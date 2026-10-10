@@ -51,4 +51,5 @@ export const zhHans: ShortsMessages = {
   madeCount: (n) => `${n} 支`,
   madeFoot: '每支是一部单独的视频，引用同一份原片。点一支打开它，在那里接着剪。',
   madeOpen: (name) => `打开「${name}」`,
+  madeMore: (n) => `还有 ${n} 支`,
 };

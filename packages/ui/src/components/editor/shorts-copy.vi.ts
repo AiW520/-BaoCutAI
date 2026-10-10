@@ -51,4 +51,5 @@ export const vi: ShortsMessages = {
   madeCount: (n) => `${n} short`,
   madeFoot: 'Mỗi short là một video riêng dùng cùng cảnh quay gốc. Nhấp vào một short để mở và tiếp tục chỉnh ở đó.',
   madeOpen: (name) => `Mở “${name}”`,
+  madeMore: (n) => `Thêm ${n} short`,
 };

@@ -51,4 +51,5 @@ export const ptBR: ShortsMessages = {
   madeCount: (n) => (n === 1 ? '1 short' : `${n} shorts`),
   madeFoot: 'Cada short é um vídeo separado que usa o mesmo material original. Clique em um para abri-lo e continuar editando lá.',
   madeOpen: (name) => `Abrir “${name}”`,
+  madeMore: (n) => (n === 1 ? 'Mais 1 short' : `Mais ${n} shorts`),
 };

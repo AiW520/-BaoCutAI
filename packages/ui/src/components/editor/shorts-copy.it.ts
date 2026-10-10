@@ -51,4 +51,5 @@ export const it: ShortsMessages = {
   madeCount: (n) => (n === 1 ? '1 short' : `${n} short`),
   madeFoot: 'Ogni short è un video a sé che usa lo stesso girato originale. Fai clic su uno per aprirlo e continuare a montarlo lì.',
   madeOpen: (name) => `Apri «${name}»`,
+  madeMore: (n) => (n === 1 ? 'Altro 1 short' : `Altri ${n} short`),
 };

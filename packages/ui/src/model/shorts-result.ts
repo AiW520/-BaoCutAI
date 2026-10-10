@@ -110,3 +110,24 @@ export function pagerIndex(ids: readonly Id[], openId: Id | null, focus: Id | nu
   const focused = focus ? ids.indexOf(focus) : -1;
   return focused >= 0 ? focused : 0;
 }
+
+/** 父视频「切出的短视频」一组默认露出几行（原型 `MADE_SHOWN`）；多的收起，「还有 N 支」展开。 */
+export const MADE_SHOWN = 6;
+
+/**
+ * 父视频「切出的短视频」一组里的子视频（原型 `madeOrder`）：从这部视频切出、没移进回收站的，同一个视频只算一次；
+ * 按建立时间倒序，新切的在最上面，同一时刻按名字。
+ */
+export function madeShorts(entries: readonly SpaceEntry[], videoId: Id): SpaceEntry[] {
+  const seen = new Set<Id>();
+  const createdAt = (entry: SpaceEntry) => entry.createdAt ?? entry.lastActivityAt;
+  return entries
+    .filter((e) => !e.user.trashedAt && derivedFrom(e) === videoId)
+    .filter((e) => {
+      const id = entryVideoId(e);
+      if (!id || seen.has(id)) return false;
+      seen.add(id);
+      return true;
+    })
+    .sort((a, b) => createdAt(b).localeCompare(createdAt(a)) || a.name.localeCompare(b.name));
+}

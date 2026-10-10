@@ -1,16 +1,17 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import type { Id, SpaceEntry } from '@baocut/protocol';
 import { ActionButton, Button, Text, Tooltip, TooltipTrigger } from '@react-spectrum/s2';
 import Add from '@react-spectrum/s2/icons/Add';
 import ChevronDown from '@react-spectrum/s2/icons/ChevronDown';
 import ChevronRight from '@react-spectrum/s2/icons/ChevronRight';
+import ChevronUp from '@react-spectrum/s2/icons/ChevronUp';
 import Folder from '@react-spectrum/s2/icons/Folder';
 import Play from '@react-spectrum/s2/icons/Play';
 import { style } from '@react-spectrum/s2/style' with { type: 'macro' };
 import { Button as RACButton } from 'react-aria-components';
 import { formatClock, formatDuration } from '../../model/format.ts';
-import { entryVideoId } from '../../model/shorts-result.ts';
-import { derivedFrom, videoTargetOf } from '../../model/space.ts';
+import { MADE_SHOWN, madeShorts } from '../../model/shorts-result.ts';
+import { videoTargetOf } from '../../model/space.ts';
 import { useRuntime } from '../../runtime/context.tsx';
 import { useShell } from '../../state/shell-store.ts';
 import { useSpace } from '../../state/space-store.ts';
@@ -18,8 +19,6 @@ import { openAiTool } from './ai-tools-nav.ts';
 import { SHORTS_COPY as S } from './shorts-copy.ts';
 import { useShortFacts } from './shorts-video-ops.ts';
 
-/** 一次露出几行（原型 `MADE_SHOWN`），多的在组里滚。 */
-const SHOWN = 4;
 const ROW_H = 56;
 
 const group = style({
@@ -56,7 +55,8 @@ const headText = style({ display: 'flex', flexDirection: 'column', gap: '[2px]',
 const headTitle = style({ font: 'ui-sm', fontWeight: 'bold', color: 'gray-900' });
 const headSub = style({ font: 'ui-xs', color: 'gray-600' });
 const body = style({ display: 'flex', flexDirection: 'column', gap: 8, padding: 8, borderTopWidth: 1, borderTopStyle: 'solid', borderColor: 'gray-200' });
-const rows = style({ display: 'flex', flexDirection: 'column', gap: 4, margin: 0, padding: 0, listStyleType: 'none', overflowY: 'auto' });
+const rows = style({ display: 'flex', flexDirection: 'column', gap: 4, margin: 0, padding: 0, listStyleType: 'none' });
+const more = style({ display: 'flex', paddingX: 4 });
 const row = style({
   display: 'flex',
   alignItems: 'center',
@@ -92,11 +92,10 @@ const rowSpan = style({ font: 'ui-xs', color: 'gray-700', overflow: 'hidden', te
 const foot = style({ margin: 0, paddingX: 4, font: 'ui-xs', color: 'gray-600', lineHeight: '[1.5]' });
 const tabular = { fontVariantNumeric: 'tabular-nums' } as const;
 
-const createdAt = (entry: SpaceEntry) => entry.createdAt ?? entry.lastActivityAt;
-
 /**
  * 父视频视频面板顶上的「切出的短视频」（原型 shorts-source.jsx `ShortsMadeGroup`，产品设计 §5.10）：从这部视频切出、
- * 没移进回收站的子视频收成一组，可以收起；每行名字、在原片上的区间与时长，点一行在同一个编辑器里打开那一支。
+ * 没移进回收站的子视频收成一组，可以收起；新建的排在最上面，默认露出 `MADE_SHOWN` 行，多的收起，「还有 N 支」展开、
+ * 「收起」收回。每行名字、在原片上的区间与时长，点一行在同一个编辑器里打开那一支。
  * 子视频按 Space 里的派生来源（`derivedFrom`）反查，父视频自己不记。这是普通的编辑动作，桌面端与 Web 共用；
  * 去往剪成短视频流程的「再切几支」只在有 AI 工具 Tab 的桌面端。
  */
@@ -104,20 +103,13 @@ export function ShortsMadeGroup({ videoId }: { videoId: Id }) {
   const runtime = useRuntime();
   const ai = runtime.host.platform !== 'web';
   const entries = useSpace((s) => s.entries);
-  const kids = useMemo(() => {
-    const seen = new Set<Id>();
-    return entries
-      .filter((e) => !e.user.trashedAt && derivedFrom(e) === videoId)
-      .filter((e) => {
-        const id = entryVideoId(e);
-        if (!id || seen.has(id)) return false;
-        seen.add(id);
-        return true;
-      })
-      .sort((a, b) => createdAt(a).localeCompare(createdAt(b)) || a.name.localeCompare(b.name));
-  }, [entries, videoId]);
+  const kids = useMemo(() => madeShorts(entries, videoId), [entries, videoId]);
   const [open, setOpen] = useState(true);
+  const [expanded, setExpanded] = useState(false);
+  useEffect(() => setExpanded(false), [videoId]);
   if (!kids.length) return null;
+  const hidden = Math.max(0, kids.length - MADE_SHOWN);
+  const shown = expanded ? kids : kids.slice(0, MADE_SHOWN);
   const inSpace = () => useShell.getState().go({ tab: 'space', category: 'all', projectId: null, from: videoId });
 
   return (
@@ -147,13 +139,21 @@ export function ShortsMadeGroup({ videoId }: { videoId: Id }) {
       </div>
       {open ? (
         <div className={body}>
-          <ul className={rows} style={{ maxHeight: SHOWN * (ROW_H + 4) }} aria-label={S.madeTitle}>
-            {kids.map((entry) => (
+          <ul className={rows} aria-label={S.madeTitle}>
+            {shown.map((entry) => (
               <li key={entry.id}>
                 <MadeRow entry={entry} />
               </li>
             ))}
           </ul>
+          {hidden ? (
+            <div className={more}>
+              <ActionButton size="S" isQuiet aria-expanded={expanded} onPress={() => setExpanded((v) => !v)}>
+                {expanded ? <ChevronUp /> : <ChevronDown />}
+                <Text>{expanded ? S.collapse : S.madeMore(hidden)}</Text>
+              </ActionButton>
+            </div>
+          ) : null}
           <p className={foot}>{S.madeFoot}</p>
         </div>
       ) : null}

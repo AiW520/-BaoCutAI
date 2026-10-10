@@ -51,4 +51,5 @@ export const ko: ShortsMessages = {
   madeCount: (n) => `${n}개`,
   madeFoot: '각 쇼츠는 같은 원본을 쓰는 별도의 동영상입니다. 하나를 눌러 열고 거기서 계속 편집하세요.',
   madeOpen: (name) => `“${name}” 열기`,
+  madeMore: (n) => `${n}개 더 보기`,
 };

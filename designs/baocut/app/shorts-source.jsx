@@ -5,7 +5,7 @@
    （store-shorts-cut / panel-aitools-shorts）只在 App——「切出的短视频」里去往它的两个入口
    （再切几支、调整后再生成）用 `BC_SURFACE.ai` 包着。判据与算术全在 model-shorts-cut.js。 */
 (function () {
-  const {useState, useEffect, useRef} = React;
+  const {useState, useEffect} = React;
   const SC = window.BC_SHORTS_CUT;
 
   /* 徽标会落在项目卡里，而整张卡是一个 button：这里用 role="link" 的 span，不嵌套按钮。 */
@@ -113,23 +113,23 @@
   }
 
   /** 来源项目视频 Tab 里的「切出的短视频」：从这个项目切出的那几支收成一组，可开合。
-      行数没有上限（一条长播客可以切出几十支），组里一次露出几行，其余在组里滚，按行虚拟化。 */
+      新建的排在最上面（刚切完回来先看到的是这一轮的）；默认露出 MADE_SHOWN 行，多的收起，
+      「还有 N 支」展开、「收起」收回。行数没有上限（一条长播客可以切出几十支），展开后跟着面板一起滚。 */
   function ShortsMadeGroup({ctx}) {
     const app = useApp();
     const S = window.BC_SURFACE;
     const proj = ctx.proj;
-    const kids = SC.childrenOf(app.projects, proj.id);
+    const kids = SC.madeOrder(SC.childrenOf(app.projects, proj.id));
     const [open, setOpen] = useState(true);
     const [menu, setMenu] = useState(null);
     const [hot, setHot] = useState(null);
-    const [top, setTop] = useState(0);
-    const list = useRef(null);
-    useEffect(() => { setMenu(null); setTop(0); if (list.current) list.current.scrollTop = 0; }, [proj.id, kids.length]);
+    const [more, setMore] = useState(false);
+    useEffect(() => { setMore(false); }, [proj.id]);
+    useEffect(() => { setMenu(null); }, [proj.id, kids.length]);
     if (!kids.length) return null;
     const head = SC.madeHead(kids);
     const rows = SC.madeRows(kids);
-    const height = Math.min(rows.length, SC.MADE_SHOWN) * SC.MADE_ROW_H;
-    const win = SC.rowWindow(rows.length, top, height, SC.MADE_ROW_H);
+    const vis = SC.madeVisible(rows.length, more);
     const session = S.ai ? app.shortsCut.sessions[proj.id] : null;
     const running = session && session.phase === 'running';
     const toggle = () => { setMenu(null); setOpen((v) => !v); };
@@ -165,16 +165,19 @@
               </div>
               <span className="t-mono">{SC.mmss(proj.duration)}</span>
             </div>
-            <div ref={list} className="sm-list bc-scroll" style={{height}} aria-label="切出的短视频列表"
-              onScroll={(e) => { setMenu(null); setTop(e.currentTarget.scrollTop); }}>
-              <div className="sm-virtual" style={{height: win.height}}>
-                {rows.slice(win.start, win.end).map((row, i) => (
-                  <div className="sm-slot" key={row.id} style={{top: (win.start + i) * SC.MADE_ROW_H}}>
-                    <MadeRow row={row} child={kids[win.start + i]} ctx={ctx} menuOpen={menu === row.id} onMenu={setMenu} onHot={setHot} />
-                  </div>
-                ))}
-              </div>
+            <div className="sm-list" aria-label="切出的短视频列表">
+              {rows.slice(0, vis.shown).map((row, i) => (
+                <div className="sm-slot" key={row.id}>
+                  <MadeRow row={row} child={kids[i]} ctx={ctx} menuOpen={menu === row.id} onMenu={setMenu} onHot={setHot} />
+                </div>
+              ))}
             </div>
+            {vis.hidden ? (
+              <div className="sm-more">
+                <Btn size="s" variant="quiet" icon={more ? 'chevup' : 'chevdown'} aria-expanded={more}
+                  onClick={() => { setMenu(null); setMore((v) => !v); }}>{SC.madeMoreLabel(vis.hidden, more)}</Btn>
+              </div>
+            ) : null}
             <div className="sm-foot">每支是一部单独的视频，引用同一份原片。点一支打开它，在那里接着剪。</div>
           </div>
         ) : null}

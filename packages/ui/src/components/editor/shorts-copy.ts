@@ -76,6 +76,7 @@ const en = {
   madeCount: (n: number) => (n === 1 ? '1 short' : `${n} shorts`),
   madeFoot: 'Each short is a separate video that uses the same original footage. Click one to open it and keep editing there.',
   madeOpen: (name: string) => `Open “${name}”`,
+  madeMore: (n: number) => (n === 1 ? '1 more short' : `${n} more shorts`),
 };
 
 export type ShortsMessages = typeof en;

@@ -51,4 +51,5 @@ export const pl: ShortsMessages = {
   madeCount: (n) => `Shorty: ${n}`,
   madeFoot: 'Każdy short to osobne wideo korzystające z tego samego materiału źródłowego. Kliknij jeden, aby go otworzyć i montować dalej.',
   madeOpen: (name) => `Otwórz „${name}”`,
+  madeMore: (n) => `Więcej shortów: ${n}`,
 };

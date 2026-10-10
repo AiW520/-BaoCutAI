@@ -327,6 +327,25 @@ test('切出的短视频一组：组头数支数与合计，行按现状写；�
   assert.equal(M.rowWindow(500, 6400, 256, M.MADE_ROW_H).start, 96);
 });
 
+test('切出的短视频一组：新建的在最上面，默认露出 6 行，多的「还有 N 支」展开', () => {
+  const kids = [
+    child('old', 4, 13, {ctime: 900}),
+    child('none', 20, 22, {}),
+    child('new2', 30, 33, {ctime: 0}),
+    child('mid', 37, 53, {ctime: 60}),
+    child('new1', 56, 61, {ctime: 0}),
+  ];
+  assert.deepEqual(M.madeOrder(kids).map((k) => k.id), ['new2', 'new1', 'mid', 'old', 'none'], '同时建的保持原序，缺 ctime 沉底');
+  assert.deepEqual(M.madeOrder([]), []);
+  assert.equal(M.MADE_SHOWN, 6);
+  assert.deepEqual(M.madeVisible(4, false), {shown: 4, hidden: 0, expanded: false});
+  assert.deepEqual(M.madeVisible(6, true), {shown: 6, hidden: 0, expanded: false}, '不超出时没有展开这回事');
+  assert.deepEqual(M.madeVisible(11, false), {shown: 6, hidden: 5, expanded: false});
+  assert.deepEqual(M.madeVisible(11, true), {shown: 11, hidden: 5, expanded: true});
+  assert.equal(M.madeMoreLabel(5, false), '还有 5 支');
+  assert.equal(M.madeMoreLabel(5, true), '收起');
+});
+
 test('调整后再生成：现状连着就带现状，剪成几段带切出时的那一段；不拿自己当已切过', () => {
   const kid = child('k2', 37, 53, {title: '字幕为什么是单独的一层', cut: {focus: 'manual', focusX: 0.62, tracks: 'trans', style: 'project'},
     used: [{start: S[37].start, end: S[54].end}]});

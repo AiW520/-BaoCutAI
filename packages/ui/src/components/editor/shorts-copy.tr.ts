@@ -51,4 +51,5 @@ export const tr: ShortsMessages = {
   madeCount: (n) => `${n} short`,
   madeFoot: 'Her short aynı orijinal görüntüyü kullanan ayrı bir videodur. Birine tıklayıp açın ve orada düzenlemeye devam edin.',
   madeOpen: (name) => `“${name}” aç`,
+  madeMore: (n) => `${n} short daha`,
 };

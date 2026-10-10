@@ -51,4 +51,5 @@ export const nl: ShortsMessages = {
   madeCount: (n) => (n === 1 ? '1 short' : `${n} shorts`),
   madeFoot: 'Elke short is een aparte video die hetzelfde originele materiaal gebruikt. Klik op een short om hem te openen en daar verder te knippen.',
   madeOpen: (name) => `‘${name}’ openen`,
+  madeMore: (n) => (n === 1 ? 'Nog 1 short' : `Nog ${n} shorts`),
 };

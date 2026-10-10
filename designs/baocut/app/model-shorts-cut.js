@@ -489,10 +489,26 @@
   }
 
   /* ---------- 来源项目视频 Tab 里「切出的短视频」那一组 ----------
-     来源项目自己不记切出过什么（裁决点 A），这一组是从项目库反查出来的，按在原片里的先后排。 */
+     来源项目自己不记切出过什么（裁决点 A），这一组是从项目库反查出来的，新建的排在最上面（madeOrder）。 */
   const MADE_ROW_H = 64;
-  /** 组里一次最多露出几行，多的在组里滚。 */
-  const MADE_SHOWN = 4;
+  /** 组里默认露出几行；多的收起，「还有 N 支」展开。 */
+  const MADE_SHOWN = 6;
+  /** 组里的顺序：按建立时间倒序，新切的在最上面。`ctime` 是多少分钟前建的（小的新）；缺的沉底；
+      同时建的保持库里的原序（新切的插在库的最前面）。 */
+  function madeOrder(children) {
+    const key = (k) => (k && k.ctime != null && Number.isFinite(+k.ctime) ? +k.ctime : Infinity);
+    return (children || []).map((k, i) => ({k, i}))
+      .sort((a, b) => (key(a.k) - key(b.k)) || (a.i - b.i))
+      .map((x) => x.k);
+  }
+  /** 露出几行、收起了几支：超出 MADE_SHOWN 的收起，展开后全部露出。 */
+  function madeVisible(count, expanded) {
+    const n = Math.max(0, Math.floor(count || 0));
+    const hidden = Math.max(0, n - MADE_SHOWN);
+    return {shown: expanded ? n : n - hidden, hidden, expanded: !!expanded && hidden > 0};
+  }
+  /** 展开 / 收起那颗按钮上的字。 */
+  const madeMoreLabel = (hidden, expanded) => (expanded ? '收起' : `还有 ${hidden} 支`);
   const tracksOf = (id) => TRACKS.find((t) => t.id === id) || TRACKS[0];
   /** 原片条上的色块：百分比。 */
   function bar(ranges, dur) {
@@ -629,7 +645,7 @@
     childTitle, childProject,
     frameLine, summaryLine, agentExtra, taskTitle, stageAt, listStatus, openTracks,
     bar, rowWindow,
-    MADE_ROW_H, MADE_SHOWN, tracksOf, editedSince, cutLine, madeHead, madeRows, madeBar, redoTitle, redoCandidate, redoParams, redoPlan,
+    MADE_ROW_H, MADE_SHOWN, madeOrder, madeVisible, madeMoreLabel, tracksOf, editedSince, cutLine, madeHead, madeRows, madeBar, redoTitle, redoCandidate, redoParams, redoPlan,
   };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   if (typeof window !== 'undefined') window.BC_SHORTS_CUT = api;

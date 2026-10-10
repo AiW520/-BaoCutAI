@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { DocumentRecord, SpaceEntry, TimelineItem } from '@baocut/protocol';
-import { createdVideoIds, pagerIndex, readDerivation, shortsBatch } from './shorts-result.ts';
+import { MADE_SHOWN, createdVideoIds, madeShorts, pagerIndex, readDerivation, shortsBatch } from './shorts-result.ts';
 
 function video(id: string, over: Partial<SpaceEntry> = {}): SpaceEntry {
   return {
@@ -124,5 +124,23 @@ describe('pagerIndex', () => {
     expect(pagerIndex(['a', 'b', 'c'], 'parent', 'c')).toBe(2);
     expect(pagerIndex(['a', 'b', 'c'], 'parent', null)).toBe(0);
     expect(pagerIndex([], 'a', null)).toBe(-1);
+  });
+});
+
+describe('madeShorts', () => {
+  it('lists the parent’s live children newest first, once per video, ties by name', () => {
+    const entries = [
+      video('parent'),
+      child('old', '2026-10-10T09:00:00.000Z'),
+      child('newest', '2026-10-10T12:00:00.000Z'),
+      child('b-tie', '2026-10-10T11:00:00.000Z'),
+      child('a-tie', '2026-10-10T11:00:00.000Z'),
+      child('trashed', '2026-10-10T13:00:00.000Z', { user: { favorite: false, displayName: null, trashedAt: '2026-10-10T13:30:00.000Z' } }),
+      child('dupe', '2026-10-10T10:00:00.000Z', { id: 'e-dupe-2', ref: { videoId: 'old' } }),
+      video('other', { createdAt: '2026-10-10T14:00:00.000Z', origin: { source: 'derived', videoId: 'elsewhere' } }),
+    ];
+    expect(madeShorts(entries, 'parent').map((e) => e.name)).toEqual(['newest', 'a-tie', 'b-tie', 'old']);
+    expect(madeShorts(entries, 'nobody')).toEqual([]);
+    expect(MADE_SHOWN).toBe(6);
   });
 });

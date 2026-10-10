@@ -51,4 +51,5 @@ export const ja: ShortsMessages = {
   madeCount: (n) => `${n} 本`,
   madeFoot: '各ショートは同じ元素材を使う別々の動画です。クリックして開き、そこで編集を続けます。',
   madeOpen: (name) => `「${name}」を開く`,
+  madeMore: (n) => `ほか ${n} 本`,
 };
