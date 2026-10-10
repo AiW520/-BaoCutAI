@@ -20,6 +20,7 @@ import {
   type AgentSkillFiles,
 } from './agent-skill-renderer.ts';
 import { findRepoDir } from './skill-catalog.ts';
+import { parseSkillFrontmatter } from './skill-frontmatter.ts';
 
 const FIXTURE = path.join(path.dirname(fileURLToPath(import.meta.url)), 'testing', 'agent-skill-fixture', 'agent-skills', 'baocut');
 const cliCatalog = new ToolCatalog(allToolSets(), silentLogger, { surface: 'cli' });
@@ -316,6 +317,26 @@ describe('仓库里的说明书', () => {
 
   it('CLI 面的渲染里没有 a_b 工具名与工具桥用语', () => {
     expect(bridgeNamesInCliFace(cli)).toEqual([]);
+  });
+
+  it('内置 skill 的 front matter 与说明书的路由表不写 a_b 工具名（它们原样进索引与引言，不经工具名改写）', () => {
+    const bare = (text: string) =>
+      CLI_COMPOUND.filter((name) => new RegExp(`(?<![A-Za-z0-9_{:])${name}(?![A-Za-z0-9_])`).test(text.replace(/\{\{[^}]*\}\}/g, '')));
+    const skillsDir = findRepoDir('skills')!;
+    const hits: string[] = [];
+    for (const id of fs.readdirSync(skillsDir)) {
+      const file = path.join(skillsDir, id, 'SKILL.md');
+      if (!fs.existsSync(file)) continue;
+      const parsed = parseSkillFrontmatter(fs.readFileSync(file, 'utf8'));
+      expect(parsed.ok, id).toBe(true);
+      if (!parsed.ok) continue;
+      for (const [key, value] of parsed.fields) for (const name of bare(value)) hits.push(`${id} ${key}: ${name}`);
+    }
+    const skill = source.get('SKILL.md')!;
+    const table = skill.slice(skill.indexOf('| 用户说的话 |'), skill.indexOf('### 三条底线'));
+    expect(table.length).toBeGreaterThan(0);
+    for (const name of bare(table)) hits.push(`SKILL.md 路由表: ${name}`);
+    expect(hits).toEqual([]);
   });
 
   it('工具桥面的渲染里没有 baocut 命令、--yes 与退出码（含会话指导与内置页面）', () => {
