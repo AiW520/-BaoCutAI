@@ -75,7 +75,7 @@ const refs = (file) => {
 const WEB_ONLY = ['app/web-shell.jsx', 'app/web-shell.css', 'app/web-main.jsx'];
 const WEB_DENY = [
   /^app\/panel-aitools/, /^app\/panel-dub/, /^app\/panel-crop/, /^app\/stage-crop/, /^app\/store-crop/, /^app\/crop\.css/,
-  /^app\/store-shorts-cut/, /^app\/stage-shorts-cut/, /^app\/shorts-cut\.css/,
+  /^app\/store-shorts-cut/,
   /^app\/panel-tts/, /^app\/glossary-tool/, /^app\/agent-/, /^app\/page-/, /^app\/settings-/, /^app\/tool-/, /^app\/tools\.css/,
   /^app\/services\.css/, /^app\/new-/, /^app\/newproject-flow/, /^app\/import-flow/, /^app\/import-panel/, /^app\/help-center/,
   /^app\/main\.jsx/, /^app\/voice-picker/, /^app\/model-openai-api/, /^app\/panel-image-gen/, /^app\/image-gen/, /^app\/model-writing/,

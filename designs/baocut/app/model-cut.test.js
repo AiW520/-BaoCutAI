@@ -361,3 +361,28 @@ test('retime：保留 id / kind / by / batch，吸收被盖住的建议，没变
   assert.equal(C.retime(DCUTS, 'a', 6, 9), DCUTS, '区间没变不写');
   assert.equal(C.retime(DCUTS, 'nope', 1, 2), DCUTS);
 });
+
+test('carve 从已剪段里抠出一段：两头留下、整段盖住就拿走、建议不动、没碰到原样返回', () => {
+  const cuts = [
+    {id: 'o1', start: 0, end: 40, kind: 'outside', state: 'cut', by: 'agent'},
+    {id: 's', start: 50, end: 51, kind: 'filler', state: 'suggested'},
+    {id: 'o2', start: 80, end: 206, kind: 'outside', state: 'cut', by: 'agent'},
+  ];
+  const a = C.carve(cuts, 34, 40);
+  assert.deepEqual(a.map((c) => [c.id, c.start, c.end, c.kind]), [['o1', 0, 34, 'outside'], ['s', 50, 51, 'filler'], ['o2', 80, 206, 'outside']]);
+  const b = C.carve(cuts, 10, 20);
+  assert.deepEqual(b.filter((c) => c.kind === 'outside').map((c) => [c.id, c.start, c.end]), [['o1', 0, 10], ['o1+20000', 20, 40], ['o2', 80, 206]]);
+  assert.deepEqual(C.carve(cuts, 0, 40).map((c) => c.id), ['s', 'o2']);
+  assert.equal(C.carve(cuts, 50, 51), cuts);
+  assert.equal(C.carve(cuts, 60, 70), cuts);
+});
+
+test('add 并进片段外的那一段仍是片段外；restoreAll 可以留下片段外', () => {
+  const cuts = [{id: 'o1', start: 0, end: 40, kind: 'outside', state: 'cut', by: 'agent'}];
+  const a = C.add(cuts, {start: 38, end: 45, text: '那一句'});
+  assert.deepEqual(a.map((c) => [c.id, c.start, c.end, c.kind, c.by]), [['o1', 0, 45, 'outside', 'agent']]);
+  const b = C.add(cuts, {start: 60, end: 61});
+  assert.deepEqual(b.map((c) => c.kind), ['outside', 'manual']);
+  assert.deepEqual(C.restoreAll(b, 'outside').map((c) => c.id), ['o1']);
+  assert.equal(C.kindLabel('outside'), '片段外');
+});

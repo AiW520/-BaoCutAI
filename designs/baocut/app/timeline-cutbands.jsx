@@ -32,8 +32,9 @@
     const words = useMemo(() => CUT.wordTimes(ctx.cues || []), [ctx.cues]);
     const live = useRef(null);                 // 进行中的拖动：卸载时拆监听
     useEffect(() => () => { if (live.current) live.current(); }, []);
-    // 开关关着 = 成片视图：已剪的内容不存在，建议也收起来（数在开关旁）
-    if (!ctx.cutMode) return null;
+    // 开关关着 = 成片视图：已剪的内容不存在，建议也收起来（数在开关旁）。
+    // 子视频（ctx.composed，§5.10）的文稿虽在剪辑态，时间轴始终是成片视图，同样不画
+    if (!ctx.cutMode || ctx.composed) return null;
 
     const beginEdge = (e, slot, edge) => {
       if (e.button !== 0) return;

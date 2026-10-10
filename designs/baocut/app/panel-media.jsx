@@ -371,9 +371,9 @@
 
     if (kind === 'video') return view === 'stock'
       ? frame(<window.StockPane ctx={ctx} kind="video" onDetailChange={setStockDetail} />)
-      /* 短视频项目（§15.12）：素材库上面先是「原片」卡——这一支从哪儿来、用了哪几段、还能从原片拿什么。
-         来源项目这一头是「切出的短视频」一组（没切过就不画）：点一支打开它，App 上还能调整后再生成 */
-      : frame(<>{window.BC_SHORTS_CUT.isChild(ctx.proj) ? <window.ShortsSourceCard ctx={ctx} /> : <window.ShortsMadeGroup ctx={ctx} />}<window.VideoLibrary ctx={ctx} onImport={importOne} /></>);
+      /* 来源项目：素材库上面是「切出的短视频」一组（没切过就不画）：点一支打开它，App 上还能调整后再生成。
+         子视频这里不另画卡：它从哪儿来写在内容区顶上那一条，片段外的话在文稿里（product-design §5.10） */
+      : frame(<>{window.BC_SHORTS_CUT.isChild(ctx.proj) ? null : <window.ShortsMadeGroup ctx={ctx} />}<window.VideoLibrary ctx={ctx} onImport={importOne} /></>);
 
     /* 选中一句配音 → 这一栏落在「编辑配音句」（2026-09-23）：时间轴上单点一块、素材库里点一行都到这里；
        多选（⌘ / ⇧）只选不翻页。返回 = 清掉选中、回到列表。 */

@@ -11,20 +11,25 @@
      4. 监听任务记录：`kind:'cleanup'` 的任务（AI Tools 或 Agent 都产出它）跑完，
         把这一批建议写进表；收据上「撤销 / 重做」翻 `undone` 位，这里整批撤走 / 放回。
         任务记录是进度的唯一真相（§15.1），所以两条路径都不直接调用这里——
-        它们只改任务，这里只看任务。 */
+        它们只改任务，这里只看任务。
+   子视频（剪成短视频切出的一支，product-design §5.10 / §4.6）：剪口表从它自己的记录来（片段外两条「片段外」剪口），
+   打开就在剪辑态（片段外的话划掉）；每次改动写回那一支的记录（`cuts` 与现在的时长），换一支就换一张表。 */
 (function () {
   const {useState, useRef, useCallback, useEffect} = React;
   const D = window.BC_DATA;
   const CUT = window.BC_CUT;
+  const SC = window.BC_SHORTS_CUT;
 
   /** @param o `{app, proj, ent, initiallyEmpty, cutsRef, setTab, setPaneHidden, setPeek}` */
   function useCutStore(o) {
     const {app, proj, initiallyEmpty} = o;
+    const child = SC.isChild(proj);
     const seed = (by, batch) => CUT.suggest([], D.cutSuggestions, by, batch);
     // 实验项目（proj.bare）不预埋建议：从「找可剪的口」到批量接受整条链留给用户自己跑
     const preset = (empty, e) => !empty && !!e.review && !proj.bare;
-    const [cuts, setCuts] = useState(() => (preset(initiallyEmpty, o.ent) ? seed('ai') : []));
-    const [cutMode, setCutMode] = useState(!initiallyEmpty && !!o.ent.review);
+    const initial = (empty, e) => (child ? SC.cutsOf(proj) : preset(empty, e) ? seed('ai') : []);
+    const [cuts, setCuts] = useState(() => initial(initiallyEmpty, o.ent));
+    const [cutMode, setCutMode] = useState(child || (!initiallyEmpty && !!o.ent.review));
     const [cutSel, setCutSel] = useState(null);
     const cutsRef = o.cutsRef;   // editor.jsx 持有：rAF 跳播每帧读它
     cutsRef.current = cuts;
@@ -85,10 +90,21 @@
         write((prev) => CUT.rejectAll(prev));
         app.toast(`已忽略 ${n} 条建议`, undefined, undo());
       },
+      /** 全部恢复：子视频里「片段外」不算——放回它就等于回到原片（§5.10）。 */
       restoreAll: () => {
-        const s = CUT.summary(CUT.active(cutsRef.current)); if (!s.n) return;
-        write((prev) => CUT.restoreAll(prev));
+        const list = CUT.active(cutsRef.current).filter((c) => !(child && c.kind === 'outside'));
+        const s = CUT.summary(list); if (!s.n) return;
+        write((prev) => CUT.restoreAll(prev, child ? 'outside' : null));
         app.toast(`已恢复 ${s.n} 处 · ${CUT.label(s.secs)} 放回成片`, 'positive', undo());
+      },
+      /** 子视频：点一句划掉的话（或剪缝上的「恢复」）把那一段放回这一支（§5.10）。
+          只从剪口里挖掉这一段，片段外其余的仍划掉；时间轴跟着变长。 */
+      reclaim: (start, end) => {
+        if (!(end > start)) return;
+        const next = CUT.carve(cutsRef.current, start, end);
+        if (next === cutsRef.current) return;
+        write(() => next);
+        app.toast(`已恢复 · ${CUT.label(end - start)} 放回这一支`, 'positive', undo());
       },
       /** 试听一处：借悬停预览的 once 窗口真播一遍（播放中的跳播对预览窗口不生效）。 */
       audition: (cut) => {
@@ -128,10 +144,20 @@
 
     /** 入口切换（editor.jsx 的 setEntry）：clean 入口带 AI 建议进来，其余入口清空。 */
     const reset = useCallback((empty, e) => {
-      setCuts(preset(empty, e) ? seed('ai') : []);
-      setCutMode(!empty && !!e.review);
+      setCuts(initial(empty, e));
+      setCutMode(child || (!empty && !!e.review));
       setCutSel(null);
     }, []);
+    /* 子视频：剪口表写回那一支的记录（项目页、来源视频里「切出的短视频」、再进来都读它），时长跟着现状 */
+    const sig = child ? JSON.stringify(cuts) : '';
+    const wrote = useRef(sig);
+    useEffect(() => {
+      if (!child || wrote.current === sig) return;
+      wrote.current = sig;
+      const dur = SC.sourceDur(proj);
+      const len = SC.keptRanges(cuts, dur).reduce((n, r) => n + (r.end - r.start), 0);
+      app.patchProject(proj.id, {cuts, duration: +len.toFixed(2)});
+    }, [sig]);
     // 切回改字态选区作废
     useEffect(() => { if (!cutMode) setCutSel(null); }, [cutMode]);
 

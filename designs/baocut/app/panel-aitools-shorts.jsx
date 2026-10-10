@@ -1,8 +1,9 @@
 /* 剪成短视频（§5.10）工具页：设置 → 进行中 → 结果（panel-aitools-shorts-result.jsx）。
    只交给 Agent，而且总是新开一条会话：在那里找片段、找到就创建成视频，要几支建几支，不停下来等人挑。
-   人在设置页给的是要几支、每支多长、画幅与取景、字幕；结果页上再逐支看、调起止、删掉不要的。
+   人在设置页给的是要几支、每支多长、画幅与取景、字幕；结果页上逐支打开、改标题、删掉不要的。
    产物是项目不是成片：每支一部新视频，引用同一份原片，原视频和时间轴不动。
-   会话在 store-shorts-cut.jsx，算出来的东西在 model-shorts-cut.js。 */
+   会话在 store-shorts-cut.jsx，算出来的东西在 model-shorts-cut.js。
+   会话挂在来源视频上：在一支子视频里打开，看见的是来源视频那一轮的结果页（`SC.hostId`，§5.10）。 */
 (function () {
   const {useState} = React;
   const SC = window.BC_SHORTS_CUT;
@@ -14,6 +15,8 @@
   const NAME = TOOLS.shortscut.name;
   const AGENT_STAGES = ['读视频与文稿', '等你放行', '找片段', '创建视频'];
   const HINT = '新开一条会话，在那里找片段并创建视频；原视频和时间轴不动。';
+  /* 会话挂在哪部视频上：子视频回到它的来源视频（找片段读的也是来源视频的整份文稿，两者共用）。 */
+  const hostOf = (app, ctx) => app.projById(SC.hostId(ctx.proj)) || ctx.proj;
   const projectFacts = (ctx) => ({
     hasTrans: ctx.cues.some((c) => !!c.trans),
     portrait: C.sourceRatio(ctx.sources.video.find((v) => !v.crop)) < 1,
@@ -74,7 +77,8 @@
   /* ---------- 设置 ---------- */
   function ShortsCutSetup({ctx, s, onBack}) {
     const app = useApp();
-    const proj = ctx.proj.id;
+    const host = hostOf(app, ctx);
+    const proj = host.id;
     const p = s.params;
     const set = (x) => app.shortsCut.setParams(proj, x);
     const sentences = ctx.cues;
@@ -100,7 +104,7 @@
     const scope = chapter ? {k: chapter.id, label: chapter.title, start: chapter.start, end: chapter.end}
       : scopeOpt && scopeOpt.k === 'sel' ? {k: 'sel', label: `当前选区 ${SC.spanText(scopeOpt)}`, start: scopeOpt.start, end: scopeOpt.end} : null;
     const scopeName = chapter ? chapter.title.replace(/^第 \d+ 章 · /, '') : scope ? scope.label : null;
-    const defaultText = P.template('shortscut', AG.intentPrompt({kind: 'shortscut', scope: scopeName}, ctx.proj),
+    const defaultText = P.template('shortscut', AG.intentPrompt({kind: 'shortscut', scope: scopeName}, host),
       {extra: SC.agentExtra(p, {children: kids.length})});
     const showFocus = p.ratio !== 'source' && !(s.facts.portrait && p.ratio === '9:16');
 
@@ -197,7 +201,7 @@
           </div>
         ) : null}
 
-        {!ctx.proj.dir ? <div className="hint">这部视频不属于项目。交给 Agent 会先把它收进一个以视频命名的项目，再在那里新开会话。</div> : null}
+        {!host.dir ? <div className="hint">这部视频不属于项目。交给 Agent 会先把它收进一个以视频命名的项目，再在那里新开会话。</div> : null}
         <window.ToolPrompt ctx={ctx} tool="shortscut" runner={runner} value={prompt} onChange={setPrompt} defaultText={defaultText}
           session={{k: 'new'}} hint={HINT} onStart={start} />
       </div>
@@ -207,7 +211,8 @@
   /* ---------- 进行中：找片段 → 创建视频，进度从那条会话倒推 ---------- */
   function ShortsCutRunning({ctx, s, onBack}) {
     const app = useApp();
-    const proj = ctx.proj.id;
+    const host = hostOf(app, ctx);
+    const proj = host.id;
     const chat = app.sessions.find((x) => x.id === s.sid) || null;
     const task = app.tasks.find((t) => t.id === (s.taskId || (chat && chat.taskId))) || null;
     const prog = chat ? AG.sessionProgress(chat, task) : null;
@@ -221,7 +226,7 @@
           <b>已交给 {s.runner || 'Agent'}</b>
           <span>在新开的那条会话里进行。找到就直接创建，创建前会先问你一次。</span>
         </div>
-        <Job title={s.stage === 'create' ? `正在创建 ${n}…` : `正在「${ctx.proj.title}」里找片段…`} pct={pct}
+        <Job title={s.stage === 'create' ? `正在创建 ${n}…` : `正在「${host.title}」里找片段…`} pct={pct}
           stages={AGENT_STAGES} cur={cur} activity={prog ? prog.note : task ? task.activity : null} />
         {prog && prog.waiting ? (
           <div className="aicard aicard--warn">
@@ -232,7 +237,7 @@
         ) : null}
         <div className="aicard">
           <b>每支一部新视频</b>
-          <span>{`${SC.summaryLine(s.params)}${s.scope ? ` · 只在「${s.scope.label}」里找` : ''}。做完直接落到结果页，逐支看、调起止。`}</span>
+          <span>{`${SC.summaryLine(s.params)}${s.scope ? ` · 只在「${s.scope.label}」里找` : ''}。做完直接落到结果页，逐支打开来看。`}</span>
         </div>
         <div className="signpost">可先切到别处 · 任务在后台跑，这里和后台任务页都能回来。</div>
         <div className="flowcta sc-row">
@@ -245,20 +250,22 @@
 
   function ShortsCutPanel({ctx, onBack}) {
     const app = useApp();
-    const s = app.shortsCut.sessions[ctx.proj.id];
-    const back = () => { app.shortsCut.close(ctx.proj.id); if (onBack) onBack(); };
+    const host = hostOf(app, ctx);
+    const s = app.shortsCut.sessions[host.id];
+    const back = () => { app.shortsCut.close(host.id); if (onBack) onBack(); };
     if (!s) return null;
     if (s.phase === 'running') return <ShortsCutRunning ctx={ctx} s={s} onBack={back} />;
     /* 结果页的「返回」回到参数页，设置与提示词保留（§5.10） */
-    if (s.phase === 'result') return <window.ShortsCutResult ctx={ctx} s={s} onBack={() => app.shortsCut.toSetup(ctx.proj.id)} />;
+    if (s.phase === 'result') return <window.ShortsCutResult ctx={ctx} s={s} host={host} onBack={() => app.shortsCut.toSetup(host.id)} />;
     return <ShortsCutSetup ctx={ctx} s={s} onBack={back} />;
   }
 
   /* AI 工具列表里那一行的副标题：会话没开着也能看见它到哪一步了。 */
   function shortsCutListStatus(app, projId, fallback) {
-    return SC.listStatus(app.shortsCut.sessions[projId], fallback, SC.childrenOf(app.projects, projId).length);
+    const id = SC.hostId(app.projById(projId)) || projId;
+    return SC.listStatus(app.shortsCut.sessions[id], fallback, SC.childrenOf(app.projects, id).length);
   }
-  const openShortsCut = (app, ctx) => app.shortsCut.open(ctx.proj.id, projectFacts(ctx));
+  const openShortsCut = (app, ctx) => app.shortsCut.open(SC.hostId(ctx.proj), projectFacts(ctx));
   /* 视频 Tab「切出的短视频」那一组的两个入口（shorts-source.jsx，只在 App 调）：再切几支、调整后再生成。 */
   function shortsCutMore(app, ctx) {
     openShortsCut(app, ctx);

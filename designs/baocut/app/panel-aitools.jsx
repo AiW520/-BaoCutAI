@@ -444,7 +444,9 @@
     const [landed, setLanded] = useState(false);
     const back = () => { setOpen(null); setScope(null); setLanded(false); };
     const cropOpen = !!app.crop.sessions[ctx.proj.id]?.open;
-    const shortsOpen = !!app.shortsCut.sessions[ctx.proj.id]?.open;
+    /* 剪成短视频的会话挂在来源视频上：子视频里看见的是来源视频那一轮（§5.10） */
+    const shortsHost = window.BC_SHORTS_CUT.hostId(ctx.proj);
+    const shortsOpen = !!app.shortsCut.sessions[shortsHost]?.open;
 
     /* 接单：下单方与接单方是两个面板，中间靠编辑器状态传（ctx.aiReq），消费完立刻清掉。
        智能裁剪与剪成短视频有自己的会话面板，接到单就开会话。 */
@@ -455,13 +457,13 @@
       /* `agent`：Agent 在会话里跑完了这件事，面板直接落在结果上（复核构图 / 挑候选 / 读成稿），不再从设置开始 */
       if (tool === 'crop') { if (!cropOpen || agent) ctx.openCrop(null, agent ? {planned: true} : {}); return; }
       if (tool === 'shortscut') {
-        const at = app.shortsCut.sessions[ctx.proj.id];
+        const at = app.shortsCut.sessions[shortsHost];
         if (!shortsOpen) window.openShortsCut(app, ctx);
         /* 选区下的单：范围记进会话，设置页的范围里多出「当前选区」并选中它 */
-        if (sc && sc.end > sc.start && (!at || at.phase === 'setup')) app.shortsCut.set(ctx.proj.id, {hostScope: {start: sc.start, end: sc.end}});
+        if (sc && sc.end > sc.start && (!at || at.phase === 'setup')) app.shortsCut.set(shortsHost, {hostScope: {start: sc.start, end: sc.end}});
         /* 会话里的「查看这几支」：那条会话还没落过就接上它（收据到了就建好、落到结果页；已经建过的只摆回结果页） */
         const fresh = !at || at.phase === 'setup' || (at.phase === 'result' && at.sid !== agent?.sid);
-        if (agent && agent.sid && fresh) app.shortsCut.findViaAgent(ctx.proj.id, {sid: agent.sid, sentences: ctx.cues, scope: null, runner: 'Agent'});
+        if (agent && agent.sid && fresh) app.shortsCut.findViaAgent(shortsHost, {sid: agent.sid, sentences: ctx.cues, scope: null, runner: 'Agent'});
         return;
       }
       setOpen(TOOLS[tool] ? tool : null);

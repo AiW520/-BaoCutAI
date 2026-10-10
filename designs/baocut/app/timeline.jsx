@@ -445,7 +445,8 @@
                     <TemplateBlock row={r} pxps={pxps} ctx={ctx} on={ctx.isSel('element', r.el.id)} onMenu={setBlkMenu} />
                   ) : r.el ? (
                     /* 同类共道（2026-09-11，§12.6）：一条元素行按道摆着一件或多件，逐件出块 */
-                    TL.rowEls(r).map((el) => (
+                    /* 子视频（ctx.composed，§5.10）：整段落在片段外的那几件在成片里不存在，不留 2px 的残条 */
+                    TL.rowEls(r).filter((el) => !ctx.composed || ctx.tmap.view(el.end) - ctx.tmap.view(el.start) > 0.01).map((el) => (
                       <React.Fragment key={el.id}>
                         <ElementBlock el={el} row={r} pxps={pxps} ctx={ctx}
                           on={ctx.isSel('element', el.id)}

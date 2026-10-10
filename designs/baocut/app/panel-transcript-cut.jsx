@@ -25,7 +25,8 @@
   function CutBar({ctx}) {
     const app = useApp();
     const sug = CUT.suggested(ctx.cuts);
-    const act = CUT.active(ctx.cuts);
+    // 子视频（§5.10）：「片段外」不是剪掉的口，是这一支本来就不要的部分——不计数、不进「全部恢复」
+    const act = CUT.active(ctx.cuts).filter((c) => !(ctx.composed && c.kind === 'outside'));
     /* 第 196 轮：找口的任务在跑时（Agent 会话或直接调模型，落成同一种任务记录），
        这里给一条迷你进度替代「再找一遍」——点它回工具页看阶段。 */
     const running = app.tasks.filter((t) => t.kind === 'cleanup' && t.project === ctx.proj.id && t.status === 'running').slice(-1)[0] || null;
@@ -145,7 +146,7 @@
       e.stopPropagation();
       const d = drag.current; drag.current = null;
       if (d && d.moved) return;                 // 拖选结束的那一下松手，不算点击
-      if (cut) { onMenu(cut, e); return; }
+      if (cut) { onMenu(cut, e, timeOf(t)); return; }
       const r = timeOf(t); if (r) ctx.seek(r.start);
     };
     const out = [];
@@ -157,7 +158,8 @@
         <span key={i} data-i={i}
           className={cx('ctok', cut && 'cutx', cut && cut.state === 'suggested' && 'cutx--sug', on && 'is-sel',
             kept && 'para__w', kept && i === words.now && 'is-now', kept && i < words.played && 'is-played')}
-          title={cut ? `${CUT.kindLabel(cut.kind)} · ${CUT.label(cut.end - cut.start)}${cut.state === 'suggested' ? ' · 建议' : ' · 已剪'}` : undefined}
+          title={cut ? (cut.kind === 'outside' && cut.state === 'cut' ? '片段外 · 点一下放回这一支'
+            : `${CUT.kindLabel(cut.kind)} · ${CUT.label(cut.end - cut.start)}${cut.state === 'suggested' ? ' · 建议' : ' · 已剪'}`) : undefined}
           onMouseDown={begin(i)} onMouseEnter={enter(i)} onClick={click(i, t, cut)}>
           {text.slice(t.s, t.e)}
         </span>);
@@ -229,6 +231,29 @@
             ))}
           </div>
         ) : null}
+      </div>
+    );
+  }
+
+  /* 子视频文稿里片段外远处的剪缝（product-design §5.10）：只有「展开」，没有「恢复」——整条放回就等于把这一支
+     变回整部原片；要放回哪句点哪句。展开分批（SC.STEP 句一批，靠近片段的先出），铺开过的可以收起。 */
+  function ShortsFoldSeam({fold, onMore, onCollapse}) {
+    const stop = (fn) => (e) => { e.stopPropagation(); fn(); };
+    const more = fold.count > 0;
+    const go = more ? onMore : onCollapse;
+    return (
+      <div className={cx('cseam cseam--fold', fold.open && 'is-open')}>
+        <div className="cseam__hd" role="button" tabIndex={0} aria-expanded={fold.open}
+          title={more ? `展开靠近片段的 ${fold.next} 句` : '收起划掉的句子'} onClick={go}
+          onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); go(); } }}>
+          <Ic n="split" className="ic--14" />
+          <span className="cseam__t">{fold.text}</span>
+          <i className="cseam__line" />
+          <span className="cseam__acts">
+            {more ? <BCAction className="cseam__b" onClick={stop(onMore)}>{fold.shown ? `继续展开 ${fold.next} 句` : `展开 ${fold.next} 句`}</BCAction> : null}
+            {fold.shown ? <BCAction className="cseam__b" onClick={stop(onCollapse)}>收起</BCAction> : null}
+          </span>
+        </div>
       </div>
     );
   }
@@ -326,5 +351,5 @@
     }, []);
   }
 
-  Object.assign(window, {CutBar, CutText, CutSeam, CutFloat, CutMenu, useCutSelection});
+  Object.assign(window, {CutBar, CutText, CutSeam, ShortsFoldSeam, CutFloat, CutMenu, useCutSelection});
 })();

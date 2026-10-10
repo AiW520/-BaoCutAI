@@ -1,13 +1,15 @@
 /* 剪成短视频（§5.10）纯模型：人给的参数、句子边界上的起止、候选的提醒、来源关系、
-   短视频项目里「原片」卡的片段排布。不碰 DOM，不依赖 React；node --test 直接 require。
+   子视频的剪口种子与它在文稿里的折叠。不碰 DOM，不依赖 React；node --test 直接 require。
 
    三个词：
-   - 句（sentence）：文稿里的一句，带起止时间。候选的起止只落在句子边界上，调起止一次挪一句。
+   - 句（sentence）：文稿里的一句，带起止时间。候选的起止只落在句子边界上。
      原型里一条 cue 就是一句；真产品用 transcript 的 Sentence 投影。
    - 候选（candidate）：`{id, from, to, start, end, title, reason, on, weak, loose, removed, focusX, redoOf}`，
      `from` / `to` 是句子下标（含两端），`start` / `end` 是原片时钟上的秒。
-   - 片段（piece）：短视频项目时间轴上一段绑着原片的视频，`{id, start, end, in, out}`——
-     `start` / `end` 在时间轴时钟，`in` / `out` 在原片时钟。
+   - 子视频（child）：切出的一支。它和来源视频共用同一份 clips 与文稿（product-design §5.10 / §4.6：
+     二次编辑就是普通的视频编辑），`origin {project, in, out, dur}` 记出身，`cuts` 是它自己的剪口表
+     （model-cut.js 的形状）：切出时是 `[0, in)` 与 `[out, dur)` 两条「片段外」，之后在文稿里恢复 / 再剪都只改这张表。
+     现在用到原片的哪几段（`usedRanges`）从剪口派生，不另存。
 
    长度一律用秒，不数字数：哪种语言的文稿都是同一条规则。 */
 (function () {
@@ -120,32 +122,6 @@
     const to = Math.max(from, nearest(sentences, end, 'end'));
     return rangeOf(sentences, from, to);
   }
-  /** 挪一句。`edge` 'start' | 'end'，`dir` -1 往前、+1 往后。挪不动（到头、会把这一段挪没）原样返回。
-      挪过的那一端不再算「落在句中」。 */
-  function nudge(sentences, seg, edge, dir) {
-    if (!canNudge(sentences, seg, edge, dir)) return seg;
-    const r = edge === 'start' ? rangeOf(sentences, seg.from + dir, seg.to) : rangeOf(sentences, seg.from, seg.to + dir);
-    const loose = Object.assign({}, seg.loose, {[edge]: false});
-    const out = Object.assign({}, seg, r, {loose, edited: true});
-    // 另一端若本来就落在句中，它的时间不跟着句子边界走
-    if (edge === 'start' && seg.loose && seg.loose.end) out.end = seg.end;
-    if (edge === 'end' && seg.loose && seg.loose.start) out.start = seg.start;
-    return out;
-  }
-  function canNudge(sentences, seg, edge, dir) {
-    if (!seg || (dir !== 1 && dir !== -1)) return false;
-    if (edge === 'start') return dir < 0 ? seg.from > 0 : seg.from < seg.to;
-    if (edge === 'end') return dir > 0 ? seg.to < sentences.length - 1 : seg.to > seg.from;
-    return false;
-  }
-  /** 拖原片条上一段的两端：吸附到句子边界，至少留一句。 */
-  function dragEdge(sentences, seg, edge, t) {
-    const r = edge === 'start'
-      ? rangeOf(sentences, Math.min(seg.to, nearest(sentences, t, 'start')), seg.to)
-      : rangeOf(sentences, seg.from, Math.max(seg.from, nearest(sentences, t, 'end')));
-    return Object.assign({}, seg, r, {loose: Object.assign({}, seg.loose, {[edge]: false}), edited: true});
-  }
-
   /* ---------- 来源关系 ---------- */
   const isChild = (p) => !!(p && p.origin && p.origin.project);
   /** 父 → 子是反查出来的（裁决点 A）：来源项目自己不记。 */
@@ -153,12 +129,160 @@
     return (projects || []).filter((p) => isChild(p) && p.origin.project === id && !p.archived)
       .sort((a, b) => a.origin.in - b.origin.in);
   }
+  /** 剪成短视频的会话挂在哪个项目上：子视频回到它的来源视频（结果页属于那一轮会话，§5.10）。 */
+  const hostId = (proj) => (isChild(proj) ? proj.origin.project : proj ? proj.id : null);
   const parentOf = (projects, proj) => (isChild(proj) ? (projects || []).find((p) => p.id === proj.origin.project) || null : null);
-  /** 这一支现在用到的原片区间。`used` 是编辑后的现状，没有就是切出时的那一段。 */
-  function usedRanges(proj) {
-    if (!isChild(proj)) return [];
-    const list = proj.used && proj.used.length ? proj.used : [{in: proj.origin.in, out: proj.origin.out}];
-    return list.map((r) => ({start: r.in, end: r.out}));
+
+  /* ---------- 子视频的剪口（product-design §5.10 / §4.6） ---------- */
+  /** 片段外两条剪口：`[0, in)` 与 `[out, dur)`，Agent 切出时写下、已生效。空的一头不写。 */
+  function seedCuts(origin) {
+    const o = origin || {};
+    const dur = o.dur > 0 ? o.dur : o.out;
+    const out = [];
+    if (o.in > EPS) out.push({id: 'outside-head', start: 0, end: +(+o.in).toFixed(3), kind: 'outside', state: 'cut', by: 'agent', text: ''});
+    if (dur - o.out > EPS) out.push({id: 'outside-tail', start: +(+o.out).toFixed(3), end: +(+dur).toFixed(3), kind: 'outside', state: 'cut', by: 'agent', text: ''});
+    return out;
+  }
+  /** 这一支的剪口表：记录里有就用记录（恢复 / 再剪写回过），没有就按出身播种。 */
+  const cutsOf = (proj) => (isChild(proj) ? (Array.isArray(proj.cuts) ? proj.cuts : seedCuts(proj.origin)) : []);
+  /** 原片时钟的总长：出身里记着；老记录没有就退到片段终点。 */
+  const sourceDur = (proj) => (isChild(proj) ? (proj.origin.dur > 0 ? proj.origin.dur : proj.origin.out) : 0);
+  /** `[0, dur]` 里扣掉已生效的剪口后留下的几段。原型的 clips 首尾相接、src 与时间轴同钟，
+      所以这就是 `BC_CUT.compose(clips, cuts)` 在原片时钟上的样子。 */
+  function keptRanges(cuts, dur) {
+    const act = (cuts || []).filter((c) => c && c.state === 'cut' && c.end - c.start > EPS)
+      .slice().sort((a, b) => a.start - b.start);
+    const out = [];
+    let a = 0;
+    act.forEach((c) => {
+      if (c.end <= a + EPS) return;
+      if (c.start > a + EPS) out.push({start: +a.toFixed(3), end: +Math.min(c.start, dur).toFixed(3)});
+      a = Math.max(a, c.end);
+    });
+    if (a < dur - EPS) out.push({start: +a.toFixed(3), end: +(+dur).toFixed(3)});
+    return out.filter((r) => r.end - r.start > EPS);
+  }
+  /** 这一支现在用到的原片区间：由剪口派生。 */
+  const usedRanges = (proj) => (isChild(proj) ? keptRanges(cutsOf(proj), sourceDur(proj)) : []);
+  /** 点一句划掉的话恢复：这一句连同它和片段之间的几句一起放回，片段保持连着。
+      在片段前面 → `[这一句起, 片段起点)`；在后面 → `[片段终点, 这一句止)`；落在片段中间的缝里只放回这一句。 */
+  function reclaimSpan(kept, sentence) {
+    if (!sentence) return null;
+    const k = kept || [];
+    if (!k.length) return {start: sentence.start, end: sentence.end};
+    const first = k[0], last = k[k.length - 1];
+    if (sentence.end <= first.start + EPS) return {start: sentence.start, end: first.start};
+    if (sentence.start >= last.end - EPS) return {start: last.end, end: sentence.end};
+    return {start: sentence.start, end: sentence.end};
+  }
+
+  /* ---------- 子视频的文稿：片段外的话划掉，远的收成一行（product-design §5.10） ----------
+     片段两端各留 NEAR 句划掉、可点恢复；再远的连成一条剪缝「前面 N 分 M 秒已剪掉」。剪缝只能展开、不能整条恢复——
+     片段外整条放回就等于把这一支变回整部原片；要放回哪句就点哪句（从那句到片段边缘）。
+     展开分批：每次铺出靠近片段的 STEP 句，再点「继续展开」，两小时的原片也不会一下铺成一面墙。
+     单位是句不是段：一段最多 4 句，按段折会多露或少露；被拆开的段出一个只含那几句的局部段。 */
+  const NEAR = 3;
+  const STEP = 10;
+  /** 时长念成「1 分 12 秒」/「45 秒」。 */
+  function durText(sec) {
+    const s = Math.max(0, Math.round(sec || 0));
+    const m = Math.floor(s / 60), r = s % 60;
+    return m ? (r ? `${m} 分 ${r} 秒` : `${m} 分`) : `${r} 秒`;
+  }
+  /** `paras`：按时间排好的段（`{id, cueIds, …}`）；`cueOf(id)` 给句的起止；`kept` 是留下的几段；
+      `o = {near, step, shown}`，`shown` 是 Map：剪缝 id → 已经铺出来的句数。返回行：
+        `{kind: 'para', para, part}`——`part` 为真时 `para` 是只含其中几句的局部段（id 带 `:` 后缀）；
+        `{kind: 'fold', id, side, start, end, secs, count, total, shown, next, open, text}`——side 是 before / after / between；
+        start / end / count 是还收着的那截，next 是下一批铺几句。
+      铺出来的句子贴着片段那一侧：前面的缝在缝下面铺（离片段最近的先出），后面与中间的缝在缝上面铺。
+      剪缝 id 取整截的第一句，展开多少都不变。 */
+  function foldRows(paras, cueOf, kept, o) {
+    const opt = o || {};
+    const near = opt.near == null ? NEAR : opt.near;
+    const step = opt.step == null ? STEP : opt.step;
+    const shown = opt.shown || new Map();
+    const units = [];
+    (paras || []).forEach((p) => (p.cueIds || []).forEach((id) => {
+      const c = cueOf(id);
+      if (c) units.push({para: p, id, start: c.start, end: c.end, keep: (kept || []).some((r) => overlapSec(c, r) > EPS)});
+    }));
+    const keepIdx = [];
+    units.forEach((u, i) => { if (u.keep) keepIdx.push(i); });
+    const far = units.map((u, i) => !u.keep && !keepIdx.some((k) => Math.abs(k - i) <= near));
+    const rows = [];
+    let cur = null;
+    const flush = () => { if (cur) { rows.push(cur); cur = null; } };
+    const push = (u) => {
+      if (cur && cur.para.id === u.para.id) { cur.ids.push(u.id); cur.end = u.end; return; }
+      flush();
+      cur = {kind: 'para', para: u.para, ids: [u.id], start: u.start, end: u.end};
+    };
+    for (let i = 0; i < units.length;) {
+      if (!far[i]) { push(units[i]); i += 1; continue; }
+      let j = i;
+      while (j < units.length && far[j]) j += 1;
+      const run = units.slice(i, j);
+      const side = !keepIdx.length || i > keepIdx[keepIdx.length - 1] ? 'after' : j <= keepIdx[0] ? 'before' : 'between';
+      const id = 'fold-' + run[0].id;
+      const n = Math.max(0, Math.min(shown.get(id) || 0, run.length));
+      const before = side === 'before';
+      const out = before ? run.slice(run.length - n) : run.slice(0, n);
+      const hid = before ? run.slice(0, run.length - n) : run.slice(n);
+      const span = hid.length ? hid : run;
+      const start = span[0].start, end = span[span.length - 1].end;
+      const lead = before ? '前面' : side === 'after' ? '后面' : '中间';
+      const fold = {kind: 'fold', id, side, start, end, secs: end - start, count: hid.length, total: run.length, shown: n,
+        next: Math.min(step, hid.length), open: n > 0,
+        text: hid.length ? `${lead} ${durText(end - start)}已剪掉` : `${lead}划掉的 ${run.length} 句都展开了`};
+      if (before) { flush(); rows.push(fold); out.forEach(push); }
+      else { out.forEach(push); flush(); rows.push(fold); }
+      i = j;
+    }
+    flush();
+    return rows.map((r) => {
+      if (r.kind !== 'para') return r;
+      const whole = r.ids.length === (r.para.cueIds || []).length;
+      const para = whole ? r.para : Object.assign({}, r.para, {id: r.para.id + ':' + r.ids[0], cueIds: r.ids, start: r.start, end: r.end});
+      return {kind: 'para', para, part: !whole};
+    });
+  }
+  /** 文稿段头的时码（§5.10）：和时间轴同一个时钟。原片上 `[start, end)` 这一段里第一处留下的地方，
+      换算成这一支的时间（从 0 起，剪掉的不占时间）；整段都在片段外返回 null（段头灰着标原片时钟）。 */
+  function clipTime(kept, start, end) {
+    const e = end == null ? start + EPS * 2 : end;
+    let acc = 0;
+    for (const r of kept || []) {
+      if (r.end > start + EPS && r.start < e - EPS) return +(acc + Math.max(0, start - r.start)).toFixed(3);
+      acc += r.end - r.start;
+    }
+    return null;
+  }
+
+  /* ---------- 取景：子视频画布上那件原片视频的摆位（product-design §5.10「画面怎么取景」） ----------
+     不另造取景控件：取景就是画布上视频元素的 `place`（stage-objects.jsx 的八把手、角上缩放与拖动）。
+     裁成别的画幅时先铺满画面、横向让原片上的 `focusX` 对着正中；之后要挪就在画布上拖那件视频。 */
+  /** 原片画幅 `srcRatio`（宽 / 高）按 contain 放进 `outRatio` 的画布后，铺满要放大多少倍。 */
+  function coverScale(srcRatio, outRatio) {
+    const r = srcRatio > 0 ? srcRatio : 16 / 9, o = outRatio > 0 ? outRatio : 9 / 16;
+    return +(r >= o ? r / o : o / r).toFixed(4);
+  }
+  /** 视频元素的 place：保留原画幅（或没有 `cut`）时原样；否则铺满，`focusX`（0–1，缺省正中）对着画面正中，夹住不露边。 */
+  function framePlace(cut, srcRatio, outRatio, base) {
+    const b = Object.assign({x: 50, y: 50, w: 100, h: 100, scale: 1}, base);
+    if (!cut || cut.ratio === 'source') return b;
+    const r = srcRatio > 0 ? srcRatio : 16 / 9, o = outRatio > 0 ? outRatio : 9 / 16;
+    if (Math.abs(r - o) < 0.01) return b;
+    const scale = coverScale(r, o);
+    const fx = cut.focusX == null ? 0.5 : Math.max(0, Math.min(1, +cut.focusX));
+    const span = 100 * scale, room = (span - 100) / 2;
+    const x = r > o ? Math.max(50 - room, Math.min(50 + room, 50 - (fx - 0.5) * span)) : 50;
+    return Object.assign(b, {scale, x: +x.toFixed(2)});
+  }
+  /** 取景念成一句（结果页卡上那一行）。 */
+  function focusText(x) {
+    if (x == null) return '居中';
+    const d = Math.round((x - 0.5) * 100);
+    return d === 0 ? '居中' : d < 0 ? `偏左 ${-d}%` : `偏右 ${d}%`;
   }
   /** 项目卡 / 行上的来源徽标。 */
   function originLabel(projects, proj) {
@@ -284,18 +408,21 @@
     while (used.has(`${base} ${i}`)) i++;
     return `${base} ${i}`;
   }
-  /** 短视频项目的记录：引用来源项目的同一份原片，只记起止，不复制视频。
+  /** 子视频的记录：引用来源视频的同一份原片与文稿，只记出身和自己的剪口，不复制视频（product-design §5.10 / §4.6）。
       和来源视频放在同一个项目目录下、各占一个以标题命名的视频文件夹（并排，不嵌套）；
-      `session` / `messageId` 让创建它的那条会话里出现这支视频的卡片（BC_AGENT_PROJECTS.sessionArtifacts）。 */
+      `session` / `messageId` 让创建它的那条会话里出现这支视频的卡片（BC_AGENT_PROJECTS.sessionArtifacts）。
+      `o.dur` 是来源视频的时长（片段外尾巴那条剪口的终点），缺省用来源记录上的 `duration`。 */
   function childProject(o) {
     const parent = o.parent, seg = o.seg, p = Object.assign({}, DEFAULTS, o.params);
     const source = ratioOf(p.ratio).id === 'source';
+    const dur = o.dur > 0 ? o.dur : (parent.duration > 0 ? parent.duration : seg.end);
+    const origin = {project: parent.id, in: seg.start, out: seg.end, dur};
     return {
       id: o.id, title: o.title, status: 'complete', entry: parent.entry || 'trans', bare: true,
       delivery: 'shorts', ratio: source ? (parent.ratio || '16:9') : ratioOf(p.ratio).id,
       dir: parent.dir || null, folder: o.title,
       session: o.session || null, messageId: o.messageId || null,
-      origin: {project: parent.id, in: seg.start, out: seg.end},
+      origin, cuts: seedCuts(origin),
       cut: {focus: source ? null : p.focus, focusX: seg.focusX == null ? null : seg.focusX, tracks: p.tracks, style: p.style, ratio: ratioOf(p.ratio).id},
       src: Object.assign({}, parent.src),
       duration: +(seg.end - seg.start).toFixed(2), lang: parent.lang, model: parent.model,
@@ -346,110 +473,6 @@
     return fallback + tail;
   }
 
-  /* ---------- 取景与字幕预览（结果页的舞台） ---------- */
-  /** 成片的宽高比：保留原画幅时就是原片的。 */
-  function outRatio(ratio, srcRatio) {
-    const v = ratioOf(ratio).value;
-    return v || (srcRatio > 0 ? srcRatio : 16 / 9);
-  }
-  /** 取景窗在原片上的大小（占原片宽高的比例）：原片比成片宽就裁左右，比它窄就裁上下。缺省按 9:16。 */
-  function focusSize(srcRatio, out) {
-    const r = srcRatio > 0 ? srcRatio : 16 / 9;
-    const o = out > 0 ? out : 9 / 16;
-    return r >= o ? {w: o / r, h: 1} : {w: 1, h: r / o};
-  }
-  /** 取景窗的横向中心夹在原片里。 */
-  function clampFocus(x, srcRatio, out) {
-    const half = focusSize(srcRatio, out).w / 2;
-    const v = Number.isFinite(+x) && x != null ? +x : 0.5;
-    return Math.min(1 - half, Math.max(half, v));
-  }
-  /** `偏左 18%` / `偏右 6%` / `居中`：取景窗中心离画面正中多远（占原片宽）。 */
-  function focusText(x) {
-    if (x == null) return '居中';
-    const d = Math.round((x - 0.5) * 100);
-    return d === 0 ? '居中' : d < 0 ? `偏左 ${-d}%` : `偏右 ${d}%`;
-  }
-  const REVIEW_FIELDS = ['start', 'end', 'from', 'to', 'loose', 'focusX'];
-  const reviewBounds = (c) => Object.fromEntries(REVIEW_FIELDS.map((k) => [k, c[k]]));
-  const sameBounds = (a, b) => JSON.stringify(a) === JSON.stringify(b);
-  function reviewRecord(s, before, after) {
-    const a = reviewBounds(before), b = reviewBounds(after);
-    if (sameBounds(a, b)) return {};
-    return {undoHistory: (s.undoHistory || []).slice(-99).concat([{id: before.id, before: a, after: b}]), redoHistory: []};
-  }
-  function reviewCanStep(s, redo) {
-    const stack = (redo ? s.redoHistory : s.undoHistory) || [], e = stack[stack.length - 1];
-    const c = e && s.list.find((c) => c.id === e.id && !c.made && !c.removed);
-    return !!c && sameBounds(reviewBounds(c), redo ? e.before : e.after);
-  }
-  function reviewStep(s, redo) {
-    if (!reviewCanStep(s, redo)) return {};
-    const from = redo ? 'redoHistory' : 'undoHistory', to = redo ? 'undoHistory' : 'redoHistory';
-    const stack = s[from], e = stack[stack.length - 1], bounds = redo ? e.after : e.before;
-    return {[from]: stack.slice(0, -1), [to]: (s[to] || []).concat([e]),
-      list: s.list.map((c) => c.id === e.id ? {...c, ...bounds} : c), sel: e.id, expand: e.id, t: bounds.start, playing: false};
-  }
-  function setReviewEdge(sentences, c, edge, time, duration) {
-    if (!Number.isFinite(time) || time < 0 || time > duration) return null;
-    const next = {...c, [edge]: time};
-    if (next.end - next.start < 0.1 || !sentences.length) return null;
-    next.from = indexAt(sentences, next.start); next.to = Math.max(next.from, indexAt(sentences, next.end - EPS * 2));
-    next.loose = {...c.loose, [edge]: Math.abs((edge === 'start' ? sentences[next.from].start : sentences[next.to].end) - time) > 1e-9};
-    return next;
-  }
-  function reviewCueAt(cues, t) {
-    let lo = 0, hi = cues.length;
-    while (lo < hi) { const mid = (lo + hi) >>> 1; if (cues[mid].start <= t) lo = mid + 1; else hi = mid; }
-    const cue = cues[lo - 1]; return cue && t < cue.end ? cue : null;
-  }
-  /** 这一刻取景窗的横向中心。`speakerX` 是「说话人 id → 他在画面里的横向位置」，认不出时退到正中。 */
-  function focusAt(params, seg, sentence, speakerX, srcRatio, fallbackX, out) {
-    const p = Object.assign({}, DEFAULTS, params);
-    let x = 0.5;
-    if (p.focus === 'manual') x = seg && seg.focusX != null ? seg.focusX : 0.5;
-    else if (p.focus === 'speaker' && sentence && speakerX && speakerX[sentence.sp] != null) x = speakerX[sentence.sp];
-    else if (p.focus === 'speaker' && fallbackX != null) x = fallbackX;
-    return clampFocus(x, srcRatio, out);
-  }
-  /** 示意轨迹：停顿沿用此前的人，片头看下一位；没有台词线索时先取可见人物。
-      App 使用真实视听轨迹，此处不把出场顺序当成人脸身份识别。 */
-  function contextFocus(sentences, t, speakerX, subjects) {
-    let previous = null;
-    for (const sentence of sentences || []) {
-      const x = speakerX && speakerX[sentence.sp];
-      if (x == null) continue;
-      if (sentence.start <= t) previous = x;
-      else return previous == null ? x : previous;
-    }
-    if (previous != null) return previous;
-    const person = (subjects || []).find((s) => s.kind === 'person');
-    return person ? person.x : null;
-  }
-  /** 说话人按出场先后轮流对到画面里的人。 */
-  function speakerMap(sentences, subjects) {
-    const people = (subjects || []).filter((x) => x.kind === 'person');
-    const out = {};
-    if (!people.length) return out;
-    let n = 0;
-    (sentences || []).forEach((c) => { if (c.sp != null && out[c.sp] == null) out[c.sp] = people[n++ % people.length].x; });
-    return out;
-  }
-  /** 成片预览里字幕的落位（占 9:16 画面的百分比）与要画的行。`safe` 是平台安全区（BC_SHORTS.SAFE）。 */
-  function captionSpec(params, sentence, safe) {
-    const p = Object.assign({}, DEFAULTS, params);
-    const z = safe || {bottom: 24, side: 6, right: 18};
-    const shorts = p.style === 'shorts';
-    const lines = [];
-    if (sentence) {
-      if (p.tracks !== 'trans' && sentence.text) lines.push({k: 'orig', text: sentence.text});
-      if (p.tracks !== 'orig' && sentence.trans) lines.push({k: 'trans', text: sentence.trans});
-    }
-    const width = shorts ? 2 * Math.min(50 - z.side, 100 - z.right - 50) - 4 : 84;
-    const bottom = shorts ? 100 - z.bottom - 2 : 86;
-    return {lines, width, bottom, fontPct: shorts ? 5.5 : 2.3, blocked: bottom > 100 - z.bottom};
-  }
-
   /** 短视频项目打开时画面上的字幕轨：创建时选了哪几轨就留哪几轨；选了「短视频字幕」就按平台安全区落位。
       `layout` 是绑好画幅的 `BC_SHORTS.captionLayout`（轨 → {id: 几何}），与发布前检查同一份几何。
       没有 `cut`（不是从这里切出来的项目）原样返回。 */
@@ -462,142 +485,29 @@
     return kept.map((t) => (geo[t.id] ? Object.assign({}, t, geo[t.id]) : t));
   }
 
-  /* ---------- 短视频项目里的「原片」卡 ---------- */
-  /** 时间轴上绑着原片的视频元素 → 片段（按时间轴先后）。 */
-  function piecesOf(elements) {
-    return (elements || []).filter((e) => e.kind === 'video' && e.fromSource && !e.hidden && e.end != null)
-      .map((e) => ({id: e.id, start: e.start, end: e.end, in: e.srcStart || 0, out: (e.srcStart || 0) + (e.end - e.start) * (e.rate || 1)}))
-      .sort((a, b) => a.start - b.start);
-  }
-  /** 多留一句：前面（'before'）取结束在 `in` 之前的那一句，后面（'after'）取开始在 `out` 之后的那一句；
-      片段的边落在句中时先补齐那半句。到原片头尾、没有句子可留时返回 null。 */
-  function extendRange(sentences, piece, side) {
-    if (side === 'before') {
-      const s = sentences.slice().reverse().find((x) => x.start < piece.in - EPS);
-      return s ? {in: s.start, out: piece.in, at: piece.start, sentence: s} : null;
-    }
-    const s = sentences.find((x) => x.end > piece.out + EPS);
-    return s ? {in: piece.out, out: s.end, at: piece.end, sentence: s} : null;
-  }
-  /** 原片 [in, out) 里的句子搬到时间轴 `at` 处；压在区间边上的句子按区间截短。 */
-  function cuesIn(sentences, range, at, tag) {
-    return sentences.filter((s) => overlapSec(s, {start: range.in, end: range.out}) > EPS)
-      .map((s) => Object.assign({}, s, {
-        id: tag ? `${s.id}@${tag}` : s.id, srcId: s.id,
-        start: +(at + Math.max(s.start, range.in) - range.in).toFixed(2),
-        end: +(at + Math.min(s.end, range.out) - range.in).toFixed(2),
-      }));
-  }
-  /** 在时间轴 `at` 处插进原片的一段：后面的字幕顺延，新字幕补进来。同一句用第二次时 id 带后缀。 */
-  function insertCues(cues, sentences, range, at, tag) {
-    const d = range.out - range.in;
-    const shifted = (cues || []).map((c) => (c.start >= at - EPS
-      ? Object.assign({}, c, {start: +(c.start + d).toFixed(2), end: +(c.end + d).toFixed(2)}) : c));
-    const ids = new Set(shifted.map((c) => c.id));
-    const fresh = cuesIn(sentences, range, at).map((c) => (ids.has(c.id) ? Object.assign({}, c, {id: `${c.id}@${tag || 'r'}`}) : c));
-    return shifted.concat(fresh).sort((a, b) => a.start - b.start);
-  }
-  /** 多留一句对各片段的改动：`[{id, start, end, in}]`（只列变了的）。 */
-  function extendPatches(pieces, id, side, range) {
-    const d = range.out - range.in;
-    const i = pieces.findIndex((p) => p.id === id);
-    if (i < 0) return [];
-    return pieces.map((p, k) => {
-      if (k < i) return null;
-      if (k === i) return {id: p.id, start: p.start, end: +(p.end + d).toFixed(2), in: side === 'before' ? range.in : p.in};
-      return {id: p.id, start: +(p.start + d).toFixed(2), end: +(p.end + d).toFixed(2), in: p.in};
-    }).filter(Boolean);
-  }
-  /** 「播放头处」落到哪条缝：播放头压在片段中间时放到这一段后面，不把它劈开。 */
-  function insertPoint(pieces, where, t) {
-    const last = pieces.length ? pieces[pieces.length - 1].end : 0;
-    if (where !== 'playhead') return last;
-    const hit = pieces.find((p) => t >= p.start - EPS && t < p.end - EPS);
-    if (hit) return t - hit.start < EPS * 2 ? hit.start : hit.end;
-    const next = pieces.find((p) => p.start >= t - EPS);
-    return next ? next.start : last;
-  }
-  /** 再加一段对已有片段的改动（在 `at` 之后的顺延）。 */
-  function shiftPatches(pieces, at, d) {
-    return pieces.filter((p) => p.start >= at - EPS)
-      .map((p) => ({id: p.id, start: +(p.start + d).toFixed(2), end: +(p.end + d).toFixed(2), in: p.in}));
-  }
-  /** 对话框里点首尾两句选出的连续区间。 */
-  function selection(sentences, a, b) {
-    if (a == null) return null;
-    const r = rangeOf(sentences, Math.min(a, b == null ? a : b), Math.max(a, b == null ? a : b));
-    return Object.assign(r, {in: r.start, out: r.end, count: r.to - r.from + 1, text: `已选 ${r.to - r.from + 1} 句 · ${secs(r.end - r.start)}`});
-  }
-  /** 这一支已经用到的句子（一半以上落在某个片段里）。 */
-  function usedIds(sentences, pieces) {
-    const out = new Set();
-    sentences.forEach((s) => {
-      const hit = (pieces || []).reduce((n, p) => n + overlapSec(s, {start: p.in, end: p.out}), 0);
-      if (hit > (s.end - s.start) * 0.5) out.add(s.id);
-    });
-    return out;
-  }
-  /** 原片条上的色块：百分比。 */
-  function bar(ranges, dur) {
-    return (ranges || []).map((r) => ({
-      left: +(Math.max(0, r.start) / dur * 100).toFixed(3),
-      width: +(Math.max(0, Math.min(dur, r.end) - Math.max(0, r.start)) / dur * 100).toFixed(3),
-    }));
-  }
-  /** 来源卡「用到的片段」逐段一行：原片里的起止、开头那一句、两头还能不能多留一句。 */
-  function pieceRows(sentences, pieces) {
-    return (pieces || []).map((p, i) => {
-      const first = (sentences || []).find((x) => overlapSec(x, {start: p.in, end: p.out}) > EPS);
-      return {
-        id: p.id, n: i + 1, at: p.start, span: spanText({start: p.in, end: p.out}), hook: first ? first.text : '',
-        before: extendRange(sentences || [], p, 'before'), after: extendRange(sentences || [], p, 'after'),
-      };
-    });
-  }
-  /** 多留一句 / 再加一段之后，时间轴上别的元素跟着顺延：`at` 之后开始的整块后移，片段自己与铺满全片的不动。 */
-  function ripplePatches(elements, at, d, skip) {
-    const out = [];
-    (elements || []).forEach((e) => {
-      if ((skip || []).indexOf(e.id) >= 0 || e.fromSource || e.endAnchor) return;
-      if (typeof e.start !== 'number' || typeof e.end !== 'number' || e.start < at - EPS) return;
-      out.push({id: e.id, start: +(e.start + d).toFixed(2), end: +(e.end + d).toFixed(2)});
-    });
-    return out;
-  }
-  /** 「从原片添加片段」对话框的行：章节头也算一行，行高固定，列表按行数虚拟化。 */
-  const ROW_H = 32;
-  function sourceRows(sentences, chapters) {
-    const heads = (chapters || []).slice().sort((a, b) => a.start - b.start);
-    const rows = [];
-    let cur = -1;
-    (sentences || []).forEach((s, i) => {
-      let k = cur;
-      while (k + 1 < heads.length && s.start >= heads[k + 1].start - EPS) k += 1;
-      if (k !== cur) { cur = k; rows.push({head: true, id: 'h:' + heads[k].id, title: heads[k].title, at: heads[k].start}); }
-      rows.push({head: false, id: s.id, index: i, sentence: s});
-    });
-    return rows;
-  }
-  function rowWindow(count, top, height, rowH) {
-    const h = rowH > 0 ? rowH : ROW_H;
-    const n = Math.max(0, Math.floor(count || 0));
-    const start = Math.min(n, Math.max(0, Math.floor(Math.max(0, top || 0) / h) - 4));
-    const end = Math.min(n, Math.max(start, Math.ceil((Math.max(0, top || 0) + Math.max(0, height || 0)) / h) + 4));
-    return {start, end, height: n * h};
-  }
-  /** `used` 与片段现状是不是一回事（一样就不写回）。 */
-  const sameUsed = (proj, pieces) => JSON.stringify(usedRanges(proj).map((r) => [+r.start.toFixed(2), +r.end.toFixed(2)]))
-    === JSON.stringify((pieces || []).map((x) => [+x.in.toFixed(2), +x.out.toFixed(2)]));
-  /** 项目记录里的现状：片段变了以后写回 `used`。 */
-  const usedFrom = (pieces) => pieces.map((p) => ({in: +p.in.toFixed(2), out: +p.out.toFixed(2)}));
-
   /* ---------- 来源项目视频 Tab 里「切出的短视频」那一组 ----------
      来源项目自己不记切出过什么（裁决点 A），这一组是从项目库反查出来的，按在原片里的先后排。 */
   const MADE_ROW_H = 64;
   /** 组里一次最多露出几行，多的在组里滚。 */
   const MADE_SHOWN = 4;
   const tracksOf = (id) => TRACKS.find((t) => t.id === id) || TRACKS[0];
-  /** 这一支切出之后在编辑器里动过起止没有：现状和切出时的那一段不是一回事。 */
+  /** 原片条上的色块：百分比。 */
+  function bar(ranges, dur) {
+    return (ranges || []).map((r) => ({
+      left: +(Math.max(0, r.start) / dur * 100).toFixed(3),
+      width: +((Math.max(0, Math.min(dur, r.end) - Math.max(0, r.start))) / dur * 100).toFixed(3),
+    }));
+  }
+  /** 定高行的虚拟化窗口：只取看得见的行，上下各多带 4 行。 */
+  function rowWindow(count, top, height, rowH) {
+    const h = rowH > 0 ? rowH : MADE_ROW_H;
+    const n = Math.max(0, Math.floor(count || 0));
+    const t = Math.max(0, top || 0);
+    const start = Math.min(n, Math.max(0, Math.floor(t / h) - 4));
+    const end = Math.min(n, Math.max(start, Math.ceil((t + Math.max(0, height || 0)) / h) + 4));
+    return {start, end, height: n * h};
+  }
+  /** 这一支切出之后动过没有：剪口留下的现状和切出时的那一段不是一回事。 */
   function editedSince(proj) {
     if (!isChild(proj)) return false;
     const r = usedRanges(proj);
@@ -673,19 +583,17 @@
   }
 
   const api = {
-    COUNT, DONE_RATIO, LENGTHS, CUSTOM, RATIOS, FOCUS, TRACKS, STYLES, DEFAULTS, FIND_STAGES, CREATE_STAGES, DIRECT_LINE,
+    COUNT, DONE_RATIO, LENGTHS, CUSTOM, RATIOS, FOCUS, TRACKS, STYLES, DEFAULTS, FIND_STAGES, CREATE_STAGES, DIRECT_LINE, NEAR,
     lengthOf, lengthRange, focusOf, ratioOf, clampCount, normalize,
-    mmss, secs, spanText, overlapSec,
-    indexAt, rangeOf, snap, nudge, canNudge, dragEdge,
-    isChild, childrenOf, parentOf, usedRanges, originLabel, countLabel, doneBy, deleteNote,
+    mmss, secs, spanText, overlapSec, durText,
+    indexAt, rangeOf, snap,
+    isChild, hostId, childrenOf, parentOf, originLabel, countLabel, doneBy, deleteNote,
+    seedCuts, cutsOf, sourceDur, keptRanges, usedRanges, reclaimSpan, foldRows, clipTime, STEP, coverScale, framePlace, focusText,
     flags, visible, chosen, totalSec, resultHead, hookOf, tailOf, preselect,
     demoCandidates, manualCandidate,
     childTitle, childProject,
-    frameLine, summaryLine, agentExtra, taskTitle, stageAt, listStatus,
-    outRatio, focusSize, clampFocus, focusText, focusAt, contextFocus, speakerMap, captionSpec, openTracks,
-    reviewRecord, reviewCanStep, reviewStep, setReviewEdge, reviewCueAt,
-    piecesOf, extendRange, cuesIn, insertCues, extendPatches, insertPoint, shiftPatches, selection, usedIds, bar, usedFrom,
-    ROW_H, pieceRows, ripplePatches, sourceRows, rowWindow, sameUsed,
+    frameLine, summaryLine, agentExtra, taskTitle, stageAt, listStatus, openTracks,
+    bar, rowWindow,
     MADE_ROW_H, MADE_SHOWN, tracksOf, editedSince, cutLine, madeHead, madeRows, madeBar, redoTitle, redoCandidate, redoParams, redoPlan,
   };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;

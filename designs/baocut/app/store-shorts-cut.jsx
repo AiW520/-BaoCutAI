@@ -2,7 +2,9 @@
    只交给 Agent、每次新开一条会话；找到就创建，没有人挑这一步。进度从那条会话的消息倒推，
    收据一到就按找到的片段直接建好子视频（引用同一份原片），会话落到结果页。
    任务记录（app.tasks）是顶栏胶囊 / 后台任务页的唯一真相，这里只多记「参数与这一轮的几支」。
-   结果页上调起止、改标题直接写回那一支的记录（`origin` / `used`）；不要哪一支就移入回收站，可撤销。 */
+   会话挂在来源视频上（`sessions[来源 id]`）；从来源视频、任何一支子视频、会话里那支视频的卡片都回到同一页结果
+   （product-design §5.10）。结果页只改标题（写回那一支）、不要哪一支就移入回收站（可撤销）；
+   起止不在这里调——打开那一支，在文稿里恢复或再剪，就是普通的视频编辑（§4.6）。 */
 (function () {
   const {useState, useRef, useCallback, useEffect} = React;
   const SC = window.BC_SHORTS_CUT;
@@ -17,12 +19,9 @@
   }
   /* 结果页的一支：找到的那一段 + 它建成的子视频 id（`id` 就是子视频 id）。 */
   const itemOf = (seg, child) => ({...seg, id: child.id, cand: seg.id, title: child.title, on: true, made: true});
-  /* 一支的现状写回子视频记录：起止只剩一段时 `used` 清掉，`origin` 就是现状。 */
-  function childPatch(p, it) {
-    return {...p, title: it.title, origin: {...p.origin, in: +it.start.toFixed(2), out: +it.end.toFixed(2)}, used: null,
-      duration: +(it.end - it.start).toFixed(2), cut: {...(p.cut || {}), focusX: it.focusX == null ? null : it.focusX}};
-  }
-  const SYNC = ['start', 'end', 'title', 'focusX'];
+  /* 结果页上能改的只有标题：写回那一支的记录（视频文件夹名不跟着改）。 */
+  const childPatch = (p, it) => ({...p, title: it.title});
+  const SYNC = ['title'];
   const changed = (a, b) => SYNC.some((k) => a[k] !== b[k]);
   const newId = (n) => 'sc' + Date.now().toString(36) + n;
 
@@ -44,7 +43,7 @@
       return SC.childrenOf(projRef.current, proj).filter((k) => !mine.has(k.id));
     };
     const fresh = (proj, params, facts, extra) => ({proj, open: true, phase: 'setup', params, facts, scope: null,
-      list: [], sel: null, expand: null, t: 0, taskId: null, sid: null, pct: 0, stage: 'find', undoHistory: [], redoHistory: [], ...extra});
+      list: [], sel: null, taskId: null, sid: null, pct: 0, stage: 'find', ...extra});
 
     /* 打开工具：有会话就回到会话原地；没有就按这个项目的现状起一份设置。 */
     const open = useCallback((proj, info) => {
@@ -64,10 +63,10 @@
       const task = taskRef.current.find((t) => t.id === taskId);
       const ids = landed.current[taskId] || (task && task.artifacts ? task.artifacts.map((a) => a.project).filter(Boolean) : []);
       const cur = live.current[proj];
-      const sents = sentences || (cur && cur.sentences) || [];
+      const sents = sentences || (cur && cur.sentences) || window.BC_DATA.cues || [];
       const list = ids.map((id) => projRef.current.find((p) => p.id === id)).filter((p) => p && !p.archived && SC.isChild(p))
         .map((p) => {
-          const r = SC.usedRanges(p)[0];
+          const r = SC.usedRanges(p)[0] || {start: p.origin.in, end: p.origin.out};
           const from = sents.length ? SC.indexAt(sents, r.start) : 0;
           const to = sents.length ? Math.max(from, SC.indexAt(sents, r.end - 0.04)) : 0;
           return {id: p.id, cand: p.id, title: p.title, start: r.start, end: r.end, from, to, on: true, made: true,
@@ -75,8 +74,7 @@
         });
       const facts = cur ? cur.facts : {hasTrans: true, portrait: false, children: 0};
       setSessions((all) => ({...all, [proj]: {...(all[proj] || fresh(proj, SC.normalize({}, facts), facts)), open: true, phase: 'result',
-        list, sentences: sents, sel: list[0] ? list[0].id : null, expand: null, t: list[0] ? list[0].start : 0, taskId, stage: 'done', pct: 100,
-        undoHistory: [], redoHistory: []}}));
+        list, sentences: sents, sel: list[0] ? list[0].id : null, taskId, stage: 'done', pct: 100}}));
     }, []);
 
     /* 收据到了：按找到的片段直接建子视频，任务记成「已完成」并列出这几支，会话落到结果页。 */
@@ -100,8 +98,7 @@
       setProjects((ps) => made.concat(ps));
       const list = segs.map((seg, i) => itemOf(seg, made[i]));
       const total = SC.totalSec(list);
-      patch(proj, {phase: 'result', list, sel: list[0] ? list[0].id : null, expand: null, t: list[0] ? list[0].start : 0,
-        pct: 100, stage: 'done', taskId, undoHistory: [], redoHistory: [], playing: false});
+      patch(proj, {phase: 'result', list, sel: list[0] ? list[0].id : null, pct: 100, stage: 'done', taskId});
       if (taskId) patchTask(taskId, {kind: 'shorts-cut', flow: 'shorts-cut', stage: 'done', status: 'done', outcome: 'done', pct: 100,
         phase: null, activity: null, undoable: false,
         sub: `已创建 ${SC.countLabel(made.length)} · 合计 ${SC.mmss(total)} · ${SC.frameLine(s.params)}`,
@@ -111,7 +108,7 @@
     /* 交给 Agent：会话已经发出去了（新开的那一条），这里记下是哪一条，进度从会话消息倒推。 */
     const findViaAgent = useCallback((proj, o) => {
       patch(proj, {phase: 'running', sid: o.sid, taskId: null, pct: 0, stage: 'find', sentences: o.sentences, scope: o.scope || null,
-        runner: o.runner, list: [], sel: null, expand: null});
+        runner: o.runner, list: [], sel: null});
     }, [patch]);
     useEffect(() => {
       Object.keys(sessions).forEach((proj) => {
@@ -167,42 +164,32 @@
     const edit = useCallback((proj, id, fn) => commit(proj, (s) => {
       const before = s.list.find((c) => c.id === id); if (!before) return {};
       const after = {...before, ...(typeof fn === 'function' ? fn(before) : fn)};
-      return {list: s.list.map((c) => (c.id === id ? after : c)), ...(s.reviewGesture ? {} : SC.reviewRecord(s, before, after))};
+      return {list: s.list.map((c) => (c.id === id ? after : c))};
     }), [commit]);
-    const beginEdit = useCallback((proj, id) => patch(proj, (s) => ({reviewGesture: {id, before: s.list.find((c) => c.id === id)}, playing: false})), [patch]);
-    const endEdit = useCallback((proj) => patch(proj, (s) => {
-      const g = s.reviewGesture, after = g && s.list.find((c) => c.id === g.id);
-      return {reviewGesture: null, ...(g && g.before && after ? SC.reviewRecord(s, g.before, after) : {})};
-    }), [patch]);
-    const undoRange = useCallback((proj, redo = false) => commit(proj, (s) => {
-      const g = s.reviewGesture;
-      if (g) return {reviewGesture: null, list: s.list.map((c) => (c.id === g.id ? g.before : c)), playing: false};
-      return SC.reviewStep(s, redo);
-    }), [commit]);
-    const setBound = useCallback((proj, id, edge, raw, duration) => {
-      const time = window.BC_TIME.parse(raw);
-      const s = live.current[proj], c = s && s.list.find((x) => x.id === id);
-      const next = c && time != null && SC.setReviewEdge(s.sentences, c, edge, time, duration);
-      if (!next) { toast('请输入原片范围内的有效时间，起点必须早于终点'); return; }
-      edit(proj, id, next); patch(proj, {t: edge === 'start' ? next.start : Math.max(next.start, next.end - 3), playing: false});
-    }, [edit, patch, toast]);
-    const select = useCallback((proj, id, opts) => patch(proj, (s) => {
-      const c = s.list.find((x) => x.id === id);
-      if (!c) return {};
-      const p = {sel: id};
-      if (!(opts && opts.keepT) || s.t < c.start || s.t > c.end) p.t = c.start;
-      return p;
-    }), [patch]);
-    const seek = useCallback((proj, t) => patch(proj, {t: Math.max(0, t)}), [patch]);
-    const nudge = useCallback((proj, id, edge, dir) => commit(proj, (s) => {
-      const c = s.list.find((x) => x.id === id);
-      if (!c) return {};
-      const n = SC.nudge(s.sentences, c, edge, dir);
-      return {list: s.list.map((x) => (x.id === id ? n : x)), sel: id, t: edge === 'start' ? n.start : Math.max(n.start, n.end - 3), ...SC.reviewRecord(s, c, n)};
-    }), [commit]);
-    const drag = useCallback((proj, id, edge, t) => commit(proj, (s) => ({
-      list: s.list.map((x) => (x.id === id ? SC.dragEdge(s.sentences, x, edge, t) : x)),
-    })), [commit]);
+    const select = useCallback((proj, id) => patch(proj, (s) => (s.list && s.list.some((x) => x.id === id) ? {sel: id} : {})), [patch]);
+
+    /* 打开一支子视频（结果页卡、‹ ›、会话里的视频卡）：结果页在来源视频的会话里，有它就亮这一张卡、摆到前面；
+       会话不在内存里（换过页面）就按建它的那次任务把这一轮摆回来。 */
+    const resultTaskOf = (child) => (child && child.session
+      ? taskRef.current.find((t) => t.kind === 'shorts-cut' && (t.artifacts || []).some((a) => a.project === child.id)) : null);
+    const hasResult = useCallback((childId) => {
+      const child = projRef.current.find((p) => p.id === childId);
+      if (!SC.isChild(child)) return false;
+      const cur = live.current[child.origin.project];
+      return !!(cur && cur.phase === 'result' && cur.list.some((x) => x.id === childId)) || !!resultTaskOf(child);
+    }, []);
+    const focusChild = useCallback((childId) => {
+      const child = projRef.current.find((p) => p.id === childId);
+      if (!SC.isChild(child)) return false;
+      const host = child.origin.project;
+      const cur = live.current[host];
+      if (cur && cur.phase === 'result' && cur.list.some((x) => x.id === childId)) { patch(host, {sel: childId, open: true}); return true; }
+      const task = resultTaskOf(child);
+      if (!task) return false;
+      showTask(host, task.id);
+      patch(host, {sel: childId});
+      return true;
+    }, [patch, showTask]);
 
     /* 「不要这支」：移入回收站（可恢复），结果页上撤下；toast 里能撤销。 */
     const remove = useCallback((proj, id) => {
@@ -212,7 +199,7 @@
       patch(proj, (cur) => {
         const list = cur.list.map((x) => (x.id === id ? {...x, removed: true} : x));
         const next = SC.visible(list)[0];
-        return {list, sel: cur.sel === id ? (next ? next.id : null) : cur.sel, expand: cur.expand === id ? null : cur.expand};
+        return {list, sel: cur.sel === id ? (next ? next.id : null) : cur.sel};
       });
       if (toast) toast(`已把「${it.title}」移入回收站`, null, {label: '撤销', run: () => {
         archiveProject(id, false);
@@ -224,8 +211,7 @@
        「再切几支」同样回参数页，另把「已经切过的不再找」勾上。 */
     const toSetup = useCallback((proj, extra) => patch(proj, (s) => {
       const facts = {...s.facts, children: SC.childrenOf(projRef.current, proj).length};
-      return {phase: 'setup', list: [], sel: null, expand: null, taskId: null, sid: null, pct: 0, stage: 'find',
-        undoHistory: [], redoHistory: [], reviewGesture: null, playing: false, facts,
+      return {phase: 'setup', list: [], sel: null, taskId: null, sid: null, pct: 0, stage: 'find', facts,
         params: SC.normalize({...s.params, ...(extra || {})}, facts)};
     }), [patch]);
     const again = useCallback((proj) => toSetup(proj, {skipDone: true}), [toSetup]);
@@ -247,9 +233,9 @@
       setProjects((ps) => [made].concat(ps));
       const it = itemOf(c, made);
       if (plan === 'append') {
-        patch(proj, (s) => ({open: true, list: s.list.concat([it]), sel: it.id, expand: it.id, t: it.start, playing: false}));
+        patch(proj, (s) => ({open: true, list: s.list.concat([it]), sel: it.id}));
       } else {
-        setSessions((all) => ({...all, [proj]: fresh(proj, params, facts, {phase: 'result', sentences, list: [it], sel: it.id, expand: it.id, t: it.start})}));
+        setSessions((all) => ({...all, [proj]: fresh(proj, params, facts, {phase: 'result', sentences, list: [it], sel: it.id})}));
       }
       if (toast) toast(`已另建「${made.title}」· 原来那支不动`, 'positive');
       return {ok: true, plan, id: made.id};
@@ -264,8 +250,8 @@
       go({r: 'editor', id: task.project});
     }, [patch, go, showTask]);
 
-    return {sessions, open, close, set, setParams, findViaAgent, cancel, edit, select, seek, nudge, drag, remove,
-      toSetup, again, resume, redo, showTask, beginEdit, endEdit, undoRange, setBound};
+    return {sessions, open, close, set, setParams, findViaAgent, cancel, edit, select, remove,
+      toSetup, again, resume, redo, showTask, hasResult, focusChild};
   }
   Object.assign(window, {useShortsCutStore});
 })();

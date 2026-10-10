@@ -1333,6 +1333,8 @@ body { font-size: 14px; }
 .cseam:hover .cseam__hd, .cseam.is-open .cseam__hd { background: var(--red-100); color: var(--red-1000); }
 .cseam:hover .cseam__line, .cseam.is-open .cseam__line { border-top-color: var(--red-400); }
 .cseam:hover .cseam__acts, .cseam.is-open .cseam__acts, .cseam__hd:focus-visible .cseam__acts { opacity: 1; }
+/* 子视频片段外的剪缝（panel-transcript-cut.jsx ShortsFoldSeam）：展开 / 恢复常显 */
+.cseam--fold .cseam__acts { opacity: 1; }
 .cseam__b { flex: none; display: inline-flex; align-items: center; gap: 3px; height: 20px; padding: 0 7px; border-radius: 9999px; font-size: 11px; color: var(--red-1000); }
 .cseam__b:hover { background: var(--red-300); }
 /* 展开：被剪掉的字只读回看——划掉、退灰，不进查找也不能改（要改先恢复） */
@@ -1401,6 +1403,8 @@ body { font-size: 14px; }
 .para--live.is-tail .para__b { color: var(--gray-700); }
 .para__sp--unk { color: var(--gray-500); font-weight: 600; }
 .para__t--flat { color: var(--gray-500); }
+/* 子视频文稿：整段在片段外的段头标原片时间，灰着（§5.10） */
+.para__t--src { color: var(--gray-500); }
 /* 光标只跟在**在飞的那一段**后面：它标的是「这里还在长」，不是装饰 */
 .caret { display: inline-block; width: 2px; height: 14px; margin-left: 2px; vertical-align: -2px; background: var(--blue-900); animation: bc-caret 1s step-end infinite; }
 @keyframes bc-caret { 0%, 50% { opacity: 1; } 51%, 100% { opacity: 0; } }

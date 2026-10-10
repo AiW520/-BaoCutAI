@@ -394,10 +394,11 @@
        trans: [{t: 610, lang: '简体中文', text: '我们最缺的是搜索：记得那句话，却找不到它在哪。'}],
      },
      meta: {speakers: 2, chapters: 6, cues: 418}},
-    /* 从 p1 切出来的一支短视频（§15.12）：引用同一份原片，`origin` 记出身。起止取第 38–54 句的边界。 */
+    /* 从 p1 切出来的一支短视频（product-design §5.10）：引用同一份原片与文稿，`origin` 记出身。起止取第 38–54 句的边界；
+       没写 `cuts`，打开时按出身播种片段外两条剪口（BC_SHORTS_CUT.seedCuts）。 */
     {id: 'p5', title: '短视频切片 · 第 7 条', dir: 'd1', folder: '切片-07', status: 'complete', entry: 'trans', bare: true,
      delivery: 'shorts', ratio: '9:16',
-     origin: {project: 'p1', in: cues[37].start, out: cues[53].end},
+     origin: {project: 'p1', in: cues[37].start, out: cues[53].end, dur: DUR},
      cut: {focus: 'speaker', focusX: null, tracks: 'both', style: 'shorts'},
      src: {name: 'kelang-ep42-master.mp4', path: '~/Movies/播客/kelang-ep42-master.mp4', format: 'MP4 · H.264', res: '1920×1080', state: 'ok'},
      duration: +(cues[53].end - cues[37].start).toFixed(2), lang: '中文', model: 'moss-transcribe', modified: '上周', mtime: 10080, otime: 1440, ctime: 10200, hue: 282,
@@ -409,11 +410,13 @@
        overlay: [{t: 0, text: '本机跑语音'}],
      },
      meta: {speakers: 1, chapters: 1, cues: 24}},
-    /* 同一个来源的第二支：切出后在编辑器里「后面多留一句」，所以 `used` 比 `origin` 长一句；取景是居中 */
+    /* 同一个来源的第二支：切出后在文稿里点回了后面一句，所以片段外尾巴那条剪口从第 15 句之后才开始，
+       现状比 `origin` 长一句；取景是居中 */
     {id: 'p12', title: '为什么要把视频工具做在本机', dir: 'd1', folder: '切片-本机', status: 'complete', entry: 'trans', bare: true,
      delivery: 'shorts', ratio: '9:16',
-     origin: {project: 'p1', in: cues[4].start, out: cues[13].end},
-     used: [{in: cues[4].start, out: cues[14].end}],
+     origin: {project: 'p1', in: cues[4].start, out: cues[13].end, dur: DUR},
+     cuts: [{id: 'outside-head', start: 0, end: cues[4].start, kind: 'outside', state: 'cut', by: 'agent', text: ''},
+            {id: 'outside-tail', start: cues[14].end, end: DUR, kind: 'outside', state: 'cut', by: 'agent', text: ''}],
      cut: {focus: 'center', focusX: null, tracks: 'orig', style: 'shorts'},
      src: {name: 'kelang-ep42-master.mp4', path: '~/Movies/播客/kelang-ep42-master.mp4', format: 'MP4 · H.264', res: '1920×1080', state: 'ok'},
      duration: +(cues[14].end - cues[4].start).toFixed(2), lang: '中文', model: 'moss-transcribe', modified: '3 天前', mtime: 4320, otime: 4320, ctime: 10100, hue: 252,
@@ -1824,7 +1827,7 @@
             write: {cmd: 'bcut shorts create project.bcut --count 3 --ratio 9:16', why: '创建 3 支子视频（引用原片，不复制、不导出）'},
             task: {kind: 'shorts-cut', title: '剪成短视频'},
             receipt: '已创建 3 支短视频 · 6.1s',
-            close: '好了：已创建 3 支短视频，起止都落在句子边界上。回到「剪成短视频」逐支看、调起止，不要哪一支就移入回收站。'}},
+            close: '好了：已创建 3 支短视频，起止都落在句子边界上。回到「剪成短视频」逐支打开：片段外的话在文稿里划掉了，点一下可以放回；不要哪一支就移入回收站。'}},
        ]},
       /* 只在项目目录里、还没有视频的会话（2026-10-01）：「产品手册动画」项目只有插图和文档。 */
       {id: 's17', title: '产品手册的插图做成 40 秒动画', project: null, dir: 'd8', harness: 'claude', model: 'sonnet', effort: 'mid',
@@ -2428,39 +2431,19 @@
      不是这条演示的主角）：translate.live（中→日的翻译中样片）、translate.cards
      （审阅卡引中文原文）、modelActivity 的调用台账、章节标题（AI 产出语言跟随
      产品语言，中文 UI 出中文章节名是成立的）。 */
-  /* ---------- 短视频项目（§15.12）----------
-     从别的项目切出来的一支：清单里的 `origin {project, in, out}` 是出身，`used` 是它现在用到的
-     原片区间（多留一句、再加一段之后会变）。打开时时间轴与字幕都按 `used` 排出来：每段一个
-     引用原片的视频片段，字幕取来源项目文稿里落在这一段的句子，时间换成这一支自己的。 */
+  /* ---------- 短视频项目（product-design §5.10 / §4.6）----------
+     从别的项目切出来的一支：清单里的 `origin {project, in, out, dur}` 是出身，`cuts` 是它自己的剪口表。
+     打开时和来源项目用同一份时间轴、原片与文稿；片段外的部分是两条已生效的「片段外」剪口，
+     时间轴按剪口折叠，只剩留下的那几段（editor.jsx 的 composeView）。 */
   const isCut = (proj) => !!(proj && proj.origin && typeof proj.origin === 'object' && proj.origin.project);
-  const cutRanges = (proj) => (proj.used && proj.used.length ? proj.used : [{in: proj.origin.in, out: proj.origin.out}]);
-  /** 来源项目的整份文稿（句子）。来源项目不在库里时返回空表。 */
-  function sourceCues(proj, list) {
-    if (!isCut(proj)) return [];
-    const parent = (list || projects).find((p) => p.id === proj.origin.project);
-    return parent ? makeCues(parent.lang === '英语') : [];
-  }
-  function cutLayout(proj, list) {
-    const SC = window.BC_SHORTS_CUT;
-    const source = sourceCues(proj, list);
-    const out = {clips: [], cues: [], duration: 0};
-    cutRanges(proj).forEach((r, i) => {
-      const at = out.duration;
-      out.clips.push({id: 'k' + (i + 1), start: at, end: +(at + r.out - r.in).toFixed(2), src: r.in});
-      if (SC) out.cues = SC.insertCues(out.cues, source, r, at, 'k' + (i + 1));
-      out.duration = +(at + r.out - r.in).toFixed(2);
-    });
-    return out;
-  }
 
   function projectSetup(proj) {
     const entry = entries.find(e => e.k === proj.entry) || entries[0];
     if (isCut(proj)) {
-      const lay = cutLayout(proj);
-      const parent = projects.find((p) => p.id === proj.origin.project);
-      const main = {...sources.video[0], name: proj.src.name, dur: parent ? parent.duration : lay.duration};
-      return {entry, tab: 'video', transcript: true, music: false, score: [], duration: lay.duration,
-        clips: lay.clips, chapters: [], sources: {image: [], video: [main], audio: []}};
+      // 同一份 clips 与时长；章节、配乐不带过来，素材只有那条原片。打开先看文稿（片段外划掉、可点恢复）
+      const main = {...sources.video[0], name: proj.src.name, dur: DUR};
+      return {entry, tab: 'transcript', transcript: true, captions: true, music: false, score: [], duration: DUR,
+        clips, chapters: [], sources: {image: [], video: [main], audio: []}};
     }
     const elementLab = proj.focus === 'elements';
     const movie = !!proj.preview;
@@ -2485,8 +2468,7 @@
     const D = window.BC_DATA;
     const proj = currentProject || projects.find((x) => x.id === id);
     const src = proj && proj.lang === '英语' ? 'en' : 'zh';
-    const cut = isCut(proj) ? cutRanges(proj).map((r) => r.in + '-' + r.out).join(',') : '';
-    const key = src + ':' + (proj && proj.entry === 'clean' ? 'monologue' : 'interview') + (cut ? ':' + proj.id + ':' + cut : '');
+    const key = src + ':' + (proj && proj.entry === 'clean' ? 'monologue' : 'interview');
     if (activeProjectKey === key) return;
     activeProjectKey = key;
     const dst = src === 'en' ? 'zh' : 'en';
@@ -2503,8 +2485,6 @@
       };
       D.cues = D.cues.map((c, i) => ({...c, sp: 's1', text: src === 'zh' ? lines[i % 21] || c.text : c.text, trans: ''}));
     }
-    // 短视频项目只有切出来的那几段（§15.12）：句子取自来源项目，时间换成这一支自己的
-    if (cut) D.cues = cutLayout(proj).cues;
     D.paras = makeParas(D.cues, src === 'en' ? ' ' : '', src === 'en' ? '' : ' ');
     D.initialSegments.paragraphs = D.paras.length;
     D.cutSuggestions = window.BC_CUT.fromSpecs(cutSpecs, D.cues, src);
@@ -2939,7 +2919,7 @@
 
   window.BC_DATA = {
     DUR, speakers, chapters, projectTitle, clips, cues, paras, initialSegments,
-    srcLang: LANG.zh, dstLang: LANG.en, activateProject, projectSetup, sourceCues,
+    srcLang: LANG.zh, dstLang: LANG.en, activateProject, projectSetup,
     elements, textGroup, ELEMENT_HUE_STOPS,
     projects, ptypes, templates, agentProjects, spaceOutputs,
     agentSkills, agentSkillFolders,

@@ -24,11 +24,16 @@
        没有 B-roll / 文字 / 贴纸，也没有音乐行；剪辑建议不预埋，留给用户自己跑 AI。 */
     const bare = !!proj.bare;
     const localMedia = useMemo(() => proj.origin === 'local' ? window.BC_MEDIA.projectMedia(proj) : null, [proj.id]);
+    /* 剪成短视频切出的一支（product-design §5.10 / §4.6）：和来源视频同一份时间轴与文稿，只是剪口不同；
+       时间轴按剪口折叠成只剩留下的那几段（composeView），打开落在片段起点。 */
+    const SC = window.BC_SHORTS_CUT;
+    const shortsChild = SC.isChild(proj);
 
     /* ---- 编辑器自己的状态：不进全局 store（只有这一屏用） ---- */
     /* 音频转视频的本地项目落在 Elements（声波已选中，§9 a2v 行）；其余本地 / URL 项目落在文稿 */
     /* 落点过一遍表面（Web 没有 AI 工具 Tab，退回文稿；model-surface.js） */
-    const [localTab, setLocalTab] = useState(() => window.BC_SURFACE.landingTab(app.crop.sessions[projectId]?.open || app.shortsCut.sessions[projectId]?.open ? 'aitools' : initiallyEmpty ? 'video'
+    const [localTab, setLocalTab] = useState(() => window.BC_SURFACE.landingTab(app.crop.sessions[projectId]?.open
+      || (shortsChild ? app.shortsCut.hasResult(projectId) : app.shortsCut.sessions[projectId]?.open) ? 'aitools' : initiallyEmpty ? 'video'
       : localMedia ? (localMedia.audio && proj.entry === 'a2v' ? 'elements' : 'transcript')
       : proj.origin === 'url' ? 'transcript' : setup.tab));
     const routeTab = D.rail.some(item => item.k === app.route.tab) ? window.BC_SURFACE.landingTab(app.route.tab) : null;
@@ -56,7 +61,8 @@
     }, []);
     /* 起始播放头：路由带 `t` 就落在那一刻（项目搜索的命中行跳转，第 118 轮），
        否则用演示默认值。深链接的 t 变化时重新定位；普通播放由编辑器自己管理。 */
-    const [playT, setPlayT] = useState(startT == null ? initiallyEmpty || localMedia ? 0 : 12.4 : startT);
+    const [playT, setPlayT] = useState(startT == null ? initiallyEmpty || localMedia ? 0
+      : shortsChild ? (SC.usedRanges(proj)[0] || {start: proj.origin.in}).start : 12.4 : startT);
     const [playing, setPlayingRaw] = useState(false);
     useLayoutEffect(() => () => { if (embedded) setPlayingRaw(false); }, [embedded]);
     const lastStartT = useRef(startT);
@@ -946,7 +952,10 @@
     const mediaElements = useMemo(() => localMedia
       ? window.BC_VIDEO_EDIT.initial(localMedia.clips, proj.src.name).map(e => ({...e, name: proj.src.name}))
         .concat(localMedia.elements || [])
-      : bare ? window.BC_VIDEO_EDIT.initial(setup.clips, proj.src.name).map(e => ({...e, name: proj.src.name})) : [], [proj.id]);
+      : bare ? window.BC_VIDEO_EDIT.initial(setup.clips, proj.src.name).map(e => ({...e, name: proj.src.name,
+        /* 子视频的取景就是画布上这段视频的摆位（§5.10）：裁成竖屏时先铺满、按 focusX 落位，之后在画布上拖 */
+        ...(shortsChild ? {place: SC.framePlace(proj.cut, window.BC_CROP.sourceRatio(setup.sources.video[0]),
+          window.BC_LAYOUT.ratioValue(proj.ratio || '9:16'), e.place)} : {})})) : [], [proj.id]);
     const els = useElementStore(pick, initiallyEmpty || !!localMedia || bare, mediaElements, proj.src.name);
     /* 音频转视频项目打开时声波已选中（§9 a2v 行「wave 自动选中」）：右栏直接是它的属性页 */
     useEffect(() => {
@@ -1009,9 +1018,8 @@
     /* ---- 智能裁剪（§15.9）：会话在 store，编辑器只负责接线 ---- */
     const cropSession = app.crop.sessions[proj.id];
     const cropActive = tab === 'aitools' && cropSession?.open && cropSession.phase === 'review';
-    /* ---- 剪成短视频（§5.10）：结果页上舞台换成那几支的预览 ---- */
-    const shortsCutSession = app.shortsCut.sessions[proj.id];
-    const shortsCutActive = tab === 'aitools' && !cropActive && shortsCutSession?.open && shortsCutSession.phase === 'result';
+    /* ---- 剪成短视频（§5.10）：子视频打开时，来源视频那一轮的结果页亮这一支 ---- */
+    useEffect(() => { if (shortsChild) app.shortsCut.focusChild(proj.id); }, [proj.id]);
     const cropOutputs = app.crop.outputs[proj.id];
     useEffect(() => {
       if (!cropOutputs?.length) return;
@@ -1118,12 +1126,14 @@
     /* 折叠时钟（第 197 轮立、第 200 轮并进全局「剪辑」开关）：开关关着时时间轴按成片时钟画、
        已剪段折掉且**什么都不画**；开着时撑开成源片时钟、已剪段成空槽带。开关是 `cutStore.cutMode`
        ——文稿的改字 / 剪辑态与时间轴形态由同一位决定。它只关乎这一次打开的项目，不进文档。 */
-    const tmap = useMemo(() => CUT.foldMap(cutStore.cuts, els.elements, {expanded: cutStore.cutMode}),
-      [cutStore.cuts, els.elements, cutStore.cutMode]);
+    /* 子视频（composeView）：文稿在剪辑态（片段外划掉、可点恢复），时间轴却始终按成片折叠——
+       只剩留下的那几段、从 0 起、总长就是这一支（product-design §5.10）。别的项目照旧由开关决定。 */
+    const tmap = useMemo(() => CUT.foldMap(cutStore.cuts, els.elements, {expanded: cutStore.cutMode && !shortsChild}),
+      [cutStore.cuts, els.elements, cutStore.cutMode, shortsChild]);
     const hasTrans = !localMedia && subStyle.tracks.some(t => t.role === 'translation');
     /* 短视频项目（§15.12）：元数据最前面写它从哪儿来 */
     const cutFrom = window.BC_SHORTS_CUT.originLabel(app.projects, proj);
-    editorBar.meta = [cutFrom ? cutFrom.short : null, T.duration(duration), proj.lang
+    editorBar.meta = [cutFrom ? cutFrom.short : null, T.duration(shortsChild ? outDuration : duration), proj.lang
       ? proj.lang + (hasTrans ? ' → ' + D.dstLang.name : '') : null,
       proj.model].filter(Boolean).join(' · ');
     /* 顶栏 ⓘ 打开的详情框里，「内容」与「译文」两行只有这条路给得出（第 233 轮）：
@@ -1228,7 +1238,7 @@
         : null,
       cues, setCues: commitCues, paras, cueText, putCueText, translations, putTranslationDoc,
       cuts: cutStore.cuts, cutOps: cutStore.cutOps, cutMode: cutStore.cutMode, setCutMode: cutStore.setCutMode, outDuration,
-      tmap,
+      tmap, composed: shortsChild,
       cutSel: cutStore.cutSel, setCutSel, transImpact, fixCutTrans,
       subStyle, setSubStyle, restoreSubStyle, setSubTrack, applyPreset, stagePreset,
       subScope, setSubScope, curCue, setSubCue, clearSubCue,
@@ -1246,7 +1256,6 @@
     /* ⌘A 读这一份（元素投影在 ctx 里才算齐）；键盘层与剪贴板见 editor-keys.jsx。 */
     stageRef.current = {elements: ctx.elements.filter(e => e.kind !== 'audio'), playT};
     const keys = window.useEditorKeys(ctx);
-    window.useShortsUsed(ctx);   // 短视频项目：时间轴上用到原片的哪几段，写回项目记录（§15.12）
     ctx.clipboard = keys.clipboard;
     // Export 弹层与原型开关面板都挂在外壳上，需要拿到编辑器上下文
     editorBar.ctx = ctx;
@@ -1266,7 +1275,7 @@
         {fs ? <window.PlayerOverlay ctx={ctx} /> : null}
         <div className="edrow" ref={boxRef}>
           <div className="editcol" style={{width: geo.stageW}}>
-            {cropActive ? <window.CropStage ctx={ctx} /> : shortsCutActive ? <window.ShortsCutStage ctx={ctx} /> : <>
+            {cropActive ? <window.CropStage ctx={ctx} /> : <>
             <div className="stagewrap" style={{height: geo.stageH}}>
               {opening ? (
                 <div className="opentoast" onClick={() => setOpening(null)}>
@@ -1277,6 +1286,8 @@
               ) : null}
               {/* 视频用到的字体还没下载时的那一条（product-design §5.9，font-downloads.jsx） */}
               {fs ? null : <window.FontOpenStrip projectId={proj.id} />}
+              {/* 子视频：从哪部视频切出来、片段外的话怎么处理、回到原片（shorts-source.jsx） */}
+              {fs || !shortsChild ? null : <window.ShortsChildBanner ctx={ctx} />}
               {fs ? null : (tpl.tplStudio ? <window.TemplateStudioStage ctx={ctx} /> : <window.StageView ctx={ctx} />)}
               {fs ? null : <window.StageBar ctx={ctx} />}
             </div>

@@ -21,3 +21,36 @@
 .aitp__ctx { display: flex; align-items: flex-start; gap: 6px; margin-top: 8px; padding: 0 2px; font-size: 11px; line-height: 1.6; color: var(--gray-600); }
 .aitp__ctx .ic--14 { flex: none; margin-top: 2px; color: var(--gray-500); }
 .ail__st { flex: none; white-space: nowrap; }
+
+/* ---------- 剪成短视频（product-design §5.10）：设置页与结果页，前缀 sc- ----------
+   原来在 shorts-cut.css；挑片段的舞台删掉之后只剩这两页的样式，跟着 AI 工具 Tab 走（只属 App）。 */
+.sc-kids { margin-top: 8px; }
+.sc-made { display: flex; flex-direction: column; gap: 4px; padding: 4px 0; }
+.sc-made__row { display: flex; align-items: center; gap: 8px; min-height: 40px; padding: 4px 4px 4px 8px; border-radius: 8px; background: var(--gray-50); }
+.sc-made__t { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.sc-made__t b { font-size: 12px; font-weight: 700; color: var(--gray-900); }
+.sc-made__t span { font-size: 11px; color: var(--gray-600); font-variant-numeric: tabular-nums; }
+.sc-flat { margin-top: 0; }
+.sc-opts { gap: 6px; padding: 4px 4px 0; }
+.sc-row { display: flex; align-items: center; gap: 8px; min-height: 32px; }
+
+/* 结果页：头上的「第 k/N ‹ ›」与每支一张卡；正在看的那一支亮着 */
+.sc-pager { display: inline-flex; align-items: center; gap: 2px; margin-left: auto; font-size: 11px; color: var(--gray-700); font-variant-numeric: tabular-nums; }
+.sc-pager > span { padding-right: 4px; }
+.sc-list { display: flex; flex-direction: column; gap: 8px; margin-top: 12px; }
+.sc-card { display: flex; flex-direction: column; gap: 6px; padding: 8px 12px 8px 8px; border-radius: 10px; background: var(--gray-25); box-shadow: inset 0 0 0 1px var(--gray-300); cursor: pointer; transition: box-shadow 150ms cubic-bezier(0.45, 0, 0.4, 1), background-color 150ms cubic-bezier(0.45, 0, 0.4, 1); }
+.sc-card:hover { box-shadow: inset 0 0 0 1px var(--gray-500); }
+.sc-card.is-sel { background: var(--blue-100); box-shadow: inset 0 0 0 2px var(--blue-800); }
+.sc-card__head { display: flex; align-items: center; gap: 6px; min-height: 24px; }
+.sc-card__n { flex: none; min-width: 16px; font-size: 11px; font-weight: 700; color: var(--gray-600); text-align: center; }
+.sc-card__title { flex: 1 1 auto; min-width: 0; padding: 0 4px; height: 24px; border-radius: 4px; font-size: 14px; font-weight: 700; color: var(--gray-900); text-align: left; cursor: text; }
+.sc-card__title:hover { background: var(--gray-100); }
+.sc-card.is-sel .sc-card__title:hover { background: var(--blue-200); }
+.sc-card__edit { flex: 1 1 auto; min-width: 0; }
+.sc-card__span { padding-left: 4px; font-size: 11px; color: var(--gray-700); }
+.sc-quote, .sc-why { display: flex; align-items: baseline; gap: 8px; padding-left: 4px; font-size: 12px; line-height: 1.5; }
+.sc-quote em, .sc-why em { flex: none; font-style: normal; font-size: 11px; color: var(--gray-600); }
+.sc-quote span { min-width: 0; color: var(--gray-900); }
+.sc-why span { min-width: 0; color: var(--gray-700); }
+.sc-flags { display: flex; flex-wrap: wrap; gap: 4px; padding-left: 4px; }
+.sc-acts { display: flex; align-items: center; gap: 6px; padding-left: 4px; }

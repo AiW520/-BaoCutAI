@@ -247,7 +247,6 @@
       "app/page-space.jsx",
       "app/stage-objects.jsx",
       "app/stage-crop.jsx",
-      "app/stage-shorts-cut.jsx",
       "app/stage-toolbar-menu.jsx",
       "app/stage-toolbar.jsx",
       "app/template-render.jsx",
@@ -329,7 +328,6 @@
       "app/panel-tts.jsx",
       "app/panel-video-library.jsx",
       "app/video-replace.jsx",
-      "app/shorts-add-dialog.jsx",
       "app/shorts-source.jsx",
       "app/panel-media-stock.jsx",
       "app/readings-chips.jsx",
@@ -388,7 +386,6 @@
       "app/stock.css",
       "app/video-replace.css",
       "app/crop.css",
-      "app/shorts-cut.css",
       "app/stage-load.css",
       "app/daoyazi.css",
       "app/help-center.css",
@@ -418,9 +415,9 @@
       "app/subtitle-motion.css",
       "app/subtitle-active.css"
     ],
-    "js": "generated/app.js?v=922770f34bae",
-    "css": "generated/app.css?v=5a6876e7653c",
-    "bytes": 3845990
+    "js": "generated/app.js?v=fecd747e7d3b",
+    "css": "generated/app.css?v=1539578f65ca",
+    "bytes": 3825222
   },
   "web": {
     "file": "BaoCutWeb.html",
@@ -615,7 +612,6 @@
       "app/panel-filters.jsx",
       "app/panel-video-library.jsx",
       "app/video-replace.jsx",
-      "app/shorts-add-dialog.jsx",
       "app/shorts-source.jsx",
       "app/panel-media-stock.jsx",
       "app/readings-chips.jsx",
@@ -657,9 +653,9 @@
       "app/subtitle-motion.css",
       "app/subtitle-active.css"
     ],
-    "js": "generated/web.js?v=548f3f3aba53",
-    "css": "generated/web.css?v=841ad7d7b726",
-    "bytes": 2382206
+    "js": "generated/web.js?v=df548527790f",
+    "css": "generated/web.css?v=908687f30510",
+    "bytes": 2374542
   },
   "components": {
     "file": "Components.html",
@@ -685,7 +681,7 @@
       "app/spectrum.css"
     ],
     "js": "generated/components.js?v=21bc3b6ce948",
-    "css": "generated/components.css?v=a355eb9df1ee",
+    "css": "generated/components.css?v=d00d50a0f297",
     "bytes": 114327
   }
 }

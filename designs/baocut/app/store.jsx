@@ -27,7 +27,7 @@
   const NO_RUNNER_BY = {};
   /* Web 表面不加载智能裁剪 / 导入 / 新建项目那几份跨屏 hook（它们的入口 Web 都没有）；
      这里给同形状的空壳，编辑器读 `app.crop.sessions[id]` 之类不必处处判空。 */
-  const NO_SHORTS_CUT = {sessions: {}, open: () => ({ok: false, error: SURF.aiElsewhere('剪成短视频')})};
+  const NO_SHORTS_CUT = {sessions: {}, open: () => ({ok: false, error: SURF.aiElsewhere('剪成短视频')}), hasResult: () => false, focusChild: () => false};
   const NO_CROP = {sessions: {}, outputs: {}, open: () => ({ok: false, error: SURF.aiElsewhere('智能裁剪')})};
   const NO_FLOW = {};
   const NO_AGENT_SIM = {runWrite: () => {}, retryTask: () => {}, runWait: () => {}, planFor: (t, hasProject) => AG.planFor(t, hasProject)};

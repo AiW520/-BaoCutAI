@@ -19,8 +19,23 @@ function sentences(n = N, dur = DUR) {
 const S = sentences();
 const parent = {id: 'p1', title: '科浪访谈双语版', entry: 'trans', lang: '中文', model: 'moss-transcribe', hue: 252,
   src: {name: 'kelang-ep42-master.mp4', res: '1920×1080'}};
-const child = (id, from, to, extra) => Object.assign({id, title: '短视频切片 · ' + id,
-  origin: {project: 'p1', in: S[from].start, out: S[to].end}}, extra);
+/** 用到的几段 → 片段外的剪口（`[0, DUR]` 里扣掉这几段）。 */
+const outsideOf = (used) => {
+  const r = used.slice().sort((x, y) => x.start - y.start);
+  const out = [];
+  let a = 0;
+  r.forEach((u, i) => { if (u.start > a) out.push({id: 'o' + i, start: a, end: u.start, kind: 'outside', state: 'cut', by: 'agent'}); a = Math.max(a, u.end); });
+  if (a < DUR) out.push({id: 'o-end', start: a, end: DUR, kind: 'outside', state: 'cut', by: 'agent'});
+  return out;
+};
+/** `extra.used`（`[{start, end}]`）写成这一支的剪口：子视频的现状只存在剪口里。 */
+const child = (id, from, to, extra) => {
+  const e = Object.assign({}, extra);
+  const used = e.used;
+  delete e.used;
+  return Object.assign({id, title: '短视频切片 · ' + id,
+    origin: {project: 'p1', in: S[from].start, out: S[to].end, dur: DUR}}, used ? {cuts: outsideOf(used)} : {}, e);
+};
 
 test('参数：缺省值、条数夹在 1–10、时长档不设上限、画幅缺省 9:16', () => {
   assert.equal(M.DEFAULTS.count, 3);
@@ -82,32 +97,6 @@ test('吸附：模型给的时间落到最近的句首和句尾，终点不会�
   assert.ok(tiny.to >= tiny.from);
 });
 
-test('挪一句：每按一次只挪一句，到头和会把这一段挪没时不动', () => {
-  const seg = Object.assign({id: 'x'}, M.rangeOf(S, 4, 6));
-  const a = M.nudge(S, seg, 'start', -1);
-  assert.deepEqual([a.from, a.to, a.start], [3, 6, S[3].start]);
-  const b = M.nudge(S, seg, 'end', 1);
-  assert.deepEqual([b.from, b.to, b.end], [4, 7, S[7].end]);
-  const one = Object.assign({id: 'y'}, M.rangeOf(S, 5, 5));
-  assert.equal(M.nudge(S, one, 'start', 1), one, '只剩一句时起点不能再往后');
-  assert.equal(M.nudge(S, one, 'end', -1), one, '只剩一句时终点不能再往前');
-  const head = Object.assign({id: 'h'}, M.rangeOf(S, 0, 3));
-  assert.equal(M.nudge(S, head, 'start', -1), head);
-  const tail = Object.assign({id: 't'}, M.rangeOf(S, 58, N - 1));
-  assert.equal(M.nudge(S, tail, 'end', 1), tail);
-  assert.equal(M.canNudge(S, seg, 'start', 2), false);
-});
-
-test('拖两端：吸附到句子边界，至少留一句', () => {
-  const seg = Object.assign({id: 'x'}, M.rangeOf(S, 10, 14));
-  const a = M.dragEdge(S, seg, 'start', S[12].start + 0.3);
-  assert.deepEqual([a.from, a.to], [12, 14]);
-  const b = M.dragEdge(S, seg, 'start', S[20].start);
-  assert.deepEqual([b.from, b.to], [14, 14]);
-  const c = M.dragEdge(S, seg, 'end', S[3].end);
-  assert.deepEqual([c.from, c.to], [10, 10]);
-});
-
 test('来源关系：父 → 子靠反查，徽标文案，来源视频不在时说清楚', () => {
   const c1 = child('c1', 37, 53), c2 = child('c2', 4, 13), other = {id: 'z', title: '别的项目'};
   const all = [parent, c1, other, c2];
@@ -136,7 +125,7 @@ test('已切过：重叠超过候选时长的一半才算，按现在用到的�
   const o = M.overlapSec(half, {start: c.origin.in, end: c.origin.out}) / (half.end - half.start);
   assert.equal(!!M.doneBy(half, [c]), o > 0.5);
   // 这一支后来把那一段剪掉了：现状里没有，就不算切过
-  const trimmed = child('c1', 37, 53, {used: [{in: S[50].start, out: S[53].end}]});
+  const trimmed = child('c1', 37, 53, {used: [{start: S[50].start, end: S[53].end}]});
   assert.equal(M.doneBy(inside, [trimmed]), null);
 });
 
@@ -176,9 +165,6 @@ test('提醒：缺译文只在要译文时提；落在句中分起点和终点',
   assert.deepEqual([loose.from, loose.to], [4, 14]);
   const fl = M.flags(loose, {params: {length: 'mid', tracks: 'orig'}, list: [loose], sentences: S}).map((f) => f.text);
   assert.deepEqual(fl, ['起点落在一句话中间', '终点落在一句话中间']);
-  // 挪过的那一端回到句子边界，另一端不动
-  const fixed = M.nudge(S, loose, 'start', -1);
-  assert.deepEqual([fixed.start, fixed.end, fixed.loose.start, fixed.loose.end], [S[3].start, loose.end, false, true]);
 });
 
 test('演示候选：要几支给几支，不多找备选；互不重叠、不含要靠前文的', () => {
@@ -235,7 +221,12 @@ test('创建：标题去重；项目记录引用同一份原片并记下起止',
   const seg = Object.assign({id: 'a', focusX: 32}, M.rangeOf(S, 4, 13));
   const p = M.childProject({id: 'ps1', parent: Object.assign({dir: '/Videos/科浪访谈'}, parent), seg, title: '为什么做本机',
     params: {focus: 'manual'}, session: 's9', messageId: 'r-t1'});
-  assert.deepEqual(p.origin, {project: 'p1', in: S[4].start, out: S[13].end});
+  assert.deepEqual(p.origin, {project: 'p1', in: S[4].start, out: S[13].end, dur: S[13].end}, '来源记录没时长时退到片段终点');
+  assert.deepEqual(p.cuts.map((c) => [c.id, c.start, c.end, c.kind, c.state, c.by]), [['outside-head', 0, S[4].start, 'outside', 'cut', 'agent']]);
+  assert.equal(p.used, undefined, '用到哪几段从剪口派生，不另存');
+  const full = M.childProject({id: 'ps4', parent, seg, title: 'd', dur: DUR});
+  assert.deepEqual(full.cuts.map((c) => [c.start, c.end]), [[0, S[4].start], [S[13].end, DUR]]);
+  assert.deepEqual(M.usedRanges(full), [{start: S[4].start, end: S[13].end}]);
   assert.deepEqual([p.delivery, p.ratio, p.bare], ['shorts', '9:16', true]);
   assert.deepEqual([p.dir, p.folder], ['/Videos/科浪访谈', '为什么做本机'], '和来源视频并排，各占一个视频文件夹');
   assert.deepEqual([p.session, p.messageId], ['s9', 'r-t1']);
@@ -282,217 +273,10 @@ test('列表副题：跟着会话走，切过的补一句', () => {
 /* ---------- 短视频项目里的「原片」卡 ---------- */
 const el = (id, start, end, srcStart) => ({id, kind: 'video', fromSource: true, start, end, srcStart});
 
-test('片段：由时间轴上绑着原片的视频元素派生，别的元素不算', () => {
-  const ps = M.piecesOf([el('b', 30, 40, S[20].start), el('a', 0, 30, S[4].start),
-    {id: 't', kind: 'text', start: 0, end: 5}, {id: 'v', kind: 'video', start: 0, end: 5}]);
-  assert.deepEqual(ps.map((p) => p.id), ['a', 'b']);
-  assert.equal(ps[0].in, S[4].start);
-  assert.equal(ps[0].out, S[4].start + 30);
-  assert.deepEqual(M.usedFrom(ps)[1], {in: +S[20].start.toFixed(2), out: +(S[20].start + 10).toFixed(2)});
-});
-
-test('多留一句：前面取上一句、后面取下一句，到原片头尾给 null', () => {
-  const piece = {id: 'a', start: 0, end: S[13].end - S[4].start, in: S[4].start, out: S[13].end};
-  const before = M.extendRange(S, piece, 'before');
-  assert.deepEqual([before.in, before.out, before.at, before.sentence.id], [S[3].start, S[4].start, 0, 'g4']);
-  const after = M.extendRange(S, piece, 'after');
-  assert.deepEqual([after.in, after.out, after.at, after.sentence.id], [S[13].end, S[14].end, piece.end, 'g15']);
-  assert.equal(M.extendRange(S, {in: 0, out: 10, start: 0, end: 10}, 'before'), null);
-  assert.equal(M.extendRange(S, {in: 190, out: DUR, start: 0, end: 16}, 'after'), null);
-  // 片段的边落在句中：先补齐那半句
-  const mid = M.extendRange(S, {in: S[4].start + 1, out: S[6].end, start: 0, end: 9}, 'before');
-  assert.deepEqual([mid.in, mid.out], [S[4].start, S[4].start + 1]);
-});
-
-test('多留一句：这一段变长，后面的片段与字幕顺延，新字幕补在缝上', () => {
-  const a = {id: 'a', start: 0, end: S[6].end - S[4].start, in: S[4].start, out: S[6].end};
-  const b = {id: 'b', start: a.end, end: a.end + (S[21].end - S[20].start), in: S[20].start, out: S[21].end};
-  const cues = M.cuesIn(S, a, a.start).concat(M.cuesIn(S, b, b.start));
-  assert.deepEqual(cues.map((c) => c.id), ['g5', 'g6', 'g7', 'g21', 'g22']);
-  assert.equal(cues[0].start, 0);
-
-  const r = M.extendRange(S, a, 'after');
-  const d = r.out - r.in;
-  const patches = M.extendPatches([a, b], 'a', 'after', r);
-  assert.deepEqual(patches.map((p) => p.id), ['a', 'b']);
-  assert.equal(patches[0].end, +(a.end + d).toFixed(2));
-  assert.equal(patches[0].in, a.in);
-  assert.equal(patches[1].start, +(b.start + d).toFixed(2));
-  const next = M.insertCues(cues, S, r, r.at);
-  assert.deepEqual(next.map((c) => c.id), ['g5', 'g6', 'g7', 'g8', 'g21', 'g22']);
-  assert.equal(next[3].start, +a.end.toFixed(2));
-  assert.equal(next[4].start, +(cues[3].start + d).toFixed(2));
-
-  const rb = M.extendRange(S, a, 'before');
-  const pb = M.extendPatches([a, b], 'a', 'before', rb);
-  assert.equal(pb[0].in, S[3].start);
-  assert.equal(pb[0].start, 0);
-  const nb = M.insertCues(cues, S, rb, rb.at);
-  assert.deepEqual(nb.map((c) => c.id), ['g4', 'g5', 'g6', 'g7', 'g21', 'g22']);
-  assert.equal(nb[1].start, +(rb.out - rb.in).toFixed(2));
-});
-
-test('再加一段：放在最后或播放头所在的那条缝；同一句用第二次 id 不撞', () => {
-  const a = {id: 'a', start: 0, end: 10, in: S[4].start, out: S[4].start + 10};
-  const b = {id: 'b', start: 10, end: 25, in: S[20].start, out: S[20].start + 15};
-  assert.equal(M.insertPoint([a, b], 'end', 3), 25);
-  assert.equal(M.insertPoint([a, b], 'playhead', 3), 10, '压在片段中间：放到这一段后面');
-  assert.equal(M.insertPoint([a, b], 'playhead', 0), 0);
-  assert.equal(M.insertPoint([a, b], 'playhead', 40), 25);
-  assert.deepEqual(M.shiftPatches([a, b], 10, 5).map((p) => [p.id, p.start, p.end]), [['b', 15, 30]]);
-  const sel = M.selection(S, 8, 5);
-  assert.deepEqual([sel.from, sel.to, sel.count], [5, 8, 4]);
-  assert.equal(sel.text, `已选 4 句 · ${M.secs(S[8].end - S[5].start)}`);
-  assert.equal(M.selection(S, null, null), null);
-  assert.equal(M.selection(S, 7, null).count, 1);
-  const cues = M.cuesIn(S, {in: S[5].start, out: S[8].end}, 0);
-  const again = M.insertCues(cues, S, {in: S[5].start, out: S[6].end}, cues[cues.length - 1].end, 'r2');
-  assert.equal(new Set(again.map((c) => c.id)).size, again.length);
-  assert.ok(again.some((c) => c.id === 'g6@r2' && c.srcId === 'g6'));
-});
-
-test('已用的句子与原片条色块', () => {
-  const used = M.usedIds(S, [{in: S[4].start, out: S[6].end}, {in: S[20].start + 0.2, out: S[20].end}]);
-  assert.deepEqual([...used], ['g5', 'g6', 'g7', 'g21']);
+test('原片条色块：按百分比', () => {
   const b = M.bar([{start: 0, end: 103}, {start: 200, end: 300}], DUR);
   assert.deepEqual(b[0], {left: 0, width: 50});
   assert.ok(Math.abs(b[1].left + b[1].width - 100) < 0.01);
-});
-
-test('取景：取景窗大小按原片画幅，中心夹在原片里，偏多少用原片宽的百分比说', () => {
-  const size = M.focusSize(16 / 9);
-  assert.ok(Math.abs(size.w - 0.3164) < 0.001);
-  assert.equal(size.h, 1);
-  assert.deepEqual(M.focusSize(9 / 16), {w: 1, h: 1});
-  assert.ok(M.focusSize(0.5).h < 1);
-  assert.ok(Math.abs(M.focusSize(16 / 9, 1).w - 0.5625) < 0.001, '1:1 裁左右');
-  assert.equal(M.outRatio('1:1', 16 / 9), 1);
-  assert.equal(M.outRatio('source', 16 / 9), 16 / 9);
-  assert.deepEqual(M.focusSize(16 / 9, M.outRatio('source', 16 / 9)), {w: 1, h: 1});
-  assert.ok(Math.abs(M.clampFocus(0, 16 / 9) - size.w / 2) < 1e-9);
-  assert.ok(Math.abs(M.clampFocus(1, 16 / 9) - (1 - size.w / 2)) < 1e-9);
-  assert.equal(M.clampFocus(null, 16 / 9), 0.5);
-  assert.equal(M.focusText(null), '居中');
-  assert.equal(M.focusText(0.5), '居中');
-  assert.equal(M.focusText(0.32), '偏左 18%');
-  assert.equal(M.focusText(0.56), '偏右 6%');
-});
-
-test('focusAt / speakerMap：跟着说话的人按这一句是谁说的取位置，认不出退到正中；自己定的用那一段的位置', () => {
-  const subjects = [{id: 'p1', kind: 'person', x: 0.3}, {id: 'b', kind: 'board', x: 0.9}, {id: 'p2', kind: 'person', x: 0.7}];
-  const lines = [{sp: 'a'}, {sp: 'b'}, {sp: 'a'}, {sp: 'c'}];
-  const map = M.speakerMap(lines, subjects);
-  assert.deepEqual(map, {a: 0.3, b: 0.7, c: 0.3});
-  assert.deepEqual(M.speakerMap(lines, []), {});
-  assert.equal(M.focusAt({focus: 'speaker'}, null, {sp: 'b'}, map, 16 / 9), 0.7);
-  assert.equal(M.focusAt({focus: 'speaker'}, null, {sp: 'zz'}, map, 16 / 9), 0.5);
-  assert.equal(M.focusAt({focus: 'center'}, {focusX: 0.2}, {sp: 'b'}, map, 16 / 9), 0.5);
-  assert.equal(M.focusAt({focus: 'manual'}, {focusX: 0.4}, null, map, 16 / 9), 0.4);
-  assert.equal(M.focusAt({focus: 'manual'}, {}, null, map, 16 / 9), 0.5);
-});
-
-test('contextFocus: pauses retain a person, openings use context, no speech still frames a visible person', () => {
-  const lines = [{start: 3, end: 5, sp: 'guest'}, {start: 9, end: 11, sp: 'host'}];
-  const map = {guest: 0.75, host: 0.2};
-  const people = [{kind: 'person', x: 0.2}, {kind: 'person', x: 0.75}];
-  assert.equal(M.contextFocus(lines, 0, map, people), 0.75);
-  assert.equal(M.contextFocus(lines, 8, map, people), 0.75);
-  assert.equal(M.contextFocus(lines, 12, map, people), 0.2);
-  assert.equal(M.contextFocus([], 0, {}, people), 0.2);
-  assert.equal(M.contextFocus([], 0, {}, []), null);
-  assert.equal(M.focusAt({focus: 'speaker'}, null, null, map, 16 / 9,
-    M.contextFocus(lines, 8, map, people)), 0.75);
-});
-
-test('review history groups a completed trim and preserves other candidate fields', () => {
-  const before={id:'a',start:10,end:40,from:1,to:3}, after={...before,start:0,from:0};
-  let s={list:[after],...M.reviewRecord({},before,after)};
-  s.list[0]={...after,title:'Changed title',on:true};
-  s={...s,...M.reviewStep(s,false)};
-  assert.equal(s.list[0].start,10); assert.equal(s.list[0].title,'Changed title'); assert.equal(s.list[0].on,true);
-  s={...s,...M.reviewStep(s,true)}; assert.equal(s.list[0].start,0);
-  s.list[0]={...s.list[0],end:55}; assert.equal(M.reviewCanStep(s,false),false);
-});
-
-test('review subtitles use cue intervals, including gaps and separate translation timing', () => {
-  const orig=[{start:0,end:1,text:'First'},{start:1,end:2,text:'Second'}];
-  const trans=[{start:0,end:1.5,text:'Premier'},{start:1.5,end:2,text:'Deuxième'}];
-  assert.equal(M.reviewCueAt(orig,1.25).text,'Second');
-  assert.equal(M.reviewCueAt(trans,1.25).text,'Premier');
-  assert.equal(M.reviewCueAt(orig,3),null);
-  assert.equal(M.reviewCueAt([],0),null);
-});
-
-test('direct boundary edits reject inverted or out-of-source times', () => {
-  const lines=Array.from({length:5},(_,i)=>({start:i*10,end:(i+1)*10}));
-  const c={id:'a',start:10,end:40,from:1,to:3};
-  const next=M.setReviewEdge(lines,c,'start',12.5,50);
-  assert.equal(next.start,12.5); assert.equal(next.end,40); assert.equal(next.loose.start,true);
-  for(const t of [-1,40,NaN,60]) assert.equal(M.setReviewEdge(lines,c,'start',t,50),null);
-});
-
-test('captionSpec：短视频字幕落在安全框里，沿用项目样式的会压到底部遮挡区；画哪几行跟着轨集', () => {
-  const safe = {top: 8, right: 18, bottom: 24, side: 6};
-  const line = {text: 'orig', trans: 'translated'};
-  const a = M.captionSpec({style: 'shorts', tracks: 'both'}, line, safe);
-  assert.deepEqual(a.lines.map((l) => l.k), ['orig', 'trans']);
-  assert.equal(a.bottom, 74);
-  assert.equal(a.width, 60);
-  assert.equal(a.blocked, false);
-  const b = M.captionSpec({style: 'project', tracks: 'trans'}, line, safe);
-  assert.deepEqual(b.lines.map((l) => l.k), ['trans']);
-  assert.equal(b.blocked, true);
-  assert.deepEqual(M.captionSpec({tracks: 'both'}, {text: 'only'}, safe).lines.map((l) => l.k), ['orig']);
-  assert.deepEqual(M.captionSpec({}, null, safe).lines, []);
-});
-
-test('pieceRows / ripplePatches：来源卡逐段一行，到原片头尾就不能再多留；别的元素跟着顺延', () => {
-  const el = (id, start, end, src) => ({id, kind: 'video', fromSource: true, start, end, srcStart: src});
-  const ps = M.piecesOf([el('a', 0, +(S[2].end - S[0].start).toFixed(2), S[0].start),
-    el('b', 10, +(10 + S[S.length - 1].end - S[S.length - 2].start).toFixed(2), S[S.length - 2].start)]);
-  const rows = M.pieceRows(S, ps);
-  assert.deepEqual(rows.map((r) => r.n), [1, 2]);
-  assert.equal(rows[0].hook, S[0].text);
-  assert.equal(rows[0].before, null);
-  assert.ok(rows[0].after);
-  assert.equal(rows[1].after, null);
-  assert.equal(rows[0].span, M.spanText({start: ps[0].in, end: ps[0].out}));
-  const moved = M.ripplePatches([
-    {id: 'a', fromSource: true, start: 0, end: 8}, {id: 't1', start: 2, end: 4}, {id: 't2', start: 9, end: 12},
-    {id: 'bar', start: 0, end: 20, endAnchor: true}, {id: 'whole'}, {id: 'skip', start: 10, end: 11},
-  ], 8, 3, ['skip']);
-  assert.deepEqual(moved, [{id: 't2', start: 12, end: 15}]);
-});
-
-test('sourceRows / rowWindow / sameUsed：章节头也算一行；窗口只取看得见的行；现状没变就不写回', () => {
-  const chapters = [{id: 'c2', title: '第二章', start: S[3].start}, {id: 'c1', title: '第一章', start: 0}];
-  const rows = M.sourceRows(S, chapters);
-  assert.equal(rows.length, S.length + 2);
-  assert.deepEqual(rows[0], {head: true, id: 'h:c1', title: '第一章', at: 0});
-  assert.equal(rows[1].index, 0);
-  assert.equal(rows[4].head, true);
-  assert.equal(rows[5].sentence, S[3]);
-  assert.equal(M.sourceRows(S, []).length, S.length);
-  const w = M.rowWindow(10000, 3200, 320);
-  assert.deepEqual(w, {start: 96, end: 114, height: 10000 * M.ROW_H});
-  assert.deepEqual(M.rowWindow(3, 0, 320), {start: 0, end: 3, height: 3 * M.ROW_H});
-  const proj = {origin: {project: 'p', in: 10, out: 20}};
-  assert.equal(M.sameUsed(proj, [{in: 10, out: 20}]), true);
-  assert.equal(M.sameUsed(proj, [{in: 10, out: 22}]), false);
-  assert.equal(M.sameUsed({...proj, used: [{in: 8, out: 20}, {in: 40, out: 50}]}, [{in: 8, out: 20}, {in: 40, out: 50}]), true);
-});
-
-test('insertCues：插在中间时后面的字幕整体顺延，前面的不动', () => {
-  const base = M.insertCues(M.insertCues([], S, {in: S[0].start, out: S[1].end}, 0), S, {in: S[6].start, out: S[7].end}, +(S[1].end - S[0].start).toFixed(2));
-  const at = +(S[1].end - S[0].start).toFixed(2);
-  const r = {in: S[3].start, out: S[4].end};
-  const d = r.out - r.in;
-  const next = M.insertCues(base, S, r, at, 'x1');
-  assert.deepEqual(next.map((c) => c.srcId), [S[0].id, S[1].id, S[3].id, S[4].id, S[6].id, S[7].id]);
-  assert.equal(next[0].start, base[0].start);
-  assert.ok(Math.abs(next[4].start - (base[2].start + d)) < 0.011);
-  assert.ok(Math.abs(next[5].end - (base[3].end + d)) < 0.011);
-  for (let i = 1; i < next.length; i += 1) assert.ok(next[i].start >= next[i - 1].end - 0.011);
 });
 
 test('openTracks：按创建时选的轨留，选了短视频字幕就按安全区几何落位；没有 cut 原样返回', () => {
@@ -516,8 +300,8 @@ test('openTracks：按创建时选的轨留，选了短视频字幕就按安全�
 test('切出的短视频一组：组头数支数与合计，行按现状写；剪过的认得出来', () => {
   const a = child('k1', 4, 13, {cut: {focus: 'speaker', tracks: 'both', style: 'shorts'}, modified: '昨天', hue: 200});
   const b = child('k2', 37, 53, {cut: {focus: 'center', tracks: 'orig', style: 'shorts'},
-    used: [{in: S[37].start, out: S[54].end}]});
-  const c = child('k3', 56, 61, {used: [{in: S[56].start, out: S[61].end}, {in: S[20].start, out: S[22].end}]});
+    used: [{start: S[37].start, end: S[54].end}]});
+  const c = child('k3', 56, 61, {used: [{start: S[56].start, end: S[61].end}, {start: S[20].start, end: S[22].end}]});
   const kids = [a, b, c];
   const head = M.madeHead(kids);
   assert.equal(head.count, 3);
@@ -542,7 +326,7 @@ test('切出的短视频一组：组头数支数与合计，行按现状写；�
 
 test('调整后再生成：现状连着就带现状，剪成几段带切出时的那一段；不拿自己当已切过', () => {
   const kid = child('k2', 37, 53, {title: '字幕为什么是单独的一层', cut: {focus: 'manual', focusX: 0.62, tracks: 'trans', style: 'project'},
-    used: [{in: S[37].start, out: S[54].end}]});
+    used: [{start: S[37].start, end: S[54].end}]});
   const c = M.redoCandidate(S, kid);
   assert.deepEqual([c.from, c.to, c.start, c.end], [37, 54, S[37].start, S[54].end]);
   assert.deepEqual([c.id, c.redoOf, c.added, c.on, c.title, c.focusX], ['sc-redo-k2', 'k2', 'redo', true, '字幕为什么是单独的一层 · 第 2 版', 0.62]);
@@ -555,12 +339,12 @@ test('调整后再生成：现状连着就带现状，剪成几段带切出时�
   const other = child('k9', 37, 53);
   assert.deepEqual(M.flags(c, {params: {length: 'mid', tracks: 'orig'}, list: [c], children: [kid, other], sentences: S}).map((f) => f.k), ['redo', 'done']);
 
-  const split = child('k3', 56, 61, {used: [{in: S[56].start, out: S[61].end}, {in: S[20].start, out: S[22].end}]});
+  const split = child('k3', 56, 61, {used: [{start: S[56].start, end: S[61].end}, {start: S[20].start, end: S[22].end}]});
   const d = M.redoCandidate(S, split);
   assert.deepEqual([d.from, d.to], [56, 61]);
   assert.match(d.reason, /切出时的起止/);
 
-  const dragged = child('k4', 4, 13, {used: [{in: S[4].start + 0.8, out: S[13].end}]});
+  const dragged = child('k4', 4, 13, {used: [{start: S[4].start + 0.8, end: S[13].end}]});
   assert.deepEqual(M.redoCandidate(S, dragged).loose, {start: true, end: false});
   assert.equal(M.redoCandidate(S, {id: 'x'}), null);
   assert.equal(M.redoCandidate([], kid), null);
@@ -587,4 +371,118 @@ test('重做的设置与落点：那一支的取景与字幕盖在现有设置�
   assert.equal(M.redoPlan({phase: 'result', list: [Object.assign({}, cand, {removed: true})]}), 'fresh');
   assert.equal(M.redoAppend, undefined);
   assert.equal(M.pickLead, undefined);
+});
+
+test('子视频的剪口：片段外两条，已生效、Agent 写的；空的一头不写；记录里有就用记录', () => {
+  const c = M.seedCuts({in: 10, out: 40, dur: 100});
+  assert.deepEqual(c.map((x) => [x.id, x.start, x.end, x.kind, x.state, x.by]),
+    [['outside-head', 0, 10, 'outside', 'cut', 'agent'], ['outside-tail', 40, 100, 'outside', 'cut', 'agent']]);
+  assert.deepEqual(M.seedCuts({in: 0, out: 100, dur: 100}), []);
+  assert.deepEqual(M.seedCuts({in: 0, out: 40}).length, 0, '没记来源时长就当片段到头');
+  const kid = {id: 'k', origin: {project: 'p1', in: 10, out: 40, dur: 100}};
+  assert.deepEqual(M.cutsOf(kid), c);
+  const own = [{id: 'x', start: 0, end: 5, kind: 'outside', state: 'cut'}];
+  assert.equal(M.cutsOf({...kid, cuts: own}), own);
+  assert.deepEqual(M.cutsOf({id: 'p'}), []);
+  assert.equal(M.sourceDur(kid), 100);
+});
+
+test('留下的几段：扣掉已生效的剪口，建议不算；重叠、越界都收得住', () => {
+  const cuts = [
+    {id: 'a', start: 0, end: 10, state: 'cut'}, {id: 'b', start: 20, end: 25, state: 'cut'},
+    {id: 's', start: 30, end: 35, state: 'suggested'}, {id: 'c', start: 22, end: 28, state: 'cut'},
+    {id: 'd', start: 90, end: 120, state: 'cut'},
+  ];
+  assert.deepEqual(M.keptRanges(cuts, 100), [{start: 10, end: 20}, {start: 28, end: 90}]);
+  assert.deepEqual(M.keptRanges([], 50), [{start: 0, end: 50}]);
+  assert.deepEqual(M.keptRanges([{start: 0, end: 50, state: 'cut'}], 50), []);
+  // 恢复一句（剪口变短）→ 用到的区间跟着变长；剪成两段也认得出
+  const kid = {id: 'k', origin: {project: 'p1', in: 10, out: 40, dur: 100},
+    cuts: [{id: 'outside-head', start: 0, end: 6, kind: 'outside', state: 'cut'}, {id: 'outside-tail', start: 40, end: 100, kind: 'outside', state: 'cut'},
+      {id: 'f', start: 20, end: 22, kind: 'filler', state: 'cut'}]};
+  assert.deepEqual(M.usedRanges(kid), [{start: 6, end: 20}, {start: 22, end: 40}]);
+  assert.equal(M.editedSince(kid), true);
+  assert.equal(M.editedSince({...kid, cuts: undefined}), false);
+});
+
+test('点一句恢复：片段前后的话连同中间几句一起放回，片段保持连着；缝里的只放回自己', () => {
+  const kept = [{start: 20, end: 30}, {start: 35, end: 50}];
+  assert.deepEqual(M.reclaimSpan(kept, {start: 12, end: 15}), {start: 12, end: 20});
+  assert.deepEqual(M.reclaimSpan(kept, {start: 60, end: 64}), {start: 50, end: 64});
+  assert.deepEqual(M.reclaimSpan(kept, {start: 31, end: 33}), {start: 31, end: 33});
+  assert.deepEqual(M.reclaimSpan([], {start: 1, end: 2}), {start: 1, end: 2});
+  assert.equal(M.reclaimSpan(kept, null), null);
+});
+
+test('文稿折叠：两端各留 3 句划掉，再远的收成一条剪缝；单位是句，被拆开的段出局部段', () => {
+  // 62 句每 4 句一段，片段是第 20–29 句
+  const paras = [];
+  for (let i = 0; i < S.length; i += 4) paras.push({id: 'pa' + i, cueIds: S.slice(i, i + 4).map((c) => c.id)});
+  const byId = new Map(S.map((c) => [c.id, c]));
+  const cueOf = (id) => byId.get(id);
+  const kept = [{start: S[20].start, end: S[29].end}];
+  const rows = M.foldRows(paras, cueOf, kept);
+  assert.equal(M.NEAR, 3);
+  const head = rows[0];
+  assert.deepEqual([head.kind, head.side, head.id, head.count, head.open, head.shown, head.next], ['fold', 'before', 'fold-g1', 17, false, 0, 10]);
+  assert.equal(head.start, S[0].start);
+  assert.equal(head.end, S[16].end);
+  assert.equal(head.text, `前面 ${M.durText(S[16].end - S[0].start)}已剪掉`);
+  const cueRows = rows.filter((r) => r.kind === 'para').flatMap((r) => r.para.cueIds);
+  assert.deepEqual(cueRows, S.slice(17, 33).map((c) => c.id), '片段 10 句加两头各 3 句');
+  const part = rows[1];
+  assert.equal(part.part, true);
+  assert.deepEqual(part.para.cueIds, ['g18', 'g19', 'g20']);
+  assert.equal(part.para.id, 'pa16:g18');
+  assert.equal(part.para.start, S[17].start);
+  const tail = rows[rows.length - 1];
+  assert.deepEqual([tail.kind, tail.side, tail.id], ['fold', 'after', 'fold-g34']);
+  assert.match(tail.text, /^后面 \d+ 分( \d+ 秒)?已剪掉$/);
+  // 分批展开：前面的缝每次铺出靠近片段的 10 句（铺在缝下面），缝 id 不变，剩下的仍收着
+  const one = M.foldRows(paras, cueOf, kept, {shown: new Map([['fold-g1', M.STEP]])});
+  assert.equal(M.STEP, 10);
+  assert.deepEqual([one[0].kind, one[0].id, one[0].count, one[0].shown, one[0].next, one[0].open], ['fold', 'fold-g1', 7, 10, 7, true]);
+  assert.equal(one[0].start, S[0].start);
+  assert.equal(one[0].end, S[6].end);
+  assert.deepEqual(one.filter((r) => r.kind === 'para').flatMap((r) => r.para.cueIds).slice(0, 3), ['g8', 'g9', 'g10']);
+  const all = M.foldRows(paras, cueOf, kept, {shown: new Map([['fold-g1', 17]])});
+  assert.deepEqual([all[0].id, all[0].count, all[0].next], ['fold-g1', 0, 0]);
+  assert.equal(all[0].text, '前面划掉的 17 句都展开了');
+  assert.equal(all[1].para.cueIds[0], 'g1');
+  // 后面的缝：铺在缝上面，从片段那头往后
+  const after = M.foldRows(paras, cueOf, kept, {shown: new Map([['fold-g34', 10]])});
+  const last = after[after.length - 1];
+  assert.deepEqual([last.kind, last.id, last.shown], ['fold', 'fold-g34', 10]);
+  assert.equal(last.start, S[43].start);
+  // 片段中间剪掉一大段：中间那条缝
+  const gap = M.foldRows(paras, cueOf, [{start: S[5].start, end: S[6].end}, {start: S[40].start, end: S[41].end}]);
+  assert.ok(gap.some((r) => r.kind === 'fold' && r.side === 'between'));
+  assert.deepEqual([M.durText(45), M.durText(72), M.durText(120)], ['45 秒', '1 分 12 秒', '2 分']);
+});
+
+test('文稿段头时码：留下的段按这一支的时钟（剪掉的不占时间），整段在片段外返回 null', () => {
+  const kept = [{start: 20, end: 30}, {start: 35, end: 50}];
+  assert.equal(M.clipTime(kept, 20, 24), 0);
+  assert.equal(M.clipTime(kept, 26, 28), 6);
+  assert.equal(M.clipTime(kept, 36, 40), 11);
+  assert.equal(M.clipTime(kept, 18, 22), 0, '段跨进片段：取段里第一处留下的地方');
+  assert.equal(M.clipTime(kept, 31, 33), null);
+  assert.equal(M.clipTime(kept, 60, 62), null);
+  assert.equal(M.clipTime(kept, 12, 15), null);
+});
+
+test('取景：裁成别的画幅时铺满画面，focusX 对着正中并夹住不露边；保留原画幅不动', () => {
+  const base = M.framePlace(null, 16 / 9, 9 / 16);
+  assert.deepEqual(base, {x: 50, y: 50, w: 100, h: 100, scale: 1});
+  assert.deepEqual(M.framePlace({ratio: 'source'}, 16 / 9, 16 / 9), base);
+  const s = M.coverScale(16 / 9, 9 / 16);
+  assert.ok(Math.abs(s - (16 / 9) / (9 / 16)) < 0.001);
+  const center = M.framePlace({ratio: '9:16', focusX: null}, 16 / 9, 9 / 16);
+  assert.deepEqual([center.x, center.scale], [50, s]);
+  const left = M.framePlace({ratio: '9:16', focusX: 0.3}, 16 / 9, 9 / 16);
+  assert.ok(left.x > 50, '看原片偏左的地方 → 视频往右挪');
+  const edge = M.framePlace({ratio: '9:16', focusX: 0}, 16 / 9, 9 / 16);
+  assert.ok(Math.abs(edge.x - (50 + (100 * s - 100) / 2)) < 0.01, '到头就夹住，左边不露底');
+  assert.equal(M.framePlace({ratio: '1:1', focusX: 0.2}, 9 / 16, 1).x, 50, '竖的原片放进方画幅只上下裁');
+  assert.deepEqual([M.focusText(null), M.focusText(0.5), M.focusText(0.3), M.focusText(0.62)], ['居中', '居中', '偏左 20%', '偏右 12%']);
 });

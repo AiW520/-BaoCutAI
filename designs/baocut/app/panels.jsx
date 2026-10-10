@@ -73,7 +73,7 @@
      但**形态按原型走卡片**（见 §13.1 与 README 分歧台账 #9）：圆角卡 + 左缘 3px 说话人色
      + 条目间留 gap，与 Subtitle 的 cue 卡（`.sb`）是同一族——两个 Tab 装的是同一批话，
      一个画成密排表、一个画成卡片，切过去要重新认一遍版式。 */
-  function ParaRow({p, on, done, editing, drag, ctx, lang, text, msSrc, msTr, cur, shades, cut, spans, words, onSeek, onEdit, onCommit, onNext, onDrag, onMove}) {
+  function ParaRow({p, on, done, editing, drag, ctx, lang, text, msSrc, msTr, cur, shades, cut, spans, words, clock, onSeek, onEdit, onCommit, onNext, onDrag, onMove}) {
     const [menu, setMenu] = useState(false);
     const canUp = !!CH.movePlan(ctx.chapters, ctx.paras, p.id, -1);
     const canDown = !!CH.movePlan(ctx.chapters, ctx.paras, p.id, 1);
@@ -86,8 +86,10 @@
         {/* 拖的是说话人头行，不是整段——正文要留给单击进编辑 */}
         <div className="para__h" draggable onDragStart={(e) => onDrag(p, e)} onDragEnd={() => onDrag(null)}>
           <span className="para__sp" style={{color: spText(p.sp)}}>{D.speakers[p.sp].name}</span>
-          <BCAction className="para__t" onClick={(e) => { e.stopPropagation(); onSeek(p.start); }}>
-            {T.timecode(p.start, {decimals: 0})}
+          {/* 子视频（§5.10）：段头时码和时间轴同一个时钟；整段在片段外的灰着标原片时间 */}
+          <BCAction className={cx('para__t', clock === null && 'para__t--src')} title={clock === null ? '片段外 · 原片时间' : undefined}
+            onClick={(e) => { e.stopPropagation(); onSeek(p.start); }}>
+            {T.timecode(clock == null ? p.start : clock, {decimals: 0})}
           </BCAction>
           <span className="grow" />
           <BCAction className="para__act" title="移到上一章" disabled={!canUp}
@@ -272,8 +274,25 @@
     const cueOf = (id) => cueById.get(id);
     useCutSelection(ctx);
     const [cutMenu, setCutMenu] = useState(null);
+    /* 子视频（ctx.composed，product-design §5.10）：片段外的话是「片段外」剪口划掉的字。点一下不出菜单，
+       直接把那一句（连同它和片段之间的几句）放回这一支；远处的收成剪缝（SC.foldRows，两端各留 NEAR 句） */
+    const SC = window.BC_SHORTS_CUT;
+    const kept = ctx.composed ? SC.keptRanges(ctx.cuts, ctx.duration) : null;
+    const reclaim = (r) => { if (r) ctx.cutOps.reclaim(r.start, r.end); };
+    const [foldShown, setFoldShown] = useState(() => new Map());   // 剪缝 id → 已铺出的句数（分批展开）
     const cutView = ctx.cutMode ? {cuts: ctx.cuts, cueOf, ctx: Object.assign({}, ctx, {seek: seekF}),
-      onMenu: (cut, e) => setCutMenu({cut, x: e.clientX, y: e.clientY})} : null;
+      onMenu: (cut, e, r) => {
+        if (!(kept && cut.kind === 'outside' && cut.state === 'cut' && r)) { setCutMenu({cut, x: e.clientX, y: e.clientY}); return; }
+        const mid = (r.start + r.end) / 2;
+        reclaim(SC.reclaimSpan(kept, ctx.cues.find((c) => mid >= c.start && mid < c.end) || r));
+      }} : null;
+    /* 打开一支子视频：文稿滚到片段起点那一段（播放头已经落在那里） */
+    useEffect(() => {
+      if (!kept || !kept.length || !listRef.current) return;
+      const first = ctx.paras.find((x) => x.end > kept[0].start + 0.02);
+      const el = first && listRef.current.querySelector(`[data-para="${first.id}"], [data-para^="${first.id}:"]`);
+      if (el) el.scrollIntoView({block: 'start'});
+    }, [ctx.proj.id]);
     /* 第 199 轮：改字态不显示已剪词。每段的显示文本 = 全文抠掉已生效剪口占的字；
        查找、就地编辑都读这一份，提交时 CUT.restoreHidden 把抠掉的段放回再摊回 cue。
        剪辑态仍读全文（CutText 自己划掉）。 */
@@ -351,17 +370,24 @@
     /* 改字态里整段剪光的段不占卡片：连着剪光的几段折成一条剪缝（BC_CUT.seamRows / CutSeam）。
        剪辑态不折——那一态的正文本来就要把已剪的字划着给人看。 */
     const allCutOf = (p) => { const ev = editViewOf(p); return !!ev && ev.text === ''; };
-    const rows = (list) => CUT.seamRows(list, allCutOf, ctx.cuts).map((row) => (
-      row.kind === 'seam'
-        ? <CutSeam key={row.id} seam={row} ctx={ctx} />
-        : paraRow(row.para)
-    ));
+    const partOf = (q) => Object.assign({}, q, {trans: q.cueIds.map((id) => (cueOf(id) || {}).trans || '').join(D.dstLang && D.dstLang.code === 'zh' ? '' : ' ')});
+    const rows = (list) => (kept && ctx.cutMode
+      ? SC.foldRows(list, cueOf, kept, {shown: foldShown}).map((row) => (row.kind === 'fold'
+        ? <window.ShortsFoldSeam key={row.id} fold={row}
+            onMore={() => setFoldShown((cur) => new Map(cur).set(row.id, row.shown + row.next))}
+            onCollapse={() => setFoldShown((cur) => { const n = new Map(cur); n.delete(row.id); return n; })} />
+        : paraRow(row.part ? partOf(row.para) : row.para)))
+      : CUT.seamRows(list, allCutOf, ctx.cuts).map((row) => (
+        row.kind === 'seam'
+          ? <CutSeam key={row.id} seam={row} ctx={ctx} />
+          : paraRow(row.para)
+      )));
 
     const paraRow = (p) => { const ev = editViewOf(p); return (
       <ParaRow key={p.id} p={p} ctx={ctx} lang={lang} on={p.id === activeId} done={playT >= p.end} editing={edit === p.id}
         shades={app.prefs.cueShading === true ? spansOf(p).filter(s => shadedCueIds.has(s.id)) : undefined}
         drag={drag && drag.id === p.id} text={ev ? ev.text : srcOf(p)} cur={find.cur}
-        cut={cutView} spans={spansOf(p)}
+        cut={cutView} spans={spansOf(p)} clock={kept ? SC.clipTime(kept, p.start, p.end) : undefined}
         msSrc={find.byKey.get(p.id + ':src')} msTr={find.byKey.get(p.id + ':trans')}
         words={p.id === activeId && lang !== 'trans' && edit !== p.id
           ? FOLLOW.paraWords(ev ? ev.text : srcOf(p), spansOf(p), cueOf, playT, ev && ev.hidden) : null}

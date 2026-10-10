@@ -6,6 +6,7 @@
      cut = {id, start, end, kind, text, why, state, by, batch?}
        start / end  时间轴时钟（与 clips / cues 同钟），秒
        kind         'filler' 口癖 · 'pause' 停顿 · 'take' 重复起句 · 'repeat' 重复 · 'manual' 手动
+                    · 'outside' 片段外（剪成短视频的子视频：切出的片段之外的原片，product-design §5.10）
        text         文稿里对应的字（停顿是「（停顿 1.4s）」）
        state        'suggested' 建议（AI / Agent 写入，尚未生效）· 'cut' 已剪（生效）
        by           'ai' | 'agent' | 'you'
@@ -18,10 +19,12 @@
      · 撤销 / 重做走整张表的快照，与 cue 改写表同栈。
    真正的成片 clips 由 `compose(clips, cuts)` **派生**：同形的 `[{id, start, end, src}]`，
    给导出与 App 写路径消费；原型的时间轴与画布仍画原 clips，剪口只叠在上面。
+   例外是剪成短视频切出的子视频（product-design §5.10 / §4.6）：它与原片共用 clips 与文稿，
+   切出的范围就是两条 `outside` 剪口；编辑器给它开「按剪口合成后显示」，时间轴恒走折叠时钟。
    ============================================================================ */
 (function () {
   const EPS = 1e-6;
-  const KIND_LABEL = {filler: '口癖', pause: '停顿', take: '重复起句', repeat: '重复', manual: '手动'};
+  const KIND_LABEL = {filler: '口癖', pause: '停顿', take: '重复起句', repeat: '重复', manual: '手动', outside: '片段外'};
 
   const round3 = (x) => Math.round(x * 1000) / 1000;
   const norm = (list) => (list || [])
@@ -52,7 +55,7 @@
   /** 汇总句：`口癖 3 处、停顿 3 处、重复起句 3 处`。 */
   function kindsText(list) {
     const {byKind} = summary(list);
-    return ['filler', 'pause', 'take', 'repeat', 'manual']
+    return ['filler', 'pause', 'take', 'repeat', 'manual', 'outside']
       .filter((k) => byKind[k]).map((k) => `${kindLabel(k)} ${byKind[k]} 处`).join('、');
   }
 
@@ -69,22 +72,47 @@
   }
   const acceptAll = (cuts) => norm(cuts).map((c) => (c.state === 'suggested' ? Object.assign({}, c, {state: 'cut'}) : c));
   const rejectAll = (cuts) => norm(cuts).filter((c) => c.state !== 'suggested');
-  const restoreAll = (cuts) => norm(cuts).filter((c) => c.state !== 'cut');
+  /** 全部恢复；`keepKind` 给了就留下这一类（子视频的「全部恢复」不把片段外放回）。 */
+  const restoreAll = (cuts, keepKind) => norm(cuts).filter((c) => c.state !== 'cut' || (keepKind && c.kind === keepKind));
   const withoutBatch = (cuts, batch) => norm(cuts).filter((c) => c.batch !== batch);
 
-  /** 手动剪一段：与已剪段重叠就合并成一段，盖住的建议一并吸收（视为已接受）。 */
+  /** 手动剪一段：与已剪段重叠就合并成一段，盖住的建议一并吸收（视为已接受）。
+      并进了「片段外」的那一段仍是片段外：在子视频里从片段边上再剪，等于片段变短（product-design §5.10）。 */
   function add(cuts, cut) {
     const me = Object.assign({state: 'cut', by: 'you', kind: 'manual'}, cut);
-    let start = me.start, end = me.end;
+    let start = me.start, end = me.end, outside = null;
     const rest = [];
     norm(cuts).forEach((c) => {
       if (!overlaps(c, me)) { rest.push(c); return; }
       start = Math.min(start, c.start); end = Math.max(end, c.end);
+      if (c.kind === 'outside' && c.state === 'cut') outside = outside || c;
     });
+    if (outside) {
+      rest.push(Object.assign({}, outside, {start: round3(start), end: round3(end)}));
+      return norm(rest);
+    }
     // id 由区间决定（确定性，不用 Date / 随机）：同一段剪两次落到同一条
     const id = me.id || ('m' + Math.round(start * 1000) + '-' + Math.round(end * 1000));
     rest.push(Object.assign({}, me, {id, start: round3(start), end: round3(end)}));
     return norm(rest);
+  }
+  /** 从已剪段里抠出 `[start, end)` 放回成片（`add` 的反操作）：压着它的已剪段剩下两头，
+      左头留原 id，右头 id 后缀落点。建议不动。子视频里「点一下恢复一句」走它——
+      整条删掉片段外的剪口会把原片前面整段都放回来。区间没碰到已剪段时原样返回。 */
+  function carve(cuts, start, end) {
+    if (!(end - start > EPS)) return cuts;
+    let hit = false;
+    const out = [];
+    norm(cuts).forEach((c) => {
+      if (c.state !== 'cut' || !overlaps(c, {start, end})) { out.push(c); return; }
+      hit = true;
+      if (c.start < start - EPS) out.push(Object.assign({}, c, {end: round3(start)}));
+      if (c.end > end + EPS) {
+        const left = c.start < start - EPS;
+        out.push(Object.assign({}, c, {id: left ? c.id + '+' + Math.round(end * 1000) : c.id, start: round3(end)}));
+      }
+    });
+    return hit ? norm(out) : cuts;
   }
   /** 写入一批建议：与表里任何一段重叠的跳过（同一处不重复建议）。 */
   function suggest(cuts, list, by, batch) {
@@ -643,7 +671,7 @@
 
   Object.assign(window, {BC_CUT: {
     KIND_LABEL, norm, active, suggested, overlaps, label, kindLabel, total, summary, kindsText, dropped,
-    setState, accept, remove, acceptAll, rejectAll, restoreAll, withoutBatch, add, suggest,
+    setState, accept, remove, acceptAll, rejectAll, restoreAll, withoutBatch, add, carve, suggest,
     skip, toOut, outDuration, at, compose, tokens, rangeTime, charsOf, fromSpecs, toTimeline,
     keptPieces, cueImpact, transStale, transImpact, fixTrans, foldMap,
     hideChars, restoreHidden, editView, seamRows,
