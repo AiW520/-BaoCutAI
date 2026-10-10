@@ -44,7 +44,7 @@ export const de: AiToolsMessages = {
     lengths: { short: '15–30 s', medium: '30–60 s', long: '60–90 s', extended: '1–3 min', custom: 'Eigene' },
     ratioSource: 'Original beibehalten',
     focus: {
-      center: { label: 'Mittig', sub: 'Schneidet die Bildmitte zu' },
+      auto: { label: 'Automatisch', sub: 'Erkennt, auf welcher Seite die sprechende Person ist, und legt den Ausschnitt auf sie; ohne Person mittig' },
       manual: { label: 'Selbst festlegen', sub: 'Du legst den Ausschnitt jedes Kurzvideos danach selbst fest' },
       speaker: { label: 'Der sprechenden Person folgen', sub: 'Der Ausschnitt folgt der Person, die gerade spricht' },
     },
@@ -54,7 +54,7 @@ export const de: AiToolsMessages = {
       shorts: { label: 'Kurzvideo-Untertitel', sub: 'Integrierte Vorlage, die Plattform-Schaltflächen freihält' },
       video: { label: 'Stil dieses Videos übernehmen', sub: 'Gleiche Größe und Position; Plattform-Schaltflächen können sie verdecken' },
     },
-    focusPrompt: { center: 'mittig', manual: 'vorerst mittig; ich passe jedes selbst an' },
+    focusPrompt: { auto: 'automatisch: gleichmäßig über den Abschnitt verteilt Einzelbilder ansehen, erkennen, auf welcher Bildseite die sprechende Person ist, und den Ausschnitt auf sie legen; wird niemand gefunden, mittig', manual: 'vorerst mittig; ich passe jedes selbst an' },
     lineCount: (count, min, max) =>
       `Erstelle ${count === 1 ? '1 Kurzvideo' : `${count} Kurzvideos`}, jeweils ${min}–${max} Sekunden, mit Anfang und Ende an Satzgrenzen`,
     lineFrame: (ratio, focus) => (ratio ? `Seitenverhältnis ${ratio}, Ausschnitt ${focus}` : 'Seitenverhältnis: Original beibehalten, nicht zuschneiden'),

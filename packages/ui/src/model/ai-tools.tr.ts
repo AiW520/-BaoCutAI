@@ -7,7 +7,7 @@ export const tr: AiToolsMessages = {
     lengths: { short: '15–30 sn', medium: '30–60 sn', long: '60–90 sn', extended: '1–3 dk', custom: 'Özel' },
     ratioSource: 'Orijinali koru',
     focus: {
-      center: { label: 'Ortalanmış', sub: 'Karenin ortasını kırpar' },
+      auto: { label: 'Otomatik', sub: 'Konuşan kişinin hangi tarafta olduğuna bakıp çerçeveyi ona yerleştirir; kimse yoksa ortalanmış' },
       manual: { label: 'Kendim belirleyeceğim', sub: 'Her kısa videonun çerçevesini sonra kendin yerleştirirsin' },
       speaker: { label: 'Konuşanı takip et', sub: 'Çerçeve konuşan kişiyi takip eder' },
     },
@@ -17,7 +17,7 @@ export const tr: AiToolsMessages = {
       shorts: { label: 'Kısa video altyazısı', sub: 'Platform düğmelerinden uzak duran yerleşik ön ayar' },
       video: { label: 'Bu videonun stilini kullan', sub: 'Aynı boyut ve konum; platform düğmeleri altyazıyı örtebilir' },
     },
-    focusPrompt: { center: 'ortalanmış', manual: 'şimdilik ortalanmış; her birini sonra kendim ayarlayacağım' },
+    focusPrompt: { auto: 'otomatik: bölüm boyunca eşit aralıklı kareler al, konuşan kişinin karenin hangi tarafında olduğuna bak ve kırpmayı ona yerleştir; kimseyi bulamazsan ortala', manual: 'şimdilik ortalanmış; her birini sonra kendim ayarlayacağım' },
     lineCount: (count, min, max) => `${count} kısa video yap, her biri ${min}–${max} saniye, başı ve sonu cümle sınırlarında olsun`,
     lineFrame: (ratio, focus) => (ratio ? `En boy oranı ${ratio}, çerçeve ${focus}` : 'En boy oranı: orijinali koru, kırpma'),
     lineSubtitles: (tracks, style) => `Altyazı: ${tracks}, ${style}`,

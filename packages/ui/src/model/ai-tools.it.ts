@@ -9,7 +9,7 @@ export const it: AiToolsMessages = {
     lengths: { short: '15–30 s', medium: '30–60 s', long: '60–90 s', extended: '1–3 min', custom: 'Personalizzata' },
     ratioSource: 'Mantieni originale',
     focus: {
-      center: { label: 'Centrato', sub: 'Ritaglia il centro dell’inquadratura' },
+      auto: { label: 'Automatica', sub: 'Vede da che lato si trova chi parla e mette l’inquadratura su di lui; se non trova nessuno, centrata' },
       manual: { label: 'Decido io', sub: 'Poi posizioni tu l’inquadratura di ogni video breve' },
       speaker: { label: 'Segui chi parla', sub: 'L’inquadratura segue chi sta parlando' },
     },
@@ -19,7 +19,7 @@ export const it: AiToolsMessages = {
       shorts: { label: 'Sottotitoli per video brevi', sub: 'Preset integrato che evita i pulsanti della piattaforma' },
       video: { label: 'Mantieni lo stile di questo video', sub: 'Stessa dimensione e posizione; i pulsanti della piattaforma possono coprirli' },
     },
-    focusPrompt: { center: 'centrata', manual: 'centrata per ora; regolerò ciascuno io' },
+    focusPrompt: { auto: 'automatica: prendi fotogrammi distribuiti nel segmento, guarda da che lato dell’inquadratura si trova chi parla e metti il ritaglio su di lui; se non trovi nessuno, centrala', manual: 'centrata per ora; regolerò ciascuno io' },
     lineCount: (count, min, max) =>
       `Crea ${count === 1 ? '1 video breve' : `${count} video brevi`}, ciascuno di ${min}–${max} secondi, con inizio e fine sui confini di frase`,
     lineFrame: (ratio, focus) => (ratio ? `Proporzioni ${ratio}, inquadratura ${focus}` : 'Proporzioni: mantieni l’originale, senza ritagliare'),

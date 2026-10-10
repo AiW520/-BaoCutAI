@@ -6,7 +6,7 @@ export const nl: AiToolsMessages = {
     lengths: { short: '15–30 s', medium: '30–60 s', long: '60–90 s', extended: '1–3 min', custom: 'Aangepast' },
     ratioSource: 'Origineel behouden',
     focus: {
-      center: { label: 'Gecentreerd', sub: 'Snijdt het midden van het beeld uit' },
+      auto: { label: 'Automatisch', sub: 'Kijkt aan welke kant de spreker staat en legt het kader op die persoon; zonder persoon gecentreerd' },
       manual: { label: 'Zelf bepalen', sub: 'Je plaatst het kader van elke korte video daarna zelf' },
       speaker: { label: 'De spreker volgen', sub: 'Het kader volgt wie er aan het woord is' },
     },
@@ -16,7 +16,7 @@ export const nl: AiToolsMessages = {
       shorts: { label: 'Ondertitels voor korte video’s', sub: 'Ingebouwde voorinstelling die platformknoppen vrijhoudt' },
       video: { label: 'Stijl van deze video behouden', sub: 'Zelfde grootte en positie; platformknoppen kunnen ze bedekken' },
     },
-    focusPrompt: { center: 'gecentreerd', manual: 'voorlopig gecentreerd; ik pas ze elk zelf aan' },
+    focusPrompt: { auto: 'automatisch: neem gelijkmatig verdeelde frames uit het fragment, kijk aan welke kant van het beeld de spreker staat en leg de uitsnede op die persoon; vind je niemand, centreer dan', manual: 'voorlopig gecentreerd; ik pas ze elk zelf aan' },
     lineCount: (count, min, max) =>
       `Maak ${count === 1 ? '1 korte video' : `${count} korte video’s`}, elk ${min}–${max} seconden, met begin en eind op zinsgrenzen`,
     lineFrame: (ratio, focus) => (ratio ? `Beeldverhouding ${ratio}, kader ${focus}` : 'Beeldverhouding: origineel behouden, niet bijsnijden'),

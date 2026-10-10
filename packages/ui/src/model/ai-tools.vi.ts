@@ -7,7 +7,7 @@ export const vi: AiToolsMessages = {
     lengths: { short: '15–30 giây', medium: '30–60 giây', long: '60–90 giây', extended: '1–3 phút', custom: 'Tùy chỉnh' },
     ratioSource: 'Giữ nguyên tỷ lệ gốc',
     focus: {
-      center: { label: 'Ở giữa', sub: 'Cắt phần giữa khung hình' },
+      auto: { label: 'Tự động', sub: 'Xem người nói ở phía nào của khung hình rồi đặt khung vào người đó; không thấy ai thì để ở giữa' },
       manual: { label: 'Tôi tự đặt', sub: 'Sau đó bạn tự đặt khung cho từng video ngắn' },
       speaker: { label: 'Theo người nói', sub: 'Khung hình đi theo người đang nói' },
     },
@@ -17,7 +17,7 @@ export const vi: AiToolsMessages = {
       shorts: { label: 'Phụ đề video ngắn', sub: 'Mẫu dựng sẵn, tránh các nút của nền tảng' },
       video: { label: 'Giữ kiểu của video này', sub: 'Giữ cỡ chữ và vị trí; nút của nền tảng có thể che mất' },
     },
-    focusPrompt: { center: 'ở giữa', manual: 'tạm để ở giữa; tôi sẽ tự chỉnh từng video' },
+    focusPrompt: { auto: 'tự động: lấy đều các khung hình trong đoạn, xem người nói ở phía nào của khung hình và đặt vùng cắt vào người đó; nếu không thấy ai thì để ở giữa', manual: 'tạm để ở giữa; tôi sẽ tự chỉnh từng video' },
     lineCount: (count, min, max) => `Làm ${count} video ngắn, mỗi video ${min}–${max} giây, bắt đầu và kết thúc ở ranh giới câu`,
     lineFrame: (ratio, focus) => (ratio ? `Tỷ lệ khung hình ${ratio}, khung ${focus}` : 'Tỷ lệ khung hình: giữ nguyên bản gốc, không cắt'),
     lineSubtitles: (tracks, style) => `Phụ đề: ${tracks}, ${style}`,

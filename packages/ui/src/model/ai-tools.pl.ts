@@ -10,7 +10,7 @@ export const pl: AiToolsMessages = {
     lengths: { short: '15–30 s', medium: '30–60 s', long: '60–90 s', extended: '1–3 min', custom: 'Własna' },
     ratioSource: 'Zachowaj oryginał',
     focus: {
-      center: { label: 'Wyśrodkowany', sub: 'Przycina środek kadru' },
+      auto: { label: 'Automatyczny', sub: 'Sprawdza, po której stronie jest mówiący, i ustawia kadr na nim; bez osoby — wyśrodkowany' },
       manual: { label: 'Ustawię sam', sub: 'Potem sam ustawiasz kadr każdego krótkiego filmu' },
       speaker: { label: 'Śledź mówiącego', sub: 'Kadr podąża za osobą, która mówi' },
     },
@@ -20,7 +20,7 @@ export const pl: AiToolsMessages = {
       shorts: { label: 'Napisy do krótkich filmów', sub: 'Wbudowany preset, który omija przyciski platformy' },
       video: { label: 'Zachowaj styl tego wideo', sub: 'Ten sam rozmiar i pozycja; przyciski platformy mogą je zasłonić' },
     },
-    focusPrompt: { center: 'wyśrodkowany', manual: 'na razie wyśrodkowany; każdy dopasuję sam' },
+    focusPrompt: { auto: 'automatyczny: weź klatki rozłożone równo w całym fragmencie, sprawdź, po której stronie kadru jest mówiący, i ustaw przycięcie na nim; jeśli nikogo nie znajdziesz, wyśrodkuj', manual: 'na razie wyśrodkowany; każdy dopasuję sam' },
     lineCount: (count, min, max) => `Liczba krótkich filmów: ${count}, każdy ${min}–${max} sekund, początek i koniec na granicach zdań`,
     lineFrame: (ratio, focus) => (ratio ? `Proporcje ${ratio}, kadr ${focus}` : 'Proporcje: zachowaj oryginalne, bez przycinania'),
     lineSubtitles: (tracks, style) => `Napisy: ${tracks}, ${style}`,

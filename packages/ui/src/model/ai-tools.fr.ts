@@ -12,7 +12,7 @@ export const fr: AiToolsMessages = {
     lengths: { short: '15–30 s', medium: '30–60 s', long: '60–90 s', extended: '1–3 min', custom: 'Personnalisé' },
     ratioSource: 'Garder l’original',
     focus: {
-      center: { label: 'Centré', sub: 'Recadre le milieu de l’image' },
+      auto: { label: 'Automatique', sub: 'Repère de quel côté se trouve la personne qui parle et cadre sur elle ; sinon, centré' },
       manual: { label: 'Je le règle', sub: 'Vous placez ensuite le cadre de chaque vidéo courte' },
       speaker: { label: 'Suivre la personne qui parle', sub: 'Le cadre suit la personne qui parle' },
     },
@@ -22,7 +22,7 @@ export const fr: AiToolsMessages = {
       shorts: { label: 'Sous-titres pour vidéos courtes', sub: 'Préréglage intégré qui évite les boutons des plateformes' },
       video: { label: 'Garder le style de cette vidéo', sub: 'Même taille et position ; les boutons des plateformes peuvent les masquer' },
     },
-    focusPrompt: { center: 'centré', manual: 'centré pour l’instant ; j’ajusterai chacune moi-même' },
+    focusPrompt: { auto: 'automatique : prends des images réparties sur le segment, regarde de quel côté de l’image se trouve la personne qui parle et place le recadrage sur elle ; si tu ne trouves personne, centre-le', manual: 'centré pour l’instant ; j’ajusterai chacune moi-même' },
     lineCount: (count, min, max) =>
       `Faites ${count === 1 ? '1 vidéo courte' : `${count} vidéos courtes`} de ${min} à ${max} secondes chacune, qui commencent et finissent sur des limites de phrase`,
     lineFrame: (ratio, focus) => (ratio ? `Format ${ratio}, cadrage ${focus}` : 'Format : garder l’original, sans recadrer'),

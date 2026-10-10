@@ -7,7 +7,7 @@ export const ja: AiToolsMessages = {
     lengths: { short: '15〜30秒', medium: '30〜60秒', long: '60〜90秒', extended: '1〜3分', custom: 'カスタム' },
     ratioSource: '元の比率のまま',
     focus: {
-      center: { label: '中央', sub: '画面の中央を切り抜きます' },
+      auto: { label: '自動', sub: '話している人が画面のどちら側にいるかを見て、その人に合わせます。見つからなければ中央' },
       manual: { label: '自分で決める', sub: 'あとで1本ずつフレームの位置を自分で決めます' },
       speaker: { label: '話している人を追う', sub: '話している人にフレームが追従します' },
     },
@@ -17,7 +17,7 @@ export const ja: AiToolsMessages = {
       shorts: { label: 'ショート動画用の字幕', sub: '組み込みのプリセット。プラットフォームのボタンを避けます' },
       video: { label: 'この動画のスタイルを使う', sub: 'サイズと位置はそのまま。プラットフォームのボタンに隠れることがあります' },
     },
-    focusPrompt: { center: '中央', manual: 'いったん中央にし、あとで1本ずつ自分で調整する' },
+    focusPrompt: { auto: '自動：区間から均等にフレームを抜き出し、話している人が画面のどちら側にいるかを見て、切り抜き枠をその人に合わせる。人が見つからなければ中央にする', manual: 'いったん中央にし、あとで1本ずつ自分で調整する' },
     lineCount: (count, min, max) => `${count} 本作る。各 ${min}〜${max} 秒、開始と終了は文の境目に合わせる`,
     lineFrame: (ratio, focus) => (ratio ? `アスペクト比 ${ratio}、フレーミングは${focus}` : 'アスペクト比：元のまま、切り抜かない'),
     lineSubtitles: (tracks, style) => `字幕：${tracks}、${style}`,

@@ -95,7 +95,7 @@ const SHORTS_LENGTH_KEYS = ['short', 'medium', 'long', 'extended', 'custom'] as 
 export type ShortsLength = (typeof SHORTS_LENGTH_KEYS)[number];
 const SHORTS_RATIO_KEYS = ['9:16', '1:1', 'source'] as const;
 export type ShortsRatio = (typeof SHORTS_RATIO_KEYS)[number];
-const SHORTS_FOCUS_KEYS = ['center', 'manual', 'speaker'] as const;
+const SHORTS_FOCUS_KEYS = ['auto', 'manual', 'speaker'] as const;
 export type ShortsFocus = (typeof SHORTS_FOCUS_KEYS)[number];
 const SHORTS_TRACK_KEYS = ['both', 'source', 'translation'] as const;
 export type ShortsTracks = (typeof SHORTS_TRACK_KEYS)[number];
@@ -255,7 +255,7 @@ const en = {
     } as Record<ShortsLength, string>,
     ratioSource: 'Keep original',
     focus: {
-      center: { label: 'Centered', sub: 'Crops the middle of the frame' },
+      auto: { label: 'Auto', sub: 'Finds which side the speaker is on and puts the frame on them; centered if no one is found' },
       manual: { label: 'I’ll set it', sub: 'You place the frame for each short yourself afterwards' },
       speaker: { label: 'Follow the speaker', sub: 'The frame follows whoever is talking' },
     } as Record<ShortsFocus, { label: string; sub: string }>,
@@ -265,8 +265,12 @@ const en = {
       shorts: { label: 'Shorts captions', sub: 'Built-in preset that stays clear of platform buttons' },
       video: { label: 'Keep this video’s style', sub: 'Same size and position; platform buttons may cover them' },
     } as Record<ShortsStyle, { label: string; sub: string }>,
-    /** 折进提示词：取景怎么说（「跟着说话的人」这一版不开放，不进句子）。 */
-    focusPrompt: { center: 'centered', manual: 'centered for now; I’ll adjust each one myself' } as Record<'center' | 'manual', string>,
+    /** 折进提示词：取景怎么说。自动是给智能体的做法（抽帧看说话的人在哪一侧、裁到他身上、找不到就居中）；
+        「跟着说话的人」这一版不开放，不进句子。 */
+    focusPrompt: {
+      auto: 'auto: sample frames evenly across the segment, see which side of the frame the speaker is on, and place the crop on them; if no one is found, center it',
+      manual: 'centered for now; I’ll adjust each one myself',
+    } as Record<'auto' | 'manual', string>,
     lineCount: (count: number, min: number, max: number) =>
       `Make ${count === 1 ? '1 short' : `${count} shorts`}, each ${min}–${max} seconds, starting and ending on sentence boundaries`,
     lineFrame: (ratio: string | null, focus: string) => (ratio ? `Aspect ratio ${ratio}, framing ${focus}` : 'Aspect ratio: keep the original, no cropping'),
@@ -611,7 +615,7 @@ export const SHORTS_DEFAULTS: Readonly<ShortsSettings> = {
   lenMin: 30,
   lenMax: 60,
   ratio: '9:16',
-  focus: 'center',
+  focus: 'auto',
   tracks: 'both',
   style: 'shorts',
   skipDone: true,
@@ -636,12 +640,12 @@ export function shortsLengthRange(s: Pick<ShortsSettings, 'length' | 'lenMin' | 
 /**
  * 设置态折成提示词里的参数行（原型 model-shorts-cut.js `agentExtra`），一行一句：几支、多长、画幅与取景、字幕，
  * 勾着「已经切过的不再找」时一句；视频不属于项目时先收进项目（`inProject: false`）；最后一行「找好就直接创建」，可以单独删掉。
- * 「跟着说话的人」这一版不开放，落回居中；没有译文时字幕只有原文。
+ * 「跟着说话的人」这一版不开放，落回自动；没有译文时字幕只有原文。
  */
 export function shortsLines(s: ShortsSettings, o: { hasTranslation: boolean; inProject: boolean }): string[] {
   const count = Math.max(SHORTS_COUNT.min, Math.min(SHORTS_COUNT.max, Math.round(s.count) || SHORTS_COUNT.initial));
   const len = shortsLengthRange(s);
-  const focus = s.focus === 'manual' ? 'manual' : 'center';
+  const focus = s.focus === 'manual' ? 'manual' : 'auto';
   const tracks: ShortsTracks = o.hasTranslation ? s.tracks : 'source';
   const out = [
     M.shorts.lineCount(count, len.min, len.max),

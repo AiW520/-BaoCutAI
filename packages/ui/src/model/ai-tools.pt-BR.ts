@@ -13,7 +13,7 @@ export const ptBR: AiToolsMessages = {
     lengths: { short: '15–30 s', medium: '30–60 s', long: '60–90 s', extended: '1–3 min', custom: 'Personalizado' },
     ratioSource: 'Manter original',
     focus: {
-      center: { label: 'Centralizado', sub: 'Recorta o meio do quadro' },
+      auto: { label: 'Automático', sub: 'Vê de que lado está quem fala e põe o quadro nessa pessoa; sem ninguém, centralizado' },
       manual: { label: 'Eu defino', sub: 'Depois você posiciona o enquadramento de cada vídeo curto' },
       speaker: { label: 'Seguir quem fala', sub: 'O enquadramento segue quem estiver falando' },
     },
@@ -23,7 +23,7 @@ export const ptBR: AiToolsMessages = {
       shorts: { label: 'Legendas para vídeos curtos', sub: 'Predefinição integrada que evita os botões da plataforma' },
       video: { label: 'Manter o estilo deste vídeo', sub: 'Mesmo tamanho e posição; os botões da plataforma podem cobri-las' },
     },
-    focusPrompt: { center: 'centralizado', manual: 'centralizado por enquanto; eu ajusto cada um depois' },
+    focusPrompt: { auto: 'automático: pegue quadros espalhados pelo trecho, veja de que lado do quadro está quem fala e coloque o recorte nessa pessoa; se não encontrar ninguém, centralize', manual: 'centralizado por enquanto; eu ajusto cada um depois' },
     lineCount: (count, min, max) =>
       `Faça ${count === 1 ? '1 vídeo curto' : `${count} vídeos curtos`}, cada um com ${min}–${max} segundos, começando e terminando em limites de frase`,
     lineFrame: (ratio, focus) => (ratio ? `Proporção ${ratio}, enquadramento ${focus}` : 'Proporção: manter a original, sem recortar'),

@@ -7,7 +7,7 @@ export const ko: AiToolsMessages = {
     lengths: { short: '15–30초', medium: '30–60초', long: '60–90초', extended: '1–3분', custom: '직접 설정' },
     ratioSource: '원본 비율 유지',
     focus: {
-      center: { label: '가운데', sub: '화면 가운데를 잘라냅니다' },
+      auto: { label: '자동', sub: '말하는 사람이 화면 어느 쪽에 있는지 보고 프레임을 그 사람에게 맞춥니다. 사람이 없으면 가운데' },
       manual: { label: '직접 정하기', sub: '나중에 쇼츠마다 프레임 위치를 직접 정합니다' },
       speaker: { label: '말하는 사람 따라가기', sub: '말하는 사람을 프레임이 따라갑니다' },
     },
@@ -17,7 +17,7 @@ export const ko: AiToolsMessages = {
       shorts: { label: '쇼츠 자막', sub: '기본 프리셋으로, 플랫폼 버튼을 피합니다' },
       video: { label: '이 영상의 스타일 유지', sub: '크기와 위치를 그대로 쓰며, 플랫폼 버튼에 가려질 수 있습니다' },
     },
-    focusPrompt: { center: '가운데', manual: '일단 가운데로 두고 나중에 하나씩 직접 조정' },
+    focusPrompt: { auto: '자동: 구간에서 프레임을 고르게 뽑아 말하는 사람이 화면 어느 쪽에 있는지 보고 자르는 틀을 그 사람에게 맞추기. 사람을 찾지 못하면 가운데로', manual: '일단 가운데로 두고 나중에 하나씩 직접 조정' },
     lineCount: (count, min, max) => `${count}개 만들기, 각각 ${min}–${max}초, 시작과 끝은 문장 경계에 맞추기`,
     lineFrame: (ratio, focus) => (ratio ? `화면 비율 ${ratio}, 프레이밍: ${focus}` : '화면 비율: 원본 유지, 자르지 않기'),
     lineSubtitles: (tracks, style) => `자막: ${tracks}, ${style}`,

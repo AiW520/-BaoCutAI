@@ -7,7 +7,7 @@ export const zhHant: AiToolsMessages = {
     lengths: { short: '15–30 秒', medium: '30–60 秒', long: '60–90 秒', extended: '1–3 分鐘', custom: '自訂' },
     ratioSource: '保留原長寬比',
     focus: {
-      center: { label: '置中', sub: '裁切畫面正中' },
+      auto: { label: '自動', sub: '看說話的人在畫面哪一側，框放到他身上；找不到人就置中' },
       manual: { label: '我自己定', sub: '之後每支自己定取景位置' },
       speaker: { label: '跟著說話的人', sub: '誰說話框跟誰' },
     },
@@ -17,7 +17,7 @@ export const zhHant: AiToolsMessages = {
       shorts: { label: '短影音字幕', sub: '內建預設，避開平台按鈕' },
       video: { label: '沿用這部影片的樣式', sub: '字級和位置照搬，可能被平台按鈕擋住' },
     },
-    focusPrompt: { center: '置中', manual: '先置中，之後我逐支自己調' },
+    focusPrompt: { auto: '自動：在片段裡均勻抽幾格畫面，看說話的人在畫面哪一側，把裁切框放到他身上；找不到人就置中', manual: '先置中，之後我逐支自己調' },
     lineCount: (count, min, max) => `要 ${count} 支，每支 ${min}–${max} 秒，起訖落在句子邊界上`,
     lineFrame: (ratio, focus) => (ratio ? `長寬比 ${ratio}，取景${focus}` : '長寬比：保留原長寬比，不裁切'),
     lineSubtitles: (tracks, style) => `字幕：${tracks}，${style}`,

@@ -21,6 +21,7 @@ import {
   listedTools,
   sessionOptions,
   SHORTS_DEFAULTS,
+  SHORTS_FOCUS,
   shortsLengthRange,
   shortsLines,
   standingLines,
@@ -183,14 +184,14 @@ describe('剪成短视频', () => {
     expect(lines).toEqual([
       intent,
       '要 3 支，每支 30–60 秒，起止落在句子边界上',
-      '画幅 9:16，取景居中',
+      '画幅 9:16，取景自动：在片段里均匀抽几帧，看说话的人在画面哪一侧，把裁框放到他身上；找不到人就居中',
       '字幕：原文 + 译文，短视频字幕',
       '已经切过的不再找',
       '找好就直接创建成视频，不用先问我',
     ]);
   });
 
-  it('保留原画幅不裁；没有译文只带原文；「跟着说话的人」不开放、落回居中；不属于项目时先收进项目', () => {
+  it('保留原画幅不裁；没有译文只带原文；「跟着说话的人」不开放、落回自动；不属于项目时先收进项目', () => {
     const lines = shortsLines(
       { ...SHORTS_DEFAULTS, count: 12, ratio: 'source', tracks: 'translation', style: 'video', skipDone: false },
       { hasTranslation: false, inProject: false },
@@ -202,7 +203,7 @@ describe('剪成短视频', () => {
       '这部视频还不属于项目：先把它收进一个以视频命名的项目，再在那里创建短视频',
       '找好就直接创建成视频，不用先问我',
     ]);
-    expect(shortsLines({ ...SHORTS_DEFAULTS, focus: 'speaker' }, { hasTranslation: true, inProject: true })[1]).toBe('画幅 9:16，取景居中');
+    expect(shortsLines({ ...SHORTS_DEFAULTS, focus: 'speaker' }, { hasTranslation: true, inProject: true })[1]).toBe('画幅 9:16，取景自动：在片段里均匀抽几帧，看说话的人在画面哪一侧，把裁框放到他身上；找不到人就居中');
     expect(shortsLines({ ...SHORTS_DEFAULTS, ratio: '1:1', focus: 'manual' }, { hasTranslation: true, inProject: true })[1]).toBe(
       '画幅 1:1，取景先居中，之后我逐支自己调',
     );
