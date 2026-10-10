@@ -33,10 +33,13 @@
     {id: '1:1', name: '1:1', value: 1},
     {id: 'source', name: '保留原画幅', value: null},
   ];
-  /* 「跟着说话的人」这一版不开放：还没有人物与发言人模型（§5.10），选项留着、置灰并说明。 */
+  /* 缺省「自动」：智能体在片段里均匀抽帧看说话的人在哪一侧，裁框放到他身上，找不到人就居中（§5.10）；
+     `prompt` 是折进提示词的那半句，没有就用 `name`。
+     「跟着说话的人」这一版不开放：还没有人物与发言人模型（§5.10），选项留着、置灰并说明。 */
   const FOCUS = [
     {id: 'speaker', name: '跟着说话的人', desc: '谁说话框跟谁', off: '这一版还没有人物与发言人模型'},
-    {id: 'center', name: '居中', desc: '裁画面正中'},
+    {id: 'auto', name: '自动', desc: '看说话的人在画面哪一侧，框放到他身上；找不到人就居中',
+      prompt: '自动：在片段里均匀抽几帧，看说话的人在画面哪一侧，把裁框放到他身上；找不到人就居中'},
     {id: 'manual', name: '我自己定', desc: '在结果页的原片上拖取景框，每支定一个位置'},
   ];
   const TRACKS = [
@@ -48,14 +51,14 @@
     {id: 'shorts', name: '短视频字幕', desc: '内置预设，避开平台按钮'},
     {id: 'project', name: '沿用这部视频的样式', desc: '字号和位置照搬，可能被平台按钮挡住'},
   ];
-  const DEFAULTS = {count: COUNT.def, length: 'mid', lenMin: 30, lenMax: 60, ratio: '9:16', focus: 'center',
+  const DEFAULTS = {count: COUNT.def, length: 'mid', lenMin: 30, lenMax: 60, ratio: '9:16', focus: 'auto',
     tracks: 'both', style: 'shorts', scope: 'all', skipDone: true, hook: true, crossChapter: false};
   /** 一条进度走完：找片段 → 创建视频（BC_TASK_FACTS.SHORTS_CUT_STAGE 的 find / create）。 */
   const FIND_STAGES = ['读文稿', '找片段', '核对起止'];
   const CREATE_STAGES = ['创建视频', '套字幕样式', '取景'];
 
   const lengthOf = (id) => LENGTHS.find((l) => l.id === id) || LENGTHS[1];
-  const focusOf = (id) => FOCUS.find((f) => f.id === id) || FOCUS[1];
+  const focusOf = (id) => FOCUS.find((f) => f.id === id) || FOCUS.find((f) => f.id === DEFAULTS.focus);
   const ratioOf = (id) => RATIOS.find((r) => r.id === id) || RATIOS[0];
   const clampSec = (n, d) => (Number.isFinite(+n) && n !== '' && n != null ? Math.max(CUSTOM.min, Math.min(CUSTOM.max, Math.round(+n))) : d);
   /** 这次要的时长区间（秒）：预设一档，或自定义的两头（1–600 秒，下限小于上限）。 */
@@ -72,7 +75,7 @@
     ? Math.max(COUNT.min, Math.min(COUNT.max, Math.round(+n))) : COUNT.def);
 
   /** 参数落到这个项目上：没有译文就只有原文；原片本来就是竖屏就不用取景。
-      「跟着说话的人」这一版不开放，带进来的一律落回居中。 */
+      「跟着说话的人」这一版不开放，带进来的（连同旧版的「居中」）一律落回缺省的自动。 */
   function normalize(params, ctx) {
     const c = ctx || {};
     const p = Object.assign({}, DEFAULTS, params);
@@ -82,7 +85,7 @@
     p.ratio = ratioOf(p.ratio).id;
     if (!c.hasTrans) p.tracks = 'orig';
     else if (!TRACKS.some((t) => t.id === p.tracks)) p.tracks = 'both';
-    if (c.portrait) p.focus = 'center';
+    if (c.portrait) p.focus = DEFAULTS.focus;
     else if (!FOCUS.some((f) => f.id === p.focus && !f.off)) p.focus = DEFAULTS.focus;
     if (!c.children) p.skipDone = DEFAULTS.skipDone;
     return p;
@@ -452,7 +455,7 @@
     const len = lengthRange(p);
     const r = ratioOf(p.ratio);
     const out = [`要 ${p.count} 支，每支 ${len.min}–${len.max} 秒，起止落在句子边界上`];
-    out.push(r.id === 'source' ? '画幅：保留原画幅，不裁' : `画幅 ${r.name}，取景${focusOf(p.focus).name}`);
+    out.push(r.id === 'source' ? '画幅：保留原画幅，不裁' : `画幅 ${r.name}，取景${focusOf(p.focus).prompt || focusOf(p.focus).name}`);
     out.push(`字幕：${tracksOf(p.tracks).name}，${(STYLES.find((x) => x.id === p.style) || STYLES[0]).name}`);
     if (c.scopeName) out.push(`只在「${c.scopeName}」里找`);
     if (p.hook) out.push('每段从一句能单独成立的话起');

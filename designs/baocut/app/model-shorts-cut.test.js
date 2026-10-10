@@ -40,7 +40,7 @@ const child = (id, from, to, extra) => {
 test('参数：缺省值、条数夹在 1–10、时长档不设上限、画幅缺省 9:16', () => {
   assert.equal(M.DEFAULTS.count, 3);
   assert.equal(M.DEFAULTS.length, 'mid');
-  assert.equal(M.DEFAULTS.focus, 'center');
+  assert.equal(M.DEFAULTS.focus, 'auto');
   assert.equal(M.DEFAULTS.ratio, '9:16');
   assert.equal(M.FOCUS[0].id, 'speaker');
   assert.equal(M.FOCUS[0].off, '这一版还没有人物与发言人模型');
@@ -52,7 +52,7 @@ test('参数：缺省值、条数夹在 1–10、时长档不设上限、画幅�
   assert.deepEqual(M.RATIOS.map((r) => r.id), ['9:16', '1:1', 'source']);
   assert.equal(M.PLATFORM_MAX, undefined);
   assert.equal(M.lengthNote, undefined);
-  assert.equal(M.summaryLine({count: 4, length: 'short', focus: 'center'}), '4 支 · 每支 15–30 秒 · 9:16 · 居中');
+  assert.equal(M.summaryLine({count: 4, length: 'short', focus: 'auto'}), '4 支 · 每支 15–30 秒 · 9:16 · 自动');
   assert.equal(M.summaryLine({count: 2, length: 'xl', ratio: 'source'}), '2 支 · 每支 1–3 分钟 · 保留原画幅');
 });
 
@@ -64,28 +64,30 @@ test('自定义时长：两头夹在 1–600 秒，下限比上限小，反了�
   assert.deepEqual([M.lengthRange({length: 'custom', lenMin: 'x', lenMax: ''}).min, M.lengthRange({length: 'custom', lenMin: 'x', lenMax: ''}).max], [30, 60]);
   const p = M.normalize({length: 'custom', lenMin: 300, lenMax: 120}, {hasTrans: true});
   assert.deepEqual([p.lenMin, p.lenMax], [120, 300]);
-  assert.equal(M.summaryLine(p), '3 支 · 每支 120–300 秒 · 9:16 · 居中');
+  assert.equal(M.summaryLine(p), '3 支 · 每支 120–300 秒 · 9:16 · 自动');
   assert.equal(M.normalize({ratio: 'nope'}, {}).ratio, '9:16');
 });
 
 test('参数落到项目上：没有译文只有原文；竖屏原片不取景；没切过时不记「不再找」', () => {
   const a = M.normalize({tracks: 'both', focus: 'manual', skipDone: false}, {hasTrans: false, portrait: true, children: 0});
   assert.equal(a.tracks, 'orig');
-  assert.equal(a.focus, 'center');
+  assert.equal(a.focus, 'auto');
   assert.equal(a.skipDone, true);
   const b = M.normalize({tracks: 'trans', focus: 'manual', skipDone: false}, {hasTrans: true, portrait: false, children: 2});
   assert.deepEqual([b.tracks, b.focus, b.skipDone], ['trans', 'manual', false]);
 });
 
-test('取景缺省居中：跟着说话的人这一版不开放，带进来也落回居中；竖屏原片仍不取景', () => {
+test('取景缺省自动：跟着说话的人这一版不开放、旧版的居中不再单列，带进来都落回自动；竖屏原片仍不取景', () => {
   const ctx = {hasTrans: true, portrait: false, children: 0};
-  assert.equal(M.normalize({}, ctx).focus, 'center');
-  assert.equal(M.normalize({focus: 'speaker'}, ctx).focus, 'center');
-  assert.equal(M.normalize({focus: 'nope'}, ctx).focus, 'center');
+  assert.deepEqual(M.FOCUS.map((f) => f.id), ['speaker', 'auto', 'manual']);
+  assert.equal(M.normalize({}, ctx).focus, 'auto');
+  assert.equal(M.normalize({focus: 'speaker'}, ctx).focus, 'auto');
+  assert.equal(M.normalize({focus: 'center'}, ctx).focus, 'auto');
+  assert.equal(M.normalize({focus: 'nope'}, ctx).focus, 'auto');
   assert.equal(M.normalize({focus: 'manual'}, ctx).focus, 'manual');
-  assert.equal(M.normalize({focus: 'manual'}, Object.assign({}, ctx, {portrait: true})).focus, 'center');
-  assert.equal(M.focusOf('nope').id, 'center');
-  assert.equal(M.summaryLine(M.normalize({}, ctx)), '3 支 · 每支 30–60 秒 · 9:16 · 居中');
+  assert.equal(M.normalize({focus: 'manual'}, Object.assign({}, ctx, {portrait: true})).focus, 'auto');
+  assert.equal(M.focusOf('nope').id, 'auto');
+  assert.equal(M.summaryLine(M.normalize({}, ctx)), '3 支 · 每支 30–60 秒 · 9:16 · 自动');
 });
 
 test('吸附：模型给的时间落到最近的句首和句尾，终点不会跑到起点前面', () => {
@@ -246,7 +248,8 @@ test('创建：标题去重；项目记录引用同一份原片并记下起止',
 test('交给 Agent 的附加句：条数、时长、画幅与取景、字幕、范围、不再找，最后一句是直接创建', () => {
   const x = M.agentExtra({count: 4, length: 'short', skipDone: true, hook: true, tracks: 'orig'}, {children: 2, scopeName: '产品演示'});
   assert.match(x[0], /^要 4 支，每支 15–30 秒/);
-  assert.ok(x.includes('画幅 9:16，取景居中'));
+  assert.ok(x.includes('画幅 9:16，取景自动：在片段里均匀抽几帧，看说话的人在画面哪一侧，把裁框放到他身上；找不到人就居中'));
+  assert.ok(M.agentExtra({focus: 'manual'}).includes('画幅 9:16，取景我自己定'));
   assert.ok(x.includes('字幕：只要原文，短视频字幕'));
   assert.ok(x.includes('只在「产品演示」里找'));
   assert.ok(x.includes('已经切过的 2 支不用再找'));
@@ -299,7 +302,7 @@ test('openTracks：按创建时选的轨留，选了短视频字幕就按安全�
 
 test('切出的短视频一组：组头数支数与合计，行按现状写；剪过的认得出来', () => {
   const a = child('k1', 4, 13, {cut: {focus: 'speaker', tracks: 'both', style: 'shorts'}, modified: '昨天', hue: 200});
-  const b = child('k2', 37, 53, {cut: {focus: 'center', tracks: 'orig', style: 'shorts'},
+  const b = child('k2', 37, 53, {cut: {focus: 'auto', tracks: 'orig', style: 'shorts'},
     used: [{start: S[37].start, end: S[54].end}]});
   const c = child('k3', 56, 61, {used: [{start: S[56].start, end: S[61].end}, {start: S[20].start, end: S[22].end}]});
   const kids = [a, b, c];
@@ -311,7 +314,7 @@ test('切出的短视频一组：组头数支数与合计，行按现状写；�
   assert.deepEqual(rows.map((r) => [r.id, r.n, r.edited]), [['k1', 1, false], ['k2', 2, true], ['k3', 3, true]]);
   assert.equal(rows[0].span, `${M.mmss(S[4].start)} – ${M.mmss(S[13].end)}`);
   assert.equal(rows[0].cut, '跟着说话的人 · 原文 + 译文');
-  assert.equal(rows[1].cut, '居中 · 只要原文');
+  assert.equal(rows[1].cut, '自动 · 只要原文');
   assert.equal(rows[1].len, M.secs(S[54].end - S[37].start));
   assert.equal(rows[2].cut, '');
   assert.match(rows[2].span, /^2 段 · 从 \d+:\d\d 起$/);
@@ -356,11 +359,11 @@ test('调整后再生成：现状连着就带现状，剪成几段带切出时�
 
 test('重做的设置与落点：那一支的取景与字幕盖在现有设置上；正在跑就等，有候选就接在后面', () => {
   const kid = child('k2', 37, 53, {cut: {focus: 'manual', focusX: 0.62, tracks: 'trans', style: 'project'}});
-  const p = M.redoParams(kid, {count: 5, length: 'short', focus: 'center'}, {hasTrans: true, portrait: false, children: 1});
+  const p = M.redoParams(kid, {count: 5, length: 'short', focus: 'auto'}, {hasTrans: true, portrait: false, children: 1});
   assert.deepEqual([p.count, p.length, p.focus, p.tracks, p.style], [5, 'short', 'manual', 'trans', 'project']);
   assert.equal(M.redoParams(kid, {}, {hasTrans: false, portrait: true, children: 1}).tracks, 'orig');
-  assert.equal(M.redoParams(kid, {}, {hasTrans: false, portrait: true, children: 1}).focus, 'center');
-  assert.equal(M.redoParams(child('k5', 4, 13), {}, {hasTrans: true}).focus, 'center');
+  assert.equal(M.redoParams(kid, {}, {hasTrans: false, portrait: true, children: 1}).focus, 'auto');
+  assert.equal(M.redoParams(child('k5', 4, 13), {}, {hasTrans: true}).focus, 'auto');
   assert.equal(M.redoParams(child('k6', 4, 13, {cut: {ratio: 'source'}}), {}, {hasTrans: true}).ratio, 'source');
 
   const cand = M.redoCandidate(S, kid);

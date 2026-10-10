@@ -411,13 +411,13 @@
      },
      meta: {speakers: 1, chapters: 1, cues: 24}},
     /* 同一个来源的第二支：切出后在文稿里点回了后面一句，所以片段外尾巴那条剪口从第 15 句之后才开始，
-       现状比 `origin` 长一句；取景是居中 */
+       现状比 `origin` 长一句；取景是自动 */
     {id: 'p12', title: '为什么要把视频工具做在本机', dir: 'd1', folder: '切片-本机', status: 'complete', entry: 'trans', bare: true,
      delivery: 'shorts', ratio: '9:16',
      origin: {project: 'p1', in: cues[4].start, out: cues[13].end, dur: DUR},
      cuts: [{id: 'outside-head', start: 0, end: cues[4].start, kind: 'outside', state: 'cut', by: 'agent', text: ''},
             {id: 'outside-tail', start: cues[14].end, end: DUR, kind: 'outside', state: 'cut', by: 'agent', text: ''}],
-     cut: {focus: 'center', focusX: null, tracks: 'orig', style: 'shorts'},
+     cut: {focus: 'auto', focusX: null, tracks: 'orig', style: 'shorts'},
      src: {name: 'kelang-ep42-master.mp4', path: '~/Movies/播客/kelang-ep42-master.mp4', format: 'MP4 · H.264', res: '1920×1080', state: 'ok'},
      duration: +(cues[14].end - cues[4].start).toFixed(2), lang: '中文', model: 'moss-transcribe', modified: '3 天前', mtime: 4320, otime: 4320, ctime: 10100, hue: 252,
      desc: '从第 42 期里剪的竖屏切片，讲为什么把视频工具做在本机。',
@@ -2583,7 +2583,7 @@
 1. 通读文稿与章节，列出候选段落，每段写一句「这段讲了什么」。
 2. 按 references/hook-checklist.md 给候选打分，留下得分最高的几段。
 3. 每段的起点放在一句完整的话开头，终点放在结论说完之后。
-4. 每段新建一部视频，引用原片、不复制不导出；画幅与取景按用户的设置（缺省 9:16、居中），并记下来源片段。
+4. 每段新建一部视频，引用原片、不复制不导出；画幅与取景按用户的设置（缺省 9:16、自动：抽帧看说话的人在哪一侧，裁到他身上，找不到人就居中），并记下来源片段。
 5. 回报每一条的标题建议、时长与来源时间码。
 
 ## 不做的事
