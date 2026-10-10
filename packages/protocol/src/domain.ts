@@ -338,6 +338,13 @@ export interface VideoDeriveResult {
   itemCount: number;
   /** 子视频里的派生来源文档（`kind: 'derivation'`）。 */
   derivationDocumentId: Id | null;
+  /**
+   * 派生来源文档里记下的挑选说明，原样回显（去掉首尾空白，空的不带），供调用方核对写进去的是什么。认回已有的子视频时是
+   * 原来那份：这次传的不改写它。
+   */
+  hook?: string;
+  reason?: string;
+  notes?: string[];
   speech: { documentId: Id; sourceDocumentId: Id; words: number }[];
   translations: { documentId: Id; sourceDocumentId: Id }[];
   /** 建的字幕层。字幕按整份文稿切条；`cueCount` 只数落在保留区间里（子视频里看得到）的字幕条，认回已有的一层时 null。 */

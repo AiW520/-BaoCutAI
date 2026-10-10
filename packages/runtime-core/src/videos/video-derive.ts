@@ -24,9 +24,11 @@ import {
   cuesInRange,
   derivationKey,
   derivationNeeds,
+  pickFields,
   planDerivation,
   planDerivationTrim,
   timelineWords,
+  type DerivePick,
   type DeriveSettings,
 } from '../agent-tools/derive-plan.ts';
 import { videoPlace } from './pipeline-targets.ts';
@@ -274,6 +276,10 @@ export async function deriveVideo(
     target: { ...(place.scope), path: opened.ref.relPath },
     videoRevision: final.revision,
   };
+  // 挑选说明按子视频里派生来源文档的现状回显：认回已有的子视频时它不改写，回显的是原来那份，不是这次传的。
+  const derivationDocumentId = Object.values(final.documents).find((d) => d.kind === DERIVATION_KIND)?.id ?? null;
+  const derivationBody = derivationDocumentId ? ((await videos.document(childId, derivationDocumentId)).body as DerivePick | null) : null;
+  const pick = pickFields(derivationBody ?? undefined);
   const result: VideoDeriveResult = {
     video,
     reused,
@@ -282,7 +288,8 @@ export async function deriveVideo(
     primaryAssetId: plan.derivation.primaryAssetId,
     cuts: plan.cuts,
     itemCount: plan.itemCount,
-    derivationDocumentId: Object.values(final.documents).find((d) => d.kind === DERIVATION_KIND)?.id ?? null,
+    derivationDocumentId,
+    ...pick,
     speech: plan.speech.flatMap((s) => (refs[s.ref] ? [{ documentId: refs[s.ref]!, sourceDocumentId: s.from, words: s.words }] : [])),
     translations,
     captions,

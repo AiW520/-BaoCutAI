@@ -127,6 +127,10 @@ description: 时间线修改的机制：一笔修改的事务与版本、预检�
 
 章节固定在时间线的时刻上，不跟着片段移动：移动、删除片段或波纹删除之后要重新核对。剪口播例外：`addCuts`、`acceptCutSuggestions` 与 `restoreCut` 让章节跟着内容走（剪掉的段后面的章前移，整章都剪掉的删掉；恢复时接缝之后的后移）。
 
+### 派生子视频
+
+{{tool:videos_derive}} 把父视频的一段建成旁边的一个可编辑子视频（做法见 {{skill:shorts-segments}}）。{{arg:hook}}、{{arg:reason}}、{{arg:notes}} 写进子视频的派生来源文档（notes 每条至多 80 字、至多 8 条）；结果原样回显文档里记下的 `hook`、`reason`、`notes`，没有的不带。认回已有的子视频（`reused` 为 true）时文档不改写，回显的是原来那份，不是这次传的。要再读一次就用 {{tool:documents_read}} 读结果的 `derivationDocumentId`。
+
 ### 撤销与历史
 
 - {{tool:edits_undo}}：撤销你自己最近的一笔；也可以给 {{arg:transactionId}} 指定一笔。撤销本身也是一笔新修改，返回同样的回执。

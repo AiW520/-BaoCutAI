@@ -747,6 +747,8 @@ describe.skipIf(!engine || !ffmpeg)('videos.derive（真实引擎）', () => {
       reason: 'Short and complete',
       notes: ['Opens mid-thought'],
     });
+    // 结果回显写进派生来源文档的那份挑选说明。
+    expect(derived).toMatchObject({ hook: 'beta gamma', reason: 'Short and complete', notes: ['Opens mid-thought'] });
     expect(derived.primaryAssetId).toBe(parent.assetId);
     expect(derived.cuts).toEqual([
       { assetId: parent.assetId, from: 0, to: 1 },
@@ -840,9 +842,15 @@ describe.skipIf(!engine || !ffmpeg)('videos.derive（真实引擎）', () => {
 
   it('同样的参数再派生认回同一个子视频，不再复制', async () => {
     const parent = await parentWithCut();
-    const first = await client.request('videos.derive', { videoId: parent.videoId, start: 1, end: 2 });
+    const first = await client.request('videos.derive', { videoId: parent.videoId, start: 1, end: 2, hook: '  beta gamma ', notes: ['Opens mid-thought'] });
+    expect(first.hook).toBe('beta gamma');
+    expect(first.notes).toEqual(['Opens mid-thought']);
+    expect(first).not.toHaveProperty('reason');
     const revision = snapshotOf(first.video.videoId).revision;
-    const again = await client.request('videos.derive', { videoId: parent.videoId, start: 1, end: 2 });
+    const again = await client.request('videos.derive', { videoId: parent.videoId, start: 1, end: 2, hook: 'Something else', reason: 'Changed my mind' });
+    // 认回时派生来源文档不改写，回显的是原来那份。
+    expect(again).toMatchObject({ hook: 'beta gamma', notes: ['Opens mid-thought'] });
+    expect(again).not.toHaveProperty('reason');
     expect(again.video.videoId).toBe(first.video.videoId);
     expect(again.reused).toBe(true);
     expect(again.key).toBe(first.key);
