@@ -526,14 +526,13 @@ export function TranscriptPanel({
       }),
     [videoId],
   );
-  // 子视频打开时文稿滚到片段起点（播放头挂上视频时已经在 0，就是片段起点）。
+  // 子视频打开时文稿滚到片段前面：前接缝行与紧挨片段的几句划掉的句子在视口顶上露着，下面接着片段的开头（产品设计 §5.10）。
+  // 没有前接缝行（片段前面没几句）时从第一段起。
   const reveal = useMemo(() => {
     for (const m of models) {
-      const word = m.fold ? m.words[m.fold.firstKept] : undefined;
-      if (!word) continue;
-      const n = m.paragraphs.findIndex((p) => p.words.some((w) => w.index === word.index));
-      const key = n >= 0 ? paraKey(m, n) : null;
-      if (key && videoId) return { id: videoId, key };
+      if (!m.fold || !m.paragraphs.length || !videoId) continue;
+      const key = m.fold.before ? `${m.record.id}:fold:before` : paraKey(m, 0);
+      if (key) return { id: videoId, key };
     }
     return null;
   }, [models, videoId]);
@@ -1575,7 +1574,7 @@ function TranscriptList({
     // 只在跳到另一处命中时定位（面板按命中换 `match`）。
   }, [match]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // 子视频打开时滚到片段起点那一段：每部视频一次，之后放回句子、展开剪缝都不再跟着滚。
+  // 子视频打开时滚到片段前面（前接缝行在顶上）：每部视频一次，之后放回句子、展开剪缝都不再跟着滚。
   const revealed = useRef<string | null>(null);
   useEffect(() => {
     if (!reveal || revealed.current === reveal.id) return;
