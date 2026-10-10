@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { Sequence } from '@baocut/protocol';
+import type { CaptionItem, Sequence, VideoItem } from '@baocut/protocol';
 import { foldOutside, reclaimOperations, reclaimRange, visibleParagraphs } from './shorts-fold.ts';
 import type { TranscriptParagraph, TranscriptWord, WordState } from './transcript-cut.ts';
 
@@ -93,8 +93,8 @@ describe('reclaim', () => {
   it('restores from the clicked sentence to the clip edge without leaving a hole', () => {
     const { words, paragraphs } = transcript(30, [10, 14]);
     const plan = foldOutside(words, paragraphs, { before: 0, after: 0 })!;
-    expect(reclaimRange(words, plan, 15)).toEqual({ from: 7, to: 10 }); // 第 7 句的第二个词
-    expect(reclaimRange(words, plan, 34)).toEqual({ from: 15, to: 18 }); // 第 17 句
+    expect(reclaimRange(words, plan, 15)).toEqual({ from: 7, to: 10, side: 'before' }); // 第 7 句的第二个词
+    expect(reclaimRange(words, plan, 34)).toEqual({ from: 15, to: 18, side: 'after' }); // 第 17 句
     expect(reclaimRange(words, plan, 20)).toBeNull(); // 留着的词
   });
 
@@ -117,5 +117,86 @@ describe('reclaim', () => {
     const tail = reclaimOperations(sequence, 'asset', cuts, { from: 15, to: 30 });
     expect(tail.ok && tail.operations).toEqual([{ type: 'restoreCut', sequenceId: 'seq', assetId: 'asset', cutId: 'tail' }]);
     expect(reclaimOperations(sequence, 'asset', [], { from: 1, to: 2 })).toEqual({ ok: false, reason: 'untracked' });
+  });
+});
+
+/**
+ * 真实子视频的形状（e2e：父视频剪成短视频之后）：23.976 fps，一个视频实例 0–1334 帧、源起点 569.235，一条经它投影、
+ * 一样长的字幕实例；片段外两个剪口 `[0, 569.235)` 与 `[624.874, 3991.237)`。
+ */
+describe('reclaim in a derived clip', () => {
+  const base = { enabled: true, locked: false, paintOrder: 0, followPolicy: { kind: 'follow-cuts' as const } };
+  const clip: VideoItem = {
+    ...base,
+    id: 'v',
+    trackId: 'V1',
+    type: 'video',
+    span: { fromFrame: 0, durationFrames: 1334 },
+    place: {},
+    mode: 'fullscreen',
+    assetRef: { id: 'asset', revision: '1' },
+    timeMap: { kind: 'linear', sourceIn: { ticks: '13661648', timescale: 24000 }, rate: { num: 1, den: 1 } },
+    fit: 'cover',
+    embeddedAudio: { enabled: true, volume: 1 },
+  };
+  const caption = (id: string, fromFrame: number, durationFrames: number, trackId = 'S1'): CaptionItem => ({
+    ...base,
+    id,
+    trackId,
+    type: 'caption',
+    span: { fromFrame, durationFrames },
+    documentId: 'doc_cap',
+    scopeItemIds: ['v'],
+  });
+  const sequence = (captions: CaptionItem[]) =>
+    ({ id: 'seq', fps: { num: 24000, den: 1001 }, items: [clip, ...captions] }) as unknown as Sequence;
+  const cuts = [
+    { id: 'head', from: 0, to: 569.2353333333333 },
+    { id: 'tail', from: 624.87425, to: 3991.23725 },
+  ];
+  // 接缝处引擎放回的帧数：剪口长度按 23.976 fps 向下取整。
+  const TAIL_FRAMES = 80712;
+
+  it('restores the tail from the clip edge, extends the caption and cuts only the far side back', () => {
+    // 最后一个留下的词跨在剪口上（止于 625.041）：旧做法剪回 [624.874, 625.041)，留下 166 ms 的洞、把实例切成两个。
+    const plan = reclaimOperations(sequence([caption('cap', 0, 1334)]), 'asset', cuts, { from: 625.041, to: 629.754, side: 'after' });
+    expect(plan.ok && plan.operations).toEqual([
+      { type: 'restoreCut', sequenceId: 'seq', assetId: 'asset', cutId: 'tail' },
+      { type: 'trimItem', sequenceId: 'seq', itemId: 'cap', edge: 'end', at: { unit: 'frames', value: 1334 + TAIL_FRAMES }, alignment: 'exact-frame' },
+      { type: 'addCuts', sequenceId: 'seq', assetId: 'asset', cuts: [{ from: '629.754', to: '3991.23725' }] },
+    ]);
+    expect(plan.ok && plan.seconds).toBeCloseTo(629.754 - 624.87425, 6);
+  });
+
+  it('restores the head up to the clip edge and pulls the caption start back to the clip start', () => {
+    // 第一个留下的词起于剪口终点之前一点（被剪口切开）：靠片段那一头不剪回。
+    const plan = reclaimOperations(sequence([caption('cap', 0, 1334)]), 'asset', cuts, { from: 565.899, to: 569.1, side: 'before' });
+    expect(plan.ok && plan.operations).toEqual([
+      { type: 'restoreCut', sequenceId: 'seq', assetId: 'asset', cutId: 'head' },
+      { type: 'addCuts', sequenceId: 'seq', assetId: 'asset', cuts: [{ from: '0', to: '565.899' }] },
+      { type: 'trimItem', sequenceId: 'seq', itemId: 'cap', edge: 'start', at: { unit: 'frames', value: 0 }, alignment: 'exact-frame' },
+    ]);
+    expect(plan.ok && plan.seconds).toBeCloseTo(569.2353333333333 - 565.899, 6);
+  });
+
+  it('extends the nearest caption on each subtitle track when none touches the seam', () => {
+    const plan = reclaimOperations(
+      sequence([caption('early', 0, 600), caption('late', 600, 700), caption('other', 0, 1334, 'S2')]),
+      'asset',
+      cuts,
+      { from: 625.041, to: 3991.23725, side: 'after' },
+    );
+    // 剪到素材末尾：没有远端要剪回；S1 上离接缝最近的（止于 1300）拉到放回之后的终点，S2 上碰到接缝的照常延长。
+    expect(plan.ok && plan.operations).toEqual([
+      { type: 'restoreCut', sequenceId: 'seq', assetId: 'asset', cutId: 'tail' },
+      { type: 'trimItem', sequenceId: 'seq', itemId: 'late', edge: 'end', at: { unit: 'frames', value: 1334 + TAIL_FRAMES }, alignment: 'exact-frame' },
+      { type: 'trimItem', sequenceId: 'seq', itemId: 'other', edge: 'end', at: { unit: 'frames', value: 1334 + TAIL_FRAMES }, alignment: 'exact-frame' },
+    ]);
+  });
+
+  it('leaves captions that do not project through the clip alone', () => {
+    const loose = { ...caption('loose', 0, 1334), scopeItemIds: [] };
+    const plan = reclaimOperations(sequence([loose]), 'asset', cuts, { from: 625.041, to: 629.754, side: 'after' });
+    expect(plan.ok && plan.operations.map((op) => op.type)).toEqual(['restoreCut', 'addCuts']);
   });
 });

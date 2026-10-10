@@ -1,9 +1,12 @@
 import type { EditOperation, Id, Sequence } from '@baocut/protocol';
 import { sentenceEnd } from './speech-cues.ts';
+import { itemFrames } from './editor.ts';
 import {
   assetRate,
   cutsWithin,
   decimalSeconds,
+  mediaSpans,
+  type MediaSpan,
   type RestorePlan,
   type SourceRange,
   type TrackedCut,
@@ -149,47 +152,146 @@ export function visibleParagraphs(paragraphs: readonly TranscriptParagraph[], hi
   return out;
 }
 
+/** 要放回的素材区间与它在片段的哪一侧。 */
+export interface ReclaimRange extends SourceRange {
+  side: FoldSide;
+}
+
 /**
- * 点了片段外划掉的一个词：要放回的素材区间——在片段前面是 `[那一句起, 第一个留下的词起)`，在后面是 `[最后一个留下的词止, 那一句止)`，
- * 片段保持连着、不留洞。词不在两端片段外（片段中间用户剪的口）时 null。`position` 是这个词在 `words` 里的位置。
+ * 点了片段外划掉的一个词：要放回的素材区间——在片段前面是 `[那一句起, 第一个留下的词起)`，在后面是 `[最后一个留下的词止, 那一句止)`。
+ * 靠片段那一头最终按剪口的边放（`reclaimOperations`），片段保持连着、不留洞。词不在两端片段外（片段中间用户剪的口）时 null。
+ * `position` 是这个词在 `words` 里的位置。
  */
-export function reclaimRange(words: readonly TranscriptWord[], plan: FoldPlan, position: number): SourceRange | null {
+export function reclaimRange(words: readonly TranscriptWord[], plan: FoldPlan, position: number): ReclaimRange | null {
   const word = words[position];
   if (!word || word.state !== 'cut') return null;
   const unit = plan.units[plan.unitOf[position] ?? -1];
   if (position < plan.firstKept) {
     const from = unit ? unit.start : word.start;
     const to = words[plan.firstKept]!.start;
-    return to > from ? { from, to } : null;
+    return to > from ? { from, to, side: 'before' } : null;
   }
   if (position > plan.lastKept) {
     const from = words[plan.lastKept]!.end;
     const to = unit ? unit.end : word.end;
-    return to > from ? { from, to } : null;
+    return to > from ? { from, to, side: 'after' } : null;
   }
   return null;
 }
 
 /** 比这短的剩余不再剪回去（帧内的零头）。 */
 const MIN_LEFT = 0.01;
+const EPS = 1e-6;
 
 /**
- * 放回素材区间 `range` → 一笔事务：盖住它的剪口整个放回（`restoreCut`），剪口超出 `range` 的两头再 `addCuts` 剪回去
+ * 剪口靠片段那一头接着的实例（同引擎 `insertions` 的判断：源时刻与剪口边界差不超过一帧）：片段后面是源终点对着剪口起点的，
+ * 前面是源起点对着剪口终点的。同一轨道上另一边也接着实例（片段中间的剪口）的不算。
+ */
+function edgeSpans(sequence: Sequence, assetId: Id, cut: TrackedCut, side: FoldSide): MediaSpan[] {
+  const frame = sequence.fps.den / sequence.fps.num;
+  const near = (a: number, b: number, rate: number) => Math.abs(a - b) <= frame * rate + EPS;
+  const spans = mediaSpans(sequence, assetId);
+  const joined = (left: MediaSpan, right: MediaSpan) =>
+    left.item.trackId === right.item.trackId &&
+    Math.abs(right.start - left.end) <= EPS &&
+    near(left.sourceOut, cut.from, left.rate) &&
+    near(right.sourceIn, cut.to, right.rate);
+  return side === 'after'
+    ? spans.filter((s) => near(s.sourceOut, cut.from, s.rate) && !spans.some((r) => joined(s, r)))
+    : spans.filter((s) => near(s.sourceIn, cut.to, s.rate) && !spans.some((l) => joined(l, s)));
+}
+
+/**
+ * 放回之后字幕跟着接上（`addCuts` 剪掉时经过剪口的字幕缩短，这里是它的镜像）：经接缝那个实例投影、边正好在接缝上的字幕实例
+ * 跨过放回的那段延长。引擎插回时只延长跨过插回点的实例，边正好落在片段首尾的会被推开（前面）或不动（后面），所以补 `trimItem`。
+ * 某条字幕轨上没有字幕实例碰到接缝时，延长那条轨上离接缝最近的、经这个实例投影的字幕实例；有跨过接缝的交给引擎。
+ * 返回各字幕实例要拉的边与帧：后面那一侧拉到放回之后、剪回之前的片段终点，紧跟着剪回远端时引擎把它和片段一起缩回
+ * （`follow_removal` 把终点拉回剪口起点）；前面那一侧剪回之后片段起点不动，拉回片段起点。
+ */
+function captionTrims(
+  sequence: Sequence,
+  seam: MediaSpan,
+  side: FoldSide,
+  frames: number,
+): Array<{ itemId: Id; edge: 'start' | 'end'; frame: number }> {
+  const at = side === 'after' ? seam.end : seam.start;
+  const byTrack = new Map<Id, Array<{ id: Id; start: number; end: number }>>();
+  for (const item of sequence.items) {
+    if (item.type !== 'caption' || !(item.scopeItemIds ?? []).includes(seam.item.id)) continue;
+    const { start, end } = itemFrames(item, sequence.fps);
+    const list = byTrack.get(item.trackId) ?? [];
+    list.push({ id: item.id, start, end });
+    byTrack.set(item.trackId, list);
+  }
+  const out: Array<{ itemId: Id; edge: 'start' | 'end'; frame: number }> = [];
+  const edge = side === 'after' ? 'end' : 'start';
+  const target = side === 'after' ? Math.round(at) + frames : Math.round(at);
+  for (const captions of byTrack.values()) {
+    const touching = captions.filter((c) => Math.abs((side === 'after' ? c.end : c.start) - at) < 0.5);
+    if (touching.length) {
+      for (const c of touching) out.push({ itemId: c.id, edge, frame: target });
+      continue;
+    }
+    if (captions.some((c) => c.start < at - EPS && c.end > at + EPS)) continue;
+    const nearest =
+      side === 'after'
+        ? captions.filter((c) => c.end <= at).sort((a, b) => b.end - a.end)[0]
+        : captions.filter((c) => c.start >= at).sort((a, b) => a.start - b.start)[0];
+    if (nearest) out.push({ itemId: nearest.id, edge, frame: target });
+  }
+  return out;
+}
+
+/**
+ * 放回素材区间 `range` → 一笔事务：盖住它的剪口整个放回（`restoreCut`），剪口超出 `range` 的远端再 `addCuts` 剪回去
  * （同拖剪口带改范围，model/cut-bands.ts `retimeOperations`；引擎按次序执行，后一步读到前一步写下的剪口集合）。
+ * 靠片段那一头不剪回：从片段边一直放回到 `range` 的远端，中间的停顿与被剪口切开的半个词一起回来，放回的那段接在原来的
+ * 实例上、还是一个实例。字幕跟着延长（`captionTrims`）。`range` 没给 `side` 时两头都按 `range` 剪回。
  * 没有剪口盖住时照实拒绝（`untracked`）。`seconds` 是放回多少秒（序列时间）。
  */
-export function reclaimOperations(sequence: Sequence, assetId: Id, cuts: readonly TrackedCut[], range: SourceRange): RestorePlan {
+export function reclaimOperations(
+  sequence: Sequence,
+  assetId: Id,
+  cuts: readonly TrackedCut[],
+  range: SourceRange & { side?: FoldSide },
+): RestorePlan {
   const found = cutsWithin(cuts, [range]);
   if (!found.length) return { ok: false, reason: 'untracked' };
   const rate = assetRate(sequence, assetId);
+  const perSecond = sequence.fps.num / sequence.fps.den;
   const operations: EditOperation[] = found.map((cut) => ({ type: 'restoreCut', sequenceId: sequence.id, assetId, cutId: cut.id }));
   const again: Array<{ from: string; to: string }> = [];
+  const tails: EditOperation[] = [];
+  const heads: EditOperation[] = [];
   let seconds = 0;
   for (const cut of found) {
-    if (range.from - cut.from >= MIN_LEFT) again.push({ from: decimalSeconds(cut.from), to: decimalSeconds(range.from) });
-    if (cut.to - range.to >= MIN_LEFT) again.push({ from: decimalSeconds(range.to), to: decimalSeconds(cut.to) });
-    seconds += Math.max(0, Math.min(cut.to, range.to) - Math.max(cut.from, range.from)) / rate;
+    // 片段那一头接到剪口的边：不在片段边与 `range` 之间留一截剪口。
+    const from = range.side === 'after' ? Math.min(range.from, cut.from) : range.from;
+    const to = range.side === 'before' ? Math.max(range.to, cut.to) : range.to;
+    if (from - cut.from >= MIN_LEFT) again.push({ from: decimalSeconds(cut.from), to: decimalSeconds(from) });
+    if (cut.to - to >= MIN_LEFT) again.push({ from: decimalSeconds(to), to: decimalSeconds(cut.to) });
+    seconds += Math.max(0, Math.min(cut.to, to) - Math.max(cut.from, from)) / rate;
+    if (!range.side) continue;
+    for (const seam of edgeSpans(sequence, assetId, cut, range.side)) {
+      // 引擎在接缝处放回的帧数（`insertions`：只有一边时按源区间除以速率向下取整）。
+      const frames = Math.floor(((range.side === 'after' ? cut.to - seam.sourceOut : seam.sourceIn - cut.from) / seam.rate) * perSecond + EPS);
+      if (frames <= 0) continue;
+      for (const trim of captionTrims(sequence, seam, range.side, frames)) {
+        if ([...tails, ...heads].some((op) => op.type === 'trimItem' && op.itemId === trim.itemId && op.edge === trim.edge)) continue;
+        (range.side === 'after' ? tails : heads).push({
+          type: 'trimItem',
+          sequenceId: sequence.id,
+          itemId: trim.itemId,
+          edge: trim.edge,
+          at: { unit: 'frames', value: trim.frame },
+          alignment: 'exact-frame',
+        });
+      }
+    }
   }
+  // 后面那一侧：字幕先拉到放回之后的终点，再剪回远端时跟着落回片段终点；前面那一侧：剪回之后片段起点不动，字幕起点拉回去。
+  operations.push(...tails);
   if (again.length) operations.push({ type: 'addCuts', sequenceId: sequence.id, assetId, cuts: again });
+  operations.push(...heads);
   return { ok: true, operations, cutIds: found.map((cut) => cut.id), seconds };
 }

@@ -391,7 +391,7 @@ export function cutOperations(
 
 type MediaItem = VideoItem | AudioItem;
 
-interface MediaSpan {
+export interface MediaSpan {
   item: MediaItem;
   /** 序列上的区间（帧，音频可以有小数）。 */
   start: number;
@@ -410,7 +410,7 @@ function linear(item: SequenceItem): { sourceIn: number; rate: number } | null {
 }
 
 /** 时间线上取用这个素材的视频与音频实例（线性映射）。 */
-function mediaSpans(sequence: Sequence, assetId?: Id): MediaSpan[] {
+export function mediaSpans(sequence: Sequence, assetId?: Id): MediaSpan[] {
   const out: MediaSpan[] = [];
   for (const item of sequence.items) {
     if (item.type !== 'video' && item.type !== 'audio') continue;
