@@ -75,10 +75,24 @@
       if (id !== ctx.proj.id) app.go({r: 'editor', id, tab: 'aitools'});
     };
     const step = (d) => { const next = live[at + d]; if (next) openChild(next.id); };
+    /* 「全部导出…」：每支各建一条导出任务（同导出弹层的 startVideo，缺省设置），进度在后台任务里；
+       建不了的那一支跳过，提示里说明（product-design §5.10）。 */
+    const X = window.BC_EXPORT;
+    const E = SC.EXPORT_COPY;
     const exportAll = () => {
       if (!live.length) return;
-      app.go({r: 'editor', id: live[0].id});
-      app.toast(`每支单独导出 · 先打开了「${live[0].title}」，其余 ${live.length - 1} 支在 Space 里`, null);
+      const {run, skipped} = SC.exportBatch(live.map((c) => app.projById(c.id)));
+      run.forEach(({project: p, seconds}) => {
+        const est = X.estimate(1080, p.ratio, seconds);
+        const base = String(p.title).replace(/[\\/:*?"<>|]/g, '_');
+        app.addTask({kind: 'export', exportTab: 'video', project: p.id, title: '导出 · ' + p.title,
+          sub: ['mp4', est.dims.w + '×' + est.dims.h, '字幕烧入'].join(' · '),
+          phase: '读取视频', cancellable: true, source: 'app', preparePhase: 'prepare-project', prepareElapsedMs: 0,
+          fontsWait: [], fontPins: [], fontFallbacks: [], etaMs: est.ms, frames: est.frames, file: base + '.mp4', size: est.size});
+      });
+      const note = SC.exportNotes(run.length, skipped);
+      if (note.started) app.toast(note.started, 'positive', {label: '看任务', run: () => app.go({r: 'tasks'})});
+      if (note.skipped) app.toast(note.skipped, 'negative');
     };
     /* 「返回」：在来源视频里回参数页（设置与提示词保留）；在子视频里回来源视频，结果页仍在那里 */
     const back = inChild ? () => app.go({r: 'editor', id: hostId, tab: 'aitools'}) : onBack;
@@ -122,7 +136,7 @@
           {live.length ? (
             <BCAction className="drill" onClick={exportAll}>
               <span className="ic2"><Ic n="export" className="ic--16" /></span>
-              <span className="tt"><b>全部导出…</b><span>每支单独导出，从第一支开始</span></span>
+              <span className="tt"><b>{E.exportAll}</b><span>{E.exportAllSub(live.length)}</span></span>
               <NavChevron style={{color: 'var(--gray-500)'}} />
             </BCAction>
           ) : null}

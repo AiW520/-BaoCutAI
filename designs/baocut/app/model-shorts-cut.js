@@ -585,6 +585,37 @@
     return 'fresh';
   }
 
+  /* ---------- 「全部导出…」（product-design §5.10；生产 shorts-video-ops.ts exportShorts、shorts-copy.zh-Hans.ts） ----------
+     结果页上没移进回收站的每一支各建一条导出任务（缺省设置：MP4、1080 短边、跟随画布、字幕烧入）；
+     建不了的那一支跳过，原因记进结果，由调用方在提示里说明。原型里"还在打开"对应：这一支没有可导出的保留段。 */
+  const EXPORT_COPY = {
+    exportAll: '全部导出…',
+    exportAllSub: (n) => `${n} 支各导出一份成片`,
+    exportSkipOpening: '还在打开',
+    exportStarted: (n) => `已发起 ${n} 份导出 · 进度在后台任务里`,
+    exportSkipped: (n, detail) => `跳过了 ${n} 支 · ${detail}`,
+    exportSkippedItem: (name, reason) => `「${name}」：${reason}`,
+    exportSkippedSeparator: '；',
+  };
+  const keptSec = (p) => usedRanges(p).reduce((n, r) => n + (r.end - r.start), 0);
+  /** 谁导、谁跳过：`kids` 是结果页上的几支子视频记录。 */
+  function exportBatch(kids) {
+    const run = [], skipped = [];
+    (kids || []).forEach((p) => {
+      if (p && keptSec(p) > EPS) run.push({project: p, seconds: +keptSec(p).toFixed(2)});
+      else if (p) skipped.push({name: p.title, reason: EXPORT_COPY.exportSkipOpening});
+    });
+    return {run, skipped};
+  }
+  /** 提示里的两句：started 为 0 时不给；skipped 为空时不给。 */
+  function exportNotes(started, skipped) {
+    const E = EXPORT_COPY;
+    return {
+      started: started > 0 ? E.exportStarted(started) : null,
+      skipped: skipped.length ? E.exportSkipped(skipped.length, skipped.map((x) => E.exportSkippedItem(x.name, x.reason)).join(E.exportSkippedSeparator)) : null,
+    };
+  }
+
   const api = {
     COUNT, DONE_RATIO, LENGTHS, CUSTOM, RATIOS, FOCUS, TRACKS, STYLES, DEFAULTS, FIND_STAGES, CREATE_STAGES, DIRECT_LINE, NEAR,
     lengthOf, lengthRange, focusOf, ratioOf, clampCount, normalize,
@@ -594,6 +625,7 @@
     seedCuts, cutsOf, sourceDur, keptRanges, usedRanges, reclaimSpan, foldRows, clipTime, STEP, coverScale, framePlace, focusText,
     flags, visible, chosen, totalSec, resultHead, hookOf, tailOf, preselect,
     demoCandidates, manualCandidate,
+    EXPORT_COPY, exportBatch, exportNotes,
     childTitle, childProject,
     frameLine, summaryLine, agentExtra, taskTitle, stageAt, listStatus, openTracks,
     bar, rowWindow,

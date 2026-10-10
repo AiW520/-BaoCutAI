@@ -489,3 +489,21 @@ test('取景：裁成别的画幅时铺满画面，focusX 对着正中并夹住�
   assert.equal(M.framePlace({ratio: '1:1', focusX: 0.2}, 9 / 16, 1).x, 50, '竖的原片放进方画幅只上下裁');
   assert.deepEqual([M.focusText(null), M.focusText(0.5), M.focusText(0.3), M.focusText(0.62)], ['居中', '居中', '偏左 20%', '偏右 12%']);
 });
+
+test('全部导出：每支有保留段的各一条，没有可导出内容的跳过并说明；文案与生产 zh-Hans 一致', () => {
+  const seg = {start: S[4].start, end: S[13].end, from: 4, to: 13, title: 't', focusX: null};
+  const a = M.childProject({id: 'e1', parent, seg, title: '第一支', dur: DUR});
+  const b = M.childProject({id: 'e2', parent, seg, title: '第二支', dur: DUR});
+  const empty = Object.assign({}, M.childProject({id: 'e3', parent, seg, title: '第三支', dur: DUR}),
+    {cuts: [{id: 'all', start: 0, end: DUR, kind: 'cut', state: 'cut', by: 'user', text: ''}]});
+  const {run, skipped} = M.exportBatch([a, b, empty]);
+  assert.deepEqual(run.map((x) => x.project.id), ['e1', 'e2']);
+  assert.ok(Math.abs(run[0].seconds - (seg.end - seg.start)) < 0.05);
+  assert.deepEqual(skipped, [{name: '第三支', reason: '还在打开'}]);
+  const n = M.exportNotes(run.length, skipped);
+  assert.equal(n.started, '已发起 2 份导出 · 进度在后台任务里');
+  assert.equal(n.skipped, '跳过了 1 支 · 「第三支」：还在打开');
+  assert.deepEqual(M.exportNotes(0, []), {started: null, skipped: null});
+  assert.equal(M.EXPORT_COPY.exportAllSub(3), '3 支各导出一份成片');
+  assert.equal(M.EXPORT_COPY.exportAll, '全部导出…');
+});
