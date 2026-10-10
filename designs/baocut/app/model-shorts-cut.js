@@ -1,4 +1,4 @@
-/* 剪成短视频（§15.12）纯模型：人给的参数、句子边界上的起止、候选的提醒、来源关系、
+/* 剪成短视频（§5.10）纯模型：人给的参数、句子边界上的起止、候选的提醒、来源关系、
    短视频项目里「原片」卡的片段排布。不碰 DOM，不依赖 React；node --test 直接 require。
 
    三个词：
@@ -12,10 +12,7 @@
    长度一律用秒，不数字数：哪种语言的文稿都是同一条规则。 */
 (function () {
   const COUNT = {min: 1, max: 10, def: 3};
-  /** 找的时候比要的多找几段备选（裁决点 H）。 */
-  const SPARE = 2;
-  /** 与发布前检查 `duration` 同一条线（BC_SHORTS.MAX_DURATION）。 */
-  const PLATFORM_MAX = 60;
+  /* §5.10：找到就创建，要几支就是几支，不多找备选；时长不设上限，平台时长只在导出前检查里说。 */
   /** 候选与某支短视频用到的原片区间重叠超过这个比例，算「已切过」。 */
   const DONE_RATIO = 0.5;
 
@@ -23,11 +20,22 @@
     {id: 'short', min: 15, max: 30, name: '15–30 秒'},
     {id: 'mid', min: 30, max: 60, name: '30–60 秒'},
     {id: 'long', min: 60, max: 90, name: '60–90 秒'},
+    {id: 'xl', min: 60, max: 180, name: '1–3 分钟'},
+    {id: 'custom', min: 30, max: 60, name: '自定义'},
   ];
+  /** 自定义时长的上下界（秒）。 */
+  const CUSTOM = {min: 1, max: 600};
+  /** 画幅：保留原画幅时不取景。 */
+  const RATIOS = [
+    {id: '9:16', name: '9:16', value: 9 / 16},
+    {id: '1:1', name: '1:1', value: 1},
+    {id: 'source', name: '保留原画幅', value: null},
+  ];
+  /* 「跟着说话的人」这一版不开放：还没有人物与发言人模型（§5.10），选项留着、置灰并说明。 */
   const FOCUS = [
-    {id: 'speaker', name: '跟着说话的人', desc: '本机模型认人，谁说话框跟谁', needs: ['person', 'speaker']},
-    {id: 'center', name: '居中', desc: '裁画面正中，最快，不用本机模型'},
-    {id: 'manual', name: '我自己定', desc: '挑片段时在原片上拖取景框，每支定一个位置'},
+    {id: 'speaker', name: '跟着说话的人', desc: '谁说话框跟谁', off: '这一版还没有人物与发言人模型'},
+    {id: 'center', name: '居中', desc: '裁画面正中'},
+    {id: 'manual', name: '我自己定', desc: '在结果页的原片上拖取景框，每支定一个位置'},
   ];
   const TRACKS = [
     {id: 'both', name: '原文 + 译文'},
@@ -38,27 +46,42 @@
     {id: 'shorts', name: '短视频字幕', desc: '内置预设，避开平台按钮'},
     {id: 'project', name: '沿用这部视频的样式', desc: '字号和位置照搬，可能被平台按钮挡住'},
   ];
-  const DEFAULTS = {count: COUNT.def, length: 'mid', focus: 'speaker', tracks: 'both', style: 'shorts',
-    note: '', scope: 'all', skipDone: true, hook: true, crossChapter: false};
+  const DEFAULTS = {count: COUNT.def, length: 'mid', lenMin: 30, lenMax: 60, ratio: '9:16', focus: 'center',
+    tracks: 'both', style: 'shorts', scope: 'all', skipDone: true, hook: true, crossChapter: false};
+  /** 一条进度走完：找片段 → 创建视频（BC_TASK_FACTS.SHORTS_CUT_STAGE 的 find / create）。 */
   const FIND_STAGES = ['读文稿', '找片段', '核对起止'];
-  const CREATE_STAGES = ['切文稿', '套字幕样式', '取景', '发布前检查'];
+  const CREATE_STAGES = ['创建视频', '套字幕样式', '取景'];
 
   const lengthOf = (id) => LENGTHS.find((l) => l.id === id) || LENGTHS[1];
-  const focusOf = (id) => FOCUS.find((f) => f.id === id) || FOCUS[0];
+  const focusOf = (id) => FOCUS.find((f) => f.id === id) || FOCUS[1];
+  const ratioOf = (id) => RATIOS.find((r) => r.id === id) || RATIOS[0];
+  const clampSec = (n, d) => (Number.isFinite(+n) && n !== '' && n != null ? Math.max(CUSTOM.min, Math.min(CUSTOM.max, Math.round(+n))) : d);
+  /** 这次要的时长区间（秒）：预设一档，或自定义的两头（1–600 秒，下限小于上限）。 */
+  function lengthRange(params) {
+    const p = Object.assign({}, DEFAULTS, params);
+    const l = lengthOf(p.length);
+    if (l.id !== 'custom') return {id: l.id, min: l.min, max: l.max, name: l.name};
+    let a = clampSec(p.lenMin, DEFAULTS.lenMin), b = clampSec(p.lenMax, DEFAULTS.lenMax);
+    if (a > b) { const t = a; a = b; b = t; }
+    if (a === b) { if (b < CUSTOM.max) b += 1; else a -= 1; }
+    return {id: 'custom', min: a, max: b, name: `${a}–${b} 秒`};
+  }
   const clampCount = (n) => (Number.isFinite(+n) && n !== '' && n != null
     ? Math.max(COUNT.min, Math.min(COUNT.max, Math.round(+n))) : COUNT.def);
 
   /** 参数落到这个项目上：没有译文就只有原文；原片本来就是竖屏就不用取景。
-      取景缺省跟着说话的人，缺本机模型也不替人改选——模型门在主按钮上（下载并开始）。 */
+      「跟着说话的人」这一版不开放，带进来的一律落回居中。 */
   function normalize(params, ctx) {
     const c = ctx || {};
     const p = Object.assign({}, DEFAULTS, params);
     p.count = clampCount(p.count);
     p.length = lengthOf(p.length).id;
+    if (p.length === 'custom') { const r = lengthRange(p); p.lenMin = r.min; p.lenMax = r.max; }
+    p.ratio = ratioOf(p.ratio).id;
     if (!c.hasTrans) p.tracks = 'orig';
     else if (!TRACKS.some((t) => t.id === p.tracks)) p.tracks = 'both';
     if (c.portrait) p.focus = 'center';
-    else if (!FOCUS.some((f) => f.id === p.focus)) p.focus = DEFAULTS.focus;
+    else if (!FOCUS.some((f) => f.id === p.focus && !f.off)) p.focus = DEFAULTS.focus;
     if (!c.children) p.skipDone = DEFAULTS.skipDone;
     return p;
   }
@@ -158,26 +181,25 @@
     ? `它切出的 ${n} 支短视频不受影响，仍可打开和导出，只是不能再从原片添加片段。` : '');
 
   /* ---------- 候选的提醒 ---------- */
-  /** 固定次序：已切过 → 平台时长 → 比要的长 / 短 → 重叠 → 要靠前文 → 译文 → 落在句中。
-      `ctx`：`{params, list（全部候选，按原片先后）, children, sentences}`。重叠只和**勾上的**别的候选比。 */
+  /** 固定次序：已切过 → 比要的长 / 短 → 重叠 → 要靠前文 → 译文 → 落在句中。平台时长不在这里说（§6.9 导出前检查）。
+      `ctx`：`{params, list（这一轮的几支，按原片先后）, children（之前切过的，不含这一轮）, sentences}`。 */
   function flags(seg, ctx) {
     const c = ctx || {};
     const p = c.params || DEFAULTS;
-    const len = lengthOf(p.length);
+    const len = lengthRange(p);
     const dur = seg.end - seg.start;
     const out = [];
     /* 重做的是哪一支写在「为什么挑它」那一行，小牌只说后果（小牌不折行，写不下标题） */
     if (seg.redoOf) out.push({k: 'redo', tone: 'accent', text: '重做 · 另建一支，原来那支不动'});
     const done = doneBy(seg, (c.children || []).filter((k) => k.id !== seg.redoOf));
     if (done) out.push({k: 'done', tone: 'notice', text: `已切过 · 「${done.title}」`});
-    if (dur > PLATFORM_MAX + 0.5) out.push({k: 'over60', tone: 'notice', text: `超过 ${PLATFORM_MAX} 秒，部分平台不按 Shorts 推`});
     if (Math.round(dur - len.max) >= 1) out.push({k: 'long', tone: 'neutral', text: `比你要的长 ${Math.round(dur - len.max)} 秒`});
     else if (Math.round(len.min - dur) >= 1) out.push({k: 'short', tone: 'neutral', text: `比你要的短 ${Math.round(len.min - dur)} 秒`});
     const list = (c.list || []).filter((x) => !x.removed);
     list.forEach((x, i) => {
-      if (x.id === seg.id || !x.on) return;
+      if (x.id === seg.id || x.on === false) return;
       const o = Math.round(overlapSec(seg, x));
-      if (o >= 1) out.push({k: 'overlap', tone: 'notice', text: `和第 ${i + 1} 段重叠 ${o} 秒`});
+      if (o >= 1) out.push({k: 'overlap', tone: 'notice', text: `和第 ${i + 1} 支重叠 ${o} 秒`});
     });
     if (seg.weak) out.push({k: 'context', tone: 'neutral', text: '要靠前文才听得懂'});
     if (p.tracks !== 'orig' && c.sentences
@@ -190,25 +212,20 @@
   /* ---------- 候选列表 ---------- */
   const byTime = (list) => list.slice().sort((a, b) => a.start - b.start || a.end - b.end);
   const visible = (list) => byTime((list || []).filter((c) => !c.removed));
-  const chosen = (list) => visible(list).filter((c) => c.on);
+  const chosen = (list) => visible(list).filter((c) => c.on !== false);
   const totalSec = (list) => chosen(list).reduce((n, c) => n + (c.end - c.start), 0);
-  function pickHeadline(list, preselected) {
-    const n = visible(list).length, on = chosen(list).length;
-    return preselected
-      ? `找到 ${n} 段，先替你选了 ${on} 段 · 合计 ${mmss(totalSec(list))}`
-      : `${n} 段候选，勾了 ${on} 段 · 合计 ${mmss(totalSec(list))}`;
-  }
-  const createLabel = (n) => (n > 0 ? `创建 ${n} 支短视频` : '创建短视频');
+  /** 结果页顶上那一句。 */
+  const resultHead = (list) => `已创建 ${visible(list).length} 支 · 合计 ${mmss(totalSec(list))}`;
   const hookOf = (sentences, seg) => (sentences[seg.from] || {}).text || '';
   const tailOf = (sentences, seg) => (sentences[seg.to] || {}).text || '';
-  /** 按把握的先后替用户勾：不勾要靠前文的、已切过的、和已勾的重叠的，勾满要的条数为止。 */
+  /** 按把握的先后取够要的条数：先跳过要靠前文的、已切过的、和已取的重叠的；不够再按次序补（仍不重叠）。 */
   function preselect(list, count, children) {
     const on = [];
-    return list.map((c) => {
-      const ok = on.length < count && !c.weak && !doneBy(c, children) && !on.some((x) => overlapSec(x, c) >= 1);
-      if (ok) on.push(c);
-      return Object.assign({}, c, {on: ok});
+    list.forEach((c) => {
+      if (on.length < count && !c.weak && !doneBy(c, children) && !on.some((x) => overlapSec(x, c) >= 1)) on.push(c);
     });
+    list.forEach((c) => { if (on.length < count && on.indexOf(c) < 0 && !on.some((x) => overlapSec(x, c) >= 1)) on.push(c); });
+    return on.map((c) => Object.assign({}, c, {on: true}));
   }
 
   /* 演示的候选：起点是句子下标，`n` 是「30–60 秒」那一档下的句数，别的档按比例伸缩。
@@ -222,10 +239,10 @@
     {k: 'e', at: 50, n: 11, title: '每个小改动都要三次签字', reason: '有故事，但开头那句在接前面的话', weak: true},
     {k: 'g', at: 56, n: 6, title: '像是把编译器那套搬过来了', reason: '一问一答，收得干净'},
   ];
-  const SCALE = {short: 0.5, mid: 1, long: 1.9};
   function demoPool(sentences, params, scope) {
     const p = Object.assign({}, DEFAULTS, params);
-    const k = SCALE[lengthOf(p.length).id];
+    const r = lengthRange(p);
+    const k = (r.min + r.max) / 2 / 45;
     const lo = scope ? scope.start : -Infinity, hi = scope ? scope.end : Infinity;
     return DEMO.filter((d) => d.at < sentences.length && sentences[d.at].start >= lo - EPS && sentences[d.at].start < hi - EPS)
       .map((d) => {
@@ -234,21 +251,12 @@
         return Object.assign({id: 'sc-' + d.k, title: d.title, reason: d.reason, weak: !!d.weak, on: false}, rangeOf(sentences, d.at, to));
       });
   }
-  /** 第一轮：要 n 支就找 n + SPARE 段；开着「已经切过的不再找」时切过的不进候选。 */
+  /** 找到的就是要创建的：要 n 支给 n 段（范围里不够就少给）；开着「已经切过的不再找」时切过的不进来。 */
   function demoCandidates(sentences, params, o) {
     const c = o || {};
     const p = Object.assign({}, DEFAULTS, params);
     const pool = demoPool(sentences, p, c.scope).filter((x) => !(p.skipDone && doneBy(x, c.children)));
-    return byTime(preselect(pool.slice(0, clampCount(p.count) + SPARE), clampCount(p.count), c.children));
-  }
-  /** 再找几段：把还没出现过的接在后面，不勾。找不到返回空表。 */
-  function demoMore(sentences, params, list, o) {
-    const c = o || {};
-    const p = Object.assign({}, DEFAULTS, params);
-    const have = new Set((list || []).map((x) => x.id));
-    return demoPool(sentences, p, c.scope)
-      .filter((x) => !have.has(x.id) && !(p.skipDone && doneBy(x, c.children))).slice(0, SPARE)
-      .map((x) => Object.assign(x, {added: 'more'}));
+    return byTime(preselect(pool, clampCount(p.count), c.children));
   }
   /** 自己加一段：有选区用选区（不吸附，落在句中的带提醒），没有就从播放头那一句起凑到这一档的中间长度。 */
   function manualCandidate(sentences, o) {
@@ -259,7 +267,7 @@
       return {id, from, to, start: o.range.start, end: o.range.end, loose,
         title: o.title || hookOf(sentences, {from}), reason: '你自己选的区间', on: true, added: 'manual'};
     }
-    const len = lengthOf((o.params || DEFAULTS).length);
+    const len = lengthRange(o.params || DEFAULTS);
     const from = indexAt(sentences, o.t || 0);
     let to = from;
     while (to < sentences.length - 1 && sentences[to].end - sentences[from].start < (len.min + len.max) / 2) to++;
@@ -276,14 +284,19 @@
     while (used.has(`${base} ${i}`)) i++;
     return `${base} ${i}`;
   }
-  /** 短视频项目的记录：引用来源项目的同一份原片，只记起止，不复制视频。 */
+  /** 短视频项目的记录：引用来源项目的同一份原片，只记起止，不复制视频。
+      和来源视频放在同一个项目目录下、各占一个以标题命名的视频文件夹（并排，不嵌套）；
+      `session` / `messageId` 让创建它的那条会话里出现这支视频的卡片（BC_AGENT_PROJECTS.sessionArtifacts）。 */
   function childProject(o) {
     const parent = o.parent, seg = o.seg, p = Object.assign({}, DEFAULTS, o.params);
+    const source = ratioOf(p.ratio).id === 'source';
     return {
       id: o.id, title: o.title, status: 'complete', entry: parent.entry || 'trans', bare: true,
-      delivery: 'shorts', ratio: '9:16',
+      delivery: 'shorts', ratio: source ? (parent.ratio || '16:9') : ratioOf(p.ratio).id,
+      dir: parent.dir || null, folder: o.title,
+      session: o.session || null, messageId: o.messageId || null,
       origin: {project: parent.id, in: seg.start, out: seg.end},
-      cut: {focus: p.focus, focusX: seg.focusX == null ? null : seg.focusX, tracks: p.tracks, style: p.style},
+      cut: {focus: source ? null : p.focus, focusX: seg.focusX == null ? null : seg.focusX, tracks: p.tracks, style: p.style, ratio: ratioOf(p.ratio).id},
       src: Object.assign({}, parent.src),
       duration: +(seg.end - seg.start).toFixed(2), lang: parent.lang, model: parent.model,
       modified: '刚刚', mtime: 0, otime: 0, ctime: 0, hue: parent.hue,
@@ -291,58 +304,63 @@
       content: {}, meta: {speakers: o.speakers || 1, chapters: 1, cues: seg.to - seg.from + 1},
     };
   }
-  /** 发布前检查在完成页上的一句话（只有时长这一条在创建时就判得了）。 */
-  function checkLine(seg) {
-    const dur = Math.round(seg.end - seg.start);
-    return dur > PLATFORM_MAX
-      ? {tone: 'notice', text: `1 项要看一眼 · 时长 ${dur} 秒`}
-      : {tone: 'positive', text: '能查的都过了'};
-  }
 
   /* ---------- 文案 ---------- */
+  /** 画幅与取景念成一句：保留原画幅时不说取景。 */
+  function frameLine(params) {
+    const p = Object.assign({}, DEFAULTS, params);
+    const r = ratioOf(p.ratio);
+    return r.id === 'source' ? '保留原画幅' : `${r.name} · ${focusOf(p.focus).name}`;
+  }
   function summaryLine(params) {
     const p = Object.assign({}, DEFAULTS, params);
-    return [`${p.count} 支`, `每支 ${lengthOf(p.length).name}`, focusOf(p.focus).name].join(' · ');
+    return [`${p.count} 支`, `每支 ${lengthRange(p).name}`, frameLine(p)].join(' · ');
   }
-  const lengthNote = (id) => (lengthOf(id).max > PLATFORM_MAX ? `超过 ${PLATFORM_MAX} 秒，部分平台不按 Shorts 推` : '');
-  /** 交给 Agent 时接在意图后面的几句（BC_AGENT.intentPrompt 的 extra）。 */
+  /** 提示词模板里那一行可删的话：删掉就等于「先列出来等我挑」（这一版不做那条分支）。 */
+  const DIRECT_LINE = '找好就直接创建成视频，不用先问我';
+  /** 交给 Agent 时接在意图后面的几句（BC_AIPROMPT.template 的 extra，一行一句）。 */
   function agentExtra(params, o) {
     const c = o || {};
     const p = Object.assign({}, DEFAULTS, params);
-    const len = lengthOf(p.length);
+    const len = lengthRange(p);
+    const r = ratioOf(p.ratio);
     const out = [`要 ${p.count} 支，每支 ${len.min}–${len.max} 秒，起止落在句子边界上`];
+    out.push(r.id === 'source' ? '画幅：保留原画幅，不裁' : `画幅 ${r.name}，取景${focusOf(p.focus).name}`);
+    out.push(`字幕：${tracksOf(p.tracks).name}，${(STYLES.find((x) => x.id === p.style) || STYLES[0]).name}`);
     if (c.scopeName) out.push(`只在「${c.scopeName}」里找`);
-    if (String(p.note || '').trim()) out.push(`我想要的：${String(p.note).trim()}`);
     if (p.hook) out.push('每段从一句能单独成立的话起');
     if (c.children && p.skipDone) out.push(`已经切过的 ${c.children} 支不用再找`);
-    out.push(`多找 ${SPARE} 段备选，每段给标题和一句理由，写进候选库让我在「剪成短视频」面板里挑；我确认之前不要创建视频`);
+    out.push(DIRECT_LINE);
     return out;
   }
   const taskTitle = (title) => `剪成短视频 · ${title}`;
   function stageAt(stages, pct) {
     return Math.min(stages.length - 1, Math.floor((Math.max(0, Math.min(99.9, pct)) / 100) * stages.length));
   }
-  /** AI 工具列表里那张卡的副题。 */
+  /** AI 工具列表里那张卡的副题：setup → running → result 三段。 */
   function listStatus(s, fallback, children) {
     const tail = children ? ` · 已有 ${children} 支` : '';
     if (!s || s.phase === 'setup') return fallback + tail;
-    if (s.phase === 'finding') return `正在找片段 · ${Math.round(s.pct || 0)}%`;
-    if (s.phase === 'review') return `找到 ${visible(s.list).length} 段 · 等你挑`;
-    if (s.phase === 'creating') return `正在创建 ${s.made ? s.made.length : chosen(s.list).length} 支 · ${Math.round(s.pct || 0)}%`;
-    if (s.phase === 'done') return `已创建 ${s.made.length} 支`;
+    if (s.phase === 'running') return `${s.stage === 'create' ? '正在创建视频' : '正在找片段'} · ${Math.round(s.pct || 0)}%`;
+    if (s.phase === 'result') return `已创建 ${visible(s.list).length} 支`;
     return fallback + tail;
   }
 
-  /* ---------- 取景与字幕预览（挑片段的舞台） ---------- */
-  const OUT_RATIO = 9 / 16;
-  /** 取景窗在原片上的大小（占原片宽高的比例）：原片比 9:16 宽就裁左右，比它窄就裁上下。 */
-  function focusSize(srcRatio) {
+  /* ---------- 取景与字幕预览（结果页的舞台） ---------- */
+  /** 成片的宽高比：保留原画幅时就是原片的。 */
+  function outRatio(ratio, srcRatio) {
+    const v = ratioOf(ratio).value;
+    return v || (srcRatio > 0 ? srcRatio : 16 / 9);
+  }
+  /** 取景窗在原片上的大小（占原片宽高的比例）：原片比成片宽就裁左右，比它窄就裁上下。缺省按 9:16。 */
+  function focusSize(srcRatio, out) {
     const r = srcRatio > 0 ? srcRatio : 16 / 9;
-    return r >= OUT_RATIO ? {w: OUT_RATIO / r, h: 1} : {w: 1, h: r / OUT_RATIO};
+    const o = out > 0 ? out : 9 / 16;
+    return r >= o ? {w: o / r, h: 1} : {w: 1, h: r / o};
   }
   /** 取景窗的横向中心夹在原片里。 */
-  function clampFocus(x, srcRatio) {
-    const half = focusSize(srcRatio).w / 2;
+  function clampFocus(x, srcRatio, out) {
+    const half = focusSize(srcRatio, out).w / 2;
     const v = Number.isFinite(+x) && x != null ? +x : 0.5;
     return Math.min(1 - half, Math.max(half, v));
   }
@@ -386,13 +404,13 @@
     const cue = cues[lo - 1]; return cue && t < cue.end ? cue : null;
   }
   /** 这一刻取景窗的横向中心。`speakerX` 是「说话人 id → 他在画面里的横向位置」，认不出时退到正中。 */
-  function focusAt(params, seg, sentence, speakerX, srcRatio, fallbackX) {
+  function focusAt(params, seg, sentence, speakerX, srcRatio, fallbackX, out) {
     const p = Object.assign({}, DEFAULTS, params);
     let x = 0.5;
     if (p.focus === 'manual') x = seg && seg.focusX != null ? seg.focusX : 0.5;
     else if (p.focus === 'speaker' && sentence && speakerX && speakerX[sentence.sp] != null) x = speakerX[sentence.sp];
     else if (p.focus === 'speaker' && fallbackX != null) x = fallbackX;
-    return clampFocus(x, srcRatio);
+    return clampFocus(x, srcRatio, out);
   }
   /** 示意轨迹：停顿沿用此前的人，片头看下一位；没有台词线索时先取可见人物。
       App 使用真实视听轨迹，此处不把出场顺序当成人脸身份识别。 */
@@ -588,7 +606,8 @@
   /** 创建时的选择念成一句：取景 · 字幕轨。没有记录（老项目）给空串。 */
   function cutLine(cut) {
     if (!cut) return '';
-    return [focusOf(cut.focus).name, tracksOf(cut.tracks).name].join(' · ');
+    const frame = cut.ratio === 'source' ? '保留原画幅' : focusOf(cut.focus).name;
+    return [frame, tracksOf(cut.tracks).name].join(' · ');
   }
   /** 组头：几支、合计多长（按现状）。 */
   function madeHead(children) {
@@ -605,7 +624,7 @@
       return {
         id: k.id, n: i + 1, title: k.title, at: k.origin.in, hue: k.hue,
         span: used.length === 1 ? `${mmss(used[0].start)} – ${mmss(used[0].end)}` : `${used.length} 段 · 从 ${mmss(used[0].start)} 起`,
-        len: secs(len), over: Math.round(len) > PLATFORM_MAX, edited, cut: cutLine(k.cut), modified: k.modified || '',
+        len: secs(len), edited, cut: cutLine(k.cut), modified: k.modified || '',
       };
     });
   }
@@ -624,7 +643,7 @@
     while (used.has(`${base} · 第 ${n} 版`)) n++;
     return `${base} · 第 ${n} 版`;
   }
-  /** 「调整后再生成」带回挑片段页的那一条候选：现状是连着的一段就用现状，剪成了几段就用切出时的那一段。
+  /** 「调整后再生成」直接另建的那一支用哪一段：现状是连着的一段就用现状，剪成了几段就用切出时的那一段。
       起止不在句子边界上的（在编辑器里拖过）照原样带回，候选卡上有「落在句中」的提醒。
       `taken` 是项目库里已有的标题，用来给新的一支起名。 */
   function redoCandidate(sentences, child, taken) {
@@ -642,48 +661,32 @@
   function redoParams(child, base, facts) {
     const cut = (child && child.cut) || {};
     const p = Object.assign({}, base);
-    ['focus', 'tracks', 'style'].forEach((k) => { if (cut[k] != null) p[k] = cut[k]; });
+    ['ratio', 'focus', 'tracks', 'style'].forEach((k) => { if (cut[k] != null) p[k] = cut[k]; });
     return normalize(p, facts);
   }
-  /** 重做落在会话的哪一步：正在跑就等它（busy）；手里还有没创建的候选就接在后面（append）；否则单起一页（fresh）。 */
+  /** 重做落在哪：正在找或正在创建就等它（busy）；结果页开着就接在后面（append）；否则单起一页结果（fresh）。 */
   function redoPlan(s) {
     if (!s) return 'fresh';
-    if (s.phase === 'finding' || s.phase === 'creating') return 'busy';
-    if ((s.phase === 'review' || s.phase === 'done') && visible(s.list).some((c) => !c.made)) return 'append';
+    if (s.phase === 'running') return 'busy';
+    if (s.phase === 'result' && visible(s.list).length) return 'append';
     return 'fresh';
-  }
-  /** 接在候选后面：上一次重做、已经创建掉的那几条撤下去。取景和字幕一页只有一套——
-      别的候选一条都没勾时跟这一支原来的走；有勾上的就不动（`kept` 说的是和这一支原来的不一样）。 */
-  function redoAppend(s, child, c) {
-    const list = (s.list || []).filter((x) => x.id !== c.id && !(x.redoOf && x.made)).concat([c]);
-    const own = redoParams(child, s.params, s.facts);
-    if (!chosen(list).some((x) => x.id !== c.id)) return {list, params: own, kept: false};
-    const kept = ['focus', 'tracks', 'style'].some((k) => own[k] !== s.params[k]);
-    return {list, params: s.params, kept};
-  }
-  /** 挑片段页顶上那一句：只有重做的那一条时说的是重做，不说「找到几段」。 */
-  function pickLead(list, preselected) {
-    const v = visible(list);
-    const on = chosen(list).length;
-    if (v.length && v.every((c) => c.redoOf)) return {redo: true, head: `重做 ${v.length} 支${on === v.length ? '' : `，勾了 ${on} 支`} · 合计 ${mmss(totalSec(list))}`, sub: '起止不对就调，取景和字幕在下面改。创建的是另一部新视频，原来那支不动。'};
-    return {redo: false, head: pickHeadline(list, preselected), sub: '逐段试看，起止不对就调，标题可以改。勾上的才会创建。'};
   }
 
   const api = {
-    COUNT, SPARE, PLATFORM_MAX, DONE_RATIO, LENGTHS, FOCUS, TRACKS, STYLES, DEFAULTS, FIND_STAGES, CREATE_STAGES,
-    lengthOf, focusOf, clampCount, normalize,
+    COUNT, DONE_RATIO, LENGTHS, CUSTOM, RATIOS, FOCUS, TRACKS, STYLES, DEFAULTS, FIND_STAGES, CREATE_STAGES, DIRECT_LINE,
+    lengthOf, lengthRange, focusOf, ratioOf, clampCount, normalize,
     mmss, secs, spanText, overlapSec,
     indexAt, rangeOf, snap, nudge, canNudge, dragEdge,
     isChild, childrenOf, parentOf, usedRanges, originLabel, countLabel, doneBy, deleteNote,
-    flags, visible, chosen, totalSec, pickHeadline, createLabel, hookOf, tailOf, preselect,
-    demoCandidates, demoMore, manualCandidate,
-    childTitle, childProject, checkLine,
-    summaryLine, lengthNote, agentExtra, taskTitle, stageAt, listStatus,
-    focusSize, clampFocus, focusText, focusAt, contextFocus, speakerMap, captionSpec, openTracks,
+    flags, visible, chosen, totalSec, resultHead, hookOf, tailOf, preselect,
+    demoCandidates, manualCandidate,
+    childTitle, childProject,
+    frameLine, summaryLine, agentExtra, taskTitle, stageAt, listStatus,
+    outRatio, focusSize, clampFocus, focusText, focusAt, contextFocus, speakerMap, captionSpec, openTracks,
     reviewRecord, reviewCanStep, reviewStep, setReviewEdge, reviewCueAt,
     piecesOf, extendRange, cuesIn, insertCues, extendPatches, insertPoint, shiftPatches, selection, usedIds, bar, usedFrom,
     ROW_H, pieceRows, ripplePatches, sourceRows, rowWindow, sameUsed,
-    MADE_ROW_H, MADE_SHOWN, tracksOf, editedSince, cutLine, madeHead, madeRows, madeBar, redoTitle, redoCandidate, redoParams, redoPlan, redoAppend, pickLead,
+    MADE_ROW_H, MADE_SHOWN, tracksOf, editedSince, cutLine, madeHead, madeRows, madeBar, redoTitle, redoCandidate, redoParams, redoPlan,
   };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   if (typeof window !== 'undefined') window.BC_SHORTS_CUT = api;

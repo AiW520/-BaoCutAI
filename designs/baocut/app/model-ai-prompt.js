@@ -1,5 +1,5 @@
 /* AI 工具 Tab 的纯模型（product-design §5.10，2026-10-09）：
-   · 工具列表分批：第一批只列从文稿出发的三组（整理文稿 / 写作 / 发布），翻译与画面之后搬入；
+   · 工具列表分批：从文稿出发的三组（整理文稿 / 写作 / 发布）加「画面」组里的剪成短视频，翻译与智能裁剪之后搬入；
    · 工具页的提示词模板：意图句 + 几行固定约束，预填进输入框，用户可改。语言、风格、篇幅、视角不再是
      下拉——都写在模板里，改一句话比翻一个下拉更直接，也让新用户看见「会发出去什么」；
    · 直接调模型时发给模型的上下文包（文稿、章节、译文、附件）折成一行人话；
@@ -7,16 +7,23 @@
      prompt cache 过期后是额外成本；一件事一条会话也更好找），可改成接着这部视频当前的会话。
    无 React、无 DOM，`node --test` 直接跑。 */
 (function () {
-  const GROUPS_NOW = ['整理文稿', '写作', '发布'];
-  const GROUPS_LATER = ['翻译', '画面'];
-  const LATER_NOTE = '翻译字幕、翻译配音、智能裁剪与剪成短视频还在字幕、音频、视频面板里，之后搬到这里。';
+  const GROUPS_NOW = ['整理文稿', '写作', '发布', '画面'];
+  const GROUPS_LATER = ['翻译'];
+  /* 「画面」一组先只开剪成短视频（§5.10）；智能裁剪之后搬进来，列表脚注说清去处。 */
+  const OPEN_IN_GROUP = {'画面': ['shortscut']};
+  const LATER_NOTE = '翻译字幕、翻译配音与智能裁剪还在字幕、音频、视频面板里，之后搬到这里。';
+  /** 列表里这一组露出哪几个工具：有白名单的组只露白名单里的。 */
+  function listed(group, ids) {
+    const only = OPEN_IN_GROUP[group];
+    return only ? (ids || []).filter((k) => only.indexOf(k) >= 0) : (ids || []).slice();
+  }
 
   /* 每个工具各配一个内置 skill（§5.10、§6.9）：提示词框默认挂着它。摘掉 = 只按提示词做；还可以再挂别的已添加 skill。 */
   const TOOL_SKILL = {
     retranscribe: 'transcribe-captions', polish: 'transcript-polish', chapters: 'chaptering', speakers: 'speaker-labeling',
     cleanup: 'talking-head-cut', translate: 'subtitle-translation', stale: 'subtitle-translation',
     summary: 'video-summary', blog: 'blog-from-video', title: 'title-and-description', desc: 'title-and-description',
-    cover: 'cover-and-title', shortscut: 'shorts-slicing',
+    cover: 'cover-and-title', shortscut: 'shorts-segments',
   };
   /** 工具页打开时默认挂的 skill id 列表：这个工具的内置 skill 还在列表里就挂它（关着也挂——点选不看开关，§6.9）。 */
   function defaultSkills(tool, list) {
@@ -51,6 +58,8 @@
       case 'cover': return ['封面上的字跟文稿的语言。'];
       case 'polish': return ['不改写我的表达，也不删内容；只修可以确定是笔误的地方。'];
       case 'chapters': return ['按话题聚合，每章一个短标题。'];
+      // 剪成短视频的参数一行一句（BC_SHORTS_CUT.agentExtra），最后一行「找好就直接创建」可删
+      case 'shortscut': return (o.extra || []).slice();
       default: return [];
     }
   }
@@ -116,6 +125,7 @@
     return STAY_ON_AGENT.indexOf(tool) < 0;
   }
 
-  Object.assign(window, {BC_AIPROMPT: {GROUPS_NOW, GROUPS_LATER, LATER_NOTE, EFFECT, TOOL_SKILL, defaultSkills, standing, template, contextPack, contextLine, sessionOptions, hint,
+  Object.assign(window, {BC_AIPROMPT: {GROUPS_NOW, GROUPS_LATER, OPEN_IN_GROUP, LATER_NOTE, listed, EFFECT,
+    TOOL_SKILL, defaultSkills, standing, template, contextPack, contextLine, sessionOptions, hint,
     backTarget, agentLeavesPage}});
 })();

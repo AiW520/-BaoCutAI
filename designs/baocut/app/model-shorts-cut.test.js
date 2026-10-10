@@ -22,18 +22,35 @@ const parent = {id: 'p1', title: '科浪访谈双语版', entry: 'trans', lang: 
 const child = (id, from, to, extra) => Object.assign({id, title: '短视频切片 · ' + id,
   origin: {project: 'p1', in: S[from].start, out: S[to].end}}, extra);
 
-test('参数：缺省值、条数夹在 1–10、时长档与平台提醒', () => {
+test('参数：缺省值、条数夹在 1–10、时长档不设上限、画幅缺省 9:16', () => {
   assert.equal(M.DEFAULTS.count, 3);
   assert.equal(M.DEFAULTS.length, 'mid');
-  assert.equal(M.DEFAULTS.focus, 'speaker');
+  assert.equal(M.DEFAULTS.focus, 'center');
+  assert.equal(M.DEFAULTS.ratio, '9:16');
   assert.equal(M.FOCUS[0].id, 'speaker');
+  assert.equal(M.FOCUS[0].off, '这一版还没有人物与发言人模型');
   assert.equal(M.clampCount(0), 1);
   assert.equal(M.clampCount(99), 10);
   assert.equal(M.clampCount('x'), 3);
-  assert.deepEqual(M.LENGTHS.map((l) => [l.min, l.max]), [[15, 30], [30, 60], [60, 90]]);
-  assert.equal(M.lengthNote('mid'), '');
-  assert.match(M.lengthNote('long'), /超过 60 秒/);
-  assert.equal(M.summaryLine({count: 4, length: 'short', focus: 'center'}), '4 支 · 每支 15–30 秒 · 居中');
+  assert.deepEqual(M.LENGTHS.filter((l) => l.id !== 'custom').map((l) => [l.min, l.max]), [[15, 30], [30, 60], [60, 90], [60, 180]]);
+  assert.equal(M.lengthOf('xl').name, '1–3 分钟');
+  assert.deepEqual(M.RATIOS.map((r) => r.id), ['9:16', '1:1', 'source']);
+  assert.equal(M.PLATFORM_MAX, undefined);
+  assert.equal(M.lengthNote, undefined);
+  assert.equal(M.summaryLine({count: 4, length: 'short', focus: 'center'}), '4 支 · 每支 15–30 秒 · 9:16 · 居中');
+  assert.equal(M.summaryLine({count: 2, length: 'xl', ratio: 'source'}), '2 支 · 每支 1–3 分钟 · 保留原画幅');
+});
+
+test('自定义时长：两头夹在 1–600 秒，下限比上限小，反了就对调', () => {
+  assert.deepEqual(M.lengthRange({length: 'custom', lenMin: 20, lenMax: 45}), {id: 'custom', min: 20, max: 45, name: '20–45 秒'});
+  assert.deepEqual([M.lengthRange({length: 'custom', lenMin: 0, lenMax: 900}).min, M.lengthRange({length: 'custom', lenMin: 0, lenMax: 900}).max], [1, 600]);
+  assert.deepEqual([M.lengthRange({length: 'custom', lenMin: 90, lenMax: 40}).min, M.lengthRange({length: 'custom', lenMin: 90, lenMax: 40}).max], [40, 90]);
+  assert.deepEqual([M.lengthRange({length: 'custom', lenMin: 600, lenMax: 600}).min, M.lengthRange({length: 'custom', lenMin: 600, lenMax: 600}).max], [599, 600]);
+  assert.deepEqual([M.lengthRange({length: 'custom', lenMin: 'x', lenMax: ''}).min, M.lengthRange({length: 'custom', lenMin: 'x', lenMax: ''}).max], [30, 60]);
+  const p = M.normalize({length: 'custom', lenMin: 300, lenMax: 120}, {hasTrans: true});
+  assert.deepEqual([p.lenMin, p.lenMax], [120, 300]);
+  assert.equal(M.summaryLine(p), '3 支 · 每支 120–300 秒 · 9:16 · 居中');
+  assert.equal(M.normalize({ratio: 'nope'}, {}).ratio, '9:16');
 });
 
 test('参数落到项目上：没有译文只有原文；竖屏原片不取景；没切过时不记「不再找」', () => {
@@ -45,14 +62,15 @@ test('参数落到项目上：没有译文只有原文；竖屏原片不取景�
   assert.deepEqual([b.tracks, b.focus, b.skipDone], ['trans', 'manual', false]);
 });
 
-test('取景缺省跟着说话的人：没给、给了不认识的都落到它；竖屏原片仍不取景', () => {
+test('取景缺省居中：跟着说话的人这一版不开放，带进来也落回居中；竖屏原片仍不取景', () => {
   const ctx = {hasTrans: true, portrait: false, children: 0};
-  assert.equal(M.normalize({}, ctx).focus, 'speaker');
-  assert.equal(M.normalize({focus: 'nope'}, ctx).focus, 'speaker');
-  assert.equal(M.normalize({focus: 'center'}, ctx).focus, 'center');
-  assert.equal(M.normalize({}, Object.assign({}, ctx, {portrait: true})).focus, 'center');
-  assert.equal(M.focusOf('nope').id, 'speaker');
-  assert.equal(M.summaryLine(M.normalize({}, ctx)), '3 支 · 每支 30–60 秒 · 跟着说话的人');
+  assert.equal(M.normalize({}, ctx).focus, 'center');
+  assert.equal(M.normalize({focus: 'speaker'}, ctx).focus, 'center');
+  assert.equal(M.normalize({focus: 'nope'}, ctx).focus, 'center');
+  assert.equal(M.normalize({focus: 'manual'}, ctx).focus, 'manual');
+  assert.equal(M.normalize({focus: 'manual'}, Object.assign({}, ctx, {portrait: true})).focus, 'center');
+  assert.equal(M.focusOf('nope').id, 'center');
+  assert.equal(M.summaryLine(M.normalize({}, ctx)), '3 支 · 每支 30–60 秒 · 9:16 · 居中');
 });
 
 test('吸附：模型给的时间落到最近的句首和句尾，终点不会跑到起点前面', () => {
@@ -129,15 +147,17 @@ test('提醒：固定次序与文案；重叠只和勾上的别的候选比', ()
   const list = [a, b];
   const fb = M.flags(b, {params, list, children: [], sentences: S});
   assert.deepEqual(fb.map((f) => f.k), ['overlap', 'context']);
-  assert.equal(fb[0].text, `和第 1 段重叠 ${Math.round(M.overlapSec(a, b))} 秒`);
+  assert.equal(fb[0].text, `和第 1 支重叠 ${Math.round(M.overlapSec(a, b))} 秒`);
   assert.equal(fb[1].text, '要靠前文才听得懂');
   assert.deepEqual(M.flags(a, {params, list, children: [], sentences: S}), [], 'b 没勾，a 不提重叠');
 
   const long = Object.assign({id: 'l', on: true}, M.rangeOf(S, 0, 20));   // 约 70 秒
   const fl = M.flags(long, {params, list: [long], children: [child('c1', 2, 18)], sentences: S});
-  assert.deepEqual(fl.map((f) => f.k), ['done', 'over60', 'long']);
+  assert.deepEqual(fl.map((f) => f.k), ['done', 'long'], '不再提平台时长');
   assert.match(fl[0].text, /^已切过 · 「/);
-  assert.equal(fl[2].text, `比你要的长 ${Math.round(long.end - long.start - 60)} 秒`);
+  assert.equal(fl[1].text, `比你要的长 ${Math.round(long.end - long.start - 60)} 秒`);
+  // 1–3 分钟那一档：70 秒在区间里，不提
+  assert.deepEqual(M.flags(long, {params: {length: 'xl', tracks: 'both'}, list: [long], sentences: S}), []);
 
   const short = Object.assign({id: 's', on: true}, M.rangeOf(S, 5, 8));
   assert.deepEqual(M.flags(short, {params, list: [short], sentences: S}).map((f) => f.k), ['short']);
@@ -161,29 +181,36 @@ test('提醒：缺译文只在要译文时提；落在句中分起点和终点',
   assert.deepEqual([fixed.start, fixed.end, fixed.loose.start, fixed.loose.end], [S[3].start, loose.end, false, true]);
 });
 
-test('演示候选：多找两段，先勾要的条数，勾上的互不重叠、不含要靠前文的', () => {
+test('演示候选：要几支给几支，不多找备选；互不重叠、不含要靠前文的', () => {
   const list = M.demoCandidates(S, {count: 3, length: 'mid'}, {children: []});
-  assert.equal(list.length, 5);
+  assert.equal(list.length, 3);
   assert.deepEqual(list.map((c) => c.start), list.map((c) => c.start).slice().sort((a, b) => a - b), '按原片先后');
-  const on = M.chosen(list);
-  assert.equal(on.length, 3);
-  on.forEach((a) => on.forEach((b) => { if (a !== b) assert.ok(M.overlapSec(a, b) < 1); }));
-  assert.ok(on.every((c) => !c.weak));
-  on.forEach((c) => assert.deepEqual(M.flags(c, {params: {length: 'mid', tracks: 'both'}, list, children: [], sentences: S}), [], c.title));
-  assert.match(M.pickHeadline(list, true), /^找到 5 段，先替你选了 3 段 · 合计 \d+:\d\d$/);
-  assert.equal(M.createLabel(3), '创建 3 支短视频');
+  assert.equal(M.chosen(list).length, 3);
+  list.forEach((a) => list.forEach((b) => { if (a !== b) assert.ok(M.overlapSec(a, b) < 1); }));
+  assert.ok(list.every((c) => !c.weak));
+  list.forEach((c) => assert.deepEqual(M.flags(c, {params: {length: 'mid', tracks: 'both'}, list, children: [], sentences: S}), [], c.title));
+  assert.match(M.resultHead(list), /^已创建 3 支 · 合计 \d+:\d\d$/);
+  assert.equal(M.demoMore, undefined);
+  assert.equal(M.pickHeadline, undefined);
+  // 要得比找得到的多：有几段给几段，仍然互不重叠
+  const many = M.demoCandidates(S, {count: 10}, {children: []});
+  assert.ok(many.length > 3 && many.length <= 10);
+  many.forEach((a) => many.forEach((b) => { if (a !== b) assert.ok(M.overlapSec(a, b) < 1); }));
+  // 时长档跟着区间中点伸缩
+  const xl = M.demoCandidates(S, {count: 1, length: 'xl'}, {children: []});
+  assert.ok(xl[0].end - xl[0].start > 90);
 });
 
-test('演示候选：切过的那一段开着「不再找」时不出现，关掉后出现但不替你勾', () => {
+test('演示候选：切过的那一段开着「不再找」时不出现，关掉后也排在没切过的后面', () => {
   const kids = [child('p5', 37, 53)];
   const skip = M.demoCandidates(S, {count: 3, skipDone: true}, {children: kids});
   assert.ok(skip.every((c) => !M.doneBy(c, kids)));
-  assert.equal(M.chosen(skip).length, 3);
+  assert.equal(skip.length, 3);
   const keep = M.demoCandidates(S, {count: 3, skipDone: false}, {children: kids});
-  const done = keep.filter((c) => M.doneBy(c, kids));
-  assert.equal(done.length, 1);
-  assert.equal(done[0].on, false);
-  assert.equal(M.chosen(keep).length, 3);
+  assert.equal(keep.filter((c) => M.doneBy(c, kids)).length, 0);
+  assert.equal(keep.length, 3);
+  const all = M.demoCandidates(S, {count: 10, skipDone: false}, {children: kids});
+  assert.equal(all.filter((c) => M.doneBy(c, kids)).length, 1, '不够时才补切过的');
 });
 
 test('演示候选：只在一章里找时起点都在这一章，不跨章就收在章尾之前', () => {
@@ -193,13 +220,6 @@ test('演示候选：只在一章里找时起点都在这一章，不跨章就�
   list.forEach((c) => { assert.ok(c.start >= 95 - 0.02 && c.end <= 158 + 0.02, c.title); });
 });
 
-test('再找几段：只给没出现过的，不勾；找完了给空表', () => {
-  const list = M.demoCandidates(S, {count: 3}, {children: []});
-  const more = M.demoMore(S, {count: 3}, list, {children: []});
-  assert.equal(more.length, 2);
-  assert.ok(more.every((c) => !c.on && !list.some((x) => x.id === c.id)));
-  assert.deepEqual(M.demoMore(S, {count: 3}, list.concat(more), {children: []}), []);
-});
 
 test('自己加一段：从播放头那一句起，凑到这一档的中间长度', () => {
   const c = M.manualCandidate(S, {t: S[20].start + 1, params: {length: 'mid'}});
@@ -213,37 +233,48 @@ test('创建：标题去重；项目记录引用同一份原片并记下起止',
   assert.equal(M.childTitle('A', ['A', 'A 2']), 'A 3');
   assert.equal(M.childTitle('  ', []), '未命名短视频');
   const seg = Object.assign({id: 'a', focusX: 32}, M.rangeOf(S, 4, 13));
-  const p = M.childProject({id: 'ps1', parent, seg, title: '为什么做本机', params: {focus: 'manual'}});
+  const p = M.childProject({id: 'ps1', parent: Object.assign({dir: '/Videos/科浪访谈'}, parent), seg, title: '为什么做本机',
+    params: {focus: 'manual'}, session: 's9', messageId: 'r-t1'});
   assert.deepEqual(p.origin, {project: 'p1', in: S[4].start, out: S[13].end});
   assert.deepEqual([p.delivery, p.ratio, p.bare], ['shorts', '9:16', true]);
+  assert.deepEqual([p.dir, p.folder], ['/Videos/科浪访谈', '为什么做本机'], '和来源视频并排，各占一个视频文件夹');
+  assert.deepEqual([p.session, p.messageId], ['s9', 'r-t1']);
   assert.equal(p.src.name, parent.src.name);
   assert.notEqual(p.src, parent.src);
   assert.equal(p.duration, +(S[13].end - S[4].start).toFixed(2));
   assert.equal(p.cut.focusX, 32);
   assert.equal(p.meta.cues, 10);
-  assert.equal(M.checkLine(seg).text, '能查的都过了');
-  assert.equal(M.checkLine({start: 0, end: 62}).text, '1 项要看一眼 · 时长 62 秒');
+  assert.equal(M.checkLine, undefined);
+  const sq = M.childProject({id: 'ps2', parent, seg, title: 'b', params: {ratio: '1:1'}});
+  assert.deepEqual([sq.ratio, sq.dir, sq.session], ['1:1', null, null]);
+  const src = M.childProject({id: 'ps3', parent: Object.assign({ratio: '16:9'}, parent), seg, title: 'c', params: {ratio: 'source'}});
+  assert.deepEqual([src.ratio, src.cut.ratio, src.cut.focus], ['16:9', 'source', null]);
+  assert.equal(M.cutLine(src.cut), '保留原画幅 · 原文 + 译文');
 });
 
-test('交给 Agent 的附加句：参数都在，候选写进候选库、确认前不创建', () => {
-  const x = M.agentExtra({count: 4, length: 'short', note: '只要讲成本的', skipDone: true, hook: true}, {children: 2, scopeName: '产品演示'});
+test('交给 Agent 的附加句：条数、时长、画幅与取景、字幕、范围、不再找，最后一句是直接创建', () => {
+  const x = M.agentExtra({count: 4, length: 'short', skipDone: true, hook: true, tracks: 'orig'}, {children: 2, scopeName: '产品演示'});
   assert.match(x[0], /^要 4 支，每支 15–30 秒/);
+  assert.ok(x.includes('画幅 9:16，取景居中'));
+  assert.ok(x.includes('字幕：只要原文，短视频字幕'));
   assert.ok(x.includes('只在「产品演示」里找'));
-  assert.ok(x.includes('我想要的：只要讲成本的'));
   assert.ok(x.includes('已经切过的 2 支不用再找'));
-  assert.match(x[x.length - 1], /候选库.*不要创建视频/);
-  const bare = M.agentExtra({note: '', hook: false}, {});
-  assert.equal(bare.length, 2);
+  assert.equal(x[x.length - 1], '找好就直接创建成视频，不用先问我');
+  assert.equal(M.DIRECT_LINE, '找好就直接创建成视频，不用先问我');
+  assert.ok(!x.some((l) => /候选库|备选/.test(l)));
+  const bare = M.agentExtra({hook: false, ratio: 'source', length: 'custom', lenMin: 100, lenMax: 400}, {});
+  assert.deepEqual(bare.slice(0, 2), ['要 3 支，每支 100–400 秒，起止落在句子边界上', '画幅：保留原画幅，不裁']);
+  assert.equal(bare.length, 4);
 });
 
 test('列表副题：跟着会话走，切过的补一句', () => {
   const list = M.demoCandidates(S, {count: 3}, {children: []});
   assert.equal(M.listStatus(null, '挑几段', 0), '挑几段');
   assert.equal(M.listStatus({phase: 'setup'}, '挑几段', 2), '挑几段 · 已有 2 支');
-  assert.equal(M.listStatus({phase: 'finding', pct: 44.6}, 'x', 0), '正在找片段 · 45%');
-  assert.equal(M.listStatus({phase: 'review', list}, 'x', 0), '找到 5 段 · 等你挑');
-  assert.equal(M.listStatus({phase: 'creating', pct: 60, list}, 'x', 0), '正在创建 3 支 · 60%');
-  assert.equal(M.listStatus({phase: 'done', made: [1, 2, 3]}, 'x', 0), '已创建 3 支');
+  assert.equal(M.listStatus({phase: 'running', stage: 'find', pct: 44.6}, 'x', 0), '正在找片段 · 45%');
+  assert.equal(M.listStatus({phase: 'running', stage: 'create', pct: 60}, 'x', 0), '正在创建视频 · 60%');
+  assert.equal(M.listStatus({phase: 'result', list}, 'x', 0), '已创建 3 支');
+  assert.equal(M.listStatus({phase: 'result', list: list.map((c, i) => (i ? c : Object.assign({}, c, {removed: true})))}, 'x', 0), '已创建 2 支');
   assert.equal(M.stageAt(M.FIND_STAGES, 0), 0);
   assert.equal(M.stageAt(M.FIND_STAGES, 100), 2);
 });
@@ -334,6 +365,10 @@ test('取景：取景窗大小按原片画幅，中心夹在原片里，偏多�
   assert.equal(size.h, 1);
   assert.deepEqual(M.focusSize(9 / 16), {w: 1, h: 1});
   assert.ok(M.focusSize(0.5).h < 1);
+  assert.ok(Math.abs(M.focusSize(16 / 9, 1).w - 0.5625) < 0.001, '1:1 裁左右');
+  assert.equal(M.outRatio('1:1', 16 / 9), 1);
+  assert.equal(M.outRatio('source', 16 / 9), 16 / 9);
+  assert.deepEqual(M.focusSize(16 / 9, M.outRatio('source', 16 / 9)), {w: 1, h: 1});
   assert.ok(Math.abs(M.clampFocus(0, 16 / 9) - size.w / 2) < 1e-9);
   assert.ok(Math.abs(M.clampFocus(1, 16 / 9) - (1 - size.w / 2)) < 1e-9);
   assert.equal(M.clampFocus(null, 16 / 9), 0.5);
@@ -541,36 +576,15 @@ test('重做的设置与落点：那一支的取景与字幕盖在现有设置�
   assert.deepEqual([p.count, p.length, p.focus, p.tracks, p.style], [5, 'short', 'manual', 'trans', 'project']);
   assert.equal(M.redoParams(kid, {}, {hasTrans: false, portrait: true, children: 1}).tracks, 'orig');
   assert.equal(M.redoParams(kid, {}, {hasTrans: false, portrait: true, children: 1}).focus, 'center');
-  assert.equal(M.redoParams(child('k5', 4, 13), {}, {hasTrans: true}).focus, 'speaker');
+  assert.equal(M.redoParams(child('k5', 4, 13), {}, {hasTrans: true}).focus, 'center');
+  assert.equal(M.redoParams(child('k6', 4, 13, {cut: {ratio: 'source'}}), {}, {hasTrans: true}).ratio, 'source');
 
   const cand = M.redoCandidate(S, kid);
   assert.equal(M.redoPlan(null), 'fresh');
   assert.equal(M.redoPlan({phase: 'setup', list: []}), 'fresh');
-  assert.equal(M.redoPlan({phase: 'finding', list: []}), 'busy');
-  assert.equal(M.redoPlan({phase: 'creating', list: [cand]}), 'busy');
-  assert.equal(M.redoPlan({phase: 'review', list: [cand]}), 'append');
-  assert.equal(M.redoPlan({phase: 'done', list: [Object.assign({}, cand, {removed: true})]}), 'fresh');
-  // 手里只剩创建掉的，不算有候选
-  const spent = Object.assign({}, cand, {on: false, made: true});
-  assert.equal(M.redoPlan({phase: 'done', list: [spent]}), 'fresh');
-
-  // 接在后面：别的一条都没勾，设置跟这一支原来的走；有勾上的就不动
-  const found3 = M.demoCandidates(S, {count: 3}, {children: []});
-  const base = M.normalize({focus: 'center', tracks: 'orig'}, {hasTrans: true});
-  const facts = {hasTrans: true, portrait: false, children: 1};
-  const off = M.redoAppend({list: found3.map((x) => Object.assign({}, x, {on: false})).concat([spent]), params: base, facts}, kid, cand);
-  assert.deepEqual([off.params.focus, off.params.tracks, off.kept], ['manual', 'trans', false]);
-  assert.equal(off.list.length, found3.length + 1);
-  assert.equal(off.list[off.list.length - 1].id, cand.id);
-  const held = M.redoAppend({list: found3.map((x, i) => Object.assign({}, x, {on: i === 0})), params: base, facts}, kid, cand);
-  assert.deepEqual([held.params.focus, held.params.tracks, held.kept], ['center', 'orig', true]);
-  const same = M.redoAppend({list: found3.map((x, i) => Object.assign({}, x, {on: i === 0})), params: M.redoParams(kid, base, facts), facts}, kid, cand);
-  assert.equal(same.kept, false);
-  assert.match(M.pickLead([cand, Object.assign({}, cand, {id: 'sc-redo-k9', on: false})], false).head, /^重做 2 支，勾了 1 支 · 合计/);
-
-  assert.match(M.pickLead([cand], false).head, /^重做 1 支 · 合计 \d+:\d\d$/);
-  assert.equal(M.pickLead([cand], false).redo, true);
-  const found = M.demoCandidates(S, {count: 3}, {children: []});
-  assert.equal(M.pickLead(found.concat([cand]), true).head, M.pickHeadline(found.concat([cand]), true));
-  assert.equal(M.pickLead(found.concat([cand]), true).redo, false);
+  assert.equal(M.redoPlan({phase: 'running', list: []}), 'busy');
+  assert.equal(M.redoPlan({phase: 'result', list: [cand]}), 'append');
+  assert.equal(M.redoPlan({phase: 'result', list: [Object.assign({}, cand, {removed: true})]}), 'fresh');
+  assert.equal(M.redoAppend, undefined);
+  assert.equal(M.pickLead, undefined);
 });

@@ -624,8 +624,8 @@
     image: '生成图片', download: '下载视频', 'legacy-import': '导入旧版项目',
   };
 
-  /** 任务停下来等人时的说法：智能裁剪等人检查构图，剪成短视频等人挑片段。 */
-  const reviewLabel = (kind) => (kind === 'shorts-cut' ? '等你挑' : '等你检查');
+  /** 任务停下来等人时的说法：智能裁剪等人检查构图。剪成短视频找到就创建，不停下来等人（§5.10）。 */
+  const reviewLabel = () => '等你检查';
 
   function pillLabel(task) {
     if (!task) return '';

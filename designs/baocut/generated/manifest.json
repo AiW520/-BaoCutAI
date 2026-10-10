@@ -296,7 +296,7 @@
       "app/panel-aitools-flows.jsx",
       "app/panel-crop-review.jsx",
       "app/panel-crop.jsx",
-      "app/panel-aitools-shorts-pick.jsx",
+      "app/panel-aitools-shorts-result.jsx",
       "app/panel-aitools-shorts.jsx",
       "app/panel-dub-fit.jsx",
       "app/panel-dub-readings.jsx",
@@ -418,9 +418,9 @@
       "app/subtitle-motion.css",
       "app/subtitle-active.css"
     ],
-    "js": "generated/app.js?v=0a2e4f20a936",
+    "js": "generated/app.js?v=922770f34bae",
     "css": "generated/app.css?v=5a6876e7653c",
-    "bytes": 3854608
+    "bytes": 3845990
   },
   "web": {
     "file": "BaoCutWeb.html",
@@ -657,9 +657,9 @@
       "app/subtitle-motion.css",
       "app/subtitle-active.css"
     ],
-    "js": "generated/web.js?v=e1b1a34b9dc3",
+    "js": "generated/web.js?v=548f3f3aba53",
     "css": "generated/web.css?v=841ad7d7b726",
-    "bytes": 2382674
+    "bytes": 2382206
   },
   "components": {
     "file": "Components.html",

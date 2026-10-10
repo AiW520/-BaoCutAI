@@ -136,8 +136,8 @@
     speakers:    (o) => `识别${o.p}里${o.scope || '全篇'}的说话人，先把结果列给我确认再写进视频。`,
     retranscribe:(o) => `用另一个语音模型重新转录${o.p}的${o.scope || '全篇'}，范围之外一个字不动。`,
     cleanup:     (o) => `找出${o.p}${o.scope || '全篇'}里的口癖、长停顿和重复起句，先列出来，我确认后再剪。`,
-    /* 剪成短视频（§15.12）：只找候选，创建项目等人在 AI 工具里挑完再做 */
-    shortscut:   (o) => `从${o.p}${o.scope ? `的${o.scope}` : ''}里挑几段能单独成立的话，各剪成一支竖屏短视频。先把候选列给我挑，我确认后再创建视频。`,
+    /* 剪成短视频（§5.10）：找到就创建，每支一部引用原片的新视频；原视频和时间轴不动 */
+    shortscut:   (o) => `从${o.p}${o.scope ? `的${o.scope}` : ''}里挑几段能单独成立的话，各创建成一支短视频：每支一部新视频，引用同一份原片，原视频和时间轴不动。`,
     /* AI 工具重设计（§15.11）：写作两件给读的人，发布三件给发视频的人；篇幅、风格、语言、视角由工具页折进 extra。 */
     summary:     (o) => `从${o.p}的文稿提炼一份带时间码的要点总结。`,
     blog:        (o) => `把${o.p}改写成一篇可发布的博客。`,
@@ -164,17 +164,17 @@
      问一次写入 → 执行 → 收据」这一整条，所以按关键词挑一份脚本。
      `write` 为 null 的计划不写项目（只回答 / 只列出建议），因此没有放行卡。 */
   const PLANS = [
-    /* 剪成短视频排在最前：这句意图里的「剪成」会被 cleanup 的「剪」先抢走（§15.12）。
-       这份计划只写候选库，不创建项目——挑哪几段、起止落在哪一句是人在 AI 工具里定的。 */
-    {kind: 'shortscut', re: /短视频|候选库|shorts/i,
-     summary: '我先读一遍文稿和章节，找几段不靠前文也听得懂的话，把起止对到句子边界上。找到的先写进候选库，你在右侧的「剪成短视频」面板里挑、调起止，确认了才创建视频——我不会直接建。',
+    /* 剪成短视频排在最前：这句意图里的「剪成」会被 cleanup 的「剪」先抢走。
+       找到就创建（§5.10）：写入是创建 N 支子视频，引用原片、不复制、不导出；N 由 planFor 从「要 N 支」里取。 */
+    {kind: 'shortscut', re: /短视频|shorts/i,
+     summary: '我先读一遍文稿和章节，找几段不靠前文也听得懂的话，把起止对到句子边界上，然后直接创建成短视频：每支一部新视频，引用同一份原片。原视频和时间轴不动，创建前先问你一次。',
      reads: ['bcut project info', 'transcript.json · 62 句 · 4 章 · 3 位说话人'],
-     write: {cmd: 'bcut shorts find project.bcut --count 3 --spare 2', why: '只写候选库（shorts/candidates.json），不创建视频，也不动时间轴和文稿。'},
-     step: {verb: '从', count: 62, unit: '句文稿里找候选片段', llm: true},
-     task: {kind: 'shorts-cut', title: '剪成短视频 · 找片段'},
-     receipt: '已写入候选库 · 5 段候选 · 7.2s',
-     close: '找好了：5 段候选，先替你选了把握大的 3 段。在「剪成短视频」面板里挑——可以改标题、一句一句挪起止、自己再加一段，确认后才会创建视频。',
-     open: {tool: 'shortscut', label: '剪成短视频'}},
+     write: {cmd: 'bcut shorts create project.bcut --count 3', why: '创建 3 支子视频（引用原片，不复制、不导出）'},
+     step: {verb: '从', count: 62, unit: '句文稿里找片段并创建视频', llm: true},
+     task: {kind: 'shorts-cut', title: '剪成短视频'},
+     receipt: '已创建 3 支短视频 · 7.2s',
+     close: '好了：已创建 3 支短视频，每支是一部单独的视频，引用同一份原片。回到「剪成短视频」逐支看、调起止，不要哪一支就移入回收站。',
+     open: {tool: 'shortscut', label: '剪成短视频', cta: '查看这几支'}},
     /* 过期译文排在最前：这句意图里有「剪切」也有「译文」，落到 translate / cleanup 都不对（第 196 轮）。 */
     {kind: 'stale', re: /过期|重译|被剪切|剪后/,
      summary: '我先对一遍原文与译文：哪些句子原文改过、哪些句子的原文被剪掉了半句。只重译这几句，按剪后的原文译；整句剪掉的译文随句一起剪，其余一个字不动。写入前会先问你。',
@@ -379,6 +379,17 @@
     if (ask) return ask;
     const named = slashKind(t);
     let hit = (named && PLANS.find((p) => p.kind === named)) || PLANS.find((p) => p.re.test(t)) || CUSTOM;
+    if (hit.kind === 'shortscut') {
+      // 要几支就创建几支（§5.10）：放行卡、收据与收尾都按这次的条数说
+      const m = t.match(/要\s*(\d+)\s*支/);
+      const n = m ? Math.max(1, Math.min(10, +m[1])) : 3;
+      hit = Object.assign({}, hit, {
+        write: {cmd: `bcut shorts create project.bcut --count ${n}`, why: `创建 ${n} 支子视频（引用原片，不复制、不导出）`},
+        receipt: `已创建 ${n} 支短视频 · 7.2s`,
+        close: hit.close.replace(/已创建 \d+ 支/, `已创建 ${n} 支`),
+        count: n,
+      });
+    }
     if (hit.kind === 'translate') {
       const tg = translateTarget(t);
       hit = Object.assign({}, hit, {

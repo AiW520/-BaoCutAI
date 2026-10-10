@@ -46,8 +46,9 @@
    *   label               直接调模型时主按钮的字（交给 Agent 时固定「交给 Agent」）
    *   readonly            写作与发布类：不写进视频（hint 用）
    *   onStart(payload)    {text, attachments, skillIds, mode, effort}（家 · 模型由 runner.cur 定，宿主从那里取）
+   *   hint                主按钮下那一行换成宿主给的话（剪成短视频总是新开会话，§5.10）
    */
-  function ToolPrompt({ctx, tool, runner, value, onChange, defaultText, session, context, label, readonly, onStart, disabled}) {
+  function ToolPrompt({ctx, tool, runner, value, onChange, defaultText, session, context, label, readonly, onStart, disabled, hint: hintText}) {
     const app = useApp();
     const [attachments, setAttachments] = useState([]);
     const [skillIds, setSkillIds] = useState(() => P.defaultSkills(tool, app.agentSkills));
@@ -99,7 +100,7 @@
       onStart({text: window.BC_AGENT_SKILLS.withSkills(text.trim(), skills), attachments, skillIds, mode, effort});
     };
     const model = runner.apiModel;
-    const hint = P.hint({agent, session: session && session.k, model: model ? model.name : null, readonly, cloud: !!model});
+    const hint = hintText || P.hint({agent, session: session && session.k, model: model ? model.name : null, readonly, cloud: !!model});
     // 直接调模型而这个模型看不了图：附了图片就说一声，不拦
     const images = !agent && attachments.filter((a) => window.BC_ATTACHMENTS.kind(a) === 'image').length;
     const ctxItems = (context || []).concat(attachments.length ? [{k: 'attachments', label: '附件', detail: `${attachments.length} 个`}] : [],

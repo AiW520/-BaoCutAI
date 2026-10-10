@@ -1009,9 +1009,9 @@
     /* ---- 智能裁剪（§15.9）：会话在 store，编辑器只负责接线 ---- */
     const cropSession = app.crop.sessions[proj.id];
     const cropActive = tab === 'aitools' && cropSession?.open && cropSession.phase === 'review';
-    /* ---- 剪成短视频（§15.12）：挑片段时舞台换成候选预览 ---- */
+    /* ---- 剪成短视频（§5.10）：结果页上舞台换成那几支的预览 ---- */
     const shortsCutSession = app.shortsCut.sessions[proj.id];
-    const shortsCutActive = tab === 'aitools' && !cropActive && shortsCutSession?.open && shortsCutSession.phase === 'review';
+    const shortsCutActive = tab === 'aitools' && !cropActive && shortsCutSession?.open && shortsCutSession.phase === 'result';
     const cropOutputs = app.crop.outputs[proj.id];
     useEffect(() => {
       if (!cropOutputs?.length) return;

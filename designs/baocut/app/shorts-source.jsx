@@ -179,7 +179,7 @@
           <span className="sm-thumb" aria-hidden="true"><Ic n="play" className="ic--12" /></span>
           <span className="sm-row__t">
             <b className="t-truncate">{row.title}</b>
-            <span className="t-mono t-truncate">{row.span} · <span className={cx(row.over && 'is-over')}>{row.len}</span></span>
+            <span className="t-mono t-truncate">{row.span} · {row.len}</span>
             <span className="t-truncate">{[row.cut, row.edited ? '剪过' : '', row.modified ? row.modified + '编辑' : ''].filter(Boolean).join(' · ')}</span>
           </span>
         </BCAction>
@@ -192,7 +192,7 @@
               {S.ai ? (
                 <>
                   <MenuRule />
-                  <MenuItem icon="redo" label="调整后再生成…" sub="带着它的起止和设置回到挑片段，另建一支" onClick={() => { close(); window.shortsCutRedo(app, ctx, child); }} />
+                  <MenuItem icon="redo" label="调整后再生成…" sub="按它的起止和设置另建一支，原来那支不动" onClick={() => { close(); window.shortsCutRedo(app, ctx, child); }} />
                 </>
               ) : null}
               {S.pages ? (
@@ -227,7 +227,7 @@
     const height = Math.min(rows.length, SC.MADE_SHOWN) * SC.MADE_ROW_H;
     const win = SC.rowWindow(rows.length, top, height, SC.MADE_ROW_H);
     const session = S.ai ? app.shortsCut.sessions[proj.id] : null;
-    const running = session && ['finding', 'review', 'creating'].indexOf(session.phase) >= 0;
+    const running = session && session.phase === 'running';
     const toggle = () => { setMenu(null); setOpen((v) => !v); };
     return (
       <section className="sm-group" aria-label="切出的短视频">

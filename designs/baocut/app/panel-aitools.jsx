@@ -457,7 +457,11 @@
       if (tool === 'shortscut') {
         const at = app.shortsCut.sessions[ctx.proj.id];
         if (!shortsOpen) window.openShortsCut(app, ctx);
-        if (agent && agent.sid && (!at || at.phase === 'setup')) app.shortsCut.findViaAgent(ctx.proj.id, {sid: agent.sid, sentences: ctx.cues, scope: null, runner: 'Agent'});
+        /* 选区下的单：范围记进会话，设置页的范围里多出「当前选区」并选中它 */
+        if (sc && sc.end > sc.start && (!at || at.phase === 'setup')) app.shortsCut.set(ctx.proj.id, {hostScope: {start: sc.start, end: sc.end}});
+        /* 会话里的「查看这几支」：那条会话还没落过就接上它（收据到了就建好、落到结果页；已经建过的只摆回结果页） */
+        const fresh = !at || at.phase === 'setup' || (at.phase === 'result' && at.sid !== agent?.sid);
+        if (agent && agent.sid && fresh) app.shortsCut.findViaAgent(ctx.proj.id, {sid: agent.sid, sentences: ctx.cues, scope: null, runner: 'Agent'});
         return;
       }
       setOpen(TOOLS[tool] ? tool : null);
@@ -467,7 +471,8 @@
     if (cropOpen) return <window.CropPanel ctx={ctx} onBack={back} />;
     if (shortsOpen) return <window.ShortsCutPanel ctx={ctx} onBack={back} />;
     // 没打开哪一页就是列表（panel-aitools-list.jsx）；工具页的「返回」回这里
-    if (!open) return <window.AiToolsList ctx={ctx} onOpen={(k) => { setOpen(k); setScope(null); setLanded(false); }} />;
+    /* 剪成短视频有自己的会话面板（store-shorts-cut.jsx）：点那一行就开会话，不走通用工具页 */
+    if (!open) return <window.AiToolsList ctx={ctx} onOpen={(k) => { if (k === 'shortscut') { window.openShortsCut(app, ctx); return; } setOpen(k); setScope(null); setLanded(false); }} />;
     const t = TOOLS[open];
     const clearScope = () => setScope(null);
     if (t.kind === 'spk') return <div className="pview"><SpeakerFlow scope={scope} clearScope={clearScope} onBack={back} ctx={ctx} /></div>;

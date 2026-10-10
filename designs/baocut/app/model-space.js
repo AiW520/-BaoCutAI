@@ -83,7 +83,9 @@
     const out = [];
     (s.movies || []).forEach((m) => {
       const it = {
-        id: m.id, kind: 'movie', name: m.title, dir: m.dir || null, movie: m.id, session: null, task: null,
+        id: m.id, kind: 'movie', name: m.title, dir: m.dir || null, movie: m.id, task: null,
+        // 会话里新建的视频（剪成短视频的子视频）：记下是哪条会话、哪条消息建的，会话里挂它的卡（BC_AGENT_PROJECTS.sessionArtifacts）
+        session: m.session || null, messageId: m.messageId || null,
         status: movieStatus(m), dur: m.duration || 0, res: m.src ? m.src.res : '', bytes: (m.src && m.src.bytes) || null,
         ctime: m.ctime != null ? m.ctime : null,
         transcribe: transcribeAction(m), mtime: m.mtime != null ? m.mtime : m.ctime != null ? m.ctime : null,   // 刚建的视频只有 ctime

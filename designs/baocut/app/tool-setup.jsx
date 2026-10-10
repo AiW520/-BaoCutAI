@@ -151,14 +151,16 @@
   /** 工具设置态。plan 只需要 `step`（见 model-agent.js PLANS）。
       工具页传 `runner`（useRunner 的返回）：第一行是「用」；放行卡不传，第一行是「模型」，
       model / scope 由宿主持有，宿主再把它们带进「开始」或「允许」。
-      `pre` 是折进摘要句的前置步骤（「先润色 42 段，再…」），由宿主的勾选项决定。 */
-  function ToolSetup({plan, runner, model, onModel, scope, onScope, chapters, children, compact, hint, pre}) {
+      `pre` 是折进摘要句的前置步骤（「先润色 42 段，再…」），由宿主的勾选项决定。
+      `agentOnly`：这个工具只交给 Agent（剪成短视频，§5.10），「用」那一行不出现。
+      `scopes`：接在标准范围后面的额外几项（如「当前选区」），宿主有才给。 */
+  function ToolSetup({plan, runner, model, onModel, scope, onScope, chapters, children, compact, hint, pre, agentOnly, scopes}) {
     const app = useApp();
     const step = plan && plan.step;
     if (!step) return null;
     // 宿主带来的范围（Transcript 按章 / 按段下的单）不在标准选项里时，前置成第一项——
     // 回退到「整篇」会把用户刚下的单悄悄改掉。
-    const base = AG.scopeOptions(step.count, chapters || D.chapters);
+    const base = AG.scopeOptions(step.count, chapters || D.chapters).concat(scopes || []);
     const opts = (scope && !base.some((o) => o.k === scope.k) ? [scope, ...base] : base).map((o) => ({...o, unit: step.unit}));
     const sc = opts.find((o) => o.k === (scope ? scope.k : 'all')) || opts[0];
     const rn = runner && runner.cur;
@@ -179,7 +181,7 @@
           <span className="grow">{sum}</span>
         </div>
         <div className="tsetup__rows">
-          <div className="tsetup__row">
+          {agentOnly ? null : <div className="tsetup__row">
             <span className="tsetup__lb">{runner ? '用' : (step.llm ? '模型' : '引擎')}</span>
             {runner
               ? <RunnerPick groups={runner.groups} value={rn} onChange={runner.pick} />
@@ -187,7 +189,7 @@
                 ? <ModelPick value={mdl.id} onChange={(m) => onModel && onModel(m)} />
                 : <span className="t-body-sm">{step.engine || '本机模型'}<span className="t-detail-xs"> · 不出本机</span></span>}
             {fix ? <BCAction className="tsetup__lnk" onClick={() => app.go(fix.route)}>{fix.label}</BCAction> : null}
-          </div>
+          </div>}
           <div className="tsetup__row">
             <span className="tsetup__lb">范围</span>
             <ScopePick options={opts} value={sc.k} onChange={(o) => onScope && onScope(o)} />

@@ -732,7 +732,7 @@
     const imports = SURF.pages ? window.useImportFlow({tasks, setTasks, setProjects, go, route, toast, confirm}) : NO_FLOW;
     const crop = SURF.ai ? window.useCropStore({addTask, patchTask, tasks, go, toast}) : NO_CROP;
     const shortsCut = SURF.ai
-      ? window.useShortsCutStore({addTask, patchTask, tasks, sessions, stopAgent, projects, setProjects, go, toast}) : NO_SHORTS_CUT;
+      ? window.useShortsCutStore({addTask, patchTask, tasks, sessions, stopAgent, projects, setProjects, archiveProject, go, toast}) : NO_SHORTS_CUT;
     /* 新建项目页的跨屏那一半：预置、记忆、转录后的后续链（newproject-flow.jsx） */
     const newFlow = SURF.pages ? window.useNewProjectFlow({tasks, setTasks, addTask, prefs, setPref, go, toast}) : NO_FLOW;
     /* 工具页的预设（product-design §2.7、§4.5）：从 Space 查看器「用工具处理…」或结果页「接着用工具」进工具页时，

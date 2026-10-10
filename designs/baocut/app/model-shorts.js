@@ -162,7 +162,8 @@
   const CHECK_LABELS = {'aspect': '画幅', 'duration': '时长', 'first-frame': '首帧', 'hook-3s': '前 3 秒',
     'safe-area': '安全区', 'subtitles': '字幕', 'loop': '循环', 'loudness': '响度', 'ending': '结尾'};
   const CHECK_STATUS = ['ok', 'warn', 'error', 'info', 'skip'];
-  const MAX_DURATION = 60;
+  /* YouTube 把 3 分钟以内的竖屏视频算 Shorts（平台档案，§6.9）；只在导出前检查里说，不在剪成短视频时设上限。 */
+  const MAX_DURATION = 180;
   const HOOK_S = 3;
   const ENDING_S = 3;
   const CTA_WORDS = /关注|订阅|评论|点赞|下期|\b(?:subscribe|follow|like|comment)s?\b/i;
@@ -212,7 +213,7 @@
 
     rows.push(dur <= MAX_DURATION
       ? row('duration', 'ok', fmtSec(dur), {value: dur})
-      : row('duration', 'warn', `${fmtSec(dur)} · 超过 60 秒，部分平台不按 Shorts 推`, {value: dur, pointer: {kind: 'range'}}));
+      : row('duration', 'warn', `${fmtSec(dur)} · 超过 3 分钟，YouTube 不按 Shorts 收`, {value: dur, pointer: {kind: 'range'}}));
 
     rows.push(row('first-frame', 'skip', '要渲染出第 0 帧才判得了 · 导出后再查', {pointer: {kind: 'time', t: start}}));
 
@@ -317,8 +318,8 @@
     const n = /\d/.test(m[1]) ? +m[1] : CN_NUM[m[1]];
     return n > 0 ? n : null;
   }
-  /** 带着视频打开开关后，开关下那一行说明。 */
-  const CUT_GRAMMAR = ['每支一部新视频', RATIO, '不超过 60 秒', '从看点起', '记下来源片段'];
+  /** 带着视频打开开关后，开关下那一行说明。时长不设上限、不写死秒数：按用户要的范围（§5.10），平台时长只在导出前检查里说。 */
+  const CUT_GRAMMAR = ['每支一部新视频', RATIO, '时长按你要的范围', '从看点起', '记下来源片段'];
   const cutGrammarLine = () => CUT_GRAMMAR.join(' · ');
   /** 切片版流程条（接在「转录」之后；转录那一步由 BC_NEW.pipeline 的 ask 目标给）。 */
   function cutPipeline() {
@@ -333,7 +334,7 @@
   }
   /** 切片版交给 Agent 的那一行。 */
   function cutPromptLine(n) {
-    return `切成${n ? ' ' + n + ' ' : '几'}条 Shorts：每条 ${RATIO}、不超过 60 秒，从有看点的那一句起；`
+    return `切成${n ? ' ' + n + ' ' : '几'}条 Shorts：每条 ${RATIO}、时长按我要的范围，从有看点的那一句起；`
       + '每支一部新视频，记下它在原片里的起止；逐词字幕放在平台按钮挡不到的地方，每支过一遍发布前检查，最后列给我挑。';
   }
 

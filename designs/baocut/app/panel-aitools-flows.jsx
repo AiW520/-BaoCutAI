@@ -107,7 +107,7 @@
     desc:     {verb: '从', count: 42, unit: '段文稿写发布简介', llm: true},
     // 封面要看图、写合成代码，缺省交给 Agent（同找可剪的口）
     cover:    {verb: '从', count: 206, unit: '秒的成片里挑关键帧，做 3 张封面候选', llm: true, prefer: 'agent'},
-    // 剪成短视频（§15.12）：句数与要找几段由设置页按项目现状填进来
+    // 剪成短视频（§5.10）：句数由设置页按项目现状填进来；找到就创建，要几支建几支
     shortscut: {verb: '从', count: 62, unit: '句文稿里找能单独成立的片段', llm: true, prefer: 'agent'},
   };
 

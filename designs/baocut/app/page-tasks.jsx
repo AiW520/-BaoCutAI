@@ -82,10 +82,9 @@
         {t.session ? <Btn variant="quiet" size="s" onClick={() => app.openSession(t.session)}>打开会话</Btn> : null}
         {/* 智能裁剪停在「检查构图」等人：这颗按钮把人带回编辑器里的检查页（§15.9） */}
         {t.kind === 'crop' && review ? <Btn variant="accent" size="s" onClick={() => app.crop.resume(t)}>去检查</Btn> : null}
-        {/* 剪成短视频停在「挑片段」等人（§15.12）：回到来源项目的 AI 工具页 */}
-        {t.kind === 'shorts-cut' && review ? <Btn variant="accent" size="s" onClick={() => app.shortsCut.resume(t)}>去挑片段</Btn> : null}
+        {/* 剪成短视频找到就创建，不停下来等人（§5.10）：跑完回到来源视频编辑器里的结果页 */}
         {t.kind === 'shorts-cut' && t.status === 'done' && !t.canceled && t.project
-          ? <Btn variant="quiet" size="s" onClick={() => app.go({r: 'projects', from: t.project})}>查看这几支</Btn> : null}
+          ? <Btn variant="quiet" size="s" onClick={() => app.shortsCut.resume(t)}>查看结果</Btn> : null}
         <Btn variant="quiet" size="s" onClick={() => onOpen(t.id)}>详情</Btn>
         {/* 跑完的任务没有「取消」可言——cancellable 是那条记录的属性，
             但它只在还在跑的时候成立 */}

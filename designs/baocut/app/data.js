@@ -1816,15 +1816,15 @@
        status: 'waiting', ago: 6,
        messages: [
          {id: 'm1', role: 'user', text: '等转录完，把发布会主视频切成 3 条竖版预告，每条 30 秒左右。', ...turnLive(380)},
-         {id: 'm2', role: 'assistant', text: '转录到 45% 了。我先在已经转出来的部分里找能独立成立的几段话，候选写进候选库，你挑完才会建视频。写入前先问你。'},
+         {id: 'm2', role: 'assistant', text: '转录到 45% 了。我先在已经转出来的部分里找能独立成立的几段话，找好就直接创建成 3 支短视频，每支一部新视频、引用原片。创建前先问你。'},
          {id: 'm3', role: 'tool', cmd: 'bcut project info project.bcut', status: 'done', took: '0.2s', out: 'duration 52:00 · 转录 45% · 1 位说话人'},
-         {id: 'm4', role: 'permission', cmd: 'bcut shorts find project.bcut --count 3 --ratio 9:16', state: 'pending',
-          why: '只写候选库（shorts/candidates.json），不创建视频，也不动时间轴和文稿。',
+         {id: 'm4', role: 'permission', cmd: 'bcut shorts create project.bcut --count 3 --ratio 9:16', state: 'pending',
+          why: '创建 3 支子视频（引用原片，不复制、不导出）',
           plan: {kind: 'shortscut',
-            write: {cmd: 'bcut shorts find project.bcut --count 3 --ratio 9:16', why: '只写候选库（shorts/candidates.json），不创建视频，也不动时间轴和文稿。'},
-            task: {kind: 'shorts-cut', title: '剪成短视频 · 找片段'},
-            receipt: '已写入候选库 · 3 段候选 · 6.1s',
-            close: '找好了 3 段，都落在句子边界上。到右侧的「剪成短视频」面板里挑、调起止，确认后才会建视频。'}},
+            write: {cmd: 'bcut shorts create project.bcut --count 3 --ratio 9:16', why: '创建 3 支子视频（引用原片，不复制、不导出）'},
+            task: {kind: 'shorts-cut', title: '剪成短视频'},
+            receipt: '已创建 3 支短视频 · 6.1s',
+            close: '好了：已创建 3 支短视频，起止都落在句子边界上。回到「剪成短视频」逐支看、调起止，不要哪一支就移入回收站。'}},
        ]},
       /* 只在项目目录里、还没有视频的会话（2026-10-01）：「产品手册动画」项目只有插图和文档。 */
       {id: 's17', title: '产品手册的插图做成 40 秒动画', project: null, dir: 'd8', harness: 'claude', model: 'sonnet', effort: 'mid',
@@ -2585,12 +2585,12 @@
 - 口癖词在句子中间才剪；作为语气转折的「那么」「所以」保留。
 - 剪完一句话不足 3 个字的，连同前后句一起看，避免剪碎。`)},
       ]},
-    {id: 'shorts-slicing', name: '短视频切片', source: 'builtin', author: 'BaoCut', category: '剪辑', enabled: true, updated: '2026-09-21',
+    {id: 'shorts-segments', name: '短视频切片', source: 'builtin', author: 'BaoCut', category: '剪辑', enabled: true, updated: '2026-09-21',
       summary: '从长视频里挑出能独立成篇的段落，切成几条竖屏短视频。',
       description: '读完整份文稿，挑出有开头、有结论、单独看得懂的段落，每段切成一部新的竖屏视频，并记下它来自原片的哪一段。',
       examples: ['从这期访谈里切 3 条竖屏短视频', '挑一个最有争议的观点，做成 60 秒以内的切片'],
       files: [
-        {path: 'SKILL.md', body: skillDoc('shorts-slicing', '把长视频切成几条竖屏短视频。用户说「切片」「做成短视频」「挑几个看点」时使用。', `
+        {path: 'SKILL.md', body: skillDoc('shorts-segments', '把长视频切成几条竖屏短视频。用户说「切片」「做成短视频」「挑几个看点」时使用。', `
 # 短视频切片
 
 ## 什么时候用
@@ -2603,7 +2603,7 @@
 1. 通读文稿与章节，列出候选段落，每段写一句「这段讲了什么」。
 2. 按 references/hook-checklist.md 给候选打分，留下得分最高的几段。
 3. 每段的起点放在一句完整的话开头，终点放在结论说完之后。
-4. 每段新建一部 9:16 的视频，画面按说话人居中裁切，并记下来源片段。
+4. 每段新建一部视频，引用原片、不复制不导出；画幅与取景按用户的设置（缺省 9:16、居中），并记下来源片段。
 5. 回报每一条的标题建议、时长与来源时间码。
 
 ## 不做的事
@@ -2616,7 +2616,7 @@
 - 开头 3 秒内出现问题、反差或结论
 - 不依赖前文也能看懂
 - 有一个明确的结论或建议
-- 时长在 20 到 60 秒之间
+- 时长落在用户要的区间里
 - 说话人情绪有变化`},
       ]},
     {id: 'cover-and-title', name: '封面与标题', source: 'builtin', author: 'BaoCut', category: '发布', enabled: true, updated: '2026-09-12',
@@ -2642,7 +2642,7 @@
       ]},
     /* 2026-10-09：AI 工具 Tab 的每个工具各配一个内置 skill（product-design §5.10、§6.9）：工具页的提示词框默认挂着它，
        可以摘掉（摘掉就只剩提示词），也可以再挂别的已添加 skill。剪口播 → talking-head-cut，做封面 → cover-and-title，
-       剪成短视频 → shorts-slicing，其余在这里。 */
+       剪成短视频 → shorts-segments，其余在这里。 */
     {id: 'transcribe-captions', name: '转录与字幕', source: 'builtin', author: 'BaoCut', category: '文稿', enabled: true, updated: '2026-10-09',
       summary: '用合适的语音模型转录，按词级时间整理成文稿与字幕。',
       description: '转录或重新转录时用：按视频语言挑语音模型，保留词级时间，按语义停顿切句，专有名词按术语库写法。只换掉选定范围的文稿，其余不动。',

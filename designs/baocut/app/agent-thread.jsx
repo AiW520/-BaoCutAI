@@ -105,7 +105,7 @@
         <span className="amsg__av"><Ic n="agent" className="ic--14" /></span>
         <div className="amsg__body">
           {m.text ? <AgentMarkdown text={m.text} streaming={!!m.streaming} /> : null}
-          {m.open && movie && app.openTool ? <div className="amsg__open"><Btn variant="secondary" size="s" onClick={() => app.openTool(movie, m.open.tool, sess.id)}>{`打开${m.open.label}`}</Btn></div> : null}
+          {m.open && movie && app.openTool ? <div className="amsg__open"><Btn variant="secondary" size="s" onClick={() => app.openTool(movie, m.open.tool, sess.id)}>{m.open.cta || `打开${m.open.label}`}</Btn></div> : null}
           {m.error ? <ErrorMsg m={m} sess={sess} /> : null}
           {m.work ? <WorkMsg m={{id: `work-${m.id}`, items: m.work}} live={live}
             className={m.text ? `agap-${TURN.gapBetween('assistant', 'tool')}` : null} /> : null}

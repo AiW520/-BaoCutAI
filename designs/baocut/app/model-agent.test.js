@@ -186,15 +186,22 @@ test('planFor：挂着场景模板发来的先确认简报，不读不写、不�
   assert.equal(A.planFor('把字幕翻译成英文', true).kind, 'translate');
 });
 
-test('shortscut 计划与意图：「剪成短视频」落到 shortscut，不被 cleanup 的「剪」抢走；只写候选库（§15.12）', () => {
+test('shortscut 计划与意图：「剪成短视频」落到 shortscut，不被 cleanup 的「剪」抢走；找到就创建，要几支建几支（§5.10）', () => {
   const p = {title: '科浪访谈 第 42 期'};
   const text = A.intentPrompt({kind: 'shortscut', extra: ['要 3 支，每支 30–60 秒']}, p);
-  assert.match(text, /^从「科浪访谈 第 42 期」里挑几段.*我确认后再创建视频。要 3 支，每支 30–60 秒。$/);
+  assert.match(text, /^从「科浪访谈 第 42 期」里挑几段.*各创建成一支短视频.*原视频和时间轴不动。要 3 支，每支 30–60 秒。$/);
+  assert.ok(!/我确认后再创建/.test(text));
   assert.match(A.intentPrompt({kind: 'shortscut', scope: '第 2 章'}, p), /的第 2 章里挑几段/);
   const plan = A.planFor(text, true);
   assert.equal(plan.kind, 'shortscut');
   assert.equal(plan.task.kind, 'shorts-cut');
-  assert.match(plan.write.why, /不创建视频/);
+  assert.equal(plan.write.why, '创建 3 支子视频（引用原片，不复制、不导出）');
+  assert.equal(plan.receipt, '已创建 3 支短视频 · 7.2s');
+  assert.equal(plan.open.cta, '查看这几支');
+  const five = A.planFor('把这部视频剪成短视频\n要 5 支，每支 15–30 秒', true);
+  assert.deepEqual([five.write.cmd, five.write.why, five.count], ['bcut shorts create project.bcut --count 5', '创建 5 支子视频（引用原片，不复制、不导出）', 5]);
+  assert.match(five.receipt, /^已创建 5 支短视频/);
+  assert.match(five.close, /已创建 5 支短视频/);
   assert.equal(A.planFor('把口癖和长停顿都剪掉', true).kind, 'cleanup');
 });
 

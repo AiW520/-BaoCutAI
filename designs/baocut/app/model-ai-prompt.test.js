@@ -5,10 +5,20 @@ global.window = {};
 require('./model-ai-prompt.js');
 const P = window.BC_AIPROMPT;
 
-test('第一批只列从文稿出发的三组；翻译与画面另有去处说明', () => {
-  assert.deepEqual(P.GROUPS_NOW, ['整理文稿', '写作', '发布']);
-  assert.deepEqual(P.GROUPS_LATER, ['翻译', '画面']);
+test('列表：从文稿出发的三组加「画面」组；画面组只开剪成短视频，智能裁剪另有去处说明', () => {
+  assert.deepEqual(P.GROUPS_NOW, ['整理文稿', '写作', '发布', '画面']);
+  assert.deepEqual(P.GROUPS_LATER, ['翻译']);
+  assert.deepEqual(P.listed('画面', ['crop', 'shortscut']), ['shortscut']);
+  assert.deepEqual(P.listed('写作', ['summary', 'blog']), ['summary', 'blog']);
+  assert.match(P.LATER_NOTE, /智能裁剪/);
+  assert.ok(!/剪成短视频/.test(P.LATER_NOTE));
   assert.match(P.LATER_NOTE, /之后搬到这里/);
+});
+
+test('剪成短视频的模板：意图句之后参数一行一句，最后一行是可删的「直接创建」', () => {
+  const t = P.template('shortscut', '把「A」剪成几支短视频。', {extra: ['要 3 支，每支 30–60 秒', '找好就直接创建成视频，不用先问我']});
+  assert.deepEqual(t.split('\n'), ['把「A」剪成几支短视频。', '要 3 支，每支 30–60 秒', '找好就直接创建成视频，不用先问我']);
+  assert.equal(P.TOOL_SKILL.shortscut, 'shorts-segments');
 });
 
 test('模板 = 意图句 + 固定约束；写作类带 Markdown 与语言，整理类不带', () => {
@@ -42,7 +52,7 @@ test('每个第一批工具都配一个内置 skill；默认挂它，列表里�
   const list = window.BC_DATA.agentSkills;
   const K = window.BC_AGENT_SKILLS;
   global.window = saved;
-  ['polish', 'chapters', 'speakers', 'retranscribe', 'cleanup', 'stale', 'summary', 'blog', 'title', 'desc', 'cover']
+  ['polish', 'chapters', 'speakers', 'retranscribe', 'cleanup', 'stale', 'summary', 'blog', 'title', 'desc', 'cover', 'shortscut']
     .forEach((k) => {
       const id = P.TOOL_SKILL[k];
       assert.ok(id, k);

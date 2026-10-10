@@ -239,6 +239,13 @@ test('纯文档会话把产物放在回答后；旧收据仍可回看目标视�
   assert.deepEqual(P.sessionArtifacts({id:'old',project:'p1',messages:[{id:'r',role:'receipt'}]},items).map(it=>it.id), ['p1']);
 });
 
+test('会话里新建的视频（剪成短视频的子视频）没有产物状态也挂在建它的那条消息后面（§5.10）', () => {
+  const items = [{id:'p1',kind:'movie'},{id:'k1',kind:'movie',session:'s',messageId:'r',status:null},
+    {id:'k2',kind:'movie',session:'s',messageId:'r',status:null},{id:'k3',kind:'movie',session:'other',messageId:'r',status:null}];
+  const sess = {id:'s',project:'p1',messages:[{id:'u',role:'user'},{id:'r',role:'receipt',movieId:'p1'}]};
+  assert.deepEqual(P.sessionArtifacts(sess,items).map(it => [it.id,it.messageId]), [['p1','r'],['k1','r'],['k2','r']]);
+});
+
 
 test('仅有来源会话的引用素材不算产物；文档没有新的引用就留在原处，记的消息不在会话里只进汇总', () => {
   const items = [{id:'source',kind:'image',session:'s'},

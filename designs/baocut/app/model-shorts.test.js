@@ -128,18 +128,18 @@ test('发布前检查：行序与规则 id 恒为契约 3 那九条，状态只�
 test('发布前检查：画幅 error、时长与开口与结尾 warn、跳转指针', () => {
   const p = base();
   p.ratio = '16:9';
-  p.span = {start: 10, end: 100, dur: 90};
-  p.cues = [{start: 14, end: 16, text: '开场晚了'}, {start: 97.5, end: 100, text: '记得点赞关注'}];
+  p.span = {start: 10, end: 200, dur: 190};
+  p.cues = [{start: 14, end: 16, text: '开场晚了'}, {start: 197.5, end: 200, text: '记得点赞关注'}];
   const by = Object.fromEntries(S.checkRows(p).map((r) => [r.rule, r]));
   assert.equal(by.aspect.status, 'error');
   assert.deepEqual(by.aspect.pointer, {kind: 'ratio'});
   assert.equal(by.duration.status, 'warn');
-  assert.match(by.duration.message, /超过 60 秒/);
+  assert.match(by.duration.message, /超过 3 分钟，YouTube 不按 Shorts 收/);
   assert.equal(by['hook-3s'].status, 'warn');
   assert.deepEqual(by['hook-3s'].pointer, {kind: 'time', t: 10});
   assert.equal(by.ending.status, 'warn');
   assert.match(by.ending.message, /点赞/);
-  assert.equal(by.ending.at, 97.5);
+  assert.equal(by.ending.at, 197.5);
   const en = base();
   en.cues = [{start: 38, end: 40, text: '好', trans: "Don't forget to subscribe"}];
   assert.equal(S.checkRows(en).find((r) => r.rule === 'ending').status, 'warn');
@@ -214,5 +214,7 @@ test('切 Shorts：读出条数、切片版流程条、交给 Agent 的一行写
   assert.match(line, /每支一部新视频/);
   assert.match(line, /原片里的起止/);
   assert.match(S.cutPromptLine(null), /^切成几条 Shorts：/);
-  assert.equal(S.cutGrammarLine(), '每支一部新视频 · 9:16 · 不超过 60 秒 · 从看点起 · 记下来源片段');
+  assert.match(line, /时长按我要的范围/);
+  assert.ok(!/60 秒/.test(line));
+  assert.equal(S.cutGrammarLine(), '每支一部新视频 · 9:16 · 时长按你要的范围 · 从看点起 · 记下来源片段');
 });

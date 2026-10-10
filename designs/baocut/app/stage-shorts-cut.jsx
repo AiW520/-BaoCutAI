@@ -1,7 +1,7 @@
-/* 剪成短视频（§15.12）挑片段时的舞台：接管编辑列，与智能裁剪「检查构图」同一位置。
-   左边原片叠 9:16 取景窗（取景选「我自己定」时可以横向拖），右边是这一支的成片预览
-   （当前这一句的字幕 + 平台安全区），下面一条原片条：整片、章节刻度、每段候选一个色块。
-   这里不逐镜头调构图——要调，在切出来的短视频项目里用智能裁剪（裁决点 F）。 */
+/* 剪成短视频（§5.10）结果页的舞台：接管编辑列，与智能裁剪「检查构图」同一位置，跟着结果页上选中的那一支。
+   左边原片叠取景窗（画幅 9:16 / 1:1；取景选「我自己定」时可以横向拖；保留原画幅时不裁），右边是这一支的成片预览
+   （当前这一句的字幕 + 平台安全区），下面一条原片条：整片、章节刻度、这一轮的每一支一个色块，之前切过的另一种颜色。
+   这里的改动直接写进那一支。不逐镜头调构图——要调，在那一支里用智能裁剪。 */
 (function () {
   const {useState, useRef, useEffect, useMemo, useCallback} = React;
   const SC = window.BC_SHORTS_CUT;
@@ -45,7 +45,8 @@
     const srcRatio = C.sourceRatio(source);
     const subjects = useMemo(() => C.demoSubjects('podcast'), []);
     const speakerX = useMemo(() => SC.speakerMap(s.sentences, subjects), [s.sentences, subjects]);
-    const kids = SC.childrenOf(app.projects, proj);
+    const mine = new Set(s.list.map((c) => c.id));
+    const kids = SC.childrenOf(app.projects, proj).filter((k) => !mine.has(k.id));
     const dur = Math.max(1, ctx.duration || (s.sentences.length ? s.sentences[s.sentences.length - 1].end : 1));
     const t = s.t || 0;
     const playing = !!s.playing;
@@ -53,21 +54,15 @@
     const seek = useCallback((x) => api.seek(proj, Math.min(dur, x)), [proj, dur]);
     const line = s.sentences[SC.indexAt(s.sentences, t)] || null;
     const inCur = cur && t >= cur.start - 0.02 && t <= cur.end + 0.02;
-    const size = SC.focusSize(srcRatio);
+    /* 成片画幅：9:16 / 1:1，保留原画幅时就是原片本身，不画取景窗 */
+    const noCrop = s.params.ratio === 'source';
+    const out = SC.outRatio(s.params.ratio, srcRatio);
+    const size = SC.focusSize(srcRatio, out);
     const activeLine = line && t >= line.start && t < line.end ? line : null;
-    const cx0 = SC.focusAt(s.params, cur, activeLine, speakerX, srcRatio, SC.contextFocus(s.sentences, t, speakerX, subjects));
-    const analysisKey = s.params.focus === 'speaker' && cur ? `${proj}:${source && source.id}:${cur.start}:${cur.end}` : null;
-    const [analyzed, setAnalyzed] = useState(null);
-    useEffect(() => {
-      if (!analysisKey) return;
-      // Explicitly simulated delay; this prototype does not run video models.
-      const timer = setTimeout(() => setAnalyzed(analysisKey), 600);
-      return () => clearTimeout(timer);
-    }, [analysisKey]);
-    const framingPending = analysisKey && analyzed !== analysisKey;
-    const framingOutside = analysisKey && (t < Math.max(0, cur.start - 3) || t > cur.end + 3);
+    const cx0 = SC.focusAt(s.params, cur, activeLine, speakerX, srcRatio, SC.contextFocus(s.sentences, t, speakerX, subjects), out);
     const win = {cx: cx0, cy: 0.5, w: size.w, h: size.h};
-    const manual = s.params.focus === 'manual' && !s.facts.portrait;
+    const fits = noCrop || (size.w >= 0.999 && size.h >= 0.999);
+    const manual = s.params.focus === 'manual' && !fits && size.w < 1;
     const cue = SC.reviewCueAt(ctx.cues || [], t);
     const spec = SC.captionSpec(s.params, inCur ? cue : null, S.SAFE);
 
@@ -86,7 +81,7 @@
     }, []);
     /* 本地播放时钟：只推进会话里的播放头，放到这一段末尾就停。 */
     useEffect(() => {
-      if (!playing || framingPending) { cancelAnimationFrame(raf.current); return; }
+      if (!playing) { cancelAnimationFrame(raf.current); return; }
       last.current = performance.now();
       if (tRef.current >= endRef.current - 0.05 && cur) { tRef.current = cur.start; seek(cur.start); }
       const tick = (now) => {
@@ -97,7 +92,7 @@
       };
       raf.current = requestAnimationFrame(tick);
       return () => cancelAnimationFrame(raf.current);
-    }, [playing, cur && cur.id, framingPending]);
+    }, [playing, cur && cur.id]);
     useEffect(() => () => api.set(proj, {playing: false}), [proj]);
     useEffect(() => {
       const key = (e) => {
@@ -120,7 +115,7 @@
     const innerW = Math.max(0, box.w - pad * 2 - gap), innerH = Math.max(0, box.h - pad * 2 - labelH);
     const srcW = Math.round(innerW * 0.62), outW = innerW - srcW;
     const srcFit = window.BC_LAYOUT.fitStage(srcW, innerH, srcRatio, 0);
-    const outFit = window.BC_LAYOUT.fitStage(outW, innerH, 9 / 16, 0);
+    const outFit = window.BC_LAYOUT.fitStage(outW, innerH, out, 0);
     const pct = (v) => `${v * 100}%`;
 
     /* 拖取景框：只横向，整支一个位置。 */
@@ -135,7 +130,7 @@
     };
     const onMove = (e) => {
       const d = drag.current; if (!d) return;
-      api.edit(proj, d.id, {focusX: +SC.clampFocus(d.base + (e.clientX - d.x0) / d.w, srcRatio).toFixed(3)});
+      api.edit(proj, d.id, {focusX: +SC.clampFocus(d.base + (e.clientX - d.x0) / d.w, srcRatio, out).toFixed(3)});
     };
     const onUp = () => { if (drag.current) api.endEdit(proj); drag.current = null; };
 
@@ -166,13 +161,14 @@
       seek(Math.max(0, Math.min(dur, head.current.time + (e.clientX-head.current.x)/trackRef.current.getBoundingClientRect().width*dur)));
     };
 
-    const focusName = s.facts.portrait ? '原片就是竖屏，不用取景' : SC.focusOf(s.params.focus).name;
+    const focusName = noCrop ? '保留原画幅，不裁' : fits ? '画幅一样，不用取景' : SC.focusOf(s.params.focus).name;
+    const outName = noCrop ? '原画幅' : SC.ratioOf(s.params.ratio).name;
     return (
-      <div className="cr-stage sc-stage" aria-label="挑片段">
+      <div className="cr-stage sc-stage" aria-label="剪成短视频">
         <div className="cr-stage__bar">
           <Ic n="clip" className="ic--16" />
-          <b>挑片段</b>
-          <span className="t-detail t-truncate">{cur ? `第 ${list.indexOf(cur) + 1} 段 · ${cur.title} · ${SC.spanText(cur)}` : '还没有候选'}</span>
+          <b>剪成短视频</b>
+          <span className="t-detail t-truncate">{cur ? `第 ${list.indexOf(cur) + 1} 支 · ${cur.title} · ${SC.spanText(cur)}` : '这几支都移入回收站了'}</span>
           <span className="grow" />
           <IconBtn icon="undo" size="s" tip="撤销范围调整" disabled={!SC.reviewCanStep(s, false)} onClick={() => api.undoRange(proj)} />
           <IconBtn icon="redo" size="s" tip="重做范围调整" disabled={!SC.reviewCanStep(s, true)} onClick={() => api.undoRange(proj, true)} />
@@ -183,7 +179,7 @@
             <div className="cr-pane__lab"><b>原片</b><span>{C.ratioId(srcRatio)} · {manual ? '拖取景框定这一支的位置' : `取景 · ${focusName}`}</span></div>
             <div className="cr-frame" style={{width: srcFit.w, height: srcFit.h}} onPointerMove={onMove} onPointerUp={onUp} onPointerCancel={onUp}>
               <window.CropScene subjects={subjects} ratio={srcRatio} />
-              {!framingPending && !framingOutside && <>
+              {!fits && <>
               <i className="cr-shade" style={{left: 0, top: 0, bottom: 0, width: pct(win.cx - win.w / 2)}} />
               <i className="cr-shade" style={{right: 0, top: 0, bottom: 0, width: pct(1 - win.cx - win.w / 2)}} />
               <div className={cx('cr-win', manual && 'is-manual', !manual && 'sc-win--fixed')}
@@ -195,17 +191,15 @@
             </div>
           </div>
           <div className="cr-pane" style={{width: outW}}>
-            <div className="cr-pane__lab"><b>这一支</b><span>9:16 · {SC.STYLES.find((x) => x.id === s.params.style).name}</span></div>
+            <div className="cr-pane__lab"><b>这一支</b><span>{outName} · {SC.STYLES.find((x) => x.id === s.params.style).name}</span></div>
             <div className="cr-frame cr-frame--out" style={{width: outFit.w, height: outFit.h}}>
-              {framingPending || framingOutside ? <div className="sc-framing-pending" role="status">{framingPending ? '正在分析跟拍，完成后显示预览…' : '点「试看」回到片段内查看跟拍。'}</div> : <>
               <span className="cr-cell">
                 <span className="cr-cell__in" style={{width: `${100 / win.w}%`, height: `${100 / win.h}%`, left: `${-(win.cx - win.w / 2) / win.w * 100}%`, top: `${-(win.cy - win.h / 2) / win.h * 100}%`}}>
                   <window.CropScene subjects={subjects} ratio={srcRatio} />
                 </span>
               </span>
               <Caption spec={spec} width={outFit.w} />
-              <SafeZones />
-              </>}
+              {s.params.ratio === '9:16' ? <SafeZones /> : null}
             </div>
             {spec.blocked ? <div className="sc-stage__warn">字幕压在平台文案区里 · 换成「短视频字幕」就避开了</div> : null}
           </div>
@@ -218,9 +212,8 @@
             <span className="t-mono t-detail">原片 {SC.mmss(t)} / {SC.mmss(dur)}</span>
             <span className="grow" />
             <span className="cr-legend">
-              <span className="sc-legend is-on">勾上的</span>
-              <span className="sc-legend">没勾的</span>
-              {kids.length ? <span className="sc-legend is-done">已切过</span> : null}
+              <span className="sc-legend is-on">这一轮的几支</span>
+              {kids.length ? <span className="sc-legend is-done">之前切过的</span> : null}
             </span>
           </div>
           <div className="cr-track sc-track" ref={trackRef} onPointerDown={(e) => { scrub(e); e.currentTarget.setPointerCapture(e.pointerId); }}
@@ -234,7 +227,7 @@
               const on = cur && c.id === cur.id;
               return (
                 <span key={c.id} className={cx('sc-seg', c.on && 'is-on', on && 'is-cur')} style={{left: pct(c.start / dur), width: pct((c.end - c.start) / dur)}}
-                  title={`第 ${i + 1} 段 · ${c.title} · ${SC.spanText(c)}`}
+                  title={`第 ${i + 1} 支 · ${c.title} · ${SC.spanText(c)}`}
                   onPointerDown={(e) => { e.stopPropagation(); setPlaying(false); api.select(proj, c.id); }}>
                   <b>{i + 1}</b>
                   {on && (c.end-c.start)/dur*(trackRef.current?.clientWidth || 0) >= 24 ? <i className="sc-grip sc-grip--l" onPointerDown={(e) => edgeDown(e, c.id, 'start')} onPointerMove={edgeMove} onPointerUp={edgeUp} title="拖这里改起点" /> : null}

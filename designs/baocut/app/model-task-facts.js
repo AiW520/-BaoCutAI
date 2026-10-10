@@ -104,7 +104,8 @@
   }
 
   /** 智能裁剪任务的阶段是机器值，详情里给人看的名字。 */
-  const SHORTS_CUT_STAGE = {find: '找片段', review: '等你挑', create: '创建视频', done: '已完成'};
+  /* 剪成短视频找到就创建（§5.10），没有「等你挑」这一步。 */
+  const SHORTS_CUT_STAGE = {find: '找片段', create: '创建视频', done: '已完成'};
   const CROP_STAGE = {analyze: '分析构图', review: '等你检查', render: '生成视频', done: '已完成'};
 
   /* ---------- 图片任务（jobs 帧的 `images[]`，与 liveSegments 不同，它随任务进历史） ---------- */

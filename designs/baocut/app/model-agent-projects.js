@@ -288,8 +288,8 @@
       }
     });
     for (const item of items) {
-      // 没有产物状态的引用素材不算交付；记的那条消息不在会话里时不知道该挂在哪，只在「产物」汇总里列出（messageId 为 null）。
-      if (item.session === sess.id && item.status && item.purpose !== 'preview' && !found.has(item.id)) {
+      // 没有产物状态的引用素材不算交付（会话里新建的视频除外，如剪成短视频的子视频，§5.10）；记的那条消息不在会话里时不知道该挂在哪，只在「产物」汇总里列出（messageId 为 null）。
+      if (item.session === sess.id && (item.status || item.kind === 'movie') && item.purpose !== 'preview' && !found.has(item.id)) {
         add(item.id, messages.some(m => m.id === item.messageId) ? item.messageId : null);
       }
     }
