@@ -33,7 +33,7 @@ BaoCut 是以**可编辑视频**为中心的剪辑工具：素材在时间线上
 | 旁白、念一段话 | 语音合成，按需放进视频 | [voice](references/catalog/voice.md) | — |
 | 旁白成片、给画面配多句旁白 | 先量语速算字数，一个能锁住音色的声音一次合成，画面剪到旁白上 | [voice](references/catalog/voice.md) | {{skill:narration}} |
 | 剪口播、去口癖、剪掉停顿 | 在时间线上剪，原文件不动 | [editing](references/catalog/editing.md) | {{skill:talking-head-cut}} |
-| 切短视频、挑几段发 | 从长视频挑几段，用户挑定后按段导出 | [export](references/catalog/export.md) | {{skill:shorts-segments}} |
+| 切短视频、挑几段发 | 从长视频挑几段，每段建成可编辑的子视频 | [editing](references/catalog/editing.md) | {{skill:shorts-segments}} |
 | 分章、加时间轴目录 | 写进视频的章节 | [editing](references/catalog/editing.md) | {{skill:video-chapters}} |
 | 总结、提炼要点 | 读带时间的文稿，写总结与可跳转的要点 | [subtitles](references/catalog/subtitles.md) | {{skill:video-summary}} |
 | 写成博客、公众号文章 | 读文稿写成完整文章 | [subtitles](references/catalog/subtitles.md) | {{skill:video-blog}} |
