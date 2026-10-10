@@ -133,4 +133,10 @@ export const de: RcAgentToolsMessages = {
   createProjectSummary: (p: { path: string; name: string | null }) => `Projektordner erstellen: ${p.path}${p.name ? ` (${p.name})` : ""}`,
   adoptSessionSummary: (p: { name: string | null }) =>
     `Projekt ${p.name ? `„${p.name}“` : 'mit dem Namen des ersten Videos'} erstellen und die Videos und Dateien dieser Sitzung dorthin verschieben`,
+  deriveVideoSummary: (p) => `Abgeleitetes Video „${p.name}“ aus ${p.from}–${p.to} dieses Videos erstellen`,
+  deriveVideoLabel: (p) => `Abgeleitet von „${p.name}“`,
+  derivationDocumentName: 'Ableitungsquelle',
+  deriveRangeEmpty: 'Der Bereich ist nach dem Ausrichten auf Frames leer',
+  deriveUnsupportedItem: (p) => `Der Bereich enthält einen Clip, der nicht in ein abgeleitetes Video kopiert werden kann (${p.kind})`,
+  deriveParentUnplaced: 'Dieses Video liegt in keinem Projekt- oder Sitzungsordner, daher kann daneben kein abgeleitetes Video erstellt werden',
 };

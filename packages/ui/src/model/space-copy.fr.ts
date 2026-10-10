@@ -33,6 +33,7 @@ export const fr: SpaceMessages = {
   noProject: "Sans projet",
   removedProject: "Projet retiré",
   conversation: (title: string) => `Session « ${title} »`,
+  derivedFrom: (name: string) => `Issu de « ${name} »`,
   kindCount: (kind: string, n: number) => `${kind} ${n}`,
   foundFiles: (name: string, n: number) => (n === 1 ? `Correspondance : ${name}` : `Correspondance : ${name} et ${n - 1} ${pluralForm('fr', n - 1, { one: 'autre', other: 'autres' })}`),
   fileStatus: (kind: string, status: string) => `${kind} : ${status}`,

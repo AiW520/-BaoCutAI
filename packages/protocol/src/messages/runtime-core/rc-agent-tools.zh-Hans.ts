@@ -100,4 +100,10 @@ export const zhHans: RcAgentToolsMessages = {
   registerProjectSummary: (p) => `把已有的目录登记为项目 ${p.path}${p.name ? `（${p.name}）` : ''}`,
   createProjectSummary: (p) => `新建项目目录 ${p.path}${p.name ? `（${p.name}）` : ''}`,
   adoptSessionSummary: (p) => `新建项目${p.name ? `「${p.name}」` : '（以第一个视频命名）'}，把这个会话的视频与文件搬进去`,
+  deriveVideoSummary: (p) => `从这个视频的 ${p.from}–${p.to} 派生子视频「${p.name}」`,
+  deriveVideoLabel: (p) => `从「${p.name}」派生`,
+  derivationDocumentName: '派生来源',
+  deriveRangeEmpty: '对齐到帧之后区间是空的',
+  deriveUnsupportedItem: (p) => `区间里有不能复制到子视频的片段（${p.kind}）`,
+  deriveParentUnplaced: '这个视频不在项目或会话的目录里，没法在它旁边建子视频',
 };

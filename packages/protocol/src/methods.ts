@@ -19,6 +19,8 @@ import type {
   SpaceEntry,
   SpaceEntryKind,
   TaskStatus,
+  VideoDeriveParams,
+  VideoDeriveResult,
 } from './domain.ts';
 import type { ConversationSnapshot, DirectorySnapshot, SequencedEvent, Topic } from './events.ts';
 import type { ExportCreateRequest, ExportRenderTextRequest, ExportRenderTextResult } from './exports.ts';
@@ -583,6 +585,16 @@ export interface RpcMethods {
   'videos.create': {
     params: { projectId?: Id; conversationId?: Id; name?: string; fps?: Rate; width?: number; height?: number; commandId?: Id };
     result: VideoOpenResult;
+  };
+  /**
+   * 派生子视频（架构设计 §3.5「派生子视频」，工具 `videos_derive`）：复制一个已打开的视频（时间线、文稿、章节），把剪辑后时间线
+   * `[start, end)` 之外的部分用剪口剪掉，建在父视频旁边并打开。同一父视频版本、同一区间与设置再调用时认回同一个子视频（`reused`）。
+   * 区间对到帧后为空时 `DERIVE_RANGE_EMPTY`，父视频里有不能复制的片段时 `DERIVE_UNSUPPORTED_ITEM`，父视频不在项目或会话的目录里时
+   * `DERIVE_PARENT_UNPLACED`。
+   */
+  'videos.derive': {
+    params: VideoDeriveParams;
+    result: VideoDeriveResult;
   };
   /**
    * 打开一个便携包（视频格式规范 §8）：校验清单（格式版本、每个文件的长度与摘要、路径不越出包），在项目目录或会话工作目录里

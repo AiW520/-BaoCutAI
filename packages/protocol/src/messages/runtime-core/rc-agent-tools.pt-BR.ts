@@ -130,4 +130,10 @@ export const ptBR: RcAgentToolsMessages = {
   createProjectSummary: (p: { path: string; name: string | null }) => `Criar pasta de projeto ${p.path}${p.name ? ` (${p.name})` : ""}`,
   adoptSessionSummary: (p: { name: string | null }) =>
     `Criar um projeto ${p.name ? `“${p.name}”` : 'com o nome do primeiro vídeo'} e mover para ele os vídeos e arquivos desta sessão`,
+  deriveVideoSummary: (p) => `Criar o vídeo derivado “${p.name}” a partir de ${p.from}–${p.to} deste vídeo`,
+  deriveVideoLabel: (p) => `Derivado de “${p.name}”`,
+  derivationDocumentName: 'Origem da derivação',
+  deriveRangeEmpty: 'O intervalo fica vazio ao ser alinhado aos quadros',
+  deriveUnsupportedItem: (p) => `O intervalo contém um clipe que não pode ser copiado para um vídeo derivado (${p.kind})`,
+  deriveParentUnplaced: 'Este vídeo não está em uma pasta de projeto ou de sessão, então não é possível criar um vídeo derivado ao lado dele',
 };

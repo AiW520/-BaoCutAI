@@ -144,7 +144,8 @@ export class VideoTrash {
     const related = record.videoId
       ? this.#deps.space
           .entries()
-          .filter((e) => e.id !== entryId && e.origin?.videoId === record.videoId)
+          // 派生的子视频（origin 同样指向父视频）是独立的视频，不算它生成、导出的条目。
+          .filter((e) => e.id !== entryId && e.kind !== 'video' && e.origin?.videoId === record.videoId)
           .map((e) => e.id)
       : [];
     return { status: 'trashed', entryId, videoId: record.videoId, name: record.name, trashedAt: record.trashedAt, related };

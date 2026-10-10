@@ -155,4 +155,10 @@ export const it: RcAgentToolsMessages = {
   createProjectSummary: (p: { path: string; name: string | null }) => `Crea la cartella del progetto ${p.path}${p.name ? ` (${p.name})` : ''}`,
   adoptSessionSummary: (p: { name: string | null }) =>
     `Crea un progetto ${p.name ? `«${p.name}»` : 'con il nome del primo video'} e spostaci i video e i file di questa sessione`,
+  deriveVideoSummary: (p) => `Crea il video derivato «${p.name}» da ${p.from}–${p.to} di questo video`,
+  deriveVideoLabel: (p) => `Derivato da «${p.name}»`,
+  derivationDocumentName: 'Origine della derivazione',
+  deriveRangeEmpty: 'L’intervallo è vuoto dopo l’allineamento ai fotogrammi',
+  deriveUnsupportedItem: (p) => `L’intervallo contiene una clip che non si può copiare in un video derivato (${p.kind})`,
+  deriveParentUnplaced: 'Questo video non si trova in una cartella di progetto o di sessione, quindi non si può creare un video derivato accanto',
 };

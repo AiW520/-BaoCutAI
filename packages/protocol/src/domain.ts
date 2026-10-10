@@ -283,6 +283,58 @@ export interface VideoCreated {
 }
 
 /**
+ * `videos.derive`（工具 `videos_derive`，架构设计 §3.5「派生子视频」）：复制父视频（时间线与文稿），把剪辑后时间线
+ * `[start, end)`（秒）之外的部分用剪口剪掉，建在父视频旁边；子视频里恢复剪口就能把片段往外扩。区间先对到帧（起点向下、终点向上取整）。`width`、`height` 缺省沿用父视频的画布；
+ * `fit`、`crop` 给了时写到每个视频片段上；`captions`、`translations`、`chapters` 缺省都开。
+ */
+export interface VideoDeriveParams {
+  videoId: Id;
+  start: number;
+  end: number;
+  /** 子视频名；缺省「父视频名 · mm:ss–mm:ss」。不参与幂等键。 */
+  name?: string;
+  width?: number;
+  height?: number;
+  fit?: 'cover' | 'contain';
+  crop?: { left: number; top: number; right: number; bottom: number };
+  captions?: boolean;
+  translations?: boolean;
+  chapters?: boolean;
+}
+
+/** 派生时丢掉、改动或没做到的东西（架构设计 §3.5「派生子视频」）。 */
+export type VideoDeriveWarningCode =
+  | 'anchor-dropped'
+  | 'locks-dropped'
+  | 'animation-bindings-dropped'
+  | 'multiple-assets'
+  | 'range-not-exact'
+  | 'items-not-restorable'
+  | 'captions-skipped';
+
+export interface VideoDeriveResult {
+  /** 子视频：与 `videos_create` 的 `video-created` 同一个写法。 */
+  video: VideoCreated;
+  /** 同一父视频版本、同一区间与设置的子视频已经有了：认回它，没有再建。 */
+  reused: boolean;
+  /** 幂等键：父视频、版本、对齐后的区间与设置的摘要。 */
+  key: string;
+  /** 对齐到帧之后的区间（秒）。 */
+  range: { start: number; end: number };
+  /** 记剪口的主素材（父视频里的 ID）；没有可剪的媒体时 null。 */
+  primaryAssetId: Id | null;
+  /** 区间之外记下的剪口：主素材源时钟上的秒（父视频的素材 ID）。在子视频里恢复它们就回到父视频的全貌。 */
+  cuts: { assetId: Id; from: number; to: number }[];
+  itemCount: number;
+  /** 子视频里的派生来源文档（`kind: 'derivation'`）。 */
+  derivationDocumentId: Id | null;
+  speech: { documentId: Id; sourceDocumentId: Id; words: number }[];
+  translations: { documentId: Id; sourceDocumentId: Id }[];
+  captions: { documentId: Id; sourceDocumentId: Id; cueCount: number | null }[];
+  warnings: { code: VideoDeriveWarningCode; itemId?: Id; assetId?: Id; documentId?: Id; count?: number }[];
+}
+
+/**
  * 回合失败的结构化原因（架构设计 §3.11）。Driver 从原生错误里认出来（Claude 的 `authentication_failed`、
  * `model_not_found`、`billing_error`，Codex 的登录与模型错误），认不出的为 null，界面只显示原文。
  * `AGENT_BILLING_REQUIRED`：账号的余额或付款有问题（Claude 的 `billing_error`），要用户在服务商那边处理，等待不会恢复；
@@ -662,7 +714,8 @@ export type SpaceEntryStatus = 'generating' | 'candidate' | 'applied' | 'publish
 
 /** 条目从哪来（架构设计 §5.7 的 `origin`）。生成参数（原文、提示词）不在这里，只在 Job 记录里。 */
 export interface SpaceEntryOrigin {
-  source: 'generated' | 'imported' | 'exported';
+  /** `derived`：从另一个视频的一段派生出来的子视频（`videos.derive`），`videoId` 是父视频。 */
+  source: 'generated' | 'imported' | 'exported' | 'derived';
   /**
    * 所属项目：产物取自产生它的视频或会话所属的项目；不属于任何项目时为 null。bytes 不在来源目录里的条目
    * （`source` 两项都是 null）靠它归到项目，`space.list` 的 `projectId` 筛选同时看两处。
@@ -674,7 +727,7 @@ export interface SpaceEntryOrigin {
   conversationId?: Id;
   taskId?: Id;
   jobId?: Id;
-  /** 生成或导出它的能力（`synthesizeSpeech`、`generateImage`、`generateText`、`export`）。 */
+  /** 生成、导出或派生它的能力（`synthesizeSpeech`、`generateImage`、`generateText`、`export`、`videos-derive`）。 */
   capability?: string;
   provider?: { providerId: string; modelId: string };
 }

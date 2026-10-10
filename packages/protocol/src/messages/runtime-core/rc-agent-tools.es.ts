@@ -37,4 +37,10 @@ export const es: RcAgentToolsMessages = {
  grantSummary: (p) => `Compartir datos con ${p.recipients}: ${p.items}`, grantSummaryItem: (p) => `${p.purpose} (${p.maxCalls === null ? 'sin límite de llamadas' : `hasta ${countEs(p.maxCalls, 'llamada', 'llamadas')}`})`,
  testModelSummary: (p) => `Comprobar el paquete de modelos local ${p.bundleId}: ejecutarlo de principio a fin con una muestra fija`, installModelSummary: (p) => `Descargar el modelo local ${p.bundleId}: ${p.estimated ? `unos ${p.size} (tamaño desconocido, estimado)` : p.size}${p.resumed ? `, reanudando ${p.resumed} ya descargados` : ''}, desde ${p.source} (${p.parts})`,
  registerProjectSummary: (p) => `Registrar la carpeta existente ${p.path} como proyecto${p.name ? ` (${p.name})` : ''}`, createProjectSummary: (p) => `Crear la carpeta de proyecto ${p.path}${p.name ? ` (${p.name})` : ''}`, adoptSessionSummary: (p) => `Crear un proyecto ${p.name ? `«${p.name}»` : 'con el nombre del primer vídeo'} y mover a él los vídeos y archivos de esta sesión`,
+  deriveVideoSummary: (p) => `Crear el vídeo derivado «${p.name}» a partir de ${p.from}–${p.to} de este vídeo`,
+  deriveVideoLabel: (p) => `Derivado de «${p.name}»`,
+  derivationDocumentName: 'Origen de la derivación',
+  deriveRangeEmpty: 'El intervalo queda vacío al ajustarlo a fotogramas',
+  deriveUnsupportedItem: (p) => `El intervalo contiene un clip que no se puede copiar a un vídeo derivado (${p.kind})`,
+  deriveParentUnplaced: 'Este vídeo no está en una carpeta de proyecto o de sesión, así que no se puede crear un vídeo derivado a su lado',
 };

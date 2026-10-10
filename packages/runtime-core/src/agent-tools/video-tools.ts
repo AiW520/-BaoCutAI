@@ -42,6 +42,8 @@ import { RcAgentTools } from '@baocut/protocol/messages/runtime-core';
 import type { MediaAnalysis } from '../media-analysis.ts';
 import type { PackageImporter } from '../videos/package-import.ts';
 import type { VideoService } from '../videos/video-service.ts';
+import { deriveVideo, resolveDerive, type DeriveDeps } from '../videos/video-derive.ts';
+import { clockLabel } from './derive-plan.ts';
 import { EDIT_OPERATIONS, OPERATION_FAMILIES, OPERATION_TYPES, describeOperation } from './edit-ops.ts';
 import { ToolError, type ToolInfo, type ToolSet } from './tool-catalog.ts';
 import { approvalField, confirmSummary, type ToolAccess, type ToolPrincipal, type ToolScope } from './tool-scope.ts';
@@ -74,6 +76,8 @@ export interface VideoToolsDeps {
   analysis: MediaAnalysis;
   /** 打开便携包（`videos_import_package`）：与 `videos.importPackage` 同一个入口。 */
   packages: PackageImporter;
+  /** 派生子视频（`videos_derive`）时按 Space 索引认回已有的子视频；不给时只看父视频旁边的目录。 */
+  findDerived?: DeriveDeps['findDerived'];
 }
 
 // i18n-ignore: 给模型的工具说明、错误与下一步
@@ -302,6 +306,28 @@ const schemas = {
     video: videoArg,
     transactionId: z.string().min(1).max(200).optional().describe('要撤销的那笔修改；省略时撤销你自己最近的一笔'),
     expectedRevision: revisionArg.optional().describe('可选。视频当前的版本，不一致时不撤销'),
+  }),
+  videos_derive: z.strictObject({
+    video: videoArg,
+    start: z.number().nonnegative().describe('区间起点：剪辑后时间线上的秒（与 videos_inspect、播放器显示的时间一致）'),
+    end: z.number().positive().describe('区间终点：剪辑后时间线上的秒，大于 start；超过时长时截到时长'),
+    name: z.string().trim().min(1).max(100).optional().describe('可选。子视频名，也是目录名的前半；不给时为「父视频名 · mm:ss–mm:ss」'),
+    width: z.number().int().min(16).max(8192).optional().describe('可选。子视频画布宽；不给时沿用父视频'),
+    height: z.number().int().min(16).max(8192).optional().describe('可选。子视频画布高；不给时沿用父视频'),
+    fit: z.enum(['cover', 'contain']).optional().describe('可选。画布比例变了时视频片段怎么放：cover（铺满、裁掉多余）或 contain（完整显示、留边）；不给时不改'),
+    crop: z
+      .strictObject({
+        left: z.number().min(0).lt(1),
+        top: z.number().min(0).lt(1),
+        right: z.number().min(0).lt(1),
+        bottom: z.number().min(0).lt(1),
+      })
+      .refine((c) => c.left + c.right < 1 && c.top + c.bottom < 1)
+      .optional()
+      .describe('可选。视频片段四边各裁掉的比例（0 到 1，左右之和、上下之和小于 1）'),
+    captions: z.boolean().optional().describe('可选。按复制来的转写给子视频建原文字幕层，默认 true'),
+    translations: z.boolean().optional().describe('可选。复制父视频的译文，默认 true'),
+    chapters: z.boolean().optional().describe('可选。复制父视频的章节，默认 true'),
   }),
   captions_create: z.strictObject({
     video: videoArg,
@@ -600,6 +626,23 @@ const DEFINITIONS: Record<ToolName, ToolInfo> = {
     surfaces: ['agent', 'mcp', 'cli'],
     positional: 'video',
   },
+  videos_derive: {
+    title: '派生子视频',
+    description: [
+      '复制父视频并把区间之外剪掉，建成一个子视频，子视频里可以恢复。',
+      '子视频建在父视频旁边（同一层目录），是独立的视频（新的 videoId），父视频不变。复制整条时间线（素材是同一份文件：收在父视频里的同样收进子视频，链接的仍链接到原文件）、转写与译文整份、父视频已有的剪口与章节；start、end 是剪辑后时间线上的秒，先对到帧（起点向下、终点向上取整）。再把区间之外的部分用剪口剪掉：子视频的时间线只剩这一段，转写面板里区间之外的话显示为剪掉的，恢复剪口（restoreCut）就能把片段往外扩。字幕层不复制，按子视频剪辑后的时间线重新建（captions: false 时不建）。',
+      '首版只支持单主素材时间线：剪口只记在时间线上播放得最多的那个素材（主素材）上；别的素材与图文片段跟着剪口移动、缩短，整个落在剪掉范围里的会被删掉，恢复剪口时回不来。父视频有多个媒体素材时 warnings 有 multiple-assets；主素材盖不到的区间之外部分没剪掉时有 range-not-exact（count 是帧数）；会被删掉、恢复不回来的片段有 items-not-restorable。父视频有代码画面（composition）时拒绝（DERIVE_UNSUPPORTED_ITEM）；区间对到帧后为空时拒绝（DERIVE_RANGE_EMPTY）；父视频本身就是项目或会话的目录时拒绝（DERIVE_PARENT_UNPLACED）。',
+      '幂等：父视频同一版本、同一区间与设置再调用时认回已有的子视频（reused 为 true），不再复制。会向用户确认。',
+      '返回 video（子视频的 videoId、名字与打开位置）、reused、key、对到帧的 range、primaryAssetId、cuts（区间之外的剪口：主素材源时钟上的秒）、itemCount、derivationDocumentId（派生来源文档）、speech、translations、captions 与 warnings。之后用 videos_inspect 读子视频。',
+    ].join('\n'),
+    effect: 'mutation',
+    examples: [
+      { title: '把 1:00–2:30 派生成子视频', args: { video: 'demo', start: 60, end: 150 } },
+      { title: '派生竖屏短片', args: { video: 'demo', start: 12.5, end: 48, name: '竖屏片段', width: 1080, height: 1920, fit: 'cover' } },
+    ],
+    surfaces: ['agent', 'mcp', 'cli'],
+    positional: 'video',
+  },
   captions_create: {
     title: '建立字幕层',
     description: [
@@ -663,6 +706,8 @@ export class VideoTools implements ToolSet {
         return this.#apply(args as z.infer<(typeof schemas)['edits_apply']>, principal);
       case 'edits_undo':
         return this.#undo(args as z.infer<(typeof schemas)['edits_undo']>, principal);
+      case 'videos_derive':
+        return this.#derive(args as z.infer<(typeof schemas)['videos_derive']>, principal);
       case 'captions_create':
         return this.#captions(args as z.infer<(typeof schemas)['captions_create']>, principal);
       case 'videos_frames':
@@ -719,6 +764,43 @@ export class VideoTools implements ToolSet {
     };
     await this.#scope.recordCreated?.(access, created);
     return { ...digestVideo(opened.snapshot.video, opened.ref.relPath, []), ...(note ? { note } : {}), ...approvalField(approval) };
+  }
+
+  /** 派生子视频：与 `videos.derive` 同一个实现（`video-derive.ts`）；确认之后才建。 */
+  async #derive(args: z.infer<(typeof schemas)['videos_derive']>, principal: ToolPrincipal) {
+    const access = this.#scope.authorize(principal, true);
+    // 先打开父视频、对齐区间：确认卡写子视频真正的名字与对到帧的区间，对不上的区间不必让用户确认。
+    const opened = await this.#scope.open(args.video, access);
+    const { video: _video, ...params } = args;
+    const parent = this.#videos.mirror(opened.ref.videoId)?.video ?? opened.snapshot.video;
+    let resolved: ReturnType<typeof resolveDerive>;
+    try {
+      resolved = resolveDerive(parent, params);
+    } catch (error) {
+      throw deriveToolError(error);
+    }
+    const approval = await this.#scope.confirm(access, {
+      tool: 'videos_derive',
+      video: args.video,
+      ...confirmSummary(
+        RcAgentTools.deriveVideoSummary({ name: resolved.name, from: clockLabel(resolved.range.start), to: clockLabel(resolved.range.end) }),
+      ),
+    });
+    let derived: Awaited<ReturnType<typeof deriveVideo>>;
+    try {
+      derived = await deriveVideo(
+        { videos: this.#videos, ...(this.#deps.findDerived ? { findDerived: this.#deps.findDerived } : {}) },
+        { videoId: opened.ref.videoId, ...params },
+        principal,
+        { ...taskOf(access), protections: (videoId) => this.#scope.protections?.(access, videoId) ?? [] },
+      );
+    } catch (error) {
+      throw deriveToolError(error);
+    }
+    const { result } = derived;
+    if (result.reused) await this.#scope.adoptCreatedVideo?.(access, result.video.videoId);
+    else await this.#scope.recordCreated?.(access, result.video);
+    return { ...result, ...approvalField(approval) };
   }
 
   async #inspect(args: z.infer<(typeof schemas)['videos_inspect']>, principal: ToolPrincipal) {
@@ -1623,6 +1705,25 @@ function captionItemsCreated(
 }
 
 /** 会话的调用带着进行中的任务号（记进事务的来源）；对外服务的没有。 */
+// i18n-ignore-start: 给模型的工具说明、错误与下一步
+const DERIVE_TOOL_MESSAGES: Record<string, string> = {
+  DERIVE_RANGE_EMPTY: '区间对到帧之后是空的：start、end 是剪辑后时间线上的秒，先用 videos_inspect 看时长',
+  DERIVE_UNSUPPORTED_ITEM: '父视频里有不能复制到子视频的片段（代码画面或不能复制的链接素材，details 指出是哪个），首版不支持派生',
+  DERIVE_PARENT_UNPLACED: '这个视频就是项目或会话的目录本身（或不是从项目、会话打开的），旁边没有地方建子视频',
+};
+// i18n-ignore-end
+
+/** `videos.derive` 的拒绝（RPC 错误，`details.code` 是 `DERIVE_*`）换成工具错误。 */
+function deriveToolError(error: unknown): unknown {
+  if (!(error instanceof RpcError)) return error;
+  const details = (error.details ?? {}) as Record<string, unknown>;
+  const code = typeof details.code === 'string' ? details.code : '';
+  const message = DERIVE_TOOL_MESSAGES[code];
+  if (!message) return error;
+  const { code: _code, ...extra } = details;
+  return new ToolError(code, message, extra);
+}
+
 function taskOf(access: ToolAccess): { taskId?: string } {
   const taskId = (access as { taskId?: unknown }).taskId;
   return typeof taskId === 'string' ? { taskId } : {};

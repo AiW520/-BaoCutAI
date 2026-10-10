@@ -45,6 +45,8 @@ const en = {
   noProject: 'Not in a project',
   removedProject: 'Removed project',
   conversation: (title: string) => `Session “${title}”`,
+  /** 「来源」一列里派生子视频的父视频。 */
+  derivedFrom: (name: string) => `From “${name}”`,
   /** 卡片「N 个文件」的明细里的一项：类型与个数。 */
   kindCount: (kind: string, n: number) => `${kind} ${n}`,
   /** 只靠名下文件对上搜索或筛选时写是哪个文件：`n` 是对上的文件数。 */

@@ -827,6 +827,31 @@ export const methodParamSchemas = {
       commandId: id.optional(),
     })
     .strict(),
+  'videos.derive': z
+    .object({
+      videoId: id,
+      start: z.number().finite().nonnegative(),
+      end: z.number().finite().positive(),
+      name: z.string().trim().min(1).max(100).optional(),
+      width: positiveInt.min(16).max(8192).optional(),
+      height: positiveInt.min(16).max(8192).optional(),
+      fit: z.enum(['cover', 'contain']).optional(),
+      crop: z
+        .object({
+          left: z.number().min(0).lt(1),
+          top: z.number().min(0).lt(1),
+          right: z.number().min(0).lt(1),
+          bottom: z.number().min(0).lt(1),
+        })
+        .strict()
+        .refine((c) => c.left + c.right < 1 && c.top + c.bottom < 1)
+        .optional(),
+      captions: z.boolean().optional(),
+      translations: z.boolean().optional(),
+      chapters: z.boolean().optional(),
+    })
+    .strict()
+    .refine((p) => p.end > p.start),
   'videos.open': fileTarget,
   'videos.importPackage': z
     .object({

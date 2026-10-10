@@ -66,6 +66,7 @@ MCP 工具 `<名词>_<动词>` 就是 CLI 的 `baocut <名词> <动词>`，参�
 | `transcribe` | `baocut transcribe` | job |
 | `translate` | `baocut translate` | job |
 | `videos_create` | `baocut videos create` | mutation |
+| `videos_derive` | `baocut videos derive` | mutation |
 | `videos_frames` | `baocut videos frames` | mutation |
 | `videos_history` | `baocut videos history` | query |
 | `videos_inspect` | `baocut videos inspect` | query |

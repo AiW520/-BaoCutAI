@@ -80,6 +80,19 @@ export interface VideoFacts {
    * 快照不全时 null。格式版本 4 之前的缓存里没有这一项（`undefined`），等重读。
    */
   timeline?: VideoTimelineFact | null;
+  /**
+   * 派生来源（`videos.derive` 建的子视频，架构设计 §3.5「派生子视频」）：取自 `derivation` 文档当前版本的概要；不是派生的为 null。
+   * 存储格式版本 2 之前的缓存里没有这一项。
+   */
+  origin?: VideoOriginFact | null;
+}
+
+export interface VideoOriginFact {
+  parentVideoId: Id;
+  parentRevision: string;
+  /** 幂等键：同一父视频版本、同一区间与设置的派生认回这个子视频。 */
+  key: string;
+  range: { start: number; end: number };
 }
 
 export interface VideoTimelineFact {
@@ -258,6 +271,7 @@ export function extractContent(result: ReadContentResult, videoDir: string): Ext
       ...documentFacts(result),
       poster: posterOf(result.snapshot),
       timeline: timelineOf(result.snapshot),
+      origin: originOf(result.snapshot),
     },
     problems,
   };
@@ -449,6 +463,24 @@ export function posterOf(snapshot: VideoSnapshot): VideoPosterFact | null {
     mediaType: record.mediaType,
     durationSec: record.duration ? mediaTimeToSeconds(record.duration) : null,
   };
+}
+
+/** 派生来源：`derivation` 文档当前版本的概要（`baocut.derivation/1`）；没有或形状不对时 null。 */
+export function originOf(snapshot: VideoSnapshot): VideoOriginFact | null {
+  const records = Object.values(snapshot.documents ?? {})
+    .filter((d) => d.kind === 'derivation')
+    .sort((a, b) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
+  for (const record of records) {
+    const summary = record.revisions?.[record.currentRevision]?.summary as
+      | { schema?: unknown; parentVideoId?: unknown; parentRevision?: unknown; key?: unknown; range?: { start?: unknown; end?: unknown } }
+      | undefined;
+    if (!summary || summary.schema !== 'baocut.derivation/1') continue;
+    const { parentVideoId, parentRevision, key, range } = summary;
+    if (typeof parentVideoId !== 'string' || typeof parentRevision !== 'string' || typeof key !== 'string') continue;
+    if (typeof range?.start !== 'number' || typeof range.end !== 'number') continue;
+    return { parentVideoId, parentRevision, key, range: { start: range.start, end: range.end } };
+  }
+  return null;
 }
 
 /** 根序列的时长与画布尺寸。 */

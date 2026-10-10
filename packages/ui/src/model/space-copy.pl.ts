@@ -31,6 +31,7 @@ export const pl: SpaceMessages = {
   noProject: "Poza projektem",
   removedProject: "Usunięty projekt",
   conversation: (title: string) => `Sesja „${title}”`,
+  derivedFrom: (name: string) => `Z „${name}”`,
   kindCount: (kind: string, n: number) => `${kind} ${n}`,
   foundFiles: (name: string, n: number) => (n === 1 ? `Znaleziono: ${name}` : `Znaleziono: ${name} i ${n - 1} więcej`),
   fileStatus: (kind: string, status: string) => `${kind}: ${status}`,

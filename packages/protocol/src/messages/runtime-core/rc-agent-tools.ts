@@ -177,6 +177,16 @@ const en = {
   createProjectSummary: (p: { path: string; name: string | null }) => `Create project folder ${p.path}${p.name ? ` (${p.name})` : ''}`,
   adoptSessionSummary: (p: { name: string | null }) =>
     `Create a project ${p.name ? `“${p.name}”` : 'named after the first video'} and move this session’s videos and files into it`,
+  /** 派生子视频（videos_derive）的审批摘要；from、to 是时间线上的 mm:ss。 */
+  deriveVideoSummary: (p: { name: string; from: string; to: string }) => `Create a child video "${p.name}" from ${p.from}–${p.to} of this video`,
+  /** 子视频里派生那笔修改在历史与撤销里的说明；name 是父视频名。 */
+  deriveVideoLabel: (p: { name: string }) => `Derive from "${p.name}"`,
+  /** 子视频里派生来源文档（kind derivation）的名字。 */
+  derivationDocumentName: 'Derivation source',
+  /** videos.derive 的错误（错误码 DERIVE_RANGE_EMPTY、DERIVE_UNSUPPORTED_ITEM、DERIVE_PARENT_UNPLACED）。 */
+  deriveRangeEmpty: 'The range is empty after snapping to frames',
+  deriveUnsupportedItem: (p: { kind: string }) => `The range contains a clip that can’t be copied into a child video (${p.kind})`,
+  deriveParentUnplaced: 'This video isn’t inside a project or session folder, so a child video can’t be created next to it',
 };
 
 export type RcAgentToolsMessages = typeof en;

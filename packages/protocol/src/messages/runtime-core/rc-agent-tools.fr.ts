@@ -49,4 +49,10 @@ export const fr: RcAgentToolsMessages = {
   testModelSummary: (p) => `Vérifier le paquet de modèle local ${p.bundleId} : l’exécuter de bout en bout sur un exemple fixe`,
   installModelSummary: (p) => `Télécharger le modèle local ${p.bundleId} : ${p.estimated ? `environ ${p.size} (taille inconnue, estimée)` : p.size}${p.resumed ? `, reprise des ${p.resumed} déjà téléchargés` : ''}, depuis ${p.source} (${p.parts})`,
   registerProjectSummary: (p) => `Enregistrer le dossier existant ${p.path} comme projet${p.name ? ` (${p.name})` : ''}`, createProjectSummary: (p) => `Créer le dossier du projet ${p.path}${p.name ? ` (${p.name})` : ''}`, adoptSessionSummary: (p) => `Créer un projet ${p.name ? `« ${p.name} »` : 'nommé d’après la première vidéo'} et y déplacer les vidéos et fichiers de cette session`,
+  deriveVideoSummary: (p) => `Créer la vidéo dérivée « ${p.name} » à partir de ${p.from}–${p.to} de cette vidéo`,
+  deriveVideoLabel: (p) => `Dérivée de « ${p.name} »`,
+  derivationDocumentName: 'Origine de la dérivation',
+  deriveRangeEmpty: 'La plage est vide une fois alignée sur les images',
+  deriveUnsupportedItem: (p) => `La plage contient un clip qui ne peut pas être copié dans une vidéo dérivée (${p.kind})`,
+  deriveParentUnplaced: 'Cette vidéo n’est pas dans un dossier de projet ou de session : impossible de créer une vidéo dérivée à côté',
 };

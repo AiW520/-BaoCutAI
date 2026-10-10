@@ -132,4 +132,10 @@ export const nl: RcAgentToolsMessages = {
   createProjectSummary: (p: { path: string; name: string | null }) => `Projectmap maken: ${p.path}${p.name ? ` (${p.name})` : ""}`,
   adoptSessionSummary: (p: { name: string | null }) =>
     `Project ${p.name ? `‘${p.name}’` : 'met de naam van de eerste video'} maken en de video’s en bestanden van deze sessie erheen verplaatsen`,
+  deriveVideoSummary: (p) => `Afgeleide video ‘${p.name}’ maken van ${p.from}–${p.to} van deze video`,
+  deriveVideoLabel: (p) => `Afgeleid van ‘${p.name}’`,
+  derivationDocumentName: 'Bron van afleiding',
+  deriveRangeEmpty: 'Het bereik is leeg na uitlijnen op frames',
+  deriveUnsupportedItem: (p) => `Het bereik bevat een clip die niet naar een afgeleide video kan worden gekopieerd (${p.kind})`,
+  deriveParentUnplaced: 'Deze video staat niet in een project- of sessiemap, dus er kan geen afgeleide video naast worden gemaakt',
 };

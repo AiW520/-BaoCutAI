@@ -189,6 +189,27 @@ describe('视频事实：时长与画布尺寸', () => {
   });
 });
 
+describe('视频事实：派生来源', () => {
+  const derivation = (summary: unknown) =>
+    snapshot({
+      documents: {
+        doc_d: { id: 'doc_d', kind: 'derivation', name: '派生来源', currentRevision: '2', revisions: { '1': { summary: null }, '2': { summary } } },
+      },
+    });
+
+  it('取 derivation 文档当前版本的概要：父视频、版本、幂等键与区间', () => {
+    const summary = { schema: 'baocut.derivation/1', parentVideoId: 'v_parent', parentRevision: '7', key: 'abc123def456', range: { start: 1.5, end: 4.5 }, cuts: [] };
+    const { facts } = extractContent({ ...result([]), snapshot: derivation(summary) }, '/p/访谈');
+    expect(facts.origin).toEqual({ parentVideoId: 'v_parent', parentRevision: '7', key: 'abc123def456', range: { start: 1.5, end: 4.5 } });
+  });
+
+  it('不是派生的视频与形状不对的概要为 null', () => {
+    expect(extractContent(result([]), '/p/访谈').facts.origin).toBeNull();
+    const wrong = { schema: 'baocut.derivation/2', parentVideoId: 'v_parent', parentRevision: '7', key: 'k', range: { start: 0, end: 1 } };
+    expect(extractContent({ ...result([]), snapshot: derivation(wrong) }, '/p/访谈').facts.origin).toBeNull();
+  });
+});
+
 describe('视频事实：文稿、译文与配音组', () => {
   it('没有文稿时三项都是空的', () => {
     const { facts } = extractContent(result([]), '/p/访谈');

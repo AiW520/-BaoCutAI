@@ -125,6 +125,8 @@ export const TOOL_RISK: Readonly<Record<string, RiskLevel>> = {
   compositions_import: 'edit',
   // 打开便携包：新建一个视频目录，与 videos_create 同级。
   videos_import_package: 'edit',
+  // 派生子视频（§3.5）：在父视频旁边新建一个视频目录、复制并剪掉区间之外，父视频不变，与 videos_create 同级。
+  videos_derive: 'edit',
   // 取帧（Agent 面设计 §4.3）：不改视频，只把帧写进写文件目录下的 .baocut-out/frames/，规划模式也能用。
   videos_frames: 'read',
   // 预览代码画面：不改视频，只在离屏宿主里取帧，写进 .baocut-out/frames/，与 videos_frames 同级。

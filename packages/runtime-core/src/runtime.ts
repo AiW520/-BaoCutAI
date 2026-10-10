@@ -83,6 +83,7 @@ import { resolveModelWorkerCommand, type ModelWorkerCommand } from './models/mod
 import { resolveEngineHostCommand } from './videos/engine-host.ts';
 import { VideoService } from './videos/video-service.ts';
 import { PackageImporter } from './videos/package-import.ts';
+import { spaceDerivedFinder } from './videos/video-derive.ts';
 import { openNodeInitiator, type NodeInitiatorRuntimeOptions } from './nodes/node-initiator.ts';
 import { openNodeShare, type NodeShareOptions } from './nodes/node-share.ts';
 import { NodeProviderSource, type NodeInitiator, type NodeService } from '@baocut/nodes';
@@ -678,7 +679,14 @@ export async function startRuntime(options: StartRuntimeOptions = {}): Promise<R
         scope: toolScope,
       };
       return [
-        new VideoTools({ videos, scope: toolScope, analysis, packages }),
+        new VideoTools({
+          videos,
+          scope: toolScope,
+          analysis,
+          packages,
+          // Space 目录在后面才建好：派生时再取。
+          findDerived: (parentVideoId, key) => spaceDerivedFinder(space)(parentVideoId, key),
+        }),
         new ModelTools({ models, scope: toolScope }),
         new JobTools({ jobs: models.jobs, pipelines: models.pipelines, scope: toolScope }),
         new ExportTools({ exports, scope: toolScope }),

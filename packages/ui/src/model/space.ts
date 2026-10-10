@@ -78,6 +78,19 @@ export function fromVideoId(entry: Pick<SpaceEntry, 'kind' | 'origin' | 'user'>)
   return entry.kind !== 'video' && !entry.user.trashedAt ? (entry.origin?.videoId ?? null) : null;
 }
 
+/**
+ * 派生的子视频（`videos_derive`，`origin.source` 为 `derived`）的父视频 videoId；不是派生来的为 null。子视频是独立的一部视频，
+ * 不收进父视频的卡片（`fromVideoId` 对视频总是 null）。
+ */
+export function derivedFrom(entry: Pick<SpaceEntry, 'kind' | 'origin'>): Id | null {
+  return entry.kind === 'video' && entry.origin?.source === 'derived' ? (entry.origin.videoId ?? null) : null;
+}
+
+/** 从这部视频派生出的子视频有几部（回收站里的不算）。 */
+export function derivedCount(entries: readonly Pick<SpaceEntry, 'kind' | 'origin' | 'user'>[], videoId: Id): number {
+  return entries.filter((entry) => !entry.user.trashedAt && derivedFrom(entry) === videoId).length;
+}
+
 /** 能收文件的视频条目：不在回收站里、知道 videoId。同一个 videoId 有两处时（复制了视频目录）收进先列出的那个。 */
 function hostIds(entries: readonly SpaceEntry[]): Map<Id, Id> {
   const hosts = new Map<Id, Id>();
@@ -409,6 +422,7 @@ export function entryPath(entry: SpaceEntry, dirs: SourceDirs): string | null {
 /**
  * 「来源」一列（原型 sourceText：项目 · 视频）：项目名，或不属于项目的那个会话；文件不在来源目录顶层时带上子目录。
  * 不在来源目录里的产物与占位按 `origin` 写：所属项目（或产生它的会话）与产生它的视频（`videoNames` 里有时）。
+ * 派生的子视频在后面写「来自 父视频名」。
  */
 export function sourceLabel(entry: SpaceEntry, dirs: SourceDirs, untitled: string, videoNames?: ReadonlyMap<Id, string>): string {
   const { projectId, conversationId } = entry.source;
@@ -426,7 +440,11 @@ export function sourceLabel(entry: SpaceEntry, dirs: SourceDirs, untitled: strin
   }
   const owner = projectId ? projectName(projectId) : conversationName(conversationId);
   const slash = entry.relPath.lastIndexOf('/');
-  return slash > 0 ? `${owner} · ${entry.relPath.slice(0, slash)}` : owner;
+  const place = slash > 0 ? `${owner} · ${entry.relPath.slice(0, slash)}` : owner;
+  // 派生的子视频：带上父视频（`videoNames` 里有时）。
+  const parent = derivedFrom(entry);
+  const parentName = parent ? videoNames?.get(parent) : undefined;
+  return parentName ? `${place} · ${M.derivedFrom(parentName)}` : place;
 }
 
 /** 视频条目的名字，按 videoId 查（「来源」一列写产物来自哪个视频）。 */

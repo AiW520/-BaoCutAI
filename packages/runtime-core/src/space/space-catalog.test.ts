@@ -17,6 +17,7 @@ import { SpaceArtifactStore, SpaceMarkStore } from '@baocut/runtime-storage';
 import { ArtifactStore, artifactIdOf, toolDefinition } from '@baocut/jobs';
 import { SpaceCatalog, type SpaceJobsSource } from '../space-catalog.ts';
 import { toolCandidates } from '../tool-catalogue/tool-candidates.ts';
+import { spaceDerivedFinder } from '../videos/video-derive.ts';
 import { ContentIndex, type ContentReader } from './content-index.ts';
 import type { ReadContentResult } from './content-extract.ts';
 import { materialText, resolvePipelineEntryInputs, withSpeechMaterial, withTextMaterial } from './space-inputs.ts';
@@ -879,6 +880,29 @@ describe('Space 目录', () => {
     expect(reader.reads).toBe(reads + 1);
     expect(reloaded.at(videoDir)).toMatchObject({ revision: 'rev-2', facts: { timeline: { durationSec: 15 } } });
     expect(byName(reopened, '访谈').media).toEqual({ durationSec: 15, width: 1920, height: 1080 });
+  });
+
+  it('派生的子视频：条目的 origin 指向父视频与派生时的版本，按幂等键认得回来', async () => {
+    const { catalog, index } = await open();
+    expect(byName(catalog, '访谈').origin).toBeUndefined();
+    const content = videoContent('v1', 'rev-2');
+    const summary = { schema: 'baocut.derivation/1', parentVideoId: 'v_parent', parentRevision: '7', key: 'abc123def456', range: { start: 1, end: 2 } };
+    (content.snapshot as unknown as { documents: unknown }).documents = {
+      doc_d: { id: 'doc_d', kind: 'derivation', name: '派生来源', currentRevision: '1', revisions: { '1': { summary } } },
+    };
+    reader.videos.set(videoDir, content);
+    index.touched(videoDir, 'rev-2');
+    await catalog.idle();
+    expect(byName(catalog, '访谈').origin).toEqual({
+      source: 'derived',
+      projectId: byName(catalog, '访谈').source.projectId,
+      videoId: 'v_parent',
+      videoRevision: '7',
+      capability: 'videos-derive',
+    });
+    const find = spaceDerivedFinder(catalog);
+    expect(await find('v_parent', 'abc123def456')).toBe(videoDir);
+    expect(await find('v_parent', 'other')).toBeNull();
   });
 
   it('ensure：还没有索引的视频排到队首先读，读完就返回；不在目录里的、超时的回答手上有的', async () => {

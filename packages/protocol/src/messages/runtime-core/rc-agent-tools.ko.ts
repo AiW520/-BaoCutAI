@@ -104,4 +104,10 @@ export const ko: RcAgentToolsMessages = {
   registerProjectSummary: (p) => `기존 폴더를 프로젝트로 등록: ${p.path}${p.name ? `(${p.name})` : ''}`,
   createProjectSummary: (p) => `프로젝트 폴더 ${p.path}${p.name ? `(${p.name})` : ''} 만들기`,
   adoptSessionSummary: (p) => `프로젝트${p.name ? ` '${p.name}'` : '(첫 번째 동영상 이름)'}를 만들고 이 세션의 동영상과 파일을 옮기기`,
+  deriveVideoSummary: (p) => `이 영상의 ${p.from}–${p.to} 구간으로 하위 영상 “${p.name}” 만들기`,
+  deriveVideoLabel: (p) => `“${p.name}”에서 파생`,
+  derivationDocumentName: '파생 출처',
+  deriveRangeEmpty: '프레임에 맞추면 구간이 비어 있습니다',
+  deriveUnsupportedItem: (p) => `구간에 하위 영상으로 복사할 수 없는 클립이 있습니다(${p.kind})`,
+  deriveParentUnplaced: '이 영상은 프로젝트나 세션 폴더에 있지 않아 옆에 하위 영상을 만들 수 없습니다',
 };

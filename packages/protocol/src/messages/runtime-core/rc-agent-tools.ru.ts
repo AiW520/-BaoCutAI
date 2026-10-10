@@ -85,4 +85,10 @@ export const ru: RcAgentToolsMessages = {
   registerProjectSummary: (p) => `Зарегистрировать существующую папку ${p.path} как проект${p.name ? ` (${p.name})` : ""}`,
   createProjectSummary: (p) => `Создать папку проекта ${p.path}${p.name ? ` (${p.name})` : ""}`,
   adoptSessionSummary: (p) => `Создать проект ${p.name ? `«${p.name}»` : 'с названием первого видео'} и перенести в него видео и файлы этой сессии`,
+  deriveVideoSummary: (p) => `Создать производное видео «${p.name}» из фрагмента ${p.from}–${p.to} этого видео`,
+  deriveVideoLabel: (p) => `Создано из «${p.name}»`,
+  derivationDocumentName: 'Источник производного видео',
+  deriveRangeEmpty: 'После выравнивания по кадрам диапазон пуст',
+  deriveUnsupportedItem: (p) => `В диапазоне есть клип, который нельзя скопировать в производное видео (${p.kind})`,
+  deriveParentUnplaced: 'Это видео не находится в папке проекта или сеанса, поэтому рядом с ним нельзя создать производное видео',
 };

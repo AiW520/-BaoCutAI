@@ -85,4 +85,10 @@ export const pl: RcAgentToolsMessages = {
   registerProjectSummary: (p) => `Zarejestruj istniejący folder ${p.path} jako projekt${p.name ? ` (${p.name})` : ""}`,
   createProjectSummary: (p) => `Utwórz folder projektu ${p.path}${p.name ? ` (${p.name})` : ""}`,
   adoptSessionSummary: (p) => `Utwórz projekt ${p.name ? `„${p.name}”` : 'o nazwie pierwszego wideo'} i przenieś do niego wideo i pliki tej sesji`,
+  deriveVideoSummary: (p) => `Utwórz wideo pochodne „${p.name}” z fragmentu ${p.from}–${p.to} tego wideo`,
+  deriveVideoLabel: (p) => `Pochodne od „${p.name}”`,
+  derivationDocumentName: 'Źródło wideo pochodnego',
+  deriveRangeEmpty: 'Po wyrównaniu do klatek zakres jest pusty',
+  deriveUnsupportedItem: (p) => `Zakres zawiera klip, którego nie można skopiować do wideo pochodnego (${p.kind})`,
+  deriveParentUnplaced: 'To wideo nie znajduje się w folderze projektu ani sesji, więc nie można obok niego utworzyć wideo pochodnego',
 };

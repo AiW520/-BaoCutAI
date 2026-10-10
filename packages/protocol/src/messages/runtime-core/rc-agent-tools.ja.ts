@@ -109,4 +109,10 @@ export const ja: RcAgentToolsMessages = {
   registerProjectSummary: (p) => `既存のフォルダ ${p.path} をプロジェクトとして登録${p.name ? `（${p.name}）` : ''}`,
   createProjectSummary: (p) => `プロジェクトフォルダ ${p.path} を作成${p.name ? `（${p.name}）` : ''}`,
   adoptSessionSummary: (p) => `プロジェクト${p.name ? `「${p.name}」` : '（最初の動画の名前）'}を作成し、このセッションの動画とファイルを移動`,
+  deriveVideoSummary: (p) => `この動画の ${p.from}–${p.to} から子動画「${p.name}」を作成`,
+  deriveVideoLabel: (p) => `「${p.name}」から派生`,
+  derivationDocumentName: '派生元',
+  deriveRangeEmpty: 'フレームに合わせると範囲が空になります',
+  deriveUnsupportedItem: (p) => `範囲に子動画へコピーできないクリップがあります（${p.kind}）`,
+  deriveParentUnplaced: 'この動画はプロジェクトやセッションのフォルダーにないため、隣に子動画を作成できません',
 };

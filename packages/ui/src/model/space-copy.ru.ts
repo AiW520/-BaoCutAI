@@ -31,6 +31,7 @@ export const ru: SpaceMessages = {
   noProject: "Вне проекта",
   removedProject: "Удалённый проект",
   conversation: (title: string) => `Сессия «${title}»`,
+  derivedFrom: (name: string) => `Из «${name}»`,
   kindCount: (kind: string, n: number) => `${kind} ${n}`,
   foundFiles: (name: string, n: number) => (n === 1 ? `Найдено: ${name}` : `Найдено: ${name} и ещё ${n - 1}`),
   fileStatus: (kind: string, status: string) => `${kind}: ${status}`,

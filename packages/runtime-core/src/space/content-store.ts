@@ -17,8 +17,8 @@ import { normalizeText } from './content-search.ts';
  * `DatabaseSync` 是同步的：事务里只做写库，读视频与抽取段落都在事务之外。
  */
 
-/** 库的格式版本（`PRAGMA user_version`）。 */
-export const STORE_VERSION = 1;
+/** 库的格式版本（`PRAGMA user_version`）。2：视频事实加了派生来源（`origin`）。 */
+export const STORE_VERSION = 2;
 
 export const STORE_FILE = 'index.db';
 

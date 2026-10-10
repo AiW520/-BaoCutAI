@@ -3,11 +3,14 @@ import type { SpaceEntry } from '@baocut/protocol';
 import {
   SPACE_SORTS,
   countByCategory,
+  derivedCount,
+  derivedFrom,
   entryPath,
   filesAttention,
   filesOf,
   filesSummary,
   formatBytes,
+  fromVideoId,
   groupEntries,
   hitsText,
   hostVideoOf,
@@ -250,6 +253,25 @@ describe('位置与来源', () => {
   it('来源一列带上子目录；没有标题的会话用占位名', () => {
     expect(sourceLabel(entry('a', { relPath: 'clips/a.mp4' }), dirs, '新会话')).toBe('宣传片 · clips');
     expect(sourceLabel(entry('c', { source: { projectId: null, conversationId: 'c1' } }), dirs, '新会话')).toBe('会话「新会话」');
+  });
+
+  it('派生的子视频：来源写「来自 父视频」，不收进父视频的卡片，父视频知道派生了几部', () => {
+    const parent = entry('parent', { kind: 'video', name: '发布会', relPath: 'talks/发布会', ref: { videoId: 'v_parent' } });
+    const origin = { source: 'derived' as const, projectId: 'p1', videoId: 'v_parent', videoRevision: '7', capability: 'videos-derive' };
+    const child = entry('child', { kind: 'video', name: '发布会 · 01:00–02:30', relPath: 'talks/发布会 · 01:00–02:30-abc', ref: { videoId: 'v_child' }, origin });
+    const trashed = entry('old', { kind: 'video', ref: { videoId: 'v_old' }, origin }, { trashedAt: '2026-10-01T00:00:00.000Z' });
+    const entries = [parent, child, trashed];
+    expect(derivedFrom(child)).toBe('v_parent');
+    expect(derivedFrom(parent)).toBeNull();
+    // 产物的 origin 也指向视频，但它不是派生的视频。
+    expect(derivedFrom(entry('e', { kind: 'export', origin: { source: 'exported', videoId: 'v_parent' } }))).toBeNull();
+    expect(derivedCount(entries, 'v_parent')).toBe(1);
+    expect(derivedCount(entries, 'v_child')).toBe(0);
+    expect(fromVideoId(child)).toBeNull();
+    expect(groupEntries(entries).map((row) => row.id)).toEqual(expect.arrayContaining(['parent', 'child']));
+    expect(sourceLabel(child, dirs, '新会话', videoNamesOf(entries))).toBe('宣传片 · talks · 来自「发布会」');
+    // 父视频不在列表里时只写位置。
+    expect(sourceLabel(child, dirs, '新会话', videoNamesOf([child]))).toBe('宣传片 · talks');
   });
 });
 

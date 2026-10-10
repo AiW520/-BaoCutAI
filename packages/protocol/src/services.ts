@@ -68,6 +68,7 @@ export const MCP_SERVICE_TOOL_NAMES: readonly McpServiceTool[] = [
   { name: 'documents_read', title: '读取文档', effect: 'query' },
   { name: 'edits_apply', title: '修改视频', effect: 'mutation' },
   { name: 'edits_undo', title: '撤销修改', effect: 'mutation' },
+  { name: 'videos_derive', title: '派生子视频', effect: 'mutation' },
   { name: 'captions_create', title: '建立字幕层', effect: 'mutation' },
   { name: 'videos_frames', title: '取视频帧', effect: 'mutation' },
   { name: 'videos_history', title: '查看修改历史', effect: 'query' },

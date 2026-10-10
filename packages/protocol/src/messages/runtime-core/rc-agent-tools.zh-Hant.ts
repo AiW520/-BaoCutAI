@@ -104,4 +104,10 @@ export const zhHant: RcAgentToolsMessages = {
   registerProjectSummary: (p) => `將現有資料夾 ${p.path} 登記為專案${p.name ? `（${p.name}）` : ''}`,
   createProjectSummary: (p) => `建立專案資料夾 ${p.path}${p.name ? `（${p.name}）` : ''}`,
   adoptSessionSummary: (p) => `建立專案${p.name ? `「${p.name}」` : '（以第一部影片命名）'}，把這個對話的影片與檔案移進去`,
+  deriveVideoSummary: (p) => `從這部影片的 ${p.from}–${p.to} 衍生子影片「${p.name}」`,
+  deriveVideoLabel: (p) => `從「${p.name}」衍生`,
+  derivationDocumentName: '衍生來源',
+  deriveRangeEmpty: '對齊到影格之後區間是空的',
+  deriveUnsupportedItem: (p) => `區間裡有無法複製到子影片的片段（${p.kind}）`,
+  deriveParentUnplaced: '這部影片不在專案或工作階段的資料夾裡，無法在它旁邊建立子影片',
 };

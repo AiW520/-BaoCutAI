@@ -406,7 +406,7 @@ P0 由一个用户可以理解的执行主体对结果负责。内部的分析�
 `ToolCatalog` 使用领域化的输入与输出，适配原生工具、MCP、SDK 和 CLI 四种接入方式。每个目录项写全这几项，各个面都由它派生、不另抄清单：标题；说明，第一句是一行摘要；输入 schema，每个字段有说明，枚举值都写进说明；`effect`（`query` 只读、`mutation` 同步写入、`job` 立即返回 `jobId`、`destructive` 删除或不可撤销），与 `annotations` 一致（`query` 即 `readOnlyHint`，`destructive` 必带 `destructiveHint`）；一到三个能通过 schema 的 `examples`；`surfaces`，即出现在哪些面（`agent` 会话的工具桥、`mcp` 对外的 MCP 服务、`cli`），写全不省略；可选的 `positional`，CLI 的位置参数。
 
 ```text
-videos.list / videos.create / videos.inspect / videos.history / videos.frames / videos.importPackage / videos.delete / timeline.query / speech.search / previews.capture
+videos.list / videos.create / videos.inspect / videos.history / videos.frames / videos.importPackage / videos.derive / videos.delete / timeline.query / speech.search / previews.capture
 documents.read / documents.put / assets.import / captions.create
 edits.propose / edits.prepareBatch / edits.applyPrepared / edits.apply / edits.ops / edits.undo
 models.capabilities / speak / image
@@ -430,6 +430,13 @@ space.list / space.search
 - `downloads_save { path, name? }` 把会话工作目录里的一个文件复制到下载目录（与从链接导入同一个：设置 `downloads.directory`，否则主机的下载文件夹，§7.9），交给用户：不属于项目的会话的工作目录用户看不到，智能体自己做出的结果（例如译好的字幕）经它交出。源按真实路径判断，不能经 `..`、绝对路径或符号链接指到工作目录以外，必须是普通文件，不在视频目录（含 `video.db`）与 `.bcut` 里，不超过 200 MB；只新建、不覆盖，重名时加序号；文件名按下载的文件同一套规则清理，扩展名沿用源文件的。写操作，规划模式下拒绝；目录项的 `surfaces` 只有 `agent`：MCP 服务与 CLI 没有会话工作目录，都没有它。交出的文件登记为 Space 交付物：复制时算内容的 sha256，与从链接下载的文件同一条路写进产物记录（流程名 `downloads-save`，不经 Job Ledger，输出的 `media` 是 `{ kind: 'file' }`，§5.7），条目 `id` 是这个摘要、`file.path` 是下载目录里的真实路径，回复里的文件链接按条目在文件标签里打开；登记失败不影响复制的结果。
 - 对象的读写有几件 sugar，编译成 `edits_apply` 的操作，走同一条提交路径（产物解析、秒数换算、对外服务的素材路径限制、译文补对齐），返回同样的回执：`documents_put { video, document? | kind, name?, language?, sourceDocument?, sourceAsset?, body, revision? }` 编译成一个 `putDocument`（替换时 kind 取原来的；新建译文要给 `language` 与 `sourceDocument`），回执另带 `documentId`；`assets_import { video, path | artifactId, name?, storage?, place?: { track?: 'main' | <trackId>, at?: <秒> | 'end' }, revision? }` 编译成 `importAsset`，给了 `place` 时同一笔再加 `addItem`（`main` 与 `end` 是省略 `trackId` 与 `at`：第一条未锁定的同类轨道、接在末尾），回执另带 `assetId` 与 `itemId`；`assets_prune { video, assetIds?, apply?, revision? }` 列出没有引用的素材，给 `apply: true` 时编译成 `removeAssets`（代码包与它的预渲染替身成对）；`chapters_adopt { video, asset?, document?, outline?, label?, revision?, dryRun? }` 把素材来源自带的章节（或显式大纲）吸附到转写的段落、句子起点，再从源时间投影到时间线，编译成一个整个替换章节的 `setChapters`，回执另带每章的吸附结果 `sourceChapters`（规则见 §7.9「采用来源章节」）；三个面都有（[命令与协议规范 §4.2](../spec/command-protocol-spec.md#42-编辑操作)）。`revision` 不给时用最新的版本。`edits_ops { op? }` 按操作族列出 `edits_apply` 的每个操作的说明、参数的 JSON Schema 与一个示例；`edits_apply` 的操作说明由同一张表拼成。
 - `videos_history { video, limit? }` 列出修改历史（默认 20 笔）与检查点。`videos_import_package { file, project?, name? }` 打开便携包（与 `videos.importPackage` 同一个入口，同步完成，`mutation`），位置同 `videos_create`；只在 `agent` 与 `cli` 面。
+- **派生子视频**。`videos_derive { video, start, end, name?, width?, height?, fit?, crop?, captions?, translations?, chapters? }`（网关方法 `videos.derive`，三个面都有，按 `edit` 确认）复制父视频并把区间之外剪掉，子视频里可以恢复。`start`、`end` 是剪辑后时间线上的秒，先对到帧（起点向下、终点向上取整，截到时长；空了是 `DERIVE_RANGE_EMPTY`）。子视频是新的视频目录，建在父视频旁边（同一个来源目录、同一层），目录名是名字（缺省「父视频名 · mm:ss–mm:ss」）加 `-<幂等键>`；画布缺省沿用父视频，`fit`、`crop` 只改视频片段的摆法。父视频本身就是来源目录时没有地方放，是 `DERIVE_PARENT_UNPLACED`。
+  - **复制**（第一笔事务）：轨道（字幕轨除外）、全部实例（字幕实例除外；不平移、不截断，一律改成 `follow-cuts`，锁着的实例复制成不锁的）、素材（同一份文件：收在父视频里的同样收进子视频，链接的仍链接到原文件，来源沿用）、转写与译文整份（含句子与章节）、根序列的章节与背景，以及派生来源文档（`kind: 'derivation'`，视频格式规范 §4.6）。有代码画面（`composition`）或不能经媒体通道给出的链接素材时拒绝（`DERIVE_UNSUPPORTED_ITEM`）。
+  - **收尾**（第二笔事务，要用第一笔新建的 ID）：轨道的隐藏与静音、转场（两侧按轨道、种类与位置找回）、译文（`sourceBasis` 换成子视频的转写与序列；转写整份复制，编辑视图指纹不变）、父视频已有的剪口集合（剪口原样，范围换成子视频的实例），然后对主素材 `addCuts` 记区间之外的剪口，最后锁回父视频锁着的轨道。剪口是父视频的主素材在 `[0, S)` 与 `[E, 时长)` 里播放的源区间，减去它在区间里也播放的源区间；父视频已有的剪口对应的源区间不在实例里，不会重复记。恢复全部区间之外的剪口，子视频的时间线与文稿回到父视频的样子。
+  - **字幕层**：父视频的字幕实例不复制，按子视频剪辑后的时间线给每份复制来的转写重新建一层（`planCaptionLayer`，样式用缺省；`captions: false` 不建）。建不成时 `warnings` 记 `captions-skipped`。
+  - **首版只支持单主素材时间线**：`addCuts` 按素材记、只作用于播放那个素材的实例，所以剪口只记在主素材（源时钟都是正速率线性、时间线上播放得最多的那个，一样多时按 ID）上。别的素材与图文片段跟着剪口移动、缩短，整个落在剪掉范围里的被删掉、恢复剪口时回不来。结果的 `warnings` 说明：`multiple-assets`（媒体素材不止一个）、`range-not-exact`（区间之外没剪掉的帧数）、`items-not-restorable`（会被删掉的片段数）、`anchor-dropped`、`locks-dropped`、`animation-bindings-dropped`。
+  - **幂等**：键是父视频、版本、对齐后的区间与设置的 sha256 前 12 位（名字不算）。依次认回：Space 索引里派生自这个父视频、键相同的子视频；同一层以 `-<键>` 结尾且有数据库的目录；子视频里按命令 ID（`derive:<键>:apply` / `:trim` / `:captions:<n>`）持久化的回执，中断后从断处接上。认回时 `reused: true`。
+  - 结果：`video`（与 `VideoCreated` 同形）、`reused`、`key`、`range`、`primaryAssetId`、`cuts`（主素材源时钟上的秒）、`itemCount`、`derivationDocumentId`、`speech`、`translations`、`captions`、`warnings`。会话里新建时记一条 `video-created`（认回时不记）。
 - `videos_frames { video, at? | range + count?, format?, maxWidth? }` 取帧（[Agent 能力面设计 §4.3](../design/agent-surface/agent-surface-design.md#43-名词组对象的读与写)）：时间线上的时刻按根序列的帧率落到帧，取盖住它的、启用的、轨道可见的视频片段里最上层的那个（视觉轨 `order` 越大越靠上，同轨按 `paintOrder`），按它的时间映射换成素材时间，从素材取那一帧（与素材库缩略图同一份缓存与 ffmpeg）。不合成：字幕、文字、叠加与画中画的摆法、效果都不在帧里，结果的 `composited: false` 与 `note` 说明；没有视频片段的时刻 `file` 为 null。单次最多 24 帧，默认 PNG、长边不超过 1280。文件写进范围的写文件目录（会话与终端是 `cwd`，对外服务是视频所属项目的 `exports/`）下的 `.baocut-out/frames/<videoId>/at-<毫秒>ms.<png|jpg>`，按真实路径不出这个目录、不进视频目录与 `.bcut`。不改视频，风险等级 `read`，规划模式下也能用；写文件所以 `effect` 是 `mutation`（幂等）。
 - `documents_read` 读转写（`speech`）时另带 `translationBasis`：写译文要用的 `sourceBasis` 与按字幕与翻译核心的规则切好的句子（ID、指纹、文本、词），智能体自己翻译时照填（视频格式规范 §5.3），不自己切句、算指纹。每句的 `alignment` 写句级对齐 `{ basis: 'natural', correspondence: 'sentence', blocks: [], sourceWordIds: <那一句的 wordIds> }`；`textHash` 由 Runtime 补。`edits_apply` 的 `putDocument`（或 `documents_put`）写 `baocut.translation/2` 时，Runtime 在交给引擎之前按单元的 `sourceSentenceId` 在它译自的转写里找到那一句（同一套规则），`alignment` 为 null 或缺 `sourceWordIds`、`textHash` 的补成句级对齐，句级、没有块的对齐的 `textHash` 按译文重算；句子找不到、指纹与单元记下的不同、单元已过期的不动，转写读不了或句子的 WASM 没有构建时只补对齐对象缺的 `textHash`。回执的 `filledAlignments` 是补了几句。这样写的译文导出双语字幕与建字幕层都拿得到每句的成员词。读转写是为了自己翻译时给 `translateTo`（目标语言，BCP 47）：Runtime 登记一条 `agentTranslate` 任务记录（`submitter` 是这条会话与这一回合，`translation` 记译自的转写、目标语言与切好的句数；没有 Worker、不排队，`progress` 为 null），让视频卡、字幕面板的翻译与任务页看得到「正在翻译」，结果另带 `translationJob`。同一回合同一份转写同一门语言沿用同一条；写入这门语言的译文（`putDocument` 的 `kind: 'translation'`、`sourceDocument` 是这份转写）时完成，结果指向译文；回合结束还没写的记为中断，用户停止的记为取消，下一回合接着翻译时上一条中断、重新登记。它跟着回合走，取消这条记录不会停下智能体，所以界面上不给「取消」。`translateTo` 只用于转写，别的文档是 `INVALID_ARGUMENTS`；它是要写的意图，规划模式下不登记。
 - `captions_create { video, documentId, bilingual?, layoutProfileId? }` 把一份转写或译文做成字幕层（§7.9「字幕层」），与固定流程的 `captions` 一步同一份算法（`planCaptionLayer`），一笔可撤销的事务。转写建原文字幕；译文按单元的句级对齐取原句成员词的时间、按显示宽度切条（与编辑器的「放到画面上」相同，不经 Speech Worker），有 `alignment` 为 null 的单元时以 `TRANSLATION_UNALIGNED` 拒绝；`bilingual` 只用于译文，译文为主、原文为辅，转写上给 `bilingual: true` 是 `INVALID_ARGUMENTS`。`layoutProfileId` 是 `default` 或 `two-line`（缺省 `default`），两者源侧的切条参数相同，结果里回显；字幕层还不记 profile（视频格式规范 §5.4 的 `CaptionProgram` 没有落盘）。同一份文档已有字幕层时不覆盖，照样新建一层（「不覆盖」），结果的 `existing` 与 `note` 说明；素材不在时间线上是 `CAPTIONS_NOT_ON_TIMELINE`，没有可显示的字幕条是 `CAPTIONS_EMPTY`。`bilingual: true` 而时间线上还没有这份转写的原文字幕层时，同一笔事务里先给转写建原文字幕层（与转写的 `captions_create` 同样切条与放置），再建译文的一层，两层共用新建的样式，撤销时一起撤；译文已有一层显示着（新的一层停用着放上去）时不顺带建。返回 `transactionId`、`revision`、新字幕文档的 `documentId`、`trackId`、`itemIds`、`cueCount`、`enabled`，译文另有 `bilingual` 与配对的原文字幕层 `pairedOriginal: { documentId, itemIds, created } | null`（`created` 为 true 是这次顺带建的；null 时 `bilingualNote` 说明只显示了译文）。提交前版本冲突时按新的状态重新算，最多三次。三个面都有：对外服务给范围之内的视频建字幕层，与会话里相同。
@@ -803,7 +810,7 @@ interface ContextBarrierResult {
 
 | 服务 | 面向 | 监听 | 内容 |
 | --- | --- | --- | --- |
-| `mcp` | 其他应用里的智能体 | 本机回环 | 工具目录里 `surfaces` 含 `mcp` 的工具（§3.5）：读视频与取帧、新建视频、改文稿与译文、剪片段、建字幕层、启动转录 / 翻译 / 配音 / 导出 / 从链接下载、合成语音与生成图片、导入与预览代码画面、只读地查 skill 与用户库 |
+| `mcp` | 其他应用里的智能体 | 本机回环 | 工具目录里 `surfaces` 含 `mcp` 的工具（§3.5）：读视频与取帧、新建视频、派生子视频、改文稿与译文、剪片段、建字幕层、启动转录 / 翻译 / 配音 / 导出 / 从链接下载、合成语音与生成图片、导入与预览代码画面、只读地查 skill 与用户库 |
 | `model-api` | 支持 OpenAI 接口的程序 | 本机回环 | 用本机已经配置好的模型能力转写、合成语音、生成图片与文本 |
 | `web` | 本机浏览器 | 本机回环 | Web 客户端与它连接的网关入口 |
 | `node` | 局域网里的其他 BaoCut | 局域网 | 能力共享（§6.7） |
@@ -1005,7 +1012,7 @@ interface SpaceEntry {
   name: string;
   ref: { videoId: Id } | { artifactRef: VersionRef };
   origin: {
-    source: 'generated' | 'imported' | 'exported' | 'edited';
+    source: 'generated' | 'imported' | 'exported' | 'edited' | 'derived';  // derived：videos.derive 派生的子视频
     projectId?: Id;                        // 所在项目；不属于任何项目时为空
     videoId?: Id;
     videoRevision?: Revision;            // 产物对应的冻结版本
@@ -1063,6 +1070,7 @@ interface SpaceEntry {
 **这个版本的实现**（`packages/runtime-core/src/space-catalog.ts` 与 `space/`；与上面不同的地方记在 §14）：
 
 - **派生**。条目由一个纯函数从全部输入整体算出（`space/space-derive.ts`），再与上一次的结果比较，只发变了的条目（`entry.upsert` / `entry.removed`）；首次扫描、重扫与重建发一条 `catalog.replaced`。增量与重建因此走同一条路径，结果一致。输入是：来源目录的扫描（登记的项目目录、不属于项目的会话的工作目录；会话绑定项目时来源从 `conv:<id>` 换成 `project:<id>`，条目 id 随来源键变化，用户标记与 `space.json` 里旧来源键下的回收站记录不跟过去）、`space.import` 的登记与用户标记（Runtime Store 的 `space.json`）、Job Ledger（`JobManager.list()` 与它的变化通知），以及内容索引（§5.11）里每个视频的 videoId、当前版本、时间线上用到的素材、链接素材指向的文件，与根序列的时长和画布尺寸。
+- **派生的子视频**。`videos.derive`（§3.5）建的子视频是独立的视频条目；内容索引从它的派生来源文档读出父视频与版本（下面 §5.11 的视频事实），条目的 `origin` 是 `{ source: 'derived', projectId, videoId: <父视频>, videoRevision: <派生时父视频的版本>, capability: 'videos-derive' }`（上面接口里的 `derivedFromVideo` 这一版用 `origin.videoId` 表达）。它不收进父视频的卡片，删除父视频时也不在 `related` 里；界面的「来源」一列写「来自 父视频名」。
 - **条目的 `id`**。扫描到的文件与视频目录是来源键与相对路径的摘要（`sp_…`），视频条目另带 `ref: { videoId }` 与 `media`（根序列的时长 `durationSec` 与画布的 `width`、`height`，界面「时长或尺寸」一列用；内容索引读到之后，回收站里的视频没有）；生成与导出的产物是 artifactId；`generating` / `failed` 占位是 jobId。`ref` 是 `{ videoId }`、`{ artifactId }` 或 `{ jobId }`。
 - **来源与项目**。不在来源目录里的条目（产物、占位、发布到来源目录之外的导出）`source` 为空，所属项目记在 `origin.projectId`（取自产生它的视频所在的项目，或提交它的会话所属的项目）；`list` 的 `projectId` 按 `source.projectId ?? origin.projectId` 筛。
 - **状态**。`generating`：排队与运行中的生成、导出，带进度。`failed`：失败或中断的，带原因与错误码；`space.purge` 清除，或同一能力、同样输入（`inputHash`）的任务后来成功了就不再显示。`candidate` / `applied`：导入了视频的生成输出，时间线（任何序列）上用着那个素材时是 `applied`。`published`：导出发布的文件；发布到来源目录里的与扫描到的文件合成一个条目（`kind` 按导出设置，`ref.artifactId` 是导出的产物）。`source-changed`：导出冻结的 `videoRevision` 与视频的当前版本不同。`missing`：产物文件、发布的文件或登记的项目文件不在了。普通文件与视频没有状态（`null`，`list` 里用 `none` 筛）。
@@ -1240,6 +1248,7 @@ CLI 的 `baocut settings`（列出键、当前值、是否默认）、`settings 
   - 配音组：组 ID、语言、配音计划、用的译文与它译自的文稿、时间线上的配音实例数。`dubbing-plan` 文档（摘要里的 `groupId`）与带 `baocut.dub` 扩展的实例合起来，分离出的背景声与人声不算实例。
   - 封面（`space.thumbnail` 用，§5.7）：封面那一帧的素材 ID、版本、源时间，与那个版本的内容摘要、媒体类型和时长；不记文件路径。没有可见画面时为 null。
   - 时长与画布尺寸（视频条目的 `media`，§5.7）：根序列的时长（最晚结束的实例，按序列帧率换成秒；与智能体工具的视频摘要同一个 `sequenceDurationFrames`，不看 `durationPolicy`）与画布的宽高。快照不全时为 null。
+  - 派生来源（视频条目的 `origin`，§5.7）：`derivation` 文档当前版本的概要里的父视频、父视频版本、幂等键与区间；不是派生的为 null。`videos.derive` 也按它认回已有的子视频。
 - **增量**。视频目录来自 Space 目录的扫描：新出现的读一次；修改时间变了先用 `videos.inspect` 看版本，版本没变只记下新的修改时间；已打开的视频提交新版本时由 VideoService 的变化通知触发重读。从来源目录里消失的视频连同缓存文件删掉。要某个还没有当前索引的视频（`space.thumbnail`）时把它排到队首，只等这一个。
 - **重建**。`space.rebuildIndex` 删掉缓存，全部视频排队重读；重读完之前旧的记录仍可检索，但算作待索引。读不了的视频（引擎不可用、旧版引擎没有 `videos.readContent`、库损坏）也算待索引，等下一次变化或重建再试。有待索引的视频时结果 `complete: false`，`pendingVideos` 是个数。
 - **段落**。转写与字幕按导出的句子切分（`segmentsOf`），时间是序列时间；文档对应的素材不在时间线上（投影为空或出错）时退回源时间（`clock: 'source'`）。译文借用转写那一句的时间：`baocut.translation/2` 按 `sourceSentenceId`，转写没有存句子时按对齐的词或句子 ID 里的首词；`/1` 按单元 ID；过期的单元不收。章节是根序列上 `kind: 'chapter'` 的标记的标题与简介。说话人取转写或字幕里的名字。

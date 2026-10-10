@@ -1415,6 +1415,7 @@ interface Provenance {
 | `import-record` | 这部视频从别的格式导入时的明细 | `baocut.import-record/1` | — |
 | `editorial-proposal` | 口播剪辑提案 | 已实现 | §6.2 |
 | `cut-set` | 一个源素材上被口播剪辑删掉的区间 | `baocut.cut-set/1` | §6.7 |
+| `derivation` | 派生子视频的来源：父视频、版本、区间与区间之外的剪口 | `baocut.derivation/1` | 见下 |
 | `dubbing-plan` | 配音计划 | 计划 | §7.2 |
 | `sound-cue-sheet`、`narration-cue-sheet` | 声音事件表、旁白事件表 | 计划 | §7.9、§7.10 |
 
@@ -1422,6 +1423,24 @@ interface Provenance {
 - 引擎只核对 `baocut.speech/1` 与 `baocut.translation/2` 里 §5.2、§5.3 补充的字段：出现时形状必须对（类型、枚举值与取值范围），引用的词在不在不查；`baocut.cut-set/1` 按 §6.7 的约束整份核对。其余正文不校验。带 `/1` 的几种格式是导入旧项目时定下来的，比 §5 描述的模型简单；二者怎么统一列在 §9。
 - `export-record` 与 `import-record` 是这台机器上的记录：正文里有本机路径（成片写到了哪里、旧项目原来在哪里）。它们不参与渲染，也不是任何实例的输入；打包成便携包时不带出去，或去掉路径之后再带（§8）；这两种记录还没有实现，现在正文里有本机路径的文档一律在导出便携包时拒绝（§8.2，架构设计 §14）。
 - 读到不认识的 `kind` 或 `schema`：文档头照常显示，正文不解释，写回时保留。
+- `derivation` 记这部视频是从哪个视频的哪一段派生的（`videos.derive`，架构设计 §3.5「派生子视频」）：派生时写一份，正文与文档头的 `summary` 相同（Space 的内容索引只读 `summary`），名字「派生来源」（按当前语言）。之后不随父视频或子视频的修改更新，只记派生那一刻。正文：
+
+  ```ts
+  interface DerivationBody {
+    schema: 'baocut.derivation/1';
+    parentVideoId: Id;
+    parentRevision: string;            // 派生时父视频的版本
+    range: { start: number; end: number };  // 父视频剪辑后时间线上的秒，已对到帧
+    primaryAssetId: Id | null;         // 记剪口的主素材（父视频里的 ID）；没有可剪的媒体时 null
+    cuts: Array<{ assetId: Id; from: number; to: number }>;  // 区间之外的剪口：主素材源时钟上的秒
+    settings: { width: number; height: number; fit: 'cover' | 'contain' | null; crop: Crop | null;
+                captions: boolean; translations: boolean; chapters: boolean };
+    key: string;                       // 幂等键：父视频、版本、区间与设置的 sha256 前 12 位
+  }
+  ```
+
+  子视频复制了父视频的时间线与文稿，区间之外的部分是记在主素材剪口集合（`cut-set`，§6.7）里的剪口，恢复它们就回到父视频的样子；`cuts` 只是派生时记下的那几个，剪口集合才是当前状态。
+
 - `library-selection` 记视频启用了用户库里的哪些条目（架构设计 §5.9）：每个视频至多一份，有几份时只认 ID 最小的一份，名字「启用的库条目」。它记条目 ID，不记内容；条目的内容在用到时冻结，记在用到它的文档或任务上（例如译文的 `glossaryRef`，§5.3）。正文：
 
   ```ts
