@@ -9,6 +9,29 @@ const soonTail = 'O Runtime ainda não tem este fluxo nem sobreposição para aj
 const scopeOf = (o: IntentArgs) => o.scope ? `${o.scope} de ${o.p}` : o.p;
 
 export const ptBR: AiToolsMessages = {
+  shorts: {
+    lengths: { short: '15–30 s', medium: '30–60 s', long: '60–90 s', extended: '1–3 min', custom: 'Personalizado' },
+    ratioSource: 'Manter original',
+    focus: {
+      center: { label: 'Centralizado', sub: 'Recorta o meio do quadro' },
+      manual: { label: 'Eu defino', sub: 'Depois você posiciona o enquadramento de cada vídeo curto' },
+      speaker: { label: 'Seguir quem fala', sub: 'O enquadramento segue quem estiver falando' },
+    },
+    speakerOff: 'Esta versão ainda não tem um modelo de pessoas e falantes',
+    tracks: { both: 'Original + tradução', source: 'Só o original', translation: 'Só a tradução' },
+    styles: {
+      shorts: { label: 'Legendas para vídeos curtos', sub: 'Predefinição integrada que evita os botões da plataforma' },
+      video: { label: 'Manter o estilo deste vídeo', sub: 'Mesmo tamanho e posição; os botões da plataforma podem cobri-las' },
+    },
+    focusPrompt: { center: 'centralizado', manual: 'centralizado por enquanto; eu ajusto cada um depois' },
+    lineCount: (count, min, max) =>
+      `Faça ${count === 1 ? '1 vídeo curto' : `${count} vídeos curtos`}, cada um com ${min}–${max} segundos, começando e terminando em limites de frase`,
+    lineFrame: (ratio, focus) => (ratio ? `Proporção ${ratio}, enquadramento ${focus}` : 'Proporção: manter a original, sem recortar'),
+    lineSubtitles: (tracks, style) => `Legendas: ${tracks}, ${style}`,
+    lineSkipDone: 'Pule as partes que já viraram vídeos curtos',
+    lineAdopt: 'Este vídeo ainda não está em um projeto: primeiro mova-o para um projeto novo com o nome do vídeo e crie os vídeos curtos lá',
+    lineDirect: 'Crie os vídeos assim que encontrá-los; não precisa me perguntar antes',
+  },
   groups: {
     frame: "Visual",
     transcript: "Transcrição",
@@ -24,8 +47,8 @@ export const ptBR: AiToolsMessages = {
     },
     shortscut: {
       name: "Cortar em vídeos curtos",
-      desc: "Escolher segmentos e criar um curto vertical de cada",
-      why: `Criar curtos exige escolher segmentos, recortar verticalmente e ajustar enquadramento por segmento. ${soonTail}`,
+      desc: 'Escolher alguns trechos deste vídeo e transformar cada um em um vídeo curto',
+      setup: ['Escolhe alguns trechos que se sustentam sozinhos e transforma cada um em um vídeo curto.'],
     },
     polish: {
       name: "Aprimorar transcrição",
@@ -155,6 +178,7 @@ export const ptBR: AiToolsMessages = {
   sourceCut: (n: number | null) => (n === null ? "source cut" : pluralForm('pt-BR', n, { one: `${n} frase cortada na origem`, other: `${n} frases cortadas na origem` })),
   sourceJoin: (parts: readonly string[]) => parts.join(", "),
   intents: {
+    shortscut: (o) => `Escolha em ${o.scope ? `${o.scope} de ${o.p}` : o.p} alguns trechos que se sustentam sozinhos e crie cada um como um vídeo curto: cada um é um vídeo novo que referencia o mesmo material original, e o vídeo original e sua linha do tempo não mudam.`,
     stale: (o: IntentArgs & { why: string }) =>
       `Algumas traduções em ${o.p} estão desatualizadas${o.why ? ` (${o.why})` : " porque a origem foi editada"}. Retraduza só estas frases${o.cut ? "; retraduza da origem cortada e remova traduções de frases totalmente cortadas" : ""}. Deixe todo o restante intacto.`,
     polish: (o: IntentArgs) =>
@@ -176,8 +200,9 @@ export const ptBR: AiToolsMessages = {
   endSentence: (text: string) => (/[.!?]$/.test(text) ? text : `${text}.`),
   joinPrompt: (head: string, extra: readonly string[]) => [head, ...extra].join(" "),
   groupSub: { writing: 'Para quem lê: saber do que o vídeo trata sem assistir', publish: 'Para quem publica o vídeo: dar vontade de clicar e cumprir o que promete' },
-  laterNote: 'Traduzir legendas ainda fica no painel Legendas e Traduzir dublagem no painel Áudio; eles vêm para cá depois.',
+  laterNote: 'Traduzir legendas ainda fica no painel Legendas e Traduzir dublagem no painel Áudio; eles vêm para cá depois. O recorte inteligente chega em breve.',
   effect: {
+    shortscut: 'Cria novos vídeos filhos; o vídeo original e sua linha do tempo não mudam',
     polish: 'Altera a transcrição: aplicado ao terminar, desfeito em uma etapa',
     chapters: 'Altera os capítulos: aplicado ao terminar, desfeito em uma etapa',
     speakers: 'Você confirma o resultado primeiro; ele só é gravado no vídeo quando você aplica',

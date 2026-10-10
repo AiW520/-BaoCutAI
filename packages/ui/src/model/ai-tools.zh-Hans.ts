@@ -3,6 +3,28 @@ import type { AiToolsMessages } from './ai-tools.ts';
 const SOON_TAIL = 'Runtime 还没有这条流程，画面上也还没有调取景框的覆盖层，所以这里先不给能操作的表单。';
 
 export const zhHans: AiToolsMessages = {
+  shorts: {
+    lengths: { short: '15–30 秒', medium: '30–60 秒', long: '60–90 秒', extended: '1–3 分钟', custom: '自定义' },
+    ratioSource: '保留原画幅',
+    focus: {
+      center: { label: '居中', sub: '裁画面正中' },
+      manual: { label: '我自己定', sub: '之后每支自己定取景位置' },
+      speaker: { label: '跟着说话的人', sub: '谁说话框跟谁' },
+    },
+    speakerOff: '这一版还没有人物与发言人模型',
+    tracks: { both: '原文 + 译文', source: '只要原文', translation: '只要译文' },
+    styles: {
+      shorts: { label: '短视频字幕', sub: '内置预设，避开平台按钮' },
+      video: { label: '沿用这部视频的样式', sub: '字号和位置照搬，可能被平台按钮挡住' },
+    },
+    focusPrompt: { center: '居中', manual: '先居中，之后我逐支自己调' },
+    lineCount: (count, min, max) => `要 ${count} 支，每支 ${min}–${max} 秒，起止落在句子边界上`,
+    lineFrame: (ratio, focus) => (ratio ? `画幅 ${ratio}，取景${focus}` : '画幅：保留原画幅，不裁'),
+    lineSubtitles: (tracks, style) => `字幕：${tracks}，${style}`,
+    lineSkipDone: '已经切过的不再找',
+    lineAdopt: '这部视频还不属于项目：先把它收进一个以视频命名的项目，再在那里创建短视频',
+    lineDirect: '找好就直接创建成视频，不用先问我',
+  },
   groups: {
     frame: '画面',
     transcript: '整理文稿',
@@ -18,8 +40,8 @@ export const zhHans: AiToolsMessages = {
     },
     shortscut: {
       name: '剪成短视频',
-      desc: '从这个视频里挑几段，各做成一支竖屏短视频',
-      why: `剪成短视频要挑出几段、各自裁成竖屏，并在画面上逐段调取景。${SOON_TAIL}`,
+      desc: '从这个视频里挑几段，各做成一支短视频',
+      setup: ['挑几段能单独成立的话，各做成一支短视频。'],
     },
     polish: {
       name: '润色文稿',
@@ -108,6 +130,7 @@ export const zhHans: AiToolsMessages = {
   sourceCut: (n: number | null) => (n === null ? '原文被剪切' : `${n} 句原文被剪切`),
   sourceJoin: (parts: readonly string[]) => parts.join('、'),
   intents: {
+    shortscut: (o) => `从${o.p}${o.scope ? `的${o.scope}` : ''}里挑几段能单独成立的话，各创建成一支短视频：每支一部新视频，引用同一份原片，原视频和时间轴不动。`,
     stale: (o) =>
       `${o.p}有几句译文过期了${o.why ? `（${o.why}）` : '：原文改过'}，只重译这些句子，${o.cut ? '被剪切的按剪后的原文重译、整句剪掉的随句一起剪掉，' : ''}其余一个字不动。`,
     polish: (o) => `润色${o.p}的${o.scope || '全篇'}文稿：修错字、补标点、按话题分段，不改写我的表达。`,
@@ -124,8 +147,9 @@ export const zhHans: AiToolsMessages = {
   endSentence: (text: string) => (/[。！？]$/.test(text) ? text : `${text}。`),
   joinPrompt: (head: string, extra: readonly string[]) => head + extra.join(''),
   groupSub: { writing: '给读的人：不看视频也能知道讲了什么', publish: '给发视频的人：让人想点开，点开后内容对得上' },
-  laterNote: '翻译字幕还在字幕面板里，翻译配音还在音频面板里，之后会搬到这里。',
+  laterNote: '翻译字幕还在字幕面板里，翻译配音还在音频面板里，之后会搬到这里。智能裁剪即将推出。',
   effect: {
+    shortscut: '创建新的子视频；原视频和时间轴不动',
     polish: '会改文稿：完成后应用，一步撤销',
     chapters: '会改章节：完成后应用，一步撤销',
     speakers: '先给你确认，应用后才写进视频',

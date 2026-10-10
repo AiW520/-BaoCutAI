@@ -6,6 +6,28 @@ import type { AiToolsMessages } from './ai-tools.ts';
 const soonTail = 'Runtime nie ma jeszcze tego procesu ani nakładki kadrowania, więc formularz działania niedostępny.';
 
 export const pl: AiToolsMessages = {
+  shorts: {
+    lengths: { short: '15–30 s', medium: '30–60 s', long: '60–90 s', extended: '1–3 min', custom: 'Własna' },
+    ratioSource: 'Zachowaj oryginał',
+    focus: {
+      center: { label: 'Wyśrodkowany', sub: 'Przycina środek kadru' },
+      manual: { label: 'Ustawię sam', sub: 'Potem sam ustawiasz kadr każdego krótkiego filmu' },
+      speaker: { label: 'Śledź mówiącego', sub: 'Kadr podąża za osobą, która mówi' },
+    },
+    speakerOff: 'Ta wersja nie ma jeszcze modelu osób i mówców',
+    tracks: { both: 'Oryginał + tłumaczenie', source: 'Tylko oryginał', translation: 'Tylko tłumaczenie' },
+    styles: {
+      shorts: { label: 'Napisy do krótkich filmów', sub: 'Wbudowany preset, który omija przyciski platformy' },
+      video: { label: 'Zachowaj styl tego wideo', sub: 'Ten sam rozmiar i pozycja; przyciski platformy mogą je zasłonić' },
+    },
+    focusPrompt: { center: 'wyśrodkowany', manual: 'na razie wyśrodkowany; każdy dopasuję sam' },
+    lineCount: (count, min, max) => `Liczba krótkich filmów: ${count}, każdy ${min}–${max} sekund, początek i koniec na granicach zdań`,
+    lineFrame: (ratio, focus) => (ratio ? `Proporcje ${ratio}, kadr ${focus}` : 'Proporcje: zachowaj oryginalne, bez przycinania'),
+    lineSubtitles: (tracks, style) => `Napisy: ${tracks}, ${style}`,
+    lineSkipDone: 'Pomiń fragmenty już pocięte na krótkie filmy',
+    lineAdopt: 'To wideo nie należy jeszcze do projektu: najpierw przenieś je do nowego projektu nazwanego jak wideo, a potem utwórz tam krótkie filmy',
+    lineDirect: 'Twórz filmy od razu, gdy je znajdziesz; nie musisz mnie najpierw pytać',
+  },
   groups: {
     frame: "Ramka",
     transcript: "Transkrypcja",
@@ -21,8 +43,8 @@ export const pl: AiToolsMessages = {
     },
     shortscut: {
       name: "Potnij na krótkie filmy",
-      desc: "Wybierz kilka segmentów wideo i zrób z każdego pionowy krótki film",
-      why: `Krótkie filmy powstają przez wybór segmentów, pionowe przycięcie i dostosowanie kadrowania segment po segmencie. ${soonTail}`,
+      desc: 'Wybierz kilka fragmentów z tego wideo i zrób z każdego krótki film',
+      setup: ['Wybiera kilka fragmentów, które bronią się same, i robi z każdego krótki film.'],
     },
     polish: {
       name: "Ulepsz transkrypcję",
@@ -123,6 +145,7 @@ export const pl: AiToolsMessages = {
   sourceCut: (n: number | null) => n === null ? "źródło wycięte" : pluralForm('pl', n, { one: `${n} zdanie wycięte w źródle`, few: `${n} zdania wycięte w źródle`, many: `${n} zdań wyciętych w źródle`, other: `${n} zdania wyciętego w źródle` }),
   sourceJoin: (parts: readonly string[]) => parts.join(", "),
   intents: {
+    shortscut: (o) => `Wybierz z ${o.scope ? `${o.scope} w ${o.p}` : o.p} kilka fragmentów, które bronią się same, i utwórz z każdego krótki film: każdy to nowe wideo odwołujące się do tego samego materiału źródłowego, a oryginalne wideo i jego oś czasu pozostają bez zmian.`,
     stale: (o) => `Niektóre tłumaczenia w ${o.p} nieaktualne${o.why ? ` (${o.why})` : " przez zmianę źródła"}. Tłumacz ponownie tylko te zdania${o.cut ? "; wycięte tłumacz z wyciętego źródła, tłumaczenia całkowicie wyciętych zdań usuń razem" : ""}. Resztę pozostaw bez zmian.`,
     polish: (o) => `Popraw transkrypcję ${scopeOf(o)}: popraw literówki, dodaj interpunkcję i podziel na akapity tematyczne bez przepisywania.`,
     chapters: (o) => `Podziel ${o.p} na rozdziały tematyczne i nadaj krótkie tytuły.`,
@@ -138,8 +161,9 @@ export const pl: AiToolsMessages = {
   endSentence: (text: string) => (/[.!?]$/.test(text) ? text : `${text}.`),
   joinPrompt: (head: string, extra: readonly string[]) => [head, ...extra].join(" "),
   groupSub: { writing: 'Dla czytelników: wiedzieć, o czym jest wideo, bez oglądania', publish: 'Dla publikujących wideo: zachęcić do kliknięcia i dotrzymać obietnicy' },
-  laterNote: 'Tłumaczenie napisów jest jeszcze w panelu Napisy, a tłumaczenie dubbingu w panelu Audio; później trafią tutaj.',
+  laterNote: 'Tłumaczenie napisów jest jeszcze w panelu Napisy, a tłumaczenie dubbingu w panelu Audio; później trafią tutaj. Inteligentne kadrowanie już wkrótce.',
   effect: {
+    shortscut: 'Tworzy nowe wideo podrzędne; oryginalne wideo i jego oś czasu pozostają bez zmian',
     polish: 'Zmienia transkrypcję: stosowane po zakończeniu, cofane jednym krokiem',
     chapters: 'Zmienia rozdziały: stosowane po zakończeniu, cofane jednym krokiem',
     speakers: 'Najpierw potwierdzasz wynik; do wideo trafia dopiero po zastosowaniu',

@@ -8,6 +8,29 @@ const scopeOf = (o: IntentArgs) => o.scope ? `${o.scope} de ${o.p}` : o.p;
 import type { AiToolsMessages } from './ai-tools.ts';
 
 export const fr: AiToolsMessages = {
+  shorts: {
+    lengths: { short: '15–30 s', medium: '30–60 s', long: '60–90 s', extended: '1–3 min', custom: 'Personnalisé' },
+    ratioSource: 'Garder l’original',
+    focus: {
+      center: { label: 'Centré', sub: 'Recadre le milieu de l’image' },
+      manual: { label: 'Je le règle', sub: 'Vous placez ensuite le cadre de chaque vidéo courte' },
+      speaker: { label: 'Suivre la personne qui parle', sub: 'Le cadre suit la personne qui parle' },
+    },
+    speakerOff: 'Cette version n’a pas encore de modèle de personnes et de locuteurs',
+    tracks: { both: 'Original + traduction', source: 'Original seul', translation: 'Traduction seule' },
+    styles: {
+      shorts: { label: 'Sous-titres pour vidéos courtes', sub: 'Préréglage intégré qui évite les boutons des plateformes' },
+      video: { label: 'Garder le style de cette vidéo', sub: 'Même taille et position ; les boutons des plateformes peuvent les masquer' },
+    },
+    focusPrompt: { center: 'centré', manual: 'centré pour l’instant ; j’ajusterai chacune moi-même' },
+    lineCount: (count, min, max) =>
+      `Faites ${count === 1 ? '1 vidéo courte' : `${count} vidéos courtes`} de ${min} à ${max} secondes chacune, qui commencent et finissent sur des limites de phrase`,
+    lineFrame: (ratio, focus) => (ratio ? `Format ${ratio}, cadrage ${focus}` : 'Format : garder l’original, sans recadrer'),
+    lineSubtitles: (tracks, style) => `Sous-titres : ${tracks}, ${style}`,
+    lineSkipDone: 'Ignorez les passages déjà découpés en vidéos courtes',
+    lineAdopt: 'Cette vidéo n’est pas encore dans un projet : déplacez-la d’abord dans un nouveau projet au nom de la vidéo, puis créez-y les vidéos courtes',
+    lineDirect: 'Créez les vidéos dès qu’elles sont trouvées ; inutile de me demander avant',
+  },
   groups: {
     frame: "Cadre",
     transcript: "Transcription",
@@ -23,8 +46,8 @@ export const fr: AiToolsMessages = {
     },
     shortscut: {
       name: "Découper en vidéos courtes",
-      desc: "Choisir plusieurs segments et faire un court vertical de chacun",
-      why: `Créer des courts = choisir des segments, recadrer chacun verticalement et ajuster le cadre segment par segment. ${soonTail}`,
+      desc: 'Choisir quelques segments de cette vidéo et faire de chacun une vidéo courte',
+      setup: ['Choisit quelques passages qui tiennent seuls et fait de chacun une vidéo courte.'],
     },
     polish: {
       name: "Améliorer la transcription",
@@ -154,6 +177,7 @@ export const fr: AiToolsMessages = {
   sourceCut: (n: number | null) => (n === null ? "source coupée" : pluralForm('fr', n, { one: `${n} phrase coupée dans la source`, other: `${n} phrases coupées dans la source` })),
   sourceJoin: (parts: readonly string[]) => parts.join(", "),
   intents: {
+    shortscut: (o) => `Choisissez dans ${o.scope ? `${o.scope} de ${o.p}` : o.p} quelques passages qui tiennent seuls et créez chacun comme une vidéo courte : chacune est une nouvelle vidéo qui référence le même métrage source, et la vidéo d’origine et sa timeline restent telles quelles.`,
     stale: (o: IntentArgs & { why: string }) =>
       `Des traductions de ${o.p} sont obsolètes${o.why ? ` (${o.why})` : " car la source a été modifiée"}. Retraduisez seulement ces phrases${o.cut ? " ; retraduisez les phrases coupées depuis la source coupée et retirez les traductions des phrases entièrement coupées" : ""}. Laissez tout le reste inchangé.`,
     polish: (o: IntentArgs) =>
@@ -175,8 +199,9 @@ export const fr: AiToolsMessages = {
   endSentence: (text: string) => (/[.!?]$/.test(text) ? text : `${text}.`),
   joinPrompt: (head: string, extra: readonly string[]) => [head, ...extra].join(" "),
   groupSub: { writing: 'Pour les lecteurs : savoir de quoi parle la vidéo sans la regarder', publish: 'Pour qui publie la vidéo : donner envie de cliquer, puis tenir la promesse' },
-  laterNote: 'Traduire les sous-titres est encore dans le panneau Sous-titres et Traduire le doublage dans le panneau Audio ; ils arriveront ici plus tard.',
+  laterNote: 'Traduire les sous-titres est encore dans le panneau Sous-titres et Traduire le doublage dans le panneau Audio ; ils arriveront ici plus tard. Le recadrage intelligent arrive bientôt.',
   effect: {
+    shortscut: 'Crée de nouvelles vidéos enfants ; la vidéo d’origine et sa timeline restent telles quelles',
     polish: 'Modifie la transcription : appliqué à la fin, annulable en une étape',
     chapters: 'Modifie les chapitres : appliqué à la fin, annulable en une étape',
     speakers: 'Vous confirmez d’abord le résultat ; il n’est écrit dans la vidéo qu’une fois appliqué',

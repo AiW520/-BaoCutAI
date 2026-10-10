@@ -2,6 +2,25 @@ import { pluralForm } from '@baocut/protocol';
 import type { AiToolsMessages } from './ai-tools-copy.ts';
 
 export const pl: AiToolsMessages = {
+  shortsShape: 'Co pociąć',
+  shortsCount: 'Ile',
+  shortsLength: 'Długość',
+  shortsCustom: 'Własna',
+  shortsMin: 'Najkrótszy',
+  shortsMax: 'Najdłuższy',
+  shortsTo: 'do',
+  shortsRatio: 'Proporcje',
+  shortsFraming: 'Kadr',
+  shortsSubtitles: 'Napisy',
+  shortsTracks: 'Ścieżki',
+  shortsStyle: 'Styl',
+  shortsNoTranslation: 'Tylko oryginał · to wideo nie ma jeszcze tłumaczenia.',
+  shortsSkipDone: 'Pomiń to, co już pocięte',
+  shortsSkipDoneOn: 'Nie szuka ponownie w zakresach użytych przez wcześniejsze krótkie filmy',
+  shortsSkipDoneOff: 'Szuka wszędzie; może pokrywać się z już pociętymi',
+  shortsHint: 'Otwiera nową sesję, która znajduje fragmenty i tworzy filmy; oryginalne wideo i jego oś czasu pozostają bez zmian.',
+  shortsLoose: 'To wideo nie należy do projektu. Trafi do sesji, do której należy: tam agent najpierw przeniesie je do projektu nazwanego jak wideo, potem znajdzie fragmenty i utworzy filmy.',
+  shortsLooseHint: 'Wysyła do sesji, do której należy to wideo: tam znajdowane są fragmenty i tworzone filmy; oryginalne wideo i jego oś czasu pozostają bez zmian.',
   back: "Wstecz",
 
   who: "Wybierz",

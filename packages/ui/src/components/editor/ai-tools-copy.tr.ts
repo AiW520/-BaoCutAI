@@ -1,6 +1,25 @@
 import type { AiToolsMessages } from './ai-tools-copy.ts';
 
 export const tr: AiToolsMessages = {
+  shortsShape: 'Nasıl kesilecek',
+  shortsCount: 'Kaç tane',
+  shortsLength: 'Uzunluk',
+  shortsCustom: 'Özel',
+  shortsMin: 'En kısa',
+  shortsMax: 'En uzun',
+  shortsTo: '–',
+  shortsRatio: 'En boy oranı',
+  shortsFraming: 'Çerçeve',
+  shortsSubtitles: 'Altyazı',
+  shortsTracks: 'İzler',
+  shortsStyle: 'Stil',
+  shortsNoTranslation: 'Yalnızca orijinal · bu videonun henüz çevirisi yok.',
+  shortsSkipDone: 'Kesilmiş olanları atla',
+  shortsSkipDoneOn: 'Önceki kısa videoların kullandığı aralıklarda yeniden aramaz',
+  shortsSkipDoneOff: 'Her yerde arar; kesilmiş olanlarla çakışabilir',
+  shortsHint: 'Yeni bir oturum açar; bölümleri orada bulur ve videoları oluşturur. Orijinal video ve zaman çizelgesi değişmez.',
+  shortsLoose: 'Bu video bir projede değil. Ait olduğu oturuma gönderilir; orada ajan önce onu videonun adını taşıyan bir projeye taşır, sonra bölümleri bulup videoları oluşturur.',
+  shortsLooseHint: 'Bu videonun ait olduğu oturuma gönderir; bölümler orada bulunur ve videolar oluşturulur. Orijinal video ve zaman çizelgesi değişmez.',
   back: 'Geri',
   // 设置态
   who: 'Kullan', whoAgent: 'Ajana ver', whoModel: 'Modeli doğrudan çağır', whoModelSub: 'Runtime içinde henüz iş akışı yok; yalnızca ajan yapabilir', scope: 'Kapsam', scopeAll: 'Tüm video', scopeChapter: (index, label) => `Bölüm ${index} · ${label}`, scopeNoChapters: 'Zaman çizelgesinde henüz bölüm yok; yalnızca tüm video kullanılabilir', cta: 'Ajana ver', queued: 'Ajan meşgul · mesaj sırada, bu tur bitince gönderilir', noConversation: 'Bu video proje veya oturumda değil; ajana verilemez.', createFailed: (message) => `Oturum oluşturulamadı: ${message}`,

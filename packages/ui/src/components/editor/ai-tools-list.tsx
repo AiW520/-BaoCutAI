@@ -3,6 +3,7 @@ import type { AiToolKind, DocumentRecord, Id, Sequence } from '@baocut/protocol'
 import { Badge, Button, Link } from '@react-spectrum/s2';
 import ChevronRight from '@react-spectrum/s2/icons/ChevronRight';
 import Comment from '@react-spectrum/s2/icons/Comment';
+import DevicePhone from '@react-spectrum/s2/icons/DevicePhone';
 import Cut from '@react-spectrum/s2/icons/Cut';
 import Edit from '@react-spectrum/s2/icons/Edit';
 import FileText from '@react-spectrum/s2/icons/FileText';
@@ -15,7 +16,7 @@ import TextParagraph from '@react-spectrum/s2/icons/TextParagraph';
 import UserGroup from '@react-spectrum/s2/icons/UserGroup';
 import { style } from '@react-spectrum/s2/style' with { type: 'macro' };
 import { Button as RACButton } from 'react-aria-components';
-import { AI_TOOL_GROUP_LABEL, AI_TOOLS, groupSub, laterNote, LIST_GROUPS, toolDraftKey, type AiToolId } from '../../model/ai-tools.ts';
+import { AI_TOOL_GROUP_LABEL, AI_TOOLS, groupSub, laterNote, LIST_GROUPS, listedTools, toolDraftKey, type AiToolId } from '../../model/ai-tools.ts';
 import { chapterPieces } from '../../model/export-range.ts';
 import { useConnection, defaultDriver } from '../../state/connection-store.ts';
 import { useDirectory } from '../../state/directory-store.ts';
@@ -116,6 +117,7 @@ const TOOL_ICON: Partial<Record<AiToolId, ComponentType>> = {
   title: TextIcon,
   desc: TextParagraph,
   cover: Image,
+  shortscut: DevicePhone,
 };
 
 const STALE_LISTED = AI_TOOLS.some((t) => t.id === 'stale' && LIST_GROUPS.includes(t.group));
@@ -295,7 +297,7 @@ function SetupCard({ guide }: { guide: GateGuide }) {
 
 /**
  * AI 工具 Tab 的列表页（原型 panel-aitools-list.jsx，产品设计 §5.10「分批」）：顶上一张交给 Agent 的卡；没有文稿时加一张说明卡、
- * 工具行置灰；下面按组列第一批的三组工具，每行一句说明与这个视频上的状态；脚注说清还在各自面板里的工具。
+ * 工具行置灰；下面按组列第一批的三组工具与「画面」组里的剪成短视频，每行一句说明与这个视频上的状态；脚注说清还在各自面板里的工具。
  */
 export function AiToolsList({ videoId, sequence, documents }: { videoId: Id; sequence: Sequence; documents: Record<Id, DocumentRecord> }) {
   const drivers = useConnection((s) => s.drivers);
@@ -321,7 +323,7 @@ export function AiToolsList({ videoId, sequence, documents }: { videoId: Id; seq
           <section key={group} aria-label={AI_TOOL_GROUP_LABEL[group]}>
             <h3 className={secHead}>{AI_TOOL_GROUP_LABEL[group]}</h3>
             {groupSub(group) ? <p className={groupNote}>{groupSub(group)}</p> : null}
-            {AI_TOOLS.filter((t) => t.group === group).map((t) => {
+            {listedTools(group).map((t) => {
               const Icon = TOOL_ICON[t.id] ?? Edit;
               const state = states[t.id];
               return (

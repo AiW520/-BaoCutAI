@@ -6,7 +6,8 @@
  * - `runtime`：Runtime 有这条流程（识别说话人、翻译字幕、翻译配音），工具页就是那条流程的设置页。识别说话人的设置页里
  *   「用」还能选交给 Agent（意图句照下面的 `INTENTS.speakers`）。
  * - `agent`：Runtime 没有单独的流程，交给编码 Agent——直接把那句意图发到这个视频的会话里。
- * - `soon`：要在画面上跟踪、调取景框（智能裁剪、剪成短视频），Runtime 还没有这条流程，列着但只说为什么还不能用。
+ * - `soon`：要在画面上跟踪、调取景框（智能裁剪），Runtime 还没有这条流程，列着但只说为什么还不能用。
+ * 剪成短视频只交给 Agent、总是新开一条会话：参数折成提示词里一行一句（`shortsLines`），在那条会话里找片段、创建子视频。
  *
  * 工具页第一行「用」还能选「直接调模型」：润色、章节、总结、博客、标题、简介走 Runtime 的 `ai-tool` 流程（不经过对话，
  * 见 components/editor/ai-tool-direct.ts）；重新转录、找可剪的口、重译过期句、做封面那一项置灰、写原因。
@@ -53,7 +54,19 @@ export type AiToolGroup = 'frame' | 'transcript' | 'translate' | 'writing' | 'pu
 export type AiToolTier = 'runtime' | 'agent' | 'soon';
 
 /** 交给 Agent 的那些工具。 */
-export type AgentToolId = 'polish' | 'chapters' | 'speakers' | 'retranscribe' | 'cleanup' | 'stale' | 'summary' | 'blog' | 'title' | 'desc' | 'cover';
+export type AgentToolId =
+  | 'polish'
+  | 'chapters'
+  | 'speakers'
+  | 'retranscribe'
+  | 'cleanup'
+  | 'stale'
+  | 'summary'
+  | 'blog'
+  | 'title'
+  | 'desc'
+  | 'cover'
+  | 'shortscut';
 
 export interface AiTool {
   id: AiToolId;
@@ -78,6 +91,16 @@ const VIEW_KEYS = ['auto', 'author', 'viewer'] as const;
 export type WriteView = (typeof VIEW_KEYS)[number];
 const COVER_TEXT_KEYS = ['none', 'phrase', 'phrase-sub'] as const;
 export type CoverText = (typeof COVER_TEXT_KEYS)[number];
+const SHORTS_LENGTH_KEYS = ['short', 'medium', 'long', 'extended', 'custom'] as const;
+export type ShortsLength = (typeof SHORTS_LENGTH_KEYS)[number];
+const SHORTS_RATIO_KEYS = ['9:16', '1:1', 'source'] as const;
+export type ShortsRatio = (typeof SHORTS_RATIO_KEYS)[number];
+const SHORTS_FOCUS_KEYS = ['center', 'manual', 'speaker'] as const;
+export type ShortsFocus = (typeof SHORTS_FOCUS_KEYS)[number];
+const SHORTS_TRACK_KEYS = ['both', 'source', 'translation'] as const;
+export type ShortsTracks = (typeof SHORTS_TRACK_KEYS)[number];
+const SHORTS_STYLE_KEYS = ['shorts', 'video'] as const;
+export type ShortsStyle = (typeof SHORTS_STYLE_KEYS)[number];
 
 type IntentArgs = {
   p: string;
@@ -114,8 +137,8 @@ const en = {
     },
     shortscut: {
       name: 'Cut into shorts',
-      desc: 'Pick a few segments from this video and turn each into a vertical short',
-      why: `Cutting into shorts means picking a few segments, cropping each to vertical, and adjusting the framing segment by segment on the video. ${soonTail}`,
+      desc: 'Pick a few segments from this video and turn each into a short',
+      setup: ['Pick a few passages that stand on their own and make each one a short.'],
     },
     polish: {
       name: 'Polish transcript',
@@ -221,6 +244,37 @@ const en = {
     author: 'I’m the author',
     viewer: 'I’m a viewer',
   } as Record<WriteView, string>,
+  /** 剪成短视频的选项（原型 model-shorts-cut.js）与折进提示词的几行。 */
+  shorts: {
+    lengths: {
+      short: '15–30s',
+      medium: '30–60s',
+      long: '60–90s',
+      extended: '1–3 min',
+      custom: 'Custom',
+    } as Record<ShortsLength, string>,
+    ratioSource: 'Keep original',
+    focus: {
+      center: { label: 'Centered', sub: 'Crops the middle of the frame' },
+      manual: { label: 'I’ll set it', sub: 'You place the frame for each short yourself afterwards' },
+      speaker: { label: 'Follow the speaker', sub: 'The frame follows whoever is talking' },
+    } as Record<ShortsFocus, { label: string; sub: string }>,
+    speakerOff: 'This version doesn’t have a person and speaker model yet',
+    tracks: { both: 'Original + translation', source: 'Original only', translation: 'Translation only' } as Record<ShortsTracks, string>,
+    styles: {
+      shorts: { label: 'Shorts captions', sub: 'Built-in preset that stays clear of platform buttons' },
+      video: { label: 'Keep this video’s style', sub: 'Same size and position; platform buttons may cover them' },
+    } as Record<ShortsStyle, { label: string; sub: string }>,
+    /** 折进提示词：取景怎么说（「跟着说话的人」这一版不开放，不进句子）。 */
+    focusPrompt: { center: 'centered', manual: 'centered for now; I’ll adjust each one myself' } as Record<'center' | 'manual', string>,
+    lineCount: (count: number, min: number, max: number) =>
+      `Make ${count === 1 ? '1 short' : `${count} shorts`}, each ${min}–${max} seconds, starting and ending on sentence boundaries`,
+    lineFrame: (ratio: string | null, focus: string) => (ratio ? `Aspect ratio ${ratio}, framing ${focus}` : 'Aspect ratio: keep the original, no cropping'),
+    lineSubtitles: (tracks: string, style: string) => `Subtitles: ${tracks}, ${style}`,
+    lineSkipDone: 'Skip the parts already cut into shorts',
+    lineAdopt: 'This video isn’t in a project yet: first move it into a new project named after the video, then create the shorts there',
+    lineDirect: 'Create the videos as soon as they’re found; no need to ask me first',
+  },
   coverText: {
     none: 'No text',
     phrase: 'A short phrase',
@@ -261,6 +315,8 @@ const en = {
     desc: (o: IntentArgs) => `Write a description of ${o.p} for publishing, with chapter timecodes and a line of tags.`,
     cover: (o: IntentArgs & { count: number }) =>
       `Make ${o.count} cover candidates for ${o.p}: pick key frames first, use a different base-image approach for each, and check them at a small size before showing me.`,
+    shortscut: (o: IntentArgs) =>
+      `Pick a few passages from ${scopeOf(o)} that stand on their own and create each as a short: each one is a new video referencing the same source footage, and the original video and its timeline stay as they are.`,
   },
   /** 列表页（AI 工具 Tab）分组下的一句副题：说清这一组给谁用。 */
   groupSub: {
@@ -268,7 +324,8 @@ const en = {
     publish: 'For whoever posts the video: make people want to click, then deliver on it',
   } as Partial<Record<AiToolGroup, string>>,
   /** 列表页脚注：第一批没搬进来的工具在哪。 */
-  laterNote: 'Translate subtitles is still in the Subtitles panel and Translate voice-over in the Audio panel; they’ll move here later.',
+  laterNote:
+    'Translate subtitles is still in the Subtitles panel and Translate voice-over in the Audio panel; they’ll move here later. Smart crop is coming soon.',
   /** 工具页说明卡上的一行：按下去会不会改视频。 */
   effect: {
     polish: 'Changes the transcript: applied when done, and one step undoes it',
@@ -282,6 +339,7 @@ const en = {
     title: 'Doesn’t change the video: pick one to use',
     desc: 'Doesn’t change the video: the result is for you to read and copy',
     cover: 'Doesn’t change the video: pick one to use',
+    shortscut: 'Creates new child videos; the original video and its timeline stay as they are',
   } as Record<AgentToolId, string>,
   /** 模板里的固定约束（以前是语言、风格、篇幅、视角的下拉）。`language` 是语言名；没有时跟文稿。 */
   standMarkdown: (language: string | null) =>
@@ -341,7 +399,7 @@ const tool = (id: AiToolId, group: AiToolGroup, tier: AiToolTier): AiTool => ({
 
 export const AI_TOOLS: readonly AiTool[] = [
   tool('crop', 'frame', 'soon'),
-  tool('shortscut', 'frame', 'soon'),
+  tool('shortscut', 'frame', 'agent'),
   tool('polish', 'transcript', 'agent'),
   tool('chapters', 'transcript', 'agent'),
   tool('speakers', 'transcript', 'runtime'),
@@ -489,6 +547,113 @@ export function writingExtra(tool: 'summary' | 'blog' | 'title' | 'desc' | 'cove
   return out;
 }
 
+// ---- 剪成短视频（原型 panel-aitools-shorts.jsx、model-shorts-cut.js） ----
+
+export const SHORTS_COUNT = { min: 1, max: 10, initial: 3 } as const;
+/** 自定义时长的上下界（秒）。 */
+export const SHORTS_CUSTOM = { min: 1, max: 600 } as const;
+const SHORTS_PRESET: Record<Exclude<ShortsLength, 'custom'>, { min: number; max: number }> = {
+  short: { min: 15, max: 30 },
+  medium: { min: 30, max: 60 },
+  long: { min: 60, max: 90 },
+  extended: { min: 60, max: 180 },
+};
+
+export const SHORTS_LENGTHS = options(SHORTS_LENGTH_KEYS, () => M.shorts.lengths);
+export const SHORTS_RATIOS = SHORTS_RATIO_KEYS.map((key) => ({
+  key,
+  get label() {
+    return key === 'source' ? M.shorts.ratioSource : key;
+  },
+}));
+export const SHORTS_FOCUS = SHORTS_FOCUS_KEYS.map((key) => ({
+  key,
+  get label() {
+    return M.shorts.focus[key].label;
+  },
+  get sub() {
+    return M.shorts.focus[key].sub;
+  },
+  /** 这一版不开放时的原因（「跟着说话的人」：还没有人物与发言人模型）。 */
+  get off(): string | null {
+    return key === 'speaker' ? M.shorts.speakerOff : null;
+  },
+}));
+export const SHORTS_TRACKS = options(SHORTS_TRACK_KEYS, () => M.shorts.tracks);
+export const SHORTS_STYLES = SHORTS_STYLE_KEYS.map((key) => ({
+  key,
+  get label() {
+    return M.shorts.styles[key].label;
+  },
+  get sub() {
+    return M.shorts.styles[key].sub;
+  },
+}));
+
+/** 剪成短视频的设置态；默认见 `SHORTS_DEFAULTS`。 */
+export interface ShortsSettings {
+  count: number;
+  length: ShortsLength;
+  /** 自定义时长的两头（秒）。 */
+  lenMin: number;
+  lenMax: number;
+  ratio: ShortsRatio;
+  focus: ShortsFocus;
+  tracks: ShortsTracks;
+  style: ShortsStyle;
+  /** 已经切过的不再找。 */
+  skipDone: boolean;
+}
+
+export const SHORTS_DEFAULTS: Readonly<ShortsSettings> = {
+  count: SHORTS_COUNT.initial,
+  length: 'medium',
+  lenMin: 30,
+  lenMax: 60,
+  ratio: '9:16',
+  focus: 'center',
+  tracks: 'both',
+  style: 'shorts',
+  skipDone: true,
+};
+
+const clampSeconds = (n: number, fallback: number) =>
+  Number.isFinite(n) ? Math.max(SHORTS_CUSTOM.min, Math.min(SHORTS_CUSTOM.max, Math.round(n))) : fallback;
+
+/** 这次要的时长区间（秒）：预设一档，或自定义的两头（1–600 秒，填反了对调，两头相等时拉开一秒）。 */
+export function shortsLengthRange(s: Pick<ShortsSettings, 'length' | 'lenMin' | 'lenMax'>): { min: number; max: number } {
+  if (s.length !== 'custom') return { ...SHORTS_PRESET[s.length] };
+  let a = clampSeconds(s.lenMin, SHORTS_DEFAULTS.lenMin);
+  let b = clampSeconds(s.lenMax, SHORTS_DEFAULTS.lenMax);
+  if (a > b) [a, b] = [b, a];
+  if (a === b) {
+    if (b < SHORTS_CUSTOM.max) b += 1;
+    else a -= 1;
+  }
+  return { min: a, max: b };
+}
+
+/**
+ * 设置态折成提示词里的参数行（原型 model-shorts-cut.js `agentExtra`），一行一句：几支、多长、画幅与取景、字幕，
+ * 勾着「已经切过的不再找」时一句；视频不属于项目时先收进项目（`inProject: false`）；最后一行「找好就直接创建」，可以单独删掉。
+ * 「跟着说话的人」这一版不开放，落回居中；没有译文时字幕只有原文。
+ */
+export function shortsLines(s: ShortsSettings, o: { hasTranslation: boolean; inProject: boolean }): string[] {
+  const count = Math.max(SHORTS_COUNT.min, Math.min(SHORTS_COUNT.max, Math.round(s.count) || SHORTS_COUNT.initial));
+  const len = shortsLengthRange(s);
+  const focus = s.focus === 'manual' ? 'manual' : 'center';
+  const tracks: ShortsTracks = o.hasTranslation ? s.tracks : 'source';
+  const out = [
+    M.shorts.lineCount(count, len.min, len.max),
+    M.shorts.lineFrame(s.ratio === 'source' ? null : s.ratio, M.shorts.focusPrompt[focus]),
+    M.shorts.lineSubtitles(M.shorts.tracks[tracks], M.shorts.styles[s.style].label),
+  ];
+  if (s.skipDone) out.push(M.shorts.lineSkipDone);
+  if (!o.inProject) out.push(M.shorts.lineAdopt);
+  out.push(M.shorts.lineDirect);
+  return out;
+}
+
 // ---- 意图句 ----
 
 export interface AiIntent {
@@ -525,6 +690,7 @@ const INTENTS: Record<AgentToolId, (o: IntentArgs) => string> = {
   title: (o) => M.intents.title({ ...o, count: o.count || TITLE_COUNT.initial }),
   desc: (o) => M.intents.desc(o),
   cover: (o) => M.intents.cover({ ...o, count: o.count || COVER_COUNT.initial }),
+  shortscut: (o) => M.intents.shortscut(o),
 };
 
 /** 交给 Agent 的那句话：意图句加附加要求，每条补上句号。 */
@@ -547,8 +713,17 @@ export function intentPrompt(intent: AiIntent): string {
 
 // ---- AI 工具 Tab：列表、模板、内置 skill、会话去向（产品设计 §5.10、§6.9；原型 model-ai-prompt.js） ----
 
-/** 列表页第一批只列从文稿出发的三组；翻译与画面的工具仍从各自面板进来，脚注说清去处。 */
-export const LIST_GROUPS: readonly AiToolGroup[] = ['transcript', 'writing', 'publish'];
+/** 列表页第一批只列从文稿出发的三组，加「画面」组里的剪成短视频；翻译与智能裁剪仍从各自面板进来，脚注说清去处。 */
+export const LIST_GROUPS: readonly AiToolGroup[] = ['transcript', 'writing', 'publish', 'frame'];
+
+/** 有白名单的组只露白名单里的工具（原型 model-ai-prompt.js `OPEN_IN_GROUP`）：「画面」组先只开剪成短视频。 */
+const OPEN_IN_GROUP: Partial<Record<AiToolGroup, readonly AiToolId[]>> = { frame: ['shortscut'] };
+
+/** 列表页这一组露出的工具。 */
+export function listedTools(group: AiToolGroup): AiTool[] {
+  const only = OPEN_IN_GROUP[group];
+  return AI_TOOLS.filter((t) => t.group === group && (!only || only.includes(t.id)));
+}
 
 /** 分组下的一句副题；没有时不画。 */
 export function groupSub(group: AiToolGroup): string | null {
@@ -600,9 +775,12 @@ export function standingLines(tool: AgentToolId, opts: { language?: string | nul
   return own;
 }
 
-/** 预填进提示词框的模板：第一行意图句（`intentPrompt` 的结果，范围与勾选项已折在里面），下面一行一条固定约束。 */
-export function toolTemplate(tool: AgentToolId, intent: string, opts: { language?: string | null } = {}): string {
-  return [intent.trim(), ...standingLines(tool, opts)].filter(Boolean).join('\n');
+/**
+ * 预填进提示词框的模板：第一行意图句（`intentPrompt` 的结果，范围与勾选项已折在里面），下面一行一条固定约束；
+ * `lines` 是工具自己的参数行（剪成短视频的 `shortsLines`），接在最后，一行一句，用户可以单独删改。
+ */
+export function toolTemplate(tool: AgentToolId, intent: string, opts: { language?: string | null; lines?: readonly string[] } = {}): string {
+  return [intent.trim(), ...standingLines(tool, opts), ...(opts.lines ?? [])].filter(Boolean).join('\n');
 }
 
 /** 工具页提示词框的草稿键：附件、图片与改过的提示词都挂在它下面。 */

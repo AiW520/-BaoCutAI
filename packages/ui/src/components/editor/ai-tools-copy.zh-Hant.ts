@@ -1,6 +1,25 @@
 import type { AiToolsMessages } from './ai-tools-copy.ts';
 
 export const zhHant: AiToolsMessages = {
+  shortsShape: '切成什麼樣',
+  shortsCount: '切幾支',
+  shortsLength: '每支多長',
+  shortsCustom: '自訂',
+  shortsMin: '最短',
+  shortsMax: '最長',
+  shortsTo: '到',
+  shortsRatio: '長寬比',
+  shortsFraming: '取景',
+  shortsSubtitles: '字幕',
+  shortsTracks: '帶哪幾軌',
+  shortsStyle: '樣式',
+  shortsNoTranslation: '只有原文 · 這部影片還沒有譯文。',
+  shortsSkipDone: '已經切過的不再找',
+  shortsSkipDoneOn: '跳過之前幾支用到的區間',
+  shortsSkipDoneOff: '照找，可能和切過的幾支重疊',
+  shortsHint: '新開一條對話，在那裡找片段並建立影片；原影片和時間軸不動。',
+  shortsLoose: '這部影片不屬於專案。交給 Agent 會發到它所在的對話，先把它收進一個以影片命名的專案，再找片段並建立影片。',
+  shortsLooseHint: '發到這部影片所在的對話，在那裡找片段並建立影片；原影片和時間軸不動。',
   back: '返回',
 
   // 设置态

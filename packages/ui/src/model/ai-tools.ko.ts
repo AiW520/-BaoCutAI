@@ -3,6 +3,28 @@ import type { AiToolsMessages } from './ai-tools.ts';
 const SOON_TAIL = 'Runtime에는 아직 이 워크플로가 없고 영상 위에서 프레이밍을 조정할 오버레이도 없어서, 여기에는 아직 입력할 양식이 없습니다.';
 
 export const ko: AiToolsMessages = {
+  shorts: {
+    lengths: { short: '15–30초', medium: '30–60초', long: '60–90초', extended: '1–3분', custom: '직접 설정' },
+    ratioSource: '원본 비율 유지',
+    focus: {
+      center: { label: '가운데', sub: '화면 가운데를 잘라냅니다' },
+      manual: { label: '직접 정하기', sub: '나중에 쇼츠마다 프레임 위치를 직접 정합니다' },
+      speaker: { label: '말하는 사람 따라가기', sub: '말하는 사람을 프레임이 따라갑니다' },
+    },
+    speakerOff: '이 버전에는 아직 인물·화자 모델이 없습니다',
+    tracks: { both: '원문 + 번역', source: '원문만', translation: '번역만' },
+    styles: {
+      shorts: { label: '쇼츠 자막', sub: '기본 프리셋으로, 플랫폼 버튼을 피합니다' },
+      video: { label: '이 영상의 스타일 유지', sub: '크기와 위치를 그대로 쓰며, 플랫폼 버튼에 가려질 수 있습니다' },
+    },
+    focusPrompt: { center: '가운데', manual: '일단 가운데로 두고 나중에 하나씩 직접 조정' },
+    lineCount: (count, min, max) => `${count}개 만들기, 각각 ${min}–${max}초, 시작과 끝은 문장 경계에 맞추기`,
+    lineFrame: (ratio, focus) => (ratio ? `화면 비율 ${ratio}, 프레이밍: ${focus}` : '화면 비율: 원본 유지, 자르지 않기'),
+    lineSubtitles: (tracks, style) => `자막: ${tracks}, ${style}`,
+    lineSkipDone: '이미 잘라 낸 부분은 다시 찾지 않기',
+    lineAdopt: '이 영상은 아직 프로젝트에 속하지 않음: 먼저 영상 이름으로 새 프로젝트를 만들어 옮긴 뒤, 거기서 쇼츠 만들기',
+    lineDirect: '찾으면 바로 영상으로 만들기, 먼저 묻지 않아도 됨',
+  },
   groups: {
     frame: '화면',
     transcript: '전사본',
@@ -18,8 +40,8 @@ export const ko: AiToolsMessages = {
     },
     shortscut: {
       name: '쇼츠로 만들기',
-      desc: '이 영상에서 몇 구간을 골라 각각 세로형 쇼츠로 만듭니다',
-      why: `쇼츠로 만들려면 몇 구간을 골라 각각 세로로 크롭하고, 영상 위에서 구간마다 프레이밍을 조정해야 합니다. ${SOON_TAIL}`,
+      desc: '이 영상에서 몇 구간을 골라 각각 쇼츠로 만듭니다',
+      setup: ['따로 떼어도 말이 되는 구간을 몇 개 골라 각각 쇼츠로 만듭니다.'],
     },
     polish: {
       name: '전사본 다듬기',
@@ -146,6 +168,7 @@ export const ko: AiToolsMessages = {
   sourceCut: (n: number | null) => (n === null ? '원문 잘림' : `원문에서 ${n}문장 잘림`),
   sourceJoin: (parts: readonly string[]) => parts.join(', '),
   intents: {
+    shortscut: (o) => `${o.scope ? `${o.p}의 ${o.scope}` : o.p}에서 따로 떼어도 말이 되는 구간을 몇 개 골라 각각 쇼츠로 만들어 주세요. 쇼츠마다 같은 원본을 참조하는 새 영상이며, 원본 영상과 타임라인은 그대로 둡니다.`,
     stale: (o) =>
       `${o.p}의 일부 번역이 ${o.why ? `오래되었습니다(${o.why})` : '원문 수정으로 오래되었습니다'}. 해당 문장만 다시 번역해 주세요${o.cut ? '. 잘린 문장은 잘린 뒤의 원문으로 다시 번역하고, 문장 전체가 잘린 경우 그 번역도 함께 삭제해 주세요' : ''}. 나머지는 그대로 유지해 주세요.`,
     polish: (o) =>
@@ -166,8 +189,9 @@ export const ko: AiToolsMessages = {
   endSentence: (text: string) => (/[.!?]$/.test(text) ? text : `${text}.`),
   joinPrompt: (head: string, extra: readonly string[]) => [head, ...extra].join(' '),
   groupSub: { writing: '읽는 사람을 위해: 영상을 보지 않아도 내용을 알 수 있게', publish: '영상을 올리는 사람을 위해: 열어 보고 싶게, 열면 내용이 맞게' },
-  laterNote: '자막 번역은 자막 패널에, 더빙 번역은 오디오 패널에 아직 있습니다. 나중에 이곳으로 옮겨집니다.',
+  laterNote: '자막 번역은 자막 패널에, 더빙 번역은 오디오 패널에 아직 있습니다. 나중에 이곳으로 옮겨집니다. 스마트 크롭은 곧 제공됩니다.',
   effect: {
+    shortscut: '새 하위 영상을 만듭니다. 원본 영상과 타임라인은 그대로입니다',
     polish: '전사본을 바꿉니다: 완료되면 적용되고 한 번에 실행 취소할 수 있습니다',
     chapters: '챕터를 바꿉니다: 완료되면 적용되고 한 번에 실행 취소할 수 있습니다',
     speakers: '먼저 확인을 받고, 적용해야 영상에 기록됩니다',

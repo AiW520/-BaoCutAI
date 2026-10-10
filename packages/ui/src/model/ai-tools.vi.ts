@@ -3,6 +3,28 @@ import type { AiToolsMessages } from './ai-tools.ts';
 const SOON_TAIL = "Runtime chưa có quy trình này và video chưa có lớp phủ chỉnh khung, nên chưa có biểu mẫu để điền tại đây.";
 
 export const vi: AiToolsMessages = {
+  shorts: {
+    lengths: { short: '15–30 giây', medium: '30–60 giây', long: '60–90 giây', extended: '1–3 phút', custom: 'Tùy chỉnh' },
+    ratioSource: 'Giữ nguyên tỷ lệ gốc',
+    focus: {
+      center: { label: 'Ở giữa', sub: 'Cắt phần giữa khung hình' },
+      manual: { label: 'Tôi tự đặt', sub: 'Sau đó bạn tự đặt khung cho từng video ngắn' },
+      speaker: { label: 'Theo người nói', sub: 'Khung hình đi theo người đang nói' },
+    },
+    speakerOff: 'Phiên bản này chưa có mô hình người và người nói',
+    tracks: { both: 'Bản gốc + bản dịch', source: 'Chỉ bản gốc', translation: 'Chỉ bản dịch' },
+    styles: {
+      shorts: { label: 'Phụ đề video ngắn', sub: 'Mẫu dựng sẵn, tránh các nút của nền tảng' },
+      video: { label: 'Giữ kiểu của video này', sub: 'Giữ cỡ chữ và vị trí; nút của nền tảng có thể che mất' },
+    },
+    focusPrompt: { center: 'ở giữa', manual: 'tạm để ở giữa; tôi sẽ tự chỉnh từng video' },
+    lineCount: (count, min, max) => `Làm ${count} video ngắn, mỗi video ${min}–${max} giây, bắt đầu và kết thúc ở ranh giới câu`,
+    lineFrame: (ratio, focus) => (ratio ? `Tỷ lệ khung hình ${ratio}, khung ${focus}` : 'Tỷ lệ khung hình: giữ nguyên bản gốc, không cắt'),
+    lineSubtitles: (tracks, style) => `Phụ đề: ${tracks}, ${style}`,
+    lineSkipDone: 'Bỏ qua những phần đã cắt thành video ngắn',
+    lineAdopt: 'Video này chưa thuộc dự án nào: trước hết chuyển nó vào một dự án mới đặt theo tên video, rồi tạo các video ngắn ở đó',
+    lineDirect: 'Tìm được là tạo video luôn, không cần hỏi tôi trước',
+  },
   groups: {
     frame: "Khung",
     transcript: "Bản chép lời",
@@ -18,8 +40,8 @@ export const vi: AiToolsMessages = {
     },
     shortscut: {
       name: "Cắt thành video ngắn",
-      desc: "Chọn vài đoạn trong video và biến mỗi đoạn thành video ngắn dọc",
-      why: `Cắt thành video ngắn cần chọn vài đoạn, cắt mỗi đoạn theo chiều dọc và chỉnh khung từng đoạn trên video. ${SOON_TAIL}`,
+      desc: 'Chọn vài đoạn trong video này và biến mỗi đoạn thành một video ngắn',
+      setup: ['Chọn vài đoạn có thể đứng riêng và biến mỗi đoạn thành một video ngắn.'],
     },
     polish: {
       name: "Chỉnh sửa bản chép lời",
@@ -108,6 +130,7 @@ export const vi: AiToolsMessages = {
   sourceCut: (n) => n === null ? 'nguồn đã cắt' : `${n} câu đã cắt trong nguồn`,
   sourceJoin: (parts: readonly string[]) => parts.join(', '),
   intents: {
+    shortscut: (o) => `Chọn trong ${o.scope ? `${o.p}: ${o.scope}` : o.p} vài đoạn có thể đứng riêng và tạo mỗi đoạn thành một video ngắn: mỗi video là một video mới tham chiếu cùng tư liệu gốc, video gốc và dòng thời gian của nó giữ nguyên.`,
     stale: (o) => `Một số bản dịch trong ${o.p} đã cũ${o.why ? ` (${o.why})` : ' vì nguồn đã sửa'}. Chỉ dịch lại các câu đó${o.cut ? '; dịch lại câu bị cắt trong nguồn theo trạng thái cắt và gỡ bản dịch của câu đã cắt hoàn toàn cùng với câu nguồn' : ''}. Giữ nguyên mọi phần khác.`,
     polish: (o) => `Trau chuốt bản chép lời của ${o.scope ? `${o.p}: ${o.scope}` : o.p}: sửa lỗi chính tả, thêm dấu câu và chia đoạn theo chủ đề, không viết lại lời của tôi.`,
     chapters: (o) => `Chia ${o.p} thành chương theo chủ đề và đặt tiêu đề ngắn cho mỗi chương.`,
@@ -123,8 +146,9 @@ export const vi: AiToolsMessages = {
   endSentence: (text: string) => (/[.!?]$/.test(text) ? text : `${text}.`),
   joinPrompt: (head: string, extra: readonly string[]) => [head, ...extra].join(' '),
   groupSub: { writing: 'Cho người đọc: biết video nói gì mà không cần xem', publish: 'Cho người đăng video: khiến người xem muốn bấm vào và nội dung đúng như hứa hẹn' },
-  laterNote: 'Dịch phụ đề vẫn ở bảng Phụ đề và Dịch lồng tiếng ở bảng Âm thanh; sau này sẽ chuyển về đây.',
+  laterNote: 'Dịch phụ đề vẫn ở bảng Phụ đề và Dịch lồng tiếng ở bảng Âm thanh; sau này sẽ chuyển về đây. Cắt khung thông minh sắp ra mắt.',
   effect: {
+    shortscut: 'Tạo các video con mới; video gốc và dòng thời gian giữ nguyên',
     polish: 'Thay đổi bản chép lời: áp dụng khi xong, hoàn tác trong một bước',
     chapters: 'Thay đổi chương: áp dụng khi xong, hoàn tác trong một bước',
     speakers: 'Bạn xác nhận kết quả trước; chỉ ghi vào video khi bạn áp dụng',

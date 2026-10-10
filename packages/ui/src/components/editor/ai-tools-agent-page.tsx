@@ -75,7 +75,8 @@ const field = style({ width: 'full' });
 const effect = style({ display: 'flex', alignItems: 'start', gap: '[6px]', marginTop: 4, color: 'gray-700' });
 const effectIcon = iconStyle({ size: 'S' });
 
-function Row({ label, children }: { label: string; children: ReactNode }) {
+/** 设置态里的一行：左边标签、右边控件（剪成短视频的参数页也用）。 */
+export function Row({ label, children }: { label: string; children: ReactNode }) {
   return (
     <div className={row}>
       <span className={rowLabel}>{label}</span>
@@ -84,7 +85,8 @@ function Row({ label, children }: { label: string; children: ReactNode }) {
   );
 }
 
-function Option({
+/** 一个勾选项，下面一行小字说明。 */
+export function Option({
   label,
   sub,
   isSelected,
@@ -103,6 +105,22 @@ function Option({
         {label}
       </Checkbox>
       <span className={optionSub}>{sub}</span>
+    </div>
+  );
+}
+
+/** 工具页顶上那张说明卡：名字、说明、会不会改视频（产品设计 §5.10「参数页」第 1 段）。 */
+export function ToolCard({ name, lines, effect: what }: { name: string; lines: readonly string[]; effect: string }) {
+  return (
+    <div className={card}>
+      <span className={cardTitle}>{name}</span>
+      {lines.map((line) => (
+        <span key={line}>{line}</span>
+      ))}
+      <span className={effect}>
+        <InfoCircle styles={effectIcon} />
+        {what}
+      </span>
     </div>
   );
 }
@@ -285,16 +303,7 @@ export function AiAgentToolPage({
             <DirectProblem runKey={key} problem={problem} />
           </div>
         ) : null}
-        <div className={card}>
-          <span className={cardTitle}>{info.name}</span>
-          {(info.setup ?? [info.desc]).map((line) => (
-            <span key={line}>{line}</span>
-          ))}
-          <span className={effect}>
-            <InfoCircle styles={effectIcon} />
-            {toolEffect(tool)}
-          </span>
-        </div>
+        <ToolCard name={info.name} lines={info.setup ?? [info.desc]} effect={toolEffect(tool)} />
 
         {tool === 'cover' ? (
           <>

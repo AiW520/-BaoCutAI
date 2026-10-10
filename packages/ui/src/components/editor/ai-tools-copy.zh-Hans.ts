@@ -1,6 +1,25 @@
 import type { AiToolsMessages } from './ai-tools-copy.ts';
 
 export const zhHans: AiToolsMessages = {
+  shortsShape: '切成什么样',
+  shortsCount: '切几支',
+  shortsLength: '每支多长',
+  shortsCustom: '自定义',
+  shortsMin: '最短',
+  shortsMax: '最长',
+  shortsTo: '到',
+  shortsRatio: '画幅',
+  shortsFraming: '取景',
+  shortsSubtitles: '字幕',
+  shortsTracks: '带哪几轨',
+  shortsStyle: '样式',
+  shortsNoTranslation: '只有原文 · 这部视频还没有译文。',
+  shortsSkipDone: '已经切过的不再找',
+  shortsSkipDoneOn: '跳过之前几支用到的区间',
+  shortsSkipDoneOff: '照找，可能和切过的几支重叠',
+  shortsHint: '新开一条会话，在那里找片段并创建视频；原视频和时间轴不动。',
+  shortsLoose: '这部视频不属于项目。交给 Agent 会发到它所在的会话，先把它收进一个以视频命名的项目，再找片段并创建视频。',
+  shortsLooseHint: '发到这部视频所在的会话，在那里找片段并创建视频；原视频和时间轴不动。',
   back: '返回',
 
   // 设置态

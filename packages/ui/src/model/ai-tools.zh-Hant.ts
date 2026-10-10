@@ -3,6 +3,28 @@ import type { AiToolsMessages } from './ai-tools.ts';
 const SOON_TAIL = 'Runtime 還沒有這條流程，畫面上也還沒有調整取景框的覆蓋層，所以這裡暫時沒有可以填寫的表單。';
 
 export const zhHant: AiToolsMessages = {
+  shorts: {
+    lengths: { short: '15–30 秒', medium: '30–60 秒', long: '60–90 秒', extended: '1–3 分鐘', custom: '自訂' },
+    ratioSource: '保留原長寬比',
+    focus: {
+      center: { label: '置中', sub: '裁切畫面正中' },
+      manual: { label: '我自己定', sub: '之後每支自己定取景位置' },
+      speaker: { label: '跟著說話的人', sub: '誰說話框跟誰' },
+    },
+    speakerOff: '這一版還沒有人物與說話者模型',
+    tracks: { both: '原文 + 譯文', source: '只要原文', translation: '只要譯文' },
+    styles: {
+      shorts: { label: '短影音字幕', sub: '內建預設，避開平台按鈕' },
+      video: { label: '沿用這部影片的樣式', sub: '字級和位置照搬，可能被平台按鈕擋住' },
+    },
+    focusPrompt: { center: '置中', manual: '先置中，之後我逐支自己調' },
+    lineCount: (count, min, max) => `要 ${count} 支，每支 ${min}–${max} 秒，起訖落在句子邊界上`,
+    lineFrame: (ratio, focus) => (ratio ? `長寬比 ${ratio}，取景${focus}` : '長寬比：保留原長寬比，不裁切'),
+    lineSubtitles: (tracks, style) => `字幕：${tracks}，${style}`,
+    lineSkipDone: '已經切過的不再找',
+    lineAdopt: '這部影片還不屬於專案：先把它收進一個以影片命名的專案，再在那裡建立短影音',
+    lineDirect: '找好就直接建立成影片，不用先問我',
+  },
   groups: {
     frame: '畫面',
     transcript: '逐字稿',
@@ -18,8 +40,8 @@ export const zhHant: AiToolsMessages = {
     },
     shortscut: {
       name: '剪成短影音',
-      desc: '從這部影片挑出幾段，各做成一支直式短影音',
-      why: `剪成短影音要挑出幾段、各自裁成直式，並在畫面上逐段調整取景。${SOON_TAIL}`,
+      desc: '從這部影片挑出幾段，各做成一支短影音',
+      setup: ['挑幾段能單獨成立的話，各做成一支短影音。'],
     },
     polish: {
       name: '潤飾逐字稿',
@@ -108,6 +130,7 @@ export const zhHant: AiToolsMessages = {
   sourceCut: (n: number | null) => (n === null ? '原文已剪掉' : `${n} 句原文已剪掉`),
   sourceJoin: (parts: readonly string[]) => parts.join('、'),
   intents: {
+    shortscut: (o) => `從${o.p}${o.scope ? `的${o.scope}` : ''}裡挑幾段能單獨成立的話，各建立成一支短影音：每支一部新影片，引用同一份原始素材，原影片和時間軸不動。`,
     stale: (o) =>
       `${o.p}有幾句譯文過期了${o.why ? `（${o.why}）` : '：原文已修改'}，只重新翻譯這些句子，${o.cut ? '被剪掉的依剪輯後的原文重新翻譯，整句剪掉的譯文也一併移除，' : ''}其餘完全不變。`,
     polish: (o) => `潤飾${o.p}的${o.scope || '全篇'}逐字稿：修正錯字、補上標點、依主題分段，不改寫我的措辭。`,
@@ -124,8 +147,9 @@ export const zhHant: AiToolsMessages = {
   endSentence: (text: string) => (/[。！？]$/.test(text) ? text : `${text}。`),
   joinPrompt: (head: string, extra: readonly string[]) => head + extra.join(''),
   groupSub: { writing: '給讀的人：不看影片也能知道講了什麼', publish: '給發影片的人：讓人想點開，點開後內容對得上' },
-  laterNote: '翻譯字幕還在字幕面板裡，翻譯配音還在音訊面板裡，之後會搬到這裡。',
+  laterNote: '翻譯字幕還在字幕面板裡，翻譯配音還在音訊面板裡，之後會搬到這裡。智慧裁切即將推出。',
   effect: {
+    shortscut: '建立新的子影片；原影片和時間軸不動',
     polish: '會改文稿：完成後套用，一步復原',
     chapters: '會改章節：完成後套用，一步復原',
     speakers: '先給你確認，套用後才寫進影片',

@@ -1,6 +1,25 @@
 import type { AiToolsMessages } from './ai-tools-copy.ts';
 
 export const nl: AiToolsMessages = {
+  shortsShape: 'Wat knippen',
+  shortsCount: 'Hoeveel',
+  shortsLength: 'Lengte',
+  shortsCustom: 'Aangepast',
+  shortsMin: 'Kortste',
+  shortsMax: 'Langste',
+  shortsTo: 'tot',
+  shortsRatio: 'Beeldverhouding',
+  shortsFraming: 'Kader',
+  shortsSubtitles: 'Ondertitels',
+  shortsTracks: 'Sporen',
+  shortsStyle: 'Stijl',
+  shortsNoTranslation: 'Alleen origineel · deze video heeft nog geen vertaling.',
+  shortsSkipDone: 'Al geknipte delen overslaan',
+  shortsSkipDoneOn: 'Zoekt niet opnieuw in stukken die eerdere korte video’s gebruikten',
+  shortsSkipDoneOff: 'Zoekt overal; kan overlappen met al geknipte video’s',
+  shortsHint: 'Start een nieuwe sessie die de fragmenten zoekt en de video’s maakt; de oorspronkelijke video en de tijdlijn blijven ongewijzigd.',
+  shortsLoose: 'Deze video hoort niet bij een project. Hij gaat naar de sessie waar hij bij hoort; daar zet de agent hem eerst in een project met de naam van de video en zoekt dan de fragmenten en maakt de video’s.',
+  shortsLooseHint: 'Stuurt naar de sessie waar deze video bij hoort, die de fragmenten zoekt en de video’s maakt; de oorspronkelijke video en de tijdlijn blijven ongewijzigd.',
   back: "Terug",
 
   who: "Kiezen",

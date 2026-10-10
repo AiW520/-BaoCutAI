@@ -18,7 +18,11 @@ import {
   laterNote,
   LENGTHS,
   LIST_GROUPS,
+  listedTools,
   sessionOptions,
+  SHORTS_DEFAULTS,
+  shortsLengthRange,
+  shortsLines,
   standingLines,
   TOOL_SKILL,
   toolEffect,
@@ -29,7 +33,7 @@ import {
 
 /** 仓库根 `skills/`：随应用分发的内置 skill，一个目录一个 id。 */
 const SKILLS_DIR = path.resolve(import.meta.dirname, '../../../../skills');
-const AGENT_TOOLS: AgentToolId[] = ['polish', 'chapters', 'speakers', 'retranscribe', 'cleanup', 'stale', 'summary', 'blog', 'title', 'desc', 'cover'];
+const AGENT_TOOLS: AgentToolId[] = ['polish', 'chapters', 'speakers', 'retranscribe', 'cleanup', 'stale', 'summary', 'blog', 'title', 'desc', 'cover', 'shortscut'];
 
 describe('AI 工具目录', () => {
   it('五组十五个工具，次序与原型一致', () => {
@@ -52,12 +56,14 @@ describe('AI 工具目录', () => {
     ]);
   });
 
-  it('识别说话人、翻译与配音走 Runtime；裁剪与短视频还做不了并写明原因；其余交给 Agent', () => {
+  it('识别说话人、翻译与配音走 Runtime；智能裁剪还做不了并写明原因；其余（含剪成短视频）交给 Agent', () => {
     expect(AI_TOOLS.filter((t) => t.tier === 'runtime').map((t) => t.id)).toEqual(['speakers', 'translate', 'dub']);
     const soon = AI_TOOLS.filter((t) => t.tier === 'soon');
-    expect(soon.map((t) => t.id)).toEqual(['crop', 'shortscut']);
+    expect(soon.map((t) => t.id)).toEqual(['crop']);
     for (const t of soon) expect(t.why).toMatch(/Runtime 还没有这条流程/);
     expect(aiTool('stale').tier).toBe('agent');
+    expect(aiTool('shortscut').tier).toBe('agent');
+    expect(aiTool('shortscut').setup).toEqual(['挑几段能单独成立的话，各做成一支短视频。']);
   });
 
   it('认得工具 id', () => {
@@ -160,10 +166,55 @@ describe('画布比例', () => {
   });
 });
 
+describe('剪成短视频', () => {
+  it('预设四档时长，自定义的两头夹在 1–600 秒、填反了对调、相等时拉开一秒', () => {
+    expect(shortsLengthRange(SHORTS_DEFAULTS)).toEqual({ min: 30, max: 60 });
+    expect(shortsLengthRange({ length: 'extended', lenMin: 0, lenMax: 0 })).toEqual({ min: 60, max: 180 });
+    expect(shortsLengthRange({ length: 'custom', lenMin: 90, lenMax: 20 })).toEqual({ min: 20, max: 90 });
+    expect(shortsLengthRange({ length: 'custom', lenMin: 0, lenMax: 9999 })).toEqual({ min: 1, max: 600 });
+    expect(shortsLengthRange({ length: 'custom', lenMin: 600, lenMax: 600 })).toEqual({ min: 599, max: 600 });
+    expect(shortsLengthRange({ length: 'custom', lenMin: Number.NaN, lenMax: 45 })).toEqual({ min: 30, max: 45 });
+  });
+
+  it('参数一行一句折进模板：意图句、几支多长、画幅与取景、字幕、已切过的不再找，最后一行直接创建', () => {
+    const intent = intentPrompt({ tool: 'shortscut', title: 'A', scope: '第 2 章 · 开场' });
+    expect(intent).toBe('从「A」的第 2 章 · 开场里挑几段能单独成立的话，各创建成一支短视频：每支一部新视频，引用同一份原片，原视频和时间轴不动。');
+    const lines = toolTemplate('shortscut', intent, { lines: shortsLines(SHORTS_DEFAULTS, { hasTranslation: true, inProject: true }) }).split('\n');
+    expect(lines).toEqual([
+      intent,
+      '要 3 支，每支 30–60 秒，起止落在句子边界上',
+      '画幅 9:16，取景居中',
+      '字幕：原文 + 译文，短视频字幕',
+      '已经切过的不再找',
+      '找好就直接创建成视频，不用先问我',
+    ]);
+  });
+
+  it('保留原画幅不裁；没有译文只带原文；「跟着说话的人」不开放、落回居中；不属于项目时先收进项目', () => {
+    const lines = shortsLines(
+      { ...SHORTS_DEFAULTS, count: 12, ratio: 'source', tracks: 'translation', style: 'video', skipDone: false },
+      { hasTranslation: false, inProject: false },
+    );
+    expect(lines).toEqual([
+      '要 10 支，每支 30–60 秒，起止落在句子边界上',
+      '画幅：保留原画幅，不裁',
+      '字幕：只要原文，沿用这部视频的样式',
+      '这部视频还不属于项目：先把它收进一个以视频命名的项目，再在那里创建短视频',
+      '找好就直接创建成视频，不用先问我',
+    ]);
+    expect(shortsLines({ ...SHORTS_DEFAULTS, focus: 'speaker' }, { hasTranslation: true, inProject: true })[1]).toBe('画幅 9:16，取景居中');
+    expect(shortsLines({ ...SHORTS_DEFAULTS, ratio: '1:1', focus: 'manual' }, { hasTranslation: true, inProject: true })[1]).toBe(
+      '画幅 1:1，取景先居中，之后我逐支自己调',
+    );
+  });
+});
+
 describe('AI 工具 Tab', () => {
-  it('列表第一批只有从文稿出发的三组，写作与发布各有一句副题；脚注说清翻译在哪', () => {
-    expect(LIST_GROUPS).toEqual(['transcript', 'writing', 'publish']);
-    expect(AI_TOOLS.filter((t) => LIST_GROUPS.includes(t.group)).map((t) => t.id)).toEqual([
+  it('列表第一批是从文稿出发的三组加「画面」组里的剪成短视频，写作与发布各有一句副题；脚注说清翻译在哪、智能裁剪还没来', () => {
+    expect(LIST_GROUPS).toEqual(['transcript', 'writing', 'publish', 'frame']);
+    expect(listedTools('frame').map((t) => t.id)).toEqual(['shortscut']);
+    expect(LIST_GROUPS.flatMap((g) => listedTools(g)).map((t) => t.id)).not.toContain('crop');
+    expect(LIST_GROUPS.filter((g) => g !== 'frame').flatMap((g) => listedTools(g)).map((t) => t.id)).toEqual([
       'polish',
       'chapters',
       'speakers',
@@ -179,6 +230,7 @@ describe('AI 工具 Tab', () => {
     expect(groupSub('writing')).toMatch(/读的人/);
     expect(groupSub('publish')).toMatch(/发视频的人/);
     expect(laterNote()).toMatch(/字幕面板.*音频面板.*搬到这里/);
+    expect(laterNote()).toMatch(/智能裁剪/);
   });
 
   it('每个工具都有一句「会不会改视频」', () => {

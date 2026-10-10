@@ -3,6 +3,28 @@ import type { AiToolsMessages } from './ai-tools.ts';
 const SOON_TAIL = "Runtime henüz bu iş akışını sunmuyor; videoda kadraj ayarlama katmanı da yok. Bu yüzden burada henüz doldurulacak form yok.";
 
 export const tr: AiToolsMessages = {
+  shorts: {
+    lengths: { short: '15–30 sn', medium: '30–60 sn', long: '60–90 sn', extended: '1–3 dk', custom: 'Özel' },
+    ratioSource: 'Orijinali koru',
+    focus: {
+      center: { label: 'Ortalanmış', sub: 'Karenin ortasını kırpar' },
+      manual: { label: 'Kendim belirleyeceğim', sub: 'Her kısa videonun çerçevesini sonra kendin yerleştirirsin' },
+      speaker: { label: 'Konuşanı takip et', sub: 'Çerçeve konuşan kişiyi takip eder' },
+    },
+    speakerOff: 'Bu sürümde henüz kişi ve konuşmacı modeli yok',
+    tracks: { both: 'Orijinal + çeviri', source: 'Yalnızca orijinal', translation: 'Yalnızca çeviri' },
+    styles: {
+      shorts: { label: 'Kısa video altyazısı', sub: 'Platform düğmelerinden uzak duran yerleşik ön ayar' },
+      video: { label: 'Bu videonun stilini kullan', sub: 'Aynı boyut ve konum; platform düğmeleri altyazıyı örtebilir' },
+    },
+    focusPrompt: { center: 'ortalanmış', manual: 'şimdilik ortalanmış; her birini sonra kendim ayarlayacağım' },
+    lineCount: (count, min, max) => `${count} kısa video yap, her biri ${min}–${max} saniye, başı ve sonu cümle sınırlarında olsun`,
+    lineFrame: (ratio, focus) => (ratio ? `En boy oranı ${ratio}, çerçeve ${focus}` : 'En boy oranı: orijinali koru, kırpma'),
+    lineSubtitles: (tracks, style) => `Altyazı: ${tracks}, ${style}`,
+    lineSkipDone: 'Daha önce kısa videoya kesilmiş bölümleri atla',
+    lineAdopt: 'Bu video henüz bir projede değil: önce onu videonun adını taşıyan yeni bir projeye taşı, sonra kısa videoları orada oluştur',
+    lineDirect: 'Bulduğun anda videoları oluştur; önce bana sormana gerek yok',
+  },
   groups: {
     frame: "Çerçeve",
     transcript: "Döküm",
@@ -18,8 +40,8 @@ export const tr: AiToolsMessages = {
     },
     shortscut: {
       name: "Kısa videolara böl",
-      desc: "Bu videodan birkaç bölüm seç ve her birini dikey kısa videoya dönüştür",
-      why: `Kısa videolara bölme, birkaç kesit seçmeyi, her birini dikey kırpmayı ve videoda kesit kesit kadraj ayarlamayı gerektirir. ${SOON_TAIL}`,
+      desc: 'Bu videodan birkaç bölüm seçip her birini kısa videoya dönüştür',
+      setup: ['Kendi başına anlam taşıyan birkaç bölüm seçer ve her birini kısa videoya dönüştürür.'],
     },
     polish: {
       name: "Transkripti iyileştir",
@@ -108,6 +130,7 @@ export const tr: AiToolsMessages = {
   sourceCut: (n) => n === null ? 'kaynak kesildi' : `kaynakta ${n} cümle kesildi`,
   sourceJoin: (parts: readonly string[]) => parts.join(', '),
   intents: {
+    shortscut: (o) => `${o.scope ? `${o.p}: ${o.scope}` : o.p} içinden kendi başına anlam taşıyan birkaç bölüm seç ve her birini kısa video olarak oluştur: her biri aynı kaynak görüntüye başvuran yeni bir videodur; orijinal video ve zaman çizelgesi değişmez.`,
     stale: (o) => `${o.p} içindeki bazı çeviriler eski${o.why ? ` (${o.why})` : '; kaynak düzenlendiği için'}. Yalnızca bu cümleleri yeniden çevir${o.cut ? '; kaynakta kesilenleri kesilmiş olarak yeniden çevir ve tamamen kesilen cümlelerle birlikte çevirilerini de kaldır' : ''}. Diğer her şeyi olduğu gibi bırak.`,
     polish: (o) => `${o.scope ? `${o.p}: ${o.scope}` : o.p} için dökümü düzelt: sözlerimi yeniden yazmadan yazım hatalarını düzelt, noktalama ekle ve konuya göre paragraflara böl.`,
     chapters: (o) => `${o.p} içeriğini konuya göre bölümlere ayır ve her bölüme kısa başlık ver.`,
@@ -123,8 +146,9 @@ export const tr: AiToolsMessages = {
   endSentence: (text: string) => (/[.!?]$/.test(text) ? text : `${text}.`),
   joinPrompt: (head: string, extra: readonly string[]) => [head, ...extra].join(' '),
   groupSub: { writing: 'Okuyanlar için: videoyu izlemeden neyi anlattığını bilmek', publish: 'Videoyu yayımlayanlar için: tıklatmak ve sözünü tutmak' },
-  laterNote: 'Altyazı çevirisi hâlâ Altyazılar panelinde, seslendirme çevirisi Ses panelinde; ileride buraya taşınacak.',
+  laterNote: 'Altyazı çevirisi hâlâ Altyazılar panelinde, seslendirme çevirisi Ses panelinde; ileride buraya taşınacak. Akıllı kırpma yakında geliyor.',
   effect: {
+    shortscut: 'Yeni alt videolar oluşturur; orijinal video ve zaman çizelgesi değişmez',
     polish: 'Transkripti değiştirir: bitince uygulanır, tek adımda geri alınır',
     chapters: 'Bölümleri değiştirir: bitince uygulanır, tek adımda geri alınır',
     speakers: 'Önce sonucu onaylarsınız; videoya yalnızca uyguladığınızda yazılır',

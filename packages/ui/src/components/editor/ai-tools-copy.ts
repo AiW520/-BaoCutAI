@@ -61,6 +61,27 @@ const en = {
   coverRatioProject: 'Same as the video canvas',
   coverText: 'Cover text',
 
+  // 剪成短视频（原型 panel-aitools-shorts.jsx）
+  shortsShape: 'What to cut',
+  shortsCount: 'How many',
+  shortsLength: 'Length',
+  shortsCustom: 'Custom',
+  shortsMin: 'Shortest',
+  shortsMax: 'Longest',
+  shortsTo: 'to',
+  shortsRatio: 'Aspect ratio',
+  shortsFraming: 'Framing',
+  shortsSubtitles: 'Subtitles',
+  shortsTracks: 'Tracks',
+  shortsStyle: 'Caption style',
+  shortsNoTranslation: 'Original only · this video has no translation yet.',
+  shortsSkipDone: 'Skip parts already cut',
+  shortsSkipDoneOn: 'Doesn’t look again in ranges that earlier shorts used',
+  shortsSkipDoneOff: 'Looks everywhere; may overlap shorts already cut',
+  shortsHint: 'Starts a new session to find the segments and create the videos; the original video and its timeline stay as they are.',
+  shortsLoose: 'This video isn’t in a project. It goes to the session it belongs to, where the Agent first moves it into a project named after the video, then finds the segments and creates the videos.',
+  shortsLooseHint: 'Sends to the session this video belongs to, which finds the segments and creates the videos; the original video and its timeline stay as they are.',
+
   // 还做不了的
   soon: 'Coming soon',
   chaptersPolishFirst: 'Polish and split into paragraphs first, then generate chapters',

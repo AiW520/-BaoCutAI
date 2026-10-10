@@ -227,6 +227,8 @@ export function AiToolPrompt({
   onDone,
   onHandedOff,
   direct,
+  target,
+  hint,
 }: {
   videoId: Id;
   tool: AiToolId;
@@ -238,6 +240,10 @@ export function AiToolPrompt({
   onHandedOff?(handoff: Handoff): void;
   /** 「用」选了直接调模型：底栏换成文本模型的选择，框下多两行（skill 作系统提示词、发给模型的），按下去走 `ai-tool` 流程。 */
   direct?: DirectPrompt | null;
+  /** 不按「会话」行、固定发到哪（剪成短视频：总是新开一条；视频不属于项目时发到它所在的那条）。 */
+  target?: 'new' | { id: Id };
+  /** 主按钮下那行去向，不给时按「会话」行说。 */
+  hint?: string;
 }) {
   const runtime = useRuntime();
   const draftKey = toolDraftKey(videoId, tool);
@@ -360,12 +366,12 @@ export function AiToolPrompt({
                 onSkill: attachSkill,
                 notice: noSkill,
                 cta: C.cta,
-                hint: handoffHint(session?.key ?? 'new'),
-                isDisabled: isDisabled || !session || !!handoff.guide || !handoff.ref,
+                hint: hint ?? handoffHint(session?.key ?? 'new'),
+                isDisabled: isDisabled || (!target && !session) || !!handoff.guide || !handoff.ref,
                 onStart: (message, attachments) =>
                   handToAgent(runtime, {
                     video: handoff.ref,
-                    session: session?.key === 'current' && session.conversationId ? { id: session.conversationId } : 'new',
+                    session: target ?? (session?.key === 'current' && session.conversationId ? { id: session.conversationId } : 'new'),
                     text: message,
                     attachments,
                     skills: skillIds.map((id) => ({ id })),

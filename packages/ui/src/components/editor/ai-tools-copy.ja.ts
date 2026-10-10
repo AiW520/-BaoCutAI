@@ -1,6 +1,25 @@
 import type { AiToolsMessages } from './ai-tools-copy.ts';
 
 export const ja: AiToolsMessages = {
+  shortsShape: '切り出し方',
+  shortsCount: '本数',
+  shortsLength: '1本の長さ',
+  shortsCustom: 'カスタム',
+  shortsMin: '最短',
+  shortsMax: '最長',
+  shortsTo: '〜',
+  shortsRatio: 'アスペクト比',
+  shortsFraming: 'フレーミング',
+  shortsSubtitles: '字幕',
+  shortsTracks: '入れるトラック',
+  shortsStyle: 'スタイル',
+  shortsNoTranslation: '原文のみ · この動画にはまだ訳文がありません。',
+  shortsSkipDone: 'すでに切り出した部分は探さない',
+  shortsSkipDoneOn: 'これまでのショートで使った範囲はもう探しません',
+  shortsSkipDoneOff: 'すべて探します。切り出し済みのショートと重なることがあります',
+  shortsHint: '新しいセッションを開き、そこで区間を探して動画を作成します。元の動画とタイムラインは変わりません。',
+  shortsLoose: 'この動画はプロジェクトに属していません。動画があるセッションに送られ、Agent がまず動画名のプロジェクトに移してから、区間を探して動画を作成します。',
+  shortsLooseHint: 'この動画があるセッションに送り、そこで区間を探して動画を作成します。元の動画とタイムラインは変わりません。',
   back: '戻る',
 
   // 设置态

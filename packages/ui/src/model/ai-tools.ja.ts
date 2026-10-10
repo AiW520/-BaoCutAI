@@ -3,6 +3,28 @@ import type { AiToolsMessages } from './ai-tools.ts';
 const SOON_TAIL = 'Runtime にはまだこのワークフローがなく、動画上でフレーミングを調整するオーバーレイもないため、ここではまだ入力フォームを用意していません。';
 
 export const ja: AiToolsMessages = {
+  shorts: {
+    lengths: { short: '15〜30秒', medium: '30〜60秒', long: '60〜90秒', extended: '1〜3分', custom: 'カスタム' },
+    ratioSource: '元の比率のまま',
+    focus: {
+      center: { label: '中央', sub: '画面の中央を切り抜きます' },
+      manual: { label: '自分で決める', sub: 'あとで1本ずつフレームの位置を自分で決めます' },
+      speaker: { label: '話している人を追う', sub: '話している人にフレームが追従します' },
+    },
+    speakerOff: 'このバージョンには人物と話者のモデルがまだありません',
+    tracks: { both: '原文 + 訳文', source: '原文のみ', translation: '訳文のみ' },
+    styles: {
+      shorts: { label: 'ショート動画用の字幕', sub: '組み込みのプリセット。プラットフォームのボタンを避けます' },
+      video: { label: 'この動画のスタイルを使う', sub: 'サイズと位置はそのまま。プラットフォームのボタンに隠れることがあります' },
+    },
+    focusPrompt: { center: '中央', manual: 'いったん中央にし、あとで1本ずつ自分で調整する' },
+    lineCount: (count, min, max) => `${count} 本作る。各 ${min}〜${max} 秒、開始と終了は文の境目に合わせる`,
+    lineFrame: (ratio, focus) => (ratio ? `アスペクト比 ${ratio}、フレーミングは${focus}` : 'アスペクト比：元のまま、切り抜かない'),
+    lineSubtitles: (tracks, style) => `字幕：${tracks}、${style}`,
+    lineSkipDone: 'すでに切り出した部分は探さない',
+    lineAdopt: 'この動画はまだプロジェクトに入っていない：まず動画名の新しいプロジェクトに移してから、そこでショート動画を作る',
+    lineDirect: '見つかったらそのまま動画として作成する。先に確認しなくてよい',
+  },
   groups: {
     frame: '画面',
     transcript: '文字起こし',
@@ -18,8 +40,8 @@ export const ja: AiToolsMessages = {
     },
     shortscut: {
       name: 'ショート動画に切り出す',
-      desc: 'この動画からいくつかの区間を選び、それぞれを縦型のショート動画にします',
-      why: `ショート動画への切り出しでは、いくつかの区間を選んでそれぞれ縦型に切り抜き、動画上で区間ごとにフレーミングを調整します。${SOON_TAIL}`,
+      desc: 'この動画からいくつかの区間を選び、それぞれをショート動画にします',
+      setup: ['単独で成り立つ部分をいくつか選び、それぞれをショート動画にします。'],
     },
     polish: {
       name: '文字起こしを校正',
@@ -111,6 +133,7 @@ export const ja: AiToolsMessages = {
   sourceCut: (n: number | null) => (n === null ? '原文をカット' : `原文で ${n} 文をカット`),
   sourceJoin: (parts: readonly string[]) => parts.join('、'),
   intents: {
+    shortscut: (o) => `${o.scope ? `${o.p}の${o.scope}` : o.p}から、単独で成り立つ部分をいくつか選び、それぞれをショート動画として作成してください。1本ごとに同じ元素材を参照する新しい動画にし、元の動画とタイムラインは変更しないでください。`,
     stale: (o) =>
       `${o.p}の訳文の一部が古くなっています${o.why ? `（${o.why}）` : '（原文が編集されたため）'}。該当する文だけを訳し直してください${o.cut ? '。カットされた文はカット後の原文から訳し直し、丸ごとカットされた文の訳文は一緒に削除してください' : ''}。それ以外は一字も変えないでください。`,
     polish: (o) =>
@@ -129,8 +152,9 @@ export const ja: AiToolsMessages = {
   endSentence: (text: string) => (/[。！？.!?]$/.test(text) ? text : `${text}。`),
   joinPrompt: (head: string, extra: readonly string[]) => head + extra.join(''),
   groupSub: { writing: '読む人向け：動画を見なくても内容がわかる', publish: '動画を公開する人向け：開きたくなり、開いたら期待どおりの内容' },
-  laterNote: '字幕の翻訳は字幕パネル、吹き替えの翻訳はオーディオパネルにあります。あとでここに移ります。',
+  laterNote: '字幕の翻訳は字幕パネル、吹き替えの翻訳はオーディオパネルにあります。あとでここに移ります。スマートクロップは近日公開です。',
   effect: {
+    shortscut: '新しい子動画を作成します。元の動画とタイムラインは変わりません',
     polish: '文字起こしを変更します：完了時に適用、1 ステップで元に戻せます',
     chapters: 'チャプターを変更します：完了時に適用、1 ステップで元に戻せます',
     speakers: 'まず確認してもらい、適用したときだけ動画に書き込みます',

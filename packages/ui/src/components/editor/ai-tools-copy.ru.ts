@@ -2,6 +2,25 @@ import { pluralForm } from '@baocut/protocol';
 import type { AiToolsMessages } from './ai-tools-copy.ts';
 
 export const ru: AiToolsMessages = {
+  shortsShape: 'Что нарезать',
+  shortsCount: 'Сколько',
+  shortsLength: 'Длина',
+  shortsCustom: 'Своя',
+  shortsMin: 'Минимум',
+  shortsMax: 'Максимум',
+  shortsTo: 'до',
+  shortsRatio: 'Соотношение сторон',
+  shortsFraming: 'Кадр',
+  shortsSubtitles: 'Субтитры',
+  shortsTracks: 'Дорожки',
+  shortsStyle: 'Стиль',
+  shortsNoTranslation: 'Только оригинал · у этого видео пока нет перевода.',
+  shortsSkipDone: 'Пропускать уже нарезанное',
+  shortsSkipDoneOn: 'Не ищет снова в участках, которые использовали прежние короткие видео',
+  shortsSkipDoneOff: 'Ищет везде; может пересечься с уже нарезанными',
+  shortsHint: 'Открывает новый сеанс, где находит фрагменты и создаёт видео; исходное видео и его таймлайн не меняются.',
+  shortsLoose: 'Это видео не входит в проект. Оно уйдёт в сеанс, к которому относится: там агент сначала перенесёт его в проект с названием видео, затем найдёт фрагменты и создаст видео.',
+  shortsLooseHint: 'Отправляет в сеанс, к которому относится это видео: там находятся фрагменты и создаются видео; исходное видео и его таймлайн не меняются.',
   back: "Назад",
 
   who: "Выбрать",

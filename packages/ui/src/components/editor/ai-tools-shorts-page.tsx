@@ -1,0 +1,242 @@
+import { useMemo, useState } from 'react';
+import type { DocumentRecord, Id, Sequence } from '@baocut/protocol';
+import { NumberField, Picker, PickerItem, Radio, RadioGroup, SegmentedControl, SegmentedControlItem } from '@react-spectrum/s2';
+import { style } from '@react-spectrum/s2/style' with { type: 'macro' };
+import {
+  aiTool,
+  intentPrompt,
+  SHORTS_COUNT,
+  SHORTS_CUSTOM,
+  SHORTS_DEFAULTS,
+  SHORTS_FOCUS,
+  SHORTS_LENGTHS,
+  SHORTS_RATIOS,
+  SHORTS_STYLES,
+  SHORTS_TRACKS,
+  shortsLengthRange,
+  shortsLines,
+  toolEffect,
+  toolTemplate,
+  type ShortsFocus,
+  type ShortsLength,
+  type ShortsRatio,
+  type ShortsSettings,
+  type ShortsStyle,
+  type ShortsTracks,
+} from '../../model/ai-tools.ts';
+import { chapterPieces } from '../../model/export-range.ts';
+import { AgentGateLine } from './agent-gate-line.tsx';
+import { AiToolPrompt, useToolHandoff } from './ai-tool-prompt.tsx';
+import { Option, Row, ToolCard } from './ai-tools-agent-page.tsx';
+import { AI_TOOLS_COPY as C } from './ai-tools-copy.ts';
+import { PanelHead } from './panel-head.tsx';
+
+const body = style({ flexGrow: 1, minHeight: 0, overflowY: 'auto', paddingX: 12, paddingTop: 12, paddingBottom: 16 });
+const secHead = style({ marginTop: 20, marginBottom: 0, font: 'detail', fontWeight: 'bold', color: 'gray-700' });
+const rows = style({ display: 'flex', flexDirection: 'column', gap: 12, marginTop: 12 });
+const hint = style({ margin: 0, font: 'ui-xs', color: 'gray-600', lineHeight: '[1.5]' });
+const note = style({ marginTop: 16, marginBottom: 0, font: 'ui-xs', color: 'gray-700', lineHeight: '[1.5]' });
+const field = style({ width: 'full' });
+const pair = style({ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' });
+const radioSub = style({ display: 'block', paddingStart: 24, marginTop: -2, marginBottom: 4, font: 'ui-xs', color: 'gray-600' });
+
+/**
+ * 剪成短视频的参数页（原型 panel-aitools-shorts.jsx `ShortsCutSetup`，产品设计 §5.10「参数页」）：只交给 Agent，所以没有「用」一行；
+ * 总是新开一条会话，所以也没有「会话」一行。自上而下：说明卡（挑几段能单独成立的话、会创建新的子视频），范围与「已经切过的不再找」，
+ * 切成什么样（几支、多长、画幅），取景（画幅不是保留原画幅时），字幕（带哪几轨、样式），提示词框（意图句加一行一句的参数，最后一行
+ * 「找好就直接创建」可以单独删），主按钮与去向。按下就新开会话发出去，那条会话打开到眼前，工具页回列表。
+ * 视频不属于项目时没有可新开会话的项目：发到它所在的那条会话，提示词里多一行先收进以视频命名的项目（Runtime 没有给界面用的收进项目的命令）。
+ */
+export function ShortsToolPage({
+  videoId,
+  sequence,
+  documents,
+  onBack,
+}: {
+  videoId: Id;
+  sequence: Sequence;
+  documents: Record<Id, DocumentRecord>;
+  onBack(): void;
+}) {
+  const handoff = useToolHandoff();
+  const info = aiTool('shortscut');
+  const source = handoff.ref?.source ?? null;
+  const inProject = !!source?.projectId;
+  const target = inProject ? 'new' : source?.conversationId ? { id: source.conversationId } : undefined;
+
+  const chapters = useMemo(() => chapterPieces(sequence), [sequence]);
+  const [scopeKey, setScopeKey] = useState<string>('all');
+  const scopeIndex = chapters.findIndex((c) => c.id === scopeKey);
+  const scope = scopeIndex >= 0 ? C.scopeChapter(scopeIndex + 1, chapters[scopeIndex]!.label) : null;
+
+  const hasTranslation = useMemo(() => Object.values(documents).some((d) => d.kind === 'translation'), [documents]);
+  const [s, setS] = useState<ShortsSettings>({ ...SHORTS_DEFAULTS });
+  const set = (patch: Partial<ShortsSettings>) => setS((prev) => ({ ...prev, ...patch }));
+  const range = shortsLengthRange(s);
+
+  const intent = intentPrompt({ tool: 'shortscut', title: handoff.ref?.name ?? null, scope });
+  const template = toolTemplate('shortscut', intent, { lines: shortsLines(s, { hasTranslation, inProject }) });
+
+  return (
+    <>
+      <PanelHead title={info.name} back={{ label: C.back, onPress: onBack }} />
+      <div className={`${body} bc-scroll`}>
+        <ToolCard name={info.name} lines={info.setup ?? [info.desc]} effect={toolEffect('shortscut')} />
+
+        <div className={rows}>
+          <Row label={C.scope}>
+            <Picker
+              aria-label={C.scope}
+              size="S"
+              styles={field}
+              isDisabled={!chapters.length}
+              selectedKey={scopeIndex >= 0 ? scopeKey : 'all'}
+              onSelectionChange={(key) => setScopeKey(String(key ?? 'all'))}>
+              {[
+                <PickerItem key="all" id="all">
+                  {C.scopeAll}
+                </PickerItem>,
+                ...chapters.map((c, i) => (
+                  <PickerItem key={c.id} id={c.id}>
+                    {C.scopeChapter(i + 1, c.label)}
+                  </PickerItem>
+                )),
+              ]}
+            </Picker>
+            {chapters.length ? null : <p className={hint}>{C.scopeNoChapters}</p>}
+          </Row>
+          <Option
+            label={C.shortsSkipDone}
+            sub={s.skipDone ? C.shortsSkipDoneOn : C.shortsSkipDoneOff}
+            isSelected={s.skipDone}
+            onChange={(on) => set({ skipDone: on })}
+          />
+        </div>
+
+        <h3 className={secHead}>{C.shortsShape}</h3>
+        <div className={rows}>
+          <Row label={C.shortsCount}>
+            <NumberField
+              aria-label={C.shortsCount}
+              size="S"
+              minValue={SHORTS_COUNT.min}
+              maxValue={SHORTS_COUNT.max}
+              step={1}
+              value={s.count}
+              onChange={(n) => Number.isFinite(n) && set({ count: n })}
+            />
+          </Row>
+          <Row label={C.shortsLength}>
+            <Picker
+              aria-label={C.shortsLength}
+              size="S"
+              styles={field}
+              selectedKey={s.length}
+              onSelectionChange={(key) => {
+                if (!key) return;
+                const next = key as ShortsLength;
+                // 切到自定义时从眼下这一档的两头起步。
+                set(next === 'custom' ? { length: next, lenMin: range.min, lenMax: range.max } : { length: next });
+              }}>
+              {SHORTS_LENGTHS.map((l) => (
+                <PickerItem key={l.key} id={l.key}>
+                  {l.label}
+                </PickerItem>
+              ))}
+            </Picker>
+            {s.length === 'custom' ? (
+              <div className={pair}>
+                <NumberField
+                  aria-label={C.shortsMin}
+                  size="S"
+                  minValue={SHORTS_CUSTOM.min}
+                  maxValue={SHORTS_CUSTOM.max}
+                  step={1}
+                  formatOptions={{ style: 'unit', unit: 'second', unitDisplay: 'short' }}
+                  value={s.lenMin}
+                  onChange={(n) => Number.isFinite(n) && set({ lenMin: n })}
+                />
+                <span className={hint}>{C.shortsTo}</span>
+                <NumberField
+                  aria-label={C.shortsMax}
+                  size="S"
+                  minValue={SHORTS_CUSTOM.min}
+                  maxValue={SHORTS_CUSTOM.max}
+                  step={1}
+                  formatOptions={{ style: 'unit', unit: 'second', unitDisplay: 'short' }}
+                  value={s.lenMax}
+                  onChange={(n) => Number.isFinite(n) && set({ lenMax: n })}
+                />
+              </div>
+            ) : null}
+          </Row>
+          <Row label={C.shortsRatio}>
+            <SegmentedControl aria-label={C.shortsRatio} selectedKey={s.ratio} onSelectionChange={(key) => set({ ratio: key as ShortsRatio })}>
+              {SHORTS_RATIOS.map((r) => (
+                <SegmentedControlItem key={r.key} id={r.key}>
+                  {r.label}
+                </SegmentedControlItem>
+              ))}
+            </SegmentedControl>
+          </Row>
+        </div>
+
+        {s.ratio === 'source' ? null : (
+          <>
+            <h3 className={secHead}>{C.shortsFraming}</h3>
+            <div className={rows}>
+              <RadioGroup aria-label={C.shortsFraming} size="S" value={s.focus} onChange={(value) => set({ focus: value as ShortsFocus })}>
+                {SHORTS_FOCUS.map((f) => (
+                  <div key={f.key}>
+                    <Radio value={f.key} isDisabled={!!f.off}>
+                      {f.label}
+                    </Radio>
+                    <span className={radioSub}>{f.off ?? f.sub}</span>
+                  </div>
+                ))}
+              </RadioGroup>
+            </div>
+          </>
+        )}
+
+        <h3 className={secHead}>{C.shortsSubtitles}</h3>
+        <div className={rows}>
+          {hasTranslation ? (
+            <Row label={C.shortsTracks}>
+              <SegmentedControl aria-label={C.shortsTracks} selectedKey={s.tracks} onSelectionChange={(key) => set({ tracks: key as ShortsTracks })}>
+                {SHORTS_TRACKS.map((t) => (
+                  <SegmentedControlItem key={t.key} id={t.key}>
+                    {t.label}
+                  </SegmentedControlItem>
+                ))}
+              </SegmentedControl>
+            </Row>
+          ) : (
+            <p className={hint}>{C.shortsNoTranslation}</p>
+          )}
+          <RadioGroup aria-label={C.shortsStyle} size="S" value={s.style} onChange={(value) => set({ style: value as ShortsStyle })}>
+            {SHORTS_STYLES.map((t) => (
+              <div key={t.key}>
+                <Radio value={t.key}>{t.label}</Radio>
+                <span className={radioSub}>{t.sub}</span>
+              </div>
+            ))}
+          </RadioGroup>
+        </div>
+
+        {!inProject && source?.conversationId ? <p className={note}>{C.shortsLoose}</p> : null}
+        {handoff.guide ? <AgentGateLine guide={handoff.guide} /> : null}
+        <AiToolPrompt
+          key="shortscut"
+          videoId={videoId}
+          tool="shortscut"
+          template={template}
+          handoff={handoff}
+          onDone={onBack}
+          {...(target ? { target } : {})}
+          hint={inProject ? C.shortsHint : C.shortsLooseHint}
+        />
+      </div>
+    </>
+  );
+}

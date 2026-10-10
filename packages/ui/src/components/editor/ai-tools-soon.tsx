@@ -19,7 +19,7 @@ const title = style({ font: 'ui', fontWeight: 'bold', color: 'gray-900' });
 const why = style({ margin: 0, color: 'gray-700' });
 
 /**
- * 还做不了的工具页（智能裁剪、剪成短视频）：要在画面上跟踪重点、调取景框，Runtime 还没有这条流程。
+ * 还做不了的工具页（智能裁剪）：要在画面上跟踪重点、调取景框，Runtime 还没有这条流程。
  * 列表里照常列着，点进来只说「即将推出」和为什么，不画能操作的表单（同 tools/planned-tool.tsx）。
  */
 export function AiToolSoon({ tool, onBack }: { tool: AiTool; onBack(): void }) {
