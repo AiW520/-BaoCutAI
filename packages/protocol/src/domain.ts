@@ -284,7 +284,7 @@ export interface VideoCreated {
 
 /**
  * `videos.derive`（工具 `videos_derive`，架构设计 §3.5「派生子视频」）：复制父视频（时间线与文稿），把剪辑后时间线
- * `[start, end)`（秒）之外的部分用剪口剪掉，建在父视频旁边；子视频里恢复剪口就能把片段往外扩。区间先对到帧（起点向下、终点向上取整）。`width`、`height` 缺省沿用父视频的画布；
+ * `[start, end)`（秒）之外的部分用剪口剪掉，建在父视频旁边；子视频里恢复剪口就能把片段往外扩。区间先对到帧（起点向下、终点向上取整；取整越过句间停顿、吃进相邻句子的词时反向取整，结果的 `range` 是实际采用的区间）。`width`、`height` 缺省沿用父视频的画布；
  * `fit`、`crop` 给了时写到每个视频片段上；`captions`、`translations`、`chapters` 缺省都开。
  */
 export interface VideoDeriveParams {
@@ -323,7 +323,7 @@ export interface VideoDeriveResult {
   reused: boolean;
   /** 幂等键：父视频、版本、对齐后的区间与设置的摘要。 */
   key: string;
-  /** 对齐到帧之后的区间（秒）。 */
+  /** 对齐到帧之后实际采用的区间（秒；边界留在句间的停顿里）。 */
   range: { start: number; end: number };
   /** 记剪口的主素材（父视频里的 ID）；没有可剪的媒体时 null。 */
   primaryAssetId: Id | null;

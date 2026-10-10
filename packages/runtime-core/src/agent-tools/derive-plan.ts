@@ -259,16 +259,41 @@ function decimal(value: Q, up: boolean): string {
 
 // ---- 区间与幂等键 ----
 
+/** 时间线上一个词的位置（秒）：转写的词按播放它的实例投到剪辑后的时间线上。 */
+export interface TimelineWord {
+  start: number;
+  end: number;
+}
+
 /**
  * 剪辑后时间线上的 `[start, end)` 秒对到帧：起点向下取整、终点向上取整，截到序列长度。空了时 `DERIVE_RANGE_EMPTY`。
  * 秒数换帧时留一点余量，免得 0.1 × 30 这类浮点误差多出一帧。
+ *
+ * 给了 `words`（`timelineWords`）时边界留在句间的停顿里：终点向上取整之后越过了下一个词的起点（终点之后最先开始的词；
+ * 停顿比一帧短时会把下一句的第一个词吃进来），改为向下取整；起点向下取整之后落在上一个词结束之前（起点之前最后结束的词），
+ * 改为向上取整。改了之后区间空了就不改。返回的是实际采用的区间。
  */
-export function alignRange(sequence: Sequence, start: number, end: number): AlignedRange {
+export function alignRange(sequence: Sequence, start: number, end: number, words: readonly TimelineWord[] = []): AlignedRange {
   const fps = sequence.fps;
   const toFrames = (seconds: number) => (seconds * fps.num) / fps.den;
+  const toSeconds = (frame: number) => (frame * fps.den) / fps.num;
   const duration = sequenceDurationFrames(sequence);
-  const startFrame = Math.max(0, Math.floor(toFrames(start) + 1e-9));
-  const endFrame = Math.min(duration, Math.ceil(toFrames(end) - 1e-9));
+  let startFrame = Math.max(0, Math.floor(toFrames(start) + 1e-9));
+  let endFrame = Math.min(duration, Math.ceil(toFrames(end) - 1e-9));
+  let next = Infinity;
+  let previous = -Infinity;
+  for (const word of words) {
+    if (word.start >= end - 1e-9 && word.start < next) next = word.start;
+    if (word.end <= start + 1e-9 && word.end > previous) previous = word.end;
+  }
+  if (toSeconds(endFrame) > next + 1e-9) {
+    const down = Math.min(duration, Math.floor(toFrames(end) + 1e-9));
+    if (down > startFrame) endFrame = down;
+  }
+  if (toSeconds(startFrame) < previous - 1e-9) {
+    const up = Math.ceil(toFrames(start) - 1e-9);
+    if (up < endFrame) startFrame = up;
+  }
   if (!(endFrame > startFrame)) throw new DeriveError('DERIVE_RANGE_EMPTY', { start, end, durationFrames: duration });
   return {
     startFrame,
@@ -515,6 +540,41 @@ function planCuts(sequence: Sequence, items: SequenceItem[], range: AlignedRange
   if (lost.length) warnings.push({ code: 'items-not-restorable', count: lost.length });
 
   return { primaryAssetId: primary, cuts, warnings };
+}
+
+/**
+ * 转写的词在剪辑后时间线上的位置（秒）：每份取自时间线上素材的转写（`documents` 里有正文的），按播放那个素材的实例
+ * （正速率线性的源时钟）把词的源区间投到时间线上；同一个词被几个实例播放时各算一次，剪掉的词不在里面。`alignRange` 用它
+ * 把区间的边界留在句间的停顿里。
+ */
+export function timelineWords(snapshot: VideoSnapshot, documents: ReadonlyMap<Id, unknown>): TimelineWord[] {
+  const sequence = rootSequence(snapshot);
+  const fps = sequence.fps;
+  const pieces = new Map<Id, MediaPiece[]>();
+  for (const item of copiedTimeline(sequence).items) {
+    const piece = mediaPiece(item, fps);
+    if (piece && piece !== 'unsupported') pieces.set(piece.assetId, [...(pieces.get(piece.assetId) ?? []), piece]);
+  }
+  const out: TimelineWord[] = [];
+  for (const record of Object.values(snapshot.documents)) {
+    const own = record.kind === 'speech' && record.sourceAssetId ? pieces.get(record.sourceAssetId) : undefined;
+    const body = own ? documents.get(record.id) : undefined;
+    if (!own || !isSpeechBody(body)) continue;
+    const scale = BigInt(typeof body.timescale === 'number' && body.timescale > 0 ? body.timescale : 1_000_000);
+    for (const raw of body.words) {
+      const w = raw as { start?: unknown; end?: unknown };
+      if (typeof w.start !== 'number' || typeof w.end !== 'number' || !Number.isFinite(w.start) || !Number.isFinite(w.end)) continue;
+      const word: Interval = { start: q(BigInt(Math.round(w.start)), scale), end: q(BigInt(Math.round(w.end)), scale) };
+      for (const p of own) {
+        const played = intersect(word, toSource(p, { start: p.a, end: p.b }));
+        if (played) {
+          const t = toTimeline(p, played);
+          out.push({ start: toNumber(t.start), end: toNumber(t.end) });
+        }
+      }
+    }
+  }
+  return out.sort((x, y) => x.start - y.start);
 }
 
 // ---- 调用方要先准备的输入 ----

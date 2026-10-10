@@ -27,6 +27,7 @@ import {
   derivationNeeds,
   planDerivation,
   planDerivationTrim,
+  timelineWords,
   type DeriveSettings,
 } from './derive-plan.ts';
 
@@ -221,6 +222,37 @@ describe('alignRange', () => {
     expect(alignRange(sequence, 5, 999)).toMatchObject({ endFrame: 180 });
     expect(() => alignRange(sequence, 2, 2)).toThrow(DeriveError);
     expect(() => alignRange(sequence, 7, 9)).toThrowError(expect.objectContaining({ code: 'DERIVE_RANGE_EMPTY' }));
+  });
+
+  it('句间停顿比一帧短时边界留在停顿里：终点越过下一个词的起点改向下，起点落进上一个词改向上', () => {
+    const sequence = video(items).sequences.seq_1!;
+    // 30 fps 一帧约 33 ms；两处停顿都只有 30–35 ms。
+    const words = [
+      { start: 0.2, end: 1.005 },
+      { start: 1.04, end: 1.995 },
+      { start: 2.025, end: 2.5 },
+    ];
+    // 终点 2.01：向上是 61 帧（2.033s），越过下一个词的起点 2.025，改为 60 帧（2.0s）。
+    // 起点 1.02：向下是 30 帧（1.0s），落在上一个词结束（1.005s）之前，改为 31 帧（1.033s）。
+    expect(alignRange(sequence, 1.02, 2.01, words)).toMatchObject({ startFrame: 31, endFrame: 60, end: 2 });
+    // 不给词时照旧。
+    expect(alignRange(sequence, 1.02, 2.01)).toMatchObject({ startFrame: 30, endFrame: 61 });
+    // 取整没碰到词：不改。
+    expect(alignRange(sequence, 1.5, 1.99, words)).toMatchObject({ startFrame: 45, endFrame: 60 });
+    // 区间落在一个词里（终点之后的词才算下一个）：照常向上。
+    expect(alignRange(sequence, 1.1, 1.9, words)).toMatchObject({ startFrame: 33, endFrame: 57 });
+    // 改了之后区间会空：不改。
+    expect(alignRange(sequence, 2.005, 2.01, words)).toMatchObject({ startFrame: 60, endFrame: 61 });
+  });
+
+  it('timelineWords 把转写的词按播放它的实例投到剪辑后的时间线上（变速、剪掉的不在）', () => {
+    const words = timelineWords(video(items), new Map([['doc_speech', speechBody]]));
+    // w1、w2 在 item_a（源 0–3s 原速）；w3（源 3.5s）没播放；w4（源 11s）在 item_b（时间线 3s 起两倍速播源 10s）。
+    expect(words).toEqual([
+      { start: 0.5, end: 1 },
+      { start: 1.6, end: 2 },
+      { start: 3.5, end: 3.75 },
+    ]);
   });
 });
 

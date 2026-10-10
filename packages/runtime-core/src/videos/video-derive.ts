@@ -25,6 +25,7 @@ import {
   derivationNeeds,
   planDerivation,
   planDerivationTrim,
+  timelineWords,
   type DeriveSettings,
 } from '../agent-tools/derive-plan.ts';
 import { videoPlace } from './pipeline-targets.ts';
@@ -69,10 +70,12 @@ export function defaultDerivedName(parentName: string, range: { start: number; e
   return `${parentName} · ${clockLabel(range.start)}–${clockLabel(range.end)}`;
 }
 
-/** 解析参数：对齐区间、补全设置、算幂等键。调用方在确认之前用它拿到摘要里的名字与时刻。 */
-export function resolveDerive(snapshot: VideoSnapshot, params: Omit<VideoDeriveParams, 'videoId'>) {
+/**
+ * 解析参数：补全设置、读要复制的文稿与译文、对齐区间（边界留在句间的停顿里，`alignRange`）、算幂等键。调用方在确认之前
+ * 用它拿到摘要里的名字与时刻；`videos.derive` 再用同一份结果规划。
+ */
+export async function prepareDerive(videos: Pick<VideoService, 'document'>, snapshot: VideoSnapshot, params: Omit<VideoDeriveParams, 'videoId'>) {
   const sequence = snapshot.sequences[snapshot.rootSequenceId]!;
-  const range = deriveCall(() => alignRange(sequence, params.start, params.end));
   const settings: DeriveSettings = {
     width: params.width ?? sequence.canvas.width,
     height: params.height ?? sequence.canvas.height,
@@ -82,9 +85,13 @@ export function resolveDerive(snapshot: VideoSnapshot, params: Omit<VideoDeriveP
     translations: params.translations ?? true,
     chapters: params.chapters ?? true,
   };
+  const needs = deriveCall(() => derivationNeeds(snapshot, settings));
+  const documents = new Map<Id, unknown>();
+  for (const id of needs.documentIds) documents.set(id, (await videos.document(snapshot.id, id)).body);
+  const range = deriveCall(() => alignRange(sequence, params.start, params.end, timelineWords(snapshot, documents)));
   const key = derivationKey({ parentVideoId: snapshot.id, parentRevision: snapshot.revision, range, settings });
   const name = params.name?.trim() || defaultDerivedName(snapshot.name, range);
-  return { sequence, range, settings, key, name };
+  return { sequence, range, settings, key, name, needs, documents };
 }
 
 /** 规划里的拒绝换成 RPC 错误（`details.code` 是 `DERIVE_*`）。 */
@@ -118,8 +125,7 @@ export async function deriveVideo(
   const { videos } = deps;
   const parent = videos.mirror(params.videoId)?.video;
   if (!parent) throw new RpcError('not-found', RcAgentTools.deriveParentUnplaced(), { code: 'VIDEO_NOT_OPEN' });
-  const { sequence, range, settings, key, name } = resolveDerive(parent, params);
-  const needs = deriveCall(() => derivationNeeds(parent, settings));
+  const { sequence, range, settings, key, name, needs, documents } = await prepareDerive(videos, parent, params);
 
   const place = videoPlace(videos, parent.id) as { root: string; file: string; scope: VideoLocation['scope'] } | null;
   // 父视频就是来源目录本身（或不是从项目、会话打开的）：旁边没有地方放子视频。
@@ -162,7 +168,7 @@ export async function deriveVideo(
   const label = RcAgentTools.deriveVideoLabel({ name: parent.name }).text;
   const guard = { ...(options.taskId ? { taskId: options.taskId } : {}), protections: options.protections?.(childId) ?? [] };
 
-  // ---- 读父视频的素材文件与文档正文，规划 ----
+  // ---- 读父视频的素材文件，规划（文档正文在 prepareDerive 里读过） ----
   const files = new Map<string, string>();
   for (const asset of needs.assets) {
     const found = await videos.assetFile(parent.id, asset.id, asset.revision).catch((error: unknown) => {
@@ -174,8 +180,6 @@ export async function deriveVideo(
     });
     files.set(assetFileKey(asset), path.resolve(found.root, found.file));
   }
-  const documents = new Map<Id, unknown>();
-  for (const id of needs.documentIds) documents.set(id, (await videos.document(parent.id, id)).body);
   const childSequence = child().sequences[child().rootSequenceId]!;
   const plan = deriveCall(() =>
     planDerivation({
