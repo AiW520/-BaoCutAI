@@ -3385,3 +3385,10 @@ html.is-col-resize, html.is-col-resize * { cursor: col-resize !important; }
 .trow__drop { position: absolute; left: 0; right: 0; z-index: 16; height: 2px; background: var(--blue-800); pointer-events: none; }
 .trow__drop--above { top: -1px; }
 .trow__drop--below { bottom: -1px; }
+
+/* 按镜头分段取景的小牌（stage-objects.jsx `ShotChip`，product-design §5.10）：挂在画面左下角外面
+   （落位由组件按画面算），说清楚选中的是哪一段；「套到整支」是次要操作。 */
+.shotchip { position: absolute; z-index: 15; display: flex; align-items: center; gap: 4px;
+  padding: 0 4px 0 8px; min-height: 32px; border-radius: 10px; background: var(--gray-25); box-shadow: var(--sh-pop);
+  color: var(--gray-800); font-size: 12px; color-scheme: light; }
+.shotchip__t { white-space: nowrap; }

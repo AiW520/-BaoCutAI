@@ -281,6 +281,59 @@
     const x = r > o ? Math.max(50 - room, Math.min(50 + room, 50 - (fx - 0.5) * span)) : 50;
     return Object.assign(b, {scale, x: +x.toFixed(2)});
   }
+  /* 按镜头分段取景（per-shot framing）：原片里常有几个机位来回切（主讲近景 / 全景 / 采访者近景），一支子视频只用一个
+     focusX 总有一段裁错人。`cut.shots: [{start, end, focusX}]`（原片时钟）把它拆成几段：原片视频元素在镜头边界处
+     用 `BC_VIDEO_EDIT.splitElementAt` 切开，每段按自己那个镜头的 focusX 铺满落位，之后在画布上拖哪段只改哪段。
+     落在第一个镜头之前 / 最后一个镜头之后的部分（文稿里恢复了首尾的句子）沿用首 / 末镜头的 focusX。 */
+  const shotsOf = (cut) => (cut && cut.ratio !== 'source' && Array.isArray(cut.shots)
+    ? cut.shots.filter((x) => x && x.end > x.start).slice().sort((a, b) => a.start - b.start) : []);
+  /** 原片时刻 `s` 落在哪个镜头：镜头之前算第一个、之后算最后一个、缝里算前一个。 */
+  function shotAt(shots, s) {
+    let k = 0;
+    for (let i = 0; i < shots.length; i++) if (shots[i].start <= s + EPS) k = i;
+    return k;
+  }
+  /** 把原片视频元素按镜头拆开并各自落位。没有镜头（或只剩一个）时等同逐件 `framePlace`。
+      返回的每一段带 `shot`（镜头下标，从 0 起）；拆出来的右半 id 是 `<原 id>-shot<k>`。 */
+  function shotElements(elements, shots, srcRatio, outRatio) {
+    const list = (shots || []).filter((x) => x && x.end > x.start).slice().sort((a, b) => a.start - b.start);
+    const place = (e, k) => Object.assign({}, e, {
+      place: framePlace({focusX: list[k] ? list[k].focusX : null}, srcRatio, outRatio, e.place)},
+      list.length ? {shot: k} : {});
+    if (!list.length) return (elements || []).map((e) => place(e, -1));
+    const VE = typeof window !== 'undefined' ? window.BC_VIDEO_EDIT : null;
+    const cuts = list.slice(1).map((x) => x.start);
+    const out = [];
+    (elements || []).forEach((e) => {
+      if (e.kind !== 'video' || !e.fromSource || !VE) { out.push(e); return; }
+      const rate = e.rate || 1, src0 = e.srcStart || 0;
+      const toT = (s) => e.start + (s - src0) / rate;
+      let cur = e;
+      cuts.forEach((s) => {
+        const t = +toT(s).toFixed(3);
+        const r = VE.splitElementAt([cur], null, cur.id, t, {id: e.id + '-shot' + shotAt(list, s)});
+        if (!r) return;
+        out.push(Object.assign({}, cur, {end: r.left.end}));
+        cur = r.right;
+      });
+      out.push(cur);
+    });
+    return out.map((e) => (e.kind === 'video' && e.fromSource
+      ? place(e, shotAt(list, (e.srcStart || 0) + ((e.end - e.start) * (e.rate || 1)) / 2)) : e));
+  }
+  /** 选中某一段时画布上那枚小牌：「这一段 · 第 X–Y 秒」，秒是子视频时间线上的（`fold` 把原片时钟折成成片时钟）。 */
+  function shotBadge(el, fold) {
+    const f = typeof fold === 'function' ? fold : (t) => t;
+    const a = Math.round(f(el.start)), b = Math.max(a + 1, Math.round(f(el.end)));
+    return `这一段 · 第 ${a}–${b} 秒`;
+  }
+  const SHOT_COPY = {applyAll: '套到整支', applyAllTip: '把这一段现在的摆位用到这支视频的每一段',
+    appliedAll: (n) => `已把这一段的摆位用到全部 ${n} 段`};
+  /** 结果页卡上「取景」那一行：多镜头时说分了几个镜头；否则沿用一个 focusX 的说法。 */
+  function frameText(cut, focusX) {
+    const n = shotsOf(cut).length;
+    return n > 1 ? `按 ${n} 个镜头分别取景 · 打开后在画布上拖某一段改` : `${focusText(focusX)} · 打开后在画布上拖那段视频改`;
+  }
   /** 取景念成一句（结果页卡上那一行）。 */
   function focusText(x) {
     if (x == null) return '居中';
@@ -359,8 +412,11 @@
      次序就是把握的先后。真产品里这张表由模型或 Agent 给出，这里只为原型可复现。 */
   const DEMO = [
     {k: 'a', at: 4, n: 10, title: '为什么要把视频工具做在本机', reason: '以一个问题开头，三句之内给出回答'},
-    {k: 'c', at: 26, n: 10, title: '上传本身就是一个决定', reason: '开头一句就是结论，后面是理由'},
-    {k: 'd', at: 37, n: 12, title: '字幕为什么是单独的一层', reason: '一个观点讲完整，中间有一句可以单独引用'},
+    /* `shots`：这一段里机位切了几次（句子下标相对 `at`、该镜头的 focusX）——近景主讲 / 全景 / 采访者近景 */
+    {k: 'c', at: 26, n: 10, title: '上传本身就是一个决定', reason: '开头一句就是结论，后面是理由',
+     shots: [{at: 0, focusX: 0.3}, {at: 5, focusX: 0.7}]},
+    {k: 'd', at: 37, n: 12, title: '字幕为什么是单独的一层', reason: '一个观点讲完整，中间有一句可以单独引用',
+     shots: [{at: 0, focusX: 0.3}, {at: 4, focusX: 0.5}, {at: 8, focusX: 0.72}]},
     {k: 'f', at: 17, n: 9, title: '词是真相，句子只是投影', reason: '开头一句就能单独引用'},
     {k: 'b', at: 11, n: 12, title: '渲染最难的是确定性', reason: '有例子，结尾落在一句结论上'},
     {k: 'e', at: 50, n: 11, title: '每个小改动都要三次签字', reason: '有故事，但开头那句在接前面的话', weak: true},
@@ -375,7 +431,12 @@
       .map((d) => {
         let to = Math.min(sentences.length - 1, d.at + Math.max(2, Math.round(d.n * k)) - 1);
         if (scope && !p.crossChapter) while (to > d.at && sentences[to].end > hi + EPS) to--;
-        return Object.assign({id: 'sc-' + d.k, title: d.title, reason: d.reason, weak: !!d.weak, on: false}, rangeOf(sentences, d.at, to));
+        const span = rangeOf(sentences, d.at, to);
+        const shots = (d.shots || []).filter((x) => d.at + x.at <= to).map((x, i, all) => ({
+          start: i ? sentences[d.at + x.at].start : span.start,
+          end: i < all.length - 1 ? sentences[d.at + all[i + 1].at].start : span.end, focusX: x.focusX}));
+        return Object.assign({id: 'sc-' + d.k, title: d.title, reason: d.reason, weak: !!d.weak, on: false}, span,
+          shots.length > 1 ? {shots} : {});
       });
   }
   /** 找到的就是要创建的：要 n 支给 n 段（范围里不够就少给）；开着「已经切过的不再找」时切过的不进来。 */
@@ -426,7 +487,8 @@
       dir: parent.dir || null, folder: o.title,
       session: o.session || null, messageId: o.messageId || null,
       origin, cuts: seedCuts(origin),
-      cut: {focus: source ? null : p.focus, focusX: seg.focusX == null ? null : seg.focusX, tracks: p.tracks, style: p.style, ratio: ratioOf(p.ratio).id},
+      cut: Object.assign({focus: source ? null : p.focus, focusX: seg.focusX == null ? null : seg.focusX, tracks: p.tracks, style: p.style, ratio: ratioOf(p.ratio).id},
+        !source && Array.isArray(seg.shots) && seg.shots.length > 1 ? {shots: seg.shots.map((x) => Object.assign({}, x))} : {}),
       src: Object.assign({}, parent.src),
       duration: +(seg.end - seg.start).toFixed(2), lang: parent.lang, model: parent.model,
       modified: '刚刚', mtime: 0, otime: 0, ctime: 0, hue: parent.hue,
@@ -639,6 +701,7 @@
     indexAt, rangeOf, snap,
     isChild, hostId, childrenOf, parentOf, originLabel, countLabel, doneBy, deleteNote,
     seedCuts, cutsOf, sourceDur, keptRanges, usedRanges, reclaimSpan, foldRows, clipTime, STEP, coverScale, framePlace, focusText,
+    shotsOf, shotAt, shotElements, shotBadge, SHOT_COPY, frameText,
     flags, visible, chosen, totalSec, resultHead, hookOf, tailOf, preselect,
     demoCandidates, manualCandidate,
     EXPORT_COPY, exportBatch, exportNotes,

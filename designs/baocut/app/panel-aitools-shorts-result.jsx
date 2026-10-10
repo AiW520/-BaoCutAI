@@ -15,6 +15,8 @@
     const api = app.shortsCut;
     const [editing, setEditing] = useState(false);
     const [draft, setDraft] = useState(c.title);
+    const cut = (app.projById(c.id) || {}).cut;
+    const shots = SC.shotsOf(cut).length;
     const commit = () => { setEditing(false); const t = draft.trim(); if (t && t !== c.title) api.edit(host, c.id, {title: t}); else setDraft(c.title); };
     return (
       <div className={cx('sc-card', cur && 'is-sel')} onClick={() => onOpen(c.id)} aria-current={cur ? 'true' : undefined}>
@@ -31,8 +33,9 @@
         <div className="sc-card__span t-mono">{SC.spanText(c)}{c.added === 'redo' ? ' · 重做' : ''}</div>
         <div className="sc-quote"><em>开头</em><span>{SC.hookOf(s.sentences, c)}</span></div>
         {c.reason ? <div className="sc-why"><em>为什么挑它</em><span>{c.reason}</span></div> : null}
-        {s.params.focus === 'manual' && s.params.ratio !== 'source'
-          ? <div className="sc-why"><em>取景</em><span>{SC.focusText(c.focusX)} · 打开后在画布上拖那段视频改</span></div> : null}
+        {/* 取景：分了镜头的写「按 N 个镜头分别取景」（每个镜头裁到谁写在 agent 的说明里）；只有一个位置的照旧只在「我自己定」时说 */}
+        {shots > 1 || (s.params.focus === 'manual' && s.params.ratio !== 'source')
+          ? <div className="sc-why"><em>取景</em><span>{SC.frameText(cut, c.focusX)}</span></div> : null}
         {flags.length ? (
           <div className="sc-flags">{flags.map((f, i) => <Chip key={f.k + i} tone={f.tone}>{f.text}</Chip>)}</div>
         ) : null}

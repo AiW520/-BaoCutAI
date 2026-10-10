@@ -90,6 +90,42 @@
       .map((n) => frameBox(n, fr));
   }
 
+  /* ---------- 按镜头分段取景的小牌（product-design §5.10「画面怎么取景」） ----------
+     子视频的原片按镜头切成了几段（BC_SHORTS_CUT.shotElements）：选中其中一段时挂一枚小牌，
+     说清楚现在拖的是哪一段（子视频时间线上的秒）——拖动本来就只改这一件。小牌上的次要操作「套到整支」
+     把这一段现在的摆位写到这支视频的每一段，记一步历史。挂在画面（`.frame`）左下角的外面：裁成竖屏后
+     视频盒比画面宽，贴着视频盒放会跑出视野；画面上方是视频工具条，画面里面会挡住要对的人。 */
+  function ShotChip({el, ctx, pose, frameRef}) {
+    const SC = window.BC_SHORTS_CUT;
+    const app = useApp();
+    const frame = frameRef && frameRef.current;
+    const root = frame && frame.parentElement;
+    if (!root) return null;
+    const segs = (ctx.elements || []).filter((e) => e.kind === 'video' && e.shot != null && !e.hidden);
+    const others = segs.filter((e) => e.id !== el.id);
+    const apply = () => {
+      const patch = {};
+      ['x', 'y', 'scale', 'w', 'h'].forEach((k) => { if (pose[k] != null) patch[k] = pose[k]; });
+      if (ctx.history) ctx.history.begin();
+      others.forEach((e) => ctx.setElPose(e.id, patch));
+      if (ctx.history) ctx.history.commit('pose');
+      /* 片段外整段划掉的那几件也一起写（恢复回来时不突兀），但提示里只数这一支里看得见的段 */
+      const fold = ctx.tmap ? ctx.tmap.fold : (t) => t;
+      const shown = segs.filter((e) => fold(e.end) - fold(e.start) > 0.05).length;
+      app.toast(SC.SHOT_COPY.appliedAll(shown), 'positive', {label: '撤销', undo: true, run: () => ctx.history.undo()});
+    };
+    const stop = (ev) => ev.stopPropagation();
+    return ReactDOM.createPortal(
+      <div className="shotchip" onMouseDown={stop} onClick={stop}
+        style={{left: frame.offsetLeft, top: Math.min(frame.offsetTop + frame.offsetHeight + 8, root.clientHeight - 40)}}>
+        <span className="shotchip__t">{SC.shotBadge(el, ctx.tmap ? ctx.tmap.fold : null)}</span>
+        {others.length ? (
+          <Btn size="s" variant="quiet" className="shotchip__all" title={SC.SHOT_COPY.applyAllTip}
+            onPress={apply}>{SC.SHOT_COPY.applyAll}</Btn>
+        ) : null}
+      </div>, root);
+  }
+
   /* ---------- 选中框 ---------- */
   function SelectionBox({kind, id, el, ctx, st, set, style, inner, children, onClick,
                          bottomAnchored, pose, setPose, frameRef, onGuides, onDoubleClick,
@@ -298,6 +334,8 @@
               transform: `rotate(${rot}deg)`}}
             onClick={ev => ev.stopPropagation()}>{controls}</div>, overlay.root) : null}
 
+        {videoSelection && ctx && ctx.composed && el && el.shot != null && !dragging
+          ? <ShotChip el={el} ctx={ctx} pose={pose} frameRef={frameRef} /> : null}
         {/* 主视频与视频元素共用视频工具条，写入由编辑目标适配。 */}
         {noToolbar ? null : (
           <window.Toolbar kind={kind} el={el} ctx={ctx} st={st} set={set}

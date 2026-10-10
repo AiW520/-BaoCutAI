@@ -949,13 +949,18 @@
        [editor-elements.jsx](editor-elements.jsx)——编辑器这一支只把选中口子递进去。 */
     /* 本地项目的起始元素：视频 = 按 clip 拆开的源视频；音频 = 建项配置预埋的那条声波
        （`BC_MEDIA.projectMedia().elements`，第 225 轮）——它是真元素，可选可换样式可删。 */
+    /* 子视频的取景就是画布上这段视频的摆位（§5.10）：裁成竖屏时先铺满、按 focusX 落位，之后在画布上拖。
+       有 `cut.shots`（按镜头分段取景）时先在镜头边界处把视频切开，每段按自己那个镜头落位（BC_SHORTS_CUT.shotElements）。 */
+    const childFraming = (list) => {
+      if (!shortsChild) return list;
+      const sr = window.BC_CROP.sourceRatio(setup.sources.video[0]), or = window.BC_LAYOUT.ratioValue(proj.ratio || '9:16');
+      if (SC.shotsOf(proj.cut).length > 1) return SC.shotElements(list, SC.shotsOf(proj.cut), sr, or);
+      return list.map(e => ({...e, place: SC.framePlace(proj.cut, sr, or, e.place)}));
+    };
     const mediaElements = useMemo(() => localMedia
       ? window.BC_VIDEO_EDIT.initial(localMedia.clips, proj.src.name).map(e => ({...e, name: proj.src.name}))
         .concat(localMedia.elements || [])
-      : bare ? window.BC_VIDEO_EDIT.initial(setup.clips, proj.src.name).map(e => ({...e, name: proj.src.name,
-        /* 子视频的取景就是画布上这段视频的摆位（§5.10）：裁成竖屏时先铺满、按 focusX 落位，之后在画布上拖 */
-        ...(shortsChild ? {place: SC.framePlace(proj.cut, window.BC_CROP.sourceRatio(setup.sources.video[0]),
-          window.BC_LAYOUT.ratioValue(proj.ratio || '9:16'), e.place)} : {})})) : [], [proj.id]);
+      : bare ? childFraming(window.BC_VIDEO_EDIT.initial(setup.clips, proj.src.name).map(e => ({...e, name: proj.src.name}))) : [], [proj.id]);
     const els = useElementStore(pick, initiallyEmpty || !!localMedia || bare, mediaElements, proj.src.name);
     /* 音频转视频项目打开时声波已选中（§9 a2v 行「wave 自动选中」）：右栏直接是它的属性页 */
     useEffect(() => {

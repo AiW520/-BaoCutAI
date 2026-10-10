@@ -1,6 +1,7 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 global.window = {};
+require('./model-video-edit.js');
 const M = require('./model-shorts-cut.js');
 
 /* 与 data.js makeCues 同一份节奏：62 句铺满 206 秒，抖动是固定序列。 */
@@ -525,4 +526,63 @@ test('全部导出：每支有保留段的各一条，没有可导出内容的�
   assert.deepEqual(M.exportNotes(0, []), {started: null, skipped: null});
   assert.equal(M.EXPORT_COPY.exportAllSub(3), '3 支各导出一份成片');
   assert.equal(M.EXPORT_COPY.exportAll, '全部导出…');
+});
+
+/* ---------- 按镜头分段取景 ---------- */
+const CLIPS = [{id: 'k1', start: 0, end: 28, src: 0}, {id: 'k2', start: 28, end: 45.2, src: 28}, {id: 'k3', start: 45.2, end: 78, src: 45.2}];
+const SHOTS = [{start: 13.3, end: 28, focusX: 0.3}, {start: 28, end: 39.9, focusX: 0.5}, {start: 39.9, end: 46.5, focusX: 0.74}];
+const base = () => window.BC_VIDEO_EDIT.initial(CLIPS, 'a.mp4');
+
+test('shotElements：在镜头边界处切开原片视频，每段按自己镜头的 focusX 落位', () => {
+  const out = M.shotElements(base(), SHOTS, 16 / 9, 9 / 16);
+  assert.deepEqual(out.map((e) => [e.id, e.start, e.end, e.shot]), [
+    ['video-k1', 0, 28, 0],
+    ['video-k2', 28, 39.9, 1],
+    ['video-k2-shot2', 39.9, 45.2, 2],
+    ['video-k3', 45.2, 78, 2],
+  ]);
+  const at = (fx) => M.framePlace({focusX: fx}, 16 / 9, 9 / 16).x;
+  assert.deepEqual(out.map((e) => e.place.x), [at(0.3), at(0.5), at(0.74), at(0.74)]);
+  assert.equal(out[2].srcStart, 39.9, '右半的 srcStart 跟着切点走');
+  assert.ok(out.every((e) => e.place.scale === M.coverScale(16 / 9, 9 / 16)), '每段都铺满');
+});
+
+test('shotElements：镜头之前 / 之后（恢复回来的首尾句子）沿用首 / 末镜头；边界贴着元素两端不切', () => {
+  const out = M.shotElements(base(), [{start: 13.3, end: 28.02, focusX: 0.2}, {start: 28.02, end: 46.5, focusX: 0.8}], 16 / 9, 9 / 16);
+  assert.deepEqual(out.map((e) => [e.id, e.shot]), [['video-k1', 0], ['video-k2', 1], ['video-k3', 1]], '28.02 离 k2 头不到 0.05 秒，不切出碎片');
+  assert.equal(M.shotAt(SHOTS, 0), 0);
+  assert.equal(M.shotAt(SHOTS, 120), 2);
+  /* 倍速：镜头边界按 srcStart 与 rate 换算到时间轴 */
+  const fast = M.shotElements([Object.assign(base()[1], {rate: 2})], SHOTS, 16 / 9, 9 / 16);
+  assert.deepEqual(fast.map((e) => [e.start, e.end]), [[28, 33.95], [33.95, 45.2]]);
+});
+
+test('shotElements：没有镜头时与逐件 framePlace（居中）一样；不是原片的元素原样放过', () => {
+  const sticker = {id: 's', kind: 'sticker', start: 0, end: 5};
+  const out = M.shotElements(base().concat(sticker), [], 16 / 9, 9 / 16);
+  assert.equal(out.length, 4);
+  assert.ok(out.slice(0, 3).every((e) => e.shot == null && e.place.x === 50));
+  assert.equal(M.shotElements([sticker], SHOTS, 16 / 9, 9 / 16)[0], sticker);
+});
+
+test('shotsOf / frameText / shotBadge：结果卡的取景行与画布小牌', () => {
+  assert.equal(M.shotsOf({shots: SHOTS}).length, 3);
+  assert.equal(M.shotsOf({shots: SHOTS, ratio: 'source'}).length, 0, '保留原画幅不取景');
+  assert.equal(M.frameText({shots: SHOTS}), '按 3 个镜头分别取景 · 打开后在画布上拖某一段改');
+  assert.equal(M.frameText({}, 0.3), '偏左 20% · 打开后在画布上拖那段视频改');
+  const fold = (t) => Math.max(0, t - 13.3);
+  assert.equal(M.shotBadge({start: 28, end: 39.9}, fold), '这一段 · 第 15–27 秒');
+  assert.equal(M.shotBadge({start: 0, end: 28}, fold), '这一段 · 第 0–15 秒', '片段外的头折到 0');
+});
+
+test('childProject：候选带镜头时子视频记 `cut.shots`；保留原画幅时不记', () => {
+  const seg = Object.assign({id: 'x', title: 't'}, M.rangeOf(S, 37, 48), {shots: [{start: S[37].start, end: S[41].start, focusX: 0.3}, {start: S[41].start, end: S[48].end, focusX: 0.7}]});
+  const kid = M.childProject({id: 'k', parent, seg, title: 't', params: {}});
+  assert.equal(kid.cut.shots.length, 2);
+  assert.notEqual(kid.cut.shots[0], seg.shots[0], '复制，不共用');
+  assert.equal(M.childProject({id: 'k', parent, seg, title: 't', params: {ratio: 'source'}}).cut.shots, undefined);
+  const d = M.demoCandidates(S, {}, {children: []}).find((c) => c.id === 'sc-d');
+  assert.equal(d.shots.length, 3);
+  assert.equal(d.shots[0].start, d.start);
+  assert.equal(d.shots[2].end, d.end);
 });
