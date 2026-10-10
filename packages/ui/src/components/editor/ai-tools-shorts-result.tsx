@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState, type ComponentType } from 'react';
-import type { DocumentRecord, Id, Sequence, SpaceEntry } from '@baocut/protocol';
+import type { Id, SpaceEntry } from '@baocut/protocol';
 import { ActionButton, Badge, Button, ProgressCircle, TextField, ToastQueue } from '@react-spectrum/s2';
 import ChevronLeft from '@react-spectrum/s2/icons/ChevronLeft';
 import ChevronRight from '@react-spectrum/s2/icons/ChevronRight';
@@ -11,9 +11,8 @@ import { Button as RACButton } from 'react-aria-components';
 import { untitled } from '../../copy.ts';
 import { aiTool } from '../../model/ai-tools.ts';
 import { agentRunState } from '../../model/ai-tools-handoff.ts';
-import { durationSeconds } from '../../model/editor.ts';
 import { formatClock, formatDuration } from '../../model/format.ts';
-import { createdVideoIds, entryVideoId, pagerIndex, readDerivation, shortsBatch, type ShortsDerivation } from '../../model/shorts-result.ts';
+import { createdVideoIds, entryVideoId, pagerIndex, shortsBatch, type ShortsDerivation } from '../../model/shorts-result.ts';
 import { derivedFrom, videoTargetOf } from '../../model/space.ts';
 import { useRuntime } from '../../runtime/context.tsx';
 import { useShell } from '../../state/shell-store.ts';
@@ -26,7 +25,7 @@ import { setAiToolPage, setPanelLanding, type AiToolPage } from './ai-tools-nav.
 import { PanelHead } from './panel-head.tsx';
 import { SHORTS_COPY as S } from './shorts-copy.ts';
 import { focusShortsRun, latestShortsRun, useShortsRuns } from './shorts-runs.ts';
-import { peekShort, renameShort, type ShortFacts } from './shorts-video-ops.ts';
+import { exportShorts, renameShort, useShortFacts } from './shorts-video-ops.ts';
 
 const body = style({ flexGrow: 1, minHeight: 0, overflowY: 'auto', paddingX: 12, paddingTop: 12, paddingBottom: 16 });
 const pager = style({ display: 'flex', alignItems: 'center', gap: 2, flexShrink: 0, font: 'ui-xs', color: 'gray-700' });
@@ -77,6 +76,12 @@ const cardTitle = style({
 });
 const renameField = style({ flexGrow: 1, minWidth: 0 });
 const cardSpan = style({ font: 'ui-xs', color: 'gray-600' });
+/** 「开头」「为什么挑它」两行（原型 .sc-quote / .sc-why）：左边小字标签，右边正文。 */
+const line = style({ display: 'flex', alignItems: 'baseline', gap: 8, font: 'ui-sm', lineHeight: '[1.5]' });
+const lineLabel = style({ flexShrink: 0, font: 'ui-xs', color: 'gray-600' });
+const quote = style({ minWidth: 0, color: 'gray-900' });
+const why = style({ minWidth: 0, color: 'gray-700' });
+const flags = style({ display: 'flex', flexWrap: 'wrap', gap: 4 });
 const cardActs = style({ display: 'flex', alignItems: 'center', gap: 8, justifyContent: 'end' });
 const status = style({ display: 'flex', alignItems: 'center', gap: 8, marginTop: 12, font: 'ui-sm', color: 'gray-700' });
 const hint = style({ marginTop: 12, marginBottom: 0, font: 'ui-xs', color: 'gray-600', lineHeight: '[1.5]' });
@@ -137,24 +142,14 @@ function released(videoId: Id, ms = 4000): Promise<void> {
 
 /**
  * 剪成短视频的结果页（原型 panel-aitools-shorts-result.jsx `ShortsCutResult`，产品设计 §5.10「结果页」）：这一轮会话切出的子视频，
- * 每支一张卡——标题（点一下改名，`renameVideo`）、在原片里的起止与眼下的时长、「正在看」、「打开」「不要这支」。头上「已创建 N 支」
+ * 每支一张卡——标题（点一下改名，`renameVideo`）、在原片里的起止与眼下的时长、开头那一句、为什么挑它与提示牌（派生来源文档里有才显示）、「正在看」、「打开」「不要这支」。头上「已创建 N 支」
  * 与「第 k/N ‹ ›」逐支翻。「打开」在同一个编辑器里换成那一支，右侧仍是这一页、那张卡亮着；「不要这支」移入回收站，提示里可撤销。
- * 下面「接下来」：再切几支（回参数页，勾上「已经切过的不再找」）、在 Space 里看这几支（按来源筛好）、全部导出…（打开第一支的导出弹层）。
+ * 下面「接下来」：再切几支（回参数页，勾上「已经切过的不再找」）、在 Space 里看这几支（按来源筛好）、全部导出…（每支各发起一次成片导出，`exportShorts`）。
  *
  * 这一页属于那一轮会话、挂在父视频（`host`）上：开着父视频或其中任何一支子视频都画同一份。认这一轮靠本机记下的那次交接
  * （`useShortsRuns`）；没有记录（比如在 Space 里直接打开了一支子视频）时列出这部父视频派生的全部子视频。
  */
-export function ShortsResultPage({
-  videoId,
-  host,
-  sequence,
-  documents,
-}: {
-  videoId: Id;
-  host: Id;
-  sequence: Sequence;
-  documents: Record<Id, DocumentRecord>;
-}) {
+export function ShortsResultPage({ videoId, host }: { videoId: Id; host: Id }) {
   const runtime = useRuntime();
   const run = useShortsRuns((s) => latestShortsRun(s.runs, host));
   const conversationId = run?.conversationId ?? null;
@@ -202,13 +197,23 @@ export function ShortsResultPage({
     else if (hostEntry) openWithPage(hostEntry, page);
   };
   const inSpace = () => useShell.getState().go({ tab: 'space', category: 'all', projectId: null, from: host });
+  // 「全部导出…」：这一轮没移进回收站的每一支各发起一次成片导出（`exportShorts`），进度在任务列表里；开着的那一支另打开它的导出弹层盯着。
+  const [exporting, setExporting] = useState(false);
   const exportAll = () => {
-    const first = live[0];
-    const id = first ? entryVideoId(first) : null;
-    if (!first || !id) return;
-    requestExport(id);
-    if (id !== videoId) open(first);
-    ToastQueue.neutral(S.exportStarted(first.name, live.length - 1), { timeout: 5000 });
+    if (exporting || !live.length) return;
+    setExporting(true);
+    void exportShorts(runtime, live, { opening: S.exportSkipOpening })
+      .then((outcome) => {
+        if (outcome.cancelled) return;
+        if (outcome.started.length && live.some((e) => entryVideoId(e) === videoId)) requestExport(videoId);
+        if (outcome.started.length) ToastQueue.positive(S.exportStarted(outcome.started.length), { timeout: 6000 });
+        if (outcome.skipped.length) {
+          const detail = outcome.skipped.map((x) => S.exportSkippedItem(x.name, x.reason)).join(S.exportSkippedSeparator);
+          ToastQueue.negative(S.exportSkipped(outcome.skipped.length, detail), { timeout: 12000 });
+        }
+      })
+      .catch(fail)
+      .finally(() => setExporting(false));
   };
   const discard = (entry: SpaceEntry) => {
     const id = entryVideoId(entry);
@@ -270,7 +275,6 @@ export function ShortsResultPage({
               entry={entry}
               n={i + 1}
               current={entryVideoId(entry) === videoId}
-              live={entryVideoId(entry) === videoId ? { documents, sequence } : null}
               onOpen={() => open(entry)}
               onDiscard={() => discard(entry)}
             />
@@ -282,16 +286,18 @@ export function ShortsResultPage({
         <h3 className={secHead}>{S.nextHead}</h3>
         <NextRow icon={Cut} title={S.more} sub={S.moreSub} onPress={more} />
         <NextRow icon={Folder} title={S.inSpace} sub={S.inSpaceSub(hostName)} onPress={inSpace} />
-        {live.length ? <NextRow icon={Export} title={S.exportAll} sub={S.exportAllSub} onPress={exportAll} /> : null}
+        {live.length ? (
+          <NextRow icon={Export} title={S.exportAll} sub={exporting ? S.exporting : S.exportAllSub(live.length)} onPress={exportAll} isDisabled={exporting} />
+        ) : null}
         <p className={hint}>{S.hint}</p>
       </div>
     </>
   );
 }
 
-function NextRow({ icon: Icon, title, sub, onPress }: { icon: ComponentType; title: string; sub: string; onPress(): void }) {
+function NextRow({ icon: Icon, title, sub, onPress, isDisabled }: { icon: ComponentType; title: string; sub: string; onPress(): void; isDisabled?: boolean }) {
   return (
-    <RACButton className={(state) => tile(state)} onPress={onPress}>
+    <RACButton className={(state) => tile(state)} onPress={onPress} isDisabled={isDisabled}>
       <span className={tileIcon}>
         <Icon />
       </span>
@@ -306,33 +312,6 @@ function NextRow({ icon: Icon, title, sub, onPress }: { icon: ComponentType; tit
   );
 }
 
-/** 一支子视频的派生来源与眼下的时长：开着的那一支读编辑器里的快照，其余在后台读一次（`peekShort`）。 */
-function useShortFacts(entry: SpaceEntry, live: { documents: Record<Id, DocumentRecord>; sequence: Sequence } | null): ShortFacts {
-  const runtime = useRuntime();
-  const [peeked, setPeeked] = useState<ShortFacts | null>(null);
-  // `entry` 换了对象但 `key` 没变时不用再读：目标按 `key` 记下来。
-  const key = `${entry.id}@${entry.lastActivityAt}`;
-  const target = useMemo(() => videoTargetOf(entry), [key]); // eslint-disable-line react-hooks/exhaustive-deps
-  const isLive = !!live;
-  useEffect(() => {
-    if (isLive) return;
-    let alive = true;
-    peekShort(runtime, target, key)
-      .then((facts) => alive && setPeeked(facts))
-      .catch(() => {});
-    return () => {
-      alive = false;
-    };
-  }, [runtime, target, key, isLive]);
-  const documents = live?.documents ?? null;
-  const sequence = live?.sequence ?? null;
-  const liveFacts = useMemo(
-    () => (documents && sequence ? { derivation: readDerivation(documents), seconds: durationSeconds(sequence) } : null),
-    [documents, sequence],
-  );
-  return liveFacts ?? peeked ?? { derivation: null, seconds: entry.media?.durationSec ?? null };
-}
-
 function spanText(derivation: ShortsDerivation | null, seconds: number | null): string | null {
   const length = seconds !== null ? formatDuration(seconds * 1000) : null;
   if (derivation && length) return S.span(formatClock(derivation.range.start), formatClock(derivation.range.end), length);
@@ -343,19 +322,19 @@ function ShortCard({
   entry,
   n,
   current,
-  live,
   onOpen,
   onDiscard,
 }: {
   entry: SpaceEntry;
   n: number;
   current: boolean;
-  live: { documents: Record<Id, DocumentRecord>; sequence: Sequence } | null;
   onOpen(): void;
   onDiscard(): void;
 }) {
   const runtime = useRuntime();
-  const facts = useShortFacts(entry, live);
+  const facts = useShortFacts(entry);
+  const reason = facts.derivation?.reason ?? null;
+  const notes = facts.derivation?.notes ?? [];
   const [draft, setDraft] = useState<string | null>(null);
   const span = spanText(facts.derivation, facts.seconds);
   const commit = () => {
@@ -400,6 +379,27 @@ function ShortCard({
         <span className={cardSpan} style={tabular}>
           {span}
         </span>
+      ) : null}
+      {facts.opening ? (
+        <div className={line}>
+          <span className={lineLabel}>{S.hookLabel}</span>
+          <q className={quote}>{facts.opening}</q>
+        </div>
+      ) : null}
+      {reason ? (
+        <div className={line}>
+          <span className={lineLabel}>{S.reasonLabel}</span>
+          <span className={why}>{reason}</span>
+        </div>
+      ) : null}
+      {notes.length ? (
+        <div className={flags}>
+          {notes.map((note, i) => (
+            <Badge key={`${i}:${note}`} size="S" variant="notice" fillStyle="subtle">
+              {note}
+            </Badge>
+          ))}
+        </div>
       ) : null}
       <div className={cardActs}>
         <Button size="S" variant="secondary" fillStyle="outline" onPress={onDiscard}>

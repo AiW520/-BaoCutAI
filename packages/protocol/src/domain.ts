@@ -300,6 +300,12 @@ export interface VideoDeriveParams {
   captions?: boolean;
   translations?: boolean;
   chapters?: boolean;
+  /** 开头一句（剪成短视频的结果页卡片上的「开头」）；不给时界面取子视频保留段的第一句。写进派生来源文档，不参与幂等键。 */
+  hook?: string;
+  /** 为什么挑这一段（结果页卡片上的「为什么挑它」）。写进派生来源文档，不参与幂等键。 */
+  reason?: string;
+  /** 提示牌：几句短提醒（如「开头是对方反应镜头」）。写进派生来源文档，不参与幂等键。 */
+  notes?: string[];
 }
 
 /**

@@ -30,6 +30,7 @@ import { DubGroupCard } from './media-dub-groups.tsx';
 import { AUDIO_GEN_COPY, generatedMark, IMAGE_GEN_COPY } from './media-gen-copy.ts';
 import { useMediaGen, useMediaGenStore, type ImageSegment } from './media-gen-store.ts';
 import { PanelHead, panelBody } from './panel-head.tsx';
+import { ShortsMadeGroup } from './shorts-made-group.tsx';
 import { ASSET_DRAG_TYPE } from './timeline.tsx';
 import { TtsPanel } from './tts-panel.tsx';
 import { useAssetUrl } from './use-asset-url.ts';
@@ -204,6 +205,8 @@ export function MediaPanel({ kind, sequence, assets }: { kind: PlaceableKind; se
 
   const library = (
     <div className={body}>
+      {/* 父视频的「切出的短视频」（产品设计 §5.10，原型 panel-media.jsx 把它放在视频库上面）：没有子视频时不占地方。 */}
+      {kind === 'video' && videoId ? <ShortsMadeGroup videoId={videoId} /> : null}
       {ai && kind === 'audio' ? (
         <div className={genRow}>
           <TooltipTrigger>

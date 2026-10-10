@@ -1792,8 +1792,12 @@ const ParagraphRow = memo(function ParagraphRow({
   });
   const played = useEditor((s) => paragraphPlayed(model.playedSpans[n] ?? null, playedUntil(model.played, s.playhead)));
   const { read, speakers } = model;
+  // 子视频片段外的话：第一个、最后一个留下的词之外划掉的，单击放回（能改时才放得回，悬停提示跟着）。
+  const fold = editable ? model.fold : null;
   return (
     <Paragraph
+      keptFrom={fold ? (model.words[fold.firstKept]?.index ?? null) : null}
+      keptTo={fold ? (model.words[fold.lastKept]?.index ?? null) : null}
       assetId={model.assetId}
       index={n}
       paragraph={paragraph}

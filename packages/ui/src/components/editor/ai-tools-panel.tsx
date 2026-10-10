@@ -83,7 +83,7 @@ export function AiToolsPanel({ sequence, documents }: { sequence: Sequence; docu
   if (tool.id === 'shortscut') {
     const host = page.host ?? derivation?.parentVideoId ?? videoId;
     if (page.phase === 'result' || (page.phase !== 'setup' && (hasRun || !!derivation)))
-      return <ShortsResultPage videoId={videoId} host={host} sequence={sequence} documents={documents} />;
+      return <ShortsResultPage videoId={videoId} host={host} />;
     const skipDone = !!page.preset?.skipDone;
     return (
       <ShortsToolPage

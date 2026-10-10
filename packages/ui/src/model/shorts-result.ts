@@ -14,7 +14,15 @@ export interface ShortsDerivation {
   parentRevision: string | null;
   range: { start: number; end: number };
   primaryAssetId: Id | null;
+  /** 开头一句（派生时智能体给的）；没给时 null，卡片取保留段的第一句。 */
+  hook: string | null;
+  /** 为什么挑它；没给时 null。 */
+  reason: string | null;
+  /** 提示牌；没给时空。 */
+  notes: string[];
 }
+
+const textOf = (value: unknown): string | null => (typeof value === 'string' && value.trim() ? value.trim() : null);
 
 /** 视频里的派生来源文档的概要；不是子视频（没有这份文档、或认不出）时 null。 */
 export function readDerivation(documents: Record<Id, DocumentRecord> | null | undefined): ShortsDerivation | null {
@@ -32,6 +40,10 @@ export function readDerivation(documents: Record<Id, DocumentRecord> | null | un
       parentRevision: typeof summary.parentRevision === 'string' ? summary.parentRevision : null,
       range: { start, end },
       primaryAssetId: typeof summary.primaryAssetId === 'string' ? summary.primaryAssetId : null,
+      // 加法式字段：旧的派生来源文档没有，卡片就不显示。
+      hook: textOf(summary.hook),
+      reason: textOf(summary.reason),
+      notes: Array.isArray(summary.notes) ? summary.notes.flatMap((n) => textOf(n) ?? []) : [],
     };
   }
   return null;

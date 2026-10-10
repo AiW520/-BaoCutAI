@@ -14,6 +14,7 @@ import type { TextRange } from '../../model/text-find.ts';
 import { playedEnd, type TranscriptParagraph, type TranscriptWord } from '../../model/transcript-cut.ts';
 import { wordHighlights, type ParagraphText, type TranscriptView, type WordHighlight } from '../../model/transcript-text.ts';
 import { scopeCopyItems, useScopeCopy } from './transcript-copy-button.tsx';
+import { SHORTS_COPY } from './shorts-copy.ts';
 import { TRANSCRIPT_COPY as C, TRANSCRIPT_TOOLS_COPY as T } from './transcript-copy.ts';
 import { useHoldRow } from './use-virtual-rows.ts';
 
@@ -192,6 +193,8 @@ export const Paragraph = memo(
     onCommit,
     onCancel,
     onAction,
+    keptFrom = null,
+    keptTo = null,
   }: {
     assetId: Id;
     index: number;
@@ -221,6 +224,12 @@ export const Paragraph = memo(
     onCommit(assetId: Id, index: number, text: string): void;
     onCancel(): void;
     onAction(assetId: Id, index: number, action: ParagraphAction, moves: ParagraphMoves | null): void;
+    /**
+     * 切出来的子视频：第一个、最后一个留在时间线上的词（`TranscriptWord.index`）。在它们之外划掉的词是片段外的话，
+     * 单击放回这一支，悬停提示这一点。不是子视频或不能改时 null。
+     */
+    keptFrom?: number | null;
+    keptTo?: number | null;
   }) {
     const [hovered, setHovered] = useState(false);
     const scopeCopy = useScopeCopy('para');
@@ -328,6 +337,7 @@ export const Paragraph = memo(
                 isPlayed={played > -Infinity && w.placements.length > 0 && playedEnd(w)! <= played}
                 isEditing={editing === w.index}
                 highlight={highlights?.get(w.index) ?? null}
+                outside={keptFrom !== null && keptTo !== null && (w.index < keptFrom || w.index > keptTo)}
                 onCommit={onCommit}
                 onCancel={onCancel}
               />
@@ -361,7 +371,9 @@ export const Paragraph = memo(
     a.onSeek === b.onSeek &&
     a.onCommit === b.onCommit &&
     a.onCancel === b.onCancel &&
-    a.onAction === b.onAction,
+    a.onAction === b.onAction &&
+    a.keptFrom === b.keptFrom &&
+    a.keptTo === b.keptTo,
 );
 
 function WordView({
@@ -373,6 +385,7 @@ function WordView({
   isPlayed,
   isEditing,
   highlight,
+  outside,
   onCommit,
   onCancel,
 }: {
@@ -385,6 +398,8 @@ function WordView({
   isPlayed: boolean;
   isEditing: boolean;
   highlight: WordHighlight | null;
+  /** 子视频片段外的话（单击放回这一支）。 */
+  outside: boolean;
   onCommit(assetId: Id, index: number, text: string): void;
   onCancel(): void;
 }) {
@@ -397,7 +412,7 @@ function WordView({
       </>
     );
   }
-  const title = w.state === 'cut' ? C.cutWordTitle : w.state === 'partial' ? C.partialWordTitle : undefined;
+  const title = w.state === 'cut' ? (outside ? SHORTS_COPY.outsideWord : C.cutWordTitle) : w.state === 'partial' ? C.partialWordTitle : undefined;
   const gap = highlight?.gap ? (
     <mark className={mark({ isCurrent: highlight.gap === 2 })} {...(highlight.gap === 2 ? { 'data-match-current': '' } : {})}>
       {' '}

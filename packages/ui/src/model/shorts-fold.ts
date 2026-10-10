@@ -1,6 +1,7 @@
 import type { EditOperation, Id, Sequence } from '@baocut/protocol';
 import { sentenceEnd } from './speech-cues.ts';
 import { itemFrames } from './editor.ts';
+import { paragraphText } from './transcript-text.ts';
 import {
   assetRate,
   cutsWithin,
@@ -134,6 +135,19 @@ export function foldOutside(
   const before = side(head, 'before');
   const after = side(tail, 'after');
   return { hidden, before, after, firstKept, lastKept, units, unitOf };
+}
+
+/**
+ * 这一支开头那一句（剪成短视频结果页卡片上的「开头」，派生时没给 `hook` 时）：第一个留在时间线上的词所在的那一句里、
+ * 从它起留下的词。整支剪光了时 null。
+ */
+export function openingSentence(words: readonly TranscriptWord[], paragraphs: readonly TranscriptParagraph[]): string | null {
+  const plan = foldOutside(words, paragraphs, { before: 0, after: 0 });
+  if (!plan) return null;
+  const n = plan.unitOf[plan.firstKept] ?? -1;
+  const unit = n >= 0 ? plan.units[n] : undefined;
+  const text = paragraphText(words.slice(plan.firstKept, unit ? unit.to : plan.firstKept + 1)).text;
+  return text || null;
 }
 
 /** 去掉收起来的词之后的段落：整段收起的不要，切开的段只留露出来的词（段首换成第一个露出来的词）。没有收起来的词时原样返回。 */

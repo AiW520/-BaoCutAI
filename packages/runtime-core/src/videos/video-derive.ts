@@ -192,6 +192,7 @@ export async function deriveVideo(
       files,
       documents,
       labels: { derivationName: RcAgentTools.derivationDocumentName().text },
+      pick: { ...(params.hook !== undefined ? { hook: params.hook } : {}), ...(params.reason !== undefined ? { reason: params.reason } : {}), ...(params.notes ? { notes: params.notes } : {}) },
     }),
   );
 

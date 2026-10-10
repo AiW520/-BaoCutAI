@@ -27,8 +27,10 @@ import {
   derivationKey,
   derivationNeeds,
   planDerivation,
+  pickFields,
   planDerivationTrim,
   timelineWords,
+  type DerivePick,
   type DeriveSettings,
 } from './derive-plan.ts';
 
@@ -173,9 +175,10 @@ const settings: DeriveSettings = { width: 1080, height: 1920, fit: 'cover', crop
 const items: SequenceItem[] = [videoItem('item_a', 0, 90, 0), videoItem('item_b', 90, 90, 10, 2), audio];
 const childTracks = [track('trk_c1', 0, 'visual'), track('trk_c2', 1, 'audio')];
 
-function plan(snapshot: VideoSnapshot, start: number, end: number, s: DeriveSettings = settings, docs: Record<string, unknown> = {}) {
+function plan(snapshot: VideoSnapshot, start: number, end: number, s: DeriveSettings = settings, docs: Record<string, unknown> = {}, pick?: DerivePick) {
   const range = alignRange(snapshot.sequences.seq_1!, start, end);
   return planDerivation({
+    ...(pick ? { pick } : {}),
     snapshot,
     range,
     settings: s,
@@ -308,6 +311,18 @@ describe('planDerivation：整份复制', () => {
       range: { start: 1.5, end: 4.5 },
       primaryAssetId: 'asset_v',
     });
+    expect(p.derivation).not.toHaveProperty('hook');
+    expect(p.derivation).not.toHaveProperty('reason');
+    expect(p.derivation).not.toHaveProperty('notes');
+  });
+
+  it('开头一句、为什么挑它与提示牌原样写进来源文档（去掉空白与空项），不参与幂等键', () => {
+    const p = plan(video(items), 1.5, 4.5, settings, {}, { hook: '  So here is the thing. ', reason: 'Self-contained point', notes: ['Opens on a reaction shot', ' '] });
+    expect(p.derivation).toMatchObject({ hook: 'So here is the thing.', reason: 'Self-contained point', notes: ['Opens on a reaction shot'] });
+    expect(p.operations.at(-1)).toMatchObject({ type: 'putDocument', kind: 'derivation', summary: p.derivation });
+    expect(plan(video(items), 1.5, 4.5, settings, {}, { hook: ' ', notes: [] }).derivation).not.toHaveProperty('hook');
+    expect(pickFields({ hook: 'a', reason: '', notes: [''] })).toEqual({ hook: 'a' });
+    expect(p.derivation.key).toBe(plan(video(items), 1.5, 4.5).derivation.key);
   });
 
   it('第二条用到的视觉轨新建；锁着的实例复制成不锁的并提醒', () => {
@@ -717,9 +732,21 @@ describe.skipIf(!engine || !ffmpeg)('videos.derive（真实引擎）', () => {
     expect(parentCuts).toEqual([{ id: expect.any(String), from: 1.5, to: 2 }]);
 
     // 时间线 [1, 2)：源 1–1.5s 与 2–2.5s 留下；区间之外是源 0–1s 与 2.5–4s。
-    const derived = await client.request('videos.derive', { videoId: parent.videoId, start: 1, end: 2 });
+    const derived = await client.request('videos.derive', {
+      videoId: parent.videoId,
+      start: 1,
+      end: 2,
+      hook: 'beta gamma',
+      reason: 'Short and complete',
+      notes: ['Opens mid-thought'],
+    });
     expect(derived.reused).toBe(false);
     expect(derived.range).toEqual({ start: 1, end: 2 });
+    expect(await documentOf(derived.video.videoId, 'derivation')).toMatchObject({
+      hook: 'beta gamma',
+      reason: 'Short and complete',
+      notes: ['Opens mid-thought'],
+    });
     expect(derived.primaryAssetId).toBe(parent.assetId);
     expect(derived.cuts).toEqual([
       { assetId: parent.assetId, from: 0, to: 1 },

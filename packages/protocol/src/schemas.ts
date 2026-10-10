@@ -849,6 +849,9 @@ export const methodParamSchemas = {
       captions: z.boolean().optional(),
       translations: z.boolean().optional(),
       chapters: z.boolean().optional(),
+      hook: z.string().trim().min(1).max(300).optional(),
+      reason: z.string().trim().min(1).max(500).optional(),
+      notes: z.array(z.string().trim().min(1).max(80)).max(8).optional(),
     })
     .strict()
     .refine((p) => p.end > p.start),

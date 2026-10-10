@@ -34,6 +34,8 @@ const en = {
   discarded: (name: string) => `Moved to Trash · ${name}`,
   undo: 'Undo',
   span: (from: string, to: string, length: string) => `${from} – ${to} · ${length}`,
+  hookLabel: 'Opens with',
+  reasonLabel: 'Why this one',
   rename: 'Click to rename',
   renameLabel: 'Short title',
   failed: (reason: string) => `Couldn’t do that: ${reason}`,
@@ -43,9 +45,13 @@ const en = {
   inSpace: 'See these in Space',
   inSpaceSub: (name: string) => `Filtered by source · shorts cut from “${name}”`,
   exportAll: 'Export all…',
-  exportAllSub: 'Each one exports on its own, starting with the first',
-  exportStarted: (name: string, rest: number) =>
-    rest > 0 ? `Each short exports on its own · opened “${name}” first; the other ${rest} are in Space` : `Opened “${name}” to export`,
+  exportAllSub: (n: number) => (n === 1 ? 'Exports it as a video' : `Exports each of the ${n} as its own video`),
+  exporting: 'Starting the exports…',
+  exportStarted: (n: number) => (n === 1 ? 'Started 1 export · progress is in Background tasks' : `Started ${n} exports · progress is in Background tasks`),
+  exportSkipOpening: 'it’s still opening',
+  exportSkipped: (n: number, detail: string) => (n === 1 ? `Skipped 1 short · ${detail}` : `Skipped ${n} shorts · ${detail}`),
+  exportSkippedItem: (name: string, reason: string) => `“${name}”: ${reason}`,
+  exportSkippedSeparator: '; ',
   hint: 'Each short is a separate video that uses the same original footage and transcript. Move the ones you don’t want to Trash; you can restore them.',
   backTo: (name: string) => `Back to “${name}”`,
 
@@ -64,7 +70,12 @@ const en = {
   expandMore: (n: number) => (n === 1 ? 'Show 1 more' : `Show ${n} more`),
   collapse: 'Collapse',
   outsideWord: 'Outside the clip · click to bring it back into this short',
-  reclaimLabel: 'Bring back into the short',
+
+  // 父视频视频面板里「切出的短视频」一组
+  madeTitle: 'Shorts cut from this video',
+  madeCount: (n: number) => (n === 1 ? '1 short' : `${n} shorts`),
+  madeFoot: 'Each short is a separate video that uses the same original footage. Click one to open it and keep editing there.',
+  madeOpen: (name: string) => `Open “${name}”`,
 };
 
 export type ShortsMessages = typeof en;

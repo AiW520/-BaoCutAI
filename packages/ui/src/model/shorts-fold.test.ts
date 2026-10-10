@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { CaptionItem, Sequence, VideoItem } from '@baocut/protocol';
-import { foldOutside, reclaimOperations, reclaimRange, visibleParagraphs } from './shorts-fold.ts';
+import { foldOutside, openingSentence, reclaimOperations, reclaimRange, visibleParagraphs } from './shorts-fold.ts';
 import type { TranscriptParagraph, TranscriptWord, WordState } from './transcript-cut.ts';
 
 /** 一句一秒、每句两个词（第二个带句号）；`kept` 是留在时间线上的句号（从 0 起）。 */
@@ -30,6 +30,23 @@ function transcript(sentences: number, kept: [number, number], perParagraph = 4)
   }
   return { words, paragraphs };
 }
+
+describe('openingSentence', () => {
+  it('is the kept part of the sentence holding the first kept word', () => {
+    const { words, paragraphs } = transcript(6, [2, 4]);
+    words[4]!.text = 'Here';
+    words[5]!.text = 'goes.';
+    expect(openingSentence(words, paragraphs)).toBe('Here goes.');
+    // 片段从句中起：只取留下的那几个词。
+    words[4]!.state = 'cut';
+    expect(openingSentence(words, paragraphs)).toBe('goes.');
+  });
+
+  it('is null when everything is cut', () => {
+    const { words, paragraphs } = transcript(4, [9, 9]);
+    expect(openingSentence(words, paragraphs)).toBeNull();
+  });
+});
 
 describe('foldOutside', () => {
   it('keeps the 3 nearest struck sentences on each side and folds the rest', () => {

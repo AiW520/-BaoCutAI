@@ -1436,8 +1436,13 @@ interface Provenance {
     settings: { width: number; height: number; fit: 'cover' | 'contain' | null; crop: Crop | null;
                 captions: boolean; translations: boolean; chapters: boolean };
     key: string;                       // 幂等键：父视频、版本、区间与设置的 sha256 前 12 位
+    hook?: string;                     // 开头一句：派生时调用方给了才有
+    reason?: string;                   // 为什么挑这一段
+    notes?: string[];                  // 提示牌：几句短提醒
   }
   ```
+
+  `hook`、`reason`、`notes` 是加上去的可选字段（派生时调用方给了才写，不参与幂等键），旧文档没有它们照常读；界面没有 `hook` 时取子视频保留段的第一句，没有 `reason`、`notes` 时不显示。
 
   子视频复制了父视频的时间线与文稿，区间之外的部分是记在主素材剪口集合（`cut-set`，§6.7）里的剪口，恢复它们就回到父视频的样子；`cuts` 只是派生时记下的那几个，剪口集合才是当前状态。
 

@@ -83,9 +83,38 @@ describe('readDerivation', () => {
         },
       },
     } as DocumentRecord;
-    expect(readDerivation({ d1: record })).toEqual({ parentVideoId: 'parent', parentRevision: 'v3', range: { start: 12.5, end: 48 }, primaryAssetId: 'a1' });
+    expect(readDerivation({ d1: record })).toEqual({
+      parentVideoId: 'parent',
+      parentRevision: 'v3',
+      range: { start: 12.5, end: 48 },
+      primaryAssetId: 'a1',
+      hook: null,
+      reason: null,
+      notes: [],
+    });
     expect(readDerivation({})).toBeNull();
     expect(readDerivation(null)).toBeNull();
+  });
+
+  it('reads the optional hook, reason and notes; blanks and non-strings are dropped', () => {
+    const summary = {
+      schema: 'baocut.derivation/1',
+      parentVideoId: 'parent',
+      parentRevision: 'v3',
+      range: { start: 1, end: 2 },
+      primaryAssetId: null,
+      hook: ' So here is the thing. ',
+      reason: 'Self-contained',
+      notes: ['Opens on a reaction shot', '', 3],
+    };
+    const record = {
+      id: 'd1',
+      kind: 'derivation',
+      name: 'Derivation',
+      currentRevision: 'r1',
+      revisions: { r1: { revision: 'r1', contentHash: '', byteLength: 0, createdAt: '', createdBy: 't', summary } },
+    } as DocumentRecord;
+    expect(readDerivation({ d1: record })).toMatchObject({ hook: 'So here is the thing.', reason: 'Self-contained', notes: ['Opens on a reaction shot'] });
   });
 });
 

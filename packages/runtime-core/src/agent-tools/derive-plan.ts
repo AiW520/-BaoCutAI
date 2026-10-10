@@ -108,6 +108,17 @@ export interface DerivationBody {
   cuts: DerivedCut[];
   settings: DeriveSettings;
   key: string;
+  /** 开头一句、为什么挑它、提示牌（剪成短视频的结果页卡片）：调用方给了才有，不参与幂等键。 */
+  hook?: string;
+  reason?: string;
+  notes?: string[];
+}
+
+/** 派生时调用方附上的说明（`hook`、`reason`、`notes`），原样写进派生来源文档。 */
+export interface DerivePick {
+  hook?: string;
+  reason?: string;
+  notes?: string[];
 }
 
 /** 放在哪条轨道上：子视频已有的轨道，或第一笔事务里新建的轨道的 ref。 */
@@ -190,6 +201,17 @@ export interface DerivationInput {
   documents: ReadonlyMap<Id, unknown>;
   /** 写进视频的名字（按当前语言）。 */
   labels: { derivationName: string };
+  /** 调用方附上的说明；空的不写。 */
+  pick?: DerivePick;
+}
+
+/** 说明里非空的那几项（去掉首尾空白；空的提示牌不要）。 */
+export function pickFields(pick: DerivePick | undefined): DerivePick {
+  if (!pick) return {};
+  const hook = pick.hook?.trim();
+  const reason = pick.reason?.trim();
+  const notes = (pick.notes ?? []).map((n) => n.trim()).filter(Boolean);
+  return { ...(hook ? { hook } : {}), ...(reason ? { reason } : {}), ...(notes.length ? { notes } : {}) };
 }
 
 export const DERIVATION_REF = 'derivation';
@@ -830,6 +852,7 @@ export function planDerivation(input: DerivationInput): DerivationPlan {
     cuts,
     settings,
     key: input.key,
+    ...pickFields(input.pick),
   };
   operations.push({
     type: 'putDocument',
