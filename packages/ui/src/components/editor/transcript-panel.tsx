@@ -488,13 +488,15 @@ export function TranscriptPanel({
   // 切出来的子视频：片段外的话收成两条剪缝（产品设计 §5.10）。`foldShown` 是两侧各铺开了几句，按「视频 · 素材」记，换视频就不算了。
   const derivation = useMemo(() => readDerivation(documents), [documents]);
   const [foldShown, setFoldShown] = useState<Record<string, { before: number; after: number }>>({});
+  // 派生文档记的是父视频里的素材 ID，子视频复制素材时换了新 ID：对不上这里任何一份文稿时不按它筛（首版只有一个主素材）。
+  const primaryHere = !!derivation?.primaryAssetId && sources.some((s) => s.asset.id === derivation.primaryAssetId);
   const models = useMemo(
     () =>
       sources.map((source): SourceModel => {
         const assetId = source.asset.id;
         const loaded = bodies.get(source.record.id);
         const whole = speechBase(loaded, sequence, assetId);
-        const folds = !!derivation && (!derivation.primaryAssetId || derivation.primaryAssetId === assetId) && whole.words.length > 0;
+        const folds = !!derivation && (!primaryHere || derivation.primaryAssetId === assetId) && whole.words.length > 0;
         const fold = folds ? foldOutside(whole.words, whole.paragraphs, foldShown[`${videoId}:${assetId}`] ?? { before: 0, after: 0 }) : null;
         const base = foldedBase(whole, fold);
         const translation = translationRecords.get(source.record.id);
@@ -513,7 +515,7 @@ export function TranscriptPanel({
           fold,
         };
       }),
-    [sources, bodies, fresh, sequence, translationRecords, cutSets, derivation, foldShown, videoId],
+    [sources, bodies, fresh, sequence, translationRecords, cutSets, derivation, primaryHere, foldShown, videoId],
   );
   const foldStep = useCallback(
     (assetId: Id, side: FoldSide, action: 'more' | 'collapse') =>
