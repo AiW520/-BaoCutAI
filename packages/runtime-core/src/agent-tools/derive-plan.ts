@@ -16,6 +16,7 @@ import {
   type VersionRef,
   type VideoSnapshot,
 } from '@baocut/protocol';
+import { upgradeLegacyTranslation } from '../videos/legacy-translation.ts';
 
 /**
  * 派生子视频的规划（架构设计 §3.5「派生子视频」，视频格式规范 §4.6 的 `derivation`）：复制父视频的整条时间线与文稿，
@@ -28,7 +29,9 @@ import {
  * 1. 复制（`planDerivation` 的 `operations`）：轨道、素材（同一份文件，收在父视频里的同样收进子视频）、全部实例
  *    （字幕实例除外，不平移、不截断）、文稿整份、章节、画布背景与派生来源文档。
  * 2. 收尾（`planDerivationTrim`，要用第一笔新建的 ID）：轨道的隐藏与静音、转场、译文、父视频已有的剪口集合，
- *    然后对主素材记下区间之外的剪口（剪掉之后时间线只剩区间），最后锁回父视频锁着的轨道。
+ *    然后对主素材记下区间之外的剪口（剪掉之后时间线只剩区间），最后锁回父视频锁着的轨道。译文一律写成
+ *    `baocut.translation/2`：旧项目导入的 `/1` 按转写现在的句子换过来（`legacy-translation.ts`），换不了的不复制，
+ *    以 `translations-skipped` 说明。
  *
  * 剪口记在素材的源时钟上，只作用于播放那个素材的实例；其余实例在复制时一律改成 `follow-cuts`，跟着剪口移动、缩短，
  * 整个落在剪掉范围里的删掉（恢复剪口时回不来，结果的 `items-not-restorable` 说明）。首版只对一个主素材（时间线上
@@ -56,12 +59,15 @@ export type DeriveWarningCode =
   | 'animation-bindings-dropped'
   | 'multiple-assets'
   | 'range-not-exact'
-  | 'items-not-restorable';
+  | 'items-not-restorable'
+  | 'translations-skipped';
 
 export interface DeriveWarning {
   code: DeriveWarningCode;
   itemId?: Id;
   assetId?: Id;
+  /** `translations-skipped`：没能复制的那份译文（父视频里的 ID）。 */
+  documentId?: Id;
   /** `range-not-exact`：区间之外没能剪掉的帧数；`items-not-restorable`：会被剪口删掉的实例数；`multiple-assets`：媒体素材数。 */
   count?: number;
 }
@@ -670,8 +676,19 @@ export function planDerivation(input: DerivationInput): DerivationPlan {
     for (const record of docs) {
       if (record.kind !== 'translation' || !record.sourceDocumentId) continue;
       const speechRef = speechRefs.get(record.sourceDocumentId);
-      const body = input.documents.get(record.id);
-      if (!speechRef || !isTranslationBody(body)) continue;
+      if (!speechRef) continue;
+      const raw = input.documents.get(record.id);
+      // 旧项目导入的 `/1` 译文按转写现在的句子换成 `/2`（句级对齐），子视频才能给它建字幕层；换不了的不复制，以警告说明。
+      const body = isTranslationBody(raw)
+        ? raw
+        : (upgradeLegacyTranslation(raw, input.documents.get(record.sourceDocumentId), record.language, {
+            speechRef: { id: record.sourceDocumentId, revision: snapshot.documents[record.sourceDocumentId]?.currentRevision ?? '' },
+            sequenceId: sequence.id,
+          })?.body ?? null);
+      if (!body) {
+        warnings.push({ code: 'translations-skipped', documentId: record.id });
+        continue;
+      }
       translations.push({ from: record.id, speechRef, name: record.name, ...(record.language ? { language: record.language } : {}), body });
     }
   }

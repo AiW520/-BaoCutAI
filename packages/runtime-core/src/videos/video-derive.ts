@@ -12,7 +12,7 @@ import {
   type VideoOpenResult,
   type VideoSnapshot,
 } from '@baocut/protocol';
-import { PipelineStepError, existingCaptionLayer, planCaptionLayer } from '@baocut/jobs';
+import { PipelineStepError, existingCaptionLayer, planCaptionLayer, type CaptionSource } from '@baocut/jobs';
 import { RcAgentTools } from '@baocut/protocol/messages/runtime-core';
 import type { TrustedPrincipal } from '../gateway.ts';
 import {
@@ -206,17 +206,20 @@ export async function deriveVideo(
 
   // ---- 第二笔：收尾与剪口 ----
   const trimCommand = `derive:${key}:trim`;
-  if (copyReceipt && !(await videos.receiptFor(childId, trimCommand))) {
+  let trimReceipt: TransactionReceipt | null = copyReceipt ? await videos.receiptFor(childId, trimCommand) : null;
+  if (copyReceipt && !trimReceipt) {
     const now = child();
     const operations = planDerivationTrim(plan, { sequence: now.sequences[now.rootSequenceId]!, documents: now.documents }, refs);
     if (operations.length) {
-      await videos.apply(
+      const result = await videos.apply(
         { videoId: childId, commandId: trimCommand, expectedRevision: now.revision, operations: operations as never, label },
         principal,
         guard,
       );
+      trimReceipt = result.receipt;
     }
   }
+  const trimRefs = trimReceipt?.refs ?? {};
 
   // ---- 字幕层：按剪辑后的时间线，每个素材至多一层 ----
   const warnings: VideoDeriveResult['warnings'] = [...plan.warnings];
@@ -231,7 +234,21 @@ export async function deriveVideo(
     for (const [n, speech] of captionSources(plan.speech, parent).entries()) {
       const documentId = refs[speech.ref];
       if (!documentId) continue;
-      const made = await captionLayer(videos, reader, childId, documentId, `derive:${key}:captions:${n + 1}`, principal, guard);
+      const source = { kind: 'speech' as const, documentId };
+      const made = await captionLayer(videos, reader, childId, source, `derive:${key}:captions:${n + 1}`, principal, guard);
+      if (made === 'skipped') warnings.push({ code: 'captions-skipped', documentId });
+      else captions.push({ documentId: made.documentId, sourceDocumentId: documentId, cueCount: made.cueCount });
+    }
+    // 译文：父视频里有字幕层的译文同样建一层（与父视频对应）；父视频的原文字幕层显示着时是双语。
+    const parentSequence = parent.sequences[parent.rootSequenceId]!;
+    for (const [n, t] of plan.trim.translations.entries()) {
+      const documentId = trimRefs[`translation-${n + 1}`];
+      if (!documentId || !existingCaptionLayer(parentSequence, parent.documents, t.from)) continue;
+      const speechId = parent.documents[t.from]?.sourceDocumentId;
+      const original = speechId ? existingCaptionLayer(parentSequence, parent.documents, speechId) : null;
+      const bilingual = !!original && parentSequence.items.some((item) => original.itemIds.includes(item.id) && item.enabled);
+      const source = { kind: 'translation' as const, documentId, bilingual, cues: 'sentence-alignment' as const };
+      const made = await captionLayer(videos, reader, childId, source, `derive:${key}:translation-captions:${n + 1}`, principal, guard);
       if (made === 'skipped') warnings.push({ code: 'captions-skipped', documentId });
       else captions.push({ documentId: made.documentId, sourceDocumentId: documentId, cueCount: made.cueCount });
     }
@@ -291,7 +308,7 @@ async function captionLayer(
   videos: VideoService,
   reader: Parameters<typeof planCaptionLayer>[0],
   videoId: Id,
-  speechId: Id,
+  source: CaptionSource,
   command: string,
   principal: TrustedPrincipal,
   guard: { taskId?: Id; protections: EngineProtection[] },
@@ -301,16 +318,16 @@ async function captionLayer(
     const done = await videos.receiptFor(videoId, commandId);
     const video = videos.mirror(videoId)!.video;
     const sequence = video.sequences[video.rootSequenceId]!;
-    const layer = existingCaptionLayer(sequence, video.documents, speechId);
-    if (done || layer) return { documentId: layer?.documentId ?? done?.refs?.caption ?? speechId, cueCount: null };
+    const layer = existingCaptionLayer(sequence, video.documents, source.documentId);
+    if (done || layer) return { documentId: layer?.documentId ?? done?.refs?.caption ?? source.documentId, cueCount: null };
     let plan: Awaited<ReturnType<typeof planCaptionLayer>>;
     try {
       plan = await planCaptionLayer(reader, {
         videoId,
         sequence,
         documents: video.documents as Record<Id, DocumentRecord>,
-        source: { kind: 'speech', documentId: speechId },
-        pairOriginal: true,
+        source,
+        pairOriginal: source.kind === 'speech',
       });
     } catch (error) {
       if (error instanceof PipelineStepError) return 'skipped';
@@ -329,7 +346,7 @@ async function captionLayer(
         principal,
         guard,
       );
-      return { documentId: result.receipt.refs?.caption ?? speechId, cueCount: plan.cueCount };
+      return { documentId: result.receipt.refs?.caption ?? source.documentId, cueCount: plan.cueCount };
     } catch (error) {
       const code = error instanceof RpcError ? (error.details as { code?: unknown } | null)?.code : undefined;
       const conflict = error instanceof RpcError && (error.code === 'conflict' || code === 'PROJECT_REVISION_CONFLICT');

@@ -16,6 +16,7 @@ import {
   type VideoSnapshot,
 } from '@baocut/protocol';
 import { resolveRuntimeHome } from '@baocut/runtime-storage';
+import { editorWasmAvailable, sha256Hex } from '@baocut/jobs';
 import { startRuntime, type RunningRuntime } from '../runtime.ts';
 import { resolveEngineHostCommand } from '../videos/engine-host.ts';
 import {
@@ -170,7 +171,7 @@ const settings: DeriveSettings = { width: 1080, height: 1920, fit: 'cover', crop
 const items: SequenceItem[] = [videoItem('item_a', 0, 90, 0), videoItem('item_b', 90, 90, 10, 2), audio];
 const childTracks = [track('trk_c1', 0, 'visual'), track('trk_c2', 1, 'audio')];
 
-function plan(snapshot: VideoSnapshot, start: number, end: number, s: DeriveSettings = settings) {
+function plan(snapshot: VideoSnapshot, start: number, end: number, s: DeriveSettings = settings, docs: Record<string, unknown> = {}) {
   const range = alignRange(snapshot.sequences.seq_1!, start, end);
   return planDerivation({
     snapshot,
@@ -186,6 +187,7 @@ function plan(snapshot: VideoSnapshot, start: number, end: number, s: DeriveSett
       ['doc_speech', speechBody],
       ['doc_tr', translationBody],
       ['doc_cuts', parentCutSet],
+      ...Object.entries(docs),
     ]),
     labels: { derivationName: 'Derivation' },
   });
@@ -378,6 +380,77 @@ describe('planDerivation：父视频已有的剪口（cut-set）', () => {
     expect(cutSet).toMatchObject({ sourceAsset: { assetId: 'asset_new_v' }, body: { ...parentCutSet, scopeItemIds: ['new_item_a', 'new_item_b'] } });
     // 剪口集合先写，再记区间之外的剪口（addCuts 合进同一个集合）。
     expect(trim.indexOf(cutSet)).toBeLessThan(trim.findIndex((o) => o.type === 'addCuts'));
+  });
+});
+
+describe.skipIf(!editorWasmAvailable())('planDerivation：旧项目的译文（baocut.translation/1）', () => {
+  /**
+   * 旧项目的译文：单元 ID 是旧的句子 ID；一句记着词的范围，一句与规则句同 ID，一句找不到对应的词。
+   * 规则句子（章节在 1s 处断句）：s-w1 [w1]、s-w2 [w2, w3]、s-w4 [w4]。
+   */
+  const legacy = {
+    schema: 'baocut.translation/1',
+    sourceLanguage: 'en',
+    units: [
+      { id: 's1', text: '乙丙', display: '乙', source: { first: 'w2', last: 'w3', wordCount: 2, fingerprint: 'x' } },
+      { id: 's-w4', text: '丁' },
+      { id: 'gone', text: '戊' },
+    ],
+  };
+
+  it('按转写现在的句子换成 /2：句级对齐、译文照用，子视频照样复制', () => {
+    const p = plan(video(items), 1.5, 4.5, settings, { doc_tr: legacy });
+    expect(codes(p)).not.toContain('translations-skipped');
+    expect(p.trim.translations).toHaveLength(1);
+    const t = p.trim.translations[0]!;
+    expect(t).toMatchObject({ from: 'doc_tr', speechRef: 'speech-1', language: 'zh' });
+    expect(t.body).toMatchObject({
+      schema: 'baocut.translation/2',
+      language: 'zh',
+      sourceBasis: { speechRef: { id: 'doc_speech', revision: '1' }, sequenceId: 'seq_1', scopeLineage: [], editViewHash: expect.any(String) },
+    });
+    const units = t.body.units as Loose[];
+    expect(units.map((u) => [u.sourceSentenceId, u.naturalText, u.status])).toEqual([
+      ['s-w2', '乙丙', 'draft'],
+      ['s-w4', '丁', 'draft'],
+    ]);
+    expect(units[0]).toEqual({
+      id: 't-s-w2',
+      sourceSentenceId: 's-w2',
+      sourceFingerprint: expect.stringMatching(/^2:w2:w3:/),
+      naturalText: '乙丙',
+      // 旧的显示改写不带（没有改写依据的指纹）。
+      alignment: { basis: 'natural', correspondence: 'sentence', blocks: [], sourceWordIds: ['w2', 'w3'], textHash: `sha256:${sha256Hex('乙丙')}` },
+      status: 'draft',
+    });
+
+    // 收尾照常写成子视频的译文：sourceBasis 换成子视频的转写与序列。
+    const child = childAfterCopy(items, { trk_v1: 'trk_c1', trk_a1: 'trk_c2' });
+    const trim = planDerivationTrim(p, child, { 'asset-1': 'asset_new_v', 'speech-1': 'doc_new' });
+    expect(op(trim, 'putDocument').find((d) => d.kind === 'translation')).toMatchObject({
+      ref: 'translation-1',
+      sourceDocument: { documentId: 'doc_new' },
+      body: { schema: 'baocut.translation/2', sourceBasis: { speechRef: { id: 'doc_new', revision: '3' }, sequenceId: 'seq_child' } },
+    });
+  });
+
+  it('旧句的词与现在的句子不同时译文留着、标为过期', () => {
+    const shifted = { ...legacy, units: [{ id: 's1', text: '甲乙', source: { first: 'w1', last: 'w2' } }] };
+    const units = plan(video(items), 1.5, 4.5, settings, { doc_tr: shifted }).trim.translations[0]!.body.units as Loose[];
+    expect(units.map((u) => [u.sourceSentenceId, u.naturalText, u.status])).toEqual([['s-w1', '甲乙', 'stale']]);
+  });
+
+  it('换不了的译文不复制，以 translations-skipped 说明', () => {
+    const noLanguage = video(items);
+    noLanguage.documents.doc_tr = { ...noLanguage.documents.doc_tr!, language: undefined } as DocumentRecord;
+    for (const p of [
+      plan(noLanguage, 1.5, 4.5, settings, { doc_tr: legacy }),
+      plan(video(items), 1.5, 4.5, settings, { doc_tr: { schema: 'baocut.translation/9', units: [] } }),
+      plan(video(items), 1.5, 4.5, settings, { doc_tr: { ...legacy, units: [{ id: 'gone', text: '戊' }] } }),
+    ]) {
+      expect(p.trim.translations).toEqual([]);
+      expect(p.warnings).toContainEqual({ code: 'translations-skipped', documentId: 'doc_tr' });
+    }
   });
 });
 
@@ -629,6 +702,50 @@ describe.skipIf(!engine || !ffmpeg)('videos.derive（真实引擎）', () => {
     await apply(parent.videoId, [{ type: 'restoreCut', sequenceId: snapshotOf(parent.videoId).rootSequenceId, assetId: parent.assetId, cutId: parentCuts[0]!.id }]);
     expect(playback(childId)).toEqual(playback(parent.videoId));
     expect(playback(childId)).toEqual([{ from: 0, to: 120, sourceIn: 0 }]);
+  });
+
+  it('父视频的旧译文（/1）换成 /2 带进子视频，并按父视频的译文字幕层建一层', async () => {
+    const parent = await parentWithCut();
+    const sequenceId = snapshotOf(parent.videoId).rootSequenceId;
+    const speechId = Object.values(snapshotOf(parent.videoId).documents).find((d) => d.kind === 'speech')!.id;
+    await apply(parent.videoId, [
+      {
+        type: 'putDocument',
+        ref: 'tr',
+        kind: 'translation',
+        language: 'zh',
+        sourceDocument: { documentId: speechId },
+        body: { schema: 'baocut.translation/1', sourceLanguage: 'en', units: [{ id: 's-w1', text: '阿尔法贝塔伽马德尔塔欧米伽。' }] },
+      },
+      {
+        type: 'putDocument',
+        ref: 'cap',
+        kind: 'caption',
+        language: 'zh',
+        sourceDocument: { ref: 'tr' },
+        body: { schema: 'baocut.caption/1', clock: 'source-asset', timescale: 1000, cues: [{ id: 'q1', start: 200, end: 3800, text: '阿尔法贝塔伽马德尔塔欧米伽。' }] },
+      },
+      { type: 'addTrack', sequenceId, kind: 'subtitle', ref: 'subs' },
+      { type: 'insertItems', sequenceId, items: [{ type: 'caption', span: { fromFrame: 0, durationFrames: 105 }, documentRef: 'cap', trackRef: 'subs' }] },
+    ]);
+
+    const derived = await client.request('videos.derive', { videoId: parent.videoId, start: 1, end: 2 });
+    expect(derived.warnings).toEqual([]);
+    const childId = derived.video.videoId;
+    expect(derived.translations).toHaveLength(1);
+    const translation = derived.translations[0]!;
+    const body = (await client.request('documents.read', { videoId: childId, documentId: translation.documentId })).body as Loose;
+    expect(body).toMatchObject({ schema: 'baocut.translation/2', language: 'zh' });
+    expect(body.units).toEqual([
+      expect.objectContaining({ sourceSentenceId: 's-w1', naturalText: '阿尔法贝塔伽马德尔塔欧米伽。', status: 'draft' }),
+    ]);
+    // 子视频里原文与译文各一层字幕。
+    expect(derived.captions.map((c) => c.sourceDocumentId).sort()).toEqual([translation.sourceDocumentId, translation.documentId].sort());
+    const child = snapshotOf(childId);
+    const layers = sequenceOf(childId).items.filter((i) => i.type === 'caption');
+    expect(layers.map((i) => child.documents[(i as { documentId: string }).documentId]?.sourceDocumentId).sort()).toEqual(
+      [translation.sourceDocumentId, translation.documentId].sort(),
+    );
   });
 
   it('同样的参数再派生认回同一个子视频，不再复制', async () => {

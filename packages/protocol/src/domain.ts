@@ -302,7 +302,10 @@ export interface VideoDeriveParams {
   chapters?: boolean;
 }
 
-/** 派生时丢掉、改动或没做到的东西（架构设计 §3.5「派生子视频」）。 */
+/**
+ * 派生时丢掉、改动或没做到的东西（架构设计 §3.5「派生子视频」）。`translations-skipped`：父视频的一份译文没能复制
+ * （`documentId` 是父视频里的译文；正文既不是 `baocut.translation/2`，旧项目的 `/1` 也换不过去）。
+ */
 export type VideoDeriveWarningCode =
   | 'anchor-dropped'
   | 'locks-dropped'
@@ -310,7 +313,8 @@ export type VideoDeriveWarningCode =
   | 'multiple-assets'
   | 'range-not-exact'
   | 'items-not-restorable'
-  | 'captions-skipped';
+  | 'captions-skipped'
+  | 'translations-skipped';
 
 export interface VideoDeriveResult {
   /** 子视频：与 `videos_create` 的 `video-created` 同一个写法。 */
