@@ -30,6 +30,7 @@ import { AiToolPrompt, useToolHandoff } from './ai-tool-prompt.tsx';
 import { Option, Row, ToolCard } from './ai-tools-agent-page.tsx';
 import { AI_TOOLS_COPY as C } from './ai-tools-copy.ts';
 import { PanelHead } from './panel-head.tsx';
+import { recordShortsRun } from './shorts-runs.ts';
 
 const body = style({ flexGrow: 1, minHeight: 0, overflowY: 'auto', paddingX: 12, paddingTop: 12, paddingBottom: 16 });
 const secHead = style({ marginTop: 20, marginBottom: 0, font: 'detail', fontWeight: 'bold', color: 'gray-700' });
@@ -44,18 +45,22 @@ const radioSub = style({ display: 'block', paddingStart: 24, marginTop: -2, marg
  * 剪成短视频的参数页（原型 panel-aitools-shorts.jsx `ShortsCutSetup`，产品设计 §5.10「参数页」）：只交给 Agent，所以没有「用」一行；
  * 总是新开一条会话，所以也没有「会话」一行。自上而下：说明卡（挑几段能单独成立的话、会创建新的子视频），范围与「已经切过的不再找」，
  * 切成什么样（几支、多长、画幅），取景（画幅不是保留原画幅时），字幕（带哪几轨、样式），提示词框（意图句加一行一句的参数，最后一行
- * 「找好就直接创建」可以单独删），主按钮与去向。按下就新开会话发出去，那条会话打开到眼前，工具页回列表。
+ * 「找好就直接创建」可以单独删），主按钮与去向。按下就新开会话发出去，那条会话打开到眼前，工具页回列表；这一轮记下来（`recordShortsRun`），
+ * 跑完、切出了子视频时这部视频的 AI 工具 Tab 翻到结果页（ai-tools-shorts-result.tsx）。
  * 视频不属于项目时没有可新开会话的项目：发到它所在的那条会话，提示词里多一行先收进以视频命名的项目（Runtime 没有给界面用的收进项目的命令）。
  */
 export function ShortsToolPage({
   videoId,
   sequence,
   documents,
+  skipDone,
   onBack,
 }: {
   videoId: Id;
   sequence: Sequence;
   documents: Record<Id, DocumentRecord>;
+  /** 结果页「再切几支」进来：勾上「已经切过的不再找」。 */
+  skipDone?: boolean;
   onBack(): void;
 }) {
   const handoff = useToolHandoff();
@@ -70,7 +75,7 @@ export function ShortsToolPage({
   const scope = scopeIndex >= 0 ? C.scopeChapter(scopeIndex + 1, chapters[scopeIndex]!.label) : null;
 
   const hasTranslation = useMemo(() => Object.values(documents).some((d) => d.kind === 'translation'), [documents]);
-  const [s, setS] = useState<ShortsSettings>({ ...SHORTS_DEFAULTS });
+  const [s, setS] = useState<ShortsSettings>(() => ({ ...SHORTS_DEFAULTS, ...(skipDone ? { skipDone: true } : {}) }));
   const set = (patch: Partial<ShortsSettings>) => setS((prev) => ({ ...prev, ...patch }));
   const range = shortsLengthRange(s);
 
@@ -233,6 +238,9 @@ export function ShortsToolPage({
           template={template}
           handoff={handoff}
           onDone={onBack}
+          onSent={(sent) =>
+            recordShortsRun({ conversationId: sent.conversationId, parentVideoId: videoId, taskId: sent.taskId, handedAt: sent.handedAt })
+          }
           {...(target ? { target } : {})}
           hint={inProject ? C.shortsHint : C.shortsLooseHint}
         />

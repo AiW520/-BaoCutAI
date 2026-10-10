@@ -13,6 +13,7 @@ import { useJobs } from '../../state/jobs-store.ts';
 import type { OpenVideo } from '../../state/video-store.ts';
 import { mediaCandidates } from '../editor/transcribe-run.ts';
 import { EXPORT_COPY } from './export-copy.ts';
+import { clearExportRequest, useExportRequest } from './export-request.ts';
 import { Note } from './export-parts.tsx';
 import { ExportPanel } from './export-popover.tsx';
 import type { ExportEnv } from './use-export-submit.ts';
@@ -21,6 +22,7 @@ import type { ExportEnv } from './use-export-submit.ts';
  * 视频栏的「导出」按钮（设计稿 export.jsx、产品设计 §17.1）：点开右对齐的导出弹层。
  * 这个视频有导出在跑时（谁提交的都算），按钮念「导出中 · NN%」；关掉弹层不停导出。
  * 弹层关着时导出结束：完成给一条提示，可以直接在文件夹中显示；失败或中断给一条提示，点「查看」打开弹层看原因。
+ * 别处可以请它打开弹层（`requestExport`）。
  */
 
 const tabular = { fontVariantNumeric: 'tabular-nums' } as const;
@@ -36,6 +38,14 @@ export function ExportButton({ video, sequence }: { video: OpenVideo; sequence: 
     setFocus(jobId);
     setOpen(true);
   });
+  // 别处请打开导出弹层（剪成短视频结果页的「全部导出…」）：视频读到了才开。
+  const requested = useExportRequest((s) => !!videoId && s.videoId === videoId);
+  const ready = !!sequence;
+  useEffect(() => {
+    if (!requested || !ready || !videoId) return;
+    clearExportRequest(videoId);
+    setOpen(true);
+  }, [requested, ready, videoId]);
   if (!videoId) return null;
   const label = exportButtonLabel(live);
 

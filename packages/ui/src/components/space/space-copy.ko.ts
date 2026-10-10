@@ -225,4 +225,9 @@ export const ko: SpaceMessages = {
   importSummaryIn: (text: string, project: string) => `${text}(${project})`,
   activityAt: (ago: string, at: string) => `${ago}(${at})`,
   withReason: (reason: string, body: string) => `${reason}. ${body}`,
+  shortsCount: (n: number) => `쇼츠 ${n}개`,
+  shortsView: '잘라 낸 쇼츠 보기',
+  shortsFilter: (name: string) => `“${name}”에서 자른 쇼츠`,
+  shortsFilterClear: '필터 지우기',
+  trashVideoShorts: (n: number) => `파생된 동영상 ${n}개는 각각 따로 유지됩니다.`,
 };

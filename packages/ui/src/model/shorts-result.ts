@@ -1,0 +1,100 @@
+import type { DocumentRecord, Id, SpaceEntry, TimelineItem } from '@baocut/protocol';
+import { derivedFrom } from './space.ts';
+
+/**
+ * 剪成短视频的结果（产品设计 §5.10「结果页」）：这一轮会话派生出了哪几支子视频、子视频从父视频的哪一段来。
+ * 子视频的派生来源文档（`kind: 'derivation'`，视频格式规范 `baocut.derivation/1`）随快照下发，概要就是正文。
+ */
+
+export const DERIVATION_KIND = 'derivation';
+
+/** 子视频的派生来源：父视频、父视频剪辑后时间线上的区间（秒）、记剪口的主素材。 */
+export interface ShortsDerivation {
+  parentVideoId: Id;
+  parentRevision: string | null;
+  range: { start: number; end: number };
+  primaryAssetId: Id | null;
+}
+
+/** 视频里的派生来源文档的概要；不是子视频（没有这份文档、或认不出）时 null。 */
+export function readDerivation(documents: Record<Id, DocumentRecord> | null | undefined): ShortsDerivation | null {
+  if (!documents) return null;
+  for (const record of Object.values(documents)) {
+    if (record.kind !== DERIVATION_KIND) continue;
+    const summary = record.revisions[record.currentRevision]?.summary as Record<string, unknown> | undefined;
+    if (!summary || typeof summary !== 'object' || typeof summary.parentVideoId !== 'string') continue;
+    const range = summary.range as { start?: unknown; end?: unknown } | undefined;
+    const start = Number(range?.start);
+    const end = Number(range?.end);
+    if (range?.start === undefined || range?.end === undefined || !Number.isFinite(start) || !Number.isFinite(end)) continue;
+    return {
+      parentVideoId: summary.parentVideoId,
+      parentRevision: typeof summary.parentRevision === 'string' ? summary.parentRevision : null,
+      range: { start, end },
+      primaryAssetId: typeof summary.primaryAssetId === 'string' ? summary.primaryAssetId : null,
+    };
+  }
+  return null;
+}
+
+/** 一条会话里智能体新建的视频（`video-created`：`videos_create` 与新派生的子视频；认回已有子视频的不记）。时间线还没读到时 null。 */
+export function createdVideoIds(items: readonly TimelineItem[] | undefined): Set<Id> | null {
+  if (!items) return null;
+  const ids = new Set<Id>();
+  for (const item of items) if (item.kind === 'video-created') ids.add(item.videoId);
+  return ids;
+}
+
+/** 认这一轮的依据：交出去的那条会话、那一刻，与（时间线读到时）会话里新建的视频。 */
+export interface ShortsBatchKey {
+  parentVideoId: Id;
+  conversationId: Id;
+  /** 交给 Agent 的那一刻（ISO）。 */
+  handedAt: string;
+  /** 那条会话时间线里 `video-created` 的视频；时间线还没读到时 null。 */
+  created: ReadonlySet<Id> | null;
+}
+
+const videoIdOf = (entry: Pick<SpaceEntry, 'ref'>): Id | null => (entry.ref && 'videoId' in entry.ref ? entry.ref.videoId : null);
+const createdAt = (entry: Pick<SpaceEntry, 'createdAt' | 'lastActivityAt'>) => entry.createdAt ?? entry.lastActivityAt;
+
+/**
+ * 这一轮切出的子视频（含回收站里的，调用方按需要再筛），按创建先后排。从 Space 里这部父视频派生的视频条目里认：
+ *
+ * 1. 条目的 `origin.conversationId` 有值时只按它（Runtime 现在的派生条目不带，留着以后带上）；
+ * 2. 否则会话时间线里新建过它（`video-created`），或它是交出去之后才建的（`createdAt`，旧 Runtime 没有时按最近活动）。
+ *
+ * 认回已有子视频（同一区间与设置再派生一次）既没有 `video-created`，创建时间也早于这一轮：认不出，结果页不列。
+ */
+export function shortsBatch(entries: readonly SpaceEntry[], key: ShortsBatchKey): SpaceEntry[] {
+  const out: SpaceEntry[] = [];
+  const seen = new Set<Id>();
+  for (const entry of entries) {
+    if (derivedFrom(entry) !== key.parentVideoId) continue;
+    const videoId = videoIdOf(entry);
+    if (!videoId || seen.has(videoId)) continue;
+    const origin = entry.origin?.conversationId;
+    const mine = origin ? origin === key.conversationId : !!key.created?.has(videoId) || createdAt(entry) >= key.handedAt;
+    if (!mine) continue;
+    seen.add(videoId);
+    out.push(entry);
+  }
+  return out.sort((a, b) => createdAt(a).localeCompare(createdAt(b)) || a.name.localeCompare(b.name));
+}
+
+/** 条目指向的视频（子视频卡用）；不是视频条目时 null。 */
+export function entryVideoId(entry: Pick<SpaceEntry, 'ref'>): Id | null {
+  return videoIdOf(entry);
+}
+
+/**
+ * 头上「第 k/N」的 k（从 0 起）：开着的是其中一支就是它；开着父视频时是上次选中的那一支，没选过是第一支。
+ * 没有子视频时 -1。
+ */
+export function pagerIndex(ids: readonly Id[], openId: Id | null, focus: Id | null): number {
+  if (!ids.length) return -1;
+  const open = openId ? ids.indexOf(openId) : -1;
+  if (open >= 0) return open;
+  const focused = focus ? ids.indexOf(focus) : -1;
+  return focused >= 0 ? focused : 0;
+}

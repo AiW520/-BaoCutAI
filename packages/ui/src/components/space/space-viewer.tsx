@@ -16,6 +16,7 @@ import {
 } from '@react-spectrum/s2';
 import Chat from '@react-spectrum/s2/icons/Chat';
 import Clock from '@react-spectrum/s2/icons/Clock';
+import DevicePhone from '@react-spectrum/s2/icons/DevicePhone';
 import Edit from '@react-spectrum/s2/icons/Edit';
 import Filmstrip from '@react-spectrum/s2/icons/Filmstrip';
 import Folder from '@react-spectrum/s2/icons/Folder';
@@ -98,6 +99,8 @@ export interface ViewerActions {
   onConversation(conversationId: Id): void;
   /** 换成另一个条目的查看框：视频名下的文件，或文件所属的视频。 */
   onSwitch(entryId: Id): void;
+  /** 按来源筛出从这部视频切出的短视频（产品设计 §5.10）。 */
+  onShorts?(entry: SpaceEntry): void;
   onClose(): void;
 }
 
@@ -120,6 +123,7 @@ export function SpaceViewer({
   tools = null,
   files = [],
   host = null,
+  shorts = 0,
 }: {
   entry: SpaceEntry | null;
   source: string;
@@ -135,6 +139,8 @@ export function SpaceViewer({
   files?: readonly SpaceEntry[];
   /** 文件所属的视频（`hostVideoOf`）。 */
   host?: SpaceEntry | null;
+  /** 从这部视频派生的子视频数（`derivedCount`）。 */
+  shorts?: number;
 }) {
   return (
     <DialogContainer onDismiss={actions.onClose}>
@@ -150,6 +156,7 @@ export function SpaceViewer({
             tools={tools}
             files={files}
             host={host}
+            shorts={shorts}
           />
         </Dialog>
       ) : null}
@@ -167,6 +174,7 @@ function ViewerBody({
   tools,
   files,
   host,
+  shorts,
 }: {
   entry: SpaceEntry;
   source: string;
@@ -177,6 +185,7 @@ function ViewerBody({
   tools: EntryTools | null;
   files: readonly SpaceEntry[];
   host: SpaceEntry | null;
+  shorts: number;
 }) {
   const trashed = entry.user.trashedAt !== null;
   const failed = isFailedPlaceholder(entry);
@@ -321,6 +330,12 @@ function ViewerBody({
             <ActionButton isQuiet onPress={() => actions.onSwitch(host.id)}>
               <Filmstrip />
               <Text>{COPY.viewVideo}</Text>
+            </ActionButton>
+          ) : null}
+          {isVideo && shorts > 0 && actions.onShorts ? (
+            <ActionButton isQuiet onPress={() => actions.onShorts?.(entry)}>
+              <DevicePhone />
+              <Text>{COPY.shortsView}</Text>
             </ActionButton>
           ) : null}
           {trashed ? null : <ToolActions entry={entry} tools={tools} onClose={actions.onClose} />}

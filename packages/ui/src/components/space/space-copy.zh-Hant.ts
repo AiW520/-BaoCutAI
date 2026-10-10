@@ -223,4 +223,9 @@ export const zhHant: SpaceMessages = {
   importSummaryIn: (text: string, project: string) => `${text}（${project}）`,
   activityAt: (ago: string, at: string) => `${ago}（${at}）`,
   withReason: (reason: string, body: string) => `${reason}。${body}`,
+  shortsCount: (n: number) => `${n} 支短影片`,
+  shortsView: '查看剪出的短影片',
+  shortsFilter: (name: string) => `從「${name}」剪出的短影片`,
+  shortsFilterClear: '清除篩選',
+  trashVideoShorts: (n: number) => `有 ${n} 支衍生影片，它們各自獨立保留。`,
 };

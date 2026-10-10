@@ -205,4 +205,9 @@ export const ru: SpaceMessages = {
   importSummaryIn: (text: string, project: string) => `${text} (${project})`,
   activityAt: (ago: string, at: string) => `${ago} (${at})`,
   withReason: (reason: string, body: string) => `${reason}. ${body}`,
+  shortsCount: (n: number) => `Шортсов: ${n}`,
+  shortsView: 'Показать нарезанные шортсы',
+  shortsFilter: (name: string) => `Шортсы из «${name}»`,
+  shortsFilterClear: 'Сбросить фильтр',
+  trashVideoShorts: (n: number) => `Производных видео: ${n}. Каждое сохранится отдельно.`,
 };

@@ -24,6 +24,7 @@ import Chat from '@react-spectrum/s2/icons/Chat';
 import Clock from '@react-spectrum/s2/icons/Clock';
 import CloseCaptions from '@react-spectrum/s2/icons/CloseCaptions';
 import Delete from '@react-spectrum/s2/icons/Delete';
+import DevicePhone from '@react-spectrum/s2/icons/DevicePhone';
 import Edit from '@react-spectrum/s2/icons/Edit';
 import ExportTo from '@react-spectrum/s2/icons/ExportTo';
 import FileText from '@react-spectrum/s2/icons/FileText';
@@ -80,7 +81,9 @@ export type EntryAction =
   | 'trash'
   | 'restore'
   | 'purge'
-  | 'clear';
+  | 'clear'
+  /** 按来源筛出从这部视频切出的短视频（卡片与行上的「N 支短视频」）。 */
+  | 'shorts';
 
 export const KIND_ICON: Record<SpaceEntryKind, ComponentType> = {
   video: Filmstrip,
@@ -291,6 +294,17 @@ function FilesButton({ row, onAction }: { row: SpaceRow; onAction: (action: Entr
   );
 }
 
+/** 父视频卡片上的「N 支短视频」（产品设计 §5.10）：点一下按来源筛出它们。 */
+function ShortsButton({ row, count, onAction }: { row: SpaceRow; count: number; onAction: (action: EntryAction, entry: SpaceEntry) => void }) {
+  if (!count) return null;
+  return (
+    <ActionButton size="S" isQuiet aria-label={COPY.shortsView} onPress={() => onAction('shorts', row)}>
+      <DevicePhone />
+      <Text>{COPY.shortsCount(count)}</Text>
+    </ActionButton>
+  );
+}
+
 /**
  * 条目的 ⋯ 菜单（原型 itemMenu，卡片与行共用）：视频是「打开视频」「查看信息」（查看框）与
  * 「视频详情…」（原型项目卡菜单的详情框，与编辑器顶栏 ⓘ 同一个框）；其余是「查看」；回收站里的是恢复与彻底删除，
@@ -426,6 +440,8 @@ interface ListProps {
   /** 视频条目菜单里给哪个转录动作；不给时 null（转录中、源文件缺失、还不知道有没有文稿）。 */
   transcribeAction: (entry: SpaceEntry) => SpaceTranscribeAction | null;
   empty: () => ReactNode;
+  /** 父视频派生出的子视频数（`derivedCount`，按 videoId）；不给时不显示。 */
+  shorts?: ReadonlyMap<string, number>;
 }
 
 const listStyles = style({ flexGrow: 1, minHeight: 0 });
@@ -435,17 +451,17 @@ const listStyles = style({ flexGrow: 1, minHeight: 0 });
  * 来源列和 `now` 不经 `entries` 传进来，得靠依赖键让缓存失效（`entryMenuKey`，内容变了才变）。缓存住的菜单回调也会过时，
  * 所以菜单拿一个身份不变、调用时转给最新 `onAction` 的函数。
  */
-function useListDeps({ entries, now, canReveal, onAction, transcribeAction }: ListProps, sourceOf?: ListProps['sourceOf']) {
+function useListDeps({ entries, now, canReveal, onAction, transcribeAction, shorts }: ListProps, sourceOf?: ListProps['sourceOf']) {
   const latest = useRef(onAction);
   useLayoutEffect(() => {
     latest.current = onAction;
   });
   const act = useCallback((action: EntryAction, entry: SpaceEntry) => latest.current(action, entry), []);
-  return { act, dependencies: [entryMenuKey(entries, canReveal, transcribeAction, sourceOf), now] };
+  return { act, dependencies: [entryMenuKey(entries, canReveal, transcribeAction, sourceOf), now, shorts] };
 }
 
 export function SpaceGrid(props: ListProps) {
-  const { entries, now, canReveal, onAction, transcribeAction, empty } = props;
+  const { entries, now, canReveal, onAction, transcribeAction, empty, shorts } = props;
   const { act, dependencies } = useListDeps(props);
   return (
     <CardView
@@ -478,12 +494,18 @@ export function SpaceGrid(props: ListProps) {
                 <StarFilled />
               </span>
             ) : null}
+            <ShortsButton row={entry} count={shortsOf(shorts, entry)} onAction={act} />
             <FilesButton row={entry} onAction={act} />
           </Footer>
         </Card>
       )}
     </CardView>
   );
+}
+
+/** 视频条目派生出的子视频数。 */
+function shortsOf(shorts: ListProps['shorts'], entry: SpaceEntry): number {
+  return shorts && entry.ref && 'videoId' in entry.ref ? (shorts.get(entry.ref.videoId) ?? 0) : 0;
 }
 
 /** 表格的列；列名在渲染时按当前语言取（`columnName`）。 */
@@ -509,13 +531,15 @@ function columnName(id: ColumnId): string {
 }
 
 export function SpaceTable(props: ListProps) {
-  const { entries, now, sourceOf, canReveal, onAction, transcribeAction, empty } = props;
+  const { entries, now, sourceOf, canReveal, onAction, transcribeAction, empty, shorts } = props;
   const { act, dependencies } = useListDeps(props, sourceOf);
   const cell = (entry: SpaceRow, column: ColumnId): ReactNode => {
     if (column === 'name') {
       // 收了文件的视频：名字下面一行写「N 个文件 · 成片 2 · 字幕 1」，只靠文件对上搜索时写找到的是哪个
       const n = entry.files?.length ?? 0;
-      const sub = hitsText(entry) ?? (n ? COPY.filesLine(n, filesSummary(entry)) : null);
+      const kids = shortsOf(shorts, entry);
+      const sub =
+        hitsText(entry) ?? ([n ? COPY.filesLine(n, filesSummary(entry)) : null, kids ? COPY.shortsCount(kids) : null].filter(Boolean).join(' · ') || null);
       return (
         <span className={nameCell}>
           <EntryThumb entry={entry} small />

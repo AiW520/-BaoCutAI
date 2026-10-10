@@ -223,4 +223,9 @@ export const ja: SpaceMessages = {
   importSummaryIn: (text: string, project: string) => `${text}（${project}）`,
   activityAt: (ago: string, at: string) => `${ago}（${at}）`,
   withReason: (reason: string, body: string) => `${reason}。${body}`,
+  shortsCount: (n: number) => `ショート ${n} 本`,
+  shortsView: '切り出したショートを見る',
+  shortsFilter: (name: string) => `「${name}」から切り出したショート`,
+  shortsFilterClear: '絞り込みを解除',
+  trashVideoShorts: (n: number) => `派生した動画が ${n} 本あります。それぞれ独立して残ります。`,
 };

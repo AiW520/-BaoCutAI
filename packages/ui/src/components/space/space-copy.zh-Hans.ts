@@ -216,4 +216,9 @@ export const zhHans: SpaceMessages = {
   importSummaryIn: (text: string, project: string) => `${text}（${project}）`,
   activityAt: (ago: string, at: string) => `${ago}（${at}）`,
   withReason: (reason: string, body: string) => `${reason}。${body}`,
+  shortsCount: (n: number) => `${n} 支短视频`,
+  shortsView: '查看切出的短视频',
+  shortsFilter: (name: string) => `从「${name}」切出的短视频`,
+  shortsFilterClear: '清除筛选',
+  trashVideoShorts: (n: number) => `有 ${n} 支派生视频，它们各自独立保留。`,
 };

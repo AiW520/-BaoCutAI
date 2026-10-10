@@ -224,4 +224,9 @@ export const ptBR: SpaceMessages = {
   activityAt: (ago: string, at: string) => `${ago} (${at})`,
 
   withReason: (reason: string, body: string) => `${reason}. ${body}`,
+  shortsCount: (n: number) => (n === 1 ? '1 short' : `${n} shorts`),
+  shortsView: 'Ver os shorts cortados',
+  shortsFilter: (name: string) => `Shorts cortados de “${name}”`,
+  shortsFilterClear: 'Limpar filtro',
+  trashVideoShorts: (n: number) => (n === 1 ? 'Há 1 vídeo derivado; ele é mantido separadamente.' : `Há ${n} vídeos derivados; cada um é mantido separadamente.`),
 };

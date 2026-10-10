@@ -205,4 +205,9 @@ export const pl: SpaceMessages = {
   importSummaryIn: (text: string, project: string) => `${text} (${project})`,
   activityAt: (ago: string, at: string) => `${ago} (${at})`,
   withReason: (reason: string, body: string) => `${reason}. ${body}`,
+  shortsCount: (n: number) => `Shorty: ${n}`,
+  shortsView: 'Zobacz wycięte shorty',
+  shortsFilter: (name: string) => `Shorty wycięte z „${name}”`,
+  shortsFilterClear: 'Wyczyść filtr',
+  trashVideoShorts: (n: number) => `Filmy pochodne: ${n}. Każdy zostaje zachowany osobno.`,
 };

@@ -93,6 +93,19 @@ describe('viewEntries', () => {
     expect(viewEntries(rows, { ...query, projectId: 'none' }).map((e) => e.id)).toEqual(['c']);
   });
 
+  it('按来源筛：只留从那部视频派生的视频，回收站里的照旧不列', () => {
+    const origin = { source: 'derived' as const, projectId: 'p1', videoId: 'v_parent', videoRevision: '7', capability: 'videos-derive' };
+    const family = [
+      entry('parent', { kind: 'video', ref: { videoId: 'v_parent' } }),
+      entry('s1', { kind: 'video', ref: { videoId: 'v_s1' }, origin }),
+      entry('s2', { kind: 'video', ref: { videoId: 'v_s2' }, origin }, { trashedAt: '2026-10-01T00:00:00.000Z' }),
+      entry('other', { kind: 'video', ref: { videoId: 'v_other' }, origin: { ...origin, videoId: 'v_else' } }),
+    ];
+    expect(viewEntries(family, { ...query, from: 'v_parent' }).map((e) => e.id)).toEqual(['s1']);
+    expect(viewEntries(family, { ...query, category: 'trash', from: 'v_parent' }).map((e) => e.id)).toEqual(['s2']);
+    expect(viewEntries(family, { ...query, from: null }).length).toBe(3);
+  });
+
   it('搜索名称与路径；按类型排时视频类在前', () => {
     expect(viewEntries(rows, { ...query, search: 'CLIPS' }).map((e) => e.id)).toEqual(['a']);
     expect(viewEntries(rows, { ...query, sort: 'kind' }).map((e) => e.id)).toEqual(['c', 'a', 'b']);

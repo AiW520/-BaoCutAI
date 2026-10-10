@@ -258,6 +258,15 @@ const en = {
   activityAt: (ago: string, at: string) => `${ago} (${at})`,
   /** 把条目状态的原因放在说明前面：`reason` 是一句话，不带句末标点。 */
   withReason: (reason: string, body: string) => `${reason}. ${body}`,
+  /** 父视频卡片 / 行上的派生计数（剪成短视频）。 */
+  shortsCount: (n: number) => (n === 1 ? '1 short' : `${n} shorts`),
+  /** 查看框动作：按来源筛出这部视频切出的短视频。 */
+  shortsView: 'See shorts cut from this',
+  /** 按来源筛选时顶上的筛选条：`name` 是父视频名。 */
+  shortsFilter: (name: string) => `Shorts cut from “${name}”`,
+  shortsFilterClear: 'Clear filter',
+  /** 删除父视频时补一句：派生视频不会跟着删。 */
+  trashVideoShorts: (n: number) => (n === 1 ? '1 video was derived from it; it stays on its own.' : `${n} videos were derived from it; each stays on its own.`),
 };
 
 export type SpaceMessages = typeof en;

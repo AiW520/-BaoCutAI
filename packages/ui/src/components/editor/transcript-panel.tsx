@@ -108,6 +108,9 @@ import { Paragraph, type ParagraphAction, type ParagraphMoves, type ParaMarks } 
 import { mediaCandidates } from './transcribe-run.ts';
 import { RowHoldContext, useVirtualRows, type VirtualRows } from './use-virtual-rows.ts';
 import { EDITOR_COPY as E } from './editor-copy.ts';
+import { foldOutside, reclaimOperations, reclaimRange, visibleParagraphs, FOLD_STEP, type FoldPlan, type FoldSide, type ShortsFold } from '../../model/shorts-fold.ts';
+import { readDerivation } from '../../model/shorts-result.ts';
+import { ShortsFoldSeam } from './transcript-shorts-fold.tsx';
 
 /**
  * 文稿面板（产品设计 §5.7、S03；原型 panels.jsx `TranscriptPanel` 与 panel-transcript-cut.jsx）：时间线上取用了已转写素材的
@@ -193,6 +196,8 @@ interface SourceModel {
   played: number[];
   /** 每段各词最早落点结尾的最小、最大值（段的已读阈值）；整段剪掉的段 null。 */
   playedSpans: Array<[number, number] | null>;
+  /** 切出来的子视频：片段外收起来的那两截（`foldOutside`）；`paragraphs` 等已经去掉收起来的词。不是子视频时 null。 */
+  fold: FoldPlan | null;
 }
 
 /** 一处查找命中：哪份转写、第几段、原文还是译文、在那一面文字里的区间。 */
@@ -372,6 +377,19 @@ function speechBase(loaded: unknown, sequence: Sequence, assetId: Id): SpeechBas
   return base;
 }
 
+/** 去掉片段外收起来的词之后的段与段上的派生量；没有收起来的词时原样返回。 */
+function foldedBase(base: SpeechBase, fold: FoldPlan | null): SpeechBase {
+  if (!fold?.hidden.size) return base;
+  const paragraphs = visibleParagraphs(base.paragraphs, fold.hidden) as TranscriptParagraph[];
+  return {
+    ...base,
+    paragraphs,
+    spans: paragraphs.map((p) => paragraphSpan(p.words)),
+    texts: paragraphs.map((p) => paragraphText(p.words)),
+    playedSpans: paragraphs.map((p) => paragraphPlayedSpan(p.words)),
+  };
+}
+
 function translationsOf(loaded: unknown, translationBody: unknown, paragraphs: readonly TranscriptParagraph[]): string[] | null {
   const key = typeof translationBody === 'object' && translationBody !== null ? translationBody : null;
   const cached = key ? translationCache.get(key) : undefined;
@@ -467,12 +485,18 @@ export function TranscriptPanel({
     [sources, translationRecords, cutSets],
   );
   const { bodies, fresh } = useDocumentBodies(records);
+  // 切出来的子视频：片段外的话收成两条剪缝（产品设计 §5.10）。`foldShown` 是两侧各铺开了几句，按「视频 · 素材」记，换视频就不算了。
+  const derivation = useMemo(() => readDerivation(documents), [documents]);
+  const [foldShown, setFoldShown] = useState<Record<string, { before: number; after: number }>>({});
   const models = useMemo(
     () =>
       sources.map((source): SourceModel => {
         const assetId = source.asset.id;
         const loaded = bodies.get(source.record.id);
-        const base = speechBase(loaded, sequence, assetId);
+        const whole = speechBase(loaded, sequence, assetId);
+        const folds = !!derivation && (!derivation.primaryAssetId || derivation.primaryAssetId === assetId) && whole.words.length > 0;
+        const fold = folds ? foldOutside(whole.words, whole.paragraphs, foldShown[`${videoId}:${assetId}`] ?? { before: 0, after: 0 }) : null;
+        const base = foldedBase(whole, fold);
         const translation = translationRecords.get(source.record.id);
         const translationBody = translation ? bodies.get(translation.id) : undefined;
         const cutSet = cutSets.get(assetId);
@@ -486,10 +510,31 @@ export function TranscriptPanel({
           translations:
             loaded !== undefined && translationBody !== undefined ? translationsOf(loaded, translationBody, base.paragraphs) : null,
           cuts: (cutSet && readCutSet(bodies.get(cutSet.id))) || [],
+          fold,
         };
       }),
-    [sources, bodies, fresh, sequence, translationRecords, cutSets],
+    [sources, bodies, fresh, sequence, translationRecords, cutSets, derivation, foldShown, videoId],
   );
+  const foldStep = useCallback(
+    (assetId: Id, side: FoldSide, action: 'more' | 'collapse') =>
+      setFoldShown((prev) => {
+        const key = `${videoId}:${assetId}`;
+        const now = prev[key] ?? { before: 0, after: 0 };
+        return { ...prev, [key]: { ...now, [side]: action === 'more' ? now[side] + FOLD_STEP : 0 } };
+      }),
+    [videoId],
+  );
+  // 子视频打开时文稿滚到片段起点（播放头挂上视频时已经在 0，就是片段起点）。
+  const reveal = useMemo(() => {
+    for (const m of models) {
+      const word = m.fold ? m.words[m.fold.firstKept] : undefined;
+      if (!word) continue;
+      const n = m.paragraphs.findIndex((p) => p.words.some((w) => w.index === word.index));
+      const key = n >= 0 ? paraKey(m, n) : null;
+      if (key && videoId) return { id: videoId, key };
+    }
+    return null;
+  }, [models, videoId]);
   const byAsset = useMemo(() => new Map(models.map((m) => [m.assetId, m])), [models]);
   const chapterTracks = useMemo(() => [...new Set(candidates.flatMap((c) => cutTrackIds(sequence, c.asset.id)))], [candidates, sequence]);
   const chapters = chaptersOf(sequence);
@@ -530,6 +575,10 @@ export function TranscriptPanel({
   const model = selection ? byAsset.get(selection.assetId) : undefined;
   const latestModels = useRef(byAsset);
   latestModels.current = byAsset;
+  const latestSequence = useRef(sequence);
+  latestSequence.current = sequence;
+  const latestEditable = useRef(editable);
+  latestEditable.current = editable;
 
   // 转写换了版本（改了字、删了字），下标可能挪了：清掉选区。
   const revisions = sources.map((s) => `${s.record.id}@${s.record.currentRevision}`).join(',');
@@ -903,13 +952,21 @@ export function TranscriptPanel({
       const current = drag.current;
       drag.current = null;
       if (!current || current.moved || !current.plain) return;
-      const w = latestModels.current.get(current.assetId)?.words[current.index];
+      const owner = latestModels.current.get(current.assetId);
+      // 子视频片段外划掉的话：单击从这一句到片段边缘放回这一支，不留洞（产品设计 §5.10）。
+      const reclaim = owner?.fold && latestEditable.current ? reclaimRange(owner.words, owner.fold, current.index) : null;
+      if (owner && reclaim) {
+        setSelection(null);
+        void applyRestore(actions, reclaimOperations(latestSequence.current, owner.assetId, owner.cuts, reclaim));
+        return;
+      }
+      const w = owner?.words[current.index];
       const at = w?.placements[0]?.start;
       if (at !== undefined) seekHere(at);
     };
     window.addEventListener('pointerup', up);
     return () => window.removeEventListener('pointerup', up);
-  }, [seekHere]);
+  }, [seekHere, actions, setSelection]);
 
   const onDoubleClick = (event: React.MouseEvent<HTMLDivElement>) => {
     if (mode !== 'edit' || !editable) return;
@@ -1069,6 +1126,8 @@ export function TranscriptPanel({
           onCancel={cancelEdit}
           onParagraph={paragraphAction}
           onCopyChapter={copyChapter}
+          onFold={foldStep}
+          reveal={reveal}
           bodyProps={{
             onKeyDown,
             onPointerDown,
@@ -1294,7 +1353,9 @@ type ListRow =
   | { kind: 'note'; key: string; section: number; text: string }
   | { kind: 'chapter'; key: string; section: number; model: SourceModel; chapter: ChapterSpan | null; count: number }
   | { kind: 'empty'; key: string; section: number }
-  | { kind: 'paragraph'; key: string; section: number; model: SourceModel; index: number };
+  | { kind: 'paragraph'; key: string; section: number; model: SourceModel; index: number }
+  /** 子视频片段外收起来的那一截（`ShortsFoldSeam`）：在这一节第一段之前或最后一段之后。 */
+  | { kind: 'fold'; key: string; section: number; model: SourceModel; fold: ShortsFold };
 
 interface ListLayout {
   rows: ListRow[];
@@ -1327,9 +1388,14 @@ function listLayout(models: readonly SourceModel[], sequence: Sequence, chapters
       return;
     }
     const seen = new Map<string, number>();
+    const before = model.fold?.before ?? null;
+    const after = model.fold?.after ?? null;
+    let lastParagraph = -1;
     for (const row of sectionLayout(model, sequence, chapters, !showTitle).rows) {
       if (row.kind === 'paragraph') {
+        if (before && lastParagraph < 0) rows.push({ kind: 'fold', key: `${id}:fold:before`, section, model, fold: before });
         rows.push({ kind: 'paragraph', key: paraKey(model, row.index)!, section, model, index: row.index });
+        lastParagraph = rows.length - 1;
         continue;
       }
       // 同一章可能出现两次（片段挪过）：按出现的次序区分。
@@ -1340,6 +1406,10 @@ function listLayout(models: readonly SourceModel[], sequence: Sequence, chapters
       sticky.push(rows.length);
       rows.push({ kind: 'chapter', key, section, model, chapter: row.chapter, count: row.count });
       if (row.chapter && row.count === 0) rows.push({ kind: 'empty', key: `${key}:empty`, section });
+    }
+    if (after && lastParagraph >= 0) {
+      rows.splice(lastParagraph + 1, 0, { kind: 'fold', key: `${id}:fold:after`, section, model, fold: after });
+      for (let k = 0; k < sticky.length; k++) if (sticky[k]! > lastParagraph) sticky[k] = sticky[k]! + 1;
     }
   });
   bounds.push(rows.length);
@@ -1356,7 +1426,7 @@ const WORD_LINE = 25.2;
 const TRANS_LINE = 23.8;
 const TRANS_SMALL = 12;
 const TRANS_SMALL_LINE = 20.4;
-const ROW_ESTIMATE = { title: 26, stats: 14, note: 34, chapter: 40, empty: 40 } as const;
+const ROW_ESTIMATE = { title: 26, stats: 14, note: 34, chapter: 40, empty: 40, fold: 36 } as const;
 /** 列表最上面一行的上边距（原来是面板主体的上内边距；虚拟列表的容器不能有上内边距）。 */
 const LIST_TOP = 16;
 /** 几份转写同时显示时，节与节之间的空。 */
@@ -1405,6 +1475,8 @@ function TranscriptList({
   onCancel,
   onParagraph,
   onCopyChapter,
+  onFold,
+  reveal,
   bodyProps,
 }: {
   bodyRef: React.RefObject<HTMLDivElement | null>;
@@ -1429,6 +1501,10 @@ function TranscriptList({
   onCancel(): void;
   onParagraph(assetId: Id, index: number, action: ParagraphAction, moves: ParagraphMoves | null): void;
   onCopyChapter(assetId: Id, rows: readonly ChapterRow[], chapter: ChapterSpan | null, withSettings: boolean): void;
+  /** 子视频片段外的剪缝：铺开下一批或收起。 */
+  onFold(assetId: Id, side: FoldSide, action: 'more' | 'collapse'): void;
+  /** 打开子视频时滚到的那一行（片段起点所在段）：每部视频只滚一次（`id`）。 */
+  reveal: { id: string; key: string } | null;
   /** 滚动容器上的键盘与指针处理（选词、拖选、⌫ 截住……）。 */
   bodyProps: React.HTMLAttributes<HTMLDivElement>;
 }) {
@@ -1496,6 +1572,16 @@ function TranscriptList({
     });
     // 只在跳到另一处命中时定位（面板按命中换 `match`）。
   }, [match]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // 子视频打开时滚到片段起点那一段：每部视频一次，之后放回句子、展开剪缝都不再跟着滚。
+  const revealed = useRef<string | null>(null);
+  useEffect(() => {
+    if (!reveal || revealed.current === reveal.id) return;
+    const index = layout.indexOf.get(reveal.key);
+    if (index === undefined) return;
+    revealed.current = reveal.id;
+    void scrollToIndex(index, { align: 'start' });
+  }, [reveal, layout, scrollToIndex]);
 
   const locate = useCallback(
     (assetId: Id, index: number) => {
@@ -1574,6 +1660,19 @@ function TranscriptList({
           </div>
         );
         break;
+      case 'fold': {
+        const { model, fold } = row;
+        content = (
+          <div {...item} style={edges}>
+            <ShortsFoldSeam
+              fold={fold}
+              onMore={() => onFold(model.assetId, fold.side, 'more')}
+              onCollapse={() => onFold(model.assetId, fold.side, 'collapse')}
+            />
+          </div>
+        );
+        break;
+      }
       case 'chapter': {
         const model = row.model;
         const chapter = row.chapter;

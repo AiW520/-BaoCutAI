@@ -21,6 +21,9 @@ import { PreviewEngine } from './preview-engine.ts';
 import { enterPreviewFullscreen } from './fullscreen-player.tsx';
 import { Preview } from './preview.tsx';
 import { SidePanel } from './side-panel.tsx';
+import { takePanelLanding } from './ai-tools-nav.ts';
+import { ShortsChildBanner } from './shorts-banner.tsx';
+import { useShortsLanding } from './shorts-landing.ts';
 import { StageLiveCaptions } from './stage-live.tsx';
 import { Timeline, type TimelineHandle } from './timeline.tsx';
 import { Transport } from './transport.tsx';
@@ -151,9 +154,13 @@ export function VideoEditor() {
     const opened = useVideo.getState().video?.state?.video;
     const root = opened ? rootSequence(opened) : null;
     const landing = root ? (root.items.length ? 'transcript' : 'video') : undefined;
-    useEditor.getState().attach(videoId, landing);
+    // 剪成短视频的结果页打开一支、横幅回到原片：落在 AI 工具 Tab（`setPanelLanding`）。
+    useEditor.getState().attach(videoId, takePanelLanding(videoId) ?? landing);
     engine.seek(useEditor.getState().playhead);
   }, [videoId, engine]);
+
+  // 剪成短视频跑完、切出了子视频：开着父视频时右侧翻到结果页（网页没有 AI 工具 Tab）。
+  useShortsLanding(videoId, runtime.host.platform !== 'web');
 
   const assets = snapshot?.assets ?? null;
   const documents = snapshot?.documents ?? null;
@@ -185,6 +192,7 @@ export function VideoEditor() {
     <EditorContext.Provider value={actions}>
       <div ref={rootRef} className={editor} tabIndex={-1} data-editor-root>
         <VideoBar video={video} sequence={sequence} />
+        {snapshot && video.videoId ? <ShortsChildBanner videoId={video.videoId} documents={snapshot.documents} /> : null}
         {sequence && shown && snapshot ? (
           <div className={body}>
             <div className={column}>

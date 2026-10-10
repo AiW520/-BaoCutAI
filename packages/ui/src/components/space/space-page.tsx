@@ -58,6 +58,8 @@ import {
 } from '../../model/space-actions.ts';
 import {
   countByCategory,
+  derivedCount,
+  derivedFrom,
   entryPath,
   filesOf,
   hostVideoOf,
@@ -141,6 +143,8 @@ const tools = style({
 const filters = style({ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 8, flexGrow: 1, minWidth: 0 });
 const picker = style({ width: 140, maxWidth: 'full' });
 const viewTools = style({ display: 'flex', alignItems: 'center', gap: 8 });
+/** 按来源筛选时的那一条：「从「X」切出的短视频」加清除。 */
+const fromChip = style({ display: 'flex', alignItems: 'center', gap: 8, font: 'ui', color: 'gray-800' });
 const notes = style({ display: 'flex', flexDirection: 'column', gap: 8, paddingX: { default: 40, isTight: 24 }, paddingBottom: 16 });
 /** CardView 在两端也留一份卡片间距（约 12）：网格少留这么多，卡片才和标题对齐。 */
 const list = style({
@@ -159,11 +163,22 @@ const MINE_ICON: Partial<Record<SpaceCategory, ComponentType>> = { all: AppsAll,
  * Space（产品设计 §4）：所有项目里的视频、素材与产物的视图。0.2 列出项目目录与临时会话目录里的文件；
  * 文件仍在各自的目录里，这里只加收藏、回收站这类标记。
  */
-export function SpacePage({ category, projectId, video }: { category: SpaceCategory; projectId: Id | null; video: FileTarget | null }) {
+export function SpacePage({
+  category,
+  projectId,
+  video,
+  from = null,
+}: {
+  category: SpaceCategory;
+  projectId: Id | null;
+  video: FileTarget | null;
+  /** 只看从这部视频派生的视频（`viewEntries` 的 `from`）。 */
+  from?: Id | null;
+}) {
   return (
     <div className={page}>
       <SpaceSidebar category={category} projectId={projectId} />
-      {video ? <SpaceVideo video={video} /> : <SpaceMain category={category} projectId={projectId} />}
+      {video ? <SpaceVideo video={video} /> : <SpaceMain category={category} projectId={projectId} from={from} />}
     </div>
   );
 }
@@ -235,7 +250,7 @@ async function openPackageAs(runtime: RuntimeSession, scope: { projectId: Id } |
   }
 }
 
-function SpaceMain({ category, projectId }: { category: SpaceCategory; projectId: Id | null }) {
+function SpaceMain({ category, projectId, from }: { category: SpaceCategory; projectId: Id | null; from: Id | null }) {
   const runtime = useRuntime();
   const { ready, scanning, entries, issues } = useSpace();
   const projects = useDirectory((s) => s.projects);
@@ -264,9 +279,24 @@ function SpaceMain({ category, projectId }: { category: SpaceCategory; projectId
 
   const dirs = { projects, conversations };
   const rows = useMemo(
-    () => viewEntries(entries, { category, projectId, search: query, sort, status }),
-    [entries, category, projectId, query, sort, status],
+    () => viewEntries(entries, { category, projectId, search: query, sort, status, from }),
+    [entries, category, projectId, query, sort, status, from],
   );
+  // 父视频卡片 / 行上的「N 支短视频」与查看框的「查看切出的短视频」。
+  const shorts = useMemo(() => {
+    const counts = new Map<Id, number>();
+    for (const entry of entries) {
+      const parent = entry.user.trashedAt ? null : derivedFrom(entry);
+      if (parent) counts.set(parent, (counts.get(parent) ?? 0) + 1);
+    }
+    return counts;
+  }, [entries]);
+  const showShorts = (entry: SpaceEntry) => {
+    const videoId = videoIdOf(entry);
+    if (!videoId) return;
+    setViewingId(null);
+    go({ tab: 'space', category: 'all', projectId: null, from: videoId });
+  };
   const options = useMemo(() => projectOptions(entries, projects), [entries, projects]);
   const videoNames = useMemo(() => videoNamesOf(entries), [entries]);
   const importable = useMemo(() => projects.filter((p) => !p.archived), [projects]);
@@ -279,7 +309,8 @@ function SpaceMain({ category, projectId }: { category: SpaceCategory; projectId
   const viewingTools = useEntryTools(viewing);
   const viewingConversationId = viewing ? entryConversationId(viewing) : null;
   const viewingConversation = viewingConversationId ? conversations.find((c) => c.id === viewingConversationId) : undefined;
-  const filtered = query.trim() !== '' || projectId !== null || status !== 'any';
+  const filtered = query.trim() !== '' || projectId !== null || status !== 'any' || !!from;
+  const fromName = from ? (videoNames.get(from) ?? untitled()) : null;
   // 内容命中只在视频与「全部」里找（架构设计 §5.11：内容索引只建在视频上）。
   const searchContent = query.trim() !== '' && (category === 'all' || category === 'video');
 
@@ -320,9 +351,10 @@ function SpaceMain({ category, projectId }: { category: SpaceCategory; projectId
   const trash = (entry: SpaceEntry) => {
     const videoId = entry.kind === 'video' ? videoIdOf(entry) : null;
     const related = videoId ? relatedEntries(entries, videoId) : [];
-    if (related.length) {
+    const kids = videoId ? derivedCount(entries, videoId) : 0;
+    if (related.length || kids) {
       setViewingId(null);
-      setDialog({ kind: 'trash-video', entry, related });
+      setDialog({ kind: 'trash-video', entry, related, shorts: kids });
     } else void trashNow(entry);
   };
 
@@ -459,6 +491,7 @@ function SpaceMain({ category, projectId }: { category: SpaceCategory; projectId
     else if (action === 'restore') void restore(entry);
     else if (action === 'purge') setDialog({ kind: 'purge', entry });
     else if (action === 'clear') purgeNow(entry);
+    else if (action === 'shorts') showShorts(entry);
   };
 
   const viewerActions: ViewerActions = {
@@ -489,6 +522,7 @@ function SpaceMain({ category, projectId }: { category: SpaceCategory; projectId
     onTask: (jobId) => go({ tab: 'tasks', taskId: jobId }),
     onConversation: (conversationId) => go({ tab: 'home', conversationId, projectId: null }),
     onSwitch: (entryId) => setViewingId(entryId),
+    onShorts: showShorts,
     onClose: () => setViewingId(null),
   };
 
@@ -621,6 +655,17 @@ function SpaceMain({ category, projectId }: { category: SpaceCategory; projectId
         </div>
       </div>
 
+      {fromName ? (
+        <div className={notes({ isTight })}>
+          <span className={fromChip}>
+            <Text>{COPY.shortsFilter(fromName)}</Text>
+            <ActionButton size="S" isQuiet onPress={() => replace({ tab: 'space', category, projectId })}>
+              {COPY.shortsFilterClear}
+            </ActionButton>
+          </span>
+        </div>
+      ) : null}
+
       {issues.length ? (
         <div className={notes({ isTight })}>
           <InlineAlert variant="notice">
@@ -657,6 +702,7 @@ function SpaceMain({ category, projectId }: { category: SpaceCategory; projectId
             onAction={onAction}
             transcribeAction={transcribeAction}
             empty={empty}
+            shorts={shorts}
           />
         ) : (
           <SpaceGrid
@@ -667,6 +713,7 @@ function SpaceMain({ category, projectId }: { category: SpaceCategory; projectId
             onAction={onAction}
             transcribeAction={transcribeAction}
             empty={empty}
+            shorts={shorts}
           />
         )}
       </div>
@@ -681,6 +728,7 @@ function SpaceMain({ category, projectId }: { category: SpaceCategory; projectId
         tools={viewingTools}
         files={viewingFiles}
         host={viewingHost}
+        shorts={viewing ? (shorts.get(videoIdOf(viewing) ?? '') ?? 0) : 0}
       />
       <SpaceDialogs
         dialog={dialog}

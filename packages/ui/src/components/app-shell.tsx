@@ -115,7 +115,7 @@ export function AppShell({ platform }: { platform: string }) {
             {route.tab === 'home' ? (
               <HomePage conversationId={route.conversationId} projectId={route.projectId} pane={route.pane ?? null} />
             ) : route.tab === 'space' ? (
-              <SpacePage category={route.category} projectId={route.projectId} video={route.video ?? null} />
+              <SpacePage category={route.category} projectId={route.projectId} video={route.video ?? null} from={route.from ?? null} />
             ) : route.tab === 'tasks' ? (
               <TasksPage taskId={route.taskId} />
             ) : route.tab === 'services' ? (

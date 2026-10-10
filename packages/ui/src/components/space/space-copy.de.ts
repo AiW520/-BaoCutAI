@@ -223,4 +223,9 @@ export const de: SpaceMessages = {
   activityAt: (ago: string, at: string) => `${ago} (${at})`,
 
   withReason: (reason: string, body: string) => `${reason}. ${body}`,
+  shortsCount: (n: number) => (n === 1 ? '1 Short' : `${n} Shorts`),
+  shortsView: 'Geschnittene Shorts ansehen',
+  shortsFilter: (name: string) => `Aus „${name}“ geschnittene Shorts`,
+  shortsFilterClear: 'Filter entfernen',
+  trashVideoShorts: (n: number) => (n === 1 ? '1 Video wurde davon abgeleitet; es bleibt eigenständig erhalten.' : `${n} Videos wurden davon abgeleitet; jedes bleibt eigenständig erhalten.`),
 };

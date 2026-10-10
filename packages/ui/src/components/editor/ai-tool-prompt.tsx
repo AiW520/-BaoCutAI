@@ -226,6 +226,7 @@ export function AiToolPrompt({
   isDisabled,
   onDone,
   onHandedOff,
+  onSent,
   direct,
   target,
   hint,
@@ -238,6 +239,8 @@ export function AiToolPrompt({
   onDone(): void;
   /** 留在原地（`agentStaysOnPage`）：交出去后不切到会话、不回列表，由工具页画进度卡。话没发出去（放进了会话的输入框）时照常 `onDone`。 */
   onHandedOff?(handoff: Handoff): void;
+  /** 话真发出去了（不是放进了输入框）：剪成短视频记下这一轮，跑完后翻到结果页。在 `onDone` / `onHandedOff` 之前调。 */
+  onSent?(handoff: Handoff): void;
   /** 「用」选了直接调模型：底栏换成文本模型的选择，框下多两行（skill 作系统提示词、发给模型的），按下去走 `ai-tool` 流程。 */
   direct?: DirectPrompt | null;
   /** 不按「会话」行、固定发到哪（剪成短视频：总是新开一条；视频不属于项目时发到它所在的那条）。 */
@@ -379,6 +382,7 @@ export function AiToolPrompt({
                     draftKey,
                     stay: !!onHandedOff,
                   }).then((result) => {
+                    if (result && !result.drafted) onSent?.(result);
                     if (result && onHandedOff && !result.drafted) onHandedOff(result);
                     else if (result) onDone();
                     return !!result;

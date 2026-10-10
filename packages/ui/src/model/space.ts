@@ -259,10 +259,12 @@ export interface SpaceQuery {
   sort: SpaceSort;
   /** 状态筛选；不给时不按状态筛。 */
   status?: SpaceStatusFilter;
+  /** 只看从这部视频派生的视频（`derivedFrom`）；不给时不按来源筛。 */
+  from?: Id | null;
 }
 
 /**
- * 列表区：分类 → 项目 → 状态 → 搜索 → 排序。「全部」与「视频」先把文件收进视频（`groupEntries`），视频本身或它的任何一个文件
+ * 列表区：分类 → 来源（`from`）→ 项目 → 状态 → 搜索 → 排序。「全部」与「视频」先把文件收进视频（`groupEntries`），视频本身或它的任何一个文件
  * 对得上状态与搜索，这一行就留下；只靠文件对上的，`hits` 记下是哪几个文件。「无状态」只看视频自己：文件没有状态不说明什么。
  */
 export function viewEntries(entries: readonly SpaceEntry[], query: SpaceQuery): SpaceRow[] {
@@ -275,6 +277,7 @@ export function viewEntries(entries: readonly SpaceEntry[], query: SpaceQuery): 
   const rows = base.flatMap((row): SpaceRow[] => {
     const project = entryProjectId(row);
     if (!inCategory(row, query.category)) return [];
+    if (query.from && derivedFrom(row) !== query.from) return [];
     if (query.projectId !== null && (query.projectId === 'none' ? project !== null : project !== query.projectId)) return [];
     if (matches(row, true)) return [row];
     const hits = (row.files ?? []).filter((file) => matches(file, false));

@@ -36,7 +36,8 @@ export type SpaceDialogState =
   | { kind: 'rename'; entry: SpaceEntry }
   | { kind: 'purge'; entry: SpaceEntry }
   | { kind: 'blocked'; entry: SpaceEntry; references: SpaceReference[] }
-  | { kind: 'trash-video'; entry: SpaceEntry; related: SpaceEntry[] }
+  /** `shorts`：从它派生的子视频数，它们不随父视频删除。 */
+  | { kind: 'trash-video'; entry: SpaceEntry; related: SpaceEntry[]; shorts: number }
   | { kind: 'source-changed'; entry: SpaceEntry; result: SourceVideoResult & { target: { entryId: Id } } }
   | { kind: 'import' };
 
@@ -115,13 +116,18 @@ export function SpaceDialogs({
           onPrimaryAction={() => onTrashVideo(dialog.entry)}>
           <div className={body}>
             <p className={para}>{COPY.trashVideoBody}</p>
-            <p className={para}>{COPY.trashVideoRelated(dialog.related.length)}</p>
-            <ul className={items}>
-              {dialog.related.slice(0, RELATED_SHOWN).map((entry) => (
-                <li key={entry.id}>{entry.name}</li>
-              ))}
-              {dialog.related.length > RELATED_SHOWN ? <li>{COPY.relatedMore(dialog.related.length)}</li> : null}
-            </ul>
+            {dialog.related.length ? (
+              <>
+                <p className={para}>{COPY.trashVideoRelated(dialog.related.length)}</p>
+                <ul className={items}>
+                  {dialog.related.slice(0, RELATED_SHOWN).map((entry) => (
+                    <li key={entry.id}>{entry.name}</li>
+                  ))}
+                  {dialog.related.length > RELATED_SHOWN ? <li>{COPY.relatedMore(dialog.related.length)}</li> : null}
+                </ul>
+              </>
+            ) : null}
+            {dialog.shorts ? <p className={para}>{COPY.trashVideoShorts(dialog.shorts)}</p> : null}
           </div>
         </AlertDialog>
       ) : dialog?.kind === 'source-changed' ? (

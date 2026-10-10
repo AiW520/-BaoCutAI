@@ -9,11 +9,17 @@ import { useEditor, type PanelTab } from '../../state/editor-store.ts';
 export interface AiToolPreset {
   /** 译文的语言名（「英语」）。 */
   language?: string | null;
+  /** 剪成短视频的「再切几支」：参数页勾上「已经切过的不再找」。 */
+  skipDone?: boolean;
 }
 
 export interface AiToolPage {
   tool: AiToolId;
   preset: AiToolPreset | null;
+  /** 剪成短视频翻到结果页（产品设计 §5.10「结果页」）；没给是参数页。 */
+  phase?: 'setup' | 'result';
+  /** 结果页属于哪部父视频：开着子视频时也画父视频那一轮的结果。 */
+  host?: Id;
 }
 
 /**
@@ -33,6 +39,28 @@ export function setAiToolPage(videoId: Id, page: AiToolPage | null): void {
 export function openAiTool(videoId: Id, tool: AiToolId, preset: AiToolPreset | null = null): void {
   setAiToolPage(videoId, { tool, preset });
   useEditor.getState().showPanel('aitools');
+}
+
+/** 打开剪成短视频的结果页（父视频或其中一支子视频上都行）。 */
+export function openShortsResult(videoId: Id, host: Id): void {
+  setAiToolPage(videoId, { tool: 'shortscut', preset: null, phase: 'result', host });
+  useEditor.getState().showPanel('aitools');
+}
+
+const landings = new Map<Id, PanelTab>();
+
+/**
+ * 换到另一部视频时右侧面板落在哪一页：结果页打开子视频、横幅回到原片时落在 AI 工具 Tab，而不是默认的文稿。
+ * 编辑器挂上那部视频时取走（`takePanelLanding`），只用一次。
+ */
+export function setPanelLanding(videoId: Id, tab: PanelTab): void {
+  landings.set(videoId, tab);
+}
+
+export function takePanelLanding(videoId: Id): PanelTab | undefined {
+  const tab = landings.get(videoId);
+  landings.delete(videoId);
+  return tab;
 }
 
 /** 关掉工具页、回到列表；`to` 给了就同时翻到那一页（翻译开跑后去字幕页看进度）。面板收着时不自己展开。 */

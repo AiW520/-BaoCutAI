@@ -212,4 +212,9 @@ export const tr: SpaceMessages = {
   importSummaryIn: (text: string, project: string) => `${text} (${project})`,
   activityAt: (ago: string, at: string) => `${ago} (${at})`,
   withReason: (reason: string, body: string) => `${reason}. ${body}`,
+  shortsCount: (n: number) => `${n} short`,
+  shortsView: 'Kesilen short’ları gör',
+  shortsFilter: (name: string) => `“${name}” videosundan kesilen short’lar`,
+  shortsFilterClear: 'Filtreyi temizle',
+  trashVideoShorts: (n: number) => `Bundan türetilmiş ${n} video var; her biri ayrı olarak korunur.`,
 };

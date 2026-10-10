@@ -61,7 +61,8 @@ export type Tab = 'home' | 'space' | 'tasks' | 'models' | 'services' | 'tools' |
  */
 export type Route =
   | { tab: 'home'; conversationId: Id | null; projectId: Id | null; pane?: WorkspaceItem }
-  | { tab: 'space'; category: SpaceCategory; projectId: Id | null; video?: FileTarget }
+  /** `from`：只看从这部视频派生的视频（剪成短视频结果页的「在 Space 里看这几支」、查看框的「查看切出的短视频」）。 */
+  | { tab: 'space'; category: SpaceCategory; projectId: Id | null; video?: FileTarget; from?: Id }
   | { tab: 'settings'; section: SettingsSection }
   | { tab: 'models'; category: ModelCategory; page?: ModelPage }
   | { tab: 'tasks'; taskId?: Id }
@@ -677,8 +678,11 @@ export function hrefFor(route: Route): string {
       return `/home${query}`;
     }
     case 'space': {
-      const video = route.video ? `?video=${encodeURIComponent(JSON.stringify(route.video))}` : '';
-      return (route.projectId ? `/space/${route.category}/${route.projectId}` : `/space/${route.category}`) + video;
+      const params = [
+        ...(route.from ? [`from=${encodeURIComponent(route.from)}`] : []),
+        ...(route.video ? [`video=${encodeURIComponent(JSON.stringify(route.video))}`] : []),
+      ];
+      return (route.projectId ? `/space/${route.category}/${route.projectId}` : `/space/${route.category}`) + (params.length ? `?${params.join('&')}` : '');
     }
     case 'settings':
       return `/settings/${route.section}`;
@@ -717,7 +721,8 @@ export function parseHref(href: string): Route {
   if (head === 'home' && pane) return withPane({ tab: 'home', conversationId: null, projectId: null });
   if (head === 'space') {
     const category = SPACE_CATEGORIES.some((c) => c.key === a) ? (a as SpaceCategory) : 'all';
-    const route: Route = { tab: 'space', category, projectId: b || null };
+    const from = query.get('from');
+    const route: Route = { tab: 'space', category, projectId: b || null, ...(from ? { from } : {}) };
     return video ? { ...route, video } : route;
   }
   if (head === 'settings' && a === 'models') {
