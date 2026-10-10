@@ -7,6 +7,7 @@ import { BaoCutClient } from '@baocut/client';
 import { editorWasmAvailable } from '@baocut/jobs';
 import { newId, type CatalogCallResult, type Id, type JobRecord, type Project, type VideoItem } from '@baocut/protocol';
 import { resolveRuntimeHome } from '@baocut/runtime-storage';
+import { resolveFaceDetectCommand } from '../face-detection.ts';
 import { resolveEngineHostCommand } from '../videos/engine-host.ts';
 import { startRuntime, type RunningRuntime } from '../runtime.ts';
 import { OPERATION_TYPES } from './edit-ops.ts';
@@ -186,7 +187,11 @@ describe.skipIf(!engine || !ffmpeg)('对象的读写工具（终端目录，真�
     expect(frames.frames[0].file).toBe(path.join(framesDir, 'at-500ms.png'));
     expect(await header(frames.frames[0].file, 4)).toEqual(PNG);
     expect(frames.frames[1].file).toBe(path.join(framesDir, 'at-1000ms.png'));
-    // 3 秒处时间线上没有视频片段：不是错误，file 为 null。
+    // 人脸检测：构建了 face-detect 时由它检测（测试图案上没有脸），没有时 detector 为 null；有文件的帧都带 faces。
+    expect(frames.detector).toBe(resolveFaceDetectCommand() ? 'yunet' : null);
+    expect(frames.frames[0].faces).toEqual([]);
+    expect(frames.frames[1].faces).toEqual([]);
+    // 3 秒处时间线上没有视频片段：不是错误，file 为 null，也没有 faces。
     expect(frames.frames[2]).toEqual({ at: '3', file: null });
 
     // 上面一条视觉轨（order 更大）上的片段盖住下面的：取它。

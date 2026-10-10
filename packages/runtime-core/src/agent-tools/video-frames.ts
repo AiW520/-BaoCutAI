@@ -3,6 +3,7 @@ import { randomUUID } from 'node:crypto';
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import { mediaTimeToSeconds, type Id, type VideoItem, type VideoSnapshot } from '@baocut/protocol';
+import type { DetectedFace, FaceDetector } from '../face-detection.ts';
 import type { MediaAnalysis, FrameAsset } from '../media-analysis.ts';
 import { inside, refuseVideoDirectory } from './artifact-save.ts';
 import { ToolError } from './tool-catalog.ts';
@@ -23,7 +24,7 @@ export const DEFAULT_RANGE_COUNT = 6;
 export const FRAMES_DIR = path.join('.baocut-out', 'frames');
 
 export const FRAMES_NOTE =
-  '帧是时间线上最上层的那个视频片段的素材画面，不是合成后的画面：字幕、文字、贴纸与叠加的元素不在里面，画中画的位置、裁剪与效果也没有套用（composited: false）。没有视频片段的时刻 file 为 null。';
+  '帧是时间线上最上层的那个视频片段的素材画面，不是合成后的画面：字幕、文字、贴纸与叠加的元素不在里面，画中画的位置、裁剪与效果也没有套用（composited: false）。没有视频片段的时刻 file 为 null。faces 是这一帧上检测到的人脸框（x、y、w、h 按帧的宽高归一化到 0–1，score 是置信度），坐标对应素材画面；detector 为 null 时没有做人脸检测，faces 为空不代表没有人脸。';
 
 /** 时间线上一个时刻取到的源：片段、素材版本与素材时间。 */
 export interface FrameSource {
@@ -128,6 +129,29 @@ export async function writeFrame(
     throw error;
   });
   return { file, width: frame.width, height: frame.height };
+}
+
+/** 取到的一帧（`file` 为 null 是那个时刻没有视频片段）。 */
+export interface TakenFrame {
+  at: string;
+  file: string | null;
+}
+
+/**
+ * 给取到的帧标上人脸：有文件的帧加 `faces`（检测器不可用时为空数组），没有文件的帧不加；`detector` 是检测器的标识，
+ * 没有检测器或这次没检测成时为 null（不报错，帧照常返回）。
+ */
+export async function withFaces<T extends TakenFrame>(
+  detector: FaceDetector | undefined,
+  frames: T[],
+): Promise<{ detector: 'yunet' | null; frames: Array<T | (T & { faces: DetectedFace[] })> }> {
+  const files = frames.flatMap((frame) => (frame.file === null ? [] : [frame.file]));
+  const found = detector && files.length > 0 ? await detector.detect(files) : null;
+  let next = 0;
+  return {
+    detector: found?.detector ?? null,
+    frames: frames.map((frame) => (frame.file === null ? frame : { ...frame, faces: found?.faces[next++] ?? [] })),
+  };
 }
 
 function decimal(value: number): string {

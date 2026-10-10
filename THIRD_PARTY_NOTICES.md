@@ -484,3 +484,40 @@ OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR
 IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 ```
+
+## YuNet 人脸检测模型
+
+`packages/models/assets/face-detection/yunet-2023mar.onnx` 是 OpenCV Zoo 的 YuNet 模型（`face_detection_yunet_2023mar.onnx`，内容未改动，只改了文件名），随应用分发，`videos_frames` 用它标出每帧的人脸框。来源（固定到提交）、SHA-256 与许可原文见同目录的 `COPYING.txt`。
+
+- 来源：https://github.com/opencv/opencv_zoo/tree/f12e12798e8314f7c074a6656816c048dcc95b7a/models/face_detection_yunet
+- 许可：MIT License，Copyright (c) 2020 Shiqi Yu
+
+## tract
+
+人脸检测进程 `face-detect`（`crates/face-detect`）用 tract（Sonos，`tract-onnx` 及其依赖的 `tract-*` crate）做纯 Rust 的 ONNX 推理，编进随应用分发的原生程序。tract 以 MIT OR Apache-2.0 双许可发布，本分发选择 MIT 许可：
+
+```text
+Permission is hereby granted, free of charge, to any
+person obtaining a copy of this software and associated
+documentation files (the "Software"), to deal in the
+Software without restriction, including without
+limitation the rights to use, copy, modify, merge,
+publish, distribute, sublicense, and/or sell copies of
+the Software, and to permit persons to whom the Software
+is furnished to do so, subject to the following
+conditions:
+
+The above copyright notice and this permission notice
+shall be included in all copies or substantial portions
+of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF
+ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED
+TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A
+PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT
+SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY
+CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
+OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR
+IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
+DEALINGS IN THE SOFTWARE.
+```

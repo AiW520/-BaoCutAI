@@ -64,6 +64,7 @@ import { StorageGc } from './storage-gc.ts';
 import { AttachmentStore } from './attachments.ts';
 import { MediaRegistry } from './media.ts';
 import { MediaAnalysis } from './media-analysis.ts';
+import { createFaceDetector } from './face-detection.ts';
 import { LibraryService } from './library/library-service.ts';
 import { VoiceCloneService } from './library/voice-clone-service.ts';
 import { openModelJobs, type ModelJobs, type ModelJobsOptions } from './models/model-jobs.ts';
@@ -373,6 +374,8 @@ export async function startRuntime(options: StartRuntimeOptions = {}): Promise<R
       ffprobe,
     });
     stops.add('analysis', () => analysis.close(), 'Stopping media analysis failed');
+    // 取帧时标人脸（`videos_frames` 的 `faces`）：每次调用起一个 `face-detect` 进程，缺了就不标。
+    const faces = createFaceDetector({ log });
     const modelWorker = options.modelWorker !== undefined ? options.modelWorker : resolveModelWorkerCommand();
     // 在线 Provider 的密钥与节点令牌共用一个凭据存储；钥匙串后端在这里迁走明文文件里遗留的密钥。
     const credentials = await openCredentialStore(home, log, {
@@ -683,6 +686,7 @@ export async function startRuntime(options: StartRuntimeOptions = {}): Promise<R
           videos,
           scope: toolScope,
           analysis,
+          faces,
           packages,
           // Space 目录在后面才建好：派生时再取。
           findDerived: (parentVideoId, key) => spaceDerivedFinder(space)(parentVideoId, key),

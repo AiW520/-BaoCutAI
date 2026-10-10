@@ -57,6 +57,7 @@ description: 媒体的机制：从链接下载、转码与合并、取帧看画�
 {{tool:videos_frames}}：{{arg:at}} 列出时间线上的时刻，或 {{arg:range}}（`起:止`）加 {{arg:count}} 等间隔取；一次最多 24 帧，{{arg:maxWidth}} 缩小、{{arg:format}} 选 png 或 jpeg。
 
 - 帧取的是那个时刻最上层视频片段的素材画面，**不是合成后的成片**：字幕、文字、贴纸与叠加的元素不在里面，画中画的位置、裁剪与效果也没套用。要核对字幕位置或叠加效果，导出一小段成片（{{tool:export}} 给 range）再看。
+- 每帧顺带做人脸检测（本机，随应用的 YuNet 模型）：`faces` 是人脸框，坐标按帧的宽高归一化到 0–1、对应素材画面。按人定构图（比如竖屏裁框跟着发言人）时读 `faces`，不靠看图估位置；`detector` 为 null 时检测不可用，`faces` 为空不代表没人，这时再看图。
 <!-- surface: cli -->
   也可以在网页版编辑器里看合成后的画面、拖着调整，见 [web](web.md)。
 <!-- /surface -->
@@ -87,7 +88,7 @@ description: 媒体的机制：从链接下载、转码与合并、取帧看画�
 - {{tool:download}} / {{tool:transcribe}}：`pipeline.summary.videoId` 是新视频，`assetId` 是素材；`outputs` 里有下载的文件与文稿的 `path`。给链接时 summary 另有 `description`（截断的简介）与 `sourceChapters`（作者章节的条数）。
 - 链接导入的素材：{{tool:videos_inspect}} 的 `assets[].source` 是来源元数据：`platform`、`webpageUrl`、`uploader`（发布者）、`uploadDate`、`title`、`description`（最多 1200 字符，被截断时 `descriptionTruncated` 为 true）、`chapters`（作者的章节 `[{ at, title }]`，平台给的或从简介的时间戳大纲解析出的，没有时 `[]`）。它是背景参考，不是文稿内容：润色时人名与术语的写法只在说话人明显在说它时照改，说话人实名时只在它唯一指明某一位时算证据（见 [subtitles](subtitles.md)）；作者章节用 {{tool:chapters_adopt}} 写进视频（见 [editing](editing.md)）。
 - {{tool:transcode}}：`outputs` 的 `path`（`pipeline.summary.files`）是输出文件，把位置告诉用户。
-- {{tool:videos_frames}}：`frames` 每帧有 `at`、`file`、`width`、`height` 与取自哪个片段（`item`）、哪个素材（`asset`）。读 `file` 这张图片。
+- {{tool:videos_frames}}：`frames` 每帧有 `at`、`file`、`width`、`height`、`faces` 与取自哪个片段（`item`）、哪个素材（`asset`）。读 `file` 这张图片。`faces` 是 `[{x, y, w, h, score}]`：框的左上角与宽高，按帧的宽高归一化到 0–1，`score` 0–1，按 score 从高到低；顶层 `detector` 是 `yunet`，检测器不可用时为 null（`faces` 都是空数组）。`file` 为 null 的帧没有 `faces`。
 - {{tool:assets_import}}：回执里有 `assetId`、`itemId`（没放上时间线时为 null）与新版本。
 - {{tool:videos_create}} / {{tool:videos_import_package}}：返回与 {{tool:videos_inspect}} 相同的摘要，含 `videoId`。
 - {{tool:image}}：`outputs` 里每张图的 `artifactId`；带了 video 时还有 `assetId`。

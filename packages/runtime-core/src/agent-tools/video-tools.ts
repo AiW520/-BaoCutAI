@@ -40,6 +40,7 @@ import {
 } from '@baocut/jobs';
 import { RcAgentTools } from '@baocut/protocol/messages/runtime-core';
 import type { MediaAnalysis } from '../media-analysis.ts';
+import type { FaceDetector } from '../face-detection.ts';
 import type { PackageImporter } from '../videos/package-import.ts';
 import type { VideoService } from '../videos/video-service.ts';
 import { deriveVideo, prepareDerive, type DeriveDeps } from '../videos/video-derive.ts';
@@ -58,6 +59,7 @@ import {
   frameSourceAt,
   frameTimes,
   framesDirectory,
+  withFaces,
   writeFrame,
 } from './video-frames.ts';
 
@@ -74,6 +76,8 @@ export interface VideoToolsDeps {
   scope: ToolScope;
   /** 取帧（`videos_frames`）：与素材库缩略图同一份缓存与 ffmpeg。 */
   analysis: MediaAnalysis;
+  /** 取帧时标出人脸（`videos_frames` 的 `faces`）；不给时 `detector` 为 null。 */
+  faces?: FaceDetector;
   /** 打开便携包（`videos_import_package`）：与 `videos.importPackage` 同一个入口。 */
   packages: PackageImporter;
   /** 派生子视频（`videos_derive`）时按 Space 索引认回已有的子视频；不给时只看父视频旁边的目录。 */
@@ -418,7 +422,8 @@ const DEFINITIONS: Record<ToolName, ToolInfo> = {
       `at 列出时刻，或 range 给一段时间、count 给帧数（等间隔，从起点开始），一次最多 ${MAX_FRAMES} 帧。每个时刻取画面上最上层的视频片段（启用、轨道可见；视觉轨越靠上越优先），按它的时间映射换成素材时间，取素材的那一帧；那个时刻没有视频片段时 file 为 null，不报错。`,
       '帧不是合成后的画面（composited: false）：字幕、文字、贴纸与叠加的元素不在里面，画中画的位置、裁剪与效果也没有套用。',
       `文件写在写文件目录（会话与终端是工作目录，对外服务是项目的 exports）下的 ${FRAMES_DIR}/<videoId>/，名为 at-<毫秒>ms.png（或 .jpg），同一时刻再取时覆盖。默认 png、长边不超过 1280 像素，maxWidth 按宽度缩小。`,
-      '返回 frames（每帧 at、file、width、height，以及取自哪个片段 item 与素材 asset）、composited 与 note。',
+      '每帧有 file 时还做人脸检测（随应用分发的 YuNet 模型，本机推理）：faces 是人脸框的列表 [{x, y, w, h, score}]，x、y 是框的左上角，x、y、w、h 都按这一帧的宽高归一化到 0–1，score 是 0–1 的置信度，按 score 从高到低；坐标对应素材画面（没有套画中画与裁剪）。顶层 detector 是 "yunet"；检测器不可用时为 null，这时 faces 都是空数组，不代表画面上没有人。',
+      '返回 frames（每帧 at、file、width、height、faces，以及取自哪个片段 item 与素材 asset）、detector、composited 与 note。',
     ].join('\n'),
     annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: true },
     effect: 'mutation',
@@ -1006,11 +1011,11 @@ export class VideoTools implements ToolSet {
     const video = this.#current(opened);
     const dir = await framesDirectory(this.#scope.saveRoot(access, opened), videoId, this.#scope.importBase(access, opened).confine);
     const format = args.format ?? 'png';
-    const frames = [];
+    const taken = [];
     for (const at of times) {
       const source = frameSourceAt(video, Number(at));
       if (!source) {
-        frames.push({ at, file: null });
+        taken.push({ at, file: null });
         continue;
       }
       const written = await writeFrame(
@@ -1019,9 +1024,10 @@ export class VideoTools implements ToolSet {
         () => this.#videos.assetFile(videoId, source.assetId, source.revision),
         { dir, at, format, maxWidth: args.maxWidth },
       );
-      frames.push({ at, ...written, item: source.item.id, asset: source.assetId });
+      taken.push({ at, ...written, item: source.item.id, asset: source.assetId });
     }
-    return { videoId, revision: video.revision, frames, composited: false, note: FRAMES_NOTE };
+    const { detector, frames } = await withFaces(this.#deps.faces, taken);
+    return { videoId, revision: video.revision, frames, detector, composited: false, note: FRAMES_NOTE };
   }
 
   async #history(args: z.infer<(typeof schemas)['videos_history']>, principal: ToolPrincipal) {

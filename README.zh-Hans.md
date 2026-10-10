@@ -192,7 +192,7 @@ Windows Command Prompt 中，先执行 `set "BAOCUT_HOME=.dev/baocut-home"`，�
 | `npm run package:win` / `npm run package:win:cuda` / `npm run package:win:vulkan` | Windows x64 的 NSIS 安装包（按用户安装）与 zip，不签名；分别使用 CPU、CUDA（NVIDIA）或 Vulkan（Whisper 使用 GPU，candle 仍使用 CPU）配置。见[桌面端 README](apps/desktop/README.md#windows-打包)。 |
 | `npm run runtime` | 单独启动 Runtime，默认主目录为 `~/.baocut`。 |
 | `npm run cli -- --help` | 查看 `baocut` 命令一览。工具命令从 Runtime 的工具目录派生，与 MCP 共用；`baocut help <command>` 查看参数，`baocut spec` 输出机器可读目录。没有 Runtime 时自动在后台启动，空闲后退出；可用 `baocut runtime status\|ensure\|stop` 管理。退出码：0 成功、1 失败、2 需要用户处理、3 Runtime 不可用、4 参数错误。见 [Agent 面设计 §5](docs/design/agent-surface/agent-surface-design.md#5-cli-约定)。 |
-| `npm run build:engine` | 构建视频引擎 `engine-host`、成片渲染器 `export-worker`、`speech-worker` 与本地推理进程 `model-worker`。Apple Silicon 使用 MLX 与 Core ML，其他平台使用 candle 与 whisper.cpp；额外参数原样交给 cargo，例如 `npm run build:engine -- --release`。 |
+| `npm run build:engine` | 构建视频引擎 `engine-host`、成片渲染器 `export-worker`、`speech-worker`、人脸检测 `face-detect` 与本地推理进程 `model-worker`。Apple Silicon 使用 MLX 与 Core ML，其他平台使用 candle 与 whisper.cpp；额外参数原样交给 cargo，例如 `npm run build:engine -- --release`。 |
 | `npm test` | 单元测试与使用假 Driver 的 Runtime 端到端测试，无需 Codex。 |
 | `npm run check:file-fonts` | 构建桌面应用，在 Electron 隐藏窗口中通过 `file://` 检查预览渲染器加载全部字体。 |
 | `npm run typecheck` | 类型检查。 |
@@ -233,6 +233,7 @@ BaoCut 正在积极开发，macOS Apple Silicon 与 Windows x64 安装包见上�
 | `BAOCUT_BIN_DIR` | 随应用分发的原生程序（Worker 与凭据助手）目录。设置后不再搜索 cargo 产物；打包后的桌面应用使用 `<resources>/bin`。 |
 | `BAOCUT_ENGINE_HOST` / `BAOCUT_MODEL_WORKER` | 指定 `engine-host` / `model-worker` 路径。否则先查 `BAOCUT_BIN_DIR`，再查 cargo 产物目录（`CARGO_TARGET_DIR`、`.cargo/config*.toml` 的 `build.target-dir`、仓库 `target/`）中的 `{release,debug}/`。没有 `model-worker` 时本地转写不可用。 |
 | `BAOCUT_EXPORT_WORKER` | 指定 `export-worker` 路径。否则先查 `engine-host` 旁边，再查 cargo 产物目录；缺失时导出返回 `EXPORT_TOOL_MISSING`。 |
+| `BAOCUT_FACE_DETECT` | 指定 `face-detect` 路径。否则先查 `BAOCUT_BIN_DIR`，再查 cargo 产物目录；缺失（或随附的 YuNet 模型缺失）时 `videos_frames` 照常取帧，`detector` 为 null、不标人脸。 |
 | `BAOCUT_RUNTIME_ENTRY` | CLI 启动 Runtime 的入口：`.ts` / `.js` 使用当前 Node，其他路径作为可执行文件。否则依次查找已安装的 BaoCut 应用、仓库内的 `apps/runtime`。 |
 | `BAOCUT_MODELS_DIR` | 本地模型目录，默认 `<BAOCUT_HOME>/models`。 |
 | `BAOCUT_TEMPLATES_DIR` | 内置创作模板目录，见[模板包规范 §6](docs/spec/template-spec.md#6-目录来源与加载)。否则查找打包资源中的 `templates/`，再查仓库模板。用户模板放在 `<BAOCUT_HOME>/templates`；ID 冲突时内置模板优先。 |

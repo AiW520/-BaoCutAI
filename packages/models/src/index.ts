@@ -32,6 +32,7 @@ export {
 export { SEPARATION_SELF_TEST_LIMITS, separationSelfTestVerdict, type SeparationSelfTestVerdict } from './separation-self-test.ts';
 export { BUILTIN_VOICES, builtinVoice, builtinVoiceFile, defaultBuiltinVoice, type BuiltinVoice } from './speech-voices.ts';
 export { APP_FILE_MISSING, MODEL_ASSETS_ENV, appFileMissing, modelAssetPath, resolveModelAssetsDir } from './model-assets.ts';
+export { FACE_DETECTION_MODEL, faceDetectionModelFile, type FaceDetectionModel } from './face-detection-model.ts';
 export {
   BUILTIN_REFERENCE_LABEL,
   LOCAL_SPEECH_MAX_CHARS,

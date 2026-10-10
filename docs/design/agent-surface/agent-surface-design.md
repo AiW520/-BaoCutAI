@@ -166,7 +166,7 @@ CLI 不区分「人敲的」与「Agent 敲的」。要让 Agent 宿主的权限
 | `videos` | `list` | query | 范围内的视频：`videoId`、名字、项目、路径 |
 | | `inspect` | query | 当前版本、序列、轨道、实例、素材、文档清单；字段选择、时间范围与字节预算（架构设计 §3.7） |
 | | `create` | mutation | 新建空视频（现 `videos_create`） |
-| | `frames` | mutation | **新增**：按时刻或区间取帧写成 PNG，返回路径（`previews.capture` 在 §3.5 的目录里却一直没有工具）。Agent 不看画面就剪不了 |
+| | `frames` | mutation | **新增**：按时刻或区间取帧写成 PNG，返回路径（`previews.capture` 在 §3.5 的目录里却一直没有工具）；每帧带本机检测的人脸框 `faces`，顶层 `detector`。Agent 不看画面就剪不了 |
 | | `history` | query | 版本历史与检查点 |
 | | `delete` | destructive | 移进回收站（现 `videos_delete`），要 `--yes` |
 | | `import-package` | mutation | 打开便携包建成新视频（同步完成，不是任务）；只在工具桥与 CLI |
@@ -585,6 +585,7 @@ SKILL.md 与 `references/` 的正文等 §10 的第 2 阶段（CLI 切到目录�
 - `documents read` 只有 `video`、`documentId`、可选 `revision`（2026-10-06）：转写另带 `translationBasis`，没有 `for` / `format`；纯文本用 `export --kind transcript --format txt`。§4.3 / §4.4 已按实现改正，不改实现。
 - 外部 Agent 经网页版编辑器看与改（2026-10-06，§8.8）：会话内智能体不开网页，`catalog/web.md` 整页只给 CLI 面，渲染器跳过工具桥面正文为空的目录页；`web open --video` 直达视频的编辑器，URL 由 `@baocut/protocol` 的 `webVideoHref` 构造、videoId 在 Runtime 侧解析；不加 `web status`；一个任务开一次、复用标签，登录页 / 401 / 连接被拒才重发；交付时给用户新链接，`--launch` 留给用户；CLI 优先，网页用于播放、看合成画面、拖拽与审片，网页改过后重新 `videos inspect`；`web open` 是管理命令先问的例外，端口被占不换端口。
 - 会话内智能体的指导由说明书渲染（2026-10-06，§8.6）：渲染失败时 Runtime 启动失败；目录页、`workflows.md`、`conventions.md` 是总在索引里的内置说明书页，只给会话内智能体（终端与 MCP 的 `skills_read` 读不到，那边读装好的 CLI 面），不进设置里的 skill 列表、不能开关。
+- `videos_frames` 标人脸（2026-10-10）：每个有 `file` 的帧带 `faces: [{x, y, w, h, score}]`（左上角与宽高按那一帧的宽高归一化到 0–1，score 0–1，按 score 从高到低），顶层 `detector` 是 `"yunet"`，检测器不可用时为 `null`、`faces` 都是空数组、不报错；`file` 为 null 的帧没有 `faces`。模型是随应用分发的 YuNet（OpenCV Zoo，MIT，`packages/models/assets/face-detection/`），由纯 Rust 的 `face-detect` 进程推理（tract，Windows 与 macOS 同一份实现，不带原生运行库），每次调用起一个进程、载入一次模型；不按需下载。坐标对应素材画面，与 `composited: false` 一致。用途是「剪成短视频」的自动取景（按脸定 9:16 裁框）。
 
 未决（实现阶段裁决，默认按括号里的）：
 
