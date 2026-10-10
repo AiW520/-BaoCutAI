@@ -633,7 +633,7 @@ const DEFINITIONS: Record<ToolName, ToolInfo> = {
       '子视频建在父视频旁边（同一层目录），是独立的视频（新的 videoId），父视频不变。复制整条时间线（素材是同一份文件：收在父视频里的同样收进子视频，链接的仍链接到原文件）、转写与译文整份、父视频已有的剪口与章节；start、end 是剪辑后时间线上的秒，先对到帧（起点向下、终点向上取整；取整会越过句间停顿、吃进上一句末词或下一句首词时改为反向取整，边界留在停顿里，结果的 range 是实际采用的区间）。再把区间之外的部分用剪口剪掉：子视频的时间线只剩这一段，转写面板里区间之外的话显示为剪掉的，恢复剪口（restoreCut）就能把片段往外扩。字幕层不复制，按子视频剪辑后的时间线重新建（captions: false 时不建）：每份转写一层原文字幕，父视频里有字幕层的译文也各建一层（父视频的原文字幕显示着时是双语）。旧项目导入的译文（baocut.translation/1）按转写的句子换成 baocut.translation/2 再复制，换不了的不复制，warnings 有 translations-skipped（documentId 是父视频里的译文）。',
       '首版只支持单主素材时间线：剪口只记在时间线上播放得最多的那个素材（主素材）上；别的素材与图文片段跟着剪口移动、缩短，整个落在剪掉范围里的会被删掉，恢复剪口时回不来。父视频有多个媒体素材时 warnings 有 multiple-assets；主素材盖不到的区间之外部分没剪掉时有 range-not-exact（count 是帧数）；会被删掉、恢复不回来的片段有 items-not-restorable。父视频有代码画面（composition）时拒绝（DERIVE_UNSUPPORTED_ITEM）；区间对到帧后为空时拒绝（DERIVE_RANGE_EMPTY）；父视频本身就是项目或会话的目录时拒绝（DERIVE_PARENT_UNPLACED）。',
       '幂等：父视频同一版本、同一区间与设置再调用时认回已有的子视频（reused 为 true），不再复制。会向用户确认。',
-      '返回 video（子视频的 videoId、名字与打开位置）、reused、key、对到帧的 range、primaryAssetId、cuts（区间之外的剪口：主素材源时钟上的秒）、itemCount、derivationDocumentId（派生来源文档）、speech、translations、captions 与 warnings。之后用 videos_inspect 读子视频。',
+      '返回 video（子视频的 videoId、名字与打开位置）、reused、key、对到帧的 range、primaryAssetId、cuts（区间之外的剪口：主素材源时钟上的秒）、itemCount、derivationDocumentId（派生来源文档）、speech、translations、captions（每层字幕的 documentId、sourceDocumentId 与 cueCount：字幕按整份文稿切条，cueCount 只数落在保留区间里、子视频里看得到的字幕条；认回已有的一层时为 null）与 warnings。之后用 videos_inspect 读子视频。',
     ].join('\n'),
     effect: 'mutation',
     examples: [

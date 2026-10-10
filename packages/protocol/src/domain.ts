@@ -334,6 +334,7 @@ export interface VideoDeriveResult {
   derivationDocumentId: Id | null;
   speech: { documentId: Id; sourceDocumentId: Id; words: number }[];
   translations: { documentId: Id; sourceDocumentId: Id }[];
+  /** 建的字幕层。字幕按整份文稿切条；`cueCount` 只数落在保留区间里（子视频里看得到）的字幕条，认回已有的一层时 null。 */
   captions: { documentId: Id; sourceDocumentId: Id; cueCount: number | null }[];
   warnings: { code: VideoDeriveWarningCode; itemId?: Id; assetId?: Id; documentId?: Id; count?: number }[];
 }

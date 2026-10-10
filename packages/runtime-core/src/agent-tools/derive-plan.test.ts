@@ -23,6 +23,7 @@ import {
   DeriveError,
   alignRange,
   clockLabel,
+  cuesInRange,
   derivationKey,
   derivationNeeds,
   planDerivation,
@@ -391,6 +392,33 @@ describe('planDerivation：区间之外的剪口', () => {
   });
 });
 
+describe('区间里的字幕条', () => {
+  it('kept 是区间里播放的源区间（按素材，变速换算）；cuesInRange 只数与它重叠的字幕条', () => {
+    // 时间线 [1.5, 4.5)：item_a 播源 1.5–3s，item_b 两倍速播源 10–13s；配乐（1s+1/60s 起播）播源 0.4833…–3.4833…s。
+    const p = plan(video(items), 1.5, 4.5);
+    expect(p.kept.map((k) => ({ ...k, from: Number(k.from.toFixed(4)), to: Number(k.to.toFixed(4)) }))).toEqual([
+      { assetId: 'asset_a', from: 0.4833, to: 3.4833 },
+      { assetId: 'asset_v', from: 1.5, to: 3 },
+      { assetId: 'asset_v', from: 10, to: 13 },
+    ]);
+    const kept = p.kept.filter((k) => k.assetId === 'asset_v');
+    const body = {
+      schema: 'baocut.caption/1',
+      clock: 'source-asset',
+      timescale: 1000,
+      cues: [
+        { id: 'c1', start: 0, end: 1400, text: 'before' },
+        { id: 'c2', start: 1400, end: 1600, text: 'across the start' },
+        { id: 'c3', start: 3000, end: 9000, text: 'cut out' },
+        { id: 'c4', start: 11000, end: 12000, text: 'inside' },
+        { id: 'c5', start: 13000, end: 14000, text: 'after' },
+      ],
+    };
+    expect(cuesInRange(body, kept)).toBe(2);
+    expect(cuesInRange({ cues: 'x' }, kept)).toBeNull();
+  });
+});
+
 describe('planDerivation：父视频已有的剪口（cut-set）', () => {
   it('剪口集合原样复制，范围换成子视频的实例；区间之外的剪口不与它重复', () => {
     const snapshot = video(items, {}, true);
@@ -708,6 +736,9 @@ describe.skipIf(!engine || !ffmpeg)('videos.derive（真实引擎）', () => {
     ]);
     // 文稿是整份（区间之外的话显示为剪掉的）。
     expect(await documentOf(childId, 'speech')).toEqual(parentSpeech);
+    // 字幕层按整份文稿切条（两条），cueCount 只数区间里（源 1–1.5s 与 2–2.5s）看得到的那一条。
+    expect(((await documentOf(childId, 'caption')) as { cues: unknown[] }).cues).toHaveLength(2);
+    expect(derived.captions).toEqual([expect.objectContaining({ cueCount: 1 })]);
     // (b) 剪口集合：父视频的剪口在，区间之外的两个剪口各记一次，没有重复。
     const childCuts = seconds((await documentOf(childId, 'cut-set')) as CutSetBodyShape);
     expect(childCuts.map(({ from, to }) => ({ from, to }))).toEqual([

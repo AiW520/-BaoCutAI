@@ -173,6 +173,8 @@ export interface DerivationPlan {
   warnings: DeriveWarning[];
   /** 复制的实例数。 */
   itemCount: number;
+  /** 区间里播放的源区间（父视频的素材 ID、源时钟上的秒），按素材、起点排好；数子视频字幕层在区间里的字幕条用（`cuesInRange`）。 */
+  kept: DerivedCut[];
 }
 
 export interface DerivationInput {
@@ -577,6 +579,41 @@ export function timelineWords(snapshot: VideoSnapshot, documents: ReadonlyMap<Id
   return out.sort((x, y) => x.start - y.start);
 }
 
+/** 区间 `[S, E)` 里播放的源区间：每个实例（正速率线性的源时钟）与区间相交的部分换到源时钟上，按素材合并。 */
+function keptSource(sequence: Sequence, items: SequenceItem[], range: AlignedRange): DerivedCut[] {
+  const fps = sequence.fps;
+  const kept: Interval = { start: frames(range.startFrame, fps), end: frames(range.endFrame, fps) };
+  const byAsset = new Map<Id, Interval[]>();
+  for (const item of items) {
+    const p = mediaPiece(item, fps);
+    if (!p || p === 'unsupported') continue;
+    const part = intersect({ start: p.a, end: p.b }, kept);
+    if (part) byAsset.set(p.assetId, [...(byAsset.get(p.assetId) ?? []), toSource(p, part)]);
+  }
+  return [...byAsset.entries()]
+    .sort(([x], [y]) => (x < y ? -1 : x > y ? 1 : 0))
+    .flatMap(([assetId, list]) => merge(list).map((s) => ({ assetId, from: toNumber(s.start), to: toNumber(s.end) })));
+}
+
+/**
+ * 字幕正文（`baocut.caption/1`，素材时钟）里有几条落在区间里播放的源区间（`kept`，同一个素材的）之内：与哪一段有重叠就算。
+ * 正文读不出时 null。派生的结果里 `captions[].cueCount` 用它，只数子视频剪完之后还看得到的字幕条。
+ */
+export function cuesInRange(body: unknown, kept: readonly { from: number; to: number }[]): number | null {
+  const b = body as { timescale?: unknown; cues?: unknown } | null;
+  if (!b || typeof b !== 'object' || !Array.isArray(b.cues)) return null;
+  const scale = typeof b.timescale === 'number' && b.timescale > 0 ? b.timescale : 1000;
+  let count = 0;
+  for (const raw of b.cues) {
+    const cue = raw as { start?: unknown; end?: unknown };
+    if (typeof cue.start !== 'number' || typeof cue.end !== 'number') continue;
+    const start = cue.start / scale;
+    const end = cue.end / scale;
+    if (kept.some((k) => start < k.to - 1e-9 && end > k.from + 1e-9)) count++;
+  }
+  return count;
+}
+
 // ---- 调用方要先准备的输入 ----
 
 /**
@@ -777,6 +814,7 @@ export function planDerivation(input: DerivationInput): DerivationPlan {
     return duration ? time(duration) : null;
   };
   const cutPlan = planCuts(sequence, items, range, durationOf);
+  const kept = keptSource(sequence, items, range);
   warnings.push(...cutPlan.warnings);
   const primaryRef = cutPlan.primaryAssetId ? assetImportRef.get(cutPlan.primaryAssetId) : undefined;
   const cuts: DerivedCut[] = cutPlan.primaryAssetId
@@ -819,6 +857,7 @@ export function planDerivation(input: DerivationInput): DerivationPlan {
     derivation,
     warnings: dedupeWarnings(warnings),
     itemCount: inserted.length,
+    kept,
   };
 }
 

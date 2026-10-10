@@ -12,7 +12,7 @@ import {
   type VideoOpenResult,
   type VideoSnapshot,
 } from '@baocut/protocol';
-import { PipelineStepError, existingCaptionLayer, planCaptionLayer, type CaptionSource } from '@baocut/jobs';
+import { CAPTION_DOCUMENT_REF, PipelineStepError, existingCaptionLayer, planCaptionLayer, type CaptionSource } from '@baocut/jobs';
 import { RcAgentTools } from '@baocut/protocol/messages/runtime-core';
 import type { TrustedPrincipal } from '../gateway.ts';
 import {
@@ -21,6 +21,7 @@ import {
   alignRange,
   assetFileKey,
   clockLabel,
+  cuesInRange,
   derivationKey,
   derivationNeeds,
   planDerivation,
@@ -229,6 +230,8 @@ export async function deriveVideo(
   const warnings: VideoDeriveResult['warnings'] = [...plan.warnings];
   const captions: VideoDeriveResult['captions'] = [];
   if (settings.captions) {
+    // 字幕条数只数剪完之后还看得到的：落在区间里播放的源区间之内的（字幕在素材时钟上）。
+    const keptOf = (assetId: Id | undefined) => plan.kept.filter((k) => k.assetId === assetId);
     const reader = {
       document: async (v: Id, d: Id, revision?: string) => {
         const content = await videos.document(v, d, revision);
@@ -239,7 +242,8 @@ export async function deriveVideo(
       const documentId = refs[speech.ref];
       if (!documentId) continue;
       const source = { kind: 'speech' as const, documentId };
-      const made = await captionLayer(videos, reader, childId, source, `derive:${key}:captions:${n + 1}`, principal, guard);
+      const inRange = keptOf(speech.assetId);
+      const made = await captionLayer(videos, reader, childId, source, `derive:${key}:captions:${n + 1}`, principal, guard, inRange);
       if (made === 'skipped') warnings.push({ code: 'captions-skipped', documentId });
       else captions.push({ documentId: made.documentId, sourceDocumentId: documentId, cueCount: made.cueCount });
     }
@@ -252,7 +256,8 @@ export async function deriveVideo(
       const original = speechId ? existingCaptionLayer(parentSequence, parent.documents, speechId) : null;
       const bilingual = !!original && parentSequence.items.some((item) => original.itemIds.includes(item.id) && item.enabled);
       const source = { kind: 'translation' as const, documentId, bilingual, cues: 'sentence-alignment' as const };
-      const made = await captionLayer(videos, reader, childId, source, `derive:${key}:translation-captions:${n + 1}`, principal, guard);
+      const inRange = keptOf(plan.speech.find((s) => s.ref === t.speechRef)?.assetId);
+      const made = await captionLayer(videos, reader, childId, source, `derive:${key}:translation-captions:${n + 1}`, principal, guard, inRange);
       if (made === 'skipped') warnings.push({ code: 'captions-skipped', documentId });
       else captions.push({ documentId: made.documentId, sourceDocumentId: documentId, cueCount: made.cueCount });
     }
@@ -316,6 +321,7 @@ async function captionLayer(
   command: string,
   principal: TrustedPrincipal,
   guard: { taskId?: Id; protections: EngineProtection[] },
+  kept: readonly { from: number; to: number }[],
 ): Promise<{ documentId: Id; cueCount: number | null } | 'skipped'> {
   for (let attempt = 1; ; attempt++) {
     const commandId = attempt === 1 ? command : `${command}:${attempt}`;
@@ -350,7 +356,8 @@ async function captionLayer(
         principal,
         guard,
       );
-      return { documentId: result.receipt.refs?.caption ?? source.documentId, cueCount: plan.cueCount };
+      const document = plan.operations.find((o) => o.type === 'putDocument' && o.ref === CAPTION_DOCUMENT_REF) as { body?: unknown } | undefined;
+      return { documentId: result.receipt.refs?.caption ?? source.documentId, cueCount: cuesInRange(document?.body, kept) ?? plan.cueCount };
     } catch (error) {
       const code = error instanceof RpcError ? (error.details as { code?: unknown } | null)?.code : undefined;
       const conflict = error instanceof RpcError && (error.code === 'conflict' || code === 'PROJECT_REVISION_CONFLICT');
