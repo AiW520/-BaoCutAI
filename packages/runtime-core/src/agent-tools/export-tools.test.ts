@@ -217,7 +217,8 @@ describe.skipIf(!engine || !ffmpeg)('导出工具（真实引擎）', () => {
     expect(read.isError).toBe(false);
     const basis = read.body.translationBasis;
     expect(basis.sourceBasis).toMatchObject({ speechRef: { id: speechId, revision: read.body.revision }, scopeLineage: [] });
-    expect(basis.sentences).toEqual([{ id: 's-w1', fingerprint: expect.any(String), text: 'Hello there.', wordIds: ['w1', 'w2'] }]);
+    expect(basis.sentences).toEqual([{ id: 's-w1', fingerprint: expect.any(String), text: 'Hello there.', wordIds: ['w1', 'w2'], start: expect.any(Number), end: expect.any(Number) }]);
+    expect(basis.sentences[0].end).toBeGreaterThan(basis.sentences[0].start);
 
     const inspected = await tool(session, 'videos_inspect', { video: videoPath });
     const put = await tool(session, 'edits_apply', {

@@ -394,7 +394,7 @@ const DEFINITIONS: Record<ToolName, ToolInfo> = {
       '读取视频里一份文档（转写、译文、字幕等）的正文。',
       '返回文档头（kind、名字、语言、来源素材与来源文档、各版本）、读到的版本与正文。',
       '改文档时先读当前版本，再用 documents_put 写入新的完整正文（document 给这个 documentId）。',
-      '转写（kind speech）另带 translationBasis：写译文要用的 sourceBasis 与按规则切好的句子（id、fingerprint、text、wordIds）。要自己翻译时读转写给 translateTo（目标语言）：BaoCut 在视频卡与字幕面板显示「正在翻译」，用 documents_put 写入这门语言的译文时结束（结果的 translationJob 是这条进度记录的 jobId）。自己翻译后用 documents_put 新建译文：kind "translation"、language 为目标语言、sourceDocument 为这份转写的 documentId，body 为 {"schema":"baocut.translation/2","language":目标语言,"sourceBasis":translationBasis.sourceBasis,"units":[每句一个 {"id":"t-<句子 id>","sourceSentenceId":句子 id,"sourceFingerprint":句子 fingerprint,"naturalText":译文,"alignment":{"basis":"natural","correspondence":"sentence","blocks":[],"sourceWordIds":句子 wordIds},"status":"draft"}]}，字段不多不少。',
+      '转写（kind speech）另带 translationBasis：写译文要用的 sourceBasis 与按规则切好的句子（id、fingerprint、text、wordIds，以及 start、end：素材时钟上的秒，首个可见词的起点到末个可见词的终点；父视频从 0 秒原速播放这个素材、没有剪口时就是 videos_derive 的 start、end，否则先按时间线换算）。找句子边界读这里就够，不用读整份正文。要自己翻译时读转写给 translateTo（目标语言）：BaoCut 在视频卡与字幕面板显示「正在翻译」，用 documents_put 写入这门语言的译文时结束（结果的 translationJob 是这条进度记录的 jobId）。自己翻译后用 documents_put 新建译文：kind "translation"、language 为目标语言、sourceDocument 为这份转写的 documentId，body 为 {"schema":"baocut.translation/2","language":目标语言,"sourceBasis":translationBasis.sourceBasis,"units":[每句一个 {"id":"t-<句子 id>","sourceSentenceId":句子 id,"sourceFingerprint":句子 fingerprint,"naturalText":译文,"alignment":{"basis":"natural","correspondence":"sentence","blocks":[],"sourceWordIds":句子 wordIds},"status":"draft"}]}，字段不多不少。',
       'alignment 是这句译文对应的原文词（句级对齐）：导出双语字幕与建字幕层都按它取时间。textHash（"sha256:" 加 naturalText 的 SHA-256）不用自己算，Runtime 写入时补上；写成 null 的，句子与指纹核对得上时 Runtime 同样补成句级对齐（回执的 filledAlignments 是补了几句）。',
       '要把转写或译文显示在画面上，用 captions_create 建字幕层，不要自己写字幕文档。',
     ].join('\n'),
@@ -1911,6 +1911,11 @@ function roundSeconds(value: number): number {
   return Math.round(value * 1000) / 1000;
 }
 
+/** 转写的刻度换成秒，留 6 位小数（微秒）。 */
+function sourceSeconds(ticks: number, timescale: number): number {
+  return Math.round((ticks / timescale) * 1e6) / 1e6;
+}
+
 function translationBasis(content: DocumentContent, sequenceId: Id): { translationBasis?: Record<string, unknown> } {
   if (content.document.kind !== 'speech') return {};
   let read: ReturnType<typeof sourceSentences>;
@@ -1929,7 +1934,15 @@ function translationBasis(content: DocumentContent, sequenceId: Id): { translati
         scopeLineage: [],
         editViewHash: read.editViewHash,
       },
-      sentences: read.sentences.map((s) => ({ id: s.id, fingerprint: s.fingerprint, text: s.text, wordIds: s.wordIds })),
+      // start、end：素材时钟上的秒（首个可见词的起点到末个可见词的终点），找句界不用再读整份正文。
+      sentences: read.sentences.map((s) => ({
+        id: s.id,
+        fingerprint: s.fingerprint,
+        text: s.text,
+        wordIds: s.wordIds,
+        start: sourceSeconds(s.start, read.timescale),
+        end: sourceSeconds(s.end, read.timescale),
+      })),
     },
   };
 }

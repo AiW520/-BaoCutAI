@@ -273,6 +273,11 @@ describe.skipIf(!engine || !ffmpeg)('对象的读写工具（终端目录，真�
       const read = await ok('documents_read', { video: videoId, documentId: speech.documentId });
       const basis = read.translationBasis;
       expect(basis.sentences).toHaveLength(2);
+      // 每句带素材时钟上的起止（秒）：首个可见词的起点到末个可见词的终点。
+      expect(basis.sentences.map((s: Loose) => [s.id, s.start, s.end])).toEqual([
+        ['s-w1', 0, 1],
+        ['s-w3', 1.1, 1.9],
+      ]);
       const texts = ['你好。', '早上好。'];
       const translated = await ok('documents_put', {
         video: videoId,

@@ -50,7 +50,7 @@ description: 文稿与字幕的机制：转录、润色写回、自己翻译并�
 
 翻译由你自己做，不用 {{tool:translate}}：
 
-1. **润色写回之后再读一次转写。** {{tool:documents_read}} 读 speech 文档，结果里的 `translationBasis` 给出 `sourceBasis` 与切好的句子（每句 `id`、`fingerprint`、`text`、`wordIds`）。润色会改分句与指纹，所以润色之后必须重新读。
+1. **润色写回之后再读一次转写。** {{tool:documents_read}} 读 speech 文档，结果里的 `translationBasis` 给出 `sourceBasis` 与切好的句子（每句 `id`、`fingerprint`、`text`、`wordIds`，以及素材时钟上的起止 `start`、`end`，单位秒）。润色会改分句与指纹，所以润色之后必须重新读。
 2. **逐句翻译**，按 {{skill:translate-subtitles}}：一句对一句，不合并、不拆分、不漏。
 3. **写成译文。** {{tool:documents_put}} 新建：{{arg:kind}} `translation`，{{arg:language}} 为目标语言（BCP 47），{{arg:sourceDocument}} 为转写的 documentId，{{arg:body}} 照 {{tool:documents_read}} 说明里的形状（`baocut.translation/2`），`sourceBasis` 用这次读到的。每句的 `alignment` 照说明填，或写 null 让 Runtime 按句补上句级对齐。已有同一语言的译文时给 {{arg:document}} 更新它，不新建第二份。
 4. **建字幕层。** {{tool:captions_create}}，{{arg:documentId}} 给译文；双语加 {{arg:bilingual}}（译文为主、原文为辅，转写还没有原文字幕层时同一笔里一起建）。
