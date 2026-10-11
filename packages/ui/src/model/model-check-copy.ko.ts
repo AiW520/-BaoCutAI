@@ -6,6 +6,7 @@ const outputWrong: Record<CheckSubject, string> = {
   synthesize: '모델은 실행되지만 만들어 낸 목소리가 올바르지 않습니다',
   image: '모델은 실행되지만 그려 낸 이미지가 올바르지 않습니다',
   separate: '모델은 실행되지만 사람 목소리와 배경음을 분리하지 못했습니다',
+  music: '모델은 실행되지만 생성된 소리가 거의 무음입니다',
 };
 
 const checkSentences: Record<ModelCheckCode, (subject: CheckSubject) => CheckSentence> = {
@@ -107,4 +108,5 @@ export const ko: ModelCheckMessages = {
   refUnknown: '녹음',
   trySpeech: trySubject('합성', '미리 듣기', '다른 큰 모델이나 메모리를 많이 쓰는 앱을 닫은 뒤 다시 시도하세요.'),
   tryImage: trySubject('이미지 생성', '테스트 이미지 생성', '다른 큰 모델을 닫은 뒤 다시 시도하거나 단계 수를 낮추세요.'),
+  tryMusic: trySubject('생성', '미리 듣기', '다른 큰 모델을 닫은 뒤 다시 시도하거나 길이를 줄이세요.'),
 };

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
-import type { ImageModelInfo, JobRecord, ModelBundleStatus, ModelComponentStatus, SpeechModelInfo } from '@baocut/protocol';
+import { localizeText, type ImageModelInfo, type JobRecord, type ModelBundleStatus, type ModelComponentStatus, type MusicModelInfo, type SpeechModelInfo } from '@baocut/protocol';
 import {
   ActionButton,
   AlertDialog,
@@ -40,7 +40,7 @@ import {
   rpcProblem,
 } from '../../model/models-install.ts';
 import { checkDetailLines, checkLineView, hasCheck, tryNotice } from '../../model/model-check.ts';
-import { checkCaption, CHECK_HEAD, CHECK_LABEL, TRY_SUBJECT_IMAGE } from '../../model/model-check-copy.ts';
+import { checkCaption, CHECK_HEAD, CHECK_LABEL, TRY_SUBJECT_IMAGE, TRY_SUBJECT_MUSIC } from '../../model/model-check-copy.ts';
 import {
   bundleChips,
   bundleFacts,
@@ -56,6 +56,7 @@ import {
   localDefaultPicker,
   localGroups,
   localImageModels,
+  localMusicModels,
   LOCAL_PROVIDER,
   missingParts,
   needBytes,
@@ -76,6 +77,7 @@ import { useConnection } from '../../state/connection-store.ts';
 import { useJobs } from '../../state/jobs-store.ts';
 import { useModelCheck } from '../../state/model-check-store.ts';
 import { useModels } from '../../state/models-store.ts';
+import { useMusicQuick } from '../../state/music-quick-store.ts';
 import { useTtsQuick } from '../../state/tts-quick-store.ts';
 import { useVoiceHandoff } from '../../state/voice-handoff-store.ts';
 import { ImageTryDialog } from './image-try-dialog.tsx';
@@ -89,6 +91,8 @@ import { ModelSourceFold } from './model-source-row.tsx';
 import { IMAGE_LOCAL_COPY as IMAGE, LOCAL_COPY, MODELS_PAGE_COPY } from './models-copy.ts';
 import { TTS_LOCAL_COPY as TTS } from './tts-local-copy.ts';
 import { TtsQuickTest } from './tts-quick-test.tsx';
+import { MusicQuickTest } from './music-quick-test.tsx';
+import { MUSIC_LOCAL_COPY as MUSIC } from './music-local-copy.ts';
 import { startCheck } from './start-check.ts';
 import { useBundleCheck } from './use-bundle-check.ts';
 
@@ -155,6 +159,7 @@ export function LocalModels({ category }: { category: ModelCategory }) {
   if (category === 'tts') return <LocalPage key="tts" category="tts" kind="synthesize" />;
   if (category === 'image') return <LocalPage key="image" category="image" kind="image" />;
   if (category === 'sep') return <LocalPage key="sep" category="sep" kind="separate" />;
+  if (category === 'music') return <LocalPage key="music" category="music" kind="music" />;
   const label = modelCategory(category).label;
   return <EmptyCard title={LOCAL_COPY.emptyTitle(label)} body={LOCAL_COPY.emptyBody} />;
 }
@@ -179,8 +184,14 @@ function LocalPage({ category, kind }: { category: ModelCategory; kind: LocalDef
   });
   const speech = useMemo(() => (kind === 'synthesize' ? localSpeechModels(view) : new Map<string, SpeechModelInfo>()), [kind, view]);
   const images = useMemo(() => (kind === 'image' ? localImageModels(view) : new Map<string, ImageModelInfo>()), [kind, view]);
-  const quickOpen = useTtsQuick((s) => s.open);
-  const setQuickOpen = useTtsQuick((s) => s.setOpen);
+  const musics = useMemo(() => (kind === 'music' ? localMusicModels(view) : new Map<string, MusicModelInfo>()), [kind, view]);
+  const ttsOpen = useTtsQuick((s) => s.open);
+  const setTtsOpen = useTtsQuick((s) => s.setOpen);
+  const musicOpen = useMusicQuick((s) => s.open);
+  const setMusicOpen = useMusicQuick((s) => s.setOpen);
+  // 试听展开着的行：语音合成与音乐生成各记各的。
+  const quickOpen = kind === 'music' ? musicOpen : ttsOpen;
+  const setQuickOpen = kind === 'music' ? setMusicOpen : setTtsOpen;
   useClaimAudition(kind === 'synthesize' && ready, speech);
 
   if (!connected) return <PageStatus>{MODELS_PAGE_COPY.offline}</PageStatus>;
@@ -236,7 +247,7 @@ function LocalPage({ category, kind }: { category: ModelCategory; kind: LocalDef
     }
   };
 
-  const noAuto = synth ? TTS : kind === 'image' ? IMAGE : null;
+  const noAuto = synth ? TTS : kind === 'image' ? IMAGE : kind === 'music' ? MUSIC : null;
   const desc = (
     noAuto
       ? [noAuto.defaultDesc, picker.other ? noAuto.cloudDefault(picker.other) : null, picker.items.length ? null : noAuto.noInstalled]
@@ -261,6 +272,7 @@ function LocalPage({ category, kind }: { category: ModelCategory; kind: LocalDef
       kind={kind}
       speech={synth ? { model: speech.get(bundle.bundleId) ?? null, cloneNames } : null}
       image={kind === 'image' ? (images.get(bundle.bundleId) ?? null) : null}
+      music={kind === 'music' ? (musics.get(bundle.bundleId) ?? null) : null}
       quickOpen={quickOpen.includes(bundle.bundleId)}
       onQuick={(open) => setQuickOpen(bundle.bundleId, open)}
       reenabling={busy === bundle.bundleId}
@@ -353,7 +365,7 @@ function LocalPage({ category, kind }: { category: ModelCategory; kind: LocalDef
           bundleId={install.bundle.bundleId}
           name={bundleName(install.bundle)}
           license={install.bundle.license ?? speech.get(install.bundle.bundleId)?.local?.license ?? null}
-          {...(kind === 'image' ? { licenseUse: IMAGE.licenseUse } : {})}
+          {...(kind === 'image' ? { licenseUse: IMAGE.licenseUse } : kind === 'music' ? { licenseUse: MUSIC.licenseUse } : {})}
           mode={install.mode}
           {...(install.note ? { note: install.note } : {})}
           onClose={() => setInstall(null)}
@@ -499,6 +511,7 @@ function BundleRow({
   kind,
   speech,
   image,
+  music,
   quickOpen,
   onQuick,
   reenabling,
@@ -518,6 +531,8 @@ function BundleRow({
   speech: { model: SpeechModelInfo | null; cloneNames: readonly string[] } | null;
   /** 图像生成的行：本机列出的模型（没装好时可能没有）；别的行为 null。 */
   image: ImageModelInfo | null;
+  /** 音乐生成的行：本机列出的模型（没装好时可能没有）；别的行为 null。 */
+  music: MusicModelInfo | null;
   quickOpen: boolean;
   onQuick: (open: boolean) => void;
   reenabling: boolean;
@@ -558,8 +573,11 @@ function BundleRow({
   const model = speech?.model ?? null;
   const canAudition = !!model && model.available && isBundleInstalled(bundle) && bundle.state !== 'error';
   const canTryImage = !!image && image.available !== false && isBundleInstalled(bundle) && bundle.state !== 'error';
+  // 引擎没找到时模型不可用（`available: false`，原因写在模型的 detail 里）：不给试听，原因照实写在行上。
+  const canTryMusic = !!music && music.available !== false && isBundleInstalled(bundle) && bundle.state !== 'error';
+  const musicWhy = music && music.available === false && isBundleInstalled(bundle) ? (localizeText(music.detail, music.detailRef) ?? null) : null;
   const buttons: ReactNode[] = [];
-  if (canAudition) {
+  if (canAudition || canTryMusic) {
     buttons.push(
       <Button
         key="quick"
@@ -586,7 +604,7 @@ function BundleRow({
     );
   }
   // 没有试用的（语音识别，或这一刻试不了的图像模型）：检查在行上露一个安静的按钮；有试听、试画的，检查只在 ⋯ 里。
-  if (!speech && !canTryImage && check.can.recheck) {
+  if (!speech && !canTryImage && !canTryMusic && check.can.recheck) {
     buttons.push(
       <TooltipTrigger key="check" placement="top" delay={300}>
         <ActionButton isQuiet size="S" isDisabled={checkBusy} onPress={() => void check.start()}>
@@ -682,7 +700,7 @@ function BundleRow({
 
   const brief = model ? ttsBrief(model) : null;
   const size = speech ? installedBytes(bundle) : null;
-  const weights = bundle.license ?? model?.local?.license ?? null;
+  const weights = bundle.license ?? model?.local?.license ?? music?.local?.license ?? null;
   const license = kind !== 'transcribe' ? weights : null;
   const restricted = license && !license.commercialUse ? license : null;
   // 详情的「许可」一行：所有类都列权重的许可，再加上与它不同或要署名的组件（设计稿 settings-local.jsx `lics`）。
@@ -710,6 +728,7 @@ function BundleRow({
             {brief ? [...brief.facts, ...(size !== null ? [fmtSize(size)] : [])].join(' · ') : bundleFacts(bundle)}
           </div>
           {restricted ? <div className={modelFacts}>{licenseBrief(restricted)}</div> : null}
+          {musicWhy ? <div className={modelFacts}>{musicWhy}</div> : null}
         </div>
         <div className={modelActions}>{buttons}</div>
       </div>
@@ -742,6 +761,16 @@ function BundleRow({
           model={model}
           cloneNames={speech?.cloneNames ?? []}
           notice={tryNotice(check.state, check.can)}
+          canCheck={check.can.recheck}
+          onCheck={(k) => (k === 'repair' ? onInstall('repair') : void check.start())}
+        />
+      ) : null}
+      {quickOpen && canTryMusic && music ? (
+        <MusicQuickTest
+          bundleId={id}
+          name={name}
+          model={music}
+          notice={tryNotice(check.state, check.can, TRY_SUBJECT_MUSIC)}
           canCheck={check.can.recheck}
           onCheck={(k) => (k === 'repair' ? onInstall('repair') : void check.start())}
         />

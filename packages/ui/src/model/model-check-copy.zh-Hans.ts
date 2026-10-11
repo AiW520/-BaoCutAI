@@ -6,6 +6,7 @@ const outputWrong: Record<CheckSubject, string> = {
   synthesize: '模型能运行，但合成出来的声音不对',
   image: '模型能运行，但画出来的图不对',
   separate: '模型能运行，但人声和背景没分开',
+  music: '模型能运行，但生成出来几乎是静音',
 };
 
 const checkSentences: Record<ModelCheckCode, (subject: CheckSubject) => CheckSentence> = {
@@ -99,4 +100,5 @@ export const zhHans: ModelCheckMessages = {
   refUnknown: '录音',
   trySpeech: trySubject('合成', '试听', '关掉别的大模型或占内存的应用后重试。'),
   tryImage: trySubject('画', '试画', '关掉别的大模型后重试，或把步数调低。'),
+  tryMusic: trySubject('生成', '试听', '关掉别的大模型后重试，或把时长缩短。'),
 };

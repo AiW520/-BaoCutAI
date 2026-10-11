@@ -6,6 +6,7 @@ const outputWrong: Record<CheckSubject, string> = {
  synthesize: 'Le modèle fonctionne mais l’audio synthétisé est incorrect',
  image: 'Le modèle fonctionne mais l’image est incorrecte',
  separate: 'Le modèle fonctionne mais voix et fond ne sont pas séparés',
+ music: 'Le modèle fonctionne mais ce qu’il génère est presque silencieux',
 };
 const checkSentences: Record<ModelCheckCode, (subject: CheckSubject) => CheckSentence> = {
  APP_FILE_MISSING: () => ({ text: 'Un fichier de BaoCut manque ; ce n’est pas un problème de modèle', todo: 'Réinstallez BaoCut. Modèles déjà téléchargés inchangés.' }),
@@ -122,5 +123,19 @@ export const fr: ModelCheckMessages = {
     }),
     notStarted: (message: string) => ({ text: `Impossible de démarrer le dessin : ${message}`, todo: "" }),
     noticeTodo: (todo: string) => `${todo} Un test d’image échouera probablement aussi.`,
+  } as TrySubject,
+
+  tryMusic: {
+    noMemory: {
+      text: "Mémoire insuffisante pour terminer la génération",
+      todo: "Fermez les autres grands modèles et réessayez, ou raccourcissez la durée.",
+    },
+    modelError: { text: "Le modèle a échoué sans produire de musique", todo: "Vérifiez le modèle pour voir le motif." },
+    other: (message: string) => ({
+      text: `Impossible de générer : ${message}`,
+      todo: "Réessayez. Si cela persiste, consultez les détails dans Tâches en arrière-plan.",
+    }),
+    notStarted: (message: string) => ({ text: `Impossible de démarrer la génération : ${message}`, todo: "" }),
+    noticeTodo: (todo: string) => `${todo} Un aperçu échouera probablement aussi.`,
   } as TrySubject,
 };

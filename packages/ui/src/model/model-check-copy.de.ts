@@ -3,6 +3,7 @@ const outputWrong: Record<CheckSubject, string> = {
  synthesize: 'Modell läuft, aber die erzeugte Stimme ist nicht richtig',
  image: 'Modell läuft, aber das erzeugte Bild ist nicht richtig',
  separate: 'Modell läuft, hat Stimme und Hintergrund aber nicht getrennt',
+ music: 'Modell läuft, erzeugt aber fast nur Stille',
 };
 const checkSentences = {
  APP_FILE_MISSING: () => ({ text: 'Eine mit BaoCut gelieferte Datei fehlt; kein Modellproblem', todo: 'BaoCut erneut installieren. Heruntergeladene Modelle bleiben unverändert.' }),
@@ -121,5 +122,19 @@ export const de: ModelCheckMessages = {
     }),
     notStarted: (message: string) => ({ text: `Zeichnen konnte nicht gestartet werden: ${message}`, todo: "" }),
     noticeTodo: (todo: string) => `${todo} Auch ein Testbild würde jetzt wahrscheinlich fehlschlagen.`,
+  } as TrySubject,
+
+  tryMusic: {
+    noMemory: {
+      text: "Nicht genug Arbeitsspeicher zum Erzeugen",
+      todo: "Andere große Modelle schließen oder Länge verkürzen und erneut versuchen.",
+    },
+    modelError: { text: "Modellfehler; keine Musik erzeugt", todo: "Modell prüfen, um den Fehler zu finden." },
+    other: (message: string) => ({
+      text: `Erzeugen fehlgeschlagen: ${message}`,
+      todo: "Erneut versuchen. Bei Wiederholung Details unter Hintergrundaufgaben prüfen.",
+    }),
+    notStarted: (message: string) => ({ text: `Erzeugen konnte nicht gestartet werden: ${message}`, todo: "" }),
+    noticeTodo: (todo: string) => `${todo} Auch eine Vorschau würde jetzt wahrscheinlich fehlschlagen.`,
   } as TrySubject,
 };

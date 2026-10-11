@@ -6,6 +6,7 @@ const outputWrong: Record<CheckSubject, string> = {
   synthesize: 'Model działa, ale syntetyzowany głos jest nieprawidłowy',
   image: 'Model działa, ale utworzony obraz jest nieprawidłowy',
   separate: 'Model działa, ale głosu i tła nie oddzielono',
+  music: 'Model działa, ale wygenerowana muzyka jest prawie cicha',
 };
 
 const checkSentences: Record<ModelCheckCode, (subject: CheckSubject) => CheckSentence> = {
@@ -29,7 +30,7 @@ const checkSentences: Record<ModelCheckCode, (subject: CheckSubject) => CheckSen
 function trySubject(verb: string, noun: string, noMemoryTodo: string): TrySubject {
   return {
     noMemory: { text: `Nie udało się ukończyć ${verb} z braku pamięci`, todo: noMemoryTodo },
-    modelError: { text: verb === 'syntezy' ? 'Błąd modelu, nie utworzono audio' : 'Błąd modelu, nie utworzono obrazu', todo: 'Sprawdź model, aby znaleźć przyczynę.' },
+    modelError: { text: verb === 'syntezy' ? 'Błąd modelu, nie utworzono audio' : verb === 'generowania' ? 'Błąd modelu, nie utworzono muzyki' : 'Błąd modelu, nie utworzono obrazu', todo: 'Sprawdź model, aby znaleźć przyczynę.' },
     other: (message) => ({ text: `Nie udało się wykonać ${verb}: ${message}`, todo: 'Spróbuj ponownie. Przy powtórzeniu zobacz szczegóły w zadaniach w tle.' }),
     notStarted: (message) => ({ text: `Nie udało się rozpocząć ${verb}: ${message}`, todo: '' }),
     noticeTodo: (todo) => `${todo} Teraz ${noun} też najprawdopodobniej się nie powiedzie.`,
@@ -99,4 +100,5 @@ export const pl: ModelCheckMessages = {
   refUnknown: "nagranie",
   trySpeech: trySubject('syntezy', 'podgląd', 'Zamknij inne duże modele lub aplikacje zużywające pamięć i spróbuj ponownie.'),
   tryImage: trySubject('rysowania', 'próbny obraz', 'Zamknij inne duże modele i spróbuj ponownie lub zmniejsz liczbę kroków.'),
+  tryMusic: trySubject('generowania', 'podgląd', 'Zamknij inne duże modele i spróbuj ponownie lub skróć czas trwania.'),
 };

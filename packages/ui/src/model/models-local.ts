@@ -5,6 +5,7 @@ import {
   type ModelCapabilitiesView,
   type ModelComponentStatus,
   type ModelLicense,
+  type MusicModelInfo,
 } from '@baocut/protocol';
 import type { ModelCategory } from './settings-nav.ts';
 import { M } from './models-local-copy.ts';
@@ -21,6 +22,12 @@ export const LOCAL_PROVIDER = 'local';
 /** 本机列出的文生图模型：模型包 ID → 描述（「试画」读提示词上限与可用性）。 */
 export function localImageModels(view: ModelCapabilitiesView | null): Map<string, ImageModelInfo> {
   const local = view?.generateImage.providers.find((p) => p.providerId === LOCAL_PROVIDER);
+  return new Map((local?.models ?? []).map((m) => [m.modelId, m]));
+}
+
+/** 本机列出的音乐生成模型（按模型包 ID）：没装好的也在，`available` 说能不能用。 */
+export function localMusicModels(view: ModelCapabilitiesView | null): Map<string, MusicModelInfo> {
+  const local = view?.generateMusic.providers.find((p) => p.providerId === LOCAL_PROVIDER);
   return new Map((local?.models ?? []).map((m) => [m.modelId, m]));
 }
 
@@ -178,12 +185,13 @@ export interface LocalDefaultPicker {
 }
 
 /** 本地页能设默认的几种模型包与它们在能力视图里的名字。 */
-export type LocalDefaultCapability = 'transcribe' | 'synthesize' | 'image' | 'separate';
+export type LocalDefaultCapability = 'transcribe' | 'synthesize' | 'image' | 'separate' | 'music';
 export const VIEW_CAPABILITY = {
   transcribe: 'transcribe',
   synthesize: 'synthesizeSpeech',
   image: 'generateImage',
   separate: 'separateAudio',
+  music: 'generateMusic',
 } as const;
 
 /** 模型包给人看的名字：登记的模型包都有 `label`；旧的快照没有时退回 `bundleId`。 */
@@ -194,7 +202,7 @@ export function bundleName(bundle: Pick<ModelBundleStatus, 'bundleId' | 'label'>
 /**
  * 本地页的默认模型菜单。
  * - 语音识别与音源分离：「自动选择」= 不设默认，用出厂默认的本机模型包；其余是装好的这一类模型包。
- * - 语音合成与图像生成：没有出厂默认（架构设计 §6.2），菜单里没有「自动选择」；没设或设的那只已不可选时什么都不勾、显示
+ * - 语音合成、图像生成与音乐生成：没有出厂默认（架构设计 §6.2），菜单里没有「自动选择」；没设或设的那只已不可选时什么都不勾、显示
  *   「未设置」，只列装好的这一类模型包。
  *   想清掉默认在云端页选「每次选择」。
  * 一种能力只有一个默认值，与云端页共用——默认是云端或节点的模型时这里不勾任何一项，如实说出来；选一只本地的会替换它。

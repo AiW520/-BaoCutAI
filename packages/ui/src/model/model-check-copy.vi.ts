@@ -6,6 +6,7 @@ const outputWrong: Record<CheckSubject, string> = {
   synthesize: 'Mô hình chạy được nhưng giọng tạo ra không đúng',
   image: 'Mô hình chạy được nhưng hình vẽ không đúng',
   separate: 'Mô hình chạy được nhưng chưa tách giọng khỏi nền',
+  music: 'Mô hình chạy được nhưng nhạc tạo ra gần như im lặng',
 };
 
 const checkSentences: Record<ModelCheckCode, (subject: CheckSubject) => CheckSentence> = {
@@ -98,4 +99,5 @@ export const vi: ModelCheckMessages = {
   refUnknown: 'bản ghi',
   trySpeech: trySubject('tổng hợp', 'nghe thử', 'Đóng mô hình lớn hoặc ứng dụng tốn bộ nhớ khác rồi thử lại.'),
   tryImage: trySubject('vẽ', 'vẽ thử', 'Đóng mô hình lớn khác rồi thử lại hoặc giảm số bước.'),
+  tryMusic: trySubject('tạo nhạc', 'nghe thử', 'Đóng mô hình lớn khác rồi thử lại hoặc rút ngắn thời lượng.'),
 };

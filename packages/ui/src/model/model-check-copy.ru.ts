@@ -6,6 +6,7 @@ const outputWrong: Record<CheckSubject, string> = {
   synthesize: 'Модель работает, но синтезированный голос неверный',
   image: 'Модель работает, но созданное изображение неверное',
   separate: 'Модель работает, но голос и фон не разделены',
+  music: 'Модель работает, но созданная музыка почти не слышна',
 };
 
 const checkSentences: Record<ModelCheckCode, (subject: CheckSubject) => CheckSentence> = {
@@ -29,7 +30,7 @@ const checkSentences: Record<ModelCheckCode, (subject: CheckSubject) => CheckSen
 function trySubject(verb: string, noun: string, noMemoryTodo: string): TrySubject {
   return {
     noMemory: { text: `Не удалось завершить ${verb} из-за нехватки памяти`, todo: noMemoryTodo },
-    modelError: { text: verb === 'синтез' ? 'Модель завершилась ошибкой и не создала аудио' : 'Модель завершилась ошибкой и не создала изображение', todo: 'Проверьте модель, чтобы найти причину.' },
+    modelError: { text: verb === 'синтез' ? 'Модель завершилась ошибкой и не создала аудио' : verb === 'генерацию' ? 'Модель завершилась ошибкой и не создала музыку' : 'Модель завершилась ошибкой и не создала изображение', todo: 'Проверьте модель, чтобы найти причину.' },
     other: (message) => ({ text: `Не удалось выполнить ${verb}: ${message}`, todo: 'Повторите попытку. При повторении посмотрите сведения в фоновых задачах.' }),
     notStarted: (message) => ({ text: `Не удалось начать ${verb}: ${message}`, todo: '' }),
     noticeTodo: (todo) => `${todo} Сейчас ${noun} скорее всего тоже закончится ошибкой.`,
@@ -99,4 +100,5 @@ export const ru: ModelCheckMessages = {
   refUnknown: "запись",
   trySpeech: trySubject('синтез', 'предпросмотр', 'Закройте другие большие модели или приложения с большим потреблением памяти и повторите попытку.'),
   tryImage: trySubject('рисование', 'пробное рисование', 'Закройте другие большие модели и повторите попытку либо уменьшите число шагов.'),
+  tryMusic: trySubject('генерацию', 'предпросмотр', 'Закройте другие большие модели и повторите попытку либо сократите длительность.'),
 };

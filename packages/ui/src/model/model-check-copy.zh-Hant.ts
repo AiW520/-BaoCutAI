@@ -6,6 +6,7 @@ const outputWrong: Record<CheckSubject, string> = {
   synthesize: '模型可以執行，但合成出的聲音不正確',
   image: '模型可以執行，但繪製出的圖片不正確',
   separate: '模型可以執行，但沒有把人聲和背景分開',
+  music: '模型可以執行，但生成的結果幾乎是靜音',
 };
 
 const checkSentences: Record<ModelCheckCode, (subject: CheckSubject) => CheckSentence> = {
@@ -98,4 +99,5 @@ export const zhHant: ModelCheckMessages = {
   refUnknown: '錄音',
   trySpeech: trySubject('合成', '試聽', '請關閉其他大型模型或佔用記憶體的應用程式後重試。'),
   tryImage: trySubject('繪製', '試畫', '請關閉其他大型模型後重試，或調低步數。'),
+  tryMusic: trySubject('生成', '試聽', '請關閉其他大型模型後重試，或縮短長度。'),
 };

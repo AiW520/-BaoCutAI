@@ -6,6 +6,7 @@ const outputWrong: Record<CheckSubject, string> = {
   synthesize: 'モデルは動作しますが、合成された声が正しくありません',
   image: 'モデルは動作しますが、描かれた画像が正しくありません',
   separate: 'モデルは動作しますが、声と背景を分離できませんでした',
+  music: 'モデルは動作しますが、生成された音がほぼ無音です',
 };
 
 const checkSentences: Record<ModelCheckCode, (subject: CheckSubject) => CheckSentence> = {
@@ -114,4 +115,5 @@ export const ja: ModelCheckMessages = {
   refUnknown: '録音',
   trySpeech: trySubject('合成', '試聴', 'ほかの大きなモデルやメモリを多く使うアプリを閉じてから、再試行してください。'),
   tryImage: trySubject('描画', '試し描き', 'ほかの大きなモデルを閉じてから再試行するか、ステップ数を下げてください。'),
+  tryMusic: trySubject('生成', '試聴', 'ほかの大きなモデルを閉じてから再試行するか、長さを短くしてください。'),
 };

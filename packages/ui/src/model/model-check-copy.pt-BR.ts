@@ -1,7 +1,7 @@
 import type { ModelCheckCode } from '@baocut/protocol';
 import type { CheckSentence, CheckSubject, ModelCheckMessages, TrySubject } from './model-check-copy.ts';
 
-const outputWrong: Record<CheckSubject, string> = { transcribe: 'O modelo executa, mas não reconhece a fala da amostra', synthesize: 'O modelo executa, mas o áudio sintetizado está incorreto', image: 'O modelo executa, mas a imagem está incorreta', separate: 'O modelo executa, mas voz e fundo não foram separados' };
+const outputWrong: Record<CheckSubject, string> = { transcribe: 'O modelo executa, mas não reconhece a fala da amostra', synthesize: 'O modelo executa, mas o áudio sintetizado está incorreto', image: 'O modelo executa, mas a imagem está incorreta', separate: 'O modelo executa, mas voz e fundo não foram separados', music: 'O modelo executa, mas o que gera é quase silêncio' };
 const checkSentences: Record<ModelCheckCode, (subject: CheckSubject) => CheckSentence> = {
  APP_FILE_MISSING: () => ({ text: 'Falta um arquivo do BaoCut, não é problema do modelo', todo: 'Reinstale o BaoCut; modelos baixados não mudam.' }),
  MODEL_FILES_DAMAGED: () => ({ text: 'Arquivos do modelo danificados', todo: 'Reparar baixa os arquivos danificados novamente.' }),
@@ -117,5 +117,19 @@ export const ptBR: ModelCheckMessages = {
     }),
     notStarted: (message: string) => ({ text: `Não foi possível iniciar desenho: ${message}`, todo: "" }),
     noticeTodo: (todo: string) => `${todo} Um teste de imagem provavelmente também falhará.`,
+  } as TrySubject,
+
+  tryMusic: {
+    noMemory: {
+      text: "Memória insuficiente para concluir geração",
+      todo: "Feche outros modelos e tente, ou encurte a duração.",
+    },
+    modelError: { text: "Modelo falhou sem música", todo: "Verifique o modelo para entender." },
+    other: (message: string) => ({
+      text: `Não foi possível gerar: ${message}`,
+      todo: "Tente novamente; se persistir, veja detalhes em Tarefas em segundo plano.",
+    }),
+    notStarted: (message: string) => ({ text: `Não foi possível iniciar geração: ${message}`, todo: "" }),
+    noticeTodo: (todo: string) => `${todo} Uma prévia provavelmente também falhará.`,
   } as TrySubject,
 };

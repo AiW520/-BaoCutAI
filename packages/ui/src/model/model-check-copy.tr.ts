@@ -6,6 +6,7 @@ const outputWrong: Record<CheckSubject, string> = {
   synthesize: 'Model çalışıyor ancak ürettiği ses doğru değil',
   image: 'Model çalışıyor ancak çizdiği görsel doğru değil',
   separate: 'Model çalışıyor ancak sesi arka plandan ayırmadı',
+  music: 'Model çalışıyor ancak ürettiği ses neredeyse sessiz',
 };
 
 const checkSentences: Record<ModelCheckCode, (subject: CheckSubject) => CheckSentence> = {
@@ -98,4 +99,5 @@ export const tr: ModelCheckMessages = {
   refUnknown: 'kayıt',
   trySpeech: trySubject('sentez', 'önizleme', 'Diğer büyük modelleri veya çok bellek kullanan uygulamaları kapatıp yeniden deneyin.'),
   tryImage: trySubject('çizim', 'deneme çizimi', 'Diğer büyük modelleri kapatıp yeniden deneyin veya adım sayısını düşürün.'),
+  tryMusic: trySubject('üretim', 'önizleme', 'Diğer büyük modelleri kapatıp yeniden deneyin veya süreyi kısaltın.'),
 };

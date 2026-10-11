@@ -4,6 +4,7 @@ const outputWrong: Record<CheckSubject, string> = {
  synthesize: 'El modelo se ejecuta, pero la voz que produce no es correcta',
  image: 'El modelo se ejecuta, pero la imagen que dibuja no es correcta',
  separate: 'El modelo se ejecuta, pero no separó la voz del fondo',
+ music: 'El modelo se ejecuta, pero lo que genera es casi silencio',
 };
 export const es: ModelCheckMessages = {
  label: { check: 'Comprobar', checkFull: 'Comprobar modelo', recheck: 'Comprobar de nuevo', repair: 'Reparar…', repairSub: 'Solo vuelve a descargar los archivos dañados', details: 'Detalles técnicos', hideDetails: 'Ocultar detalles técnicos', copy: 'Copiar detalles técnicos', copied: 'Detalles técnicos copiados', copyFailed: 'No se pudo copiar. Selecciona el texto de arriba y cópialo tú.', cancel: 'Cancelar', retry: 'Reintentar', pickRef: 'Elegir otra grabación…', useSample: 'Usar grabación de muestra' },
@@ -43,5 +44,11 @@ export const es: ModelCheckMessages = {
  modelError: { text: 'El modelo encontró un error y no dibujó nada', todo: 'Comprueba el modelo para ver qué falló.' },
  other: (message) => ({ text: `No se pudo dibujar: ${message}`, todo: 'Puedes volver a intentarlo. Si sigue ocurriendo, consulta los detalles en Tareas en segundo plano.' }),
  notStarted: (message) => ({ text: `No se pudo iniciar el dibujo: ${message}`, todo: '' }), noticeTodo: (todo) => `${todo} Es muy probable que un dibujo de prueba ahora también falle.`,
+ },
+ tryMusic: {
+ noMemory: { text: 'No hay suficiente memoria para terminar la generación', todo: 'Cierra otros modelos grandes y vuelve a intentarlo o hazlo más corto.' },
+ modelError: { text: 'El modelo encontró un error y no produjo música', todo: 'Comprueba el modelo para ver qué falló.' },
+ other: (message) => ({ text: `No se pudo generar: ${message}`, todo: 'Puedes volver a intentarlo. Si sigue ocurriendo, consulta los detalles en Tareas en segundo plano.' }),
+ notStarted: (message) => ({ text: `No se pudo iniciar la generación: ${message}`, todo: '' }), noticeTodo: (todo) => `${todo} Es muy probable que una vista previa ahora también falle.`,
  },
 };

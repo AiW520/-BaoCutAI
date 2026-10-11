@@ -20,8 +20,8 @@ import { vi } from './model-check-copy.vi.ts';
  * 英文是键与类型的来源，译文在 `model-check-copy.<语言>.ts`；读当前语言要在调用时读。
  */
 
-/** 能力的种类：识别与分离（没有试用）、合成（试听）与生图。「不对」长什么样各说各的。 */
-export type CheckSubject = 'transcribe' | 'synthesize' | 'image' | 'separate';
+/** 能力的种类：识别与分离（没有试用）、合成（试听）、生图与音乐（试听）。「不对」长什么样各说各的。 */
+export type CheckSubject = 'transcribe' | 'synthesize' | 'image' | 'separate' | 'music';
 
 export interface CheckSentence {
   text: string;
@@ -50,6 +50,7 @@ const outputWrong: Record<CheckSubject, string> = {
   synthesize: "The model runs, but the voice it produces isn't right",
   image: "The model runs, but the image it draws isn't right",
   separate: "The model runs, but it didn't separate the voice from the background",
+  music: 'The model runs, but what it generates is nearly silent',
 };
 
 const checkSentences = {
@@ -180,6 +181,20 @@ const en = {
     notStarted: (message: string) => ({ text: `Couldn't start drawing: ${message}`, todo: '' }),
     noticeTodo: (todo: string) => `${todo} A test drawing now will most likely fail too.`,
   } as TrySubject,
+  /** 音乐生成的试听。 */
+  tryMusic: {
+    noMemory: {
+      text: 'Not enough memory to finish generating',
+      todo: 'Close other large models and try again, or make it shorter.',
+    },
+    modelError: { text: 'The model ran into an error and produced no music', todo: 'Check the model to see what went wrong.' },
+    other: (message: string) => ({
+      text: `Couldn't generate: ${message}`,
+      todo: 'You can try again. If it keeps happening, look at the details in Background tasks.',
+    }),
+    notStarted: (message: string) => ({ text: `Couldn't start generating: ${message}`, todo: '' }),
+    noticeTodo: (todo: string) => `${todo} A preview now will most likely fail too.`,
+  } as TrySubject,
 };
 
 export type ModelCheckMessages = typeof en;
@@ -231,3 +246,4 @@ export const TRY_FAILURE = {
 
 export const TRY_SUBJECT: TrySubject = live(() => M.trySpeech);
 export const TRY_SUBJECT_IMAGE: TrySubject = live(() => M.tryImage);
+export const TRY_SUBJECT_MUSIC: TrySubject = live(() => M.tryMusic);
