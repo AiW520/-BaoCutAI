@@ -538,6 +538,7 @@ export function videoChangeOf(videos: VideoService, opened: VideoOpenResult, res
       : { conversationId: ref.source.conversationId ?? '', path: ref.relPath },
     transactionId: result.receipt.transactionId,
     label: result.receipt.label,
+    ...(result.receipt.labelRef ? { labelRef: result.receipt.labelRef } : {}),
     previousRevision: result.receipt.previousRevision,
     videoRevision: result.receipt.videoRevision,
     createdIds: result.receipt.createdIds,

@@ -7,6 +7,7 @@ import {
   itemAssetRefs,
   itemRangeSeconds,
   itemTimeMap,
+  localizeText,
   mediaTimeToSeconds,
   sequenceDurationFrames,
   type DuckingGroup,
@@ -157,7 +158,7 @@ export function digestVideo(snapshot: VideoSnapshot, videoPath: string, history:
       }),
     recentHistory: history.slice(0, 10).map((entry) => ({
       transactionId: entry.transactionId,
-      label: entry.label,
+      label: localizeText(entry.label, entry.labelRef),
       by: entry.actor.kind,
       revision: entry.videoRevision,
       undone: Boolean(entry.undoneBy),
@@ -352,13 +353,16 @@ function trackOrder(sequence: Sequence, item: SequenceItem): number {
   return sequence.tracks.find((track) => track.id === item.trackId)?.order ?? 0;
 }
 
-/** 回执摘要：工具结果与变更卡都从这里取，不从模型的说法里取（命令与协议规范 §5）。 */
+/**
+ * 回执摘要：工具结果与变更卡都从这里取，不从模型的说法里取（命令与协议规范 §5）。
+ * 修改名与引擎的错误一样按 Runtime 的语言给（`localizeText`）；变更卡另外带着 `labelRef`，界面按自己的语言显示。
+ */
 export function digestReceipt(receipt: TransactionReceipt, fps: Rate, replayed: boolean) {
   return {
     status: receipt.status,
     replayed,
     transactionId: receipt.transactionId,
-    label: receipt.label,
+    label: localizeText(receipt.label, receipt.labelRef),
     revision: { before: receipt.previousRevision, after: receipt.videoRevision },
     createdIds: receipt.createdIds,
     updatedIds: receipt.updatedIds,

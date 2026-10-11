@@ -483,7 +483,9 @@ export interface VideoChange {
   /** 在编辑器里打开这个视频。 */
   target: { projectId: Id; path: string } | { conversationId: Id; path: string };
   transactionId: Id;
+  /** 回执的修改名与引用：界面用 `localizeText(label, labelRef)` 显示。 */
   label: string;
+  labelRef?: MessageRef;
   previousRevision: string;
   videoRevision: string;
   createdIds: Id[];

@@ -13,7 +13,7 @@ use serde::{Deserialize, Serialize};
 use serde_json::{Value, json};
 use sha2::{Digest, Sha256};
 
-use crate::error::{EngineResult, ErrorBody, kinds, msg};
+use crate::error::{EngineResult, ErrorBody, Text, kinds, msg};
 use crate::ids::{new_id, new_transaction_id, now_rfc3339};
 use crate::import::{
     DIRECTORY_MEDIA_TYPE, PreparedAsset, blob_rel_path, hash_file, hash_tree, link_locator, locate_linked, prepare_import, publish_tree,
@@ -256,69 +256,77 @@ fn with_operation_index(mut err: ErrorBody, index: usize) -> ErrorBody {
     err
 }
 
-fn operation_label(op: &EditOperation) -> &'static str {
+/// 一种操作的缺省修改名（命令与协议规范 §3.1）：英文与引用，界面按读者的语言重新生成。
+/// 每个分支一条字面量 `msg!`，英文由 `tools/rust-messages.test.ts` 与译文核对。
+fn operation_label(op: &EditOperation) -> Text {
     match op {
-        EditOperation::ImportAsset { .. } => "导入素材",
-        EditOperation::CollectAssets { .. } => "收纳素材",
-        EditOperation::RemoveAssets { .. } => "清理素材",
-        EditOperation::RelinkAsset { .. } => "重新链接素材",
-        EditOperation::InsertItems { .. } => "添加片段",
-        EditOperation::PutDocument { .. } => "写入文档",
-        EditOperation::AddItem { .. } => "添加片段",
-        EditOperation::MoveItem { .. } | EditOperation::MoveItems { .. } => "移动片段",
-        EditOperation::TrimItem { .. } => "裁切片段",
-        EditOperation::SplitItem { .. } => "拆分片段",
-        EditOperation::JoinItems { .. } => "合并片段",
-        EditOperation::AddCuts { .. } => "剪掉片段",
-        EditOperation::RestoreCut { .. } => "恢复剪口",
-        EditOperation::ProposeCuts { .. } => "提出剪辑建议",
-        EditOperation::AcceptCutSuggestions { .. } => "接受剪辑建议",
-        EditOperation::DeleteItems { .. } => "删除片段",
-        EditOperation::RemoveRange { .. } => "删除一段时间",
-        EditOperation::AddTrack { .. } => "新建轨道",
-        EditOperation::DeleteTrack { .. } => "删除轨道",
-        EditOperation::UpdateTrack { .. } => "修改轨道",
-        EditOperation::ArrangeItem { .. } => "调整叠放次序",
-        EditOperation::MoveTrack { .. } => "移动轨道",
-        EditOperation::UpdateItem { .. } => "修改片段",
-        EditOperation::SetTransform { .. } => "调整位置与大小",
-        EditOperation::SetStyle { .. } => "修改样式",
-        EditOperation::SetText { .. } => "修改文字",
-        EditOperation::SetProps { .. } => "修改参数",
-        EditOperation::SetAnimation { .. } => "设置动画",
-        EditOperation::SetKeyframes { .. } => "设置关键帧",
-        EditOperation::SetTemplate { .. } => "设置模板",
-        EditOperation::SetCodeParameters { .. } => "修改参数",
-        EditOperation::ReplaceCodeBundle { .. } => "替换代码画面",
-        EditOperation::SetAudioMix { .. } => "调整声音",
-        EditOperation::SetSpeed { .. } => "变速",
-        EditOperation::SetCaptionStyle { .. } => "更换字幕样式",
-        EditOperation::UpdateSequence { .. } => "修改视频设置",
-        EditOperation::SetTransition { .. } => "设置转场",
-        EditOperation::RemoveTransition { .. } => "删除转场",
-        EditOperation::SetEffects { .. } => "修改效果",
-        EditOperation::SetChapters { .. } => "设置章节",
-        EditOperation::UpsertChapter { .. } => "修改章节",
-        EditOperation::RemoveChapter { .. } => "删除章节",
-        EditOperation::SetDucking { .. } => "设置闪避",
-        EditOperation::RemoveDucking { .. } => "删除闪避",
-        EditOperation::CreateCheckpoint { .. } => "保存检查点",
-        EditOperation::RenameVideo { .. } => "重命名视频",
+        EditOperation::ImportAsset { .. } => msg!("engine.labelImportAssets", "Import assets"),
+        EditOperation::CollectAssets { .. } => msg!("engine.labelCollectAssets", "Collect assets"),
+        EditOperation::RemoveAssets { .. } => msg!("engine.labelCleanUpAssets", "Clean up assets"),
+        EditOperation::RelinkAsset { .. } => msg!("engine.labelRelinkAsset", "Relink asset"),
+        EditOperation::InsertItems { .. } | EditOperation::AddItem { .. } => msg!("engine.labelAddClip", "Add clip"),
+        EditOperation::PutDocument { .. } => msg!("engine.labelWriteDocument", "Write document"),
+        EditOperation::MoveItem { .. } | EditOperation::MoveItems { .. } => msg!("engine.labelMoveClips", "Move clips"),
+        EditOperation::TrimItem { .. } => msg!("engine.labelTrimClip", "Trim clip"),
+        EditOperation::SplitItem { .. } => msg!("engine.labelSplitClip", "Split clip"),
+        EditOperation::JoinItems { .. } => msg!("engine.labelJoinClips", "Join clips"),
+        EditOperation::AddCuts { .. } => msg!("engine.labelAddCuts", "Cut out sections"),
+        EditOperation::RestoreCut { .. } => msg!("engine.labelRestoreCut", "Restore cut"),
+        EditOperation::ProposeCuts { .. } => msg!("engine.labelSuggestCuts", "Suggest cuts"),
+        EditOperation::AcceptCutSuggestions { .. } => msg!("engine.labelAcceptSuggestedCuts", "Accept suggested cuts"),
+        EditOperation::DeleteItems { .. } => msg!("engine.labelDeleteClips", "Delete clips"),
+        EditOperation::RemoveRange { .. } => msg!("engine.labelDeleteTimeRange", "Delete time range"),
+        EditOperation::AddTrack { .. } => msg!("engine.labelAddTrack", "Add track"),
+        EditOperation::DeleteTrack { .. } => msg!("engine.labelDeleteTrack", "Delete track"),
+        EditOperation::UpdateTrack { .. } => msg!("engine.labelEditTrack", "Edit track"),
+        EditOperation::ArrangeItem { .. } => msg!("engine.labelChangeStackingOrder", "Change stacking order"),
+        EditOperation::MoveTrack { .. } => msg!("engine.labelMoveTrack", "Move track"),
+        EditOperation::UpdateItem { .. } => msg!("engine.labelEditClip", "Edit clip"),
+        EditOperation::SetTransform { .. } => msg!("engine.labelAdjustPositionAndSize", "Adjust position and size"),
+        EditOperation::SetStyle { .. } => msg!("engine.labelEditStyle", "Edit style"),
+        EditOperation::SetText { .. } => msg!("engine.labelEditText", "Edit text"),
+        EditOperation::SetProps { .. } | EditOperation::SetCodeParameters { .. } => msg!("engine.labelEditParameters", "Edit parameters"),
+        EditOperation::SetAnimation { .. } => msg!("engine.labelSetAnimation", "Set animation"),
+        EditOperation::SetKeyframes { .. } => msg!("engine.labelSetKeyframes", "Set keyframes"),
+        EditOperation::SetTemplate { .. } => msg!("engine.labelSetTemplate", "Set template"),
+        EditOperation::ReplaceCodeBundle { .. } => msg!("engine.labelReplaceCodeComposition", "Replace code composition"),
+        EditOperation::SetAudioMix { .. } => msg!("engine.labelAdjustAudio", "Adjust audio"),
+        EditOperation::SetSpeed { .. } => msg!("engine.labelChangeSpeed", "Change speed"),
+        EditOperation::SetCaptionStyle { .. } => msg!("engine.labelChangeCaptionStyle", "Change caption style"),
+        EditOperation::UpdateSequence { .. } => msg!("engine.labelEditVideoSettings", "Edit video settings"),
+        EditOperation::SetTransition { .. } => msg!("engine.labelSetTransition", "Set transition"),
+        EditOperation::RemoveTransition { .. } => msg!("engine.labelDeleteTransition", "Delete transition"),
+        EditOperation::SetEffects { .. } => msg!("engine.labelEditEffects", "Edit effects"),
+        EditOperation::SetChapters { .. } => msg!("engine.labelSetChapters", "Set chapters"),
+        EditOperation::UpsertChapter { .. } => msg!("engine.labelEditChapter", "Edit chapter"),
+        EditOperation::RemoveChapter { .. } => msg!("engine.labelDeleteChapter", "Delete chapter"),
+        EditOperation::SetDucking { .. } => msg!("engine.labelSetDucking", "Set ducking"),
+        EditOperation::RemoveDucking { .. } => msg!("engine.labelDeleteDucking", "Delete ducking"),
+        EditOperation::CreateCheckpoint { .. } => msg!("engine.labelSaveCheckpoint", "Save checkpoint"),
+        EditOperation::RenameVideo { .. } => msg!("engine.labelRenameVideo", "Rename video"),
     }
 }
 
-fn default_label(ops: &[EditOperation]) -> String {
-    let first = ops.first().map_or("编辑", operation_label);
+fn default_label(ops: &[EditOperation]) -> Text {
     // 「导入并添加」视为一次添加。
-    let main = ops
+    let kept: Vec<Text> = ops
         .iter()
-        .find(|op| !matches!(op, EditOperation::ImportAsset { .. }))
-        .map_or(first, operation_label);
-    let distinct: BTreeSet<&str> = ops.iter().map(operation_label).filter(|l| *l != "导入素材").collect();
+        .filter(|op| !matches!(op, EditOperation::ImportAsset { .. }))
+        .map(operation_label)
+        .collect();
+    let Some(main) = kept.first().cloned().or_else(|| ops.first().map(operation_label)) else {
+        return msg!("engine.labelEdit", "Edit");
+    };
+    // 按引用比较种类，不比较文字。
+    let distinct: BTreeSet<Option<&str>> = kept
+        .iter()
+        .map(|label| label.message_ref.as_ref().map(|r| r.key.as_str()))
+        .collect();
     if distinct.len() > 1 {
-        format!("{main}等 {} 项修改", ops.len())
+        let count = ops.len();
+        msg!("engine.labelMoreChanges", "{main} and more ({count} changes)", main, count)
     } else {
-        main.to_string()
+        main
     }
 }
 
@@ -894,8 +902,9 @@ impl Video {
         // 全部操作执行完之后，不再成立的转场被删掉并在回执里报告（视频格式规范 §3.9）。
         crate::elements::prune_bindings(&mut next);
         let transition_changes = crate::transitions::reconcile_transitions(&self.state, &mut next)?;
+        // 调用方给的修改名原样保存，不带引用；没给才由引擎起名（命令与协议规范 §3.1）。
         let label = match &tx.label {
-            Some(l) if !l.trim().is_empty() => l.trim().chars().take(200).collect(),
+            Some(l) if !l.trim().is_empty() => Text::plain(l.trim().chars().take(200).collect::<String>()),
             _ => default_label(&ops),
         };
         let time_resolution = std::mem::take(&mut ctx.time_resolution);
@@ -1041,6 +1050,7 @@ impl Video {
             undone_by,
             undo_depth,
             base_label,
+            base_label_ref,
         } = self
             .store
             .undo_record(&target)?
@@ -1098,14 +1108,23 @@ impl Video {
         }
 
         let depth = undo_depth + 1;
-        let prefix = if depth % 2 == 1 { "撤销" } else { "重做" };
+        // 正向修改名作为嵌套参数：引擎起的按读者的语言展开，调用方给的原样显示。
+        let base_label = Text {
+            text: base_label,
+            message_ref: base_label_ref,
+        };
+        let label = if depth % 2 == 1 {
+            msg!("engine.labelUndo", "Undo: {label}", label = &base_label)
+        } else {
+            msg!("engine.labelRedo", "Redo: {label}", label = &base_label)
+        };
         self.commit(
             next,
             CommitInput {
                 transaction_id: new_transaction_id(),
                 command_id: request.command_id.clone(),
                 payload_hash: hash,
-                label: format!("{prefix}：{base_label}"),
+                label,
                 base_label,
                 undo_depth: depth,
                 actor: request.actor.clone(),
@@ -1178,7 +1197,8 @@ impl Video {
             previous_revision: base_revision.to_string(),
             video_revision: next.revision.to_string(),
             event_seq: next.event_seq.to_string(),
-            label: input.label.clone(),
+            label: input.label.text.clone(),
+            label_ref: input.label.message_ref.clone(),
             actor: input.actor.clone(),
             undo_of: input.undo_of.clone(),
             created_ids: created,
@@ -1229,7 +1249,8 @@ impl Video {
             changed_ids: changes.iter().map(|c| c.id.clone()).collect(),
             projection: projection(&next, &changes, &touched),
             actor: input.actor,
-            label: input.label,
+            label: input.label.text,
+            label_ref: input.label.message_ref,
             undo_of: input.undo_of.clone(),
             task_id: input.task_id,
         };
@@ -1248,7 +1269,8 @@ impl Video {
             event: &event,
             undo_of: input.undo_of.as_deref(),
             undo_depth: input.undo_depth,
-            base_label: &input.base_label,
+            base_label: &input.base_label.text,
+            base_label_ref: input.base_label.message_ref.as_ref(),
         })?;
         self.state = next;
         Ok(Committed {
@@ -1262,8 +1284,9 @@ struct CommitInput {
     transaction_id: Id,
     command_id: Id,
     payload_hash: String,
-    label: String,
-    base_label: String,
+    label: Text,
+    /// 正向修改的名字：撤销与重做套在它外面。
+    base_label: Text,
     undo_depth: i64,
     actor: Actor,
     task_id: Option<Id>,

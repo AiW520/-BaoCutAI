@@ -18,6 +18,7 @@ import {
   type Sequence,
   itemAssetRef,
   itemTimeMap,
+  localizeText,
   mediaTimeToSeconds,
 } from '@baocut/protocol';
 import {
@@ -1127,7 +1128,7 @@ export class VideoTools implements ToolSet {
       revision: video.revision,
       entries: entries.map((entry) => ({
         transactionId: entry.transactionId,
-        label: entry.label,
+        label: localizeText(entry.label, entry.labelRef),
         by: entry.actor.kind,
         revision: entry.videoRevision,
         committedAt: entry.committedAt,
@@ -1733,6 +1734,7 @@ export class VideoTools implements ToolSet {
         : { conversationId: ref.source.conversationId ?? '', path: ref.relPath },
       transactionId: result.receipt.transactionId,
       label: result.receipt.label,
+      ...(result.receipt.labelRef ? { labelRef: result.receipt.labelRef } : {}),
       previousRevision: result.receipt.previousRevision,
       videoRevision: result.receipt.videoRevision,
       createdIds: result.receipt.createdIds,

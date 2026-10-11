@@ -1,5 +1,5 @@
 import { useEffect, useState, type ReactElement } from 'react';
-import type { HistoryEntry, VideoRef, Sequence } from '@baocut/protocol';
+import { localizeText, type HistoryEntry, type VideoRef, type Sequence } from '@baocut/protocol';
 import {
   ActionButton,
   ActionMenu,
@@ -200,13 +200,15 @@ function SaveState({ video }: { video: OpenVideo }) {
       </span>
     );
   // 智能体刚改过：说一声改了什么，时间线上的变化才不显得莫名其妙（§1.5 共用一个编辑器）。
-  if (video.lastChange?.by === 'agent')
+  if (video.lastChange?.by === 'agent') {
+    const label = localizeText(video.lastChange.label, video.lastChange.labelRef);
     return (
-      <span className={agentText} title={VB.agentChanged(video.lastChange.label)}>
+      <span className={agentText} title={VB.agentChanged(label)}>
         <AIMark />
-        <span className={agentLabel}>{VB.savedByAgent(video.lastChange.label)}</span>
+        <span className={agentLabel}>{VB.savedByAgent(label)}</span>
       </span>
     );
+  }
   return <span className={saveText}>{VB.saved}</span>;
 }
 
@@ -259,7 +261,7 @@ function HistoryPanel({ revision }: { revision: string }) {
               <li key={item.transactionId} className={entry}>
                 <span className={entryText}>
                   <span className={entryLabel({ isUndone: undone })}>
-                    {item.label}
+                    {localizeText(item.label, item.labelRef)}
                     {undone ? VB.undoneMark : ''}
                   </span>
                   <span className={entryMeta}>

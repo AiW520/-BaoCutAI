@@ -1,5 +1,5 @@
 import { memo, useState } from 'react';
-import type { FileTarget, Id, TimelineItem } from '@baocut/protocol';
+import { localizeText, type FileTarget, type Id, type TimelineItem } from '@baocut/protocol';
 import { AlertDialog, Button, DialogContainer, ToastQueue } from '@react-spectrum/s2';
 import CheckmarkCircle from '@react-spectrum/s2/icons/CheckmarkCircle';
 import Undo from '@react-spectrum/s2/icons/Undo';
@@ -138,18 +138,20 @@ export const ChangeCard = memo(function ChangeCard({
     }
   };
 
+  // 引擎起的修改名带引用，按界面的语言显示；旧卡片与调用方给的名字照原样（命令与协议规范 §3.1）。
+  const changeLabel = localizeText(item.label, item.labelRef);
   const label = isUndone
     ? CHANGE_COPY.undone
-    : (isUndoCard ? T.change.undoStep : T.change.changed)(item.videoName, item.label);
+    : (isUndoCard ? T.change.undoStep : T.change.changed)(item.videoName, changeLabel);
   const Icon = isUndone ? Undo : CheckmarkCircle;
 
   return (
-    <li className={row} aria-label={T.change.aria(item.label)} data-role="video-change">
+    <li className={row} aria-label={T.change.aria(changeLabel)} data-role="video-change">
       <div className={head}>
         <span className={icon({ isUndone })} aria-hidden>
           <Icon />
         </span>
-        <span className={title({ isUndone })} title={isUndone ? T.withDetail(label, item.label) : label}>
+        <span className={title({ isUndone })} title={isUndone ? T.withDetail(label, changeLabel) : label}>
           {label}
         </span>
         <span className={buttons}>

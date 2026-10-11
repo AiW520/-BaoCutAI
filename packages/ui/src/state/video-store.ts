@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import type { Actor, FileTarget, Id, VideoRef, VideoTopicSnapshot, TransactionReceipt, UndoState } from '@baocut/protocol';
+import type { Actor, FileTarget, Id, MessageRef, VideoRef, VideoTopicSnapshot, TransactionReceipt, UndoState } from '@baocut/protocol';
 
 /**
  * 编辑器打开的视频：Runtime 镜像经主题同步过来的投影，以及这个窗口发出的命令的状态。
@@ -30,8 +30,8 @@ export interface OpenVideo {
   /** 已发出、还没有回执的命令数。 */
   inFlight: number;
   lastReceipt: TransactionReceipt | null;
-  /** 最近一笔落到视频上的修改是谁做的（来自主题事件，包括别的窗口和智能体）。 */
-  lastChange: { by: Actor['kind']; label: string } | null;
+  /** 最近一笔落到视频上的修改是谁做的（来自主题事件，包括别的窗口和智能体）。修改名用 `localizeText(label, labelRef)` 显示。 */
+  lastChange: { by: Actor['kind']; label: string; labelRef?: MessageRef | undefined } | null;
   commandError: CommandError | null;
   undo: UndoState;
   /** 收到过几次 `video.replaced`（引擎重启后整体替换）：素材状态要重查。 */

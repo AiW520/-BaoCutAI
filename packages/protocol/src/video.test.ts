@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { setLocale } from './i18n.ts';
+import { localizeText } from './message-ref.ts';
 import './messages/video-engine/index.ts';
 import {
   applyVideoEvent,
@@ -360,5 +361,36 @@ describe('sequenceDisplayName', () => {
       expect(sequenceDisplayName({ name: '竖版' })).toBe('竖版');
       expect(sequenceDisplayName({ name: 'Main sequence' })).toBe('Main sequence');
     });
+  });
+});
+
+/** 引擎起的修改名带引用，按读者的语言显示；撤销、重做与几种修改把别的修改名作为嵌套参数（命令与协议规范 §3.1）。 */
+describe('事务的修改名', () => {
+  const trim = { key: 'engine.labelTrimClip', text: 'Trim clip' };
+  const undoTrim = { key: 'engine.labelUndo', params: { label: trim } };
+  const redoNamed = { key: 'engine.labelRedo', params: { label: '整理标题' } };
+  const mixed = { key: 'engine.labelMoreChanges', params: { main: { key: 'engine.labelRenameVideo', text: 'Rename video' }, count: 3 } };
+  afterEach(() => {
+    vi.unstubAllEnvs();
+    setLocale('zh-Hans');
+  });
+
+  it('按当前语言展开嵌套的修改名', () => {
+    expect(localizeText('Undo: Trim clip', undoTrim)).toBe('撤销：裁切片段');
+    expect(localizeText('Rename video and more (3 changes)', mixed)).toBe('重命名视频等 3 项修改');
+    vi.stubEnv('BAOCUT_LOCALE', 'en');
+    setLocale('en');
+    expect(localizeText('Undo: Trim clip', undoTrim)).toBe('Undo: Trim clip');
+    expect(localizeText('Rename video and more (3 changes)', mixed)).toBe('Rename video and more (3 changes)');
+    vi.stubEnv('BAOCUT_LOCALE', 'ja');
+    setLocale('ja');
+    expect(localizeText('Undo: Trim clip', undoTrim)).toBe('取り消し：クリップをトリム');
+  });
+
+  it('调用方给的修改名与没有引用的旧记录照原样', () => {
+    vi.stubEnv('BAOCUT_LOCALE', 'en');
+    setLocale('en');
+    expect(localizeText('Redo: 整理标题', redoNamed)).toBe('Redo: 整理标题');
+    expect(localizeText('撤销：设置章节')).toBe('撤销：设置章节');
   });
 });

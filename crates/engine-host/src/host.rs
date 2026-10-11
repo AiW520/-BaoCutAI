@@ -1540,7 +1540,7 @@ mod tests {
             &mut events,
             json!([{ "type": "addCuts", "sequenceId": sequence_id, "assetId": vo, "cuts": [{ "from": "1", "to": "2", "ref": "s1" }] }]),
         );
-        assert_eq!(cut["receipt"]["label"], "剪掉片段");
+        assert_eq!(cut["receipt"]["label"], "Cut out sections");
         assert_eq!(cut["receipt"]["impact"]["newDurationFrames"], 90);
         let after = items(&mut host);
         let voices: Vec<(Value, Value)> = after
@@ -1580,7 +1580,7 @@ mod tests {
             &mut events,
             json!([{ "type": "restoreCut", "sequenceId": sequence_id, "assetId": vo, "cutId": cut_id }]),
         );
-        assert_eq!(restored["receipt"]["label"], "恢复剪口");
+        assert_eq!(restored["receipt"]["label"], "Restore cut");
         assert_eq!(restored["receipt"]["impact"]["newDurationFrames"], 120);
         let back = items(&mut host);
         assert_eq!(back.iter().filter(|i| i["type"] == "audio").count(), 1, "放回之后接回一段");

@@ -166,7 +166,7 @@ fn split_divides_keyframes_and_join_restores_them() {
 
     // 合并是拆分的逆：拼回同一串帧，绑定 ID 不变，右半删掉。
     let joined = apply(&mut video, "cmd_join", vec![json!({ "type": "joinItems", "itemIds": [right, id] })]).unwrap();
-    assert_eq!(joined.receipt.label, "合并片段");
+    assert_eq!(joined.receipt.label, "Join clips");
     assert!(joined.receipt.deleted_ids.contains(&right));
     assert_eq!(span(&video, &id), (0, 90));
     assert_eq!(bindings(&video, &id), before);

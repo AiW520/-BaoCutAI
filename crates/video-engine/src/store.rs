@@ -8,7 +8,7 @@ use std::path::Path;
 use rusqlite::{Connection, OpenFlags, OptionalExtension, params};
 use serde_json::Value;
 
-use crate::error::{EngineResult, ErrorBody, msg};
+use crate::error::{EngineResult, ErrorBody, MessageRef, msg};
 use crate::model::{AssetRevision, Id, SCHEMA_VERSION, VIDEO_FORMAT};
 use crate::receipt::{HistoryEntry, TransactionReceipt, VideoEvent};
 use crate::state::{EntityChange, EntityKind, VideoState};
@@ -81,6 +81,8 @@ CREATE TABLE IF NOT EXISTS transactions (
   undo_depth INTEGER NOT NULL,
   base_label TEXT NOT NULL,
   committed_at TEXT NOT NULL,
+  label_ref TEXT,
+  base_label_ref TEXT,
   UNIQUE (video_id, idempotency_key)
 );
 CREATE TABLE IF NOT EXISTS receipts (transaction_id TEXT PRIMARY KEY, body TEXT NOT NULL);
@@ -119,6 +121,26 @@ UPDATE undo_records SET changes = replace(replace(replace(changes, '"movieId":',
 
 pub struct Store {
     conn: Connection,
+    /// `transactions` 有没有标签引用列。它们是后加的：可写打开时补上；只读打开的旧库没有，按没有引用读。
+    label_refs: bool,
+}
+
+/// 标签引用列（命令与协议规范 §3.1）：可选字段，旧库补上即可，不改 schemaVersion（视频格式规范 §1.4）。
+const LABEL_REF_COLUMNS: [&str; 2] = ["label_ref", "base_label_ref"];
+
+fn missing_label_ref_columns(conn: &Connection) -> EngineResult<Vec<&'static str>> {
+    let mut stmt = conn.prepare("SELECT name FROM pragma_table_info('transactions')")?;
+    let present = stmt.query_map([], |r| r.get::<_, String>(0))?.collect::<Result<Vec<_>, _>>()?;
+    Ok(LABEL_REF_COLUMNS.into_iter().filter(|c| !present.iter().any(|p| p == c)).collect())
+}
+
+fn ref_json(message_ref: Option<&MessageRef>) -> Option<String> {
+    message_ref.map(json)
+}
+
+/// 读不出的引用当作没有：照存下的文字显示，不让一列坏数据挡住历史。
+fn parse_ref(column: Option<String>) -> Option<MessageRef> {
+    column.and_then(|c| serde_json::from_str(&c).ok())
 }
 
 /// 视频认领所属项目的结果（架构设计 §5.1；视频格式规范 §1.3）。
@@ -146,6 +168,7 @@ pub struct UndoRecord {
     pub undo_depth: i64,
     /// 正向修改的标签；撤销与重做在它前面加前缀。
     pub base_label: String,
+    pub base_label_ref: Option<MessageRef>,
 }
 
 /// 撤销栈上的一步。
@@ -154,6 +177,8 @@ pub struct UndoRecord {
 pub struct UndoStep {
     pub transaction_id: Id,
     pub label: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub label_ref: Option<MessageRef>,
 }
 
 /// 一笔事务要写入的全部内容。
@@ -173,6 +198,7 @@ pub struct CommitRecord<'a> {
     pub undo_of: Option<&'a str>,
     pub undo_depth: i64,
     pub base_label: &'a str,
+    pub base_label_ref: Option<&'a MessageRef>,
 }
 
 /// 一个文档版本的正文，与引用它的文档头在同一个 SQLite 事务里写入。
@@ -193,6 +219,11 @@ impl Store {
         conn.busy_timeout(std::time::Duration::from_secs(5))?;
         conn.pragma_update(None, "foreign_keys", "ON")?;
         Ok(())
+    }
+
+    /// 查询里的标签引用列；只读打开的旧库没有这一列，按 NULL 读。
+    fn ref_column(&self, column: &'static str) -> &'static str {
+        if self.label_refs { column } else { "NULL" }
     }
 
     /// 新建视频的数据库。调用方已持有写锁。
@@ -218,7 +249,7 @@ impl Store {
             )?;
         }
         tx.commit()?;
-        Ok(Store { conn })
+        Ok(Store { conn, label_refs: true })
     }
 
     /// 便携包导入（视频格式规范 §8）：刚用 [`Store::create`] 建好的库接上包里的修订号（视频与各个序列的），
@@ -299,9 +330,23 @@ impl Store {
             conn
         };
         Store::configure(&conn)?;
-        let store = Store { conn };
+        let mut store = Store { conn, label_refs: false };
         store.check_format()?;
+        store.label_refs = store.add_label_ref_columns(read_only)?;
         Ok(store)
+    }
+
+    /// 补上标签引用列，返回能不能读它们。只读打开不改库：旧库缺列时按没有引用读。
+    fn add_label_ref_columns(&self, read_only: bool) -> EngineResult<bool> {
+        let conn = &self.conn;
+        let missing = missing_label_ref_columns(conn)?;
+        if read_only {
+            return Ok(missing.is_empty());
+        }
+        for column in missing {
+            conn.execute_batch(&format!("ALTER TABLE transactions ADD COLUMN {column} TEXT"))?;
+        }
+        Ok(true)
     }
 
     fn check_format(&self) -> EngineResult<()> {
@@ -441,22 +486,26 @@ impl Store {
     }
 
     pub fn undo_record(&self, transaction_id: &str) -> EngineResult<Option<UndoRecord>> {
-        let row: Option<(String, Option<String>, i64, String)> = self
+        let row: Option<(String, Option<String>, i64, String, Option<String>)> = self
             .conn
             .query_row(
-                "SELECT u.changes, u.undone_by, t.undo_depth, t.base_label FROM undo_records u JOIN transactions t ON t.transaction_id = u.transaction_id
+                &format!(
+                    "SELECT u.changes, u.undone_by, t.undo_depth, t.base_label, {} FROM undo_records u JOIN transactions t ON t.transaction_id = u.transaction_id
                  WHERE u.transaction_id = ?1",
+                    self.ref_column("t.base_label_ref")
+                ),
                 [transaction_id],
-                |r| Ok((r.get(0)?, r.get(1)?, r.get(2)?, r.get(3)?)),
+                |r| Ok((r.get(0)?, r.get(1)?, r.get(2)?, r.get(3)?, r.get(4)?)),
             )
             .optional()?;
-        row.map(|(changes, undone_by, undo_depth, base_label)| {
+        row.map(|(changes, undone_by, undo_depth, base_label, base_label_ref)| {
             let changes = serde_json::from_str(&changes).map_err(|e| ErrorBody::storage(msg!("engine.undoRecordCorrupt", "The undo record is corrupt: {error}", error = e.to_string())))?;
             Ok(UndoRecord {
                 changes,
                 undone_by,
                 undo_depth,
                 base_label,
+                base_label_ref: parse_ref(base_label_ref),
             })
         })
         .transpose()
@@ -539,8 +588,8 @@ impl Store {
         }
         let receipt = record.receipt;
         tx.execute(
-            "INSERT INTO transactions (transaction_id, video_id, idempotency_key, payload_hash, actor, label, base_revision, revision, event_seq, undo_of, undo_depth, base_label, committed_at)
-             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13)",
+            "INSERT INTO transactions (transaction_id, video_id, idempotency_key, payload_hash, actor, label, base_revision, revision, event_seq, undo_of, undo_depth, base_label, committed_at, label_ref, base_label_ref)
+             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15)",
             params![
                 receipt.transaction_id,
                 record.video_id,
@@ -554,7 +603,9 @@ impl Store {
                 record.undo_of,
                 record.undo_depth,
                 record.base_label,
-                receipt.committed_at
+                receipt.committed_at,
+                ref_json(receipt.label_ref.as_ref()),
+                ref_json(record.base_label_ref)
             ],
         )?;
         tx.execute(
@@ -589,21 +640,26 @@ impl Store {
         let step = |sql: &str| -> EngineResult<Option<UndoStep>> {
             Ok(self
                 .conn
-                .query_row(sql, params![video_id, actor], |r| {
-                    Ok(UndoStep {
-                        transaction_id: r.get(0)?,
-                        label: r.get(1)?,
-                    })
-                })
+                .query_row(
+                    &sql.replace("{base_label_ref}", self.ref_column("t.base_label_ref")),
+                    params![video_id, actor],
+                    |r| {
+                        Ok(UndoStep {
+                            transaction_id: r.get(0)?,
+                            label: r.get(1)?,
+                            label_ref: parse_ref(r.get(2)?),
+                        })
+                    },
+                )
                 .optional()?)
         };
         let undo = step(
-            "SELECT t.transaction_id, t.base_label FROM transactions t JOIN undo_records u ON u.transaction_id = t.transaction_id
+            "SELECT t.transaction_id, t.base_label, {base_label_ref} FROM transactions t JOIN undo_records u ON u.transaction_id = t.transaction_id
              WHERE t.video_id = ?1 AND t.actor = ?2 AND t.undo_depth % 2 = 0 AND u.undone_by IS NULL AND u.changes != '[]'
              ORDER BY t.revision DESC LIMIT 1",
         )?;
         let redo = step(
-            "SELECT t.transaction_id, t.base_label FROM transactions t JOIN undo_records u ON u.transaction_id = t.transaction_id
+            "SELECT t.transaction_id, t.base_label, {base_label_ref} FROM transactions t JOIN undo_records u ON u.transaction_id = t.transaction_id
              WHERE t.video_id = ?1 AND t.actor = ?2 AND t.undo_depth % 2 = 1 AND u.undone_by IS NULL
                AND t.revision > (SELECT COALESCE(MAX(f.revision), 0) FROM transactions f JOIN undo_records fu ON fu.transaction_id = f.transaction_id
                                  WHERE f.video_id = ?1 AND f.actor = ?2 AND f.undo_depth = 0 AND fu.changes != '[]')
@@ -769,11 +825,12 @@ impl Store {
     }
 
     pub fn history(&self, video_id: &str, limit: i64) -> EngineResult<Vec<HistoryEntry>> {
-        let mut stmt = self.conn.prepare(
-            "SELECT t.transaction_id, t.idempotency_key, t.label, t.actor, t.revision, t.committed_at, t.undo_of, u.undone_by, u.changes, t.undo_depth
+        let mut stmt = self.conn.prepare(&format!(
+            "SELECT t.transaction_id, t.idempotency_key, t.label, t.actor, t.revision, t.committed_at, t.undo_of, u.undone_by, u.changes, t.undo_depth, {}
              FROM transactions t LEFT JOIN undo_records u ON u.transaction_id = t.transaction_id
              WHERE t.video_id = ?1 ORDER BY t.revision DESC LIMIT ?2",
-        )?;
+            self.ref_column("t.label_ref")
+        ))?;
         let rows = stmt.query_map(params![video_id, limit], |r| {
             Ok((
                 r.get::<_, String>(0)?,
@@ -786,15 +843,18 @@ impl Store {
                 r.get::<_, Option<String>>(7)?,
                 r.get::<_, Option<String>>(8)?,
                 r.get::<_, i64>(9)?,
+                r.get::<_, Option<String>>(10)?,
             ))
         })?;
         rows.map(|row| {
-            let (transaction_id, command_id, label, actor, revision, committed_at, undo_of, undone_by, changes, undo_depth) = row?;
+            let (transaction_id, command_id, label, actor, revision, committed_at, undo_of, undone_by, changes, undo_depth, label_ref) =
+                row?;
             let has_changes = changes.is_some_and(|c| c != "[]");
             Ok(HistoryEntry {
                 transaction_id,
                 command_id,
                 label,
+                label_ref: parse_ref(label_ref),
                 actor: serde_json::from_str(&actor).map_err(|e| ErrorBody::storage(msg!(
                     "engine.transactionCorrupt",
                     "The transaction record is corrupt: {error}",

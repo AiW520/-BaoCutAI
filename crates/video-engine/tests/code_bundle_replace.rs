@@ -145,7 +145,7 @@ fn replace_keeps_the_clip_and_swaps_only_the_source() {
     )
     .unwrap();
     let replaced_tx = committed.receipt.transaction_id.clone();
-    assert_eq!(committed.receipt.label, "替换代码画面");
+    assert_eq!(committed.receipt.label, "Replace code composition");
     assert_eq!(committed.receipt.updated_ids, vec![id.clone()]);
     assert!(committed.receipt.created_ids.is_empty() && committed.receipt.deleted_ids.is_empty());
 

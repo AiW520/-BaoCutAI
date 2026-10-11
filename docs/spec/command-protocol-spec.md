@@ -144,11 +144,18 @@ interface VideoTransaction {
   idempotencyKey: string;
   actor: { kind: 'user' | 'agent' | 'system'; id: Id };
   readSet: Array<{ entityId: Id; revision: Revision }>;
-  label: string;
+  label?: string;                    // 给人看的修改名；省略时引擎起名（见下）
   operations: EditOperation[];
   provenance?: { sessionId?: Id; turnId?: Id; jobIds?: Id[]; proposalId?: Id };
 }
 ```
+
+**修改名**是历史、撤销提示与变更卡上给人看的名字。回执（§5）、视频事件（§10.1）、历史与撤销栈的每一项都带 `label` 与可选的 `labelRef`：
+
+- 调用方给的 `label`（去掉首尾空白，最多 200 字）原样保存、原样显示，不翻译，没有 `labelRef`。
+- 省略或为空时引擎按操作起名：`label` 是英文缺省文字，`labelRef` 是它的消息引用（键在 `engine.label*`，§11.1 末尾）。界面与 CLI 用 `localizeText(label, labelRef)` 按读者的语言重新生成。一笔事务有几种修改时，名字是主修改名加修改条数（`engine.labelMoreChanges`，主修改名是嵌套参数）；「导入并添加」算一次添加。
+- 撤销与重做的名字把正向修改名作为嵌套参数套进 `engine.labelUndo` / `engine.labelRedo`：引擎起的按读者的语言展开，调用方给的作为字符串参数原样显示。撤销栈上的一步用正向修改名。
+- 有 `labelRef` 之前提交的事务只有当时写下的文字，照原样显示；撤销它们得到的名字是英文前缀加旧文字。引用是可选字段，不改视频格式版本（视频格式规范 §1.4）。
 
 ### 3.2 严格的乐观并发
 
@@ -469,6 +476,8 @@ interface TransactionReceipt {
   previousRevision: Revision;
   videoRevision: Revision;
   eventSeq: string;
+  label: string;                                   // 修改名（§3.1）
+  labelRef?: MessageRef;                           // 引擎起的修改名的消息引用；调用方给的没有
   layer?: 'instance' | 'parameter' | 'source';     // 代码合成的修改属于哪一层
   createdIds: Id[];
   updatedIds: Id[];
@@ -717,6 +726,8 @@ interface VideoEvent {
   changedIds: Id[];
   projection: JsonValue;             // 客户端可以直接消费的投影变化
   actor: { kind: 'user' | 'agent' | 'system'; id: Id };
+  label: string;                     // 与回执相同（§3.1）
+  labelRef?: MessageRef;
   taskId?: Id;
 }
 ```

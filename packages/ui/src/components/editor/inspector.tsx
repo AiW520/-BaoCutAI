@@ -323,7 +323,7 @@ function ReceiptCard({ receipt, sequence }: { receipt: TransactionReceipt; seque
   return (
     <section className={card} aria-label={IC.lastChange}>
       <div className={cardHead}>
-        <strong>{IC.lastChangeLabel(receipt.label)}</strong>
+        <strong>{IC.lastChangeLabel(localizeText(receipt.label, receipt.labelRef))}</strong>
         <span className={muted}>
           {IC.revisionChange(receipt.previousRevision, receipt.videoRevision)}
         </span>

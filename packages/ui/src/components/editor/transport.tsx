@@ -1,5 +1,5 @@
 import { useMemo, useRef, type ReactElement } from 'react';
-import type { Sequence } from '@baocut/protocol';
+import { localizeText, type Sequence } from '@baocut/protocol';
 import { ActionButton, Button, Keyboard, Menu, MenuItem, MenuTrigger, Text, Tooltip, TooltipTrigger } from '@react-spectrum/s2';
 import ChevronDoubleLeft from '@react-spectrum/s2/icons/ChevronDoubleLeft';
 import ChevronDoubleRight from '@react-spectrum/s2/icons/ChevronDoubleRight';
@@ -116,12 +116,12 @@ export function Transport({ sequence, onZoom }: { sequence: Sequence; onZoom(act
   return (
     <div ref={ref} className={bar}>
       <div className={side}>
-        <Tip label={undoStep ? E.undoTip(undoStep.label, `${MOD}Z`) : E.nothingToUndo}>
+        <Tip label={undoStep ? E.undoTip(localizeText(undoStep.label, undoStep.labelRef), `${MOD}Z`) : E.nothingToUndo}>
           <ActionButton isQuiet aria-label={E.undo} isDisabled={!editable || !undoStep} onPress={() => void undo('undo')}>
             <Undo />
           </ActionButton>
         </Tip>
-        <Tip label={redoStep ? E.redoTip(redoStep.label, `⇧${MOD}Z`) : E.nothingToRedo}>
+        <Tip label={redoStep ? E.redoTip(localizeText(redoStep.label, redoStep.labelRef), `⇧${MOD}Z`) : E.nothingToRedo}>
           <ActionButton isQuiet aria-label={E.redo} isDisabled={!editable || !redoStep} onPress={() => void undo('redo')}>
             <Redo />
           </ActionButton>

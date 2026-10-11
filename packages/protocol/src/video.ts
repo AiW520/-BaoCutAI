@@ -1256,7 +1256,12 @@ export interface TransactionReceipt {
   previousRevision: Revision;
   videoRevision: Revision;
   eventSeq: Seq;
+  /**
+   * 给人看的修改名（命令与协议规范 §3.1）。调用方给的原样保存，没有 `labelRef`；引擎起的是英文缺省文字，
+   * `labelRef` 是它的消息引用，界面用 `localizeText(label, labelRef)` 按当前语言显示。
+   */
   label: string;
+  labelRef?: MessageRef;
   actor: Actor;
   undoOf?: Id;
   createdIds: Id[];
@@ -1318,7 +1323,9 @@ export interface VideoEvent {
     removals: { kind: VideoEntityKind; id: Id; sequenceId?: Id }[];
   };
   actor: Actor;
+  /** 与回执的 `label`、`labelRef` 相同。 */
   label: string;
+  labelRef?: MessageRef;
   undoOf?: Id;
   taskId?: Id;
 }
@@ -1326,7 +1333,9 @@ export interface VideoEvent {
 export interface HistoryEntry {
   transactionId: Id;
   commandId: Id;
+  /** 与回执相同。引用列加上之前提交的事务没有 `labelRef`，照 `label` 原样显示。 */
   label: string;
+  labelRef?: MessageRef;
   actor: Actor;
   videoRevision: Revision;
   committedAt: string;
@@ -1339,7 +1348,9 @@ export interface HistoryEntry {
 
 export interface UndoStep {
   transactionId: Id;
+  /** 正向修改的名字（撤销与重做都用它），显示同回执的 `label`。 */
   label: string;
+  labelRef?: MessageRef;
 }
 
 /** 当前连接的操作者可以撤销与重做的一步（只含自己的修改）。 */

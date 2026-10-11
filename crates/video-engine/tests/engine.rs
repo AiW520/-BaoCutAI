@@ -265,6 +265,183 @@ fn sequence_header_without_name_ref_round_trips_unchanged() {
     assert_eq!(serde_json::to_value(&header).unwrap(), stored);
 }
 
+fn ref_json(message_ref: &impl serde::Serialize) -> Value {
+    serde_json::to_value(message_ref).unwrap()
+}
+
+#[test]
+fn default_labels_are_english_with_a_message_ref_and_caller_labels_stay_as_given() {
+    let dir = tempfile::tempdir().unwrap();
+    let mut video = new_video(dir.path());
+
+    // 引擎起的修改名：英文与引用，界面按读者的语言重新生成（命令与协议规范 §3.1）。
+    let renamed = video
+        .apply(&tx(&video, "cmd_rename", vec![json!({ "type": "renameVideo", "name": "一" })]))
+        .unwrap();
+    assert_eq!(renamed.receipt.label, "Rename video");
+    assert_eq!(ref_json(&renamed.receipt.label_ref), json!({ "key": "engine.labelRenameVideo" }));
+    let event = renamed.event.unwrap();
+    assert_eq!(
+        (event.label.as_str(), &event.label_ref),
+        ("Rename video", &renamed.receipt.label_ref)
+    );
+
+    // 几种修改：主修改名作为嵌套参数，次数按全部操作算。
+    let mixed = video
+        .apply(&tx(
+            &video,
+            "cmd_mixed",
+            vec![
+                json!({ "type": "renameVideo", "name": "二" }),
+                json!({ "type": "addTrack", "sequenceId": seq(&video), "kind": "audio" }),
+            ],
+        ))
+        .unwrap();
+    assert_eq!(mixed.receipt.label, "Rename video and more (2 changes)");
+    assert_eq!(
+        ref_json(&mixed.receipt.label_ref),
+        json!({
+            "key": "engine.labelMoreChanges",
+            "params": { "main": { "key": "engine.labelRenameVideo", "text": "Rename video" }, "count": 2 }
+        })
+    );
+
+    // 调用方给的修改名原样保存（去掉首尾空白），不带引用。
+    let mut named = tx(&video, "cmd_named", vec![json!({ "type": "renameVideo", "name": "三" })]);
+    named.label = Some("  整理标题  ".into());
+    let named = video.apply(&named).unwrap();
+    assert_eq!((named.receipt.label.as_str(), &named.receipt.label_ref), ("整理标题", &None));
+    assert!(serde_json::to_value(&named.receipt).unwrap().get("labelRef").is_none());
+
+    // 历史与补发的事件带着同样的引用。
+    let history = video.history(10).unwrap();
+    assert_eq!(history[0].label_ref, None);
+    assert_eq!(history[1].label_ref, mixed.receipt.label_ref);
+    let events = video.events_after(0, 10).unwrap();
+    assert_eq!(events[0].label_ref, renamed.receipt.label_ref);
+
+    // 「导入并添加」算一次添加。
+    if let Some(fixtures) = fixtures() {
+        let ops = vec![
+            json!({ "type": "importAsset", "path": fixtures.video_file, "ref": "clip" }),
+            json!({ "type": "addItem", "sequenceId": seq(&video), "asset": { "ref": "clip" }, "alignment": "nearest-frame" }),
+            json!({ "type": "addItem", "sequenceId": seq(&video), "asset": { "ref": "clip" }, "alignment": "nearest-frame" }),
+        ];
+        let added = video.apply(&tx(&video, "cmd_import_add", ops)).unwrap();
+        assert_eq!(added.receipt.label, "Add clip");
+        assert_eq!(ref_json(&added.receipt.label_ref), json!({ "key": "engine.labelAddClip" }));
+    }
+}
+
+#[test]
+fn undo_and_redo_labels_wrap_the_original_label() {
+    let dir = tempfile::tempdir().unwrap();
+    let mut video = new_video(dir.path());
+    let step = |video: &mut Video, id: &str, target: UndoTarget| {
+        video
+            .undo(&UndoRequest {
+                command_id: id.into(),
+                target,
+                expected_revision: None,
+                actor: user(),
+            })
+            .unwrap()
+    };
+    let rename_ref = json!({ "key": "engine.labelRenameVideo", "text": "Rename video" });
+
+    video
+        .apply(&tx(&video, "cmd_rename", vec![json!({ "type": "renameVideo", "name": "一" })]))
+        .unwrap();
+    let undone = step(&mut video, "cmd_undo", UndoTarget::Undo);
+    assert_eq!(undone.receipt.label, "Undo: Rename video");
+    assert_eq!(
+        ref_json(&undone.receipt.label_ref),
+        json!({ "key": "engine.labelUndo", "params": { "label": rename_ref } })
+    );
+    // 撤销栈上的一步用正向修改名，引用跟着走。
+    let redo = video.undo_state(&user()).unwrap().redo.unwrap();
+    assert_eq!(
+        (redo.label.as_str(), ref_json(&redo.label_ref)),
+        ("Rename video", json!({ "key": "engine.labelRenameVideo" }))
+    );
+    let redone = step(&mut video, "cmd_redo", UndoTarget::Redo);
+    assert_eq!(redone.receipt.label, "Redo: Rename video");
+    assert_eq!(
+        ref_json(&redone.receipt.label_ref),
+        json!({ "key": "engine.labelRedo", "params": { "label": rename_ref } })
+    );
+
+    // 调用方给的修改名作为字符串参数原样显示。
+    let mut named = tx(&video, "cmd_named", vec![json!({ "type": "renameVideo", "name": "二" })]);
+    named.label = Some("整理标题".into());
+    video.apply(&named).unwrap();
+    let undone_named = step(&mut video, "cmd_undo_named", UndoTarget::Undo);
+    assert_eq!(undone_named.receipt.label, "Undo: 整理标题");
+    assert_eq!(
+        ref_json(&undone_named.receipt.label_ref),
+        json!({ "key": "engine.labelUndo", "params": { "label": "整理标题" } })
+    );
+
+    // 重新打开之后，历史与撤销栈的引用还在。
+    drop(video);
+    let reopened = Video::open(dir.path(), OpenMode::Write, &ffprobe()).unwrap();
+    let history = reopened.history(10).unwrap();
+    assert_eq!(history[0].label_ref, undone_named.receipt.label_ref);
+    assert_eq!(history[2].label_ref, redone.receipt.label_ref);
+    let undo = reopened.undo_state(&user()).unwrap().undo.unwrap();
+    assert_eq!(
+        (undo.label.as_str(), ref_json(&undo.label_ref)),
+        ("Rename video", json!({ "key": "engine.labelRenameVideo" }))
+    );
+}
+
+#[test]
+fn transactions_without_label_ref_columns_read_as_stored_text() {
+    let dir = tempfile::tempdir().unwrap();
+    let mut video = new_video(dir.path());
+    video
+        .apply(&tx(&video, "cmd_rename", vec![json!({ "type": "renameVideo", "name": "一" })]))
+        .unwrap();
+    drop(video);
+    // 加上引用列之前的库：没有这两列，修改名是当时写下的中文。
+    {
+        let conn = rusqlite::Connection::open(dir.path().join("video.db")).unwrap();
+        conn.execute_batch(
+            "ALTER TABLE transactions DROP COLUMN label_ref;
+             ALTER TABLE transactions DROP COLUMN base_label_ref;
+             UPDATE transactions SET label = '重命名视频', base_label = '重命名视频';",
+        )
+        .unwrap();
+    }
+
+    // 只读打开不改库：照存下的文字读，没有引用。
+    let read_only = Video::open(dir.path(), OpenMode::ReadOnly, &ffprobe()).unwrap();
+    let history = read_only.history(10).unwrap();
+    assert_eq!((history[0].label.as_str(), &history[0].label_ref), ("重命名视频", &None));
+    let undo = read_only.undo_state(&user()).unwrap().undo.unwrap();
+    assert_eq!((undo.label.as_str(), &undo.label_ref), ("重命名视频", &None));
+    drop(read_only);
+
+    // 可写打开时补上两列；撤销旧修改，旧名字作为字符串参数。
+    let mut video = Video::open(dir.path(), OpenMode::Write, &ffprobe()).unwrap();
+    let undone = video
+        .undo(&UndoRequest {
+            command_id: "cmd_undo".into(),
+            target: UndoTarget::Undo,
+            expected_revision: None,
+            actor: user(),
+        })
+        .unwrap();
+    assert_eq!(undone.receipt.label, "Undo: 重命名视频");
+    assert_eq!(
+        serde_json::to_value(&undone.receipt.label_ref).unwrap(),
+        json!({ "key": "engine.labelUndo", "params": { "label": "重命名视频" } })
+    );
+    let history = video.history(10).unwrap();
+    assert_eq!(history[0].label_ref, undone.receipt.label_ref);
+    assert_eq!(history[1].label_ref, None);
+}
+
 #[test]
 fn c03_second_writer_is_rejected_and_read_only_cannot_write() {
     let dir = tempfile::tempdir().unwrap();
@@ -926,7 +1103,7 @@ fn t08_undo_does_not_erase_later_additions_and_redo_works() {
     assert_eq!(span_of(&video, &ids[0]).0, 100);
 
     let history = video.history(10).unwrap();
-    assert_eq!(history[0].label, "重做：移动片段");
+    assert_eq!(history[0].label, "Redo: Move clips");
     assert_eq!(history[0].undo_depth, 2);
     assert!(history.iter().any(|h| h.actor == agent()));
 }
@@ -1045,7 +1222,7 @@ fn undo_stack_follows_the_actor_and_clears_redo_after_a_new_edit() {
     );
     by_agent.actor = agent();
     video.apply(&by_agent).unwrap();
-    assert_eq!(video.undo_state(&user()).unwrap().undo.unwrap().label, "重命名视频");
+    assert_eq!(video.undo_state(&user()).unwrap().undo.unwrap().label, "Rename video");
     assert!(video.undo_state(&user()).unwrap().redo.is_none());
 
     step(&mut video, "u1", UndoTarget::Undo).unwrap();
@@ -1174,7 +1351,7 @@ fn audio_mix_and_picture_fit_follow_the_item_kind() {
         json!({ "type": "setStyle", "sequenceId": s, "itemId": id, "mode": "pip", "fit": "cover", "bg": "blur", "opacity": 0.8 }),
     ];
     let committed = video.apply(&tx(&video, "cmd_mix", ops)).unwrap();
-    assert_eq!(committed.receipt.label, "调整声音等 2 项修改");
+    assert_eq!(committed.receipt.label, "Adjust audio and more (2 changes)");
     let TimelineItem::Video(v) = &video.state().items[&id].value else {
         panic!("应是视频")
     };

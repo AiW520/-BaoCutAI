@@ -191,7 +191,9 @@ export class VideoController {
           state: next,
           status: 'ready',
           ref: video.ref ? { ...video.ref, name: next.video.name } : video.ref,
-          ...(event.type === 'video.event' ? { lastChange: { by: event.event.actor.kind, label: event.event.label } } : {}),
+          ...(event.type === 'video.event'
+            ? { lastChange: { by: event.event.actor.kind, label: event.event.label, labelRef: event.event.labelRef } }
+            : {}),
           ...(event.type === 'video.replaced' ? { replaced: (video.replaced ?? 0) + 1 } : {}),
         });
         void this.#refreshUndo();

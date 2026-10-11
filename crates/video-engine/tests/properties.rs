@@ -156,7 +156,7 @@ fn set_transform_changes_only_the_given_place_fields_and_bumps_the_sequence_revi
 
     let op = json!({ "type": "setTransform", "itemId": text, "x": 40.5, "rot": -30, "flipX": true });
     let committed = apply(&mut video, "cmd_move", vec![op]).unwrap();
-    assert_eq!(committed.receipt.label, "调整位置与大小");
+    assert_eq!(committed.receipt.label, "Adjust position and size");
     let p = place_of(&video, &text);
     assert_eq!(
         (p.x, p.y, p.w, p.rot, p.flip_x, p.flip_y),
@@ -294,7 +294,7 @@ fn animation_keyframes_and_template_layers_are_checked_by_the_element_model() {
         ],
     )
     .unwrap();
-    assert_eq!(committed.receipt.label, "设置动画等 3 项修改");
+    assert_eq!(committed.receipt.label, "Set animation and more (3 changes)");
     assert_eq!(serde_json::to_value(item(&video, &text).animate().unwrap()).unwrap(), animate);
     let header = &video.snapshot().sequences[&s].header;
     let binding = &header.animation_bindings[0];
@@ -457,7 +457,7 @@ fn canvas_changes_keep_percent_geometry_and_take_a_hex_background() {
                      "canvas": { "width": 1080, "height": 1920 }, "background": "#ff8800" })],
     )
     .unwrap();
-    assert_eq!(committed.receipt.label, "修改视频设置");
+    assert_eq!(committed.receipt.label, "Edit video settings");
     let header = &video.snapshot().sequences[&s].header;
     assert_eq!(
         (header.name.as_str(), header.canvas.width, header.canvas.height),

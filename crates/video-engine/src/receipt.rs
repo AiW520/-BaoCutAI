@@ -21,7 +21,10 @@ pub struct TransactionReceipt {
     pub previous_revision: String,
     pub video_revision: String,
     pub event_seq: String,
+    /// 给人看的修改名（§3.1）：调用方给的原样保存；引擎起的是英文，带 `labelRef`，界面按读者的语言重新生成。
     pub label: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub label_ref: Option<MessageRef>,
     pub actor: Actor,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub undo_of: Option<Id>,
@@ -157,6 +160,8 @@ pub struct VideoEvent {
     pub actor: Actor,
     pub label: String,
     #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub label_ref: Option<MessageRef>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub undo_of: Option<Id>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub task_id: Option<Id>,
@@ -196,6 +201,9 @@ pub struct HistoryEntry {
     pub transaction_id: Id,
     pub command_id: Id,
     pub label: String,
+    /// 引用列加上之前提交的事务没有（§3.1）：照 `label` 原样显示。
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub label_ref: Option<MessageRef>,
     pub actor: Actor,
     pub video_revision: String,
     pub committed_at: String,

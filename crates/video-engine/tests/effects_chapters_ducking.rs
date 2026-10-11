@@ -146,7 +146,7 @@ fn set_effects_replaces_the_whole_fx_and_undoes() {
         vec![json!({ "type": "setEffects", "itemId": counter, "fx": fx })],
     )
     .unwrap();
-    assert_eq!(committed.receipt.label, "修改效果");
+    assert_eq!(committed.receipt.label, "Edit effects");
     assert_eq!(fx_json(&video, &counter), fx);
 
     // 整个替换：没给的字段去掉。
@@ -366,7 +366,7 @@ fn chapters_are_set_upserted_and_removed() {
         { "at": { "unit": "seconds", "value": "1.01" }, "title": "  正文  ", "summary": "讲重点" },
     ] });
     let committed = apply(&mut video, "cmd_set", vec![op]).unwrap();
-    assert_eq!(committed.receipt.label, "设置章节");
+    assert_eq!(committed.receipt.label, "Set chapters");
     assert_eq!(committed.receipt.time_resolution.len(), 2);
     let chapters = |video: &Video| -> Vec<Value> {
         let snapshot = serde_json::to_value(video.snapshot()).unwrap();
@@ -432,7 +432,7 @@ fn chapters_are_set_upserted_and_removed() {
     assert_eq!(chapters(&video).len(), 2);
     let removed = apply(&mut video, "cmd_rm", vec![json!({ "type": "removeChapter", "chapterId": second })]).unwrap();
     assert_eq!(removed.receipt.deleted_ids, vec![second]);
-    assert_eq!(removed.receipt.label, "删除章节");
+    assert_eq!(removed.receipt.label, "Delete chapter");
 
     // 章节不受锁定约束。
     let v1 = track(&video, "V1");
@@ -466,7 +466,7 @@ fn ducking_rules_are_validated_and_undoable() {
         vec![json!({ "type": "setDucking", "sequenceId": s, "trigger": { "kind": "items", "trackIds": [a1] }, "target": { "itemIds": [counter] } })],
     )
     .unwrap();
-    assert_eq!(committed.receipt.label, "设置闪避");
+    assert_eq!(committed.receipt.label, "Set ducking");
     let snapshot = serde_json::to_value(video.snapshot()).unwrap();
     let rule = snapshot["sequences"][&s]["ducking"][0].clone();
     let id = rule["id"].as_str().unwrap().to_string();

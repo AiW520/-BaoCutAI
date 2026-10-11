@@ -202,7 +202,8 @@ describe.skipIf(!engine || !ffmpeg)('视频（真实引擎）', () => {
     await view.ready;
     const { receipt, replayed } = await importClip(ref.videoId, snapshot.video.revision);
     expect(replayed).toBe(false);
-    expect(receipt.label).toBe('添加片段');
+    // 引擎起的修改名是英文与引用，界面按读者的语言显示（命令与协议规范 §3.1）。
+    expect([receipt.label, receipt.labelRef]).toEqual(['Add clip', { key: 'engine.labelAddClip' }]);
     expect(receipt.actor).toEqual({ kind: 'user', id: 'user_local' });
     // 事件先于响应：拿到回执时镜像已经是新版本（产品设计：收到回执之前不显示「已保存」）。
     expect(view.get()!.video.revision).toBe(receipt.videoRevision);
@@ -292,7 +293,10 @@ describe.skipIf(!engine || !ffmpeg)('视频（真实引擎）', () => {
         },
       ],
     });
-    expect((await client.request('edits.undoState', { videoId: ref.videoId })).undo?.label).toBe('移动片段');
+    expect((await client.request('edits.undoState', { videoId: ref.videoId })).undo).toMatchObject({
+      label: 'Move clips',
+      labelRef: { key: 'engine.labelMoveClips' },
+    });
 
     const undone = await client.request('edits.undo', { videoId: ref.videoId, commandId: newId('cmd'), target: 'undo' });
     expect(undone.receipt.undoOf).toBe(moved.receipt.transactionId);
@@ -300,13 +304,17 @@ describe.skipIf(!engine || !ffmpeg)('视频（真实引擎）', () => {
     expect(item.type === 'video' && item.span.fromFrame).toBe(0);
 
     const state = await client.request('edits.undoState', { videoId: ref.videoId });
-    expect(state.redo?.label).toBe('移动片段');
+    expect(state.redo?.label).toBe('Move clips');
     await client.request('edits.undo', { videoId: ref.videoId, commandId: newId('cmd'), target: 'redo' });
     const redone = view.get()!.video.sequences[snapshot.video.rootSequenceId]!.items.find((i) => i.id === itemId)!;
     expect(redone.type === 'video' && redone.span.fromFrame).toBe(30);
 
     const { entries } = await client.request('videos.history', { videoId: ref.videoId });
-    expect(entries.map((e) => e.label)).toEqual(['重做：移动片段', '撤销：移动片段', '移动片段', '添加片段']);
+    expect(entries.map((e) => e.label)).toEqual(['Redo: Move clips', 'Undo: Move clips', 'Move clips', 'Add clip']);
+    expect(entries[1]!.labelRef).toEqual({
+      key: 'engine.labelUndo',
+      params: { label: { key: 'engine.labelMoveClips', text: 'Move clips' } },
+    });
   });
 
   it('文档正文不进快照，按需读出；不给版本时读当前版本', async () => {

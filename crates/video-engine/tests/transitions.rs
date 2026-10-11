@@ -118,7 +118,7 @@ fn set_transition_creates_updates_in_place_and_undoes() {
     let (mut video, _dir, [a, b, _]) = three_texts();
     let s = seq(&video);
     let committed = apply(&mut video, "cmd_tr", vec![dissolve(&s, Some(&a), Some(&b), 30)]).unwrap();
-    assert_eq!(committed.receipt.label, "设置转场");
+    assert_eq!(committed.receipt.label, "Set transition");
     let list = transitions(&video);
     assert_eq!(list.len(), 1);
     let tr = &list[0];
@@ -156,7 +156,7 @@ fn set_transition_creates_updates_in_place_and_undoes() {
     )
     .unwrap();
     assert_eq!(removed.receipt.deleted_ids, vec![tr.id.clone()]);
-    assert_eq!(removed.receipt.label, "删除转场");
+    assert_eq!(removed.receipt.label, "Delete transition");
 }
 
 #[test]
