@@ -95,6 +95,8 @@ export interface ToolPreset {
   tool: ToolId;
   entryId: Id;
   retryJobId?: Id;
+  /** 编辑器 AI 工具「生成配乐」：给哪部视频配乐、时长按它预填（已夹进模型的范围）。 */
+  soundtrack?: { videoId: Id; videoName: string; targetDurationSec: number };
 }
 
 interface VideoToolsState extends Drafts {

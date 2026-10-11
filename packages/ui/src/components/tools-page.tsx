@@ -2,6 +2,7 @@ import { toolById, type ToolId } from '../model/tool-catalog.ts';
 import { plannedReason } from '../model/tools-gallery.ts';
 import { DubTool } from './tools/dub-tool.tsx';
 import { ImageTool } from './tools/image-tool.tsx';
+import { MusicTool } from './tools/music-tool.tsx';
 import { LinkTool } from './tools/link-tool.tsx';
 import { PlannedTool } from './tools/planned-tool.tsx';
 import { TextTool } from './tools/text-tool.tsx';
@@ -33,6 +34,8 @@ export function ToolsPage({ tool }: { tool?: ToolId }) {
       return <TtsTool />;
     case 'generate-image':
       return <ImageTool />;
+    case 'generate-music':
+      return <MusicTool />;
     case 'generate-text':
       return <TextTool />;
     case 'compress-video':
