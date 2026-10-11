@@ -13,7 +13,7 @@ use serde::{Deserialize, Serialize};
 use serde_json::{Value, json};
 use sha2::{Digest, Sha256};
 
-use crate::error::{EngineResult, ErrorBody, Text, kinds, msg};
+use crate::error::{EngineResult, ErrorBody, MessageRef, Text, kinds, msg};
 use crate::ids::{new_id, new_transaction_id, now_rfc3339};
 use crate::import::{
     DIRECTORY_MEDIA_TYPE, PreparedAsset, blob_rel_path, hash_file, hash_tree, link_locator, locate_linked, prepare_import, publish_tree,
@@ -53,6 +53,8 @@ pub struct VideoTransaction {
     pub command_id: Id,
     pub expected_revision: Revision,
     pub label: Option<String>,
+    /// 调用方给的修改名的消息引用，与非空的 `label` 一起才用；引擎不认它的键，原样存下（命令与协议规范 §3.1）。
+    pub label_ref: Option<MessageRef>,
     pub operations: Vec<Value>,
     pub actor: Actor,
     pub task_id: Option<Id>,
@@ -753,12 +755,17 @@ impl Video {
                 "A transaction must have 1–1000 operations"
             )));
         }
-        let hash = payload_hash(&json!({
+        let mut payload = json!({
             "kind": "edit",
             "baseVideoRevision": tx.expected_revision,
             "label": tx.label,
             "operations": tx.operations,
-        }));
+        });
+        // 引用只在带了的时候计入：没带引用的命令摘要与以前一样，升级前发出的命令重试照样认作重放。
+        if let Some(label_ref) = &tx.label_ref {
+            payload["labelRef"] = json!(label_ref);
+        }
+        let hash = payload_hash(&payload);
         if let Some(replayed) = self.replay(&tx.command_id, &hash)? {
             return Ok(replayed);
         }
@@ -902,9 +909,12 @@ impl Video {
         // 全部操作执行完之后，不再成立的转场被删掉并在回执里报告（视频格式规范 §3.9）。
         crate::elements::prune_bindings(&mut next);
         let transition_changes = crate::transitions::reconcile_transitions(&self.state, &mut next)?;
-        // 调用方给的修改名原样保存，不带引用；没给才由引擎起名（命令与协议规范 §3.1）。
+        // 调用方给的修改名与引用原样保存；没给才由引擎起名（命令与协议规范 §3.1）。
         let label = match &tx.label {
-            Some(l) if !l.trim().is_empty() => Text::plain(l.trim().chars().take(200).collect::<String>()),
+            Some(l) if !l.trim().is_empty() => Text {
+                text: l.trim().chars().take(200).collect(),
+                message_ref: tx.label_ref.clone(),
+            },
             _ => default_label(&ops),
         };
         let time_resolution = std::mem::take(&mut ctx.time_resolution);

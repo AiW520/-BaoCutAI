@@ -438,6 +438,7 @@ export class VideoService {
       expectedRevision: params.expectedRevision,
       operations: params.operations,
       ...(params.label !== undefined ? { label: params.label } : {}),
+      ...(params.labelRef ? { labelRef: params.labelRef } : {}),
       actor,
       ...(provenance.taskId ? { taskId: provenance.taskId } : {}),
       ...(provenance.run ? { run: { runId: provenance.run.runId, runGeneration: provenance.run.runGeneration } } : {}),

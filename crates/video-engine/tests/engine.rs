@@ -113,6 +113,7 @@ fn tx(video: &Video, command_id: &str, operations: Vec<Value>) -> VideoTransacti
         command_id: command_id.into(),
         expected_revision: video.revision(),
         label: None,
+        label_ref: None,
         operations,
         actor: user(),
         task_id: None,
@@ -306,7 +307,7 @@ fn default_labels_are_english_with_a_message_ref_and_caller_labels_stay_as_given
         })
     );
 
-    // 调用方给的修改名原样保存（去掉首尾空白），不带引用。
+    // 调用方给的修改名原样保存（去掉首尾空白）；没给引用就没有引用。
     let mut named = tx(&video, "cmd_named", vec![json!({ "type": "renameVideo", "name": "三" })]);
     named.label = Some("  整理标题  ".into());
     let named = video.apply(&named).unwrap();
@@ -371,7 +372,7 @@ fn undo_and_redo_labels_wrap_the_original_label() {
         json!({ "key": "engine.labelRedo", "params": { "label": rename_ref } })
     );
 
-    // 调用方给的修改名作为字符串参数原样显示。
+    // 调用方给的修改名没有引用时作为字符串参数原样显示。
     let mut named = tx(&video, "cmd_named", vec![json!({ "type": "renameVideo", "name": "二" })]);
     named.label = Some("整理标题".into());
     video.apply(&named).unwrap();
@@ -393,6 +394,61 @@ fn undo_and_redo_labels_wrap_the_original_label() {
         (undo.label.as_str(), ref_json(&undo.label_ref)),
         ("Rename video", json!({ "key": "engine.labelRenameVideo" }))
     );
+}
+
+#[test]
+fn caller_labels_keep_the_ref_they_came_with() {
+    let dir = tempfile::tempdir().unwrap();
+    let mut video = new_video(dir.path());
+    let caller_ref = json!({ "key": "editLabel.moveClips", "params": { "count": 2 } });
+
+    // 调用方给的修改名带着引用：文字与引用原样存下，引擎不认这个键（命令与协议规范 §3.1）。
+    let mut named = tx(&video, "cmd_named", vec![json!({ "type": "renameVideo", "name": "一" })]);
+    named.label = Some(" Move 2 clips ".into());
+    named.label_ref = serde_json::from_value(caller_ref.clone()).unwrap();
+    let applied = video.apply(&named).unwrap();
+    assert_eq!(
+        (applied.receipt.label.as_str(), ref_json(&applied.receipt.label_ref)),
+        ("Move 2 clips", caller_ref.clone())
+    );
+    assert_eq!(applied.event.unwrap().label_ref, applied.receipt.label_ref);
+    let undo = video.undo_state(&user()).unwrap().undo.unwrap();
+    assert_eq!(ref_json(&undo.label_ref), caller_ref);
+
+    // 撤销把它作为嵌套参数，连同当时的文字（读者认不出这个键时用）。
+    let undone = video
+        .undo(&UndoRequest {
+            command_id: "cmd_undo".into(),
+            target: UndoTarget::Undo,
+            expected_revision: None,
+            actor: user(),
+        })
+        .unwrap();
+    assert_eq!(undone.receipt.label, "Undo: Move 2 clips");
+    assert_eq!(
+        ref_json(&undone.receipt.label_ref),
+        json!({
+            "key": "engine.labelUndo",
+            "params": { "label": { "key": "editLabel.moveClips", "params": { "count": 2 }, "text": "Move 2 clips" } }
+        })
+    );
+
+    // 只有引用、没有文字：不算调用方给了名字，引擎照常起名。
+    let mut ref_only = tx(&video, "cmd_ref_only", vec![json!({ "type": "renameVideo", "name": "二" })]);
+    ref_only.label = Some("  ".into());
+    ref_only.label_ref = serde_json::from_value(caller_ref.clone()).unwrap();
+    let ref_only = video.apply(&ref_only).unwrap();
+    assert_eq!(
+        (ref_only.receipt.label.as_str(), ref_json(&ref_only.receipt.label_ref)),
+        ("Rename video", json!({ "key": "engine.labelRenameVideo" }))
+    );
+
+    // 重新打开之后，历史里还是调用方的引用。
+    drop(video);
+    let reopened = Video::open(dir.path(), OpenMode::ReadOnly, &ffprobe()).unwrap();
+    let history = reopened.history(10).unwrap();
+    assert_eq!(ref_json(&history[2].label_ref), caller_ref);
+    assert_eq!(history[1].label_ref, undone.receipt.label_ref);
 }
 
 #[test]

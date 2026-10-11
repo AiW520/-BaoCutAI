@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { setLocale } from './i18n.ts';
 import { localizeText } from './message-ref.ts';
+import { methodParamSchemas } from './schemas.ts';
 import './messages/video-engine/index.ts';
 import {
   applyVideoEvent,
@@ -392,5 +393,16 @@ describe('事务的修改名', () => {
     setLocale('en');
     expect(localizeText('Redo: 整理标题', redoNamed)).toBe('Redo: 整理标题');
     expect(localizeText('撤销：设置章节')).toBe('撤销：设置章节');
+  });
+
+  it('edits.apply 收下调用方的修改名引用，只查外形与长度', () => {
+    const apply = methodParamSchemas['edits.apply'];
+    const base = { videoId: 'v', commandId: 'c', expectedRevision: '0', operations: [{ type: 'renameVideo', name: 'x' }], label: 'Move 2 clips' };
+    const nested = { key: 'editLabel.translateTo', params: { language: { key: 'editLabel.languageName', text: 'French' }, count: 2 } };
+    expect(apply.parse({ ...base, labelRef: nested }).labelRef).toEqual(nested);
+    expect(apply.safeParse({ ...base, labelRef: { key: 'noArea' } }).success).toBe(false);
+    expect(apply.safeParse({ ...base, labelRef: { key: 'editLabel.x', extra: 1 } }).success).toBe(false);
+    expect(apply.safeParse({ ...base, labelRef: { key: 'editLabel.x', params: { a: { key: 'b.c', params: { d: { key: 'e.f' } } } } } }).success).toBe(false);
+    expect(apply.safeParse({ ...base, labelRef: { key: 'editLabel.x', params: { a: 'y'.repeat(1001) } } }).success).toBe(false);
   });
 });

@@ -21,6 +21,7 @@ fn apply(video: &mut Video, command_id: &str, operations: Vec<Value>) {
         command_id: command_id.into(),
         expected_revision: video.revision(),
         label: None,
+        label_ref: None,
         operations,
         actor: Actor {
             kind: ActorKind::User,

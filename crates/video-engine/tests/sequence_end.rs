@@ -34,6 +34,7 @@ fn apply_guarded(video: &mut Video, command_id: &str, operations: Vec<Value>, gu
         command_id: command_id.into(),
         expected_revision: video.revision(),
         label: None,
+        label_ref: None,
         operations,
         actor: actor(if guard.is_empty() { ActorKind::User } else { ActorKind::Agent }),
         task_id: (!guard.is_empty()).then(|| "task_1".to_string()),

@@ -21,7 +21,7 @@ pub struct TransactionReceipt {
     pub previous_revision: String,
     pub video_revision: String,
     pub event_seq: String,
-    /// 给人看的修改名（§3.1）：调用方给的原样保存；引擎起的是英文，带 `labelRef`，界面按读者的语言重新生成。
+    /// 给人看的修改名（§3.1）：调用方给的文字与引用原样保存；引擎起的是英文，带 `labelRef`。有引用时界面按读者的语言重新生成。
     pub label: String,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub label_ref: Option<MessageRef>,

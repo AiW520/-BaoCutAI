@@ -38,6 +38,7 @@ fn apply(video: &mut Video, command_id: &str, operations: Vec<Value>) -> Result<
         command_id: command_id.into(),
         expected_revision: video.revision(),
         label: None,
+        label_ref: None,
         operations,
         actor: user(),
         task_id: None,

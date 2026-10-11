@@ -11,7 +11,7 @@ use editor_semantics::Rate;
 use serde::Deserialize;
 use serde::de::DeserializeOwned;
 use serde_json::{Value, json};
-use message_ref::msg;
+use message_ref::{MessageRef, msg};
 use video_engine::error::kinds;
 use video_engine::gc::STAGING_GRACE;
 use video_engine::model::{Actor, ActorKind, Id};
@@ -79,6 +79,8 @@ struct ApplyParams {
     expected_revision: String,
     #[serde(default)]
     label: Option<String>,
+    #[serde(default)]
+    label_ref: Option<MessageRef>,
     operations: Vec<Value>,
     actor: Actor,
     #[serde(default)]
@@ -455,6 +457,7 @@ impl Host {
                         command_id: p.command_id,
                         expected_revision: p.expected_revision,
                         label: p.label,
+                        label_ref: p.label_ref,
                         operations: p.operations,
                         actor: p.actor,
                         task_id: p.task_id,
@@ -589,18 +592,27 @@ mod tests {
             kind: ActorKind::User,
             id: "user_local".into(),
         };
+        let label_ref = json!({ "key": "editLabel.renameVideo" });
         let params = json!({
             "videoId": video_id, "commandId": "cmd_1", "expectedRevision": "0", "actor": actor,
             "operations": [{ "type": "renameVideo", "name": "改名" }],
+            "label": "Rename video", "labelRef": label_ref,
         });
         let mut events = Vec::new();
         let result = host.handle("edits.apply", params.clone(), &mut |e| events.push(e.clone())).unwrap();
         assert_eq!(events.len(), 1);
         assert_eq!(result["receipt"]["videoRevision"], json!("1"));
         assert_eq!(result["replayed"], json!(false));
-        let replay = host.handle("edits.apply", params, &mut |e| events.push(e.clone())).unwrap();
+        // 调用方给的修改名引用原样带到回执与事件上（命令与协议规范 §3.1）。
+        assert_eq!(result["receipt"]["labelRef"], label_ref);
+        assert_eq!(serde_json::to_value(&events[0].label_ref).unwrap(), label_ref);
+        let replay = host.handle("edits.apply", params.clone(), &mut |e| events.push(e.clone())).unwrap();
         assert_eq!(replay["replayed"], json!(true));
         assert_eq!(events.len(), 1, "重放不发事件");
+        // 同一个命令换了引用就是另一份载荷。
+        let mut other = params;
+        other["labelRef"] = json!({ "key": "editLabel.other" });
+        assert!(host.handle("edits.apply", other, &mut |_| {}).is_err());
 
         let inspect = host
             .handle("videos.inspect", json!({ "path": root.path().join("m") }), &mut |_| {})

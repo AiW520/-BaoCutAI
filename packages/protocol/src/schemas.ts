@@ -62,6 +62,17 @@ const attachmentTarget = z.object({ conversationId: id, attachmentId: id }).stri
 const localFileTarget = z.object({ localPath: filePath }).strict();
 const mediaTarget = z.union([fileTarget, attachmentTarget, z.object(assetTarget).strict(), localFileTarget]);
 const positiveInt = z.number().int().positive();
+/**
+ * 调用方给的文字旁边的消息引用（message-ref.ts）：键是 `<区域>.<名字>`，参数是标量或一层嵌套的引用。收下的引用原样存下、
+ * 由读者展开，这里只限外形与长度。
+ */
+const messageKey = z.string().max(200).regex(/^[A-Za-z][\w-]*\.[\w.-]+$/);
+const messageParamName = z.string().min(1).max(100);
+const messageScalar = z.union([z.string().max(1000), z.number(), z.boolean(), z.null()]);
+const nestedMessageRef = z
+  .object({ key: messageKey, params: z.record(messageParamName, messageScalar).optional(), text: z.string().max(1000).optional() })
+  .strict();
+const messageRef = z.object({ key: messageKey, params: z.record(messageParamName, z.union([messageScalar, nestedMessageRef])).optional() }).strict();
 /** 分段取景（`videos.derive` 的 `crops`）按 from 排好之后互不重叠。 */
 const cropsDisjoint = (crops: { from: number; to: number }[]) =>
   [...crops].sort((a, b) => a.from - b.from).every((c, n, all) => n === 0 || c.from >= all[n - 1]!.to);
@@ -925,6 +936,7 @@ export const methodParamSchemas = {
       expectedRevision: revision,
       operations: z.array(editOperation).min(1).max(500),
       label: z.string().trim().min(1).max(200).optional(),
+      labelRef: messageRef.optional(),
     })
     .strict(),
   'edits.undo': z.object({ videoId: id, commandId: id, target: undoTarget, expectedRevision: revision.optional() }).strict(),

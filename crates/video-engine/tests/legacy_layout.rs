@@ -26,6 +26,7 @@ fn tx(video: &Video, command_id: &str, operation: serde_json::Value) -> VideoTra
         command_id: command_id.into(),
         expected_revision: video.revision(),
         label: None,
+        label_ref: None,
         operations: vec![operation],
         actor: user(),
         task_id: None,

@@ -1257,8 +1257,8 @@ export interface TransactionReceipt {
   videoRevision: Revision;
   eventSeq: Seq;
   /**
-   * 给人看的修改名（命令与协议规范 §3.1）。调用方给的原样保存，没有 `labelRef`；引擎起的是英文缺省文字，
-   * `labelRef` 是它的消息引用，界面用 `localizeText(label, labelRef)` 按当前语言显示。
+   * 给人看的修改名（命令与协议规范 §3.1）。调用方给的文字与引用（`edits.apply` 的 `labelRef`）原样保存；引擎起的是
+   * 英文缺省文字，`labelRef` 是它的消息引用。界面用 `localizeText(label, labelRef)` 按当前语言显示。
    */
   label: string;
   labelRef?: MessageRef;

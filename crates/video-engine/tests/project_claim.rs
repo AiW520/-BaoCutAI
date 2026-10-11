@@ -27,6 +27,7 @@ fn rename(video: &mut Video, command_id: &str, name: &str) {
             command_id: command_id.into(),
             expected_revision: video.revision(),
             label: None,
+            label_ref: None,
             operations: vec![json!({ "type": "renameVideo", "name": name })],
             actor: user(),
             task_id: None,

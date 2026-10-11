@@ -1,4 +1,5 @@
 import type { AgentMode, PendingApproval, PendingApprovalDecision } from './access.ts';
+import type { MessageRef } from './message-ref.ts';
 import type {
   AgentPolicy,
   AgentPreferences,
@@ -650,9 +651,10 @@ export interface RpcMethods {
   /**
    * 提交一笔编辑事务（命令与协议规范 §4、§5）：全部操作一起生效或全部不生效。
    * `expectedRevision` 与当前版本不一致时返回 `conflict`（`PROJECT_REVISION_CONFLICT`）。
+   * `label` 是给人看的修改名，`labelRef` 是它在目录里的引用（§3.1）：引擎原样存下，读者按自己的语言重新生成。
    */
   'edits.apply': {
-    params: { videoId: Id; commandId: Id; expectedRevision: Revision; operations: EditOperation[]; label?: string };
+    params: { videoId: Id; commandId: Id; expectedRevision: Revision; operations: EditOperation[]; label?: string; labelRef?: MessageRef };
     result: EditResult;
   };
   /** 撤销（命令与协议规范 §8）：`undo` / `redo` 指这条连接的操作者自己最近的一步。 */

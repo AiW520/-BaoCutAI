@@ -317,6 +317,34 @@ describe.skipIf(!engine || !ffmpeg)('视频（真实引擎）', () => {
     });
   });
 
+  it('调用方给的修改名带着引用经网关存下（命令与协议规范 §3.1）', async () => {
+    const { ref, snapshot } = await create();
+    const labelRef = { key: 'editLabel.renameVideo' };
+    const renamed = await client.request('edits.apply', {
+      videoId: ref.videoId,
+      commandId: newId('cmd'),
+      expectedRevision: snapshot.video.revision,
+      operations: [{ type: 'renameVideo', name: '改名' }],
+      label: 'Rename video',
+      labelRef,
+    });
+    expect([renamed.receipt.label, renamed.receipt.labelRef]).toEqual(['Rename video', labelRef]);
+    const { entries } = await client.request('videos.history', { videoId: ref.videoId });
+    expect(entries[0]!.labelRef).toEqual(labelRef);
+
+    const bad = await rejection(
+      client.request('edits.apply', {
+        videoId: ref.videoId,
+        commandId: newId('cmd'),
+        expectedRevision: renamed.receipt.videoRevision,
+        operations: [{ type: 'renameVideo', name: '再改' }],
+        label: 'Rename video',
+        labelRef: { key: 'no-area' },
+      }),
+    );
+    expect(bad.code).toBe('invalid-request');
+  });
+
   it('文档正文不进快照，按需读出；不给版本时读当前版本', async () => {
     const { ref, snapshot } = await create();
     const body = {
