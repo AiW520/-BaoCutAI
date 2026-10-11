@@ -86,7 +86,7 @@ description: 媒体的机制：从链接下载、转码与合并、取帧看画�
 
 **先看能力**：{{tool:models_capabilities}}，{{arg:capability}} 给 `generateImage`。`effective` 是不指定服务时用谁（null 时不指定服务的调用会被拒），`usableProviders` 是能用的服务；再看要用的模型的 `sizes`、`aspectRatios`、`maxCount`、`maxPromptChars`、`acceptsSeed`、`cost` 与 `notes`。各服务差别很大：
 
-- 本机（`local`）没有出厂默认，提交时带 {{arg:provider}} `local` 与 {{arg:model}}。本机模型的提示词上限可能只有一千字左右，一次一张，一张要几分钟到十几分钟。
+- 本机（`local`）不会自动成为默认：`effective` 不是它时，提交带 {{arg:provider}} `local` 与 {{arg:model}}。本机模型的提示词上限可能只有一千字左右，一次一张，一张要几分钟到十几分钟。
 - 智能体服务（如 `agent:codex`）可能不收尺寸与种子：`sizes` 与 `aspectRatios` 都为空的模型不给 {{arg:size}} 和 {{arg:seed}}，在提示词里写明横竖与构图，用的时候再裁。
 - `maxCount` 为 1 的模型要几张就分几次提交；一次只跑一个任务的服务会排队。张数多或模型慢时，先告诉用户大约要等多久。
 
@@ -99,7 +99,7 @@ description: 媒体的机制：从链接下载、转码与合并、取帧看画�
 - 不让模型在图里写字：生成的字常常写错。保真夹子里写明不要文字、字母、水印与标志；要字时用字幕、动效图形或页面里的文字叠上去，构图里给它留出干净的一侧。
 - 不用真实的品牌、作品、艺术家与真人做风格参照。生成的图只会「像」：不把它画成或说成用户真实的产品、界面、人物、地点或数据，要真东西时用用户的素材、截图或取帧。
 
-**结果放哪**：给了 {{arg:video}} 时每张图导入为那个视频的候选素材（结果里有 `assetId`），要用再放上时间线；没给时只得到产物（`outputs` 里每张图的 `artifactId`），要文件用 {{tool:artifacts_save}} 存进工作目录（同名文件已经存在时换个名字），要进视频用 {{tool:assets_import}} 的 {{arg:artifactId}}，不重新生成。
+**结果放哪**：提交后是一个任务，用 {{tool:jobs_wait}} 等它结束再读结果。给了 {{arg:video}} 时每张图导入为那个视频的候选素材（结果里有 `assetId`），要用再放上时间线；没给时只得到产物（`outputs` 里每张图的 `artifactId`），要文件用 {{tool:artifacts_save}} 存进工作目录（同名文件已经存在时换个名字），要进视频用 {{tool:assets_import}} 的 {{arg:artifactId}}，不重新生成。
 
 **用之前看一眼**：能看图时用 {{tool:artifacts_save}} 存成文件再读一遍，看主体与构图、该留白的地方、颜色，以及有没有冒出来的字、水印、变形的手与脸。不合格的改提示词重画一次；还不行就不用它，换别的画面来源。没看的在交付时说没看过。
 
