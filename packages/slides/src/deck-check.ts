@@ -60,6 +60,7 @@ export function isCjkWordBreakLint(message: string): boolean {
 /** 编辑器认得的字体（packages/slides-runtime 的 deck 模型）：族名、Google Fonts 链接、字体文件地址。 */
 const FACE_FAMILY = /^[A-Za-z][A-Za-z0-9 _-]{0,39}$/;
 const GOOGLE_FONTS_CSS = /^https:\/\/fonts\.googleapis\.com\/css2\?[A-Za-z0-9&=+,.:;@_-]+$/;
+const MAX_FONT_HREF = 1024;
 const BLOB_SRC = /^\/_blob\/([0-9a-f]{32})$/;
 const DS_FONT_SRC = /^project\/(ds\/[a-z0-9][a-z0-9_-]{0,63}\/(?:[A-Za-z0-9][A-Za-z0-9._-]{0,99}\/){0,8}[A-Za-z0-9][A-Za-z0-9._-]{0,99}\.(?:[Ww][Oo][Ff][Ff]2?|[Tt][Tt][Ff]|[Oo][Tt][Ff]))$/;
 const MAX_FACES = 4;
@@ -216,6 +217,7 @@ export function deckFileProblems(raw: Pick<DeckMetadata, 'faces' | 'designSystem
     if (href !== undefined && src !== undefined) problems.push(`${where} 只写 href 或 src 中的一个`);
     else if (href !== undefined) {
       if (typeof href !== 'string' || !GOOGLE_FONTS_CSS.test(href)) problems.push(`${where}.href 要是 https://fonts.googleapis.com/css2?… 的链接`);
+      else if (href.length > MAX_FONT_HREF) problems.push(`${where}.href 有 ${href.length} 个字符，编辑器只认 ${MAX_FONT_HREF} 个以内：少列几个字重`);
     } else if (src !== undefined) {
       const blob = typeof src === 'string' ? BLOB_SRC.exec(src) : null;
       const dsFile = typeof src === 'string' ? DS_FONT_SRC.exec(src) : null;

@@ -86,15 +86,17 @@ describe('deckFileProblems', () => {
       web: { family: 'Remote', src: 'https://example.com/a.woff2' },
       both: { family: 'Both', href: FACE.href, src: `/_blob/${blob}` },
       cjk: { family: '思源黑体', href: FACE.href },
+      long: { family: 'Long', href: `https://fonts.googleapis.com/css2?family=Long:wght@${'1;'.repeat(510)}400` },
     };
     const problems = deckFileProblems(deck({ faces, designSystems: [record('acme')] }), root);
     expect(problems).toEqual([
-      'deck.json: faces 有 5 项，编辑器只认前 4 个',
+      'deck.json: faces 有 6 项，编辑器只认前 4 个',
       expect.stringMatching(/^deck\.json: faces\.missing\.src 引用的 \/_blob\/c{32} 不存在/),
       'deck.json: faces.gone.src 指向的 ds/acme/fonts/Gone.woff2 不在 deck 里',
       expect.stringMatching(/^deck\.json: faces\.web\.src 要是 slides_import_asset 返回的/),
       'deck.json: faces.both 只写 href 或 src 中的一个',
       expect.stringMatching(/^deck\.json: faces\.cjk\.family「思源黑体」编辑器认不得/),
+      expect.stringMatching(/^deck\.json: faces\.long\.href 有 \d+ 个字符，编辑器只认 1024 个以内/),
     ]);
   });
 
