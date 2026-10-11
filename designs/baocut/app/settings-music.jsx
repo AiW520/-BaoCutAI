@@ -1,5 +1,5 @@
 /* 设置 › 音乐生成 › 「试听」（2026-10-11，YuE2 技术方案）：点行上的「试听」只展开面板，不生成。
-   只挑风格（几枚芯片）、纯音乐 / 带唱二选一，固定 10 秒、少步数、不编排——试的是「这只模型 + 音乐引擎能不能出声」，
+   只挑风格（几枚芯片）、纯音乐 / 带唱二选一，固定 10 秒、少步数、不编排——试的是「这只模型 + audio.cpp 引擎能不能出声」，
    不是作品。慢是常态：面板里先写预计耗时，生成中给阶段与进度，做好了给播放与下载。
    失败与「上次检查没通过」的提醒走 BC_LOCALCHECK 同一套说法（ModelTryNote）。算法与文案在 model-music.js（BC_MUSIC）。 */
 (function () {
@@ -86,7 +86,7 @@
           </div>
         </div>
         <p className="ttst__note t-detail-xs">
-          试听固定 {M.QUICK.seconds} 秒、{M.QUICK.steps} 步、不先编排，只看这只模型和音乐引擎能不能出声；{M.etaText(M.QUICK.seconds, {planning: 'off'})}。
+          试听固定 {M.QUICK.seconds} 秒、{M.QUICK.steps} 步、不先编排，只看这只模型和它的引擎能不能出声；{M.etaText(M.QUICK.seconds, {planning: 'off'})}。
           {pick.mode === 'song' ? ' 带唱的歌用一句自带的示例歌词。' : ''}要正式做配乐去工具 › 生成音乐。
         </p>
 

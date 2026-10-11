@@ -2277,15 +2277,19 @@
      note: '文生图 · 4-bit · Apple Silicon / Windows / Linux · CPU 较慢', repo: 'mlx-community/Qwen-Image-2.1-MLX-4bit', uses: [],
      license: {name: 'Qwen RESEARCH LICENSE AGREEMENT', url: 'https://huggingface.co/Qwen/Qwen-Image-2.1/blob/main/LICENSE', commercialUse: false,
        summary: '只许非商业用途（研究 / 评估），商用要向 Qwen 另行申请；MLX 包是它的派生物，受同一许可'}},
-    /* 音乐生成（2026-10-11）：YuE2 3B 的 GGUF 包（Q8 语言模型 + VAE），由 audio.cpp 引擎跑（引擎不随 BaoCut 分发，在设置 › 音乐生成里另装，见 model-local-check.js ENGINE）；不另下组件 */
+    /* 音乐生成（2026-10-11）：YuE2 3B 的 GGUF 包（Q8 语言模型 + VAE），由 audio.cpp 引擎跑。引擎是这只模型的组件
+       （audiocpp-engine，按平台从 audio.cpp 的 GitHub 发布页下载），和语音识别的分词器一样装模型时一起下，不另装；
+       只有它用，所以跟着它的行走，下载按钮的体积含引擎 */
     {id: 'yue2-3b', name: 'YuE2 3B', cat: 'music', size: 4608, installed: false, platform: 'macos-arm64,windows-x64,linux-x64',
-     note: '按风格或歌词生成音乐 · Q8 · audio.cpp 引擎 · 30 秒约几分钟 · CPU 更慢', repo: 'audio-cpp/Yue2-3B-GGUF', uses: [],
+     note: '按风格或歌词生成音乐 · Q8 · audio.cpp 引擎 · 30 秒约几分钟 · CPU 更慢', repo: 'audio-cpp/Yue2-3B-GGUF', uses: ['audiocpp-engine'],
      license: {name: 'CC-BY-NC-4.0', url: 'https://huggingface.co/audio-cpp/Yue2-3B-GGUF/blob/main/model_licenses.md', commercialUse: false,
        summary: '只许非商业用途，须署名；商用要向 M-A-P 另行申请；GGUF 包是它的转换，受同一许可'}},
   ];
   /* 组件（catalog.rs 的 SharedDependency 与覆盖层）。`installed` 是初始盘上状态：
      Whisper 分词器缺着，让 Whisper large-v3 演示「权重在、组件缺」的半装态。
-     `license` 只有登记里带了自己许可的组件写（对齐器、声纹嵌入）；声纹嵌入是 CC-BY-4.0，署名照登记逐字抄。 */
+     `license` 只有登记里带了自己许可的组件写（对齐器、声纹嵌入、audio.cpp 引擎）；声纹嵌入是 CC-BY-4.0，署名照登记逐字抄。
+     来源一般是 Hugging Face 仓库（`repo`）；audio.cpp 引擎是可执行文件，来自 GitHub 发布页（`release`，按平台挑包，
+     macOS 是 Metal 包约 30–32 MB，Windows / Linux x64 是带 Vulkan 运行库的包约 62–72 MB；演示按 macOS 写体积）。 */
   const setComponents = [
     {id: 'vad', name: 'VAD 语音活动检测', size: 1.2, installed: true, repo: 'aufklarer/Silero-VAD-v6.2.1-MLX',
      desc: '切出有人说话的段落'},
@@ -2304,6 +2308,10 @@
      desc: '把声学 token 还原成波形'},
     {id: 'indextts-aux', name: 'IndexTTS2 辅助件', size: 1400, installed: false, repo: 'aufklarer/IndexTTS2-MLX-fp16',
      desc: 'w2v-BERT · CAM++ · BigVGAN · 情绪特征表'},
+    {id: 'audiocpp-engine', name: 'audio.cpp 引擎', size: 30.5, installed: false, release: '0xShug0/audio.cpp v0.9.1',
+     desc: '跑 YuE2 的引擎 · 按平台下载 · Windows / Linux 要 Vulkan 显卡驱动',
+     license: {name: 'Apache-2.0', url: 'https://github.com/0xShug0/audio.cpp/blob/main/LICENSE', commercialUse: true,
+       summary: '上游 audio.cpp 标 Apache-2.0，可商用；BaoCut 下载的是它的官方预编译包，装前核对 sha256'}},
   ];
   const setShortcuts = [
     {grp: '全局', rows: [['新建视频', '⌘N'], ['设置…', '⌘,'], ['显示/隐藏侧边栏', '⌃⌘S']]},

@@ -326,7 +326,7 @@
               <span className="t-title-sm grow">生成记录</span>
               <Btn size="s" variant="quiet" onClick={() => app.go({r: 'projects', sec: 'audio'})}>在 Space 中查看</Btn>
               {busy ? <Chip tone="accent">{busy} 条进行中</Chip> : <span className="t-detail-xs">{list.filter((r) => r.status !== 'canceled').length} 条</span>}
-              <BCAction className="viewall" title="演示：让下一条失败" onClick={() => { jobs.failNext = '音乐引擎退出了（退出码 1）：内存不够，关掉别的大模型或把时长缩短再试'; app.toast('演示：下一条会失败'); }}>演示失败</BCAction>
+              <BCAction className="viewall" title="演示：让下一条失败" onClick={() => { jobs.failNext = 'audio.cpp 引擎退出了（退出码 1）：内存不够，关掉别的大模型或把时长缩短再试'; app.toast('演示：下一条会失败'); }}>演示失败</BCAction>
             </div>
             {list.filter((r) => r.status !== 'canceled').length
               ? list.filter((r) => r.status !== 'canceled').map((r) => <RecordCard key={r.id} r={r} onReuse={again} />)

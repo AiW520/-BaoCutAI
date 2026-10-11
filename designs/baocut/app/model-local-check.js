@@ -13,21 +13,16 @@
 (function () {
   const LABEL = {
     check: '检查', checkFull: '检查模型', recheck: '重新检查', repair: '修复…', repairSub: '只重新下载坏掉的文件',
-    details: '技术详情', hideDetails: '收起技术详情', cancel: '取消', copy: '复制技术详情', installEngine: '安装引擎',
+    details: '技术详情', hideDetails: '收起技术详情', cancel: '取消', copy: '复制技术详情',
   };
   /** 检查与修复的图标：放大镜。不用 play——那是「试听」。 */
   const CHECK_ICON = 'search';
 
   /*
-   * 音乐引擎（docs/spec/model-worker-protocol-spec.md §4.4、architecture-design §12.9）：audio.cpp 的上游预编译包，
-   * 版本与 sha256 登记在 packages/models 的 music-engine.ts。不随 BaoCut 分发：设置 › 音乐生成里点「安装引擎」从上游发布页下载
-   * （和视频下载工具一样走受管外部工具，有进度、失败可重试），也可以用 BAOCUT_AUDIOCPP_CLI 指定自己构建的那一份。
-   * 演示里按 macOS 的包写大小；Windows / Linux 的包带 Vulkan 运行库，大一些，并且要有 Vulkan 显卡驱动。
+   * 音乐模型跑在 audio.cpp 引擎上（docs/spec/model-worker-protocol-spec.md §4.4）。引擎是 YuE2 模型包的一件组件
+   * （data.js setComponents 的 audiocpp-engine），和语音识别的分词器一样跟着模型一起下载；缺了它就是模型的「半装」，
+   * 行上给「补齐」，不在检查里另说，所以这里没有引擎专属的问题与动作。
    */
-  const ENGINE = {
-    name: 'audio.cpp', command: 'audiocpp_cli', version: '0.9.1', sizeMB: 30, otherSizeMB: 70,
-    license: 'Apache-2.0', source: 'GitHub · 0xShug0/audio.cpp',
-  };
 
   /* 有东西可试的能力：行上的主操作。其余能力没有试用。 */
   const TRY = {
@@ -64,8 +59,7 @@
    *   head  —— 状态行开头（「检查没通过」/「检查没能开始」）
    *   text  —— 哪里不对，一句人话
    *   todo  —— 怎么办，一句人话
-   *   fix   —— 'repair' 修复能解决（状态行给「修复…」）；'reinstall' 是应用自己的问题，修复帮不上；'retry' 处理后重新检查；
-   *            'engine' 是音乐引擎还没装（状态行给「安装引擎」，装好后自动再检查一次）
+   *   fix   —— 'repair' 修复能解决（状态行给「修复…」）；'reinstall' 是应用自己的问题，修复帮不上；'retry' 处理后重新检查
    *   code / detail —— 只在「技术详情」里出现，给反馈问题时用
    */
   const PROBLEMS = {
@@ -99,20 +93,11 @@
       todo: '稍后再检查一次；一直这样就重启 BaoCut。',
       detail: ['modelTest 没有在 10 秒内被接收', 'Worker 进程未就绪'],
     }),
-    /* 音乐模型跑在 audio.cpp 引擎上。引擎不随 BaoCut 分发，第一次用前从上游的发布页下载（architecture-design §12.9 受管外部工具）；
-       引擎没装不是模型的问题，修复帮不上，给「安装引擎」 */
-    engineMissing: (m) => ({
-      head: '检查没能开始', fix: 'engine', code: 'ENGINE_MISSING',
-      text: '还没有安装音乐引擎，不是模型的问题',
-      todo: `安装 ${ENGINE.name} 引擎后会自动再检查一次，已下载的模型不受影响。`,
-      detail: [`找不到 ${ENGINE.command}（BAOCUT_AUDIOCPP_CLI、BaoCut 的 bin/、受管工具目录与 PATH 里都没有）`, `模型 ${m.id} 的文件完好`],
-    }),
   };
   const PROBLEM_KEYS = Object.keys(PROBLEMS);
-  /** 状态行与试用面板的主动作：修复帮得上给「修复…」，引擎没装给「安装引擎」。 */
+  /** 状态行与试用面板的主动作：修复帮得上给「修复…」。 */
   function fixAction(p) {
     if (p.fix === 'repair') return {k: 'repair', label: LABEL.repair, primary: true};
-    if (p.fix === 'engine') return {k: 'installEngine', label: LABEL.installEngine, primary: true};
     return null;
   }
   function memNeed(m) {
@@ -128,7 +113,6 @@
   const CHECK_DEMOS = [
     {k: 'pass', label: '通过'}, {k: 'appFileMissing', label: '自带文件缺失'}, {k: 'modelDamaged', label: '模型文件损坏'},
     {k: 'wrongOutput', label: '结果不对'}, {k: 'noMemory', label: '内存不够'}, {k: 'notStarted', label: '没能开始'},
-    {k: 'engineMissing', label: '音乐引擎缺失'},
   ];
   /* 原型开关「下次试听的结果」 */
   const TRY_DEMOS = [
@@ -229,33 +213,9 @@
     return TRY_DEMOS.some((d) => d.k === demo) ? demo : 'ok';
   }
 
-  /**
-   * 设置 › 音乐生成顶部的「音乐引擎」一行。st: {phase:'missing'|'installing'|'failed'|'installed', pct?}。
-   * 返回 {chip:{tone,label}, text, facts:[…], pct?, actions:[{k,label,primary?}]}；动作键：install / cancel。
-   */
-  function engineView(st) {
-    const phase = (st && st.phase) || 'missing';
-    const facts = [`${ENGINE.name} ${ENGINE.version}`, `约 ${ENGINE.sizeMB} MB（Windows / Linux 约 ${ENGINE.otherSizeMB} MB）`, `${ENGINE.license} 许可`, `从 ${ENGINE.source} 下载，装前核对 sha256`];
-    if (phase === 'installing') {
-      const pct = (st && st.pct) || 0;
-      return {chip: {tone: 'accent', label: '安装中'}, text: pct < 85 ? '下载引擎…' : '核对并解开…', facts, pct, actions: [{k: 'cancel', label: LABEL.cancel}]};
-    }
-    if (phase === 'failed') {
-      return {chip: {tone: 'negative', label: '没装上'}, text: '下载中断了，引擎没装上。检查网络后重试，已下载的部分会续传。', facts, actions: [{k: 'install', label: '重试', primary: true}]};
-    }
-    if (phase === 'installed') {
-      return {chip: {tone: 'positive', label: '已安装'}, text: '音乐模型用这份引擎在这台电脑上生成。', facts: [`${ENGINE.name} ${ENGINE.version}`, 'BaoCut 下载的那一份', `${ENGINE.license} 许可`], actions: []};
-    }
-    return {
-      chip: {tone: 'notice', label: '未安装'},
-      text: '音乐模型要靠它在这台电脑上运行，第一次用之前装一次。Windows / Linux 还要有 Vulkan 显卡驱动。',
-      facts, actions: [{k: 'install', label: LABEL.installEngine, primary: true}],
-    };
-  }
-
   const BC_LOCALCHECK = {
     LABEL, CHECK_ICON, TRY, tryOf, checkOnRow, CAPTION, phaseLabel, PROBLEMS, PROBLEM_KEYS, problem,
-    CHECK_DEMOS, TRY_DEMOS, finish, lineView, detailLines, tryNotice, tryFailure, tryOutcome, ENGINE, engineView,
+    CHECK_DEMOS, TRY_DEMOS, finish, lineView, detailLines, tryNotice, tryFailure, tryOutcome,
   };
   if (typeof window !== 'undefined') Object.assign(window, {BC_LOCALCHECK});
   if (typeof module !== 'undefined') module.exports = BC_LOCALCHECK;

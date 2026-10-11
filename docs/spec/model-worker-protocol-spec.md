@@ -418,7 +418,7 @@ interface ModelFiles {
 
 检查不判断画得好不好，只证明整条生图链路能出图。通过时记下尺寸与步数，PNG 作为产物留存；不通过记下原因。
 
-**音乐**。不经 Worker（§4.4）：用固定的风格描述（`calm solo piano, slow tempo`）、`instrumental`、不编排（`planning: 'off'`）、上限 8 秒、seed 7、4 步起一次引擎（参数在 `packages/models/src/music-self-test.ts`），输出按 §5.1 核对长度与摘要，判定与合成相同（能解码、0.3–30 秒、不是静音、没有削波）。检查不判断好不好听，只证明引擎与权重能出声。通过时记下时长、采样率与步数，WAV 作为产物留存；不通过记下原因；找不到引擎时模型包状态是 `error` / `worker-missing`，说明里写的是引擎，`models.test` 以 `MODEL_UNAVAILABLE` 拒绝。
+**音乐**。不经 Worker（§4.4）：用固定的风格描述（`calm solo piano, slow tempo`）、`instrumental`、不编排（`planning: 'off'`）、上限 8 秒、seed 7、4 步起一次引擎（参数在 `packages/models/src/music-self-test.ts`），输出按 §5.1 核对长度与摘要，判定与合成相同（能解码、0.3–30 秒、不是静音、没有削波）。检查不判断好不好听，只证明引擎与权重能出声。通过时记下时长、采样率与步数，WAV 作为产物留存；不通过记下原因；缺引擎组件的模型包不完整（`not-installed` / `incomplete`，`detail` 点名 `audiocpp-engine`），`models.test` 同其他没装好的模型包一样以 `MODEL_UNAVAILABLE` 拒绝，修复装好之后才能检查。
 
 **分离**。把识别用的同一段样本（只有人声）按 §2.5.4 分离，`sampleRate` 为 null。两路按 §5 核对长度与摘要，再判定：
 
@@ -430,9 +430,9 @@ interface ModelFiles {
 
 ### 4.4 音乐生成模型包与 audio.cpp 引擎
 
-音乐生成（`generateMusic`，架构设计 §6.1）的模型包是 `music` 能力、`audio-cpp` backend 的 GGUF 权重（目前 `yue2-3b@audio-cpp-q8`：`audio-cpp/Yue2-3B-GGUF` 仓库里的 Q8 主模型 `yue2-3b-q8_0.gguf`、F16 VAE `yue2-vae-f16.gguf` 与四个配置文件，约 4.6 GB，`yue2` 族，许可 CC-BY-NC-4.0）。它**不交给 Model Worker**：Runtime 的本地 Provider 为每个任务起一个 audio.cpp 引擎进程（`audiocpp_cli`），引擎直接读模型包目录里的 GGUF、把 WAV 写进这次尝试的 staging，退出即结束，不常驻、没有 `model.load`，也没有 `job.cancel`（取消是结束整个进程组：先 SIGTERM，宽限期 5 秒后 SIGKILL；Windows 上结束整棵进程树）。模型包的安装、清单与校验照 §4.1–4.2（`.bcut-manifest.json`、只下载清单列出的文件）。
+音乐生成（`generateMusic`，架构设计 §6.1）的模型包是 `music` 能力、`audio-cpp` backend 的 GGUF 权重（目前 `yue2-3b@audio-cpp-q8`：`audio-cpp/Yue2-3B-GGUF` 仓库里的 Q8 主模型 `yue2-3b-q8_0.gguf`、F16 VAE `yue2-vae-f16.gguf` 与四个配置文件，约 4.6 GB，`yue2` 族，许可 CC-BY-NC-4.0）。它由两部分组成：权重，和 audio.cpp 引擎这个共享组件（下一段）。它**不交给 Model Worker**：Runtime 的本地 Provider 为每个任务起一个 audio.cpp 引擎进程（`audiocpp_cli`），引擎直接读模型包目录里的 GGUF、把 WAV 写进这次尝试的 staging，退出即结束，不常驻、没有 `model.load`，也没有 `job.cancel`（取消是结束整个进程组：先 SIGTERM，宽限期 5 秒后 SIGKILL；Windows 上结束整棵进程树）。模型包的安装、清单与校验照 §4.1–4.2（`.bcut-manifest.json`、只下载清单列出的文件），引擎组件随它一并下载。
 
-**引擎**。audio.cpp 不随应用分发，是受管外部工具 `audiocpp`（架构设计 §12.9）：上游预编译包的版本、各平台的文件名、大小与 sha256 登记在 `@baocut/models` 的 `music-engine.ts`（目前 0.9.1；macOS arm64 / x64 是 Metal 版，Windows / Linux x64 是 Vulkan portable 版，许可 Apache-2.0），经 `externalTools.install`（设置 › 音乐生成的「安装引擎」、`baocut external-tools install audiocpp`）或智能体的 `models_install` 下载、核对、解开到 `<runtime-home>/tools/audiocpp/<版本>/`。可执行文件按这个顺序找，每个任务重新找（装好后无需重启）：环境变量 `BAOCUT_AUDIOCPP_CLI`（给了就只用它，文件不存在算找不到）→ 随应用分发的 `bin/` 与 cargo 产物目录 → 用户指定的路径（`externalTools.setPath`，给了就只用它）→ 受管副本（先找登记的版本）→ `PATH`。`audiocpp_cli --version` 的第一行是 `audio.cpp <版本>`（自己构建的是 `audio.cpp dev`），探测按它读版本。找不到时模型包状态是 `error` / `worker-missing`（说明里写的是引擎，不是 Worker，并指向设置 › 音乐生成与 `baocut external-tools install audiocpp`），能力视图里这项 `unavailableReason: 'unsupported'`；引擎在而模型包没装是 `not-installed`，两种情形分开说。设备由引擎按构建自选（Metal、CUDA、Vulkan 或 CPU），`BAOCUT_AUDIOCPP_BACKEND`（`metal` / `cuda` / `vulkan` / `cpu`）给了才传 `--backend`。
+**引擎**。audio.cpp 不随应用分发，也不是受管外部工具，而是音乐模型包的共享组件 `audiocpp-engine`（架构设计 §6.3，下载、引用计数与回收照其他组件）：上游预编译包的版本、各平台的文件名、大小与 sha256 登记在 `@baocut/models` 的 `music-engine.ts`（目前 0.9.1；macOS arm64 / x64 是 Metal 版，Windows / Linux x64 是 Vulkan portable 版，其余平台没有包；许可 Apache-2.0），随模型包下载、核对、解开到 `<runtime-home>/tools/audiocpp/<版本>/`。可执行文件按这个顺序找，每个任务重新找（装好后无需重启）：环境变量 `BAOCUT_AUDIOCPP_CLI`（给了就只用它，文件不存在算找不到）→ 已安装的组件（`tools/audiocpp/<登记的版本>/`）→ `PATH`。`audiocpp_cli --version` 的第一行是 `audio.cpp <版本>`（自己构建的是 `audio.cpp dev`），探测按它读版本。权重在而引擎组件没装时，模型包状态是 `not-installed` / `reason: 'incomplete'`，`detail` 点名 `audiocpp-engine`，能力视图里这项也报告 `not-installed` 并给出安装补救（修复只下载缺的组件）；没装模型包与缺引擎组件都是 `not-installed`，`detail` 不同；当前主机平台没有引擎包又没有 `BAOCUT_AUDIOCPP_CLI` 时是 `error` / `unsupported`。设备由引擎按构建自选（Metal、CUDA、Vulkan 或 CPU），`BAOCUT_AUDIOCPP_BACKEND`（`metal` / `cuda` / `vulkan` / `cpu`）给了才传 `--backend`。
 
 **命令行**。冻结的参数（`JobRecord.generation`，`capability: 'generateMusic'`）换算成引擎的参数，`cwd` 是 staging，stdout 与 stderr 的尾巴（2000 字符）留给失败说明：
 

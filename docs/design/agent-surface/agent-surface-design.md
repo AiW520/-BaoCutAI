@@ -156,7 +156,7 @@ CLI 不区分「人敲的」与「Agent 敲的」。要让 Agent 宿主的权限
 | `transcode` | 文件到文件：压缩、按顺序合并、提取音轨（不建视频）；只有本机文件这一种输入，不在 MCP 面 | `files`、`merge`、`extract-audio`、`codec`、`max-height`、`crf`、`out-dir` |
 | `speak` | 合成语音 | `text` / `text-file`、`voice`、`provider`、`model`、`video`（导入为候选素材）、`out` |
 | `image` | 生成图片 | `prompt`、`size`、`count`、`provider`、`model`、`video`、`out` |
-| `music` | 生成音乐（歌曲或配乐）：只有本机的音乐模型包加 audio.cpp 引擎，很慢 | `mode`（`song` / `instrumental`）、`style`、`lyrics`（只在 `song`）、`target-duration-sec`、`max-duration-sec`、`planning`、`seed`、`provider`、`model`、`video`、`out` |
+| `music` | 生成音乐（歌曲或配乐）：只有本机的音乐模型包（含 audio.cpp 引擎组件），很慢 | `mode`（`song` / `instrumental`）、`style`、`lyrics`（只在 `song`）、`target-duration-sec`、`max-duration-sec`、`planning`、`seed`、`provider`、`model`、`video`、`out` |
 
 `text`（调一次文本模型）不进 Agent 面：Agent 自己就是文本模型。它留在 CLI 给人用（§7）。
 

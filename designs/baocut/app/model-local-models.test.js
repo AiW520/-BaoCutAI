@@ -244,3 +244,21 @@ test('下载来源：设置里的一个基址对应 Hugging Face / ModelScope / 
   assert.deepEqual([env.id, env.label, env.locked, env.source], ['ms', 'ModelScope', true, 'env'], '环境变量盖过设置');
   assert.match(L.sourceNote(), /BAOCUT_MODELS_ENDPOINT/);
 });
+
+test('音乐生成：audio.cpp 引擎是 YuE2 的组件，跟着模型一起下载，缺了是半装', () => {
+  const y = byId('yue2-3b');
+  const eng = C.find((c) => c.id === 'audiocpp-engine');
+  assert.deepEqual(y.uses, ['audiocpp-engine']);
+  assert.ok(eng.release && !eng.repo, '引擎来自 GitHub 发布页，不是 HF 仓库');
+  assert.equal(eng.license.commercialUse, true);
+  const lay = L.layout(M, C, 'music');
+  assert.deepEqual(lay.shared, [], '只有一只模型用，跟着它的行走');
+  assert.deepEqual(lay.rows[0].own.map((c) => c.id), ['audiocpp-engine']);
+  const none = {};
+  assert.equal(L.needSize(y, C, none), y.size + eng.size, '下载按钮的体积含引擎');
+  assert.deepEqual(L.applyInstall(none, y), {'yue2-3b': true, 'audiocpp-engine': true});
+  const halfOn = {'yue2-3b': true};
+  assert.equal(L.half(y, C, halfOn), true);
+  assert.deepEqual(L.missing(y, C, halfOn).map((x) => x.id), ['audiocpp-engine']);
+  assert.ok(L.licenseLines(y, C).some((x) => x.comp && x.lic.name === 'Apache-2.0'));
+});
