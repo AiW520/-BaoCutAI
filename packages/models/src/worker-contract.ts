@@ -40,7 +40,12 @@ export type ModelFamily =
   // 本地文生图（§4.2）：Qwen-Image-2.1（文本编码器、DiT、VAE 与分词表同在一个 `image` 组件里）。
   | 'qwen-image'
   /** 本地音乐生成（§4.4）：YuE2 的 GGUF 权重（主模型、VAE 与分词表同在一个 `music` 组件里），由 audio.cpp 引擎执行，不交给 Model Worker。 */
-  | 'yue2';
+  | 'yue2'
+  /**
+   * audio.cpp 引擎（`audiocpp-engine` 组件，§4.4）：上游 GitHub 发布页的预编译包，按主机平台取一个压缩包解开；不交给 Model Worker，
+   * 音乐生成的本地 Provider 直接执行它。
+   */
+  | 'audio-cpp-engine';
 /**
  * `asr` / `vad` / `aligner` / `speaker` / `segmentation` / `tokenizer` 是识别的组件；`tts` / `codec` / `aux` 是语音合成的组件（§4.1）；
  * `separator` 是人声与伴奏分离的组件，`image` 是文生图的组件（§4.2）：两者都不与别的组件同在一个模型包里。
@@ -58,7 +63,12 @@ export type BundleComponent =
   | 'separator'
   | 'image'
   /** 音乐生成的组件（§4.4）：不与别的组件同在一个模型包里，也不交给 Model Worker（audio.cpp 引擎直接读它的目录）。 */
-  | 'music';
+  | 'music'
+  /**
+   * 音乐生成模型包的 audio.cpp 引擎（§4.4）：平台专属的共享组件，来自 GitHub 发布页而不是模型仓库，装在 Runtime Home 的
+   * `tools/audiocpp/<版本>/`，不在模型目录里，也不交给 Model Worker。
+   */
+  | 'audiocpp-engine';
 export const SPEECH_COMPONENTS: readonly BundleComponent[] = ['tts', 'codec', 'aux'];
 
 export interface ModelFiles {

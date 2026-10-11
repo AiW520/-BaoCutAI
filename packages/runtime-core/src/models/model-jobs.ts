@@ -1,6 +1,5 @@
-import { readdirSync, statSync } from 'node:fs';
+import { statSync } from 'node:fs';
 import path from 'node:path';
-import { fileURLToPath } from 'node:url';
 import { TopicLog, type Logger } from '@baocut/harness';
 import {
   JobManager,
@@ -38,16 +37,15 @@ import {
   AUDIO_CPP_BACKEND_ENV,
   AUDIO_CPP_CLI_ENV,
   AUDIO_CPP_ENGINE,
-  AUDIO_CPP_RELEASE,
-  AUDIO_CPP_TOOL,
   LocalProviderSource,
   ModelCatalog,
   ModelServiceStore,
   ModelServices,
   UsageLedger,
+  parseAudioCppVersion,
+  type BundleDefinition,
   type ProviderSource,
 } from '@baocut/models';
-import { findBundledBinary } from '@baocut/process-host';
 import {
   RpcError,
   type Actor,
@@ -79,7 +77,9 @@ import { grantedTextGenerator, withPipelineGrants } from '../grants/pipeline-gra
 import type { TextPlanResult } from '../exports/export-plan.ts';
 import { DUB_DATA_KINDS, dubSpeech, withDubGrantGuidance } from './dub-speech.ts';
 import { pipelineTargets, placeLocation, videoPlace, type PipelineTargetsOptions } from '../videos/pipeline-targets.ts';
-import { RcModels } from '@baocut/protocol/messages/runtime-core';
+import { RcExternalTools, RcModels } from '@baocut/protocol/messages/runtime-core';
+import { toolsDownloadEndpoint } from '../external-tools/external-tool-service.ts';
+import { runVersionProbe } from '../external-tools/tool-probe.ts';
 
 /** Runtime 自己写入转写结果、导入生成的素材时的行为者（架构设计 §7.3）。 */
 export const JOBS_ACTOR: Actor = { kind: 'system', id: 'system:jobs' };
@@ -128,8 +128,15 @@ export interface ModelJobsOptions {
   /** Speech Worker 的命令（翻译与翻译配音的翻译一步，架构设计 §7.9）；不给时按 `resolveSpeechWorkerCommand` 找。null 表示没有构建。 */
   speechWorker?: () => string | null;
   env: () => Promise<NodeJS.ProcessEnv>;
-  /** audio.cpp 引擎（`audiocpp_cli`）的位置；null 表示找不到。不给时按 `resolveAudioCppCli` 找。 */
-  musicEngine?: () => string | null;
+  /**
+   * 读外部工具覆盖的环境（`BAOCUT_AUDIOCPP_CLI`：音乐引擎的开发者覆盖）；默认 `process.env`。测试给不含真实环境变量的对象。
+   */
+  toolOverrides?: NodeJS.ProcessEnv;
+  /**
+   * 发布页组件（音乐模型包的 audio.cpp 引擎）的下载镜像：`BAOCUT_TOOLS_ENDPOINT` 或设置 `tools.downloadEndpoint`，做计划时取一次；
+   * 不合法时抛出（`TOOL_DOWNLOAD_SOURCE`）。不给时用官方地址。
+   */
+  toolsEndpoint?: () => string | null;
   idleMs?: number;
   /** 偏好设置 `resources.capacity`（每次准入时读，改了立即生效）。 */
   resourceCapacity?: () => ResourceCapacitySetting | null;
@@ -161,7 +168,10 @@ export interface ModelJobsOptions {
   /** 测试用：卡住或打断模型目录的移动、假装跨盘。 */
   modelsDirTesting?: ModelsDirTestHooks;
   /** 模型安装的调节项：测试把下载来源指向本机的假服务、注入可用空间、内置清单与自检样本。 */
-  modelInstall?: Pick<ModelInstallServiceOptions, 'installer' | 'selfTestSample' | 'env'>;
+  modelInstall?: Pick<ModelInstallServiceOptions, 'installer' | 'selfTestSample' | 'env'> & {
+    /** 测试用：换掉登记的模型包（例如把音乐引擎的发布换成本机打的假压缩包）。 */
+    bundles?: readonly BundleDefinition[];
+  };
   /**
    * 保存位置（§7.9「保存位置」）：没有视频的流程结果（文件转码、字幕文件的翻译、只给文件的转录）不给 `outDir` 时写在这里，
    * 提交时读一次并冻结。不给时（只在单测里）写在源文件旁边。
@@ -203,13 +213,19 @@ export async function openModelJobs(options: ModelJobsOptions): Promise<ModelJob
   const envModelsDir = path.resolve(home.modelsDir) !== defaultModelsDir ? path.resolve(home.modelsDir) : null;
   const dirSetting = options.modelsDirSetting ?? { get: () => null, set: async () => {} };
   const configuredDir = dirSetting.get();
-  const musicEngine = options.musicEngine ?? (() => resolveAudioCppCli(process.env));
+  const toolOverrides = options.toolOverrides ?? process.env;
+  const { bundles: testBundles, ...modelInstall } = options.modelInstall ?? {};
+  // 音乐模型包的引擎是它的发布页组件（§6.3），装在 Runtime Home 的 `tools/` 下，不随模型目录移动。
   const catalog = new ModelCatalog({
     root: envModelsDir ?? (configuredDir ? path.resolve(configuredDir) : defaultModelsDir),
+    toolsDir: path.join(home.root, 'tools'),
+    engineOverride: toolOverrides[AUDIO_CPP_CLI_ENV] || null,
     workerAvailable: () => options.worker() !== null,
-    engineAvailable: (backend) => backend !== 'audio-cpp' || musicEngine() !== null,
     ...(manifests ? { manifests } : {}),
+    ...(testBundles ? { bundles: testBundles } : {}),
   });
+  // 每个任务重新找（模型包装好后无需重启）：开发者覆盖 → 装好的引擎组件 → PATH。
+  const musicEngine = (bundleId: string) => resolveAudioCppCli(toolOverrides, () => catalog.engineExecutable(bundleId));
   // 资源调度（§7.6、§7.7）：Model Worker 的进程与所有任务共用一个。
   const resources = new ResourceScheduler({
     capacity:
@@ -248,7 +264,6 @@ export async function openModelJobs(options: ModelJobsOptions): Promise<ModelJob
         speech: provider.speechGenerator(),
         image: provider.imageGenerator(),
         music,
-        musicEngine,
       }),
       ...(options.remote ? [options.remote] : []),
       online,
@@ -435,7 +450,14 @@ export async function openModelJobs(options: ModelJobsOptions): Promise<ModelJob
     jobs,
     log,
     settings: options.installSettings ?? (() => ({ downloadEndpoint: null, offlineStrict: false })),
-    ...options.modelInstall,
+    toolsEndpoint: options.toolsEndpoint ?? (() => toolsDownloadEndpoint(toolOverrides, null)),
+    // 引擎组件发布之后跑一次 `--version`，确认能运行、认得出是 audio.cpp。
+    probeExecutable: async (executable) => {
+      const outcome = await runVersionProbe(executable, ['--version'], await options.env());
+      if (!outcome.ok) throw new Error(outcome.reason.text);
+      if (parseAudioCppVersion(outcome.output) === null) throw new Error(RcExternalTools.noVersion().text);
+    },
+    ...modelInstall,
     refresh: () => void services.refresh().catch(() => {}),
     clearDefaults: (bundleId) => services.clearLocalDefaults(bundleId),
   });
@@ -447,7 +469,7 @@ export async function openModelJobs(options: ModelJobsOptions): Promise<ModelJob
     provider,
     jobs,
     log,
-    ...(options.modelInstall?.installer?.freeBytes ? { freeBytes: options.modelInstall.installer.freeBytes } : {}),
+    ...(modelInstall.installer?.freeBytes ? { freeBytes: modelInstall.installer.freeBytes } : {}),
     ...(options.modelsDirTesting ? { testing: options.modelsDirTesting } : {}),
     refresh: () => void services.refresh().catch(() => {}),
   });
@@ -691,31 +713,16 @@ function dubVideos(videos: VideoService, guard: TaskGuard): DubVideos {
 }
 
 /**
- * 找 audio.cpp 引擎（`audiocpp_cli`）：`BAOCUT_AUDIOCPP_CLI` 给了就只用它（存在才算）；否则随应用分发的 `bin/`、cargo 产物目录；
- * 再是用户用 `externalTools.setPath` 指定的路径（给了就只用它）、BaoCut 下载的受管副本（`<toolsDir>/audiocpp/<版本>/`，先找登记的
- * 版本）；最后找 PATH。与受管外部工具的探测（`ExternalToolService`，架构设计 §12.9）同一个顺序，只看文件在不在、不执行它。
- * 每次调用重新找：用户装好引擎后无需重启。
+ * 找 audio.cpp 引擎（`audiocpp_cli`，Model Worker 协议规范 §4.4）：`BAOCUT_AUDIOCPP_CLI` 给了就只用它（文件不在时找不到）；否则是
+ * 模型包装好的引擎组件（`installed`，即 `ModelCatalog.engineExecutable`：`<Runtime Home>/tools/audiocpp/<版本>/`）；最后找 PATH。
+ * 只看文件在不在、不执行它。
  */
-export function resolveAudioCppCli(env: NodeJS.ProcessEnv, options: { toolsDir?: string | null; userPath?: string | null } = {}): string | null {
+export function resolveAudioCppCli(env: NodeJS.ProcessEnv, installed: () => string | null = () => null): string | null {
   const explicit = env[AUDIO_CPP_CLI_ENV];
   if (explicit) return isExecutableFile(explicit) ? explicit : null;
-  const bundled = findBundledBinary(AUDIO_CPP_ENGINE, path.dirname(fileURLToPath(import.meta.url)), env);
-  if (bundled) return bundled;
-  if (options.userPath) return isExecutableFile(options.userPath) ? options.userPath : null;
+  const component = installed();
+  if (component) return component;
   const exe = process.platform === 'win32' ? `${AUDIO_CPP_ENGINE}.exe` : AUDIO_CPP_ENGINE;
-  if (options.toolsDir) {
-    const root = path.join(options.toolsDir, AUDIO_CPP_TOOL);
-    let versions: string[] = [];
-    try {
-      versions = readdirSync(root);
-    } catch {
-      versions = [];
-    }
-    for (const version of [AUDIO_CPP_RELEASE.version, ...versions.filter((v) => v !== AUDIO_CPP_RELEASE.version)]) {
-      const candidate = path.join(root, version, exe);
-      if (isExecutableFile(candidate)) return candidate;
-    }
-  }
   for (const dir of (env.PATH ?? '').split(path.delimiter)) {
     if (!dir) continue;
     const candidate = path.join(dir, exe);

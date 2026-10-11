@@ -81,9 +81,6 @@ export const zhHant: RcExternalToolsMessages = {
   ytDlpPurpose: '從連結匯入：讀取影片頁面並下載媒體和字幕',
   ytDlpMissingRemedy: '用 externalTools.install（baocut external-tools install yt-dlp）下載，或自行安裝後用 externalTools.setPath 設定其路徑',
   ffmpegPurpose: '媒體分析、檔案轉檔、匯出，以及下載後合併音訊和影片',
-  audioCppPurpose: "音樂生成：執行本機的 YuE2 模型，生成歌曲與純音樂",
-  audioCppMissingRemedy:
-    "在設定 › 音樂生成裡安裝，或用 externalTools.install（baocut external-tools install audiocpp）下載；也可以用 BAOCUT_AUDIOCPP_CLI 或 externalTools.setPath 指定自己建置的引擎。Linux 與 Windows 版需要顯示卡驅動程式支援 Vulkan",
   noReleaseForPlatform: (p) => `沒有適用於這台電腦（${p.platform}）的發行檔案`,
   noTrustedSha: '內建清單中還沒有這個檔案可信的 sha256，因此無法下載',
 

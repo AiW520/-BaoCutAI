@@ -38,23 +38,20 @@ export class LocalProviderSource implements ProviderSource {
   readonly #speech: GenerationProvider | null;
   readonly #image: GenerationProvider | null;
   readonly #music: GenerationProvider | null;
-  readonly #musicEngine: () => string | null;
 
   constructor(options: {
     catalog: ModelCatalog;
     transcriber: TranscribeProvider | null;
     speech?: GenerationProvider | null;
     image?: GenerationProvider | null;
-    /** 音乐生成的执行者与它的引擎（audio.cpp 可执行文件的路径，找不到时 null：模型包装好了也不可用）。 */
+    /** 音乐生成的执行者。引擎（audio.cpp）是模型包的必需组件，可执行文件由目录的 `engineExecutable` 给出。 */
     music?: GenerationProvider | null;
-    musicEngine?: () => string | null;
   }) {
     this.#catalog = options.catalog;
     this.#transcriber = options.transcriber;
     this.#speech = options.speech ?? null;
     this.#image = options.image ?? null;
     this.#music = options.music ?? null;
-    this.#musicEngine = options.musicEngine ?? (() => null);
   }
 
   owns(providerId: string): boolean {
@@ -225,22 +222,21 @@ export class LocalProviderSource implements ProviderSource {
   }
 
   /**
-   * 音乐生成的模型包：登记了才有这项能力。模型包没装时 `not-installed`（先下载模型，引擎在不在都一样）；装好了但引擎
-   * （audio.cpp）找不到时整项 `unsupported`，说明里写怎么补。两种情形分开说，用户才知道该下载模型还是装引擎。
+   * 音乐生成的模型包：登记了才有这项能力。引擎（audio.cpp）是模型包的必需组件，随模型一起下载：引擎没装时模型包是
+   * `not-installed` / `incomplete`，原因是 `not-installed`（下载或修复模型包即可）；只有这个平台没有引擎包时模型包是
+   * `error` / `unsupported`，原因才是 `unsupported`。
    */
   #musicCapability(all: ModelBundleStatus[]): { generateMusic?: ProviderCapability<MusicModelInfo> } {
-    const engine = this.#music === null ? null : this.#musicEngine();
     const models = all
       .filter((s) => s.capability === 'music')
       .flatMap((status) => {
         const def = this.#catalog.definition(status.bundleId);
         if (!def?.music) return [];
+        const engine = this.#music === null ? null : this.#catalog.engineExecutable(def.bundleId);
         const usable = bundleUsable(status);
         const info = localMusicModelInfo(def, status, usable, engine);
         if (info.available) return [info];
-        // 没装时先说没装（先下载模型）；装好了才轮到引擎：引擎找不到是 `unsupported`，说明里写怎么装。
-        const installed = status.state !== 'not-installed' && status.state !== 'downloading';
-        return [{ ...info, unavailableReason: engine === null && installed ? ('unsupported' as const) : unavailableReasonOf(status) }];
+        return [{ ...info, unavailableReason: usable ? ('not-installed' as const) : unavailableReasonOf(status) }];
       });
     if (models.length === 0) return {};
     const usable = models.filter((m) => m.available);

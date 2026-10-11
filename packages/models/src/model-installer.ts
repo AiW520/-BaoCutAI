@@ -1,14 +1,25 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import type { ModelInstallPlan, ModelSelfTestResult } from '@baocut/protocol';
+import { ModelsModelCatalog as MC } from '@baocut/protocol/messages/models/model-catalog.ts';
+import { ModelsModelDownloader as MD } from '@baocut/protocol/messages/models/model-downloader.ts';
 import { ModelsModelInstaller as M } from '@baocut/protocol/messages/models/model-installer.ts';
-import { requiredSources, type BundleComponentSource, type BundleDefinition } from './bundle-registry.ts';
+import { requiredSources, type BundleComponentSource, type BundleDefinition, type ComponentReleaseAsset } from './bundle-registry.ts';
 import { readInstallRecord, updateInstallRecord } from './install-record.ts';
-import { readManifest, sha256File, type BcutManifest, type ModelCatalog } from './model-catalog.ts';
+import { MANIFEST_FILE, readManifest, sha256File, type BcutManifest, type ModelCatalog } from './model-catalog.ts';
 import { DownloadError, ModelDownloader, diskFreeBytes, type DownloadFile } from './model-downloader.ts';
 import { isModelScopeEndpoint, modelFileUrl, repoEndpoint } from './download-source.ts';
 import { discardStaging, removeEmptyParents, stagingDirOf } from './model-staging.ts';
+import {
+  UNPACK_DIR,
+  discardReleaseStaging,
+  releaseSource,
+  releaseStagedBytes,
+  releaseStagingDir,
+  releaseUrl,
+} from './release-component.ts';
 import { REPO_MANIFESTS, repoManifestFor, type RepoManifestSpec } from './repo-manifests.ts';
+import { extractToolArchive } from './tool-archive.ts';
 
 /**
  * 模型包的安装、修复与删除（架构设计 §6.3）。
@@ -21,6 +32,11 @@ import { REPO_MANIFESTS, repoManifestFor, type RepoManifestSpec } from './repo-m
  *   保留，模型包报告为 `incomplete`，下次只补缺的。完成后把模型包记进安装记录。
  * - 删除（`remove`）：只删没有别的模型包持有的组件。持有者是用到同一仓库与版本、并且在安装记录里或文件齐全的模型包。
  *   仓库目录里是别的版本时不删（不属于这个模型包）。
+ * - 发布页组件（`release`，audio.cpp 引擎）：按主机平台的压缩包下载（地址见 `release-component.ts`，不发 HEAD，大小取登记的），
+ *   核对大小与 sha256，在进程内解开到暂存区（只取包根目录的普通文件，略过 `archive.skip`），没有可执行文件或解不开时删掉暂存、
+ *   `MODEL_DOWNLOAD_INTEGRITY`；写好清单后原子地改名到 `<toolsDir>/<名字>/<版本>/`，再交给 `probeExecutable` 确认能运行（失败时
+ *   删掉组件目录，同样是 `MODEL_DOWNLOAD_INTEGRITY`）。`engineOverride` 满足的不碰；修复时有清单就按清单核对 sha256，旧版装下、
+ *   没有清单的重新下载压缩包。最后一个持有者删除时回收组件目录。
  */
 
 export interface ModelInstallerOptions {
@@ -39,6 +55,16 @@ export interface ModelInstallerOptions {
   retries?: number;
   backoffMs?: (attempt: number) => number;
   stallMs?: number;
+  /**
+   * 发布页组件的下载镜像（设置 `tools.downloadEndpoint` 或 `BAOCUT_TOOLS_ENDPOINT`）：给了时地址是 `<基址>/<名字>/<版本>/<文件名>`，
+   * 否则是登记的官方地址。函数形式每次做计划时取一次。
+   */
+  toolsEndpoint?: string | null | (() => string | null);
+  /**
+   * 发布页组件发布之后确认可执行文件能运行（Runtime 传 `--version` 探测）；抛错时删掉刚发布的组件目录，安装以
+   * `MODEL_DOWNLOAD_INTEGRITY` 失败。不给时不探测。
+   */
+  probeExecutable?: (executable: string) => Promise<void>;
 }
 
 /** 计划里的一个组件（内部形态，安装时照着做）。 */
@@ -57,12 +83,16 @@ export interface PlannedComponent {
   /** 还要下载的字节；有大小未知的文件时 null。 */
   bytes: number | null;
   estimatedBytes: number;
+  /** 发布页组件：这台主机的压缩包与下载地址（`fetch` 里只有这个压缩包）。 */
+  release?: { asset: ComponentReleaseAsset; url: string };
 }
 
 export interface InstallPlanDetail {
   plan: ModelInstallPlan;
   components: PlannedComponent[];
   endpoint: string;
+  /** 发布页组件的下载镜像；没有时 null（官方地址）。 */
+  toolsEndpoint: string | null;
   repair: boolean;
   /** 进度的总字节数（含暂存区里已经收到的）；未知时 null。 */
   totalBytes: number | null;
@@ -104,9 +134,15 @@ export class ModelInstaller {
     const def = this.#definition(bundleId);
     const repair = options.repair ?? false;
     const endpoint = this.#options.endpoint();
+    const toolsOption = this.#options.toolsEndpoint;
+    const toolsEndpoint = (typeof toolsOption === 'function' ? toolsOption() : toolsOption) || null;
     const components: PlannedComponent[] = [];
     for (const [component, source] of componentsOf(def)) {
-      components.push(await this.#planComponent(component, source, repair, endpoint));
+      components.push(
+        source.release
+          ? await this.#planRelease(component, source, repair, toolsEndpoint)
+          : await this.#planComponent(component, source, repair, endpoint),
+      );
     }
     const downloading = components.filter((c) => c.action === 'download');
     const downloadBytes = downloading.some((c) => c.bytes === null) ? null : downloading.reduce((sum, c) => sum + (c.bytes ?? 0), 0);
@@ -118,6 +154,7 @@ export class ModelInstaller {
         component: c.component,
         repo: c.source.repo,
         revision: c.source.revision,
+        ...(c.source.release ? { origin: 'github-release' as const } : {}),
         action: c.action,
         files: c.fetch.map((f) => f.path),
         bytes: c.action === 'keep' ? 0 : c.bytes,
@@ -127,10 +164,10 @@ export class ModelInstaller {
       confirmBytes: downloadBytes ?? estimatedBytes,
       resumedBytes,
       availableBytes: await this.#freeBytes(this.root),
-      source: this.#sourceOf(endpoint, downloading),
+      source: this.#sourceOf(endpoint, toolsEndpoint, downloading),
       upToDate: downloading.length === 0,
     };
-    return { plan, components, endpoint, repair, totalBytes: downloadBytes === null ? null : downloadBytes + resumedBytes };
+    return { plan, components, endpoint, toolsEndpoint, repair, totalBytes: downloadBytes === null ? null : downloadBytes + resumedBytes };
   }
 
   /** 照计划下载、核对、发布。信号中止时停下（暂存区保留，下次续传），抛出中止的原因。 */
@@ -164,6 +201,16 @@ export class ModelInstaller {
     report('downloading');
     const published: BcutManifest[] = [];
     for (const component of downloading) {
+      if (component.release) {
+        const onBytes = (delta: number) => {
+          received += delta;
+          if (delta > 0) downloaded += delta;
+          report('downloading');
+        };
+        published.push(await this.#installRelease(downloader, component, signal, onBytes, () => report('publishing')));
+        this.#catalog.changed(detail.plan.bundleId);
+        continue;
+      }
       const { repo, revision } = component.source;
       if (component.reuse.length > 0) await downloader.reuse(repo, revision, this.#catalog.repoDir(repo), component.reuse);
       const sourceRepo = this.#sourceRepo(component.source);
@@ -202,8 +249,8 @@ export class ModelInstaller {
         kept.push({ repo: source.repo, usedBy: holders });
         continue;
       }
-      await discardStaging(this.root, source.repo, source.revision);
-      const dir = this.#catalog.repoDir(source.repo);
+      await this.#discardStaging(source);
+      const dir = this.#catalog.componentDir(source);
       const manifest = await readManifest(dir);
       if (manifest && manifest.revision !== source.revision) {
         kept.push({ repo: source.repo, usedBy: [] });
@@ -225,7 +272,7 @@ export class ModelInstaller {
   async discard(bundleId: string, busy: (source: BundleComponentSource) => boolean = () => false): Promise<void> {
     const def = this.#definition(bundleId);
     for (const [, source] of componentsOf(def)) {
-      if (!busy(source)) await discardStaging(this.root, source.repo, source.revision);
+      if (!busy(source)) await this.#discardStaging(source);
     }
     this.#catalog.changed(bundleId);
   }
@@ -236,6 +283,141 @@ export class ModelInstaller {
       record.bundles[bundleId] = { ...(record.bundles[bundleId] ?? { installedAt: result.at }), selfTest: result };
     });
     this.#catalog.changed(bundleId);
+  }
+
+  async #discardStaging(source: BundleComponentSource): Promise<void> {
+    if (source.release) await discardReleaseStaging(this.#catalog.toolsDir, source.release);
+    else await discardStaging(this.root, source.repo, source.revision);
+  }
+
+  /**
+   * 发布页组件的计划：`engineOverride` 满足的、装好的不动；修复时有清单就按清单核对 sha256，好的不动，旧版装下没有清单的重新下载。
+   * 要下载的只有这台主机的压缩包，大小取登记的（不发 HEAD）；暂存区里已有的部分续传。这个平台没有压缩包时拒绝。
+   */
+  async #planRelease(component: string, source: BundleComponentSource, repair: boolean, toolsEndpoint: string | null): Promise<PlannedComponent> {
+    const release = source.release!;
+    const keep = (): PlannedComponent => ({
+      component,
+      source,
+      action: 'keep',
+      fetch: [],
+      reuse: [],
+      files: [],
+      staged: 0,
+      bytes: 0,
+      estimatedBytes: 0,
+    });
+    if (this.#catalog.engineOverridden(source)) return keep();
+    const asset = this.#catalog.releaseAsset(source);
+    if (!asset) {
+      const platform = this.#catalog.platformKey;
+      throw new DownloadError('MODEL_DOWNLOAD_SOURCE', MC.engineNoBuild({ platform }), { repo: source.repo, platform });
+    }
+    if (!repair && (await this.#catalog.componentInstalled(source))) return keep();
+    if (repair) {
+      const dir = this.#catalog.componentDir(source);
+      const manifest = await readManifest(dir);
+      if (manifest && manifest.revision === source.revision && (await intact(dir, manifest))) return keep();
+    }
+    const staged = await releaseStagedBytes(this.#catalog.toolsDir, release, asset);
+    const bytes = Math.max(0, asset.size - staged);
+    return {
+      component,
+      source,
+      action: 'download',
+      fetch: [{ path: asset.fileName, size: asset.size, sha256: asset.sha256 }],
+      reuse: [],
+      files: [],
+      staged,
+      bytes,
+      estimatedBytes: bytes,
+      release: { asset, url: releaseUrl(release, asset, toolsEndpoint) },
+    };
+  }
+
+  /**
+   * 下载、核对、解开、发布一个发布页组件，返回写进组件目录的清单。解不开、没有可执行文件或探测失败时不留半个目录，
+   * 以 `MODEL_DOWNLOAD_INTEGRITY` 失败；中止时压缩包留在暂存区，下次续传。
+   */
+  async #installRelease(
+    downloader: ModelDownloader,
+    component: PlannedComponent,
+    signal: AbortSignal,
+    onBytes: (delta: number) => void,
+    publishing: () => void,
+  ): Promise<BcutManifest> {
+    const { source } = component;
+    const release = source.release!;
+    const { asset, url } = component.release!;
+    const toolsDir = this.#catalog.toolsDir;
+    const stage = releaseStagingDir(toolsDir, release);
+    await downloader.downloadUrl(stage, url, component.fetch[0]!, signal, onBytes);
+    signal.throwIfAborted();
+    publishing();
+    const unpacked = path.join(stage, UNPACK_DIR);
+    await fs.rm(unpacked, { recursive: true, force: true });
+    await fs.mkdir(unpacked, { recursive: true });
+    let names: string[];
+    try {
+      names = await extractToolArchive(path.join(stage, asset.fileName), asset.archive, unpacked, signal);
+      if (!names.includes(asset.executable)) {
+        throw new DownloadError('MODEL_DOWNLOAD_INTEGRITY', MD.executableMissing({ file: asset.fileName, executable: asset.executable }), {
+          file: asset.fileName,
+          executable: asset.executable,
+        });
+      }
+    } catch (error) {
+      if (signal.aborted) {
+        await fs.rm(unpacked, { recursive: true, force: true });
+        throw signal.reason ?? error;
+      }
+      await discardReleaseStaging(toolsDir, release);
+      if (error instanceof DownloadError) throw error;
+      if ((error as NodeJS.ErrnoException).code === 'ENOSPC') {
+        throw new DownloadError('MODEL_DOWNLOAD_NO_SPACE', MD.diskFull(), { file: asset.fileName });
+      }
+      const reason = error instanceof Error ? error.message : String(error);
+      throw new DownloadError('MODEL_DOWNLOAD_INTEGRITY', MD.archiveUnpackable({ file: asset.fileName, reason }), {
+        file: asset.fileName,
+        reason,
+      });
+    }
+    const files: BcutManifest['files'] = [];
+    for (const name of [...names].sort()) {
+      const full = path.join(unpacked, name);
+      files.push({ path: name, size: (await fs.stat(full)).size, sha256: await sha256File(full) });
+    }
+    const manifest: BcutManifest = { format_version: 1, repo: source.repo, revision: source.revision, source: url, files };
+    await fs.writeFile(path.join(unpacked, MANIFEST_FILE), `${JSON.stringify(manifest, null, 2)}\n`);
+    // 原子地换上：旧的组件目录（旧版装下的那一份，或修复前的）先挪开，换好再删。
+    const target = this.#catalog.componentDir(source);
+    await fs.mkdir(path.dirname(target), { recursive: true });
+    const aside = `${target}.old-${process.pid}-${Date.now()}`;
+    const hadOld = (await fs.stat(target).catch(() => null)) !== null;
+    if (hadOld) await fs.rename(target, aside);
+    try {
+      await fs.rename(unpacked, target);
+    } catch (error) {
+      if (hadOld) await fs.rename(aside, target).catch(() => {});
+      throw error;
+    }
+    if (hadOld) await fs.rm(aside, { recursive: true, force: true });
+    await discardReleaseStaging(toolsDir, release);
+    if (this.#options.probeExecutable) {
+      try {
+        await this.#options.probeExecutable(path.join(target, asset.executable));
+      } catch (error) {
+        await fs.rm(target, { recursive: true, force: true });
+        await removeEmptyParents(path.dirname(target), path.dirname(target));
+        const reason = error instanceof Error ? error.message : String(error);
+        throw new DownloadError('MODEL_DOWNLOAD_INTEGRITY', MD.engineProbeFailed({ executable: asset.executable, reason }), {
+          file: asset.fileName,
+          executable: asset.executable,
+          reason,
+        });
+      }
+    }
+    return manifest;
   }
 
   async #planComponent(component: string, source: BundleComponentSource, repair: boolean, endpoint: string): Promise<PlannedComponent> {
@@ -325,9 +507,16 @@ export class ModelInstaller {
     return repoManifestFor(source.repo, source.revision, this.#manifests)?.sourceRepo ?? source.repo;
   }
 
-  /** 计划里的来源：这次要下载的组件实际用到的基址，有几个时设置的基址在前、用「 + 」连起来；没有要下载的时是设置的基址。 */
-  #sourceOf(endpoint: string, downloading: readonly PlannedComponent[]): string {
-    const bases = new Set(downloading.map((c) => repoEndpoint(endpoint, this.#sourceRepo(c.source))));
+  /**
+   * 计划里的来源：这次要下载的组件实际用到的基址，有几个时设置的基址在前、用「 + 」连起来；没有要下载的时是设置的基址。
+   * 发布页组件的基址是工具下载镜像，没有镜像时是上游的发布页。
+   */
+  #sourceOf(endpoint: string, toolsEndpoint: string | null, downloading: readonly PlannedComponent[]): string {
+    const bases = new Set(
+      downloading.map((c) =>
+        c.source.release ? releaseSource(c.source.release, toolsEndpoint) : repoEndpoint(endpoint, this.#sourceRepo(c.source)),
+      ),
+    );
     if (bases.size === 0) return endpoint;
     return [...bases].sort((a, b) => Number(b === endpoint) - Number(a === endpoint)).join(' + ');
   }
@@ -404,6 +593,16 @@ export class ModelInstaller {
     if (!def) throw new Error(M.noBundle({ bundleId }).text);
     return def;
   }
+}
+
+/** 清单列出的文件都在、大小相符、sha256 对得上（修复发布页组件时）。 */
+async function intact(dir: string, manifest: BcutManifest): Promise<boolean> {
+  for (const file of manifest.files) {
+    const full = path.join(dir, file.path);
+    const stat = await fs.stat(full).catch(() => null);
+    if (!stat?.isFile() || stat.size !== file.size || (await sha256File(full)) !== file.sha256) return false;
+  }
+  return true;
 }
 
 function sizeOf(value: string | null | undefined): number | null {

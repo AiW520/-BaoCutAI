@@ -10,4 +10,7 @@ export const it: ModelsModelDownloaderMessages = {
   integrityMismatch: (p: { file: string }) => `${p.file} ha una dimensione o un valore sha256 che non corrisponde al manifesto`,
   sourceHttp: (p: { file: string; status: number }) => `L’origine del download per ${p.file} ha restituito HTTP ${p.status}`,
   diskFull: "Il disco si è riempito durante la scrittura dei file del modello",
+  archiveUnpackable: (p: { file: string; reason: string }) => `Impossibile estrarre ${p.file}: ${p.reason}`,
+  executableMissing: (p: { file: string; executable: string }) => `${p.file} non contiene ${p.executable}`,
+  engineProbeFailed: (p: { executable: string; reason: string }) => `${p.executable} è stato estratto ma non si avvia: ${p.reason}`,
 };

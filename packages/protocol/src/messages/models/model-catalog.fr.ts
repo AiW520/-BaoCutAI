@@ -15,4 +15,6 @@ export const fr: ModelsModelCatalogMessages = {
   moving: "Le dossier des modèles est en cours de déplacement",
   notInstalled: (p: { repo: string }) => `Le modèle ${p.repo} n’est pas installé`,
   noFilesInSubdir: (p: { subdir: string }) => `Le modèle n’a aucun fichier sous ${p.subdir}/`,
+  engineNoBuild: (p: { platform: string }) => `Le moteur audio.cpp n’a pas de version pour cette machine (${p.platform}) ; indiquez dans BAOCUT_AUDIOCPP_CLI un moteur que vous avez compilé`,
+  engineNotInstalled: (p: { version: string }) => `Le moteur audio.cpp ${p.version} n’est pas installé`,
 };

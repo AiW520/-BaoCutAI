@@ -15,7 +15,6 @@ function linkImportAfter(p: { target: string; name: string | null; transcribe: b
 }
 
 export const ru: RcAgentToolsMessages = {
-  installEngineSummary: (p) => `Установить движок audio.cpp ${p.version} (${p.size}, ${p.license}) из ${p.url}; он нужен локальной модели ${p.bundleId} для генерации музыки`,
   instructionsNotSet: "Инструкции сессии не заданы: неверный порядок сборки Runtime",
 
   listSeparator: ", ",

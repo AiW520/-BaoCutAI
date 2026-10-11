@@ -15,4 +15,6 @@ export const ptBR: ModelsModelCatalogMessages = {
   moving: "A pasta de modelos está sendo movida",
   notInstalled: (p: { repo: string }) => `O modelo ${p.repo} não está instalado`,
   noFilesInSubdir: (p: { subdir: string }) => `O modelo não tem arquivos em ${p.subdir}/`,
+  engineNoBuild: (p: { platform: string }) => `O motor audio.cpp não tem versão para esta máquina (${p.platform}); defina em BAOCUT_AUDIOCPP_CLI um motor compilado por você`,
+  engineNotInstalled: (p: { version: string }) => `O motor audio.cpp ${p.version} não está instalado`,
 };

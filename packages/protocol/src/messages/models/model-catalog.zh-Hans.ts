@@ -15,4 +15,6 @@ export const zhHans: ModelsModelCatalogMessages = {
   moving: '正在移动模型目录',
   notInstalled: (p: { repo: string }) => `模型 ${p.repo} 没有安装`,
   noFilesInSubdir: (p: { subdir: string }) => `模型的 ${p.subdir}/ 下没有文件`,
+  engineNoBuild: (p: { platform: string }) => `audio.cpp 引擎没有这台机器（${p.platform}）的版本；可以用 BAOCUT_AUDIOCPP_CLI 指定自己构建的引擎`,
+  engineNotInstalled: (p: { version: string }) => `audio.cpp 引擎 ${p.version} 没有安装`,
 };

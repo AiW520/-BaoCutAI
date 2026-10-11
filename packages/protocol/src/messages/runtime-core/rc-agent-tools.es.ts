@@ -11,7 +11,6 @@ function linkImportAfter(p: { target: string; name: string | null; transcribe: b
 }
 const countEs = (n: number, one: string, other: string) => `${n} ${pluralForm('es', n, { one, other })}`;
 export const es: RcAgentToolsMessages = {
-  installEngineSummary: (p) => `Instalar el motor audio.cpp ${p.version} (${p.size}, ${p.license}) desde ${p.url}; el modelo local ${p.bundleId} lo necesita para generar música`,
  instructionsNotSet: 'No se han establecido las instrucciones de la sesión: el orden de montaje del Runtime es incorrecto', listSeparator: ', ', clauseSeparator: '; ',
  createVideoSummary: (p) => `Crear el vídeo «${p.name}»`,
  slidesImportAssetSummary: (p) => `Importar la imagen «${p.file}» a las diapositivas «${p.deck}»`, editsSummary: (p) => `${p.label} (${countEs(p.count, 'operación', 'operaciones')}: ${p.types})`, captionsSummary: (p) => `Añadir una capa de subtítulos${p.bilingual ? ' bilingües' : ''} para el documento ${p.documentId}`, captionsLabel: 'Añadir capa de subtítulos', undoSummary: (p) => `Deshacer el cambio ${p.transactionId}`, undoLatestSummary: 'Deshacer el último cambio',

@@ -13,14 +13,15 @@ import { MUSIC_OUTPUT_FILE } from './worker-contract.ts';
 
 export type MusicParameters = Extract<GenerationParameters, { capability: 'generateMusic' }>;
 
-/** 引擎可执行文件的环境变量：给了就只用它（开发时指向自己构建或下载的 `audiocpp_cli`）。 */
+/** 引擎可执行文件的环境变量：给了就只用它（开发时指向自己构建或下载的 `audiocpp_cli`；目录的 `engineOverride`），不看 PATH。 */
 export const AUDIO_CPP_CLI_ENV = 'BAOCUT_AUDIOCPP_CLI';
 /** 引擎后端的环境变量（`metal` / `cuda` / `vulkan` / `cpu`）：不给时由引擎按构建自己选。 */
 export const AUDIO_CPP_BACKEND_ENV = 'BAOCUT_AUDIOCPP_BACKEND';
 
 /**
- * `generateMusic` 的模型描述：歌曲与纯音乐、只出 WAV、接受 seed 与步数；上限来自模型包登记的特性。`engine` 是找到的引擎路径
- * （没有时 null，模型整体不可用，`unavailableReason` 由调用方给）。
+ * `generateMusic` 的模型描述：歌曲与纯音乐、只出 WAV、接受 seed 与步数；上限来自模型包登记的特性。`engine` 是引擎组件的可执行
+ * 文件（`ModelCatalog.engineExecutable`；没装时 null，模型整体不可用，`unavailableReason` 由调用方给）。引擎是模型包的必需组件，
+ * 没装的说明就是模型包状态的 `detail`。
  */
 export function localMusicModelInfo(def: BundleDefinition, status: ModelBundleStatus, usable: boolean, engine: string | null): MusicModelInfo {
   const profile = def.music!;
@@ -48,11 +49,9 @@ export function localMusicModelInfo(def: BundleDefinition, status: ModelBundleSt
       license: def.license!,
     },
     ...(profile.slow ? { notes: M.slowLocal().text } : {}),
-    ...(engine === null
-      ? { detail: M.engineMissing().text }
-      : !usable && status.detail
-        ? { detail: status.detail, ...(status.detailRef ? { detailRef: status.detailRef } : {}) }
-        : {}),
+    ...((!usable || engine === null) && status.detail
+      ? { detail: status.detail, ...(status.detailRef ? { detailRef: status.detailRef } : {}) }
+      : {}),
   };
 }
 

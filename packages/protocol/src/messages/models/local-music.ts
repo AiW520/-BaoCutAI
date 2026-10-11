@@ -14,10 +14,9 @@ import { pl } from './local-music.pl.ts';
 import { tr } from './local-music.tr.ts';
 import { vi } from './local-music.vi.ts';
 
-/** `packages/models/src/local-music.ts` 给人看的文字：本地音乐生成模型的耗时提示与引擎缺失。 */
+/** `packages/models/src/local-music.ts` 给人看的文字：本地音乐生成模型的耗时提示。 */
 const en = {
   slowLocal: 'Generates on this computer with the audio.cpp engine: a one-minute track takes a few minutes; longer tracks take proportionally longer',
-  engineMissing: 'The audio.cpp engine (audiocpp_cli) is not installed: install it from Settings › Music generation or with `baocut external-tools install audiocpp`, or set BAOCUT_AUDIOCPP_CLI to your own build',
 };
 
 export type ModelsLocalMusicMessages = typeof en;

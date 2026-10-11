@@ -48,6 +48,7 @@ import {
   canReenable,
   componentDesc,
   componentLabel,
+  componentSource,
   hasOwnFiles,
   installingPlacement,
   isBundleInstalled,
@@ -812,9 +813,8 @@ function BundleRow({
             bundle.components.map((c) => (
               <li key={`${c.component}:${c.repo}`} className={detailLine}>
                 <span>{componentLabel(c.component)}</span>
-                <span className={detailRepo}>
-                  {c.repo}@{c.revision.slice(0, 7)}
-                </span>
+                {!c.sharedWith.length && componentDesc(c.component) ? <span>{componentDesc(c.component)}</span> : null}
+                <span className={detailRepo}>{componentSource(c)}</span>
                 <span>{INSTALL.componentLine(c.state, componentSize(c))}</span>
                 {c.sharedWith.length ? <span>{INSTALL.sharedWith(c.sharedWith)}</span> : null}
               </li>

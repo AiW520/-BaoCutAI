@@ -91,9 +91,6 @@ export const ja: RcExternalToolsMessages = {
   ytDlpMissingRemedy:
     'externalTools.install（baocut external-tools install yt-dlp）でダウンロードするか、ご自身でインストールして externalTools.setPath でパスを指定してください',
   ffmpegPurpose: 'メディアの解析、ファイルの変換、書き出し、ダウンロード後の音声と映像の結合',
-  audioCppPurpose: "音楽生成：このコンピューターで YuE2 モデルを実行し、歌やインストゥルメンタルを生成します",
-  audioCppMissingRemedy:
-    "設定 › 音楽生成からインストールするか、externalTools.install（baocut external-tools install audiocpp）でダウンロードしてください。自分でビルドしたエンジンは BAOCUT_AUDIOCPP_CLI か externalTools.setPath で指定できます。Linux 版と Windows 版には Vulkan 対応のグラフィックドライバーが必要です",
   noReleaseForPlatform: (p) => `このマシン（${p.platform}）向けのリリースファイルがありません`,
   noTrustedSha: '組み込みのマニフェストにこのファイルの信頼できる sha256 がまだないため、ダウンロードできません',
 

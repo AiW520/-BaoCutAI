@@ -19,8 +19,8 @@ import {
   type Localized,
   type MessageRef,
 } from '@baocut/protocol';
+import { ToolArchiveError, extractToolArchive } from '@baocut/models';
 import { readJsonOrQuarantine, writeJsonAtomic } from '@baocut/runtime-storage';
-import { ToolArchiveError, extractToolArchive } from './tool-archive.ts';
 import { ToolDownloadError, downloadToolFile, type ToolDownloadOptions } from './tool-download.ts';
 import { BUILTIN_TOOL_MANIFESTS, compareVersions, platformKey, toolOffer, type ToolAsset, type ToolManifest } from './tool-manifests.ts';
 import { envValue, findOnPath, isExecutableFile, runVersionProbe, windowsScriptKind } from './tool-probe.ts';
@@ -32,14 +32,14 @@ import { remedyOf, taskFailure } from '../localized.ts';
 /**
  * 受管外部工具的状态与动作（架构设计 §12.9）：探测、同意、指定路径、下载与删除受管副本。
  *
- * - 解析顺序：环境变量（ffmpeg 的 `BAOCUT_FFMPEG`、音乐引擎的 `BAOCUT_AUDIOCPP_CLI`）→ 随应用分发的（只有音乐引擎登记了 `bin/`）→
- *   用户指定的路径 → 受管副本 → 系统 PATH（Runtime 的工具环境，即登录 shell 的 PATH；测试注入一个空目录）。用户指定的路径不能运行时
+ * - 解析顺序：环境变量（ffmpeg 的 `BAOCUT_FFMPEG`）→ 用户指定的路径 → 受管副本 → 系统 PATH（Runtime 的工具环境，即登录 shell 的 PATH；测试注入一个空目录）。用户指定的路径不能运行时
  *   报告为不可用，不悄悄换成别的。
  * - 同意与用户路径、受管副本的登记存在 `<home>/store/external-tools.json`；受管副本在 `<home>/tools/<工具>/<版本>/`，
  *   下载中的文件在 `<home>/tools/.staging/`（取消时保留，下次续传）。
  * - 下载是一个任务（`kind: 'toolInstall'`）：提交前查严格离线、清单与同意，任务里下载、核对 sha256 与大小、设可执行位、
- *   原子地改名发布，再执行一次 `--version` 确认能运行。发布文件是压缩包（音乐引擎）时，核对之后先解开到 staging 目录
- *   （只取包根目录的普通文件，`tool-archive.ts`），整个目录改名发布。
+ *   原子地改名发布，再执行一次 `--version` 确认能运行。清单把发布文件登记为压缩包（`archive`）时，核对之后先解开到 staging
+ *   目录（只取包根目录的普通文件，`@baocut/models` 的 `extractToolArchive`），整个目录改名发布；内置的工具目前都是单个文件。
+ *   （音乐生成的 audio.cpp 引擎不是受管外部工具，是音乐模型包的组件，随模型包安装，见架构设计 §6.3。）
  * - 系统里自己装的那一份按原安装方式更新（`tool-update-plan.ts` 判断办法）：也是一个任务（`kind: 'toolUpdate'`），提交前
  *   要调用方交回用户确认过的那条命令；任务里不经 shell 执行，输出逐段写进任务记录的 `command`，结束后重新探测。
  *   不提权：要管理员权限的只给命令。更新进行中用它的流程拒绝启动（`TOOL_UPDATING`），反过来有流程在用时不更新。
@@ -175,16 +175,6 @@ export class ExternalToolService {
 
   get #overrides(): NodeJS.ProcessEnv {
     return this.#options.overrides ?? process.env;
-  }
-
-  /** 读入登记文件（不探测）：之后 `userPathOf` 才有结果。 */
-  async warm(): Promise<void> {
-    await this.#load();
-  }
-
-  /** 用户指定的路径（同步，读的是已经读入的登记；还没读入时 null）：音乐引擎的同步查找用它与探测保持同一个顺序。 */
-  userPathOf(name: string): string | null {
-    return this.#store?.tools[name]?.userPath ?? null;
   }
 
   /** 上次探测的结果；还没探测过的先探测。 */
@@ -439,8 +429,6 @@ export class ExternalToolService {
       const file = path.isAbsolute(fromEnv) ? fromEnv : await lookup(fromEnv);
       candidates.push({ file, source: 'env', strict: true, label: RcExternalTools.sourceEnvVar({ name: manifest.envVar! }) });
     }
-    const bundled = manifest.bundled?.(this.#overrides) ?? null;
-    if (bundled) candidates.push({ file: bundled, source: 'bundled', strict: true, label: RcExternalTools.sourceBundled() });
     if (record.userPath) candidates.push({ file: record.userPath, source: 'user', strict: true, label: RcExternalTools.sourceUserPath() });
     if (record.managed) {
       const file = this.#managedFile(manifest, record.managed.version);
@@ -811,23 +799,8 @@ export class ExternalToolService {
     return path.join(this.#options.toolsDir, '.staging', `${manifest.name}-${manifest.release?.version ?? 'none'}.part`);
   }
 
-  /** 下载来源：环境变量 `BAOCUT_TOOLS_ENDPOINT` 优先于设置。不合法时 `invalid-request`。 */
   #endpoint(): string | null {
-    const fromEnv = this.#overrides.BAOCUT_TOOLS_ENDPOINT?.trim();
-    const value = fromEnv || this.#options.settings().downloadEndpoint;
-    if (!value) return null;
-    let url: URL;
-    try {
-      url = new URL(value);
-    } catch {
-      throw new RpcError('invalid-request', RcExternalTools.endpointInvalid(), { code: 'TOOL_DOWNLOAD_SOURCE' });
-    }
-    if ((url.protocol !== 'https:' && url.protocol !== 'http:') || url.username || url.password || url.search || url.hash) {
-      throw new RpcError('invalid-request', RcExternalTools.endpointBadForm(), {
-        code: 'TOOL_DOWNLOAD_SOURCE',
-      });
-    }
-    return value;
+    return toolsDownloadEndpoint(this.#overrides, this.#options.settings().downloadEndpoint);
   }
 
   #activeInstall(name: string): JobRecord | null {
@@ -883,4 +856,26 @@ export class ExternalToolService {
     this.#writes = write.catch(() => {});
     await write;
   }
+}
+
+/**
+ * 外部工具与发布页组件（音乐模型包的引擎）的下载镜像：环境变量 `BAOCUT_TOOLS_ENDPOINT` 优先于设置 `tools.downloadEndpoint`；
+ * 都没有时 null（官方地址）。不合法时 `invalid-request`（`TOOL_DOWNLOAD_SOURCE`）。
+ */
+export function toolsDownloadEndpoint(overrides: NodeJS.ProcessEnv, setting: string | null): string | null {
+  const fromEnv = overrides.BAOCUT_TOOLS_ENDPOINT?.trim();
+  const value = fromEnv || setting;
+  if (!value) return null;
+  let url: URL;
+  try {
+    url = new URL(value);
+  } catch {
+    throw new RpcError('invalid-request', RcExternalTools.endpointInvalid(), { code: 'TOOL_DOWNLOAD_SOURCE' });
+  }
+  if ((url.protocol !== 'https:' && url.protocol !== 'http:') || url.username || url.password || url.search || url.hash) {
+    throw new RpcError('invalid-request', RcExternalTools.endpointBadForm(), {
+      code: 'TOOL_DOWNLOAD_SOURCE',
+    });
+  }
+  return value;
 }

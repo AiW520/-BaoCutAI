@@ -31,7 +31,6 @@ function linkImportAfter(p: { target: string; name: string | null; transcribe: b
 }
 
 export const ko: RcAgentToolsMessages = {
-  installEngineSummary: (p) => `${p.url}에서 audio.cpp 엔진 ${p.version}(${p.size}, ${p.license})을 설치합니다. 로컬 모델 ${p.bundleId}로 음악을 생성하려면 필요합니다`,
 
   instructionsNotSet: '세션 지침이 설정되지 않았습니다: Runtime 조립 순서가 잘못되었습니다',
   listSeparator: ', ',

@@ -134,6 +134,22 @@ export class ModelDownloader {
     }
   }
 
+  /**
+   * 按地址下载一个文件到 `stage`（不经模型仓库的地址规则；发布页组件的压缩包，见 `release-component.ts`）：续传、重试、核对大小与
+   * sha256 都与 `download` 相同，核对过的文件留在 `<stage>/<file.path>`，不符时删掉（`MODEL_DOWNLOAD_INTEGRITY`）。
+   */
+  async downloadUrl(
+    stage: string,
+    url: string,
+    file: DownloadFile,
+    signal: AbortSignal,
+    onBytes: (delta: number) => void = () => {},
+  ): Promise<void> {
+    await fs.mkdir(stage, { recursive: true });
+    signal.throwIfAborted();
+    await this.#downloadFile(stage, url, file, signal, onBytes);
+  }
+
   /** 修复：把仓库目录里核对过的好文件硬链接（不行就复制）进暂存目录，发布时连同新下载的一起换上。 */
   async reuse(repo: string, revision: string, repoDir: string, files: readonly string[]): Promise<void> {
     const stage = stagingDirOf(this.#root, repo, revision);

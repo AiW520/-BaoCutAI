@@ -6,4 +6,7 @@ export const es: ModelsModelDownloaderMessages = {
  remedySource: 'El origen de descarga no tiene este archivo o denegó el acceso. Comprueba que el servidor espejo configurado en «Origen de descarga de modelos» de «Ajustes › General» (o la variable de entorno BAOCUT_MODELS_ENDPOINT) esté completo',
  remedyManifestIncomplete: 'Al manifiesto integrado de este paquete de modelos le falta un sha256 fiable, por lo que no se puede instalar. Espera a una actualización de BaoCut',
  downloadFailed: (p) => `No se pudo descargar ${p.file}: ${p.reason}`, integrityMismatch: (p) => `El tamaño o sha256 de ${p.file} no coincide con el manifiesto`, sourceHttp: (p) => `El origen de descarga devolvió HTTP ${p.status} para ${p.file}`, diskFull: 'El disco se llenó al escribir los archivos del modelo',
+  archiveUnpackable: (p: { file: string; reason: string }) => `No se pudo descomprimir ${p.file}: ${p.reason}`,
+  executableMissing: (p: { file: string; executable: string }) => `${p.file} no contiene ${p.executable}`,
+  engineProbeFailed: (p: { executable: string; reason: string }) => `${p.executable} se descomprimió, pero no se ejecuta: ${p.reason}`,
 };

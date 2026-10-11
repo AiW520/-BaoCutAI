@@ -3,9 +3,6 @@ import type { RcExternalToolsMessages } from './rc-external-tools.ts';
 export const fr: RcExternalToolsMessages = {
   sourceBundled: "la copie fournie avec BaoCut",
   archiveBroken: (p) => `Impossible de décompresser ${p.file} : ${p.reason}`,
-  audioCppPurpose: "Génération de musique : exécute sur cet ordinateur le modèle YuE2, qui génère des chansons et des instrumentaux",
-  audioCppMissingRemedy:
-    "Installez-le depuis Réglages › Génération de musique ou avec externalTools.install (baocut external-tools install audiocpp), ou indiquez votre propre build avec BAOCUT_AUDIOCPP_CLI ou externalTools.setPath. Les versions Linux et Windows nécessitent un pilote graphique compatible Vulkan",
   manageOnlyInAppOrCli: 'Les outils externes peuvent uniquement être gérés dans l’application de bureau ou le CLI', videoNotOpen: 'La vidéo n’est pas ouverte',
   toolUpdating: (p) => `Mise à jour de ${p.label} en cours`, waitForUpdate: (p) => `Réessayez après la fin de la tâche de mise à jour ${p.jobId}`, toolNotInstalled: (p) => `${p.label} n’est pas installé`, toolCannotRun: (p) => `Impossible d’exécuter ${p.label} : ${p.reason}`,
   toolOutdated: (p) => `${p.label} est obsolète : ${p.reason}`, consentRevoked: (p) => `Le consentement à l’utilisation de ${p.label} a été retiré`, consentRequired: (p) => `L’utilisation de ${p.label} nécessite d’abord le consentement de l’utilisateur`,

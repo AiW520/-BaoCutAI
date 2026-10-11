@@ -10,4 +10,7 @@ export const zhHans: ModelsModelDownloaderMessages = {
   integrityMismatch: (p: { file: string }) => `${p.file} 的大小或 sha256 与清单不符`,
   sourceHttp: (p: { file: string; status: number }) => `下载来源对 ${p.file} 返回 HTTP ${p.status}`,
   diskFull: '写入模型文件时磁盘满了',
+  archiveUnpackable: (p: { file: string; reason: string }) => `${p.file} 解不开：${p.reason}`,
+  executableMissing: (p: { file: string; executable: string }) => `${p.file} 里没有 ${p.executable}`,
+  engineProbeFailed: (p: { executable: string; reason: string }) => `${p.executable} 解开了，但运行不起来：${p.reason}`,
 };

@@ -533,3 +533,66 @@ describe('ModelCatalog', () => {
     expect(bundle.components.vad!.files.map((f) => f.path)).toContain('model.safetensors');
   });
 });
+
+/** 音乐模型包的第二个组件 audio.cpp 引擎（架构设计 §6.3）：按主机平台选压缩包，放在工具目录里，可以用 `engineOverride` 顶替。 */
+describe('ModelCatalog audio.cpp 引擎组件', () => {
+  const YUE = 'yue2-3b@audio-cpp-q8';
+  let root: string;
+  beforeEach(async () => {
+    root = await fs.mkdtemp(path.join(os.tmpdir(), 'baocut-engine-catalog-'));
+    const def = BUNDLES.find((b) => b.bundleId === YUE)!;
+    await writeRepo(root, def.components.music!.repo, def.components.music!.revision, { 'model.gguf': 'gguf' });
+  });
+  afterEach(async () => {
+    await fs.rm(root, { recursive: true, force: true });
+  });
+
+  it('没有引擎包的平台：仍然列出，状态是 error / unsupported，说明带平台；平台键可以由测试指定', async () => {
+    const arm = new ModelCatalog({ root, platform: 'linux', arch: 'arm64' });
+    expect(arm.platformKey).toBe('linux-arm64');
+    expect(arm.definitions().map((d) => d.bundleId)).toContain(YUE);
+    const status = await arm.status(YUE);
+    expect(status).toMatchObject({ state: 'error', reason: 'unsupported' });
+    expect(status!.detail).toContain('linux-arm64');
+    expect(status!.estimatedBytes).toBeNull();
+    expect(arm.engineExecutable(YUE)).toBeNull();
+    // 同一台主机按指定的平台键看：有引擎包，引擎没装是 not-installed / incomplete。
+    const pinned = new ModelCatalog({ root, platform: 'linux', arch: 'arm64', platformKey: 'linux-x64' });
+    expect(await pinned.status(YUE)).toMatchObject({ state: 'not-installed', reason: 'incomplete' });
+    expect((await pinned.status(YUE))!.estimatedBytes).toBeGreaterThan(0);
+  });
+
+  it('engineOverride：文件在时组件算装好（bytes 为 null），也不报平台不支持；文件不在时不算', async () => {
+    const exe = path.join(root, 'my-audiocpp_cli');
+    await fs.writeFile(exe, '#!/bin/sh\nexit 0\n', { mode: 0o755 });
+    const catalog = new ModelCatalog({ root, platform: 'linux', arch: 'arm64', engineOverride: exe });
+    const status = await catalog.status(YUE);
+    expect(status).toMatchObject({ state: 'installed' });
+    expect(status!.components!.find((c) => c.component === 'audiocpp-engine')).toMatchObject({
+      origin: 'github-release',
+      state: 'installed',
+      bytes: null,
+    });
+    expect(catalog.engineExecutable(YUE)).toBe(exe);
+    expect((await catalog.verify(YUE)).ok).toBe(true);
+
+    const gone = new ModelCatalog({ root, platform: 'darwin', arch: 'arm64', engineOverride: path.join(root, 'nope') });
+    expect(await gone.status(YUE)).toMatchObject({ state: 'not-installed', reason: 'incomplete' });
+    expect(gone.engineExecutable(YUE)).toBeNull();
+  });
+
+  it('旧版装下的引擎（有可执行文件、没有清单）算装好，校验通过；工具目录默认在模型目录的 .bcut-tools 里', async () => {
+    const catalog = new ModelCatalog({ root, platform: 'darwin', arch: 'arm64' });
+    expect(catalog.toolsDir).toBe(path.join(root, '.bcut-tools'));
+    const dir = path.join(catalog.toolsDir, 'audiocpp', '0.9.1');
+    await fs.mkdir(dir, { recursive: true });
+    await fs.writeFile(path.join(dir, 'audiocpp_cli'), '#!/bin/sh\nexit 0\n', { mode: 0o755 });
+    expect(await catalog.status(YUE)).toMatchObject({ state: 'installed' });
+    expect(catalog.engineExecutable(YUE)).toBe(path.join(dir, 'audiocpp_cli'));
+    expect((await catalog.verify(YUE)).ok).toBe(true);
+    // 指定的工具目录。
+    const elsewhere = new ModelCatalog({ root, platform: 'darwin', arch: 'arm64', toolsDir: path.join(root, 'tools') });
+    expect(elsewhere.toolsDir).toBe(path.join(root, 'tools'));
+    expect(await elsewhere.status(YUE)).toMatchObject({ state: 'not-installed', reason: 'incomplete' });
+  });
+});

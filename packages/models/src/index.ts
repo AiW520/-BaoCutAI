@@ -13,6 +13,8 @@ export {
   requiredSources,
   type BundleComponentSource,
   type BundleDefinition,
+  type ComponentRelease,
+  type ComponentReleaseAsset,
   type ImageBundleProfile,
   type MusicBundleProfile,
   type SpeechBundleProfile,
@@ -23,13 +25,21 @@ export { imageRunOf, localImageModelInfo, localImageSeed } from './local-image.t
 export { AUDIO_CPP_ENGINE, MUSIC_BUNDLES, YUE2_SEMANTIC_TOKENS_PER_SEC } from './music-bundles.ts';
 export {
   AUDIO_CPP_COMMAND,
+  AUDIO_CPP_ENGINE_COMPONENT,
+  AUDIO_CPP_LICENSE,
   AUDIO_CPP_RELEASE,
   AUDIO_CPP_TOOL,
   parseAudioCppVersion,
-  type EngineArchive,
-  type EngineAsset,
-  type EngineRelease,
 } from './music-engine.ts';
+export {
+  hostPlatformKey,
+  releaseAsset,
+  releaseDir,
+  releaseSource,
+  releaseStagingDir,
+  releaseUrl,
+} from './release-component.ts';
+export { ToolArchiveError, extractToolArchive, rootEntryName, type ToolArchiveSpec } from './tool-archive.ts';
 export {
   AUDIO_CPP_BACKEND_ENV,
   AUDIO_CPP_CLI_ENV,

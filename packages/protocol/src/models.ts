@@ -29,7 +29,9 @@ export type ModelBackend = 'mlx' | 'coreml' | 'candle' | 'ggml' | 'audio-cpp';
  * - `installed`：文件齐全，Worker 没有加载它；
  * - `loading` / `ready` / `busy` / `unloading`：Worker 的状态；
  * - `error`：不可用，`reason` 说明原因（`unsupported`：这台机器的平台或后端不支持；`resource`：资源不足或反复崩溃后停用，
- *   `models.enable` 重新启用；`worker-missing`：没有找到 Model Worker 可执行文件）。
+ *   `models.enable` 重新启用；`worker-missing`：没有找到 Model Worker 可执行文件）。音乐模型包（`audio-cpp`）的引擎是它的组件
+ *   `audiocpp-engine`：权重在而引擎没装是 `not-installed` / `incomplete`；主机平台没有引擎包（又没有 `BAOCUT_AUDIOCPP_CLI`）是
+ *   `error` / `unsupported`。
  *
  * 具体进度未知时不伪造百分比：总字节数未知时 `install.totalBytes` 为 null。
  */
@@ -75,17 +77,27 @@ export interface ModelBundleStatus {
 
 /**
  * 模型包的一个组件：上游仓库的一个固定版本，装在 `<models-root>/<owner>/<repo>/`。几个模型包共用的组件（VAD 等）只装一份，
- * 按引用保留：删除模型包时只回收没有别的模型包在用的组件。
+ * 按引用保留：删除模型包时只回收没有别的模型包在用的组件。来自 GitHub 发布页的组件（`origin: 'github-release'`，音乐模型包的
+ * audio.cpp 引擎）是平台专属的，按 Runtime 所在主机取一个压缩包，装在 Runtime Home 的 `tools/<名字>/<版本>/`。
  */
 export interface ModelComponentStatus {
-  /** `asr`、`vad`、`aligner`…… */
+  /** `asr`、`vad`、`aligner`、`audiocpp-engine`…… */
   component: string;
-  /** `<owner>/<repo>` */
+  /** `<owner>/<repo>`（发布页组件是上游的 GitHub 仓库名） */
   repo: string;
+  /** 上游的提交（发布页组件是发布的标签，如 `v0.9.1`）。 */
   revision: string;
+  /**
+   * 组件从哪里下载：没有这一项是模型仓库（Hugging Face 或设置的镜像）；`github-release` 是 GitHub 发布页的预编译包（按主机平台选，
+   * 可由工具下载镜像替换），装在 Runtime Home 的 `tools/` 下而不是模型目录里。
+   */
+  origin?: 'github-release';
   /** `installed`：清单与文件齐全；`missing`：没装或不完整（缺文件、大小不符、版本不对）。 */
   state: 'installed' | 'missing';
-  /** 已经装好时它占的字节数（清单里的大小之和）；没装时 null。 */
+  /**
+   * 已经装好时它占的字节数（清单里的大小之和）；没装时 null。发布页组件由 `BAOCUT_AUDIOCPP_CLI` 指向自己构建的引擎时算装好，
+   * 也是 null。
+   */
   bytes: number | null;
   /**
    * 这个组件的下载大小（字节），按内置清单；没有登记清单时 null。装没装都给，供缺组件时显示要下多少（Runtime 总是给；旧的快照可能
@@ -173,8 +185,10 @@ export interface ModelInstallPlan {
     component: string;
     repo: string;
     revision: string;
+    /** 同 `ModelComponentStatus.origin`：`github-release` 的组件下载一个压缩包，核对后解开到 `tools/<名字>/<版本>/`。 */
+    origin?: 'github-release';
     action: 'keep' | 'download';
-    /** 要下载的文件（相对仓库目录）。 */
+    /** 要下载的文件（相对仓库目录；发布页组件是压缩包的文件名）。 */
     files: string[];
     /** 这个组件要下载的字节数；有文件大小未知时 null。 */
     bytes: number | null;
@@ -586,7 +600,10 @@ export const MUSIC_PLANNINGS: readonly MusicPlanning[] = ['off', 'melody', 'full
 export interface LocalMusicTraits {
   /** 引擎的家族（`yue2`）。 */
   family: string;
-  /** 执行引擎（`audio-cpp`）与它此刻找到的可执行文件；没找到时 null（模型装好了也不能生成，`unavailableReason: 'unsupported'`）。 */
+  /**
+   * 执行引擎（`audiocpp_cli`）与它此刻找到的可执行文件；没找到时 null（模型不能生成）。引擎是模型包的 `audiocpp-engine` 组件：没装时
+   * 模型包是 `not-installed` / `incomplete`，`unavailableReason: 'not-installed'`。
+   */
   engine: { id: string; executable: string | null };
   /** 输出的采样率（Hz）。输出一律是 WAV。 */
   sampleRate: number;

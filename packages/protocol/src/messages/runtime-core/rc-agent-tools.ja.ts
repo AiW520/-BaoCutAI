@@ -31,7 +31,6 @@ function linkImportAfter(p: { target: string; name: string | null; transcribe: b
 }
 
 export const ja: RcAgentToolsMessages = {
-  installEngineSummary: (p) => `${p.url} から audio.cpp エンジン ${p.version}（${p.size}、${p.license}）をインストールします。ローカルモデル ${p.bundleId} の音楽生成に必要です`,
 
   instructionsNotSet: 'セッションの指示が設定されていません：Runtime の組み立て順序が正しくありません',
   listSeparator: '、',

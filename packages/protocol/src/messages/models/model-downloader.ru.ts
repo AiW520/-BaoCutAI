@@ -10,4 +10,7 @@ export const ru: ModelsModelDownloaderMessages = {
   integrityMismatch: (p: { file: string }) => `Размер или sha256 файла ${p.file} не совпадает с манифестом`,
   sourceHttp: (p: { file: string; status: number }) => `Источник скачивания вернул HTTP ${p.status} для ${p.file}`,
   diskFull: "Во время записи файлов модели на диске закончилось место",
+  archiveUnpackable: (p: { file: string; reason: string }) => `Не удалось распаковать ${p.file}: ${p.reason}`,
+  executableMissing: (p: { file: string; executable: string }) => `В ${p.file} нет ${p.executable}`,
+  engineProbeFailed: (p: { executable: string; reason: string }) => `${p.executable} распакован, но не запускается: ${p.reason}`,
 };

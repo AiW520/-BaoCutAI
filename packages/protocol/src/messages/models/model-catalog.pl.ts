@@ -15,4 +15,6 @@ export const pl: ModelsModelCatalogMessages = {
   moving: "Folder modeli jest przenoszony",
   notInstalled: (p: { repo: string }) => `Model ${p.repo} nie jest zainstalowany`,
   noFilesInSubdir: (p: { subdir: string }) => `Model nie ma plików w ${p.subdir}/`,
+  engineNoBuild: (p: { platform: string }) => `Silnik audio.cpp nie ma wersji dla tego komputera (${p.platform}); wskaż w BAOCUT_AUDIOCPP_CLI silnik zbudowany samodzielnie`,
+  engineNotInstalled: (p: { version: string }) => `Silnik audio.cpp ${p.version} nie jest zainstalowany`,
 };

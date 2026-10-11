@@ -4,8 +4,8 @@ import path from 'node:path';
 import { createGunzip, inflateRawSync } from 'node:zlib';
 
 /**
- * 受管工具的压缩包（架构设计 §12.9）：核对过 sha256 的 `.tar.gz` 或 `.zip`，只解开包根目录里的普通文件，进程内完成，不调用系统的
- * tar 或 unzip（Windows 上 PATH 里的 tar 可能是不认 zip 的 GNU tar）。
+ * 预编译工具的压缩包（受管外部工具，架构设计 §12.9；模型包的发布页组件，§6.3）：核对过 sha256 的 `.tar.gz` 或 `.zip`，只解开包根
+ * 目录里的普通文件，进程内完成，不调用系统的 tar 或 unzip（Windows 上 PATH 里的 tar 可能是不认 zip 的 GNU tar）。
  *
  * - 只认根目录（可带 `./` 前缀）下的普通文件；子目录、目录项、链接、设备文件一律略过，名字里有 `..`、反斜杠、绝对路径或盘符的
  *   也略过，所以写不出目标目录。macOS 打包时附带的 AppleDouble 文件（`._` 开头）也略过。

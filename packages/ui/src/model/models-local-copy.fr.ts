@@ -38,7 +38,8 @@ export const fr: ModelsLocalMessages = {
 
   notInstalled: (name: string) => `${name} (non installé)`,
 
-  componentName: { aligner: "Aligneur forcé", speaker: "Représentation des locuteurs", vad: "VAD (détection d’activité vocale)", tokenizer: "Tokeniseur", segmentation: "Segmentation des locuteurs", codec: "Codec vocal", aux: "Modèles auxiliaires" } as Record<string, string>,
-  componentDesc: { vad: "Repère les passages où quelqu’un parle", aligner: "Aligne le texte sur le minutage de chaque mot", tokenizer: "Convertit entre le texte et les jetons du modèle", speaker: "Distingue les locuteurs", segmentation: "Repère où chaque personne commence et cesse de parler", codec: "Reconvertit les jetons acoustiques en forme d’onde", aux: "Modèles supplémentaires requis par le modèle principal" },
+  componentName: { 'audiocpp-engine': "Moteur audio.cpp", aligner: "Aligneur forcé", speaker: "Représentation des locuteurs", vad: "VAD (détection d’activité vocale)", tokenizer: "Tokeniseur", segmentation: "Segmentation des locuteurs", codec: "Codec vocal", aux: "Modèles auxiliaires" } as Record<string, string>,
+  componentDesc: { 'audiocpp-engine': "Exécute YuE2 · téléchargé selon la plateforme · Windows / Linux nécessitent un pilote GPU Vulkan", vad: "Repère les passages où quelqu’un parle", aligner: "Aligne le texte sur le minutage de chaque mot", tokenizer: "Convertit entre le texte et les jetons du modèle", speaker: "Distingue les locuteurs", segmentation: "Repère où chaque personne commence et cesse de parler", codec: "Reconvertit les jetons acoustiques en forme d’onde", aux: "Modèles supplémentaires requis par le modèle principal" },
+  githubRelease: (repo, tag) => `Version GitHub ${repo} ${tag}`,
   weights: "Poids du modèle",
 };

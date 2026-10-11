@@ -100,7 +100,11 @@ export interface ModelInstallServiceOptions {
   settings: () => { downloadEndpoint: string | null; offlineStrict: boolean };
   /** 读 `BAOCUT_MODELS_ENDPOINT` 的环境，默认 `process.env`。 */
   env?: NodeJS.ProcessEnv;
-  /** 下载器的调节项（测试注入本机的假服务、可用空间与内置清单）。 */
+  /** 发布页组件（音乐引擎）的下载镜像（`BAOCUT_TOOLS_ENDPOINT` / 设置 `tools.downloadEndpoint`）；null 时用官方地址。 */
+  toolsEndpoint?: () => string | null;
+  /** 发布页组件发布之后确认可执行文件能运行（`--version` 探测）；抛错时安装失败。 */
+  probeExecutable?: (executable: string) => Promise<void>;
+  /** 下载器的调节项（测试注入本机的假服务、可用空间与内置清单）；给了的项优先于上面两项。 */
   installer?: Omit<ModelInstallerOptions, 'catalog' | 'endpoint'>;
   /** 检查样本（测试可换）。 */
   selfTestSample?: SelfTestSample;
@@ -125,6 +129,8 @@ export class ModelInstallService {
     this.#log = options.log.child('model-install');
     this.#sample = options.selfTestSample ?? TRANSCRIBE_SELF_TEST;
     this.installer = new ModelInstaller({
+      ...(options.toolsEndpoint ? { toolsEndpoint: options.toolsEndpoint } : {}),
+      ...(options.probeExecutable ? { probeExecutable: options.probeExecutable } : {}),
       ...options.installer,
       catalog: options.catalog,
       endpoint: () => this.#endpoint(),

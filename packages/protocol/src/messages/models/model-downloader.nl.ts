@@ -10,4 +10,7 @@ export const nl: ModelsModelDownloaderMessages = {
   integrityMismatch: (p: { file: string }) => `De grootte of sha256 van ${p.file} komt niet overeen met het manifest`,
   sourceHttp: (p: { file: string; status: number }) => `De downloadbron heeft HTTP geretourneerd: ${p.status} voor ${p.file}`,
   diskFull: "De schijf is vol geraakt tijdens het schrijven van modelbestanden",
+  archiveUnpackable: (p: { file: string; reason: string }) => `${p.file} kon niet worden uitgepakt: ${p.reason}`,
+  executableMissing: (p: { file: string; executable: string }) => `${p.file} bevat ${p.executable} niet`,
+  engineProbeFailed: (p: { executable: string; reason: string }) => `${p.executable} is uitgepakt, maar start niet: ${p.reason}`,
 };

@@ -10,4 +10,7 @@ export const ptBR: ModelsModelDownloaderMessages = {
   integrityMismatch: (p: { file: string }) => `${p.file} tem tamanho ou sha256 que não corresponde ao manifesto`,
   sourceHttp: (p: { file: string; status: number }) => `A fonte de download para ${p.file} retornou HTTP ${p.status}`,
   diskFull: "O disco ficou cheio ao gravar os arquivos do modelo",
+  archiveUnpackable: (p: { file: string; reason: string }) => `Não foi possível descompactar ${p.file}: ${p.reason}`,
+  executableMissing: (p: { file: string; executable: string }) => `${p.file} não contém ${p.executable}`,
+  engineProbeFailed: (p: { executable: string; reason: string }) => `${p.executable} foi descompactado, mas não executa: ${p.reason}`,
 };

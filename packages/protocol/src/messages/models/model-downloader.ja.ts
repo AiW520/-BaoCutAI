@@ -15,4 +15,7 @@ export const ja: ModelsModelDownloaderMessages = {
   integrityMismatch: (p: { file: string }) => `${p.file} のサイズまたは sha256 がマニフェストと一致しません`,
   sourceHttp: (p: { file: string; status: number }) => `ダウンロード元が ${p.file} に対して HTTP ${p.status} を返しました`,
   diskFull: 'モデルファイルの書き込み中にディスクがいっぱいになりました',
+  archiveUnpackable: (p: { file: string; reason: string }) => `${p.file} を展開できませんでした：${p.reason}`,
+  executableMissing: (p: { file: string; executable: string }) => `${p.file} に ${p.executable} が含まれていません`,
+  engineProbeFailed: (p: { executable: string; reason: string }) => `${p.executable} は展開されましたが実行できません：${p.reason}`,
 };

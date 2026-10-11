@@ -127,10 +127,12 @@ describe('本地识别的模型包登记', () => {
     }
     // Core ML 的模型是目录（.mlmodelc）：清单逐个列出目录里的文件。
     expect(manifestOf('aufklarer/Whisper-Large-v3-Turbo-CoreML').files.some((f) => f.path.includes('.mlmodelc/'))).toBe(true);
-    // 每个登记的模型包的组件都有清单。
+    // 每个登记的模型包的组件都有清单；发布页组件（audio.cpp 引擎）按平台登记压缩包，没有仓库清单。
     for (const def of BUNDLES) {
-      for (const s of Object.values(def.components))
+      for (const s of Object.values(def.components)) {
+        if (s!.release) continue;
         expect(repoManifestFor(s!.repo, s!.revision), `${def.bundleId} ${s!.repo}`).not.toBeNull();
+      }
     }
     expect(weightBytes([{ repo: 'nobody/nothing', revision: 'r' }])).toBeNull();
   });

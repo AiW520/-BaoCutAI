@@ -84,9 +84,6 @@ export const ko: RcExternalToolsMessages = {
   ytDlpMissingRemedy:
     'externalTools.install(baocut external-tools install yt-dlp)로 다운로드하거나, 직접 설치한 뒤 externalTools.setPath로 경로를 지정하세요',
   ffmpegPurpose: '미디어 분석, 파일 트랜스코딩, 내보내기, 다운로드 후 오디오와 영상 병합',
-  audioCppPurpose: "음악 생성: 이 컴퓨터에서 YuE2 모델을 실행해 노래와 연주곡을 생성합니다",
-  audioCppMissingRemedy:
-    "설정 › 음악 생성에서 설치하거나 externalTools.install(baocut external-tools install audiocpp)로 다운로드하세요. 직접 빌드한 엔진은 BAOCUT_AUDIOCPP_CLI 또는 externalTools.setPath로 지정할 수 있습니다. Linux와 Windows 빌드는 Vulkan을 지원하는 그래픽 드라이버가 필요합니다",
   noReleaseForPlatform: (p) => `이 컴퓨터(${p.platform})용 릴리스 파일이 없습니다`,
   noTrustedSha: '기본 제공 매니페스트에 아직 이 파일의 신뢰할 수 있는 sha256이 없어 다운로드할 수 없습니다',
 

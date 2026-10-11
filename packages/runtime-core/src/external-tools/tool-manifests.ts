@@ -1,14 +1,12 @@
-import path from 'node:path';
-import { fileURLToPath } from 'node:url';
-import { AUDIO_CPP_CLI_ENV, AUDIO_CPP_COMMAND, AUDIO_CPP_RELEASE, AUDIO_CPP_TOOL, parseAudioCppVersion } from '@baocut/models';
-import { ffmpegMissingRemedyMessage, findBundledBinary } from '@baocut/process-host';
+import { ffmpegMissingRemedyMessage } from '@baocut/process-host';
 import { refOf, type ExternalToolOffer, type Localized } from '@baocut/protocol';
 import type { ToolUpdateRecipe } from './tool-update-plan.ts';
 import { RcExternalTools } from '@baocut/protocol/messages/runtime-core';
 
 /**
  * 受管外部工具的登记表（架构设计 §12.9）。每个工具一份清单：用途、最低版本、探测方式，能由 BaoCut 下载的再带固定的发布版本、
- * 各平台的文件、大小、sha256 与许可。音乐生成的 audio.cpp 引擎的发布登记在 `@baocut/models`（`music-engine.ts`），这里直接引用。
+ * 各平台的文件、大小、sha256 与许可。音乐生成的 audio.cpp 引擎不在这里：它是音乐模型包的组件，随模型包安装（`@baocut/models` 的
+ * `music-engine.ts`，架构设计 §6.3）。
  *
  * 不编造摘要：离线无法核实的 sha256 与大小留空（null），这时安装以 `TOOL_MANIFEST_INCOMPLETE` 拒绝（与模型包的内置清单
  * `MODEL_MANIFEST_INCOMPLETE` 同一条规则）。补上摘要是待评审事项（§14）。
@@ -58,10 +56,8 @@ export interface ToolManifest {
   consentRequired: boolean;
   /** 能由 BaoCut 下载的工具的发布；null 表示只能由用户自己安装（ffmpeg）。 */
   release: ToolRelease | null;
-  /** 环境变量指定的路径（ffmpeg 的 `BAOCUT_FFMPEG`、引擎的 `BAOCUT_AUDIOCPP_CLI`）；优先于其余来源。 */
+  /** 环境变量指定的路径（ffmpeg 的 `BAOCUT_FFMPEG`）；优先于其余来源。 */
   envVar?: string;
-  /** 随应用分发的那一份（`bin/`、开发时的 cargo 产物目录）；在环境变量之后、用户指定的路径之前。没有时 null。 */
-  bundled?: (env: NodeJS.ProcessEnv) => string | null;
   /** 用到它的任务种类：这些任务没结束时不删除受管副本（`TOOL_IN_USE`）。 */
   usedByJobKinds?: readonly string[];
   /** 按原安装方式更新系统里的那一份（`externalTools.update`）；没有时不提供更新。 */
@@ -72,7 +68,6 @@ export interface ToolManifest {
 
 export const YT_DLP = 'yt-dlp';
 export const FFMPEG = 'ffmpeg';
-export const AUDIO_CPP = AUDIO_CPP_TOOL;
 
 /**
  * yt-dlp 的发布：版本取自这台开发机上 Homebrew 安装的稳定版（Changelog 与 `yt_dlp/version.py` 都是 2026.07.04），没有对照
@@ -142,27 +137,6 @@ export const BUILTIN_TOOL_MANIFESTS: readonly ToolManifest[] = [
     envVar: 'BAOCUT_FFMPEG',
     get missingRemedy() {
       return ffmpegMissingRemedyMessage();
-    },
-  },
-  {
-    // 音乐生成的 audio.cpp 引擎（架构设计 §6.5）：只处理本机文件，用它不需要同意；下载仍要用户点「安装引擎」或在终端、会话里确认。
-    name: AUDIO_CPP,
-    label: 'audio.cpp',
-    get purpose() {
-      return RcExternalTools.audioCppPurpose();
-    },
-    command: AUDIO_CPP_COMMAND,
-    versionArgs: ['--version'],
-    parseVersion: parseAudioCppVersion,
-    // 没有核实更早的版本是否认得本仓库用的参数，不设下限；自己构建的 `dev` 版本也不会被当成过旧。
-    minVersion: null,
-    consentRequired: false,
-    release: AUDIO_CPP_RELEASE,
-    envVar: AUDIO_CPP_CLI_ENV,
-    bundled: (env) => findBundledBinary(AUDIO_CPP_COMMAND, path.dirname(fileURLToPath(import.meta.url)), env),
-    usedByJobKinds: ['generateMusic'],
-    get missingRemedy() {
-      return RcExternalTools.audioCppMissingRemedy();
     },
   },
 ];

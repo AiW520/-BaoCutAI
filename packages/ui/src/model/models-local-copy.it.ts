@@ -31,7 +31,8 @@ export const it: ModelsLocalMessages = {
   },
   auto: "Automatico",
   notInstalled: (name) => `${name} (non installato)`,
-  componentName: { aligner: "Allineatore forzato", speaker: "Embedding del parlante", vad: "VAD (rilevamento dell’attività vocale)", tokenizer: "Tokenizzatore", segmentation: "Segmentazione dei parlanti", codec: "Codec vocale", aux: "Modelli ausiliari" },
-  componentDesc: { vad: "Individua i tratti in cui qualcuno parla", aligner: "Allinea il testo ai tempi di ogni parola", tokenizer: "Converte tra il testo e i token del modello", speaker: "Distingue i parlanti", segmentation: "Individua dove ogni persona inizia e smette di parlare", codec: "Riconverte i token acustici in forma d’onda", aux: "Modelli aggiuntivi richiesti dal modello principale" },
+  componentName: { 'audiocpp-engine': "Motore audio.cpp", aligner: "Allineatore forzato", speaker: "Embedding del parlante", vad: "VAD (rilevamento dell’attività vocale)", tokenizer: "Tokenizzatore", segmentation: "Segmentazione dei parlanti", codec: "Codec vocale", aux: "Modelli ausiliari" },
+  componentDesc: { 'audiocpp-engine': "Esegue YuE2 · scaricato in base alla piattaforma · Windows / Linux richiedono un driver GPU Vulkan", vad: "Individua i tratti in cui qualcuno parla", aligner: "Allinea il testo ai tempi di ogni parola", tokenizer: "Converte tra il testo e i token del modello", speaker: "Distingue i parlanti", segmentation: "Individua dove ogni persona inizia e smette di parlare", codec: "Riconverte i token acustici in forma d’onda", aux: "Modelli aggiuntivi richiesti dal modello principale" },
+  githubRelease: (repo, tag) => `Release GitHub ${repo} ${tag}`,
   weights: "Pesi del modello",
 };

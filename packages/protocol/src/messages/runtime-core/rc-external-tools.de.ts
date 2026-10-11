@@ -3,9 +3,6 @@ import type { RcExternalToolsMessages } from './rc-external-tools.ts';
 export const de: RcExternalToolsMessages = {
   sourceBundled: "die mit BaoCut ausgelieferte Kopie",
   archiveBroken: (p) => `${p.file} konnte nicht entpackt werden: ${p.reason}`,
-  audioCppPurpose: "Musikerzeugung: führt auf diesem Computer das YuE2-Modell aus, das Songs und Instrumentalstücke erzeugt",
-  audioCppMissingRemedy:
-    "Über Einstellungen › Musikerzeugung oder mit externalTools.install (baocut external-tools install audiocpp) installieren, oder einen eigenen Build über BAOCUT_AUDIOCPP_CLI bzw. externalTools.setPath angeben. Die Linux- und Windows-Builds brauchen einen Grafiktreiber mit Vulkan",
   manageOnlyInAppOrCli: "Externe Werkzeuge können nur in der Desktop-App oder CLI verwaltet werden",
   videoNotOpen: "Das Video ist nicht geöffnet",
 

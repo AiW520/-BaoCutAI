@@ -134,8 +134,9 @@ export class ModelsDirService {
     const access = await dirAccess(root);
     const scan = await scanModelsDir(root, catalog.definitions());
     const bundles = await catalog.list();
+    // 与 `scanModelsDir` 同一条规则：发布页组件（音乐引擎）在 Runtime Home 的 `tools/` 里，不算这个文件夹里的模型。
     const modelCount = bundles.filter((b) => {
-      const required = (b.components ?? []).filter((c) => !c.optional);
+      const required = (b.components ?? []).filter((c) => !c.optional && c.origin !== 'github-release');
       return required.length > 0 && required.every((c) => c.state === 'installed');
     }).length;
     return {

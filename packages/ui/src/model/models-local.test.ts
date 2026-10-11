@@ -7,6 +7,8 @@ import {
   canReenable,
   componentDesc,
   componentLabel,
+  componentSource,
+  downloadBytes,
   hasOwnFiles,
   isBundleInstalled,
   licenseLines,
@@ -22,6 +24,7 @@ import {
   sharedUsage,
 } from './models-local.ts';
 import type { ModelComponentStatus, ModelLicense } from '@baocut/protocol';
+import { bundleActions } from './models-install.ts';
 import { bundle, fixtureView } from './models-test-fixtures.ts';
 
 const QWEN = 'qwen3-asr-0.6b@mlx-4bit';
@@ -389,5 +392,80 @@ describe('公共组件', () => {
     expect(componentDesc('vad')).toBe('切出有人说话的段落');
     expect(componentLabel('mystery')).toBe('mystery');
     expect(componentDesc('mystery')).toBeNull();
+  });
+});
+
+describe('音乐模型包的 audio.cpp 引擎组件', () => {
+  const MUSIC = 'yue2-3b@audio-cpp-q8';
+  const APACHE: ModelLicense = { name: 'Apache-2.0', url: 'https://github.com/0xShug0/audio.cpp/blob/main/LICENSE', commercialUse: true, summary: '可商用' };
+  const NC: ModelLicense = { name: 'CC-BY-NC-4.0', url: 'https://example.test/nc', commercialUse: false, summary: '只许非商业用途' };
+  const weights = (state: 'installed' | 'missing'): ModelComponentStatus => ({
+    component: 'music',
+    repo: 'audio-cpp/Yue2-3B-GGUF',
+    revision: 'cca74d8980c00f30ab8d52248a367c01ad633ec2',
+    state,
+    bytes: state === 'installed' ? 4_600_000_000 : null,
+    estimatedBytes: 4_600_000_000,
+    sharedWith: [],
+  });
+  const engine = (state: 'installed' | 'missing'): ModelComponentStatus => ({
+    component: 'audiocpp-engine',
+    repo: '0xShug0/audio.cpp',
+    revision: 'v0.9.1',
+    origin: 'github-release',
+    state,
+    bytes: state === 'installed' ? 32_000_000 : null,
+    estimatedBytes: 32_000_000,
+    license: APACHE,
+    sharedWith: [],
+  });
+  const music = (w: 'installed' | 'missing', e: 'installed' | 'missing') =>
+    bundle(MUSIC, {
+      capability: 'music',
+      backend: 'audio-cpp',
+      device: 'auto',
+      state: w === 'installed' && e === 'installed' ? 'installed' : 'not-installed',
+      ...(w === 'installed' && e === 'installed' ? {} : { reason: 'incomplete' as const }),
+      license: NC,
+      components: [weights(w), engine(e)],
+    });
+
+  it('来源：发布页的写「GitHub 发布 仓库 标签」，标签不截断；模型仓库的写 仓库@提交前 7 位', () => {
+    expect(componentSource(engine('missing'))).toBe('GitHub 发布 0xShug0/audio.cpp v0.9.1');
+    expect(componentSource(weights('installed'))).toBe('audio-cpp/Yue2-3B-GGUF@cca74d8');
+    expect(componentLabel('audiocpp-engine')).toBe('audio.cpp 引擎');
+    expect(componentDesc('audiocpp-engine')).toMatch(/Vulkan/);
+  });
+
+  it('只有这一只模型用引擎：不进公共组件区，跟着模型的行走', () => {
+    expect(sharedComponents([music('installed', 'missing')], 'music')).toEqual([]);
+  });
+
+  it('权重在、缺引擎：在已安装，挂「缺 audio.cpp 引擎」，补齐只下引擎；下载按钮的体积就是引擎的', () => {
+    const half = music('installed', 'missing');
+    expect(localGroups([half], 'music').installed).toEqual([half]);
+    expect(missingParts(half, hasOwnFiles(half, [])).map((c) => c.component)).toEqual(['audiocpp-engine']);
+    expect(bundleChips(half, false, true).map((c) => c.label)).toEqual(['缺 audio.cpp 引擎']);
+    expect(needBytes(half)).toBe(32_000_000);
+    expect(downloadBytes(half)).toBe(32_000_000);
+    expect(bundleActions(half, true)).toMatchObject({ install: false, complete: true, repair: true, remove: true });
+  });
+
+  it('都没装：下载的体积含引擎；只有引擎（发布页组件或自建引擎）不算自己的文件在盘上', () => {
+    const fresh = music('missing', 'missing');
+    expect(needBytes(fresh)).toBe(4_632_000_000);
+    expect(bundleActions(fresh, hasOwnFiles(fresh, []))).toMatchObject({ install: true, complete: false });
+    const engineOnly = music('missing', 'installed');
+    expect(hasOwnFiles(engineOnly, [])).toBe(false);
+    expect(localGroups([engineOnly], 'music').available).toEqual([engineOnly]);
+    expect(needBytes(engineOnly)).toBe(4_600_000_000);
+  });
+
+  it('许可：权重的，再加上引擎的 Apache-2.0', () => {
+    const lines = licenseLines(music('installed', 'installed'), NC);
+    expect(lines.map((l) => [l.part, l.license.name])).toEqual([
+      ['模型权重', 'CC-BY-NC-4.0'],
+      ['audio.cpp 引擎', 'Apache-2.0'],
+    ]);
   });
 });

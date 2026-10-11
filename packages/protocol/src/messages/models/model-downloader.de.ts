@@ -10,4 +10,7 @@ export const de: ModelsModelDownloaderMessages = {
   integrityMismatch: (p: { file: string }) => `Die Größe oder der sha256 von ${p.file} stimmt nicht mit dem Manifest überein`,
   sourceHttp: (p: { file: string; status: number }) => `Die Downloadquelle gab HTTP zurück: ${p.status} für ${p.file}`,
   diskFull: "Die Festplatte wurde beim Schreiben der Modelldateien voll",
+  archiveUnpackable: (p: { file: string; reason: string }) => `${p.file} konnte nicht entpackt werden: ${p.reason}`,
+  executableMissing: (p: { file: string; executable: string }) => `${p.file} enthält ${p.executable} nicht`,
+  engineProbeFailed: (p: { executable: string; reason: string }) => `${p.executable} wurde entpackt, startet aber nicht: ${p.reason}`,
 };

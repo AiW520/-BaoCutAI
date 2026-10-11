@@ -37,8 +37,11 @@ export interface ModelsDirScan {
 
 /** 一个文件夹里能认出的模型：`<owner>/<repo>/.bcut-manifest.json`。只读。文件夹不在时是空的。 */
 export async function scanModelsDir(root: string, bundles: readonly BundleDefinition[]): Promise<ModelsDirScan> {
+  // 发布页组件（audio.cpp 引擎）不在模型目录里（在 Runtime Home 的工具目录），不认、不移动，也不算进模型包在不在这个文件夹里。
   const known = new Set<string>();
-  for (const def of bundles) for (const source of Object.values(def.components)) if (source) known.add(`${source.repo}@${source.revision}`);
+  for (const def of bundles) {
+    for (const source of Object.values(def.components)) if (source && !source.release) known.add(`${source.repo}@${source.revision}`);
+  }
   const repos: ModelsDirRepo[] = [];
   for (const owner of await listDirs(root)) {
     for (const name of await listDirs(path.join(root, owner))) {
@@ -58,7 +61,7 @@ export async function scanModelsDir(root: string, bundles: readonly BundleDefini
   const have = new Set(repos.map((r) => `${r.repo}@${r.revision}`));
   const bundleIds = bundles
     .filter((def) => {
-      const sources = requiredSources(def);
+      const sources = requiredSources(def).filter((s) => !s.release);
       return sources.length > 0 && sources.every((s) => have.has(`${s.repo}@${s.revision}`));
     })
     .map((def) => def.bundleId);

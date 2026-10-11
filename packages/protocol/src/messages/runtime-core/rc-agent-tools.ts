@@ -172,8 +172,6 @@ const en = {
     `${p.purpose} (${p.maxCalls === null ? 'no call limit' : `up to ${plural(p.maxCalls, 'call', 'calls')}`})`,
 
   testModelSummary: (p: { bundleId: string }) => `Check local model bundle ${p.bundleId}: run it end to end on a fixed sample`,
-  installEngineSummary: (p: { version: string; size: string; license: string; url: string; bundleId: string }) =>
-    `Install the audio.cpp engine ${p.version} (${p.size}, ${p.license}) from ${p.url}; the local model ${p.bundleId} needs it to generate music`,
   installModelSummary: (p: { bundleId: string; size: string; estimated: boolean; resumed: string | null; source: string; parts: string }) =>
     `Download local model ${p.bundleId}: ${p.estimated ? `about ${p.size} (size unknown, estimated)` : p.size}${p.resumed ? `, resuming ${p.resumed} already downloaded` : ''}, from ${p.source} (${p.parts})`,
 

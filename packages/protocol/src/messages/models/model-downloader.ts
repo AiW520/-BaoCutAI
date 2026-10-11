@@ -25,6 +25,9 @@ const en = {
   integrityMismatch: (p: { file: string }) => `The size or sha256 of ${p.file} does not match the manifest`,
   sourceHttp: (p: { file: string; status: number }) => `The download source returned HTTP ${p.status} for ${p.file}`,
   diskFull: 'The disk filled up while writing model files',
+  archiveUnpackable: (p: { file: string; reason: string }) => `${p.file} could not be unpacked: ${p.reason}`,
+  executableMissing: (p: { file: string; executable: string }) => `${p.file} does not contain ${p.executable}`,
+  engineProbeFailed: (p: { executable: string; reason: string }) => `${p.executable} was unpacked but does not run: ${p.reason}`,
 };
 
 export type ModelsModelDownloaderMessages = typeof en;

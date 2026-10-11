@@ -10,4 +10,7 @@ export const zhHant: ModelsModelDownloaderMessages = {
   integrityMismatch: (p: { file: string }) => `${p.file} 的大小或 sha256 與資訊清單不符`,
   sourceHttp: (p: { file: string; status: number }) => `下載來源對 ${p.file} 傳回 HTTP ${p.status}`,
   diskFull: '寫入模型檔案時磁碟已滿',
+  archiveUnpackable: (p: { file: string; reason: string }) => `${p.file} 無法解開：${p.reason}`,
+  executableMissing: (p: { file: string; executable: string }) => `${p.file} 裡沒有 ${p.executable}`,
+  engineProbeFailed: (p: { executable: string; reason: string }) => `${p.executable} 解開了，但無法執行：${p.reason}`,
 };

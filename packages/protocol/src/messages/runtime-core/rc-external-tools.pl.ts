@@ -5,9 +5,6 @@ const WIN_ADMIN = 'Otwórz terminal jako administrator i uruchom to polecenie.';
 export const pl: RcExternalToolsMessages = {
   sourceBundled: "kopia dostarczana z BaoCut",
   archiveBroken: (p) => `Nie udało się rozpakować ${p.file}: ${p.reason}`,
-  audioCppPurpose: "Generowanie muzyki: uruchamia na tym komputerze model YuE2, który tworzy piosenki i utwory instrumentalne",
-  audioCppMissingRemedy:
-    "Zainstaluj go w Ustawienia › Generowanie muzyki lub przez externalTools.install (baocut external-tools install audiocpp), albo wskaż własną kompilację przez BAOCUT_AUDIOCPP_CLI lub externalTools.setPath. Wersje dla Linuksa i Windows wymagają sterownika graficznego z obsługą Vulkan",
   manageOnlyInAppOrCli: "Narzędzia zewnętrzne zarządzane tylko w aplikacji komputerowej lub CLI",
   videoNotOpen: "Wideo nie jest otwarte",
 

@@ -1,3 +1,6 @@
+import type { ComponentRelease } from './bundle-registry.ts';
+import { hostPlatformKey, releaseAsset } from './release-component.ts';
+
 /**
  * 内置的仓库清单（架构设计 §6.3；Model Worker 协议规范 §4）：每个登记的组件（上游仓库的一个固定版本）要下载哪些文件，
  * 每个文件的 sha256 与大小。下载器只下载这里列出的文件，逐个按这里的 sha256 校验；装好之后写进仓库目录的
@@ -753,14 +756,22 @@ export function repoManifestFor(
 
 /**
  * 一组组件（仓库与版本）的权重总字节数：按内置清单的文件大小加起来，大小未知的仓库用 `estimatedBytes`。有组件没有登记清单时
- * null（不知道多大）。用来估计 Model Worker 加载它们要多少内存。
+ * null（不知道多大）。用来估计 Model Worker 加载它们要多少内存，也是下载前显示的大小。来自发布页的组件（`release`，audio.cpp 引擎）
+ * 按 `platformKey` 这个平台的压缩包大小算，这个平台没有压缩包时 null。
  */
 export function weightBytes(
-  sources: ReadonlyArray<{ repo: string; revision: string }>,
+  sources: ReadonlyArray<{ repo: string; revision: string; release?: ComponentRelease }>,
   manifests: readonly RepoManifestSpec[] = REPO_MANIFESTS,
+  platformKey: string = hostPlatformKey(),
 ): number | null {
   let total = 0;
   for (const source of sources) {
+    if (source.release) {
+      const asset = releaseAsset(source.release, platformKey);
+      if (!asset) return null;
+      total += asset.size;
+      continue;
+    }
     const spec = repoManifestFor(source.repo, source.revision, manifests);
     if (!spec) return null;
     total += spec.files.every((f) => f.size !== null) ? spec.files.reduce((sum, f) => sum + (f.size ?? 0), 0) : spec.estimatedBytes;

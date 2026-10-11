@@ -1,5 +1,5 @@
 import crypto from 'node:crypto';
-import { createReadStream } from 'node:fs';
+import { createReadStream, statSync } from 'node:fs';
 import fs from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
@@ -11,7 +11,6 @@ import type {
   ModelComponentStatus,
   ModelInstallProgress,
 } from '@baocut/protocol';
-import { ModelsLocalMusic as ML } from '@baocut/protocol/messages/models/local-music.ts';
 import { ModelsModelCatalog as M } from '@baocut/protocol/messages/models/model-catalog.ts';
 import {
   backendSupported,
@@ -21,10 +20,12 @@ import {
   requiredSources,
   type BundleComponentSource,
   type BundleDefinition,
+  type ComponentReleaseAsset,
 } from './bundle-registry.ts';
 import { readInstallRecord } from './install-record.ts';
 import { stagedBytes } from './model-staging.ts';
 import { modelDetail, type ModelText } from './model-text.ts';
+import { hostPlatformKey, releaseAsset, releaseDir, releaseStagedBytes } from './release-component.ts';
 import { REPO_MANIFESTS, repoManifestFor, weightBytes, type RepoManifestSpec } from './repo-manifests.ts';
 import type { BundleComponent, ModelBundle, ModelFiles } from './worker-contract.ts';
 
@@ -40,6 +41,11 @@ import type { BundleComponent, ModelBundle, ModelFiles } from './worker-contract
  *
  * 状态按组件算：部分组件装好、另一些缺失时是 `not-installed` / `incomplete`，`components` 列出每个组件；暂存区里留着
  * 没下完的部分时带 `install.state: 'paused'`。这些状态的变化经 `onChange` 通知（`models` 主题的 `bundle.updated`）。
+ *
+ * 来自 GitHub 发布页的组件（`release`，音乐模型包的 audio.cpp 引擎）是平台专属的：按 `platformKey` 取压缩包，装在
+ * `<toolsDir>/<名字>/<版本>/`（同样带清单）。这台主机没有它的压缩包、又没有 `engineOverride` 时模型包是 `error` / `unsupported`；
+ * `engineOverride`（`BAOCUT_AUDIOCPP_CLI`）指向存在的文件时它算装好（`bytes` 为 null），安装计划不碰它。旧版作为受管外部工具装下
+ * 的引擎（组件目录里有可执行文件、没有清单）也算装好，校验不查它，修复重新下载压缩包。
  */
 
 export const MANIFEST_FILE = '.bcut-manifest.json';
@@ -64,10 +70,16 @@ export interface ModelCatalogOptions {
   /** 有没有 Model Worker 可执行文件。没有时已安装的模型包显示为 `error` / `worker-missing`。 */
   workerAvailable?: () => boolean;
   /**
-   * 不经 Model Worker 的后端（`audio-cpp`）有没有它的引擎可执行文件。没有时已安装的模型包同样显示为 `error` / `worker-missing`，
-   * 说明里写的是引擎。不给时当作有。
+   * Runtime Home 的 `tools/`：发布页组件（audio.cpp 引擎）装在 `<toolsDir>/<名字>/<版本>/`。不给时是 `<root>/.bcut-tools`（测试用；
+   * Runtime 总是给）。
    */
-  engineAvailable?: (backend: ModelBackend) => boolean;
+  toolsDir?: string;
+  /**
+   * 引擎的开发者覆盖（Runtime 传 `BAOCUT_AUDIOCPP_CLI`）：指向存在的文件时发布页组件算装好，不下载、不报告平台不支持。
+   */
+  engineOverride?: string | null;
+  /** 发布页组件按哪个平台键取压缩包（测试用）。不给时是 `<platform>-<arch>`。 */
+  platformKey?: string;
   /** 交给 Worker 的 CPU 线程数上限。默认取可用核数减二，至少 1、至多 8。 */
   threads?: number;
   /** 换掉内置的仓库清单（测试用）：暂停的安装据它报告总字节数。 */
@@ -98,6 +110,8 @@ export interface VerifyResult {
 
 interface DiskCheck {
   ok: boolean;
+  /** 发布页组件由 `engineOverride` 满足（没有自己的文件，`bytes` 报告为 null）。 */
+  overridden?: boolean;
   reason?: ModelBundleReason;
   detail?: ModelText;
   /** 齐全时清单里的大小之和。 */
@@ -153,7 +167,9 @@ export class ModelCatalog {
   readonly #platform: NodeJS.Platform;
   readonly #arch: string;
   readonly #workerAvailable: () => boolean;
-  readonly #engineAvailable: (backend: ModelBackend) => boolean;
+  readonly #toolsDir: string | null;
+  readonly #engineOverride: string | null;
+  readonly #platformKey: string;
   readonly #threads: number;
   readonly #runtime = new Map<string, RuntimeBundleState>();
   readonly #blocked = new Map<string, { state: 'not-installed' | 'error'; reason: ModelBundleReason; detail?: ModelText }>();
@@ -170,7 +186,9 @@ export class ModelCatalog {
     this.#arch = options.arch ?? process.arch;
     this.#bundles = new Map((options.bundles ?? platformBundles(this.#platform, this.#arch)).map((b) => [b.bundleId, b]));
     this.#workerAvailable = options.workerAvailable ?? (() => true);
-    this.#engineAvailable = options.engineAvailable ?? (() => true);
+    this.#toolsDir = options.toolsDir ?? null;
+    this.#engineOverride = options.engineOverride || null;
+    this.#platformKey = options.platformKey ?? hostPlatformKey(this.#platform, this.#arch);
     this.#threads = options.threads ?? Math.max(1, Math.min(8, os.availableParallelism() - 2));
     this.#manifests = options.manifests ?? REPO_MANIFESTS;
   }
@@ -178,6 +196,52 @@ export class ModelCatalog {
   /** 模型目录的根。`setRoot` 之后读到的是新的目录（安装、暂存区、安装记录都跟着它）。 */
   get root(): string {
     return this.#root;
+  }
+
+  /** 发布页组件（audio.cpp 引擎）的存放处：Runtime Home 的 `tools/`。不随模型目录移动。 */
+  get toolsDir(): string {
+    return this.#toolsDir ?? path.join(this.#root, '.bcut-tools');
+  }
+
+  /** 发布页组件取压缩包用的平台键（`darwin-arm64`、`win32-x64`……）。 */
+  get platformKey(): string {
+    return this.#platformKey;
+  }
+
+  /** 引擎的开发者覆盖（`BAOCUT_AUDIOCPP_CLI`）；没给时 null。 */
+  get engineOverride(): string | null {
+    return this.#engineOverride;
+  }
+
+  /** 发布页组件在这台主机上的压缩包；不是发布页组件、或这个平台没有压缩包时 null。 */
+  releaseAsset(source: Pick<BundleComponentSource, 'release'>): ComponentReleaseAsset | null {
+    return source.release ? releaseAsset(source.release, this.#platformKey) : null;
+  }
+
+  /** 组件的目录：模型仓库是 `<root>/<owner>/<repo>/`，发布页组件是 `<toolsDir>/<名字>/<版本>/`。 */
+  componentDir(source: Pick<BundleComponentSource, 'repo' | 'release'>): string {
+    return source.release ? releaseDir(this.toolsDir, source.release) : this.repoDir(source.repo);
+  }
+
+  /** 发布页组件此刻由 `engineOverride` 满足：给了覆盖、而且是存在的文件。 */
+  engineOverridden(source: Pick<BundleComponentSource, 'release'>): boolean {
+    return source.release !== undefined && this.#engineOverride !== null && isFile(this.#engineOverride);
+  }
+
+  /**
+   * 一个模型包的引擎可执行文件（绝对路径），给 Runtime 找引擎用（Model Worker 协议规范 §4.4）：给了 `engineOverride` 就只用它（文件
+   * 不存在时 null）；否则是装好的发布页组件里的可执行文件（`<toolsDir>/<名字>/<版本>/<可执行文件>`，旧版装下、没有清单的也算）。
+   * 模型包没有发布页组件、这个平台没有压缩包或还没装时 null。只看文件在不在，不执行它。
+   */
+  engineExecutable(bundleId: string): string | null {
+    const def = this.#bundles.get(bundleId);
+    const source = def ? componentsOf(def).find(([, s]) => s.release)?.[1] : undefined;
+    if (!source?.release) return null;
+    if (this.#engineOverride !== null) return isFile(this.#engineOverride) ? this.#engineOverride : null;
+    const asset = releaseAsset(source.release, this.#platformKey);
+    if (!asset) return null;
+    const exe = path.join(this.componentDir(source), asset.executable);
+    return isFile(exe) ? exe : null;
   }
 
   /**
@@ -236,8 +300,11 @@ export class ModelCatalog {
     return this.#install.get(bundleId) ?? null;
   }
 
-  /** 一个组件（仓库与版本）在磁盘上齐不齐：清单、版本、每个文件存在且大小相符。 */
-  async componentInstalled(source: Pick<BundleComponentSource, 'repo' | 'revision'>): Promise<boolean> {
+  /**
+   * 一个组件（仓库与版本）在磁盘上齐不齐：清单、版本、每个文件存在且大小相符。发布页组件另算 `engineOverride` 与旧版装下的
+   * 可执行文件（见类的说明）。
+   */
+  async componentInstalled(source: Pick<BundleComponentSource, 'repo' | 'revision' | 'release'>): Promise<boolean> {
     return (await this.#checkComponent(source)).ok;
   }
 
@@ -252,6 +319,8 @@ export class ModelCatalog {
   async #workerComponents(def: BundleDefinition): Promise<Array<[BundleComponent, BundleComponentSource]>> {
     const out: Array<[BundleComponent, BundleComponentSource]> = [];
     for (const [name, source] of componentsOf(def)) {
+      // 发布页组件（audio.cpp 引擎）不交给 Worker：执行它的 Provider 自己找可执行文件（`engineExecutable`）。
+      if (source.release) continue;
       if (source.optional && !(await this.#checkComponent(source)).ok) continue;
       out.push([name, source]);
     }
@@ -410,7 +479,7 @@ export class ModelCatalog {
       device: this.#device(def),
       ...(def.label ? { label: def.label } : {}),
       ...(def.license ? { license: def.license } : {}),
-      estimatedBytes: weightBytes(requiredSources(def), this.#manifests),
+      estimatedBytes: weightBytes(requiredSources(def), this.#manifests, this.#platformKey),
     };
     const checks = await Promise.all(
       componentsOf(def).map(async ([name, source]) => ({ name, source, check: await this.#checkComponent(source) })),
@@ -419,9 +488,10 @@ export class ModelCatalog {
       component: name,
       repo: source.repo,
       revision: source.revision,
+      ...(source.release ? { origin: 'github-release' as const } : {}),
       state: check.ok ? 'installed' : 'missing',
-      bytes: check.ok ? (check.bytes ?? 0) : null,
-      estimatedBytes: weightBytes([source], this.#manifests),
+      bytes: check.ok && !check.overridden ? (check.bytes ?? 0) : null,
+      estimatedBytes: weightBytes([source], this.#manifests, this.#platformKey),
       sharedWith: this.#sharers(bundleId, source),
       ...(source.optional ? { optional: true } : {}),
       ...(source.license ? { license: source.license } : {}),
@@ -444,6 +514,9 @@ export class ModelCatalog {
     if (!backendSupported(def.backend, this.#platform, this.#arch)) {
       return make('error', 'unsupported', M.backendUnsupported({ backend: def.backend, platform: this.#platform, arch: this.#arch }));
     }
+    // 发布页组件（audio.cpp 引擎）在这个平台上没有压缩包，又没有 `engineOverride`。
+    const noBuild = checks.find((c) => c.check.reason === 'unsupported');
+    if (noBuild) return make('error', 'unsupported', noBuild.check.detail);
     if (this.#relocating) return make('error', 'relocating', M.relocating());
     if (this.#install.has(bundleId)) return make('downloading');
     if (missing.length > 0 && missing.length < required.length) {
@@ -458,9 +531,8 @@ export class ModelCatalog {
     if (verified && !verified.ok) return make('not-installed', 'hash-mismatch', describeProblems(verified));
     const blocked = this.#blocked.get(bundleId);
     if (blocked) return make(blocked.state, blocked.reason, blocked.detail);
-    if (def.backend === 'audio-cpp') {
-      if (!this.#engineAvailable(def.backend)) return make('error', 'worker-missing', ML.engineMissing());
-    } else if (!this.#workerAvailable()) return make('error', 'worker-missing', M.workerMissing());
+    // 音乐模型包（`audio-cpp`）不经 Model Worker：引擎是它的组件，缺了就是上面的 `incomplete`。
+    if (def.backend !== 'audio-cpp' && !this.#workerAvailable()) return make('error', 'worker-missing', M.workerMissing());
     const runtime = this.#runtime.get(bundleId);
     return make(runtime ?? 'installed');
   }
@@ -500,10 +572,14 @@ export class ModelCatalog {
     if (!def) throw new Error(M.noBundle({ bundleId }).text);
     const problems: VerifyResult['problems'] = [];
     for (const [, source] of componentsOf(def)) {
-      const dir = this.repoDir(source.repo);
+      // 由 `engineOverride` 满足的发布页组件没有自己的文件。
+      if (this.engineOverridden(source)) continue;
+      const dir = this.componentDir(source);
       const manifest = await readManifest(dir);
       // 没装的可选组件不算问题。
       if (source.optional && manifest?.revision !== source.revision) continue;
+      // 旧版装下的引擎（有可执行文件、没有清单）没有可以核对的摘要：算通过，修复会重新下载压缩包。
+      if (!manifest && (await this.#legacyRelease(source))) continue;
       if (!manifest) {
         problems.push({ repo: source.repo, path: MANIFEST_FILE, problem: 'missing' });
         continue;
@@ -551,9 +627,25 @@ export class ModelCatalog {
     this.changed(bundleId);
   }
 
-  async #checkComponent(source: Pick<BundleComponentSource, 'repo' | 'revision'>): Promise<DiskCheck> {
-    const dir = this.repoDir(source.repo);
+  /** 旧版（受管外部工具）装下的发布页组件：组件目录里有这个平台的可执行文件，没有清单。 */
+  async #legacyRelease(source: Pick<BundleComponentSource, 'repo' | 'release'>): Promise<boolean> {
+    const asset = this.releaseAsset(source);
+    if (!asset) return false;
+    const stat = await fs.stat(path.join(this.componentDir(source), asset.executable)).catch(() => null);
+    return stat?.isFile() ?? false;
+  }
+
+  async #checkComponent(source: Pick<BundleComponentSource, 'repo' | 'revision' | 'release'>): Promise<DiskCheck> {
+    if (source.release) {
+      if (this.engineOverridden(source)) return { ok: true, overridden: true };
+      if (!this.releaseAsset(source)) return { ok: false, reason: 'unsupported', detail: M.engineNoBuild({ platform: this.#platformKey }) };
+    }
+    const dir = this.componentDir(source);
     const manifest = await readManifest(dir);
+    if (!manifest && source.release) {
+      if (await this.#legacyRelease(source)) return { ok: true, bytes: await rootFileBytes(dir) };
+      return { ok: false, reason: 'missing-file', detail: M.engineNotInstalled({ version: source.release.version }) };
+    }
     if (!manifest) return { ok: false, reason: 'missing-manifest', detail: M.noManifest({ repo: source.repo }) };
     if (manifest.revision !== source.revision) {
       return { ok: false, reason: 'missing-manifest', detail: M.wrongRevision({ repo: source.repo, revision: source.revision.slice(0, 7) }) };
@@ -580,6 +672,12 @@ export class ModelCatalog {
     let received = 0;
     let total: number | null = 0;
     for (const source of sources) {
+      if (source.release) {
+        const asset = this.releaseAsset(source);
+        if (asset) received += await releaseStagedBytes(this.toolsDir, source.release, asset);
+        total = total === null || !asset ? null : total + asset.size;
+        continue;
+      }
       received += await stagedBytes(this.root, source.repo, source.revision);
       const spec = repoManifestFor(source.repo, source.revision, this.#manifests);
       const sizes = spec?.files.map((f) => f.size) ?? [null];
@@ -628,6 +726,23 @@ function describeProblems(result: VerifyResult): string {
     .slice(0, 3)
     .map((p) => `${p.repo}/${p.path}: ${p.problem}`)
     .join('; ');
+}
+
+function isFile(file: string): boolean {
+  try {
+    return statSync(file).isFile();
+  } catch {
+    return false;
+  }
+}
+
+/** 目录根下普通文件的字节数之和（旧版装下、没有清单的引擎目录）。 */
+async function rootFileBytes(dir: string): Promise<number> {
+  let total = 0;
+  for (const entry of await fs.readdir(dir, { withFileTypes: true }).catch(() => [])) {
+    if (entry.isFile()) total += (await fs.stat(path.join(dir, entry.name)).catch(() => null))?.size ?? 0;
+  }
+  return total;
 }
 
 export async function sha256File(file: string): Promise<string> {

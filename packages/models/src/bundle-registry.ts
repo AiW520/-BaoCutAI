@@ -48,6 +48,34 @@ export interface BundleComponentSource {
    * 加载时把权重都换成计算精度，常驻量约为参数个数 × 每个参数的字节数（CPU 的 f32 是 4，CUDA 的半精度是 2）。
    */
   parameters?: number;
+  /**
+   * 来自 GitHub 发布页、而不是模型仓库的组件（audio.cpp 引擎，架构设计 §6.3）。它是平台专属的：模型目录按 Runtime 所在主机的
+   * 平台键（`<process.platform>-<process.arch>`）取一个压缩包，下载、核对、解开到 `<toolsDir>/<name>/<version>/`，不在模型目录里。
+   * `repo` 与 `revision` 仍要填（合成的 `<owner>/<repo>` 与上游标签），持有者、共用与安装记录照旧按 `repo@revision` 算。
+   */
+  release?: ComponentRelease;
+}
+
+/** GitHub 发布页上一个平台的压缩包（`BundleComponentSource.release`）。 */
+export interface ComponentReleaseAsset {
+  fileName: string;
+  size: number;
+  sha256: string;
+  /** 压缩包的格式与解开时略过的文件（包根目录里同包的其他工具）。只解开包根目录里的普通文件。 */
+  archive: { format: 'tar.gz' | 'zip'; skip: readonly string[] };
+  /** 解开之后必须有的可执行文件（相对组件目录）。 */
+  executable: string;
+}
+
+/** 发布页组件的登记：固定版本，各平台一个压缩包。 */
+export interface ComponentRelease {
+  /** 组件目录与镜像路径里的名字：`<toolsDir>/<name>/<version>/`、`<镜像>/<name>/<version>/<文件名>`。 */
+  name: string;
+  version: string;
+  /** 官方下载地址的模板：`{version}`、`{file}` 换成版本与文件名。 */
+  urlTemplate: string;
+  /** 平台键（`darwin-arm64`、`darwin-x64`、`linux-x64`、`win32-x64`……）→ 压缩包；没有的平台不支持。 */
+  assets: Readonly<Partial<Record<string, ComponentReleaseAsset>>>;
 }
 
 export interface BundleDefinition {
@@ -97,8 +125,8 @@ export interface ImageBundleProfile {
 }
 
 /**
- * 一个本地音乐生成模型包能做什么（架构设计 §6.1、§6.3）。权重由 audio.cpp 引擎（`engine`，随应用分发或由 `BAOCUT_AUDIOCPP_CLI`
- * 指定）直接读取，不经 Model Worker；一次一段、只出 WAV、接受 seed。
+ * 一个本地音乐生成模型包能做什么（架构设计 §6.1、§6.3）。权重由 audio.cpp 引擎（`engine`，模型包的 `audiocpp-engine` 组件，或由
+ * `BAOCUT_AUDIOCPP_CLI` 指定）直接读取，不经 Model Worker；一次一段、只出 WAV、接受 seed。
  */
 export interface MusicBundleProfile {
   family: string;
@@ -588,7 +616,7 @@ export const BUNDLES: readonly BundleDefinition[] = [
 
 /**
  * backend 能不能在这台机器上用：`mlx` 与 `coreml` 只有 Apple Silicon 的 macOS；`candle` 与 `ggml` 全平台（CPU）；`audio-cpp` 全平台
- * （引擎按构建选 Metal、CUDA、Vulkan 或 CPU，引擎本身有没有另由目录的 `engineAvailable` 决定）。
+ * （引擎按构建选 Metal、CUDA、Vulkan 或 CPU；引擎是模型包的 `audiocpp-engine` 组件，主机平台没有它的压缩包时模型目录另报 `unsupported`）。
  */
 export function backendSupported(backend: ModelBackend, platform: NodeJS.Platform, arch: string): boolean {
   if (backend === 'mlx' || backend === 'coreml') return platform === 'darwin' && arch === 'arm64';

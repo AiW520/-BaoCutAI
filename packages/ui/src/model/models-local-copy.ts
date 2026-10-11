@@ -53,6 +53,7 @@ const en = {
   notInstalled: (name: string) => `${name} (not installed)`,
   /** 组件给人看的名字（许可、缺件标签、公共组件）；没列的用组件名。 */
   componentName: {
+    'audiocpp-engine': 'audio.cpp engine',
     aligner: 'Forced aligner',
     speaker: 'Speaker embedding',
     vad: 'VAD (voice activity detection)',
@@ -63,6 +64,7 @@ const en = {
   } as Record<string, string>,
   /** 公共组件那一行写它做什么；没列的不写。 */
   componentDesc: {
+    'audiocpp-engine': 'Runs YuE2 · downloaded for your platform · Windows / Linux need a Vulkan GPU driver',
     vad: 'Finds the stretches where someone is speaking',
     aligner: 'Aligns the text to word-level timing',
     tokenizer: 'Converts between text and the model’s tokens',
@@ -71,6 +73,8 @@ const en = {
     codec: 'Turns acoustic tokens back into a waveform',
     aux: 'Extra models the main model needs',
   } as Record<string, string>,
+  /** 从 GitHub 发布页下载的组件的来源（详情里组件那一行）：仓库与发布标签。 */
+  githubRelease: (repo: string, tag: string) => `GitHub release ${repo} ${tag}`,
   weights: 'Model weights',
 };
 
