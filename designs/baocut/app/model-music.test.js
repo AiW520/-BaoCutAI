@@ -13,7 +13,8 @@ test('表单字段与 Runtime 的 GenerateMusicRequest 同名；提交体按模�
 });
 
 test('时长 → 语义 token 按 25 token / 秒；上限缺省比目标多两成、不超过 300 秒', () => {
-  assert.equal(M.clampDuration(206), 205);
+  assert.equal(M.clampDuration(206), 210);
+  assert.equal(M.clampDuration(205), 205);
   assert.equal(M.clampDuration(3), 10);
   assert.equal(M.clampDuration(4000), 300);
   assert.equal(M.clampDuration(null), 30);
@@ -75,7 +76,9 @@ test('试听：固定 10 秒纯音乐、直接生成；换风格就换 key', () 
 });
 
 test('生成配乐：不超过单次上限按视频预填；超过时预填上限、要循环，横幅写明', () => {
-  assert.deepEqual(M.soundtrackFor(206), {targetDurationSec: 205, loop: false, note: null});
+  assert.deepEqual(M.soundtrackFor(206), {targetDurationSec: 210, loop: false, note: null});
+  assert.equal(M.loopLayout(M.soundtrackFor(206).targetDurationSec, 206).length, 1, '不超过上限的视频只放一段');
+  assert.equal(M.soundtrackFor(298).targetDurationSec, 300);
   assert.deepEqual(M.soundtrackFor(300), {targetDurationSec: 300, loop: false, note: null});
   const long = M.soundtrackFor(742);
   assert.equal(long.targetDurationSec, 300);

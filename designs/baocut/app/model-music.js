@@ -38,11 +38,11 @@
   function blank(model) {
     return {mode: 'instrumental', style: '', lyrics: '', targetDurationSec: DURATION.dflt, maxDurationSec: null, planning: 'melody', seed: '', model: model || null};
   }
-  /** 视频时长 → 可用的目标时长：按 5 秒取整，夹在范围内；没有时长用缺省 */
+  /** 视频时长 → 可用的目标时长：按 5 秒向上取整（音乐不比视频短，铺上去只截不补），夹在范围内；没有时长用缺省 */
   function clampDuration(sec) {
     const n = Number(sec);
     if (!(n > 0)) return DURATION.dflt;
-    return Math.min(DURATION.max, Math.max(DURATION.min, Math.round(n / DURATION.step) * DURATION.step));
+    return Math.min(DURATION.max, Math.max(DURATION.min, Math.ceil(n / DURATION.step) * DURATION.step));
   }
   /* 配乐铺满（product-design §2.7「生成配乐」）：视频比单次上限长时只生成上限长度的一段，加到视频时首尾相接循环铺满。
      接缝交叉淡化、片尾淡出；两个时长都在实例淡入淡出的 [0, 5] 秒之内（video-format-spec §3.9 AudioMix）。
