@@ -115,7 +115,7 @@ description: 媒体的机制：从链接下载、转码与合并、取帧看画�
 
 | 要做的事 | 调用 |
 | --- | --- |
-| 把工作目录里的图片放进 deck | {{tool:slides_import_asset}}，{{arg:deck}} + {{arg:path}}；同一张图只存一份 |
+| 把工作目录里的图片或字体放进 deck | {{tool:slides_import_asset}}，{{arg:deck}} + {{arg:path}}；同一份只存一份 |
 | 校验整份 deck，通过后线程里出卡片 | {{tool:slides_check}}，{{arg:path}} 是 deck 目录；改完页面再校验一次 |
 
 页面要插图时用 {{tool:image}} 生成（不带 {{arg:video}}），{{tool:artifacts_save}} 存进工作目录，再按上表导入 deck；哪几页画、提示词与尺寸见 {{skill:slides}}。
@@ -151,8 +151,8 @@ css、js、json 这类支持文件不导入，直接写进设计稿目录，用�
 - {{tool:image}}：`outputs` 里每张图的 `artifactId`；带了 video 时还有 `assetId`。
 - {{tool:music}}（见 [models](models.md) 的「音乐生成」）：`outputs` 里是一个 WAV 的 `artifactId`；带了 video 时还有 `assetId`；到了时长预算时 `warnings` 里有 `output-truncated`。
 <!-- surface: agent -->
-- {{tool:slides_import_asset}}：`src` 形如 `/_blob/<id>`，原样写进 `<img src>`。
-- {{tool:slides_check}}：`problems` 是问题总数，为 0 时线程里记一张幻灯片卡片；否则 `slides` 列出每页的 `problems`，`deckProblems` 是 `deck.json` 的问题，`orphans` 是不在 `order` 里的页面文件。每页的 `notes` 不算问题，其中以「排版」开头的是放不下或互相压住的提示，尽量改掉。
+- {{tool:slides_import_asset}}：`src` 形如 `/_blob/<id>`，图片原样写进 `<img src>`，字体原样写进 `deck.json` 里 `faces` 那一项的 `src`；另有 `bytes` 与 `contentType`。
+- {{tool:slides_check}}：`problems` 是问题总数，为 0 时线程里记一张幻灯片卡片；否则 `slides` 列出每页的 `problems`，`deckProblems` 是 `deck.json`（含字体与设计系统的记录）与 `ds/` 的问题，`orphans` 是不在 `order` 里的页面文件。每页的 `notes` 不算问题，其中以「排版」开头的是放不下或互相压住的提示，尽量改掉。
 - {{tool:design_import_asset}}：`src` 形如 `/_blob/<id>`，原样写进 `<img src>`、`<helmet><style>` 里的 `url(…)` 或 `@font-face`；另有 `bytes` 与 `contentType`。
 - {{tool:design_check}}：`problems` 是问题总数，为 0 时线程里记一张设计稿卡片；否则 `issues` 每条有 `file`（相对设计稿目录，`.` 是整个目录）与 `message`，列不下时 `more` 说还有几条。`notChecked` 说明没查的部分：画板脚本能不能跑、排版与视觉效果。
 <!-- /surface -->
