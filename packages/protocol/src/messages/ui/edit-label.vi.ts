@@ -5,6 +5,7 @@ const noun: Record<string, string> = {'video': 'video', 'image': 'hình ảnh', 
 
 export const vi: EditLabelMessages = {
   addClip: 'Thêm clip',
+  addSoundtrack: 'Thêm nhạc nền',
   importAndAdd: 'Nhập và thêm tư liệu',
   moveClips: 'Chuyển clip',
   moveTrack: 'Chuyển rãnh',

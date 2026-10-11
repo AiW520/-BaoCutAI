@@ -125,6 +125,5 @@ export const tr: AiToolsMessages = {
   statePending: (count) => `${count} bekliyor`,
   stateStale: (count) => `${count} eskimiş`,
   stateLast: (when) => `Son · ${when}`,
-  soundtrackLabel: 'Film müziği ekle',
   soundtrackAdded: (name, summary) => `“${name}” müzik parçasına eklendi · ${summary}`,
 };

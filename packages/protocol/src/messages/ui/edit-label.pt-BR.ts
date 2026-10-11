@@ -5,6 +5,7 @@ const noun: Record<string, string> = { video: 'vídeo', image: 'imagem', audio: 
 
 export const ptBR: EditLabelMessages = {
   addClip: "Adicionar clipe",
+  addSoundtrack: 'Adicionar trilha sonora',
   importAndAdd: "Importar e adicionar mídias",
   moveClips: "Mover clipes",
   moveTrack: 'Mover faixa',

@@ -163,6 +163,5 @@ export const ru: AiToolsMessages = {
   statePending: (count) => `Не решено: ${count}`,
   stateStale: (count) => `Устарело: ${count}`,
   stateLast: (when) => `Последний · ${when}`,
-  soundtrackLabel: 'Добавить саундтрек',
   soundtrackAdded: (name, summary) => `«${name}» добавлен на музыкальную дорожку · ${summary}`,
 };

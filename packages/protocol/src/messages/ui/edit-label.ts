@@ -25,6 +25,7 @@ const noun: Record<string, string> = { video: 'video', image: 'image', audio: 'a
 const en = {
   // 时间线：片段与轨道
   addClip: 'Add clip',
+  addSoundtrack: 'Add soundtrack',
   importAndAdd: 'Import and add assets',
   moveClips: 'Move clips',
   moveTrack: 'Move track',

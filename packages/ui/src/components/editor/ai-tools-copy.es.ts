@@ -119,6 +119,5 @@ export const es: AiToolsMessages = {
   statePending: (count) => `${count} pendientes`,
   stateStale: (count) => (count === 1 ? '1 desactualizada' : `${count} desactualizadas`),
   stateLast: (when) => `Última · ${when}`,
-  soundtrackLabel: 'Añadir banda sonora',
   soundtrackAdded: (name, summary) => `«${name}» añadido a la pista de música · ${summary}`,
 };

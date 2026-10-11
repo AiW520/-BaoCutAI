@@ -5,6 +5,7 @@ const noun: Record<string, string> = { video: '영상', image: '이미지', audi
 
 export const ko: EditLabelMessages = {
   addClip: '클립 추가',
+  addSoundtrack: '배경음악 추가',
   importAndAdd: '소재 가져와 추가',
   moveClips: '클립 이동',
   moveTrack: '트랙 이동',

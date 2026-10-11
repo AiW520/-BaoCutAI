@@ -5,6 +5,7 @@ const noun: Record<string, string> = { video: '视频', image: '图片', audio: 
 
 export const zhHans: EditLabelMessages = {
   addClip: '添加片段',
+  addSoundtrack: '加配乐',
   importAndAdd: '导入并添加素材',
   moveClips: '移动片段',
   moveTrack: '移动轨道',

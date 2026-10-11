@@ -5,6 +5,7 @@ const noun: Record<string, string> = { video: 'video', image: 'afbeelding', audi
 
 export const nl: EditLabelMessages = {
   addClip: "Clip toevoegen",
+  addSoundtrack: 'Soundtrack toevoegen',
   importAndAdd: "Media importeren en toevoegen",
   moveClips: "Clips verplaatsen",
   moveTrack: 'Track verplaatsen',

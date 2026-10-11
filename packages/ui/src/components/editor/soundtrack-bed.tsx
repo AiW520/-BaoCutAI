@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
 import type { AssetRecord, Id, JobRecord, Sequence } from '@baocut/protocol';
+import { EditLabel } from '@baocut/protocol/messages/ui';
 import { ToastQueue } from '@react-spectrum/s2';
 import { assetOnTimeline, loopSummary, musicBedOperations, placedSoundtrackJobs } from '../../model/music-bed.ts';
 import { audioOutput } from '../../model/tools-tts.ts';
@@ -36,7 +37,7 @@ export function SoundtrackBed({ videoId, sequence, assets }: { videoId: Id; sequ
     const bed = musicBedOperations(sequence, asset, job.jobId);
     if (!bed) return;
     markPlaced(job.jobId);
-    void apply(bed.operations, C.soundtrackLabel).then((receipt) => {
+    void apply(bed.operations, EditLabel.addSoundtrack()).then((receipt) => {
       if (!receipt) return;
       ToastQueue.positive(C.soundtrackAdded(asset.name, loopSummary(bed.layout, bed.totalSec)), {
         timeout: 8000,

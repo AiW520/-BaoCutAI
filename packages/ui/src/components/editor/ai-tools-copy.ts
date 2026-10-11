@@ -192,8 +192,7 @@ const en = {
   statePending: (count: number) => `${count} pending`,
   stateStale: (count: number) => `${count} stale`,
   stateLast: (when: string) => `Last · ${when}`,
-  // 生成配乐做好后铺上音乐轨（soundtrack-bed.tsx）：这笔编辑的名字与吐司
-  soundtrackLabel: 'Add soundtrack',
+  // 生成配乐做好后铺上音乐轨（soundtrack-bed.tsx）的吐司；这笔编辑的名字在协议的 `editLabel.addSoundtrack`
   soundtrackAdded: (name: string, summary: string) => `Added “${name}” to the music track · ${summary}`,
 };
 

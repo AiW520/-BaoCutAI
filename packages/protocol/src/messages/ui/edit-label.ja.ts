@@ -5,6 +5,7 @@ const noun: Record<string, string> = { video: '動画', image: '画像', audio: 
 
 export const ja: EditLabelMessages = {
   addClip: 'クリップを追加',
+  addSoundtrack: 'BGM を追加',
   importAndAdd: '素材を読み込んで追加',
   moveClips: 'クリップを移動',
   moveTrack: 'トラックを移動',

@@ -125,6 +125,5 @@ export const vi: AiToolsMessages = {
   statePending: (count) => `${count} chờ quyết định`,
   stateStale: (count) => `${count} câu đã cũ`,
   stateLast: (when) => `Lần trước · ${when}`,
-  soundtrackLabel: 'Thêm nhạc nền',
   soundtrackAdded: (name, summary) => `Đã thêm “${name}” vào track nhạc · ${summary}`,
 };

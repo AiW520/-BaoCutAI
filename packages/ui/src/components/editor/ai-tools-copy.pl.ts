@@ -163,6 +163,5 @@ export const pl: AiToolsMessages = {
   statePending: (count) => `${count} do decyzji`,
   stateStale: (count) => `Nieaktualne: ${count}`,
   stateLast: (when) => `Ostatnio · ${when}`,
-  soundtrackLabel: 'Dodaj ścieżkę dźwiękową',
   soundtrackAdded: (name, summary) => `Dodano „${name}” na ścieżkę muzyczną · ${summary}`,
 };

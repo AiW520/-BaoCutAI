@@ -161,6 +161,5 @@ export const nl: AiToolsMessages = {
   statePending: (count) => `${count} open`,
   stateStale: (count) => `${count} verouderd`,
   stateLast: (when) => `Laatst · ${when}`,
-  soundtrackLabel: 'Soundtrack toevoegen',
   soundtrackAdded: (name, summary) => `‘${name}’ op het muziekspoor gezet · ${summary}`,
 };
