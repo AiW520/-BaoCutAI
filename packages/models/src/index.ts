@@ -22,6 +22,15 @@ export { IMAGE_BUNDLES, QWEN_IMAGE_ASPECTS } from './image-bundles.ts';
 export { imageRunOf, localImageModelInfo, localImageSeed } from './local-image.ts';
 export { AUDIO_CPP_ENGINE, MUSIC_BUNDLES, YUE2_SEMANTIC_TOKENS_PER_SEC } from './music-bundles.ts';
 export {
+  AUDIO_CPP_COMMAND,
+  AUDIO_CPP_RELEASE,
+  AUDIO_CPP_TOOL,
+  parseAudioCppVersion,
+  type EngineArchive,
+  type EngineAsset,
+  type EngineRelease,
+} from './music-engine.ts';
+export {
   AUDIO_CPP_BACKEND_ENV,
   AUDIO_CPP_CLI_ENV,
   localMusicModelInfo,
