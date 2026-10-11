@@ -61,8 +61,19 @@ const en = {
   // 子视频顶上的横幅
   bannerFrom: (name: string) => `Short cut from “${name}”`,
   bannerMissing: 'Short · the source video is no longer in the library',
-  bannerSub: 'Text outside the clip stays struck out; click it to bring it back',
   bannerBack: 'Back to original',
+
+  // 进文稿调起止：横幅那一格、结果页「正在看」那张卡、文稿的提示
+  cutAdjust: 'Adjust in transcript',
+  cutAdjustTip: 'Bring back text outside the clip in the transcript, or cut a few more sentences',
+  cutTrim: 'Trim',
+  cutTrimTip: 'Go to the transcript: bring back text outside the clip, or cut a few more sentences',
+  cutBack: (label: string) => `Back to ${label}`,
+  cutBackTip: 'Back to the panel you were on before the transcript',
+  cutBackResult: 'Back to results',
+  cutResult: 'See results',
+  cutResultTip: 'Open the results of this Cut into shorts session',
+  cutHint: 'Text outside the clip is struck out; click it to bring it back',
 
   // 文稿里片段外的剪缝
   foldBefore: (length: string) => `${length} earlier is cut`,

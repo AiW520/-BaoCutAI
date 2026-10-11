@@ -42,7 +42,6 @@ import Revert from '@react-spectrum/s2/icons/Revert';
 import Search from '@react-spectrum/s2/icons/Search';
 import TranscriptIcon from '@react-spectrum/s2/icons/Transcript';
 import { iconStyle, style } from '@react-spectrum/s2/style' with { type: 'macro' };
-import { create } from 'zustand';
 import {
   chapterRows,
   moveParagraphPlan,
@@ -111,6 +110,10 @@ import { EDITOR_COPY as E } from './editor-copy.ts';
 import { foldOutside, reclaimOperations, reclaimRange, visibleParagraphs, FOLD_STEP, type FoldPlan, type FoldSide, type ShortsFold } from '../../model/shorts-fold.ts';
 import { readDerivation } from '../../model/shorts-result.ts';
 import { ShortsFoldSeam } from './transcript-shorts-fold.tsx';
+import { useTranscriptMode, type TranscriptMode } from './transcript-mode.ts';
+import { consumeCutJump, useCutEntry } from './shorts-entry.ts';
+import { entryAnchor } from '../../model/shorts-entry.ts';
+import { SHORTS_COPY as S } from './shorts-copy.ts';
 
 /**
  * 文稿面板（产品设计 §5.7、S03；原型 panels.jsx `TranscriptPanel` 与 panel-transcript-cut.jsx）：时间线上取用了已转写素材的
@@ -135,24 +138,7 @@ import { ShortsFoldSeam } from './transcript-shorts-fold.tsx';
  * 「找可剪的口」，推进工具页的同名页（交给 Agent）；网页宿主没有工具页，不给这一条。
  */
 
-type Mode = 'edit' | 'cut';
-
-/** 模式与语言视图不持久化，但在切页之间保持（面板卸载再装上时还是原来的样子）。`language` 为 null 时跟着第一门译文。 */
-const useTranscriptMode = create<{
-  mode: Mode;
-  view: TranscriptView;
-  language: string | null;
-  setMode(mode: Mode): void;
-  setView(view: TranscriptView): void;
-  setLanguage(language: string | null): void;
-}>()((set) => ({
-  mode: 'edit',
-  view: 'source',
-  language: null,
-  setMode: (mode) => set({ mode }),
-  setView: (view) => set({ view }),
-  setLanguage: (language) => set({ language }),
-}));
+type Mode = TranscriptMode;
 
 function selectedSet(selection: WordSelection | null): Set<number> {
   const set = new Set<number>();
@@ -536,6 +522,18 @@ export function TranscriptPanel({
     }
     return null;
   }, [models, videoId]);
+  // 横幅「去文稿调整」/ 结果页「调起止」（shorts-entry.ts）：滚到片段前面那条剪缝，没有就落在片段第一句所在的段；每次请求只滚一次。
+  const jumpN = useCutEntry((s) => (s.jump && s.jump.videoId === videoId && s.jump.n !== s.seen ? s.jump.n : null));
+  const jump = useMemo(() => {
+    if (jumpN === null) return null;
+    for (const m of models) {
+      const anchor = entryAnchor(m.fold, m.words, m.paragraphs);
+      if (!anchor) continue;
+      const key = 'fold' in anchor ? `${m.record.id}:fold:before` : paraKey(m, anchor.paragraph);
+      if (key) return { n: jumpN, key };
+    }
+    return null;
+  }, [jumpN, models]);
   const byAsset = useMemo(() => new Map(models.map((m) => [m.assetId, m])), [models]);
   const chapterTracks = useMemo(() => [...new Set(candidates.flatMap((c) => cutTrackIds(sequence, c.asset.id)))], [candidates, sequence]);
   const chapters = chaptersOf(sequence);
@@ -1087,6 +1085,8 @@ export function TranscriptPanel({
           />
         </div>
         <p className={modeHint}>{translationOnly ? T.translationOnly : mode === 'cut' ? C.hintCut : C.hintEdit}</p>
+        {/* 子视频（产品设计 §5.10）：片段外的话也是划掉的字 */}
+        {derivation && mode === 'cut' && !translationOnly ? <p className={modeHint}>{S.cutHint}</p> : null}
         {view !== 'source' ? (
           <p className={viewNote}>
             <InfoCircle styles={smallIcon} />
@@ -1129,6 +1129,7 @@ export function TranscriptPanel({
           onCopyChapter={copyChapter}
           onFold={foldStep}
           reveal={reveal}
+          jump={jump}
           bodyProps={{
             onKeyDown,
             onPointerDown,
@@ -1478,6 +1479,7 @@ function TranscriptList({
   onCopyChapter,
   onFold,
   reveal,
+  jump,
   bodyProps,
 }: {
   bodyRef: React.RefObject<HTMLDivElement | null>;
@@ -1506,6 +1508,8 @@ function TranscriptList({
   onFold(assetId: Id, side: FoldSide, action: 'more' | 'collapse'): void;
   /** 打开子视频时滚到的那一行（片段起点所在段）：每部视频只滚一次（`id`）。 */
   reveal: { id: string; key: string } | null;
+  /** 进文稿调起止的那一次滚动（`n` 是第几次请求）：比 `reveal` 优先，滚过就交回 `consumeCutJump`。 */
+  jump: { n: number; key: string } | null;
   /** 滚动容器上的键盘与指针处理（选词、拖选、⌫ 截住……）。 */
   bodyProps: React.HTMLAttributes<HTMLDivElement>;
 }) {
@@ -1577,12 +1581,21 @@ function TranscriptList({
   // 子视频打开时滚到片段前面（前接缝行在顶上）：每部视频一次，之后放回句子、展开剪缝都不再跟着滚。
   const revealed = useRef<string | null>(null);
   useEffect(() => {
+    // 进文稿调起止：这一次滚到它，打开时的那一次算已经滚过，免得两次滚动打架。
+    if (jump) {
+      const index = layout.indexOf.get(jump.key);
+      if (index === undefined) return;
+      consumeCutJump(jump.n);
+      if (reveal) revealed.current = reveal.id;
+      void scrollToIndex(index, { align: 'start' });
+      return;
+    }
     if (!reveal || revealed.current === reveal.id) return;
     const index = layout.indexOf.get(reveal.key);
     if (index === undefined) return;
     revealed.current = reveal.id;
     void scrollToIndex(index, { align: 'start' });
-  }, [reveal, layout, scrollToIndex]);
+  }, [reveal, jump, layout, scrollToIndex]);
 
   const locate = useCallback(
     (assetId: Id, index: number) => {

@@ -10,7 +10,10 @@ import { runtimeFonts } from '../../render/local-fonts.ts';
 import { downloadingResolve } from '../../render/font-downloads.ts';
 import { useRuntime } from '../../runtime/context.tsx';
 import { zoomKey } from '../../model/timeline-zoom.ts';
-import { TIMELINE_HEIGHT_MIN, useEditor } from '../../state/editor-store.ts';
+import { TIMELINE_HEIGHT_MIN, useEditor, type PanelTab } from '../../state/editor-store.ts';
+import { landingPanel } from '../../model/shorts-entry.ts';
+import { readDerivation } from '../../model/shorts-result.ts';
+import { useTranscriptMode } from './transcript-mode.ts';
 import { useFontLibrary } from '../../state/font-library-store.ts';
 import { canEdit, useVideo } from '../../state/video-store.ts';
 import { DraftDocuments } from './draft-documents.ts';
@@ -147,15 +150,22 @@ export function VideoEditor() {
   );
 
   // 换了视频：选区与播放头归零（同一个视频在 Home 与 Space 之间切换时保持，产品设计 §5.1）；
-  // 右侧面板落在文稿，时间线还是空的落在视频（设计稿 editor.jsx 的落点）。
+  // 右侧面板落在文稿，时间线还是空的落在视频（设计稿 editor.jsx 的落点）。剪成短视频的结果页打开一支、横幅回到原片：
+  // 落在 AI 工具 Tab（`setPanelLanding`）；没带面板打开的子视频落在文稿、剪辑打开（产品设计 §5.10，`landingPanel`）。
   const videoId = video?.videoId ?? null;
   useEffect(() => {
     if (!videoId) return;
     const opened = useVideo.getState().video?.state?.video;
     const root = opened ? rootSequence(opened) : null;
-    const landing = root ? (root.items.length ? 'transcript' : 'video') : undefined;
-    // 剪成短视频的结果页打开一支、横幅回到原片：落在 AI 工具 Tab（`setPanelLanding`）。
-    useEditor.getState().attach(videoId, takePanelLanding(videoId) ?? landing);
+    const editor = useEditor.getState();
+    const fresh = editor.videoId !== videoId;
+    const landing = landingPanel<PanelTab>({
+      handoff: takePanelLanding(videoId),
+      child: !!readDerivation(opened?.documents),
+      hasItems: root ? root.items.length > 0 : undefined,
+    });
+    editor.attach(videoId, landing.tab);
+    if (fresh && landing.cut) useTranscriptMode.getState().setMode('cut');
     engine.seek(useEditor.getState().playhead);
   }, [videoId, engine]);
 

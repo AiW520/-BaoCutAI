@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState, type ComponentType } from 'react';
 import type { Id, SpaceEntry } from '@baocut/protocol';
-import { ActionButton, Badge, Button, ProgressCircle, TextField, ToastQueue } from '@react-spectrum/s2';
+import { ActionButton, Badge, Button, ProgressCircle, TextField, ToastQueue, Tooltip, TooltipTrigger } from '@react-spectrum/s2';
 import ChevronLeft from '@react-spectrum/s2/icons/ChevronLeft';
 import ChevronRight from '@react-spectrum/s2/icons/ChevronRight';
 import Cut from '@react-spectrum/s2/icons/Cut';
@@ -24,6 +24,7 @@ import { AI_TOOLS_COPY as C } from './ai-tools-copy.ts';
 import { setAiToolPage, setPanelLanding, type AiToolPage } from './ai-tools-nav.ts';
 import { PanelHead } from './panel-head.tsx';
 import { SHORTS_COPY as S } from './shorts-copy.ts';
+import { openCutEntry } from './shorts-entry.ts';
 import { focusShortsRun, latestShortsRun, useShortsRuns } from './shorts-runs.ts';
 import { exportShorts, renameShort, useShortFacts } from './shorts-video-ops.ts';
 
@@ -276,6 +277,7 @@ export function ShortsResultPage({ videoId, host }: { videoId: Id; host: Id }) {
               n={i + 1}
               current={entryVideoId(entry) === videoId}
               onOpen={() => open(entry)}
+              onTrim={() => openCutEntry(videoId, runtime.host.platform === 'web')}
               onDiscard={() => discard(entry)}
             />
           ))}
@@ -323,12 +325,15 @@ function ShortCard({
   n,
   current,
   onOpen,
+  onTrim,
   onDiscard,
 }: {
   entry: SpaceEntry;
   n: number;
   current: boolean;
   onOpen(): void;
+  /** 「正在看」那一支去文稿调起止（同子视频横幅的「去文稿调整」，shorts-entry.ts）。 */
+  onTrim(): void;
   onDiscard(): void;
 }) {
   const runtime = useRuntime();
@@ -409,6 +414,15 @@ function ShortCard({
         </div>
       ) : null}
       <div className={cardActs}>
+        {/* 「正在看」那一支：起止在文稿里调（产品设计 §4.6 / §5.10），这里只给入口 */}
+        {current ? (
+          <TooltipTrigger>
+            <Button size="S" variant="secondary" onPress={onTrim}>
+              {S.cutTrim}
+            </Button>
+            <Tooltip>{S.cutTrimTip}</Tooltip>
+          </TooltipTrigger>
+        ) : null}
         <Button size="S" variant="secondary" fillStyle="outline" onPress={onDiscard}>
           {S.discard}
         </Button>

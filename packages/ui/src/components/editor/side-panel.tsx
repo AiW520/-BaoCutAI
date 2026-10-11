@@ -17,6 +17,7 @@ import { hostPanelTab, PANEL_WIDTH_DEFAULT, useEditor, type PanelTab } from '../
 import { AiToolsPanel } from './ai-tools-panel.tsx';
 import { BrandPanel } from './brand-panel.tsx';
 import { ElementsPanel } from './elements-panel.tsx';
+import { clearCutOrigin } from './shorts-entry.ts';
 import { Inspector } from './inspector.tsx';
 import { MediaPanel } from './media-panel.tsx';
 import { SubtitlePanel } from './subtitle-panel.tsx';
@@ -97,6 +98,11 @@ const TABS: { key: PanelTab; label: string; Icon: ComponentType }[] = [
     Icon: Properties,
   },
 ];
+
+/** 某一页在工具栏上的名字（按当前语言读）。 */
+export function panelTabLabel(tab: PanelTab): string {
+  return TABS.find((t) => t.key === tab)?.label ?? tab;
+}
 
 /** 编辑列与面板之间的缝：自己不画线（线是面板的左边框），悬停或拖动时浮出一条蓝色把手。 */
 const seam = style({ position: 'relative', flexShrink: 0, width: '[7px]', cursor: 'col-resize' });
@@ -213,7 +219,12 @@ export function SidePanel({
             isQuiet
             size="M"
             selectedKeys={hidden ? [] : [tab]}
-            onSelectionChange={(keys) => showPanel(([...keys][0] as PanelTab | undefined) ?? null)}>
+            onSelectionChange={(keys) => {
+              const key = ([...keys][0] as PanelTab | undefined) ?? null;
+              // 点工具栏换页（哪怕点回文稿）就不再是「从别的面板跳进文稿的」：横幅的来处作废（产品设计 §5.10）。
+              if (key) clearCutOrigin();
+              showPanel(key);
+            }}>
             {TABS.filter(({ key }) => hostPanelTab(key, web) === key).map(({ key, label, Icon }) => (
               <TooltipTrigger key={key} placement="start" delay={300}>
                 <ToggleButton id={key} aria-label={label}>
