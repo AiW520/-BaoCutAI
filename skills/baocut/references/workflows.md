@@ -197,7 +197,7 @@ description: 端到端的做法：链接到双语字幕成片、润色后翻译�
 3. 按预算写稿，一句一行；语气说明只写怎么说。
 4. {{tool:speak}} 整段提交（同音色、同说明、固定 seed，给 {{arg:video}}），等到完成，记下时长与 seed。
 5. {{tool:transcribe}} 给这个旁白素材拿字时间；按句算字/秒与停顿，找出要重配的句子并重配。
-6. {{tool:edits_apply}} 把旁白放上一条轨，按句子的起止排画面与字幕，配乐 `setDucking`。
+6. {{tool:edits_apply}} 把旁白放上一条轨，按句子的起止排画面与字幕。要配乐时这时再生成或放上（成片时长已定），按 [music](catalog/music.md) 放在单独一条轨上、`setDucking` 压在旁白之下。
 7. {{tool:export}} 导出 2–3 处跨句边界的 5 秒片段给用户听；用户认可后再导出成片。
 <!-- surface: cli -->
    画面与字幕的排布要用户看时，在网页版编辑器里请用户审（[web](catalog/web.md)），交付时给新链接。

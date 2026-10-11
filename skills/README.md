@@ -9,7 +9,7 @@ skills/
     references/
       start.md            找到 CLI、版本门、status 预检、Runtime 的归属
       conventions.md      输出与退出码、错误对象、版本冲突、等任务、大结果、时间与 ID
-      catalog/*.md        按任务分的目录页：media、subtitles、editing、voice、export、models、system、web（web 只给 CLI 面）
+      catalog/*.md        按任务分的目录页：media、subtitles、editing、voice、music、export、models、system、web（web 只给 CLI 面）
                           声音参考独立为 voice-language-rates.md、voice-<模型系列>.md，由 voice 与 craft 引用
       workflows.md        端到端的做法
       mcp.md              走 MCP 时怎么接、工具名映射、差异

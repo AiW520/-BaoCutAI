@@ -435,6 +435,7 @@ describe('仓库里的说明书', () => {
       'baocut-catalog-export',
       'baocut-catalog-media',
       'baocut-catalog-models',
+      'baocut-catalog-music',
       'baocut-catalog-subtitles',
       'baocut-catalog-system',
       'baocut-catalog-voice-gemini-tts',

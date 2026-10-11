@@ -16,7 +16,7 @@ description: 模型能力的机制：各能力可用的服务、模型与限制�
 
 - **文本生成与你无关。** 它是工具页与固定流程（{{tool:translate}} 这类）用的文本模型；翻译、润色、总结由你自己做，它没配置不影响你，也不能经它调用别的模型。
 - 人声分离只在本机，只给翻译配音的「分离背景声」用。
-- 音乐生成只在本机（已安装的音乐模型包加 audio.cpp 引擎），没有在线服务；用法见下文「音乐生成」。
+- 音乐生成只在本机（已安装的音乐模型包加 audio.cpp 引擎），没有在线服务；能力与安装见下文「音乐生成」，用法见 [music](music.md)。
 
 ## 命令与例子
 
@@ -56,11 +56,10 @@ description: 模型能力的机制：各能力可用的服务、模型与限制�
 
 只有本机的服务：模型是已安装的音乐模型包（目前是 `yue2-3b@audio-cpp-q8`，YuE2 3B，下载约 4.6 GB），由 audio.cpp 引擎（`audiocpp_cli`）在本机执行，不联网，没有在线服务，也没有出厂默认。先 {{tool:models_capabilities}}（能力 `generateMusic`）看有没有可用的模型、时长上限（`maxDurationSec`，YuE2 为 300 秒）、默认预算（`defaultDurationSec`）、编排选项（`local.planning.options` 与默认值）与风格、歌词的字数上限（`maxStyleChars`、`maxLyricsChars`）。
 
-{{tool:music}}：{{arg:mode}} 是 `instrumental`（纯音乐、配乐）或 `song`（带人声，必须给 {{arg:lyrics}}；纯音乐不能给）；{{arg:style}} 写曲风、情绪、乐器、节奏与人声类型（英文最稳）；{{arg:targetDurationSec}} 是希望的时长（只是创作意图，不保证精确）；{{arg:maxDurationSec}} 是生成预算（不超过模型的 `maxDurationSec`；不给时取目标时长，再没有时用模型的默认预算；到了预算的结果带 `output-truncated` 警告）；{{arg:planning}} 从 `local.planning.options` 里选（`off` 不编排、`melody` 先规划旋律、`full` 完整规划，更慢），不给时用模型默认；可给 {{arg:seed}}（同一台机器上同 seed 出同一段）与 {{arg:video}}（结果导入为那个视频的候选素材，不放上时间线）。
+给视频配乐与要一段音乐时怎么提交、风格怎么写、长视频怎么铺满、怎么放上配乐轨，见 [music](music.md)。这里只留能力本身的事实：
 
-- **很慢**：一段要几分钟到十几分钟（CPU 更慢）。提交一次，用 {{tool:jobs_wait}} 等，不重复提交。给视频配乐时 {{arg:mode}} 用 `instrumental`，{{arg:maxDurationSec}} 按要配的片段长度给（可以略长，之后在时间线上裁）；超过 300 秒的片段分段生成或循环，不要一次要更长。
+- **很慢**：一段要几分钟到十几分钟（CPU 更慢），提交一次，用 {{tool:jobs_wait}} 等，不重复提交。
 - **许可**：YuE2 是 CC-BY-NC-4.0，只许非商业用途（`license.commercialUse: false`）。用户要商用时先告诉用户这一点，由用户决定。
-- 输出是 WAV（`outputs` 里有 `artifactId`，带了 {{arg:video}} 时还有 `assetId`）。
 - 没装模型包时 {{tool:models_install}} 给 {{arg:bundleId}} `yue2-3b@audio-cpp-q8`（先把大小告诉用户）；装好了但找不到引擎时能力报 `unsupported`，处理见下节。
 
 ## 「没配置」与「要授权」怎么处理
@@ -91,7 +90,7 @@ description: 模型能力的机制：各能力可用的服务、模型与限制�
 
 ## 下一步
 
-- 能力就绪：回到原来的任务页（[subtitles](subtitles.md)、[voice](voice.md)、[media](media.md)，或上文「音乐生成」）重新提交。
+- 能力就绪：回到原来的任务页（[subtitles](subtitles.md)、[voice](voice.md)、[media](media.md)、[music](music.md)）重新提交。
 - 用户暂时不配置：告诉用户哪一步做不了，其余能做的照常做完。
 
 ## 验收

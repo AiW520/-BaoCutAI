@@ -114,7 +114,7 @@ description: 声音的机制：翻译配音、旁白与语音合成、音色；�
 ## 下一步
 
 - 配音轨放上了：导出成片或只导出声音（{{tool:export}}；{{arg:source}} 可以只要配音或只要原声，见 [export](export.md)）。
-- 配乐要在人声下面：用 [editing](editing.md) 的 `setDucking` 或 `setAudioMix`。
+- 要配乐、或配乐要在人声下面：见 [music](music.md)（配乐从哪来、生成、`setDucking` 闪避）。
 
 ## 验收
 
