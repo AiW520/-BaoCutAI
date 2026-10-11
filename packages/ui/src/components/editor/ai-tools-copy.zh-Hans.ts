@@ -165,4 +165,6 @@ export const zhHans: AiToolsMessages = {
   statePending: (count) => `${count} 处待定`,
   stateStale: (count) => `${count} 句过期`,
   stateLast: (when) => `上次 · ${when}`,
+  soundtrackLabel: '加配乐',
+  soundtrackAdded: (name, summary) => `「${name}」已加到音乐轨 · ${summary}`,
 };

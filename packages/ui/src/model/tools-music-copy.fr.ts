@@ -44,4 +44,8 @@ export const fr: ToolsMusicMessages = {
   seed: (seed) => `Graine ${seed}`,
   steps: (n) => `${n} ${pluralForm('fr', n, { one: 'étape', other: 'étapes' })}`,
   took: (n) => `a pris ${n} s`,
+  musicTrack: (n) => (n === 1 ? 'Musique' : `Musique ${n}`),
+  tailFade: (sec) => `fondu de sortie sur les ${sec} dernières s`,
+  loopPieces: (n, total) => `répété ${n} fois pour remplir ${total} s`,
+  seamCrossfade: (sec) => `fondu enchaîné de ${sec} s à chaque raccord`,
 };

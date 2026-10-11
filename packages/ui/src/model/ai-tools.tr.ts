@@ -83,7 +83,7 @@ export const tr: AiToolsMessages = {
     title: { name: "Başlık öner", desc: "Farklı açılardan birkaç aday oluştur, ardından birini seç" },
     desc: { name: "Açıklama yaz", desc: "Bölüm zaman kodları ve etiketler içeren yayın açıklaması" },
     cover: { name: "Kapak yap", desc: "Ana karelerden birkaç kapak adayı oluştur, ardından birini seç" },
-    soundtrack: { name: "Film müziği oluştur", desc: "Bu bilgisayarda bu video uzunluğunda bir arka plan müziği oluştur ve videonun medyasına ekle" },
+    soundtrack: { name: "Film müziği oluştur", desc: "Bu bilgisayarda bu video uzunluğunda bir arka plan müziği oluştur ve videonun müzik parçasına ekle" },
   },
   unknownTool: (id) => `Böyle AI aracı yok: ${id}`,
   cleanup: {

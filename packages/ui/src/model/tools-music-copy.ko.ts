@@ -43,4 +43,8 @@ export const ko: ToolsMusicMessages = {
   seed: (seed) => `시드 ${seed}`,
   steps: (n) => `${n}단계`,
   took: (n) => `${n}초 걸림`,
+  musicTrack: (n) => (n === 1 ? '음악' : `음악 ${n}`),
+  tailFade: (sec) => `마지막 ${sec}초 페이드아웃`,
+  loopPieces: (n, total) => `${n}번 반복해 ${total}초를 채움`,
+  seamCrossfade: (sec) => `이음새마다 ${sec}초 크로스페이드`,
 };

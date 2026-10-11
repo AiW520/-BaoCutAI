@@ -44,4 +44,8 @@ export const ptBR: ToolsMusicMessages = {
   seed: (seed) => `Semente ${seed}`,
   steps: (n) => pluralForm('pt-BR', n, { one: `${n} etapa`, other: `${n} etapas` }),
   took: (n) => `levou ${n} s`,
+  musicTrack: (n) => (n === 1 ? 'Música' : `Música ${n}`),
+  tailFade: (sec) => `fade-out nos últimos ${sec} s`,
+  loopPieces: (n, total) => `repete ${n} vezes para preencher ${total} s`,
+  seamCrossfade: (sec) => `crossfade de ${sec} s em cada emenda`,
 };

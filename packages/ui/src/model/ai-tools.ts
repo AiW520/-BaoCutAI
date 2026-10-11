@@ -214,7 +214,7 @@ const en = {
     },
     soundtrack: {
       name: 'Generate soundtrack',
-      desc: 'Make background music as long as this video on this computer, and add it to the video’s media',
+      desc: 'Make background music as long as this video on this computer, and add it to the video’s music track',
     },
   } as Record<AiToolId, ToolText>,
   unknownTool: (id: string) => `No such AI tool: ${id}`,

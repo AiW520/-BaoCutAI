@@ -43,4 +43,8 @@ export const zhHans: ToolsMusicMessages = {
   seed: (seed) => `种子 ${seed}`,
   steps: (n) => `${n} 步`,
   took: (n) => `用了 ${n} 秒`,
+  musicTrack: (n) => (n === 1 ? '音乐' : `音乐 ${n}`),
+  tailFade: (sec) => `片尾淡出 ${sec} 秒`,
+  loopPieces: (n, total) => `循环 ${n} 段铺满 ${total} 秒`,
+  seamCrossfade: (sec) => `接缝交叉淡化 ${sec} 秒`,
 };

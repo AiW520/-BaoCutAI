@@ -43,4 +43,8 @@ export const ja: ToolsMusicMessages = {
   seed: (seed) => `シード ${seed}`,
   steps: (n) => `${n} ステップ`,
   took: (n) => `${n} 秒かかりました`,
+  musicTrack: (n) => (n === 1 ? '音楽' : `音楽 ${n}`),
+  tailFade: (sec) => `最後の ${sec} 秒でフェードアウト`,
+  loopPieces: (n, total) => `${n} 回ループして ${total} 秒を満たす`,
+  seamCrossfade: (sec) => `つなぎ目で ${sec} 秒クロスフェード`,
 };

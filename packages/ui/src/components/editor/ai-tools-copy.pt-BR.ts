@@ -161,4 +161,6 @@ export const ptBR: AiToolsMessages = {
   statePending: (count) => `${count} pendente${count === 1 ? '' : 's'}`,
   stateStale: (count) => `${count} desatualizada${count === 1 ? '' : 's'}`,
   stateLast: (when) => `Última · ${when}`,
+  soundtrackLabel: 'Adicionar trilha sonora',
+  soundtrackAdded: (name, summary) => `“${name}” adicionado à faixa de música · ${summary}`,
 };

@@ -164,4 +164,6 @@ export const ko: AiToolsMessages = {
   statePending: (count) => `${count}곳 미정`,
   stateStale: (count) => `${count}문장 오래됨`,
   stateLast: (when) => `지난번 · ${when}`,
+  soundtrackLabel: '배경음악 추가',
+  soundtrackAdded: (name, summary) => `“${name}”을(를) 음악 트랙에 추가했습니다 · ${summary}`,
 };

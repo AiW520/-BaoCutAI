@@ -24,6 +24,7 @@ import { PreviewEngine } from './preview-engine.ts';
 import { enterPreviewFullscreen } from './fullscreen-player.tsx';
 import { Preview } from './preview.tsx';
 import { SidePanel } from './side-panel.tsx';
+import { SoundtrackBed } from './soundtrack-bed.tsx';
 import { takePanelLanding } from './ai-tools-nav.ts';
 import { ShortsChildBanner } from './shorts-banner.tsx';
 import { useShortsLanding } from './shorts-landing.ts';
@@ -221,6 +222,7 @@ export function VideoEditor() {
               />
             </div>
             <SidePanel sequence={shown} assets={snapshot.assets} documents={snapshot.documents} />
+            {video.videoId ? <SoundtrackBed videoId={video.videoId} sequence={sequence} assets={snapshot.assets} /> : null}
           </div>
         ) : video.status === 'error' ? (
           <div className={centered}>

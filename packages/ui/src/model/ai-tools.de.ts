@@ -154,7 +154,7 @@ export const de: AiToolsMessages = {
     },
     soundtrack: {
       name: "Soundtrack erzeugen",
-      desc: "Auf diesem Computer Hintergrundmusik in der Länge dieses Videos erzeugen und zum Material des Videos hinzufügen",
+      desc: "Auf diesem Computer Hintergrundmusik in der Länge dieses Videos erzeugen und auf seine Musikspur legen",
     },
   } as Record<AiToolId, ToolText>,
   unknownTool: (id: string) => `Kein solches KI-Werkzeug: ${id}`,

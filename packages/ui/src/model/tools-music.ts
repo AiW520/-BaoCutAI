@@ -80,11 +80,24 @@ export function maxSecOf(info: Pick<MusicModelInfo, 'maxDurationSec'> | null | u
   return info?.maxDurationSec && info.maxDurationSec > 0 ? info.maxDurationSec : FALLBACK_MAX_SEC;
 }
 
-/** 视频时长 → 可用的目标时长：按 5 秒取整，夹在范围内；没有时长用缺省（超过上限的长视频照样夹到上限）。 */
+/**
+ * 视频时长 → 可用的目标时长：按 5 秒向上取整（音乐不比视频短，铺上去只截不补），夹在范围内；没有时长用缺省
+ * （超过上限的长视频夹到上限，加到视频时循环铺满，见 `soundtrackFor` 与 music-bed.ts）。
+ */
 export function clampDuration(sec: number | null | undefined, max = FALLBACK_MAX_SEC): number {
   const n = Number(sec);
   if (!(n > 0)) return DURATION.dflt;
-  return Math.min(max, Math.max(DURATION.min, Math.round(n / DURATION.step) * DURATION.step));
+  return Math.min(max, Math.max(DURATION.min, Math.ceil(n / DURATION.step) * DURATION.step));
+}
+
+/**
+ * 「生成配乐」进来时的那一段（产品设计 §2.7「生成配乐」；设计稿 `soundtrackFor`）：视频不超过这只模型的单次上限时目标时长
+ * 按视频预填、一段铺完；超过时预填上限、`loop` 为 true——加到视频时循环铺满、接缝交叉淡化、片尾淡出，横幅要写明。
+ */
+export function soundtrackFor(videoSec: number | null | undefined, max = FALLBACK_MAX_SEC): { targetDurationSec: number; loop: boolean } {
+  const v = Number(videoSec);
+  if (!(v > max)) return { targetDurationSec: clampDuration(v, max), loop: false };
+  return { targetDurationSec: max, loop: true };
 }
 
 /** 上限：手改过的用手改的，否则比目标多两成、不超过模型的上限。 */

@@ -83,7 +83,7 @@ export const vi: AiToolsMessages = {
     title: { name: "Đặt tiêu đề", desc: "Tạo vài phương án từ các góc nhìn khác nhau rồi chọn một" },
     desc: { name: "Viết mô tả", desc: "Mô tả để xuất bản, kèm mã thời gian chương và thẻ" },
     cover: { name: "Làm ảnh bìa", desc: "Tạo vài phương án ảnh bìa từ khung hình chính rồi chọn một" },
-    soundtrack: { name: "Tạo nhạc nền", desc: "Tạo trên máy này một đoạn nhạc nền dài bằng video này và thêm vào tư liệu của video" },
+    soundtrack: { name: "Tạo nhạc nền", desc: "Tạo trên máy này một đoạn nhạc nền dài bằng video này và thêm vào track nhạc của video" },
   },
   unknownTool: (id) => `Không có công cụ AI này: ${id}`,
   cleanup: {

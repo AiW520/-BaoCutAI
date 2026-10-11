@@ -95,8 +95,11 @@ export interface ToolPreset {
   tool: ToolId;
   entryId: Id;
   retryJobId?: Id;
-  /** 编辑器 AI 工具「生成配乐」：给哪部视频配乐、时长按它预填（已夹进模型的范围）。 */
-  soundtrack?: { videoId: Id; videoName: string; targetDurationSec: number };
+  /**
+   * 编辑器 AI 工具「生成配乐」：给哪部视频配乐、它的时长（秒）与按它预填的目标时长（已夹进模型的范围；视频比单次上限长时是上限，
+   * 做好后循环铺满，工具页按 `videoSec` 与选中模型的上限决定横幅写不写循环）。
+   */
+  soundtrack?: { videoId: Id; videoName: string; videoSec: number; targetDurationSec: number };
 }
 
 interface VideoToolsState extends Drafts {

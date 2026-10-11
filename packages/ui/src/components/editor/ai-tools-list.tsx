@@ -18,7 +18,7 @@ import { style } from '@react-spectrum/s2/style' with { type: 'macro' };
 import { Button as RACButton } from 'react-aria-components';
 import { AI_TOOL_GROUP_LABEL, AI_TOOLS, groupSub, laterNote, LIST_GROUPS, listedTools, needsTranscript, toolDraftKey, type AiToolId } from '../../model/ai-tools.ts';
 import { durationSeconds } from '../../model/editor.ts';
-import { clampDuration } from '../../model/tools-music.ts';
+import { soundtrackFor } from '../../model/tools-music.ts';
 import { chapterPieces } from '../../model/export-range.ts';
 import { useConnection, defaultDriver } from '../../state/connection-store.ts';
 import { useDirectory } from '../../state/directory-store.ts';
@@ -38,7 +38,7 @@ import { PanelHead } from './panel-head.tsx';
 import { useShallow } from 'zustand/react/shallow';
 import { useSpeakersRun } from './speakers-run.ts';
 import { useAiToolRun } from './ai-tool-run.ts';
-import { aiToolJobFacts, aiToolRowState, EDITORIAL_PROPOSAL_KIND, pendingCutCount, type AiToolRowState } from '../../model/ai-tool-row-state.ts';
+import { aiToolJobFacts, aiToolRowState, EDITORIAL_PROPOSAL_KIND, pendingCutCount, soundtrackJobFacts, type AiToolRowState } from '../../model/ai-tool-row-state.ts';
 import { agoLabel } from '../../model/format.ts';
 import { isStale, pairRows, readTranslation, speechSentences } from '../../model/translation-doc.ts';
 import { useJobs } from '../../state/jobs-store.ts';
@@ -221,6 +221,8 @@ function useRowStates(videoId: Id, sequence: Sequence, documents: Record<Id, Doc
   // 任务镜像里这个视频的 `ai-tool` 任务：别处（CLI、另一个窗口）提交的也在。
   const jobs = useJobs((s) => s.jobs);
   const jobFacts = useMemo(() => aiToolJobFacts(jobs, videoId), [jobs, videoId]);
+  // 生成配乐不走 `ai-tool` 流程：是工具页提交的 `generateMusic` 任务带着这部视频。
+  const soundtrackFacts = useMemo(() => soundtrackJobFacts(jobs, videoId), [jobs, videoId]);
   // 找可剪的口与刷新过期译文交给 Agent 后留在原地：那条会话还有任务在跑（排着队的也算）。
   const agentRuns = useAiToolAgentRuns((s) => s.runs);
   const conversations = useDirectory((s) => s.conversations);
@@ -233,7 +235,7 @@ function useRowStates(videoId: Id, sequence: Sequence, documents: Record<Id, Doc
   const now = useNow(30_000);
   const states: Partial<Record<AiToolId, { text: string; tone: RowTone }>> = {};
   for (const t of AI_TOOLS) {
-    const job = jobFacts[t.id];
+    const job = t.id === 'soundtrack' ? soundtrackFacts : jobFacts[t.id];
     const running =
       job?.running ??
       (submitting.includes(t.id as AiToolKind) || (t.id === 'speakers' && speakersRunning) || agentBusy(t.id) ? { percent: null } : null);
@@ -303,17 +305,19 @@ function SetupCard({ guide }: { guide: GateGuide }) {
 }
 
 /**
- * 生成配乐（原型 panel-aitools.jsx `openSoundtrack`）：不在这个 Tab 里做，带上这部视频去工具 › 生成音乐，时长按视频预填（按 5 秒取整、夹进范围）。
- * 提交时带 `videoId`，做好后 Runtime 把那段音乐导入这部视频的素材。
+ * 生成配乐（原型 panel-aitools.jsx `openSoundtrack`）：不在这个 Tab 里做，带上这部视频去工具 › 生成音乐，时长按视频预填（按 5 秒向上取整、
+ * 夹进范围；视频比单次上限长时预填上限，做好后循环铺满，产品设计 §2.7「生成配乐」）。提交时带 `videoId`，做好后 Runtime 把那段音乐导入
+ * 这部视频的素材，编辑器再把它铺上音乐轨（soundtrack-bed.tsx）。
  */
 function openSoundtrack(videoId: Id, sequence: Sequence): void {
   const video = useVideo.getState().video;
   const videoName = video?.state?.video.name ?? video?.ref?.name ?? sequence.name;
   const entryId = entryOfVideo(useSpace.getState().entries, videoId)?.id ?? videoId;
+  const videoSec = durationSeconds(sequence);
   useVideoTools.getState().setPreset({
     tool: 'generate-music',
     entryId,
-    soundtrack: { videoId, videoName, targetDurationSec: clampDuration(durationSeconds(sequence)) },
+    soundtrack: { videoId, videoName, videoSec, targetDurationSec: soundtrackFor(videoSec).targetDurationSec },
   });
   useShell.getState().go({ tab: 'tools', tool: 'generate-music' });
 }

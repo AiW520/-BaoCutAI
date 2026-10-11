@@ -25,6 +25,7 @@ import {
   planningLabel,
   planningsOf,
   setTarget,
+  soundtrackFor,
   styleLabel,
   switchMusicModel,
   tokens,
@@ -67,7 +68,8 @@ import { usePreset, useRerun } from './video-tool-parts.tsx';
 /*
  * 设计稿 tool-music.jsx `MusicToolPage`：形式 → 风格（英文描述，芯片可填）→ 歌词（带唱时）→ 时长（目标与上限）→ 规划 → 模型与种子 → 保存位置，
  * 右边生成记录。只用本机模型（音乐生成没有云端服务商）。字段与 Runtime 的 GenerateMusicRequest 同名（model/tools-music.ts）。
- * 从编辑器 AI 工具「生成配乐」进来时（`ToolPreset.soundtrack`）时长按那部视频预填，提交带 `videoId`，做好后 Runtime 把它导入那部视频的素材。
+ * 从编辑器 AI 工具「生成配乐」进来时（`ToolPreset.soundtrack`）时长按那部视频预填（比模型的单次上限长时预填上限、横幅写明循环铺满），
+ * 提交带 `videoId`，做好后 Runtime 把它导入那部视频的素材，编辑器再铺上音乐轨（editor/soundtrack-bed.tsx）。
  */
 
 const chips = style({ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 8, minWidth: 0 });
@@ -119,8 +121,10 @@ export function MusicTool() {
   usePreset('generate-music', (_entryId, preset) => {
     if (!preset.soundtrack) return;
     setSoundtrack(preset.soundtrack);
-    patch(setTarget(draft, Math.min(preset.soundtrack.targetDurationSec, limit)));
+    patch(setTarget(draft, soundtrackFor(preset.soundtrack.videoSec, limit).targetDurationSec));
   });
+  // 视频比选中模型的单次上限长：横幅写明会生成上限长度并循环铺满（换了模型按它的上限重新判断）。
+  const soundtrackLoop = soundtrack ? soundtrackFor(soundtrack.videoSec, limit).loop : false;
 
   const reason = view ? modelReason(options, option, COPY.noun) : null;
   const status = reason ? { text: reason, bad: true } : musicStatus(draft, option, tried);
@@ -194,7 +198,9 @@ export function MusicTool() {
       {soundtrack ? (
         <div className={card} role="note">
           <span className={cardTitle}>{COPY.soundtrackTitle(soundtrack.videoName)}</span>
-          <span className={detail}>{COPY.soundtrackBody(draft.targetDurationSec)}</span>
+          <span className={detail}>
+            {soundtrackLoop ? COPY.soundtrackLoopBody(Math.round(soundtrack.videoSec), limit) : COPY.soundtrackBody(draft.targetDurationSec)}
+          </span>
           <ActionButton isQuiet size="S" onPress={() => setSoundtrack(null)}>
             <Text>{COPY.soundtrackOff}</Text>
           </ActionButton>

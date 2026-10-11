@@ -73,6 +73,23 @@ export function aiToolJobFacts(jobs: readonly JobRecord[], videoId: Id): Partial
   return out;
 }
 
+/** 这部视频的「生成配乐」任务（`generateMusic` 带 `videoId`，从工具页提交）：在跑的那一个与最近一次完成的那一个。 */
+export function soundtrackJobFacts(jobs: readonly JobRecord[], videoId: Id): AiToolJobFacts | null {
+  let facts: AiToolJobFacts | null = null;
+  for (const job of jobs) {
+    if (job.kind !== 'generateMusic' || job.videoId !== videoId) continue;
+    facts ??= { running: null, last: null };
+    if (jobLive(job)) {
+      const percent = jobPercent(job);
+      if (!facts.running || (facts.running.percent === null && percent !== null)) facts.running = { percent };
+    } else if (job.state === 'completed') {
+      const at = job.endedAt ?? job.updatedAt;
+      if (!facts.last || Date.parse(at) > Date.parse(facts.last.at)) facts.last = { jobId: job.jobId, at };
+    }
+  }
+  return facts;
+}
+
 export const EDITORIAL_PROPOSAL_KIND = 'editorial-proposal';
 
 const isObject = (value: unknown): value is Record<string, unknown> => typeof value === 'object' && value !== null && !Array.isArray(value);

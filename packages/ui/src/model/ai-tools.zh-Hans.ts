@@ -83,7 +83,7 @@ export const zhHans: AiToolsMessages = {
     title: { name: '起标题', desc: '一次出几个角度不同的候选，挑一个选用' },
     desc: { name: '写简介', desc: '发布用的简介，带章节时间码和标签' },
     cover: { name: '做封面', desc: '从关键帧出发做几张封面候选，挑一张选用' },
-    soundtrack: { name: '生成配乐', desc: '按这部视频的长度，在本机生成一段背景音乐，加进它的素材' },
+    soundtrack: { name: '生成配乐', desc: '按这部视频的长度，在本机生成一段背景音乐，加到它的音乐轨' },
   },
   unknownTool: (id: string) => `没有这个 AI 工具：${id}`,
   cleanup: {

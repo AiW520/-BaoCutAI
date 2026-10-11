@@ -43,4 +43,8 @@ export const vi: ToolsMusicMessages = {
   seed: (seed) => `Seed ${seed}`,
   steps: (n) => `${n} bước`,
   took: (n) => `mất ${n} giây`,
+  musicTrack: (n) => (n === 1 ? 'Nhạc' : `Nhạc ${n}`),
+  tailFade: (sec) => `nhỏ dần trong ${sec} giây cuối`,
+  loopPieces: (n, total) => `lặp ${n} lần để lấp đầy ${total} giây`,
+  seamCrossfade: (sec) => `hòa trộn ${sec} giây ở mỗi mối nối`,
 };

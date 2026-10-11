@@ -5,6 +5,7 @@ import { toolJob } from './tools-test-fixtures.ts';
 import {
   BLANK_MUSIC,
   clampDuration,
+  soundtrackFor,
   etaText,
   maxOf,
   musicAgainDraft,
@@ -105,12 +106,22 @@ describe('请求与 GenerateMusicRequest 同名', () => {
 });
 
 describe('时长', () => {
-  it('视频时长按 5 秒取整，夹进范围', () => {
-    expect(clampDuration(206)).toBe(205);
+  it('视频时长按 5 秒向上取整（音乐不比视频短），夹进范围', () => {
+    expect(clampDuration(206)).toBe(210);
+    expect(clampDuration(205)).toBe(205);
     expect(clampDuration(3)).toBe(10);
     expect(clampDuration(4000)).toBe(300);
     expect(clampDuration(4000, 120)).toBe(120);
     expect(clampDuration(null)).toBe(30);
+  });
+
+  it('生成配乐：不超过单次上限按视频预填；超过时预填上限、要循环（设计稿 soundtrackFor）', () => {
+    expect(soundtrackFor(206)).toEqual({ targetDurationSec: 210, loop: false });
+    expect(soundtrackFor(298).targetDurationSec).toBe(300);
+    expect(soundtrackFor(300)).toEqual({ targetDurationSec: 300, loop: false });
+    expect(soundtrackFor(742)).toEqual({ targetDurationSec: 300, loop: true });
+    expect(soundtrackFor(742, 120)).toEqual({ targetDurationSec: 120, loop: true });
+    expect(soundtrackFor(null).targetDurationSec).toBe(30);
   });
 
   it('25 token / 秒；上限跟着目标、不超过模型上限', () => {

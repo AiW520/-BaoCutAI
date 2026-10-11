@@ -1,6 +1,7 @@
 import { AI_TOOL_PIPELINE, type DocumentRecord, type JobRecord } from '@baocut/protocol';
 import { describe, expect, it } from 'vitest';
-import { aiToolJobFacts, aiToolRowState, pendingCutCount, type AiToolRowFacts } from './ai-tool-row-state.ts';
+import { aiToolJobFacts, aiToolRowState, pendingCutCount, soundtrackJobFacts, type AiToolRowFacts } from './ai-tool-row-state.ts';
+import { toolJob } from './tools-test-fixtures.ts';
 
 describe('aiToolRowState', () => {
   it('什么都没有时不出状态', () => {
@@ -116,5 +117,21 @@ describe('pendingCutCount', () => {
     expect(pendingCutCount([{ record: documents.pr, body: body('r1') }], documents)).toBe(0);
     expect(pendingCutCount([{ record: documents.pr, body: undefined }], documents)).toBe(0);
     expect(pendingCutCount([{ record: documents.pr, body: { schema: 'other' } }], documents)).toBe(0);
+  });
+});
+
+describe('soundtrackJobFacts', () => {
+  const music = (patch: Parameters<typeof toolJob>[0]) => toolJob({ kind: 'generateMusic', providerId: 'local', modelId: 'yue2-3b@audio-cpp-q8', videoId: 'v1', ...patch });
+
+  it('只看这部视频的 generateMusic 任务：在跑的带百分比，最近一次完成的记时间', () => {
+    const jobs = [
+      music({ jobId: 'j1', state: 'running', progress: { done: 25, total: 100, unit: 'seconds' } }),
+      music({ jobId: 'j2', state: 'completed', endedAt: '2026-10-10T01:00:00.000Z' }),
+      music({ jobId: 'j3', state: 'completed', endedAt: '2026-10-11T01:00:00.000Z' }),
+      music({ jobId: 'j4', state: 'completed', videoId: 'v2', endedAt: '2026-10-12T01:00:00.000Z' }),
+      toolJob({ jobId: 'j5', state: 'running', videoId: 'v1' }),
+    ];
+    expect(soundtrackJobFacts(jobs, 'v1')).toEqual({ running: { percent: 25 }, last: { jobId: 'j3', at: '2026-10-11T01:00:00.000Z' } });
+    expect(soundtrackJobFacts(jobs, 'v3')).toBeNull();
   });
 });

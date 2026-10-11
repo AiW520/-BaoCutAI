@@ -58,6 +58,11 @@ const en = {
   seed: (seed: number) => `Seed ${seed}`,
   steps: (n: number) => `${n} ${n === 1 ? 'step' : 'steps'}`,
   took: (n: number) => `took ${n} s`,
+  // 配乐铺满（music-bed.ts）
+  musicTrack: (n: number) => (n === 1 ? 'Music' : `Music ${n}`),
+  tailFade: (sec: number) => `fades out over the last ${sec} s`,
+  loopPieces: (n: number, total: number) => `loops ${n} times to fill ${total} s`,
+  seamCrossfade: (sec: number) => `${sec} s crossfade at each seam`,
 };
 export type ToolsMusicMessages = typeof en;
 export const M = defineMessages(en, { 'zh-Hans': zhHans, 'zh-Hant': zhHant, ja, ko, es, fr, de, nl, 'pt-BR': ptBR, it, ru, pl, tr, vi });

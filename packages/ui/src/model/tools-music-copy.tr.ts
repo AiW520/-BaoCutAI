@@ -43,4 +43,8 @@ export const tr: ToolsMusicMessages = {
   seed: (seed) => `Tohum ${seed}`,
   steps: (n) => `${n} adım`,
   took: (n) => `${n} sn sürdü`,
+  musicTrack: (n) => (n === 1 ? 'Müzik' : `Müzik ${n}`),
+  tailFade: (sec) => `son ${sec} sn içinde kısılarak biter`,
+  loopPieces: (n, total) => `${total} sn doldurmak için ${n} kez yinelenir`,
+  seamCrossfade: (sec) => `her ek yerinde ${sec} sn çapraz geçiş`,
 };

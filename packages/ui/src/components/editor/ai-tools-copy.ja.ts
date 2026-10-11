@@ -164,4 +164,6 @@ export const ja: AiToolsMessages = {
   statePending: (count) => `${count} 件未確定`,
   stateStale: (count) => `${count} 文が古い`,
   stateLast: (when) => `前回 · ${when}`,
+  soundtrackLabel: 'BGM を追加',
+  soundtrackAdded: (name, summary) => `「${name}」を音楽トラックに追加しました · ${summary}`,
 };

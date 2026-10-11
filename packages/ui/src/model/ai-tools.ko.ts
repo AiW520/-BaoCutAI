@@ -115,7 +115,7 @@ export const ko: AiToolsMessages = {
     },
     soundtrack: {
       name: '배경 음악 생성',
-      desc: '이 동영상 길이에 맞춰 이 컴퓨터에서 배경 음악을 만들고 동영상 소재에 추가합니다',
+      desc: '이 영상 길이에 맞춰 이 컴퓨터에서 배경음악을 만들어 영상의 음악 트랙에 추가합니다',
     },
   },
   unknownTool: (id: string) => `해당 AI 도구가 없습니다: ${id}`,

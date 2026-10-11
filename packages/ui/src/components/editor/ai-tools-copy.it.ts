@@ -124,4 +124,6 @@ export const it: AiToolsMessages = {
   statePending: (count) => `${count} in sospeso`,
   stateStale: (count) => (count === 1 ? '1 obsoleta' : `${count} obsolete`),
   stateLast: (when) => `Ultima · ${when}`,
+  soundtrackLabel: 'Aggiungi colonna sonora',
+  soundtrackAdded: (name, summary) => `“${name}” aggiunto alla traccia musicale · ${summary}`,
 };

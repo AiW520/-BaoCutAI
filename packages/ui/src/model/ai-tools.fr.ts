@@ -121,7 +121,7 @@ export const fr: AiToolsMessages = {
     },
     soundtrack: {
       name: "Générer une bande-son",
-      desc: "Créer sur cet ordinateur une musique de fond de la durée de cette vidéo et l’ajouter aux médias de la vidéo",
+      desc: "Créer sur cet ordinateur une musique de fond aussi longue que cette vidéo et l’ajouter à sa piste musicale",
     },
   } as Record<AiToolId, ToolText>,
   unknownTool: (id: string) => `Outil IA inconnu : ${id}`,

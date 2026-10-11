@@ -83,7 +83,7 @@ export const zhHant: AiToolsMessages = {
     title: { name: '建議標題', desc: '一次產生幾個角度不同的候選，再挑一個' },
     desc: { name: '寫簡介', desc: '發布用的簡介，附章節時間碼與標籤' },
     cover: { name: '做封面', desc: '從關鍵影格做幾張候選封面，再挑一張' },
-    soundtrack: { name: '生成配樂', desc: '按這部影片的長度，在本機生成一段背景音樂，加進它的素材' },
+    soundtrack: { name: '生成配樂', desc: '按這部影片的長度，在本機生成一段背景音樂，加到它的音樂軌' },
   },
   unknownTool: (id: string) => `沒有這個 AI 工具：${id}`,
   cleanup: {

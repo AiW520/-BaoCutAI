@@ -122,7 +122,7 @@ export const ptBR: AiToolsMessages = {
     },
     soundtrack: {
       name: "Gerar trilha sonora",
-      desc: "Criar neste computador uma música de fundo com a duração deste vídeo e adicioná-la às mídias do vídeo",
+      desc: "Criar neste computador uma música de fundo do tamanho deste vídeo e colocá-la na faixa de música do vídeo",
     },
   } as Record<AiToolId, ToolText>,
   unknownTool: (id: string) => `Ferramenta IA inexistente: ${id}`,

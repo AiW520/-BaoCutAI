@@ -26,8 +26,8 @@ const en = {
   noun: 'music model',
   manage: 'Manage music models…',
   soundtrackTitle: (name: string) => `Soundtrack for “${name}”`,
-  soundtrackBody: (seconds: number) =>
-    `The length is prefilled from this video: ${seconds} s. When it’s done it’s added to the video’s media, and it stays in Space too.`,
+  soundtrackBody: (seconds: number) => `The length is prefilled from this video: ${seconds} s. When it’s done it goes onto the video’s music track, and it stays in Space too.`,
+  soundtrackLoopBody: (videoSec: number, max: number) => `This video is ${videoSec} s, longer than the ${max} s a single clip can be: a ${max} s clip is generated and looped to fill the video, fading out at the end. It stays in Space too.`,
   soundtrackOff: 'Only generate, don’t add to the video',
   mode: 'Form',
   style: 'Style',

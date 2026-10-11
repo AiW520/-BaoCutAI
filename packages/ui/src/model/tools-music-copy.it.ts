@@ -44,4 +44,8 @@ export const it: ToolsMusicMessages = {
   seed: (seed) => `Seme ${seed}`,
   steps: (n) => pluralForm('it', n, { one: `${n} passaggio`, other: `${n} passaggi` }),
   took: (n) => `ha impiegato ${n} s`,
+  musicTrack: (n) => (n === 1 ? 'Musica' : `Musica ${n}`),
+  tailFade: (sec) => `dissolvenza in uscita negli ultimi ${sec} s`,
+  loopPieces: (n, total) => `ripetuto ${n} volte per riempire ${total} s`,
+  seamCrossfade: (sec) => `dissolvenza incrociata di ${sec} s a ogni giunzione`,
 };

@@ -44,4 +44,8 @@ export const ru: ToolsMusicMessages = {
   seed: (seed) => `Сид ${seed}`,
   steps: (n) => pluralForm('ru', n, { one: `${n} шаг`, few: `${n} шага`, many: `${n} шагов`, other: `${n} шага` }),
   took: (n) => `заняло ${n} с`,
+  musicTrack: (n) => (n === 1 ? 'Музыка' : `Музыка ${n}`),
+  tailFade: (sec) => `затухание в последние ${sec} с`,
+  loopPieces: (n, total) => `повторяется ${n} раз, заполняя ${total} с`,
+  seamCrossfade: (sec) => `кроссфейд ${sec} с на каждом стыке`,
 };

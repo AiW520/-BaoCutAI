@@ -161,4 +161,6 @@ export const fr: AiToolsMessages = {
   statePending: (count) => `${count} en attente`,
   stateStale: (count) => (count <= 1 ? `${count} obsolète` : `${count} obsolètes`),
   stateLast: (when) => `Dernière · ${when}`,
+  soundtrackLabel: 'Ajouter la bande-son',
+  soundtrackAdded: (name, summary) => `« ${name} » ajouté à la piste musicale · ${summary}`,
 };
