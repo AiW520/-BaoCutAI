@@ -202,6 +202,7 @@ In Windows Command Prompt, use `set "BAOCUT_HOME=.dev/baocut-home"` before the C
 | `npm test` | Unit tests and Runtime end-to-end tests with a fake driver (no Codex needed) |
 | `npm run check:file-fonts` | Build the desktop app and verify, in a hidden Electron window over `file://`, that the preview renderer loads every font |
 | `npm run typecheck` | Type check |
+| `npm run build:slides-editor` | Build the slides editor (`packages/slides-runtime`) into `apps/slides-editor/dist`: the editor page and the compiler `slides_check` uses. Skipped when inputs are unchanged (`node apps/slides-editor/build.mjs --force` rebuilds). See [slides design §3](docs/design/slides/slides-design.md#3-运行时的放置与构建) |
 
 ## Status
 
@@ -245,6 +246,7 @@ BaoCut is under active development, with macOS Apple Silicon and Windows x64 pac
 | `BAOCUT_TEMPLATES_DIR` | Built-in creation templates ([template spec §6](docs/spec/template-spec.md#6-目录来源与加载)). Otherwise the packaged `templates/`, then the repo's. User templates live in `<BAOCUT_HOME>/templates`; built-in wins on id clash |
 | `BAOCUT_SKILLS_DIR` | Built-in agent skills ([architecture §3.8](docs/architecture/architecture-design.md)). Otherwise the packaged `skills/`, then the repo's. User skills live in `<BAOCUT_HOME>/skills`; built-in wins on id clash |
 | `BAOCUT_AGENT_SKILLS_DIR` | Source of the BaoCut skill for external agents ([Agent surface §8](docs/design/agent-surface/agent-surface-design.md)), rendered by `baocut skill install`. Otherwise the packaged `agent-skills/`, then the repo's |
+| `BAOCUT_SLIDES_EDITOR_DIST` | Built slides editor ([slides design §3](docs/design/slides/slides-design.md#3-运行时的放置与构建)). Otherwise the packaged `slides-editor/`, then the repo's `apps/slides-editor/dist` |
 | `BAOCUT_MODEL_ASSETS_DIR` | Model data shipped with the app (self-test samples, reference recordings of built-in voices, i.e. `packages/models/assets`). Otherwise the packaged `model-assets/`, then the repo's; the packaged desktop app sets `<resources>/model-assets` |
 | `BAOCUT_WORKER_FEATURES` | Extra cargo features for `model-worker` in `npm run build:engine`, comma separated. `cuda,whisper-ggml-cuda` for NVIDIA on Windows / Linux (needs the CUDA toolkit; Whisper on CUDA untested), `whisper-ggml-vulkan` for AMD / Intel (needs the Vulkan SDK; untested) |
 | `BAOCUT_GPU` | `off`, `0`, `false`, `cpu` or `no` keeps `model-worker` on the CPU for both candle and whisper.cpp ([Model Worker protocol §2.1](docs/spec/model-worker-protocol-spec.md)) |
@@ -261,6 +263,7 @@ apps/
   runtime/          Runtime process entry
   cli/              Command-line client
   web/              Web client, served by the Runtime's web service
+  slides-editor/    Slides editor page (built from packages/slides-runtime), served by the Runtime
 packages/
   protocol/         Wire protocol: envelopes, methods, topic events, domain types, validation
   client/           Connect, request, subscribe, reconnect; mirror reduction
@@ -274,6 +277,8 @@ packages/
   nodes/            LAN capability sharing (node service and initiator)
   code-runtime/     Code bundle adapters and frame baking
   ui/               React UI (React Spectrum 2 + Zustand)
+  slides/           Slide decks: file protocol, deck store, editor routes, editor host shim
+  slides-runtime/   Slides editor runtime: document model, HTML compiler, editor UI, presentation, export
 crates/
   editor-semantics/ Time semantics: exact rationals, decimal seconds, frame quantization
   video-model/      Video interchange DTOs

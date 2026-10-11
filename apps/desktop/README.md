@@ -52,7 +52,7 @@ npm run package:win:vulkan   # Vulkan 版：Whisper 用 Vulkan GPU（candle 仍�
 
 **CPU 指令集基线**。打包脚本给三个变体编 Model Worker 时都设 `GGML_NATIVE=OFF` 与 `GGML_AVX2=ON`（外部设了就用外部的）：ggml 缺省按构建机的 CPU 探测指令集，runner 带 AVX-512 时编出的 Whisper 在没有 AVX-512 的用户机器上会非法指令崩溃。固定基线是 AVX2（MSVC 上 `/arch:AVX2` 加 FMA、F16C、BMI2，Intel Haswell / AMD Zen 起）：带 AVX-512 的机器在 CPU 上转写稍慢；没有 AVX2 的 CPU（Sandy / Ivy Bridge 与不少 Pentium / Celeron）仍不支持，运行期按 CPU 选内核在 whisper-rs-sys 的静态链接下做不到（[架构设计 §6.5](../../docs/architecture/architecture-design.md#65-model-worker本地推理进程)「ggml 的 CPU 指令集基线」）。whisper-rs-sys 不随这些环境变量重跑：本机以前编过 Windows 的 Worker，先 `cargo clean -p whisper-rs-sys --release --target x86_64-pc-windows-msvc` 再打包；工作流的缓存 key 带着基线。只按源码核对，没有在 Windows 上实际构建或在只有 AVX2 的机器上跑过。
 
-它先 `npm run build`、`npm run build:web`，再由 `tools/package-desktop.mjs` 用 cargo 编 Worker（release、`x86_64-pc-windows-msvc`、`--locked`），用 electron-builder 出包到 `apps/desktop/dist/<cpu|cuda|vulkan>/`（已被 git 忽略）：
+它先 `npm run build`、`npm run build:web`、`npm run build:slides-editor`，再由 `tools/package-desktop.mjs` 用 cargo 编 Worker（release、`x86_64-pc-windows-msvc`、`--locked`），用 electron-builder 出包到 `apps/desktop/dist/<cpu|cuda|vulkan>/`（已被 git 忽略）：
 
 - `BaoCut-<版本>[-build.<n>]-win-x64[-cuda|-vulkan]-setup.exe`：NSIS 一键安装，按用户装到 `%LOCALAPPDATA%\Programs\baocut`，不要管理员；
 - `BaoCut-<版本>[-build.<n>]-win-x64[-cuda|-vulkan].zip`：解开即用；

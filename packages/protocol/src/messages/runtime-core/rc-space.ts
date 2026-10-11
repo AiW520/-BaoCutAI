@@ -44,6 +44,7 @@ const en = {
   projectDirNotFound: "The project folder doesn't exist",
   hiddenDirFile: "Files in hidden or dependency folders can't be added",
   videoDirFile: "Files in a video folder belong to the video and can't be added on their own",
+  slidesDirFile: "Files in a slides folder belong to the deck and can't be added on their own",
   tooManySameName: "Too many files with the same name in the project's imports/",
 
   // 物理删除（space.purge）

@@ -51,6 +51,9 @@ BaoCut 是以**可编辑视频**为中心的剪辑工具：素材在时间线上
 | 按模板做一条成片、从零做一条视频 | 简报定下后写风格与分镜规划，逐镜用素材、生成图片或代码画面做出来，配旁白、混音、导出 | [media](references/catalog/media.md)、[voice](references/catalog/voice.md) | {{skill:video-production}} |
 | 做一条某类视频，但没说清 | 先问清主题、目标、受众、手上的材料，再动手 | [workflows](references/workflows.md) | {{skill:video-production}} |
 | 加下横栏、关键词、大数字、标注、品牌贴片这类动效图形 | 按规则写一个自包含的 HTML 画面，打包成代码包导入，放上时间线对齐旁白 | [media](references/catalog/media.md) | {{skill:motion-graphics}} |
+<!-- surface: agent -->
+| 做幻灯片、演示文稿、汇报用的页面 | 在工作目录写一份 deck，校验通过后线程里出卡片，用户在功能区预览、编辑、标注 | [media](references/catalog/media.md) | {{skill:slides}} |
+<!-- /surface -->
 
 ### 三条底线
 

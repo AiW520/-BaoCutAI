@@ -132,6 +132,18 @@ describe('项目文件浏览（projects.files.list）', () => {
     expect((await listProjectFiles(root, { query: '   ' })).entries).toHaveLength(6);
   });
 
+  it('幻灯片目录：含合法 deck.json 的目录是一项 slides，修改时间取 deck.json；查找时不进入', async () => {
+    await write(path.join(root, 'talk', 'deck.json'), JSON.stringify({ v: 4, title: 'Talk', order: ['s1'] }));
+    await write(path.join(root, 'talk', 'slides', 'clip-s1.html'), '<slide></slide>');
+    const listed = await listProjectFiles(root, {});
+    expect(listed.entries.find((e) => e.path === 'talk')).toMatchObject({ isDir: true, size: null, kind: 'slides' });
+    expect(listed.entries.find((e) => e.path === 'talk')?.modifiedAt).toMatch(/^\d{4}-\d{2}-\d{2}T/);
+    // 进目录照常列出里面的文件。
+    expect((await listProjectFiles(root, { dir: 'talk' })).entries.map((e) => e.path)).toEqual(['talk/slides', 'talk/deck.json']);
+    expect((await listProjectFiles(root, { query: 'clip' })).entries.map((e) => e.path)).not.toContain('talk/slides/clip-s1.html');
+    expect((await listProjectFiles(root, { query: 'talk' })).entries).toMatchObject([{ path: 'talk', kind: 'slides' }]);
+  });
+
   it('截断：超过 limit、看过的目录项或候选超过上限时标出 truncated', async () => {
     const listed = await listProjectFiles(root, { limit: 2 });
     expect(listed.entries.map((e) => e.path)).toEqual(['assets', 'Intro.video']);

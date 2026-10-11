@@ -21,6 +21,7 @@ export const pl: RcAgentToolsMessages = {
   clauseSeparator: "; ",
 
   createVideoSummary: (p) => `Utwórz wideo „${p.name}"`,
+  slidesImportAssetSummary: (p) => `Zaimportuj obraz „${p.file}” do slajdów „${p.deck}”`,
   editsSummary: (p) => `${p.label} (${pluralForm('pl', p.count, { one: `${p.count} operacja`, few: `${p.count} operacje`, many: `${p.count} operacji`, other: `${p.count} operacji` })}: ${p.types})`,
   captionsSummary: (p) => `Dodaj: ${p.bilingual ? "dwujęzyczną " : ""}warstwę napisów dokumentu ${p.documentId}`,
   captionsLabel: "Dodaj warstwę napisów",

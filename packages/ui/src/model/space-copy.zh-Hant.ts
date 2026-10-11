@@ -9,6 +9,7 @@ export const zhHant: SpaceMessages = {
     audio: '音訊',
     subtitle: '字幕',
     document: '文件',
+    slides: '投影片',
     package: '影片套件',
     template: '範本',
   },

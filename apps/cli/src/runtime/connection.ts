@@ -154,6 +154,7 @@ export function packagedResourceEnv(resources: string, platform: NodeJS.Platform
     BAOCUT_AGENT_SKILLS_DIR: path.join(resources, 'agent-skills'),
     BAOCUT_MODEL_ASSETS_DIR: path.join(resources, 'model-assets'),
     BAOCUT_WEB_DIST: path.join(resources, 'web'),
+    BAOCUT_SLIDES_EDITOR_DIST: path.join(resources, 'slides-editor'),
     ...(platform === 'darwin' ? { PMETAL_METALLIB_PATH: path.join(resources, 'bin', 'mlx.metallib') } : {}),
   };
 }

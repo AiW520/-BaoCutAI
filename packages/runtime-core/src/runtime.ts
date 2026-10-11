@@ -63,6 +63,8 @@ import { createFileLogger } from './logger.ts';
 import { StorageGc } from './storage-gc.ts';
 import { AttachmentStore } from './attachments.ts';
 import { MediaRegistry } from './media.ts';
+import { SlidesService } from './slides.ts';
+import { SlidesTools } from './agent-tools/slides-tools.ts';
 import { MediaAnalysis } from './media-analysis.ts';
 import { createFaceDetector } from './face-detection.ts';
 import { LibraryService } from './library/library-service.ts';
@@ -189,6 +191,11 @@ export interface StartRuntimeOptions {
    * 按 CLI 面渲染。默认取 `BAOCUT_AGENT_SKILLS_DIR`、打包的资源目录或仓库根的 `agent-skills/`；找不到或渲染不了时 Runtime 启动失败。
    */
   agentSkillsDir?: string | null;
+  /**
+   * 幻灯片编辑器的构建目录（docs/design/slides §3）。默认取 `BAOCUT_SLIDES_EDITOR_DIST`、打包的资源目录或仓库的
+   * `apps/slides-editor/dist`；null 表示没有构建（`slides.open` 照常给地址，页面回 503，结果里 `editorAvailable` 为 false）。
+   */
+  slidesEditorDist?: string | null;
   /** 从 GitHub 导入 skill（§12.9）。测试注入假的 fetch，不访问真实网络。 */
   skillsGithub?: GithubFetchOptions;
   /** 按需下载的字体（§9.1）。测试注入只含几个族的字体目录，并把下载指向本机的假服务；不访问真实网络。 */
@@ -262,6 +269,7 @@ const STOP_ORDER = [
   'initiator',
   'discovery',
   'space',
+  'slides',
   'compositions',
   'analysis',
   'videos',
@@ -365,6 +373,12 @@ export async function startRuntime(options: StartRuntimeOptions = {}): Promise<R
     });
     stops.add('videos', () => videos.shutdown(), 'Stopping the video engine failed');
     const media = new MediaRegistry({ log, originAllowed: (origin) => originAllowed(origin, options.allowedOrigins) });
+    // 幻灯片编辑器（docs/design/slides §6）：网关与 Web 服务共用，同一份 deck 只有一个存储与一个目录监听。
+    const slides = new SlidesService({
+      log,
+      editorDist: options.slidesEditorDist === undefined ? undefined : () => options.slidesEditorDist ?? null,
+    });
+    stops.add('slides', () => slides.close(), null);
     // 生成的音频与图片、参考录音都用 ffprobe 解码校验（与引擎同一个 ffprobe）；WebM 播放也用它探测编码。
     const ffprobe = async () => ({ command: process.env.BAOCUT_FFPROBE || 'ffprobe', env: await toolEnv() });
     const analysis = new MediaAnalysis({
@@ -720,6 +734,8 @@ export async function startRuntime(options: StartRuntimeOptions = {}): Promise<R
           scope: toolScope,
         }),
         new CompositionTools({ videos, scope: toolScope, compositions }),
+        // 会话里的幻灯片（docs/design/slides §7.2）：校验与导入素材；编译器与 deck 的存储来自幻灯片服务。
+        new SlidesTools({ scope: toolScope, slides }),
       ];
     };
     // 会话的工具桥与网关 `catalog.call`（终端）共用同一组工具实例：`ScopeRouter` 按主体的种类转给会话的范围或终端的范围
@@ -853,6 +869,7 @@ export async function startRuntime(options: StartRuntimeOptions = {}): Promise<R
       setup,
       space,
       media,
+      slides: slides.opener(),
       attachments,
       analysis,
       spaceThumbnails: new SpaceThumbnails({
@@ -889,7 +906,11 @@ export async function startRuntime(options: StartRuntimeOptions = {}): Promise<R
       legacyUpgrade,
     };
     // Web 服务（§4.8）用同一组处理函数，只把媒体句柄换成它自己的（同源地址、要会话）；白名单在它的网关入口上。
-    services.web.bind({ runtime: info, handlers: createHandlers({ ...handlerDeps, media: services.web.media }) });
+    services.web.bind({
+      runtime: info,
+      handlers: createHandlers({ ...handlerDeps, media: services.web.media, slides: slides.opener(() => '') }),
+      slides: slides.server,
+    });
     // 在场的用户（工具页的当场授权，§7.9）：这个网关上的桌面界面连接。CLI、智能体、浏览器与对外服务都不算。
     const present = new Set<string>();
     models.grants.setPresence((submitter) => submitter.kind === 'connection' && present.has(submitter.id));
@@ -901,7 +922,12 @@ export async function startRuntime(options: StartRuntimeOptions = {}): Promise<R
       allowedOrigins: options.allowedOrigins,
       http: (request, response) => {
         activity.touch();
-        return mcp.handle(request, response) || attachments.handle(request, response) || media.handle(request, response);
+        return (
+          mcp.handle(request, response) ||
+          attachments.handle(request, response) ||
+          media.handle(request, response) ||
+          slides.handle(request, response)
+        );
       },
       onConnect: (principal) => {
         if (principal.kind === 'desktop') present.add(principal.connectionId);
@@ -918,6 +944,7 @@ export async function startRuntime(options: StartRuntimeOptions = {}): Promise<R
     stops.add('gateway', () => gateway.close(), 'Stopping the gateway failed');
     const endpoint = await gateway.listen(options.host, options.port);
     media.setBaseUrl(endpoint.replace(/^ws:/, 'http:'));
+    slides.setBaseUrl(endpoint.replace(/^ws:/, 'http:'));
     attachments.setBaseUrl(endpoint.replace(/^ws:/, 'http:'));
     grants.setEndpoint(`${endpoint.replace(/^ws:/, 'http:')}/mcp`);
     const discovery: RuntimeDiscovery = { ...info, endpoint, token };

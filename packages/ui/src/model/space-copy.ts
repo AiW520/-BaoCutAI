@@ -24,6 +24,7 @@ const en = {
     audio: 'Audio',
     subtitle: 'Subtitles',
     document: 'Document',
+    slides: 'Slides',
     package: 'Video package',
     template: 'Template',
   } satisfies Record<SpaceEntryKind, string>,

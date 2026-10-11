@@ -131,6 +131,8 @@ export const KINDS: Readonly<Record<LoaderKind, readonly LoaderIcon[]>> = Object
   skill: seq('page', 'potion', 'wand'),
   grant: seq('hourglass', 'dial'),
   contract: seq('document', 'pencil', 'page'),
+  /* 幻灯片 */
+  slides: seq('page', 'eye', 'pencil'),
 });
 
 /** 类别 → 图形名序列；认不出的走 FALLBACK。同一个类别每次返回同一个（冻结的）数组。 */

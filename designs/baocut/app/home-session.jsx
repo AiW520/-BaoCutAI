@@ -37,6 +37,12 @@
   }
 
   function SessionArtifactCard({item, sess, onOpen}) {
+    /* 幻灯片卡（docs/design/slides §7.3）：第一页做预览，「打开」在右侧开幻灯片标签页 */
+    if (item.kind === 'slides' && window.SlidesDeckCard) return <window.SlidesDeckCard item={item} sess={sess} onOpen={onOpen} />;
+    return <ArtifactCard item={item} sess={sess} onOpen={onOpen} />;
+  }
+
+  function ArtifactCard({item, sess, onOpen}) {
     const app = useApp();
     const R = window.RSP;
     const kind = window.BC_SPACE.KINDS[item.kind];

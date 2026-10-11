@@ -526,6 +526,38 @@
      text: '{"title":"产品手册动画","durationSeconds":40,"size":{"width":1920,"height":1080},"files":["成片.mp4","字幕.srt"],"editable":true}'},
     {id: 'preview-code', kind: 'doc', name: '检查时长.py', file: '检查时长.py', dir: 'd8', session: 's17', mtime: 1,
      text: '# 检查分镜总时长\nshots = [8, 12, 10, 10]\nexpected_seconds = 40\n\nassert sum(shots) == expected_seconds\nprint(f"Duration: {sum(shots)} seconds")\n'},
+    /* 幻灯片（docs/design/slides §7.3）：deck 的目录是一个条目。`slides` 是原型画静态页面用的演示内容，正式版由 Slides 运行时
+       读 deck 的文件来画；`parts` 是页面上能被标注的元素（角色与原文）。第 3、6 页是按 s25 第二轮的标注改过之后的样子。 */
+    {id: 'deck-r1', kind: 'slides', name: '确定性渲染 · 第 1 讲', dir: 'd5', session: 's25', mtime: 2, bytes: 48128,
+     file: '幻灯片/第1讲/', ratio: '16:9',
+     slides: [
+       {id: 's01', layout: 'cover', parts: [
+         {id: 'kicker', role: '眉题', text: '确定性渲染课程 · 第 1 讲'},
+         {id: 'title', role: '标题', text: '同一份输入，永远同一帧'},
+         {id: 'sub', role: '副标题', text: '为什么视频渲染需要确定性，以及怎么证明它'}]},
+       {id: 's02', layout: 'list', parts: [
+         {id: 'title', role: '标题', text: '这一讲回答三个问题'},
+         {id: 'list', role: '列表', items: ['什么是确定性渲染', '不确定从哪里来', '怎么证明两次渲染一样']}]},
+       {id: 's03', layout: 'list', parts: [
+         {id: 'title', role: '标题', text: '不确定从哪里来'},
+         {id: 'list', role: '列表', items: ['浮点误差', '字体回退', '线程顺序', '时间舍入']}]},
+       {id: 's04', layout: 'steps', parts: [
+         {id: 'title', role: '标题', text: '一帧是怎么画出来的'},
+         {id: 'steps', role: '流程', items: ['时间线', '布局', '栅格化', '编码']}]},
+       {id: 's05', layout: 'quote', parts: [
+         {id: 'quote', role: '引语', text: '渲染两次，逐像素比对。'},
+         {id: 'caption', role: '说明', text: '这门课每一讲的验收标准'}]},
+       {id: 's06', layout: 'stats', parts: [
+         {id: 'title', role: '标题', text: '同一段 206 秒'},
+         {id: 'sub', role: '副标题', text: '3 台机器各渲染一次'},
+         {id: 'stats', role: '数据', items: [{value: '5,150', label: '帧'}, {value: '3', label: '种显卡'}, {value: '0', label: '像素差异'}]}]},
+       {id: 's07', layout: 'list', parts: [
+         {id: 'title', role: '标题', text: '本讲小结'},
+         {id: 'list', role: '列表', items: ['同一份输入得到同一串像素', '先消除浮点、字体、线程与时间四类来源', '用逐像素比对来验收']}]},
+       {id: 's08', layout: 'end', parts: [
+         {id: 'title', role: '标题', text: '下一讲：时间模型'},
+         {id: 'sub', role: '副标题', text: '帧号、时间码与舍入规则'}]},
+     ]},
     {id: 'o11', kind: 'image', name: '橘猫窗台 · 水彩.png', dir: null, task: 'im1', status: 'generating',
      res: '1024×1024', mtime: 0, hue: 32, file: '~/BaoCut/未归类/cat-window.png'},
     {id: 'o13', kind: 'subtitle', name: '年度回顾 · 粗剪字幕.srt', dir: 'd7', movie: 'p6', trashed: true,
@@ -1948,6 +1980,33 @@
          {id: 'm3', role: 'tool', tool: 'documents_read', args: {document: '文稿', sentences: 62, translateTo: 'en'}, status: 'done', took: '0.1s', taskId: 'ag24l'},
        ]},
       /* 未绑定项目的会话再补 7 条：侧栏这一段首屏只露 5 条、每次再加载 5 条，少于 6 条演示不出来 */
+      /* 会话里的幻灯片（docs/design/slides）：读讲稿、读 slides skill、用 Driver 自带的文件工具写 deck，`slides_check` 通过后
+         线程里出一张幻灯片卡片（挂在那条回复上）。第二轮是在幻灯片标签页里标了 2 处、随消息发回来的标注（`slideAnnotations`）：
+         标注记的是当时的位置与原文，之后页面改了，位置里引的仍是旧字。 */
+      {id: 's25', title: '把第 1 讲的讲稿做成课件', project: null, dir: 'd5', harness: 'claude', model: 'sonnet', effort: 'mid',
+       status: 'done', ago: 2, unread: true,
+       messages: [
+         {id: 'm1', role: 'user', text: '按「讲稿/第1讲.md」做一份 16:9 的课件，8 页左右，版式素一点。', ...turnDone(9, 96)},
+         {id: 'm2', role: 'tool', kind: 'read', summary: '讲稿/第1讲.md', cmd: '读取 讲稿/第1讲.md · 186 行', status: 'done', took: '0.1s'},
+         {id: 'm3', role: 'tool', kind: 'read', summary: 'slides', cmd: '读取 skill slides · references/format.md、design.md', status: 'done', took: '0.1s'},
+         {id: 'm4', role: 'tool', kind: 'edit', summary: '幻灯片/第1讲/deck.json', cmd: '新建 幻灯片/第1讲/deck.json 与 8 页', status: 'done', took: '0.4s',
+          out: '--- /dev/null\n+++ b/幻灯片/第1讲/deck.json\n@@ -0,0 +1,6 @@\n+{\n+  "title": "确定性渲染 · 第 1 讲",\n+  "size": [1920, 1080],\n+  "order": ["s01", "s02", "s03", "s04", "s05", "s06", "s07", "s08"],\n+  "faces": ["Source Sans 3"]\n+}'},
+         {id: 'm5', role: 'tool', tool: 'slides_check', args: {path: '幻灯片/第1讲/', slides: 8}, status: 'done', took: '0.6s', out: '8 页 · 0 个问题'},
+         {id: 'm6', role: 'assistant', artifactIds: ['deck-r1'], text: '课件做好了，一共 8 页，放在 `幻灯片/第1讲/`：封面、三个问题、不确定的来源、一帧的流程、验收标准、实测数据、小结和下一讲预告。\n\n点卡片上的「打开」在右侧预览和修改。哪里要改，打开「标注」，点一下页面上的元素写批注，添加到对话后和你的话一起发给我。'},
+         {id: 'm7', role: 'user', text: '按标注改一下。', ...turnDone(2, 41),
+          slideAnnotations: [
+            {id: 'a1', deck: 'deck-r1', path: '幻灯片/第1讲/', slide: 's03', part: 'list', x: 0.3, y: 0.56,
+             label: '第 3 页 › 列表 “浮点误差在不同显卡上会逐帧…”', detail: 'Element on slide 3 (s03) · list · "浮点误差在不同显卡上会逐帧累积，字体缺失时回退到别的字体…"',
+             text: '四条都太长，压成一眼能读完的短词。'},
+            {id: 'a2', deck: 'deck-r1', path: '幻灯片/第1讲/', slide: 's06', part: 'title', x: 0.5, y: 0.24,
+             label: '第 6 页 › 标题 “同一段 206 秒，在 3 台机器上…”', detail: 'Element on slide 6 (s06) · title · "同一段 206 秒，在 3 台机器上各渲染一次"',
+             text: '标题太长，拆成两行。'},
+          ]},
+         {id: 'm8', role: 'tool', kind: 'edit', summary: '幻灯片/第1讲/slides/s03.html', cmd: '修改 幻灯片/第1讲/slides/s03.html', status: 'done', took: '0.1s'},
+         {id: 'm9', role: 'tool', kind: 'edit', summary: '幻灯片/第1讲/slides/s06.html', cmd: '修改 幻灯片/第1讲/slides/s06.html', status: 'done', took: '0.1s'},
+         {id: 'm10', role: 'tool', tool: 'slides_check', args: {path: '幻灯片/第1讲/', slides: 8}, status: 'done', took: '0.5s', out: '8 页 · 0 个问题'},
+         {id: 'm11', role: 'assistant', text: '改好了：第 3 页的四条压成了「浮点误差、字体回退、线程顺序、时间舍入」；第 6 页的标题拆成「同一段 206 秒」和「3 台机器各渲染一次」两行。右侧打开着的编辑器已经刷新。'},
+       ]},
       {id: 's7', title: '把 3 段竖屏素材拼成一条 60 秒短片', project: null, harness: 'claude', model: 'sonnet', effort: 'mid',
        status: 'done', ago: 1800,
        messages: [{id: 'm1', role: 'user', text: '把 3 段竖屏素材拼成一条 60 秒短片'}]},

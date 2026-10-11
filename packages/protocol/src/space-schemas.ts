@@ -7,7 +7,7 @@ import { SPACE_LIST_MAX_LIMIT, SPACE_SEARCH_MAX_LIMIT } from './space.ts';
 const id = z.string().min(1).max(200);
 const filePath = z.string().min(1).max(4096);
 const entry = z.object({ entryId: id }).strict();
-const kind = z.enum(['video', 'export', 'video-file', 'image', 'audio', 'subtitle', 'document', 'package', 'template']);
+const kind = z.enum(['video', 'export', 'video-file', 'image', 'audio', 'subtitle', 'document', 'package', 'template', 'slides']);
 const status = z.enum(['generating', 'candidate', 'applied', 'published', 'source-changed', 'missing', 'failed', 'none']);
 const searchKind = z.enum(['speech', 'caption', 'translation', 'chapter']);
 const oneOrMany = <T extends z.ZodType>(item: T) => z.union([item, z.array(item).min(1).max(20)]);

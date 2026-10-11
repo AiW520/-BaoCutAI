@@ -16,6 +16,7 @@ import FileText from '@react-spectrum/s2/icons/FileText';
 import Image from '@react-spectrum/s2/icons/Image';
 import Key from '@react-spectrum/s2/icons/Key';
 import Layers from '@react-spectrum/s2/icons/Layers';
+import Layout from '@react-spectrum/s2/icons/Layout';
 import ListBulleted from '@react-spectrum/s2/icons/ListBulleted';
 import SaveFloppy from '@react-spectrum/s2/icons/SaveFloppy';
 import Text from '@react-spectrum/s2/icons/Text';
@@ -96,6 +97,7 @@ const TOOL_ICON: Record<BaoCutStepKind, ReactNode> = {
   skill: <Bookmark />,
   grant: <Key />,
   contract: <Checkmark />,
+  slides: <Layout />,
 };
 
 /**

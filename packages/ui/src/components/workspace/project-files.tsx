@@ -63,14 +63,16 @@ export interface ProjectFilesProps {
   onOpenFile?: (target: FileTarget, entry: ProjectFileEntry) => void;
   /** 点视频目录（含 `video.db`）。不给时视频目录按普通文件夹进入。 */
   onOpenVideo?: (target: FileTarget, entry: ProjectFileEntry) => void;
+  /** 点幻灯片目录（含 `deck.json`）。不给时按普通文件夹进入。 */
+  onOpenSlides?: (target: FileTarget, entry: ProjectFileEntry) => void;
 }
 
 /**
  * 功能区的「项目文件」标签（产品设计 §3.3，原型 home-workspace.jsx `WorkspaceFiles`）：
  * 会话所属项目目录里的文件，一层一层进入；搜索框按名字在整个项目里找（`projects.files.list`）。
- * 只读：打开文件交给调用方（单文件标签或视频）。没有后端时显示真实的空态与错误，不造数据。
+ * 只读：打开文件交给调用方（单文件标签、视频或幻灯片）。没有后端时显示真实的空态与错误，不造数据。
  */
-export function ProjectFiles({ conversationId, onOpenFile, onOpenVideo }: ProjectFilesProps) {
+export function ProjectFiles({ conversationId, onOpenFile, onOpenVideo, onOpenSlides }: ProjectFilesProps) {
   const runtime = useRuntime();
   const conversation = useConversationMeta(conversationId);
   const project = useProject(conversation?.projectId ?? null);
@@ -118,6 +120,7 @@ export function ProjectFiles({ conversationId, onOpenFile, onOpenVideo }: Projec
     const action = entryAction(entry);
     const target = projectFileTarget(conversationId, entry);
     if (action === 'video' && onOpenVideo) onOpenVideo(target, entry);
+    else if (action === 'slides' && onOpenSlides) onOpenSlides(target, entry);
     else if (action === 'file') onOpenFile?.(target, entry);
     else {
       setInput('');
@@ -192,7 +195,7 @@ export function ProjectFiles({ conversationId, onOpenFile, onOpenVideo }: Projec
             const Icon = (entry.kind ? KIND_ICON[entry.kind] : entry.isDir ? Folder : FileIcon) as ComponentType<{ slot?: string }>;
             const folder = searching ? entryFolder(entry.path) || COPY.inRoot : '';
             return (
-              <ListViewItem key={entry.path} id={entry.path} textValue={entry.name} hasChildItems={entryAction(entry) === 'enter' || (entry.kind === 'video' && !onOpenVideo)}>
+              <ListViewItem key={entry.path} id={entry.path} textValue={entry.name} hasChildItems={entryAction(entry) === 'enter' || (entry.kind === 'video' && !onOpenVideo) || (entry.kind === 'slides' && !onOpenSlides)}>
                 <Icon slot="icon" />
                 <Text>{entry.name}</Text>
                 <Text slot="description">{folder ? `${entryMeta(entry, now)} · ${folder}` : entryMeta(entry, now)}</Text>

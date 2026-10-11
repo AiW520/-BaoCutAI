@@ -53,6 +53,8 @@
       if (workspace.active === key) app.replace(W.route(sid, next.tabs.find(t => t.key === next.active)));
     };
     const openWorkspaceFile = (id, sessionId = sid) => { show(sessionId); app.go(W.route(sessionId, {kind: 'file', id})); };
+    // docs/design/slides §8.1: a deck opens in its own tab; `slide` jumps to a page (an annotation in a sent message).
+    const openWorkspaceSlides = (id, sessionId = sid, slide) => { show(sessionId); app.go(W.route(sessionId, {kind: 'slides', id, ...(slide ? {slide} : {})})); };
     const openWorkspaceAttachment = file => {
       setWorkspaceAttachments(previous => ({...previous, [file.id]: file}));
       setWorkspaceFileTitle(file.id, file.name);
@@ -176,7 +178,7 @@
     });
     return {workspaceKey: sid, workspaceSessionId, workspaceSingle, showWorkspaceTab, finishDraftWorkspace, openAgent, createWorkspacePage, browseWorkspaceFiles, workspaceAttachments, openWorkspaceAttachment, workspaceMediaState, updateWorkspaceMediaState, workspaceFileTitles, setWorkspaceFileTitle, workspace, workspaceVisible, workspaceFull, workspaceNarrow, workspaceConversation, workspaceRef, showConversation,
       workspaceWidth, workspaceDockW, resizeWorkspace, toggleWorkspace, toggleWorkspaceFull,
-      selectWorkspaceTab, closeWorkspaceTab, moveWorkspaceTab, openWorkspaceFile, openWorkspaceBrowser, openMovie};
+      selectWorkspaceTab, closeWorkspaceTab, moveWorkspaceTab, openWorkspaceFile, openWorkspaceSlides, openWorkspaceBrowser, openMovie};
   }
   Object.assign(window, {useHomeWorkspace});
 })();

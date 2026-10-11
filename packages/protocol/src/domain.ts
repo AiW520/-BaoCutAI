@@ -3,6 +3,7 @@ import type { TaskContract } from './tasks.ts';
 import type { TemplateMessageRef } from './template.ts';
 import type { SkillMessageRef } from './skill.ts';
 import type { MessageRef } from './message-ref.ts';
+import type { SlideAnnotation } from './slides.ts';
 
 /**
  * 会话侧的领域对象（架构设计 §1.5、§3.10）。
@@ -206,6 +207,8 @@ export type TimelineItem =
       skills?: SkillMessageRef[];
       /** 旧记录：只能点一个 skill 时写的标记。读的时候与 `skills` 一样对待（`messageSkills`），新消息不再写。 */
       skill?: SkillMessageRef;
+      /** 随消息发出的幻灯片标注（docs/design/slides §9），按添加的顺序。批注正文交给了智能体，不在 `text` 里。旧记录没有。 */
+      slideAnnotations?: SlideAnnotation[];
     })
   | (TimelineBase & { kind: 'agent-message'; text: string; streaming: boolean })
   | (TimelineBase & { kind: 'reasoning'; text: string; streaming: boolean })
@@ -265,7 +268,8 @@ export type TimelineItem =
       modeChange?: { from: AgentMode; to: AgentMode };
     })
   | (TimelineBase & VideoChange & { kind: 'video-change' })
-  | (TimelineBase & VideoCreated & { kind: 'video-created' });
+  | (TimelineBase & VideoCreated & { kind: 'video-created' })
+  | (TimelineBase & SlidesCreated & { kind: 'slides-created' });
 
 export type TimelineItemKind = TimelineItem['kind'];
 
@@ -407,6 +411,18 @@ export interface VideoShotsResult {
   threshold: number;
   minShot: number;
   detector: 'ffmpeg-scene';
+}
+
+/**
+ * 智能体在这条会话里做好了一份幻灯片（`slides_check` 校验通过，docs/design/slides §7.3）：线程里出现幻灯片卡片，点开在功能区的幻灯片标签里编辑。
+ * 同一份 deck 只有一条，之后再校验通过时更新标题、页数与 `taskId`（换成那次校验的任务；条目 id 与位置不变）。
+ */
+export interface SlidesCreated {
+  /** deck 目录；与 `VideoCreated.target` 同一个写法，打开时原样交给 `slides.open`。 */
+  target: VideoChange['target'];
+  /** `deck.json` 的 `title`（去掉首尾空白，可能为空）。 */
+  title: string;
+  slideCount: number;
 }
 
 /**
@@ -775,7 +791,8 @@ export interface TaskSummary {
 /**
  * Space 条目（架构设计 §5.7）。目录是派生索引，条目有四种来源：
  *
- * - 来源目录（登记的项目目录、不属于项目的会话的工作目录）里认得出的文件与视频目录；视频条目带 `ref.videoId`；
+ * - 来源目录（登记的项目目录、不属于项目的会话的工作目录）里认得出的文件、视频目录与幻灯片目录（有合法 `deck.json` 的目录，
+ *   一份 deck 一个条目，不拆成里面的文件）；视频条目带 `ref.videoId`；
  * - Artifact Store 里可交付的产物（生成的图片、音频、文本；不在来源目录里的导出），`id` 是 artifactId；
  * - Job Ledger 里进行中与失败的生成、导出：`generating` / `failed` 的占位，`id` 是 jobId，没有 bytes；
  * - 经 `space.import` 登记的项目文件（与来源目录里的同一个文件是同一个条目，`origin.source` 为 `imported`）。
@@ -783,7 +800,17 @@ export interface TaskSummary {
  * 发布到来源目录里的导出与扫描到的那个文件是同一个条目（`id` 由来源与相对路径决定），带上导出的来源与状态。
  * `status` 为 null 表示没有可说的状态（普通文件、视频）。
  */
-export type SpaceEntryKind = 'video' | 'export' | 'video-file' | 'image' | 'audio' | 'subtitle' | 'document' | 'package' | 'template';
+export type SpaceEntryKind =
+  | 'video'
+  | 'export'
+  | 'video-file'
+  | 'image'
+  | 'audio'
+  | 'subtitle'
+  | 'document'
+  | 'package'
+  | 'template'
+  | 'slides';
 
 export type SpaceEntryStatus = 'generating' | 'candidate' | 'applied' | 'published' | 'source-changed' | 'missing' | 'failed';
 
@@ -839,6 +866,8 @@ export interface SpaceEntry {
     currentRevision?: string;
   };
   media?: { mediaType?: string; durationSec?: number; width?: number; height?: number };
+  /** 幻灯片条目（deck 目录，docs/design/slides §7.3）的页数；`name` 是 deck 的标题。 */
+  deck?: { slideCount: number };
   /**
    * 结果写到磁盘上的文件（架构设计 §7.9「保存位置」）：取自任务结果的 `outputs[].path`——文件到文件的流程与导出发布的文件、
    * 直接任务另存的副本。文件不在了时没有；来源目录里扫描到的普通文件也没有（按来源目录与 `relPath` 拼）。

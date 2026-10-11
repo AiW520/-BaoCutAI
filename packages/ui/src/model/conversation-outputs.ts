@@ -13,7 +13,7 @@ import { changedFiles } from './thread.ts';
 import { conversationJobVideos, isVideoAt, openingVideo, videoOutput } from './video-cards.ts';
 import { isPreviewExport } from './export-job.ts';
 
-/** 会话头「产物」里的一项（产品设计 §3.2 用户修订）：这条会话新建、改过或在上面做过活的视频，或它工作目录里的文件。 */
+/** 会话头「产物」里的一项（产品设计 §3.2 用户修订）：这条会话新建、改过或在上面做过活的视频、做好的幻灯片，或它工作目录里的文件。 */
 export interface ConversationOutput {
   /** 视频用视频 ID（同一个改几次只算一项），其它文件用 Space 条目 ID。 */
   id: string;
@@ -25,6 +25,8 @@ export interface ConversationOutput {
   entry: SpaceEntry | null;
   /** 视频最近一次修改后的时长。 */
   durationSeconds: number | null;
+  /** 幻灯片（docs/design/slides §7.3）：在功能区幻灯片标签里打开的定位与页数（不知道时 null）；不是幻灯片时没有。 */
+  slides?: { target: FileTarget; slideCount: number | null };
   at: string;
   /**
    * 产生它的任务：视频取最近一次修改所在的任务；文件取最近一次改到它的文件改动步骤所在的任务。
@@ -34,6 +36,14 @@ export interface ConversationOutput {
 }
 
 const LIMIT = 30;
+
+/** Space 里的这个幻灯片条目是不是在这个位置（来源目录 + 相对路径）。 */
+function isSlidesAt(entry: SpaceEntry, target: FileTarget): boolean {
+  if (entry.kind !== 'slides' || !('path' in target) || entry.relPath !== target.path) return false;
+  return 'projectId' in target ? entry.source.projectId === target.projectId : entry.source.conversationId === target.conversationId;
+}
+
+const baseName = (path: string) => path.replace(/[\\/]+$/, '').split(/[\\/]/).pop() ?? path;
 
 /**
  * 文件改动步骤改到的文件 → 最近一次改它的任务。Driver 写的路径可能是绝对路径，也可能相对工作目录；
@@ -55,7 +65,7 @@ function fileTasks(items: readonly TimelineItem[], cwd: string | undefined): Map
 
 /**
  * 这条会话的产物，最近的在前：智能体新建（`video-created`）或经视频引擎改过（变更卡）的视频，智能体在上面做过活的视频
- * （转录、导出、从链接导入新建的……，`jobs` 里这条会话提交的），随第一句话带进来的视频（`openingVideo`），
+ * （转录、导出、从链接导入新建的……，`jobs` 里这条会话提交的），随第一句话带进来的视频（`openingVideo`），智能体做好的幻灯片（`slides-created`），
  * 加上不属于项目的会话自己工作目录里的文件。
  * 项目会话的其它文件没有记录是哪条会话产生的，不列；进了回收站的不列。`cwd` 用来把文件对回改它的任务。
  * 会话头只列最近 30 项；按回复分组时不截断（`limit: Infinity`）。
@@ -90,7 +100,25 @@ export function conversationOutputs(
   // 随第一句话带进来的视频：线程里有它的卡，会话摘要里也列（同一张卡，产品设计 §3.2.2）。
   const opening = openingVideo(items);
   if (opening && !videos.has(opening.videoId)) videos.set(opening.videoId, videoOutput(opening.videoId, items, entries, jobs));
-  const outputs = [...videos.values()].filter((output) => !output.entry?.user.trashedAt);
+  // 智能体做好的幻灯片（`slides-created` 回执）：一份一项，标题、页数与任务取最近一次校验通过的，回复下面的卡片跟着它挪。
+  // Space 里有它的条目时用条目的 id，下面列工作目录里的文件时不再重复。
+  const decks: ConversationOutput[] = [];
+  for (const item of items) {
+    if (item.kind !== 'slides-created') continue;
+    const entry = entries.find((e) => isSlidesAt(e, item.target)) ?? null;
+    decks.push({
+      id: entry?.id ?? item.id,
+      kind: 'slides',
+      name: item.title || entry?.name || baseName(item.target.path),
+      video: null,
+      entry,
+      durationSeconds: null,
+      slides: { target: item.target, slideCount: item.slideCount },
+      at: item.createdAt,
+      taskId: item.taskId,
+    });
+  }
+  const outputs = [...videos.values(), ...decks].filter((output) => !output.entry?.user.trashedAt);
   if (!conversation.projectId) {
     const normalize = (path: string) => path.replace(/\\/g, '/');
     const exports = jobs.filter((j) => j.kind === 'export');
@@ -125,6 +153,7 @@ export function conversationOutputs(
         video: entry.kind === 'video' ? videoTargetOf(entry) : null,
         entry,
         durationSeconds: null,
+        ...(entry.kind === 'slides' ? { slides: { target: videoTargetOf(entry), slideCount: entry.deck?.slideCount ?? null } } : {}),
         at: entry.lastActivityAt,
         taskId: tasks.get(entry.relPath) ?? null,
       });

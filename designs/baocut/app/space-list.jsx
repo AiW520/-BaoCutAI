@@ -61,6 +61,10 @@
         <span className="sp-prev__doctype">{SP.KINDS[it.kind].label}</span>
       </div>;
     }
+    /* 幻灯片（docs/design/slides §7.3）：第一页；列表行里的小图放不下，留类型图标 */
+    if (it.kind === 'slides' && it.slides?.length && !missing && !small && window.SlideFace) {
+      return <div className={cx('sp-prev', 'sp-prev--slides', size)}><window.SlideFace slide={it.slides[0]} label={`${it.name}的第一页`} /></div>;
+    }
     if (it.kind === 'image' && it.art) {
       /* 列表行里名字就在旁边，缩略图不再重复读一遍 */
       const a11y = small ? {'aria-hidden': true} : {role: 'img', 'aria-label': it.name};

@@ -12,6 +12,7 @@ import {
   type TasksEvent,
   type VideoChange,
   type VideoCreated,
+  type SlidesCreated,
   type VideoOpenResult,
 } from '@baocut/protocol';
 import { engineProtections, type Harness } from '@baocut/harness';
@@ -202,6 +203,11 @@ export class AgentScope implements ToolScope<AgentAccess> {
         ? { ...created.target, conversationId: access.conversation.id }
         : created.target;
     this.#harness.recordVideoCreated(access.conversation.id, access.taskId, { ...created, target });
+  }
+
+  /** `slides_check` 校验通过的 deck 在会话里记一条，界面的幻灯片卡片从它出现（docs/design/slides §7.3）。 */
+  recordSlides(access: AgentAccess, created: SlidesCreated): void {
+    this.#harness.recordSlidesCreated(access.conversation.id, access.taskId, created);
   }
 
   /**

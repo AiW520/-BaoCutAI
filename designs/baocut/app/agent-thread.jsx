@@ -31,6 +31,7 @@
     /* 交给 Agent 带的引用（§4.7）放在气泡上方，与气泡右对齐 */
     return <div className="amsg amsg--user" data-role="user">
       {m.reference && window.ComposerRefToken ? <div className="bc-ai-sent-attachments" style={{marginBottom: 0}} aria-label="引用的 Space 条目"><window.ComposerRefToken reference={m.reference} /></div> : null}
+      {m.slideAnnotations?.length && window.SlideNotesToken ? <div className="bc-ai-sent-attachments" style={{marginBottom: 0}} aria-label="幻灯片标注"><window.SlideNotesToken notes={m.slideAnnotations} /></div> : null}
       <A.UserMessage>
       {!!m.attachments?.length && <div className="bc-ai-sent-attachments" aria-label="已发送的文件">
         {m.attachments.map((a, i) => <BCAction key={a.id || i} className="bc-ai-sent-file" aria-label={`打开附件：${a.name}`} onClick={() => setPreview(a)}>
@@ -287,11 +288,13 @@
     const mode = AG.normalizeMode(sess.mode);
     /* Space 条目的引用标签（product-design §4.7）：读会话上的 `draftReference`，随下一条消息发出，发之前可以去掉 */
     const reference = sess.draftReference || null;
+    /* 幻灯片标签页里加进来的标注（docs/design/slides §8.2）：随下一条消息发出，发之前可以逐条去掉 */
+    const slideNotes = sess.draftSlideAnnotations || [];
     const send = () => {
-      if (off || reading || busy || (!draft.trim() && !attachments.length && !reference)) return;
-      onSend(window.BC_AGENT_SKILLS.withSkill(draft.trim(), skill), attachments, reference);
+      if (off || reading || busy || (!draft.trim() && !attachments.length && !reference && !slideNotes.length)) return;
+      onSend(window.BC_AGENT_SKILLS.withSkill(draft.trim(), skill), attachments, reference, slideNotes);
       setDraft(''); setSkillId(null);
-      setAttachments([]); onPatch({draftAttachments: [], ...(reference ? {draftReference: null} : {})});
+      setAttachments([]); onPatch({draftAttachments: [], ...(reference ? {draftReference: null} : {}), ...(slideNotes.length ? {draftSlideAnnotations: []} : {})});
     };
     const completions = filter => {
       if (filter.startsWith('/')) return AG.slashItems(filter.slice(1), D.agent.slash).map(c =>
@@ -343,10 +346,12 @@
           </div>
         ) : null}
         <PromptField inputRef={ref} onSubmit={send} onStop={() => app.stopAgent(sess.id)} busy={busy}
-          canSubmit={!off && !reading && (!!draft.trim() || !!attachments.length || !!reference)} hasAttachments={!!attachments.length || !!reference}
+          canSubmit={!off && !reading && (!!draft.trim() || !!attachments.length || !!reference || !!slideNotes.length)} hasAttachments={!!attachments.length || !!reference || !!slideNotes.length}
           renderCompletions={completions}
           attachments={<><window.ComposerSkillToken skill={skill} onRemove={() => setSkillId(null)} />
             <window.ComposerRefToken reference={reference} onRemove={() => onPatch({draftReference: null})} />
+            {window.SlideNotesToken ? <window.SlideNotesToken notes={slideNotes} onClear={() => onPatch({draftSlideAnnotations: []})}
+              onRemove={id => onPatch({draftSlideAnnotations: window.BC_HOME_SLIDES.remove(slideNotes, id)})} /> : null}
             <ComposerAttachments items={attachments} onRemove={i => {
               const all = attachments.filter((_, n) => n !== i); setAttachments(all); onPatch({draftAttachments: all});
             }} /></>} inputProps={{rows: compact ? 2 : 3, value: draft, disabled: off,
@@ -426,17 +431,17 @@
       app.patchSession(sess.id, next);
       /* 2026-10-01：选了写入目标的会话仍住在 Home——视频从消息卡片打开（第 110 轮「搬进项目编辑器」退场） */
     };
-    const send = (text, attachments = [], reference = null) => {
+    const send = (text, attachments = [], reference = null, slideNotes = []) => {
       // product-design §5.1：Space 首条消息带当前视频卡，随后进入 Home 会话。
       const artifacts = videoCard && !cur.messages.length && cur.project ? [cur.project] : [];
       if (sess) {
-        app.sendAgent(sess.id, text, undefined, attachments, reference, artifacts);
+        app.sendAgent(sess.id, text, undefined, attachments, reference, artifacts, slideNotes);
         if (onSent) onSent(sess);
         return;
       }
       const s = app.newSession({project: draftSess.project, dir: draftSess.dir, harness: draftSess.harness, model: draftSess.model,
         effort: draftSess.effort, mode: draftSess.mode});
-      app.sendAgent(s.id, text, s, attachments, reference, artifacts);
+      app.sendAgent(s.id, text, s, attachments, reference, artifacts, slideNotes);
       if (onCreated) onCreated(s);
       if (onSent) onSent(s);
     };

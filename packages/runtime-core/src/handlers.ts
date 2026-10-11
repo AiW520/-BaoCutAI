@@ -6,6 +6,7 @@ import {
   parseVideoTopic,
   type FileTarget,
   type Id,
+  type SlideAnnotation,
   type RpcMethod,
   type RpcParams,
   type RpcResult,
@@ -23,6 +24,7 @@ import { findSubtitles, type MediaRegistry } from './media.ts';
 import { listProjectFiles } from './project-files.ts';
 import { createProjectFile, type ProjectFileScope } from './project-file-create.ts';
 import type { MediaAnalysis } from './media-analysis.ts';
+import { resolveSlideAnnotations, type SlidesOpener } from './slides.ts';
 import type { SpaceCatalog } from './space-catalog.ts';
 import { resolvePipelineEntryInputs, withSpeechMaterial, withTextMaterial } from './space/space-inputs.ts';
 import { spaceMethods, updateEntry } from './space/space-methods.ts';
@@ -79,6 +81,8 @@ export interface HandlerDeps {
   setup: AgentSetup;
   space: SpaceCatalog;
   media: MediaRegistry;
+  /** 幻灯片编辑器的地址（`slides.open`，docs/design/slides §6.1）：网关与 Web 服务的基址不同。 */
+  slides: SlidesOpener;
   attachments: AttachmentStore;
   analysis: MediaAnalysis;
   /** Space 条目的缩略图（`space.thumbnail`）。 */
@@ -161,6 +165,7 @@ export function createHandlers({
   setup,
   space,
   media,
+  slides,
   attachments,
   analysis,
   spaceThumbnails,
@@ -194,6 +199,9 @@ export function createHandlers({
   const nodeChanged = <T>(result: Promise<T>): Promise<T> => result.finally(() => external.manager.refresh('node'));
   /** 文件定位到来源目录与文件。目录内的检查在媒体通道（或视频服务）里做。 */
   const locateMedia = (target: FileTarget) => locateFileTarget(harness, space, target);
+  /** 发送与插话带的幻灯片标注：deck 换成相对会话工作目录的路径（docs/design/slides §9）。 */
+  const slideAnnotationsOf = (conversationId: Id, annotations: readonly SlideAnnotation[] | undefined) =>
+    resolveSlideAnnotations(annotations, harness.getConversation(conversationId).conversation.cwd, locateMedia);
 
   /**
    * 新建视频的位置：项目目录。给的是会话时用它的来源：所属项目，不属于项目时是会话的工作目录（架构设计 §3.10，不为视频建项目）。
@@ -322,7 +330,10 @@ export function createHandlers({
         return { deleted: true as const };
       },
       // 带模板或 skill 的发送在 `templateMethods` 里：先解析模板与 skill，再交给 Harness。
-      'conversations.steer': (p) => harness.steer(p),
+      'conversations.steer': ({ slideAnnotations, ...p }) => {
+        const resolved = slideAnnotationsOf(p.conversationId, slideAnnotations);
+        return harness.steer({ ...p, ...(resolved ? { slideAnnotations: resolved } : {}) });
+      },
       'attachments.prepare': (p) => attachments.prepare(p),
       'tasks.stop': (p) => harness.stopTask(p.taskId),
       // 任务合同（架构设计 §3.2）：经 RPC 的一方都是用户（界面、CLI、Web）；智能体经工具读写自己的合同。
@@ -409,6 +420,11 @@ export function createHandlers({
         const { root, scope } = await videoRoot(p);
         return packages.import(p, root, scope, principal);
       },
+      'slides.open': async (p) => {
+        // Space 条目给的是绝对路径，其余是相对来源目录的路径。
+        const { root, file } = locateMedia(p);
+        return slides.open(root, path.isAbsolute(file) ? path.relative(root, file) : file);
+      },
       'videos.open': (p, principal) => videos.open(locateMedia(p), principal),
       'videos.close': (p, principal) => videos.close(p.videoId, principal),
       'videos.delete': (p, principal) => videoTrash.delete(p, principal),
@@ -490,7 +506,7 @@ export function createHandlers({
         ),
       'pipelines.retry': (p) => pipelines.retry(p.jobId),
       ...externalToolMethods(() => externalTools),
-      ...templateMethods({ templates, media, harness, skills }),
+      ...templateMethods({ templates, media, harness, skills, slideAnnotationsOf }),
       ...skillMethods({ skills, installer: skillInstaller }),
       ...catalogMethods(toolCatalog, agentSkillsDir === undefined ? {} : { agentSkillsDir: () => agentSkillsDir }),
       ...toolCatalogueMethods({

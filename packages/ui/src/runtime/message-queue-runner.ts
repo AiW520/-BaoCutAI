@@ -27,9 +27,9 @@ function transport(runtime: RuntimeSession, conversationId: Id): QueueTransport 
         ? Promise.resolve(
             useDirectory.getState().conversations.find((c) => c.id === conversationId)?.activeTaskId ? 'unsupported' : 'no-active-turn',
           )
-        : runtime.steer(conversationId, m.text, ids(m)),
+        : runtime.steer(conversationId, m.text, ids(m), m.slideAnnotations),
     send: async (m) => {
-      await runtime.send(conversationId, m.text, m.context, ids(m), undefined, m.skills);
+      await runtime.send(conversationId, m.text, m.context, ids(m), undefined, m.skills, m.slideAnnotations);
     },
   };
 }

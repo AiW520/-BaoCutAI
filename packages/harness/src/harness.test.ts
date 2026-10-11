@@ -431,6 +431,23 @@ describe('无项目会话绑定项目', () => {
   });
 });
 
+describe('幻灯片回执', () => {
+  it('同一份 deck 只有一条：再次校验通过时更新标题、页数与任务，id 与位置不变；没有任务时保留原来的', async () => {
+    const conversation = await harness.createConversation({ title: '做幻灯片' });
+    const target = { conversationId: conversation.id, path: 'decks/talk' };
+    harness.recordSlidesCreated(conversation.id, 'task_1', { target, title: '初稿', slideCount: 3 });
+    harness.recordSlidesCreated(conversation.id, 'task_1', { target: { conversationId: conversation.id, path: 'other' }, title: '另一份', slideCount: 1 });
+    const slides = () => harness.getConversation(conversation.id).items.filter((item) => item.kind === 'slides-created');
+    const [first, other] = slides();
+    expect(first).toMatchObject({ target, title: '初稿', slideCount: 3, taskId: 'task_1' });
+
+    harness.recordSlidesCreated(conversation.id, 'task_2', { target, title: '定稿', slideCount: 5 });
+    expect(slides()).toEqual([{ ...first, title: '定稿', slideCount: 5, taskId: 'task_2' }, other]);
+    harness.recordSlidesCreated(conversation.id, null, { target, title: '定稿', slideCount: 6 });
+    expect(slides()[0]).toMatchObject({ id: first!.id, slideCount: 6, taskId: 'task_2' });
+  });
+});
+
 describe('withEditorContext', () => {
   const base = { videoId: 'vid', videoName: '样片', videoPath: 'videos/样片', revision: '3', selection: [], playheadSeconds: 1.5 };
 

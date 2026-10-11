@@ -35,6 +35,8 @@ export interface ScannedFile {
   size: number;
   mtimeMs: number;
   birthtimeMs?: number;
+  /** 幻灯片条目（deck 目录）：deck.json 里的标题与页数。 */
+  deck?: { title: string; slideCount: number };
 }
 
 export interface ScannedItem {
@@ -132,6 +134,10 @@ export function deriveEntries(input: DeriveInput): Map<Id, DerivedEntry> {
       user: { favorite: false, displayName: null, trashedAt: null },
     };
     const derived: DerivedEntry = { entry, location: { kind: 'source', sourceKey: item.sourceKey, relPath: item.file.relPath } };
+    if (item.file.deck) {
+      if (item.file.deck.title) entry.name = item.file.deck.title;
+      entry.deck = { slideCount: item.file.deck.slideCount };
+    }
     if (item.file.kind === 'video') {
       const dir = path.join(source.root, ...item.file.relPath.split('/'));
       derived.videoDir = dir;

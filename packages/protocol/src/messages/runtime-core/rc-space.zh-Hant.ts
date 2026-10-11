@@ -25,6 +25,7 @@ export const zhHant: RcSpaceMessages = {
   projectDirNotFound: '專案資料夾不存在',
   hiddenDirFile: '無法加入隱藏資料夾或相依套件資料夾中的檔案',
   videoDirFile: '影片資料夾中的檔案屬於影片，無法單獨加入',
+  slidesDirFile: '投影片資料夾中的檔案屬於這份投影片，無法單獨加入',
   tooManySameName: '專案的 imports/ 中同名的檔案太多',
 
   purgeVideoDeleteFirst: '請先刪除影片（videos.delete），將它移到垃圾桶，再從垃圾桶中永久刪除',

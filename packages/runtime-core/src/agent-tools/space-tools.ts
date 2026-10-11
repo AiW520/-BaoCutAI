@@ -21,7 +21,7 @@ export interface SpaceToolsDeps {
   jobs: { list(): JobRecord[] };
 }
 
-const KINDS = ['video', 'export', 'video-file', 'image', 'audio', 'subtitle', 'document', 'package', 'template'] as const;
+const KINDS = ['video', 'export', 'video-file', 'image', 'audio', 'subtitle', 'document', 'slides', 'package', 'template'] as const;
 const STATUSES = ['generating', 'candidate', 'applied', 'published', 'source-changed', 'missing', 'failed', 'none'] as const;
 
 const schemas = {
@@ -29,10 +29,10 @@ const schemas = {
     kind: z
       .array(z.enum(KINDS))
       .min(1)
-      .max(9)
+      .max(10)
       .optional()
       .describe(
-        '可选。只列这些种类：video（可编辑的视频）、export（导出的文件）、video-file、image、audio、subtitle、document、package（便携包）、template（模板）',
+        '可选。只列这些种类：video（可编辑的视频）、export（导出的文件）、video-file、image、audio、subtitle、document、slides（幻灯片目录）、package（便携包）、template（模板）',
       ),
     status: z
       .array(z.enum(STATUSES))
@@ -183,6 +183,7 @@ function entryOf(entry: SpaceEntry) {
     videoId: videoOf(entry),
     ...(entry.source.projectId || entry.source.conversationId ? { path: entry.relPath } : {}),
     size: entry.size,
+    ...(entry.deck ? { slideCount: entry.deck.slideCount } : {}),
     lastActivityAt: entry.lastActivityAt,
     ...(entry.origin ? { origin: { source: entry.origin.source, ...(entry.origin.jobId ? { jobId: entry.origin.jobId } : {}) } } : {}),
     ...(entry.user.favorite ? { favorite: true } : {}),

@@ -12,6 +12,7 @@
     "@baocut/client": "*",
     "@baocut/editor-wasm": "*",
     "@baocut/protocol": "*",
+    "@baocut/slides": "*",
     "@react-spectrum/ai": "0.4.0",
     "@react-spectrum/s2": "^1.7.1",
     "dompurify": "^3.4.16",

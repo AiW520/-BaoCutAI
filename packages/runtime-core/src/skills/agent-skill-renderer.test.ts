@@ -241,6 +241,21 @@ describe('只在会话里有的工具在 CLI 面的兜底写法', () => {
     // 工具桥面原样。
     expect(agent('再用 {{tool:downloads_save}} 放进下载目录。')).toBe('再用 `downloads_save` 放进下载目录。');
   });
+
+  it('slides_check 与 slides_import_asset：craft 里的那一步从「调用」起整行换掉，其余地方换成兜底说法', () => {
+    // skills/slides 的第 6 步与第 4 步。
+    expect(cli('6. **校验**。调用 `slides_check`（参数 `path` 是 deck 目录），逐条改掉它列出的问题。问题为 0 后线程里出现卡片。')).toBe(
+      '6. **校验**。终端里没有校验命令：按 `references/format.md` 逐页自查标签、样式与图片地址，按 `references/design.md` 的估算确认放得下，' +
+        '再核对 `deck.json` 的 `order`、`sections`、`cover` 都指向存在的页，`slides/` 里没有 `order` 之外的文件。',
+    );
+    expect(cli('4. **准备图片**。用户给的图片，逐张调用 `slides_import_asset` 放进 deck：返回的 `src` 写进 `<img src>`。')).toBe(
+      '4. **准备图片**。用户给的图片，终端里没有把图片导入 deck 的命令：页面先不放图片，交付时说明哪几页该配什么图。',
+    );
+    expect(cli('最后跑一遍 {{tool:slides_check}}。')).toBe('最后跑一遍 幻灯片校验（只在 BaoCut 的会话里有）。');
+    expect(cli('图片经 slides_import_asset 放进来。')).toBe('图片经 导入图片（只在 BaoCut 的会话里有） 放进来。');
+    // 工具桥面原样。
+    expect(agent('调用 {{tool:slides_check}} 校验。')).toBe('调用 `slides_check` 校验。');
+  });
 });
 
 describe('说明书的标记法报错', () => {

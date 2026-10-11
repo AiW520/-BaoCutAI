@@ -21,6 +21,7 @@ export const ptBR: RcAgentToolsMessages = {
   clauseSeparator: "; ",
 
   createVideoSummary: (p: { name: string }) => `Criar vídeo “${p.name}”`,
+  slidesImportAssetSummary: (p: { file: string; deck: string }) => `Importar a imagem “${p.file}” para os slides “${p.deck}”`,
   editsSummary: (p: { label: string; count: number; types: string }) =>
     `${p.label} (${plural(p.count, "operação", "operações")}: ${p.types})`,
   captionsSummary: (p) => `Adicionar camada de legendas${p.bilingual ? ' bilíngue' : ''} ao documento ${p.documentId}`,

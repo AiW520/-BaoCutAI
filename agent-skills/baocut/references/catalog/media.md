@@ -11,6 +11,9 @@ description: 媒体的机制：从链接下载、转码与合并、取帧看画�
 - 要看画面：构图、镜头分布、字幕会不会挡住内容、剪点前后是什么。
 - 要新建一个空视频、把素材导入视频并放上时间线、打开便携包（`.baocut` 文件）。
 - 要生成图片放进视频。
+<!-- surface: agent -->
+- 要做幻灯片：给 deck 导入图片、校验整份 deck。
+<!-- /surface -->
 
 要转写的链接与本机文件直接用 {{tool:transcribe}}（见 [subtitles](subtitles.md)）：它一步做完新建视频、下载或导入、放上时间线与转写。
 
@@ -82,6 +85,17 @@ description: 媒体的机制：从链接下载、转码与合并、取帧看画�
 {{tool:image}}：{{arg:prompt}}；可给 {{arg:size}}、{{arg:count}}、{{arg:video}}（结果导入为那个视频的候选素材，不放上时间线）。不接受参考图。
 
 **提示词怎么写**，按这个顺序：主体 → 外观或材质 → 场景 → 光 → 机位与构图 → 风格与质量 → 一句保真夹子（不要改什么、不要出现什么）。不用真实品牌与真人做风格参照；一个系列的图沿用同一套风格描述。
+<!-- surface: agent -->
+
+### 幻灯片
+
+一份幻灯片是工作目录里的一个 deck 目录（`deck.json` 加 `slides/<id>.html`），页面用文件工具直接写；怎么做、格式是什么见 {{skill:slides}}。只有两步要用工具：
+
+| 要做的事 | 调用 |
+| --- | --- |
+| 把工作目录里的图片放进 deck | {{tool:slides_import_asset}}，{{arg:deck}} + {{arg:path}}；同一张图只存一份 |
+| 校验整份 deck，通过后线程里出卡片 | {{tool:slides_check}}，{{arg:path}} 是 deck 目录；改完页面再校验一次 |
+<!-- /surface -->
 
 ### 找镜头切换
 
@@ -100,6 +114,10 @@ description: 媒体的机制：从链接下载、转码与合并、取帧看画�
 - {{tool:assets_import}}：回执里有 `assetId`、`itemId`（没放上时间线时为 null）与新版本。
 - {{tool:videos_create}} / {{tool:videos_import_package}}：返回与 {{tool:videos_inspect}} 相同的摘要，含 `videoId`。
 - {{tool:image}}：`outputs` 里每张图的 `artifactId`；带了 video 时还有 `assetId`。
+<!-- surface: agent -->
+- {{tool:slides_import_asset}}：`src` 形如 `/_blob/<id>`，原样写进 `<img src>`。
+- {{tool:slides_check}}：`problems` 是问题总数，为 0 时线程里记一张幻灯片卡片；否则 `slides` 列出每页的 `problems`，`deckProblems` 是 `deck.json` 的问题，`orphans` 是不在 `order` 里的页面文件。每页的 `notes` 不算问题，其中以「排版」开头的是放不下或互相压住的提示，尽量改掉。
+<!-- /surface -->
 
 ## 看一条视频的证据阶梯
 
@@ -126,6 +144,11 @@ description: 媒体的机制：从链接下载、转码与合并、取帧看画�
 | `ASSET_MISSING` | 链接的原文件被移动或删除：请用户放回原处或给新位置 |
 | `INPUT_TOO_LONG` | 图片提示词超长：缩短后重提 |
 | `CAPABILITY_NOT_CONFIGURED` | 没有可用的图片模型：见 [models](models.md) |
+<!-- surface: agent -->
+| `DECK_NOT_FOUND`、`NOT_A_DECK` | 路径不是 deck 目录（没有 `deck.json`，或它不是幻灯片的索引）：核对路径 |
+| `SLIDES_COMPILER_UNAVAILABLE` | 这台机器上的 BaoCut 没带幻灯片编辑器：deck 文件照样写好，告诉用户没法校验、也没法在 BaoCut 里打开，不要自己找编译器 |
+| `UNSUPPORTED_ASSET_TYPE` | 只能导入 png、jpg、gif、webp、avif、svg 图片 |
+<!-- /surface -->
 
 <!-- surface: cli -->
 不要自己运行 yt-dlp 或 ffmpeg 来绕过这些错误。

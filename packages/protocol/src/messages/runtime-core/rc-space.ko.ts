@@ -25,6 +25,7 @@ export const ko: RcSpaceMessages = {
   projectDirNotFound: '프로젝트 폴더가 없습니다',
   hiddenDirFile: '숨김 폴더나 종속성 폴더 안의 파일은 추가할 수 없습니다',
   videoDirFile: '영상 폴더 안의 파일은 영상에 속하므로 따로 추가할 수 없습니다',
+  slidesDirFile: '슬라이드 폴더 안의 파일은 슬라이드에 속하므로 따로 추가할 수 없습니다',
   tooManySameName: '프로젝트의 imports/에 이름이 같은 파일이 너무 많습니다',
 
   purgeVideoDeleteFirst: '먼저 영상을 삭제해(videos.delete) 휴지통으로 옮긴 뒤 휴지통에서 영구 삭제하세요',

@@ -1,4 +1,4 @@
-import { Activity, useEffect, useRef, useState, type ReactNode, type RefObject } from 'react';
+import { Activity, useEffect, useRef, useState, type CSSProperties, type ReactNode, type RefObject } from 'react';
 import type { FileTarget, Id } from '@baocut/protocol';
 import { ProgressCircle } from '@react-spectrum/s2';
 import { style } from '@react-spectrum/s2/style' with { type: 'macro' };
@@ -11,6 +11,7 @@ import { useVideo } from '../../state/video-store.ts';
 import { VideoEditor } from '../editor/video-editor.tsx';
 import { FilePane } from '../file-pane.tsx';
 import { ProjectFiles } from './project-files.tsx';
+import { SlidesPane } from './slides-pane.tsx';
 import { WebTab } from './web-tab.tsx';
 import { WORKSPACE_OVERLAY_ATTRIBUTE } from './workspace-overlay.ts';
 import { workspacePanelId, workspaceTabId } from './workspace-tabs.tsx';
@@ -73,19 +74,23 @@ export function WorkspacePanes({
 }) {
   const rootRef = useRef<HTMLDivElement>(null);
   const covered = useCovered(rootRef);
+  const parkedWidth = useShownWidth(rootRef, visible);
+  // 收起整个右侧区域时，有幻灯片标签就不用 display none：编辑器 iframe 里的布局会全部量成 0，回来时缩放闪动（见 `Pane`）。
+  // 改为按收起前的宽度叠在会话列下面、看不见；其他标签各自仍是 display none。一开始就是收起的（没量过宽度）照旧。
+  const park = !visible && parkedWidth.current !== undefined && tabs.some((t) => t.kind === 'slides');
   const openKey = useVideo((s) => (s.video ? targetKey(s.video.target) : null));
   const current = visible ? tabs.find((t) => itemKey(t) === active) : undefined;
   // 当前标签就是打开着的视频：编辑器那一格接管这个标签的面板 id。
   const editorKey = current?.kind === 'video' && targetKey(current.target) === openKey ? itemKey(current) : null;
 
   return (
-    <div ref={rootRef} className={panes({ isHidden: !visible })}>
+    <div ref={rootRef} className={panes({ isHidden: !visible && !park })} style={park ? { ...PARKED_AREA, width: parkedWidth.current } : undefined}>
       {tabs.map((item) => {
         const key = itemKey(item);
         if (key === editorKey) return null;
         const shown = visible && key === active;
         return (
-          <Pane key={`${book}:${key}`} paneKey={key} shown={shown}>
+          <Pane key={`${book}:${key}`} paneKey={key} shown={shown} keepLayout={item.kind === 'slides'}>
             <PaneContent item={item} conversationId={conversationId} book={book} shown={shown} webVisible={!covered} />
           </Pane>
         );
@@ -95,8 +100,32 @@ export function WorkspacePanes({
   );
 }
 
-/** 一个标签的面板。隐藏时把里面的播放器停下（网页视图由 WebTab 按 `active` 自己隐藏）。 */
-function Pane({ paneKey, shown, children }: { paneKey: string; shown: boolean; children: ReactNode }) {
+const PARKED: CSSProperties = { position: 'absolute', inset: 0, visibility: 'hidden' };
+/** 收起的右侧区域停在内容区右侧，宽度另给（收起前的宽度）。 */
+const PARKED_AREA: CSSProperties = { position: 'absolute', top: 0, bottom: 0, right: 0, visibility: 'hidden', pointerEvents: 'none' };
+
+/** 右侧区域显示着时的宽度，收起后保留最后一次的值（不触发重新渲染）。 */
+function useShownWidth(ref: RefObject<HTMLElement | null>, shown: boolean): RefObject<number | undefined> {
+  const width = useRef<number | undefined>(undefined);
+  useEffect(() => {
+    const element = ref.current;
+    if (!shown || !element) return;
+    const observer = new ResizeObserver(() => {
+      width.current = element.getBoundingClientRect().width;
+    });
+    observer.observe(element);
+    return () => observer.disconnect();
+  }, [ref, shown]);
+  return width;
+}
+
+/**
+ * 一个标签的面板。隐藏时把里面的播放器停下（网页视图由 WebTab 按 `active` 自己隐藏）。
+ *
+ * `keepLayout`（幻灯片标签）隐藏时不用 display none：编辑器的 iframe 重新显示时会先量到一个错的尺寸，缩放闪动约 1 秒。
+ * 改为叠在当前标签下面、保持同样的尺寸，只是看不见：visibility hidden 不接收指针、不进 Tab 顺序与读屏。
+ */
+function Pane({ paneKey, shown, keepLayout, children }: { paneKey: string; shown: boolean; keepLayout?: boolean; children: ReactNode }) {
   const ref = useRef<HTMLDivElement>(null);
   useEffect(() => {
     if (shown) return;
@@ -109,7 +138,8 @@ function Pane({ paneKey, shown, children }: { paneKey: string; shown: boolean; c
       role="tabpanel"
       aria-labelledby={workspaceTabId(paneKey)}
       tabIndex={0}
-      className={pane({ isHidden: !shown })}>
+      className={pane({ isHidden: !shown && !keepLayout })}
+      style={!shown && keepLayout ? PARKED : undefined}>
       {children}
     </div>
   );
@@ -165,6 +195,8 @@ function PaneContent({
           onTitleChange={(title) => setWebTitle(item.id, title)}
         />
       );
+    case 'slides':
+      return <SlidesPane target={item.target} conversationId={conversationId} active={shown} />;
   }
 }
 
@@ -189,6 +221,7 @@ function ConversationFiles({ conversationId }: { conversationId: Id }) {
       conversationId={conversationId}
       onOpenFile={(target) => useShell.getState().openPane({ kind: 'file', target: scoped(target) })}
       onOpenVideo={(target) => useShell.getState().openVideo(scoped(target))}
+      onOpenSlides={(target) => useShell.getState().openPane({ kind: 'slides', target: scoped(target) })}
     />
   );
 }

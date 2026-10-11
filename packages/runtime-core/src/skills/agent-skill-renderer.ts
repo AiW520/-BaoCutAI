@@ -127,6 +127,19 @@ export const SESSION_ONLY_TOOLS: Readonly<Record<string, SessionOnlyToolFallback
     replacement: '把文件的路径告诉用户（终端里没有下载目录这一步：文件就在你写的位置）',
     text: '把文件交给用户（终端里直接告诉用户文件的路径）',
   },
+  // 幻灯片（skills/slides）的校验与导入图片只在会话里有；craft 里各占一个步骤，整步从「调用」换到行尾。
+  slides_check: {
+    phrase: new RegExp(`调用\\s*${toolNamePattern('slides_check')}[^\\n]*`, 'g'),
+    replacement:
+      '终端里没有校验命令：按 `references/format.md` 逐页自查标签、样式与图片地址，按 `references/design.md` 的估算确认放得下，' +
+      '再核对 `deck.json` 的 `order`、`sections`、`cover` 都指向存在的页，`slides/` 里没有 `order` 之外的文件。',
+    text: '幻灯片校验（只在 BaoCut 的会话里有）',
+  },
+  slides_import_asset: {
+    phrase: new RegExp(`逐张调用\\s*${toolNamePattern('slides_import_asset')}[^\\n]*`, 'g'),
+    replacement: '终端里没有把图片导入 deck 的命令：页面先不放图片，交付时说明哪几页该配什么图。',
+    text: '导入图片（只在 BaoCut 的会话里有）',
+  },
 };
 // i18n-ignore-end
 

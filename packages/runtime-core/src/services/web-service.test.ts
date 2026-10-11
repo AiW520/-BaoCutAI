@@ -845,6 +845,64 @@ describe('Web 服务', () => {
     expect(details(await readonlyPage.request('media.resolve', { localPath: local }).catch((e: unknown) => e))).toMatchObject({ code: 'forbidden' });
   });
 
+  it('幻灯片：浏览器拿到同源的相对地址（与桌面同一个 grant）；编辑器路由要会话，只能嵌在自己的页面里；只读配置下不能发布', async () => {
+    const editor = path.join(dir, 'slides-editor');
+    await fs.mkdir(editor);
+    await fs.writeFile(path.join(editor, 'index.html'), '<!doctype html><div id="root"></div>');
+    await boot({ dist }, { slidesEditorDist: editor });
+    const origin = await openWeb();
+    const cookie = await login(origin);
+    const page = await browser(origin, cookie);
+    const { project } = await desktop.request('projects.create', { name: '幻灯片' });
+    const deck = path.join(project.path, 'pitch');
+    await fs.mkdir(path.join(deck, 'slides'), { recursive: true });
+    await fs.writeFile(path.join(deck, 'deck.json'), JSON.stringify({ v: 4, title: '路演', order: ['s01'] }));
+    await fs.writeFile(path.join(deck, 'slides', 's01.html'), '<section></section>');
+    await fs.mkdir(path.join(project.path, 'plain'));
+
+    const opened = await page.request('slides.open', { projectId: project.id, path: 'pitch' });
+    expect(opened).toMatchObject({ deck: { title: '路演', slideCount: 1 }, editorAvailable: true });
+    expect(opened.url).toMatch(/^\/slides\/[A-Za-z0-9_-]{32}\/$/);
+    const gateway = runtime!.discovery.endpoint.replace('ws:', 'http:');
+    expect((await desktop.request('slides.open', { projectId: project.id, path: 'pitch' })).url).toBe(`${gateway}${opened.url}`);
+    for (const target of ['plain', '../outside.txt', 'missing']) {
+      expect(details(await page.request('slides.open', { projectId: project.id, path: target }).catch((e: unknown) => e)), target).toMatchObject({
+        code: target === 'missing' ? 'not-found' : 'invalid-request',
+        ...(target === 'plain' ? { details: { code: 'SLIDES_NOT_A_DECK' } } : {}),
+      });
+    }
+
+    const editorPage = await send(`${origin}${opened.url}`, { headers: { Cookie: cookie } });
+    expect(editorPage.status).toBe(200);
+    expect(editorPage.headers['x-frame-options']).toBeUndefined();
+    expect(editorPage.headers['content-security-policy']).toContain("frame-ancestors 'self'");
+    expect(editorPage.headers['x-content-type-options']).toBe('nosniff');
+    expect((await send(`${origin}${opened.url}`)).status).toBe(401);
+    expect((await send(`${origin}${opened.url}`, { headers: { Cookie: cookie, 'Sec-Fetch-Site': 'cross-site' } })).status).toBe(403);
+    expect((await send(`${origin}/_blob/${'0'.repeat(32)}`)).status).toBe(401);
+    expect((await send(`${origin}/_blob/${'0'.repeat(32)}`, { headers: { Cookie: cookie } })).status).toBe(404);
+    const listing = JSON.parse((await send(`${origin}${opened.url}_files.json`, { headers: { Cookie: cookie } })).body) as { files: object };
+    expect(Object.keys(listing.files)).toEqual(['project/deck.json', 'project/slides/s01.html']);
+
+    const publish = (html: string, headers: Record<string, string> = { Cookie: cookie, Origin: origin }) =>
+      send(`${origin}${opened.url}__deck/publish`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', ...headers },
+        body: JSON.stringify({ files: { 'project/slides/s01.html': { base64: Buffer.from(html).toString('base64'), contentType: 'text/html' } } }),
+      });
+    expect((await publish('<section>v2</section>')).status).toBe(200);
+    expect(await fs.readFile(path.join(deck, 'slides', 's01.html'), 'utf8')).toBe('<section>v2</section>');
+    expect((await publish('x', { Origin: origin })).status).toBe(401);
+
+    await desktop.request('services.configure', { serviceId: 'web', readOnly: true });
+    await until(() => page.state.status === 'disconnected');
+    const readOnly = await publish('<section>v3</section>');
+    expect(readOnly.status).toBe(403);
+    expect(JSON.parse(readOnly.body)).toMatchObject({ code: 'not_writer' });
+    expect(JSON.parse((await send(`${origin}${opened.url}__deck/session`, { headers: { Cookie: cookie } })).body)).toEqual({ canEdit: false });
+    expect(await fs.readFile(path.join(deck, 'slides', 's01.html'), 'utf8')).toBe('<section>v2</section>');
+  });
+
   it('访问代码与会话令牌不出现在 services.list、主题、日志、配置文件与审计里', async () => {
     await boot();
     const events: ServicesEvent[] = [];

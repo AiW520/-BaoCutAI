@@ -55,6 +55,12 @@ describe('排队的增删改', () => {
     expect(isQueuedMessage({ ...msg('a'), skills: [{ id: 'a' }, { id: 'b' }] })).toBe(true);
     expect(isQueuedMessage({ ...msg('a'), skills: [{ id: 'a' }, {}] })).toBe(false);
     expect(isQueuedMessage({ ...msg('a'), skills: { id: 'a' } })).toBe(false);
+    // 加进对话的幻灯片标注也随排队消息存。
+    const note = { deck: { conversationId: 'c1', path: 'talk/deck.json' }, anchor: 's1#title', slideId: 's1', label: 'Slide 1 › Title', text: '改短' };
+    expect(isQueuedMessage({ ...msg('a'), slideAnnotations: [note, { ...note, detail: 'Slide 1 #s1', area: true }] })).toBe(true);
+    expect(isQueuedMessage({ ...msg('a'), slideAnnotations: [{ ...note, text: 1 }] })).toBe(false);
+    expect(isQueuedMessage({ ...msg('a'), slideAnnotations: [{ ...note, deck: 'talk/deck.json' }] })).toBe(false);
+    expect(isQueuedMessage({ ...msg('a'), slideAnnotations: note })).toBe(false);
   });
 
   it('读回时把只能点一个 skill 时存的 skill 换成 skills', () => {

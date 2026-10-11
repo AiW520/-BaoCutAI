@@ -179,6 +179,12 @@ describe('标签名与条目', () => {
     expect(workspaceTitle(video)).toBe('第一部');
     expect(workspaceTitle({ kind: 'video', target: { entryId: 'e1' } })).toBe('视频不可用');
     expect(workspaceTitle({ kind: 'file', target: { entryId: 'e1' } })).toBe('文件不可用');
+    // 幻灯片（deck 目录）：键按目录，与同一目录的视频、文件分开；名字退到目录名。
+    const slides = { kind: 'slides' as const, target: { conversationId: 'c1', path: 'decks/talk/' } };
+    expect(itemKey(slides)).toBe(`slides:${targetKey(slides.target)}`);
+    expect(workspaceTitle(slides)).toBe('talk');
+    expect(workspaceTitle(slides, '季度回顾')).toBe('季度回顾');
+    expect(workspaceTitle({ kind: 'slides', target: { entryId: 'e1' } })).toBe('幻灯片不可用');
   });
 
   it('按条目 id、项目路径或会话路径找到 Space 条目', () => {

@@ -36,6 +36,8 @@ export const fr: AgentToolStepsMessages = {
     readContract: "Lire le contrat de tâche",
     refineContract: "Préciser le contrat de tâche",
     recordCheck: "Enregistrer une vérification d’acceptation",
+    checkSlides: "Vérifier les diapositives",
+    importSlideAsset: "Importer une image de diapositive",
   },
   exportKind: {
     subtitles: "Sous-titres",

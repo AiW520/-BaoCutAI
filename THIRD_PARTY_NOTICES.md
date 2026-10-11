@@ -12,6 +12,13 @@ BaoCut 的部分代码与资源移植、改写或复制自下列开源项目。�
 
 构建从安装包原文收集这些声明，随 Electron 与 Web 输出到 `assets/file-preview-licenses.txt`（`tools/pdf-licenses.ts`）。
 
+## 幻灯片编辑器
+
+编辑器页面与 `slides_check` 用的编译器（`apps/slides-editor`）打进了 React、Base UI、Floating UI、TanStack Virtual、class-variance-authority（Apache-2.0）、clsx、tailwind-merge、JSZip（MIT/GPL-3.0 双许可，取 MIT）及其内联的 pako（MIT 与 Zlib）等 npm 包。构建按实际打进的模块从安装包原文收集许可，输出到 `third-party-licenses.txt`（页面）与 `node/third-party-licenses.txt`（编译器），随应用的 `slides-editor/` 资源分发（`apps/slides-editor/licenses.mjs`）。
+
+- PptxGenJS 3.12.0（Brent Ely，MIT）：构建时按 `packages/slides-runtime/patches/pptxgenjs-3.12.0.json` 加了 25 处扩展（渐变、平铺填充、图片圆角、占位符继承、自定义主题与母版等），不改安装包。
+- mediabunny 1.27.3（Vanilagy and contributors，MPL-2.0）：`packages/slides-runtime/src/media/video-worker.ts` 以字符串原样内嵌它的编译产物，作为重新编码超大视频的 Worker；各段保留原有的 MPL 许可头。完整源码见 https://github.com/Vanilagy/mediabunny，许可全文在 `packages/slides-runtime/licenses/MPL-2.0.txt`，也写进上面两份许可文件。
+
 ## Paseo
 
 - 来源：Paseo（https://github.com/getpaseo/paseo）

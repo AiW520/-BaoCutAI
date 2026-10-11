@@ -58,7 +58,7 @@ test('分类与计数：回收站只收已移入的，其余分类不含它们',
   assert.equal(n.doc, 0);
   assert.equal(n.fav, 1);
   assert.equal(n.trash, 2);
-  assert.deepEqual(SP.CATS.map((c) => c.label), ['全部', '视频', '成片', '图片', '音频', '字幕', '文档', '模板']);
+  assert.deepEqual(SP.CATS.map((c) => c.label), ['全部', '视频', '成片', '图片', '音频', '字幕', '文档', '幻灯片', '模板']);
   assert.deepEqual(SP.SPECIAL.map((c) => c.label), ['收藏', '回收站']);
   assert.ok(SP.isCat('trash') && SP.isCat('doc') && !SP.isCat('nope'));
 });
@@ -152,6 +152,8 @@ test('二次编辑的路子（§4.6）', () => {
   assert.equal(SP.editRoute({kind: 'final'}), 'new-movie');
   assert.equal(SP.editRoute(by.o2), 'text');
   assert.equal(SP.editRoute(by.o3), 'version');
+  assert.equal(SP.editRoute({kind: 'slides'}), 'slides');
+  assert.equal(SP.specText({kind: 'slides', slides: [{}, {}, {}]}), '3 页');
 });
 
 test('另存为新版本：新加一条候选，原条目不动；版本号递增', () => {

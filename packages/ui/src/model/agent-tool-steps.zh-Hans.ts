@@ -35,6 +35,8 @@ export const zhHans: AgentToolStepsMessages = {
     readContract: '读取任务合同',
     refineContract: '细化任务合同',
     recordCheck: '记录验收检查',
+    checkSlides: '检查幻灯片',
+    importSlideAsset: '导入幻灯片素材',
   },
   exportKind: {
     subtitles: '字幕',

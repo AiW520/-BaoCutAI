@@ -9,6 +9,7 @@ export const ptBR: SpaceMessages = {
     audio: "Áudio",
     subtitle: "Legendas",
     document: "Documento",
+    slides: "Slides",
     package: "Pacote de vídeo",
     template: "Template",
   },

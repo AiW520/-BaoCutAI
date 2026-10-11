@@ -173,6 +173,8 @@ describe('工具步骤', () => {
     expect(of('image', { prompt: 'x', count: 4 })).toEqual(['生成图片', '4 张', 'image']);
     expect(of('export', { video: 'v', kind: 'video', format: 'mp4' })).toEqual(['导出', '成片 · MP4', 'export']);
     expect(of('download', { url: 'https://www.youtube.com/watch?v=1' })).toEqual(['下载视频', 'youtube.com', 'download']);
+    expect(of('slides_check', { path: 'decks/talk/' })).toEqual(['检查幻灯片', 'talk', 'slides']);
+    expect(of('slides_import_asset', { deck: 'talk', path: 'images/cover.png' })).toEqual(['导入幻灯片素材', 'cover.png', 'slides']);
     expect(of('edits_apply', { video: 'v', operations: [{ type: 'putDocument', kind: 'translation', language: 'en' }] })).toEqual([
       '翻译',
       'en',
@@ -209,6 +211,20 @@ describe('工具步骤', () => {
       videoName: '样片',
       target: { projectId: 'p', path: '样片' },
       videoRevision: '1',
+    };
+    const blocks = buildThread([user('u1', 't1'), tool('c1', 't1'), created, tool('c2', 't1')]);
+    expect(blocks.map((b) => b.type)).toEqual(['user', 'steps']);
+  });
+
+  it('幻灯片的记录同样不占块，也不打断步骤组', () => {
+    const created: TimelineItem = {
+      kind: 'slides-created',
+      id: 'slides_1',
+      createdAt: at,
+      taskId: 't1',
+      target: { conversationId: 'c', path: 'talk' },
+      title: '季度回顾',
+      slideCount: 3,
     };
     const blocks = buildThread([user('u1', 't1'), tool('c1', 't1'), created, tool('c2', 't1')]);
     expect(blocks.map((b) => b.type)).toEqual(['user', 'steps']);

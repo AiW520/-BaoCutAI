@@ -39,6 +39,9 @@ test('describe：edits_apply 按操作分类别', () => {
   assert.equal(T.describe('edits_apply', {ops: 4}).summary, '4 项操作');
   assert.equal(T.describe('edits_propose', {cut: {count: 3, what: '口癖'}}).label, '提出修改');
   assert.equal(T.describe('edits_undo', {label: '删停顿'}).label, '撤销修改');
+  assert.deepEqual(T.describe('slides_check', {path: '幻灯片/第1讲/', slides: 8}),
+    {kind: 'slides', label: '检查幻灯片', summary: '第1讲 · 8 页', icon: 'template'});
+  assert.equal(T.describe('slides.importAsset', {path: '插图/管线.png'}).summary, '管线.png');
 });
 
 test('describe：网关名同样认得，认不出的返回 null', () => {

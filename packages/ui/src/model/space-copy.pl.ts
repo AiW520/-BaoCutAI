@@ -10,6 +10,7 @@ export const pl: SpaceMessages = {
     audio: "Dźwięk",
     subtitle: "Napisy",
     document: "Dokument",
+    slides: "Slajdy",
     package: "Pakiet wideo",
     template: "Szablon",
   },

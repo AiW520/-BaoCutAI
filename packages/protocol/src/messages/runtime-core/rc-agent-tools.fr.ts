@@ -15,7 +15,8 @@ function linkImportAfter(p: { target: string; name: string | null; transcribe: b
 
 export const fr: RcAgentToolsMessages = {
   instructionsNotSet: 'Les instructions de session n’ont pas été définies : l’ordre d’assemblage du Runtime est incorrect', listSeparator: ', ', clauseSeparator: ' ; ',
-  createVideoSummary: (p) => `Créer la vidéo « ${p.name} »`, editsSummary: (p) => `${p.label} (${p.count} ${pluralForm('fr', p.count, { one: 'opération', other: 'opérations' })} : ${p.types})`,
+  createVideoSummary: (p) => `Créer la vidéo « ${p.name} »`,
+  slidesImportAssetSummary: (p) => `Importer l’image « ${p.file} » dans les diapositives « ${p.deck} »`, editsSummary: (p) => `${p.label} (${p.count} ${pluralForm('fr', p.count, { one: 'opération', other: 'opérations' })} : ${p.types})`,
   captionsSummary: (p) => `Ajouter un calque de sous-titres ${p.bilingual ? 'bilingue ' : ''}pour le document ${p.documentId}`, captionsLabel: 'Ajouter un calque de sous-titres',
   undoSummary: (p) => `Annuler la modification ${p.transactionId}`, undoLatestSummary: 'Annuler la dernière modification',
   deleteVideoSummary: (p) => `Supprimer la vidéo « ${p.name} » (${p.path}) : la déplacer dans la corbeille, où elle peut être restaurée dans Space pendant ${p.days} ${pluralForm('fr', p.days, { one: 'jour', other: 'jours' })}. Les fichiers originaux des médias liés restent à leur emplacement`,

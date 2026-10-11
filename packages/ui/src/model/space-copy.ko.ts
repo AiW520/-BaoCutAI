@@ -9,6 +9,7 @@ export const ko: SpaceMessages = {
     audio: '오디오',
     subtitle: '자막',
     document: '문서',
+    slides: '슬라이드',
     package: '영상 패키지',
     template: '템플릿',
   },

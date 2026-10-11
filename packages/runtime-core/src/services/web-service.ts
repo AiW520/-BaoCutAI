@@ -19,6 +19,7 @@ import {
 } from '@baocut/protocol';
 import { RcWeb } from '@baocut/protocol/messages/runtime-core';
 import type { Harness, Logger } from '@baocut/harness';
+import type { SlidesServer } from '@baocut/slides';
 import { Gateway, type TrustedPrincipal } from '../gateway.ts';
 import type { RpcHandlers } from '../handlers.ts';
 import { MediaRegistry } from '../media.ts';
@@ -37,6 +38,8 @@ import { resolveWebDist, sendLoginPage, sendLoginScript, sendStatic, setSecurity
  * - 网关入口 `/ws`：与桌面界面同一套协议与处理函数，但连接在升级时按会话 cookie 认证，方法与主题按白名单过滤；
  *   主体是 `{ kind: 'web', sessionId }`，写入的操作者是用户本人（`user_local`）；
  * - 媒体通道 `/media/…`：这个服务自己的句柄表（同源的相对地址），取内容还要会话 cookie；不暴露桌面网关的端口与令牌。
+ * - 幻灯片编辑器 `/slides/<grant>/…` 与素材 `/_blob/<id>`（docs/design/slides §6.2）：与网关共用一个 SlidesServer，要会话 cookie；
+ *   只读配置下发布与上传被拒（`not_writer`）；只能嵌在这个服务自己的页面里（`frame-ancestors 'self'`）。
  *
  * 登录：`createAccessLink` 发一个一次性代码，放在链接的 fragment 里（或由用户粘进登录页的输入框）；
  * 登录页的脚本用它 `POST /_auth/session` 换一个 HttpOnly、SameSite=Strict 的会话 cookie。选 cookie 而不是页面内存里的令牌：`<video>`、`<img>` 不能带请求头，
@@ -76,6 +79,7 @@ export class WebService implements ManagedService {
   readonly #sessions: WebSessions;
   readonly #uploads = new Map<string, { sessionId: string; url: string; expires: number }>();
   #binding: { handlers: RpcHandlers; runtime: RuntimeInfo } | null = null;
+  #slides: SlidesServer | null = null;
   #server: Server | null = null;
   #gateway: Gateway | null = null;
   #port: number | null = null;
@@ -90,7 +94,8 @@ export class WebService implements ManagedService {
   }
 
   /** Runtime 装配好网关之后交给它处理函数（用这个服务的媒体句柄表构造的那一组）。在这之前不能开启。 */
-  bind(binding: { handlers: RpcHandlers; runtime: RuntimeInfo }): void {
+  bind(binding: { handlers: RpcHandlers; runtime: RuntimeInfo; slides?: SlidesServer }): void {
+    this.#slides = binding.slides ?? null;
     this.#binding = {
       runtime: binding.runtime,
       handlers: webHandlers(binding.handlers, {
@@ -332,6 +337,7 @@ export class WebService implements ManagedService {
       request.pipe(upstream);
       return;
     }
+    if (pathname.startsWith('/slides/') || pathname.startsWith('/_blob/')) return this.#slidesRequest(request, response);
     if (request.method !== 'GET' && request.method !== 'HEAD') {
       return void response.writeHead(405, { Allow: 'GET, HEAD' }).end();
     }
@@ -356,6 +362,23 @@ export class WebService implements ManagedService {
       if (!response.headersSent) deny(500, RcWeb.readFailed().text);
       else response.destroy();
     });
+  }
+
+  /**
+   * 幻灯片编辑器的路由：要会话（同源请求带的 cookie），白名单里要有 `slides.open`。发布与上传在只读配置下被拒；
+   * 这组路由自己给 CSP，嵌入只放行这个服务自己的页面（替换掉每个响应都带的 `X-Frame-Options: DENY`）。
+   */
+  #slidesRequest(request: IncomingMessage, response: ServerResponse): void {
+    const deny = (status: number, text: string) => response.writeHead(status, { 'Content-Type': 'text/plain; charset=utf-8' }).end(text);
+    const site = request.headers['sec-fetch-site'];
+    const sameOrigin = site === undefined || site === 'same-origin' || site === 'none';
+    if (!sameOrigin || !this.#session(request)) return void deny(sameOrigin ? 401 : 403, RcWeb.loginRequired().text);
+    const access = this.#access();
+    const verdict = webAuthorize('slides.open', {}, access);
+    if (verdict || !this.#slides) return void deny(403, verdict?.message ?? RcWeb.fileNotFound().text);
+    response.removeHeader('X-Frame-Options');
+    response.removeHeader('Content-Security-Policy');
+    if (!this.#slides.handle(request, response, { canEdit: !access.readOnly, frameAncestors: "'self'" })) deny(404, RcWeb.fileNotFound().text);
   }
 
   /** `POST /_auth/session { code }`：代码换会话 cookie。来源必须带、必须是自己。 */

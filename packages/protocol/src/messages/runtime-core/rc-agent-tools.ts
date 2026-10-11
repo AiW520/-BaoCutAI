@@ -64,6 +64,7 @@ const en = {
   clauseSeparator: '; ',
 
   createVideoSummary: (p: { name: string }) => `Create video "${p.name}"`,
+  slidesImportAssetSummary: (p: { file: string; deck: string }) => `Add image "${p.file}" to the slides "${p.deck}"`,
   editsSummary: (p: { label: string; count: number; types: string }) =>
     `${p.label} (${plural(p.count, 'operation', 'operations')}: ${p.types})`,
   captionsSummary: (p: { documentId: string; bilingual: boolean }) =>

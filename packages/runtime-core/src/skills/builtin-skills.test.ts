@@ -13,6 +13,7 @@ const EXPECTED_IDS = [
   'narration',
   'polish-transcript',
   'shorts-segments',
+  'slides',
   'speaker-labeling',
   'subtitle-workflow',
   'talking-head-cut',

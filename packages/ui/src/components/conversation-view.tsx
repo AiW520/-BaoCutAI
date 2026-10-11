@@ -1,15 +1,20 @@
 import { useEffect, useState } from 'react';
-import { DEFAULT_AGENT_MODE, RpcError, newId, nowIso, type AttachmentRef, type Id, type SkillSendRef } from '@baocut/protocol';
+import { DEFAULT_AGENT_MODE, RpcError, newId, nowIso, type AttachmentRef, type Id, type SkillSendRef, type SlideAnnotation } from '@baocut/protocol';
 import { Button, ProgressCircle, ToastQueue } from '@react-spectrum/s2';
 import { style } from '@react-spectrum/s2/style' with { type: 'macro' };
 import { S } from './shell-copy.ts';
 import { AGENT_PICKER, QUEUE_COPY } from '../copy.ts';
 import { sendFailureMessage } from '../model/agent-skills.ts';
 import { enqueueMessage } from '../model/message-queue.ts';
+import { sentSlideAnnotations } from '../model/slide-annotations.ts';
+import { SLIDES } from '../model/slides-copy.ts';
+import { targetKey } from '../model/workspace.ts';
 import { referenceDescription } from '../model/space-actions.ts';
 import { useRuntime } from '../runtime/context.tsx';
 import { drainQueue, sendQueuedMessageNow } from '../runtime/message-queue-runner.ts';
 import { useConversationMeta, useDirectory } from '../state/directory-store.ts';
+import { useDraftSlideAnnotationList, useDraftSlideAnnotations } from '../state/draft-slide-annotations-store.ts';
+import { flushSlides } from '../state/slides-editor-bridge.ts';
 import { useTimelineItems, useTimelineLoaded } from '../state/timeline-store.ts';
 import { useSetting } from '../state/settings-store.ts';
 import { useShell } from '../state/shell-store.ts';
@@ -42,6 +47,7 @@ export function ConversationView({ conversationId, autoFocus = true }: { convers
   const loaded = useTimelineLoaded(conversationId);
   const go = useShell((s) => s.go);
   const editor = useEditorReference({ conversationId, projectId: meta?.projectId ?? null });
+  const slideAnnotations = useDraftSlideAnnotationList(conversationId);
   const [sendingNow, setSendingNow] = useState<Id | null>(null);
 
   useEffect(() => runtime.watchConversation(conversationId), [runtime, conversationId]);
@@ -70,8 +76,8 @@ export function ConversationView({ conversationId, autoFocus = true }: { convers
   // 有过任务的会话不能再换 Agent（原生会话不能跨 Agent 续，架构设计 §3.11）。
   const lockedTo = items.some((i) => i.kind === 'task') ? meta.driverId : null;
 
-  /** 忙的时候发的话先排队，带上此刻的编辑器状态与点选的 skill；任务结束后按顺序发出。 */
-  const enqueue = async (text: string, attachments: AttachmentRef[], skills: SkillSendRef[]) => {
+  /** 忙的时候发的话先排队，带上此刻的编辑器状态、点选的 skill 与幻灯片标注；任务结束后按顺序发出。 */
+  const enqueue = async (text: string, attachments: AttachmentRef[], skills: SkillSendRef[], notes: SlideAnnotation[]) => {
     const context = await editor.capture();
     useShell.getState().setQueue(conversationId, (queue) =>
       enqueueMessage(queue, {
@@ -80,6 +86,7 @@ export function ConversationView({ conversationId, autoFocus = true }: { convers
         attachments,
         ...(context ? { context } : {}),
         ...(skills.length ? { skills } : {}),
+        ...(notes.length ? { slideAnnotations: notes } : {}),
         queuedAt: nowIso(),
       }),
     );
@@ -150,12 +157,32 @@ export function ConversationView({ conversationId, autoFocus = true }: { convers
               }
             : null
         }
+        slideAnnotations={{
+          items: slideAnnotations,
+          onRemove: (id) => useDraftSlideAnnotations.getState().remove(conversationId, id),
+          onClear: () => useDraftSlideAnnotations.getState().clear(conversationId),
+        }}
         mentionScope={{ projectId: meta.projectId, conversationId }}
         queue={<QueuedMessages conversationId={conversationId} sending={sendingNow} onSendNow={(id) => void sendNow(id)} />}
-        onSend={async (text, attachments, skills) => {
+        beforeSend={async () => {
+          // 带着幻灯片标注时，先让打开着的编辑器把改动保存完（docs/design/slides §8.2）：智能体读到的是用户看到的版本。
+          // 等的时候输入框里的话留着；没保存成就不发，写出是哪几份（产品设计 §3.2.4），输入与标注都留着。
+          const drafted = useDraftSlideAnnotations.getState().annotations[conversationId] ?? [];
+          if (!sentSlideAnnotations(drafted).length) return true;
+          const failed = await flushSlides(drafted.map((n) => targetKey(n.deck)));
+          if (failed.length) ToastQueue.negative(SLIDES.flushFailed(failed), { timeout: 5000 });
+          return !failed.length;
+        }}
+        onSend={async (input, attachments, skills) => {
+          // 幻灯片标注（§8.2）：只带标注、没写话时补一句；发出去（或排进队列）后从草稿里摘掉。
+          const drafted = useDraftSlideAnnotations.getState().annotations[conversationId] ?? [];
+          const notes = sentSlideAnnotations(drafted);
+          const text = input || (notes.length ? SLIDES.message : input);
+          const sentNotes = () => useDraftSlideAnnotations.getState().sent(conversationId, drafted.map((n) => n.id));
           // 前面还有排队的：排到最后，保持先后；会话空着就先发队首那一条。
           if (busy || useShell.getState().queues[conversationId]?.length) {
-            await enqueue(text, attachments, skills);
+            await enqueue(text, attachments, skills, notes);
+            sentNotes();
             if (!busy)
               void drainQueue(runtime, conversationId).then((result) => {
                 if (result.status === 'failed') reportQueueFailure(result.error);
@@ -170,13 +197,16 @@ export function ConversationView({ conversationId, autoFocus = true }: { convers
               attachments.map((a) => a.id),
               undefined,
               skills,
+              notes,
             );
             editor.reset();
+            sentNotes();
             return true;
           } catch (error) {
             // 刚好有任务开跑（别的窗口、别的入口）：这句话排队，不丢。
             if (error instanceof RpcError && error.code === 'busy') {
-              await enqueue(text, attachments, skills);
+              await enqueue(text, attachments, skills, notes);
+              sentNotes();
               return true;
             }
             ToastQueue.negative(sendFailureMessage(error), { timeout: 5000 });

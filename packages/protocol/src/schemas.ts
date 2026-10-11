@@ -10,6 +10,7 @@ import { languageTag } from './language-schemas.ts';
 import { USAGE_PERIODS } from './usage.ts';
 import { MAX_SELECTED_GLOSSARIES, MAX_SPEAKER_VOICES } from './library.ts';
 import { WEB_METHOD_PATTERN } from './web.ts';
+import { SLIDE_ANNOTATION_LIMITS } from './slides.ts';
 import { SPACE_PARAM_SCHEMAS } from './space-schemas.ts';
 import { EXTERNAL_TOOL_PARAM_SCHEMAS } from './external-tools-schemas.ts';
 import { TEMPLATE_PARAM_SCHEMAS, templateSendRefSchema } from './template-schemas.ts';
@@ -363,6 +364,19 @@ const installKind = z.enum(['script', 'brew', 'npm']);
 const agentModel = z.string().trim().min(1).max(200).nullable();
 const agentEffort = z.string().trim().min(1).max(50).nullable();
 const attachmentIds = z.array(id).max(MAX_ATTACHMENTS_PER_MESSAGE);
+/** 幻灯片标注（docs/design/slides §9）。锚点、位置与定位描述的长度与编辑器消息（`@baocut/slides/editor-messages`）一致。 */
+const slideAnnotation = z
+  .object({
+    deck: fileTarget,
+    anchor: z.string().min(1).max(4096),
+    slideId: z.string().min(1).max(200).optional(),
+    label: z.string().max(1000),
+    detail: z.string().max(4096).optional(),
+    area: z.boolean().optional(),
+    text: z.string().trim().min(1).max(SLIDE_ANNOTATION_LIMITS.text),
+  })
+  .strict();
+const slideAnnotations = z.array(slideAnnotation).max(SLIDE_ANNOTATION_LIMITS.perMessage);
 const languageOption = z.union([
   z.object({ mode: z.literal('assert'), tag: languageTag }).strict(),
   z.object({ mode: z.literal('prefer'), tag: languageTag.nullable() }).strict(),
@@ -725,12 +739,14 @@ export const methodParamSchemas = {
     template: templateSendRefSchema.optional(),
     skill: skillSendRefSchema.optional(),
     skills: skillSendListSchema.optional(),
+    slideAnnotations: slideAnnotations.optional(),
   }),
   'conversations.steer': z.object({
     conversationId: id,
     text: z.string().min(1).max(100_000),
     commandId: id,
     attachments: attachmentIds.optional(),
+    slideAnnotations: slideAnnotations.optional(),
   }),
   'attachments.prepare': z.object({
     fileName: z.string().trim().min(1).max(255),
@@ -885,6 +901,7 @@ export const methodParamSchemas = {
     })
     .strict()
     .refine((p) => p.start === undefined || p.end === undefined || p.end > p.start),
+  'slides.open': fileTarget,
   'videos.open': fileTarget,
   'videos.importPackage': z
     .object({

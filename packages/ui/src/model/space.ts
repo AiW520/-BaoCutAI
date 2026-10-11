@@ -1,6 +1,7 @@
 import { intlLocale, live, type FileTarget, type Id, type SpaceEntry, type SpaceEntryKind, type SpaceEntryStatus } from '@baocut/protocol';
 import { documentPreview } from './file-preview.ts';
 import { formatClock } from './format.ts';
+import { SLIDES } from './slides-copy.ts';
 import { M } from './space-copy.ts';
 
 /**
@@ -11,7 +12,7 @@ import { M } from './space-copy.ts';
 export const KIND_LABEL: Record<SpaceEntryKind, string> = live(() => M.kind);
 
 /** 分类侧栏的顺序。视频是带 video.db 的子目录（0.4 起）；项目目录里的视频文件单列「视频素材」。 */
-const KIND_ORDER: SpaceEntryKind[] = ['video', 'export', 'video-file', 'image', 'audio', 'subtitle', 'document', 'template', 'package'];
+const KIND_ORDER: SpaceEntryKind[] = ['video', 'export', 'video-file', 'image', 'audio', 'subtitle', 'document', 'slides', 'template', 'package'];
 
 export type SpaceCategory = 'all' | SpaceEntryKind | 'favorite' | 'trash';
 
@@ -311,10 +312,11 @@ export function projectOptions(entries: readonly SpaceEntry[], projects: readonl
 }
 
 /**
- * 「时长或尺寸」一列（原型 sizeText）：视频类写时长与画面尺寸，音频写时长，图片写尺寸。Runtime 没给媒体信息时为 null，
+ * 「时长或尺寸」一列（原型 sizeText）：视频类写时长与画面尺寸，音频写时长，图片写尺寸，幻灯片写页数。Runtime 没给媒体信息时为 null，
  * 界面退回写文件大小。
  */
-export function measureText(entry: Pick<SpaceEntry, 'kind' | 'media'>): string | null {
+export function measureText(entry: Pick<SpaceEntry, 'kind' | 'media'> & Partial<Pick<SpaceEntry, 'deck'>>): string | null {
+  if (entry.kind === 'slides') return entry.deck ? SLIDES.pages(entry.deck.slideCount) : null;
   const media = entry.media;
   if (!media) return null;
   const duration = media.durationSec && media.durationSec > 0 ? formatClock(media.durationSec) : null;

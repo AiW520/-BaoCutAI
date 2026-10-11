@@ -12,6 +12,7 @@ describe('packagedResources', () => {
       agentSkillsDir: 'C:\\Users\\a\\AppData\\Local\\Programs\\BaoCut\\resources\\agent-skills',
       modelAssetsDir: 'C:\\Users\\a\\AppData\\Local\\Programs\\BaoCut\\resources\\model-assets',
       webDist: 'C:\\Users\\a\\AppData\\Local\\Programs\\BaoCut\\resources\\web',
+      slidesEditorDist: 'C:\\Users\\a\\AppData\\Local\\Programs\\BaoCut\\resources\\slides-editor',
     });
   });
 
@@ -24,6 +25,7 @@ describe('packagedResources', () => {
       BAOCUT_AGENT_SKILLS_DIR: '/r/agent-skills',
       BAOCUT_MODEL_ASSETS_DIR: '/r/model-assets',
       BAOCUT_WEB_DIST: '/r/web',
+      BAOCUT_SLIDES_EDITOR_DIST: '/r/slides-editor',
     });
   });
   it('pins macOS MLX to the shipped Metal library', () => {

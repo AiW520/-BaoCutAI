@@ -9,6 +9,7 @@ import { Button as RACButton } from 'react-aria-components';
 import { OUTPUT_COPY, VIDEO_CARD_COPY } from '../../copy.ts';
 import { outputSourceMissing, posterFrame, type ConversationOutput } from '../../model/conversation-outputs.ts';
 import { formatClock } from '../../model/format.ts';
+import { SLIDES } from '../../model/slides-copy.ts';
 import { formatBytes, isPlayable, KIND_LABEL } from '../../model/space.ts';
 import { videoStatus } from '../../model/video-cards.ts';
 import { useRuntime } from '../../runtime/context.tsx';
@@ -209,10 +210,13 @@ export function OutputCard({
   const Icon = KIND_ICON[output.kind];
   const playable = !output.video && output.entry !== null && isPlayable(output.entry.fileName);
   const isVideo = output.kind === 'video';
+  const slides = output.slides;
   const words = (
     isVideo
       ? [KIND_LABEL.video, output.durationSeconds ? formatClock(output.durationSeconds) : null]
-      : [KIND_LABEL[output.kind], output.entry ? formatBytes(output.entry.size) : null, playable ? OUTPUT_COPY.playHere : output.entry ? OUTPUT_COPY.previewHere : null]
+      : slides
+        ? [KIND_LABEL.slides, slides.slideCount === null ? null : SLIDES.pages(slides.slideCount)]
+        : [KIND_LABEL[output.kind], output.entry ? formatBytes(output.entry.size) : null, playable ? OUTPUT_COPY.playHere : output.entry ? OUTPUT_COPY.previewHere : null]
   )
     .filter(Boolean)
     .join(' · ');
@@ -235,6 +239,8 @@ export function OutputCard({
     // 原型 home-session.jsx `SessionArtifactCard`：非视频的产物都在功能区的单文件标签里打开；
     // 那里视频与音频用播放器，其余用查看器，预览不了的如实说明并给「在文件夹中显示」。
     if (output.video) shell.openVideo(output.video);
+    // 幻灯片在功能区的幻灯片标签里预览、编辑与标注（docs/design/slides §8.1）。
+    else if (slides) shell.openPane({ kind: 'slides', target: slides.target });
     else if (!isVideo && output.entry) shell.openPane({ kind: 'file', target: { conversationId, path: output.entry.relPath } });
   };
 

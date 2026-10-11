@@ -36,6 +36,8 @@ export const de: AgentToolStepsMessages = {
     readContract: "Aufgabenvertrag lesen",
     refineContract: "Aufgabenvertrag präzisieren",
     recordCheck: "Abnahmeprüfung protokollieren",
+    checkSlides: "Folien prüfen",
+    importSlideAsset: "Folienbild importieren",
   },
   exportKind: {
     subtitles: "Untertitel",

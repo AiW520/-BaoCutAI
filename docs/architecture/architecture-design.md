@@ -395,6 +395,9 @@ P0 由一个用户可以理解的执行主体对结果负责。内部的分析�
 
 发送时的编辑器上下文（`EditorContext`：打开的视频与版本、选中的片段、播放头）另带用户的界面语言 `uiLanguage`（BCP 47 标签，可选），附在用户消息后的 `<baocut-editor-context>` 里；AI 工具的「直接调模型」经 `ai-tool` 流程的 `uiLanguage` 参数写进系统提示词。skill 据此决定输出语言：用户提问用的语言优先，其次是界面语言，最后是文稿的语言。
 
+
+消息带幻灯片标注（`slideAnnotations`，幻灯片设计 §9）时，Runtime 把每条的 deck 换成相对会话工作目录的路径，Harness 按 deck 分段，每份一段 `<baocut-slide-annotations>`，逐条列出位置、定位与批注，附在交给智能体的文字最后；锚点只给编辑器用，不交给智能体。格式与限制见协议规范 `conversations`。
+
 - 先摘要与检索，再按需扩展，不默认把完整视频和全文外发。
 - 只读到文件名不能声称理解了内容。`ContextEvidence` 记录实际读取的范围与方法。
 - 检查记录包含 `method`、`inputRefs`、`coveredRanges`、`uncoveredRanges`、`findings` 和 `confidence`；它不是被展示出来的内部推理。
@@ -792,6 +795,7 @@ interface ContextBarrierResult {
 - 屏障解决的是「读到自己的写」，不取消其后的版本检查：另一个窗口随后提交时，智能体的结果仍然要对照最新版本检查。
 - 不涉及视频的纯聊天可以不建立屏障。
 - 屏障对 Home 与 Space 两个入口的请求同样适用。
+- 幻灯片编辑器里还没发布的改动也是本次请求依赖的本地修改：消息带幻灯片标注时，先让打开着这几份 deck 的编辑器发布完（`slides:flush` / `slides:flushed`，最多等 10 秒）；没发布成就不发送，输入与标注都留着（幻灯片设计 §8.2）。
 
 界面行为见产品设计 §3.2.4。
 
@@ -853,7 +857,7 @@ interface ContextBarrierResult {
 
 **Web 服务**提供与桌面界面相同的客户端协议：浏览器取得的是一个作用域受限的连接，能力集合由服务配置给出，不包含设置、凭据与对外服务的管理。它在产品范围之内（产品设计 §1.4）；首版的取舍见 §14。
 
-- **一个端口，三样东西**。服务监听 `127.0.0.1`，默认端口 47622，提供 Web 客户端的静态文件（`apps/web` 的构建产物）、网关入口 `/ws` 与媒体通道 `/media/…`。网关入口与桌面界面用同一套协议与处理函数，只是连接在升级时按会话认证、方法与主题按白名单过滤；媒体用这个服务自己的句柄表，地址是同源的相对路径，取内容同样要会话。浏览器拿不到桌面网关的端口与令牌。构建产物按 `BAOCUT_WEB_DIST`、打包后的 `<resources>/web`、仓库里的 `apps/web/dist` 的顺序找；没有时开启服务进入 `error` 并说明，不影响 Runtime。
+- **一个端口，三样东西**。服务监听 `127.0.0.1`，默认端口 47622，提供 Web 客户端的静态文件（`apps/web` 的构建产物）、网关入口 `/ws`、媒体通道 `/media/…` 与幻灯片编辑器的路由 `/slides/<grant>/…`、`/_blob/<id>`（与网关共用一份，要会话；只读时编辑器只读，只能嵌在这个服务自己的页面里；幻灯片设计 §6.2）。网关入口与桌面界面用同一套协议与处理函数，只是连接在升级时按会话认证、方法与主题按白名单过滤；媒体用这个服务自己的句柄表，地址是同源的相对路径，取内容同样要会话。浏览器拿不到桌面网关的端口与令牌。构建产物按 `BAOCUT_WEB_DIST`、打包后的 `<resources>/web`、仓库里的 `apps/web/dist` 的顺序找；没有时开启服务进入 `error` 并说明，不影响 Runtime。
 - **登录**。`services.web.createAccessLink` 发一个一次性代码，放在链接的 fragment 里（`http://127.0.0.1:<端口>/#code=…`；fragment 不发给服务器，不进访问日志与 Referer）。`createAccessLink { video }`（videoId）让链接直达这个视频的编辑器：Runtime 把 videoId 解析成界面打开它用的文件目标（已打开的视频或 Space 登记的位置：项目或会话的工作目录 + 相对路径），链接的路径与查询是界面内链接 `/home?video=<JSON 的 FileTarget>`（`@baocut/protocol` 的 `webVideoHref`，界面的路由与它共用一个构造函数），fragment 里仍只有代码；找不到时 `not-found`（`VIDEO_NOT_FOUND`）。未登录时页面只有一张登录页（根路径与界面内链接都是；界面内链接是最后一段没有扩展名、不在 `/media/`、`/_auth/`、`/assets/` 下的路径，登录后同样给客户端页面），它的脚本取出代码、立即从地址栏抹掉，用 `POST /_auth/session` 换一个会话 cookie，然后回到原来的路径与查询，客户端启动时按它去对应的界面、再把地址栏改回根路径；登录页也有一个输入框，粘贴代码（或整条链接）同样能登录。`baocut web open [--video <videoId>]` 打印链接；`--launch` 不把带代码的链接交给浏览器（打开浏览器要经 `open`、`xdg-open` 或 `cmd` 的进程参数，本机别的用户与程序在进程列表里看得到），而是打开不带代码的登录页（保留路径与查询），代码只打在终端里，由用户粘进去。代码两分钟内有效，第一次兑换（不论成败）就作废；Runtime 只存代码与会话令牌的哈希。会话 12 小时有效，只在内存里，服务停止即全部作废；`services.web.listSessions` 列出，`services.web.revokeSession` 吊销并立即断开它的连接。
 - **为什么是 cookie**。`<video>`、`<img>` 不能带请求头，只有 cookie 能让媒体请求与 WebSocket 用同一个会话认证、吊销时一起失效，令牌也不必进 URL。cookie 是 `HttpOnly`（页面脚本读不到）、`SameSite=Strict`（别的站点发起的请求不带）、`Path=/`，名字带端口（`baocut_web_<端口>`）。
 - **能力集合**是一份方法白名单（方法名或 `<命名空间>.*`），在网关分发之前检查，白名单之外回答 `forbidden`（`WEB_METHOD_NOT_ALLOWED`）。默认集合是桌面界面的协议减去：`settings.set`；`models.configure`、`models.removeProvider`、`models.enable`、`models.setDefault` 等模型服务的配置与凭据，含 API 提供方账号的写方法（`models.addAccount`、`models.updateAccount`、`models.removeAccount`、`models.arrangeAccounts`）与查余额（`models.checkBalance`，它用账号的密钥向 API 提供方发请求）；`services.*`（含 `services.mcp.*`、`services.modelApi.*` 与访问链接的发放）；`nodes.pair`、`nodes.remove`、`nodes.share.*`；本地模型包的安装管理（`models.install`、`models.repair`、`models.cancelInstall`、`models.remove`、`models.test`，§6.3：从网络下载几百 MB、删掉本机的转写能力是这台机器的管理，浏览器只看状态与进度）；Agent skill 的添加、导入与移除（`skills.add`、`skills.importGithub`、`skills.remove`，§12.9：要读本机文件夹或从网络取内容，写进这台机器的指导）。查询、会话、编辑、转写与生成（含 `models.generateText`）、模型用量（`models.usage`，只读，也在只读集合里；§6.10）、任务与导出（`exports.*`）、工具目录与候选输入（`tools.list`、`tools.candidates`，也在只读集合里）、创作模板目录（`templates.*`，也在只读集合里；模板包规范 §6，句柄只发给清单登记的封面、预览与素材）、Agent skill 的查看与开关（`skills.list`、`skills.get`、`skills.readFile`、`skills.setEnabled`，前三个也在只读集合里；§3.8）可用；目录里执行方法不在白名单的工具对浏览器标为不可用，外部工具的问题只给错误码与工具名。白名单逐项或按命名空间写出，名字不在里面的方法浏览器一律调不了：固定流程（`pipelines.*`，§7.9）不开放：文件转码的输入与输出目录是任意的绝对路径，不受项目目录约束；要开放得先给它加上与 `exports.create` 同样的路径约束；从链接导入也在其中。受管外部工具（`externalTools.*`，§12.9）整个不开放，连 `list` 也不开放：下载并执行第三方程序是这台机器的管理，状态里还有本机路径。主题按对应的读取方法过滤（`services` 主题要 `services.list`，所以默认不可订阅），拒绝时 `WEB_TOPIC_NOT_ALLOWED`。服务配置可以在默认集合之内收紧（`methods`），或设为只读（`readOnly`，只剩一份逐个列出的查询方法，如 `videos.assetStatus`、`exports.get`、`exports.list`；写入回答 `WEB_READ_ONLY`）；配置不能把默认集合之外的方法加进来。配置一改，已有的浏览器连接断开，按新的白名单重连。
@@ -1011,7 +1015,7 @@ Space 目录（`SpaceCatalog`）是共享存储层里的一个派生索引，把
 interface SpaceEntry {
   id: Id;                                  // 视频条目用 videoId；产物条目用 artifactId。kind 里 'video' 是可编辑的视频，'video-file' 是视频素材
   kind: 'video' | 'export' | 'video-file' | 'image' | 'audio'
-      | 'subtitle' | 'document' | 'package' | 'template';
+      | 'subtitle' | 'document' | 'slides' | 'package' | 'template';
   name: string;
   ref: { videoId: Id } | { artifactRef: VersionRef };
   origin: {
@@ -1031,6 +1035,7 @@ interface SpaceEntry {
   status: 'generating' | 'candidate' | 'applied' | 'published'
         | 'source-changed' | 'missing' | 'failed';
   media?: { duration?: MediaTime; width?: number; height?: number };
+  deck?: { slideCount: number };           // 幻灯片条目（含合法 deck.json 的目录）的页数；name 是 deck 的标题
   previewRef?: Id;
   lastActivityAt: string;
   createdAt?: string | null;              // 文件 / 视频数据库的 birthtime；生成结果用完成时间，占位用任务创建时间
@@ -1079,13 +1084,14 @@ interface SpaceEntry {
 - **状态**。`generating`：排队与运行中的生成、导出，带进度。`failed`：失败或中断的，带原因与错误码；`space.purge` 清除，或同一能力、同样输入（`inputHash`）的任务后来成功了就不再显示。`candidate` / `applied`：导入了视频的生成输出，时间线（任何序列）上用着那个素材时是 `applied`。`published`：导出发布的文件；发布到来源目录里的与扫描到的文件合成一个条目（`kind` 按导出设置，`ref.artifactId` 是导出的产物）。`source-changed`：导出冻结的 `videoRevision` 与视频的当前版本不同。`missing`：产物文件、发布的文件或登记的项目文件不在了。普通文件与视频没有状态（`null`，`list` 里用 `none` 筛）。
 - **可交付**。生成的图片、音频、文本与导出进入目录；转写的原始结果、导出的冻结快照不进入；代理、缩略图、波形本来就不在 Artifact Store 里。固定流程（§7.9）的父任务与步骤不进入：发布到来源目录里的转码结果经扫描出现。
 - **bytes**。`media.resolve` 给 `entryId` 时由目录定位：来源目录里的条目限定到来源目录，产物与来源目录之外的导出限定到那一个文件；占位与缺失的条目没有 bytes。
-- **`space.import`**。项目目录里的文件原地登记；项目之外的复制进项目的 `imports/`（重名时加序号），返回 `copied: true`。视频目录里、隐藏目录与依赖目录里的文件，以及认不出类型的文件拒绝（`SPACE_IMPORT_UNSUPPORTED`）。
+- **幻灯片目录**。来源目录里含合法 `deck.json`（`v: 4`、`order` 是数组）的目录是一个 `slides` 条目，不再往里扫，里面的页面与图片不各自成为条目（幻灯片设计 §7.3）。`name` 取 deck 的标题（没有标题时用目录名），`deck.slideCount` 是页数，大小与修改时间取目录与第一层子目录里的普通文件（不跟随符号链接、跳过隐藏文件）的合计与最新者，创建时间取 `deck.json`。`deck.json` 读不出或版本不对时照常往里扫。项目文件浏览（`projects.files.list`）同样把它标成 `slides`（修改时间取 `deck.json`），搜索不进去。
+- **`space.import`**。项目目录里的文件原地登记；项目之外的复制进项目的 `imports/`（重名时加序号），返回 `copied: true`。视频目录与幻灯片目录里、隐藏目录与依赖目录里的文件，以及认不出类型的文件拒绝（`SPACE_IMPORT_UNSUPPORTED`）。
 - **`space.openForEdit`**。视频条目返回 `video`；有来源视频的返回 `source-video`，带冻结版本、当前版本与 `changed`；没有来源视频的返回 `new-video` 与建议的项目。只回答去哪里，不打开视频。
 - **`space.thumbnail`**（`space/space-thumbnails.ts`）。网格卡片与列表名称列的缩略图，客户端在条目可见时按需取。回答 `image`（宽不超过 720、高不超过宽的 3 倍、不放大；PNG、GIF、WebP 来源输出 PNG 保留透明，其余 JPEG）、`text`（开头约 1.5 KB 的 UTF-8 文字，截在字符边界上）或 `none`，不含本机路径；条目不在或看不到是 `not-found`，主体规则与 `space.get` 相同，Web 只读模式下照常可用。各种类的取法：
   - 视频：工作稿的封面那一帧（与界面的海报帧同一条规则，`@baocut/protocol` 的 `posterFrame`）。素材版本与时间取自内容索引的视频事实（§5.11），还没有索引时让索引先读这一个（至多等 15 秒）。素材文件经 Engine Host 的内部只读查询 `videos.resolveAsset { path, assetId, revision? }`（不在网关的方法表里）找：已经打开的视频用打开的那一份，没有打开的只读打开、找完就放下，不取写锁；复制进来的素材的存放方式是引擎内部的约定，不在 Runtime 里另算一份，链接素材照引擎的长度与位置检查，再照媒体通道的规则放行。回收站里的视频与时间线上没有画面的视频是 `none`。
   - 成片与视频文件：1 秒与时长的 10% 中较早的那一帧，取不到（视频更短）时退回第一帧。图片取第一帧。只认扩展名对应的解复用器（MP4/MOV、WebM/MKV、AVI；PNG、JPEG、WebP、GIF、BMP 强制按格式读），SVG、HEIC、AVIF 是 `none`。
   - 文档与字幕：Markdown、纯文本与字幕（SRT、WebVTT、ASS/SSA）取开头的文字，去掉 BOM；字幕只留台词（去掉序号、时间码、头部、样式与标签）。认 UTF-8 与带 BOM 的 UTF-16，别的编码与二进制是 `none`；PDF、Word、RTF 是 `none`。
-  - 音频、包、模板与占位、缺失、失败的条目是 `none`。
+  - 音频、幻灯片、包、模板与占位、缺失、失败的条目是 `none`。
 
   取帧经媒体分析（`media-analysis.ts`）：与胶片条同样的解复用器白名单、只读本地文件、20 秒时限、1 MB 输出上限与 3 个并发名额，失败记 60 秒。缓存在 `<home>/cache/media/`：视频封面按素材的内容摘要、时间与宽（`<摘要>/thumb-<毫秒>-w<宽>.jpg`，缓存命中时不去找文件），文件按真实路径、大小、修改时间、宽与时间的摘要（`files/<摘要>.jpg|png`），文件被覆盖之后重新取。读不了、解不了的都答 `none`，不报错。
 - **`space.rebuildIndex`**。重扫全部来源、重查文件，内容索引删掉缓存后在后台重读；返回时目录已经重建完，`pendingVideos` 是还要重读的视频数。用户标记与登记不动。
@@ -1093,7 +1099,7 @@ interface SpaceEntry {
 - **CLI**。`baocut space [list]` 按种类、状态、来源视频、收藏与回收站列条目，`baocut space search` 跨视频检索（命中带视频、时间、文档种类与说话人，索引不完整时说明），另有 `rescan`、`rebuild`、`trash`、`restore` 与 `purge`（有引用时列出引用并以非零状态退出），`delete-video` 删除视频，`continue [--conversation <id>]` 从条目继续会话。改名、收藏、导入与回到视频编辑这一版只在界面里。
 - **删除视频**（`videos.delete`，入口还有 `space.trash` / `space.update { trashed: true }` 对视频条目的调用）。整个视频目录在同一个卷上改名进所在来源目录的回收站 `.bcut-trash/<trashId>/<目录名>`，不复制、不删除；跨卷时以 `VIDEO_TRASH_CROSS_DEVICE` 拒绝。视频目录是某个来源目录本身（用户把视频目录当成项目打开了）或装着某个来源目录时，改名会挪走那个项目或会话的目录，删除在关闭视频、写记录、移动目录之前以 `VIDEO_TRASH_SOURCE_ROOT` 拒绝。移动期间持有视频的写锁，别的进程锁着时是引擎的 `VIDEO_LOCKED`。别的连接打开着时 `VIDEO_IN_USE`；Runtime 内部还用着（任务、导出的租约）或有排队、运行中的任务时 `VIDEO_BUSY`（带 `jobIds`）；只有调用方自己打开着时先替它关闭，订阅者收到 `video.closed`（`reason: 'deleted'`）。先在 `space.json` 里记下删除（`trashedVideos`：原来的条目 id 与相对路径、回收站里的位置、videoId、名字），再移动目录；启动时按目录实际在哪里核对，中途崩溃不留下对不上的记录。回收站里的视频是一个视频条目，`id` 由来源与它在回收站里的位置决定（原来的位置可能放进别的视频），用户标记跟过去；删除之前的 `id` 仍然可以拿来撤销与恢复。回收站目录以点开头，不被扫描成视频；`videos.open` 打不开回收站里的路径（`VIDEO_TRASHED`）。由它导出、生成的条目留在原处，结果的 `related` 列出它们。
 - **恢复视频**（`videos.restore`，或对删除了的视频调用 `space.restore` / `space.update { trashed: false }`）。目录移回原来的相对路径；那里已经有东西时加序号（`renamed: true`）。项目或会话已经不在时无法恢复。
-- **`space.purge`**。来源目录里的视频条目以 `invalid-request` 拒绝（`SPACE_PURGE_VIDEO`，先删除视频）；进行中的占位以 `conflict` 拒绝（`SPACE_PURGE_RUNNING`，先 `jobs.cancel`）；失败的占位直接清除；其余只删回收站里的（否则 `SPACE_NOT_TRASHED`）。删除前查引用：链接着这个文件的视频素材（`video-asset`）、用着这个产物的进行中任务（`job`）；有视频此刻读不了或索引还没跟上时无法确认，按有引用处理（`unverified`）。删除了的视频另查：别的视频链接着它目录里的文件（`video-asset`）、它的排队、运行中与等对账（`needs-reconciliation`，结果可能还要写进它）的任务（`job`）、目录里不归视频管理的文件（`user-file`）；都没有时只删归视频管理的文件，再删掉空目录（§5.5）。有引用时什么也不删，返回 `{ status: 'blocked', references }`。删掉的产物与导出记下清除标记，之后不以 `missing` 再出现。
+- **`space.purge`**。来源目录里的视频条目以 `invalid-request` 拒绝（`SPACE_PURGE_VIDEO`，先删除视频）；进行中的占位以 `conflict` 拒绝（`SPACE_PURGE_RUNNING`，先 `jobs.cancel`）；失败的占位直接清除；其余只删回收站里的（否则 `SPACE_NOT_TRASHED`），幻灯片条目连目录一起删。删除前查引用：链接着这个文件的视频素材（`video-asset`）、用着这个产物的进行中任务（`job`）；有视频此刻读不了或索引还没跟上时无法确认，按有引用处理（`unverified`）。删除了的视频另查：别的视频链接着它目录里的文件（`video-asset`）、它的排队、运行中与等对账（`needs-reconciliation`，结果可能还要写进它）的任务（`job`）、目录里不归视频管理的文件（`user-file`）；都没有时只删归视频管理的文件，再删掉空目录（§5.5）。有引用时什么也不删，返回 `{ status: 'blocked', references }`。删掉的产物与导出记下清除标记，之后不以 `missing` 再出现。
 - **回收站的保留期**。偏好设置 `space.trashRetentionDays`（1–3650，默认 30）。Space 首次扫描之后清一次，之后每 6 小时一次，天数每次取当时的设置：移入回收站超过保留期的条目逐个走 `space.purge` 的同一条路径，有引用的留着、写日志，下次再试。只写了回收站标记的来源目录里的视频（这个版本之前的记录）不在其中。
 - **产物记录**（Runtime Store 的 `store/space-artifacts.json`）。Job Ledger 只留最近的若干个任务（§7.5），修剪掉的任务的产物 bytes 还在 Artifact Store 里，条目却会跟着消失。Space 另留一份产出产物的任务（生成、导出，以及文件到文件的流程：文件转码、字幕文件的翻译与从链接下载，只记流程名；`downloads_save` 交出的文件也按流程 `downloads-save` 记在这里，§3.5）的派生用事实（`SpaceJobFacts`：种类、状态、videoId、Provider 与模型、输入 hash、提交者、时间、错误、输出列表、导出的设置摘要与发布文件名、最后一次应用的状态）：任务结束且有结果时写入，启动时也从 Ledger 补一遍；派生时与 Ledger 合并，Ledger 里还有的以 Ledger 为准。生成参数（原文、提示词）、警告、授权与取消的细节不在里面。一条记录的产物全部物理删除或清除之后去掉它（Ledger 里也没有了时连清除标记一起去掉）。它不是缓存，`space.rebuildIndex` 不删；读坏的行跳过，整个文件读不了时改名留存、从空的开始。同一个文件另存**只为清扫保留的引用**（`references`：任务结束时取它的结果、流程步骤的产出与应用里出现的全部产物 id，配音、翻译、说话人与写进视频的转写等不进目录的任务也记）与清扫起点 `sweepSince`（开始保留引用的时刻，旧文件读入时补上并落盘，不后移）；这些引用不参与派生，不显示成条目，目前也不释放。
 - **`space.continueInConversation`**。放进哪个会话：给了 `conversationId` 时用它，它要看得到这个条目（与智能体的 `space_list` 同一条规则），否则 `SPACE_CONVERSATION_MISMATCH`；没给时，属于项目的条目在那个项目里新建会话（项目里的会话各有话题，不猜该接哪一个，§3.10），不属于项目的条目回到它所在或产生它的会话，那个会话不在了时新建一个不属于项目的会话。带的只有条目的引用（`SpaceEntryReference`：`entryId`、种类、名字、项目、来源目录里的相对路径、videoId、artifactId、状态、来源的能力、jobId、会话与冻结版本），不读文件内容，不带生成参数。引用记在会话的 `pendingReferences` 上（同一条目只留一份，最多 20 个），不启动任务；用户下一次 `conversations.send` 时附在发给智能体的文字后面（`<baocut-space-references>` 段，只有元数据，要内容时智能体经工具按 id 取），记在那条用户消息的 `references` 上，然后清空；`conversations.update { pendingReferences: null }` 去掉。回收站里的条目拒绝（`SPACE_ENTRY_TRASHED`）。`commandId` 重试时回答同一个会话。
@@ -2686,12 +2692,13 @@ App Shell
 
 ### 11.3 会话投影
 
-`ConversationProjector` 把 Driver 事件投影成线程条目（消息、推理、工具步骤、审批）；Task 条目由 Harness 在收发消息时写入，视频回执（`video-created`、`video-change`）由工具落到会话里。Job 记录不投影成条目：要显示的卡片由客户端按下面的规则从记录推出（产品设计 §6.5）。
+`ConversationProjector` 把 Driver 事件投影成线程条目（消息、推理、工具步骤、审批）；Task 条目由 Harness 在收发消息时写入，视频回执（`video-created`、`video-change`）与幻灯片回执（`slides-created`）由工具落到会话里。Job 记录不投影成条目：要显示的卡片由客户端按下面的规则从记录推出（产品设计 §6.5）。
 
 - 卡片状态来自事件与回执，不来自模型的自然语言。
 - 卡片保存的是稳定引用（`taskId`、`jobId`、`artifactRef`、`receiptId`、`candidateRef`）；点击时由功能区按引用打开对应的视图。
 - 流式文本可以合并小块；终态与权限事件不可丢失。Runtime 在发出 `item.append` 前按条目与字段合并窗口（默认 60 ms）内的文本增量：窗口开头的第一块立即发出，之后到达的攒到窗口结束再发一条；发出同一会话的任何其他事件、答复 `conversations.get` 与落盘之前，先把攒着的增量发出去，记录里的 `seq` 与文本同一水位。
 - 线程里的视频卡与下载卡（产品设计 §3.2.2）服务端不做卡片投影：客户端从智能体提交的 Job 记录（`submitter.kind === 'agent'`，`submitter.taskId` 把 Job 连到会话里引用它的消息；一部视频一张卡，挂在最后的引用之后，Job 还没结束时按 `endedAt` 比之后回合的开始时刻跟到更晚的回合；固定流程的步骤是 `parentJobId` 指向父任务、`submitter.kind === 'pipeline'` 的子记录）加会话里的 `video-created` / `video-change` 回执推出。`video-created` 记视频 ID、名字、打开编辑器的位置（与变更卡的 `target` 同一个写法）与新建时的版本，只记智能体经 `videos_create` 新建的视频；固定流程（从链接导入、转录的 `target.create`）新建的视频不另记，看父任务记录的 `videoId`：视频一建出来（导入媒体之前）就写进父任务并落盘，随 `jobs` 主题推给客户端（§7.9）。
+- `slides-created` 记一份幻灯片（deck 目录的 `target`，与 `video-created` 同一个写法）、标题与页数：智能体的 `slides_check` 没有问题时写入，同一份 deck 只有一条，之后的检查更新标题、页数与 `taskId`（换成这次检查所在的任务，卡片跟着挂到那一轮的回复下面），位置不变。线程不把它当工具步骤画行；幻灯片卡片由客户端从这条回执推出（幻灯片设计 §7.3）。
 - 侧栏的状态徽标由会话的活动 Task 状态汇总得到。
 
 ### 11.4 索引化的 Replica

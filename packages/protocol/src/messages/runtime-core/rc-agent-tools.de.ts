@@ -22,6 +22,7 @@ export const de: RcAgentToolsMessages = {
   clauseSeparator: "; ",
 
   createVideoSummary: (p: { name: string }) => `Video erstellen: „${p.name}“`,
+  slidesImportAssetSummary: (p: { file: string; deck: string }) => `Bild „${p.file}“ in die Folien „${p.deck}“ übernehmen`,
   editsSummary: (p: { label: string; count: number; types: string }) =>
     `${p.label} (${`${p.count} ${pluralForm('de', p.count, { one: "Operation", other: "Operationen" })}`}: ${p.types})`,
   captionsSummary: (p: { documentId: string; bilingual: boolean }) =>

@@ -14,6 +14,7 @@ import type {
   ServiceId,
   VideoChange,
   VideoCreated,
+  SlidesCreated,
   VideoOpenResult,
 } from '@baocut/protocol';
 import type { TrustedPrincipal } from '../gateway.ts';
@@ -176,6 +177,9 @@ export const TOOL_RISK: Readonly<Record<string, RiskLevel>> = {
   // 用户库（§5.9）：只读。
   library_list: 'read',
   library_show: 'read',
+  // 幻灯片（docs/design/slides §7.2）：校验只读文件（通过时在会话里记一张卡片）；导入素材写 deck 目录的 assets/，按内容寻址、不覆盖。
+  slides_check: 'read',
+  slides_import_asset: 'edit',
 };
 
 export function toolRisk(request: ToolConfirmation): RiskLevel {
@@ -278,6 +282,8 @@ export interface ToolScope<A extends ToolAccess = ToolAccess> {
   recordChange(access: A, change: VideoChange): void;
   /** `videos_create` 新建视频之后：会话记一条 `video-created`；对外服务把它登记进自己的视频范围（之后看得见）。 */
   recordCreated?(access: A, created: VideoCreated): void | Promise<void>;
+  /** `slides_check` 校验通过之后：会话记一条 `slides-created`（同一份 deck 只有一条）；对外服务没有会话，不做。 */
+  recordSlides?(access: A, created: SlidesCreated): void;
   /**
    * 固定流程替调用方新建的视频（`download` / `transcribe` 给链接时的 `newVideo`）：对外服务把它登记进自己的视频范围；会话不做
    * （视频卡来自流程的任务卡片）。
@@ -374,6 +380,9 @@ export class ScopeRouter implements ToolScope<ToolAccess> {
   }
   recordCreated(access: ToolAccess, created: VideoCreated): void | Promise<void> {
     return this.#of(access.principal).recordCreated?.(access, created);
+  }
+  recordSlides(access: ToolAccess, created: SlidesCreated): void {
+    this.#of(access.principal).recordSlides?.(access, created);
   }
   adoptCreatedVideo(access: ToolAccess, videoId: Id): void | Promise<void> {
     return this.#of(access.principal).adoptCreatedVideo?.(access, videoId);

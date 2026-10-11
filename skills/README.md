@@ -20,6 +20,7 @@
 | `narration` | 旁白成片 |
 | `video-production` | 从简报到成片 |
 | `motion-graphics` | 动效图形 |
+| `slides` | 幻灯片 |
 
 ## 新增或修改一个 skill
 

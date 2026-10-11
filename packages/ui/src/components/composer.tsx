@@ -114,6 +114,7 @@ import { useSpace } from '../state/space-store.ts';
 import { AccessPicker } from './access-picker.tsx';
 import { AgentPicker } from './agent-picker.tsx';
 import { ComposerToken, composerTokenList } from './composer-token.tsx';
+import { SlideAnnotationsToken, type SlideAnnotationTokenItem } from './slide-annotations-token.tsx';
 import { useVideoMentions } from './use-editor-reference.ts';
 import { useNarrow } from './use-narrow.ts';
 import { focusPromptEnd, usePromptValue } from './use-prompt-value.ts';
@@ -212,6 +213,11 @@ export interface ComposerProps {
    * 返回 false 表示没有发出去，保留草稿（含点选的 skill）。
    */
   onSend(text: string, attachments: AttachmentRef[], skills: SkillSendRef[]): Promise<boolean>;
+  /**
+   * 发送前的准备（如让打开着的幻灯片编辑器保存完），在清空输入框之前跑：等的时候正文与附件都留在框里，发送按钮显示进行中。
+   * 返回 false 不发，草稿原样留着（提示由调用方给）。
+   */
+  beforeSend?(): Promise<boolean>;
   onStop?(): void;
   /** 输入框上方的引用标签（产品设计 §3.2.3）：随这条消息交给智能体的编辑器状态。可以移除。 */
   reference?: { label: string; description: string; onRemove(): void } | null;
@@ -220,6 +226,11 @@ export interface ComposerProps {
    * Runtime 只能一起去掉（`conversations.update` 的 `pendingReferences: null`），所以只有一个移除按钮。
    */
   spaceReferences?: { items: { id: string; label: string; description: string }[]; onClear(): void } | null;
+  /**
+   * 输入框上方：幻灯片标签里加进对话、还没发出的标注（docs/design/slides §8.2），「幻灯片标注 · N 条」。
+   * 有标注时正文空着也能发（`onSend` 收到空正文，由调用方补一句）。
+   */
+  slideAnnotations?: { items: readonly SlideAnnotationTokenItem[]; onRemove(id: string): void; onClear(): void } | null;
   /** 输入框上方：排队等发送的消息。 */
   queue?: ReactNode;
   /** 新会话起始页（原型 new-agent.jsx `AgentHero`）才传；会话里不传，输入区保持原样。 */
@@ -286,8 +297,9 @@ export interface ComposerStart {
  */
 export function Composer(props: ComposerProps) {
   const { draftKey, driverId, model, effort, lockedTo, onAgentChange, accessMode, onAccessModeChange } = props;
-  const { busy, queueWhileBusy, stopping, placeholder, autoFocus, mentionScope, onSend, onStop, reference, queue, start, tool } = props;
+  const { busy, queueWhileBusy, stopping, placeholder, autoFocus, mentionScope, onSend, beforeSend, onStop, reference, queue, start, tool } = props;
   const spaceReferences = props.spaceReferences?.items.length ? props.spaceReferences : null;
+  const slideAnnotations = props.slideAnnotations?.items.length ? props.slideAnnotations : null;
   const runtime = useRuntime();
   const shellDraft = useShell((s) => s.drafts[draftKey] ?? '');
   const setShellDraft = useShell((s) => s.setDraft);
@@ -353,7 +365,7 @@ export function Composer(props: ComposerProps) {
   const uploading = images.some((image) => image.progress !== null);
   const hasText = draft.trim().length > 0;
   // 起始页：正文空着时，附了图片或素材也能发（只选模板不行）。
-  const hasContent = hasText || !!files.length || !!images.length || (!!start && start.canSendEmpty(images.length));
+  const hasContent = hasText || !!files.length || !!images.length || !!slideAnnotations || (!!start && start.canSendEmpty(images.length));
   const canSend = (!busy || !!queueWhileBusy) && !sending && !picking && !uploading && !blocked && hasContent && !tool?.isDisabled;
   const [over, setOver] = useState(false);
   const dragDepth = useRef(0);
@@ -534,6 +546,10 @@ export function Composer(props: ComposerProps) {
       } finally {
         setSending(false);
       }
+      return;
+    }
+    if (beforeSend && !(await beforeSend().catch(() => false))) {
+      setSending(false);
       return;
     }
     setDraft(draftKey, '');
@@ -861,7 +877,7 @@ export function Composer(props: ComposerProps) {
               ))}
             </div>
           ) : null}
-          {reference || spaceReferences ? (
+          {reference || spaceReferences || slideAnnotations ? (
             <div className={tags}>
               {reference ? (
                 <span className={tag} title={reference.description}>
@@ -885,6 +901,9 @@ export function Composer(props: ComposerProps) {
                     <Close />
                   </ActionButton>
                 </span>
+              ) : null}
+              {slideAnnotations ? (
+                <SlideAnnotationsToken items={slideAnnotations.items} onRemove={slideAnnotations.onRemove} onClear={slideAnnotations.onClear} />
               ) : null}
             </div>
           ) : null}

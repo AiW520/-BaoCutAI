@@ -36,6 +36,7 @@ import {
   packageBlock,
   purgeBlock,
 } from '../../model/space-actions.ts';
+import { SLIDES } from '../../model/slides-copy.ts';
 import { formatBytes, isPlayable, KIND_LABEL, measureText, SPACE_STATUS, statusText } from '../../model/space.ts';
 import { FilePreview } from '../file-preview.tsx';
 import type { EntryTools } from '../tools/use-entry-tools.ts';
@@ -88,6 +89,8 @@ export interface ViewerActions {
   onReveal(entry: SpaceEntry): void;
   onContinue(entry: SpaceEntry): void;
   onOpenVideo(entry: SpaceEntry): void;
+  /** 幻灯片（deck 目录）在功能区的幻灯片标签里打开（docs/design/slides §8.1）。 */
+  onOpenSlides(entry: SpaceEntry): void;
   onEdit(entry: SpaceEntry): void;
   /** 便携包打开成新视频。 */
   onOpenPackage(entry: SpaceEntry): void;
@@ -190,6 +193,7 @@ function ViewerBody({
   const trashed = entry.user.trashedAt !== null;
   const failed = isFailedPlaceholder(entry);
   const isVideo = entry.kind === 'video';
+  const isSlides = entry.kind === 'slides';
   const jobId = entryJobId(entry);
   const route = editRoute(entry);
   const blockedEdit = isVideo ? null : editBlock(entry, path);
@@ -199,7 +203,8 @@ function ViewerBody({
   const blockedPurge = trashed ? purgeBlock(entry) : null;
   const measure = measureText(entry);
   const status = statusText(entry);
-  const hasFile = !isVideo && entry.status !== 'generating' && entry.status !== 'failed' && entry.status !== 'missing';
+  // 幻灯片是一个目录，查看框里不预览，打开到幻灯片标签里看。
+  const hasFile = !isVideo && !isSlides && entry.status !== 'generating' && entry.status !== 'failed' && entry.status !== 'missing';
   const origin = entry.origin;
   const generated = origin?.capability
     ? [COPY.capability[origin.capability] ?? origin.capability, origin.provider ? `${origin.provider.providerId} · ${origin.provider.modelId}` : null]
@@ -365,14 +370,20 @@ function ViewerBody({
               </Button>
             ) : null}
           </>
-        ) : isVideo ? (
+        ) : isVideo || isSlides ? (
           <>
             <Button variant="secondary" isDisabled={!!blockedContinue} onPress={() => actions.onContinue(entry)}>
               {COPY.continue}
             </Button>
-            <Button variant="accent" onPress={() => actions.onOpenVideo(entry)}>
-              {COPY.openVideo}
-            </Button>
+            {isVideo ? (
+              <Button variant="accent" onPress={() => actions.onOpenVideo(entry)}>
+                {COPY.openVideo}
+              </Button>
+            ) : (
+              <Button variant="accent" isDisabled={entry.status === 'missing'} onPress={() => actions.onOpenSlides(entry)}>
+                {SLIDES.open}
+              </Button>
+            )}
           </>
         ) : (
           <>

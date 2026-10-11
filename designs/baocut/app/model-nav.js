@@ -7,6 +7,7 @@
      `editor` 的 via 是从哪个 App Tab 打开的视频（'home' | 'space'，2026-10-01）：两处打开是同一套布局，
      只差 rail 上亮哪一格、「后退」回哪儿，所以它进 isSame——从 Home 与从 Space 打开同一部视频是两条历史
      `agent` 的 movie 是右侧正在查看的视频；id 始终是会话 id。
+     `agent` 的 slides 是右侧正在查看的幻灯片（deck 的 Space 条目 id），slide 是停在哪一页（docs/design/slides §8.1）。
      `agent` 没有 id、带 dir = 在这个项目（目录）里起一条还没说话的新会话（App，2026-10-01）
      `tools` 的 id 是工具（'tts' / 'compress' / 'merge'），没有 id 是目录；`services` 的 id 是 'mcp' / 'remote' / 'web'；
      `remote` 与 {r:'tools', id:'remote'} 是旧链接，落到 {r:'services', id:'remote'}（BC_SERVICES.resolve）
@@ -21,6 +22,7 @@
     && (a.sec || null) === (b.sec || null) && (a.tab || null) === (b.tab || null)
     && (a.from || null) === (b.from || null) && (a.via || null) === (b.via || null)
     && (a.file || null) === (b.file || null) && (a.web || null) === (b.web || null) && (a.url || null) === (b.url || null)
+    && (a.slides || null) === (b.slides || null) && (a.slide || null) === (b.slide || null)
     && (a.movie || null) === (b.movie || null) && (a.dir || null) === (b.dir || null) && (a.t ?? null) === (b.t ?? null);
 
   const fresh = () => ({stack: [HOME], pos: 0});
@@ -81,7 +83,7 @@
     let url = '#/' + name;
     if (r.id && r.r !== 'projects') url += '/' + encodeURIComponent(r.id);
     if (r.r === 'projects' && r.id) q.set('dir', r.id);
-    for (const key of ['sec', 'tab', 'from', 'via', 'dir', 'movie', 'file', 'web', 'url']) {
+    for (const key of ['sec', 'tab', 'from', 'via', 'dir', 'movie', 'file', 'web', 'url', 'slides', 'slide']) {
       if (r[key]) q.set(key === 'sec' && r.r === 'projects' ? 'cat' : key, r[key]);
     }
     if (Number.isFinite(r.t) && r.t >= 0) q.set('t', String(r.t));
@@ -103,7 +105,7 @@
       if (!routes.has(name)) return {...HOME};
       const r = {r:name};
       if (parts[1]) r.id = parts[1];
-      for (const key of ['sec', 'tab', 'from', 'via', 'dir', 'movie', 'file', 'web', 'url']) if (q.get(key)) r[key] = q.get(key);
+      for (const key of ['sec', 'tab', 'from', 'via', 'dir', 'movie', 'file', 'web', 'url', 'slides', 'slide']) if (q.get(key)) r[key] = q.get(key);
       if (name === 'projects') {
         if (q.get('cat')) r.sec = q.get('cat');
         if (q.get('dir')) { r.id = q.get('dir'); delete r.dir; }

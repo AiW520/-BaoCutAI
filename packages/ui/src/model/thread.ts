@@ -49,8 +49,8 @@ export function buildThread(items: readonly TimelineItem[]): ThreadBlock[] {
   };
 
   items.forEach((item, i) => {
-    // 新建视频的记录不占一行、也不打断步骤组：它的视频卡由 video-cards.ts 挂在这一轮最后引用它的那一行后面。
-    if (item.kind === 'video-created') {
+    // 新建视频与幻灯片的记录不占一行、也不打断步骤组：视频卡由 video-cards.ts 挂在这一轮最后引用它的那一行后面，幻灯片卡片同理。
+    if (item.kind === 'video-created' || item.kind === 'slides-created') {
       flushTasksEndingAt(i);
       return;
     }

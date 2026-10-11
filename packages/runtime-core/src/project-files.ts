@@ -8,6 +8,7 @@ import {
   type ProjectFilesList,
   type SpaceEntryKind,
 } from '@baocut/protocol';
+import { DECK_FILE, readDeckSummary } from '@baocut/slides';
 import { classifyFile, isIgnoredName } from './space-catalog.ts';
 import { RcRuntime } from '@baocut/protocol/messages/runtime-core';
 
@@ -17,7 +18,7 @@ import { RcRuntime } from '@baocut/protocol/messages/runtime-core';
  * - `dir` 与每一项都要在根目录之内：`dir` 解析符号链接之后越界就拒绝（`invalid-request`），
  *   指出根目录的符号链接与悬空链接不列。
  * - 跳过隐藏文件与依赖目录（与 Space 同一张忽略表：`.git`、`.baocut`、`node_modules` 等）。
- * - 查找时不进入符号链接目录（避免绕圈），也不进入视频目录（含 `video.db`，整个目录算一项）。
+ * - 查找时不进入符号链接目录（避免绕圈），也不进入视频目录（含 `video.db`）与幻灯片目录（含 `deck.json`），整个目录算一项。
  * - 返回的 `path` 按目录的逻辑路径拼出（不从真实路径反推），可以原样交给 `{ conversationId, path }`。
  */
 
@@ -85,6 +86,12 @@ async function videoDb(dir: string): Promise<Stats | null> {
     if (stat?.isFile()) return stat;
   }
   return null;
+}
+
+/** 幻灯片目录（含合法 `deck.json`，docs/design/slides §7.3）的 `deck.json` 状态；不是时 null。 */
+async function deckFile(dir: string): Promise<Stats | null> {
+  if (!(await readDeckSummary(dir))) return null;
+  return fsp.stat(path.join(dir, DECK_FILE)).catch(() => null);
 }
 
 /**
@@ -182,9 +189,13 @@ async function candidateOf(
   let stat = found.stat;
   if (found.isDir) {
     const db = await videoDb(found.full);
+    const deck = db ? null : await deckFile(found.full);
     if (db) {
       kind = 'video';
       stat = db;
+    } else if (deck) {
+      kind = 'slides';
+      stat = deck;
     }
   } else kind = classifyFile(dirent.name);
   return {
@@ -250,7 +261,7 @@ async function search(
         }
         candidates.push(candidate);
       }
-      if (candidate.isDir && !candidate.isLink && candidate.kind !== 'video' && depth < limits.maxDepth) {
+      if (candidate.isDir && !candidate.isLink && candidate.kind !== 'video' && candidate.kind !== 'slides' && depth < limits.maxDepth) {
         queue.push({ rel: candidate.path, real: candidate.full, depth: depth + 1 });
       }
     }

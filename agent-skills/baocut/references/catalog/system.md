@@ -43,7 +43,7 @@ description: 任务的查看、等待、取消与重跑；跨视频检索、视�
 | 把这个会话收进新项目（会话不属于项目、用户要求时） | {{tool:projects_adopt_session}}；默认以视频命名，可给 {{arg:name}} |
 <!-- /surface -->
 | 跨视频按文稿、字幕、译文、章节、说话人找 | {{tool:space_search}}，{{arg:query}}；可给 {{arg:videoIds}}、{{arg:kinds}}、{{arg:speaker}} |
-| 列出 Space 条目（视频、导出的文件、生成的图片与音频） | {{tool:space_list}}；可按 {{arg:kind}}、{{arg:videoId}} 筛选 |
+| 列出 Space 条目（视频、导出的文件、生成的图片与音频、幻灯片） | {{tool:space_list}}；可按 {{arg:kind}}、{{arg:videoId}} 筛选 |
 | 删除视频（移进回收站；用户明确要求时） | {{tool:videos_delete}}，{{arg:video}} |
 
 {{tool:space_search}} 的时间以索引时的版本为准；要精确定位，再用 {{tool:videos_inspect}} / {{tool:documents_read}} 读当前版本。`complete` 为 false 时索引还没覆盖全部视频，结果可能不全。

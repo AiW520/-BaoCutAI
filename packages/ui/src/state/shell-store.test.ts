@@ -26,6 +26,8 @@ const routes: Route[] = [
   { tab: 'home', conversationId: null, projectId: null, pane: { kind: 'video', target: { conversationId: 'c1', path: 'a?b=c&d' } } },
   { tab: 'home', conversationId: 'c1', projectId: null, pane: { kind: 'file', target: { conversationId: 'c1', path: 'notes.md' } } },
   { tab: 'home', conversationId: null, projectId: 'p1', pane: { kind: 'files' } },
+  { tab: 'home', conversationId: 'c1', projectId: null, pane: { kind: 'slides', target: { conversationId: 'c1', path: 'decks/季度 回顾' } } },
+  { tab: 'home', conversationId: null, projectId: 'p1', pane: { kind: 'slides', target: { projectId: 'p1', path: 'talk' } } },
   { tab: 'home', conversationId: 'c1', projectId: null, pane: { kind: 'web', id: 'w1', url: 'https://example.com/a?b=1&c=2' } },
   { tab: 'space', category: 'video', projectId: null, video: { entryId: 'e1' } },
   { tab: 'settings', section: 'diagnostics' },

@@ -36,6 +36,8 @@ export const pl: AgentToolStepsMessages = {
     readContract: "Odczytaj kontrakt zadania",
     refineContract: "Doprecyzuj kontrakt zadania",
     recordCheck: "Zapisz kontrolę odbioru",
+    checkSlides: "Sprawdź slajdy",
+    importSlideAsset: "Zaimportuj obraz do slajdów",
   },
   exportKind: {
     subtitles: "Napisy",

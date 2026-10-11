@@ -419,16 +419,19 @@
     const runWrite = agentSim.runWrite;
 
     /** 发一句话：写入 user 消息，按脚本推进。 */
-    /* `reference`：输入框里的 Space 条目引用（product-design §4.7），随这条消息发出 */
-    const sendAgent = useCallback((sid, text, fresh, attachments = [], reference = null, artifactIds = []) => {
+    /* `reference`：输入框里的 Space 条目引用（product-design §4.7），随这条消息发出
+       `slideAnnotations`：幻灯片标签页里加进草稿的标注（docs/design/slides §8.2），随这条消息记入会话 */
+    const sendAgent = useCallback((sid, text, fresh, attachments = [], reference = null, artifactIds = [], slideAnnotations = []) => {
       const t = String(text || '').trim();
-      if (!t && !attachments.length && !reference) return;
+      if (!t && !attachments.length && !reference && !slideAnnotations.length) return;
       const sess = sessionsRef.current.find((x) => x.id === sid) || fresh;
       if (!sess) return;
-      const title = sess.title || AG.sessionTitle(t || attachments[0]?.name || (reference && reference.name) || '图片');
-      const plan = agentSim.planFor(t, !!sess.project, sess);
+      const title = sess.title || AG.sessionTitle(t || attachments[0]?.name || (reference && reference.name) || (slideAnnotations.length ? '幻灯片标注' : '图片'));
+      /* 带着幻灯片标注发出去：原型按标注模拟逐页修改（model-home-slides.js；Web 入口没有这个模块） */
+      const SL = window.BC_HOME_SLIDES;
+      const plan = slideAnnotations.length && SL ? SL.replyPlan(slideAnnotations) : agentSim.planFor(t, !!sess.project, sess);
       appendMsg(sid, {role: 'user', text: t, attachments, ...(reference ? {reference} : {}),
-        ...(artifactIds.length ? {artifactIds} : {}), startedAt: Date.now()});
+        ...(artifactIds.length ? {artifactIds} : {}), ...(slideAnnotations.length ? {slideAnnotations} : {}), startedAt: Date.now()});
       patchSession(sid, {title, status: 'running', draft: '', activeModel: null});
       // 原型用 fixture 模拟 CLI 握手：只在回报模型后展示具体名字，目录默认不冒充运行值。
       const h = harnessList.find((item) => item.id === sess.harness);

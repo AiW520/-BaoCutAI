@@ -12,6 +12,7 @@ export const fr: SpaceMessages = {
     audio: "Audio",
     subtitle: "Sous-titres",
     document: "Document",
+    slides: "Diapositives",
     package: "Paquet vidéo",
     template: "Modèle",
   } satisfies Record<SpaceEntryKind, string>,

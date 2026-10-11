@@ -55,6 +55,8 @@ export const WEB_DEFAULT_METHODS: readonly string[] = [
   'tasks.*',
   'space.*',
   'media.*',
+  // 幻灯片（docs/design/slides §6.1）：只在来源目录里按真实路径打开；只读配置下照样能打开，发布被路由拒绝。
+  'slides.open',
   'videos.*',
   'documents.*',
   'edits.*',
@@ -112,6 +114,7 @@ export const WEB_READ_METHODS: readonly RpcMethod[] = [
   'media.subtitles',
   'media.peaks',
   'media.thumbnail',
+  'slides.open',
   'videos.open',
   'videos.close',
   'videos.history',

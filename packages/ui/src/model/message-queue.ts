@@ -5,7 +5,7 @@
  * packages/app/src/composer/actions.ts（`sendQueuedComposerMessageNow`、`editQueuedComposerMessage`），modified：
  * 立即发送先走 `conversations.steer`，按它的结果决定移出、留在队列还是改走 `conversations.send`；队列按会话存在 shell-store。
  */
-import { sendSkillRefs, type AttachmentRef, type EditorContext, type Id, type SkillSendRef } from '@baocut/protocol';
+import { sendSkillRefs, type AttachmentRef, type EditorContext, type Id, type SkillSendRef, type SlideAnnotation } from '@baocut/protocol';
 
 export interface QueuedMessage {
   id: Id;
@@ -16,6 +16,8 @@ export interface QueuedMessage {
   context?: EditorContext;
   /** 点选的 skill，按挂上的顺序；走 `conversations.send` 时带上（`steer` 不收 skill，带 skill 的不插话，等这一轮结束再发）。 */
   skills?: SkillSendRef[];
+  /** 加进对话的幻灯片标注（docs/design/slides §8.2）；`send` 与 `steer` 都带上。 */
+  slideAnnotations?: SlideAnnotation[];
   queuedAt: string;
 }
 
@@ -27,7 +29,7 @@ export function removeQueuedMessage(queue: readonly QueuedMessage[], id: Id): Qu
   return queue.filter((m) => m.id !== id);
 }
 
-/** 改排队的文字；改成空的就是删掉（消息必须有正文，图片不能单独发）。 */
+/** 改排队的文字；改成空的就是删掉（消息必须有正文，图片与标注不能单独发）。 */
 export function editQueuedMessage(queue: readonly QueuedMessage[], id: Id, text: string): QueuedMessage[] {
   const trimmed = text.trim();
   return queue.flatMap((m) => {
@@ -38,6 +40,22 @@ export function editQueuedMessage(queue: readonly QueuedMessage[], id: Id, text:
 
 function isSkillRef(value: unknown): value is SkillSendRef {
   return !!value && typeof value === 'object' && typeof (value as SkillSendRef).id === 'string';
+}
+
+/** 持久化的一条幻灯片标注：只核对形状，长度与条数由 Runtime 的 schema 把关。 */
+function isSlideAnnotation(value: unknown): value is SlideAnnotation {
+  if (!value || typeof value !== 'object') return false;
+  const a = value as Record<string, unknown>;
+  return (
+    !!a.deck &&
+    typeof a.deck === 'object' &&
+    typeof a.anchor === 'string' &&
+    typeof a.label === 'string' &&
+    typeof a.text === 'string' &&
+    (a.slideId === undefined || typeof a.slideId === 'string') &&
+    (a.detail === undefined || typeof a.detail === 'string') &&
+    (a.area === undefined || typeof a.area === 'boolean')
+  );
 }
 
 /** 读回持久化的一条：形状不对的不要。只能点一个 skill 时存的 `skill` 也认（`readQueuedMessage` 把它换成 `skills`）。 */
@@ -52,7 +70,8 @@ export function isQueuedMessage(value: unknown): value is QueuedMessage {
     m.attachments.every((a) => !!a && typeof a === 'object' && typeof (a as AttachmentRef).id === 'string') &&
     (m.context === undefined || (!!m.context && typeof m.context === 'object')) &&
     (m.skill === undefined || isSkillRef(m.skill)) &&
-    (m.skills === undefined || (Array.isArray(m.skills) && m.skills.every(isSkillRef)))
+    (m.skills === undefined || (Array.isArray(m.skills) && m.skills.every(isSkillRef))) &&
+    (m.slideAnnotations === undefined || (Array.isArray(m.slideAnnotations) && m.slideAnnotations.every(isSlideAnnotation)))
   );
 }
 

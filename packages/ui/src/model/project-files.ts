@@ -63,8 +63,9 @@ export function projectFileTarget(conversationId: Id, entry: Pick<ProjectFileEnt
   return { conversationId, path: entry.path };
 }
 
-/** 视频目录交给视频查看器，普通目录进入，其余是文件。 */
-export function entryAction(entry: Pick<ProjectFileEntry, 'isDir' | 'kind'>): 'video' | 'enter' | 'file' {
+/** 视频目录交给视频查看器，幻灯片目录交给幻灯片标签（docs/design/slides §8.1），普通目录进入，其余是文件。 */
+export function entryAction(entry: Pick<ProjectFileEntry, 'isDir' | 'kind'>): 'video' | 'slides' | 'enter' | 'file' {
   if (entry.kind === 'video') return 'video';
+  if (entry.kind === 'slides') return 'slides';
   return entry.isDir ? 'enter' : 'file';
 }

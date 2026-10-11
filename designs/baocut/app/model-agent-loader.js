@@ -47,6 +47,7 @@
     read: ['document', 'page', 'eye'],
     edit: ['pencil', 'brush', 'document'],
     search: ['mag', 'filter', 'eye'],
+    slides: ['page', 'eye', 'pencil'],
     'space-search': ['mag', 'filter', 'folder'],
     space: ['folder', 'shop', 'cart'],
     /* 进出 */

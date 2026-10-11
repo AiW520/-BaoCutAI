@@ -1,0 +1,389 @@
+/**
+ * deck 存储：把 Slides 运行时期望的宿主文件接口落到会话工作目录里的一份 deck 上（docs/design/slides §2）。
+ *
+ * 运行时看到的路径带 `project/` 前缀，磁盘上是 deck 目录里的同名文件：
+ *   project/deck.json          ↔ <deck>/deck.json
+ *   project/slides/<id>.html   ↔ <deck>/slides/<id>.html
+ *   project/ds/**              ↔ <deck>/ds/**
+ *   /_blob/<id>                ↔ <deck>/assets/<id>.<ext>（Content-Type 记在 assets/index.json）
+ * 只有这几类文件进清单、可以读写；deck 目录里别的文件（智能体的草稿、素材原图）编辑器看不到也改不了。
+ * 路径上有符号链接的一律当作不存在、不可写：符号链接可能指到 deck 目录外。
+ *
+ * 读写的 HTTP 路由在 deck-routes.ts；协议类型见 file-protocol.ts。
+ */
+import { createHash, randomUUID } from 'node:crypto';
+import { existsSync, watch, type FSWatcher } from 'node:fs';
+import { lstat, mkdir, readdir, readFile, realpath, rename, rm, writeFile } from 'node:fs/promises';
+import path from 'node:path';
+import {
+  BLOB_ID_PATTERN,
+  isProjectPath,
+  isWriteEntry,
+  type ConflictError,
+  type ConflictPath,
+  type DeckChangeEvent,
+  type FileListing,
+  type GenericPublishError,
+  type ListingEntry,
+  type PublishResult,
+  type Sha256,
+  type UploadResult,
+  type WireEntry,
+} from './file-protocol.ts';
+
+const MIME: Record<string, string> = {
+  html: 'text/html',
+  json: 'application/json',
+  css: 'text/css',
+  md: 'text/markdown',
+  txt: 'text/plain',
+  svg: 'image/svg+xml',
+  png: 'image/png',
+  jpg: 'image/jpeg',
+  jpeg: 'image/jpeg',
+  gif: 'image/gif',
+  webp: 'image/webp',
+  avif: 'image/avif',
+  woff2: 'font/woff2',
+  woff: 'font/woff',
+  ttf: 'font/ttf',
+  otf: 'font/otf',
+  mp4: 'video/mp4',
+  webm: 'video/webm',
+};
+
+/** 素材文件的扩展名：按 Content-Type 取，认不出的存成 .bin。 */
+const EXT_BY_MIME: Record<string, string> = {
+  'image/svg+xml': 'svg',
+  'image/png': 'png',
+  'image/jpeg': 'jpg',
+  'image/gif': 'gif',
+  'image/webp': 'webp',
+  'image/avif': 'avif',
+  'font/woff2': 'woff2',
+  'font/woff': 'woff',
+  'font/ttf': 'ttf',
+  'font/otf': 'otf',
+  'video/mp4': 'mp4',
+  'video/webm': 'webm',
+};
+
+/** deck 目录里放素材的子目录与它的类型索引。 */
+export const ASSETS_DIR = 'assets';
+const ASSET_INDEX = 'index.json';
+
+export function contentTypeOf(file: string): string {
+  const ext = file.slice(file.lastIndexOf('.') + 1).toLowerCase();
+  return MIME[ext] ?? 'application/octet-stream';
+}
+
+export function assetExtensionOf(contentType: string): string {
+  return EXT_BY_MIME[contentType.split(';')[0]!.trim().toLowerCase()] ?? 'bin';
+}
+
+export function sha256(bytes: Uint8Array | string): Sha256 {
+  return createHash('sha256').update(bytes).digest('hex');
+}
+
+/**
+ * 运行时路径 → deck 目录里的相对路径；不是可读写的那几类文件时返回 null。
+ * `project/deck.json`、`project/slides/<名>.html`（只一层）、`project/ds/**`。
+ */
+export function deckFileOf(runtimePath: string): string | null {
+  if (!isProjectPath(runtimePath)) return null;
+  const rel = runtimePath.slice('project/'.length);
+  return isDeckFile(rel) ? rel : null;
+}
+
+/** deck 目录里的相对路径（`/` 分隔）是否属于编辑器可见的文件。以点开头的段一律不算。 */
+export function isDeckFile(rel: string): boolean {
+  const parts = rel.split('/');
+  if (parts.some(part => part === '' || part === '.' || part === '..' || part.startsWith('.'))) return false;
+  if (rel === 'deck.json') return true;
+  if (parts[0] === 'slides') return parts.length === 2 && parts[1]!.endsWith('.html');
+  return parts[0] === 'ds' && parts.length > 1;
+}
+
+/** publish 的结果，按 HTTP 状态区分成功和各类失败。 */
+export type PublishOutcome = { status: 200; body: PublishResult } | { status: 409; body: ConflictError } | { status: 400; body: GenericPublishError };
+
+async function walk(dir: string, base: string, out: string[]): Promise<void> {
+  if (!existsSync(dir)) return;
+  for (const entry of await readdir(dir, { withFileTypes: true })) {
+    if (entry.name.startsWith('.')) continue;
+    const full = path.join(dir, entry.name);
+    if (entry.isDirectory()) await walk(full, base, out);
+    else if (entry.isFile()) out.push(path.relative(base, full).split(path.sep).join('/'));
+  }
+}
+
+/** 原子写：同目录下以点开头的临时文件（Space 与外部改动监听都跳过）写完再 rename。 */
+async function writeFileAtomic(file: string, bytes: Uint8Array): Promise<void> {
+  await mkdir(path.dirname(file), { recursive: true });
+  const tmp = path.join(path.dirname(file), `.${path.basename(file)}.${randomUUID()}.tmp`);
+  try {
+    await writeFile(tmp, bytes);
+    await rename(tmp, file);
+  } catch (error) {
+    await rm(tmp, { force: true }).catch(() => {});
+    throw error;
+  }
+}
+
+export class DeckStore {
+  /** deck 目录（含 deck.json 的那一层）。 */
+  readonly root: string;
+  /** 本进程刚写过的文件（运行时路径）→ 写入时的 sha（删除记为 ""），用来区分「编辑器自己保存」和「外部改动」。 */
+  readonly ownWrites = new Map<string, Sha256 | ''>();
+  private queue: Promise<unknown> = Promise.resolve();
+  private seq = 0;
+
+  constructor(root: string) {
+    this.root = root;
+  }
+
+  /**
+   * deck 目录里一个文件的磁盘路径（文件本身可以还不存在）。路径上任何一段是符号链接、或这个名字不是普通文件时 null。
+   */
+  private async diskPath(rel: string): Promise<string | null> {
+    const realRoot = await realpath(this.root).catch(() => null);
+    if (realRoot === null) return null;
+    const file = path.join(realRoot, ...rel.split('/'));
+    // 从文件所在目录往上找到第一个存在的目录，它的真实路径必须就是它自己
+    for (let dir = path.dirname(file); ; dir = path.dirname(dir)) {
+      const real = await realpath(dir).catch(() => null);
+      if (real === null) continue;
+      if (real !== dir) return null;
+      break;
+    }
+    const info = await lstat(file).catch(() => null);
+    return info && !info.isFile() ? null : file;
+  }
+
+  async listing(): Promise<FileListing> {
+    const rels: string[] = [];
+    if (existsSync(path.join(this.root, 'deck.json'))) rels.push('deck.json');
+    await walk(path.join(this.root, 'slides'), this.root, rels);
+    await walk(path.join(this.root, 'ds'), this.root, rels);
+    const files: Record<string, ListingEntry> = {};
+    for (const rel of rels.filter(isDeckFile).sort()) {
+      const file = await this.diskPath(rel);
+      if (file === null) continue;
+      const bytes = await readFile(file).catch(() => null);
+      if (bytes === null) continue;
+      files[`project/${rel}`] = { sha256: sha256(bytes), size: bytes.length, contentType: contentTypeOf(rel) };
+    }
+    return { ver: versionOf(files), files };
+  }
+
+  async readProjectFile(p: string): Promise<Uint8Array | null> {
+    const rel = deckFileOf(p);
+    const file = rel === null ? null : await this.diskPath(rel);
+    if (file === null) return null;
+    try {
+      return await readFile(file);
+    } catch {
+      return null;
+    }
+  }
+
+  /** 串行执行，保证 ifMatch 检查和写入之间没有交错。 */
+  publish(files: Record<string, WireEntry>): Promise<PublishOutcome> {
+    const run = this.queue.then(() => this.publishNow(files));
+    this.queue = run.catch(() => undefined);
+    return run;
+  }
+
+  private async publishNow(batch: Record<string, WireEntry>): Promise<PublishOutcome> {
+    const files = new Map<string, string>();
+    for (const p of Object.keys(batch)) {
+      const rel = deckFileOf(p);
+      const file = rel === null ? null : await this.diskPath(rel);
+      if (file === null) {
+        return { status: 400, body: { code: 'read_only_path', message: `${p}: only deck.json, slides/*.html and ds/** can be written` } };
+      }
+      files.set(p, file);
+    }
+    const before = await this.listing();
+    const conflicts: ConflictPath[] = [];
+    for (const [p, entry] of Object.entries(batch)) {
+      const expected = entry?.ifMatch;
+      if (typeof expected !== 'string') continue;
+      const actual = before.files[p]?.sha256 ?? null;
+      if (actual !== expected) conflicts.push({ path: p, actual, expected });
+    }
+    if (conflicts.length > 0) {
+      return { status: 409, body: { code: 'conflict', live: before.ver, paths: conflicts } };
+    }
+
+    const shas: Record<string, Sha256> = {};
+    for (const [p, entry] of Object.entries(batch)) {
+      const file = files.get(p)!;
+      if (!isWriteEntry(entry)) {
+        this.ownWrites.set(p, '');
+        await rm(file, { force: true });
+        continue;
+      }
+      const bytes = Buffer.from(entry.base64, 'base64');
+      const sha = sha256(bytes);
+      // 先登记再写：fs.watch 的回调可能在写入返回前就到
+      this.ownWrites.set(p, sha);
+      await writeFileAtomic(file, bytes);
+      shas[p] = sha;
+    }
+    const after = await this.listing();
+    this.seq += 1;
+    return { status: 200, body: { version: after.ver, seq: this.seq, shas } };
+  }
+
+  private async assetIndex(): Promise<Record<string, string>> {
+    try {
+      const file = await this.diskPath(`${ASSETS_DIR}/${ASSET_INDEX}`);
+      if (file === null) return {};
+      const parsed: unknown = JSON.parse(await readFile(file, 'utf8'));
+      return parsed && typeof parsed === 'object' && !Array.isArray(parsed) ? (parsed as Record<string, string>) : {};
+    } catch {
+      return {};
+    }
+  }
+
+  /** 素材按内容寻址：id 是 sha256 的前 32 位，同一张图只存一份。 */
+  putBlob(bytes: Uint8Array, contentType: string): Promise<UploadResult> {
+    // 与发布共用队列：assets/index.json 的读改写不能交错
+    const run = this.queue.then(() => this.putBlobNow(bytes, contentType));
+    this.queue = run.catch(() => undefined);
+    return run;
+  }
+
+  private async putBlobNow(bytes: Uint8Array, contentType: string): Promise<UploadResult> {
+    const id = sha256(bytes).slice(0, 32);
+    const type = contentType.split(';')[0]!.trim().toLowerCase() || 'application/octet-stream';
+    const existing = await this.findBlobFile(id);
+    if (existing === null) {
+      const file = await this.diskPath(`${ASSETS_DIR}/${id}.${assetExtensionOf(type)}`);
+      if (file === null) throw new Error('assets directory is not writable');
+      await writeFileAtomic(file, bytes);
+    }
+    const index = await this.assetIndex();
+    const indexFile = await this.diskPath(`${ASSETS_DIR}/${ASSET_INDEX}`);
+    if (index[id] !== type && indexFile !== null) {
+      index[id] = type;
+      await writeFileAtomic(indexFile, Buffer.from(JSON.stringify(index, null, 2) + '\n'));
+    }
+    return { id, url: `/_blob/${id}`, sizeBytes: bytes.byteLength };
+  }
+
+  /** assets/ 里以 `<id>.` 开头的那个文件。 */
+  private async findBlobFile(id: string): Promise<string | null> {
+    try {
+      const name = (await readdir(path.join(this.root, ASSETS_DIR))).find(n => n.startsWith(`${id}.`) && !n.endsWith('.tmp'));
+      if (name === undefined) return null;
+      const file = await this.diskPath(`${ASSETS_DIR}/${name}`);
+      return file !== null && (await lstat(file).catch(() => null))?.isFile() ? file : null;
+    } catch {
+      return null;
+    }
+  }
+
+  async hasBlob(id: string): Promise<boolean> {
+    return BLOB_ID_PATTERN.test(id) && (await this.findBlobFile(id)) !== null;
+  }
+
+  /** 素材的磁盘文件与 Content-Type（路由按文件流式返回）。 */
+  async blobFile(id: string): Promise<{ file: string; contentType: string } | null> {
+    if (!BLOB_ID_PATTERN.test(id)) return null;
+    const file = await this.findBlobFile(id);
+    if (file === null) return null;
+    return { file, contentType: (await this.assetIndex())[id] ?? contentTypeOf(file) };
+  }
+
+  async getBlob(id: string): Promise<{ bytes: Uint8Array; contentType: string } | null> {
+    const found = await this.blobFile(id);
+    if (found === null) return null;
+    try {
+      return { bytes: await readFile(found.file), contentType: found.contentType };
+    } catch {
+      return null;
+    }
+  }
+
+  /**
+   * 这些运行时路径里，哪些的当前内容不是本进程写进去的。`seen` 是调用方已经知道的内容（开始监听时盘上的、报过的）：
+   * 与它一致的也不算；查过的路径记成当前内容。
+   */
+  async externalChanges(paths: Iterable<string>, seen?: Map<string, Sha256 | ''>): Promise<string[]> {
+    const external: string[] = [];
+    for (const p of paths) {
+      const rel = deckFileOf(p);
+      if (rel === null) continue;
+      let sha = '';
+      try {
+        const file = await this.diskPath(rel);
+        if (file !== null && (await lstat(file)).isFile()) sha = sha256(await readFile(file));
+      } catch {
+        sha = '';
+      }
+      if (this.ownWrites.get(p) !== sha && seen?.get(p) !== sha) external.push(p);
+      seen?.set(p, sha);
+    }
+    return external;
+  }
+}
+
+/** 版本号由清单内容决定：内容不变，版本不变。 */
+export function versionOf(files: Record<string, ListingEntry>): string {
+  const digest = sha256(
+    Object.entries(files)
+      .map(([p, f]) => `${p}:${f.sha256}`)
+      .join('\n'),
+  );
+  return 'local-' + digest.slice(0, 16);
+}
+
+/** fs.watch 报上来的相对路径里，任何一段以 . 开头（.swp、sed 的 .!123!x.html、本模块的临时文件）都不算 deck 改动。 */
+export function isIgnoredWatchPath(rel: string): boolean {
+  return rel.split('/').some(part => part.startsWith('.'));
+}
+
+/**
+ * 监听 deck 目录：被编辑器以外的东西改了（智能体用文件工具改 slide、重写 deck.json），去抖 300 ms 后
+ * 回调一次。编辑器自己保存的文件 sha 与 ownWrites 一致，不触发；内容与开始监听时一样的也不触发（macOS 的 FSEvents
+ * 会补报监听开始前不久的写入，比如刚建好的 deck）。返回停止监听的函数。
+ */
+export function watchExternalEdits(store: DeckStore, onChange: (event: DeckChangeEvent) => void, onError: (error: unknown) => void = () => {}): () => void {
+  let timer: NodeJS.Timeout | undefined;
+  let watcher: FSWatcher | undefined;
+  const changed = new Set<string>();
+  const seen = store.listing().then(
+    listing => new Map<string, Sha256 | ''>(Object.entries(listing.files).map(([p, f]) => [p, f.sha256])),
+    () => new Map<string, Sha256 | ''>(),
+  );
+  const flush = async () => {
+    const paths = [...changed];
+    changed.clear();
+    try {
+      const external = await store.externalChanges(paths, await seen);
+      if (external.length === 0) return;
+      onChange({ type: 'external-change', paths: external, ver: (await store.listing()).ver });
+    } catch (error) {
+      onError(error);
+    }
+  };
+  try {
+    watcher = watch(store.root, { recursive: true }, (_event, name) => {
+      if (!name) return;
+      const rel = String(name).split(path.sep).join('/');
+      if (isIgnoredWatchPath(rel) || !isDeckFile(rel)) return;
+      changed.add('project/' + rel);
+      clearTimeout(timer);
+      timer = setTimeout(() => void flush(), 300);
+    });
+    watcher.on('error', onError);
+  } catch (error) {
+    onError(error);
+  }
+  return () => {
+    clearTimeout(timer);
+    watcher?.close();
+  };
+}

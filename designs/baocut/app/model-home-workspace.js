@@ -13,6 +13,8 @@
     if (keyFor(r) === null) return null;
     if (r.movie) return {key: 'movie:' + r.movie, kind: 'movie', id: r.movie, ...(r.tab ? {tab: r.tab} : {}), ...(r.t != null ? {t: r.t} : {})};
     if (r.file) return {key: 'file:' + r.file, kind: 'file', id: r.file};
+    // docs/design/slides §8.1: a deck opens in its own tab; `slide` is the page it shows.
+    if (r.slides) return {key: 'slides:' + r.slides, kind: 'slides', id: r.slides, ...(r.slide ? {slide: r.slide} : {})};
     if (r.web) return {key: 'web:' + r.web, kind: 'web', id: r.web, url: safeUrl(r.url) || ''};
     return null;
   }
@@ -63,6 +65,7 @@
     if (!item) return base;
     if (item.kind === 'movie') return {...base, movie: item.id, ...(item.tab ? {tab: item.tab} : {}), ...(item.t != null ? {t: item.t} : {})};
     if (item.kind === 'file') return {...base, file: item.id};
+    if (item.kind === 'slides') return {...base, slides: item.id, ...(item.slide ? {slide: item.slide} : {})};
     return {...base, web: item.id, ...(item.url ? {url: item.url} : {})};
   }
   function reconcile(book, r) {
@@ -94,7 +97,7 @@
   }
   function title(item, items) {
     if (item.kind === 'web') { try { return new URL(item.url).hostname; } catch { return '新标签页'; } }
-    return items.find(it => it.id === item.id)?.name || (item.kind === 'movie' ? '视频不可用' : '文件不可用');
+    return items.find(it => it.id === item.id)?.name || ({movie: '视频不可用', slides: '幻灯片不可用'}[item.kind] || '文件不可用');
   }
   // Hit-test untransformed tab slots so animated neighbors cannot move the target.
   function dragTarget(rects, key, x) {

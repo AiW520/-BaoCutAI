@@ -9,6 +9,7 @@ export const it: SpaceMessages = {
     audio: "Audio",
     subtitle: "Sottotitoli",
     document: "Documento",
+    slides: "Diapositive",
     package: "Pacchetto video",
     template: "Template",
   },

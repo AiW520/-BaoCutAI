@@ -21,6 +21,7 @@ export const ru: RcAgentToolsMessages = {
   clauseSeparator: "; ",
 
   createVideoSummary: (p) => `Создать видео «${p.name}"`,
+  slidesImportAssetSummary: (p) => `Импортировать изображение «${p.file}» в слайды «${p.deck}»`,
   editsSummary: (p) => `${p.label} (${pluralForm('ru', p.count, { one: `${p.count} операция`, few: `${p.count} операции`, many: `${p.count} операций`, other: `${p.count} операции` })}: ${p.types})`,
   captionsSummary: (p) => `Добавить: ${p.bilingual ? "двуязычный " : ""}слой субтитров документа ${p.documentId}`,
   captionsLabel: "Добавить слой субтитров",

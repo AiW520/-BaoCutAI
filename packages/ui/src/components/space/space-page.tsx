@@ -475,9 +475,22 @@ function SpaceMain({ category, projectId, from }: { category: SpaceCategory; pro
     go({ tab: 'tools', tool: 'transcribe' });
   };
 
+  /**
+   * 幻灯片在做它的那条会话（项目里的在项目起始页）的功能区里开幻灯片标签（docs/design/slides §8.1）。
+   * `videoTargetOf` 只是按来源目录与相对路径给定位，幻灯片目录同样适用。
+   */
+  const openSlides = (entry: SpaceEntry) => {
+    const { projectId, conversationId } = entry.source;
+    if (!projectId && !conversationId) return;
+    setViewingId(null);
+    useShell.getState().openPane({ kind: 'slides', target: videoTargetOf(entry) }, { conversationId, projectId });
+  };
+
   const onAction = (action: EntryAction, entry: SpaceEntry) => {
-    if (action === 'open') openVideo(videoTargetOf(entry));
-    else if (action === 'transcribe') openTranscribe(entry);
+    if (action === 'open') {
+      if (entry.kind === 'slides') openSlides(entry);
+      else openVideo(videoTargetOf(entry));
+    } else if (action === 'transcribe') openTranscribe(entry);
     else if (action === 'view') setViewingId(entry.id);
     else if (action === 'info') setInfoId(entry.id);
     else if (action === 'continue') continueIn(entry);
@@ -502,6 +515,7 @@ function SpaceMain({ category, projectId, from }: { category: SpaceCategory; pro
       setViewingId(null);
       openVideo(videoTargetOf(entry));
     },
+    onOpenSlides: openSlides,
     onEdit: (entry) => void edit(entry),
     onOpenPackage: (entry) => {
       const path = entryPath(entry, dirs);

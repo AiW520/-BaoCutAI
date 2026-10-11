@@ -17,10 +17,12 @@ import { style } from '@react-spectrum/s2/style' with { type: 'macro' };
 import { T } from './thread-copy.ts';
 import { HOME_COPY, sentAttachmentsLabel, SKILL_COPY } from '../../copy.ts';
 import { formatClock } from '../../model/format.ts';
+import { sentAnnotationId } from '../../model/slide-annotations.ts';
 import { referenceDescription, referencesText } from '../../model/space-actions.ts';
 import { useRuntime } from '../../runtime/context.tsx';
 import { AgentMarkdown } from './agent-markdown.tsx';
 import { CopyButton } from './copy-button.tsx';
+import { SlideAnnotationsToken } from '../slide-annotations-token.tsx';
 
 type Item<K extends TimelineItem['kind']> = Extract<TimelineItem, { kind: K }>;
 
@@ -166,6 +168,14 @@ export const UserMessage = memo(function UserMessage({ item, conversationId }: {
           <span>{SKILL_COPY.token(skill.name)}</span>
         </div>
       ))}
+      {item.slideAnnotations?.length ? (
+        // 随这条消息交出去的幻灯片标注（docs/design/slides §8.2）：点开看各条，点一条打开那份幻灯片跳到那一页。
+        <div className={contextLine}>
+          <SlideAnnotationsToken
+            items={item.slideAnnotations.map((a, i) => ({ id: sentAnnotationId(item.id, i), deck: a.deck, anchor: a.anchor, label: a.label, text: a.text }))}
+          />
+        </div>
+      ) : null}
       <div className={actions}>
         <CopyButton text={item.text} />
       </div>

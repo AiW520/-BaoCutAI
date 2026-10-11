@@ -18,11 +18,13 @@
     audio:    {k: 'audio',    label: '音频', icon: 'AudioWave'},
     subtitle: {k: 'subtitle', label: '字幕', icon: 'CloseCaptions'},
     doc:      {k: 'doc',      label: '文档', icon: 'FileText'},
+    /* docs/design/slides §7.3：一份 deck 的目录是一个条目，不拆成 deck.json 加每页一份文档 */
+    slides:   {k: 'slides',   label: '幻灯片', icon: 'Layout'},
     template: {k: 'template', label: '模板', icon: 'Template'},
   };
-  const KIND_ORDER = ['movie', 'final', 'image', 'audio', 'subtitle', 'doc', 'template'];
+  const KIND_ORDER = ['movie', 'final', 'image', 'audio', 'subtitle', 'doc', 'slides', 'template'];
 
-  /* 分类侧栏（§4.3）：全部 ＋ 七类；收藏；回收站。 */
+  /* 分类侧栏（§4.3）：全部 ＋ 八类（幻灯片是 docs/design/slides 新加的）；收藏；回收站。 */
   const CATS = [{k: 'all', label: '全部', icon: 'Apps'}]
     .concat(KIND_ORDER.map((k) => ({k, label: KINDS[k].label, icon: KINDS[k].icon})));
   const SPECIAL = [{k: 'fav', label: '收藏', icon: 'Star'}, {k: 'trash', label: '回收站', icon: 'Delete'}];
@@ -311,6 +313,7 @@
     if (it.kind === 'audio') return size;
     if (it.kind === 'subtitle') return it.lines ? `${it.lines} 句` : '';
     if (it.kind === 'doc') return it.lines ? `${it.lines} 行` : '';
+    if (it.kind === 'slides') return it.slides ? `${it.slides.length} 页` : '';
     return '';
   }
 
@@ -382,6 +385,7 @@
     if (it.kind === 'movie') return 'editor';
     if (it.kind === 'final') return it.movie ? 'source' : 'new-movie';
     if (it.kind === 'subtitle' || it.kind === 'doc') return 'text';
+    if (it.kind === 'slides') return 'slides';
     return 'version';
   }
 

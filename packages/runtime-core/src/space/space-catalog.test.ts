@@ -682,6 +682,34 @@ describe('Space 目录', () => {
     expect(() => catalog.get(failed.id)).toThrow(RpcError);
   });
 
+  it('幻灯片：含合法 deck.json 的目录是一个 slides 条目，名字是标题、带页数；里面的文件不单列、不能单独登记，物理删除删整个目录', async () => {
+    const deckDir = path.join(projectDir, 'talk');
+    await fs.mkdir(path.join(deckDir, 'slides'), { recursive: true });
+    await fs.mkdir(path.join(deckDir, 'assets'), { recursive: true });
+    await fs.writeFile(path.join(deckDir, 'deck.json'), JSON.stringify({ v: 4, title: ' 季度回顾 ', order: ['s01', 's02', 's03'] }));
+    await fs.writeFile(path.join(deckDir, 'slides', 's01.html'), '<slide></slide>');
+    await fs.writeFile(path.join(deckDir, 'assets', 'logo.png'), 'png');
+    await fs.writeFile(path.join(deckDir, 'notes.md'), '# 讲稿');
+    // deck.json 不合格式的目录照常往里走。
+    await fs.mkdir(path.join(projectDir, 'draft'), { recursive: true });
+    await fs.writeFile(path.join(projectDir, 'draft', 'deck.json'), JSON.stringify({ v: 3, order: [] }));
+    const { catalog } = await open();
+
+    const deck = catalog.entries().find((e) => e.kind === 'slides')!;
+    expect(deck).toMatchObject({ relPath: 'talk', fileName: 'talk', name: '季度回顾', deck: { slideCount: 3 } });
+    expect(deck.size).toBeGreaterThan(0);
+    expect(catalog.entries().filter((e) => e.relPath.startsWith('talk/'))).toEqual([]);
+    expect(byName(catalog, 'deck.json')).toMatchObject({ relPath: 'draft/deck.json', kind: 'document' });
+
+    await expect(catalog.importFile({ projectId: 'p1', file: path.join(deckDir, 'notes.md') })).rejects.toMatchObject({
+      details: { code: 'SPACE_IMPORT_UNSUPPORTED' },
+    });
+
+    await catalog.update({ entryId: deck.id, trashed: true });
+    expect(await catalog.purge(deck.id)).toEqual({ status: 'purged', entryId: deck.id });
+    await expect(fs.stat(deckDir)).rejects.toThrow();
+  });
+
   it('登记项目素材：项目里的原地登记，项目外的复制进 imports/', async () => {
     const { catalog } = await open();
     await fs.writeFile(path.join(projectDir, 'raw', 'note.md'), '# 笔记');

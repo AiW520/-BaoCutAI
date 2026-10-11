@@ -35,6 +35,8 @@ export const ko: AgentToolStepsMessages = {
     readContract: '작업 계약 읽기',
     refineContract: '작업 계약 구체화',
     recordCheck: '검수 결과 기록',
+    checkSlides: '슬라이드 검사',
+    importSlideAsset: '슬라이드 이미지 가져오기',
   },
   exportKind: {
     subtitles: '자막',

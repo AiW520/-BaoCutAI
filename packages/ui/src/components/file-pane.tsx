@@ -21,6 +21,7 @@ import { generatedImageGallery } from '../model/image-preview.ts';
 import { useImagePreview } from '../state/image-preview-store.ts';
 import { IMAGE } from './image-preview-copy.ts';
 import { itemKey } from '../model/workspace.ts';
+import { SLIDES } from '../model/slides-copy.ts';
 
 const pane = style({ display: 'flex', flexDirection: 'column', flexGrow: 1, minWidth: 0, minHeight: 0 });
 /** 单文件头（原型 home-workspace.css `.home-resource__bar`）。 */
@@ -99,6 +100,13 @@ export function FilePane({ target, conversationId, fileNameHint, active = true }
   const memoryKey = previewMemoryKey(target,entries,conversations);
   const gallery = (activeGroup ? groups[activeGroup] : undefined)
     ?? generatedImageGallery({ target, name: fileName }, entries);
+  // 打开的是一份幻灯片的 `deck.json`：可以改用幻灯片编辑器打开它所在的目录（docs/design/slides §8.1）。是不是合法的 deck 由 slides.open 判断。
+  const deckDir = 'path' in target && /(^|[\\/])deck\.json$/.test(target.path) ? target.path.replace(/[\\/]?deck\.json$/, '') : null;
+  const openDeck = () => {
+    if (deckDir === null || !('path' in target)) return;
+    const deck = 'projectId' in target ? { projectId: target.projectId, path: deckDir } : { conversationId: target.conversationId, path: deckDir };
+    useShell.getState().openPane({ kind: 'slides', target: deck });
+  };
 
   return (
     <section className={pane} aria-label={S.filePane.label(entry?.name ?? fileName)}>
@@ -109,6 +117,7 @@ export function FilePane({ target, conversationId, fileNameHint, active = true }
           {metadata ? <span className={meta}>{metadata}</span> : null}
         </div>
         {mode && mode !== 'image' && mode !== 'audio' && mode !== 'video' && <DocumentViewControl mode={mode} source={source} onChange={setSource} />}
+        {deckDir !== null && <ActionButton isQuiet onPress={openDeck}>{SLIDES.openInEditor}</ActionButton>}
         {resolved && <LinkButton variant="secondary" href={`${resolved.handle.url}?download=1`} target="_blank" rel="noopener noreferrer" download={fileName}>{IMAGE.download}</LinkButton>}
         {absolute && kind && runtime.host.openFile && <ActionButton isQuiet onPress={() => {
           void runtime.host.openFile!(absolute).then(async error => {

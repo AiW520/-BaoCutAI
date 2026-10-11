@@ -33,6 +33,7 @@
       "app/model-player.js",
       "app/model-proxy.js",
       "app/model-home-workspace.js",
+      "app/model-home-slides.js",
       "app/model-file-preview.js",
       "app/model-media-preview.js",
       "app/model-media-gif.js",
@@ -351,6 +352,8 @@
       "app/home-shell-chrome.jsx",
       "app/home-workspace.jsx",
       "app/file-tab-preview.jsx",
+      "app/home-slides.jsx",
+      "app/home-slides-notes.jsx",
       "app/media-preview-runtime.jsx",
       "app/media-preview-markup.jsx",
       "app/media-preview-panorama.jsx",
@@ -407,6 +410,7 @@
       "app/media-preview-image.css",
       "app/apprail.css",
       "app/space.css",
+      "app/home-slides.css",
       "app/spectrum.css",
       "app/font-library.css",
       "app/agent-messages.css",
@@ -415,9 +419,9 @@
       "app/subtitle-motion.css",
       "app/subtitle-active.css"
     ],
-    "js": "generated/app.js?v=a0389a017c86",
-    "css": "generated/app.css?v=afc2917733aa",
-    "bytes": 3834436
+    "js": "generated/app.js?v=4ad4773034d8",
+    "css": "generated/app.css?v=4cf1d1b45fc7",
+    "bytes": 3858837
   },
   "web": {
     "file": "BaoCutWeb.html",
@@ -653,9 +657,9 @@
       "app/subtitle-motion.css",
       "app/subtitle-active.css"
     ],
-    "js": "generated/web.js?v=34ede4f2c1e4",
+    "js": "generated/web.js?v=e28a9762e105",
     "css": "generated/web.css?v=793e79244daf",
-    "bytes": 2383090
+    "bytes": 2390569
   },
   "components": {
     "file": "Components.html",

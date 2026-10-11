@@ -48,10 +48,12 @@ import {
   type Id,
   type VideoChange,
   type VideoCreated,
+  type SlidesCreated,
   type Project,
   type Seq,
   type SequencedEvent,
   type SettingsReader,
+  type SlideAnnotation,
   type SpaceEntryReference,
   type TaskContract,
   type TaskContractInput,
@@ -624,7 +626,7 @@ export class Harness {
     }
     if (!state || moved.size === 0) return;
     for (const item of state.items()) {
-      if (item.kind !== 'video-created' && item.kind !== 'video-change') continue;
+      if (item.kind !== 'video-created' && item.kind !== 'video-change' && item.kind !== 'slides-created') continue;
       if (!('conversationId' in item.target) || item.target.conversationId !== state.id) continue;
       const [top, ...rest] = item.target.path.split('/');
       const renamed = top !== undefined ? moved.get(top) : undefined;
@@ -1041,6 +1043,8 @@ export class Harness {
      * `SKILL.md` 正文与同目录文件）只附在交给智能体的文字后面，排在模板段之后。
      */
     skills?: { refs: SkillMessageRef[]; instructions: string };
+    /** 幻灯片标注（docs/design/slides §9），由 Runtime 按添加的顺序解析好 deck 相对会话工作目录的路径。 */
+    slideAnnotations?: ResolvedSlideAnnotation[];
   }): Promise<{ taskId: Id }> {
     const key = `send:${params.commandId}`;
     const done = this.#commands.get(key);
@@ -1108,6 +1112,7 @@ export class Harness {
       ...(attached.length ? { attachments: attached.map((a) => a.ref) } : {}),
       ...(params.template ? { template: params.template.ref } : {}),
       ...(params.skills?.refs.length ? { skills: params.skills.refs } : {}),
+      ...(params.slideAnnotations?.length ? { slideAnnotations: params.slideAnnotations.map((a) => a.annotation) } : {}),
     });
     state.upsert({
       kind: 'task',
@@ -1145,7 +1150,7 @@ export class Harness {
     this.#runs.set(state.id, run);
     const agentText = [params.text, params.template?.instructions, params.skills?.instructions, fileAttachmentsText(attached)].filter(Boolean).join('\n\n');
     void this.#startRun(state, run, {
-      text: withSpaceReferences(withEditorContext(agentText, params.context), references),
+      text: withSlideAnnotations(withSpaceReferences(withEditorContext(agentText, params.context), references), params.slideAnnotations ?? []),
       ...imagesOf(attached),
     });
     return { taskId };
@@ -1238,6 +1243,7 @@ export class Harness {
     text: string;
     commandId: Id;
     attachments?: Id[];
+    slideAnnotations?: ResolvedSlideAnnotation[];
   }): Promise<{ status: 'steered' | 'unsupported' | 'no-active-turn' }> {
     const key = `steer:${params.commandId}`;
     if (this.#commands.has(key)) return { status: 'steered' };
@@ -1252,7 +1258,9 @@ export class Harness {
       if (this.#commands.has(key)) return { status: 'steered' };
       if (this.#runs.get(state.id) !== run || run.stopRequested || this.#agents.get(state.id) !== session) return { status: 'no-active-turn' };
     }
-    const result = await session.steer(run.turnId, { text: [params.text,fileAttachmentsText(attached)].filter(Boolean).join('\n\n'), ...imagesOf(attached) });
+    const annotations = params.slideAnnotations ?? [];
+    const text = withSlideAnnotations([params.text, fileAttachmentsText(attached)].filter(Boolean).join('\n\n'), annotations);
+    const result = await session.steer(run.turnId, { text, ...imagesOf(attached) });
     if (result !== 'accepted') return { status: 'unsupported' };
     this.#commands.set(key, run.taskId);
     if (attached.length) this.#attachments?.markSent(attached.map((a) => a.ref.id));
@@ -1263,6 +1271,7 @@ export class Harness {
       taskId: run.taskId,
       text: params.text,
       ...(attached.length ? { attachments: attached.map((a) => a.ref) } : {}),
+      ...(annotations.length ? { slideAnnotations: annotations.map((a) => a.annotation) } : {}),
     });
     return { status: 'steered' };
   }
@@ -1542,6 +1551,24 @@ export class Harness {
     const state = this.#states.get(conversationId);
     if (!state) return;
     state.upsert({ kind: 'video-created', id: `created/${created.videoId}`, createdAt: nowIso(), taskId, ...created });
+  }
+
+  /**
+   * 智能体的 `slides_check` 校验通过了一份 deck：会话里记一条，线程里出现幻灯片卡片（docs/design/slides §7.3）。
+   * 同一份 deck 只有一条：再次通过时更新标题与页数，所属任务换成这次校验的任务（卡片跟着挂到那一轮的回复下面），
+   * 条目的 id 与位置不变。
+   */
+  recordSlidesCreated(conversationId: Id, taskId: Id | null, created: SlidesCreated): void {
+    const state = this.#states.get(conversationId);
+    if (!state) return;
+    const existing = state.items().find(
+      (item): item is Extract<TimelineItem, { kind: 'slides-created' }> => item.kind === 'slides-created' && sameTarget(item.target, created.target),
+    );
+    state.upsert(
+      existing
+        ? { ...existing, ...created, taskId: taskId ?? existing.taskId }
+        : { kind: 'slides-created', id: newId('slides'), createdAt: nowIso(), taskId, ...created },
+    );
   }
 
   /**
@@ -2426,6 +2453,13 @@ function summarize(conversation: Conversation, task: Extract<TimelineItem, { kin
 
 /** 目录名：去掉路径分隔符与控制字符，压掉首尾空白与点。 */
 /** 目录名作项目的默认显示名。 */
+/** 两个 FileTarget 是不是同一处（同一个项目或会话的同一个相对路径）。 */
+function sameTarget(a: SlidesCreated['target'], b: SlidesCreated['target']): boolean {
+  if (a.path !== b.path) return false;
+  if ('projectId' in a) return 'projectId' in b && a.projectId === b.projectId;
+  return 'conversationId' in b && a.conversationId === b.conversationId;
+}
+
 function dirLabel(dir: string): string {
   return path.basename(dir) || dir;
 }
@@ -2511,6 +2545,29 @@ export function withSpaceReferences(text: string, references: readonly SpaceEntr
     '</baocut-space-references>',
   ].join('\n');
   // i18n-ignore-end
+}
+
+/** 一条幻灯片标注与它的 deck 相对会话工作目录的路径（以 `/` 分隔、以 `/` 结尾；不在工作目录里时是绝对路径）。 */
+export interface ResolvedSlideAnnotation {
+  annotation: SlideAnnotation;
+  deckPath: string;
+}
+
+/**
+ * 把幻灯片标注附在发给智能体的文字后面（docs/design/slides §9）：每份 deck 一段，按 deck 第一次出现的顺序；
+ * 编号是在整条消息里的序号，与界面上 composer 列表、编辑器里的编号标记一致。会话里显示的仍是用户的原话，标注另存在消息上。
+ */
+export function withSlideAnnotations(text: string, annotations: readonly ResolvedSlideAnnotation[]): string {
+  if (annotations.length === 0) return text;
+  const groups = new Map<string, string[]>();
+  annotations.forEach(({ annotation: a, deckPath }, i) => {
+    // i18n-ignore-start: 发给智能体的标注（给模型的提示词），不随界面语言变化
+    const lines = [`${i + 1}. ${a.label}`, ...(a.detail ? [`   定位：${a.detail}`] : []), `   批注：${a.text.split('\n').join('\n        ')}`];
+    // i18n-ignore-end
+    groups.set(deckPath, [...(groups.get(deckPath) ?? []), lines.join('\n')]);
+  });
+  const blocks = [...groups].map(([deckPath, items]) => [`<baocut-slide-annotations deck=${JSON.stringify(deckPath)}>`, ...items, '</baocut-slide-annotations>'].join('\n'));
+  return [text, '', ...blocks].join('\n');
 }
 
 /** 会话的消息里引用的附件。 */

@@ -50,6 +50,8 @@ const en = {
     readContract: 'Read task contract',
     refineContract: 'Refine task contract',
     recordCheck: 'Record acceptance check',
+    checkSlides: 'Check slides',
+    importSlideAsset: 'Import slide image',
   },
   exportKind: {
     subtitles: 'Subtitles',
@@ -105,7 +107,8 @@ export type BaoCutStepKind =
   | 'space-search'
   | 'skill'
   | 'grant'
-  | 'contract';
+  | 'contract'
+  | 'slides';
 
 export interface BaoCutStep {
   kind: BaoCutStepKind;
@@ -189,6 +192,9 @@ const CATALOG: Record<string, (a: Args) => BaoCutStep> = {
   tasks_contract: () => ({ kind: 'contract', label: M.label.readContract, summary: '' }),
   tasks_update_contract: () => ({ kind: 'contract', label: M.label.refineContract, summary: '' }),
   tasks_record_check: (a) => ({ kind: 'contract', label: M.label.recordCheck, summary: str(a.checkId) ?? '' }),
+  // 幻灯片（docs/design/slides §7.2）：摘要是 deck 目录名与图片文件名。
+  slides_check: (a) => ({ kind: 'slides', label: M.label.checkSlides, summary: base(a.path) }),
+  slides_import_asset: (a) => ({ kind: 'slides', label: M.label.importSlideAsset, summary: base(a.path) }),
 };
 
 /** 工具名：MCP 的 `baocut.<tool>`；不是 BaoCut 的工具返回 null。 */

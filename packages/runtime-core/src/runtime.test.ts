@@ -809,6 +809,60 @@ describe('Runtime（假 Driver）', () => {
     expect(mixed.code).toBe('invalid-request');
   });
 
+  it('幻灯片（slides.open）：会话工作目录里的 deck 给网关上的编辑器地址；不越界、不跟符号链接出去；编辑器没构建时照常给地址、页面 503', async () => {
+    client.close();
+    await runtime.close();
+    runtime = await startRuntime({
+      home: resolveRuntimeHome({ BAOCUT_HOME: dir }),
+      drivers: () => [driver],
+      watchSpace: false,
+      slidesEditorDist: null,
+    });
+    client = await connect();
+    const { conversation } = await client.request('conversations.create', {});
+    const metadata = JSON.stringify({ v: 4, title: ' Q3 ', order: ['a', 'b'] });
+    await fs.mkdir(path.join(conversation.cwd, 'deck', 'slides'), { recursive: true });
+    await fs.writeFile(path.join(conversation.cwd, 'deck', 'deck.json'), metadata);
+    const outside = path.join(dir, 'outside-deck');
+    await fs.mkdir(outside);
+    await fs.writeFile(path.join(outside, 'deck.json'), metadata);
+    await fs.symlink(outside, path.join(conversation.cwd, 'link'));
+    await fs.mkdir(path.join(conversation.cwd, 'node_modules', 'pkg'), { recursive: true });
+    await fs.writeFile(path.join(conversation.cwd, 'node_modules', 'pkg', 'deck.json'), metadata);
+    await fs.mkdir(path.join(conversation.cwd, 'empty'));
+
+    const opened = await client.request('slides.open', { conversationId: conversation.id, path: 'deck' });
+    expect(opened).toMatchObject({ deck: { title: 'Q3', slideCount: 2 }, editorAvailable: false });
+    const gateway = runtime.discovery.endpoint.replace('ws:', 'http:');
+    expect(opened.url).toMatch(new RegExp(`^${gateway}/slides/[A-Za-z0-9_-]{32}/$`));
+    expect((await client.request('slides.open', { conversationId: conversation.id, path: './deck/' })).url).toBe(opened.url);
+    expect((await fetch(opened.url)).status).toBe(503);
+    expect(Object.keys(((await (await fetch(`${opened.url}_files.json`)).json()) as { files: object }).files)).toEqual(['project/deck.json']);
+
+    // Space 里 deck 目录是一个幻灯片条目，用条目打开得到同一个地址。
+    await runtime.space.ready;
+    await client.request('space.rescan', {});
+    const entries = runtime.space.snapshot().entries.filter((e) => e.source.conversationId === conversation.id);
+    expect(entries).toEqual([expect.objectContaining({ kind: 'slides', relPath: 'deck', name: 'Q3', deck: { slideCount: 2 } })]);
+    expect((await client.request('slides.open', { entryId: entries[0]!.id })).url).toBe(opened.url);
+
+    const cases: [string, string][] = [
+      ['../outside-deck', 'invalid-request'],
+      [outside, 'invalid-request'],
+      ['link', 'invalid-request'],
+      ['node_modules/pkg', 'invalid-request'],
+      ['deck/deck.json', 'invalid-request'],
+      ['empty', 'invalid-request'],
+      ['missing', 'not-found'],
+    ];
+    for (const [target, code] of cases) {
+      expect((await rejection(client.request('slides.open', { conversationId: conversation.id, path: target }))).code, target).toBe(code);
+    }
+    expect((await rejection(client.request('slides.open', { conversationId: conversation.id, path: 'empty' }))).details).toEqual({
+      code: 'SLIDES_NOT_A_DECK',
+    });
+  });
+
   it('本机文件（{ localPath }）：只发给桌面客户端，以文件自己的目录为根，只给普通文件', async () => {
     const downloads = path.join(dir, 'Downie');
     await fs.mkdir(path.join(downloads, 'folder'), { recursive: true });

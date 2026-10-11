@@ -182,6 +182,31 @@ describe('conversationOutputs', () => {
     ]);
   });
 
+  it('智能体做好的幻灯片（slides-created）：一份一项，标题、页数与任务取回执；Space 有条目时用条目 id，工作目录里不重复', () => {
+    const source = { projectId: null, conversationId: 'c1' };
+    const receipt = (id: string, path: string, title: string): TimelineItem => ({
+      kind: 'slides-created',
+      id,
+      createdAt: '2026-10-02T02:00:00.000Z',
+      taskId: 't2',
+      target: { conversationId: 'c1', path },
+      title,
+      slideCount: 8,
+    });
+    const items = [receipt('s1', 'decks/talk', '季度回顾'), receipt('s2', 'drafts/plan', '')];
+    const entries = [
+      entry('deck', { kind: 'slides', name: '旧标题', source, relPath: 'decks/talk', deck: { slideCount: 7 } }),
+      entry('loose', { kind: 'slides', name: '没校验的', source, relPath: 'loose', deck: { slideCount: 2 }, lastActivityAt: '2026-10-01T00:00:00.000Z' }),
+    ];
+    const outputs = conversationOutputs({ id: 'c1', projectId: null }, items, entries);
+    expect(outputs.map((o) => [o.id, o.name, o.taskId, o.slides])).toEqual([
+      ['deck', '季度回顾', 't2', { target: { conversationId: 'c1', path: 'decks/talk' }, slideCount: 8 }],
+      ['s2', 'plan', 't2', { target: { conversationId: 'c1', path: 'drafts/plan' }, slideCount: 8 }],
+      ['loose', '没校验的', null, { target: { conversationId: 'c1', path: 'loose' }, slideCount: 2 }],
+    ]);
+    expect(outputs.every((o) => o.kind === 'slides' && o.video === null)).toBe(true);
+  });
+
   it('limit：会话头最多 30 项，按回复分组时可以不截断', () => {
     const source = { projectId: null, conversationId: 'c1' };
     const entries = Array.from({ length: 35 }, (_, i) => entry(`e${i}`, { source }));

@@ -7,6 +7,7 @@ const W = window.BC_HOME_WORKSPACE, N = window.BC_NAV;
 const movie = {key:'movie:p1', kind:'movie', id:'p1', tab:'subtitle'};
 const file = {key:'file:o1', kind:'file', id:'o1'};
 const web = {key:'web:w1', kind:'web', id:'w1', url:'https://example.com/'};
+const slides = {key:'slides:deck1', kind:'slides', id:'deck1'};
 
 test('multiple resource types coexist, reopening selects rather than duplicates', () => {
   const first = W.open(W.open(W.open(W.empty(), movie), file), web);
@@ -27,7 +28,7 @@ test('closing active selects the right neighbor, then the left, then collapses',
   assert.equal(W.close(first, 'missing'), first);
 });
 test('deep links roundtrip every pane type and keep editor tool/time', () => {
-  for (const item of [movie, {...movie,t:24.5},file,web,{...web,url:''}]) {
+  for (const item of [movie, {...movie,t:24.5},file,web,{...web,url:''},slides,{...slides,slide:'s03'}]) {
     const route = W.route('s2', item);
     const parsed = N.routeFromHref(N.hrefFor(route));
     assert.deepEqual(parsed, route);
@@ -37,6 +38,16 @@ test('deep links roundtrip every pane type and keep editor tool/time', () => {
   }
   assert.equal(N.isSame(W.route('s2',file),W.route('s2',web)), false);
   assert.equal(N.isSame(W.route('s2',web),W.route('s2',{...web,url:'https://example.org/'})), false);
+  assert.equal(N.isSame(W.route('s2',slides),W.route('s2',{...slides,slide:'s03'})), false);
+});
+test('a slides tab keeps its page, and an unknown deck is named as unavailable', () => {
+  const opened = W.open(W.empty(), {...slides, slide:'s02'});
+  // A route without a page selects the tab without forgetting where it was.
+  const again = W.reconcile({s2: opened}, W.route('s2', slides)).s2;
+  assert.equal(again.tabs[0].slide, 's02');
+  assert.equal(W.reconcile({s2: opened}, W.route('s2', {...slides, slide:'s05'})).s2.tabs[0].slide, 's05');
+  assert.equal(W.title(slides, [{id:'deck1', name:'第 1 讲'}]), '第 1 讲');
+  assert.equal(W.title(slides, []), '幻灯片不可用');
 });
 test('history reconciliation isolates conversations and preserves inactive tabs', () => {
   let book = W.reconcile({}, W.route('s2',movie));
@@ -124,7 +135,7 @@ test('draft workspaces are scoped by project and their resource routes round-tri
     const key = W.keyFor(draft);
     assert.ok(key.startsWith('draft:'));
     assert.deepEqual(W.route(key, null), draft);
-    for (const item of [web, file, movie]) {
+    for (const item of [web, file, movie, slides]) {
       const route = W.route(key, item);
       assert.deepEqual(N.routeFromHref(N.hrefFor(route)), route);
       assert.equal(W.keyFor(route), key);

@@ -35,6 +35,8 @@ export const ja: AgentToolStepsMessages = {
     readContract: 'タスク契約を読む',
     refineContract: 'タスク契約を詳細化',
     recordCheck: '検収チェックを記録',
+    checkSlides: 'スライドを検査',
+    importSlideAsset: 'スライド素材を取り込む',
   },
   exportKind: {
     subtitles: '字幕',

@@ -10,6 +10,7 @@ export const ru: SpaceMessages = {
     audio: "Аудио",
     subtitle: "Субтитры",
     document: "Документ",
+    slides: "Слайды",
     package: "Пакет видео",
     template: "Шаблон",
   },

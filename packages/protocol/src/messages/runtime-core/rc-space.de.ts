@@ -27,6 +27,7 @@ export const de: RcSpaceMessages = {
   projectDirNotFound: "Der Projektordner ist nicht vorhanden",
   hiddenDirFile: "Dateien in versteckten Ordnern oder Abhängigkeitsordnern können nicht hinzugefügt werden",
   videoDirFile: "Dateien in einem Videoordner gehören zum Video und können nicht einzeln hinzugefügt werden",
+  slidesDirFile: "Dateien in einem Folienordner gehören zu den Folien und können nicht einzeln hinzugefügt werden",
   tooManySameName: "Zu viele Dateien mit gleichem Namen in imports/ des Projekts",
 
   purgeVideoDeleteFirst:

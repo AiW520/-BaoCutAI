@@ -27,6 +27,7 @@ export const ptBR: RcSpaceMessages = {
   projectDirNotFound: "A pasta do projeto não existe",
   hiddenDirFile: "Arquivos em pastas ocultas ou de dependências não podem ser adicionados",
   videoDirFile: "Arquivos da pasta de vídeo pertencem a ele e não podem ser adicionados separadamente",
+  slidesDirFile: "Arquivos da pasta de slides pertencem aos slides e não podem ser adicionados separadamente",
   tooManySameName: "Arquivos demais com o mesmo nome em imports/ do projeto",
 
   purgeVideoDeleteFirst:

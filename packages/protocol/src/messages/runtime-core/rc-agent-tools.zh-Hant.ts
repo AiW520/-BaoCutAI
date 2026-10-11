@@ -37,6 +37,7 @@ export const zhHant: RcAgentToolsMessages = {
   clauseSeparator: '；',
 
   createVideoSummary: (p) => `建立影片「${p.name}」`,
+  slidesImportAssetSummary: (p) => `將圖片「${p.file}」匯入投影片「${p.deck}」`,
   editsSummary: (p) => `${p.label}（${p.count} 個操作：${p.types}）`,
   captionsSummary: (p) => `為文件 ${p.documentId} 新增${p.bilingual ? '雙語' : ''}字幕層`,
   captionsLabel: '新增字幕層',

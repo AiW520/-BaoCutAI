@@ -699,6 +699,7 @@ export function hrefFor(route: Route): string {
 
 function paneQuery(pane: WorkspaceItem): string {
   if (pane.kind === 'video') return fileTargetQuery('video', pane.target);
+  if (pane.kind === 'slides') return new URLSearchParams({ slides: JSON.stringify(pane.target) }).toString();
   if (pane.kind === 'file') return new URLSearchParams({file:JSON.stringify(pane.target),...(pane.name?{fileName:pane.name}:{})}).toString();
   const query = new URLSearchParams();
   if (pane.kind === 'files') query.set('files', '1');
@@ -755,6 +756,8 @@ export function parseHref(href: string): Route {
 function parsePane(query: URLSearchParams): WorkspaceItem | undefined {
   const video = parseTarget(query.get('video'));
   if (video) return { kind: 'video', target: video };
+  const slides = parseTarget(query.get('slides'));
+  if (slides) return { kind: 'slides', target: slides };
   const file = parseMediaTarget(query.get('file'));
   if (file) return { kind: 'file', target: file, ...(query.get('fileName')?{name:query.get('fileName')!}:{}) };
   if (query.get('files') === '1') return { kind: 'files' };

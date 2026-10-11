@@ -35,6 +35,8 @@ export const tr: AgentToolStepsMessages = {
     readContract: "Görev sözleşmesini oku",
     refineContract: "Görev sözleşmesini netleştir",
     recordCheck: "Kabul denetimini kaydet",
+    checkSlides: "Slaytları denetle",
+    importSlideAsset: "Slayt görseli içe aktar",
   },
   exportKind: {
     subtitles: "Altyazı",

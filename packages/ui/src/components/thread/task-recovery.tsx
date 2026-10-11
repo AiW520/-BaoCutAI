@@ -61,7 +61,7 @@ export function TaskRecovery({ item, conversationId }: { item: Task; conversatio
     setPending(true);
     try {
       await before?.();
-      // 那一轮点选的 skill 也按原顺序一起重发（只带 id，Runtime 读它当前的 SKILL.md）。
+      // 那一轮点选的 skill 也按原顺序一起重发（只带 id，Runtime 读它当前的 SKILL.md）；幻灯片标注原样重发。
       await runtime.send(
         conversationId,
         message.text,
@@ -69,6 +69,7 @@ export function TaskRecovery({ item, conversationId }: { item: Task; conversatio
         message.attachments?.map((a) => a.id),
         undefined,
         messageSkills(message).map((s) => ({ id: s.id })),
+        message.slideAnnotations,
       );
     } catch (error) {
       ToastQueue.negative(RECOVERY_COPY.resendFailed((error as Error).message), { timeout: 5000 });

@@ -9,6 +9,8 @@ export {
   driverApprovalRisk,
   withEditorContext,
   withSpaceReferences,
+  withSlideAnnotations,
+  type ResolvedSlideAnnotation,
   type HarnessAttachments,
   type ContractActor,
   type HarnessOptions,

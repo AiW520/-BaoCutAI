@@ -35,6 +35,8 @@ export const zhHant: AgentToolStepsMessages = {
     readContract: '讀取任務合約',
     refineContract: '細化任務合約',
     recordCheck: '記錄驗收檢查',
+    checkSlides: '檢查投影片',
+    importSlideAsset: '匯入投影片素材',
   },
   exportKind: {
     subtitles: '字幕',

@@ -242,12 +242,14 @@ describe('状态与时长', () => {
     expect(statusText({ status: 'generating', statusDetail: { progress: { done: 1, total: null } } })).toBe('生成中');
   });
 
-  it('时长或尺寸：视频写时长与画面，音频写时长，图片写尺寸；没有媒体信息时 null', () => {
+  it('时长或尺寸：视频写时长与画面，音频写时长，图片写尺寸，幻灯片写页数；没有媒体信息时 null', () => {
     expect(measureText({ kind: 'export', media: { durationSec: 65, width: 1920, height: 1080 } })).toBe('1:05 · 1920×1080');
     expect(measureText({ kind: 'audio', media: { durationSec: 3, width: 1, height: 1 } })).toBe('0:03');
     expect(measureText({ kind: 'image', media: { width: 640, height: 480 } })).toBe('640×480');
     expect(measureText({ kind: 'image', media: {} })).toBeNull();
     expect(measureText({ kind: 'document' })).toBeNull();
+    expect(measureText({ kind: 'slides', deck: { slideCount: 12 } })).toBe('12 页');
+    expect(measureText({ kind: 'slides' })).toBeNull();
   });
 });
 

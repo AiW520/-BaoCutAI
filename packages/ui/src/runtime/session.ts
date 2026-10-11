@@ -21,6 +21,7 @@ import {
   type SpaceEntry,
   type SubtitleTrack,
   type SkillSendRef,
+  type SlideAnnotation,
   type TemplateSendRef,
 } from '@baocut/protocol';
 import type { HostBridge } from '../host.ts';
@@ -170,6 +171,7 @@ export class RuntimeSession {
    * `template`：挂着的场景模板（模板包规范 §5.2），Runtime 据此给智能体拼简报引导与模板正文；`text` 仍是用户自己的话。
    * `skills`：输入框「+ › 使用 Skill」点选的 skill（产品设计 §6.9），按挂上的顺序；Runtime 把每个的 `SKILL.md` 正文附给智能体，
    * 消息上另带标记。空的不传。
+   * `slideAnnotations`：幻灯片标签里加进对话的标注（docs/design/slides §8.2、§9），Runtime 按 deck 拼成给智能体的段落。空的不传。
    */
   async send(
     conversationId: Id,
@@ -178,6 +180,7 @@ export class RuntimeSession {
     attachments?: Id[],
     template?: TemplateSendRef,
     skills?: readonly SkillSendRef[],
+    slideAnnotations?: readonly SlideAnnotation[],
   ): Promise<Id> {
     const { taskId } = await this.client.request('conversations.send', {
       conversationId,
@@ -187,17 +190,24 @@ export class RuntimeSession {
       ...(attachments?.length ? { attachments } : {}),
       ...(template ? { template } : {}),
       ...(skills?.length ? { skills: skills.map((s) => ({ id: s.id })) } : {}),
+      ...(slideAnnotations?.length ? { slideAnnotations: [...slideAnnotations] } : {}),
     });
     return taskId;
   }
 
   /** 插进正在运行的回合；Agent 不支持、或已经没有在跑的回合时如实返回，由调用方决定排队还是直接发。 */
-  async steer(conversationId: Id, text: string, attachments?: Id[]): Promise<'steered' | 'unsupported' | 'no-active-turn'> {
+  async steer(
+    conversationId: Id,
+    text: string,
+    attachments?: Id[],
+    slideAnnotations?: readonly SlideAnnotation[],
+  ): Promise<'steered' | 'unsupported' | 'no-active-turn'> {
     const { status } = await this.client.request('conversations.steer', {
       conversationId,
       text,
       commandId: newId('cmd'),
       ...(attachments?.length ? { attachments } : {}),
+      ...(slideAnnotations?.length ? { slideAnnotations: [...slideAnnotations] } : {}),
     });
     return status;
   }

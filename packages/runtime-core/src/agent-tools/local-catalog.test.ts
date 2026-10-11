@@ -102,6 +102,8 @@ describe.skipIf(!engine || !ffmpeg)('工具目录经网关给 CLI（真实引擎
     expect(names).not.toEqual(expect.arrayContaining(['tasks_contract']));
     expect(names).not.toEqual(expect.arrayContaining(['grants_request']));
     expect(names).not.toEqual(expect.arrayContaining(['downloads_save']));
+    expect(names).not.toEqual(expect.arrayContaining(['slides_check']));
+    expect(names).not.toEqual(expect.arrayContaining(['slides_import_asset']));
     expect(listed.tools.find((t) => t.name === 'videos_create')?.risk).toBe('edit');
   });
 

@@ -33,6 +33,7 @@ import Folder from '@react-spectrum/s2/icons/Folder';
 import Image from '@react-spectrum/s2/icons/Image';
 import InfoCircle from '@react-spectrum/s2/icons/InfoCircle';
 import Layers from '@react-spectrum/s2/icons/Layers';
+import Layout from '@react-spectrum/s2/icons/Layout';
 import MusicNote from '@react-spectrum/s2/icons/MusicNote';
 import OpenIn from '@react-spectrum/s2/icons/OpenIn';
 import Preview from '@react-spectrum/s2/icons/Preview';
@@ -44,6 +45,7 @@ import Template from '@react-spectrum/s2/icons/Template';
 import Video from '@react-spectrum/s2/icons/Video';
 import { style } from '@react-spectrum/s2/style' with { type: 'macro' };
 import { agoLabel } from '../../model/format.ts';
+import { SLIDES } from '../../model/slides-copy.ts';
 import { continueBlock, entryJobId, entryMenuKey, isFailedPlaceholder, purgeBlock } from '../../model/space-actions.ts';
 import {
   filesAttention,
@@ -93,6 +95,7 @@ export const KIND_ICON: Record<SpaceEntryKind, ComponentType> = {
   audio: MusicNote,
   subtitle: CloseCaptions,
   document: FileText,
+  slides: Layout,
   package: Archive,
   template: Template,
 };
@@ -334,6 +337,7 @@ function entryMenu(
   const failed = isFailedPlaceholder(entry);
   const jobId = entryJobId(entry);
   const isVideo = entry.kind === 'video' && !trashed;
+  const isSlides = entry.kind === 'slides' && !trashed;
   const viewLabel = isVideo ? (entry.files?.length ? COPY.viewInfoFiles : COPY.viewInfo) : COPY.view;
   const disabled: EntryAction[] = [];
   if (!canReveal) disabled.push('reveal');
@@ -348,10 +352,10 @@ function entryMenu(
       onAction={(key) => onAction(key as EntryAction, entry)}>
       <MenuSection>
         {isVideo && transcribe === 'retry' ? transcribeItem(transcribe) : null}
-        {isVideo ? (
-          <MenuItem id="open" textValue={COPY.openVideo}>
+        {isVideo || isSlides ? (
+          <MenuItem id="open" textValue={isVideo ? COPY.openVideo : SLIDES.open}>
             <OpenIn />
-            <Text>{COPY.openVideo}</Text>
+            <Text>{isVideo ? COPY.openVideo : SLIDES.open}</Text>
           </MenuItem>
         ) : null}
         <MenuItem id="view" textValue={viewLabel}>
@@ -427,8 +431,9 @@ function measureOf(entry: SpaceEntry): string {
   return measureText(entry) ?? (entry.size > 0 ? formatBytes(entry.size) : '');
 }
 
-/** 行与卡片的默认动作：视频打开编辑器，其余打开查看框（原型 onAction）。 */
-const primaryAction = (entry: SpaceEntry): EntryAction => (entry.kind === 'video' && !entry.user.trashedAt ? 'open' : 'view');
+/** 行与卡片的默认动作：视频打开编辑器，幻灯片在功能区打开，其余打开查看框（原型 onAction）。 */
+const primaryAction = (entry: SpaceEntry): EntryAction =>
+  (entry.kind === 'video' || entry.kind === 'slides') && !entry.user.trashedAt ? 'open' : 'view';
 
 interface ListProps {
   entries: SpaceRow[];

@@ -15,19 +15,26 @@ import { tr } from './workspace.tr.ts';
 import { vi } from './workspace.vi.ts';
 
 /** 标签名的兜底文案（译文在 `workspace.<语言>.ts`）。 */
-const en = { newTab: 'New tab', projectFiles: 'Project files', videoUnavailable: 'Video unavailable', fileUnavailable: 'File unavailable' };
+const en = {
+  newTab: 'New tab',
+  projectFiles: 'Project files',
+  videoUnavailable: 'Video unavailable',
+  fileUnavailable: 'File unavailable',
+  slidesUnavailable: 'Slides unavailable',
+};
 export type WorkspaceMessages = typeof en;
 const M = defineMessages(en, { 'zh-Hans': zhHans, 'zh-Hant': zhHant, ja, ko, es, fr, de, nl, 'pt-BR': ptBR, it, ru, pl, tr, vi });
 
 /**
- * Home 功能区的标签页（产品设计 §2.5、§3.3 用户修订）：视频、单个文件、项目文件浏览、网页。
+ * Home 功能区的标签页（产品设计 §2.5、§3.3 用户修订）：视频、单个文件、项目文件浏览、网页、幻灯片（deck 目录，docs/design/slides §8.1）。
  * 每条会话各自记着一组标签；路由只带当前那一个。预览不改变会话的写入目标。
  */
 export type WorkspaceItem =
   | { kind: 'video'; target: FileTarget }
   | { kind: 'file'; target: MediaTarget; name?:string }
   | { kind: 'files' }
-  | { kind: 'web'; id: string; url: string };
+  | { kind: 'web'; id: string; url: string }
+  | { kind: 'slides'; target: FileTarget };
 
 export interface WorkspaceTabs {
   tabs: WorkspaceItem[];
@@ -55,6 +62,8 @@ export function itemKey(item: WorkspaceItem): string {
       return 'files';
     case 'web':
       return `web:${item.id}`;
+    case 'slides':
+      return `slides:${targetKey(item.target)}`;
   }
 }
 
@@ -230,7 +239,7 @@ export function narrowShowsConversation(focusInConversation: boolean, paneVisibl
   return focusInConversation || !paneVisible;
 }
 
-/** 标签上的名字（原型 model-home-workspace.js `title`）：项目文件、网页标题（还没有时用主机名），或文件与视频的名字。 */
+/** 标签上的名字（原型 model-home-workspace.js `title`）：项目文件、网页标题（还没有时用主机名），或文件、视频与幻灯片的名字（幻灯片退到目录名）。 */
 export function workspaceTitle(item: WorkspaceItem, name?: string | null): string {
   if (item.kind === 'files') return M.projectFiles;
   if (item.kind === 'web') return name || webTitle(item.url);
@@ -238,7 +247,7 @@ export function workspaceTitle(item: WorkspaceItem, name?: string | null): strin
   if (item.kind==='file'&&item.name) return item.name;
   const path = ('path' in item.target ? item.target.path : 'localPath' in item.target ? item.target.localPath : '').replace(/[\\/]+$/, '');
   const base = path.slice(Math.max(path.lastIndexOf('/'), path.lastIndexOf('\\')) + 1);
-  return base || (item.kind === 'video' ? M.videoUnavailable : M.fileUnavailable);
+  return base || (item.kind === 'video' ? M.videoUnavailable : item.kind === 'slides' ? M.slidesUnavailable : M.fileUnavailable);
 }
 
 /** 网页标签里的页面换了地址：就地改这个标签的 `url`，不改当前标签与顺序；没有这个标签或没变化时返回原对象。 */

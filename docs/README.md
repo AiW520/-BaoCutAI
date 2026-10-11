@@ -22,6 +22,7 @@ BaoCut 是一个源码可用（source-available）的 AI 视频智能体：用�
 | [`design/brand/app-icon.md`](design/brand/app-icon.md) | **App 图标设计**：图形组成、三色配色与备选变体、外形模板、否决过的方向；绘制源码在 `tools/app-icon/` |
 | [`design/timeline/`](design/timeline/README.md) | **时间线语义与元素模型（移植自 v2）**：v2 元素模型与 v3 视频格式的逐项对照（接线各批的输入），以及剪辑域、剪口播、元素几何、`timeline.json` 的设计记录；实现在 `crates/timeline`，文中的数据模型名指 v2 |
 | [`design/agent-surface/`](design/agent-surface/README.md) | **面向外部 Agent 的能力面（方案稿）**：CLI、MCP 服务与 BaoCut skill 共用工具目录的设计，Agent 面的命令目录、CLI 与 MCP 约定、skill 的结构与实施顺序 |
+| [`design/slides/`](design/slides/README.md) | **会话里的幻灯片（实施中）**：智能体在会话里做 deck、功能区的 Slides 编辑器、标注作为附件发回会话；宿主能力的重新实现、Runtime 路由、标注协议与分阶段实施 |
 | [`glossary.md`](glossary.md) | **术语表**：同一概念只用一个词 |
 | [`repo-conventions.md`](repo-conventions.md) | **仓库约定**：顶层目录、代码放置与文件命名 |
 | [`development-workflow.md`](development-workflow.md) | **开发流程**：规范与实现同步、验证入口、多端同步、语言与平台、工作区与产物；按任务读取相关章节 |

@@ -132,6 +132,7 @@ import type {
   ServiceStatus,
 } from './services.ts';
 import type { WebAccessLink, WebSession } from './web.ts';
+import type { SlideAnnotation, SlidesOpenResult } from './slides.ts';
 import type { LegacyImportAnswer, LegacyImportRetry, LegacyImportSetSkipped, LegacyImportSnapshot } from './legacy-import.ts';
 import type { Seq } from './domain.ts';
 import type { PlaybackCodec } from './limits.ts';
@@ -359,6 +360,9 @@ export interface RpcMethods {
    * 排在最前，重复的 id 只算第一次（`sendSkillRefs`）。Runtime 读目录里当前的 `SKILL.md`，每个 skill 把正文与「同目录还有哪些文件、
    * 用 `skills_read` 取」包成一段，按顺序附在交给智能体的文字后面（在模板段之后）；消息上按同样的顺序带 skill 标记。
    * 有一个不存在时整条 `not-found`（`SKILL_NOT_FOUND`）。
+   * `slideAnnotations`：幻灯片标签里加进草稿的标注（docs/design/slides §9），最多 `SLIDE_ANNOTATION_LIMITS.perMessage` 条。
+   * Runtime 把 deck 换成相对会话工作目录的路径，每份 deck 一段 `<baocut-slide-annotations>` 附在交给智能体的文字最后；
+   * 消息上原样带一份。deck 的位置找不到（Space 条目或项目已不在）时整条 `not-found`。
    */
   'conversations.send': {
     params: {
@@ -373,14 +377,16 @@ export interface RpcMethods {
       template?: TemplateSendRef;
       skill?: SkillSendRef;
       skills?: SkillSendRef[];
+      slideAnnotations?: SlideAnnotation[];
     };
     result: { taskId: Id };
   };
   /**
    * 把一条消息插进正在运行的回合（Agent 支持时）。不支持或没有运行中的回合时如实返回，由界面决定排队还是先停再发。
+   * `slideAnnotations` 与 `conversations.send` 的相同。
    */
   'conversations.steer': {
-    params: { conversationId: Id; text: string; commandId: Id; attachments?: Id[] };
+    params: { conversationId: Id; text: string; commandId: Id; attachments?: Id[]; slideAnnotations?: SlideAnnotation[] };
     result: { status: 'steered' | 'unsupported' | 'no-active-turn' };
   };
 
@@ -615,6 +621,11 @@ export interface RpcMethods {
     params: { projectId?: Id; conversationId?: Id; path: string; commandId?: Id };
     result: VideoOpenResult;
   };
+  /**
+   * 在幻灯片标签里打开一份 deck（docs/design/slides §6.1）：Space 里的幻灯片条目，或来源目录里的 deck 目录。
+   * 目录按真实路径必须在来源目录之内、认得出是 deck（有合法的 `deck.json`）。同一个目录返回同一个地址。
+   */
+  'slides.open': { params: FileTarget; result: SlidesOpenResult };
   /** 打开一个视频：Space 里的视频条目，或来源目录里的视频目录。已经打开的返回同一个 `videoId`。 */
   'videos.open': { params: FileTarget; result: VideoOpenResult };
   /** 这条连接不再需要这个视频；没有其他连接打开它时 Runtime 关闭它。 */
@@ -1108,9 +1119,9 @@ export interface ProjectFileEntry {
   isDir: boolean;
   /** 文件的字节数；目录为 null。 */
   size: number | null;
-  /** 最后修改时间；视频目录取 `video.db` 的修改时间。 */
+  /** 最后修改时间；视频目录取 `video.db`、幻灯片目录取 `deck.json` 的修改时间。 */
   modifiedAt: string | null;
-  /** 认得出的媒体与文档类型（与 Space 同一套分类）；含 `video.db` 的目录是 `video`；其余为 null。 */
+  /** 认得出的媒体与文档类型（与 Space 同一套分类）；含 `video.db` 的目录是 `video`，含合法 `deck.json` 的目录是 `slides`；其余为 null。 */
   kind: SpaceEntryKind | null;
 }
 
