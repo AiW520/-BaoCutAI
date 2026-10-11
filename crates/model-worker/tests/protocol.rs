@@ -157,7 +157,7 @@ fn hello_reports_version_backends_and_capabilities() {
         assert_eq!(backends[2]["reason"], "not-compiled");
     }
     if cfg!(feature = "whisper-ggml") {
-        // ggml 同样不挑机器：CPU 总在最后，前面至多一个 GPU（`cuda` 或 `vulkan`）。
+        // ggml 同样不挑机器：CPU 总在最后，前面至多一个 GPU（`cuda`、`vulkan` 或 `metal`）。
         assert_eq!(backends[3]["available"], true);
         let devices = backends[3]["devices"].as_array().unwrap();
         assert_eq!(devices.last(), Some(&json!("cpu")));
@@ -165,7 +165,7 @@ fn hello_reports_version_backends_and_capabilities() {
         assert!(
             devices
                 .iter()
-                .all(|device| device == "cpu" || device == "cuda" || device == "vulkan"),
+                .all(|device| device == "cpu" || device == "cuda" || device == "vulkan" || device == "metal"),
             "{devices:?}"
         );
     } else {
@@ -772,7 +772,7 @@ fn moss_bundles_name_the_missing_file() {
     );
 }
 
-/// Whisper（GGML）的加载器：设备只认 `cpu` 与握手报的那个 GPU（`cuda` 或 `vulkan`，至多一个）；GGML 权重自带词表，带分词器是
+/// Whisper（GGML）的加载器：设备只认 `cpu` 与握手报的那个 GPU（`cuda`、`vulkan` 或 `metal`，至多一个）；GGML 权重自带词表，带分词器是
 /// 模型包写错了；权重是 `asr` 组件里的单个 `.bin`，没列出就是 `MODEL_NOT_INSTALLED`。都在读任何权重之前，失败的加载不留状态。
 #[cfg(feature = "whisper-ggml")]
 #[test]
@@ -798,11 +798,11 @@ fn ggml_bundles_check_device_components_and_weights() {
     };
     let bundle = json!({ "asr": component("whisper-ggml"), "vad": component("silero-vad") });
 
-    let response = load("metal", bundle.clone());
+    let response = load("ane", bundle.clone());
     assert_eq!(error_code(&response), "MODEL_UNSUPPORTED", "{response}");
     assert_eq!(response["error"]["details"]["reason"], "unsupported-device");
-    // 不是握手报的首选 GPU 的那一个（或两个）GPU 设备都不收。
-    for gpu in ["cuda", "vulkan"].into_iter().filter(|gpu| *gpu != preferred) {
+    // 不是握手报的首选 GPU 的设备都不收。
+    for gpu in ["cuda", "vulkan", "metal"].into_iter().filter(|gpu| *gpu != preferred) {
         let response = load(gpu, bundle.clone());
         assert_eq!(error_code(&response), "MODEL_UNSUPPORTED", "{response}");
         assert_eq!(response["error"]["details"]["reason"], "unsupported-device");
