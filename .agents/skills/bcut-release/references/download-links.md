@@ -8,10 +8,11 @@ failed or stayed unpublished.
 ## Source of truth
 
 The four update feeds in `apps/desktop/releases/` on remote `main` decide what
-each platform links to: `appcast-aarch64-apple-darwin.json` and
+each README platform row links to: `appcast-aarch64-apple-darwin.json` and
 `appcast-x86_64-pc-windows-msvc{,-cuda,-vulkan}.json`. Each platform row shows
 the version and build of its own feed. A variant whose feed did not advance keeps
 its previous links; never link files that were not published and verified.
+baocut.com resolves its links from GitHub Releases instead (see below).
 
 ## README
 
