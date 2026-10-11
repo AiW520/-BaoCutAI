@@ -577,7 +577,7 @@ export type MusicMode = 'song' | 'instrumental';
 export const MUSIC_MODES: readonly MusicMode[] = ['song', 'instrumental'];
 /**
  * 音乐生成的规划：`off` 直接从风格与歌词生成；`melody` 先生成或接受一段旋律的乐谱再生成；`full` 先生成完整的乐谱。
- * 不给时由模型决定（YuE2 默认 `full`）。
+ * 不给时用模型包登记的默认值（YuE2 是 `melody`）。
  */
 export type MusicPlanning = 'off' | 'melody' | 'full';
 export const MUSIC_PLANNINGS: readonly MusicPlanning[] = ['off', 'melody', 'full'];
