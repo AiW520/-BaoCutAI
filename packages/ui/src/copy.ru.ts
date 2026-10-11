@@ -765,6 +765,12 @@ export const ru: CopyMessages = {
     groupCornerTip: "Масштабировать всё пропорционально",
     picked: (n: number) => `${n} выделено`,
     degrees: (n: number) => `${n}°`,
+    pan: 'Изменить кадр',
+    shotPiece: (from: number, to: number) => `Эта часть · ${from}–${to} с`,
+    applyAll: 'Применить ко всему шортсу',
+    applyAllTip: 'Использовать кадрирование этой части для всех частей этого видео',
+    appliedAll: (n: number) => `Кадрирование применено ко всем частям: ${n}`,
+    undo: 'Отменить',
   },
   /**
    * 四项服务的目录与起停用词（原型 model-services.js `SERVICES`）；远端算力沿用「共享」。顺序就是侧栏与总览的顺序。

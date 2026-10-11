@@ -17,6 +17,8 @@ export const ko: ShortsMessages = {
   span: (from, to, length) => `${from} – ${to} · ${length}`,
   hookLabel: '시작 문장',
   reasonLabel: '고른 이유',
+  framingLabel: '프레이밍',
+  framingShots: (n) => `샷 ${n}개를 각각 프레이밍 · 연 다음 캔버스에서 구간을 끌어 바꾸기`,
   rename: '클릭해서 제목 바꾸기',
   renameLabel: '쇼츠 제목',
   failed: (reason) => `하지 못했습니다: ${reason}`,

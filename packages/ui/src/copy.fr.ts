@@ -736,6 +736,12 @@ export const fr: CopyMessages = {
     groupCornerTip: "Tout redimensionner proportionnellement",
     picked: (n: number) => `${n} sélectionnées`,
     degrees: (n: number) => `${n}°`,
+    pan: 'Recadrer',
+    shotPiece: (from: number, to: number) => `Cette partie · ${from}–${to} s`,
+    applyAll: 'Appliquer à tout le short',
+    applyAllTip: 'Utiliser le cadrage de cette partie pour toutes les parties de cette vidéo',
+    appliedAll: (n: number) => `Cadrage appliqué aux ${n} parties`,
+    undo: 'Annuler',
   },
 
   service: {

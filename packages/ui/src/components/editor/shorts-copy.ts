@@ -36,6 +36,9 @@ const en = {
   span: (from: string, to: string, length: string) => `${from} – ${to} · ${length}`,
   hookLabel: 'Opens with',
   reasonLabel: 'Why this one',
+  /** 卡上「取景」那一行（原型 `frameText`）：按镜头分段取景时写几个镜头、去画布上拖哪一段改。 */
+  framingLabel: 'Framing',
+  framingShots: (n: number) => `Framed per shot (${n} shots) · Open it and drag a part on the canvas to change`,
   rename: 'Click to rename',
   renameLabel: 'Short title',
   failed: (reason: string) => `Couldn’t do that: ${reason}`,

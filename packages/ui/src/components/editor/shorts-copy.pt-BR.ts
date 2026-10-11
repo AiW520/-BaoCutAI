@@ -17,6 +17,8 @@ export const ptBR: ShortsMessages = {
   span: (from, to, length) => `${from} – ${to} · ${length}`,
   hookLabel: 'Começa com',
   reasonLabel: 'Por que este',
+  framingLabel: 'Enquadramento',
+  framingShots: (n) => `Enquadrado por plano (${n} planos) · Abra e arraste uma parte na tela para mudar`,
   rename: 'Clique para renomear',
   renameLabel: 'Título do short',
   failed: (reason) => `Não deu certo: ${reason}`,

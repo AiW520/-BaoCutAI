@@ -1,5 +1,5 @@
 import { stageBox, stagePlace, type StageAsset, type StageItem } from '@baocut/editor-wasm';
-import { isVisualItem, type AssetRecord, type Id, type Place, type SequenceItem, type VisualItem } from '@baocut/protocol';
+import { isVisualItem, type AssetRecord, type Crop, type Id, type Place, type SequenceItem, type VideoItem, type VisualItem } from '@baocut/protocol';
 import { round1, wrapRotation } from './geometry-panel.ts';
 
 /**
@@ -218,6 +218,52 @@ export function aabbOf(pose: Pose): Rect {
 /** 未旋转的盒（吸附按它算，与原型 `frameBox` 同口径）。 */
 export function boxRect(pose: Pose): Rect {
   return { x: pose.cx - pose.w / 2, y: pose.cy - pose.h / 2, w: pose.w, h: pose.h };
+}
+
+// ---- 平移取景 ----
+
+/** 铺满画面、`cover`、带裁剪的视频（剪成短视频的子视频按镜头分段取景就是这样）：画布上拖它是平移裁剪窗口。 */
+export type PannableVideo = VideoItem & { crop: Crop };
+
+export function isPannable(item: SequenceItem): item is PannableVideo {
+  return item.type === 'video' && item.mode === 'fullscreen' && (item.fit ?? 'cover') === 'cover' && !!item.crop;
+}
+
+/** 源的显示尺寸（已按旋转交换，乘上像素宽高比；与 `render-graph` 的 `display_size` 同口径）；素材表里没有时 null。 */
+export function sourceSize(item: VideoItem, assets: Assets | undefined): { width: number; height: number } | null {
+  const video = assets?.[item.assetRef.id]?.revisions[item.assetRef.revision]?.video;
+  if (!video) return null;
+  const { num, den } = video.pixelAspectRatio;
+  const width = den > 0 ? (video.displayWidth * num) / den : 0;
+  const height = video.displayHeight;
+  return width > 0 && height > 0 ? { width, height } : null;
+}
+
+const round4 = (v: number) => Math.round(v * 1e4) / 1e4;
+
+/**
+ * 平移裁剪窗口（画布像素的指针位移 → 新的裁剪）：窗口大小不变（左右之和、上下之和不变），只挪位置，夹在源画面里。
+ * 往右拖是画面跟着往右走，窗口往左挪（`left` 变小）。一个画布像素合多少源画面按 `cover` 的缩放算（窗口按长的那一边铺满画布）；
+ * 不知道源尺寸时按窗口正好铺满画布算。上下之和是 0（窗口与源一样高）时竖直方向不动。取四位小数；没动时原样返回同一个对象。
+ */
+export function panCrop(crop: Crop, dx: number, dy: number, canvas: CanvasSize, source: { width: number; height: number } | null): Crop {
+  const sumX = crop.left + crop.right;
+  const sumY = crop.top + crop.bottom;
+  const cw = 1 - sumX;
+  const ch = 1 - sumY;
+  if (!(cw > 0) || !(ch > 0) || !(canvas.width > 0) || !(canvas.height > 0)) return crop;
+  // 每个画布像素是源画面宽 / 高的几分之几。
+  let fx = cw / canvas.width;
+  let fy = ch / canvas.height;
+  if (source) {
+    const scale = Math.max(canvas.width / (cw * source.width), canvas.height / (ch * source.height));
+    fx = 1 / (scale * source.width);
+    fy = 1 / (scale * source.height);
+  }
+  const left = sumX > 0 ? round4(clamp(crop.left - dx * fx, 0, sumX)) : crop.left;
+  const top = sumY > 0 ? round4(clamp(crop.top - dy * fy, 0, sumY)) : crop.top;
+  if (left === crop.left && top === crop.top) return crop;
+  return { left, top, right: round4(Math.max(0, sumX - left)), bottom: round4(Math.max(0, sumY - top)) };
 }
 
 // ---- 移动 ----

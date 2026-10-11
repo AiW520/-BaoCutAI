@@ -683,6 +683,12 @@ export const zhHans: CopyMessages = {
     groupCornerTip: '整体等比缩放',
     picked: (n: number) => `已选 ${n} 个`,
     degrees: (n: number) => `${n}°`,
+    pan: '调整取景',
+    shotPiece: (from: number, to: number) => `这一段 · 第 ${from}–${to} 秒`,
+    applyAll: '套到整支',
+    applyAllTip: '把这一段现在的摆位用到这支视频的每一段',
+    appliedAll: (n: number) => `已把这一段的摆位用到全部 ${n} 段`,
+    undo: '撤销',
   },
   service: {
     mcp: {

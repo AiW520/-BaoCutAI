@@ -781,6 +781,14 @@ const en = {
     groupCornerTip: 'Scale all proportionally',
     picked: (n: number) => `${n} selected`,
     degrees: (n: number) => `${n}°`,
+    /** 平移取景：拖铺满画面的视频，挪它的裁剪窗口（撤销记录里的名字）。 */
+    pan: 'Reframe',
+    /** 按镜头分段取景时选中一段挂的小牌（原型 `shotBadge`）：子视频时间线上的起止秒。 */
+    shotPiece: (from: number, to: number) => `This part · ${from}–${to}s`,
+    applyAll: 'Apply to whole short',
+    applyAllTip: 'Use this part’s framing for every part of this video',
+    appliedAll: (n: number) => `Applied this framing to all ${n} parts`,
+    undo: 'Undo',
   },
   /**
    * 四项服务的目录与起停用词（原型 model-services.js `SERVICES`）；远端算力沿用「共享」。顺序就是侧栏与总览的顺序。

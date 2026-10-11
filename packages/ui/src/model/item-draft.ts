@@ -1,6 +1,7 @@
 import type {
   AudioMix,
   ConfettiProps,
+  Crop,
   DrawProps,
   EmbeddedAudio,
   Fx,
@@ -43,6 +44,8 @@ export interface ItemPatch {
   embeddedAudio?: Partial<EmbeddedAudio>;
   /** 画面效果（整体替换；`null` 是去掉）。 */
   fx?: Fx | null;
+  /** 视频与图片的裁剪（整体替换）：画布上平移铺满画面的视频时跟手。 */
+  crop?: Crop;
 }
 
 /** 同一个片段、同一个版本上的草稿叠在一起（拖完一根滑杆、提交还没回来时又拖另一根，前一根不弹回）。 */
@@ -76,7 +79,8 @@ export function applyDraft(sequence: Sequence, draft: ItemDraft | null): Sequenc
 export function patchItem(item: SequenceItem, patch: ItemPatch): SequenceItem {
   if (item.type === 'audio') return patch.mix ? { ...item, mix: { ...item.mix, ...patch.mix } } : item;
   if (item.type === 'caption') return item;
-  const placed = patch.place ? { ...item, place: { ...item.place, ...patch.place } } : item;
+  const moved = patch.place ? { ...item, place: { ...item.place, ...patch.place } } : item;
+  const placed = patch.crop && (moved.type === 'video' || moved.type === 'image') ? { ...moved, crop: patch.crop } : moved;
   const props = patch.props;
   switch (placed.type) {
     case 'video':

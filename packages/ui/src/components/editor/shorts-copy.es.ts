@@ -17,6 +17,8 @@ export const es: ShortsMessages = {
   span: (from, to, length) => `${from} – ${to} · ${length}`,
   hookLabel: 'Empieza con',
   reasonLabel: 'Por qué este',
+  framingLabel: 'Encuadre',
+  framingShots: (n) => `Encuadrado por plano (${n} planos) · Ábrelo y arrastra una parte en el lienzo para cambiarlo`,
   rename: 'Haz clic para cambiar el título',
   renameLabel: 'Título del short',
   failed: (reason) => `No se pudo hacer: ${reason}`,

@@ -17,6 +17,8 @@ export const zhHant: ShortsMessages = {
   span: (from, to, length) => `${from} – ${to} · ${length}`,
   hookLabel: '開頭',
   reasonLabel: '為什麼挑它',
+  framingLabel: '取景',
+  framingShots: (n) => `按 ${n} 個鏡頭分別取景 · 開啟後在畫布上拖某一段修改`,
   rename: '點一下改標題',
   renameLabel: '短影片標題',
   failed: (reason) => `沒有完成：${reason}`,

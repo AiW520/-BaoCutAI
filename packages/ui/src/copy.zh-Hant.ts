@@ -670,6 +670,12 @@ export const zhHant: CopyMessages = {
     groupCornerTip: '全部等比例縮放',
     picked: (n: number) => `已選取 ${n} 個`,
     degrees: (n: number) => `${n}°`,
+    pan: '調整取景',
+    shotPiece: (from: number, to: number) => `這一段 · 第 ${from}–${to} 秒`,
+    applyAll: '套用到整支',
+    applyAllTip: '把這一段現在的擺位用到這支影片的每一段',
+    appliedAll: (n: number) => `已把這一段的擺位用到全部 ${n} 段`,
+    undo: '還原',
   },
   service: {
     mcp: {

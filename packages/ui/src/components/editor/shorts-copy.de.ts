@@ -17,6 +17,8 @@ export const de: ShortsMessages = {
   span: (from, to, length) => `${from} – ${to} · ${length}`,
   hookLabel: 'Beginnt mit',
   reasonLabel: 'Warum dieses',
+  framingLabel: 'Bildausschnitt',
+  framingShots: (n) => `Pro Einstellung zugeschnitten (${n} Einstellungen) · Öffnen und einen Teil auf der Leinwand ziehen, um ihn zu ändern`,
   rename: 'Zum Umbenennen klicken',
   renameLabel: 'Titel des Shorts',
   failed: (reason) => `Hat nicht geklappt: ${reason}`,

@@ -18,11 +18,13 @@ import {
   type CaptionMoveFrame,
 } from '../../model/stage-caption-move.ts';
 import {
+  cropOperations,
   gestureOperations,
   gesturePatch,
   memberOf,
   membersOf,
   nudgeOperations,
+  panGesture,
   resetRotation,
   stepGesture,
   type Gesture,
@@ -31,12 +33,14 @@ import {
   type StageEnv,
 } from '../../model/stage-gesture.ts';
 import { hitAt, isMainVideo, marqueeHits, marqueeSelection, visibleItems } from '../../model/stage-hit.ts';
+import { showsShotChip } from '../../model/stage-shots.ts';
 import {
   DEAD_ZONE,
   aabbOf,
   boundsOf,
   boxRect,
   cornerScales,
+  isPannable,
   isPlaced,
   marqueeRect,
   nudgeDelta,
@@ -64,6 +68,7 @@ import { useEditorActions } from './editor-context.tsx';
 import type { PreviewEngine } from './preview-engine.ts';
 import { GroupBox, Guides, ItemBox, Marquee, ThinBox, type View } from './stage-boxes.tsx';
 import { StageCaptionToolbar } from './stage-caption-toolbar.tsx';
+import { StageShotChip } from './stage-shot-chip.tsx';
 import { StageTextEdit } from './stage-text-edit.tsx';
 import { StageToolbar } from './stage-toolbar.tsx';
 
@@ -97,6 +102,7 @@ const LABEL: Record<Gesture['kind'], string> = {
   edge: STAGE_COPY.resize,
   corner: STAGE_COPY.scale,
   rotate: STAGE_COPY.rotate,
+  pan: STAGE_COPY.pan,
   'group-move': STAGE_COPY.groupMove,
   'group-scale': STAGE_COPY.groupScale,
 };
@@ -310,7 +316,7 @@ export function StageObjects({ sequence, frame }: { sequence: Sequence; frame: F
       useEditor.getState().setDraft({
         itemId: m.item.id,
         revision: seq.revision,
-        patch: gesturePatch(m.item, result.poses[0]!, result.factor, seq.canvas, assets),
+        patch: gesturePatch(m.item, result.poses[0]!, result.factor, seq.canvas, assets, result.crop),
       });
     }
     setGuides(live ? result.guides : []);
@@ -326,7 +332,12 @@ export function StageObjects({ sequence, frame }: { sequence: Sequence; frame: F
 
   const commit = (gesture: Gesture, result: GestureFrame) => {
     const seq = latest.current;
-    const operations = gestureOperations(seq.id, membersOf(gesture), result.poses, result.factor, seq.canvas);
+    const operations =
+      gesture.kind === 'pan'
+        ? result.crop
+          ? cropOperations(seq.id, gesture.member.item, result.crop)
+          : []
+        : gestureOperations(seq.id, membersOf(gesture), result.poses, result.factor, seq.canvas);
     if (!operations.length) return discard(gesture);
     show(gesture, result, false);
     if ('members' in gesture) setOverride((o) => (o ? { ...o, until: seq.revision } : o));
@@ -485,7 +496,9 @@ export function StageObjects({ sequence, frame }: { sequence: Sequence; frame: F
       if (captionGroup) click = () => select([hit]);
       else if (!current.includes(hit) || current.length > 1) select([hit]);
       if (item?.type === 'caption') useEditor.getState().showPanel('props');
-      if (item && isPlaced(item) && changeable(item)) gesture = { kind: 'move', member: memberOf(item, seq.canvas, assets), p0: p };
+      // 铺满、cover、带裁剪的视频（剪成短视频的子视频）没有可挪的框：拖动是平移它的裁剪窗口，只改这一段。
+      if (item && isPannable(item) && changeable(item)) gesture = panGesture(item, p, seq.canvas, assets);
+      else if (item && isPlaced(item) && changeable(item)) gesture = { kind: 'move', member: memberOf(item, seq.canvas, assets), p0: p };
       else if (item?.type === 'caption' && changeable(item) && (!captionGroup || current.every((id) => changeable(byId.get(id)!))))
         caption = captionDragOf(item, p, captionGroup);
       moving = new Set([hit]);
@@ -665,7 +678,7 @@ export function StageObjects({ sequence, frame }: { sequence: Sequence; frame: F
 
   // ---- 画 ----
 
-  const dragging = active === 'move' || active === 'group-move';
+  const dragging = active === 'move' || active === 'group-move' || active === 'pan';
   const editingItem = editing ? byId.get(editing) : undefined;
   let boxes: ReactNode = null;
   if (editingItem?.type === 'text') {
@@ -740,6 +753,9 @@ export function StageObjects({ sequence, frame }: { sequence: Sequence; frame: F
       </div>
       {single && !editingItem && changeable(single) ? (
         <StageToolbar key={single.id} item={single} sequence={sequence} frame={frame} view={view} yielding={active !== null} />
+      ) : null}
+      {single && isPannable(single) && changeable(single) && !dragging && showsShotChip(sequence, single) ? (
+        <StageShotChip key={single.id} item={single} sequence={sequence} frame={frame} />
       ) : null}
       {captionBar && !editing ? (
         <StageCaptionToolbar items={captionBar} sequence={sequence} hits={captionHits} frame={frame} view={view} yielding={active !== null} />

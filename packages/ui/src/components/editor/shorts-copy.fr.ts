@@ -17,6 +17,8 @@ export const fr: ShortsMessages = {
   span: (from, to, length) => `${from} – ${to} · ${length}`,
   hookLabel: 'Commence par',
   reasonLabel: 'Pourquoi celui-ci',
+  framingLabel: 'Cadrage',
+  framingShots: (n) => `Cadré par plan (${n} plans) · Ouvrez-le et faites glisser une partie sur le canevas pour modifier`,
   rename: 'Cliquez pour renommer',
   renameLabel: 'Titre du short',
   failed: (reason) => `Impossible : ${reason}`,

@@ -12,7 +12,7 @@ import { untitled } from '../../copy.ts';
 import { aiTool } from '../../model/ai-tools.ts';
 import { agentRunState } from '../../model/ai-tools-handoff.ts';
 import { formatClock, formatDuration } from '../../model/format.ts';
-import { createdVideoIds, entryVideoId, pagerIndex, shortsBatch, type ShortsDerivation } from '../../model/shorts-result.ts';
+import { createdVideoIds, entryVideoId, framingShots, pagerIndex, shortsBatch, type ShortsDerivation } from '../../model/shorts-result.ts';
 import { derivedFrom, videoTargetOf } from '../../model/space.ts';
 import { useRuntime } from '../../runtime/context.tsx';
 import { useShell } from '../../state/shell-store.ts';
@@ -335,6 +335,7 @@ function ShortCard({
   const facts = useShortFacts(entry);
   const reason = facts.derivation?.reason ?? null;
   const notes = facts.derivation?.notes ?? [];
+  const shots = framingShots(facts.derivation);
   const [draft, setDraft] = useState<string | null>(null);
   const span = spanText(facts.derivation, facts.seconds);
   const commit = () => {
@@ -390,6 +391,12 @@ function ShortCard({
         <div className={line}>
           <span className={lineLabel}>{S.reasonLabel}</span>
           <span className={why}>{reason}</span>
+        </div>
+      ) : null}
+      {shots !== null ? (
+        <div className={line}>
+          <span className={lineLabel}>{S.framingLabel}</span>
+          <span className={why}>{S.framingShots(shots)}</span>
         </div>
       ) : null}
       {notes.length ? (

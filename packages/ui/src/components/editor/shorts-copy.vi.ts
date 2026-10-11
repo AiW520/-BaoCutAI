@@ -17,6 +17,8 @@ export const vi: ShortsMessages = {
   span: (from, to, length) => `${from} – ${to} · ${length}`,
   hookLabel: 'Mở đầu',
   reasonLabel: 'Vì sao chọn',
+  framingLabel: 'Khung hình',
+  framingShots: (n) => `Chỉnh khung theo từng cảnh (${n} cảnh) · Mở ra rồi kéo một đoạn trên khung vẽ để đổi`,
   rename: 'Bấm để đổi tên',
   renameLabel: 'Tiêu đề short',
   failed: (reason) => `Không làm được: ${reason}`,

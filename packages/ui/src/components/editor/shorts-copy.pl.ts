@@ -17,6 +17,8 @@ export const pl: ShortsMessages = {
   span: (from, to, length) => `${from} – ${to} · ${length}`,
   hookLabel: 'Zaczyna się od',
   reasonLabel: 'Dlaczego ten',
+  framingLabel: 'Kadr',
+  framingShots: (n) => `Kadrowane osobno dla każdego ujęcia (${n}) · Otwórz i przeciągnij część na płótnie, aby zmienić`,
   rename: 'Kliknij, aby zmienić nazwę',
   renameLabel: 'Tytuł shorta',
   failed: (reason) => `Nie udało się: ${reason}`,

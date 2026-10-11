@@ -17,6 +17,8 @@ export const nl: ShortsMessages = {
   span: (from, to, length) => `${from} – ${to} · ${length}`,
   hookLabel: 'Begint met',
   reasonLabel: 'Waarom deze',
+  framingLabel: 'Uitsnede',
+  framingShots: (n) => `Per shot uitgesneden (${n} shots) · Open hem en sleep een deel op het canvas om het te wijzigen`,
   rename: 'Klik om de naam te wijzigen',
   renameLabel: 'Titel van de short',
   failed: (reason) => `Dat lukte niet: ${reason}`,

@@ -684,6 +684,12 @@ export const ja: CopyMessages = {
     groupCornerTip: 'すべてを縦横比を保って拡大縮小',
     picked: (n: number) => `${n} 個を選択`,
     degrees: (n: number) => `${n}°`,
+    pan: 'フレーミングを調整',
+    shotPiece: (from: number, to: number) => `この区間 · ${from}–${to} 秒`,
+    applyAll: 'ショート全体に適用',
+    applyAllTip: 'この区間の今の位置を、この動画のすべての区間に使います',
+    appliedAll: (n: number) => `この位置を全 ${n} 区間に適用しました`,
+    undo: '取り消す',
   },
   service: {
     mcp: {

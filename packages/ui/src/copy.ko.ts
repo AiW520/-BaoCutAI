@@ -685,6 +685,12 @@ export const ko: CopyMessages = {
     groupCornerTip: '모두 비율을 유지하며 크기 조정',
     picked: (n: number) => `${n}개 선택됨`,
     degrees: (n: number) => `${n}°`,
+    pan: '프레이밍 조정',
+    shotPiece: (from: number, to: number) => `이 구간 · ${from}–${to}초`,
+    applyAll: '쇼츠 전체에 적용',
+    applyAllTip: '이 구간의 현재 위치를 이 동영상의 모든 구간에 적용합니다',
+    appliedAll: (n: number) => `이 위치를 전체 ${n}개 구간에 적용했습니다`,
+    undo: '실행 취소',
   },
   service: {
     mcp: {

@@ -17,6 +17,8 @@ export const ru: ShortsMessages = {
   span: (from, to, length) => `${from} – ${to} · ${length}`,
   hookLabel: 'Начало',
   reasonLabel: 'Почему он',
+  framingLabel: 'Кадрирование',
+  framingShots: (n) => `Кадрировано по планам (${n}) · Откройте и перетащите часть на холсте, чтобы изменить`,
   rename: 'Нажмите, чтобы переименовать',
   renameLabel: 'Название шортса',
   failed: (reason) => `Не получилось: ${reason}`,

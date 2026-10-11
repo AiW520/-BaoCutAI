@@ -17,6 +17,8 @@ export const it: ShortsMessages = {
   span: (from, to, length) => `${from} – ${to} · ${length}`,
   hookLabel: 'Inizia con',
   reasonLabel: 'Perché questo',
+  framingLabel: 'Inquadratura',
+  framingShots: (n) => `Inquadrato per inquadratura (${n} riprese) · Aprilo e trascina una parte sull’area di lavoro per cambiarla`,
   rename: 'Fai clic per rinominare',
   renameLabel: 'Titolo dello short',
   failed: (reason) => `Non è riuscito: ${reason}`,

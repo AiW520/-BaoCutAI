@@ -20,9 +20,25 @@ export interface ShortsDerivation {
   reason: string | null;
   /** 提示牌；没给时空。 */
   notes: string[];
+  /** 分段取景有几个镜头（派生来源文档的 `settings.crops`，没有时按 `framing.shots`）；没有分段取景时 0。 */
+  shots: number;
 }
 
 const textOf = (value: unknown): string | null => (typeof value === 'string' && value.trim() ? value.trim() : null);
+
+const lengthOf = (value: unknown): number => (Array.isArray(value) ? value.length : 0);
+
+/** 分段取景有几个镜头：按 `settings.crops`（派生时给的各段取景）数；`framing.shots` 是主素材在源时钟上的各段，剪口会把一个镜头拆成几段，只作兜底。 */
+function shotCount(summary: Record<string, unknown>): number {
+  const framing = summary.framing as { shots?: unknown } | undefined;
+  const settings = summary.settings as { crops?: unknown } | undefined;
+  return lengthOf(settings?.crops) || lengthOf(framing?.shots);
+}
+
+/** 结果页卡上「取景」那一行写几个镜头：分了不止一个镜头时是段数，否则 null（不出这一行）。 */
+export function framingShots(derivation: Pick<ShortsDerivation, 'shots'> | null): number | null {
+  return derivation && derivation.shots > 1 ? derivation.shots : null;
+}
 
 /** 视频里的派生来源文档的概要；不是子视频（没有这份文档、或认不出）时 null。 */
 export function readDerivation(documents: Record<Id, DocumentRecord> | null | undefined): ShortsDerivation | null {
@@ -44,6 +60,7 @@ export function readDerivation(documents: Record<Id, DocumentRecord> | null | un
       hook: textOf(summary.hook),
       reason: textOf(summary.reason),
       notes: Array.isArray(summary.notes) ? summary.notes.flatMap((n) => textOf(n) ?? []) : [],
+      shots: shotCount(summary),
     };
   }
   return null;
