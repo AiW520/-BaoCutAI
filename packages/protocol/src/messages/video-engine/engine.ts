@@ -447,7 +447,7 @@ const en = {
   labelReplaceCodeComposition: 'Replace code composition',
   labelAdjustAudio: 'Adjust audio',
   labelChangeSpeed: 'Change speed',
-  labelChangeCaptionStyle: 'Change caption style',
+  labelChangeCaptionStyle: 'Change subtitle style',
   labelEditVideoSettings: 'Edit video settings',
   labelSetTransition: 'Set transition',
   labelDeleteTransition: 'Delete transition',
