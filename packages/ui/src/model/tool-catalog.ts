@@ -21,6 +21,7 @@ export const TOOL_IDS = [
   'synthesize-speech',
   'generate-text',
   'generate-image',
+  'generate-music',
   'link-import',
   'compress-video',
   'merge-video',
@@ -39,7 +40,7 @@ export type VideoToolId = (typeof VIDEO_TOOL_IDS)[number];
 export const FILE_VIDEO_TOOL_IDS = ['compress-video', 'merge-video', 'extract-audio'] as const;
 export type FileVideoToolId = (typeof FILE_VIDEO_TOOL_IDS)[number];
 
-export type ToolIcon = 'transcript' | 'translate' | 'microphone' | 'import' | 'wave' | 'image' | 'text' | 'film' | 'layers';
+export type ToolIcon = 'transcript' | 'translate' | 'microphone' | 'import' | 'wave' | 'image' | 'music' | 'text' | 'film' | 'layers';
 export type ToolGroupKey = ToolCategory;
 export type ToolOutput = 'video' | 'artifact';
 export type ToolArtifact = 'audio' | 'image' | 'doc' | 'final' | 'subtitle';
@@ -195,6 +196,16 @@ const TEXT_IMAGE_TOOLS: readonly ToolDecl[] = [
   }),
 ];
 
+const MUSIC_TOOLS: readonly ToolDecl[] = [
+  tool({
+    id: 'generate-music',
+    icon: 'music',
+    output: 'artifact',
+    artifacts: ['audio'],
+    inputs: [{ kind: 'text', output: 'artifact' }],
+  }),
+];
+
 const VIDEO_FILE_TOOLS: readonly ToolDecl[] = [
   tool({
     id: 'link-import',
@@ -240,6 +251,7 @@ const VIDEO_FILE_TOOLS: readonly ToolDecl[] = [
 const GROUP_TOOLS: Record<ToolGroupKey, readonly ToolDecl[]> = {
   speech: SPEECH_TOOLS,
   'text-image': TEXT_IMAGE_TOOLS,
+  music: MUSIC_TOOLS,
   'video-file': VIDEO_FILE_TOOLS,
 };
 
@@ -263,6 +275,7 @@ const LEGACY_IDS: Record<string, ToolId> = {
   link: 'link-import',
   tts: 'synthesize-speech',
   image: 'generate-image',
+  music: 'generate-music',
   text: 'generate-text',
   compress: 'compress-video',
   merge: 'merge-video',

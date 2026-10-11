@@ -106,6 +106,7 @@ export const ru: SpaceMessages = {
   capability: {
     synthesizeSpeech: "Озвучка",
     generateImage: "Сгенерировать изображение",
+    generateMusic: 'Создать музыку',
     generateText: "Сгенерировать текст",
     export: "Экспорт",
   },

@@ -258,6 +258,7 @@ export const fr: ModelsMessages = {
     generateImage: "Génération d’images",
     generateText: "Génération de texte",
     separateAudio: "Séparation vocale",
+    generateMusic: 'Génération de musique',
   } satisfies Record<ModelServiceCapability, string>,
   unavailableLabels: {
     'not-configured': "non activé",

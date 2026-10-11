@@ -113,6 +113,7 @@ export const ko: SpaceMessages = {
   capability: {
     synthesizeSpeech: '더빙',
     generateImage: '이미지 생성',
+    generateMusic: '음악 생성',
     generateText: '텍스트 생성',
     export: '내보내기',
   },

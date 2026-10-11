@@ -26,6 +26,7 @@ export const it: ModelsLocalMessages = {
     synthesize: "Sintetizza",
     image: "Immagine",
     separate: "Separa",
+    music: 'Musica',
     diarize: "Diarizzazione dei parlanti",
   },
   auto: "Automatico",

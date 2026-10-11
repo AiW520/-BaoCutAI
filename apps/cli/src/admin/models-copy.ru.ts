@@ -240,6 +240,7 @@ export const ru: ModelsMessages = {
     generateImage: "Генерация изображений",
     generateText: "Генерация текста",
     separateAudio: "Разделение голоса",
+    generateMusic: 'Генерация музыки',
   },
   unavailableLabels: {
     'not-configured': "не включено",

@@ -20,6 +20,7 @@ export const zhHans: ToolCatalogMessages = {
     'synthesize-speech': { name: '生成语音', desc: '把文字或 Space 里的文档、字幕念出来；可选预设音色、克隆一段录音或描述一个声音' },
     'generate-text': { name: '文本生成', desc: '输入要求，直接调用文本模型生成文案、脚本或摘要；可以附上 Space 里的文档或字幕作为材料' },
     'generate-image': { name: '生成图片', desc: '写一句描述，用云端或本机图像模型画一张图；可带参考图、选画幅与张数' },
+    'generate-music': { name: '生成音乐', desc: '写下风格与可选的歌词，用本机音乐模型生成歌曲或纯音乐；时长与种子可选' },
     'link-import': { name: '下载视频', desc: '粘贴链接，下载视频到本机；可使用浏览器 Cookie，下载后可转录成文稿和字幕' },
     'compress-video': { name: '压缩视频', desc: '按目标体积或画质重新编码，发消息、传网盘前先压一压' },
     'merge-video': { name: '合并视频', desc: '把几段视频按顺序首尾接成一个文件' },
@@ -34,6 +35,7 @@ export const zhHans: ToolCatalogMessages = {
       desc: '转录、翻译字幕与配音、把文字念出来。结果是文档、字幕与音频条目；选 Space 里可编辑的视频时写进它。',
     },
     'text-image': { label: '文字与图片', desc: '直接调用文本模型与图像模型。结果是文档与图片条目。' },
+    music: { label: '音乐', desc: '用本机音乐模型生成歌曲与配乐。结果是音频条目。' },
     'video-file': {
       label: '视频文件',
       desc: '下载、压缩、合并视频与提取音频，用本机的 yt-dlp 与 ffmpeg。结果是视频文件与音频条目。',

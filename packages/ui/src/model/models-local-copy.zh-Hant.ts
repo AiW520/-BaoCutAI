@@ -26,6 +26,7 @@ export const zhHant: ModelsLocalMessages = {
     synthesize: '合成',
     image: '影像生成',
     separate: '分離',
+    music: '音樂',
     diarize: '說話者區分',
   },
   auto: '自動',

@@ -26,6 +26,7 @@ export const ptBR: ModelsLocalMessages = {
     synthesize: "Sintetizar",
     image: "Imagem",
     separate: "Separar",
+    music: 'Música',
     diarize: "Diarização de falantes",
   },
   auto: "Automático",

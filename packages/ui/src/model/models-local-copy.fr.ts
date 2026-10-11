@@ -30,6 +30,7 @@ export const fr: ModelsLocalMessages = {
     synthesize: "Synthétiser",
     image: "Images",
     separate: "Séparation",
+    music: 'Musique',
     diarize: "Diarisation des locuteurs",
   } as Record<ModelBundleStatus['capability'], string>,
 

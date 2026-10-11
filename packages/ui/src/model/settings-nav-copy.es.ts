@@ -6,6 +6,7 @@ export const es: SettingsNavMessages = {
  llm: { label: 'Generación de texto', description: 'Mejora transcripciones, traduce subtítulos y genera texto.' },
  image: { label: 'Generación de imágenes', description: 'Genera las imágenes y portadas que necesitan tus vídeos.' },
  sep: { label: 'Separación de fuentes', description: 'Separa voces, acompañamiento y sonido de fondo.' },
+ music: { label: 'Generación de música', description: 'Genera canciones y música de fondo para tus vídeos en este equipo.' },
  vision: { label: 'Comprensión visual', description: 'Reconoce personas, hablantes y lo que hay en pantalla para ayudar con el recorte inteligente.' },
  },
  page: { local: 'Modelos locales', cloud: 'Modelos en la nube', voices: 'Mis voces' },

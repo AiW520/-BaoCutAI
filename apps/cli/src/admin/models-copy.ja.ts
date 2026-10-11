@@ -245,6 +245,7 @@ export const ja: ModelsMessages = {
     generateImage: '画像生成',
     generateText: 'テキスト生成',
     separateAudio: '音声分離',
+    generateMusic: '音楽生成',
   },
   unavailableLabels: {
     'not-configured': '未有効化',

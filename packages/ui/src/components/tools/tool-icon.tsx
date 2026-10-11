@@ -5,6 +5,7 @@ import ImageIcon from '@react-spectrum/s2/icons/Image';
 import Download from '@react-spectrum/s2/icons/Download';
 import Layers from '@react-spectrum/s2/icons/Layers';
 import Microphone from '@react-spectrum/s2/icons/Microphone';
+import MusicNote from '@react-spectrum/s2/icons/MusicNote';
 import TextIcon from '@react-spectrum/s2/icons/Text';
 import Transcript from '@react-spectrum/s2/icons/Transcript';
 import Translate from '@react-spectrum/s2/icons/Translate';
@@ -20,6 +21,7 @@ export const TOOL_ICON: Record<ToolIcon, IconComponent> = {
   import: Download,
   wave: AudioWave,
   image: ImageIcon,
+  music: MusicNote,
   text: TextIcon,
   film: Filmstrip,
   layers: Layers,

@@ -225,6 +225,7 @@ export const zhHans: ModelsMessages = {
     generateImage: '图片生成',
     generateText: '文本生成',
     separateAudio: '人声分离',
+    generateMusic: '音乐生成',
   },
   unavailableLabels: {
     'not-configured': '未启用',

@@ -403,6 +403,12 @@ export class RuntimeSession {
     return jobId;
   }
 
+  /** 生成一段音乐，返回任务 ID；进度与结果经 `jobs` 主题送达。 */
+  async generateMusic(request: Omit<import('@baocut/protocol').GenerateMusicRequest, 'commandId'>): Promise<Id> {
+    const { jobId } = await this.client.request('models.generateMusic', { ...request, commandId: newId('cmd') });
+    return jobId;
+  }
+
   /** 调用一次文本模型，返回任务 ID；全文是结果里的产物，进度与结果经 `jobs` 主题送达。 */
   async generateText(request: Omit<import('@baocut/protocol').GenerateTextRequest, 'commandId'>): Promise<Id> {
     const { jobId } = await this.client.request('models.generateText', { ...request, commandId: newId('cmd') });

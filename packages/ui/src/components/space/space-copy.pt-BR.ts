@@ -110,6 +110,7 @@ export const ptBR: SpaceMessages = {
   capability: {
     synthesizeSpeech: "Narração",
     generateImage: "Gerar imagem",
+    generateMusic: 'Gerar música',
     generateText: "Texto gerado",
     export: "Exportar",
   } as Record<string, string>,

@@ -26,6 +26,7 @@ export const ja: ModelsLocalMessages = {
     synthesize: '合成',
     image: '画像',
     separate: '分離',
+    music: '音楽',
     diarize: '話者分離',
   },
   auto: '自動',

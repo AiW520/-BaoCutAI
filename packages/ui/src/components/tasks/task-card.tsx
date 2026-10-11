@@ -9,6 +9,7 @@ import FolderOpen from '@react-spectrum/s2/icons/FolderOpen';
 import Image from '@react-spectrum/s2/icons/Image';
 import Layers from '@react-spectrum/s2/icons/Layers';
 import Microphone from '@react-spectrum/s2/icons/Microphone';
+import MusicNote from '@react-spectrum/s2/icons/MusicNote';
 import Search from '@react-spectrum/s2/icons/Search';
 import Tools from '@react-spectrum/s2/icons/Tools';
 import UserAvatar from '@react-spectrum/s2/icons/UserAvatar';
@@ -36,6 +37,7 @@ export const KIND_ICON: Record<TaskKind, ComponentType> = {
   transcribe: Microphone,
   synthesizeSpeech: AudioWave,
   generateImage: Image,
+  generateMusic: MusicNote,
   generateText: AIMark,
   export: Export,
   pipeline: Layers,

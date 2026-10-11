@@ -56,6 +56,7 @@ const en = {
       name: 'Generate image',
       desc: 'Describe a picture and draw it with a cloud or local image model; reference images, aspect ratio and count are optional',
     },
+    'generate-music': { name: 'Generate music', desc: 'Write a style and optional lyrics and compose a song or instrumental track with a local music model; duration and seed are optional' },
     'link-import': {
       name: 'Download video',
       desc: 'Paste a link to download a video to this computer; browser cookies can be used, and the download can be transcribed into a transcript and subtitles',
@@ -82,6 +83,7 @@ const en = {
       desc: 'Transcribe, translate subtitles, add voice-overs and read text aloud. Results are document, subtitle and audio items; choosing an editable video in Space writes into it.',
     },
     'text-image': { label: 'Text & images', desc: 'Call text and image models directly. Results are document and image items.' },
+    music: { label: 'Music', desc: 'Generate songs and background music with a local music model. Results are audio items.' },
     'video-file': {
       label: 'Video files',
       desc: 'Download, compress and merge videos and extract audio with yt-dlp and ffmpeg on this computer. Results are video file and audio items.',

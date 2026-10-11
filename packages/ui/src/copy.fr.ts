@@ -407,6 +407,7 @@ export const fr: CopyMessages = {
     transcribe: "Transcrire",
     synthesizeSpeech: "Générer la parole",
     generateImage: "Générer une image",
+    generateMusic: 'Générer de la musique',
     generateText: "Générer du texte",
     export: "Exporter",
     pipeline: "Flux",

@@ -26,6 +26,7 @@ export const ko: ModelsLocalMessages = {
     synthesize: '합성',
     image: '이미지',
     separate: '분리',
+    music: '음악',
     diarize: '화자 구분',
   },
   auto: '자동 선택',

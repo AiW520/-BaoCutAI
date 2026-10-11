@@ -35,6 +35,8 @@ export function bundleCategory(bundle: Pick<ModelBundleStatus, 'capability'>): M
       return 'tts';
     case 'image':
       return 'image';
+    case 'music':
+      return 'music';
     case 'separate':
       return 'sep';
   }
@@ -146,7 +148,7 @@ export function bundleChips(bundle: ModelBundleStatus, isDefault: boolean, ownFi
   return chips;
 }
 
-const BACKEND_LABEL: Record<ModelBundleStatus['backend'], string> = { mlx: 'MLX', coreml: 'Core ML', candle: 'Candle', ggml: 'GGML' };
+const BACKEND_LABEL: Record<ModelBundleStatus['backend'], string> = { mlx: 'MLX', coreml: 'Core ML', candle: 'Candle', ggml: 'GGML', 'audio-cpp': 'audio.cpp' };
 
 /** 一行模型包的事实：用途 · 后端 · 设备 · 补充说明。 */
 export function bundleFacts(bundle: ModelBundleStatus): string {

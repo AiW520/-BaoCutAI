@@ -38,6 +38,7 @@ export const de: ToolCatalogMessages = {
       name: "Bild erzeugen",
       desc: "Ein Bild beschreiben und mit einem Cloud- oder lokalen Bildmodell zeichnen lassen; Referenzbilder, Seitenverhältnis und Anzahl sind optional",
     },
+    'generate-music': { name: 'Musik erzeugen', desc: 'Stil und optional einen Songtext angeben und mit einem lokalen Musikmodell einen Song oder ein Instrumentalstück komponieren; Dauer und Seed sind optional' },
     'link-import': {
       name: "Video herunterladen",
       desc: "Einen Link einfügen, um ein Video auf diesen Computer herunterzuladen; Browser-Cookies können verwendet und der Download in ein Transkript und Untertitel transkribiert werden",
@@ -64,6 +65,7 @@ export const de: ToolCatalogMessages = {
       desc: "Transkribieren, Untertitel übersetzen, Vertonungen hinzufügen und Text vorlesen. Ergebnisse sind Dokument-, Untertitel- und Audioeinträge; bei Auswahl eines bearbeitbaren Videos in Space wird hineingeschrieben.",
     },
     'text-image': { label: "Text & Bilder", desc: "Text- und Bildmodelle direkt aufrufen. Ergebnisse sind Dokument- und Bildeinträge." },
+    music: { label: 'Musik', desc: 'Songs und Hintergrundmusik mit einem lokalen Musikmodell erzeugen. Ergebnisse sind Audio-Elemente.' },
     'video-file': {
       label: "Videodateien",
       desc: "Videos mit yt-dlp und ffmpeg auf diesem Computer herunterladen, komprimieren und zusammenführen sowie Audio extrahieren. Ergebnisse sind Videodatei- und Audioeinträge.",

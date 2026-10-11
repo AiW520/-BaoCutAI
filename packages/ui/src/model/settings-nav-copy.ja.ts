@@ -7,6 +7,7 @@ export const ja: SettingsNavMessages = {
     llm: { label: 'テキスト生成', description: '文字起こしを整え、字幕を翻訳し、テキストを生成します。' },
     image: { label: '画像生成', description: '動画に必要な画像や表紙を生成します。' },
     sep: { label: '音源分離', description: 'ボーカル、伴奏、背景音を分離します。' },
+    music: { label: '音楽生成', description: 'このコンピューターで楽曲や動画のBGMを生成します。' },
     vision: { label: '映像理解', description: '人物、話者、画面の内容を認識して、スマートクロップを補助します。' },
   },
   page: { local: 'ローカルモデル', cloud: 'クラウドモデル', voices: 'マイボイス' },

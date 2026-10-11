@@ -21,7 +21,7 @@ describe('resolveModelsRoute', () => {
 describe('modelsNavTargets', () => {
   it('当前这一类用解析好的页，其余用上次停的页', () => {
     const targets = modelsNavTargets({ category: 'asr', page: 'cloud' }, { asr: 'local', tts: 'voices' });
-    expect(targets.map((t) => `${t.category}/${t.page}`)).toEqual(['asr/cloud', 'tts/voices', 'llm/cloud', 'image/local', 'sep/local', 'vision/local']);
+    expect(targets.map((t) => `${t.category}/${t.page}`)).toEqual(['asr/cloud', 'tts/voices', 'llm/cloud', 'image/local', 'music/local', 'sep/local', 'vision/local']);
   });
 });
 

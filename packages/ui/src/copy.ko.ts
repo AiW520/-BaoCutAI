@@ -370,6 +370,7 @@ export const ko: CopyMessages = {
     transcribe: '전사',
     synthesizeSpeech: '음성 생성',
     generateImage: '이미지 생성',
+    generateMusic: '음악 생성',
     generateText: '텍스트 생성',
     export: '내보내기',
     pipeline: '파이프라인',

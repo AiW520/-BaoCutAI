@@ -109,8 +109,8 @@ export function toolBlock(
 
 /** 这种能力下能用的云端服务商有几家（连上了、这一档也可用；Codex 画图这类智能体 Provider 不算）。 */
 export function usableCloudCount(view: ModelCapabilitiesView, capability: ModelServiceCapability): number {
-  // 人声分离只在本机，没有云端服务商。
-  if (capability === 'separateAudio') return 0;
+  // 人声分离与音乐生成只在本机，没有云端服务商。
+  if (capability === 'separateAudio' || capability === 'generateMusic') return 0;
   return cloudProviders(view, capability).filter((card) => card.connected && card.available).length;
 }
 

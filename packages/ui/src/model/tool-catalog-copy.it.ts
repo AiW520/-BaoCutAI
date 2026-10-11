@@ -13,6 +13,7 @@ export const it: ToolCatalogMessages = {
     'synthesize-speech': { name: 'Genera voce', desc: 'Leggi ad alta voce testo oppure documenti e sottotitoli nello Space; usa una voce preset, clona una registrazione o descrivi una voce' },
     'generate-text': { name: 'Genera testo', desc: 'Descrivi cosa ti serve e chiama direttamente un modello di testo per testi, sceneggiature o riepiloghi; puoi allegare documenti o sottotitoli nello Space come materiale' },
     'generate-image': { name: 'Genera immagine', desc: 'Descrivi un’immagine e disegnala con un modello di immagini cloud o locale; immagini di riferimento, rapporto d’aspetto e quantità sono facoltativi' },
+    'generate-music': { name: 'Genera musica', desc: 'Scrivi uno stile e un testo facoltativo e componi una canzone o un brano strumentale con un modello musicale locale; durata e seed sono facoltativi' },
     'link-import': { name: 'Scarica video', desc: 'Incolla un link per scaricare un video su questo computer; puoi usare i cookie del browser e trascrivere il download in una trascrizione e sottotitoli' },
     'compress-video': { name: 'Comprimi video', desc: 'Ricodifica a una dimensione o qualità desiderata; riducilo prima di inviarlo o caricarlo' },
     'merge-video': { name: 'Unisci video', desc: 'Unisci diversi video uno dopo l’altro in un unico file, in ordine' },
@@ -22,6 +23,7 @@ export const it: ToolCatalogMessages = {
   groups: {
     speech: { label: 'Voce e sottotitoli', desc: 'Trascrivi, traduci sottotitoli, aggiungi doppiaggi e leggi testo ad alta voce. I risultati sono voci di documenti, sottotitoli e audio; scegliendo un video modificabile nello Space li scrivi nel video.' },
     'text-image': { label: 'Testo e immagini', desc: 'Chiama direttamente modelli di testo e immagini. I risultati sono voci di documenti e immagini.' },
+    music: { label: 'Musica', desc: 'Genera canzoni e musiche di sottofondo con un modello musicale locale. I risultati sono elementi audio.' },
     'video-file': { label: 'File video', desc: 'Scarica, comprimi e unisci video ed estrai audio con yt-dlp e ffmpeg su questo computer. I risultati sono voci di file video e audio.' },
   },
   artifactItems: (artifacts) => artifacts.length ? `voci di ${artifacts.map((a) => artifactLabels[a]).join(' e ')}` : 'voci dei risultati',

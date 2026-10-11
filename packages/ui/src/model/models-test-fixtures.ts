@@ -153,6 +153,7 @@ export function fixtureView(): ModelCapabilitiesView {
     },
     generateText: { default: null, effective: null, providers: [], parameters: { effort: null, concurrency: 4 } },
     separateAudio: { default: null, effective: null, providers: [] },
+    generateMusic: { default: null, effective: null, providers: [] },
   };
 }
 

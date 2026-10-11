@@ -5,7 +5,7 @@ import { useShell } from '../state/shell-store.ts';
 
 describe('回复里的设置链接', () => {
   it('工具提供的每种能力链接都能定位到对应模型设置', () => {
-    const categories = ['asr', 'tts', 'image', 'llm', 'sep'];
+    const categories = ['asr', 'tts', 'image', 'llm', 'sep', 'music'];
     MODEL_SERVICE_CAPABILITIES.forEach((capability, i) => {
       expect(settingsLink(capabilitySettingsHref(capability))?.route).toEqual({ tab: 'models', category: categories[i] });
     });

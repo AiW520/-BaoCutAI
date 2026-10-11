@@ -164,6 +164,7 @@ const CAPABILITY_CATEGORY: Record<ModelServiceCapability, ModelCategory> = {
   generateImage: 'image',
   generateText: 'llm',
   separateAudio: 'sep',
+  generateMusic: 'music',
 };
 
 /** 模型任务所属的能力分类；导出、固定流程、安装之类不是模型任务，没有。 */

@@ -274,6 +274,7 @@ const en = {
     generateImage: 'Image generation',
     generateText: 'Text generation',
     separateAudio: 'Voice separation',
+    generateMusic: 'Music generation',
   } satisfies Record<ModelServiceCapability, string>,
   unavailableLabels: {
     'not-configured': 'not enabled',

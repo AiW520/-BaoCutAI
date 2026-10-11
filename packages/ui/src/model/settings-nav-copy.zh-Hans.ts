@@ -7,6 +7,7 @@ export const zhHans: SettingsNavMessages = {
     llm: { label: '文本生成', description: '润色文稿、翻译字幕，生成文本内容。' },
     image: { label: '图像生成', description: '生成视频所需的图片和封面。' },
     sep: { label: '音源分离', description: '分离人声、伴奏和背景声。' },
+    music: { label: '音乐生成', description: '在本机生成歌曲与视频配乐。' },
     vision: { label: '画面理解', description: '识别人像、说话人和画面内容，辅助智能裁剪。' },
   },
   page: { local: '本地模型', cloud: '云端模型', voices: '我的声音' },

@@ -356,6 +356,7 @@ export const zhHant: CopyMessages = {
     transcribe: '轉錄',
     synthesizeSpeech: '生成語音',
     generateImage: '生成圖片',
+    generateMusic: '生成音樂',
     generateText: '生成文字',
     export: '匯出',
     pipeline: '固定流程',

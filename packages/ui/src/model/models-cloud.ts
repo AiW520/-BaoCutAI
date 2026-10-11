@@ -71,6 +71,8 @@ export function capabilityCategory(capability: ModelServiceCapability): ModelCat
       return 'llm';
     case 'separateAudio':
       return 'sep';
+    case 'generateMusic':
+      return 'music';
   }
 }
 

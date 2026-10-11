@@ -26,6 +26,7 @@ export const ru: ModelsLocalMessages = {
     synthesize: "Синтезировать",
     image: "Изображение",
     separate: "Разделение",
+    music: 'Музыка',
     diarize: "Разделение говорящих",
   },
   auto: "Автоматически",

@@ -29,6 +29,7 @@ export const zhHant: ToolCatalogMessages = {
       desc: '描述你的需求，直接呼叫文字模型生成文案、腳本或摘要；可以附上 Space 中的文件或字幕作為參考資料',
     },
     'generate-image': { name: '生成圖片', desc: '描述一個畫面，用雲端或本機影像模型畫出來；參考圖、長寬比和張數皆可選' },
+    'generate-music': { name: '生成音樂', desc: '寫下風格與可選的歌詞，用本機音樂模型生成歌曲或純音樂；時長與種子可選' },
     'link-import': {
       name: '下載影片',
       desc: '貼上連結，將影片下載到這台電腦；可使用瀏覽器 Cookie，下載後可轉錄成逐字稿和字幕',
@@ -46,6 +47,7 @@ export const zhHant: ToolCatalogMessages = {
       desc: '轉錄、翻譯字幕、加上配音及朗讀文字。結果是文件、字幕與音訊項目；選擇 Space 中可編輯的影片時會寫入其中。',
     },
     'text-image': { label: '文字與圖片', desc: '直接呼叫文字模型與影像模型。結果是文件與圖片項目。' },
+    music: { label: '音樂', desc: '用本機音樂模型生成歌曲與配樂。結果是音訊條目。' },
     'video-file': {
       label: '影片檔',
       desc: '使用這台電腦上的 yt-dlp 與 ffmpeg 下載、壓縮、合併影片及擷取音訊。結果是影片檔與音訊項目。',

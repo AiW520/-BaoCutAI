@@ -367,6 +367,7 @@ export const zhHans: CopyMessages = {
     transcribe: '转录',
     synthesizeSpeech: '生成语音',
     generateImage: '生成图片',
+    generateMusic: '生成音乐',
     generateText: '生成文本',
     export: '导出',
     pipeline: '固定流程',

@@ -108,6 +108,7 @@ export const tr: SpaceMessages = {
   capability: {
     synthesizeSpeech: "Dublaj",
     generateImage: "Görsel oluştur",
+    generateMusic: 'Müzik oluştur',
     generateText: "Metin oluştur",
     export: "Dışa aktar",
   },

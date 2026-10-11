@@ -369,6 +369,7 @@ export const ja: CopyMessages = {
     transcribe: '文字起こし',
     synthesizeSpeech: '音声を生成',
     generateImage: '画像を生成',
+    generateMusic: '音楽を生成',
     generateText: 'テキストを生成',
     export: '書き出し',
     pipeline: 'パイプライン',

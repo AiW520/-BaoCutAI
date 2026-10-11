@@ -39,6 +39,7 @@ export const ptBR: ToolCatalogMessages = {
       name: "Gerar imagem",
       desc: "Descreva imagem para nuvem ou local; referências, proporção e quantidade opcionais",
     },
+    'generate-music': { name: 'Gerar música', desc: 'Escreva um estilo e uma letra opcional e componha uma música ou faixa instrumental com um modelo de música local; duração e seed são opcionais' },
     'link-import': {
       name: "Baixar vídeos",
       desc: "Cole link para baixar; cookies e transcrição com legendas opcionais",
@@ -65,6 +66,7 @@ export const ptBR: ToolCatalogMessages = {
       desc: "Transcreve, traduz, dubla e lê texto. Resultados em documentos, legendas e áudio; vídeo editável selecionado recebe gravação.",
     },
     'text-image': { label: "Texto e imagens", desc: "Chama texto/imagens direto; resultados em documentos/imagens." },
+    music: { label: 'Música', desc: 'Gere músicas e trilhas de fundo com um modelo de música local. Os resultados são itens de áudio.' },
     'video-file': {
       label: "Arquivos de vídeo",
       desc: "Baixa, comprime, mescla e extrai áudio com yt-dlp/ffmpeg local. Resultados são vídeo e áudio.",

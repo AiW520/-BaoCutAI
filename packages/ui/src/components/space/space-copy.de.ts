@@ -109,6 +109,7 @@ export const de: SpaceMessages = {
   capability: {
     synthesizeSpeech: "Vertonung",
     generateImage: "Bild erzeugen",
+    generateMusic: 'Musik erzeugen',
     generateText: "Text erzeugen",
     export: "Exportieren",
   } as Record<string, string>,

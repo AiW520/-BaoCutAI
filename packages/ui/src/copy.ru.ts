@@ -427,6 +427,7 @@ export const ru: CopyMessages = {
     transcribe: "Расшифровать",
     synthesizeSpeech: "Синтезировать речь",
     generateImage: "Создать изображение",
+    generateMusic: 'Создать музыку',
     generateText: "Сгенерировать текст",
     export: "Экспортировать",
     pipeline: "Пайплайн",

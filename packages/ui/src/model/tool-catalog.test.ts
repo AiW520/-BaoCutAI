@@ -20,15 +20,17 @@ import {
 /* 设计稿 model-tools.test.js 第 19–64 行的用例，工具 ID 换成 Runtime 注册表的 ID。 */
 
 describe('工具目录', () => {
-  it('按处理的对象分三组：语音与字幕、文字与图片、视频文件（产品设计 §2.7，`TOOL_CATEGORIES` 的顺序）', () => {
+  it('按处理的对象分四组：语音与字幕、文字与图片、音乐、视频文件（产品设计 §2.7，`TOOL_CATEGORIES` 的顺序）', () => {
     expect(TOOL_GROUPS.map((g) => [g.key, g.label])).toEqual([
       ['speech', '语音与字幕'],
       ['text-image', '文字与图片'],
+      ['music', '音乐'],
       ['video-file', '视频文件'],
     ]);
     expect(TOOL_GROUPS[0]!.tools.map((t) => t.id)).toEqual(['transcribe', 'translate-subtitles', 'dub', 'synthesize-speech']);
     expect(TOOL_GROUPS[1]!.tools.map((t) => t.id)).toEqual(['generate-text', 'generate-image']);
-    expect(TOOL_GROUPS[2]!.tools.map((t) => t.id)).toEqual(['link-import', 'compress-video', 'merge-video', 'extract-audio']);
+    expect(TOOL_GROUPS[2]!.tools.map((t) => t.id)).toEqual(['generate-music']);
+    expect(TOOL_GROUPS[3]!.tools.map((t) => t.id)).toEqual(['link-import', 'compress-video', 'merge-video', 'extract-audio']);
     expect(TOOL_GROUPS.every((g) => g.desc.length > 0)).toBe(true);
     expect(openable('link-import')?.name).toBe('下载视频');
     expect(openable('transcribe')?.group).toBe('speech');

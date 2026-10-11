@@ -427,6 +427,7 @@ export const pl: CopyMessages = {
     transcribe: "Transkrybuj",
     synthesizeSpeech: "Wygeneruj mowę",
     generateImage: "Wygeneruj obraz",
+    generateMusic: 'Wygeneruj muzykę',
     generateText: "Generuj tekst",
     export: "Eksport",
     pipeline: "Potok",

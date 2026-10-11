@@ -113,6 +113,7 @@ export const ja: SpaceMessages = {
   capability: {
     synthesizeSpeech: '吹き替え',
     generateImage: '画像を生成',
+    generateMusic: '音楽を生成',
     generateText: 'テキストを生成',
     export: '書き出し',
   },

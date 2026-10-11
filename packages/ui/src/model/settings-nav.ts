@@ -9,7 +9,7 @@ import { M } from './settings-nav-copy.ts';
 export const SETTINGS_SECTIONS = ['general', 'shortcuts', 'fonts', 'agent', 'skills', 'glossary', 'privacy', 'diagnostics', 'about'] as const;
 export type SettingsSection = (typeof SETTINGS_SECTIONS)[number];
 
-export const MODEL_CATEGORIES = ['asr', 'tts', 'llm', 'image', 'sep', 'vision'] as const;
+export const MODEL_CATEGORIES = ['asr', 'tts', 'llm', 'image', 'music', 'sep', 'vision'] as const;
 export type ModelCategory = (typeof MODEL_CATEGORIES)[number];
 export const MODEL_PAGES = ['local', 'cloud', 'voices'] as const;
 export type ModelPage = (typeof MODEL_PAGES)[number];
@@ -38,6 +38,7 @@ export const MODEL_CATEGORY_INFO: readonly ModelCategoryInfo[] = [
   categoryInfo('tts', ['local', 'cloud', 'voices']),
   categoryInfo('llm', ['cloud']),
   categoryInfo('image', ['local', 'cloud']),
+  categoryInfo('music', ['local']),
   categoryInfo('sep', ['local']),
   categoryInfo('vision', ['local']),
 ];

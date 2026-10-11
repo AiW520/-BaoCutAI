@@ -31,6 +31,7 @@ const M = defineMessages(en, { 'zh-Hans': zhHans, 'zh-Hant': zhHant, ja, ko, es,
 const DIRECT: Partial<Record<JobKind, ToolId>> = {
   synthesizeSpeech: 'synthesize-speech',
   generateImage: 'generate-image',
+  generateMusic: 'generate-music',
   generateText: 'generate-text',
 };
 

@@ -50,7 +50,7 @@ export const vi: SpaceMessages = {
   missingFile: 'Không tìm thấy tệp', missingBody: 'Mục vẫn ở đây. Trạng thái sẽ khôi phục khi tệp trở lại.', failedTitle: 'Tạo thất bại', failedBody: 'Không tạo được tệp. Xem nguyên nhân và thử lại ở trang Tác vụ, hoặc xóa nếu không cần.', changedTitle: 'Video nguồn đã thay đổi', changedBody: 'Kết quả này khớp với phiên bản trước của video. Vẫn dùng được nhưng không còn phản ánh video hiện tại.', reexport: 'Xuất lại từ video nguồn', noPreviewVideo: 'Video mở trong trình chỉnh sửa.',
 
   // 能力（origin.capability）
-  capability: { synthesizeSpeech: 'Lồng tiếng', generateImage: 'Tạo hình ảnh', generateText: 'Tạo văn bản', export: 'Xuất' },
+  capability: { synthesizeSpeech: 'Lồng tiếng', generateImage: 'Tạo hình ảnh', generateMusic: 'Tạo nhạc', generateText: 'Tạo văn bản', export: 'Xuất' },
 
   // 动作的结果
   trashed: (name) => `Đã chuyển vào Thùng rác · ${name}`, undo: 'Hoàn tác', restored: (name) => `Đã khôi phục · ${name}`, purged: (name) => `Đã xóa vĩnh viễn · ${name}`, cleared: (name) => `Đã xóa · ${name}`, renamed: 'Đã đổi tên', continued: (created, name, title) => created ? `Đã bắt đầu phiên mới với “${name}” đính kèm: viết yêu cầu rồi gửi` : `Đã trở lại “${title}” với “${name}” đính kèm: viết yêu cầu rồi gửi`, sourceGone: 'Video nguồn hiện không ở thư mục dự án hoặc phiên nào nên không thể mở', failed: (what, reason) => `${what} thất bại: ${reason}`,

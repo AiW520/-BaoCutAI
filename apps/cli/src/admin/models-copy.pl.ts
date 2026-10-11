@@ -240,6 +240,7 @@ export const pl: ModelsMessages = {
     generateImage: "Generowanie obrazów",
     generateText: "Generowanie tekstu",
     separateAudio: "Separacja głosu",
+    generateMusic: 'Generowanie muzyki',
   },
   unavailableLabels: {
     'not-configured': "niewłączone",

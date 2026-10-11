@@ -5,6 +5,7 @@ import Cloud from '@react-spectrum/s2/icons/Cloud';
 import DeviceLaptop from '@react-spectrum/s2/icons/DeviceLaptop';
 import ImageIcon from '@react-spectrum/s2/icons/Image';
 import Microphone from '@react-spectrum/s2/icons/Microphone';
+import MusicNote from '@react-spectrum/s2/icons/MusicNote';
 import TextIcon from '@react-spectrum/s2/icons/Text';
 import Transcript from '@react-spectrum/s2/icons/Transcript';
 import UnlinkHoriz from '@react-spectrum/s2/icons/UnlinkHoriz';
@@ -38,6 +39,7 @@ export const CATEGORY_ICON: Record<ModelCategory, ComponentType> = {
   tts: AudioWave,
   llm: TextIcon,
   image: ImageIcon,
+  music: MusicNote,
   sep: UnlinkHoriz,
   vision: Visibility,
 };

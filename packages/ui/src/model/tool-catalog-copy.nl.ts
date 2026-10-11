@@ -38,6 +38,7 @@ export const nl: ToolCatalogMessages = {
       name: "Afbeelding genereren",
       desc: "Beschrijf een afbeelding en teken die met een cloudmodel of lokaal afbeeldingsmodel; referentieafbeeldingen, beeldverhouding en aantal zijn optioneel",
     },
+    'generate-music': { name: 'Muziek genereren', desc: 'Beschrijf een stijl en optioneel een songtekst en componeer een liedje of instrumentaal nummer met een lokaal muziekmodel; duur en seed zijn optioneel' },
     'link-import': {
       name: "Video downloaden",
       desc: "Plak een link om een video naar deze computer te downloaden; browsercookies kunnen worden gebruikt en de download kan worden getranscribeerd tot een transcript en ondertitels",
@@ -64,6 +65,7 @@ export const nl: ToolCatalogMessages = {
       desc: "Transcriberen, ondertitels vertalen, nasynchronisatie toevoegen en tekst voorlezen. Resultaten zijn document-, ondertitel- en audio-items; als je een bewerkbare video in Space kiest, wordt erin geschreven.",
     },
     'text-image': { label: "Tekst & afbeeldingen", desc: "Tekst- en afbeeldingsmodellen rechtstreeks aanroepen. Resultaten zijn document- en afbeeldingsitems." },
+    music: { label: 'Muziek', desc: 'Liedjes en achtergrondmuziek genereren met een lokaal muziekmodel. Resultaten zijn audio-items.' },
     'video-file': {
       label: "Videobestanden",
       desc: "Video’s downloaden, comprimeren en samenvoegen en audio extraheren met yt-dlp en ffmpeg op deze computer. Resultaten zijn videobestand- en audio-items.",

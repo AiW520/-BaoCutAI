@@ -7,6 +7,7 @@ export const zhHant: SettingsNavMessages = {
     llm: { label: '文字生成', description: '潤飾逐字稿、翻譯字幕，並生成文字。' },
     image: { label: '影像生成', description: '生成影片所需的圖片和封面。' },
     sep: { label: '音源分離', description: '分離人聲、伴奏和背景音。' },
+    music: { label: '音樂生成', description: '在本機生成歌曲與影片配樂。' },
     vision: { label: '視覺理解', description: '辨識人物、說話者和畫面內容，協助智慧裁切。' },
   },
   page: { local: '本機模型', cloud: '雲端模型', voices: '我的音色' },

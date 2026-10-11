@@ -7,6 +7,7 @@ export const it: SettingsNavMessages = {
     llm: { label: "Generazione di testo", description: "Migliora le trascrizioni, traduci i sottotitoli e genera testo." },
     image: { label: "Generazione di immagini", description: "Genera le immagini e le copertine necessarie per i tuoi video." },
     sep: { label: "Separazione delle sorgenti", description: "Separa voci, accompagnamento e suono di sottofondo." },
+    music: { label: 'Generazione di musica', description: 'Genera canzoni e musiche di sottofondo per i tuoi video su questo computer.' },
     vision: { label: "Comprensione visiva", description: "Riconosci persone, parlanti e contenuti sullo schermo per aiutare il ritaglio intelligente." },
   },
   page: { local: "Modelli locali", cloud: "Modelli cloud", voices: "Le mie voci" },

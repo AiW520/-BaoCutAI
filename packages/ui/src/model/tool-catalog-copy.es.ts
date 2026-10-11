@@ -13,6 +13,7 @@ export const es: ToolCatalogMessages = {
     'synthesize-speech': { name: 'Generar voz', desc: 'Lee en voz alta texto, documentos o subtítulos de Space; usa una voz predefinida, clona una grabación o describe una voz' },
     'generate-text': { name: 'Generar texto', desc: 'Describe lo que necesitas y llama directamente a un modelo de texto para generar textos, guiones o resúmenes; puedes adjuntar documentos o subtítulos de Space como material' },
     'generate-image': { name: 'Generar imagen', desc: 'Describe una imagen y dibújala con un modelo de imágenes local o en la nube; las imágenes de referencia, la relación de aspecto y la cantidad son opcionales' },
+    'generate-music': { name: 'Generar música', desc: 'Escribe un estilo y, opcionalmente, una letra, y compón una canción o pista instrumental con un modelo de música local; la duración y la semilla son opcionales' },
     'link-import': { name: 'Descargar vídeo', desc: 'Pega un enlace para descargar un vídeo a este ordenador; puedes usar cookies del navegador y transcribir la descarga para obtener una transcripción y subtítulos' },
     'compress-video': { name: 'Comprimir vídeo', desc: 'Recodifica con un tamaño o una calidad objetivo; reduce el tamaño antes de enviar o subir' },
     'merge-video': { name: 'Unir vídeos', desc: 'Une varios vídeos en un solo archivo, uno tras otro y en orden' },
@@ -22,6 +23,7 @@ export const es: ToolCatalogMessages = {
   groups: {
     speech: { label: 'Voz y subtítulos', desc: 'Transcribe, traduce subtítulos, añade doblajes y lee texto en voz alta. Los resultados son elementos de documento, subtítulos y audio; elegir un vídeo editable en Space escribe en él.' },
     'text-image': { label: 'Texto e imágenes', desc: 'Llama directamente a modelos de texto e imágenes. Los resultados son elementos de documento e imagen.' },
+    music: { label: 'Música', desc: 'Genera canciones y música de fondo con un modelo de música local. Los resultados son elementos de audio.' },
     'video-file': { label: 'Archivos de vídeo', desc: 'Descarga, comprime y une vídeos, y extrae audio con yt-dlp y ffmpeg en este ordenador. Los resultados son elementos de archivo de vídeo y audio.' },
   },
   artifactItems: (artifacts) => artifacts.length ? `elementos de ${artifacts.map((a) => artifactLabels[a]).join(' y ')}` : 'elementos de resultado',

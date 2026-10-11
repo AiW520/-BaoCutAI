@@ -7,6 +7,7 @@ export const de: SettingsNavMessages = {
     llm: { label: "Texterzeugung", description: "Transkripte überarbeiten, Untertitel übersetzen und Text erzeugen." },
     image: { label: "Bilderzeugung", description: "Bilder und Titelbilder für Videos erzeugen." },
     sep: { label: "Quellentrennung", description: "Stimmen, Begleitung und Hintergrundgeräusche trennen." },
+    music: { label: 'Musikerzeugung', description: 'Songs und Hintergrundmusik für Ihre Videos auf diesem Computer erzeugen.' },
     vision: { label: "Bildverständnis", description: "Personen, Sprecher und Bildinhalte für intelligentes Zuschneiden erkennen." },
   },
   page: { local: "Lokale Modelle", cloud: "Cloud-Modelle", voices: "Meine Stimmen" },

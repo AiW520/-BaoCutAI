@@ -20,6 +20,7 @@ export const pl: ToolCatalogMessages = {
     'synthesize-speech': { name: "Generuj mowę", desc: "Odczytaj na głos tekst, dokumenty i napisy Space; użyj gotowego głosu, sklonuj nagranie lub opisz głos" },
     'generate-text': { name: "Generuj tekst", desc: "Opisz potrzebę i wywołaj bezpośrednio model tekstowy dla tekstów, scenariuszy lub podsumowań; dokumenty i napisy Space można załączyć jako materiały" },
     'generate-image': { name: "Generuj obraz", desc: "Opisz obraz i narysuj modelem w chmurze lub lokalnym; obrazy referencyjne, proporcje i liczba są opcjonalne" },
+    'generate-music': { name: 'Wygeneruj muzykę', desc: 'Opisz styl i opcjonalnie tekst, a lokalny model muzyczny skomponuje piosenkę lub utwór instrumentalny; czas trwania i seed są opcjonalne' },
     'link-import': { name: "Pobierz wideo", desc: "Wklej link, aby pobrać wideo na komputer; można użyć cookie przeglądarki i transkrybować pobrane wideo na transkrypcję i napisy" },
     'compress-video': { name: "Kompresuj wideo", desc: "Przekoduj do docelowego rozmiaru lub jakości; zmniejsz przed wysłaniem lub przesłaniem" },
     'merge-video': { name: "Scal wideo", desc: "Połącz kilka wideo kolejno w jeden plik" },
@@ -34,6 +35,7 @@ export const pl: ToolCatalogMessages = {
       desc: "Transkrybuj, tłumacz napisy, dodawaj dubbing i czytaj na głos. Wyniki to dokumenty, napisy i audio; wybór edytowalnego wideo w Space zapisuje w nim.",
     },
     'text-image': { label: "Tekst i obrazy", desc: "Wywołuj bezpośrednio modele tekstowe i obrazów. Wyniki to dokumenty i obrazy." },
+    music: { label: 'Muzyka', desc: 'Generuj piosenki i muzykę w tle lokalnym modelem muzycznym. Wyniki to elementy audio.' },
     'video-file': {
       label: "Pliki wideo",
       desc: "Pobieraj, kompresuj, łącz wideo i wyodrębniaj audio przez yt-dlp i ffmpeg na tym komputerze. Wyniki to pliki wideo i audio.",

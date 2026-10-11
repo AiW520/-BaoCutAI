@@ -7,6 +7,7 @@ export const ko: SettingsNavMessages = {
     llm: { label: '텍스트 생성', description: '전사본을 다듬고, 자막을 번역하고, 텍스트를 생성합니다.' },
     image: { label: '이미지 생성', description: '영상에 필요한 이미지와 커버를 생성합니다.' },
     sep: { label: '음원 분리', description: '보컬, 반주, 배경음을 분리합니다.' },
+    music: { label: '음악 생성', description: '이 컴퓨터에서 노래와 영상 배경음악을 생성합니다.' },
     vision: { label: '화면 이해', description: '인물, 화자, 화면 내용을 인식해 스마트 자르기를 돕습니다.' },
   },
   page: { local: '로컬 모델', cloud: '클라우드 모델', voices: '내 목소리' },

@@ -22,6 +22,7 @@ const en = {
     llm: { label: 'Text generation', description: 'Polish transcripts, translate subtitles and generate text.' },
     image: { label: 'Image generation', description: 'Generate the images and covers your videos need.' },
     sep: { label: 'Source separation', description: 'Separate vocals, accompaniment and background sound.' },
+    music: { label: 'Music generation', description: 'Generate songs and background music for your videos on this computer.' },
     vision: { label: 'Visual understanding', description: 'Recognize people, speakers and what’s on screen to help with smart cropping.' },
   },
   page: { local: 'Local models', cloud: 'Cloud models', voices: 'My voices' },

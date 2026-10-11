@@ -44,6 +44,7 @@ const en = {
     synthesize: 'Synthesize',
     image: 'Image',
     separate: 'Separate',
+    music: 'Music',
     diarize: 'Speaker diarization',
   } as Record<ModelBundleStatus['capability'], string>,
   /** 默认菜单里「不设默认，用出厂默认」那一项。 */

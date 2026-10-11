@@ -26,6 +26,7 @@ export const zhHans: ModelsLocalMessages = {
     synthesize: '合成',
     image: '生图',
     separate: '分离',
+    music: '音乐',
     diarize: '说话人区分',
   },
   auto: '自动选择',

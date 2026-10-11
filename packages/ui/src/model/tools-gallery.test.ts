@@ -23,6 +23,7 @@ function offline(view: ModelCapabilitiesView): ModelCapabilitiesView {
     generateImage: strip(view.generateImage),
     generateText: strip(view.generateText),
     separateAudio: strip(view.separateAudio),
+    generateMusic: strip(view.generateMusic),
   };
 }
 

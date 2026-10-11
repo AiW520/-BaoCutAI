@@ -110,6 +110,7 @@ export const zhHans: SpaceMessages = {
   capability: {
     synthesizeSpeech: '配音',
     generateImage: '生成图片',
+    generateMusic: '生成音乐',
     generateText: '生成文字',
     export: '导出',
   },

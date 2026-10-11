@@ -443,6 +443,7 @@ const en = {
     transcribe: 'Transcribe',
     synthesizeSpeech: 'Generate speech',
     generateImage: 'Generate image',
+    generateMusic: 'Generate music',
     generateText: 'Generate text',
     export: 'Export',
     pipeline: 'Pipeline',

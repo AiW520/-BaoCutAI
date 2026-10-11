@@ -137,6 +137,7 @@ const en = {
   capability: {
     synthesizeSpeech: 'Voice-over',
     generateImage: 'Generate image',
+    generateMusic: 'Generate music',
     generateText: 'Generate text',
     export: 'Export',
   } as Record<string, string>,

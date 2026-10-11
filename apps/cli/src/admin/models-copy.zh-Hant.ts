@@ -226,6 +226,7 @@ export const zhHant: ModelsMessages = {
     generateImage: '影像生成',
     generateText: '文字生成',
     separateAudio: '人聲分離',
+    generateMusic: '音樂生成',
   },
   unavailableLabels: {
     'not-configured': '未啟用',

@@ -239,6 +239,7 @@ export const ko: ModelsMessages = {
     generateImage: '이미지 생성',
     generateText: '텍스트 생성',
     separateAudio: '음성 분리',
+    generateMusic: '음악 생성',
   },
   unavailableLabels: {
     'not-configured': '사용 설정 안 됨',
