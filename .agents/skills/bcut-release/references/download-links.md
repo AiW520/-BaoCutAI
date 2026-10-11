@@ -48,11 +48,16 @@ The site normally follows within about 5 minutes. The first request after that
 may still get the old answer while the Worker refreshes, so request again.
 
 If the site is still stale after 10 minutes, the Worker cannot use the new
-release. Causes:
+release. Its `github-releases` log entries say why. Each one records `status`,
+`limit`, `remaining`, `token` and the build found per platform. Read them in
+Workers Logs on the Cloudflare dashboard, or live with
+`npx --yes wrangler@4.144.0 tail --config apps/portal/wrangler.jsonc --format pretty`
+while requesting the site. Causes:
 
 - The GitHub API is unreachable or rate-limited. With the `GITHUB_TOKEN` secret
   the limit is 5000 requests per hour. Without it the limit is 60 per hour per
-  shared egress IP.
+  shared egress IP. `limit: 60` with `token: true`, or status 401, means the token
+  expired or was revoked. The user must replace it.
 - The release fails `apps/portal/src/release.ts` validation. It must be published,
   not a prerelease. The tag and asset names must match the version and build.
 - An asset is not in the uploaded state.

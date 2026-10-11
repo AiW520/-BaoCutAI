@@ -129,6 +129,9 @@ describe('release refresh', () => {
   ];
   const cache = new Map<string, Response>();
   const requests: Request[] = [];
+  // 每次重取都会记一条日志；测试里收起来，需要时检查内容。
+  const logs = vi.spyOn(console, 'log').mockImplementation(() => {});
+  const warnings = vi.spyOn(console, 'warn').mockImplementation(() => {});
 
   beforeAll(() => {
     vi.stubGlobal('caches', {
@@ -142,7 +145,10 @@ describe('release refresh', () => {
       },
     });
   });
-  afterAll(() => vi.unstubAllGlobals());
+  afterAll(() => {
+    vi.unstubAllGlobals();
+    vi.restoreAllMocks();
+  });
 
   /** 换一份模块，相当于 Workers 新起的一个实例：内存里什么都没有。 */
   async function freshWorker() {
@@ -194,5 +200,44 @@ describe('release refresh', () => {
     expect(response.headers.get('Location')).toMatch(/\/BaoCut-9\.9\.9-build\.999-aarch64-apple-darwin\.zip$/);
     expect(pending).toHaveLength(0);
     expect(fetchSpy).not.toHaveBeenCalled();
+  });
+
+  it('sends the token to GitHub and logs the rate limit without the token', async () => {
+    cache.clear();
+    logs.mockClear();
+    const sent: Request[] = [];
+    vi.stubGlobal('fetch', async (input: RequestInfo | URL, init?: RequestInit) => {
+      sent.push(new Request(input, init));
+      return Response.json(github, { headers: { 'X-RateLimit-Limit': '5000', 'X-RateLimit-Remaining': '4999' } });
+    });
+    const fresh = await freshWorker();
+    const pending: Promise<unknown>[] = [];
+    const ctx = { waitUntil: (promise: Promise<unknown>) => void pending.push(promise) };
+    await fresh.fetch(new Request('https://baocut.com/api/release'), { ...env, GITHUB_TOKEN: 'test-token' }, ctx);
+    await Promise.all(pending);
+    expect(sent[0]!.headers.get('Authorization')).toBe('Bearer test-token');
+    expect(logs).toHaveBeenCalledWith({
+      event: 'github-releases',
+      token: true,
+      status: 200,
+      limit: 5000,
+      remaining: 4999,
+      builds: { mac: 999, win: 998, 'win-cuda': 998, 'win-vulkan': 998 },
+    });
+    expect(JSON.stringify(logs.mock.calls)).not.toContain('test-token');
+  });
+
+  it('logs why GitHub was not used and keeps answering', async () => {
+    cache.clear();
+    warnings.mockClear();
+    vi.stubGlobal('fetch', async () => Response.json({ message: 'Bad credentials' }, { status: 401, headers: { 'X-RateLimit-Limit': '60' } }));
+    const fresh = await freshWorker();
+    const pending: Promise<unknown>[] = [];
+    const ctx = { waitUntil: (promise: Promise<unknown>) => void pending.push(promise) };
+    const call = () => fresh.fetch(new Request('https://baocut.com/download/mac-dmg'), env, ctx);
+    expect((await call()).status).toBe(302);
+    await Promise.all(pending);
+    expect(warnings).toHaveBeenCalledWith({ event: 'github-releases', token: false, status: 401, limit: 60, remaining: null });
+    expect((await call()).headers.get('Location')).not.toContain('9.9.9');
   });
 });

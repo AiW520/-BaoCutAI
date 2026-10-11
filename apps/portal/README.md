@@ -54,6 +54,7 @@ npx --yes wrangler@4.144.0 secret put GITHUB_TOKEN --config apps/portal/wrangler
 - 构建时把 `apps/desktop/releases/*.json`（桌面端的更新源）写进 `dist/release.json` 当快照，页面里的版本号也先按它写好；GitHub 取不到、或最近 5 个 Release 里没有某个平台时用它。两边逐个平台取构建号大的那份，所以发版后不用重新部署。
 - 访客的请求不等 GitHub：Worker 依次用本实例内存里的、本机房缓存（Cache API，存整理好的结果）里的、构建快照，超过 5 分钟就在响应之后到后台重取。发版后官网一般 5 分钟左右跟上；一个机房第一次被访问时先给快照，后台取到后才换成最新的。GitHub 出错或限流时继续用手上这份，5 分钟后再试。
 - `/api/release` 返回最新版本与各下载地址的 JSON。
+- 每次到 GitHub 重取都记一条 `github-releases` 日志：`status`、`limit` / `remaining`（额度上限与剩余；`limit` 为 5000 说明 token 生效，60 说明没带上）、`token`（有没有设，不含值）与各平台取到的构建号；失败时记 `console.warn`。在 Cloudflare 控制台的 Workers Logs 里查，或实时看：`npx --yes wrangler@4.144.0 tail --config apps/portal/wrangler.jsonc --format pretty`。
 
 ## 截图与模板预览
 

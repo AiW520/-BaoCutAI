@@ -110,6 +110,10 @@ async function readEdgeCache(origin: string): Promise<CachedReleases | null> {
   }
 }
 
+/**
+ * 取一次 GitHub 的 Release 列表。每次的结果记一条 `github-releases` 日志（Workers Logs 与 `wrangler tail` 里看得到），
+ * 用来确认 token 是否生效（`limit` 为 5000 是带上了，60 是没带上）和查发版后网站为什么没跟上。日志里不放 token。
+ */
 async function githubReleases(env: Env): Promise<ReleaseSet | null> {
   const headers: Record<string, string> = {
     Accept: 'application/vnd.github+json',
@@ -117,11 +121,20 @@ async function githubReleases(env: Env): Promise<ReleaseSet | null> {
     'X-GitHub-Api-Version': '2022-11-28',
   };
   if (env.GITHUB_TOKEN) headers.Authorization = `Bearer ${env.GITHUB_TOKEN}`;
+  const log = { event: 'github-releases', token: Boolean(env.GITHUB_TOKEN) };
   try {
     const response = await fetch(RELEASES_API_URL, { headers, signal: AbortSignal.timeout(GITHUB_TIMEOUT_MS) });
-    if (!response.ok) return null;
-    return parseReleases(await response.json());
-  } catch {
+    const rate = (name: string) => (response.headers.has(name) ? Number(response.headers.get(name)) : null);
+    const status = { ...log, status: response.status, limit: rate('X-RateLimit-Limit'), remaining: rate('X-RateLimit-Remaining') };
+    if (!response.ok) {
+      console.warn(status);
+      return null;
+    }
+    const releases = parseReleases(await response.json());
+    console.log({ ...status, builds: Object.fromEntries(FEED_IDS.map((id) => [id, releases[id]?.build ?? null])) });
+    return releases;
+  } catch (error) {
+    console.warn({ ...log, error: String(error) });
     return null;
   }
 }
