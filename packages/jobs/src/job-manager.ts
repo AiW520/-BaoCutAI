@@ -11,6 +11,7 @@ import {
   type ApplicationRecord,
   type EditOperation,
   type GenerateImageRequest,
+  type GenerateMusicRequest,
   type GenerateTextRequest,
   type GeneratedOutput,
   type FrozenSpeechReference,
@@ -53,6 +54,8 @@ import {
   imageParameters,
   freezeReferenceFile,
   localImageSeed,
+  localMusicSeed,
+  musicParameters,
   planLocalVoice,
   speechParameters,
   textParameters,
@@ -114,7 +117,7 @@ import {
 } from './job-recovery.ts';
 import { libraryVoice, localLibraryVoice, transcribeGlossaries, type JobLibrary } from './job-library.ts';
 import { silentLog, type JobsLogger } from './jobs-logger.ts';
-import { localImageResources, localTranscribeResources } from './resource-profiles.ts';
+import { localImageResources, localMusicResources, localTranscribeResources } from './resource-profiles.ts';
 import {
   ResourceExceedsCapacity,
   ResourceScheduler,
@@ -1065,6 +1068,23 @@ export class JobManager {
   }
 
   /**
+   * 音乐生成（§6.6）：只有本地的 Provider。seed 在提交时冻结（没给时抽一个），重试与重新执行出同一段；来源是风格描述与歌词，
+   * 产物按风格开头取名。
+   */
+  submitGenerateMusic(request: GenerateMusicRequest, submitter: JobSubmitter, grant?: JobGrantHint): Promise<{ jobId: Id }> {
+    return this.#submitGeneration(
+      'generateMusic',
+      request,
+      submitter,
+      (choice) => ({ parameters: musicParameters(choice, request, choice.providerId === 'local' ? localMusicSeed(request.seed) : (request.seed ?? 0)) }),
+      request.lyrics ? `${request.style}\n${request.lyrics}` : request.style,
+      grant,
+      {},
+      readableStem(request.style, 'music'),
+    );
+  }
+
+  /**
    * 文本生成（§6.1、§6.4）：提交时检查并冻结消息、输出格式（JSON Schema 在这里编译）、输出上限与推理强度。
    * 不导入视频；全文发布为产物（`.txt`，结构化输出是 `.json`）。
    */
@@ -1149,9 +1169,9 @@ export class JobManager {
       contentHash: `sha256:${sha256Hex(source)}`,
       providerId: selection.providerId,
       modelId: selection.modelId,
-      // 本地合成与本地生图的模型就是模型包：资源调度按它的 Model Worker 计入（§7.7）。
+      // 本地合成、本地生图与本地音乐的模型就是模型包：资源调度按它的 Model Worker 或引擎计入（§7.7）。
       bundleId:
-        selection.providerId === 'local' && (capability === 'synthesizeSpeech' || capability === 'generateImage')
+        selection.providerId === 'local' && (capability === 'synthesizeSpeech' || capability === 'generateImage' || capability === 'generateMusic')
           ? selection.modelId
           : null,
       inputHash: generationInputHash(spec),
@@ -1392,6 +1412,10 @@ export class JobManager {
     if (executor.generator && record.kind === 'generateImage' && record.providerId === 'local' && record.bundleId) {
       // 本地生图按模型包登记的实测峰值（candle 按 Worker 报告的设备取值与池）。
       return { ...base, ...localImageResources(record.bundleId, this.#catalog.imagePeak(record.bundleId)) };
+    }
+    if (executor.generator && record.kind === 'generateMusic' && record.providerId === 'local' && record.bundleId) {
+      // 本地音乐按模型包登记的估计峰值（引擎每个任务一个进程，不共用 holder）。
+      return { ...base, ...localMusicResources(record.bundleId, this.#catalog.musicPeak(record.bundleId)) };
     }
     const localModel = executor.transcriber || (executor.generator && record.kind === 'synthesizeSpeech');
     if (localModel && record.providerId === 'local' && record.bundleId) {
@@ -2294,7 +2318,7 @@ export class JobManager {
     }
     const spec = entry.spec as GenerationInputSpec;
     return {
-      label: (spec.capability === 'synthesizeSpeech' ? J.voiceOverLabel() : J.imageLabel()).text,
+      label: (spec.capability === 'synthesizeSpeech' ? J.voiceOverLabel() : spec.capability === 'generateMusic' ? J.musicLabel() : J.imageLabel()).text,
       check: () => {
         const revision = this.#videos.videoRevision(videoId);
         if (revision === null) throw new StaleInput(J.videoClosed());

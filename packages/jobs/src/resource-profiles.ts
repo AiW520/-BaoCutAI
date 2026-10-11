@@ -74,6 +74,25 @@ export function localImageResources(
 /** 一次本地生图自己的 staging：一张 PNG（1536² RGBA 不压缩也不到 10 MiB）加余量。 */
 export const LOCAL_IMAGE_DEMAND: ResourceDemand = { scratchDisk: 64 * MiB };
 
+/**
+ * 本地音乐生成（§7.7）：引擎每个任务起一个进程、不常驻，没有共用的 holder；峰值按模型包登记的估计值直接计入任务（Apple Silicon
+ * 计 GPU 内存，别的平台计内存），再加 staging。
+ */
+export function localMusicResources(bundleId: string, peak: WorkerFootprint | null): { demand: ResourceDemand } {
+  if (!peak) return { demand: { ...LOCAL_MUSIC_DEMAND, memory: MODEL_WORKER_DEMAND.memory, cpuThreads: MODEL_WORKER_DEMAND.cpuThreads } };
+  void bundleId;
+  return {
+    demand: {
+      ...LOCAL_MUSIC_DEMAND,
+      cpuThreads: MODEL_WORKER_DEMAND.cpuThreads,
+      ...(peak.pool === 'memory' ? { memory: peak.bytes } : { gpuMemory: peak.bytes, memory: MODEL_WORKER_DEMAND.memory }),
+    },
+  };
+}
+
+/** 一次本地音乐生成自己的 staging：五分钟 44.1 kHz 立体声 16 位 WAV 约 50 MiB，加引擎的日志与余量。 */
+export const LOCAL_MUSIC_DEMAND: ResourceDemand = { scratchDisk: 256 * MiB };
+
 /** 成片导出同时活跃的帧数（Render Worker 的帧窗口与编码器的缓冲，§9.6）。 */
 const VIDEO_FRAME_WINDOW = 48;
 /** 成片导出的 staging 余量：每段的中间文件、日志与校验。 */

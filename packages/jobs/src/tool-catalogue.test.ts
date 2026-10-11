@@ -18,6 +18,7 @@ describe('工具目录', () => {
       'synthesize-speech',
       'generate-text',
       'generate-image',
+      'generate-music',
       'link-import',
       'compress-video',
       'merge-video',
@@ -104,15 +105,23 @@ describe('工具目录', () => {
       capability: 'generateImage',
     });
     expect(toolDefinition('generate-text')?.execution).toEqual({ kind: 'job', method: 'models.generateText', capability: 'generateText' });
+    expect(toolDefinition('generate-music')).toMatchObject({
+      category: 'music',
+      inputs: ['text'],
+      results: ['artifact'],
+      execution: { kind: 'job', method: 'models.generateMusic', capability: 'generateMusic' },
+      capabilities: ['generateMusic'],
+    });
     expect(toolDefinition('generate-text')?.inputs).toEqual(['text', 'document']);
     expect(toolDefinition('nope')).toBeNull();
   });
 
-  it('分成三组：语音与字幕、文字与图片、视频文件（§7.9，产品设计 §2.7）', () => {
+  it('分成四组：语音与字幕、文字与图片、音乐、视频文件（§7.9，产品设计 §2.7）', () => {
     const groups = Object.fromEntries(TOOL_CATEGORIES.map((c) => [c, TOOL_CATALOGUE.filter((t) => t.category === c).map((t) => t.id)]));
     expect(groups).toEqual({
       speech: ['transcribe', 'translate-subtitles', 'dub', 'synthesize-speech'],
       'text-image': ['generate-text', 'generate-image'],
+      music: ['generate-music'],
       'video-file': ['link-import', 'compress-video', 'merge-video', 'extract-audio'],
     });
   });

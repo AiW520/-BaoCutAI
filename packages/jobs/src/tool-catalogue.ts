@@ -143,6 +143,25 @@ export const TOOL_CATALOGUE: readonly ToolDefinition[] = [
     network: 'none',
     candidates: null,
   },
+  {
+    id: 'generate-music',
+    get label() {
+      return T.generateMusicLabel().text;
+    },
+    get description() {
+      return T.generateMusicDescription().text;
+    },
+    category: 'music',
+    inputs: ['text'],
+    results: ['artifact'],
+    execution: { kind: 'job', method: 'models.generateMusic', capability: 'generateMusic' },
+    capabilities: ['generateMusic'],
+    optionalCapabilities: [],
+    externalTools: [],
+    optionalExternalTools: [],
+    network: 'none',
+    candidates: null,
+  },
   // 视频文件
   {
     id: 'link-import',

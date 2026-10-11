@@ -45,9 +45,12 @@ function defaultAssetName(parameters: GenerationParameters): string {
       ? parameters.text
       : parameters.capability === 'generateImage'
         ? parameters.prompt
-        : (parameters.messages.findLast((m) => m.role === 'user')?.content ?? '');
+        : parameters.capability === 'generateMusic'
+          ? parameters.style
+          : (parameters.messages.findLast((m) => m.role === 'user')?.content ?? '');
   const head = [...source.replace(/\s+/g, ' ').trim()].slice(0, 24).join('');
   const more = [...source.trim()].length > 24 ? '…' : '';
-  const name = parameters.capability === 'synthesizeSpeech' ? J.voiceOverName : J.imageName;
+  const name =
+    parameters.capability === 'synthesizeSpeech' ? J.voiceOverName : parameters.capability === 'generateMusic' ? J.musicName : J.imageName;
   return name({ head: `${head}${more}` }).text;
 }

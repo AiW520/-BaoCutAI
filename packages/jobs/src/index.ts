@@ -18,6 +18,7 @@ export {
   type LiveSegmentsUpdate,
   type TranscribeRouter,
 } from './job-manager.ts';
+export { LocalMusicProvider, type LocalMusicProviderOptions } from './local-music-provider.ts';
 export {
   LocalTranscribeProvider,
   type LocalDiarizeOutcome,
@@ -51,6 +52,7 @@ export { MachineCapacity, unifiedGpuEstimate, type CapacitySource, type MachineC
 export {
   audioExportDemand,
   localImageResources,
+  localMusicResources,
   localSeparateResources,
   localTranscribeResources,
   modelDownloadDemand,
