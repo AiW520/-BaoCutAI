@@ -244,7 +244,8 @@ export function rewriteCraftText(text: string, ctx: RewriteContext): string {
 /**
  * 正文里的裸工具名换成 CLI 命令（名字规则同 `renderCliToolNames`）；不在行内代码或代码块里时套上反引号，与占位符的输出一致。
  * 一级动词（`speak`、`export`）也改，所以边界比 `renderCliToolNames` 严：带 `-`、`/`、`.` 的不算（`translate-subtitles.md`、`export/`），
- * 后面跟 `:` 的是字段不是工具（`download` 的 `transcribe: true`）。
+ * 后面跟 `:` 的是字段不是工具（`download` 的 `transcribe: true`）。一级动词又是普通的英文词（an image、PNG export）与代码
+ * （CSS 的 `translate(…)`），见 `isVerbReference`。
  */
 const CRAFT_TOOL_NAME_BOUNDARY = { before: '(?<![A-Za-z0-9_\\-/.])', after: '(?![A-Za-z0-9_\\-/.]|\\s*:)' } as const;
 
@@ -268,12 +269,28 @@ function renderCraftToolNames(text: string, names: readonly string[]): string {
       }
       return line.replace(pattern, (name: string, _g: string, offset: number) => {
         const command = `baocut ${toolCommandName(name).display}`;
-        if (fence) return command;
         const ticks = [...line.slice(0, offset)].filter((c) => c === '`').length;
-        return ticks % 2 === 1 ? command : `\`${command}\``;
+        const at = fence ? 'fence' : ticks % 2 === 1 ? 'span' : 'prose';
+        if (!name.includes('_') && !isVerbReference(line, offset, name.length, at)) return name;
+        if (at !== 'prose') return command;
+        return `\`${command}\``;
       });
     })
     .join('\n');
+}
+
+/**
+ * 一级动词在哪里算工具名：代码块里只认行首的命令（`transcribe --url x`，不认 `translate(-50%)`）；行内代码里是取值
+ * （元素类型 `image`），不算；正文里要挨着中文（「用 export 导出」），挨着英文单词或两边都没有中文的是英文词。
+ */
+function isVerbReference(line: string, offset: number, length: number, at: 'fence' | 'span' | 'prose'): boolean {
+  const after = line.slice(offset + length);
+  if (at === 'fence') return line.slice(0, offset).trim() === '' && /^(\s|$)/.test(after);
+  if (at === 'span') return false;
+  const before = line.slice(0, offset).trimEnd().slice(-1);
+  const next = after.trimStart().slice(0, 1);
+  if (/[A-Za-z0-9]/.test(before) || /[A-Za-z0-9]/.test(next)) return false;
+  return /[^\x00-\x7f]/.test(before) || /[^\x00-\x7f]/.test(next);
 }
 
 function listMarkdown(dir: string, rel = ''): string[] {

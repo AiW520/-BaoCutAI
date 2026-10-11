@@ -1,23 +1,37 @@
 import fsp from 'node:fs/promises';
 import type { IncomingMessage, ServerResponse } from 'node:http';
 import path from 'node:path';
-import { RpcError, type FileTarget, type SlideAnnotation, type SlidesOpenResult } from '@baocut/protocol';
-import { RcRuntime, RcSlides } from '@baocut/protocol/messages/runtime-core';
-import type { Logger, ResolvedSlideAnnotation } from '@baocut/harness';
+import {
+  RpcError,
+  type DesignAnnotation,
+  type DesignOpenResult,
+  type DesignSystemAnnotation,
+  type DesignSystemOpenResult,
+  type FileTarget,
+  type SlideAnnotation,
+  type SlidesOpenResult,
+} from '@baocut/protocol';
+import { RcDesign, RcDesignSystem, RcRuntime, RcSlides } from '@baocut/protocol/messages/runtime-core';
+import type { Logger, ResolvedDesignAnnotation, ResolvedDesignSystemAnnotation, ResolvedSlideAnnotation } from '@baocut/harness';
+import { CANVAS_LAYOUT, readCanvasInfo, resolveDesignEditorDist } from '@baocut/design';
+import { DESIGN_SYSTEM_LAYOUT, readDesignSystemInfo, resolveDesignSystemEditorDist } from '@baocut/design-system';
 import {
   compilerAvailable,
   DeckStore,
   loadSlidesCompiler,
   readDeckSummary,
   resolveSlidesEditorDist,
+  localUserName,
   SlidesServer,
   type SlidesRuntime,
 } from '@baocut/slides';
 import { isIgnoredName } from './space-catalog.ts';
 
 /**
- * 会话里的幻灯片（docs/design/slides §6）：`slides.open` 发编辑器地址，`/slides/<grant>/…` 与 `/_blob/<id>` 由
- * `@baocut/slides` 的 SlidesServer 处理。网关与 Web 服务共用一个 SlidesServer：同一份 deck 只有一个存储（发布串行）。
+ * 会话里的幻灯片、设计稿与设计系统（docs/design/slides §6、docs/design/canvas §6、§10.4）：`slides.open` / `design.open` /
+ * `designSystem.open` 发编辑器地址，`/slides/<grant>/…`、`/design/<grant>/…`、`/design-system/<grant>/…` 与 `/_blob/<id>` 由
+ * `@baocut/slides` 的 SlidesServer 处理（设计稿按 `@baocut/design` 的 `CANVAS_LAYOUT`，设计系统按 `@baocut/design-system` 的
+ * `DESIGN_SYSTEM_LAYOUT`）。网关与 Web 服务共用一个 SlidesServer：同一个目录只有一个存储（发布串行）。
  */
 
 /** 处理函数用的入口：地址的基址各不相同（网关是 `http://127.0.0.1:<端口>`，Web 服务是同源的相对地址）。 */
@@ -30,6 +44,18 @@ function isInside(rootReal: string, target: string): boolean {
   if (target === rootReal) return true;
   const prefix = rootReal.endsWith(path.sep) ? rootReal : rootReal + path.sep;
   return target.startsWith(prefix);
+}
+
+/** 打开设计稿的入口，地址的基址同 `SlidesOpener`。 */
+export interface DesignOpener {
+  /** 打开来源目录 `root` 里的设计稿目录 `rel`。 */
+  open(root: string, rel: string): Promise<DesignOpenResult>;
+}
+
+/** 打开设计系统的入口，地址的基址同 `SlidesOpener`。 */
+export interface DesignSystemOpener {
+  /** 打开来源目录 `root` 里的设计系统目录 `rel`。 */
+  open(root: string, rel: string): Promise<DesignSystemOpenResult>;
 }
 
 /** 来源目录里的 deck 目录：防越界（按真实路径）、不进隐藏与依赖目录、必须是有合法 deck.json 的目录。返回真实路径。 */
@@ -67,27 +93,69 @@ export function resolveSlideAnnotations(
   locate: (target: FileTarget) => { root: string; file: string },
 ): ResolvedSlideAnnotation[] | undefined {
   if (!annotations?.length) return undefined;
-  return annotations.map((annotation) => {
-    const { root, file } = locate(annotation.deck);
-    const dir = path.resolve(root, file);
-    const rel = path.relative(cwd, dir);
-    const outside = rel === '..' || rel.startsWith(`..${path.sep}`) || path.isAbsolute(rel);
-    const deckPath = outside ? dir : rel.split(path.sep).filter(Boolean).join('/');
-    return { annotation, deckPath: deckPath ? `${deckPath.replace(/[\\/]+$/, '')}/` : './' };
-  });
+  return annotations.map((annotation) => ({ annotation, deckPath: dirPathFor(locate(annotation.deck), cwd) }));
+}
+
+/**
+ * 消息带的设计稿标注（docs/design/canvas §9）：与幻灯片标注相同，每条的设计稿换成相对会话工作目录的路径
+ * （`/` 分隔、以 `/` 结尾，工作目录外是绝对路径）；找不到时由 `locate` 抛 `not-found`。没有标注时为 undefined。
+ */
+export function resolveDesignAnnotations(
+  annotations: readonly DesignAnnotation[] | undefined,
+  cwd: string,
+  locate: (target: FileTarget) => { root: string; file: string },
+): ResolvedDesignAnnotation[] | undefined {
+  if (!annotations?.length) return undefined;
+  return annotations.map((annotation) => ({ annotation, canvasPath: dirPathFor(locate(annotation.canvas), cwd) }));
+}
+
+/**
+ * 消息带的设计系统标注（docs/design/canvas §10.6）：与设计稿标注相同，每条的设计系统换成相对会话工作目录的路径；
+ * 找不到时由 `locate` 抛 `not-found`。没有标注时为 undefined。
+ */
+export function resolveDesignSystemAnnotations(
+  annotations: readonly DesignSystemAnnotation[] | undefined,
+  cwd: string,
+  locate: (target: FileTarget) => { root: string; file: string },
+): ResolvedDesignSystemAnnotation[] | undefined {
+  if (!annotations?.length) return undefined;
+  return annotations.map((annotation) => ({ annotation, systemPath: dirPathFor(locate(annotation.system), cwd) }));
+}
+
+/** 目录相对会话工作目录的写法：`/` 分隔、以 `/` 结尾；不在工作目录里时是绝对路径；就是工作目录时是 `./`。 */
+function dirPathFor({ root, file }: { root: string; file: string }, cwd: string): string {
+  const dir = path.resolve(root, file);
+  const rel = path.relative(cwd, dir);
+  const outside = rel === '..' || rel.startsWith(`..${path.sep}`) || path.isAbsolute(rel);
+  const shown = outside ? dir : rel.split(path.sep).filter(Boolean).join('/');
+  return shown ? `${shown.replace(/[\\/]+$/, '')}/` : './';
 }
 
 export class SlidesService {
   readonly server: SlidesServer;
   readonly #editorDist: () => string | null;
+  readonly #designEditorDist: () => string | null;
+  readonly #designSystemEditorDist: () => string | null;
   #baseUrl = '';
 
-  constructor(options: { log: Logger; editorDist?: () => string | null }) {
+  constructor(options: {
+    log: Logger;
+    editorDist?: () => string | null;
+    designEditorDist?: () => string | null;
+    designSystemEditorDist?: () => string | null;
+    /** 设计系统编辑器的 `user.name()`（`__deck/session.userName`）；默认取本机账户名。 */
+    userName?: () => string | undefined;
+  }) {
     const log = options.log.child('slides');
     this.#editorDist = options.editorDist ?? (() => resolveSlidesEditorDist());
+    this.#designEditorDist = options.designEditorDist ?? (() => resolveDesignEditorDist());
+    this.#designSystemEditorDist = options.designSystemEditorDist ?? (() => resolveDesignSystemEditorDist());
     this.server = new SlidesServer({
       editorDist: this.#editorDist,
+      design: { editorDist: this.#designEditorDist, layout: CANVAS_LAYOUT },
+      designSystem: { editorDist: this.#designSystemEditorDist, layout: DESIGN_SYSTEM_LAYOUT, userName: options.userName ?? localUserName },
       onError: (message, error) => log.warn(message, { error: (error as Error)?.name }),
+      onWarn: (message) => log.warn(message),
     });
   }
 
@@ -114,6 +182,35 @@ export class SlidesService {
     };
   }
 
+  /** 设计稿的入口（docs/design/canvas §6.1）：校验同 `slides.open`，认不出设计稿时 `DESIGN_NOT_A_CANVAS`。`baseUrl` 同 `opener`。 */
+  designOpener(baseUrl: () => string = () => this.#baseUrl): DesignOpener {
+    return {
+      open: async (root, rel) => {
+        const dir = await resolveDeckDir(root, rel);
+        const canvas = await readCanvasInfo(dir);
+        if (!canvas) throw new RpcError('invalid-request', RcDesign.notACanvas(), { code: 'DESIGN_NOT_A_CANVAS' });
+        const grant = await this.server.open(dir, 'design');
+        return { url: `${baseUrl()}/design/${grant}/`, canvas, editorAvailable: this.#designEditorDist() !== null };
+      },
+    };
+  }
+
+  /**
+   * 设计系统的入口（docs/design/canvas §10.4）：校验同 `slides.open`，认不出设计系统（`design-system.json` 的认法见
+   * docs/design/canvas §10.1）时 `DESIGN_SYSTEM_NOT_A_SYSTEM`。`baseUrl` 同 `opener`。
+   */
+  designSystemOpener(baseUrl: () => string = () => this.#baseUrl): DesignSystemOpener {
+    return {
+      open: async (root, rel) => {
+        const dir = await resolveDeckDir(root, rel);
+        const system = await readDesignSystemInfo(dir);
+        if (!system) throw new RpcError('invalid-request', RcDesignSystem.notASystem(), { code: 'DESIGN_SYSTEM_NOT_A_SYSTEM' });
+        const grant = await this.server.open(dir, 'design-system');
+        return { url: `${baseUrl()}/design-system/${grant}/`, system, editorAvailable: this.#designSystemEditorDist() !== null };
+      },
+    };
+  }
+
   /** `slides_check` 用的编译器（编辑器构建里的 node/compiler.cjs）；没有构建时 null。 */
   compiler(): SlidesRuntime | null {
     const dist = this.#editorDist();
@@ -123,6 +220,16 @@ export class SlidesService {
   /** deck 目录（真实路径）的存储：编辑器开着这份 deck 时用它那一个，素材登记与发布串行；否则新建一个。 */
   store(dir: string): DeckStore {
     return this.server.storeOf(dir) ?? new DeckStore(dir);
+  }
+
+  /** 设计稿目录（真实路径）的存储，规则同 `store`，布局按设计稿。 */
+  designStore(dir: string): DeckStore {
+    return this.server.storeOf(dir, 'design') ?? this.server.createStore(dir, 'design');
+  }
+
+  /** 设计系统目录（真实路径）的存储，规则同 `store`，布局按设计系统（上传写进 `_blobs/`）。 */
+  designSystemStore(dir: string): DeckStore {
+    return this.server.storeOf(dir, 'design-system') ?? this.server.createStore(dir, 'design-system');
   }
 
   close(): void {

@@ -82,7 +82,7 @@
 | `db` | 只给旧的「数据库存储」模式的 deck 用；文件模式不读 | **不需要**。讲者备注在 slide 的 `<aside>` 里，标注不持久化。不提供 `db`，运行时按文件模式工作 |
 | `room` | 多人在线、光标、选区 | 不提供（单用户），运行时跳过协作层 |
 | `downloads` | 导出 PPTX、PDF 后交给用户保存 | P1：桌面端经主进程的下载处理保存，Web 端由浏览器下载 |
-| `chat.suggestPrompt` | 「让智能体修好这页」等提示直接放进会话 | 经 `slides:suggest-prompt` 交给父窗口，放进这个会话的输入框（接在已有输入后面，由用户自己发送）；标签不属于会话或父窗口 5 秒没回应时，运行时退为把提示复制到剪贴板 |
+| `chat.suggestPrompt` | 「让智能体修好这页」等提示直接放进会话 | 经 `editor:suggest-prompt` 交给父窗口，放进这个会话的输入框（接在已有输入后面，由用户自己发送）；标签不属于会话或父窗口 5 秒没回应时，运行时退为把提示复制到剪贴板 |
 | `commentLabels` | 标注位置标签（`label`）里的词：页号、文字角色、元素种类与形状、区域方位、框选盖住的元素数 | BaoCut 加的。按编辑器地址上的 `?lang=`（打开标签时的界面语言）给词；没带时运行时用自己的英文。`detail` 不经这里，保持英文（8.2） |
 
 
@@ -93,8 +93,8 @@
 - 标注与「在会话里打开」这类需要 BaoCut 界面的能力走 `postMessage`：
   - 桌面端父页面是 `file://`，origin 是 `null`。iframe → 父窗口只能用 `targetOrigin: "*"`，父窗口收消息时必须校验 `event.source === iframe.contentWindow`，消息里不放内容以外的东西。父窗口 → iframe 指定路由的 origin。
   - 消息类型以 `packages/slides/src/editor-messages.ts` 为准，两边收消息时都逐字段校验，不认识的丢掉：
-    - iframe → 父窗口：`slides:ready { canEdit }`、`slides:mode { on }`、`slides:compose`（锚点、iframe 视口里的坐标、`label`、`detail`、`area`）、`slides:flushed { requestId, saved }`、`slides:external-change { paths }`、`slides:suggest-prompt { requestId, prompt }`（§4 的 `chat.suggestPrompt`）。
-    - 父窗口 → iframe：`slides:threads`（未发送的标注 `{ id, anchor, n }`，iframe 画编号标记）、`slides:compose-result { opened }`、`slides:composer-closed`、`slides:reveal`、`slides:set-mode { on }`（标签条上的标注开关）、`slides:flush`（发送前，6.5）、`slides:suggest-prompt-result { requestId, ok }`（提示放进输入框没有）。
+    - iframe → 父窗口：`editor:ready { canEdit }`、`editor:mode { on }`、`editor:compose`（锚点、iframe 视口里的坐标、`label`、`detail`、`area`）、`editor:flushed { requestId, saved }`、`editor:external-change { paths }`、`editor:suggest-prompt { requestId, prompt }`（§4 的 `chat.suggestPrompt`）、`editor:save-file { requestId, filename, data }`（只有设计稿编辑器发：运行时导出的文件交给父窗口保存，`data` 是 `ArrayBuffer` 或 `Blob`）。
+    - 父窗口 → iframe：`editor:threads`（未发送的标注 `{ id, anchor, n }`，iframe 画编号标记）、`editor:compose-result { opened }`、`editor:composer-closed`、`editor:reveal`、`editor:set-mode { on }`（标签条上的标注开关）、`editor:flush`（发送前，6.5）、`editor:suggest-prompt-result { requestId, ok }`（提示放进输入框没有）、`editor:save-file-result { requestId, outcome }`（`saved`、`declined` 用户取消、`failed`）。
     - 与方案稿相比多了 `mode`/`set-mode`（标注模式两边都能开关）、`flush`/`flushed`、`external-change` 与 `suggest-prompt`/`suggest-prompt-result`。编号标记由 shim 画在 iframe 里（不拦截指针），位置用运行时的 `placed` 回调。
 - 能否编辑由 shim 启动时读 `__deck/session` 得到，交给运行时的 `user.canEdit`。
 
@@ -132,7 +132,8 @@
 ### 6.3 发布
 
 - 请求：`{ files: { "project/<path>": { base64, contentType, ifMatch? } | { delete: true, ifMatch? } | null } }`。
-- 同一 deck 的发布串行执行：先逐个核对 `ifMatch` 与磁盘上的 sha256，有不符就整批返回 409 `{ code: "conflict", live, paths }`，一个文件也不写。全部通过后逐个原子写入（临时文件加 rename，复用 `writeJsonAtomic` 的做法）。
+- 写入的 `ifMatch` 可以是 `null`，表示这个文件必须还不存在（编辑器新建文件时这样发）；删除的 `ifMatch` 只能是 sha256 或省略。
+- 同一 deck 的发布串行执行：先逐个核对 `ifMatch` 与磁盘上的 sha256（文件不存在按 `null` 比），有不符就整批返回 409 `{ code: "conflict", live, paths }`，一个文件也不写。全部通过后逐个原子写入（临时文件加 rename，复用 `writeJsonAtomic` 的做法）。
 - 错误码沿用运行时认得的 13 种（`packages/slides/src/file-protocol.ts` 的 `PublishErrorCode`），运行时据此提示用户刷新或重试。
 - 每次写入记下「自己写的 sha256」，用来区分外部改动（6.5）。
 
@@ -147,8 +148,8 @@
 ### 6.5 外部改动
 
 - 智能体用 Driver 的文件工具直接改 deck 文件。路由用非递归 `fs.watch` 监听 deck 根目录、`slides/` 与 `ds/` 的各级普通目录（不跟随符号链接，去抖 300 ms）；只监听目录，避免 Linux 的递归文件监听在原子保存替换 inode 后丢掉后续修改。收到变化后重建增删目录的监听，并对完整清单（含上次存在、现在删除的文件）比摘要。sha256 与「自己写的」、开始监听时盘上的内容（以及报过的内容）都不同的才算外部改动，经 `__deck/events` 推给编辑器。macOS 的 FSEvents 会补报监听开始前不久的写入（刚建好的 deck），只比「自己写的」会误报，编辑器白白重载一次。
-- 编辑器收到后：shim 先通知父窗口（`slides:external-change`），把自己未保存的改动发布完，再重新载入页面。**与方案稿不同**：P0 不接运行时的 `hot`（契约没有读懂，见第 12 节），代价是丢掉当前选中与滚动位置。
-- 发送消息前（ContextBarrier，架构设计 §4.6）：界面先等编辑器把未保存的改动发布完（父窗口发 `slides:flush`，shim 回 `slides:flushed`），再发出消息，保证智能体读到的是用户最后看到的版本。运行时只在 `beforeunload` 时立刻发布，shim 发一个可取消的 `beforeunload` 探测有没有未保存的改动，有就等这一轮发布结束再问，最多等 8 秒。
+- 编辑器收到后：shim 先通知父窗口（`editor:external-change`），把自己未保存的改动发布完，再重新载入页面。**与方案稿不同**：P0 不接运行时的 `hot`（契约没有读懂，见第 12 节），代价是丢掉当前选中与滚动位置。
+- 发送消息前（ContextBarrier，架构设计 §4.6）：界面先等编辑器把未保存的改动发布完（父窗口发 `editor:flush`，shim 回 `editor:flushed`），再发出消息，保证智能体读到的是用户最后看到的版本。运行时只在 `beforeunload` 时立刻发布，shim 发一个可取消的 `beforeunload` 探测有没有未保存的改动，有就等这一轮发布结束再问，最多等 8 秒。
 
 ## 7. 智能体
 
@@ -189,17 +190,17 @@
 
 ### 8.2 标注
 
-1. 用户在编辑器里打开标注模式（标签头部的「标注」开关，或运行时自带的按钮与快捷键 C；三者经 `slides:mode` / `slides:set-mode` 同步），点一个元素或框一块区域。
-2. 运行时调用宿主的 `compose(anchor, point, { label, detail, area? })`。shim 把它转成 `slides:compose` 发给父窗口。
-3. 父窗口在 iframe 对应位置弹出批注框（S2 Popover，跟随界面语言），回 `slides:compose-result`：上方是运行时给的 `label`（运行时生成，词跟随界面语言，经 §4 的 `commentLabels` 取，例如 `第 3 页 › 三级标题 "AI 时代该学什么"`；给智能体定位的 `detail` 保持英文），一个输入框，按钮「取消」与「添加到对话」，⌘/Ctrl+Enter 添加。批注框关掉（添加、取消、切走标签、退出标注模式）时回 `slides:composer-closed`。
-4. 添加后，这条标注进入当前会话的草稿（按会话分，只在这个窗口里，不持久化）；父窗口把草稿里属于这份 deck 的标注经 `slides:threads` 交给编辑器，编辑器在对应位置画编号标记。幻灯片标签所在的位置还没有会话时不收，提示先发一句话开始会话。
+1. 用户在编辑器里打开标注模式（标签头部的「标注」开关，或运行时自带的按钮与快捷键 C；三者经 `editor:mode` / `editor:set-mode` 同步），点一个元素或框一块区域。
+2. 运行时调用宿主的 `compose(anchor, point, { label, detail, area? })`。shim 把它转成 `editor:compose` 发给父窗口。
+3. 父窗口在 iframe 对应位置弹出批注框（S2 Popover，跟随界面语言），回 `editor:compose-result`：上方是运行时给的 `label`（运行时生成，词跟随界面语言，经 §4 的 `commentLabels` 取，例如 `第 3 页 › 三级标题 "AI 时代该学什么"`；给智能体定位的 `detail` 保持英文），一个输入框，按钮「取消」与「添加到对话」，⌘/Ctrl+Enter 添加。批注框关掉（添加、取消、切走标签、退出标注模式）时回 `editor:composer-closed`。
+4. 添加后，这条标注进入当前会话的草稿（按会话分，只在这个窗口里，不持久化）；父窗口把草稿里属于这份 deck 的标注经 `editor:threads` 交给编辑器，编辑器在对应位置画编号标记。幻灯片标签所在的位置还没有会话时不收，提示先发一句话开始会话。
 5. composer 上方显示一个引用标签「幻灯片标注 · N 条」；点开列出各条（编号、位置、批注），可逐条或全部移除，移除时标记同步消失；点一条打开（或切到）那份幻灯片并跳到那一页。
 6. 发送：
    - 只带标注、没写话时，消息正文是固定的一句（「请按这些幻灯片标注修改。」，跟随界面语言）。
-   - 发出前，对带标注的每份 deck，让打开着的编辑器把未保存的改动发布完（`slides:flush` / `slides:flushed`，最多等 10 秒），智能体读到的是用户看到的版本；没保存成时不发，输入与标注都留着，提示里点名没保存好的那份幻灯片，请用户再发一次或先移除标注（产品设计 §3.2.4：不带着旧上下文提交）。等待期间发送按钮显示进行中，输入框里的文字不清空。
+   - 发出前，对带标注的每份 deck，让打开着的编辑器把未保存的改动发布完（`editor:flush` / `editor:flushed`，最多等 10 秒），智能体读到的是用户看到的版本；没保存成时不发，输入与标注都留着，提示里点名没保存好的那份幻灯片，请用户再发一次或先移除标注（产品设计 §3.2.4：不带着旧上下文提交）。等待期间发送按钮显示进行中，输入框里的文字不清空。
    - 会话忙时消息连同标注进排队；排队消息「立即发送」走 `steer`，同样带标注。
    - 发出去（或排进队列）后，这几条从草稿里摘掉，编辑器里的标记随之消失；发送期间新加的留着。
-7. 已发送的消息下面显示一行「幻灯片标注 · N 条」，点开能看到每条内容，点一条打开那份幻灯片并跳到那一页（`slides:reveal`）。运行时只认得手上的标注，所以不在草稿里的那条先作为一条临时标注（编号为 0，不画标记）交给编辑器，等它渲染后再跳，随后撤掉。
+7. 已发送的消息下面显示一行「幻灯片标注 · N 条」，点开能看到每条内容，点一条打开那份幻灯片并跳到那一页（`editor:reveal`）。运行时只认得手上的标注，所以不在草稿里的那条先作为一条临时标注（编号为 0，不画标记）交给编辑器，等它渲染后再跳，随后撤掉。
 
 编号是在整份草稿（发出后是在整条消息）里的序号：composer 列表、编辑器里的编号标记与给智能体的那段文字一致；同一份 deck 的标注编号可以不连续。
 

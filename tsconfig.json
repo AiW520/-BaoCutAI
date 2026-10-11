@@ -17,5 +17,6 @@
     "resolveJsonModule": true,
     "types": ["node"]
   },
-  "include": ["apps/*/src/**/*", "packages/*/src/**/*", "apps/desktop/*.config.ts", "apps/desktop/tools/*.mts", "apps/web/*.config.ts", "tools/s2-styles*.ts", "tools/catalog-snapshot*.ts", "tools/third-party-notices*.ts"]
+  "include": ["apps/*/src/**/*", "packages/*/src/**/*", "apps/desktop/*.config.ts", "apps/desktop/tools/*.mts", "apps/web/*.config.ts", "tools/s2-styles*.ts", "tools/catalog-snapshot*.ts", "tools/third-party-notices*.ts"],
+  "exclude": ["**/node_modules", "packages/design-system-runtime/src/**/*", "apps/design-system-editor/src/**/*"]
 }

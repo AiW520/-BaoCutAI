@@ -51,6 +51,7 @@ export {Picker} from '@react-spectrum/s2/Picker';
 export {PickerItem} from '@react-spectrum/s2/Picker';
 export {Popover} from '@react-spectrum/s2/Popover';
 export {ProgressBar} from '@react-spectrum/s2/ProgressBar';
+export {Meter} from '@react-spectrum/s2/Meter';
 export {ProgressCircle} from '@react-spectrum/s2/ProgressCircle';
 export {Provider} from '@react-spectrum/s2/Provider';
 export {Radio} from '@react-spectrum/s2/RadioGroup';
@@ -199,6 +200,8 @@ import I_AIMark from '@react-spectrum/s2/icons/AIMark';
 import I_Layout from '@react-spectrum/s2/icons/Layout';
 import I_ClockPending from '@react-spectrum/s2/icons/ClockPending';
 import I_Shapes from '@react-spectrum/s2/icons/Shapes';
+// 设计系统（docs/design/canvas §10.6）：Space 分类、功能区标签与线程卡片
+import I_ColorHarmony from '@react-spectrum/s2/icons/ColorHarmony';
 import I_StopProcessing from '@react-spectrum/s2/icons/StopProcessing';
 import I_Keyboard from '@react-spectrum/s2/icons/Keyboard';
 import I_New from '@react-spectrum/s2/icons/New';
@@ -208,6 +211,17 @@ import I_DeviceMultiscreen from '@react-spectrum/s2/icons/DeviceMultiscreen';
 import I_DeviceLaptop from '@react-spectrum/s2/icons/DeviceLaptop';
 import I_Cloud from '@react-spectrum/s2/icons/Cloud';
 import I_GlobeGrid from '@react-spectrum/s2/icons/GlobeGrid';
+// Design-system tab: section rows, the starter cards and the Spectrum 2 icon set (app/home-design-system*.jsx).
+import I_Color from '@react-spectrum/s2/icons/Color';
+import I_DistributeSpaceHorizontally from '@react-spectrum/s2/icons/DistributeSpaceHorizontally';
+import I_CornerRadius from '@react-spectrum/s2/icons/CornerRadius';
+import I_Plugin from '@react-spectrum/s2/icons/Plugin';
+import I_Calendar from '@react-spectrum/s2/icons/Calendar';
+import I_Heart from '@react-spectrum/s2/icons/Heart';
+import I_MenuHamburger from '@react-spectrum/s2/icons/MenuHamburger';
+import I_UserGroup from '@react-spectrum/s2/icons/UserGroup';
+import I_VisibilityOff from '@react-spectrum/s2/icons/VisibilityOff';
+import I_StickyNote from '@react-spectrum/s2/icons/StickyNote';
 export const Icons = {
   Home: I_Home,
   Folder: I_Folder,
@@ -319,6 +333,7 @@ export const Icons = {
   Layout: I_Layout,
   ClockPending: I_ClockPending,
   Shapes: I_Shapes,
+  ColorHarmony: I_ColorHarmony,
   StopProcessing: I_StopProcessing,
   Keyboard: I_Keyboard,
   New: I_New,
@@ -328,4 +343,14 @@ export const Icons = {
   DeviceLaptop: I_DeviceLaptop,
   Cloud: I_Cloud,
   GlobeGrid: I_GlobeGrid,
+  Color: I_Color,
+  DistributeSpaceHorizontally: I_DistributeSpaceHorizontally,
+  CornerRadius: I_CornerRadius,
+  Plugin: I_Plugin,
+  Calendar: I_Calendar,
+  Heart: I_Heart,
+  MenuHamburger: I_MenuHamburger,
+  UserGroup: I_UserGroup,
+  VisibilityOff: I_VisibilityOff,
+  StickyNote: I_StickyNote,
 };

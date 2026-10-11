@@ -54,6 +54,8 @@ BaoCut 是以**可编辑视频**为中心的剪辑工具：素材在时间线上
 | 加下横栏、关键词、大数字、标注、品牌贴片这类动效图形 | 按规则写一个自包含的 HTML 画面，打包成代码包导入，放上时间线对齐旁白 | [media](references/catalog/media.md) | {{skill:motion-graphics}} |
 <!-- surface: agent -->
 | 做幻灯片、演示文稿、汇报用的页面 | 在工作目录写一份 deck，校验通过后线程里出卡片，用户在功能区预览、编辑、标注 | [media](references/catalog/media.md) | {{skill:slides}} |
+| 做界面、网页、海报、图表或信息图、示意图、原型这类设计稿 | 在工作目录写一份设计稿（每块画板一个文件），校验通过后线程里出卡片，用户在功能区预览、编辑、标注 | [media](references/catalog/media.md) | {{skill:design}} |
+| 建设计系统、整理品牌 tokens 与组件 | 在工作目录写一个设计系统目录，可从代码仓库或设计工具整理；设计稿可以装用它 | — | {{skill:design-system}} |
 <!-- /surface -->
 
 ### 三条底线

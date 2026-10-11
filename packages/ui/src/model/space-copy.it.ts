@@ -10,6 +10,8 @@ export const it: SpaceMessages = {
     subtitle: "Sottotitoli",
     document: "Documento",
     slides: "Diapositive",
+    design: "Design",
+    'design-system': "Design system",
     package: "Pacchetto video",
     template: "Template",
   },

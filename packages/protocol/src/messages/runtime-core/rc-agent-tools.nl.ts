@@ -23,6 +23,8 @@ export const nl: RcAgentToolsMessages = {
 
   createVideoSummary: (p: { name: string }) => `Video maken: ‘${p.name}’`,
   slidesImportAssetSummary: (p: { file: string; deck: string }) => `Afbeelding ‘${p.file}’ importeren in de dia's ‘${p.deck}’`,
+  designImportAssetSummary: (p: { file: string; canvas: string }) => `‘${p.file}’ importeren in het ontwerp ‘${p.canvas}’`,
+  designSystemImportAssetSummary: (p: { file: string; system: string }) => `‘${p.file}’ importeren in het ontwerpsysteem ‘${p.system}’`,
   editsSummary: (p: { label: string; count: number; types: string }) =>
     `${p.label} (${`${p.count} ${pluralForm('nl', p.count, { one: "actie", other: "acties" })}`}: ${p.types})`,
   captionsSummary: (p: { documentId: string; bilingual: boolean }) =>

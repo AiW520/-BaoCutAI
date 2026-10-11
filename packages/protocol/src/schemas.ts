@@ -11,6 +11,8 @@ import { USAGE_PERIODS } from './usage.ts';
 import { MAX_SELECTED_GLOSSARIES, MAX_SPEAKER_VOICES } from './library.ts';
 import { WEB_METHOD_PATTERN } from './web.ts';
 import { SLIDE_ANNOTATION_LIMITS } from './slides.ts';
+import { DESIGN_ANNOTATION_LIMITS } from './design.ts';
+import { DESIGN_SYSTEM_ANNOTATION_LIMITS } from './design-system.ts';
 import { SPACE_PARAM_SCHEMAS } from './space-schemas.ts';
 import { EXTERNAL_TOOL_PARAM_SCHEMAS } from './external-tools-schemas.ts';
 import { TEMPLATE_PARAM_SCHEMAS, templateSendRefSchema } from './template-schemas.ts';
@@ -388,6 +390,31 @@ const slideAnnotation = z
   })
   .strict();
 const slideAnnotations = z.array(slideAnnotation).max(SLIDE_ANNOTATION_LIMITS.perMessage);
+/** 设计稿标注（docs/design/canvas §9）。长度与幻灯片标注相同；`board` 是相对设计稿目录的画板文件。 */
+const designAnnotation = z
+  .object({
+    canvas: fileTarget,
+    anchor: z.string().min(1).max(4096),
+    board: z.string().min(1).max(1024).optional(),
+    label: z.string().max(1000),
+    detail: z.string().max(4096).optional(),
+    area: z.boolean().optional(),
+    text: z.string().trim().min(1).max(DESIGN_ANNOTATION_LIMITS.text),
+  })
+  .strict();
+const designAnnotations = z.array(designAnnotation).max(DESIGN_ANNOTATION_LIMITS.perMessage);
+/** 设计系统标注（docs/design/canvas §10.6）。长度与设计稿标注相同；`section` 与编辑器消息里的章节同一个上限。 */
+const designSystemAnnotation = z
+  .object({
+    system: fileTarget,
+    anchor: z.string().min(1).max(4096),
+    section: z.string().min(1).max(200).optional(),
+    label: z.string().max(1000),
+    detail: z.string().max(4096).optional(),
+    text: z.string().trim().min(1).max(DESIGN_SYSTEM_ANNOTATION_LIMITS.text),
+  })
+  .strict();
+const designSystemAnnotations = z.array(designSystemAnnotation).max(DESIGN_SYSTEM_ANNOTATION_LIMITS.perMessage);
 const languageOption = z.union([
   z.object({ mode: z.literal('assert'), tag: languageTag }).strict(),
   z.object({ mode: z.literal('prefer'), tag: languageTag.nullable() }).strict(),
@@ -751,6 +778,8 @@ export const methodParamSchemas = {
     skill: skillSendRefSchema.optional(),
     skills: skillSendListSchema.optional(),
     slideAnnotations: slideAnnotations.optional(),
+    designAnnotations: designAnnotations.optional(),
+    designSystemAnnotations: designSystemAnnotations.optional(),
   }),
   'conversations.steer': z.object({
     conversationId: id,
@@ -758,6 +787,8 @@ export const methodParamSchemas = {
     commandId: id,
     attachments: attachmentIds.optional(),
     slideAnnotations: slideAnnotations.optional(),
+    designAnnotations: designAnnotations.optional(),
+    designSystemAnnotations: designSystemAnnotations.optional(),
   }),
   'attachments.prepare': z.object({
     fileName: z.string().trim().min(1).max(255),
@@ -913,6 +944,8 @@ export const methodParamSchemas = {
     .strict()
     .refine((p) => p.start === undefined || p.end === undefined || p.end > p.start),
   'slides.open': fileTarget,
+  'design.open': fileTarget,
+  'designSystem.open': fileTarget,
   'videos.open': fileTarget,
   'videos.importPackage': z
     .object({

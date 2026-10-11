@@ -163,7 +163,7 @@ describe('说明书的同步', () => {
     expect(() => buildAgentSkillSync(root, INPUTS)).toThrow('references/catalog/voice-language-rates.md');
   });
 
-  it('一级动词也按 CLI 面改写；连着 -、/、. 或后跟 : 的不算工具名；代码块里不加反引号', () => {
+  it('一级动词也按 CLI 面改写；连着 -、/、. 或后跟 : 的不算工具名；代码块里不加反引号；英文词、代码与取值不改', () => {
     const root = freshFixture();
     fs.appendFileSync(
       path.join(root, BUILTIN, 'demo-polish/SKILL.md'),
@@ -175,6 +175,14 @@ describe('说明书的同步', () => {
         'transcribe --url x',
         '```',
         '',
+        // 英文正文、CSS 与取值里的同一个词不是工具名。
+        'Every transcribe job is English prose here; the',
+        'transcribe (at a line start) too, and the element type `transcribe`.',
+        '',
+        '```js',
+        "parts.push('transcribe(-50%)'); transcribe(1);",
+        '```',
+        '',
       ].join('\n'),
     );
     const result = buildAgentSkillSync(root, INPUTS);
@@ -183,6 +191,8 @@ describe('说明书的同步', () => {
       '链接时 `baocut transcribe` 给 `url`（或带 `transcribe: true`）；章节见 [demo-chapters](demo-chapters.md)，transcribe-only 的产物在 transcribe/ 下，脚本是 transcribe.ts。',
     );
     expect(text).toContain('```bash\nbaocut transcribe --url x\n```');
+    expect(text).toContain('Every transcribe job is English prose here; the\ntranscribe (at a line start) too, and the element type `transcribe`.');
+    expect(text).toContain("```js\nparts.push('transcribe(-50%)'); transcribe(1);\n```");
     expect(result.warnings).toEqual([]);
   });
 

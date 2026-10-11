@@ -49,6 +49,8 @@
     edit: ['pencil', 'brush', 'document'],
     search: ['mag', 'filter', 'eye'],
     slides: ['page', 'eye', 'pencil'],
+    design: ['brush', 'eyedrop', 'eye'],
+    'design-system': ['eyedrop', 'slider', 'document'],
     'space-search': ['mag', 'filter', 'folder'],
     space: ['folder', 'shop', 'cart'],
     /* 进出 */

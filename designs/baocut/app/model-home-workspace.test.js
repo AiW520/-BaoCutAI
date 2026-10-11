@@ -8,6 +8,8 @@ const movie = {key:'movie:p1', kind:'movie', id:'p1', tab:'subtitle'};
 const file = {key:'file:o1', kind:'file', id:'o1'};
 const web = {key:'web:w1', kind:'web', id:'w1', url:'https://example.com/'};
 const slides = {key:'slides:deck1', kind:'slides', id:'deck1'};
+const design = {key:'design:cv1', kind:'design', id:'cv1'};
+const system = {key:'design-system:ds1', kind:'design-system', id:'ds1'};
 
 test('multiple resource types coexist, reopening selects rather than duplicates', () => {
   const first = W.open(W.open(W.open(W.empty(), movie), file), web);
@@ -28,7 +30,7 @@ test('closing active selects the right neighbor, then the left, then collapses',
   assert.equal(W.close(first, 'missing'), first);
 });
 test('deep links roundtrip every pane type and keep editor tool/time', () => {
-  for (const item of [movie, {...movie,t:24.5},file,web,{...web,url:''},slides,{...slides,slide:'s03'}]) {
+  for (const item of [movie, {...movie,t:24.5},file,web,{...web,url:''},slides,{...slides,slide:'s03'},design,{...design,board:'hero'},system]) {
     const route = W.route('s2', item);
     const parsed = N.routeFromHref(N.hrefFor(route));
     assert.deepEqual(parsed, route);
@@ -39,6 +41,9 @@ test('deep links roundtrip every pane type and keep editor tool/time', () => {
   assert.equal(N.isSame(W.route('s2',file),W.route('s2',web)), false);
   assert.equal(N.isSame(W.route('s2',web),W.route('s2',{...web,url:'https://example.org/'})), false);
   assert.equal(N.isSame(W.route('s2',slides),W.route('s2',{...slides,slide:'s03'})), false);
+  assert.equal(N.isSame(W.route('s2',design),W.route('s2',{...design,board:'hero'})), false);
+  assert.equal(N.isSame(W.route('s2',design),W.route('s2',system)), false);
+  assert.equal(N.isSame(W.route('s2',system),W.route('s2',{...system,id:'ds2'})), false);
 });
 test('a slides tab keeps its page, and an unknown deck is named as unavailable', () => {
   const opened = W.open(W.empty(), {...slides, slide:'s02'});
@@ -48,6 +53,29 @@ test('a slides tab keeps its page, and an unknown deck is named as unavailable',
   assert.equal(W.reconcile({s2: opened}, W.route('s2', {...slides, slide:'s05'})).s2.tabs[0].slide, 's05');
   assert.equal(W.title(slides, [{id:'deck1', name:'第 1 讲'}]), '第 1 讲');
   assert.equal(W.title(slides, []), '幻灯片不可用');
+});
+test('a design tab keeps its focused artboard, and an unknown canvas is named as unavailable', () => {
+  const opened = W.open(W.empty(), {...design, board:'phone'});
+  assert.equal(W.reconcile({s2: opened}, W.route('s2', design)).s2.tabs[0].board, 'phone');
+  assert.equal(W.reconcile({s2: opened}, W.route('s2', {...design, board:'plans'})).s2.tabs[0].board, 'plans');
+  assert.deepEqual(W.route('s2', {...design, board:'hero'}), {r:'agent', id:'s2', design:'cv1', board:'hero'});
+  assert.equal(W.title(design, [{id:'cv1', name:'落地页'}]), '落地页');
+  assert.equal(W.title(design, []), '设计稿不可用');
+});
+test('a design system opens in its own tab beside a canvas, and an unknown one is named as unavailable', () => {
+  assert.deepEqual(W.route('s2', system), {r:'agent', id:'s2', system:'ds1'});
+  assert.deepEqual(W.fromRoute({r:'agent', id:'s2', system:'ds1'}), system);
+  const both = W.reconcile(W.reconcile({}, W.route('s2', design)), W.route('s2', system)).s2;
+  assert.deepEqual(both.tabs.map(t => t.key), ['design:cv1', 'design-system:ds1']);
+  assert.equal(both.active, 'design-system:ds1');
+  assert.equal(W.title(system, [{id:'ds1', name:'Ember'}]), 'Ember');
+  assert.equal(W.title(system, []), '设计系统不可用');
+});
+test('a design system tab carries a one-shot jump target in its route', () => {
+  const at = 'colors:token-accent-content-default';
+  assert.deepEqual(W.route('s2', {...system, at}), {r:'agent', id:'s2', system:'ds1', at});
+  assert.deepEqual(W.fromRoute({r:'agent', id:'s2', system:'ds1', at}), {...system, at});
+  assert.deepEqual(W.route('s2', {...system, at: undefined}), {r:'agent', id:'s2', system:'ds1'});
 });
 test('history reconciliation isolates conversations and preserves inactive tabs', () => {
   let book = W.reconcile({}, W.route('s2',movie));
@@ -135,7 +163,7 @@ test('draft workspaces are scoped by project and their resource routes round-tri
     const key = W.keyFor(draft);
     assert.ok(key.startsWith('draft:'));
     assert.deepEqual(W.route(key, null), draft);
-    for (const item of [web, file, movie, slides]) {
+    for (const item of [web, file, movie, slides, design, system]) {
       const route = W.route(key, item);
       assert.deepEqual(N.routeFromHref(N.hrefFor(route)), route);
       assert.equal(W.keyFor(route), key);

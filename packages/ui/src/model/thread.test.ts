@@ -175,6 +175,19 @@ describe('工具步骤', () => {
     expect(of('download', { url: 'https://www.youtube.com/watch?v=1' })).toEqual(['下载视频', 'youtube.com', 'download']);
     expect(of('slides_check', { path: 'decks/talk/' })).toEqual(['检查幻灯片', 'talk', 'slides']);
     expect(of('slides_import_asset', { deck: 'talk', path: 'images/cover.png' })).toEqual(['导入幻灯片素材', 'cover.png', 'slides']);
+    expect(of('design_check', { path: 'designs/landing' })).toEqual(['检查设计稿', 'landing', 'design']);
+    expect(of('design_import_asset', { canvas: 'designs/landing', path: 'images/hero.png' })).toEqual(['导入设计稿素材', 'hero.png', 'design']);
+    expect(of('design_system_check', { path: 'systems/brand/' })).toEqual(['检查设计系统', 'brand', 'design-system']);
+    expect(of('design_system_import_asset', { system: 'systems/brand', path: 'assets/logo.svg', group: 'Logos' })).toEqual([
+      '导入设计系统素材',
+      'logo.svg · Logos',
+      'design-system',
+    ]);
+    expect(of('design_system_import_asset', { system: 'systems/brand', path: 'fonts/Inter.woff2' })).toEqual([
+      '导入设计系统素材',
+      'Inter.woff2',
+      'design-system',
+    ]);
     expect(of('edits_apply', { video: 'v', operations: [{ type: 'putDocument', kind: 'translation', language: 'en' }] })).toEqual([
       '翻译',
       'en',
@@ -225,6 +238,33 @@ describe('工具步骤', () => {
       target: { conversationId: 'c', path: 'talk' },
       title: '季度回顾',
       slideCount: 3,
+    };
+    const blocks = buildThread([user('u1', 't1'), tool('c1', 't1'), created, tool('c2', 't1')]);
+    expect(blocks.map((b) => b.type)).toEqual(['user', 'steps']);
+  });
+
+  it('设计稿的记录同样不占块，也不打断步骤组', () => {
+    const created: TimelineItem = {
+      kind: 'design-created',
+      id: 'design_1',
+      createdAt: at,
+      taskId: 't1',
+      target: { conversationId: 'c', path: 'designs/landing' },
+      title: '课程落地页',
+      boardCount: 3,
+    };
+    const blocks = buildThread([user('u1', 't1'), tool('c1', 't1'), created, tool('c2', 't1')]);
+    expect(blocks.map((b) => b.type)).toEqual(['user', 'steps']);
+  });
+
+  it('设计系统的记录同样不占块，也不打断步骤组', () => {
+    const created: TimelineItem = {
+      kind: 'design-system-created',
+      id: 'system_1',
+      createdAt: at,
+      taskId: 't1',
+      target: { conversationId: 'c', path: 'systems/brand' },
+      title: '品牌设计系统',
     };
     const blocks = buildThread([user('u1', 't1'), tool('c1', 't1'), created, tool('c2', 't1')]);
     expect(blocks.map((b) => b.type)).toEqual(['user', 'steps']);

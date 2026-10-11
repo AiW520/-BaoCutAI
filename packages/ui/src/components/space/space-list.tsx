@@ -23,6 +23,7 @@ import Archive from '@react-spectrum/s2/icons/Archive';
 import Chat from '@react-spectrum/s2/icons/Chat';
 import Clock from '@react-spectrum/s2/icons/Clock';
 import CloseCaptions from '@react-spectrum/s2/icons/CloseCaptions';
+import ColorHarmony from '@react-spectrum/s2/icons/ColorHarmony';
 import Delete from '@react-spectrum/s2/icons/Delete';
 import DevicePhone from '@react-spectrum/s2/icons/DevicePhone';
 import Edit from '@react-spectrum/s2/icons/Edit';
@@ -39,12 +40,15 @@ import OpenIn from '@react-spectrum/s2/icons/OpenIn';
 import Preview from '@react-spectrum/s2/icons/Preview';
 import Redo from '@react-spectrum/s2/icons/Redo';
 import Revert from '@react-spectrum/s2/icons/Revert';
+import Shapes from '@react-spectrum/s2/icons/Shapes';
 import Star from '@react-spectrum/s2/icons/Star';
 import StarFilled from '@react-spectrum/s2/icons/StarFilled';
 import Template from '@react-spectrum/s2/icons/Template';
 import Video from '@react-spectrum/s2/icons/Video';
 import { style } from '@react-spectrum/s2/style' with { type: 'macro' };
 import { agoLabel } from '../../model/format.ts';
+import { DESIGN } from '../../model/design-copy.ts';
+import { DESIGN_SYSTEM } from '../../model/design-system-copy.ts';
 import { SLIDES } from '../../model/slides-copy.ts';
 import { continueBlock, entryJobId, entryMenuKey, isFailedPlaceholder, purgeBlock } from '../../model/space-actions.ts';
 import {
@@ -96,6 +100,8 @@ export const KIND_ICON: Record<SpaceEntryKind, ComponentType> = {
   subtitle: CloseCaptions,
   document: FileText,
   slides: Layout,
+  design: Shapes,
+  'design-system': ColorHarmony,
   package: Archive,
   template: Template,
 };
@@ -338,6 +344,9 @@ function entryMenu(
   const jobId = entryJobId(entry);
   const isVideo = entry.kind === 'video' && !trashed;
   const isSlides = entry.kind === 'slides' && !trashed;
+  const isDesign = entry.kind === 'design' && !trashed;
+  const isDesignSystem = entry.kind === 'design-system' && !trashed;
+  const openLabel = isVideo ? COPY.openVideo : isDesign ? DESIGN.open : isDesignSystem ? DESIGN_SYSTEM.open : SLIDES.open;
   const viewLabel = isVideo ? (entry.files?.length ? COPY.viewInfoFiles : COPY.viewInfo) : COPY.view;
   const disabled: EntryAction[] = [];
   if (!canReveal) disabled.push('reveal');
@@ -352,10 +361,10 @@ function entryMenu(
       onAction={(key) => onAction(key as EntryAction, entry)}>
       <MenuSection>
         {isVideo && transcribe === 'retry' ? transcribeItem(transcribe) : null}
-        {isVideo || isSlides ? (
-          <MenuItem id="open" textValue={isVideo ? COPY.openVideo : SLIDES.open}>
+        {isVideo || isSlides || isDesign || isDesignSystem ? (
+          <MenuItem id="open" textValue={openLabel}>
             <OpenIn />
-            <Text>{isVideo ? COPY.openVideo : SLIDES.open}</Text>
+            <Text>{openLabel}</Text>
           </MenuItem>
         ) : null}
         <MenuItem id="view" textValue={viewLabel}>
@@ -431,9 +440,11 @@ function measureOf(entry: SpaceEntry): string {
   return measureText(entry) ?? (entry.size > 0 ? formatBytes(entry.size) : '');
 }
 
-/** 行与卡片的默认动作：视频打开编辑器，幻灯片在功能区打开，其余打开查看框（原型 onAction）。 */
+/** 行与卡片的默认动作：视频打开编辑器，幻灯片、设计稿与设计系统在功能区打开，其余打开查看框（原型 onAction）。 */
 const primaryAction = (entry: SpaceEntry): EntryAction =>
-  (entry.kind === 'video' || entry.kind === 'slides') && !entry.user.trashedAt ? 'open' : 'view';
+  (entry.kind === 'video' || entry.kind === 'slides' || entry.kind === 'design' || entry.kind === 'design-system') && !entry.user.trashedAt
+    ? 'open'
+    : 'view';
 
 interface ListProps {
   entries: SpaceRow[];

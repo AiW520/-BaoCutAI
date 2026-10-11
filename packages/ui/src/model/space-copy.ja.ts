@@ -10,6 +10,8 @@ export const ja: SpaceMessages = {
     subtitle: '字幕',
     document: 'ドキュメント',
     slides: 'スライド',
+    design: 'デザイン',
+    'design-system': 'デザインシステム',
     package: '動画パッケージ',
     template: 'テンプレート',
   },

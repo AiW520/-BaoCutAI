@@ -283,13 +283,13 @@ svg{overflow:visible}
     if (el && el.textContent !== String(value)) el.textContent = String(value);
   };
   // 一次写全 transform：没给的属性回到默认值，所以同一时刻重复调用结果相同。
-  // preserveCenter 为真时保留 baocut translate(-50%,-50%)，用于以中心点定位的元素。
+  // preserveCenter 为真时保留 translate(-50%,-50%)，用于以中心点定位的元素。
   const applyEl = (el, props = {}, preserveCenter = false) => {
     if (!el) return;
     const s = props.scale ?? 1;
     const parts = [];
-    if (preserveCenter) parts.push('baocut translate(-50%, -50%)');
-    parts.push(`baocut translate(${props.x ?? 0}px, ${props.y ?? 0}px)`);
+    if (preserveCenter) parts.push('translate(-50%, -50%)');
+    parts.push(`translate(${props.x ?? 0}px, ${props.y ?? 0}px)`);
     if (props.rotate) parts.push(`rotate(${props.rotate}deg)`);
     parts.push(`scale(${s * (props.scaleX ?? 1)}, ${s * (props.scaleY ?? 1)})`);
     el.style.transform = parts.join(' ');

@@ -15,10 +15,11 @@ function fakeFetch(respond: (url: string, init: RequestInit) => Response | Promi
 }
 
 describe('encodeWireBatch', () => {
-  it('字符串按 UTF-8、Blob 按原始字节转 base64，保留 contentType 和 ifMatch', async () => {
+  it('字符串按 UTF-8、Blob 按原始字节转 base64，保留 contentType 和 ifMatch（null 也原样）', async () => {
     const wire = await encodeWireBatch({
       'project/a.html': { content: '中文 ✓', contentType: 'text/html', ifMatch: 'a'.repeat(64) },
       'project/b.bin': { content: new Blob([new Uint8Array([0, 255])]), contentType: 'application/octet-stream' },
+      'project/c.css': { content: 'a{}', contentType: 'text/css', ifMatch: null },
     });
     expect(wire.files['project/a.html']).toEqual({
       base64: Buffer.from('中文 ✓').toString('base64'),
@@ -26,6 +27,7 @@ describe('encodeWireBatch', () => {
       ifMatch: 'a'.repeat(64),
     });
     expect(wire.files['project/b.bin']).toEqual({ base64: 'AP8=', contentType: 'application/octet-stream', ifMatch: undefined });
+    expect(wire.files['project/c.css']).toEqual({ base64: Buffer.from('a{}').toString('base64'), contentType: 'text/css', ifMatch: null });
   });
 
   it('删除项原样传过去', async () => {

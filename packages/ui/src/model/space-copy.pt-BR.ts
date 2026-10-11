@@ -10,6 +10,8 @@ export const ptBR: SpaceMessages = {
     subtitle: "Legendas",
     document: "Documento",
     slides: "Slides",
+    design: "Design",
+    'design-system': "Sistema de design",
     package: "Pacote de vídeo",
     template: "Template",
   },

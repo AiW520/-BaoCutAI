@@ -36,6 +36,8 @@ export const zhHans: RcAgentToolsMessages = {
 
   createVideoSummary: (p) => `新建视频「${p.name}」`,
   slidesImportAssetSummary: (p) => `把图片「${p.file}」导入幻灯片「${p.deck}」`,
+  designImportAssetSummary: (p) => `把「${p.file}」导入设计稿「${p.canvas}」`,
+  designSystemImportAssetSummary: (p) => `把「${p.file}」导入设计系统「${p.system}」`,
   editsSummary: (p) => `${p.label}（${p.count} 个操作：${p.types}）`,
   captionsSummary: (p) => `给文档 ${p.documentId} 建立${p.bilingual ? '双语' : ''}字幕层`,
   captionsLabel: '建立字幕层',

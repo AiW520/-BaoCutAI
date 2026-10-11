@@ -22,6 +22,8 @@ import {
   type SubtitleTrack,
   type SkillSendRef,
   type SlideAnnotation,
+  type DesignAnnotation,
+  type DesignSystemAnnotation,
   type TemplateSendRef,
 } from '@baocut/protocol';
 import { EditLabel } from '@baocut/protocol/messages/ui';
@@ -173,6 +175,8 @@ export class RuntimeSession {
    * `skills`：输入框「+ › 使用 Skill」点选的 skill（产品设计 §6.9），按挂上的顺序；Runtime 把每个的 `SKILL.md` 正文附给智能体，
    * 消息上另带标记。空的不传。
    * `slideAnnotations`：幻灯片标签里加进对话的标注（docs/design/slides §8.2、§9），Runtime 按 deck 拼成给智能体的段落。空的不传。
+   * `designAnnotations`：设计稿标签里加进对话的标注（docs/design/canvas §8.2、§9），同上，按设计稿拼段。空的不传。
+   * `designSystemAnnotations`：设计系统标签里加进对话的标注（docs/design/canvas §10.6），同上，按设计系统拼段。空的不传。
    */
   async send(
     conversationId: Id,
@@ -182,6 +186,8 @@ export class RuntimeSession {
     template?: TemplateSendRef,
     skills?: readonly SkillSendRef[],
     slideAnnotations?: readonly SlideAnnotation[],
+    designAnnotations?: readonly DesignAnnotation[],
+    designSystemAnnotations?: readonly DesignSystemAnnotation[],
   ): Promise<Id> {
     const { taskId } = await this.client.request('conversations.send', {
       conversationId,
@@ -192,6 +198,8 @@ export class RuntimeSession {
       ...(template ? { template } : {}),
       ...(skills?.length ? { skills: skills.map((s) => ({ id: s.id })) } : {}),
       ...(slideAnnotations?.length ? { slideAnnotations: [...slideAnnotations] } : {}),
+      ...(designAnnotations?.length ? { designAnnotations: [...designAnnotations] } : {}),
+      ...(designSystemAnnotations?.length ? { designSystemAnnotations: [...designSystemAnnotations] } : {}),
     });
     return taskId;
   }
@@ -202,6 +210,8 @@ export class RuntimeSession {
     text: string,
     attachments?: Id[],
     slideAnnotations?: readonly SlideAnnotation[],
+    designAnnotations?: readonly DesignAnnotation[],
+    designSystemAnnotations?: readonly DesignSystemAnnotation[],
   ): Promise<'steered' | 'unsupported' | 'no-active-turn'> {
     const { status } = await this.client.request('conversations.steer', {
       conversationId,
@@ -209,6 +219,8 @@ export class RuntimeSession {
       commandId: newId('cmd'),
       ...(attachments?.length ? { attachments } : {}),
       ...(slideAnnotations?.length ? { slideAnnotations: [...slideAnnotations] } : {}),
+      ...(designAnnotations?.length ? { designAnnotations: [...designAnnotations] } : {}),
+      ...(designSystemAnnotations?.length ? { designSystemAnnotations: [...designSystemAnnotations] } : {}),
     });
     return status;
   }

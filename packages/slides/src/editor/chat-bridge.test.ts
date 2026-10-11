@@ -24,10 +24,10 @@ describe('createChatBridge', () => {
     const parent = fakeLink();
     const chat = createChatBridge(parent.link, () => 'p1');
     const done = chat.capability.suggestPrompt('Fix slide 2');
-    expect(parent.sent).toEqual([{ type: 'slides:suggest-prompt', requestId: 'p1', prompt: 'Fix slide 2' }]);
+    expect(parent.sent).toEqual([{ type: 'editor:suggest-prompt', requestId: 'p1', prompt: 'Fix slide 2' }]);
     // 别的请求的回应不算
-    parent.deliver({ type: 'slides:suggest-prompt-result', requestId: 'other', ok: true });
-    parent.deliver({ type: 'slides:suggest-prompt-result', requestId: 'p1', ok: true });
+    parent.deliver({ type: 'editor:suggest-prompt-result', requestId: 'other', ok: true });
+    parent.deliver({ type: 'editor:suggest-prompt-result', requestId: 'p1', ok: true });
     await expect(done).resolves.toBeUndefined();
   });
 
@@ -37,7 +37,7 @@ describe('createChatBridge', () => {
     let n = 0;
     const chat = createChatBridge(parent.link, () => `p${++n}`, 1000);
     const refused = chat.capability.suggestPrompt('a');
-    parent.deliver({ type: 'slides:suggest-prompt-result', requestId: 'p1', ok: false });
+    parent.deliver({ type: 'editor:suggest-prompt-result', requestId: 'p1', ok: false });
     await expect(refused).rejects.toThrow();
     const silent = chat.capability.suggestPrompt('b');
     vi.advanceTimersByTime(1000);

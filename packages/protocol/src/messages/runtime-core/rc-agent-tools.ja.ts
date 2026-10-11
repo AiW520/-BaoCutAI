@@ -38,6 +38,8 @@ export const ja: RcAgentToolsMessages = {
 
   createVideoSummary: (p) => `動画「${p.name}」を作成`,
   slidesImportAssetSummary: (p) => `画像「${p.file}」をスライド「${p.deck}」に取り込む`,
+  designImportAssetSummary: (p) => `「${p.file}」をデザイン「${p.canvas}」に取り込む`,
+  designSystemImportAssetSummary: (p) => `「${p.file}」をデザインシステム「${p.system}」に取り込む`,
   editsSummary: (p) => `${p.label}（${p.count} 件の操作：${p.types}）`,
   captionsSummary: (p) => `ドキュメント ${p.documentId} の${p.bilingual ? 'バイリンガル' : ''}字幕レイヤーを追加`,
   captionsLabel: '字幕レイヤーを追加',

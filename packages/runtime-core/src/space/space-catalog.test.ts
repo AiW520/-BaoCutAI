@@ -710,6 +710,67 @@ describe('Space 目录', () => {
     await expect(fs.stat(deckDir)).rejects.toThrow();
   });
 
+  it('设计稿：含合法 canvas.json 的目录是一个 design 条目，名字是标题、带画板数；里面的文件不单列、不能单独登记，物理删除删整个目录', async () => {
+    const canvasDir = path.join(projectDir, 'poster');
+    await fs.mkdir(path.join(canvasDir, 'screens'), { recursive: true });
+    await fs.mkdir(path.join(canvasDir, 'assets'), { recursive: true });
+    const boards = { 'Main.dc.html': { x: 0, y: 0, w: 880, h: 560 }, 'screens/Cart.dc.html': { x: 960, y: 0, w: 390, h: 844 } };
+    await fs.writeFile(path.join(canvasDir, 'canvas.json'), JSON.stringify({ v: 3, title: ' 春季海报 ', boards, order: Object.keys(boards) }));
+    await fs.writeFile(path.join(canvasDir, 'Main.dc.html'), '<x-dc></x-dc>');
+    await fs.writeFile(path.join(canvasDir, 'screens', 'Cart.dc.html'), '<x-dc></x-dc>');
+    await fs.writeFile(path.join(canvasDir, 'assets', 'logo.png'), 'png');
+    await fs.writeFile(path.join(canvasDir, 'brief.md'), '# 需求');
+    // canvas.json 不合格式的目录照常往里走。
+    await fs.mkdir(path.join(projectDir, 'sketch'), { recursive: true });
+    await fs.writeFile(path.join(projectDir, 'sketch', 'canvas.json'), JSON.stringify({ v: 2, boards: [] }));
+    const { catalog } = await open();
+
+    const design = catalog.entries().find((e) => e.kind === 'design')!;
+    expect(design).toMatchObject({ relPath: 'poster', fileName: 'poster', name: '春季海报', canvas: { boardCount: 2 } });
+    expect(design.size).toBeGreaterThan(0);
+    expect(catalog.entries().filter((e) => e.relPath.startsWith('poster/'))).toEqual([]);
+    expect(byName(catalog, 'canvas.json')).toMatchObject({ relPath: 'sketch/canvas.json', kind: 'document' });
+
+    await expect(catalog.importFile({ projectId: 'p1', file: path.join(canvasDir, 'brief.md') })).rejects.toMatchObject({
+      details: { code: 'SPACE_IMPORT_UNSUPPORTED' },
+    });
+
+    await catalog.update({ entryId: design.id, trashed: true });
+    expect(await catalog.purge(design.id)).toEqual({ status: 'purged', entryId: design.id });
+    await expect(fs.stat(canvasDir)).rejects.toThrow();
+  });
+
+  it('设计系统：含合法 design-system.json 的目录是一个 design-system 条目，名字是标题；里面的文件不单列、不能单独登记，物理删除连同 _blobs/ 删整个目录', async () => {
+    const systemDir = path.join(projectDir, 'brand');
+    await fs.mkdir(path.join(systemDir, 'assets', 'Logos'), { recursive: true });
+    await fs.mkdir(path.join(systemDir, '_blobs'), { recursive: true });
+    await fs.writeFile(
+      path.join(systemDir, 'design-system.json'),
+      JSON.stringify({ v: 3, layout: 'files', createdOnFiles: { v: 1, at: '2026-10-11T00:00:00Z' }, title: ' 品牌规范 ', namespace: 'Brand' }),
+    );
+    await fs.writeFile(path.join(systemDir, 'README.md'), '# 品牌');
+    await fs.writeFile(path.join(systemDir, 'assets', 'Logos', 'mark.svg'), '<svg/>');
+    await fs.writeFile(path.join(systemDir, '_blobs', `${'ab'.repeat(16)}.png`), 'png');
+    // 不是 v3 files 的 design-system.json（旧的单文件信封）不算设计系统，目录照常往里走。
+    await fs.mkdir(path.join(projectDir, 'legacy'), { recursive: true });
+    await fs.writeFile(path.join(projectDir, 'legacy', 'design-system.json'), JSON.stringify({ v: 2, content: { files: {} } }));
+    const { catalog } = await open();
+
+    const system = catalog.entries().find((e) => e.kind === 'design-system')!;
+    expect(system).toMatchObject({ relPath: 'brand', fileName: 'brand', name: '品牌规范' });
+    expect(system.size).toBeGreaterThan(0);
+    expect(catalog.entries().filter((e) => e.relPath.startsWith('brand/'))).toEqual([]);
+    expect(byName(catalog, 'design-system.json')).toMatchObject({ relPath: 'legacy/design-system.json', kind: 'document' });
+
+    for (const file of [path.join(systemDir, 'README.md'), path.join(systemDir, 'assets', 'Logos', 'mark.svg')]) {
+      await expect(catalog.importFile({ projectId: 'p1', file })).rejects.toMatchObject({ details: { code: 'SPACE_IMPORT_UNSUPPORTED' } });
+    }
+
+    await catalog.update({ entryId: system.id, trashed: true });
+    expect(await catalog.purge(system.id)).toEqual({ status: 'purged', entryId: system.id });
+    await expect(fs.stat(systemDir)).rejects.toThrow();
+  });
+
   it('登记项目素材：项目里的原地登记，项目外的复制进 imports/', async () => {
     const { catalog } = await open();
     await fs.writeFile(path.join(projectDir, 'raw', 'note.md'), '# 笔记');

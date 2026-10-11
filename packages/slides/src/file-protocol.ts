@@ -35,11 +35,14 @@ export interface FileListing {
 
 // ---------- 写入：slidesHost.artifact.publish(batch) ----------
 
-/** 写一个文件。ifMatch 是调用方读到的 sha，和磁盘上不一致就整批拒绝（conflict）。 */
+/**
+ * 写一个文件。ifMatch 是调用方读到的 sha，和磁盘上不一致就整批拒绝（conflict）；为 null 时要求文件还不存在
+ * （编辑器新建文件时这样传），已经有了同样是 conflict。
+ */
 export interface PublishWrite {
   content: string | Blob;
   contentType: string;
-  ifMatch?: Sha256;
+  ifMatch?: Sha256 | null;
 }
 
 /** 删除一个文件；带 ifMatch 时同样做并发检查。 */
@@ -82,7 +85,8 @@ export interface ConflictPath {
   path: string;
   /** 现在的 sha；文件不存在时为 null。 */
   actual: Sha256 | null;
-  expected: Sha256;
+  /** 调用方给的 ifMatch；null 表示要求文件不存在。 */
+  expected: Sha256 | null;
 }
 
 export interface ConflictError {
@@ -124,7 +128,7 @@ export interface UploadResult {
 export interface WireWrite {
   base64: string;
   contentType: string;
-  ifMatch?: Sha256;
+  ifMatch?: Sha256 | null;
 }
 
 export type WireEntry = WireWrite | PublishDelete | null;

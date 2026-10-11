@@ -200,13 +200,15 @@ jobs:
         if: steps.gate.outputs.skip != 'true'
         run: ninja --version
 
-      # 构建 Electron、Runtime 托管的 Web 客户端与幻灯片编辑器（页面和 Node 编译器）。
-      - name: Build the Electron app, Web client and slides editor
+      # 构建 Electron、Runtime 托管的 Web 客户端、幻灯片编辑器（页面和 Node 编译器）、设计稿编辑器与设计系统编辑器。
+      - name: Build the Electron app, Web client, slides editor, design editor and design system editor
         if: steps.gate.outputs.skip != 'true'
         run: |
           npm run build
           npm run build:web
           npm run build:slides-editor
+          npm run build:design-editor
+          npm run build:design-system-editor
 
       - name: Verify slides file watching after atomic saves
         if: steps.gate.outputs.skip != 'true'

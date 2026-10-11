@@ -7,6 +7,7 @@ import AudioWave from '@react-spectrum/s2/icons/AudioWave';
 import Bookmark from '@react-spectrum/s2/icons/Bookmark';
 import Checkmark from '@react-spectrum/s2/icons/Checkmark';
 import Collection from '@react-spectrum/s2/icons/Collection';
+import ColorHarmony from '@react-spectrum/s2/icons/ColorHarmony';
 import Cut from '@react-spectrum/s2/icons/Cut';
 import Data from '@react-spectrum/s2/icons/Data';
 import Delete from '@react-spectrum/s2/icons/Delete';
@@ -19,6 +20,7 @@ import Layers from '@react-spectrum/s2/icons/Layers';
 import Layout from '@react-spectrum/s2/icons/Layout';
 import ListBulleted from '@react-spectrum/s2/icons/ListBulleted';
 import SaveFloppy from '@react-spectrum/s2/icons/SaveFloppy';
+import Shapes from '@react-spectrum/s2/icons/Shapes';
 import Text from '@react-spectrum/s2/icons/Text';
 import Transcript from '@react-spectrum/s2/icons/Transcript';
 import Translate from '@react-spectrum/s2/icons/Translate';
@@ -98,6 +100,8 @@ const TOOL_ICON: Record<BaoCutStepKind, ReactNode> = {
   grant: <Key />,
   contract: <Checkmark />,
   slides: <Layout />,
+  design: <Shapes />,
+  'design-system': <ColorHarmony />,
 };
 
 /**

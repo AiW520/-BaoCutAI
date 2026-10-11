@@ -11,6 +11,8 @@ export const ru: SpaceMessages = {
     subtitle: "Субтитры",
     document: "Документ",
     slides: "Слайды",
+    design: "Дизайн",
+    'design-system': "Дизайн-система",
     package: "Пакет видео",
     template: "Шаблон",
   },

@@ -1,3 +1,4 @@
+import fs from 'node:fs/promises';
 import path from 'node:path';
 import { BrowserWindow, Menu, app, dialog, ipcMain, nativeTheme, session, shell } from 'electron';
 import { onLocaleChange, setLocale } from '@baocut/protocol';
@@ -13,7 +14,7 @@ import { RuntimeSupervisor } from './runtime-supervisor.ts';
 import { installWebTabs } from './web-tabs.ts';
 import { openLocalFile } from './open-local-file.ts';
 import { installStdioErrorGuards } from './stdio-errors.ts';
-import { saveDialogPath } from './save-dialog-path.ts';
+import { saveDialogPath, saveFileData } from './save-dialog-path.ts';
 import { desktopRuntimeHeaders, desktopRuntimeResponseHeaders, isDesktopRuntimeRequest } from './runtime-origin.ts';
 
 /**
@@ -192,7 +193,8 @@ export function startDesktopApp(): void {
     return result.canceled ? [] : messageFiles(result.filePaths, opts.images === true);
   });
 
-  ipcMain.handle('baocut:pick-save-path', async (event, raw: unknown) => {
+  /** 系统存储对话框：选保存位置与保存文件共用。取消时 null。 */
+  const showSaveDialog = async (event: Electron.IpcMainInvokeEvent, raw: unknown): Promise<string | null> => {
     const win = BrowserWindow.fromWebContents(event.sender);
     const opts = (raw ?? {}) as { title?: unknown; buttonLabel?: unknown; defaultName?: unknown; defaultDir?: unknown; filters?: unknown };
     const defaultPath = saveDialogPath(opts.defaultName, opts.defaultDir);
@@ -205,6 +207,18 @@ export function startDesktopApp(): void {
     };
     const result = win ? await dialog.showSaveDialog(win, options) : await dialog.showSaveDialog(options);
     return result.canceled || !result.filePath ? null : result.filePath;
+  };
+
+  ipcMain.handle('baocut:pick-save-path', (event, raw: unknown) => showSaveDialog(event, raw));
+
+  // 把界面手上的文件存到用户在对话框里选的位置（设计稿的导出，docs/design/canvas §8.3）。只收应用窗口主框架发来的；
+  // 路径只由对话框给，渲染进程只给内容与建议的文件名。
+  ipcMain.handle('baocut:save-file', async (event, raw: unknown) => {
+    if (!BrowserWindow.fromWebContents(event.sender) || event.senderFrame !== event.sender.mainFrame) return null;
+    const data = saveFileData((raw as { data?: unknown } | null)?.data);
+    const file = await showSaveDialog(event, raw);
+    if (file) await fs.writeFile(file, data);
+    return file;
   });
 
   ipcMain.handle('baocut:reveal', (_event, target: unknown) => {

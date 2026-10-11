@@ -10,6 +10,8 @@ export const zhHans: SpaceMessages = {
     subtitle: '字幕',
     document: '文档',
     slides: '幻灯片',
+    design: '设计稿',
+    'design-system': '设计系统',
     package: '视频包',
     template: '模板',
   },

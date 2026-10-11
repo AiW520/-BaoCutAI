@@ -880,7 +880,9 @@ describe('Web 服务', () => {
     expect(editorPage.headers['x-content-type-options']).toBe('nosniff');
     expect((await send(`${origin}${opened.url}`)).status).toBe(401);
     expect((await send(`${origin}${opened.url}`, { headers: { Cookie: cookie, 'Sec-Fetch-Site': 'cross-site' } })).status).toBe(403);
-    expect((await send(`${origin}/_blob/${'0'.repeat(32)}`)).status).toBe(401);
+    // 不带会话的根级素材请求只在设计稿里找（docs/design/canvas §6.2），这里没有，是 404；跨站的照样拒绝。
+    expect((await send(`${origin}/_blob/${'0'.repeat(32)}`)).status).toBe(404);
+    expect((await send(`${origin}/_blob/${'0'.repeat(32)}`, { headers: { 'Sec-Fetch-Site': 'cross-site' } })).status).toBe(403);
     expect((await send(`${origin}/_blob/${'0'.repeat(32)}`, { headers: { Cookie: cookie } })).status).toBe(404);
     const listing = JSON.parse((await send(`${origin}${opened.url}_files.json`, { headers: { Cookie: cookie } })).body) as { files: object };
     expect(Object.keys(listing.files)).toEqual(['project/deck.json', 'project/slides/s01.html']);
@@ -902,6 +904,222 @@ describe('Web 服务', () => {
     expect(JSON.parse(readOnly.body)).toMatchObject({ code: 'not_writer' });
     expect(JSON.parse((await send(`${origin}${opened.url}__deck/session`, { headers: { Cookie: cookie } })).body)).toEqual({ canEdit: false });
     expect(await fs.readFile(path.join(deck, 'slides', 's01.html'), 'utf8')).toBe('<section>v2</section>');
+  });
+
+  it('设计稿：浏览器拿到相对地址；/design/ 在另一个主机名上只认 grant，不要会话；跨站只放行导航；不带会话的 /_blob/ 只找设计稿；只读不能发布', async () => {
+    const editor = path.join(dir, 'design-editor');
+    await fs.mkdir(editor);
+    await fs.writeFile(path.join(editor, 'index.html'), '<!doctype html><div id="root"></div><script>boot()</script>');
+    await boot({ dist }, { designEditorDist: editor });
+    const origin = await openWeb();
+    const port = new URL(origin).port;
+    const other = `http://localhost:${port}`;
+    const cookie = await login(origin);
+    const page = await browser(origin, cookie);
+    const { project } = await desktop.request('projects.create', { name: '设计稿' });
+    const canvas = path.join(project.path, 'poster');
+    const blob = 'ab'.repeat(16);
+    await fs.mkdir(path.join(canvas, 'assets'), { recursive: true });
+    await fs.writeFile(
+      path.join(canvas, 'canvas.json'),
+      JSON.stringify({ v: 3, title: '海报', boards: { 'Main.dc.html': { x: 0, y: 0, w: 880, h: 560 } }, order: ['Main.dc.html'] }),
+    );
+    await fs.writeFile(path.join(canvas, 'Main.dc.html'), '<x-dc></x-dc>');
+    await fs.writeFile(path.join(canvas, 'assets', `${blob}.png`), 'png');
+    const deck = path.join(project.path, 'pitch');
+    const deckBlob = 'cd'.repeat(16);
+    await fs.mkdir(path.join(deck, 'assets'), { recursive: true });
+    await fs.writeFile(path.join(deck, 'deck.json'), JSON.stringify({ v: 4, title: '路演', order: [] }));
+    await fs.writeFile(path.join(deck, 'assets', `${deckBlob}.png`), 'png');
+    await page.request('slides.open', { projectId: project.id, path: 'pitch' });
+    await fs.mkdir(path.join(project.path, 'plain'));
+
+    const opened = await page.request('design.open', { projectId: project.id, path: 'poster' });
+    expect(opened).toMatchObject({ canvas: { title: '海报', boardCount: 1 }, editorAvailable: true });
+    expect(opened.url).toMatch(/^\/design\/[A-Za-z0-9_-]{32}\/$/);
+    const gateway = runtime!.discovery.endpoint.replace('ws:', 'http:');
+    expect((await desktop.request('design.open', { projectId: project.id, path: 'poster' })).url).toBe(`${gateway}${opened.url}`);
+    expect(details(await page.request('design.open', { projectId: project.id, path: 'plain' }).catch((e: unknown) => e))).toMatchObject({
+      code: 'invalid-request',
+      details: { code: 'DESIGN_NOT_A_CANVAS' },
+    });
+
+    // 另一个主机名上没有会话 cookie：页面照样给，CSP 不带哈希、放行 eval，嵌入只放行这个服务的两个回环源。
+    const onOther = (route: string, headers: Record<string, string> = {}, method = 'GET', body?: string) =>
+      send(`${origin}${route}`, { method, headers: { Host: `localhost:${port}`, ...headers }, ...(body ? { body } : {}) });
+    const editorPage = await onOther(opened.url, { 'Sec-Fetch-Site': 'cross-site', 'Sec-Fetch-Mode': 'navigate', 'Sec-Fetch-Dest': 'iframe' });
+    expect(editorPage.status).toBe(200);
+    expect(editorPage.headers['x-frame-options']).toBeUndefined();
+    const csp = editorPage.headers['content-security-policy'] as string;
+    expect(csp).toContain(`frame-ancestors ${origin} ${other}`);
+    expect(csp).toContain("script-src 'self' 'unsafe-inline' 'unsafe-eval' blob:");
+    expect(csp).not.toContain("'sha256-");
+    expect((await onOther(opened.url, { 'Sec-Fetch-Site': 'cross-site', 'Sec-Fetch-Mode': 'cors', 'Sec-Fetch-Dest': 'empty' })).status).toBe(403);
+    expect((await onOther(`${opened.url}_files.json`, { 'Sec-Fetch-Site': 'same-site', 'Sec-Fetch-Mode': 'no-cors', 'Sec-Fetch-Dest': 'script' })).status).toBe(403);
+    expect((await onOther(`/design/${'x'.repeat(32)}/`)).status).toBe(404);
+    const listing = JSON.parse((await onOther(`${opened.url}_files.json`, { 'Sec-Fetch-Site': 'same-origin' })).body) as { files: object };
+    expect(Object.keys(listing.files).sort()).toEqual(['project/Main.dc.html', 'project/canvas.json']);
+
+    // 不带会话的根级 /_blob/ 只在设计稿里找；带会话时与幻灯片一样在所有打开的里找。
+    expect((await onOther(`/_blob/${blob}`)).status).toBe(200);
+    expect((await onOther(`/_blob/${deckBlob}`)).status).toBe(404);
+    expect((await onOther(`${opened.url}_blob/${blob}`)).status).toBe(200);
+    expect((await send(`${origin}/_blob/${deckBlob}`, { headers: { Cookie: cookie } })).status).toBe(200);
+    expect((await send(`${origin}/_blob/${blob}`, { headers: { Cookie: cookie } })).status).toBe(200);
+
+    // 写请求要同源：Origin 与 Host 一致。
+    const publish = (text: string, from: string) =>
+      onOther(
+        `${opened.url}__deck/publish`,
+        { 'Content-Type': 'application/json', Origin: from },
+        'POST',
+        JSON.stringify({ files: { 'project/Main.dc.html': { base64: Buffer.from(text).toString('base64'), contentType: 'text/html' } } }),
+      );
+    expect((await publish('<x-dc>v2</x-dc>', other)).status).toBe(200);
+    expect(await fs.readFile(path.join(canvas, 'Main.dc.html'), 'utf8')).toBe('<x-dc>v2</x-dc>');
+    expect((await publish('<x-dc>x</x-dc>', origin)).status).toBe(403);
+    expect(await fs.readFile(path.join(canvas, 'Main.dc.html'), 'utf8')).toBe('<x-dc>v2</x-dc>');
+
+    // Web 客户端页面的 CSP 允许把另一个主机名嵌进来。
+    const app = await send(`${origin}/`, { headers: { Cookie: cookie } });
+    expect(app.headers['content-security-policy']).toContain(`frame-src 'self' blob: ${origin} ${other}`);
+
+    await desktop.request('services.configure', { serviceId: 'web', readOnly: true });
+    await until(() => page.state.status === 'disconnected');
+    const readOnly = await publish('<x-dc>v3</x-dc>', other);
+    expect(readOnly.status).toBe(403);
+    expect(JSON.parse(readOnly.body)).toMatchObject({ code: 'not_writer' });
+    expect(JSON.parse((await onOther(`${opened.url}__deck/session`)).body)).toEqual({ canEdit: false });
+  });
+
+  /** 设计稿与设计系统：两种编辑器在 Web 上走同一个隔离主机名（docs/design/canvas §6.2、§10.4），下面的断言对两种都成立。 */
+  const ISOLATED_KINDS = [
+    {
+      kind: 'design',
+      method: 'design.open',
+      other: 'design-system',
+      notA: 'DESIGN_NOT_A_CANVAS',
+      file: 'project/Main.dc.html',
+      write: async (folder: string) => {
+        await fs.mkdir(folder, { recursive: true });
+        await fs.writeFile(path.join(folder, 'canvas.json'), JSON.stringify({ v: 3, title: 'T', boards: { 'Main.dc.html': { x: 0, y: 0, w: 1, h: 1 } }, order: ['Main.dc.html'] }));
+        await fs.writeFile(path.join(folder, 'Main.dc.html'), '<x-dc></x-dc>');
+      },
+    },
+    {
+      kind: 'design-system',
+      method: 'designSystem.open',
+      other: 'design',
+      notA: 'DESIGN_SYSTEM_NOT_A_SYSTEM',
+      file: 'project/README.md',
+      write: async (folder: string) => {
+        await fs.mkdir(folder, { recursive: true });
+        await fs.writeFile(path.join(folder, 'design-system.json'), JSON.stringify({ v: 3, layout: 'files', createdOnFiles: { v: 1, at: '2026-10-11T00:00:00Z' }, title: 'T' }));
+        await fs.writeFile(path.join(folder, 'README.md'), '# T');
+      },
+    },
+  ] as const;
+
+  async function bootIsolated() {
+    const editors: Record<string, string> = {};
+    for (const name of ['design-editor', 'design-system-editor']) {
+      const editor = path.join(dir, name);
+      await fs.mkdir(path.join(editor, 'artifact-type'), { recursive: true });
+      await fs.writeFile(path.join(editor, 'index.html'), `<!doctype html><script>boot('${name}')</script>`);
+      await fs.writeFile(path.join(editor, 'artifact-type', 'run.html'), '<!doctype html><script>run()</script>');
+      editors[name] = editor;
+    }
+    await boot({ dist }, { designEditorDist: editors['design-editor'], designSystemEditorDist: editors['design-system-editor'] });
+    const origin = await openWeb();
+    const port = new URL(origin).port;
+    const cookie = await login(origin);
+    const page = await browser(origin, cookie);
+    const { project } = await desktop.request('projects.create', { name: '隔离' });
+    const onOther = (route: string, headers: Record<string, string> = {}, method = 'GET', body?: string) =>
+      send(`${origin}${route}`, { method, headers: { Host: `localhost:${port}`, ...headers }, ...(body ? { body } : {}) });
+    return { origin, other: `http://localhost:${port}`, cookie, page, project, onOther };
+  }
+
+  it.each(ISOLATED_KINDS)('$kind：浏览器拿到相对地址；另一个主机名上只认 grant、不要会话；跨站只放行这种路由的导航；grant 跨种类 404', async (spec) => {
+    const { origin, other, page, project, onOther } = await bootIsolated();
+    await spec.write(path.join(project.path, 'mine'));
+    await (spec.kind === 'design' ? ISOLATED_KINDS[1] : ISOLATED_KINDS[0]).write(path.join(project.path, 'theirs'));
+    await fs.mkdir(path.join(project.path, 'plain'));
+
+    const opened = (await page.request(spec.method, { projectId: project.id, path: 'mine' })) as { url: string; editorAvailable: boolean };
+    expect(opened.editorAvailable).toBe(true);
+    expect(opened.url).toMatch(new RegExp(`^/${spec.kind}/[A-Za-z0-9_-]{32}/$`));
+    const gateway = runtime!.discovery.endpoint.replace('ws:', 'http:');
+    expect(((await desktop.request(spec.method, { projectId: project.id, path: 'mine' })) as { url: string }).url).toBe(`${gateway}${opened.url}`);
+    expect(details(await page.request(spec.method, { projectId: project.id, path: 'plain' }).catch((e: unknown) => e))).toMatchObject({
+      code: 'invalid-request',
+      details: { code: spec.notA },
+    });
+    const theirs = (await page.request(spec.other === 'design' ? 'design.open' : 'designSystem.open', { projectId: project.id, path: 'theirs' })) as { url: string };
+
+    const navigate = { 'Sec-Fetch-Site': 'cross-site', 'Sec-Fetch-Mode': 'navigate', 'Sec-Fetch-Dest': 'iframe' };
+    const editorPage = await onOther(opened.url, navigate);
+    expect(editorPage.status).toBe(200);
+    expect(editorPage.headers['x-frame-options']).toBeUndefined();
+    const csp = editorPage.headers['content-security-policy'] as string;
+    expect(csp).toContain(`frame-ancestors ${origin} ${other}`);
+    expect(csp).toContain("script-src 'self' 'unsafe-inline' 'unsafe-eval' blob:");
+    // 编辑器里嵌的 run.html 是同源的 iframe 导航
+    const run = await onOther(`${opened.url}artifact-type/run.html`, { 'Sec-Fetch-Site': 'same-origin', 'Sec-Fetch-Mode': 'navigate', 'Sec-Fetch-Dest': 'iframe' });
+    expect(run.status).toBe(200);
+    expect(run.headers['content-security-policy']).toBe(csp);
+    expect((await onOther(opened.url, { 'Sec-Fetch-Site': 'cross-site', 'Sec-Fetch-Mode': 'cors', 'Sec-Fetch-Dest': 'empty' })).status).toBe(403);
+    expect((await onOther(`${opened.url}_files.json`, { 'Sec-Fetch-Site': 'same-site', 'Sec-Fetch-Mode': 'no-cors', 'Sec-Fetch-Dest': 'script' })).status).toBe(403);
+    const listing = JSON.parse((await onOther(`${opened.url}_files.json`, { 'Sec-Fetch-Site': 'same-origin' })).body) as { files: object };
+    expect(Object.keys(listing.files)).toContain(spec.file);
+
+    // grant 跨种类：同一个 grant 换到另一种路由下是 404，跨站导航也一样
+    const swapped = (url: string, to: string) => url.replace(/^\/[a-z-]+\//, `/${to}/`);
+    expect((await onOther(swapped(opened.url, spec.other), { 'Sec-Fetch-Site': 'same-origin' })).status).toBe(404);
+    expect((await onOther(swapped(opened.url, spec.other), navigate)).status).toBe(404);
+    expect((await onOther(swapped(theirs.url, spec.kind), { 'Sec-Fetch-Site': 'same-origin' })).status).toBe(404);
+    expect((await onOther(`/${spec.kind}/${'x'.repeat(32)}/`)).status).toBe(404);
+  });
+
+  it('设计系统：project/* 按扩展名给 Content-Type；根级 /_blob/ 按白名单只在开放的种类里找；两种都不开放时 403', async () => {
+    const { origin, cookie, page, project, onOther } = await bootIsolated();
+    const canvasBlob = 'ab'.repeat(16);
+    const systemBlob = 'cd'.repeat(16);
+    await ISOLATED_KINDS[0].write(path.join(project.path, 'poster'));
+    await fs.mkdir(path.join(project.path, 'poster', 'assets'));
+    await fs.writeFile(path.join(project.path, 'poster', 'assets', `${canvasBlob}.png`), 'png');
+    await ISOLATED_KINDS[1].write(path.join(project.path, 'brand'));
+    await fs.mkdir(path.join(project.path, 'brand', 'components'));
+    await fs.writeFile(path.join(project.path, 'brand', 'components', 'bundle.js'), 'window.T={}');
+    await fs.mkdir(path.join(project.path, 'brand', '_blobs'));
+    await fs.writeFile(path.join(project.path, 'brand', '_blobs', `${systemBlob}.png`), 'png');
+    const poster = await page.request('design.open', { projectId: project.id, path: 'poster' });
+    const brand = await page.request('designSystem.open', { projectId: project.id, path: 'brand' });
+    expect(brand.system).toEqual({ title: 'T', namespace: null });
+
+    const bundle = await onOther(`${brand.url}project/components/bundle.js`, { 'Sec-Fetch-Site': 'same-origin' });
+    expect(bundle.status).toBe(200);
+    expect(bundle.headers['content-type']).toBe('text/javascript');
+    expect(bundle.headers['x-content-type-options']).toBe('nosniff');
+
+    const blobs = async () => [(await onOther(`/_blob/${canvasBlob}`)).status, (await onOther(`/_blob/${systemBlob}`)).status];
+    expect(await blobs()).toEqual([200, 200]);
+    // 带会话时与幻灯片一样在所有打开的里找
+    expect((await send(`${origin}/_blob/${systemBlob}`, { headers: { Cookie: cookie } })).status).toBe(200);
+    expect((await send(`${origin}/_blob/${canvasBlob}`, { headers: { Cookie: cookie } })).status).toBe(200);
+    const base = ['runtime.info', 'projects.list', 'conversations.*', 'slides.open'];
+    const combos: [string[], number[], number, number][] = [
+      [['design.open'], [200, 404], 200, 403],
+      [['designSystem.open'], [404, 200], 403, 200],
+      [[], [403, 403], 403, 403],
+      [['design.open', 'designSystem.open'], [200, 200], 200, 200],
+    ];
+    for (const [allowed, expected, designPage, systemPage] of combos) {
+      await desktop.request('services.configure', { serviceId: 'web', methods: [...base, ...allowed] });
+      expect(await blobs(), allowed.join(',')).toEqual(expected);
+      expect((await onOther(`${poster.url}_files.json`, { 'Sec-Fetch-Site': 'same-origin' })).status, allowed.join(',')).toBe(designPage);
+      expect((await onOther(`${brand.url}_files.json`, { 'Sec-Fetch-Site': 'same-origin' })).status, allowed.join(',')).toBe(systemPage);
+    }
   });
 
   it('访问代码与会话令牌不出现在 services.list、主题、日志、配置文件与审计里', async () => {

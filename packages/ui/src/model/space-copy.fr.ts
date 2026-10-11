@@ -13,6 +13,8 @@ export const fr: SpaceMessages = {
     subtitle: "Sous-titres",
     document: "Document",
     slides: "Diapositives",
+    design: "Design",
+    'design-system': "Système de design",
     package: "Paquet vidéo",
     template: "Modèle",
   } satisfies Record<SpaceEntryKind, string>,

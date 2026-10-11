@@ -13,6 +13,7 @@ description: 媒体的机制：从链接下载、转码与合并、取帧看画�
 - 要生成图片放进视频。
 <!-- surface: agent -->
 - 要做幻灯片：给 deck 导入图片、校验整份 deck。
+- 要做设计稿：给设计稿导入图片与字体、校验整份设计稿。
 <!-- /surface -->
 
 要转写的链接与本机文件直接用 {{tool:transcribe}}（见 [subtitles](subtitles.md)）：它一步做完新建视频、下载或导入、放上时间线与转写。
@@ -118,6 +119,17 @@ description: 媒体的机制：从链接下载、转码与合并、取帧看画�
 | 校验整份 deck，通过后线程里出卡片 | {{tool:slides_check}}，{{arg:path}} 是 deck 目录；改完页面再校验一次 |
 
 页面要插图时用 {{tool:image}} 生成（不带 {{arg:video}}），{{tool:artifacts_save}} 存进工作目录，再按上表导入 deck；哪几页画、提示词与尺寸见 {{skill:slides}}。
+
+### 设计稿
+
+一份设计稿是工作目录里的一个目录（`canvas.json` 加每块画板一个 `.dc.html`），文件用文件工具直接写；怎么做、格式是什么见 {{skill:design}}，设计系统见 {{skill:design-system}}（只是文件，没有工具）。只有两步要用工具：
+
+| 要做的事 | 调用 |
+| --- | --- |
+| 把工作目录里的图片或字体放进设计稿 | {{tool:design_import_asset}}，{{arg:canvas}} + {{arg:path}}；设计稿目录里要先有 `canvas.json`；同一份只存一份 |
+| 校验整份设计稿，通过后线程里出卡片 | {{tool:design_check}}，{{arg:path}} 是设计稿目录；改完文件再校验一次 |
+
+css、js、json 这类支持文件不导入，直接写进设计稿目录，用相对路径引用。
 <!-- /surface -->
 
 ### 找镜头切换
@@ -141,6 +153,8 @@ description: 媒体的机制：从链接下载、转码与合并、取帧看画�
 <!-- surface: agent -->
 - {{tool:slides_import_asset}}：`src` 形如 `/_blob/<id>`，原样写进 `<img src>`。
 - {{tool:slides_check}}：`problems` 是问题总数，为 0 时线程里记一张幻灯片卡片；否则 `slides` 列出每页的 `problems`，`deckProblems` 是 `deck.json` 的问题，`orphans` 是不在 `order` 里的页面文件。每页的 `notes` 不算问题，其中以「排版」开头的是放不下或互相压住的提示，尽量改掉。
+- {{tool:design_import_asset}}：`src` 形如 `/_blob/<id>`，原样写进 `<img src>`、`<helmet><style>` 里的 `url(…)` 或 `@font-face`；另有 `bytes` 与 `contentType`。
+- {{tool:design_check}}：`problems` 是问题总数，为 0 时线程里记一张设计稿卡片；否则 `issues` 每条有 `file`（相对设计稿目录，`.` 是整个目录）与 `message`，列不下时 `more` 说还有几条。`notChecked` 说明没查的部分：画板脚本能不能跑、排版与视觉效果。
 <!-- /surface -->
 
 ## 看一条视频的证据阶梯
@@ -171,7 +185,8 @@ description: 媒体的机制：从链接下载、转码与合并、取帧看画�
 <!-- surface: agent -->
 | `DECK_NOT_FOUND`、`NOT_A_DECK` | 路径不是 deck 目录（没有 `deck.json`，或它不是幻灯片的索引）：核对路径 |
 | `SLIDES_COMPILER_UNAVAILABLE` | 这台机器上的 BaoCut 没带幻灯片编辑器：deck 文件照样写好，告诉用户没法校验、也没法在 BaoCut 里打开，不要自己找编译器 |
-| `UNSUPPORTED_ASSET_TYPE` | 只能导入 png、jpg、gif、webp、avif、svg 图片 |
+| `CANVAS_NOT_FOUND`、`NOT_A_CANVAS` | 路径不是设计稿目录（没有 `canvas.json`，或它不合格式）：核对路径；导入素材前先写好 `canvas.json` |
+| `UNSUPPORTED_ASSET_TYPE` | 只能导入 png、jpg、gif、webp、avif、svg 图片；设计稿另收 woff2、woff、ttf、otf 字体 |
 <!-- /surface -->
 
 <!-- surface: cli -->

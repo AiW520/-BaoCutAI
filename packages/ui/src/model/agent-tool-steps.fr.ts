@@ -38,6 +38,10 @@ export const fr: AgentToolStepsMessages = {
     recordCheck: "Enregistrer une vérification d’acceptation",
     checkSlides: "Vérifier les diapositives",
     importSlideAsset: "Importer une image de diapositive",
+    checkDesign: "Vérifier le design",
+    importDesignAsset: "Importer un élément de design",
+    checkDesignSystem: "Vérifier le système de design",
+    importDesignSystemAsset: "Importer un élément du système de design",
   },
   exportKind: {
     subtitles: "Sous-titres",

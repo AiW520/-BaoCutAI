@@ -135,6 +135,8 @@ import type {
 } from './services.ts';
 import type { WebAccessLink, WebSession } from './web.ts';
 import type { SlideAnnotation, SlidesOpenResult } from './slides.ts';
+import type { DesignAnnotation, DesignOpenResult } from './design.ts';
+import type { DesignSystemAnnotation, DesignSystemOpenResult } from './design-system.ts';
 import type { LegacyImportAnswer, LegacyImportRetry, LegacyImportSetSkipped, LegacyImportSnapshot } from './legacy-import.ts';
 import type { Seq } from './domain.ts';
 import type { PlaybackCodec } from './limits.ts';
@@ -365,6 +367,10 @@ export interface RpcMethods {
    * `slideAnnotations`：幻灯片标签里加进草稿的标注（docs/design/slides §9），最多 `SLIDE_ANNOTATION_LIMITS.perMessage` 条。
    * Runtime 把 deck 换成相对会话工作目录的路径，每份 deck 一段 `<baocut-slide-annotations>` 附在交给智能体的文字最后；
    * 消息上原样带一份。deck 的位置找不到（Space 条目或项目已不在）时整条 `not-found`。
+   * `designAnnotations`：设计稿标签里加进草稿的标注（docs/design/canvas §9），限制与幻灯片标注相同（`DESIGN_ANNOTATION_LIMITS`）。
+   * 每份设计稿一段 `<baocut-design-annotations>`，附在幻灯片标注段之后；编号各自从 1 起；设计稿找不到时同样整条 `not-found`。
+   * `designSystemAnnotations`：设计系统标签里加进草稿的标注（docs/design/canvas §10.6），限制相同（`DESIGN_SYSTEM_ANNOTATION_LIMITS`）。
+   * 每套设计系统一段 `<baocut-design-system-annotations>`，附在设计稿标注段之后；编号各自从 1 起；设计系统找不到时同样整条 `not-found`。
    */
   'conversations.send': {
     params: {
@@ -380,15 +386,25 @@ export interface RpcMethods {
       skill?: SkillSendRef;
       skills?: SkillSendRef[];
       slideAnnotations?: SlideAnnotation[];
+      designAnnotations?: DesignAnnotation[];
+      designSystemAnnotations?: DesignSystemAnnotation[];
     };
     result: { taskId: Id };
   };
   /**
    * 把一条消息插进正在运行的回合（Agent 支持时）。不支持或没有运行中的回合时如实返回，由界面决定排队还是先停再发。
-   * `slideAnnotations` 与 `conversations.send` 的相同。
+   * `slideAnnotations`、`designAnnotations`、`designSystemAnnotations` 与 `conversations.send` 的相同。
    */
   'conversations.steer': {
-    params: { conversationId: Id; text: string; commandId: Id; attachments?: Id[]; slideAnnotations?: SlideAnnotation[] };
+    params: {
+      conversationId: Id;
+      text: string;
+      commandId: Id;
+      attachments?: Id[];
+      slideAnnotations?: SlideAnnotation[];
+      designAnnotations?: DesignAnnotation[];
+      designSystemAnnotations?: DesignSystemAnnotation[];
+    };
     result: { status: 'steered' | 'unsupported' | 'no-active-turn' };
   };
 
@@ -628,6 +644,19 @@ export interface RpcMethods {
    * 目录按真实路径必须在来源目录之内、认得出是 deck（有合法的 `deck.json`）。同一个目录返回同一个地址。
    */
   'slides.open': { params: FileTarget; result: SlidesOpenResult };
+  /**
+   * 在设计稿标签里打开一份设计稿（docs/design/canvas §6.1）：Space 里的设计稿条目，或来源目录里的设计稿目录。
+   * 目录的校验与 `slides.open` 相同，认得出是设计稿（`canvas.json` 的 `v` 为 3、`boards` 是对象）；与 `slides.open` 共用 grant 表，
+   * 同一个目录返回同一个地址。
+   */
+  'design.open': { params: FileTarget; result: DesignOpenResult };
+  /**
+   * 在设计系统标签里打开一个设计系统（docs/design/canvas §10.4）：Space 里的设计系统条目，或来源目录里的设计系统目录。
+   * 目录的校验与 `design.open` 相同，认得出是设计系统（`design-system.json` 的认法见 docs/design/canvas §10.1），否则
+   * `invalid-request`、`details.code` 为 `DESIGN_SYSTEM_NOT_A_SYSTEM`。与 `slides.open`、`design.open` 共用 grant 表（按种类分开），
+   * 同一个目录返回同一个地址。
+   */
+  'designSystem.open': { params: FileTarget; result: DesignSystemOpenResult };
   /** 打开一个视频：Space 里的视频条目，或来源目录里的视频目录。已经打开的返回同一个 `videoId`。 */
   'videos.open': { params: FileTarget; result: VideoOpenResult };
   /** 这条连接不再需要这个视频；没有其他连接打开它时 Runtime 关闭它。 */
@@ -1127,9 +1156,13 @@ export interface ProjectFileEntry {
   isDir: boolean;
   /** 文件的字节数；目录为 null。 */
   size: number | null;
-  /** 最后修改时间；视频目录取 `video.db`、幻灯片目录取 `deck.json` 的修改时间。 */
+  /** 最后修改时间；视频目录取 `video.db`、幻灯片目录取 `deck.json`、设计稿目录取 `canvas.json`、设计系统目录取 `design-system.json` 的修改时间。 */
   modifiedAt: string | null;
-  /** 认得出的媒体与文档类型（与 Space 同一套分类）；含 `video.db` 的目录是 `video`，含合法 `deck.json` 的目录是 `slides`；其余为 null。 */
+  /**
+   * 认得出的媒体与文档类型（与 Space 同一套分类）；含 `video.db` 的目录是 `video`，含合法 `deck.json` 的目录是 `slides`，
+   * 含合法 `canvas.json`（v 为 3）的目录是 `design`，含合法 `design-system.json`（认法见 docs/design/canvas §10.1）的目录是
+   * `design-system`；其余为 null。
+   */
   kind: SpaceEntryKind | null;
 }
 

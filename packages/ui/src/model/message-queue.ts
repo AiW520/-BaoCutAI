@@ -5,7 +5,7 @@
  * packages/app/src/composer/actions.ts（`sendQueuedComposerMessageNow`、`editQueuedComposerMessage`），modified：
  * 立即发送先走 `conversations.steer`，按它的结果决定移出、留在队列还是改走 `conversations.send`；队列按会话存在 shell-store。
  */
-import { sendSkillRefs, type AttachmentRef, type EditorContext, type Id, type SkillSendRef, type SlideAnnotation } from '@baocut/protocol';
+import { sendSkillRefs, type AttachmentRef, type EditorContext, type Id, type SkillSendRef, type SlideAnnotation, type DesignAnnotation, type DesignSystemAnnotation } from '@baocut/protocol';
 
 export interface QueuedMessage {
   id: Id;
@@ -18,6 +18,10 @@ export interface QueuedMessage {
   skills?: SkillSendRef[];
   /** 加进对话的幻灯片标注（docs/design/slides §8.2）；`send` 与 `steer` 都带上。 */
   slideAnnotations?: SlideAnnotation[];
+  /** 加进对话的设计稿标注（docs/design/canvas §8.2）；同幻灯片标注。 */
+  designAnnotations?: DesignAnnotation[];
+  /** 加进对话的设计系统标注（docs/design/canvas §10.6）；同幻灯片标注。 */
+  designSystemAnnotations?: DesignSystemAnnotation[];
   queuedAt: string;
 }
 
@@ -58,6 +62,37 @@ function isSlideAnnotation(value: unknown): value is SlideAnnotation {
   );
 }
 
+/** 持久化的一条设计稿标注：同幻灯片标注，只核对形状。 */
+function isDesignAnnotation(value: unknown): value is DesignAnnotation {
+  if (!value || typeof value !== 'object') return false;
+  const a = value as Record<string, unknown>;
+  return (
+    !!a.canvas &&
+    typeof a.canvas === 'object' &&
+    typeof a.anchor === 'string' &&
+    typeof a.label === 'string' &&
+    typeof a.text === 'string' &&
+    (a.board === undefined || typeof a.board === 'string') &&
+    (a.detail === undefined || typeof a.detail === 'string') &&
+    (a.area === undefined || typeof a.area === 'boolean')
+  );
+}
+
+/** 持久化的一条设计系统标注：同幻灯片标注，只核对形状。 */
+function isDesignSystemAnnotation(value: unknown): value is DesignSystemAnnotation {
+  if (!value || typeof value !== 'object') return false;
+  const a = value as Record<string, unknown>;
+  return (
+    !!a.system &&
+    typeof a.system === 'object' &&
+    typeof a.anchor === 'string' &&
+    typeof a.label === 'string' &&
+    typeof a.text === 'string' &&
+    (a.section === undefined || typeof a.section === 'string') &&
+    (a.detail === undefined || typeof a.detail === 'string')
+  );
+}
+
 /** 读回持久化的一条：形状不对的不要。只能点一个 skill 时存的 `skill` 也认（`readQueuedMessage` 把它换成 `skills`）。 */
 export function isQueuedMessage(value: unknown): value is QueuedMessage {
   if (!value || typeof value !== 'object') return false;
@@ -71,7 +106,10 @@ export function isQueuedMessage(value: unknown): value is QueuedMessage {
     (m.context === undefined || (!!m.context && typeof m.context === 'object')) &&
     (m.skill === undefined || isSkillRef(m.skill)) &&
     (m.skills === undefined || (Array.isArray(m.skills) && m.skills.every(isSkillRef))) &&
-    (m.slideAnnotations === undefined || (Array.isArray(m.slideAnnotations) && m.slideAnnotations.every(isSlideAnnotation)))
+    (m.slideAnnotations === undefined || (Array.isArray(m.slideAnnotations) && m.slideAnnotations.every(isSlideAnnotation))) &&
+    (m.designAnnotations === undefined || (Array.isArray(m.designAnnotations) && m.designAnnotations.every(isDesignAnnotation))) &&
+    (m.designSystemAnnotations === undefined ||
+      (Array.isArray(m.designSystemAnnotations) && m.designSystemAnnotations.every(isDesignSystemAnnotation)))
   );
 }
 

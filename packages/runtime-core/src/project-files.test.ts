@@ -144,6 +144,35 @@ describe('项目文件浏览（projects.files.list）', () => {
     expect((await listProjectFiles(root, { query: 'talk' })).entries).toMatchObject([{ path: 'talk', kind: 'slides' }]);
   });
 
+  it('设计稿目录：含合法 canvas.json 的目录是一项 design，修改时间取 canvas.json；查找时不进入', async () => {
+    const boards = { 'Main.dc.html': { x: 0, y: 0, w: 880, h: 560 } };
+    await write(path.join(root, 'poster', 'canvas.json'), JSON.stringify({ v: 3, title: 'Poster', boards, order: ['Main.dc.html'] }));
+    await write(path.join(root, 'poster', 'screens', 'clip-Main.dc.html'), '<x-dc></x-dc>');
+    // 不合格式的 canvas.json 不算设计稿，目录照常进入。
+    await write(path.join(root, 'sketch', 'canvas.json'), JSON.stringify({ v: 2, boards: [] }));
+    const listed = await listProjectFiles(root, {});
+    expect(listed.entries.find((e) => e.path === 'poster')).toMatchObject({ isDir: true, size: null, kind: 'design' });
+    expect(listed.entries.find((e) => e.path === 'poster')?.modifiedAt).toMatch(/^\d{4}-\d{2}-\d{2}T/);
+    expect(listed.entries.find((e) => e.path === 'sketch')).toMatchObject({ isDir: true, kind: null });
+    expect((await listProjectFiles(root, { dir: 'poster' })).entries.map((e) => e.path)).toEqual(['poster/screens', 'poster/canvas.json']);
+    expect((await listProjectFiles(root, { query: 'clip' })).entries.map((e) => e.path)).not.toContain('poster/screens/clip-Main.dc.html');
+    expect((await listProjectFiles(root, { query: 'poster' })).entries).toMatchObject([{ path: 'poster', kind: 'design' }]);
+  });
+
+  it('设计系统目录：含合法 design-system.json 的目录是一项 design-system，修改时间取 design-system.json；查找时不进入', async () => {
+    await write(path.join(root, 'brand', 'design-system.json'), JSON.stringify({ v: 3, layout: 'files', createdOnFiles: { v: 1, at: '2026-10-11T00:00:00Z' }, title: 'Brand' }));
+    await write(path.join(root, 'brand', 'assets', 'Logos', 'clip-mark.svg'), '<svg/>');
+    // 不是 v3 files 的 design-system.json 不算设计系统，目录照常进入。
+    await write(path.join(root, 'legacy', 'design-system.json'), JSON.stringify({ v: 2, content: { files: {} } }));
+    const listed = await listProjectFiles(root, {});
+    expect(listed.entries.find((e) => e.path === 'brand')).toMatchObject({ isDir: true, size: null, kind: 'design-system' });
+    expect(listed.entries.find((e) => e.path === 'brand')?.modifiedAt).toMatch(/^\d{4}-\d{2}-\d{2}T/);
+    expect(listed.entries.find((e) => e.path === 'legacy')).toMatchObject({ isDir: true, kind: null });
+    expect((await listProjectFiles(root, { dir: 'brand' })).entries.map((e) => e.path)).toEqual(['brand/assets', 'brand/design-system.json']);
+    expect((await listProjectFiles(root, { query: 'clip' })).entries.map((e) => e.path)).not.toContain('brand/assets/Logos/clip-mark.svg');
+    expect((await listProjectFiles(root, { query: 'brand' })).entries).toMatchObject([{ path: 'brand', kind: 'design-system' }]);
+  });
+
   it('截断：超过 limit、看过的目录项或候选超过上限时标出 truncated', async () => {
     const listed = await listProjectFiles(root, { limit: 2 });
     expect(listed.entries.map((e) => e.path)).toEqual(['assets', 'Intro.video']);

@@ -7,6 +7,8 @@ import {
   type FileTarget,
   type Id,
   type SlideAnnotation,
+  type DesignAnnotation,
+  type DesignSystemAnnotation,
   type RpcMethod,
   type RpcParams,
   type RpcResult,
@@ -24,7 +26,14 @@ import { findSubtitles, type MediaRegistry } from './media.ts';
 import { listProjectFiles } from './project-files.ts';
 import { createProjectFile, type ProjectFileScope } from './project-file-create.ts';
 import type { MediaAnalysis } from './media-analysis.ts';
-import { resolveSlideAnnotations, type SlidesOpener } from './slides.ts';
+import {
+  resolveDesignAnnotations,
+  resolveDesignSystemAnnotations,
+  resolveSlideAnnotations,
+  type DesignOpener,
+  type DesignSystemOpener,
+  type SlidesOpener,
+} from './slides.ts';
 import type { SpaceCatalog } from './space-catalog.ts';
 import { resolvePipelineEntryInputs, withSpeechMaterial, withTextMaterial } from './space/space-inputs.ts';
 import { spaceMethods, updateEntry } from './space/space-methods.ts';
@@ -83,6 +92,10 @@ export interface HandlerDeps {
   media: MediaRegistry;
   /** 幻灯片编辑器的地址（`slides.open`，docs/design/slides §6.1）：网关与 Web 服务的基址不同。 */
   slides: SlidesOpener;
+  /** 设计稿编辑器的地址（`design.open`，docs/design/canvas §6.1），基址同 `slides`。 */
+  design: DesignOpener;
+  /** 设计系统编辑器的地址（`designSystem.open`，docs/design/canvas §10.4），基址同 `slides`。 */
+  designSystem: DesignSystemOpener;
   attachments: AttachmentStore;
   analysis: MediaAnalysis;
   /** Space 条目的缩略图（`space.thumbnail`）。 */
@@ -166,6 +179,8 @@ export function createHandlers({
   space,
   media,
   slides,
+  design,
+  designSystem,
   attachments,
   analysis,
   spaceThumbnails,
@@ -202,6 +217,12 @@ export function createHandlers({
   /** 发送与插话带的幻灯片标注：deck 换成相对会话工作目录的路径（docs/design/slides §9）。 */
   const slideAnnotationsOf = (conversationId: Id, annotations: readonly SlideAnnotation[] | undefined) =>
     resolveSlideAnnotations(annotations, harness.getConversation(conversationId).conversation.cwd, locateMedia);
+  /** 设计稿标注同上（docs/design/canvas §9）。 */
+  const designAnnotationsOf = (conversationId: Id, annotations: readonly DesignAnnotation[] | undefined) =>
+    resolveDesignAnnotations(annotations, harness.getConversation(conversationId).conversation.cwd, locateMedia);
+  /** 设计系统标注同上（docs/design/canvas §10.6）。 */
+  const designSystemAnnotationsOf = (conversationId: Id, annotations: readonly DesignSystemAnnotation[] | undefined) =>
+    resolveDesignSystemAnnotations(annotations, harness.getConversation(conversationId).conversation.cwd, locateMedia);
 
   /**
    * 新建视频的位置：项目目录。给的是会话时用它的来源：所属项目，不属于项目时是会话的工作目录（架构设计 §3.10，不为视频建项目）。
@@ -330,9 +351,16 @@ export function createHandlers({
         return { deleted: true as const };
       },
       // 带模板或 skill 的发送在 `templateMethods` 里：先解析模板与 skill，再交给 Harness。
-      'conversations.steer': ({ slideAnnotations, ...p }) => {
+      'conversations.steer': ({ slideAnnotations, designAnnotations, designSystemAnnotations, ...p }) => {
         const resolved = slideAnnotationsOf(p.conversationId, slideAnnotations);
-        return harness.steer({ ...p, ...(resolved ? { slideAnnotations: resolved } : {}) });
+        const resolvedDesign = designAnnotationsOf(p.conversationId, designAnnotations);
+        const resolvedSystem = designSystemAnnotationsOf(p.conversationId, designSystemAnnotations);
+        return harness.steer({
+          ...p,
+          ...(resolved ? { slideAnnotations: resolved } : {}),
+          ...(resolvedDesign ? { designAnnotations: resolvedDesign } : {}),
+          ...(resolvedSystem ? { designSystemAnnotations: resolvedSystem } : {}),
+        });
       },
       'attachments.prepare': (p) => attachments.prepare(p),
       'tasks.stop': (p) => harness.stopTask(p.taskId),
@@ -425,6 +453,16 @@ export function createHandlers({
         const { root, file } = locateMedia(p);
         return slides.open(root, path.isAbsolute(file) ? path.relative(root, file) : file);
       },
+      'design.open': async (p) => {
+        // 同 slides.open（docs/design/canvas §6.1）。
+        const { root, file } = locateMedia(p);
+        return design.open(root, path.isAbsolute(file) ? path.relative(root, file) : file);
+      },
+      'designSystem.open': async (p) => {
+        // 同 design.open（docs/design/canvas §10.4）。
+        const { root, file } = locateMedia(p);
+        return designSystem.open(root, path.isAbsolute(file) ? path.relative(root, file) : file);
+      },
       'videos.open': (p, principal) => videos.open(locateMedia(p), principal),
       'videos.close': (p, principal) => videos.close(p.videoId, principal),
       'videos.delete': (p, principal) => videoTrash.delete(p, principal),
@@ -507,7 +545,7 @@ export function createHandlers({
         ),
       'pipelines.retry': (p) => pipelines.retry(p.jobId),
       ...externalToolMethods(() => externalTools),
-      ...templateMethods({ templates, media, harness, skills, slideAnnotationsOf }),
+      ...templateMethods({ templates, media, harness, skills, slideAnnotationsOf, designAnnotationsOf, designSystemAnnotationsOf }),
       ...skillMethods({ skills, installer: skillInstaller }),
       ...catalogMethods(toolCatalog, agentSkillsDir === undefined ? {} : { agentSkillsDir: () => agentSkillsDir }),
       ...toolCatalogueMethods({

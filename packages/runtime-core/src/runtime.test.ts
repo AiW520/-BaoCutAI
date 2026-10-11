@@ -863,6 +863,139 @@ describe('Runtime（假 Driver）', () => {
     });
   });
 
+  it('设计稿（design.open）：会话工作目录里的设计稿给网关上的编辑器地址；校验同 slides.open；编辑器没构建时照常给地址、页面 503', async () => {
+    client.close();
+    await runtime.close();
+    runtime = await startRuntime({
+      home: resolveRuntimeHome({ BAOCUT_HOME: dir }),
+      drivers: () => [driver],
+      watchSpace: false,
+      slidesEditorDist: null,
+      designEditorDist: null,
+    });
+    client = await connect();
+    const { conversation } = await client.request('conversations.create', {});
+    const metadata = JSON.stringify({ v: 3, title: ' Spring Poster ', boards: { 'Main.dc.html': { x: 0, y: 0, w: 880, h: 560 } }, order: ['Main.dc.html'] });
+    const poster = path.join(conversation.cwd, 'poster');
+    await fs.mkdir(path.join(poster, 'screens'), { recursive: true });
+    await fs.writeFile(path.join(poster, 'canvas.json'), metadata);
+    await fs.writeFile(path.join(poster, 'Main.dc.html'), '<x-dc></x-dc>');
+    await fs.writeFile(path.join(poster, 'screens', 'Cart.dc.html'), '<x-dc></x-dc>');
+    const outside = path.join(dir, 'outside-canvas');
+    await fs.mkdir(outside);
+    await fs.writeFile(path.join(outside, 'canvas.json'), metadata);
+    await fs.symlink(outside, path.join(conversation.cwd, 'link'));
+    await fs.mkdir(path.join(conversation.cwd, 'old'));
+    await fs.writeFile(path.join(conversation.cwd, 'old', 'canvas.json'), JSON.stringify({ v: 2, boards: {} }));
+
+    const opened = await client.request('design.open', { conversationId: conversation.id, path: 'poster' });
+    expect(opened).toMatchObject({ canvas: { title: 'Spring Poster', boardCount: 1 }, editorAvailable: false });
+    const gateway = runtime.discovery.endpoint.replace('ws:', 'http:');
+    expect(opened.url).toMatch(new RegExp(`^${gateway}/design/[A-Za-z0-9_-]{32}/$`));
+    expect((await client.request('design.open', { conversationId: conversation.id, path: './poster/' })).url).toBe(opened.url);
+    const page = await fetch(opened.url);
+    expect(page.status).toBe(503);
+    expect(await page.text()).toBe('Design editor is not built');
+    const listing = (await (await fetch(`${opened.url}_files.json`)).json()) as { files: object };
+    expect(Object.keys(listing.files).sort()).toEqual(['project/Main.dc.html', 'project/canvas.json', 'project/screens/Cart.dc.html']);
+    // grant 只对发它的那个种类有效。
+    expect((await fetch(opened.url.replace('/design/', '/slides/'))).status).toBe(404);
+
+    // Space 里设计稿目录是一个设计稿条目，用条目打开得到同一个地址；目录里的画板不另成条目。
+    await runtime.space.ready;
+    await client.request('space.rescan', {});
+    const entries = runtime.space.snapshot().entries.filter((e) => e.source.conversationId === conversation.id && e.relPath.startsWith('poster'));
+    expect(entries).toEqual([expect.objectContaining({ kind: 'design', relPath: 'poster', name: 'Spring Poster', canvas: { boardCount: 1 } })]);
+    expect((await client.request('design.open', { entryId: entries[0]!.id })).url).toBe(opened.url);
+    const files = await client.request('projects.files.list', { conversationId: conversation.id });
+    expect(files.entries.find((e) => e.path === 'poster')).toMatchObject({ isDir: true, kind: 'design' });
+    expect(files.entries.some((e) => e.path.startsWith('poster/'))).toBe(false);
+
+    const cases: [string, string][] = [
+      ['../outside-canvas', 'invalid-request'],
+      [outside, 'invalid-request'],
+      ['link', 'invalid-request'],
+      ['poster/canvas.json', 'invalid-request'],
+      ['old', 'invalid-request'],
+      ['missing', 'not-found'],
+    ];
+    for (const [target, code] of cases) {
+      expect((await rejection(client.request('design.open', { conversationId: conversation.id, path: target }))).code, target).toBe(code);
+    }
+    expect((await rejection(client.request('design.open', { conversationId: conversation.id, path: 'old' }))).details).toEqual({
+      code: 'DESIGN_NOT_A_CANVAS',
+    });
+  });
+
+  it('设计系统（designSystem.open）：会话工作目录里的设计系统给网关上的编辑器地址；校验同 design.open；编辑器没构建时照常给地址、页面 503', async () => {
+    client.close();
+    await runtime.close();
+    runtime = await startRuntime({
+      home: resolveRuntimeHome({ BAOCUT_HOME: dir }),
+      drivers: () => [driver],
+      watchSpace: false,
+      slidesEditorDist: null,
+      designEditorDist: null,
+      designSystemEditorDist: null,
+    });
+    client = await connect();
+    const { conversation } = await client.request('conversations.create', {});
+    const index = JSON.stringify({ v: 3, layout: 'files', createdOnFiles: { v: 1, at: '2026-10-11T00:00:00Z' }, title: ' Acme ', namespace: 'Acme' });
+    const brand = path.join(conversation.cwd, 'brand');
+    await fs.mkdir(path.join(brand, 'assets', 'Logos'), { recursive: true });
+    await fs.mkdir(path.join(brand, '_blobs'), { recursive: true });
+    await fs.writeFile(path.join(brand, 'design-system.json'), index);
+    await fs.writeFile(path.join(brand, 'README.md'), '# Acme');
+    await fs.writeFile(path.join(brand, 'assets', 'Logos', 'mark.svg'), '<svg/>');
+    await fs.writeFile(path.join(brand, '_blobs', `${'ab'.repeat(16)}.png`), 'png');
+    const outside = path.join(dir, 'outside-system');
+    await fs.mkdir(outside);
+    await fs.writeFile(path.join(outside, 'design-system.json'), index);
+    await fs.symlink(outside, path.join(conversation.cwd, 'link'));
+    await fs.mkdir(path.join(conversation.cwd, 'old'));
+    await fs.writeFile(path.join(conversation.cwd, 'old', 'design-system.json'), JSON.stringify({ v: 2, content: { files: {} } }));
+
+    const opened = await client.request('designSystem.open', { conversationId: conversation.id, path: 'brand' });
+    expect(opened).toEqual({ url: expect.any(String), system: { title: 'Acme', namespace: 'Acme' }, editorAvailable: false });
+    const gateway = runtime.discovery.endpoint.replace('ws:', 'http:');
+    expect(opened.url).toMatch(new RegExp(`^${gateway}/design-system/[A-Za-z0-9_-]{32}/$`));
+    expect((await client.request('designSystem.open', { conversationId: conversation.id, path: './brand/' })).url).toBe(opened.url);
+    const page = await fetch(opened.url);
+    expect(page.status).toBe(503);
+    expect(await page.text()).toBe('Design system editor is not built');
+    const listing = (await (await fetch(`${opened.url}_files.json`)).json()) as { files: object };
+    expect(Object.keys(listing.files).sort()).toEqual(['project/README.md', 'project/assets/Logos/mark.svg', 'project/design-system.json']);
+    expect((await fetch(`${opened.url}_blob/${'ab'.repeat(16)}`)).status).toBe(200);
+    // grant 只对发它的那个种类有效。
+    expect((await fetch(opened.url.replace('/design-system/', '/design/'))).status).toBe(404);
+    expect((await fetch(opened.url.replace('/design-system/', '/slides/'))).status).toBe(404);
+
+    // Space 里设计系统目录是一个设计系统条目（名字是标题），用条目打开得到同一个地址；目录里的文件不另成条目。
+    await runtime.space.ready;
+    await client.request('space.rescan', {});
+    const entries = runtime.space.snapshot().entries.filter((e) => e.source.conversationId === conversation.id && e.relPath.startsWith('brand'));
+    expect(entries).toEqual([expect.objectContaining({ kind: 'design-system', relPath: 'brand', name: 'Acme' })]);
+    expect((await client.request('designSystem.open', { entryId: entries[0]!.id })).url).toBe(opened.url);
+    const files = await client.request('projects.files.list', { conversationId: conversation.id });
+    expect(files.entries.find((e) => e.path === 'brand')).toMatchObject({ isDir: true, kind: 'design-system' });
+    expect(files.entries.some((e) => e.path.startsWith('brand/'))).toBe(false);
+
+    const cases: [string, string][] = [
+      ['../outside-system', 'invalid-request'],
+      [outside, 'invalid-request'],
+      ['link', 'invalid-request'],
+      ['brand/design-system.json', 'invalid-request'],
+      ['old', 'invalid-request'],
+      ['missing', 'not-found'],
+    ];
+    for (const [target, code] of cases) {
+      expect((await rejection(client.request('designSystem.open', { conversationId: conversation.id, path: target }))).code, target).toBe(code);
+    }
+    expect((await rejection(client.request('designSystem.open', { conversationId: conversation.id, path: 'old' }))).details).toEqual({
+      code: 'DESIGN_SYSTEM_NOT_A_SYSTEM',
+    });
+  });
+
   it('本机文件（{ localPath }）：只发给桌面客户端，以文件自己的目录为根，只给普通文件', async () => {
     const downloads = path.join(dir, 'Downie');
     await fs.mkdir(path.join(downloads, 'folder'), { recursive: true });

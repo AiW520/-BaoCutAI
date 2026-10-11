@@ -9,6 +9,7 @@ import { Button as RACButton } from 'react-aria-components';
 import { OUTPUT_COPY, VIDEO_CARD_COPY } from '../../copy.ts';
 import { outputSourceMissing, posterFrame, type ConversationOutput } from '../../model/conversation-outputs.ts';
 import { formatClock } from '../../model/format.ts';
+import { DESIGN } from '../../model/design-copy.ts';
 import { SLIDES } from '../../model/slides-copy.ts';
 import { formatBytes, isPlayable, KIND_LABEL } from '../../model/space.ts';
 import { videoStatus } from '../../model/video-cards.ts';
@@ -211,12 +212,18 @@ export function OutputCard({
   const playable = !output.video && output.entry !== null && isPlayable(output.entry.fileName);
   const isVideo = output.kind === 'video';
   const slides = output.slides;
+  const design = output.design;
+  const designSystem = output.designSystem;
   const words = (
     isVideo
       ? [KIND_LABEL.video, output.durationSeconds ? formatClock(output.durationSeconds) : null]
       : slides
         ? [KIND_LABEL.slides, slides.slideCount === null ? null : SLIDES.pages(slides.slideCount)]
-        : [KIND_LABEL[output.kind], output.entry ? formatBytes(output.entry.size) : null, playable ? OUTPUT_COPY.playHere : output.entry ? OUTPUT_COPY.previewHere : null]
+        : design
+          ? [KIND_LABEL.design, design.boardCount === null ? null : DESIGN.boards(design.boardCount)]
+          : designSystem
+            ? [KIND_LABEL['design-system']]
+            : [KIND_LABEL[output.kind], output.entry ? formatBytes(output.entry.size) : null, playable ? OUTPUT_COPY.playHere : output.entry ? OUTPUT_COPY.previewHere : null]
   )
     .filter(Boolean)
     .join(' · ');
@@ -241,6 +248,10 @@ export function OutputCard({
     if (output.video) shell.openVideo(output.video);
     // 幻灯片在功能区的幻灯片标签里预览、编辑与标注（docs/design/slides §8.1）。
     else if (slides) shell.openPane({ kind: 'slides', target: slides.target });
+    // 设计稿同样在功能区的设计稿标签里打开（docs/design/canvas §8.1）。
+    else if (design) shell.openPane({ kind: 'design', target: design.target });
+    // 设计系统在功能区的设计系统标签里打开（docs/design/canvas §10.6）。
+    else if (designSystem) shell.openPane({ kind: 'design-system', target: designSystem.target });
     else if (!isVideo && output.entry) shell.openPane({ kind: 'file', target: { conversationId, path: output.entry.relPath } });
   };
 

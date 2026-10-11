@@ -185,6 +185,13 @@ describe('标签名与条目', () => {
     expect(workspaceTitle(slides)).toBe('talk');
     expect(workspaceTitle(slides, '季度回顾')).toBe('季度回顾');
     expect(workspaceTitle({ kind: 'slides', target: { entryId: 'e1' } })).toBe('幻灯片不可用');
+    // 设计系统（含 design-system.json 的目录）：同一种做法，键与同一目录的设计稿分开。
+    const system = { kind: 'design-system' as const, target: { projectId: 'p1', path: 'systems/brand' } };
+    expect(itemKey(system)).toBe(`design-system:${targetKey(system.target)}`);
+    expect(itemKey(system)).not.toBe(itemKey({ kind: 'design', target: system.target }));
+    expect(workspaceTitle(system)).toBe('brand');
+    expect(workspaceTitle(system, '品牌设计系统')).toBe('品牌设计系统');
+    expect(workspaceTitle({ kind: 'design-system', target: { entryId: 'e1' } })).toBe('设计系统不可用');
   });
 
   it('按条目 id、项目路径或会话路径找到 Space 条目', () => {

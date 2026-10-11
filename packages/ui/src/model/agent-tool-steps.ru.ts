@@ -38,6 +38,10 @@ export const ru: AgentToolStepsMessages = {
     recordCheck: "Записать проверку приёмки",
     checkSlides: "Проверить слайды",
     importSlideAsset: "Импортировать изображение для слайдов",
+    checkDesign: "Проверить дизайн",
+    importDesignAsset: "Импортировать материал для дизайна",
+    checkDesignSystem: "Проверить дизайн-систему",
+    importDesignSystemAsset: "Импортировать материал для дизайн-системы",
   },
   exportKind: {
     subtitles: "Субтитры",

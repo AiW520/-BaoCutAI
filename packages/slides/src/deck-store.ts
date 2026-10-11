@@ -9,6 +9,11 @@
  * 只有这几类文件进清单、可以读写；deck 目录里别的文件（智能体的草稿、素材原图）编辑器看不到也改不了。
  * 路径上有符号链接的一律当作不存在、不可写：符号链接可能指到 deck 目录外。
  *
+ * 设计稿（docs/design/canvas §2.2）用同一个存储，只是文件布局不同：把 `DeckLayout` 换成 `@baocut/design` 的布局，
+ * 整个目录里的普通文件（不含 `assets/`、以点开头的与符号链接）都进清单。默认是 deck 的布局（`DECK_LAYOUT`）。
+ * 设计系统（docs/design/canvas §10.1）的布局在 `@baocut/design-system`：`assets/<组>/` 是内容，上传的素材放在
+ * `DeckLayout.blobDir`（`_blobs/`），`/_blob/<id>` 从那里取。
+ *
  * 读写的 HTTP 路由在 deck-routes.ts；协议类型见 file-protocol.ts。
  */
 import { createHash, randomUUID } from 'node:crypto';
@@ -31,12 +36,21 @@ import {
   type WireEntry,
 } from './file-protocol.ts';
 
+/**
+ * 按扩展名给的 Content-Type（清单的 `contentType` 与 `project/*` 的响应头）。`project/*` 带 `nosniff`，所以页面要当
+ * 子资源加载的类型都得列在这里：设计系统的预览用 `<script src>` 加载 `.js`（docs/design/canvas §10.4），类型不对时浏览器拒绝执行。
+ * 取值同原版设计系统的 `FILE_MIME_TYPES_BY_EXTENSION`，另加 `mov`。
+ */
 const MIME: Record<string, string> = {
   html: 'text/html',
+  htm: 'text/html',
   json: 'application/json',
   css: 'text/css',
+  js: 'text/javascript',
+  mjs: 'text/javascript',
   md: 'text/markdown',
   txt: 'text/plain',
+  xml: 'application/xml',
   svg: 'image/svg+xml',
   png: 'image/png',
   jpg: 'image/jpeg',
@@ -44,12 +58,18 @@ const MIME: Record<string, string> = {
   gif: 'image/gif',
   webp: 'image/webp',
   avif: 'image/avif',
+  ico: 'image/x-icon',
   woff2: 'font/woff2',
   woff: 'font/woff',
   ttf: 'font/ttf',
   otf: 'font/otf',
+  mp3: 'audio/mpeg',
+  wav: 'audio/wav',
   mp4: 'video/mp4',
   webm: 'video/webm',
+  mov: 'video/quicktime',
+  pdf: 'application/pdf',
+  wasm: 'application/wasm',
 };
 
 /** 素材文件的扩展名：按 Content-Type 取，认不出的存成 .bin。 */
@@ -66,9 +86,14 @@ const EXT_BY_MIME: Record<string, string> = {
   'font/otf': 'otf',
   'video/mp4': 'mp4',
   'video/webm': 'webm',
+  'video/quicktime': 'mov',
+  'image/x-icon': 'ico',
+  'audio/mpeg': 'mp3',
+  'audio/wav': 'wav',
+  'application/pdf': 'pdf',
 };
 
-/** deck 目录里放素材的子目录与它的类型索引。 */
+/** deck 目录里放素材的子目录（`DeckLayout.blobDir` 的默认值）与它的类型索引。 */
 export const ASSETS_DIR = 'assets';
 const ASSET_INDEX = 'index.json';
 
@@ -104,17 +129,92 @@ export function isDeckFile(rel: string): boolean {
   return parts[0] === 'ds' && parts.length > 1;
 }
 
-/** publish 的结果，按 HTTP 状态区分成功和各类失败。 */
-export type PublishOutcome = { status: 200; body: PublishResult } | { status: 409; body: ConflictError } | { status: 400; body: GenericPublishError };
+/**
+ * 编辑器服务的文件布局：哪些文件进清单、可以读写，清单与监听从哪些目录开始。deck 用 `DECK_LAYOUT`；
+ * 设计稿的布局在 `@baocut/design`（canvas-layout.ts），设计系统的在 `@baocut/design-system`，由 Runtime 交给 SlidesServer。
+ * 以点开头的段与符号链接不论布局都不算；素材目录（`blobDir`）由存储自己管，布局不应把它算进来。
+ */
+export interface DeckLayout {
+  /** 上传的素材放在哪个子目录（`<id>.<ext>` 与类型索引 `index.json`）。不给时是 `assets`。 */
+  readonly blobDir?: string;
+  /** 目录里的相对路径（`/` 分隔）是否属于编辑器可见、可写的文件。 */
+  isFile(rel: string): boolean;
+  /** 清单与监听从哪些目录开始（`''` 是根）；`descend` 时往下走子目录。 */
+  readonly roots: readonly { readonly rel: string; readonly descend: boolean }[];
+  /** 往下走时进不进这个子目录（相对路径）。不给时进所有不以点开头的。 */
+  descendInto?(rel: string): boolean;
+  /** 监听报上来这个相对路径变了时要不要重新比对清单：可见的文件，或可能装着它们的目录。 */
+  watches(rel: string): boolean;
+  /** 清单至多列几个文件；超出时只列遍历（按名字排序）到的前这么多个，并经 `onTruncated` 记一次。 */
+  readonly maxFiles?: number;
+  /** 一次发布里写入内容的合计上限（字节，解码后）。 */
+  readonly maxPublishBytes?: number;
+  /** 发布时单个文件的上限（字节，解码后）。 */
+  readonly maxFileBytes?: number;
+  /** 上传一个素材的上限（字节）；按 Content-Type 区分（例如 SVG 更小）。不给时只受路由的请求体上限约束。 */
+  maxBlobBytes?(contentType: string): number;
+  /** 发布到不可写的路径时给编辑器的说明。 */
+  readOnlyMessage(runtimePath: string): string;
+}
 
-async function walk(dir: string, base: string, out: string[]): Promise<void> {
-  if (!existsSync(dir)) return;
-  for (const entry of await readdir(dir, { withFileTypes: true })) {
-    if (entry.name.startsWith('.')) continue;
-    const full = path.join(dir, entry.name);
-    if (entry.isDirectory()) await walk(full, base, out);
-    else if (entry.isFile()) out.push(path.relative(base, full).split(path.sep).join('/'));
+/** deck 的布局（docs/design/slides §2.2）：`deck.json`、`slides/*.html`（只一层）、`ds/**`。 */
+export const DECK_LAYOUT: DeckLayout = {
+  isFile: isDeckFile,
+  roots: [
+    { rel: '', descend: false },
+    { rel: 'slides', descend: false },
+    { rel: 'ds', descend: true },
+  ],
+  watches: rel => rel === 'slides' || rel === 'ds' || isDeckFile(rel),
+  readOnlyMessage: p => `${p}: only deck.json, slides/*.html and ds/** can be written`,
+};
+
+export interface DeckStoreOptions {
+  /** 清单第一次超出 `layout.maxFiles` 时调用（每个存储只调一次）。 */
+  onTruncated?: (limit: number) => void;
+}
+
+/** publish 的结果，按 HTTP 状态区分成功和各类失败。 */
+export type PublishOutcome =
+  | { status: 200; body: PublishResult }
+  | { status: 409; body: ConflictError }
+  | { status: 400 | 413; body: GenericPublishError };
+
+/** 按布局列出可见文件的相对路径（不跟随符号链接、跳过以点开头的）。目录按名字排序遍历，超过 `limit` 时停下。 */
+async function collectFiles(root: string, layout: DeckLayout, limit: number): Promise<{ rels: string[]; truncated: boolean }> {
+  const rels: string[] = [];
+  const seen = new Set<string>();
+  let truncated = false;
+  const visit = async (relDir: string, descend: boolean): Promise<void> => {
+    const dir = relDir === '' ? root : path.join(root, ...relDir.split('/'));
+    let entries;
+    try {
+      entries = await readdir(dir, { withFileTypes: true });
+    } catch {
+      return;
+    }
+    entries.sort((a, b) => (a.name < b.name ? -1 : a.name > b.name ? 1 : 0));
+    for (const entry of entries) {
+      if (truncated) return;
+      if (entry.name.startsWith('.')) continue;
+      const rel = relDir === '' ? entry.name : `${relDir}/${entry.name}`;
+      if (entry.isDirectory()) {
+        if (descend && (layout.descendInto?.(rel) ?? true)) await visit(rel, true);
+      } else if (entry.isFile() && layout.isFile(rel) && !seen.has(rel)) {
+        if (rels.length >= limit) {
+          truncated = true;
+          return;
+        }
+        seen.add(rel);
+        rels.push(rel);
+      }
+    }
+  };
+  for (const start of layout.roots) {
+    if (truncated) break;
+    await visit(start.rel, start.descend);
   }
+  return { rels, truncated };
 }
 
 /** 原子写：同目录下以点开头的临时文件（Space 与外部改动监听都跳过）写完再 rename。 */
@@ -131,15 +231,32 @@ async function writeFileAtomic(file: string, bytes: Uint8Array): Promise<void> {
 }
 
 export class DeckStore {
-  /** deck 目录（含 deck.json 的那一层）。 */
+  /** deck 目录（含 deck.json 的那一层），或设计稿目录（含 canvas.json 的那一层）。 */
   readonly root: string;
+  readonly layout: DeckLayout;
   /** 本进程刚写过的文件（运行时路径）→ 写入时的 sha（删除记为 ""），用来区分「编辑器自己保存」和「外部改动」。 */
   readonly ownWrites = new Map<string, Sha256 | ''>();
   private queue: Promise<unknown> = Promise.resolve();
   private seq = 0;
+  private readonly onTruncated: ((limit: number) => void) | undefined;
+  private truncationReported = false;
 
-  constructor(root: string) {
+  constructor(root: string, layout: DeckLayout = DECK_LAYOUT, options: DeckStoreOptions = {}) {
     this.root = root;
+    this.layout = layout;
+    this.onTruncated = options.onTruncated;
+  }
+
+  /** 上传素材所在的子目录。 */
+  get blobDir(): string {
+    return this.layout.blobDir ?? ASSETS_DIR;
+  }
+
+  /** 运行时路径 → 目录里的相对路径；不是这个布局可读写的文件时 null。 */
+  fileOf(runtimePath: string): string | null {
+    if (!isProjectPath(runtimePath)) return null;
+    const rel = runtimePath.slice('project/'.length);
+    return this.layout.isFile(rel) ? rel : null;
   }
 
   /**
@@ -161,12 +278,14 @@ export class DeckStore {
   }
 
   async listing(): Promise<FileListing> {
-    const rels: string[] = [];
-    if (existsSync(path.join(this.root, 'deck.json'))) rels.push('deck.json');
-    await walk(path.join(this.root, 'slides'), this.root, rels);
-    await walk(path.join(this.root, 'ds'), this.root, rels);
+    const limit = this.layout.maxFiles ?? Number.POSITIVE_INFINITY;
+    const { rels, truncated } = await collectFiles(this.root, this.layout, limit);
+    if (truncated && !this.truncationReported) {
+      this.truncationReported = true;
+      this.onTruncated?.(limit);
+    }
     const files: Record<string, ListingEntry> = {};
-    for (const rel of rels.filter(isDeckFile).sort()) {
+    for (const rel of rels.sort()) {
       const file = await this.diskPath(rel);
       if (file === null) continue;
       const bytes = await readFile(file).catch(() => null);
@@ -177,7 +296,7 @@ export class DeckStore {
   }
 
   async readProjectFile(p: string): Promise<Uint8Array | null> {
-    const rel = deckFileOf(p);
+    const rel = this.fileOf(p);
     const file = rel === null ? null : await this.diskPath(rel);
     if (file === null) return null;
     try {
@@ -196,19 +315,32 @@ export class DeckStore {
 
   private async publishNow(batch: Record<string, WireEntry>): Promise<PublishOutcome> {
     const files = new Map<string, string>();
-    for (const p of Object.keys(batch)) {
-      const rel = deckFileOf(p);
+    let total = 0;
+    const maxFileBytes = this.layout.maxFileBytes;
+    for (const [p, entry] of Object.entries(batch)) {
+      const rel = this.fileOf(p);
       const file = rel === null ? null : await this.diskPath(rel);
       if (file === null) {
-        return { status: 400, body: { code: 'read_only_path', message: `${p}: only deck.json, slides/*.html and ds/** can be written` } };
+        return { status: 400, body: { code: 'read_only_path', message: this.layout.readOnlyMessage(p) } };
       }
       files.set(p, file);
+      if (!isWriteEntry(entry)) continue;
+      const bytes = Buffer.byteLength(entry.base64, 'base64');
+      if (maxFileBytes !== undefined && bytes > maxFileBytes) {
+        return { status: 413, body: { code: 'too_large', message: `${p}: a file can be at most ${maxFileBytes} bytes` } };
+      }
+      total += bytes;
+    }
+    const maxBytes = this.layout.maxPublishBytes;
+    if (maxBytes !== undefined && total > maxBytes) {
+      return { status: 413, body: { code: 'too_large', message: `a publish can write at most ${maxBytes} bytes` } };
     }
     const before = await this.listing();
     const conflicts: ConflictPath[] = [];
     for (const [p, entry] of Object.entries(batch)) {
       const expected = entry?.ifMatch;
-      if (typeof expected !== 'string') continue;
+      // null 要求文件还不存在：与「不存在」的 null 相比，已经有了就冲突。
+      if (expected === undefined) continue;
       const actual = before.files[p]?.sha256 ?? null;
       if (actual !== expected) conflicts.push({ path: p, actual, expected });
     }
@@ -238,7 +370,7 @@ export class DeckStore {
 
   private async assetIndex(): Promise<Record<string, string>> {
     try {
-      const file = await this.diskPath(`${ASSETS_DIR}/${ASSET_INDEX}`);
+      const file = await this.diskPath(`${this.blobDir}/${ASSET_INDEX}`);
       if (file === null) return {};
       const parsed: unknown = JSON.parse(await readFile(file, 'utf8'));
       return parsed && typeof parsed === 'object' && !Array.isArray(parsed) ? (parsed as Record<string, string>) : {};
@@ -249,7 +381,7 @@ export class DeckStore {
 
   /** 素材按内容寻址：id 是 sha256 的前 32 位，同一张图只存一份。 */
   putBlob(bytes: Uint8Array, contentType: string): Promise<UploadResult> {
-    // 与发布共用队列：assets/index.json 的读改写不能交错
+    // 与发布共用队列：素材目录里 index.json 的读改写不能交错
     const run = this.queue.then(() => this.putBlobNow(bytes, contentType));
     this.queue = run.catch(() => undefined);
     return run;
@@ -260,12 +392,12 @@ export class DeckStore {
     const type = contentType.split(';')[0]!.trim().toLowerCase() || 'application/octet-stream';
     const existing = await this.findBlobFile(id);
     if (existing === null) {
-      const file = await this.diskPath(`${ASSETS_DIR}/${id}.${assetExtensionOf(type)}`);
-      if (file === null) throw new Error('assets directory is not writable');
+      const file = await this.diskPath(`${this.blobDir}/${id}.${assetExtensionOf(type)}`);
+      if (file === null) throw new Error(`${this.blobDir} directory is not writable`);
       await writeFileAtomic(file, bytes);
     }
     const index = await this.assetIndex();
-    const indexFile = await this.diskPath(`${ASSETS_DIR}/${ASSET_INDEX}`);
+    const indexFile = await this.diskPath(`${this.blobDir}/${ASSET_INDEX}`);
     if (index[id] !== type && indexFile !== null) {
       index[id] = type;
       await writeFileAtomic(indexFile, Buffer.from(JSON.stringify(index, null, 2) + '\n'));
@@ -273,12 +405,12 @@ export class DeckStore {
     return { id, url: `/_blob/${id}`, sizeBytes: bytes.byteLength };
   }
 
-  /** assets/ 里以 `<id>.` 开头的那个文件。 */
+  /** 素材目录里以 `<id>.` 开头的那个文件。 */
   private async findBlobFile(id: string): Promise<string | null> {
     try {
-      const name = (await readdir(path.join(this.root, ASSETS_DIR))).find(n => n.startsWith(`${id}.`) && !n.endsWith('.tmp'));
+      const name = (await readdir(path.join(this.root, this.blobDir))).find(n => n.startsWith(`${id}.`) && !n.endsWith('.tmp'));
       if (name === undefined) return null;
-      const file = await this.diskPath(`${ASSETS_DIR}/${name}`);
+      const file = await this.diskPath(`${this.blobDir}/${name}`);
       return file !== null && (await lstat(file).catch(() => null))?.isFile() ? file : null;
     } catch {
       return null;
@@ -314,7 +446,7 @@ export class DeckStore {
   async externalChanges(paths: Iterable<string>, seen?: Map<string, Sha256 | ''>): Promise<string[]> {
     const external: string[] = [];
     for (const p of paths) {
-      const rel = deckFileOf(p);
+      const rel = this.fileOf(p);
       if (rel === null) continue;
       let sha = '';
       try {
@@ -350,6 +482,8 @@ export function isIgnoredWatchPath(rel: string): boolean {
  * 回调一次。编辑器自己保存的文件 sha 与 ownWrites 一致，不触发；内容与开始监听时一样的也不触发（macOS 的 FSEvents
  * 会补报监听开始前不久的写入，比如刚建好的 deck）。只监听目录：Linux 的递归 fs.watch 会监听文件 inode，
  * 原子保存替换文件后会丢掉后续修改。目录增删时重建目录监听，并按完整清单识别新增与删除。返回停止监听的函数。
+ * 监听哪些目录按存储的布局（`DeckLayout.roots` 与 `descendInto`）；设计稿是整棵目录树（不含 `assets/` 与隐藏目录），
+ * 设计系统是整棵目录树（不含 `_blobs/` 与隐藏目录），目录数按 `maxFiles` 封顶。
  */
 export function watchExternalEdits(store: DeckStore, onChange: (event: DeckChangeEvent) => void, onError: (error: unknown) => void = () => {}): () => void {
   let timer: NodeJS.Timeout | undefined;
@@ -360,22 +494,26 @@ export function watchExternalEdits(store: DeckStore, onChange: (event: DeckChang
     listing => new Map<string, Sha256 | ''>(Object.entries(listing.files).map(([p, f]) => [p, f.sha256])),
     () => new Map<string, Sha256 | ''>(),
   );
+  const layout = store.layout;
+  const maxDirectories = layout.maxFiles ?? Number.POSITIVE_INFINITY;
   const refresh = () => {
     const directories = new Map<string, string>();
-    const visit = (dir: string, descend: boolean) => {
-      if (!existsSync(dir)) return;
+    const visit = (rel: string, descend: boolean) => {
+      if (directories.size >= maxDirectories) return;
+      const dir = rel === '' ? store.root : path.join(store.root, ...rel.split('/'));
+      if (directories.has(dir) || !existsSync(dir)) return;
       const info = lstatSync(dir);
       if (!info.isDirectory()) return;
       directories.set(dir, `${info.dev}:${info.ino}`);
       if (descend) {
         for (const entry of readdirSync(dir, { withFileTypes: true })) {
-          if (entry.isDirectory() && !entry.name.startsWith('.')) visit(path.join(dir, entry.name), true);
+          if (!entry.isDirectory() || entry.name.startsWith('.')) continue;
+          const child = rel === '' ? entry.name : `${rel}/${entry.name}`;
+          if (layout.descendInto?.(child) ?? true) visit(child, true);
         }
       }
     };
-    visit(store.root, false);
-    visit(path.join(store.root, 'slides'), false);
-    visit(path.join(store.root, 'ds'), true);
+    for (const start of layout.roots) visit(start.rel, start.descend);
     for (const [dir, item] of watchers) {
       if (directories.get(dir) !== item.identity) {
         item.watcher.close();
@@ -388,7 +526,7 @@ export function watchExternalEdits(store: DeckStore, onChange: (event: DeckChang
         if (stopped) return;
         if (name) {
           const rel = path.relative(store.root, path.join(dir, String(name))).split(path.sep).join('/');
-          if (isIgnoredWatchPath(rel) || (rel !== 'slides' && rel !== 'ds' && !isDeckFile(rel))) return;
+          if (isIgnoredWatchPath(rel) || !layout.watches(rel)) return;
         }
         clearTimeout(timer);
         timer = setTimeout(() => { queue = queue.then(flush); }, 300);

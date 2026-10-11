@@ -58,7 +58,7 @@ test('分类与计数：回收站只收已移入的，其余分类不含它们',
   assert.equal(n.doc, 0);
   assert.equal(n.fav, 1);
   assert.equal(n.trash, 2);
-  assert.deepEqual(SP.CATS.map((c) => c.label), ['全部', '视频', '成片', '图片', '音频', '字幕', '文档', '幻灯片', '模板']);
+  assert.deepEqual(SP.CATS.map((c) => c.label), ['全部', '视频', '成片', '图片', '音频', '字幕', '文档', '幻灯片', '设计稿', '设计系统', '模板']);
   assert.deepEqual(SP.SPECIAL.map((c) => c.label), ['收藏', '回收站']);
   assert.ok(SP.isCat('trash') && SP.isCat('doc') && !SP.isCat('nope'));
 });
@@ -154,6 +154,13 @@ test('二次编辑的路子（§4.6）', () => {
   assert.equal(SP.editRoute(by.o3), 'version');
   assert.equal(SP.editRoute({kind: 'slides'}), 'slides');
   assert.equal(SP.specText({kind: 'slides', slides: [{}, {}, {}]}), '3 页');
+  assert.equal(SP.editRoute({kind: 'design'}), 'design');
+  assert.equal(SP.specText({kind: 'design', boards: [{}, {}]}), '2 个画板');
+  assert.equal(SP.KINDS.design.label, '设计稿');
+  assert.equal(SP.editRoute({kind: 'design-system'}), 'design-system');
+  assert.equal(SP.specText({kind: 'design-system', components: [{}, {}, {}]}), '3 个组件');
+  assert.deepEqual(SP.KINDS['design-system'], {k: 'design-system', label: '设计系统', icon: 'ColorHarmony'});
+  assert.ok(SP.isCat('design-system'));
 });
 
 test('另存为新版本：新加一条候选，原条目不动；版本号递增', () => {

@@ -42,6 +42,15 @@ test('describe：edits_apply 按操作分类别', () => {
   assert.deepEqual(T.describe('slides_check', {path: '幻灯片/第1讲/', slides: 8}),
     {kind: 'slides', label: '检查幻灯片', summary: '第1讲 · 8 页', icon: 'template'});
   assert.equal(T.describe('slides.importAsset', {path: '插图/管线.png'}).summary, '管线.png');
+  assert.deepEqual(T.describe('design_check', {path: '设计稿/课程落地页/', boards: 3}),
+    {kind: 'design', label: '检查设计稿', summary: '课程落地页 · 3 个画板', icon: 'template'});
+  assert.equal(T.describe('design.importAsset', {canvas: '设计稿/课程落地页/', path: '插图/首屏.png'}).summary, '首屏.png');
+  assert.deepEqual(T.describe('design_system_check', {path: '设计系统/Ember/', components: 6}),
+    {kind: 'design-system', label: '检查设计系统', summary: 'Ember · 6 个组件', icon: 'template'});
+  assert.equal(T.describe('designSystem.check', {path: '设计系统/Ember'}).summary, 'Ember');
+  assert.deepEqual(T.describe('designSystem.importAsset', {system: '设计系统/Ember/', path: '素材/标志/ember-mark.svg', group: '标志'}),
+    {kind: 'design-system', label: '导入设计系统素材', summary: 'ember-mark.svg · 标志', icon: 'image'});
+  assert.equal(T.describe('design_system_import_asset', {system: '设计系统/Ember/', path: '字体/SourceSans3.woff2'}).summary, 'SourceSans3.woff2');
 });
 
 test('describe：网关名同样认得，认不出的返回 null', () => {

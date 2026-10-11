@@ -9,6 +9,8 @@
   "dependencies": {
     "@baocut/agent-drivers": "*",
     "@baocut/code-runtime": "*",
+    "@baocut/design": "*",
+    "@baocut/design-system": "*",
     "@baocut/editor-wasm": "*",
     "@baocut/harness": "*",
     "@baocut/jobs": "*",

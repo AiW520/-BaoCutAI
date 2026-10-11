@@ -21,6 +21,8 @@ import { generatedImageGallery } from '../model/image-preview.ts';
 import { useImagePreview } from '../state/image-preview-store.ts';
 import { IMAGE } from './image-preview-copy.ts';
 import { itemKey } from '../model/workspace.ts';
+import { DESIGN } from '../model/design-copy.ts';
+import { DESIGN_SYSTEM } from '../model/design-system-copy.ts';
 import { SLIDES } from '../model/slides-copy.ts';
 
 const pane = style({ display: 'flex', flexDirection: 'column', flexGrow: 1, minWidth: 0, minHeight: 0 });
@@ -107,6 +109,21 @@ export function FilePane({ target, conversationId, fileNameHint, active = true }
     const deck = 'projectId' in target ? { projectId: target.projectId, path: deckDir } : { conversationId: target.conversationId, path: deckDir };
     useShell.getState().openPane({ kind: 'slides', target: deck });
   };
+  // 打开的是一份设计稿的 `canvas.json`：同样改用设计稿编辑器打开它所在的目录（docs/design/canvas §8.1）；认不认得出由 design.open 判断。
+  const canvasDir = 'path' in target && /(^|[\\/])canvas\.json$/.test(target.path) ? target.path.replace(/[\\/]?canvas\.json$/, '') : null;
+  const openCanvas = () => {
+    if (canvasDir === null || !('path' in target)) return;
+    const canvas = 'projectId' in target ? { projectId: target.projectId, path: canvasDir } : { conversationId: target.conversationId, path: canvasDir };
+    useShell.getState().openPane({ kind: 'design', target: canvas });
+  };
+  // 打开的是一套设计系统的 `design-system.json`：改用设计系统编辑器打开它所在的目录（docs/design/canvas §10）；认不认得出由 designSystem.open 判断。
+  const systemDir =
+    'path' in target && /(^|[\\/])design-system\.json$/.test(target.path) ? target.path.replace(/[\\/]?design-system\.json$/, '') : null;
+  const openSystem = () => {
+    if (systemDir === null || !('path' in target)) return;
+    const system = 'projectId' in target ? { projectId: target.projectId, path: systemDir } : { conversationId: target.conversationId, path: systemDir };
+    useShell.getState().openPane({ kind: 'design-system', target: system });
+  };
 
   return (
     <section className={pane} aria-label={S.filePane.label(entry?.name ?? fileName)}>
@@ -118,6 +135,8 @@ export function FilePane({ target, conversationId, fileNameHint, active = true }
         </div>
         {mode && mode !== 'image' && mode !== 'audio' && mode !== 'video' && <DocumentViewControl mode={mode} source={source} onChange={setSource} />}
         {deckDir !== null && <ActionButton isQuiet onPress={openDeck}>{SLIDES.openInEditor}</ActionButton>}
+        {canvasDir !== null && <ActionButton isQuiet onPress={openCanvas}>{DESIGN.openInEditor}</ActionButton>}
+        {systemDir !== null && <ActionButton isQuiet onPress={openSystem}>{DESIGN_SYSTEM.openInEditor}</ActionButton>}
         {resolved && <LinkButton variant="secondary" href={`${resolved.handle.url}?download=1`} target="_blank" rel="noopener noreferrer" download={fileName}>{IMAGE.download}</LinkButton>}
         {absolute && kind && runtime.host.openFile && <ActionButton isQuiet onPress={() => {
           void runtime.host.openFile!(absolute).then(async error => {

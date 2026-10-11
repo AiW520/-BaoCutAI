@@ -11,6 +11,8 @@ import { useVideo } from '../../state/video-store.ts';
 import { VideoEditor } from '../editor/video-editor.tsx';
 import { FilePane } from '../file-pane.tsx';
 import { ProjectFiles } from './project-files.tsx';
+import { DesignPane } from './design-pane.tsx';
+import { DesignSystemPane } from './design-system-pane.tsx';
 import { SlidesPane } from './slides-pane.tsx';
 import { WebTab } from './web-tab.tsx';
 import { WORKSPACE_OVERLAY_ATTRIBUTE } from './workspace-overlay.ts';
@@ -75,9 +77,9 @@ export function WorkspacePanes({
   const rootRef = useRef<HTMLDivElement>(null);
   const covered = useCovered(rootRef);
   const parkedWidth = useShownWidth(rootRef, visible);
-  // 收起整个右侧区域时，有幻灯片标签就不用 display none：编辑器 iframe 里的布局会全部量成 0，回来时缩放闪动（见 `Pane`）。
+  // 收起整个右侧区域时，有幻灯片或设计稿标签就不用 display none：编辑器 iframe 里的布局会全部量成 0，回来时缩放闪动（见 `Pane`）。
   // 改为按收起前的宽度叠在会话列下面、看不见；其他标签各自仍是 display none。一开始就是收起的（没量过宽度）照旧。
-  const park = !visible && parkedWidth.current !== undefined && tabs.some((t) => t.kind === 'slides');
+  const park = !visible && parkedWidth.current !== undefined && tabs.some(isEditorTab);
   const openKey = useVideo((s) => (s.video ? targetKey(s.video.target) : null));
   const current = visible ? tabs.find((t) => itemKey(t) === active) : undefined;
   // 当前标签就是打开着的视频：编辑器那一格接管这个标签的面板 id。
@@ -90,7 +92,7 @@ export function WorkspacePanes({
         if (key === editorKey) return null;
         const shown = visible && key === active;
         return (
-          <Pane key={`${book}:${key}`} paneKey={key} shown={shown} keepLayout={item.kind === 'slides'}>
+          <Pane key={`${book}:${key}`} paneKey={key} shown={shown} keepLayout={isEditorTab(item)}>
             <PaneContent item={item} conversationId={conversationId} book={book} shown={shown} webVisible={!covered} />
           </Pane>
         );
@@ -98,6 +100,11 @@ export function WorkspacePanes({
       {openKey ? <EditorPane paneKey={editorKey} /> : null}
     </div>
   );
+}
+
+/** 编辑器 iframe 的标签（幻灯片、设计稿、设计系统）：隐藏时保留布局。 */
+function isEditorTab(item: WorkspaceItem): boolean {
+  return item.kind === 'slides' || item.kind === 'design' || item.kind === 'design-system';
 }
 
 const PARKED: CSSProperties = { position: 'absolute', inset: 0, visibility: 'hidden' };
@@ -197,6 +204,10 @@ function PaneContent({
       );
     case 'slides':
       return <SlidesPane target={item.target} conversationId={conversationId} active={shown} />;
+    case 'design':
+      return <DesignPane target={item.target} conversationId={conversationId} active={shown} />;
+    case 'design-system':
+      return <DesignSystemPane target={item.target} conversationId={conversationId} active={shown} />;
   }
 }
 
@@ -222,6 +233,8 @@ function ConversationFiles({ conversationId }: { conversationId: Id }) {
       onOpenFile={(target) => useShell.getState().openPane({ kind: 'file', target: scoped(target) })}
       onOpenVideo={(target) => useShell.getState().openVideo(scoped(target))}
       onOpenSlides={(target) => useShell.getState().openPane({ kind: 'slides', target: scoped(target) })}
+      onOpenDesign={(target) => useShell.getState().openPane({ kind: 'design', target: scoped(target) })}
+      onOpenDesignSystem={(target) => useShell.getState().openPane({ kind: 'design-system', target: scoped(target) })}
     />
   );
 }

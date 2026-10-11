@@ -59,6 +59,18 @@ describe('分类', () => {
     expect(counts.audio).toBe(0);
     expect(visibleCategories(counts).map((c) => c.key)).toEqual(['all', 'video-file', 'image', 'favorite', 'trash']);
   });
+
+  it('设计系统是单独的一类，排在设计稿后面、模板前面', () => {
+    const counts = countByCategory([
+      entry('t', { kind: 'template' }),
+      entry('s', { kind: 'design-system', name: '品牌设计系统' }),
+      entry('d', { kind: 'design', canvas: { boardCount: 2 } }),
+    ]);
+    expect(counts['design-system']).toBe(1);
+    expect(visibleCategories(counts).map((c) => c.key)).toEqual(['all', 'design', 'design-system', 'template', 'favorite', 'trash']);
+    expect(visibleCategories(counts).find((c) => c.key === 'design-system')?.label).toBe('设计系统');
+    expect(inCategory(entry('s', { kind: 'design-system' }), 'design-system')).toBe(true);
+  });
 });
 
 describe('viewEntries', () => {

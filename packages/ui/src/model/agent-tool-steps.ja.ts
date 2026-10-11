@@ -37,6 +37,10 @@ export const ja: AgentToolStepsMessages = {
     recordCheck: '検収チェックを記録',
     checkSlides: 'スライドを検査',
     importSlideAsset: 'スライド素材を取り込む',
+    checkDesign: 'デザインを検査',
+    importDesignAsset: 'デザイン素材を取り込む',
+    checkDesignSystem: 'デザインシステムを検査',
+    importDesignSystemAsset: 'デザインシステム素材を取り込む',
   },
   exportKind: {
     subtitles: '字幕',

@@ -38,6 +38,10 @@ export const de: AgentToolStepsMessages = {
     recordCheck: "Abnahmeprüfung protokollieren",
     checkSlides: "Folien prüfen",
     importSlideAsset: "Folienbild importieren",
+    checkDesign: "Design prüfen",
+    importDesignAsset: "Design-Asset importieren",
+    checkDesignSystem: "Designsystem prüfen",
+    importDesignSystemAsset: "Designsystem-Asset importieren",
   },
   exportKind: {
     subtitles: "Untertitel",

@@ -11,6 +11,8 @@ export const pl: SpaceMessages = {
     subtitle: "Napisy",
     document: "Dokument",
     slides: "Slajdy",
+    design: "Projekt",
+    'design-system': "System projektowy",
     package: "Pakiet wideo",
     template: "Szablon",
   },

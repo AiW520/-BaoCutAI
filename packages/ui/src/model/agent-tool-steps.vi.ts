@@ -37,6 +37,10 @@ export const vi: AgentToolStepsMessages = {
     recordCheck: "Ghi kiểm tra nghiệm thu",
     checkSlides: "Kiểm tra trang chiếu",
     importSlideAsset: "Nhập hình ảnh cho trang chiếu",
+    checkDesign: "Kiểm tra bản thiết kế",
+    importDesignAsset: "Nhập tư liệu cho bản thiết kế",
+    checkDesignSystem: "Kiểm tra hệ thống thiết kế",
+    importDesignSystemAsset: "Nhập tư liệu cho hệ thống thiết kế",
   },
   exportKind: {
     subtitles: "Phụ đề",

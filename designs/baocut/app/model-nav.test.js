@@ -114,6 +114,13 @@ test('新会话页的 dir（在哪个项目里起）算不同的一条路由', (
 });
 
 
+test('设计系统标签的 at（跳到哪个标注目标）算不同的一条路由，并能经地址往返', () => {
+  const route = {r: 'agent', id: 's27', system: 'dsys-spectrum2', at: 'components:comp-Button'};
+  assert.ok(!N.isSame({r: 'agent', id: 's27', system: 'dsys-spectrum2'}, route));
+  assert.ok(N.isSame(route, {...route}));
+  assert.deepEqual(N.routeFromHref(N.hrefFor(route)), route);
+});
+
 test('旧模型 URL 迁入设置，保留能力与子页并兼容已有设置链接', () => {
   for (const page of [{sec: 'local', tab: 'tts'}, {sec: 'cloud', tab: 'image'}, {sec: 'voices'}]) {
     const route = {r: 'settings', ...page};

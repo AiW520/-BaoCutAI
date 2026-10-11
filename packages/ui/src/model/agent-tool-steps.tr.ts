@@ -37,6 +37,10 @@ export const tr: AgentToolStepsMessages = {
     recordCheck: "Kabul denetimini kaydet",
     checkSlides: "Slaytları denetle",
     importSlideAsset: "Slayt görseli içe aktar",
+    checkDesign: "Tasarımı denetle",
+    importDesignAsset: "Tasarım varlığı içe aktar",
+    checkDesignSystem: "Tasarım sistemini denetle",
+    importDesignSystemAsset: "Tasarım sistemi varlığı içe aktar",
   },
   exportKind: {
     subtitles: "Altyazı",

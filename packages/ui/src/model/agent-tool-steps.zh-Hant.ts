@@ -37,6 +37,10 @@ export const zhHant: AgentToolStepsMessages = {
     recordCheck: '記錄驗收檢查',
     checkSlides: '檢查投影片',
     importSlideAsset: '匯入投影片素材',
+    checkDesign: '檢查設計稿',
+    importDesignAsset: '匯入設計稿素材',
+    checkDesignSystem: '檢查設計系統',
+    importDesignSystemAsset: '匯入設計系統素材',
   },
   exportKind: {
     subtitles: '字幕',

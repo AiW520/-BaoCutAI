@@ -49,6 +49,10 @@ import {
   type VideoChange,
   type VideoCreated,
   type SlidesCreated,
+  type DesignCreated,
+  type DesignSystemCreated,
+  type DesignAnnotation,
+  type DesignSystemAnnotation,
   type Project,
   type Seq,
   type SequencedEvent,
@@ -626,7 +630,7 @@ export class Harness {
     }
     if (!state || moved.size === 0) return;
     for (const item of state.items()) {
-      if (item.kind !== 'video-created' && item.kind !== 'video-change' && item.kind !== 'slides-created') continue;
+      if (item.kind !== 'video-created' && item.kind !== 'video-change' && item.kind !== 'slides-created' && item.kind !== 'design-created' && item.kind !== 'design-system-created') continue;
       if (!('conversationId' in item.target) || item.target.conversationId !== state.id) continue;
       const [top, ...rest] = item.target.path.split('/');
       const renamed = top !== undefined ? moved.get(top) : undefined;
@@ -1045,6 +1049,10 @@ export class Harness {
     skills?: { refs: SkillMessageRef[]; instructions: string };
     /** 幻灯片标注（docs/design/slides §9），由 Runtime 按添加的顺序解析好 deck 相对会话工作目录的路径。 */
     slideAnnotations?: ResolvedSlideAnnotation[];
+    /** 设计稿标注（docs/design/canvas §9），由 Runtime 按添加的顺序解析好设计稿相对会话工作目录的路径。 */
+    designAnnotations?: ResolvedDesignAnnotation[];
+    /** 设计系统标注（docs/design/canvas §10.6），由 Runtime 按添加的顺序解析好设计系统相对会话工作目录的路径。 */
+    designSystemAnnotations?: ResolvedDesignSystemAnnotation[];
   }): Promise<{ taskId: Id }> {
     const key = `send:${params.commandId}`;
     const done = this.#commands.get(key);
@@ -1113,6 +1121,10 @@ export class Harness {
       ...(params.template ? { template: params.template.ref } : {}),
       ...(params.skills?.refs.length ? { skills: params.skills.refs } : {}),
       ...(params.slideAnnotations?.length ? { slideAnnotations: params.slideAnnotations.map((a) => a.annotation) } : {}),
+      ...(params.designAnnotations?.length ? { designAnnotations: params.designAnnotations.map((a) => a.annotation) } : {}),
+      ...(params.designSystemAnnotations?.length
+        ? { designSystemAnnotations: params.designSystemAnnotations.map((a) => a.annotation) }
+        : {}),
     });
     state.upsert({
       kind: 'task',
@@ -1150,7 +1162,13 @@ export class Harness {
     this.#runs.set(state.id, run);
     const agentText = [params.text, params.template?.instructions, params.skills?.instructions, fileAttachmentsText(attached)].filter(Boolean).join('\n\n');
     void this.#startRun(state, run, {
-      text: withSlideAnnotations(withSpaceReferences(withEditorContext(agentText, params.context), references), params.slideAnnotations ?? []),
+      text: withDesignSystemAnnotations(
+        withDesignAnnotations(
+          withSlideAnnotations(withSpaceReferences(withEditorContext(agentText, params.context), references), params.slideAnnotations ?? []),
+          params.designAnnotations ?? [],
+        ),
+        params.designSystemAnnotations ?? [],
+      ),
       ...imagesOf(attached),
     });
     return { taskId };
@@ -1244,6 +1262,8 @@ export class Harness {
     commandId: Id;
     attachments?: Id[];
     slideAnnotations?: ResolvedSlideAnnotation[];
+    designAnnotations?: ResolvedDesignAnnotation[];
+    designSystemAnnotations?: ResolvedDesignSystemAnnotation[];
   }): Promise<{ status: 'steered' | 'unsupported' | 'no-active-turn' }> {
     const key = `steer:${params.commandId}`;
     if (this.#commands.has(key)) return { status: 'steered' };
@@ -1259,7 +1279,15 @@ export class Harness {
       if (this.#runs.get(state.id) !== run || run.stopRequested || this.#agents.get(state.id) !== session) return { status: 'no-active-turn' };
     }
     const annotations = params.slideAnnotations ?? [];
-    const text = withSlideAnnotations([params.text, fileAttachmentsText(attached)].filter(Boolean).join('\n\n'), annotations);
+    const designAnnotations = params.designAnnotations ?? [];
+    const designSystemAnnotations = params.designSystemAnnotations ?? [];
+    const text = withDesignSystemAnnotations(
+      withDesignAnnotations(
+        withSlideAnnotations([params.text, fileAttachmentsText(attached)].filter(Boolean).join('\n\n'), annotations),
+        designAnnotations,
+      ),
+      designSystemAnnotations,
+    );
     const result = await session.steer(run.turnId, { text, ...imagesOf(attached) });
     if (result !== 'accepted') return { status: 'unsupported' };
     this.#commands.set(key, run.taskId);
@@ -1272,6 +1300,8 @@ export class Harness {
       text: params.text,
       ...(attached.length ? { attachments: attached.map((a) => a.ref) } : {}),
       ...(annotations.length ? { slideAnnotations: annotations.map((a) => a.annotation) } : {}),
+      ...(designAnnotations.length ? { designAnnotations: designAnnotations.map((a) => a.annotation) } : {}),
+      ...(designSystemAnnotations.length ? { designSystemAnnotations: designSystemAnnotations.map((a) => a.annotation) } : {}),
     });
     return { status: 'steered' };
   }
@@ -1568,6 +1598,41 @@ export class Harness {
       existing
         ? { ...existing, ...created, taskId: taskId ?? existing.taskId }
         : { kind: 'slides-created', id: newId('slides'), createdAt: nowIso(), taskId, ...created },
+    );
+  }
+
+  /**
+   * 智能体的 `design_check` 校验通过了一份设计稿：会话里记一条，线程里出现设计稿卡片（docs/design/canvas §7.3）。
+   * 与 `recordSlidesCreated` 相同：同一份设计稿只有一条，再次通过时更新标题与画板数、换成这次的任务，id 与位置不变。
+   */
+  recordDesignCreated(conversationId: Id, taskId: Id | null, created: DesignCreated): void {
+    const state = this.#states.get(conversationId);
+    if (!state) return;
+    const existing = state.items().find(
+      (item): item is Extract<TimelineItem, { kind: 'design-created' }> => item.kind === 'design-created' && sameTarget(item.target, created.target),
+    );
+    state.upsert(
+      existing
+        ? { ...existing, ...created, taskId: taskId ?? existing.taskId }
+        : { kind: 'design-created', id: newId('design'), createdAt: nowIso(), taskId, ...created },
+    );
+  }
+
+  /**
+   * 智能体的 `design_system_check` 校验通过了一个设计系统：会话里记一条，线程里出现设计系统卡片（docs/design/canvas §10.5）。
+   * 与 `recordDesignCreated` 相同：同一个设计系统只有一条，再次通过时更新标题、换成这次的任务，id 与位置不变。
+   */
+  recordDesignSystemCreated(conversationId: Id, taskId: Id | null, created: DesignSystemCreated): void {
+    const state = this.#states.get(conversationId);
+    if (!state) return;
+    const existing = state.items().find(
+      (item): item is Extract<TimelineItem, { kind: 'design-system-created' }> =>
+        item.kind === 'design-system-created' && sameTarget(item.target, created.target),
+    );
+    state.upsert(
+      existing
+        ? { ...existing, ...created, taskId: taskId ?? existing.taskId }
+        : { kind: 'design-system-created', id: newId('dsys'), createdAt: nowIso(), taskId, ...created },
     );
   }
 
@@ -2567,6 +2632,56 @@ export function withSlideAnnotations(text: string, annotations: readonly Resolve
     groups.set(deckPath, [...(groups.get(deckPath) ?? []), lines.join('\n')]);
   });
   const blocks = [...groups].map(([deckPath, items]) => [`<baocut-slide-annotations deck=${JSON.stringify(deckPath)}>`, ...items, '</baocut-slide-annotations>'].join('\n'));
+  return [text, '', ...blocks].join('\n');
+}
+
+/** 一条设计稿标注与它的设计稿相对会话工作目录的路径（写法与 `ResolvedSlideAnnotation.deckPath` 相同）。 */
+export interface ResolvedDesignAnnotation {
+  annotation: DesignAnnotation;
+  canvasPath: string;
+}
+
+/**
+ * 把设计稿标注附在发给智能体的文字后面（docs/design/canvas §9），排在幻灯片标注段之后：每份设计稿一段，按第一次出现的顺序；
+ * 编号是在这条消息的设计稿标注里的序号，与界面上的列表、编辑器里的编号标记一致（幻灯片标注各自编号）。
+ */
+export function withDesignAnnotations(text: string, annotations: readonly ResolvedDesignAnnotation[]): string {
+  if (annotations.length === 0) return text;
+  const groups = new Map<string, string[]>();
+  annotations.forEach(({ annotation: a, canvasPath }, i) => {
+    // i18n-ignore-start: 发给智能体的标注（给模型的提示词），不随界面语言变化
+    const lines = [`${i + 1}. ${a.label}`, ...(a.detail ? [`   定位：${a.detail}`] : []), `   批注：${a.text.split('\n').join('\n        ')}`];
+    // i18n-ignore-end
+    groups.set(canvasPath, [...(groups.get(canvasPath) ?? []), lines.join('\n')]);
+  });
+  const blocks = [...groups].map(([canvasPath, items]) =>
+    [`<baocut-design-annotations canvas=${JSON.stringify(canvasPath)}>`, ...items, '</baocut-design-annotations>'].join('\n'),
+  );
+  return [text, '', ...blocks].join('\n');
+}
+
+/** 一条设计系统标注与它的设计系统相对会话工作目录的路径（写法与 `ResolvedSlideAnnotation.deckPath` 相同）。 */
+export interface ResolvedDesignSystemAnnotation {
+  annotation: DesignSystemAnnotation;
+  systemPath: string;
+}
+
+/**
+ * 把设计系统标注附在发给智能体的文字后面（docs/design/canvas §10.6），排在设计稿标注段之后：每套设计系统一段，按第一次出现的顺序；
+ * 编号是在这条消息的设计系统标注里的序号，与界面上的列表、编辑器里的编号标记一致（幻灯片、设计稿标注各自编号）。
+ */
+export function withDesignSystemAnnotations(text: string, annotations: readonly ResolvedDesignSystemAnnotation[]): string {
+  if (annotations.length === 0) return text;
+  const groups = new Map<string, string[]>();
+  annotations.forEach(({ annotation: a, systemPath }, i) => {
+    // i18n-ignore-start: 发给智能体的标注（给模型的提示词），不随界面语言变化
+    const lines = [`${i + 1}. ${a.label}`, ...(a.detail ? [`   定位：${a.detail}`] : []), `   批注：${a.text.split('\n').join('\n        ')}`];
+    // i18n-ignore-end
+    groups.set(systemPath, [...(groups.get(systemPath) ?? []), lines.join('\n')]);
+  });
+  const blocks = [...groups].map(([systemPath, items]) =>
+    [`<baocut-design-system-annotations system=${JSON.stringify(systemPath)}>`, ...items, '</baocut-design-system-annotations>'].join('\n'),
+  );
   return [text, '', ...blocks].join('\n');
 }
 

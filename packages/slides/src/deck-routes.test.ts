@@ -131,6 +131,10 @@ describe('SlidesServer 路由', () => {
     const stale = await publish({ 'project/slides/s01.html': { delete: true, ifMatch: sha256('old') } });
     expect(stale.status).toBe(409);
     expect((await publish({ 'project/x': 1 })).status).toBe(400);
+    expect((await publish({ 'project/slides/s01.html': { delete: true, ifMatch: null } })).status).toBe(400);
+    const createOnly = await publish({ 'project/slides/s02.html': { base64: Buffer.from('<section id="s02"></section>').toString('base64'), contentType: 'text/html', ifMatch: null } });
+    expect(createOnly.status).toBe(200);
+    expect(await readFile(path.join(deckDir, 'slides/s02.html'), 'utf8')).toBe('<section id="s02"></section>');
     expect((await fetch(at('__deck/publish'), { method: 'POST', body: '{}' })).status).toBe(415);
     expect((await fetch(at('__deck/publish'))).status).toBe(405);
   });

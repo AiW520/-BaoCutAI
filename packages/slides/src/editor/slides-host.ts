@@ -40,8 +40,8 @@ export interface HostAssetsCapability {
 export interface CommentAnchorHandlers {
   /** 标注模式开关。 */
   mode(on: boolean): void;
-  /** 当前要画标记的标注；`active` 的那条保留选区高亮。 */
-  threads(list: { id: string; anchor: string; active: boolean }[]): void;
+  /** 当前要画标记的标注；`active` 的那条保留选区高亮。`section` 只有设计系统的标注带（editor-messages.ts 的 `EditorThread`）。 */
+  threads(list: { id: string; anchor: string; active: boolean; section?: string }[]): void;
   /** 批注框是否开着。 */
   composing(on: boolean): void;
   /** 拖动标记换位置；BaoCut 不支持，不调用。 */

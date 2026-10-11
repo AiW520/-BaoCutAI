@@ -13,7 +13,10 @@ import { changedFiles } from './thread.ts';
 import { conversationJobVideos, isVideoAt, openingVideo, videoOutput } from './video-cards.ts';
 import { isPreviewExport } from './export-job.ts';
 
-/** 会话头「产物」里的一项（产品设计 §3.2 用户修订）：这条会话新建、改过或在上面做过活的视频、做好的幻灯片，或它工作目录里的文件。 */
+/**
+ * 会话头「产物」里的一项（产品设计 §3.2 用户修订）：这条会话新建、改过或在上面做过活的视频、做好的幻灯片、设计稿与设计系统，
+ * 或它工作目录里的文件。
+ */
 export interface ConversationOutput {
   /** 视频用视频 ID（同一个改几次只算一项），其它文件用 Space 条目 ID。 */
   id: string;
@@ -27,6 +30,10 @@ export interface ConversationOutput {
   durationSeconds: number | null;
   /** 幻灯片（docs/design/slides §7.3）：在功能区幻灯片标签里打开的定位与页数（不知道时 null）；不是幻灯片时没有。 */
   slides?: { target: FileTarget; slideCount: number | null };
+  /** 设计稿（docs/design/canvas §7.3）：在功能区设计稿标签里打开的定位与画板数（不知道时 null）；不是设计稿时没有。 */
+  design?: { target: FileTarget; boardCount: number | null };
+  /** 设计系统（docs/design/canvas §10.6）：在功能区设计系统标签里打开的定位；不是设计系统时没有。 */
+  designSystem?: { target: FileTarget };
   at: string;
   /**
    * 产生它的任务：视频取最近一次修改所在的任务；文件取最近一次改到它的文件改动步骤所在的任务。
@@ -37,9 +44,9 @@ export interface ConversationOutput {
 
 const LIMIT = 30;
 
-/** Space 里的这个幻灯片条目是不是在这个位置（来源目录 + 相对路径）。 */
-function isSlidesAt(entry: SpaceEntry, target: FileTarget): boolean {
-  if (entry.kind !== 'slides' || !('path' in target) || entry.relPath !== target.path) return false;
+/** Space 里的这个幻灯片、设计稿或设计系统条目是不是在这个位置（来源目录 + 相对路径）。 */
+function isDirAt(kind: 'slides' | 'design' | 'design-system', entry: SpaceEntry, target: FileTarget): boolean {
+  if (entry.kind !== kind || !('path' in target) || entry.relPath !== target.path) return false;
   return 'projectId' in target ? entry.source.projectId === target.projectId : entry.source.conversationId === target.conversationId;
 }
 
@@ -65,7 +72,8 @@ function fileTasks(items: readonly TimelineItem[], cwd: string | undefined): Map
 
 /**
  * 这条会话的产物，最近的在前：智能体新建（`video-created`）或经视频引擎改过（变更卡）的视频，智能体在上面做过活的视频
- * （转录、导出、从链接导入新建的……，`jobs` 里这条会话提交的），随第一句话带进来的视频（`openingVideo`），智能体做好的幻灯片（`slides-created`），
+ * （转录、导出、从链接导入新建的……，`jobs` 里这条会话提交的），随第一句话带进来的视频（`openingVideo`），智能体做好的幻灯片、设计稿
+ * 与设计系统（`slides-created`、`design-created`、`design-system-created`），
  * 加上不属于项目的会话自己工作目录里的文件。
  * 项目会话的其它文件没有记录是哪条会话产生的，不列；进了回收站的不列。`cwd` 用来把文件对回改它的任务。
  * 会话头只列最近 30 项；按回复分组时不截断（`limit: Infinity`）。
@@ -105,7 +113,7 @@ export function conversationOutputs(
   const decks: ConversationOutput[] = [];
   for (const item of items) {
     if (item.kind !== 'slides-created') continue;
-    const entry = entries.find((e) => isSlidesAt(e, item.target)) ?? null;
+    const entry = entries.find((e) => isDirAt('slides', e, item.target)) ?? null;
     decks.push({
       id: entry?.id ?? item.id,
       kind: 'slides',
@@ -114,6 +122,38 @@ export function conversationOutputs(
       entry,
       durationSeconds: null,
       slides: { target: item.target, slideCount: item.slideCount },
+      at: item.createdAt,
+      taskId: item.taskId,
+    });
+  }
+  // 智能体做好的设计稿（`design-created` 回执）：同幻灯片。
+  for (const item of items) {
+    if (item.kind !== 'design-created') continue;
+    const entry = entries.find((e) => isDirAt('design', e, item.target)) ?? null;
+    decks.push({
+      id: entry?.id ?? item.id,
+      kind: 'design',
+      name: item.title || entry?.name || baseName(item.target.path),
+      video: null,
+      entry,
+      durationSeconds: null,
+      design: { target: item.target, boardCount: item.boardCount },
+      at: item.createdAt,
+      taskId: item.taskId,
+    });
+  }
+  // 智能体做好的设计系统（`design-system-created` 回执）：同幻灯片，没有计数。
+  for (const item of items) {
+    if (item.kind !== 'design-system-created') continue;
+    const entry = entries.find((e) => isDirAt('design-system', e, item.target)) ?? null;
+    decks.push({
+      id: entry?.id ?? item.id,
+      kind: 'design-system',
+      name: item.title || entry?.name || baseName(item.target.path),
+      video: null,
+      entry,
+      durationSeconds: null,
+      designSystem: { target: item.target },
       at: item.createdAt,
       taskId: item.taskId,
     });
@@ -154,6 +194,8 @@ export function conversationOutputs(
         entry,
         durationSeconds: null,
         ...(entry.kind === 'slides' ? { slides: { target: videoTargetOf(entry), slideCount: entry.deck?.slideCount ?? null } } : {}),
+        ...(entry.kind === 'design' ? { design: { target: videoTargetOf(entry), boardCount: entry.canvas?.boardCount ?? null } } : {}),
+        ...(entry.kind === 'design-system' ? { designSystem: { target: videoTargetOf(entry) } } : {}),
         at: entry.lastActivityAt,
         taskId: tasks.get(entry.relPath) ?? null,
       });

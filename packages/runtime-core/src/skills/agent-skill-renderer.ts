@@ -31,6 +31,9 @@ import { parseSkillFrontmatter } from './skill-frontmatter.ts';
  * - 生成块：`<!-- generated: <名字> -->` … `<!-- /generated -->`。内容由同步脚本（`tools/sync-agent-skill.ts`）写进源文件，
  *   渲染器不重算，只像正文一样处理里面的标记与占位符，标记行保留。
  *
+ * - 代码里（代码块或同一行的行内代码）不带 `kind:` 的 `{{…}}` 不是占位符，是正文要讲的模板写法（如设计稿 Design Component 的
+ *   `{{hole}}`、`{{ item.x }}`），原样保留；写在正文里的仍算不认识的占位符。
+ *
  * 不认识的占位符、不认识的面或生成块、没有闭合或嵌套的标记一律抛 `AgentSkillRenderError`（带文件与行号），不默默放过。
  * 名字的转换规则只有一份（`@baocut/protocol` 的 `toolCommandName`、`fieldFlagName`），与 CLI 的命令树、旗标相同。
  */
@@ -142,6 +145,39 @@ export const SESSION_ONLY_TOOLS: Readonly<Record<string, SessionOnlyToolFallback
     phrase: new RegExp(`逐张调用\\s*${toolNamePattern('slides_import_asset')}[^\\n]*`, 'g'),
     replacement: '终端里没有把图片导入 deck 的命令：页面先不放图片，交付时说明哪几页该配什么图。',
     text: '导入图片（只在 BaoCut 的会话里有）',
+  },
+  // 设计稿（skills/design）的校验与导入素材同样只在会话里有：「新建」第 6 步的校验句、第 3 步的导入句整句换掉。
+  design_check: {
+    phrase: new RegExp(`然后对设计稿运行\\s*${toolNamePattern('design_check')}[^\\n]*?这时线程里才出现设计稿卡片。`, 'g'),
+    replacement:
+      '终端里没有设计稿校验，也没有设计稿卡片：按 `references/format.md` 自己逐个检查文件' +
+      '（标签都闭合、attribute 都加引号、`support.js` 那一行头部原样、`boards` 与 `order` 都指向存在的文件）。',
+    text: '设计稿校验（只在 BaoCut 的会话里有）',
+  },
+  design_import_asset: {
+    phrase: new RegExp(`用\\s*${toolNamePattern('design_import_asset')}\\s*导入（[^）\\n]*）→[^\\n]*?或 \`@font-face\`。`, 'g'),
+    replacement: '终端里没有把它导入设计稿的命令：先不放（图片换成带说明的 placeholder），并说明这份设计需要哪些文件。',
+    text: '导入素材（只在 BaoCut 的会话里有）',
+  },
+  // 设计系统（skills/design-system）：「新建设计系统」第 3 步的校验句与「调用」的两条工具说明整句换掉；上传在终端里换成拷成文件（原版允许的另一种存法）。
+  design_system_check: {
+    phrase: new RegExp(
+      `(?:然后对设计系统运行\\s*${toolNamePattern('design_system_check')}[^\\n]*?这时线程里才出现设计系统卡片。|` +
+        `${toolNamePattern('design_system_check')}（\`path\` = 设计系统的目录）[^\\n]*?线程里出现设计系统卡片。)`,
+      'g',
+    ),
+    replacement:
+      '终端里没有设计系统校验，也没有设计系统卡片：按 `references/format.md` 自己逐个检查文件' +
+      '（index 的 marker 与字段、`tokens.json` 里每个 family 都写成列表、每条 record 与每个 `/_blob/<id>` 都指向存在的文件）。',
+    text: '设计系统校验（只在 BaoCut 的会话里有）',
+  },
+  design_system_import_asset: {
+    phrase: new RegExp(`${toolNamePattern('design_system_import_asset')}（\`system\`[^\\n]*?index 照样最后写。`, 'g'),
+    replacement:
+      '终端里不能上传：把每张图片、每个视频和 PDF 作为文件拷到 `assets/<Group>/<file>`' +
+      '（`format.md`：「要么存成文件，要么存成上传」），不写 `files` record，并在它所在组的 `order` 里写上它；' +
+      '设计系统已有的 record 都保留，没有文件撑着的 record 一条也不写。',
+    text: '上传素材（只在 BaoCut 的会话里有）',
   },
 };
 // i18n-ignore-end
@@ -321,10 +357,12 @@ function renderPlaceholders(
         return `${lead ?? ''}[${value}](${path.posix.relative(path.posix.dirname(file), target)})`;
       }
       default:
+        // 代码里的模板洞（`{{hole}}`）原样保留，前面的「读」也原样放回。
+        if (colon < 0 && (inFence || insideInlineCode(line, at))) return match;
         return fail(RcSkills.unknownPlaceholder({ placeholder: whole }));
     }
   });
-  if (rendered.includes('{{')) fail(RcSkills.placeholderUnclosed());
+  if (line.replace(PLACEHOLDER, '').includes('{{')) fail(RcSkills.placeholderUnclosed());
   return rendered;
 }
 

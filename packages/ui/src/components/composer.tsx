@@ -114,7 +114,7 @@ import { useSpace } from '../state/space-store.ts';
 import { AccessPicker } from './access-picker.tsx';
 import { AgentPicker } from './agent-picker.tsx';
 import { ComposerToken, composerTokenList } from './composer-token.tsx';
-import { SlideAnnotationsToken, type SlideAnnotationTokenItem } from './slide-annotations-token.tsx';
+import { AnnotationsToken, type AnnotationTokenItem } from './annotations-token.tsx';
 import { useVideoMentions } from './use-editor-reference.ts';
 import { useNarrow } from './use-narrow.ts';
 import { focusPromptEnd, usePromptValue } from './use-prompt-value.ts';
@@ -185,6 +185,13 @@ const SLASH_ICON: Record<SlashCommand['icon'], ComponentType> = {
 
 const IMAGE_TYPES = [...ATTACHMENT_MIME_TYPES];
 
+/** composer 上方的一组还没发出的标注（幻灯片、设计稿或设计系统）：可以逐条移除或全部移除。 */
+export interface ComposerAnnotations {
+  items: readonly AnnotationTokenItem[];
+  onRemove(id: string): void;
+  onClear(): void;
+}
+
 export interface ComposerProps {
   /** 草稿的键：会话 ID，或新会话用的草稿键。 */
   draftKey: string;
@@ -230,7 +237,11 @@ export interface ComposerProps {
    * 输入框上方：幻灯片标签里加进对话、还没发出的标注（docs/design/slides §8.2），「幻灯片标注 · N 条」。
    * 有标注时正文空着也能发（`onSend` 收到空正文，由调用方补一句）。
    */
-  slideAnnotations?: { items: readonly SlideAnnotationTokenItem[]; onRemove(id: string): void; onClear(): void } | null;
+  slideAnnotations?: ComposerAnnotations | null;
+  /** 输入框上方：设计稿标签里加进对话、还没发出的标注（docs/design/canvas §8.2），「设计稿标注 · N 条」；其余同 `slideAnnotations`。 */
+  designAnnotations?: ComposerAnnotations | null;
+  /** 输入框上方：设计系统标签里加进对话、还没发出的标注（docs/design/canvas §10.6），「设计系统标注 · N 条」；其余同 `slideAnnotations`。 */
+  designSystemAnnotations?: ComposerAnnotations | null;
   /** 输入框上方：排队等发送的消息。 */
   queue?: ReactNode;
   /** 新会话起始页（原型 new-agent.jsx `AgentHero`）才传；会话里不传，输入区保持原样。 */
@@ -300,6 +311,8 @@ export function Composer(props: ComposerProps) {
   const { busy, queueWhileBusy, stopping, placeholder, autoFocus, mentionScope, onSend, beforeSend, onStop, reference, queue, start, tool } = props;
   const spaceReferences = props.spaceReferences?.items.length ? props.spaceReferences : null;
   const slideAnnotations = props.slideAnnotations?.items.length ? props.slideAnnotations : null;
+  const designAnnotations = props.designAnnotations?.items.length ? props.designAnnotations : null;
+  const designSystemAnnotations = props.designSystemAnnotations?.items.length ? props.designSystemAnnotations : null;
   const runtime = useRuntime();
   const shellDraft = useShell((s) => s.drafts[draftKey] ?? '');
   const setShellDraft = useShell((s) => s.setDraft);
@@ -365,7 +378,14 @@ export function Composer(props: ComposerProps) {
   const uploading = images.some((image) => image.progress !== null);
   const hasText = draft.trim().length > 0;
   // 起始页：正文空着时，附了图片或素材也能发（只选模板不行）。
-  const hasContent = hasText || !!files.length || !!images.length || !!slideAnnotations || (!!start && start.canSendEmpty(images.length));
+  const hasContent =
+    hasText ||
+    !!files.length ||
+    !!images.length ||
+    !!slideAnnotations ||
+    !!designAnnotations ||
+    !!designSystemAnnotations ||
+    (!!start && start.canSendEmpty(images.length));
   const canSend = (!busy || !!queueWhileBusy) && !sending && !picking && !uploading && !blocked && hasContent && !tool?.isDisabled;
   const [over, setOver] = useState(false);
   const dragDepth = useRef(0);
@@ -877,7 +897,7 @@ export function Composer(props: ComposerProps) {
               ))}
             </div>
           ) : null}
-          {reference || spaceReferences || slideAnnotations ? (
+          {reference || spaceReferences || slideAnnotations || designAnnotations || designSystemAnnotations ? (
             <div className={tags}>
               {reference ? (
                 <span className={tag} title={reference.description}>
@@ -903,7 +923,18 @@ export function Composer(props: ComposerProps) {
                 </span>
               ) : null}
               {slideAnnotations ? (
-                <SlideAnnotationsToken items={slideAnnotations.items} onRemove={slideAnnotations.onRemove} onClear={slideAnnotations.onClear} />
+                <AnnotationsToken kind="slides" items={slideAnnotations.items} onRemove={slideAnnotations.onRemove} onClear={slideAnnotations.onClear} />
+              ) : null}
+              {designAnnotations ? (
+                <AnnotationsToken kind="design" items={designAnnotations.items} onRemove={designAnnotations.onRemove} onClear={designAnnotations.onClear} />
+              ) : null}
+              {designSystemAnnotations ? (
+                <AnnotationsToken
+                  kind="design-system"
+                  items={designSystemAnnotations.items}
+                  onRemove={designSystemAnnotations.onRemove}
+                  onClear={designSystemAnnotations.onClear}
+                />
               ) : null}
             </div>
           ) : null}

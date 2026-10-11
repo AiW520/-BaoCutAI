@@ -80,6 +80,13 @@
     /* 幻灯片（docs/design/slides §7.2）：写完或改完 deck 校验一次，没有错误时线程里登记幻灯片卡片；图片拷进 deck 的 assets/ */
     slides_check: (a) => ({kind: 'slides', label: '检查幻灯片', icon: 'template', summary: join(a.deck || base(a.path), n(a.slides, '页'))}),
     slides_import_asset: (a) => ({kind: 'slides', label: '导入幻灯片素材', icon: 'image', summary: a.name || base(a.path)}),
+    /* 设计稿（docs/design/canvas §7.2）：同一种做法，校验 canvas.json 与画板；图片拷进设计稿的 assets/ */
+    design_check: (a) => ({kind: 'design', label: '检查设计稿', icon: 'template', summary: join(a.canvas || base(a.path), n(a.boards, '个画板'))}),
+    design_import_asset: (a) => ({kind: 'design', label: '导入设计稿素材', icon: 'image', summary: a.name || base(a.path)}),
+    /* 设计系统（docs/design/canvas §10.5）：校验 design-system.json、tokens.json 与组件包；图片、字体等拷进设计系统的 _blobs/，
+       `group` 是记进索引的素材分组。`components` 是原型的参数摘要（组件数），不是工具的参数 */
+    design_system_check: (a) => ({kind: 'design-system', label: '检查设计系统', icon: 'template', summary: join(a.system || base(a.path), n(a.components, '个组件'))}),
+    design_system_import_asset: (a) => ({kind: 'design-system', label: '导入设计系统素材', icon: 'image', summary: join(a.name || base(a.path), a.group)}),
   };
   const NAMES = Object.keys(CATALOG);
 

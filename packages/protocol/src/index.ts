@@ -14,6 +14,8 @@ export * from './library.ts';
 export * from './pipelines.ts';
 export * from './space.ts';
 export * from './slides.ts';
+export * from './design.ts';
+export * from './design-system.ts';
 export * from './external-tools.ts';
 export * from './fonts.ts';
 export * from './tool-catalogue.ts';

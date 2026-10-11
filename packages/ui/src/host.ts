@@ -30,6 +30,11 @@ export interface HostBridge {
   pickMessageFiles?(options: PickMessageFilesOptions): Promise<MessageFile[]>;
   /** 选一个保存位置（系统的存储对话框）。取消时返回 null。没有它时，原生另存为不可用；视频导出仍可交给 Runtime 保存。 */
   pickSavePath?(options: PickSavePathOptions): Promise<string | null>;
+  /**
+   * 把界面手上的文件字节存到用户在系统存储对话框里选的位置（对话框与写入都在主进程里），返回存下的路径；取消时 null，写不进去时抛错。
+   * 桌面端才有；Web 没有它，界面改为交给浏览器下载（设计稿的导出，docs/design/canvas §8.3）。
+   */
+  saveFile?(options: SaveFileOptions): Promise<string | null>;
   /** 应用自动更新（架构设计 §2.6，桌面端才有）。没有它的宿主里，更新相关的界面一概不出现。 */
   updates?: UpdatesHost;
   /** 界面语言变了（启动时也调一次）：宿主据此换原生菜单与对话框的语言。没有它的宿主不管。 */
@@ -74,6 +79,11 @@ export interface PickSavePathOptions {
   /** 系统保存对话框初始打开的绝对目录；不给时沿用系统的位置。 */
   defaultDir?: string;
   filters?: FileFilter[];
+}
+
+export interface SaveFileOptions extends PickSavePathOptions {
+  /** 要写进去的内容。 */
+  data: Uint8Array;
 }
 
 /**

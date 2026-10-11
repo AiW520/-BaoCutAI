@@ -1,7 +1,7 @@
 import path from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { RpcError, type FileTarget, type SlideAnnotation } from '@baocut/protocol';
-import { resolveSlideAnnotations } from './slides.ts';
+import { RpcError, type DesignSystemAnnotation, type FileTarget, type SlideAnnotation } from '@baocut/protocol';
+import { resolveDesignSystemAnnotations, resolveSlideAnnotations } from './slides.ts';
 
 /** 消息带的幻灯片标注：deck 换成相对会话工作目录的路径（docs/design/slides §9）。 */
 
@@ -36,5 +36,18 @@ describe('resolveSlideAnnotations', () => {
     const [far] = resolveSlideAnnotations([note({ entryId: 'far' })], cwd, locate)!;
     expect(far!.deckPath).toBe(`${path.join(other, 'decks', 'far')}/`);
     expect(() => resolveSlideAnnotations([note({ entryId: 'gone' })], cwd, locate)).toThrow(RpcError);
+  });
+});
+
+describe('resolveDesignSystemAnnotations（docs/design/canvas §10.6）', () => {
+  const system = (target: FileTarget): DesignSystemAnnotation => ({ system: target, anchor: 'comp-Button', section: 'components', label: 'Button', text: '改' });
+
+  it('与幻灯片标注同一种写法：没有时为 undefined，工作目录里写相对路径，外面写绝对路径，找不到整条拒绝', () => {
+    expect(resolveDesignSystemAnnotations(undefined, cwd, locate)).toBeUndefined();
+    expect(resolveDesignSystemAnnotations([], cwd, locate)).toBeUndefined();
+    const resolved = resolveDesignSystemAnnotations([system({ conversationId: 'c', path: 'spectrum-2' }), system({ entryId: 'far' })], cwd, locate);
+    expect(resolved?.map((r) => r.systemPath)).toEqual(['spectrum-2/', `${path.join(other, 'decks', 'far')}/`]);
+    expect(resolved?.[0]?.annotation).toEqual(system({ conversationId: 'c', path: 'spectrum-2' }));
+    expect(() => resolveDesignSystemAnnotations([system({ entryId: 'gone' })], cwd, locate)).toThrow(RpcError);
   });
 });

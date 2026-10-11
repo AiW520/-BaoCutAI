@@ -37,6 +37,10 @@ export const ko: AgentToolStepsMessages = {
     recordCheck: '검수 결과 기록',
     checkSlides: '슬라이드 검사',
     importSlideAsset: '슬라이드 이미지 가져오기',
+    checkDesign: '디자인 검사',
+    importDesignAsset: '디자인 소재 가져오기',
+    checkDesignSystem: '디자인 시스템 검사',
+    importDesignSystemAsset: '디자인 시스템 소재 가져오기',
   },
   exportKind: {
     subtitles: '자막',

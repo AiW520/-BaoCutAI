@@ -15,6 +15,8 @@ import type {
   VideoChange,
   VideoCreated,
   SlidesCreated,
+  DesignCreated,
+  DesignSystemCreated,
   VideoOpenResult,
 } from '@baocut/protocol';
 import type { TrustedPrincipal } from '../gateway.ts';
@@ -180,6 +182,12 @@ export const TOOL_RISK: Readonly<Record<string, RiskLevel>> = {
   // 幻灯片（docs/design/slides §7.2）：校验只读文件（通过时在会话里记一张卡片）；导入素材写 deck 目录的 assets/，按内容寻址、不覆盖。
   slides_check: 'read',
   slides_import_asset: 'edit',
+  // 设计稿（docs/design/canvas §7.2）：同幻灯片。校验只读文件；导入素材写设计稿目录的 assets/。
+  design_check: 'read',
+  design_import_asset: 'edit',
+  // 设计系统（docs/design/canvas §10.5）：同设计稿。校验只读文件；导入素材写设计系统目录的 _blobs/。
+  design_system_check: 'read',
+  design_system_import_asset: 'edit',
 };
 
 export function toolRisk(request: ToolConfirmation): RiskLevel {
@@ -284,6 +292,10 @@ export interface ToolScope<A extends ToolAccess = ToolAccess> {
   recordCreated?(access: A, created: VideoCreated): void | Promise<void>;
   /** `slides_check` 校验通过之后：会话记一条 `slides-created`（同一份 deck 只有一条）；对外服务没有会话，不做。 */
   recordSlides?(access: A, created: SlidesCreated): void;
+  /** `design_check` 没有问题之后：会话记一条 `design-created`（同一份设计稿只有一条）；对外服务没有会话，不做。 */
+  recordDesign?(access: A, created: DesignCreated): void;
+  /** `design_system_check` 没有问题之后：会话记一条 `design-system-created`（同一个设计系统只有一条）；对外服务没有会话，不做。 */
+  recordDesignSystem?(access: A, created: DesignSystemCreated): void;
   /**
    * 固定流程替调用方新建的视频（`download` / `transcribe` 给链接时的 `newVideo`）：对外服务把它登记进自己的视频范围；会话不做
    * （视频卡来自流程的任务卡片）。
@@ -383,6 +395,12 @@ export class ScopeRouter implements ToolScope<ToolAccess> {
   }
   recordSlides(access: ToolAccess, created: SlidesCreated): void {
     this.#of(access.principal).recordSlides?.(access, created);
+  }
+  recordDesign(access: ToolAccess, created: DesignCreated): void {
+    this.#of(access.principal).recordDesign?.(access, created);
+  }
+  recordDesignSystem(access: ToolAccess, created: DesignSystemCreated): void {
+    this.#of(access.principal).recordDesignSystem?.(access, created);
   }
   adoptCreatedVideo(access: ToolAccess, videoId: Id): void | Promise<void> {
     return this.#of(access.principal).adoptCreatedVideo?.(access, videoId);

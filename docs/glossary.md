@@ -16,6 +16,11 @@
 | Space 条目 | Space 中的一行或一张卡片：一个视频、一份素材，或一个产物。条目是视图，不是第二份存储 |
 | 幻灯片 | 智能体在会话里做的一份演示文稿：工作目录里一个含 `deck.json` 的目录，每页一个 HTML 文件。在功能区的幻灯片标签里预览、编辑与标注，在 Space 里是一个条目。见 [幻灯片设计](design/slides/slides-design.md) |
 | 幻灯片标注 | 用户在幻灯片编辑器里圈出某个元素或区域并写下的意见，随下一条消息交给智能体，是消息上的一种特殊附件 |
+| 设计稿 | 智能体在会话里做的一份视觉设计（界面、网页、海报、图表）：工作目录里一个含 `canvas.json` 的目录，画布上每块画板一个 `.dc.html` 文件。在功能区的设计稿标签里预览、编辑与标注，在 Space 里是一个条目。见[产品设计 §3.3](product/product-design.md#33-功能区ux-07) |
+| 画板 | 设计稿画布上的一块独立画面，有自己的位置与尺寸（例如「首屏 · 桌面」1280 × 800） |
+| 设计稿标注 | 用户在设计稿编辑器里点中某个元素或区域并写下的意见，随下一条消息交给智能体；与幻灯片标注是同一种附件、各自编号 |
+| 设计系统 | 一套可复用的设计规范：工作目录里一个含 `design-system.json` 的目录，有颜色、字体等 token、品牌说明、组件包与素材。在功能区的设计系统标签里查看与编辑，设计稿可以装上它。见[`packages/design-system-runtime`](../packages/design-system-runtime/README.md) |
+| 设计系统标注 | 用户在设计系统标签里点中某个 token、文字样式、组件、素材或章节并写下的意见，随下一条消息交给智能体；与设计稿标注并列、各自编号。见[产品设计 §3.2.3](product/product-design.md#323-输入区) |
 | 引用标签 | 输入框上方显示的上下文引用，例如某个对象、某句话、某段时间、某个版本 |
 | 任务卡片 | 对话中由真实事件驱动的结构化卡片：目标、阶段、候选、变更、授权、问题、交付等 |
 | 在文件夹中显示 | 打开系统的文件管理器并选中目标文件或目录。所有平台同一个说法，不写「访达」「Finder」「资源管理器」等平台专有名词 |
@@ -44,6 +49,8 @@
 | 说话人 | Speaker | |
 | 章节 | Chapter | |
 | 幻灯片 / 幻灯片标注 | Slides / Slide annotation | 一份幻灯片也叫 Slides，不写 Deck、Presentation |
+| 设计稿 / 画板 / 设计稿标注 | Design / Artboard / Design annotation | 一份设计稿也叫 Design，不写 Canvas、Mockup；画板不写 Frame、Board |
+| 设计系统 / 设计系统标注 | Design system / Design system annotation | 不写 Style guide、UI kit |
 | 时间线 / 检查器 / 编辑器 | Timeline / Inspector / Editor | |
 | 候选 / 检查点 | Candidate / Checkpoint | |
 | 任务 / 后台任务 | Task / Background tasks | |

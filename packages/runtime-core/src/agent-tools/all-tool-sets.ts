@@ -12,6 +12,8 @@ import { ModelTools } from './model-tools.ts';
 import { ProjectTools } from './project-tools.ts';
 import { SkillTools } from './skill-tools.ts';
 import { SlidesTools } from './slides-tools.ts';
+import { DesignTools } from './design-tools.ts';
+import { DesignSystemTools } from './design-system-tools.ts';
 import { SpaceTools } from './space-tools.ts';
 import { TaskTools } from './task-tools.ts';
 import { VideoDeleteTools } from './video-delete-tools.ts';
@@ -42,6 +44,8 @@ export function allToolSets(): ToolSet[] {
     new VideoDeleteTools(none),
     new CompositionTools(none),
     new SlidesTools(none),
+    new DesignTools(none),
+    new DesignSystemTools(none),
   ];
 }
 

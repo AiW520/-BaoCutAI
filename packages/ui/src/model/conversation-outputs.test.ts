@@ -207,6 +207,66 @@ describe('conversationOutputs', () => {
     expect(outputs.every((o) => o.kind === 'slides' && o.video === null)).toBe(true);
   });
 
+  it('智能体做好的设计稿（design-created）：同幻灯片，画板数取回执；Space 有条目时用条目 id，工作目录里不重复', () => {
+    const source = { projectId: null, conversationId: 'c1' };
+    const items: TimelineItem[] = [
+      {
+        kind: 'design-created',
+        id: 'd1',
+        createdAt: '2026-10-02T02:00:00.000Z',
+        taskId: 't3',
+        target: { conversationId: 'c1', path: 'designs/landing' },
+        title: '课程落地页',
+        boardCount: 3,
+      },
+    ];
+    const entries = [
+      entry('canvas', { kind: 'design', name: '旧标题', source, relPath: 'designs/landing', canvas: { boardCount: 2 } }),
+      entry('draft', { kind: 'design', name: '草图', source, relPath: 'sketch', canvas: { boardCount: 1 }, lastActivityAt: '2026-10-01T00:00:00.000Z' }),
+    ];
+    const outputs = conversationOutputs({ id: 'c1', projectId: null }, items, entries);
+    expect(outputs.map((o) => [o.id, o.name, o.taskId, o.design])).toEqual([
+      ['canvas', '课程落地页', 't3', { target: { conversationId: 'c1', path: 'designs/landing' }, boardCount: 3 }],
+      ['draft', '草图', null, { target: { conversationId: 'c1', path: 'sketch' }, boardCount: 1 }],
+    ]);
+    expect(outputs.every((o) => o.kind === 'design' && o.video === null && !o.slides)).toBe(true);
+  });
+
+  it('智能体做好的设计系统（design-system-created）：同设计稿，没有计数；Space 有条目时用条目 id，工作目录里不重复', () => {
+    const source = { projectId: null, conversationId: 'c1' };
+    const items: TimelineItem[] = [
+      {
+        kind: 'design-system-created',
+        id: 's1',
+        createdAt: '2026-10-02T02:00:00.000Z',
+        taskId: 't4',
+        target: { conversationId: 'c1', path: 'systems/brand' },
+        title: '品牌设计系统',
+      },
+      {
+        kind: 'design-system-created',
+        id: 's2',
+        createdAt: '2026-10-02T01:00:00.000Z',
+        taskId: 't5',
+        target: { conversationId: 'c1', path: 'systems/untitled' },
+        title: '',
+      },
+    ];
+    const entries = [
+      entry('brand', { kind: 'design-system', name: '旧标题', source, relPath: 'systems/brand' }),
+      // 同一路径上的设计稿条目不算这套设计系统
+      entry('canvas', { kind: 'design', name: '落地页', source, relPath: 'systems/untitled', canvas: { boardCount: 1 } }),
+      entry('kit', { kind: 'design-system', name: '组件库', source, relPath: 'kit', lastActivityAt: '2026-10-01T00:00:00.000Z' }),
+    ];
+    const outputs = conversationOutputs({ id: 'c1', projectId: null }, items, entries).filter((o) => o.kind === 'design-system');
+    expect(outputs.map((o) => [o.id, o.name, o.taskId, o.designSystem])).toEqual([
+      ['brand', '品牌设计系统', 't4', { target: { conversationId: 'c1', path: 'systems/brand' } }],
+      ['s2', 'untitled', 't5', { target: { conversationId: 'c1', path: 'systems/untitled' } }],
+      ['kit', '组件库', null, { target: { conversationId: 'c1', path: 'kit' } }],
+    ]);
+    expect(outputs.every((o) => o.video === null && !o.slides && !o.design)).toBe(true);
+  });
+
   it('limit：会话头最多 30 项，按回复分组时可以不截断', () => {
     const source = { projectId: null, conversationId: 'c1' };
     const entries = Array.from({ length: 35 }, (_, i) => entry(`e${i}`, { source }));

@@ -55,7 +55,8 @@ export function appCsp(port: number): string {
     "img-src 'self' data: blob:",
     "media-src 'self' blob:",
     "worker-src 'self' blob:",
-    "frame-src 'self' blob:",
+    // 设计稿编辑器在这个服务的另一个回环主机名上（docs/design/canvas §6.2）。
+    `frame-src 'self' blob: http://127.0.0.1:${port} http://localhost:${port}`,
     "font-src 'self' blob: data: https://use.typekit.net",
     `connect-src 'self' blob: ws://127.0.0.1:${port} ws://localhost:${port}`,
     "object-src 'none'",

@@ -420,18 +420,28 @@
 
     /** 发一句话：写入 user 消息，按脚本推进。 */
     /* `reference`：输入框里的 Space 条目引用（product-design §4.7），随这条消息发出
-       `slideAnnotations`：幻灯片标签页里加进草稿的标注（docs/design/slides §8.2），随这条消息记入会话 */
-    const sendAgent = useCallback((sid, text, fresh, attachments = [], reference = null, artifactIds = [], slideAnnotations = []) => {
+       `slideAnnotations`：幻灯片标签页里加进草稿的标注（docs/design/slides §8.2），随这条消息记入会话
+       `designAnnotations`：设计稿标签页里加进草稿的标注（docs/design/canvas §8.2），同上
+       `designSystemAnnotations`：设计系统标签里加进草稿的标注（docs/design/canvas §10.6），同上 */
+    const sendAgent = useCallback((sid, text, fresh, attachments = [], reference = null, artifactIds = [], slideAnnotations = [], designAnnotations = [], designSystemAnnotations = []) => {
       const t = String(text || '').trim();
-      if (!t && !attachments.length && !reference && !slideAnnotations.length) return;
+      if (!t && !attachments.length && !reference && !slideAnnotations.length && !designAnnotations.length && !designSystemAnnotations.length) return;
       const sess = sessionsRef.current.find((x) => x.id === sid) || fresh;
       if (!sess) return;
-      const title = sess.title || AG.sessionTitle(t || attachments[0]?.name || (reference && reference.name) || (slideAnnotations.length ? '幻灯片标注' : '图片'));
-      /* 带着幻灯片标注发出去：原型按标注模拟逐页修改（model-home-slides.js；Web 入口没有这个模块） */
-      const SL = window.BC_HOME_SLIDES;
-      const plan = slideAnnotations.length && SL ? SL.replyPlan(slideAnnotations) : agentSim.planFor(t, !!sess.project, sess);
-      appendMsg(sid, {role: 'user', text: t, attachments, ...(reference ? {reference} : {}),
-        ...(artifactIds.length ? {artifactIds} : {}), ...(slideAnnotations.length ? {slideAnnotations} : {}), startedAt: Date.now()});
+      const title = sess.title || AG.sessionTitle(t || attachments[0]?.name || (reference && reference.name) || (slideAnnotations.length ? '幻灯片标注'
+        : designAnnotations.length ? '设计稿标注' : designSystemAnnotations.length ? '设计系统标注' : '图片'));
+      /* 带着幻灯片、设计稿或设计系统标注发出去：原型按标注模拟逐页、逐块画板、逐个文件修改
+         （model-home-slides.js、model-home-design.js、model-home-design-system-notes.js；Web 入口没有这几个模块） */
+      const SL = window.BC_HOME_SLIDES, DG = window.BC_HOME_DESIGN, DS = window.BC_HOME_DSYS_NOTES;
+      const plan = slideAnnotations.length && SL ? SL.replyPlan(slideAnnotations)
+        : designAnnotations.length && DG ? DG.replyPlan(designAnnotations)
+        : designSystemAnnotations.length && DS ? DS.replyPlan(designSystemAnnotations) : agentSim.planFor(t, !!sess.project, sess);
+      /* 只带标注、没写话时正文是固定的一句（docs/design/slides §8.2、canvas §8.2 与 §10.6；原型只写中文） */
+      const said = t || (attachments.length || reference ? '' : slideAnnotations.length ? '请按这些幻灯片标注修改。'
+        : designAnnotations.length ? '请按这些设计稿标注修改。' : designSystemAnnotations.length ? '请按这些设计系统标注修改。' : '');
+      appendMsg(sid, {role: 'user', text: said, attachments, ...(reference ? {reference} : {}),
+        ...(artifactIds.length ? {artifactIds} : {}), ...(slideAnnotations.length ? {slideAnnotations} : {}),
+        ...(designAnnotations.length ? {designAnnotations} : {}), ...(designSystemAnnotations.length ? {designSystemAnnotations} : {}), startedAt: Date.now()});
       patchSession(sid, {title, status: 'running', draft: '', activeModel: null});
       // 原型用 fixture 模拟 CLI 握手：只在回报模型后展示具体名字，目录默认不冒充运行值。
       const h = harnessList.find((item) => item.id === sess.harness);

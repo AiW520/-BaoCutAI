@@ -22,7 +22,7 @@ import { referenceDescription, referencesText } from '../../model/space-actions.
 import { useRuntime } from '../../runtime/context.tsx';
 import { AgentMarkdown } from './agent-markdown.tsx';
 import { CopyButton } from './copy-button.tsx';
-import { SlideAnnotationsToken } from '../slide-annotations-token.tsx';
+import { AnnotationsToken } from '../annotations-token.tsx';
 
 type Item<K extends TimelineItem['kind']> = Extract<TimelineItem, { kind: K }>;
 
@@ -171,8 +171,34 @@ export const UserMessage = memo(function UserMessage({ item, conversationId }: {
       {item.slideAnnotations?.length ? (
         // 随这条消息交出去的幻灯片标注（docs/design/slides §8.2）：点开看各条，点一条打开那份幻灯片跳到那一页。
         <div className={contextLine}>
-          <SlideAnnotationsToken
-            items={item.slideAnnotations.map((a, i) => ({ id: sentAnnotationId(item.id, i), deck: a.deck, anchor: a.anchor, label: a.label, text: a.text }))}
+          <AnnotationsToken
+            kind="slides"
+            items={item.slideAnnotations.map((a, i) => ({ id: sentAnnotationId(item.id, i), target: a.deck, anchor: a.anchor, label: a.label, text: a.text }))}
+          />
+        </div>
+      ) : null}
+      {item.designAnnotations?.length ? (
+        // 随这条消息交出去的设计稿标注（docs/design/canvas §8.2）：点一条打开那份设计稿，定位到那个元素或区域。
+        <div className={contextLine}>
+          <AnnotationsToken
+            kind="design"
+            items={item.designAnnotations.map((a, i) => ({ id: sentAnnotationId(item.id, i), target: a.canvas, anchor: a.anchor, label: a.label, text: a.text }))}
+          />
+        </div>
+      ) : null}
+      {item.designSystemAnnotations?.length ? (
+        // 随这条消息交出去的设计系统标注（docs/design/canvas §10.6）：点一条打开那套设计系统，展开那一节定位到那个目标。
+        <div className={contextLine}>
+          <AnnotationsToken
+            kind="design-system"
+            items={item.designSystemAnnotations.map((a, i) => ({
+              id: sentAnnotationId(item.id, i),
+              target: a.system,
+              anchor: a.anchor,
+              section: a.section,
+              label: a.label,
+              text: a.text,
+            }))}
           />
         </div>
       ) : null}

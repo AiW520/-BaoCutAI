@@ -1,10 +1,10 @@
 /**
  * 标注的桥（docs/design/slides §8.2）：运行时的 `comments.customAnchors` 在 iframe 里，批注框与草稿在父窗口。
  *
- * 1. 用户在编辑器里打开标注模式（运行时的按钮、快捷键 C，或父窗口的 `slides:set-mode`），点一个元素或框一块区域；
- * 2. 运行时调 `compose(anchor, point, { label, detail, area })`，这里转成 `slides:compose` 发给父窗口；
- * 3. 父窗口在对应位置弹出批注框，回 `slides:compose-result`；关掉时回 `slides:composer-closed`；
- * 4. 父窗口把草稿里属于这份 deck 的标注经 `slides:threads` 交回来，运行时算出位置（`placed`），这里画编号标记。
+ * 1. 用户在编辑器里打开标注模式（运行时的按钮、快捷键 C，或父窗口的 `editor:set-mode`），点一个元素或框一块区域；
+ * 2. 运行时调 `compose(anchor, point, { label, detail, area })`，这里转成 `editor:compose` 发给父窗口；
+ * 3. 父窗口在对应位置弹出批注框，回 `editor:compose-result`；关掉时回 `editor:composer-closed`；
+ * 4. 父窗口把草稿里属于这份 deck 的标注经 `editor:threads` 交回来，运行时算出位置（`placed`），这里画编号标记。
  *
  * 标记只是显示，不接收点击：运行时在标注模式下把容器外的按下当作退出标注模式。
  */
@@ -109,7 +109,8 @@ export function createCommentsBridge(link: ParentLink, pins: PinLayer, newId: ()
   let composing: string | null = null;
   const pending = new Map<string, (result: { opened: boolean }) => void>();
 
-  const feedThreads = () => handlers?.threads(threads.map(t => ({ id: t.id, anchor: t.anchor, active: false })));
+  const feedThreads = () =>
+    handlers?.threads(threads.map(t => ({ id: t.id, anchor: t.anchor, active: false, ...(t.section ? { section: t.section } : {}) })));
   const setMode = (on: boolean) => {
     if (mode === on) return;
     mode = on;
@@ -117,7 +118,7 @@ export function createCommentsBridge(link: ParentLink, pins: PinLayer, newId: ()
     // 运行时关标注模式时会清空它手上的标注，再打开要重新给
     if (on) feedThreads();
     else pins.clear();
-    link.post({ type: 'slides:mode', on });
+    link.post({ type: 'editor:mode', on });
   };
   const settle = (requestId: string, opened: boolean) => {
     const resolve = pending.get(requestId);
@@ -132,30 +133,30 @@ export function createCommentsBridge(link: ParentLink, pins: PinLayer, newId: ()
 
   const stop = link.onMessage(message => {
     switch (message.type) {
-      case 'slides:threads':
+      case 'editor:threads':
         threads = message.threads;
         feedThreads();
         pins.render(lastPositions, threads);
         return;
-      case 'slides:compose-result':
+      case 'editor:compose-result':
         settle(message.requestId, message.opened);
         return;
-      case 'slides:composer-closed':
+      case 'editor:composer-closed':
         if (composing === message.requestId) {
           composing = null;
           handlers?.composing(false);
         }
         return;
-      case 'slides:reveal':
+      case 'editor:reveal':
         handlers?.reveal(message.id);
         return;
-      case 'slides:set-mode':
+      case 'editor:set-mode':
         setMode(message.on);
         return;
-      case 'slides:flush':
+      case 'editor:flush':
         // 由 editor-host 处理
         return;
-      case 'slides:suggest-prompt-result':
+      case 'editor:suggest-prompt-result':
         // 由 chat-bridge 处理
         return;
     }
@@ -180,13 +181,14 @@ export function createCommentsBridge(link: ParentLink, pins: PinLayer, newId: ()
           });
           const scroll = { x: globalThis.scrollX ?? 0, y: globalThis.scrollY ?? 0 };
           link.post({
-            type: 'slides:compose',
+            type: 'editor:compose',
             requestId,
             anchor,
             point: { x: point.x - scroll.x, y: point.y - scroll.y },
             label: description.label,
             ...(description.detail ? { detail: description.detail } : {}),
             ...(description.area ? { area: true } : {}),
+            ...(description.section ? { section: description.section } : {}),
           });
           return result;
         },

@@ -34,6 +34,9 @@
       "app/model-proxy.js",
       "app/model-home-workspace.js",
       "app/model-home-slides.js",
+      "app/model-home-design.js",
+      "app/model-home-design-system.js",
+      "app/model-home-design-system-notes.js",
       "app/model-file-preview.js",
       "app/model-media-preview.js",
       "app/model-media-gif.js",
@@ -357,6 +360,12 @@
       "app/file-tab-preview.jsx",
       "app/home-slides.jsx",
       "app/home-slides-notes.jsx",
+      "app/home-design.jsx",
+      "app/home-design-notes.jsx",
+      "app/home-design-system-notes.jsx",
+      "app/home-design-system.jsx",
+      "app/home-design-system-overview.jsx",
+      "app/home-design-system-tables.jsx",
       "app/media-preview-runtime.jsx",
       "app/media-preview-markup.jsx",
       "app/media-preview-panorama.jsx",
@@ -414,6 +423,8 @@
       "app/apprail.css",
       "app/space.css",
       "app/home-slides.css",
+      "app/home-design.css",
+      "app/home-design-system.css",
       "app/spectrum.css",
       "app/font-library.css",
       "app/agent-messages.css",
@@ -422,9 +433,9 @@
       "app/subtitle-motion.css",
       "app/subtitle-active.css"
     ],
-    "js": "generated/app.js?v=3f0021e65117",
-    "css": "generated/app.css?v=cd986b4f6370",
-    "bytes": 3899841
+    "js": "generated/app.js?v=099997079fe2",
+    "css": "generated/app.css?v=81b50dfcdf80",
+    "bytes": 4021514
   },
   "web": {
     "file": "BaoCutWeb.html",
@@ -660,9 +671,9 @@
       "app/subtitle-motion.css",
       "app/subtitle-active.css"
     ],
-    "js": "generated/web.js?v=7430a6168dcd",
+    "js": "generated/web.js?v=1fab70f71865",
     "css": "generated/web.css?v=793e79244daf",
-    "bytes": 2398402
+    "bytes": 2445470
   },
   "components": {
     "file": "Components.html",

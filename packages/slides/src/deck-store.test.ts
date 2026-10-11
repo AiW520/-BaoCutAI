@@ -131,6 +131,17 @@ describe('DeckStore', () => {
     expect((outcome.body as ConflictError).paths[0]!.actual).toBe(null);
   });
 
+  it('ifMatch 为 null 只建新文件：不存在时写入，已存在时 409（expected 为 null）', async () => {
+    const created = await store.publish({ 'project/slides/new.html': { base64: b64('<section>new</section>'), contentType: 'text/html', ifMatch: null } });
+    expect(created.status).toBe(200);
+    expect(await readFile(path.join(root, 'slides/new.html'), 'utf8')).toBe('<section>new</section>');
+
+    const again = await store.publish({ 'project/slides/new.html': { base64: b64('<section>again</section>'), contentType: 'text/html', ifMatch: null } });
+    expect(again.status).toBe(409);
+    expect((again.body as ConflictError).paths).toEqual([{ path: 'project/slides/new.html', actual: sha256('<section>new</section>'), expected: null }]);
+    expect(await readFile(path.join(root, 'slides/new.html'), 'utf8')).toBe('<section>new</section>');
+  });
+
   it('删除：{delete:true} 和 null 都删，ownWrites 记为空串', async () => {
     const outcome = await store.publish({
       'project/slides/s01.html': { delete: true, ifMatch: sha256('<section></section>') },

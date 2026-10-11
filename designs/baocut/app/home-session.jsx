@@ -39,6 +39,10 @@
   function SessionArtifactCard({item, sess, onOpen}) {
     /* 幻灯片卡（docs/design/slides §7.3）：第一页做预览，「打开」在右侧开幻灯片标签页 */
     if (item.kind === 'slides' && window.SlidesDeckCard) return <window.SlidesDeckCard item={item} sess={sess} onOpen={onOpen} />;
+    /* 设计稿卡（docs/design/canvas §7.3）：整张画布做预览，「打开」在右侧开设计稿标签页 */
+    if (item.kind === 'design' && window.DesignCanvasCard) return <window.DesignCanvasCard item={item} sess={sess} onOpen={onOpen} />;
+    /* 设计系统卡（docs/design/canvas §10.5）：一行，图标、标题、「设计系统」，点了在右侧开设计系统标签页 */
+    if (item.kind === 'design-system' && window.DesignSystemCard) return <window.DesignSystemCard item={item} sess={sess} onOpen={onOpen} />;
     return <ArtifactCard item={item} sess={sess} onOpen={onOpen} />;
   }
 

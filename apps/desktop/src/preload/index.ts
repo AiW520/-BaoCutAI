@@ -76,6 +76,7 @@ contextBridge.exposeInMainWorld('baocut', {
   pickMessageFiles: (options) => ipcRenderer.invoke('baocut:pick-message-files', options),
   pickFiles: (options) => ipcRenderer.invoke('baocut:pick-files', options),
   pickSavePath: (options) => ipcRenderer.invoke('baocut:pick-save-path', options),
+  saveFile: (options) => ipcRenderer.invoke('baocut:save-file', options),
   // 界面语言：主进程据此换应用菜单与对话框的语言（参数在主进程里重新校验）。
   setLocale: (locale) => ipcRenderer.send('baocut:set-locale', locale),
 } satisfies HostBridge);

@@ -205,6 +205,8 @@ In Windows Command Prompt, use `set "BAOCUT_HOME=.dev/baocut-home"` before the C
 | `npm run check:file-fonts` | Build the desktop app and verify, in a hidden Electron window over `file://`, that the preview renderer loads every font |
 | `npm run typecheck` | Type check |
 | `npm run build:slides-editor` | Build the slides editor (`packages/slides-runtime`) into `apps/slides-editor/dist`: the editor page and the compiler `slides_check` uses. Skipped when inputs are unchanged (`node apps/slides-editor/build.mjs --force` rebuilds). See [slides design §3](docs/design/slides/slides-design.md#3-运行时的放置与构建) |
+| `npm run build:design-editor` | Build the design (canvas) editor (`packages/design-runtime`) into `apps/design-editor/dist`: the editor page, the artboard runtime and the fast-edit worker. Skipped when inputs are unchanged (`node apps/design-editor/build.mjs --force` rebuilds). See [`packages/design-runtime`](packages/design-runtime/README.md) |
+| `npm run build:design-system-editor` | Build the design system editor (`packages/design-system-runtime`) into `apps/design-system-editor/dist`: the editor page, the preview page `artifact-type/run.html` and the React UMD files previews load. Skipped when inputs are unchanged (`node apps/design-system-editor/build.mjs --force` rebuilds). See [`packages/design-system-runtime`](packages/design-system-runtime/README.md) |
 
 ## Status
 
@@ -249,6 +251,8 @@ BaoCut is under active development, with macOS Apple Silicon and Windows x64 pac
 | `BAOCUT_SKILLS_DIR` | Built-in agent skills ([architecture §3.8](docs/architecture/architecture-design.md)). Otherwise the packaged `skills/baocut/built-in-skills/`, then the repo's. User skills live in `<BAOCUT_HOME>/skills`; built-in wins on id clash |
 | `BAOCUT_AGENT_SKILLS_DIR` | Source of the BaoCut skill for external agents ([Agent surface §8](docs/design/agent-surface/agent-surface-design.md)), rendered by `baocut skill install`. Otherwise the packaged `skills/`, then the repo's |
 | `BAOCUT_SLIDES_EDITOR_DIST` | Built slides editor ([slides design §3](docs/design/slides/slides-design.md#3-运行时的放置与构建)). Otherwise the packaged `slides-editor/`, then the repo's `apps/slides-editor/dist` |
+| `BAOCUT_DESIGN_EDITOR_DIST` | Built design editor ([`packages/design-runtime`](packages/design-runtime/README.md)). Otherwise the packaged `design-editor/`, then the repo's `apps/design-editor/dist` |
+| `BAOCUT_DESIGN_SYSTEM_EDITOR_DIST` | Built design system editor ([`packages/design-system-runtime`](packages/design-system-runtime/README.md)). Otherwise the packaged `design-system-editor/`, then the repo's `apps/design-system-editor/dist` |
 | `BAOCUT_MODEL_ASSETS_DIR` | Model data shipped with the app (self-test samples, reference recordings of built-in voices, i.e. `packages/models/assets`). Otherwise the packaged `model-assets/`, then the repo's; the packaged desktop app sets `<resources>/model-assets` |
 | `BAOCUT_WORKER_FEATURES` | Extra cargo features for `model-worker` in `npm run build:engine`, comma separated. `cuda,whisper-ggml-cuda` for NVIDIA on Windows / Linux (needs the CUDA toolkit; Whisper on CUDA untested), `whisper-ggml-vulkan` for AMD / Intel (needs the Vulkan SDK; untested) |
 | `BAOCUT_GPU` | `off`, `0`, `false`, `cpu` or `no` keeps `model-worker` on the CPU for both candle and whisper.cpp ([Model Worker protocol §2.1](docs/spec/model-worker-protocol-spec.md)) |
@@ -266,6 +270,8 @@ apps/
   cli/              Command-line client
   web/              Web client, served by the Runtime's web service
   slides-editor/    Slides editor page (built from packages/slides-runtime), served by the Runtime
+  design-editor/    Design (canvas) editor page (built from packages/design-runtime), served by the Runtime
+  design-system-editor/ Design system editor page (built from packages/design-system-runtime), served by the Runtime
   portal/           baocut.com website: static pages and a Cloudflare Worker for downloads
 packages/
   protocol/         Wire protocol: envelopes, methods, topic events, domain types, validation
@@ -282,6 +288,10 @@ packages/
   ui/               React UI (React Spectrum 2 + Zustand)
   slides/           Slide decks: file protocol, deck store, editor routes, editor host shim
   slides-runtime/   Slides editor runtime: document model, HTML compiler, editor UI, presentation, export
+  design/           Design canvases: file layout, design_check, editor host shim
+  design-runtime/   Design editor runtime: canvas and artboards, properties, preview documents, artboard runtime, export
+  design-system/    Design systems: directory layout, design_system_check, editor host shim
+  design-system-runtime/ Design system editor runtime: tokens, components, assets, docs, previews, files-layout storage
 crates/
   editor-semantics/ Time semantics: exact rationals, decimal seconds, frame quantization
   video-model/      Video interchange DTOs

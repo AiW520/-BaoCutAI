@@ -40,6 +40,9 @@ import { resolveWebDist, sendLoginPage, sendLoginScript, sendStatic, setSecurity
  * - 媒体通道 `/media/…`：这个服务自己的句柄表（同源的相对地址），取内容还要会话 cookie；不暴露桌面网关的端口与令牌。
  * - 幻灯片编辑器 `/slides/<grant>/…` 与素材 `/_blob/<id>`（docs/design/slides §6.2）：与网关共用一个 SlidesServer，要会话 cookie；
  *   只读配置下发布与上传被拒（`not_writer`）；只能嵌在这个服务自己的页面里（`frame-ancestors 'self'`）。
+ * - 设计稿编辑器 `/design/<grant>/…`（docs/design/canvas §6.2）与设计系统编辑器 `/design-system/<grant>/…`（§10.4）：Web 客户端
+ *   把它们放在另一个回环主机名上，那里没有会话 cookie，所以只认 grant；白名单里要有 `design.open` / `designSystem.open`，只读配置下
+ *   发布与上传被拒。不带会话的 `/_blob/<id>` 只在白名单开放的那几种（设计稿、设计系统）里找。
  *
  * 登录：`createAccessLink` 发一个一次性代码，放在链接的 fragment 里（或由用户粘进登录页的输入框）；
  * 登录页的脚本用它 `POST /_auth/session` 换一个 HttpOnly、SameSite=Strict 的会话 cookie。选 cookie 而不是页面内存里的令牌：`<video>`、`<img>` 不能带请求头，
@@ -337,6 +340,8 @@ export class WebService implements ManagedService {
       request.pipe(upstream);
       return;
     }
+    if (pathname.startsWith('/design/')) return this.#designRequest(request, response, 'design');
+    if (pathname.startsWith('/design-system/')) return this.#designRequest(request, response, 'design-system');
     if (pathname.startsWith('/slides/') || pathname.startsWith('/_blob/')) return this.#slidesRequest(request, response);
     if (request.method !== 'GET' && request.method !== 'HEAD') {
       return void response.writeHead(405, { Allow: 'GET, HEAD' }).end();
@@ -372,13 +377,48 @@ export class WebService implements ManagedService {
     const deny = (status: number, text: string) => response.writeHead(status, { 'Content-Type': 'text/plain; charset=utf-8' }).end(text);
     const site = request.headers['sec-fetch-site'];
     const sameOrigin = site === undefined || site === 'same-origin' || site === 'none';
-    if (!sameOrigin || !this.#session(request)) return void deny(sameOrigin ? 401 : 403, RcWeb.loginRequired().text);
+    const session = sameOrigin ? this.#session(request) : null;
+    // 不带会话的根级素材请求来自另一个主机名上的设计稿或设计系统编辑器（docs/design/canvas §6.2、§10.4）：只在这两种里找。
+    if (sameOrigin && !session && request.url?.startsWith('/_blob/')) return this.#designRequest(request, response, null);
+    if (!sameOrigin || !session) return void deny(sameOrigin ? 401 : 403, RcWeb.loginRequired().text);
     const access = this.#access();
     const verdict = webAuthorize('slides.open', {}, access);
     if (verdict || !this.#slides) return void deny(403, verdict?.message ?? RcWeb.fileNotFound().text);
     response.removeHeader('X-Frame-Options');
     response.removeHeader('Content-Security-Policy');
     if (!this.#slides.handle(request, response, { canEdit: !access.readOnly, frameAncestors: "'self'" })) deny(404, RcWeb.fileNotFound().text);
+  }
+
+  /**
+   * 设计稿与设计系统编辑器的路由（docs/design/canvas §6.2、§10.4）：Web 客户端把 `design.open` / `designSystem.open` 给的相对地址
+   * 换到这个服务的另一个回环主机名，那里不带会话 cookie（画板与预览脚本即使连 `/ws` 也过不了认证），所以只认 grant，不要会话；
+   * 白名单里要有对应的方法。请求要同源，只有放进 iframe 或新窗口的那次导航可以来自另一个主机名（那时 `Sec-Fetch-Site` 是
+   * cross-site）；写请求另外要 `Origin` 与 `Host` 一致（SlidesServer 查）。`kind` 为 null 是根级 `/_blob/<id>`：只在白名单开放的
+   * 设计稿与设计系统里找。嵌入只放行这个服务的两个回环源（设计系统编辑器里还嵌着同源的 `artifact-type/run.html`，两层都要在列表里）。
+   */
+  #designRequest(request: IncomingMessage, response: ServerResponse, kind: 'design' | 'design-system' | null): void {
+    const deny = (status: number, text: string) => response.writeHead(status, { 'Content-Type': 'text/plain; charset=utf-8' }).end(text);
+    const site = request.headers['sec-fetch-site'];
+    const sameOrigin = site === undefined || site === 'same-origin' || site === 'none';
+    const dest = request.headers['sec-fetch-dest'];
+    const navigation =
+      request.headers['sec-fetch-mode'] === 'navigate' && (dest === 'iframe' || dest === 'frame' || dest === 'document') && (request.method ?? 'GET') === 'GET';
+    if (!sameOrigin && !(navigation && kind !== null && request.url?.startsWith(`/${kind}/`))) return void deny(403, RcWeb.originRejected().text);
+    const access = this.#access();
+    const designVerdict = kind === 'design-system' ? null : webAuthorize('design.open', {}, access);
+    const systemVerdict = kind === 'design' ? null : webAuthorize('designSystem.open', {}, access);
+    // 根级素材：两种都被拒才拒；否则只在开放的那几种里找
+    const verdict = kind === 'design' ? designVerdict : kind === 'design-system' ? systemVerdict : designVerdict && systemVerdict;
+    if (verdict || !this.#slides) return void deny(403, verdict?.message ?? RcWeb.fileNotFound().text);
+    const blobScope = kind ?? (designVerdict ? 'design-system' : systemVerdict ? 'design' : 'isolated');
+    response.removeHeader('X-Frame-Options');
+    response.removeHeader('Content-Security-Policy');
+    const handled = this.#slides.handle(request, response, {
+      canEdit: !access.readOnly,
+      frameAncestors: this.#origins().join(' '),
+      blobScope,
+    });
+    if (!handled) deny(404, RcWeb.fileNotFound().text);
   }
 
   /** `POST /_auth/session { code }`：代码换会话 cookie。来源必须带、必须是自己。 */

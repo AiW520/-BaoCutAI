@@ -76,6 +76,7 @@ import {
   type SpaceSort,
   type SpaceStatusFilter,
 } from '../../model/space.ts';
+import type { EditorKind } from '../../model/workspace.ts';
 import { useRuntime } from '../../runtime/context.tsx';
 import type { RuntimeSession } from '../../runtime/session.ts';
 import { useConnection } from '../../state/connection-store.ts';
@@ -476,19 +477,24 @@ function SpaceMain({ category, projectId, from }: { category: SpaceCategory; pro
   };
 
   /**
-   * 幻灯片在做它的那条会话（项目里的在项目起始页）的功能区里开幻灯片标签（docs/design/slides §8.1）。
-   * `videoTargetOf` 只是按来源目录与相对路径给定位，幻灯片目录同样适用。
+   * 幻灯片、设计稿与设计系统在做它的那条会话（项目里的在项目起始页）的功能区里开各自的标签
+   * （docs/design/slides §8.1、docs/design/canvas §8.1、§10）。`videoTargetOf` 只是按来源目录与相对路径给定位，这几种目录同样适用。
    */
-  const openSlides = (entry: SpaceEntry) => {
+  const openEditorTab = (kind: EditorKind, entry: SpaceEntry) => {
     const { projectId, conversationId } = entry.source;
     if (!projectId && !conversationId) return;
     setViewingId(null);
-    useShell.getState().openPane({ kind: 'slides', target: videoTargetOf(entry) }, { conversationId, projectId });
+    useShell.getState().openPane({ kind, target: videoTargetOf(entry) }, { conversationId, projectId });
   };
+  const openSlides = (entry: SpaceEntry) => openEditorTab('slides', entry);
+  const openDesign = (entry: SpaceEntry) => openEditorTab('design', entry);
+  const openDesignSystem = (entry: SpaceEntry) => openEditorTab('design-system', entry);
 
   const onAction = (action: EntryAction, entry: SpaceEntry) => {
     if (action === 'open') {
       if (entry.kind === 'slides') openSlides(entry);
+      else if (entry.kind === 'design') openDesign(entry);
+      else if (entry.kind === 'design-system') openDesignSystem(entry);
       else openVideo(videoTargetOf(entry));
     } else if (action === 'transcribe') openTranscribe(entry);
     else if (action === 'view') setViewingId(entry.id);
@@ -516,6 +522,8 @@ function SpaceMain({ category, projectId, from }: { category: SpaceCategory; pro
       openVideo(videoTargetOf(entry));
     },
     onOpenSlides: openSlides,
+    onOpenDesign: openDesign,
+    onOpenDesignSystem: openDesignSystem,
     onEdit: (entry) => void edit(entry),
     onOpenPackage: (entry) => {
       const path = entryPath(entry, dirs);

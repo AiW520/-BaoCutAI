@@ -26,6 +26,8 @@ export const pl: RcSpaceMessages = {
   hiddenDirFile: "Nie można dodawać plików z folderów ukrytych ani zależności",
   videoDirFile: "Pliki folderu wideo należą do wideo i nie mogą być dodawane osobno",
   slidesDirFile: "Pliki folderu slajdów należą do slajdów i nie mogą być dodawane osobno",
+  designDirFile: 'Pliki folderu projektu graficznego należą do projektu i nie mogą być dodawane osobno',
+  designSystemDirFile: 'Pliki folderu systemu projektowego należą do systemu projektowego i nie mogą być dodawane osobno',
   tooManySameName: "Zbyt wiele plików o tej samej nazwie w imports/ projektu",
 
   purgeVideoDeleteFirst: "Najpierw usuń wideo (videos.delete) do kosza, potem trwale usuń z kosza",

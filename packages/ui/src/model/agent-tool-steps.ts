@@ -52,6 +52,10 @@ const en = {
     recordCheck: 'Record acceptance check',
     checkSlides: 'Check slides',
     importSlideAsset: 'Import slide image',
+    checkDesign: 'Check design',
+    importDesignAsset: 'Import design asset',
+    checkDesignSystem: 'Check design system',
+    importDesignSystemAsset: 'Import design system asset',
   },
   exportKind: {
     subtitles: 'Subtitles',
@@ -108,7 +112,9 @@ export type BaoCutStepKind =
   | 'skill'
   | 'grant'
   | 'contract'
-  | 'slides';
+  | 'slides'
+  | 'design'
+  | 'design-system';
 
 export interface BaoCutStep {
   kind: BaoCutStepKind;
@@ -195,6 +201,16 @@ const CATALOG: Record<string, (a: Args) => BaoCutStep> = {
   // 幻灯片（docs/design/slides §7.2）：摘要是 deck 目录名与图片文件名。
   slides_check: (a) => ({ kind: 'slides', label: M.label.checkSlides, summary: base(a.path) }),
   slides_import_asset: (a) => ({ kind: 'slides', label: M.label.importSlideAsset, summary: base(a.path) }),
+  // 设计稿（docs/design/canvas §7.2）：摘要是设计稿目录名与素材文件名。
+  design_check: (a) => ({ kind: 'design', label: M.label.checkDesign, summary: base(a.path) }),
+  design_import_asset: (a) => ({ kind: 'design', label: M.label.importDesignAsset, summary: base(a.path) }),
+  // 设计系统（docs/design/canvas §10.5）：摘要是设计系统目录名，导入素材的是文件名与素材组。
+  design_system_check: (a) => ({ kind: 'design-system', label: M.label.checkDesignSystem, summary: base(a.path) }),
+  design_system_import_asset: (a) => ({
+    kind: 'design-system',
+    label: M.label.importDesignSystemAsset,
+    summary: join(base(a.path), str(a.group)),
+  }),
 };
 
 /** 工具名：MCP 的 `baocut.<tool>`；不是 BaoCut 的工具返回 null。 */

@@ -65,6 +65,14 @@
     if (it.kind === 'slides' && it.slides?.length && !missing && !small && window.SlideFace) {
       return <div className={cx('sp-prev', 'sp-prev--slides', size)}><window.SlideFace slide={it.slides[0]} label={`${it.name}的第一页`} /></div>;
     }
+    /* 设计稿（docs/design/canvas §7.3）：整张画布；列表行里同样留类型图标 */
+    if (it.kind === 'design' && it.boards?.length && !missing && !small && window.DesignCanvasView) {
+      return <div className={cx('sp-prev', 'sp-prev--design', size)}><window.DesignCanvasView canvas={it} pad={12} label={`${it.name}的画布`} /></div>;
+    }
+    /* 设计系统（docs/design/canvas §10.6）：封面缩成一张卡；列表行里同样留类型图标 */
+    if (it.kind === 'design-system' && !missing && !small && window.DesignSystemFace) {
+      return <div className={cx('sp-prev', 'sp-prev--design-system', size)}><window.DesignSystemFace system={it} label={`设计系统「${it.name}」的封面`} /></div>;
+    }
     if (it.kind === 'image' && it.art) {
       /* 列表行里名字就在旁边，缩略图不再重复读一遍 */
       const a11y = small ? {'aria-hidden': true} : {role: 'img', 'aria-label': it.name};

@@ -1,12 +1,14 @@
 /**
  * 编辑器页面的入口（`@baocut/slides/editor`）：apps/slides-editor 的 main.ts 先调 installEditorHost 装好 globalThis.slidesHost，
- * 再启动 Slides 运行时（运行时启动时就读宿主能力）。docs/design/slides §5。
+ * 再启动 Slides 运行时（运行时启动时就读宿主能力）。docs/design/slides §5。设计稿编辑器用 connectEditorHost 拿同一个宿主对象，
+ * 挂到 globalThis.designHost（docs/design/canvas §5）。
  */
 import { DECK_ROUTES, type DeckChangeEvent } from '../file-protocol.ts';
 import { createChatBridge } from './chat-bridge.ts';
 import { createCommentLabels, localeFromSearch } from './comment-labels.ts';
 import { createCommentsBridge, domPinLayer, windowParentLink, type ParentLink } from './comments-bridge.ts';
 import { createEditorHost, createHttpBackend, readSessionCanEdit, type Backend } from './editor-host.ts';
+import type { HostCommentLabels, SlidesHost } from './slides-host.ts';
 
 export { createChatBridge, type ChatBridge } from './chat-bridge.ts';
 export { createCommentLabels, localeFromSearch, type CommentLabelMessages } from './comment-labels.ts';
@@ -54,7 +56,7 @@ function watchDeckEvents(win: Window & typeof globalThis, base: string, backend:
       return;
     }
     reloading = true;
-    link?.post({ type: 'slides:external-change', paths: change.paths });
+    link?.post({ type: 'editor:external-change', paths: change.paths });
     await flushEdits(win, backend);
     source.close();
     win.location.reload();
@@ -66,10 +68,15 @@ export interface InstallEditorHostOptions {
   /** 编辑器页面的地址（以 / 结尾），路由都相对它。默认是页面所在目录。 */
   base?: string;
   win?: Window & typeof globalThis;
+  /** 标注位置标签里的词（只有幻灯片运行时会问）。 */
+  commentLabels?: HostCommentLabels;
 }
 
-/** 在页面上装好 globalThis.slidesHost，并接上父窗口与外部改动的通知。 */
-export function installEditorHost(options: InstallEditorHostOptions = {}): void {
+/**
+ * 做好宿主对象，并接上父窗口与外部改动的通知；由调用方挂到运行时读的全局上。
+ * 幻灯片与设计稿编辑器共用（docs/design/canvas §5）。
+ */
+export function connectEditorHost(options: InstallEditorHostOptions = {}): SlidesHost {
   const win = options.win ?? window;
   const base = options.base ?? new URL('./', win.location.href).href;
   const backend = createHttpBackend(base, (...args) => win.fetch(...args));
@@ -78,19 +85,31 @@ export function installEditorHost(options: InstallEditorHostOptions = {}): void 
   const bridge = link ? createCommentsBridge(link, domPinLayer(win.document)) : null;
   // 页面单独打开（不在 BaoCut 的 iframe 里）时没有会话可放提示，不提供 chat，运行时直接复制到剪贴板
   const chat = link ? createChatBridge(link) : null;
-  win.slidesHost = createEditorHost(backend, {
+  const host = createEditorHost(backend, {
     canEdit,
     ...(bridge ? { comments: bridge.capability } : {}),
     ...(chat ? { chat: chat.capability } : {}),
-    // 标注位置标签跟随 BaoCut 的界面语言（地址上的 ?lang=）；单独打开时没带，保持英文
-    commentLabels: createCommentLabels(localeFromSearch(win.location.search)),
+    ...(options.commentLabels ? { commentLabels: options.commentLabels } : {}),
   });
   watchDeckEvents(win, base, backend, link);
-  if (!link) return;
-  link.onMessage(async message => {
-    if (message.type !== 'slides:flush') return;
-    const saved = await flushEdits(win, backend);
-    link.post({ type: 'slides:flushed', requestId: message.requestId, saved });
+  if (link) {
+    link.onMessage(async message => {
+      if (message.type !== 'editor:flush') return;
+      const saved = await flushEdits(win, backend);
+      link.post({ type: 'editor:flushed', requestId: message.requestId, saved });
+    });
+    void canEdit().then(editable => link.post({ type: 'editor:ready', canEdit: editable }));
+  }
+  return host;
+}
+
+/** 在页面上装好 globalThis.slidesHost（幻灯片编辑器）。 */
+export function installEditorHost(options: InstallEditorHostOptions = {}): void {
+  const win = options.win ?? window;
+  win.slidesHost = connectEditorHost({
+    ...options,
+    win,
+    // 标注位置标签跟随 BaoCut 的界面语言（地址上的 ?lang=）；单独打开时没带，保持英文
+    commentLabels: options.commentLabels ?? createCommentLabels(localeFromSearch(win.location.search)),
   });
-  void canEdit().then(editable => link.post({ type: 'slides:ready', canEdit: editable }));
 }
