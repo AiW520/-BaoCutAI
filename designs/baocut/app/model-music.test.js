@@ -5,7 +5,7 @@ const M = require('./model-music.js');
 test('表单字段与 Runtime 的 GenerateMusicRequest 同名；提交体按模式带歌词、按需带种子', () => {
   const f = Object.assign(M.blank('yue2-3b'), {style: ' calm piano ', targetDurationSec: 30});
   assert.deepEqual(Object.keys(M.blank()), ['mode', 'style', 'lyrics', 'targetDurationSec', 'maxDurationSec', 'planning', 'seed', 'model']);
-  assert.deepEqual(M.request(f), {mode: 'instrumental', style: 'calm piano', targetDurationSec: 30, maxDurationSec: 36, planning: 'full', model: 'yue2-3b'});
+  assert.deepEqual(M.request(f), {mode: 'instrumental', style: 'calm piano', targetDurationSec: 30, maxDurationSec: 36, planning: 'melody', model: 'yue2-3b'});
   const song = Object.assign({}, f, {mode: 'song', lyrics: '一行歌词', seed: '7', maxDurationSec: 40});
   assert.deepEqual(M.request(song).lyrics, '一行歌词');
   assert.equal(M.request(song).seed, 7);
@@ -50,7 +50,7 @@ test('预计耗时按本机倍数说「大约」；CPU 另说', () => {
 test('文件名取风格头几个字加序号；记录一行写模式、时长、规划、模型、种子', () => {
   assert.equal(M.nameFor({style: 'calm solo piano, slow tempo'}, 3), 'calm solo piano slow tempo-03.wav');
   assert.equal(M.nameFor({style: ''}, 12), 'music-12.wav');
-  assert.equal(M.recordMeta({form: Object.assign(M.blank('yue2-3b'), {seed: '7'}), modelName: 'YuE2 3B'}), '纯音乐 · 30 秒 · 完整编排 · YuE2 3B · 种子 7');
+  assert.equal(M.recordMeta({form: Object.assign(M.blank('yue2-3b'), {seed: '7'}), modelName: 'YuE2 3B'}), '纯音乐 · 30 秒 · 先定旋律 · YuE2 3B · 种子 7');
 });
 
 test('模型行只列音乐类；预选默认或第一只装好的；目录卡状态行', () => {

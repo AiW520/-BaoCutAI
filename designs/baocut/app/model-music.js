@@ -36,7 +36,7 @@
 
   /** 空表单 */
   function blank(model) {
-    return {mode: 'instrumental', style: '', lyrics: '', targetDurationSec: DURATION.dflt, maxDurationSec: null, planning: 'full', seed: '', model: model || null};
+    return {mode: 'instrumental', style: '', lyrics: '', targetDurationSec: DURATION.dflt, maxDurationSec: null, planning: 'melody', seed: '', model: model || null};
   }
   /** 视频时长 → 可用的目标时长：按 5 秒取整，夹在范围内；没有时长用缺省 */
   function clampDuration(sec) {

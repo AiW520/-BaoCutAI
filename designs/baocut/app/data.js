@@ -2280,7 +2280,7 @@
     /* 音乐生成（2026-10-11）：YuE2 3B 的 GGUF 包（Q8 语言模型 + VAE），由随 BaoCut 自带的 audio.cpp 引擎跑；不另下组件 */
     {id: 'yue2-3b', name: 'YuE2 3B', cat: 'music', size: 4608, installed: false, platform: 'macos-arm64,windows-x64,linux-x64',
      note: '按风格或歌词生成音乐 · Q8 · audio.cpp 引擎 · 30 秒约几分钟 · CPU 更慢', repo: 'audio-cpp/Yue2-3B-GGUF', uses: [],
-     license: {name: 'CC-BY-NC-4.0', url: 'https://huggingface.co/m-a-p/YuE-s1-7B-anneal-en-cot', commercialUse: false,
+     license: {name: 'CC-BY-NC-4.0', url: 'https://huggingface.co/audio-cpp/Yue2-3B-GGUF/blob/main/model_licenses.md', commercialUse: false,
        summary: '只许非商业用途，须署名；商用要向 M-A-P 另行申请；GGUF 包是它的转换，受同一许可'}},
   ];
   /* 组件（catalog.rs 的 SharedDependency 与覆盖层）。`installed` 是初始盘上状态：
