@@ -572,6 +572,317 @@
       "assets": [],
       "audioSpectra": [],
       "documents": [],
+      "name": "video-two-piece-crop",
+      "pictures": [
+        {
+          "bands": [
+            [
+              255,
+              0,
+              0,
+              255
+            ],
+            [
+              0,
+              255,
+              0,
+              255
+            ],
+            [
+              0,
+              0,
+              255,
+              255
+            ],
+            [
+              255,
+              255,
+              0,
+              255
+            ]
+          ],
+          "height": 90,
+          "itemId": "v1",
+          "width": 160
+        },
+        {
+          "bands": [
+            [
+              255,
+              0,
+              0,
+              255
+            ],
+            [
+              0,
+              255,
+              0,
+              255
+            ],
+            [
+              0,
+              0,
+              255,
+              255
+            ],
+            [
+              255,
+              255,
+              0,
+              255
+            ]
+          ],
+          "height": 90,
+          "itemId": "v2",
+          "width": 160
+        }
+      ],
+      "shots": [
+        {
+          "captions": true,
+          "frame": 15,
+          "height": 90,
+          "sha256": "cfbc0eb0688655bfe54e6c84b13aea2ac148dca63b27a5e090ed89d6468d73e4",
+          "skipped": [],
+          "transparent": false,
+          "warnings": [],
+          "width": 160
+        },
+        {
+          "captions": true,
+          "frame": 29,
+          "height": 90,
+          "sha256": "cfbc0eb0688655bfe54e6c84b13aea2ac148dca63b27a5e090ed89d6468d73e4",
+          "skipped": [],
+          "transparent": false,
+          "warnings": [],
+          "width": 160
+        },
+        {
+          "captions": true,
+          "frame": 30,
+          "height": 90,
+          "sha256": "652ab1475a7923e31d349e2e5e9f1cf171c9c7e6bb30b48811a87c1ec4495fbe",
+          "skipped": [],
+          "transparent": false,
+          "warnings": [],
+          "width": 160
+        },
+        {
+          "captions": true,
+          "frame": 45,
+          "height": 90,
+          "sha256": "652ab1475a7923e31d349e2e5e9f1cf171c9c7e6bb30b48811a87c1ec4495fbe",
+          "skipped": [],
+          "transparent": false,
+          "warnings": [],
+          "width": 160
+        }
+      ],
+      "spectra": [],
+      "video": {
+        "assets": {
+          "a_v": {
+            "currentRevision": "rev_1",
+            "id": "a_v",
+            "kind": "video",
+            "name": "a_v",
+            "revisions": {
+              "rev_1": {
+                "byteLength": 1000,
+                "contentHash": "sha256:a_v",
+                "mediaType": "video/mp4",
+                "provenance": {
+                  "origin": "import"
+                },
+                "revision": "rev_1",
+                "storage": {
+                  "mode": "managed"
+                },
+                "video": {
+                  "displayHeight": 90,
+                  "displayWidth": 160,
+                  "frameRate": {
+                    "kind": "cfr",
+                    "rate": {
+                      "den": 1,
+                      "num": 30
+                    }
+                  },
+                  "hasAlpha": false,
+                  "pixelAspectRatio": {
+                    "den": 1,
+                    "num": 1
+                  },
+                  "ptsOrigin": {
+                    "ticks": "0",
+                    "timescale": 1
+                  },
+                  "rotation": 0
+                }
+              }
+            }
+          }
+        },
+        "canvasVariants": {},
+        "checkpoints": {},
+        "documents": {},
+        "fonts": {},
+        "format": "baocut.video",
+        "id": "video_test",
+        "links": [],
+        "localizationSets": {},
+        "name": "测试",
+        "protections": {},
+        "revision": "1",
+        "rootSequenceId": "seq",
+        "schemaVersion": 3,
+        "sequences": {
+          "seq": {
+            "animationBindings": [],
+            "canvas": {
+              "background": "#000000",
+              "height": 90,
+              "width": 160,
+              "workingSpace": "srgb"
+            },
+            "ducking": [],
+            "durationPolicy": {
+              "kind": "derived"
+            },
+            "fps": {
+              "den": 1,
+              "num": 30
+            },
+            "id": "seq",
+            "items": [
+              {
+                "assetRef": {
+                  "id": "a_v",
+                  "revision": "rev_1"
+                },
+                "crop": {
+                  "bottom": 0.0,
+                  "left": 0.0,
+                  "right": 0.5,
+                  "top": 0.0
+                },
+                "embeddedAudio": {
+                  "enabled": false,
+                  "volume": 1.0
+                },
+                "enabled": true,
+                "fit": "cover",
+                "followPolicy": {
+                  "kind": "sequence-fixed"
+                },
+                "id": "v1",
+                "locked": false,
+                "mode": "fullscreen",
+                "paintOrder": 0,
+                "place": {},
+                "span": {
+                  "durationFrames": 30,
+                  "fromFrame": 0
+                },
+                "timeMap": {
+                  "kind": "linear",
+                  "rate": {
+                    "den": 1,
+                    "num": 1
+                  },
+                  "sourceIn": {
+                    "ticks": "0",
+                    "timescale": 1
+                  }
+                },
+                "trackId": "trk_v1",
+                "type": "video"
+              },
+              {
+                "assetRef": {
+                  "id": "a_v",
+                  "revision": "rev_1"
+                },
+                "crop": {
+                  "bottom": 0.0,
+                  "left": 0.5,
+                  "right": 0.0,
+                  "top": 0.0
+                },
+                "embeddedAudio": {
+                  "enabled": false,
+                  "volume": 1.0
+                },
+                "enabled": true,
+                "fit": "cover",
+                "followPolicy": {
+                  "kind": "sequence-fixed"
+                },
+                "id": "v2",
+                "locked": false,
+                "mode": "fullscreen",
+                "paintOrder": 0,
+                "place": {},
+                "span": {
+                  "durationFrames": 30,
+                  "fromFrame": 30
+                },
+                "timeMap": {
+                  "kind": "linear",
+                  "rate": {
+                    "den": 1,
+                    "num": 1
+                  },
+                  "sourceIn": {
+                    "ticks": "1",
+                    "timescale": 1
+                  }
+                },
+                "trackId": "trk_v1",
+                "type": "video"
+              }
+            ],
+            "markers": [],
+            "name": "测试序列",
+            "revision": "1",
+            "tracks": [
+              {
+                "id": "trk_v1",
+                "kind": "visual",
+                "locked": false,
+                "muted": false,
+                "order": 0,
+                "solo": {
+                  "enabled": false,
+                  "group": "visual"
+                },
+                "visible": true
+              },
+              {
+                "id": "trk_s1",
+                "kind": "subtitle",
+                "locked": false,
+                "muted": false,
+                "order": 1,
+                "solo": {
+                  "enabled": false,
+                  "group": "visual"
+                },
+                "visible": true
+              }
+            ],
+            "transitions": []
+          }
+        },
+        "syncGroups": {},
+        "timeContractVersion": 1
+      }
+    },
+    {
+      "assets": [],
+      "audioSpectra": [],
+      "documents": [],
       "name": "stacked-layers",
       "pictures": [
         {

@@ -248,6 +248,7 @@ fn scenes() -> Vec<Scene> {
             &[15],
         )
         .picture("v", 64, 64, &[GREEN, BLUE]),
+        two_piece_crop().picture("v1", W, H, &[RED, GREEN, BLUE, YELLOW]).picture("v2", W, H, &[RED, GREEN, BLUE, YELLOW]),
         Scene::new(
             "stacked-layers",
             video(
@@ -1077,6 +1078,44 @@ fn render_scene(scene: &Value) -> Vec<Value> {
 
 fn fixture_path() -> PathBuf {
     PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("tests/fixtures/parity.json")
+}
+
+/// 按镜头分段取景（派生子视频的 `crops`）的样子：同一素材在镜头边界上拆成两段，右段的 `sourceIn` 接着左段，两段各带一份
+/// 不同的 `crop`（左段取左半、右段取右半），铺满画布。帧取两段中间与接缝两侧。
+fn two_piece_crop() -> Scene {
+    Scene::new(
+        "video-two-piece-crop",
+        video(
+            vec![
+                video_item("v1", "a_v", 0, 30, json!({ "crop": { "left": 0, "top": 0, "right": 0.5, "bottom": 0 } })),
+                video_item(
+                    "v2",
+                    "a_v",
+                    30,
+                    30,
+                    json!({ "crop": { "left": 0.5, "top": 0, "right": 0, "bottom": 0 }, "timeMap": {
+                        "kind": "linear", "sourceIn": { "ticks": "1", "timescale": 1 }, "rate": { "num": 1, "den": 1 }
+                    } }),
+                ),
+            ],
+            vec![video_asset("a_v", W, H)],
+            json!({}),
+        ),
+        &[15, 29, 30, 45],
+    )
+}
+
+/// 两段确实各用自己的裁剪：源画面左红右蓝，左段只看得到红，右段只看得到蓝，接缝那一帧就换。
+#[test]
+fn two_piece_crop_switches_at_the_seam() {
+    let scene = two_piece_crop();
+    let mut media = Media::default().with("v1", halves(W, H, RED, BLUE)).with("v2", halves(W, H, RED, BLUE));
+    for (frame, color) in [(15.0, RED), (29.0, RED), (30.0, BLUE), (45.0, BLUE)] {
+        let pixels = render(&scene.video, at(frame), &mut media);
+        for (x, y) in [(5, 5), (W / 2, H / 2), (W - 5, H - 5)] {
+            near(px(&pixels, x, y), color, 2);
+        }
+    }
 }
 
 fn build_fixture() -> Value {
