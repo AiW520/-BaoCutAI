@@ -34,7 +34,7 @@ baocut status
 | 字段 | 看什么 |
 | --- | --- |
 | Runtime | 在不在跑、版本；没在跑时会自动拉起（`--no-start` 时只回答 `running: false`） |
-| 能力 | 转写、语音合成、图片生成、文本生成、人声分离各自此刻用哪个服务、哪些服务能用；不可用的带原因与补救命令。这是摘要：要看各服务的模型、音色与限制，用 `baocut status --full` 或 `baocut models capabilities --capability <能力>` |
+| 能力 | 转写、语音合成、图片生成、音乐生成、文本生成、人声分离各自此刻用哪个服务、哪些服务能用；不可用的带原因与补救命令。这是摘要：要看各服务的模型、音色与限制，用 `baocut status --full` 或 `baocut models capabilities --capability <能力>` |
 | 本地模型包 | 装了哪些、状态如何 |
 | 外部工具 | yt-dlp（下载链接）与 ffmpeg（导出、转码）在不在 |
 

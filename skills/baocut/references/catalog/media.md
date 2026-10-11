@@ -72,7 +72,7 @@ description: 媒体的机制：从链接下载、转码与合并、取帧看画�
 | --- | --- |
 | 新建空视频 | {{tool:videos_create}}，{{arg:name}}；竖屏素材给竖屏的宽高（如 1080×1920），帧率按素材 |
 | 导入并放上时间线 | {{tool:assets_import}}，{{arg:path}} + {{arg:place}}（不给 place 只登记为素材） |
-| 导入生成的产物 | {{tool:assets_import}}，{{arg:artifactId}}（不重新生成） |
+| 导入生成的产物（语音、图片、音乐的 WAV 等） | {{tool:assets_import}}，{{arg:artifactId}}（不重新生成） |
 | 复制进视频 | {{tool:assets_import}} 加 {{arg:storage}} `managed` |
 | 和别的修改放进同一笔 | {{tool:edits_apply}} 的 `importAsset` + `addItem`，用 `ref` 连起来（见 [editing](editing.md)） |
 | 打开便携包 | {{tool:videos_import_package}}，{{arg:file}}；可给 {{arg:name}} |
@@ -137,6 +137,7 @@ description: 媒体的机制：从链接下载、转码与合并、取帧看画�
 - {{tool:assets_import}}：回执里有 `assetId`、`itemId`（没放上时间线时为 null）与新版本。
 - {{tool:videos_create}} / {{tool:videos_import_package}}：返回与 {{tool:videos_inspect}} 相同的摘要，含 `videoId`。
 - {{tool:image}}：`outputs` 里每张图的 `artifactId`；带了 video 时还有 `assetId`。
+- {{tool:music}}（见 [models](models.md) 的「音乐生成」）：`outputs` 里是一个 WAV 的 `artifactId`；带了 video 时还有 `assetId`；到了时长预算时 `warnings` 里有 `output-truncated`。
 <!-- surface: agent -->
 - {{tool:slides_import_asset}}：`src` 形如 `/_blob/<id>`，原样写进 `<img src>`。
 - {{tool:slides_check}}：`problems` 是问题总数，为 0 时线程里记一张幻灯片卡片；否则 `slides` 列出每页的 `problems`，`deckProblems` 是 `deck.json` 的问题，`orphans` 是不在 `order` 里的页面文件。每页的 `notes` 不算问题，其中以「排版」开头的是放不下或互相压住的提示，尽量改掉。

@@ -156,6 +156,7 @@ CLI 不区分「人敲的」与「Agent 敲的」。要让 Agent 宿主的权限
 | `transcode` | 文件到文件：压缩、按顺序合并、提取音轨（不建视频）；只有本机文件这一种输入，不在 MCP 面 | `files`、`merge`、`extract-audio`、`codec`、`max-height`、`crf`、`out-dir` |
 | `speak` | 合成语音 | `text` / `text-file`、`voice`、`provider`、`model`、`video`（导入为候选素材）、`out` |
 | `image` | 生成图片 | `prompt`、`size`、`count`、`provider`、`model`、`video`、`out` |
+| `music` | 生成音乐（歌曲或配乐）：只有本机的音乐模型包加 audio.cpp 引擎，很慢 | `mode`（`song` / `instrumental`）、`style`、`lyrics`（只在 `song`）、`target-duration-sec`、`max-duration-sec`、`planning`、`seed`、`provider`、`model`、`video`、`out` |
 
 `text`（调一次文本模型）不进 Agent 面：Agent 自己就是文本模型。它留在 CLI 给人用（§7）。
 
@@ -281,6 +282,7 @@ baocut — 用 BaoCut 转录、翻译、剪辑、配音与导出视频。先 `ba
   dub          翻译配音                                       download    从链接下载，可导入或新建视频
   export       导出字幕 / 文稿 / 音频 / 成片 / 便携包 / 工程   transcode   压缩、合并、提取音轨（文件到文件）
   speak        合成语音                                       image       生成图片
+  music        生成音乐（本机模型，很慢）
 对象
   videos       list · inspect · create · frames · history · delete · import-package
   documents    read · put            edits     apply · undo · ops        captions  create
@@ -332,7 +334,7 @@ Streamable HTTP、回环监听、按客户端发令牌、`Host` 与 `Origin` 检
 | --- | --- | --- |
 | `transcribe <videoId> <assetId>`（直接提交） | 并入 `transcribe --video V --asset A` | 一个入口两种形态合一 |
 | `transcribe --video|--entry|--file`（流程） | Agent 面 `transcribe` | |
-| `translate`、`dub`、`export`、`transcode`、`speak`、`image` | Agent 面，同名 | |
+| `translate`、`dub`、`export`、`transcode`、`speak`、`image`、`music` | Agent 面，同名 | |
 | `import-link` | Agent 面 `download` | 术语表没有「import-link」这个词 |
 | `import-package` | Agent 面 `videos import-package` | |
 | `pipelines`、`pipelines retry` | `pipelines` 撤；`retry` → `jobs retry` | 「固定流程」是实现概念，Agent 只认任务 |

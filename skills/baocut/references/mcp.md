@@ -57,6 +57,7 @@ MCP 工具 `<名词>_<动词>` 就是 CLI 的 `baocut <名词> <动词>`，参�
 | `library_show` | `baocut library show` | query |
 | `models_capabilities` | `baocut models capabilities` | query |
 | `models_list` | `baocut models list` | query |
+| `music` | `baocut music` | job |
 | `projects_list` | `baocut projects list` | query |
 | `skills_list` | `baocut skills list` | query |
 | `skills_read` | `baocut skills read` | query |

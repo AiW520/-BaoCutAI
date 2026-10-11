@@ -6,16 +6,17 @@ description: 模型能力的机制：各能力可用的服务、模型与限制�
 
 ## 何时用
 
-- 动手前确认转写、语音合成、图片生成能不能用、限制是多少。
+- 动手前确认转写、语音合成、图片生成、音乐生成能不能用、限制是多少。
 - 本机模型没装，要装或检查本地模型包。
 - 收到 `CAPABILITY_NOT_CONFIGURED`、`GRANT_REQUIRED` 等要用户做事的错误。
 
 ## 前置检查
 
-能力有五种：转写（`transcribe`）、语音合成（`synthesizeSpeech`）、图片生成（`generateImage`）、文本生成（`generateText`）、人声与背景分离（`separateAudio`）。
+能力有六种：转写（`transcribe`）、语音合成（`synthesizeSpeech`）、图片生成（`generateImage`）、音乐生成（`generateMusic`）、文本生成（`generateText`）、人声与背景分离（`separateAudio`）。
 
 - **文本生成与你无关。** 它是工具页与固定流程（{{tool:translate}} 这类）用的文本模型；翻译、润色、总结由你自己做，它没配置不影响你，也不能经它调用别的模型。
 - 人声分离只在本机，只给翻译配音的「分离背景声」用。
+- 音乐生成只在本机（已安装的音乐模型包加 audio.cpp 引擎），没有在线服务；用法见下文「音乐生成」。
 
 ## 命令与例子
 
@@ -23,7 +24,7 @@ description: 模型能力的机制：各能力可用的服务、模型与限制�
 | --- | --- |
 | 看各能力可用的服务、模型、限制与默认值 | {{tool:models_capabilities}}；只看一种给 {{arg:capability}} |
 | 看本机模型包装没装、状态 | {{tool:models_list}} |
-| 装本机模型包 | {{tool:models_install}}；不给 {{arg:bundleId}} 时装这台机器默认的转写模型包，本机语音合成与生图必须给 |
+| 装本机模型包 | {{tool:models_install}}；不给 {{arg:bundleId}} 时装这台机器默认的转写模型包，本机语音合成、生图与音乐生成必须给 |
 | 检查装好的模型包能不能用 | {{tool:models_test}}，{{arg:bundleId}} |
 
 {{tool:models_install}} 下载几百 MB 到几 GB：
@@ -42,21 +43,33 @@ description: 模型能力的机制：各能力可用的服务、模型与限制�
 {{tool:models_capabilities}} 的每种能力：
 
 - `effective`：不指定服务时实际会用的；为 null 时不指定服务的调用会以 `CAPABILITY_NOT_CONFIGURED` 拒绝。
-- 每个服务与模型：是否可用及原因、限制（文本长度 `maxInputChars`、提示词长度、尺寸、张数、音色、格式、语速范围、接不接受语气说明 `acceptsInstructions`）、默认值。
-- 本机服务的「模型」就是本地模型包：转写在 `transcribe` 下，合成在 `synthesizeSpeech` 下，生图在 `generateImage` 下。
+- 每个服务与模型：是否可用及原因、限制（文本长度 `maxInputChars`、提示词长度、尺寸、张数、音色、格式、语速范围、接不接受语气说明 `acceptsInstructions`、音乐的时长上限 `maxDurationSec` 与编排选项 `local.planning`）、默认值。
+- 本机服务的「模型」就是本地模型包：转写在 `transcribe` 下，合成在 `synthesizeSpeech` 下，生图在 `generateImage` 下，音乐生成在 `generateMusic` 下。
 
 {{tool:models_list}} 的每个模型包：`bundleId`、能力、状态（`not-installed`、`downloading`、`installed`、`ready` 等）与原因、下载大小的估计、最近一次检查（`selfTest`）。
 
-{{tool:models_install}}：返回 `jobId` 与大小（`downloadBytes`；未知时看 `estimatedBytes`），等到 `completed` 才算装好。之后再提交转写；本机合成与生图没有出厂默认，提交 {{tool:speak}} 或 {{tool:image}} 时带上 {{arg:provider}} `local` 与 {{arg:model}}（这个模型包）。
+{{tool:models_install}}：返回 `jobId` 与大小（`downloadBytes`；未知时看 `estimatedBytes`），等到 `completed` 才算装好。之后再提交转写；本机合成、生图与音乐生成没有出厂默认，提交 {{tool:speak}}、{{tool:image}} 或 {{tool:music}} 时带上 {{arg:provider}} `local` 与 {{arg:model}}（这个模型包）。
 
 {{tool:models_test}}：`completed` 是通过；`failed` 时 `error.details.check` 是原因。
+
+## 音乐生成（`generateMusic`）
+
+只有本机的服务：模型是已安装的音乐模型包（目前是 `yue2-3b@audio-cpp-q8`，YuE2 3B，下载约 4.6 GB），由 audio.cpp 引擎（`audiocpp_cli`）在本机执行，不联网，没有在线服务，也没有出厂默认。先 {{tool:models_capabilities}}（能力 `generateMusic`）看有没有可用的模型、时长上限（`maxDurationSec`，YuE2 为 300 秒）、默认预算（`defaultDurationSec`）、编排选项（`local.planning.options` 与默认值）与风格、歌词的字数上限（`maxStyleChars`、`maxLyricsChars`）。
+
+{{tool:music}}：{{arg:mode}} 是 `instrumental`（纯音乐、配乐）或 `song`（带人声，必须给 {{arg:lyrics}}；纯音乐不能给）；{{arg:style}} 写曲风、情绪、乐器、节奏与人声类型（英文最稳）；{{arg:targetDurationSec}} 是希望的时长（只是创作意图，不保证精确）；{{arg:maxDurationSec}} 是生成预算（不超过模型的 `maxDurationSec`；不给时取目标时长，再没有时用模型的默认预算；到了预算的结果带 `output-truncated` 警告）；{{arg:planning}} 从 `local.planning.options` 里选（`off` 不编排、`melody` 先规划旋律、`full` 完整规划，更慢），不给时用模型默认；可给 {{arg:seed}}（同一台机器上同 seed 出同一段）与 {{arg:video}}（结果导入为那个视频的候选素材，不放上时间线）。
+
+- **很慢**：一段要几分钟到十几分钟（CPU 更慢）。提交一次，用 {{tool:jobs_wait}} 等，不重复提交。给视频配乐时 {{arg:mode}} 用 `instrumental`，{{arg:maxDurationSec}} 按要配的片段长度给（可以略长，之后在时间线上裁）；超过 300 秒的片段分段生成或循环，不要一次要更长。
+- **许可**：YuE2 是 CC-BY-NC-4.0，只许非商业用途（`license.commercialUse: false`）。用户要商用时先告诉用户这一点，由用户决定。
+- 输出是 WAV（`outputs` 里有 `artifactId`，带了 {{arg:video}} 时还有 `assetId`）。
+- 没装模型包时 {{tool:models_install}} 给 {{arg:bundleId}} `yue2-3b@audio-cpp-q8`（先把大小告诉用户）；装好了但找不到引擎时能力报 `unsupported`，处理见下节。
 
 ## 「没配置」与「要授权」怎么处理
 
 | 情况 | 处理 |
 | --- | --- |
 | {{tool:translate}} 报 `CAPABILITY_NOT_CONFIGURED` | 自己翻译（[subtitles](subtitles.md) 的自译路径），**不**请用户去配置 |
-| 转写、语音合成、图片生成报 `CAPABILITY_NOT_CONFIGURED`，`remedy.action` 为 `install-model` | 本机模型包没装：告诉用户要装哪个、多大，同意后 {{tool:models_install}}，装好再重提 |
+| 转写、语音合成、图片生成、音乐生成报 `CAPABILITY_NOT_CONFIGURED`，`remedy.action` 为 `install-model` | 本机模型包没装：告诉用户要装哪个、多大，同意后 {{tool:models_install}}，装好再重提 |
+| `generateMusic` 的模型包装好了，能力仍 `unavailableReason: 'unsupported'`，`detail` 说找不到 audio.cpp 引擎 | 引擎（`audiocpp_cli`）不在这台机器上：转告用户按 `detail` 装引擎或设 `BAOCUT_AUDIOCPP_CLI`，你不替用户装 |
 | 同上，其他 `remedy` | 要用户启用一项在线服务或配置账号：照 `remedy` 与 `next` 告诉用户要在哪里启用哪项，停在这里（图片只是交付的一部分时，停下的只是画图这一步，见 [media](media.md) 的「生成图片」） |
 | `GRANT_REQUIRED`、`GRANT_REVOKED` | 要把数据发给在线服务，但用户没有授权：照 `remedy` 转告用户 |
 | `BUDGET_EXCEEDED`、`TASK_BUDGET_EXCEEDED` | 超了预算：转告用户，由用户决定 |
@@ -78,7 +91,7 @@ description: 模型能力的机制：各能力可用的服务、模型与限制�
 
 ## 下一步
 
-- 能力就绪：回到原来的任务页（[subtitles](subtitles.md)、[voice](voice.md)、[media](media.md)）重新提交。
+- 能力就绪：回到原来的任务页（[subtitles](subtitles.md)、[voice](voice.md)、[media](media.md)，或上文「音乐生成」）重新提交。
 - 用户暂时不配置：告诉用户哪一步做不了，其余能做的照常做完。
 
 ## 验收

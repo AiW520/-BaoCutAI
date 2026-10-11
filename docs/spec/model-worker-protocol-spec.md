@@ -341,8 +341,8 @@ Runtime 把模型包的全部文件路径显式交给 Worker；Worker 不扫描�
 ```ts
 interface ModelBundle {
   bundleId: string;                   // 例如 'qwen3-asr-0.6b@mlx-4bit'、'qwen3-asr-0.6b@candle'
-  backend: 'mlx' | 'coreml' | 'candle' | 'ggml';   // mlx、coreml 只在 Apple Silicon 的 macOS 上
-  device: string;                     // mlx 为 'metal'，coreml 为 'ane'，candle 为 'cuda' 或 'cpu'，ggml 为 'cuda'、'vulkan' 或 'cpu'（§2.1）
+  backend: 'mlx' | 'coreml' | 'candle' | 'ggml' | 'audio-cpp';   // mlx、coreml 只在 Apple Silicon 的 macOS 上；audio-cpp 不交给 Worker（§4.4）
+  device: string;                     // mlx 为 'metal'，coreml 为 'ane'，candle 为 'cuda' 或 'cpu'，ggml 为 'cuda'、'vulkan' 或 'cpu'（§2.1）；audio-cpp 为 'auto'（引擎自选，§4.4）
   components: {
     asr?: ModelFiles;
     vad?: ModelFiles;
@@ -355,6 +355,7 @@ interface ModelBundle {
     aux?: ModelFiles;                 // 辅助权重（IndexTTS 2.5 用 IndexTTS2 的说话人与声码器权重）
     separator?: ModelFiles;           // 人声分离模型（HTDemucs-FT）
     image?: ModelFiles;               // 文生图模型（Qwen-Image：一个仓库里的分词器、调度器配置、文本编码器、DiT 与 VAE）
+    music?: ModelFiles;               // 音乐生成模型（YuE2 的 GGUF：主模型、VAE 与分词表同在一个仓库）；不与别的组件同在一个模型包里，Worker 不加载它（§4.4）
   };
   threads: number;                    // CPU 线程数上限
   memoryBudgetBytes: number | null;   // 准入给出的预算；null 为不限制
@@ -366,7 +367,8 @@ interface ModelFiles {
     | 'qwen3-forced-aligner' | 'silero-vad' | 'wespeaker' | 'pyannote-segmentation'
     | 'qwen3-tts' | 'qwen3-tts-tokenizer' | 'indextts2' | 'indextts2.5' | 'indextts2-aux'
     | 'gpt-sovits' | 'voxcpm2' | 'omnivoice' | 'qwen-image'
-    | 'htdemucs-ft';
+    | 'htdemucs-ft'
+    | 'yue2';                         // 音乐生成（§4.4），只由 audio.cpp 引擎读
   revision: string;                   // 上游仓库的 revision
   dir: string;                        // 绝对路径
   files: Array<{ path: string; sha256: string; byteLength: number }>;   // 相对 dir
@@ -416,6 +418,8 @@ interface ModelFiles {
 
 检查不判断画得好不好，只证明整条生图链路能出图。通过时记下尺寸与步数，PNG 作为产物留存；不通过记下原因。
 
+**音乐**。不经 Worker（§4.4）：用固定的风格描述（`calm solo piano, slow tempo`）、`instrumental`、不编排（`planning: 'off'`）、上限 8 秒、seed 7、4 步起一次引擎（参数在 `packages/models/src/music-self-test.ts`），输出按 §5.1 核对长度与摘要，判定与合成相同（能解码、0.3–30 秒、不是静音、没有削波）。检查不判断好不好听，只证明引擎与权重能出声。通过时记下时长、采样率与步数，WAV 作为产物留存；不通过记下原因；找不到引擎时模型包状态是 `error` / `worker-missing`，说明里写的是引擎，`models.test` 以 `MODEL_UNAVAILABLE` 拒绝。
+
 **分离**。把识别用的同一段样本（只有人声）按 §2.5.4 分离，`sampleRate` 为 null。两路按 §5 核对长度与摘要，再判定：
 
 - 都能解码（同上），是立体声，采样率相同，时长与样本相差不超过 0.02 秒；
@@ -424,22 +428,53 @@ interface ModelFiles {
 
 通过时记下时长、采样率与人声比背景高多少 dB，人声 WAV 作为产物留存；不通过记下原因（`MODEL_OUTPUT_WRONG`）。
 
+### 4.4 音乐生成模型包与 audio.cpp 引擎
+
+音乐生成（`generateMusic`，架构设计 §6.1）的模型包是 `music` 能力、`audio-cpp` backend 的 GGUF 权重（目前 `yue2-3b@audio-cpp-q8`：`audio-cpp/Yue2-3B-GGUF` 仓库里的 Q8 主模型 `yue2-3b-q8_0.gguf`、F16 VAE `yue2-vae-f16.gguf` 与四个配置文件，约 4.6 GB，`yue2` 族，许可 CC-BY-NC-4.0）。它**不交给 Model Worker**：Runtime 的本地 Provider 为每个任务起一个 audio.cpp 引擎进程（`audiocpp_cli`），引擎直接读模型包目录里的 GGUF、把 WAV 写进这次尝试的 staging，退出即结束，不常驻、没有 `model.load`，也没有 `job.cancel`（取消是结束整个进程组：先 SIGTERM，宽限期 5 秒后 SIGKILL；Windows 上结束整棵进程树）。模型包的安装、清单与校验照 §4.1–4.2（`.bcut-manifest.json`、只下载清单列出的文件）。
+
+**引擎**。可执行文件按这个顺序找，每个任务重新找（装好后无需重启）：环境变量 `BAOCUT_AUDIOCPP_CLI`（给了就只用它，文件不存在算找不到）→ 随应用分发的 `bin/` 与 cargo 产物目录 → `PATH`。找不到时模型包状态是 `error` / `worker-missing`（说明里写的是引擎，不是 Worker），能力视图里这项 `unavailableReason: 'unsupported'`；引擎在而模型包没装是 `not-installed`，两种情形分开说。设备由引擎按构建自选（Metal、CUDA、Vulkan 或 CPU），`BAOCUT_AUDIOCPP_BACKEND`（`metal` / `cuda` / `vulkan` / `cpu`）给了才传 `--backend`。
+
+**命令行**。冻结的参数（`JobRecord.generation`，`capability: 'generateMusic'`）换算成引擎的参数，`cwd` 是 staging，stdout 与 stderr 的尾巴（2000 字符）留给失败说明：
+
+```text
+audiocpp_cli --task gen --family yue2 --model <模型包目录> --threads <n>
+  --lyrics <歌词；instrumental 时为空字符串>
+  --request-option style=<style>
+  --request-option cot=<planning：off | melody | full>
+  --request-option seed=<seed>
+  --request-option semantic_max_tokens=<round(maxDurationSec × 25)，至少 1>
+  [--request-option num_inference_steps=<steps>]        # 冻结了 steps（或自检给的少步数）时才传，否则引擎用默认值
+  --session-option yue2.model_gguf=<模型包目录>/yue2-3b-q8_0.gguf
+  --session-option yue2.vae_gguf=<模型包目录>/yue2-vae-f16.gguf
+  --out-dir <staging> --out music.wav --log
+  [--backend <metal | cuda | vulkan | cpu>]
+```
+
+- 时长没有直接的参数：`maxDurationSec` 按模型包登记的语义帧率（YuE2 每秒 25 个语义 token）换成 `semantic_max_tokens`，所以它是计算预算而不是承诺的时长；`targetDurationSec` 只写在任务记录里，不交给引擎。
+- 线程数默认是 `min(8, 可用并行数 − 2)`，至少 1。
+- 引擎不报告步数：进入 `generating` 后只有不定进度，完成时报 1/1。
+
+**结果**。退出码 0 且 staging 里有 `music.wav` 才算成功（引擎按自己的规则改了名时取 staging 里第一个 `.wav` 并改名为 `music.wav`）。找不到引擎或进程起不来是 `unavailable`（任务错误 `MODEL_LOAD_FAILED`），非零退出是 `crashed`（`MODEL_WORKER_CRASHED`，附 stderr 尾巴），退出了却没有 WAV 是 `protocol`（`MODEL_OUTPUT_INVALID`）；命令与协议规范 §11.3。输出合同是 `baocut.music-wav/v1`（§5.1）；WAV 的时长达到 `maxDurationSec` 的 98% 时视为撞上限，任务带 `output-truncated` 警告，照样完成。`workerVersion` 记为 `audiocpp_cli@<可执行文件名>`。
+
+**资源**。没有常驻进程与 holder：每个任务按模型包登记的估计峰值（YuE2 Q8 加 F16 VAE 约 10 GiB，`peakEstimated`，上游在一块 32 GB 的 NVIDIA 卡上实测约 8.9 GB 后留的余量）直接计入任务，Apple Silicon 计 GPU 内存、别的平台计内存，另加 256 MiB 的 staging（五分钟 44.1 kHz 立体声 WAV 约 50 MiB 加日志）；架构设计 §7.7。
+
 ## 5. 任务与 staging 目录
 
-- Runtime 为每个任务创建 `<runtime-home>/staging/jobs/<jobId>/` 并传入 `staging`。Worker 的所有中间文件与输出都写在这里，文件名固定：识别是 `audio.f32`（可选，解码缓存）、`segments.jsonl`、`result.json`；合成是 `speech.wav`，生图是 `image.png`（§5.1）；分离是 `vocals.wav` 与 `background.wav`（§2.5.4）；说话人区分是 `speakers.json`（§2.5.5）。
+- Runtime 为每个任务创建 `<runtime-home>/staging/jobs/<jobId>/` 并传入 `staging`。Worker 的所有中间文件与输出都写在这里，文件名固定：识别是 `audio.f32`（可选，解码缓存）、`segments.jsonl`、`result.json`；合成是 `speech.wav`，生图是 `image.png`，音乐是 `music.wav`（§5.1，由 audio.cpp 引擎写，§4.4）；分离是 `vocals.wav` 与 `background.wav`（§2.5.4）；说话人区分是 `speakers.json`（§2.5.5）。
 - `segments.jsonl` 是 append-only，每行一个 `Segment`（§6），按 `start` 递增写入；每行写完后 flush。首行是头：`{ "header": true, "jobId", "contentHash", "bundleId", "workerVersion", "timescale" }`。Runtime 续跑（P1）时校验头与已有行再决定从哪一段开始。
 - `result.json` 在任务完成时一次性写入临时文件再重命名，内容为 §6 的对象。`job.run` 的 `output.sha256` 是该文件 bytes 的摘要。
 - Worker 不删除 staging 目录；清理属于 Runtime。
 
 ### 5.1 生成任务的输出
 
-`synthesizeSpeech` 与 `generateImage` 的执行者（在线 Provider、本地 Worker，以及之后的节点）遵守同一份输出约定，Runtime 按它校验后发布（架构设计 §6.4）：
+`synthesizeSpeech`、`generateImage` 与 `generateMusic` 的执行者（在线 Provider、本地 Worker、本地的 audio.cpp 引擎，以及之后的节点）遵守同一份输出约定，Runtime 按它校验后发布（架构设计 §6.4）：
 
 - 输入是提交时冻结的参数（`JobRecord.generation`），执行者不改参数、不换模型或音色；做不到就失败。
 - 每个输出写成 staging 里的 `output-<n>.<扩展名>`（`n` 从 1 开始；扩展名 `mp3`、`wav`、`flac`、`png`、`jpg`、`webp`），完成时报告相对路径、sha256（小写十六进制）、长度与媒体类型（`audio/mpeg`、`audio/wav`、`audio/flac`、`image/png`、`image/jpeg`、`image/webp`）。
 - 本地 Worker 的合成（§2.5.2）输出合同是 `baocut.speech-wav/v1`：一个 PCM WAV（16/24/32 位整数或 32 位浮点，单声道或立体声，采样率是模型的原生采样率），文件名固定为 `speech.wav`，先写临时文件再重命名。整段的峰值高于 −1 dBFS（满幅为 1 时约 0.891）时，Worker 在写出前把整段等比缩小到 −1 dBFS（非有限的样本先置零）；不提升安静的输出，也不做压缩。Worker 报告绝对路径；本地 Provider 换成相对 staging 的路径，不是 `speech.wav` 时按协议错误处理。
 - 本地 Worker 的生图（§2.5.3）输出合同是 `baocut.image-png/v1`：一张 8 位 RGBA PNG，宽高就是请求的宽高，文件名固定为 `image.png`，先写临时文件再重命名。第四个通道是模型（Qwen-Image 的 VAE）自己给的 alpha，原样写入。本地 Provider 同样换成相对路径，不是 `image.png` 时按协议错误处理。
-- 输出个数等于请求的张数（语音为 1），媒体类型等于请求的格式。
+- 本地音乐生成（§4.4）的输出合同是 `baocut.music-wav/v1`：一个 PCM WAV（16/24/32 位整数或 32 位浮点，单声道或立体声，采样率是模型的采样率，YuE2 为 44.1 kHz），文件名固定为 `music.wav`，由引擎直接写出（没有 Worker 的 −1 dBFS 限幅）；媒体类型 `audio/wav`。本地 Provider 报告相对 staging 的路径，退出了却没有 WAV 按协议错误处理。
+- 输出个数等于请求的张数（语音与音乐为 1），媒体类型等于请求的格式。
 - Runtime 核对长度与摘要、文件头与声明的类型，再用 ffprobe 以该格式的解复用器完整解码：音频要有正的时长、采样率与声道数，图片要有正的宽高。不过的映射为 `MODEL_OUTPUT_INVALID`（命令与协议规范 §11.3），原始文件移到 `logs/diagnostics/<jobId>/`。
 
 ## 6. 输出合同 `baocut.asr-result/v1`

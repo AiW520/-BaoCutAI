@@ -79,7 +79,7 @@ BaoCut 是以**可编辑视频**为中心的剪辑工具：素材在时间线上
 不手动启动 Runtime：要连 Runtime 的命令找不到它时会自己在后台拉起（结果里 `runtime.started: true`），CLI 拉起的那个空闲一段时间后自己退出。任务结束不用专门停；只在用户要求时 `baocut runtime stop`，它只停 CLI 自己拉起的那一个。
 <!-- /surface -->
 <!-- surface: agent -->
-工具已经连好，不用启动什么。用到转写、语音合成、图片生成前先 {{tool:models_capabilities}} 看有没有可用的服务、限制是多少；然后按任务读一页目录（第 3 节）。
+工具已经连好，不用启动什么。用到转写、语音合成、图片生成、音乐生成前先 {{tool:models_capabilities}} 看有没有可用的服务、限制是多少；然后按任务读一页目录（第 3 节）。
 <!-- /surface -->
 
 ## 3. 能力目录与阅读纪律
@@ -173,7 +173,7 @@ BaoCut 自带的 craft（做法）。第 1 节的表按用户的话指到其中�
 <!-- surface: agent -->
 9. **不可撤销的先问。** 删除这类不可撤销的操作只在用户明确要求时做。按用户选的访问模式，有些调用要等用户在 BaoCut 里批准，工具会等到用户决定后才返回；不要替用户同意。返回 `APPROVAL_DENIED` 时不重试同样的操作，先问用户想怎么改；返回 `APPROVAL_CANCELLED` 或 `TASK_STOPPED` 时结束这个回合。
 <!-- /surface -->
-10. **要用户做的事转告用户。** `CAPABILITY_NOT_CONFIGURED`（转写、语音合成、图片生成这些你自己做不了的）、`GRANT_REQUIRED`、外部工具要同意或安装、链接要登录：照错误里的 `remedy` 与 `next` 告诉用户，不用 shell、脚本、别的网站或别的服务商绕过，不碰 API key 与凭据。
+10. **要用户做的事转告用户。** `CAPABILITY_NOT_CONFIGURED`（转写、语音合成、图片生成、音乐生成这些你自己做不了的）、`GRANT_REQUIRED`、外部工具要同意或安装、链接要登录：照错误里的 `remedy` 与 `next` 告诉用户，不用 shell、脚本、别的网站或别的服务商绕过，不碰 API key 与凭据。
 <!-- surface: cli -->
 11. **管理命令先征得同意。** `baocut --help` 后半屏「本机管理」里的命令（模型服务与凭据、设置、对外服务、授权、skill 开关等）是给人用的：先征得用户同意再用；密钥只由用户自己输入。打开网页版编辑器的 `baocut web open` 除外（见 [web](references/catalog/web.md)）。
 <!-- /surface -->
