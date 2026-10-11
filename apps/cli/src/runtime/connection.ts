@@ -150,8 +150,8 @@ export function packagedResourceEnv(resources: string, platform: NodeJS.Platform
   return {
     BAOCUT_BIN_DIR: path.join(resources, 'bin'),
     BAOCUT_TEMPLATES_DIR: path.join(resources, 'templates'),
-    BAOCUT_SKILLS_DIR: path.join(resources, 'skills'),
-    BAOCUT_AGENT_SKILLS_DIR: path.join(resources, 'agent-skills'),
+    BAOCUT_SKILLS_DIR: path.join(resources, 'skills', 'baocut', 'built-in-skills'),
+    BAOCUT_AGENT_SKILLS_DIR: path.join(resources, 'skills'),
     BAOCUT_MODEL_ASSETS_DIR: path.join(resources, 'model-assets'),
     BAOCUT_WEB_DIST: path.join(resources, 'web'),
     BAOCUT_SLIDES_EDITOR_DIST: path.join(resources, 'slides-editor'),
@@ -161,7 +161,7 @@ export function packagedResourceEnv(resources: string, platform: NodeJS.Platform
 
 /**
  * 说明书的根目录（里面是 `baocut/`），给不连 Runtime 的 `baocut skill path` 用：与 Runtime 的 `resolveBuiltinAgentSkillsDir`
- * 同一个顺序——`BAOCUT_AGENT_SKILLS_DIR` → 装好的 BaoCut 应用的 `<resources>/agent-skills` → 仓库根的 `agent-skills/`。
+ * 同一个顺序——`BAOCUT_AGENT_SKILLS_DIR` → 装好的 BaoCut 应用的 `<resources>/skills` → 仓库根的 `skills/`。
  * 都没有时 null。
  */
 export function resolveAgentSkillsDir(
@@ -175,7 +175,7 @@ export function resolveAgentSkillsDir(
     if (fs.existsSync(dir)) return dir;
   }
   const root = repoRoot(from);
-  const dir = root && path.join(root, 'agent-skills');
+  const dir = root && path.join(root, 'skills');
   return dir && fs.existsSync(dir) ? dir : null;
 }
 

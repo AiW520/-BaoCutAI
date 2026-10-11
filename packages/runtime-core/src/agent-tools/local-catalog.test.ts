@@ -212,11 +212,12 @@ describe.skipIf(!engine || !ffmpeg)('工具目录经网关给 CLI（真实引擎
     const skill = await client.request('catalog.agentSkill', {});
     expect(skill.id).toBe('baocut');
     expect(skill.interfaceVersion).toBe(MCP_INTERFACE_VERSION);
-    expect(skill.sourceDir).toMatch(/agent-skills[/\\]baocut$/);
+    expect(skill.sourceDir).toMatch(/[/\\]skills[/\\]baocut$/);
     const entry = skill.files.find((file) => file.path === 'SKILL.md');
     expect(entry?.content).toContain('`baocut videos inspect`');
     expect(entry?.content).not.toMatch(/\{\{|<!-- surface/);
     expect(skill.files.some((file) => file.path.startsWith('references/craft/') && file.path.endsWith('.md'))).toBe(true);
+    expect(skill.files.some((file) => file.path.startsWith('built-in-skills/'))).toBe(false);
   });
 });
 

@@ -22,7 +22,7 @@ afterEach(() => {
 const rendered = {
   interfaceVersion: 1,
   id: 'baocut',
-  sourceDir: '/src/agent-skills/baocut',
+  sourceDir: '/src/skills/baocut',
   files: [
     { path: 'SKILL.md', content: '# BaoCut\n' },
     { path: 'references/start.md', content: '先 baocut status\n' },

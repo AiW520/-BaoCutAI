@@ -41,7 +41,7 @@ export const CODE_BUNDLE_HASH_PREFIX = 'sha256-';
 
 /**
  * 不参与 `contentHash` 的文件：清单与验证报告引用这个摘要，文件清单列出自己的摘要，三者都会循环。
- * 与 `skills/motion-graphics/scripts/build-bundle.mjs` 写包的算法一致。
+ * 与 `skills/baocut/built-in-skills/motion-graphics/scripts/build-bundle.mjs` 写包的算法一致。
  */
 export const CODE_BUNDLE_UNHASHED_FILES = ['bundle.manifest.json', 'files.manifest.json', 'verification.json'] as const;
 

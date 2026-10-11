@@ -6,7 +6,8 @@ import { findRepoDir } from './skill-catalog.ts';
 import { parseSkillFrontmatter } from './skill-frontmatter.ts';
 
 /**
- * 说明书的渲染器（Agent 面设计 §8.6）：`agent-skills/baocut/`（SKILL.md + references/**）一个来源，两种渲染。
+ * 说明书的渲染器（Agent 面设计 §8.6）：`skills/baocut/`（SKILL.md + references/**）一个来源，两种渲染。同目录下的
+ * `built-in-skills/` 是内置 skill 本身（由 `SkillCatalog` 加载、同步成 craft 副本），不算说明书的页，读目录时跳过。
  *
  * - `cli` 面：给外部 Agent（Claude Code、Codex、Cursor、Gemini），由 `baocut skill install` 装进宿主的 skills 目录。
  * - `agent` 面：给 BaoCut 自己的会话内智能体（工具桥），SKILL.md 正文成为指导的「工作方式」段，`references/catalog/*.md`
@@ -39,8 +40,10 @@ export type AgentSkillFace = 'cli' | 'agent';
 /** 说明书的 skill id，也是它在宿主 skills 目录里的目录名。 */
 export const AGENT_SKILL_ID = 'baocut';
 export const AGENT_SKILL_ENTRY = 'SKILL.md';
-/** craft 副本的目录（由 `skills/<id>/` 同步，§8.3）。 */
+/** craft 副本的目录（由 `built-in-skills/<id>/` 同步，§8.3）。 */
 export const AGENT_SKILL_CRAFT_DIR = 'references/craft';
+/** 内置 skill 的目录（说明书目录下）：不是说明书的页，`readAgentSkillDir` 跳过它。 */
+export const AGENT_SKILL_BUILTIN_DIR = 'built-in-skills';
 /** 生成块的名字。 */
 export const AGENT_SKILL_GENERATED_BLOCKS = ['common-ops', 'error-codes', 'tool-map'] as const;
 export type AgentSkillGeneratedBlock = (typeof AGENT_SKILL_GENERATED_BLOCKS)[number];
@@ -157,13 +160,16 @@ export function renderSessionOnlyTools(line: string): string {
   return out;
 }
 
-/** 读一个说明书目录：全部文件（不含点开头的），相对路径按 `/` 分隔、排序。目录里有符号链接时抛错，不读到目录外。 */
+/**
+ * 读一个说明书目录：全部文件（不含点开头的与顶层的 `built-in-skills/`），相对路径按 `/` 分隔、排序。目录里有符号链接时抛错，
+ * 不读到目录外。
+ */
 export function readAgentSkillDir(dir: string): AgentSkillFiles {
   const files: AgentSkillFiles = new Map();
   const walk = (abs: string, rel: string) => {
     const entries = fs.readdirSync(abs, { withFileTypes: true }).sort((a, b) => a.name.localeCompare(b.name));
     for (const entry of entries) {
-      if (entry.name.startsWith('.')) continue;
+      if (entry.name.startsWith('.') || (!rel && entry.name === AGENT_SKILL_BUILTIN_DIR)) continue;
       const childRel = rel ? `${rel}/${entry.name}` : entry.name;
       const childAbs = path.join(abs, entry.name);
       if (entry.isSymbolicLink()) throw new AgentSkillRenderError(childRel, 0, RcSkills.agentSkillNoSymlinks());
@@ -461,18 +467,18 @@ function firstParagraph(text: string): string {
 }
 
 /**
- * 找说明书的根目录（里面是 `baocut/`）：`BAOCUT_AGENT_SKILLS_DIR` → 打包后的 `<resources>/agent-skills`（Electron 的
+ * 找说明书的根目录（里面是 `baocut/`）：`BAOCUT_AGENT_SKILLS_DIR` → 打包后的 `<resources>/skills`（Electron 的
  * `process.resourcesPath`，再依次看 `resourceDirs`：CLI 传装好的 BaoCut 应用的资源目录）→ 从本模块往上找仓库根的
- * `agent-skills/`。与 `resolveBuiltinSkillsDir` 的顺序相同；都没有时 null。
+ * `skills/`。与 `resolveBuiltinSkillsDir` 的顺序相同；都没有时 null。
  */
 export function resolveBuiltinAgentSkillsDir(env: NodeJS.ProcessEnv = process.env, resourceDirs: readonly string[] = []): string | null {
   if (env.BAOCUT_AGENT_SKILLS_DIR) return env.BAOCUT_AGENT_SKILLS_DIR;
   const electron = (process as { resourcesPath?: string }).resourcesPath;
   for (const resources of [...(electron ? [electron] : []), ...resourceDirs]) {
-    const bundled = path.join(resources, 'agent-skills');
+    const bundled = path.join(resources, 'skills');
     if (isDirectory(bundled)) return bundled;
   }
-  return findRepoDir('agent-skills');
+  return findRepoDir('skills');
 }
 
 function isDirectory(dir: string): boolean {

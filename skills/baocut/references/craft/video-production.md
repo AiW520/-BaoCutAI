@@ -1,4 +1,4 @@
-<!-- 由 tools/sync-agent-skill.ts 从 skills/video-production/ 生成，不要手改：改源文件后运行 npm run build:agent-skill -->
+<!-- 由 tools/sync-agent-skill.ts 从 skills/baocut/built-in-skills/video-production/ 生成，不要手改：改源文件后运行 npm run build:agent-skill -->
 
 # 从简报到成片
 

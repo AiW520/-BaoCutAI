@@ -75,7 +75,7 @@ export interface CatalogToolError {
 export type CatalogCallResult = { ok: true; result: unknown } | { ok: false; error: CatalogToolError };
 
 /**
- * `catalog.agentSkill` 的结果：给外部 Agent 的说明书（`agent-skills/baocut/`，Agent 面设计 §8.6）按 CLI 面渲染好的全部文件，
+ * `catalog.agentSkill` 的结果：给外部 Agent 的说明书（`skills/baocut/`，Agent 面设计 §8.6）按 CLI 面渲染好的全部文件，
  * `baocut skill install` 原样写进宿主的 skills 目录。
  */
 export interface CatalogAgentSkill {

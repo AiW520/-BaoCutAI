@@ -32,8 +32,8 @@ import {
   type AgentToolId,
 } from './ai-tools.ts';
 
-/** 仓库根 `skills/`：随应用分发的内置 skill，一个目录一个 id。 */
-const SKILLS_DIR = path.resolve(import.meta.dirname, '../../../../skills');
+/** 仓库根 `skills/baocut/built-in-skills/`：随应用分发的内置 skill，一个目录一个 id。 */
+const SKILLS_DIR = path.resolve(import.meta.dirname, '../../../../skills/baocut/built-in-skills');
 const AGENT_TOOLS: AgentToolId[] = ['polish', 'chapters', 'speakers', 'retranscribe', 'cleanup', 'stale', 'summary', 'blog', 'title', 'desc', 'cover', 'shortscut'];
 
 describe('AI 工具目录', () => {

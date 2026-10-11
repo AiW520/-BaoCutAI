@@ -15,7 +15,8 @@ import {
 
 const FIXTURE = path.join(REPO_ROOT, 'packages/runtime-core/src/skills/testing/agent-skill-fixture');
 const SCRIPT = path.join(REPO_ROOT, 'tools/sync-agent-skill.ts');
-const AGENT = 'agent-skills/baocut';
+const AGENT = 'skills/baocut';
+const BUILTIN = `${AGENT}/built-in-skills`;
 
 function tool(name: string, effect: CatalogTool['effect'], surfaces: CatalogTool['surfaces'] = ['agent', 'mcp', 'cli']): CatalogTool {
   return { name, title: name, description: name, inputSchema: { type: 'object' }, risk: 'low', effect, examples: [], surfaces };
@@ -106,7 +107,7 @@ describe('说明书的同步', () => {
     const result = buildAgentSkillSync(root, INPUTS);
     expect(result.files.get(`${AGENT}/references/craft/demo-polish.md`)).toBe(
       [
-        '<!-- 由 tools/sync-agent-skill.ts 从 skills/demo-polish/ 生成，不要手改：改源文件后运行 npm run build:agent-skill -->',
+        '<!-- 由 tools/sync-agent-skill.ts 从 skills/baocut/built-in-skills/demo-polish/ 生成，不要手改：改源文件后运行 npm run build:agent-skill -->',
         '',
         '# 润色一份转写',
         '',
@@ -136,10 +137,10 @@ describe('说明书的同步', () => {
     );
     // 只在会话里有的工具：有兜底写法的（downloads_save）换掉、不提醒；没有的原样留下并提醒。
     expect(result.warnings).toEqual([]);
-    fs.appendFileSync(path.join(root, 'skills/demo-polish/SKILL.md'), '\n收尾时更新 tasks_contract。\n');
+    fs.appendFileSync(path.join(root, BUILTIN, 'demo-polish/SKILL.md'), '\n收尾时更新 tasks_contract。\n');
     const withContract = buildAgentSkillSync(root, { ...INPUTS, agentToolNames: [...INPUTS.agentToolNames, 'tasks_contract'] });
     expect(withContract.warnings).toEqual([
-      'skills/demo-polish/SKILL.md:16：tasks_contract 只在 BaoCut 的会话里有，CLI 面没有对应的命令，原样留下',
+      `${BUILTIN}/demo-polish/SKILL.md:16：tasks_contract 只在 BaoCut 的会话里有，CLI 面没有对应的命令，原样留下`,
     ]);
   });
 
@@ -149,7 +150,7 @@ describe('说明书的同步', () => {
     const body = '# 共享语速\n\n| Language | Rate |\n| --- | --- |\n| English | 2.1 |\n';
     fs.writeFileSync(path.join(root, shared), body);
     fs.appendFileSync(
-      path.join(root, 'skills/demo-polish/SKILL.md'),
+      path.join(root, BUILTIN, 'demo-polish/SKILL.md'),
       '\n用 `skills_read` 读 `baocut-catalog-voice-language-rates`。\n',
     );
     const result = buildAgentSkillSync(root, INPUTS);
@@ -165,7 +166,7 @@ describe('说明书的同步', () => {
   it('一级动词也按 CLI 面改写；连着 -、/、. 或后跟 : 的不算工具名；代码块里不加反引号', () => {
     const root = freshFixture();
     fs.appendFileSync(
-      path.join(root, 'skills/demo-polish/SKILL.md'),
+      path.join(root, BUILTIN, 'demo-polish/SKILL.md'),
       [
         '',
         '链接时 transcribe 给 `url`（或带 `transcribe: true`）；章节见 [demo-chapters](demo-chapters.md)，transcribe-only 的产物在 transcribe/ 下，脚本是 transcribe.ts。',
@@ -232,9 +233,9 @@ describe('说明书的同步', () => {
 
   it('改写不了的 skills_read 说法报错，带源文件与行号', () => {
     const root = freshFixture();
-    fs.appendFileSync(path.join(root, 'skills/demo-chapters/SKILL.md'), '\n不确定时用 `skills_read` 看看别的。\n');
+    fs.appendFileSync(path.join(root, BUILTIN, 'demo-chapters/SKILL.md'), '\n不确定时用 `skills_read` 看看别的。\n');
     expect(() => buildAgentSkillSync(root, INPUTS)).toThrow(
-      /^skills\/demo-chapters\/SKILL\.md:13：这种 `skills_read` 的说法没法改写成 CLI 面/,
+      /^skills\/baocut\/built-in-skills\/demo-chapters\/SKILL\.md:13：这种 `skills_read` 的说法没法改写成 CLI 面/,
     );
   });
 

@@ -1223,8 +1223,8 @@ Electron Main                          ← 窗口 / 菜单 / 更新 / 监管
           <tr><td><code>docs/</code></td><td>产品、架构、格式、协议<strong>规范文档</strong>（中文；一事一处、一个主题一篇）</td><td>architecture/ · spec/ · acceptance/ · design/</td></tr>
           <tr><td><code>designs/</code></td><td>界面原型（UI 改动先到这里做原型再落到 Electron &amp; Web）</td><td>designs/baocut/</td></tr>
           <tr><td><code>templates/</code></td><td>内置创作模板，一个模板一个目录，随应用分发</td><td>promo-ad · vlog-edit · data-story · launch-film</td></tr>
-          <tr><td><code>skills/</code></td><td>内置 Agent craft skills（<em>怎么做</em>），Runtime 整体加载</td><td>subtitle-workflow · talking-head-cut · motion-graphics</td></tr>
-          <tr><td><code>agent-skills/</code></td><td>给外部 Agent 用的 BaoCut skill（<em>怎么调用 BaoCut</em>），CLI + MCP 同一起源渲染</td><td>agent-skills/baocut/SKILL.md</td></tr>
+          <tr><td><code>skills/baocut/built-in-skills/</code></td><td>内置 Agent craft skills（<em>怎么做</em>），Runtime 作为内置目录加载，README 是索引</td><td>subtitle-workflow · talking-head-cut · motion-graphics</td></tr>
+          <tr><td><code>skills/</code></td><td>BaoCut skill（<em>怎么调用 BaoCut</em>），CLI + MCP 同一起源渲染；内置 craft 在 <code>baocut/built-in-skills/</code></td><td>skills/baocut/SKILL.md</td></tr>
         </tbody>
       </table>
 
@@ -1508,7 +1508,7 @@ const nodeData = {
       ['作用', '让 Claude Code / Codex / Cursor / Gemini CLI / Pi / OpenCode …在自己的会话里调用 BaoCut 完成视频工作'],
       ['工具目录', 'videos.* · edits.* · speak · transcribe · translate · dub · export · jobs.* · tasks.* 等'],
       ['权限模型', '每个对外服务有独立的监听面、认证与访问策略，默认关闭（D15）'],
-      ['Skill vs skills/', 'agent-skills/ 是「怎么用 BaoCut」；skills/ 是 BaoCut 内部 craft「怎么做字幕/剪辑/动效」']
+      ['Skill vs built-in-skills/', 'skills/baocut/ 是「怎么用 BaoCut」；skills/baocut/built-in-skills/ 是 BaoCut 内部 craft「怎么做字幕/剪辑/动效」']
     ]
   },
   web: {
@@ -1852,8 +1852,8 @@ const repoStructure = [
   ]},
   { name: 'designs/baocut/', type: 'dir', desc: '界面原型（UI 改动先到这里 → 确认后同步到 Electron 与 Web）' },
   { name: 'templates/', type: 'dir', desc: '内置创作模板：promo-ad / vlog-edit / launch-film / data-story 等 24+ 套' },
-  { name: 'skills/', type: 'dir', desc: '内置 Agent craft skills：subtitle-workflow · talking-head-cut · motion-graphics · narration …' },
-  { name: 'agent-skills/baocut/', type: 'dir', desc: '给外部 Agent 的 BaoCut skill（SKILL.md），CLI + MCP 同源渲染' },
+  { name: 'skills/baocut/', type: 'dir', desc: 'BaoCut skill（SKILL.md，入口），CLI + MCP 同源渲染' },
+  { name: 'skills/baocut/built-in-skills/', type: 'dir', desc: '内置 Agent craft skills：subtitle-workflow · talking-head-cut · motion-graphics · narration …（README 是索引）' },
   { name: 'scripts/legacy-import/', type: 'dir', desc: '一次性 v1/v2 → v3 迁移脚本（不进产品 workspace）' },
   { name: 'Cargo.toml · Cargo.lock', type: 'file', desc: 'Rust workspace 根配置（crates/* + bindings/*）' },
   { name: 'package.json · package-lock.json', type: 'file', desc: 'npm workspace 根配置（apps/* + packages/*）' },

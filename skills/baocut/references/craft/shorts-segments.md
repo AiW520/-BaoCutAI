@@ -1,4 +1,4 @@
-<!-- 由 tools/sync-agent-skill.ts 从 skills/shorts-segments/ 生成，不要手改：改源文件后运行 npm run build:agent-skill -->
+<!-- 由 tools/sync-agent-skill.ts 从 skills/baocut/built-in-skills/shorts-segments/ 生成，不要手改：改源文件后运行 npm run build:agent-skill -->
 
 # 从长视频里切短视频
 

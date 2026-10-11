@@ -6,7 +6,10 @@ import { SKILL_LIMITS } from '@baocut/protocol';
 import { SkillPrefsStore } from '@baocut/runtime-storage';
 import { SkillCatalog, resolveBuiltinSkillsDir, type LoadedSkill } from './skill-catalog.ts';
 
-/** 仓库根 `skills/` 里随应用分发的内置 skill。新增或改名时同步这里与 `skills/README.md`。 */
+/**
+ * 仓库根 `skills/baocut/built-in-skills/` 里随应用分发的内置 skill。新增或改名时同步这里、那里 `README.md` 的索引与说明书
+ * `SKILL.md` 的「内置 skill」表。
+ */
 const EXPECTED_IDS = [
   'cover-and-title',
   'motion-graphics',
@@ -24,6 +27,9 @@ const EXPECTED_IDS = [
   'video-production',
   'video-summary',
 ];
+
+/** 只给会话内智能体的内置 skill：说明书的路由只在工具桥面列出它们，CLI 面的「内置 skill」表也不列。 */
+const AGENT_ONLY_IDS = ['slides'];
 
 /** 会话开始时的 skill 索引只取 description 的前 300 个字符（`skill-brief.ts`），内置的写在这个长度以内。 */
 const INDEX_DESCRIPTION_CHARS = 300;
@@ -51,8 +57,8 @@ describe('仓库里的内置 skill', () => {
     await fs.rm(tmp, { recursive: true, force: true });
   });
 
-  it('开发时从仓库根找到 skills/，全部加载、没有诊断', async () => {
-    expect(path.basename(builtinDir)).toBe('skills');
+  it('开发时从仓库根找到 skills/baocut/built-in-skills/，全部加载、没有诊断', async () => {
+    expect(builtinDir.endsWith(path.join('skills', 'baocut', 'built-in-skills'))).toBe(true);
     expect(skills.map((s) => s.id).sort()).toEqual(EXPECTED_IDS);
     const list = await catalog.list();
     expect(list.diagnostics).toEqual([]);
@@ -89,5 +95,21 @@ describe('仓库里的内置 skill', () => {
         expect(paths.has(match[1]!), `${skill.id} → ${match[1]}`).toBe(true);
       }
     }
+  });
+
+  it('目录 README.md 的索引列出全部内置 skill，每行链到它的 SKILL.md', async () => {
+    const readme = await fs.readFile(path.join(builtinDir, 'README.md'), 'utf8');
+    const rows = [...readme.matchAll(/^\| \[`([a-z0-9-]+)`\]\(([^)]+)\) \|/gm)];
+    expect(rows.map((row) => row[1]).sort()).toEqual(EXPECTED_IDS);
+    for (const [, id, target] of rows) expect(target, id).toBe(`${id}/SKILL.md`);
+  });
+
+  it('说明书 SKILL.md 的「内置 skill」表（只给 CLI 面）列出全部内置 skill，只给会话内智能体的除外', async () => {
+    const manual = await fs.readFile(path.join(builtinDir, '..', 'SKILL.md'), 'utf8');
+    const start = manual.indexOf('### 内置 skill');
+    expect(start).toBeGreaterThan(0);
+    const section = manual.slice(start, manual.indexOf('<!-- /surface -->', start));
+    const ids = [...section.matchAll(/^\| \{\{skill:([a-z0-9-]+)\}\} \|/gm)].map((row) => row[1]);
+    expect(ids.sort()).toEqual(EXPECTED_IDS.filter((id) => !AGENT_ONLY_IDS.includes(id)));
   });
 });

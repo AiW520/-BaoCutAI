@@ -30,7 +30,7 @@ const ffmpeg = (() => {
   }
 })();
 
-const EXEMPLAR = fileURLToPath(new URL('../../../../skills/motion-graphics/exemplars/lower-third/16x9.html', import.meta.url));
+const EXEMPLAR = fileURLToPath(new URL('../../../../skills/baocut/built-in-skills/motion-graphics/exemplars/lower-third/16x9.html', import.meta.url));
 const LONG = { timeoutMs: 600_000 };
 
 async function rejection(promise: Promise<unknown>): Promise<RpcError> {

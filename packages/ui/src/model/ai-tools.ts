@@ -740,7 +740,7 @@ export function laterNote(): string {
 }
 
 /**
- * 每个工具配一个内置 skill（仓库根 `skills/<id>/`）：工具页的提示词框默认挂着它，可以摘掉，也可以再挂别的。
+ * 每个工具配一个内置 skill（仓库根 `skills/baocut/built-in-skills/<id>/`）：工具页的提示词框默认挂着它，可以摘掉，也可以再挂别的。
  * 翻译字幕与刷新过期译文共用一个；起标题与写简介共用一个。
  */
 export const TOOL_SKILL: Readonly<Partial<Record<AiToolId, string>>> = {

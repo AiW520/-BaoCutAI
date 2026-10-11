@@ -8,8 +8,8 @@ describe('packagedResources', () => {
     expect(resources).toEqual({
       binDir: 'C:\\Users\\a\\AppData\\Local\\Programs\\BaoCut\\resources\\bin',
       templatesDir: 'C:\\Users\\a\\AppData\\Local\\Programs\\BaoCut\\resources\\templates',
-      skillsDir: 'C:\\Users\\a\\AppData\\Local\\Programs\\BaoCut\\resources\\skills',
-      agentSkillsDir: 'C:\\Users\\a\\AppData\\Local\\Programs\\BaoCut\\resources\\agent-skills',
+      skillsDir: 'C:\\Users\\a\\AppData\\Local\\Programs\\BaoCut\\resources\\skills\\baocut\\built-in-skills',
+      agentSkillsDir: 'C:\\Users\\a\\AppData\\Local\\Programs\\BaoCut\\resources\\skills',
       modelAssetsDir: 'C:\\Users\\a\\AppData\\Local\\Programs\\BaoCut\\resources\\model-assets',
       webDist: 'C:\\Users\\a\\AppData\\Local\\Programs\\BaoCut\\resources\\web',
       slidesEditorDist: 'C:\\Users\\a\\AppData\\Local\\Programs\\BaoCut\\resources\\slides-editor',
@@ -21,8 +21,8 @@ describe('packagedResources', () => {
     expect(env).toEqual({
       BAOCUT_BIN_DIR: '/r/bin',
       BAOCUT_TEMPLATES_DIR: '/r/templates',
-      BAOCUT_SKILLS_DIR: '/r/skills',
-      BAOCUT_AGENT_SKILLS_DIR: '/r/agent-skills',
+      BAOCUT_SKILLS_DIR: '/r/skills/baocut/built-in-skills',
+      BAOCUT_AGENT_SKILLS_DIR: '/r/skills',
       BAOCUT_MODEL_ASSETS_DIR: '/r/model-assets',
       BAOCUT_WEB_DIST: '/r/web',
       BAOCUT_SLIDES_EDITOR_DIST: '/r/slides-editor',

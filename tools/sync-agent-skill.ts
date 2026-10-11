@@ -2,10 +2,11 @@
 /**
  * 说明书的同步（Agent 面设计 §8.3、§8.6、§8.7）：
  *
- * 1. craft 副本：每个内置 skill `skills/<id>/`（SKILL.md + references/*.md）合成一页 `agent-skills/baocut/references/craft/<id>.md`。
+ * 1. craft 副本：每个内置 skill `skills/baocut/built-in-skills/<id>/`（SKILL.md + references/*.md）合成一页
+ *    `skills/baocut/references/craft/<id>.md`。
  *    front matter 去掉，正文开头的一级标题作标题（没有时用 `name`）、`description` 作引言，references 作二级附录；工具桥的工具名按 CLI 面改写
  *    （`documents_read` → `baocut documents read`，`edits_apply` 的操作名不动），`skills_read` 的说法改成读本页附录或别的
- *    craft 页；正文里的标记与占位符按 CLI 面渲染（与说明书同一个渲染器）。`skills/` 里没有了的 craft 页删掉。
+ *    craft 页；正文里的标记与占位符按 CLI 面渲染（与说明书同一个渲染器）。`built-in-skills/` 里没有了的 craft 页删掉。
  * 2. 生成块：说明书里 `<!-- generated: <名字> -->` … `<!-- /generated -->` 之间的内容按目录重写：
  *    `common-ops`（最常用的 8 个 `edits_apply` 操作，来自 `edits_ops` 的说明与示例）、`error-codes`（错误码 → 退出码 →
  *    下一步，来自 `apps/cli/src/envelope.ts` 的表）、`tool-map`（MCP 工具 ↔ CLI 命令 ↔ 效果，来自目录）。
@@ -13,7 +14,7 @@
  *
  *   node tools/sync-agent-skill.ts                 写入
  *   node tools/sync-agent-skill.ts --check         与磁盘不一致（或渲染不过）时退出码 1
- *   node tools/sync-agent-skill.ts --root <目录>   换一个根（下面有 skills/ 与 agent-skills/baocut/，测试的夹具用它）
+ *   node tools/sync-agent-skill.ts --root <目录>   换一个根（下面有 skills/baocut/ 与 skills/baocut/built-in-skills/，测试的夹具用它）
  *
  * 根 `package.json` 的 `build:agent-skill` 跑它。
  */
@@ -26,6 +27,7 @@ import { EXIT_BY_CODE } from '../apps/cli/src/envelope.ts';
 import { ToolCatalog } from '../packages/runtime-core/src/agent-tools/tool-catalog.ts';
 import { allToolSets } from '../packages/runtime-core/src/agent-tools/all-tool-sets.ts';
 import {
+  AGENT_SKILL_BUILTIN_DIR,
   AGENT_SKILL_CRAFT_DIR,
   AGENT_SKILL_ID,
   AgentSkillRenderError,
@@ -74,9 +76,9 @@ export interface SyncResult {
 
 /** 算出同步后应有的文件，不写盘。 */
 export function buildAgentSkillSync(root: string, inputs: SyncInputs = defaultSyncInputs()): SyncResult {
-  const skillsDir = path.join(root, 'skills');
-  const agentRel = `agent-skills/${AGENT_SKILL_ID}`;
+  const agentRel = `skills/${AGENT_SKILL_ID}`;
   const agentDir = path.join(root, agentRel);
+  const skillsDir = path.join(agentDir, AGENT_SKILL_BUILTIN_DIR);
   if (!isDirectory(agentDir)) throw new Error(`没有说明书目录 ${agentDir}`);
   const files = new Map<string, string>();
   const warnings: string[] = [];
@@ -126,7 +128,7 @@ export function buildAgentSkillSync(root: string, inputs: SyncInputs = defaultSy
 
 /** 一份 craft 合成一页。 */
 export function composeCraft(id: string, dir: string, craftIds: ReadonlySet<string>, inputs: SyncInputs, warnings: string[]): string {
-  const sourceRel = `skills/${id}`;
+  const sourceRel = `skills/${AGENT_SKILL_ID}/${AGENT_SKILL_BUILTIN_DIR}/${id}`;
   const skillSource = fs.readFileSync(path.join(dir, 'SKILL.md'), 'utf8');
   const parsed = parseSkillFrontmatter(skillSource);
   if (!parsed.ok) throw new Error(`${sourceRel}/SKILL.md：${parsed.problem}`);
@@ -166,7 +168,7 @@ export function composeCraft(id: string, dir: string, craftIds: ReadonlySet<stri
 
 interface RewriteContext {
   id: string;
-  /** 源文件（报错用）：`skills/<id>/SKILL.md`。 */
+  /** 源文件（报错用）：`skills/baocut/built-in-skills/<id>/SKILL.md`。 */
   file: string;
   /** 正文第一行在源文件里的行号减一。 */
   lineOffset: number;

@@ -19,10 +19,10 @@ import {
   resolveBuiltinAgentSkillsDir,
   type AgentSkillFiles,
 } from './agent-skill-renderer.ts';
-import { findRepoDir } from './skill-catalog.ts';
+import { findRepoDir, resolveBuiltinSkillsDir } from './skill-catalog.ts';
 import { parseSkillFrontmatter } from './skill-frontmatter.ts';
 
-const FIXTURE = path.join(path.dirname(fileURLToPath(import.meta.url)), 'testing', 'agent-skill-fixture', 'agent-skills', 'baocut');
+const FIXTURE = path.join(path.dirname(fileURLToPath(import.meta.url)), 'testing', 'agent-skill-fixture', 'skills', 'baocut');
 const cliCatalog = new ToolCatalog(allToolSets(), silentLogger, { surface: 'cli' });
 const agentCatalog = new ToolCatalog(allToolSets(), silentLogger, { surface: 'agent' });
 const CLI = { tools: cliCatalog.list() };
@@ -91,6 +91,11 @@ describe('说明书的渲染器', () => {
     expect(cli.get('references/conventions.md')).not.toContain('{{');
     expect(cli.has('references/craft/demo-polish.md')).toBe(true);
     expect(bridgeNamesInCliFace(cli)).toEqual([]);
+  });
+
+  it('读说明书目录时跳过同目录下的 built-in-skills/：内置 skill 本身不是说明书的页，也不随 CLI 面装进宿主', () => {
+    expect(fs.existsSync(path.join(FIXTURE, 'built-in-skills', 'demo-polish', 'SKILL.md'))).toBe(true);
+    expect([...source.keys()].filter((file) => file.startsWith('built-in-skills/'))).toEqual([]);
   });
 
   it('工具桥面：工具名与字段名原样，craft 与页面链接换成 skills_read，没有 CLI 的痕迹', () => {
@@ -312,17 +317,17 @@ describe('说明书的位置', () => {
   });
 
   it('环境变量优先，其次是打包资源，最后是仓库根', () => {
-    expect(resolveBuiltinAgentSkillsDir({ BAOCUT_AGENT_SKILLS_DIR: '/x/agent-skills' })).toBe('/x/agent-skills');
+    expect(resolveBuiltinAgentSkillsDir({ BAOCUT_AGENT_SKILLS_DIR: '/x/skills' })).toBe('/x/skills');
     const resources = fs.mkdtempSync(path.join(os.tmpdir(), 'baocut-agent-skills-'));
     dirs.push(resources);
-    fs.mkdirSync(path.join(resources, 'agent-skills'));
-    expect(resolveBuiltinAgentSkillsDir({}, [resources])).toBe(path.join(resources, 'agent-skills'));
-    expect(resolveBuiltinAgentSkillsDir({}, [path.join(resources, 'missing')])).toBe(findRepoDir('agent-skills'));
+    fs.mkdirSync(path.join(resources, 'skills'));
+    expect(resolveBuiltinAgentSkillsDir({}, [resources])).toBe(path.join(resources, 'skills'));
+    expect(resolveBuiltinAgentSkillsDir({}, [path.join(resources, 'missing')])).toBe(findRepoDir('skills'));
   });
 });
 
 describe('仓库里的说明书', () => {
-  const dir = path.join(findRepoDir('agent-skills')!, 'baocut');
+  const dir = path.join(findRepoDir('skills')!, 'baocut');
 
   // §8.6 的三条测试，对仓库里真实的说明书与真实的工具目录（Runtime 的工具组，按面取视图）。
   const source = readAgentSkillDir(dir);
@@ -337,7 +342,7 @@ describe('仓库里的说明书', () => {
   it('内置 skill 的 front matter 与说明书的路由表不写 a_b 工具名（它们原样进索引与引言，不经工具名改写）', () => {
     const bare = (text: string) =>
       CLI_COMPOUND.filter((name) => new RegExp(`(?<![A-Za-z0-9_{:])${name}(?![A-Za-z0-9_])`).test(text.replace(/\{\{[^}]*\}\}/g, '')));
-    const skillsDir = findRepoDir('skills')!;
+    const skillsDir = resolveBuiltinSkillsDir({})!;
     const hits: string[] = [];
     for (const id of fs.readdirSync(skillsDir)) {
       const file = path.join(skillsDir, id, 'SKILL.md');

@@ -14,10 +14,11 @@ export const RESOURCE_DIRS = {
   bin: 'bin',
   /** 内置创作模板（仓库根的 `templates/`）。 */
   templates: 'templates',
-  /** 内置 Agent skill（仓库根的 `skills/`）。 */
+  /**
+   * 仓库根的 `skills/`：`baocut/` 是给 Agent 的说明书（`baocut skill install` 渲染后装进宿主），`baocut/built-in-skills/`
+   * 是内置 Agent skill。
+   */
   skills: 'skills',
-  /** 给外部 Agent 的说明书（仓库根的 `agent-skills/`，`baocut skill install` 渲染后装进宿主）。 */
-  agentSkills: 'agent-skills',
   /** 自测样本与内置音色的录音（`packages/models/assets`）。 */
   modelAssets: 'model-assets',
   /** Web 客户端的构建产物（`apps/web/dist`）。 */
@@ -44,8 +45,8 @@ export function packagedResources(resourcesPath: string, pathApi: path.PlatformP
   return {
     binDir: pathApi.join(resourcesPath, RESOURCE_DIRS.bin),
     templatesDir: pathApi.join(resourcesPath, RESOURCE_DIRS.templates),
-    skillsDir: pathApi.join(resourcesPath, RESOURCE_DIRS.skills),
-    agentSkillsDir: pathApi.join(resourcesPath, RESOURCE_DIRS.agentSkills),
+    skillsDir: pathApi.join(resourcesPath, RESOURCE_DIRS.skills, 'baocut', 'built-in-skills'),
+    agentSkillsDir: pathApi.join(resourcesPath, RESOURCE_DIRS.skills),
     modelAssetsDir: pathApi.join(resourcesPath, RESOURCE_DIRS.modelAssets),
     webDist: pathApi.join(resourcesPath, RESOURCE_DIRS.web),
     slidesEditorDist: pathApi.join(resourcesPath, RESOURCE_DIRS.slidesEditor),

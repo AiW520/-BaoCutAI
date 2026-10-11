@@ -25,8 +25,7 @@
 | `docs/` | 产品、架构与规范文档，见 [docs/README.md](README.md) |
 | `designs/` | 界面原型，自成一体，有自己的 `AGENTS.md` |
 | `templates/` | 随应用分发的内置创作模板，一个模板一个目录，格式见[模板包规范](spec/template-spec.md) |
-| `skills/` | 随应用分发的内置 Agent skill，一个 skill 一个目录，见 [`skills/README.md`](../skills/README.md) 与[架构设计 §3.8](architecture/architecture-design.md) |
-| `agent-skills/` | 「怎么用 BaoCut」的说明书（`baocut/`，BaoCut skill），随 CLI 与桌面端分发；一个来源渲染成 CLI 面与工具桥面。与 `skills/` 不同：`skills/` 是 craft（做法），由 Runtime 整体加载；这里是机制、目录与硬规则，其中的 craft 页由 `tools/sync-agent-skill.ts` 从 `skills/` 同步，不手改。见 [`agent-skills/README.md`](../agent-skills/README.md)、[架构设计 §3.8](architecture/architecture-design.md) 与 [Agent 能力面设计 §8](design/agent-surface/agent-surface-design.md#8-baocut-skill) |
+| `skills/` | 「怎么用 BaoCut」的说明书（`baocut/`，BaoCut skill）是入口，随 CLI 与桌面端分发；一个来源渲染成 CLI 面与工具桥面。随应用分发的内置 Agent skill（craft，做法）在它下面的 `baocut/built-in-skills/`，一个 skill 一个目录，由 Runtime 作为内置目录加载，[索引](../skills/baocut/built-in-skills/README.md)在那里；说明书里的 craft 副本（`baocut/references/craft/`）由 `tools/sync-agent-skill.ts` 从它同步，不手改。见 [`skills/README.md`](../skills/README.md)、[架构设计 §3.8](architecture/architecture-design.md) 与 [Agent 能力面设计 §8](design/agent-surface/agent-surface-design.md#8-baocut-skill) |
 
 两个 workspace 并存，各管各的依赖：
 

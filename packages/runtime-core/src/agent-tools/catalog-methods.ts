@@ -15,7 +15,7 @@ import { defaultToolRisk } from './tool-scope.ts';
  * 只给 `cli` 与 `desktop` 连接：浏览器（`web`）、对外服务与 `agent` 连接一律 `forbidden`；Web 服务的白名单里也没有 `catalog.*`。
  * 工具层的结果与拒绝都放在返回值里（`{ ok }`），拒绝与 MCP 工具结果的 `error` 是同一个对象（`errorBody`）。
  *
- * `catalog.agentSkill` 把说明书（`agent-skills/baocut/`）按 CLI 面渲染给 `baocut skill install`：渲染器在 Runtime 这边，CLI 仍只经
+ * `catalog.agentSkill` 把说明书（`skills/baocut/`）按 CLI 面渲染给 `baocut skill install`：渲染器在 Runtime 这边，CLI 仍只经
  * Client 与协议（架构设计 §13.1）；`{{tool:…}}` 按这份目录对终端的视图核对。每次调用都重新读目录。
  */
 export function catalogMethods(
@@ -74,7 +74,7 @@ function agentSkill(root: string | null, tools: ToolCatalog): CatalogAgentSkill 
     else throw error;
   }
   if (!sourceDir || !files) {
-    throw new RpcError('not-found', RcSkills.agentSkillDirNotFound({ dir: `agent-skills/${AGENT_SKILL_ID}` }), {
+    throw new RpcError('not-found', RcSkills.agentSkillDirNotFound({ dir: `skills/${AGENT_SKILL_ID}` }), {
       code: 'AGENT_SKILL_NOT_FOUND',
       ...(sourceDir ? { path: sourceDir } : {}),
     });

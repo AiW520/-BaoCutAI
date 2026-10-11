@@ -143,7 +143,7 @@ export const TEMPLATE_VERIFICATION_LIMITS = {
 /** 模板 id：小写字母开头，小写字母、数字与单个连字符，等于目录名。 */
 export const TEMPLATE_ID_PATTERN = /^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$/;
 
-/** `skills` 里的 craft id（仓库根 `skills/<id>`）：与模板 id 同一种 kebab-case。 */
+/** `skills` 里的 craft id（仓库根 `skills/baocut/built-in-skills/<id>`）：与模板 id 同一种 kebab-case。 */
 export const TEMPLATE_SKILL_ID_PATTERN = TEMPLATE_ID_PATTERN;
 
 /**
@@ -243,7 +243,7 @@ export interface TemplateManifest {
   brief?: string;
   /** 待填项，`brief`（scene）或 `prompt.md`（example）里的每个占位符都要在这里声明，声明的每项都要被引用。 */
   fields?: TemplateField[];
-  /** 做这类成片建议先读的 craft（`skills/<id>`）。 */
+  /** 做这类成片建议先读的 craft（`skills/baocut/built-in-skills/<id>`）。 */
   skills?: string[];
   author: string;
   source: TemplateSource;

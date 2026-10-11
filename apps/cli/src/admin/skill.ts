@@ -136,7 +136,7 @@ function removeTarget(target: string): void {
 }
 
 export interface SkillPaths {
-  /** 说明书的来源（`<…>/agent-skills/baocut`）；找不到时 null。 */
+  /** 说明书的来源（`<…>/skills/baocut`）；找不到时 null。 */
   sourceDir: string | null;
   /** `--link` 时渲染结果放的位置。 */
   linkDir: string;

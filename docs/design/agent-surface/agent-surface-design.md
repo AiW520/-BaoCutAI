@@ -365,9 +365,9 @@ Streamable HTTP、回环监听、按客户端发令牌、`Host` 与 `Origin` 检
 
 skill 是给外部 Agent 的说明书：何时用 BaoCut、怎么启动、每类任务用哪条命令、prompts 与最佳实践、硬规则、怎么交付。它不复制参数（参数以 `spec` 为准），不描述 BaoCut 内部。
 
-它与仓库现有的 `skills/` 不是一回事：
+它与内置的 craft skill 不是一回事：
 
-| | `skills/<id>/`（10 个 craft skill） | BaoCut skill |
+| | `skills/baocut/built-in-skills/<id>/`（内置 craft skill） | BaoCut skill |
 | --- | --- | --- |
 | 读者 | BaoCut 自己的会话内智能体 | 其他 Agent（Claude Code、Codex、Cursor…） |
 | 内容 | 一种做法（润色、翻译、分章、剪口播…），引用工具桥的工具名 | 怎么用 CLI / MCP 操作 BaoCut，加上 craft |
@@ -375,14 +375,14 @@ skill 是给外部 Agent 的说明书：何时用 BaoCut、怎么启动、每类
 
 ### 8.2 放哪里
 
-**不放进 `skills/`**：那个目录由 Runtime 整体加载给会话内智能体，`builtin-skills.test.ts` 核对清单，一份教人用 CLI 的 skill 放进去会被会话内智能体读到，而内容对它是错的（它该用工具桥，不该开子进程跑 `baocut`）。
+**说明书是入口，内置 craft 放在它下面**（2026-10-10 起；原先说明书在顶层 `agent-skills/baocut/`、craft 在顶层 `skills/<id>/`）：仓库根 `skills/baocut/` 是说明书，内置 craft 在 `skills/baocut/built-in-skills/<id>/`，那里的 `README.md` 是索引。Runtime 只把 `built-in-skills/` 当内置 skill 目录加载（`builtin-skills.test.ts` 核对清单），说明书本身不会被会话内智能体当成 craft 读到——一份教人用 CLI 的 skill 对它是错的（它该用工具桥，不该开子进程跑 `baocut`）；渲染器读说明书时也跳过 `built-in-skills/`，它不进任一面的渲染结果。
 
-新开顶层目录 `agent-skills/baocut/`，在仓库约定的目录表加一行；随 BaoCut 发布（桌面端打进 `<resources>/agent-skills/`；CLI 不另带一份，经 Runtime 的 `catalog.agentSkill` 取渲染结果），由 `baocut skill install --agent <宿主> [--dir <目录>]` 复制到宿主的 skills 目录（Claude Code `~/.claude/skills/baocut/`、Codex `~/.codex/skills/baocut/`、Cursor `~/.cursor/skills/baocut/`、Gemini CLI `~/.gemini/skills/baocut/`）。复制的是 CLI 面的渲染结果，不是源目录；`--link` 时渲染结果写进 `<Runtime Home>/agent-skills/baocut/`，宿主里放指向它的链接，之后对任一宿主再装一次就一起更新。`skill install` 是管理桶命令。
+随 BaoCut 发布（桌面端把整个 `skills/` 打进 `<resources>/skills/`；CLI 不另带一份，经 Runtime 的 `catalog.agentSkill` 取渲染结果），由 `baocut skill install --agent <宿主> [--dir <目录>]` 复制到宿主的 skills 目录（Claude Code `~/.claude/skills/baocut/`、Codex `~/.codex/skills/baocut/`、Cursor `~/.cursor/skills/baocut/`、Gemini CLI `~/.gemini/skills/baocut/`）。复制的是 CLI 面的渲染结果，不是源目录；`--link` 时渲染结果写进 `<Runtime Home>/agent-skills/baocut/`，宿主里放指向它的链接，之后对任一宿主再装一次就一起更新。`skill install` 是管理桶命令。
 
 ### 8.3 内容结构
 
 ```text
-agent-skills/baocut/
+skills/baocut/
   SKILL.md                      入口（见 8.4）
   references/
     start.md                    找到 CLI、runtime ensure、版本门、status 预检、没有 Runtime 时怎么办
@@ -397,14 +397,17 @@ agent-skills/baocut/
       system.md                 runtime、spec、status，以及管理桶命令（要用户同意）
       web.md                    网页版编辑器：web open --video、链接与会话、浏览器用来看与拖、交付时的新链接（只给 CLI 面，§8.8）
     workflows.md                端到端 recipe：链接 → 转录 → 双语字幕 → 成片；润色后翻译；翻译配音；剪口播；切短视频；总结与写稿；每条按 §8.7 的骨架写
-    craft/                      由 skills/<id>/ 同步来的 10 份 craft（prompts、步骤、best practice）
+    craft/                      由 built-in-skills/<id>/ 同步来的 craft（prompts、步骤、best practice），CLI 面用
     mcp.md                      走 MCP 时怎么接、工具名映射、jobs_wait 的用法
+  built-in-skills/              内置 craft 的源，一个 skill 一个目录，README.md 是索引；不是说明书的页，不随 skill install 装进宿主
 ```
 
-**craft 不 fork。** `skills/<id>/SKILL.md` 与它们的 `references/` 就是用户要的 prompts、workflow 与最佳实践，单一来源仍是 `skills/<id>/`。两条路把它们交给外部 Agent：
+**craft 不 fork。** `built-in-skills/<id>/SKILL.md` 与它们的 `references/` 就是用户要的 prompts、workflow 与最佳实践，单一来源仍是 `built-in-skills/<id>/`。两条路把它们交给外部 Agent：
 
 1. **同步副本**：构建脚本 `tools/sync-agent-skill.ts`（`npm run build:agent-skill`，`--check` 核对）把每个内置 skill 复制成 `references/craft/<id>.md`（合并它的 `references/`），并把其中的工具桥工具名按 §4.1 的规则改写成 CLI 命令（`documents_read` → `baocut documents read`，一级动词 `speak` → `baocut speak`；连着 `-`、`/`、`.` 或后跟 `:` 的字面量是文件名或字段，不改）；craft 引用共享目录页时，`用 skills_read 读 baocut-catalog-<页>` 改写为该目录页的相对链接，不把参考表展开进附录；目标页必须存在。只在会话里有、终端没有对应命令的工具（`downloads_save`）换成不提工具名的兜底写法（终端里直接把文件路径告诉用户）。测试断言副本与源一致。
 2. **现取**：`baocut skills read <id>` 随时能取当前 Runtime 里的版本（含用户自己添加的 skill）。SKILL.md 说明两者的关系：副本是随 skill 发布时的版本，现取是这台机器上的版本。
+
+SKILL.md 第 3 节末尾的「内置 skill」表（只在 CLI 面）给每份内置 craft 一个名字与一句话，`{{skill:<id>}}` 链到副本，第 1 节的路由没覆盖的任务按它判断该读哪一份；会话内智能体看会话开始的 skill 索引，不重复这张表。只给会话内智能体的 craft（`slides`）不列。
 
 ### 8.4 SKILL.md 的大纲
 
@@ -427,15 +430,15 @@ SKILL.md 与 `references/` 的正文等 §10 的第 2 阶段（CLI 切到目录�
 
 用户的补充要求（2026-10-06）：BaoCut 自己的会话内智能体也要用这一套——给它一个任务，它也是按同一份 skill 的说法、调同一份工具目录完成；BaoCut agent 与 Codex / Claude Code 读的是同一套 skills，背后是同一套工具。
 
-机制上这已经成立一半：工具桥、MCP 与 CLI 是同一份 `ToolCatalog`，会话内智能体调的工具名就是 `a_b`，与 CLI 只差 §4.1 那条映射。差的是说明书这一层：原来会话内的指导是手写的 `guidance.ts` 加内置 skill 索引，外部 Agent 的是 §8.3 的 `agent-skills/baocut/`，两份必然漂移。决定收成**一个来源、两种渲染**：
+机制上这已经成立一半：工具桥、MCP 与 CLI 是同一份 `ToolCatalog`，会话内智能体调的工具名就是 `a_b`，与 CLI 只差 §4.1 那条映射。差的是说明书这一层：原来会话内的指导是手写的 `guidance.ts` 加内置 skill 索引，外部 Agent 的是 §8.3 的说明书，两份必然漂移。决定收成**一个来源、两种渲染**：
 
 | | 外部 Agent（CLI 面） | BaoCut 的会话内智能体（工具桥面） |
 | --- | --- | --- |
-| 来源 | `agent-skills/baocut/`（SKILL.md + `references/`） | 同一份 |
+| 来源 | `skills/baocut/`（SKILL.md + `references/`） | 同一份 |
 | 形态 | 一个 skill，整体装进宿主的 skills 目录 | SKILL.md 正文渲染成 system prompt 的「工作方式」段（取代 `guidance.ts` 手写的内容）；`references/catalog/*.md`、`workflows.md` 与 `conventions.md` 成为内置的说明书页（`baocut-catalog-<页>`、`baocut-workflows`、`baocut-conventions`；工具桥面正文为空的页除外，§8.8），craft 照旧是内置 skill；索引附在指导后，按需 `skills_read` |
 | 工具的写法 | `baocut documents read` | `documents_read` |
 | 不适用的段落 | — | 找 CLI、`runtime ensure`、版本门、`--yes`、退出码、落盘到 `.baocut-out/`、MCP 接法、网页版编辑器（§8.8） |
-| craft | `references/craft/<id>.md`（从 `skills/<id>/` 同步，§8.3） | `skills/<id>/` 本身 |
+| craft | `references/craft/<id>.md`（从 `built-in-skills/<id>/` 同步，§8.3） | `built-in-skills/<id>/` 本身 |
 
 写法上用两个标记，不写两份文稿：
 
@@ -443,7 +446,7 @@ SKILL.md 与 `references/` 的正文等 §10 的第 2 阶段（CLI 切到目录�
 - **工具名占位**：正文里的工具写 `{{tool:documents_read}}`，渲染时按面输出 `baocut documents read` 或 `documents_read`；参数名同理用字段名，CLI 面渲染成 `--kebab-case`。craft 同步脚本（§8.3）与这里共用同一个渲染函数。
 - **craft 占位**：引用一份 craft 写 `{{skill:polish-transcript}}`，CLI 面渲染成 `references/craft/polish-transcript.md` 的链接，工具桥面渲染成「`polish-transcript`（用 `skills_read` 读）」（紧跟在「读」后面时是「用 `skills_read` 读 `polish-transcript`」，不说两遍「读」）。入口与 workflows 用它指向方法，不写死任一面的路径。
 
-落地：`packages/runtime-core/src/skills/` 加一个渲染器，Runtime 读 `agent-skills/baocut/`（随应用分发在 `<resources>/agent-skills/`，开发时读仓库，与 `skills/` 的解析顺序相同）按工具桥面渲染出指导与内置 skill；`guidance.ts` 退化成渲染器的调用方，不再手写内容；工具名按 Runtime 真实的工具桥目录核对，找不到说明书或渲染不了时 Runtime 启动失败。说明书页只给会话内智能体（终端与 MCP 的 `skills_read` 读不到，那边读装好的 CLI 面），总在会话的 skill 索引里（排在 craft 前面），不进设置里的 skill 列表、不能开关：它们是入口指导引用的机制，关掉会让指导指向读不到的页；用户或内置 skill 用了同样的 id 时不加载那一份，记 `builtin-conflict`。`skills/` 目录只剩 craft（做法），「怎么用 BaoCut」的通用指导全部进 `agent-skills/baocut/`。测试：CLI 面的渲染里不出现 `a_b` 形式的工具名与 `skills_read` 的「现取」说法以外的工具桥用语；工具桥面的渲染里不出现 `baocut ` 命令、`--yes`、退出码；两面渲染出的硬规则条数相同；工具桥面正文为空（整页在 `cli` 块里）的目录页不登记成说明书页，指导或别的页在 `cli` 块外链到它时渲染失败。
+落地：`packages/runtime-core/src/skills/` 加一个渲染器，Runtime 读 `skills/baocut/`（随应用分发在 `<resources>/skills/baocut/`，开发时读仓库，与内置 skill 目录的解析顺序相同）按工具桥面渲染出指导与内置 skill；`guidance.ts` 退化成渲染器的调用方，不再手写内容；工具名按 Runtime 真实的工具桥目录核对，找不到说明书或渲染不了时 Runtime 启动失败。说明书页只给会话内智能体（终端与 MCP 的 `skills_read` 读不到，那边读装好的 CLI 面），总在会话的 skill 索引里（排在 craft 前面），不进设置里的 skill 列表、不能开关：它们是入口指导引用的机制，关掉会让指导指向读不到的页；用户或内置 skill 用了同样的 id 时不加载那一份，记 `builtin-conflict`。`skills/` 目录只剩 craft（做法），「怎么用 BaoCut」的通用指导全部进 `agent-skills/baocut/`。测试：CLI 面的渲染里不出现 `a_b` 形式的工具名与 `skills_read` 的「现取」说法以外的工具桥用语；工具桥面的渲染里不出现 `baocut ` 命令、`--yes`、退出码；两面渲染出的硬规则条数相同；工具桥面正文为空（整页在 `cli` 块里）的目录页不登记成说明书页，指导或别的页在 `cli` 块外链到它时渲染失败。
 
 不做的事：不让会话内智能体开子进程跑 `baocut`（它有工具桥）；不 fork craft；不为两个面各写一份硬规则。
 
@@ -451,9 +454,9 @@ SKILL.md 与 `references/` 的正文等 §10 的第 2 阶段（CLI 切到目录�
 
 ### 8.7 说明书的写法
 
-几条贯穿 `agent-skills/baocut/` 全部页面的写法，§10 第 3 阶段按此写，评审按此查：
+几条贯穿说明书（`skills/baocut/`）全部页面的写法，§10 第 3 阶段按此写，评审按此查：
 
-**方法与机制分层。** craft（`skills/<id>/`，同步成 `references/craft/`）与 `workflows.md` 只讲判断与步骤：何时剪、留哪句、停顿多长、先声后画；点名用哪个工具或操作（经 `{{tool:…}}`），但不抄旗标与参数字段，不解释机制。`conventions.md` 与 `catalog/*.md` 只讲机制：命令、回执怎么读、错误码之后做什么、上限；不替 Agent 做创作判断。两边用 `{{tool:…}}` / `{{skill:…}}` 互相指，不复制对方的内容。一页里同时出现「为什么这样剪」和「这个旗标怎么给」，就是放错了地方。
+**方法与机制分层。** craft（`built-in-skills/<id>/`，同步成 `references/craft/`）与 `workflows.md` 只讲判断与步骤：何时剪、留哪句、停顿多长、先声后画；点名用哪个工具或操作（经 `{{tool:…}}`），但不抄旗标与参数字段，不解释机制。`conventions.md` 与 `catalog/*.md` 只讲机制：命令、回执怎么读、错误码之后做什么、上限；不替 Agent 做创作判断。两边用 `{{tool:…}}` / `{{skill:…}}` 互相指，不复制对方的内容。一页里同时出现「为什么这样剪」和「这个旗标怎么给」，就是放错了地方。
 
 **三条底线。** 入口开头给出，所有验收对照：
 
@@ -472,7 +475,7 @@ SKILL.md 与 `references/` 的正文等 §10 的第 2 阶段（CLI 切到目录�
 
 **看一条视频的证据阶梯。** `catalog/media.md` 与 `workflows.md` 用同一个顺序：先完整导入原件、复用已有转写，缺的批量转录；在转写里按文字定位片段；再按时间批量取帧拼成带时间戳的接触表看构图与镜头分布，可疑区间加密采样、单帧细看；仍不知道剪点才做镜头切换检测；视频理解模型（如果配置了）放最后，问具体问题、要时间戳、对照原片核实。证据够了就停，彼此独立的读取一次发完。改动先做一段有代表性的，读回核对后再批量做，大改之后重新核对，没动的结果复用。
 
-**配音与生成的提示。** `speak` 的 `instructions` 与 `text` 是两件事：`instructions` 只写怎么说（语气、语速、场景、角色），`text` 只写说什么，两者方向一致（紧张的指令配紧张的台词）。指令不过度规定，模型会自然补全；不用真实品牌与真人做风格参照；同一角色全片用同一音色与同一基线。`instructions` 的语言按模型说明或已有试读证据选择，模型要求或更适合英文时用英文，否则用用户的语言；说明语言不改变台词的目标语言。表演可以要求缓慢或急促，能力与效果按模型判断，不承诺精确时长、不靠加速塞进预算。音色参考表按模型系列独立成 `catalog/voice-<模型系列>.md`，写明适用条件，由声音目录页引用；语言语速表只在 `catalog/voice-language-rates.md` 维护，craft 与目录页引用它，不再内嵌数据副本。`image` 的提示按固定顺序写：主体 → 外观或材质 → 场景 → 光 → 机位与构图 → 风格与质量 → 一句保真夹子（不要改什么）。通用提示规则放在 `catalog/voice.md` 与 `catalog/media.md` 的「怎么填这个字段」一节，不另立 craft；长到一屏放不下时再独立成 `skills/<id>/`。
+**配音与生成的提示。** `speak` 的 `instructions` 与 `text` 是两件事：`instructions` 只写怎么说（语气、语速、场景、角色），`text` 只写说什么，两者方向一致（紧张的指令配紧张的台词）。指令不过度规定，模型会自然补全；不用真实品牌与真人做风格参照；同一角色全片用同一音色与同一基线。`instructions` 的语言按模型说明或已有试读证据选择，模型要求或更适合英文时用英文，否则用用户的语言；说明语言不改变台词的目标语言。表演可以要求缓慢或急促，能力与效果按模型判断，不承诺精确时长、不靠加速塞进预算。音色参考表按模型系列独立成 `catalog/voice-<模型系列>.md`，写明适用条件，由声音目录页引用；语言语速表只在 `catalog/voice-language-rates.md` 维护，craft 与目录页引用它，不再内嵌数据副本。`image` 的提示按固定顺序写：主体 → 外观或材质 → 场景 → 光 → 机位与构图 → 风格与质量 → 一句保真夹子（不要改什么）。通用提示规则放在 `catalog/voice.md` 与 `catalog/media.md` 的「怎么填这个字段」一节，不另立 craft；长到一屏放不下时再独立成 `skills/baocut/built-in-skills/<id>/`。
 
 **模板与说明书的关系。** 场景模板（模板包规范 §5.2）的简报引导已经是「先问清主题、目标、受众、材料，再动手」；说明书不重写一份，入口只在「用户要做某类成片但没说清」那行指向它：有模板目录可用时选一个场景模板走它的简报，没有就按同样四项问。模板正文是用户侧的话，不含任一面的工具名，两个面不用渲染。
 
@@ -569,9 +572,9 @@ SKILL.md 与 `references/` 的正文等 §10 的第 2 阶段（CLI 切到目录�
 - CLI 不走 BaoCut 审批，`destructive` 要 `--yes`；确认的责任在 Agent 宿主。
 - 第一版 sugar 只有 `documents_put` 与 `assets_import`。
 - Agent 自译是默认路径，`translate` 是显式选择。
-- 外部 skill 放 `agent-skills/`，craft 以 `skills/<id>/` 为单一来源同步，不 fork。
+- 外部 skill 放 `skills/baocut/`（2026-10-10 前是顶层 `agent-skills/`），craft 以它下面的 `built-in-skills/<id>/` 为单一来源同步，不 fork。
 - 不考虑与 v2、现行 v3 CLI 的兼容；接口版本升到 `2`。
-- 说明书一个来源两种渲染（§8.6）：BaoCut 自己的智能体与外部 Agent 读同一份 `agent-skills/baocut/`，craft 仍以 `skills/<id>/` 为源。
+- 说明书一个来源两种渲染（§8.6）：BaoCut 自己的智能体与外部 Agent 读同一份 `skills/baocut/`，craft 仍以 `built-in-skills/<id>/` 为源。
 - 说明书的写法（§8.7）：方法与机制分层、三条底线、固定页面骨架、从目录生成常用操作块、看视频的证据阶梯、配音指令与台词分开、交付报告的三栏；说明书以中文为单一作者语言。
 - 阶段 1 实现时的裁决：`models_install` / `models_test`、`projects_create`、`videos_import_package`、`transcode`、`artifacts_save`、`videos_delete` 不开放给 MCP；`videos_frames` 与 `videos_import_package` 同步完成、算 `mutation`；`LocalScope` 对没有授权覆盖的外发以 `GRANT_REQUIRED` 拒绝、不代发授权；无项目时新建视频落到默认项目目录下的 `CLI` 项目；`jobs_retry` 沿用同一个 `jobId`（`attempt` 加一）。
 - 旁白成片（2026-10-06 复盘一次资讯快评的配音后定）：方法进 craft `narration`（旁白成片），会话内由 SKILL.md §1 的路由表指过去（两面同一张表）、外部面另由 `workflows.md` 第 8 条指过去；机制（引擎按约 60 个单元切块逐块合成、`speed` 只有 `speedRange` 不为 null 的模型接受、`seed` 是重配的旋钮）写在 `catalog/voice.md`。模板只在 `ai-news-take` 的示例请求里加一句「同一个声音、正常语速、太长就删词、不靠加速凑时长」；其余含旁白的 15 个模板不逐个改，靠 craft 路由覆盖。

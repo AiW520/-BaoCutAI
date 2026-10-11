@@ -219,8 +219,7 @@ BaoCut is under active development, with macOS Apple Silicon and Windows x64 pac
 | --- | --- |
 | [docs/](docs/README.md) | Product design, architecture, format and protocol specs, acceptance criteria. Start with the reading guide. |
 | [designs/baocut/](designs/baocut/README.md) | Interactive UI prototype; UI changes land here first. |
-| [skills/](skills/README.md) | Built-in craft skills the agent follows (subtitles, translation, talking-head cut, narration, motion graphics…). |
-| [agent-skills/](agent-skills/README.md) | The BaoCut skill that teaches external agents how to use BaoCut over CLI or MCP. |
+| [skills/](skills/README.md) | The BaoCut skill: the entry that teaches agents how to use BaoCut over CLI or MCP, with the built-in craft skills (subtitles, translation, talking-head cut, narration, motion graphics…) under [`skills/baocut/built-in-skills/`](skills/baocut/built-in-skills/README.md). |
 | [templates/](templates/README.md) | Built-in creation templates. |
 | [AGENTS.md](AGENTS.md) | Rules for coding agents working in this repository. |
 
@@ -244,8 +243,8 @@ BaoCut is under active development, with macOS Apple Silicon and Windows x64 pac
 | `BAOCUT_RUNTIME_ENTRY` | Entry the CLI uses to start a Runtime: `.ts` / `.js` run with the current Node, anything else as an executable. Otherwise an installed BaoCut app, then `apps/runtime` in the repo |
 | `BAOCUT_MODELS_DIR` | Local model files. Default `<BAOCUT_HOME>/models` |
 | `BAOCUT_TEMPLATES_DIR` | Built-in creation templates ([template spec §6](docs/spec/template-spec.md#6-目录来源与加载)). Otherwise the packaged `templates/`, then the repo's. User templates live in `<BAOCUT_HOME>/templates`; built-in wins on id clash |
-| `BAOCUT_SKILLS_DIR` | Built-in agent skills ([architecture §3.8](docs/architecture/architecture-design.md)). Otherwise the packaged `skills/`, then the repo's. User skills live in `<BAOCUT_HOME>/skills`; built-in wins on id clash |
-| `BAOCUT_AGENT_SKILLS_DIR` | Source of the BaoCut skill for external agents ([Agent surface §8](docs/design/agent-surface/agent-surface-design.md)), rendered by `baocut skill install`. Otherwise the packaged `agent-skills/`, then the repo's |
+| `BAOCUT_SKILLS_DIR` | Built-in agent skills ([architecture §3.8](docs/architecture/architecture-design.md)). Otherwise the packaged `skills/baocut/built-in-skills/`, then the repo's. User skills live in `<BAOCUT_HOME>/skills`; built-in wins on id clash |
+| `BAOCUT_AGENT_SKILLS_DIR` | Source of the BaoCut skill for external agents ([Agent surface §8](docs/design/agent-surface/agent-surface-design.md)), rendered by `baocut skill install`. Otherwise the packaged `skills/`, then the repo's |
 | `BAOCUT_SLIDES_EDITOR_DIST` | Built slides editor ([slides design §3](docs/design/slides/slides-design.md#3-运行时的放置与构建)). Otherwise the packaged `slides-editor/`, then the repo's `apps/slides-editor/dist` |
 | `BAOCUT_MODEL_ASSETS_DIR` | Model data shipped with the app (self-test samples, reference recordings of built-in voices, i.e. `packages/models/assets`). Otherwise the packaged `model-assets/`, then the repo's; the packaged desktop app sets `<resources>/model-assets` |
 | `BAOCUT_WORKER_FEATURES` | Extra cargo features for `model-worker` in `npm run build:engine`, comma separated. `cuda,whisper-ggml-cuda` for NVIDIA on Windows / Linux (needs the CUDA toolkit; Whisper on CUDA untested), `whisper-ggml-vulkan` for AMD / Intel (needs the Vulkan SDK; untested) |
@@ -291,8 +290,8 @@ crates/
   speech-doc/       Transcript post-processing, alignment, subtitle splitting
 bindings/
   preview-wasm/     WASM entry for the editor preview
-skills/             Built-in craft skills
-agent-skills/       The BaoCut skill for external agents
+skills/             The BaoCut skill (entry) for agents
+  baocut/built-in-skills/  Built-in craft skills, indexed in its README
 templates/          Built-in creation templates
 tools/              Build scripts
 ```

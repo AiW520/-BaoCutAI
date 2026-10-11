@@ -10,7 +10,7 @@
 // 2. 在仓库外的临时目录里搭一个只含产物的应用：out/、按 out 里真正 require 的第三方包生成的 package.json 与它们的 node_modules。
 //    不直接打 apps/desktop：它的 dependencies 里有工作区的 TypeScript 包与只给渲染进程用的 React，会被原样塞进 asar。
 // 3. 资源按 `src/main/packaged-resources.ts`（主进程启动 Runtime 时用的同一份）放到 `<resources>` 下：bin/（Worker、凭据助手，
-//    CUDA 版另带 NVIDIA 运行库）、templates/、skills/、agent-skills/、model-assets/、web/、slides-editor/。都在 asar 外面，
+//    CUDA 版另带 NVIDIA 运行库）、templates/、skills/（说明书与内置 skill）、model-assets/、web/、slides-editor/。都在 asar 外面，
 //    子进程要按路径读。
 // 4. electron-builder 出包。它会把 Electron 的 win32-x64 发行包与 NSIS 工具下到自己的缓存目录（~/Library/Caches/electron-builder 等）。
 // 5. 核对解开的包：resources 里的每一项都在，asar 里有主进程、Runtime 与 editor.wasm。在 Windows 上另由 check-packaged-app.mjs 真跑一遍。
@@ -325,7 +325,6 @@ try {
   }
   cpSync(path.join(ROOT, 'templates'), path.join(resDir, RESOURCE_DIRS.templates), { recursive: true });
   cpSync(path.join(ROOT, 'skills'), path.join(resDir, RESOURCE_DIRS.skills), { recursive: true });
-  cpSync(path.join(ROOT, 'agent-skills'), path.join(resDir, RESOURCE_DIRS.agentSkills), { recursive: true });
   cpSync(path.join(ROOT, 'packages/models/assets'), path.join(resDir, RESOURCE_DIRS.modelAssets), { recursive: true });
   cpSync(path.join(ROOT, 'apps/web/dist'), path.join(resDir, RESOURCE_DIRS.web), { recursive: true });
   cpSync(SLIDES_EDITOR_DIST, path.join(resDir, RESOURCE_DIRS.slidesEditor), { recursive: true });

@@ -4,10 +4,10 @@ import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { afterAll, describe, expect, it } from 'vitest';
-import { buildBundle, lintHtml, sampleTimes } from '../skills/motion-graphics/scripts/build-bundle.mjs';
+import { buildBundle, lintHtml, sampleTimes } from '../skills/baocut/built-in-skills/motion-graphics/scripts/build-bundle.mjs';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const skill = path.join(root, 'skills/motion-graphics');
+const skill = path.join(root, 'skills/baocut/built-in-skills/motion-graphics');
 const read = (rel: string) => fs.readFileSync(path.join(skill, rel), 'utf8');
 const EXEMPLARS = ['lower-third', 'big-number', 'keyword-caption', 'callout-pin', 'logo-sting'];
 const ASPECTS = ['16x9', '9x16'];

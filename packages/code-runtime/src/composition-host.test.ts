@@ -139,10 +139,10 @@ describe.skipIf(!electron)('CompositionHost（Electron 离屏）', { timeout: 12
   it('打开 motion-graphics 的 build-bundle.mjs 产出的包并取帧', async () => {
     const out = fs.mkdtempSync(path.join(os.tmpdir(), 'baocut-mg-host-'));
     tmpDirs.push(out);
-    const html = path.join(repo, 'skills/motion-graphics/exemplars/lower-third/16x9.html');
+    const html = path.join(repo, 'skills/baocut/built-in-skills/motion-graphics/exemplars/lower-third/16x9.html');
     const run = spawnSync(
       process.execPath,
-      [path.join(repo, 'skills/motion-graphics/scripts/build-bundle.mjs'), '--html', html, '--out', out],
+      [path.join(repo, 'skills/baocut/built-in-skills/motion-graphics/scripts/build-bundle.mjs'), '--html', html, '--out', out],
       {
         encoding: 'utf8',
       },

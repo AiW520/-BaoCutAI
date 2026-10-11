@@ -9,8 +9,8 @@ import { TemplateCatalog, resolveBuiltinTemplatesDir, scanTemplateDir } from './
 
 /** 仓库根的 `templates/`：从本文件往上四级（packages/runtime-core/src/templates）。 */
 const REPO_TEMPLATES = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../../../templates');
-/** 仓库根的 `skills/`：内置模板 `skills` 里写的 craft 都要在这里。 */
-const REPO_SKILLS = path.resolve(REPO_TEMPLATES, '../skills');
+/** 仓库根的 `skills/baocut/built-in-skills/`：内置模板 `skills` 里写的 craft 都要在这里。 */
+const REPO_SKILLS = path.resolve(REPO_TEMPLATES, '../skills/baocut/built-in-skills');
 
 const manifest = (id: string, extra: Partial<TemplateManifest> = {}): TemplateManifest => ({
   schema: 1,

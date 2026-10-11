@@ -131,7 +131,7 @@ interface TemplateField {
 | `durationSeconds` | `scene` 必填 | 默认时长（秒）：5–600 秒，步长 5。缺省表示自动 |
 | `brief` | `scene` 必填；`example` 不得有 | 选用模板时填进输入框的那段话：用户口吻，一到三句，用 `{{label}}` 留出待填项（§5.5），例如「给{{产品或服务}}做一条推广短片，目标是{{希望观众做什么}}，受众是{{受众}}。」。待填项按题材定，通常两到五项 |
 | `fields` | 否 | 待填项的声明，见下文。`scene` 对应 `brief` 里的占位符，`example` 对应 `prompt.md` 里的占位符 |
-| `skills` | 否 | 做这类成片建议先读的 craft，取仓库根 `skills/` 下的 `id`（kebab-case，≤ 64，不重复）。智能体用 `skills_read` 读（§5.2）。协议只校验形状；内置模板写的每一项都要在 `skills/` 里，由 §7 的测试检查 |
+| `skills` | 否 | 做这类成片建议先读的 craft，取仓库根 `skills/baocut/built-in-skills/` 下的 `id`（kebab-case，≤ 64，不重复）。智能体用 `skills_read` 读（§5.2）。协议只校验形状；内置模板写的每一项都要在 `skills/baocut/built-in-skills/` 里，由 §7 的测试检查 |
 | `author` | 是 | 官方模板写 `BaoCut`；社区模板写作者的公开署名，不写邮箱或联系方式 |
 | `source` | 是 | `official`：随应用分发、由仓库维护；`community`：来自社区（§6） |
 | `license` | 是 | 模板文案与随附素材的许可。内置原创模板用 `LicenseRef-BaoCut-Community-1.0`，对应仓库 [LICENSE](../../LICENSE)，允许将模板元素用于商业作品；第三方素材保留自己的许可 |

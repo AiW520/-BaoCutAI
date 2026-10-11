@@ -21,10 +21,10 @@ describe('Runtime 的入口与版本门', () => {
     expect(env.PMETAL_METALLIB_PATH).toBe(platform === 'darwin' ? path.join(resources, 'bin', 'mlx.metallib') : undefined);
   });
 
-  it('说明书的来源：BAOCUT_AGENT_SKILLS_DIR 优先；没有时回落到仓库里的 agent-skills/，都没有时 null', () => {
-    expect(resolveAgentSkillsDir({ BAOCUT_AGENT_SKILLS_DIR: '/x/agent-skills' }, 'linux')).toBe('/x/agent-skills');
+  it('说明书的来源：BAOCUT_AGENT_SKILLS_DIR 优先；没有时回落到仓库里的 skills/，都没有时 null', () => {
+    expect(resolveAgentSkillsDir({ BAOCUT_AGENT_SKILLS_DIR: '/x/skills' }, 'linux')).toBe('/x/skills');
     const repo = resolveAgentSkillsDir({}, 'linux');
-    expect(repo).toMatch(/agent-skills$/);
+    expect(repo).toMatch(/[/\\]skills$/);
     expect(fs.existsSync(path.join(repo!, 'baocut', 'SKILL.md'))).toBe(true);
     expect(resolveAgentSkillsDir({}, 'linux', os.tmpdir())).toBeNull();
   });

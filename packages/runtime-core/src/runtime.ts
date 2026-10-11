@@ -182,13 +182,14 @@ export interface StartRuntimeOptions {
    */
   templatesDir?: string | null;
   /**
-   * 内置 Agent skill 的目录（架构设计 §3.8）。默认取 `BAOCUT_SKILLS_DIR`、打包的资源目录或仓库根的 `skills/`；null 表示没有。
+   * 内置 Agent skill 的目录（架构设计 §3.8）。默认取 `BAOCUT_SKILLS_DIR`、打包的资源目录或仓库根的 `skills/baocut/built-in-skills/`；
+   * null 表示没有。
    * 用户添加与导入的 skill 总在 `<home>/skills`。
    */
   skillsDir?: string | null;
   /**
    * 说明书的根目录（里面是 `baocut/`，Agent 面设计 §8.6）：会话内智能体的指导与说明书页由它按工具桥面渲染，`baocut skill install`
-   * 按 CLI 面渲染。默认取 `BAOCUT_AGENT_SKILLS_DIR`、打包的资源目录或仓库根的 `agent-skills/`；找不到或渲染不了时 Runtime 启动失败。
+   * 按 CLI 面渲染。默认取 `BAOCUT_AGENT_SKILLS_DIR`、打包的资源目录或仓库根的 `skills/`；找不到或渲染不了时 Runtime 启动失败。
    */
   agentSkillsDir?: string | null;
   /**

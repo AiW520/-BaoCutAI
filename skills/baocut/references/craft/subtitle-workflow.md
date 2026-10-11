@@ -1,4 +1,4 @@
-<!-- 由 tools/sync-agent-skill.ts 从 skills/subtitle-workflow/ 生成，不要手改：改源文件后运行 npm run build:agent-skill -->
+<!-- 由 tools/sync-agent-skill.ts 从 skills/baocut/built-in-skills/subtitle-workflow/ 生成，不要手改：改源文件后运行 npm run build:agent-skill -->
 
 # 转录与字幕
 

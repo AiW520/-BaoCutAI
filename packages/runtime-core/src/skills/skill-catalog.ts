@@ -33,7 +33,7 @@ import { RcSkills } from '@baocut/protocol/messages/runtime-core';
  * - 符号链接不跟随：skill 目录本身是链接、或目录里有链接、特殊文件时整个跳过，不会读到目录外的东西。
  * - 内置与用户目录同 id 时内置的优先，用户的那一份记 `builtin-conflict`。
  * - 开关 = 来源的默认值（`SKILL_DEFAULT_ENABLED`）加上 `SkillPrefsStore` 里的差量。
- * - 说明书页（`setGuidePages`，Agent 面设计 §8.6）：`agent-skills/baocut/` 按工具桥面渲染出的目录页、做法总览与约定，
+ * - 说明书页（`setGuidePages`，Agent 面设计 §8.6）：`skills/baocut/` 按工具桥面渲染出的目录页、做法总览与约定，
  *   在内存里、不在任何目录。它们是会话指导的一部分：总在会话开始的索引里、`skills_read` 能读，但不进 `list()`（设置里的
  *   skill 列表与 `skills_list`），不能开关；同 id 的内置目录与用户目录里的 skill 都让位给它们。
  */
@@ -72,23 +72,26 @@ export interface SkillCatalogOptions {
   prefs: SkillPrefsStore;
 }
 
+/** 内置 skill 相对仓库根（打包后是 `<resources>`）的位置：说明书 `skills/baocut/` 下的 `built-in-skills/`。 */
+const BUILTIN_SKILLS_PATH = path.join('skills', 'baocut', 'built-in-skills');
+
 /**
- * 找内置 skill 目录：`BAOCUT_SKILLS_DIR` 环境变量；打包后的应用里是 `<resources>/skills`；开发时从本模块往上找同时有
- * `package.json` 与 `skills/` 的目录（仓库根）。都没有时 null。
+ * 找内置 skill 目录：`BAOCUT_SKILLS_DIR` 环境变量；打包后的应用里是 `<resources>/skills/baocut/built-in-skills`；开发时从
+ * 本模块往上找仓库根下的 `skills/baocut/built-in-skills/`。都没有时 null。
  */
 export function resolveBuiltinSkillsDir(env: NodeJS.ProcessEnv = process.env): string | null {
   if (env.BAOCUT_SKILLS_DIR) return env.BAOCUT_SKILLS_DIR;
   const resources = (process as { resourcesPath?: string }).resourcesPath;
   if (resources) {
-    const bundled = path.join(resources, 'skills');
+    const bundled = path.join(resources, BUILTIN_SKILLS_PATH);
     if (isDirectory(bundled)) return bundled;
   }
-  return findRepoDir('skills');
+  return findRepoDir(BUILTIN_SKILLS_PATH);
 }
 
 /**
- * 开发时从本模块往上找仓库根（`package.json` 的名字是 `baocut`）下的 `<name>` 目录：内置 skill（`skills/`）与说明书
- * （`agent-skills/`）共用。找不到时 null。
+ * 开发时从本模块往上找仓库根（`package.json` 的名字是 `baocut`）下的 `<name>` 目录（可以是多级相对路径）：内置 skill
+ * （`skills/baocut/built-in-skills/`）与说明书（`skills/`）共用。找不到时 null。
  */
 export function findRepoDir(name: string, from: string = path.dirname(fileURLToPath(import.meta.url))): string | null {
   let dir = from;

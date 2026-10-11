@@ -98,7 +98,7 @@ BaoCut 是以**可编辑视频**为中心的剪辑工具：素材在时间线上
 
 另有：端到端的做法在 [workflows](references/workflows.md)；
 <!-- surface: cli -->
-启动与版本在 [start](references/start.md)，输出、退出码、长任务与大结果在 [conventions](references/conventions.md)，走 MCP 在 [mcp](references/mcp.md)；craft 的副本在 `references/craft/`，是随这份 skill 发布时的版本，`baocut skills read <id>` 取的是这台机器上当前的版本（含用户自己加的 skill），两者不同时以后者为准。
+启动与版本在 [start](references/start.md)，输出、退出码、长任务与大结果在 [conventions](references/conventions.md)，走 MCP 在 [mcp](references/mcp.md)；BaoCut 自带的全部 craft 见本节末尾的「内置 skill」。
 <!-- /surface -->
 <!-- surface: agent -->
 错误对象、版本冲突与等任务的通用处理在 [conventions](references/conventions.md)；目录页与 craft 都用 {{tool:skills_read}} 按 id 取，会话开始时附在这份指导后面的 skill 索引列出开着的。索引里没有的 craft（用户关掉了）不读，按这份指导做。
@@ -115,6 +115,31 @@ BaoCut 是以**可编辑视频**为中心的剪辑工具：素材在时间线上
 - 参数看工具说明；`edits_apply` 某个操作的字段用 {{tool:edits_ops}} 只查那一个操作，不拉整个清单。
 <!-- /surface -->
 - 任务属于某份 craft 时，动手前先读它，按它的做法做；跨回合继续同一个任务时也照它做，不中途换成自己的做法。
+
+<!-- surface: cli -->
+### 内置 skill
+
+BaoCut 自带的 craft（做法）。第 1 节的表按用户的话指到其中一个；表里没有的任务，按下面的一句话判断该读哪一份，需要时再打开细读。
+
+| craft | 名称 | 一句话 |
+| --- | --- | --- |
+| {{skill:subtitle-workflow}} | 转录与字幕 | 从链接或本机音视频建可编辑视频，转写、润色、按需翻译，放上字幕层，再按需导出 |
+| {{skill:polish-transcript}} | 润色转写 | 改错字与误听、统一术语与标点，写回同一份转写，词的时间不变 |
+| {{skill:speaker-labeling}} | 说话人标注 | 按声纹区分说话人，凭文稿与来源里的证据起真名，写回转写的说话人 |
+| {{skill:translate-subtitles}} | 翻译字幕 | 自己逐句翻译成视频里的译文，建译文或双语字幕层；也用来更新过期的译文 |
+| {{skill:video-summary}} | 视频内容总结 | 挑出最值得带走的两三件事讲透，另附一组带视频时间的要点 |
+| {{skill:video-blog}} | 写成博客文章 | 把视频写成不看视频也能读明白的完整文章，分作者视角与观众视角 |
+| {{skill:titles-and-description}} | 起标题与写简介 | 标题候选与视频简介（说明、章节、标签），每句都由视频兑现 |
+| {{skill:cover-and-title}} | 封面与标题 | 标题与封面文案候选，用户挑定后按画幅生成封面图，放进候选素材 |
+| {{skill:video-chapters}} | 分章节 | 在话题自然转换处分章，每章一个标题和一句摘要，写进视频的章节 |
+| {{skill:talking-head-cut}} | 剪口播 | 去口癖、长停顿与录废的部分，收紧节奏，按需加强调、B-roll、竖屏取景与配乐闪避 |
+| {{skill:shorts-segments}} | 切短视频 | 从长视频里挑出能单独发布的几段，每段建成可编辑的子视频 |
+| {{skill:narration}} | 旁白成片 | 按实测语速写稿，一个音色一次合成，量时长、只重配不合格的句子，再把画面剪到旁白上 |
+| {{skill:video-production}} | 从简报到成片 | 从零做一条完整成片：风格与分镜规划，逐镜出画面，配旁白、混音、导出验收 |
+| {{skill:motion-graphics}} | 动效图形 | 写一个自包含的 HTML 画面做下横栏、关键词、大数字、标注或品牌贴片，打包导入后放上时间线 |
+
+这些页是内置 skill 随这份 skill 发布时的副本；`baocut skills read <id>` 取的是这台机器上当前的版本（含用户自己加的 skill），两者不同时以后者为准。
+<!-- /surface -->
 
 ## 4. 编排
 

@@ -212,8 +212,7 @@ BaoCut 正在积极开发，macOS Apple Silicon 与 Windows x64 安装包见上�
 | --- | --- |
 | [docs/](docs/README.md) | 产品、架构、格式与协议规范、验收标准；从阅读路线开始。 |
 | [designs/baocut/](designs/baocut/README.md) | 可交互的界面原型，UI 变化先在这里确认。 |
-| [skills/](skills/README.md) | 内置创作 skill，包括字幕、翻译、口播剪辑、旁白和动态图形。 |
-| [agent-skills/](agent-skills/README.md) | 指导外部智能体通过 CLI 或 MCP 使用 BaoCut 的 skill。 |
+| [skills/](skills/README.md) | BaoCut skill：指导智能体通过 CLI 或 MCP 使用 BaoCut 的入口；内置创作 skill（字幕、翻译、口播剪辑、旁白、动态图形等）在它下面的 [`skills/baocut/built-in-skills/`](skills/baocut/built-in-skills/README.md)。 |
 | [templates/](templates/README.md) | 内置创作模板。 |
 | [AGENTS.md](AGENTS.md) | 在本仓库工作的编码代理规则。 |
 
@@ -237,8 +236,8 @@ BaoCut 正在积极开发，macOS Apple Silicon 与 Windows x64 安装包见上�
 | `BAOCUT_RUNTIME_ENTRY` | CLI 启动 Runtime 的入口：`.ts` / `.js` 使用当前 Node，其他路径作为可执行文件。否则依次查找已安装的 BaoCut 应用、仓库内的 `apps/runtime`。 |
 | `BAOCUT_MODELS_DIR` | 本地模型目录，默认 `<BAOCUT_HOME>/models`。 |
 | `BAOCUT_TEMPLATES_DIR` | 内置创作模板目录，见[模板包规范 §6](docs/spec/template-spec.md#6-目录来源与加载)。否则查找打包资源中的 `templates/`，再查仓库模板。用户模板放在 `<BAOCUT_HOME>/templates`；ID 冲突时内置模板优先。 |
-| `BAOCUT_SKILLS_DIR` | 内置智能体 skill 目录，见[架构设计 §3.8](docs/architecture/architecture-design.md#38-分层渐进加载的创作指导)。否则查找打包资源中的 `skills/`，再查仓库 skill。用户 skill 放在 `<BAOCUT_HOME>/skills`；ID 冲突时内置优先。 |
-| `BAOCUT_AGENT_SKILLS_DIR` | 外部智能体使用的 BaoCut skill 源目录，由 `baocut skill install` 渲染，见 [Agent 面设计 §8](docs/design/agent-surface/agent-surface-design.md)。否则依次查找打包的 `agent-skills/` 与仓库目录。 |
+| `BAOCUT_SKILLS_DIR` | 内置智能体 skill 目录，见[架构设计 §3.8](docs/architecture/architecture-design.md#38-分层渐进加载的创作指导)。否则查找打包资源中的 `skills/baocut/built-in-skills/`，再查仓库中的同一目录。用户 skill 放在 `<BAOCUT_HOME>/skills`；ID 冲突时内置优先。 |
+| `BAOCUT_AGENT_SKILLS_DIR` | 外部智能体使用的 BaoCut skill 源目录，由 `baocut skill install` 渲染，见 [Agent 面设计 §8](docs/design/agent-surface/agent-surface-design.md)。否则依次查找打包的 `skills/` 与仓库目录。 |
 | `BAOCUT_MODEL_ASSETS_DIR` | 随应用分发的模型数据（自检样本、内置音色参考录音，即 `packages/models/assets`）。否则查找打包的 `model-assets/`，再查仓库数据；打包后的桌面端使用 `<resources>/model-assets`。 |
 | `BAOCUT_WORKER_FEATURES` | `npm run build:engine` 为 `model-worker` 追加的 cargo feature，逗号分隔。Windows / Linux 的 NVIDIA CUDA 配置使用 `cuda,whisper-ggml-cuda`，需要 CUDA 工具链；Whisper 的 Vulkan 配置使用 `whisper-ggml-vulkan`，需要 Vulkan SDK。硬件验证状态见上文。 |
 | `BAOCUT_GPU` | `off`、`0`、`false`、`cpu` 或 `no` 让 `model-worker` 的 candle 与 whisper.cpp 都在 CPU 上运行，见 [Model Worker 协议 §2.1](docs/spec/model-worker-protocol-spec.md)。 |
@@ -280,8 +279,8 @@ crates/
   speech-doc/       文稿后处理、对齐与字幕拆分
 bindings/
   preview-wasm/     编辑器预览的 WASM 入口
-skills/             内置创作 skill
-agent-skills/       外部智能体使用的 BaoCut skill
+skills/             BaoCut skill（智能体使用的入口）
+  baocut/built-in-skills/  内置创作 skill，README 是索引
 templates/          内置创作模板
 tools/              构建与检查脚本
 ```

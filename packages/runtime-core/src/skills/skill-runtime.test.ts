@@ -77,7 +77,7 @@ describe('Agent skill 端到端', () => {
     await boot();
     const { session } = await send('你好');
     const instructions = session.options.developerInstructions!;
-    // 真实的 agent-skills/baocut/：SKILL.md 正文在前，skill 索引附在后面。
+    // 真实的 skills/baocut/：SKILL.md 正文在前，skill 索引附在后面。
     expect(instructions.startsWith('# BaoCut\n')).toBe(true);
     expect(instructions).toContain('### 三条底线');
     expect(instructions).toContain('`<baocut-editor-context>`');
@@ -240,11 +240,11 @@ describe('会话指导的说明书', () => {
       startRuntime({ home, drivers: () => [new ToolDriver()], watchSpace: false, skillsDir: null, agentSkillsDir });
     await expect(start(null)).rejects.toThrow(/找不到说明书目录/);
     await expect(start(path.join(dir, 'missing'))).rejects.toThrow(/说明书目录不存在/);
-    const broken = path.join(dir, 'agent-skills', 'baocut');
+    const broken = path.join(dir, 'skills', 'baocut');
     await fs.mkdir(broken, { recursive: true });
     await fs.writeFile(path.join(broken, 'SKILL.md'), '# BaoCut\n\n<!-- surface: agent -->\n没有闭合\n');
-    await expect(start(path.join(dir, 'agent-skills'))).rejects.toThrow(/会话指导渲染失败.*SKILL\.md:3：surface 标记没有闭合/);
+    await expect(start(path.join(dir, 'skills'))).rejects.toThrow(/会话指导渲染失败.*SKILL\.md:3：surface 标记没有闭合/);
     await fs.writeFile(path.join(broken, 'SKILL.md'), '# BaoCut\n\n先 {{tool:no_such_tool}}。\n');
-    await expect(start(path.join(dir, 'agent-skills'))).rejects.toThrow(/工具桥面的目录里没有这个工具/);
+    await expect(start(path.join(dir, 'skills'))).rejects.toThrow(/工具桥面的目录里没有这个工具/);
   });
 });

@@ -268,10 +268,10 @@ describe('inspectBundle', () => {
 
   it('接受 motion-graphics 的 build-bundle.mjs 产出的包', async () => {
     const out = tmp();
-    const html = path.join(repo, 'skills/motion-graphics/exemplars/lower-third/16x9.html');
+    const html = path.join(repo, 'skills/baocut/built-in-skills/motion-graphics/exemplars/lower-third/16x9.html');
     const run = spawnSync(
       process.execPath,
-      [path.join(repo, 'skills/motion-graphics/scripts/build-bundle.mjs'), '--html', html, '--out', out],
+      [path.join(repo, 'skills/baocut/built-in-skills/motion-graphics/scripts/build-bundle.mjs'), '--html', html, '--out', out],
       {
         encoding: 'utf8',
       },
