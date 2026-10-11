@@ -53,4 +53,6 @@ export const zhHant: GeneralSettingsMessages = {
   trashDaysDesc: (fallback: number | null) =>
     `在垃圾桶中超過這個天數且沒有被引用的項目，以及已刪除的影片，會被永久刪除（啟動時檢查一次，之後每 6 小時檢查一次）。仍被引用的項目會保留。清空此欄即回復預設值${fallback ? `（${fallback} 天）` : ''}。`,
   webNote: '瀏覽器中無法變更這項設定，請在 BaoCut 桌面應用程式中變更。',
+  webViewOnly: '瀏覽器中只能檢視這些，請在 BaoCut 桌面應用程式中變更。',
+  webUnavailable: '瀏覽器中沒有這一項，請在 BaoCut 桌面應用程式中查看。',
 };

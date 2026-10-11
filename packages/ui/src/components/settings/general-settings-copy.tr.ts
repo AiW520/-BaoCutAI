@@ -50,4 +50,6 @@ export const tr: GeneralSettingsMessages = {
   trashDays: "Çöp sepetinde tutma süresi (gün)",
   trashDaysDesc: (fallback) => `Çöp sepetinde bu süreden uzun kalan, başvurulmayan öğeler ve silinmiş videolar kalıcı silinir (başlangıçta ve ardından her 6 saatte denetlenir). Hâlâ başvurulan öğeler tutulur. Varsayılana${fallback ? ` (${fallback} gün)` : ''} dönmek için temizleyin.`,
   webNote: "Tarayıcı bu ayarı değiştiremez. Bunu BaoCut masaüstü uygulamasında değiştirin.",
+  webViewOnly: "Tarayıcıda bunu yalnızca görüntüleyebilirsiniz. Değişiklikleri BaoCut masaüstü uygulamasında yapın.",
+  webUnavailable: "Bu, tarayıcıda kullanılamaz. BaoCut masaüstü uygulamasını kullanın.",
 };

@@ -52,4 +52,6 @@ export const zhHans: GeneralSettingsMessages = {
   trashDaysDesc: (fallback: number | null) =>
     `移进回收站超过这么多天、没有被引用的条目与删除的视频会被永久删除（启动时与之后每 6 小时检查一次）；还被引用的留着。清空恢复默认${fallback ? ` ${fallback} 天` : ''}。`,
   webNote: '浏览器里不能更改这项设置，请在 BaoCut 桌面应用里更改。',
+  webViewOnly: '浏览器里只能查看这些，请在 BaoCut 桌面应用里更改。',
+  webUnavailable: '浏览器里没有这一项，请在 BaoCut 桌面应用里查看。',
 };

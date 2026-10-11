@@ -54,4 +54,6 @@ export const ko: GeneralSettingsMessages = {
   trashDaysDesc: (fallback: number | null) =>
     `휴지통에 이 기간보다 오래 있었고 참조되지 않는 항목과 삭제한 영상은 영구적으로 삭제됩니다(시작할 때와 그 후 6시간마다 확인). 아직 참조되는 항목은 유지됩니다. 비우면 기본값${fallback ? `(${fallback}일)` : ''}이 적용됩니다.`,
   webNote: '브라우저에서는 이 설정을 변경할 수 없습니다. BaoCut 데스크톱 앱에서 변경하세요.',
+  webViewOnly: '브라우저에서는 보기만 할 수 있습니다. 변경은 BaoCut 데스크톱 앱에서 하세요.',
+  webUnavailable: '이 항목은 브라우저에서 사용할 수 없습니다. BaoCut 데스크톱 앱을 사용하세요.',
 };

@@ -18,18 +18,21 @@ import { useRuntime } from '../../runtime/context.tsx';
 import { useConnection } from '../../state/connection-store.ts';
 import { useJobs } from '../../state/jobs-store.ts';
 import { useSetting } from '../../state/settings-store.ts';
+import { M } from './general-settings-copy.ts';
 import { RESOURCE_COPY } from './resource-capacity-copy.ts';
 
 /*
  * 设置 → 诊断 →「资源调度」（架构设计 §7.6、§7.7；设计稿没有这一块）：机器的容量与来源、谁在用、谁在等；
  * 内存、GPU 内存与 CPU 线程可以手动设上限（偏好设置 `resources.capacity`，留空为自动）。`jobs.resources` 是请求不是主题，
  * 这一节开着时每 5 秒取一次，任务有进出、改了设置也立即重取。分组与行的样式与设置页的 Group / Row 相同。
+ * 浏览器里只读：Web 白名单不含 `settings.set`，上限框与「全部恢复自动」置灰，导语下写一句。
  */
 
 const group = style({ marginBottom: 48 });
 const groupHead = style({ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, marginBottom: 16 });
 const groupTitle = style({ margin: 0, font: 'ui', fontWeight: 'medium', color: 'gray-900' });
 const lead = style({ marginTop: -8, marginBottom: 16, font: 'ui-sm', color: 'gray-600' });
+const webNote = style({ marginTop: -8, marginBottom: 16, font: 'ui-sm', color: 'gray-800' });
 const card = style({ paddingX: 16, borderWidth: 1, borderStyle: 'solid', borderColor: 'gray-200', borderRadius: 'xl' });
 const subhead = style({ marginTop: 24, marginBottom: 12, font: 'ui-sm', fontWeight: 'medium', color: 'gray-700' });
 const row = style({
@@ -56,6 +59,7 @@ const FIELD_OF = { memory: 'memoryGB', gpuMemory: 'gpuMemoryGB', cpuThreads: 'cp
 
 export function ResourceCapacity() {
   const runtime = useRuntime();
+  const web = runtime.host.platform === 'web';
   const connected = useConnection((s) => s.state.status === 'connected');
   const setting = useSetting('resources.capacity');
   const jobs = useJobs((s) => s.jobs);
@@ -106,12 +110,13 @@ export function ResourceCapacity() {
       <div className={groupHead}>
         <h2 className={groupTitle}>{RESOURCE_COPY.title}</h2>
         {overridden ? (
-          <Button variant="secondary" size="S" isDisabled={!connected} onPress={() => void save({ memoryGB: null, gpuMemoryGB: null, cpuThreads: null })}>
+          <Button variant="secondary" size="S" isDisabled={web || !connected} onPress={() => void save({ memoryGB: null, gpuMemoryGB: null, cpuThreads: null })}>
             {RESOURCE_COPY.resetAll}
           </Button>
         ) : null}
       </div>
       <p className={lead}>{RESOURCE_COPY.lead}</p>
+      {web ? <p className={webNote}>{M.webNote}</p> : null}
       <div className={card}>
         {!connected ? (
           <Row label={RESOURCE_COPY.disconnected} />
@@ -133,6 +138,7 @@ export function ResourceCapacity() {
                     step={key === 'cpuThreads' ? 1 : 0.5}
                     formatOptions={key === 'cpuThreads' ? { maximumFractionDigits: 0 } : { maximumFractionDigits: 1 }}
                     value={form[key] ?? NaN}
+                    isDisabled={web}
                     onChange={(value) => void save({ ...form, [key]: Number.isNaN(value) ? null : value })}
                   />
                 ) : (

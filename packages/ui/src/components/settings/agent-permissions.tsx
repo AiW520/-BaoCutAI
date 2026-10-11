@@ -15,6 +15,7 @@ import { useSettings } from '../../state/settings-store.ts';
 import { AGENT_COPY, POLICY_COPY, POLICY_KEYS } from './agent-copy.ts';
 import { Panel, SectionHeading, SettingRow } from './agent-panels.tsx';
 import { rulesView } from './agent-setup.ts';
+import { M } from './general-settings-copy.ts';
 
 /** 四档各一枚图标（data.js `agent.modes`）：图标是输入框下拉收起后唯一的状态提示，所以不共用。「先给方案」原型没画。 */
 const MODE_ICON: Record<AgentMode, ComponentType> = { plan: Visibility, ask: Lock, autoAcceptEdits: Edit, auto: AIMark, fullAccess: LockOpen };
@@ -36,10 +37,13 @@ const modeLabel = style({ font: 'ui', fontWeight: 'medium', color: 'gray-900' })
 const modeHint = style({ marginTop: 2, marginBottom: 0, font: 'ui-sm', color: 'gray-600' });
 const rules = style({ marginTop: 24 });
 const rulesBody = style({ marginTop: 0, marginBottom: 12, font: 'ui-sm', color: 'gray-700' });
+/** 浏览器里为什么开关置灰、规则删不掉：Web 白名单不含 `agents.updatePreferences` / `agents.removeRule`。 */
+const webNote = style({ marginTop: 0, marginBottom: 12, font: 'ui-sm', color: 'gray-800' });
 
 /** Agent 权限（page-settings-agent.jsx 的 AgentPermissionsSection，显示在设置 › 隐私与权限）：访问模式说明、三条放行策略、「总是允许」的规则。 */
 export function AgentPermissions() {
   const runtime = useRuntime();
+  const web = runtime.host.platform === 'web';
   const connected = useConnection((s) => s.state.status === 'connected');
   const preferences = useConnection((s) => s.agentPreferences);
   const [pending, setPending] = useState<keyof AgentPolicy | 'rule' | null>(null);
@@ -102,6 +106,7 @@ export function AgentPermissions() {
       </Panel>
 
       <SectionHeading title={AGENT_COPY.policyHeading} hint={AGENT_COPY.policyHint} />
+      {web ? <p className={webNote}>{M.webViewOnly}</p> : null}
       <Panel label={AGENT_COPY.policyHeading}>
         {POLICY_KEYS.map((key) => (
           <SettingRow key={key} label={POLICY_COPY[key].label} desc={POLICY_COPY[key].desc}>
@@ -109,7 +114,7 @@ export function AgentPermissions() {
               aria-label={POLICY_COPY[key].label}
               size="S"
               isSelected={preferences?.policy[key] ?? false}
-              isDisabled={!connected || !preferences || pending === key}
+              isDisabled={web || !connected || !preferences || pending === key}
               onChange={(on) => void setPolicy(key, on)}
             />
           </SettingRow>
@@ -127,10 +132,14 @@ export function AgentPermissions() {
                   aria-label={AGENT_COPY.alwaysAllowed}
                   size="S"
                   items={view.rules.map((rule) => ({ id: rule }))}
-                  onRemove={(keys) => {
-                    if (!connected || pending === 'rule') return;
-                    for (const key of keys) void remove(String(key));
-                  }}>
+                  onRemove={
+                    web
+                      ? undefined
+                      : (keys) => {
+                          if (!connected || pending === 'rule') return;
+                          for (const key of keys) void remove(String(key));
+                        }
+                  }>
                   {(item) => (
                     <Tag id={item.id} textValue={item.id}>
                       {item.id}

@@ -72,6 +72,10 @@ const en = {
 
   /** 浏览器里改不了的行（Web 白名单不含 `settings.set`）：置灰，行下写这一句。 */
   webNote: 'A browser can’t change this setting. Change it in the BaoCut desktop app.',
+  /** 浏览器里只能看、不能改的一节：置灰，节下写这一句。 */
+  webViewOnly: 'In a browser you can only view this. Make changes in the BaoCut desktop app.',
+  /** 浏览器拿不到数据的一节（Web 订阅不了它的主题，如用户库、数据外发授权）：替换「加载中」。 */
+  webUnavailable: 'This isn’t available in a browser. Use the BaoCut desktop app.',
 };
 
 export type GeneralSettingsMessages = typeof en;

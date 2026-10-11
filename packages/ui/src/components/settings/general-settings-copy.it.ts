@@ -18,4 +18,6 @@ export const it: GeneralSettingsMessages = {
   trashDays: 'Giorni di conservazione nel Cestino',
   trashDaysDesc: (fallback: number | null) => `Le voci rimaste nel Cestino più a lungo senza riferimenti e i video eliminati vengono eliminati definitivamente (verifica all’avvio e ogni 6 ore). Le voci ancora referenziate vengono conservate. Svuota il campo per ripristinare il valore predefinito${fallback ? ` di ${pluralForm('it', fallback, { one: `${fallback} giorno`, other: `${fallback} giorni` })}` : ''}.`,
   webNote: 'Un browser non può modificare questa impostazione. Modificala nell’app desktop di BaoCut.',
+  webViewOnly: 'In un browser puoi solo visualizzarlo. Apporta le modifiche nell’app desktop di BaoCut.',
+  webUnavailable: 'Non è disponibile in un browser. Usa l’app desktop di BaoCut.',
 };

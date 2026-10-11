@@ -55,4 +55,6 @@ export const ptBR: GeneralSettingsMessages = {
   trashDaysDesc: (fallback: number | null) =>
     `Itens antigos sem referências e vídeos excluídos são apagados permanentemente; verifica ao iniciar e a cada 6 horas. Referenciados mantidos. Limpe para padrão${fallback ? ` de ${fallback} dias` : ""}.`,
   webNote: "Um navegador não pode alterar esta configuração. Altere-a no app para desktop do BaoCut.",
+  webViewOnly: "No navegador você só pode ver isto. Faça as alterações no app para desktop do BaoCut.",
+  webUnavailable: "Isto não está disponível no navegador. Use o app para desktop do BaoCut.",
 };

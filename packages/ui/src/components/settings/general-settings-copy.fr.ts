@@ -11,4 +11,6 @@ export const fr: GeneralSettingsMessages = {
   strictOfflineOn: 'Mode hors ligne strict activé', strictOfflineOff: 'Mode hors ligne strict désactivé', endpointChanged: (endpoint) => `Utilise désormais ${endpoint}`, endpointReset: (label) => `${label} rétabli par défaut`, save: 'Enregistrer', resetDefault: 'Rétablir la valeur par défaut',
   trashDays: 'Durée de conservation dans la corbeille', trashDaysDesc: (fallback) => `Les éléments dans la corbeille depuis plus longtemps que cette durée et non référencés, ainsi que les vidéos supprimées, sont supprimés définitivement (vérification au démarrage puis toutes les 6 heures). Les éléments encore référencés sont conservés. Laissez vide pour rétablir la valeur par défaut${fallback ? ` de ${fallback} jours` : ''}.`,
   webNote: 'Un navigateur ne peut pas modifier ce réglage. Modifiez-le dans l’app de bureau BaoCut.',
+  webViewOnly: 'Dans un navigateur, vous pouvez seulement consulter ceci. Faites les modifications dans l’app de bureau BaoCut.',
+  webUnavailable: 'Ceci n’est pas disponible dans un navigateur. Utilisez l’app de bureau BaoCut.',
 };

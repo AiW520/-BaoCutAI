@@ -9,11 +9,13 @@ import { useGrants } from '../../state/grants-store.ts';
 import { useModels } from '../../state/models-store.ts';
 import { useSpace } from '../../state/space-store.ts';
 import { GRANTS_COPY } from './data-grants-copy.ts';
+import { M } from './general-settings-copy.ts';
 
 /*
  * 设置 → 隐私 →「数据外发授权」（架构设计 §12.5；设计稿没有这一块）：列出发给云端服务商的持续授权，可以撤销。
  * 发放只在两处：启用服务商时默认一条、审批时选「以后都允许」。这里不新建也不改（`grants.create/update` 没有界面）。
- * 分组与行的样式与设置页的 Group / Row 相同。
+ * 分组与行的样式与设置页的 Group / Row 相同。浏览器里没有这一节的数据：Web 白名单不含 `grants.*`，订阅不了 `grants` 主题，
+ * 那里不写「加载中」，直接说浏览器里没有。
  */
 
 const group = style({ marginBottom: 48 });
@@ -39,6 +41,7 @@ const rowControl = style({ display: 'flex', alignItems: 'center', gap: 8, flexSh
 
 export function DataGrants() {
   const runtime = useRuntime();
+  const web = runtime.host.platform === 'web';
   const connected = useConnection((s) => s.state.status === 'connected');
   const { ready, grants } = useGrants();
   const capabilities = useModels((s) => s.capabilities);
@@ -80,7 +83,9 @@ export function DataGrants() {
       </div>
       <p className={lead}>{GRANTS_COPY.lead}</p>
       <div className={card}>
-        {!ready ? (
+        {web ? (
+          <GrantRow label={M.webUnavailable} />
+        ) : !ready ? (
           <GrantRow label={connected ? GRANTS_COPY.loading : GRANTS_COPY.disconnected} />
         ) : list.length ? (
           list.map((g) => (

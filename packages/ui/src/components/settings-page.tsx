@@ -337,13 +337,16 @@ function Shortcuts({ mac }: { mac: boolean }) {
   );
 }
 
+/** 一条本机路径；「在访达中显示」只在桌面端有，浏览器打不开 Runtime 那台机器的文件管理器（与视频信息对话框一样不画按钮）。 */
 function PathRow({ label, path }: { label: string; path: string | null }) {
   const runtime = useRuntime();
   return (
     <Row label={label} desc={path ? shortenPath(path) : '—'}>
-      <Button variant="secondary" size="S" isDisabled={!path} onPress={() => path && void runtime.host.revealPath(path)}>
-        {revealLabel()}
-      </Button>
+      {runtime.host.platform === 'web' ? null : (
+        <Button variant="secondary" size="S" isDisabled={!path} onPress={() => path && void runtime.host.revealPath(path)}>
+          {revealLabel()}
+        </Button>
+      )}
     </Row>
   );
 }
