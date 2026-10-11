@@ -171,9 +171,15 @@ describe('模型工具：能力视图与提交时的拒绝（不需要 ffprobe�
       'generateImage',
       'generateText',
       'separateAudio',
+      'generateMusic',
     ]);
     expect(before.body.capabilities.map((c: Loose) => c.settingsHref)).toEqual([
-      '/settings/models/asr', '/settings/models/tts', '/settings/models/image', '/settings/models/llm', '/settings/models/sep',
+      '/settings/models/asr',
+      '/settings/models/tts',
+      '/settings/models/image',
+      '/settings/models/llm',
+      '/settings/models/sep',
+      '/settings/models/music',
     ]);
     expect(before.body.capabilities[0].next).toContain('Markdown 设置链接');
     // 文本生成也列出（带能力参数），但没有提交它的工具。

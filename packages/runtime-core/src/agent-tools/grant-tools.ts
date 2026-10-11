@@ -29,7 +29,7 @@ const schemas = {
     items: z
       .array(
         z.strictObject({
-          capability: capabilityArg.describe('能力：transcribe、synthesizeSpeech、generateImage'),
+          capability: capabilityArg.describe('能力：transcribe、synthesizeSpeech、generateImage、generateMusic'),
           provider: z.string().min(1).max(200).optional().describe('可选。Provider；不给时用这种能力的默认值'),
           model: z.string().min(1).max(200).optional().describe('可选。模型 ID'),
           video: videoArg.optional().describe('可选。数据来自（或结果导入）的视频；给了时授权只覆盖这个视频'),

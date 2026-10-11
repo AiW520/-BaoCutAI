@@ -6,10 +6,12 @@ import {
   canonicalJson,
   isTerminal,
   localImageResources,
+  localMusicResources,
   localTranscribeResources,
   modelDownloadDemand,
   sha256Hex,
   type JobManager,
+  type LocalMusicProvider,
   type LocalTranscribeProvider,
   type TaskRun,
 } from '@baocut/jobs';
@@ -18,6 +20,7 @@ import {
   DEFAULT_TIMESCALE,
   DownloadError,
   IMAGE_SELF_TEST,
+  MUSIC_SELF_TEST,
   ModelInstaller,
   ProviderFailure,
   TRANSCRIBE_SELF_TEST,
@@ -29,6 +32,8 @@ import {
   imageSelfTestVerdict,
   inspectWav,
   localSpeechModelInfo,
+  musicSelfTestParameters,
+  musicSelfTestVerdict,
   normalizeTranscript,
   planLocalVoice,
   resolveModelsEndpoint,
@@ -87,6 +92,8 @@ const PROGRESS_INTERVAL_MS = 250;
 export interface ModelInstallServiceOptions {
   catalog: ModelCatalog;
   provider: LocalTranscribeProvider;
+  /** 本地音乐生成的 Provider（audio.cpp 引擎）；音乐模型包的检查经它。 */
+  music: LocalMusicProvider;
   jobs: JobManager;
   log: Logger;
   /** 设置里的下载来源与严格离线。 */
@@ -253,6 +260,8 @@ export class ModelInstallService {
       contentHash = `sha256:${sha256Hex(canonicalJson(speechSelfTestRequest(def)))}`;
     } else if (def.capability === 'image') {
       contentHash = `sha256:${sha256Hex(canonicalJson(IMAGE_SELF_TEST))}`;
+    } else if (def.capability === 'music') {
+      contentHash = `sha256:${sha256Hex(canonicalJson(MUSIC_SELF_TEST))}`;
     } else {
       sampleFile = selfTestSampleFile(this.#sample);
       const hex = sampleFile ? await sha256File(sampleFile).catch(() => null) : null;
@@ -263,7 +272,9 @@ export class ModelInstallService {
     const resources =
       def.capability === 'image'
         ? localImageResources(params.bundleId, this.#catalog.imagePeak(params.bundleId))
-        : localTranscribeResources(params.bundleId, await this.#catalog.workerFootprint(params.bundleId));
+        : def.capability === 'music'
+          ? localMusicResources(params.bundleId, this.#catalog.musicPeak(params.bundleId))
+          : localTranscribeResources(params.bundleId, await this.#catalog.workerFootprint(params.bundleId));
     const spec = { task: 'modelTest' as const, bundleId: params.bundleId };
     return this.#jobs.submitTask(
       {
@@ -283,7 +294,9 @@ export class ModelInstallService {
         run: (run) =>
           def.capability === 'image'
             ? this.#runImageTest(run, def)
-            : sampleFile === null
+            : def.capability === 'music'
+              ? this.#runMusicTest(run, def)
+              : sampleFile === null
               ? this.#runSpeechTest(run, def)
               : def.capability === 'separate'
                 ? this.#runSeparateTest(run, params.bundleId, sampleFile, contentHash)
@@ -580,6 +593,50 @@ export class ModelInstallService {
     const { width, height } = verdict.png;
     await record('passed', RcModels.imagePassed({ width, height, steps: IMAGE_SELF_TEST.steps }));
     this.#log.info('Model check passed', { bundleId, jobId: run.jobId, width, height });
+    return { documentId: null, artifactId };
+  }
+
+  /** 音乐模型包的检查（Model Worker 协议规范 §4.4）：固定风格、seed、少步数生成几秒纯音乐，判定与合成相同。 */
+  async #runMusicTest(run: TaskRun, def: BundleDefinition): Promise<NonNullable<JobRecord['result']>> {
+    const bundleId = def.bundleId;
+    const { record, fail } = this.#verdicts(run, bundleId);
+    const staging = path.join(run.staging, 'attempt-1');
+    await fs.mkdir(staging, { recursive: true });
+    run.phase('loading');
+    let attempt;
+    try {
+      attempt = await this.#options.music.generateMusic(
+        { jobId: run.jobId, attempt: 1, providerId: 'local', modelId: bundleId, parameters: musicSelfTestParameters(), staging },
+        {
+          generating: () => run.phase('generating'),
+          progress: (done, total, unit = 'outputs') => run.phase('generating', { done, total, unit }),
+        },
+        run.signal,
+        { steps: MUSIC_SELF_TEST.steps },
+      );
+    } catch (error) {
+      if (error instanceof ProviderFailure) return fail(providerCheckCode(error), RcModels.workerFailed({ reason: localizedOf(error) }), providerDetails(error));
+      throw error;
+    }
+    if (attempt.outcome === 'cancelled') {
+      run.signal.throwIfAborted();
+      return fail('MODEL_WORKER_FAILED', RcModels.workerCancelledCheck());
+    }
+    run.phase('validating');
+    const output = attempt.outputs[0];
+    if (!output) return fail('MODEL_OUTPUT_WRONG', RcModels.noWorkerOutput());
+    const bytes = await fs.readFile(path.resolve(staging, output.path)).catch(() => null);
+    if (!bytes) return fail('MODEL_OUTPUT_WRONG', RcModels.outputMissing());
+    if (bytes.length !== output.byteLength || sha256Hex(bytes) !== output.sha256) {
+      return fail('MODEL_OUTPUT_WRONG', RcModels.outputMismatch());
+    }
+    const verdict = musicSelfTestVerdict(bytes);
+    if (!verdict.passed) return fail('MODEL_OUTPUT_WRONG', verdict.problem, verdict.wav ? { wav: verdict.wav } : {});
+    run.phase('publishing');
+    const { artifactId } = await this.#jobs.artifacts.put(bytes, 'wav');
+    const { durationSec, sampleRate } = verdict.wav;
+    await record('passed', RcModels.musicPassed({ duration: durationSec.toFixed(2), sampleRate, steps: MUSIC_SELF_TEST.steps }));
+    this.#log.info('Model check passed', { bundleId, jobId: run.jobId, durationSec, sampleRate });
     return { documentId: null, artifactId };
   }
 

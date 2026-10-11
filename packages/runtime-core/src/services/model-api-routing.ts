@@ -50,6 +50,8 @@ function capabilityText(capability: ModelServiceCapability): Localized {
       return RcModelApi.capabilityGenerateText();
     case 'separateAudio':
       return RcModelApi.capabilitySeparateAudio();
+    case 'generateMusic':
+      return RcModelApi.capabilityGenerateMusic();
   }
 }
 

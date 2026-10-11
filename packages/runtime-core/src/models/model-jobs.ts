@@ -1,7 +1,10 @@
+import { statSync } from 'node:fs';
 import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { TopicLog, type Logger } from '@baocut/harness';
 import {
   JobManager,
+  LocalMusicProvider,
   LocalTranscribeProvider,
   MachineCapacity,
   ResourceScheduler,
@@ -31,7 +34,18 @@ import {
   type ProbeToolResolver,
   type CapacitySource,
 } from '@baocut/jobs';
-import { LocalProviderSource, ModelCatalog, ModelServiceStore, ModelServices, UsageLedger, type ProviderSource } from '@baocut/models';
+import {
+  AUDIO_CPP_BACKEND_ENV,
+  AUDIO_CPP_CLI_ENV,
+  AUDIO_CPP_ENGINE,
+  LocalProviderSource,
+  ModelCatalog,
+  ModelServiceStore,
+  ModelServices,
+  UsageLedger,
+  type ProviderSource,
+} from '@baocut/models';
+import { findBundledBinary } from '@baocut/process-host';
 import {
   RpcError,
   type Actor,
@@ -112,6 +126,8 @@ export interface ModelJobsOptions {
   /** Speech Worker 的命令（翻译与翻译配音的翻译一步，架构设计 §7.9）；不给时按 `resolveSpeechWorkerCommand` 找。null 表示没有构建。 */
   speechWorker?: () => string | null;
   env: () => Promise<NodeJS.ProcessEnv>;
+  /** audio.cpp 引擎（`audiocpp_cli`）的位置；null 表示找不到。不给时按 `resolveAudioCppCli` 找。 */
+  musicEngine?: () => string | null;
   idleMs?: number;
   /** 偏好设置 `resources.capacity`（每次准入时读，改了立即生效）。 */
   resourceCapacity?: () => ResourceCapacitySetting | null;
@@ -185,9 +201,11 @@ export async function openModelJobs(options: ModelJobsOptions): Promise<ModelJob
   const envModelsDir = path.resolve(home.modelsDir) !== defaultModelsDir ? path.resolve(home.modelsDir) : null;
   const dirSetting = options.modelsDirSetting ?? { get: () => null, set: async () => {} };
   const configuredDir = dirSetting.get();
+  const musicEngine = options.musicEngine ?? (() => resolveAudioCppCli(process.env));
   const catalog = new ModelCatalog({
     root: envModelsDir ?? (configuredDir ? path.resolve(configuredDir) : defaultModelsDir),
     workerAvailable: () => options.worker() !== null,
+    engineAvailable: (backend) => backend !== 'audio-cpp' || musicEngine() !== null,
     ...(manifests ? { manifests } : {}),
   });
   // 资源调度（§7.6、§7.7）：Model Worker 的进程与所有任务共用一个。
@@ -205,6 +223,14 @@ export async function openModelJobs(options: ModelJobsOptions): Promise<ModelJob
     idleMs: options.idleMs,
     resources,
   });
+  // 本地音乐生成（§6.1）：audio.cpp 引擎每个任务一个进程，不经 Model Worker。
+  const music = new LocalMusicProvider({
+    catalog,
+    engine: musicEngine,
+    env: options.env,
+    backend: process.env[AUDIO_CPP_BACKEND_ENV] || null,
+    log,
+  });
   const store = await ModelServiceStore.open(home, options.credentials, undefined, { log: options.log.child('model-services') });
   // 用量账本（§6.10）：在线与智能体 Provider 的每次真实调用记一条。
   const usageLog = options.log.child('usage');
@@ -214,7 +240,14 @@ export async function openModelJobs(options: ModelJobsOptions): Promise<ModelJob
     store,
     usage,
     sources: [
-      new LocalProviderSource({ catalog, transcriber: provider, speech: provider.speechGenerator(), image: provider.imageGenerator() }),
+      new LocalProviderSource({
+        catalog,
+        transcriber: provider,
+        speech: provider.speechGenerator(),
+        image: provider.imageGenerator(),
+        music,
+        musicEngine,
+      }),
       ...(options.remote ? [options.remote] : []),
       online,
       ...(options.agents ? [new AgentProviderSource({ ...options.agentProviders, store, drivers: options.agents, usage })] : []),
@@ -396,6 +429,7 @@ export async function openModelJobs(options: ModelJobsOptions): Promise<ModelJob
   const installs = new ModelInstallService({
     catalog,
     provider,
+    music,
     jobs,
     log,
     settings: options.installSettings ?? (() => ({ downloadEndpoint: null, offlineStrict: false })),
@@ -652,4 +686,30 @@ function dubVideos(videos: VideoService, guard: TaskGuard): DubVideos {
       }
     },
   };
+}
+
+/**
+ * 找 audio.cpp 引擎（`audiocpp_cli`）：`BAOCUT_AUDIOCPP_CLI` 给了就只用它（存在才算）；否则随应用分发的 `bin/`、cargo 产物目录；
+ * 再找 PATH。每次调用重新找：用户装好引擎后无需重启。
+ */
+export function resolveAudioCppCli(env: NodeJS.ProcessEnv): string | null {
+  const explicit = env[AUDIO_CPP_CLI_ENV];
+  if (explicit) return isExecutableFile(explicit) ? explicit : null;
+  const bundled = findBundledBinary(AUDIO_CPP_ENGINE, path.dirname(fileURLToPath(import.meta.url)), env);
+  if (bundled) return bundled;
+  const exe = process.platform === 'win32' ? `${AUDIO_CPP_ENGINE}.exe` : AUDIO_CPP_ENGINE;
+  for (const dir of (env.PATH ?? '').split(path.delimiter)) {
+    if (!dir) continue;
+    const candidate = path.join(dir, exe);
+    if (isExecutableFile(candidate)) return candidate;
+  }
+  return null;
+}
+
+function isExecutableFile(file: string): boolean {
+  try {
+    return statSync(file).isFile();
+  } catch {
+    return false;
+  }
 }

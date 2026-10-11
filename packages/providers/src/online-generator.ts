@@ -124,6 +124,10 @@ export class OnlineGenerator implements GenerationProvider {
     if (parameters.capability === 'generateText') {
       throw new ProviderFailure('unavailable', PC.noTextGeneration({ label }).text, { providerId: this.id });
     }
+    // 音乐生成只有本地 Provider（`OnlineCapability` 不含它），不会派到这里。
+    if (parameters.capability === 'generateMusic') {
+      throw new ProviderFailure('unavailable', PC.noTextGeneration({ label }).text, { providerId: this.id });
+    }
 
     const adapter = this.#options.image;
     const model = adapter?.models(config).find((m) => m.modelId === run.modelId);

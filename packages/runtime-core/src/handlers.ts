@@ -450,6 +450,7 @@ export function createHandlers({
       'models.synthesizeSpeech': async (p, principal) =>
         jobs.submitSynthesizeSpeech(await withSpeechMaterial(space, p), { kind: 'connection', id: principal.connectionId }),
       'models.generateImage': (p, principal) => jobs.submitGenerateImage(p, { kind: 'connection', id: principal.connectionId }),
+      'models.generateMusic': (p, principal) => jobs.submitGenerateMusic(p, { kind: 'connection', id: principal.connectionId }),
       'models.generateText': async (p, principal) =>
         jobs.submitGenerateText(await withTextMaterial(space, p), { kind: 'connection', id: principal.connectionId }),
       'models.refreshProvider': (p) => services.refreshProvider(p.providerId),

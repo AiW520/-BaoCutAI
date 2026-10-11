@@ -101,6 +101,8 @@ function labelOf(kind: string): string | null {
       return RcSpace.labelSynthesizeSpeech().text;
     case 'generateImage':
       return RcSpace.labelGenerateImage().text;
+    case 'generateMusic':
+      return RcSpace.labelGenerateMusic().text;
     case 'generateText':
       return RcSpace.labelGenerateText().text;
     case 'export':
@@ -532,6 +534,7 @@ export function exportKind(settings: ExportSettings): SpaceEntryKind {
 function kindOfJob(job: SpaceJobFacts): SpaceEntryKind {
   switch (job.kind) {
     case 'synthesizeSpeech':
+    case 'generateMusic':
       return 'audio';
     case 'generateImage':
       return 'image';

@@ -725,6 +725,7 @@ describe('Web 服务', () => {
       'synthesize-speech',
       'generate-text',
       'generate-image',
+      'generate-music',
       'link-import',
       'compress-video',
       'merge-video',
@@ -735,7 +736,7 @@ describe('Web 服务', () => {
       expect(byId(id), id).toMatchObject({ available: false });
       expect(byId(id).problems, id).toContainEqual(expect.objectContaining({ code: 'WEB_METHOD_NOT_ALLOWED' }));
     }
-    for (const id of ['synthesize-speech', 'generate-image', 'generate-text']) {
+    for (const id of ['synthesize-speech', 'generate-image', 'generate-music', 'generate-text']) {
       expect(
         byId(id).problems.map((p) => p.code),
         id,

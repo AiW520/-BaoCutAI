@@ -34,7 +34,7 @@ const schemas = {
       .max(200)
       .optional()
       .describe(
-        `可选。要下载的本地模型包；不给时是这台机器默认的转写模型包 ${defaultTranscribeBundle(process.platform, process.arch)}，本机语音合成与生图必须给出。models_capabilities 里本机 Provider 的模型就是模型包（转写在 transcribe 下，合成在 synthesizeSpeech 下，生图在 generateImage 下）`,
+        `可选。要下载的本地模型包；不给时是这台机器默认的转写模型包 ${defaultTranscribeBundle(process.platform, process.arch)}，本机语音合成、生图与音乐生成必须给出。models_capabilities 里本机 Provider 的模型就是模型包（转写在 transcribe 下，合成在 synthesizeSpeech 下，生图在 generateImage 下，音乐在 generateMusic 下）`,
       ),
     commandId: commandIdArg.optional().describe('可选。重试同一次提交时带上同一个值，不会重复创建任务'),
   }),
@@ -69,7 +69,7 @@ const DEFINITIONS: Record<ToolName, ToolInfo> = {
     title: '列出本地模型包',
     description: [
       '列出这台机器上的本地模型包与各自的状态。',
-      '每个模型包：bundleId、名字、能力（transcribe、align、synthesize、separate、image、diarize）、后端、状态（not-installed、downloading、installed、ready 等）与原因、下载大小的估计、权重许可、安装进度与最近一次检查的结果。',
+      '每个模型包：bundleId、名字、能力（transcribe、align、synthesize、separate、image、music、diarize）、后端、状态（not-installed、downloading、installed、ready 等）与原因、下载大小的估计、权重许可、安装进度与最近一次检查的结果。',
       '只读。要用本机模型时先看这里装没装；没装的用 models_install 下载（会话与终端里），能力与默认值看 models_capabilities。',
     ].join('\n'),
     annotations: { readOnlyHint: true },

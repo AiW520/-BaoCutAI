@@ -48,7 +48,7 @@ export interface SpaceJobFacts {
 }
 
 /** 会留下产物条目的任务种类。 */
-const ARTIFACT_KINDS = new Set<JobKind>(['synthesizeSpeech', 'generateImage', 'generateText', 'export']);
+const ARTIFACT_KINDS = new Set<JobKind>(['synthesizeSpeech', 'generateImage', 'generateMusic', 'generateText', 'export']);
 const TERMINAL = new Set<JobState>(['completed', 'failed', 'cancelled', 'interrupted', 'needs-reconciliation']);
 
 /**

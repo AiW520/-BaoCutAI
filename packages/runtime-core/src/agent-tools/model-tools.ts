@@ -2,6 +2,8 @@ import fs from 'node:fs/promises';
 import { z } from 'zod';
 import {
   IMAGE_FORMATS,
+  MUSIC_MODES,
+  MUSIC_PLANNINGS,
   MODEL_SERVICE_CAPABILITIES,
   SPEECH_FORMATS,
   capabilitySettingsHref,
@@ -60,7 +62,7 @@ const schemas = {
   models_capabilities: z.strictObject({
     capability: capabilityArg
       .optional()
-      .describe('可选。只看一种能力：transcribe、synthesizeSpeech、generateImage、generateText、separateAudio；省略时列出全部'),
+      .describe('可选。只看一种能力：transcribe、synthesizeSpeech、generateImage、generateMusic、generateText、separateAudio；省略时列出全部'),
   }),
   speak: z.strictObject({
     text: z.string().min(1).max(200_000).describe('要合成的文本；不能超过模型的 maxInputChars（models_capabilities 里）'),
@@ -105,6 +107,28 @@ const schemas = {
     name: assetNameArg.optional(),
     commandId: commandIdArg.optional().describe('可选。重试同一次提交时带上同一个值，不会重复创建任务'),
   }),
+  music: z.strictObject({
+    mode: z.enum(MUSIC_MODES as [string, ...string[]]).describe('song 是带人声的歌曲（必须给 lyrics），instrumental 是纯音乐（不能给 lyrics）'),
+    style: z.string().min(1).max(100_000).describe('风格描述（曲风、情绪、乐器、节奏、人声类型等，英文效果最稳）；不能超过模型的 maxStyleChars'),
+    lyrics: z.string().min(1).max(200_000).optional().describe('歌词，只在 mode 为 song 时给；不能超过模型的 maxLyricsChars'),
+    targetDurationSec: z.number().positive().max(3600).optional().describe('可选。希望的时长（秒），只是给模型的创作意图，不保证精确'),
+    maxDurationSec: z
+      .number()
+      .positive()
+      .max(3600)
+      .optional()
+      .describe('可选。时长上限（秒），不超过模型的 maxDurationSec；不给时取 targetDurationSec，再没有时用模型的 defaultDurationSec。到了上限的结果带 output-truncated 警告'),
+    planning: z
+      .enum(MUSIC_PLANNINGS as [string, ...string[]])
+      .optional()
+      .describe('可选。编排：off 不编排，melody 先规划旋律，full 完整规划（更慢）；只能选模型 planning.options 里的，不给时用模型默认'),
+    seed: seedArg.optional(),
+    provider: providerArg.optional(),
+    model: modelArg.optional(),
+    video: outputVideoArg.optional(),
+    name: assetNameArg.optional(),
+    commandId: commandIdArg.optional().describe('可选。重试同一次提交时带上同一个值，不会重复创建任务'),
+  }),
   artifacts_save: z.strictObject({
     artifactId: z
       .string()
@@ -132,7 +156,8 @@ const DEFINITIONS: Record<ToolName, ToolInfo> = {
     title: '查看模型能力',
     description: [
       '列出每种模型能力可用的 Provider、模型、限制与默认值。',
-      '能力有转写（transcribe）、语音合成（synthesizeSpeech）、图片生成（generateImage）、文本生成（generateText）、人声与背景分离（separateAudio）五种：各 Provider 与模型、是否可用及原因、限制（文本长度、尺寸、张数、音色、格式、上下文与输出上限、推理强度）、默认值。',
+      '能力有转写（transcribe）、语音合成（synthesizeSpeech）、图片生成（generateImage）、音乐生成（generateMusic）、文本生成（generateText）、人声与背景分离（separateAudio）六种：各 Provider 与模型、是否可用及原因、限制（文本长度、尺寸、张数、音色、格式、时长、上下文与输出上限、推理强度）、默认值。',
+      'generateMusic 只在本机（audio.cpp 引擎加本地模型包），生成很慢（几分钟到十几分钟），用 music 提交。',
       'separateAudio 只在本机，由翻译配音的「分离背景声」使用，没有对应的提交工具。',
       'generateText 是工具页与 CLI 启动的固定流程（翻译、润色等）调用的文本模型，没有对应的提交工具：会话里的翻译、润色、总结由你自己完成，它没有配置也不影响你做，你也不能经它调用别的模型。',
       'effective 是不指定 provider 时实际会用的；为 null 时不指定 provider 的调用会以 CAPABILITY_NOT_CONFIGURED 拒绝。',
@@ -180,6 +205,24 @@ const DEFINITIONS: Record<ToolName, ToolInfo> = {
     surfaces: ['agent', 'mcp', 'cli'],
     positional: 'prompt',
   },
+  music: {
+    title: '生成音乐',
+    description: [
+      '按风格描述（与可选的歌词）生成一段音乐：配乐、片头曲、带人声的歌曲。',
+      '只有本机的模型（audio.cpp 引擎加本地模型包），生成一段要几分钟到十几分钟：提交后用 jobs_wait 等，不要重复提交。先用 models_capabilities 看 generateMusic 有没有可用的模型、时长上限与编排选项。',
+      '给视频做配乐时：maxDurationSec 按要配的片段长度给（可以略长，之后在时间线上裁），mode 用 instrumental，风格里写清情绪、节奏与乐器。',
+      '给了 video 时，完成后音频导入为那个视频的候选素材（jobs_inspect 给出 assetId），不会放上时间线；要用时再 edits_apply 的 addItem。',
+      ARTIFACT_RULES,
+      SUBMIT_RULES,
+    ].join('\n'),
+    effect: 'job',
+    examples: [
+      { title: '给视频配一段背景音乐', args: { mode: 'instrumental', style: 'warm acoustic guitar, gentle, hopeful, 90 bpm', maxDurationSec: 60, video: 'demo' } },
+      { title: '生成一首歌', args: { mode: 'song', style: 'upbeat pop, female vocal, bright synths', lyrics: '[verse]\nMorning light on the city street\n[chorus]\nWe keep on running', planning: 'melody' } },
+    ],
+    surfaces: ['agent', 'mcp', 'cli'],
+    positional: 'style',
+  },
   artifacts_save: {
     title: '保存产物到工作目录',
     description: [
@@ -220,6 +263,8 @@ export class ModelTools implements ToolSet {
         return this.#synthesizeSpeech(args as Args<'speak'>, principal);
       case 'image':
         return this.#generateImage(args as Args<'image'>, principal);
+      case 'music':
+        return this.#generateMusic(args as Args<'music'>, principal);
       case 'artifacts_save':
         return this.#save(args as Args<'artifacts_save'>, principal);
     }
@@ -310,6 +355,51 @@ export class ModelTools implements ToolSet {
             commandId: this.#commandId(access, commandId),
           }),
           prompt: args.prompt,
+        },
+        access.submitter,
+        hint,
+      ),
+    );
+    return { ...this.#submitted(jobId), ...approvalField(approval) };
+  }
+
+  async #generateMusic(args: Args<'music'>, principal: ToolPrincipal) {
+    const access = this.#scope.authorize(principal, true);
+    const videoId = args.video !== undefined ? (await this.#scope.open(args.video, access)).ref.videoId : undefined;
+    const plan = await this.#plan(access, {
+      capability: 'generateMusic',
+      providerId: args.provider,
+      modelId: args.model,
+      videoId: videoId ?? null,
+      quantity: {},
+      ...outboundPurpose(RcAgentTools.musicPurpose({ style: clip(args.style, 40) })),
+    });
+    const approval = await this.#scope.confirm(access, {
+      tool: 'music',
+      ...(args.video !== undefined ? { video: args.video } : {}),
+      ...confirmSummary(
+        RcAgentTools.musicSummary({
+          mode: args.mode,
+          seconds: args.maxDurationSec ?? args.targetDurationSec ?? null,
+          provider: args.provider ?? null,
+          style: clip(args.style, 80),
+        }),
+      ),
+      ...this.#risk(plan),
+    });
+    const hint = this.#grantHint(plan, approval, access);
+    const { video: _, mode, planning, commandId, ...rest } = args;
+    const { jobId } = await this.#models.grants.submitWith(hint, () =>
+      this.#models.jobs.submitGenerateMusic(
+        {
+          ...optional(rest),
+          ...optional({
+            planning: planning as (typeof MUSIC_PLANNINGS)[number] | undefined,
+            videoId,
+            commandId: this.#commandId(access, commandId),
+          }),
+          mode: mode as (typeof MUSIC_MODES)[number],
+          style: args.style,
         },
         access.submitter,
         hint,

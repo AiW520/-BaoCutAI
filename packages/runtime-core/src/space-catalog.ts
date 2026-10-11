@@ -1146,7 +1146,7 @@ export class SpaceCatalog {
       for (const output of job.result.outputs ?? []) {
         // 发布的文件，以及直接任务另存在保存位置的副本（§7.9）。
         if (output.path) paths.add(output.path);
-        if (job.kind === 'generateImage' || job.kind === 'synthesizeSpeech') artifacts.add(output.artifactId);
+        if (job.kind === 'generateImage' || job.kind === 'synthesizeSpeech' || job.kind === 'generateMusic') artifacts.add(output.artifactId);
       }
     }
     for (const artifactId of artifacts) {

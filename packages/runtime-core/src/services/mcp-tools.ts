@@ -73,6 +73,7 @@ export function describeServiceTool(name: string, info: ToolInfo): ToolInfo {
       };
     case 'speak':
     case 'image':
+    case 'music':
       return { ...info, description: info.description.replace('；需要文件本身时用 artifacts_save 复制到工作目录', '') };
     case 'download':
       return {

@@ -128,7 +128,7 @@ export function webHandlers(base: RpcHandlers, deps: WebHandlerDeps): RpcHandler
   };
 
   // 直接任务的 `saveDir`（§7.9）：浏览器只能让副本写进已登记的项目目录。
-  for (const name of ['models.synthesizeSpeech', 'models.generateImage', 'models.generateText'] as const) {
+  for (const name of ['models.synthesizeSpeech', 'models.generateImage', 'models.generateMusic', 'models.generateText'] as const) {
     const submit = base.methods[name] as (params: unknown, principal: TrustedPrincipal) => unknown;
     methods[name] = async (params, principal) => {
       const saveDir = (params as { saveDir?: unknown }).saveDir;
