@@ -370,6 +370,7 @@ export const zhHans: EngineMessages = {
   // video.rs
   canvasSizeRange: '画布尺寸须在 1–16384 之间',
   videoExists: '这个目录里已经有视频',
+  mainSequence: '主序列',
   claimReadOnly: '只读打开的视频不能认领项目',
   assetRevisionMissing: (p) => `素材没有版本 ${p.revision}`,
   managedFileMissing: '素材的文件不在视频目录里',

@@ -370,6 +370,7 @@ export const vi: EngineMessages = {
   // video.rs
   canvasSizeRange: "Kích thước khung vẽ phải từ 1 đến 16384",
   videoExists: "Thư mục này đã có video",
+  mainSequence: "Chuỗi chính",
   claimReadOnly: "Video mở chỉ đọc không nhận dự án được",
   assetRevisionMissing: (p) => `Tư liệu không có phiên bản ${p.revision}`,
   managedFileMissing: "Tệp tư liệu không trong thư mục video",

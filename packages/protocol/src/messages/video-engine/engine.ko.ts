@@ -370,6 +370,7 @@ export const ko: EngineMessages = {
   // video.rs
   canvasSizeRange: '캔버스 크기는 1에서 16384 사이여야 합니다',
   videoExists: '이 디렉터리에는 이미 영상이 있습니다',
+  mainSequence: '메인 시퀀스',
   claimReadOnly: '읽기 전용으로 연 영상은 프로젝트를 소유할 수 없습니다',
   assetRevisionMissing: (p) => `소재에 버전 ${p.revision}이(가) 없습니다`,
   managedFileMissing: '소재 파일이 영상 디렉터리에 없습니다',

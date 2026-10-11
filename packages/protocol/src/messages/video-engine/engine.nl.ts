@@ -355,6 +355,7 @@ export const nl: EngineMessages = {
 
   canvasSizeRange: "De canvasgrootte moet tussen 1 en 16384 liggen",
   videoExists: "Deze map heeft al een video",
+  mainSequence: "Hoofdsequentie",
   claimReadOnly: "Een video die alleen-lezen is geopend kan geen project claimen",
   assetRevisionMissing: (p: P<'revision'>) => `De media hebben geen revisie ${p.revision}`,
   managedFileMissing: "Het mediabestand staat niet in de videomap",

@@ -1,5 +1,6 @@
 import {
   refOf,
+  sequenceDisplayName,
   type AssetRevision,
   type CompositionItem,
   type Id,
@@ -347,7 +348,7 @@ export function renderXmeml(video: VideoSnapshot, sequenceId: Id, assets: Map<st
     '<!DOCTYPE xmeml>',
     '<xmeml version="5">',
     `<sequence id="sequence-1">`,
-    `<name>${escapeXml(`${video.name} · ${sequence.name}`)}</name>`,
+    `<name>${escapeXml(`${video.name} · ${sequenceDisplayName(sequence)}`)}</name>`,
     `<duration>${durationFrames}</duration>`,
     rateXml(rate),
     '<media>',

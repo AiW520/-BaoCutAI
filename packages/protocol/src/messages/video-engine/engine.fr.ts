@@ -371,6 +371,7 @@ export const fr: EngineMessages = {
 
   canvasSizeRange: "La taille du canevas doit être entre 1 et 16384",
   videoExists: "Ce dossier contient déjà une vidéo",
+  mainSequence: "Séquence principale",
   claimReadOnly: "Une vidéo ouverte en lecture seule ne peut pas déclarer un projet",
   assetRevisionMissing: (p) => `Le média n’a aucune révision ${p.revision}`,
   managedFileMissing: "Le fichier média n’est pas dans le dossier de la vidéo",

@@ -417,6 +417,7 @@ interface Sequence {
   id: Id;
   revision: Revision;
   name: string;
+  nameRef?: MessageRef;              // name 还是引擎起的缺省名时它的消息引用；改名后没有
   fps: Rate;                         // 编辑网格。输出帧率见 ExportSettings.fps
   canvas: {
     width: number;
@@ -435,6 +436,7 @@ interface Sequence {
 }
 ```
 
+- 名字：新建视频时根序列的缺省名由引擎起，存英文 `name: 'Main sequence'` 与 `nameRef: { key: 'engine.mainSequence' }`（命令与协议规范 §11.1 的消息引用）；`updateSequence` 给了 `name` 就是用户起的名字，去掉 `nameRef`。给人看时按 `localizeText(name, nameRef)` 用读者的语言显示，用户起的名字原样（`@baocut/protocol` 的 `sequenceDisplayName`）。有 `nameRef` 之前新建的视频存的是 `name: '主序列'`、没有引用：引擎读写都不补，原样保留（撤销按存下的原样比对）；显示时把这个字面值也当缺省名。只增加可以忽略的字段，不加格式版本（§1.4）。
 - `derived`：先求所有可计时对象的精确终点，再向上投影为序列的整数帧长度。音频可能有子帧的尾端；它的真实长度不被这个视觉边界反向覆盖。
 - `fixed`：允许片尾留白；超出终点的内容必须显式裁切或延长序列。
 - 恒定帧率输出的尾帧政策见 §2.11；不能为了编码方便而偷偷修改视频时长。

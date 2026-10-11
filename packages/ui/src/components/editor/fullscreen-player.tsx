@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore, type ReactElement, type ReactNode, type RefObject } from 'react';
-import type { AssetRecord, DocumentRecord, Id, Sequence } from '@baocut/protocol';
+import { sequenceDisplayName, type AssetRecord, type DocumentRecord, type Id, type Sequence } from '@baocut/protocol';
 import {
   ActionButton,
   Header,
@@ -139,7 +139,7 @@ export function FullscreenPlayer({
   const { engine, seek, togglePlay } = useEditorActions();
   const playing = useEditor((s) => s.playing);
   const playhead = useEditor((s) => s.playhead);
-  const name = useVideo((s) => s.video?.state?.video.name ?? s.video?.ref?.name) ?? sequence.name;
+  const name = useVideo((s) => s.video?.state?.video.name ?? s.video?.ref?.name) ?? sequenceDisplayName(sequence);
   const duration = durationSeconds(sequence);
   const chapters = useMemo(() => sequenceChapters(sequence), [sequence]);
   const shownChapters = useMemo(() => visibleChapters(chapters), [chapters]);

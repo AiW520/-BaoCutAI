@@ -355,6 +355,7 @@ export const de: EngineMessages = {
 
   canvasSizeRange: "Die Arbeitsflächengröße muss zwischen 1 und 16384 liegen",
   videoExists: "Dieses Verzeichnis enthält bereits ein Video",
+  mainSequence: "Hauptsequenz",
   claimReadOnly: "Ein schreibgeschützt geöffnetes Video kann kein Projekt beanspruchen",
   assetRevisionMissing: (p: P<'revision'>) => `Das Material hat keine Revision ${p.revision}`,
   managedFileMissing: "Die Materialdatei liegt nicht im Videoverzeichnis",

@@ -1,10 +1,13 @@
-import { describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { setLocale } from './i18n.ts';
+import './messages/video-engine/index.ts';
 import {
   applyVideoEvent,
   itemAssetRef,
   itemAssetRefs,
   itemRangeSeconds,
   itemTimeMap,
+  sequenceDisplayName,
   sequenceDurationFrames,
   type AudioItem,
   type CaptionItem,
@@ -223,6 +226,29 @@ describe('applyVideoEvent', () => {
     expect(next.video.assets.asset_1?.name).toBe('a.mp4');
   });
 
+  it('序列头的投影：改名之后的序列头没有 nameRef，旧的引用不留', () => {
+    const state = base();
+    const seq = state.video.sequences.seq_1!;
+    const header = (name: string, extra: object = {}) => ({
+      id: 'seq_1',
+      revision: '2',
+      name,
+      fps,
+      canvas: seq.canvas,
+      durationPolicy: { kind: 'derived' },
+      animationBindings: [],
+      ...extra,
+    });
+    const named = applyVideoEvent(
+      state,
+      event('2', { upserts: [{ kind: 'sequence', id: 'seq_1', value: header('Main sequence', { nameRef: { key: 'engine.mainSequence' } }) }], removals: [] }),
+    );
+    expect(named.video.sequences.seq_1!.nameRef).toEqual({ key: 'engine.mainSequence' });
+    const renamed = applyVideoEvent(named, event('3', { upserts: [{ kind: 'sequence', id: 'seq_1', value: header('Vertical cut') }], removals: [] }));
+    expect(renamed.video.sequences.seq_1!.name).toBe('Vertical cut');
+    expect('nameRef' in renamed.video.sequences.seq_1!).toBe(false);
+  });
+
   it('文档头的投影：写入新版本替换文档头，删除后不在快照里', () => {
     const header = {
       id: 'doc_1',
@@ -299,5 +325,40 @@ describe('applyVideoEvent', () => {
     const range = itemRangeSeconds(audio, fps);
     expect(range.start).toBeCloseTo(1 + 1 / 60);
     expect(range.end).toBeCloseTo(2.5 + 1 / 60);
+  });
+});
+
+/** 序列的缺省名按读者的语言显示（视频格式规范 §3.2）；用户起的名字原样。 */
+describe('sequenceDisplayName', () => {
+  const created = { name: 'Main sequence', nameRef: { key: 'engine.mainSequence' } };
+  const legacy = { name: '主序列' };
+  afterEach(() => {
+    vi.unstubAllEnvs();
+    setLocale('zh-Hans');
+  });
+
+  it('缺省名与有 nameRef 之前存下的「主序列」都按当前语言显示', () => {
+    expect(sequenceDisplayName(created)).toBe('主序列');
+    expect(sequenceDisplayName(legacy)).toBe('主序列');
+    vi.stubEnv('BAOCUT_LOCALE', 'en');
+    setLocale('en');
+    expect(sequenceDisplayName(created)).toBe('Main sequence');
+    expect(sequenceDisplayName(legacy)).toBe('Main sequence');
+    vi.stubEnv('BAOCUT_LOCALE', 'ja');
+    setLocale('ja');
+    expect(sequenceDisplayName(legacy)).toBe('メインシーケンス');
+  });
+
+  describe('用户起的名字', () => {
+    beforeEach(() => {
+      vi.stubEnv('BAOCUT_LOCALE', 'en');
+      setLocale('en');
+    });
+
+    it('原样显示，不跟着语言换', () => {
+      expect(sequenceDisplayName({ name: 'Vertical cut' })).toBe('Vertical cut');
+      expect(sequenceDisplayName({ name: '竖版' })).toBe('竖版');
+      expect(sequenceDisplayName({ name: 'Main sequence' })).toBe('Main sequence');
+    });
   });
 });

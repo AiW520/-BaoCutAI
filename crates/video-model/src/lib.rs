@@ -9,6 +9,7 @@
 use std::collections::BTreeMap;
 
 use editor_semantics::{MediaTime, Rate, TimeMap};
+use message_ref::MessageRef;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
@@ -116,6 +117,9 @@ pub struct Sequence {
 #[serde(rename_all = "camelCase")]
 pub struct SequenceHeader {
     pub name: String,
+    /// `name` 还是引擎起的缺省名时，它的消息引用（§3.2）：界面按读者的语言重新生成。改名后没有。
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name_ref: Option<MessageRef>,
     pub fps: Rate,
     pub canvas: Canvas,
     pub duration_policy: DurationPolicy,

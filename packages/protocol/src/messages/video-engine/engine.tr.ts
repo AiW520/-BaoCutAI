@@ -370,6 +370,7 @@ export const tr: EngineMessages = {
   // video.rs
   canvasSizeRange: "Tuval boyutu 1–16384 arasında olmalı",
   videoExists: "Bu klasörde zaten video var",
+  mainSequence: "Ana sekans",
   claimReadOnly: "Salt okunur açılan video proje sahipliği alamaz",
   assetRevisionMissing: (p) => `Medyanın ${p.revision} sürümü yok`,
   managedFileMissing: "Medya dosyası video klasöründe değil",

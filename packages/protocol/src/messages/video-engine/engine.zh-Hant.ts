@@ -370,6 +370,7 @@ export const zhHant: EngineMessages = {
   // video.rs
   canvasSizeRange: '畫布尺寸必須介於 1 到 16384 之間',
   videoExists: '這個資料夾已經有影片',
+  mainSequence: '主序列',
   claimReadOnly: '以唯讀方式開啟的影片無法認領專案',
   assetRevisionMissing: (p) => `素材沒有版本 ${p.revision}`,
   managedFileMissing: '素材檔案不在影片資料夾中',

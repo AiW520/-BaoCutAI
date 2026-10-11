@@ -358,11 +358,14 @@ impl Video {
             markers: BTreeMap::new(),
             ducking: BTreeMap::new(),
         };
+        // 缺省名存英文与引用，界面按读者的语言显示（视频格式规范 §3.2）。
+        let root_name = msg!("engine.mainSequence", "Main sequence");
         state.sequences.insert(
             sequence_id.clone(),
             SequenceEntity {
                 header: SequenceHeader {
-                    name: "主序列".into(),
+                    name: root_name.text,
+                    name_ref: root_name.message_ref,
                     fps: options.fps,
                     canvas: Canvas {
                         width: options.width,

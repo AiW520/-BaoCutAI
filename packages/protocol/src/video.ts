@@ -1,5 +1,5 @@
 import type { Id, Seq } from './domain.ts';
-import type { MessageRef } from './message-ref.ts';
+import { localizeText, type MessageRef } from './message-ref.ts';
 
 /**
  * 视频领域的线上 DTO（视频格式规范 §2–§4；命令与协议规范 §4–§6、§10）。
@@ -658,6 +658,8 @@ export interface Sequence {
   id: Id;
   revision: Revision;
   name: string;
+  /** `name` 还是引擎起的缺省名（`engine.mainSequence`）时的引用；改名后没有。显示用 {@link sequenceDisplayName}。 */
+  nameRef?: MessageRef;
   fps: Rate;
   /** `background` 是不透明的纯色 `#RRGGBB`（大写）。 */
   canvas: { width: number; height: number; workingSpace: string; background: string };
@@ -1515,8 +1517,9 @@ export function applyVideoEvent(state: VideoTopicSnapshot, event: VideoEvent): V
         const existing = sequenceOf(upsert.id);
         if (existing) {
           Object.assign(existing, header);
-          // 没有模板层时省略：去掉之后的投影里也不能留着旧的。
+          // 没有模板层时省略：去掉之后的投影里也不能留着旧的。缺省名的引用同理（改名后省略）。
           if (!('template' in header)) delete existing.template;
+          if (!('nameRef' in header)) delete existing.nameRef;
         } else {
           video.sequences[upsert.id] = {
             transitions: [],
@@ -1610,6 +1613,18 @@ export function itemRangeSeconds(item: SequenceItem, fps: Rate): { start: number
     return { start, end: start + mediaTimeToSeconds(item.playDuration) };
   }
   return { start: framesToSeconds(item.span.fromFrame, fps), end: framesToSeconds(item.span.fromFrame + item.span.durationFrames, fps) };
+}
+
+// i18n-ignore: 有 nameRef 之前新建的视频存的是这个缺省名（视频格式规范 §3.2），只用来认出它
+const LEGACY_DEFAULT_SEQUENCE_NAME = '主序列';
+
+/**
+ * 序列给人看的名字（视频格式规范 §3.2）：引擎起的缺省名按读者的语言显示，用户起的名字原样。有 `nameRef` 之前新建的视频
+ * 存的是中文缺省名「主序列」、没有引用，也当缺省名显示。
+ */
+export function sequenceDisplayName(sequence: Pick<Sequence, 'name' | 'nameRef'>): string {
+  const ref = sequence.nameRef ?? (sequence.name === LEGACY_DEFAULT_SEQUENCE_NAME ? { key: 'engine.mainSequence' } : undefined);
+  return localizeText(sequence.name, ref);
 }
 
 /** 序列长度（帧）：所有实例终点的最大值向上取整。 */

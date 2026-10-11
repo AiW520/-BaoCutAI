@@ -370,6 +370,7 @@ export const pl: EngineMessages = {
   // video.rs
   canvasSizeRange: "Rozmiar płótna musi być między 1 a 16384",
   videoExists: "Ten katalog już ma wideo",
+  mainSequence: "Sekwencja główna",
   claimReadOnly: "Wideo tylko do odczytu nie może przypisać projektu",
   assetRevisionMissing: (p) => `Materiał nie ma rewizji ${p.revision}`,
   managedFileMissing: "Plik materiału nie jest w katalogu wideo",

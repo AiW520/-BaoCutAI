@@ -370,6 +370,7 @@ export const ru: EngineMessages = {
   // video.rs
   canvasSizeRange: "Размер холста должен быть между 1 и 16384",
   videoExists: "В этом каталоге уже есть видео",
+  mainSequence: "Основная последовательность",
   claimReadOnly: "Видео только для чтения не может закрепить проект",
   assetRevisionMissing: (p) => `У материала нет ревизии ${p.revision}`,
   managedFileMissing: "Файл материала вне каталога видео",

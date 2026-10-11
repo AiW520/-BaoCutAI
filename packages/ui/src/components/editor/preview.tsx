@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type SyntheticEvent } from 'react';
-import { itemRangeSeconds, type AssetRecord, type AudioItem, type DocumentRecord, type Id, type Sequence, type VersionRef } from '@baocut/protocol';
+import { itemRangeSeconds, sequenceDisplayName, type AssetRecord, type AudioItem, type DocumentRecord, type Id, type Sequence, type VersionRef } from '@baocut/protocol';
 import { Content, ContextualHelp, Heading, StatusLight } from '@react-spectrum/s2';
 import { style } from '@react-spectrum/s2/style' with { type: 'macro' };
 import { formatFps, videoSlots } from '../../model/editor.ts';
@@ -205,7 +205,7 @@ export function Preview({
     <div className={wrap}>
       <div className={head}>
         <span>
-          {sequence.name} · {cw}×{ch} · {formatFps(sequence.fps)}
+          {sequenceDisplayName(sequence)} · {cw}×{ch} · {formatFps(sequence.fps)}
         </span>
         {status.kind === 'ready' && status.problems ? <Problems problems={status.problems} /> : null}
       </div>

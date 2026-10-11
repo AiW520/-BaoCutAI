@@ -296,7 +296,7 @@ type EditOperation = { type: string; [field: string]: JsonValue };
 - `setAudioMix` 改音频实例的混音或视频、合成自带的那路声音：`muted`、`volume`（线性倍数，0–4）、`fadeIn`、`fadeOut`（十进制秒，`"0"` 去掉）。
 - `setTransition` 给出 `sequenceId`、`leftItemId` 与 `rightItemId`（至少一个）、`kind`、`params`，可选 `duration`（§6 的时间输入；给了就要写明 `alignment`）、`easing`、`placement`、`audioCrossfade`。种类是 `dissolve`、`wipe`、`slide`、`zoom`、`iris`、`dip-to-color`、`push`，后两种只用于两侧。同一条边上已有的转场被替换。两侧转场必须给 `duration`，handles 不够时拒绝，不自动缩短；单侧转场不给 `duration` 时是 0.5 秒，生效的长度随实例变短（视频格式规范 §3.9），变短的列在回执的 `impact.shortenedTransitions` 里。
 - `setEffects` 给 `fx`，整个替换视觉媒体或合成实例的效果（视频格式规范 §3.9），`null` 去掉。
-- `updateSequence` 改序列的 `name`、`canvas`（`{ width, height }`，像素）与 `background`（`#RRGGBB`）。位置按画幅的百分比保存，改尺寸时实例跟着画布走。
+- `updateSequence` 改序列的 `name`、`canvas`（`{ width, height }`，像素）与 `background`（`#RRGGBB`）。给了 `name` 时序列头去掉缺省名的 `nameRef`（视频格式规范 §3.2）。位置按画幅的百分比保存，改尺寸时实例跟着画布走。
 - `setChapters` 整个替换序列的章节，其他标记不动；`chapterId` 沿用已有的章节。`upsertChapter` 不给 `chapterId` 时新建，须给 `at` 与 `title`；`summary`、`thumbnail` 给 `null` 去掉；给 `at` 时须写明 `alignment`。缩略图用 `{ assetId }` 或同一事务里 `importAsset` 的 `{ ref }`。
 - `setDucking` 不给 `ruleId` 时新建，须给 `trigger` 与 `target`；给了只改给出的字段。`trigger` 是 `{ kind: 'speech' }`（有人说话时）或 `{ kind: 'items', … }`（这些轨道与实例发声时）；`depth` 是压低的分贝数（0–60）；`attack`、`release` 是十进制秒字符串。按实例触发的 `trigger` 与 `target` 除了 `trackIds`、`itemIds`，还可以用 `trackRefs` 引用同一事务里 `addTrack` 的 `ref`。
 - `removeRange` 给出 `sequenceId`、`from`、`to`（§6 的时间输入）、`trackIds` 与 `alignment`，在列出的轨道上删掉 `[from, to)` 并让之后的内容前移（波纹删除，视频格式规范 §6.4）：盖住区间的视频、音频、合成实例拆开删掉中间，经它投影的字幕跟着右段走；图片、文字、形状、字幕实例缩短；整个落在区间里的删掉。没列出的轨道不动；列出的轨道或要动的实例锁着时整笔拒绝（`TARGET_LOCKED`），不跳过。口播剪辑接受建议时编译成它。

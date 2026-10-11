@@ -391,6 +391,7 @@ const en = {
   // video.rs
   canvasSizeRange: 'The canvas size must be between 1 and 16384',
   videoExists: 'This directory already has a video',
+  mainSequence: 'Main sequence',
   claimReadOnly: 'A video opened read-only cannot claim a project',
   assetRevisionMissing: (p: P<'revision'>) => `The asset has no revision ${p.revision}`,
   managedFileMissing: 'The asset file is not in the video directory',

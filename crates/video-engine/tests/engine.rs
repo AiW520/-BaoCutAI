@@ -196,6 +196,76 @@ fn created_video_reopens_with_the_same_snapshot() {
 }
 
 #[test]
+fn default_root_sequence_name_carries_a_message_ref_until_renamed() {
+    let dir = tempfile::tempdir().unwrap();
+    let mut video = new_video(dir.path());
+    let s = seq(&video);
+    let header = |video: &Video| video.snapshot().sequences[&s].header.clone();
+    // 缺省名存英文与引用，界面按读者的语言显示（视频格式规范 §3.2）。
+    let created = header(&video);
+    assert_eq!(created.name, "Main sequence");
+    assert_eq!(created.name_ref.as_ref().map(|r| r.key.as_str()), Some("engine.mainSequence"));
+
+    // 只改画布不动名字：仍是缺省名。
+    video
+        .apply(&tx(
+            &video,
+            "cmd_background",
+            vec![json!({ "type": "updateSequence", "sequenceId": s, "background": "#112233" })],
+        ))
+        .unwrap();
+    assert_eq!(header(&video).name_ref, created.name_ref);
+
+    // 改名：用户起的名字原样显示，引用去掉，交换形式里没有 nameRef；重开后也一样。
+    let renamed = video
+        .apply(&tx(
+            &video,
+            "cmd_sequence_name",
+            vec![json!({ "type": "updateSequence", "sequenceId": s, "name": "Vertical cut" })],
+        ))
+        .unwrap();
+    assert_eq!((header(&video).name, header(&video).name_ref), ("Vertical cut".to_string(), None));
+    assert!(
+        serde_json::to_value(&video.snapshot().sequences[&s])
+            .unwrap()
+            .get("nameRef")
+            .is_none()
+    );
+    drop(video);
+    let mut reopened = Video::open(dir.path(), OpenMode::Write, &ffprobe()).unwrap();
+    assert_eq!(header(&reopened).name_ref, None);
+
+    // 撤销改名：缺省名与引用一起回来。
+    reopened
+        .undo(&UndoRequest {
+            command_id: "cmd_undo_name".into(),
+            target: UndoTarget::Transaction(renamed.receipt.transaction_id.clone()),
+            expected_revision: None,
+            actor: user(),
+        })
+        .unwrap();
+    assert_eq!(
+        (header(&reopened).name, header(&reopened).name_ref),
+        (created.name, created.name_ref)
+    );
+}
+
+#[test]
+fn sequence_header_without_name_ref_round_trips_unchanged() {
+    // 有 nameRef 之前写下的序列：读入时没有引用，引擎也不补，写回与原样一致（撤销按原样比对）。
+    let stored = json!({
+        "name": "主序列",
+        "fps": { "num": 30, "den": 1 },
+        "canvas": { "width": 1920, "height": 1080, "workingSpace": "srgb", "background": "#000000" },
+        "durationPolicy": { "kind": "derived" },
+        "animationBindings": [],
+    });
+    let header: video_engine::model::SequenceHeader = serde_json::from_value(stored.clone()).unwrap();
+    assert_eq!(header.name_ref, None);
+    assert_eq!(serde_json::to_value(&header).unwrap(), stored);
+}
+
+#[test]
 fn c03_second_writer_is_rejected_and_read_only_cannot_write() {
     let dir = tempfile::tempdir().unwrap();
     let video = new_video(dir.path());

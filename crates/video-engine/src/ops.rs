@@ -3311,6 +3311,8 @@ fn update_sequence(
     let mut next = state.sequence(sequence_id)?.header.clone();
     if let Some(n) = name {
         next.name = clean_name(n, kinds::sequence())?;
+        // 用户起的名字原样显示，不再跟着读者的语言换。
+        next.name_ref = None;
     }
     if let Some(bg) = background {
         next.canvas.background = canvas_background(bg)

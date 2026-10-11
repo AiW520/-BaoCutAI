@@ -370,6 +370,7 @@ export const ptBR: EngineMessages = {
   // video.rs
   canvasSizeRange: "O tamanho do canvas deve estar entre 1 e 16384",
   videoExists: "Este diretório já tem vídeo",
+  mainSequence: "Sequência principal",
   claimReadOnly: "Vídeo aberto em leitura apenas não pode registrar projeto",
   assetRevisionMissing: (p) => `A mídia não tem revisão ${p.revision}`,
   managedFileMissing: "O arquivo da mídia não está no diretório do vídeo",

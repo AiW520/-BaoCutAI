@@ -370,6 +370,7 @@ export const ja: EngineMessages = {
   // video.rs
   canvasSizeRange: 'キャンバスのサイズは 1〜16384 にしてください',
   videoExists: 'このフォルダにはすでに動画があります',
+  mainSequence: 'メインシーケンス',
   claimReadOnly: '読み取り専用で開いた動画はプロジェクトに紐付けできません',
   assetRevisionMissing: (p) => `素材にリビジョン ${p.revision} がありません`,
   managedFileMissing: '素材のファイルが動画フォルダにありません',
