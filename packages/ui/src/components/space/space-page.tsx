@@ -45,6 +45,7 @@ import ViewList from '@react-spectrum/s2/icons/ViewList';
 import { style } from '@react-spectrum/s2/style' with { type: 'macro' };
 import { untitled } from '../../copy.ts';
 import { mediaKindOf } from '../../model/new-flow.ts';
+import { madeShorts } from '../../model/shorts-result.ts';
 import {
   editBlock,
   entryConversationId,
@@ -63,6 +64,7 @@ import {
   entryPath,
   filesOf,
   hostVideoOf,
+  parentVideoOf,
   videoTargetOf,
   projectOptions,
   SPACE_CATEGORIES,
@@ -283,7 +285,7 @@ function SpaceMain({ category, projectId, from }: { category: SpaceCategory; pro
     () => viewEntries(entries, { category, projectId, search: query, sort, status, from }),
     [entries, category, projectId, query, sort, status, from],
   );
-  // 父视频卡片 / 行上的「N 支短视频」与查看框的「查看切出的短视频」。
+  // 父视频卡片 / 行上的「N 支短视频」。
   const shorts = useMemo(() => {
     const counts = new Map<Id, number>();
     for (const entry of entries) {
@@ -307,6 +309,12 @@ function SpaceMain({ category, projectId, from }: { category: SpaceCategory; pro
   // 视频的查看框列出名下的文件，文件的查看框能回到所属的视频（§4.3）：从哪个分类、哪里打开都一样，所以按全部条目算。
   const viewingFiles = useMemo(() => (viewing?.kind === 'video' ? filesOf(entries, viewing.id) : []), [entries, viewing]);
   const viewingHost = useMemo(() => (viewing ? hostVideoOf(entries, viewing) : null), [entries, viewing]);
+  // 视频的查看框列出它切出的短视频，短视频的查看框能回到父视频（§4.5）。
+  const viewingShorts = useMemo(() => {
+    const videoId = viewing?.kind === 'video' ? videoIdOf(viewing) : null;
+    return videoId ? madeShorts(entries, videoId) : [];
+  }, [entries, viewing]);
+  const viewingParent = useMemo(() => (viewing ? parentVideoOf(entries, viewing) : null), [entries, viewing]);
   const viewingTools = useEntryTools(viewing);
   const viewingConversationId = viewing ? entryConversationId(viewing) : null;
   const viewingConversation = viewingConversationId ? conversations.find((c) => c.id === viewingConversationId) : undefined;
@@ -750,7 +758,8 @@ function SpaceMain({ category, projectId, from }: { category: SpaceCategory; pro
         tools={viewingTools}
         files={viewingFiles}
         host={viewingHost}
-        shorts={viewing ? (shorts.get(videoIdOf(viewing) ?? '') ?? 0) : 0}
+        shorts={viewingShorts}
+        parent={viewingParent}
       />
       <SpaceDialogs
         dialog={dialog}

@@ -24,6 +24,8 @@ describe('Space 页文案', () => {
     expect(SPACE_COPY.filesLine(3, 'Export 2 · Subtitles 1')).toBe('3 files · Export 2 · Subtitles 1');
     expect(M.foundFiles('a.srt', 3)).toBe('Found: a.srt and 2 more');
     expect(M.filesStatus(2, 'Missing')).toBe('2 files: Missing');
+    expect(SPACE_COPY.shortsMore(1)).toBe('1 more short. Show them all in the list.');
+    expect(SPACE_COPY.shortsSpan('10:12', '10:58')).toBe('Original 10:12–10:58');
   });
 
   it('简体中文译文照旧', () => {
@@ -33,5 +35,7 @@ describe('Space 页文案', () => {
     expect(SPACE_COPY.withReason('文件被移走了', SPACE_COPY.missingBody)).toBe('文件被移走了。条目还在，接回文件后状态会自己恢复。');
     expect(SPACE_COPY.filesButtonLabel(2, '成片 1 · 字幕 1')).toBe('2 个文件：成片 1 · 字幕 1');
     expect(M.fileStatus('成片', '来源已变')).toBe('成片来源已变');
+    expect(SPACE_COPY.shortsMore(3)).toBe('还有 3 支，在列表中查看全部');
+    expect(SPACE_COPY.shortsSpan('10:12', '10:58')).toBe('原片 10:12–10:58');
   });
 });

@@ -137,6 +137,13 @@ export function hostVideoOf(entries: readonly SpaceEntry[], entry: SpaceEntry): 
   return host ? (entries.find((e) => e.id === host) ?? null) : null;
 }
 
+/** 切出的短视频的父视频（查看框的「查看来源视频」回到它）：不在回收站里的那部；不是派生来的或父视频不在时 null。 */
+export function parentVideoOf(entries: readonly SpaceEntry[], entry: SpaceEntry): SpaceEntry | null {
+  const videoId = derivedFrom(entry);
+  const parent = videoId ? hostIds(entries).get(videoId) : undefined;
+  return parent ? (entries.find((e) => e.id === parent) ?? null) : null;
+}
+
 /** 只靠名下文件对上搜索或筛选时，这一行的说明写是哪个文件（「找到 英文字幕.srt」）；不是这种行时 null。 */
 export function hitsText(row: SpaceRow): string | null {
   const first = row.hits?.length ? row.files?.find((f) => f.id === row.hits![0]) : undefined;

@@ -16,6 +16,7 @@ import {
   hostVideoOf,
   inCategory,
   measureText,
+  parentVideoOf,
   previewKind,
   projectOptions,
   recentVideos,
@@ -299,6 +300,12 @@ describe('位置与来源', () => {
     expect(sourceLabel(child, dirs, '新会话', videoNamesOf(entries))).toBe('宣传片 · talks · 来自「发布会」');
     // 父视频不在列表里时只写位置。
     expect(sourceLabel(child, dirs, '新会话', videoNamesOf([child]))).toBe('宣传片 · talks');
+    // 查看框的「查看来源视频」：父视频还在、不在回收站里才有。
+    expect(parentVideoOf(entries, child)?.id).toBe('parent');
+    expect(parentVideoOf(entries, parent)).toBeNull();
+    expect(parentVideoOf([child], child)).toBeNull();
+    const binned = entry('parent', { kind: 'video', ref: { videoId: 'v_parent' } }, { trashedAt: '2026-10-01T00:00:00.000Z' });
+    expect(parentVideoOf([binned, child], child)).toBeNull();
   });
 });
 

@@ -1037,7 +1037,7 @@ describe('Space 目录', () => {
     expect(byName(reopened, '访谈').media).toEqual({ durationSec: 15, width: 1920, height: 1080 });
   });
 
-  it('派生的子视频：条目的 origin 指向父视频与派生时的版本，按幂等键认得回来', async () => {
+  it('派生的子视频：条目的 origin 指向父视频、派生时的版本与区间，按幂等键认得回来', async () => {
     const { catalog, index } = await open();
     expect(byName(catalog, '访谈').origin).toBeUndefined();
     const content = videoContent('v1', 'rev-2');
@@ -1053,6 +1053,7 @@ describe('Space 目录', () => {
       projectId: byName(catalog, '访谈').source.projectId,
       videoId: 'v_parent',
       videoRevision: '7',
+      range: { start: 1, end: 2 },
       capability: 'videos-derive',
     });
     const find = spaceDerivedFinder(catalog);

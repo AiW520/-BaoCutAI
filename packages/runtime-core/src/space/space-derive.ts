@@ -168,7 +168,7 @@ export function deriveEntries(input: DeriveInput): Map<Id, DerivedEntry> {
         // 「时长或尺寸」一列：工作稿根序列的时长与画布尺寸（索引读到之后；快照不全时没有）。
         const timeline = known.facts.timeline;
         if (timeline) entry.media = { durationSec: timeline.durationSec, width: timeline.width, height: timeline.height };
-        // 派生的子视频（`videos.derive`）：来源是父视频与派生时它的版本。
+        // 派生的子视频（`videos.derive`）：来源是父视频、派生时它的版本与取的区间。
         const derivedFrom = known.facts.origin;
         if (derivedFrom) {
           entry.origin = {
@@ -176,6 +176,7 @@ export function deriveEntries(input: DeriveInput): Map<Id, DerivedEntry> {
             projectId: source.projectId,
             videoId: derivedFrom.parentVideoId,
             videoRevision: derivedFrom.parentRevision,
+            range: { start: derivedFrom.range.start, end: derivedFrom.range.end },
             capability: 'videos-derive',
           };
         }

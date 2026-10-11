@@ -867,6 +867,8 @@ export interface SpaceEntryOrigin {
   /** 产生它的视频；导出时另有冻结的视频版本。 */
   videoId?: Id;
   videoRevision?: string;
+  /** 派生的子视频：派生时取的父视频区间（父视频剪辑后的时间线，秒）；只有 `derived` 有。 */
+  range?: { start: number; end: number };
   conversationId?: Id;
   taskId?: Id;
   jobId?: Id;

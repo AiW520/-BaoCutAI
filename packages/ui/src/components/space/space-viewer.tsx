@@ -16,7 +16,6 @@ import {
 } from '@react-spectrum/s2';
 import Chat from '@react-spectrum/s2/icons/Chat';
 import Clock from '@react-spectrum/s2/icons/Clock';
-import DevicePhone from '@react-spectrum/s2/icons/DevicePhone';
 import Edit from '@react-spectrum/s2/icons/Edit';
 import Filmstrip from '@react-spectrum/s2/icons/Filmstrip';
 import Folder from '@react-spectrum/s2/icons/Folder';
@@ -24,7 +23,7 @@ import Star from '@react-spectrum/s2/icons/Star';
 import StarFilled from '@react-spectrum/s2/icons/StarFilled';
 import { style } from '@react-spectrum/s2/style' with { type: 'macro' };
 import { Button as RACButton } from 'react-aria-components';
-import { agoLabel } from '../../model/format.ts';
+import { agoLabel, formatClock } from '../../model/format.ts';
 import { targetKey } from '../../model/media.ts';
 import {
   continueBlock,
@@ -39,6 +38,7 @@ import {
 import { DESIGN } from '../../model/design-copy.ts';
 import { DESIGN_SYSTEM } from '../../model/design-system-copy.ts';
 import { SLIDES } from '../../model/slides-copy.ts';
+import { MADE_SHOWN } from '../../model/shorts-result.ts';
 import { formatBytes, isPlayable, KIND_LABEL, measureText, SPACE_STATUS, statusText } from '../../model/space.ts';
 import { FilePreview } from '../file-preview.tsx';
 import type { EntryTools } from '../tools/use-entry-tools.ts';
@@ -63,6 +63,7 @@ const alerts = style({ display: 'flex', flexDirection: 'column', gap: 8, marginT
 const hint = style({ font: 'ui-sm', color: 'gray-600', marginTop: 12, marginBottom: 0 });
 const filesSection = style({ display: 'flex', flexDirection: 'column', gap: 8 });
 const filesHead = style({ display: 'flex', alignItems: 'baseline', gap: 8, margin: 0, font: 'ui', fontWeight: 'bold', color: 'gray-900' });
+const filesBar = style({ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 });
 const filesCount = style({ fontWeight: 'normal', color: 'gray-600' });
 const fileList = style({ display: 'flex', flexDirection: 'column', gap: 2, margin: 0, padding: 0, listStyleType: 'none' });
 const fileRow = style({
@@ -84,6 +85,7 @@ const fileRow = style({
 const fileBody = style({ display: 'flex', flexDirection: 'column', flexGrow: 1, minWidth: 0 });
 const fileName = style({ font: 'ui', color: 'gray-900', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' });
 const fileMeta = style({ font: 'ui-xs', color: 'gray-600', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' });
+const filesHint = style({ font: 'ui-sm', color: 'gray-600', margin: 0 });
 
 /** 查看框里的动作（由页面接到 Runtime）。 */
 export interface ViewerActions {
@@ -108,7 +110,7 @@ export interface ViewerActions {
   onConversation(conversationId: Id): void;
   /** 换成另一个条目的查看框：视频名下的文件，或文件所属的视频。 */
   onSwitch(entryId: Id): void;
-  /** 按来源筛出从这部视频切出的短视频（产品设计 §5.10）。 */
+  /** 按来源把 Space 筛成从这部视频切出的短视频（产品设计 §4.3、§5.10）。 */
   onShorts?(entry: SpaceEntry): void;
   onClose(): void;
 }
@@ -119,7 +121,8 @@ export interface ViewerActions {
  * 收藏 · 重命名 · 用工具处理… · 再做一次（工具做出来的）；
  * 回收站里的是恢复与彻底删除，失败的占位是清除与查看任务。做不了的按钮置灰，原因写在下面。
  * 一部视频在「全部」与「视频」里只有一行（§4.3）：它导出、生成的文件列在这部视频的查看框里，点一个换成那个文件；
- * 文件的查看框里「查看视频」换回来。
+ * 文件的查看框里「查看视频」换回来。切出的短视频各是一部视频，父视频的查看框里在文件之前一起列，点一支换成它的查看框；
+ * 短视频的查看框里「查看来源视频」换回父视频。
  * 条目由外层传进来：S2 的 Dialog 会在几个 slot 里各渲染一遍 children，这里不放状态。
  */
 export function SpaceViewer({
@@ -132,7 +135,8 @@ export function SpaceViewer({
   tools = null,
   files = [],
   host = null,
-  shorts = 0,
+  shorts = [],
+  parent = null,
 }: {
   entry: SpaceEntry | null;
   source: string;
@@ -148,8 +152,10 @@ export function SpaceViewer({
   files?: readonly SpaceEntry[];
   /** 文件所属的视频（`hostVideoOf`）。 */
   host?: SpaceEntry | null;
-  /** 从这部视频派生的子视频数（`derivedCount`）。 */
-  shorts?: number;
+  /** 从这部视频切出的短视频，新切的在前（model/shorts-result.ts `madeShorts`）。 */
+  shorts?: readonly SpaceEntry[];
+  /** 短视频的父视频（`parentVideoOf`）。 */
+  parent?: SpaceEntry | null;
 }) {
   return (
     <DialogContainer onDismiss={actions.onClose}>
@@ -166,6 +172,7 @@ export function SpaceViewer({
             files={files}
             host={host}
             shorts={shorts}
+            parent={parent}
           />
         </Dialog>
       ) : null}
@@ -184,6 +191,7 @@ function ViewerBody({
   files,
   host,
   shorts,
+  parent,
 }: {
   entry: SpaceEntry;
   source: string;
@@ -194,7 +202,8 @@ function ViewerBody({
   tools: EntryTools | null;
   files: readonly SpaceEntry[];
   host: SpaceEntry | null;
-  shorts: number;
+  shorts: readonly SpaceEntry[];
+  parent: SpaceEntry | null;
 }) {
   const trashed = entry.user.trashedAt !== null;
   const failed = isFailedPlaceholder(entry);
@@ -239,6 +248,9 @@ function ViewerBody({
       <Content>
         {hasFile ? <FilePreview key={entry.id} target={{ entryId: entry.id }} fileName={entry.fileName}
           playback={{ layout: 'row', memoryKey: entry.source.projectId ? targetKey({ projectId: entry.source.projectId, path: entry.relPath }) : undefined }} /> : null}
+        {isVideo && shorts.length ? (
+          <VideoShorts shorts={shorts} onSwitch={actions.onSwitch} onList={actions.onShorts ? () => actions.onShorts?.(entry) : null} />
+        ) : null}
         {isVideo && files.length ? <VideoFiles files={files} onSwitch={actions.onSwitch} /> : null}
         <dl className={facts}>
           <dt className={term}>{COPY.factSource}</dt>
@@ -345,10 +357,10 @@ function ViewerBody({
               <Text>{COPY.viewVideo}</Text>
             </ActionButton>
           ) : null}
-          {isVideo && shorts > 0 && actions.onShorts ? (
-            <ActionButton isQuiet onPress={() => actions.onShorts?.(entry)}>
-              <DevicePhone />
-              <Text>{COPY.shortsView}</Text>
+          {parent ? (
+            <ActionButton isQuiet onPress={() => actions.onSwitch(parent.id)}>
+              <Filmstrip />
+              <Text>{COPY.viewSourceVideo}</Text>
             </ActionButton>
           ) : null}
           {trashed ? null : <ToolActions entry={entry} tools={tools} onClose={actions.onClose} />}
@@ -420,6 +432,54 @@ function ViewerBody({
         )}
       </ButtonGroup>
     </>
+  );
+}
+
+/**
+ * 这部视频切出的短视频（原型 MovieShorts，产品设计 §4.5）：一行一支，写在原片上的区间与时长，点开换成那一支的查看框。
+ * 最多露出 `MADE_SHOWN` 支；「在列表中查看」把 Space 筛成这部视频切出的全部（§4.3）。
+ */
+function VideoShorts({ shorts, onSwitch, onList }: { shorts: readonly SpaceEntry[]; onSwitch: (entryId: Id) => void; onList: (() => void) | null }) {
+  const shown = shorts.slice(0, MADE_SHOWN);
+  return (
+    <section className={filesSection} aria-label={COPY.shortsTitle}>
+      <div className={filesBar}>
+        <h3 className={filesHead}>
+          {COPY.shortsTitle}
+          <span className={filesCount}>{shorts.length}</span>
+        </h3>
+        {onList ? (
+          <ActionButton size="S" isQuiet onPress={onList}>
+            {COPY.shortsInList}
+          </ActionButton>
+        ) : null}
+      </div>
+      <ul className={fileList}>
+        {shown.map((short) => {
+          const status = statusText(short);
+          const range = short.origin?.range;
+          const span = range ? COPY.shortsSpan(formatClock(range.start), formatClock(range.end)) : null;
+          const length = short.media?.durationSec ? formatClock(short.media.durationSec) : null;
+          return (
+            <li key={short.id}>
+              <RACButton className={(s) => fileRow(s)} onPress={() => onSwitch(short.id)}>
+                <EntryThumb entry={short} small />
+                <span className={fileBody}>
+                  <span className={fileName}>{short.name}</span>
+                  <span className={fileMeta}>{[span, length].filter(Boolean).join(' · ') || KIND_LABEL[short.kind]}</span>
+                </span>
+                {short.status && status ? (
+                  <StatusLight size="S" variant={SPACE_STATUS[short.status].tone}>
+                    {status}
+                  </StatusLight>
+                ) : null}
+              </RACButton>
+            </li>
+          );
+        })}
+      </ul>
+      {shorts.length > shown.length ? <p className={filesHint}>{COPY.shortsMore(shorts.length - shown.length)}</p> : null}
+    </section>
   );
 }
 

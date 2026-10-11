@@ -261,8 +261,16 @@ const en = {
   withReason: (reason: string, body: string) => `${reason}. ${body}`,
   /** 父视频卡片 / 行上的派生计数（剪成短视频）。 */
   shortsCount: (n: number) => (n === 1 ? '1 short' : `${n} shorts`),
-  /** 查看框动作：按来源筛出这部视频切出的短视频。 */
+  /** 卡片 / 行上「N 支短视频」的读屏名：按来源筛出这部视频切出的短视频。 */
   shortsView: 'See shorts cut from this',
+  /** 父视频查看框里「切出的短视频」一节（产品设计 §4.5）：标题、右上角筛成全部的动作、只露出前几支时的提示。 */
+  shortsTitle: 'Shorts cut from this video',
+  shortsInList: 'Show in list',
+  shortsMore: (n: number) => (n === 1 ? '1 more short. Show them all in the list.' : `${n} more shorts. Show them all in the list.`),
+  /** 一支短视频在父视频上的区间（`from`、`to` 是时间码）。 */
+  shortsSpan: (from: string, to: string) => `Original ${from}–${to}`,
+  /** 短视频的查看框：换成父视频的查看框。 */
+  viewSourceVideo: 'View source video',
   /** 按来源筛选时顶上的筛选条：`name` 是父视频名。 */
   shortsFilter: (name: string) => `Shorts cut from “${name}”`,
   shortsFilterClear: 'Clear filter',
