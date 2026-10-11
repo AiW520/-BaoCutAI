@@ -118,7 +118,7 @@ function localWhy(
  * 本机（`kind: 'local'` 的 Provider）的模型：都列出来（没装的也列，选中时页面说还没安装、给去设置或下载），
  * 名字用模型的名字（产品设计 §2.7「模型」一行）。
  */
-export function localModelOptions<C extends OnlineCapability>(
+export function localModelOptions<C extends ModelServiceCapability>(
   view: ModelCapabilitiesView,
   capability: C,
 ): ToolModelOption<ModelInfoByCapability[C]>[] {

@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
 import type { Id } from '@baocut/protocol';
 import { BLANK_IMAGE, type ImageDraft } from '../model/tools-image.ts';
+import { BLANK_MUSIC, type MusicDraft } from '../model/tools-music.ts';
 import { hideJob } from '../model/tools-records.ts';
 import { BLANK_TEXT, type TextDraft } from '../model/tools-text.ts';
 import { BLANK_COMPRESS, BLANK_EXTRACT, BLANK_MERGE, type TranscodeDraft } from '../model/tools-transcode.ts';
@@ -30,6 +31,7 @@ export interface ToolsStore {
   retried: Id[];
   tts: TtsDraft;
   image: ImageDraft;
+  music: MusicDraft;
   text: TextDraft;
   transcribe: TranscribeDraft;
   /** 压缩视频、合并视频与提取音频的表单：选的文件只留在这次运行里（同转录），编码设置与输出目录跟着草稿记住。 */
@@ -40,6 +42,7 @@ export interface ToolsStore {
   markRetried(jobId: Id): void;
   patchTts(patch: Partial<TtsDraft>): void;
   patchImage(patch: Partial<ImageDraft>): void;
+  patchMusic(patch: Partial<MusicDraft>): void;
   patchText(patch: Partial<TextDraft>): void;
   patchTranscribe(patch: Partial<TranscribeDraft>): void;
   patchCompress(patch: Partial<TranscodeDraft>): void;
@@ -54,6 +57,7 @@ export const useTools = create<ToolsStore>()(
       retried: [],
       tts: BLANK_TTS,
       image: BLANK_IMAGE,
+      music: BLANK_MUSIC,
       text: BLANK_TEXT,
       transcribe: BLANK_TRANSCRIBE,
       compress: BLANK_COMPRESS,
@@ -63,6 +67,7 @@ export const useTools = create<ToolsStore>()(
       markRetried: (jobId) => set((s) => (s.retried.includes(jobId) ? s : { retried: [...s.retried, jobId] })),
       patchTts: (patch) => set((s) => ({ tts: { ...s.tts, ...patch } })),
       patchImage: (patch) => set((s) => ({ image: { ...s.image, ...patch } })),
+      patchMusic: (patch) => set((s) => ({ music: { ...s.music, ...patch } })),
       patchText: (patch) => set((s) => ({ text: { ...s.text, ...patch } })),
       patchTranscribe: (patch) => set((s) => ({ transcribe: { ...s.transcribe, ...patch } })),
       patchCompress: (patch) => set((s) => ({ compress: { ...s.compress, ...patch } })),
@@ -78,6 +83,7 @@ export const useTools = create<ToolsStore>()(
         hidden: s.hidden,
         tts: s.tts,
         image: s.image,
+        music: s.music,
         text: s.text,
         transcribe: { ...s.transcribe, path: null },
         compress: { ...s.compress, inputs: [], outDir: null },
@@ -86,12 +92,13 @@ export const useTools = create<ToolsStore>()(
       }),
       // 字段以后加了，旧草稿缺的那几项用空表单补上。
       merge: (persisted, current) => {
-        const p = (persisted ?? {}) as Partial<Pick<ToolsStore, 'hidden' | 'tts' | 'image' | 'text' | 'transcribe' | 'compress' | 'merge' | 'extract'>>;
+        const p = (persisted ?? {}) as Partial<Pick<ToolsStore, 'hidden' | 'tts' | 'image' | 'music' | 'text' | 'transcribe' | 'compress' | 'merge' | 'extract'>>;
         return {
           ...current,
           hidden: Array.isArray(p.hidden) ? p.hidden : current.hidden,
           tts: { ...BLANK_TTS, ...p.tts },
           image: { ...BLANK_IMAGE, ...p.image },
+          music: { ...BLANK_MUSIC, ...p.music },
           text: { ...BLANK_TEXT, ...p.text },
           transcribe: { ...BLANK_TRANSCRIBE, ...p.transcribe, path: null },
           compress: { ...BLANK_COMPRESS, ...p.compress, inputs: [], outDir: null },
