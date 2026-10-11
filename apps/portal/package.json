@@ -2,7 +2,7 @@
   "name": "@baocut/portal",
   "version": "0.1.0",
   "private": true,
-  "description": "BaoCut website (baocut.com): static pages plus a Cloudflare Worker that resolves downloads to the latest verified release",
+  "description": "BaoCut website (baocut.com): static pages plus a Cloudflare Worker that resolves downloads to the latest GitHub release",
   "type": "module",
   "scripts": {
     "build": "node --experimental-strip-types src/site/build.ts",

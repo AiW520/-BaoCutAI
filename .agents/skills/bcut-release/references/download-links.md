@@ -46,14 +46,16 @@ Push follows the current task's push authorization.
 
 ## baocut.com
 
-The official site (`apps/portal`, Worker `baocut-portal`) reads the same feeds
-from raw.githubusercontent.com at request time. A release needs no site change or
-redeploy. Its version label and `/download/<id>` redirects follow the feeds within
-about 10 minutes: up to 5 minutes of Worker cache plus 5 minutes of edge cache.
+The official site (`apps/portal`, Worker `baocut-portal`) reads GitHub Releases
+itself, so a release needs no site change or redeploy. For each platform it links
+the newest `baocut-v<VERSION>-build.<BUILD>` release whose installer and ZIP are
+both uploaded, ignoring GitHub's Latest flag. Its version label and
+`/download/<id>` redirects follow within about 5 minutes. The Worker refreshes in
+the background, so the first request after that may still get the old answer.
 [apps/portal/README.md](../../../../apps/portal/README.md) describes how it
 resolves downloads.
 
-After the feed commit is on `main`, verify:
+After the publishers finish, verify:
 
 ```bash
 curl -s https://baocut.com/api/release
@@ -65,13 +67,22 @@ curl -s -o /dev/null -w '%{http_code} %{redirect_url}\n' https://baocut.com/down
   `mac-dmg`, `mac-zip`, `win-setup`, `win-zip`, `win-cuda-setup`, `win-cuda-zip`,
   `win-vulkan-setup`, `win-vulkan-zip`.
 
-If the site is still stale after 10 minutes, the Worker is serving the snapshot
-from its last deploy. That happens when a feed is unreachable or fails
-`apps/portal/src/release.ts` validation: repository, tag and file names must match
-the version and build. Fix the cause.
+If the site is still stale after 10 minutes, request it twice more. Still stale
+means the Worker cannot use the new release, so it keeps its last answer or the
+snapshot from its last deploy. Causes:
 
-Running `npm run deploy -w @baocut/portal` only refreshes that fallback snapshot.
-It is a production deploy, so do it only when the current task authorizes it.
+- The GitHub API is unreachable or rate-limited. Without the optional
+  `GITHUB_TOKEN` secret, the limit is 60 requests per hour per egress IP.
+- The release fails `apps/portal/src/release.ts` validation. It must be published,
+  not a prerelease. The tag and asset names must match the version and build.
+- An asset is not in the uploaded state.
+
+Fix the cause.
+
+Running `npm run deploy -w @baocut/portal` only refreshes that fallback snapshot
+from the feeds in `apps/desktop/releases/`. It is a production deploy, so do it
+only when the current task authorizes it. Setting the secret is a production
+change too.
 Never touch the unrelated `baocut-site` Worker, which serves baocut.app.
 
 ## Report

@@ -1,6 +1,6 @@
 /**
  * 官网单页的 HTML。build.ts 为每种语言调用一次 renderPage，写成 dist/ 里的静态文件。
- * 版本号、日期与发布说明链接先按构建时的快照写好，并用 `data-release` 标注，部署后由 Worker 换成最新已验证版本（见 worker.ts）。
+ * 版本号、日期与发布说明链接先按构建时的快照写好，并用 `data-release` 标注，部署后由 Worker 换成 GitHub Releases 上的最新版本（见 worker.ts）。
  * 文案来自 SiteCopy：字段名以 `Html` 结尾的原样输出，其余一律经 esc() 转义。
  */
 

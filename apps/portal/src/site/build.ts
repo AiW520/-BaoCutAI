@@ -5,7 +5,7 @@
  * - 样式与脚本：src/site/site.css、client.ts（去掉类型）按内容哈希命名，放进 /assets/。
  * - 模板展示：从仓库 templates/ 取有预览的模板，封面与预览按内容哈希命名，放进 /media/templates/。
  * - 截图：apps/portal/screenshots/ 里的 `<名字>[.<语言>]-<宽>x<高>.webp`，按内容哈希放进 /media/shots/。
- * - 版本快照：apps/desktop/releases/ 的更新源原样写进 release.json，页面里的版本号也按它先写好；部署后由 Worker 换成最新的。
+ * - 版本快照：apps/desktop/releases/ 的更新源原样写进 release.json，页面里的版本号也按它先写好；部署后由 Worker 换成 GitHub Releases 上最新的。
  * - public/ 原样复制（图标、分享图 og.png 与各语言的 og.<语言小写>.png，1200×630）。
  */
 

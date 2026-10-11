@@ -1,16 +1,21 @@
 /**
- * 官网的下载地址从哪里来：与桌面端的自动更新读同一份更新源（`apps/desktop/releases/appcast-*.json`，见
- * `apps/desktop/src/main/app-update-rules.ts`）。那里钉的是已经验证过的发布版本，比 GitHub 上标成 Latest 的那一版更可靠。
+ * 官网的版本号与下载地址从哪里来：线上读 GitHub Releases（`parseReleases`），构建时用桌面端的更新源
+ * （`apps/desktop/releases/appcast-*.json`，`parseFeed`）写一份快照兜底。
  *
- * 每份更新源只写了自动更新用的那个包（macOS 是 ZIP，Windows 是安装器）。同一次发布的其他文件按发布产物的命名规则推出来：
- * `https://github.com/jimliu/baocut/releases/download/<tag>/BaoCut-<版本>-build.<构建号>-<平台后缀>`。
+ * GitHub 上标成 Latest 的 Release 可能是历史上的 Skill 发布，不能用；这里按 `baocut-v<版本>-build.<构建号>` 的 tag 自己挑。
+ * macOS 先发布、Windows 的文件之后才追加进同一个 Release，所以每个平台变体各取「它的文件已经传完」的最新一版。
+ * 文件名按发布产物的命名规则：`https://github.com/jimliu/baocut/releases/download/<tag>/BaoCut-<版本>-build.<构建号>-<平台后缀>`。
  */
 
 export const REPOSITORY_URL = 'https://github.com/jimliu/baocut';
 export const RELEASES_URL = `${REPOSITORY_URL}/releases`;
-/** 桌面端读的更新源目录（`feedUrl`）；Worker 也从这里取最新的已验证版本。 */
-export const FEED_BASE_URL = 'https://raw.githubusercontent.com/jimliu/baocut/main/apps/desktop/releases/';
+/**
+ * Worker 读的 Release 列表，新的在前。只要最近几次：每次发布都带全部平台，某个平台变体连着几次没发布时由构建快照兜底；
+ * 每个 Release 带二十多个文件，响应体随条数涨得很快（一条约 30 KB）。
+ */
+export const RELEASES_API_URL = 'https://api.github.com/repos/jimliu/baocut/releases?per_page=5';
 
+/** 平台变体（macOS、Windows CPU / CUDA / Vulkan），与桌面端的更新源一一对应；页面上每个下载卡片一个。 */
 export const FEED_IDS = ['mac', 'win', 'win-cuda', 'win-vulkan'] as const;
 export type FeedId = (typeof FEED_IDS)[number];
 
@@ -34,7 +39,7 @@ export const DOWNLOAD_IDS = [
 ] as const;
 export type DownloadId = (typeof DOWNLOAD_IDS)[number];
 
-/** 下载项读哪份更新源、文件名在 `BaoCut-<版本>-build.<构建号>` 之后接什么。 */
+/** 下载项属于哪个平台变体、文件名在 `BaoCut-<版本>-build.<构建号>` 之后接什么。 */
 const DOWNLOADS: Record<DownloadId, { feed: FeedId; suffix: string }> = {
   'mac-dmg': { feed: 'mac', suffix: '-aarch64-apple-darwin.dmg' },
   'mac-zip': { feed: 'mac', suffix: '-aarch64-apple-darwin.zip' },
@@ -46,7 +51,7 @@ const DOWNLOADS: Record<DownloadId, { feed: FeedId; suffix: string }> = {
   'win-vulkan-zip': { feed: 'win-vulkan', suffix: '-win-x64-vulkan.zip' },
 };
 
-/** 一份更新源说明的发布：版本、构建号、日期，以及同一次发布的文件所在目录。 */
+/** 一次发布：版本、构建号、日期，以及这次发布的文件所在目录。 */
 export interface FeedRelease {
   version: string;
   build: number;
@@ -61,7 +66,7 @@ export type ReleaseSet = Partial<Record<FeedId, FeedRelease>>;
 
 const VERSION = /^\d{1,4}\.\d{1,4}\.\d{1,4}$/;
 const DATE = /^\d{4}-\d{2}-\d{2}$/;
-const TAG = /^baocut-v\d{1,4}\.\d{1,4}\.\d{1,4}-build\.\d{1,7}$/;
+const TAG = /^baocut-v(\d{1,4}\.\d{1,4}\.\d{1,4})-build\.(\d{1,7})$/;
 const DOWNLOAD_PREFIX = `${REPOSITORY_URL}/releases/download/`;
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -93,7 +98,42 @@ function releasePrefix(release: Pick<FeedRelease, 'version' | 'build'>): string 
   return `BaoCut-${release.version}-build.${release.build}`;
 }
 
-/** 某个下载项在这组发布里的地址；对应平台的更新源读不到时为 null。 */
+/**
+ * 读 GitHub「列出 Release」接口的响应。跳过草稿、预发布和别的 tag（如 `skill-v…`）；每个平台变体取安装包与 ZIP
+ * 都已传完的最新一次发布。文件地址必须就是本仓库这次发布目录下的同名文件，否则不算：Worker 会照它重定向。
+ */
+export function parseReleases(raw: unknown): ReleaseSet {
+  const releases: ReleaseSet = {};
+  if (!Array.isArray(raw)) return releases;
+  for (const entry of raw) {
+    if (!isRecord(entry) || entry.draft !== false || entry.prerelease !== false) continue;
+    const { tag_name: tag, published_at: publishedAt, assets } = entry;
+    if (typeof tag !== 'string' || typeof publishedAt !== 'string' || !Array.isArray(assets)) continue;
+    const [, version, build] = TAG.exec(tag) ?? [];
+    const date = publishedAt.slice(0, 10);
+    if (!version || !build || Number(build) < 1 || !DATE.test(date)) continue;
+    const release: FeedRelease = { version, build: Number(build), date, tag };
+    const uploaded = new Set<string>();
+    for (const asset of assets) {
+      if (!isRecord(asset) || asset.state !== 'uploaded') continue;
+      const { name, browser_download_url: url } = asset;
+      if (typeof name !== 'string' || typeof url !== 'string') continue;
+      // 仓库地址在不同地方大小写不同（`JimLiu/baocut`），只比较小写。
+      if (url.toLowerCase() === `${DOWNLOAD_PREFIX}${tag}/${name}`.toLowerCase()) uploaded.add(name);
+    }
+    for (const id of FEED_IDS) {
+      const current = releases[id];
+      if (current && current.build >= release.build) continue;
+      const complete = DOWNLOAD_IDS.every(
+        (download) => DOWNLOADS[download].feed !== id || uploaded.has(`${releasePrefix(release)}${DOWNLOADS[download].suffix}`),
+      );
+      if (complete) releases[id] = release;
+    }
+  }
+  return releases;
+}
+
+/** 某个下载项在这组发布里的地址；对应平台变体没有可用的发布时为 null。 */
 export function downloadUrl(set: ReleaseSet, id: DownloadId): string | null {
   const { feed, suffix } = DOWNLOADS[id];
   const release = set[feed];
@@ -110,7 +150,7 @@ export function isDownloadId(value: string): value is DownloadId {
   return (DOWNLOAD_IDS as readonly string[]).includes(value);
 }
 
-/** 两组发布逐个平台取构建号大的那份：构建时的快照给兜底，线上更新源更新时以它为准。 */
+/** 两组发布逐个平台取构建号大的那份：构建时的快照给兜底，GitHub 上有更新的发布时以它为准。 */
 export function newerReleases(base: ReleaseSet, next: ReleaseSet): ReleaseSet {
   const merged: ReleaseSet = { ...base };
   for (const id of FEED_IDS) {

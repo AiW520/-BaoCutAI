@@ -8,6 +8,7 @@ import {
   headlineRelease,
   newerReleases,
   parseFeed,
+  parseReleases,
   preferredDownload,
   releaseSummary,
   type ReleaseSet,
@@ -82,6 +83,71 @@ describe('parseFeed', () => {
   });
 });
 
+const SUFFIXES = {
+  mac: ['-aarch64-apple-darwin.dmg', '-aarch64-apple-darwin.zip'],
+  win: ['-win-x64-setup.exe', '-win-x64.zip'],
+  'win-cuda': ['-win-x64-cuda-setup.exe', '-win-x64-cuda.zip'],
+  'win-vulkan': ['-win-x64-vulkan-setup.exe', '-win-x64-vulkan.zip'],
+};
+const ALL_SUFFIXES = Object.values(SUFFIXES).flat();
+
+/** GitHub「列出 Release」接口里的一项，只带用得到的字段。 */
+function githubRelease(version: string, build: number, suffixes: string[], overrides: Record<string, unknown> = {}) {
+  const tag = `baocut-v${version}-build.${build}`;
+  return {
+    tag_name: tag,
+    draft: false,
+    prerelease: false,
+    published_at: '2026-10-11T05:43:46Z',
+    assets: [...suffixes, '-win-x64-setup.exe.sha256'].map((suffix) => {
+      const name = `BaoCut-${version}-build.${build}${suffix}`;
+      return { name, state: 'uploaded', browser_download_url: `https://github.com/JimLiu/baocut/releases/download/${tag}/${name}` };
+    }),
+    ...overrides,
+  };
+}
+
+describe('parseReleases', () => {
+  const full = { version: '3.3.0', build: 67, date: '2026-10-11', tag: 'baocut-v3.3.0-build.67' };
+
+  it('takes each platform from the newest release whose files are all uploaded', () => {
+    const releases = parseReleases([
+      githubRelease('3.4.0', 68, [...SUFFIXES.mac, SUFFIXES.win[0]!]),
+      githubRelease('3.3.0', 67, ALL_SUFFIXES),
+      githubRelease('3.2.0', 65, ALL_SUFFIXES),
+    ]);
+    const mac = { version: '3.4.0', build: 68, date: '2026-10-11', tag: 'baocut-v3.4.0-build.68' };
+    expect(releases).toEqual({ mac, win: full, 'win-cuda': full, 'win-vulkan': full });
+    expect(headlineRelease(releases)).toEqual(mac);
+  });
+
+  it('ignores drafts, prereleases and other tags', () => {
+    const skill = { ...githubRelease('3.3.0', 67, ALL_SUFFIXES), tag_name: 'skill-v1.1.4' };
+    expect(
+      parseReleases([
+        githubRelease('3.5.0', 70, ALL_SUFFIXES, { draft: true, published_at: null }),
+        githubRelease('3.4.0', 69, ALL_SUFFIXES, { prerelease: true }),
+        skill,
+      ]),
+    ).toEqual({});
+  });
+
+  it('ignores unfinished uploads and files outside the release', () => {
+    const open = githubRelease('3.4.0', 68, SUFFIXES.mac);
+    open.assets[0]!.state = 'open';
+    const elsewhere = githubRelease('3.4.0', 68, SUFFIXES.win);
+    elsewhere.assets[0]!.browser_download_url = 'https://example.com/BaoCut-3.4.0-build.68-win-x64-setup.exe';
+    const releases = parseReleases([open, elsewhere, githubRelease('3.3.0', 67, ALL_SUFFIXES)]);
+    expect(releases.mac).toEqual(full);
+    expect(releases.win).toEqual(full);
+  });
+
+  it('reads nothing from a malformed response', () => {
+    expect(parseReleases({ message: 'API rate limit exceeded' })).toEqual({});
+    expect(parseReleases([null, { tag_name: 'baocut-v3.3.0-build.67' }])).toEqual({});
+  });
+});
+
 describe('downloads', () => {
   const release = { version: '3.2.0', build: 65, date: '2026-10-10', tag: 'baocut-v3.2.0-build.65' };
   const set: ReleaseSet = { mac: release, win: release, 'win-cuda': release, 'win-vulkan': release };
@@ -100,7 +166,7 @@ describe('downloads', () => {
     });
   });
 
-  it('returns null when that platform has no feed', () => {
+  it('returns null when that platform has no release', () => {
     expect(downloadUrl({ mac: release }, 'win-setup')).toBeNull();
   });
 

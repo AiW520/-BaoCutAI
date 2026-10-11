@@ -10,7 +10,7 @@ export interface Item {
 }
 
 export interface Platform {
-  /** 对应 release.ts 的更新源，页面上的版本号按它改写。 */
+  /** 对应 release.ts 的平台变体（`FeedId`），页面上的版本号按它改写。 */
   feed: 'mac' | 'win' | 'win-cuda' | 'win-vulkan';
   name: string;
   chip: string;

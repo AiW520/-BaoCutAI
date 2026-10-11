@@ -34,14 +34,15 @@ describe('fetch', () => {
       },
     },
   };
-  const call = (path: string, init: RequestInit = {}) => worker.fetch(new Request(`https://baocut.com${path}`, init), env);
+  const ctx = { waitUntil() {} };
+  const call = (path: string, init: RequestInit = {}) => worker.fetch(new Request(`https://baocut.com${path}`, init), env, ctx);
 
-  // 线上更新源取不到时退回构建快照；这里让它失败，结果只取决于仓库里的更新源。
+  // GitHub 取不到时退回构建快照；这里让它失败，结果只取决于仓库里的更新源。
   beforeAll(() => vi.stubGlobal('fetch', async () => new Response(null, { status: 503 })));
   afterAll(() => vi.unstubAllGlobals());
 
   it('sends www to the apex domain', async () => {
-    const response = await worker.fetch(new Request('https://www.baocut.com/zh-hans/?a=1'), env);
+    const response = await worker.fetch(new Request('https://www.baocut.com/zh-hans/?a=1'), env, ctx);
     expect(response.status).toBe(301);
     expect(response.headers.get('Location')).toBe('https://baocut.com/zh-hans/?a=1');
   });
@@ -86,5 +87,112 @@ describe('fetch', () => {
     expect(response.status).toBe(200);
     const body = (await response.json()) as { downloads: Record<string, string> };
     expect(Object.keys(body.downloads)).toHaveLength(8);
+  });
+});
+
+describe('release refresh', () => {
+  const feeds = Object.fromEntries(
+    FEED_IDS.map((id) => [id, JSON.parse(readFileSync(new URL(`../../desktop/releases/${FEED_FILES[id]}`, import.meta.url), 'utf8'))]),
+  );
+  const env = {
+    ASSETS: {
+      async fetch(request: Request) {
+        return new URL(request.url).pathname === '/release.json' ? Response.json(feeds) : new Response(null, { status: 404 });
+      },
+    },
+  };
+  const asset = (tag: string, name: string) => ({
+    name,
+    state: 'uploaded',
+    browser_download_url: `https://github.com/JimLiu/baocut/releases/download/${tag}/${name}`,
+  });
+  // 比仓库里任何更新源都新的两次发布：999 只传完了 macOS，998 只有 Windows。
+  const github = [
+    {
+      tag_name: 'baocut-v9.9.9-build.999',
+      draft: false,
+      prerelease: false,
+      published_at: '2027-01-02T03:04:05Z',
+      assets: ['dmg', 'zip'].map((ext) =>
+        asset('baocut-v9.9.9-build.999', `BaoCut-9.9.9-build.999-aarch64-apple-darwin.${ext}`),
+      ),
+    },
+    {
+      tag_name: 'baocut-v9.9.8-build.998',
+      draft: false,
+      prerelease: false,
+      published_at: '2027-01-01T03:04:05Z',
+      assets: ['-setup.exe', '.zip', '-cuda-setup.exe', '-cuda.zip', '-vulkan-setup.exe', '-vulkan.zip'].map((suffix) =>
+        asset('baocut-v9.9.8-build.998', `BaoCut-9.9.8-build.998-win-x64${suffix}`),
+      ),
+    },
+  ];
+  const cache = new Map<string, Response>();
+  const requests: Request[] = [];
+
+  beforeAll(() => {
+    vi.stubGlobal('caches', {
+      default: {
+        async match(request: Request) {
+          return cache.get(request.url)?.clone();
+        },
+        async put(request: Request, response: Response) {
+          cache.set(request.url, response);
+        },
+      },
+    });
+  });
+  afterAll(() => vi.unstubAllGlobals());
+
+  /** 换一份模块，相当于 Workers 新起的一个实例：内存里什么都没有。 */
+  async function freshWorker() {
+    vi.resetModules();
+    return (await import('./worker.ts')).default;
+  }
+
+  it('answers from the snapshot at once and picks up GitHub Releases afterwards', async () => {
+    vi.stubGlobal('fetch', async (input: RequestInfo | URL, init?: RequestInit) => {
+      requests.push(new Request(input, init));
+      return Response.json(github);
+    });
+    const fresh = await freshWorker();
+    const pending: Promise<unknown>[] = [];
+    const ctx = { waitUntil: (promise: Promise<unknown>) => void pending.push(promise) };
+    const summary = async () =>
+      (await (await fresh.fetch(new Request('https://baocut.com/api/release'), env, ctx)).json()) as {
+        version: string;
+        downloads: Record<string, string>;
+      };
+
+    expect((await summary()).version).not.toBe('9.9.9');
+    expect(pending).toHaveLength(1);
+    await Promise.all(pending);
+    expect(requests).toHaveLength(1);
+    expect(requests[0]!.url).toBe('https://api.github.com/repos/jimliu/baocut/releases?per_page=5');
+    expect(requests[0]!.headers.get('User-Agent')).toBe('baocut-portal');
+
+    const latest = await summary();
+    expect(latest.version).toBe('9.9.9');
+    expect(latest.downloads['mac-dmg']).toBe(
+      'https://github.com/jimliu/baocut/releases/download/baocut-v9.9.9-build.999/BaoCut-9.9.9-build.999-aarch64-apple-darwin.dmg',
+    );
+    expect(latest.downloads['win-vulkan-zip']).toBe(
+      'https://github.com/jimliu/baocut/releases/download/baocut-v9.9.8-build.998/BaoCut-9.9.8-build.998-win-x64-vulkan.zip',
+    );
+    const download = await fresh.fetch(new Request('https://baocut.com/download/win-setup'), env, ctx);
+    expect(download.headers.get('Location')).toMatch(/\/baocut-v9\.9\.8-build\.998\/BaoCut-9\.9\.8-build\.998-win-x64-setup\.exe$/);
+    expect(pending).toHaveLength(1);
+  });
+
+  it('lets a new instance start from the shared cache without waiting for GitHub', async () => {
+    const fetchSpy = vi.fn(async () => new Response(null, { status: 503 }));
+    vi.stubGlobal('fetch', fetchSpy);
+    const fresh = await freshWorker();
+    const pending: Promise<unknown>[] = [];
+    const ctx = { waitUntil: (promise: Promise<unknown>) => void pending.push(promise) };
+    const response = await fresh.fetch(new Request('https://baocut.com/download/mac-zip'), env, ctx);
+    expect(response.headers.get('Location')).toMatch(/\/BaoCut-9\.9\.9-build\.999-aarch64-apple-darwin\.zip$/);
+    expect(pending).toHaveLength(0);
+    expect(fetchSpy).not.toHaveBeenCalled();
   });
 });

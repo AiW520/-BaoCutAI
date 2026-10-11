@@ -1,6 +1,6 @@
 # apps/portal
 
-BaoCut 官网 [baocut.com](https://baocut.com)：一个静态单页（英文在 `/`，简体中文在 `/zh-hans/`），由 Cloudflare Worker 托管。Worker 负责首页按语言跳转、把页面里的版本号换成最新已验证版本、把 `/download/*` 跳到 GitHub Releases 上对应的安装包。
+BaoCut 官网 [baocut.com](https://baocut.com)：一个静态单页（英文在 `/`，简体中文在 `/zh-hans/`），由 Cloudflare Worker 托管。Worker 负责首页按语言跳转、把页面里的版本号换成 GitHub Releases 上的最新版本、把 `/download/*` 跳到那里对应的安装包。
 
 它与桌面应用无关：不进 workspace 之外的任何构建，也不被别的包引用。
 
@@ -13,7 +13,7 @@ BaoCut 官网 [baocut.com](https://baocut.com)：一个静态单页（英文在 
 | `src/site/page.ts` | 页面 HTML（`renderPage`、`renderNotFound`） |
 | `src/site/site.css`、`client.ts` | 样式与浏览器脚本；脚本只做增强，没有它页面照样能读、能下载 |
 | `src/site/build.ts` | 生成 `dist/`（见文件头注释） |
-| `src/release.ts` | 读桌面端更新源、推出各安装包的下载地址，构建与 Worker 共用 |
+| `src/release.ts` | 读 GitHub Releases（线上）与桌面端更新源（构建快照），推出各安装包的下载地址，构建与 Worker 共用 |
 | `src/worker.ts` | Worker 入口 |
 | `screenshots/` | 页面用的应用截图，命名 `<名字>[.<语言>]-<宽>x<高>.webp`，名字见 `page.ts` 的 `SHOT_NAMES`（`editor`、`translate`、`space`、`home`、`models`） |
 | `public/` | 原样复制的文件：图标、分享图 `og.png`（英文，其他语言缺省用它）与 `og.zh-hans.png`，1200×630 |
@@ -37,13 +37,22 @@ npm run deploy -w @baocut/portal
 
 部署会创建或更新 Worker `baocut-portal`，并把 `baocut.com`、`www.baocut.com` 绑成它的自定义域名（`www` 由 Worker 301 到不带 `www` 的地址）。不需要 D1、R2 或 KV。
 
+可选：给 Worker 设一个 GitHub token，读 Release 列表的额度从每个出口 IP 每小时 60 次（Cloudflare 的出口 IP 与别人共用，可能被别人用光）变成这个 token 的 5000 次。用 fine-grained token 即可：Repository access 选 Public repositories（只读），不用加任何权限。
+
+```bash
+npx --yes wrangler@4.144.0 secret put GITHUB_TOKEN --config apps/portal/wrangler.jsonc
+```
+
+没设或额度用完时 Worker 照常工作，只是继续用手上的那份版本，直到下次取到为止。
+
 同一个 Cloudflare 账号里的 `baocut-site`（baocut.app：遥测、下载与更新源）、`baocut-cdn`、`baocut-release-pointers`、R2 `baocut-downloads` 与 D1 `baocut-analytics` 和官网无关，不要改它们，也不要把官网部署成这些名字。
 
 ## 下载地址从哪来
 
-- 最新版本以桌面端自动更新读的更新源为准：`apps/desktop/releases/*.json` 在 `main` 上的版本（`raw.githubusercontent.com`），四个平台各一份。只有通过发布验收、钉进这里的版本才会出现在官网上；GitHub 上标成 Latest 的 Release 不一定是它。
-- `release.ts` 校验更新源里的地址属于本仓库、标签与文件名和版本号一致，再按固定后缀推出 DMG、ZIP、安装程序等全部地址。
-- Worker 每 5 分钟最多取一次更新源，边缘再缓存 5 分钟；取不到时用构建时写进 `dist/release.json` 的快照。页面里的版本号先按快照写好，Worker 再改写成最新的，所以发版后不用重新部署。
+- 线上以 GitHub Releases 为准：Worker 读最近 5 个 Release（`api.github.com/repos/jimliu/baocut/releases`），只认 `baocut-v<版本>-build.<构建号>` 的 tag，跳过草稿与预发布。GitHub 上标成 Latest 的可能是历史上的 Skill 发布，不用它。
+- 四个平台变体（macOS、Windows CPU / CUDA / Vulkan）各取「安装包与 ZIP 都已传完」的最新一次发布：macOS 先发布、Windows 之后才追加进同一个 Release，追加完之前 Windows 仍指向上一版，不会给出 404 的链接。文件地址必须就是本仓库这次发布目录下的同名文件。
+- 构建时把 `apps/desktop/releases/*.json`（桌面端的更新源）写进 `dist/release.json` 当快照，页面里的版本号也先按它写好；GitHub 取不到、或最近 5 个 Release 里没有某个平台时用它。两边逐个平台取构建号大的那份，所以发版后不用重新部署。
+- 访客的请求不等 GitHub：Worker 依次用本实例内存里的、本机房缓存（Cache API，存整理好的结果）里的、构建快照，超过 5 分钟就在响应之后到后台重取。发版后官网一般 5 分钟左右跟上；一个机房第一次被访问时先给快照，后台取到后才换成最新的。GitHub 出错或限流时继续用手上这份，5 分钟后再试。
 - `/api/release` 返回最新版本与各下载地址的 JSON。
 
 ## 截图与模板预览
