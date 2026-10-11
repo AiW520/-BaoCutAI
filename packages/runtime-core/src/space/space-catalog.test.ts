@@ -223,6 +223,7 @@ describe('Space 目录', () => {
       watch: false,
       jobs,
       index,
+      scratchDirs: [path.join(tmp, 'scratch')],
       ...(artifacts ? { artifacts } : {}),
     });
     catalogs.push(catalog);
@@ -466,6 +467,71 @@ describe('Space 目录', () => {
       origin: { source: 'exported', videoId: 'v1' },
       media: { mediaType: 'video/mp4', durationSec: 4, width: 320, height: 180 },
     });
+  });
+
+  /** 一次完成的导出：设置、发布的文件（路径）与产物 id。 */
+  function exportJob(settings: object, file: string, artifactId: string, state: JobRecord['state'] = 'completed'): JobRecord {
+    return job({
+      kind: 'export',
+      state,
+      videoId: 'v1',
+      export: {
+        settings: settings as never,
+        snapshotArtifactId: 'sha256:snap',
+        videoRevision: 'rev-1',
+        sequenceId: 'seq',
+        destination: { dir: path.dirname(file), files: [path.basename(file)], overwrite: false },
+      },
+      result:
+        state === 'completed'
+          ? {
+              documentId: null,
+              artifactId,
+              outputs: [{ artifactId, mediaType: 'text/plain', byteLength: 2, assetId: null, media: { kind: 'text', entries: 1, durationSec: 3 }, path: file }],
+            }
+          : null,
+      ...(state === 'failed' ? { error: { code: 'EXPORT_FAILED', message: '失败' } } : {}),
+    });
+  }
+
+  it('内部检查用的导出（purpose: preview）：排队、失败与完成都不成条，发布的文件也不列；同一路径后来交付了照常列', async () => {
+    const srt = path.join(projectDir, 'exports', '访谈.srt');
+    await fs.writeFile(srt, '1\n');
+    jobs.put(exportJob({ kind: 'subtitles', format: 'srt', purpose: 'preview' }, srt, 'sha256:check'));
+    jobs.put(exportJob({ kind: 'transcript', format: 'md', purpose: 'preview' }, path.join(projectDir, 'exports', '访谈.md'), 'sha256:md', 'running'));
+    jobs.put(exportJob({ kind: 'audio', format: 'wav', purpose: 'preview' }, path.join(projectDir, 'exports', '访谈.wav'), 'sha256:wav', 'failed'));
+    const { catalog } = await open();
+    const names = catalog.entries().map((e) => e.fileName);
+    expect(names).not.toContain('访谈.srt');
+    expect(() => catalog.get('sha256:check')).toThrow(RpcError);
+    expect(catalog.entries().filter((e) => e.status === 'generating' || e.status === 'failed')).toEqual([]);
+    expect(listEntries(catalog, USER_VIEWER, { videoId: 'v1' }).entries.map((e) => e.fileName)).toEqual(['访谈']);
+
+    // 用户后来要了同一份字幕：交付的导出认领这个文件。
+    jobs.put(exportJob({ kind: 'subtitles', format: 'srt' }, srt, 'sha256:deliver'));
+    await catalog.idle();
+    expect(byName(catalog, '访谈.srt')).toMatchObject({ kind: 'subtitle', status: 'published', ref: { artifactId: 'sha256:deliver' } });
+  });
+
+  it('会话收进项目之前发布到它工作目录里的导出：按搬进项目后的位置认，与扫描到的文件是一条', async () => {
+    const before = path.join(tmp, 'scratch', 'c5', 'exports', '短片.mp4');
+    const after = path.join(projectDir, 'exports', '短片.mp4');
+    await fs.writeFile(after, 'mp4!');
+    const conversation = { id: 'c5', projectId: 'p1', cwd: projectDir } as never;
+    directory = new TopicLog<DirectorySnapshot, DirectoryEvent>(() => ({ projects: [project], conversations: [conversation] }), '0');
+    jobs.put(exportJob({ kind: 'video', format: 'mp4' }, before, 'sha256:short'));
+    const { catalog } = await open();
+    const entries = catalog.entries().filter((e) => e.fileName === '短片.mp4');
+    expect(entries).toHaveLength(1);
+    expect(entries[0]).toMatchObject({
+      kind: 'export',
+      status: 'published',
+      relPath: 'exports/短片.mp4',
+      source: { projectId: 'p1' },
+      ref: { artifactId: 'sha256:short' },
+      file: { path: after },
+    });
+    expect(() => catalog.get('sha256:short')).toThrow(RpcError);
   });
 
   it('派生：扫描、产物、导出与占位的状态；重建与从头再建结果一致，用户标记不丢', async () => {
@@ -992,6 +1058,25 @@ describe('Space 目录', () => {
     const find = spaceDerivedFinder(catalog);
     expect(await find('v_parent', 'abc123def456')).toBe(videoDir);
     expect(await find('v_parent', 'other')).toBeNull();
+  });
+
+  it('按视频列（videoId）：视频本身、它导出的条目与由它派生的子视频', async () => {
+    const childDir = path.join(projectDir, '短片一');
+    await fs.mkdir(childDir);
+    await fs.writeFile(path.join(childDir, 'video.db'), 'db');
+    const child = videoContent('v_child', 'rev-1');
+    const summary = { schema: 'baocut.derivation/1', parentVideoId: 'v1', parentRevision: 'rev-1', key: 'k1', range: { start: 1, end: 2 } };
+    (child.snapshot as unknown as { documents: unknown }).documents = {
+      doc_d: { id: 'doc_d', kind: 'derivation', name: '派生来源', currentRevision: '1', revisions: { '1': { summary } } },
+    };
+    reader.videos.set(childDir, child);
+    await seedJobs();
+    const { catalog } = await open();
+    const names = listEntries(catalog, USER_VIEWER, { videoId: 'v1' }).entries.map((e) => e.fileName);
+    expect(names).toEqual(expect.arrayContaining(['访谈', '访谈.srt', '短片一']));
+    expect(listEntries(catalog, USER_VIEWER, { videoId: 'v1', kind: 'video' }).entries.map((e) => e.fileName).sort()).toEqual(['短片一', '访谈']);
+    // 子视频自己的筛选只有它自己。
+    expect(listEntries(catalog, USER_VIEWER, { videoId: 'v_child' }).entries.map((e) => e.fileName)).toEqual(['短片一']);
   });
 
   it('ensure：还没有索引的视频排到队首先读，读完就返回；不在目录里的、超时的回答手上有的', async () => {

@@ -214,7 +214,10 @@ export interface PortableExportOptions {
  */
 export type ProjectExportFormat = 'xmeml';
 
-/** `preview` 是智能体内部检查的文件，不作为会话交付；省略时按 `deliverable` 处理。 */
+/**
+ * `preview` 是智能体内部检查的文件，不作为会话交付，也不进 Space；不给目录时写到来源目录下的 `.baocut-out/exports/`。
+ * 省略时按 `deliverable` 处理。
+ */
 export type ExportPurpose = 'deliverable' | 'preview';
 
 export type ExportSettings = { purpose?: ExportPurpose } & (
@@ -227,7 +230,8 @@ export type ExportSettings = { purpose?: ExportPurpose } & (
 );
 
 /**
- * 输出的位置。不给 `dir` 时是视频来源目录（项目目录；不在项目里的视频是视频目录的上一级）下的 `exports/`；
+ * 输出的位置。不给 `dir` 时是视频来源目录（项目目录；不在项目里的视频是视频目录的上一级）下的 `exports/`（`preview` 的是
+ * `.baocut-out/exports/`）；
  * 给了的 `dir` 必须是已经存在、可写的绝对路径。文件名默认是「视频名.种类后缀.扩展名」（成片的后缀是画面里烧着的字幕语言，
  * 没有时不加，见 `burnedCaptionLanguages`），重名时加序号；
  * 给了 `fileName` 而文件已经存在时，除非 `overwrite`，以 `EXPORT_DESTINATION_EXISTS` 拒绝。

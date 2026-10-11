@@ -147,7 +147,7 @@ const schemas = {
       .max(1000)
       .optional()
       .describe(
-        '可选。输出目录，已经存在；会话里相对工作目录（不给时是工作目录下的 exports/），对外服务相对项目的 exports/。不能写进视频目录或 .bcut',
+        '可选。输出目录，已经存在；会话里相对工作目录（不给时是工作目录下的 exports/，purpose: preview 的是 .baocut-out/exports/），对外服务相对项目的 exports/。不能写进视频目录或 .bcut',
       ),
     fileName: z
       .string()

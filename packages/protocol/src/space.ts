@@ -15,7 +15,7 @@ export interface SpaceListParams {
   kind?: SpaceEntryKind | SpaceEntryKind[];
   /** `none` 是没有状态的条目（普通文件、视频）。 */
   status?: SpaceEntryStatus | 'none' | (SpaceEntryStatus | 'none')[];
-  /** 来源视频：这个视频本身，以及由它生成、导出的条目。 */
+  /** 来源视频：这个视频本身，由它生成、导出的条目，以及由它派生的子视频（`origin.source` 为 `derived`，如切出的短片）。 */
   videoId?: Id;
   favorite?: boolean;
   /** 回收站：默认 `exclude`（不列回收站里的），`only` 只列回收站，`include` 都列。 */

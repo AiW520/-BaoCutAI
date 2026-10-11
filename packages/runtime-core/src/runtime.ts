@@ -811,6 +811,7 @@ export async function startRuntime(options: StartRuntimeOptions = {}): Promise<R
       artifacts: spaceArtifacts,
       videos,
       index: contentIndex,
+      scratchDirs: [home.scratchDir, ...(home.legacyScratchDir ? [home.legacyScratchDir] : [])],
     });
     spaceRef = space;
     // 回收站的保留期（§5.7）：首次扫描之后清一次，之后每 6 小时一次；天数每次取当时的设置。

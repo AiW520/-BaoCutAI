@@ -10,6 +10,8 @@ import { RcSpace } from '@baocut/protocol/messages/runtime-core';
  *
  * - 扫描到的文件与视频目录是基础条目；视频目录在内容索引里有记录时带上 `ref.videoId`，与根序列的时长、画布尺寸（`media`）。
  * - 导出发布到来源目录里的文件，与扫描到的那个文件合成一个条目：带上导出的来源与 `published` / `source-changed`。
+ *   无项目会话放进项目之前发布在它工作目录里的（`DeriveSource.formerRoots`），按搬进项目之后的位置认。
+ *   智能体内部检查用的导出（`purpose: 'preview'`）不成条，发布的文件扫描到了也不列。
  *   发布到来源目录之外的导出单独成条，`id` 是 artifactId。文件到文件的流程（文件转码、字幕文件的翻译，§7.9）发布的文件同样处理，
  *   来源是 `generated`，`capability` 是流程名，带执行者。智能体用 `downloads_save` 交出的文件（§3.5）同样处理，`capability`
  *   是 `downloads-save`，不带服务商。
@@ -27,6 +29,11 @@ export interface DeriveSource {
   realRoot: string;
   projectId: Id | null;
   conversationId: Id | null;
+  /**
+   * 项目来源：放进这个项目的无项目会话原来的工作目录（架构设计 §3.10）。绑定前发布在那里的导出记着旧路径，东西已经按相对路径
+   * 原样搬进项目，按这里换算回项目里的那个文件。
+   */
+  formerRoots?: readonly string[];
 }
 
 export interface ScannedFile {
@@ -119,6 +126,8 @@ function labelOf(kind: string): string | null {
 export function deriveEntries(input: DeriveInput): Map<Id, DerivedEntry> {
   const out = new Map<Id, DerivedEntry>();
   const videos = new Map<Id, { entryId: Id; source: DeriveSource; known: KnownVideo }>();
+  // 内部检查用的导出发布在来源目录里的文件：等任务都过完，没有被交付的导出认领的才去掉。
+  const previews = new Set<Id>();
 
   // 1. 扫描到的文件与视频目录。
   for (const [id, item] of input.files) {
@@ -244,6 +253,11 @@ export function deriveEntries(input: DeriveInput): Map<Id, DerivedEntry> {
       continue;
     }
     if (job.kind === 'transcribe' || labelOf(job.kind) === null) continue;
+    // 内部检查用的导出：排队、失败与完成都不成条。
+    if (job.kind === 'export' && job.export?.settings.purpose === 'preview') {
+      for (const output of job.result?.outputs ?? []) hidePreview(previews, input, output);
+      continue;
+    }
     const video = job.videoId ? (videos.get(job.videoId) ?? null) : null;
     const origin = originOf(job, video?.source.projectId ?? null, input);
     if (job.state === 'queued' || job.state === 'running') {
@@ -298,6 +312,9 @@ export function deriveEntries(input: DeriveInput): Map<Id, DerivedEntry> {
       });
     }
   }
+
+  // 内部检查用的导出发布的文件：没有被交付的导出认领（同一路径后来又交付过）、也不是视频目录的，不列。
+  for (const id of previews) if (!out.get(id)?.entry.ref) out.delete(id);
 
   // 4. 删除了的视频：在回收站里，直到恢复或物理删除。来源不在了（项目被移除）时没有位置，只能看、不能恢复。
   for (const [id, record] of input.trashedVideos) {
@@ -444,8 +461,9 @@ function addExport(
       : { status: 'published' };
   // 发布到某个来源目录里：与扫描到的那个文件是同一个条目。
   for (const source of input.sources.values()) {
-    const rel = relativeInside(source, output.path);
-    if (rel === null) continue;
+    const inside = relativeInside(source, output.path);
+    if (inside === null) continue;
+    const { rel, former } = inside;
     const id = input.entryIdOf(source.key, rel);
     const scanned = out.get(id);
     if (scanned) {
@@ -454,7 +472,7 @@ function addExport(
         ref: { artifactId: output.artifactId },
         origin,
         media: mediaOf(output),
-        file: { path: output.path },
+        file: { path: former ? path.join(source.realRoot, ...rel.split('/')) : output.path },
         ...status(),
       });
       return;
@@ -516,13 +534,23 @@ function exportEntry(
   };
 }
 
-/** 文件在来源目录里时，相对它的路径（`/` 分隔）。 */
-function relativeInside(source: DeriveSource, file: string): string | null {
-  for (const root of new Set([source.realRoot, source.root])) {
+/** 文件在来源目录里时，相对它的路径（`/` 分隔）；`former`：按放进项目之前的旧工作目录认出来的。 */
+function relativeInside(source: DeriveSource, file: string): { rel: string; former: boolean } | null {
+  const current = new Set([source.realRoot, source.root]);
+  for (const root of [...current, ...(source.formerRoots ?? [])]) {
     const rel = path.relative(root, file);
-    if (rel && !rel.startsWith('..') && !path.isAbsolute(rel)) return rel.split(path.sep).join('/');
+    if (rel && !rel.startsWith('..') && !path.isAbsolute(rel)) return { rel: rel.split(path.sep).join('/'), former: !current.has(root) };
   }
   return null;
+}
+
+/** 内部检查用的导出（`purpose: 'preview'`，架构设计 §9.13）：不成条；发布在来源目录里的文件记下来，不作普通文件列出。 */
+function hidePreview(previews: Set<Id>, input: DeriveInput, output: GeneratedOutput): void {
+  if (!output.path) return;
+  for (const source of input.sources.values()) {
+    const inside = relativeInside(source, output.path);
+    if (inside) previews.add(input.entryIdOf(source.key, inside.rel));
+  }
 }
 
 export function exportKind(settings: ExportSettings): SpaceEntryKind {

@@ -223,6 +223,11 @@ export interface SpaceCatalogOptions {
   artifacts?: SpaceArtifactStore;
   videos?: SpaceVideoEvents;
   index?: ContentIndex;
+  /**
+   * 无项目会话的工作目录放在哪（`RuntimeHome.scratchDir`，以及旧版本的 `legacyScratchDir`）：会话放进项目之前发布在
+   * `<目录>/<会话 id>/` 里的导出，按搬进项目之后的位置认（`DeriveSource.formerRoots`）。
+   */
+  scratchDirs?: readonly string[];
 }
 
 /** 回收站目录：在来源目录里（与视频目录同一个卷，移动是改名），隐藏目录不进 Space 的扫描。 */
@@ -273,6 +278,8 @@ export class SpaceCatalog {
   readonly #sources = new Map<string, DeriveSource>();
   /** 会话属于哪个项目：会话里生成的产物归到那个项目。 */
   readonly #conversationProjects = new Map<Id, Id | null>();
+  /** 无项目会话工作目录的上级目录，首次扫描前换成真实路径（导出记下的发布路径是真实路径）。 */
+  #scratchDirs: readonly string[];
   readonly #files = new Map<Id, ScannedItem>();
   #derived = new Map<Id, DerivedEntry>();
   /** 派生时用的文件状态缓存：产物文件、来源目录之外的发布路径。 */
@@ -301,6 +308,7 @@ export class SpaceCatalog {
     this.#jobs = options.jobs ?? null;
     this.#artifacts = options.artifacts ?? null;
     this.#index = options.index ?? null;
+    this.#scratchDirs = options.scratchDirs ?? [];
     this.#topic = new TopicLog(() => this.snapshot(), '0');
     this.ready = new Promise((resolve) => (this.#markReady = resolve));
     if (this.#jobs) {
@@ -330,6 +338,8 @@ export class SpaceCatalog {
     }
     // 先把 Ledger 里还在的产物任务补进产物记录、按目录实际在哪里核对删除了的视频，再做首次扫描：条目不会先消失再出现。
     void this.#enqueue(async () => {
+      const dirs = await Promise.all(this.#scratchDirs.map(async (dir) => [dir, await fsp.realpath(dir).catch(() => dir)]));
+      this.#scratchDirs = [...new Set(dirs.flat())];
       if (this.#jobs) this.#retain(this.#jobs.list());
       await this.#reconcileTrash();
       await this.#scanAll();
@@ -1024,6 +1034,19 @@ export class SpaceCatalog {
     );
   }
 
+  /** 项目来源的 `formerRoots`：放进这个项目的会话原来的工作目录（项目里直接建的会话也算上，那个目录从来没有过，认不到东西）。 */
+  #syncFormerRoots(): void {
+    if (!this.#scratchDirs.length) return;
+    const former = new Map<Id, string[]>();
+    for (const [conversationId, projectId] of this.#conversationProjects) {
+      if (!projectId) continue;
+      const roots = former.get(projectId) ?? [];
+      for (const dir of this.#scratchDirs) roots.push(path.join(dir, conversationId));
+      former.set(projectId, roots);
+    }
+    for (const source of this.#sources.values()) if (source.projectId) source.formerRoots = former.get(source.projectId) ?? [];
+  }
+
   #addSource(source: DeriveSource, scan: boolean): boolean {
     if (this.#sources.has(source.key)) return false;
     this.#sources.set(source.key, source);
@@ -1186,6 +1209,7 @@ export class SpaceCatalog {
   /** 从全部输入重算条目；`publish` 时把变了的条目逐条发出去（首次扫描与重建只发一条 `catalog.replaced`）。 */
   #recompute(publish: boolean): void {
     if (this.#closed) return;
+    this.#syncFormerRoots();
     const next = deriveEntries({
       sources: this.#sources,
       files: this.#files,

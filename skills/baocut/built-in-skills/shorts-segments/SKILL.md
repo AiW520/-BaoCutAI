@@ -1,7 +1,7 @@
 ---
 name: shorts-segments
 description: 用户有一个长视频（访谈、讲座、直播回放、口播），想从中切出几支能单独发布的短视频时用：读转写找出最值得发的话题，每个话题从开头的钩子剪到讲完，建成可编辑的子视频，用户在编辑器里接着调；几支、每支多长可以交给你按话题定。需要视频的转写。不用于按主题从零做一个新的短视频，也不用于把整段口播剪干净（用剪口播）。
-version: 3.5.0
+version: 3.5.1
 ---
 
 # 从长视频里切短视频
@@ -23,7 +23,7 @@ version: 3.5.0
 
 ## 2. 读文稿，找话题
 
-读带时间的文稿：export 导出字幕（kind `subtitles`、format `srt`）或带时间码的文稿（kind `transcript`、format `md`、timestamps `true`），jobs_inspect 等到 completed，读 outputs 里的文件。这些时间是剪辑后时间线上的时间，和 videos_derive 的 start、end、取帧用的是同一个时钟。
+读带时间的文稿：export 导出字幕（kind `subtitles`、format `srt`）或带时间码的文稿（kind `transcript`、format `md`、timestamps `true`），给 purpose `preview`（只是你自己读，不是交给用户的），jobs_inspect 等到 completed，读 outputs 里的文件。这些时间是剪辑后时间线上的时间，和 videos_derive 的 start、end、取帧用的是同一个时钟。
 
 **句界怎么取**：找句子的起止不用 dump 整份 speech 文档。documents_read 读转写时，返回的 translationBasis.sentences 每一句带 start、end（秒），但那是**素材时钟**；videos_derive 的 start、end 是**时间线时钟**。父视频从 0 秒开始、原速、没有剪口地播放这条素材时，两者相同，可以直接用句子的 start、end 定区间。先确认这一点：用 videos_inspect（或 facts）看视频项的 sourceIn 是否为 0、速度是否为 1、有没有剪口。任一条不满足，就用上面导出的 SRT 或文稿里的时间线时间，或者把素材时间换算成时间线时间再传，不要把素材时间直接当时间线时间用。
 
@@ -149,6 +149,7 @@ version: 3.5.0
 - 不要让片段以对方的反应镜头或依赖上文的句子开头；不要交付被切了半个台标或留着烧进去的边框的裁框。
 - 不要把几件事塞进一条 note，不要只写一个时钟的秒数。
 - 不要导出了 mp4 却说成交付，除非用户要的就是文件；不要把子视频移入回收站。
+- 不要把检查用的东西留在用户的文件里：看画面用 videos_frames，不用 ffmpeg 往 exports/ 里截图；为读文稿、试听或看效果而导出的都给 purpose `preview`，不按 ranges 把片段导出成 mp4 来检查。
 
 ## 7. 交付
 

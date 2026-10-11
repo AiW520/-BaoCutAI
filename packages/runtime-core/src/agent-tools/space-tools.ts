@@ -40,7 +40,7 @@ const schemas = {
       .max(8)
       .optional()
       .describe('可选。只列这些状态：generating、failed、candidate、applied、published、source-changed、missing；none 是普通文件与视频'),
-    videoId: z.string().min(1).max(200).optional().describe('可选。这个视频本身，以及由它生成、导出的条目'),
+    videoId: z.string().min(1).max(200).optional().describe('可选。这个视频本身，由它生成、导出的条目，以及从它切出的子视频（短片）'),
     favorite: z.boolean().optional().describe('可选。只列收藏的'),
     cursor: z
       .string()

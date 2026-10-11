@@ -1259,7 +1259,10 @@ export class ExportService {
     }
   }
 
-  /** 目标目录与每个输出的文件名；预检目录可写、给定的文件名不存在（除非覆盖）。 */
+  /**
+   * 目标目录与每个输出的文件名；预检目录可写、给定的文件名不存在（除非覆盖）。不给目录时是来源目录下的 `exports/`，
+   * 内部检查用的（`purpose: 'preview'`）是 `.baocut-out/exports/`：Space 不扫点开头的目录，检查文件不混进交付物。
+   */
   async #destination(
     request: ExportCreateRequest,
     videoName: string,
@@ -1272,7 +1275,8 @@ export class ExportService {
     const destination = request.destination ?? {};
     const ref = this.#videos.ref(request.videoId)!;
     try {
-      const dir = await prepareDirectory(destination.dir ?? path.join(sourceRoot(ref), 'exports'), destination.dir === undefined);
+      const fallback = request.settings.purpose === 'preview' ? path.join('.baocut-out', 'exports') : 'exports';
+      const dir = await prepareDirectory(destination.dir ?? path.join(sourceRoot(ref), fallback), destination.dir === undefined);
       const outputs = Array.from({ length: parts }, (_, i) => ({
         range: rangeOf(i),
         fileName:

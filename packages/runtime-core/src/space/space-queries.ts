@@ -40,6 +40,11 @@ export function videoOf(entry: SpaceEntry): Id | null {
   return entry.origin?.videoId ?? null;
 }
 
+/** 按视频筛（`space.list` 的 `videoId`）：视频本身、它生成或导出的条目，以及由它派生的子视频（短片）。 */
+function relatedTo(entry: SpaceEntry, videoId: Id): boolean {
+  return videoOf(entry) === videoId || (entry.origin?.source === 'derived' && entry.origin.videoId === videoId);
+}
+
 export function visibleTo(viewer: SpaceViewer, entry: SpaceEntry): boolean {
   switch (viewer.kind) {
     case 'user':
@@ -78,7 +83,7 @@ export function listEntries(catalog: SpaceCatalog, viewer: SpaceViewer, params: 
     if (params.projectId !== undefined && projectOf(entry) !== params.projectId) return false;
     if (kinds && !kinds.has(entry.kind)) return false;
     if (statuses && !statuses.has(entry.status ?? 'none')) return false;
-    if (params.videoId !== undefined && videoOf(entry) !== params.videoId) return false;
+    if (params.videoId !== undefined && !relatedTo(entry, params.videoId)) return false;
     if (params.favorite !== undefined && entry.user.favorite !== params.favorite) return false;
     const trashed = entry.user.trashedAt !== null;
     if (trash === 'exclude' && trashed) return false;

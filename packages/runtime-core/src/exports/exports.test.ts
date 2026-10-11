@@ -331,6 +331,10 @@ describe.skipIf(!engine || !ffmpeg)('导出（真实引擎 + ffmpeg）', () => {
     expect(mdText).not.toContain('Cutaway');
     expect(mdText).toContain('Keep this. [00:00]');
 
+    // 内部检查用的：不给目录时写进 `.baocut-out/exports/`，不混进交付的 `exports/`。
+    const check = await exportOnce({ videoId, settings: { kind: 'transcript', format: 'md', timestamps: true, purpose: 'preview' } });
+    expect(check.result!.outputs![0]!.path).toBe(path.join(project.path, '.baocut-out', 'exports', '采访.transcript.md'));
+
     // 不跳过剪掉的部分：整份原文，时间是素材时间。
     const whole = await exportOnce({ videoId, settings: { kind: 'transcript', format: 'txt', timestamps: true, skipCut: false } });
     const wholeText = await fs.readFile(whole.result!.outputs![0]!.path!, 'utf8');
