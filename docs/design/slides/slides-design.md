@@ -23,7 +23,7 @@
 | 范围 | 内容 |
 | --- | --- |
 | P0 | 上面四步，桌面端与 Web 端（D3）；单用户；中英文以外的界面语言走现有多语言 |
-| P1 | 标注附截图（D2）；导出 PPTX、PDF 的下载；设计系统（`designSystems`）的安装；从 Slides 导出的单文件 HTML 导入为 deck |
+| P1 | 标注附截图（D2）；导出 PPTX、PDF 的下载；从 Slides 导出的单文件 HTML 导入为 deck |
 | 不做 | 多人协作与在线状态（room）；分享链接；评论线程的持久化（标注只是一次性附件）；发送到 Google Drive / Google Slides（运行时里的这部分已删除） |
 
 ## 2. deck 的文件
@@ -36,13 +36,15 @@
 <deck>/
   deck.json              索引：标题、order、sections、cover、faces、designSystems（Slides 格式 v4）
   slides/<id>.html       每页一个文件，恰好一个 <section id="<id>">，内联样式，1920×1080
-  assets/<id>.<ext>      素材，<id> 是内容 sha256 的前 32 位十六进制
+  assets/<id>.<ext>      素材（图片与字体），<id> 是内容 sha256 的前 32 位十六进制
   assets/index.json      <id> → Content-Type（可选，缺省按扩展名）
+  ds/<folder>/tokens.json  装进来的设计系统的 tokens 副本（可选；与 deck.json 的 designSystems 记录成对）
 ```
 
 - 目录名由智能体按标题取，不以点开头（以点开头的目录 Space 不扫描）。
 - 认 deck 的条件：目录里有 `deck.json`，其中 `v` 为 4、`order` 是数组。与视频目录（认 `video.db`）同样作为一个条目，不再往里走。
 - slide 的格式、`deck.json` 的字段与上限沿用运行时编译器（`compileSlideHtml`、`normalizeDeckMetadata`）的规则；规范写进 skill 的 `references/format.md`。
+- 设计系统：智能体按 skill 的 `references/design-system.md` 把工作目录里的设计系统装进 deck——`tokens.json` 原样拷到 `ds/<folder>/`，`designSystems` 记一条 `{title, namespace, artifact, version, copiedAt}`（`namespace` 即 `<folder>`）；字体与标志经 `slides_import_asset` 导入，字体在 `faces` 里用 `src` 登记。两者都在时编辑器才提供这个设计系统的颜色与文字样式（运行时 `files/design-systems.ts`）。
 
 ### 2.2 与运行时 URL 的映射
 
@@ -156,17 +158,17 @@
 ### 7.1 skill `slides`
 
 - 新建 `skills/baocut/built-in-skills/slides/SKILL.md`：何时用（做幻灯片、演示文稿、deck；不用于视频画面里的字卡与动效）、deck 的磁盘格式、创建步骤、修改已有 deck、设计原则。
-- `references/`：`format.md`（slide 标签与样式的闭合子集、`faces` 的写法、上限）、`design.md`（版式、字号阶梯、配色、图表）、`images.md`（图从哪来、哪几页配图、用图片生成模型画插图、占位图框）。各控制在 `SKILL_LIMITS` 内。
+- `references/`：`format.md`（slide 标签与样式的闭合子集、`faces` 的写法、上限）、`design.md`（版式、字号阶梯、配色、图表）、`images.md`（图从哪来、哪几页配图、用图片生成模型画插图、占位图框）、`design-system.md`（找、读、装设计系统，按它写页面）。各控制在 `SKILL_LIMITS` 内。
 - 插图不加新工具：智能体用模型工具 `image` 生成（不带 `video`），`artifacts_save` 存进 deck 目录的 `images/`，再经 `slides_import_asset` 导入；图片生成没有配置时整份照做，不放插图，交付时说明。
 - 同步：`skills/baocut/built-in-skills/README.md` 的表、`builtin-skills.test.ts` 的 `EXPECTED_IDS`、`skills/baocut/SKILL.md` §1 的路由表与 media 目录页（都只在 agent 面）、产品设计 §6.9 的「来源」，然后 `npm run build:agent-skill`。
-- 两个工具只在会话里有，CLI 面的 craft 副本里没有它们：`SESSION_ONLY_TOOLS` 把 SKILL.md 里「调用 `slides_check`」「逐张调用 `slides_import_asset`」那两步整步换成终端里的说法（自查格式、先不放图片），所以 SKILL.md 里这两个工具名只在这两步出现。
+- 两个工具只在会话里有，CLI 面的 craft 副本里没有它们：`SESSION_ONLY_TOOLS` 把「调用 `slides_check`」「逐张调用 `slides_import_asset`」「逐个用 `slides_import_asset` 导入」（字体）三种说法从那里换到行尾，换成终端里的说法（自查格式、先不放图片、设计系统的字体拷进 `ds/<folder>/fonts/` 并以 `project/ds/…` 作 `src`），所以 skill 与 references 里这两个工具名只用这三种说法。
 
 ### 7.2 工具
 
 | 工具 | 作用 |
 | --- | --- |
-| `slides_check { path }` | 用运行时编译器逐页校验 deck，规则与编辑器读页面时一致：格式外的标签、会被丢弃的 CSS、页面文件里的 `<title>`/`<link>`/`<style>`、相对路径或网上的图片、缺失的素材、引用不一致、序列化往返不稳定。返回问题清单；每页另带不算问题的提示（编译器警告，以及以「排版」开头的放不下、互相压住，中日韩整句的「断词」误报滤掉）。没有问题时在会话线程里登记或更新一张幻灯片卡片（7.3）。智能体写完或改完 deck 必须调用一次 |
-| `slides_import_asset { deck, path }` | 把工作目录里的图片拷进 deck 的 `assets/`，返回要写进 `<img src>` 的 `/_blob/<id>` |
+| `slides_check { path }` | 用运行时编译器逐页校验 deck，规则与编辑器读页面时一致：格式外的标签、会被丢弃的 CSS、页面文件里的 `<title>`/`<link>`/`<style>`、相对路径或网上的图片、缺失的素材、引用不一致、序列化往返不稳定；`faces` 里编辑器认不得的字体或缺失的字体文件，`designSystems` 记录的写法、重复与个数，以及 `ds/<folder>/` 没有记录。返回问题清单；每页另带不算问题的提示（编译器警告，以及以「排版」开头的放不下、互相压住，中日韩整句的「断词」误报滤掉）。没有问题时在会话线程里登记或更新一张幻灯片卡片（7.3）。智能体写完或改完 deck 必须调用一次 |
+| `slides_import_asset { deck, path }` | 把工作目录里的图片或字体（woff2、woff、ttf、otf）拷进 deck 的 `assets/`，返回 `/_blob/<id>`：图片写进 `<img src>`，字体写进 `faces` 那一项的 `src` |
 
 - 写 deck 文件本身用 Driver 自带的文件工具（与 `video-blog` 写文章相同）。
 - 两个工具进工具目录（`agent-tools/all-tool-sets.ts`），同步说明书（`skills/baocut/`）的目录页与 `npm run build:catalog`。

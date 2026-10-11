@@ -4,11 +4,12 @@
  *   - 每页 compileSlideHtml 无 error、无 unsupported（被丢弃的写法）、无 cellRemovals；与编辑器一样不收相对路径的图片，
  *     也不收页面文件里的 <title>、<link>、<style>
  *   - 引用的 /_blob/<id> 在 deck 的 assets/ 里
+ *   - deck.json 的 faces 编辑器认得（Google Fonts 链接，或指向存在的字体文件的 src），designSystems 与 ds/<folder>/ 对得上
  *   - 序列化往返稳定：serialize(compile(src)) 再编译、再序列化结果不变
  * 问题与提示是给智能体看的，不进界面文案目录。
  */
 // i18n-ignore-file: 给模型的校验结果
-import { existsSync, readdirSync, readFileSync } from 'node:fs';
+import { existsSync, readdirSync, readFileSync, statSync, type Dirent } from 'node:fs';
 import path from 'node:path';
 import type { CompileDiagnostic, CompileResult, SlidesRuntime } from './compiler-contract.ts';
 import { deckReferenceProblems, type DeckMetadata } from './deck-metadata.ts';
@@ -56,12 +57,33 @@ export function isCjkWordBreakLint(message: string): boolean {
   return CJK.test(quoted);
 }
 
-/** 编辑器读取时把 deck.json 的 faces 拼成 <head> 的字体链接；单页编译也带上，免得误报「字体未声明」。 */
+/** 编辑器认得的字体（packages/slides-runtime 的 deck 模型）：族名、Google Fonts 链接、字体文件地址。 */
+const FACE_FAMILY = /^[A-Za-z][A-Za-z0-9 _-]{0,39}$/;
+const GOOGLE_FONTS_CSS = /^https:\/\/fonts\.googleapis\.com\/css2\?[A-Za-z0-9&=+,.:;@_-]+$/;
+const BLOB_SRC = /^\/_blob\/([0-9a-f]{32})$/;
+const DS_FONT_SRC = /^project\/(ds\/[a-z0-9][a-z0-9_-]{0,63}\/(?:[A-Za-z0-9][A-Za-z0-9._-]{0,99}\/){0,8}[A-Za-z0-9][A-Za-z0-9._-]{0,99}\.(?:[Ww][Oo][Ff][Ff]2?|[Tt][Tt][Ff]|[Oo][Tt][Ff]))$/;
+const MAX_FACES = 4;
+/** 设计系统在 ds/ 下的目录名与个数上限（同 packages/slides-runtime/src/files/design-systems.ts）。 */
+const DS_DIR = 'ds';
+const DS_FOLDER = /^[a-z0-9][a-z0-9_-]{0,63}$/;
+const MAX_DESIGN_SYSTEMS = 4;
+
+const isRecord = (v: unknown): v is Record<string, unknown> => typeof v === 'object' && v !== null && !Array.isArray(v);
+
+/**
+ * 编辑器读取时把 deck.json 的 faces 拼成 <head>：href 是字体链接，src（上传或设计系统里的字体文件）是 @font-face；
+ * 单页编译也带上，免得误报「字体未声明」。
+ */
 export function fontHead(deck: Pick<DeckMetadata, 'faces'>): string {
-  const links = Object.values(deck.faces ?? {})
-    .filter(f => typeof f?.href === 'string')
-    .map(f => `<link rel="stylesheet" href="${f.href!.replace(/&/g, '&amp;').replace(/"/g, '&quot;')}">`);
-  return `<head>${links.join('')}</head>\n`;
+  const parts: string[] = [];
+  for (const f of Object.values(deck.faces ?? {})) {
+    if (typeof f?.href === 'string') {
+      parts.push(`<link rel="stylesheet" href="${f.href.replace(/&/g, '&amp;').replace(/"/g, '&quot;')}">`);
+    } else if (typeof f?.src === 'string' && typeof f.family === 'string' && FACE_FAMILY.test(f.family) && (BLOB_SRC.test(f.src) || DS_FONT_SRC.test(f.src))) {
+      parts.push(`<style>@font-face{font-family:'${f.family}';src:url(${f.src})}</style>`);
+    }
+  }
+  return `<head>${parts.join('')}</head>\n`;
 }
 
 const facesOf = (r: CompileResult) => (Array.isArray(r.content.faces) ? r.content.faces.length : 0);
@@ -148,8 +170,109 @@ export function checkDeck(rt: SlidesRuntime, deckDir: string, options: { verbose
 
   return {
     title: normalized.title,
-    deckProblems: deckProblems.map(p => `deck.json: ${p}`),
+    deckProblems: [...deckProblems.map(p => `deck.json: ${p}`), ...deckFileProblems(raw, deckDir)],
     orphans: [...slideFiles].filter(id => !normalized.order.includes(id)),
     slides,
   };
+}
+
+/**
+ * deck.json 里指向文件的两处：faces（字体链接或字体文件）与 designSystems（ds/<folder>/ 里拷来的设计系统）。每条问题以
+ * 所在的文件开头（`deck.json: ` 或 `ds/…`）。
+ * 编辑器丢掉认不得的字体，只在记录与 ds/<folder>/ 都在时才提供设计系统的颜色与文字样式；有记录、目录里还没有
+ * tokens.json 不算问题（设计系统没有 tokens.json 时照装，编辑器只是给不出它的颜色）。
+ */
+export function deckFileProblems(raw: Pick<DeckMetadata, 'faces' | 'designSystems'>, deckDir: string): string[] {
+  const problems: string[] = [];
+  const faces: unknown = raw.faces;
+  const fileExists = (rel: string) => {
+    try {
+      return statSync(path.join(deckDir, rel)).isFile();
+    } catch {
+      return false;
+    }
+  };
+  const blobExists = (id: string) => {
+    try {
+      return readdirSync(path.join(deckDir, ASSETS_DIR)).some(name => name.startsWith(`${id}.`));
+    } catch {
+      return false;
+    }
+  };
+  if (faces !== undefined && !isRecord(faces)) problems.push('deck.json: faces 要是对象：{"<键>": {"family": …, "href" 或 "src": …}}');
+  const entries = isRecord(faces) ? Object.entries(faces) : [];
+  if (entries.length > MAX_FACES) problems.push(`deck.json: faces 有 ${entries.length} 项，编辑器只认前 ${MAX_FACES} 个`);
+  const families = new Set<string>();
+  for (const [key, face] of entries) {
+    const where = `deck.json: faces.${key}`;
+    if (!isRecord(face) || typeof face.family !== 'string') {
+      problems.push(`${where} 要写成 {"family": <页面 font-family 里的名字>, "href": <Google Fonts 链接>} 或 {"family": …, "src": <slides_import_asset 返回的 /_blob/<id>>}`);
+      continue;
+    }
+    if (!FACE_FAMILY.test(face.family)) problems.push(`${where}.family「${face.family}」编辑器认不得：以英文字母开头，只用字母、数字、空格、- 与 _，至多 40 个字符`);
+    else if (families.has(face.family.toLowerCase())) problems.push(`${where}.family「${face.family}」重复了，编辑器只认第一个`);
+    families.add(face.family.toLowerCase());
+    const { href, src } = face;
+    if (href !== undefined && src !== undefined) problems.push(`${where} 只写 href 或 src 中的一个`);
+    else if (href !== undefined) {
+      if (typeof href !== 'string' || !GOOGLE_FONTS_CSS.test(href)) problems.push(`${where}.href 要是 https://fonts.googleapis.com/css2?… 的链接`);
+    } else if (src !== undefined) {
+      const blob = typeof src === 'string' ? BLOB_SRC.exec(src) : null;
+      const dsFile = typeof src === 'string' ? DS_FONT_SRC.exec(src) : null;
+      if (blob) {
+        if (!blobExists(blob[1]!)) problems.push(`${where}.src 引用的 /_blob/${blob[1]} 不存在：用 slides_import_asset 导入字体文件，写它返回的 src`);
+      } else if (dsFile) {
+        if (!fileExists(dsFile[1]!)) problems.push(`${where}.src 指向的 ${dsFile[1]} 不在 deck 里`);
+      } else {
+        problems.push(`${where}.src 要是 slides_import_asset 返回的 /_blob/<id>（字体文件 woff2、woff、ttf、otf 先导入）`);
+      }
+    } else {
+      problems.push(`${where} 要有 href（Google Fonts 链接）或 src（slides_import_asset 返回的 /_blob/<id>）`);
+    }
+  }
+  problems.push(...designSystemProblems(raw.designSystems, deckDir));
+  return problems;
+}
+
+/** designSystems 与 ds/<folder>/ 对得上：每个目录都有记录，记录的形状与个数编辑器认得。 */
+function designSystemProblems(value: unknown, deckDir: string): string[] {
+  const problems: string[] = [];
+  const folders: string[] = [];
+  let listing: Dirent[] = [];
+  try {
+    listing = readdirSync(path.join(deckDir, DS_DIR), { withFileTypes: true }).sort((x, y) => (x.name < y.name ? -1 : x.name > y.name ? 1 : 0));
+  } catch {
+    // 没有 ds/ 目录
+  }
+  for (const entry of listing) {
+    if (entry.name.startsWith('.')) continue;
+    if (!entry.isDirectory()) problems.push(`${DS_DIR}/${entry.name}: ${DS_DIR}/ 下只放目录，一个设计系统一个 ${DS_DIR}/<folder>/`);
+    else if (!DS_FOLDER.test(entry.name)) problems.push(`${DS_DIR}/${entry.name}/: 设计系统的目录名只用小写字母、数字、- 与 _，以字母或数字开头，至多 64 个字符`);
+    else folders.push(entry.name);
+  }
+  const records = Array.isArray(value) ? value : isRecord(value) ? Object.values(value) : value === undefined ? [] : null;
+  if (records === null) problems.push('deck.json: designSystems 要是数组：[{"title","namespace","artifact","version","copiedAt"}]');
+  const recorded = new Set<string>();
+  if (records && records.length > MAX_DESIGN_SYSTEMS) problems.push(`deck.json: designSystems 有 ${records.length} 项，一份 deck 至多 ${MAX_DESIGN_SYSTEMS} 个`);
+  (records ?? []).forEach((record, i) => {
+    const where = `deck.json: designSystems[${i}]`;
+    if (
+      !isRecord(record) ||
+      typeof record.title !== 'string' ||
+      typeof record.namespace !== 'string' ||
+      !DS_FOLDER.test(record.namespace) ||
+      typeof record.artifact !== 'string' ||
+      !(record.version === undefined || record.version === null || typeof record.version === 'string') ||
+      !(record.copiedAt === undefined || typeof record.copiedAt === 'string')
+    ) {
+      problems.push(`${where} 要写成 {"title": <名字>, "namespace": <ds/ 下的目录名>, "artifact": <从哪里拷来>, "version": <字符串或 null>, "copiedAt": <RFC 3339 时间>}`);
+      return;
+    }
+    if (recorded.has(record.namespace)) problems.push(`${where}: namespace「${record.namespace}」出现了不止一次`);
+    recorded.add(record.namespace);
+  });
+  for (const folder of folders) {
+    if (!recorded.has(folder)) problems.push(`${DS_DIR}/${folder}/ 在 designSystems 里没有记录：编辑器要两者都在才提供这个设计系统`);
+  }
+  return problems;
 }

@@ -21,7 +21,7 @@ export const ru: RcAgentToolsMessages = {
   clauseSeparator: "; ",
 
   createVideoSummary: (p) => `Создать видео «${p.name}"`,
-  slidesImportAssetSummary: (p) => `Импортировать изображение «${p.file}» в слайды «${p.deck}»`,
+  slidesImportAssetSummary: (p) => `Импортировать «${p.file}» в слайды «${p.deck}»`,
   designImportAssetSummary: (p) => `Импортировать «${p.file}» в дизайн «${p.canvas}»`,
   designSystemImportAssetSummary: (p) => `Импортировать «${p.file}» в дизайн-систему «${p.system}»`,
   editsSummary: (p) => `${p.label} (${pluralForm('ru', p.count, { one: `${p.count} операция`, few: `${p.count} операции`, many: `${p.count} операций`, other: `${p.count} операции` })}: ${p.types})`,

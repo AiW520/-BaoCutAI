@@ -45,7 +45,7 @@ export const it: RcAgentToolsMessages = {
   clauseSeparator: '; ',
 
   createVideoSummary: (p: { name: string }) => `Crea il video «${p.name}»`,
-  slidesImportAssetSummary: (p: { file: string; deck: string }) => `Importa l’immagine «${p.file}» nelle diapositive «${p.deck}»`,
+  slidesImportAssetSummary: (p: { file: string; deck: string }) => `Importa «${p.file}» nelle diapositive «${p.deck}»`,
   designImportAssetSummary: (p: { file: string; canvas: string }) => `Importa «${p.file}» nel design «${p.canvas}»`,
   designSystemImportAssetSummary: (p: { file: string; system: string }) => `Importa «${p.file}» nel design system «${p.system}»`,
   editsSummary: (p: { label: string; count: number; types: string }) =>

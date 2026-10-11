@@ -90,7 +90,7 @@
 ## 7. 形状、图标与连线
 
 - `<x-shape kind="…">`：`rect`、`rounded`（圆角矩形）、`ellipse`、`diamond`、`arrow-right`、`arrow-left`、`arrow-up`、`arrow-down`、`line`。里面不放内容；`background` 是填充（只能纯色），`border` 是描边；钉住时写全 `width` 与 `height`；`transform` 只认 `rotate(…)`。要在形状上写字，另放一个钉在同一位置的 `<p>`。
-- `<x-icon name="…">`：内置图标，名字不分大小写——Activity、Book、Chart、Chat、Check、CheckCircle、Clock、Cloud、Code、Database、Globe、GraduationCap、Home、Key、Lightbulb、Lightning、Link、Lock、PaperPlane、Play、Search、Settings、Star、ThumbsUp、Tool、Trust、Users、Verified、Warning、Wrench。`width`、`height` 用 px（只写一个就是正方形），`color` 上色。名字不在表里的会显示成一段文字。
+- `<x-icon name="…">`：内置图标，名字不分大小写——Activity、Book、Chart、Chat、Check、CheckCircle、Clock、Cloud、Code、Database、Globe、GraduationCap、Home、Key、Lightbulb、Lightning、Link、Lock、PaperPlane、Play、Search、Settings、Star、ThumbsUp、Tool、Trust、Users、Verified、Warning、Wrench。`width`、`height` 用 px（只写一个就是正方形），`color` 上色。名字不在表里的会显示成一段文字。字体里没有的符号（✓ ✗ ★ ☐ 这类）会换成系统字体显示：打勾用 `<x-icon name="Check">`，表示「没有」写字或一个 −。
 - `<x-connector>`：直线、折线与箭头。钉在画布上时写全 `x1`、`y1`、`x2`、`y2`（px 数字；在 `position:relative` 的 `<div>` 里也可以写百分比）。
   - `head`：`end`（终点有箭头，默认）、`both`、`none`；也可以分别写 `head-start`、`head-end`：`none`、`open`、`filled`。
   - `route`：`straight`、`elbow`、`hv`（先横后竖）、`vh`（先竖后横）。
@@ -110,10 +110,12 @@
 
 ## 9. 字体
 
-- 页面里用到的网络字体，都要在 `deck.json` 的 `faces` 里登记：键是自己起的短名，值是 `{ "family": "…", "href": "…" }`。
+- 页面里用到的网络字体与字体文件，都要在 `deck.json` 的 `faces` 里登记：键是自己起的短名，值是 `{ "family": "…", "href": "…" }` 或 `{ "family": "…", "src": "…" }`，`href` 与 `src` 只写一个。
 - `family` 以英文字母开头，只含字母、数字、空格、`-`、`_`，最长 40 个字符，与 `font-family` 里写的完全一致。
 - `href` 只能是 Google Fonts 的 css2 地址（`https://fonts.googleapis.com/css2?family=…`），最长 1024 个字符，用到的字重都写进去。
-- 一份最多登记 4 个网络字体。系统字体（Arial、Georgia、Courier New、PingFang SC、Microsoft YaHei 这类）不用登记，写在字体栈后面当退路，最后以 `sans-serif` 或 `serif` 收尾。
+- `src` 是 deck 里的字体文件的地址，原样写；不写 `data:`、网上地址或相对路径。只有一个字重的静态字体文件，所有字重都显示成那一个：优先用可变字体文件，或只用最常用的那个字重。
+- 字体文件（woff2、woff、ttf、otf）逐个用 `slides_import_asset` 导入，`src` 写它返回的 `/_blob/<id>`；导入不了的改用 Google Fonts 或系统字体，交付时说明。
+- 一份最多登记 4 个字体。系统字体（Arial、Georgia、Courier New、PingFang SC、Microsoft YaHei 这类）不用登记，写在字体栈后面当退路，最后以 `sans-serif` 或 `serif` 收尾。
 - 中文可以用 `Noto Sans SC`、`Noto Serif SC`；日文、韩文各有对应的 Noto 字体。
 
 ## 10. 上限

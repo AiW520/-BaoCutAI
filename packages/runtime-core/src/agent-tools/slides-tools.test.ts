@@ -156,7 +156,17 @@ describe('slides_import_asset', () => {
     expect((await fs.readdir(path.join(deck, 'assets'))).filter((name) => name !== 'index.json')).toEqual([`${id}.png`]);
   });
 
-  it('只收工作目录里的普通图片文件；规划模式只读；检查不过的不生成审批', async () => {
+  it('字体也拷进 assets/，下一步说明把 src 登记进 deck.json 的 faces', async () => {
+    const deck = await writeDeck('talk', { a: SLIDE('a') });
+    await fs.writeFile(path.join(root, 'Brand.woff2'), 'woff2-bytes');
+    const result = (await tools(fakeScope().scope).dispatch('slides_import_asset', { deck: 'talk', path: 'Brand.woff2' }, principal)) as Record<string, unknown>;
+    expect(result).toMatchObject({ src: expect.stringMatching(/^\/_blob\/[0-9a-f]{32}$/), contentType: 'font/woff2' });
+    expect(result.next).toContain('faces');
+    const id = (result.src as string).slice('/_blob/'.length);
+    expect(await fs.readFile(path.join(deck, 'assets', `${id}.woff2`), 'utf8')).toBe('woff2-bytes');
+  });
+
+  it('只收工作目录里的普通图片与字体文件；规划模式只读；检查不过的不生成审批', async () => {
     await writeDeck('talk', { a: SLIDE('a') });
     await fs.writeFile(path.join(root, 'notes.md'), '# 讲稿');
     await fs.writeFile(path.join(tmp, 'secret.png'), 'png');

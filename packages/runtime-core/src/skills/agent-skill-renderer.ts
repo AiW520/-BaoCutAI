@@ -114,6 +114,8 @@ export interface SessionOnlyToolFallback {
   /** 常见的整句说法（工具名写成裸名、行内代码或 `{{tool:…}}` 都认）→ 换成 `replacement`。 */
   phrase: RegExp;
   replacement: string;
+  /** 同一个工具的其他整句说法，各有各的换法；在 `phrase` 之前换。 */
+  morePhrases?: readonly { phrase: RegExp; replacement: string }[];
   /** 其余地方出现的工具名换成这句。 */
   text: string;
 }
@@ -133,7 +135,7 @@ export const SESSION_ONLY_TOOLS: Readonly<Record<string, SessionOnlyToolFallback
     replacement: '把文件的路径告诉用户（终端里没有下载目录这一步：文件就在你写的位置）',
     text: '把文件交给用户（终端里直接告诉用户文件的路径）',
   },
-  // 幻灯片（skills/slides）的校验与导入图片只在会话里有；craft 里各占一个步骤，整步从「调用」换到行尾。
+  // 幻灯片（skills/slides）的校验与导入图片、字体只在会话里有；craft 里各占一个步骤，整步从「调用」「用」换到行尾。
   slides_check: {
     phrase: new RegExp(`调用\\s*${toolNamePattern('slides_check')}[^\\n]*`, 'g'),
     replacement:
@@ -144,7 +146,16 @@ export const SESSION_ONLY_TOOLS: Readonly<Record<string, SessionOnlyToolFallback
   slides_import_asset: {
     phrase: new RegExp(`逐张调用\\s*${toolNamePattern('slides_import_asset')}[^\\n]*`, 'g'),
     replacement: '终端里没有把图片导入 deck 的命令：页面先不放图片，交付时说明哪几页该配什么图。',
-    text: '导入图片（只在 BaoCut 的会话里有）',
+    // 字体（第 4 步、format.md「字体」、design-system.md）：编辑器也认装进 deck 的设计系统里的字体文件 project/ds/…。
+    morePhrases: [
+      {
+        phrase: new RegExp(`逐个用\\s*${toolNamePattern('slides_import_asset')}\\s*导入[^\\n]*`, 'g'),
+        replacement:
+          '终端里没有把字体导入 deck 的命令：装进 deck 的设计系统的字体拷到 `ds/<folder>/fonts/<文件>`（路径只含字母、数字与 `._/-`），' +
+          '`src` 写 `project/ds/<folder>/fonts/<文件>`；其他字体改用 Google Fonts 或系统字体，交付时说明。',
+      },
+    ],
+    text: '导入图片与字体（只在 BaoCut 的会话里有）',
   },
   // 设计稿（skills/design）的校验与导入素材同样只在会话里有：「新建」第 6 步的校验句、第 3 步的导入句整句换掉。
   design_check: {
@@ -191,6 +202,7 @@ function toolNamePattern(name: string): string {
 export function renderSessionOnlyTools(line: string): string {
   let out = line;
   for (const [name, fallback] of Object.entries(SESSION_ONLY_TOOLS)) {
+    for (const more of fallback.morePhrases ?? []) out = out.replace(more.phrase, more.replacement);
     out = out.replace(fallback.phrase, fallback.replacement).replace(new RegExp(toolNamePattern(name), 'g'), fallback.text);
   }
   return out;

@@ -22,7 +22,7 @@ export const de: RcAgentToolsMessages = {
   clauseSeparator: "; ",
 
   createVideoSummary: (p: { name: string }) => `Video erstellen: „${p.name}“`,
-  slidesImportAssetSummary: (p: { file: string; deck: string }) => `Bild „${p.file}“ in die Folien „${p.deck}“ übernehmen`,
+  slidesImportAssetSummary: (p: { file: string; deck: string }) => `„${p.file}“ in die Folien „${p.deck}“ übernehmen`,
   designImportAssetSummary: (p: { file: string; canvas: string }) => `„${p.file}“ in das Design „${p.canvas}“ übernehmen`,
   designSystemImportAssetSummary: (p: { file: string; system: string }) => `„${p.file}“ in das Designsystem „${p.system}“ übernehmen`,
   editsSummary: (p: { label: string; count: number; types: string }) =>

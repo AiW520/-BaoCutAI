@@ -21,7 +21,7 @@ export const ptBR: RcAgentToolsMessages = {
   clauseSeparator: "; ",
 
   createVideoSummary: (p: { name: string }) => `Criar vídeo “${p.name}”`,
-  slidesImportAssetSummary: (p: { file: string; deck: string }) => `Importar a imagem “${p.file}” para os slides “${p.deck}”`,
+  slidesImportAssetSummary: (p: { file: string; deck: string }) => `Importar “${p.file}” para os slides “${p.deck}”`,
   designImportAssetSummary: (p: { file: string; canvas: string }) => `Importar “${p.file}” para o design “${p.canvas}”`,
   designSystemImportAssetSummary: (p: { file: string; system: string }) => `Importar “${p.file}” para o sistema de design “${p.system}”`,
   editsSummary: (p: { label: string; count: number; types: string }) =>

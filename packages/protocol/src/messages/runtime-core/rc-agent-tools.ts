@@ -64,7 +64,7 @@ const en = {
   clauseSeparator: '; ',
 
   createVideoSummary: (p: { name: string }) => `Create video "${p.name}"`,
-  slidesImportAssetSummary: (p: { file: string; deck: string }) => `Add image "${p.file}" to the slides "${p.deck}"`,
+  slidesImportAssetSummary: (p: { file: string; deck: string }) => `Add "${p.file}" to the slides "${p.deck}"`,
   designImportAssetSummary: (p: { file: string; canvas: string }) => `Add "${p.file}" to the design "${p.canvas}"`,
   designSystemImportAssetSummary: (p: { file: string; system: string }) => `Add "${p.file}" to the design system "${p.system}"`,
   editsSummary: (p: { label: string; count: number; types: string }) =>

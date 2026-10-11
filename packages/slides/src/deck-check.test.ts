@@ -6,7 +6,7 @@ import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import type { SlidesRuntime } from './compiler-contract.ts';
-import { checkDeck, checkSlide, fontHead, isCjkWordBreakLint, problemCount } from './deck-check.ts';
+import { checkDeck, checkSlide, deckFileProblems, fontHead, isCjkWordBreakLint, problemCount } from './deck-check.ts';
 import { deckReferenceProblems, isDeckMetadata, readDeckSummary, type DeckMetadata } from './deck-metadata.ts';
 import { compilerAvailable, loadSlidesCompiler } from './slides-compiler.ts';
 
@@ -43,6 +43,79 @@ describe('fontHead', () => {
     );
     expect(fontHead(deck({ faces: {} }))).toBe('<head></head>\n');
   });
+
+  it('src 的字体（导入的或设计系统里的）变成 @font-face；认不得的 src 不拼', () => {
+    const blob = `/_blob/${'a'.repeat(32)}`;
+    const faces = {
+      brand: { family: 'Brand Sans', src: blob },
+      ds: { family: 'Acme Serif', src: 'project/ds/acme/fonts/Acme-Serif.woff2' },
+      web: { family: 'Remote', src: 'https://example.com/a.woff2' },
+    };
+    expect(fontHead(deck({ faces }))).toBe(
+      `<head><style>@font-face{font-family:'Brand Sans';src:url(${blob})}</style><style>@font-face{font-family:'Acme Serif';src:url(project/ds/acme/fonts/Acme-Serif.woff2)}</style></head>\n`,
+    );
+  });
+});
+
+describe('deckFileProblems', () => {
+  let root: string;
+  const blob = 'b'.repeat(32);
+  const record = (namespace: string) => ({ title: namespace, namespace, artifact: `../${namespace}`, version: null, copiedAt: '2026-10-11T00:00:00Z' });
+  beforeAll(async () => {
+    root = await mkdtemp(path.join(tmpdir(), 'deck-files-'));
+    await mkdir(path.join(root, 'assets'), { recursive: true });
+    await writeFile(path.join(root, `assets/${blob}.woff2`), 'woff2');
+    await mkdir(path.join(root, 'ds/acme/fonts'), { recursive: true });
+    await writeFile(path.join(root, 'ds/acme/tokens.json'), '{}');
+    await writeFile(path.join(root, 'ds/acme/fonts/Acme.woff2'), 'woff2');
+  });
+  afterAll(async () => {
+    await rm(root, { recursive: true, force: true });
+  });
+
+  it('字体链接、存在的字体文件与对得上的设计系统没有问题', () => {
+    const faces = { web: FACE, brand: { family: 'Brand Sans', src: `/_blob/${blob}` }, ds: { family: 'Acme', src: 'project/ds/acme/fonts/Acme.woff2' } };
+    expect(deckFileProblems(deck({ faces, designSystems: [record('acme')] }), root)).toEqual([]);
+    expect(deckFileProblems(deck({ faces, designSystems: { acme: record('acme') } as never }), root), '对象形式也认').toEqual([]);
+  });
+
+  it('报告编辑器认不得或找不到的字体', () => {
+    const faces = {
+      missing: { family: 'Missing', src: `/_blob/${'c'.repeat(32)}` },
+      gone: { family: 'Gone', src: 'project/ds/acme/fonts/Gone.woff2' },
+      web: { family: 'Remote', src: 'https://example.com/a.woff2' },
+      both: { family: 'Both', href: FACE.href, src: `/_blob/${blob}` },
+      cjk: { family: '思源黑体', href: FACE.href },
+    };
+    const problems = deckFileProblems(deck({ faces, designSystems: [record('acme')] }), root);
+    expect(problems).toEqual([
+      'deck.json: faces 有 5 项，编辑器只认前 4 个',
+      expect.stringMatching(/^deck\.json: faces\.missing\.src 引用的 \/_blob\/c{32} 不存在/),
+      'deck.json: faces.gone.src 指向的 ds/acme/fonts/Gone.woff2 不在 deck 里',
+      expect.stringMatching(/^deck\.json: faces\.web\.src 要是 slides_import_asset 返回的/),
+      'deck.json: faces.both 只写 href 或 src 中的一个',
+      expect.stringMatching(/^deck\.json: faces\.cjk\.family「思源黑体」编辑器认不得/),
+    ]);
+  });
+
+  it('ds/ 下的目录要有记录；记录的形状、重复与个数', async () => {
+    await mkdir(path.join(root, 'ds/beta'), { recursive: true });
+    try {
+      expect(deckFileProblems(deck({ designSystems: [] }), root)).toEqual([
+        expect.stringMatching(/^ds\/acme\/ 在 designSystems 里没有记录/),
+        expect.stringMatching(/^ds\/beta\/ 在 designSystems 里没有记录/),
+      ]);
+      const records = [record('acme'), record('beta'), record('acme'), { namespace: 'Bad' }, record('d'), record('e')];
+      expect(deckFileProblems(deck({ designSystems: records }), root)).toEqual([
+        'deck.json: designSystems 有 6 项，一份 deck 至多 4 个',
+        'deck.json: designSystems[2]: namespace「acme」出现了不止一次',
+        expect.stringMatching(/^deck\.json: designSystems\[3\] 要写成/),
+      ]);
+      expect(deckFileProblems(deck({ designSystems: [record('acme'), record('beta'), record('other')] }), root), '有记录、还没有目录不算问题').toEqual([]);
+    } finally {
+      await rm(path.join(root, 'ds/beta'), { recursive: true, force: true });
+    }
+  });
 });
 
 describe.skipIf(!compilerAvailable())('用运行时编译器校验', () => {
@@ -61,6 +134,11 @@ describe.skipIf(!compilerAvailable())('用运行时编译器校验', () => {
     const report = checkSlide(rt, 'a', SLIDE('a'), { head: '' });
     expect(report.problems).toHaveLength(0);
     expect(report.notes.join('\n')).toMatch(/Source Sans 3.*not declared/);
+  });
+
+  it('src 的字体在 head 里声明过：不报未声明，也不算页面里的 <style>', () => {
+    const srcHead = fontHead(deck({ faces: { brand: { family: 'Source Sans 3', src: 'project/ds/acme/fonts/Brand.woff2' } } }));
+    expect(checkSlide(rt, 'a', SLIDE('a'), { head: srcHead })).toEqual({ id: 'a', problems: [], notes: [], roundTripDrift: false });
   });
 
   it('格式外的标签是错误，丢弃的 CSS 是 unsupported', () => {

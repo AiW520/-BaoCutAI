@@ -258,7 +258,10 @@ describe('只在会话里有的工具在 CLI 面的兜底写法', () => {
       '4. **准备图片**。用户给的图片，终端里没有把图片导入 deck 的命令：页面先不放图片，交付时说明哪几页该配什么图。',
     );
     expect(cli('最后跑一遍 {{tool:slides_check}}。')).toBe('最后跑一遍 幻灯片校验（只在 BaoCut 的会话里有）。');
-    expect(cli('图片经 slides_import_asset 放进来。')).toBe('图片经 导入图片（只在 BaoCut 的会话里有） 放进来。');
+    expect(cli('- 字体文件逐个用 `slides_import_asset` 导入，`src` 写它返回的 `/_blob/<id>`。')).toBe(
+      `- 字体文件${SESSION_ONLY_TOOLS.slides_import_asset!.morePhrases![0]!.replacement}`,
+    );
+    expect(cli('图片经 slides_import_asset 放进来。')).toBe('图片经 导入图片与字体（只在 BaoCut 的会话里有） 放进来。');
     // 工具桥面原样。
     expect(agent('调用 {{tool:slides_check}} 校验。')).toBe('调用 `slides_check` 校验。');
   });

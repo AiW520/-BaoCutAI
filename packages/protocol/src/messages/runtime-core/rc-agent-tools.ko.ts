@@ -37,7 +37,7 @@ export const ko: RcAgentToolsMessages = {
   clauseSeparator: '; ',
 
   createVideoSummary: (p) => `영상 “${p.name}” 만들기`,
-  slidesImportAssetSummary: (p) => `이미지 “${p.file}”을(를) 슬라이드 “${p.deck}”에 가져오기`,
+  slidesImportAssetSummary: (p) => `“${p.file}”을(를) 슬라이드 “${p.deck}”에 가져오기`,
   designImportAssetSummary: (p) => `“${p.file}”을(를) 디자인 “${p.canvas}”에 가져오기`,
   designSystemImportAssetSummary: (p) => `“${p.file}”을(를) 디자인 시스템 “${p.system}”에 가져오기`,
   editsSummary: (p) => `${p.label}(편집 ${p.count}개: ${p.types})`,

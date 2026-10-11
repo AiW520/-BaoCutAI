@@ -37,7 +37,7 @@ export const zhHant: RcAgentToolsMessages = {
   clauseSeparator: '；',
 
   createVideoSummary: (p) => `建立影片「${p.name}」`,
-  slidesImportAssetSummary: (p) => `將圖片「${p.file}」匯入投影片「${p.deck}」`,
+  slidesImportAssetSummary: (p) => `將「${p.file}」匯入投影片「${p.deck}」`,
   designImportAssetSummary: (p) => `將「${p.file}」匯入設計稿「${p.canvas}」`,
   designSystemImportAssetSummary: (p) => `將「${p.file}」匯入設計系統「${p.system}」`,
   editsSummary: (p) => `${p.label}（${p.count} 個操作：${p.types}）`,
