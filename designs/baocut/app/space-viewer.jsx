@@ -6,7 +6,9 @@
    二次编辑**不覆盖原条目**（§4.6）：字幕与文档就地改字、另存为新版本；图片 / 音频 / 模板另存一份新版本；
    成片回到来源视频（或以它为素材新建视频）；视频就是打开编辑器。
    一部视频在 Space 里只有一张卡：它导出、生成的文件列在这部视频的查看框里（BC_SPACE.filesOf），点一个换成那个文件；
-   文件的查看框里「查看视频」换回来。源文件是视频的一条事实，不另成条目。 */
+   文件的查看框里「查看视频」换回来。源文件是视频的一条事实，不另成条目。
+   切出的短视频各是一部视频（§4.3），父视频的查看框里在「文件」之前一起列（BC_SPACE.shortsOf），点一支换成它的查看框；
+   短视频的查看框里「查看来源视频」换回父视频。 */
 (function () {
   const {useState, useEffect} = React;
   const SP = window.BC_SPACE;
@@ -49,6 +51,35 @@
     );
   }
 
+  /** 这部视频切出的短视频（product-design §4.5）：一行一支，写原片上的区间与时长，点开换成那一支的查看框。
+      最多露出 6 支；「在列表中查看」把 Space 筛成这部视频切出的全部（§4.3）。 */
+  const SHORTS_SHOWN = 6;
+  function MovieShorts({shorts, movies, onSwitch, onList}) {
+    const R = window.RSP;
+    const shown = shorts.slice(0, SHORTS_SHOWN);
+    return (
+      <section className="spv__files" aria-label="切出的短视频">
+        <div className="spv__files-bar">
+          <h3 className="spv__files-h">切出的短视频<span className="spv__files-n">{shorts.length}</span></h3>
+          <R.ActionButton size="S" isQuiet onPress={onList}>在列表中查看</R.ActionButton>
+        </div>
+        <R.GridList aria-label="切出的短视频" items={shown} className="spv__files-list" onAction={(k) => onSwitch(String(k))}>
+          {(s) => (
+            <R.GridListItem id={s.id} textValue={s.name} className="spv__file">
+              <window.SpaceItemPreview it={s} movie={movies[s.id]} small />
+              <span className="spv__file-body">
+                <span className="spv__file-t">{s.name}</span>
+                <span className="spv__file-d">{[SP.spanText(s), SP.durationText(s)].filter(Boolean).join(' · ')}</span>
+              </span>
+              <window.SpaceItemStatus it={s} />
+            </R.GridListItem>
+          )}
+        </R.GridList>
+        {shorts.length > shown.length ? <p className="spv__hint">还有 {shorts.length - shown.length} 支，在列表中查看全部</p> : null}
+      </section>
+    );
+  }
+
   /* S2 的 Dialog 会把 children 在标题区、正文区、底栏各渲染一遍（每处只露自己那个 slot），
      所以这里不能有自己的 state——编辑态放在外面的 SpaceViewer 里，三处共用。 */
   function ViewerBody({it, movies, dirs, close, onSwitch, editing, setEditing, text, setText, source, setSource}) {
@@ -61,6 +92,9 @@
     const document = it.kind === 'doc' && /\.md$/i.test(it.file || it.name) && !!it.text;
     const versions = it.kind === 'movie' ? [] : SP.versionsOf(it, app.spaceItems);
     const files = it.kind === 'movie' ? SP.filesOf(app.spaceItems, it.id) : [];
+    const shorts = it.kind === 'movie' ? SP.shortsOf(app.spaceItems, it.id) : [];
+    /* 切出的短视频：「查看来源视频」换回还在的父视频 */
+    const parent = it.kind === 'movie' && it.origin ? app.spaceItems.find((x) => x.id === it.origin && x.kind === 'movie' && !x.trashed) : null;
     /* 文件属于一部还在的视频：「查看视频」换回那部视频的查看框（它的文件都列在那里） */
     const host = it.kind !== 'movie' && it.movie ? app.spaceItems.find((x) => x.id === it.movie && x.kind === 'movie' && !x.trashed) : null;
     // 产物的文件路径相对它的项目目录；已经是绝对路径（外接盘、未归类）的照写
@@ -131,6 +165,8 @@
                   : <window.SpaceItemPreview it={it} movie={mv && it.kind === 'movie' ? mv : null} big />}
               </div>
             )}
+            {shorts.length ? <MovieShorts shorts={shorts} movies={movies} onSwitch={onSwitch}
+              onList={() => { close(); app.go({r: 'projects', from: it.id}); }} /> : null}
             {files.length ? <MovieFiles files={files} onSwitch={onSwitch} /> : null}
             <dl className="spv__facts">
               <Fact k="来源">
@@ -145,6 +181,7 @@
                     <R.ActionButton size="S" isQuiet onPress={() => { close(); app.go({r: 'task', id: orgTask.id}); }}>查看任务</R.ActionButton>
                   ) : null}
                   {host ? <R.ActionButton size="S" isQuiet onPress={() => onSwitch(host.id)}>查看视频</R.ActionButton> : null}
+                  {parent ? <R.ActionButton size="S" isQuiet onPress={() => onSwitch(parent.id)}>查看来源视频</R.ActionButton> : null}
                 </span>
               </Fact>
               {loc && (org || loc.isSaveDir) ? <Fact k="位置">{loc.label}{loc.isSaveDir ? '（默认保存位置）' : ''}</Fact> : null}

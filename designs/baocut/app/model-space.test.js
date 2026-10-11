@@ -101,6 +101,7 @@ test('一部视频只出现一次：它的文件收进视频，按类型看、�
   assert.equal(SP.filesSummary(m1), '成片 1 · 字幕 1');
   assert.deepEqual(SP.filesOf(list, 'm1').map((f) => f.id), ['o1', 'o2']);
   assert.deepEqual(SP.filesOf(list, 'm2'), []);
+  assert.deepEqual(SP.shortsOf(list, 'm2'), []);
   assert.equal(SP.hitsText(SP.view(list, {q: 'en.srt'})[0]), '找到 英文字幕.srt');
   assert.equal(SP.hitsText({hits: ['o1', 'o2'], files: m1.files}), '找到 双语版.mp4 等 2 个文件');
   assert.equal(SP.hitsText(m1), '');
@@ -301,4 +302,19 @@ test('创建与更新时间倒序：投影保留创建时间，两种次序独�
   const output = list.find((x) => x.id === 'out');
   assert.equal(SP.newVersion(output, list, 'out-v2', {}).ctime, 0);
   assert.equal(SP.assetRecord({name: 'a.png'}, null, 'asset').ctime, 0);
+});
+
+test('切出的短视频：父视频查看框里一起列，新切的在前；进了回收站的不列；区间写成原片上的时间', () => {
+  const kids = [
+    {id: 'k1', title: '第 1 支', dir: 'd1', status: 'complete', src: {state: 'ok'}, origin: {project: 'm1', in: 612, out: 658}, ctime: 300},
+    {id: 'k2', title: '第 2 支', dir: 'd1', status: 'complete', src: {state: 'ok'}, origin: {project: 'm1', in: 30, out: 75.4}, ctime: 20},
+    {id: 'k3', title: '扔掉的', dir: 'd1', status: 'complete', src: {state: 'ok'}, origin: {project: 'm1', in: 1, out: 2}, ctime: 5, archived: true},
+  ];
+  const list = SP.items({movies: movies.concat(kids), outputs, dirs});
+  assert.deepEqual(SP.shortsOf(list, 'm1').map((x) => x.id), ['k2', 'k1', 'm6'], '新切的在前，没有建立时间的排最后');
+  assert.equal(SP.spanText(list.find((x) => x.id === 'k1')), '原片 10:12–10:58');
+  assert.equal(SP.spanText(list.find((x) => x.id === 'm6')), '', '没记区间的不写');
+  assert.deepEqual(SP.filesOf(list, 'm1').map((f) => f.id), ['o1', 'o2'], '短视频不收进父视频的文件');
+  const byId = Object.fromEntries(movies.map((m) => [m.id, m]));
+  assert.equal(SP.sourceText(list.find((x) => x.id === 'k1'), Object.fromEntries(dirs.map((d) => [d.id, d])), byId), '来自「双语版」');
 });

@@ -96,6 +96,8 @@
         ctime: m.ctime != null ? m.ctime : null,
         transcribe: transcribeAction(m), mtime: m.mtime != null ? m.mtime : m.ctime != null ? m.ctime : null,   // 刚建的视频只有 ctime
         origin: m.origin ? m.origin.project : null, queuePos: m.status === 'queued' ? m.queuePos || null : null,
+        // 切出的短视频在原片上的区间（product-design §5.10），父视频查看框里「切出的短视频」一行写它
+        span: m.origin && Number.isFinite(m.origin.in) && Number.isFinite(m.origin.out) ? {in: m.origin.in, out: m.origin.out} : null,
         hue: m.hue, folder: m.folder || null, ver: null, parent: null,
         toolRun: m.toolRun || null,   // 工具新建的视频：来源记为那次运行（product-design §2.7）
       };
@@ -213,6 +215,21 @@
   function filesOf(list, movieId) {
     const m = group(list).find((x) => x.id === movieId && x.files);
     return m ? m.files : [];
+  }
+
+  /** 从这部视频切出、还在的短视频（product-design §4.5）：各是一部独立的视频，父视频的查看框里一起列，新切的在前。 */
+  function shortsOf(list, movieId) {
+    const fin = (x) => (Number.isFinite(x) ? x : Infinity);
+    return (list || []).filter((it) => it.kind === 'movie' && it.origin === movieId && !it.trashed)
+      .sort((a, b) => fin(a.ctime) - fin(b.ctime));
+  }
+
+  /** 短视频在原片上的区间（「原片 10:12–10:58」）；没记区间的返回 ''。 */
+  function spanText(it) {
+    if (!it || !it.span) return '';
+    const T = root.BC_TIME;
+    const at = (t) => (T ? T.timecode(t, {decimals: 0}) : `${Math.round(t)} 秒`);
+    return `原片 ${at(it.span.in)}–${at(it.span.out)}`;
   }
 
   /** 只靠名下文件对上搜索或筛选时，卡片的描述行写是哪个文件（「找到 英文字幕.srt」「找到 a.srt 等 2 个文件」）。 */
@@ -337,6 +354,9 @@
     const m = it.kind !== 'movie' && it.movie ? (moviesById || {})[it.movie] : null;
     const head = d ? d.name : '不属于任何项目';
     if (it.kind === 'movie' && it.toolRun) return `${head} · ${it.toolRun.label || '工具'}新建`;
+    // 切出的短视频写「来自「父视频名」」（product-design §4.4）
+    const from = it.kind === 'movie' && it.origin ? (moviesById || {})[it.origin] : null;
+    if (from) return `来自「${from.title}」`;
     if (it.kind !== 'movie' && (it.tool === true || typeof it.tool === 'string' || it.toolId)) {
       const name = toolName(it);
       const tool = name ? `工具 · ${name}` : '工具';
@@ -465,7 +485,7 @@
 
   root.BC_SPACE = {
     KINDS, KIND_ORDER, CATS, SPECIAL, STATUS, SORTS, TRANSCRIBE, isCat, movieStatus, transcribeAction,
-    items, inCat, group, filesOf, counts, view, hitsText, filesSummary, filesAttention, dirOptions, statusText, formatBytes, durationText, durationClock, specText, sourceText, toolName, agoText,
+    items, inCat, group, filesOf, shortsOf, spanText, counts, view, hitsText, filesSummary, filesAttention, dirOptions, statusText, formatBytes, durationText, durationClock, specText, sourceText, toolName, agoText,
     documentBlocks, editRoute, versionsOf, versionName, newVersion, IMPORT_ACCEPT, kindOfFile, assetRecord, recentMovies,
   };
 })();
