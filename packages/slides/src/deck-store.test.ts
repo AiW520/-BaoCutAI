@@ -1,4 +1,4 @@
-import { mkdir, mkdtemp, readdir, readFile, rm, symlink, writeFile } from 'node:fs/promises';
+import { mkdir, mkdtemp, readdir, readFile, rename, rm, symlink, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { afterAll, beforeEach, describe, expect, it } from 'vitest';
@@ -235,6 +235,64 @@ describe('DeckStore', () => {
       await expect.poll(() => events.length, { timeout: 3000 }).toBe(1);
       expect(events[0]!.paths).toEqual(['project/slides/s01.html']);
       expect(events[0]!.ver).toBe((await store.listing()).ver);
+    } finally {
+      stop();
+    }
+  });
+
+  it('watchExternalEdits：原子替换 slide 后仍能收到下一次修改', async () => {
+    const events: DeckChangeEvent[] = [];
+    const stop = watchExternalEdits(store, event => events.push(event));
+    try {
+      // 先让监听的初始清单读完，再模拟智能体用临时文件替换页面。
+      await new Promise(resolve => setTimeout(resolve, 100));
+      const file = path.join(root, 'slides/s01.html');
+      const temp = path.join(root, 'slides/.s01.tmp');
+      await writeFile(temp, 'replacement');
+      await rename(temp, file);
+      await expect.poll(() => events.length, { timeout: 3000 }).toBe(1);
+      await writeFile(file, 'next edit');
+      await expect.poll(() => events.length, { timeout: 3000 }).toBe(2);
+      expect(events.map(event => event.paths)).toEqual([['project/slides/s01.html'], ['project/slides/s01.html']]);
+    } finally {
+      stop();
+    }
+  });
+
+  it('watchExternalEdits：新建嵌套 ds 目录时不漏初次文件，之后的修改继续通知', async () => {
+    const events: DeckChangeEvent[] = [];
+    const stop = watchExternalEdits(store, event => events.push(event));
+    try {
+      await new Promise(resolve => setTimeout(resolve, 100));
+      const folder = path.join(root, 'ds/new/nested');
+      await mkdir(folder, { recursive: true });
+      const file = path.join(folder, 'theme.css');
+      await writeFile(file, 'initial');
+      await expect.poll(() => events.length, { timeout: 3000 }).toBe(1);
+      expect(events[0]!.paths).toEqual(['project/ds/new/nested/theme.css']);
+      await writeFile(file, 'changed');
+      await expect.poll(() => events.length, { timeout: 3000 }).toBe(2);
+      expect(events[1]!.paths).toEqual(['project/ds/new/nested/theme.css']);
+    } finally {
+      stop();
+    }
+  });
+
+  it('watchExternalEdits：删除重建 slides 目录后继续监听，旧文件删除也通知', async () => {
+    const events: DeckChangeEvent[] = [];
+    const stop = watchExternalEdits(store, event => events.push(event));
+    try {
+      await new Promise(resolve => setTimeout(resolve, 100));
+      const folder = path.join(root, 'slides');
+      await rm(folder, { recursive: true });
+      await mkdir(folder);
+      const file = path.join(folder, 's02.html');
+      await writeFile(file, 'new slide');
+      await expect.poll(() => events.length, { timeout: 3000 }).toBe(1);
+      expect(events[0]!.paths).toEqual(['project/slides/s01.html', 'project/slides/s02.html']);
+      await writeFile(file, 'next edit');
+      await expect.poll(() => events.length, { timeout: 3000 }).toBe(2);
+      expect(events[1]!.paths).toEqual(['project/slides/s02.html']);
     } finally {
       stop();
     }
