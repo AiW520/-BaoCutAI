@@ -25,7 +25,7 @@ skills/
 | 单一来源 | 是 | 是；craft 只引用，不复制正文 |
 | 给谁 | 会话内智能体直接加载；外部 Agent 经同步副本读 | 两种读者，同一份文稿按面渲染 |
 
-Runtime 只把 `built-in-skills/` 当内置 skill 目录加载，说明书本身不会被当成 craft 读到；渲染器读说明书时跳过 `built-in-skills/`，它不进任一面的渲染结果，也不随 `baocut skill install` 装进宿主（外部 Agent 读 `references/craft/` 的副本）。SKILL.md 第 1 节的路由与第 3 节末尾的「内置 skill」表用 `{{skill:<id>}}` 指到这些 craft。打包后整个 `skills/` 原样放在 `<resources>/skills/`。
+Runtime 只把 `baocut/built-in-skills/` 当内置 skill 目录加载，说明书本身不会被当成 craft 读到；渲染器读说明书时跳过 `built-in-skills/`，它不进任一面的渲染结果，也不随 `baocut skill install` 装进宿主（外部 Agent 读 `baocut/references/craft/` 的副本）。SKILL.md 第 1 节的路由与第 3 节末尾的「内置 skill」表用 `{{skill:<id>}}` 指到这些 craft。打包后整个 `skills/` 原样放在 `<resources>/skills/`。
 
 ## 一份文稿，两个面
 
@@ -45,9 +45,9 @@ Runtime 只把 `built-in-skills/` 当内置 skill 目录加载，说明书本身
   | `{{arg:expectedRevision}}` | `--expected-revision` | `expectedRevision` |
   | `{{skill:polish-transcript}}` | `references/craft/polish-transcript.md` 的链接 | 「`polish-transcript`（用 `skills_read` 读）」；紧跟在「读」后面时是「用 `skills_read` 读 `polish-transcript`」 |
 
-  工具名必须在目录里（`spec` 的工具清单），参数必须是同一小节里出现的工具的字段，craft id 必须是 `built-in-skills/` 下的目录名。只在会话里有的工具（`downloads_save`）在 CLI 面换成不提工具名的兜底写法（渲染器的 `SESSION_ONLY_TOOLS`）。
+  工具名必须在目录里（`spec` 的工具清单），参数必须是同一小节里出现的工具的字段，craft id 必须是 `baocut/built-in-skills/` 下的目录名。只在会话里有的工具（`downloads_save`）在 CLI 面换成不提工具名的兜底写法（渲染器的 `SESSION_ONLY_TOOLS`）。
 - 只属于一个面的段落用独占一行的 `<!-- surface: cli -->` … `<!-- /surface -->`（或 `agent`）包住，可以包段落、列表项、表格行或代码块，不嵌套；没标的两面都有。找 CLI、`runtime`、版本门、`--yes`、退出码、`--result-file` 与 `.baocut-out/`、MCP 接法这些 CLI 专属内容，以及元命令（`status`、`help`、`spec`、`version`）只在 `cli` 块里直接写 `baocut …`；会话审批、编辑器上下文这些只在 `agent` 块里写。
-- 内置 skill 增删、改名或改变用途时，同步 SKILL.md 第 1 节的路由、第 3 节末尾的「内置 skill」表与 [`built-in-skills/README.md`](baocut/built-in-skills/README.md) 的索引（`builtin-skills.test.ts` 核对后两张表的 id）。
+- 内置 skill 增删、改名或改变用途时，同步 SKILL.md 第 1 节的路由、第 3 节末尾的「内置 skill」表与 [`baocut/built-in-skills/README.md`](baocut/built-in-skills/README.md) 的索引（`builtin-skills.test.ts` 核对后两张表的 id）。
 - 硬规则（SKILL.md 第 5 节）两面条数必须相同：一条只属于一个面时，`cli` 块与 `agent` 块各写一条等价的。
 - 生成块 `<!-- generated: <名字> -->` … `<!-- /generated -->` 的内容由同步脚本从目录生成，不手改：`common-ops`（editing.md）、`error-codes`（conventions.md）、`tool-map`（mcp.md）。
 - 页面互相引用用相对链接（`catalog/subtitles.md`、`../conventions.md`），由渲染器按面改写。
