@@ -23,6 +23,7 @@ import { useShell } from '../state/shell-store.ts';
 import { CloudModels } from './models/cloud-models.tsx';
 import { LocalModels } from './models/local-models.tsx';
 import { ModelsDirCard } from './models/models-dir-card.tsx';
+import { MusicEngineCard } from './models/music-engine-card.tsx';
 import { MODELS_PAGE_COPY } from './models/models-copy.ts';
 import { MyVoices } from './models/my-voices.tsx';
 
@@ -64,6 +65,7 @@ export function ModelSettings({ category, page: requested }: { category: ModelCa
     p === 'local' ? (
       <>
         <ModelsDirCard />
+        {category === 'music' ? <MusicEngineCard /> : null}
         <LocalModels category={category} />
       </>
     ) : p === 'cloud' ? (
