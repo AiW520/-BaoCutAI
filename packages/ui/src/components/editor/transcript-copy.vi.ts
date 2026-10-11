@@ -59,8 +59,6 @@ export const viTranscript: TranscriptMessages = {
 
   // 时间线剪口
   seamLabel: (seconds) => `Đã cắt ${secondsLabel(seconds)} · nhấp khôi phục`,
-  cutLabel: "Cắt trong bản chép lời",
-  restoreLabel: "Khôi phục nội dung cắt",
   liveCopy: "Sao chép phần đã chép lời",
   liveCopied: "Đã sao chép phần đã chép lời · vẫn đang chuyển âm",
   liveSpeaker: "Đang nhận dạng",
@@ -78,7 +76,6 @@ export const viTranscriptTools: TranscriptToolsMessages = {
 
   lockTranslation: "Có thể tìm bản dịch nhưng không sửa tại đây; bảng Bản chép lời chỉ sửa nguồn",
   lockLoading: "Bản chép lời mới đang tải; thay sau khi xong",
-  replaceLabel: "Thay văn bản chép lời",
   replaceDone: (count) => `Đã thay ${count} kết quả · giữ video và âm thanh`,
   replaceNothing: "Không có kết quả cần đổi",
 
@@ -130,7 +127,6 @@ export const viTranscriptTools: TranscriptToolsMessages = {
   noPrev: "Không có chương trước đoạn",
   noNext: "Không có chương sau đoạn",
   moveBlocked: "Chuyển sẽ để chương trống hoặc vượt đầu chương bên cạnh",
-  moveLabel: "Chuyển đoạn sang chương bên cạnh",
   moved: (title, count) => count > 1 ? `Đã chuyển ${count} đoạn đến “${title}”` : `Đã chuyển đến “${title}”`,
   cutPara: "Cắt đoạn này",
   cutParaHint: "Cắt cả video, âm thanh và phụ đề; có thể khôi phục",
@@ -140,7 +136,6 @@ export const viTranscriptTools: TranscriptToolsMessages = {
   renameChapter: "Đổi tên…",
   cutChapter: "Cắt chương này",
   cutChapterHint: "Cắt cả video, âm thanh, phụ đề; chương sau chuyển sớm",
-  cutChapterLabel: "Cắt chương",
   cutChapterRefused: {
     empty: "Chương không có thời lượng",
     whole: "Chương này là toàn video; cắt sẽ không còn gì",

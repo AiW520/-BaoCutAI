@@ -16,6 +16,5 @@ export const nl: CutBandMessages = {
     `−${secondsLabel(seconds)}${word ? (edge === 'start' ? ` · van ‘${word.trim()}’` : ` · tot ‘${word.trim()}’`) : ""}`,
   tagRestore: "Loslaten om te herstellen",
 
-  retimeLabel: "Knipbereik wijzigen",
   retimed: (before: number, after: number) => `Knipbereik gewijzigd · ${secondsLabel(before)} → ${secondsLabel(after)}`,
 };

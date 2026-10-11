@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { ToastQueue } from '@react-spectrum/s2';
-import type { DocumentContent, DocumentRecord, DubParams, EditOperation, Id, JobRecord, TransactionReceipt, UndoTarget } from '@baocut/protocol';
+import type { DocumentContent, DocumentRecord, DubParams, EditOperation, Id, JobRecord, Localized, TransactionReceipt, UndoTarget } from '@baocut/protocol';
+import { EditLabel } from '@baocut/protocol/messages/ui';
 import { dubSummaryOf } from '../../model/dub-progress.ts';
 import { grantRefusal } from '../../model/dub-setup.ts';
 import { retextTranslation } from '../../model/dub-takes.ts';
@@ -28,7 +29,7 @@ export interface RegenDeps {
     startDub(params: DubParams): Promise<Id>;
     readDocument(videoId: Id, documentId: Id, revision?: string): Promise<DocumentContent>;
   };
-  apply(operations: EditOperation[], label?: string): Promise<TransactionReceipt | null>;
+  apply(operations: EditOperation[], label?: Localized): Promise<TransactionReceipt | null>;
   undo(target: UndoTarget): Promise<TransactionReceipt | null>;
 }
 
@@ -168,7 +169,7 @@ export async function retextAndRegenerate(deps: RegenDeps, request: RetextReques
             summary: { ...(previous && typeof previous === 'object' ? previous : {}), unitCount: result.body.units.length },
           },
         ],
-        C.labelRetext,
+        EditLabel.editDubText(),
       );
       if (!receipt) return null;
     }

@@ -71,7 +71,6 @@ export const nl: BrandMessages = {
   copiedNotPlaced: (name: string) => `Gekopieerd naar media maar nog niet op de tijdlijn geplaatst: ${name}`,
   elementsTrack: "Elementen",
   copiedNotPlaceable: (name: string) => `Gekopieerd naar media; dit bestandstype kan niet rechtstreeks op de tijdlijn: ${name}`,
-  addLabel: (name: string) => `Toevoegen: ${name}`,
   placedAtPlayhead: (name: string) => `Op de tijdlijn geplaatst bij de afspeelkop: ${name}`,
   newBrandColor: "Nieuwe merkkleur",
   namePlaceholder: "bijvoorbeeld Primair",

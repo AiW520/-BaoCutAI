@@ -24,6 +24,7 @@ import {
   type SlideAnnotation,
   type TemplateSendRef,
 } from '@baocut/protocol';
+import { EditLabel } from '@baocut/protocol/messages/ui';
 import type { HostBridge } from '../host.ts';
 import { importAndPlace } from '../model/editor-ops.ts';
 import { insertVisual, type VisualLayer } from '../model/new-items.ts';
@@ -40,7 +41,7 @@ import { useTimeline } from '../state/timeline-store.ts';
 import { putAttachment } from './attachment-upload.ts';
 import { RT } from './runtime-copy.ts';
 import { SpaceThumbnailCache } from './space-thumbnails.ts';
-import { VideoController, targetOf } from './video-controller.ts';
+import { VideoController, targetOf, transactionLabel } from './video-controller.ts';
 
 /**
  * 界面与 Runtime 之间的唯一通道：把订阅灌进 Zustand 镜像，把用户操作变成公共命令。
@@ -631,7 +632,7 @@ export class RuntimeSession {
         commandId: newId('cmd'),
         expectedRevision: video.revision,
         operations: importAndPlace(sequence, [{ path, kind }], 0),
-        label: RT.edit.importAssets,
+        ...transactionLabel(EditLabel.importAssets()),
       });
       return { target: targetOf(ref), importError: null };
     } catch (error) {
@@ -978,7 +979,7 @@ export class RuntimeSession {
         commandId: newId('cmd'),
         expectedRevision: video.revision,
         operations,
-        label: options.file ? RT.edit.importAssets : RT.edit.setBackground,
+        ...transactionLabel(options.file ? EditLabel.importAssets() : EditLabel.setBackground()),
       }));
     } catch (error) {
       return { target, videoId, assetId: null, importError: (error as Error).message, waveError: null };
@@ -993,7 +994,7 @@ export class RuntimeSession {
         commandId: newId('cmd'),
         expectedRevision: receipt.videoRevision,
         operations: insertVisual(sequence, span, [options.wave], RT.waveformName),
-        label: RT.edit.addWaveform,
+        ...transactionLabel(EditLabel.addWaveform()),
       });
       return { target, videoId, assetId, importError: null, waveError: null };
     } catch (error) {

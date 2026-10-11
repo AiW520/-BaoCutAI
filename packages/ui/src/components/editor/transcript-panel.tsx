@@ -13,6 +13,7 @@ import {
   type ReactNode,
 } from 'react';
 import type { AssetRecord, DocumentRecord, EditOperation, Id, Sequence } from '@baocut/protocol';
+import { EditLabel } from '@baocut/protocol/messages/ui';
 import {
   ActionButton,
   Button,
@@ -783,7 +784,7 @@ export function TranscriptPanel({
           ...(summary !== undefined ? { summary } : {}),
         },
       ],
-      C.modeEdit,
+      EditLabel.editTranscript(),
     );
     if (!receipt) return false;
     ToastQueue.positive(message, {

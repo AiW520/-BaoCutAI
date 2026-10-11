@@ -71,7 +71,6 @@ export const pl: BrandMessages = {
   copiedNotPlaced: (name: string) => `Skopiowano do materiałów, jeszcze nie na osi czasu: ${name}`,
   elementsTrack: "Elementy",
   copiedNotPlaceable: (name: string) => `Skopiowano do materiałów; ten rodzaj pliku nie trafia bezpośrednio na oś czasu: ${name}`,
-  addLabel: (name: string) => `Dodaj ${name}`,
   placedAtPlayhead: (name: string) => `Umieszczono na osi czasu przy głowicy odtwarzania: ${name}`,
   newBrandColor: "Nowy kolor marki",
   namePlaceholder: "np. Podstawowy",

@@ -59,8 +59,6 @@ export const zhHantTranscript: TranscriptMessages = {
 
   // 时间线剪口
   seamLabel: (seconds: number) => `已剪掉 ${secondsLabel(seconds)} · 按一下即可回復`,
-  cutLabel: '在逐字稿中剪下',
-  restoreLabel: '回復剪掉的內容',
   liveCopy: '複製已轉錄的部分',
   liveCopied: '已複製已轉錄的部分 · 轉錄仍在進行',
   liveSpeaker: '辨識中',
@@ -77,7 +75,6 @@ export const zhHantTranscriptTools: TranscriptToolsMessages = {
   findPlaceholder: '在逐字稿中尋找',
   lockTranslation: '譯文在這裡只能搜尋、不能編輯——逐字稿面板只編輯原文',
   lockLoading: '這份逐字稿的新版本還在載入，載入完成後再取代',
-  replaceLabel: '取代逐字稿文字',
   replaceDone: (count: number) => `已取代 ${count} 處 · 影片與音訊未變更`,
   replaceNothing: '沒有需要變更的相符項目',
 
@@ -128,7 +125,6 @@ export const zhHantTranscriptTools: TranscriptToolsMessages = {
   noPrev: '這一段之前沒有章節了',
   noNext: '這一段之後沒有章節了',
   moveBlocked: '移過去會讓這一章變空，或越過相鄰章節的起點',
-  moveLabel: '把段落移到相鄰章節',
   moved: (title: string, count: number) => (count > 1 ? `已把 ${count} 段移到「${title}」` : `已移到「${title}」`),
   cutPara: '剪掉這一段',
   cutParaHint: '影片、音訊與字幕會一起剪掉；可以回復',
@@ -138,7 +134,6 @@ export const zhHantTranscriptTools: TranscriptToolsMessages = {
   renameChapter: '重新命名…',
   cutChapter: '剪掉這一章',
   cutChapterHint: '影片、音訊與字幕會一起剪掉；後面的章節會往前移',
-  cutChapterLabel: '剪掉章節',
   cutChapterRefused: {
     empty: '這一章沒有長度',
     whole: '這一章就是整部影片；剪掉後就什麼都不剩了',

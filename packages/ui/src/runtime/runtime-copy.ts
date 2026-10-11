@@ -19,12 +19,6 @@ const en = {
   missingContext: 'RuntimeContext is missing',
   mediaStatus: (status: number) => `The media service returned ${status}`,
   noRootSequence: 'The new video has no main sequence',
-  /** 写进视频改动历史的步骤名。 */
-  edit: {
-    importAssets: 'Import assets',
-    setBackground: 'Set background',
-    addWaveform: 'Add waveform',
-  },
   /** 新建声波实例的名字。 */
   waveformName: 'Waveform',
   noDuration: 'The video has no length yet, so the waveform wasn’t added',

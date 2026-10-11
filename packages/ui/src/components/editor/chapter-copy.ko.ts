@@ -26,7 +26,6 @@ export const ko: ChapterMessages = {
     beyond: '재생 헤드가 끝에 있어 여기에는 챕터를 추가할 수 없습니다',
     blank: '제목은 비워 둘 수 없습니다',
   },
-  labels: { add: '챕터 추가', rename: '챕터 이름 변경', remove: '챕터 삭제', move: '챕터 시작 지점 이동' },
   added: (title: string) => `챕터 “${title}”을(를) 추가했습니다`,
   renamed: (title: string) => `“${title}”(으)로 이름을 변경했습니다`,
   removed: (title: string) => `챕터 “${title}”을(를) 삭제했습니다`,

@@ -59,8 +59,6 @@ export const jaTranscript: TranscriptMessages = {
 
   // 时间线剪口
   seamLabel: (seconds: number) => `${secondsLabel(seconds)} をカット済み · クリックして復元`,
-  cutLabel: '文字起こしでカット',
-  restoreLabel: 'カットした内容を復元',
   liveCopy: 'ここまでの文字起こしをコピー',
   liveCopied: 'ここまでの文字起こしをコピーしました · 文字起こしは続いています',
   liveSpeaker: '認識中',
@@ -77,7 +75,6 @@ export const jaTranscriptTools: TranscriptToolsMessages = {
   findPlaceholder: '文字起こし内を検索',
   lockTranslation: '訳文は検索できますが、ここでは編集できません。文字起こしパネルで編集できるのは原文だけです',
   lockLoading: 'この文字起こしの新しいバージョンを読み込み中です。完了してから置換してください',
-  replaceLabel: '文字起こしのテキストを置換',
   replaceDone: (count: number) => `${count} 件を置換しました · 映像と音声は変更なし`,
   replaceNothing: '変更が必要な一致はありません',
 
@@ -128,7 +125,6 @@ export const jaTranscriptTools: TranscriptToolsMessages = {
   noPrev: 'この段落より前にチャプターがありません',
   noNext: 'この段落より後にチャプターがありません',
   moveBlocked: '移動するとこのチャプターが空になるか、隣のチャプターの開始位置を越えてしまいます',
-  moveLabel: '段落を隣のチャプターへ移動',
   moved: (title: string, count: number) => (count > 1 ? `${count} 段落を「${title}」へ移動しました` : `「${title}」へ移動しました`),
   cutPara: 'この段落をカット',
   cutParaHint: '動画、音声、字幕をまとめてカットします。復元できます',
@@ -138,7 +134,6 @@ export const jaTranscriptTools: TranscriptToolsMessages = {
   renameChapter: '名前を変更…',
   cutChapter: 'このチャプターをカット',
   cutChapterHint: '動画、音声、字幕をまとめてカットし、後ろのチャプターは前に詰められます',
-  cutChapterLabel: 'チャプターをカット',
   cutChapterRefused: {
     empty: 'このチャプターには長さがありません',
     whole: 'このチャプターは動画全体です。カットすると何も残りません',

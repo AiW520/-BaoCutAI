@@ -1,5 +1,6 @@
 import { useState, type ComponentType, type ReactElement, type ReactNode } from 'react';
 import type { ArrangeDirection, Id } from '@baocut/protocol';
+import { EditLabel } from '@baocut/protocol/messages/ui';
 import {
   ActionButton,
   Content,
@@ -226,7 +227,7 @@ export function runTool(tool: Tool, { item, sequence, assets, edit }: ToolProps,
       if (tool.id === 'delete') return void deleteItems(actions, [item.id]);
       // 停用之后画面上没有它了，条子随选中框一起收起；提示带撤销，并说在时间线上右键可重新启用。
       if (tool.id === 'disable') return void setItemEnabled(actions, item.id, false, TOOLBAR_COPY.disabledNotice);
-      if (tool.id === 'detach-audio' && item.type === 'video') return void detachAudio(actions, sequence, item, tool.label, TOOLBAR_COPY.detachedNotice);
+      if (tool.id === 'detach-audio' && item.type === 'video') return void detachAudio(actions, sequence, item, TOOLBAR_COPY.detachedNotice);
       if (tool.id === 'replace-video' || tool.id === 'replace-image') {
         const asset = itemAsset(item, assets);
         if (asset) openItemReplace(item.id, asset.id);
@@ -247,13 +248,13 @@ export function runTool(tool: Tool, { item, sequence, assets, edit }: ToolProps,
           assets,
         );
         if (!Object.keys(fields).length) return;
-        return edit.commit([{ type: 'setTransform', ...target, ...fields }], tool.id === 'fill-canvas' ? COPY.labelFill : COPY.labelFit);
+        return edit.commit([{ type: 'setTransform', ...target, ...fields }], tool.id === 'fill-canvas' ? EditLabel.fillCanvas() : EditLabel.fitCanvas());
       }
       return;
     case 'toggle': {
       const on = toolIsOn(tool.id, item);
-      if (tool.id === 'flip-horizontal') return edit.commit([{ type: 'setTransform', ...target, flipX: !on }], COPY.labelFlip);
-      if (tool.id === 'flip-vertical') return edit.commit([{ type: 'setTransform', ...target, flipY: !on }], COPY.labelFlip);
+      if (tool.id === 'flip-horizontal') return edit.commit([{ type: 'setTransform', ...target, flipX: !on }], EditLabel.flip());
+      if (tool.id === 'flip-vertical') return edit.commit([{ type: 'setTransform', ...target, flipY: !on }], EditLabel.flip());
       if (tool.id === 'bold') return void text({ bold: !on });
       if (tool.id === 'italic') return void text(on ? { italic: false, fontStyle: 'normal' } : { italic: true });
       if (tool.id === 'align-left') return void text({ textAlign: 'left' });

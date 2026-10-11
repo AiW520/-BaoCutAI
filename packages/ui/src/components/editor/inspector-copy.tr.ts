@@ -272,7 +272,6 @@ export const tr: InspectorMessages = {
   plateNote: "Bu klipte önizlemenin henüz göstermediği zemin veya yuvarlak köşeler var.",
   orderTranslationFirst: "Çeviri üstte",
   orderOriginalFirst: "Özgün metin üstte",
-  editCaptionStyle: "Altyazı stilini düzenle",
   loadingCaptionStyle: "Altyazı stili yükleniyor…",
   captionSchema: (schema) => `Bu altyazı stili ${schema}; henüz burada düzenlenemez.`,
   noSchema: "(şema yok)",

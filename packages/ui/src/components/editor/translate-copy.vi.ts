@@ -123,8 +123,6 @@ export const viTranslate: TranslateMessages = {
   editFailed: (message) => `Không viết lại được: ${message}`,
   seekTip: "Chuyển đầu phát đến câu",
   cutTip: "Hình của câu này đã cắt",
-  translateTo: (language) => `Dịch sang ${language}`,
-  rewriteTranslation: "Sửa bản dịch",
   unknownLanguage: "Ngôn ngữ không xác định",
   targetLanguage: "ngôn ngữ đích",
 };

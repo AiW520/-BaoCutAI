@@ -26,7 +26,6 @@ export const ja: ChapterMessages = {
     beyond: '再生ヘッドが末尾にあるため、ここにはチャプターを追加できません',
     blank: 'タイトルを空白にすることはできません',
   },
-  labels: { add: 'チャプターを追加', rename: 'チャプターの名前を変更', remove: 'チャプターを削除', move: 'チャプターの開始位置を移動' },
   added: (title: string) => `チャプター「${title}」を追加しました`,
   renamed: (title: string) => `名前を「${title}」に変更しました`,
   removed: (title: string) => `チャプター「${title}」を削除しました`,

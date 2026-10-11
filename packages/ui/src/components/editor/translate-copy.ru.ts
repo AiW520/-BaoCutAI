@@ -123,8 +123,6 @@ export const ruTranslate: TranslateMessages = {
   editFailed: (message: string) => `Не удалось изменить: ${message}`,
   seekTip: "Переместить курсор к предложению",
   cutTip: "Видео этого предложения вырезано",
-  translateTo: (language: string) => `Перевести на ${language}`,
-  rewriteTranslation: "Изменить перевод",
   unknownLanguage: "Неизвестный язык",
   targetLanguage: "целевой язык",
 };

@@ -9,11 +9,13 @@ import {
   type EditOperation,
   type Id,
   type JobRecord,
+  type Localized,
   type TransactionReceipt,
   type TranslateParams,
   type TranslateSummary,
   type UndoTarget,
 } from '@baocut/protocol';
+import { EditLabel } from '@baocut/protocol/messages/ui';
 import { captionChips, languageName } from '../../model/caption-tracks.ts';
 import { rootSequence } from '../../model/editor.ts';
 import { readSpeechWords, speechCaptionBody, type SpeechWords } from '../../model/speech-cues.ts';
@@ -117,7 +119,7 @@ export interface TranslateDeps {
     cancelJob(jobId: Id): Promise<void>;
     readDocument(videoId: Id, documentId: Id, revision?: string): Promise<DocumentContent>;
     videos: {
-      apply(operations: EditOperation[], label?: string): Promise<TransactionReceipt | null>;
+      apply(operations: EditOperation[], label?: Localized): Promise<TransactionReceipt | null>;
       undo(target: UndoTarget): Promise<TransactionReceipt | null>;
     };
   };
@@ -403,7 +405,7 @@ async function place(videoId: Id, translationDocumentId: Id, bilingual: boolean)
       paired,
     );
     // 失败时编辑器已经提示了引擎的原话；译文还在视频里，留一句怎么接着做。
-    const receipt = await bound.runtime.videos.apply(withNewCaptionStyle(operations, newCaptionStyle()), C.translateTo(label));
+    const receipt = await bound.runtime.videos.apply(withNewCaptionStyle(operations, newCaptionStyle()), EditLabel.translateTo({ language: language ? label : EditLabel.unnamedTranslation() }));
     if (!receipt) return pending();
     return {
       placed: { transactionId: receipt.transactionId, language: label, count: cues.length },
@@ -492,7 +494,7 @@ export async function editTranslation(edit: TranslationEdit): Promise<Translatio
         summary: { ...(summary && typeof summary === 'object' ? summary : {}), cueCount: Array.isArray(body.cues) ? body.cues.length : 0 },
       });
     }
-    const receipt = await bound.runtime.videos.apply(operations, C.rewriteTranslation);
+    const receipt = await bound.runtime.videos.apply(operations, EditLabel.editTranslation());
     if (!receipt) return null;
     bound.toast('positive', C.edited, () => {
       void bound.runtime.videos.undo({ transaction: receipt.transactionId });

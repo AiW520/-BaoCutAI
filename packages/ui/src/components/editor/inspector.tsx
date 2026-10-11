@@ -10,6 +10,7 @@ import {
   type TimeQuantizationReceipt,
   type TransactionReceipt,
 } from '@baocut/protocol';
+import { EditLabel } from '@baocut/protocol/messages/ui';
 import { useState, type ComponentType } from 'react';
 import { ActionButton, Button, Text, Tooltip, TooltipTrigger } from '@react-spectrum/s2';
 import AlignBottom from '@react-spectrum/s2/icons/AlignBottom';
@@ -229,7 +230,7 @@ function Multiple({
     void applyArrangement(
       actions,
       alignOperations(sequence.id, movable, edge, relative, sequence.canvas, assets),
-      MULTI.labelAlign,
+      EditLabel.alignClips(),
       MULTI.aligned(movable.length),
       MULTI.inPlace,
     );
@@ -237,7 +238,7 @@ function Multiple({
     void applyArrangement(
       actions,
       distributeOperations(sequence.id, movable, axis, relative, sequence.canvas, assets),
-      MULTI.labelDistribute,
+      EditLabel.distributeClips(),
       MULTI.distributed(movable.length),
       MULTI.inPlace,
     );

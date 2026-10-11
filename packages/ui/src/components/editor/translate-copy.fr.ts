@@ -130,8 +130,6 @@ export const frTranslate: TranslateMessages = {
   editFailed: (message: string) => `Impossible de réécrire : ${message}`,
   seekTip: "Déplacer la tête de lecture à cette phrase",
   cutTip: "Les images de cette phrase ont été coupées",
-  translateTo: (language: string) => `Traduire en ${language}`,
-  rewriteTranslation: "Modifier la traduction",
   unknownLanguage: "Langue inconnue",
   targetLanguage: "la langue cible",
 };

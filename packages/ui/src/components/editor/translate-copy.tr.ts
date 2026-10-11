@@ -123,8 +123,6 @@ export const trTranslate: TranslateMessages = {
   editFailed: (message) => `Yeniden yazılamadı: ${message}`,
   seekTip: "Oynatma kafasını bu cümleye taşı",
   cutTip: "Bu cümlenin görüntüsü kesildi",
-  translateTo: (language) => `${language} diline çevir`,
-  rewriteTranslation: "Çeviriyi düzenle",
   unknownLanguage: "Bilinmeyen dil",
   targetLanguage: "hedef dil",
 };

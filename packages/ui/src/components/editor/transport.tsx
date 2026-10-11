@@ -1,5 +1,6 @@
 import { useMemo, useRef, type ReactElement } from 'react';
 import { localizeText, type Sequence } from '@baocut/protocol';
+import { EditLabel } from '@baocut/protocol/messages/ui';
 import { ActionButton, Button, Keyboard, Menu, MenuItem, MenuTrigger, Text, Tooltip, TooltipTrigger } from '@react-spectrum/s2';
 import ChevronDoubleLeft from '@react-spectrum/s2/icons/ChevronDoubleLeft';
 import ChevronDoubleRight from '@react-spectrum/s2/icons/ChevronDoubleRight';
@@ -128,7 +129,7 @@ export function Transport({ sequence, onZoom }: { sequence: Sequence; onZoom(act
         </Tip>
         <span className={divider} />
         <Tip label={E.splitTip}>
-          <ActionButton isQuiet aria-label={E.split} isDisabled={!editable || splits.length === 0} onPress={() => void apply(splits, E.splitClips)}>
+          <ActionButton isQuiet aria-label={E.split} isDisabled={!editable || splits.length === 0} onPress={() => void apply(splits, EditLabel.splitClip())}>
             <Cut />
           </ActionButton>
         </Tip>

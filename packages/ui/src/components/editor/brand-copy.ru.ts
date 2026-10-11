@@ -71,7 +71,6 @@ export const ru: BrandMessages = {
   copiedNotPlaced: (name: string) => `Скопировано в материалы, пока не размещено на таймлайне: ${name}`,
   elementsTrack: "Элементы",
   copiedNotPlaceable: (name: string) => `Скопировано в материалы; этот вид файла не размещается напрямую на таймлайне: ${name}`,
-  addLabel: (name: string) => `Добавить ${name}`,
   placedAtPlayhead: (name: string) => `Размещено на таймлайне у курсора воспроизведения: ${name}`,
   newBrandColor: "Новый цвет бренда",
   namePlaceholder: "например, Основной",

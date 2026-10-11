@@ -1,5 +1,6 @@
 import { useState, type Key } from 'react';
 import type { AssetRecord, Sequence } from '@baocut/protocol';
+import { EditLabel } from '@baocut/protocol/messages/ui';
 import {
   ActionButton,
   Button,
@@ -99,7 +100,7 @@ export function MediaAssetMenu({
       else ToastQueue.negative(MC.copyFailed, { timeout: 4000 });
     } else if (key === 'reveal' && path) void runtime.host.revealPath(path);
     else if (key === 'collect') {
-      const receipt = await apply([{ type: 'collectAssets', assetIds: [asset.id] }], MC.collect);
+      const receipt = await apply([{ type: 'collectAssets', assetIds: [asset.id] }], EditLabel.collectAsset());
       if (receipt)
         ToastQueue.positive(MC.collected(asset.name), {
           timeout: 5000,

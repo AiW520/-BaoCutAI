@@ -1,4 +1,5 @@
 import type { BrandContent, LibraryApplyResult, LibraryEntry, Sequence } from '@baocut/protocol';
+import { EditLabel } from '@baocut/protocol/messages/ui';
 import { ToastQueue } from '@react-spectrum/s2';
 import { frameAt, rootSequence } from '../../model/editor.ts';
 import { isPlaceable, placeAsset } from '../../model/editor-ops.ts';
@@ -77,7 +78,7 @@ export function useBrandApply(): (entry: LibraryEntry) => Promise<void> {
       ToastQueue.neutral(IB.copiedNotPlaceable(content.name), { timeout: 5000 });
       return;
     }
-    const receipt = await apply(placeAsset(fresh, asset, frame), IB.addLabel(content.name));
+    const receipt = await apply(placeAsset(fresh, asset, frame), EditLabel.addNamed({ name: content.name }));
     if (receipt) ToastQueue.positive(IB.placedAtPlayhead(content.name), { timeout: 4000 });
   };
 }

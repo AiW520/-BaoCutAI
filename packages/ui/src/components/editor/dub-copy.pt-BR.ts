@@ -175,7 +175,6 @@ export const ptBRDub: DubMessages = {
   undone: "Dublagem desfeita",
   undonePartial:
     "Clipes, silêncios e reduções de volume desfeitos. Faixa vazia e plano ficam no vídeo (o protocolo não exclui faixas ou documentos).",
-  undoLabel: (language: string) => `Desfazer dublagem (${language})`,
   undoFailed: "Não foi possível desfazer esta dublagem",
   undoNotOpen: "Abra o vídeo primeiro para desfazer.",
   close: "Fechar",
@@ -215,11 +214,6 @@ export const ptBRTimelineDub: TimelineDubMessages = {
   removeGroup: "Remover este grupo de dublagem",
   removeGroupHint: (bed: boolean) =>
     `${bed ? "Remove também o áudio de fundo" : "Remove toda a dublagem deste idioma"} · áudio original silenciado volta`,
-  labelMute: "Silenciar dublagem",
-  labelUnmute: "Ativar som da dublagem",
-  labelRemove: "Excluir dublagem",
-  labelRemoveGroup: (language: string) => `Remover dublagem (${language})`,
-  labelStretch: "Mudar velocidade da dublagem",
   muted: (n: number) => `Silenciadas ${sentences(n)} de dublagem`,
   unmuted: (n: number) => `Som ativado em ${sentences(n)} de dublagem`,
   removed: (n: number) => `Excluídas ${sentences(n)} de dublagem`,
@@ -294,7 +288,6 @@ export const ptBRDubRegen: DubRegenMessages = {
   cancelled: "Regeneração cancelada",
   undo: "Desfazer",
   undoMissing: "Não foi possível encontrar a edição da regeneração; use Desfazer no editor",
-  labelRetext: "Editar tradução (dublar novamente)",
 
   fitTitle: (n: number) => `Editar tradução e dublar novamente ${sentences(n)}`,
   fitIntro:
@@ -325,7 +318,6 @@ export const ptBRDubRegen: DubRegenMessages = {
   takeUnavailable: "Tomada fora da linha do tempo ou mídia não encontrada",
   takesNote: "Cada regeneração registra uma tomada; voltar a uma antiga é desfazível e não sintetiza novamente.",
   takeName: (k: number) => `Tomada ${k}`,
-  labelSwitchTake: (k: number) => `Trocar para tomada de dublagem ${k}`,
   switched: (k: number) => `Trocado para tomada ${k}`,
   regenThis: "Regenerar esta frase",
   unreadableFormat: "Formato não reconhecido",

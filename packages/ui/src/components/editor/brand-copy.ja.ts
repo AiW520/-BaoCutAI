@@ -71,7 +71,6 @@ export const ja: BrandMessages = {
   copiedNotPlaced: (name: string) => `素材にコピーしましたが、まだタイムラインには配置していません：${name}`,
   elementsTrack: '要素',
   copiedNotPlaceable: (name: string) => `素材にコピーしました。この種類のファイルはタイムラインに直接配置できません：${name}`,
-  addLabel: (name: string) => `${name} を追加`,
   placedAtPlayhead: (name: string) => `タイムラインの再生ヘッドの位置に配置しました：${name}`,
   newBrandColor: '新規ブランドカラー',
   namePlaceholder: '例：メインカラー',

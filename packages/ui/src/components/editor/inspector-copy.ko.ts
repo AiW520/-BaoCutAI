@@ -272,7 +272,6 @@ export const ko: InspectorMessages = {
   plateNote: '이 클립에는 배경판이나 둥근 모서리가 있지만 미리보기에는 아직 표시되지 않습니다.',
   orderTranslationFirst: '번역을 위에',
   orderOriginalFirst: '원문을 위에',
-  editCaptionStyle: '자막 스타일 편집',
   loadingCaptionStyle: '자막 스타일 불러오는 중…',
   captionSchema: (schema: string) => `이 자막 스타일의 형식은 ${schema}입니다. 아직 여기서 편집할 수 없습니다.`,
   noSchema: '(schema 없음)',

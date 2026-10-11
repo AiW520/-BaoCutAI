@@ -71,7 +71,6 @@ export const zhHant: BrandMessages = {
   copiedNotPlaced: (name: string) => `已複製到素材，但尚未放到時間軸上：${name}`,
   elementsTrack: '元素',
   copiedNotPlaceable: (name: string) => `已複製到素材；這類檔案無法直接放到時間軸上：${name}`,
-  addLabel: (name: string) => `新增${name}`,
   placedAtPlayhead: (name: string) => `已放到時間軸的播放頭處：${name}`,
   newBrandColor: '新增品牌色',
   namePlaceholder: '例如：主色',

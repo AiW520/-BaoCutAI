@@ -287,7 +287,6 @@ const en = {
   plateNote: 'This clip has a backing or rounded corners, which the preview doesn’t show yet.',
   orderTranslationFirst: 'Translation on top',
   orderOriginalFirst: 'Original on top',
-  editCaptionStyle: 'Edit subtitle style',
   loadingCaptionStyle: 'Loading subtitle style…',
   captionSchema: (schema: string) => `This subtitle style is ${schema}; it can’t be edited here yet.`,
   noSchema: '(no schema)',

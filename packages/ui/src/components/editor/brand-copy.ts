@@ -86,7 +86,6 @@ const en = {
   copiedNotPlaced: (name: string) => `Copied to assets but not placed on the timeline yet: ${name}`,
   elementsTrack: 'Elements',
   copiedNotPlaceable: (name: string) => `Copied to assets; this kind of file can’t go straight onto the timeline: ${name}`,
-  addLabel: (name: string) => `Add ${name}`,
   placedAtPlayhead: (name: string) => `Placed on timeline at playhead: ${name}`,
   newBrandColor: 'New Brand Color',
   namePlaceholder: 'e.g. Primary',

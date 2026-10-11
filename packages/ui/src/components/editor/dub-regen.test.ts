@@ -200,7 +200,7 @@ describe('改译文并重配', () => {
       ['u1', 'Hello there.', 'draft'],
       ['u2', 'Long sentence.', 'reviewed'],
     ]);
-    expect(deps.apply).toHaveBeenCalledWith(expect.any(Array), C.labelRetext);
+    expect(deps.apply).toHaveBeenCalledWith(expect.any(Array), expect.objectContaining({ key: 'editLabel.editDubText' }));
     expect(deps.runtime.startDub).toHaveBeenCalledWith({ videoId: 'vid', regroup: { groupId: 'dub_p1', units: ['u1', 'u2'], seed: 'new' } });
   });
 

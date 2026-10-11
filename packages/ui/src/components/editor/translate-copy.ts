@@ -152,8 +152,6 @@ const en = {
   editFailed: (message: string) => `Couldn’t rewrite: ${message}`,
   seekTip: 'Move the playhead to this sentence',
   cutTip: 'The footage for this sentence has been cut',
-  translateTo: (language: string) => `Translate to ${language}`,
-  rewriteTranslation: 'Edit translation',
   unknownLanguage: 'Unknown language',
   targetLanguage: 'the target language',
 };

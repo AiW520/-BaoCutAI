@@ -1,6 +1,7 @@
 import { useCaptionPreferences } from '../../state/caption-preferences-store.ts';
 import { useState, type ReactNode } from 'react';
 import type { DocumentRecord, EditOperation, Id, Sequence, TransactionReceipt } from '@baocut/protocol';
+import { EditLabel } from '@baocut/protocol/messages/ui';
 import { AlertDialog, DialogContainer, ProgressCircle, ToastQueue, Tooltip, TooltipTrigger } from '@react-spectrum/s2';
 import Add from '@react-spectrum/s2/icons/Add';
 import ChevronRight from '@react-spectrum/s2/icons/ChevronRight';
@@ -258,11 +259,11 @@ export function SubtitleStrip({
       ToastQueue.neutral(C.dropLast, { timeout: 4000 });
       return;
     }
-    const receipt = await apply(result.operations, C.dropLabel);
+    const receipt = await apply(result.operations, EditLabel.dropSubtitle());
     if (receipt) toastUndo(C.dropped(target.name), receipt);
   };
   const land = async (target: CaptionChip, operations: EditOperation[], message: string) => {
-    const receipt = await apply(operations, C.landLabel);
+    const receipt = await apply(operations, EditLabel.landSubtitle());
     if (receipt) toastUndo(message, receipt);
   };
   const putBack = (target: CaptionChip) => {
@@ -274,7 +275,7 @@ export function SubtitleStrip({
     if (!flipRecord || flipBody === undefined || !flipRoot) return;
     const translationFirst = (flipRoot.order ?? 'trans') === 'trans';
     const body = patchCaptionStyle(flipBody, { order: translationFirst ? 'orig' : 'trans' });
-    const receipt = await apply([{ type: 'putDocument', documentId: flipRecord.id, kind: flipRecord.kind, body }], C.flipLabel);
+    const receipt = await apply([{ type: 'putDocument', documentId: flipRecord.id, kind: flipRecord.kind, body }], EditLabel.flipSubtitle());
     if (receipt) {
       useCaptionPreferences.getState().remember(flipRoot, captionStyleRoot(body)!);
       toastUndo(C.flipped(!translationFirst), receipt);

@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import type { AssetRecord, Id, JobRecord, ModelCapabilitiesView, Sequence } from '@baocut/protocol';
+import { EditLabel } from '@baocut/protocol/messages/ui';
 import { ActionButton, Badge, Button, Picker, PickerItem, ProgressBar, Slider, Text, TextField, ToastQueue } from '@react-spectrum/s2';
 import Add from '@react-spectrum/s2/icons/Add';
 import CheckmarkCircle from '@react-spectrum/s2/icons/CheckmarkCircle';
@@ -48,7 +49,6 @@ import { useEditorActions } from './editor-context.tsx';
 import { AUDIO_GEN_COPY as C } from './media-gen-copy.ts';
 import { useMediaGen, useMediaGenStore, type AudioSubpage } from './media-gen-store.ts';
 import { PanelHead } from './panel-head.tsx';
-import { EDITOR_COPY as E } from './editor-copy.ts';
 
 /*
  * 音频 Tab 的「生成语音 / 克隆声音」子页（设计稿 panel-tts.jsx `TtsPanel` 的云端部分）：同一张表单两个入口，
@@ -410,7 +410,7 @@ function DoneView({
   const provider = providerName(view, 'synthesizeSpeech', job.providerId);
   const add = () => {
     if (!placeable) return;
-    void apply(placeAsset(sequence, placeable, frameAt(useEditor.getState().playhead, sequence.fps)), E.addClip);
+    void apply(placeAsset(sequence, placeable, frameAt(useEditor.getState().playhead, sequence.fps)), EditLabel.addClip());
   };
   return (
     <div className={stack}>

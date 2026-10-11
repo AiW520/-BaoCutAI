@@ -173,7 +173,6 @@ export const nlDub: DubMessages = {
   undone: "Nasynchronisatie ongedaan gemaakt",
   undonePartial:
     "De clips, dempingen en verlagingen van deze nasynchronisatie zijn ongedaan gemaakt. Het lege nasynchronisatiespoor en nasynchronisatieplandocument blijven in de video (het protocol heeft geen actie om sporen of documenten te verwijderen).",
-  undoLabel: (language: string) => `Nasynchronisatie ongedaan maken (${language})`,
   undoFailed: "Kan de nasynchronisatie niet ongedaan maken",
   undoNotOpen: "Open die video eerst om deze nasynchronisatie ongedaan te maken.",
   close: "Sluiten",
@@ -213,11 +212,6 @@ export const nlTimelineDub: TimelineDubMessages = {
   removeGroup: "Deze nasynchronisatiegroep verwijderen",
   removeGroupHint: (bed: boolean) =>
     `${bed ? "Verwijdert die samen met de achtergrondaudio" : "Verwijdert alle nasynchronisatie in deze taal"} · oorspronkelijke audio die hierdoor is gedempt komt terug`,
-  labelMute: "Nasynchronisatie dempen",
-  labelUnmute: "Dempen van nasynchronisatie opheffen",
-  labelRemove: "Nasynchronisatie verwijderen",
-  labelRemoveGroup: (language: string) => `Nasynchronisatie verwijderen (${language})`,
-  labelStretch: "Nasynchronisatiesnelheid wijzigen",
   muted: (n: number) => `Gedempt: ${sentences(n)} van nasynchronisatie`,
   unmuted: (n: number) => `Dempen opgeheven: ${sentences(n)} van nasynchronisatie`,
   removed: (n: number) => `Verwijderd: ${sentences(n)} van nasynchronisatie`,
@@ -285,7 +279,6 @@ export const nlDubRegen: DubRegenMessages = {
   cancelled: "Opnieuw genereren geannuleerd",
   undo: "Ongedaan maken",
   undoMissing: "Kan de bewerking van deze nieuwe generatie niet vinden; gebruik Ongedaan maken in de editor",
-  labelRetext: "Vertaling bewerken (opnieuw inspreken)",
 
   fitTitle: (n: number) => `Vertaling bewerken en opnieuw inspreken: ${sentences(n)}`,
   fitIntro:
@@ -316,7 +309,6 @@ export const nlDubRegen: DubRegenMessages = {
   takeUnavailable: "Deze opname staat niet op de tijdlijn of de media kunnen niet worden gevonden",
   takesNote: "Elke nieuwe generatie registreert een opname; terugwisselen naar een oudere opname is een bewerking die je ongedaan kunt maken en synthetiseert niet opnieuw.",
   takeName: (k: number) => `Opname ${k}`,
-  labelSwitchTake: (k: number) => `Wisselen naar nasynchronisatie-opname ${k}`,
   switched: (k: number) => `Gewisseld naar opname ${k}`,
   regenThis: "Deze zin opnieuw genereren",
   unreadableFormat: "Niet-herkend formaat",

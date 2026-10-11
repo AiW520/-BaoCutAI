@@ -130,8 +130,6 @@ export const ptBRTranslate: TranslateMessages = {
   editFailed: (message: string) => `Não foi possível reescrever: ${message}`,
   seekTip: "Mover indicador de reprodução para esta frase",
   cutTip: "As imagens desta frase foram cortadas",
-  translateTo: (language: string) => `Traduzir para ${language}`,
-  rewriteTranslation: "Editar tradução",
   unknownLanguage: "Idioma desconhecido",
   targetLanguage: "Idioma alvo",
 };

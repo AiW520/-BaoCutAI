@@ -1,5 +1,6 @@
 import { useEffect, useState, type ReactElement } from 'react';
 import { localizeText, type HistoryEntry, type VideoRef, type Sequence } from '@baocut/protocol';
+import { EditLabel } from '@baocut/protocol/messages/ui';
 import {
   ActionButton,
   ActionMenu,
@@ -161,7 +162,7 @@ export function VideoBar({ video, sequence }: { video: OpenVideo; sequence: Sequ
           submitLabel={VB.save}
           onClose={() => setRenaming(false)}
           onSubmit={async (next) => {
-            const receipt = await apply([{ type: 'renameVideo', name: next }], VB.rename);
+            const receipt = await apply([{ type: 'renameVideo', name: next }], EditLabel.renameVideo());
             if (receipt) setRenaming(false);
           }}
         />

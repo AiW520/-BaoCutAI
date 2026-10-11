@@ -131,8 +131,6 @@ export const jaTranslate: TranslateMessages = {
   editFailed: (message: string) => `書き直せませんでした：${message}`,
   seekTip: '再生ヘッドをこの文に移動',
   cutTip: 'この文の映像はカットされています',
-  translateTo: (language: string) => `${language} に翻訳`,
-  rewriteTranslation: '訳文を編集',
   unknownLanguage: '不明な言語',
   targetLanguage: '翻訳先の言語',
 };

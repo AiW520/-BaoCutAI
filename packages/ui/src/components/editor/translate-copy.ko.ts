@@ -134,8 +134,6 @@ export const koTranslate: TranslateMessages = {
   editFailed: (message: string) => `다시 쓰지 못했습니다: ${message}`,
   seekTip: '재생 헤드를 이 문장으로 이동',
   cutTip: '이 문장의 영상 구간은 잘라냈습니다',
-  translateTo: (language: string) => `${language}(으)로 번역`,
-  rewriteTranslation: '번역 편집',
   unknownLanguage: '알 수 없는 언어',
   targetLanguage: '대상 언어',
 };

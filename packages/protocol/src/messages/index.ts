@@ -20,3 +20,4 @@ import './engine-host/index.ts';
 import './video-model/index.ts';
 import './editor-semantics/index.ts';
 import './message-ref/index.ts';
+import './ui/index.ts';

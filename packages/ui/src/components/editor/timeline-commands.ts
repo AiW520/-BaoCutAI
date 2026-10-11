@@ -1,10 +1,10 @@
-import type { ArrangeDirection, Id, Sequence, SequenceItem, TransactionReceipt, VideoItem, VideoSnapshot } from '@baocut/protocol';
+import type { ArrangeDirection, Id, Localized, Sequence, SequenceItem, TransactionReceipt, VideoItem, VideoSnapshot } from '@baocut/protocol';
+import { EditLabel } from '@baocut/protocol/messages/ui';
 import { ToastQueue } from '@react-spectrum/s2';
 import { TIMELINE_EDIT_COPY as COPY } from '../../copy.ts';
 import { frameAt, itemFrames, itemLabel, rootSequence } from '../../model/editor.ts';
 import { detachAudioOperations } from '../../model/detach-audio.ts';
 import { arrangeOperation, deletableItemIds, itemsAtFrame, moveOperation, nudgeDelta, splitOperations } from '../../model/editor-ops.ts';
-import { ARRANGE_COPY } from '../../model/stage-toolbar.ts';
 import { pasteOperations } from '../../model/item-clipboard.ts';
 import { createdItemIds } from '../../model/new-items.ts';
 import { fallbackUndoOperations, mutedItemsOf } from '../../model/dub-undo.ts';
@@ -103,7 +103,7 @@ export async function cutSelection(actions: EditorActions): Promise<void> {
   useClipboard.getState().put(ctx.videoId, items);
   const receipt = await actions.apply(
     [{ type: 'deleteItems', sequenceId: ctx.sequence.id, itemIds: items.map((item) => item.id) }],
-    COPY.labelCut,
+    EditLabel.cutClips(),
   );
   if (!receipt) return;
   useEditor.getState().select([]);
@@ -131,7 +131,7 @@ async function removeItems(actions: EditorActions, ctx: Live, itemIds: readonly 
   const plan = rippleOperations(ctx.sequence, gapsAfterDelete(ctx.sequence, itemIds), itemIds);
   const receipt = await actions.apply(
     [{ type: 'deleteItems', sequenceId: ctx.sequence.id, itemIds: [...itemIds] }, ...plan.operations],
-    COPY.labelDelete,
+    EditLabel.deleteClips(),
   );
   if (!receipt) return false;
   followPlayhead(actions, ctx.sequence, plan.spans);
@@ -151,7 +151,7 @@ export async function removeSelectionSpan(actions: EditorActions): Promise<void>
   const plan = rippleOperations(ctx.sequence, selectionSpans(ctx.sequence, useEditor.getState().selection));
   if (plan.locked.length) return say(RIPPLE.locked);
   if (!plan.operations.length) return say(RIPPLE.pickSpan);
-  const receipt = await actions.apply(plan.operations, RIPPLE.labelRemoveSpan);
+  const receipt = await actions.apply(plan.operations, EditLabel.removeSpan());
   if (!receipt) return;
   followPlayhead(actions, ctx.sequence, plan.spans);
   useEditor.getState().select([]);
@@ -179,7 +179,7 @@ export async function pasteClipboard(actions: EditorActions): Promise<void> {
   const { entries, videoId } = useClipboard.getState();
   if (!entries.length) return say(COPY.clipboardEmpty(MOD_KEY));
   if (videoId !== ctx.videoId) return say(COPY.otherVideo);
-  await spawn(actions, ctx, entries, COPY.labelPaste, COPY.pasted);
+  await spawn(actions, ctx, entries, EditLabel.pasteClips(), COPY.pasted);
 }
 
 /** ⌘D：选中的片段原样再来一份（不经剪贴板）。 */
@@ -188,7 +188,7 @@ export async function duplicateSelection(actions: EditorActions): Promise<void> 
   if (!ctx?.editable) return;
   const items = picked(ctx.sequence);
   if (!items.length) return say(COPY.pick(COPY.duplicate));
-  await spawn(actions, ctx, items, COPY.labelDuplicate, COPY.duplicated);
+  await spawn(actions, ctx, items, EditLabel.duplicateClips(), COPY.duplicated);
 }
 
 /** 造副本（原型 spawn）：整批一笔事务、一条撤销记录，之后选中新副本。 */
@@ -196,7 +196,7 @@ async function spawn(
   actions: EditorActions,
   ctx: Live,
   entries: readonly SequenceItem[],
-  label: string,
+  label: Localized,
   message: (n: number) => string,
 ): Promise<void> {
   const generation = useClipboard.getState().nextGeneration();
@@ -219,7 +219,7 @@ export function splitAtPlayhead(actions: EditorActions, itemIds?: readonly Id[])
   const ctx = live();
   if (!ctx?.editable) return;
   const splits = splitOperations(ctx.sequence, itemIds ?? useEditor.getState().selection, frameAt(useEditor.getState().playhead, ctx.sequence.fps));
-  if (splits.length) void actions.apply(splits, COPY.labelSplit);
+  if (splits.length) void actions.apply(splits, EditLabel.splitClip());
 }
 
 /** 这件片段能不能在播放头处拆开（右键菜单的那一项）。 */
@@ -234,14 +234,14 @@ export function canSplitAt(sequence: Sequence, itemId: Id, playhead: number): bo
 export async function setItemEnabled(actions: EditorActions, itemId: Id, enabled: boolean, notice?: string): Promise<void> {
   const ctx = live();
   if (!ctx?.editable) return;
-  const receipt = await actions.apply([{ type: 'updateItem', sequenceId: ctx.sequence.id, itemId, enabled }], enabled ? COPY.labelEnable : COPY.labelDisable);
+  const receipt = await actions.apply([{ type: 'updateItem', sequenceId: ctx.sequence.id, itemId, enabled }], enabled ? EditLabel.enableClip() : EditLabel.disableClip());
   if (receipt && notice) undoToast(actions, notice, receipt);
 }
 
 /** 分离音频（画布工具条）：一笔里新建音频轨放这一段的声音、关掉视频自带的声音（detach-audio.ts）；提示带撤销。 */
-export async function detachAudio(actions: EditorActions, sequence: Sequence, item: VideoItem, label: string, notice: string): Promise<void> {
+export async function detachAudio(actions: EditorActions, sequence: Sequence, item: VideoItem, notice: string): Promise<void> {
   if (!live()?.editable) return;
-  const receipt = await actions.apply(detachAudioOperations(sequence, item), label);
+  const receipt = await actions.apply(detachAudioOperations(sequence, item), EditLabel.detachAudio());
   if (receipt) undoToast(actions, notice, receipt);
 }
 
@@ -301,7 +301,7 @@ export function flushNudge(actions: EditorActions): void {
     if (useEditor.getState().nudge === committing) useEditor.getState().setNudge(null);
   };
   useEditor.getState().setNudge(committing);
-  void actions.apply([operation], COPY.labelNudge).then((receipt) => {
+  void actions.apply([operation], EditLabel.nudgeClip()).then((receipt) => {
     if (!receipt || useVideo.getState().video?.state?.video.revision !== draft.revision) return clear();
     const stop = useVideo.subscribe((state) => {
       if (state.video?.state?.video.revision === draft.revision) return;
@@ -330,7 +330,7 @@ export async function duplicateItems(actions: EditorActions, itemIds: readonly I
   if (!ctx?.editable) return;
   const entries = ctx.sequence.items.filter((item) => itemIds.includes(item.id));
   if (!entries.length) return say(COPY.pick(COPY.duplicate));
-  await spawn(actions, ctx, entries, COPY.labelDuplicate, COPY.duplicated);
+  await spawn(actions, ctx, entries, EditLabel.duplicateClips(), COPY.duplicated);
 }
 
 /**
@@ -341,7 +341,7 @@ export function arrangeItem(actions: EditorActions, itemId: Id, direction: Arran
   const ctx = live();
   if (!ctx?.editable) return;
   const operation = arrangeOperation(ctx.sequence, itemId, direction);
-  if (operation) void actions.apply([operation], ARRANGE_COPY.label);
+  if (operation) void actions.apply([operation], EditLabel.changeStacking());
 }
 
 /**
@@ -372,7 +372,7 @@ export async function deleteItems(actions: EditorActions, itemIds: readonly Id[]
 export async function applyArrangement(
   actions: EditorActions,
   operations: Parameters<EditorActions['apply']>[0],
-  label: string,
+  label: Localized,
   done: string,
   idle: string,
 ): Promise<void> {
@@ -392,7 +392,7 @@ export async function muteDubBlocks(actions: EditorActions, itemIds: readonly Id
   if (!ctx?.editable) return;
   const operations = muteOperations(ctx.sequence, itemIds, muted);
   if (!operations.length) return;
-  const receipt = await actions.apply(operations, muted ? DUB.labelMute : DUB.labelUnmute);
+  const receipt = await actions.apply(operations, muted ? EditLabel.muteDub() : EditLabel.unmuteDub());
   if (receipt) say(muted ? DUB.muted(itemIds.length) : DUB.unmuted(itemIds.length));
 }
 
@@ -403,7 +403,7 @@ export async function deleteDubBlocks(actions: EditorActions, itemIds: readonly 
   const present = new Set(ctx.sequence.items.map((item) => item.id));
   const ids = itemIds.filter((id) => present.has(id));
   if (!ids.length) return;
-  const receipt = await actions.apply([{ type: 'deleteItems', sequenceId: ctx.sequence.id, itemIds: ids }], DUB.labelRemove);
+  const receipt = await actions.apply([{ type: 'deleteItems', sequenceId: ctx.sequence.id, itemIds: ids }], EditLabel.removeDub());
   if (!receipt) return;
   useEditor.getState().select(useEditor.getState().selection.filter((id) => !ids.includes(id)));
   undoToast(actions, DUB.removed(ids.length), receipt);
@@ -429,11 +429,10 @@ export async function deleteDubGroup(actions: EditorActions, groupId: string, re
   if (!group) return;
   const fallback = fallbackUndoOperations(ctx.sequence, { groupId, trackId: group.trackIds[0]! }, muted);
   if (!fallback.operations.length) return;
-  const language = group.language ? langName(group.language) : '';
-  const receipt = await actions.apply(fallback.operations, DUB.labelRemoveGroup(language));
+  const receipt = await actions.apply(fallback.operations, EditLabel.removeDubGroup({ language: group.language ?? '' }));
   if (!receipt) return;
   useEditor.getState().select([]);
-  undoToast(actions, DUB.groupRemoved(language), receipt);
+  undoToast(actions, DUB.groupRemoved(group.language ? langName(group.language) : ''), receipt);
   if (unread) say(DUB.planUnread);
 }
 

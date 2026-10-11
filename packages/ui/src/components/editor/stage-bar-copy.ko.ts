@@ -4,7 +4,6 @@ export const ko: StageBarMessages = {
   bar: '미리보기 컨트롤',
   ratio: '화면 비율',
   ratioReadOnly: '화면 비율 · 동영상이 읽기 전용입니다',
-  ratioChange: (ratio: string) => `화면 비율 ${ratio}`,
   ratioApplied: (ratio: string) => `화면 비율을 ${ratio}(으)로 바꿨습니다`,
   original: '원본',
   originalHint: (ratio: string) => `동영상 파일과 같음 · ${ratio}`,

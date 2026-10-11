@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useSyncExternalStore } from 'react';
 import type { AssetRecord, DocumentRecord, Id, Sequence } from '@baocut/protocol';
+import { EditLabel } from '@baocut/protocol/messages/ui';
 import { langName } from '../../model/tools-models.ts';
 import { contentCounts, editorExtras, snapshotFacts, translationTargets } from '../../model/video-info.ts';
 import { useRuntime } from '../../runtime/context.tsx';
@@ -48,7 +49,7 @@ export function EditorVideoInfo({ video, sequence, onClose }: { video: OpenVideo
     <VideoInfoDialog
       facts={facts}
       extras={extras}
-      onRename={canEdit(video) ? async (name) => (await apply([{ type: 'renameVideo', name }], VB.rename)) !== null : undefined}
+      onRename={canEdit(video) ? async (name) => (await apply([{ type: 'renameVideo', name }], EditLabel.renameVideo())) !== null : undefined}
       onClose={onClose}
     />
   );

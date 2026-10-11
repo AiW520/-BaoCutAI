@@ -272,7 +272,6 @@ export const ptBR: InspectorMessages = {
   plateNote: "O clipe tem fundo ou cantos arredondados que a prévia ainda não mostra.",
   orderTranslationFirst: "Topo da tradução",
   orderOriginalFirst: "Topo original",
-  editCaptionStyle: "Editar estilo de legendas",
   loadingCaptionStyle: "Carregando estilo de legendas…",
   captionSchema: (schema: string) => `Este estilo de legendas é ${schema}; ainda não pode ser editado aqui.`,
   noSchema: "(sem schema)",

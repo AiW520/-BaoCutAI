@@ -10,11 +10,13 @@ import {
   type EditOperation,
   type Id,
   type JobRecord,
+  type Localized,
   type Sequence,
   type TransactionReceipt,
   type TranscribeSummary,
   type UndoTarget,
 } from '@baocut/protocol';
+import { EditLabel } from '@baocut/protocol/messages/ui';
 import { guessLanguage } from '../../model/cue-edit.ts';
 import { rootSequence } from '../../model/editor.ts';
 import { formatClock } from '../../model/format.ts';
@@ -88,7 +90,7 @@ export interface TranscribeDeps {
     readDocument(videoId: Id, documentId: Id, revision?: string): Promise<DocumentContent>;
     cancelJob(jobId: Id): Promise<void>;
     videos: {
-      apply(operations: EditOperation[], label?: string): Promise<TransactionReceipt | null>;
+      apply(operations: EditOperation[], label?: Localized): Promise<TransactionReceipt | null>;
       undo(target: UndoTarget): Promise<TransactionReceipt | null>;
     };
   };
@@ -393,7 +395,7 @@ async function writeCaptions(run: TranscribeRun, speechDocumentId: Id): Promise<
       trackName: C.trackName,
     });
     // 失败时编辑器已经提示了引擎的原话；转写还在视频里，留一句怎么接着做。
-    const receipt = await bound.runtime.videos.apply(withNewCaptionStyle(operations, newCaptionStyle()), C.generate);
+    const receipt = await bound.runtime.videos.apply(withNewCaptionStyle(operations, newCaptionStyle()), EditLabel.generateSubtitles());
     if (!receipt) return endRun(videoId, { kind: 'failed', title: C.writeFailedTitle, message: C.pending, remedy: null });
     const documentId = receipt.refs?.['speech-caption'];
     useSubtitleRun.setState((s) => ({

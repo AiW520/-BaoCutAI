@@ -123,8 +123,6 @@ export const plTranslate: TranslateMessages = {
   editFailed: (message: string) => `Nie udało się zmienić: ${message}`,
   seekTip: "Przesuń głowicę do zdania",
   cutTip: "Materiał wideo zdania wycięto",
-  translateTo: (language: string) => `Przetłumacz na ${language}`,
-  rewriteTranslation: "Edytuj tłumaczenie",
   unknownLanguage: "Nieznany język",
   targetLanguage: "język docelowy",
 };

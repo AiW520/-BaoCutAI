@@ -5,7 +5,6 @@ export const ptBR: TimelineRippleMessages = {
   removeSpan: 'Excluir este trecho de todas as faixas',
   removeSpanHint: 'O conteúdo seguinte avança · a duração total diminui',
   removeSpanCaptions: 'As legendas cobrem o vídeo inteiro · Selecione um clipe',
-  labelRemoveSpan: 'Excluir trecho de todas as faixas',
   closed: (deleted: string, seconds: number) => `${deleted} · Lacuna de ${secondsLabel(seconds)} fechada`,
   gapKept: (deleted: string) => `${deleted} · Lacuna mantida: há uma faixa ou clipe bloqueado depois`,
   removed: (seconds: number) => `${secondsLabel(seconds)} excluídos de todas as faixas · O conteúdo seguinte avançou`,

@@ -71,7 +71,6 @@ export const fr: BrandMessages = {
   copiedNotPlaced: (name: string) => `Copié dans les médias mais pas encore placé sur la timeline : ${name}`,
   elementsTrack: "Éléments",
   copiedNotPlaceable: (name: string) => `Copié dans les médias ; ce type de fichier ne peut pas aller directement sur la timeline : ${name}`,
-  addLabel: (name: string) => `Ajouter ${name}`,
   placedAtPlayhead: (name: string) => `Placé sur la timeline à la tête de lecture : ${name}`,
   newBrandColor: "Nouvelle couleur de marque",
   namePlaceholder: "ex. Principale",

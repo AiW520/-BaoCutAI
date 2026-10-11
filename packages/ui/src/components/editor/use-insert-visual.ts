@@ -1,4 +1,5 @@
 import type { FrameSpan, Sequence } from '@baocut/protocol';
+import { EditLabel } from '@baocut/protocol/messages/ui';
 import { ToastQueue } from '@react-spectrum/s2';
 import { rootSequence } from '../../model/editor.ts';
 import { formatClock } from '../../model/format.ts';
@@ -26,7 +27,7 @@ export interface InsertRequest {
 export function useInsertVisual(): (sequence: Sequence, request: InsertRequest) => Promise<void> {
   const { apply, undo } = useEditorActions();
   return async (sequence, { span, layers, label, trackName, selectLayer = 0 }) => {
-    const receipt = await apply(insertVisual(sequence, span, layers, trackName), EL.addNamed(label));
+    const receipt = await apply(insertVisual(sequence, span, layers, trackName), EditLabel.addNamed({ name: label }));
     if (!receipt) return;
     const snapshot = useVideo.getState().video?.state?.video;
     const fresh = (snapshot && rootSequence(snapshot)) ?? sequence;

@@ -1,4 +1,5 @@
 import type { Sequence, TransactionReceipt } from '@baocut/protocol';
+import { EditLabel } from '@baocut/protocol/messages/ui';
 import { ToastQueue } from '@react-spectrum/s2';
 import {
   addChapterOperation,
@@ -40,7 +41,7 @@ export async function addChapter(actions: EditorActions, sequence: Sequence, fra
     ToastQueue.neutral(C.refusal[result.reason], { timeout: TOAST_MS });
     return false;
   }
-  const receipt = await actions.apply([result.operation], C.labels.add);
+  const receipt = await actions.apply([result.operation], EditLabel.addChapter());
   if (receipt) undoToast(actions, C.added(title.trim()), receipt);
   return !!receipt;
 }
@@ -48,13 +49,13 @@ export async function addChapter(actions: EditorActions, sequence: Sequence, fra
 export async function renameChapter(actions: EditorActions, sequence: Sequence, chapter: ChapterSpan, title: string): Promise<boolean> {
   const operation = renameChapterOperation(sequence.id, chapter, title);
   if (!operation) return false;
-  const receipt = await actions.apply([operation], C.labels.rename);
+  const receipt = await actions.apply([operation], EditLabel.renameChapter());
   if (receipt) undoToast(actions, C.renamed(title.trim()), receipt);
   return !!receipt;
 }
 
 export async function removeChapter(actions: EditorActions, sequence: Sequence, chapter: ChapterSpan): Promise<boolean> {
-  const receipt = await actions.apply([removeChapterOperation(sequence.id, chapter)], C.labels.remove);
+  const receipt = await actions.apply([removeChapterOperation(sequence.id, chapter)], EditLabel.removeChapter());
   if (receipt) undoToast(actions, C.removed(chapter.title), receipt);
   return !!receipt;
 }
@@ -63,5 +64,5 @@ export async function removeChapter(actions: EditorActions, sequence: Sequence, 
 export async function moveChapter(actions: EditorActions, sequence: Sequence, chapter: ChapterSpan, frame: number): Promise<boolean> {
   const operation = moveChapterOperation(sequence.id, chapter, frame);
   if (!operation) return false;
-  return !!(await actions.apply([operation], C.labels.move));
+  return !!(await actions.apply([operation], EditLabel.moveChapter()));
 }

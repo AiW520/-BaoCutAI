@@ -60,8 +60,6 @@ export const ptBRTranscript: TranscriptMessages = {
   undo: "Desfazer",
 
   seamLabel: (seconds: number) => `O corte ${secondsLabel(seconds)} · clique para restaurar`,
-  cutLabel: "Cortar na transcrição",
-  restoreLabel: "Restaurar conteúdo cortado",
   liveCopy: "Copiar o que já foi transcrito",
   liveCopied: "Copiado o que já foi transcrito · a transcrição continua",
   liveSpeaker: "Reconhecendo",
@@ -80,7 +78,6 @@ export const ptBRTranscriptTools: TranscriptToolsMessages = {
 
   lockTranslation: "Traduções podem ser buscadas, não editadas; o painel Transcrição só altera o original",
   lockLoading: "Uma versão nova está carregando; substitua após concluir",
-  replaceLabel: "Substituir texto da transcrição",
   replaceDone: (count: number) => `Substituídos ${count} ${pluralForm('pt-BR', count, { one: "correspondência", other: "correspondências" })} · vídeo e áudio inalterados`,
   replaceNothing: "Sem correspondências para alterar",
 
@@ -129,7 +126,6 @@ export const ptBRTranscriptTools: TranscriptToolsMessages = {
   noPrev: "Sem capítulo antes deste parágrafo",
   noNext: "Sem capítulo após este parágrafo",
   moveBlocked: "Mover deixaria capítulo vazio ou cruzaria o início do vizinho",
-  moveLabel: "Mover parágrafo ao capítulo vizinho",
   moved: (title: string, count: number) => (count > 1 ? `Movidos ${count} parágrafos para “${title}”` : `Movido para “${title}”`),
   cutPara: "Cortar este parágrafo",
   cutParaHint: "Corta vídeo, áudio e legendas juntos; restaurável",
@@ -138,7 +134,6 @@ export const ptBRTranscriptTools: TranscriptToolsMessages = {
   renameChapter: "Renomear…",
   cutChapter: "Cortar este capítulo",
   cutChapterHint: "Corta vídeo, áudio e legendas juntos; capítulos seguintes avançam",
-  cutChapterLabel: "Cortar capítulo",
   cutChapterRefused: {
     empty: "Este capítulo não tem duração",
     whole: "Este capítulo é o vídeo inteiro; cortar não deixaria nada",

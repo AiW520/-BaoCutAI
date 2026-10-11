@@ -71,7 +71,6 @@ export const ko: BrandMessages = {
   copiedNotPlaced: (name: string) => `소재로 복사했지만 아직 타임라인에 배치하지 않았습니다: ${name}`,
   elementsTrack: '요소',
   copiedNotPlaceable: (name: string) => `소재로 복사했습니다. 이 종류의 파일은 타임라인에 바로 놓을 수 없습니다: ${name}`,
-  addLabel: (name: string) => `${name} 추가`,
   placedAtPlayhead: (name: string) => `타임라인의 재생 헤드 위치에 배치했습니다: ${name}`,
   newBrandColor: '새 브랜드 색상',
   namePlaceholder: '예: 기본 색상',

@@ -32,7 +32,6 @@ export const de: ChapterMessages = {
     blank: "Der Titel darf nicht leer sein",
   } satisfies Record<AddChapterRefusal, string>,
 
-  labels: { add: "Kapitel hinzufügen", rename: "Kapitel umbenennen", remove: "Kapitel löschen", move: "Kapitelanfang verschieben" },
   added: (title: string) => `Kapitel hinzugefügt: „${title}“`,
   renamed: (title: string) => `Umbenannt in „${title}“`,
   removed: (title: string) => `Kapitel gelöscht: „${title}“`,

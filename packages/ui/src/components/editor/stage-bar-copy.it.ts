@@ -4,7 +4,6 @@ export const it: StageBarMessages = {
   bar: 'Controlli dell’anteprima',
   ratio: 'Rapporto d’aspetto',
   ratioReadOnly: 'Rapporto d’aspetto · il video è di sola lettura',
-  ratioChange: (ratio: string) => `Rapporto d’aspetto ${ratio}`,
   ratioApplied: (ratio: string) => `Rapporto d’aspetto cambiato in ${ratio}`,
   original: 'Originale',
   originalHint: (ratio: string) => `Uguale al file video · ${ratio}`,

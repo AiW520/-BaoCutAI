@@ -1,5 +1,6 @@
 import { useState, type Key } from 'react';
 import type { AssetRecord, Id, Sequence } from '@baocut/protocol';
+import { EditLabel } from '@baocut/protocol/messages/ui';
 import { ActionButton, Badge, Menu, MenuItem, MenuSection, MenuTrigger, Text, ToastQueue } from '@react-spectrum/s2';
 import AudioWave from '@react-spectrum/s2/icons/AudioWave';
 import ChevronDown from '@react-spectrum/s2/icons/ChevronDown';
@@ -187,7 +188,7 @@ export function DubGroupCard({
     } else if (key === 'remove') {
       const fallback = fallbackUndoOperations(sequence, { groupId, trackId: g.trackId ?? '' }, mutedItemsOf(planBody));
       if (!fallback.operations.length) return;
-      const receipt = await apply(fallback.operations, C.remove);
+      const receipt = await apply(fallback.operations, EditLabel.removeThisDubGroup());
       if (!receipt) return;
       ToastQueue.positive(C.removed(g.title), {
         timeout: 5000,

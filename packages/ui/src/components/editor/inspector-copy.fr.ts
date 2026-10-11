@@ -272,7 +272,6 @@ export const fr: InspectorMessages = {
   plateNote: "Ce clip a un fond ou des coins arrondis que l’aperçu n’affiche pas encore.",
   orderTranslationFirst: "Traduction en haut",
   orderOriginalFirst: "Original en haut",
-  editCaptionStyle: "Modifier le style de sous-titres",
   loadingCaptionStyle: "Chargement du style de sous-titres…",
   captionSchema: (schema: string) => `Ce style de sous-titres est ${schema} ; il ne peut pas encore être modifié ici.`,
   noSchema: "(aucun schema)",

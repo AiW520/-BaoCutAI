@@ -10,9 +10,11 @@ import {
   type GrantCreateParams,
   type Id,
   type JobRecord,
+  type Localized,
   type TransactionReceipt,
   type UndoTarget,
 } from '@baocut/protocol';
+import { EditLabel } from '@baocut/protocol/messages/ui';
 import { langName } from '../../model/tools-models.ts';
 import { dubFailureFacts, dubRemedy, dubRetryNote, dubSummaryOf, dubWarnings, type DubFailureFacts } from '../../model/dub-progress.ts';
 import { grantPurpose, grantRefusal, grantRequest, refusalKey, type GrantRefusal } from '../../model/dub-setup.ts';
@@ -125,7 +127,7 @@ export interface DubDeps {
     cancelJob(jobId: Id): Promise<void>;
     readDocument(videoId: Id, documentId: Id, revision?: string): Promise<DocumentContent>;
     videos: {
-      apply(operations: EditOperation[], label?: string): Promise<TransactionReceipt | null>;
+      apply(operations: EditOperation[], label?: Localized): Promise<TransactionReceipt | null>;
       undo(target: UndoTarget): Promise<TransactionReceipt | null>;
       clearError(): void;
     };
@@ -421,7 +423,7 @@ export async function undoDub(videoId: Id): Promise<void> {
   }
   patchReceipt(videoId, { undoing: true });
   const { summary } = receipt;
-  const label = C.undoLabel(langName(summary.language));
+  const label = EditLabel.undoDub({ language: summary.language });
   try {
     const transactionId = planTransaction(first.documents[summary.planDocumentId]);
     if (transactionId && (await bound.runtime.videos.undo({ transaction: transactionId }))) {

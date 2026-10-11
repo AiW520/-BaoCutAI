@@ -272,7 +272,6 @@ export const nl: InspectorMessages = {
   plateNote: "Deze clip heeft een achtergrondvlak of afgeronde hoeken die het voorbeeld nog niet toont.",
   orderTranslationFirst: "Vertaling boven",
   orderOriginalFirst: "Origineel boven",
-  editCaptionStyle: "Ondertitelstijl bewerken",
   loadingCaptionStyle: "Ondertitelstijl laden…",
   captionSchema: (schema: string) => `Deze ondertitelstijl is ${schema}; die kan hier nog niet worden bewerkt.`,
   noSchema: "(geen schema)",

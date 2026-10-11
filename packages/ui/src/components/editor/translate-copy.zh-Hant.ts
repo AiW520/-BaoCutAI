@@ -127,8 +127,6 @@ export const zhHantTranslate: TranslateMessages = {
   editFailed: (message: string) => `無法改寫：${message}`,
   seekTip: '將播放頭移到這一句',
   cutTip: '這一句的畫面已經剪掉了',
-  translateTo: (language: string) => `翻譯成${language}`,
-  rewriteTranslation: '編輯譯文',
   unknownLanguage: '未知語言',
   targetLanguage: '目標語言',
 };

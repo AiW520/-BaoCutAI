@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { Id, MissingAsset, Sequence, VersionRef } from '@baocut/protocol';
+import { EditLabel } from '@baocut/protocol/messages/ui';
 import {
   STAGE_MEDIA_COPY as C,
   assetsFingerprint,
@@ -151,7 +152,7 @@ export function useStageMedia(videoId: Id | null, sequence: Sequence): StageMedi
       if (reason) failure = reason;
     });
     try {
-      const receipt = await runtime.videos.apply([{ type: 'relinkAsset', assetId: target.assetId, path }], C.label(target.name));
+      const receipt = await runtime.videos.apply([{ type: 'relinkAsset', assetId: target.assetId, path }], EditLabel.relinkAsset({ name: target.name }));
       if (!receipt) {
         const reason = failure ?? useVideo.getState().video?.commandError?.message ?? E.notEditableNow;
         setError({ videoId, assetId: target.assetId, message: C.relinkFailed(reason) });

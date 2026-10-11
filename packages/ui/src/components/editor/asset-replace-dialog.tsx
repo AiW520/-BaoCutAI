@@ -1,6 +1,7 @@
 import { useMemo, useState, type ComponentType } from 'react';
 import type { AssetRecord, Id, Sequence } from '@baocut/protocol';
 import { mediaTimeToSeconds } from '@baocut/protocol';
+import { EditLabel } from '@baocut/protocol/messages/ui';
 import {
   Button,
   ButtonGroup,
@@ -161,7 +162,7 @@ export function AssetReplaceDialog({ asset, sequence, assets, itemId, onClose }:
     if (!plan?.ok) return;
     setBusy(true);
     setFrozen({ plan, precheck });
-    const receipt = await apply(plan.operations, MC.replaceKind(asset.kind));
+    const receipt = await apply(plan.operations, EditLabel.replaceAsset({ kind: asset.kind }));
     setBusy(false);
     if (!receipt) {
       setFrozen(null);

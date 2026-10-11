@@ -16,6 +16,5 @@ export const fr: CutBandMessages = {
     `−${secondsLabel(seconds)}${word ? (edge === 'start' ? ` · depuis « ${word.trim()} »` : ` · jusqu’à « ${word.trim()} »`) : ""}`,
   tagRestore: "Relâcher pour restaurer",
 
-  retimeLabel: "Modifier la plage coupée",
   retimed: (before: number, after: number) => `Plage de coupe modifiée · ${secondsLabel(before)} → ${secondsLabel(after)}`,
 };

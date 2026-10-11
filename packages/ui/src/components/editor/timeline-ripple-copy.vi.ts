@@ -5,7 +5,6 @@ export const vi: TimelineRippleMessages = {
   removeSpan: 'Xóa đoạn này khỏi mọi rãnh',
   removeSpanHint: 'Nội dung phía sau dồn lên · tổng thời lượng ngắn lại',
   removeSpanCaptions: 'Phụ đề trải dài cả video · Hãy chọn một clip',
-  labelRemoveSpan: 'Xóa đoạn khỏi mọi rãnh',
   closed: (deleted: string, seconds: number) => `${deleted} · Đã khép khoảng trống ${secondsLabel(seconds)}`,
   gapKept: (deleted: string) => `${deleted} · Giữ khoảng trống: phía sau có rãnh hoặc clip bị khóa`,
   removed: (seconds: number) => `Đã xóa ${secondsLabel(seconds)} khỏi mọi rãnh · Nội dung phía sau đã dồn lên`,

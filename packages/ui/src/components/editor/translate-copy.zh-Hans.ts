@@ -123,8 +123,6 @@ export const zhTranslate: TranslateMessages = {
   editFailed: (message: string) => `没能改写：${message}`,
   seekTip: '播放头跳到这一句',
   cutTip: '这一句所在的画面已经剪掉了',
-  translateTo: (language: string) => `翻译成${language}`,
-  rewriteTranslation: '改写译文',
   unknownLanguage: '语言未知',
   targetLanguage: '目标语言',
 };

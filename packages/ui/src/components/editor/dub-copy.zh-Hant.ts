@@ -172,7 +172,6 @@ export const zhHantDub: DubMessages = {
   undone: '已還原配音',
   undonePartial:
     '已還原這組配音的片段、靜音與壓低。空的配音軌道與配音計畫文件仍留在影片中（協定沒有刪除軌道或文件的操作）。',
-  undoLabel: (language: string) => `還原配音（${language}）`,
   undoFailed: '無法還原這組配音',
   undoNotOpen: '要還原這組配音，請先開啟那部影片。',
   close: '關閉',
@@ -208,11 +207,6 @@ export const zhHantTimelineDub: TimelineDubMessages = {
   removeHint: '從配音軌道移除 · 可以還原',
   removeGroup: '移除這組配音',
   removeGroupHint: (bed: boolean) => `${bed ? '連同它的背景聲一起移除' : '移除這個語言的所有配音'} · 因它而靜音的原聲會回復`,
-  labelMute: '將配音靜音',
-  labelUnmute: '取消配音靜音',
-  labelRemove: '刪除配音',
-  labelRemoveGroup: (language: string) => `移除配音（${language}）`,
-  labelStretch: '變更配音語速',
   muted: (n: number) => `已將 ${n} 句配音靜音`,
   unmuted: (n: number) => `已取消 ${n} 句配音的靜音`,
   removed: (n: number) => `已刪除 ${n} 句配音`,
@@ -289,7 +283,6 @@ export const zhHantDubRegen: DubRegenMessages = {
   cancelled: '已取消重新生成',
   undo: '還原',
   undoMissing: '找不到這次重新生成寫入的編輯，請使用編輯器的「還原」',
-  labelRetext: '修改譯文（重新配音）',
 
   // ---- 改译文并重配 ----
   fitTitle: (n: number) => `修改譯文並為 ${n} 句重新配音`,
@@ -322,7 +315,6 @@ export const zhHantDubRegen: DubRegenMessages = {
   takeUnavailable: '這一版不在時間軸上，或找不到它的素材',
   takesNote: '每次重新生成都會記錄一個版本；切回舊版本是一筆可以還原的編輯，不會重新合成。',
   takeName: (k: number) => `第 ${k} 版`,
-  labelSwitchTake: (k: number) => `切換到配音第 ${k} 版`,
   switched: (k: number) => `已切換到第 ${k} 版`,
   regenThis: '重新生成這一句',
   unreadableFormat: '無法辨識的格式',

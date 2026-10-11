@@ -275,7 +275,6 @@ export const pl: InspectorMessages = {
   plateNote: "Ten klip ma podkład lub zaokrąglone rogi, których podgląd jeszcze nie pokazuje.",
   orderTranslationFirst: "Tłumaczenie na górze",
   orderOriginalFirst: "Oryginał na górze",
-  editCaptionStyle: "Edytuj styl napisów",
   loadingCaptionStyle: "Wczytywanie stylu napisów…",
   captionSchema: (schema: string) => `Styl napisów to ${schema}; nie można go jeszcze edytować tutaj.`,
   noSchema: "(brak schema)",

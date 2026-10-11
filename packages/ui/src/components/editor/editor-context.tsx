@@ -1,5 +1,5 @@
 import { createContext, useContext } from 'react';
-import type { EditOperation, TransactionReceipt, UndoTarget } from '@baocut/protocol';
+import type { EditOperation, Localized, TransactionReceipt, UndoTarget } from '@baocut/protocol';
 import type { PreviewEngine } from './preview-engine.ts';
 
 /**
@@ -12,8 +12,8 @@ export interface EditorActions {
   seek(seconds: number): void;
   togglePlay(): void;
   pause(): void;
-  /** 提交一笔修改。失败时错误由编辑器统一提示，这里返回 null。 */
-  apply(operations: EditOperation[], label?: string): Promise<TransactionReceipt | null>;
+  /** 提交一笔修改。修改名取自 `editLabel` 目录（带引用，读者按自己的语言显示）。失败时错误由编辑器统一提示，这里返回 null。 */
+  apply(operations: EditOperation[], label?: Localized): Promise<TransactionReceipt | null>;
   undo(target: UndoTarget): Promise<TransactionReceipt | null>;
 }
 

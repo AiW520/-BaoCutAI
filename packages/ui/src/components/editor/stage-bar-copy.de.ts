@@ -4,7 +4,6 @@ export const de: StageBarMessages = {
   bar: 'Vorschausteuerung',
   ratio: 'Seitenverhältnis',
   ratioReadOnly: 'Seitenverhältnis · das Video ist schreibgeschützt',
-  ratioChange: (ratio: string) => `Seitenverhältnis ${ratio}`,
   ratioApplied: (ratio: string) => `Seitenverhältnis auf ${ratio} geändert`,
   original: 'Original',
   originalHint: (ratio: string) => `Wie die Videodatei · ${ratio}`,

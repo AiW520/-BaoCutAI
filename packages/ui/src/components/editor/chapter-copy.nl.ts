@@ -32,7 +32,6 @@ export const nl: ChapterMessages = {
     blank: "De titel mag niet leeg zijn",
   } satisfies Record<AddChapterRefusal, string>,
 
-  labels: { add: "Hoofdstuk toevoegen", rename: "Hoofdstuk hernoemen", remove: "Hoofdstuk verwijderen", move: "Begin van hoofdstuk verplaatsen" },
   added: (title: string) => `Hoofdstuk toegevoegd: ‘${title}’`,
   renamed: (title: string) => `Hernoemd naar ‘${title}’`,
   removed: (title: string) => `Hoofdstuk verwijderd: ‘${title}’`,

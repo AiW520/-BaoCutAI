@@ -275,7 +275,6 @@ export const ru: InspectorMessages = {
   plateNote: "У этого клипа есть подложка или скруглённые углы, которые пока не отображаются в предпросмотре.",
   orderTranslationFirst: "Перевод сверху",
   orderOriginalFirst: "Оригинал сверху",
-  editCaptionStyle: "Изменить стиль субтитров",
   loadingCaptionStyle: "Загрузка стиля субтитров…",
   captionSchema: (schema: string) => `Этот стиль субтитров — ${schema}; его пока нельзя редактировать здесь.`,
   noSchema: "(нет schema)",

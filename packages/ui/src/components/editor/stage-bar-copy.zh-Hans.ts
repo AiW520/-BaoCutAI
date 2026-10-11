@@ -4,7 +4,6 @@ export const zhHans: StageBarMessages = {
   bar: '预览控件',
   ratio: '画幅',
   ratioReadOnly: '画幅 · 视频是只读的',
-  ratioChange: (ratio: string) => `画幅 ${ratio}`,
   ratioApplied: (ratio: string) => `画幅已改为 ${ratio}`,
   original: '原始',
   originalHint: (ratio: string) => `与视频文件一致 · ${ratio}`,

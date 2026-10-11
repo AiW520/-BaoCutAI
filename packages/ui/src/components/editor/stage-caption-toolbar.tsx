@@ -1,5 +1,6 @@
 import { useMemo } from 'react';
 import type { CaptionItem, Id, Sequence } from '@baocut/protocol';
+import { EditLabel } from '@baocut/protocol/messages/ui';
 import { Text, ToggleButton } from '@react-spectrum/s2';
 import { style } from '@react-spectrum/s2/style' with { type: 'macro' };
 import { STAGE_TOOLBAR_COPY as COPY } from '../../copy.ts';
@@ -20,7 +21,6 @@ import { useEditorActions } from './editor-context.tsx';
 import { EDITOR_COPY as E } from './editor-copy.ts';
 import { ToolbarFontField } from './font-field.tsx';
 import { ColorField } from './inspector-controls.tsx';
-import { INSPECTOR_COPY as IC } from './inspector-copy.ts';
 import type { View } from './stage-boxes.tsx';
 import type { FrameRect } from './stage-objects.tsx';
 import { SpacingRow, type ToolHost } from './stage-toolbar-menu.tsx';
@@ -89,7 +89,7 @@ export function StageCaptionToolbar({
   const next = (patch: Json) => (block ? editBlock(root, patch) : editLine(root, patch, kind, paired, paired));
   const live = (patch: Json) => previewCaptionStyle(record, body, next(patch));
   const commit = (patch: Json) =>
-    saveCaptionStyle(apply, { sequence, record, body, before: root, style: next(patch), label: IC.editCaptionStyle }, block || paired ? undefined : kind);
+    saveCaptionStyle(apply, { sequence, record, body, before: root, style: next(patch), label: EditLabel.editSubtitleStyle() }, block || paired ? undefined : kind);
 
   const align = shown.textAlign ?? shown.align;
   const textCase = captionCase(shown.textTransform);

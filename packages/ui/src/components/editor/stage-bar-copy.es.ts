@@ -4,7 +4,6 @@ export const es: StageBarMessages = {
   bar: 'Controles de la vista previa',
   ratio: 'Relación de aspecto',
   ratioReadOnly: 'Relación de aspecto · el vídeo es de solo lectura',
-  ratioChange: (ratio: string) => `Relación de aspecto ${ratio}`,
   ratioApplied: (ratio: string) => `Relación de aspecto cambiada a ${ratio}`,
   original: 'Original',
   originalHint: (ratio: string) => `Igual que el archivo de vídeo · ${ratio}`,

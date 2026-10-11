@@ -4,7 +4,6 @@ export const ja: StageBarMessages = {
   bar: 'プレビューのコントロール',
   ratio: 'アスペクト比',
   ratioReadOnly: 'アスペクト比 · 動画は読み取り専用です',
-  ratioChange: (ratio: string) => `アスペクト比 ${ratio}`,
   ratioApplied: (ratio: string) => `アスペクト比を ${ratio} に変更しました`,
   original: 'オリジナル',
   originalHint: (ratio: string) => `動画ファイルと同じ · ${ratio}`,

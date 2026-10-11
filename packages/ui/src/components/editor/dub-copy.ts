@@ -204,7 +204,6 @@ const dub = {
   undone: 'Voice-over undone',
   undonePartial:
     'Undid this voice-over’s clips, mutes, and ducking. The empty voice-over track and the voice-over plan document stay in the video (the protocol has no operation to delete tracks or documents).',
-  undoLabel: (language: string) => `Undo voice-over (${language})`,
   undoFailed: 'Couldn’t undo this voice-over',
   undoNotOpen: 'Open that video first to undo this voice-over.',
   close: 'Close',
@@ -261,11 +260,6 @@ const timelineDub = {
   removeGroup: 'Remove this voice-over group',
   removeGroupHint: (bed: boolean) =>
     `${bed ? 'Removes it along with its background audio' : 'Removes all voice-over in this language'} · original audio muted by it comes back`,
-  labelMute: 'Mute voice-over',
-  labelUnmute: 'Unmute voice-over',
-  labelRemove: 'Delete voice-over',
-  labelRemoveGroup: (language: string) => `Remove voice-over (${language})`,
-  labelStretch: 'Change voice-over speed',
   muted: (n: number) => `Muted ${sentences(n)} of voice-over`,
   unmuted: (n: number) => `Unmuted ${sentences(n)} of voice-over`,
   removed: (n: number) => `Deleted ${sentences(n)} of voice-over`,
@@ -347,7 +341,6 @@ const dubRegen = {
   cancelled: 'Regeneration cancelled',
   undo: 'Undo',
   undoMissing: 'Couldn’t find the edit this regeneration wrote; use the editor’s Undo',
-  labelRetext: 'Edit translation (revoice)',
 
   // ---- 改译文并重配 ----
   fitTitle: (n: number) => `Edit translation and revoice ${sentences(n)}`,
@@ -380,7 +373,6 @@ const dubRegen = {
   takeUnavailable: 'This take isn’t on the timeline, or its asset can’t be found',
   takesNote: 'Each regeneration records a take; switching back to an older take is an edit you can undo and doesn’t synthesize again.',
   takeName: (k: number) => `Take ${k}`,
-  labelSwitchTake: (k: number) => `Switch to voice-over take ${k}`,
   switched: (k: number) => `Switched to take ${k}`,
   regenThis: 'Regenerate this sentence',
   unreadableFormat: 'Unrecognized format',

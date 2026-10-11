@@ -1,6 +1,7 @@
 import { useCaptionPreferences } from '../../state/caption-preferences-store.ts';
 import { Fragment, useEffect, useMemo, useState, type ReactNode } from 'react';
 import type { DocumentRecord, Id, Sequence } from '@baocut/protocol';
+import { EditLabel } from '@baocut/protocol/messages/ui';
 import { ActionButton, ToastQueue, Tooltip, TooltipTrigger } from '@react-spectrum/s2';
 import Checkmark from '@react-spectrum/s2/icons/Checkmark';
 import Edit from '@react-spectrum/s2/icons/Edit';
@@ -243,7 +244,7 @@ export function CaptionGallery({
     if (disabled || body === undefined) return false;
     const next = applyPreset(body, preset, scope);
     if (record) useEditor.getState().setDocumentDraft({ documentId: record.id, baseRevision: record.currentRevision, body: next });
-    const receipt = await apply(captionStyleOperations(sequence, record, next), C.applyStyleLabel);
+    const receipt = await apply(captionStyleOperations(sequence, record, next), EditLabel.applySubtitleStyle());
     if (!receipt) {
       useEditor.getState().clearDrafts();
       return false;

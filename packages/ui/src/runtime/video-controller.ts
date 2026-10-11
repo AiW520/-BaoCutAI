@@ -3,9 +3,12 @@ import {
   RpcError,
   isEngineErrorBody,
   newId,
+  refOf,
   type EditOperation,
   type FileTarget,
   type Id,
+  type Localized,
+  type MessageRef,
   type VideoRef,
   type TransactionReceipt,
   type UndoTarget,
@@ -108,15 +111,18 @@ export class VideoController {
     if (video?.videoId) void this.#client.request('videos.close', { videoId: video.videoId }).catch(() => {});
   }
 
-  /** 提交一笔编辑事务。成功返回回执；失败时错误记在 store 里（界面显示），返回 null。 */
-  apply(operations: EditOperation[], label?: string): Promise<TransactionReceipt | null> {
+  /**
+   * 提交一笔编辑事务。成功返回回执；失败时错误记在 store 里（界面显示），返回 null。修改名带着目录引用一起存下
+   * （命令与协议规范 §3.1），历史与撤销提示按读者的语言显示；不给时由引擎起名。
+   */
+  apply(operations: EditOperation[], label?: Localized): Promise<TransactionReceipt | null> {
     return this.#enqueue((videoId, revision) =>
       this.#client.request('edits.apply', {
         videoId,
         commandId: newId('cmd'),
         expectedRevision: revision,
         operations,
-        ...(label ? { label } : {}),
+        ...(label ? transactionLabel(label) : {}),
       }),
     );
   }
@@ -254,6 +260,11 @@ export class VideoController {
     this.#queue = result;
     return result;
   }
+}
+
+/** `edits.apply` 的修改名字段：当前语言的文字与它的目录引用（命令与协议规范 §3.1）。 */
+export function transactionLabel(label: Localized): { label: string; labelRef: MessageRef } {
+  return { label: label.text, labelRef: refOf(label) };
 }
 
 /** 视频的定位：所在来源目录里的相对路径。 */

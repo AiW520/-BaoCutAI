@@ -60,8 +60,6 @@ export const frTranscript: TranscriptMessages = {
   undo: "Annuler",
 
   seamLabel: (seconds: number) => `Coupé ${secondsLabel(seconds)} · cliquez pour restaurer`,
-  cutLabel: "Couper dans la transcription",
-  restoreLabel: "Restaurer le contenu coupé",
   liveCopy: "Copier la partie déjà transcrite",
   liveCopied: "Partie déjà transcrite copiée · la transcription continue",
   liveSpeaker: "Reconnaissance en cours",
@@ -80,7 +78,6 @@ export const frTranscriptTools: TranscriptToolsMessages = {
 
   lockTranslation: "Les traductions sont consultables mais non modifiables ici ; Transcription modifie seulement l’original",
   lockLoading: "Une nouvelle version est encore en chargement ; remplacez après la fin",
-  replaceLabel: "Remplacer le texte de transcription",
   replaceDone: (count: number) => `Remplacé : ${count} ${pluralForm('fr', count, { one: "correspondance", other: "correspondances" })} · vidéo et audio inchangés`,
   replaceNothing: "Aucune correspondance à modifier",
 
@@ -129,7 +126,6 @@ export const frTranscriptTools: TranscriptToolsMessages = {
   noPrev: "Aucun chapitre avant ce paragraphe",
   noNext: "Aucun chapitre après ce paragraphe",
   moveBlocked: "Le déplacer viderait ce chapitre ou dépasserait le début du voisin",
-  moveLabel: "Déplacer le paragraphe au chapitre voisin",
   moved: (title: string, count: number) => (count > 1 ? `Déplacé : ${count} paragraphes vers « ${title} »` : `Déplacé vers « ${title} »`),
   cutPara: "Couper ce paragraphe",
   cutParaHint: "Coupe vidéo, audio et sous-titres ensemble ; restaurable",
@@ -138,7 +134,6 @@ export const frTranscriptTools: TranscriptToolsMessages = {
   renameChapter: "Renommer…",
   cutChapter: "Couper ce chapitre",
   cutChapterHint: "Coupe vidéo, audio et sous-titres ensemble ; chapitres suivants avancés",
-  cutChapterLabel: "Couper le chapitre",
   cutChapterRefused: {
     empty: "Ce chapitre n’a aucune durée",
     whole: "Ce chapitre est toute la vidéo ; le couper ne laisserait rien",

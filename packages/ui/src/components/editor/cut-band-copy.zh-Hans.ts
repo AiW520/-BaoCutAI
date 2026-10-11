@@ -19,7 +19,5 @@ export const zhHans: CutBandMessages = {
   tag: (seconds: number, edge: 'start' | 'end', word: string | null) =>
     `−${secondsLabel(seconds)}${word ? (edge === 'start' ? ` · 从「${word.trim()}」起` : ` · 到「${word.trim()}」止`) : ''}`,
   tagRestore: '松手恢复',
-  /** 编辑事务的名字。 */
-  retimeLabel: '改剪切范围',
   retimed: (before: number, after: number) => `已改剪切范围 · ${secondsLabel(before)} → ${secondsLabel(after)}`,
 };

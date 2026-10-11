@@ -23,8 +23,6 @@ const en = {
   bar: 'Preview controls',
   ratio: 'Aspect ratio',
   ratioReadOnly: 'Aspect ratio · the video is read-only',
-  /** 撤销记录里的名字。 */
-  ratioChange: (ratio: string) => `Aspect ratio ${ratio}`,
   /** 自定义画幅应用之后的提示。 */
   ratioApplied: (ratio: string) => `Aspect ratio changed to ${ratio}`,
   original: 'Original',

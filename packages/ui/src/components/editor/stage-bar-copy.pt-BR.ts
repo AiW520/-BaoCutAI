@@ -4,7 +4,6 @@ export const ptBR: StageBarMessages = {
   bar: 'Controles da prévia',
   ratio: 'Proporção',
   ratioReadOnly: 'Proporção · o vídeo é somente leitura',
-  ratioChange: (ratio: string) => `Proporção ${ratio}`,
   ratioApplied: (ratio: string) => `Proporção alterada para ${ratio}`,
   original: 'Original',
   originalHint: (ratio: string) => `Igual ao arquivo de vídeo · ${ratio}`,

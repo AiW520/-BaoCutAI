@@ -45,8 +45,6 @@ const en = {
     beyond: 'The playhead is at the end; a chapter can’t be added here',
     blank: 'The title can’t be blank',
   } satisfies Record<AddChapterRefusal, string>,
-  /** 编辑事务的名字（撤销按钮上「撤销「…」」）。 */
-  labels: { add: 'Add chapter', rename: 'Rename chapter', remove: 'Delete chapter', move: 'Move chapter start' },
   added: (title: string) => `Added chapter “${title}”`,
   renamed: (title: string) => `Renamed to “${title}”`,
   removed: (title: string) => `Deleted chapter “${title}”`,

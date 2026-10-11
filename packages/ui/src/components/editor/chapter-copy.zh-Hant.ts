@@ -26,7 +26,6 @@ export const zhHant: ChapterMessages = {
     beyond: '播放頭位於結尾，無法在這裡新增章節',
     blank: '標題不能空白',
   },
-  labels: { add: '新增章節', rename: '重新命名章節', remove: '刪除章節', move: '移動章節開頭' },
   added: (title: string) => `已新增章節「${title}」`,
   renamed: (title: string) => `已重新命名為「${title}」`,
   removed: (title: string) => `已刪除章節「${title}」`,

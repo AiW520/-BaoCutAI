@@ -31,7 +31,6 @@ export const ru: ChapterMessages = {
     blank: "Заголовок не может быть пустым",
   },
 
-  labels: { add: "Добавить главу", rename: "Переименовать главу", remove: "Удалить главу", move: "Переместить начало главы" },
   added: (title: string) => `Добавлена глава «${title}»`,
   renamed: (title: string) => `Переименовано в «${title}»`,
   removed: (title: string) => `Удалена глава «${title}»`,

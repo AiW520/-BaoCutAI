@@ -34,8 +34,6 @@ const en = {
   tag: (seconds: number, edge: 'start' | 'end', word: string | null) =>
     `−${secondsLabel(seconds)}${word ? (edge === 'start' ? ` · from “${word.trim()}”` : ` · to “${word.trim()}”`) : ''}`,
   tagRestore: 'Release to restore',
-  /** 编辑事务的名字。 */
-  retimeLabel: 'Change cut range',
   retimed: (before: number, after: number) => `Changed cut range · ${secondsLabel(before)} → ${secondsLabel(after)}`,
 };
 

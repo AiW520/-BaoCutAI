@@ -5,11 +5,6 @@ export const de: RuntimeMessages = {
   mediaStatus: (status: number) => `Der Mediendienst hat zurückgegeben: ${status}`,
   noRootSequence: "Das neue Video hat keine Hauptsequenz",
 
-  edit: {
-    importAssets: "Material importieren",
-    setBackground: "Hintergrund festlegen",
-    addWaveform: "Wellenform hinzufügen",
-  },
 
   waveformName: "Wellenform",
   noDuration: "Das Video hat noch keine Länge; die Wellenform wurde daher nicht hinzugefügt",

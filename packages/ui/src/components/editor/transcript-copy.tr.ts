@@ -59,8 +59,6 @@ export const trTranscript: TranscriptMessages = {
 
   // 时间线剪口
   seamLabel: (seconds) => `${secondsLabel(seconds)} kesildi · geri yüklemek için tıklayın`,
-  cutLabel: "Dökümde kes",
-  restoreLabel: "Kesilen içeriği geri yükle",
   liveCopy: "Şimdiye kadar dökülen kısmı kopyala",
   liveCopied: "Şimdiye kadar dökülen kısım kopyalandı · yazıya dökme sürüyor",
   liveSpeaker: "Tanınıyor",
@@ -78,7 +76,6 @@ export const trTranscriptTools: TranscriptToolsMessages = {
 
   lockTranslation: "Çeviriler aranabilir ancak burada düzenlenemez; Döküm paneli yalnızca kaynağı düzenler",
   lockLoading: "Dökümün yeni sürümü hâlâ yükleniyor; bitince değiştirin",
-  replaceLabel: "Döküm metnini değiştir",
   replaceDone: (count) => `${count} eşleşme değiştirildi · video ve ses değişmedi`,
   replaceNothing: "Değiştirilecek eşleşme yok",
 
@@ -130,7 +127,6 @@ export const trTranscriptTools: TranscriptToolsMessages = {
   noPrev: "Bu paragraftan önce bölüm yok",
   noNext: "Bu paragraftan sonra bölüm yok",
   moveBlocked: "Taşımak bu bölümü boş bırakır veya komşu bölümün başlangıcını aşar",
-  moveLabel: "Paragrafı komşu bölüme taşı",
   moved: (title, count) => count > 1 ? `${count} paragraf “${title}” bölümüne taşındı` : `“${title}” bölümüne taşındı`,
   cutPara: "Bu paragrafı kes",
   cutParaHint: "Video, ses ve altyazıyı birlikte keser; geri yüklenebilir",
@@ -140,7 +136,6 @@ export const trTranscriptTools: TranscriptToolsMessages = {
   renameChapter: "Yeniden adlandır…",
   cutChapter: "Bu bölümü kes",
   cutChapterHint: "Video, ses ve altyazıyı birlikte keser; sonraki bölümler erkene gelir",
-  cutChapterLabel: "Bölümü kes",
   cutChapterRefused: {
     empty: "Bu bölümün süresi yok",
     whole: "Bu bölüm tüm videodur; kesmek hiçbir şey bırakmaz",

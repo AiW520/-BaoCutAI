@@ -272,7 +272,6 @@ export const de: InspectorMessages = {
   plateNote: "Dieser Clip hat eine Hintergrundfläche oder abgerundete Ecken, die die Vorschau noch nicht zeigt.",
   orderTranslationFirst: "Übersetzung oben",
   orderOriginalFirst: "Original oben",
-  editCaptionStyle: "Untertitelstil bearbeiten",
   loadingCaptionStyle: "Untertitelstil wird geladen…",
   captionSchema: (schema: string) => `Dieser Untertitelstil ist ${schema} und kann hier noch nicht bearbeitet werden.`,
   noSchema: "(kein schema)",

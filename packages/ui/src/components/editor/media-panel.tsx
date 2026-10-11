@@ -1,6 +1,7 @@
 import { useEffect, useState, type DragEvent, type ReactNode } from 'react';
 import type { AssetRecord, Id, Sequence } from '@baocut/protocol';
 import { mediaTimeToSeconds } from '@baocut/protocol';
+import { EditLabel } from '@baocut/protocol/messages/ui';
 import { ActionButton, Button, Link, Tab, TabList, TabPanel, Tabs, Text, ToastQueue, Tooltip, TooltipTrigger } from '@react-spectrum/s2';
 import Add from '@react-spectrum/s2/icons/Add';
 import AIMark from '@react-spectrum/s2/icons/AIMark';
@@ -181,7 +182,7 @@ export function MediaPanel({ kind, sequence, assets }: { kind: PlaceableKind; se
     if (!paths.length) return;
     const receipt = await apply(
       paths.map((path) => ({ type: 'importAsset', path })),
-      MC.importLabel,
+      EditLabel.importAssets(),
     );
     if (receipt) ToastQueue.positive(MC.imported, { timeout: 4000 });
   };
@@ -196,7 +197,7 @@ export function MediaPanel({ kind, sequence, assets }: { kind: PlaceableKind; se
 
   const addToTimeline = (asset: AssetRecord & { kind: PlaceableKind }) => {
     const frame = frameAt(useEditor.getState().playhead, sequence.fps);
-    void apply(placeAsset(sequence, asset, frame), MC.addClip);
+    void apply(placeAsset(sequence, asset, frame), EditLabel.addClip());
   };
 
   if (ai && kind === 'audio' && gen.audio) {

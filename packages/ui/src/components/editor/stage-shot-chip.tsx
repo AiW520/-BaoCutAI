@@ -1,5 +1,6 @@
 import { useLayoutEffect, useRef, useState } from 'react';
 import type { Sequence } from '@baocut/protocol';
+import { EditLabel } from '@baocut/protocol/messages/ui';
 import { ActionButton, ToastQueue, Tooltip, TooltipTrigger } from '@react-spectrum/s2';
 import { style } from '@react-spectrum/s2/style' with { type: 'macro' };
 import { STAGE_COPY } from '../../copy.ts';
@@ -92,7 +93,7 @@ export function StageShotChip({ item, sequence, frame }: { item: PannableVideo; 
     const operations = applyFramingToAll(sequence.id, item, pieces);
     const done = () => ToastQueue.positive(STAGE_COPY.appliedAll(pieces.length), { timeout: 5000 });
     if (!operations.length) return done();
-    void apply(operations, STAGE_COPY.applyAll).then((receipt) => {
+    void apply(operations, EditLabel.applyFramingToAll()).then((receipt) => {
       if (!receipt) return;
       ToastQueue.positive(STAGE_COPY.appliedAll(pieces.length), {
         timeout: 5000,

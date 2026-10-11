@@ -19,6 +19,5 @@ export const pl: CutBandMessages = {
   tag: (seconds: number, edge: 'start' | 'end', word: string | null) => `−${secondsLabel(seconds)}${word ? (edge === "start" ? ` · od „${word.trim()}”` : ` · do „${word.trim()}”`) : ""}`,
   tagRestore: "Puść, aby przywrócić",
 
-  retimeLabel: "Zmień wycięty zakres",
   retimed: (before: number, after: number) => `Zmieniono zakres cięcia · ${secondsLabel(before)} → ${secondsLabel(after)}`,
 };

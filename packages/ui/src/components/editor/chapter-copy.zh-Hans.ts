@@ -29,8 +29,6 @@ export const zhHans: ChapterMessages = {
     beyond: '播放头在片尾，这里加不了章节',
     blank: '标题不能是空白',
   },
-  /** 编辑事务的名字（撤销按钮上「撤销「…」」）。 */
-  labels: { add: '加章节', rename: '改章节标题', remove: '删除章节', move: '移动章节起点' },
   added: (title: string) => `已加章节「${title}」`,
   renamed: (title: string) => `已改名为「${title}」`,
   removed: (title: string) => `已删除章节「${title}」`,

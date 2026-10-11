@@ -14,6 +14,5 @@ export const ko: CutBandMessages = {
   tag: (seconds: number, edge: 'start' | 'end', word: string | null) =>
     `−${secondsLabel(seconds)}${word ? (edge === 'start' ? ` · “${word.trim()}”부터` : ` · “${word.trim()}”까지`) : ''}`,
   tagRestore: '놓으면 복원',
-  retimeLabel: '컷 범위 변경',
   retimed: (before: number, after: number) => `컷 범위 변경 · ${secondsLabel(before)} → ${secondsLabel(after)}`,
 };

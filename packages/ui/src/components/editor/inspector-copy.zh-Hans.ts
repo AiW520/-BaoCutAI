@@ -272,7 +272,6 @@ export const zhHans: InspectorMessages = {
   plateNote: '这个片段带着衬底或圆角，预览暂不体现。',
   orderTranslationFirst: '译文在上',
   orderOriginalFirst: '原文在上',
-  editCaptionStyle: '修改字幕样式',
   loadingCaptionStyle: '正在读取字幕样式…',
   captionSchema: (schema: string) => `这份字幕样式是 ${schema}，属性页还不能改。`,
   noSchema: '（没有 schema）',

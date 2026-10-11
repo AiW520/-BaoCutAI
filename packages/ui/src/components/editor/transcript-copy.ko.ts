@@ -60,8 +60,6 @@ export const koTranscript: TranscriptMessages = {
 
   // 时间线剪口
   seamLabel: (seconds: number) => `${secondsLabel(seconds)} 잘라냄 · 클릭해 복원`,
-  cutLabel: '전사본에서 잘라내기',
-  restoreLabel: '잘라낸 내용 복원',
   liveCopy: '지금까지 전사된 부분 복사',
   liveCopied: '지금까지 전사된 부분을 복사했습니다 · 전사가 계속 진행 중입니다',
   liveSpeaker: '인식 중',
@@ -78,7 +76,6 @@ export const koTranscriptTools: TranscriptToolsMessages = {
   findPlaceholder: '전사본에서 찾기',
   lockTranslation: '번역은 여기서 검색만 할 수 있고 편집할 수 없습니다. 전사본 패널은 원문만 편집합니다',
   lockLoading: '이 전사본의 새 버전을 아직 불러오는 중입니다. 다 불러온 뒤에 바꾸세요',
-  replaceLabel: '전사본 텍스트 바꾸기',
   replaceDone: (count: number) => `일치 항목 ${count}개를 바꿨습니다 · 영상과 오디오는 그대로`,
   replaceNothing: '바꿀 일치 항목이 없습니다',
 
@@ -129,7 +126,6 @@ export const koTranscriptTools: TranscriptToolsMessages = {
   noPrev: '이 단락 앞에는 챕터가 없습니다',
   noNext: '이 단락 뒤에는 챕터가 없습니다',
   moveBlocked: '옮기면 이 챕터가 비거나 인접 챕터의 시작점을 넘어갑니다',
-  moveLabel: '단락을 인접 챕터로 이동',
   moved: (title: string, count: number) => (count > 1 ? `단락 ${count}개를 “${title}” 챕터로 옮겼습니다` : `“${title}” 챕터로 옮겼습니다`),
   cutPara: '이 단락 잘라내기',
   cutParaHint: '영상, 오디오, 자막을 함께 잘라내며 복원할 수 있습니다',
@@ -139,7 +135,6 @@ export const koTranscriptTools: TranscriptToolsMessages = {
   renameChapter: '이름 변경…',
   cutChapter: '이 챕터 잘라내기',
   cutChapterHint: '영상, 오디오, 자막을 함께 잘라내며 뒤쪽 챕터가 앞으로 당겨집니다',
-  cutChapterLabel: '챕터 잘라내기',
   cutChapterRefused: {
     empty: '이 챕터는 길이가 없습니다',
     whole: '이 챕터가 영상 전체라서 잘라내면 아무것도 남지 않습니다',

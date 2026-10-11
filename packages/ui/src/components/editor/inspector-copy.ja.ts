@@ -272,7 +272,6 @@ export const ja: InspectorMessages = {
   plateNote: 'このクリップには背景プレートか角の丸みがありますが、プレビューにはまだ反映されません。',
   orderTranslationFirst: '翻訳を上に',
   orderOriginalFirst: '原文を上に',
-  editCaptionStyle: '字幕スタイルを編集',
   loadingCaptionStyle: '字幕スタイルを読み込み中…',
   captionSchema: (schema: string) => `この字幕スタイルは ${schema} のため、まだここでは編集できません。`,
   noSchema: '（schema なし）',

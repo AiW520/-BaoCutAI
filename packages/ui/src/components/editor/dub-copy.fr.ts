@@ -177,7 +177,6 @@ export const frDub: DubMessages = {
   undone: "Doublage annulé",
   undonePartial:
     "Clips, mises en sourdine et atténuations du doublage annulés. La piste vide et le document du plan restent dans la vidéo (aucune opération de suppression de piste ou document dans le protocole).",
-  undoLabel: (language: string) => `Annuler le doublage (${language})`,
   undoFailed: "Impossible d’annuler ce doublage",
   undoNotOpen: "Ouvrez d’abord cette vidéo pour annuler le doublage.",
   close: "Fermer",
@@ -217,11 +216,6 @@ export const frTimelineDub: TimelineDubMessages = {
   removeGroup: "Retirer ce groupe de doublage",
   removeGroupHint: (bed: boolean) =>
     `${bed ? "Retire aussi son fond sonore" : "Retire tout le doublage dans cette langue"} · l’audio original qu’il avait coupé revient`,
-  labelMute: "Couper le son du doublage",
-  labelUnmute: "Rétablir le son du doublage",
-  labelRemove: "Supprimer le doublage",
-  labelRemoveGroup: (language: string) => `Retirer le doublage (${language})`,
-  labelStretch: "Changer la vitesse du doublage",
   muted: (n: number) => `Son coupé pour ${sentences(n)} de doublage`,
   unmuted: (n: number) => `Son rétabli pour ${sentences(n)} de doublage`,
   removed: (n: number) => `Supprimé : ${sentences(n)} de doublage`,
@@ -296,7 +290,6 @@ export const frDubRegen: DubRegenMessages = {
   cancelled: "Régénération annulée",
   undo: "Annuler",
   undoMissing: "Modification de cette régénération introuvable ; utilisez Annuler dans l’éditeur",
-  labelRetext: "Modifier la traduction (redoubler)",
 
   fitTitle: (n: number) => `Modifier la traduction et redoubler ${sentences(n)}`,
   fitIntro:
@@ -327,7 +320,6 @@ export const frDubRegen: DubRegenMessages = {
   takeUnavailable: "Cette prise n’est pas sur la timeline ou son média est introuvable",
   takesNote: "Chaque régénération enregistre une prise ; revenir à une ancienne est annulable et ne relance pas la synthèse.",
   takeName: (k: number) => `Prise ${k}`,
-  labelSwitchTake: (k: number) => `Passer à la prise de doublage ${k}`,
   switched: (k: number) => `Passé à la prise ${k}`,
   regenThis: "Régénérer cette phrase",
   unreadableFormat: "Format non reconnu",

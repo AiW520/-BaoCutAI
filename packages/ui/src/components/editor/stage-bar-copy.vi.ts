@@ -4,7 +4,6 @@ export const vi: StageBarMessages = {
   bar: 'Điều khiển bản xem trước',
   ratio: 'Tỷ lệ khung hình',
   ratioReadOnly: 'Tỷ lệ khung hình · video chỉ đọc',
-  ratioChange: (ratio: string) => `Tỷ lệ khung hình ${ratio}`,
   ratioApplied: (ratio: string) => `Đã đổi tỷ lệ khung hình thành ${ratio}`,
   original: 'Gốc',
   originalHint: (ratio: string) => `Giống tệp video · ${ratio}`,

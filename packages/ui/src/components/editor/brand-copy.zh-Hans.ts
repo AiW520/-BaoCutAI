@@ -71,7 +71,6 @@ export const zhHans: BrandMessages = {
   copiedNotPlaced: (name: string) => `已拷进素材库，还没放到时间线上：${name}`,
   elementsTrack: '元素',
   copiedNotPlaceable: (name: string) => `已拷进素材库，这类文件不能直接放到时间线上：${name}`,
-  addLabel: (name: string) => `添加${name}`,
   placedAtPlayhead: (name: string) => `已放到时间线 · 播放头处：${name}`,
   newBrandColor: '新建品牌色',
   namePlaceholder: '例如：主色',

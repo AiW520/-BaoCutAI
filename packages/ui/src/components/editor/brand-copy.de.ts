@@ -71,7 +71,6 @@ export const de: BrandMessages = {
   copiedNotPlaced: (name: string) => `In Materialien kopiert, noch nicht in der Zeitleiste platziert: ${name}`,
   elementsTrack: "Elemente",
   copiedNotPlaceable: (name: string) => `In Materialien kopiert; dieser Dateityp kann nicht direkt in die Zeitleiste: ${name}`,
-  addLabel: (name: string) => `Hinzufügen: ${name}`,
   placedAtPlayhead: (name: string) => `Am Abspielkopf in die Zeitleiste eingefügt: ${name}`,
   newBrandColor: "Neue Markenfarbe",
   namePlaceholder: "z. B. Primär",

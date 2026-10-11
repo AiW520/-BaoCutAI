@@ -4,7 +4,6 @@ export const nl: StageBarMessages = {
   bar: 'Voorvertoningsbediening',
   ratio: 'Beeldverhouding',
   ratioReadOnly: 'Beeldverhouding · de video is alleen-lezen',
-  ratioChange: (ratio: string) => `Beeldverhouding ${ratio}`,
   ratioApplied: (ratio: string) => `Beeldverhouding gewijzigd in ${ratio}`,
   original: 'Origineel',
   originalHint: (ratio: string) => `Gelijk aan het videobestand · ${ratio}`,

@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState, type KeyboardEvent, type MouseEvent, type PointerEvent, type ReactNode } from 'react';
-import type { CaptionItem, DocumentRecord, Id, Place, Revision, Sequence, SequenceItem } from '@baocut/protocol';
+import type { CaptionItem, DocumentRecord, Id, Localized, Place, Revision, Sequence, SequenceItem } from '@baocut/protocol';
+import { EditLabel } from '@baocut/protocol/messages/ui';
 import { style } from '@react-spectrum/s2/style' with { type: 'macro' };
 import { STAGE_COPY } from '../../copy.ts';
 import { captionKind } from '../../model/caption-tracks.ts';
@@ -97,14 +98,15 @@ export interface FrameRect {
   height: number;
 }
 
-const LABEL: Record<Gesture['kind'], string> = {
-  move: STAGE_COPY.move,
-  edge: STAGE_COPY.resize,
-  corner: STAGE_COPY.scale,
-  rotate: STAGE_COPY.rotate,
-  pan: STAGE_COPY.pan,
-  'group-move': STAGE_COPY.groupMove,
-  'group-scale': STAGE_COPY.groupScale,
+/** 每种拖动提交时的修改名；提交时才生成，跟着当时的语言。 */
+const LABEL: Record<Gesture['kind'], () => Localized> = {
+  move: EditLabel.move,
+  edge: EditLabel.resize,
+  corner: EditLabel.scale,
+  rotate: EditLabel.rotate,
+  pan: EditLabel.reframe,
+  'group-move': EditLabel.groupMove,
+  'group-scale': EditLabel.groupScale,
 };
 
 /**
@@ -341,7 +343,7 @@ export function StageObjects({ sequence, frame }: { sequence: Sequence; frame: F
     if (!operations.length) return discard(gesture);
     show(gesture, result, false);
     if ('members' in gesture) setOverride((o) => (o ? { ...o, until: seq.revision } : o));
-    void apply(operations, LABEL[gesture.kind]).then((receipt) => {
+    void apply(operations, LABEL[gesture.kind]()).then((receipt) => {
       if (!receipt) discard(gesture);
     });
   };
@@ -403,7 +405,7 @@ export function StageObjects({ sequence, frame }: { sequence: Sequence; frame: F
     if (result.x === drag.move.x0 && result.y === drag.move.y0) return useEditor.getState().clearDrafts();
     const { record, body, root } = drag;
     const before = drag.remember ? root : null;
-    saveCaptionStyle(apply, { sequence: latest.current, record, body, before, style: drag.restyle(result), label: STAGE_COPY.move });
+    saveCaptionStyle(apply, { sequence: latest.current, record, body, before, style: drag.restyle(result), label: EditLabel.move() });
   };
 
   const finishMarquee = (p: Press, clientX: number, clientY: number, additive: boolean) => {
@@ -612,7 +614,7 @@ export function StageObjects({ sequence, frame }: { sequence: Sequence; frame: F
       const item = byId.get(rotateEl.dataset.rotate ?? '');
       if (item && isPlaced(item) && changeable(item)) {
         const operations = resetRotation(seq.id, item);
-        if (operations.length) void apply(operations, STAGE_COPY.rotateReset);
+        if (operations.length) void apply(operations, EditLabel.resetRotation());
       }
       return;
     }
@@ -638,7 +640,7 @@ export function StageObjects({ sequence, frame }: { sequence: Sequence; frame: F
     // 新字先画上，不等回执（否则提交往返的这一下画面上是空的）。
     const seq = latest.current;
     paintSequence({ ...seq, items: seq.items.map((item) => (item.id === id && item.type === 'text' ? { ...item, text } : item)) });
-    void apply([{ type: 'setText', sequenceId: latest.current.id, itemId: id, text }], STAGE_COPY.textEditor).then((receipt) => {
+    void apply([{ type: 'setText', sequenceId: latest.current.id, itemId: id, text }], EditLabel.editText()).then((receipt) => {
       if (!receipt) restore();
     });
   };
@@ -670,7 +672,7 @@ export function StageObjects({ sequence, frame }: { sequence: Sequence; frame: F
       pending.at.set(operation.itemId, { ...from, x: operation.x ?? from.x, y: operation.y ?? from.y });
     }
     pending.inflight += 1;
-    void apply(operations, STAGE_COPY.nudge).finally(() => {
+    void apply(operations, EditLabel.nudgePosition()).finally(() => {
       pending.inflight -= 1;
       if (!pending.inflight) pending.at.clear();
     });

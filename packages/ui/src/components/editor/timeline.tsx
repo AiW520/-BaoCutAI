@@ -9,8 +9,9 @@ import {
   type PointerEvent as ReactPointerEvent,
   type ReactNode,
 } from 'react';
-import type { AssetRecord, AudioItem, DocumentRecord, Id, Sequence, SequenceItem, Track } from '@baocut/protocol';
+import type { AssetRecord, AudioItem, DocumentRecord, Id, Localized, Sequence, SequenceItem, Track } from '@baocut/protocol';
 import { mediaTimeToSeconds } from '@baocut/protocol';
+import { EditLabel } from '@baocut/protocol/messages/ui';
 import { ActionButton, ToastQueue, Tooltip, TooltipTrigger } from '@react-spectrum/s2';
 import Animation from '@react-spectrum/s2/icons/Animation';
 import AudioWave from '@react-spectrum/s2/icons/AudioWave';
@@ -795,7 +796,7 @@ export function Timeline({
     if (done.kind === 'stretch') {
       const item = items.get(done.itemId);
       if (item?.type === 'audio' && done.stretch && stretchChanged(item, done.stretch)) {
-        void apply([{ type: 'setSpeed', sequenceId: sequence.id, itemId: item.id, rate: done.stretch.rate }], DUB_COPY.labelStretch);
+        void apply([{ type: 'setSpeed', sequenceId: sequence.id, itemId: item.id, rate: done.stretch.rate }], EditLabel.stretchDub());
       }
       return;
     }
@@ -812,7 +813,7 @@ export function Timeline({
             position: trackPlacement(track.kind, done.target.position),
           },
         ],
-        E.moveTrack,
+        EditLabel.moveTrack(),
       );
       return;
     }
@@ -824,7 +825,7 @@ export function Timeline({
         deltaFrames: done.deltaFrames,
         trackId: done.trackId,
       });
-      if (operation) void apply([operation], done.itemIds.length > 1 ? E.moveClips : undefined);
+      if (operation) void apply([operation], done.itemIds.length > 1 ? EditLabel.moveClips() : undefined);
       return;
     }
     const item = items.get(done.itemId);
@@ -900,7 +901,7 @@ export function Timeline({
     const assetId = event.dataTransfer.getData(ASSET_DRAG_TYPE);
     if (assetId) {
       const asset = assets[assetId];
-      if (asset && isPlaceable(asset)) void apply(placeAsset(sequence, asset, frame, track.id), E.addClip);
+      if (asset && isPlaceable(asset)) void apply(placeAsset(sequence, asset, frame, track.id), EditLabel.addClip());
       return;
     }
     const files = [...event.dataTransfer.files]
@@ -911,7 +912,7 @@ export function Timeline({
       const kind = kindOfFileName(file.name);
       return { path: file.path, kind: kind === 'video-file' ? ('video' as const) : kind === 'audio' || kind === 'image' ? kind : null };
     });
-    void apply(importAndPlace(sequence, kinds, frame, track.id), E.importAndAdd);
+    void apply(importAndPlace(sequence, kinds, frame, track.id), EditLabel.importAndAdd());
   };
 
   // ---- 播放头：点刻度尺定位，按住拖动 ----
@@ -1426,7 +1427,7 @@ function TrackHeader({
   onDragStart(event: ReactPointerEvent<HTMLDivElement>): void;
 }) {
   const { apply } = useEditorActions();
-  const update = (patch: { visible?: boolean; muted?: boolean; locked?: boolean }, what: string) =>
+  const update = (patch: { visible?: boolean; muted?: boolean; locked?: boolean }, what: Localized) =>
     void apply([{ type: 'updateTrack', sequenceId, trackId: track.id, ...patch }], what);
   const off = track.kind === 'audio' ? track.muted : !track.visible;
   const Icon = icon ?? TRACK_ICON[track.kind];
@@ -1453,7 +1454,7 @@ function TrackHeader({
           <HeaderToggle
             label={track.visible ? E.hideTrack(label) : E.showTrack(label)}
             isDisabled={!editable}
-            onPress={() => update({ visible: !track.visible }, track.visible ? E.hideTrackLabel : E.showTrackLabel)}>
+            onPress={() => update({ visible: !track.visible }, track.visible ? EditLabel.hideTrack() : EditLabel.showTrack())}>
             {track.visible ? <Visibility /> : <VisibilityOff />}
           </HeaderToggle>
         ) : null}
@@ -1461,14 +1462,14 @@ function TrackHeader({
           <HeaderToggle
             label={track.muted ? E.unmuteTrack(label) : E.muteTrack(label)}
             isDisabled={!editable}
-            onPress={() => update({ muted: !track.muted }, track.muted ? E.unmuteTrackLabel : E.muteTrackLabel)}>
+            onPress={() => update({ muted: !track.muted }, track.muted ? EditLabel.unmuteTrack() : EditLabel.muteTrack())}>
             {track.muted ? <VolumeOff /> : <VolumeTwo />}
           </HeaderToggle>
         ) : null}
         <HeaderToggle
           label={track.locked ? E.unlockTrack(label) : E.lockTrack(label)}
           isDisabled={!editable}
-          onPress={() => update({ locked: !track.locked }, track.locked ? E.unlockTrackLabel : E.lockTrackLabel)}>
+          onPress={() => update({ locked: !track.locked }, track.locked ? EditLabel.unlockTrack() : EditLabel.lockTrack())}>
           {track.locked ? <Lock /> : <LockOpen />}
         </HeaderToggle>
         {menu}

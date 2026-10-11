@@ -31,7 +31,6 @@ export const pl: ChapterMessages = {
     blank: "Tytuł nie może być pusty",
   },
 
-  labels: { add: "Dodaj rozdział", rename: "Zmień nazwę rozdziału", remove: "Usuń rozdział", move: "Przesuń początek rozdziału" },
   added: (title: string) => `Dodano rozdział „${title}”`,
   renamed: (title: string) => `Zmieniono nazwę na „${title}”`,
   removed: (title: string) => `Usunięto rozdział „${title}”`,

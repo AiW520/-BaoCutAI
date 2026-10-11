@@ -4,7 +4,6 @@ export const pl: StageBarMessages = {
   bar: 'Sterowanie podglądem',
   ratio: 'Proporcje',
   ratioReadOnly: 'Proporcje · wideo jest tylko do odczytu',
-  ratioChange: (ratio: string) => `Proporcje ${ratio}`,
   ratioApplied: (ratio: string) => `Zmieniono proporcje na ${ratio}`,
   original: 'Oryginalne',
   originalHint: (ratio: string) => `Jak w pliku wideo · ${ratio}`,

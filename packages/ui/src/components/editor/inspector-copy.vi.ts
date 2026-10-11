@@ -272,7 +272,6 @@ export const vi: InspectorMessages = {
   plateNote: "Clip này có nền lót hoặc góc bo mà xem trước chưa hiện.",
   orderTranslationFirst: "Bản dịch ở trên",
   orderOriginalFirst: "Bản gốc ở trên",
-  editCaptionStyle: "Chỉnh sửa kiểu phụ đề",
   loadingCaptionStyle: "Đang tải kiểu phụ đề…",
   captionSchema: (schema) => `Kiểu phụ đề này là ${schema}; chưa sửa được tại đây.`,
   noSchema: "(không có schema)",

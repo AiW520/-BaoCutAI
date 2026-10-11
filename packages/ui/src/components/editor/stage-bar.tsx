@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState, type ReactElement, type RefObject } from 'react';
-import type { AssetRecord, Id, Sequence } from '@baocut/protocol';
+import type { AssetRecord, Id, Localized, Sequence } from '@baocut/protocol';
+import { EditLabel } from '@baocut/protocol/messages/ui';
 import {
   ActionButton,
   Button,
@@ -175,14 +176,14 @@ function RatioPicker({ sequence, assets }: { sequence: Sequence; assets: Record<
   const text = ratioText(canvas);
   const portrait = isPortrait(canvas);
 
-  const change = (next: { width: number; height: number }, label: string) =>
-    apply([{ type: 'updateSequence', sequenceId: sequence.id, canvas: next }], S.ratioChange(label));
+  const change = (next: { width: number; height: number }, ratio: string | Localized) =>
+    apply([{ type: 'updateSequence', sequenceId: sequence.id, canvas: next }], EditLabel.aspectRatio({ ratio }));
   const run = (key: string) => {
     if (key === 'custom') return setCustom(true);
     if (key === 'safe') return setSafeArea(!safeArea);
     const next = stageRatioCanvas(canvas, key, original);
     if (!next || (next.width === canvas.width && next.height === canvas.height)) return;
-    void change(next, key === ORIGINAL_RATIO ? S.original : key);
+    void change(next, key === ORIGINAL_RATIO ? EditLabel.originalRatio() : key);
   };
   const ratioKeys = [ORIGINAL_RATIO, ...STAGE_RATIOS.map((r) => r.key)];
   const disabled = [...(editable ? [] : [...ratioKeys, 'custom']), ...(original ? [] : [ORIGINAL_RATIO]), ...(portrait ? [] : ['safe'])];

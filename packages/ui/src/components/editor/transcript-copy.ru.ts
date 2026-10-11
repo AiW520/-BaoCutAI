@@ -58,8 +58,6 @@ export const ruTranscript: TranscriptMessages = {
   undo: "Отменить",
 
   seamLabel: (seconds: number) => `Вырезание ${secondsLabel(seconds)} · нажмите для восстановления`,
-  cutLabel: "Вырезать в расшифровке",
-  restoreLabel: "Восстановить вырезанное",
   liveCopy: "Копировать уже расшифрованное",
   liveCopied: "Уже расшифрованное скопировано · расшифровка продолжается",
   liveSpeaker: "Распознаётся",
@@ -78,7 +76,6 @@ export const ruTranscriptTools: TranscriptToolsMessages = {
 
   lockTranslation: "Здесь можно искать переводы, но не менять — панель «Расшифровка» меняет только оригинал",
   lockLoading: "Новая версия расшифровки загружается; замените после завершения",
-  replaceLabel: "Заменить текст расшифровки",
   replaceDone: (count: number) => `Заменено: ${count} ${pluralForm('ru', count, { one: "совпадение", few: "совпадения", many: "совпадений", other: "совпадения" })} · видео и аудио не изменены`,
   replaceNothing: "Нет совпадений для замены",
 
@@ -127,7 +124,6 @@ export const ruTranscriptTools: TranscriptToolsMessages = {
   noPrev: "Перед абзацем нет главы",
   noNext: "После абзаца нет главы",
   moveBlocked: "Перемещение опустошит главу или пересечёт начало соседней",
-  moveLabel: "Переместить абзац в соседнюю главу",
   moved: (title: string, count: number) => (count > 1 ? `Перемещено: ${count} абзацев в «${title}»` : `Перемещено в «${title}»`),
   cutPara: "Вырезать абзац",
   cutParaHint: "Вырезает видео, аудио и субтитры вместе; можно восстановить",
@@ -136,7 +132,6 @@ export const ruTranscriptTools: TranscriptToolsMessages = {
   renameChapter: "Переименовать…",
   cutChapter: "Вырезать главу",
   cutChapterHint: "Вырезает видео, аудио и субтитры вместе; следующие главы сдвигаются вперёд",
-  cutChapterLabel: "Вырезать главу",
   cutChapterRefused: {
     empty: "У главы нет длительности",
     whole: "Глава занимает всё видео; вырезание ничего не оставит",

@@ -1,4 +1,5 @@
 import type { AudioItem, DubPlanTake, Id } from '@baocut/protocol';
+import { EditLabel } from '@baocut/protocol/messages/ui';
 import { ActionButton, Badge, Text, ToastQueue } from '@react-spectrum/s2';
 import Refresh from '@react-spectrum/s2/icons/Refresh';
 import { style } from '@react-spectrum/s2/style' with { type: 'macro' };
@@ -49,7 +50,7 @@ function DubTakes({ item, sequence, assets, canChange, groupId, unitId }: ItemPa
   const use = async (take: DubPlanTake) => {
     const operations = switchTakeOperations({ sequence, item, record: plan, body, unitId, k: take.k, assets });
     if (!operations) return;
-    const receipt = await actions.apply(operations, C.labelSwitchTake(take.k));
+    const receipt = await actions.apply(operations, EditLabel.switchDubTake({ take: take.k }));
     if (!receipt) return;
     const snapshot = useVideo.getState().video?.state?.video;
     const fresh = snapshot ? rootSequence(snapshot) : null;

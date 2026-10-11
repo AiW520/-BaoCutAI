@@ -1,4 +1,4 @@
-import type { DocumentRecord, EditOperation, Sequence, TransactionReceipt } from '@baocut/protocol';
+import type { DocumentRecord, EditOperation, Localized, Sequence, TransactionReceipt } from '@baocut/protocol';
 import { withCaptionStyle } from '../../model/caption-lines.ts';
 import { captionStyleOperations } from '../../model/caption-presets.ts';
 import type { Json, LineKind } from '../../render/text-style.ts';
@@ -21,8 +21,8 @@ export function previewCaptionStyle(record: DocumentRecord | undefined, body: un
  * `singleLine` 见 `rememberCaptionPreferences`）。
  */
 export function saveCaptionStyle(
-  apply: (operations: EditOperation[], label?: string) => Promise<TransactionReceipt | null>,
-  edit: { sequence: Sequence; record: DocumentRecord | undefined; body: unknown; before: Json | null; style: Json; label: string },
+  apply: (operations: EditOperation[], label?: Localized) => Promise<TransactionReceipt | null>,
+  edit: { sequence: Sequence; record: DocumentRecord | undefined; body: unknown; before: Json | null; style: Json; label: Localized },
   singleLine?: LineKind,
 ): void {
   const { sequence, record, body, before, style, label } = edit;

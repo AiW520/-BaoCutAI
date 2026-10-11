@@ -89,8 +89,6 @@ const en = {
 
   // 时间线剪口
   seamLabel: (seconds: number) => `Cut ${secondsLabel(seconds)} · click to restore`,
-  cutLabel: 'Cut in transcript',
-  restoreLabel: 'Restore cut content',
 
   // 转录中的实时文稿（原型 panels.jsx `LiveTranscript`）：只读，转录完成后才能编辑。
   liveCopy: 'Copy what’s transcribed so far',
@@ -119,7 +117,6 @@ const tools = {
   /** 当前命中改不了的原因（设计稿 `lockHint`）：译文只查不改；转写的新版本还没取到时先不改，免得盖掉新版本。 */
   lockTranslation: 'Translations can be searched but not edited here—the Transcript panel only edits the original',
   lockLoading: 'A newer version of this transcript is still loading; replace after it finishes',
-  replaceLabel: 'Replace transcript text',
   replaceDone: (count: number) => `Replaced ${count} ${count === 1 ? 'match' : 'matches'} · video and audio unchanged`,
   replaceNothing: 'No matches need changing',
 
@@ -171,7 +168,6 @@ const tools = {
   noPrev: 'There’s no chapter before this paragraph',
   noNext: 'There’s no chapter after this paragraph',
   moveBlocked: 'Moving it would leave this chapter empty or cross the start of the neighboring chapter',
-  moveLabel: 'Move paragraph to neighboring chapter',
   moved: (title: string, count: number) => (count > 1 ? `Moved ${count} paragraphs to “${title}”` : `Moved to “${title}”`),
   cutPara: 'Cut this paragraph',
   cutParaHint: 'Cuts video, audio, and subtitles together; can be restored',
@@ -181,7 +177,6 @@ const tools = {
   renameChapter: 'Rename…',
   cutChapter: 'Cut this chapter',
   cutChapterHint: 'Cuts video, audio, and subtitles together; later chapters move up',
-  cutChapterLabel: 'Cut chapter',
   cutChapterRefused: {
     empty: 'This chapter has no length',
     whole: 'This chapter is the whole video; cutting it would leave nothing',

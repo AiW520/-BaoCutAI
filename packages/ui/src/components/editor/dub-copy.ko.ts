@@ -168,7 +168,6 @@ export const koDub: DubMessages = {
   undone: '더빙을 실행 취소했습니다',
   undonePartial:
     '이 더빙의 클립, 음소거, 더킹을 실행 취소했습니다. 빈 더빙 트랙과 더빙 계획 문서는 영상에 남습니다(프로토콜에 트랙이나 문서를 삭제하는 작업이 없음).',
-  undoLabel: (language: string) => `더빙 실행 취소(${language})`,
   undoFailed: '이 더빙을 실행 취소하지 못했습니다',
   undoNotOpen: '이 더빙을 실행 취소하려면 먼저 해당 영상을 여세요.',
   close: '닫기',
@@ -204,11 +203,6 @@ export const koTimelineDub: TimelineDubMessages = {
   removeHint: '더빙 트랙에서 제거 · 실행 취소 가능',
   removeGroup: '이 더빙 그룹 제거',
   removeGroupHint: (bed: boolean) => `${bed ? '배경음과 함께 제거' : '이 언어의 더빙을 모두 제거'} · 이 더빙으로 음소거된 원본 오디오가 복원됨`,
-  labelMute: '더빙 음소거',
-  labelUnmute: '더빙 음소거 해제',
-  labelRemove: '더빙 삭제',
-  labelRemoveGroup: (language: string) => `더빙 제거(${language})`,
-  labelStretch: '더빙 속도 변경',
   muted: (n: number) => `더빙 문장 ${n}개를 음소거했습니다`,
   unmuted: (n: number) => `더빙 문장 ${n}개의 음소거를 해제했습니다`,
   removed: (n: number) => `더빙 문장 ${n}개를 삭제했습니다`,
@@ -281,7 +275,6 @@ export const koDubRegen: DubRegenMessages = {
   cancelled: '다시 생성 취소됨',
   undo: '실행 취소',
   undoMissing: '이번 다시 생성이 기록한 편집을 찾지 못했습니다. 편집기의 실행 취소를 사용하세요',
-  labelRetext: '번역 수정(다시 더빙)',
 
   // ---- 改译文并重配 ----
   fitTitle: (n: number) => `번역 수정 후 문장 ${n}개 다시 더빙`,
@@ -314,7 +307,6 @@ export const koDubRegen: DubRegenMessages = {
   takeUnavailable: '이 테이크는 타임라인에 없거나 소재를 찾을 수 없습니다',
   takesNote: '다시 생성할 때마다 테이크가 하나씩 기록됩니다. 이전 테이크로 되돌리는 것은 실행 취소할 수 있는 편집이며 다시 합성하지 않습니다.',
   takeName: (k: number) => `테이크 ${k}`,
-  labelSwitchTake: (k: number) => `더빙 테이크 ${k}(으)로 전환`,
   switched: (k: number) => `테이크 ${k}(으)로 전환했습니다`,
   regenThis: '이 문장 다시 생성',
   unreadableFormat: '인식할 수 없는 형식',

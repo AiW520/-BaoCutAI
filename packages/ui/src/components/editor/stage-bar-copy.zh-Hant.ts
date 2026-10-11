@@ -4,7 +4,6 @@ export const zhHant: StageBarMessages = {
   bar: '預覽控制項',
   ratio: '長寬比',
   ratioReadOnly: '長寬比 · 影片為唯讀',
-  ratioChange: (ratio: string) => `長寬比 ${ratio}`,
   ratioApplied: (ratio: string) => `長寬比已改為 ${ratio}`,
   original: '原始',
   originalHint: (ratio: string) => `與影片檔案一致 · ${ratio}`,

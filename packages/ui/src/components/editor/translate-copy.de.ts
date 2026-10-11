@@ -129,8 +129,6 @@ export const deTranslate: TranslateMessages = {
   editFailed: (message: string) => `Umschreiben fehlgeschlagen: ${message}`,
   seekTip: "Abspielkopf zu diesem Satz bewegen",
   cutTip: "Das Filmmaterial dieses Satzes wurde herausgeschnitten",
-  translateTo: (language: string) => `Übersetzen nach ${language}`,
-  rewriteTranslation: "Übersetzung bearbeiten",
   unknownLanguage: "Unbekannte Sprache",
   targetLanguage: "die Zielsprache",
 };

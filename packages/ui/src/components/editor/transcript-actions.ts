@@ -27,7 +27,7 @@ export async function applyCut(actions: Actions, plan: CutPlan, fps: Rate): Prom
     ToastQueue.neutral(plan.reason === 'nothing' ? C.cutNothing : C.cutTooShort, { timeout: 4000 });
     return false;
   }
-  const receipt = await actions.apply(plan.operations, C.cutLabel);
+  const receipt = await actions.apply(plan.operations, EditLabel.cutText());
   if (!receipt) return false;
   undoable(actions, receipt, C.cutDone((plan.frames * fps.den) / fps.num, plan.ranges.length));
   return true;
@@ -42,7 +42,7 @@ export async function applyRestore(actions: Actions, plan: RestorePlan): Promise
     ToastQueue.neutral(C.restoreRefused[plan.reason], { timeout: 6000 });
     return false;
   }
-  const receipt = await actions.apply(plan.operations, C.restoreLabel);
+  const receipt = await actions.apply(plan.operations, EditLabel.restoreText());
   if (!receipt) return false;
   const done = C.restoreDone(plan.seconds);
   undoable(actions, receipt, receipt.impact.cutsNotRelaid?.length ? `${done} · ${C.restoreNotRelaid}` : done);
@@ -60,7 +60,7 @@ export async function applyRetime(actions: Actions, plan: RetimePlan | null, fps
     return false;
   }
   if (plan.frames === 0) return applyRestore(actions, plan.restore);
-  const receipt = await actions.apply(plan.operations, CUT_BAND_COPY.retimeLabel);
+  const receipt = await actions.apply(plan.operations, EditLabel.retimeCut());
   if (!receipt) return false;
   undoable(actions, receipt, CUT_BAND_COPY.retimed(before, (plan.frames * fps.den) / fps.num));
   return true;
@@ -70,6 +70,7 @@ export async function applyRetime(actions: Actions, plan: RetimePlan | null, fps
 // 这个文件只往后加：新用到的导入写在这里。
 
 import type { EditOperation } from '@baocut/protocol';
+import { EditLabel } from '@baocut/protocol/messages/ui';
 import type { ChapterCutRefusal, ChapterSpan, ParagraphMove } from '../../model/chapters.ts';
 import { TRANSCRIPT_TOOLS_COPY as T } from './transcript-copy.ts';
 
@@ -95,7 +96,7 @@ export async function applyTextReplace(actions: Actions, operations: EditOperati
     ToastQueue.neutral(T.replaceNothing, { timeout: 3000 });
     return false;
   }
-  const receipt = await actions.apply(operations, T.replaceLabel);
+  const receipt = await actions.apply(operations, EditLabel.replaceText());
   if (!receipt) return false;
   undoable(actions, receipt, T.replaceDone(count));
   return true;
@@ -103,7 +104,7 @@ export async function applyTextReplace(actions: Actions, operations: EditOperati
 
 /** 把一段挪到相邻章：挪的是那一条章节边界（`upsertChapter`），同侧的邻居一起走。挪不了的由调用方先说清楚。 */
 export async function applyParagraphMove(actions: Actions, move: ParagraphMove): Promise<boolean> {
-  const receipt = await actions.apply([move.operation], T.moveLabel);
+  const receipt = await actions.apply([move.operation], EditLabel.moveText());
   if (!receipt) return false;
   undoable(actions, receipt, T.moved(move.to.title, move.moved));
   return true;
@@ -120,7 +121,7 @@ export async function applyChapterCut(
     ToastQueue.neutral(T.cutChapterRefused[plan.reason], { timeout: 5000 });
     return false;
   }
-  const receipt = await actions.apply(plan.operations, T.cutChapterLabel);
+  const receipt = await actions.apply(plan.operations, EditLabel.cutChapter());
   if (!receipt) return false;
   undoable(actions, receipt, T.cutChapterDone(chapter.title, (plan.frames * fps.den) / fps.num));
   return true;

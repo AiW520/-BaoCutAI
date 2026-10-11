@@ -58,8 +58,6 @@ export const plTranscript: TranscriptMessages = {
   undo: "Cofnij",
 
   seamLabel: (seconds: number) => `Wycięcie ${secondsLabel(seconds)} · kliknij, aby przywrócić`,
-  cutLabel: "Wytnij w transkrypcji",
-  restoreLabel: "Przywróć wyciętą treść",
   liveCopy: "Kopiuj dotychczasową transkrypcję",
   liveCopied: "Skopiowano dotychczasową transkrypcję · transkrypcja trwa",
   liveSpeaker: "Rozpoznawanie",
@@ -78,7 +76,6 @@ export const plTranscriptTools: TranscriptToolsMessages = {
 
   lockTranslation: "Można szukać tłumaczeń, ale nie edytować tutaj – panel „Transkrypcja” edytuje tylko oryginał",
   lockLoading: "Nowa wersja transkrypcji wczytywana; zastąp po ukończeniu",
-  replaceLabel: "Zastąp tekst transkrypcji",
   replaceDone: (count: number) => `Zastąpiono: ${count} ${pluralForm('pl', count, { one: "dopasowanie", few: "dopasowania", many: "dopasowań", other: "dopasowania" })} · wideo i audio bez zmian`,
   replaceNothing: "Brak dopasowań do zmiany",
 
@@ -127,7 +124,6 @@ export const plTranscriptTools: TranscriptToolsMessages = {
   noPrev: "Przed akapitem nie ma rozdziału",
   noNext: "Po akapicie nie ma rozdziału",
   moveBlocked: "Przeniesienie opróżni rozdział lub przekroczy początek sąsiedniego",
-  moveLabel: "Przenieś akapit do sąsiedniego rozdziału",
   moved: (title: string, count: number) => (count > 1 ? `Przeniesiono: ${count} akapitów do „${title}”` : `Przeniesiono do „${title}”`),
   cutPara: "Wytnij akapit",
   cutParaHint: "Wycina razem wideo, audio i napisy; można przywrócić",
@@ -136,7 +132,6 @@ export const plTranscriptTools: TranscriptToolsMessages = {
   renameChapter: "Zmień nazwę…",
   cutChapter: "Wytnij rozdział",
   cutChapterHint: "Wycina razem wideo, audio i napisy; kolejne rozdziały przesuwają wcześniej",
-  cutChapterLabel: "Wytnij rozdział",
   cutChapterRefused: {
     empty: "Rozdział nie ma długości",
     whole: "Rozdział to całe wideo; wycięcie nie zostawi nic",

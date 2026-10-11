@@ -274,7 +274,6 @@ export const zhHant: InspectorMessages = {
   plateNote: '這個片段帶有襯底或圓角，預覽中目前還不會顯示。',
   orderTranslationFirst: '譯文在上',
   orderOriginalFirst: '原文在上',
-  editCaptionStyle: '編輯字幕樣式',
   loadingCaptionStyle: '正在載入字幕樣式…',
   captionSchema: (schema: string) => `這份字幕樣式是 ${schema}，目前還無法在這裡編輯。`,
   noSchema: '（沒有 schema）',

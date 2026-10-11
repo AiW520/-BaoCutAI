@@ -5,7 +5,6 @@ export const nl: TimelineRippleMessages = {
   removeSpan: 'Dit stuk uit alle sporen verwijderen',
   removeSpanHint: 'Wat volgt schuift op · totale duur wordt korter',
   removeSpanCaptions: 'Ondertitels beslaan de hele video · Selecteer een clip',
-  labelRemoveSpan: 'Stuk uit alle sporen verwijderen',
   closed: (deleted: string, seconds: number) => `${deleted} · Gat van ${secondsLabel(seconds)} gesloten`,
   gapKept: (deleted: string) => `${deleted} · Gat blijft: een spoor of clip erna is vergrendeld`,
   removed: (seconds: number) => `${secondsLabel(seconds)} uit alle sporen verwijderd · Wat volgt is opgeschoven`,

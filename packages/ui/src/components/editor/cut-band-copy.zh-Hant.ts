@@ -14,6 +14,5 @@ export const zhHant: CutBandMessages = {
   tag: (seconds: number, edge: 'start' | 'end', word: string | null) =>
     `−${secondsLabel(seconds)}${word ? (edge === 'start' ? ` · 從「${word.trim()}」起` : ` · 到「${word.trim()}」為止`) : ''}`,
   tagRestore: '放開即可回復',
-  retimeLabel: '變更剪除範圍',
   retimed: (before: number, after: number) => `已變更剪除範圍 · ${secondsLabel(before)} → ${secondsLabel(after)}`,
 };

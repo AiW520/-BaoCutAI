@@ -5,11 +5,6 @@ export const nl: RuntimeMessages = {
   mediaStatus: (status: number) => `De mediadienst heeft geretourneerd: ${status}`,
   noRootSequence: "De nieuwe video heeft geen hoofdsequentie",
 
-  edit: {
-    importAssets: "Media importeren",
-    setBackground: "Achtergrond instellen",
-    addWaveform: "Golfvorm toevoegen",
-  },
 
   waveformName: "Golfvorm",
   noDuration: "De video heeft nog geen lengte, dus de golfvorm is niet toegevoegd",

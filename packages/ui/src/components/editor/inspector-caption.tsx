@@ -1,4 +1,5 @@
 import type { CaptionItem, DocumentRecord, Id } from '@baocut/protocol';
+import { EditLabel } from '@baocut/protocol/messages/ui';
 import { ActionButton, Button, Switch } from '@react-spectrum/s2';
 import { style } from '@react-spectrum/s2/style' with { type: 'macro' };
 import { useState } from 'react';
@@ -78,7 +79,7 @@ export function CaptionPage(props: ItemPageProps<CaptionItem> & { documents: Rec
     if (body !== undefined) previewCaptionStyle(record, body, next);
   };
   const save = (next: Json, singleLine?: LineKind) => {
-    if (body !== undefined) saveCaptionStyle(apply, { sequence, record, body, before: root, style: next, label: IC.editCaptionStyle }, singleLine);
+    if (body !== undefined) saveCaptionStyle(apply, { sequence, record, body, before: root, style: next, label: EditLabel.editSubtitleStyle() }, singleLine);
   };
 
   if (body === undefined)

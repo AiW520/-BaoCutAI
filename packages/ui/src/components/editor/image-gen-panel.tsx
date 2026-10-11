@@ -1,5 +1,6 @@
 import { useMemo, useRef, useState, type ReactNode } from 'react';
 import type { AssetRecord, Id, JobRecord, ModelCapabilitiesView, Sequence } from '@baocut/protocol';
+import { EditLabel } from '@baocut/protocol/messages/ui';
 import { ActionButton, ActionMenu, Button, MenuItem, NumberField, Text, TextField, ToastQueue, Tooltip, TooltipTrigger } from '@react-spectrum/s2';
 import Add from '@react-spectrum/s2/icons/Add';
 import Copy from '@react-spectrum/s2/icons/Copy';
@@ -584,7 +585,7 @@ function ImageCard({
   const prompt = imagePrompt(job);
   const place = () => {
     if (!placeable) return;
-    void apply(placeAsset(sequence, placeable, frameAt(useEditor.getState().playhead, sequence.fps)), E.addClip);
+    void apply(placeAsset(sequence, placeable, frameAt(useEditor.getState().playhead, sequence.fps)), EditLabel.addClip());
   };
   return (
     <figure className={card}>

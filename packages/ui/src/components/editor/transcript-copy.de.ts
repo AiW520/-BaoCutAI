@@ -59,8 +59,6 @@ export const deTranscript: TranscriptMessages = {
   undo: "Rückgängig machen",
 
   seamLabel: (seconds: number) => `Schnitt ${secondsLabel(seconds)} · klicken zum Wiederherstellen`,
-  cutLabel: "Im Transkript schneiden",
-  restoreLabel: "Geschnittenen Inhalt wiederherstellen",
   liveCopy: "Bisher Transkribiertes kopieren",
   liveCopied: "Bisher Transkribiertes kopiert · Transkription läuft noch",
   liveSpeaker: "Wird erkannt",
@@ -79,7 +77,6 @@ export const deTranscriptTools: TranscriptToolsMessages = {
 
   lockTranslation: "Übersetzungen können hier durchsucht, aber nicht bearbeitet werden – der Transkript-Bereich bearbeitet nur das Original",
   lockLoading: "Eine neuere Transkriptversion wird noch geladen; nach Abschluss ersetzen",
-  replaceLabel: "Transkripttext ersetzen",
   replaceDone: (count: number) => `Ersetzt: ${count} ${pluralForm('de', count, { one: "Treffer", other: "Treffer" })} · Video und Audio unverändert`,
   replaceNothing: "Keine Treffer müssen geändert werden",
 
@@ -128,7 +125,6 @@ export const deTranscriptTools: TranscriptToolsMessages = {
   noPrev: "Vor diesem Absatz gibt es kein Kapitel",
   noNext: "Nach diesem Absatz gibt es kein Kapitel",
   moveBlocked: "Verschieben würde dieses Kapitel leeren oder den Beginn des benachbarten Kapitels überschreiten",
-  moveLabel: "Absatz zum benachbarten Kapitel verschieben",
   moved: (title: string, count: number) => (count > 1 ? `Verschoben: ${count} Absätze nach „${title}“` : `Verschoben nach „${title}“`),
   cutPara: "Diesen Absatz schneiden",
   cutParaHint: "Schneidet Video, Audio und Untertitel gemeinsam; wiederherstellbar",
@@ -137,7 +133,6 @@ export const deTranscriptTools: TranscriptToolsMessages = {
   renameChapter: "Umbenennen…",
   cutChapter: "Dieses Kapitel schneiden",
   cutChapterHint: "Schneidet Video, Audio und Untertitel gemeinsam; spätere Kapitel rücken nach",
-  cutChapterLabel: "Kapitel schneiden",
   cutChapterRefused: {
     empty: "Dieses Kapitel hat keine Länge",
     whole: "Dieses Kapitel umfasst das ganze Video; Schneiden würde nichts übriglassen",

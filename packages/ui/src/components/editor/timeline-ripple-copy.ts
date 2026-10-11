@@ -25,8 +25,6 @@ const en = {
   removeSpanHint: 'Later content moves up · total gets shorter',
   /** 选中的只有字幕时：字幕铺满整条轨，不拿它的区间。 */
   removeSpanCaptions: 'Subtitles span the whole video · Select a clip',
-  /** 编辑事务的名字。 */
-  labelRemoveSpan: 'Delete span from all tracks',
   /** 删除后合拢了空隙；`deleted` 是「已删除 N 个片段」那一句。 */
   closed: (deleted: string, seconds: number) => `${deleted} · Closed the ${secondsLabel(seconds)} gap`,
   /** 删除了，但空隙后面有锁住的轨道或片段，没有合拢。 */

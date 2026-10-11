@@ -1,4 +1,5 @@
 import type { DocumentRecord, Id, Sequence } from '@baocut/protocol';
+import { EditLabel } from '@baocut/protocol/messages/ui';
 import { ActionButton, Header, Heading, Menu, MenuItem, MenuSection, MenuTrigger, Text, ToastQueue, Tooltip, TooltipTrigger } from '@react-spectrum/s2';
 import AudioWave from '@react-spectrum/s2/icons/AudioWave';
 import DeleteIcon from '@react-spectrum/s2/icons/Delete';
@@ -36,6 +37,9 @@ import { useDocumentBody } from './use-document-body.ts';
  * 一条配音轨此刻的句子：时间线上的块、计划里没合成的、排队重配的，以及它们的计数。行头名字的提示与 ⋯ 的头部共用这一份
  * （设计稿两处都是 `trackLine(d.blocks)`），两边的句数才对得上。
  */
+/** 切换配音组播放来源的修改名。 */
+const HEAR_LABEL = { dub: EditLabel.hearDub, original: EditLabel.hearOriginal, both: EditLabel.hearBoth };
+
 export function useDubTrack(group: DubGroup, sequence: Sequence, documents: Record<Id, DocumentRecord>, blocks: ReadonlyMap<Id, DubBlock>) {
   const videoId = useVideo((s) => s.video?.videoId ?? null);
   const queued = queuedSet(useJobs((s) => queuedKey(s.jobs, videoId)));
@@ -110,7 +114,7 @@ export function DubHeadMenu({
     }
     const operations = switchSourceOperations(latest, groups, group.groupId, target);
     const done = target === 'dub' ? C.sourceDone.dub(language) : C.sourceDone[target];
-    if (operations.length > 0 && !(await actions.apply(operations, C.sourceLabel[target]))) return;
+    if (operations.length > 0 && !(await actions.apply(operations, HEAR_LABEL[target]()))) return;
     ToastQueue.neutral(done, { timeout: 3000 });
   };
 

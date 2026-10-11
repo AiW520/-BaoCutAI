@@ -14,6 +14,5 @@ export const ja: CutBandMessages = {
   tag: (seconds: number, edge: 'start' | 'end', word: string | null) =>
     `−${secondsLabel(seconds)}${word ? (edge === 'start' ? ` · 「${word.trim()}」から` : ` · 「${word.trim()}」まで`) : ''}`,
   tagRestore: '離すと復元',
-  retimeLabel: 'カット範囲を変更',
   retimed: (before: number, after: number) => `カット範囲を変更しました · ${secondsLabel(before)} → ${secondsLabel(after)}`,
 };

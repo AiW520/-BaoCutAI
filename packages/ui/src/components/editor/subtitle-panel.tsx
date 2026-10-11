@@ -11,7 +11,8 @@ import {
   type ReactNode,
   type RefObject,
 } from 'react';
-import type { AssetRecord, CaptionItem, DocumentRecord, Id, Sequence } from '@baocut/protocol';
+import type { AssetRecord, CaptionItem, DocumentRecord, Id, Localized, Sequence } from '@baocut/protocol';
+import { EditLabel } from '@baocut/protocol/messages/ui';
 import { ActionButton, Button, TextField, ToastQueue, ToggleButton, Tooltip, TooltipTrigger } from '@react-spectrum/s2';
 import ChevronDown from '@react-spectrum/s2/icons/ChevronDown';
 import ChevronUp from '@react-spectrum/s2/icons/ChevronUp';
@@ -460,7 +461,7 @@ function useCaptionImport(sequence: Sequence, onImported: (documentId: Id) => vo
         .map((cue) => cue.text)
         .join(''),
     );
-    const receipt = await apply(withNewCaptionStyle(importCaptionOperations(sequence, cues, name, language), newCaptionStyle()), C.importLabel);
+    const receipt = await apply(withNewCaptionStyle(importCaptionOperations(sequence, cues, name, language), newCaptionStyle()), EditLabel.importSubtitles());
     if (!receipt) return;
     const documentId = receipt.refs?.['imported-caption'];
     if (documentId) onImported(documentId);
@@ -670,7 +671,7 @@ function CueEditor({ record, sequence, items }: { record: DocumentRecord; sequen
   if (!cues) return <div className={muted}>{C.unsupportedDoc}</div>;
 
   /** 写一个新版本：成功了提示带「撤销」，失败了丢掉本地那份。 */
-  const write = async (next: Json, label: string, done: string) => {
+  const write = async (next: Json, label: Localized, done: string) => {
     if (!editable) return;
     setLocal({ base: loaded, body: next });
     const previous = record.revisions[record.currentRevision]?.summary;
@@ -693,7 +694,7 @@ function CueEditor({ record, sequence, items }: { record: DocumentRecord; sequen
     setEditing(null);
     const text = value.trim();
     if (!text || text === cue.text) return;
-    void write(setCueTexts(source, new Map([[cue.id, text]])).body, C.rewriteLabel, C.rewritten);
+    void write(setCueTexts(source, new Map([[cue.id, text]])).body, EditLabel.rewriteSubtitle(), C.rewritten);
   };
   const split = (cue: ListCue, value: string, at: number) => {
     const result = splitCue(source, cue.id, value, at);
@@ -702,7 +703,7 @@ function CueEditor({ record, sequence, items }: { record: DocumentRecord; sequen
       return;
     }
     setEditing({ id: result.id, caret: 0 });
-    void write(result.body, C.splitLabel, C.splitDone);
+    void write(result.body, EditLabel.splitSubtitle(), C.splitDone);
   };
   /** 并不了（到头了、说话人不同）时返回 false，接着编辑。 */
   const merge = (cue: ListCue, value: string, direction: -1 | 1): boolean => {
@@ -714,7 +715,7 @@ function CueEditor({ record, sequence, items }: { record: DocumentRecord; sequen
       return false;
     }
     setEditing({ id: result.id, caret: result.caret });
-    void write(result.body, C.mergeLabel, direction < 0 ? C.mergedUp : C.mergedDown);
+    void write(result.body, EditLabel.mergeSubtitles(), direction < 0 ? C.mergedUp : C.mergedDown);
     return true;
   };
   /** 接缝上的「并入上一条」：不进编辑，直接并。 */
@@ -724,7 +725,7 @@ function CueEditor({ record, sequence, items }: { record: DocumentRecord; sequen
       ToastQueue.neutral(result.refused === 'speaker' ? C.seamSpeaker : C.firstCue, { timeout: 3000 });
       return;
     }
-    void write(result.body, C.mergeLabel, C.mergedUp);
+    void write(result.body, EditLabel.mergeSubtitles(), C.mergedUp);
   };
   const replace = (targets: Match[]) => {
     // 按句归组、按 id 查句：全部替换时命中与句子都上千，不能逐个命中扫一遍句表。
@@ -743,7 +744,7 @@ function CueEditor({ record, sequence, items }: { record: DocumentRecord; sequen
       ToastQueue.neutral(C.noChanges, { timeout: 3000 });
       return;
     }
-    void write(setCueTexts(source, texts).body, C.replaceLabel, C.replaced(count));
+    void write(setCueTexts(source, texts).body, EditLabel.replaceSubtitleText(), C.replaced(count));
   };
 
   actions.current = {

@@ -63,8 +63,6 @@ export const zhTranscript: TranscriptMessages = {
 
   // 时间线剪口
   seamLabel: (seconds: number) => `剪掉了 ${secondsLabel(seconds)} · 点击恢复`,
-  cutLabel: '在文稿里剪掉',
-  restoreLabel: '恢复剪掉的内容',
   liveCopy: '复制已转录的部分',
   liveCopied: '已复制已转录的部分 · 转录仍在进行',
   liveSpeaker: '识别中',
@@ -82,7 +80,6 @@ export const zhTranscriptTools: TranscriptToolsMessages = {
   /** 当前命中改不了的原因（设计稿 `lockHint`）：译文只查不改；转写的新版本还没取到时先不改，免得盖掉新版本。 */
   lockTranslation: '译文只查不改——文稿面板只改原文',
   lockLoading: '这份转写的新版本还在读取，读完再替换',
-  replaceLabel: '替换文稿文字',
   replaceDone: (count: number) => `已替换 ${count} 处 · 音画没动`,
   replaceNothing: '没有需要改动的匹配',
 
@@ -134,7 +131,6 @@ export const zhTranscriptTools: TranscriptToolsMessages = {
   noPrev: '这一段前面没有别的章节了',
   noNext: '这一段后面没有别的章节了',
   moveBlocked: '挪过去本章就空了，或会越过相邻章节的起点',
-  moveLabel: '把段落移到相邻章节',
   moved: (title: string, count: number) => (count > 1 ? `已把 ${count} 段移到「${title}」` : `已移到「${title}」`),
   cutPara: '剪掉这一段',
   cutParaHint: '视频、音频和字幕一起剪，可以恢复',
@@ -144,7 +140,6 @@ export const zhTranscriptTools: TranscriptToolsMessages = {
   renameChapter: '改名…',
   cutChapter: '剪掉这一章',
   cutChapterHint: '视频、音频和字幕一起剪，后面的章节跟着前移',
-  cutChapterLabel: '剪掉一章',
   cutChapterRefused: {
     empty: '这一章没有长度',
     whole: '这一章就是整个视频，剪掉就什么都不剩了',

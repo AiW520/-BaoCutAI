@@ -173,7 +173,6 @@ export const deDub: DubMessages = {
   undone: "Vertonung rückgängig gemacht",
   undonePartial:
     "Clips, Stummschaltungen und Absenkungen dieser Vertonung wurden rückgängig gemacht. Leere Vertonungsspur und Vertonungsplan-Dokument bleiben im Video (das Protokoll hat keine Operation zum Löschen von Spuren oder Dokumenten).",
-  undoLabel: (language: string) => `Vertonung rückgängig machen (${language})`,
   undoFailed: "Vertonung konnte nicht rückgängig gemacht werden",
   undoNotOpen: "Zuerst dieses Video öffnen, um die Vertonung rückgängig zu machen.",
   close: "Schließen",
@@ -213,11 +212,6 @@ export const deTimelineDub: TimelineDubMessages = {
   removeGroup: "Diese Vertonungsgruppe entfernen",
   removeGroupHint: (bed: boolean) =>
     `${bed ? "Entfernt sie einschließlich ihres Hintergrundaudios" : "Entfernt alle Vertonungen in dieser Sprache"} · dadurch stummgeschalteter Originalton kehrt zurück`,
-  labelMute: "Vertonung stummschalten",
-  labelUnmute: "Stummschaltung der Vertonung aufheben",
-  labelRemove: "Vertonung löschen",
-  labelRemoveGroup: (language: string) => `Vertonung entfernen (${language})`,
-  labelStretch: "Vertonungsgeschwindigkeit ändern",
   muted: (n: number) => `Stummgeschaltet: ${sentences(n)} der Vertonung`,
   unmuted: (n: number) => `Stummschaltung aufgehoben: ${sentences(n)} der Vertonung`,
   removed: (n: number) => `Gelöscht: ${sentences(n)} der Vertonung`,
@@ -285,7 +279,6 @@ export const deDubRegen: DubRegenMessages = {
   cancelled: "Erneute Erzeugung abgebrochen",
   undo: "Rückgängig machen",
   undoMissing: "Die Änderung dieser erneuten Erzeugung wurde nicht gefunden; „Rückgängig machen“ im Editor verwenden",
-  labelRetext: "Übersetzung bearbeiten (neu vertonen)",
 
   fitTitle: (n: number) => `Übersetzung bearbeiten und neu vertonen: ${sentences(n)}`,
   fitIntro:
@@ -316,7 +309,6 @@ export const deDubRegen: DubRegenMessages = {
   takeUnavailable: "Diese Aufnahme ist nicht in der Zeitleiste oder ihr Material wurde nicht gefunden",
   takesNote: "Jede erneute Erzeugung speichert eine Aufnahme; Wechsel zu einer älteren Aufnahme ist eine rückgängig zu machende Bearbeitung ohne erneute Synthese.",
   takeName: (k: number) => `Aufnahme ${k}`,
-  labelSwitchTake: (k: number) => `Zu Vertonungsaufnahme wechseln: ${k}`,
   switched: (k: number) => `Gewechselt zu Aufnahme ${k}`,
   regenThis: "Diesen Satz erneut erzeugen",
   unreadableFormat: "Nicht erkanntes Format",

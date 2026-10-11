@@ -4,7 +4,6 @@ export const tr: StageBarMessages = {
   bar: 'Önizleme denetimleri',
   ratio: 'En boy oranı',
   ratioReadOnly: 'En boy oranı · video salt okunur',
-  ratioChange: (ratio: string) => `En boy oranı ${ratio}`,
   ratioApplied: (ratio: string) => `En boy oranı ${ratio} olarak değiştirildi`,
   original: 'Özgün',
   originalHint: (ratio: string) => `Video dosyasıyla aynı · ${ratio}`,

@@ -71,7 +71,6 @@ export const ptBR: BrandMessages = {
   copiedNotPlaced: (name: string) => `Copiado para mídias, mas ainda fora da linha do tempo: ${name}`,
   elementsTrack: "Elementos",
   copiedNotPlaceable: (name: string) => `Copiado para mídias; este tipo não vai direto à linha do tempo: ${name}`,
-  addLabel: (name: string) => `Adicionar ${name}`,
   placedAtPlayhead: (name: string) => `Colocado na linha do tempo no indicador de reprodução: ${name}`,
   newBrandColor: "Nova cor da marca",
   namePlaceholder: "Ex.: principal",

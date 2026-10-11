@@ -4,7 +4,6 @@ export const ru: StageBarMessages = {
   bar: 'Управление предпросмотром',
   ratio: 'Соотношение сторон',
   ratioReadOnly: 'Соотношение сторон · видео только для чтения',
-  ratioChange: (ratio: string) => `Соотношение сторон ${ratio}`,
   ratioApplied: (ratio: string) => `Соотношение сторон изменено на ${ratio}`,
   original: 'Исходное',
   originalHint: (ratio: string) => `Как у видеофайла · ${ratio}`,

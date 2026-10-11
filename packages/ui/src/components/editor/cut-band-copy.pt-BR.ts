@@ -14,6 +14,5 @@ export const ptBR: CutBandMessages = {
   tag: (seconds: number, edge: 'start' | 'end', word: string | null) =>
     `−${secondsLabel(seconds)}${word ? (edge === 'start' ? ` · de “${word.trim()}”` : ` · até “${word.trim()}”`) : ''}`,
   tagRestore: 'Soltar para restaurar',
-  retimeLabel: 'Alterar intervalo do corte',
   retimed: (before: number, after: number) => `Intervalo do corte alterado · ${secondsLabel(before)} → ${secondsLabel(after)}`,
 };

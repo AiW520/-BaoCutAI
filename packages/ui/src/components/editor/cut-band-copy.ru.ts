@@ -19,6 +19,5 @@ export const ru: CutBandMessages = {
   tag: (seconds: number, edge: 'start' | 'end', word: string | null) => `−${secondsLabel(seconds)}${word ? (edge === "start" ? ` · от «${word.trim()}»` : ` · до «${word.trim()}»`) : ""}`,
   tagRestore: "Отпустите для восстановления",
 
-  retimeLabel: "Изменить вырезанный участок",
   retimed: (before: number, after: number) => `Диапазон вырезания изменён · ${secondsLabel(before)} → ${secondsLabel(after)}`,
 };
