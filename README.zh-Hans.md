@@ -254,6 +254,7 @@ apps/
   runtime/          Runtime 进程入口
   cli/              命令行客户端
   web/              Web 客户端，由 Runtime 的 Web 服务提供
+  portal/           官网 baocut.com：静态页面与负责下载跳转的 Cloudflare Worker
 packages/
   protocol/         线协议：信封、方法、主题事件、领域类型与校验
   client/           连接、请求、订阅、重连与镜像归约

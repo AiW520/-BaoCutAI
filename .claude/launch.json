@@ -27,6 +27,16 @@
         ".dev/preview-shim/start.mjs"
       ],
       "port": 5199
+    },
+    {
+      "name": "portal",
+      "runtimeExecutable": "sh",
+      "runtimeArgs": [
+        "-c",
+        "exec npm run dev -w @baocut/portal -- --port \"${PORT:-8787}\" --ip 127.0.0.1"
+      ],
+      "port": 8787,
+      "autoPort": true
     }
   ]
 }

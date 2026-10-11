@@ -263,6 +263,7 @@ apps/
   cli/              Command-line client
   web/              Web client, served by the Runtime's web service
   slides-editor/    Slides editor page (built from packages/slides-runtime), served by the Runtime
+  portal/           baocut.com website: static pages and a Cloudflare Worker for downloads
 packages/
   protocol/         Wire protocol: envelopes, methods, topic events, domain types, validation
   client/           Connect, request, subscribe, reconnect; mirror reduction
