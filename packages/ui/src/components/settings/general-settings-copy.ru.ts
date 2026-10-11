@@ -35,7 +35,7 @@ export const ru: GeneralSettingsMessages = {
 
   sourcesGroup: "Источники скачивания и офлайн",
   modelsEndpoint: "Источник скачивания моделей",
-  modelsEndpointDesc: "Локальные модели скачиваются отсюда. Оставьте пустым для публичного репозитория (Hugging Face); если недоступен, укажите базовый URL зеркала. Переменная окружения BAOCUT_MODELS_ENDPOINT имеет приоритет.",
+  modelsEndpointDesc: "Локальные модели скачиваются отсюда. Оставьте пустым для публичного репозитория (Hugging Face); если недоступен, укажите https://www.modelscope.cn для загрузки с ModelScope или базовый URL зеркала. Переменная окружения BAOCUT_MODELS_ENDPOINT имеет приоритет.",
   toolsEndpoint: "Источник скачивания инструментов",
   toolsEndpointDesc: "Внешние инструменты, например yt-dlp, скачиваются отсюда по «базовый URL/tool/version/file name». Оставьте пустым для официального URL выпуска. Переменная окружения BAOCUT_TOOLS_ENDPOINT имеет приоритет.",
   toolsEndpointPlaceholder: "Официальный URL выпуска",

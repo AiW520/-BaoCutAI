@@ -12,7 +12,7 @@ export const zhHans: SettingDescriptionMessages = {
   'transcribe.afterComplete': '转写完成后：open-video 打开视频，notify 只通知，nothing 什么都不做',
   'downloads.directory':
     '默认保存位置：工具没有视频的结果、从链接下载的媒体与 downloads_save 交出的文件都放这里（绝对路径）；null 使用当前主机的 ~/Downloads，与项目归属无关',
-  'models.downloadEndpoint': '本地模型的下载来源（镜像的基址，http(s)://）；null 为公共模型仓库。环境变量 BAOCUT_MODELS_ENDPOINT 优先',
+  'models.downloadEndpoint': '本地模型的下载来源（镜像的基址，http(s)://）；null 为公共模型仓库，https://www.modelscope.cn 从 ModelScope 下载。环境变量 BAOCUT_MODELS_ENDPOINT 优先',
   'models.dir':
     '本地模型放在哪个文件夹（绝对路径）；null 为数据目录下的 models。环境变量 BAOCUT_MODELS_DIR 优先。用 models.setDir 更改，不能用 settings set',
   'tools.downloadEndpoint':

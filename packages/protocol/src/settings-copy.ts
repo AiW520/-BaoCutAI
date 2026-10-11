@@ -28,7 +28,7 @@ const en = {
   'downloads.directory':
     'Default save location for tool results without a video, media downloaded from links, and files handed over by downloads_save (absolute path); null uses ~/Downloads on this host, regardless of project',
   'models.downloadEndpoint':
-    'Download source for local models (mirror base URL, http(s)://); null uses the public model hub. The BAOCUT_MODELS_ENDPOINT environment variable takes precedence',
+    'Download source for local models (mirror base URL, http(s)://); null uses the public model hub; https://www.modelscope.cn downloads from ModelScope. The BAOCUT_MODELS_ENDPOINT environment variable takes precedence',
   'models.dir':
     "Folder for local models (absolute path); null uses models in the data folder. The BAOCUT_MODELS_DIR environment variable takes precedence. Change it with models.setDir, not settings set",
   'tools.downloadEndpoint':

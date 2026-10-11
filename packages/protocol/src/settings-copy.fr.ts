@@ -14,7 +14,7 @@ export const fr: SettingDescriptionMessages = {
   'downloads.directory':
     "Emplacement par défaut pour résultats sans vidéo, médias téléchargés par lien et fichiers de downloads_save (chemin absolu) ; null utilise ~/Downloads de cet hôte, indépendamment du projet",
   'models.downloadEndpoint':
-    "Source des modèles locaux (URL de base de miroir, http(s)://) ; null utilise le hub public. BAOCUT_MODELS_ENDPOINT a priorité",
+    "Source des modèles locaux (URL de base de miroir, http(s)://) ; null utilise le hub public ; https://www.modelscope.cn télécharge depuis ModelScope. BAOCUT_MODELS_ENDPOINT a priorité",
   'models.dir':
     "Dossier des modèles locaux (chemin absolu) ; null utilise models dans le dossier de données. BAOCUT_MODELS_DIR a priorité. Changez avec models.setDir, pas settings set",
   'tools.downloadEndpoint':

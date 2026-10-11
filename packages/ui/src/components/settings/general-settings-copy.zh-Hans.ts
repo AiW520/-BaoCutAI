@@ -36,7 +36,7 @@ export const zhHans: GeneralSettingsMessages = {
 
   sourcesGroup: '下载来源与离线',
   modelsEndpoint: '模型下载来源',
-  modelsEndpointDesc: '本地模型从这里下载。留空用公共模型仓库（Hugging Face）；连不上时可以填镜像的基址。环境变量 BAOCUT_MODELS_ENDPOINT 优先于这里。',
+  modelsEndpointDesc: '本地模型从这里下载。留空用公共模型仓库（Hugging Face）；连不上时可以填 https://www.modelscope.cn 从 ModelScope 下载，或填镜像的基址。环境变量 BAOCUT_MODELS_ENDPOINT 优先于这里。',
   toolsEndpoint: '工具下载来源',
   toolsEndpointDesc: 'yt-dlp 这类外部工具从这里下载，文件在「基址/工具/版本/文件名」。留空用工具的官方发布地址。环境变量 BAOCUT_TOOLS_ENDPOINT 优先于这里。',
   toolsEndpointPlaceholder: '官方发布地址',

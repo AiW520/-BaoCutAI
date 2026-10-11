@@ -37,7 +37,7 @@ export const ko: GeneralSettingsMessages = {
   sourcesGroup: '다운로드 소스 및 오프라인',
   modelsEndpoint: '모델 다운로드 소스',
   modelsEndpointDesc:
-    '로컬 모델은 여기에서 다운로드합니다. 비워 두면 공개 모델 허브(Hugging Face)를 사용하며, 연결할 수 없으면 미러의 기본 URL을 입력하세요. BAOCUT_MODELS_ENDPOINT 환경 변수가 있으면 이 설정보다 우선합니다.',
+    '로컬 모델은 여기에서 다운로드합니다. 비워 두면 공개 모델 허브(Hugging Face)를 사용하며, 연결할 수 없으면 https://www.modelscope.cn을 입력해 ModelScope에서 받거나 미러의 기본 URL을 입력하세요. BAOCUT_MODELS_ENDPOINT 환경 변수가 있으면 이 설정보다 우선합니다.',
   toolsEndpoint: '도구 다운로드 소스',
   toolsEndpointDesc:
     'yt-dlp 같은 외부 도구는 여기에서 “기본 URL/도구/버전/파일 이름” 경로로 다운로드합니다. 비워 두면 공식 배포 URL을 사용합니다. BAOCUT_TOOLS_ENDPOINT 환경 변수가 있으면 이 설정보다 우선합니다.',

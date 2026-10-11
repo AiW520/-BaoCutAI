@@ -13,7 +13,7 @@ export const zhHant: SettingDescriptionMessages = {
   'downloads.directory':
     '預設儲存位置：沒有影片的工具結果、從連結下載的媒體，以及 downloads_save 交出的檔案（絕對路徑）；null 使用這台主機上的 ~/Downloads，與專案無關',
   'models.downloadEndpoint':
-    '本機模型的下載來源（鏡像站的基礎 URL，http(s)://）；null 使用公開的模型庫。環境變數 BAOCUT_MODELS_ENDPOINT 優先',
+    '本機模型的下載來源（鏡像站的基礎 URL，http(s)://）；null 使用公開的模型庫，https://www.modelscope.cn 從 ModelScope 下載。環境變數 BAOCUT_MODELS_ENDPOINT 優先',
   'models.dir':
     '本機模型的資料夾（絕對路徑）；null 使用資料資料夾中的 models。環境變數 BAOCUT_MODELS_DIR 優先。請用 models.setDir 變更，而不是 settings set',
   'tools.downloadEndpoint':

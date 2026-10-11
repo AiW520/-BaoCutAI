@@ -12,7 +12,7 @@ export const pl: SettingDescriptionMessages = {
   'transcribe.afterComplete': "Po transkrypcji: open-video otwiera wideo, notify tylko powiadamia, nothing nic nie robi",
   'downloads.directory':
     "Lokalizacja zapisu wyników narzędzi bez wideo, multimediów z linków i plików downloads_save (ścieżka bezwzględna); null używa ~/Downloads na hoście niezależnie od projektu",
-  'models.downloadEndpoint': "Źródło modeli lokalnych (bazowy URL serwera lustrzanego, http(s)://); null używa publicznego repozytorium. BAOCUT_MODELS_ENDPOINT ma pierwszeństwo",
+  'models.downloadEndpoint': "Źródło modeli lokalnych (bazowy URL serwera lustrzanego, http(s)://); null używa publicznego repozytorium, https://www.modelscope.cn pobiera z ModelScope. BAOCUT_MODELS_ENDPOINT ma pierwszeństwo",
   'models.dir':
     "Folder modeli lokalnych (ścieżka bezwzględna); null używa models w folderze danych. BAOCUT_MODELS_DIR ma pierwszeństwo. Zmieniaj przez models.setDir, nie settings set",
   'tools.downloadEndpoint':

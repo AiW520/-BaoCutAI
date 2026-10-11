@@ -297,6 +297,47 @@ describe('ModelInstaller', () => {
     expect(progress.at(-1)!.receivedBytes).toBe(bytesOf(asrA) + bytesOf(vad));
   });
 
+  it('HEAD 不给大小（ModelScope）：改发只要第一个字节的 GET，从 Content-Range 读总长', async () => {
+    const manifests = [asrA, asrB, vad].map((r) => syntheticManifest(r, { sizes: false, estimatedBytes: 1_000_000 }));
+    const catalog = new ModelCatalog({ root, ...mac, bundles, manifests });
+    const sizeless: typeof fetch = async (input, init) => {
+      const response = await fetch(input, init);
+      return init?.method === 'HEAD' ? new Response(null, { status: response.status }) : response;
+    };
+    const installer = new ModelInstaller({ catalog, endpoint: () => source.endpoint, manifests, freeBytes: async () => free, fetch: sizeless });
+    const detail = await installer.plan('test-a@mlx');
+    expect(detail.plan.downloadBytes).toBe(bytesOf(asrA) + bytesOf(vad));
+    const ranged = source.requests.filter((r) => r.method === 'GET');
+    expect(ranged).toHaveLength(4);
+    expect(ranged.every((r) => r.range === 'bytes=0-0')).toBe(true);
+
+    // ModelScope 的小文件：回 200、`Content-Length` 是 1，但带 `Content-Range`。
+    const quirky: typeof fetch = async (input, init) => {
+      const response = await sizeless(input, init);
+      return response.status === 206 ? new Response(await response.arrayBuffer(), { status: 200, headers: response.headers }) : response;
+    };
+    const quirk = new ModelInstaller({ catalog, endpoint: () => source.endpoint, manifests, freeBytes: async () => free, fetch: quirky });
+    expect((await quirk.plan('test-a@mlx')).plan.downloadBytes).toBe(bytesOf(asrA) + bytesOf(vad));
+  });
+
+  it('计划的来源：选了 ModelScope 时，它上面没有的仓库改从公共模型仓库下载，两个基址都写出来', async () => {
+    const whisper: SyntheticRepo = { repo: 'ggerganov/whisper.cpp', revision: 'e'.repeat(40), files: { 'ggml.bin': Buffer.from('w') } };
+    const manifests = [syntheticManifest(vad), syntheticManifest(whisper)];
+    const def = {
+      ...bundles[0]!,
+      bundleId: 'ggml@cpu',
+      backend: 'ggml' as const,
+      device: 'cpu',
+      components: { ...bundles[0]!.components, asr: { family: 'whisper-ggml' as const, repo: whisper.repo, revision: whisper.revision } },
+    };
+    const catalog = new ModelCatalog({ root, platform: 'win32', arch: 'x64', bundles: [def], manifests });
+    const plan = async (endpoint: string) =>
+      (await new ModelInstaller({ catalog, endpoint: () => endpoint, manifests, freeBytes: async () => free, probeSizes: false }).plan(def.bundleId))
+        .plan.source;
+    expect(await plan('https://www.modelscope.cn')).toBe('https://www.modelscope.cn + https://huggingface.co');
+    expect(await plan('https://mirror.example')).toBe('https://mirror.example');
+  });
+
   it('内置清单缺可信的哈希：拒绝安装（不下载了再算）', async () => {
     const manifests = [asrA, vad].map((r) => syntheticManifest(r));
     manifests[1]!.files[0]!.sha256 = null;

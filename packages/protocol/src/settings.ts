@@ -48,8 +48,8 @@ export interface SettingValues {
    */
   'downloads.directory': string | null;
   /**
-   * 本地模型的下载来源（基址，`http(s)://`，不含凭据）；null 为公共模型仓库（`https://huggingface.co`）。环境变量
-   * `BAOCUT_MODELS_ENDPOINT` 优先于它（架构设计 §6.3）。
+   * 本地模型的下载来源（基址，`http(s)://`，不含凭据）；null 为公共模型仓库（`https://huggingface.co`），
+   * `https://www.modelscope.cn` 从 ModelScope 下载。环境变量 `BAOCUT_MODELS_ENDPOINT` 优先于它（架构设计 §6.3）。
    */
   'models.downloadEndpoint': string | null;
   /**

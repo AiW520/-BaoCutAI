@@ -38,7 +38,7 @@ export const ptBR: GeneralSettingsMessages = {
   sourcesGroup: "Fontes de download e off-line",
   modelsEndpoint: "Fonte de download de modelos",
   modelsEndpointDesc:
-    "Modelos locais baixados daqui. Vazio usa Hugging Face; se inacessível, informe URL base de espelho. BAOCUT_MODELS_ENDPOINT tem prioridade.",
+    "Modelos locais baixados daqui. Vazio usa Hugging Face; se inacessível, informe https://www.modelscope.cn para baixar do ModelScope ou URL base de espelho. BAOCUT_MODELS_ENDPOINT tem prioridade.",
   toolsEndpoint: "Fonte de download de ferramentas",
   toolsEndpointDesc:
     "Ferramentas como yt-dlp baixadas em “URL base/ferramenta/versão/arquivo”. Vazio usa URL oficial. BAOCUT_TOOLS_ENDPOINT tem prioridade.",

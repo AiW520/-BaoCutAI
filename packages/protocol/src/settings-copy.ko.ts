@@ -13,7 +13,7 @@ export const ko: SettingDescriptionMessages = {
   'downloads.directory':
     '영상이 없는 도구 결과, 링크에서 다운로드한 미디어, downloads_save가 넘긴 파일의 기본 저장 위치(절대 경로). null이면 프로젝트와 관계없이 이 호스트의 ~/Downloads를 사용합니다',
   'models.downloadEndpoint':
-    '로컬 모델의 다운로드 소스(미러 기본 URL, http(s)://). null이면 공개 모델 허브를 사용합니다. BAOCUT_MODELS_ENDPOINT 환경 변수가 우선합니다',
+    '로컬 모델의 다운로드 소스(미러 기본 URL, http(s)://). null이면 공개 모델 허브를, https://www.modelscope.cn이면 ModelScope를 사용합니다. BAOCUT_MODELS_ENDPOINT 환경 변수가 우선합니다',
   'models.dir':
     '로컬 모델을 둘 폴더(절대 경로). null이면 데이터 폴더의 models를 사용합니다. BAOCUT_MODELS_DIR 환경 변수가 우선합니다. settings set이 아니라 models.setDir로 변경하세요',
   'tools.downloadEndpoint':

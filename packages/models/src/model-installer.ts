@@ -6,7 +6,7 @@ import { requiredSources, type BundleComponentSource, type BundleDefinition } fr
 import { readInstallRecord, updateInstallRecord } from './install-record.ts';
 import { readManifest, sha256File, type BcutManifest, type ModelCatalog } from './model-catalog.ts';
 import { DownloadError, ModelDownloader, diskFreeBytes, type DownloadFile } from './model-downloader.ts';
-import { modelFileUrl } from './download-source.ts';
+import { isModelScopeEndpoint, modelFileUrl, repoEndpoint } from './download-source.ts';
 import { discardStaging, removeEmptyParents, stagingDirOf } from './model-staging.ts';
 import { REPO_MANIFESTS, repoManifestFor, type RepoManifestSpec } from './repo-manifests.ts';
 
@@ -127,7 +127,7 @@ export class ModelInstaller {
       confirmBytes: downloadBytes ?? estimatedBytes,
       resumedBytes,
       availableBytes: await this.#freeBytes(this.root),
-      source: endpoint,
+      source: this.#sourceOf(endpoint, downloading),
       upToDate: downloading.length === 0,
     };
     return { plan, components, endpoint, repair, totalBytes: downloadBytes === null ? null : downloadBytes + resumedBytes };
@@ -166,7 +166,7 @@ export class ModelInstaller {
     for (const component of downloading) {
       const { repo, revision } = component.source;
       if (component.reuse.length > 0) await downloader.reuse(repo, revision, this.#catalog.repoDir(repo), component.reuse);
-      const sourceRepo = repoManifestFor(repo, revision, this.#manifests)?.sourceRepo ?? repo;
+      const sourceRepo = this.#sourceRepo(component.source);
       await downloader.download(
         repo,
         revision,
@@ -181,7 +181,7 @@ export class ModelInstaller {
       );
       signal.throwIfAborted();
       report('publishing');
-      published.push(await downloader.publish(repo, revision, component.files));
+      published.push(await downloader.publish(repo, revision, component.files, sourceRepo));
       this.#catalog.changed(detail.plan.bundleId);
     }
     await updateInstallRecord(this.root, (record) => {
@@ -308,7 +308,7 @@ export class ModelInstaller {
     const unknown = pending.filter((p) => p.file.size === null).map((p) => p.file);
     const probed = new Map<string, number | null>();
     if (unknown.length > 0) {
-      const sizes = await this.#probeSizes(endpoint, spec.sourceRepo ?? source.repo, source.revision, unknown);
+      const sizes = await this.#probeSizes(endpoint, this.#sourceRepo(source), source.revision, unknown);
       unknown.forEach((file, i) => probed.set(file.path, sizes[i] ?? null));
     }
     const remaining = pending.map(({ file, part }) => {
@@ -320,21 +320,48 @@ export class ModelInstaller {
     return { component, source, action: 'download', fetch: fetchFiles, reuse, files, staged, bytes, estimatedBytes };
   }
 
-  /** 向下载来源问文件大小（HEAD，跟随重定向；LFS 文件优先 `x-linked-size`）。取不到时 null。 */
+  /** 下载来源的仓库：清单的 `sourceRepo`，没写时就是登记的 `repo`。 */
+  #sourceRepo(source: BundleComponentSource): string {
+    return repoManifestFor(source.repo, source.revision, this.#manifests)?.sourceRepo ?? source.repo;
+  }
+
+  /** 计划里的来源：这次要下载的组件实际用到的基址，有几个时设置的基址在前、用「 + 」连起来；没有要下载的时是设置的基址。 */
+  #sourceOf(endpoint: string, downloading: readonly PlannedComponent[]): string {
+    const bases = new Set(downloading.map((c) => repoEndpoint(endpoint, this.#sourceRepo(c.source))));
+    if (bases.size === 0) return endpoint;
+    return [...bases].sort((a, b) => Number(b === endpoint) - Number(a === endpoint)).join(' + ');
+  }
+
+  /**
+   * 向下载来源问文件大小：先 HEAD（跟随重定向；LFS 文件优先 `x-linked-size`）；HEAD 不给大小时改发只要第一个字节的 GET，
+   * 从 `Content-Range` 读总长（来源不理 Range、回 200 整份时读 `Content-Length`）。ModelScope 的 HEAD 从不给大小，直接发 GET。
+   * 取不到时 null。
+   */
   async #probeSizes(endpoint: string, repo: string, revision: string, files: DownloadFile[]): Promise<Array<number | null>> {
     if (this.#options.probeSizes === false) return files.map(() => null);
     const timeout = this.#options.headTimeoutMs ?? 5_000;
+    const headless = isModelScopeEndpoint(repoEndpoint(endpoint, repo));
     return Promise.all(
       files.map(async (file) => {
+        const url = modelFileUrl(endpoint, repo, revision, file.path);
         try {
-          const response = await this.#fetch(modelFileUrl(endpoint, repo, revision, file.path), {
-            method: 'HEAD',
+          if (!headless) {
+            const head = await this.#fetch(url, { method: 'HEAD', redirect: 'follow', signal: AbortSignal.timeout(timeout) });
+            if (!head.ok) return null;
+            const size = sizeOf(head.headers.get('x-linked-size') ?? head.headers.get('content-length'));
+            if (size !== null) return size;
+          }
+          const ranged = await this.#fetch(url, {
+            headers: { Range: 'bytes=0-0' },
             redirect: 'follow',
             signal: AbortSignal.timeout(timeout),
           });
-          if (!response.ok) return null;
-          const value = Number(response.headers.get('x-linked-size') ?? response.headers.get('content-length') ?? NaN);
-          return Number.isSafeInteger(value) && value >= 0 ? value : null;
+          await ranged.body?.cancel().catch(() => {});
+          if (!ranged.ok) return null;
+          // ModelScope 的小文件回 200 却带 `Content-Range`（`Content-Length` 是 1）：有它就以它为准。
+          const range = /^bytes \d+-\d+\/(\d+)$/.exec(ranged.headers.get('content-range') ?? '');
+          if (range) return sizeOf(range[1]);
+          return ranged.status === 200 ? sizeOf(ranged.headers.get('content-length')) : null;
         } catch {
           return null;
         }
@@ -377,6 +404,11 @@ export class ModelInstaller {
     if (!def) throw new Error(M.noBundle({ bundleId }).text);
     return def;
   }
+}
+
+function sizeOf(value: string | null | undefined): number | null {
+  const size = Number(value ?? NaN);
+  return Number.isSafeInteger(size) && size >= 0 ? size : null;
 }
 
 function componentsOf(def: BundleDefinition): Array<[string, BundleComponentSource]> {

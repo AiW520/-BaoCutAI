@@ -1,7 +1,7 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import { MANIFEST_FILE, sha256File, type BcutManifest } from './model-catalog.ts';
-import { modelFileUrl } from './download-source.ts';
+import { modelFileUrl, repoEndpoint } from './download-source.ts';
 import { STAGING_DIR, removeEmptyParents, stagingDirOf } from './model-staging.ts';
 import { live, type MessageRef } from '@baocut/protocol';
 import { ModelsModelDownloader as M } from '@baocut/protocol/messages/models/model-downloader.ts';
@@ -12,8 +12,10 @@ import { modelTextRef, type ModelText } from './model-text.ts';
  *
  * 暂存区：`<models-root>/.bcut-staging/<owner>/<repo>@<revision>/`，与模型目录在同一个卷上（发布是改名）。
  * - 没下完的文件是 `<path>.part`；核对过 sha256 的文件改名为 `<path>`。暂存区里已经核对过的文件不再下载。
- * - 续传：`.part` 已有 n 字节时带 `Range: bytes=n-`；206 且 `Content-Range` 从 n 开始就接着写，200 表示来源不支持
- *   续传，从头写。续传出来的文件 sha256 不符时，删掉从头再下一次；从头下的仍不符就是校验失败。
+ * - 续传：`.part` 已有 n 字节时带 `Range: bytes=n-`；206 且 `Content-Range` 从 n 开始就接着写。200 表示来源不支持
+ *   续传：丢掉这个回复（它的内容不一定完整），不带 Range 从头再要一次；已有的部分不超过 `RESTART_BELOW` 时 5xx 也这样处理
+ *   （ModelScope 的小文件对 `bytes=n-` 回 200 却只发一截，或回 502）。续传出来的文件 sha256 不符时，删掉从头再下一次；
+ *   从头下的仍不符就是校验失败。
  * - 连不上、5xx、429 与读到一半断开按有界的退避重试（每次从已经写下的字节续传；断开前有进展时重新计数）；
  *   404、401、403 不重试。
  * - 取消（信号中止）立即停下，`.part` 留在暂存区，下次续传。
@@ -88,6 +90,9 @@ class Retryable extends Error {
 /** 内容不对（多出字节）：与 sha256 不符一样处理。 */
 class Oversize extends Error {}
 
+/** 续传请求回 5xx 时，已有的部分不超过这么多字节就从头下载（重下的代价小于卡在不能续传的来源上）。 */
+const RESTART_BELOW = 64 * 1024 * 1024;
+
 export class ModelDownloader {
   readonly #root: string;
   readonly #endpoint: string;
@@ -143,16 +148,21 @@ export class ModelDownloader {
 
   /**
    * 发布：暂存目录里的文件写成清单，原子地换到 `<root>/<owner>/<repo>/`。`files` 是清单要列出的全部文件（含复用的），
-   * 都应已在暂存目录里。
+   * 都应已在暂存目录里。清单的 `source` 记这个仓库实际的下载基址（`sourceRepo` 同 `download`）。
    */
-  async publish(repo: string, revision: string, files: ReadonlyArray<{ path: string; sha256: string }>): Promise<BcutManifest> {
+  async publish(
+    repo: string,
+    revision: string,
+    files: ReadonlyArray<{ path: string; sha256: string }>,
+    sourceRepo: string = repo,
+  ): Promise<BcutManifest> {
     const stage = stagingDirOf(this.#root, repo, revision);
     const entries: BcutManifest['files'] = [];
     for (const file of files) {
       const stat = await fs.stat(path.join(stage, file.path));
       entries.push({ path: file.path, size: stat.size, sha256: file.sha256, source_verified: true });
     }
-    const manifest: BcutManifest = { format_version: 1, repo, revision, source: this.#endpoint, files: entries };
+    const manifest: BcutManifest = { format_version: 1, repo, revision, source: repoEndpoint(this.#endpoint, sourceRepo), files: entries };
     await fs.writeFile(path.join(stage, MANIFEST_FILE), `${JSON.stringify(manifest, null, 2)}\n`);
     const target = path.join(this.#root, ...repo.split('/'));
     await fs.mkdir(path.dirname(target), { recursive: true });
@@ -258,18 +268,27 @@ export class ModelDownloader {
         attempt.abort(new Error('stalled'));
       }, this.#stallMs);
     };
-    try {
-      arm();
-      let response: Response;
+    const request = async (from: number): Promise<Response> => {
       try {
-        response = await this.#fetch(url, {
-          headers: offset > 0 ? { Range: `bytes=${offset}-` } : {},
+        return await this.#fetch(url, {
+          headers: from > 0 ? { Range: `bytes=${from}-` } : {},
           signal: attempt.signal,
           redirect: 'follow',
         });
       } catch {
         if (signal.aborted) throw signal.reason;
         throw new Retryable(stalled ? 'stalled' : 'connect');
+      }
+    };
+    try {
+      arm();
+      let response = await request(offset);
+      if (offset > 0 && (response.status === 200 || (response.status >= 500 && offset <= RESTART_BELOW))) {
+        // 来源没有按 Range 回这一截：已有的部分作废，从头要。
+        await response.body?.cancel().catch(() => {});
+        await truncate(part, onBytes, offset);
+        offset = 0;
+        response = await request(0);
       }
       const status = response.status;
       let start = 0;
@@ -282,7 +301,7 @@ export class ModelDownloader {
         }
         start = offset;
       } else if (status === 200) {
-        if (offset > 0) await truncate(part, onBytes, offset);
+        // 从头写（续传请求回 200 的，上面已经不带 Range 重新要过）。
       } else if (status === 416) {
         await response.body?.cancel().catch(() => {});
         // 已经收全（大小未知时由 sha256 决定）；否则从头来。

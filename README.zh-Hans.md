@@ -30,6 +30,8 @@ macOS 打开 DMG 后，将 BaoCut 拖入“应用程序”。Windows 先安装 [
 
 智能体功能需要已登录的智能体引擎，例如 Codex CLI 或 Claude Code。媒体分析、转写音频准备与导出还需要 `ffmpeg` 和 `ffprobe`；安装包不包含这些外部工具。
 
+本地模型默认从 Hugging Face 下载。连不上或速度慢时，可在“设置 › 通用 › 模型下载来源”填 `https://www.modelscope.cn` 改从 ModelScope 下载（ModelScope 上没有的少数模型文件仍从 Hugging Face 下载，文件都按内置校验值核对），也可以填镜像的基址。
+
 ## 为什么选择 BaoCut
 
 视频制作往往需要反复修改：译文里的第二句话不准确、某个镜头需要替换、配音的语气还要调整。BaoCut 把这些修改保留在同一个可编辑视频里：
@@ -235,6 +237,7 @@ BaoCut 正在积极开发，macOS Apple Silicon 与 Windows x64 安装包见上�
 | `BAOCUT_FACE_DETECT` | 指定 `face-detect` 路径。否则先查 `BAOCUT_BIN_DIR`，再查 cargo 产物目录；缺失（或随附的 YuNet 模型缺失）时 `videos_frames` 照常取帧，`detector` 为 null、不标人脸。 |
 | `BAOCUT_RUNTIME_ENTRY` | CLI 启动 Runtime 的入口：`.ts` / `.js` 使用当前 Node，其他路径作为可执行文件。否则依次查找已安装的 BaoCut 应用、仓库内的 `apps/runtime`。 |
 | `BAOCUT_MODELS_DIR` | 本地模型目录，默认 `<BAOCUT_HOME>/models`。 |
+| `BAOCUT_MODELS_ENDPOINT` | 本地模型的下载来源（基址），优先于“模型下载来源”设置。默认 `https://huggingface.co`；`https://www.modelscope.cn` 改从 ModelScope 下载。 |
 | `BAOCUT_TEMPLATES_DIR` | 内置创作模板目录，见[模板包规范 §6](docs/spec/template-spec.md#6-目录来源与加载)。否则查找打包资源中的 `templates/`，再查仓库模板。用户模板放在 `<BAOCUT_HOME>/templates`；ID 冲突时内置模板优先。 |
 | `BAOCUT_SKILLS_DIR` | 内置智能体 skill 目录，见[架构设计 §3.8](docs/architecture/architecture-design.md#38-分层渐进加载的创作指导)。否则查找打包资源中的 `skills/baocut/built-in-skills/`，再查仓库中的同一目录。用户 skill 放在 `<BAOCUT_HOME>/skills`；ID 冲突时内置优先。 |
 | `BAOCUT_AGENT_SKILLS_DIR` | 外部智能体使用的 BaoCut skill 源目录，由 `baocut skill install` 渲染，见 [Agent 面设计 §8](docs/design/agent-surface/agent-surface-design.md)。否则依次查找打包的 `skills/` 与仓库目录。 |

@@ -10,7 +10,7 @@ export const ptBR: SettingDescriptionMessages = {
   'captions.maxLineLength': 'Comprimento desejado para quebras automáticas de linha (caracteres): cjk para texto chinês, japonês e coreano; other para todos os demais',
   'transcribe.afterComplete': 'Após transcrever: open-video abre o vídeo, notify somente notifica, nothing não faz nada',
   'downloads.directory': 'Local padrão de salvamento para resultados de ferramentas sem vídeo, mídias baixadas de links e arquivos entregues por downloads_save (caminho absoluto); null usa ~/Downloads neste host, independentemente do projeto',
-  'models.downloadEndpoint': 'Fonte de download de modelos locais (URL base de espelho, http(s)://); null usa o hub público de modelos. A variável de ambiente BAOCUT_MODELS_ENDPOINT tem prioridade',
+  'models.downloadEndpoint': 'Fonte de download de modelos locais (URL base de espelho, http(s)://); null usa o hub público de modelos; https://www.modelscope.cn baixa do ModelScope. A variável de ambiente BAOCUT_MODELS_ENDPOINT tem prioridade',
   'models.dir': 'Pasta dos modelos locais (caminho absoluto); null usa models na pasta de dados. A variável de ambiente BAOCUT_MODELS_DIR tem prioridade. Altere com models.setDir, não com settings set',
   'tools.downloadEndpoint': 'Fonte de download de ferramentas externas gerenciadas (yt-dlp) (URL base de espelho, http(s)://, arquivos em <base>/<tool>/<version>/<file>); null usa a URL do lançamento oficial. A variável de ambiente BAOCUT_TOOLS_ENDPOINT tem prioridade',
   'fonts.autoDownload': 'Baixar automaticamente fontes exigidas pelo layout, ausentes neste computador e presentes no catálogo de fontes (prévia e exportação); quando desativado, usa uma fonte alternativa e mostra um aviso',

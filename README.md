@@ -30,6 +30,8 @@ On macOS, open the DMG and drag BaoCut into Applications. On Windows, install th
 
 Agent features require a signed-in agent engine such as Codex CLI or Claude Code. Media analysis, transcription preparation and export also require `ffmpeg` and `ffprobe`; these external tools are not bundled.
 
+Local models download from Hugging Face by default. If it is unreachable or slow, enter `https://www.modelscope.cn` in Settings › General › Model download source to download from ModelScope instead (the few model files ModelScope lacks still come from Hugging Face; every file is checked against its built-in checksum), or enter a mirror's base URL.
+
 <img width="4432" height="2704" alt="CleanShot 2026-10-07 at 9 35 49 PM@2x" src="https://github.com/user-attachments/assets/304eecf4-56f7-40bf-a1f0-83dd9a7d4ee8" />
 
 <img width="3294" height="2582" alt="CleanShot 2026-10-07 at 9 38 02 PM@2x" src="https://github.com/user-attachments/assets/f71e7ad1-a7cb-40f5-987b-4b78403c11cf" />
@@ -242,6 +244,7 @@ BaoCut is under active development, with macOS Apple Silicon and Windows x64 pac
 | `BAOCUT_FACE_DETECT` | Path to `face-detect`. Otherwise `BAOCUT_BIN_DIR`, then the cargo output dirs; without it (or without the shipped YuNet model) `videos_frames` still returns frames, with `detector: null` and no faces |
 | `BAOCUT_RUNTIME_ENTRY` | Entry the CLI uses to start a Runtime: `.ts` / `.js` run with the current Node, anything else as an executable. Otherwise an installed BaoCut app, then `apps/runtime` in the repo |
 | `BAOCUT_MODELS_DIR` | Local model files. Default `<BAOCUT_HOME>/models` |
+| `BAOCUT_MODELS_ENDPOINT` | Download source (base URL) for local models; overrides the Model download source setting. Default `https://huggingface.co`; `https://www.modelscope.cn` downloads from ModelScope |
 | `BAOCUT_TEMPLATES_DIR` | Built-in creation templates ([template spec §6](docs/spec/template-spec.md#6-目录来源与加载)). Otherwise the packaged `templates/`, then the repo's. User templates live in `<BAOCUT_HOME>/templates`; built-in wins on id clash |
 | `BAOCUT_SKILLS_DIR` | Built-in agent skills ([architecture §3.8](docs/architecture/architecture-design.md)). Otherwise the packaged `skills/baocut/built-in-skills/`, then the repo's. User skills live in `<BAOCUT_HOME>/skills`; built-in wins on id clash |
 | `BAOCUT_AGENT_SKILLS_DIR` | Source of the BaoCut skill for external agents ([Agent surface §8](docs/design/agent-surface/agent-surface-design.md)), rendered by `baocut skill install`. Otherwise the packaged `skills/`, then the repo's |

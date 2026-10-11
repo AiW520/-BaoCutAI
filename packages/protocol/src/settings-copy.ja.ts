@@ -13,7 +13,7 @@ export const ja: SettingDescriptionMessages = {
   'downloads.directory':
     '既定の保存先：動画のないツールの結果、リンクからダウンロードしたメディア、downloads_save で渡されたファイルをここに置きます（絶対パス）。null は、プロジェクトに関係なくこのホストの ~/Downloads を使います',
   'models.downloadEndpoint':
-    'ローカルモデルのダウンロード元（ミラーのベース URL、http(s)://）。null は公開モデルハブ。環境変数 BAOCUT_MODELS_ENDPOINT が優先されます',
+    'ローカルモデルのダウンロード元（ミラーのベース URL、http(s)://）。null は公開モデルハブ、https://www.modelscope.cn は ModelScope からダウンロード。環境変数 BAOCUT_MODELS_ENDPOINT が優先されます',
   'models.dir':
     'ローカルモデルを置くフォルダ（絶対パス）。null はデータフォルダ内の models。環境変数 BAOCUT_MODELS_DIR が優先されます。変更には settings set ではなく models.setDir を使います',
   'tools.downloadEndpoint':

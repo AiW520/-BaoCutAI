@@ -148,6 +148,20 @@ describe('legacy startup upgrade', () => {
     expect(settings.get('ui.language')).toBe('zh-Hant');
     expect(settings.get('models.dir')).toBe(path.join(os.homedir(), 'models'));
   });
+  it('maps the old ModelScope download source to its v3 base URL and leaves the old CDN unset', async () => {
+    const s = await setup();
+    const settings = new SettingsStore(s.home.settingsFile);
+    await settings.load();
+    const source = (await readLegacySource(s.root))!;
+    source.preferences = {};
+    source.config = { 'models.endpoint': 'modelscope' };
+    await importLegacySettings(settings, source);
+    expect(settings.get('models.downloadEndpoint')).toBe('https://www.modelscope.cn');
+    await settings.set({ 'models.downloadEndpoint': null });
+    source.config = {};
+    await importLegacySettings(settings, source, { 'vk-download-source': 'cdn' });
+    expect(settings.get('models.downloadEndpoint')).toBeNull();
+  });
   it('reads the old macOS vault, defers denied credentials, and never leaks secrets', async () => {
     const s = await setup();
     await fs.rm(path.join(s.root, 'secrets.json'));

@@ -354,8 +354,7 @@ export class LegacyUpgrade {
               .filter((key) => !mapped.has(key))
               .map((key) => `preference:${key}`),
           );
-          if (['cdn', 'modelscope'].includes(source.config['models.endpoint'] ?? v1['vk-download-source']))
-            state.unsupported.push('setting:models.endpoint');
+          if ((source.config['models.endpoint'] ?? v1['vk-download-source']) === 'cdn') state.unsupported.push('setting:models.endpoint');
           state.settings = true;
           await this.#save();
         }

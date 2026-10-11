@@ -3,6 +3,7 @@ import { localeOfTag } from '@baocut/protocol';
 import { settingValueSchemas } from '@baocut/protocol/schemas';
 import os from 'node:os';
 import path from 'node:path';
+import { MODELSCOPE_ENDPOINT } from '@baocut/models';
 import { SettingsStore } from '@baocut/runtime-storage';
 import { legacyPath, type LegacyObject, type LegacySource } from './legacy-upgrade-sources.ts';
 
@@ -26,9 +27,10 @@ export async function importLegacySettings(
     'agent.defaultEffort': p.agentChatDefaults?.effort,
     'agent.defaultAccessMode': p.agentLastMode,
   };
-  // The old endpoint is an enum, not a URL. Only HF has identical semantics.
+  // The old endpoint is an enum, not a URL. HF and ModelScope have v3 base URLs; the old CDN does not carry v3 repositories.
   const endpoint = c['models.endpoint'] ?? (v1['vk-download-source'] === 'custom' ? v1['vk-custom-mirror'] : v1['vk-download-source']);
   if (endpoint === 'hf' || endpoint === 'huggingface') patch['models.downloadEndpoint'] = 'https://huggingface.co';
+  else if (endpoint === 'modelscope') patch['models.downloadEndpoint'] = MODELSCOPE_ENDPOINT;
   else if (typeof endpoint === 'string' && /^https?:\/\//.test(endpoint)) patch['models.downloadEndpoint'] = endpoint;
   const accepted: Partial<Record<SettingKey, unknown>> = {};
   for (const [key, value] of Object.entries(patch) as [SettingKey, unknown][]) {

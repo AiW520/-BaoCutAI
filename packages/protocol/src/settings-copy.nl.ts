@@ -14,7 +14,7 @@ export const nl: SettingDescriptionMessages = {
   'downloads.directory':
     "Standaardopslaglocatie voor toolresultaten zonder video, media gedownload via links en bestanden overgedragen door downloads_save (absoluut pad); null gebruikt ~/Downloads op deze host, ongeacht het project",
   'models.downloadEndpoint':
-    "Downloadbron voor lokale modellen (basis-URL van spiegelserver, http(s)://); null gebruikt de openbare modelhub. De omgevingsvariabele BAOCUT_MODELS_ENDPOINT heeft voorrang",
+    "Downloadbron voor lokale modellen (basis-URL van spiegelserver, http(s)://); null gebruikt de openbare modelhub; https://www.modelscope.cn downloadt van ModelScope. De omgevingsvariabele BAOCUT_MODELS_ENDPOINT heeft voorrang",
   'models.dir':
     "Map voor lokale modellen (absoluut pad); null gebruikt models in de gegevensmap. De omgevingsvariabele BAOCUT_MODELS_DIR heeft voorrang. Wijzig die met models.setDir, niet settings set",
   'tools.downloadEndpoint':

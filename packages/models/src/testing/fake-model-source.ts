@@ -9,7 +9,7 @@ import type { RepoManifestSpec } from '../repo-manifests.ts';
 
 /**
  * 测试用的假模型来源：只监听本机回环地址的临时端口，按下载来源的路径规则
- * （`<基址>/<owner>/<repo>/resolve/<revision>/<文件路径>`）提供内存里的文件，支持 HEAD 与 `Range: bytes=n-`。
+ * （`<基址>/<owner>/<repo>/resolve/<revision>/<文件路径>`）提供内存里的文件，支持 HEAD、`Range: bytes=n-` 与 `bytes=n-m`。
  * 可以按文件注入故障：返回某个状态码、发出若干字节后断开、发出若干字节后挂起、内容换成坏字节、不理 Range。
  * 测试永远不连真实的模型仓库，也不下载真实的模型。
  */
@@ -101,24 +101,26 @@ export async function startFakeModelSource(options: { prefix?: string } = {}): P
       return;
     }
     const body = fault.corrupt ? Buffer.from(content.map((b) => b ^ 0xff)) : content;
-    const match = range && !fault.ignoreRange ? /^bytes=(\d+)-$/.exec(range) : null;
+    const match = range && !fault.ignoreRange ? /^bytes=(\d+)-(\d*)$/.exec(range) : null;
     let start = 0;
+    let stop = body.length;
     if (match) {
       start = Number(match[1]);
-      if (start >= body.length) {
+      if (match[2]) stop = Math.min(body.length, Number(match[2]) + 1);
+      if (start >= stop) {
         res.writeHead(416, { 'content-range': `bytes */${body.length}` });
         res.end();
         return;
       }
       res.writeHead(206, {
-        'content-length': String(body.length - start),
-        'content-range': `bytes ${start}-${body.length - 1}/${body.length}`,
+        'content-length': String(stop - start),
+        'content-range': `bytes ${start}-${stop - 1}/${body.length}`,
         'accept-ranges': 'bytes',
       });
     } else {
       res.writeHead(200, { 'content-length': String(body.length), 'accept-ranges': 'bytes' });
     }
-    const slice = body.subarray(start);
+    const slice = body.subarray(start, stop);
     let sent = 0;
     while (sent < slice.length) {
       if (fault.breakAfter !== undefined && sent >= fault.breakAfter) {

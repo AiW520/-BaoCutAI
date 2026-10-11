@@ -158,8 +158,11 @@ export {
 export { REPO_MANIFESTS, repoManifestFor, weightBytes, type RepoFileSpec, type RepoManifestSpec } from './repo-manifests.ts';
 export {
   DEFAULT_MODELS_ENDPOINT,
+  MODELSCOPE_ENDPOINT,
   MODELS_ENDPOINT_ENV,
+  isModelScopeEndpoint,
   modelFileUrl,
+  repoEndpoint,
   resolveModelsEndpoint,
   validEndpoint,
   type EndpointOrigin,

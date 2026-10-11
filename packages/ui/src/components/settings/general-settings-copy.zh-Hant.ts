@@ -37,7 +37,7 @@ export const zhHant: GeneralSettingsMessages = {
   sourcesGroup: '下載來源與離線',
   modelsEndpoint: '模型下載來源',
   modelsEndpointDesc:
-    '本機模型從這裡下載。留空則使用公開的模型庫（Hugging Face）；無法連線時，請輸入鏡像站的基礎 URL。環境變數 BAOCUT_MODELS_ENDPOINT 優先於此設定。',
+    '本機模型從這裡下載。留空則使用公開的模型庫（Hugging Face）；無法連線時，可輸入 https://www.modelscope.cn 從 ModelScope 下載，或輸入鏡像站的基礎 URL。環境變數 BAOCUT_MODELS_ENDPOINT 優先於此設定。',
   toolsEndpoint: '工具下載來源',
   toolsEndpointDesc:
     'yt-dlp 這類外部工具從這裡下載，位置為「基礎 URL/工具/版本/檔案名稱」。留空則使用官方發布網址。環境變數 BAOCUT_TOOLS_ENDPOINT 優先於此設定。',

@@ -14,7 +14,7 @@ export const de: SettingDescriptionMessages = {
   'downloads.directory':
     "Standard-Speicherort für Werkzeugergebnisse ohne Video, über Links heruntergeladene Medien und Dateien von downloads_save (absoluter Pfad); null verwendet ~/Downloads auf diesem Host, unabhängig vom Projekt",
   'models.downloadEndpoint':
-    "Downloadquelle für lokale Modelle (Spiegelserver-Basis-URL, http(s)://); null verwendet den öffentlichen Modell-Hub. BAOCUT_MODELS_ENDPOINT hat Vorrang",
+    "Downloadquelle für lokale Modelle (Spiegelserver-Basis-URL, http(s)://); null verwendet den öffentlichen Modell-Hub, https://www.modelscope.cn lädt von ModelScope. BAOCUT_MODELS_ENDPOINT hat Vorrang",
   'models.dir':
     "Ordner für lokale Modelle (absoluter Pfad); null verwendet models im Datenordner. BAOCUT_MODELS_DIR hat Vorrang. Mit models.setDir ändern, nicht mit settings set",
   'tools.downloadEndpoint':

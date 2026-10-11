@@ -108,6 +108,17 @@ describe('ModelDownloader', () => {
     expect(await fs.readFile(path.join(stagingDirOf(root, REPO, REV), 'sub/model.safetensors'))).toEqual(weights);
   });
 
+  it('续传请求回 200 或 5xx（ModelScope 的小文件）：不读那个回复，不带 Range 从头再要', async () => {
+    source.fault('sub/model.safetensors', { breakAfter: 50_000 });
+    source.fault('sub/model.safetensors', { status: 502 });
+    let bytes = 0;
+    await downloader().download(REPO, REV, files, new AbortController().signal, (delta) => (bytes += delta));
+    expect(bytes).toBe(config.length + weights.length);
+    expect(await fs.readFile(path.join(stagingDirOf(root, REPO, REV), 'sub/model.safetensors'))).toEqual(weights);
+    const ranges = source.requests.filter((r) => r.file === 'sub/model.safetensors').map((r) => r.range);
+    expect(ranges).toEqual([null, 'bytes=50000-', null]);
+  });
+
   it('内容不符：删掉坏文件，报 MODEL_DOWNLOAD_INTEGRITY 并带补救说明', async () => {
     source.fault('sub/model.safetensors', { corrupt: true });
     const error = await downloader()
