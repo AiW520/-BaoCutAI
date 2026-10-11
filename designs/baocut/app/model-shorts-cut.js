@@ -678,14 +678,38 @@
   /* ---------- 子视频进文稿调起止（product-design §5.10 / §4.6） ----------
      起止就在文稿里调：片段外的话划掉保留，点一下放回来，再剪就是普通的剪。这里只给入口——
      子视频横幅的「去文稿调整」、结果页「正在看」那张卡的「调起止」，两个按钮同一个动作：
-     切到文稿 Tab、剪辑开关打开、滚到片段前面那条剪缝（没有就落在片段第一句）。 */
+     切到文稿 Tab、剪辑开关打开、滚到片段前面那条剪缝（没有就落在片段第一句）。
+     进来之后横幅同一个位置换成回去的路（cutEntryAction）：从哪个 Tab 来就回哪个 Tab，
+     从结果页来就「回到结果页」；不是这样进的文稿（网址、Space、会话卡，或跳过来之后又点过 rail），
+     有结果页时给「看结果页」，没有就不摆。 */
   const CUT_ENTRY_COPY = {
     adjust: '去文稿调整',
     adjustTip: '在文稿里放回片段外的话，或再剪掉几句',
     trim: '调起止',
     trimTip: '去文稿：放回片段外的话，或再剪掉几句',
     hint: '片段外的话已划掉，点一下放回来',
+    back: (label) => `回到${label}`,
+    backTip: '回到进文稿之前的面板',
+    backResult: '回到结果页',
+    result: '看结果页',
+    resultTip: '打开这一轮剪成短视频的结果页',
   };
+  /** 横幅上那个入口按钮（product-design §5.10 / §4.6）。`tab` 是右栏现在的 Tab；`origin` 是
+      「去文稿调整」/「调起止」记下的来处 `{tab}`（别的路径换 Tab 时清掉）；`hasResult` 这一支有结果页，
+      `ai` 这个表面有 AI 工具，`railLabel` 是来处 Tab 在 rail 上的名字。
+      返回 `{kind: 'adjust' | 'back' | 'result' | null, label, tip, to}`，`to` 是点了去哪个 Tab（adjust 为 transcript）。 */
+  function cutEntryAction(tab, origin, o) {
+    const c = o || {};
+    const E = CUT_ENTRY_COPY;
+    const result = !!(c.hasResult && c.ai);
+    if (tab !== 'transcript') return {kind: 'adjust', label: E.adjust, tip: E.adjustTip, to: 'transcript'};
+    if (origin && origin.tab && origin.tab !== 'transcript') {
+      const label = origin.tab === 'aitools' && result ? E.backResult : E.back(c.railLabel || origin.tab);
+      return {kind: 'back', label, tip: E.backTip, to: origin.tab};
+    }
+    if (result) return {kind: 'result', label: E.result, tip: E.resultTip, to: 'aitools'};
+    return {kind: null, label: null, tip: null, to: null};
+  }
   /** 子视频打开时右栏落在哪：URL 带了 Tab 就听它（结果页点卡打开带 `tab=aitools`，留在结果页）；
       没带——Space、会话里的视频卡、来源视频「切出的短视频」、直接输网址——落在文稿（剪辑开关缺省为开）。 */
   function childLanding(routeTab) {
@@ -732,7 +756,7 @@
     flags, visible, chosen, totalSec, resultHead, hookOf, tailOf, preselect,
     demoCandidates, manualCandidate,
     EXPORT_COPY, exportBatch, exportNotes,
-    CUT_ENTRY_COPY, childLanding, entryAnchor,
+    CUT_ENTRY_COPY, cutEntryAction, childLanding, entryAnchor,
     childTitle, childProject,
     frameLine, summaryLine, agentExtra, taskTitle, stageAt, listStatus, openTracks,
     bar, rowWindow,

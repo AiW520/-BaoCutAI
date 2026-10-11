@@ -1028,14 +1028,25 @@
     /* ---- 剪成短视频（§5.10）：子视频打开时，来源视频那一轮的结果页亮这一支 ---- */
     useEffect(() => { if (shortsChild) app.shortsCut.focusChild(proj.id); }, [proj.id]);
     /* 子视频进文稿调起止（横幅「去文稿调整」、结果卡「调起止」）：切到文稿、剪辑开关打开，
-       文稿面板挂上后滚到片段前面那条剪缝（panels.jsx 消费 cutJump，只消费一次） */
+       文稿面板挂上后滚到片段前面那条剪缝（panels.jsx 消费 cutJump，只消费一次）。
+       出发前记下来处 `cutOrigin {tab, paneView}`，横幅在文稿里换成回去的那一格（SC.cutEntryAction，§5.10 / §4.6）；
+       closeCutEntry 回到那里。离开文稿、点 rail、换视频都清掉——那之后的文稿不算「从那儿跳过来的」。 */
     const [cutJump, setCutJump] = useState(0);
     const cutJumpSeen = useRef(0);
+    const [cutOrigin, setCutOrigin] = useState(null);
     const openCutEntry = useCallback(() => {
+      if (tab !== 'transcript') setCutOrigin({tab, paneView});
       cutStore.setCutMode(true);
       setTab('transcript'); setPaneView(null); setPaneHidden(false);
       setCutJump(n => n + 1);
-    }, [setTab, cutStore.setCutMode]);
+    }, [tab, paneView, setTab, cutStore.setCutMode]);
+    const closeCutEntry = useCallback(() => {
+      if (!cutOrigin) return;
+      setTab(cutOrigin.tab); setPaneView(cutOrigin.paneView || null); setPaneHidden(false);
+      setCutOrigin(null);
+    }, [cutOrigin, setTab]);
+    useEffect(() => { if (tab !== 'transcript') setCutOrigin(null); }, [tab]);
+    useEffect(() => { setCutOrigin(null); }, [proj.id]);
     const cropOutputs = app.crop.outputs[proj.id];
     useEffect(() => {
       if (!cropOutputs?.length) return;
@@ -1254,7 +1265,7 @@
         : null,
       cues, setCues: commitCues, paras, cueText, putCueText, translations, putTranslationDoc,
       cuts: cutStore.cuts, cutOps: cutStore.cutOps, cutMode: cutStore.cutMode, setCutMode: cutStore.setCutMode, outDuration,
-      tmap, composed: shortsChild, cutJump, cutJumpSeen, openCutEntry,
+      tmap, composed: shortsChild, cutJump, cutJumpSeen, openCutEntry, cutOrigin, closeCutEntry, clearCutOrigin: () => setCutOrigin(null),
       cutSel: cutStore.cutSel, setCutSel, transImpact, fixCutTrans,
       subStyle, setSubStyle, restoreSubStyle, setSubTrack, applyPreset, stagePreset,
       subScope, setSubScope, curCue, setSubCue, clearSubCue,
@@ -1343,14 +1354,15 @@
      Native S2 toggles own selection/focus; the user-revised selection indicator
      mirrors the app rail, on the right edge. */
   function Rail({ctx}) {
-    const {tab, setTab, paneHidden, setPaneHidden} = ctx;
+    const {tab, setTab, paneHidden, setPaneHidden, clearCutOrigin} = ctx;
     const S = window.RSP;
     return <div className="rail">
       <S.ToggleButtonGroup orientation="vertical" selectionMode="single" isQuiet size="M" aria-label="视频编辑工具"
         selectedKeys={new Set(paneHidden ? [] : [tab])} onSelectionChange={keys => {
           const key = [...keys][0];
           if (key == null) setPaneHidden(true);
-          else { setTab(key); setPaneHidden(false); }
+          /* 点 rail 换面板（哪怕点回文稿）就不再是「从结果页 / 别的面板跳来的」（§5.10）：清掉横幅的来处 */
+          else { if (clearCutOrigin) clearCutOrigin(); setTab(key); setPaneHidden(false); }
         }} UNSAFE_className="editor-tools bc-scroll">
         {window.BC_SURFACE.rail(D.rail).map(r => <S.TooltipTrigger key={r.k}>
           <S.ToggleButton id={r.k} aria-label={r.label} UNSAFE_className="editor-tools__button">{r.k === 'transcript' ? <S.Icons.Transcript /> : r.k === 'aitools' ? <S.Icons.MagicWand /> : <Ic n={r.icon} />}</S.ToggleButton>

@@ -1,5 +1,6 @@
 /* 短视频项目与来源项目的那条链接（product-design §5.10）：项目卡 / 行 / 侧栏上的来源标记、
-   子视频编辑器内容区顶上那一条「从「…」切出的短视频」、来源项目视频 Tab 里「切出的短视频」一组。
+   子视频编辑器内容区顶上那一条「从「…」切出的短视频」（带「去文稿调整」与进文稿后回去的那一格）、
+   来源项目视频 Tab 里「切出的短视频」一组。
    子视频用到原片的哪几段从它自己的剪口派生（model-shorts-cut.js `usedRanges`），这里不再写回。
    这一层是**普通的编辑动作**，不调模型、不起任务，所以 App 与 Web 共用；找片段的那条流程
    （store-shorts-cut / panel-aitools-shorts）只在 App——「切出的短视频」里去往它的两个入口
@@ -44,12 +45,13 @@
   }
 
   /** 子视频编辑器内容区顶上的一条（product-design §5.10）：它从哪部视频切出来、「去文稿调整」进文稿调起止；
-      「回到原片」去来源视频，那一轮的结果页还在（App 有 AI 工具时摆到前面）。Web 没有结果页，只回来源视频。 */
+      「回到原片」去来源视频，那一轮的结果页还在（App 有 AI 工具时摆到前面）。Web 没有结果页，只回来源视频。
+      入口那一格看右栏在哪（SC.cutEntryAction，§4.6）：不在文稿是「去文稿调整」；从别的面板跳进文稿的，
+      换成「回到结果页」/「回到<那个面板>」；直接落在文稿的，有结果页给「看结果页」，没有就不摆。 */
   function ShortsChildBanner({ctx}) {
     const app = useApp();
     const proj = ctx.proj;
     if (!SC.isChild(proj)) return null;
-    const E = SC.CUT_ENTRY_COPY;
     const o = SC.originLabel(app.projects, proj);
     const parent = o && !o.missing ? o.parent : null;
     const back = () => {
@@ -59,14 +61,29 @@
       if (result) api.focusChild(proj.id);
       app.go({r: 'editor', id: parent.id, ...(result ? {tab: 'aitools'} : {})});
     };
+    const S = window.BC_SURFACE;
+    const result = !!(S.ai && app.shortsCut && app.shortsCut.hasResult(proj.id));
+    const from = ctx.cutOrigin && window.BC_DATA.rail.find((r) => r.k === ctx.cutOrigin.tab);
+    const entry = SC.cutEntryAction(ctx.tab, ctx.cutOrigin, {hasResult: result, ai: S.ai, railLabel: from ? from.label : null});
+    const onEntry = () => {
+      if (entry.kind === 'adjust') ctx.openCutEntry();
+      else if (entry.kind === 'back') {
+        if (entry.to === 'aitools' && result) app.shortsCut.focusChild(proj.id);
+        ctx.closeCutEntry();
+      } else if (entry.kind === 'result') {
+        app.shortsCut.focusChild(proj.id);
+        ctx.setTab('aitools'); ctx.setPaneView(null); ctx.setPaneHidden(false);
+      }
+    };
     return (
       <div className="ss-banner" role="note">
         <Ic n="clip" className="ic--14" />
         <span className="ss-banner__t">
           {parent ? `从「${parent.title}」切出的短视频` : '切出的短视频 · 来源视频已不在视频库'}
         </span>
-        {/* 起止在文稿里调（§4.6）：切到文稿、剪辑开关打开、滚到片段前面那条剪缝（editor.jsx openCutEntry）；普通编辑动作，Web 同样有 */}
-        {ctx.openCutEntry ? <Btn size="s" variant="secondary" title={E.adjustTip} onClick={ctx.openCutEntry}>{E.adjust}</Btn> : null}
+        {/* 起止在文稿里调（§4.6）：切到文稿、剪辑开关打开、滚到片段前面那条剪缝（editor.jsx openCutEntry）；普通编辑动作，Web 同样有。
+            进了文稿这一格换成回去的路（closeCutEntry 回来处）或「看结果页」，都没有就不摆 */}
+        {ctx.openCutEntry && entry.kind ? <Btn size="s" variant="secondary" title={entry.tip} onClick={onEntry}>{entry.label}</Btn> : null}
         {parent ? <Btn size="s" variant="secondary" onClick={back}>回到原片</Btn> : null}
       </div>
     );

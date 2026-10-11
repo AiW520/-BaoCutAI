@@ -619,7 +619,8 @@ test('入口文案与按钮：横幅给「去文稿调整」、结果页正在�
   assert.equal(E.trim, '调起止');
   assert.equal(E.hint, '片段外的话已划掉，点一下放回来');
   const banner = read('shorts-source.jsx');
-  assert.match(banner, /onClick=\{ctx\.openCutEntry\}>\{E\.adjust\}/);
+  assert.match(banner, /SC\.cutEntryAction\(ctx\.tab, ctx\.cutOrigin/);
+  assert.match(banner, /onClick=\{onEntry\}>\{entry\.label\}/);
   assert.match(banner, /回到原片/);
   assert.doesNotMatch(banner, /片段外的话划掉保留/);
   const result = read('panel-aitools-shorts-result.jsx');
@@ -629,4 +630,44 @@ test('入口文案与按钮：横幅给「去文稿调整」、结果页正在�
   assert.match(tc, /ctx\.composed \? <span>\{window\.BC_SHORTS_CUT\.CUT_ENTRY_COPY\.hint\}/);
   assert.match(tc, /data-fold=\{fold\.id\}/);
   assert.match(read('editor.jsx'), /shortsChild \? SC\.childLanding\(null\)/);
+});
+
+test('横幅入口那一格：不在文稿是「去文稿调整」', () => {
+  const E = M.CUT_ENTRY_COPY;
+  for (const tab of ['aitools', 'video', 'elements', 'subtitle']) {
+    assert.deepEqual(M.cutEntryAction(tab, null, {hasResult: true, ai: true}), {kind: 'adjust', label: E.adjust, tip: E.adjustTip, to: 'transcript'});
+  }
+  // 记着来处但已经离开文稿（编辑器会清掉，这里也不看它）
+  assert.equal(M.cutEntryAction('video', {tab: 'aitools'}, {hasResult: true, ai: true}).kind, 'adjust');
+});
+
+test('横幅入口那一格：从别的面板跳进文稿，回那个面板；从结果页来且有结果页是「回到结果页」', () => {
+  const r = M.cutEntryAction('transcript', {tab: 'aitools'}, {hasResult: true, ai: true, railLabel: 'AI 工具'});
+  assert.deepEqual(r, {kind: 'back', label: '回到结果页', tip: M.CUT_ENTRY_COPY.backTip, to: 'aitools'});
+  assert.deepEqual(M.cutEntryAction('transcript', {tab: 'video'}, {hasResult: true, ai: true, railLabel: '视频'}),
+    {kind: 'back', label: '回到视频', tip: M.CUT_ENTRY_COPY.backTip, to: 'video'});
+  assert.equal(M.cutEntryAction('transcript', {tab: 'elements'}, {railLabel: '元素'}).label, '回到元素');
+  // 从 AI 工具来但没有结果页（或表面没有 AI 工具）：按 rail 名回去
+  assert.equal(M.cutEntryAction('transcript', {tab: 'aitools'}, {hasResult: false, ai: true, railLabel: 'AI 工具'}).label, '回到AI 工具');
+  assert.equal(M.cutEntryAction('transcript', {tab: 'aitools'}, {hasResult: true, ai: false, railLabel: 'AI 工具'}).label, '回到AI 工具');
+});
+
+test('横幅入口那一格：直接落在文稿（或点过 rail），有结果页且有 AI 工具给「看结果页」，否则不摆', () => {
+  assert.deepEqual(M.cutEntryAction('transcript', null, {hasResult: true, ai: true}),
+    {kind: 'result', label: '看结果页', tip: M.CUT_ENTRY_COPY.resultTip, to: 'aitools'});
+  assert.equal(M.cutEntryAction('transcript', null, {hasResult: false, ai: true}).kind, null);
+  assert.equal(M.cutEntryAction('transcript', null, {hasResult: true, ai: false}).kind, null);
+  assert.equal(M.cutEntryAction('transcript', undefined).kind, null);
+  // 来处就是文稿（不会被记下，防御）：当作没有来处
+  assert.equal(M.cutEntryAction('transcript', {tab: 'transcript'}, {hasResult: true, ai: true}).kind, 'result');
+});
+
+test('编辑器：openCutEntry 记下来处，离开文稿 / 点 rail / 换视频清掉，closeCutEntry 回去', () => {
+  const fs = require('node:fs');
+  const path = require('node:path');
+  const ed = fs.readFileSync(path.join(__dirname, 'editor.jsx'), 'utf8');
+  assert.match(ed, /if \(tab !== 'transcript'\) setCutOrigin\(\{tab, paneView\}\)/);
+  assert.match(ed, /useEffect\(\(\) => \{ if \(tab !== 'transcript'\) setCutOrigin\(null\); \}, \[tab\]\)/);
+  assert.match(ed, /if \(clearCutOrigin\) clearCutOrigin\(\); setTab\(key\)/);
+  assert.match(ed, /openCutEntry, cutOrigin, closeCutEntry, clearCutOrigin/);
 });
