@@ -119,6 +119,7 @@
       "app/model-services.js",
       "app/model-openai-api.js",
       "app/model-mcp-tools.js",
+      "app/model-music.js",
       "app/model-tools.js",
       "app/model-tool-targets.js",
       "app/model-tool-runs.js",
@@ -196,6 +197,7 @@
       "app/settings-agent-skill-detail.jsx",
       "app/settings-agent-skills.jsx",
       "app/settings-tts.jsx",
+      "app/settings-music.jsx",
       "app/page-services-mcp-tools.jsx",
       "app/page-services-api-map.jsx",
       "app/page-services-api.jsx",
@@ -216,6 +218,7 @@
       "app/tool-tts.jsx",
       "app/image-gen.jsx",
       "app/tool-image.jsx",
+      "app/tool-music.jsx",
       "app/tool-video.jsx",
       "app/tool-video-jobs.jsx",
       "app/tool-video-compress.jsx",
@@ -419,9 +422,9 @@
       "app/subtitle-motion.css",
       "app/subtitle-active.css"
     ],
-    "js": "generated/app.js?v=c37dc682cb0d",
+    "js": "generated/app.js?v=67132c383e87",
     "css": "generated/app.css?v=6aff4305662e",
-    "bytes": 3862465
+    "bytes": 3893963
   },
   "web": {
     "file": "BaoCutWeb.html",
@@ -657,9 +660,9 @@
       "app/subtitle-motion.css",
       "app/subtitle-active.css"
     ],
-    "js": "generated/web.js?v=50265afe0b49",
+    "js": "generated/web.js?v=06ff7fda3a3f",
     "css": "generated/web.css?v=793e79244daf",
-    "bytes": 2391702
+    "bytes": 2394455
   },
   "components": {
     "file": "Components.html",
@@ -684,8 +687,8 @@
       "vendor/react-spectrum-s2/react-spectrum-s2-font.css",
       "app/spectrum.css"
     ],
-    "js": "generated/components.js?v=21bc3b6ce948",
+    "js": "generated/components.js?v=c51714a9ffb8",
     "css": "generated/components.css?v=9061c7859247",
-    "bytes": 114327
+    "bytes": 114487
   }
 }

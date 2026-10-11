@@ -2,7 +2,7 @@
 
    智能体要请用户去设置里改什么时，写一个 Markdown 链接，地址用应用内的设置路径（与正式客户端的界面内链接同一套）：
    - `/settings/<节>`：general、shortcuts、fonts、agent、skills、glossary、privacy、diagnostics、about；
-   - `/settings/models/<类>[/<页>]`：类是 providers（API 提供方）、usage（用量）与各能力页 asr、tts、llm、image、sep、vision
+   - `/settings/models/<类>[/<页>]`：类是 providers（API 提供方）、usage（用量）与各能力页 asr、tts、llm、image、music、sep、vision
      （§7.6），页只有语音合成的 voices；旧的 local、cloud 页（正式客户端还没改成能力页时的地址）落到那种能力的能力页，
      与 BC_SETTINGS_NAV.normalize 一致。
    认得的链接点了在当前窗口打开设置的那一页；认不出的（拼错的节、不属于这一类的页、别的路径）返回 null，按普通文字显示。
@@ -12,7 +12,7 @@
 
   const SECTIONS = ['general', 'shortcuts', 'fonts', 'agent', 'skills', 'glossary', 'privacy', 'diagnostics', 'about'];
   const CAPABILITY_CATEGORY = {
-    transcribe: 'asr', synthesizeSpeech: 'tts', generateText: 'llm', generateImage: 'image', separateAudio: 'sep',
+    transcribe: 'asr', synthesizeSpeech: 'tts', generateText: 'llm', generateImage: 'image', generateMusic: 'music', separateAudio: 'sep',
   };
   const PATH_RE = /^\/settings\/([a-z]+)(?:\/([a-z]+)(?:\/([a-z]+))?)?\/?$/;
 

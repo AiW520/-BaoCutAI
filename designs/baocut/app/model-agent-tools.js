@@ -47,7 +47,7 @@
     return {kind: 'edit-video', label: '修改视频', icon: 'edit', summary: a.ops != null ? `${a.ops} 项操作` : a.label || ''};
   }
 
-  const CAPABILITY = {transcribe: '语音识别', synthesizeSpeech: '语音合成', generateImage: '图像生成', generateText: '文本生成', separateAudio: '音源分离'};
+  const CAPABILITY = {transcribe: '语音识别', synthesizeSpeech: '语音合成', generateImage: '图像生成', generateMusic: '音乐生成', generateText: '文本生成', separateAudio: '音源分离'};
 
   /* 工具名 → (参数 → {kind, label, summary, icon})。kind 是步骤行的类别键，也是 `workKind` 归组的依据（都算「调用了工具」）。
      图标只用 icons.jsx 里已有的几何。 */
@@ -63,6 +63,8 @@
     models_transcribe: (a) => ({kind: 'transcribe', label: '转录', icon: 'transcript', summary: join(a.model, a.duration != null ? spoken(a.duration) : null)}),
     models_synthesize_speech: (a) => ({kind: 'speech', label: '合成语音', icon: 'wave', summary: join(n(a.lines != null ? a.lines : 1, '句'), a.voice)}),
     models_generate_image: (a) => ({kind: 'image', label: '生成图片', icon: 'image', summary: n(a.count != null ? a.count : 1, '张')}),
+    /* 生成音乐（2026-10-11）：模式 + 目标时长；Agent 做视频时的配乐也是这一张卡 */
+    models_generate_music: (a) => ({kind: 'music', label: '生成音乐', icon: 'music', summary: join(a.mode === 'song' ? '带唱的歌' : a.mode === 'instrumental' ? '纯音乐' : null, a.targetDurationSec != null ? spoken(a.targetDurationSec) : null, a.style)}),
     captions_create: (a) => ({kind: 'captions', label: '建字幕层', icon: 'captions', summary: a.bilingual ? `${a.pair || '中英'}双语` : a.language || a.document || '原文'}),
     exports_create: (a) => ({kind: 'export', label: '导出', icon: 'export', summary: join(a.resolution || a.format, a.what)}),
     jobs_inspect: (a) => ({kind: 'job', label: '查看任务', icon: 'tasks', summary: a.label || a.jobId || ''}),

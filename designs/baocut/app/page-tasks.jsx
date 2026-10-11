@@ -19,7 +19,7 @@
     cleanup: {icon: 'split', label: '找可剪的口'}, stale: {icon: 'redo', label: '刷新过期译文'},
     tts: {icon: 'wave', label: '生成语音'}, dub: {icon: 'translate', label: '翻译配音'},
     compress: {icon: 'video', label: '压缩视频'}, merge: {icon: 'layers', label: '合并视频'},
-    image: {icon: 'image', label: '生成图片'}, link: {icon: 'link', label: '从链接导入'},
+    image: {icon: 'image', label: '生成图片'}, music: {icon: 'music', label: '生成音乐'}, link: {icon: 'link', label: '从链接导入'},
     'legacy-import': {icon: 'projects', label: '导入旧版项目'},
   };
 

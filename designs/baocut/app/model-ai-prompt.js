@@ -7,7 +7,8 @@
      prompt cache 过期后是额外成本；一件事一条会话也更好找），可改成接着这部视频当前的会话。
    无 React、无 DOM，`node --test` 直接跑。 */
 (function () {
-  const GROUPS_NOW = ['整理文稿', '写作', '发布', '画面'];
+  /* 「声音」组（2026-10-11）只有生成配乐：不从文稿出发，没有文稿也能用 */
+  const GROUPS_NOW = ['整理文稿', '写作', '发布', '画面', '声音'];
   const GROUPS_LATER = ['翻译'];
   /* 「画面」一组先只开剪成短视频（§5.10）；智能裁剪之后搬进来，列表脚注说清去处。 */
   const OPEN_IN_GROUP = {'画面': ['shortscut']};

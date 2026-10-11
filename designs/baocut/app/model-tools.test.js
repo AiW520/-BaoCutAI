@@ -16,11 +16,14 @@ test('本地默认模型覆盖内置推荐，未安装的默认模型不会预�
   assert.equal(T.modelOf(T.preferredForm(mid => mid === fallback, id)), fallback);
 });
 
-test('工具目录按处理的对象分三组：语音与字幕、文字与图片、视频文件（product-design §2.7）', () => {
-  assert.deepEqual(T.GROUPS.map((g) => [g.k, g.label]), [['speech', '语音与字幕'], ['text-image', '文字与图片'], ['video-file', '视频文件']]);
+test('工具目录按处理的对象分四组：语音与字幕、文字与图片、音乐、视频文件（product-design §2.7）', () => {
+  assert.deepEqual(T.GROUPS.map((g) => [g.k, g.label]), [['speech', '语音与字幕'], ['text-image', '文字与图片'], ['music', '音乐'], ['video-file', '视频文件']]);
   assert.deepEqual(T.GROUPS[0].tools.map((t) => t.id), ['transcribe', 'translate', 'dub', 'tts']);
   assert.deepEqual(T.GROUPS[1].tools.map((t) => t.id), ['text', 'image']);
-  assert.deepEqual(T.GROUPS[2].tools.map((t) => t.id), ['link', 'compress', 'merge', 'extract']);
+  assert.deepEqual(T.GROUPS[2].tools.map((t) => t.id), ['music']);
+  assert.deepEqual(T.GROUPS[3].tools.map((t) => t.id), ['link', 'compress', 'merge', 'extract']);
+  assert.equal(T.openable('music').artifact, 'audio');
+  assert.equal(T.musicStatus([], () => false), null, 'Web 入口没有音乐模型时不写状态');
   assert.equal(T.openable('link').name, '下载视频');
   assert.equal(T.openable('transcribe').group, 'speech');
   assert.equal(T.openable('dub').name, '翻译配音');

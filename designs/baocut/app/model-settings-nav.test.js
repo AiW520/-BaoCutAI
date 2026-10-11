@@ -17,11 +17,11 @@ test('每一页只属左栏一项，且往返回到同一项', () => {
 test('模型组：API 提供方、用量在前，然后每种能力一页；语音合成另有我的声音', () => {
   const groups = N.searchGroups('');
   assert.deepEqual(groups.map((g) => g.id), ['preferences', 'agents', 'models', 'app']);
-  assert.deepEqual(groups.find((g) => g.id === 'models').items.map((n) => n.k), ['providers', 'usage', 'asr', 'tts', 'llm', 'image', 'sep', 'vision']);
+  assert.deepEqual(groups.find((g) => g.id === 'models').items.map((n) => n.k), ['providers', 'usage', 'asr', 'tts', 'llm', 'image', 'music', 'sep', 'vision']);
   assert.deepEqual(groups.find((g) => g.id === 'agents').items.map((n) => n.k), ['agent', 'skills']);
   assert.deepEqual(N.byKey('tts').pages, ['tts', 'voices']);
   assert.equal(N.navOf('voices'), 'tts');
-  assert.deepEqual(N.NAV.filter((n) => n.capPage && !n.cap).map((n) => n.k), ['sep', 'vision'], '人声分离与视觉分析只有本机模型');
+  assert.deepEqual(N.NAV.filter((n) => n.capPage && !n.cap).map((n) => n.k), ['music', 'sep', 'vision'], '音乐生成、人声分离与视觉分析只有本机模型');
   assert.equal(N.byKey('llm').local, undefined, '文本生成没有本机模型');
 });
 

@@ -1,5 +1,5 @@
 /* 设置 › 本地模型：「检查」与「试听 / 试画」分开的两件事（2026-10-05）。
-   - 用它：有东西可试的能力（语音合成「试听」、图像生成「试画」）把它当行上唯一的主操作。
+   - 用它：有东西可试的能力（语音合成「试听」、图像生成「试画」、音乐生成「试听」）把它当行上唯一的主操作。
    - 检查：这只模型能不能正常工作。名字只有「检查」（菜单与提示里写全「检查模型」），图标是放大镜，
      不用播放三角。有试用的行，检查只在 ⋯ 里，紧挨「修复…」；没有试用的行（语音识别、音源分离、
      画面理解）在行上另有一个安静的「检查」按钮，⋯ 里照样有。
@@ -22,6 +22,7 @@
   const TRY = {
     tts: {label: '试听', hide: '收起试听', verb: '合成', noun: '试听'},
     image: {label: '试画', verb: '画', noun: '试画'},
+    music: {label: '试听', hide: '收起试听', verb: '生成', noun: '试听'},
   };
   const tryOf = (cat) => TRY[cat] || null;
   /** 检查要不要在行上露出来：只有没有试用的能力露一个安静的按钮；⋯ 里总有「检查模型」。 */
@@ -44,6 +45,7 @@
     sep: {text: '人声和背景没分开', detail: '人声轨与原混音的相关度 0.98（期望 0.6 以下）'},
     vision: {text: '示例画面里一个人也没认出来', detail: '样本图应检出 2 张人脸，实际 0'},
     image: {text: '画出来是一张纯色图', detail: '输出 256 × 256 · 像素方差 0'},
+    music: {text: '生成出来几乎是静音', detail: '样本 8 秒纯音乐 · 响度 -70 LUFS（期望 -40 以上）'},
   };
 
   /*
@@ -85,6 +87,13 @@
       todo: '稍后再检查一次；一直这样就重启 BaoCut。',
       detail: ['modelTest 没有在 10 秒内被接收', 'Worker 进程未就绪'],
     }),
+    /* 音乐模型跟着 BaoCut 自带的 audio.cpp 引擎跑：引擎不在是应用的问题，模型文件完好，修复帮不上 */
+    engineMissing: (m) => ({
+      head: '检查没能开始', fix: 'reinstall', code: 'ENGINE_MISSING',
+      text: 'BaoCut 自带的音乐引擎不见了，不是模型的问题',
+      todo: '重新安装 BaoCut 可以解决，已下载的模型不受影响。',
+      detail: ['找不到 audiocpp_cli（BaoCut.app/Contents/Resources/runtime/audiocpp_cli）', `模型 ${m.id} 的文件完好`],
+    }),
   };
   const PROBLEM_KEYS = Object.keys(PROBLEMS);
   function memNeed(m) {
@@ -100,6 +109,7 @@
   const CHECK_DEMOS = [
     {k: 'pass', label: '通过'}, {k: 'appFileMissing', label: '自带文件缺失'}, {k: 'modelDamaged', label: '模型文件损坏'},
     {k: 'wrongOutput', label: '结果不对'}, {k: 'noMemory', label: '内存不够'}, {k: 'notStarted', label: '没能开始'},
+    {k: 'engineMissing', label: '音乐引擎缺失'},
   ];
   /* 原型开关「下次试听的结果」 */
   const TRY_DEMOS = [
@@ -181,7 +191,7 @@
     if (kind === 'noMemory') {
       return {
         text: `内存不够，没${t.verb}完`,
-        todo: cat === 'image' ? '关掉别的大模型后重试，或把步数调低。' : '关掉别的大模型或占内存的应用后重试。',
+        todo: cat === 'image' ? '关掉别的大模型后重试，或把步数调低。' : cat === 'music' ? '关掉别的大模型后重试，或把时长缩短。' : '关掉别的大模型或占内存的应用后重试。',
         actions: [{k: 'retry', label: '重试', primary: true}],
       };
     }

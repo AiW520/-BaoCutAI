@@ -2277,6 +2277,11 @@
      note: '文生图 · 4-bit · Apple Silicon / Windows / Linux · CPU 较慢', repo: 'mlx-community/Qwen-Image-2.1-MLX-4bit', uses: [],
      license: {name: 'Qwen RESEARCH LICENSE AGREEMENT', url: 'https://huggingface.co/Qwen/Qwen-Image-2.1/blob/main/LICENSE', commercialUse: false,
        summary: '只许非商业用途（研究 / 评估），商用要向 Qwen 另行申请；MLX 包是它的派生物，受同一许可'}},
+    /* 音乐生成（2026-10-11）：YuE2 3B 的 GGUF 包（Q8 语言模型 + VAE），由随 BaoCut 自带的 audio.cpp 引擎跑；不另下组件 */
+    {id: 'yue2-3b', name: 'YuE2 3B', cat: 'music', size: 4608, installed: false, platform: 'macos-arm64,windows-x64,linux-x64',
+     note: '按风格或歌词生成音乐 · Q8 · audio.cpp 引擎 · 30 秒约几分钟 · CPU 更慢', repo: 'audio-cpp/Yue2-3B-GGUF', uses: [],
+     license: {name: 'CC-BY-NC-4.0', url: 'https://huggingface.co/m-a-p/YuE-s1-7B-anneal-en-cot', commercialUse: false,
+       summary: '只许非商业用途，须署名；商用要向 M-A-P 另行申请；GGUF 包是它的转换，受同一许可'}},
   ];
   /* 组件（catalog.rs 的 SharedDependency 与覆盖层）。`installed` 是初始盘上状态：
      Whisper 分词器缺着，让 Whisper large-v3 演示「权重在、组件缺」的半装态。

@@ -29,6 +29,7 @@
     /* 声音与文字 */
     transcribe: ['microphone', 'comment', 'page'],
     speech: ['microphone', 'comment'],
+    music: ['microphone', 'wand', 'dial'],   // 生成音乐（2026-10-11）：话筒、魔棒、旋钮
     'speech-search': ['mag', 'microphone', 'comment'],
     translate: ['comment', 'page', 'document'],
     captions: ['comment', 'page', 'timeline'],

@@ -5,6 +5,7 @@
    用的组件跟着那只模型的展开区走。算法全在 `BC_LOCALMODELS`，这里只画。
    语音合成行只写能拿它做什么（出声方式 / 要不要录音 / 情绪 / 语言 / 体积），仓库名、语速库与组成
    收进展开区；装好后点「试听」展开试听面板，选好再点「生成试听」（`TtsQuickTest`）。
+   音乐生成行（2026-10-11）与语音合成同一种「试听」展开面板（MusicQuickTest）。
    「检查」与「试听 / 试画」是两件事（2026-10-05，BC_LOCALCHECK）：试用是行上的主操作，检查在 ⋯ 里紧挨「修复…」，
    没有试用的能力在行上另有一个安静的「检查」；健康只写在行上那一条状态里（ModelCheckLine）。 */
 (function () {
@@ -161,8 +162,8 @@
           </span>
           {pct >= 0 ? <div className="lmrow__pg"><Progress value={pct} /></div> : (
             <>
-              {ready && cat === 'tts'
-                ? <Btn variant={test ? 'secondary' : 'accent'} size="s" onClick={() => setTest((v) => !v)}>{test ? '收起试听' : '试听'}</Btn>
+              {ready && (cat === 'tts' || cat === 'music')
+                ? <Btn variant={test ? 'secondary' : 'accent'} size="s" onClick={() => setTest((v) => !v)}>{test ? CK.tryOf(cat).hide : CK.tryOf(cat).label}</Btn>
                 : null}
               {ready && cat === 'image'
                 ? <Btn variant="accent" size="s" onClick={() => setImgProbe(true)}>{CK.tryOf('image').label}</Btn> : null}
@@ -202,7 +203,9 @@
         </div>
 
         {ready ? <window.ModelCheckLine st={check} cat={cat} m={m} onAction={onCheck} /> : null}
-        {test && ready ? <window.TtsQuickTest m={m} check={check} onCheck={onCheck} /> : null}
+        {test && ready && cat === 'tts' ? <window.TtsQuickTest m={m} check={check} onCheck={onCheck} /> : null}
+        {/* 音乐生成行的「试听」（settings-music.jsx）：固定几秒纯音乐，只挑风格；慢，面板里写清预计耗时 */}
+        {test && ready && cat === 'music' ? <window.MusicQuickTest m={m} check={check} onCheck={onCheck} /> : null}
         {imgProbe && ready ? <window.ImageProbeDialog open onClose={() => setImgProbe(false)}
           engine={{family: 'local', title: m.name, modelId: m.id, chip: 'MLX', steps: 8, cap: window.BC_CLOUD_IMAGE.capabilities(m.id)}}
           notice={CK.tryNotice(check, cat)} onCheck={(k) => { setImgProbe(false); onCheck(k); }} /> : null}

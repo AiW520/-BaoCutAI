@@ -10,7 +10,7 @@
   const root = typeof window !== 'undefined' ? window : globalThis;
 
   /* 直接任务的 kind → 工具 id（早先的直接任务没记 `toolId`） */
-  const DIRECT = {tts: 'tts', image: 'image', write: 'text'};
+  const DIRECT = {tts: 'tts', image: 'image', music: 'music', write: 'text'};
 
   /* 没记 `toolId` 时按 kind 推断只认工具页的直接任务：Agent、命令行发起的（「再做一次」属于会话），
      以及项目里编辑器面板发起的（带 `project`，如配音面板的生成语音）都不回工具页 */

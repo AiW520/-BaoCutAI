@@ -2,7 +2,8 @@
    顶部一张卡：不在列表里的活用一句话交给 Agent（新会话、这部视频作为上下文）；没有可用 Agent 时换成配置引导。
    下面按组列工具：从文稿出发的三组（整理文稿 / 写作 / 发布）加「画面」组（先只开剪成短视频），翻译与智能裁剪仍从各自面板进来、
    列表脚注说清去处。每行：名字、一句说明、这部视频上的状态（在跑 / 待处理 / 已选用 / 上次什么时候）。
-   没有文稿的视频：顶上加一张说明卡（这些工具都从文稿出发，先转录），工具行置灰不可点，让新用户仍看得见有什么。 */
+   没有文稿的视频：顶上加一张说明卡（这些工具都从文稿出发，先转录），工具行置灰不可点，让新用户仍看得见有什么；
+   「声音」组的生成配乐（2026-10-11）不从文稿出发，照样能点。 */
 (function () {
   const D = window.BC_DATA;
   const AG = window.BC_AGENT;
@@ -59,7 +60,7 @@
           {!hasTranscript ? (
             <div className="aicard ail__empty">
               <b>这部视频还没有文稿</b>
-              <span>这里的工具都从文稿出发：润色、分章、写总结、起标题都要先有转录。{ctx.proj.status === 'running' ? '转录正在进行，完成后这里就能用。' : '先转录一遍。'}</span>
+              <span>这里的大多数工具从文稿出发：润色、分章、写总结、起标题都要先有转录；生成配乐不用。{ctx.proj.status === 'running' ? '转录正在进行，完成后这里就能用。' : '先转录一遍。'}</span>
               {ctx.proj.status !== 'running' ? <div className="chiprow"><Btn size="s" variant="accent" onClick={() => ctx.setTab('video')}>去转录</Btn></div> : null}
             </div>
           ) : null}
@@ -71,8 +72,9 @@
                 const t = TOOLS[k];
                 const st = rowState(app, ctx, k);
                 const sub = k === 'shortscut' ? window.shortsCutListStatus(app, ctx.proj.id, t.desc) : WF ? WF.listStatus(ctx.proj.id, k, t.desc) : t.desc;
+                const off = !hasTranscript && !t.noTranscript;   // 生成配乐不从文稿出发，没有文稿也能点
                 return (
-                  <button className={cx('drill ail__row', !hasTranscript && 'is-off')} key={k} disabled={!hasTranscript} onClick={() => onOpen(k)}>
+                  <button className={cx('drill ail__row', off && 'is-off')} key={k} disabled={off} onClick={() => onOpen(k)}>
                     <span className="ic2"><Ic n={t.icon} className="ic--16" /></span>
                     <span className="tt"><b>{t.name}</b><span>{sub}</span></span>
                     {st ? <Chip tone={st.tone} pill className="ail__st">{st.text}</Chip> : null}

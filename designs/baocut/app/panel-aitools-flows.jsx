@@ -11,6 +11,8 @@
   const TOOLS = {
     crop: {group: '画面', icon: 'video', name: '智能裁剪', desc: '换一种画幅，把发言人、白板这些重点留在框里', kind: 'crop'},
     shortscut: {group: '画面', icon: 'clip', name: '剪成短视频', desc: '从这部视频里挑几段，各做成一支竖屏短视频', kind: 'shorts'},
+    /* 生成配乐（2026-10-11）：不从文稿出发，没有文稿也能点；点了去工具 › 生成音乐，时长按这部视频预填，做好加到音乐轨 */
+    soundtrack: {group: '声音', icon: 'music', name: '生成配乐', desc: '按这部视频的长度与气氛，在本机生成一段背景音乐，加到音乐轨', kind: 'music', noTranscript: true},
     polish:  {group: '整理文稿', icon: 'sparkle', name: '润色文稿', desc: '修错字、补标点、自动分段——不改写你的话', kind: 'doc',
               setup: ['把明显的错字、缺失的标点补上，并按话题分段。', '不改写你的表达，也不删内容——只修可以确定是笔误的地方。']},
     chapters:{group: '整理文稿', icon: 'list', name: '生成章节', desc: '给长视频分出带标题的章节', kind: 'doc', needsPolish: true,
@@ -31,11 +33,12 @@
     desc:    {group: '发布', icon: 'edit', name: '写简介', desc: '发布用的简介，带章节时间码和标签', kind: 'wr'},
     cover:   {group: '发布', icon: 'image', name: '做封面', desc: '从关键帧出发做几张封面候选，挑一张选用', kind: 'wr'},
   };
-  const GROUPS = ['画面', '整理文稿', '翻译', '写作', '发布'];
+  const GROUPS = ['画面', '整理文稿', '翻译', '写作', '发布', '声音'];
   /* 分组下的一句副题：说清这一组给谁用 */
   const GROUP_SUB = {
     '写作': '给读的人：不看视频也能知道讲了什么',
     '发布': '给发视频的人：让人想点开，点开后内容对得上',
+    '声音': '给视频配背景音乐：在本机生成，不联网；没有文稿也能用',
   };
 
   /* 撤销确认框的正文，逐 flow 写清**撤销会拿走什么**。

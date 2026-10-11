@@ -55,6 +55,12 @@
        desc: '写一句描述，用云端或本机图像模型画一张图；可带参考图、选画幅与张数',
        inputs: [{kind: 'text', output: 'artifact'}]},
     ]},
+    /* 音乐（2026-10-11 YuE2 技术方案）：自成一组，与 Runtime 工具目录的 category 'music' 对齐 */
+    {k: 'music', label: '音乐', desc: '在本机生成配乐与歌曲，不联网。结果是音频条目，可以直接加到视频的音乐轨。', tools: [
+      {id: 'music', name: '生成音乐', icon: 'music', navIcon: 'MusicNote', output: 'artifact', artifact: 'audio',
+       desc: '写一句风格，或给一段歌词，用本机音乐模型生成一段配乐或歌曲；可定时长、先编排再生成',
+       inputs: [{kind: 'text', output: 'artifact'}]},
+    ]},
     {k: 'video-file', label: '视频文件', desc: '下载、压缩、合并视频与提取音频，用本机的 yt-dlp 与 ffmpeg。结果是视频文件与音频条目。', tools: [
       {id: 'link', name: '下载视频', icon: 'Download', navIcon: 'Download', output: 'artifact', artifact: 'final',
        desc: '粘贴链接，下载视频到本机；可使用浏览器 Cookie，下载后可转录成文稿和字幕',
@@ -444,6 +450,11 @@
     return window.BC_CLOUD_IMAGE.toolStatus(engines);
   }
 
+  /** 生成音乐卡的状态行（真相在 model-music.js；Web 入口不加载它，没有就不写） */
+  function musicStatus(models, installed) {
+    return window.BC_MUSIC ? window.BC_MUSIC.toolStatus(window.BC_MUSIC.models(models, installed)) : null;
+  }
+
   /** 生成语音卡的状态行：已装几只模型 */
   function ttsStatus(installed, saved) {
     const all = engines().reduce((ids, e) => ids.concat(modelsOf(e.id)), []);
@@ -455,7 +466,7 @@
 
   window.BC_TOOLS = {
     INPUTS, OUTPUTS, ARTIFACTS, MEDIA_ACCEPT, VIDEO_ACCEPT, GROUPS, TOOLS, toolById, openable, inputOptions, sourceOptions, targetOptions, outputOf,
-    artifactText, resultLine, imageStatus,
+    artifactText, resultLine, imageStatus, musicStatus,
     langName, RATES, MAX_CHARS, isCloud, allEngines, voiceModes, modelOf, modelsOf, langsShort, engineCard, langOptions,
     VIBES, vibeOf, pickVibe, rollVibe, rollPreset, preferredForm, installedAlternative,
     detectLang, enginesFor, langProblem, blank, switchEngine, switchCloudModel, validate, textStats, maxChars, sampleText, voiceLabel,

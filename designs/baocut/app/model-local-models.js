@@ -12,11 +12,13 @@
     {k: 'vision', title: '画面理解', desc: '「智能裁剪」用：认出画面里的人、判断谁在说、找到白板和屏幕上的内容。按场景只装需要的那几个。'},
     /* 图像生成（2026-09-25 图像生成设计稿 §2.3）：与「画面理解」严格分开——那是看图，这是出图 */
     {k: 'image', title: '图像生成', desc: '图片 Tab 的「AI 生成」、工具 › 生成图片、bcut image 用：在这台电脑上出图，不联网。Qwen-Image-2.1 支持 Apple Silicon 与 Windows/Linux x64。NVIDIA 加速需 CUDA 运行时，CPU 生成较慢。'},
+    /* 音乐生成（2026-10-11 YuE2 技术方案）：工具 › 生成音乐、编辑器 AI 工具「生成配乐」、Agent 做视频时配乐都用它 */
+    {k: 'music', title: '音乐生成', desc: '工具 › 生成音乐、编辑器里的「生成配乐」与 Agent 配乐用：按风格或歌词在这台电脑上生成音乐，不联网。YuE2 3B 走随 BaoCut 自带的 audio.cpp 引擎，Apple Silicon 与 Windows/Linux x64 都能用；一段 30 秒的音乐要几分钟。'},
   ];
   const catOf = (m) => m.cat || 'asr';
   const visionDefaultName = (m) => ({'vision-person': 'YuNet 2023mar', 'vision-speaker': 'LR-ASD',
     'vision-content': 'PP-OCRv5 server det'}[m.id] || m.name);
-  /* 语音合成与图像生成没有出厂默认（architecture-design §6.2）：默认菜单没有「自动选择」，
+  /* 语音合成、图像生成与音乐生成没有出厂默认（architecture-design §6.2）：默认菜单没有「自动选择」，
      没设默认时新建任务要手动选模型。语音识别与音源分离保留「自动选择」。 */
   const FACTORY_DEFAULT = {asr: true, sep: true};
   const hasAuto = (cat) => !!FACTORY_DEFAULT[cat];
@@ -25,6 +27,7 @@
     tts: '新建合成任务时预选它；没有默认时要手动选模型，手动选择优先。',
     sep: '未指定模型时，命令行音源分离使用它。',
     image: '新建生图任务时预选它；没有默认时要手动选模型，手动选择优先。',
+    music: '生成音乐、生成配乐时预选它；没有默认时要手动选模型，手动选择优先。',
   };
   /* 云端默认只有语音合成与图像生成有（设置 › 云端模型）；其余类只有本地默认。 */
   const CLOUD_CATS = {tts: true, image: true};

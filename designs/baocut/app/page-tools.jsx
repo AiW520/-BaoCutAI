@@ -1,7 +1,7 @@
 /* 工具页 —— §17.5（2026-09-16）。
    侧栏「后台任务」下面一行进来：不依附任何项目的独立工具。直接调用模型，无 Agent loop。目录按能力分组，
    每张卡一句「能拿它做什么」加一行现状；远端算力 2026-09-17 搬去侧栏「服务」（§17.6，旧链接在 main.jsx 里落过去），
-   生成语音见 tool-tts.jsx，压缩 / 合并视频见 tool-video.jsx 与 tool-video-merge.jsx，生成图片见 tool-image.jsx（2026-09-25）。
+   生成语音见 tool-tts.jsx，压缩 / 合并视频见 tool-video.jsx 与 tool-video-merge.jsx，生成图片见 tool-image.jsx（2026-09-25），生成音乐见 tool-music.jsx（2026-10-11）。
    2026-10-03 每张卡多一行「结果」（从工具目录的输入声明派生）；2026-10-06 按 product-design §2.7 分成语音与字幕 / 文字与图片 /
    视频文件三组，新增提取音频（与压缩、合并共用一页，tool-video-extract.jsx）。各工具页共用一套骨架：输入（含 Space 选择器）→ 模型 →
    选项 → 保存位置 → 开始（tool-frame.jsx、tool-space-picker.jsx），结果是保存到默认保存位置的 Space 条目。
@@ -46,6 +46,7 @@
       merge: ffmpeg,
       extract: ffmpeg,
       image: T.imageStatus(window.useImageEngines(app).filter(e => e.family !== 'agent')),
+      music: T.musicStatus(D.setModels, app.modelInstalled),
       link: app.downloader ? {text: app.downloader.state === 'ready' ? `下载工具就绪 · yt-dlp ${app.downloader.version}` : '第一次使用前要准备下载工具', on: app.downloader.state === 'ready'} : null,
     };
     return (
@@ -80,6 +81,7 @@
     if (t && t.id === 'merge') return <window.MergeToolPage />;
     if (t && t.id === 'extract') return <window.ExtractToolPage />;
     if (t && t.id === 'image') return <window.ImageToolPage />;
+    if (t && t.id === 'music') return <window.MusicToolPage />;
     return <ToolsGallery />;
   }
 

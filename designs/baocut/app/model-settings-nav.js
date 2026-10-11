@@ -15,6 +15,8 @@
     {k: 'tts', label: '语音合成', model: true, capPage: true, pages: ['tts', 'voices'], local: 'tts', cap: 'tts'},
     {k: 'llm', label: '文本生成', model: true, capPage: true, pages: ['llm'], cap: 'text'},
     {k: 'image', label: '图像生成', model: true, capPage: true, pages: ['image'], local: 'image', cap: 'image'},
+    /* 音乐生成（2026-10-11）：只有本机模型（YuE2 + audio.cpp），没有 API 提供方，与人声分离同一种页 */
+    {k: 'music', label: '音乐生成', model: true, capPage: true, pages: ['music'], local: 'music'},
     {k: 'sep', label: '人声分离', model: true, capPage: true, pages: ['sep'], local: 'sep'},
     {k: 'vision', label: '视觉分析', model: true, capPage: true, pages: ['vision'], local: 'vision'},
     {k: 'glossary', label: '术语库', pages: ['glossary']},
@@ -27,6 +29,7 @@
     tts: '生成语音、克隆声音，为视频配音。',
     llm: '润色文稿、翻译字幕，生成文本内容。',
     image: '生成视频所需的图片和封面。',
+    music: '按风格或歌词生成配乐与歌曲。只用这台电脑上的模型。',
     sep: '分离人声、伴奏和背景声。只用这台电脑上的模型。',
     vision: '识别人像、说话人和画面内容，辅助智能裁剪。只用这台电脑上的模型。',
   };
@@ -34,7 +37,7 @@
   const PAGE_LABEL = {tts: '模型', voices: '我的声音', providers: 'API 提供方 服务商 账号 密钥', usage: '用量 花费 余额', agent: 'Agent 提供方', skills: 'Skills'};
   const LOCAL_TABS = NAV.filter((n) => n.local).map((n) => n.local);
   /* 旧「云端模型」页的 tab → 能力页 */
-  const CLOUD_TAB = {stt: 'asr', llm: 'llm', tts: 'tts', image: 'image'};
+  const CLOUD_TAB = {stt: 'asr', llm: 'llm', tts: 'tts', image: 'image'};   // 音乐生成没有云端页，不在这张表
 
   const byKey = (k) => NAV.find((n) => n.k === k) || null;
 

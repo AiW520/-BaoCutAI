@@ -474,7 +474,9 @@
     if (shortsOpen) return <window.ShortsCutPanel ctx={ctx} onBack={back} />;
     // 没打开哪一页就是列表（panel-aitools-list.jsx）；工具页的「返回」回这里
     /* 剪成短视频有自己的会话面板（store-shorts-cut.jsx）：点那一行就开会话，不走通用工具页 */
-    if (!open) return <window.AiToolsList ctx={ctx} onOpen={(k) => { if (k === 'shortscut') { window.openShortsCut(app, ctx); return; } setOpen(k); setScope(null); setLanded(false); }} />;
+    /* 生成配乐走工具 › 生成音乐那一页（不是会话）：带上这部视频与它的时长，做好直接「加到视频」 */
+    const openSoundtrack = () => app.openToolWith('music', {params: {movie: ctx.proj.id, movieTitle: ctx.proj.title, targetDurationSec: window.BC_MUSIC.clampDuration(ctx.proj.duration)}});
+    if (!open) return <window.AiToolsList ctx={ctx} onOpen={(k) => { if (k === 'shortscut') { window.openShortsCut(app, ctx); return; } if (k === 'soundtrack') { openSoundtrack(); return; } setOpen(k); setScope(null); setLanded(false); }} />;
     const t = TOOLS[open];
     const clearScope = () => setScope(null);
     if (t.kind === 'spk') return <div className="pview"><SpeakerFlow scope={scope} clearScope={clearScope} onBack={back} ctx={ctx} /></div>;

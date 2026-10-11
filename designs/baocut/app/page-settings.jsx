@@ -234,7 +234,7 @@
     const Body = nav.capPage && r.sec !== 'voices' ? window.CapabilitySection : SECTIONS[r.sec] || GeneralSection;
     const R = window.RSP;
     const groups = NV.searchGroups('');
-    const icons = {general: 'Settings', shortcuts: 'Keyboard', providers: 'Cloud', usage: 'Data', asr: 'Transcript', tts: 'AudioWave', llm: 'Text', image: 'Image', sep: 'UnlinkHoriz', vision: 'Visibility', glossary: 'FileText', privacy: 'Lock', diagnostics: 'Properties', about: 'InfoCircle'};
+    const icons = {general: 'Settings', shortcuts: 'Keyboard', providers: 'Cloud', usage: 'Data', asr: 'Transcript', tts: 'AudioWave', llm: 'Text', image: 'Image', music: 'MusicNote', sep: 'UnlinkHoriz', vision: 'Visibility', glossary: 'FileText', privacy: 'Lock', diagnostics: 'Properties', about: 'InfoCircle'};
     const href = (n) => window.BC_APP_IA.hrefFor(NV.routeFor(n.k, null, lastPage[n.k]));
     return (
       <div className="setpage">
