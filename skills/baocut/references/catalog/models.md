@@ -69,7 +69,7 @@ description: 模型能力的机制：各能力可用的服务、模型与限制�
 | --- | --- |
 | {{tool:translate}} 报 `CAPABILITY_NOT_CONFIGURED` | 自己翻译（[subtitles](subtitles.md) 的自译路径），**不**请用户去配置 |
 | 转写、语音合成、图片生成、音乐生成报 `CAPABILITY_NOT_CONFIGURED`，`remedy.action` 为 `install-model` | 本机模型包没装：告诉用户要装哪个、多大，同意后 {{tool:models_install}}，装好再重提 |
-| `generateMusic` 的模型包装好了，能力仍 `unavailableReason: 'unsupported'`，`detail` 说找不到 audio.cpp 引擎 | 引擎（`audiocpp_cli`）不在这台机器上：转告用户按 `detail` 装引擎或设 `BAOCUT_AUDIOCPP_CLI`，你不替用户装 |
+| `generateMusic` 的模型包装好了，能力仍 `unavailableReason: 'unsupported'`，`detail` 说找不到 audio.cpp 引擎 | 引擎（`audiocpp_cli`）不在这台机器上：先告诉用户引擎要下载（约 30–70 MB，Apache-2.0，来自 audio.cpp 的发布页），同意后带 {{arg:bundleId}} `yue2-3b@audio-cpp-q8` 调 {{tool:models_install}}，它在确认后安装引擎，用 {{tool:jobs_wait}} 等结果的 `engine.jobId`；`engine` 没有 `jobId` 而带 `reason` 时（`BAOCUT_AUDIOCPP_CLI` 指定的引擎不能运行、离线、这台机器没有包）照 `reason` 与 `remedy` 转告用户 |
 | 同上，其他 `remedy` | 要用户启用一项在线服务或配置账号：照 `remedy` 与 `next` 告诉用户要在哪里启用哪项，停在这里（图片只是交付的一部分时，停下的只是画图这一步，见 [media](media.md) 的「生成图片」） |
 | `GRANT_REQUIRED`、`GRANT_REVOKED` | 要把数据发给在线服务，但用户没有授权：照 `remedy` 转告用户 |
 | `BUDGET_EXCEEDED`、`TASK_BUDGET_EXCEEDED` | 超了预算：转告用户，由用户决定 |
