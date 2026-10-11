@@ -56,7 +56,7 @@
     );
   }
 
-  function ModelRow({row, cat, on, comps, dflt, pct, onDownload, onRemove, onWork}) {
+  function ModelRow({row, cat, on, comps, dflt, pct, onDownload, onRemove, onWork, engine, onInstallEngine}) {
     const app = useApp();
     const {m, own, common} = row;
     const cmap = {};
@@ -106,7 +106,9 @@
     };
     const runCheck = (afterRepair) => {
       remember();
-      const demo = afterRepair ? 'pass' : (app.prefs.modelCheckDemo || 'pass');
+      // 音乐模型：引擎没装时检查必然没能开始（BC_LOCALCHECK engineMissing）
+      const noEngine = cat === 'music' && engine && engine.phase !== 'installed';
+      const demo = noEngine ? 'engineMissing' : afterRepair ? 'pass' : (app.prefs.modelCheckDemo || 'pass');
       clearInterval(ckTimer.current);
       setCheck({phase: 'checking', pct: 0});
       let p = 0;
@@ -137,8 +139,14 @@
     const onCheck = (k) => {
       if (k === 'cancel') { clearInterval(ckTimer.current); setCheck(checkBefore.current || {phase: 'idle'}); }
       else if (k === 'repair') repair();
+      else if (k === 'installEngine') onInstallEngine();
       else if (k === 'recheck' || k === 'check') runCheck();
     };
+    // 引擎装好后，上次因为引擎没装而没能开始的检查自动再跑一次
+    const enginePhase = engine && engine.phase;
+    useEffect(() => {
+      if (enginePhase === 'installed' && check.phase === 'failed' && check.problem && check.problem.key === 'engineMissing') runCheck(true);
+    }, [enginePhase]);
     const paceLangs = cat === 'tts' && !(brief && brief.dubOnly) && TTS.PACE_SEED[m.id] ? Object.keys(TTS.PACE_SEED[m.id]) : [];
 
     return (
@@ -379,6 +387,29 @@
     const installed = LM.defaultChoices(models, comps, on, cat);
     const view = LM.defaultView(cat, dflt, cloudName, installed);
 
+    // 音乐引擎（audio.cpp）：不随 BaoCut 分发，在这里装（BC_LOCALCHECK.engineView）；装好记进偏好，演示进度走完才算装上
+    const [engine, setEngine] = useState(() => ({phase: app.prefs.musicEngine === 'installed' ? 'installed' : 'missing'}));
+    const engineTimer = useRef(null);
+    useEffect(() => () => clearInterval(engineTimer.current), []);
+    const installEngine = () => {
+      if (engine.phase === 'installing' || engine.phase === 'installed') return;
+      clearInterval(engineTimer.current);
+      setEngine({phase: 'installing', pct: 0});
+      let progress = 0;
+      engineTimer.current = setInterval(() => {
+        progress += 8;
+        if (progress < 100) { setEngine({phase: 'installing', pct: progress}); return; }
+        clearInterval(engineTimer.current);
+        setEngine({phase: 'installed'});
+        app.setPref('musicEngine', 'installed');
+        app.toast(`已安装 ${CK.ENGINE.name} ${CK.ENGINE.version}`, 'positive');
+      }, 120);
+    };
+    const onEngine = (k) => {
+      if (k === 'install') installEngine();
+      else if (k === 'cancel') { clearInterval(engineTimer.current); setEngine({phase: 'missing'}); }
+    };
+
     const install = (m, completing) => {
       setOn((t) => LM.applyInstall(t, m));
       app.setModelInstalled(m.id, true);
@@ -424,6 +455,7 @@
     return (
       <>
         <window.ModelsDirCard models={models} comps={comps} on={on} setOn={setOn} work={work} />
+        {cat === 'music' ? <window.MusicEngineRow st={engine} onAction={onEngine} /> : null}
         {hideDefault ? null : cat !== 'vision' ? (
           <Row label="默认模型" desc={view.cloud ? '默认是 API 提供方的模型；选一只本机模型会改用它。' : LM.DEFAULT_DESC[cat]}>
             <Picker size="s" value={view.label}
@@ -450,7 +482,8 @@
           {group.rows.length ? <div className="lmlist">
             {group.rows.map((row) => <ModelRow key={row.m.id} row={row} cat={cat} on={on} comps={comps}
               dflt={row.m.id === view.checked && LM.ready(row.m, comps, on)} pct={dl[row.m.id] ?? -1}
-              onDownload={startDownload} onRemove={remove} onWork={onWork} />)}
+              onDownload={startDownload} onRemove={remove} onWork={onWork}
+              engine={engine} onInstallEngine={installEngine} />)}
           </div> : <p className="t-detail">{group.id === 'installed' ? '还没有安装模型，从下面选择一个下载。' : '这一类的模型已全部安装。'}</p>}
         </section>)}
         {lay.shared.length > 0 && <ModelDisclosure label="公共组件"

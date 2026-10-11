@@ -109,3 +109,36 @@ test('原型开关：录音读不出只在用了自己的录音时成立', () =>
   assert.equal(C.tryOutcome(undefined, true), 'ok');
   assert.deepEqual(C.CHECK_DEMOS.map((d) => d.k), ['pass'].concat(C.PROBLEM_KEYS));
 });
+
+test('音乐引擎没装：检查没能开始，给「安装引擎」而不是「重新安装 BaoCut」；试听面板同样给', () => {
+  const music = {id: 'yue2-3b@audio-cpp-q8', size: 4300};
+  const st = C.finish('engineMissing', music, 'music', NOW);
+  const v = C.lineView(st, 'music', NOW);
+  assert.equal(v.head, '检查没能开始');
+  assert.match(v.text, /还没有安装音乐引擎/);
+  assert.doesNotMatch(v.todo, /重新安装 BaoCut/);
+  assert.deepEqual(v.actions.map((a) => a.k), ['installEngine', 'recheck', 'details']);
+  assert.equal(v.actions[0].label, '安装引擎');
+  assert.ok(C.detailLines(st, music, NOW).some((l) => /audiocpp_cli/.test(l)));
+  assert.deepEqual(C.tryNotice(st, 'music').actions.map((a) => a.k), ['installEngine', 'recheck']);
+});
+
+test('音乐引擎一行：未安装说清大小、许可与来源并给安装；安装中有进度与取消；失败给重试；装好不再有按钮', () => {
+  const missing = C.engineView({phase: 'missing'});
+  assert.equal(missing.chip.label, '未安装');
+  assert.deepEqual(missing.actions.map((a) => a.k), ['install']);
+  const facts = missing.facts.join(' · ');
+  assert.match(facts, /audio\.cpp 0\.9\.1/);
+  assert.match(facts, /Apache-2\.0/);
+  assert.match(facts, /GitHub/);
+  assert.match(facts, /sha256/);
+  assert.match(missing.text, /Vulkan/);
+  assert.equal(C.engineView(null).chip.label, '未安装');
+  const running = C.engineView({phase: 'installing', pct: 40});
+  assert.equal(running.pct, 40);
+  assert.deepEqual(running.actions.map((a) => a.k), ['cancel']);
+  assert.deepEqual(C.engineView({phase: 'failed'}).actions.map((a) => a.k), ['install']);
+  const done = C.engineView({phase: 'installed'});
+  assert.equal(done.chip.label, '已安装');
+  assert.deepEqual(done.actions, []);
+});

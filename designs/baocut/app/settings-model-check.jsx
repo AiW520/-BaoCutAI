@@ -1,7 +1,8 @@
 /* 设置 › 本地模型：行上那一条健康状态，与试用面板里的提醒 / 失败块（2026-10-05）。
    说法与动作全在 BC_LOCALCHECK（model-local-check.js），这里只画。
    - ModelCheckLine：检查中（阶段 + 进度 + 取消）/ N 分钟前检查通过 / 没通过（红色一句 + 修复… / 重新检查 / 详情）。
-   - ModelTryNote：试听 / 试画里的提醒与失败，同一套「哪里不对 · 怎么办 · 按钮」。 */
+   - ModelTryNote：试听 / 试画里的提醒与失败，同一套「哪里不对 · 怎么办 · 按钮」。
+   - MusicEngineRow：设置 › 音乐生成顶部的「音乐引擎」（audio.cpp）：未安装 / 安装中 / 没装上 / 已安装，说法在 BC_LOCALCHECK.engineView。 */
 (function () {
   const {useState} = React;
   const CK = window.BC_LOCALCHECK;
@@ -69,5 +70,37 @@
     );
   }
 
-  Object.assign(window, {ModelCheckLine, ModelTryNote});
+  /** 音乐引擎一行，与模型行同一套版式。st 见 BC_LOCALCHECK.engineView；onAction(k) 收 install / cancel。 */
+  function MusicEngineRow({st, onAction}) {
+    const v = CK.engineView(st);
+    return (
+      <section className="lmgroup" aria-label="音乐引擎">
+        <h2>音乐引擎</h2>
+        <div className="lmlist">
+          <div className="lmrow">
+            <div className="lmrow__main">
+              <span className="grow lmrow__txt">
+                <span className="lmrow__name">
+                  <b className="t-ui t-strong">{CK.ENGINE.name}</b>
+                  <Chip tone={v.chip.tone}>{v.chip.label}</Chip>
+                </span>
+                <span className="t-detail">{v.text}</span>
+                <span className="t-detail-xs">{v.facts.join(' · ')}</span>
+              </span>
+              {v.pct != null ? <div className="lmrow__pg"><Progress value={v.pct} label={v.text} /></div> : null}
+              {v.actions.length ? (
+                <span className="lmrow__act">
+                  {v.actions.map((a) => (
+                    <Btn key={a.k} size="s" variant={a.primary ? 'accent' : 'quiet'} onClick={() => onAction(a.k)}>{a.label}</Btn>
+                  ))}
+                </span>
+              ) : null}
+            </div>
+          </div>
+        </div>
+      </section>
+    );
+  }
+
+  Object.assign(window, {ModelCheckLine, ModelTryNote, MusicEngineRow});
 })();

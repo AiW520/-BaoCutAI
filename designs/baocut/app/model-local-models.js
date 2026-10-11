@@ -13,7 +13,7 @@
     /* 图像生成（2026-09-25 图像生成设计稿 §2.3）：与「画面理解」严格分开——那是看图，这是出图 */
     {k: 'image', title: '图像生成', desc: '图片 Tab 的「AI 生成」、工具 › 生成图片、bcut image 用：在这台电脑上出图，不联网。Qwen-Image-2.1 支持 Apple Silicon 与 Windows/Linux x64。NVIDIA 加速需 CUDA 运行时，CPU 生成较慢。'},
     /* 音乐生成（2026-10-11 YuE2 技术方案）：工具 › 生成音乐、编辑器 AI 工具「生成配乐」、Agent 做视频时配乐都用它 */
-    {k: 'music', title: '音乐生成', desc: '工具 › 生成音乐、编辑器里的「生成配乐」与 Agent 配乐用：按风格或歌词在这台电脑上生成音乐，不联网。YuE2 3B 走随 BaoCut 自带的 audio.cpp 引擎，Apple Silicon 与 Windows/Linux x64 都能用；一段 30 秒的音乐要几分钟。'},
+    {k: 'music', title: '音乐生成', desc: '工具 › 生成音乐、编辑器里的「生成配乐」与 Agent 配乐用：按风格或歌词在这台电脑上生成音乐，不联网。YuE2 3B 跑在 audio.cpp 引擎上，引擎在本页顶部安装一次（约 30–70 MB）；Apple Silicon 与 Windows/Linux x64 都能用，一段 30 秒的音乐要几分钟。'},
   ];
   const catOf = (m) => m.cat || 'asr';
   const visionDefaultName = (m) => ({'vision-person': 'YuNet 2023mar', 'vision-speaker': 'LR-ASD',
