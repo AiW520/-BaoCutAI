@@ -299,6 +299,18 @@ describe('JobManager（假 Model Worker）', () => {
     await fs.rm(dir, { recursive: true, force: true });
   });
 
+  it('首次 GPU 内核编译超过 5 秒：Intel Mac 等握手完成，其他平台保留原期限', async () => {
+    await start({ control: { helloDelayMs: 5500 } });
+    const job = await run();
+    if (process.platform === 'darwin' && process.arch === 'x64') {
+      expect(job.state).toBe('completed');
+      expect(job.error).toBeNull();
+    } else {
+      expect(job.state).toBe('failed');
+      expect(job.error?.details).toMatchObject({ detail: 'hello-timeout' });
+    }
+  }, 15_000);
+
   it('完成：写出 speech 文档、发布原始结果、删除 staging，主题事件有序', async () => {
     await start();
     const job = await run();
@@ -606,7 +618,8 @@ describe('JobManager（假 Model Worker）', () => {
   });
 
   it('空闲卸载：idleMs 之后 model.unload 并关闭进程', async () => {
-    await start({ idleMs: 200 });
+    // 发布结果与落盘可能超过 200 ms；留出时间检查完成后的存活状态，再验证空闲退出。
+    await start({ idleMs: 1000 });
     await run();
     const pid = provider.workerPid('fake@cpu')!;
     expect(alive(pid)).toBe(true);

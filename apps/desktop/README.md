@@ -22,7 +22,7 @@ DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer npm run package:mac -- 
 
 本地模式生成临时签名的 App、ZIP、DMG 与校验和，不公证、不生成更新源，不接受发布 build 号、下载地址或 Developer ID 身份。产物名带 `x86_64-apple-darwin-local`，`app-release.json` 记录来源提交与签名状态。正式发布仍使用下面的 Apple Silicon 流程。
 
-Intel 的 Model Worker 关闭 MLX / Core ML，启用 candle CPU 与 `whisper-ggml-metal`。Whisper 通过 whisper.cpp 的 Metal 后端使用可用的 AMD 显卡；没有兼容 GPU 或 `BAOCUT_GPU=off` 时回落 CPU。其他模型、VAD 与对齐器走 CPU。Metal 内核由 whisper-rs-sys 内嵌，不需要 Apple Silicon 的 `mlx.metallib`。需要完整 Xcode、CMake 与 Rust WASM 目标。Intel Worker 在启动线程前设置 `GGML_METAL_CONCURRENCY_DISABLE=1`，规避当前 ggml 并发 Metal 调度在 AMD 独显上的错误，仍使用 GPU 计算。已用 Radeon Pro 5500M 与 Whisper large-v3 Turbo q8_0 跑通中英文样本；其他 AMD 型号与模型尚未实测。打包后的 Worker 启动检查与真实模型推理分别验证。
+Intel 的 Model Worker 关闭 MLX / Core ML，启用 candle CPU 与 `whisper-ggml-metal`。Whisper 通过 whisper.cpp 的 Metal 后端使用可用的 AMD 显卡；没有兼容 GPU 或 `BAOCUT_GPU=off` 时回落 CPU。其他模型、VAD 与对齐器走 CPU。Metal 内核由 whisper-rs-sys 内嵌，不需要 Apple Silicon 的 `mlx.metallib`。需要完整 Xcode、CMake 与 Rust WASM 目标。Intel Worker 在启动线程前设置 `GGML_METAL_CONCURRENCY_DISABLE=1`，规避当前 ggml 并发 Metal 调度在 AMD 独显上的错误，仍使用 GPU 计算。已用 Radeon Pro 5500M 与 Whisper large-v3 Turbo q8_0 跑通中英文样本；其他 AMD 型号与模型尚未实测。Runtime 的 Intel Mac 握手期限按[架构设计 §6.5](../../docs/architecture/architecture-design.md#65-model-worker本地推理进程)留出首次 Metal 编译时间。打包后的 Worker 启动检查与真实模型推理分别验证。
 
 ### Apple Silicon 发布包
 
