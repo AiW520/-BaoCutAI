@@ -602,6 +602,27 @@ describe('planDerivation：分段取景（crops）', () => {
     expect(alignCrops(sequence, range, [shot(1.5, 2.5, A)])).toEqual({ crops: [shot(1.5, 2.5, A)], adjusted: 0 });
   });
 
+  it('alignCrops：区间首尾不足 0.5 秒的缺口并入第一段、最后一段，不计 adjusted；0.6 秒的缺口不并入', () => {
+    const sequence = video(items).sequences.seq_1!;
+    const range = alignRange(sequence, 1, 5);
+    // 首段晚 0.04 秒起、末段早 0.04 秒止：向外延到区间边界。
+    expect(alignCrops(sequence, range, [shot(1.04, 3, A), shot(3, 4.96, B)])).toEqual({ crops: [shot(1, 3, A), shot(3, 5, B)], adjusted: 0 });
+    // 只有一段时两头都延。
+    expect(alignCrops(sequence, range, [shot(1.1, 4.9, A)])).toEqual({ crops: [shot(1, 5, A)], adjusted: 0 });
+    // 0.6 秒的缺口留给缺省裁剪。
+    expect(alignCrops(sequence, range, [shot(1.6, 3, A), shot(3, 4.4, B)])).toEqual({ crops: [shot(1.6, 3, A), shot(3, 4.4, B)], adjusted: 0 });
+  });
+
+  it('首尾的小缺口并入后不多出碎片：片段数不变，也没有 crops-adjusted', () => {
+    const base = framed(video(items), 1, 5, [shot(1, 3, A), shot(3, 5, B)]);
+    const gap = framed(video(items), 1, 5, [shot(1.04, 3, A), shot(3, 4.96, B)]);
+    expect(videoEntries(gap).map((e) => [e.span.fromFrame, e.span.durationFrames, e.crop ?? null])).toEqual(
+      videoEntries(base).map((e) => [e.span.fromFrame, e.span.durationFrames, e.crop ?? null]),
+    );
+    expect(gap.itemCount).toBe(base.itemCount);
+    expect(gap.warnings.some((w) => w.code === 'crops-adjusted')).toBe(false);
+  });
+
   it('两个边界把主素材的片段拆成三段：span 与 sourceIn 精确，各带自己的裁剪；区间外跟首末段；转场接首末段，剪口集合范围展开', () => {
     const p = framed(video(items, {}, true), 0.5, 5, [shot(0.5, 1.5, A), shot(1.5, 2.5, B), shot(2.5, 5, C)]);
     const entries = videoEntries(p);

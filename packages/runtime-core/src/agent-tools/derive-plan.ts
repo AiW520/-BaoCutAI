@@ -382,15 +382,22 @@ export function derivationKey(input: {
   return createHash('sha256').update(canonical).digest('hex').slice(0, 12);
 }
 
+/** 区间首尾没被分段取景盖住的缺口小于这个秒数时，由第一段、最后一段向外延盖住（`alignCrops`）。 */
+const EDGE_CROP_TOLERANCE_SECONDS = 0.5;
+
 /**
  * 分段取景对到帧：每段的起止就近取整到帧（正好在两帧中间时取早的），截到对齐后的区间 `[S, E)`，按 from 排好。被截过的、
  * 截完为空丢掉的段数记在 `adjusted`（结果以 `crops-adjusted` 说明）。调用方保证各段按秒不重叠（参数校验）。
+ * 对齐后，第一段起点晚于区间起点、最后一段终点早于区间终点，且缺口小于 `EDGE_CROP_TOLERANCE_SECONDS`（0.5 秒）时，把它向外延到
+ * 区间边界：区间边界为落在停顿里被吸附（可比请求的宽几帧），而调用方的首尾段正好是请求的起止，不延的话那一小条会自成一个很短的
+ * 片段并套用缺省裁剪。只动首尾两段、只向外延，不计入 `adjusted`；缺口更大的仍沿用缺省裁剪，且已计入 `adjusted` 的不变。
  */
 export function alignCrops(sequence: Sequence, range: AlignedRange, crops: readonly CropShot[]): { crops: CropShot[]; adjusted: number } {
   const fps = sequence.fps;
   const toFrame = (seconds: number) => Math.ceil((seconds * fps.num) / fps.den - 0.5 - 1e-9);
   const out: CropShot[] = [];
   let adjusted = 0;
+  const outFrames: Array<{ from: number; to: number }> = [];
   let previous = range.startFrame;
   for (const shot of [...crops].sort((x, y) => x.from - y.from)) {
     const rawFrom = toFrame(shot.from);
@@ -400,6 +407,7 @@ export function alignCrops(sequence: Sequence, range: AlignedRange, crops: reado
     if (from !== rawFrom || to !== rawTo || to <= from) adjusted++;
     if (to <= from) continue;
     previous = to;
+    outFrames.push({ from, to });
     out.push({
       from: toNumber(frames(from, fps)),
       to: toNumber(frames(to, fps)),
@@ -408,6 +416,16 @@ export function alignCrops(sequence: Sequence, range: AlignedRange, crops: reado
       right: shot.right,
       bottom: shot.bottom,
     });
+  }
+  // 首尾边缘的小缺口并入第一段、最后一段（只向外，不计 adjusted）。
+  const tolerance = (EDGE_CROP_TOLERANCE_SECONDS * fps.num) / fps.den;
+  const first = outFrames[0];
+  const last = outFrames[outFrames.length - 1];
+  if (first && first.from > range.startFrame && first.from - range.startFrame < tolerance) {
+    out[0]!.from = toNumber(frames(range.startFrame, fps));
+  }
+  if (last && last.to < range.endFrame && range.endFrame - last.to < tolerance) {
+    out[out.length - 1]!.to = toNumber(frames(range.endFrame, fps));
   }
   return { crops: out, adjusted };
 }
