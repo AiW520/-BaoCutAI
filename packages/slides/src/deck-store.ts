@@ -12,7 +12,7 @@
  * 读写的 HTTP 路由在 deck-routes.ts；协议类型见 file-protocol.ts。
  */
 import { createHash, randomUUID } from 'node:crypto';
-import { existsSync, watch, type FSWatcher } from 'node:fs';
+import { existsSync, lstatSync, readdirSync, watch, type FSWatcher } from 'node:fs';
 import { lstat, mkdir, readdir, readFile, realpath, rename, rm, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import {
@@ -348,42 +348,77 @@ export function isIgnoredWatchPath(rel: string): boolean {
 /**
  * 监听 deck 目录：被编辑器以外的东西改了（智能体用文件工具改 slide、重写 deck.json），去抖 300 ms 后
  * 回调一次。编辑器自己保存的文件 sha 与 ownWrites 一致，不触发；内容与开始监听时一样的也不触发（macOS 的 FSEvents
- * 会补报监听开始前不久的写入，比如刚建好的 deck）。返回停止监听的函数。
+ * 会补报监听开始前不久的写入，比如刚建好的 deck）。只监听目录：Linux 的递归 fs.watch 会监听文件 inode，
+ * 原子保存替换文件后会丢掉后续修改。目录增删时重建目录监听，并按完整清单识别新增与删除。返回停止监听的函数。
  */
 export function watchExternalEdits(store: DeckStore, onChange: (event: DeckChangeEvent) => void, onError: (error: unknown) => void = () => {}): () => void {
   let timer: NodeJS.Timeout | undefined;
-  let watcher: FSWatcher | undefined;
-  const changed = new Set<string>();
+  let stopped = false;
+  const watchers = new Map<string, { watcher: FSWatcher; identity: string }>();
+  let queue = Promise.resolve();
   const seen = store.listing().then(
     listing => new Map<string, Sha256 | ''>(Object.entries(listing.files).map(([p, f]) => [p, f.sha256])),
     () => new Map<string, Sha256 | ''>(),
   );
+  const refresh = () => {
+    const directories = new Map<string, string>();
+    const visit = (dir: string, descend: boolean) => {
+      if (!existsSync(dir)) return;
+      const info = lstatSync(dir);
+      if (!info.isDirectory()) return;
+      directories.set(dir, `${info.dev}:${info.ino}`);
+      if (descend) {
+        for (const entry of readdirSync(dir, { withFileTypes: true })) {
+          if (entry.isDirectory() && !entry.name.startsWith('.')) visit(path.join(dir, entry.name), true);
+        }
+      }
+    };
+    visit(store.root, false);
+    visit(path.join(store.root, 'slides'), false);
+    visit(path.join(store.root, 'ds'), true);
+    for (const [dir, item] of watchers) {
+      if (directories.get(dir) !== item.identity) {
+        item.watcher.close();
+        watchers.delete(dir);
+      }
+    }
+    for (const [dir, identity] of directories) {
+      if (watchers.has(dir)) continue;
+      const watcher = watch(dir, (_event, name) => {
+        if (stopped) return;
+        if (name) {
+          const rel = path.relative(store.root, path.join(dir, String(name))).split(path.sep).join('/');
+          if (isIgnoredWatchPath(rel) || (rel !== 'slides' && rel !== 'ds' && !isDeckFile(rel))) return;
+        }
+        clearTimeout(timer);
+        timer = setTimeout(() => { queue = queue.then(flush); }, 300);
+      });
+      watcher.on('error', onError);
+      watchers.set(dir, { watcher, identity });
+    }
+  };
   const flush = async () => {
-    const paths = [...changed];
-    changed.clear();
+    if (stopped) return;
     try {
-      const external = await store.externalChanges(paths, await seen);
-      if (external.length === 0) return;
+      refresh();
+      const known = await seen;
+      const current = await store.listing();
+      const external = await store.externalChanges(new Set([...known.keys(), ...Object.keys(current.files)]), known);
+      if (stopped || external.length === 0) return;
       onChange({ type: 'external-change', paths: external, ver: (await store.listing()).ver });
     } catch (error) {
       onError(error);
     }
   };
   try {
-    watcher = watch(store.root, { recursive: true }, (_event, name) => {
-      if (!name) return;
-      const rel = String(name).split(path.sep).join('/');
-      if (isIgnoredWatchPath(rel) || !isDeckFile(rel)) return;
-      changed.add('project/' + rel);
-      clearTimeout(timer);
-      timer = setTimeout(() => void flush(), 300);
-    });
-    watcher.on('error', onError);
+    refresh();
   } catch (error) {
     onError(error);
   }
   return () => {
+    stopped = true;
     clearTimeout(timer);
-    watcher?.close();
+    for (const item of watchers.values()) item.watcher.close();
+    watchers.clear();
   };
 }

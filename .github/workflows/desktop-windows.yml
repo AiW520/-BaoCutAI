@@ -208,6 +208,10 @@ jobs:
           npm run build:web
           npm run build:slides-editor
 
+      - name: Verify slides file watching after atomic saves
+        if: steps.gate.outputs.skip != 'true'
+        run: npx vitest run packages/slides/src/deck-store.test.ts -t watchExternalEdits
+
       # 打包脚本自己编 Worker（release、x86_64-pc-windows-msvc、--locked）；三个变体都设 GGML_NATIVE=OFF 与 GGML_AVX2=ON，ggml-cpu
       # 按 AVX2 基线编，不按 runner 的 CPU（可能带 AVX-512）探测；CUDA 版另设 CUDA_COMPUTE_CAP=80、nvcc 的 /MD 与
       # ggml-cuda 的 CMAKE_CUDA_ARCHITECTURES（runner 没有 GPU，不给的话 ggml 的 native 架构探测会失败）。
