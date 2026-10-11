@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { AssetRecord } from '@baocut/protocol';
 import { audioItem, sequence, track, videoItem } from '../testing/sequence-records.ts';
-import { assetOnTimeline, LOOP, loopLayout, loopSummary, MUSIC_ROLE, musicBedOperations, type LoopPiece } from './music-bed.ts';
+import { assetOnTimeline, LOOP, loopLayout, loopSummary, MUSIC_ROLE, musicBedOperations, placedSoundtrackJobs, SOUNDTRACK_EXTENSION, type LoopPiece } from './music-bed.ts';
 
 const music = (seconds: number, extra: Partial<AssetRecord> = {}): AssetRecord =>
   ({
@@ -81,7 +81,7 @@ describe('musicBedOperations：一笔事务里新建音乐轨、每段一个音�
   const long = sequence([track('t1', 'visual', 0)], [videoItem('v1', 't1', 0, 742 * 30)]);
 
   it('视频比音乐长：两条音乐轨交替，起点拆成帧与帧内偏移，长度与淡化按铺法', () => {
-    const r = musicBedOperations(long, music(300));
+    const r = musicBedOperations(long, music(300), 'job_1');
     expect(r).not.toBeNull();
     const { operations, layout, totalSec } = r!;
     expect(totalSec).toBe(742);
@@ -102,6 +102,7 @@ describe('musicBedOperations：一笔事务里新建音乐轨、每段一个音�
       mix: { volume: 1, fadeIn: { ticks: '2000', timescale: 1000 }, fadeOut: { ticks: '2000', timescale: 1000 } },
       name: 'calm piano.wav',
       role: MUSIC_ROLE,
+      extensions: { [SOUNDTRACK_EXTENSION]: { jobId: 'job_1' } },
     });
     const first = insert.items[0] as typeof second;
     expect(first.mix).toEqual({ volume: 1, fadeOut: { ticks: '2000', timescale: 1000 } });
@@ -112,7 +113,7 @@ describe('musicBedOperations：一笔事务里新建音乐轨、每段一个音�
 
   it('非整数帧率：帧内偏移在一帧之内、以毫秒为整数算', () => {
     const ntsc = sequence([track('t1', 'visual', 0)], [videoItem('v1', 't1', 0, 20000)], { fps: { num: 30000, den: 1001 } });
-    const r = musicBedOperations(ntsc, music(300))!;
+    const r = musicBedOperations(ntsc, music(300), 'job_1')!;
     const insert = r.operations.find((op) => op.type === 'insertItems')!;
     if (insert.type !== 'insertItems') throw new Error(insert.type);
     const second = insert.items[1] as Extract<(typeof insert.items)[number], { type: 'audio' }>;
@@ -127,7 +128,7 @@ describe('musicBedOperations：一笔事务里新建音乐轨、每段一个音�
 
   it('视频不比音乐长：一条音乐轨、一段截到结尾', () => {
     const short = sequence([track('t1', 'visual', 0)], [videoItem('v1', 't1', 0, 206 * 30)]);
-    const r = musicBedOperations(short, music(300))!;
+    const r = musicBedOperations(short, music(300), 'job_1')!;
     expect(r.operations.filter((op) => op.type === 'addTrack')).toHaveLength(1);
     const insert = r.operations[1]!;
     if (insert.type !== 'insertItems') throw new Error(insert.type);
@@ -136,9 +137,54 @@ describe('musicBedOperations：一笔事务里新建音乐轨、每段一个音�
   });
 
   it('空时间线、没时长的素材、不是音频的素材都不铺', () => {
-    expect(musicBedOperations(sequence([track('t1', 'visual', 0)], []), music(300))).toBeNull();
-    expect(musicBedOperations(long, music(300, { revisions: { '2': { revision: '2' } } } as unknown as Partial<AssetRecord>))).toBeNull();
-    expect(musicBedOperations(long, music(300, { kind: 'video' } as Partial<AssetRecord>))).toBeNull();
+    expect(musicBedOperations(sequence([track('t1', 'visual', 0)], []), music(300), 'job_1')).toBeNull();
+    expect(musicBedOperations(long, music(300, { revisions: { '2': { revision: '2' } } } as unknown as Partial<AssetRecord>), 'job_1')).toBeNull();
+    expect(musicBedOperations(long, music(300, { kind: 'video' } as Partial<AssetRecord>), 'job_1')).toBeNull();
+  });
+
+  it('素材时长不是整毫秒：铺的长度向下取整，不比素材长；最后一段不越过序列末尾', () => {
+    // 299.99977… 秒 @44.1 kHz
+    const odd = music(300, { revisions: { '2': { revision: '2', duration: { ticks: '13229990', timescale: 44100 } } } } as unknown as Partial<AssetRecord>);
+    const r = musicBedOperations(long, odd, 'job_1')!;
+    const insert = r.operations.find((op) => op.type === 'insertItems')!;
+    if (insert.type !== 'insertItems') throw new Error(insert.type);
+    for (const item of insert.items as Extract<(typeof insert.items)[number], { type: 'audio' }>[]) {
+      // playDuration ≤ 素材时长，按有理数比：ticks/1000 ≤ 13229990/44100
+      expect(Number(item.playDuration.ticks) * 44100).toBeLessThanOrEqual(13229990 * 1000);
+    }
+    expect(insert.items[0]).toMatchObject({ playDuration: { ticks: '299999', timescale: 1000 } });
+    const last = r.layout[r.layout.length - 1]!;
+    expect(last.start + last.dur).toBeLessThanOrEqual(742 + 1e-9);
+    // 序列时长不是整毫秒（NTSC 20000 帧 = 667.333… 秒）：总长向下取整，最后一段的终点不越过序列末尾
+    const ntsc = sequence([track('t1', 'visual', 0)], [videoItem('v1', 't1', 0, 20000)], { fps: { num: 30000, den: 1001 } });
+    const n = musicBedOperations(ntsc, music(300), 'job_1')!;
+    expect(n.totalSec).toBe(667.333);
+    const tail = n.layout[n.layout.length - 1]!;
+    expect(tail.start + tail.dur).toBeLessThanOrEqual((20000 * 1001) / 30000 + 1e-9);
+  });
+
+  it('再铺一床就换掉上一床：同一笔里先删上一床的实例与只放着它们的音乐轨', () => {
+    const mark = { [SOUNDTRACK_EXTENSION]: { jobId: 'job_0' } };
+    const withBed = sequence(
+      [track('t1', 'visual', 0), track('m1', 'audio', 1), track('m2', 'audio', 2), track('a3', 'audio', 3)],
+      [
+        videoItem('v1', 't1', 0, 742 * 30),
+        audioItem('b1', 'm1', 0, 300, { extensions: mark }),
+        audioItem('b2', 'm2', 298 * 30, 300, { extensions: mark }),
+        audioItem('b3', 'm1', 596 * 30, 146, { extensions: mark }),
+        // 第三条音乐轨上用户自己放了别的声音：轨留着
+        audioItem('b4', 'a3', 0, 10, { extensions: mark }),
+        audioItem('x1', 'a3', 400 * 30, 5, { assetRef: { id: 'asset_x', revision: '1' } }),
+      ],
+    );
+    expect(placedSoundtrackJobs(withBed)).toEqual(new Set(['job_0']));
+    const r = musicBedOperations(withBed, music(300), 'job_1')!;
+    expect(r.operations.slice(0, 3)).toEqual([
+      { type: 'deleteItems', sequenceId: 'seq', itemIds: ['b1', 'b2', 'b3', 'b4'] },
+      { type: 'deleteTrack', sequenceId: 'seq', trackId: 'm1' },
+      { type: 'deleteTrack', sequenceId: 'seq', trackId: 'm2' },
+    ]);
+    expect(r.operations.filter((op) => op.type === 'addTrack')).toHaveLength(2);
   });
 
   it('素材已经在时间线上就不再铺', () => {

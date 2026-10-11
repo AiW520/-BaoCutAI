@@ -1,4 +1,4 @@
-import type { AssetRecord, EditOperation, Id, MediaTime, Sequence, SequenceItemInput } from '@baocut/protocol';
+import type { AssetRecord, AudioItem, EditOperation, Id, MediaTime, Sequence, SequenceItemInput } from '@baocut/protocol';
 import { mediaTimeToSeconds } from '@baocut/protocol';
 import { durationSeconds } from './editor.ts';
 import { M } from './tools-music-copy.ts';
@@ -16,6 +16,8 @@ export const LOOP = { crossfade: 2, tailFade: 3 } as const;
 
 /** 加到视频的音乐实例的作用（开放词表，§3.1）。 */
 export const MUSIC_ROLE = 'music';
+/** 铺上去的每段实例带的扩展（引擎不解释）：是哪个「生成配乐」任务铺的。一部视频只留一床配乐：再铺时先删掉上一床。 */
+export const SOUNDTRACK_EXTENSION = 'baocut.soundtrack';
 
 export interface LoopPiece {
   /** 在序列上的起点、长度（秒，精确到毫秒）。 */
@@ -28,6 +30,8 @@ export interface LoopPiece {
 }
 
 const r3 = (n: number) => Math.round(n * 1000) / 1000;
+/** 向下取整到毫秒：铺上去的长度不能比素材长、不能越过序列末尾。 */
+const floorMs = (n: number) => Math.floor(n * 1000 + 1e-6) / 1000;
 
 /**
  * 一段 `pieceSec` 秒的音乐铺满 `totalSec` 秒：每段从音乐开头起放，后一段在前一段结束前 `crossfade` 秒进来；
@@ -75,16 +79,45 @@ const ms = (seconds: number): MediaTime => ({ ticks: String(Math.round(seconds *
 /** 新建音乐轨在同一事务里的 `ref`。 */
 const trackRef = (lane: 0 | 1) => `music-bed-${lane}`;
 
+/** 已经铺在时间线上的配乐实例（带 `SOUNDTRACK_EXTENSION`）。 */
+export function soundtrackBedItems(sequence: Sequence): AudioItem[] {
+  return sequence.items.filter((item): item is AudioItem => item.type === 'audio' && !!item.extensions?.[SOUNDTRACK_EXTENSION]);
+}
+
+/** 时间线上这些配乐实例来自哪些任务。 */
+export function placedSoundtrackJobs(sequence: Sequence): Set<Id> {
+  const out = new Set<Id>();
+  for (const item of soundtrackBedItems(sequence)) {
+    const mark = item.extensions?.[SOUNDTRACK_EXTENSION];
+    const jobId = typeof mark === 'object' && mark !== null ? (mark as { jobId?: unknown }).jobId : undefined;
+    if (typeof jobId === 'string') out.add(jobId);
+  }
+  return out;
+}
+
+/** 换掉上一床配乐：删掉它的实例，只放着它们的音乐轨一并删掉（轨上还有别的东西就留着）。 */
+function replaceOperations(sequence: Sequence): EditOperation[] {
+  const olds = soundtrackBedItems(sequence);
+  if (!olds.length) return [];
+  const ids = new Set(olds.map((o) => o.id));
+  const emptied = sequence.tracks.filter((t) => t.kind === 'audio' && !t.locked && sequence.items.some((i) => i.trackId === t.id) && sequence.items.every((i) => i.trackId !== t.id || ids.has(i.id)));
+  return [
+    { type: 'deleteItems', sequenceId: sequence.id, itemIds: olds.map((o) => o.id) },
+    ...emptied.map((t): EditOperation => ({ type: 'deleteTrack', sequenceId: sequence.id, trackId: t.id })),
+  ];
+}
+
 /**
  * 把这段音乐循环铺满这部视频的那一笔操作：按实际时长算铺法，新建用到的音乐轨（一或两条），每段一个音频实例
- * （从音乐开头起、`playDuration` 截到该段长度、淡入淡出按铺法）。视频没有时长、素材不是音频或没有时长时 null。
+ * （从音乐开头起、`playDuration` 截到该段长度、淡入淡出按铺法，带 `jobId` 的扩展）；上一床配乐在同一笔里换掉。
+ * 时长向下取整到毫秒：铺的长度不超过素材、不越过序列末尾。视频没有时长、素材不是音频或没有时长时 null。
  */
-export function musicBedOperations(sequence: Sequence, asset: AssetRecord): { operations: EditOperation[]; layout: LoopPiece[]; totalSec: number } | null {
+export function musicBedOperations(sequence: Sequence, asset: AssetRecord, jobId: Id): { operations: EditOperation[]; layout: LoopPiece[]; totalSec: number } | null {
   if (asset.kind !== 'audio') return null;
   const piece = pieceSeconds(asset);
-  const total = r3(durationSeconds(sequence));
+  const total = floorMs(durationSeconds(sequence));
   if (piece === null || !(piece > 0) || !(total > 0)) return null;
-  const layout = loopLayout(piece, total);
+  const layout = loopLayout(floorMs(piece), total);
   if (!layout.length) return null;
   const { num, den } = sequence.fps;
   const lanes = [...new Set(layout.map((p) => p.lane))].sort();
@@ -104,16 +137,18 @@ export function musicBedOperations(sequence: Sequence, asset: AssetRecord): { op
       mix: { volume: 1, ...(p.fadeIn > 0 ? { fadeIn: ms(p.fadeIn) } : {}), ...(p.fadeOut > 0 ? { fadeOut: ms(p.fadeOut) } : {}) },
       name: asset.name,
       role: MUSIC_ROLE,
+      extensions: { [SOUNDTRACK_EXTENSION]: { jobId } },
     };
   });
   const operations: EditOperation[] = [
+    ...replaceOperations(sequence),
     ...lanes.map((lane): EditOperation => ({ type: 'addTrack', sequenceId: sequence.id, kind: 'audio', ref: trackRef(lane), name: M.musicTrack(lane + 1) })),
     { type: 'insertItems', sequenceId: sequence.id, items },
   ];
   return { operations, layout, totalSec: total };
 }
 
-/** 这段素材已经在时间线上了（铺过、或用户自己放过）：不再自动铺。 */
+/** 这段素材已经在时间线上了（用户自己放过）：不再自动铺。 */
 export function assetOnTimeline(sequence: Sequence, assetId: Id): boolean {
   return sequence.items.some((item) => item.type === 'audio' && item.assetRef.id === assetId);
 }
