@@ -64,8 +64,9 @@
 
 - `<img src>` 只认两种地址：导入 deck 后得到的 `/_blob/<id>`；或 70 KB 以内的 png、jpeg、gif、webp、avif、svg `data:` 地址（只适合很小的标志，SVG 里的 `#` 写成 `%23`）。网上的地址、相对路径、绝对路径都是错误。
 - 写 `alt`（最多 500 字），宽高用 px。
+- 图还没有时可以只写 `alt` 与宽高、不写 `src`，当占位图框：它保住位置，用户在编辑器里选中它就能补上图（见 `references/images.md`「占位图框」）。
 - `object-fit:cover`（默认，裁掉多出的部分铺满框）或 `contain`（完整显示）。cover 的图可以用 `data-crop="倍数 X% Y%"` 放大并选焦点，倍数 1–50，例如 `data-crop="1.5 50% 30%"`。
-- `<svg>` 直接写在页面里：恰好一个 `<svg>` 根元素，源码不超过约 70 KB；写 `width` 与 `height`（只写 `viewBox` 时按 400px 宽算）；不能有 `<script>`、`<foreignObject>`、`onclick` 这类事件属性、指向外部的 `href` 或 `url(…)`。`aria-label` 当替代文字。SVG 整体当作一张图，里面的 `<text>` 在编辑器里改不了字，要让用户改的文字放在 SVG 外面。
+- `<svg>` 直接写在页面里：恰好一个 `<svg>` 根元素，源码不超过约 70 KB；写 `width` 与 `height`（只写 `viewBox` 时按 400px 宽算）；不能有 `<script>`、`<foreignObject>`、`onclick` 这类事件属性、指向外部的 `href` 或 `url(…)`。`aria-label` 当替代文字。SVG 整体当作一张图，里面的 `<text>` 在编辑器里改不了字，也不用 deck 的字体，文字放在 SVG 外面。SVG 里的特殊字符直接写，或写成数字形式（`&#8212;`）与 `&amp;`、`&lt;`、`&gt;`、`&quot;`，不写 `&nbsp;` 这类 HTML 实体。
 
 ```html
 <img src="/_blob/0f3a…" alt="新版时间线截图" style="position:absolute;left:0;top:0;width:1920px;height:1080px;object-fit:cover" data-crop="1.2 50% 40%">

@@ -155,7 +155,8 @@
 ### 7.1 skill `slides`
 
 - 新建 `skills/baocut/built-in-skills/slides/SKILL.md`：何时用（做幻灯片、演示文稿、deck；不用于视频画面里的字卡与动效）、deck 的磁盘格式、创建步骤、修改已有 deck、设计原则。
-- `references/`：`format.md`（slide 标签与样式的闭合子集、`faces` 的写法、上限）、`design.md`（版式、字号阶梯、配色、图表）。各控制在 `SKILL_LIMITS` 内。
+- `references/`：`format.md`（slide 标签与样式的闭合子集、`faces` 的写法、上限）、`design.md`（版式、字号阶梯、配色、图表）、`images.md`（图从哪来、哪几页配图、用图片生成模型画插图、占位图框）。各控制在 `SKILL_LIMITS` 内。
+- 插图不加新工具：智能体用模型工具 `image` 生成（不带 `video`），`artifacts_save` 存进 deck 目录的 `images/`，再经 `slides_import_asset` 导入；图片生成没有配置时整份照做，不放插图，交付时说明。
 - 同步：`skills/baocut/built-in-skills/README.md` 的表、`builtin-skills.test.ts` 的 `EXPECTED_IDS`、`skills/baocut/SKILL.md` §1 的路由表与 media 目录页（都只在 agent 面）、产品设计 §6.9 的「来源」，然后 `npm run build:agent-skill`。
 - 两个工具只在会话里有，CLI 面的 craft 副本里没有它们：`SESSION_ONLY_TOOLS` 把 SKILL.md 里「调用 `slides_check`」「逐张调用 `slides_import_asset`」那两步整步换成终端里的说法（自查格式、先不放图片），所以 SKILL.md 里这两个工具名只在这两步出现。
 
