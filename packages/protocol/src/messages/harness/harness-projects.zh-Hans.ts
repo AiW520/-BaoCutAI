@@ -11,4 +11,5 @@ export const zhHans: HarnessProjectsMessages = {
   tooManySameName: '同名的项目目录太多了，换一个名字',
   markerNotWritable: (p) => `项目目录不可写，无法写入项目标记 .bcut/project.json：${p.dir}`,
   markerWriteFailed: (p) => `无法写入项目标记：${p.error}`,
+  sessionVideosOpen: (p) => `这个会话里的视频还开着：${p.names}。关掉之后再试`,
 };

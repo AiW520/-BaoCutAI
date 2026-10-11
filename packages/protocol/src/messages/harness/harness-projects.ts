@@ -31,6 +31,8 @@ const en = {
   markerNotWritable: (p: { dir: string }) =>
     `The project folder isn't writable, so the project marker .bcut/project.json couldn't be written: ${p.dir}`,
   markerWriteFailed: (p: { error: string }) => `Couldn't write the project marker: ${p.error}`,
+  /** 无项目会话放进项目、删会话之前：它工作目录里的视频还开着（别的窗口、任务或连接），不能搬（架构设计 §3.10）。`names` 是视频目录名。 */
+  sessionVideosOpen: (p: { names: string }) => `Some videos in this session are still open: ${p.names}. Close them, then try again`,
 };
 
 export type HarnessProjectsMessages = typeof en;

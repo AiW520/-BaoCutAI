@@ -817,7 +817,7 @@ interface ErrorBody {
 | `TRANSITION_HANDLES_INSUFFICIENT` | 转场需要的 handles 超出素材的范围（视频格式规范 §3.9）。`details` 给出 `itemId`、`edge`（`head` / `tail`）、`neededFrames`、`availableFrames` | 缩短转场、换放置方式，或先裁短实例留出余量；引擎不自动缩短 |
 | `PROJECT_DIR_READ_ONLY` | `projects.open` / `projects.create` 需要写入项目标记 `.bcut/project.json`，而目录不可写（只读卷、没有权限）；或标记读不出来。放在 `RpcError.details.code`（`details.path`），`RpcError.code` 为 `forbidden`，项目不登记 | 换到可写的位置，或由用户修改权限后重试 |
 | `VIDEO_NOT_FOUND` | 指明的视频找不到：工具目录里范围之外的与不存在的一样回答（工具结果的错误）；`services.web.createAccessLink { video }` 的 videoId 既不是已打开的视频、也不在 Space 的登记里（放在 `RpcError.details.code`，`RpcError.code` 为 `not-found`，带 `details.videoId`） | 不原样重试；用 `baocut videos list` 重新确认 videoId 或视频目录 |
-| `VIDEO_IN_USE` | `videos.delete`：视频在别的连接里打开着（或同一个视频在引擎里以另一个路径开着）。`conflict` | 在那里关掉视频后重试 |
+| `VIDEO_IN_USE` | `videos.delete`：视频在别的连接里打开着（或同一个视频在引擎里以另一个路径开着）；`conversations.delete`：无项目会话的工作目录里还有视频开着，不能先放进项目（`videos` 是开着的视频目录，架构设计 §3.10）。`conflict` | 在那里关掉视频后重试 |
 | `VIDEO_BUSY` | `videos.delete`：Runtime 内部还用着视频（任务、导出的租约），或有排队、运行中的任务（`details.jobIds`）。`conflict` | 等任务结束或取消后重试 |
 | `VIDEO_TRASHED` | 视频已经删除（在回收站里）：`videos.open` 回收站里的路径、对它 `space.openForEdit` 或定位 bytes。`conflict` | 先 `videos.restore` |
 | `VIDEO_NOT_TRASHED` | `videos.restore` 的条目不是删除了的视频。`invalid-request` | 不用恢复 |

@@ -14,4 +14,5 @@ export const de: HarnessProjectsMessages = {
   markerNotWritable: (p: { dir: string }) =>
     `Der Projektordner ist nicht beschreibbar. Die Projektmarkierung .bcut/project.json konnte daher nicht geschrieben werden: ${p.dir}`,
   markerWriteFailed: (p: { error: string }) => `Projektmarkierung konnte nicht geschrieben werden: ${p.error}`,
+  sessionVideosOpen: (p) => `Videos in dieser Sitzung sind noch geöffnet: ${p.names}. Schließen und dann erneut versuchen`,
 };

@@ -2,7 +2,7 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import { z } from 'zod';
 import type { Harness } from '@baocut/harness';
-import type { RiskLevel } from '@baocut/protocol';
+import { RpcError, type RiskLevel } from '@baocut/protocol';
 import { RcAgentTools } from '@baocut/protocol/messages/runtime-core';
 import type { VideoService } from '../videos/video-service.ts';
 import { ToolError, type ToolInfo, type ToolSet } from './tool-catalog.ts';
@@ -19,7 +19,8 @@ import { approvalField, confirmSummary, scopedProject, type ToolPrincipal, type 
  *   之外是写项目目录之外（`high`），按访问模式确认；终端不走审批。已经登记过的项目原样返回，不确认、不改名。
  * - `projects_adopt_session` 只在工具桥：用户明确要建项目时，把不属于项目的会话放进默认项目目录下的一个新项目（名字默认取会话里最早建的
  *   视频，`Harness.ensureConversationProject`，架构设计 §3.10），会话的视频与文件搬过去，之后在项目里工作。只写 BaoCut 的项目目录下
- *   一个新建的目录、搬的是会话自己的工作目录，不覆盖任何文件，所以按 `edit` 确认。已经属于项目的会话原样返回那个项目。
+ *   一个新建的目录、搬的是会话自己的工作目录，不覆盖任何文件，所以按 `edit` 确认。已经属于项目的会话原样返回那个项目。工作目录里还有
+ *   视频被界面、任务或别的连接开着时拒绝（`VIDEO_IN_USE`），什么都不动。
  */
 
 export interface ProjectToolsDeps {
@@ -83,7 +84,7 @@ const DEFINITIONS: Record<ToolName, ToolInfo> = {
     description: [
       '用户明确要求建项目（「建个项目」「放进项目里」）时用：在 BaoCut 的项目目录下新建项目，把这个会话的视频与文件搬进去，会话从此属于它。',
       '项目名不给时取会话里最早建的视频的名字（还没有视频时取会话标题）。用户没要求时不要调用：不属于项目的会话照样能新建、下载、编辑视频，视频就留在会话的工作目录里。',
-      '会话已经属于项目时原样返回那个项目。搬完之后会话的工作目录换成项目目录；正开着的视频关掉之后再搬过去。',
+      '会话已经属于项目时原样返回那个项目。搬完之后会话的工作目录换成项目目录。工作目录里还有视频在编辑器、任务或别的连接里开着时拒绝（VIDEO_IN_USE），什么都不动：请用户关掉那几部视频后再试。',
     ].join('\n'),
     annotations: { destructiveHint: false, idempotentHint: true },
     effect: 'mutation',
@@ -195,12 +196,21 @@ export class ProjectTools implements ToolSet {
       ...confirmSummary(RcAgentTools.adoptSessionSummary({ name: args.name ?? null })),
       risk: 'edit',
     });
-    // 这个智能体自己开着的、在工作目录里的视频先放下，才能一起搬走；界面还开着的关掉之后再搬（Harness 稍后重试）。
+    // 这个智能体自己开着的、在工作目录里的视频先放下，才能一起搬走；界面或任务还开着的，Harness 拒绝绑定（`VIDEO_IN_USE`）。
     const cwd = await fs.realpath(conversation.cwd).catch(() => conversation.cwd);
     for (const ref of videos.openRefs()) {
       if (inside(ref.path, cwd)) await videos.close(ref.videoId, principal).catch(() => {});
     }
-    const project = await harness.ensureConversationProject(conversationId, args.name ? { name: args.name } : {});
+    let project;
+    try {
+      project = await harness.ensureConversationProject(conversationId, args.name ? { name: args.name } : {});
+    } catch (error) {
+      if (error instanceof RpcError && (error.details as { code?: unknown } | undefined)?.code === 'VIDEO_IN_USE') {
+        const { videos: names } = error.details as { videos?: unknown };
+        throw new ToolError('VIDEO_IN_USE', error.message, { ...(Array.isArray(names) ? { videos: names } : {}), next: ADOPT_BUSY_NEXT });
+      }
+      throw error;
+    }
     return { ...scopedProject(project), created: true, existing: false, ...approvalField(approval), next: ADOPT_NEXT };
   }
 }
@@ -208,6 +218,8 @@ export class ProjectTools implements ToolSet {
 // i18n-ignore-start: 给模型的工具说明、错误与下一步
 const ADOPT_NEXT =
   '会话已经属于这个项目：新视频不给 project 就建在项目里，视频与文件在项目目录里（相对路径不变）。告诉用户项目的名字与位置。';
+const ADOPT_BUSY_NEXT =
+  '没有建项目，会话和视频都原样留着、照常能用。告诉用户是哪几部视频还开着，请用户在编辑器里关掉它们（或等任务结束）后再说一次；不要自己反复重试。';
 // i18n-ignore-end
 
 function nextAfterCreate(principal: ToolPrincipal): string {

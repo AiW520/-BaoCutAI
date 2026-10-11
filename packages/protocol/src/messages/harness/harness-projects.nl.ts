@@ -14,4 +14,5 @@ export const nl: HarnessProjectsMessages = {
   markerNotWritable: (p: { dir: string }) =>
     `De projectmap is niet schrijfbaar, dus de projectmarkering .bcut/project.json kan niet worden geschreven: ${p.dir}`,
   markerWriteFailed: (p: { error: string }) => `Kan de projectmarkering niet schrijven: ${p.error}`,
+  sessionVideosOpen: (p) => `Video's in deze sessie zijn nog geopend: ${p.names}. Sluit ze en probeer het opnieuw`,
 };

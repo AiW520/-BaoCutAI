@@ -11,4 +11,5 @@ export const it: HarnessProjectsMessages = {
   tooManySameName: "Troppe cartelle di progetto hanno questo nome. Scegli un altro nome",
   markerNotWritable: (p) => `La cartella del progetto non è scrivibile, quindi non è stato possibile scrivere il marcatore .bcut/project.json: ${p.dir}`,
   markerWriteFailed: (p) => `Impossibile scrivere il marcatore del progetto: ${p.error}`,
+  sessionVideosOpen: (p) => `Alcuni video di questa sessione sono ancora aperti: ${p.names}. Chiudili e riprova`,
 };

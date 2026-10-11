@@ -11,4 +11,5 @@ export const ptBR: HarnessProjectsMessages = {
   tooManySameName: "Há pastas de projeto demais com este nome. Escolha outro nome",
   markerNotWritable: (p) => `Não é possível gravar na pasta do projeto, então não foi possível gravar o marcador .bcut/project.json: ${p.dir}`,
   markerWriteFailed: (p) => `Não foi possível gravar o marcador do projeto: ${p.error}`,
+  sessionVideosOpen: (p) => `Alguns vídeos desta sessão ainda estão abertos: ${p.names}. Feche-os e tente de novo`,
 };

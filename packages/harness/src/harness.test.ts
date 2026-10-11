@@ -389,9 +389,10 @@ describe('无项目会话绑定项目', () => {
     expect(await harness.migrateScratch()).toEqual({ moved: 0, folded: 0, recovered: 0, removed: 0 });
   });
 
-  it('打开着的视频不搬：留在工作目录里，其余照搬；关掉之后再搬', async () => {
+  it('视频还开着就不放进项目：拒绝（VIDEO_IN_USE），不建项目、不绑定、不搬；删会话同样拒绝；关掉之后照常放进去', async () => {
     await harness.shutdown();
     let busy: string[] = [];
+    const idleClosed: string[] = [];
     harness = await Harness.open({
       home,
       conversations: new ConversationStore(home.conversationsDir),
@@ -399,6 +400,49 @@ describe('无项目会话绑定项目', () => {
       drivers: new DriverRegistry(),
       log: silentLogger,
       openVideoDirs: () => busy,
+      closeIdleVideos: async (dir) => void idleClosed.push(dir),
+    });
+    const conversation = await harness.createConversation({ title: '开着' });
+    await fakeVideo(path.join(conversation.cwd, '开着的'));
+    await fs.writeFile(path.join(conversation.cwd, 'b.txt'), 'x');
+    const real = await fs.realpath(conversation.cwd);
+    busy = [path.join(real, '开着的')];
+    const projectsBefore = harness.listProjects().length;
+
+    const refused = await rejection(harness.ensureConversationProject(conversation.id));
+    expect(refused.code).toBe('conflict');
+    expect(refused.details).toMatchObject({ code: 'VIDEO_IN_USE', videos: ['开着的'] });
+    // 先把只在宽限期里等着关的关掉，再看还有没有开着的。
+    expect(idleClosed).toEqual([real]);
+    expect(harness.listProjects()).toHaveLength(projectsBefore);
+    expect(harness.getConversation(conversation.id).conversation).toMatchObject({ projectId: null, cwd: conversation.cwd });
+    expect(await exists(path.join(conversation.cwd, '开着的', 'video.db'))).toBe(true);
+    expect(await exists(path.join(conversation.cwd, 'b.txt'))).toBe(true);
+
+    // 删会话要先把视频放进项目：同样拒绝，会话记录与工作目录原样留着。
+    expect((await rejection(harness.deleteConversation(conversation.id))).details).toMatchObject({ code: 'VIDEO_IN_USE' });
+    expect(harness.getConversation(conversation.id).conversation.projectId).toBeNull();
+    expect(await exists(path.join(conversation.cwd, '开着的', 'video.db'))).toBe(true);
+
+    busy = [];
+    const project = await harness.ensureConversationProject(conversation.id);
+    expect(await exists(path.join(project.path, '开着的', 'video.db'))).toBe(true);
+    expect(await exists(path.join(project.path, 'b.txt'))).toBe(true);
+    expect(await exists(conversation.cwd)).toBe(false);
+  });
+
+  it('检查之后才打开的视频（竞态）：其余照搬，它留在工作目录里，关掉之后再搬', async () => {
+    await harness.shutdown();
+    let busy: string[] = [];
+    let checked = false;
+    harness = await Harness.open({
+      home,
+      conversations: new ConversationStore(home.conversationsDir),
+      projects: new ProjectStore(home.projectsFile),
+      drivers: new DriverRegistry(),
+      log: silentLogger,
+      // 第一次是绑定前的检查：那时还没开着。
+      openVideoDirs: () => (checked ? busy : ((checked = true), [])),
     });
     const conversation = await harness.createConversation({ title: '开着' });
     await fakeVideo(path.join(conversation.cwd, '开着的'));

@@ -11,4 +11,5 @@ export const zhHant: HarnessProjectsMessages = {
   tooManySameName: '同名的專案資料夾太多，請換一個名稱',
   markerNotWritable: (p) => `專案資料夾無法寫入，因此無法寫入專案標記 .bcut/project.json：${p.dir}`,
   markerWriteFailed: (p) => `無法寫入專案標記：${p.error}`,
+  sessionVideosOpen: (p) => `這個對話裡的影片還開著：${p.names}。請先關閉再試一次`,
 };

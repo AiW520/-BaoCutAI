@@ -11,4 +11,5 @@ export const pl: HarnessProjectsMessages = {
   tooManySameName: "Zbyt wiele folderów projektów ma tę nazwę. Wybierz inną",
   markerNotWritable: (p) => `Folder projektu jest niezapisywalny, więc nie można zapisać znacznika projektu .bcut/project.json: ${p.dir}`,
   markerWriteFailed: (p) => `Nie udało się zapisać znacznika projektu: ${p.error}`,
+  sessionVideosOpen: (p) => `Wideo w tej sesji są nadal otwarte: ${p.names}. Zamknij je i spróbuj ponownie`,
 };

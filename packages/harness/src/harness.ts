@@ -140,7 +140,8 @@ export interface HarnessOptions {
   /** 任务预算的账本（架构设计 §3.2、§7.8）：每个任务建立时登记它的预算策略。没有时合同不带 `budgetPolicyRef`、不能设预算。 */
   budgets?: TaskBudgetPort;
   /**
-   * 此刻打开着的视频目录（真实路径）。把会话工作目录里的东西搬进项目时跳过它们（与包含它们的目录），关掉之后再搬。
+   * 此刻打开着的视频目录（真实路径）。会话工作目录里有它们时不放进项目、不删会话（`VIDEO_IN_USE`）；检查之后才打开的，搬的时候
+   * 跳过它们（与包含它们的目录），关掉之后再搬。
    * 没有时当作都没有打开。
    */
   openVideoDirs?: () => readonly string[];
@@ -511,6 +512,9 @@ export class Harness {
    * （相对路径不变）。之后视频建在项目里，Space 按项目列出，删会话不影响它们。已经属于项目的会话直接返回那个项目。
    * 新建视频本身不绑定：无项目会话的视频就建在它的工作目录里。
    *
+   * 工作目录里的视频还被别的窗口、任务或连接开着时拒绝（`conflict`，`VIDEO_IN_USE`），不建项目、不绑定：开着的视频搬不动，
+   * 先绑定再等它关掉会让它落在会话的工作目录与项目之外。
+   *
    * 幂等：会话记录上的 `projectId` 是持久的锚点，绑定之后再来的调用（重试、同一命令的重复提交、崩溃后恢复的流程）都拿回同一个项目；
    * 同一个会话同时到来的调用共用一趟。选定的项目目录在建之前先记在工作目录的 `.baocut-binding.json` 里：项目建好、会话还没绑定之间
    * 崩溃时，下次绑定接着用那个目录，不产生第二个项目。
@@ -537,6 +541,8 @@ export class Harness {
     const scratch = this.#ownScratch(state.conversation);
     const intentFile = scratch ? path.join(scratch, BIND_INTENT_FILE) : null;
     if (scratch) await fs.mkdir(scratch, { recursive: true });
+    // 视频还开着就不绑：工作目录一换，开着的视频就落在会话的工作目录与项目之外，Space 里找不到、也打不开，直到它被关掉。
+    if (scratch) await this.#assertNoneOpen(scratch);
     let project: Project | null = null;
     if (intentFile) {
       const intent = await fs.readFile(intentFile, 'utf8').then(
@@ -605,6 +611,20 @@ export class Harness {
     }, FOLD_RETRY_MS);
     timer.unref?.();
     this.#foldRetries.set(scratch, timer);
+  }
+
+  /**
+   * 工作目录里的视频都没有打开（§3.10）：先把只在宽限期里等着关的关掉，还有别的窗口、任务或连接开着的就拒绝（`VIDEO_IN_USE`），
+   * 什么都不动。放进项目与删会话之前用。
+   */
+  async #assertNoneOpen(scratch: string): Promise<void> {
+    const real = await fs.realpath(scratch).catch(() => null);
+    if (!real) return;
+    await this.#closeIdleVideos(real).catch(() => {});
+    const open = this.#openVideoDirs().filter((dir) => isInside(real, dir));
+    if (!open.length) return;
+    const names = open.map((dir) => path.relative(real, dir).split(path.sep).join('/'));
+    throw new RpcError('conflict', HP.sessionVideosOpen({ names: names.join(', ') }), { code: 'VIDEO_IN_USE', videos: names });
   }
 
   /** 会话自己的、在 Runtime Home 的 scratch 下的工作目录；别处的（项目目录）为 null。 */
@@ -964,8 +984,9 @@ export class Harness {
 
   /**
    * 只删会话记录（架构设计 §3.10）：不碰项目目录。运行中的任务先停下。
-   * 不属于项目、工作目录里还有视频的，先建一个以视频命名的项目并搬进去（`ensureConversationProject`），视频不随会话消失；搬不了的
-   * 留在原处，下次启动收进「恢复的视频」。属于项目的会话还留着的工作目录，剩下的东西搬进项目；没有视频的工作目录随会话删掉。
+   * 不属于项目、工作目录里还有视频的，先建一个以视频命名的项目并搬进去（`ensureConversationProject`），视频不随会话消失；其中还有
+   * 视频被别处开着时不删（`VIDEO_IN_USE`，会话的智能体刚放下的不算），会话记录与工作目录原样留着；其他原因搬不了的留在原处，
+   * 下次启动收进「恢复的视频」。属于项目的会话还留着的工作目录，剩下的东西搬进项目；没有视频的工作目录随会话删掉。
    */
   async deleteConversation(id: Id): Promise<void> {
     const state = this.#require(id);
@@ -975,6 +996,9 @@ export class Harness {
     if (run) this.#finish(state, run, 'stopped', null);
     this.#cancelIdle(id);
     await this.#agents.release(id);
+    // 先停下回合、放掉原生会话：会话的智能体自己开着的视频由此放下，不算别处开着。
+    const scratch = path.join(this.#home.scratchDir, id);
+    if (!state.conversation.projectId && (await containsVideo(scratch))) await this.#assertNoneOpen(scratch);
     await this.#tidyBeforeDelete(state);
     state.dispose();
     state.log.publish({ type: 'conversation.removed' });

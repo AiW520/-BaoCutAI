@@ -6,4 +6,5 @@ export const es: HarnessProjectsMessages = {
  untitledProject: 'Proyecto sin título', recoveredVideos: 'Vídeos recuperados', createFolderFailed: (p) => `No se pudo crear la carpeta del proyecto: ${p.error}`, tooManySameName: 'Demasiadas carpetas de proyecto tienen este nombre. Elige otro',
  markerNotWritable: (p) => `No se puede escribir en la carpeta del proyecto, por lo que no se pudo escribir el marcador .bcut/project.json: ${p.dir}`,
  markerWriteFailed: (p) => `No se pudo escribir el marcador del proyecto: ${p.error}`,
+ sessionVideosOpen: (p) => `Algunos vídeos de esta sesión siguen abiertos: ${p.names}. Ciérralos y vuelve a intentarlo`,
 };

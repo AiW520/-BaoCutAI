@@ -11,4 +11,5 @@ export const ru: HarnessProjectsMessages = {
   tooManySameName: "Слишком много папок проектов с таким именем. Выберите другое имя",
   markerNotWritable: (p) => `Папка проекта недоступна для записи, не удалось записать маркер проекта .bcut/project.json: ${p.dir}`,
   markerWriteFailed: (p) => `Не удалось записать маркер проекта: ${p.error}`,
+  sessionVideosOpen: (p) => `Видео в этой сессии ещё открыты: ${p.names}. Закройте их и повторите попытку`,
 };

@@ -13,4 +13,5 @@ export const ja: HarnessProjectsMessages = {
   markerNotWritable: (p) =>
     `プロジェクトフォルダに書き込めないため、プロジェクトマーカー .bcut/project.json を書き込めませんでした：${p.dir}`,
   markerWriteFailed: (p) => `プロジェクトマーカーを書き込めませんでした：${p.error}`,
+  sessionVideosOpen: (p) => `このセッションの動画がまだ開いています：${p.names}。閉じてからもう一度お試しください`,
 };
