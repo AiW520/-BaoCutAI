@@ -2,6 +2,7 @@ import type { LocalModelsMessages } from './local-models-copy.ts';
 
 export const it: LocalModelsMessages = {
   install: {
+    webNote: 'Un browser non può scaricare, verificare, riparare o eliminare i modelli locali, né cambiare il modello predefinito. Fallo nell’app desktop di BaoCut.',
     availableNote: 'Prima del download vedrai quanto verrà scaricato e lo spazio su disco disponibile. Puoi mettere in pausa; ciò che è già stato scaricato viene conservato e ripreso la prossima volta.',
     download: 'Scarica', complete: 'Completa', downloadSize: (size: string) => `Scarica ${size}`, completeSize: (size: string) => `Completa ${size}`, resume: 'Riprendi download', pause: 'Pausa', cancelDownload: 'Annulla download', discard: 'Scarta file scaricati', repair: 'Ripara…', remove: 'Elimina…',
     more: (id: string) => `Altro · ${id}`, details: 'Dettagli', hideDetails: 'Nascondi dettagli',

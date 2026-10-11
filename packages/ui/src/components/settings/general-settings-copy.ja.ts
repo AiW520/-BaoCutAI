@@ -53,4 +53,5 @@ export const ja: GeneralSettingsMessages = {
   trashDays: 'ゴミ箱の保持日数',
   trashDaysDesc: (fallback: number | null) =>
     `ゴミ箱に入れてからこの日数を過ぎ、どこからも参照されていない項目と、削除した動画は完全に削除されます（起動時とその後 6 時間ごとに確認）。まだ参照されている項目は残ります。空欄にすると既定値${fallback ? `の ${fallback} 日` : ''}に戻ります。`,
+  webNote: 'ブラウザーではこの設定を変更できません。BaoCut デスクトップアプリで変更してください。',
 };

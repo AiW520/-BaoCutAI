@@ -49,4 +49,5 @@ export const pl: GeneralSettingsMessages = {
 
   trashDays: "Dni przechowywania w koszu",
   trashDaysDesc: (fallback: number | null) => `Wpisy bez odwołań w koszu dłużej niż ten okres i usunięte wideo są usuwane trwale (kontrola przy starcie i co 6 godzin). Wpisy z odwołaniami zostają zachowane. Wyczyść dla wartości domyślnej${fallback ? ` z ${fallback} dni` : ""}.`,
+  webNote: "W przeglądarce nie można zmienić tego ustawienia. Zmień je w aplikacji BaoCut na komputer.",
 };

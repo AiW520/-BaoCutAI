@@ -54,4 +54,5 @@ export const de: GeneralSettingsMessages = {
   trashDays: "Aufbewahrungstage im Papierkorb",
   trashDaysDesc: (fallback: number | null) =>
     `Ältere nicht referenzierte Papierkorbeinträge und gelöschte Videos werden dauerhaft gelöscht (Prüfung beim Start und danach alle 6 Stunden). Referenzierte Einträge bleiben erhalten. Leeren stellt den Standard wieder her${fallback ? ` von ${fallback} Tage` : ""}.`,
+  webNote: "Im Browser lässt sich diese Einstellung nicht ändern. Ändern Sie sie in der BaoCut-Desktop-App.",
 };

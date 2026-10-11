@@ -54,4 +54,5 @@ export const ptBR: GeneralSettingsMessages = {
   trashDays: "Dias na Lixeira",
   trashDaysDesc: (fallback: number | null) =>
     `Itens antigos sem referências e vídeos excluídos são apagados permanentemente; verifica ao iniciar e a cada 6 horas. Referenciados mantidos. Limpe para padrão${fallback ? ` de ${fallback} dias` : ""}.`,
+  webNote: "Um navegador não pode alterar esta configuração. Altere-a no app para desktop do BaoCut.",
 };

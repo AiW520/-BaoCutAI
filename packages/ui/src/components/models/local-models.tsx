@@ -39,7 +39,7 @@ import {
   removedToast,
   rpcProblem,
 } from '../../model/models-install.ts';
-import { checkDetailLines, checkLineView, hasCheck, tryNotice } from '../../model/model-check.ts';
+import { checkDetailLines, checkLineView, hasCheck, tryNotice, type CheckAbilities } from '../../model/model-check.ts';
 import { checkCaption, CHECK_HEAD, CHECK_LABEL, TRY_SUBJECT_IMAGE, TRY_SUBJECT_MUSIC } from '../../model/model-check-copy.ts';
 import {
   bundleChips,
@@ -136,12 +136,16 @@ const detailLink = style({ color: 'gray-800', overflowWrap: 'anywhere', userSele
 const fold = style({ marginTop: 24 });
 const foldSummary = style({ marginStart: 8, font: 'ui-sm', fontWeight: 'normal', color: 'gray-600' });
 const sideNote = style({ font: 'ui-xs', color: 'gray-600' });
+/** 浏览器里为什么这些按钮是灰的：与通用页、下载来源一行的原因同一档。 */
+const webNote = style({ marginTop: 0, marginBottom: 16, font: 'ui-sm', color: 'gray-800', overflowWrap: 'anywhere' });
 const okIcon = iconStyle({ size: 'S', color: 'positive' });
 const missIcon = iconStyle({ size: 'S', color: 'notice' });
 
 type Confirm = { kind: 'remove' | 'discard'; bundle: ModelBundleStatus };
 /** 打开着的下载 / 补齐 / 修复对话框；`note` 是从公共组件那一行借模型补齐时换上的那一句。 */
 type Install = { bundle: ModelBundleStatus; mode: InstallMode; note?: string };
+/** 浏览器里：检查状态与试用的提示里不给「修复」「重新检查」。 */
+const NO_CHECK: CheckAbilities = { repair: false, recheck: false };
 
 /**
  * 模型 › 本地模型（设计稿 settings-local.jsx:200-308）：`models` 主题里的模型包按「已安装 / 可下载」分组（权重在、缺公共组件的
@@ -154,6 +158,8 @@ type Install = { bundle: ModelBundleStatus; mode: InstallMode; note?: string };
  * 图像生成的「试画」还没做（设计稿 model-local-check.js 的 `TRY.image`），所以它的行像语音识别一样在行上露「检查」。
  * 「检查」与「试听」是两件事（设计稿 model-local-check.js）：试听是行上的主操作，检查在 ⋯ 里紧挨「修复…」；
  * 没有试用的语音识别在行上另有一个安静的「检查」。模型能不能用只写在行上那一条状态里（model-check-line.tsx）。
+ * 浏览器里只看与试用（产品设计 §7.6）：Web 白名单不含安装管理（`models.install`、`repair`、`cancelInstall`、`remove`、`test`、
+ * `enable`）与 `models.setDefault`，这些按钮与默认模型选择器置灰，页面顶上写一句原因；试听、试画照常。
  */
 export function LocalModels({ category }: { category: ModelCategory }) {
   if (category === 'asr') return <LocalPage key="asr" category="asr" kind="transcribe" />;
@@ -167,6 +173,7 @@ export function LocalModels({ category }: { category: ModelCategory }) {
 
 function LocalPage({ category, kind }: { category: ModelCategory; kind: LocalDefaultCapability }) {
   const runtime = useRuntime();
+  const web = runtime.host.platform === 'web';
   const connected = useConnection((s) => s.state.status === 'connected');
   const ready = useModels((s) => s.ready);
   const view = useModels((s) => s.capabilities);
@@ -285,6 +292,7 @@ function LocalPage({ category, kind }: { category: ModelCategory; kind: LocalDef
 
   return (
     <>
+      {web ? <p className={webNote}>{INSTALL.webNote}</p> : null}
       <Card label={LOCAL_COPY.defaultLabel}>
         <SettingRow label={LOCAL_COPY.defaultLabel} desc={desc}>
           <Picker
@@ -294,7 +302,7 @@ function LocalPage({ category, kind }: { category: ModelCategory; kind: LocalDef
             menuWidth={280}
             selectedKey={picker.selectedKey}
             placeholder={picker.other ?? (picker.hasAuto ? LOCAL_COPY.auto : TTS.unset)}
-            isDisabled={busy === 'default'}
+            isDisabled={web || busy === 'default'}
             onSelectionChange={(key) => {
               if (key !== null && key !== picker.selectedKey) void choose(String(key));
             }}>
@@ -329,7 +337,7 @@ function LocalPage({ category, kind }: { category: ModelCategory; kind: LocalDef
         </div>
         {groups.available.length ? (
           <>
-            <p className={groupNote}>{INSTALL.availableNote}</p>
+            {web ? null : <p className={groupNote}>{INSTALL.availableNote}</p>}
             <Card>{groups.available.map(row)}</Card>
           </>
         ) : (
@@ -351,6 +359,7 @@ function LocalPage({ category, kind }: { category: ModelCategory; kind: LocalDef
                   key={c.key}
                   component={c}
                   shared={shared}
+                  web={web}
                   onGet={(target) => setInstall({ bundle: target, mode: 'complete', note: SHARED.completeNote(bundleName(target)) })}
                 />
               ))}
@@ -410,10 +419,12 @@ function componentSize(c: ModelComponentStatus): string | null {
 function SharedRow({
   component: c,
   shared,
+  web,
   onGet,
 }: {
   component: SharedComponent;
   shared: readonly SharedComponent[];
+  web: boolean;
   onGet: (target: ModelBundleStatus) => void;
 }) {
   const action = sharedAction(c, shared);
@@ -437,7 +448,7 @@ function SharedRow({
         <div className={modelActions}>
           {action.kind === 'installed' ? <span className={sideNote}>{INSTALL.componentLine('installed', size)}</span> : null}
           {action.kind === 'get' ? (
-            <Button variant="secondary" size="S" onPress={() => onGet(action.target)}>
+            <Button variant="secondary" size="S" isDisabled={web} onPress={() => onGet(action.target)}>
               <DownloadIcon />
               <Text>{size ? INSTALL.downloadSize(size) : INSTALL.download}</Text>
             </Button>
@@ -547,6 +558,9 @@ function BundleRow({
   const [trying, setTrying] = useState(false);
   const actions = bundleActions(bundle, ownFiles);
   const check = useBundleCheck(bundle, kind, jobs, ownFiles);
+  // 浏览器里管不了安装（见 LocalModels）：下面的按钮置灰，检查状态与试用的提示里不给修复与重新检查；取消检查（`jobs.cancel`）照常。
+  const web = runtime.host.platform === 'web';
+  const can = web ? NO_CHECK : check.can;
   // 缺组件的（设计稿 settings-local.jsx 的 `half`）自动展开详情，看得到缺的是哪几件、各多大。
   const half = missingParts(bundle, ownFiles).length > 0;
   useEffect(() => {
@@ -599,7 +613,7 @@ function BundleRow({
   }
   if (canReenable(bundle)) {
     buttons.push(
-      <Button key="reenable" variant="secondary" size="S" isPending={reenabling} onPress={onReenable}>
+      <Button key="reenable" variant="secondary" size="S" isDisabled={web} isPending={reenabling} onPress={onReenable}>
         {LOCAL_COPY.reenable}
       </Button>,
     );
@@ -608,7 +622,7 @@ function BundleRow({
   if (!speech && !canTryImage && !canTryMusic && check.can.recheck) {
     buttons.push(
       <TooltipTrigger key="check" placement="top" delay={300}>
-        <ActionButton isQuiet size="S" isDisabled={checkBusy} onPress={() => void check.start()}>
+        <ActionButton isQuiet size="S" isDisabled={web || checkBusy} onPress={() => void check.start()}>
           <SearchIcon />
           <Text>{CHECK_LABEL.check}</Text>
         </ActionButton>
@@ -623,7 +637,7 @@ function BundleRow({
   // （设计稿 settings-local.jsx 的 `half`）。
   if (actions.complete) {
     buttons.push(
-      <Button key="complete" variant="accent" size="S" onPress={() => onInstall('complete')}>
+      <Button key="complete" variant="accent" size="S" isDisabled={web} onPress={() => onInstall('complete')}>
         <DownloadIcon />
         <Text>{needSize ? INSTALL.completeSize(needSize) : INSTALL.complete}</Text>
       </Button>,
@@ -631,7 +645,7 @@ function BundleRow({
   }
   if (actions.install) {
     buttons.push(
-      <Button key="install" variant="secondary" size="S" onPress={() => onInstall('install')}>
+      <Button key="install" variant="secondary" size="S" isDisabled={web} onPress={() => onInstall('install')}>
         <DownloadIcon />
         <Text>{needSize ? INSTALL.downloadSize(needSize) : INSTALL.download}</Text>
       </Button>,
@@ -639,7 +653,7 @@ function BundleRow({
   }
   if (actions.resume) {
     buttons.push(
-      <Button key="resume" variant="accent" size="S" onPress={() => onInstall(ownFiles ? 'complete' : 'install')}>
+      <Button key="resume" variant="accent" size="S" isDisabled={web} onPress={() => onInstall(ownFiles ? 'complete' : 'install')}>
         <DownloadIcon />
         <Text>{INSTALL.resume}</Text>
       </Button>,
@@ -647,18 +661,18 @@ function BundleRow({
   }
   if (actions.stop && !repairing) {
     buttons.push(
-      <ActionButton key="pause" size="S" isPending={pending === 'pause'} onPress={() => void pause()}>
+      <ActionButton key="pause" size="S" isDisabled={web} isPending={pending === 'pause'} onPress={() => void pause()}>
         <PauseIcon />
         <Text>{INSTALL.pause}</Text>
       </ActionButton>,
-      <ActionButton key="cancel" isQuiet size="S" onPress={() => onConfirm('discard')}>
+      <ActionButton key="cancel" isQuiet size="S" isDisabled={web} onPress={() => onConfirm('discard')}>
         <Text>{INSTALL.cancelDownload}</Text>
       </ActionButton>,
     );
   }
   if (actions.discard) {
     buttons.push(
-      <ActionButton key="discard" isQuiet size="S" onPress={() => onConfirm('discard')}>
+      <ActionButton key="discard" isQuiet size="S" isDisabled={web} onPress={() => onConfirm('discard')}>
         <Text>{INSTALL.discard}</Text>
       </ActionButton>,
     );
@@ -669,7 +683,7 @@ function BundleRow({
     const disabled = [...(checkBusy || !check.can.recheck ? ['check'] : []), ...(checkBusy || !check.can.repair ? ['repair'] : [])];
     buttons.push(
       <MenuTrigger key="more">
-        <ActionButton isQuiet size="S" aria-label={INSTALL.more(name)}>
+        <ActionButton isQuiet size="S" isDisabled={web} aria-label={INSTALL.more(name)}>
           <MoreIcon />
         </ActionButton>
         <Menu
@@ -693,7 +707,7 @@ function BundleRow({
   }
   if (actions.remove) {
     buttons.push(
-      <ActionButton key="remove" isQuiet size="S" aria-label={`${LOCAL_COPY.remove} ${name}`} onPress={() => onConfirm('remove')}>
+      <ActionButton key="remove" isQuiet size="S" isDisabled={web} aria-label={`${LOCAL_COPY.remove} ${name}`} onPress={() => onConfirm('remove')}>
         <DeleteIcon />
       </ActionButton>,
     );
@@ -748,7 +762,7 @@ function BundleRow({
       {progress?.state === 'paused' ? <p className={rowNote({})}>{progress.label}</p> : null}
       {isBundleInstalled(bundle) || checkBusy ? (
         <ModelCheckLine
-          view={checkLineView(check.state, check.can)}
+          view={checkLineView(check.state, can)}
           detailLines={checkDetailLines(check.state, id)}
           label={`${repairing ? CHECK_HEAD.repairing : CHECK_HEAD.running} ${name}`}
           onAction={(k) => (k === 'cancel' ? check.cancel() : k === 'repair' ? onInstall('repair') : void check.start())}
@@ -761,8 +775,8 @@ function BundleRow({
           name={name}
           model={model}
           cloneNames={speech?.cloneNames ?? []}
-          notice={tryNotice(check.state, check.can)}
-          canCheck={check.can.recheck}
+          notice={tryNotice(check.state, can)}
+          canCheck={can.recheck}
           onCheck={(k) => (k === 'repair' ? onInstall('repair') : void check.start())}
         />
       ) : null}
@@ -771,8 +785,8 @@ function BundleRow({
           bundleId={id}
           name={name}
           model={music}
-          notice={tryNotice(check.state, check.can, TRY_SUBJECT_MUSIC)}
-          canCheck={check.can.recheck}
+          notice={tryNotice(check.state, can, TRY_SUBJECT_MUSIC)}
+          canCheck={can.recheck}
           onCheck={(k) => (k === 'repair' ? onInstall('repair') : void check.start())}
         />
       ) : null}
@@ -782,8 +796,8 @@ function BundleRow({
           name={name}
           chip={bundle.backend.toUpperCase()}
           model={image}
-          notice={tryNotice(check.state, check.can, TRY_SUBJECT_IMAGE)}
-          canCheck={check.can.recheck}
+          notice={tryNotice(check.state, can, TRY_SUBJECT_IMAGE)}
+          canCheck={can.recheck}
           onCheck={(k) => (k === 'repair' ? onInstall('repair') : void check.start())}
           onClose={() => setTrying(false)}
         />

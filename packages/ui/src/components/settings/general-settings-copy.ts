@@ -69,6 +69,9 @@ const en = {
   trashDays: 'Days to keep items in Trash',
   trashDaysDesc: (fallback: number | null) =>
     `Items that have been in Trash longer than this and aren't referenced, and deleted videos, are deleted permanently (checked at startup and every 6 hours after). Items still referenced are kept. Clear it to reset to the default${fallback ? ` of ${fallback} days` : ''}.`,
+
+  /** 浏览器里改不了的行（Web 白名单不含 `settings.set`）：置灰，行下写这一句。 */
+  webNote: 'A browser can’t change this setting. Change it in the BaoCut desktop app.',
 };
 
 export type GeneralSettingsMessages = typeof en;

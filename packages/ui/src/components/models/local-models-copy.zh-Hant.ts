@@ -2,6 +2,7 @@ import type { LocalModelsMessages } from './local-models-copy.ts';
 
 export const zhHant: LocalModelsMessages = {
   install: {
+    webNote: '瀏覽器中無法下載、檢查、修復或刪除本機模型，也無法變更預設模型，請在 BaoCut 桌面應用程式中操作。',
     availableNote: '下載前會先顯示要下載多少，以及磁碟還剩多少空間。下載可以暫停；已下載的部分會保留，下次接著下載。',
     download: '下載',
     complete: '補齊',

@@ -95,8 +95,8 @@ export function GeneralSettings() {
       <InterfaceGroup />
       <EditingGroup />
       <DownloadsGroup web={web} ready={ready} />
-      <SourcesGroup ready={ready} />
-      <SpaceGroup ready={ready} />
+      <SourcesGroup web={web} ready={ready} />
+      <SpaceGroup web={web} ready={ready} />
     </>
   );
 }
@@ -279,8 +279,11 @@ function DownloaderRow({ web }: { web: boolean }) {
   );
 }
 
-/** 合同里有、设计稿这一页没画的：下载来源与严格离线。模型的下载来源与本地模型页「下载与存储」是同一行（model-source-row.tsx）。 */
-function SourcesGroup({ ready }: { ready: boolean }) {
+/**
+ * 合同里有、设计稿这一页没画的：下载来源与严格离线。模型的下载来源与本地模型页「下载与存储」是同一行（model-source-row.tsx）。
+ * 浏览器里只读：Web 白名单不含 `settings.set`，置灰并写一句原因。
+ */
+function SourcesGroup({ web, ready }: { web: boolean; ready: boolean }) {
   const save = useSaveSettings();
   const strict = useSetting('offline.strict');
   return (
@@ -291,12 +294,13 @@ function SourcesGroup({ ready }: { ready: boolean }) {
         label={M.toolsEndpoint}
         desc={M.toolsEndpointDesc}
         placeholder={M.toolsEndpointPlaceholder}
+        web={web}
         ready={ready}
       />
-      <Row label={M.strictOffline} desc={M.strictOfflineDesc}>
+      <Row label={M.strictOffline} desc={M.strictOfflineDesc} note={web ? M.webNote : undefined}>
         <Switch
           aria-label={M.strictOffline}
-          isDisabled={!ready}
+          isDisabled={web || !ready}
           isSelected={strict ?? false}
           onChange={(on) => void save({ 'offline.strict': on }, on ? M.strictOfflineOn : M.strictOfflineOff)}
         />
@@ -311,12 +315,14 @@ function EndpointRow({
   label,
   desc,
   placeholder,
+  web,
   ready,
 }: {
   settingKey: 'tools.downloadEndpoint';
   label: string;
   desc: string;
   placeholder: string;
+  web: boolean;
   ready: boolean;
 }) {
   const save = useSaveSettings();
@@ -331,11 +337,12 @@ function EndpointRow({
     await save({ [settingKey]: endpoint }, endpoint ? M.endpointChanged(endpoint) : M.endpointReset(label));
     setBusy(false);
   };
-  const off = !ready || busy;
+  const off = web || !ready || busy;
   return (
     <div className={stackedRow}>
       <div className={rowLabel}>{label}</div>
       <div className={rowDesc}>{desc}</div>
+      {web ? <div className={rowNote}>{M.webNote}</div> : null}
       <div className={fieldLine}>
         <TextField
           aria-label={label}
@@ -361,8 +368,8 @@ function EndpointRow({
   );
 }
 
-/** 合同里有、设计稿这一页没画的：回收站保留天数。清空数字框 = 恢复默认。 */
-function SpaceGroup({ ready }: { ready: boolean }) {
+/** 合同里有、设计稿这一页没画的：回收站保留天数。清空数字框 = 恢复默认。浏览器里只读。 */
+function SpaceGroup({ web, ready }: { web: boolean; ready: boolean }) {
   const save = useSaveSettings();
   const days = useSetting('space.trashRetentionDays');
   const fallback = useSettings((s) => s.snapshot?.defaults['space.trashRetentionDays'] ?? null);
@@ -370,7 +377,8 @@ function SpaceGroup({ ready }: { ready: boolean }) {
     <Group title="Space">
       <Row
         label={M.trashDays}
-        desc={M.trashDaysDesc(fallback)}>
+        desc={M.trashDaysDesc(fallback)}
+        note={web ? M.webNote : undefined}>
         <NumberField
           aria-label={M.trashDays}
           size="S"
@@ -378,7 +386,7 @@ function SpaceGroup({ ready }: { ready: boolean }) {
           maxValue={TRASH_DAYS.max}
           step={1}
           value={days ?? Number.NaN}
-          isDisabled={!ready}
+          isDisabled={web || !ready}
           styles={daysField}
           onChange={(input) => {
             const next = trashDaysValue(input);

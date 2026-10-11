@@ -2,6 +2,7 @@ import type { LocalModelsMessages } from './local-models-copy.ts';
 
 export const ko: LocalModelsMessages = {
   install: {
+    webNote: '브라우저에서는 로컬 모델을 다운로드, 검사, 복구, 삭제하거나 기본 모델을 변경할 수 없습니다. BaoCut 데스크톱 앱에서 하세요.',
     availableNote:
       '다운로드 전에 내려받을 용량과 남은 디스크 공간을 보여 드립니다. 다운로드는 일시정지할 수 있으며, 이미 받은 부분은 남겨 두었다가 다음에 이어서 받습니다.',
     download: '다운로드',
