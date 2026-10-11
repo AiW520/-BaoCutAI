@@ -57,7 +57,7 @@ export const vi: AiToolsMessages = {
   agentCardSomeAgent: 'Agent',
   agentCardOutside: 'Mở phiên chứa video này, lấy video làm ngữ cảnh →',
   noTranscriptTitle: 'Video này chưa có bản chép lời',
-  noTranscriptBody: 'Các công cụ ở đây đều bắt đầu từ bản chép lời: trau chuốt, chia chương, tóm tắt, đặt tiêu đề đều cần chép lời trước.',
+  noTranscriptBody: 'Phần lớn công cụ ở đây bắt đầu từ bản chép lời: trau chuốt, chia chương, tóm tắt, đặt tiêu đề đều cần chép lời trước; Tạo nhạc nền thì không.',
   goTranscribe: 'Đến bản chép lời',
   stateRunning: 'Đang chạy',
   stateReview: 'Chờ xem',

@@ -96,7 +96,7 @@ export const ko: AiToolsMessages = {
   agentCardSomeAgent: 'Agent',
   agentCardOutside: '이 영상이 속한 세션을 열고 영상을 맥락으로 씁니다 →',
   noTranscriptTitle: '이 영상에는 아직 스크립트가 없습니다',
-  noTranscriptBody: '여기 도구는 모두 스크립트에서 출발합니다. 다듬기, 챕터, 요약, 제목 모두 먼저 전사가 필요합니다.',
+  noTranscriptBody: '여기 도구는 대부분 스크립트에서 출발합니다. 다듬기, 챕터, 요약, 제목 모두 먼저 전사가 필요합니다. 배경 음악 생성은 전사가 없어도 됩니다.',
   goTranscribe: '스크립트로 이동',
   stateRunning: '실행 중',
   stateReview: '검토 대기',

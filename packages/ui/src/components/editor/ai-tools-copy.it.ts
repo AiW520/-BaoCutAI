@@ -56,7 +56,7 @@ export const it: AiToolsMessages = {
   agentCardSomeAgent: 'l’agente',
   agentCardOutside: 'Apre la sessione di questo video, con il video come contesto →',
   noTranscriptTitle: 'Questo video non ha ancora una trascrizione',
-  noTranscriptBody: 'Questi strumenti partono tutti dalla trascrizione: rifinire, capitoli, riassunti e titoli richiedono prima una trascrizione.',
+  noTranscriptBody: 'La maggior parte di questi strumenti parte dalla trascrizione: rifinire, capitoli, riassunti e titoli richiedono prima una trascrizione; Genera colonna sonora no.',
   goTranscribe: 'Vai alla trascrizione',
   stateRunning: 'In corso',
   stateReview: 'Da rivedere',

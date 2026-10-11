@@ -19,6 +19,7 @@ import {
   LENGTHS,
   LIST_GROUPS,
   listedTools,
+  needsTranscript,
   sessionOptions,
   SHORTS_DEFAULTS,
   SHORTS_FOCUS,
@@ -37,7 +38,7 @@ const SKILLS_DIR = path.resolve(import.meta.dirname, '../../../../skills/baocut/
 const AGENT_TOOLS: AgentToolId[] = ['polish', 'chapters', 'speakers', 'retranscribe', 'cleanup', 'stale', 'summary', 'blog', 'title', 'desc', 'cover', 'shortscut'];
 
 describe('AI 工具目录', () => {
-  it('五组十五个工具，次序与原型一致', () => {
+  it('六组十六个工具，次序与原型一致', () => {
     expect(AI_TOOLS.map((t) => t.id)).toEqual([
       'crop',
       'shortscut',
@@ -54,6 +55,7 @@ describe('AI 工具目录', () => {
       'title',
       'desc',
       'cover',
+      'soundtrack',
     ]);
   });
 
@@ -65,6 +67,14 @@ describe('AI 工具目录', () => {
     expect(aiTool('stale').tier).toBe('agent');
     expect(aiTool('shortscut').tier).toBe('agent');
     expect(aiTool('shortscut').setup).toEqual(['挑几段能单独成立的话，各做成一支短视频。']);
+  });
+
+  it('生成配乐在「声音」组、列在最后，去工具页做，不要文稿', () => {
+    expect(aiTool('soundtrack')).toMatchObject({ group: 'sound', tier: 'tool', name: '生成配乐' });
+    expect(LIST_GROUPS.at(-1)).toBe('sound');
+    expect(listedTools('sound').map((t) => t.id)).toEqual(['soundtrack']);
+    expect(needsTranscript('soundtrack')).toBe(false);
+    expect(needsTranscript('polish')).toBe(true);
   });
 
   it('认得工具 id', () => {
@@ -211,11 +221,11 @@ describe('剪成短视频', () => {
 });
 
 describe('AI 工具 Tab', () => {
-  it('列表第一批是从文稿出发的三组加「画面」组里的剪成短视频，写作与发布各有一句副题；脚注说清翻译在哪、智能裁剪还没来', () => {
-    expect(LIST_GROUPS).toEqual(['transcript', 'writing', 'publish', 'frame']);
+  it('列表第一批是从文稿出发的三组加「画面」组里的剪成短视频与「声音」组，写作与发布各有一句副题；脚注说清翻译在哪、智能裁剪还没来', () => {
+    expect(LIST_GROUPS).toEqual(['transcript', 'writing', 'publish', 'frame', 'sound']);
     expect(listedTools('frame').map((t) => t.id)).toEqual(['shortscut']);
     expect(LIST_GROUPS.flatMap((g) => listedTools(g)).map((t) => t.id)).not.toContain('crop');
-    expect(LIST_GROUPS.filter((g) => g !== 'frame').flatMap((g) => listedTools(g)).map((t) => t.id)).toEqual([
+    expect(LIST_GROUPS.filter((g) => g !== 'frame' && g !== 'sound').flatMap((g) => listedTools(g)).map((t) => t.id)).toEqual([
       'polish',
       'chapters',
       'speakers',

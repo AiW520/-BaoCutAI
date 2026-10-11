@@ -96,7 +96,7 @@ export const ja: AiToolsMessages = {
   agentCardSomeAgent: 'Agent',
   agentCardOutside: 'この動画のセッションを開き、動画を文脈にします →',
   noTranscriptTitle: 'この動画にはまだ文字起こしがありません',
-  noTranscriptBody: 'ここのツールはすべて文字起こしが出発点です。整文・章分け・要約・タイトルには先に文字起こしが必要です。',
+  noTranscriptBody: 'ここのツールのほとんどは文字起こしが出発点です。整文・章分け・要約・タイトルには先に文字起こしが必要です。「BGMを生成」は文字起こしがなくても使えます。',
   goTranscribe: '文字起こしへ',
   stateRunning: '実行中',
   stateReview: '確認待ち',

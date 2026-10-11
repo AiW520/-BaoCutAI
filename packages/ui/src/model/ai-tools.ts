@@ -47,11 +47,13 @@ export type AiToolId =
   | 'blog'
   | 'title'
   | 'desc'
-  | 'cover';
+  | 'cover'
+  | 'soundtrack';
 
 /** 分组（数据键；显示名见 `AI_TOOL_GROUP_LABEL`）。 */
-export type AiToolGroup = 'frame' | 'transcript' | 'translate' | 'writing' | 'publish';
-export type AiToolTier = 'runtime' | 'agent' | 'soon';
+export type AiToolGroup = 'frame' | 'transcript' | 'translate' | 'writing' | 'publish' | 'sound';
+/** `tool`：不在这个 Tab 里做，带上这部视频去工具页（生成配乐 → 工具 › 生成音乐）。 */
+export type AiToolTier = 'runtime' | 'agent' | 'soon' | 'tool';
 
 /** 交给 Agent 的那些工具。 */
 export type AgentToolId =
@@ -128,6 +130,7 @@ const en = {
     translate: 'Translation',
     writing: 'Writing',
     publish: 'Publishing',
+    sound: 'Sound',
   } as Record<AiToolGroup, string>,
   tools: {
     crop: {
@@ -208,6 +211,10 @@ const en = {
     cover: {
       name: 'Make a cover',
       desc: 'Make a few cover candidates from key frames, then pick one',
+    },
+    soundtrack: {
+      name: 'Generate soundtrack',
+      desc: 'Make background music as long as this video on this computer, and add it to the video’s media',
     },
   } as Record<AiToolId, ToolText>,
   unknownTool: (id: string) => `No such AI tool: ${id}`,
@@ -417,6 +424,7 @@ export const AI_TOOLS: readonly AiTool[] = [
   tool('title', 'publish', 'agent'),
   tool('desc', 'publish', 'agent'),
   tool('cover', 'publish', 'agent'),
+  tool('soundtrack', 'sound', 'tool'),
 ];
 
 const BY_ID = new Map(AI_TOOLS.map((t) => [t.id, t]));
@@ -717,8 +725,11 @@ export function intentPrompt(intent: AiIntent): string {
 
 // ---- AI 工具 Tab：列表、模板、内置 skill、会话去向（产品设计 §5.10、§6.9；原型 model-ai-prompt.js） ----
 
-/** 列表页第一批只列从文稿出发的三组，加「画面」组里的剪成短视频；翻译与智能裁剪仍从各自面板进来，脚注说清去处。 */
-export const LIST_GROUPS: readonly AiToolGroup[] = ['transcript', 'writing', 'publish', 'frame'];
+/**
+ * 列表页第一批只列从文稿出发的三组，加「画面」组里的剪成短视频与「声音」组的生成配乐（原型 model-ai-prompt.js `GROUPS_NOW`）；
+ * 翻译与智能裁剪仍从各自面板进来，脚注说清去处。
+ */
+export const LIST_GROUPS: readonly AiToolGroup[] = ['transcript', 'writing', 'publish', 'frame', 'sound'];
 
 /** 有白名单的组只露白名单里的工具（原型 model-ai-prompt.js `OPEN_IN_GROUP`）：「画面」组先只开剪成短视频。 */
 const OPEN_IN_GROUP: Partial<Record<AiToolGroup, readonly AiToolId[]>> = { frame: ['shortscut'] };
@@ -727,6 +738,11 @@ const OPEN_IN_GROUP: Partial<Record<AiToolGroup, readonly AiToolId[]>> = { frame
 export function listedTools(group: AiToolGroup): AiTool[] {
   const only = OPEN_IN_GROUP[group];
   return AI_TOOLS.filter((t) => t.group === group && (!only || only.includes(t.id)));
+}
+
+/** 这个工具要不要先有文稿：生成配乐不从文稿出发，没有文稿也能点。 */
+export function needsTranscript(id: AiToolId): boolean {
+  return id !== 'soundtrack';
 }
 
 /** 分组下的一句副题；没有时不画。 */

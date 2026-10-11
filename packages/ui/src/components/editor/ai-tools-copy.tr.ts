@@ -57,7 +57,7 @@ export const tr: AiToolsMessages = {
   agentCardSomeAgent: 'Agent',
   agentCardOutside: 'Bu videonun oturumunu açar, video bağlam olur →',
   noTranscriptTitle: 'Bu videonun henüz dökümü yok',
-  noTranscriptBody: 'Buradaki araçların hepsi dökümden başlar: düzeltme, bölümler, özet ve başlık için önce döküm gerekir.',
+  noTranscriptBody: 'Buradaki araçların çoğu dökümden başlar: düzeltme, bölümler, özet ve başlık için önce döküm gerekir; Film müziği oluştur için gerekmez.',
   goTranscribe: 'Döküme git',
   stateRunning: 'Çalışıyor',
   stateReview: 'İncelenecek',

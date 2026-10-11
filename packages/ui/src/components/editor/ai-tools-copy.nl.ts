@@ -93,7 +93,7 @@ export const nl: AiToolsMessages = {
   agentCardSomeAgent: 'de agent',
   agentCardOutside: 'Opent de sessie van deze video, met de video als context →',
   noTranscriptTitle: 'Deze video heeft nog geen transcript',
-  noTranscriptBody: 'Deze tools gaan allemaal uit van het transcript: polijsten, hoofdstukken, samenvattingen en titels vragen eerst een transcriptie.',
+  noTranscriptBody: 'De meeste van deze tools gaan uit van het transcript: polijsten, hoofdstukken, samenvattingen en titels vragen eerst een transcriptie; Soundtrack genereren niet.',
   goTranscribe: 'Naar transcript',
   stateRunning: 'Bezig',
   stateReview: 'Te bekijken',

@@ -94,7 +94,7 @@ export const pl: AiToolsMessages = {
   agentCardSomeAgent: 'agencie',
   agentCardOutside: 'Otwiera sesję tego wideo, z wideo jako kontekstem →',
   noTranscriptTitle: 'To wideo nie ma jeszcze transkrypcji',
-  noTranscriptBody: 'Wszystkie te narzędzia wychodzą od transkrypcji: poprawki, rozdziały, podsumowania i tytuły wymagają jej najpierw.',
+  noTranscriptBody: 'Większość tych narzędzi wychodzi od transkrypcji: poprawki, rozdziały, podsumowania i tytuły wymagają jej najpierw; Wygeneruj ścieżkę dźwiękową — nie.',
   goTranscribe: 'Przejdź do transkrypcji',
   stateRunning: 'W toku',
   stateReview: 'Do przejrzenia',

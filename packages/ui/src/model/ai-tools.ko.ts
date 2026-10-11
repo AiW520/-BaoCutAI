@@ -31,6 +31,7 @@ export const ko: AiToolsMessages = {
     translate: '번역',
     writing: '글쓰기',
     publish: '게시',
+    sound: '사운드',
   },
   tools: {
     crop: {
@@ -111,6 +112,10 @@ export const ko: AiToolsMessages = {
     cover: {
       name: '커버 만들기',
       desc: '주요 프레임으로 커버 후보를 몇 장 만든 뒤 하나를 고릅니다',
+    },
+    soundtrack: {
+      name: '배경 음악 생성',
+      desc: '이 동영상 길이에 맞춰 이 컴퓨터에서 배경 음악을 만들고 동영상 소재에 추가합니다',
     },
   },
   unknownTool: (id: string) => `해당 AI 도구가 없습니다: ${id}`,

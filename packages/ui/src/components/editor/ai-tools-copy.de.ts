@@ -93,7 +93,7 @@ export const de: AiToolsMessages = {
   agentCardSomeAgent: 'dem Agenten',
   agentCardOutside: 'Öffnet die Sitzung dieses Videos, mit dem Video als Kontext →',
   noTranscriptTitle: 'Dieses Video hat noch kein Transkript',
-  noTranscriptBody: 'Diese Werkzeuge gehen alle vom Transkript aus: Überarbeiten, Kapitel, Zusammenfassungen und Titel brauchen zuerst eine Transkription.',
+  noTranscriptBody: 'Die meisten dieser Werkzeuge gehen vom Transkript aus: Überarbeiten, Kapitel, Zusammenfassungen und Titel brauchen zuerst eine Transkription; Soundtrack erzeugen nicht.',
   goTranscribe: 'Zum Transkript',
   stateRunning: 'Läuft',
   stateReview: 'Zu prüfen',

@@ -1,6 +1,6 @@
 const soonTail = 'Runtime hat diesen Workflow noch nicht; kein Video-Overlay zum Anpassen des Bildausschnitts. Daher noch kein Formular verfügbar.';
 const scopeOf = (o: IntentArgs) => o.scope ? `${o.scope} von ${o.p}` : o.p;
-type AiToolGroup = 'frame' | 'transcript' | 'translate' | 'writing' | 'publish';
+type AiToolGroup = 'frame' | 'transcript' | 'translate' | 'writing' | 'publish' | 'sound';
 type AiToolId =
   | 'crop'
   | 'shortscut'
@@ -16,7 +16,8 @@ type AiToolId =
   | 'blog'
   | 'title'
   | 'desc'
-  | 'cover';
+  | 'cover'
+  | 'soundtrack';
 type ToolText = {
   name: string;
   desc: string;
@@ -69,6 +70,7 @@ export const de: AiToolsMessages = {
     translate: "Übersetzung",
     writing: "Wird geschrieben",
     publish: "Wird veröffentlicht",
+    sound: "Ton",
   } as Record<AiToolGroup, string>,
   tools: {
     crop: {
@@ -149,6 +151,10 @@ export const de: AiToolsMessages = {
     cover: {
       name: "Cover erstellen",
       desc: "Titelbildkandidaten aus wichtigen Frames erstellen und einen auswählen",
+    },
+    soundtrack: {
+      name: "Soundtrack erzeugen",
+      desc: "Auf diesem Computer Hintergrundmusik in der Länge dieses Videos erzeugen und zum Material des Videos hinzufügen",
     },
   } as Record<AiToolId, ToolText>,
   unknownTool: (id: string) => `Kein solches KI-Werkzeug: ${id}`,

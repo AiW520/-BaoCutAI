@@ -37,6 +37,7 @@ export const fr: AiToolsMessages = {
     translate: "Traduction",
     writing: "Écriture",
     publish: "Publication",
+    sound: "Son",
   } as Record<AiToolGroup, string>,
   tools: {
     crop: {
@@ -117,6 +118,10 @@ export const fr: AiToolsMessages = {
     cover: {
       name: "Créer une miniature",
       desc: "Créer plusieurs couvertures depuis les images clés, puis choisir",
+    },
+    soundtrack: {
+      name: "Générer une bande-son",
+      desc: "Créer sur cet ordinateur une musique de fond de la durée de cette vidéo et l’ajouter aux médias de la vidéo",
     },
   } as Record<AiToolId, ToolText>,
   unknownTool: (id: string) => `Outil IA inconnu : ${id}`,

@@ -34,6 +34,7 @@ export const pl: AiToolsMessages = {
     translate: "Tłumaczenie",
     writing: "Pisanie",
     publish: "Publikowanie",
+    sound: "Dźwięk",
   },
   tools: {
     crop: {
@@ -97,6 +98,7 @@ export const pl: AiToolsMessages = {
     title: { name: "Zaproponuj tytuły", desc: "Uzyskaj kilka propozycji z różnych perspektyw i wybierz" },
     desc: { name: "Napisz opis", desc: "Opis do publikacji z kodami czasowymi rozdziałów i tagami" },
     cover: { name: "Zrób okładkę", desc: "Utwórz kilka okładek z klatek kluczowych i wybierz" },
+    soundtrack: { name: "Wygeneruj ścieżkę dźwiękową", desc: "Utwórz na tym komputerze muzykę w tle o długości tego wideo i dodaj ją do materiałów wideo" },
   },
   unknownTool: (id: string) => `Brak takiego narzędzia AI: ${id}`,
   cleanup: {

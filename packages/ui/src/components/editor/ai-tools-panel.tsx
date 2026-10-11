@@ -56,6 +56,11 @@ export function AiToolsPanel({ sequence, documents }: { sequence: Sequence; docu
   const page = useAiToolsNav((s) => (videoId ? (s.pages[videoId] ?? null) : null));
   const derivation = useMemo(() => readDerivation(documents), [documents]);
   const hasRun = useShortsRuns((s) => (videoId ? !!latestShortsRun(s.runs, videoId) : false));
+  // 去工具页的（生成配乐）没有自己的页：万一导航状态记着它（旧的状态），清掉回列表。
+  const toolPage = !!page && aiTool(page.tool).tier === 'tool';
+  useEffect(() => {
+    if (videoId && toolPage) closeAiTool(videoId);
+  }, [videoId, toolPage]);
   if (!videoId) return null;
   if (!page) return <AiToolsList videoId={videoId} sequence={sequence} documents={documents} />;
 
@@ -78,6 +83,7 @@ export function AiToolsPanel({ sequence, documents }: { sequence: Sequence; docu
   // 识别结果先进确认页、应用后留收据：都在这一页上。
   if (tool.id === 'speakers') return <SpeakerFlow videoId={videoId} sequence={sequence} documents={documents} onBack={back} />;
   if (tool.tier === 'soon') return <AiToolSoon tool={tool} onBack={back} />;
+  if (tool.tier === 'tool') return <AiToolsList videoId={videoId} sequence={sequence} documents={documents} />;
   // 剪成短视频：只交给 Agent、总是新开会话，参数页自己的一套（没有「用」与「会话」两行）。交出去过（或开着的是切出来的一支）时
   // 进来先是结果页，结果页「返回」才是参数页（原型 panel-aitools-shorts.jsx `ShortsCutPanel`）。
   if (tool.id === 'shortscut') {

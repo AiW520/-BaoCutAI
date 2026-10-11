@@ -93,7 +93,7 @@ export const ptBR: AiToolsMessages = {
   agentCardSomeAgent: 'o agente',
   agentCardOutside: 'Abre a sessão deste vídeo, com o vídeo como contexto →',
   noTranscriptTitle: 'Este vídeo ainda não tem transcrição',
-  noTranscriptBody: 'Todas estas ferramentas partem da transcrição: polir, capítulos, resumos e títulos precisam de uma transcrição antes.',
+  noTranscriptBody: 'A maioria destas ferramentas parte da transcrição: polir, capítulos, resumos e títulos precisam de uma transcrição antes; Gerar trilha sonora, não.',
   goTranscribe: 'Ir para a transcrição',
   stateRunning: 'Em andamento',
   stateReview: 'A rever',

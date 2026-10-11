@@ -117,7 +117,7 @@ const en = {
   agentCardSomeAgent: 'the Agent',
   agentCardOutside: 'Opens the session this video belongs to, with the video as context →',
   noTranscriptTitle: 'This video has no transcript yet',
-  noTranscriptBody: 'These tools all start from the transcript: polishing, chapters, summaries and titles need a transcription first.',
+  noTranscriptBody: 'Most of these tools start from the transcript: polishing, chapters, summaries and titles need a transcription first; Generate soundtrack doesn’t.',
   goTranscribe: 'Go to Transcript',
   stateRunning: 'Running',
   stateReview: 'To review',

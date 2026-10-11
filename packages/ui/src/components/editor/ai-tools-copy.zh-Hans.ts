@@ -97,7 +97,7 @@ export const zhHans: AiToolsMessages = {
   agentCardSomeAgent: 'Agent',
   agentCardOutside: '打开这部视频所在的会话，视频作为上下文 →',
   noTranscriptTitle: '这部视频还没有文稿',
-  noTranscriptBody: '这里的工具都从文稿出发：润色、分章、写总结、起标题都要先有转录。',
+  noTranscriptBody: '这里的大多数工具从文稿出发：润色、分章、写总结、起标题都要先有转录；生成配乐不用。',
   goTranscribe: '去转录',
   stateRunning: '在跑',
   stateReview: '待处理',

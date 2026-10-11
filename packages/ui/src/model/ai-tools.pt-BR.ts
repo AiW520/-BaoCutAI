@@ -38,6 +38,7 @@ export const ptBR: AiToolsMessages = {
     translate: "Traduzir",
     writing: "Escrever",
     publish: "Publicar",
+    sound: "Som",
   } as Record<AiToolGroup, string>,
   tools: {
     crop: {
@@ -118,6 +119,10 @@ export const ptBR: AiToolsMessages = {
     cover: {
       name: "Criar uma capa",
       desc: "A partir de quadros-chave, criar algumas capas candidatas e escolher uma",
+    },
+    soundtrack: {
+      name: "Gerar trilha sonora",
+      desc: "Criar neste computador uma música de fundo com a duração deste vídeo e adicioná-la às mídias do vídeo",
     },
   } as Record<AiToolId, ToolText>,
   unknownTool: (id: string) => `Ferramenta IA inexistente: ${id}`,

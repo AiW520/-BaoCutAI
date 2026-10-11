@@ -96,7 +96,7 @@ export const zhHant: AiToolsMessages = {
   agentCardSomeAgent: 'Agent',
   agentCardOutside: '打開這部影片所在的對話，影片作為上下文 →',
   noTranscriptTitle: '這部影片還沒有文稿',
-  noTranscriptBody: '這裡的工具都從文稿出發：潤飾、分章、寫總結、起標題都要先有轉錄。',
+  noTranscriptBody: '這裡的大多數工具從文稿出發：潤飾、分章、寫總結、起標題都要先有轉錄；生成配樂不用。',
   goTranscribe: '去轉錄',
   stateRunning: '執行中',
   stateReview: '待處理',

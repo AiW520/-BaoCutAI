@@ -16,13 +16,19 @@ import TextParagraph from '@react-spectrum/s2/icons/TextParagraph';
 import UserGroup from '@react-spectrum/s2/icons/UserGroup';
 import { style } from '@react-spectrum/s2/style' with { type: 'macro' };
 import { Button as RACButton } from 'react-aria-components';
-import { AI_TOOL_GROUP_LABEL, AI_TOOLS, groupSub, laterNote, LIST_GROUPS, listedTools, toolDraftKey, type AiToolId } from '../../model/ai-tools.ts';
+import { AI_TOOL_GROUP_LABEL, AI_TOOLS, groupSub, laterNote, LIST_GROUPS, listedTools, needsTranscript, toolDraftKey, type AiToolId } from '../../model/ai-tools.ts';
+import { durationSeconds } from '../../model/editor.ts';
+import { clampDuration } from '../../model/tools-music.ts';
 import { chapterPieces } from '../../model/export-range.ts';
 import { useConnection, defaultDriver } from '../../state/connection-store.ts';
 import { useDirectory } from '../../state/directory-store.ts';
 import { useEditor } from '../../state/editor-store.ts';
 import { routeVideo, useShell } from '../../state/shell-store.ts';
+import { useSpace } from '../../state/space-store.ts';
 import { useVideo } from '../../state/video-store.ts';
+import { MusicIcon } from '../music-icon.tsx';
+import { entryOfVideo } from '../tools/tool-run-view.tsx';
+import { useVideoTools } from '../tools/use-video-tools.ts';
 import { useGateFix } from '../start/gate-card.tsx';
 import { AI_TOOLS_COPY as C } from './ai-tools-copy.ts';
 import { openAiTool, useAiToolAgentRuns } from './ai-tools-nav.ts';
@@ -118,6 +124,7 @@ const TOOL_ICON: Partial<Record<AiToolId, ComponentType>> = {
   desc: TextParagraph,
   cover: Image,
   shortscut: DevicePhone,
+  soundtrack: MusicIcon,
 };
 
 const STALE_LISTED = AI_TOOLS.some((t) => t.id === 'stale' && LIST_GROUPS.includes(t.group));
@@ -296,8 +303,25 @@ function SetupCard({ guide }: { guide: GateGuide }) {
 }
 
 /**
+ * 生成配乐（原型 panel-aitools.jsx `openSoundtrack`）：不在这个 Tab 里做，带上这部视频去工具 › 生成音乐，时长按视频预填（按 5 秒取整、夹进范围）。
+ * 提交时带 `videoId`，做好后 Runtime 把那段音乐导入这部视频的素材。
+ */
+function openSoundtrack(videoId: Id, sequence: Sequence): void {
+  const video = useVideo.getState().video;
+  const videoName = video?.state?.video.name ?? video?.ref?.name ?? sequence.name;
+  const entryId = entryOfVideo(useSpace.getState().entries, videoId)?.id ?? videoId;
+  useVideoTools.getState().setPreset({
+    tool: 'generate-music',
+    entryId,
+    soundtrack: { videoId, videoName, targetDurationSec: clampDuration(durationSeconds(sequence)) },
+  });
+  useShell.getState().go({ tab: 'tools', tool: 'generate-music' });
+}
+
+/**
  * AI 工具 Tab 的列表页（原型 panel-aitools-list.jsx，产品设计 §5.10「分批」）：顶上一张交给 Agent 的卡；没有文稿时加一张说明卡、
- * 工具行置灰；下面按组列第一批的三组工具与「画面」组里的剪成短视频，每行一句说明与这个视频上的状态；脚注说清还在各自面板里的工具。
+ * 工具行置灰（生成配乐不用文稿，照样能点）；下面按组列第一批的三组工具、「画面」组里的剪成短视频与「声音」组的生成配乐，每行一句说明与
+ * 这个视频上的状态；脚注说清还在各自面板里的工具。
  */
 export function AiToolsList({ videoId, sequence, documents }: { videoId: Id; sequence: Sequence; documents: Record<Id, DocumentRecord> }) {
   const drivers = useConnection((s) => s.drivers);
@@ -327,7 +351,11 @@ export function AiToolsList({ videoId, sequence, documents }: { videoId: Id; seq
               const Icon = TOOL_ICON[t.id] ?? Edit;
               const state = states[t.id];
               return (
-                <RACButton key={t.id} className={(s) => tile(s)} isDisabled={!hasTranscript} onPress={() => openAiTool(videoId, t.id)}>
+                <RACButton
+                  key={t.id}
+                  className={(s) => tile(s)}
+                  isDisabled={!hasTranscript && needsTranscript(t.id)}
+                  onPress={() => (t.tier === 'tool' ? openSoundtrack(videoId, sequence) : openAiTool(videoId, t.id))}>
                   <span className={iconBox}>
                     <Icon />
                   </span>

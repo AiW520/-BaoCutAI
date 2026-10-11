@@ -31,6 +31,7 @@ export const ja: AiToolsMessages = {
     translate: '翻訳',
     writing: '執筆',
     publish: '公開',
+    sound: 'サウンド',
   },
   tools: {
     crop: {
@@ -85,6 +86,7 @@ export const ja: AiToolsMessages = {
     title: { name: 'タイトルを考える', desc: '切り口の異なる候補をいくつか出し、1 つを選びます' },
     desc: { name: '概要を書く', desc: '公開用の概要。チャプターのタイムコードとタグ付き' },
     cover: { name: 'サムネイルを作る', desc: 'キーフレームからサムネイル候補をいくつか作り、1 つを選びます' },
+    soundtrack: { name: 'BGMを生成', desc: 'この動画の長さに合わせてこのコンピューターで BGM を作り、動画の素材に追加します' },
   },
   unknownTool: (id: string) => `その AI ツールはありません：${id}`,
   cleanup: {
