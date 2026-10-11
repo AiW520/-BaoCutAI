@@ -9,7 +9,7 @@ import type { AiToolsMessages } from './ai-tools.ts';
 
 export const fr: AiToolsMessages = {
   shorts: {
-    lengths: { short: '15–30 s', medium: '30–60 s', long: '60–90 s', extended: '1–3 min', custom: 'Personnalisé' },
+    lengths: { auto: 'Automatique', short: '15–30 s', medium: '30–60 s', long: '60–90 s', extended: '1–3 min', custom: 'Personnalisé' },
     ratioSource: 'Garder l’original',
     focus: {
       auto: { label: 'Automatique', sub: 'Repère de quel côté se trouve la personne qui parle et cadre sur elle ; sinon, centré' },
@@ -23,8 +23,14 @@ export const fr: AiToolsMessages = {
       video: { label: 'Garder le style de cette vidéo', sub: 'Même taille et position ; les boutons des plateformes peuvent les masquer' },
     },
     focusPrompt: { auto: 'automatique : prends des images réparties sur le segment, regarde de quel côté de l’image se trouve la personne qui parle et place le recadrage sur elle ; si tu ne trouves personne, centre-le', manual: 'centré pour l’instant ; j’ajusterai chacune moi-même' },
-    lineCount: (count, min, max) =>
-      `Faites ${count === 1 ? '1 vidéo courte' : `${count} vidéos courtes`} de ${min} à ${max} secondes chacune, qui commencent et finissent sur des limites de phrase`,
+    countN: (n) => `${n}`,
+    autoHint: {
+      both: 'Automatique : l’agent trouve les sujets les plus forts qui tiennent seuls et décide du nombre de vidéos courtes et de la durée de chacune, sans remplissage ni sujet coupé en deux.',
+      count: 'Automatique : une vidéo courte par sujet assez fort pour tenir seul, sans remplissage.',
+      length: 'Automatique : chaque vidéo courte va de son accroche d’ouverture jusqu’à la chute de son sujet, sans être étirée ni raccourcie pour tenir une durée.',
+    },
+    lineCount: (count, len) =>
+      `${count === null ? 'Décidez du nombre de vidéos courtes selon les sujets trouvés' : `Faites ${count === 1 ? '1 vidéo courte' : `${count} vidéos courtes`}`}, ${len ? `de ${len.min} à ${len.max} secondes chacune` : 'chacune aussi longue que son sujet l’exige, de l’accroche d’ouverture jusqu’à la chute'}, qui commencent et finissent sur des limites de phrase`,
     lineFrame: (ratio, focus) => (ratio ? `Format ${ratio}, cadrage ${focus}` : 'Format : garder l’original, sans recadrer'),
     lineSubtitles: (tracks, style) => `Sous-titres : ${tracks}, ${style}`,
     lineSkipDone: 'Ignorez les passages déjà découpés en vidéos courtes',
@@ -47,8 +53,8 @@ export const fr: AiToolsMessages = {
     },
     shortscut: {
       name: "Découper en vidéos courtes",
-      desc: 'Choisir quelques segments de cette vidéo et faire de chacun une vidéo courte',
-      setup: ['Choisit quelques passages qui tiennent seuls et fait de chacun une vidéo courte.'],
+      desc: 'Trouver les meilleurs sujets de cette vidéo et faire de chacun une vidéo courte',
+      setup: ['Trouve les sujets qui méritent le plus d’être publiés seuls et découpe chacun en une vidéo courte complète.'],
     },
     polish: {
       name: "Améliorer la transcription",
@@ -182,7 +188,7 @@ export const fr: AiToolsMessages = {
   sourceCut: (n: number | null) => (n === null ? "source coupée" : pluralForm('fr', n, { one: `${n} phrase coupée dans la source`, other: `${n} phrases coupées dans la source` })),
   sourceJoin: (parts: readonly string[]) => parts.join(", "),
   intents: {
-    shortscut: (o) => `Choisissez dans ${o.scope ? `${o.scope} de ${o.p}` : o.p} quelques passages qui tiennent seuls et créez chacun comme une vidéo courte : chacune est une nouvelle vidéo qui référence le même métrage source, et la vidéo d’origine et sa timeline restent telles quelles.`,
+    shortscut: (o) => `Trouvez dans ${o.scope ? `${o.scope} de ${o.p}` : o.p} les sujets qui méritent le plus d’être publiés seuls et découpez chacun en une vidéo courte complète : chacune est une nouvelle vidéo qui référence le même métrage source, et la vidéo d’origine et sa timeline restent telles quelles.`,
     stale: (o: IntentArgs & { why: string }) =>
       `Des traductions de ${o.p} sont obsolètes${o.why ? ` (${o.why})` : " car la source a été modifiée"}. Retraduisez seulement ces phrases${o.cut ? " ; retraduisez les phrases coupées depuis la source coupée et retirez les traductions des phrases entièrement coupées" : ""}. Laissez tout le reste inchangé.`,
     polish: (o: IntentArgs) =>

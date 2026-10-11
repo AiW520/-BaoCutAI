@@ -4,7 +4,7 @@ const SOON_TAIL = 'Runtime 还没有这条流程，画面上也还没有调取�
 
 export const zhHans: AiToolsMessages = {
   shorts: {
-    lengths: { short: '15–30 秒', medium: '30–60 秒', long: '60–90 秒', extended: '1–3 分钟', custom: '自定义' },
+    lengths: { auto: '自动', short: '15–30 秒', medium: '30–60 秒', long: '60–90 秒', extended: '1–3 分钟', custom: '自定义' },
     ratioSource: '保留原画幅',
     focus: {
       auto: { label: '自动', sub: '看说话的人在画面哪一侧，框放到他身上；找不到人就居中' },
@@ -18,7 +18,14 @@ export const zhHans: AiToolsMessages = {
       video: { label: '沿用这部视频的样式', sub: '字号和位置照搬，可能被平台按钮挡住' },
     },
     focusPrompt: { auto: '自动：在片段里均匀抽几帧，看说话的人在画面哪一侧，把裁框放到他身上；找不到人就居中', manual: '先居中，之后我逐支自己调' },
-    lineCount: (count, min, max) => `要 ${count} 支，每支 ${min}–${max} 秒，起止落在句子边界上`,
+    countN: (n) => `${n} 支`,
+    autoHint: {
+      both: '自动：Agent 先找出能单独成立的好话题，几支、每支多长都按话题定，不凑数也不截半截。',
+      count: '自动：够格的话题有几个就切几支，不拿弱的凑数。',
+      length: '自动：每支从开头能抓人的那句剪到话题讲完，不为凑时长拉长或截短。',
+    },
+    lineCount: (count, len) =>
+      `${count === null ? '几支由你按话题定' : `要 ${count} 支`}，${len ? `每支 ${len.min}–${len.max} 秒` : '每支多长按话题定：从开头能抓人的那句剪到讲完'}，起止落在句子边界上`,
     lineFrame: (ratio, focus) => (ratio ? `画幅 ${ratio}，取景${focus}` : '画幅：保留原画幅，不裁'),
     lineSubtitles: (tracks, style) => `字幕：${tracks}，${style}`,
     lineSkipDone: '已经切过的不再找',
@@ -41,8 +48,8 @@ export const zhHans: AiToolsMessages = {
     },
     shortscut: {
       name: '剪成短视频',
-      desc: '从这个视频里挑几段，各做成一支短视频',
-      setup: ['挑几段能单独成立的话，各做成一支短视频。'],
+      desc: '从这个视频里找出好话题，各剪成一支短视频',
+      setup: ['找出最值得单独发布的话题，各剪成一支完整的短视频。'],
     },
     polish: {
       name: '润色文稿',
@@ -132,7 +139,7 @@ export const zhHans: AiToolsMessages = {
   sourceCut: (n: number | null) => (n === null ? '原文被剪切' : `${n} 句原文被剪切`),
   sourceJoin: (parts: readonly string[]) => parts.join('、'),
   intents: {
-    shortscut: (o) => `从${o.p}${o.scope ? `的${o.scope}` : ''}里挑几段能单独成立的话，各创建成一支短视频：每支一部新视频，引用同一份原片，原视频和时间轴不动。`,
+    shortscut: (o) => `从${o.p}${o.scope ? `的${o.scope}` : ''}里找出最值得单独发布的话题，每个话题剪成一支完整的短视频：每支一部新视频，引用同一份原片，原视频和时间轴不动。`,
     stale: (o) =>
       `${o.p}有几句译文过期了${o.why ? `（${o.why}）` : '：原文改过'}，只重译这些句子，${o.cut ? '被剪切的按剪后的原文重译、整句剪掉的随句一起剪掉，' : ''}其余一个字不动。`,
     polish: (o) => `润色${o.p}的${o.scope || '全篇'}文稿：修错字、补标点、按话题分段，不改写我的表达。`,

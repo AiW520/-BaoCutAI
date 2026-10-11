@@ -42,7 +42,7 @@ import type { AiToolsMessages } from './ai-tools.ts';
 
 export const de: AiToolsMessages = {
   shorts: {
-    lengths: { short: '15–30 s', medium: '30–60 s', long: '60–90 s', extended: '1–3 min', custom: 'Eigene' },
+    lengths: { auto: 'Automatisch', short: '15–30 s', medium: '30–60 s', long: '60–90 s', extended: '1–3 min', custom: 'Eigene' },
     ratioSource: 'Original beibehalten',
     focus: {
       auto: { label: 'Automatisch', sub: 'Erkennt, auf welcher Seite die sprechende Person ist, und legt den Ausschnitt auf sie; ohne Person mittig' },
@@ -56,8 +56,14 @@ export const de: AiToolsMessages = {
       video: { label: 'Stil dieses Videos übernehmen', sub: 'Gleiche Größe und Position; Plattform-Schaltflächen können sie verdecken' },
     },
     focusPrompt: { auto: 'automatisch: gleichmäßig über den Abschnitt verteilt Einzelbilder ansehen, erkennen, auf welcher Bildseite die sprechende Person ist, und den Ausschnitt auf sie legen; wird niemand gefunden, mittig', manual: 'vorerst mittig; ich passe jedes selbst an' },
-    lineCount: (count, min, max) =>
-      `Erstelle ${count === 1 ? '1 Kurzvideo' : `${count} Kurzvideos`}, jeweils ${min}–${max} Sekunden, mit Anfang und Ende an Satzgrenzen`,
+    countN: (n) => `${n}`,
+    autoHint: {
+      both: 'Automatisch: Der Agent findet die stärksten Themen, die für sich allein stehen, und entscheidet, wie viele Kurzvideos es werden und wie lang jedes ist – ohne Füllmaterial und ohne halbierte Themen.',
+      count: 'Automatisch: ein Kurzvideo für jedes Thema, das stark genug ist, um für sich allein zu stehen – ohne Füllmaterial.',
+      length: 'Automatisch: Jedes Kurzvideo reicht vom Einstiegssatz bis zur Pointe seines Themas und wird nicht für eine Länge gestreckt oder gekürzt.',
+    },
+    lineCount: (count, len) =>
+      `${count === null ? 'Entscheide anhand der gefundenen Themen, wie viele Kurzvideos es werden' : `Erstelle ${count === 1 ? '1 Kurzvideo' : `${count} Kurzvideos`}`}, ${len ? `jeweils ${len.min}–${len.max} Sekunden` : 'jedes so lang, wie sein Thema braucht, vom Einstiegssatz bis zur Pointe'}, mit Anfang und Ende an Satzgrenzen`,
     lineFrame: (ratio, focus) => (ratio ? `Seitenverhältnis ${ratio}, Ausschnitt ${focus}` : 'Seitenverhältnis: Original beibehalten, nicht zuschneiden'),
     lineSubtitles: (tracks, style) => `Untertitel: ${tracks}, ${style}`,
     lineSkipDone: 'Bereits zu Kurzvideos geschnittene Stellen überspringen',
@@ -80,8 +86,8 @@ export const de: AiToolsMessages = {
     },
     shortscut: {
       name: "In Kurzvideos schneiden",
-      desc: 'Einige Abschnitte aus diesem Video auswählen und aus jedem ein Kurzvideo machen',
-      setup: ['Wählt einige Passagen, die für sich allein stehen, und macht aus jeder ein Kurzvideo.'],
+      desc: 'Die besten Themen in diesem Video finden und aus jedem ein Kurzvideo schneiden',
+      setup: ['Findet die Themen, die sich am meisten für eine eigene Veröffentlichung lohnen, und schneidet jedes zu einem vollständigen Kurzvideo.'],
     },
     polish: {
       name: "Transkript verbessern",
@@ -215,7 +221,7 @@ export const de: AiToolsMessages = {
   sourceCut: (n: number | null) => (n === null ? "Quelle geschnitten" : pluralForm('de', n, { one: "1 Satz in Quelle geschnitten", other: `${n} Sätze in Quelle geschnitten` })),
   sourceJoin: (parts: readonly string[]) => parts.join(", "),
   intents: {
-    shortscut: (o) => `Wähle aus ${o.scope ? `${o.scope} von ${o.p}` : o.p} einige Passagen, die für sich allein stehen, und erstelle aus jeder ein Kurzvideo: jedes ist ein neues Video, das dasselbe Quellmaterial referenziert; das ursprüngliche Video und seine Timeline bleiben unverändert.`,
+    shortscut: (o) => `Finde in ${o.scope ? `${o.scope} von ${o.p}` : o.p} die Themen, die sich am meisten für eine eigene Veröffentlichung lohnen, und schneide jedes zu einem vollständigen Kurzvideo: jedes ist ein neues Video, das dasselbe Quellmaterial referenziert; das ursprüngliche Video und seine Timeline bleiben unverändert.`,
     stale: (o: IntentArgs & { why: string }) =>
       `Einige Übersetzungen in ${o.p} sind veraltet${o.why ? ` (${o.why})` : " wegen bearbeiteter Quelle"}. Nur diese Sätze erneut übersetzen${o.cut ? "; geschnittene Sätze aus geschnittener Quelle erneut übersetzen und Übersetzungen vollständig geschnittener Sätze mit entfernen" : ""}. Alles andere vollständig unverändert lassen.`,
     polish: (o: IntentArgs) =>

@@ -4,7 +4,7 @@ const SOON_TAIL = "Runtime henüz bu iş akışını sunmuyor; videoda kadraj ay
 
 export const tr: AiToolsMessages = {
   shorts: {
-    lengths: { short: '15–30 sn', medium: '30–60 sn', long: '60–90 sn', extended: '1–3 dk', custom: 'Özel' },
+    lengths: { auto: 'Otomatik', short: '15–30 sn', medium: '30–60 sn', long: '60–90 sn', extended: '1–3 dk', custom: 'Özel' },
     ratioSource: 'Orijinali koru',
     focus: {
       auto: { label: 'Otomatik', sub: 'Konuşan kişinin hangi tarafta olduğuna bakıp çerçeveyi ona yerleştirir; kimse yoksa ortalanmış' },
@@ -18,7 +18,14 @@ export const tr: AiToolsMessages = {
       video: { label: 'Bu videonun stilini kullan', sub: 'Aynı boyut ve konum; platform düğmeleri altyazıyı örtebilir' },
     },
     focusPrompt: { auto: 'otomatik: bölüm boyunca eşit aralıklı kareler al, konuşan kişinin karenin hangi tarafında olduğuna bak ve kırpmayı ona yerleştir; kimseyi bulamazsan ortala', manual: 'şimdilik ortalanmış; her birini sonra kendim ayarlayacağım' },
-    lineCount: (count, min, max) => `${count} kısa video yap, her biri ${min}–${max} saniye, başı ve sonu cümle sınırlarında olsun`,
+    countN: (n) => `${n}`,
+    autoHint: {
+      both: 'Otomatik: ajan tek başına anlam taşıyan en güçlü konuları bulur; kaç kısa video yapılacağına ve her birinin uzunluğuna konulara göre karar verir, sayıyı doldurmak için zayıf bölüm eklemez, konuyu yarıda kesmez.',
+      count: 'Otomatik: tek başına ayakta durabilecek kadar güçlü her konu için bir kısa video; dolgu yok.',
+      length: 'Otomatik: her kısa video dikkat çeken ilk cümleden konunun bağlandığı yere kadar sürer; bir süreye uymak için uzatılmaz ya da kısaltılmaz.',
+    },
+    lineCount: (count, len) =>
+      `${count === null ? 'Kaç kısa video yapılacağına bulduğun konulara göre karar ver' : `${count} kısa video yap`}, ${len ? `her biri ${len.min}–${len.max} saniye` : 'her biri konusunun gerektirdiği kadar uzun olsun, dikkat çeken ilk cümleden fikrin bağlandığı yere kadar'}, başı ve sonu cümle sınırlarında olsun`,
     lineFrame: (ratio, focus) => (ratio ? `En boy oranı ${ratio}, çerçeve ${focus}` : 'En boy oranı: orijinali koru, kırpma'),
     lineSubtitles: (tracks, style) => `Altyazı: ${tracks}, ${style}`,
     lineSkipDone: 'Daha önce kısa videoya kesilmiş bölümleri atla',
@@ -41,8 +48,8 @@ export const tr: AiToolsMessages = {
     },
     shortscut: {
       name: "Kısa videolara böl",
-      desc: 'Bu videodan birkaç bölüm seçip her birini kısa videoya dönüştür',
-      setup: ['Kendi başına anlam taşıyan birkaç bölüm seçer ve her birini kısa videoya dönüştürür.'],
+      desc: 'Bu videodaki en iyi konuları bulup her birini kısa videoya dönüştür',
+      setup: ['Tek başına paylaşmaya en değer konuları bulur ve her birini eksiksiz bir kısa videoya keser.'],
     },
     polish: {
       name: "Transkripti iyileştir",
@@ -132,7 +139,7 @@ export const tr: AiToolsMessages = {
   sourceCut: (n) => n === null ? 'kaynak kesildi' : `kaynakta ${n} cümle kesildi`,
   sourceJoin: (parts: readonly string[]) => parts.join(', '),
   intents: {
-    shortscut: (o) => `${o.scope ? `${o.p}: ${o.scope}` : o.p} içinden kendi başına anlam taşıyan birkaç bölüm seç ve her birini kısa video olarak oluştur: her biri aynı kaynak görüntüye başvuran yeni bir videodur; orijinal video ve zaman çizelgesi değişmez.`,
+    shortscut: (o) => `${o.scope ? `${o.p}: ${o.scope}` : o.p} içinde tek başına paylaşmaya en değer konuları bul ve her birini eksiksiz bir kısa video olarak kes: her biri aynı kaynak görüntüye başvuran yeni bir videodur; orijinal video ve zaman çizelgesi değişmez.`,
     stale: (o) => `${o.p} içindeki bazı çeviriler eski${o.why ? ` (${o.why})` : '; kaynak düzenlendiği için'}. Yalnızca bu cümleleri yeniden çevir${o.cut ? '; kaynakta kesilenleri kesilmiş olarak yeniden çevir ve tamamen kesilen cümlelerle birlikte çevirilerini de kaldır' : ''}. Diğer her şeyi olduğu gibi bırak.`,
     polish: (o) => `${o.scope ? `${o.p}: ${o.scope}` : o.p} için dökümü düzelt: sözlerimi yeniden yazmadan yazım hatalarını düzelt, noktalama ekle ve konuya göre paragraflara böl.`,
     chapters: (o) => `${o.p} içeriğini konuya göre bölümlere ayır ve her bölüme kısa başlık ver.`,

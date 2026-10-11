@@ -10,7 +10,7 @@
 
   const TOOLS = {
     crop: {group: '画面', icon: 'video', name: '智能裁剪', desc: '换一种画幅，把发言人、白板这些重点留在框里', kind: 'crop'},
-    shortscut: {group: '画面', icon: 'clip', name: '剪成短视频', desc: '从这部视频里挑几段，各做成一支竖屏短视频', kind: 'shorts'},
+    shortscut: {group: '画面', icon: 'clip', name: '剪成短视频', desc: '从这部视频里找出好话题，各剪成一支竖屏短视频', kind: 'shorts'},
     /* 生成配乐（2026-10-11）：不从文稿出发，没有文稿也能点；点了去工具 › 生成音乐，时长按这部视频预填，做好加到音乐轨 */
     soundtrack: {group: '声音', icon: 'music', name: '生成配乐', desc: '按这部视频的长度与气氛，在本机生成一段背景音乐，加到音乐轨', kind: 'music', noTranscript: true},
     polish:  {group: '整理文稿', icon: 'sparkle', name: '润色文稿', desc: '修错字、补标点、自动分段——不改写你的话', kind: 'doc',

@@ -10,7 +10,7 @@ const scopeOf = (o: IntentArgs) => o.scope ? `${o.scope} de ${o.p}` : o.p;
 
 export const ptBR: AiToolsMessages = {
   shorts: {
-    lengths: { short: '15–30 s', medium: '30–60 s', long: '60–90 s', extended: '1–3 min', custom: 'Personalizado' },
+    lengths: { auto: 'Automático', short: '15–30 s', medium: '30–60 s', long: '60–90 s', extended: '1–3 min', custom: 'Personalizado' },
     ratioSource: 'Manter original',
     focus: {
       auto: { label: 'Automático', sub: 'Vê de que lado está quem fala e põe o quadro nessa pessoa; sem ninguém, centralizado' },
@@ -24,8 +24,14 @@ export const ptBR: AiToolsMessages = {
       video: { label: 'Manter o estilo deste vídeo', sub: 'Mesmo tamanho e posição; os botões da plataforma podem cobri-las' },
     },
     focusPrompt: { auto: 'automático: pegue quadros espalhados pelo trecho, veja de que lado do quadro está quem fala e coloque o recorte nessa pessoa; se não encontrar ninguém, centralize', manual: 'centralizado por enquanto; eu ajusto cada um depois' },
-    lineCount: (count, min, max) =>
-      `Faça ${count === 1 ? '1 vídeo curto' : `${count} vídeos curtos`}, cada um com ${min}–${max} segundos, começando e terminando em limites de frase`,
+    countN: (n) => `${n}`,
+    autoHint: {
+      both: 'Automático: o agente encontra os temas mais fortes que se sustentam sozinhos e decide quantos vídeos curtos fazer e quanto dura cada um, sem enchimento e sem cortar temas pela metade.',
+      count: 'Automático: um vídeo curto para cada tema forte o bastante para se sustentar sozinho, sem enchimento.',
+      length: 'Automático: cada vídeo curto vai do gancho de abertura até o tema se fechar, sem esticar nem cortar para caber numa duração.',
+    },
+    lineCount: (count, len) =>
+      `${count === null ? 'Decida quantos vídeos curtos fazer pelos temas que encontrar' : `Faça ${count === 1 ? '1 vídeo curto' : `${count} vídeos curtos`}`}, ${len ? `cada um com ${len.min}–${len.max} segundos` : 'cada um do tamanho que o tema pedir, do gancho de abertura até a ideia se fechar'}, começando e terminando em limites de frase`,
     lineFrame: (ratio, focus) => (ratio ? `Proporção ${ratio}, enquadramento ${focus}` : 'Proporção: manter a original, sem recortar'),
     lineSubtitles: (tracks, style) => `Legendas: ${tracks}, ${style}`,
     lineSkipDone: 'Pule as partes que já viraram vídeos curtos',
@@ -48,8 +54,8 @@ export const ptBR: AiToolsMessages = {
     },
     shortscut: {
       name: "Cortar em vídeos curtos",
-      desc: 'Escolher alguns trechos deste vídeo e transformar cada um em um vídeo curto',
-      setup: ['Escolhe alguns trechos que se sustentam sozinhos e transforma cada um em um vídeo curto.'],
+      desc: 'Encontrar os melhores temas deste vídeo e transformar cada um em um vídeo curto',
+      setup: ['Encontra os temas que mais valem a pena publicar sozinhos e corta cada um em um vídeo curto completo.'],
     },
     polish: {
       name: "Aprimorar transcrição",
@@ -183,7 +189,7 @@ export const ptBR: AiToolsMessages = {
   sourceCut: (n: number | null) => (n === null ? "source cut" : pluralForm('pt-BR', n, { one: `${n} frase cortada na origem`, other: `${n} frases cortadas na origem` })),
   sourceJoin: (parts: readonly string[]) => parts.join(", "),
   intents: {
-    shortscut: (o) => `Escolha em ${o.scope ? `${o.scope} de ${o.p}` : o.p} alguns trechos que se sustentam sozinhos e crie cada um como um vídeo curto: cada um é um vídeo novo que referencia o mesmo material original, e o vídeo original e sua linha do tempo não mudam.`,
+    shortscut: (o) => `Encontre em ${o.scope ? `${o.scope} de ${o.p}` : o.p} os temas que mais valem a pena publicar sozinhos e corte cada um em um vídeo curto completo: cada um é um vídeo novo que referencia o mesmo material original, e o vídeo original e sua linha do tempo não mudam.`,
     stale: (o: IntentArgs & { why: string }) =>
       `Algumas traduções em ${o.p} estão desatualizadas${o.why ? ` (${o.why})` : " porque a origem foi editada"}. Retraduza só estas frases${o.cut ? "; retraduza da origem cortada e remova traduções de frases totalmente cortadas" : ""}. Deixe todo o restante intacto.`,
     polish: (o: IntentArgs) =>

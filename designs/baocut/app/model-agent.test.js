@@ -189,9 +189,9 @@ test('planFor：挂着场景模板发来的先确认简报，不读不写、不�
 test('shortscut 计划与意图：「剪成短视频」落到 shortscut，不被 cleanup 的「剪」抢走；找到就创建，要几支建几支（§5.10）', () => {
   const p = {title: '科浪访谈 第 42 期'};
   const text = A.intentPrompt({kind: 'shortscut', extra: ['要 3 支，每支 30–60 秒']}, p);
-  assert.match(text, /^从「科浪访谈 第 42 期」里挑几段.*各创建成一支短视频.*原视频和时间轴不动。要 3 支，每支 30–60 秒。$/);
+  assert.match(text, /^从「科浪访谈 第 42 期」里找出最值得单独发布的话题，每个话题剪成一支完整的短视频.*原视频和时间轴不动。要 3 支，每支 30–60 秒。$/);
   assert.ok(!/我确认后再创建/.test(text));
-  assert.match(A.intentPrompt({kind: 'shortscut', scope: '第 2 章'}, p), /的第 2 章里挑几段/);
+  assert.match(A.intentPrompt({kind: 'shortscut', scope: '第 2 章'}, p), /的第 2 章里找出/);
   const plan = A.planFor(text, true);
   assert.equal(plan.kind, 'shortscut');
   assert.equal(plan.task.kind, 'shorts-cut');

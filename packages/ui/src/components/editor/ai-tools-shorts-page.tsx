@@ -5,7 +5,7 @@ import { style } from '@react-spectrum/s2/style' with { type: 'macro' };
 import {
   aiTool,
   intentPrompt,
-  SHORTS_COUNT,
+  SHORTS_COUNTS,
   SHORTS_CUSTOM,
   SHORTS_DEFAULTS,
   SHORTS_FOCUS,
@@ -13,10 +13,12 @@ import {
   SHORTS_RATIOS,
   SHORTS_STYLES,
   SHORTS_TRACKS,
+  shortsAutoHint,
   shortsLengthRange,
   shortsLines,
   toolEffect,
   toolTemplate,
+  type ShortsCount,
   type ShortsFocus,
   type ShortsLength,
   type ShortsRatio,
@@ -43,8 +45,9 @@ const radioSub = style({ display: 'block', paddingStart: 24, marginTop: -2, marg
 
 /**
  * 剪成短视频的参数页（原型 panel-aitools-shorts.jsx `ShortsCutSetup`，产品设计 §5.10「参数页」）：只交给 Agent，所以没有「用」一行；
- * 总是新开一条会话，所以也没有「会话」一行。自上而下：说明卡（挑几段能单独成立的话、会创建新的子视频），范围与「已经切过的不再找」，
- * 切成什么样（几支、多长、画幅），取景（画幅不是保留原画幅时），字幕（带哪几轨、样式），提示词框（意图句加一行一句的参数，最后一行
+ * 总是新开一条会话，所以也没有「会话」一行。自上而下：说明卡（找出值得单独发的话题、各剪成一支新的子视频），范围与「已经切过的不再找」，
+ * 切成什么样（几支、多长缺省都是「自动」——交给 Agent 按话题定，下面一行说明自动怎么定；画幅），取景（画幅不是保留原画幅时），
+ * 字幕（带哪几轨、样式），提示词框（意图句加一行一句的参数，最后一行
  * 「找好就直接创建」可以单独删），主按钮与去向。按下就新开会话发出去，那条会话打开到眼前，工具页回列表；这一轮记下来（`recordShortsRun`），
  * 跑完、切出了子视频时这部视频的 AI 工具 Tab 翻到结果页（ai-tools-shorts-result.tsx）。
  * 视频不属于项目时没有可新开会话的项目：发到它所在的那条会话，提示词里多一行先收进以视频命名的项目（Runtime 没有给界面用的收进项目的命令）。
@@ -78,6 +81,7 @@ export function ShortsToolPage({
   const [s, setS] = useState<ShortsSettings>(() => ({ ...SHORTS_DEFAULTS, ...(skipDone ? { skipDone: true } : {}) }));
   const set = (patch: Partial<ShortsSettings>) => setS((prev) => ({ ...prev, ...patch }));
   const range = shortsLengthRange(s);
+  const autoHint = shortsAutoHint(s);
 
   const intent = intentPrompt({ tool: 'shortscut', title: handoff.ref?.name ?? null, scope });
   const template = toolTemplate('shortscut', intent, { lines: shortsLines(s, { hasTranslation, inProject }) });
@@ -121,15 +125,22 @@ export function ShortsToolPage({
         <h3 className={secHead}>{C.shortsShape}</h3>
         <div className={rows}>
           <Row label={C.shortsCount}>
-            <NumberField
+            <Picker
               aria-label={C.shortsCount}
               size="S"
-              minValue={SHORTS_COUNT.min}
-              maxValue={SHORTS_COUNT.max}
-              step={1}
-              value={s.count}
-              onChange={(n) => Number.isFinite(n) && set({ count: n })}
-            />
+              styles={field}
+              selectedKey={String(s.count)}
+              onSelectionChange={(key) => {
+                if (key == null) return;
+                const next: ShortsCount = key === 'auto' ? 'auto' : Number(key);
+                set({ count: next });
+              }}>
+              {SHORTS_COUNTS.map((c) => (
+                <PickerItem key={String(c.key)} id={String(c.key)}>
+                  {c.label}
+                </PickerItem>
+              ))}
+            </Picker>
           </Row>
           <Row label={C.shortsLength}>
             <Picker
@@ -140,8 +151,9 @@ export function ShortsToolPage({
               onSelectionChange={(key) => {
                 if (!key) return;
                 const next = key as ShortsLength;
-                // 切到自定义时从眼下这一档的两头起步。
-                set(next === 'custom' ? { length: next, lenMin: range.min, lenMax: range.max } : { length: next });
+                // 切到自定义时从眼下这一档的两头起步；从自动切过去时沿用上回自定义的两头。
+                const start = range ?? { min: s.lenMin, max: s.lenMax };
+                set(next === 'custom' ? { length: next, lenMin: start.min, lenMax: start.max } : { length: next });
               }}>
               {SHORTS_LENGTHS.map((l) => (
                 <PickerItem key={l.key} id={l.key}>
@@ -175,6 +187,7 @@ export function ShortsToolPage({
               </div>
             ) : null}
           </Row>
+          {autoHint ? <p className={hint}>{autoHint}</p> : null}
           <Row label={C.shortsRatio}>
             <SegmentedControl aria-label={C.shortsRatio} selectedKey={s.ratio} onSelectionChange={(key) => set({ ratio: key as ShortsRatio })}>
               {SHORTS_RATIOS.map((r) => (

@@ -39,16 +39,19 @@ const child = (id, from, to, extra) => {
 };
 
 test('参数：缺省值、条数夹在 1–10、时长档不设上限、画幅缺省 9:16', () => {
-  assert.equal(M.DEFAULTS.count, 3);
-  assert.equal(M.DEFAULTS.length, 'mid');
+  assert.equal(M.DEFAULTS.count, 'auto', '几支缺省交给 Agent 按话题定');
+  assert.equal(M.DEFAULTS.length, 'auto', '多长缺省交给 Agent 按话题定');
   assert.equal(M.DEFAULTS.focus, 'auto');
   assert.equal(M.DEFAULTS.ratio, '9:16');
   assert.equal(M.FOCUS[0].id, 'speaker');
   assert.equal(M.FOCUS[0].off, '这一版还没有人物与发言人模型');
   assert.equal(M.clampCount(0), 1);
   assert.equal(M.clampCount(99), 10);
-  assert.equal(M.clampCount('x'), 3);
-  assert.deepEqual(M.LENGTHS.filter((l) => l.id !== 'custom').map((l) => [l.min, l.max]), [[15, 30], [30, 60], [60, 90], [60, 180]]);
+  assert.equal(M.clampCount('x'), 'auto');
+  assert.equal(M.clampCount('auto'), 'auto');
+  assert.deepEqual(M.LENGTHS.map((l) => l.id), ['auto', 'short', 'mid', 'long', 'xl', 'custom']);
+  assert.deepEqual(M.LENGTHS.filter((l) => l.id !== 'custom' && l.id !== 'auto').map((l) => [l.min, l.max]), [[15, 30], [30, 60], [60, 90], [60, 180]]);
+  assert.equal(M.lengthOf('nope').id, 'auto');
   assert.equal(M.lengthOf('xl').name, '1–3 分钟');
   assert.deepEqual(M.RATIOS.map((r) => r.id), ['9:16', '1:1', 'source']);
   assert.equal(M.PLATFORM_MAX, undefined);
@@ -65,7 +68,7 @@ test('自定义时长：两头夹在 1–600 秒，下限比上限小，反了�
   assert.deepEqual([M.lengthRange({length: 'custom', lenMin: 'x', lenMax: ''}).min, M.lengthRange({length: 'custom', lenMin: 'x', lenMax: ''}).max], [30, 60]);
   const p = M.normalize({length: 'custom', lenMin: 300, lenMax: 120}, {hasTrans: true});
   assert.deepEqual([p.lenMin, p.lenMax], [120, 300]);
-  assert.equal(M.summaryLine(p), '3 支 · 每支 120–300 秒 · 9:16 · 自动');
+  assert.equal(M.summaryLine(p), '几支按话题定 · 每支 120–300 秒 · 9:16 · 自动');
   assert.equal(M.normalize({ratio: 'nope'}, {}).ratio, '9:16');
 });
 
@@ -88,7 +91,8 @@ test('取景缺省自动：跟着说话的人这一版不开放、旧版的居�
   assert.equal(M.normalize({focus: 'manual'}, ctx).focus, 'manual');
   assert.equal(M.normalize({focus: 'manual'}, Object.assign({}, ctx, {portrait: true})).focus, 'auto');
   assert.equal(M.focusOf('nope').id, 'auto');
-  assert.equal(M.summaryLine(M.normalize({}, ctx)), '3 支 · 每支 30–60 秒 · 9:16 · 自动');
+  assert.equal(M.summaryLine(M.normalize({}, ctx)), '按话题定几支、多长 · 9:16 · 自动');
+  assert.equal(M.summaryLine(M.normalize({count: 3, length: 'mid'}, ctx)), '3 支 · 每支 30–60 秒 · 9:16 · 自动');
 });
 
 test('吸附：模型给的时间落到最近的句首和句尾，终点不会跑到起点前面', () => {
@@ -258,8 +262,50 @@ test('交给 Agent 的附加句：条数、时长、画幅与取景、字幕、�
   assert.equal(M.DIRECT_LINE, '找好就直接创建成视频，不用先问我');
   assert.ok(!x.some((l) => /候选库|备选/.test(l)));
   const bare = M.agentExtra({hook: false, ratio: 'source', length: 'custom', lenMin: 100, lenMax: 400}, {});
-  assert.deepEqual(bare.slice(0, 2), ['要 3 支，每支 100–400 秒，起止落在句子边界上', '画幅：保留原画幅，不裁']);
+  assert.deepEqual(bare.slice(0, 2), ['几支由你按话题定，每支 100–400 秒，起止落在句子边界上', '画幅：保留原画幅，不裁']);
   assert.equal(bare.length, 4);
+});
+
+test('自动：几支、多长交给 Agent 按话题定；下拉、摘要、附加句、提醒与进行中的文案', () => {
+  assert.deepEqual(M.COUNTS.map((c) => c.id), ['auto', 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
+  assert.deepEqual([M.countName('auto'), M.countName(4), M.countName(0)], ['自动', '4 支', '1 支']);
+  assert.deepEqual(M.lengthRange({length: 'auto'}), {id: 'auto', min: null, max: null, name: '自动'});
+  assert.equal(M.normalize({count: 'auto', length: 'auto'}, {}).count, 'auto');
+
+  assert.equal(M.summaryLine({}), '按话题定几支、多长 · 9:16 · 自动');
+  assert.equal(M.summaryLine({count: 4}), '4 支 · 每支按话题定长短 · 9:16 · 自动');
+  assert.equal(M.summaryLine({length: 'short', ratio: 'source'}), '几支按话题定 · 每支 15–30 秒 · 保留原画幅');
+
+  const auto = M.lengthRange({length: 'auto'}), mid = M.lengthRange({length: 'mid'});
+  assert.equal(M.countLine('auto', auto), '几支由你按话题定，每支多长按话题定：从开头能抓人的那句剪到讲完，起止落在句子边界上');
+  assert.equal(M.countLine(3, auto), '要 3 支，每支多长按话题定：从开头能抓人的那句剪到讲完，起止落在句子边界上');
+  assert.equal(M.countLine('auto', mid), '几支由你按话题定，每支 30–60 秒，起止落在句子边界上');
+  assert.equal(M.countLine(3, mid), '要 3 支，每支 30–60 秒，起止落在句子边界上');
+  assert.equal(M.agentExtra({})[0], M.countLine('auto', auto));
+  assert.match(M.autoHint({}), /几支、每支多长都按话题定/);
+  assert.match(M.autoHint({length: 'mid'}), /^自动：够格的话题有几个就切几支/);
+  assert.match(M.autoHint({count: 3}), /^自动：每支从开头能抓人的那句剪到话题讲完/);
+  assert.equal(M.autoHint({count: 3, length: 'mid'}), null);
+
+  // 自动时长没有「要的区间」，长短不提醒
+  const long = Object.assign({id: 'l', on: true}, M.rangeOf(S, 0, 20));
+  const short = Object.assign({id: 's', on: true}, M.rangeOf(S, 5, 8));
+  assert.deepEqual(M.flags(long, {params: {length: 'auto', tracks: 'orig'}, list: [long], sentences: S}), []);
+  assert.deepEqual(M.flags(short, {params: {length: 'auto', tracks: 'orig'}, list: [short], sentences: S}), []);
+
+  // 自动支数：够格的有几段给几段，不拿要靠前文的凑；至多 10 支，互不重叠
+  const list = M.demoCandidates(S, {}, {children: []});
+  assert.ok(list.length >= 3 && list.length <= M.COUNT.max);
+  assert.ok(list.every((c) => !c.weak), '不拿弱的凑');
+  list.forEach((a) => list.forEach((b) => { if (a !== b) assert.ok(M.overlapSec(a, b) < 1); }));
+
+  assert.equal(M.creatingTitle('auto'), '正在创建短视频…');
+  assert.equal(M.creatingTitle(3), '正在创建 3 支短视频…');
+  assert.match(M.createNote('auto'), /^它会按找到的话题创建子视频/);
+  assert.match(M.createNote(2), /^它会创建 2 支子视频/);
+  // 从自动切到自定义：手动加的一段凑到「30–60 秒」那一档的中间
+  const c = M.manualCandidate(S, {t: S[20].start + 1, params: {length: 'auto'}});
+  assert.ok(c.end - c.start >= 45);
 });
 
 test('列表副题：跟着会话走，切过的补一句', () => {

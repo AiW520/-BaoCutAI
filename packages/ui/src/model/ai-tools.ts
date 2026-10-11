@@ -7,7 +7,8 @@
  *   「用」还能选交给 Agent（意图句照下面的 `INTENTS.speakers`）。
  * - `agent`：Runtime 没有单独的流程，交给编码 Agent——直接把那句意图发到这个视频的会话里。
  * - `soon`：要在画面上跟踪、调取景框（智能裁剪），Runtime 还没有这条流程，列着但只说为什么还不能用。
- * 剪成短视频只交给 Agent、总是新开一条会话：参数折成提示词里一行一句（`shortsLines`），在那条会话里找片段、创建子视频。
+ * 剪成短视频只交给 Agent、总是新开一条会话：参数折成提示词里一行一句（`shortsLines`），在那条会话里找话题、每个话题剪成一支子视频；
+ * 几支、每支多长缺省都是「自动」，交给 Agent 按找到的话题定。
  *
  * 工具页第一行「用」还能选「直接调模型」：润色、章节、总结、博客、标题、简介走 Runtime 的 `ai-tool` 流程（不经过对话，
  * 见 components/editor/ai-tool-direct.ts）；重新转录、找可剪的口、重译过期句、做封面那一项置灰、写原因。
@@ -93,8 +94,10 @@ const VIEW_KEYS = ['auto', 'author', 'viewer'] as const;
 export type WriteView = (typeof VIEW_KEYS)[number];
 const COVER_TEXT_KEYS = ['none', 'phrase', 'phrase-sub'] as const;
 export type CoverText = (typeof COVER_TEXT_KEYS)[number];
-const SHORTS_LENGTH_KEYS = ['short', 'medium', 'long', 'extended', 'custom'] as const;
+const SHORTS_LENGTH_KEYS = ['auto', 'short', 'medium', 'long', 'extended', 'custom'] as const;
 export type ShortsLength = (typeof SHORTS_LENGTH_KEYS)[number];
+/** 切几支：`auto` 交给 Agent 按找到的话题定，或 1–10 支。 */
+export type ShortsCount = number | 'auto';
 const SHORTS_RATIO_KEYS = ['9:16', '1:1', 'source'] as const;
 export type ShortsRatio = (typeof SHORTS_RATIO_KEYS)[number];
 const SHORTS_FOCUS_KEYS = ['auto', 'manual', 'speaker'] as const;
@@ -140,8 +143,8 @@ const en = {
     },
     shortscut: {
       name: 'Cut into shorts',
-      desc: 'Pick a few segments from this video and turn each into a short',
-      setup: ['Pick a few passages that stand on their own and make each one a short.'],
+      desc: 'Find the best topics in this video and cut each into a short',
+      setup: ['Find the topics most worth posting on their own and cut each one into a complete short.'],
     },
     polish: {
       name: 'Polish transcript',
@@ -254,6 +257,7 @@ const en = {
   /** 剪成短视频的选项（原型 model-shorts-cut.js）与折进提示词的几行。 */
   shorts: {
     lengths: {
+      auto: 'Auto',
       short: '15–30s',
       medium: '30–60s',
       long: '60–90s',
@@ -278,8 +282,19 @@ const en = {
       auto: 'auto: sample frames evenly across the segment, see which side of the frame the speaker is on, and place the crop on them; if no one is found, center it',
       manual: 'centered for now; I’ll adjust each one myself',
     } as Record<'auto' | 'manual', string>,
-    lineCount: (count: number, min: number, max: number) =>
-      `Make ${count === 1 ? '1 short' : `${count} shorts`}, each ${min}–${max} seconds, starting and ending on sentence boundaries`,
+    /** 「切几支」下拉里的一项（自动那一项用 `lengths.auto`）。 */
+    countN: (n: number) => `${n}`,
+    /** 「切成什么样」下面那行说明：哪一项是自动就说那一项怎么定。 */
+    autoHint: {
+      both: 'Auto: the Agent finds the strongest topics that stand on their own and decides how many shorts and how long each runs—no filler, no topic cut in half.',
+      count: 'Auto: one short for every topic strong enough to stand on its own; no filler.',
+      length: 'Auto: each short runs from its opening hook to where its topic lands, not stretched or trimmed to fit a length.',
+    },
+    /** 几支、多长那一句；`count` 为 null 是自动（按话题定几支），`len` 为 null 是自动（每支按话题定长短）。 */
+    lineCount: (count: number | null, len: { min: number; max: number } | null) =>
+      `${count === null ? 'Decide how many shorts from the topics you find' : `Make ${count === 1 ? '1 short' : `${count} shorts`}`}, ${
+        len ? `each ${len.min}–${len.max} seconds` : 'each as long as its topic needs, from the opening hook to where the point lands'
+      }, starting and ending on sentence boundaries`,
     lineFrame: (ratio: string | null, focus: string) => (ratio ? `Aspect ratio ${ratio}, framing ${focus}` : 'Aspect ratio: keep the original, no cropping'),
     lineSubtitles: (tracks: string, style: string) => `Subtitles: ${tracks}, ${style}`,
     lineSkipDone: 'Skip the parts already cut into shorts',
@@ -327,7 +342,7 @@ const en = {
     cover: (o: IntentArgs & { count: number }) =>
       `Make ${o.count} cover candidates for ${o.p}: pick key frames first, use a different base-image approach for each, and check them at a small size before showing me.`,
     shortscut: (o: IntentArgs) =>
-      `Pick a few passages from ${scopeOf(o)} that stand on their own and create each as a short: each one is a new video referencing the same source footage, and the original video and its timeline stay as they are.`,
+      `Find the topics in ${scopeOf(o)} most worth posting on their own and cut each into a complete short: each one is a new video referencing the same source footage, and the original video and its timeline stay as they are.`,
   },
   /** 列表页（AI 工具 Tab）分组下的一句副题：说清这一组给谁用。 */
   groupSub: {
@@ -561,10 +576,20 @@ export function writingExtra(tool: 'summary' | 'blog' | 'title' | 'desc' | 'cove
 
 // ---- 剪成短视频（原型 panel-aitools-shorts.jsx、model-shorts-cut.js） ----
 
-export const SHORTS_COUNT = { min: 1, max: 10, initial: 3 } as const;
+export const SHORTS_COUNT = { min: 1, max: 10 } as const;
+/** 「切几支」下拉：自动在最前，再是 1–10 支。 */
+export const SHORTS_COUNTS: readonly { key: ShortsCount; readonly label: string }[] = [
+  'auto' as const,
+  ...Array.from({ length: SHORTS_COUNT.max - SHORTS_COUNT.min + 1 }, (_, i) => SHORTS_COUNT.min + i),
+].map((key) => ({
+  key,
+  get label() {
+    return key === 'auto' ? M.shorts.lengths.auto : M.shorts.countN(key);
+  },
+}));
 /** 自定义时长的上下界（秒）。 */
 export const SHORTS_CUSTOM = { min: 1, max: 600 } as const;
-const SHORTS_PRESET: Record<Exclude<ShortsLength, 'custom'>, { min: number; max: number }> = {
+const SHORTS_PRESET: Record<Exclude<ShortsLength, 'auto' | 'custom'>, { min: number; max: number }> = {
   short: { min: 15, max: 30 },
   medium: { min: 30, max: 60 },
   long: { min: 60, max: 90 },
@@ -604,7 +629,7 @@ export const SHORTS_STYLES = SHORTS_STYLE_KEYS.map((key) => ({
 
 /** 剪成短视频的设置态；默认见 `SHORTS_DEFAULTS`。 */
 export interface ShortsSettings {
-  count: number;
+  count: ShortsCount;
   length: ShortsLength;
   /** 自定义时长的两头（秒）。 */
   lenMin: number;
@@ -618,8 +643,8 @@ export interface ShortsSettings {
 }
 
 export const SHORTS_DEFAULTS: Readonly<ShortsSettings> = {
-  count: SHORTS_COUNT.initial,
-  length: 'medium',
+  count: 'auto',
+  length: 'auto',
   lenMin: 30,
   lenMax: 60,
   ratio: '9:16',
@@ -632,8 +657,9 @@ export const SHORTS_DEFAULTS: Readonly<ShortsSettings> = {
 const clampSeconds = (n: number, fallback: number) =>
   Number.isFinite(n) ? Math.max(SHORTS_CUSTOM.min, Math.min(SHORTS_CUSTOM.max, Math.round(n))) : fallback;
 
-/** 这次要的时长区间（秒）：预设一档，或自定义的两头（1–600 秒，填反了对调，两头相等时拉开一秒）。 */
-export function shortsLengthRange(s: Pick<ShortsSettings, 'length' | 'lenMin' | 'lenMax'>): { min: number; max: number } {
+/** 这次要的时长区间（秒）：预设一档，或自定义的两头（1–600 秒，填反了对调，两头相等时拉开一秒）；自动时为 null（长短按话题定）。 */
+export function shortsLengthRange(s: Pick<ShortsSettings, 'length' | 'lenMin' | 'lenMax'>): { min: number; max: number } | null {
+  if (s.length === 'auto') return null;
   if (s.length !== 'custom') return { ...SHORTS_PRESET[s.length] };
   let a = clampSeconds(s.lenMin, SHORTS_DEFAULTS.lenMin);
   let b = clampSeconds(s.lenMax, SHORTS_DEFAULTS.lenMax);
@@ -645,18 +671,34 @@ export function shortsLengthRange(s: Pick<ShortsSettings, 'length' | 'lenMin' | 
   return { min: a, max: b };
 }
 
+/** 支数：自动原样留着；数字夹在 1–10；认不出的落回自动。 */
+function clampShortsCount(n: ShortsCount): ShortsCount {
+  if (n === 'auto' || !Number.isFinite(n)) return 'auto';
+  return Math.max(SHORTS_COUNT.min, Math.min(SHORTS_COUNT.max, Math.round(n)));
+}
+
+/** 「切成什么样」下面那行说明（原型 model-shorts-cut.js `autoHint`）：哪一项是自动就说那一项怎么定；都不是自动时为 null。 */
+export function shortsAutoHint(s: Pick<ShortsSettings, 'count' | 'length'>): string | null {
+  const count = clampShortsCount(s.count) === 'auto';
+  const length = s.length === 'auto';
+  if (count && length) return M.shorts.autoHint.both;
+  if (count) return M.shorts.autoHint.count;
+  if (length) return M.shorts.autoHint.length;
+  return null;
+}
+
 /**
- * 设置态折成提示词里的参数行（原型 model-shorts-cut.js `agentExtra`），一行一句：几支、多长、画幅与取景、字幕，
+ * 设置态折成提示词里的参数行（原型 model-shorts-cut.js `agentExtra`），一行一句：几支、多长（自动的一半交给 Agent 按话题定）、画幅与取景、字幕，
  * 勾着「已经切过的不再找」时一句；视频不属于项目时先收进项目（`inProject: false`）；最后一行「找好就直接创建」，可以单独删掉。
  * 「跟着说话的人」这一版不开放，落回自动；没有译文时字幕只有原文。
  */
 export function shortsLines(s: ShortsSettings, o: { hasTranslation: boolean; inProject: boolean }): string[] {
-  const count = Math.max(SHORTS_COUNT.min, Math.min(SHORTS_COUNT.max, Math.round(s.count) || SHORTS_COUNT.initial));
+  const count = clampShortsCount(s.count);
   const len = shortsLengthRange(s);
   const focus = s.focus === 'manual' ? 'manual' : 'auto';
   const tracks: ShortsTracks = o.hasTranslation ? s.tracks : 'source';
   const out = [
-    M.shorts.lineCount(count, len.min, len.max),
+    M.shorts.lineCount(count === 'auto' ? null : count, len),
     M.shorts.lineFrame(s.ratio === 'source' ? null : s.ratio, M.shorts.focusPrompt[focus]),
     M.shorts.lineSubtitles(M.shorts.tracks[tracks], M.shorts.styles[s.style].label),
   ];

@@ -4,7 +4,7 @@ const SOON_TAIL = "Runtime chưa có quy trình này và video chưa có lớp p
 
 export const vi: AiToolsMessages = {
   shorts: {
-    lengths: { short: '15–30 giây', medium: '30–60 giây', long: '60–90 giây', extended: '1–3 phút', custom: 'Tùy chỉnh' },
+    lengths: { auto: 'Tự động', short: '15–30 giây', medium: '30–60 giây', long: '60–90 giây', extended: '1–3 phút', custom: 'Tùy chỉnh' },
     ratioSource: 'Giữ nguyên tỷ lệ gốc',
     focus: {
       auto: { label: 'Tự động', sub: 'Xem người nói ở phía nào của khung hình rồi đặt khung vào người đó; không thấy ai thì để ở giữa' },
@@ -18,7 +18,14 @@ export const vi: AiToolsMessages = {
       video: { label: 'Giữ kiểu của video này', sub: 'Giữ cỡ chữ và vị trí; nút của nền tảng có thể che mất' },
     },
     focusPrompt: { auto: 'tự động: lấy đều các khung hình trong đoạn, xem người nói ở phía nào của khung hình và đặt vùng cắt vào người đó; nếu không thấy ai thì để ở giữa', manual: 'tạm để ở giữa; tôi sẽ tự chỉnh từng video' },
-    lineCount: (count, min, max) => `Làm ${count} video ngắn, mỗi video ${min}–${max} giây, bắt đầu và kết thúc ở ranh giới câu`,
+    countN: (n) => `${n}`,
+    autoHint: {
+      both: 'Tự động: Agent tìm những chủ đề mạnh nhất có thể đứng riêng rồi tự quyết làm mấy video ngắn và mỗi video dài bao lâu, không độn cho đủ số, không cắt chủ đề giữa chừng.',
+      count: 'Tự động: mỗi chủ đề đủ mạnh để đứng riêng thành một video ngắn, không độn cho đủ số.',
+      length: 'Tự động: mỗi video ngắn chạy từ câu mở đầu gây chú ý đến khi chủ đề khép lại, không kéo dài hay cắt bớt cho vừa một độ dài.',
+    },
+    lineCount: (count, len) =>
+      `${count === null ? 'Tự quyết số video ngắn theo các chủ đề tìm được' : `Làm ${count} video ngắn`}, ${len ? `mỗi video ${len.min}–${len.max} giây` : 'mỗi video dài đúng bằng chủ đề cần, từ câu mở đầu gây chú ý đến khi ý chính khép lại'}, bắt đầu và kết thúc ở ranh giới câu`,
     lineFrame: (ratio, focus) => (ratio ? `Tỷ lệ khung hình ${ratio}, khung ${focus}` : 'Tỷ lệ khung hình: giữ nguyên bản gốc, không cắt'),
     lineSubtitles: (tracks, style) => `Phụ đề: ${tracks}, ${style}`,
     lineSkipDone: 'Bỏ qua những phần đã cắt thành video ngắn',
@@ -41,8 +48,8 @@ export const vi: AiToolsMessages = {
     },
     shortscut: {
       name: "Cắt thành video ngắn",
-      desc: 'Chọn vài đoạn trong video này và biến mỗi đoạn thành một video ngắn',
-      setup: ['Chọn vài đoạn có thể đứng riêng và biến mỗi đoạn thành một video ngắn.'],
+      desc: 'Tìm những chủ đề hay nhất trong video này và biến mỗi chủ đề thành một video ngắn',
+      setup: ['Tìm những chủ đề đáng đăng riêng nhất và cắt mỗi chủ đề thành một video ngắn trọn vẹn.'],
     },
     polish: {
       name: "Chỉnh sửa bản chép lời",
@@ -132,7 +139,7 @@ export const vi: AiToolsMessages = {
   sourceCut: (n) => n === null ? 'nguồn đã cắt' : `${n} câu đã cắt trong nguồn`,
   sourceJoin: (parts: readonly string[]) => parts.join(', '),
   intents: {
-    shortscut: (o) => `Chọn trong ${o.scope ? `${o.p}: ${o.scope}` : o.p} vài đoạn có thể đứng riêng và tạo mỗi đoạn thành một video ngắn: mỗi video là một video mới tham chiếu cùng tư liệu gốc, video gốc và dòng thời gian của nó giữ nguyên.`,
+    shortscut: (o) => `Tìm trong ${o.scope ? `${o.p}: ${o.scope}` : o.p} những chủ đề đáng đăng riêng nhất và cắt mỗi chủ đề thành một video ngắn trọn vẹn: mỗi video là một video mới tham chiếu cùng tư liệu gốc, video gốc và dòng thời gian của nó giữ nguyên.`,
     stale: (o) => `Một số bản dịch trong ${o.p} đã cũ${o.why ? ` (${o.why})` : ' vì nguồn đã sửa'}. Chỉ dịch lại các câu đó${o.cut ? '; dịch lại câu bị cắt trong nguồn theo trạng thái cắt và gỡ bản dịch của câu đã cắt hoàn toàn cùng với câu nguồn' : ''}. Giữ nguyên mọi phần khác.`,
     polish: (o) => `Trau chuốt bản chép lời của ${o.scope ? `${o.p}: ${o.scope}` : o.p}: sửa lỗi chính tả, thêm dấu câu và chia đoạn theo chủ đề, không viết lại lời của tôi.`,
     chapters: (o) => `Chia ${o.p} thành chương theo chủ đề và đặt tiêu đề ngắn cho mỗi chương.`,

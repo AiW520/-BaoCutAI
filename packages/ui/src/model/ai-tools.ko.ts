@@ -4,7 +4,7 @@ const SOON_TAIL = 'Runtime에는 아직 이 워크플로가 없고 영상 위에
 
 export const ko: AiToolsMessages = {
   shorts: {
-    lengths: { short: '15–30초', medium: '30–60초', long: '60–90초', extended: '1–3분', custom: '직접 설정' },
+    lengths: { auto: '자동', short: '15–30초', medium: '30–60초', long: '60–90초', extended: '1–3분', custom: '직접 설정' },
     ratioSource: '원본 비율 유지',
     focus: {
       auto: { label: '자동', sub: '말하는 사람이 화면 어느 쪽에 있는지 보고 프레임을 그 사람에게 맞춥니다. 사람이 없으면 가운데' },
@@ -18,7 +18,14 @@ export const ko: AiToolsMessages = {
       video: { label: '이 영상의 스타일 유지', sub: '크기와 위치를 그대로 쓰며, 플랫폼 버튼에 가려질 수 있습니다' },
     },
     focusPrompt: { auto: '자동: 구간에서 프레임을 고르게 뽑아 말하는 사람이 화면 어느 쪽에 있는지 보고 자르는 틀을 그 사람에게 맞추기. 사람을 찾지 못하면 가운데로', manual: '일단 가운데로 두고 나중에 하나씩 직접 조정' },
-    lineCount: (count, min, max) => `${count}개 만들기, 각각 ${min}–${max}초, 시작과 끝은 문장 경계에 맞추기`,
+    countN: (n) => `${n}개`,
+    autoHint: {
+      both: '자동: Agent가 따로 떼어도 성립하는 좋은 주제를 찾아 몇 개를, 각각 얼마나 길게 만들지 주제에 맞춰 정합니다. 개수를 억지로 채우거나 주제를 중간에 자르지 않습니다.',
+      count: '자동: 따로 떼어도 성립하는 주제 수만큼 만들고, 약한 구간으로 개수를 채우지 않습니다.',
+      length: '자동: 각 쇼츠는 시선을 끄는 첫 문장부터 주제가 마무리되는 곳까지이며, 길이에 맞추려고 늘리거나 자르지 않습니다.',
+    },
+    lineCount: (count, len) =>
+      `${count === null ? '몇 개 만들지는 찾은 주제를 보고 정하기' : `${count}개 만들기`}, ${len ? `각각 ${len.min}–${len.max}초` : '길이는 주제마다 정하기(시선을 끄는 첫 문장부터 요점이 마무리되는 곳까지)'}, 시작과 끝은 문장 경계에 맞추기`,
     lineFrame: (ratio, focus) => (ratio ? `화면 비율 ${ratio}, 프레이밍: ${focus}` : '화면 비율: 원본 유지, 자르지 않기'),
     lineSubtitles: (tracks, style) => `자막: ${tracks}, ${style}`,
     lineSkipDone: '이미 잘라 낸 부분은 다시 찾지 않기',
@@ -41,8 +48,8 @@ export const ko: AiToolsMessages = {
     },
     shortscut: {
       name: '쇼츠로 만들기',
-      desc: '이 영상에서 몇 구간을 골라 각각 쇼츠로 만듭니다',
-      setup: ['따로 떼어도 말이 되는 구간을 몇 개 골라 각각 쇼츠로 만듭니다.'],
+      desc: '이 영상에서 좋은 주제를 찾아 각각 쇼츠로 만듭니다',
+      setup: ['따로 올릴 만한 주제를 찾아 각각 완결된 쇼츠로 잘라냅니다.'],
     },
     polish: {
       name: '전사본 다듬기',
@@ -173,7 +180,7 @@ export const ko: AiToolsMessages = {
   sourceCut: (n: number | null) => (n === null ? '원문 잘림' : `원문에서 ${n}문장 잘림`),
   sourceJoin: (parts: readonly string[]) => parts.join(', '),
   intents: {
-    shortscut: (o) => `${o.scope ? `${o.p}의 ${o.scope}` : o.p}에서 따로 떼어도 말이 되는 구간을 몇 개 골라 각각 쇼츠로 만들어 주세요. 쇼츠마다 같은 원본을 참조하는 새 영상이며, 원본 영상과 타임라인은 그대로 둡니다.`,
+    shortscut: (o) => `${o.scope ? `${o.p}의 ${o.scope}` : o.p}에서 따로 올릴 만한 주제를 찾아 주제마다 완결된 쇼츠로 잘라 주세요. 쇼츠마다 같은 원본을 참조하는 새 영상이며, 원본 영상과 타임라인은 그대로 둡니다.`,
     stale: (o) =>
       `${o.p}의 일부 번역이 ${o.why ? `오래되었습니다(${o.why})` : '원문 수정으로 오래되었습니다'}. 해당 문장만 다시 번역해 주세요${o.cut ? '. 잘린 문장은 잘린 뒤의 원문으로 다시 번역하고, 문장 전체가 잘린 경우 그 번역도 함께 삭제해 주세요' : ''}. 나머지는 그대로 유지해 주세요.`,
     polish: (o) =>

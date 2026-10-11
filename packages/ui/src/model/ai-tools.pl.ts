@@ -7,7 +7,7 @@ const soonTail = 'Runtime nie ma jeszcze tego procesu ani nakładki kadrowania, 
 
 export const pl: AiToolsMessages = {
   shorts: {
-    lengths: { short: '15–30 s', medium: '30–60 s', long: '60–90 s', extended: '1–3 min', custom: 'Własna' },
+    lengths: { auto: 'Automatycznie', short: '15–30 s', medium: '30–60 s', long: '60–90 s', extended: '1–3 min', custom: 'Własna' },
     ratioSource: 'Zachowaj oryginał',
     focus: {
       auto: { label: 'Automatyczny', sub: 'Sprawdza, po której stronie jest mówiący, i ustawia kadr na nim; bez osoby — wyśrodkowany' },
@@ -21,7 +21,14 @@ export const pl: AiToolsMessages = {
       video: { label: 'Zachowaj styl tego wideo', sub: 'Ten sam rozmiar i pozycja; przyciski platformy mogą je zasłonić' },
     },
     focusPrompt: { auto: 'automatyczny: weź klatki rozłożone równo w całym fragmencie, sprawdź, po której stronie kadru jest mówiący, i ustaw przycięcie na nim; jeśli nikogo nie znajdziesz, wyśrodkuj', manual: 'na razie wyśrodkowany; każdy dopasuję sam' },
-    lineCount: (count, min, max) => `Liczba krótkich filmów: ${count}, każdy ${min}–${max} sekund, początek i koniec na granicach zdań`,
+    countN: (n) => `${n}`,
+    autoHint: {
+      both: 'Automatycznie: agent znajduje najmocniejsze tematy, które bronią się same, i decyduje, ile krótkich filmów zrobić i jak długi ma być każdy – bez zapychaczy i bez tematów uciętych w połowie.',
+      count: 'Automatycznie: jeden krótki film na każdy temat, który broni się sam, bez zapychaczy.',
+      length: 'Automatycznie: każdy krótki film trwa od chwytliwego otwarcia do puenty swojego tematu, bez rozciągania ani przycinania pod długość.',
+    },
+    lineCount: (count, len) =>
+      `${count === null ? 'Liczbę krótkich filmów ustal według znalezionych tematów' : `Liczba krótkich filmów: ${count}`}, ${len ? `każdy ${len.min}–${len.max} sekund` : 'każdy tak długi, jak wymaga jego temat, od chwytliwego otwarcia do puenty'}, początek i koniec na granicach zdań`,
     lineFrame: (ratio, focus) => (ratio ? `Proporcje ${ratio}, kadr ${focus}` : 'Proporcje: zachowaj oryginalne, bez przycinania'),
     lineSubtitles: (tracks, style) => `Napisy: ${tracks}, ${style}`,
     lineSkipDone: 'Pomiń fragmenty już pocięte na krótkie filmy',
@@ -44,8 +51,8 @@ export const pl: AiToolsMessages = {
     },
     shortscut: {
       name: "Potnij na krótkie filmy",
-      desc: 'Wybierz kilka fragmentów z tego wideo i zrób z każdego krótki film',
-      setup: ['Wybiera kilka fragmentów, które bronią się same, i robi z każdego krótki film.'],
+      desc: 'Znajdź najlepsze tematy w tym wideo i zrób z każdego krótki film',
+      setup: ['Znajduje tematy, które najbardziej warto opublikować osobno, i tnie każdy na kompletny krótki film.'],
     },
     polish: {
       name: "Ulepsz transkrypcję",
@@ -147,7 +154,7 @@ export const pl: AiToolsMessages = {
   sourceCut: (n: number | null) => n === null ? "źródło wycięte" : pluralForm('pl', n, { one: `${n} zdanie wycięte w źródle`, few: `${n} zdania wycięte w źródle`, many: `${n} zdań wyciętych w źródle`, other: `${n} zdania wyciętego w źródle` }),
   sourceJoin: (parts: readonly string[]) => parts.join(", "),
   intents: {
-    shortscut: (o) => `Wybierz z ${o.scope ? `${o.scope} w ${o.p}` : o.p} kilka fragmentów, które bronią się same, i utwórz z każdego krótki film: każdy to nowe wideo odwołujące się do tego samego materiału źródłowego, a oryginalne wideo i jego oś czasu pozostają bez zmian.`,
+    shortscut: (o) => `Znajdź w ${o.scope ? `${o.scope} w ${o.p}` : o.p} tematy, które najbardziej warto opublikować osobno, i potnij każdy na kompletny krótki film: każdy to nowe wideo odwołujące się do tego samego materiału źródłowego, a oryginalne wideo i jego oś czasu pozostają bez zmian.`,
     stale: (o) => `Niektóre tłumaczenia w ${o.p} nieaktualne${o.why ? ` (${o.why})` : " przez zmianę źródła"}. Tłumacz ponownie tylko te zdania${o.cut ? "; wycięte tłumacz z wyciętego źródła, tłumaczenia całkowicie wyciętych zdań usuń razem" : ""}. Resztę pozostaw bez zmian.`,
     polish: (o) => `Popraw transkrypcję ${scopeOf(o)}: popraw literówki, dodaj interpunkcję i podziel na akapity tematyczne bez przepisywania.`,
     chapters: (o) => `Podziel ${o.p} na rozdziały tematyczne i nadaj krótkie tytuły.`,

@@ -13,12 +13,18 @@
 
    长度一律用秒，不数字数：哪种语言的文稿都是同一条规则。 */
 (function () {
+  /** 「自动」：几支、每支多长交给智能体按找到的话题定（§5.10，缺省）。 */
+  const AUTO = 'auto';
+  /** 切几支：自动，或 1–10 支；`def` 是从自动改成指定支数时的起点。 */
   const COUNT = {min: 1, max: 10, def: 3};
-  /* §5.10：找到就创建，要几支就是几支，不多找备选；时长不设上限，平台时长只在导出前检查里说。 */
+  /* §5.10：找到就创建，要几支就是几支，不多找备选；自动时够格的话题有几个建几支（至多 COUNT.max）。
+     时长不设上限，平台时长只在导出前检查里说。 */
   /** 候选与某支短视频用到的原片区间重叠超过这个比例，算「已切过」。 */
   const DONE_RATIO = 0.5;
 
+  /* 「自动」排在最前：每支的长度就是它那个话题的长度，从开头能抓人的那句到讲完（没有 min / max）。 */
   const LENGTHS = [
+    {id: AUTO, min: null, max: null, name: '自动'},
     {id: 'short', min: 15, max: 30, name: '15–30 秒'},
     {id: 'mid', min: 30, max: 60, name: '30–60 秒'},
     {id: 'long', min: 60, max: 90, name: '60–90 秒'},
@@ -51,17 +57,17 @@
     {id: 'shorts', name: '短视频字幕', desc: '内置预设，避开平台按钮'},
     {id: 'project', name: '沿用这部视频的样式', desc: '字号和位置照搬，可能被平台按钮挡住'},
   ];
-  const DEFAULTS = {count: COUNT.def, length: 'mid', lenMin: 30, lenMax: 60, ratio: '9:16', focus: 'auto',
+  const DEFAULTS = {count: AUTO, length: AUTO, lenMin: 30, lenMax: 60, ratio: '9:16', focus: 'auto',
     tracks: 'both', style: 'shorts', scope: 'all', skipDone: true, hook: true, crossChapter: false};
   /** 一条进度走完：找片段 → 创建视频（BC_TASK_FACTS.SHORTS_CUT_STAGE 的 find / create）。 */
   const FIND_STAGES = ['读文稿', '找片段', '核对起止'];
   const CREATE_STAGES = ['创建视频', '套字幕样式', '取景'];
 
-  const lengthOf = (id) => LENGTHS.find((l) => l.id === id) || LENGTHS[1];
+  const lengthOf = (id) => LENGTHS.find((l) => l.id === id) || LENGTHS.find((l) => l.id === DEFAULTS.length);
   const focusOf = (id) => FOCUS.find((f) => f.id === id) || FOCUS.find((f) => f.id === DEFAULTS.focus);
   const ratioOf = (id) => RATIOS.find((r) => r.id === id) || RATIOS[0];
   const clampSec = (n, d) => (Number.isFinite(+n) && n !== '' && n != null ? Math.max(CUSTOM.min, Math.min(CUSTOM.max, Math.round(+n))) : d);
-  /** 这次要的时长区间（秒）：预设一档，或自定义的两头（1–600 秒，下限小于上限）。 */
+  /** 这次要的时长区间（秒）：预设一档，或自定义的两头（1–600 秒，下限小于上限）；自动时 min / max 为 null。 */
   function lengthRange(params) {
     const p = Object.assign({}, DEFAULTS, params);
     const l = lengthOf(p.length);
@@ -71,8 +77,13 @@
     if (a === b) { if (b < CUSTOM.max) b += 1; else a -= 1; }
     return {id: 'custom', min: a, max: b, name: `${a}–${b} 秒`};
   }
-  const clampCount = (n) => (Number.isFinite(+n) && n !== '' && n != null
-    ? Math.max(COUNT.min, Math.min(COUNT.max, Math.round(+n))) : COUNT.def);
+  /** 支数：自动原样留着；数字夹在 1–10；认不出的落回缺省（自动）。 */
+  const clampCount = (n) => (n === AUTO ? AUTO : Number.isFinite(+n) && n !== '' && n != null
+    ? Math.max(COUNT.min, Math.min(COUNT.max, Math.round(+n))) : DEFAULTS.count);
+  /** 「切几支」下拉的几项：自动在最前，再是 1–10 支。 */
+  const COUNTS = [{id: AUTO, name: '自动'}].concat(
+    Array.from({length: COUNT.max - COUNT.min + 1}, (_, i) => ({id: COUNT.min + i, name: `${COUNT.min + i} 支`})));
+  const countName = (n) => (clampCount(n) === AUTO ? '自动' : `${clampCount(n)} 支`);
 
   /** 参数落到这个项目上：没有译文就只有原文；原片本来就是竖屏就不用取景。
       「跟着说话的人」这一版不开放，带进来的（连同旧版的「居中」）一律落回缺省的自动。 */
@@ -349,7 +360,12 @@
       ? {missing: false, parent, text: `来自「${parent.title}」· ${span}`, short: `来自「${parent.title}」`}
       : {missing: true, parent: null, text: '来源视频已不在视频库', short: '来源视频已不在视频库'};
   }
-  const countLabel = (n) => `${n} 支短视频`;
+  const countLabel = (n) => (n === AUTO ? '短视频' : `${n} 支短视频`);
+  /** 进行中那一页：标题与等放行时那一句；自动时还不知道几支。 */
+  const creatingTitle = (n) => (n === AUTO ? '正在创建短视频…' : `正在创建 ${countLabel(n)}…`);
+  const createNote = (n) => (n === AUTO
+    ? '它会按找到的话题创建子视频，引用原片，不复制、不导出。放行后结果会出现在这一页。'
+    : `它会创建 ${n} 支子视频，引用原片，不复制、不导出。放行后结果会出现在这一页。`);
   /** 候选被哪一支短视频切过（重叠超过候选时长的一半）。 */
   function doneBy(seg, children) {
     const dur = seg.end - seg.start;
@@ -373,8 +389,9 @@
     if (seg.redoOf) out.push({k: 'redo', tone: 'accent', text: '重做 · 另建一支，原来那支不动'});
     const done = doneBy(seg, (c.children || []).filter((k) => k.id !== seg.redoOf));
     if (done) out.push({k: 'done', tone: 'notice', text: `已切过 · 「${done.title}」`});
-    if (Math.round(dur - len.max) >= 1) out.push({k: 'long', tone: 'neutral', text: `比你要的长 ${Math.round(dur - len.max)} 秒`});
-    else if (Math.round(len.min - dur) >= 1) out.push({k: 'short', tone: 'neutral', text: `比你要的短 ${Math.round(len.min - dur)} 秒`});
+    /* 自动时长没有「要的区间」，长短由话题定，不提醒 */
+    if (len.max != null && Math.round(dur - len.max) >= 1) out.push({k: 'long', tone: 'neutral', text: `比你要的长 ${Math.round(dur - len.max)} 秒`});
+    else if (len.min != null && Math.round(len.min - dur) >= 1) out.push({k: 'short', tone: 'neutral', text: `比你要的短 ${Math.round(len.min - dur)} 秒`});
     const list = (c.list || []).filter((x) => !x.removed);
     list.forEach((x, i) => {
       if (x.id === seg.id || x.on === false) return;
@@ -398,18 +415,21 @@
   const resultHead = (list) => `已创建 ${visible(list).length} 支 · 合计 ${mmss(totalSec(list))}`;
   const hookOf = (sentences, seg) => (sentences[seg.from] || {}).text || '';
   const tailOf = (sentences, seg) => (sentences[seg.to] || {}).text || '';
-  /** 按把握的先后取够要的条数：先跳过要靠前文的、已切过的、和已取的重叠的；不够再按次序补（仍不重叠）。 */
+  /** 按把握的先后取够要的条数：先跳过要靠前文的、已切过的、和已取的重叠的；不够再按次序补（仍不重叠）。
+      自动（`count` 为 AUTO）：只取够格的那些，至多 COUNT.max 支，不拿弱的凑。 */
   function preselect(list, count, children) {
+    const auto = count === AUTO;
+    const n = auto ? COUNT.max : count;
     const on = [];
     list.forEach((c) => {
-      if (on.length < count && !c.weak && !doneBy(c, children) && !on.some((x) => overlapSec(x, c) >= 1)) on.push(c);
+      if (on.length < n && !c.weak && !doneBy(c, children) && !on.some((x) => overlapSec(x, c) >= 1)) on.push(c);
     });
-    list.forEach((c) => { if (on.length < count && on.indexOf(c) < 0 && !on.some((x) => overlapSec(x, c) >= 1)) on.push(c); });
+    if (!auto) list.forEach((c) => { if (on.length < n && on.indexOf(c) < 0 && !on.some((x) => overlapSec(x, c) >= 1)) on.push(c); });
     return on.map((c) => Object.assign({}, c, {on: true}));
   }
 
-  /* 演示的候选：起点是句子下标，`n` 是「30–60 秒」那一档下的句数，别的档按比例伸缩。
-     次序就是把握的先后。真产品里这张表由模型或 Agent 给出，这里只为原型可复现。 */
+  /* 演示的候选：每条是一个话题，起点是句子下标，`n` 是这个话题本来的句数（自动时长就取它，约合「30–60 秒」那一档），
+     别的档按比例伸缩。次序就是把握的先后。真产品里这张表由模型或 Agent 给出，这里只为原型可复现。 */
   const DEMO = [
     {k: 'a', at: 4, n: 10, title: '为什么要把视频工具做在本机', reason: '以一个问题开头，三句之内给出回答'},
     /* `shots`：这一段里机位切了几次（句子下标相对 `at`、该镜头的 focusX）——近景主讲 / 全景 / 采访者近景 */
@@ -425,7 +445,7 @@
   function demoPool(sentences, params, scope) {
     const p = Object.assign({}, DEFAULTS, params);
     const r = lengthRange(p);
-    const k = (r.min + r.max) / 2 / 45;
+    const k = r.min == null ? 1 : (r.min + r.max) / 2 / 45;
     const lo = scope ? scope.start : -Infinity, hi = scope ? scope.end : Infinity;
     return DEMO.filter((d) => d.at < sentences.length && sentences[d.at].start >= lo - EPS && sentences[d.at].start < hi - EPS)
       .map((d) => {
@@ -439,7 +459,8 @@
           shots.length > 1 ? {shots} : {});
       });
   }
-  /** 找到的就是要创建的：要 n 支给 n 段（范围里不够就少给）；开着「已经切过的不再找」时切过的不进来。 */
+  /** 找到的就是要创建的：要 n 支给 n 段（范围里不够就少给），自动时够格的话题有几个给几段；
+      开着「已经切过的不再找」时切过的不进来。 */
   function demoCandidates(sentences, params, o) {
     const c = o || {};
     const p = Object.assign({}, DEFAULTS, params);
@@ -456,9 +477,11 @@
         title: o.title || hookOf(sentences, {from}), reason: '你自己选的区间', on: true, added: 'manual'};
     }
     const len = lengthRange(o.params || DEFAULTS);
+    /* 自动时长没有区间：凑到「30–60 秒」那一档的中间 */
+    const want = len.min == null ? 45 : (len.min + len.max) / 2;
     const from = indexAt(sentences, o.t || 0);
     let to = from;
-    while (to < sentences.length - 1 && sentences[to].end - sentences[from].start < (len.min + len.max) / 2) to++;
+    while (to < sentences.length - 1 && sentences[to].end - sentences[from].start < want) to++;
     return Object.assign({id, title: o.title || hookOf(sentences, {from}), reason: '你自己加的，从播放头那一句起', on: true, added: 'manual'},
       rangeOf(sentences, from, to));
   }
@@ -504,9 +527,28 @@
     const r = ratioOf(p.ratio);
     return r.id === 'source' ? '保留原画幅' : `${r.name} · ${focusOf(p.focus).name}`;
   }
+  /** 「切成什么样」那一行：几支、每支多长、画幅与取景；两项都自动时并成一句。 */
   function summaryLine(params) {
     const p = Object.assign({}, DEFAULTS, params);
-    return [`${p.count} 支`, `每支 ${lengthRange(p).name}`, frameLine(p)].join(' · ');
+    const count = clampCount(p.count), len = lengthRange(p);
+    const shape = count === AUTO && len.id === AUTO ? ['按话题定几支、多长']
+      : [count === AUTO ? '几支按话题定' : `${count} 支`, len.id === AUTO ? '每支按话题定长短' : `每支 ${len.name}`];
+    return shape.concat(frameLine(p)).join(' · ');
+  }
+  /** 「切成什么样」下面那行说明：哪一项是自动就说那一项怎么定；都不是自动时不给（null）。 */
+  function autoHint(params) {
+    const p = Object.assign({}, DEFAULTS, params);
+    const count = clampCount(p.count) === AUTO, len = lengthRange(p).id === AUTO;
+    if (count && len) return '自动：Agent 先找出能单独成立的好话题，几支、每支多长都按话题定，不凑数也不截半截。';
+    if (count) return '自动：够格的话题有几个就切几支，不拿弱的凑数。';
+    if (len) return '自动：每支从开头能抓人的那句剪到话题讲完，不为凑时长拉长或截短。';
+    return null;
+  }
+  /** 几支、多长折成的那一句：自动的一半交给智能体按话题定（shorts-segments skill 认「几支由你按话题定」「每支多长按话题定」）。 */
+  function countLine(count, len) {
+    const n = count === AUTO ? '几支由你按话题定' : `要 ${count} 支`;
+    const l = len.id === AUTO ? '每支多长按话题定：从开头能抓人的那句剪到讲完' : `每支 ${len.min}–${len.max} 秒`;
+    return `${n}，${l}，起止落在句子边界上`;
   }
   /** 提示词模板里那一行可删的话：删掉就等于「先列出来等我挑」（这一版不做那条分支）。 */
   const DIRECT_LINE = '找好就直接创建成视频，不用先问我';
@@ -516,7 +558,7 @@
     const p = Object.assign({}, DEFAULTS, params);
     const len = lengthRange(p);
     const r = ratioOf(p.ratio);
-    const out = [`要 ${p.count} 支，每支 ${len.min}–${len.max} 秒，起止落在句子边界上`];
+    const out = [countLine(clampCount(p.count), len)];
     out.push(r.id === 'source' ? '画幅：保留原画幅，不裁' : `画幅 ${r.name}，取景${focusOf(p.focus).prompt || focusOf(p.focus).name}`);
     out.push(`字幕：${tracksOf(p.tracks).name}，${(STYLES.find((x) => x.id === p.style) || STYLES[0]).name}`);
     if (c.scopeName) out.push(`只在「${c.scopeName}」里找`);
@@ -746,11 +788,11 @@
   }
 
   const api = {
-    COUNT, DONE_RATIO, LENGTHS, CUSTOM, RATIOS, FOCUS, TRACKS, STYLES, DEFAULTS, FIND_STAGES, CREATE_STAGES, DIRECT_LINE, NEAR,
-    lengthOf, lengthRange, focusOf, ratioOf, clampCount, normalize,
+    AUTO, COUNT, COUNTS, DONE_RATIO, LENGTHS, CUSTOM, RATIOS, FOCUS, TRACKS, STYLES, DEFAULTS, FIND_STAGES, CREATE_STAGES, DIRECT_LINE, NEAR,
+    lengthOf, lengthRange, focusOf, ratioOf, clampCount, countName, normalize,
     mmss, secs, spanText, overlapSec, durText,
     indexAt, rangeOf, snap,
-    isChild, hostId, childrenOf, parentOf, originLabel, countLabel, doneBy, deleteNote,
+    isChild, hostId, childrenOf, parentOf, originLabel, countLabel, creatingTitle, createNote, doneBy, deleteNote,
     seedCuts, cutsOf, sourceDur, keptRanges, usedRanges, reclaimSpan, foldRows, clipTime, STEP, coverScale, framePlace, focusText,
     shotsOf, shotAt, shotElements, shotBadge, SHOT_COPY, frameText,
     flags, visible, chosen, totalSec, resultHead, hookOf, tailOf, preselect,
@@ -758,7 +800,7 @@
     EXPORT_COPY, exportBatch, exportNotes,
     CUT_ENTRY_COPY, cutEntryAction, childLanding, entryAnchor,
     childTitle, childProject,
-    frameLine, summaryLine, agentExtra, taskTitle, stageAt, listStatus, openTracks,
+    frameLine, summaryLine, autoHint, countLine, agentExtra, taskTitle, stageAt, listStatus, openTracks,
     bar, rowWindow,
     MADE_ROW_H, MADE_SHOWN, madeOrder, madeVisible, madeMoreLabel, tracksOf, editedSince, cutLine, madeHead, madeRows, madeBar, redoTitle, redoCandidate, redoParams, redoPlan,
   };

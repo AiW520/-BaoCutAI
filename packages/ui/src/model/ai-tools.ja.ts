@@ -4,7 +4,7 @@ const SOON_TAIL = 'Runtime にはまだこのワークフローがなく、動�
 
 export const ja: AiToolsMessages = {
   shorts: {
-    lengths: { short: '15〜30秒', medium: '30〜60秒', long: '60〜90秒', extended: '1〜3分', custom: 'カスタム' },
+    lengths: { auto: '自動', short: '15〜30秒', medium: '30〜60秒', long: '60〜90秒', extended: '1〜3分', custom: 'カスタム' },
     ratioSource: '元の比率のまま',
     focus: {
       auto: { label: '自動', sub: '話している人が画面のどちら側にいるかを見て、その人に合わせます。見つからなければ中央' },
@@ -18,7 +18,14 @@ export const ja: AiToolsMessages = {
       video: { label: 'この動画のスタイルを使う', sub: 'サイズと位置はそのまま。プラットフォームのボタンに隠れることがあります' },
     },
     focusPrompt: { auto: '自動：区間から均等にフレームを抜き出し、話している人が画面のどちら側にいるかを見て、切り抜き枠をその人に合わせる。人が見つからなければ中央にする', manual: 'いったん中央にし、あとで1本ずつ自分で調整する' },
-    lineCount: (count, min, max) => `${count} 本作る。各 ${min}〜${max} 秒、開始と終了は文の境目に合わせる`,
+    countN: (n) => `${n} 本`,
+    autoHint: {
+      both: '自動：Agent が単独で成り立つ良い話題を見つけ、本数も各本の長さも話題に合わせて決めます。数合わせも話の途中での切り上げもしません。',
+      count: '自動：単独で成り立つ話題の数だけ作ります。弱い部分で本数を埋めません。',
+      length: '自動：各本は冒頭の引きのある一文から話題が結論に届くまで。長さに合わせて引き延ばしたり削ったりしません。',
+    },
+    lineCount: (count, len) =>
+      `${count === null ? '本数は見つけた話題に合わせて決める' : `${count} 本作る`}。${len ? `各 ${len.min}〜${len.max} 秒` : '長さは話題ごとに決める（冒頭の引きのある一文から話が結論に届くまで）'}、開始と終了は文の境目に合わせる`,
     lineFrame: (ratio, focus) => (ratio ? `アスペクト比 ${ratio}、フレーミングは${focus}` : 'アスペクト比：元のまま、切り抜かない'),
     lineSubtitles: (tracks, style) => `字幕：${tracks}、${style}`,
     lineSkipDone: 'すでに切り出した部分は探さない',
@@ -41,8 +48,8 @@ export const ja: AiToolsMessages = {
     },
     shortscut: {
       name: 'ショート動画に切り出す',
-      desc: 'この動画からいくつかの区間を選び、それぞれをショート動画にします',
-      setup: ['単独で成り立つ部分をいくつか選び、それぞれをショート動画にします。'],
+      desc: 'この動画から良い話題を見つけ、それぞれをショート動画にします',
+      setup: ['単独で公開する価値が最も高い話題を見つけ、それぞれを完結したショート動画に切り出します。'],
     },
     polish: {
       name: '文字起こしを校正',
@@ -135,7 +142,7 @@ export const ja: AiToolsMessages = {
   sourceCut: (n: number | null) => (n === null ? '原文をカット' : `原文で ${n} 文をカット`),
   sourceJoin: (parts: readonly string[]) => parts.join('、'),
   intents: {
-    shortscut: (o) => `${o.scope ? `${o.p}の${o.scope}` : o.p}から、単独で成り立つ部分をいくつか選び、それぞれをショート動画として作成してください。1本ごとに同じ元素材を参照する新しい動画にし、元の動画とタイムラインは変更しないでください。`,
+    shortscut: (o) => `${o.scope ? `${o.p}の${o.scope}` : o.p}から、単独で公開する価値が最も高い話題を見つけ、話題ごとに完結したショート動画として切り出してください。1本ごとに同じ元素材を参照する新しい動画にし、元の動画とタイムラインは変更しないでください。`,
     stale: (o) =>
       `${o.p}の訳文の一部が古くなっています${o.why ? `（${o.why}）` : '（原文が編集されたため）'}。該当する文だけを訳し直してください${o.cut ? '。カットされた文はカット後の原文から訳し直し、丸ごとカットされた文の訳文は一緒に削除してください' : ''}。それ以外は一字も変えないでください。`,
     polish: (o) =>

@@ -1,6 +1,7 @@
 /* 剪成短视频（§5.10）工具页：设置 → 进行中 → 结果（panel-aitools-shorts-result.jsx）。
    只交给 Agent，而且总是新开一条会话：在那里找片段、找到就创建成视频，要几支建几支，不停下来等人挑。
-   人在设置页给的是要几支、每支多长、画幅与取景、字幕；结果页上逐支打开、改标题、删掉不要的。
+   人在设置页给的是要几支、每支多长（缺省都是「自动」：Agent 找出好话题，每个话题剪完整，几支、多长按话题定）、
+   画幅与取景、字幕；结果页上逐支打开、改标题、删掉不要的。
    产物是项目不是成片：每支一部新视频，引用同一份原片，原视频和时间轴不动。
    会话在 store-shorts-cut.jsx，算出来的东西在 model-shorts-cut.js。
    会话挂在来源视频上：在一支子视频里打开，看见的是来源视频那一轮的结果页（`SC.hostId`，§5.10）。 */
@@ -45,11 +46,30 @@
     );
   }
 
-  /* 每支多长：四档预设 + 自定义（两头各填秒数，1–600）。不设上限，平台时长只在导出前检查里说。 */
+  /* 切几支：自动（缺省，够格的话题有几个建几支）或 1–10 支。 */
+  function CountPick({p, set}) {
+    const [pop, setPop] = useState(false);
+    const cur = SC.clampCount(p.count);
+    return (
+      <PRow label="切几支">
+        <Picker size="s" value={SC.countName(cur)} open={pop} popWidth={200}
+          onClick={() => setPop((v) => !v)} onClose={() => setPop(false)}>
+          <Menu>
+            {SC.COUNTS.map((c) => (
+              <MenuItem key={c.id} label={c.name} on={c.id === cur} onClick={() => { set({count: c.id}); setPop(false); }} />
+            ))}
+          </Menu>
+        </Picker>
+      </PRow>
+    );
+  }
+
+  /* 每支多长：自动（缺省，长度就是话题的长度）、四档预设 + 自定义（两头各填秒数，1–600）。
+     不设上限，平台时长只在导出前检查里说。 */
   function LengthPick({p, set}) {
     const [pop, setPop] = useState(false);
     const cur = SC.lengthRange(p);
-    const preset = SC.LENGTHS.find((l) => l.id === p.length) || SC.LENGTHS[1];
+    const preset = SC.lengthOf(p.length);
     return (
       <>
         <PRow label="每支多长">
@@ -58,7 +78,11 @@
             <Menu>
               {SC.LENGTHS.map((l) => (
                 <MenuItem key={l.id} label={l.name} on={l.id === preset.id}
-                  onClick={() => { set(l.id === 'custom' ? {length: 'custom', lenMin: cur.min, lenMax: cur.max} : {length: l.id}); setPop(false); }} />
+                  onClick={() => {
+                    /* 从自动切到自定义时没有眼下的区间，沿用上次填的两头 */
+                    set(l.id === 'custom' ? {length: 'custom', lenMin: cur.min == null ? p.lenMin : cur.min, lenMax: cur.max == null ? p.lenMax : cur.max} : {length: l.id});
+                    setPop(false);
+                  }} />
               ))}
             </Menu>
           </Picker>
@@ -134,8 +158,8 @@
       <div className="pscroll bc-scroll">
         <div className="flowh"><IconBtn icon="back" size="s" tip="返回" onClick={onBack} /><b>{NAME}</b></div>
         <div className="aicard">
-          <b>挑几段能单独成立的话，各做成一支短视频</b>
-          <span>交给 Agent 去找，找到就直接创建：要几支建几支，每支一部新视频，引用同一份原片。原视频不动。</span>
+          <b>找出最值得单独发布的话题，各剪成一支完整的短视频</b>
+          <span>交给 Agent 去找：每个话题从开头能抓人的那句剪到讲完，找到就直接创建。每支一部新视频，引用同一份原片。原视频不动。</span>
         </div>
         {kids.length ? (
           <>
@@ -157,11 +181,9 @@
 
         <SecHead aside={SC.summaryLine(p)}>切成什么样</SecHead>
         <div className="sec">
-          <PRow label="切几支">
-            <Stepper value={p.count} onDec={() => set({count: p.count - 1})} onInc={() => set({count: p.count + 1})}
-              disabledDec={p.count <= SC.COUNT.min} disabledInc={p.count >= SC.COUNT.max} decTip="少一支" incTip="多一支" />
-          </PRow>
+          <CountPick p={p} set={set} />
           <LengthPick p={p} set={set} />
+          {SC.autoHint(p) ? <div className="hint sc-flat">{SC.autoHint(p)}</div> : null}
           <PRow label="画幅">
             <Segmented size="s" value={p.ratio} onChange={(v) => set({ratio: v})} items={SC.RATIOS.map((r) => ({k: r.id, label: r.name}))} />
           </PRow>
@@ -218,7 +240,7 @@
     const prog = chat ? AG.sessionProgress(chat, task) : null;
     const pct = prog ? prog.pct : s.pct || 0;
     const cur = prog ? prog.cur : SC.stageAt(AGENT_STAGES, pct);
-    const n = SC.countLabel(s.params.count);
+
     return (
       <div className="pscroll bc-scroll">
         <div className="flowh"><IconBtn icon="back" size="s" tip="返回" onClick={onBack} /><b>{NAME}</b><Chip tone="accent">后台运行中</Chip></div>
@@ -226,12 +248,12 @@
           <b>已交给 {s.runner || 'Agent'}</b>
           <span>在新开的那条会话里进行。找到就直接创建，创建前会先问你一次。</span>
         </div>
-        <Job title={s.stage === 'create' ? `正在创建 ${n}…` : `正在「${host.title}」里找片段…`} pct={pct}
+        <Job title={s.stage === 'create' ? SC.creatingTitle(s.params.count) : `正在「${host.title}」里找片段…`} pct={pct}
           stages={AGENT_STAGES} cur={cur} activity={prog ? prog.note : task ? task.activity : null} />
         {prog && prog.waiting ? (
           <div className="aicard aicard--warn">
             <b>等你在会话里放行</b>
-            <span>{`它会创建 ${s.params.count} 支子视频，引用原片，不复制、不导出。放行后结果会出现在这一页。`}</span>
+            <span>{SC.createNote(s.params.count)}</span>
             <div><Btn variant="accent" size="s" onClick={() => app.openSession(s.sid)}>去会话放行</Btn></div>
           </div>
         ) : null}

@@ -33,7 +33,7 @@ BaoCut 是以**可编辑视频**为中心的剪辑工具：素材在时间线上
 | 旁白、念一段话 | 语音合成，按需放进视频 | [voice](references/catalog/voice.md) | — |
 | 旁白成片、给画面配多句旁白 | 先量语速算字数，一个能锁住音色的声音一次合成，画面剪到旁白上 | [voice](references/catalog/voice.md) | {{skill:narration}} |
 | 剪口播、去口癖、剪掉停顿 | 在时间线上剪，原文件不动 | [editing](references/catalog/editing.md) | {{skill:talking-head-cut}} |
-| 切短视频、挑几段发 | 从长视频挑几段，每段建成可编辑的子视频 | [editing](references/catalog/editing.md) | {{skill:shorts-segments}} |
+| 切短视频、挑几段发 | 从长视频找出值得单独发的话题，每个话题建成一支可编辑的子视频 | [editing](references/catalog/editing.md) | {{skill:shorts-segments}} |
 | 分章、加时间轴目录 | 写进视频的章节 | [editing](references/catalog/editing.md) | {{skill:video-chapters}} |
 | 总结、提炼要点 | 读带时间的文稿，写总结与可跳转的要点 | [subtitles](references/catalog/subtitles.md) | {{skill:video-summary}} |
 | 写成博客、公众号文章 | 读文稿写成完整文章 | [subtitles](references/catalog/subtitles.md) | {{skill:video-blog}} |
@@ -134,7 +134,7 @@ BaoCut 自带的 craft（做法）。第 1 节的表按用户的话指到其中�
 | {{skill:cover-and-title}} | 封面与标题 | 标题与封面文案候选，用户挑定后按画幅生成封面图，放进候选素材 |
 | {{skill:video-chapters}} | 分章节 | 在话题自然转换处分章，每章一个标题和一句摘要，写进视频的章节 |
 | {{skill:talking-head-cut}} | 剪口播 | 去口癖、长停顿与录废的部分，收紧节奏，按需加强调、B-roll、竖屏取景与配乐闪避 |
-| {{skill:shorts-segments}} | 切短视频 | 从长视频里挑出能单独发布的几段，每段建成可编辑的子视频 |
+| {{skill:shorts-segments}} | 切短视频 | 从长视频里找出能单独发布的话题，每个话题从钩子剪到讲完，建成可编辑的子视频 |
 | {{skill:narration}} | 旁白成片 | 按实测语速写稿，一个音色一次合成，量时长、只重配不合格的句子，再把画面剪到旁白上 |
 | {{skill:video-production}} | 从简报到成片 | 从零做一条完整成片：风格与分镜规划，逐镜出画面，配旁白、混音、导出验收 |
 | {{skill:motion-graphics}} | 动效图形 | 写一个自包含的 HTML 画面做下横栏、关键词、大数字、标注或品牌贴片，打包导入后放上时间线 |
