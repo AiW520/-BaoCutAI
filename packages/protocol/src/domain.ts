@@ -45,6 +45,12 @@ export interface Conversation {
   projectId: Id | null;
   /** 智能体的工作目录：项目目录，或无项目会话的临时目录（绑定项目后换成项目目录）。 */
   cwd: string;
+  /**
+   * 不属于项目、与另一条会话共用工作目录的会话（`conversations.create` 的 `folderOf`，架构设计 §3.10）：那条会话的 id。
+   * 它的视频与文件都在那条会话的工作目录里，Space 按那条会话列出，视频的位置也写那条会话；那条会话放进项目时它跟着进去，
+   * 之后省略。自己有工作目录的会话省略。
+   */
+  folderOf?: Id;
   /** 会话的 Agent。没有任务之前可以换，之后固定（原生会话不能跨 Agent 续）。 */
   driverId: DriverId;
   /** 模型 id，来自 `DriverInfo.models`；null = 不传模型，用 Agent 自己的默认（`configModel`）。下一轮生效。 */

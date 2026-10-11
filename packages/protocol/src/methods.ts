@@ -307,10 +307,13 @@ export interface RpcMethods {
    * 新建会话。没给的 Agent、模型、强度取偏好里的默认（`agent.defaultDriver`、那个 Agent 的默认模型与强度），
    * 建好之后固定在会话上，改偏好不影响已有会话（架构设计 §3.11）。`accessMode` 没给（或 null）时会话跟随
    * `agent.defaultAccessMode`（§3.12），给了等于建好后切换一次（接受旧值）。
+   * `folderOf`：新会话用这条会话的工作目录（从一部不属于项目的视频发起新会话时，新会话要能打开它与它旁边的文件，§3.10）；
+   * 那条会话属于项目时新会话就建在那个项目里，`projectId` 不看。
    */
   'conversations.create': {
     params: {
       projectId?: Id | null;
+      folderOf?: Id;
       title?: string;
       commandId?: Id;
       driverId?: DriverId;

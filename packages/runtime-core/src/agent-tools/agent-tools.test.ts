@@ -267,6 +267,30 @@ describe.skipIf(!engine || !ffmpeg)('智能体工具（真实引擎）', () => {
       return entries.length === 2 && entries.every((e) => e.source.projectId === null);
     });
 
+    // 从这部视频新开一条会话（`folderOf`，§3.10）：与它共用工作目录，打得开原来的视频；新建的视频记在原来那条会话的位置上，
+    // Space 不多出一个来源。
+    const { conversation: guestConversation } = await client.request('conversations.create', { folderOf: loose, title: '剪成短视频' });
+    expect(guestConversation).toMatchObject({ projectId: null, cwd: scratch, folderOf: loose });
+    const guest = guestConversation.id;
+    await client.request('conversations.send', { conversationId: guest, text: '切几段', commandId: newId('cmd') });
+    const guestSession = await until(() => driver.sessions[2]);
+    await until(() => guestSession.turnId);
+    const guestInspected = await tool(guestSession, 'videos_inspect', { video: looseCreated.body.videoId });
+    expect(guestInspected.isError, JSON.stringify(guestInspected.body)).toBe(false);
+    expect((await tool(guestSession, 'videos_list', {})).body.workspace).toBe(await fs.realpath(scratch));
+    const guestCreated = await tool(guestSession, 'videos_create', { name: '切片' });
+    expect(guestCreated.isError, JSON.stringify(guestCreated.body)).toBe(false);
+    await fs.access(path.join(scratch, guestCreated.body.video, 'video.db'));
+    expect((await client.request('conversations.get', { conversationId: guest })).items.find((i) => i.kind === 'video-created')).toMatchObject({
+      target: { conversationId: loose, path: guestCreated.body.video },
+    });
+    await until(async () => {
+      const entries = (await client.request('space.list', { kind: ['video'] })).entries;
+      return entries.filter((e) => e.source.conversationId === loose).length === 3 && !entries.some((e) => e.source.conversationId === guest);
+    });
+    // 回合结束、原生会话还闲着（它的智能体还开着视频）：放进项目时先关掉它，不算别处开着。
+    guestSession.finish();
+
     // 用户明确要建项目：projects_adopt_session 以最早建的视频命名，会话绑定到它，视频与文件搬进项目（智能体开着的先放下）。
     const adopted = await tool(looseSession, 'projects_adopt_session', {});
     expect(adopted.isError, JSON.stringify(adopted.body)).toBe(false);
@@ -285,6 +309,11 @@ describe.skipIf(!engine || !ffmpeg)('智能体工具（真实引擎）', () => {
       videoId: looseCreated.body.videoId,
       target: { projectId: boundProject.id, path: looseCreated.body.video },
     });
+    // 共用工作目录的会话跟着进了项目，卡片改指向项目。
+    const followed = await client.request('conversations.get', { conversationId: guest });
+    expect(followed.conversation).toMatchObject({ projectId: boundProject.id, cwd: boundProject.path });
+    expect(followed.conversation.folderOf).toBeUndefined();
+    expect(followed.items.find((i) => i.kind === 'video-created')).toMatchObject({ target: { projectId: boundProject.id, path: guestCreated.body.video } });
     // 再调一次原样返回；之后的新视频建在项目里。
     expect((await tool(looseSession, 'projects_adopt_session', {})).body).toMatchObject({ projectId: boundProject.id, created: false });
     const third = await tool(looseSession, 'videos_create', { name: '第三部' });
@@ -292,11 +321,11 @@ describe.skipIf(!engine || !ffmpeg)('智能体工具（真实引擎）', () => {
     expect(runtime.harness.listProjects()).toHaveLength(projectsBefore + 1);
     const listedBound = await tool(looseSession, 'videos_list', {});
     expect(listedBound.body.workspace).toBe(boundProject.path);
-    expect(listedBound.body.videos).toHaveLength(3);
+    expect(listedBound.body.videos).toHaveLength(4);
     // Space：视频条目在项目来源下，旧的会话来源没有了。
     await until(async () => {
       const entries = (await client.request('space.list', { kind: ['video'], projectId: boundProject.id })).entries;
-      return entries.length === 3 && entries.every((e) => e.source.projectId === boundProject.id && e.source.conversationId === null);
+      return entries.length === 4 && entries.every((e) => e.source.projectId === boundProject.id && e.source.conversationId === null);
     });
     // 回合结束：回合里指向项目的旧路径删掉。
     looseSession.finish();

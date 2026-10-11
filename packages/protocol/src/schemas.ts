@@ -744,6 +744,7 @@ export const methodParamSchemas = {
   'conversations.list': empty,
   'conversations.create': z.object({
     projectId: id.nullable().optional(),
+    folderOf: id.optional(),
     title: z.string().max(200).optional(),
     commandId: id.optional(),
     driverId: driverId.optional(),

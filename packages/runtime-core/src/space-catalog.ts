@@ -1010,6 +1010,8 @@ export class SpaceCatalog {
       this.#removeSource(`conv:${conversation.id}`);
       return false;
     }
+    // 共用另一条会话工作目录的：那条会话的来源已经列出这个目录。
+    if (conversation.folderOf) return false;
     return this.#addSource(
       {
         key: `conv:${conversation.id}`,
@@ -1241,7 +1243,7 @@ async function copyUnique(file: string, dir: string): Promise<string> {
 }
 
 function sourceKeyOf(conversation: Conversation): string {
-  return conversation.projectId ? `project:${conversation.projectId}` : `conv:${conversation.id}`;
+  return conversation.projectId ? `project:${conversation.projectId}` : `conv:${conversation.folderOf ?? conversation.id}`;
 }
 
 /** 条目 id 由来源与相对路径决定：重扫、重启都不变，用户标记才能跟得上。 */

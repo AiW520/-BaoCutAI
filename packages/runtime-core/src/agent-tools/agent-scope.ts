@@ -193,7 +193,7 @@ export class AgentScope implements ToolScope<AgentAccess> {
   recordChange(access: AgentAccess, change: VideoChange): void {
     const target =
       'conversationId' in change.target && !change.target.conversationId
-        ? { ...change.target, conversationId: access.conversation.id }
+        ? { ...change.target, conversationId: access.conversation.folderOf ?? access.conversation.id }
         : change.target;
     this.#harness.recordVideoChange(access.conversation.id, access.taskId, { ...change, target });
   }
@@ -202,7 +202,7 @@ export class AgentScope implements ToolScope<AgentAccess> {
   recordCreated(access: AgentAccess, created: VideoCreated): void {
     const target =
       'conversationId' in created.target && !created.target.conversationId
-        ? { ...created.target, conversationId: access.conversation.id }
+        ? { ...created.target, conversationId: access.conversation.folderOf ?? access.conversation.id }
         : created.target;
     this.#harness.recordVideoCreated(access.conversation.id, access.taskId, { ...created, target });
   }
@@ -318,13 +318,16 @@ export class AgentScope implements ToolScope<AgentAccess> {
     return { base: root, within: root, ownDefault: false };
   }
 
-  /** 会话的来源目录：所属项目的目录，或会话自己的工作目录。 */
+  /**
+   * 会话的来源目录：所属项目的目录，或会话自己的工作目录。共用另一条会话工作目录的（`folderOf`）范围记那条会话：视频与文件的位置、
+   * Space 的来源都是它的。
+   */
   source(conversation: Conversation): { root: string; scope: { projectId: Id } | { conversationId: Id } } {
     if (conversation.projectId) {
       const project = this.#harness.listProjects().find((p) => p.id === conversation.projectId);
       if (project) return { root: project.path, scope: { projectId: project.id } };
     }
-    return { root: conversation.cwd, scope: { conversationId: conversation.id } };
+    return { root: conversation.cwd, scope: { conversationId: conversation.folderOf ?? conversation.id } };
   }
 
   /**

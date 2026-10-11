@@ -462,7 +462,7 @@ export async function startRuntime(options: StartRuntimeOptions = {}): Promise<R
           .find((p) => p.id === conversation.projectId);
         if (project) return { root: project.path, scope: { projectId: project.id } };
       }
-      return { root: conversation.cwd, scope: { conversationId: conversation.id } };
+      return { root: conversation.cwd, scope: { conversationId: conversation.folderOf ?? conversation.id } };
     };
     const conversationRoot = (conversationId: Id) => conversationSource(conversationId).root;
     const models = await openModelJobs({

@@ -473,6 +473,103 @@ describe('无项目会话绑定项目', () => {
       vi.useRealTimers();
     }
   });
+
+  it('共用工作目录（folderOf）：新会话在那条会话的工作目录里；共用的总是自己有目录的那条；那条属于项目时建在项目里', async () => {
+    const owner = await harness.createConversation({ title: '原来的' });
+    const guest = await harness.createConversation({ title: '切片', folderOf: owner.id });
+    expect(guest).toMatchObject({ projectId: null, cwd: owner.cwd, folderOf: owner.id });
+    // 从共用的会话再开：还是共用最初那条。
+    expect(await harness.createConversation({ folderOf: guest.id })).toMatchObject({ cwd: owner.cwd, folderOf: owner.id });
+    expect(await exists(path.join(home.scratchDir, guest.id))).toBe(false);
+
+    const project = await harness.createProject({ name: '有项目的' });
+    const inProject = await harness.createConversation({ projectId: project.id });
+    const follower = await harness.createConversation({ folderOf: inProject.id });
+    expect(follower).toMatchObject({ projectId: project.id, cwd: project.path });
+    expect(follower.folderOf).toBeUndefined();
+
+    // 落盘：重启后还在。
+    await harness.shutdown();
+    harness = await open();
+    expect(harness.getConversation(guest.id).conversation).toMatchObject({ cwd: owner.cwd, folderOf: owner.id });
+  });
+
+  it('共用的会话放进项目：放进的是那条会话，共用它的一起进去，卡片改指向项目；删共用的会话不碰目录', async () => {
+    const owner = await harness.createConversation({ title: '原来的' });
+    await fakeVideo(path.join(owner.cwd, '访谈'));
+    const guest = await harness.createConversation({ title: '切片', folderOf: owner.id });
+    const other = await harness.createConversation({ title: '再切', folderOf: owner.id });
+    harness.recordVideoCreated(guest.id, null, {
+      videoId: 'vid_1',
+      videoName: '片段',
+      target: { conversationId: owner.id, path: '访谈 片段' },
+      videoRevision: '1',
+    });
+    await fakeVideo(path.join(owner.cwd, '访谈 片段'));
+
+    // 删掉一条共用的会话：目录与视频都在。
+    await harness.deleteConversation(other.id);
+    expect(await exists(path.join(owner.cwd, '访谈', 'video.db'))).toBe(true);
+
+    const project = await harness.ensureConversationProject(guest.id);
+    expect(project.name).toBe('访谈');
+    expect(harness.getConversation(owner.id).conversation).toMatchObject({ projectId: project.id, cwd: project.path });
+    const moved = harness.getConversation(guest.id);
+    expect(moved.conversation).toMatchObject({ projectId: project.id, cwd: project.path });
+    expect(moved.conversation.folderOf).toBeUndefined();
+    expect(moved.items.find((item) => item.kind === 'video-created')).toMatchObject({ target: { projectId: project.id, path: '访谈 片段' } });
+    expect(await exists(path.join(project.path, '访谈 片段', 'video.db'))).toBe(true);
+    expect(await exists(owner.cwd)).toBe(false);
+  });
+
+  it('删掉有别的会话共用目录的那条：先放进项目，共用它的跟着进去，目录不丢', async () => {
+    const owner = await harness.createConversation({ title: '原来的' });
+    await fs.writeFile(path.join(owner.cwd, 'notes.txt'), '笔记');
+    const guest = await harness.createConversation({ title: '切片', folderOf: owner.id });
+    await harness.deleteConversation(owner.id);
+    const { conversation } = harness.getConversation(guest.id);
+    expect(conversation.projectId).not.toBeNull();
+    expect(conversation.folderOf).toBeUndefined();
+    expect(await fs.readFile(path.join(conversation.cwd, 'notes.txt'), 'utf8')).toBe('笔记');
+  });
+
+  it('启动时跟上那条会话：它已经进了项目的一起进；它没了的，第一条接过目录，其余改共用它', async () => {
+    const owner = await harness.createConversation({ title: '原来的' });
+    await fakeVideo(path.join(owner.cwd, '访谈'));
+    const first = await harness.createConversation({ title: '一', folderOf: owner.id });
+    const second = await harness.createConversation({ title: '二', folderOf: owner.id });
+    const bound = await harness.createConversation({ title: '有项目的' });
+    const boundGuest = await harness.createConversation({ title: '跟着', folderOf: bound.id });
+    await harness.shutdown();
+    // 模拟崩溃留下的记录：那条会话的记录没了（删掉之后来不及改共用它的）；另一条进了项目、共用它的还没改。
+    await fs.rm(path.join(home.conversationsDir, `${owner.id}.jsonl`), { force: true });
+    harness = await open();
+    const project = await harness.ensureConversationProject(bound.id);
+    await harness.shutdown();
+    await rewriteGuest(boundGuest.id, bound.id);
+    harness = await open();
+    await harness.migrateScratch();
+
+    const a = harness.getConversation(first.id).conversation;
+    expect(a).toMatchObject({ cwd: path.join(home.scratchDir, first.id), projectId: null });
+    expect(a.folderOf).toBeUndefined();
+    expect(await exists(path.join(a.cwd, '访谈', 'video.db'))).toBe(true);
+    expect(harness.getConversation(second.id).conversation).toMatchObject({ cwd: a.cwd, folderOf: first.id });
+    const b = harness.getConversation(boundGuest.id).conversation;
+    expect(b).toMatchObject({ projectId: project.id, cwd: project.path });
+    expect(b.folderOf).toBeUndefined();
+  });
+
+  /** 把共用会话的记录改回「还没跟上」：仍共用 `ownerId`，工作目录是它的旧工作目录（模拟绑定后来不及改它就停了）。 */
+  async function rewriteGuest(guestId: string, ownerId: string): Promise<void> {
+    const file = path.join(home.conversationsDir, `${guestId}.jsonl`);
+    const lines = (await fs.readFile(file, 'utf8')).split('\n').filter(Boolean).map((line) => JSON.parse(line));
+    for (const line of lines) {
+      const conversation = line.snapshot?.conversation ?? line.conversation;
+      if (conversation) Object.assign(conversation, { projectId: null, cwd: path.join(home.scratchDir, ownerId), folderOf: ownerId });
+    }
+    await fs.writeFile(file, lines.map((line) => JSON.stringify(line)).join('\n') + '\n');
+  }
 });
 
 describe('幻灯片回执', () => {

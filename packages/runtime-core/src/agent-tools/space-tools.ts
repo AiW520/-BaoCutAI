@@ -158,7 +158,7 @@ export class SpaceTools implements ToolSet {
     if (access.principal.kind === 'local') return USER_VIEWER;
     if (access.principal.kind === 'agent') {
       const { conversation } = access as AgentAccess;
-      return { kind: 'source', projectId: conversation.projectId ?? null, conversationId: conversation.id };
+      return { kind: 'source', projectId: conversation.projectId ?? null, conversationId: conversation.folderOf ?? conversation.id };
     }
     const { policy } = access as ServiceAccess;
     const records = new Map(this.#deps.jobs.list().map((r) => [r.jobId, r]));

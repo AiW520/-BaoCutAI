@@ -41,7 +41,7 @@ export async function continueInConversation(
   let created = false;
   if (params.conversationId) {
     conversation = harness.getConversation(params.conversationId).conversation;
-    if (!visibleTo({ kind: 'source', projectId: conversation.projectId, conversationId: conversation.id }, entry)) {
+    if (!visibleTo({ kind: 'source', projectId: conversation.projectId, conversationId: conversation.folderOf ?? conversation.id }, entry)) {
       throw new RpcError('conflict', RcSpace.conversationCantSee(), {
         code: 'SPACE_CONVERSATION_MISMATCH',
       });

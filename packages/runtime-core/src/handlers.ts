@@ -143,7 +143,8 @@ export function locateFileTarget(
   if ('entryId' in target) return space.locate(target.entryId);
   if ('conversationId' in target) {
     const { conversation } = harness.getConversation(target.conversationId);
-    return { root: conversation.cwd, file: target.path, scope: { conversationId: conversation.id } };
+    // 共用另一条会话工作目录的会话：位置记那条会话（与 AgentScope.source 相同）。
+    return { root: conversation.cwd, file: target.path, scope: { conversationId: conversation.folderOf ?? conversation.id } };
   }
   const project = harness.listProjects().find((p) => p.id === target.projectId);
   if (!project) throw new RpcError('not-found', RcRuntime.projectNotFound());
