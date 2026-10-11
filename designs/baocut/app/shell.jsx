@@ -444,17 +444,7 @@
                 ))}
               </div>
             </div>
-            {SURF.pages ? (
-              <div className="tweaks__sec">
-                <div className="tweaks__lb">模型目录环境变量<em>设置 › 本地模型 › 模型目录；设了以后入口只读（architecture-design §6.3）</em></div>
-                <div className="tweaks__rad">
-                  {[[null, '未设置'], ['/Volumes/ExtremeSSD/BaoCut/models', 'BAOCUT_MODELS_DIR']].map(([v, l]) => (
-                    <BCAction key={l} className={cx('tweaks__opt', (app.prefs.modelsDirEnv || null) === v && 'is-on')}
-                      onClick={() => app.setPref('modelsDirEnv', v)}>{l}</BCAction>
-                  ))}
-                </div>
-              </div>
-            ) : null}
+            {SURF.pages && window.ModelEnvTweaks ? <window.ModelEnvTweaks /> : null}
             {window.LegacyImportTweaks ? <window.LegacyImportTweaks onLaunch={() => setOpen(false)} /> : null}
             {SURF.pages && window.BC_LOCALCHECK ? (
               <div className="tweaks__sec">

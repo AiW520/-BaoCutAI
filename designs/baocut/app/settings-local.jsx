@@ -261,6 +261,67 @@
     </R.Disclosure>;
   }
 
+  /* 下载来源（architecture-design §6.3「来源」、§5.10 `models.downloadEndpoint`）：Hugging Face / ModelScope / 自定义，
+     判断在 BC_LOCALMODELS。各能力页共用一个设置，存 prefs.modelsEndpoint（null 是 Hugging Face）。选「自定义」先出基址框，
+     填好保存才改用它；原型开关里设了 BAOCUT_MODELS_ENDPOINT 时只读。 */
+  function SourceRow() {
+    const app = useApp();
+    const Row = window.ShellRow;
+    const saved = app.prefs.modelsEndpoint || null;
+    const eff = LM.effectiveSource(app.prefs.modelsEndpointEnv, saved);
+    const [pop, setPop] = useState(false);
+    const [custom, setCustom] = useState(false);   // 选了「自定义」、还没保存
+    const [draft, setDraft] = useState(null);
+    const picked = custom && !eff.locked ? 'custom' : eff.id;
+    const cur = LM.SOURCES.find((s) => s.id === picked);
+    const shown = draft != null ? draft : (LM.sourceOf(saved) === 'custom' ? saved : '');
+    const err = LM.endpointError(shown);
+    const next = shown.trim().replace(/\/+$/, '');
+    const choose = (s) => {
+      setPop(false);
+      if (s.id === 'custom') { setCustom(true); return; }
+      setCustom(false);
+      setDraft(null);
+      if (s.id === eff.id) return;
+      app.setPref('modelsEndpoint', s.endpoint);
+      app.toast(`下载来源已改为 ${s.name}`, 'positive');
+    };
+    const save = () => {
+      app.setPref('modelsEndpoint', next);
+      setCustom(false);
+      setDraft(null);
+      app.toast(`下载来源已改为 ${next}`, 'positive');
+    };
+    // 说明只留一句短的，选择器才不会被挤到下一行；长的补充放在下面整行
+    const notes = [
+      cur.note,
+      eff.locked ? LM.sourceNote() : null,
+      picked === 'custom' && eff.id !== 'custom' ? `填好地址并保存后改用它；现在仍从 ${eff.label} 下载。` : null,
+    ].filter(Boolean);
+    return (
+      <Row label="下载来源" desc={cur.desc} mono={eff.locked && eff.id === 'custom' ? eff.endpoint : null}>
+        {eff.locked ? <Chip tone="notice">环境变量</Chip> : null}
+        <Picker size="s" value={cur.name} disabled={eff.locked} open={pop} popAlign="right" popWidth={260}
+          onClick={() => setPop(!pop)} onClose={() => setPop(false)}>
+          <Menu>
+            {LM.SOURCES.map((s) => <MenuItem key={s.id} label={s.name} sub={s.sub} on={s.id === picked} onClick={() => choose(s)} />)}
+          </Menu>
+        </Picker>
+        {notes.length ? <p className="lmsrc__note t-detail-xs">{notes.join(' ')}</p> : null}
+        {picked === 'custom' && !eff.locked ? (
+          <div className="lmsrc">
+            <div className="lmsrc__field">
+              <Field size="s" aria-label="镜像的基址" placeholder="https://mirror.example.com" value={shown} invalid={!!err}
+                onChange={(e) => setDraft(e.target.value)} />
+              {err ? <span className="lmsrc__err">{err}</span> : null}
+            </div>
+            <Btn variant="secondary" size="s" disabled={!next || !!err || next === saved} onClick={save}>保存</Btn>
+          </div>
+        ) : null}
+      </Row>
+    );
+  }
+
   /* hideDefault：能力页（settings-capability.jsx）用统一的默认模型选择器，这里不再给本机的默认行 */
   function LocalModelsSection({tab, hideDefault}) {
     const app = useApp();
@@ -277,7 +338,6 @@
       });
       return t;
     });
-    const [src, setSrc] = useState('auto');
     const [storageOpen, setStorageOpen] = useState(false);
     const [sharedOpen, setSharedOpen] = useState(null);
     const [pop, setPop] = useState(null);
@@ -313,7 +373,6 @@
     const catalog = LM.catalog(models, comps, on, cat);
     const sharedExpanded = sharedOpen ?? catalog.repair.length > 0;
     const lay = LM.layout(models, comps, cat);
-    const cur = D.setSources.find((s) => s.id === src);
     const installed = LM.defaultChoices(models, comps, on, cat);
     const view = LM.defaultView(cat, dflt, cloudName, installed);
 
@@ -396,19 +455,10 @@
           expanded={sharedExpanded} onToggle={() => setSharedOpen(!sharedExpanded)}>
           <SharedCard shared={lay.shared} models={models.filter((m) => LM.catOf(m) === cat)} comps={comps} on={on} dl={dl} onGet={getComp} />
         </ModelDisclosure>}
-        <ModelDisclosure label="下载与存储" summary={`已用 ${mb(LM.disk(models, comps, on))}`}
+        <ModelDisclosure label="下载与存储"
+          summary={`已用 ${mb(LM.disk(models, comps, on))} · ${LM.effectiveSource(app.prefs.modelsEndpointEnv, app.prefs.modelsEndpoint).label}`}
           expanded={storageOpen} onToggle={() => setStorageOpen(!storageOpen)}>
-          <Row label="下载源" desc={src === 'auto' ? '自动挑中了 Hugging Face，之后会粘住它。' : cur.desc}>
-            <Picker size="s" value={cur.name} open={pop === 's'} popAlign="right" popWidth={240}
-              onClick={() => setPop(pop === 's' ? null : 's')} onClose={() => setPop(null)}>
-              <Menu>
-                {D.setSources.map((s) => (
-                  <MenuItem key={s.id} label={s.name} sub={s.desc} on={s.id === src}
-                    onClick={() => { setSrc(s.id); setPop(null); }} />
-                ))}
-              </Menu>
-            </Picker>
-          </Row>
+          <SourceRow />
           <Row label="盘上合计"
             desc={LM.CATS.map((c) => `${c.title} ${mb(LM.disk(models, comps, on, c.k))}`).join(' · ')}>
             <span className="t-mono t-detail">{mb(LM.disk(models, comps, on))}</span>

@@ -249,7 +249,7 @@
                         );
                       })}
                       <MenuRule />
-                      <MenuItem icon="settings" label="管理本地模型…" sub="检查 · 依赖 · 删除 · 下载源"
+                      <MenuItem icon="settings" label="管理本地模型…" sub="检查 · 依赖 · 删除 · 下载来源"
                         onClick={() => { setPop(false); app.go({r: 'settings', sec: 'local'}); }} />
                     </Menu>
                   </Picker>

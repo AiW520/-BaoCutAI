@@ -191,9 +191,61 @@
     return lines;
   }
 
+  /* 下载来源（architecture-design §6.3「来源」、§5.10 `models.downloadEndpoint`）：设置里存的是一个基址，null 是 Hugging Face。
+     选择器只是这个基址的三种写法：Hugging Face（null）、ModelScope（主机是 modelscope.cn 时，存 https://www.modelscope.cn）、
+     自定义（别的基址）。环境变量 BAOCUT_MODELS_ENDPOINT 优先于设置，这时只显示、不能改（同模型目录，product-design §7.6）。 */
+  const HF_ENDPOINT = 'https://huggingface.co';
+  const MS_ENDPOINT = 'https://www.modelscope.cn';
+  const ENDPOINT_ENV = 'BAOCUT_MODELS_ENDPOINT';
+  const SOURCES = [
+    {id: 'hf', name: 'Hugging Face', sub: 'huggingface.co · 默认', endpoint: null,
+     desc: '从 Hugging Face（huggingface.co）下载。'},
+    {id: 'ms', name: 'ModelScope', sub: 'modelscope.cn · 中国大陆通常更快', endpoint: MS_ENDPOINT,
+     desc: '从 ModelScope（modelscope.cn）下载，中国大陆通常更快。',
+     note: 'ModelScope 上没有的少数文件（whisper.cpp、GPT-SoVITS）仍从 Hugging Face 下载；每个文件都按内置的校验值核对。'},
+    {id: 'custom', name: '自定义', sub: '填镜像的基址', endpoint: null,
+     desc: '从镜像下载，文件按 Hugging Face 的路径提供。'},
+  ];
+  const trimSlash = (v) => String(v || '').trim().replace(/\/+$/, '');
+
+  /** 基址属于哪一种来源：空或 Hugging Face 是 hf，主机是 modelscope.cn 的是 ms，其余是 custom */
+  function sourceOf(endpoint) {
+    const v = trimSlash(endpoint);
+    if (!v || v === HF_ENDPOINT) return 'hf';
+    try {
+      if (['modelscope.cn', 'www.modelscope.cn'].indexOf(new URL(v).hostname) >= 0) return 'ms';
+    } catch (e) { /* 不是地址的按自定义算 */ }
+    return 'custom';
+  }
+
+  /** 自定义基址的问题；null 表示可以保存（空的也是 null，界面上不让存空的）。规则同 Runtime 的 validEndpoint */
+  function endpointError(value) {
+    const v = String(value || '').trim();
+    if (!v) return null;
+    let u;
+    try { u = new URL(v); } catch (e) { return '不是有效的地址'; }
+    if (u.protocol !== 'https:' && u.protocol !== 'http:') return '只接受 http:// 或 https:// 开头的地址';
+    if (u.username || u.password) return '地址里不能带账号或密码';
+    if (u.search || u.hash) return '地址里不能带查询参数或 #';
+    return null;
+  }
+
+  /** 生效的来源：环境变量 > 设置 > Hugging Face。`label` 是折叠标题旁的短名（自定义显示主机名） */
+  function effectiveSource(env, pref) {
+    const endpoint = trimSlash(env || pref) || null;
+    const id = sourceOf(endpoint);
+    const src = SOURCES.find((s) => s.id === id);
+    let label = src.name;
+    if (id === 'custom') { try { label = new URL(endpoint).host; } catch (e) { label = endpoint; } }
+    return {id, endpoint, label, locked: !!trimSlash(env), source: trimSlash(env) ? 'env' : endpoint ? 'setting' : 'default'};
+  }
+
+  const sourceNote = () => `由环境变量 ${ENDPOINT_ENV} 指定，要改请改环境变量并重启 BaoCut。`;
+
   const BC_LOCALMODELS = {
     CATS, DEFAULT_DESC, hasAuto, defaultView, defaultChoices, visionDefaultName, catOf, mb, usersOf, layout, catalog, missing, ready, half, needSize, disk, compUsage,
     compAction, removal, removalBody, applyRemove, applyInstall, initial, licenseLines,
+    HF_ENDPOINT, MS_ENDPOINT, ENDPOINT_ENV, SOURCES, sourceOf, endpointError, effectiveSource, sourceNote,
   };
   if (typeof module !== 'undefined') module.exports = BC_LOCALMODELS;
   if (typeof window !== 'undefined') Object.assign(window, {BC_LOCALMODELS});

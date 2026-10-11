@@ -2300,13 +2300,6 @@
     {id: 'indextts-aux', name: 'IndexTTS2 辅助件', size: 1400, installed: false, repo: 'aufklarer/IndexTTS2-MLX-fp16',
      desc: 'w2v-BERT · CAM++ · BigVGAN · 情绪特征表'},
   ];
-  const setSources = [
-    {id: 'auto', name: '自动', desc: '按当前网络挑最快的镜像（现在粘在 Hugging Face）'},
-    {id: 'hf', name: 'Hugging Face', desc: 'huggingface.co'},
-    {id: 'ms', name: 'ModelScope', desc: 'modelscope.cn · 国内通常更快'},
-    {id: 'cdn', name: 'BaoCut CDN', desc: 'cdn.baocut.app'},
-    {id: 'custom', name: '自定义…', desc: '填一个镜像地址'},
-  ];
   const setShortcuts = [
     {grp: '全局', rows: [['新建视频', '⌘N'], ['设置…', '⌘,'], ['显示/隐藏侧边栏', '⌃⌘S']]},
     {grp: '导航', rows: [['后退', '⌘['], ['前进', '⌘]'], ['Space', '⇧⌘H'], ['后台任务', '⇧⌘B']]},
@@ -2990,7 +2983,7 @@
     tasks, modelActivity, rail, ratios, speeds, zoomMenu, BADGE, app,
     glossary,
     subtitle, fonts, translate, sources, brand, agent, remote, services, skill,
-    setModels, setComponents, setSources, setShortcuts, setCrashes,
+    setModels, setComponents, setShortcuts, setCrashes,
     canvasStyle, templateItems, elementSpecs,
     textCats, textPresets, textAnims, textStylePresets,
     entries, cutSuggestions,

@@ -169,5 +169,27 @@
     );
   }
 
-  Object.assign(window, {ModelsDirCard});
+  /* 原型开关（shell.jsx 的「原型开关」里画）：本地模型的两个环境变量。设了以后对应的入口只读（architecture-design §6.3）。 */
+  const ENV_TWEAKS = [
+    {pref: 'modelsDirEnv', label: '模型目录环境变量', where: '设置 › 本地模型 › 模型目录',
+     opts: [[null, '未设置'], ['/Volumes/ExtremeSSD/BaoCut/models', 'BAOCUT_MODELS_DIR']]},
+    {pref: 'modelsEndpointEnv', label: '模型下载来源环境变量', where: '设置 › 本地模型 › 下载与存储 › 下载来源',
+     opts: [[null, '未设置'], [LM.MS_ENDPOINT, `${LM.ENDPOINT_ENV}=${LM.MS_ENDPOINT}`]]},
+  ];
+  function ModelEnvTweaks() {
+    const app = useApp();
+    return ENV_TWEAKS.map((t) => (
+      <div className="tweaks__sec" key={t.pref}>
+        <div className="tweaks__lb">{t.label}<em>{t.where}；设了以后入口只读（architecture-design §6.3）</em></div>
+        <div className="tweaks__rad">
+          {t.opts.map(([v, l]) => (
+            <BCAction key={l} className={cx('tweaks__opt', (app.prefs[t.pref] || null) === v && 'is-on')}
+              onClick={() => app.setPref(t.pref, v)}>{l}</BCAction>
+          ))}
+        </div>
+      </div>
+    ));
+  }
+
+  Object.assign(window, {ModelsDirCard, ModelEnvTweaks});
 })();
