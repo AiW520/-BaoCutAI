@@ -285,7 +285,7 @@ export interface VideoCreated {
 /**
  * `videos.derive`（工具 `videos_derive`，架构设计 §3.5「派生子视频」）：复制父视频（时间线与文稿），把剪辑后时间线
  * `[start, end)`（秒）之外的部分用剪口剪掉，建在父视频旁边；子视频里恢复剪口就能把片段往外扩。区间先对到帧（起点向下、终点向上取整；取整越过句间停顿、吃进相邻句子的词时反向取整，结果的 `range` 是实际采用的区间）。`width`、`height` 缺省沿用父视频的画布；
- * `fit`、`crop` 给了时写到每个视频片段上；`captions`、`translations`、`chapters` 缺省都开。
+ * `fit`、`crop` 给了时写到每个视频片段上；`crops` 按镜头分段取景（见字段）；`captions`、`translations`、`chapters` 缺省都开。
  */
 export interface VideoDeriveParams {
   videoId: Id;
@@ -297,6 +297,12 @@ export interface VideoDeriveParams {
   height?: number;
   fit?: 'cover' | 'contain';
   crop?: { left: number; top: number; right: number; bottom: number };
+  /**
+   * 按镜头分段取景：父视频剪辑后时间线上的 `[from, to)` 秒（与 `start`、`end` 同一个时钟）各用一份裁剪，最多 64 段、互不重叠。
+   * 各段的起止就近对到帧、截到区间（截过或丢掉的以 `crops-adjusted` 说明）；主素材的视频片段在取景变化处拆开，各段带自己的
+   * 裁剪。没盖住的地方用 `crop`。给了才参与幂等键。
+   */
+  crops?: VideoDeriveCrop[];
   captions?: boolean;
   translations?: boolean;
   chapters?: boolean;
@@ -308,9 +314,21 @@ export interface VideoDeriveParams {
   notes?: string[];
 }
 
+/** 一段取景：时间线上的 `[from, to)` 秒与四边各裁掉的比例（同 `crop`）。 */
+export interface VideoDeriveCrop {
+  from: number;
+  to: number;
+  left: number;
+  top: number;
+  right: number;
+  bottom: number;
+}
+
 /**
  * 派生时丢掉、改动或没做到的东西（架构设计 §3.5「派生子视频」）。`translations-skipped`：父视频的一份译文没能复制
- * （`documentId` 是父视频里的译文；正文既不是 `baocut.translation/2`，旧项目的 `/1` 也换不过去）。
+ * （`documentId` 是父视频里的译文；正文既不是 `baocut.translation/2`，旧项目的 `/1` 也换不过去）。`crops-adjusted`：
+ * 分段取景有 `count` 段截到了区间或截完为空丢掉。`animation-split`：拆开的片段（`itemId`，父视频里的）有循环动画或音量包络，
+ * 拆开后每段从头算。
  */
 export type VideoDeriveWarningCode =
   | 'anchor-dropped'
@@ -320,7 +338,9 @@ export type VideoDeriveWarningCode =
   | 'range-not-exact'
   | 'items-not-restorable'
   | 'captions-skipped'
-  | 'translations-skipped';
+  | 'translations-skipped'
+  | 'crops-adjusted'
+  | 'animation-split';
 
 export interface VideoDeriveResult {
   /** 子视频：与 `videos_create` 的 `video-created` 同一个写法。 */
@@ -335,7 +355,10 @@ export interface VideoDeriveResult {
   primaryAssetId: Id | null;
   /** 区间之外记下的剪口：主素材源时钟上的秒（父视频的素材 ID）。在子视频里恢复它们就回到父视频的全貌。 */
   cuts: { assetId: Id; from: number; to: number }[];
+  /** 复制的片段数；分段取景拆开的片段按段数算。 */
   itemCount: number;
+  /** 实际采用的分段取景：对到帧、截到区间之后的各段（父视频剪辑后时间线上的秒）。给了 `crops` 才有。 */
+  framing?: VideoDeriveCrop[];
   /** 子视频里的派生来源文档（`kind: 'derivation'`）。 */
   derivationDocumentId: Id | null;
   /**

@@ -60,7 +60,9 @@ export type DeriveWarningCode =
   | 'multiple-assets'
   | 'range-not-exact'
   | 'items-not-restorable'
-  | 'translations-skipped';
+  | 'translations-skipped'
+  | 'crops-adjusted'
+  | 'animation-split';
 
 export interface DeriveWarning {
   code: DeriveWarningCode;
@@ -68,7 +70,10 @@ export interface DeriveWarning {
   assetId?: Id;
   /** `translations-skipped`：没能复制的那份译文（父视频里的 ID）。 */
   documentId?: Id;
-  /** `range-not-exact`：区间之外没能剪掉的帧数；`items-not-restorable`：会被剪口删掉的实例数；`multiple-assets`：媒体素材数。 */
+  /**
+   * `range-not-exact`：区间之外没能剪掉的帧数；`items-not-restorable`：会被剪口删掉的实例数；`multiple-assets`：媒体素材数；
+   * `crops-adjusted`：截到区间、或截完为空丢掉的分段取景数。
+   */
   count?: number;
 }
 
@@ -80,6 +85,25 @@ export interface DeriveSettings {
   captions: boolean;
   translations: boolean;
   chapters: boolean;
+  /**
+   * 分段取景（按镜头）：父视频剪辑后时间线上的 `[from, to)` 秒各用一份裁剪。已对到帧、截到区间、按 from 排好；调用方给了
+   * `crops` 才有（截完可能是空数组），没给时省略，幂等键也不算它。没盖住的地方用 `crop`。
+   */
+  crops?: CropShot[];
+}
+
+/** 一段取景：时间线上的 `[from, to)` 秒与这段的裁剪（四边比例，同 `Crop`）。 */
+export interface CropShot extends Crop {
+  from: number;
+  to: number;
+}
+
+/** 分段取景在主素材源时钟上的样子（派生来源文档的 `framing`），供以后恢复剪口时按镜头补拆。 */
+export interface DerivationFraming {
+  /** 主素材（父视频里的 ID）。 */
+  assetId: Id;
+  /** 区间里主素材的每一段：源时钟上的 `[from, to)` 秒与它用的裁剪（没有裁剪时 null）。 */
+  shots: { from: number; to: number; crop: Crop | null }[];
 }
 
 /** 对到帧之后的区间：帧号与秒（`[start, end)`）。 */
@@ -107,6 +131,8 @@ export interface DerivationBody {
   primaryAssetId: Id | null;
   cuts: DerivedCut[];
   settings: DeriveSettings;
+  /** 分段取景（`settings.crops`）落在主素材源时钟上的样子；给了 `crops` 且有主素材时才有。 */
+  framing?: DerivationFraming;
   key: string;
   /** 开头一句、为什么挑它、提示牌（剪成短视频的结果页卡片）：调用方给了才有，不参与幂等键。 */
   hook?: string;
@@ -203,6 +229,8 @@ export interface DerivationInput {
   labels: { derivationName: string };
   /** 调用方附上的说明；空的不写。 */
   pick?: DerivePick;
+  /** `alignCrops` 截掉或丢掉的分段数：大于 0 时以 `crops-adjusted` 说明。 */
+  cropsAdjusted?: number;
 }
 
 /** 说明里非空的那几项（去掉首尾空白；空的提示牌不要）。 */
@@ -347,9 +375,41 @@ export function derivationKey(input: {
       captions: s.captions,
       translations: s.translations,
       chapters: s.chapters,
+      // 只在给了分段取景时才算进来：老调用的键不变。
+      ...(s.crops ? { crops: s.crops.map((c) => [c.from, c.to, c.left, c.top, c.right, c.bottom]) } : {}),
     },
   });
   return createHash('sha256').update(canonical).digest('hex').slice(0, 12);
+}
+
+/**
+ * 分段取景对到帧：每段的起止就近取整到帧（正好在两帧中间时取早的），截到对齐后的区间 `[S, E)`，按 from 排好。被截过的、
+ * 截完为空丢掉的段数记在 `adjusted`（结果以 `crops-adjusted` 说明）。调用方保证各段按秒不重叠（参数校验）。
+ */
+export function alignCrops(sequence: Sequence, range: AlignedRange, crops: readonly CropShot[]): { crops: CropShot[]; adjusted: number } {
+  const fps = sequence.fps;
+  const toFrame = (seconds: number) => Math.ceil((seconds * fps.num) / fps.den - 0.5 - 1e-9);
+  const out: CropShot[] = [];
+  let adjusted = 0;
+  let previous = range.startFrame;
+  for (const shot of [...crops].sort((x, y) => x.from - y.from)) {
+    const rawFrom = toFrame(shot.from);
+    const rawTo = toFrame(shot.to);
+    const from = Math.max(rawFrom, range.startFrame, previous);
+    const to = Math.min(rawTo, range.endFrame);
+    if (from !== rawFrom || to !== rawTo || to <= from) adjusted++;
+    if (to <= from) continue;
+    previous = to;
+    out.push({
+      from: toNumber(frames(from, fps)),
+      to: toNumber(frames(to, fps)),
+      left: shot.left,
+      top: shot.top,
+      right: shot.right,
+      bottom: shot.bottom,
+    });
+  }
+  return { crops: out, adjusted };
 }
 
 // ---- 复制哪些实例 ----
@@ -408,6 +468,117 @@ function itemInput(item: SequenceItem, settings: DeriveSettings, warnings: Deriv
     if (settings.crop) input.crop = settings.crop;
   }
   return input;
+}
+
+// ---- 分段取景：把主素材的视频实例在镜头边界上拆开 ----
+
+/** 对到帧的一段取景。 */
+interface FrameShot {
+  fromFrame: number;
+  toFrame: number;
+  crop: Crop;
+}
+
+const cropOf = (c: Crop): Crop => ({ left: c.left, top: c.top, right: c.right, bottom: c.bottom });
+const sameCrop = (a: Crop | null, b: Crop | null): boolean =>
+  a === b || (!!a && !!b && a.left === b.left && a.top === b.top && a.right === b.right && a.bottom === b.bottom);
+
+function mediaTime(value: Q): MediaTime {
+  if (value.d > BigInt(Number.MAX_SAFE_INTEGER)) throw new Error('sourceIn timescale overflow');
+  return { ticks: value.n.toString(), timescale: Number(value.d) };
+}
+
+/** 时间线上帧号与取景的对应：区间之前的帧跟区间第一帧，之后的跟最后一帧；没有段盖住的帧是 null（用缺省裁剪）。 */
+class Framing {
+  readonly shots: FrameShot[];
+  readonly #range: AlignedRange;
+  /** 取景变化的帧（严格在区间里面）：主素材的实例在这些帧上拆开。 */
+  readonly splits: number[];
+
+  constructor(fps: Rate, range: AlignedRange, crops: readonly CropShot[]) {
+    this.#range = range;
+    this.shots = crops.map((c) => ({
+      fromFrame: Math.round((c.from * fps.num) / fps.den),
+      toFrame: Math.round((c.to * fps.num) / fps.den),
+      crop: cropOf(c),
+    }));
+    const candidates = [...new Set(this.shots.flatMap((s) => [s.fromFrame, s.toFrame]))]
+      .filter((f) => f > range.startFrame && f < range.endFrame)
+      .sort((a, b) => a - b);
+    this.splits = candidates.filter((f) => !sameCrop(this.at(f - 1), this.at(f)));
+  }
+
+  at(frame: number): Crop | null {
+    const f = Math.min(Math.max(frame, this.#range.startFrame), this.#range.endFrame - 1);
+    return this.shots.find((s) => s.fromFrame <= f && f < s.toFrame)?.crop ?? null;
+  }
+}
+
+/**
+ * 一个视频实例按分段取景复制成的条目：主素材（正速率线性源时钟）的实例在取景变化的帧上拆成几段，`sourceIn` 用有理数精确算
+ * （以后两段的裁剪改成一样时能按源连续合并）；入场动画只留第一段、出场只留最后一段，内嵌音频的淡入只留第一段、淡出只留
+ * 最后一段，循环动画与音量包络每段从头算（`animation-split`）。别的视频实例不拆，整段取它在区间里中间那一帧的取景。
+ * 没有段盖住的地方用缺省裁剪（`crop` 设置，否则实例原来的）。`shots` 收区间里主素材各段的源区间与裁剪。
+ */
+function framedEntries(
+  item: SequenceItem,
+  entry: Record<string, unknown>,
+  context: { fps: Rate; range: AlignedRange; framing: Framing; primary: Id | null; warnings: DeriveWarning[]; shots: DerivationFraming['shots'] },
+): Record<string, unknown>[] {
+  if (item.type !== 'video') return [entry];
+  const { fps, range, framing } = context;
+  const fallback = (entry.crop as Crop | undefined) ?? null;
+  const cropAt = (frame: number): Crop | null => framing.at(frame) ?? fallback;
+  const withCrop = (e: Record<string, unknown>, crop: Crop | null) => {
+    const out = { ...e };
+    if (crop) out.crop = cropOf(crop);
+    else delete out.crop;
+    return out;
+  };
+  const a = item.span.fromFrame;
+  const b = a + item.span.durationFrames;
+  const piece = mediaPiece(item, fps);
+  if (!piece || piece === 'unsupported' || piece.assetId !== context.primary) {
+    const lo = Math.max(a, range.startFrame);
+    const hi = Math.min(b, range.endFrame);
+    return [withCrop(entry, cropAt(lo < hi ? Math.floor((lo + hi - 1) / 2) : a))];
+  }
+  const bounds = [a, ...framing.splits.filter((f) => f > a && f < b), b];
+  const last = bounds.length - 2;
+  const kept: Interval = { start: frames(range.startFrame, fps), end: frames(range.endFrame, fps) };
+  const animate = item.animate;
+  const audio = item.embeddedAudio;
+  if (last > 0 && (animate?.loop || audio.envelope?.length)) context.warnings.push({ code: 'animation-split', itemId: item.id });
+  const out: Record<string, unknown>[] = [];
+  for (let n = 0; n <= last; n++) {
+    const from = bounds[n]!;
+    const to = bounds[n + 1]!;
+    const crop = cropAt(from);
+    const e: Record<string, unknown> = { ...entry, span: { fromFrame: from, durationFrames: to - from } };
+    if (n > 0 && item.timeMap.kind === 'linear') {
+      e.timeMap = { ...item.timeMap, sourceIn: mediaTime(add(piece.sourceIn, mul(sub(frames(from, fps), piece.a), piece.rate))) };
+    }
+    if (last > 0) {
+      if (animate) {
+        const slots = { ...animate };
+        if (n > 0) delete slots.enter;
+        if (n < last) delete slots.exit;
+        if (Object.keys(slots).length) e.animate = slots;
+        else delete e.animate;
+      }
+      const sound = { ...audio };
+      if (n > 0) delete sound.fadeIn;
+      if (n < last) delete sound.fadeOut;
+      e.embeddedAudio = sound;
+    }
+    const part = intersect({ start: frames(from, fps), end: frames(to, fps) }, kept);
+    if (part) {
+      const source = toSource(piece, part);
+      context.shots.push({ from: toNumber(source.start), to: toNumber(source.end), crop: crop ? cropOf(crop) : null });
+    }
+    out.push(withCrop(e, crop));
+  }
+  return out;
 }
 
 // ---- 区间之外的剪口 ----
@@ -743,16 +914,39 @@ export function planDerivation(input: DerivationInput): DerivationPlan {
     });
   }
 
-  // 实例：整条时间线，不平移、不截断。
+  // 区间之外的剪口（主素材也决定分段取景拆哪些实例）。
+  const durationOf = (assetId: Id): Q | null => {
+    const record = snapshot.assets[assetId];
+    const duration = record?.revisions[record.currentRevision]?.duration;
+    return duration ? time(duration) : null;
+  };
+  const cutPlan = planCuts(sequence, items, range, durationOf);
+
+  // 实例：整条时间线，不平移、不截断。给了分段取景时主素材的视频实例在取景变化的帧上拆开（`framedEntries`），
+  // 一个父实例对应子视频里的几段（`piecesOf`，按时间排好）。
   const inserted: Record<string, unknown>[] = [];
-  const locatorOf = new Map<Id, ItemLocator>();
+  const piecesOf = new Map<Id, ItemLocator[]>();
+  const framing = settings.crops ? new Framing(sequence.fps, range, settings.crops) : null;
+  const framingShots: DerivationFraming['shots'] = [];
+  if (input.cropsAdjusted) warnings.push({ code: 'crops-adjusted', count: input.cropsAdjusted });
   for (const item of items) {
     const track = trackTargets.get(item.trackId)!;
     const entry: Record<string, unknown> = { ...itemInput(item, settings, warnings), ...track };
     const asset = itemAssetRef(item);
     if (asset) entry.assetImportRef = importRefs.get(assetFileKey(asset));
-    inserted.push(entry);
-    locatorOf.set(item.id, { track, type: item.type, position: positionOf(item) });
+    const entries = framing
+      ? framedEntries(item, entry, { fps: sequence.fps, range, framing, primary: cutPlan.primaryAssetId, warnings, shots: framingShots })
+      : [entry];
+    inserted.push(...entries);
+    piecesOf.set(
+      item.id,
+      entries.length > 1
+        ? entries.map((e) => {
+            const span = e.span as { fromFrame: number; durationFrames: number };
+            return { track, type: item.type, position: `v:${span.fromFrame}:${span.durationFrames}` };
+          })
+        : [{ track, type: item.type, position: positionOf(item) }],
+    );
   }
   if (inserted.length) operations.push({ type: 'insertItems', sequenceId: target.sequenceId, items: inserted as never });
   if (sequence.animationBindings.length) warnings.push({ code: 'animation-bindings-dropped' });
@@ -771,11 +965,11 @@ export function planDerivation(input: DerivationInput): DerivationPlan {
     operations.push({ type: 'updateSequence', sequenceId: target.sequenceId, background: sequence.canvas.background });
   }
 
-  // 转场：两侧都复制了，收尾时按位置找回实例。
+  // 转场：两侧都复制了，收尾时按位置找回实例。拆开的实例在左侧时接最后一段，在右侧时接第一段。
   const transitions: PlannedTransition[] = [];
   for (const t of sequence.transitions) {
-    const left = t.leftItemId !== undefined ? locatorOf.get(t.leftItemId) : undefined;
-    const right = t.rightItemId !== undefined ? locatorOf.get(t.rightItemId) : undefined;
+    const left = t.leftItemId !== undefined ? piecesOf.get(t.leftItemId)?.at(-1) : undefined;
+    const right = t.rightItemId !== undefined ? piecesOf.get(t.rightItemId)?.[0] : undefined;
     if ((t.leftItemId !== undefined && !left) || (t.rightItemId !== undefined && !right)) continue;
     transitions.push({
       ...(left ? { left } : {}),
@@ -825,17 +1019,11 @@ export function planDerivation(input: DerivationInput): DerivationPlan {
       importRef,
       name: record.name,
       body: body as Record<string, unknown>,
-      scope: scopeIds.flatMap((id) => locatorOf.get(id) ?? []),
+      // 拆开的实例每一段都在范围里。
+      scope: scopeIds.flatMap((id) => piecesOf.get(id) ?? []),
     });
   }
 
-  // 区间之外的剪口。
-  const durationOf = (assetId: Id): Q | null => {
-    const record = snapshot.assets[assetId];
-    const duration = record?.revisions[record.currentRevision]?.duration;
-    return duration ? time(duration) : null;
-  };
-  const cutPlan = planCuts(sequence, items, range, durationOf);
   const kept = keptSource(sequence, items, range);
   warnings.push(...cutPlan.warnings);
   const primaryRef = cutPlan.primaryAssetId ? assetImportRef.get(cutPlan.primaryAssetId) : undefined;
@@ -851,6 +1039,9 @@ export function planDerivation(input: DerivationInput): DerivationPlan {
     primaryAssetId: cutPlan.primaryAssetId,
     cuts,
     settings,
+    ...(framing && cutPlan.primaryAssetId
+      ? { framing: { assetId: cutPlan.primaryAssetId, shots: framingShots.sort((x, y) => x.from - y.from) } }
+      : {}),
     key: input.key,
     ...pickFields(input.pick),
   };

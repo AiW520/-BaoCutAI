@@ -18,6 +18,7 @@ import type { TrustedPrincipal } from '../gateway.ts';
 import {
   DERIVATION_KIND,
   DeriveError,
+  alignCrops,
   alignRange,
   assetFileKey,
   clockLabel,
@@ -92,9 +93,12 @@ export async function prepareDerive(videos: Pick<VideoService, 'document'>, snap
   const documents = new Map<Id, unknown>();
   for (const id of needs.documentIds) documents.set(id, (await videos.document(snapshot.id, id)).body);
   const range = deriveCall(() => alignRange(sequence, params.start, params.end, timelineWords(snapshot, documents)));
+  // 分段取景对到帧、截到区间之后才进设置（幂等键按对齐后的算）；没给时不带这个字段，老调用的键不变。
+  const aligned = params.crops?.length ? alignCrops(sequence, range, params.crops) : null;
+  if (aligned) settings.crops = aligned.crops;
   const key = derivationKey({ parentVideoId: snapshot.id, parentRevision: snapshot.revision, range, settings });
   const name = params.name?.trim() || defaultDerivedName(snapshot.name, range);
-  return { sequence, range, settings, key, name, needs, documents };
+  return { sequence, range, settings, key, name, needs, documents, cropsAdjusted: aligned?.adjusted ?? 0 };
 }
 
 /** 规划里的拒绝换成 RPC 错误（`details.code` 是 `DERIVE_*`）。 */
@@ -128,7 +132,7 @@ export async function deriveVideo(
   const { videos } = deps;
   const parent = videos.mirror(params.videoId)?.video;
   if (!parent) throw new RpcError('not-found', RcAgentTools.deriveParentUnplaced(), { code: 'VIDEO_NOT_OPEN' });
-  const { sequence, range, settings, key, name, needs, documents } = await prepareDerive(videos, parent, params);
+  const { sequence, range, settings, key, name, needs, documents, cropsAdjusted } = await prepareDerive(videos, parent, params);
 
   const place = videoPlace(videos, parent.id) as { root: string; file: string; scope: VideoLocation['scope'] } | null;
   // 父视频就是来源目录本身（或不是从项目、会话打开的）：旁边没有地方放子视频。
@@ -194,6 +198,7 @@ export async function deriveVideo(
       files,
       documents,
       labels: { derivationName: RcAgentTools.derivationDocumentName().text },
+      cropsAdjusted,
       pick: { ...(params.hook !== undefined ? { hook: params.hook } : {}), ...(params.reason !== undefined ? { reason: params.reason } : {}), ...(params.notes ? { notes: params.notes } : {}) },
     }),
   );
@@ -288,6 +293,7 @@ export async function deriveVideo(
     primaryAssetId: plan.derivation.primaryAssetId,
     cuts: plan.cuts,
     itemCount: plan.itemCount,
+    ...(settings.crops ? { framing: settings.crops } : {}),
     derivationDocumentId,
     ...pick,
     speech: plan.speech.flatMap((s) => (refs[s.ref] ? [{ documentId: refs[s.ref]!, sourceDocumentId: s.from, words: s.words }] : [])),

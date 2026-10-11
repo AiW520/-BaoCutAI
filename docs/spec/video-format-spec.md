@@ -1434,13 +1434,20 @@ interface Provenance {
     primaryAssetId: Id | null;         // 记剪口的主素材（父视频里的 ID）；没有可剪的媒体时 null
     cuts: Array<{ assetId: Id; from: number; to: number }>;  // 区间之外的剪口：主素材源时钟上的秒
     settings: { width: number; height: number; fit: 'cover' | 'contain' | null; crop: Crop | null;
-                captions: boolean; translations: boolean; chapters: boolean };
-    key: string;                       // 幂等键：父视频、版本、区间与设置的 sha256 前 12 位
+                captions: boolean; translations: boolean; chapters: boolean;
+                crops?: Array<{ from: number; to: number } & Crop> };  // 分段取景：父视频剪辑后时间线上的秒，已对到帧、截到区间
+    framing?: {                        // 分段取景落在主素材源时钟上的样子：给了 crops 且有主素材时才有
+      assetId: Id;                     // 主素材（父视频里的 ID）
+      shots: Array<{ from: number; to: number; crop: Crop | null }>;  // 区间里主素材的每一段：源时钟上的秒与它用的裁剪
+    };
+    key: string;                       // 幂等键：父视频、版本、区间与设置的 sha256 前 12 位（settings.crops 有才算进来）
     hook?: string;                     // 开头一句：派生时调用方给了才有
     reason?: string;                   // 为什么挑这一段
     notes?: string[];                  // 提示牌：几句短提醒
   }
   ```
+
+  `settings.crops` 与 `framing` 也是加上去的可选字段：派生时给了分段取景才写，旧文档没有它们照常读，按只有 `crop` 一份取景理解。`framing` 留给以后恢复剪口时按镜头补拆片段用；子视频里各片段的 `crop` 才是当前状态。
 
   `hook`、`reason`、`notes` 是加上去的可选字段（派生时调用方给了才写，不参与幂等键），旧文档没有它们照常读；界面没有 `hook` 时取子视频保留段的第一句，没有 `reason`、`notes` 时不显示。
 

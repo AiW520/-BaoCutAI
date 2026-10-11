@@ -21,6 +21,7 @@ import { startRuntime, type RunningRuntime } from '../runtime.ts';
 import { resolveEngineHostCommand } from '../videos/engine-host.ts';
 import {
   DeriveError,
+  alignCrops,
   alignRange,
   clockLabel,
   cuesInRange,
@@ -175,10 +176,19 @@ const settings: DeriveSettings = { width: 1080, height: 1920, fit: 'cover', crop
 const items: SequenceItem[] = [videoItem('item_a', 0, 90, 0), videoItem('item_b', 90, 90, 10, 2), audio];
 const childTracks = [track('trk_c1', 0, 'visual'), track('trk_c2', 1, 'audio')];
 
-function plan(snapshot: VideoSnapshot, start: number, end: number, s: DeriveSettings = settings, docs: Record<string, unknown> = {}, pick?: DerivePick) {
+function plan(
+  snapshot: VideoSnapshot,
+  start: number,
+  end: number,
+  s: DeriveSettings = settings,
+  docs: Record<string, unknown> = {},
+  pick?: DerivePick,
+  cropsAdjusted?: number,
+) {
   const range = alignRange(snapshot.sequences.seq_1!, start, end);
   return planDerivation({
     ...(pick ? { pick } : {}),
+    ...(cropsAdjusted ? { cropsAdjusted } : {}),
     snapshot,
     range,
     settings: s,
@@ -567,8 +577,112 @@ describe('planDerivationTrim', () => {
   });
 });
 
+/** 加分段取景之前的幂等键（同一份输入）：没给 crops 的调用键不能变。 */
+const KEY_WITHOUT_CROPS = '72c510ba5c43';
+const A = { left: 0.1, top: 0, right: 0.5, bottom: 0 };
+const B = { left: 0.4, top: 0, right: 0.2, bottom: 0 };
+const C = { left: 0.3, top: 0.05, right: 0.3, bottom: 0.05 };
+const shot = (from: number, to: number, crop: typeof A) => ({ from, to, ...crop });
+/** 区间对齐之后再对齐分段取景，与 prepareDerive 一样。 */
+function framed(snapshot: VideoSnapshot, start: number, end: number, crops: ReturnType<typeof shot>[], extra: Partial<DeriveSettings> = {}) {
+  const range = alignRange(snapshot.sequences.seq_1!, start, end);
+  const aligned = alignCrops(snapshot.sequences.seq_1!, range, crops);
+  return plan(snapshot, start, end, { ...settings, ...extra, crops: aligned.crops }, {}, undefined, aligned.adjusted);
+}
+const videoEntries = (p: { operations: EditOperation[] }) => insertedOf(p.operations).filter((i) => i.type === 'video');
+
+describe('planDerivation：分段取景（crops）', () => {
+  it('alignCrops：就近对到帧（正好在中间取早的），截到区间；截过、截完为空的记在 adjusted', () => {
+    const sequence = video(items).sequences.seq_1!;
+    const range = alignRange(sequence, 1, 5);
+    const out = alignCrops(sequence, range, [shot(3, 9, C), shot(0, 2, A), shot(2, 2.01, B), shot(2.05, 2.5, B)]);
+    expect(out.adjusted).toBe(3);
+    // 2.05 × 30 = 61.5 取 61。
+    expect(out.crops).toEqual([shot(1, 2, A), shot(61 / 30, 2.5, B), shot(3, 5, C)]);
+    expect(alignCrops(sequence, range, [shot(1.5, 2.5, A)])).toEqual({ crops: [shot(1.5, 2.5, A)], adjusted: 0 });
+  });
+
+  it('两个边界把主素材的片段拆成三段：span 与 sourceIn 精确，各带自己的裁剪；区间外跟首末段；转场接首末段，剪口集合范围展开', () => {
+    const p = framed(video(items, {}, true), 0.5, 5, [shot(0.5, 1.5, A), shot(1.5, 2.5, B), shot(2.5, 5, C)]);
+    const entries = videoEntries(p);
+    expect(entries.map((e) => [e.span.fromFrame, e.span.durationFrames, e.timeMap.sourceIn, e.crop])).toEqual([
+      [0, 45, { ticks: '0', timescale: 1000 }, A],
+      [45, 30, { ticks: '3', timescale: 2 }, B],
+      [75, 15, { ticks: '5', timescale: 2 }, C],
+      [90, 90, { ticks: '10000', timescale: 1000 }, C],
+    ]);
+    expect(p.itemCount).toBe(5);
+    expect(p.trim.transitions[0]).toMatchObject({ left: { position: 'v:75:15' }, right: { position: 'v:90:90' } });
+    expect(p.trim.cutSets[0]!.scope.map((l) => l.position)).toEqual(['v:0:45', 'v:45:30', 'v:75:15', 'v:90:90']);
+    expect(p.derivation.settings.crops).toEqual([shot(0.5, 1.5, A), shot(1.5, 2.5, B), shot(2.5, 5, C)]);
+    expect(p.derivation.framing).toEqual({
+      assetId: 'asset_v',
+      shots: [
+        { from: 0.5, to: 1.5, crop: A },
+        { from: 1.5, to: 2.5, crop: B },
+        { from: 2.5, to: 3, crop: C },
+        { from: 10, to: 14, crop: C },
+      ],
+    });
+    // 收尾里转场按位置找回首末段。
+    const parentItems = items;
+    const child = childAfterCopy(parentItems, { trk_v1: 'trk_c1', trk_a1: 'trk_c2' });
+    const pieces = entries.map((e, n) => ({ ...parentItems[0]!, id: `piece_${n}`, trackId: 'trk_c1', span: e.span }) as SequenceItem);
+    child.sequence = { ...child.sequence, items: [...pieces, ...child.sequence.items.filter((i) => i.type === 'audio')] };
+    const trim = planDerivationTrim(p, child, { 'asset-1': 'asset_new_v' });
+    expect(op(trim, 'setTransition')[0]).toMatchObject({ leftItemId: 'piece_2', rightItemId: 'piece_3' });
+    expect((op(trim, 'putDocument')[0]!.body as Loose).scopeItemIds).toEqual(['piece_0', 'piece_1', 'piece_2', 'piece_3']);
+  });
+
+  it('变速片段的拆点 sourceIn 用有理数精算；没盖住的地方用缺省裁剪（没有时不裁）', () => {
+    // 100 帧 = 10/3 秒；item_b 从 3 秒起以两倍速播源 10 秒：源 10 + (10/3 − 3) × 2 = 32/3。
+    const p = framed(video(items), 1, 5, [shot(1, 100 / 30, A)]);
+    expect(videoEntries(p).map((e) => [e.span.fromFrame, e.span.durationFrames, e.timeMap.sourceIn, e.crop ?? null])).toEqual([
+      [0, 90, { ticks: '0', timescale: 1000 }, A],
+      [90, 10, { ticks: '10000', timescale: 1000 }, A],
+      [100, 80, { ticks: '32', timescale: 3 }, null],
+    ]);
+    const withDefault = framed(video(items), 1, 5, [shot(1, 100 / 30, A)], { crop: C });
+    expect(videoEntries(withDefault).map((e) => e.crop)).toEqual([A, A, C]);
+    // 拆开的片段在右侧时转场接第一段。
+    expect(p.trim.transitions[0]).toMatchObject({ left: { position: 'v:0:90' }, right: { position: 'v:90:10' } });
+  });
+
+  it('入场动画只留第一段、出场只留最后一段，淡入淡出同理；循环动画每段保留并以 animation-split 说明', () => {
+    const animated = { ...videoItem('item_a', 0, 90, 0), animate: { enter: { preset: 'fade' }, exit: { preset: 'fade' }, loop: { preset: 'pulse' } } };
+    const p = framed(video([animated, items[1]!, audio]), 0.5, 5, [shot(0.5, 1.5, A), shot(1.5, 2.5, B)]);
+    const [first, middle, last] = videoEntries(p);
+    expect(first!.animate).toEqual({ enter: { preset: 'fade' }, loop: { preset: 'pulse' } });
+    expect(middle!.animate).toEqual({ loop: { preset: 'pulse' } });
+    expect(last!.animate).toEqual({ exit: { preset: 'fade' }, loop: { preset: 'pulse' } });
+    expect(first!.embeddedAudio).toEqual({ enabled: true, volume: 1, fadeIn: { ticks: '1', timescale: 2 } });
+    expect(middle!.embeddedAudio).toEqual({ enabled: true, volume: 1 });
+    expect(last!.embeddedAudio).toEqual({ enabled: true, volume: 1, fadeOut: { ticks: '1', timescale: 2 } });
+    expect(p.warnings).toContainEqual({ code: 'animation-split', itemId: 'item_a' });
+    // 没循环、没包络时不提醒。
+    expect(codes(framed(video(items), 0.5, 5, [shot(0.5, 1.5, A), shot(1.5, 2.5, B)]))).not.toContain('animation-split');
+  });
+
+  it('边界在区间起止上不拆；相邻两段裁剪相同不拆；截过的段以 crops-adjusted 说明', () => {
+    const p = framed(video(items), 1, 3, [shot(0, 2, A), shot(2, 3, A), shot(3, 6, B)]);
+    // [3, 6) 截完为空丢掉，[0, 2) 截到 1 秒：两段。
+    expect(p.warnings).toContainEqual({ code: 'crops-adjusted', count: 2 });
+    expect(videoEntries(p).map((e) => [e.span.fromFrame, e.crop])).toEqual([
+      [0, A],
+      [90, A],
+    ]);
+  });
+});
+
 describe('derivationKey', () => {
   const input = { parentVideoId: 'video_parent', parentRevision: '7', range: { start: 1.5, end: 4.5 }, settings };
+  it('没给分段取景时键与以前一样；给了才算进来', () => {
+    expect(derivationKey(input)).toBe(KEY_WITHOUT_CROPS);
+    const withCrops = derivationKey({ ...input, settings: { ...settings, crops: [shot(1.5, 3, A)] } });
+    expect(withCrops).not.toBe(KEY_WITHOUT_CROPS);
+    expect(derivationKey({ ...input, settings: { ...settings, crops: [shot(1.5, 3, B)] } })).not.toBe(withCrops);
+    expect(derivationKey({ ...input, settings: { ...settings, crops: [shot(1.5, 3, A)] } })).toBe(withCrops);
+  });
   it('同样的输入同样的键；区间、版本、设置变了键就变', () => {
     const key = derivationKey(input);
     expect(key).toMatch(/^[0-9a-f]{12}$/);
@@ -794,6 +908,74 @@ describe.skipIf(!engine || !ffmpeg)('videos.derive（真实引擎）', () => {
     await apply(parent.videoId, [{ type: 'restoreCut', sequenceId: snapshotOf(parent.videoId).rootSequenceId, assetId: parent.assetId, cutId: parentCuts[0]!.id }]);
     expect(playback(childId)).toEqual(playback(parent.videoId));
     expect(playback(childId)).toEqual([{ from: 0, to: 120, sourceIn: 0 }]);
+  });
+
+  it('分段取景：主素材的片段在取景变化处拆开、各带裁剪；字幕范围含全部各段；恢复开头的剪口延长第一段、裁剪不变', async () => {
+    const parent = await parentWithCut();
+    const A = { left: 0.1, top: 0, right: 0.5, bottom: 0 };
+    const B = { left: 0.4, top: 0, right: 0.2, bottom: 0 };
+    const C = { left: 0.3, top: 0, right: 0.3, bottom: 0 };
+    // 父视频：时间线 0–1.5s 播源 0–1.5s，1.5–3.5s 播源 2–4s。区间 [0.5, 3)，取景在 1s 与 2.5s 换：两个片段各拆一刀。
+    const derived = await client.request('videos.derive', {
+      videoId: parent.videoId,
+      start: 0.5,
+      end: 3,
+      crops: [
+        { from: 0.5, to: 1, ...A },
+        { from: 1, to: 2.5, ...B },
+        { from: 2.5, to: 3, ...C },
+      ],
+    });
+    expect(derived.warnings).toEqual([]);
+    expect(derived.framing).toEqual([
+      { from: 0.5, to: 1, ...A },
+      { from: 1, to: 2.5, ...B },
+      { from: 2.5, to: 3, ...C },
+    ]);
+    expect(derived.itemCount).toBe(4);
+    const childId = derived.video.videoId;
+    const videoItems = () =>
+      sequenceOf(childId)
+        .items.filter((item): item is VideoItem => item.type === 'video')
+        .sort((a, b) => a.span.fromFrame - b.span.fromFrame);
+    const shape = () =>
+      videoItems().map((item) => {
+        const map = item.timeMap as { sourceIn: { ticks: string; timescale: number } };
+        return [item.span.fromFrame, item.span.durationFrames, Number((Number(map.sourceIn.ticks) / map.sourceIn.timescale).toFixed(6)), item.crop];
+      });
+    // 剪掉区间之外（源 0–0.5s 与 3.5–4s）之后：四段，各自的裁剪。
+    expect(shape()).toEqual([
+      [0, 15, 0.5, A],
+      [15, 15, 1, B],
+      [30, 30, 2, B],
+      [60, 15, 3, C],
+    ]);
+    const derivation = (await documentOf(childId, 'derivation')) as Loose;
+    expect(derivation.settings.crops).toEqual(derived.framing);
+    expect(derivation.framing).toEqual({
+      assetId: parent.assetId,
+      shots: [
+        { from: 0.5, to: 1, crop: A },
+        { from: 1, to: 1.5, crop: B },
+        { from: 2, to: 3, crop: B },
+        { from: 3, to: 3.5, crop: C },
+      ],
+    });
+    // 原文字幕层的范围是全部各段。
+    const caption = sequenceOf(childId).items.find((item) => item.type === 'caption') as { scopeItemIds?: string[] } | undefined;
+    expect([...(caption?.scopeItemIds ?? [])].sort()).toEqual(videoItems().map((i) => i.id).sort());
+
+    // 恢复开头的剪口（源 0–0.5s）：第一段往前延长，各段裁剪不变。
+    const childAsset = Object.keys(snapshotOf(childId).assets)[0]!;
+    const cutSet = seconds((await documentOf(childId, 'cut-set')) as CutSetBodyShape);
+    const head = cutSet.find((c) => c.from === 0)!;
+    await apply(childId, [{ type: 'restoreCut', sequenceId: snapshotOf(childId).rootSequenceId, assetId: childAsset, cutId: head.id }]);
+    expect(shape()).toEqual([
+      [0, 30, 0, A],
+      [30, 15, 1, B],
+      [45, 30, 2, B],
+      [75, 15, 3, C],
+    ]);
   });
 
   it('父视频的旧译文（/1）换成 /2 带进子视频，并按父视频的译文字幕层建一层', async () => {

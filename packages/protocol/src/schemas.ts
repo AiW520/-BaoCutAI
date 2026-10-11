@@ -61,6 +61,9 @@ const attachmentTarget = z.object({ conversationId: id, attachmentId: id }).stri
 const localFileTarget = z.object({ localPath: filePath }).strict();
 const mediaTarget = z.union([fileTarget, attachmentTarget, z.object(assetTarget).strict(), localFileTarget]);
 const positiveInt = z.number().int().positive();
+/** 分段取景（`videos.derive` 的 `crops`）按 from 排好之后互不重叠。 */
+const cropsDisjoint = (crops: { from: number; to: number }[]) =>
+  [...crops].sort((a, b) => a.from - b.from).every((c, n, all) => n === 0 || c.from >= all[n - 1]!.to);
 /**
  * 编辑操作只在这里查外形；字段与语义由引擎校验（架构设计 §13.2：单源定义），
  * 引擎拒绝未知字段并按操作序号报错。
@@ -845,6 +848,23 @@ export const methodParamSchemas = {
         })
         .strict()
         .refine((c) => c.left + c.right < 1 && c.top + c.bottom < 1)
+        .optional(),
+      crops: z
+        .array(
+          z
+            .object({
+              from: z.number().finite().nonnegative(),
+              to: z.number().finite().positive(),
+              left: z.number().min(0).lt(1),
+              top: z.number().min(0).lt(1),
+              right: z.number().min(0).lt(1),
+              bottom: z.number().min(0).lt(1),
+            })
+            .strict()
+            .refine((c) => c.to > c.from && c.left + c.right < 1 && c.top + c.bottom < 1),
+        )
+        .max(64)
+        .refine(cropsDisjoint)
         .optional(),
       captions: z.boolean().optional(),
       translations: z.boolean().optional(),
