@@ -116,6 +116,7 @@ export const ko: SpaceMessages = {
     generateMusic: '음악 생성',
     generateText: '텍스트 생성',
     export: '내보내기',
+    'videos-derive': '쇼츠로 만들기',
   },
 
   // 动作的结果

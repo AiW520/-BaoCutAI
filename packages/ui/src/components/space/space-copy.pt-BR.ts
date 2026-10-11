@@ -113,6 +113,7 @@ export const ptBR: SpaceMessages = {
     generateMusic: 'Gerar música',
     generateText: "Texto gerado",
     export: "Exportar",
+    'videos-derive': 'Cortar em vídeos curtos',
   } as Record<string, string>,
 
   trashed: (name: string) => `Movido à Lixeira · ${name}`,

@@ -140,6 +140,7 @@ const en = {
     generateMusic: 'Generate music',
     generateText: 'Generate text',
     export: 'Export',
+    'videos-derive': 'Cut into shorts',
   } as Record<string, string>,
 
   // 动作的结果

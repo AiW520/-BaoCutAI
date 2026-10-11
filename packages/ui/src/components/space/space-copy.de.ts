@@ -112,6 +112,7 @@ export const de: SpaceMessages = {
     generateMusic: 'Musik erzeugen',
     generateText: "Text erzeugen",
     export: "Exportieren",
+    'videos-derive': 'In Kurzvideos schneiden',
   } as Record<string, string>,
 
   trashed: (name: string) => `In Papierkorb verschoben · ${name}`,

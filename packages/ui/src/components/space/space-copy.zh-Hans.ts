@@ -113,6 +113,7 @@ export const zhHans: SpaceMessages = {
     generateMusic: '生成音乐',
     generateText: '生成文字',
     export: '导出',
+    'videos-derive': '剪成短视频',
   },
 
   // 动作的结果

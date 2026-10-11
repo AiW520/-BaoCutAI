@@ -26,6 +26,7 @@ describe('Space 页文案', () => {
     expect(M.filesStatus(2, 'Missing')).toBe('2 files: Missing');
     expect(SPACE_COPY.shortsMore(1)).toBe('1 more short. Show them all in the list.');
     expect(SPACE_COPY.shortsSpan('10:12', '10:58')).toBe('Original 10:12–10:58');
+    expect(SPACE_COPY.capability['videos-derive']).toBe('Cut into shorts');
   });
 
   it('简体中文译文照旧', () => {
@@ -37,5 +38,6 @@ describe('Space 页文案', () => {
     expect(M.fileStatus('成片', '来源已变')).toBe('成片来源已变');
     expect(SPACE_COPY.shortsMore(3)).toBe('还有 3 支，在列表中查看全部');
     expect(SPACE_COPY.shortsSpan('10:12', '10:58')).toBe('原片 10:12–10:58');
+    expect(SPACE_COPY.capability['videos-derive']).toBe('剪成短视频');
   });
 });

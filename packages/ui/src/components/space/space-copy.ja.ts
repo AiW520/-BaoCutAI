@@ -116,6 +116,7 @@ export const ja: SpaceMessages = {
     generateMusic: '音楽を生成',
     generateText: 'テキストを生成',
     export: '書き出し',
+    'videos-derive': 'ショート動画に切り出す',
   },
 
   // 动作的结果

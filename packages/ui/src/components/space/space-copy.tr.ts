@@ -111,6 +111,7 @@ export const tr: SpaceMessages = {
     generateMusic: 'Müzik oluştur',
     generateText: "Metin oluştur",
     export: "Dışa aktar",
+    'videos-derive': 'Kısa videolara böl',
   },
 
   // 动作的结果

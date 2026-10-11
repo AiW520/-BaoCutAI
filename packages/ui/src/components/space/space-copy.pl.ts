@@ -109,6 +109,7 @@ export const pl: SpaceMessages = {
     generateMusic: 'Wygeneruj muzykę',
     generateText: "Generuj tekst",
     export: "Eksportuj",
+    'videos-derive': 'Potnij na krótkie filmy',
   },
 
   trashed: (name: string) => `Przeniesiono do kosza · ${name}`,

@@ -109,6 +109,7 @@ export const ru: SpaceMessages = {
     generateMusic: 'Создать музыку',
     generateText: "Сгенерировать текст",
     export: "Экспорт",
+    'videos-derive': 'Нарезать короткие видео',
   },
 
   trashed: (name: string) => `Перемещено в корзину · ${name}`,
