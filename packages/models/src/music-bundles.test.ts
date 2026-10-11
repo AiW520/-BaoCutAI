@@ -345,12 +345,9 @@ describe('模型描述与冻结参数', () => {
       'semantic_max_tokens=2250',
     );
     expect(option('--request-option', 'num_inference_steps=')).toBeUndefined();
-    expect(option('--session-option', 'yue2.model_gguf=')).toBe(
-      `yue2.model_gguf=${path.join('/models/yue2', YUE.music!.files.model)}`,
-    );
-    expect(option('--session-option', 'yue2.vae_gguf=')).toBe(
-      `yue2.vae_gguf=${path.join('/models/yue2', YUE.music!.files.vae)}`,
-    );
+    // 相对于模型根，不是绝对路径：引擎拒绝绝对路径
+    expect(option('--session-option', 'yue2.model_gguf=')).toBe(`yue2.model_gguf=${YUE.music!.files.model}`);
+    expect(option('--session-option', 'yue2.vae_gguf=')).toBe(`yue2.vae_gguf=${YUE.music!.files.vae}`);
     expect(args[args.indexOf('--out-dir') + 1]).toBe('/staging');
     expect(args[args.indexOf('--out') + 1]).toBe(MUSIC_OUTPUT_FILE);
     expect(args).toContain('--log');

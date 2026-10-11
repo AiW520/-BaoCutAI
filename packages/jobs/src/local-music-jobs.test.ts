@@ -170,7 +170,7 @@ describe('本地音乐生成', () => {
       expect(args).toContain('cot=melody');
       expect(args).toContain('seed=11');
       expect(args).toContain('semantic_max_tokens=100');
-      expect(args).toContain(`yue2.model_gguf=${path.join(modelDir, YUE.music!.files.model)}`);
+      expect(args).toContain(`yue2.model_gguf=${YUE.music!.files.model}`);
       expect(args).not.toContain('--backend');
     });
 

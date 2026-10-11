@@ -444,8 +444,8 @@ audiocpp_cli --task gen --family yue2 --model <模型包目录> --threads <n>
   --request-option seed=<seed>
   --request-option semantic_max_tokens=<round(maxDurationSec × 25)，至少 1>
   [--request-option num_inference_steps=<steps>]        # 冻结了 steps（或自检给的少步数）时才传，否则引擎用默认值
-  --session-option yue2.model_gguf=<模型包目录>/yue2-3b-q8_0.gguf
-  --session-option yue2.vae_gguf=<模型包目录>/yue2-vae-f16.gguf
+  --session-option yue2.model_gguf=yue2-3b-q8_0.gguf      # 相对于 --model 的模型根；引擎拒绝绝对路径
+  --session-option yue2.vae_gguf=yue2-vae-f16.gguf
   --out-dir <staging> --out music.wav --log
   [--backend <metal | cuda | vulkan | cpu>]
 ```

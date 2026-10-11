@@ -109,10 +109,11 @@ export function musicEngineRunOf(
     '--request-option',
     `semantic_max_tokens=${tokens}`,
     ...(steps !== null ? ['--request-option', `num_inference_steps=${steps}`] : []),
+    // 引擎要求 GGUF 的路径相对于 `--model` 给的模型根（绝对路径被拒：`yue2.model_gguf must be relative to the Yue2 model root`）。
     '--session-option',
-    `${profile.family}.model_gguf=${path.join(options.modelDir, profile.files.model)}`,
+    `${profile.family}.model_gguf=${profile.files.model}`,
     '--session-option',
-    `${profile.family}.vae_gguf=${path.join(options.modelDir, profile.files.vae)}`,
+    `${profile.family}.vae_gguf=${profile.files.vae}`,
     '--out-dir',
     options.staging,
     '--out',
