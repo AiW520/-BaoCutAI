@@ -44,6 +44,47 @@
     if (!(n > 0)) return DURATION.dflt;
     return Math.min(DURATION.max, Math.max(DURATION.min, Math.round(n / DURATION.step) * DURATION.step));
   }
+  /* 配乐铺满（product-design §2.7「生成配乐」）：视频比单次上限长时只生成上限长度的一段，加到视频时首尾相接循环铺满。
+     接缝交叉淡化、片尾淡出；两个时长都在实例淡入淡出的 [0, 5] 秒之内（video-format-spec §3.9 AudioMix）。
+     同一条轨道上的实例不能重叠（§3.4），接缝两侧交替放在两条音乐轨上。不拉伸、不改节奏。 */
+  const LOOP = {crossfade: 2, tailFade: 3};
+  const secText = (n) => `${Math.round(Number(n) * 10) / 10} 秒`;
+  /** 「生成配乐」进来时的那一段：目标时长、要不要循环、横幅上的一句 */
+  function soundtrackFor(videoSec) {
+    const v = Number(videoSec);
+    if (!(v > DURATION.max)) return {targetDurationSec: clampDuration(v), loop: false, note: null};
+    return {targetDurationSec: DURATION.max, loop: true,
+      note: `视频 ${secText(v)}超过单次上限 ${DURATION.max} 秒，会生成 ${DURATION.max} 秒并循环铺满，片尾淡出。`};
+  }
+  /** 一段 piece 秒的音乐铺满 total 秒：每段从音乐开头起放，后一段在前一段结束前 crossfade 秒进来；
+   *  lane 0 / 1 是交替的两条音乐轨。最后一段截到视频结尾、带片尾淡出；音乐比视频长时只有一段。 */
+  function loopLayout(pieceSec, totalSec, opts) {
+    const o = Object.assign({}, LOOP, opts || {});
+    const piece = Number(pieceSec), total = Number(totalSec);
+    if (!(piece > 0) || !(total > 0)) return [];
+    const xf = Math.min(o.crossfade, piece / 4);
+    const r3 = (n) => Math.round(n * 1000) / 1000;
+    const out = [];
+    let start = 0;
+    for (;;) {
+      const dur = Math.min(piece, total - start);
+      out.push({start: r3(start), dur: r3(dur), lane: out.length % 2, fadeIn: out.length ? r3(xf) : 0, fadeOut: 0});
+      if (start + piece >= total) break;
+      start += piece - xf;
+    }
+    out.forEach((s, i) => { if (i < out.length - 1) s.fadeOut = r3(xf); });
+    const last = out[out.length - 1];
+    last.fadeOut = r3(Math.min(o.tailFade, Math.max(0, last.dur - last.fadeIn)));
+    return out;
+  }
+  /** 加到视频之后的一句：「循环 3 段铺满 742 秒 · 接缝交叉淡化 2 秒 · 片尾淡出 3 秒」 */
+  function loopSummary(layout, totalSec) {
+    if (!layout.length) return '';
+    const tail = `片尾淡出 ${secText(layout[layout.length - 1].fadeOut)}`;
+    if (layout.length === 1) return tail;
+    return `循环 ${layout.length} 段铺满 ${secText(totalSec)} · 接缝交叉淡化 ${secText(layout[1].fadeIn)} · ${tail}`;
+  }
+
   /** 上限：没手改时跟着目标走 */
   const maxOf = (f) => (f.maxDurationSec ? Number(f.maxDurationSec) : Math.min(DURATION.max, Math.round(Number(f.targetDurationSec || DURATION.dflt) * MAX_HEADROOM)));
   /** 预算：这段音乐最多生成多少语义 token（Runtime 的 semantic_max_tokens） */
@@ -136,7 +177,7 @@
 
   const BC_MUSIC = {
     MODES, PLANNINGS, STYLES, TOKENS_PER_SEC, DURATION, SPEED, STEPS_DEFAULT, QUICK, modeOf, planningOf,
-    blank, clampDuration, maxOf, tokens, validate, etaText, phase, request, nameFor, recordMeta, truncated, models, preferred, toolStatus,
+    LOOP, blank, clampDuration, soundtrackFor, loopLayout, loopSummary, maxOf, tokens, validate, etaText, phase, request, nameFor, recordMeta, truncated, models, preferred, toolStatus,
     quickDefaults, quickForm, quickKey, quickSummary,
   };
   if (typeof module !== 'undefined') module.exports = BC_MUSIC;

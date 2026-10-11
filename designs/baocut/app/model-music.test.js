@@ -73,3 +73,57 @@ test('试听：固定 10 秒纯音乐、直接生成；换风格就换 key', () 
   assert.notEqual(M.quickKey(a), M.quickKey(b));
   assert.match(M.quickSummary({style: 'lofi'}, 42), /^Lo-fi 节拍 · 10 秒 · 8 步 · 用了 42 秒$/);
 });
+
+test('生成配乐：不超过单次上限按视频预填；超过时预填上限、要循环，横幅写明', () => {
+  assert.deepEqual(M.soundtrackFor(206), {targetDurationSec: 205, loop: false, note: null});
+  assert.deepEqual(M.soundtrackFor(300), {targetDurationSec: 300, loop: false, note: null});
+  const long = M.soundtrackFor(742);
+  assert.equal(long.targetDurationSec, 300);
+  assert.equal(long.loop, true);
+  assert.equal(long.note, '视频 742 秒超过单次上限 300 秒，会生成 300 秒并循环铺满，片尾淡出。');
+  assert.equal(M.soundtrackFor(null).targetDurationSec, 30);
+});
+
+/** 每一刻都有声音：相邻两段重叠正好一个交叉淡化，交替两条轨，最后一段收在视频结尾 */
+function assertCovers(layout, total) {
+  assert.equal(layout[0].start, 0);
+  layout.forEach((s, i) => {
+    assert.equal(s.lane, i % 2);
+    assert.ok(s.fadeIn <= 5 && s.fadeOut <= 5, '淡入淡出在 AudioMix 的 [0, 5] 秒里');
+    if (i) assert.ok(Math.abs(layout[i - 1].start + layout[i - 1].dur - s.start - s.fadeIn) < 1e-6, '接缝重叠一个交叉淡化');
+  });
+  const last = layout[layout.length - 1];
+  assert.ok(Math.abs(last.start + last.dur - total) < 1e-6);
+}
+
+test('循环铺满：音乐比视频长只有一段，截到结尾、片尾淡出', () => {
+  const l = M.loopLayout(300, 206);
+  assert.deepEqual(l, [{start: 0, dur: 206, lane: 0, fadeIn: 0, fadeOut: 3}]);
+  assert.equal(M.loopSummary(l, 206), '片尾淡出 3 秒');
+});
+
+test('循环铺满：首尾相接、接缝交叉淡化 2 秒、交替两条轨，最后一段片尾淡出', () => {
+  const l = M.loopLayout(300, 742);
+  assertCovers(l, 742);
+  assert.deepEqual(l.map((s) => s.start), [0, 298, 596]);
+  assert.deepEqual(l.map((s) => s.dur), [300, 300, 146]);
+  assert.deepEqual(l.map((s) => [s.fadeIn, s.fadeOut]), [[0, 2], [2, 2], [2, 3]]);
+  assert.equal(M.loopSummary(l, 742), '循环 3 段铺满 742 秒 · 接缝交叉淡化 2 秒 · 片尾淡出 3 秒');
+});
+
+test('循环铺满：正好整段数、剩一小截时最后一段仍长过交叉淡化；音乐写长了按实际时长铺', () => {
+  const exact = M.loopLayout(300, 598);   // 300 + 298：第二段正好放完
+  assertCovers(exact, 598);
+  assert.equal(exact.length, 2);
+  assert.equal(exact[1].dur, 300);
+  const sliver = M.loopLayout(300, 299);  // 只多出 1 秒：前一段收尾时第二段进来
+  assertCovers(sliver, 299);
+  assert.equal(sliver.length, 1);
+  const tiny = M.loopLayout(300, 301);
+  assertCovers(tiny, 301);
+  assert.equal(tiny.length, 2);
+  assert.ok(tiny[1].dur > tiny[1].fadeIn);
+  assert.ok(tiny[1].fadeOut <= tiny[1].dur - tiny[1].fadeIn);
+  assertCovers(M.loopLayout(360, 3120), 3120);
+  assert.deepEqual(M.loopLayout(0, 100), []);
+});

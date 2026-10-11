@@ -474,8 +474,9 @@
     if (shortsOpen) return <window.ShortsCutPanel ctx={ctx} onBack={back} />;
     // 没打开哪一页就是列表（panel-aitools-list.jsx）；工具页的「返回」回这里
     /* 剪成短视频有自己的会话面板（store-shorts-cut.jsx）：点那一行就开会话，不走通用工具页 */
-    /* 生成配乐走工具 › 生成音乐那一页（不是会话）：带上这部视频与它的时长，做好直接「加到视频」 */
-    const openSoundtrack = () => app.openToolWith('music', {params: {movie: ctx.proj.id, movieTitle: ctx.proj.title, targetDurationSec: window.BC_MUSIC.clampDuration(ctx.proj.duration)}});
+    /* 生成配乐走工具 › 生成音乐那一页（不是会话）：带上这部视频与它的时长，做好直接「加到视频」；
+       视频比单次上限长时预填上限，加到视频时循环铺满（BC_MUSIC.soundtrackFor，product-design §2.7「生成配乐」） */
+    const openSoundtrack = () => app.openToolWith('music', {params: {movie: ctx.proj.id, movieTitle: ctx.proj.title, movieDuration: ctx.proj.duration, targetDurationSec: window.BC_MUSIC.soundtrackFor(ctx.proj.duration).targetDurationSec}});
     if (!open) return <window.AiToolsList ctx={ctx} onOpen={(k) => { if (k === 'shortscut') { window.openShortsCut(app, ctx); return; } if (k === 'soundtrack') { openSoundtrack(); return; } setOpen(k); setScope(null); setLanded(false); }} />;
     const t = TOOLS[open];
     const clearScope = () => setScope(null);

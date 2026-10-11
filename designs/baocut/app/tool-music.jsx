@@ -64,8 +64,9 @@
       patchRec(r.id, {status: 'done', ago: '刚刚', dur, elapsed: (Date.now() - t0) / 1000, entry, truncated: M.truncated(dur, r.form)});
       app.patchTask(tid, Object.assign({status: 'done', outcome: 'done', pct: 100, phase: null}, window.BC_TOOL_RUNS.outputsPatch([entry], r.saveDir)));
       if (r.movie) {
-        window.BC_TOOL_RUNNER.importToMovie(app, {movie: r.movie}, {name: r.name, src: {name: r.name, path: entry.file, format: 'WAV', res: '', state: 'ok'}});
-        app.toast(`已生成 ${r.name} · 已加进「${r.movieTitle || '视频'}」的音乐轨`, 'positive');
+        const bed = addToMovie(app, r, entry, dur);
+        patchRec(r.id, {bed});
+        app.toast(`已生成 ${r.name} · 已加进「${r.movieTitle || '视频'}」的音乐轨 · ${bed}`, 'positive');
       } else {
         app.toast(`已生成 ${r.name} · 保存在 ${window.BC_SAVE_DIR.label(r.saveDir)}`, 'positive');
       }
@@ -78,13 +79,25 @@
       file: `${r.saveDir || window.BC_SAVE_DIR.DEFAULT}/${r.name}`, toolId: 'music', task: r.taskId || null, params: r.params || null,
       note: `音乐 · ${M.recordMeta(r)} · 工具生成的结果 · 交互原型使用示例内容`});
   }
+  /** 加到视频（product-design §2.7「生成配乐」）：按实际生成的时长循环铺满视频——接缝交叉淡化、片尾淡出，不拉伸。
+   *  真实的写入是一笔 edits_apply：每段一个 addItem（role: music，交替两条音乐轨）加 setAudioMix 的 fadeIn / fadeOut；
+   *  原型把铺法记在视频上（`musicBed`），素材记进 `linkedMedia`。返回一句说明。 */
+  function addToMovie(app, r, entry, dur) {
+    const R = window.BC_TOOL_RUNNER;
+    const m = R.movieNow(r.movie);
+    const total = Number(r.movieDuration || m.duration) || dur;
+    const layout = M.loopLayout(dur, total);
+    R.patchMovie(app, r.movie, {linkedMedia: (m.linkedMedia || []).concat([{name: r.name, path: entry.file}]),
+      musicBed: {name: r.name, file: entry.file, pieceSec: dur, layout}});
+    return M.loopSummary(layout, total);
+  }
   function enqueue(app, f, saveDir, model, movie) {
     jobs.seq += 1;
     const form = Object.assign({}, f, {maxDurationSec: M.maxOf(f)});
     /* params：这次的表单与来处，任务详情「再做一次」把它填回这一页 */
-    const params = Object.assign({}, form, movie ? {movie: movie.id, movieTitle: movie.title} : {});
+    const params = Object.assign({}, form, movie ? {movie: movie.id, movieTitle: movie.title, movieDuration: movie.duration} : {});
     const rec = {id: jobs.seq, name: M.nameFor(form, jobs.seq), form, modelName: model ? model.label : form.model, status: 'queued', pct: 0, saveDir, params,
-      movie: movie ? movie.id : null, movieTitle: movie ? movie.title : null, request: M.request(form)};
+      movie: movie ? movie.id : null, movieTitle: movie ? movie.title : null, movieDuration: movie ? movie.duration : null, request: M.request(form)};
     jobs.list = [rec].concat(jobs.list);
     emit();
     const ahead = aheadOf(rec.id);
@@ -145,6 +158,7 @@
         </div>
         <p className="ttsrec__text">{r.form.style}{r.form.mode === 'song' && r.form.lyrics ? ` — ${r.form.lyrics.split('\n')[0]}…` : ''}</p>
         <span className="t-detail-xs">{M.recordMeta(r)}{r.movieTitle ? ` · 配给「${r.movieTitle}」` : ''}</span>
+        {r.bed ? <span className="t-detail-xs">已加进音乐轨 · {r.bed}</span> : null}
 
         {r.status === 'running' ? (
           <div className="ttsrec__busy">
@@ -176,7 +190,9 @@
         {r.status === 'done' ? (
           <>
             <Player r={r} />
-            {r.truncated ? <span className="t-detail-xs">写到了 {M.maxOf(r.form)} 秒的上限，结尾可能收得急；想让它自然收尾就把上限加长再生成。</span> : null}
+            {r.truncated ? <span className="t-detail-xs">{M.maxOf(r.form) >= M.DURATION.max
+              ? `写到了 ${M.DURATION.max} 秒的单次上限，结尾可能收得急${r.bed ? '；循环的接缝有交叉淡化' : ''}。`
+              : `写到了 ${M.maxOf(r.form)} 秒的上限，结尾可能收得急；想让它自然收尾就把上限加长再生成。`}</span> : null}
             {r.entry ? <window.ToolOutputRow entry={r.entry} fromTool="music" compact /> : null}
           </>
         ) : null}
@@ -205,9 +221,10 @@
     /* 任务详情「再做一次」与编辑器「生成配乐」都经 openToolWith 带 params 进来 */
     window.BC_TOOL_FRAME.useToolPreset('music', (p) => {
       if (!p.params) return;
-      const {movie: mid, movieTitle, ...rest} = p.params;
+      const {movie: mid, movieTitle, movieDuration, ...rest} = p.params;
       setF((cur) => Object.assign({}, cur, rest, models.some((m) => m.id === rest.model) ? {} : {model: cur.model}));
-      setMovie(mid ? {id: mid, title: movieTitle || (app.projById(mid) || {}).title || '视频'} : null);
+      const proj = mid ? app.projById(mid) || {} : null;
+      setMovie(mid ? {id: mid, title: movieTitle || proj.title || '视频', duration: Number(movieDuration || proj.duration) || null} : null);
     });
     useEffect(() => { jobs.draft = f; }, [f]);
     const list = useRecords();
@@ -241,7 +258,11 @@
             {movie ? (
               <div className="aicard">
                 <b>给「{movie.title}」配乐</b>
-                <span>时长按这部视频预填成 {f.targetDurationSec} 秒；做好后直接加进它的音乐轨，也会留在 Space 里。</span>
+                {M.soundtrackFor(movie.duration).loop ? (
+                  <span>{M.soundtrackFor(movie.duration).note}做好后直接加进它的音乐轨，接缝交叉淡化；也会留在 Space 里。</span>
+                ) : (
+                  <span>时长按这部视频预填成 {f.targetDurationSec} 秒；做好后直接加进它的音乐轨，也会留在 Space 里。</span>
+                )}
                 <div className="chiprow"><Btn size="s" variant="quiet" onClick={() => setMovie(null)}>只生成，不加到视频</Btn></div>
               </div>
             ) : null}
