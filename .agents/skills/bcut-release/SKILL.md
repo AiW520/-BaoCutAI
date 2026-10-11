@@ -39,13 +39,14 @@ scope; follow the user's explicit method and limits.
   inventory the full commit/PR range, summarize large ranges in batches, reconcile
   coverage and publish the consolidated changelog. A local candidate keeps the
   same notes locally; platform continuation reuses the existing version's range.
-- After every public release or platform continuation, sync download links using
-  [download links](references/download-links.md): refresh both READMEs from the
-  update feeds and verify that baocut.com serves the new build. The site reads the
-  feeds itself; do not redeploy it for a release.
+- After every public release or platform continuation, check the download links
+  using [download links](references/download-links.md). The READMEs and baocut.com
+  link to `baocut.com/download/<id>`, which follows GitHub Releases by itself. Do
+  not edit the READMEs or redeploy the site for a release; verify that baocut.com
+  serves the new build.
 - Report actual checks and skips. A tag push or credential check alone is not a
   completed release; publication requires successful jobs, public read-back, feeds,
-  verified release notes and synced download links.
+  verified release notes and a passing baocut.com download check.
 
 The [desktop guide](../../../apps/desktop/README.md) owns packaging mechanics;
 mode-specific references explain when to load it. Requests only to change release

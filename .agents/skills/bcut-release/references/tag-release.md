@@ -48,10 +48,11 @@ The workflow preserves historical Latest, existing assets and unrelated feeds.
 
 Wait for the native jobs and both publishers, then merge the prepared changelog
 into the actual Release body and verify it by read-back as described in
-[release notes](release-notes.md). Then sync the README download links and check
-baocut.com as described in [download links](download-links.md). Merely pushing the
-tag is not a successful publication. Report the run/release URLs, full source SHA,
-published platforms, the download-link commit and actual verification/skips.
+[release notes](release-notes.md). Then check that baocut.com serves the new
+release as described in [download links](download-links.md). No README or site
+change is needed. Merely pushing the tag is not a successful publication. Report
+the run/release URLs, full source SHA, published platforms, the baocut.com check
+and actual verification/skips.
 UI/export, real model/GPU inference and paid Agent calls are not automated and
 must not be described as passed.
 

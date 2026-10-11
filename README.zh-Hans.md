@@ -17,16 +17,16 @@
 
 ## 下载与安装
 
-[BaoCut 3.3.0（Build 67）](https://github.com/JimLiu/baocut/releases/tag/baocut-v3.3.0-build.67) 已提供 macOS 与 Windows 安装包。包内包含 Runtime 和原生 Worker；只有开发时才需要 Node.js 和 Rust。
+BaoCut 提供 macOS 与 Windows 安装包，下面的链接始终下载最新版本；版本号与发布说明见 [baocut.com](https://baocut.com/zh-hans/#download) 与 [GitHub Releases](https://github.com/JimLiu/baocut/releases)。包内包含 Runtime 和原生 Worker；只有开发时才需要 Node.js 和 Rust。
 
 | 平台 | 安装包 | ZIP | 适用范围 |
 | --- | --- | --- | --- |
-| macOS 14+ · Apple Silicon | [DMG](https://github.com/JimLiu/baocut/releases/download/baocut-v3.3.0-build.67/BaoCut-3.3.0-build.67-aarch64-apple-darwin.dmg) | [ZIP](https://github.com/JimLiu/baocut/releases/download/baocut-v3.3.0-build.67/BaoCut-3.3.0-build.67-aarch64-apple-darwin.zip) | Apple Silicon Mac，已通过 Developer ID 签名与 Apple 公证 |
-| Windows x64 · CPU | [安装 EXE](https://github.com/JimLiu/baocut/releases/download/baocut-v3.3.0-build.67/BaoCut-3.3.0-build.67-win-x64-setup.exe) | [ZIP](https://github.com/JimLiu/baocut/releases/download/baocut-v3.3.0-build.67/BaoCut-3.3.0-build.67-win-x64.zip) | 使用 CPU 推理 |
-| Windows x64 · CUDA | [安装 EXE](https://github.com/JimLiu/baocut/releases/download/baocut-v3.3.0-build.67/BaoCut-3.3.0-build.67-win-x64-cuda-setup.exe) | [ZIP](https://github.com/JimLiu/baocut/releases/download/baocut-v3.3.0-build.67/BaoCut-3.3.0-build.67-win-x64-cuda.zip) | CUDA 13 支持的 NVIDIA 显卡，从 RTX 30 / Ampere 起 |
-| Windows x64 · Vulkan | [安装 EXE](https://github.com/JimLiu/baocut/releases/download/baocut-v3.3.0-build.67/BaoCut-3.3.0-build.67-win-x64-vulkan-setup.exe) | [ZIP](https://github.com/JimLiu/baocut/releases/download/baocut-v3.3.0-build.67/BaoCut-3.3.0-build.67-win-x64-vulkan.zip) | 支持 Vulkan 的 AMD / Intel 显卡或较旧的 NVIDIA 显卡；Whisper 使用 GPU，candle 使用 CPU |
+| macOS 14+ · Apple Silicon | [DMG](https://baocut.com/download/mac-dmg) | [ZIP](https://baocut.com/download/mac-zip) | Apple Silicon Mac，已通过 Developer ID 签名与 Apple 公证 |
+| Windows x64 · CPU | [安装 EXE](https://baocut.com/download/win-setup) | [ZIP](https://baocut.com/download/win-zip) | 使用 CPU 推理 |
+| Windows x64 · CUDA | [安装 EXE](https://baocut.com/download/win-cuda-setup) | [ZIP](https://baocut.com/download/win-cuda-zip) | CUDA 13 支持的 NVIDIA 显卡，从 RTX 30 / Ampere 起 |
+| Windows x64 · Vulkan | [安装 EXE](https://baocut.com/download/win-vulkan-setup) | [ZIP](https://baocut.com/download/win-vulkan-zip) | 支持 Vulkan 的 AMD / Intel 显卡或较旧的 NVIDIA 显卡；Whisper 使用 GPU，candle 使用 CPU |
 
-macOS 打开 DMG 后，将 BaoCut 拖入“应用程序”。Windows 先安装 [Microsoft Visual C++ v14 x64 Redistributable](https://learn.microsoft.com/en-us/cpp/windows/latest-supported-vc-redist/)，再运行安装器或解压 ZIP。Windows 包未签名，GPU 版需要兼容的显卡驱动。校验文件与验证说明见发布页；应用通过各平台的更新源检查 GitHub Releases 中的新版本。
+macOS 打开 DMG 后，将 BaoCut 拖入“应用程序”。Windows 先安装 [Microsoft Visual C++ v14 x64 Redistributable](https://learn.microsoft.com/en-us/cpp/windows/latest-supported-vc-redist/)，再运行安装器或解压 ZIP。Windows 包未签名，GPU 版需要兼容的显卡驱动。校验文件与验证说明见各版本的 GitHub 发布页；应用通过各平台的更新源检查 GitHub Releases 中的新版本。
 
 智能体功能需要已登录的智能体引擎，例如 Codex CLI 或 Claude Code。媒体分析、转写音频准备与导出还需要 `ffmpeg` 和 `ffprobe`；安装包不包含这些外部工具。
 

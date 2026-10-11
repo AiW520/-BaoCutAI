@@ -128,8 +128,8 @@ the existing version's changelog and verify it survives the platform note update
 For a local candidate, provide its paths, hashes/sizes, source SHA, actual signer
 and notarization IDs, checks and skips; say clearly that it is not public. For a
 published release or platform continuation, include its URL and verify public
-downloads and the live feed. Then sync the download links following
-[download links](download-links.md), and report the download-link commit and the
-baocut.com check.
+downloads and the live feed. Then check the download links following
+[download links](download-links.md) and report the baocut.com check. No README or
+site change is needed.
 Also report the changelog comparison range and completed coverage reconciliation.
 A local-only request must not trigger a tag push or GitHub publication.

@@ -17,16 +17,16 @@
 
 ## Download and install
 
-[BaoCut 3.3.0 (Build 67)](https://github.com/JimLiu/baocut/releases/tag/baocut-v3.3.0-build.67) is available for macOS and Windows. Packaged apps include the Runtime and native workers; Node.js and Rust are only needed for development.
+BaoCut is available for macOS and Windows. The links below always download the latest release; version numbers and release notes are on [baocut.com](https://baocut.com/#download) and [GitHub Releases](https://github.com/JimLiu/baocut/releases). Packaged apps include the Runtime and native workers; Node.js and Rust are only needed for development.
 
 | Platform | Installer | ZIP | Choose this version for |
 | --- | --- | --- | --- |
-| macOS 14+ · Apple Silicon | [DMG](https://github.com/JimLiu/baocut/releases/download/baocut-v3.3.0-build.67/BaoCut-3.3.0-build.67-aarch64-apple-darwin.dmg) | [ZIP](https://github.com/JimLiu/baocut/releases/download/baocut-v3.3.0-build.67/BaoCut-3.3.0-build.67-aarch64-apple-darwin.zip) | Apple Silicon Macs; Developer ID signed and notarized |
-| Windows x64 · CPU | [Setup EXE](https://github.com/JimLiu/baocut/releases/download/baocut-v3.3.0-build.67/BaoCut-3.3.0-build.67-win-x64-setup.exe) | [ZIP](https://github.com/JimLiu/baocut/releases/download/baocut-v3.3.0-build.67/BaoCut-3.3.0-build.67-win-x64.zip) | CPU inference |
-| Windows x64 · CUDA | [Setup EXE](https://github.com/JimLiu/baocut/releases/download/baocut-v3.3.0-build.67/BaoCut-3.3.0-build.67-win-x64-cuda-setup.exe) | [ZIP](https://github.com/JimLiu/baocut/releases/download/baocut-v3.3.0-build.67/BaoCut-3.3.0-build.67-win-x64-cuda.zip) | NVIDIA GPUs supported by CUDA 13, starting with RTX 30 / Ampere |
-| Windows x64 · Vulkan | [Setup EXE](https://github.com/JimLiu/baocut/releases/download/baocut-v3.3.0-build.67/BaoCut-3.3.0-build.67-win-x64-vulkan-setup.exe) | [ZIP](https://github.com/JimLiu/baocut/releases/download/baocut-v3.3.0-build.67/BaoCut-3.3.0-build.67-win-x64-vulkan.zip) | Vulkan-capable AMD / Intel GPUs or older NVIDIA GPUs; Whisper uses the GPU, candle uses the CPU |
+| macOS 14+ · Apple Silicon | [DMG](https://baocut.com/download/mac-dmg) | [ZIP](https://baocut.com/download/mac-zip) | Apple Silicon Macs; Developer ID signed and notarized |
+| Windows x64 · CPU | [Setup EXE](https://baocut.com/download/win-setup) | [ZIP](https://baocut.com/download/win-zip) | CPU inference |
+| Windows x64 · CUDA | [Setup EXE](https://baocut.com/download/win-cuda-setup) | [ZIP](https://baocut.com/download/win-cuda-zip) | NVIDIA GPUs supported by CUDA 13, starting with RTX 30 / Ampere |
+| Windows x64 · Vulkan | [Setup EXE](https://baocut.com/download/win-vulkan-setup) | [ZIP](https://baocut.com/download/win-vulkan-zip) | Vulkan-capable AMD / Intel GPUs or older NVIDIA GPUs; Whisper uses the GPU, candle uses the CPU |
 
-On macOS, open the DMG and drag BaoCut into Applications. On Windows, install the [Microsoft Visual C++ v14 x64 Redistributable](https://learn.microsoft.com/en-us/cpp/windows/latest-supported-vc-redist/) first, then run the installer or extract the ZIP. Windows packages are unsigned; GPU variants need compatible graphics drivers. Checksums and verification details are on the release page. The app checks GitHub Releases for updates through its platform-specific update feed.
+On macOS, open the DMG and drag BaoCut into Applications. On Windows, install the [Microsoft Visual C++ v14 x64 Redistributable](https://learn.microsoft.com/en-us/cpp/windows/latest-supported-vc-redist/) first, then run the installer or extract the ZIP. Windows packages are unsigned; GPU variants need compatible graphics drivers. Checksums and verification details are on each release's GitHub page. The app checks GitHub Releases for updates through its platform-specific update feed.
 
 Agent features require a signed-in agent engine such as Codex CLI or Claude Code. Media analysis, transcription preparation and export also require `ffmpeg` and `ffprobe`; these external tools are not bundled.
 
