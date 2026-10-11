@@ -648,8 +648,8 @@ test('横幅入口那一格：从别的面板跳进文稿，回那个面板；�
     {kind: 'back', label: '回到视频', tip: M.CUT_ENTRY_COPY.backTip, to: 'video'});
   assert.equal(M.cutEntryAction('transcript', {tab: 'elements'}, {railLabel: '元素'}).label, '回到元素');
   // 从 AI 工具来但没有结果页（或表面没有 AI 工具）：按 rail 名回去
-  assert.equal(M.cutEntryAction('transcript', {tab: 'aitools'}, {hasResult: false, ai: true, railLabel: 'AI 工具'}).label, '回到AI 工具');
-  assert.equal(M.cutEntryAction('transcript', {tab: 'aitools'}, {hasResult: true, ai: false, railLabel: 'AI 工具'}).label, '回到AI 工具');
+  assert.equal(M.cutEntryAction('transcript', {tab: 'aitools'}, {hasResult: false, ai: true, railLabel: 'AI 工具'}).label, '回到 AI 工具');
+  assert.equal(M.cutEntryAction('transcript', {tab: 'aitools'}, {hasResult: true, ai: false, railLabel: 'AI 工具'}).label, '回到 AI 工具');
 });
 
 test('横幅入口那一格：直接落在文稿（或点过 rail），有结果页且有 AI 工具给「看结果页」，否则不摆', () => {
