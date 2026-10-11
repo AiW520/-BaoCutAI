@@ -80,6 +80,7 @@ export const ko: JobsManagerMessages = {
   transcribeLabel: '전사',
   voiceOverLabel: '더빙 생성',
   imageLabel: '이미지 생성',
+  musicLabel: '음악 생성',
   videoClosed: '영상이 닫혔습니다',
   assetGone: '소재가 더 이상 영상에 없습니다',
   assetChangedDuringTranscribe: '전사 중에 소재 내용이 바뀌었습니다',

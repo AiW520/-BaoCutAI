@@ -18,6 +18,8 @@ export const ko: JobsToolCatalogueMessages = {
     '프롬프트로 텍스트를 생성합니다(JSON Schema를 따르게 할 수도 있음). 결과는 텍스트 결과물입니다. Space의 문서나 자막 항목을 자료로 첨부할 수 있습니다.',
   generateImageLabel: '이미지 생성',
   generateImageDescription: '설명으로 이미지를 생성합니다. 결과는 이미지 결과물입니다.',
+  generateMusicLabel: '음악 생성',
+  generateMusicDescription: '스타일 설명과 선택적 가사로 로컬 음악 모델이 노래 또는 연주곡을 생성합니다. 결과는 오디오 출력입니다.',
   linkImportLabel: '영상 다운로드',
   linkImportDescription:
     'yt-dlp로 영상을 이 컴퓨터에 다운로드합니다. 브라우저 쿠키를 사용할 수 있으며, 다운로드한 영상을 전사해 전사본과 자막을 만들 수 있습니다.',

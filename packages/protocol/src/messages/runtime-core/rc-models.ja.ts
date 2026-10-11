@@ -28,6 +28,7 @@ export const ja: RcModelsMessages = {
     `${p.duration} 秒 · ${p.sampleRate} Hz · ボーカルが背景より${p.finite ? ` ${p.ratio} dB ` : 'はるかに'}大きい`,
   speechPassed: (p) => `${p.duration} 秒 · ${p.sampleRate} Hz`,
   imagePassed: (p) => `${p.width}×${p.height} · ${p.steps} ステップ`,
+  musicPassed: (p: { duration: string; sampleRate: number; steps: number }) => `${p.duration} 秒 · ${p.sampleRate} Hz · ${p.steps} ステップ`,
 
   envLocked:
     'モデルフォルダは環境変数 BAOCUT_MODELS_DIR で指定されています。変更するには環境変数を変更して BaoCut を再起動してください',

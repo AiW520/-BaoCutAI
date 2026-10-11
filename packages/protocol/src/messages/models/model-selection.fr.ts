@@ -6,6 +6,7 @@ export const fr: ModelsModelSelectionMessages = {
   capGenerateImage: "Génération d’images",
   capGenerateText: "Génération de texte",
   capSeparateAudio: "Séparation vocale",
+  capGenerateMusic: 'Génération de musique',
   noSuchProvider: (p: { provider: string }) => `Fournisseur inconnu : ${p.provider}`,
   noProviderForModel: (p: { model: string }) => `Aucun fournisseur ne propose ce modèle : ${p.model}`,
   ambiguousModel: (p: { model: string }) => `Plusieurs fournisseurs proposent le modèle ${p.model} ; indiquez aussi provider`,

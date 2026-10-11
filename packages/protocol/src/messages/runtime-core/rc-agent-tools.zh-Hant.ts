@@ -66,6 +66,8 @@ export const zhHant: RcAgentToolsMessages = {
   speechPurpose: (p) => `合成語音（${p.chars} 字）`,
   speechSummary: (p) => `合成語音（${p.chars} 字${p.provider ? `，${p.provider}` : ''}${p.voice ? `，音色 ${p.voice}` : ''}）`,
   imagePurpose: (p) => `生成圖片：${p.prompt}`,
+  musicPurpose: (p: { style: string }) => `生成音樂：${p.style}`,
+  musicSummary: (p: { mode: string; seconds: number | null; provider: string | null; style: string }) => `生成${p.mode === 'song' ? '歌曲' : '純音樂'}${p.seconds ? `，最長 ${p.seconds} 秒` : ''}${p.provider ? `，${p.provider}` : ''}：${p.style}`,
   imageSummary: (p) => `生成 ${p.count} 張圖片${p.size ? `，${p.size}` : ''}${p.provider ? `，${p.provider}` : ''}：${p.prompt}`,
   cancelJobSummary: (p) => `取消任務 ${p.jobId}`,
   retryPipelineSummary: (p) => `從失敗的步驟重新執行流程 ${p.jobId}（${p.pipeline}，第 ${p.attempt} 次嘗試）`,

@@ -6,6 +6,7 @@ export const ko: ModelsModelSelectionMessages = {
   capGenerateImage: '이미지 생성',
   capGenerateText: '텍스트 생성',
   capSeparateAudio: '음성 분리',
+  capGenerateMusic: '음악 생성',
   noSuchProvider: (p: { provider: string }) => `해당 공급자가 없습니다: ${p.provider}`,
   noProviderForModel: (p: { model: string }) => `이 모델을 제공하는 공급자가 없습니다: ${p.model}`,
   ambiguousModel: (p: { model: string }) => `여러 공급자에 ${p.model} 모델이 있습니다. provider도 지정하세요`,

@@ -24,4 +24,13 @@ export const ja: ModelsGenerationOptionsMessages = {
   noSteps: (p: { modelId: string }) => `モデル ${p.modelId} は steps を受け付けません（受け付けるのはローカルモデルのみです）`,
   stepsRange: (p: { min: number; max: number }) => `steps は ${p.min} から ${p.max} までの整数である必要があります`,
   noSeed: (p: { modelId: string }) => `モデル ${p.modelId} は seed を受け付けません`,
+  styleEmpty: 'スタイルは空にできません',
+  styleTooLong: (p: { length: number; modelId: string; limit: number }) => `スタイルは ${p.length} 文字で、モデル ${p.modelId} の上限 ${p.limit} 文字を超えています`,
+  lyricsEmpty: '歌には歌詞が必要です。ボーカルなしの曲は instrumental モードを使ってください',
+  lyricsTooLong: (p: { length: number; modelId: string; limit: number }) => `歌詞は ${p.length} 文字で、モデル ${p.modelId} の上限 ${p.limit} 文字を超えています`,
+  lyricsNotInstrumental: 'instrumental モードでは歌詞を受け付けません',
+  modeUnsupported: (p: { modelId: string; mode: string }) => `モデル ${p.modelId} は ${p.mode} モードに対応していません`,
+  durationRange: (p: { modelId: string; max: number }) => `長さは正の秒数で、モデル ${p.modelId} では最大 ${p.max} 秒です`,
+  targetOverMax: 'targetDurationSec は maxDurationSec を超えられません',
+  planningUnsupported: (p: { modelId: string; planning: string; options: string }) => `モデル ${p.modelId} は planning ${p.planning} に対応していません（選択肢: ${p.options}）`,
 };

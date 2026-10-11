@@ -61,6 +61,8 @@ export const nl: RcAgentToolsMessages = {
   speechSummary: (p: { chars: number; provider: string | null; voice: string | null }) =>
     `Spraak synthetiseren (${`${p.chars} ${pluralForm('nl', p.chars, { one: "teken", other: "tekens" })}`}${p.provider ? `, ${p.provider}` : ""}${p.voice ? `, stem ${p.voice}` : ""})`,
   imagePurpose: (p: { prompt: string }) => `Afbeelding genereren: ${p.prompt}`,
+  musicPurpose: (p: { style: string }) => `Muziek genereren: ${p.style}`,
+  musicSummary: (p: { mode: string; seconds: number | null; provider: string | null; style: string }) => `${p.mode === 'song' ? 'Een liedje' : 'Instrumentale muziek'} genereren${p.seconds ? `, tot ${p.seconds} s` : ''}${p.provider ? `, ${p.provider}` : ''}: ${p.style}`,
   imageSummary: (p: { count: number; size: string | null; provider: string | null; prompt: string }) =>
     `Genereren: ${`${p.count} ${pluralForm('nl', p.count, { one: "afbeelding", other: "afbeeldingen" })}`}${p.size ? `, ${p.size}` : ""}${p.provider ? `, ${p.provider}` : ""}: ${p.prompt}`,
   cancelJobSummary: (p: { jobId: string }) => `Taak annuleren: ${p.jobId}`,

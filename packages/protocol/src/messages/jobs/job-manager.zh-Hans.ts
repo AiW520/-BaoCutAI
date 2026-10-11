@@ -73,6 +73,7 @@ export const zhHans: JobsManagerMessages = {
   transcribeLabel: '转写',
   voiceOverLabel: '生成配音',
   imageLabel: '生成图片',
+  musicLabel: '生成音乐',
   videoClosed: '视频已经关闭',
   assetGone: '素材已经不在视频里',
   assetChangedDuringTranscribe: '素材在转写期间换了内容',

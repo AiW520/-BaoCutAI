@@ -79,6 +79,7 @@ export const nl: RcModelApiMessages = {
   capabilityGenerateImage: "afbeeldingsgeneratie",
   capabilityGenerateText: "tekstgeneratie",
   capabilitySeparateAudio: "stemmen scheiden",
+  capabilityGenerateMusic: 'muziekgeneratie',
   modelNotFoundFor: (p: { capability: string; model: string }) =>
     `Geen model ‘${p.model}’ is beschikbaar voor ${p.capability}: GET /v1/models toont de beschikbare modellen`,
   hintEnableOnline: (p: { capability: string }) => `Stel eerst een onlinedienst in en schakel die in bij BaoCut voor ${p.capability}`,

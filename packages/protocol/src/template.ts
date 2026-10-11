@@ -114,8 +114,8 @@ export const TEMPLATE_VERIFICATION_OUTCOMES = ['pass', 'partial', 'fail'] as con
 export type TemplateVerificationOutcome = (typeof TEMPLATE_VERIFICATION_OUTCOMES)[number];
 
 /**
- * 验证时缺失、因而降级或跳过的能力（规范 §3.5）。前四项与模型服务的能力同名；视频、音乐与音效生成还没有对应的 Provider，
- * 先在这里占名字。
+ * 验证时缺失、因而降级或跳过的能力（规范 §3.5）。`transcribe`、`synthesizeSpeech`、`generateImage`、`generateText` 与
+ * `generateMusic` 与模型服务的能力同名；视频与音效生成还没有对应的 Provider，先在这里占名字。
  */
 export const TEMPLATE_VERIFICATION_CAPABILITIES = [
   'transcribe',

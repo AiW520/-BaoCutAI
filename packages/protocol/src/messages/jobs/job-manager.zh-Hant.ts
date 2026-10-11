@@ -75,6 +75,7 @@ export const zhHant: JobsManagerMessages = {
   transcribeLabel: '轉錄',
   voiceOverLabel: '生成配音',
   imageLabel: '生成圖片',
+  musicLabel: '生成音樂',
   videoClosed: '影片已關閉',
   assetGone: '素材已不在影片中',
   assetChangedDuringTranscribe: '素材內容在轉錄期間有變更',

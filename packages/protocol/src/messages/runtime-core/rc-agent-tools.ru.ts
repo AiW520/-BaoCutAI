@@ -50,6 +50,8 @@ export const ru: RcAgentToolsMessages = {
   speechPurpose: (p) => `Синтезировать речь (${pluralForm('ru', p.chars, { one: `${p.chars} символ`, few: `${p.chars} символа`, many: `${p.chars} символов`, other: `${p.chars} символа` })})`,
   speechSummary: (p) => `Синтезировать речь (${pluralForm('ru', p.chars, { one: `${p.chars} символ`, few: `${p.chars} символа`, many: `${p.chars} символов`, other: `${p.chars} символа` })}${p.provider ? `, ${p.provider}` : ""}${p.voice ? `, голос ${p.voice}` : ""})`,
   imagePurpose: (p) => `Сгенерировать изображение: ${p.prompt}`,
+  musicPurpose: (p: { style: string }) => `Создать музыку: ${p.style}`,
+  musicSummary: (p: { mode: string; seconds: number | null; provider: string | null; style: string }) => `Создать ${p.mode === 'song' ? 'песню' : 'инструментальную музыку'}${p.seconds ? `, до ${p.seconds} с` : ''}${p.provider ? `, ${p.provider}` : ''}: ${p.style}`,
   imageSummary: (p) => `Сгенерировать ${pluralForm('ru', p.count, { one: `${p.count} изображение`, few: `${p.count} изображения`, many: `${p.count} изображений`, other: `${p.count} изображения` })}${p.size ? `, ${p.size}` : ""}${p.provider ? `, ${p.provider}` : ""}: ${p.prompt}`,
   cancelJobSummary: (p) => `Отменить задачу ${p.jobId}`,
   retryPipelineSummary: (p) => `Повторить пайплайн ${p.jobId} (${p.pipeline}, попытка ${p.attempt}) с неудачного шага`,

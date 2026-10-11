@@ -75,6 +75,7 @@ export const ko: RcModelApiMessages = {
   capabilityGenerateImage: '이미지 생성',
   capabilityGenerateText: '텍스트 생성',
   capabilitySeparateAudio: '보컬 분리',
+  capabilityGenerateMusic: '음악 생성',
   modelNotFoundFor: (p: { capability: string; model: string }) =>
     `${p.capability}에 사용할 수 있는 모델 “${p.model}”이(가) 없습니다. GET /v1/models에서 사용 가능한 모델 목록을 볼 수 있습니다`,
   hintEnableOnline: (p: { capability: string }) => `먼저 BaoCut에서 ${p.capability}용 온라인 서비스를 설정하고 켜세요`,

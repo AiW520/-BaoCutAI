@@ -29,6 +29,7 @@ import type { ConversationSnapshot, DirectorySnapshot, SequencedEvent, Topic } f
 import type { ExportCreateRequest, ExportRenderTextRequest, ExportRenderTextResult } from './exports.ts';
 import type {
   GenerateImageRequest,
+  GenerateMusicRequest,
   GenerateTextRequest,
   JobReconcileDecision,
   JobRecord,
@@ -698,6 +699,11 @@ export interface RpcMethods {
   'models.synthesizeSpeech': { params: SynthesizeSpeechRequest; result: { jobId: Id } };
   /** 生成图片：规则同 `models.synthesizeSpeech`；尺寸、张数与格式要在模型声明的范围内。 */
   'models.generateImage': { params: GenerateImageRequest; result: { jobId: Id } };
+  /**
+   * 生成音乐（歌曲或配乐）：规则同 `models.synthesizeSpeech`，只有本地 Provider（已安装的音乐生成模型包与它的引擎）。
+   * 歌曲要给歌词；配乐不收歌词。预算 `maxDurationSec` 要在模型声明的范围内。
+   */
+  'models.generateMusic': { params: GenerateMusicRequest; result: { jobId: Id } };
   /**
    * 调用一次文本模型（架构设计 §6.1、§6.4）：立即返回 `jobId`；完成时全文发布为产物（`.txt`，结构化输出是校验过的
    * `.json`），结果带产物 ID 与开头一段的预览。选择规则同 `models.synthesizeSpeech`（没有出厂默认）。结构化输出不合 schema、

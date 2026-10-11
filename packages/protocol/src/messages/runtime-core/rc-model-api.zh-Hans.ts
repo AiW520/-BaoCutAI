@@ -73,6 +73,7 @@ export const zhHans: RcModelApiMessages = {
   capabilityGenerateImage: '图片生成',
   capabilityGenerateText: '文本生成',
   capabilitySeparateAudio: '人声分离',
+  capabilityGenerateMusic: '音乐生成',
   modelNotFoundFor: (p: { capability: string; model: string }) =>
     `没有可以用于${p.capability}的模型「${p.model}」：GET /v1/models 列出可用的模型`,
   hintEnableOnline: (p: { capability: string }) => `先在 BaoCut 里配置并启用一个能做${p.capability}的在线服务`,

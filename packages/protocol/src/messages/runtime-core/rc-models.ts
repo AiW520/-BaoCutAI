@@ -45,6 +45,7 @@ const en = {
     `${p.duration} s · ${p.sampleRate} Hz · vocals ${p.finite ? `${p.ratio} dB` : 'far'} above the background`,
   speechPassed: (p: { duration: string; sampleRate: number }) => `${p.duration} s · ${p.sampleRate} Hz`,
   imagePassed: (p: { width: number; height: number; steps: number }) => `${p.width}×${p.height} · ${p.steps} steps`,
+  musicPassed: (p: { duration: string; sampleRate: number; steps: number }) => `${p.duration} s · ${p.sampleRate} Hz · ${p.steps} steps`,
 
   // 模型目录（models-dir-service）
   envLocked: 'The models folder is set by the BAOCUT_MODELS_DIR environment variable. To change it, change the variable and restart BaoCut',

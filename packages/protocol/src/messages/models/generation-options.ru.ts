@@ -22,4 +22,13 @@ export const ru: ModelsGenerationOptionsMessages = {
   noSteps: (p: { modelId: string }) => `Модель ${p.modelId} не принимает steps (только локальные модели)`,
   stepsRange: (p: { min: number; max: number }) => `steps должен быть целым числом от ${p.min} и ${p.max}`,
   noSeed: (p: { modelId: string }) => `Модель ${p.modelId} не принимает seed`,
+  styleEmpty: 'Стиль не может быть пустым',
+  styleTooLong: (p: { length: number; modelId: string; limit: number }) => `Стиль содержит ${p.length} символов, что превышает лимит ${p.limit} модели ${p.modelId}`,
+  lyricsEmpty: 'Для песни нужен текст; для трека без вокала используйте режим instrumental',
+  lyricsTooLong: (p: { length: number; modelId: string; limit: number }) => `Текст содержит ${p.length} символов, что превышает лимит ${p.limit} модели ${p.modelId}`,
+  lyricsNotInstrumental: 'Режим instrumental не принимает текст',
+  modeUnsupported: (p: { modelId: string; mode: string }) => `Модель ${p.modelId} не поддерживает режим ${p.mode}`,
+  durationRange: (p: { modelId: string; max: number }) => `Длительность должна быть положительным числом секунд, не более ${p.max} для модели ${p.modelId}`,
+  targetOverMax: 'targetDurationSec не может превышать maxDurationSec',
+  planningUnsupported: (p: { modelId: string; planning: string; options: string }) => `Модель ${p.modelId} не поддерживает планирование ${p.planning} (варианты: ${p.options})`,
 };

@@ -33,6 +33,8 @@ const en = {
     'Generate text from a prompt (optionally following a JSON Schema); the result is a text output. Documents or subtitle items in the Space can be attached as material.',
   generateImageLabel: 'Generate image',
   generateImageDescription: 'Generate an image from a description; the result is an image output.',
+  generateMusicLabel: 'Generate music',
+  generateMusicDescription: 'Compose a song or an instrumental track from a style description and optional lyrics with a local music model; the result is an audio output.',
   linkImportLabel: 'Download video',
   linkImportDescription:
     'Download a video to this computer with yt-dlp. Browser cookies can be used, and the download can be transcribed into a transcript and subtitles.',

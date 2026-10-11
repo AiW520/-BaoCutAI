@@ -39,6 +39,8 @@ export const ptBR: ProtocolValidationMessages = {
   speechTextEmpty: "O texto não pode estar vazio; com material, passe uma string vazia em text",
   voiceOneOf: "Informe apenas voice, reference ou voiceDescription",
   promptEmpty: "O prompt não pode estar vazio",
+  musicStyleEmpty: "A descrição do estilo não pode estar vazia",
+  musicLyricsMode: "Canções precisam de letra; música instrumental não aceita letra",
   textMessagesEmpty: "É exigida ao menos uma mensagem user ou assistant não vazia",
   rangeStartEnd: "range.start deve ser menor que range.end",
   toolNameChars: "Nomes de ferramentas só podem conter minúsculas, números e hífens",

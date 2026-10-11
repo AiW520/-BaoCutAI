@@ -25,6 +25,7 @@ export const zhHant: RcModelsMessages = {
   separationPassed: (p) => `${p.duration} 秒 · ${p.sampleRate} Hz · 人聲比背景高 ${p.finite ? `${p.ratio} dB` : '很多'}`,
   speechPassed: (p) => `${p.duration} 秒 · ${p.sampleRate} Hz`,
   imagePassed: (p) => `${p.width}×${p.height} · ${p.steps} 步`,
+  musicPassed: (p: { duration: string; sampleRate: number; steps: number }) => `${p.duration} 秒 · ${p.sampleRate} Hz · ${p.steps} 步`,
 
   envLocked: '模型資料夾由環境變數 BAOCUT_MODELS_DIR 設定。若要變更，請修改該變數並重新啟動 BaoCut',
   movingDirWaitOrCancel: '正在移動模型資料夾。請在移動完成或取消後再變更',

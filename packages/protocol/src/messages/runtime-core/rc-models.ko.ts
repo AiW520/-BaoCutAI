@@ -26,6 +26,7 @@ export const ko: RcModelsMessages = {
   separationPassed: (p) => `${p.duration}초 · ${p.sampleRate} Hz · 보컬이 배경보다 ${p.finite ? `${p.ratio} dB` : '훨씬'} 높음`,
   speechPassed: (p) => `${p.duration}초 · ${p.sampleRate} Hz`,
   imagePassed: (p) => `${p.width}×${p.height} · ${p.steps}단계`,
+  musicPassed: (p: { duration: string; sampleRate: number; steps: number }) => `${p.duration}초 · ${p.sampleRate} Hz · ${p.steps}단계`,
 
   envLocked: '모델 폴더는 BAOCUT_MODELS_DIR 환경 변수로 지정되어 있습니다. 바꾸려면 환경 변수를 변경하고 BaoCut을 다시 시작하세요',
   movingDirWaitOrCancel: '모델 폴더를 옮기는 중입니다. 이동이 끝나거나 취소된 뒤 변경하세요',

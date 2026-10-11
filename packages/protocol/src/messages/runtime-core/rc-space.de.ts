@@ -53,6 +53,7 @@ export const de: RcSpaceMessages = {
   exportedFileGone: "Die exportierte Datei ist nicht mehr vorhanden",
   labelSynthesizeSpeech: "Synthetisierte Sprache",
   labelGenerateImage: "Erzeugtes Bild",
+  labelGenerateMusic: 'Erzeugte Musik',
   labelGenerateText: "Erzeugter Text",
   labelExport: "Exportieren",
 

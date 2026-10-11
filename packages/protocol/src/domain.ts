@@ -831,7 +831,7 @@ export interface SpaceEntryOrigin {
   conversationId?: Id;
   taskId?: Id;
   jobId?: Id;
-  /** 生成、导出或派生它的能力（`synthesizeSpeech`、`generateImage`、`generateText`、`export`、`videos-derive`）。 */
+  /** 生成、导出或派生它的能力（`synthesizeSpeech`、`generateImage`、`generateMusic`、`generateText`、`export`、`videos-derive`）。 */
   capability?: string;
   provider?: { providerId: string; modelId: string };
 }

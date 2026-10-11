@@ -30,6 +30,7 @@ export const ptBR: RcModelsMessages = {
     `${p.duration} s · ${p.sampleRate} Hz · voz ${p.finite ? `${p.ratio} dB` : "muito"} acima do fundo`,
   speechPassed: (p: { duration: string; sampleRate: number }) => `${p.duration} s · ${p.sampleRate} Hz`,
   imagePassed: (p: { width: number; height: number; steps: number }) => `${p.width}×${p.height} · ${p.steps} passos`,
+  musicPassed: (p: { duration: string; sampleRate: number; steps: number }) => `${p.duration} s · ${p.sampleRate} Hz · ${p.steps} passos`,
 
   envLocked: "Pasta definida por BAOCUT_MODELS_DIR. Altere a variável e reinicie o BaoCut para mudar",
   movingDirWaitOrCancel: "Pasta sendo movida. Altere após conclusão ou cancelamento",

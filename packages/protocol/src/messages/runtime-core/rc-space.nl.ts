@@ -53,6 +53,7 @@ export const nl: RcSpaceMessages = {
   exportedFileGone: "Het geëxporteerde bestand is verdwenen",
   labelSynthesizeSpeech: "Gesynthetiseerde spraak",
   labelGenerateImage: "Gegenereerde afbeelding",
+  labelGenerateMusic: 'Gegenereerde muziek',
   labelGenerateText: "Gegenereerde tekst",
   labelExport: "Exporteren",
 

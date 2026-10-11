@@ -33,7 +33,9 @@ export const fr: RcAgentToolsMessages = {
   transcribePurpose: (p) => `Transcrire le média ${p.assetId}`, transcribeSummary: (p) => `Transcrire le média ${p.assetId}${p.provider ? ` (${p.provider}${p.model ? ` ${p.model}` : ''})` : ''}`,
   speechPurpose: (p) => `Synthétiser la voix (${p.chars} ${pluralForm('fr', p.chars, { one: 'caractère', other: 'caractères' })})`,
   speechSummary: (p) => `Synthétiser la voix (${p.chars} ${pluralForm('fr', p.chars, { one: 'caractère', other: 'caractères' })}${p.provider ? `, ${p.provider}` : ''}${p.voice ? `, voix ${p.voice}` : ''})`,
-  imagePurpose: (p) => `Générer une image : ${p.prompt}`, imageSummary: (p) => `Générer ${p.count} ${pluralForm('fr', p.count, { one: 'image', other: 'images' })}${p.size ? `, ${p.size}` : ''}${p.provider ? `, ${p.provider}` : ''} : ${p.prompt}`,
+  imagePurpose: (p) => `Générer une image : ${p.prompt}`,
+  musicPurpose: (p: { style: string }) => `Générer de la musique : ${p.style}`,
+  musicSummary: (p: { mode: string; seconds: number | null; provider: string | null; style: string }) => `Générer ${p.mode === 'song' ? 'une chanson' : 'un morceau instrumental'}${p.seconds ? `, jusqu’à ${p.seconds} s` : ''}${p.provider ? `, ${p.provider}` : ''} : ${p.style}`, imageSummary: (p) => `Générer ${p.count} ${pluralForm('fr', p.count, { one: 'image', other: 'images' })}${p.size ? `, ${p.size}` : ''}${p.provider ? `, ${p.provider}` : ''} : ${p.prompt}`,
   cancelJobSummary: (p) => `Annuler la tâche ${p.jobId}`, retryPipelineSummary: (p) => `Relancer le processus ${p.jobId} (${p.pipeline}, tentative ${p.attempt}) depuis l’étape en échec`,
   saveArtifactSummary: (p) => `Enregistrer le résultat ${p.artifactId} sous ${p.path}`, overwriteArtifactSummary: (p) => `Écraser le fichier existant ${p.path} avec le résultat ${p.artifactId}`,
   exportSummary: (p) => {

@@ -22,4 +22,13 @@ export const ptBR: ModelsGenerationOptionsMessages = {
   noSteps: (p: { modelId: string }) => `Modelo ${p.modelId} não aceita steps (somente modelos locais)`,
   stepsRange: (p: { min: number; max: number }) => `steps deve ser um inteiro entre ${p.min} e ${p.max}`,
   noSeed: (p: { modelId: string }) => `Modelo ${p.modelId} não aceita seed`,
+  styleEmpty: 'O estilo não pode estar vazio',
+  styleTooLong: (p: { length: number; modelId: string; limit: number }) => `O estilo tem ${p.length} caracteres, acima do limite de ${p.limit} do modelo ${p.modelId}`,
+  lyricsEmpty: 'Uma música precisa de letra; use o modo instrumental para uma faixa sem vocais',
+  lyricsTooLong: (p: { length: number; modelId: string; limit: number }) => `A letra tem ${p.length} caracteres, acima do limite de ${p.limit} do modelo ${p.modelId}`,
+  lyricsNotInstrumental: 'O modo instrumental não aceita letra',
+  modeUnsupported: (p: { modelId: string; mode: string }) => `O modelo ${p.modelId} não suporta o modo ${p.mode}`,
+  durationRange: (p: { modelId: string; max: number }) => `A duração deve ser um número positivo de segundos, no máximo ${p.max} para o modelo ${p.modelId}`,
+  targetOverMax: 'targetDurationSec não pode exceder maxDurationSec',
+  planningUnsupported: (p: { modelId: string; planning: string; options: string }) => `O modelo ${p.modelId} não suporta o planejamento ${p.planning} (opções: ${p.options})`,
 };

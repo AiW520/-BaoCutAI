@@ -106,6 +106,8 @@ const en = {
   speechSummary: (p: { chars: number; provider: string | null; voice: string | null }) =>
     `Synthesize speech (${plural(p.chars, 'character', 'characters')}${p.provider ? `, ${p.provider}` : ''}${p.voice ? `, voice ${p.voice}` : ''})`,
   imagePurpose: (p: { prompt: string }) => `Generate image: ${p.prompt}`,
+  musicPurpose: (p: { style: string }) => `Generate music: ${p.style}`,
+  musicSummary: (p: { mode: string; seconds: number | null; provider: string | null; style: string }) => `Generate ${p.mode === 'song' ? 'a song' : 'instrumental music'}${p.seconds ? `, up to ${p.seconds} s` : ''}${p.provider ? `, ${p.provider}` : ''}: ${p.style}`,
   imageSummary: (p: { count: number; size: string | null; provider: string | null; prompt: string }) =>
     `Generate ${plural(p.count, 'image', 'images')}${p.size ? `, ${p.size}` : ''}${p.provider ? `, ${p.provider}` : ''}: ${p.prompt}`,
   cancelJobSummary: (p: { jobId: string }) => `Cancel task ${p.jobId}`,

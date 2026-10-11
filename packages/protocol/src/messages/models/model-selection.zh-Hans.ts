@@ -6,6 +6,7 @@ export const zhHans: ModelsModelSelectionMessages = {
   capGenerateImage: '图片生成',
   capGenerateText: '文本生成',
   capSeparateAudio: '人声分离',
+  capGenerateMusic: '音乐生成',
   noSuchProvider: (p: { provider: string }) => `没有这个 Provider：${p.provider}`,
   noProviderForModel: (p: { model: string }) => `没有 Provider 提供这个模型：${p.model}`,
   ambiguousModel: (p: { model: string }) => `多个 Provider 都有模型 ${p.model}，请同时指定 provider`,

@@ -18,6 +18,8 @@ export const ja: JobsToolCatalogueMessages = {
     'プロンプトからテキストを生成します（JSON Schema に従わせることもできます）。結果はテキストの生成物です。Space 内のドキュメントや字幕項目を素材として添付できます。',
   generateImageLabel: '画像を生成',
   generateImageDescription: '説明から画像を生成します。結果は画像の生成物です。',
+  generateMusicLabel: '音楽を生成',
+  generateMusicDescription: 'スタイルの説明と任意の歌詞から、ローカルの音楽モデルで楽曲またはインストを生成します。結果は音声出力です。',
   linkImportLabel: '動画をダウンロード',
   linkImportDescription:
     'yt-dlp で動画をこのコンピュータにダウンロードします。ブラウザの Cookie を使用でき、ダウンロードしたものを文字起こしと字幕にすることもできます。',

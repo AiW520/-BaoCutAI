@@ -15,6 +15,8 @@ export const zhHant: JobsToolCatalogueMessages = {
   generateTextDescription: '依提示生成一段文字（可以要求依 JSON Schema 輸出），結果是文字產出；可以附上 Space 中的文件或字幕條目作為素材。',
   generateImageLabel: '生成圖片',
   generateImageDescription: '依描述生成圖片，結果是圖片產出。',
+  generateMusicLabel: '生成音樂',
+  generateMusicDescription: '按風格描述與可選的歌詞，用本機的音樂模型生成歌曲或純音樂；結果是音訊輸出。',
   linkImportLabel: '下載影片',
   linkImportDescription: '用 yt-dlp 把影片下載到這台電腦；可以使用瀏覽器 Cookie，下載後可轉錄為逐字稿與字幕。',
   compressVideoLabel: '壓縮影片',

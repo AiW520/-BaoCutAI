@@ -54,6 +54,8 @@ const en = {
   speechTextEmpty: "Text can't be empty; when material is given, pass an empty string for text",
   voiceOneOf: 'Give only one of voice, reference, and voiceDescription',
   promptEmpty: "Prompt can't be empty",
+  musicStyleEmpty: "Style description can't be empty",
+  musicLyricsMode: "Songs need lyrics; instrumental music doesn't take lyrics",
   textMessagesEmpty: 'At least one non-empty user or assistant message is required',
   rangeStartEnd: 'range.start must be less than range.end',
   toolNameChars: 'Tool names may contain only lowercase letters, digits, and hyphens',

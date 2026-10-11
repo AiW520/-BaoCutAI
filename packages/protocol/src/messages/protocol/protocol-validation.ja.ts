@@ -40,6 +40,8 @@ export const ja: ProtocolValidationMessages = {
   speechTextEmpty: 'テキストは空にできません。material を指定する場合は text に空文字列を渡してください',
   voiceOneOf: 'voice、reference、voiceDescription はいずれか 1 つだけを指定してください',
   promptEmpty: 'プロンプトは空にできません',
+  musicStyleEmpty: 'スタイルの説明は空にできません',
+  musicLyricsMode: '歌には歌詞が必要です。インストでは歌詞を受け付けません',
   textMessagesEmpty: '空でない user または assistant のメッセージが少なくとも 1 件必要です',
   rangeStartEnd: 'range.start は range.end より小さくしてください',
   toolNameChars: 'ツール名に使えるのは英小文字、数字、ハイフンのみです',

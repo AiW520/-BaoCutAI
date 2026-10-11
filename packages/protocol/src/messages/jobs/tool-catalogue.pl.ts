@@ -15,6 +15,8 @@ export const pl: JobsToolCatalogueMessages = {
   generateTextDescription: "Generuj tekst z promptu (opcjonalnie według JSON Schema); wynik jest tekstem. Dokumenty lub wpisy napisów w Space można dołączyć jako materiały.",
   generateImageLabel: "Generuj obraz",
   generateImageDescription: "Generuj obraz z opisu; wynik jest obrazem.",
+  generateMusicLabel: 'Wygeneruj muzykę',
+  generateMusicDescription: 'Skomponuj piosenkę lub utwór instrumentalny z opisu stylu i opcjonalnego tekstu lokalnym modelem muzycznym; wynik to wyjście audio.',
   linkImportLabel: "Pobierz wideo",
   linkImportDescription: "Pobierz wideo na ten komputer przez yt-dlp. Można użyć cookie przeglądarki i transkrybować pobrane wideo na transkrypcję i napisy.",
   compressVideoLabel: "Kompresuj wideo",

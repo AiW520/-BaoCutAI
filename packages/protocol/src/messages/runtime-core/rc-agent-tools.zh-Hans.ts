@@ -63,6 +63,8 @@ export const zhHans: RcAgentToolsMessages = {
   speechPurpose: (p) => `合成语音（${p.chars} 个字符）`,
   speechSummary: (p) => `合成语音（${p.chars} 个字符${p.provider ? `，${p.provider}` : ''}${p.voice ? `，音色 ${p.voice}` : ''}）`,
   imagePurpose: (p) => `生成图片：${p.prompt}`,
+  musicPurpose: (p: { style: string }) => `生成音乐：${p.style}`,
+  musicSummary: (p: { mode: string; seconds: number | null; provider: string | null; style: string }) => `生成${p.mode === 'song' ? '歌曲' : '纯音乐'}${p.seconds ? `，最长 ${p.seconds} 秒` : ''}${p.provider ? `，${p.provider}` : ''}：${p.style}`,
   imageSummary: (p) => `生成图片（${p.count} 张${p.size ? `，${p.size}` : ''}${p.provider ? `，${p.provider}` : ''}）：${p.prompt}`,
   cancelJobSummary: (p) => `取消任务 ${p.jobId}`,
   retryPipelineSummary: (p) => `从失败的那一步重跑流程 ${p.jobId}（${p.pipeline}，第 ${p.attempt} 次）`,

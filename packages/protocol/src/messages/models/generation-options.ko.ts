@@ -24,4 +24,13 @@ export const ko: ModelsGenerationOptionsMessages = {
   noSteps: (p: { modelId: string }) => `${p.modelId} 모델은 steps를 받지 않습니다(로컬 모델만 받음)`,
   stepsRange: (p: { min: number; max: number }) => `steps는 ${p.min}~${p.max} 사이의 정수여야 합니다`,
   noSeed: (p: { modelId: string }) => `${p.modelId} 모델은 seed를 받지 않습니다`,
+  styleEmpty: '스타일은 비워 둘 수 없습니다',
+  styleTooLong: (p: { length: number; modelId: string; limit: number }) => `스타일이 ${p.length}자로 모델 ${p.modelId}의 상한 ${p.limit}자를 넘습니다`,
+  lyricsEmpty: '노래에는 가사가 필요합니다. 보컬 없는 곡은 instrumental 모드를 사용하세요',
+  lyricsTooLong: (p: { length: number; modelId: string; limit: number }) => `가사가 ${p.length}자로 모델 ${p.modelId}의 상한 ${p.limit}자를 넘습니다`,
+  lyricsNotInstrumental: 'instrumental 모드는 가사를 받지 않습니다',
+  modeUnsupported: (p: { modelId: string; mode: string }) => `모델 ${p.modelId}은(는) ${p.mode} 모드를 지원하지 않습니다`,
+  durationRange: (p: { modelId: string; max: number }) => `길이는 양수(초)여야 하며 모델 ${p.modelId}은(는) 최대 ${p.max}초입니다`,
+  targetOverMax: 'targetDurationSec은 maxDurationSec을 넘을 수 없습니다',
+  planningUnsupported: (p: { modelId: string; planning: string; options: string }) => `모델 ${p.modelId}은(는) planning ${p.planning}을(를) 지원하지 않습니다(선택: ${p.options})`,
 };

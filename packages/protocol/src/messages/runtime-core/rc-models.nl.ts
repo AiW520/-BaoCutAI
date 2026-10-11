@@ -30,6 +30,7 @@ export const nl: RcModelsMessages = {
     `${p.duration} s · ${p.sampleRate} Hz · stem ${p.finite ? `${p.ratio} dB` : "veel"} boven de achtergrond`,
   speechPassed: (p: { duration: string; sampleRate: number }) => `${p.duration} s · ${p.sampleRate} Hz`,
   imagePassed: (p: { width: number; height: number; steps: number }) => `${p.width}×${p.height} · ${p.steps} stappen`,
+  musicPassed: (p: { duration: string; sampleRate: number; steps: number }) => `${p.duration} s · ${p.sampleRate} Hz · ${p.steps} stappen`,
 
   envLocked: "De modellenmap is ingesteld door de omgevingsvariabele BAOCUT_MODELS_DIR. Wijzig de variabele en start BaoCut opnieuw om de map te wijzigen",
   movingDirWaitOrCancel: "De modellenmap wordt verplaatst. Wijzig die nadat het verplaatsen klaar of geannuleerd is",

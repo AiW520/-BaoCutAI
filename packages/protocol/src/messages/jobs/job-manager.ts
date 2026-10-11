@@ -99,6 +99,7 @@ const en = {
   transcribeLabel: 'Transcribe',
   voiceOverLabel: 'Generate voice-over',
   imageLabel: 'Generate image',
+  musicLabel: 'Generate music',
   videoClosed: 'The video has been closed',
   assetGone: 'The asset is no longer in the video',
   assetChangedDuringTranscribe: 'The asset content changed during transcription',

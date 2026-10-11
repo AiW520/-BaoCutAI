@@ -53,6 +53,7 @@ export const ptBR: RcSpaceMessages = {
   exportedFileGone: "O arquivo exportado não existe mais",
   labelSynthesizeSpeech: "Sintetizar voz",
   labelGenerateImage: "Gerar imagem",
+  labelGenerateMusic: 'Música gerada',
   labelGenerateText: "Texto gerado",
   labelExport: "Exportar",
 

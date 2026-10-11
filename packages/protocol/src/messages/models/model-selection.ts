@@ -21,6 +21,7 @@ const en = {
   capGenerateImage: 'Image generation',
   capGenerateText: 'Text generation',
   capSeparateAudio: 'Voice separation',
+  capGenerateMusic: 'Music generation',
   noSuchProvider: (p: { provider: string }) => `No such provider: ${p.provider}`,
   noProviderForModel: (p: { model: string }) => `No provider offers this model: ${p.model}`,
   ambiguousModel: (p: { model: string }) => `Several providers have model ${p.model}; also specify provider`,

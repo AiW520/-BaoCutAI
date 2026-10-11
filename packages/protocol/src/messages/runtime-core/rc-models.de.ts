@@ -30,6 +30,7 @@ export const de: RcModelsMessages = {
     `${p.duration} s · ${p.sampleRate} Hz · Stimme ${p.finite ? `${p.ratio} dB` : "weit"} über dem Hintergrund`,
   speechPassed: (p: { duration: string; sampleRate: number }) => `${p.duration} s · ${p.sampleRate} Hz`,
   imagePassed: (p: { width: number; height: number; steps: number }) => `${p.width}×${p.height} · ${p.steps} Schritte`,
+  musicPassed: (p: { duration: string; sampleRate: number; steps: number }) => `${p.duration} s · ${p.sampleRate} Hz · ${p.steps} Schritte`,
 
   envLocked: "Der Modellordner wird durch BAOCUT_MODELS_DIR festgelegt. Zum Ändern die Variable anpassen und BaoCut neu starten",
   movingDirWaitOrCancel: "Der Modellordner wird verschoben. Erst nach Abschluss oder Abbruch ändern",

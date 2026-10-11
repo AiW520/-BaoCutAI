@@ -86,7 +86,7 @@ const bundleId = z.string().min(1).max(200);
 /** Provider：`local`、`node:<nodeId 或别名>`、`openai`、`google`、`custom:<slug>`；认不认识由 Runtime 判断。 */
 const providerId = z.string().trim().min(1).max(300);
 const modelId = z.string().trim().min(1).max(200);
-const serviceCapability = z.enum(['transcribe', 'synthesizeSpeech', 'generateImage', 'generateText', 'separateAudio']);
+const serviceCapability = z.enum(['transcribe', 'synthesizeSpeech', 'generateImage', 'generateText', 'separateAudio', 'generateMusic']);
 /** 有在线 Provider 的能力（`ONLINE_CAPABILITIES`）：自建服务商声明的模型与模型接口的别名只能是这几种。 */
 const onlineCapability = z.enum(['transcribe', 'synthesizeSpeech', 'generateImage', 'generateText']);
 /** 数据外发的授权（架构设计 §12.5）。金额是十进制字符串，不用浮点数。 */
@@ -1031,6 +1031,33 @@ export const methodParamSchemas = {
       commandId: id.optional(),
     })
     .strict(),
+  'models.generateMusic': z
+    .object({
+      mode: z.enum(['song', 'instrumental']),
+      style: z
+        .string()
+        .max(20_000)
+        .refine((t) => t.trim().length > 0, { error: () => V.musicStyleEmpty().text }),
+      lyrics: z.string().max(200_000).optional(),
+      targetDurationSec: z.number().positive().finite().max(3600).optional(),
+      maxDurationSec: z.number().positive().finite().max(3600).optional(),
+      planning: z.enum(['off', 'melody', 'full']).optional(),
+      format: speechFormat.optional(),
+      seed: seed.optional(),
+      steps: z.number().int().min(1).max(1000).optional(),
+      provider: providerId.optional(),
+      model: modelId.optional(),
+      videoId: id.optional(),
+      name: z.string().trim().min(1).max(200).optional(),
+      saveDir: absolutePath.optional(),
+      commandId: id.optional(),
+    })
+    .strict()
+    // 歌曲要有歌词；配乐不收歌词（不拿说明文字凑数）。
+    .refine((r) => (r.mode === 'song' ? (r.lyrics ?? '').trim().length > 0 : r.lyrics === undefined), {
+      error: () => V.musicLyricsMode().text,
+      path: ['lyrics'],
+    }),
   'models.generateText': z
     .object({
       messages: z

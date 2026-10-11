@@ -6,6 +6,7 @@ export const zhHant: ModelsModelSelectionMessages = {
   capGenerateImage: '影像生成',
   capGenerateText: '文字生成',
   capSeparateAudio: '人聲分離',
+  capGenerateMusic: '音樂生成',
   noSuchProvider: (p: { provider: string }) => `沒有這個供應商：${p.provider}`,
   noProviderForModel: (p: { model: string }) => `沒有供應商提供這個模型：${p.model}`,
   ambiguousModel: (p: { model: string }) => `有多個供應商提供模型 ${p.model}，請同時指定 provider`,

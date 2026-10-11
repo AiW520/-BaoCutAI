@@ -15,6 +15,8 @@ export const ru: JobsToolCatalogueMessages = {
   generateTextDescription: "Сгенерировать текст по запросу (при необходимости по JSON Schema); результат — текст. Документы или записи субтитров в Space можно прикрепить как материалы.",
   generateImageLabel: "Сгенерировать изображение",
   generateImageDescription: "Сгенерировать изображение по описанию; результат — изображение.",
+  generateMusicLabel: 'Создать музыку',
+  generateMusicDescription: 'Сочинить песню или инструментальный трек по описанию стиля и необязательному тексту локальной музыкальной моделью; результат — аудиовыход.',
   linkImportLabel: "Скачать видео",
   linkImportDescription: "Скачать видео на этот компьютер через yt-dlp. Можно использовать cookie браузера и создать расшифровку и субтитры скачанного видео.",
   compressVideoLabel: "Сжать видео",

@@ -39,6 +39,8 @@ export const de: ProtocolValidationMessages = {
   speechTextEmpty: "Text darf nicht leer sein; bei Angabe von Material eine leere Zeichenfolge für text übergeben",
   voiceOneOf: "Nur einen der Werte voice, reference oder voiceDescription angeben",
   promptEmpty: "Prompt darf nicht leer sein",
+  musicStyleEmpty: "Stilbeschreibung darf nicht leer sein",
+  musicLyricsMode: "Songs brauchen einen Liedtext; Instrumentalmusik nimmt keinen Liedtext an",
   textMessagesEmpty: "Mindestens eine nichtleere user- oder assistant-Nachricht ist erforderlich",
   rangeStartEnd: "range.start muss kleiner als range.end sein",
   toolNameChars: "Werkzeugnamen dürfen nur Kleinbuchstaben, Ziffern und Bindestriche enthalten",

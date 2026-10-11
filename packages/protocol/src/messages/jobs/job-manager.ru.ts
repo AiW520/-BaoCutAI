@@ -73,6 +73,7 @@ export const ru: JobsManagerMessages = {
   transcribeLabel: "Расшифровать",
   voiceOverLabel: "Сгенерировать озвучку",
   imageLabel: "Сгенерировать изображение",
+  musicLabel: 'Создать музыку',
   videoClosed: "Видео закрыто",
   assetGone: "Материала больше нет в видео",
   assetChangedDuringTranscribe: "Материал изменился при расшифровке",

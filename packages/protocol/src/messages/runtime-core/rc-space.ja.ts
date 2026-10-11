@@ -51,6 +51,7 @@ export const ja: RcSpaceMessages = {
   exportedFileGone: '書き出したファイルはもうありません',
   labelSynthesizeSpeech: '合成した音声',
   labelGenerateImage: '生成した画像',
+  labelGenerateMusic: '生成した音楽',
   labelGenerateText: '生成したテキスト',
   labelExport: '書き出し',
 

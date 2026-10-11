@@ -48,6 +48,7 @@ export const ko: RcSpaceMessages = {
   exportedFileGone: '내보낸 파일이 더 이상 없습니다',
   labelSynthesizeSpeech: '합성된 음성',
   labelGenerateImage: '생성된 이미지',
+  labelGenerateMusic: '생성된 음악',
   labelGenerateText: '생성된 텍스트',
   labelExport: '내보내기',
 

@@ -77,6 +77,7 @@ export const ja: JobsManagerMessages = {
   transcribeLabel: '文字起こし',
   voiceOverLabel: '吹き替えを生成',
   imageLabel: '画像を生成',
+  musicLabel: '音楽を生成',
   videoClosed: '動画が閉じられました',
   assetGone: '素材はもう動画内にありません',
   assetChangedDuringTranscribe: '文字起こし中に素材の内容が変更されました',

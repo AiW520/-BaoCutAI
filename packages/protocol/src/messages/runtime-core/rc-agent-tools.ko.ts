@@ -66,6 +66,8 @@ export const ko: RcAgentToolsMessages = {
   speechPurpose: (p) => `음성 합성(${p.chars}자)`,
   speechSummary: (p) => `음성 합성(${p.chars}자${p.provider ? `, ${p.provider}` : ''}${p.voice ? `, 목소리 ${p.voice}` : ''})`,
   imagePurpose: (p) => `이미지 생성: ${p.prompt}`,
+  musicPurpose: (p: { style: string }) => `음악 생성: ${p.style}`,
+  musicSummary: (p: { mode: string; seconds: number | null; provider: string | null; style: string }) => `${p.mode === 'song' ? '노래' : '연주곡'} 생성${p.seconds ? `, 최대 ${p.seconds}초` : ''}${p.provider ? `, ${p.provider}` : ''}: ${p.style}`,
   imageSummary: (p) => `이미지 생성(${p.count}장${p.size ? `, ${p.size}` : ''}${p.provider ? `, ${p.provider}` : ''}): ${p.prompt}`,
   cancelJobSummary: (p) => `작업 ${p.jobId} 취소`,
   retryPipelineSummary: (p) => `실패한 단계부터 파이프라인 ${p.jobId} 다시 실행(${p.pipeline}, ${p.attempt}번째 시도)`,

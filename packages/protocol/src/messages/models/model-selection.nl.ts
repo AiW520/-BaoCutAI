@@ -6,6 +6,7 @@ export const nl: ModelsModelSelectionMessages = {
   capGenerateImage: "Afbeeldingsgeneratie",
   capGenerateText: "Tekstgeneratie",
   capSeparateAudio: "Stemscheiding",
+  capGenerateMusic: 'Muziekgeneratie',
   noSuchProvider: (p: { provider: string }) => `Deze aanbieder bestaat niet: ${p.provider}`,
   noProviderForModel: (p: { model: string }) => `Geen aanbieder biedt dit model aan: ${p.model}`,
   ambiguousModel: (p: { model: string }) => `Meerdere aanbieders hebben model ${p.model}; geef ook provider op`,

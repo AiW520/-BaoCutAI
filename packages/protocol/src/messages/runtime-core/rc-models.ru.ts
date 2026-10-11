@@ -26,6 +26,7 @@ export const ru: RcModelsMessages = {
   separationPassed: (p) => `${p.duration} с · ${p.sampleRate} Гц · голос ${p.finite ? `${p.ratio} дБ` : "значительно"} выше фона`,
   speechPassed: (p) => `${p.duration} с · ${p.sampleRate} Гц`,
   imagePassed: (p) => `${p.width}×${p.height} · ${p.steps} шагов`,
+  musicPassed: (p: { duration: string; sampleRate: number; steps: number }) => `${p.duration} с · ${p.sampleRate} Гц · ${p.steps} шагов`,
 
   envLocked: "Папка моделей задана BAOCUT_MODELS_DIR. Для смены измените переменную и перезапустите BaoCut",
   movingDirWaitOrCancel: "Папка моделей перемещается. Меняйте после завершения или отмены",

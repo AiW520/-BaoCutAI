@@ -38,6 +38,8 @@ export const zhHant: ProtocolValidationMessages = {
   speechTextEmpty: '文字不能為空；提供 material 時，text 請傳入空字串',
   voiceOneOf: 'voice、reference 和 voiceDescription 只能提供其中一個',
   promptEmpty: '提示詞不能為空',
+  musicStyleEmpty: '風格描述不能為空',
+  musicLyricsMode: '歌曲要有歌詞；配樂不收歌詞',
   textMessagesEmpty: '至少需要一則非空的 user 或 assistant 訊息',
   rangeStartEnd: 'range.start 必須小於 range.end',
   toolNameChars: '工具名稱只能包含小寫字母、數字和連字號',

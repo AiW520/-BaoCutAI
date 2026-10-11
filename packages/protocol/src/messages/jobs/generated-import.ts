@@ -18,6 +18,7 @@ import { vi } from './generated-import.vi.ts';
 const en = {
   voiceOverName: (p: { head: string }) => `Voice-over: ${p.head}`,
   imageName: (p: { head: string }) => `Image: ${p.head}`,
+  musicName: (p: { head: string }) => `Music: ${p.head}`,
 };
 
 export type JobsGeneratedImportMessages = typeof en;

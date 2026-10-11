@@ -18,6 +18,8 @@ export const de: JobsToolCatalogueMessages = {
     "Erzeugt Text anhand eines Prompts (optional gemäß einem JSON Schema); das Ergebnis ist ein Textergebnis. Dokumente oder Untertiteleinträge in Space können als Material angehängt werden.",
   generateImageLabel: "Bild erzeugen",
   generateImageDescription: "Erzeugt ein Bild anhand einer Beschreibung; das Ergebnis ist ein Bildergebnis.",
+  generateMusicLabel: 'Musik erzeugen',
+  generateMusicDescription: 'Aus einer Stilbeschreibung und optionalem Songtext mit einem lokalen Musikmodell einen Song oder ein Instrumentalstück komponieren; das Ergebnis ist eine Audio-Ausgabe.',
   linkImportLabel: "Video herunterladen",
   linkImportDescription:
     "Lädt mit yt-dlp ein Video auf diesen Computer herunter. Browser-Cookies können verwendet und der Download in ein Transkript und Untertitel transkribiert werden.",

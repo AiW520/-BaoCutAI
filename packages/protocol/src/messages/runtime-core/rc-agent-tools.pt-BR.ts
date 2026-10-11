@@ -59,6 +59,8 @@ export const ptBR: RcAgentToolsMessages = {
   speechSummary: (p: { chars: number; provider: string | null; voice: string | null }) =>
     `Sintetizar fala (${plural(p.chars, "caractere", "caracteres")}${p.provider ? `, ${p.provider}` : ""}${p.voice ? `, voz ${p.voice}` : ""})`,
   imagePurpose: (p: { prompt: string }) => `Gerar imagem: ${p.prompt}`,
+  musicPurpose: (p: { style: string }) => `Gerar música: ${p.style}`,
+  musicSummary: (p: { mode: string; seconds: number | null; provider: string | null; style: string }) => `Gerar ${p.mode === 'song' ? 'uma música' : 'música instrumental'}${p.seconds ? `, até ${p.seconds} s` : ''}${p.provider ? `, ${p.provider}` : ''}: ${p.style}`,
   imageSummary: (p: { count: number; size: string | null; provider: string | null; prompt: string }) =>
     `Gerar ${plural(p.count, "imagem", "imagens")}${p.size ? `, ${p.size}` : ""}${p.provider ? `, ${p.provider}` : ""}: ${p.prompt}`,
   cancelJobSummary: (p: { jobId: string }) => `Cancelar tarefa ${p.jobId}`,

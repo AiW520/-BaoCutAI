@@ -26,6 +26,7 @@ export const pl: RcModelsMessages = {
   separationPassed: (p) => `${p.duration} s · ${p.sampleRate} Hz · głos ${p.finite ? `${p.ratio} dB` : "znacznie"} powyżej tła`,
   speechPassed: (p) => `${p.duration} s · ${p.sampleRate} Hz`,
   imagePassed: (p) => `${p.width}×${p.height} · ${p.steps} kroków`,
+  musicPassed: (p: { duration: string; sampleRate: number; steps: number }) => `${p.duration} s · ${p.sampleRate} Hz · ${p.steps} kroków`,
 
   envLocked: "Folder modeli ustawiony przez BAOCUT_MODELS_DIR. Zmień zmienną i uruchom BaoCut ponownie",
   movingDirWaitOrCancel: "Folder modeli przenoszony. Zmień po ukończeniu lub anulowaniu",

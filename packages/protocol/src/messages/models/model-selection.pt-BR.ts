@@ -6,6 +6,7 @@ export const ptBR: ModelsModelSelectionMessages = {
   capGenerateImage: "Geração de imagens",
   capGenerateText: "Geração de texto",
   capSeparateAudio: "Separação de voz",
+  capGenerateMusic: 'Geração de música',
   noSuchProvider: (p: { provider: string }) => `Provedor inexistente: ${p.provider}`,
   noProviderForModel: (p: { model: string }) => `Nenhum provedor oferece este modelo: ${p.model}`,
   ambiguousModel: (p: { model: string }) => `Vários provedores têm o modelo ${p.model}; informe também provider`,

@@ -38,6 +38,8 @@ export const ko: ProtocolValidationMessages = {
   speechTextEmpty: '텍스트는 비워 둘 수 없습니다. material을 지정한 경우 text에 빈 문자열을 전달하세요',
   voiceOneOf: 'voice, reference, voiceDescription 중 하나만 지정하세요',
   promptEmpty: '프롬프트는 비워 둘 수 없습니다',
+  musicStyleEmpty: '스타일 설명은 비워 둘 수 없습니다',
+  musicLyricsMode: '노래에는 가사가 필요합니다. 연주곡은 가사를 받지 않습니다',
   textMessagesEmpty: '비어 있지 않은 user 또는 assistant 메시지가 하나 이상 필요합니다',
   rangeStartEnd: 'range.start는 range.end보다 작아야 합니다',
   toolNameChars: '도구 이름에는 영문 소문자, 숫자, 하이픈만 사용할 수 있습니다',

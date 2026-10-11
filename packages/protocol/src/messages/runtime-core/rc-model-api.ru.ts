@@ -71,6 +71,7 @@ export const ru: RcModelApiMessages = {
   capabilityGenerateImage: "генерация изображений",
   capabilityGenerateText: "генерация текста",
   capabilitySeparateAudio: "разделение голоса",
+  capabilityGenerateMusic: 'генерация музыки',
   modelNotFoundFor: (p: { capability: string; model: string }) => `Нет модели «${p.model}» доступна для ${p.capability}: GET /v1/models показывает доступные модели`,
   hintEnableOnline: (p: { capability: string }) => `Настройте и включите онлайн-сервис для ${p.capability} сначала в BaoCut`,
   hintNoLocalModel: (p: { capability: string }) => `Нет локальной модели для ${p.capability}; для пересылки онлайн включите маршрутизацию API моделей в BaoCut (baocut services configure model-api --route-online on) и онлайн-сервис`,

@@ -73,6 +73,7 @@ export const WEB_DEFAULT_METHODS: readonly string[] = [
   'models.transcribe',
   'models.synthesizeSpeech',
   'models.generateImage',
+  'models.generateMusic',
   'models.generateText',
   // 用量（§6.10）只读、不含密钥与本机路径，也在只读集合里。账号的写方法（`models.addAccount` 等）与 `models.configure` 一样不开放。
   'models.usage',

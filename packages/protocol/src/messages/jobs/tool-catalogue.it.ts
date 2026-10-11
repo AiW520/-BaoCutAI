@@ -11,7 +11,7 @@ export const it: JobsToolCatalogueMessages = {
   synthesizeSpeechDescription: 'Sintetizza voce da un testo; il risultato è audio. Può anche leggere un documento o una voce di sottotitoli nello Space (sottotitoli senza timecode).',
   generateTextLabel: 'Genera testo',
   generateTextDescription: 'Genera testo da un prompt (facoltativamente seguendo un JSON Schema); il risultato è testo. Documenti o voci di sottotitoli nello Space possono essere allegati come materiale.',
-  generateImageLabel: 'Genera immagine', generateImageDescription: 'Genera un’immagine da una descrizione; il risultato è un’immagine.',
+  generateImageLabel: 'Genera immagine', generateImageDescription: 'Genera un’immagine da una descrizione; il risultato è un’immagine.', generateMusicLabel: 'Genera musica', generateMusicDescription: 'Componi una canzone o un brano strumentale da una descrizione di stile e un testo facoltativo con un modello musicale locale; il risultato è un output audio.',
   linkImportLabel: 'Scarica video', linkImportDescription: 'Scarica un video su questo computer con yt-dlp. Puoi usare i cookie del browser e trascrivere il download in una trascrizione e sottotitoli.',
   compressVideoLabel: 'Comprimi video', compressVideoDescription: 'Comprimi i file video uno per uno: da file a file, non viene creato alcun video e i risultati non sovrascrivono i file esistenti.',
   mergeVideoLabel: 'Unisci video', mergeVideoDescription: 'Unisci diversi file video in uno solo, in ordine: da file a file, non viene creato alcun video e i risultati non sovrascrivono i file esistenti.',

@@ -11,7 +11,7 @@ export const ptBR: JobsToolCatalogueMessages = {
   synthesizeSpeechDescription: 'Sintetize fala a partir de um texto; o resultado é áudio. Também pode ler um documento ou item de legendas no Space (legendas sem códigos de tempo).',
   generateTextLabel: 'Gerar texto',
   generateTextDescription: 'Gere texto a partir de um prompt (opcionalmente seguindo um JSON Schema); o resultado é texto. Documentos ou itens de legendas no Space podem ser anexados como material.',
-  generateImageLabel: 'Gerar imagem', generateImageDescription: 'Gere uma imagem a partir de uma descrição; o resultado é uma imagem.',
+  generateImageLabel: 'Gerar imagem', generateImageDescription: 'Gere uma imagem a partir de uma descrição; o resultado é uma imagem.', generateMusicLabel: 'Gerar música', generateMusicDescription: 'Componha uma música ou faixa instrumental a partir de uma descrição de estilo e letra opcional com um modelo de música local; o resultado é uma saída de áudio.',
   linkImportLabel: 'Baixar vídeo', linkImportDescription: 'Baixe um vídeo neste computador com yt-dlp. É possível usar cookies do navegador, e o download pode ser transcrito em transcrição e legendas.',
   compressVideoLabel: 'Comprimir vídeo', compressVideoDescription: 'Comprima arquivos de vídeo um por um: de arquivo para arquivo, nenhum vídeo é criado, e os resultados não sobrescrevem arquivos existentes.',
   mergeVideoLabel: 'Mesclar vídeos', mergeVideoDescription: 'Mescle vários arquivos de vídeo em um, na ordem: de arquivo para arquivo, nenhum vídeo é criado, e os resultados não sobrescrevem arquivos existentes.',

@@ -39,6 +39,8 @@ export const nl: ProtocolValidationMessages = {
   speechTextEmpty: "Tekst mag niet leeg zijn; geef bij media een lege tekenreeks voor text mee",
   voiceOneOf: "Geef alleen voice, reference of voiceDescription op",
   promptEmpty: "Prompt mag niet leeg zijn",
+  musicStyleEmpty: "Stijlbeschrijving mag niet leeg zijn",
+  musicLyricsMode: "Een lied heeft tekst nodig; instrumentale muziek neemt geen tekst aan",
   textMessagesEmpty: "Er is minstens één niet-leeg user- of assistant-bericht vereist",
   rangeStartEnd: "range.start moet kleiner zijn dan range.end",
   toolNameChars: "Toolnamen mogen alleen kleine letters, cijfers en koppeltekens bevatten",

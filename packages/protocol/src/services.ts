@@ -87,6 +87,7 @@ export const MCP_SERVICE_TOOL_NAMES: readonly McpServiceTool[] = [
   { name: 'dub', title: '翻译配音', effect: 'job' },
   { name: 'speak', title: '合成语音', effect: 'job' },
   { name: 'image', title: '生成图片', effect: 'job' },
+  { name: 'music', title: '生成音乐', effect: 'job' },
   { name: 'jobs_inspect', title: '查看任务', effect: 'query' },
   { name: 'jobs_wait', title: '等待任务', effect: 'query' },
   { name: 'jobs_list', title: '列出任务', effect: 'query' },

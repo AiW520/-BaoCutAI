@@ -6,6 +6,7 @@ export const ja: ModelsModelSelectionMessages = {
   capGenerateImage: '画像生成',
   capGenerateText: 'テキスト生成',
   capSeparateAudio: '音声分離',
+  capGenerateMusic: '音楽生成',
   noSuchProvider: (p: { provider: string }) => `そのプロバイダはありません：${p.provider}`,
   noProviderForModel: (p: { model: string }) => `このモデルを提供するプロバイダはありません：${p.model}`,
   ambiguousModel: (p: { model: string }) => `複数のプロバイダにモデル ${p.model} があります。provider も指定してください`,

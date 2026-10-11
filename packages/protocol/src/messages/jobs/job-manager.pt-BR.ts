@@ -85,6 +85,7 @@ export const ptBR: JobsManagerMessages = {
   transcribeLabel: "Transcrição",
   voiceOverLabel: "Gerar dublagem",
   imageLabel: "Gerar imagem",
+  musicLabel: 'Gerar música',
   videoClosed: "O vídeo foi fechado",
   assetGone: "A mídia não está mais no vídeo",
   assetChangedDuringTranscribe: "O conteúdo da mídia mudou durante a transcrição",

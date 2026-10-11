@@ -46,6 +46,7 @@ export const pl: RcSpaceMessages = {
   exportedFileGone: "Wyeksportowany plik nie istnieje",
   labelSynthesizeSpeech: "Zsyntetyzowana mowa",
   labelGenerateImage: "Wygenerowany obraz",
+  labelGenerateMusic: 'Wygenerowana muzyka',
   labelGenerateText: "Wygenerowany tekst",
   labelExport: "Eksportuj",
 

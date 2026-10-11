@@ -72,6 +72,7 @@ const en = {
   exportedFileGone: 'The exported file is gone',
   labelSynthesizeSpeech: 'Synthesized speech',
   labelGenerateImage: 'Generated image',
+  labelGenerateMusic: 'Generated music',
   labelGenerateText: 'Generated text',
   labelExport: 'Export',
 

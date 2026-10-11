@@ -38,6 +38,8 @@ export const ru: ProtocolValidationMessages = {
   speechTextEmpty: "Текст не может быть пустым; при указании material передайте пустую строку text",
   voiceOneOf: "Укажите только одно из voice, reference и voiceDescription",
   promptEmpty: "Запрос не может быть пустым",
+  musicStyleEmpty: "Описание стиля не может быть пустым",
+  musicLyricsMode: "Песне нужен текст; инструментальная музыка текст не принимает",
   textMessagesEmpty: "Нужно хотя бы одно непустое сообщение user или assistant",
   rangeStartEnd: "range.start должен быть меньше range.end",
   toolNameChars: "Имена инструментов могут содержать только строчные буквы, цифры и дефисы",

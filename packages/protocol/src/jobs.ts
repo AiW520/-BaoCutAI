@@ -1,7 +1,7 @@
 import type { Id } from './domain.ts';
 import type { ExportJobInfo, ExportValidation } from './exports.ts';
 import type { JobLibraryUse } from './library.ts';
-import type { ImageFormat, SpeechFormat, TextEffort, VoiceMode } from './models.ts';
+import type { ImageFormat, MusicMode, MusicPlanning, SpeechFormat, TextEffort, VoiceMode } from './models.ts';
 import type { JobGrantUse } from './grants.ts';
 import type { JobWait } from './resources.ts';
 import { localizeText, type MessageRef } from './message-ref.ts';
@@ -25,6 +25,7 @@ export type JobKind =
   | 'transcribe'
   | 'synthesizeSpeech'
   | 'generateImage'
+  | 'generateMusic'
   | 'generateText'
   | 'export'
   | 'pipeline'
@@ -242,6 +243,25 @@ export type GenerationParameters =
       format: ImageFormat;
       seed: number | null;
       /** 本地生图的去噪步数；请求没给时不写（用模型的默认步数），在线任务没有。 */
+      steps?: number;
+    }
+  | {
+      /**
+       * 本地音乐生成（架构设计 §6.1）：风格描述与歌词照原样记下；`mode: 'instrumental'` 时 `lyrics` 为 null（不填说明文字凑数）。
+       * `maxDurationSec` 是计算预算（映射到模型的 token 上限），不是承诺的时长：实际时长以发布时探测的为准，到了上限的结果
+       * 标为 `truncated`。`seed` 在提交时冻结（请求没给时抽一个）。
+       */
+      capability: 'generateMusic';
+      mode: MusicMode;
+      style: string;
+      lyrics: string | null;
+      /** 创作意图的目标时长（秒）；没给时 null。 */
+      targetDurationSec: number | null;
+      maxDurationSec: number;
+      planning: MusicPlanning;
+      format: SpeechFormat;
+      seed: number;
+      /** 扩散步数；请求没给时不写（用模型的默认步数）。 */
       steps?: number;
     }
   | {
@@ -616,6 +636,31 @@ export interface GenerateImageRequest {
   videoId?: Id;
   name?: string;
   /** 保存位置，规则同 `SynthesizeSpeechRequest.saveDir`；副本按提示词开头取名，多张时依次加序号。 */
+  saveDir?: string;
+  commandId?: Id;
+}
+
+/**
+ * `models.generateMusic` 的参数：按风格（与歌词）生成一段音乐。选择、上限与视频的规则同 `SynthesizeSpeechRequest`；只有本地
+ * Provider。`mode: 'song'` 要给歌词；`instrumental` 不收歌词。`maxDurationSec` 是生成预算（不超过模型的 `maxDurationSec`），
+ * 不给时用模型的默认预算；`targetDurationSec` 只是给模型的创作意图，不保证精确。到了预算的结果带 `output-truncated` 警告（`JobRecord.warnings`）。
+ */
+export interface GenerateMusicRequest {
+  mode: MusicMode;
+  style: string;
+  lyrics?: string;
+  targetDurationSec?: number;
+  maxDurationSec?: number;
+  planning?: MusicPlanning;
+  format?: SpeechFormat;
+  seed?: number;
+  /** 扩散步数；只有模型的 `local.steps` 列出时接受，范围见那里。 */
+  steps?: number;
+  provider?: string;
+  model?: string;
+  videoId?: Id;
+  name?: string;
+  /** 保存位置，规则同 `SynthesizeSpeechRequest.saveDir`；副本按风格描述开头取名。 */
   saveDir?: string;
   commandId?: Id;
 }

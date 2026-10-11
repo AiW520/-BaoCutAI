@@ -47,6 +47,7 @@ export const zhHans: RcSpaceMessages = {
   exportedFileGone: '导出的文件已经不在了',
   labelSynthesizeSpeech: '合成语音',
   labelGenerateImage: '生成图片',
+  labelGenerateMusic: '生成的音乐',
   labelGenerateText: '生成文本',
   labelExport: '导出',
 

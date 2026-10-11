@@ -85,6 +85,7 @@ export const fr: JobsManagerMessages = {
   transcribeLabel: "Transcrire",
   voiceOverLabel: "Générer le doublage",
   imageLabel: "Générer une image",
+  musicLabel: 'Générer de la musique',
   videoClosed: "La vidéo a été fermée",
   assetGone: "Le média n’est plus dans la vidéo",
   assetChangedDuringTranscribe: "Le contenu du média a changé pendant la transcription",

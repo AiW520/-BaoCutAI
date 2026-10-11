@@ -18,6 +18,8 @@ export const fr: JobsToolCatalogueMessages = {
     "Génère du texte depuis un prompt (avec schéma JSON facultatif) ; résultat texte. Les documents ou sous-titres de Space peuvent être joints comme sources.",
   generateImageLabel: "Générer une image",
   generateImageDescription: "Génère une image depuis une description ; résultat image.",
+  generateMusicLabel: 'Générer de la musique',
+  generateMusicDescription: 'Composer une chanson ou un morceau instrumental à partir d’une description de style et de paroles facultatives avec un modèle musical local ; le résultat est une sortie audio.',
   linkImportLabel: "Télécharger la vidéo",
   linkImportDescription:
     "Télécharge une vidéo sur cet ordinateur avec yt-dlp. Peut utiliser les cookies du navigateur et transcrire le téléchargement en texte et sous-titres.",

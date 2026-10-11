@@ -18,6 +18,8 @@ export const nl: JobsToolCatalogueMessages = {
     "Genereert tekst vanuit een prompt (eventueel volgens een JSON Schema); het resultaat is tekstuitvoer. Documenten of ondertitelitems in Space kunnen als media worden toegevoegd.",
   generateImageLabel: "Afbeelding genereren",
   generateImageDescription: "Genereert een afbeelding vanuit een beschrijving; het resultaat is afbeeldingsuitvoer.",
+  generateMusicLabel: 'Muziek genereren',
+  generateMusicDescription: 'Een liedje of instrumentaal nummer componeren uit een stijlbeschrijving en optionele songtekst met een lokaal muziekmodel; het resultaat is een audio-uitvoer.',
   linkImportLabel: "Video downloaden",
   linkImportDescription:
     "Downloadt een video naar deze computer met yt-dlp. Browsercookies kunnen worden gebruikt en de download kan worden getranscribeerd tot een transcript en ondertitels.",

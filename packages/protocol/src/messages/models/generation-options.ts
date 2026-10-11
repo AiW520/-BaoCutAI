@@ -37,6 +37,15 @@ const en = {
   noSteps: (p: { modelId: string }) => `Model ${p.modelId} doesn't accept steps (only local models do)`,
   stepsRange: (p: { min: number; max: number }) => `steps must be a whole number between ${p.min} and ${p.max}`,
   noSeed: (p: { modelId: string }) => `Model ${p.modelId} doesn't accept seed`,
+  styleEmpty: 'Style can\'t be empty',
+  styleTooLong: (p: { length: number; modelId: string; limit: number }) => `The style has ${p.length} characters, over the ${p.limit}-character limit of model ${p.modelId}`,
+  lyricsEmpty: 'A song needs lyrics; use mode instrumental for a track without vocals',
+  lyricsTooLong: (p: { length: number; modelId: string; limit: number }) => `The lyrics have ${p.length} characters, over the ${p.limit}-character limit of model ${p.modelId}`,
+  lyricsNotInstrumental: 'Instrumental mode takes no lyrics',
+  modeUnsupported: (p: { modelId: string; mode: string }) => `Model ${p.modelId} doesn't support mode ${p.mode}`,
+  durationRange: (p: { modelId: string; max: number }) => `Duration must be a positive number of seconds, at most ${p.max} for model ${p.modelId}`,
+  targetOverMax: 'targetDurationSec can\'t exceed maxDurationSec',
+  planningUnsupported: (p: { modelId: string; planning: string; options: string }) => `Model ${p.modelId} doesn't support planning ${p.planning} (options: ${p.options})`,
 };
 
 export type ModelsGenerationOptionsMessages = typeof en;

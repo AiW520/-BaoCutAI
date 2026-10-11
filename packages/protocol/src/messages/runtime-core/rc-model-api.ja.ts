@@ -81,6 +81,7 @@ export const ja: RcModelApiMessages = {
   capabilityGenerateImage: '画像生成',
   capabilityGenerateText: 'テキスト生成',
   capabilitySeparateAudio: 'ボーカル分離',
+  capabilityGenerateMusic: '音楽生成',
   modelNotFoundFor: (p: { capability: string; model: string }) =>
     `${p.capability}に使えるモデル「${p.model}」はありません：GET /v1/models で使用可能なモデルを一覧できます`,
   hintEnableOnline: (p: { capability: string }) =>

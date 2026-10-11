@@ -55,6 +55,8 @@ export const CAPABILITY_DATA_KINDS: Readonly<Record<ModelServiceCapability, read
   generateText: ['document'],
   // 只在本机分离，不外发；列出音频只为类型完整。
   separateAudio: ['audio'],
+  // 只在本机生成，不外发；列出文档（风格与歌词）只为类型完整。
+  generateMusic: ['document'],
 };
 
 /**
@@ -67,6 +69,7 @@ export const PROVIDER_ENABLE_DATA_KINDS: Readonly<Record<ModelServiceCapability,
   generateImage: ['document'],
   generateText: ['document', 'transcript'],
   separateAudio: ['audio'],
+  generateMusic: ['document'],
 };
 
 /**

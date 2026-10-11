@@ -46,6 +46,7 @@ export const ru: RcSpaceMessages = {
   exportedFileGone: "Экспортированного файла больше нет",
   labelSynthesizeSpeech: "Синтезированная речь",
   labelGenerateImage: "Созданное изображение",
+  labelGenerateMusic: 'Созданная музыка',
   labelGenerateText: "Созданный текст",
   labelExport: "Экспорт",
 

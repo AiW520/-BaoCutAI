@@ -22,4 +22,13 @@ export const zhHans: ModelsGenerationOptionsMessages = {
   noSteps: (p: { modelId: string }) => `模型 ${p.modelId} 不接受 steps（只有本地模型接受）`,
   stepsRange: (p: { min: number; max: number }) => `steps 应是 ${p.min} 到 ${p.max} 之间的整数`,
   noSeed: (p: { modelId: string }) => `模型 ${p.modelId} 不接受 seed`,
+  styleEmpty: '风格描述不能为空',
+  styleTooLong: (p: { length: number; modelId: string; limit: number }) => `风格描述有 ${p.length} 个字符，超过模型 ${p.modelId} 的上限 ${p.limit}`,
+  lyricsEmpty: '歌曲需要歌词；不要人声请用 instrumental 模式',
+  lyricsTooLong: (p: { length: number; modelId: string; limit: number }) => `歌词有 ${p.length} 个字符，超过模型 ${p.modelId} 的上限 ${p.limit}`,
+  lyricsNotInstrumental: 'instrumental 模式不收歌词',
+  modeUnsupported: (p: { modelId: string; mode: string }) => `模型 ${p.modelId} 不支持 ${p.mode} 模式`,
+  durationRange: (p: { modelId: string; max: number }) => `时长必须是正数（秒），模型 ${p.modelId} 最长 ${p.max} 秒`,
+  targetOverMax: 'targetDurationSec 不能大于 maxDurationSec',
+  planningUnsupported: (p: { modelId: string; planning: string; options: string }) => `模型 ${p.modelId} 不支持 ${p.planning} 的编排（可选：${p.options}）`,
 };

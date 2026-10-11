@@ -11,10 +11,10 @@ import type { MessageRef } from './message-ref.ts';
  */
 
 /**
- * 工具的组（架构设计 §7.9，产品设计 §2.7）：`speech` 语音与字幕、`text-image` 文字与图片、`video-file` 视频文件。
+ * 工具的组（架构设计 §7.9，产品设计 §2.7）：`speech` 语音与字幕、`text-image` 文字与图片、`music` 音乐、`video-file` 视频文件。
  * 按用户要做的事分组，不按结果写进视频还是成为产物分（那是每个工具的 `results`）。
  */
-export const TOOL_CATEGORIES = ['speech', 'text-image', 'video-file'] as const;
+export const TOOL_CATEGORIES = ['speech', 'text-image', 'music', 'video-file'] as const;
 export type ToolCategory = (typeof TOOL_CATEGORIES)[number];
 
 /** 输入的种类：本机文件、链接、一段文字、Space 里的视频、一份文档（流程工具指视频里的文档，直接任务指 Space 里的文档或字幕条目，作 `material`）。 */
@@ -25,7 +25,12 @@ export type ToolInputKind = (typeof TOOL_INPUT_KINDS)[number];
 export type ToolResultKind = 'video' | 'artifact';
 
 /** 直接提交的 Job 用的方法。 */
-export type ToolJobMethod = 'models.transcribe' | 'models.synthesizeSpeech' | 'models.generateImage' | 'models.generateText';
+export type ToolJobMethod =
+  | 'models.transcribe'
+  | 'models.synthesizeSpeech'
+  | 'models.generateImage'
+  | 'models.generateMusic'
+  | 'models.generateText';
 
 /**
  * 怎么执行：

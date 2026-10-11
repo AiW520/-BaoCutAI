@@ -1,6 +1,6 @@
 import type { ModelsModelSelectionMessages } from './model-selection.ts';
 export const es: ModelsModelSelectionMessages = {
- capTranscribe: 'Transcripción', capSynthesizeSpeech: 'Síntesis de voz', capGenerateImage: 'Generación de imágenes', capGenerateText: 'Generación de texto', capSeparateAudio: 'Separación de voces',
+ capTranscribe: 'Transcripción', capSynthesizeSpeech: 'Síntesis de voz', capGenerateImage: 'Generación de imágenes', capGenerateText: 'Generación de texto', capSeparateAudio: 'Separación de voces', capGenerateMusic: 'Generación de música',
  noSuchProvider: (p) => `No existe ese proveedor: ${p.provider}`, noProviderForModel: (p) => `Ningún proveedor ofrece este modelo: ${p.model}`, ambiguousModel: (p) => `Varios proveedores tienen el modelo ${p.model}; especifica también provider`,
  languageUnsupported: (p) => `El modelo ${p.modelId} no admite el idioma ${p.language}`, providerNoModel: (p) => `${p.provider} no tiene este modelo: ${p.modelId}`,
  defaultModelGone: (p) => `El modelo predeterminado ${p.modelId} ya no está entre los modelos de ${p.provider}`, missingCredential: (p) => `${p.name} aún no tiene una clave de API. Introduce la clave en Ajustes.`,

@@ -84,6 +84,8 @@ export const it: RcAgentToolsMessages = {
   speechSummary: (p: { chars: number; provider: string | null; voice: string | null }) =>
     `Sintetizza voce (${plural(p.chars, 'carattere', 'caratteri')}${p.provider ? `, ${p.provider}` : ''}${p.voice ? `, voce ${p.voice}` : ''})`,
   imagePurpose: (p: { prompt: string }) => `Genera immagine: ${p.prompt}`,
+  musicPurpose: (p: { style: string }) => `Genera musica: ${p.style}`,
+  musicSummary: (p: { mode: string; seconds: number | null; provider: string | null; style: string }) => `Genera ${p.mode === 'song' ? 'una canzone' : 'musica strumentale'}${p.seconds ? `, fino a ${p.seconds} s` : ''}${p.provider ? `, ${p.provider}` : ''}: ${p.style}`,
   imageSummary: (p: { count: number; size: string | null; provider: string | null; prompt: string }) =>
     `Genera ${plural(p.count, 'immagine', 'immagini')}${p.size ? `, ${p.size}` : ''}${p.provider ? `, ${p.provider}` : ''}: ${p.prompt}`,
   cancelJobSummary: (p: { jobId: string }) => `Annulla l’attività ${p.jobId}`,

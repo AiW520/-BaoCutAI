@@ -79,6 +79,7 @@ export const ptBR: RcModelApiMessages = {
   capabilityGenerateImage: "Geração de imagens",
   capabilityGenerateText: "Geração de texto",
   capabilitySeparateAudio: "Separação de voz",
+  capabilityGenerateMusic: 'geração de música',
   modelNotFoundFor: (p: { capability: string; model: string }) =>
     `Não existe o modelo “${p.model}” está disponível para ${p.capability}: GET /v1/models lista os modelos disponíveis`,
   hintEnableOnline: (p: { capability: string }) => `Configure e ative um serviço on-line para ${p.capability} no BaoCut primeiro`,

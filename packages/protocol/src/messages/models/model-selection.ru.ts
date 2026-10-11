@@ -6,6 +6,7 @@ export const ru: ModelsModelSelectionMessages = {
   capGenerateImage: "Генерация изображений",
   capGenerateText: "Генерация текста",
   capSeparateAudio: "Разделение голоса",
+  capGenerateMusic: 'Генерация музыки',
   noSuchProvider: (p: { provider: string }) => `Нет такого поставщика: ${p.provider}`,
   noProviderForModel: (p: { model: string }) => `Ни один поставщик не предоставляет модель: ${p.model}`,
   ambiguousModel: (p: { model: string }) => `Несколько поставщиков имеют модель ${p.model}; укажите также provider`,

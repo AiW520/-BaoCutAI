@@ -96,6 +96,7 @@ const en = {
   capabilityGenerateImage: 'image generation',
   capabilityGenerateText: 'text generation',
   capabilitySeparateAudio: 'vocal separation',
+  capabilityGenerateMusic: 'music generation',
   modelNotFoundFor: (p: { capability: string; model: string }) =>
     `No model "${p.model}" is available for ${p.capability}: GET /v1/models lists the available models`,
   hintEnableOnline: (p: { capability: string }) => `Set up and enable an online service for ${p.capability} in BaoCut first`,

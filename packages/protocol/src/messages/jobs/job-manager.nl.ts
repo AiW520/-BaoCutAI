@@ -85,6 +85,7 @@ export const nl: JobsManagerMessages = {
   transcribeLabel: "Transcriberen",
   voiceOverLabel: "Nasynchronisatie genereren",
   imageLabel: "Afbeelding genereren",
+  musicLabel: 'Muziek genereren',
   videoClosed: "De video is gesloten",
   assetGone: "Het mediabestand staat niet meer in de video",
   assetChangedDuringTranscribe: "De media-inhoud is gewijzigd tijdens de transcriptie",

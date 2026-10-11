@@ -22,4 +22,13 @@ export const fr: ModelsGenerationOptionsMessages = {
   noSteps: (p: { modelId: string }) => `Le modèle ${p.modelId} n’accepte pas steps (modèles locaux uniquement)`,
   stepsRange: (p: { min: number; max: number }) => `steps doit être un entier entre ${p.min} et ${p.max}`,
   noSeed: (p: { modelId: string }) => `Le modèle ${p.modelId} n’accepte pas seed`,
+  styleEmpty: 'Le style ne peut pas être vide',
+  styleTooLong: (p: { length: number; modelId: string; limit: number }) => `Le style compte ${p.length} caractères, au-delà de la limite de ${p.limit} du modèle ${p.modelId}`,
+  lyricsEmpty: 'Une chanson nécessite des paroles ; utilisez le mode instrumental pour un morceau sans voix',
+  lyricsTooLong: (p: { length: number; modelId: string; limit: number }) => `Les paroles comptent ${p.length} caractères, au-delà de la limite de ${p.limit} du modèle ${p.modelId}`,
+  lyricsNotInstrumental: 'Le mode instrumental n’accepte pas de paroles',
+  modeUnsupported: (p: { modelId: string; mode: string }) => `Le modèle ${p.modelId} ne prend pas en charge le mode ${p.mode}`,
+  durationRange: (p: { modelId: string; max: number }) => `La durée doit être un nombre positif de secondes, au plus ${p.max} pour le modèle ${p.modelId}`,
+  targetOverMax: 'targetDurationSec ne peut pas dépasser maxDurationSec',
+  planningUnsupported: (p: { modelId: string; planning: string; options: string }) => `Le modèle ${p.modelId} ne prend pas en charge la planification ${p.planning} (options : ${p.options})`,
 };

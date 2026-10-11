@@ -14,12 +14,13 @@ import type { MessageRef } from './message-ref.ts';
  * `diarize` 是「说话人区分」模型包（Pyannote 分段 + WeSpeaker 声纹，架构设计 §6.6）：它自己不跑任务，装好之后不自带区分的
  * 识别模型包（Qwen3-ASR、Whisper）转写时带上它的组件、给段与词标说话人。
  */
-export type ModelCapability = 'transcribe' | 'align' | 'synthesize' | 'separate' | 'image' | 'diarize';
+export type ModelCapability = 'transcribe' | 'align' | 'synthesize' | 'separate' | 'image' | 'diarize' | 'music';
 /**
  * `mlx`、`coreml`（Whisper 的 CoreML 包）只在 Apple Silicon 的 macOS 上可用；`candle` 全平台；`ggml`（Whisper 的 whisper.cpp 包）
- * 全平台，Apple Silicon 上不列出。
+ * 全平台，Apple Silicon 上不列出。`audio-cpp` 是本地音乐生成的模型包（GGUF 权重，由 audio.cpp 的 `audiocpp_cli` 执行，
+ * 架构设计 §6.5）：全平台，设备按引擎的构建（Metal、CUDA、Vulkan 或 CPU）。
  */
-export type ModelBackend = 'mlx' | 'coreml' | 'candle' | 'ggml';
+export type ModelBackend = 'mlx' | 'coreml' | 'candle' | 'ggml' | 'audio-cpp';
 
 /**
  * - `not-installed`：清单缺失、文件缺失或大小不符，或校验 sha256 不过、加载时报告文件不对；部分组件已经装好、另一些缺失时
@@ -310,21 +311,24 @@ export interface ModelsDirChangeResult {
  * `transcribe` 有本地、节点与在线 Provider；`synthesizeSpeech` 有本地（已安装的语音合成模型包）与在线 Provider；`generateImage` 有本地（已安装的
  * 文生图模型包）、在线与智能体 Provider；
  * `generateText` 只有在线 Provider（局域网节点不共享它）；`separateAudio`（人声与背景分离）只有本地 Provider（已安装的分离模型包），
- * 由翻译配音使用。`transcribe` 与 `separateAudio` 有出厂默认，其余没有。
+ * 由翻译配音使用；`generateMusic`（歌曲与配乐）只有本地 Provider（已安装的音乐生成模型包）。`transcribe` 与 `separateAudio`
+ * 有出厂默认，其余没有。
  */
-export type ModelServiceCapability = 'transcribe' | 'synthesizeSpeech' | 'generateImage' | 'generateText' | 'separateAudio';
+export type ModelServiceCapability = 'transcribe' | 'synthesizeSpeech' | 'generateImage' | 'generateText' | 'separateAudio' | 'generateMusic';
 export const MODEL_SERVICE_CAPABILITIES: readonly ModelServiceCapability[] = [
   'transcribe',
   'synthesizeSpeech',
   'generateImage',
   'generateText',
   'separateAudio',
+  'generateMusic',
 ];
 
 /**
- * 有在线 Provider 的能力：云端页、自建服务商声明的模型与对外模型接口（`/v1/*`）只涉及这几种。`separateAudio` 只在本机，不在其中。
+ * 有在线 Provider 的能力：云端页、自建服务商声明的模型与对外模型接口（`/v1/*`）只涉及这几种。`separateAudio` 与 `generateMusic`
+ * 只在本机，不在其中。
  */
-export type OnlineCapability = Exclude<ModelServiceCapability, 'separateAudio'>;
+export type OnlineCapability = Exclude<ModelServiceCapability, 'separateAudio' | 'generateMusic'>;
 export const ONLINE_CAPABILITIES: readonly OnlineCapability[] = ['transcribe', 'synthesizeSpeech', 'generateImage', 'generateText'];
 
 /**
@@ -568,6 +572,54 @@ export interface LocalImageTraits {
   steps: SpeechKnobRange;
 }
 
+/** 音乐生成的方式：`song` 按风格与歌词生成有人声的歌曲；`instrumental` 按风格生成无人声的配乐。 */
+export type MusicMode = 'song' | 'instrumental';
+export const MUSIC_MODES: readonly MusicMode[] = ['song', 'instrumental'];
+/**
+ * 音乐生成的规划：`off` 直接从风格与歌词生成；`melody` 先生成或接受一段旋律的乐谱再生成；`full` 先生成完整的乐谱。
+ * 不给时由模型决定（YuE2 默认 `full`）。
+ */
+export type MusicPlanning = 'off' | 'melody' | 'full';
+export const MUSIC_PLANNINGS: readonly MusicPlanning[] = ['off', 'melody', 'full'];
+
+/** 本地音乐生成模型（`local` Provider 的 `generateMusic` 模型）独有的描述。 */
+export interface LocalMusicTraits {
+  /** 引擎的家族（`yue2`）。 */
+  family: string;
+  /** 执行引擎（`audio-cpp`）与它此刻找到的可执行文件；没找到时 null（模型装好了也不能生成，`unavailableReason: 'unsupported'`）。 */
+  engine: { id: string; executable: string | null };
+  /** 输出的采样率（Hz）。输出一律是 WAV。 */
+  sampleRate: number;
+  /** 歌词支持的语言（BCP 47 主语言子标签）；`unverified` 表示上游没有核实过的清单。 */
+  lyricLanguages: string[] | 'unverified';
+  /** 接受的规划方式与默认值。 */
+  planning: { options: MusicPlanning[]; default: MusicPlanning };
+  /** 扩散步数的范围（请求的 `steps`）。 */
+  steps: SpeechKnobRange;
+  /** 明显慢（整首歌要几分钟以上），界面据此提示。 */
+  slow: boolean;
+  license: ModelLicense;
+}
+
+/** `generateMusic` 的模型描述。 */
+export interface MusicModelInfo extends ModelInfoBase {
+  modes: MusicMode[];
+  /** 风格描述的上限（按 Unicode 码点计）。超过时在提交时拒绝。 */
+  maxStyleChars: number;
+  /** 歌词的上限（按 Unicode 码点计）。 */
+  maxLyricsChars: number;
+  /** 一次能生成的时长上限（秒）：请求的 `maxDurationSec` 不能超过它。 */
+  maxDurationSec: number;
+  /** 不给 `maxDurationSec` 时的预算（秒）。 */
+  defaultDurationSec: number;
+  formats: SpeechFormat[];
+  defaultFormat: SpeechFormat;
+  acceptsSeed: boolean;
+  cost: ModelCost;
+  /** 本地音乐生成模型独有的描述；目前只有本地模型。 */
+  local?: LocalMusicTraits;
+}
+
 /**
  * 文本模型的推理强度（架构设计 §6.8）。各供应商的写法由适配器换算（OpenAI 的 `reasoning_effort`、Gemini 的
  * `thinkingLevel`）。模型不支持请求的那一档时用最接近的一档（一样近时取高的），不支持推理强度的模型忽略它；
@@ -601,6 +653,7 @@ export interface ModelInfoByCapability {
   generateImage: ImageModelInfo;
   generateText: TextModelInfo;
   separateAudio: SeparateModelInfo;
+  generateMusic: MusicModelInfo;
 }
 
 /**
@@ -794,7 +847,7 @@ export interface CapabilityNotConfiguredDetails {
 /** Agent 提示用户配置能力时使用的设置深链（产品设计 §3.2.2），与界面内路由一致。 */
 export function capabilitySettingsHref(capability: ModelServiceCapability): string {
   const category: Record<ModelServiceCapability, string> = {
-    transcribe: 'asr', synthesizeSpeech: 'tts', generateText: 'llm', generateImage: 'image', separateAudio: 'sep',
+    transcribe: 'asr', synthesizeSpeech: 'tts', generateText: 'llm', generateImage: 'image', separateAudio: 'sep', generateMusic: 'music',
   };
   return `/settings/models/${category[capability]}`;
 }
@@ -810,6 +863,7 @@ function configurableProviders(capability: ModelServiceCapability): string {
     case 'synthesizeSpeech':
       return `openai|elevenlabs|${custom}`;
     case 'separateAudio':
+    case 'generateMusic':
       // 没有在线 Provider：补救只有安装本机模型包或设默认值。
       return 'local';
   }
@@ -826,9 +880,9 @@ export function capabilityRemedyCommands(details: CapabilityNotConfiguredDetails
   const providerId = details.remedy.providerId ?? details.providerId;
   const configure = `baocut models configure <${configurableProviders(details.capability)}> --enable --key-stdin --verify < key.txt`;
   const install = [`baocut models list  ${ProtocolLabels.bundlesCommandNote().text}`, 'baocut models install <bundleId>'];
-  // 人声分离只有本机模型包：没有可以配置的在线 Provider，补救只有安装（或设默认值）。
+  // 人声分离与音乐生成只有本机模型包：没有可以配置的在线 Provider，补救只有安装（或设默认值）。
   if (
-    details.capability === 'separateAudio' &&
+    (details.capability === 'separateAudio' || details.capability === 'generateMusic') &&
     (details.remedy.action === 'configure-provider' || details.remedy.action === 'install-model')
   ) {
     return install;

@@ -71,6 +71,7 @@ export const it: RcModelApiMessages = {
   capabilityGenerateImage: 'generazione di immagini',
   capabilityGenerateText: 'generazione di testo',
   capabilitySeparateAudio: 'separazione della voce',
+  capabilityGenerateMusic: 'generazione di musica',
   modelNotFoundFor: (p: { capability: string; model: string }) => `Nessun modello «${p.model}» disponibile per ${p.capability}: GET /v1/models elenca i modelli disponibili`,
   hintEnableOnline: (p: { capability: string }) => `Configura e attiva prima un servizio online per ${p.capability} in BaoCut`,
   hintNoLocalModel: (p: { capability: string }) => `Non esiste un modello locale per ${p.capability}; per inoltrare le richieste a un servizio online, attiva l’instradamento online per il servizio API dei modelli in BaoCut (baocut services configure model-api --route-online on) e attiva un servizio online`,

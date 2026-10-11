@@ -38,6 +38,8 @@ export const pl: ProtocolValidationMessages = {
   speechTextEmpty: "Tekst nie może być pusty; przy podanym material przekaż pusty ciąg text",
   voiceOneOf: "Podaj tylko jedną z wartości voice, reference i voiceDescription",
   promptEmpty: "Prompt nie może być pusty",
+  musicStyleEmpty: "Opis stylu nie może być pusty",
+  musicLyricsMode: "Piosenka wymaga tekstu; muzyka instrumentalna nie przyjmuje tekstu",
   textMessagesEmpty: "Wymagana jest co najmniej jedna niepusta wiadomość user lub assistant",
   rangeStartEnd: "range.start musi być mniejsze niż range.end",
   toolNameChars: "Nazwy narzędzi mogą zawierać tylko małe litery, cyfry i łączniki",
