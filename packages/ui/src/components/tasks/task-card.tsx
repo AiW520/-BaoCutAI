@@ -9,7 +9,6 @@ import FolderOpen from '@react-spectrum/s2/icons/FolderOpen';
 import Image from '@react-spectrum/s2/icons/Image';
 import Layers from '@react-spectrum/s2/icons/Layers';
 import Microphone from '@react-spectrum/s2/icons/Microphone';
-import MusicNote from '@react-spectrum/s2/icons/MusicNote';
 import Search from '@react-spectrum/s2/icons/Search';
 import Tools from '@react-spectrum/s2/icons/Tools';
 import UserAvatar from '@react-spectrum/s2/icons/UserAvatar';
@@ -23,6 +22,7 @@ import { useDirectory } from '../../state/directory-store.ts';
 import { useExportSpeed } from '../../state/jobs-store.ts';
 import { useShell } from '../../state/shell-store.ts';
 import { AgentIcon } from '../agent-icon.tsx';
+import { MusicIcon } from '../music-icon.tsx';
 import { LegacyImportCardNote } from '../legacy-import/legacy-import-task.tsx';
 import { TK } from './tasks-copy.ts';
 import { actionLabel, useTaskAction } from './use-task-actions.ts';
@@ -37,7 +37,7 @@ export const KIND_ICON: Record<TaskKind, ComponentType> = {
   transcribe: Microphone,
   synthesizeSpeech: AudioWave,
   generateImage: Image,
-  generateMusic: MusicNote,
+  generateMusic: MusicIcon,
   generateText: AIMark,
   export: Export,
   pipeline: Layers,
