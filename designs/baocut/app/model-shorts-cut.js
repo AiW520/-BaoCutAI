@@ -688,7 +688,7 @@
     trim: '调起止',
     trimTip: '去文稿：放回片段外的话，或再剪掉几句',
     hint: '片段外的话已划掉，点一下放回来',
-    back: (label) => `回到${label}`,
+    back: (label) => `回到${/^[A-Za-z]/.test(label) ? " " : ""}${label}`,
     backTip: '回到进文稿之前的面板',
     backResult: '回到结果页',
     result: '看结果页',
