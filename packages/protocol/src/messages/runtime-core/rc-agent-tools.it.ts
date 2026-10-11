@@ -37,6 +37,7 @@ function plural(count: number, one: string, many: string): string {
 }
 
 export const it: RcAgentToolsMessages = {
+  installEngineSummary: (p) => `Installare il motore audio.cpp ${p.version} (${p.size}, ${p.license}) da ${p.url}; il modello locale ${p.bundleId} ne ha bisogno per generare musica`,
   instructionsNotSet: 'Le istruzioni della sessione non sono state impostate: l’ordine di assemblaggio del Runtime è errato',
 
   /** 列表里各项之间的分隔。 */

@@ -34,6 +34,7 @@ export const ja: ToolsMessages = {
     system: 'システムの PATH',
     user: '指定パス',
     managed: 'BaoCut がダウンロードしたコピー',
+    bundled: 'BaoCut に同梱されたコピー',
     env: '環境変数',
   },
   updateMethodLabels: {

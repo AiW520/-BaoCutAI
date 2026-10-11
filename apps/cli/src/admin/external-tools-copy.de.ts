@@ -38,6 +38,7 @@ export const de: ToolsMessages = {
     system: "System-PATH",
     user: "angegebener Pfad",
     managed: "von BaoCut heruntergeladene Kopie",
+    bundled: "mit BaoCut ausgelieferte Kopie",
     env: "Umgebungsvariable",
   } satisfies Record<NonNullable<ExternalToolStatus["source"]>, string>,
   updateMethodLabels: {

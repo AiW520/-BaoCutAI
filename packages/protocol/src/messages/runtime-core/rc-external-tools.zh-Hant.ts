@@ -44,6 +44,7 @@ export const zhHant: RcExternalToolsMessages = {
   sourceEnvVar: (p) => `環境變數 ${p.name}`,
   sourceUserPath: '你設定的路徑',
   sourceManaged: 'BaoCut 下載的副本',
+  sourceBundled: "隨 BaoCut 散布的那一份",
   commandNotFound: (p) => `找不到 ${p.command}`,
   commandNotFoundIn: (p) => `找不到 ${p.command}（搜尋位置：${p.where}）`,
   sourceNotExecutable: (p) => `指定的檔案不是執行檔（來源：${p.where}）`,
@@ -74,11 +75,15 @@ export const zhHant: RcExternalToolsMessages = {
   integrityMismatch: (p) => `${p.file} 與清單中的大小或 sha256 不符`,
   sourceHttpStatus: (p) => `下載來源對 ${p.file} 傳回 HTTP ${p.status}`,
   largerThanManifest: (p) => `${p.file} 比清單中標示的還大`,
+  archiveBroken: (p) => `${p.file} 無法解開：${p.reason}`,
 
   ytDlpLicense: 'Unlicense（原始碼）；獨立執行檔包含 GPLv3+ 元件，整體為 GPLv3+',
   ytDlpPurpose: '從連結匯入：讀取影片頁面並下載媒體和字幕',
   ytDlpMissingRemedy: '用 externalTools.install（baocut external-tools install yt-dlp）下載，或自行安裝後用 externalTools.setPath 設定其路徑',
   ffmpegPurpose: '媒體分析、檔案轉檔、匯出，以及下載後合併音訊和影片',
+  audioCppPurpose: "音樂生成：執行本機的 YuE2 模型，生成歌曲與純音樂",
+  audioCppMissingRemedy:
+    "在設定 › 音樂生成裡安裝，或用 externalTools.install（baocut external-tools install audiocpp）下載；也可以用 BAOCUT_AUDIOCPP_CLI 或 externalTools.setPath 指定自己建置的引擎。Linux 與 Windows 版需要顯示卡驅動程式支援 Vulkan",
   noReleaseForPlatform: (p) => `沒有適用於這台電腦（${p.platform}）的發行檔案`,
   noTrustedSha: '內建清單中還沒有這個檔案可信的 sha256，因此無法下載',
 

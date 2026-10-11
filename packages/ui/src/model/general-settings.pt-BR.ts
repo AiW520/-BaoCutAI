@@ -15,7 +15,7 @@ export const ptBR: GeneralSettingsModelMessages = {
     pickFailed: (message: string) => `Não foi possível escolher uma pasta: ${message}`,
     webNote: 'Um navegador não pode escolher uma pasta deste computador. Configure no aplicativo de desktop BaoCut.',
   },
-  source: { system: 'Instalado no sistema', user: 'Local que você escolheu', managed: 'Baixado pelo BaoCut', env: 'Definido por variável de ambiente' },
+  source: { system: 'Instalado no sistema', user: 'Local que você escolheu', managed: 'Baixado pelo BaoCut', bundled: 'Incluído no BaoCut', env: 'Definido por variável de ambiente' },
   notInstalled: 'Não instalado',
   missingDesc: 'O yt-dlp ainda não está instalado. Quando o agente importar de um link, primeiro pedirá seu consentimento para baixá-lo (mostrando fonte, versão, tamanho e licença).',
   consentRevoked: 'Consentimento retirado',

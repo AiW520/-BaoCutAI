@@ -20,8 +20,9 @@ import {
   type MessageRef,
 } from '@baocut/protocol';
 import { readJsonOrQuarantine, writeJsonAtomic } from '@baocut/runtime-storage';
+import { ToolArchiveError, extractToolArchive } from './tool-archive.ts';
 import { ToolDownloadError, downloadToolFile, type ToolDownloadOptions } from './tool-download.ts';
-import { BUILTIN_TOOL_MANIFESTS, compareVersions, platformKey, toolOffer, type ToolManifest } from './tool-manifests.ts';
+import { BUILTIN_TOOL_MANIFESTS, compareVersions, platformKey, toolOffer, type ToolAsset, type ToolManifest } from './tool-manifests.ts';
 import { envValue, findOnPath, isExecutableFile, runVersionProbe, windowsScriptKind } from './tool-probe.ts';
 import { CommandOutput, runCommand } from './tool-command.ts';
 import { exitCodeText, toolUpdatePlan, updateSucceeded } from './tool-update-plan.ts';
@@ -31,12 +32,14 @@ import { remedyOf, taskFailure } from '../localized.ts';
 /**
  * 受管外部工具的状态与动作（架构设计 §12.9）：探测、同意、指定路径、下载与删除受管副本。
  *
- * - 解析顺序：环境变量（只有 ffmpeg 的 `BAOCUT_FFMPEG`）→ 用户指定的路径 → 受管副本 → 系统 PATH（Runtime 的工具环境，
- *   即登录 shell 的 PATH；测试注入一个空目录）。用户指定的路径不能运行时报告为不可用，不悄悄换成别的。
+ * - 解析顺序：环境变量（ffmpeg 的 `BAOCUT_FFMPEG`、音乐引擎的 `BAOCUT_AUDIOCPP_CLI`）→ 随应用分发的（只有音乐引擎登记了 `bin/`）→
+ *   用户指定的路径 → 受管副本 → 系统 PATH（Runtime 的工具环境，即登录 shell 的 PATH；测试注入一个空目录）。用户指定的路径不能运行时
+ *   报告为不可用，不悄悄换成别的。
  * - 同意与用户路径、受管副本的登记存在 `<home>/store/external-tools.json`；受管副本在 `<home>/tools/<工具>/<版本>/`，
  *   下载中的文件在 `<home>/tools/.staging/`（取消时保留，下次续传）。
  * - 下载是一个任务（`kind: 'toolInstall'`）：提交前查严格离线、清单与同意，任务里下载、核对 sha256 与大小、设可执行位、
- *   原子地改名发布，再执行一次 `--version` 确认能运行。
+ *   原子地改名发布，再执行一次 `--version` 确认能运行。发布文件是压缩包（音乐引擎）时，核对之后先解开到 staging 目录
+ *   （只取包根目录的普通文件，`tool-archive.ts`），整个目录改名发布。
  * - 系统里自己装的那一份按原安装方式更新（`tool-update-plan.ts` 判断办法）：也是一个任务（`kind: 'toolUpdate'`），提交前
  *   要调用方交回用户确认过的那条命令；任务里不经 shell 执行，输出逐段写进任务记录的 `command`，结束后重新探测。
  *   不提权：要管理员权限的只给命令。更新进行中用它的流程拒绝启动（`TOOL_UPDATING`），反过来有流程在用时不更新。
@@ -174,6 +177,16 @@ export class ExternalToolService {
     return this.#options.overrides ?? process.env;
   }
 
+  /** 读入登记文件（不探测）：之后 `userPathOf` 才有结果。 */
+  async warm(): Promise<void> {
+    await this.#load();
+  }
+
+  /** 用户指定的路径（同步，读的是已经读入的登记；还没读入时 null）：音乐引擎的同步查找用它与探测保持同一个顺序。 */
+  userPathOf(name: string): string | null {
+    return this.#store?.tools[name]?.userPath ?? null;
+  }
+
   /** 上次探测的结果；还没探测过的先探测。 */
   async list(): Promise<ExternalToolStatus[]> {
     for (const name of this.#manifests.keys()) if (!this.#status.has(name)) await this.#detectOne(name);
@@ -244,6 +257,7 @@ export class ExternalToolService {
     await this.#update(manifest.name, (record) => ({ ...record, managed: null }));
     await fs.rm(path.join(this.#options.toolsDir, manifest.name), { recursive: true, force: true });
     await fs.rm(this.#stagingFile(manifest), { force: true });
+    await fs.rm(`${this.#stagingFile(manifest)}.dir`, { recursive: true, force: true });
     this.#options.log.info('Removed managed tool', { tool: manifest.name });
     return { tool: await this.status(manifest.name) };
   }
@@ -294,7 +308,7 @@ export class ExternalToolService {
     const spec = { task: 'toolInstall' as const, tool: manifest.name, version: manifest.release.version, sha256: asset.sha256 };
     const hash = `sha256:${sha256Hex(canonicalJson(spec))}`;
     const url = offer.url;
-    const expected = { size: asset.size, sha256: asset.sha256, fileName: asset.fileName };
+    const expected = { size: asset.size, sha256: asset.sha256, fileName: asset.fileName, archive: asset.archive ?? null };
     const version = manifest.release.version;
     const { jobId } = this.#options.jobs.submitTask(
       {
@@ -425,6 +439,8 @@ export class ExternalToolService {
       const file = path.isAbsolute(fromEnv) ? fromEnv : await lookup(fromEnv);
       candidates.push({ file, source: 'env', strict: true, label: RcExternalTools.sourceEnvVar({ name: manifest.envVar! }) });
     }
+    const bundled = manifest.bundled?.(this.#overrides) ?? null;
+    if (bundled) candidates.push({ file: bundled, source: 'bundled', strict: true, label: RcExternalTools.sourceBundled() });
     if (record.userPath) candidates.push({ file: record.userPath, source: 'user', strict: true, label: RcExternalTools.sourceUserPath() });
     if (record.managed) {
       const file = this.#managedFile(manifest, record.managed.version);
@@ -563,7 +579,7 @@ export class ExternalToolService {
     manifest: ToolManifest,
     version: string,
     url: string,
-    expected: { size: number | null; sha256: string; fileName: string },
+    expected: { size: number | null; sha256: string; fileName: string; archive: ToolAsset['archive'] | null },
   ): Promise<NonNullable<JobRecord['result']>> {
     const part = this.#stagingFile(manifest);
     await fs.mkdir(path.dirname(part), { recursive: true });
@@ -600,12 +616,38 @@ export class ExternalToolService {
       throw error;
     }
     run.phase('publishing', null);
-    await fs.chmod(part, 0o755);
     const final = this.#managedFile(manifest, version);
     const dir = path.dirname(final);
-    await fs.rm(dir, { recursive: true, force: true });
-    await fs.mkdir(dir, { recursive: true });
-    await fs.rename(part, final);
+    let files: string[] = [path.basename(final)];
+    if (expected.archive) {
+      // 压缩包：解开到 staging 里的目录，确认可执行文件在里面，再整个目录改名发布；坏包删掉（下次从头下）。
+      const unpacked = `${part}.dir`;
+      await fs.rm(unpacked, { recursive: true, force: true });
+      await fs.mkdir(unpacked, { recursive: true });
+      try {
+        files = await extractToolArchive(part, expected.archive, unpacked, run.signal);
+        if (!files.includes(path.basename(final))) throw new ToolArchiveError(`${path.basename(final)} is not in the archive`);
+      } catch (error) {
+        await fs.rm(unpacked, { recursive: true, force: true });
+        if (run.signal.aborted) throw error;
+        if ((error as NodeJS.ErrnoException).code === 'ENOSPC') throw taskFailure('TOOL_DOWNLOAD_NO_SPACE', RcExternalTools.diskFull(), {});
+        await fs.rm(part, { force: true });
+        throw taskFailure('TOOL_DOWNLOAD_INTEGRITY', RcExternalTools.archiveBroken({ file: expected.fileName, reason: (error as Error).message }), {
+          tool: manifest.name,
+          file: expected.fileName,
+          ...remedyOf(RcExternalTools.remedyIntegrity()),
+        });
+      }
+      await fs.rm(dir, { recursive: true, force: true });
+      await fs.mkdir(path.dirname(dir), { recursive: true });
+      await fs.rename(unpacked, dir);
+      await fs.rm(part, { force: true });
+    } else {
+      await fs.chmod(part, 0o755);
+      await fs.rm(dir, { recursive: true, force: true });
+      await fs.mkdir(dir, { recursive: true });
+      await fs.rename(part, final);
+    }
     run.phase('validating', null);
     const probe = await runVersionProbe(final, manifest.versionArgs, await this.#options.env());
     const actual = probe.ok ? manifest.parseVersion(probe.output) : null;
@@ -631,6 +673,7 @@ export class ExternalToolService {
           reportedVersion: actual,
           fileName: expected.fileName,
           sha256: expected.sha256,
+          ...(expected.archive ? { files } : {}),
           installedAt,
         }),
       ),
@@ -797,6 +840,7 @@ export class ExternalToolService {
 
   /** 正在安装或更新它、或正在用它的流程。 */
   #busyJobs(name: string): string[] {
+    const usedBy = this.#manifests.get(name)?.usedByJobKinds ?? [];
     return this.#options.jobs
       .list()
       .filter(
@@ -804,6 +848,7 @@ export class ExternalToolService {
           !isTerminal(j.state) &&
           ((j.kind === 'toolInstall' && j.providerId === name) ||
             (j.kind === 'toolUpdate' && j.providerId === name) ||
+            usedBy.includes(j.kind) ||
             (j.kind === 'pipeline' && (TOOL_INSTALL_PIPELINE_USERS as readonly string[]).includes(j.pipeline?.name ?? ''))),
       )
       .map((j) => j.jobId);

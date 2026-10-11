@@ -3,6 +3,11 @@ import type { RcExternalToolsMessages } from './rc-external-tools.ts';
 const WIN_ADMIN = 'Откройте терминал с правами администратора и выполните эту команду.';
 
 export const ru: RcExternalToolsMessages = {
+  sourceBundled: "копия, поставляемая с BaoCut",
+  archiveBroken: (p) => `Не удалось распаковать ${p.file}: ${p.reason}`,
+  audioCppPurpose: "Генерация музыки: запускает на этом компьютере модель YuE2, которая создаёт песни и инструментальные треки",
+  audioCppMissingRemedy:
+    "Установите его в Настройки › Генерация музыки или через externalTools.install (baocut external-tools install audiocpp), либо укажите свою сборку через BAOCUT_AUDIOCPP_CLI или externalTools.setPath. Сборкам для Linux и Windows нужен графический драйвер с поддержкой Vulkan",
   manageOnlyInAppOrCli: "Внешние инструменты управляются только настольным приложением или CLI",
   videoNotOpen: "Видео не открыто",
 

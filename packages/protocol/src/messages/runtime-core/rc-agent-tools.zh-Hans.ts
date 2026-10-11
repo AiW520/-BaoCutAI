@@ -29,6 +29,7 @@ function linkImportAfter(p: { target: string; name: string | null; transcribe: b
 }
 
 export const zhHans: RcAgentToolsMessages = {
+  installEngineSummary: (p) => `从 ${p.url} 安装 audio.cpp 引擎 ${p.version}（${p.size}，${p.license}）；本机模型 ${p.bundleId} 要用它生成音乐`,
   instructionsNotSet: '会话指导还没有设上：Runtime 装配顺序有误',
 
   listSeparator: '、',

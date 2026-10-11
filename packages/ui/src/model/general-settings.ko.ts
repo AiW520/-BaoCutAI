@@ -28,6 +28,7 @@ export const ko: GeneralSettingsModelMessages = {
     system: '시스템에 설치됨',
     user: '직접 지정한 위치',
     managed: 'BaoCut이 다운로드함',
+    bundled: 'BaoCut에 포함',
     env: '환경 변수로 지정됨',
   },
   notInstalled: '설치되지 않음',

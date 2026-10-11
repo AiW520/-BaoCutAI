@@ -29,6 +29,7 @@ export const de: GeneralSettingsModelMessages = {
     system: "Im System installiert",
     user: "Gewählter Speicherort",
     managed: "Von BaoCut heruntergeladen",
+    bundled: "Mit BaoCut ausgeliefert",
     env: "Durch Umgebungsvariable festgelegt",
   } as Record<ExternalToolSource, string>,
   notInstalled: "Nicht installiert",

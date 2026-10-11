@@ -14,6 +14,7 @@ import { pluralForm } from '../../i18n.ts';
 import type { RcAgentToolsMessages } from './rc-agent-tools.ts';
 
 export const de: RcAgentToolsMessages = {
+  installEngineSummary: (p) => `Die audio.cpp-Engine ${p.version} (${p.size}, ${p.license}) von ${p.url} installieren; das lokale Modell ${p.bundleId} braucht sie zum Erzeugen von Musik`,
   instructionsNotSet: "Sitzungsanweisungen wurden nicht festgelegt: falsche Runtime-Zusammenstellungsreihenfolge",
 
 

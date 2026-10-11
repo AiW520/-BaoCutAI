@@ -34,6 +34,7 @@ export const ko: ToolsMessages = {
     system: '시스템 PATH',
     user: '지정한 경로',
     managed: 'BaoCut이 다운로드한 사본',
+    bundled: 'BaoCut에 포함된 사본',
     env: '환경 변수',
   },
   updateMethodLabels: {

@@ -64,6 +64,7 @@ const en = {
   sourceEnvVar: (p: { name: string }) => `the environment variable ${p.name}`,
   sourceUserPath: 'the path you set',
   sourceManaged: 'the copy BaoCut downloaded',
+  sourceBundled: "the copy bundled with BaoCut",
   commandNotFound: (p: { command: string }) => `${p.command} not found`,
   commandNotFoundIn: (p: { where: string; command: string }) => `${p.command} not found in ${p.where}`,
   sourceNotExecutable: (p: { where: string }) => `${p.where} isn't an executable file`,
@@ -98,6 +99,7 @@ const en = {
   integrityMismatch: (p: { file: string }) => `${p.file} doesn't match the manifest's size or sha256`,
   sourceHttpStatus: (p: { file: string; status: number }) => `The download source returned HTTP ${p.status} for ${p.file}`,
   largerThanManifest: (p: { file: string }) => `${p.file} is larger than the manifest says`,
+  archiveBroken: (p: { file: string; reason: string }) => `${p.file} could not be unpacked: ${p.reason}`,
 
   // 登记表（tool-manifests）
   ytDlpLicense: 'Unlicense (source); the standalone executable includes GPLv3+ components and is GPLv3+ as a whole',
@@ -105,6 +107,9 @@ const en = {
   ytDlpMissingRemedy:
     'Download it with externalTools.install (baocut external-tools install yt-dlp), or install it yourself and set its path with externalTools.setPath',
   ffmpegPurpose: 'Media analysis, file transcoding, exports, and merging audio and video after downloads',
+  audioCppPurpose: "Music generation: runs the local YuE2 model that generates songs and instrumentals",
+  audioCppMissingRemedy:
+    "Install it from Settings › Music generation or with externalTools.install (baocut external-tools install audiocpp), or point BAOCUT_AUDIOCPP_CLI or externalTools.setPath at your own build. The Linux and Windows builds need a graphics driver with Vulkan",
   noReleaseForPlatform: (p: { platform: string }) => `No release file for this machine (${p.platform})`,
   noTrustedSha: "The built-in manifest doesn't have a trusted sha256 for this file yet, so it can't be downloaded",
 

@@ -13,6 +13,7 @@ function linkImportAfter(p: { target: string; name: string | null; transcribe: b
 }
 
 export const ptBR: RcAgentToolsMessages = {
+  installEngineSummary: (p) => `Instalar o motor audio.cpp ${p.version} (${p.size}, ${p.license}) a partir de ${p.url}; o modelo local ${p.bundleId} precisa dele para gerar música`,
   instructionsNotSet: "As instruções da sessão não foram definidas: ordem de montagem do Runtime incorreta",
 
 

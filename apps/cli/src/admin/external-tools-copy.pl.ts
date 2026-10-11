@@ -16,6 +16,7 @@ export const pl: ToolsMessages = {
     system: "systemowy PATH",
     user: "wskazana ścieżka",
     managed: "kopia pobrana przez BaoCut",
+    bundled: "kopia dostarczana z BaoCut",
     env: "zmienna środowiskowa",
   },
   updateMethodLabels: {

@@ -16,6 +16,7 @@ export const ru: ToolsMessages = {
     system: "системный PATH",
     user: "указанный путь",
     managed: "копия, скачанная BaoCut",
+    bundled: "копия, поставляемая с BaoCut",
     env: "переменная окружения",
   },
   updateMethodLabels: {

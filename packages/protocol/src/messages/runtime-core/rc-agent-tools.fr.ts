@@ -14,6 +14,7 @@ function linkImportAfter(p: { target: string; name: string | null; transcribe: b
 }
 
 export const fr: RcAgentToolsMessages = {
+  installEngineSummary: (p) => `Installer le moteur audio.cpp ${p.version} (${p.size}, ${p.license}) depuis ${p.url} ; le modèle local ${p.bundleId} en a besoin pour générer de la musique`,
   instructionsNotSet: 'Les instructions de session n’ont pas été définies : l’ordre d’assemblage du Runtime est incorrect', listSeparator: ', ', clauseSeparator: ' ; ',
   createVideoSummary: (p) => `Créer la vidéo « ${p.name} »`,
   slidesImportAssetSummary: (p) => `Importer l’image « ${p.file} » dans les diapositives « ${p.deck} »`, editsSummary: (p) => `${p.label} (${p.count} ${pluralForm('fr', p.count, { one: 'opération', other: 'opérations' })} : ${p.types})`,

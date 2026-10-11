@@ -14,6 +14,7 @@ import { pluralForm } from '../../i18n.ts';
 import type { RcAgentToolsMessages } from './rc-agent-tools.ts';
 
 export const nl: RcAgentToolsMessages = {
+  installEngineSummary: (p) => `De audio.cpp-engine ${p.version} (${p.size}, ${p.license}) installeren vanaf ${p.url}; het lokale model ${p.bundleId} heeft hem nodig om muziek te genereren`,
   instructionsNotSet: "Sessie-instructies zijn niet ingesteld: de samenstellingsvolgorde van de Runtime is onjuist",
 
 

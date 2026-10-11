@@ -30,7 +30,7 @@ export const es: LinkImportMessages = {
  headingStopped: 'Importación detenida', headingFailed: 'La importación no terminó', headingRunning: 'Convirtiendo este enlace en un vídeo editable',
  headingDownloaded: 'Vídeo descargado', headingVideoFailed: 'Archivo descargado, pero no se creó el vídeo', headingCreatingVideo: 'Archivo descargado, creando el vídeo',
  headingTranscribing: 'Vídeo listo, generando subtítulos', headingTranscribeFailed: 'Vídeo listo, la transcripción necesita atención', headingReady: 'Vídeo listo', headingSubsReady: 'Los subtítulos están listos',
- toolSource: { system: 'Instalado en el sistema', user: 'Elegido por ti', managed: 'Descargado por BaoCut', env: 'Establecido por una variable de entorno' },
+ toolSource: { system: 'Instalado en el sistema', user: 'Elegido por ti', managed: 'Descargado por BaoCut', bundled: 'Incluido con BaoCut', env: 'Establecido por una variable de entorno' },
  factVersion: (version, size) => size ? `Versión ${version} · unos ${size}` : `Versión ${version}`, factFrom: (host) => `Descargado de ${host}`, factLicense: (license) => `Licencia ${license}`,
  factIsolated: 'Se guarda en la carpeta propia de BaoCut y se ejecuta solo después de verificar su suma de comprobación; no se modifica el sistema', factInstalledWith: (method) => `Instalado con ${method}`,
  cardChecking: 'Comprobando la herramienta de descarga…', cardCheckingBody: 'Solo consulta la versión de este ordenador; no se conecta a Internet.',

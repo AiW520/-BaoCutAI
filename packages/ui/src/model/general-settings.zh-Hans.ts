@@ -28,6 +28,7 @@ export const zhHans: GeneralSettingsModelMessages = {
     system: '系统里装的',
     user: '你指定的位置',
     managed: 'BaoCut 下载的',
+    bundled: '随 BaoCut 分发',
     env: '环境变量指定的',
   },
   notInstalled: '未安装',

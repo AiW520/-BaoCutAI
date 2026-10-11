@@ -119,6 +119,7 @@ export const ja: LinkImportMessages = {
     system: 'システムにインストール済み',
     user: '指定したもの',
     managed: 'BaoCut がダウンロード',
+    bundled: 'BaoCut に同梱',
     env: '環境変数で指定',
   },
   factVersion: (version: string, size: string | null) => (size ? `バージョン ${version} · 約 ${size}` : `バージョン ${version}`),

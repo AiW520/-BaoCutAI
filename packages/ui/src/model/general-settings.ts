@@ -43,6 +43,7 @@ const en = {
     system: 'Installed on the system',
     user: 'Location you chose',
     managed: 'Downloaded by BaoCut',
+    bundled: 'Bundled with BaoCut',
     env: 'Set by an environment variable',
   } as Record<ExternalToolSource, string>,
   notInstalled: 'Not installed',

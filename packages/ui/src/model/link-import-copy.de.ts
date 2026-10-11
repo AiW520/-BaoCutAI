@@ -116,6 +116,7 @@ export const de: LinkImportMessages = {
     system: "Im System installiert",
     user: "Von dir gewählt",
     managed: "Von BaoCut heruntergeladen",
+    bundled: "Mit BaoCut ausgeliefert",
     env: "Durch Umgebungsvariable festgelegt",
   } as Record<NonNullable<ExternalToolStatus['source']>, string>,
   factVersion: (version: string, size: string | null) => (size ? `Version ${version} · etwa ${size}` : `Version ${version}`),

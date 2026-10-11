@@ -31,6 +31,7 @@ function linkImportAfter(p: { target: string; name: string | null; transcribe: b
 }
 
 export const zhHant: RcAgentToolsMessages = {
+  installEngineSummary: (p) => `從 ${p.url} 安裝 audio.cpp 引擎 ${p.version}（${p.size}，${p.license}）；本機模型 ${p.bundleId} 需要它來生成音樂`,
 
   instructionsNotSet: '尚未設定對話指示：Runtime 組裝順序錯誤',
   listSeparator: '、',

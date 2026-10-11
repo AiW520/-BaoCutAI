@@ -45,6 +45,7 @@ export const ko: RcExternalToolsMessages = {
   sourceEnvVar: (p) => `환경 변수 ${p.name}`,
   sourceUserPath: '지정한 경로',
   sourceManaged: 'BaoCut이 다운로드한 사본',
+  sourceBundled: "BaoCut에 포함된 사본",
   commandNotFound: (p) => `${p.command}을(를) 찾을 수 없습니다`,
   commandNotFoundIn: (p) => `${p.where}에서 ${p.command}을(를) 찾을 수 없습니다`,
   sourceNotExecutable: (p) => `${p.where}: 실행 파일이 아닙니다`,
@@ -76,12 +77,16 @@ export const ko: RcExternalToolsMessages = {
   integrityMismatch: (p) => `${p.file} 파일이 매니페스트의 크기 또는 sha256과 일치하지 않습니다`,
   sourceHttpStatus: (p) => `다운로드 소스에서 ${p.file} 파일에 대해 HTTP ${p.status} 상태를 반환했습니다`,
   largerThanManifest: (p) => `${p.file} 파일이 매니페스트에 적힌 것보다 큽니다`,
+  archiveBroken: (p) => `${p.file}의 압축을 풀 수 없습니다: ${p.reason}`,
 
   ytDlpLicense: 'Unlicense(소스 코드). 단독 실행 파일에는 GPLv3+ 구성 요소가 포함되어 전체가 GPLv3+입니다',
   ytDlpPurpose: '링크에서 가져오기: 영상 페이지를 읽고 미디어와 자막을 다운로드합니다',
   ytDlpMissingRemedy:
     'externalTools.install(baocut external-tools install yt-dlp)로 다운로드하거나, 직접 설치한 뒤 externalTools.setPath로 경로를 지정하세요',
   ffmpegPurpose: '미디어 분석, 파일 트랜스코딩, 내보내기, 다운로드 후 오디오와 영상 병합',
+  audioCppPurpose: "음악 생성: 이 컴퓨터에서 YuE2 모델을 실행해 노래와 연주곡을 생성합니다",
+  audioCppMissingRemedy:
+    "설정 › 음악 생성에서 설치하거나 externalTools.install(baocut external-tools install audiocpp)로 다운로드하세요. 직접 빌드한 엔진은 BAOCUT_AUDIOCPP_CLI 또는 externalTools.setPath로 지정할 수 있습니다. Linux와 Windows 빌드는 Vulkan을 지원하는 그래픽 드라이버가 필요합니다",
   noReleaseForPlatform: (p) => `이 컴퓨터(${p.platform})용 릴리스 파일이 없습니다`,
   noTrustedSha: '기본 제공 매니페스트에 아직 이 파일의 신뢰할 수 있는 sha256이 없어 다운로드할 수 없습니다',
 

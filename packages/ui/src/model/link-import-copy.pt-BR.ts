@@ -117,6 +117,7 @@ export const ptBR: LinkImportMessages = {
     system: "Instalado no sistema",
     user: "Escolhido por você",
     managed: "Baixado pelo BaoCut",
+    bundled: "Incluído no BaoCut",
     env: "Definido por variável de ambiente",
   } as Record<NonNullable<ExternalToolStatus['source']>, string>,
   factVersion: (version: string, size: string | null) => (size ? `Versão ${version} · cerca de ${size}` : `Versão ${version}`),

@@ -144,6 +144,7 @@ const en = {
     system: 'Installed on the system',
     user: 'Chosen by you',
     managed: 'Downloaded by BaoCut',
+    bundled: 'Bundled with BaoCut',
     env: 'Set by an environment variable',
   } as Record<NonNullable<ExternalToolStatus['source']>, string>,
   factVersion: (version: string, size: string | null) => (size ? `Version ${version} · about ${size}` : `Version ${version}`),

@@ -89,6 +89,7 @@ export const ru: LinkImportMessages = {
     system: "Установлено в системе",
     user: "Выбрано вами",
     managed: "Скачано BaoCut",
+    bundled: "Поставляется с BaoCut",
     env: "Задано переменной окружения",
   },
   factVersion: (version: string, size: string | null) => (size ? `Версия ${version} · около ${size}` : `Версия ${version}`),

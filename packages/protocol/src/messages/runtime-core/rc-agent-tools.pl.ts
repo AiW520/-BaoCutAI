@@ -15,6 +15,7 @@ function linkImportAfter(p: { target: string; name: string | null; transcribe: b
 }
 
 export const pl: RcAgentToolsMessages = {
+  installEngineSummary: (p) => `Zainstalować silnik audio.cpp ${p.version} (${p.size}, ${p.license}) z ${p.url}; lokalny model ${p.bundleId} potrzebuje go do generowania muzyki`,
   instructionsNotSet: "Instrukcje sesji nieustawione: błędna kolejność składania Runtime",
 
   listSeparator: ", ",

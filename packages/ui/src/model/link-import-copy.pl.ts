@@ -89,6 +89,7 @@ export const pl: LinkImportMessages = {
     system: "Zainstalowane w systemie",
     user: "Wybrane przez Ciebie",
     managed: "Pobrane przez BaoCut",
+    bundled: "Dostarczony z BaoCut",
     env: "Ustawione przez zmienną środowiskową",
   },
   factVersion: (version: string, size: string | null) => (size ? `Wersja ${version} · około ${size}` : `Wersja ${version}`),

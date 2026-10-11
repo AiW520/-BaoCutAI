@@ -28,6 +28,7 @@ export const ja: GeneralSettingsModelMessages = {
     system: 'システムにインストール済み',
     user: '指定した場所',
     managed: 'BaoCut がダウンロード',
+    bundled: 'BaoCut に同梱',
     env: '環境変数で指定',
   },
   notInstalled: '未インストール',

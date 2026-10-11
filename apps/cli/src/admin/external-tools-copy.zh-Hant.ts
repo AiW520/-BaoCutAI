@@ -33,6 +33,7 @@ export const zhHant: ToolsMessages = {
     system: '系統 PATH',
     user: '指定的路徑',
     managed: 'BaoCut 下載的副本',
+    bundled: '隨 BaoCut 散布的那一份',
     env: '環境變數',
   },
   updateMethodLabels: {

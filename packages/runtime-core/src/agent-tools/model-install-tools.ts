@@ -1,7 +1,9 @@
 import { z } from 'zod';
 import { defaultTranscribeBundle, type ModelCatalog } from '@baocut/models';
-import { RpcError, type Localized, type ModelBundleStatus, type ModelInstallPlan } from '@baocut/protocol';
+import { RpcError, type ExternalToolStatus, type Localized, type ModelBundleStatus, type ModelInstallPlan } from '@baocut/protocol';
 import { RcAgentTools } from '@baocut/protocol/messages/runtime-core';
+import type { ExternalToolService } from '../external-tools/external-tool-service.ts';
+import { AUDIO_CPP } from '../external-tools/tool-manifests.ts';
 import type { ModelInstallService } from '../models/model-install-service.ts';
 import { ToolError, type ToolInfo, type ToolSet } from './tool-catalog.ts';
 import { approvalField, confirmSummary, type ToolPrincipal, type ToolScope } from './tool-scope.ts';
@@ -16,12 +18,18 @@ import { commandIdArg } from './video-tools.ts';
  *
  * 同组还有 `models_list`（本地模型包与状态，网关的 `models.list`，三个面都有）与 `models_test`（跑一遍固定样本检查一个模型包，
  * 网关的 `models.test`；占用本机算力，与 `models_install` 一样不开放给 MCP）。
+ *
+ * 音乐生成的模型包（backend `audio-cpp`）还要 audio.cpp 引擎：权重装好或在装时，引擎没有就一并经受管外部工具安装（§12.9，
+ * 另一次确认，说明里写明版本、大小、许可与来源）；引擎由环境变量、用户指定的路径或随应用分发的那一份决定而不能运行时不代为
+ * 安装，结果的 `engine` 说明原因与补救。
  */
 
 export interface ModelInstallToolsDeps {
   installs: ModelInstallService;
   /** 本地模型包的目录（`models_list`）。 */
   catalog: Pick<ModelCatalog, 'list'>;
+  /** 受管外部工具（音乐引擎）；不给时不检查引擎。 */
+  tools?: Pick<ExternalToolService, 'status' | 'install'>;
   scope: ToolScope;
 }
 
@@ -53,7 +61,8 @@ const DEFINITIONS: Record<ToolName, ToolInfo> = {
     title: '下载本地模型',
     description: [
       '下载并安装一个本机模型包（几百 MB 到几 GB）。',
-      '装好之后才能用本机转写、语音合成或生图。只在本机模型没有安装（CAPABILITY_NOT_CONFIGURED 的 remedy.action 为 install-model）时用。',
+      '装好之后才能用本机转写、语音合成、生图或音乐生成。只在本机模型没有安装（CAPABILITY_NOT_CONFIGURED 的 remedy.action 为 install-model）时用。',
+      '音乐生成的模型包还要 audio.cpp 引擎：没有时一并安装（另一次确认），结果的 engine 带它的任务 engine.jobId；音乐能力报 unsupported、说找不到引擎时，也用本工具带上那个模型包补装引擎。',
       '提交前会把大小告诉用户并按访问模式确认；已经装好时不下载（jobId 为 null）。只下载缺的部分，之前没下完的会续传。',
       '立即返回 jobId 与大小（downloadBytes；大小未知时为 null，estimatedBytes 是估计值）。用 jobs_wait 等它结束（要看进度用 jobs_inspect，progress.unit 为 bytes），state 为 completed 才算装好；之后再提交转写，或带上 provider: local 与这个模型包提交合成或生图（它们没有出厂默认）。不要重复提交同一件事。',
     ].join('\n'),
@@ -98,11 +107,13 @@ export class ModelInstallTools implements ToolSet {
   readonly definitions = DEFINITIONS;
   readonly #installs: ModelInstallService;
   readonly #catalog: Pick<ModelCatalog, 'list'>;
+  readonly #tools: Pick<ExternalToolService, 'status' | 'install'> | null;
   readonly #scope: ToolScope;
 
   constructor(deps: ModelInstallToolsDeps) {
     this.#installs = deps.installs;
     this.#catalog = deps.catalog;
+    this.#tools = deps.tools ?? null;
     this.#scope = deps.scope;
   }
 
@@ -160,9 +171,15 @@ export class ModelInstallTools implements ToolSet {
     const first = await this.#installs.install({ bundleId }, access.submitter).catch((error: unknown) => {
       throw toolErrorOf(error);
     });
+    // 模型包已在下载或已装好时只看引擎；要下载时先确认模型包，再看引擎（两次确认的顺序与用户看到的大小一致）。
+    const engine = first.jobId || first.plan.upToDate ? await this.#engineFor(bundleId, args, access) : {};
     // i18n-ignore-start: 给模型的工具说明、错误与下一步
-    if (first.jobId) return { ...resultOf(first.plan, first.jobId), next: '这个模型包已经在下载：用 jobs_wait 等它结束，不要重复提交。' };
-    if (first.plan.upToDate) return { ...resultOf(first.plan, null), next: '模型包已经装好，不用下载；可以直接提交转写。' };
+    if (first.jobId) return { ...resultOf(first.plan, first.jobId), ...engine, next: '这个模型包已经在下载：用 jobs_wait 等它结束，不要重复提交。' };
+    if (first.plan.upToDate) {
+      if (engine.engine?.jobId) return { ...resultOf(first.plan, null), ...engine, next: '模型包已经装好；音乐引擎的安装已提交：用 jobs_wait 等 engine.jobId 结束再生成。' };
+      if (engine.engine) return { ...resultOf(first.plan, null), ...engine, next: '模型包已经装好，但音乐引擎不能代为安装：把 engine.reason 与 engine.remedy 告诉用户。' };
+      return { ...resultOf(first.plan, null), ...engine, next: '模型包已经装好，不用下载；可以直接提交转写。' };
+    }
     // i18n-ignore-end
     const approval = await this.#scope.confirm(access, { tool: 'models_install', ...confirmSummary(summaryOf(first.plan)), risk: 'command' });
     const submitted = await this.#installs
@@ -177,13 +194,80 @@ export class ModelInstallTools implements ToolSet {
       .catch((error: unknown) => {
         throw toolErrorOf(error);
       });
+    const submittedEngine = await this.#engineFor(bundleId, args, access);
     return {
       ...resultOf(submitted.plan, submitted.jobId),
+      ...submittedEngine,
       ...approvalField(approval),
       // i18n-ignore: 给模型的工具说明、错误与下一步
       next: '下载已提交。用 jobs_wait 等它结束（看进度用 jobs_inspect），state 为 completed 才算装好，之后再提交转写；失败时 error.details.remedy 说明怎么补救。',
     };
   }
+
+  /**
+   * 音乐模型包的引擎：已经能用或不是音乐模型包时不返回；在装时交出进行中的任务；能下载时确认之后提交安装；不能代为安装时说明原因。
+   */
+  async #engineFor(bundleId: string, args: Args, access: ReturnType<ToolScope['authorize']>): Promise<{ engine?: EngineResult }> {
+    if (!this.#tools) return {};
+    const bundle = (await this.#catalog.list()).find((b) => b.bundleId === bundleId);
+    if (bundle?.backend !== 'audio-cpp') return {};
+    const status = await this.#tools.status(AUDIO_CPP);
+    if (status.state === 'installed') return {};
+    if (status.installJobId) return { engine: engineView(status, status.installJobId) };
+    const offer = status.offer;
+    // 环境变量、用户指定的路径、随应用分发的那一份不能运行：换一份下载的也不会被用到，交给用户处理。
+    const pinned = status.state === 'unavailable' && (status.source === 'env' || status.source === 'user' || status.source === 'bundled');
+    if (pinned || !offer || offer.blockedReason || !offer.url) return { engine: engineView(status, null) };
+    const approval = await this.#scope.confirm(access, {
+      tool: 'models_install',
+      ...confirmSummary(
+        RcAgentTools.installEngineSummary({
+          version: offer.version,
+          size: formatBytes(offer.sizeBytes ?? offer.estimatedBytes),
+          license: offer.license,
+          url: offer.url,
+          bundleId,
+        }),
+      ),
+      risk: 'command',
+    });
+    const installed = await this.#tools
+      .install(
+        {
+          name: AUDIO_CPP,
+          consent: true,
+          via: 'agent-approval',
+          ...(args.commandId ? { commandId: this.#scope.commandId(access, `${args.commandId}-engine`) } : {}),
+        },
+        access.submitter,
+      )
+      .catch((error: unknown) => {
+        throw toolErrorOf(error);
+      });
+    return { engine: { ...engineView(installed.tool, installed.jobId), ...approvalField(approval) } };
+  }
+}
+
+interface EngineResult {
+  tool: string;
+  state: ExternalToolStatus['state'];
+  jobId: string | null;
+  version: string | null;
+  reason?: string;
+  remedy?: string;
+}
+
+/** 引擎的状态给模型看的版本：没有本机路径。 */
+function engineView(status: ExternalToolStatus, jobId: string | null): EngineResult {
+  const remedy = jobId === null ? (status.offer?.blockedReason ?? status.remedy) : null;
+  return {
+    tool: status.name,
+    state: status.state,
+    jobId,
+    version: status.offer?.version ?? status.version,
+    ...(jobId === null && status.reason ? { reason: status.reason } : {}),
+    ...(remedy ? { remedy } : {}),
+  };
 }
 
 /** 模型包的状态给模型看的版本：组件只留名字与装没装，没有本机路径。 */

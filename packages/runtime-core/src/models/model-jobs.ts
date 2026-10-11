@@ -1,4 +1,4 @@
-import { statSync } from 'node:fs';
+import { readdirSync, statSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { TopicLog, type Logger } from '@baocut/harness';
@@ -38,6 +38,8 @@ import {
   AUDIO_CPP_BACKEND_ENV,
   AUDIO_CPP_CLI_ENV,
   AUDIO_CPP_ENGINE,
+  AUDIO_CPP_RELEASE,
+  AUDIO_CPP_TOOL,
   LocalProviderSource,
   ModelCatalog,
   ModelServiceStore,
@@ -690,14 +692,30 @@ function dubVideos(videos: VideoService, guard: TaskGuard): DubVideos {
 
 /**
  * 找 audio.cpp 引擎（`audiocpp_cli`）：`BAOCUT_AUDIOCPP_CLI` 给了就只用它（存在才算）；否则随应用分发的 `bin/`、cargo 产物目录；
- * 再找 PATH。每次调用重新找：用户装好引擎后无需重启。
+ * 再是用户用 `externalTools.setPath` 指定的路径（给了就只用它）、BaoCut 下载的受管副本（`<toolsDir>/audiocpp/<版本>/`，先找登记的
+ * 版本）；最后找 PATH。与受管外部工具的探测（`ExternalToolService`，架构设计 §12.9）同一个顺序，只看文件在不在、不执行它。
+ * 每次调用重新找：用户装好引擎后无需重启。
  */
-export function resolveAudioCppCli(env: NodeJS.ProcessEnv): string | null {
+export function resolveAudioCppCli(env: NodeJS.ProcessEnv, options: { toolsDir?: string | null; userPath?: string | null } = {}): string | null {
   const explicit = env[AUDIO_CPP_CLI_ENV];
   if (explicit) return isExecutableFile(explicit) ? explicit : null;
   const bundled = findBundledBinary(AUDIO_CPP_ENGINE, path.dirname(fileURLToPath(import.meta.url)), env);
   if (bundled) return bundled;
+  if (options.userPath) return isExecutableFile(options.userPath) ? options.userPath : null;
   const exe = process.platform === 'win32' ? `${AUDIO_CPP_ENGINE}.exe` : AUDIO_CPP_ENGINE;
+  if (options.toolsDir) {
+    const root = path.join(options.toolsDir, AUDIO_CPP_TOOL);
+    let versions: string[] = [];
+    try {
+      versions = readdirSync(root);
+    } catch {
+      versions = [];
+    }
+    for (const version of [AUDIO_CPP_RELEASE.version, ...versions.filter((v) => v !== AUDIO_CPP_RELEASE.version)]) {
+      const candidate = path.join(root, version, exe);
+      if (isExecutableFile(candidate)) return candidate;
+    }
+  }
   for (const dir of (env.PATH ?? '').split(path.delimiter)) {
     if (!dir) continue;
     const candidate = path.join(dir, exe);

@@ -28,6 +28,7 @@ export const pl: GeneralSettingsModelMessages = {
     system: "Zainstalowane w systemie",
     user: "Wybrana lokalizacja",
     managed: "Pobrane przez BaoCut",
+    bundled: "Dostarczony z BaoCut",
     env: "Ustawione przez zmienną środowiskową",
   },
   notInstalled: "Nie zainstalowano",

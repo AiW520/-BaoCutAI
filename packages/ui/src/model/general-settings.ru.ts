@@ -28,6 +28,7 @@ export const ru: GeneralSettingsModelMessages = {
     system: "Установлено в системе",
     user: "Выбранное расположение",
     managed: "Скачано BaoCut",
+    bundled: "Поставляется с BaoCut",
     env: "Задано переменной окружения",
   },
   notInstalled: "Не установлен",

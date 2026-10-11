@@ -50,6 +50,7 @@ const en = {
     system: 'system PATH',
     user: 'specified path',
     managed: 'copy downloaded by BaoCut',
+    bundled: 'copy bundled with BaoCut',
     env: 'environment variable',
   } satisfies Record<NonNullable<ExternalToolStatus['source']>, string>,
   updateMethodLabels: {

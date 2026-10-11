@@ -69,7 +69,8 @@ import { MediaAnalysis } from './media-analysis.ts';
 import { createFaceDetector } from './face-detection.ts';
 import { LibraryService } from './library/library-service.ts';
 import { VoiceCloneService } from './library/voice-clone-service.ts';
-import { openModelJobs, type ModelJobs, type ModelJobsOptions } from './models/model-jobs.ts';
+import { openModelJobs, resolveAudioCppCli, type ModelJobs, type ModelJobsOptions } from './models/model-jobs.ts';
+import { AUDIO_CPP } from './external-tools/tool-manifests.ts';
 import { ModelInstallTools } from './agent-tools/model-install-tools.ts';
 import { ExportService } from './exports/export-service.ts';
 import { FontService } from './fonts/font-service.ts';
@@ -459,6 +460,9 @@ export async function startRuntime(options: StartRuntimeOptions = {}): Promise<R
       // 字幕与翻译核心的 Speech Worker 与引擎宿主同一次 cargo 构建，放在它旁边。
       speechWorker: () => resolveSpeechWorkerCommand(options.engineHost !== undefined ? options.engineHost : resolveEngineHostCommand()),
       env: toolEnv,
+      // 音乐引擎（§6.5）：与受管外部工具同一个查找顺序，看得到用户指定的路径与 BaoCut 下载的副本（外部工具服务在后面才建）。
+      musicEngine: () =>
+        resolveAudioCppCli(toolOverrides, { toolsDir: path.join(home.root, 'tools'), userPath: externalToolsRef?.userPathOf(AUDIO_CPP) ?? null }),
       idleMs: options.jobIdleMs,
       ...(options.capacity ? { capacity: options.capacity } : {}),
       // 偏好设置在后面才读入：准入时再取。
@@ -573,6 +577,8 @@ export async function startRuntime(options: StartRuntimeOptions = {}): Promise<R
       ...options.externalTools,
     });
     externalToolsRef = externalTools;
+    // 读入外部工具的登记（用户指定的路径），音乐引擎的同步查找要用。
+    await externalTools.warm().catch((error) => log.warn('Reading external tool records failed', { error: String(error) }));
     // 原始链接只留给还能重试的从链接导入流程。
     await pruneLinkSources(models.jobs, linkSources).catch((error) => log.warn('Pruning link sources failed', { error: String(error) }));
     // 停任务会取消在途任务、关掉 Worker 进程。
@@ -709,7 +715,7 @@ export async function startRuntime(options: StartRuntimeOptions = {}): Promise<R
         new ModelTools({ models, scope: toolScope }),
         new JobTools({ jobs: models.jobs, pipelines: models.pipelines, scope: toolScope }),
         new ExportTools({ exports, scope: toolScope }),
-        new ModelInstallTools({ installs: models.installs, catalog: models.catalog, scope: toolScope }),
+        new ModelInstallTools({ installs: models.installs, catalog: models.catalog, tools: externalTools, scope: toolScope }),
         new ProjectTools({ harness, videos, scope: toolScope }),
         new LibraryTools({ library, scope: toolScope }),
         // Space 目录在后面才建好：工具调用时再取。

@@ -106,6 +106,7 @@ export const zhHant: LinkImportMessages = {
     system: '安裝在系統中',
     user: '由你選擇',
     managed: '由 BaoCut 下載',
+    bundled: '隨 BaoCut 散布',
     env: '由環境變數指定',
   },
   factVersion: (version: string, size: string | null) => `版本 ${version}${size ? ` · 約 ${size}` : ''}`,

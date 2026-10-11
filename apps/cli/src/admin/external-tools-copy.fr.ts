@@ -37,6 +37,7 @@ export const fr: ToolsMessages = {
     system: "PATH système",
     user: "chemin indiqué",
     managed: "copie téléchargée par BaoCut",
+    bundled: "copie fournie avec BaoCut",
     env: "variable d’environnement",
   } satisfies Record<NonNullable<ExternalToolStatus['source']>, string>,
   updateMethodLabels: {

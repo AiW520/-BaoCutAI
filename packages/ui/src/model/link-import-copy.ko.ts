@@ -118,6 +118,7 @@ export const ko: LinkImportMessages = {
     system: '시스템에 설치됨',
     user: '직접 지정함',
     managed: 'BaoCut이 다운로드함',
+    bundled: 'BaoCut에 포함',
     env: '환경 변수로 지정됨',
   },
   factVersion: (version: string, size: string | null) => (size ? `버전 ${version} · 약 ${size}` : `버전 ${version}`),

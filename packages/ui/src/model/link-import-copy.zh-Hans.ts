@@ -87,6 +87,7 @@ export const zhHans: LinkImportMessages = {
     system: '系统里装的',
     user: '你指定的',
     managed: 'BaoCut 下载的',
+    bundled: '随 BaoCut 分发',
     env: '环境变量指定的',
   },
   factVersion: (version: string, size: string | null) => `版本 ${version}${size ? ` · 约 ${size}` : ''}`,

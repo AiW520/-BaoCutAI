@@ -3,8 +3,8 @@ import { localizeText, type MessageRef } from './message-ref.ts';
 import type { LinkCookieBrowser } from './pipelines.ts';
 
 /**
- * 受管外部工具（架构设计 §12.9）：BaoCut 用到、但不随应用发布的程序。登记表先只有下载工具 `yt-dlp`；ffmpeg 照旧从
- * `BAOCUT_FFMPEG` 或 PATH 找，只是它的探测结果也在同一个状态视图里。
+ * 受管外部工具（架构设计 §12.9）：BaoCut 用到、但不随应用发布的程序。能由 BaoCut 下载的有下载工具 `yt-dlp` 与音乐生成的 audio.cpp
+ * 引擎 `audiocpp`（压缩包，解开根目录里的文件）；ffmpeg 照旧从 `BAOCUT_FFMPEG` 或 PATH 找，只是它的探测结果也在同一个状态视图里。
  *
  * 规则：
  * - 下载工具不随应用打包，只在用户明确同意之后才安装或使用：同意按工具记录（何时、以何种方式），可以撤回；撤回后用它的
@@ -20,8 +20,11 @@ import type { LinkCookieBrowser } from './pipelines.ts';
 /** 工具此刻的状态：已安装（能运行、版本够）、未安装、需要更新（版本低于最低版本）、不可用（找到了但不能运行）。 */
 export type ExternalToolState = 'installed' | 'missing' | 'outdated' | 'unavailable';
 
-/** 此刻用的那一份从哪里来：系统 PATH 里的、用户指定的路径、BaoCut 下载的受管副本，或环境变量（`BAOCUT_FFMPEG`）指定的。 */
-export type ExternalToolSource = 'system' | 'user' | 'managed' | 'env';
+/**
+ * 此刻用的那一份从哪里来：系统 PATH 里的、用户指定的路径、BaoCut 下载的受管副本、随应用分发的（`bin/`，目前只有音乐引擎会用到），
+ * 或环境变量（`BAOCUT_FFMPEG`、`BAOCUT_AUDIOCPP_CLI`）指定的。
+ */
+export type ExternalToolSource = 'system' | 'user' | 'managed' | 'bundled' | 'env';
 
 /** 同意的方式：桌面界面、CLI，或会话里用户批准了智能体的请求。 */
 export type ExternalToolConsentVia = 'app' | 'cli' | 'agent-approval';
