@@ -306,7 +306,7 @@ try {
   for (const name of BUNDLED_EXECUTABLES) {
     const file = path.join(binSource, exe(name));
     if (!existsSync(file)) fail(`没有 ${file}`);
-    if (isMac) runMac('lipo', ['-verify_arch', macPlan.intel ? 'x86_64' : 'arm64', file]);
+    if (isMac) runMac('lipo', [file, '-verify_arch', macPlan.intel ? 'x86_64' : 'arm64']);
     cpSync(file, path.join(bin, exe(name)));
   }
   if (options.variant === 'cuda') {
