@@ -3,7 +3,7 @@ import { test } from 'node:test';
 import { macPackagePlan } from './macos-package-plan.mjs';
 
 test('local Intel builds select x64 and candle with embedded Whisper Metal instead of MLX', () => {
-  const plan = macPackagePlan({ local: true, platform: 'darwin', arch: 'x64' });
+  const plan = macPackagePlan({ platform: 'mac', local: true, hostPlatform: 'darwin', hostArch: 'x64' });
   assert.equal(plan.target, 'x86_64-apple-darwin');
   assert.equal(plan.electronArch, 'x64');
   assert.equal(plan.directory, 'mac');
@@ -13,7 +13,7 @@ test('local Intel builds select x64 and candle with embedded Whisper Metal inste
 });
 
 test('published Apple Silicon configuration retains MLX and default features', () => {
-  const plan = macPackagePlan({ platform: 'darwin', arch: 'arm64' });
+  const plan = macPackagePlan({ hostPlatform: 'darwin', hostArch: 'arm64' });
   assert.equal(plan.target, 'aarch64-apple-darwin');
   assert.equal(plan.directory, 'mac-arm64');
   assert.deepEqual(plan.modelWorkerFeatures, []);
@@ -26,7 +26,7 @@ test('rejects public Intel packages, cross builds, non-Mac hosts and Windows GPU
     { target: 'x86_64-apple-darwin' },
     { local: true, target: 'aarch64-apple-darwin' },
     { local: true, variant: 'vulkan' },
-    { local: true, platform: 'linux' },
+    { local: true, hostPlatform: 'linux' },
     { local: true, target: 'x86_64-pc-windows-msvc' },
-  ]) assert.throws(() => macPackagePlan({ platform: 'darwin', arch: 'x64', ...options }));
+  ]) assert.throws(() => macPackagePlan({ hostPlatform: 'darwin', hostArch: 'x64', ...options }));
 });
