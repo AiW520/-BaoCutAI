@@ -37,8 +37,6 @@ export const de: GeneralSettingsMessages = {
 
   sourcesGroup: "Downloadquellen und Offline",
   modelsEndpoint: "Modelldownloadquelle",
-  modelsEndpointDesc:
-    "Lokale Modelle werden hier heruntergeladen. Leer lassen für den öffentlichen Modell-Hub (Hugging Face); bei Verbindungsproblemen https://www.modelscope.cn für ModelScope oder die Basis-URL eines Spiegelservers eingeben. BAOCUT_MODELS_ENDPOINT hat Vorrang.",
   toolsEndpoint: "Werkzeugdownloadquelle",
   toolsEndpointDesc:
     "Externe Werkzeuge wie yt-dlp werden hier unter „Basis-URL/Werkzeug/Version/Dateiname“ heruntergeladen. Leer lassen für die offizielle Release-URL. BAOCUT_TOOLS_ENDPOINT hat Vorrang.",

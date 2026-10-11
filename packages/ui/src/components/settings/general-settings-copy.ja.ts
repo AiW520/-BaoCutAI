@@ -36,8 +36,6 @@ export const ja: GeneralSettingsMessages = {
 
   sourcesGroup: 'ダウンロード元とオフライン',
   modelsEndpoint: 'モデルのダウンロード元',
-  modelsEndpointDesc:
-    'ローカルモデルはここからダウンロードされます。空欄にすると公開モデルハブ（Hugging Face）を使用します。接続できない場合は、https://www.modelscope.cn を入力すると ModelScope からダウンロードします。ミラーのベース URL も入力できます。環境変数 BAOCUT_MODELS_ENDPOINT が設定されている場合はそちらが優先されます。',
   toolsEndpoint: 'ツールのダウンロード元',
   toolsEndpointDesc:
     'yt-dlp などの外部ツールは、ここから「ベース URL/ツール/バージョン/ファイル名」の形でダウンロードされます。空欄にすると公式のリリース URL を使用します。環境変数 BAOCUT_TOOLS_ENDPOINT が設定されている場合はそちらが優先されます。',

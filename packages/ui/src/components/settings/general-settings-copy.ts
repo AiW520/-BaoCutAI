@@ -52,8 +52,6 @@ const en = {
 
   sourcesGroup: 'Download sources and offline',
   modelsEndpoint: 'Model download source',
-  modelsEndpointDesc:
-    "Local models are downloaded from here. Leave empty to use the public model hub (Hugging Face); if it can't be reached, enter https://www.modelscope.cn to download from ModelScope, or a mirror's base URL. The BAOCUT_MODELS_ENDPOINT environment variable takes priority over this.",
   toolsEndpoint: 'Tool download source',
   toolsEndpointDesc:
     'External tools like yt-dlp are downloaded from here, at “base URL/tool/version/file name”. Leave empty to use the official release URL. The BAOCUT_TOOLS_ENDPOINT environment variable takes priority over this.',

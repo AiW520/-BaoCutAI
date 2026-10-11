@@ -30,7 +30,7 @@ On macOS, open the DMG and drag BaoCut into Applications. On Windows, install th
 
 Agent features require a signed-in agent engine such as Codex CLI or Claude Code. Media analysis, transcription preparation and export also require `ffmpeg` and `ffprobe`; these external tools are not bundled.
 
-Local models download from Hugging Face by default. If it is unreachable or slow, enter `https://www.modelscope.cn` in Settings › General › Model download source to download from ModelScope instead (the few model files ModelScope lacks still come from Hugging Face; every file is checked against its built-in checksum), or enter a mirror's base URL.
+Local models download from Hugging Face by default. If it is unreachable or slow, set the download source to ModelScope (Download and storage at the bottom of a model page's local models, or Settings › General › Model download source) to download from ModelScope instead (the few model files ModelScope lacks still come from Hugging Face; every file is checked against its built-in checksum), or choose Custom and enter a mirror's base URL.
 
 <img width="4432" height="2704" alt="CleanShot 2026-10-07 at 9 35 49 PM@2x" src="https://github.com/user-attachments/assets/304eecf4-56f7-40bf-a1f0-83dd9a7d4ee8" />
 

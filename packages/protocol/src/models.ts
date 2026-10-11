@@ -208,6 +208,24 @@ export interface ModelRemoveResult {
   bundle: ModelBundleStatus;
 }
 
+// ---- 下载来源（架构设计 §6.3「来源」、§5.10 `models.downloadEndpoint`）：Runtime 下载用，设置页按它认出选的是哪一个 ----
+
+/** 设置为 null 时的下载来源：公共模型仓库。 */
+export const DEFAULT_MODELS_ENDPOINT = 'https://huggingface.co';
+/** 选 ModelScope 时存的基址。 */
+export const MODELSCOPE_ENDPOINT = 'https://www.modelscope.cn';
+
+const MODELSCOPE_HOSTS: ReadonlySet<string> = new Set(['modelscope.cn', 'www.modelscope.cn']);
+
+/** 基址指向 ModelScope（按主机认）。 */
+export function isModelScopeEndpoint(endpoint: string): boolean {
+  try {
+    return MODELSCOPE_HOSTS.has(new URL(endpoint).hostname);
+  } catch {
+    return false;
+  }
+}
+
 // ---- 模型目录（架构设计 §6.3、§5.10）：本地模型放在哪个文件夹 ----
 
 /**

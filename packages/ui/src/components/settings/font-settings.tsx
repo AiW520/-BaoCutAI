@@ -38,7 +38,8 @@ import {
 } from '../../state/font-library-store.ts';
 import { useSetting } from '../../state/settings-store.ts';
 import { FONT_COPY } from './font-settings-copy.ts';
-import { Group, Row, useSaveSettings, useSettingsReady } from './general-settings.tsx';
+import { Group, Row } from './general-settings.tsx';
+import { useSaveSettings, useSettingsReady } from './save-settings.ts';
 
 /*
  * 设置 › 字体（产品设计 §5.9「字体」、§7.6；原型 settings-fonts.jsx）：下载一组（自动下载的开关、样式表与字体文件两个镜像

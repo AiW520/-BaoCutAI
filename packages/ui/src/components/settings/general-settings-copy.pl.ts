@@ -35,7 +35,6 @@ export const pl: GeneralSettingsMessages = {
 
   sourcesGroup: "Źródła pobierania i offline",
   modelsEndpoint: "Źródło pobierania modeli",
-  modelsEndpointDesc: "Stąd pobierane są modele lokalne. Pozostaw puste dla publicznego repozytorium (Hugging Face); jeśli niedostępne, wpisz https://www.modelscope.cn, aby pobierać z ModelScope, lub bazowy URL serwera lustrzanego. Zmienna środowiskowa BAOCUT_MODELS_ENDPOINT ma pierwszeństwo.",
   toolsEndpoint: "Źródło pobierania narzędzi",
   toolsEndpointDesc: "Narzędzia zewnętrzne, np. yt-dlp, pobierane są stąd pod „bazowy URL/tool/version/file name”. Pozostaw puste dla oficjalnego URL wydania. Zmienna środowiskowa BAOCUT_TOOLS_ENDPOINT ma pierwszeństwo.",
   toolsEndpointPlaceholder: "Oficjalny URL wydania",

@@ -35,7 +35,6 @@ export const tr: GeneralSettingsMessages = {
 
   sourcesGroup: "İndirme kaynakları ve çevrimdışı",
   modelsEndpoint: "Model indirme kaynağı",
-  modelsEndpointDesc: "Yerel modeller buradan indirilir. Genel model merkezini (Hugging Face) kullanmak için boş bırakın; erişilemiyorsa ModelScope’tan indirmek için https://www.modelscope.cn veya aynanın temel URL adresini girin. BAOCUT_MODELS_ENDPOINT ortam değişkeni önceliklidir.",
   toolsEndpoint: "Araç indirme kaynağı",
   toolsEndpointDesc: "Yt-dlp gibi dış araçlar buradan “temel URL/araç/sürüm/dosya adı” yoluyla indirilir. Resmi yayın URL adresini kullanmak için boş bırakın. BAOCUT_TOOLS_ENDPOINT ortam değişkeni önceliklidir.",
   toolsEndpointPlaceholder: "Resmi yayın URL adresi",

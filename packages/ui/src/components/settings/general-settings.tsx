@@ -5,8 +5,6 @@ import {
   isLanguagePreference,
   resolveLanguage,
   type ExternalToolStatus,
-  type SettingInputValues,
-  type SettingKey,
 } from '@baocut/protocol';
 import {
   Button,
@@ -41,7 +39,9 @@ import { useAppUpdate } from '../../state/app-update-store.ts';
 import { useConnection } from '../../state/connection-store.ts';
 import { useSetting, useSettings } from '../../state/settings-store.ts';
 import { useShell, type ColorScheme } from '../../state/shell-store.ts';
+import { ModelSourceRow } from '../models/model-source-row.tsx';
 import { M } from './general-settings-copy.ts';
+import { useSaveSettings, useSettingsReady } from './save-settings.ts';
 
 /*
  * 设置 › 通用（设计稿 page-settings.jsx `GeneralSection`、settings-update.jsx `AppUpdateAutoRow`、import-panel.jsx
@@ -86,33 +86,6 @@ const fieldLine = style({ display: 'flex', alignItems: 'start', flexWrap: 'wrap'
 const endpointInput = style({ flexGrow: 1, minWidth: 220 });
 const languagePicker = style({ width: 200 });
 const daysField = style({ width: 112 });
-
-type Patch = { [K in SettingKey]?: SettingInputValues[K] | null };
-
-/** 写设置：失败时提示原因，返回是否写成。 */
-export function useSaveSettings(): (values: Patch, done?: string) => Promise<boolean> {
-  const runtime = useRuntime();
-  return useCallback(
-    async (values: Patch, done?: string) => {
-      try {
-        await runtime.client.request('settings.set', { values });
-        if (done) ToastQueue.positive(done, { timeout: 3000 });
-        return true;
-      } catch (error) {
-        ToastQueue.negative(M.saveFailed((error as Error).message), { timeout: 5000 });
-        return false;
-      }
-    },
-    [runtime],
-  );
-}
-
-/** 连上了 Runtime、设置镜像也到了：能改。 */
-export function useSettingsReady(): boolean {
-  const connected = useConnection((s) => s.state.status === 'connected');
-  const loaded = useSettings((s) => s.snapshot !== null);
-  return connected && loaded;
-}
 
 export function GeneralSettings() {
   const web = useRuntime().host.platform === 'web';
@@ -306,19 +279,13 @@ function DownloaderRow({ web }: { web: boolean }) {
   );
 }
 
-/** 合同里有、设计稿这一页没画的：下载来源与严格离线。 */
+/** 合同里有、设计稿这一页没画的：下载来源与严格离线。模型的下载来源与本地模型页「下载与存储」是同一行（model-source-row.tsx）。 */
 function SourcesGroup({ ready }: { ready: boolean }) {
   const save = useSaveSettings();
   const strict = useSetting('offline.strict');
   return (
     <Group title={M.sourcesGroup}>
-      <EndpointRow
-        settingKey="models.downloadEndpoint"
-        label={M.modelsEndpoint}
-        desc={M.modelsEndpointDesc}
-        placeholder="https://huggingface.co"
-        ready={ready}
-      />
+      <ModelSourceRow label={M.modelsEndpoint} />
       <EndpointRow
         settingKey="tools.downloadEndpoint"
         label={M.toolsEndpoint}
@@ -346,7 +313,7 @@ function EndpointRow({
   placeholder,
   ready,
 }: {
-  settingKey: 'models.downloadEndpoint' | 'tools.downloadEndpoint';
+  settingKey: 'tools.downloadEndpoint';
   label: string;
   desc: string;
   placeholder: string;

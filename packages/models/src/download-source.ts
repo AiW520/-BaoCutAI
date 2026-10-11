@@ -15,13 +15,12 @@
  * 不带凭据：基址里不允许用户名、密码、查询参数与片段；下载请求不发 `Authorization`。
  */
 
+import { DEFAULT_MODELS_ENDPOINT, isModelScopeEndpoint, MODELSCOPE_ENDPOINT } from '@baocut/protocol';
 import { ModelsDownloadSource as M } from '@baocut/protocol/messages/models/download-source.ts';
 
-export const DEFAULT_MODELS_ENDPOINT = 'https://huggingface.co';
-export const MODELSCOPE_ENDPOINT = 'https://www.modelscope.cn';
+// 默认来源、ModelScope 的基址与识别放在协议包里，设置页也按它们认出选的是哪一个。
+export { DEFAULT_MODELS_ENDPOINT, isModelScopeEndpoint, MODELSCOPE_ENDPOINT };
 export const MODELS_ENDPOINT_ENV = 'BAOCUT_MODELS_ENDPOINT';
-
-const MODELSCOPE_HOSTS: ReadonlySet<string> = new Set(['modelscope.cn', 'www.modelscope.cn']);
 
 /** ModelScope 上换了名字的仓库；没列出的按同名找。 */
 const MODELSCOPE_ALIASES: Readonly<Record<string, string>> = {
@@ -59,15 +58,6 @@ export function resolveModelsEndpoint(env: NodeJS.ProcessEnv, setting: string | 
   }
   if (setting && validEndpoint(setting)) return { endpoint: trimSlash(setting), origin: 'setting' };
   return { endpoint: DEFAULT_MODELS_ENDPOINT, origin: 'default' };
-}
-
-/** 基址指向 ModelScope（按主机认）。 */
-export function isModelScopeEndpoint(endpoint: string): boolean {
-  try {
-    return MODELSCOPE_HOSTS.has(new URL(endpoint).hostname);
-  } catch {
-    return false;
-  }
 }
 
 /** 这个仓库实际从哪个基址下载：选了 ModelScope 而它上面没有这个仓库时是公共模型仓库，其余就是 `endpoint`。 */

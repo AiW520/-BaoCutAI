@@ -85,6 +85,7 @@ import { LOCAL_INSTALL_COPY as INSTALL, LOCAL_SHARED_COPY as SHARED } from './lo
 import { chooseLocalDefault } from './model-actions.ts';
 import { ModelCheckLine } from './model-check-line.tsx';
 import { Card, Chips, EmptyCard, PageStatus, SettingRow } from './model-parts.tsx';
+import { ModelSourceFold } from './model-source-row.tsx';
 import { IMAGE_LOCAL_COPY as IMAGE, LOCAL_COPY, MODELS_PAGE_COPY } from './models-copy.ts';
 import { TTS_LOCAL_COPY as TTS } from './tts-local-copy.ts';
 import { TtsQuickTest } from './tts-quick-test.tsx';
@@ -344,6 +345,8 @@ function LocalPage({ category, kind }: { category: ModelCategory; kind: LocalDef
           </DisclosurePanel>
         </Disclosure>
       ) : null}
+
+      <ModelSourceFold />
 
       {install ? (
         <InstallDialog
