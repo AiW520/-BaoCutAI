@@ -9,6 +9,7 @@ import { AGENT_COPY, MODEL_AUTO_UPDATE } from './agent-copy.ts';
 import { CommandBlock, ExecutableField, copyText } from './agent-command-block.tsx';
 import { Panel, SectionHeading, SettingRow } from './agent-panels.tsx';
 import { diagnosticsText, isInstalled } from './agent-setup.ts';
+import { M } from './general-settings-copy.ts';
 
 const block = style({ marginTop: 16 });
 const tech = style({ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 16 });
@@ -17,10 +18,13 @@ const techModels = style({ margin: 0, font: 'ui-sm', color: 'gray-600', overflow
 const hint = style({ marginTop: 0, marginBottom: 16, font: 'ui-sm', color: 'gray-700' });
 const fields = style({ display: 'flex', flexDirection: 'column', gap: 16, marginBottom: 8 });
 const subtitle = style({ marginStart: 8, font: 'ui-sm', fontWeight: 'normal', color: 'gray-600' });
+/** 浏览器里为什么自动更新与位置改不了：`agents.updatePreferences` / `agents.configure` 不在 Web 白名单里；技术信息照样能看能复制。 */
+const webNote = style({ marginTop: 0, marginBottom: 12, font: 'ui-sm', color: 'gray-800' });
 
 /** 高级与排障（page-settings-agent.jsx:167-183，接在 Agent 提供方页底）：模型表自动更新、技术信息与诊断、手动指定位置。 */
 export function AgentAdvanced() {
   const runtime = useRuntime();
+  const web = runtime.host.platform === 'web';
   const connected = useConnection((s) => s.state.status === 'connected');
   const drivers = useConnection((s) => s.drivers) ?? [];
   const preferences = useConnection((s) => s.agentPreferences);
@@ -40,13 +44,14 @@ export function AgentAdvanced() {
   return (
     <>
       <SectionHeading title={AGENT_COPY.advancedHeading} hint={AGENT_COPY.advancedHint} />
+      {web ? <p className={webNote}>{M.webViewOnly}</p> : null}
       <Panel label={AGENT_COPY.advancedHeading}>
         <SettingRow label={MODEL_AUTO_UPDATE.label} desc={MODEL_AUTO_UPDATE.desc}>
           <Switch
             aria-label={MODEL_AUTO_UPDATE.label}
             size="S"
             isSelected={preferences?.modelAutoUpdate ?? false}
-            isDisabled={!connected || !preferences || saving}
+            isDisabled={web || !connected || !preferences || saving}
             onChange={(on) => void setAutoUpdate(on)}
           />
         </SettingRow>
@@ -91,7 +96,7 @@ export function AgentAdvanced() {
               <p className={hint}>{AGENT_COPY.executableHint}</p>
               <div className={fields}>
                 {drivers.map((driver) => (
-                  <ExecutableField key={driver.id} driver={driver} isDisabled={!connected} />
+                  <ExecutableField key={driver.id} driver={driver} isDisabled={web || !connected} />
                 ))}
               </div>
             </DisclosurePanel>

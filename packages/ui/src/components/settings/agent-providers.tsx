@@ -18,6 +18,7 @@ import { AgentCatalogSection } from './agent-catalog-section.tsx';
 import { AGENT_COPY, AGENT_FAQ, MORE_PROVIDERS, providersMeta } from './agent-copy.ts';
 import { Panel, SectionHeading } from './agent-panels.tsx';
 import { AgentProviderCard } from './agent-provider-card.tsx';
+import { M } from './general-settings-copy.ts';
 import { agentOverview, groupDrivers, isInstalled, moreSummary, setupDoneToast } from './agent-setup.ts';
 
 // 状态卡（settings-agent.css .agset-status）：卡片本身是中性的一层，只有左边 40px 的图标块按状态变色。
@@ -49,6 +50,8 @@ const statusText = style({ flexGrow: 1, flexBasis: 0, minWidth: 220 });
 const statusTitle = style({ margin: 0, font: 'title-sm', color: 'gray-900' });
 const statusBody = style({ marginTop: 4, marginBottom: 0, font: 'ui-sm', color: 'gray-700' });
 const empty = style({ padding: 20, font: 'ui-sm', color: 'gray-600' });
+/** 浏览器里为什么卡上的开关与按钮置灰：启停、检测、安装都要 Web 白名单之外的 `agents.*`；命令仍能复制。 */
+const webNote = style({ marginTop: 0, marginBottom: 12, font: 'ui-sm', color: 'gray-800' });
 const meta = style({ marginTop: 8, font: 'ui-xs', color: 'gray-600', textAlign: 'end' });
 // 「更多」折叠段的开关（settings-agent.css .agset-more）：一整条描边按钮，展开后下面再接一张同样的卡。
 const more = style({
@@ -99,6 +102,7 @@ const faqLink = style({ marginTop: 8 });
  */
 export function AgentProviders() {
   const runtime = useRuntime();
+  const web = runtime.host.platform === 'web';
   const connected = useConnection((s) => s.state.status === 'connected');
   const drivers = useConnection((s) => s.drivers);
   // 还在首次探测、没有任何结果的 Driver：没有卡片可画，用上面的进度条表示检测中。
@@ -170,7 +174,7 @@ export function AgentProviders() {
             <p className={statusBody}>{overview.body}</p>
           </div>
           {overview.cta ? (
-            <Button variant="accent" isDisabled={overview.action === 'enable' && (!connected || enabling)} onPress={() => void heroAct()}>
+            <Button variant="accent" isDisabled={overview.action === 'enable' && (web || !connected || enabling)} onPress={() => void heroAct()}>
               {overview.cta}
             </Button>
           ) : null}
@@ -181,12 +185,13 @@ export function AgentProviders() {
         title={AGENT_COPY.providersHeading}
         hint={AGENT_COPY.providersHint}
         action={
-          <ActionButton isQuiet size="S" isDisabled={!connected || scanning} onPress={() => void rescan()}>
+          <ActionButton isQuiet size="S" isDisabled={web || !connected || scanning} onPress={() => void rescan()}>
             <Refresh />
             <Text>{scanning ? AGENT_COPY.scanning : AGENT_COPY.rescan}</Text>
           </ActionButton>
         }
       />
+      {web ? <p className={webNote}>{M.webViewOnly}</p> : null}
       {scanning || checking.length ? (
         <ProgressBar aria-label={AGENT_COPY.scanProgress} isIndeterminate size="S" styles={style({ width: 'full', marginBottom: 8 })} />
       ) : null}

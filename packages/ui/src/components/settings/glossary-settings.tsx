@@ -12,6 +12,7 @@ import { useRuntime } from '../../runtime/context.tsx';
 import { importLibraryFile, putLibraryEntry } from '../../runtime/library-commands.ts';
 import { useLibrary } from '../../state/library-store.ts';
 import { useLibraryEntry } from '../use-library-entry.ts';
+import { M } from './general-settings-copy.ts';
 import { GLOSSARY_COPY } from './glossary-copy.ts';
 import { GlossaryDetail } from './glossary-detail.tsx';
 import { LanguagePicker } from './glossary-language-picker.tsx';
@@ -69,6 +70,7 @@ const footActions = style({
 const foot = style({ marginTop: 12, marginBottom: 0, font: 'ui-xs', color: 'gray-600' });
 const loadingRow = style({ display: 'flex', alignItems: 'center', gap: 8, marginTop: 24, font: 'ui-sm', color: 'gray-600' });
 const emptyText = style({ margin: 0, font: 'ui-sm', color: 'gray-600' });
+const webNote = style({ marginTop: 24, marginBottom: 0, font: 'ui-sm', color: 'gray-800' });
 
 const L = () => GLOSSARY_COPY.list;
 
@@ -78,6 +80,7 @@ const importFilters = () => [{ name: GLOSSARY_COPY.list.importFilter, extensions
 /**
  * 设置 › 术语库（产品设计 §15.10，设计稿 settings-glossary.jsx）：转录与翻译各用各的表。列表跟着 `library` 主题走；
  * 点进一张表编辑。每个视频用哪几张表在那个视频自己的转录、翻译设置里选，不在这里。
+ * 浏览器里没有这一页的数据：Web 白名单不含 `library.*`，订阅不了 `library` 主题，那里不写「加载中」，直接说浏览器里没有，也不给导入。
  */
 export function GlossarySettings() {
   const ready = useLibrary((s) => s.ready);
@@ -91,6 +94,7 @@ export function GlossarySettings() {
 
 function GlossaryList({ ready, glossaries, onOpen }: { ready: boolean; glossaries: LibraryEntrySummary[]; onOpen(id: string): void }) {
   const runtime = useRuntime();
+  const web = runtime.host.platform === 'web';
   const [newTranslation, setNewTranslation] = useState(false);
   const [importing, setImporting] = useState(false);
   const asr = glossaries.filter((g) => g.kind === 'transcription');
@@ -133,7 +137,9 @@ function GlossaryList({ ready, glossaries, onOpen }: { ready: boolean; glossarie
   return (
     <div className={root}>
       <p className={lede}>{L().lede}</p>
-      {!ready ? (
+      {web ? (
+        <p className={webNote}>{M.webUnavailable}</p>
+      ) : !ready ? (
         <div className={loadingRow}>
           <ProgressCircle aria-label={L().loadingLabel} size="S" isIndeterminate />
           {L().loading}
@@ -164,13 +170,15 @@ function GlossaryList({ ready, glossaries, onOpen }: { ready: boolean; glossarie
           </Section>
         </>
       )}
-      <div className={footActions}>
-        <Button variant="secondary" size="S" isDisabled={!canImport || !ready} isPending={importing} onPress={() => void importFile()}>
-          <Import />
-          <Text>{L().importFile}</Text>
-        </Button>
-        {canImport ? null : <span className={cardStat}>{L().importUnavailable}</span>}
-      </div>
+      {web ? null : (
+        <div className={footActions}>
+          <Button variant="secondary" size="S" isDisabled={!canImport || !ready} isPending={importing} onPress={() => void importFile()}>
+            <Import />
+            <Text>{L().importFile}</Text>
+          </Button>
+          {canImport ? null : <span className={cardStat}>{L().importUnavailable}</span>}
+        </div>
+      )}
       <p className={foot}>{L().foot}</p>
     </div>
   );

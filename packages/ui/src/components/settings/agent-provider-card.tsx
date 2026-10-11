@@ -229,7 +229,8 @@ export function AgentProviderCard({
   const problem = agentProblem(driver);
   const gate = configModelGate(driver);
   const update = hasUpdate(driver);
-  const disabled = !connected || busy !== null;
+  // 浏览器里只能看与复制：启停、检测、默认、安装运行、终端与位置都要 Web 白名单之外的 `agents.*`。
+  const disabled = web || !connected || busy !== null;
 
   // ---- 安装、升级：方式由卡片记着（问题条的「升级到 X」跟着分段里选的那一种），运行状态来自 Runtime ----
   const plan = installPlan(driver);
@@ -301,8 +302,9 @@ export function AgentProviderCard({
     }
   };
 
+  // 浏览器里不给 ▶（`agents.runSetup` 不在 Web 白名单里），命令只复制，说明也按「复制」写。
   const runnerFor = (c: InstallChoice): CommandRunner | undefined =>
-    c.runnable
+    c.runnable && !web
       ? {
           run: visibleRun && visibleRun.command === c.command && visibleRun.kind === c.kind ? visibleRun : null,
           isDisabled: !connected || setupRunning,
@@ -432,7 +434,7 @@ export function AgentProviderCard({
             variant="accent"
             size="S"
             styles={problemAction}
-            isDisabled={(problem.action !== 'login' && disabled) || (problem.action === 'upgrade' && setupRunning)}
+            isDisabled={web || (problem.action !== 'login' && disabled) || (problem.action === 'upgrade' && setupRunning)}
             onPress={() => act(problem.action)}>
             {busy === 'detect' && problem.action === 'diagnose' ? CARD_COPY.checking : problem.cta}
           </Button>
@@ -479,7 +481,7 @@ export function AgentProviderCard({
               onRecheck={recheck}
               setup={setup}
               onLogin={() => void inTerminal('login')}
-              canLogin={connected}
+              canLogin={connected && !web}
             />
           ) : launch ? (
             <AddedInstallPanel
@@ -715,7 +717,8 @@ function InstallCommands({ setup, copyLabel }: { setup: SetupControls; copyLabel
   const { plan, choice } = setup;
   if (!choice) return null;
   const installing = !plan.upgrading;
-  const scriptHint = choice.runnable
+  const runnable = !!setup.runnerFor(choice);
+  const scriptHint = runnable
     ? null
     : choice.downloadsScript
       ? installing
@@ -729,7 +732,7 @@ function InstallCommands({ setup, copyLabel }: { setup: SetupControls; copyLabel
     <div className={stack}>
       {installing ? (
         <p className={hint}>
-          {choice.runnable ? CARD_COPY.runnableHint : CARD_COPY.copyHint}
+          {runnable ? CARD_COPY.runnableHint : CARD_COPY.copyHint}
         </p>
       ) : null}
       {plan.choices.length > 1 ? (
