@@ -106,4 +106,6 @@ export const zhHans: RcAgentToolsMessages = {
   deriveRangeEmpty: '对齐到帧之后区间是空的',
   deriveUnsupportedItem: (p) => `区间里有不能复制到子视频的片段（${p.kind}）`,
   deriveParentUnplaced: '这个视频不在项目或会话的目录里，没法在它旁边建子视频',
+  shotsRangeEmpty: '对齐到帧之后区间是空的',
+  shotsRangeTooLong: (p) => `区间超过 ${p.minutes} 分钟，请分段检测镜头`,
 };

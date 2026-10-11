@@ -139,4 +139,6 @@ export const de: RcAgentToolsMessages = {
   deriveRangeEmpty: 'Der Bereich ist nach dem Ausrichten auf Frames leer',
   deriveUnsupportedItem: (p) => `Der Bereich enthält einen Clip, der nicht in ein abgeleitetes Video kopiert werden kann (${p.kind})`,
   deriveParentUnplaced: 'Dieses Video liegt in keinem Projekt- oder Sitzungsordner, daher kann daneben kein abgeleitetes Video erstellt werden',
+  shotsRangeEmpty: 'Nach dem Einrasten auf Frames ist der Bereich leer',
+  shotsRangeTooLong: (p) => `Der Bereich ist länger als ${p.minutes} Minuten; erkenne Einstellungen in kürzeren Abschnitten`,
 };

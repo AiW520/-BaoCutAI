@@ -21,6 +21,8 @@ import type {
   TaskStatus,
   VideoDeriveParams,
   VideoDeriveResult,
+  VideoShotsParams,
+  VideoShotsResult,
 } from './domain.ts';
 import type { ConversationSnapshot, DirectorySnapshot, SequencedEvent, Topic } from './events.ts';
 import type { ExportCreateRequest, ExportRenderTextRequest, ExportRenderTextResult } from './exports.ts';
@@ -595,6 +597,14 @@ export interface RpcMethods {
   'videos.derive': {
     params: VideoDeriveParams;
     result: VideoDeriveResult;
+  };
+  /**
+   * 镜头切换（架构设计 §3.5「镜头切换」，工具 `videos_shots`）：剪辑后时间线一段区间里画面的切换点与镜头。只读，不写文件。
+   * 区间超过 20 分钟、终点不大于起点时 `invalid-request`（`details.code` 为 `SHOTS_RANGE_TOO_LONG`、`SHOTS_RANGE_EMPTY`）；没装 ffmpeg 时 `internal`。
+   */
+  'videos.shots': {
+    params: VideoShotsParams;
+    result: VideoShotsResult;
   };
   /**
    * 打开一个便携包（视频格式规范 §8）：校验清单（格式版本、每个文件的长度与摘要、路径不越出包），在项目目录或会话工作目录里

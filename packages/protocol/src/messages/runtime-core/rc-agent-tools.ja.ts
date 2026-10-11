@@ -115,4 +115,6 @@ export const ja: RcAgentToolsMessages = {
   deriveRangeEmpty: 'フレームに合わせると範囲が空になります',
   deriveUnsupportedItem: (p) => `範囲に子動画へコピーできないクリップがあります（${p.kind}）`,
   deriveParentUnplaced: 'この動画はプロジェクトやセッションのフォルダーにないため、隣に子動画を作成できません',
+  shotsRangeEmpty: 'フレームに合わせると範囲が空になります',
+  shotsRangeTooLong: (p) => `範囲が ${p.minutes} 分を超えています。短く分けてショットを検出してください`,
 };

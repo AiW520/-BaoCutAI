@@ -129,6 +129,8 @@ export const TOOL_RISK: Readonly<Record<string, RiskLevel>> = {
   videos_derive: 'edit',
   // 取帧（Agent 面设计 §4.3）：不改视频，只把帧写进写文件目录下的 .baocut-out/frames/，规划模式也能用。
   videos_frames: 'read',
+  // 镜头切换：只读，不改视频、不写文件，规划模式也能用。
+  videos_shots: 'read',
   // 预览代码画面：不改视频，只在离屏宿主里取帧，写进 .baocut-out/frames/，与 videos_frames 同级。
   compositions_preview: 'read',
   videos_history: 'read',

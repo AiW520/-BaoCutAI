@@ -52,6 +52,14 @@ import { assetSegments, projectChapters, type ProjectedChapter } from './source-
 import { fillTranslationAlignments } from './translation-alignment.ts';
 import { OperationShapeError, digestVideo, digestReceipt, normalizeOperations } from './video-digest.ts';
 import {
+  DEFAULT_MIN_SHOT,
+  DEFAULT_SCENE_THRESHOLD,
+  MAX_SHOTS_RANGE_SECONDS,
+  SHOTS_NOTE,
+  detectShots,
+  shotsToolError,
+} from './video-shots.ts';
+import {
   DEFAULT_RANGE_COUNT,
   FRAMES_DIR,
   FRAMES_NOTE,
@@ -146,6 +154,26 @@ const schemas = {
       .max(1920)
       .optional()
       .describe('可选。帧的最大宽度（像素），按比例缩小、不放大；不给时长边不超过 1280'),
+  }),
+  videos_shots: z.strictObject({
+    video: videoArg,
+    range: z
+      .string()
+      .regex(/^\d+(\.\d+)?:\d+(\.\d+)?$/)
+      .optional()
+      .describe(`可选。一段时间 "起:止"（剪辑后时间线上的秒，例如 "10:20"），最长 ${MAX_SHOTS_RANGE_SECONDS / 60} 分钟；不给时整条时间线`),
+    threshold: z
+      .number()
+      .gt(0)
+      .max(1)
+      .optional()
+      .describe(`可选。场景分数的阈值（0–1），超过它算一处切换；默认 ${DEFAULT_SCENE_THRESHOLD}。漏报时调低，多报时调高`),
+    minShot: z
+      .number()
+      .min(0)
+      .max(60)
+      .optional()
+      .describe(`可选。最短镜头（秒），更短的并进前一个；默认 ${DEFAULT_MIN_SHOT}`),
   }),
   videos_history: z.strictObject({
     video: videoArg,
@@ -430,6 +458,24 @@ const DEFINITIONS: Record<ToolName, ToolInfo> = {
     examples: [
       { title: '取两个时刻的帧', args: { video: 'demo', at: ['1', '12.5'] } },
       { title: '前 30 秒均匀取 6 帧', args: { video: 'demo', range: '0:30', count: 6, format: 'jpeg', maxWidth: 640 } },
+    ],
+    surfaces: ['agent', 'mcp', 'cli'],
+    positional: 'video',
+  },
+  videos_shots: {
+    title: '找镜头切换',
+    description: [
+      '找时间线上一段区间里画面在哪里切换（镜头），用来按镜头分别看画面、分别取景。只读，不写文件。',
+      `range 是剪辑后时间线上的 "起:止"（秒），最长 ${MAX_SHOTS_RANGE_SECONDS / 60} 分钟，不给时整条时间线。按取帧的同一条规则（最上层、启用、轨道可见的视频片段）把区间分段：换了片段、源画面又接不上的地方是一处 kind "edit"（score 为 null）；每段的源画面用 ffmpeg 的场景分数检测，超过 threshold（默认 ${DEFAULT_SCENE_THRESHOLD}）的帧是 kind "scene"。短于 minShot 秒（默认 ${DEFAULT_MIN_SHOT}）的镜头并进前一个。`,
+      '只看画面的突变，不认人：叠化、推拉、缓慢摇镜会漏报，闪光、快速运动可能多报；结果不对时调 threshold，或用 videos_frames 看切换点前后的帧核对。',
+      '返回 range（对到帧之后实际检测的区间）、cuts [{at, score, kind}]（at 是时间线上的秒，对到帧，是新镜头的第一帧）、shots [{start, end, sampleAt}]（sampleAt 是镜头 20%、50%、80% 处的 3 个时刻，可直接作为 videos_frames 的 at）、threshold、minShot、detector（"ffmpeg-scene"）与 note。',
+      '要解码整段画面：长区间要等一会儿；同一素材、同一区间与阈值再问时用缓存。',
+    ].join('\n'),
+    annotations: { readOnlyHint: true },
+    effect: 'query',
+    examples: [
+      { title: '找一段里的镜头切换', args: { video: 'demo', range: '1477.8:1532.5' } },
+      { title: '调低阈值重找', args: { video: 'demo', range: '0:60', threshold: 0.2, minShot: 0.5 } },
     ],
     surfaces: ['agent', 'mcp', 'cli'],
     positional: 'video',
@@ -725,6 +771,8 @@ export class VideoTools implements ToolSet {
         return this.#captions(args as z.infer<(typeof schemas)['captions_create']>, principal);
       case 'videos_frames':
         return this.#frames(args as z.infer<(typeof schemas)['videos_frames']>, principal);
+      case 'videos_shots':
+        return this.#shots(args as z.infer<(typeof schemas)['videos_shots']>, principal);
       case 'videos_history':
         return this.#history(args as z.infer<(typeof schemas)['videos_history']>, principal);
       case 'videos_import_package':
@@ -1028,6 +1076,25 @@ export class VideoTools implements ToolSet {
     }
     const { detector, frames } = await withFaces(this.#deps.faces, taken);
     return { videoId, revision: video.revision, frames, detector, composited: false, note: FRAMES_NOTE };
+  }
+
+  /** 镜头切换（`video-shots.ts`）：只读，不改视频、不写文件；与 `videos.shots` 同一个实现。 */
+  async #shots(args: z.infer<(typeof schemas)['videos_shots']>, principal: ToolPrincipal) {
+    const access = this.#scope.authorize(principal, false);
+    const [start, end] = args.range ? (args.range.split(':').map(Number) as [number, number]) : [undefined, undefined];
+    const opened = await this.#scope.open(args.video, access);
+    const videoId = opened.ref.videoId;
+    const video = this.#current(opened);
+    try {
+      const result = await detectShots(
+        { analysis: this.#deps.analysis, assetFile: (assetId, revision) => this.#videos.assetFile(videoId, assetId, revision) },
+        video,
+        { start, end, threshold: args.threshold, minShot: args.minShot },
+      );
+      return { videoId, ...result, note: SHOTS_NOTE };
+    } catch (error) {
+      throw shotsToolError(error);
+    }
   }
 
   async #history(args: z.infer<(typeof schemas)['videos_history']>, principal: ToolPrincipal) {

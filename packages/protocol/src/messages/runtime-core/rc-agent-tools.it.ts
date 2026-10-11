@@ -161,4 +161,6 @@ export const it: RcAgentToolsMessages = {
   deriveRangeEmpty: 'L’intervallo è vuoto dopo l’allineamento ai fotogrammi',
   deriveUnsupportedItem: (p) => `L’intervallo contiene una clip che non si può copiare in un video derivato (${p.kind})`,
   deriveParentUnplaced: 'Questo video non si trova in una cartella di progetto o di sessione, quindi non si può creare un video derivato accanto',
+  shotsRangeEmpty: 'L’intervallo è vuoto dopo l’allineamento ai fotogrammi',
+  shotsRangeTooLong: (p) => `L’intervallo supera i ${p.minutes} minuti: rileva le inquadrature in parti più brevi`,
 };

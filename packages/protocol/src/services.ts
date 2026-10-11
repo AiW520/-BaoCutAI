@@ -71,6 +71,7 @@ export const MCP_SERVICE_TOOL_NAMES: readonly McpServiceTool[] = [
   { name: 'videos_derive', title: '派生子视频', effect: 'mutation' },
   { name: 'captions_create', title: '建立字幕层', effect: 'mutation' },
   { name: 'videos_frames', title: '取视频帧', effect: 'mutation' },
+  { name: 'videos_shots', title: '找镜头切换', effect: 'query' },
   { name: 'videos_history', title: '查看修改历史', effect: 'query' },
   { name: 'documents_put', title: '写入文档', effect: 'mutation' },
   { name: 'assets_import', title: '导入素材', effect: 'mutation' },

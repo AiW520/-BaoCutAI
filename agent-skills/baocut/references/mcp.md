@@ -71,6 +71,7 @@ MCP 工具 `<名词>_<动词>` 就是 CLI 的 `baocut <名词> <动词>`，参�
 | `videos_history` | `baocut videos history` | query |
 | `videos_inspect` | `baocut videos inspect` | query |
 | `videos_list` | `baocut videos list` | query |
+| `videos_shots` | `baocut videos shots` | query |
 
 只在 CLI 里、MCP 上没有的：`baocut artifacts save`、`baocut models install`、`baocut models test`、`baocut projects create`、`baocut transcode`、`baocut videos delete`、`baocut videos import-package`。
 <!-- /generated -->

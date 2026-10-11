@@ -83,12 +83,20 @@ description: 媒体的机制：从链接下载、转码与合并、取帧看画�
 
 **提示词怎么写**，按这个顺序：主体 → 外观或材质 → 场景 → 光 → 机位与构图 → 风格与质量 → 一句保真夹子（不要改什么、不要出现什么）。不用真实品牌与真人做风格参照；一个系列的图沿用同一套风格描述。
 
+### 找镜头切换
+
+{{tool:videos_shots}}：{{arg:range}}（`起:止`，剪辑后时间线上的秒，最长 20 分钟）里画面在哪里切换。换了片段、画面接不上的地方是 `edit`；片段里的画面突变按场景分数检测，是 `scene`。漏报时调低 {{arg:threshold}}（默认 0.3），多报时调高；{{arg:minShot}}（默认 0.8 秒）以下的镜头并进前一个。
+
+- 只看画面突变，不认人：叠化、推拉会漏，闪光可能多报。拿不准的切换点用 {{tool:videos_frames}} 取它前一帧与它本身看一眼。
+- 每个镜头的 `sampleAt` 是 3 个时刻，直接交给 {{tool:videos_frames}} 的 {{arg:at}}；一次最多 24 帧，也就是 8 个镜头。
+
 ## 结果怎么读
 
 - {{tool:download}} / {{tool:transcribe}}：`pipeline.summary.videoId` 是新视频，`assetId` 是素材；`outputs` 里有下载的文件与文稿的 `path`。给链接时 summary 另有 `description`（截断的简介）与 `sourceChapters`（作者章节的条数）。
 - 链接导入的素材：{{tool:videos_inspect}} 的 `assets[].source` 是来源元数据：`platform`、`webpageUrl`、`uploader`（发布者）、`uploadDate`、`title`、`description`（最多 1200 字符，被截断时 `descriptionTruncated` 为 true）、`chapters`（作者的章节 `[{ at, title }]`，平台给的或从简介的时间戳大纲解析出的，没有时 `[]`）。它是背景参考，不是文稿内容：润色时人名与术语的写法只在说话人明显在说它时照改，说话人实名时只在它唯一指明某一位时算证据（见 [subtitles](subtitles.md)）；作者章节用 {{tool:chapters_adopt}} 写进视频（见 [editing](editing.md)）。
 - {{tool:transcode}}：`outputs` 的 `path`（`pipeline.summary.files`）是输出文件，把位置告诉用户。
 - {{tool:videos_frames}}：`frames` 每帧有 `at`、`file`、`width`、`height`、`faces` 与取自哪个片段（`item`）、哪个素材（`asset`）。读 `file` 这张图片。`faces` 是 `[{x, y, w, h, score}]`：框的左上角与宽高，按帧的宽高归一化到 0–1，`score` 0–1，按 score 从高到低；顶层 `detector` 是 `yunet`，检测器不可用时为 null（`faces` 都是空数组）。`file` 为 null 的帧没有 `faces`。
+- {{tool:videos_shots}}：`cuts` 每处有 `at`（新镜头第一帧的秒）、`score`（`edit` 为 null）与 `kind`；`shots` 每个有 `start`、`end` 与 `sampleAt`。
 - {{tool:assets_import}}：回执里有 `assetId`、`itemId`（没放上时间线时为 null）与新版本。
 - {{tool:videos_create}} / {{tool:videos_import_package}}：返回与 {{tool:videos_inspect}} 相同的摘要，含 `videoId`。
 - {{tool:image}}：`outputs` 里每张图的 `artifactId`；带了 video 时还有 `assetId`。
@@ -100,7 +108,7 @@ description: 媒体的机制：从链接下载、转码与合并、取帧看画�
 1. **先完整导入原件，复用已有转写。** 缺转写的批量转录（{{tool:transcribe}}）。
 2. **在转写里按文字定位片段。** {{tool:documents_read}} 读转写；跨视频找用 {{tool:space_search}}。
 3. **再按时间批量取帧**，拼成带时间戳的接触表看构图与镜头分布（{{tool:videos_frames}} 给 range 与 count）；可疑区间加密采样，单帧细看。
-4. 仍不知道剪点在哪时，再找镜头切换（有这类手段时才用）。
+4. 仍不知道剪点在哪时，再找镜头切换（{{tool:videos_shots}}），按镜头取帧细看。
 5. 视频理解模型（配置了的话）放最后：问具体问题、要时间戳，并对照原片核实。
 
 彼此独立的读取一次发完，不要一帧一问。改动先做一段有代表性的，读回核对后再批量做；大改之后重新核对，没动的结果复用。

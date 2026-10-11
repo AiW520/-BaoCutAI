@@ -855,6 +855,16 @@ export const methodParamSchemas = {
     })
     .strict()
     .refine((p) => p.end > p.start),
+  'videos.shots': z
+    .object({
+      videoId: id,
+      start: z.number().finite().nonnegative().optional(),
+      end: z.number().finite().positive().optional(),
+      threshold: z.number().gt(0).max(1).optional(),
+      minShot: z.number().min(0).max(60).optional(),
+    })
+    .strict()
+    .refine((p) => p.start === undefined || p.end === undefined || p.end > p.start),
   'videos.open': fileTarget,
   'videos.importPackage': z
     .object({

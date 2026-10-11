@@ -136,4 +136,6 @@ export const ptBR: RcAgentToolsMessages = {
   deriveRangeEmpty: 'O intervalo fica vazio ao ser alinhado aos quadros',
   deriveUnsupportedItem: (p) => `O intervalo contém um clipe que não pode ser copiado para um vídeo derivado (${p.kind})`,
   deriveParentUnplaced: 'Este vídeo não está em uma pasta de projeto ou de sessão, então não é possível criar um vídeo derivado ao lado dele',
+  shotsRangeEmpty: 'O intervalo fica vazio ao alinhar aos quadros',
+  shotsRangeTooLong: (p) => `O intervalo passa de ${p.minutes} minutos; detecte as tomadas em partes menores`,
 };

@@ -91,4 +91,6 @@ export const pl: RcAgentToolsMessages = {
   deriveRangeEmpty: 'Po wyrównaniu do klatek zakres jest pusty',
   deriveUnsupportedItem: (p) => `Zakres zawiera klip, którego nie można skopiować do wideo pochodnego (${p.kind})`,
   deriveParentUnplaced: 'To wideo nie znajduje się w folderze projektu ani sesji, więc nie można obok niego utworzyć wideo pochodnego',
+  shotsRangeEmpty: 'Po wyrównaniu do klatek zakres jest pusty',
+  shotsRangeTooLong: (p) => `Zakres jest dłuższy niż ${p.minutes} min; wykrywaj ujęcia w krótszych częściach`,
 };

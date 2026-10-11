@@ -58,7 +58,14 @@ export function frameSourceAt(video: VideoSnapshot, seconds: number): FrameSourc
   const sequence = video.sequences[video.rootSequenceId];
   if (!sequence) return null;
   const { fps } = sequence;
-  const frame = Math.floor((seconds * fps.num) / fps.den + 1e-9);
+  return frameSourceAtFrame(video, Math.floor((seconds * fps.num) / fps.den + 1e-9));
+}
+
+/** 同 `frameSourceAt`，按根序列的帧号。 */
+export function frameSourceAtFrame(video: VideoSnapshot, frame: number): FrameSource | null {
+  const sequence = video.sequences[video.rootSequenceId];
+  if (!sequence) return null;
+  const { fps } = sequence;
   const tracks = new Map(sequence.tracks.filter((t) => t.kind === 'visual' && t.visible).map((t) => [t.id, t.order]));
   let best: { item: VideoItem; order: number } | null = null;
   for (const item of sequence.items) {

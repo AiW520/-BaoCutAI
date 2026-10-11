@@ -29,6 +29,7 @@ import { spaceMethods, updateEntry } from './space/space-methods.ts';
 import type { SpaceThumbnails } from './space/space-thumbnails.ts';
 import type { VideoService } from './videos/video-service.ts';
 import { deriveVideo, spaceDerivedFinder } from './videos/video-derive.ts';
+import { videoShots } from './agent-tools/video-shots.ts';
 import type { VideoTrash } from './videos/video-trash.ts';
 import type { ModelJobs } from './models/model-jobs.ts';
 import { applySpeakerProposal } from './models/speakers-apply.ts';
@@ -401,6 +402,8 @@ export function createHandlers({
       // 派生子视频（§3.5）：与工具 videos_derive 同一个服务。
       'videos.derive': async (p, principal) =>
         (await deriveVideo({ videos, findDerived: spaceDerivedFinder(space) }, p, principal)).result,
+      // 镜头切换（§3.5）：与工具 videos_shots 同一个实现。
+      'videos.shots': (p) => videoShots({ analysis, videos }, p),
       // 便携包（视频格式规范 §8）：建成来源目录里的一个新视频。不给智能体与对外服务（它们没有这个方法的入口）。
       'videos.importPackage': async (p, principal) => {
         const { root, scope } = await videoRoot(p);

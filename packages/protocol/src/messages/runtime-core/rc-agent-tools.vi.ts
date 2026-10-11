@@ -17,4 +17,6 @@ instructionsNotSet: 'Chưa đặt hướng dẫn phiên: thứ tự lắp ráp R
   deriveRangeEmpty: 'Khoảng trống sau khi căn theo khung hình',
   deriveUnsupportedItem: (p) => `Khoảng có đoạn không thể sao chép sang video con (${p.kind})`,
   deriveParentUnplaced: 'Video này không nằm trong thư mục dự án hoặc phiên nên không thể tạo video con bên cạnh',
+  shotsRangeEmpty: 'Sau khi căn theo khung hình, khoảng này trống',
+  shotsRangeTooLong: (p) => `Khoảng này dài hơn ${p.minutes} phút; hãy phát hiện cảnh quay theo từng đoạn ngắn hơn`,
 };

@@ -79,6 +79,8 @@ const FRAME_MAX_BYTES = 16 * 1024 * 1024;
 const PEAKS_RETRY_MS = 1000;
 /** 分析失败之后这么久之内再问，直接回同一个错误，不再启动 ffmpeg。 */
 const FAILURE_TTL_MS = 60_000;
+/** 镜头切换的 ffmpeg 输出上限（字节）：阈值很低时每帧一行，超了就停。 */
+const SCENE_OUTPUT_MAX_BYTES = 8 * 1024 * 1024;
 /** 探测 WebM 的编码与时长（`media.playback`）：时限与输出上限。 */
 const PROBE_TIMEOUT_MS = 20_000;
 const PROBE_MAX_BYTES = 64 * 1024;
@@ -113,6 +115,12 @@ export interface FrameAsset {
   contentHash: string;
   mediaType: string;
   durationSec: number | null;
+}
+
+/** 一处场景切换：源时钟上的秒与场景分数（0–1）。 */
+export interface SceneCut {
+  at: number;
+  score: number;
 }
 
 /** 缩小之后的一帧：编码后的 bytes 与实际的像素尺寸。 */
@@ -262,6 +270,7 @@ export class MediaAnalysis {
   readonly #playbackProgress = new Map<string, number>();
   readonly #peakJobs = new Map<string, Promise<MediaPeaks>>();
   readonly #thumbnailJobs = new Map<string, Promise<Buffer>>();
+  readonly #sceneJobs = new Map<string, Promise<SceneCut[]>>();
   readonly #failures = new Map<string, { at: number; error: RpcError }>();
   readonly #children = new Set<ChildProcess>();
   #closed = false;
@@ -497,6 +506,38 @@ export class MediaAnalysis {
   }
 
   /**
+   * 视频素材源时钟 `[fromSec, fromSec + durSec)` 里的镜头切换（`videos_shots`）：ffmpeg 把画面缩到 160 宽，
+   * 用 `select='gt(scene,T)'` 挑出场景分数超过 `threshold` 的帧，`metadata=print` 把时刻与分数写到 stdout。
+   * 输入端 `-ss` 之后 pts 从 0 起算，返回的 `at` 已加回 `fromSec`（源时钟上的秒）。要解码整段，与波形峰值共用并发名额，
+   * 超时按时长放宽；结果按内容摘要、区间与阈值缓存。`select` 与 `scene` 很早的 ffmpeg 就有（不用 4.4 才有的 `scdet`）。
+   */
+  async sceneCuts(
+    asset: FrameAsset,
+    options: { fromSec: number; durSec: number; threshold: number },
+    locate: () => Promise<{ root: string; file: string }>,
+  ): Promise<SceneCut[]> {
+    const demuxers = DEMUXERS[asset.mediaType];
+    if (!demuxers) throw new RpcError('forbidden', RcRuntime.onlyAudioVideoAnalyzable());
+    const from = Math.max(0, options.fromSec);
+    const dur = Math.max(0, options.durSec);
+    const key = `scenes-${from.toFixed(6)}-${dur.toFixed(6)}-${options.threshold.toFixed(4)}.json`;
+    const file = path.join(this.#options.cacheDir, cacheKeyOf(asset.contentHash), key);
+    const cached = await readSceneCuts(file);
+    if (cached) return cached;
+    this.#recentFailure(file);
+    let job = this.#sceneJobs.get(file);
+    if (!job) {
+      const started = this.#peakSlots.run(async () => {
+        const { root, file: target } = await locate();
+        const { realPath } = await resolveInside(root, target);
+        return this.#computeSceneCuts(realPath, demuxers, { from, dur, threshold: options.threshold }, file);
+      });
+      job = this.#remember(file, started, this.#sceneJobs);
+    }
+    return job;
+  }
+
+  /**
    * Space 里的一个视频或图片文件的一帧，缩到不超过 `width` 宽（不放大）。视频取 `at` 秒（取不到时，比如视频比它短，
    * 退回第一帧），图片取第一帧。缓存键是真实路径、大小、修改时间、宽与时间：文件被覆盖之后重新取。
    */
@@ -562,6 +603,55 @@ export class MediaAnalysis {
     await writeAtomic(file, JSON.stringify(result));
     this.#log.info('Computed waveform peaks', { bins: bins.length, binsPerSecond, ms: Date.now() - started });
     return result;
+  }
+
+  async #computeSceneCuts(
+    realPath: string,
+    demuxers: string,
+    range: { from: number; dur: number; threshold: number },
+    file: string,
+  ): Promise<SceneCut[]> {
+    const started = Date.now();
+    const cuts: SceneCut[] = [];
+    let pending: number | null = null;
+    let rest = '';
+    let size = 0;
+    const line = (text: string) => {
+      const pts = /pts_time:(-?[\d.]+(?:e[-+]?\d+)?)/.exec(text);
+      if (pts) {
+        pending = Number(pts[1]);
+        return;
+      }
+      const score = /lavfi\.scene_score=([\d.]+(?:e[-+]?\d+)?)/.exec(text);
+      if (score && pending !== null && Number.isFinite(pending)) {
+        cuts.push({ at: range.from + pending, score: Number(score[1]) });
+        pending = null;
+      }
+    };
+    await this.#ffmpeg(
+      // `-ss`、`-t` 放在输入之前：按索引跳到附近的关键帧再解码，只读这一段。
+      { realPath, demuxers, before: ['-ss', range.from.toFixed(6), '-t', range.dur.toFixed(6)] },
+      [
+        ...['-map', '0:v:0', '-an', '-sn', '-dn'],
+        ...['-vf', `scale=160:-2,select='gt(scene,${range.threshold})',metadata=mode=print:file=-`],
+        ...['-f', 'null', '-'],
+      ],
+      {
+        // 解码画面比解码声音慢得多：按时长放宽到每秒 1 秒（缩小之后通常快十倍以上）。
+        timeoutMs: 60_000 + range.dur * 1000,
+        onData: (chunk) => {
+          size += chunk.length;
+          if (size > SCENE_OUTPUT_MAX_BYTES) throw new RpcError('internal', RcRuntime.ffmpegCannotRead());
+          const lines = (rest + chunk.toString('utf8')).split('\n');
+          rest = lines.pop() ?? '';
+          for (const text of lines) line(text);
+        },
+      },
+    );
+    if (rest) line(rest);
+    await writeAtomic(file, JSON.stringify(cuts));
+    this.#log.info('Detected scene changes', { cuts: cuts.length, seconds: range.dur, ms: Date.now() - started });
+    return cuts;
   }
 
   /** 取一帧，编码成 JPEG 或 PNG，写进缓存。`seekMs` 为 null 时不跳（图片）。 */
@@ -726,6 +816,19 @@ function demuxersOf(record: AssetRevision): string {
   const demuxers = DEMUXERS[record.mediaType];
   if (!demuxers) throw new RpcError('forbidden', RcRuntime.onlyAudioVideoAnalyzable());
   return demuxers;
+}
+
+async function readSceneCuts(file: string): Promise<SceneCut[] | null> {
+  try {
+    const value = JSON.parse(await fs.readFile(file, 'utf8')) as unknown;
+    if (!Array.isArray(value)) return null;
+    const ok = value.every(
+      (c: SceneCut) => c && typeof c.at === 'number' && Number.isFinite(c.at) && typeof c.score === 'number' && Number.isFinite(c.score),
+    );
+    return ok ? (value as SceneCut[]) : null;
+  } catch {
+    return null;
+  }
 }
 
 async function readPeaks(file: string): Promise<MediaPeaks | null> {

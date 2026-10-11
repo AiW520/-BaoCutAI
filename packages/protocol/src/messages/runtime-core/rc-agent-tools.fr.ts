@@ -55,4 +55,6 @@ export const fr: RcAgentToolsMessages = {
   deriveRangeEmpty: 'La plage est vide une fois alignée sur les images',
   deriveUnsupportedItem: (p) => `La plage contient un clip qui ne peut pas être copié dans une vidéo dérivée (${p.kind})`,
   deriveParentUnplaced: 'Cette vidéo n’est pas dans un dossier de projet ou de session : impossible de créer une vidéo dérivée à côté',
+  shotsRangeEmpty: 'La plage est vide une fois alignée sur les images',
+  shotsRangeTooLong: (p) => `La plage dépasse ${p.minutes} minutes : détectez les plans par morceaux plus courts`,
 };

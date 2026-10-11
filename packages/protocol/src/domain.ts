@@ -353,6 +353,40 @@ export interface VideoDeriveResult {
 }
 
 /**
+ * `videos.shots`（工具 `videos_shots`，架构设计 §3.5「镜头切换」）：找剪辑后时间线 `[start, end)`（秒，缺省整条；最长 20 分钟）
+ * 里画面的切换点。按取帧的同一条规则（最上层、启用、轨道可见的视频片段）把区间分段：换了片段、源画面不接续的地方是
+ * `edit`；每段的源画面交给 ffmpeg 的场景分数（`select='gt(scene,T)'`），超过 `threshold`（0–1，缺省 0.3）的是 `scene`。
+ * 短于 `minShot` 秒（缺省 0.8）的镜头并进前一个。只看画面突变，不认人；叠化、推拉会漏报，闪光会多报。
+ */
+export interface VideoShotsParams {
+  videoId: Id;
+  start?: number;
+  end?: number;
+  threshold?: number;
+  minShot?: number;
+}
+
+/** 一处切换：时间线上的秒（对到帧）；`score` 是场景分数（`edit` 为 null）。 */
+export interface VideoShotCut {
+  at: number;
+  score: number | null;
+  kind: 'scene' | 'edit';
+}
+
+export interface VideoShotsResult {
+  videoId: Id;
+  revision: string;
+  /** 实际检测的区间（对到帧）。 */
+  range: { start: number; end: number };
+  cuts: VideoShotCut[];
+  /** 相邻切换之间的镜头；`sampleAt` 是镜头 20%、50%、80% 处的时刻（十进制秒字符串，可直接作为取帧的 `at`）。 */
+  shots: { start: number; end: number; sampleAt: string[] }[];
+  threshold: number;
+  minShot: number;
+  detector: 'ffmpeg-scene';
+}
+
+/**
  * 回合失败的结构化原因（架构设计 §3.11）。Driver 从原生错误里认出来（Claude 的 `authentication_failed`、
  * `model_not_found`、`billing_error`，Codex 的登录与模型错误），认不出的为 null，界面只显示原文。
  * `AGENT_BILLING_REQUIRED`：账号的余额或付款有问题（Claude 的 `billing_error`），要用户在服务商那边处理，等待不会恢复；

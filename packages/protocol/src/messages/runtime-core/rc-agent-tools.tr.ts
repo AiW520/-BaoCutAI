@@ -17,4 +17,6 @@ instructionsNotSet: 'Oturum yönergeleri ayarlanmadı: Runtime birleştirme sır
   deriveRangeEmpty: 'Karelere hizalandıktan sonra aralık boş',
   deriveUnsupportedItem: (p) => `Aralıkta türetilmiş videoya kopyalanamayan bir klip var (${p.kind})`,
   deriveParentUnplaced: 'Bu video bir proje ya da oturum klasöründe değil; yanında türetilmiş video oluşturulamaz',
+  shotsRangeEmpty: 'Karelere hizalandıktan sonra aralık boş kalıyor',
+  shotsRangeTooLong: (p) => `Aralık ${p.minutes} dakikadan uzun; çekimleri daha kısa parçalarda algılayın`,
 };
