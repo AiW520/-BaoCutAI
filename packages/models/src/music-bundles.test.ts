@@ -182,15 +182,44 @@ describe('本地音乐模型包的登记', () => {
       });
     });
 
-    it('本机 Provider：引擎找不到时整项 unsupported 并说明；引擎在而没装时 not-installed', async () => {
+    it('本机 Provider：没装时 not-installed（引擎在不在都先下载模型）；装好了但引擎找不到时整项 unsupported 并说明', async () => {
       const catalog = (engine: boolean) =>
         new ModelCatalog({
           root: dir,
           platform: 'darwin',
           arch: 'arm64',
+          workerAvailable: () => false,
           engineAvailable: (b) => b !== 'audio-cpp' || engine,
         });
       const music = {} as never;
+      const neither = await new LocalProviderSource({
+        catalog: catalog(false),
+        transcriber: null,
+        music,
+        musicEngine: () => null,
+      }).describe('local', 'view');
+      expect(neither!.capabilities.generateMusic).toMatchObject({
+        available: false,
+        unavailableReason: 'not-installed',
+      });
+      expect(neither!.capabilities.generateMusic!.models[0]).toMatchObject({
+        modelId: YUE.bundleId,
+        available: false,
+        unavailableReason: 'not-installed',
+      });
+      expect(
+        neither!.capabilities.generateMusic!.models[0]!.local!.engine,
+      ).toEqual({ id: AUDIO_CPP_ENGINE, executable: null });
+
+      await writeRepo(
+        dir,
+        YUE.components.music!.repo,
+        YUE.components.music!.revision,
+        {
+          [YUE.music!.files.model]: 'gguf',
+          [YUE.music!.files.vae]: 'vae',
+        },
+      );
       const missing = await new LocalProviderSource({
         catalog: catalog(false),
         transcriber: null,
@@ -206,9 +235,7 @@ describe('本地音乐模型包的登记', () => {
         available: false,
         unavailableReason: 'unsupported',
       });
-      expect(
-        missing!.capabilities.generateMusic!.models[0]!.local!.engine,
-      ).toEqual({ id: AUDIO_CPP_ENGINE, executable: null });
+      await fs.rm(path.join(dir, 'audio-cpp'), { recursive: true, force: true });
 
       const present = await new LocalProviderSource({
         catalog: catalog(true),

@@ -225,8 +225,8 @@ export class LocalProviderSource implements ProviderSource {
   }
 
   /**
-   * 音乐生成的模型包：登记了才有这项能力。模型包装好了但引擎（audio.cpp）找不到时整项 `unsupported`，说明里写怎么补；
-   * 引擎在而模型包没装时 `not-installed`。两种情形分开说，用户才知道该下载模型还是装引擎。
+   * 音乐生成的模型包：登记了才有这项能力。模型包没装时 `not-installed`（先下载模型，引擎在不在都一样）；装好了但引擎
+   * （audio.cpp）找不到时整项 `unsupported`，说明里写怎么补。两种情形分开说，用户才知道该下载模型还是装引擎。
    */
   #musicCapability(all: ModelBundleStatus[]): { generateMusic?: ProviderCapability<MusicModelInfo> } {
     const engine = this.#music === null ? null : this.#musicEngine();
@@ -238,7 +238,9 @@ export class LocalProviderSource implements ProviderSource {
         const usable = bundleUsable(status);
         const info = localMusicModelInfo(def, status, usable, engine);
         if (info.available) return [info];
-        return [{ ...info, unavailableReason: engine === null ? ('unsupported' as const) : unavailableReasonOf(status) }];
+        // 没装时先说没装（先下载模型）；装好了才轮到引擎：引擎找不到是 `unsupported`，说明里写怎么装。
+        const installed = status.state !== 'not-installed' && status.state !== 'downloading';
+        return [{ ...info, unavailableReason: engine === null && installed ? ('unsupported' as const) : unavailableReasonOf(status) }];
       });
     if (models.length === 0) return {};
     const usable = models.filter((m) => m.available);
@@ -247,7 +249,7 @@ export class LocalProviderSource implements ProviderSource {
     const available = usable.length > 0;
     const reason: ProviderUnavailableReason | undefined = available
       ? undefined
-      : this.#music === null || engine === null
+      : this.#music === null
         ? 'unsupported'
         : (preferred.unavailableReason ?? 'not-installed');
     return {
