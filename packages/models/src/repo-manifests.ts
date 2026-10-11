@@ -55,6 +55,12 @@ const SEP_PINNED_LOCAL = ASR_PINNED_LOCAL;
  */
 const IMAGE_PINNED_LOCAL =
   'sha256 of 9 files pinned for the same revision by legacy BaoCut (baocut-app, catalog.rs in bcut-models); the other 11 computed from a local install of the same revision; all sizes and hashes checked one by one against the local install';
+/**
+ * 本地音乐生成（YuE2 的 GGUF）：两个 GGUF 的大小与 sha256 取自下载来源在这个版本上的 LFS 记录；四个配置文件（不走 LFS）按版本
+ * 从下载来源流式读下来计算。没有在本机装过，也没有跑过推理。
+ */
+const MUSIC_PINNED_HUB =
+  "Sizes and the sha256 of the two GGUF files come from the download source's LFS records at this revision; the four sidecar files were streamed from the download source at this revision and hashed; no local install or inference in this repo";
 
 export const REPO_MANIFESTS: readonly RepoManifestSpec[] = [
   {
@@ -718,6 +724,21 @@ export const REPO_MANIFESTS: readonly RepoManifestSpec[] = [
     ],
     estimatedBytes: 10497208109,
     provenance: IMAGE_PINNED_LOCAL,
+  },
+  // ---- 本地音乐生成（music-bundles.ts）：只下载 Q8 主模型、F16 VAE 与配置文件 ----
+  {
+    repo: 'audio-cpp/Yue2-3B-GGUF',
+    revision: 'cca74d8980c00f30ab8d52248a367c01ad633ec2',
+    files: [
+      { path: 'yue2-3b-q8_0.gguf', size: 4264195616, sha256: '52be345b5155bf9ef0b2411e7df8d1d2b8e13b6d977a2f70c35612ec69b1f591' },
+      { path: 'yue2-vae-f16.gguf', size: 265218656, sha256: 'd4f4a05d8f291ae820cd1e43609da3fa91b56465810091a2b08c3350b751719d' },
+      { path: 'sidecars/yue2-generation-config.json', size: 466, sha256: '203830cebde6e3644eb291925362990d198e66c3b6006cd11f1aaa21904bcc61' },
+      { path: 'sidecars/yue2-model-config.json', size: 959, sha256: 'ad3477bbef890bf98ae196c1e4b44779494a6231c4ab66f32708eabadf265329' },
+      { path: 'sidecars/yue2-qwen.tiktoken', size: 2561218, sha256: 'b2b1b8dfb5cc5f024bafc373121c6aba3f66f9a5a0269e243470a1de16a33186' },
+      { path: 'sidecars/yue2-vae-config.json', size: 1378, sha256: 'f0191bb9694009956de44e0c361a6f1334760be4c8f848e599bde242a54a0970' },
+    ],
+    estimatedBytes: 4531978293,
+    provenance: MUSIC_PINNED_HUB,
   },
 ];
 

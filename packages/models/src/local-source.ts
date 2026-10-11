@@ -2,6 +2,7 @@ import type {
   ImageModelInfo,
   MessageRef,
   ModelBundleStatus,
+  MusicModelInfo,
   ProviderCapability,
   ProviderUnavailableReason,
   ProviderView,
@@ -14,6 +15,7 @@ import { transcribeLanguages } from './asr-languages.ts';
 import type { BundleDefinition } from './bundle-registry.ts';
 import type { GenerationCapability, GenerationProvider } from './generation-provider.ts';
 import { localImageModelInfo } from './local-image.ts';
+import { localMusicModelInfo } from './local-music.ts';
 import { localSpeechModelInfo } from './local-speech.ts';
 import { bundleUsable, type ModelCatalog } from './model-catalog.ts';
 import type { DescribeMode, ProviderQueue, ProviderSource } from './provider-source.ts';
@@ -35,17 +37,24 @@ export class LocalProviderSource implements ProviderSource {
   readonly #transcriber: TranscribeProvider | null;
   readonly #speech: GenerationProvider | null;
   readonly #image: GenerationProvider | null;
+  readonly #music: GenerationProvider | null;
+  readonly #musicEngine: () => string | null;
 
   constructor(options: {
     catalog: ModelCatalog;
     transcriber: TranscribeProvider | null;
     speech?: GenerationProvider | null;
     image?: GenerationProvider | null;
+    /** 音乐生成的执行者与它的引擎（audio.cpp 可执行文件的路径，找不到时 null：模型包装好了也不可用）。 */
+    music?: GenerationProvider | null;
+    musicEngine?: () => string | null;
   }) {
     this.#catalog = options.catalog;
     this.#transcriber = options.transcriber;
     this.#speech = options.speech ?? null;
     this.#image = options.image ?? null;
+    this.#music = options.music ?? null;
+    this.#musicEngine = options.musicEngine ?? (() => null);
   }
 
   owns(providerId: string): boolean {
@@ -72,11 +81,12 @@ export class LocalProviderSource implements ProviderSource {
     if (providerId !== 'local') return null;
     if (capability === 'synthesizeSpeech') return this.#speech;
     if (capability === 'generateImage') return this.#image;
+    if (capability === 'generateMusic') return this.#music;
     return null;
   }
 
   generators(): GenerationProvider[] {
-    return [this.#speech, this.#image].filter((g): g is GenerationProvider => g !== null);
+    return [this.#speech, this.#image, this.#music].filter((g): g is GenerationProvider => g !== null);
   }
 
   queue(_providerId: string, modelId: string): ProviderQueue {
@@ -115,6 +125,7 @@ export class LocalProviderSource implements ProviderSource {
         },
         ...this.#speechCapability(all),
         ...this.#imageCapability(all),
+        ...this.#musicCapability(all),
         ...this.#separateCapability(all),
       },
     };
@@ -205,6 +216,42 @@ export class LocalProviderSource implements ProviderSource {
         : (preferred.unavailableReason ?? 'not-installed');
     return {
       generateImage: {
+        models,
+        available,
+        ...(reason ? { unavailableReason: reason } : {}),
+        ...(!available ? detailOf(preferred) : {}),
+      },
+    };
+  }
+
+  /**
+   * 音乐生成的模型包：登记了才有这项能力。模型包装好了但引擎（audio.cpp）找不到时整项 `unsupported`，说明里写怎么补；
+   * 引擎在而模型包没装时 `not-installed`。两种情形分开说，用户才知道该下载模型还是装引擎。
+   */
+  #musicCapability(all: ModelBundleStatus[]): { generateMusic?: ProviderCapability<MusicModelInfo> } {
+    const engine = this.#music === null ? null : this.#musicEngine();
+    const models = all
+      .filter((s) => s.capability === 'music')
+      .flatMap((status) => {
+        const def = this.#catalog.definition(status.bundleId);
+        if (!def?.music) return [];
+        const usable = bundleUsable(status);
+        const info = localMusicModelInfo(def, status, usable, engine);
+        if (info.available) return [info];
+        return [{ ...info, unavailableReason: engine === null ? ('unsupported' as const) : unavailableReasonOf(status) }];
+      });
+    if (models.length === 0) return {};
+    const usable = models.filter((m) => m.available);
+    const preferred = usable[0] ?? models[0]!;
+    preferred.default = true;
+    const available = usable.length > 0;
+    const reason: ProviderUnavailableReason | undefined = available
+      ? undefined
+      : this.#music === null || engine === null
+        ? 'unsupported'
+        : (preferred.unavailableReason ?? 'not-installed');
+    return {
+      generateMusic: {
         models,
         available,
         ...(reason ? { unavailableReason: reason } : {}),

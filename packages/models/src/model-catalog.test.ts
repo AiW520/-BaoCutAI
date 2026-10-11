@@ -244,10 +244,10 @@ describe('ModelCatalog', () => {
     }
   });
 
-  it('按平台列出：Apple Silicon 只列 MLX 与 Core ML，别的平台只列 candle 与 GGML；名字与仓库相同，默认模型包随平台', async () => {
+  it('按平台列出：Apple Silicon 只列 MLX 与 Core ML，别的平台只列 candle 与 GGML，audio.cpp 哪里都列；名字与仓库相同，默认模型包随平台', async () => {
     const ids = (catalog: ModelCatalog) => catalog.definitions().map((d) => d.bundleId);
     const silicon = new ModelCatalog({ root, ...mac });
-    expect(silicon.definitions().every((d) => d.backend === 'mlx' || d.backend === 'coreml')).toBe(true);
+    expect(silicon.definitions().every((d) => d.backend === 'mlx' || d.backend === 'coreml' || d.backend === 'audio-cpp')).toBe(true);
     expect(ids(silicon)).toEqual(
       expect.arrayContaining([
         'qwen3-asr-0.6b@mlx-4bit',
@@ -255,6 +255,7 @@ describe('ModelCatalog', () => {
         'moss-transcribe-diarize@mlx-8bit',
         'whisper-large-v3@coreml',
         'speaker-diarization@mlx',
+        'yue2-3b@audio-cpp-q8',
       ]),
     );
     expect(silicon.defaultTranscribeBundle()).toBe('moss-transcribe-diarize@mlx-8bit');
@@ -284,6 +285,7 @@ describe('ModelCatalog', () => {
         'voxcpm2@candle',
         'omnivoice@candle',
         'qwen-image-2.1@candle',
+        'yue2-3b@audio-cpp-q8',
         'htdemucs-ft@candle',
       ]);
       expect(catalog.defaultTranscribeBundle()).toBe('moss-transcribe-diarize@candle');
@@ -314,6 +316,7 @@ describe('ModelCatalog', () => {
       'VoxCPM2',
       'OmniVoice',
       'Qwen-Image-2.1',
+      'YuE2 3B',
       'HTDemucs-FT',
     ]);
     expect(silicon.definitions().some((d) => d.backend === 'ggml')).toBe(false);

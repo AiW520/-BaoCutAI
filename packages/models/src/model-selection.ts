@@ -64,6 +64,7 @@ const CAPABILITY_LABEL_BUILDERS: Record<ModelServiceCapability, () => Localized>
   generateImage: M.capGenerateImage,
   generateText: M.capGenerateText,
   separateAudio: M.capSeparateAudio,
+  generateMusic: M.capGenerateMusic,
 };
 
 /** 能力的名字（给人看）：嵌进句子时用它，带着引用。 */
@@ -78,6 +79,7 @@ export const CAPABILITY_LABELS: Record<ModelServiceCapability, string> = live(()
   generateImage: M.capGenerateImage().text,
   generateText: M.capGenerateText().text,
   separateAudio: M.capSeparateAudio().text,
+  generateMusic: M.capGenerateMusic().text,
 }));
 
 const FACTORY_PROVIDER = 'local';

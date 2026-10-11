@@ -2,8 +2,10 @@ import {
   RpcError,
   type FrozenSpeechReference,
   type GenerateImageRequest,
+  type GenerateMusicRequest,
   type GenerationParameters,
   type ImageModelInfo,
+  type MusicModelInfo,
   type SpeechModelInfo,
   type SynthesizeSpeechRequest,
 } from '@baocut/protocol';
@@ -28,6 +30,7 @@ export interface LocalSpeechFreeze {
 
 export type SpeechParameters = Extract<GenerationParameters, { capability: 'synthesizeSpeech' }>;
 export type ImageParameters = Extract<GenerationParameters, { capability: 'generateImage' }>;
+export type MusicParameters = Extract<GenerationParameters, { capability: 'generateMusic' }>;
 
 /** 按 Unicode 码点计的长度（供应商的字符上限按字符算，代理对算一个）。 */
 export function codePointLength(text: string): number {
@@ -268,4 +271,89 @@ function languageListed(languages: string[], tag: string): boolean {
   const lower = tag.toLowerCase();
   const primary = lower.split('-')[0]!;
   return languages.some((l) => l.toLowerCase() === lower || l.toLowerCase() === primary);
+}
+
+/**
+ * 音乐生成的参数检查与冻结：风格与歌词按模型的上限，歌曲必须有歌词、纯音乐不收歌词；时长（目标与上限）在模型的范围内，不给上限时
+ * 用目标时长、再没有用模型的默认时长；编排与格式按模型声明；seed 没给时留给本地 Provider 冻结（`localMusicSeed`）；步数只有本地模型接受。
+ */
+export function musicParameters(choice: ModelChoice<'generateMusic'>, request: GenerateMusicRequest, seed: number): MusicParameters {
+  const model: MusicModelInfo = choice.model;
+  const where = { providerId: choice.providerId, modelId: choice.modelId };
+  if (!model.modes.includes(request.mode)) {
+    throw new RpcError('invalid-request', M.modeUnsupported({ modelId: choice.modelId, mode: request.mode }), { ...where, modes: model.modes });
+  }
+  const style = request.style;
+  if (!style.trim()) throw new RpcError('invalid-request', M.styleEmpty());
+  const styleLength = codePointLength(style);
+  if (styleLength > model.maxStyleChars) {
+    throw new RpcError('invalid-request', M.styleTooLong({ length: styleLength, modelId: choice.modelId, limit: model.maxStyleChars }), {
+      ...where,
+      length: styleLength,
+      limit: model.maxStyleChars,
+    });
+  }
+  let lyrics: string | null = null;
+  if (request.mode === 'song') {
+    if (!request.lyrics?.trim()) throw new RpcError('invalid-request', M.lyricsEmpty(), where);
+    const length = codePointLength(request.lyrics);
+    if (length > model.maxLyricsChars) {
+      throw new RpcError('invalid-request', M.lyricsTooLong({ length, modelId: choice.modelId, limit: model.maxLyricsChars }), {
+        ...where,
+        length,
+        limit: model.maxLyricsChars,
+      });
+    }
+    lyrics = request.lyrics;
+  } else if (request.lyrics !== undefined) {
+    throw new RpcError('invalid-request', M.lyricsNotInstrumental(), where);
+  }
+  const duration = (value: number | undefined): number | null => {
+    if (value === undefined) return null;
+    if (!(Number.isFinite(value) && value > 0 && value <= model.maxDurationSec)) {
+      throw new RpcError('invalid-request', M.durationRange({ modelId: choice.modelId, max: model.maxDurationSec }), {
+        ...where,
+        maxDurationSec: model.maxDurationSec,
+      });
+    }
+    return value;
+  };
+  const targetDurationSec = duration(request.targetDurationSec);
+  const maxDurationSec = duration(request.maxDurationSec) ?? targetDurationSec ?? model.defaultDurationSec;
+  if (targetDurationSec !== null && targetDurationSec > maxDurationSec) throw new RpcError('invalid-request', M.targetOverMax(), where);
+  const planningOptions = model.local?.planning.options ?? ['off'];
+  const planning = request.planning ?? model.local?.planning.default ?? 'off';
+  if (!planningOptions.includes(planning)) {
+    throw new RpcError(
+      'invalid-request',
+      M.planningUnsupported({ modelId: choice.modelId, planning, options: planningOptions.join(', ') }),
+      { ...where, planning: planningOptions },
+    );
+  }
+  const format = request.format ?? model.defaultFormat;
+  if (!model.formats.includes(format)) {
+    throw new RpcError('invalid-request', M.formatUnsupported({ modelId: choice.modelId, format }), { ...where, formats: model.formats });
+  }
+  if (request.seed !== undefined && !model.acceptsSeed) throw new RpcError('invalid-request', M.noSeed({ modelId: choice.modelId }), where);
+  let steps: number | null = null;
+  if (request.steps !== undefined) {
+    const range = model.local?.steps;
+    if (!range) throw new RpcError('invalid-request', M.noSteps({ modelId: choice.modelId }), where);
+    if (!(Number.isInteger(request.steps) && request.steps >= range.min && request.steps <= range.max)) {
+      throw new RpcError('invalid-request', M.stepsRange({ min: range.min, max: range.max }), { ...where, steps: range });
+    }
+    steps = request.steps;
+  }
+  return {
+    capability: 'generateMusic',
+    mode: request.mode,
+    style,
+    lyrics,
+    targetDurationSec,
+    maxDurationSec,
+    planning,
+    format,
+    seed,
+    ...(steps !== null ? { steps } : {}),
+  };
 }

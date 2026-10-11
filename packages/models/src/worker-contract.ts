@@ -38,13 +38,27 @@ export type ModelFamily =
   /** 人声与伴奏分离（`separator` 组件，§4.2）：HTDemucs-FT，四个子模型同在一个权重文件里。 */
   | 'htdemucs-ft'
   // 本地文生图（§4.2）：Qwen-Image-2.1（文本编码器、DiT、VAE 与分词表同在一个 `image` 组件里）。
-  | 'qwen-image';
+  | 'qwen-image'
+  /** 本地音乐生成（§4.4）：YuE2 的 GGUF 权重（主模型、VAE 与分词表同在一个 `music` 组件里），由 audio.cpp 引擎执行，不交给 Model Worker。 */
+  | 'yue2';
 /**
  * `asr` / `vad` / `aligner` / `speaker` / `segmentation` / `tokenizer` 是识别的组件；`tts` / `codec` / `aux` 是语音合成的组件（§4.1）；
  * `separator` 是人声与伴奏分离的组件，`image` 是文生图的组件（§4.2）：两者都不与别的组件同在一个模型包里。
  */
 export type BundleComponent =
-  'asr' | 'vad' | 'aligner' | 'speaker' | 'segmentation' | 'tokenizer' | 'tts' | 'codec' | 'aux' | 'separator' | 'image';
+  | 'asr'
+  | 'vad'
+  | 'aligner'
+  | 'speaker'
+  | 'segmentation'
+  | 'tokenizer'
+  | 'tts'
+  | 'codec'
+  | 'aux'
+  | 'separator'
+  | 'image'
+  /** 音乐生成的组件（§4.4）：不与别的组件同在一个模型包里，也不交给 Model Worker（audio.cpp 引擎直接读它的目录）。 */
+  | 'music';
 export const SPEECH_COMPONENTS: readonly BundleComponent[] = ['tts', 'codec', 'aux'];
 
 export interface ModelFiles {
@@ -198,6 +212,11 @@ export interface SeparateRunParams {
 export const IMAGE_PNG_CONTRACT = 'baocut.image-png/v1';
 /** 文生图结果在 staging 里的文件名。 */
 export const IMAGE_OUTPUT_FILE = 'image.png';
+
+/** 音乐生成的输出约定（§4.4）：staging 里一个 WAV（模型的采样率、单声道或立体声、16 位或 32 位浮点）。 */
+export const MUSIC_WAV_CONTRACT = 'baocut.music-wav/v1';
+/** 音乐生成结果在 staging 里的文件名。 */
+export const MUSIC_OUTPUT_FILE = 'music.wav';
 
 /** `job.run`（capability `image`）的冻结参数（§2.5.3）。宽高是像素；`seed` 必给（Runtime 在提交时冻结），同一 seed 同一张图。 */
 export interface ImageRunOptions {

@@ -2,6 +2,8 @@ import type {
   ModelBackend,
   ModelCapability,
   ModelLicense,
+  MusicMode,
+  MusicPlanning,
   SpeechKnobRange,
   SpeechReadings,
   SpeechVoiceDescription,
@@ -9,6 +11,7 @@ import type {
 } from '@baocut/protocol';
 import { ModelsBundleRegistry as M } from '@baocut/protocol/messages/models/bundle-registry.ts';
 import { IMAGE_BUNDLES } from './image-bundles.ts';
+import { MUSIC_BUNDLES } from './music-bundles.ts';
 import { SPEECH_BUNDLES } from './speech-bundles.ts';
 import type { BundleComponent, ModelFamily } from './worker-contract.ts';
 
@@ -61,6 +64,8 @@ export interface BundleDefinition {
   speech?: SpeechBundleProfile;
   /** `image` 模型包的特性：`local` Provider 据此描述 `generateImage` 模型、资源调度据此计 Model Worker 的峰值。 */
   image?: ImageBundleProfile;
+  /** `music` 模型包的特性：`local` Provider 据此描述 `generateMusic` 模型、在提交时检查请求、资源调度据此计引擎进程的峰值。 */
+  music?: MusicBundleProfile;
   /**
    * 识别模型包用哪个「说话人区分」模型包（`capability: 'diarize'`，架构设计 §6.6）：它装好了，交给 Worker 的模型包带上它的组件
    * （`segmentation` 与 `speaker`），转写要说话人时识别完成后区分。没装时不带，要说话人只报 `diarization-unavailable`。
@@ -88,6 +93,44 @@ export interface ImageBundleProfile {
   /** candle 模型包按 Worker 报告的设备覆盖 `peakBytes`（键是设备，如 `cuda`）。没有的设备用 `peakBytes`。 */
   devicePeakBytes?: Readonly<Record<string, number>>;
   /** 在这台机器上一张要几分钟到十几分钟：界面提示耗时。 */
+  slow: boolean;
+}
+
+/**
+ * 一个本地音乐生成模型包能做什么（架构设计 §6.1、§6.3）。权重由 audio.cpp 引擎（`engine`，随应用分发或由 `BAOCUT_AUDIOCPP_CLI`
+ * 指定）直接读取，不经 Model Worker；一次一段、只出 WAV、接受 seed。
+ */
+export interface MusicBundleProfile {
+  family: string;
+  /** 引擎可执行文件名（不带后缀）。 */
+  engine: string;
+  /** 能做歌曲（有歌词）还是纯音乐，或两者。 */
+  modes: MusicMode[];
+  /** 风格描述与歌词的上限（Unicode 码点）。 */
+  maxStyleChars: number;
+  maxLyricsChars: number;
+  /** 一段最长几秒（引擎按语义帧率换算成 token 上限），与不指定时的时长。 */
+  maxDurationSec: number;
+  defaultDurationSec: number;
+  /** 引擎的语义 token 帧率（每秒几个 token）：`maxDurationSec` × 它 = 引擎的 `semantic_max_tokens`。 */
+  semanticTokensPerSec: number;
+  /** 输出的采样率。 */
+  sampleRate: number;
+  /** 编排（引擎的 `cot`）：先想整体结构再写（`full`）、只想旋律（`melody`）或不想（`off`）。 */
+  planning: { options: MusicPlanning[]; default: MusicPlanning };
+  /** 请求能给的扩散步数；`default` 是不指定时的步数（引擎用同一个默认值）。 */
+  steps: SpeechKnobRange;
+  /** 歌词支持的语言（BCP 47 主语言）；上游没有逐个核对过时 `unverified`。 */
+  lyricLanguages: string[] | 'unverified';
+  /** 引擎要的权重文件（相对仓库目录）：主模型与 VAE 的 GGUF。 */
+  files: { model: string; vae: string };
+  /**
+   * 引擎进程的峰值内存（字节）。上游只在一块 32 GB 的 NVIDIA 卡上实测过（Q8 主模型加 F16 VAE 约 8.9 GB 显存），没有在这个仓库
+   * 里重新测量：资源调度按它计，`peakEstimated` 标明是估计。
+   */
+  peakBytes: number;
+  peakEstimated: true;
+  /** 在这台机器上一段要几分钟：界面提示耗时。 */
   slow: boolean;
 }
 
@@ -538,11 +581,15 @@ export const BUNDLES: readonly BundleDefinition[] = [
   },
   ...SPEECH_BUNDLES,
   ...IMAGE_BUNDLES,
+  ...MUSIC_BUNDLES,
   HTDEMUCS_FT,
   onCandle(HTDEMUCS_FT, 'htdemucs-ft@candle'),
 ];
 
-/** backend 能不能在这台机器上用：`mlx` 与 `coreml` 只有 Apple Silicon 的 macOS；`candle` 与 `ggml` 全平台（CPU）。 */
+/**
+ * backend 能不能在这台机器上用：`mlx` 与 `coreml` 只有 Apple Silicon 的 macOS；`candle` 与 `ggml` 全平台（CPU）；`audio-cpp` 全平台
+ * （引擎按构建选 Metal、CUDA、Vulkan 或 CPU，引擎本身有没有另由目录的 `engineAvailable` 决定）。
+ */
 export function backendSupported(backend: ModelBackend, platform: NodeJS.Platform, arch: string): boolean {
   if (backend === 'mlx' || backend === 'coreml') return platform === 'darwin' && arch === 'arm64';
   return true;

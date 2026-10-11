@@ -14,11 +14,23 @@ export {
   type BundleComponentSource,
   type BundleDefinition,
   type ImageBundleProfile,
+  type MusicBundleProfile,
   type SpeechBundleProfile,
 } from './bundle-registry.ts';
 export { SPEECH_BUNDLES } from './speech-bundles.ts';
 export { IMAGE_BUNDLES, QWEN_IMAGE_ASPECTS } from './image-bundles.ts';
 export { imageRunOf, localImageModelInfo, localImageSeed } from './local-image.ts';
+export { AUDIO_CPP_ENGINE, MUSIC_BUNDLES, YUE2_SEMANTIC_TOKENS_PER_SEC } from './music-bundles.ts';
+export {
+  AUDIO_CPP_BACKEND_ENV,
+  AUDIO_CPP_CLI_ENV,
+  localMusicModelInfo,
+  localMusicSeed,
+  musicEngineRunOf,
+  semanticMaxTokens,
+  type MusicEngineRun,
+} from './local-music.ts';
+export { MUSIC_SELF_TEST, musicSelfTestParameters, musicSelfTestVerdict } from './music-self-test.ts';
 export { IMAGE_SELF_TEST, imageSelfTestParameters, imageSelfTestVerdict, inspectPng, type PngFacts } from './image-self-test.ts';
 export { MOSS_LANGUAGES, QWEN3_ASR_LANGUAGES, WHISPER_LANGUAGES, transcribeLanguages } from './asr-languages.ts';
 export {
@@ -115,9 +127,11 @@ export type {
 export {
   codePointLength,
   imageParameters,
+  musicParameters,
   speechParameters,
   type ImageParameters,
   type LocalSpeechFreeze,
+  type MusicParameters,
   type SpeechParameters,
 } from './generation-options.ts';
 export {

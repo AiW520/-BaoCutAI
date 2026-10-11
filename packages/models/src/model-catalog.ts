@@ -11,6 +11,7 @@ import type {
   ModelComponentStatus,
   ModelInstallProgress,
 } from '@baocut/protocol';
+import { ModelsLocalMusic as ML } from '@baocut/protocol/messages/models/local-music.ts';
 import { ModelsModelCatalog as M } from '@baocut/protocol/messages/models/model-catalog.ts';
 import {
   backendSupported,
@@ -62,6 +63,11 @@ export interface ModelCatalogOptions {
   arch?: string;
   /** 有没有 Model Worker 可执行文件。没有时已安装的模型包显示为 `error` / `worker-missing`。 */
   workerAvailable?: () => boolean;
+  /**
+   * 不经 Model Worker 的后端（`audio-cpp`）有没有它的引擎可执行文件。没有时已安装的模型包同样显示为 `error` / `worker-missing`，
+   * 说明里写的是引擎。不给时当作有。
+   */
+  engineAvailable?: (backend: ModelBackend) => boolean;
   /** 交给 Worker 的 CPU 线程数上限。默认取可用核数减二，至少 1、至多 8。 */
   threads?: number;
   /** 换掉内置的仓库清单（测试用）：暂停的安装据它报告总字节数。 */
@@ -147,6 +153,7 @@ export class ModelCatalog {
   readonly #platform: NodeJS.Platform;
   readonly #arch: string;
   readonly #workerAvailable: () => boolean;
+  readonly #engineAvailable: (backend: ModelBackend) => boolean;
   readonly #threads: number;
   readonly #runtime = new Map<string, RuntimeBundleState>();
   readonly #blocked = new Map<string, { state: 'not-installed' | 'error'; reason: ModelBundleReason; detail?: ModelText }>();
@@ -163,6 +170,7 @@ export class ModelCatalog {
     this.#arch = options.arch ?? process.arch;
     this.#bundles = new Map((options.bundles ?? platformBundles(this.#platform, this.#arch)).map((b) => [b.bundleId, b]));
     this.#workerAvailable = options.workerAvailable ?? (() => true);
+    this.#engineAvailable = options.engineAvailable ?? (() => true);
     this.#threads = options.threads ?? Math.max(1, Math.min(8, os.availableParallelism() - 2));
     this.#manifests = options.manifests ?? REPO_MANIFESTS;
   }
@@ -353,6 +361,17 @@ export class ModelCatalog {
     return { bytes, pool: def.backend === 'candle' && device !== 'cuda' ? 'memory' : 'gpuMemory' };
   }
 
+  /**
+   * 音乐生成模型包的引擎进程峰值、在哪个池里（架构设计 §6.5）：按模型包登记的估计峰值（`music.peakBytes`）。Apple Silicon 的
+   * 统一内存计在 GPU 内存（与 MLX 相同）；别的平台不知道引擎的构建用 CUDA、Vulkan 还是 CPU，保守地计在内存。不是音乐模型包时 null。
+   */
+  musicPeak(bundleId: string): WorkerFootprint | null {
+    const def = this.#bundles.get(bundleId);
+    if (!def?.music) return null;
+    const unified = this.#platform === 'darwin' && this.#arch === 'arm64';
+    return { bytes: def.music.peakBytes, pool: unified ? 'gpuMemory' : 'memory' };
+  }
+
   /** 这台机器上的默认转写模型包（Apple Silicon 是 MLX 的，别的平台是 candle 的）。 */
   defaultTranscribeBundle(): string {
     return defaultTranscribeBundle(this.#platform, this.#arch);
@@ -439,7 +458,9 @@ export class ModelCatalog {
     if (verified && !verified.ok) return make('not-installed', 'hash-mismatch', describeProblems(verified));
     const blocked = this.#blocked.get(bundleId);
     if (blocked) return make(blocked.state, blocked.reason, blocked.detail);
-    if (!this.#workerAvailable()) return make('error', 'worker-missing', M.workerMissing());
+    if (def.backend === 'audio-cpp') {
+      if (!this.#engineAvailable(def.backend)) return make('error', 'worker-missing', ML.engineMissing());
+    } else if (!this.#workerAvailable()) return make('error', 'worker-missing', M.workerMissing());
     const runtime = this.#runtime.get(bundleId);
     return make(runtime ?? 'installed');
   }
