@@ -293,6 +293,16 @@
       const el = first && listRef.current.querySelector(`[data-para="${first.id}"], [data-para^="${first.id}:"]`);
       if (el) el.scrollIntoView({block: 'start'});
     }, [ctx.proj.id]);
+    /* 「去文稿调整」/「调起止」（editor.jsx openCutEntry）：滚到片段前面那条剪缝，没有就落在片段第一句（SC.entryAnchor）。
+       写在上面那条之后，同一次挂载里它说了算；cutJumpSeen 让一次请求只滚一次，换 Tab 回来不再跳。 */
+    useEffect(() => {
+      if (!kept || !ctx.cutJump || ctx.cutJumpSeen.current === ctx.cutJump || !listRef.current) return;
+      ctx.cutJumpSeen.current = ctx.cutJump;
+      const a = SC.entryAnchor(ctx.paras, cueOf, kept, {shown: foldShown});
+      const el = a && (a.fold ? listRef.current.querySelector(`[data-fold="${a.fold}"]`)
+        : listRef.current.querySelector(`[data-para="${a.para}"], [data-para^="${a.para}:"]`));
+      if (el) el.scrollIntoView({block: 'start'});
+    }, [ctx.cutJump, ctx.cutMode]);
     /* 第 199 轮：改字态不显示已剪词。每段的显示文本 = 全文抠掉已生效剪口占的字；
        查找、就地编辑都读这一份，提交时 CUT.restoreHidden 把抠掉的段放回再摊回 cue。
        剪辑态仍读全文（CutText 自己划掉）。 */

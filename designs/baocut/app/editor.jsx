@@ -32,8 +32,10 @@
     /* ---- 编辑器自己的状态：不进全局 store（只有这一屏用） ---- */
     /* 音频转视频的本地项目落在 Elements（声波已选中，§9 a2v 行）；其余本地 / URL 项目落在文稿 */
     /* 落点过一遍表面（Web 没有 AI 工具 Tab，退回文稿；model-surface.js） */
-    const [localTab, setLocalTab] = useState(() => window.BC_SURFACE.landingTab(app.crop.sessions[projectId]?.open
-      || (shortsChild ? app.shortsCut.hasResult(projectId) : app.shortsCut.sessions[projectId]?.open) ? 'aitools' : initiallyEmpty ? 'video'
+    /* 子视频（§5.10）：URL 没带 Tab 就落在文稿、剪辑开关开着（SC.childLanding）；从结果页点卡进来带着 `tab=aitools`，停在结果页 */
+    const [localTab, setLocalTab] = useState(() => window.BC_SURFACE.landingTab(app.crop.sessions[projectId]?.open ? 'aitools'
+      : shortsChild ? SC.childLanding(null)
+      : app.shortsCut.sessions[projectId]?.open ? 'aitools' : initiallyEmpty ? 'video'
       : localMedia ? (localMedia.audio && proj.entry === 'a2v' ? 'elements' : 'transcript')
       : proj.origin === 'url' ? 'transcript' : setup.tab));
     const routeTab = D.rail.some(item => item.k === app.route.tab) ? window.BC_SURFACE.landingTab(app.route.tab) : null;
@@ -1025,6 +1027,15 @@
     const cropActive = tab === 'aitools' && cropSession?.open && cropSession.phase === 'review';
     /* ---- 剪成短视频（§5.10）：子视频打开时，来源视频那一轮的结果页亮这一支 ---- */
     useEffect(() => { if (shortsChild) app.shortsCut.focusChild(proj.id); }, [proj.id]);
+    /* 子视频进文稿调起止（横幅「去文稿调整」、结果卡「调起止」）：切到文稿、剪辑开关打开，
+       文稿面板挂上后滚到片段前面那条剪缝（panels.jsx 消费 cutJump，只消费一次） */
+    const [cutJump, setCutJump] = useState(0);
+    const cutJumpSeen = useRef(0);
+    const openCutEntry = useCallback(() => {
+      cutStore.setCutMode(true);
+      setTab('transcript'); setPaneView(null); setPaneHidden(false);
+      setCutJump(n => n + 1);
+    }, [setTab, cutStore.setCutMode]);
     const cropOutputs = app.crop.outputs[proj.id];
     useEffect(() => {
       if (!cropOutputs?.length) return;
@@ -1243,7 +1254,7 @@
         : null,
       cues, setCues: commitCues, paras, cueText, putCueText, translations, putTranslationDoc,
       cuts: cutStore.cuts, cutOps: cutStore.cutOps, cutMode: cutStore.cutMode, setCutMode: cutStore.setCutMode, outDuration,
-      tmap, composed: shortsChild,
+      tmap, composed: shortsChild, cutJump, cutJumpSeen, openCutEntry,
       cutSel: cutStore.cutSel, setCutSel, transImpact, fixCutTrans,
       subStyle, setSubStyle, restoreSubStyle, setSubTrack, applyPreset, stagePreset,
       subScope, setSubScope, curCue, setSubCue, clearSubCue,

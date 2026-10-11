@@ -4,7 +4,8 @@
    任务记录（app.tasks）是顶栏胶囊 / 后台任务页的唯一真相，这里只多记「参数与这一轮的几支」。
    会话挂在来源视频上（`sessions[来源 id]`）；从来源视频、任何一支子视频、会话里那支视频的卡片都回到同一页结果
    （product-design §5.10）。结果页只改标题（写回那一支）、不要哪一支就移入回收站（可撤销）；
-   起止不在这里调——打开那一支，在文稿里恢复或再剪，就是普通的视频编辑（§4.6）。 */
+   起止不在这里调——打开那一支，在文稿里恢复或再剪，就是普通的视频编辑（§4.6）；入口是子视频横幅的「去文稿调整」
+   与结果页「正在看」那张卡的「调起止」（editor.jsx openCutEntry）。 */
 (function () {
   const {useState, useRef, useCallback, useEffect} = React;
   const SC = window.BC_SHORTS_CUT;

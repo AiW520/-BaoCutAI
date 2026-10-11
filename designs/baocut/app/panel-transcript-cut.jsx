@@ -86,6 +86,8 @@
         <div className="cutbar__t">
           <b>拖选一段文字，按 ⌫ 剪掉</b>
           <span>{AI ? '剪掉的字划线保留，点它可以恢复；也可以让 AI 先把口癖和停顿找出来' : '剪掉的字划线保留，点它可以恢复'}</span>
+          {/* 子视频（§5.10）：片段外的话也是划掉的字 */}
+          {ctx.composed ? <span>{window.BC_SHORTS_CUT.CUT_ENTRY_COPY.hint}</span> : null}
         </div>
         {findBtn('找可剪的口')}
       </div>
@@ -242,7 +244,7 @@
     const more = fold.count > 0;
     const go = more ? onMore : onCollapse;
     return (
-      <div className={cx('cseam cseam--fold', fold.open && 'is-open')}>
+      <div className={cx('cseam cseam--fold', fold.open && 'is-open')} data-fold={fold.id}>
         <div className="cseam__hd" role="button" tabIndex={0} aria-expanded={fold.open}
           title={more ? `展开靠近片段的 ${fold.next} 句` : '收起划掉的句子'} onClick={go}
           onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); go(); } }}>

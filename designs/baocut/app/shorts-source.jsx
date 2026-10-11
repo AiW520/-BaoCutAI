@@ -43,12 +43,13 @@
     return o ? o.short : null;
   }
 
-  /** 子视频编辑器内容区顶上的一条（product-design §5.10）：它从哪部视频切出来、片段外的话怎么处理；
+  /** 子视频编辑器内容区顶上的一条（product-design §5.10）：它从哪部视频切出来、「去文稿调整」进文稿调起止；
       「回到原片」去来源视频，那一轮的结果页还在（App 有 AI 工具时摆到前面）。Web 没有结果页，只回来源视频。 */
   function ShortsChildBanner({ctx}) {
     const app = useApp();
     const proj = ctx.proj;
     if (!SC.isChild(proj)) return null;
+    const E = SC.CUT_ENTRY_COPY;
     const o = SC.originLabel(app.projects, proj);
     const parent = o && !o.missing ? o.parent : null;
     const back = () => {
@@ -63,8 +64,9 @@
         <Ic n="clip" className="ic--14" />
         <span className="ss-banner__t">
           {parent ? `从「${parent.title}」切出的短视频` : '切出的短视频 · 来源视频已不在视频库'}
-          <span className="ss-banner__sub"> · 片段外的话划掉保留，点一下可以恢复</span>
         </span>
+        {/* 起止在文稿里调（§4.6）：切到文稿、剪辑开关打开、滚到片段前面那条剪缝（editor.jsx openCutEntry）；普通编辑动作，Web 同样有 */}
+        {ctx.openCutEntry ? <Btn size="s" variant="secondary" title={E.adjustTip} onClick={ctx.openCutEntry}>{E.adjust}</Btn> : null}
         {parent ? <Btn size="s" variant="secondary" onClick={back}>回到原片</Btn> : null}
       </div>
     );

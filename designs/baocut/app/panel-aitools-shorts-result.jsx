@@ -1,7 +1,8 @@
 /* 剪成短视频（product-design §5.10）结果页：找到就已经创建好了，这一页是看结果、收拾结果的地方——
    每支一张卡：标题（点一下改名）、在原片里的起止与时长、开头那一句、为什么挑它、提醒。
    点卡片就在同一个编辑器里打开那一支（结果页还在右边、这张卡亮着），头上「第 k/N ‹ ›」逐支翻。
-   起止不在这里调：那一支打开后就是普通的视频编辑（§4.6）——片段外的话在文稿里划掉，点一下恢复，再剪就是普通的剪。
+   起止在文稿里调：那一支打开后就是普通的视频编辑（§4.6）——片段外的话在文稿里划掉，点一下恢复，再剪就是普通的剪；
+   「正在看」那张卡的「调起止」与子视频横幅的「去文稿调整」直接把人带到文稿里片段前面那条剪缝。
    「不要这支」移入回收站（toast 里可撤销）。这一页属于那一轮会话，挂在来源视频上：
    从来源视频、任何一支子视频、会话里那支视频的卡片都回到这里。 */
 (function () {
@@ -10,7 +11,7 @@
   const {TOOLS} = window.BC_AIFLOWS;
   const NAME = TOOLS.shortscut.name;
 
-  function MadeCard({c, n, s, host, flags, cur, onOpen}) {
+  function MadeCard({c, n, s, host, flags, cur, onOpen, onTrim}) {
     const app = useApp();
     const api = app.shortsCut;
     const [editing, setEditing] = useState(false);
@@ -41,6 +42,8 @@
         ) : null}
         <div className="sc-acts" onClick={(e) => e.stopPropagation()}>
           <span className="grow" />
+          {/* 「正在看」那一支：起止在文稿里调（§4.6），这里只给入口；其他卡点开就是看 */}
+          {cur && onTrim ? <Btn size="s" variant="secondary" title={SC.CUT_ENTRY_COPY.trimTip} onClick={onTrim}>{SC.CUT_ENTRY_COPY.trim}</Btn> : null}
           <Btn size="s" variant="quiet" onClick={() => api.remove(host, c.id)}>不要这支</Btn>
         </div>
       </div>
@@ -120,7 +123,7 @@
 
         <div className="sc-list">
           {live.map((c, i) => <MadeCard key={c.id} c={c} n={i + 1} s={s} host={hostId} flags={SC.flags(c, fctx)}
-            cur={inChild ? c.id === ctx.proj.id : false} onOpen={openChild} />)}
+            cur={inChild ? c.id === ctx.proj.id : false} onOpen={openChild} onTrim={ctx.openCutEntry} />)}
           {!live.length ? <div className="hint">这几支都移入回收站了。可以在 Space 的回收站里恢复，或者再切几支。</div> : null}
         </div>
 

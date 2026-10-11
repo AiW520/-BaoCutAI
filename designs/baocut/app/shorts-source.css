@@ -19,7 +19,6 @@
 .ss-banner { flex: none; display: flex; align-items: center; gap: 8px; min-height: 36px; margin: 10px 12px 0; padding: 6px 6px 6px 12px; border-radius: 8px; background: var(--gray-100); color: var(--gray-900); font-size: 12px; }
 .ss-banner > .ic { flex: none; color: var(--gray-600); }
 .ss-banner__t { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.ss-banner__sub { color: var(--gray-700); }
 
 /* 原片条：切出的短视频一组里每一支用到的区间 */
 .ss-bar { position: relative; height: 8px; border-radius: 4px; background: var(--gray-200); overflow: hidden; }

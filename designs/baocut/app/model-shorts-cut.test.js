@@ -586,3 +586,47 @@ test('childProject：候选带镜头时子视频记 `cut.shots`；保留原画�
   assert.equal(d.shots[0].start, d.start);
   assert.equal(d.shots[2].end, d.end);
 });
+
+test('子视频落点：URL 没带 Tab 落在文稿；结果页点卡带 tab=aitools 停在结果页', () => {
+  assert.equal(M.childLanding(null), 'transcript');
+  assert.equal(M.childLanding(undefined), 'transcript');
+  assert.equal(M.childLanding('aitools'), 'aitools');
+  assert.equal(M.childLanding('subtitle'), 'subtitle');
+});
+
+test('进文稿调起止的落点：片段前面有收起的剪缝就落在它，没有就落在片段第一句所在的段', () => {
+  const paras = [];
+  for (let i = 0; i < S.length; i += 4) paras.push({id: 'pa' + i, cueIds: S.slice(i, i + 4).map((c) => c.id)});
+  const byId = new Map(S.map((c) => [c.id, c]));
+  const cueOf = (id) => byId.get(id);
+  assert.deepEqual(M.entryAnchor(paras, cueOf, [{start: S[20].start, end: S[29].end}]), {fold: 'fold-g1'});
+  // 片段从第 1 句开始：前面没有剪缝，落在第一段
+  assert.deepEqual(M.entryAnchor(paras, cueOf, [{start: S[0].start, end: S[9].end}]), {para: 'pa0'});
+  // 片段前只有 NEAR 句以内：不收剪缝，落在片段第一句所在的段
+  assert.deepEqual(M.entryAnchor(paras, cueOf, [{start: S[2].start, end: S[9].end}]), {para: 'pa0'});
+  assert.deepEqual(M.entryAnchor(paras, cueOf, [{start: S[3].start, end: S[9].end}]), {para: 'pa0'});
+  // 前面多出 NEAR 句就收成剪缝，id 取那一截的第一句
+  assert.deepEqual(M.entryAnchor(paras, cueOf, [{start: S[6].start, end: S[9].end}]), {fold: 'fold-g1'});
+  assert.equal(M.entryAnchor(paras, cueOf, []), null);
+});
+
+test('入口文案与按钮：横幅给「去文稿调整」、结果页正在看那张卡给「调起止」、文稿提示卡追加一句', () => {
+  const fs = require('node:fs');
+  const path = require('node:path');
+  const read = (f) => fs.readFileSync(path.join(__dirname, f), 'utf8');
+  const E = M.CUT_ENTRY_COPY;
+  assert.equal(E.adjust, '去文稿调整');
+  assert.equal(E.trim, '调起止');
+  assert.equal(E.hint, '片段外的话已划掉，点一下放回来');
+  const banner = read('shorts-source.jsx');
+  assert.match(banner, /onClick=\{ctx\.openCutEntry\}>\{E\.adjust\}/);
+  assert.match(banner, /回到原片/);
+  assert.doesNotMatch(banner, /片段外的话划掉保留/);
+  const result = read('panel-aitools-shorts-result.jsx');
+  assert.match(result, /cur && onTrim \? <Btn[^>]*>\{SC\.CUT_ENTRY_COPY\.trim\}/);
+  assert.ok(result.indexOf('CUT_ENTRY_COPY.trim}') < result.indexOf('>不要这支<'), '「调起止」在「不要这支」左侧');
+  const tc = read('panel-transcript-cut.jsx');
+  assert.match(tc, /ctx\.composed \? <span>\{window\.BC_SHORTS_CUT\.CUT_ENTRY_COPY\.hint\}/);
+  assert.match(tc, /data-fold=\{fold\.id\}/);
+  assert.match(read('editor.jsx'), /shortsChild \? SC\.childLanding\(null\)/);
+});

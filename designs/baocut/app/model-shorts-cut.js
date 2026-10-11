@@ -675,6 +675,33 @@
     exportSkippedItem: (name, reason) => `「${name}」：${reason}`,
     exportSkippedSeparator: '；',
   };
+  /* ---------- 子视频进文稿调起止（product-design §5.10 / §4.6） ----------
+     起止就在文稿里调：片段外的话划掉保留，点一下放回来，再剪就是普通的剪。这里只给入口——
+     子视频横幅的「去文稿调整」、结果页「正在看」那张卡的「调起止」，两个按钮同一个动作：
+     切到文稿 Tab、剪辑开关打开、滚到片段前面那条剪缝（没有就落在片段第一句）。 */
+  const CUT_ENTRY_COPY = {
+    adjust: '去文稿调整',
+    adjustTip: '在文稿里放回片段外的话，或再剪掉几句',
+    trim: '调起止',
+    trimTip: '去文稿：放回片段外的话，或再剪掉几句',
+    hint: '片段外的话已划掉，点一下放回来',
+  };
+  /** 子视频打开时右栏落在哪：URL 带了 Tab 就听它（结果页点卡打开带 `tab=aitools`，留在结果页）；
+      没带——Space、会话里的视频卡、来源视频「切出的短视频」、直接输网址——落在文稿（剪辑开关缺省为开）。 */
+  function childLanding(routeTab) {
+    return routeTab || 'transcript';
+  }
+  /** 「去文稿调整」滚到哪：片段前面那条剪缝（`{fold: id}`）；片段前面没收起的话就落在片段第一句所在的段（`{para: id}`）。 */
+  function entryAnchor(paras, cueOf, kept, o) {
+    const k = kept || [];
+    if (!k.length) return null;
+    const rows = foldRows(paras, cueOf, k, o);
+    const before = rows.find((r) => r.kind === 'fold' && r.side === 'before');
+    if (before) return {fold: before.id};
+    const first = (paras || []).find((p) => (p.cueIds || []).some((id) => { const c = cueOf(id); return c && c.end > k[0].start + 0.02; }));
+    return first ? {para: first.id} : null;
+  }
+
   const keptSec = (p) => usedRanges(p).reduce((n, r) => n + (r.end - r.start), 0);
   /** 谁导、谁跳过：`kids` 是结果页上的几支子视频记录。 */
   function exportBatch(kids) {
@@ -705,6 +732,7 @@
     flags, visible, chosen, totalSec, resultHead, hookOf, tailOf, preselect,
     demoCandidates, manualCandidate,
     EXPORT_COPY, exportBatch, exportNotes,
+    CUT_ENTRY_COPY, childLanding, entryAnchor,
     childTitle, childProject,
     frameLine, summaryLine, agentExtra, taskTitle, stageAt, listStatus, openTracks,
     bar, rowWindow,
