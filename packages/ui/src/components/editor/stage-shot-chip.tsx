@@ -37,25 +37,56 @@ const chip = style({
 const GAP = 8;
 const CHIP_H = 40;
 
+/** 舞台的高与视频工具条（舞台像素；没有工具条时 null）。 */
+interface Room {
+  h: number;
+  bar: { top: number; h: number } | null;
+}
+
+/**
+ * 小牌的上沿：画面下沿外 8px，舞台放不下时贴着舞台底；视频工具条也翻到了画面下方、和小牌叠在一起时，小牌挪到工具条上面
+ * （压在画面下沿上，总比把工具条盖住好）。
+ */
+function chipTop(frame: FrameRect, room: Room | null): number {
+  const below = frame.top + frame.height + GAP;
+  if (!room) return below;
+  const top = Math.max(0, Math.min(below, room.h - CHIP_H));
+  const bar = room.bar;
+  if (!bar || bar.top < frame.top + frame.height / 2) return top;
+  const overlaps = top < bar.top + bar.h && bar.top < top + CHIP_H;
+  return overlaps ? Math.max(0, bar.top - CHIP_H) : top;
+}
+
 export function StageShotChip({ item, sequence, frame }: { item: PannableVideo; sequence: Sequence; frame: FrameRect }) {
   const { apply, undo } = useEditorActions();
   const ref = useRef<HTMLDivElement>(null);
-  const [areaH, setAreaH] = useState<number | null>(null);
+  const [room, setRoom] = useState<Room | null>(null);
+  // 量舞台高与视频工具条的位置：工具条贴着舞台顶放不下时也翻到画面下方，小牌要让开它。
   useLayoutEffect(() => {
-    const area = ref.current?.parentElement;
-    if (!area) return;
-    const measure = () => setAreaH(area.clientHeight);
+    const node = ref.current;
+    const area = node?.parentElement;
+    if (!node || !area) return;
+    const measure = () => {
+      const bar = [...area.children].find((child): child is HTMLElement => child !== node && child.getAttribute('role') === 'toolbar');
+      const next: Room = { h: area.clientHeight, bar: bar ? { top: bar.offsetTop, h: bar.offsetHeight } : null };
+      setRoom((old) => (old && old.h === next.h && old.bar?.top === next.bar?.top && old.bar?.h === next.bar?.h ? old : next));
+    };
     measure();
-    const observer = new ResizeObserver(measure);
-    observer.observe(area);
-    return () => observer.disconnect();
+    const resize = new ResizeObserver(measure);
+    resize.observe(area);
+    const moves = new MutationObserver(measure);
+    // 工具条量完自己才落位（改 style），后挂上来的也要接住：看整个舞台叠加层的增删与 style 变化，没变就不重渲染。
+    moves.observe(area, { childList: true, subtree: true, attributes: true, attributeFilter: ['style'] });
+    return () => {
+      resize.disconnect();
+      moves.disconnect();
+    };
   }, []);
 
   const pieces = framingPieces(sequence, item);
   const others = pieces.length - 1;
   const { from, to } = shotSeconds(item, sequence);
-  const below = frame.top + frame.height + GAP;
-  const top = areaH === null ? below : Math.max(0, Math.min(below, areaH - CHIP_H));
+  const top = chipTop(frame, room);
 
   const applyAll = () => {
     const operations = applyFramingToAll(sequence.id, item, pieces);
