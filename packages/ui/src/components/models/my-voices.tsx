@@ -46,6 +46,7 @@ import { useVoiceHandoff } from '../../state/voice-handoff-store.ts';
 import { useVoices } from '../../state/voices-store.ts';
 import { localSpeechModels } from '../../model/models-tts-local.ts';
 import { auditionBundle } from '../../model/tts-quick-test.ts';
+import { M } from '../settings/general-settings-copy.ts';
 import { TTS_LOCAL_COPY as TTS } from './tts-local-copy.ts';
 import { auditionHandle, cloneVoice, deleteVoice, exportVoice, importVoicePackage, loadVoice, removeClone } from './voice-actions.ts';
 import { VoiceDialog, type VoiceDialogMode } from './voice-dialog.tsx';
@@ -114,6 +115,7 @@ type Confirm =
  * 模型 › 语音合成 › 我的声音（设计稿 settings-voices.jsx:480-541）：用户库里的音色（`library` 主题经 voices-store）。
  * 从音频文件新建、导入导出音色包、编辑、删除、试听参考录音，以及在能克隆的云端引擎上建 / 删克隆。
  * 应用里录音与「从视频里分人取一段」还没有接上：入口置灰，原因写在旁边。
+ * 浏览器里没有这一页的数据：Web 白名单不含 `library.*`，订阅不了 `library` 主题，那里不写「加载中」，直接说浏览器里没有。
  */
 export function MyVoices() {
   const runtime = useRuntime();
@@ -280,7 +282,8 @@ export function MyVoices() {
   );
 
   let body;
-  if (!connected) body = <PageStatus>{COPY.offline}</PageStatus>;
+  if (host.platform === 'web') body = <PageStatus>{M.webUnavailable}</PageStatus>;
+  else if (!connected) body = <PageStatus>{COPY.offline}</PageStatus>;
   else if (!ready) body = <PageStatus>{COPY.loading}</PageStatus>;
   else if (!voices.length) {
     body = (

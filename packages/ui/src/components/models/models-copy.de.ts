@@ -172,6 +172,7 @@ export const de: ModelsMessages = {
     customTag: "Benutzerdefiniert",
     emptyProviders: "Noch keine Cloud-Anbieter für diese Kategorie. Ein benutzerdefinierter OpenAI-kompatibler Dienst kann hinzugefügt werden.",
     noCloud: "Diese Kategorie hat keine Cloud-Modelle.",
+    webNote: "Im Browser können Sie keine Anbieter verbinden, Schlüssel ändern, Anbieter oder Modelle hinzufügen, Kataloge aktualisieren oder das Standardmodell und seine Einstellungen ändern. Modelle testen können Sie weiterhin. Alles andere erledigen Sie in der BaoCut-Desktop-App.",
   },
 
   textParams: {

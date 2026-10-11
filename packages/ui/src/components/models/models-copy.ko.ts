@@ -164,6 +164,7 @@ export const ko: ModelsMessages = {
     customTag: '맞춤',
     emptyProviders: '이 분류에는 아직 클라우드 공급자가 없습니다. OpenAI 호환 맞춤 서비스를 추가할 수 있습니다.',
     noCloud: '이 분류에는 클라우드 모델이 없습니다.',
+    webNote: '브라우저에서는 공급자 연결, 키 변경, 공급자나 모델 추가, 카탈로그 새로 고침, 기본 모델과 설정 변경을 할 수 없습니다. 모델 테스트는 할 수 있습니다. 나머지는 BaoCut 데스크톱 앱에서 하세요.',
   },
   textParams: {
     effort: '추론 강도',

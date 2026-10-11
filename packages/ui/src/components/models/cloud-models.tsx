@@ -2,6 +2,7 @@ import { useState } from 'react';
 import type { ModelInfoBase, OnlineCapability } from '@baocut/protocol';
 import { Button, Header, Heading, Picker, PickerItem, PickerSection, Text, ToastQueue } from '@react-spectrum/s2';
 import AddIcon from '@react-spectrum/s2/icons/Add';
+import { style } from '@react-spectrum/s2/style' with { type: 'macro' };
 import { capabilityCategory, categoryCapability, cloudDefaultPicker, cloudProviders, refreshAfterKey, type DefaultOption } from '../../model/models-cloud.ts';
 import { probeFromJob, type ProbeState } from '../../model/models-probe.ts';
 import type { ModelCategory } from '../../model/settings-nav.ts';
@@ -23,7 +24,8 @@ import { TextParamRows } from './text-params.tsx';
 /**
  * 模型 › 云端模型（设计稿 settings-cloud.jsx:220-342）：标题与说明、默认模型（文本生成多两行：推理强度、并发请求数）、
  * 服务商列表（图像档第一张是 Codex CLI），以及密钥、自建服务商、添加模型、测试四个对话框。用途档由左栏的能力分类决定；
- * 音源分离、画面理解只有本地页，深链到云端页时如实说没有。
+ * 音源分离、画面理解只有本地页，深链到云端页时如实说没有。浏览器里只能看与测试：Web 白名单不含 `models.configure`、
+ * `models.setDefault` 等，默认模型、参数、密钥、刷新与添加都置灰，页头下写一句。
  */
 export function CloudModels({ category }: { category: ModelCategory }) {
   const capability = categoryCapability(category);
@@ -39,6 +41,7 @@ type DialogState =
   | null;
 
 const EMPTY_KEY = 'empty';
+const webNote = style({ marginTop: 0, marginBottom: 16, font: 'ui-sm', color: 'gray-800', overflowWrap: 'anywhere' });
 /** 分组的 id 与选项的 id 在同一个集合里，必须错开（分组 `none` 撞上「用本地模型」那一项的 `none` 会让整页崩掉）。 */
 const sectionId = (key: string) => `section:${key}`;
 
@@ -54,6 +57,7 @@ function pickerOption(item: DefaultOption) {
 
 function CloudCapability({ capability }: { capability: OnlineCapability }) {
   const runtime = useRuntime();
+  const web = runtime.host.platform === 'web';
   const view = useModels((s) => s.capabilities);
   const connected = useConnection((s) => s.state.status === 'connected');
   const jobs = useJobs((s) => s.jobs);
@@ -144,6 +148,7 @@ function CloudCapability({ capability }: { capability: OnlineCapability }) {
   return (
     <>
       <Lede first title={CLOUD_COPY.heading[capability]} desc={CLOUD_COPY.lede[capability]} />
+      {web ? <p className={webNote}>{CLOUD_COPY.webNote}</p> : null}
       <Card label={CLOUD_COPY.defaultLabel[capability]}>
         <SettingRow label={CLOUD_COPY.defaultLabel[capability]} desc={CLOUD_COPY.defaultDesc[capability]}>
           <Picker
@@ -153,7 +158,7 @@ function CloudCapability({ capability }: { capability: OnlineCapability }) {
             menuWidth={300}
             selectedKey={picker.selectedKey}
             disabledKeys={[EMPTY_KEY]}
-            isDisabled={busy || !connected}
+            isDisabled={web || busy || !connected}
             onSelectionChange={(key) => {
               if (key !== null && key !== picker.selectedKey && key !== EMPTY_KEY) void choose(String(key));
             }}>
@@ -185,7 +190,7 @@ function CloudCapability({ capability }: { capability: OnlineCapability }) {
         title={CLOUD_COPY.providers}
         desc={CLOUD_COPY.providersDesc + CLOUD_COPY.providersExtra[capability]}
         action={
-          <Button variant="secondary" size="S" isDisabled={!connected} onPress={() => setDialog({ kind: 'custom' })}>
+          <Button variant="secondary" size="S" isDisabled={web || !connected} onPress={() => setDialog({ kind: 'custom' })}>
             <AddIcon />
             <Text>{CLOUD_COPY.addCustom}</Text>
           </Button>

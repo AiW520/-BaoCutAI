@@ -148,6 +148,7 @@ export const tr: ModelsMessages = {
     customTag: "Özel",
     emptyProviders: "Bu kategori için henüz bulut sağlayıcısı yok. OpenAI uyumlu özel bir hizmet ekleyebilirsiniz.",
     noCloud: "Bu kategoride bulut modeli yok.",
+    webNote: "Tarayıcı sağlayıcı bağlayamaz, anahtar değiştiremez, sağlayıcı veya model ekleyemez, katalogları yenileyemez, varsayılan modeli ve ayarlarını değiştiremez. Modelleri yine de test edebilirsiniz. Gerisini BaoCut masaüstü uygulamasında yapın.",
   },
   textParams: {
     effort: "Çıkarım yoğunluğu",

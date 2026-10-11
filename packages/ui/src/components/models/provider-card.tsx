@@ -17,6 +17,7 @@ import { agoLabel } from '../../model/format.ts';
 import { CAPABILITY_SHORT, refreshKind, refreshLine, type CloudProviderCard, type RefreshLine } from '../../model/models-cloud.ts';
 import { probeSupported, probeVerdict, type ProbeState } from '../../model/models-probe.ts';
 import { textModelLine } from '../../model/models-text.ts';
+import { useRuntime } from '../../runtime/context.tsx';
 import { CLOUD_COPY } from './models-copy.ts';
 
 const card = style({
@@ -144,6 +145,7 @@ function headText(
  * 连上且这一档有模型时可展开，列出模型、判词、默认标签与「测试」。自建的在下面多一行「添加模型」，
  * 这一档还没有模型的自建服务商连上后直接展开（说明行写着「在下面添加」）。
  * 文本生成与语音合成档的卡头多一颗「刷新」（模型 / 音色目录）；没连接时置灰，任何一家在刷新时各家的刷新与密钥按钮都等着。
+ * 浏览器里只留「测试」：刷新、密钥与「添加模型」都要 Web 白名单之外的方法，置灰。
  */
 export function ProviderCard({
   card: provider,
@@ -174,6 +176,7 @@ export function ProviderCard({
   refreshBusy: boolean;
   onRefresh: () => void;
 }) {
+  const web = useRuntime().host.platform === 'web';
   const canOpen = provider.connected && provider.models.length > 0;
   const addRow = provider.custom;
   const isOpen = (canOpen && expanded) || (provider.connected && !provider.models.length && addRow);
@@ -227,14 +230,14 @@ export function ProviderCard({
                 isQuiet
                 size="S"
                 aria-label={provider.connected ? CLOUD_COPY.refresh[kind] : CLOUD_COPY.refreshNeedsKey(CLOUD_COPY.refresh[kind])}
-                isDisabled={!provider.connected || refreshBusy}
+                isDisabled={web || !provider.connected || refreshBusy}
                 onPress={onRefresh}>
                 <RefreshIcon />
               </ActionButton>
               <Tooltip>{CLOUD_COPY.refresh[kind]}</Tooltip>
             </TooltipTrigger>
           ) : null}
-          <Button variant="secondary" size="S" isDisabled={refreshBusy} onPress={onKey}>
+          <Button variant="secondary" size="S" isDisabled={web || refreshBusy} onPress={onKey}>
             {provider.connected ? CLOUD_COPY.manageKey : CLOUD_COPY.connect}
           </Button>
         </div>
@@ -266,7 +269,7 @@ export function ProviderCard({
           })}
           {addRow ? (
             <div className={modelRow}>
-              <ActionButton isQuiet size="S" onPress={onAddModel}>
+              <ActionButton isQuiet size="S" isDisabled={web} onPress={onAddModel}>
                 <AddIcon />
                 <Text>{CLOUD_COPY.addModel}</Text>
               </ActionButton>

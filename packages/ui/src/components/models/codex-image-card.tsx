@@ -75,9 +75,13 @@ const title = style({ font: 'ui', fontWeight: 'bold', color: 'gray-900' });
 const body = style({ marginTop: 2, marginBottom: 0, font: 'ui-xs', color: 'gray-600' });
 const controls = style({ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 });
 
-/** 图像生成云端页服务商列表的第一张：能开时给开关，不能开（没装、没登录、太旧）时给「去设置 › Agent」。关掉开关不清默认值。 */
+/**
+ * 图像生成云端页服务商列表的第一张：能开时给开关，不能开（没装、没登录、太旧）时给「去设置 › Agent」。关掉开关不清默认值。
+ * 浏览器里开关置灰（`models.configure` 不在 Web 白名单里），页头的说明已经写了原因。
+ */
 export function CodexImageCard({ codex, isDefault }: { codex: ReturnType<typeof useCodexImage>; isDefault: boolean }) {
   const runtime = useRuntime();
+  const web = runtime.host.platform === 'web';
   const go = useShell((s) => s.go);
   const [busy, setBusy] = useState(false);
   const { state, connected } = codex;
@@ -121,7 +125,7 @@ export function CodexImageCard({ codex, isDefault }: { codex: ReturnType<typeof 
             aria-label={CODEX_CARD_COPY.switchLabel}
             size="S"
             isSelected={state.enabled}
-            isDisabled={!connected || busy || state.checking || (!state.enabled && !state.canEnable)}
+            isDisabled={web || !connected || busy || state.checking || (!state.enabled && !state.canEnable)}
             onChange={(enabled) => void toggle(enabled)}
           />
         ) : (

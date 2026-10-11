@@ -173,6 +173,7 @@ export const ptBR: ModelsMessages = {
     customTag: "Personalizado",
     emptyProviders: "Sem provedores de nuvem nesta categoria. Adicione serviço compatível OpenAI personalizado.",
     noCloud: "Esta categoria não tem modelos de nuvem.",
+    webNote: "Um navegador não pode conectar provedores, trocar chaves, adicionar provedores ou modelos, atualizar catálogos nem alterar o modelo padrão e suas configurações. Você ainda pode testar modelos. Faça o resto no app para desktop do BaoCut.",
   },
 
   textParams: {

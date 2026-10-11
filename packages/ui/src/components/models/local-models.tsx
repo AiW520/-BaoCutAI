@@ -258,7 +258,7 @@ function LocalPage({ category, kind }: { category: ModelCategory; kind: LocalDef
   const noAuto = synth ? TTS : kind === 'image' ? IMAGE : kind === 'music' ? MUSIC : null;
   const desc = (
     noAuto
-      ? [noAuto.defaultDesc, picker.other ? noAuto.cloudDefault(picker.other) : null, picker.items.length ? null : noAuto.noInstalled]
+      ? [noAuto.defaultDesc, picker.other ? noAuto.cloudDefault(picker.other) : null, picker.items.length || web ? null : noAuto.noInstalled]
       : [
           kind === 'separate' ? LOCAL_COPY.separateDefaultDesc : LOCAL_COPY.defaultDesc,
           picker.selectedKey === 'auto' && picker.autoUses ? LOCAL_COPY.autoUses(picker.autoUses) : null,
@@ -322,7 +322,7 @@ function LocalPage({ category, kind }: { category: ModelCategory; kind: LocalDef
         </div>
         {groups.installed.length ? (
           <>
-            <p className={groupNote}>{checkCaption()}</p>
+            {web ? null : <p className={groupNote}>{checkCaption()}</p>}
             <Card>{groups.installed.map(row)}</Card>
           </>
         ) : (

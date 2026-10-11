@@ -21,10 +21,11 @@ const concurrencyField = style({ width: 112 });
 /**
  * 文本生成的两行参数（设计稿 settings-cloud.jsx:262-269）：「推理强度」分段与「并发请求数」。
  * 存在 Runtime 的能力参数里（`models.setCapabilityParameters`，架构设计 §6.8），新值经 `models` 主题送回；
- * 提交到主题送回之间先显示刚选的值，失败时退回并写原因。
+ * 提交到主题送回之间先显示刚选的值，失败时退回并写原因。浏览器里置灰（Web 白名单不含 `models.setCapabilityParameters`）。
  */
 export function TextParamRows({ view, connected }: { view: ModelCapabilitiesView; connected: boolean }) {
   const runtime = useRuntime();
+  const off = !connected || runtime.host.platform === 'web';
   const parameters = textParameters(view);
   const count = effortModelCount(view);
   const [effort, setEffort] = useState<EffortKey | null>(null);
@@ -55,7 +56,7 @@ export function TextParamRows({ view, connected }: { view: ModelCapabilitiesView
         <SegmentedControl
           aria-label={TEXT_PARAMS_COPY.effort}
           selectedKey={effort ?? effortKey(parameters.effort)}
-          isDisabled={!connected}
+          isDisabled={off}
           onSelectionChange={(key) => chooseEffort(String(key) as EffortKey)}>
           {EFFORT_CHOICES.map((choice) => (
             <SegmentedControlItem key={choice.key} id={choice.key}>
@@ -72,7 +73,7 @@ export function TextParamRows({ view, connected }: { view: ModelCapabilitiesView
           minValue={CONCURRENCY_MIN}
           maxValue={CONCURRENCY_MAX}
           step={1}
-          isDisabled={!connected}
+          isDisabled={off}
           value={concurrency ?? parameters.concurrency}
           onChange={changeConcurrency}
         />

@@ -158,6 +158,7 @@ export const zhHant: ModelsMessages = {
     customTag: '自訂',
     emptyProviders: '這個類別還沒有雲端供應商。你可以新增一個 OpenAI 相容的自訂服務。',
     noCloud: '這個類別沒有雲端模型。',
+    webNote: '瀏覽器中無法連接服務商、更換金鑰、新增服務商或模型、重新整理目錄，也無法變更預設模型與參數；仍可測試模型。其餘請在 BaoCut 桌面應用程式中操作。',
   },
   textParams: {
     effort: '推理強度',
