@@ -782,7 +782,11 @@ export class Harness {
    */
   async #settleGuests(): Promise<void> {
     const adopted = new Map<Id, Conversation>();
-    for (const state of this.#states.values()) {
+    // 那条会话没了时最早建的一条接过目录：按建立时间（同时的按 id）过，载入的先后不定。
+    const states = [...this.#states.values()].sort(
+      (a, b) => a.conversation.createdAt.localeCompare(b.conversation.createdAt) || a.id.localeCompare(b.id),
+    );
+    for (const state of states) {
       const ownerId = state.conversation.folderOf;
       if (!ownerId) continue;
       const owner = this.#states.get(ownerId)?.conversation ?? adopted.get(ownerId);

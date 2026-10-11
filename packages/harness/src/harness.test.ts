@@ -550,11 +550,13 @@ describe('无项目会话绑定项目', () => {
     harness = await open();
     await harness.migrateScratch();
 
-    const a = harness.getConversation(first.id).conversation;
-    expect(a).toMatchObject({ cwd: path.join(home.scratchDir, first.id), projectId: null });
+    // 最早建的那条接过目录（两条可能建在同一毫秒，那时按 id）。
+    const [heir, other] = [first, second].sort((x, y) => x.createdAt.localeCompare(y.createdAt) || x.id.localeCompare(y.id));
+    const a = harness.getConversation(heir!.id).conversation;
+    expect(a).toMatchObject({ cwd: path.join(home.scratchDir, heir!.id), projectId: null });
     expect(a.folderOf).toBeUndefined();
     expect(await exists(path.join(a.cwd, '访谈', 'video.db'))).toBe(true);
-    expect(harness.getConversation(second.id).conversation).toMatchObject({ cwd: a.cwd, folderOf: first.id });
+    expect(harness.getConversation(other!.id).conversation).toMatchObject({ cwd: a.cwd, folderOf: heir!.id });
     const b = harness.getConversation(boundGuest.id).conversation;
     expect(b).toMatchObject({ projectId: project.id, cwd: project.path });
     expect(b.folderOf).toBeUndefined();
