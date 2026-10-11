@@ -223,7 +223,6 @@
           </div>
         ) : null}
 
-        {!host.dir ? <div className="hint">这部视频不属于项目。交给 Agent 会先把它收进一个以视频命名的项目，再在那里新开会话。</div> : null}
         <window.ToolPrompt ctx={ctx} tool="shortscut" runner={runner} value={prompt} onChange={setPrompt} defaultText={defaultText}
           session={{k: 'new'}} hint={HINT} onStart={start} />
       </div>

@@ -18,8 +18,6 @@ export const ko: AiToolsMessages = {
   shortsSkipDoneOn: '이전 쇼츠가 쓴 구간은 다시 찾지 않습니다',
   shortsSkipDoneOff: '모두 찾습니다. 이미 만든 쇼츠와 겹칠 수 있습니다',
   shortsHint: '새 세션을 열어 그곳에서 구간을 찾고 영상을 만듭니다. 원본 영상과 타임라인은 그대로입니다.',
-  shortsLoose: '이 영상은 프로젝트에 속하지 않습니다. 영상이 있는 세션으로 보내지며, Agent가 먼저 영상 이름의 프로젝트로 옮긴 뒤 구간을 찾아 영상을 만듭니다.',
-  shortsLooseHint: '이 영상이 있는 세션으로 보내 그곳에서 구간을 찾고 영상을 만듭니다. 원본 영상과 타임라인은 그대로입니다.',
   back: '뒤로',
 
   // 设置态

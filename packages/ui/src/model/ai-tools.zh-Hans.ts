@@ -29,7 +29,6 @@ export const zhHans: AiToolsMessages = {
     lineFrame: (ratio, focus) => (ratio ? `画幅 ${ratio}，取景${focus}` : '画幅：保留原画幅，不裁'),
     lineSubtitles: (tracks, style) => `字幕：${tracks}，${style}`,
     lineSkipDone: '已经切过的不再找',
-    lineAdopt: '这部视频还不属于项目：先把它收进一个以视频命名的项目，再在那里创建短视频',
     lineDirect: '找好就直接创建成视频，不用先问我',
   },
   groups: {

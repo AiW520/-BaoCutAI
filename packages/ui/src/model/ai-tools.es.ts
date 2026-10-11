@@ -29,7 +29,6 @@ export const es: AiToolsMessages = {
     lineFrame: (ratio, focus) => (ratio ? `Relación de aspecto ${ratio}, encuadre ${focus}` : 'Relación de aspecto: mantener la original, sin recortar'),
     lineSubtitles: (tracks, style) => `Subtítulos: ${tracks}, ${style}`,
     lineSkipDone: 'Omite las partes que ya se cortaron en vídeos cortos',
-    lineAdopt: 'Este vídeo aún no está en un proyecto: primero muévelo a un proyecto nuevo con el nombre del vídeo y crea ahí los vídeos cortos',
     lineDirect: 'Crea los vídeos en cuanto los encuentres; no hace falta preguntarme antes',
   },
  groups: { frame: 'Encuadre', transcript: 'Transcripción', translate: 'Traducción', writing: 'Escritura', publish: 'Publicación', sound: 'Sonido' },

@@ -18,8 +18,6 @@ export const zhHans: AiToolsMessages = {
   shortsSkipDoneOn: '跳过之前几支用到的区间',
   shortsSkipDoneOff: '照找，可能和切过的几支重叠',
   shortsHint: '新开一条会话，在那里找片段并创建视频；原视频和时间轴不动。',
-  shortsLoose: '这部视频不属于项目。交给 Agent 会发到它所在的会话，先把它收进一个以视频命名的项目，再找片段并创建视频。',
-  shortsLooseHint: '发到这部视频所在的会话，在那里找片段并创建视频；原视频和时间轴不动。',
   back: '返回',
 
   // 设置态

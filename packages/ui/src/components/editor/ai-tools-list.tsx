@@ -264,7 +264,7 @@ function AgentCard({ guide }: { guide: GateGuide | null }) {
   const open = () => {
     const shell = useShell.getState();
     const target = routeVideo(shell.route);
-    // 项目里的视频：项目的新会话起始页，视频作为功能区的标签留在右边；不属于项目的：它所在的那条会话（新会话看不到它的目录）。
+    // 项目里的视频：项目的新会话起始页，视频作为功能区的标签留在右边；不属于项目的：它所在的那条会话（起始页新建的会话不与它共用工作目录）。
     const from = inProject ? { conversationId: null, projectId: source!.projectId } : { conversationId: source?.conversationId ?? null, projectId: null };
     if (target) shell.openPane({ kind: 'video', target }, from);
     else shell.go({ tab: 'home', ...from });

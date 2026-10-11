@@ -18,8 +18,6 @@ export const de: AiToolsMessages = {
   shortsSkipDoneOn: 'Sucht nicht erneut in Bereichen, die frühere Kurzvideos verwendet haben',
   shortsSkipDoneOff: 'Sucht überall; kann sich mit bereits geschnittenen überschneiden',
   shortsHint: 'Startet eine neue Sitzung, die die Abschnitte findet und die Videos erstellt; das ursprüngliche Video und seine Timeline bleiben unverändert.',
-  shortsLoose: 'Dieses Video gehört zu keinem Projekt. Es geht an die Sitzung, zu der es gehört; dort verschiebt der Agent es zuerst in ein Projekt mit dem Namen des Videos und findet dann die Abschnitte und erstellt die Videos.',
-  shortsLooseHint: 'Sendet an die Sitzung, zu der dieses Video gehört; dort werden die Abschnitte gefunden und die Videos erstellt. Das ursprüngliche Video und seine Timeline bleiben unverändert.',
   back: "Zurück",
 
   who: "Verwenden",

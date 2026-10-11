@@ -18,8 +18,6 @@ export const ptBR: AiToolsMessages = {
   shortsSkipDoneOn: 'Não procura de novo nos trechos usados pelos vídeos curtos anteriores',
   shortsSkipDoneOff: 'Procura em tudo; pode coincidir com os já cortados',
   shortsHint: 'Abre uma sessão nova para encontrar os trechos e criar os vídeos; o vídeo original e sua linha do tempo não mudam.',
-  shortsLoose: 'Este vídeo não está em um projeto. Ele vai para a sessão a que pertence, onde o agente primeiro o move para um projeto com o nome do vídeo e depois encontra os trechos e cria os vídeos.',
-  shortsLooseHint: 'Envia para a sessão a que este vídeo pertence, que encontra os trechos e cria os vídeos; o vídeo original e sua linha do tempo não mudam.',
   back: "Voltar",
 
   who: "Usar",

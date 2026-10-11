@@ -18,8 +18,6 @@ export const vi: AiToolsMessages = {
   shortsSkipDoneOn: 'Không tìm lại trong các khoảng mà video ngắn trước đã dùng',
   shortsSkipDoneOff: 'Tìm khắp nơi; có thể trùng với các video đã cắt',
   shortsHint: 'Mở một phiên mới để tìm các đoạn và tạo video; video gốc và dòng thời gian giữ nguyên.',
-  shortsLoose: 'Video này không thuộc dự án nào. Nó sẽ được gửi tới phiên mà nó thuộc về; ở đó Agent trước hết chuyển nó vào một dự án đặt theo tên video, rồi tìm các đoạn và tạo video.',
-  shortsLooseHint: 'Gửi tới phiên mà video này thuộc về, nơi tìm các đoạn và tạo video; video gốc và dòng thời gian giữ nguyên.',
   back: 'Trở lại',
   // 设置态
   who: 'Dùng', whoAgent: 'Giao cho Agent', whoModel: 'Gọi mô hình trực tiếp', whoModelSub: 'Runtime chưa có quy trình này nên chỉ Agent thực hiện được', scope: 'Phạm vi', scopeAll: 'Toàn bộ video', scopeChapter: (index, label) => `Chương ${index} · ${label}`, scopeNoChapters: 'Dòng thời gian chưa có chương nên chỉ có toàn bộ video', cta: 'Giao cho Agent', queued: 'Agent bận · thông điệp xếp hàng và gửi khi lượt này kết thúc', noConversation: 'Video này không trong dự án hoặc phiên nên không giao cho Agent được.', createFailed: (message) => `Không tạo được phiên: ${message}`,

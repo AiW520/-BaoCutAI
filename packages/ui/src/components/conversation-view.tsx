@@ -52,7 +52,8 @@ export function ConversationView({ conversationId, autoFocus = true }: { convers
   const items = useTimelineItems(conversationId);
   const loaded = useTimelineLoaded(conversationId);
   const go = useShell((s) => s.go);
-  const editor = useEditorReference({ conversationId, projectId: meta?.projectId ?? null });
+  // 与另一条会话共用工作目录的，来源按那条会话认（架构设计 §3.10）。
+  const editor = useEditorReference({ conversationId: meta?.folderOf ?? conversationId, projectId: meta?.projectId ?? null });
   const slideAnnotations = useDraftSlideAnnotationList(conversationId);
   const designAnnotations = useDraftDesignAnnotationList(conversationId);
   const systemAnnotations = useDraftDesignSystemAnnotationList(conversationId);
@@ -132,7 +133,7 @@ export function ConversationView({ conversationId, autoFocus = true }: { convers
           items={items}
           conversationId={conversationId}
           running={busy}
-          empty={<ThreadEmpty conversationId={conversationId} projectId={meta.projectId} />}
+          empty={<ThreadEmpty conversationId={conversationId} projectId={meta.projectId} folderOf={meta.folderOf} />}
         />
       ) : (
         <div className={centered}>

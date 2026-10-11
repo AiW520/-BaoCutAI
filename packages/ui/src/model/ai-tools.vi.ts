@@ -29,7 +29,6 @@ export const vi: AiToolsMessages = {
     lineFrame: (ratio, focus) => (ratio ? `Tỷ lệ khung hình ${ratio}, khung ${focus}` : 'Tỷ lệ khung hình: giữ nguyên bản gốc, không cắt'),
     lineSubtitles: (tracks, style) => `Phụ đề: ${tracks}, ${style}`,
     lineSkipDone: 'Bỏ qua những phần đã cắt thành video ngắn',
-    lineAdopt: 'Video này chưa thuộc dự án nào: trước hết chuyển nó vào một dự án mới đặt theo tên video, rồi tạo các video ngắn ở đó',
     lineDirect: 'Tìm được là tạo video luôn, không cần hỏi tôi trước',
   },
   groups: {

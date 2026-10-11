@@ -18,8 +18,6 @@ export const fr: AiToolsMessages = {
   shortsSkipDoneOn: 'Ne cherche plus dans les plages utilisées par les vidéos courtes précédentes',
   shortsSkipDoneOff: 'Cherche partout ; peut chevaucher les vidéos déjà découpées',
   shortsHint: 'Ouvre une nouvelle session pour trouver les segments et créer les vidéos ; la vidéo d’origine et sa timeline restent telles quelles.',
-  shortsLoose: 'Cette vidéo n’est pas dans un projet. Elle est envoyée à la session à laquelle elle appartient, où l’Agent la déplace d’abord dans un projet au nom de la vidéo, puis trouve les segments et crée les vidéos.',
-  shortsLooseHint: 'Envoie à la session à laquelle appartient cette vidéo, qui trouve les segments et crée les vidéos ; la vidéo d’origine et sa timeline restent telles quelles.',
   back: "Retour",
 
   who: "Choisir",

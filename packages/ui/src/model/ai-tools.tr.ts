@@ -29,7 +29,6 @@ export const tr: AiToolsMessages = {
     lineFrame: (ratio, focus) => (ratio ? `En boy oranı ${ratio}, çerçeve ${focus}` : 'En boy oranı: orijinali koru, kırpma'),
     lineSubtitles: (tracks, style) => `Altyazı: ${tracks}, ${style}`,
     lineSkipDone: 'Daha önce kısa videoya kesilmiş bölümleri atla',
-    lineAdopt: 'Bu video henüz bir projede değil: önce onu videonun adını taşıyan yeni bir projeye taşı, sonra kısa videoları orada oluştur',
     lineDirect: 'Bulduğun anda videoları oluştur; önce bana sormana gerek yok',
   },
   groups: {

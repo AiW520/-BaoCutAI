@@ -19,8 +19,6 @@ export const pl: AiToolsMessages = {
   shortsSkipDoneOn: 'Nie szuka ponownie w zakresach użytych przez wcześniejsze krótkie filmy',
   shortsSkipDoneOff: 'Szuka wszędzie; może pokrywać się z już pociętymi',
   shortsHint: 'Otwiera nową sesję, która znajduje fragmenty i tworzy filmy; oryginalne wideo i jego oś czasu pozostają bez zmian.',
-  shortsLoose: 'To wideo nie należy do projektu. Trafi do sesji, do której należy: tam agent najpierw przeniesie je do projektu nazwanego jak wideo, potem znajdzie fragmenty i utworzy filmy.',
-  shortsLooseHint: 'Wysyła do sesji, do której należy to wideo: tam znajdowane są fragmenty i tworzone filmy; oryginalne wideo i jego oś czasu pozostają bez zmian.',
   back: "Wstecz",
 
   who: "Wybierz",

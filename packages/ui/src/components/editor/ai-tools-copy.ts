@@ -79,8 +79,6 @@ const en = {
   shortsSkipDoneOn: 'Doesn’t look again in ranges that earlier shorts used',
   shortsSkipDoneOff: 'Looks everywhere; may overlap shorts already cut',
   shortsHint: 'Starts a new session to find the segments and create the videos; the original video and its timeline stay as they are.',
-  shortsLoose: 'This video isn’t in a project. It goes to the session it belongs to, where the Agent first moves it into a project named after the video, then finds the segments and creates the videos.',
-  shortsLooseHint: 'Sends to the session this video belongs to, which finds the segments and creates the videos; the original video and its timeline stay as they are.',
 
   // 还做不了的
   soon: 'Coming soon',

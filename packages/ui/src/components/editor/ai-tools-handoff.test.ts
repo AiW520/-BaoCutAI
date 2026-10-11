@@ -58,21 +58,23 @@ describe('交给 Agent：挂着的几个 skill 一起发', () => {
   });
 });
 
-/** 假的会话：`conversations.create` 回一条新会话，`conversations.send` 记下参数。 */
+/** 假的会话：`conversations.create` 回一条新会话，`conversations.send` 记下参数；`seen` 是每个方法最近一次的参数。 */
 function handoffRuntime() {
   const calls: string[] = [];
+  const seen: Record<string, Record<string, unknown>> = {};
   const runtime = Object.create(RuntimeSession.prototype) as RuntimeSession;
   Object.assign(runtime, {
     client: {
       request: async (method: string, params: Record<string, unknown>) => {
         calls.push(method);
+        seen[method] = params;
         if (method === 'conversations.create') return { conversation: { id: 'c-new', projectId: params.projectId } };
         if (method === 'conversations.send') return { taskId: 'task-1' };
         throw new Error(`没想到会调 ${method}`);
       },
     },
   });
-  return { runtime, calls };
+  return { runtime, calls, seen };
 }
 
 describe('交给 Agent：那条会话打开到眼前', () => {
@@ -116,6 +118,16 @@ describe('交给 Agent：那条会话打开到眼前', () => {
     expect(calls).toEqual(['conversations.send']);
     expect(useShell.getState().route).toMatchObject({ tab: 'home', conversationId: 'c-old' });
     expect(conversationVisible(useShell.getState(), 'c-old')).toBe(true);
+  });
+
+  it('不属于项目的视频：新会话不属于项目，与视频所在的那条会话共用工作目录，不建项目', async () => {
+    useDirectory.setState({ conversations: [{ id: 'c-loose', projectId: null }] as never });
+    useShell.setState({ route: { tab: 'space', category: 'all', projectId: null, video: target } as unknown as Route });
+    const { runtime, calls, seen } = handoffRuntime();
+    const loose = { ...video, source: { projectId: null, conversationId: 'c-loose' } };
+    expect(await handToAgent(runtime, { ...request, video: loose })).toMatchObject({ conversationId: 'c-new', taskId: 'task-1' });
+    expect(calls).toEqual(['conversations.create', 'conversations.send']);
+    expect(seen['conversations.create']).toMatchObject({ projectId: null, folderOf: 'c-loose' });
   });
 });
 

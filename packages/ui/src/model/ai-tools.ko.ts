@@ -29,7 +29,6 @@ export const ko: AiToolsMessages = {
     lineFrame: (ratio, focus) => (ratio ? `화면 비율 ${ratio}, 프레이밍: ${focus}` : '화면 비율: 원본 유지, 자르지 않기'),
     lineSubtitles: (tracks, style) => `자막: ${tracks}, ${style}`,
     lineSkipDone: '이미 잘라 낸 부분은 다시 찾지 않기',
-    lineAdopt: '이 영상은 아직 프로젝트에 속하지 않음: 먼저 영상 이름으로 새 프로젝트를 만들어 옮긴 뒤, 거기서 쇼츠 만들기',
     lineDirect: '찾으면 바로 영상으로 만들기, 먼저 묻지 않아도 됨',
   },
   groups: {

@@ -34,7 +34,6 @@ export const fr: AiToolsMessages = {
     lineFrame: (ratio, focus) => (ratio ? `Format ${ratio}, cadrage ${focus}` : 'Format : garder l’original, sans recadrer'),
     lineSubtitles: (tracks, style) => `Sous-titres : ${tracks}, ${style}`,
     lineSkipDone: 'Ignorez les passages déjà découpés en vidéos courtes',
-    lineAdopt: 'Cette vidéo n’est pas encore dans un projet : déplacez-la d’abord dans un nouveau projet au nom de la vidéo, puis créez-y les vidéos courtes',
     lineDirect: 'Créez les vidéos dès qu’elles sont trouvées ; inutile de me demander avant',
   },
   groups: {

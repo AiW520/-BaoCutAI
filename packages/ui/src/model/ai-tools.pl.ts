@@ -32,7 +32,6 @@ export const pl: AiToolsMessages = {
     lineFrame: (ratio, focus) => (ratio ? `Proporcje ${ratio}, kadr ${focus}` : 'Proporcje: zachowaj oryginalne, bez przycinania'),
     lineSubtitles: (tracks, style) => `Napisy: ${tracks}, ${style}`,
     lineSkipDone: 'Pomiń fragmenty już pocięte na krótkie filmy',
-    lineAdopt: 'To wideo nie należy jeszcze do projektu: najpierw przenieś je do nowego projektu nazwanego jak wideo, a potem utwórz tam krótkie filmy',
     lineDirect: 'Twórz filmy od razu, gdy je znajdziesz; nie musisz mnie najpierw pytać',
   },
   groups: {

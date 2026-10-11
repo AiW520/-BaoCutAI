@@ -86,7 +86,8 @@ export function useToolHandoff(): ToolHandoff {
   const messages = items ? messageCount(items) : null;
   const locked = !!items?.some((i) => i.kind === 'task');
   const { options, fallback } = sessionOptions({
-    canCreate: !!source?.projectId,
+    // 不属于项目的视频：新会话与它所在的那条会话共用工作目录（架构设计 §3.10），那条会话要还在。
+    canCreate: !!source?.projectId || (!!source?.conversationId && conversations.some((c) => c.id === source.conversationId)),
     current: candidate ? { id: candidate.id, title: candidate.title, messages } : null,
   });
   const [picked, setPicked] = useState<SessionOption['key'] | null>(null);

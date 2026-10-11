@@ -38,7 +38,6 @@ const body = style({ flexGrow: 1, minHeight: 0, overflowY: 'auto', paddingX: 12,
 const secHead = style({ marginTop: 20, marginBottom: 0, font: 'detail', fontWeight: 'bold', color: 'gray-700' });
 const rows = style({ display: 'flex', flexDirection: 'column', gap: 12, marginTop: 12 });
 const hint = style({ margin: 0, font: 'ui-xs', color: 'gray-600', lineHeight: '[1.5]' });
-const note = style({ marginTop: 16, marginBottom: 0, font: 'ui-xs', color: 'gray-700', lineHeight: '[1.5]' });
 const field = style({ width: 'full' });
 const pair = style({ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' });
 const radioSub = style({ display: 'block', paddingStart: 24, marginTop: -2, marginBottom: 4, font: 'ui-xs', color: 'gray-600' });
@@ -50,7 +49,7 @@ const radioSub = style({ display: 'block', paddingStart: 24, marginTop: -2, marg
  * 字幕（带哪几轨、样式），提示词框（意图句加一行一句的参数，最后一行
  * 「找好就直接创建」可以单独删），主按钮与去向。按下就新开会话发出去，那条会话打开到眼前，工具页回列表；这一轮记下来（`recordShortsRun`），
  * 跑完、切出了子视频时这部视频的 AI 工具 Tab 翻到结果页（ai-tools-shorts-result.tsx）。
- * 视频不属于项目时没有可新开会话的项目：发到它所在的那条会话，提示词里多一行先收进以视频命名的项目（Runtime 没有给界面用的收进项目的命令）。
+ * 视频不属于项目时同样新开会话：新会话与视频所在的那条会话共用工作目录（`planHandoff` 的 `folderOf`），不建项目，子视频建在原视频旁边。
  */
 export function ShortsToolPage({
   videoId,
@@ -68,9 +67,6 @@ export function ShortsToolPage({
 }) {
   const handoff = useToolHandoff();
   const info = aiTool('shortscut');
-  const source = handoff.ref?.source ?? null;
-  const inProject = !!source?.projectId;
-  const target = inProject ? 'new' : source?.conversationId ? { id: source.conversationId } : undefined;
 
   const chapters = useMemo(() => chapterPieces(sequence), [sequence]);
   const [scopeKey, setScopeKey] = useState<string>('all');
@@ -84,7 +80,7 @@ export function ShortsToolPage({
   const autoHint = shortsAutoHint(s);
 
   const intent = intentPrompt({ tool: 'shortscut', title: handoff.ref?.name ?? null, scope });
-  const template = toolTemplate('shortscut', intent, { lines: shortsLines(s, { hasTranslation, inProject }) });
+  const template = toolTemplate('shortscut', intent, { lines: shortsLines(s, { hasTranslation }) });
 
   return (
     <>
@@ -242,7 +238,6 @@ export function ShortsToolPage({
           </RadioGroup>
         </div>
 
-        {!inProject && source?.conversationId ? <p className={note}>{C.shortsLoose}</p> : null}
         {handoff.guide ? <AgentGateLine guide={handoff.guide} /> : null}
         <AiToolPrompt
           key="shortscut"
@@ -254,8 +249,8 @@ export function ShortsToolPage({
           onSent={(sent) =>
             recordShortsRun({ conversationId: sent.conversationId, parentVideoId: videoId, taskId: sent.taskId, handedAt: sent.handedAt })
           }
-          {...(target ? { target } : {})}
-          hint={inProject ? C.shortsHint : C.shortsLooseHint}
+          target="new"
+          hint={C.shortsHint}
         />
       </div>
     </>

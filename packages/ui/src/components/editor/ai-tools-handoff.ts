@@ -129,11 +129,13 @@ export async function handToAgent(runtime: RuntimeSession, request: HandoffReque
   const shell = useShell.getState();
   const shown = routeVideo(shell.route);
   const floating = shell.route.tab === 'space' && shown ? targetKey(shown) : null;
-  const scope = { projectId: source?.projectId ?? null };
+  // 编辑器上下文按视频自己的来源认：所属项目，或它所在的那条无项目会话（新会话、接着的那条都与它共用工作目录）。
+  const scope = { projectId: source?.projectId ?? null, conversationId: source?.conversationId ?? null };
   let conversationId: Id;
   if (plan.kind === 'create') {
     try {
-      conversationId = (await runtime.createConversation(plan.projectId, create ?? {})).id;
+      const folderOf = plan.projectId === null ? { folderOf: plan.folderOf } : {};
+      conversationId = (await runtime.createConversation(plan.projectId, { ...create, ...folderOf })).id;
       // 选过的访问模式同时记成新会话的默认（同悬浮会话）。
       if (create?.accessMode) void setDefaultAccessMode(runtime, create.accessMode).catch(() => {});
     } catch (error) {
@@ -142,7 +144,7 @@ export async function handToAgent(runtime: RuntimeSession, request: HandoffReque
     }
   } else conversationId = plan.conversationId;
   // 编辑器此刻的状态：版本、选区与播放头是按下按钮那一刻的。
-  const context = captureEditorContext({ ...scope, conversationId });
+  const context = captureEditorContext(scope);
 
   // 悬浮会话记着这一条：最小化的图标按它亮状态点。
   if (floating) useShell.getState().setVideoChat(floating, conversationId);

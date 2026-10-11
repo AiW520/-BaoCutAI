@@ -298,7 +298,6 @@ const en = {
     lineFrame: (ratio: string | null, focus: string) => (ratio ? `Aspect ratio ${ratio}, framing ${focus}` : 'Aspect ratio: keep the original, no cropping'),
     lineSubtitles: (tracks: string, style: string) => `Subtitles: ${tracks}, ${style}`,
     lineSkipDone: 'Skip the parts already cut into shorts',
-    lineAdopt: 'This video isn’t in a project yet: first move it into a new project named after the video, then create the shorts there',
     lineDirect: 'Create the videos as soon as they’re found; no need to ask me first',
   },
   coverText: {
@@ -689,10 +688,10 @@ export function shortsAutoHint(s: Pick<ShortsSettings, 'count' | 'length'>): str
 
 /**
  * 设置态折成提示词里的参数行（原型 model-shorts-cut.js `agentExtra`），一行一句：几支、多长（自动的一半交给 Agent 按话题定）、画幅与取景、字幕，
- * 勾着「已经切过的不再找」时一句；视频不属于项目时先收进项目（`inProject: false`）；最后一行「找好就直接创建」，可以单独删掉。
+ * 勾着「已经切过的不再找」时一句；最后一行「找好就直接创建」，可以单独删掉。
  * 「跟着说话的人」这一版不开放，落回自动；没有译文时字幕只有原文。
  */
-export function shortsLines(s: ShortsSettings, o: { hasTranslation: boolean; inProject: boolean }): string[] {
+export function shortsLines(s: ShortsSettings, o: { hasTranslation: boolean }): string[] {
   const count = clampShortsCount(s.count);
   const len = shortsLengthRange(s);
   const focus = s.focus === 'manual' ? 'manual' : 'auto';
@@ -703,7 +702,6 @@ export function shortsLines(s: ShortsSettings, o: { hasTranslation: boolean; inP
     M.shorts.lineSubtitles(M.shorts.tracks[tracks], M.shorts.styles[s.style].label),
   ];
   if (s.skipDone) out.push(M.shorts.lineSkipDone);
-  if (!o.inProject) out.push(M.shorts.lineAdopt);
   out.push(M.shorts.lineDirect);
   return out;
 }
@@ -859,7 +857,8 @@ export interface SessionOption {
 
 /**
  * 交给 Agent 时发到哪条会话（原型 `sessionOptions`）：缺省新会话、这部视频作为上下文；这部视频有一条说过话的会话时才给「接着」，
- * 标上已有几条消息（还没取到时不写数）。视频不属于项目时新会话看不到它，只能接着它所在的那条会话。
+ * 标上已有几条消息（还没取到时不写数）。视频不属于项目时新会话与它所在的那条会话共用工作目录（`folderOf`），同样看得到它；
+ * 视频还没有位置（`canCreate: false`）时只能接着。
  */
 export function sessionOptions(input: {
   canCreate: boolean;

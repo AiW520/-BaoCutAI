@@ -10,6 +10,8 @@ export interface HandoffSource {
 export interface HandoffConversation {
   id: Id;
   projectId: Id | null;
+  /** 共用另一条会话工作目录的会话：那条会话的 id。 */
+  folderOf?: Id;
   title: string;
   archived: boolean;
   updatedAt: string;
@@ -19,9 +21,9 @@ export interface HandoffConversation {
  * 「会话」行的「接着这个视频当前的会话」指哪一条（原型 model-ai-prompt.js `sessionOptions`：这个项目里最近的那条）：
  *
  * 1. 当前就在一条会话里（Home 左侧的，或 Space 里这个视频的悬浮会话最近发起的那条），它和视频同属一个项目、或就是视频所在的
- *    那条无项目会话：就是它。
+ *    那条无项目会话（或与它共用工作目录的）：就是它。
  * 2. 视频属于项目：这个项目里最近更新、没归档的那条。
- * 3. 视频不属于项目：它所在的那条会话（新建的会话看不到它的目录）。
+ * 3. 视频不属于项目：它所在的那条会话与共用它工作目录的会话里最近更新、没归档的那条；都归档了时是它所在的那条。
  *
  * 都没有时 null。有没有说过话（消息数）由调用方另看：没说过话的不给「接着」（`sessionOptions`）。
  */
@@ -35,21 +37,29 @@ export function currentConversation<T extends HandoffConversation>({
   conversations: readonly T[];
 }): T | null {
   if (!source) return null;
-  const belongs = (c: T) => (source.projectId ? c.projectId === source.projectId : c.id === source.conversationId);
+  const belongs = (c: T) =>
+    source.projectId ? c.projectId === source.projectId : c.id === source.conversationId || (!!c.folderOf && c.folderOf === source.conversationId);
   const here = current ? conversations.find((c) => c.id === current) : undefined;
   if (here && belongs(here)) return here;
-  if (!source.projectId) return conversations.find(belongs) ?? null;
   let latest: T | null = null;
   for (const c of conversations) if (!c.archived && belongs(c) && (!latest || c.updatedAt > latest.updatedAt)) latest = c;
+  if (!latest && !source.projectId) return conversations.find((c) => c.id === source.conversationId) ?? null;
   return latest;
 }
 
-/** 交给 Agent 发到哪：新建一条（在视频的项目里），或接着已有的那条。 */
-export type HandoffPlan = { kind: 'existing'; conversationId: Id } | { kind: 'create'; projectId: Id } | { kind: 'none' };
+/**
+ * 交给 Agent 发到哪：新建一条（在视频的项目里，或与视频所在的那条无项目会话共用工作目录：`folderOf`），或接着已有的那条。
+ */
+export type HandoffPlan =
+  | { kind: 'existing'; conversationId: Id }
+  | { kind: 'create'; projectId: Id }
+  | { kind: 'create'; projectId: null; folderOf: Id }
+  | { kind: 'none' };
 
 /**
- * 按「会话」行的选择定下发到哪（产品设计 §5.10「交给智能体」）：新会话建在视频的项目里——视频不属于项目时新会话看不到它，
- * 交不出去（「会话」行这时不给新会话）；接着的那条要还在目录里。
+ * 按「会话」行的选择定下发到哪（产品设计 §5.10「交给智能体」）：新会话建在视频的项目里；视频不属于项目时新会话与它所在的那条会话
+ * 共用工作目录（架构设计 §3.10，`conversations.create` 的 `folderOf`），同样打得开它，不建项目——那条会话要还在目录里。
+ * 接着的那条要还在目录里。
  */
 export function planHandoff({
   session,
@@ -60,7 +70,11 @@ export function planHandoff({
   source: HandoffSource | null;
   conversations: readonly { id: Id }[];
 }): HandoffPlan {
-  if (session === 'new') return source?.projectId ? { kind: 'create', projectId: source.projectId } : { kind: 'none' };
+  if (session === 'new') {
+    if (source?.projectId) return { kind: 'create', projectId: source.projectId };
+    const owner = source?.conversationId;
+    return owner && conversations.some((c) => c.id === owner) ? { kind: 'create', projectId: null, folderOf: owner } : { kind: 'none' };
+  }
   return conversations.some((c) => c.id === session.id) ? { kind: 'existing', conversationId: session.id } : { kind: 'none' };
 }
 

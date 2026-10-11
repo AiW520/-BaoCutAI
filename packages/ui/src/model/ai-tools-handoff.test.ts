@@ -31,12 +31,26 @@ describe('「接着」指哪条会话', () => {
     expect(currentConversation({ source: { projectId: null, conversationId: 'gone' }, current: null, conversations })).toBeNull();
     expect(currentConversation({ source: null, current: 'c1', conversations })).toBeNull();
   });
+
+  it('与那条会话共用工作目录的会话也算：当前就在其中一条时是它，否则最近更新、没归档的那条；都归档了是视频所在的那条', () => {
+    const family = [
+      ...conversations,
+      { ...at('c6', null, '2026-10-04T00:00:00Z'), folderOf: 'c3' },
+      { ...at('c7', null, '2026-10-09T00:00:00Z', true), folderOf: 'c3' },
+    ];
+    expect(currentConversation({ source: outside, current: 'c1', conversations: family })?.id).toBe('c6');
+    expect(currentConversation({ source: outside, current: 'c7', conversations: family })?.id).toBe('c7');
+    expect(currentConversation({ source: outside, current: 'c3', conversations: family })?.id).toBe('c3');
+    const archived = [at('c3', null, '2026-10-02T00:00:00Z', true), { ...at('c6', null, '2026-10-04T00:00:00Z', true), folderOf: 'c3' }];
+    expect(currentConversation({ source: outside, current: null, conversations: archived })?.id).toBe('c3');
+  });
 });
 
 describe('交给 Agent 发到哪', () => {
-  it('新会话建在视频的项目里；视频不属于项目时交不出去', () => {
+  it('新会话建在视频的项目里；视频不属于项目时与它所在的那条会话共用工作目录，那条不在了就交不出去', () => {
     expect(planHandoff({ session: 'new', source: inProject, conversations })).toEqual({ kind: 'create', projectId: 'p1' });
-    expect(planHandoff({ session: 'new', source: outside, conversations })).toEqual({ kind: 'none' });
+    expect(planHandoff({ session: 'new', source: outside, conversations })).toEqual({ kind: 'create', projectId: null, folderOf: 'c3' });
+    expect(planHandoff({ session: 'new', source: { projectId: null, conversationId: 'gone' }, conversations })).toEqual({ kind: 'none' });
     expect(planHandoff({ session: 'new', source: null, conversations })).toEqual({ kind: 'none' });
   });
 

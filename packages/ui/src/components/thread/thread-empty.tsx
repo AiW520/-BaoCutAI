@@ -40,9 +40,10 @@ const suggestions = style({ display: 'flex', flexWrap: 'wrap', gap: 8, marginTop
  *
  * 原型用 `MessageSuggestionList aria-label="试着问问"`；S2 AI 的 MessageSuggestionList 的 `title` 必填、画成可见的 h3，
  * 原型不显示标题，所以这里用带 `aria-label` 的 group 包 MessageSuggestion，排法同它（换行、间距 8）。
+ * `folderOf`：与另一条会话共用工作目录时那条会话的 id，来源按它认。
  */
-export function ThreadEmpty({ conversationId, projectId }: { conversationId: Id; projectId: Id | null }) {
-  const tag = useContextTag({ conversationId, projectId });
+export function ThreadEmpty({ conversationId, projectId, folderOf }: { conversationId: Id; projectId: Id | null; folderOf?: Id }) {
+  const tag = useContextTag({ conversationId: folderOf ?? conversationId, projectId });
   const videoName = tag?.videoName || null;
   const chips = videoName ? THREAD_EMPTY_COPY.chipsVideo : THREAD_EMPTY_COPY.chips;
 

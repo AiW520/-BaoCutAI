@@ -90,13 +90,16 @@ function draftKeyOf(videoKey: string | null): string {
  *
  * 发出即转到 Home 的这条会话，第一句话就是这段 prompt，编辑器此刻的状态随它带进去，会话里出这部视频的视频卡，点「打开编辑器」回来
  * （`video-cards.ts` `openingVideo`）。发送前不建空会话；每次都新建一条会话，回到 Space 仍从空的输入框开始。会话归入视频所在的项目；
- * 视频不属于项目（在某条无项目会话的工作目录里）时新会话也不属于项目，显示在「最近」。
+ * 视频不属于项目（在某条无项目会话的工作目录里）时新会话也不属于项目，与那条会话共用工作目录（`folderOf`，架构设计 §3.10），
+ * 显示在「最近」。
  */
 export function VideoQuickChat() {
   const runtime = useRuntime();
   const source = useVideo((s) => s.video?.ref?.source ?? null);
   const projectId = source?.projectId ?? null;
   const owner = projectId ? null : (source?.conversationId ?? null);
+  // 视频所在的那条会话还在目录里才共用它的工作目录；不在了（被删）就建一条普通的无项目会话。
+  const ownerKnown = !!useConversationMeta(owner);
   const key = useShell((s) => {
     const target = routeVideo(s.route);
     return target ? targetKey(target) : null;
@@ -127,8 +130,6 @@ export function VideoQuickChat() {
       : (drivers?.find((d) => d.id === choice?.driverId) ?? defaultDriver(drivers, checking));
   const { model, effort } = draftSelection(driver, choice);
   // 引用标签与发送时取的编辑器状态按视频自己的来源（项目，或它所在的那条无项目会话）认，不按新会话：新会话发出前还不存在。
-  // 不属于项目的视频，新会话的智能体打不开它（工具只认会话自己的工作目录，`VIDEO_OUTSIDE_WORKSPACE`）；
-  // 状态照样带上，为的是视频卡，也让智能体知道用户在看哪部视频。
   const editor = useEditorReference({ conversationId: owner, projectId });
   // 默认展开时不抢编辑器的焦点；用户自己点开的才把光标放进输入框（Composer 挂上时聚焦一次）。
   const [opened, setOpened] = useState(false);
@@ -151,6 +152,7 @@ export function VideoQuickChat() {
     try {
       // 只传草稿上选过的；没选的由 Runtime 按偏好给。选过的访问模式同时记成新会话的默认。
       const conversation = await runtime.createConversation(projectId, {
+        ...(owner && ownerKnown ? { folderOf: owner } : {}),
         ...(draftMode ? { accessMode: draftMode } : {}),
         ...(choice?.driverId ? { driverId: choice.driverId } : {}),
         ...(choice && 'model' in choice ? { model: choice.model ?? null } : {}),

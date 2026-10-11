@@ -196,7 +196,7 @@ describe('剪成短视频', () => {
   it('参数一行一句折进模板：意图句、几支多长、画幅与取景、字幕、已切过的不再找，最后一行直接创建', () => {
     const intent = intentPrompt({ tool: 'shortscut', title: 'A', scope: '第 2 章 · 开场' });
     expect(intent).toBe('从「A」的第 2 章 · 开场里找出最值得单独发布的话题，每个话题剪成一支完整的短视频：每支一部新视频，引用同一份原片，原视频和时间轴不动。');
-    const lines = toolTemplate('shortscut', intent, { lines: shortsLines(SHORTS_DEFAULTS, { hasTranslation: true, inProject: true }) }).split('\n');
+    const lines = toolTemplate('shortscut', intent, { lines: shortsLines(SHORTS_DEFAULTS, { hasTranslation: true }) }).split('\n');
     expect(lines).toEqual([
       intent,
       '几支由你按话题定，每支多长按话题定：从开头能抓人的那句剪到讲完，起止落在句子边界上',
@@ -207,20 +207,19 @@ describe('剪成短视频', () => {
     ]);
   });
 
-  it('保留原画幅不裁；没有译文只带原文；「跟着说话的人」不开放、落回自动；不属于项目时先收进项目', () => {
+  it('保留原画幅不裁；没有译文只带原文；「跟着说话的人」不开放、落回自动；不叫 Agent 把视频收进项目', () => {
     const lines = shortsLines(
       { ...SHORTS_DEFAULTS, count: 12, length: 'medium', ratio: 'source', tracks: 'translation', style: 'video', skipDone: false },
-      { hasTranslation: false, inProject: false },
+      { hasTranslation: false },
     );
     expect(lines).toEqual([
       '要 10 支，每支 30–60 秒，起止落在句子边界上',
       '画幅：保留原画幅，不裁',
       '字幕：只要原文，沿用这部视频的样式',
-      '这部视频还不属于项目：先把它收进一个以视频命名的项目，再在那里创建短视频',
       '找好就直接创建成视频，不用先问我',
     ]);
-    expect(shortsLines({ ...SHORTS_DEFAULTS, focus: 'speaker' }, { hasTranslation: true, inProject: true })[1]).toBe('画幅 9:16，取景自动：在片段里均匀抽几帧，看说话的人在画面哪一侧，把裁框放到他身上；找不到人就居中');
-    expect(shortsLines({ ...SHORTS_DEFAULTS, ratio: '1:1', focus: 'manual' }, { hasTranslation: true, inProject: true })[1]).toBe(
+    expect(shortsLines({ ...SHORTS_DEFAULTS, focus: 'speaker' }, { hasTranslation: true })[1]).toBe('画幅 9:16，取景自动：在片段里均匀抽几帧，看说话的人在画面哪一侧，把裁框放到他身上；找不到人就居中');
+    expect(shortsLines({ ...SHORTS_DEFAULTS, ratio: '1:1', focus: 'manual' }, { hasTranslation: true })[1]).toBe(
       '画幅 1:1，取景先居中，之后我逐支自己调',
     );
   });
@@ -228,7 +227,7 @@ describe('剪成短视频', () => {
   it('几支、多长可以各自交给 Agent 按话题定：下拉自动在最前，提示词里那一句只把自动的一半交出去，下面那行说明跟着变', () => {
     expect(SHORTS_DEFAULTS.count).toBe('auto');
     expect(SHORTS_COUNTS.map((c) => c.label)).toEqual(['自动', '1 支', '2 支', '3 支', '4 支', '5 支', '6 支', '7 支', '8 支', '9 支', '10 支']);
-    const first = (s: Partial<typeof SHORTS_DEFAULTS>) => shortsLines({ ...SHORTS_DEFAULTS, ...s }, { hasTranslation: true, inProject: true })[0];
+    const first = (s: Partial<typeof SHORTS_DEFAULTS>) => shortsLines({ ...SHORTS_DEFAULTS, ...s }, { hasTranslation: true })[0];
     expect(first({ count: 3 })).toBe('要 3 支，每支多长按话题定：从开头能抓人的那句剪到讲完，起止落在句子边界上');
     expect(first({ length: 'short' })).toBe('几支由你按话题定，每支 15–30 秒，起止落在句子边界上');
     expect(first({ count: 2, length: 'custom', lenMin: 40, lenMax: 90 })).toBe('要 2 支，每支 40–90 秒，起止落在句子边界上');
@@ -345,10 +344,10 @@ describe('英文界面', () => {
     expect(AI_TOOL_GROUP_LABEL[polish.group]).toBe('Transcript');
     expect(LENGTHS.map((l) => l.label)).toEqual(['Short', 'Medium', 'Long']);
     expect(SHORTS_COUNTS.slice(0, 3).map((c) => c.label)).toEqual(['Auto', '1', '2']);
-    expect(shortsLines({ ...SHORTS_DEFAULTS, count: 1 }, { hasTranslation: true, inProject: true })[0]).toBe(
+    expect(shortsLines({ ...SHORTS_DEFAULTS, count: 1 }, { hasTranslation: true })[0]).toBe(
       'Make 1 short, each as long as its topic needs, from the opening hook to where the point lands, starting and ending on sentence boundaries',
     );
-    expect(shortsLines({ ...SHORTS_DEFAULTS, length: 'medium' }, { hasTranslation: true, inProject: true })[0]).toBe(
+    expect(shortsLines({ ...SHORTS_DEFAULTS, length: 'medium' }, { hasTranslation: true })[0]).toBe(
       'Decide how many shorts from the topics you find, each 30–60 seconds, starting and ending on sentence boundaries',
     );
     for (const t of AI_TOOLS.filter((x) => x.tier === 'soon')) expect(t.why).toMatch(/Runtime doesn’t have this workflow yet/);

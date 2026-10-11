@@ -28,7 +28,6 @@ export const nl: AiToolsMessages = {
     lineFrame: (ratio, focus) => (ratio ? `Beeldverhouding ${ratio}, kader ${focus}` : 'Beeldverhouding: origineel behouden, niet bijsnijden'),
     lineSubtitles: (tracks, style) => `Ondertitels: ${tracks}, ${style}`,
     lineSkipDone: 'Sla delen over die al tot korte video’s zijn geknipt',
-    lineAdopt: 'Deze video hoort nog niet bij een project: zet hem eerst in een nieuw project met de naam van de video en maak de korte video’s daar',
     lineDirect: 'Maak de video’s zodra ze gevonden zijn; je hoeft het niet eerst te vragen',
   },
  groups: { frame: 'Beeld', transcript: 'Transcript ordenen', translate: 'Vertalen', writing: 'Schrijven', publish: 'Publiceren', sound: 'Geluid' },

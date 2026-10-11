@@ -159,10 +159,13 @@ export class RuntimeSession {
 
   // ---- 命令 ----
 
-  /** 不给的字段用 Runtime 记着的偏好：上次的访问模式、默认 Agent 及它的默认模型与推理强度。 */
+  /**
+   * 不给的字段用 Runtime 记着的偏好：上次的访问模式、默认 Agent 及它的默认模型与推理强度。`folderOf`：与那条无项目会话共用
+   * 工作目录（从不属于项目的视频新开会话，架构设计 §3.10）。
+   */
   async createConversation(
     projectId: Id | null,
-    options: { accessMode?: AgentMode; driverId?: DriverId; model?: string | null; effort?: string | null } = {},
+    options: { accessMode?: AgentMode; driverId?: DriverId; model?: string | null; effort?: string | null; folderOf?: Id } = {},
   ): Promise<Conversation> {
     const { conversation } = await this.client.request('conversations.create', { projectId, commandId: newId('cmd'), ...options });
     return conversation;

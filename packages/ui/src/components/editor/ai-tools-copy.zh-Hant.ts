@@ -18,8 +18,6 @@ export const zhHant: AiToolsMessages = {
   shortsSkipDoneOn: '跳過之前幾支用到的區間',
   shortsSkipDoneOff: '照找，可能和切過的幾支重疊',
   shortsHint: '新開一條對話，在那裡找片段並建立影片；原影片和時間軸不動。',
-  shortsLoose: '這部影片不屬於專案。交給 Agent 會發到它所在的對話，先把它收進一個以影片命名的專案，再找片段並建立影片。',
-  shortsLooseHint: '發到這部影片所在的對話，在那裡找片段並建立影片；原影片和時間軸不動。',
   back: '返回',
 
   // 设置态
