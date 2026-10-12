@@ -155,7 +155,9 @@ pub fn context_type(path: &str) -> Option<ValueType> {
         | "unit.pageNextWordTimed"
         | "unit.cueWordBound"
         | "unit.cueLineBound"
-        | "unit.cueSelectionAvailable" => ValueType::Bool,
+        | "unit.cueSelectionAvailable"
+        | "unit.lineEnvelopeAvailable"
+        | "unit.rangeInkAvailable" => ValueType::Bool,
         "layout.x"
         | "layout.y"
         | "layout.width"
@@ -167,12 +169,32 @@ pub fn context_type(path: &str) -> Option<ValueType> {
         | "layout.inkHeight"
         | "layout.lineInkY"
         | "layout.lineInkHeight"
+        | "layout.lineEnvelopeY"
+        | "layout.lineEnvelopeHeight"
+        | "layout.firstInkLeft"
+        | "layout.lastInkRight"
         | "canvas.width"
         | "canvas.height" => ValueType::Length,
         _ => return None,
     })
 }
 fn require_context_capability(path: &str, scene: &Scene) -> Result<()> {
+    if matches!(
+        path,
+        "layout.lineEnvelopeY"
+            | "layout.lineEnvelopeHeight"
+            | "layout.firstInkLeft"
+            | "layout.lastInkRight"
+            | "unit.lineEnvelopeAvailable"
+            | "unit.rangeInkAvailable"
+    ) && !scene.required_capabilities.iter().any(|c| c == "caption-glyph-envelope/1")
+    {
+        return Err(Diagnostic::new(
+            "CAPTION_CAPABILITY_UNAVAILABLE",
+            path,
+            "caption-glyph-envelope/1 must be declared",
+        ));
+    }
     if matches!(
         path,
         "unit.cueWordIndex"

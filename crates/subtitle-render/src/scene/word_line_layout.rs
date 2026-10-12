@@ -153,7 +153,12 @@ pub(super) fn prepare(
     params: &BTreeMap<String, Evaluated>,
 ) -> Result<TextLayout> {
     let mut pages = Vec::new();
-    for rows in groups(words.len(), &cfg.pagination) {
+    let page_groups = if let Some(pattern) = &cfg.pagination.text_line_pattern {
+        text_line_layout::groups(content, &words, pattern)?
+    } else {
+        groups(words.len(), &cfg.pagination)
+    };
+    for rows in page_groups {
         let first = rows.first().unwrap().start;
         let last = rows.last().unwrap().end;
         // Row/page breaks precede the next word. Non-whitespace separators

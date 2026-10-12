@@ -3,6 +3,10 @@ export type CaptionValueType = 'scalar' | 'integer' | 'length' | 'time' | 'angle
 export type CaptionUnit = 'cue' | 'page' | 'line' | 'word' | 'grapheme';
 export type CaptionWordState = 'active' | 'read' | 'unread';
 export type CaptionValue = number | boolean | string;
+/** Post-layout paths requiring caption-glyph-envelope/1. Numeric paths are length; unit paths are bool. */
+export type CaptionGlyphEnvelopeReadPath =
+  | 'layout.lineEnvelopeY' | 'layout.lineEnvelopeHeight' | 'layout.firstInkLeft' | 'layout.lastInkRight'
+  | 'unit.lineEnvelopeAvailable' | 'unit.rangeInkAvailable';
 /** Built-in cubic-bezier(progress, x1, y1, x2, y2) accepts five scalars; x controls are in [0, 1]. */
 export type CaptionExpression =
   | { op: 'literal'; type: CaptionValueType; value: CaptionValue }
@@ -65,6 +69,9 @@ export interface CaptionScene {
     layoutEvaluation?: 'static' | 'per-sample'; overflow?: 'error' | 'visible';
     bindings?: { nodeId?: string | null; property: 'width' | 'x' | 'y' | 'fontSize' | 'letterSpacing' | 'lineHeight'; value: CaptionDynamicValue }[];
     pagination?: { unit?: 'word'; maxUnitsPerPage?: number | null; wordLinePattern?: number[][] | null;
+      textLinePattern?: { unit: 'unicode-scalar' | 'grapheme' | 'scalar-cluster'; lines: number[][];
+        clusterRules?: { attachments?: { next: [number, number][]; previous?: [number, number][] | null; headExcluded?: [number, number][] | null }[];
+          consumeFollowingAfter?: [number, number][]; joiners?: number[] } | null } | null;
       lastPageRule?: { ifRowCountIs: number; previousPageLines: number[] } | null };
     align?: 'left' | 'center' | 'right'; leadingGap?: 'show' | 'hide';
   };

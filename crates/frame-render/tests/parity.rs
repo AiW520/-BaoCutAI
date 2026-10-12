@@ -905,6 +905,49 @@ fn scenes() -> Vec<Scene> {
         style_doc("style", word_line_style),
     ];
     scenes.push(word_line);
+    for (name, unit) in [
+        ("captions-text-lines-scalar", "unicode-scalar"),
+        ("captions-text-lines-grapheme", "grapheme"),
+    ] {
+        let mut style: Value = serde_json::from_str(include_str!("../../caption-scene/tests/fixtures/text-line-layout.json")).unwrap();
+        style["scene"]["value"]["layout"]["pagination"]["textLinePattern"]["unit"] = json!(unit);
+        let mut counted = Scene::new(
+            name,
+            video(vec![caption("counted", "doc", Some("style"), 120, &[])], vec![], json!({})),
+            &[0, 15, 45, 82, 103, 119, 15],
+        );
+        counted.documents = vec![
+            caption_doc("doc", "sequence", &[(0.0, 4.0, "é é é AB CD\nEF LONGWORD I J")], "original"),
+            style_doc("style", style),
+        ];
+        scenes.push(counted);
+    }
+    let mut cluster_style: Value =
+        serde_json::from_str(include_str!("../../caption-scene/tests/fixtures/scalar-cluster-layout.json")).unwrap();
+    cluster_style["scene"]["value"]["layout"]["pagination"]["textLinePattern"]["clusterRules"] = json!({
+        "attachments":[{"next":[[120,120]]}], "consumeFollowingAfter":[[82,82]], "joiners":[98]
+    });
+    let mut cluster = Scene::new(
+        "captions-scalar-cluster-lines",
+        video(vec![caption("cluster", "doc", Some("style"), 120, &[])], vec![], json!({})),
+        &[0, 15, 45, 82, 103, 119, 15],
+    );
+    cluster.documents = vec![
+        caption_doc("doc", "sequence", &[(0.0, 4.0, "Axxx AbC D E RQ FG LONGWORD HI")], "original"),
+        style_doc("style", cluster_style),
+    ];
+    scenes.push(cluster);
+    let envelope_style: Value = serde_json::from_str(include_str!("../../caption-scene/tests/fixtures/glyph-envelope.json")).unwrap();
+    let mut envelope = Scene::new(
+        "captions-glyph-envelope",
+        video(vec![caption("envelope", "doc", Some("style"), 120, &[])], vec![], json!({})),
+        &[0, 15, 45, 82, 103, 119, 15],
+    );
+    envelope.documents = vec![
+        caption_doc("doc", "sequence", &[(0.0, 4.0, "HÉLLO   ffi\nAg é j")], "original"),
+        style_doc("style", envelope_style),
+    ];
+    scenes.push(envelope);
     let mut wave_style: Value = serde_json::from_str(include_str!("../../caption-scene/tests/fixtures/word-pop.json")).unwrap();
     let wave_scene = &mut wave_style["scene"]["value"];
     wave_scene["speechState"]["timingPolicy"] = json!("estimated");

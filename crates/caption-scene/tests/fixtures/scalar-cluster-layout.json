@@ -1,0 +1,93 @@
+{
+  "schema": "baocut.caption-scene-style/1",
+  "scene": {
+    "kind": "inline",
+    "value": {
+      "schema": "baocut.caption-scene/1",
+      "evaluationVersion": 1,
+      "requiredCapabilities": [
+        "caption-text-line-layout/1",
+        "caption-scalar-cluster-layout/1"
+      ],
+      "parameters": [
+        {
+          "id": "accent",
+          "type": "color",
+          "default": "#FFE600"
+        }
+      ],
+      "layout": {
+        "width": {
+          "value": 140,
+          "basis": "absolute"
+        },
+        "x": {
+          "value": 80,
+          "basis": "absolute"
+        },
+        "y": {
+          "value": 45,
+          "basis": "absolute"
+        },
+        "maxLines": 2,
+        "pagination": {
+          "textLinePattern": {
+            "unit": "scalar-cluster",
+            "lines": [
+              [
+                4,
+                4
+              ]
+            ],
+            "clusterRules": {
+              "attachments": [
+                {
+                  "next": [
+                    [
+                      126,
+                      126
+                    ]
+                  ],
+                  "headExcluded": [
+                    [
+                      65,
+                      65
+                    ]
+                  ]
+                }
+              ],
+              "consumeFollowingAfter": [
+                [
+                  46,
+                  46
+                ]
+              ],
+              "joiners": [
+                43
+              ]
+            }
+          }
+        },
+        "overflow": "visible"
+      },
+      "speechState": {
+        "gapPolicy": "hold-previous",
+        "tailPolicy": "hold-last"
+      },
+      "nodes": [
+        {
+          "id": "caption",
+          "type": "text",
+          "style": {
+            "fontSize": {
+              "value": 16,
+              "basis": "absolute"
+            }
+          }
+        }
+      ],
+      "selectors": [],
+      "animations": []
+    }
+  }
+}

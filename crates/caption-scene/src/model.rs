@@ -182,7 +182,48 @@ pub struct Pagination {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub word_line_pattern: Option<Vec<Vec<usize>>>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub text_line_pattern: Option<TextLinePattern>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub last_page_rule: Option<LastPageRule>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct TextLinePattern {
+    pub unit: TextCountUnit,
+    pub lines: Vec<Vec<usize>>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub cluster_rules: Option<ScalarClusterRules>,
+}
+#[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct ScalarClusterRules {
+    #[serde(default)]
+    pub attachments: Vec<ScalarAttachmentRule>,
+    #[serde(default)]
+    pub consume_following_after: Vec<[u32; 2]>,
+    #[serde(default)]
+    pub joiners: Vec<u32>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct ScalarAttachmentRule {
+    pub next: Vec<[u32; 2]>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub previous: Option<Vec<[u32; 2]>>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub head_excluded: Option<Vec<[u32; 2]>>,
+}
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "kebab-case")]
+pub enum TextCountUnit {
+    UnicodeScalar,
+    Grapheme,
+    ScalarCluster,
+}
+impl Pagination {
+    pub fn has_fixed_lines(&self) -> bool {
+        self.word_line_pattern.is_some() || self.text_line_pattern.is_some()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
@@ -199,6 +240,7 @@ impl Default for Pagination {
             unit: UnitKind::Word,
             max_units_per_page: None,
             word_line_pattern: None,
+            text_line_pattern: None,
             last_page_rule: None,
         }
     }

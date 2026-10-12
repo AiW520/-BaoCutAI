@@ -43,3 +43,9 @@ cargo run --locked -p subtitle-render --no-default-features --features wasm-safe
 `caption-cue-unit-context/1` 显式启用整段词/行索引，以及由真实 word tags 驱动的静态词选集索引；碎片跨页保持源词身份，per-sample 全局行数按同一时刻重排所有页并计入预算。未绑定有明确 bool 标记，旧局部索引不变，见 [cue-unit-context.json](tests/fixtures/cue-unit-context.json)。
 
 `caption-gaussian-axis/1` 与 `caption-glow-cascade/1` 提供单 Text 上下文的独立 RGBA 分量滤波：高斯采样按输入纹理 UV、多尺度 pass 按原画布有理比例定尺寸，明确边界及逐 pass gamma/量化。级联保留各尺度图，按声明的 screen 或 source-over-glow 合成；允许 RGB > alpha，须按视频格式 §5.6 使用关联输出。有效区域包含零 alpha 发光，采样与内存预算超限会拒绝。示例见 [gaussian-axis.json](tests/fixtures/gaussian-axis.json)、[glow-cascade.json](tests/fixtures/glow-cascade.json)。
+
+`caption-text-line-layout/1` 用显式 Unicode scalar 或 extended grapheme 数限制每行，按完整词贪心分组并循环页计划；分隔空白不计，超长词独占行，显式换行强制成员边界。与其他分页策略互斥，复用固定词行的时间、几何与逐采样路径，见 [text-line-layout.json](tests/fixtures/text-line-layout.json)。
+
+`caption-glyph-envelope/1` 提供不含 leading 的整行字体/墨迹垂直包络，以及源 cluster 顺序首/末墨迹横端点，附行绑定与范围墨迹可用标记。它不等同 advance 或墨迹 union，保留 RTL 逆序端点；repeat、逐采样排版和反馈共用结果，不改旧 bounds/像素。示例见 [glyph-envelope.json](tests/fixtures/glyph-envelope.json)。
+
+`caption-scalar-cluster-layout/1` 为 textLinePattern 增加显式规则的两轮 scalar-cluster 计数；只用于完整词分页配额，不改实际 glyph 整形。规则区间有严格 Unicode/数量验证，同一 TextLayout 所有词共享有界计数预算，见 [scalar-cluster-layout.json](tests/fixtures/scalar-cluster-layout.json)。

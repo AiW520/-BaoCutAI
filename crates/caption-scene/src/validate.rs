@@ -6,6 +6,7 @@ pub const CAPABILITIES: &[&str] = &[
     "caption-scene/1",
     "caption-text-context/1",
     "caption-ink-context/1",
+    "caption-glyph-envelope/1",
     "caption-unit-context/1",
     "caption-cue-word-context/1",
     "caption-first-page-context/1",
@@ -25,6 +26,8 @@ pub const CAPABILITIES: &[&str] = &[
     "caption-glow-cascade/1",
     "caption-layout-per-sample/1",
     "caption-word-line-layout/1",
+    "caption-text-line-layout/1",
+    "caption-scalar-cluster-layout/1",
 ];
 pub fn property_type(property: &str) -> Option<ValueType> {
     Some(match property {
@@ -147,6 +150,97 @@ fn validate_word_line_pattern(layout: &Layout) -> Result<()> {
     }
     Ok(())
 }
+fn validate_scalar_cluster_rules(rules: &ScalarClusterRules) -> Result<()> {
+    let path = "pagination.textLinePattern.clusterRules";
+    let mut total = 0usize;
+    let mut ranges = |ranges: &[[u32; 2]]| -> Result<()> {
+        if ranges.len() > 32 {
+            return Err(invalid(path, "at most 32 intervals per range list"));
+        }
+        total += ranges.len();
+        for &[low, high] in ranges {
+            if low > high || high > 0x10ffff || (low <= 0xdfff && high >= 0xd800) {
+                return Err(invalid(path, "inclusive ranges must contain only valid Unicode scalar values"));
+            }
+        }
+        Ok(())
+    };
+    if rules.attachments.len() > 32 || rules.joiners.len() > 32 {
+        return Err(invalid(path, "at most 32 attachments and 32 joiners"));
+    }
+    for rule in &rules.attachments {
+        if rule.next.is_empty() {
+            return Err(invalid(path, "attachment next ranges must not be empty"));
+        }
+        ranges(&rule.next)?;
+        if let Some(previous) = &rule.previous {
+            ranges(previous)?;
+        }
+        if let Some(head) = &rule.head_excluded {
+            ranges(head)?;
+        }
+    }
+    ranges(&rules.consume_following_after)?;
+    if total > 256 {
+        return Err(invalid(path, "at most 256 total range intervals"));
+    }
+    if rules.joiners.iter().any(|scalar| char::from_u32(*scalar).is_none()) {
+        return Err(invalid(path, "joiners must be valid Unicode scalar values"));
+    }
+    Ok(())
+}
+fn validate_text_line_pattern(scene: &Scene) -> Result<()> {
+    let pagination = &scene.layout.pagination;
+    let Some(pattern) = &pagination.text_line_pattern else {
+        return Ok(());
+    };
+    if !scene.required_capabilities.iter().any(|cap| cap == "caption-text-line-layout/1") {
+        return Err(Diagnostic::new(
+            "CAPTION_CAPABILITY_UNAVAILABLE",
+            "pagination.textLinePattern",
+            "caption-text-line-layout/1 must be declared",
+        ));
+    }
+    if pattern.unit == TextCountUnit::ScalarCluster {
+        if !scene
+            .required_capabilities
+            .iter()
+            .any(|cap| cap == "caption-scalar-cluster-layout/1")
+        {
+            return Err(Diagnostic::new(
+                "CAPTION_CAPABILITY_UNAVAILABLE",
+                "pagination.textLinePattern",
+                "caption-scalar-cluster-layout/1 must be declared",
+            ));
+        }
+        let rules = pattern
+            .cluster_rules
+            .as_ref()
+            .ok_or_else(|| invalid("pagination.textLinePattern", "scalar-cluster requires explicit clusterRules"))?;
+        validate_scalar_cluster_rules(rules)?;
+    } else if pattern.cluster_rules.is_some() {
+        return Err(invalid("pagination.textLinePattern", "clusterRules only applies to scalar-cluster"));
+    }
+    if pagination.word_line_pattern.is_some() || pagination.max_units_per_page.is_some() || pagination.last_page_rule.is_some() {
+        return Err(invalid(
+            "pagination.textLinePattern",
+            "text line counting is exclusive with wordLinePattern, maxUnitsPerPage and lastPageRule",
+        ));
+    }
+    if pattern.lines.is_empty()
+        || pattern.lines.len() > 256
+        || pattern
+            .lines
+            .iter()
+            .any(|rows| rows.is_empty() || rows.len() > scene.layout.max_lines || rows.iter().any(|count| !(1..=65_536).contains(count)))
+    {
+        return Err(invalid(
+            "pagination.textLinePattern",
+            "1..256 page plans, 1..maxLines rows and text limits 1..65536 required",
+        ));
+    }
+    Ok(())
+}
 pub fn validate_scene(s: &Scene) -> Result<()> {
     if s.schema != SCENE_SCHEMA || s.evaluation_version != 1 {
         return Err(Diagnostic::new(
@@ -186,6 +280,7 @@ pub fn validate_scene(s: &Scene) -> Result<()> {
     {
         return Err(invalid("layout", "invalid page/line limit"));
     }
+    validate_text_line_pattern(s)?;
     validate_word_line_pattern(&s.layout)?;
     if s.parameters.len() > 128 || s.functions.len() > 128 || s.selectors.len() > MAX_NODES || s.animations.len() > 1024 {
         return Err(invalid("scene", "declaration budget exceeded"));

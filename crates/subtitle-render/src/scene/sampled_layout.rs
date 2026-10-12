@@ -143,7 +143,7 @@ pub(super) fn reflow(
     for _ in source.graphemes(true) {
         budget.spend()?;
     }
-    if cfg.pagination.word_line_pattern.is_some() {
+    if cfg.pagination.has_fixed_lines() {
         return word_line_layout::reflow(text, base, page, node, cfg, size, params);
     }
     let paint_range = page.paint_start..range.end;

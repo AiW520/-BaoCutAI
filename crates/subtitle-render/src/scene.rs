@@ -1,8 +1,11 @@
 //! Declarative caption scenes. Layout, animation and recording are shared by native and WASM.
 mod component_filters;
 mod cue_unit_context;
+mod glyph_envelope;
 mod materials;
 mod sampled_layout;
+mod scalar_cluster;
+mod text_line_layout;
 mod word_line_layout;
 use anyhow::{Result, bail};
 use caption_scene::*;
@@ -176,6 +179,7 @@ fn page_word_input(layout: &TextLayout, page: Option<&Page>) -> PageWordInput {
 }
 #[derive(Clone)]
 struct Unit {
+    envelope: Option<Arc<glyph_envelope::Metrics>>,
     word_position: Option<usize>,
     line_position: Option<usize>,
     cue_bindings: Option<Arc<cue_unit_context::CueBindings>>,
@@ -512,7 +516,7 @@ fn resolved_units(
                 let node =
                     sampled_layout::find_text(&scene.nodes, id).expect("validated text node");
                 let mut relayout = l.clone();
-                let reflow_all = global && scene.layout.pagination.word_line_pattern.is_none();
+                let reflow_all = global && !scene.layout.pagination.has_fixed_lines();
                 for page_index in 0..l.pages.len() {
                     if page_index != pi && !reflow_all {
                         continue;
@@ -541,6 +545,9 @@ fn resolved_units(
                 &scene.speech_state,
                 presentation,
             );
+            if glyph_envelope::enabled(scene) {
+                glyph_envelope::bind(&mut resolved_units, &resolved.pages[pi], budget)?;
+            }
             if global {
                 cue_unit_context::bind(
                     scene,
@@ -666,7 +673,7 @@ fn prepare(
         speech.timing_policy,
         matches!(node.text, Some(TextBinding::Static { .. })),
     )?;
-    if cfg.pagination.word_line_pattern.is_some() {
+    if cfg.pagination.has_fixed_lines() {
         return word_line_layout::prepare(text, cue, content, words, node, cfg, size, parameters);
     }
     let fs = node.style.font_size.resolve(size.0, size.1, parameters)?;
@@ -904,6 +911,7 @@ fn units_for(
     let cue_first_word_span = input_words.next().map(|word| (word.start, word.end));
     let cue_second_word_start = input_words.next().map(|word| word.start);
     let base = Unit {
+        envelope: None,
         word_position: None,
         line_position: None,
         cue_bindings: None,
@@ -1400,6 +1408,9 @@ fn context(u: &Unit, r: &RenderContext) -> Context {
         seed: r.seed,
         stable_key: format!("{}|{}|{}", r.instance, r.cue.id, u.id),
     };
+    if glyph_envelope::enabled(r.scene) {
+        glyph_envelope::add_fields(&mut out, u);
+    }
     cue_unit_context::add_fields(&mut out, u);
     cue_unit_context::select(&mut out, u, u.cue_selector.as_deref());
     out

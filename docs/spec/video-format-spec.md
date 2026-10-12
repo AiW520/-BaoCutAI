@@ -1827,9 +1827,23 @@ interface CaptionStyleBody {
 | 表达式 | 带类型 literal/read/call/if；scalar/integer/length/time/angle/bool/color；无环纯函数，时间/单元/基础布局/参数只读；共享数学曲线、连续 sin/cos、带 seed 的 random/noise；if 惰性求值，非法运算返回诊断 |
 | 合成 | replace/add/multiply 与 priority/声明顺序；颜色只允许 replace；乘法通道为无量纲数；父子变换及离屏组 opacity 通过共同 DrawOp 光栅执行 |
 
-`requiredCapabilities` 当前可声明 `caption-scene/1`、`caption-expressions/1`、`caption-permutation/1`、`caption-function-dag/1`、`caption-unit-animation/1`、`caption-image-png/1`、`caption-paint-stack/1`、`caption-blur/1`、`caption-feedback/1`、`caption-wave-displace/1`、`caption-soft-band/1`、`caption-gaussian-axis/1`、`caption-glow-cascade/1`、`caption-layout-per-sample/1`、`caption-word-line-layout/1`、`caption-bezier-expression/1`、`caption-text-context/1`、`caption-ink-context/1`、`caption-unit-context/1`、`caption-cue-word-context/1`、`caption-first-page-context/1` 和 `caption-cue-unit-context/1`。未知能力、属性或字段拒绝；artifact 形式的场景引用、非 PNG 图片、任意 shader、无限递归反馈、节点级材质栈及改变分页成员的时间布局尚未开放，不能保存为成功后在渲染中忽略。完整扩展方向仍按[设计文档](../design/subtitle/dynamic-caption-format-design.md)维护。
+`requiredCapabilities` 当前可声明 `caption-scene/1`、`caption-expressions/1`、`caption-permutation/1`、`caption-function-dag/1`、`caption-unit-animation/1`、`caption-image-png/1`、`caption-paint-stack/1`、`caption-blur/1`、`caption-feedback/1`、`caption-wave-displace/1`、`caption-soft-band/1`、`caption-gaussian-axis/1`、`caption-glow-cascade/1`、`caption-layout-per-sample/1`、`caption-word-line-layout/1`、`caption-text-line-layout/1`、`caption-scalar-cluster-layout/1`、`caption-bezier-expression/1`、`caption-text-context/1`、`caption-ink-context/1`、`caption-glyph-envelope/1`、`caption-unit-context/1`、`caption-cue-word-context/1`、`caption-first-page-context/1` 和 `caption-cue-unit-context/1`。未知能力、属性或字段拒绝；artifact 形式的场景引用、非 PNG 图片、任意 shader、无限递归反馈、节点级材质栈及改变分页成员的时间布局尚未开放，不能保存为成功后在渲染中忽略。完整扩展方向仍按[设计文档](../design/subtitle/dynamic-caption-format-design.md)维护。
 
 显式 `maxUnitsPerPage` 按词配额人为切页时，第 2 个及后续词块开头若只有水平 Unicode 空白组成的词间分隔 run，该 run 不参与显示排版；空格、tab、NBSP、Unicode 空格均适用。若 run 含 CR/LF、VT/FF、NEL、LS 或 PS，则整段保留，不吞显式换行及其缩进。原始 cue 开头的缩进、默认按宽度换行均不变。源文本/页范围/字素索引保留分隔字节，空白装饰定位新页逻辑行首；逐采样重排使用冻结的显示起点，不恢复已隐藏的分隔空白。
+
+`caption-text-line-layout/1` 显式启用按文字数量冻结行成员的 `pagination.textLinePattern: { unit, lines: number[][] }`，与 `wordLinePattern`、`maxUnitsPerPage`、`lastPageRule` 互斥。unit 必填；基础模式为 `unicode-scalar`（Unicode scalar value 数）或 `grapheme`（扩展字素簇数），另有下述显式规则 `scalar-cluster` 模式。这些模式都不把 UTF-8 字节数或 UTF-16 码元数当作计数。例如 `e` 加组合重音为 2 个 scalar、1 个 grapheme；Emoji ZWJ 序列通常也是多个 scalar、1 个 grapheme。分页的语义 unit 仍为 word。计数只覆盖各完整词的源字节范围；词间分隔空白不计入限额，不凭字体或语言猜计数模式。
+
+lines 外层是循环页计划，内层是该页每行的正字数上限：1–256 个页计划、每页 1–maxLines 行，每项范围 1–65536。按原词顺序贪心装行：整词放入会超限且当前行非空则先结束当前行；单词自身超限时完整独占一行；放入后恰好达到限额也立即结束行。词间分隔中的 CR/LF、VT/FF、NEL、LS、PS 强制下一个词另起一行；连续或首尾换行仅作为成员边界，不产生无词空页。完整词不可拆，若单个输入词内部含显式换行则返回 `CAPTION_LAYOUT_INVALID`，不静默吞换行或切词。
+
+文字限额模式复用固定词行的形状、空白归一化、源字节/字素索引、词时间与跨页上下文。来源文字和词成员不改写，分隔标点仍保留显示；未属于某个词字节范围的字符不计入词限额。`overflow:error` 拒绝绘制宽度超限，visible 保留整行，不按宽度重新拆成员。逐采样重排只更新冻结行的绘制几何；`caption-cue-unit-context/1` 同样识别为固定行数模式，无需重排隐藏页来获得行总数，预算沿用固定词行路径。示例见 [text-line-layout.json](../../crates/caption-scene/tests/fixtures/text-line-layout.json)。
+
+`caption-scalar-cluster-layout/1` 在同时声明 `caption-text-line-layout/1` 时增加 `unit:'scalar-cluster'`，并要求显式 `clusterRules` 对象。规则只用于每个完整词的分页配额计数，不强制合并、替换或切分实际整形 glyph，也不声明遵循 Unicode 字素分割算法。`clusterRules` 由 `attachments`、`consumeFollowingAfter`、`joiners` 组成，三个列表缺省为空；显式 `{}` 表示每个 scalar 单独一组。其他 unit 不允许提供 clusterRules。
+
+每个 attachment 为 `{next: [[low,high],…], previous?: ranges, headExcluded?: ranges}`。所有 ranges 为闭区间，按提供顺序进行短路匹配，不排序；重叠区间允许。第一轮从一个 scalar 起组，反复追加下一个 scalar，当它匹配某项 attachment 的 next、且（提供 previous 时）当前组末 scalar 匹配 previous、且（提供 headExcluded 时）固定组首 scalar 不匹配 headExcluded。随后只检查这时的组末：若属于 consumeFollowingAfter 且还有输入，则无条件额外吞入恰好一个 scalar。吞入后不重启 attachment 或 consume。第二轮从当前第一轮组开始，仅当紧接的组恰有一个 scalar、该 scalar 属于 joiners 且再后面还有一组时，合并这两个后续组并重复；多 scalar 的组、缺少后续组的末尾 joiner 不触发合并。最终组数即该词计数，词与词之间不拼簇。
+
+规则最多 32 项 attachment，每项 next 必填且非空；各范围列表最多 32 个区间，所有列表总计至多 256 个区间，joiners 最多 32 个 scalar。区间必须升序端点且只含有效 Unicode scalar，任何触及 surrogate 的区间（包括端点位于两侧的跨越区间）均拒绝；joiner 也必须是有效 scalar。可选 previous/headExcluded 的显式空集按普通空集语义处理。
+
+每个 TextLayout（单个文字节点的整个 cue）共享 1,048,576 次计数操作预算，不逐词重置：读取 scalar、开始/输出组、检测 attachment、测试区间或 joiner、追加 scalar、检查及拼接后续组均计费，规则按数组顺序短路。超限返回 `CAPTION_BUDGET_EXCEEDED`，不截断单词或返回部分计数。成员冻结后逐采样重排不重跑计数；旧 scalar/grapheme 模式不变。通用玩具规则示例见 [scalar-cluster-layout.json](../../crates/caption-scene/tests/fixtures/scalar-cluster-layout.json)。
 
 `caption-word-line-layout/1` 增加固定词行分组，启用时使用 `pagination.wordLinePattern: number[][]`：外层为依次循环的页模式，内层每个正整数为该行词数。例如 `[[2,3]]` 表示每页两行，分别取两个词和三个词；`[[1],[2,1]]` 交替使用一词页与两行三词页。该字段与 `maxUnitsPerPage` 互斥，unit 必须是 word；模式1–256项，各页1–maxLines行，每行配额1–4096。未提供时保留原有硬换行、按宽度换行和分页行为。
 
@@ -1874,6 +1888,14 @@ line 的 active/read/unread 状态按该行词成员求值：当前选中的活�
 `caption-ink-context/1` 增加六个 length 类型的只读布局字段：`layout.inkX/inkY/inkWidth/inkHeight` 是当前单元字形填充墨迹的包围框；`layout.lineInkY/lineInkHeight` 是所属完整视觉行的墨迹顶部与高度，适合让光标和底框不受行间距、当前字母大小写影响。坐标为排版后的画布像素，尚未施加动画变换；不包含描边、阴影、发光、材质或字色/opacity。矢量轮廓使用曲线的紧包围框，彩色字形使用非零 alpha 像素的边界；按现有 cluster 归属聚合，不拆连字。旧 `layout.x/y/width/height/baseline` 保持 advance 与行框含义。
 
 空白或无可绘制墨迹的单元，其 inkX/inkWidth 保留原有 advance/caret，inkY/inkHeight 继承所属行的墨迹框；整行无墨迹时使用该行字体的 ascent/descent 框，不使用 lineHeight。cue/page 的墨迹框是当前页各个有墨迹行的并集，此时 lineInkY/lineInkHeight 同该并集；当前页全为空白才使用各行字体框并集。逐采样重排同时更新这些值，读取墨迹不会改变固定分页成员和时间。布局前表达式禁止读取这些字段，避免循环依赖。示例见 [ink-context.json](../../crates/caption-scene/tests/fixtures/ink-context.json)。
+
+`caption-glyph-envelope/1` 必须显式声明后才能读取以下布局后字段；未声明返回 `CAPTION_CAPABILITY_UNAVAILABLE`，布局前直接或间接读取仍返回依赖诊断。它使用现有行字体度量和未涂装字形墨迹，不修改 `layout.width/height`、ink 字段、原排版或像素。
+
+- `layout.lineEnvelopeY/lineEnvelopeHeight`（length）给出所属整行的垂直包络。以基线 B、该行既有 ShapedLine 字体 ascent/descent、实际 glyph 墨迹 top/bottom 计算：`up=max(0,ascent,B−minInkTop)`、`down=max(abs(descent),maxInkBottom−B)`，Y=B−up、Height=up+down。无墨迹时仅用字体度量。该框不含 leading、描边、阴影、材质或动画变换，也不因当前词字母较矮而缩小。
+- `layout.firstInkLeft/lastInkRight`（length）给出当前单元范围内首个/末个有墨迹字形的水平边缘。按 UTF-8 源 cluster.start 升序选择，同一 cluster 保留原 shaped glyph 次序，归属条件为 cluster.start 落在该范围内。端点不是 advance，也不是范围内全部墨迹的 union；中间字形 overhang 不扩展两端。RTL 或重叠字形可能使 firstInkLeft 大于 lastInkRight，内核不交换、不取绝对值来伪造正宽矩形。
+- `unit.lineEnvelopeAvailable/rangeInkAvailable`（bool）分别表示行绑定和范围内墨迹是否存在。Line/Word/Grapheme 使用其所属行，跨行词按当前行碎片计算；空白等无墨迹范围返回水平 0/0、rangeInkAvailable=false，但仍具有所属行的垂直包络。Cue/Page 没有唯一行绑定，四个数值为 0、两个标记均为 false，即使当前恰好只显示一行也不隐式绑定。合字归属于 cluster 起点所在单元，后续单元不能借用同一字形。
+
+repeat 装饰继承绑定单元的包络；逐采样排版与反馈历史在各自时刻重新从同一排版结果构建字段。只有声明能力的场景执行附加的每行字形排序/单元查询，并按字形与单元计入操作预算；未声明场景保持原记录和像素路径。当前矢量墨迹来自 tight Bézier bounds，彩色字形来自非零 alpha 像素框；字体度量沿用共享排版器的取值规则。这是明确的内部几何合同，不承诺与其他字体 API、字体表原始 bbox 或不同 ligature/RTL 切分结果相同。示例见 [glyph-envelope.json](../../crates/caption-scene/tests/fixtures/glyph-envelope.json)。
 
 **逐采样布局**。`layout.bindings` 是最多 64 项的 `{ nodeId?, property, value: DynamicValue }` 数组。同一目标/属性不能重复。无 nodeId 的目标是场景的 width/x/y（length）；指定文字节点时可改 fontSize（length）、letterSpacing（scalar，em）与 lineHeight（scalar）。只有 `per-sample` 模式接受 bindings。静态字段先确定基础页成员、源文本字节区间及显示起止时间；每次采样只重新布局当前页，不将溢出文字移到新页。`overflow: 'error' | 'visible'` 默认 error：超过 maxLines 或单个字形仍超宽则报 `CAPTION_LAYOUT_OVERFLOW`；visible 保留所有页成员并允许更多行，最终仍按画布裁剪。
 
