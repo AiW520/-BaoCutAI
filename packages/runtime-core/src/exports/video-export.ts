@@ -165,6 +165,8 @@ export type WorkerEvent =
       skipped: UnsupportedItem[];
       warnings: Array<{ code: string; detail: string }>;
       decoderRestarts: number;
+      /** 字幕层真正光栅了几张（缓存命中不算；架构设计 §9.12）。字幕不逐帧动却接近帧数，说明缓存键过细。旧版 Worker 不报，所以可选。 */
+      captionRasters?: number;
       renderSeconds: number;
       /** 画面编解码走了哪条路（架构设计 §9.11「画面」）：后端名（`avfoundation`、`media-foundation`、`ffmpeg`，解码混用时
        *  `mixed`，没有视频素材时 `decoder` 为 `null`）与原生回落 ffmpeg 的记录。旧版 Worker 不报，所以可选。 */

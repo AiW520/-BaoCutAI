@@ -232,9 +232,16 @@ R0 与 R1 的前半按四个起步版本交付，各自的出口：
 | 页签切换：进入译文（原文＋译文） | 没有 ≥ 50 ms 的任务 | 71–142 ms |
 | 字幕全部替换 / 撤销 | 112 处命中：≤ 67 ms / 59–71 ms | 556 处命中：240–301 ms / 418–490 ms |
 
+**成片导出基线（2026-10-12）**：`node tools/export-bench.ts`（[开发流程 §2](../development-workflow.md#2-验证)）在一台开发机上的结果，用来比对之后的改动，不是门槛。
+
+- 环境：Apple M4（4 个性能核、6 个能效核）、16 GB、macOS 27.0；release 构建的 Worker（含下面两处修复、整帧填充与拷贝的削减和调度优先级），AVFoundation 解码与编码；1 分钟负载 3–6。
+- 合成夹具（缺省：60 秒、双语、`studio-color`，24 句），各 3 次的中位数：`cover` 217.5 fps、`contain` 218.3 fps（4.6 ms/帧）。
+- 一个真实工程（1920×1080、30 fps、900 帧，双语逐词字幕；`--input`），交替各 3 次的中位数：两处修复（`d5f98799` 去掉整幅的发光扫描、`9925ed96` 逐词变色不再把帧号放进缓存键）之前 75.5 fps；`9925ed96` 215.0 fps；再加上整帧填充与拷贝的削减和调度优先级 216.4 fps，字幕层光栅 151 次。空闲时 `9925ed96` 之后的改动被硬件编解码的吞吐挡住，看不出差别；1 分钟负载约 10 时，削减整帧填充、拷贝与扫描（架构设计 §9.11 输出帧的那条）前后是 167 与 211 fps（两边都关着调度优先级，交替 5 次的中位数）。
+- 字幕重画的门禁是确定性的，不靠计时：`subtitle-render` 的 `caption_layers_are_redrawn_only_when_the_picture_changes`（架构设计 §9.12）。
+
 **导出的调度优先级（2026-10-12）**：[架构设计 §9.11](../architecture/architecture-design.md#911-冻结导出与发布)「调度优先级」在一台开发机、一个工程上的实测，不是门槛。
 
-- 环境：Apple M4（4 个性能核、6 个能效核）、16 GB、macOS 27.0；release 构建的 Worker（含 commit `0243f1ae`），同一个二进制按 `BAOCUT_EXPORT_PRIORITY=0` 开关对比；一个真实工程，1920×1080、30 fps、900 帧，烧双语逐词字幕，AVFoundation 解码与编码；命令行直接跑 `export-worker render`，帧率是 `frames / renderSeconds`。
+- 环境：Apple M4（4 个性能核、6 个能效核）、16 GB、macOS 27.0；release 构建的 Worker（含整帧填充与拷贝的削减），同一个二进制按 `BAOCUT_EXPORT_PRIORITY=0` 开关对比；一个真实工程，1920×1080、30 fps、900 帧，烧双语逐词字幕，AVFoundation 解码与编码；命令行直接跑 `export-worker render`，帧率是 `frames / renderSeconds`。
 - 量法：开、关交替跑，每轮轮换先后，取中位数；忙进程是每次运行新起的 `yes > /dev/null`（默认 QoS）。机器上同时有别的会话的进程，负载照实记。
 
 | 抢 CPU 的 | 开（帧/秒，中位数） | 关 | 每一对 |

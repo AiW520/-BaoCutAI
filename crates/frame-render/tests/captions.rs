@@ -866,6 +866,25 @@ fn preview_hits_follow_rendered_bilingual_lines_and_clear_between_frames() {
     assert!(renderer.caption_hits().is_empty());
 }
 
+/// 字幕只在画面变了时才光栅（导出报的 `captionRasters`）：两句静止的字幕各画满 30 帧，只光栅两次；空白帧不算。
+#[test]
+fn static_captions_are_rasterized_once_per_picture() {
+    let docs = vec![
+        caption_doc("orig", "sequence", &[(1.0, 2.0, "Original"), (2.0, 3.0, "Next")], "original"),
+        style_doc(
+            "style",
+            studio(json!({ "fontSize": 40, "anim": { "name": "None" }, "displayTiming": { "leadIn": 0, "tail": 0 } })),
+        ),
+    ];
+    let video = video(vec![caption("cap", "orig", Some("style"), 120, &[])], vec![], json!({}));
+    let mut renderer = renderer(false, Documents::new(docs));
+    assert_eq!(renderer.caption_rasters(), 0);
+    for frame in 0..120 {
+        render_with(&mut renderer, &video, f64::from(frame) / 30.0, &mut Media::default());
+    }
+    assert_eq!(renderer.caption_rasters(), 2);
+}
+
 #[test]
 fn dynamic_scene_instances_do_not_merge_when_they_share_a_style() {
     let mut style: Value = serde_json::from_str(include_str!("../../caption-scene/tests/fixtures/word-pop.json")).unwrap();

@@ -166,6 +166,7 @@ pub fn run(path: &Path) -> Result<ExitCode, Failure> {
         "skipped": skipped,
         "warnings": warnings,
         "decoderRestarts": restarts,
+        "captionRasters": renderer.caption_rasters(),
         "renderSeconds": (seconds * 1000.0).round() / 1000.0,
         "video": {
             "decoder": decode.decoder,

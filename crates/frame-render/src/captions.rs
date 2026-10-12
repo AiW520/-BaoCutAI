@@ -560,6 +560,8 @@ pub struct CaptionPlan {
     scene_hits: Vec<subtitle_render::scene::SceneHit>,
     scene_time: Option<u64>,
     scene_missing: std::collections::BTreeSet<String>,
+    /// 场景字幕光栅了几次（场景每次都整幅重画，不缓存）。
+    scene_rasters: u64,
     pub sequence_clock: bool,
     pub opacity: f32,
 }
@@ -628,6 +630,7 @@ impl CaptionPlan {
                 scene_hits: vec![],
                 scene_time: None,
                 scene_missing: Default::default(),
+                scene_rasters: 0,
                 sequence_clock: members.first().is_some_and(|(_, t)| t.sequence_clock),
                 opacity: 1.0,
             });
@@ -641,6 +644,7 @@ impl CaptionPlan {
             scene_hits: vec![],
             scene_time: None,
             scene_missing: Default::default(),
+            scene_rasters: 0,
         })
     }
     pub fn load_scene_resources(&mut self, read: impl FnMut(&caption_scene::ImageResource) -> Option<Vec<u8>>) -> Result<()> {
@@ -669,6 +673,7 @@ impl CaptionPlan {
         }
         let s = self.scene.as_mut().unwrap();
         let (outputs, hits) = s.render_outputs(seconds)?;
+        self.scene_rasters += 1;
         self.scene_hits = hits;
         self.scene_time = Some(seconds.to_bits());
         Ok(outputs
@@ -689,6 +694,13 @@ impl CaptionPlan {
     /// Screen needs a real backdrop and is never silently flattened here.
     pub fn render(&mut self, seconds: f64) -> Result<Option<CaptionLayer>> {
         flatten_caption_layers(self.render_layers(seconds)?)
+    }
+    /// 字幕层到现在真正光栅了几张（内核缓存命中不算）。
+    pub fn rasters(&self) -> u64 {
+        match &self.legacy {
+            Some(l) => l.plan.subtitle_rasters(),
+            None => self.scene_rasters,
+        }
     }
     pub fn hits(&mut self, seconds: f64) -> Result<Vec<CaptionHit>> {
         if let Some(l) = &mut self.legacy {

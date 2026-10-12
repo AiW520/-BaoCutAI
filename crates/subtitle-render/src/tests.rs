@@ -2303,6 +2303,63 @@ mod tests {
         assert_ne!(*world.rgba, *first.rgba, "第二个词换色后像素应当不同");
     }
 
+    /// 按帧顺序把整段画一遍：字幕层真正重画的次数与画面真正变化的次数（与上一帧逐字节比，空白帧也算一种画面）。
+    fn rasters_and_changes(doc: &Value) -> (u64, u64) {
+        let mut plan = OverlayRenderPlan::compile(doc, 320, 180, 3.0, 30.0, None).unwrap();
+        let mut previous: Option<Arc<Vec<u8>>> = None;
+        let mut changes = 0;
+        for frame in 0..90 {
+            let rgba = plan.render_subtitle_frame(f64::from(frame) / 30.0).unwrap().rgba;
+            if previous.as_ref().is_none_or(|last| **last != *rgba) {
+                changes += 1;
+            }
+            previous = Some(rgba);
+        }
+        (plan.subtitle_rasters(), changes)
+    }
+
+    /// 五个词、三秒的一句（编辑器写出的逐词动画载荷）。
+    fn five_word_document(catalog_id: &str, transition: &str) -> Value {
+        let mut doc = document("None", transition);
+        doc["style"]["wordAnimation"] = crate::word_animation_catalog::word_animation_payload(catalog_id);
+        doc["cues"][0]["text"] = json!("one two three four five");
+        doc["cues"][0]["words"] = json!([
+            {"text": "one", "t0": 0.5, "t1": 0.9},
+            {"text": "two", "t0": 0.9, "t1": 1.3},
+            {"text": "three", "t0": 1.3, "t1": 1.7},
+            {"text": "four", "t0": 1.7, "t1": 2.1},
+            {"text": "five", "t0": 2.1, "t1": 2.5}
+        ]);
+        doc
+    }
+
+    /// 「每帧做了多少事」的确定性门禁：字幕层只在画面真的变了时重画。缓存键过细（比如逐词变色按帧号进键）时，
+    /// 画面没变也每帧重画，导出的帧率会掉一大截，而像素测试一个都不会失败。
+    ///
+    /// 允许的余量：每个词的起止都可能换键而像素不变（词进入一个与上一刻相同的状态），五个词最多多画 2 × 5 次；
+    /// 按帧重画则是 90 次左右，远超余量。`boxHighlight` 的块胀缩是连续插值，键跟着帧走，首尾画面不动的几帧也会
+    /// 重画，这里只卡住一帧最多画一次。
+    #[test]
+    fn caption_layers_are_redrawn_only_when_the_picture_changes() {
+        const WORDS: u64 = 5;
+        const FRAMES: u64 = 90;
+        for entry in crate::word_animation_catalog::WORD_ANIMATIONS {
+            for transition in ["none", "magic-fade", "magic-pop"] {
+                let (rasters, changes) = rasters_and_changes(&five_word_document(entry.catalog_id, transition));
+                let limit = if entry.catalog_id == "boxHighlight" {
+                    FRAMES
+                } else {
+                    changes + 2 * WORDS
+                };
+                assert!(
+                    rasters <= limit,
+                    "{} + {transition}：重画 {rasters} 次，画面只变了 {changes} 次（上限 {limit}）",
+                    entry.catalog_id
+                );
+            }
+        }
+    }
+
     fn emphasis_document(look: Option<Value>, emphasis: Option<Value>) -> Value {
         let mut doc = document("None", "none");
         doc["cues"][0]["words"][0]["id"] = json!("w1");

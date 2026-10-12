@@ -1440,6 +1440,7 @@ impl OverlayRenderPlan {
             whiteboard_cache: HashMap::new(),
             whiteboard_sources: HashMap::new(),
             blank_frame: None,
+            subtitle_rasters: 0,
             effect_scratch: None,
             suppress_transition: false,
             executor: render_raster::CpuExecutor::new(caps.clone()),
@@ -2523,6 +2524,12 @@ impl OverlayRenderPlan {
     /// `(cue, 当前词)` 定身份」。
     pub fn word_box_animated(&self) -> bool {
         self.word_box_animated
+    }
+
+    /// 字幕层到现在真正画了几张（`render_subtitle_frame` 未命中缓存的次数；倒鸭子接管时序列层与 cue 级各算一次，
+    /// 空白帧不算）。导出把它报给 Runtime，测试拿它与画面实际变化的次数比。
+    pub fn subtitle_rasters(&self) -> u64 {
+        self.subtitle_rasters
     }
 
     /// 目录逐词动画（`motion_id`）这一帧的样子：原文行只按 [`motion_for_item`] 的姿态变（`layout_motion`
@@ -4508,6 +4515,7 @@ impl OverlayRenderPlan {
         let (width, height) = (self.width as usize, self.height as usize);
         let mut pixmap = Pixmap::new(self.width, self.height)
             .ok_or_else(|| anyhow!("无法创建字幕透明层 {}x{}", self.width, self.height))?;
+        self.subtitle_rasters += 1;
         let mut drawn = self.draw_caption_sequence(&mut pixmap, &plan, &frame)?;
         if let Some(bounds) = &classic.bounds {
             composite_premultiplied_rgba(pixmap.data_mut(), &classic.rgba, width, bounds);
@@ -4635,6 +4643,7 @@ impl OverlayRenderPlan {
         let (width, height) = (self.width as usize, self.height as usize);
         let mut pixmap = Pixmap::new(self.width, self.height)
             .ok_or_else(|| anyhow!("无法创建字幕透明层 {}x{}", self.width, self.height))?;
+        self.subtitle_rasters += 1;
         // 本帧所有落笔的并集。求包围盒时只在它内部扫，省掉整幅 8.3MB 的搜索。
         let mut drawn = DrawBounds::default();
         let stack = self.stack_layout(&layouts, canvas_scale);

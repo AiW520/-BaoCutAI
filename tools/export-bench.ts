@@ -12,11 +12,16 @@
 // Worker 的输入用 Runtime 的 `workerInput`（`packages/runtime-core/src/exports/video-export.ts`）拼，视频与文档按引擎
 // `exports.plan` 给的形状手写（取自一致性夹具 `crates/frame-render/tests/fixtures/parity.json` 的写法）。
 //
-// 用法：node tools/export-bench.ts [--seconds 60] [--mono | --no-captions] [--style <预设>] [--worker <export-worker>] [--runs 1]
-//       [--json <输出文件>] [--keep]
+// 用法：node tools/export-bench.ts [--seconds 60] [--mono | --no-captions] [--style <预设>] [--worker <export-worker>]
+//       [--baseline <export-worker>] [--input <Worker 输入>] [--runs 1] [--json <输出文件>] [--keep]
 // `--style` 选字幕样式预设：缺省 `studio-color`（编辑器里的逐词变色「Color」，画面只在句与词的边界变，约 1 ms/帧）；其余走字幕内核每帧重画的路径：
 // `studio-transition`（入场姿态＋出场）、`studio-wordbox`（药丸高亮块随词缩放淡入）、`designed`（Designed Caption 配方＋逐词强调）、
 // `boxed-reveal`（定位框样式＋逐字显现，原文与译文各一个框；词到了才亮出来，只在词界变）、`boxed-motion`（同样的框，词入场连续位移）。
+// `catalog:<目录 id>` 用编辑器逐词动画目录的一格（`catalog:flipClock` 等，与界面选中那一格写进样式的载荷相同）。
+// `--baseline` 给另一个构建（通常是改动前的 release）：每种摆法两个构建交替跑（每轮轮换先后，`--runs` 缺省 3），报各自的
+// 中位数与比值；本次比基线慢超过 10% 时退出码为 1。`--input` 不合成夹具，直接跑一份 Worker 输入（导出进行中从
+// `<Home>/staging/jobs/<任务>/<n>.input.json` 复制；素材与字体按里面的绝对路径读），输出改写到临时目录、去掉声音。
+// 每次运行另报字幕层真正光栅了几张（`done.captionRasters`）：字幕不逐帧动却接近帧数，说明缓存键过细。
 // `--worker` 缺省是 `<target>/release/export-worker`（`cargo build --release -p export-worker`；打包的应用用 release），
 // 没有时退回 debug 并警告。`--runs` 大于 1 时每种摆法各报中位数与最好的一次。机器忙时绝对值会飘，看输出里的负载。
 // 环境：CARGO_TARGET_DIR（找 export-worker），BAOCUT_FFMPEG / BAOCUT_FFPROBE（缺省 PATH 里的 ffmpeg、ffprobe）。
@@ -25,6 +30,7 @@ import { spawn, spawnSync } from "node:child_process";
 import {
   existsSync,
   mkdtempSync,
+  readFileSync,
   rmSync,
   statSync,
   writeFileSync,
@@ -37,6 +43,10 @@ import {
   type VideoOutput,
   type VideoPlanResult,
 } from "../packages/runtime-core/src/exports/video-export.ts";
+import {
+  WORD_ANIMATIONS,
+  wordAnimationPayload,
+} from "../packages/ui/src/model/caption-word-animation.ts";
 
 const ROOT = resolve(fileURLToPath(new URL("..", import.meta.url)));
 const FFMPEG = process.env.BAOCUT_FFMPEG ?? "ffmpeg";
@@ -66,13 +76,17 @@ const STYLES = [
   "boxed-reveal",
   "boxed-motion",
 ] as const;
-type StyleName = (typeof STYLES)[number];
+/** 目录逐词动画的预设：`catalog:<目录 id>`。 */
+const CATALOG = "catalog:";
+type StyleName = (typeof STYLES)[number] | `${typeof CATALOG}${string}`;
 
 interface Options {
   seconds: number;
   captions: Captions;
   style: StyleName;
   worker: string | null;
+  baseline: string | null;
+  input: string | null;
   runs: number;
   json: string | null;
   keep: boolean;
@@ -84,7 +98,9 @@ function parseOptions(argv: string[]): Options {
     captions: "bilingual",
     style: "studio-color",
     worker: null,
-    runs: 1,
+    baseline: null,
+    input: null,
+    runs: 0,
     json: null,
     keep: false,
   };
@@ -95,10 +111,22 @@ function parseOptions(argv: string[]): Options {
     else if (arg === "--no-captions") options.captions = "none";
     else if (arg === "--style") {
       const name = argv[++i] as StyleName;
-      if (!STYLES.includes(name))
-        throw new Error(`--style 要是 ${STYLES.join(" / ")} 之一`);
+      const catalog = name.startsWith(CATALOG)
+        ? name.slice(CATALOG.length)
+        : null;
+      if (catalog !== null) {
+        if (!WORD_ANIMATIONS.some(([id]) => id === catalog))
+          throw new Error(
+            `${CATALOG} 后面要是目录 id：${WORD_ANIMATIONS.map(([id]) => id).join(" / ")}`,
+          );
+      } else if (!(STYLES as readonly string[]).includes(name))
+        throw new Error(
+          `--style 要是 ${STYLES.join(" / ")} 之一，或 ${CATALOG}<目录 id>`,
+        );
       options.style = name;
     } else if (arg === "--worker") options.worker = resolve(argv[++i]!);
+    else if (arg === "--baseline") options.baseline = resolve(argv[++i]!);
+    else if (arg === "--input") options.input = resolve(argv[++i]!);
     else if (arg === "--runs") options.runs = Number(argv[++i]);
     else if (arg === "--json") options.json = resolve(argv[++i]!);
     else if (arg === "--keep") options.keep = true;
@@ -106,6 +134,8 @@ function parseOptions(argv: string[]): Options {
   }
   if (!Number.isInteger(options.seconds) || options.seconds < 1)
     throw new Error("--seconds 要是正整数");
+  // 与基线比时一次不够：机器的负载会飘，缺省各跑 3 次取中位数。
+  if (options.runs === 0) options.runs = options.baseline ? 3 : 1;
   if (!Number.isInteger(options.runs) || options.runs < 1)
     throw new Error("--runs 要是正整数");
   return options;
@@ -217,7 +247,12 @@ function styleDocuments(style: StyleName): { orig: unknown; trans: unknown } {
     const doc = studioDocument(ORIG_STYLE, { order: "trans", ...extra });
     return { orig: doc, trans: doc };
   };
-  switch (style) {
+  if (style.startsWith(CATALOG))
+    // 目录的一格，界面选中它时写进样式的载荷。
+    return studio({
+      wordAnimation: wordAnimationPayload(style.slice(CATALOG.length)),
+    });
+  switch (style as (typeof STYLES)[number]) {
     case "studio-color":
       // 逐词变色，编辑器里「Color」写出来的形状（目录动画 `colourHighlight`）：画面只在句子与词的边界变。
       return studio({
@@ -515,11 +550,20 @@ function plan(
   } as unknown as VideoPlanResult;
 }
 
+/** 要量的一份 Worker 输入：合成夹具的一种摆法（`PLACEMENTS` 的 id），或 `--input` 给的那份（`input`）。 */
+interface Case {
+  id: string;
+  label: string;
+  inputFile: string;
+}
+
 interface Fixture {
   dir: string;
-  /** 每种摆法一份 Worker 输入，共用同一段画面。 */
-  inputs: { placement: Placement; inputFile: string }[];
+  /** 合成夹具每种摆法一份，共用同一段画面；`--input` 时只有那一份。 */
+  cases: Case[];
   outputFile: string;
+  /** 打印用的一行说明。 */
+  description: string;
   cues: number;
 }
 
@@ -560,7 +604,7 @@ function makeFixture(
   const ffmpeg = which(FFMPEG);
   const ffprobe = which(FFPROBE);
   const bytes = statSync(clip).size;
-  const inputs = PLACEMENTS.map((placement) => {
+  const cases = PLACEMENTS.map((placement) => {
     const input = workerInput({
       plan: plan(seconds, captions, style, placement, bytes),
       part: 0,
@@ -575,13 +619,44 @@ function makeFixture(
     });
     const inputFile = join(dir, `${placement.id}.input.json`);
     writeFileSync(inputFile, JSON.stringify(input));
-    return { placement, inputFile };
+    const label =
+      placement.id === "cover"
+        ? "cover（旧夹具）"
+        : "contain（真实项目：fullscreen + contain + 黑底）";
+    return { id: placement.id, label, inputFile };
   });
+  const cues = Math.ceil((seconds - 0.5) / CUE_EVERY);
+  const captionsLabel = {
+    bilingual: "双语字幕",
+    mono: "单语字幕",
+    none: "不烧字幕",
+  }[captions];
   return {
     dir,
-    inputs,
+    cases,
     outputFile,
-    cues: Math.ceil((seconds - 0.5) / CUE_EVERY),
+    description:
+      `${WIDTH}×${HEIGHT} ${FPS} fps ${seconds} s，${captionsLabel}` +
+      `${captions === "none" ? "" : `（${style}，${cues} 句）`}`,
+    cues,
+  };
+}
+
+/** `--input`：现成的 Worker 输入。输出改写到临时目录，不碰原来的目标；声音不在量的范围里，去掉混音。 */
+function inputFixture(file: string): Fixture {
+  const input = JSON.parse(readFileSync(file, "utf8"));
+  const dir = mkdtempSync(join(tmpdir(), "baocut-export-bench-"));
+  const outputFile = join(dir, `out.${input.output?.format ?? "mp4"}`);
+  input.output = { ...input.output, path: outputFile, audio: null };
+  const inputFile = join(dir, "input.json");
+  writeFileSync(inputFile, JSON.stringify(input));
+  const { width, height } = input.output;
+  return {
+    dir,
+    cases: [{ id: "input", label: `输入 ${file}`, inputFile }],
+    outputFile,
+    description: `${file}（输出 ${width}×${height}，${input.burnCaptions === false ? "不烧字幕" : "烧字幕"}）`,
+    cues: 0,
   };
 }
 
@@ -599,8 +674,10 @@ function which(tool: string): string {
 // ---------- 运行 ----------
 
 interface Result {
-  /** 主视频的摆法（`PLACEMENTS` 的 id）。 */
-  placement: Placement["id"];
+  /** 主视频的摆法（`PLACEMENTS` 的 id）；`--input` 时是 `input`。 */
+  placement: string;
+  /** `candidate` 是 `--worker` 那个构建，`baseline` 是 `--baseline`。 */
+  build: Build["name"];
   captions: Captions;
   style: StyleName;
   worker: string;
@@ -614,6 +691,8 @@ interface Result {
   msPerFrame: number;
   fps: number;
   decoderRestarts: number;
+  /** 字幕层真正光栅了几张（`done.captionRasters`）；旧版 Worker 不报时为 `null`。 */
+  captionRasters: number | null;
   /** Worker 报的画面编解码后端（`done.video`），如 `avfoundation→avfoundation`；`BAOCUT_EXPORT_NATIVE=0` 时是 ffmpeg。 */
   video: string;
   outputBytes: number;
@@ -703,109 +782,158 @@ function print(
   );
 }
 
+interface Build {
+  name: "candidate" | "baseline";
+  /** 打印用：只有一个构建时为空。 */
+  label: string;
+  worker: { path: string; profile: string };
+}
+
 async function main(): Promise<void> {
   const options = parseOptions(process.argv.slice(2));
-  const worker = findWorker(options.worker);
-  const fixture = makeFixture(options.seconds, options.captions, options.style);
-  const captionsLabel = {
-    bilingual: "双语字幕",
-    mono: "单语字幕",
-    none: "不烧字幕",
-  }[options.captions];
-  console.log(
-    `夹具：${WIDTH}×${HEIGHT} ${FPS} fps ${options.seconds} s，${captionsLabel}` +
-      `${options.captions === "none" ? "" : `（${options.style}，${fixture.cues} 句）`}，目录 ${fixture.dir}`,
-  );
-  console.log(
-    `Worker：${worker.path}（${worker.profile}），${cpus().length} 核 ${cpus()[0]?.model ?? ""}`,
-  );
+  const builds: Build[] = [
+    {
+      name: "candidate",
+      label: options.baseline ? "本次" : "",
+      worker: findWorker(options.worker),
+    },
+  ];
+  if (options.baseline)
+    builds.push({
+      name: "baseline",
+      label: "基线",
+      worker: findWorker(options.baseline),
+    });
+  const fixture = options.input
+    ? inputFixture(options.input)
+    : makeFixture(options.seconds, options.captions, options.style);
+  console.log(`夹具：${fixture.description}，目录 ${fixture.dir}`);
+  for (const build of builds)
+    console.log(
+      `Worker${build.label ? `（${build.label}）` : ""}：${build.worker.path}（${build.worker.profile}），` +
+        `${cpus().length} 核 ${cpus()[0]?.model ?? ""}`,
+    );
   const results: Result[] = [];
+  const regressions: string[] = [];
   try {
-    for (const { placement, inputFile } of fixture.inputs) {
-      const label =
-        placement.id === "cover"
-          ? "cover（旧夹具）"
-          : "contain（真实项目：fullscreen + contain + 黑底）";
-      console.log(`摆法 ${label}`);
-      const own: Result[] = [];
+    for (const { id, label, inputFile } of fixture.cases) {
+      console.log(fixture.cases.length > 1 ? `摆法 ${label}` : label);
       for (let i = 0; i < options.runs; i++) {
-        const loadBefore = loadavg()[0]!;
-        const { done, wallSeconds } = await render(
-          worker.path,
-          inputFile,
-          fixture.outputFile,
-        );
-        const loadAfter = loadavg()[0]!;
-        const frames = Number(done.frames);
-        const renderSeconds = Number(done.renderSeconds);
-        const result: Result = {
-          placement: placement.id,
-          captions: options.captions,
-          style: options.style,
-          worker: worker.path,
-          profile: worker.profile,
-          seconds: options.seconds,
-          frames,
-          wallSeconds,
-          renderSeconds,
-          overheadSeconds: wallSeconds - renderSeconds,
-          msPerFrame: (renderSeconds * 1000) / frames,
-          fps: frames / renderSeconds,
-          decoderRestarts: Number(done.decoderRestarts),
-          video: done.video
-            ? `${done.video.decoder ?? "-"}→${done.video.encoder}` +
-              (done.video.fallbacks.length
-                ? `（回落 ${done.video.fallbacks.map((f: { scope: string; reason: string }) => `${f.scope}:${f.reason}`).join("、")}）`
-                : "")
-            : "未报",
-          outputBytes: statSync(fixture.outputFile).size,
-          loadBefore,
-          loadAfter,
-        };
-        own.push(result);
-        results.push(result);
-        const skipped = (done.skipped ?? []).length;
-        const warnings = (done.warnings ?? []).length + skipped;
-        if (skipped)
-          console.warn(
-            `警告：Worker 跳过了字幕（样式没画出来）：${JSON.stringify(done.skipped)}`,
+        // 交替跑、每轮轮换先后：负载随时间飘时两个构建吃到的一样多。
+        const order = i % 2 === 0 ? builds : [...builds].reverse();
+        for (const build of order) {
+          const loadBefore = loadavg()[0]!;
+          const { done, wallSeconds } = await render(
+            build.worker.path,
+            inputFile,
+            fixture.outputFile,
           );
-        print(
-          `  第 ${i + 1} 次`,
-          result,
-          ` · 解码重开 ${result.decoderRestarts} 次 · 输出 ${round(result.outputBytes / 1e6, 1)} MB · ` +
-            `编解码 ${result.video} · ` +
-            `负载 ${loadBefore.toFixed(1)}→${loadAfter.toFixed(1)}/${cpus().length}${warnings ? ` · 警告与跳过 ${warnings} 项` : ""}`,
-        );
+          const loadAfter = loadavg()[0]!;
+          const frames = Number(done.frames);
+          const renderSeconds = Number(done.renderSeconds);
+          const result: Result = {
+            placement: id,
+            build: build.name,
+            captions: options.captions,
+            style: options.style,
+            worker: build.worker.path,
+            profile: build.worker.profile,
+            seconds: options.seconds,
+            frames,
+            wallSeconds,
+            renderSeconds,
+            overheadSeconds: wallSeconds - renderSeconds,
+            msPerFrame: (renderSeconds * 1000) / frames,
+            fps: frames / renderSeconds,
+            decoderRestarts: Number(done.decoderRestarts),
+            captionRasters:
+              done.captionRasters === undefined
+                ? null
+                : Number(done.captionRasters),
+            video: done.video
+              ? `${done.video.decoder ?? "-"}→${done.video.encoder}` +
+                (done.video.fallbacks.length
+                  ? `（回落 ${done.video.fallbacks.map((f: { scope: string; reason: string }) => `${f.scope}:${f.reason}`).join("、")}）`
+                  : "")
+              : "未报",
+            outputBytes: statSync(fixture.outputFile).size,
+            loadBefore,
+            loadAfter,
+          };
+          results.push(result);
+          const skipped = (done.skipped ?? []).length;
+          const warnings = (done.warnings ?? []).length + skipped;
+          if (skipped)
+            console.warn(
+              `警告：Worker 跳过了字幕（样式没画出来）：${JSON.stringify(done.skipped)}`,
+            );
+          print(
+            `  第 ${i + 1} 次${build.label ? ` ${build.label}` : ""}`,
+            result,
+            ` · 解码重开 ${result.decoderRestarts} 次` +
+              (result.captionRasters === null
+                ? ""
+                : ` · 字幕光栅 ${result.captionRasters} 次`) +
+              ` · 输出 ${round(result.outputBytes / 1e6, 1)} MB · ` +
+              `编解码 ${result.video} · ` +
+              `负载 ${loadBefore.toFixed(1)}→${loadAfter.toFixed(1)}/${cpus().length}${warnings ? ` · 警告与跳过 ${warnings} 项` : ""}`,
+          );
+        }
       }
-      if (own.length > 1) {
-        const pick = (key: keyof Result) => own.map((r) => r[key] as number);
-        const summary = {
-          wallSeconds: median(pick("wallSeconds")),
-          renderSeconds: median(pick("renderSeconds")),
-          overheadSeconds: median(pick("overheadSeconds")),
-          frames: own[0]!.frames,
-          msPerFrame: median(pick("msPerFrame")),
-          fps: median(pick("fps")),
-        };
-        print(`  中位数（${own.length} 次）`, summary);
-        const best = own.reduce((a, b) =>
-          b.renderSeconds < a.renderSeconds ? b : a,
+      const fpsOf = (build: Build["name"]) =>
+        median(
+          results
+            .filter((r) => r.placement === id && r.build === build)
+            .map((r) => r.fps),
         );
-        print("  最好的一次", best);
+      if (options.runs > 1)
+        for (const build of builds) {
+          const own = results.filter(
+            (r) => r.placement === id && r.build === build.name,
+          );
+          const pick = (key: keyof Result) => own.map((r) => r[key] as number);
+          const summary = {
+            wallSeconds: median(pick("wallSeconds")),
+            renderSeconds: median(pick("renderSeconds")),
+            overheadSeconds: median(pick("overheadSeconds")),
+            frames: own[0]!.frames,
+            msPerFrame: median(pick("msPerFrame")),
+            fps: median(pick("fps")),
+          };
+          const name = build.label ? `${build.label}的` : "";
+          print(`  ${name}中位数（${own.length} 次）`, summary);
+          const best = own.reduce((a, b) =>
+            b.renderSeconds < a.renderSeconds ? b : a,
+          );
+          print(`  ${name}最好的一次`, best);
+        }
+      if (options.baseline) {
+        // 帧率的中位数之比：低于 0.9 算变慢（机器的抖动一般在 ±10% 内，比值以交替跑的为准）。
+        const ratio = fpsOf("candidate") / fpsOf("baseline");
+        console.log(
+          `  本次/基线 ${round(ratio, 2)}（${round(fpsOf("candidate"), 1)} / ${round(fpsOf("baseline"), 1)} fps）` +
+            (ratio < 0.9 ? "：慢了超过 10%" : ""),
+        );
+        if (ratio < 0.9) regressions.push(`${label} ${round(ratio, 2)}`);
       }
     }
-    // 两种摆法都是恒等几何，帧率应相近；contain 明显慢说明带底的恒等直通丢了。
-    const fpsOf = (id: Placement["id"]) =>
-      median(results.filter((r) => r.placement === id).map((r) => r.fps));
-    const cover = fpsOf("cover");
-    const contain = fpsOf("contain");
-    console.log(
-      `对比：cover ${round(cover, 1)} fps · contain ${round(contain, 1)} fps · contain/cover ${round(contain / cover, 2)}` +
-        (Math.abs(contain / cover - 1) > 0.1
-          ? "（相差超过 10%：查 subtitle-render 里全屏 + contain + bg 的路径，先看 render_media_element 的恒等直通，再看烧字幕时的合成）"
-          : ""),
-    );
+    if (!options.input) {
+      // 两种摆法都是恒等几何，帧率应相近；contain 明显慢说明带底的恒等直通丢了。
+      const fpsOf = (id: Placement["id"]) =>
+        median(
+          results
+            .filter((r) => r.placement === id && r.build === "candidate")
+            .map((r) => r.fps),
+        );
+      const cover = fpsOf("cover");
+      const contain = fpsOf("contain");
+      console.log(
+        `对比：cover ${round(cover, 1)} fps · contain ${round(contain, 1)} fps · contain/cover ${round(contain / cover, 2)}` +
+          (Math.abs(contain / cover - 1) > 0.1
+            ? "（相差超过 10%：查 subtitle-render 里全屏 + contain + bg 的路径，先看 render_media_element 的恒等直通，再看烧字幕时的合成）"
+            : ""),
+      );
+    }
     if (options.json)
       writeFileSync(
         options.json,
@@ -818,6 +946,10 @@ async function main(): Promise<void> {
   } finally {
     if (options.keep) console.log(`保留夹具：${fixture.dir}`);
     else rmSync(fixture.dir, { recursive: true, force: true });
+  }
+  if (regressions.length) {
+    console.error(`比基线慢了超过 10%：${regressions.join("；")}`);
+    process.exitCode = 1;
   }
 }
 

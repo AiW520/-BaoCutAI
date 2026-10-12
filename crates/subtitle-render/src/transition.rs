@@ -878,6 +878,9 @@ pub struct OverlayRenderPlan {
         VecDeque<(String, Arc<[Arc<[element_draw::GlyphInstance]>]>)>,
     pub composited: Option<CompositedOverlay>,
     pub blank_frame: Option<Arc<Vec<u8>>>,
+    /// 字幕层真正落笔的次数（缓存未命中、画了一张新图；空白帧不算）。只用来量「每帧做了多少事」：
+    /// 画面没变却重画，是缓存键过细的信号（[`OverlayRenderPlan::subtitle_rasters`]）。
+    pub subtitle_rasters: u64,
     /// 字幕效果层的可复用整幅缓冲。用完按包围盒清零后归还，保证下次取出时
     /// 仍是全零——省掉 4K 下每行效果 33MB 的分配。
     pub effect_scratch: Option<Pixmap>,

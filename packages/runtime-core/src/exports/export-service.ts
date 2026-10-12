@@ -778,6 +778,7 @@ export class ExportService {
             frames: result.frames,
             renderSeconds: result.renderSeconds,
             decoderRestarts: result.decoderRestarts,
+            ...(result.captionRasters !== undefined ? { captionRasters: result.captionRasters } : {}),
             ...(result.video
               ? {
                   videoDecoder: result.video.decoder,

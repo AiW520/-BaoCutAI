@@ -139,6 +139,8 @@ pub struct FrameRenderer {
     caption_signatures: HashMap<(String, String), String>,
     collect_caption_hits: bool,
     caption_hits: Vec<CaptionHit>,
+    /// 画帧时字幕层真正光栅了几张（[`Self::caption_rasters`]）。
+    caption_rasters: u64,
     templates: TemplateScenes,
     lotties: HashMap<String, Option<Arc<Lottie>>>,
     /// SVG 图片按输出长边光栅好的画面（键是 `素材ID@版本`，换过色的是它的变体 ID）；读不出来的是 `None`。换尺寸时作废。
@@ -195,6 +197,7 @@ impl FrameRenderer {
             caption_signatures: HashMap::new(),
             collect_caption_hits: false,
             caption_hits: Vec::new(),
+            caption_rasters: 0,
             templates: TemplateScenes::default(),
             lotties: HashMap::new(),
             svgs: HashMap::new(),
@@ -383,6 +386,12 @@ impl FrameRenderer {
 
     pub fn caption_hits(&self) -> &[CaptionHit] {
         &self.caption_hits
+    }
+
+    /// 这台渲染器画帧时字幕层一共真正光栅了几张（缓存命中不算；字体变了、计划重编之后接着累计）。字幕只在画面变了时
+    /// 才该重画：导出把它与帧数一起报出来，比帧数还多或接近帧数而字幕并不逐帧动，说明缓存键过细。
+    pub fn caption_rasters(&self) -> u64 {
+        self.caption_rasters
     }
 
     pub fn frame(&self) -> &Pixmap {
@@ -1168,10 +1177,12 @@ impl FrameRenderer {
         } else {
             scope.as_ref().map(|s| s.source_seconds)
         };
+        let before = captions.rasters();
         let rendered = match at {
             Some(at) => captions.render_layers(at).map_err(RenderError::render)?,
             None => Vec::new(),
         };
+        self.caption_rasters += captions.rasters() - before;
         let style_opacity = captions.opacity;
         if self.collect_caption_hits && !rendered.is_empty() && first.opacity * f64::from(style_opacity) > 0.0 {
             for mut hit in captions.hits(at.unwrap()).map_err(RenderError::render)? {
