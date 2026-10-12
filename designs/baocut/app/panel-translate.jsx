@@ -753,36 +753,38 @@
             </Picker>
           } />
 
-        <div className="statbar">
-          <span>{S.cues} cues · {S.sentences} 句</span>
-          {S.deficits > 0 ? <span className="warn">{S.deficits} 处黏结</span> : null}
-          {refreshing
-            ? <span className="warn">正在重译 {todoIds.length} 句…</span>
-            : todoIds.length > 0
-              ? <>
-                {S.untranslated > 0 ? <span className="warn">{S.untranslated} 句未翻译</span> : null}
-                {S.stale > 0 ? <span className="warn" title={window.BC_SURFACE.ai ? undefined : window.BC_SURFACE.aiElsewhere('刷新译文')}>{S.stale} 句译文已过期</span> : null}
-                {/* 过期与未翻译的一起重译：直接调模型（Runtime 就地刷新这份译文），或发到当前会话交给 Agent（§5.10） */}
-                {window.BC_SURFACE.ai ? <span>
-                  <BCAction className="warn stlink" onClick={() => setStaleMenu((v) => !v)}>重译</BCAction>
-                  <Popover open={staleMenu} onClose={() => setStaleMenu(false)} width={240}>
-                    <Menu>
-                      <MenuItem icon="sparkle" label={`直接重译这 ${todoIds.length} 句`} onClick={() => { setStaleMenu(false); refresh(); }} />
-                      {window.BC_SURFACE.agent ? <MenuItem icon="agent" label="交给 Agent · 发到当前会话"
-                        onClick={() => { setStaleMenu(false); toAgent({kind: 'stale', lang: cur.name, count: todoIds.length}); }} /> : null}
-                    </Menu>
-                  </Popover>
-                </span> : null}
-              </>
-              : <span className="ok">译文全部最新 ✓</span>}
-          {cutN > 0
-            ? (window.BC_SURFACE.ai
-              ? <BCAction className="warn stlink" onClick={() => ctx.requestAi('stale', {k: 'cut', label: `原文被剪切的 ${cutN} 句`, count: cutN})}>{cutN} 句原文被剪切 · 处理</BCAction>
-              : <span className="warn" title={window.BC_SURFACE.aiElsewhere('刷新译文')}>{cutN} 句原文被剪切</span>)
-            : null}
-          <span className="tail" />
+        {/* 统计条一行放下（product-design §5.10）：左边只写句数与要处理的计数（全称在 tip 里），动作都是右边的图标钮。
+            「重译」一枚管过期与未翻译的句子（直接重译 / 交给 Agent），原文被剪切的「处理」也收在它的菜单里。 */}
+        <div className="statbar statbar--one">
+          <span className="statbar__counts">
+            {refreshing
+              ? <span className="warn">正在重译 {todoIds.length} 句…</span>
+              : <>
+                <span title={`${S.cues} cues · ${S.sentences} 句`}>{S.sentences} 句</span>
+                {S.untranslated > 0 ? <span className="warn" title={`${S.untranslated} 句还没有译文`}>{S.untranslated} 未翻译</span> : null}
+                {S.stale > 0 ? <span className="warn" title={`${S.stale} 句译文已过期${window.BC_SURFACE.ai ? '' : ' · ' + window.BC_SURFACE.aiElsewhere('重译')}`}>{S.stale} 过期</span> : null}
+                {cutN > 0 ? <span className="warn" title={`${cutN} 句原文被剪切`}>{cutN} 被剪切</span> : null}
+                {S.deficits > 0 ? <span className="warn" title={`${S.deficits} 处黏结：一行译文停留太久`}>{S.deficits} 黏结</span> : null}
+                {todoIds.length + cutN + S.deficits === 0 ? <span className="ok">全部最新</span> : null}
+              </>}
+          </span>
           <IconBtn icon="search" size="s" tip="查找和替换 · ⌘F" on={find.open}
             onClick={() => (find.open ? find.close() : find.setOpen(true))} />
+          {/* 过期与未翻译的一起重译：直接调模型（Runtime 就地刷新这份译文），或发到当前会话交给 Agent */}
+          {window.BC_SURFACE.ai && (todoIds.length > 0 || cutN > 0) ? <span className="statbar__menu">
+            <IconBtn icon="refresh" size="s" disabled={refreshing} on={staleMenu}
+              tip={refreshing ? `正在重译 ${todoIds.length} 句` : '重译过期与未翻译的句子'} onClick={() => setStaleMenu((v) => !v)} />
+            <Popover open={staleMenu} onClose={() => setStaleMenu(false)} align="right" width={248}>
+              <Menu>
+                {todoIds.length > 0 ? <MenuItem icon="sparkle" label={`直接重译这 ${todoIds.length} 句`} sub="过期与未翻译的句子 · 字幕跟着更新"
+                  onClick={() => { setStaleMenu(false); refresh(); }} /> : null}
+                {todoIds.length > 0 && window.BC_SURFACE.agent ? <MenuItem icon="agent" label="交给 Agent" sub="发到当前会话"
+                  onClick={() => { setStaleMenu(false); toAgent({kind: 'stale', lang: cur.name, count: todoIds.length}); }} /> : null}
+                {cutN > 0 ? <MenuItem icon="split" label={`处理原文被剪切的 ${cutN} 句`} sub="打开刷新过期译文"
+                  onClick={() => { setStaleMenu(false); ctx.requestAi('stale', {k: 'cut', label: `原文被剪切的 ${cutN} 句`, count: cutN}); }} /> : null}
+              </Menu>
+            </Popover>
+          </span> : null}
           {window.BC_SURFACE.ai ? <IconBtn icon="sparkle" size="s" tip="翻译工具" onClick={() => ctx.requestAi('translate', null)} /> : null}
           {/* 第 109 轮：翻译面板直通 Agent——带着「翻成当前这门语言」的草稿开左抽屉 */}
           {window.BC_SURFACE.agent ? <IconBtn icon="agent" size="s" tip={app.harness ? '让 Agent 翻译或校对' : '连接编码 Agent 后可交给它翻译或校对'}

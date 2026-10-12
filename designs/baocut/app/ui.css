@@ -1692,6 +1692,9 @@ body { font-size: 14px; }
 .statbar .warn { color: var(--orange-1000); font-weight: 500; }
 .statbar .ok { color: var(--green-1000); font-weight: 500; }
 .statbar .tail { margin-left: auto; color: var(--gray-500); }
+.statbar--one { flex-wrap: nowrap; gap: 4px; padding: 4px 8px 4px 12px; }
+.statbar__counts { display: flex; align-items: center; gap: 8px; flex: 1 1 auto; min-width: 0; overflow: hidden; white-space: nowrap; }
+.statbar__menu { display: inline-flex; }
 
 /* ---------- 查找与替换（文稿 / 字幕 / 翻译共用，§13.4） ----------
    一条查找条三个 Tab 共用：上排查找 + 计数 + 上一个/下一个，下排替换 + 匹配选项。
