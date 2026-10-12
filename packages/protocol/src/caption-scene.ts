@@ -3,6 +3,7 @@ export type CaptionValueType = 'scalar' | 'integer' | 'length' | 'time' | 'angle
 export type CaptionUnit = 'cue' | 'page' | 'line' | 'word' | 'grapheme';
 export type CaptionWordState = 'active' | 'read' | 'unread';
 export type CaptionValue = number | boolean | string;
+/** Built-in cubic-bezier(progress, x1, y1, x2, y2) accepts five scalars; x controls are in [0, 1]. */
 export type CaptionExpression =
   | { op: 'literal'; type: CaptionValueType; value: CaptionValue }
   | { op: 'read'; path: string }

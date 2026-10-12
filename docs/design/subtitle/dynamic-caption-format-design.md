@@ -279,6 +279,8 @@ interface PureFunctionDefinition {
 | 几何 | 布局框读取、空间转换、padding 外扩、对齐/锚点计算 |
 | 随机 | `random(seed, stableKey)`、带明确算法/晶格定义的 `noise(seed, x)` |
 
+当前执行合同提供五个 scalar 参数的 `cubic-bezier(progress, x1, y1, x2, y2)`，复用 motion 求解器。它可与语义时钟及 `min/max` 组合，描述持续时间随当前单元时长变化的入场；progress 两端固定为 0/1，控制点 x 限 [0,1]，控制点 y 可超调。能力名为 `caption-bezier-expression/1`，参数和错误语义见视频格式 §5.6。
+
 random 对同 key 永远返回同值；时间噪声通过明确的连续坐标变化，不用“每画一帧抽一次”。key 由实例 seed、节点 ID、单元 ID 和通道 ID 组成，不因隐藏了邻词或换帧率而重排。函数算法及浮点/取整策略进入 evaluationVersion，native/WASM 使用同一实现和黄金值。
 
 除零、非有限结果、越界索引和缺失的必填字段返回结构化错误；不得默认为 0 继续画。声明为可选的上下文字段有显式 optional 类型，作者使用类型正确的 `coalesce` 或条件表达式处理；coalesce 不吞掉执行错误。`if` 只求选中的分支，避免无效分支的除零污染合法输出。clamp 只用于属性声明的合法范围，不掩盖非法计算。

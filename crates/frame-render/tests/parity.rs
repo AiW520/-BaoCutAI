@@ -712,6 +712,34 @@ fn scenes() -> Vec<Scene> {
         style_doc("style", dynamic_style),
     ];
     scenes.push(dynamic);
+    let mut bezier_style: Value = serde_json::from_str(include_str!("../../caption-scene/tests/fixtures/word-pop.json")).unwrap();
+    bezier_style["scene"]["value"]["speechState"]["timingPolicy"] = json!("estimated");
+    bezier_style["scene"]["value"]["requiredCapabilities"] = json!(["caption-bezier-expression/1"]);
+    bezier_style["scene"]["value"]["animations"][1]["value"] = json!({
+        "kind":"expression","expression":{"op":"call","function":"cubic-bezier","args":[
+            {"op":"call","function":"div","args":[
+                {"op":"read","path":"time.elapsedSeconds"},
+                {"op":"call","function":"min","args":[
+                    {"op":"read","path":"time.durationSeconds"},
+                    {"op":"literal","type":"time","value":0.2}
+                ]}
+            ]},
+            {"op":"literal","type":"scalar","value":0.2},
+            {"op":"literal","type":"scalar","value":1.6},
+            {"op":"literal","type":"scalar","value":0.4},
+            {"op":"literal","type":"scalar","value":1.2}
+        ]}
+    });
+    let mut bezier = Scene::new(
+        "captions-dynamic-bezier-expression",
+        video(vec![caption("bezier", "doc", Some("style"), 120, &[])], vec![], json!({})),
+        &[0, 1, 2, 3, 5, 9, 32, 39, 65, 99],
+    );
+    bezier.documents = vec![
+        caption_doc("doc", "sequence", &[(0.0, 4.0, "One two three four")], "original"),
+        style_doc("style", bezier_style),
+    ];
+    scenes.push(bezier);
     let mut wave_style: Value = serde_json::from_str(include_str!("../../caption-scene/tests/fixtures/word-pop.json")).unwrap();
     let wave_scene = &mut wave_style["scene"]["value"];
     wave_scene["speechState"]["timingPolicy"] = json!("estimated");

@@ -5,6 +5,7 @@ use std::collections::{BTreeMap, BTreeSet};
 pub const CAPABILITIES: &[&str] = &[
     "caption-scene/1",
     "caption-expressions/1",
+    "caption-bezier-expression/1",
     "caption-unit-animation/1",
     "caption-image-png/1",
     "caption-paint-stack/1",
@@ -190,6 +191,7 @@ pub fn validate_scene(s: &Scene) -> Result<()> {
                 "floor",
                 "ceil",
                 "smoothstep",
+                "cubic-bezier",
             ]
             .contains(&f.id.as_str())
         {

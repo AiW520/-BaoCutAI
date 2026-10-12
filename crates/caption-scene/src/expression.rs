@@ -132,6 +132,7 @@ pub fn builtin_type(name: &str, args: &[ValueType]) -> Option<ValueType> {
         ("mix", [a, b, Scalar]) if a == b && (numeric(*a) || *a == Color) => Some(*a),
         ("clamp", [a, b, c]) if a == b && b == c && numeric(*a) => Some(*a),
         ("smoothstep", [Scalar]) => Some(Scalar),
+        ("cubic-bezier", [Scalar, Scalar, Scalar, Scalar, Scalar]) => Some(Scalar),
         ("eq", [a, b]) if a == b => Some(Bool),
         ("lt" | "gt", [a, b]) if a == b && numeric(*a) => Some(Bool),
         ("and" | "or", [Bool, Bool]) | ("not", [Bool]) => Some(Bool),
@@ -334,6 +335,12 @@ fn builtin(name: &str, v: &[Evaluated], t: ValueType, c: &Context) -> Result<Eva
         "smoothstep" => {
             let u = n[0].clamp(0.0, 1.0);
             u * u * (3.0 - 2.0 * u)
+        }
+        "cubic-bezier" => {
+            if !(0.0..=1.0).contains(&n[1]) || !(0.0..=1.0).contains(&n[3]) {
+                return Err(invalid("cubic-bezier", "control point x must be in [0, 1]"));
+            }
+            motion::curve::cubic_bezier(n[1], n[2], n[3], n[4], n[0])
         }
         "random" => random(c.seed, &c.stable_key, n[0].to_bits()),
         "noise" => {

@@ -187,3 +187,60 @@ fn material_validation_limits_nested_history_and_blur() {
     body["scene"]["value"]["materials"][0]["step"]["ticks"] = json!(0);
     assert!(parse_style(&body).is_err());
 }
+
+#[test]
+fn bezier_expression_supports_duration_dependent_progress_and_overshoot() {
+    let mut input = fixture();
+    input["scene"]["value"]["requiredCapabilities"] = json!(["caption-bezier-expression/1"]);
+    let style = parse_style(&input).unwrap();
+    let curve = expr(json!({"op":"call","function":"cubic-bezier","args":[
+        {"op":"call","function":"div","args":[
+            {"op":"read","path":"time.elapsedSeconds"},
+            {"op":"call","function":"min","args":[
+                {"op":"read","path":"time.durationSeconds"},
+                {"op":"literal","type":"time","value":0.1}
+            ]}
+        ]},
+        {"op":"literal","type":"scalar","value":0.2},
+        {"op":"literal","type":"scalar","value":1.6},
+        {"op":"literal","type":"scalar","value":0.4},
+        {"op":"literal","type":"scalar","value":1.2}
+    ]}));
+    assert_eq!(infer(&curve, style.scene(), &BTreeMap::new()).unwrap(), ValueType::Scalar);
+    let sample = |elapsed, duration| {
+        let mut context = Context::default();
+        context
+            .fields
+            .insert("time.elapsedSeconds".into(), Evaluated::Number(ValueType::Time, elapsed));
+        context
+            .fields
+            .insert("time.durationSeconds".into(), Evaluated::Number(ValueType::Time, duration));
+        evaluate(&curve, style.scene(), &context, &mut Budget::default())
+            .unwrap()
+            .number()
+            .unwrap()
+    };
+    assert_eq!(sample(-0.1, 1.0), 0.0);
+    assert_eq!(sample(0.2, 1.0), 1.0);
+    assert!(sample(0.06, 1.0) > 1.0);
+    assert_eq!(sample(0.025, 0.05), sample(0.05, 1.0));
+    for time in [0.001, 0.07, 0.03, 0.099, 0.001] {
+        assert_eq!(sample(time, 1.0), motion::curve::cubic_bezier(0.2, 1.6, 0.4, 1.2, time / 0.1));
+    }
+    let make = |x| {
+        expr(json!({"op":"call","function":"cubic-bezier","args":[
+            {"op":"literal","type":"scalar","value":0.5},
+            {"op":"literal","type":"scalar","value":x},
+            {"op":"literal","type":"scalar","value":0},
+            {"op":"literal","type":"scalar","value":1},
+            {"op":"literal","type":"scalar","value":1}
+        ]}))
+    };
+    assert!(evaluate(&make(-0.1), style.scene(), &Context::default(), &mut Budget::default()).is_err());
+    assert!(evaluate(&make(1.1), style.scene(), &Context::default(), &mut Budget::default()).is_err());
+    assert!(evaluate(&make(0.2), style.scene(), &Context::default(), &mut Budget(0)).is_err());
+    assert!(builtin_type("cubic-bezier", &[ValueType::Time; 5]).is_none());
+    input["scene"]["value"]["functions"] =
+        json!([{"id":"cubic-bezier","arguments":[],"returns":"scalar","body":{"op":"literal","type":"scalar","value":1}}]);
+    assert!(parse_style(&input).is_err());
+}
