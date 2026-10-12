@@ -140,6 +140,8 @@ export const ja: AiToolsMessages = {
   sourceEdited: (n: number | null) => (n === null ? '原文を編集' : `原文で ${n} 文を編集`),
   sourceCut: (n: number | null) => (n === null ? '原文をカット' : `原文で ${n} 文をカット`),
   sourceJoin: (parts: readonly string[]) => parts.join('、'),
+  retranslateOne: (o) => `${o.p}の${o.time ? `${o.time} の` : ''}「${o.text}」の一文を${o.language}に訳し直してください。変えるのはこの一文の訳文だけで、タイミング、字幕スタイル、ほかの文は一字も変えないでください。`,
+  retranslateStale: (o) => `${o.p}の${o.language}の訳文に、要更新または未翻訳の文が ${o.count} 文あります。これらの文だけを訳し直し、ほかは一字も変えないでください。`,
   intents: {
     shortscut: (o) => `${o.scope ? `${o.p}の${o.scope}` : o.p}から、単独で公開する価値が最も高い話題を見つけ、話題ごとに完結したショート動画として切り出してください。1本ごとに同じ元素材を参照する新しい動画にし、元の動画とタイムラインは変更しないでください。`,
     stale: (o) =>

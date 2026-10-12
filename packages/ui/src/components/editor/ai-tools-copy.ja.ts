@@ -103,7 +103,7 @@ export const ja: AiToolsMessages = {
 
   whyRetranscribe: '音声モデルが必要で、Runtime の文字起こしは範囲を置き換えず新しい文字起こしを丸ごと追加するため、Agent にのみ任せられます',
   whyCleanup: 'カット箇所を探すには前後の文脈で一つずつ判断する必要があるため、Agent にのみ任せられます',
-  whyStale: '古くなった文だけを訳し直すフローが Runtime にまだないため、Agent にのみ任せられます',
+  whyStale: 'モデル API での訳し直しは字幕パネルの訳文リストの AI ボタンから；このページは Agent に任せます',
   whyCover: 'カバーには画像の生成と合成が必要なため、Agent にのみ任せられます',
   modelPromptLabel: 'プロンプト',
   modelPicker: 'テキストモデル',

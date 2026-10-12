@@ -137,6 +137,8 @@ export const tr: AiToolsMessages = {
   sourceEdited: (n) => n === null ? 'kaynak düzenlendi' : `kaynakta ${n} cümle düzenlendi`,
   sourceCut: (n) => n === null ? 'kaynak kesildi' : `kaynakta ${n} cümle kesildi`,
   sourceJoin: (parts: readonly string[]) => parts.join(', '),
+  retranslateOne: (o) => `${o.p} içindeki ${o.time ? `${o.time} anındaki ` : ''}“${o.text}” cümlesini yeniden çevir (hedef dil: ${o.language}). Yalnızca bu cümlenin çevirisini değiştir; zamanlamayı, altyazı stilini ve diğer tüm cümleleri olduğu gibi bırak.`,
+  retranslateStale: (o) => `${o.p} için ${o.language} çevirisinde güncel olmayan veya henüz çevrilmemiş cümleler var (${o.count}). Yalnızca bu cümleleri yeniden çevir, diğer her şeyi olduğu gibi bırak.`,
   intents: {
     shortscut: (o) => `${o.scope ? `${o.p}: ${o.scope}` : o.p} içinde tek başına paylaşmaya en değer konuları bul ve her birini eksiksiz bir kısa video olarak kes: her biri aynı kaynak görüntüye başvuran yeni bir videodur; orijinal video ve zaman çizelgesi değişmez.`,
     stale: (o) => `${o.p} içindeki bazı çeviriler eski${o.why ? ` (${o.why})` : '; kaynak düzenlendiği için'}. Yalnızca bu cümleleri yeniden çevir${o.cut ? '; kaynakta kesilenleri kesilmiş olarak yeniden çevir ve tamamen kesilen cümlelerle birlikte çevirilerini de kaldır' : ''}. Diğer her şeyi olduğu gibi bırak.`,

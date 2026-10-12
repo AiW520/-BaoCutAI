@@ -5,7 +5,7 @@ import { style } from '@react-spectrum/s2/style' with { type: 'macro' };
 import { TASK_VIEW_COPY, VIDEO_CARD_COPY } from '../../copy.ts';
 import { languageName } from '../../model/caption-tracks.ts';
 import { langName } from '../../model/tools-models.ts';
-import { isTranslateJob, sourceOf, targetOf, translateProgress, type TranslateProgress } from '../../model/translate-progress.ts';
+import { isTranslateJob, refreshOf, sourceOf, targetOf, translateProgress, type TranslateProgress } from '../../model/translate-progress.ts';
 import { isJobLive, useJobs } from '../../state/jobs-store.ts';
 import { useShell } from '../../state/shell-store.ts';
 import { useOpenConversation } from '../tasks/task-card.tsx';
@@ -91,7 +91,7 @@ export function useTranslateLive(videoId: Id | null): TranslateLive | null {
       ? run.jobId
         ? (jobs.find((j) => j.jobId === run.jobId) ?? null)
         : null
-      : (jobs.find((j) => isTranslateJob(j, videoId) && isJobLive(j)) ?? null);
+      : (jobs.find((j) => isTranslateJob(j, videoId) && isJobLive(j) && !refreshOf(j)) ?? null);
     if (!run && !job) return null;
     return {
       run,

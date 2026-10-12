@@ -126,7 +126,7 @@ const en = {
   /** 「用」一行里直接调模型做不了、只能交给 Agent 的工具各自的原因。 */
   whyRetranscribe: 'Needs a speech model, and the Runtime’s transcription adds a whole new transcript instead of replacing a range, so only the Agent can do it',
   whyCleanup: 'Finding cuts means weighing each spot in context, so only the Agent can do it',
-  whyStale: 'The Runtime has no workflow yet for retranslating only the stale sentences, so only the Agent can do it',
+  whyStale: 'To retranslate with the model API, use the AI button on the translation list in the Subtitles panel; this page hands the work to the Agent',
   whyCover: 'A cover means generating and composing images, so only the Agent can do it',
   modelPromptLabel: 'Prompt',
   modelPicker: 'Text model',

@@ -187,6 +187,8 @@ export const ptBR: AiToolsMessages = {
   sourceEdited: (n: number | null) => (n === null ? "source edited" : pluralForm('pt-BR', n, { one: `${n} frase editada na origem`, other: `${n} frases editadas na origem` })),
   sourceCut: (n: number | null) => (n === null ? "source cut" : pluralForm('pt-BR', n, { one: `${n} frase cortada na origem`, other: `${n} frases cortadas na origem` })),
   sourceJoin: (parts: readonly string[]) => parts.join(", "),
+  retranslateOne: (o) => `Traduza novamente a frase ${o.time ? `em ${o.time} ` : ''}de ${o.p} (“${o.text}”) para ${o.language}. Altere só a tradução desta frase; mantenha a temporização, o estilo das legendas e todas as outras frases exatamente como estão.`,
+  retranslateStale: (o) => `Na tradução para ${o.language} de ${o.p}, há frases desatualizadas ou ainda não traduzidas (${o.count}). Traduza novamente só essas frases e mantenha todo o resto exatamente como está.`,
   intents: {
     shortscut: (o) => `Encontre em ${o.scope ? `${o.scope} de ${o.p}` : o.p} os temas que mais valem a pena publicar sozinhos e corte cada um em um vídeo curto completo: cada um é um vídeo novo que referencia o mesmo material original, e o vídeo original e sua linha do tempo não mudam.`,
     stale: (o: IntentArgs & { why: string }) =>

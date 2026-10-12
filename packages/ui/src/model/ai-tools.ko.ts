@@ -178,6 +178,8 @@ export const ko: AiToolsMessages = {
   sourceEdited: (n: number | null) => (n === null ? '원문 수정됨' : `원문에서 ${n}문장 수정됨`),
   sourceCut: (n: number | null) => (n === null ? '원문 잘림' : `원문에서 ${n}문장 잘림`),
   sourceJoin: (parts: readonly string[]) => parts.join(', '),
+  retranslateOne: (o) => `${o.p}에서 ${o.time ? `${o.time}의 ` : ''}“${o.text}” 문장을 ${o.language}(으)로 다시 번역해 주세요. 이 문장의 번역만 바꾸고 타이밍, 자막 스타일, 다른 문장은 그대로 유지해 주세요.`,
+  retranslateStale: (o) => `${o.p}의 ${o.language} 번역에 오래되었거나 아직 번역되지 않은 문장이 ${o.count}개 있습니다. 해당 문장만 다시 번역하고 나머지는 그대로 유지해 주세요.`,
   intents: {
     shortscut: (o) => `${o.scope ? `${o.p}의 ${o.scope}` : o.p}에서 따로 올릴 만한 주제를 찾아 주제마다 완결된 쇼츠로 잘라 주세요. 쇼츠마다 같은 원본을 참조하는 새 영상이며, 원본 영상과 타임라인은 그대로 둡니다.`,
     stale: (o) =>

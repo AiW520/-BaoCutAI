@@ -101,7 +101,7 @@ export const pl: AiToolsMessages = {
 
   whyRetranscribe: 'Wymaga modelu mowy, a transkrypcja w Runtime dodaje całą nową transkrypcję zamiast zastąpić fragment, więc może to zrobić tylko Agent',
   whyCleanup: 'Znalezienie cięć wymaga rozważenia każdego miejsca w kontekście, więc może to zrobić tylko Agent',
-  whyStale: 'Runtime nie ma jeszcze procesu, który tłumaczy ponownie tylko nieaktualne zdania, więc może to zrobić tylko Agent',
+  whyStale: 'Aby przetłumaczyć ponownie przez API modelu, użyj przycisku AI listy tłumaczeń w panelu Napisy; ta strona przekazuje pracę agentowi',
   whyCover: 'Okładka wymaga generowania i składania obrazów, więc może to zrobić tylko Agent',
   modelPromptLabel: 'Prompt',
   modelPicker: 'Model tekstowy',

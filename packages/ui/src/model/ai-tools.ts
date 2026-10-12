@@ -323,6 +323,10 @@ const en = {
   sourceEdited: (n: number | null) => (n === null ? 'source edited' : n === 1 ? '1 sentence edited in the source' : `${n} sentences edited in the source`),
   sourceCut: (n: number | null) => (n === null ? 'source cut' : n === 1 ? '1 sentence cut in the source' : `${n} sentences cut in the source`),
   sourceJoin: (parts: readonly string[]) => parts.join(', '),
+  retranslateOne: (o: { p: string; language: string; time: string | null; text: string }) =>
+    `Retranslate the sentence ${o.time ? `at ${o.time} ` : ''}in ${o.p} (“${o.text}”) into ${o.language}. Change only this sentence’s translation; leave the timing, subtitle style, and every other sentence exactly as they are.`,
+  retranslateStale: (o: { p: string; language: string; count: number }) =>
+    `${o.count === 1 ? '1 sentence' : `${o.count} sentences`} of the ${o.language} translation of ${o.p} ${o.count === 1 ? 'is' : 'are'} out of date or not yet translated. Retranslate only those sentences and leave everything else exactly as it is.`,
   intents: {
     stale: (o: IntentArgs & { why: string }) =>
       `Some translations in ${o.p} are out of date${o.why ? ` (${o.why})` : ' because the source was edited'}. Retranslate only those sentences${o.cut ? '; retranslate cut ones from the source as cut, and remove the translations of fully cut sentences along with them' : ''}. Leave everything else exactly as it is.`,
@@ -761,6 +765,26 @@ export function intentPrompt(intent: AiIntent): string {
     head,
     extra.map((x) => M.endSentence(x)),
   );
+}
+
+/**
+ * 译文列表里「交给 Agent 重译」发出去的那句话（产品设计 §5.10「逐句与过期译文」，原型 model-agent.js 的 `retranslate` 与带句数的
+ * `stale`）：写明语言与范围——一句时是它的时间码与原文开头，一批时是过期或待翻译的句数——只改这几句的译文。
+ */
+export function retranslatePrompt(o: {
+  title: string | null;
+  /** 译文语言的名字（界面语言里的写法）。 */
+  language: string;
+  /** 一句：时间码（剪掉了时 null）与原文开头。 */
+  scope?: { time: string | null; text: string } | null;
+  /** 一批：句数。 */
+  count?: number;
+}): string {
+  const title = (o.title ?? '').trim();
+  const p = title ? M.titled(title) : M.thisVideo;
+  return o.scope
+    ? M.retranslateOne({ p, language: o.language, time: o.scope.time, text: o.scope.text })
+    : M.retranslateStale({ p, language: o.language, count: o.count ?? 0 });
 }
 
 // ---- AI 工具 Tab：列表、模板、内置 skill、会话去向（产品设计 §5.10、§6.9；原型 model-ai-prompt.js） ----

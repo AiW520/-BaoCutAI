@@ -66,6 +66,8 @@ export const tr: EditLabelMessages = {
   translateTo: (p) => `${p.language} diline çevir`,
   unnamedTranslation: "Çeviri",
   editTranslation: "Çeviriyi düzenle",
+  markTranslationStale: "Çeviriyi güncel değil olarak işaretle",
+  clearTranslationStale: "Güncel değil işaretini kaldır",
   cutText: "Dökümde kes",
   restoreText: "Kesilen içeriği geri yükle",
   editTranscript: "Metni düzenle",

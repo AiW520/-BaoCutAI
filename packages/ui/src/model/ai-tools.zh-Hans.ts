@@ -137,6 +137,8 @@ export const zhHans: AiToolsMessages = {
   sourceEdited: (n: number | null) => (n === null ? '原文改过' : `${n} 句原文改过`),
   sourceCut: (n: number | null) => (n === null ? '原文被剪切' : `${n} 句原文被剪切`),
   sourceJoin: (parts: readonly string[]) => parts.join('、'),
+  retranslateOne: (o) => `把${o.p}里${o.time ? `${o.time} ` : ''}「${o.text}」这一句重译成${o.language}，只改这一句的译文，时间轴、字幕样式与别的句子一个字不动。`,
+  retranslateStale: (o) => `${o.p}的${o.language}译文有 ${o.count} 句过期或待翻译，只重译这些句子，其余一个字不动。`,
   intents: {
     shortscut: (o) => `从${o.p}${o.scope ? `的${o.scope}` : ''}里找出最值得单独发布的话题，每个话题剪成一支完整的短视频：每支一部新视频，引用同一份原片，原视频和时间轴不动。`,
     stale: (o) =>

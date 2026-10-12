@@ -66,6 +66,8 @@ export const zhHant: EditLabelMessages = {
   translateTo: (p) => `翻譯成${p.language}`,
   unnamedTranslation: '譯文',
   editTranslation: '編輯譯文',
+  markTranslationStale: '標為過期',
+  clearTranslationStale: '移除過期標記',
   cutText: '在逐字稿中剪下',
   restoreText: '回復剪掉的內容',
   editTranscript: '編輯文字',

@@ -66,6 +66,8 @@ export const ru: EditLabelMessages = {
   translateTo: (p) => `Перевести на ${p.language}`,
   unnamedTranslation: "Перевод",
   editTranslation: "Изменить перевод",
+  markTranslationStale: "Пометить перевод как устаревший",
+  clearTranslationStale: "Снять пометку «устарело»",
   cutText: "Вырезать в расшифровке",
   restoreText: "Восстановить вырезанное",
   editTranscript: "Редактировать текст",

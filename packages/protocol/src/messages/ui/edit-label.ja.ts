@@ -66,6 +66,8 @@ export const ja: EditLabelMessages = {
   translateTo: (p) => `${p.language} に翻訳`,
   unnamedTranslation: '訳文',
   editTranslation: '訳文を編集',
+  markTranslationStale: '訳文を要更新にする',
+  clearTranslationStale: '要更新の印を外す',
   cutText: '文字起こしでカット',
   restoreText: 'カットした内容を復元',
   editTranscript: 'テキストを編集',

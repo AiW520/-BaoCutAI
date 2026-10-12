@@ -58,7 +58,7 @@ export const es: AiToolsMessages = {
 
   whyRetranscribe: 'Necesita un modelo de voz, y la transcripción del Runtime añade una transcripción nueva completa en lugar de reemplazar un tramo, por lo que solo el agente puede hacerlo',
   whyCleanup: 'Encontrar cortes exige valorar cada punto en su contexto, por lo que solo el agente puede hacerlo',
-  whyStale: 'El Runtime aún no tiene un flujo para volver a traducir solo las frases desactualizadas, por lo que solo el agente puede hacerlo',
+  whyStale: 'Para volver a traducir con la API del modelo, usa el botón de IA de la lista de traducción en el panel Subtítulos; esta página se lo encarga al agente',
   whyCover: 'Una portada requiere generar y componer imágenes, por lo que solo el agente puede hacerlo',
   modelPromptLabel: 'Prompt',
   modelPicker: 'Modelo de texto',

@@ -64,7 +64,7 @@ export const tr: AiToolsMessages = {
 
   whyRetranscribe: 'Bir konuşma modeli gerekir ve Runtime’ın dökümü bir aralığı değiştirmek yerine baştan yeni bir döküm ekler; yalnızca ajan yapabilir',
   whyCleanup: 'Kesilecek yerleri bulmak her noktayı bağlamında tartmayı gerektirir; yalnızca ajan yapabilir',
-  whyStale: 'Runtime’da yalnızca eskimiş cümleleri yeniden çeviren bir iş akışı henüz yok; yalnızca ajan yapabilir',
+  whyStale: 'Model API’siyle yeniden çevirmek için Altyazılar panelindeki çeviri listesinin AI düğmesini kullanın; bu sayfa işi ajana verir',
   whyCover: 'Kapak, görsel üretip birleştirmeyi gerektirir; yalnızca ajan yapabilir',
   modelPromptLabel: 'İstem',
   modelPicker: 'Metin modeli',

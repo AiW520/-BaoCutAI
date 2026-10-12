@@ -2,6 +2,8 @@ import { editorWasmAvailable } from '@baocut/editor-wasm';
 import { describe, expect, it } from 'vitest';
 import {
   editUnit,
+  markUnit,
+  needsTranslation,
   pairRows,
   pairStats,
   readTranslation,
@@ -182,6 +184,44 @@ describe('就地改一句译文', () => {
     expect(result!.unit.alignment).toMatchObject({ basis: 'natural', correspondence: 'sentence', sourceWordIds: ['s2', 's2b'] });
     const gone = rows.find((r) => r.key === 't-s0')!;
     expect(await editUnit(body, sentences, gone, 'nope')).toBeNull();
+  });
+});
+
+describe('标为过期与去掉过期标记', () => {
+  const sentences = [sentence('s1', '一'), sentence('s2', '二', 'fp-new', ['s2', 's2b']), sentence('s3', '三')];
+
+  it('标为过期只改状态；已经标了的、没有单元的、原句没了的不写', () => {
+    const body = translation([unit('s1', 'one'), unit('s0', 'gone'), unit('s3', 'three', { status: 'stale' })]);
+    const rows = pairRows(sentences, body);
+    const result = markUnit(body, rows[0]!, true);
+    expect(result!.unit).toMatchObject({ id: 't-s1', naturalText: 'one', status: 'stale', sourceFingerprint: 'fp-s1' });
+    expect(result!.rebound).toBe(false);
+    expect(pairRows(sentences, result!.body)[0]!.state).toBe('marked-stale');
+    expect(markUnit(body, rows.find((r) => r.key === 't-s3')!, true)).toBeNull();
+    expect(markUnit(body, rows.find((r) => r.key === 's:s2')!, true)).toBeNull();
+    expect(markUnit(body, rows.find((r) => r.key === 't-s0')!, true)).toBeNull();
+  });
+
+  it('去掉标记就是认下现在的译文：记为 reviewed；原句改过的换成现在这一句的指纹与词，不再算过期', () => {
+    const body = translation([unit('s1', 'one', { status: 'stale' }), unit('s2', 'two', { status: 'stale' }), unit('s3', 'three')]);
+    const rows = pairRows(sentences, body);
+    const marked = markUnit(body, rows[0]!, false)!;
+    expect(marked.unit).toMatchObject({ status: 'reviewed', sourceFingerprint: 'fp-s1' });
+    expect(marked.rebound).toBe(false);
+    // 标了过期、原句也改过：两样一起去掉。
+    const changed = markUnit(body, rows[1]!, false)!;
+    expect(changed.rebound).toBe(true);
+    expect(changed.unit).toMatchObject({ status: 'reviewed', sourceFingerprint: 'fp-new', naturalText: 'two' });
+    expect(changed.unit.alignment!.sourceWordIds).toEqual(['s2', 's2b']);
+    expect(unitState(changed.unit, sentences[1]!)).toBe('ok');
+    // 本来就不过期的不写。
+    expect(markUnit(body, rows[2]!, false)).toBeNull();
+  });
+
+  it('批量重译的范围：过期的与还没有译文的', () => {
+    const body = translation([unit('s1', ' '), unit('s3', 'three')]);
+    const rows = pairRows([...sentences, sentence('s4', '四')], translation([...body.units, unit('s4', 'four', { status: 'stale' })]));
+    expect(rows.filter(needsTranslation).map((r) => r.key)).toEqual(['t-s1', 's:s2', 't-s4']);
   });
 });
 

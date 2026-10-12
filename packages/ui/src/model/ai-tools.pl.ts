@@ -152,6 +152,8 @@ export const pl: AiToolsMessages = {
   sourceEdited: (n: number | null) => n === null ? "źródło zmienione" : pluralForm('pl', n, { one: `${n} zdanie zmienione w źródle`, few: `${n} zdania zmienione w źródle`, many: `${n} zdań zmienionych w źródle`, other: `${n} zdania zmienionego w źródle` }),
   sourceCut: (n: number | null) => n === null ? "źródło wycięte" : pluralForm('pl', n, { one: `${n} zdanie wycięte w źródle`, few: `${n} zdania wycięte w źródle`, many: `${n} zdań wyciętych w źródle`, other: `${n} zdania wyciętego w źródle` }),
   sourceJoin: (parts: readonly string[]) => parts.join(", "),
+  retranslateOne: (o) => `Przetłumacz ponownie zdanie ${o.time ? `z ${o.time} ` : ''}w ${o.p} („${o.text}”), język docelowy: ${o.language}. Zmień tylko tłumaczenie tego zdania; czas, styl napisów i wszystkie pozostałe zdania zostaw bez zmian.`,
+  retranslateStale: (o) => `W tłumaczeniu ${o.p} (${o.language}) są zdania nieaktualne lub jeszcze nieprzetłumaczone (${o.count}). Przetłumacz ponownie tylko te zdania, a całą resztę zostaw bez zmian.`,
   intents: {
     shortscut: (o) => `Znajdź w ${o.scope ? `${o.scope} w ${o.p}` : o.p} tematy, które najbardziej warto opublikować osobno, i potnij każdy na kompletny krótki film: każdy to nowe wideo odwołujące się do tego samego materiału źródłowego, a oryginalne wideo i jego oś czasu pozostają bez zmian.`,
     stale: (o) => `Niektóre tłumaczenia w ${o.p} nieaktualne${o.why ? ` (${o.why})` : " przez zmianę źródła"}. Tłumacz ponownie tylko te zdania${o.cut ? "; wycięte tłumacz z wyciętego źródła, tłumaczenia całkowicie wyciętych zdań usuń razem" : ""}. Resztę pozostaw bez zmian.`,

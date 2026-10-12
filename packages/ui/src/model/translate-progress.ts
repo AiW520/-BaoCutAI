@@ -28,6 +28,24 @@ export function isTranslateJob(job: JobRecord, videoId: Id | null): boolean {
   return (job.kind === 'pipeline' && job.pipeline?.name === TRANSLATE_PIPELINE) || isAgentTranslate(job);
 }
 
+/**
+ * 就地刷新一份译文的翻译流程（参数给了 `translationId`，产品设计 §5.10「逐句与过期译文」）：不新增译文、不建字幕层，
+ * 进度画在那份译文的对照列表的统计条上，不占轨条与运行态头。
+ */
+export function refreshOf(job: JobRecord): Id | null {
+  if (job.kind !== 'pipeline' || job.pipeline?.name !== TRANSLATE_PIPELINE) return null;
+  const id = job.pipeline.params.translationId;
+  return typeof id === 'string' && id ? id : null;
+}
+
+/** 正在就地刷新这份译文的那个任务（不论从哪里发起）；点名了几句时带句数。 */
+export function liveRefresh(jobs: readonly JobRecord[], translationId: Id): { job: JobRecord; count: number | null } | null {
+  const job = jobs.find((j) => refreshOf(j) === translationId && jobLive(j));
+  if (!job) return null;
+  const sentences = job.pipeline?.params.sentences;
+  return { job, count: Array.isArray(sentences) ? sentences.length : null };
+}
+
 /** 正在翻的（排队、在跑、崩溃后自动重跑）。 */
 export function liveTranslations(jobs: readonly JobRecord[], videoId: Id | null): JobRecord[] {
   return jobs.filter((job) => isTranslateJob(job, videoId) && jobLive(job));

@@ -66,6 +66,8 @@ export const nl: EditLabelMessages = {
   translateTo: (p) => `Naar ${p.language} vertalen`,
   unnamedTranslation: 'Vertaling',
   editTranslation: 'Vertaling herschrijven',
+  markTranslationStale: 'Vertaling als verouderd markeren',
+  clearTranslationStale: 'Markering verouderd verwijderen',
   cutText: 'Via transcriptie wegknippen',
   restoreText: 'Geknipte inhoud herstellen',
   editTranscript: 'Brontekst wijzigen',

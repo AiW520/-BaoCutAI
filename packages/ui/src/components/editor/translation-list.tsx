@@ -2,7 +2,6 @@ import { memo, useCallback, useEffect, useMemo, useRef, useState, type RefObject
 import type { DocumentRecord, Id, Sequence } from '@baocut/protocol';
 import {
   Button,
-  Link,
   Picker,
   PickerItem,
   SegmentedControl,
@@ -22,6 +21,7 @@ import { estimateLines } from '../../model/virtual-rows.ts';
 import {
   editableRow,
   isStale,
+  needsTranslation,
   pairRows,
   pairStats,
   readTranslation,
@@ -30,15 +30,18 @@ import {
   type PairRow,
   type TranslationBody,
 } from '../../model/translation-doc.ts';
+import { liveRefresh } from '../../model/translate-progress.ts';
 import { useRuntime } from '../../runtime/context.tsx';
 import { useEditor } from '../../state/editor-store.ts';
+import { useJobs } from '../../state/jobs-store.ts';
 import { canEdit, useVideo } from '../../state/video-store.ts';
 import { openAiTool } from './ai-tools-nav.ts';
 import { useEditorActions } from './editor-context.tsx';
 import { usePlaybackFollow } from './use-playback-follow.ts';
 import { useDocumentBody } from './use-document-body.ts';
 import { TRANSLATE_COPY as C } from './translate-copy.ts';
-import { editTranslation, putOnScreen, type CompareMode } from './translate-run.ts';
+import { editTranslation, markTranslation, openFlow, putOnScreen, startRefresh, useTranslateRun, type CompareMode } from './translate-run.ts';
+import { TranslationStatbar, UnitMenu, useAgentRetranslate, useRetranslateModel, type UnitMenuActions } from './translation-actions.tsx';
 import { useVirtualRows } from './use-virtual-rows.ts';
 
 /** 对照条（原型 panel-subtitle.jsx `ListBar`、.sublist）。 */
@@ -60,28 +63,6 @@ const bar = style({
 const barLabel = style({ flexShrink: 0, font: 'ui-xs', color: 'gray-600' });
 const barPicker = style({ flexGrow: 1, minWidth: 96, maxWidth: 200 });
 
-const statbar = style({
-  display: 'flex',
-  flexWrap: 'wrap',
-  alignItems: 'center',
-  columnGap: 8,
-  rowGap: 2,
-  flexShrink: 0,
-  paddingX: 12,
-  paddingY: 4,
-  borderTopWidth: 0,
-  borderStartWidth: 0,
-  borderEndWidth: 0,
-  borderBottomWidth: 1,
-  borderStyle: 'solid',
-  borderColor: 'gray-200',
-  font: 'ui-xs',
-  color: 'gray-600',
-});
-const warn = style({ color: 'orange-1000', fontWeight: 'medium' });
-const fresh = style({ color: 'green-1000' });
-const tail = style({ marginStart: 'auto', color: 'gray-500' });
-const later = style({ flexBasis: 'full', color: 'gray-600', lineHeight: '[1.5]' });
 const place = style({
   display: 'flex',
   alignItems: 'center',
@@ -130,6 +111,8 @@ const accent = style({
   backgroundColor: { default: 'gray-300', isOn: 'blue-800', isEditing: 'blue-800', isStale: 'orange-700', isGone: 'gray-400' },
 });
 const cardHead = style({ display: 'flex', alignItems: 'center', gap: '[6px]', marginBottom: '[5px]', minHeight: 20 });
+/** ⋯ 菜单靠右，不撑高卡头（XS 钮比卡头的 20 高一点，往上下各让一点）。 */
+const headEnd = style({ marginStart: 'auto', marginY: -4, flexShrink: 0 });
 const number = style({ fontSize: '[10px]', color: 'gray-500', minWidth: 16 });
 const time = style({
   padding: 0,
@@ -270,7 +253,8 @@ function useLoaded(record: DocumentRecord | undefined): unknown {
 /**
  * 原文 ＋ 译文的对照列表（原型 panel-translate.jsx `EditView`，`only: 'trans'` 时只看译文）：逐句配对、标出过期、未翻译与
  * 原句已删的；单击译文就地改写（失焦提交、Esc 放弃），一笔事务连同画面上从它生成的字幕一起改，一次撤销。
- * 有过期的译文时指一条路：工具页的「刷新过期译文」交给 Agent 只重译这几句（网页宿主没有工具页，只说可以直接改）。
+ * 过期与没有译文的句子可以用模型 API 就地重译（Runtime 的 `translate` 就地刷新）或交给 Agent，一句或一批；也可以手工标为过期、
+ * 去掉标记（translation-actions.tsx）。网页宿主只有标记与复制。
  */
 export function TranslationList({
   videoId,
@@ -289,6 +273,12 @@ export function TranslationList({
   const { seek } = useEditorActions();
   const editable = useVideo((s) => canEdit(s.video));
   const web = useRuntime().host.platform === 'web';
+  const model = useRetranslateModel();
+  const toAgent = useAgentRetranslate(videoId);
+  // 正在就地刷新这份译文：从这里提交的（回执到之前也算），或别处发起的。
+  const ownRefresh = useTranslateRun((s) => s.refreshes[record.id] ?? null);
+  const foreignRefresh = useJobs((s) => liveRefresh(s.jobs, record.id));
+  const refreshing = ownRefresh ? ownRefresh.count : foreignRefresh ? foreignRefresh.count : undefined;
   const loaded = useLoaded(record);
   // 刚改完、新版本还没取回来的译文：接着的改动在它上面做。
   const [local, setLocal] = useState<{ base: unknown; body: TranslationBody } | null>(null);
@@ -376,7 +366,7 @@ export function TranslationList({
   };
 
   // 卡上的动作：卡是 memo 的，拿这个不变的 ref 调最新的处理函数，播放时只重画进出「正在播」的两张。
-  const actions = useRef<PairActions>(null!);
+  const actions = useRef<PairActions & UnitMenuActions>(null!);
 
   const [placing, setPlacing] = useState(false);
   const placed = Object.values(documents).some((d) => derivedFrom(d, record.id));
@@ -387,7 +377,15 @@ export function TranslationList({
   if (!ready || !words) return <div className={muted}>{speechBody === undefined ? C.reading : C.unreadable}</div>;
 
   const language = translation.language || record.language || '';
+  const languageLabel = language ? languageName(language) : C.unnamed;
   const sourceLanguage = speechRecord.language ? langName(speechRecord.language) : C.source;
+  const todo = rows.filter(needsTranslation).length;
+  // 整句的画面都剪掉了的句子；时间线上没用到这份转写时不算（不然每一句都算）。
+  const cut = spans.size ? rows.filter((r) => r.sentence && r.state !== 'sentence-gone' && !spans.has(r.sentence.id)).length : 0;
+  const scopeOf = (row: PairRow) => {
+    const at = row.sentence ? spans.get(row.sentence.id)?.start : undefined;
+    return { time: at === undefined ? null : formatClock(at), text: (row.sentence?.text ?? '').trim().slice(0, 24) };
+  };
   const commit = async (row: PairRow, text: string) => {
     setEditing(null);
     const before = row.unit ? unitText(row.unit) : '';
@@ -404,6 +402,15 @@ export function TranslationList({
     },
     commit: (row, text) => void commit(row, text),
     cancel: () => setEditing(null),
+    direct: (row) => {
+      if (!row.sentence) return;
+      void startRefresh({ videoId, record, language, sentences: [row.sentence.id], count: 1, model: model.ref });
+    },
+    agent: (row) => toAgent({ language: languageLabel, scope: scopeOf(row) }),
+    mark: (row, on) =>
+      void markTranslation({ videoId, record, body: translation, row, on, speech: words, documents }).then((next) => {
+        if (next) setLocal({ base: loaded, body: next });
+      }),
   };
 
   return (
@@ -424,24 +431,19 @@ export function TranslationList({
           </Button>
         </div>
       )}
-      <div className={statbar}>
-        <span>{C.stats(stats.sentences)}</span>
-        {stats.untranslated ? <span className={warn}>{C.untranslated(stats.untranslated)}</span> : null}
-        {stats.stale ? <span className={warn}>{C.stale(stats.stale)}</span> : null}
-        {stats.gone ? <span className={warn}>{C.gone(stats.gone)}</span> : null}
-        {stats.untranslated || stats.stale || stats.gone ? null : <span className={fresh}>{C.allFresh}</span>}
-        {editable ? <span className={tail} title={C.editHint}>{C.editTail}</span> : null}
-        {stats.stale ? (
-          web ? (
-            <span className={later}>{C.refreshHintWeb}</span>
-          ) : (
-            <span className={later}>
-              {C.refreshHint}
-              <Link onPress={() => openAiTool(videoId, 'stale', { language: language ? languageName(language) : null })}>{C.refreshOpen}</Link>
-            </span>
-          )
-        ) : null}
-      </div>
+      <TranslationStatbar
+        stats={stats}
+        cut={cut}
+        todo={todo}
+        refreshing={refreshing}
+        web={web}
+        editable={editable}
+        modelName={model.name}
+        onDirect={() => void startRefresh({ videoId, record, language, count: todo, model: model.ref })}
+        onAgent={() => toAgent({ language: languageLabel, count: todo })}
+        onCut={() => openAiTool(videoId, 'stale', { language: language ? languageName(language) : null })}
+        onTranslateTool={() => openFlow(videoId, true)}
+      />
       <div className={colhead({ isSingle: only === 'trans' })}>
         {only === 'trans' ? null : <span>{C.original(sourceLanguage)}</span>}
         <span>{C.translation(language ? languageName(language) : C.unnamed)}</span>
@@ -468,6 +470,9 @@ export function TranslationList({
                 on={!!row.sentence && row.sentence.id === activeId}
                 editing={editing === row.key}
                 editable={editable && editableRow(row)}
+                ai={!web}
+                busy={refreshing !== undefined}
+                modelName={model.name}
                 actions={actions}
               />
             </div>
@@ -501,6 +506,9 @@ const PairCard = memo(function PairCard({
   on,
   editing,
   editable,
+  ai,
+  busy,
+  modelName,
   actions,
 }: {
   row: PairRow;
@@ -511,7 +519,11 @@ const PairCard = memo(function PairCard({
   on: boolean;
   editing: boolean;
   editable: boolean;
-  actions: RefObject<PairActions>;
+  /** ⋯ 菜单：桌面端（能调模型与会话）、这份译文正在重译、直接调的模型名。 */
+  ai: boolean;
+  busy: boolean;
+  modelName: string | null;
+  actions: RefObject<PairActions & UnitMenuActions>;
 }) {
   const gone = row.state === 'sentence-gone';
   const stale = isStale(row.state);
@@ -546,6 +558,9 @@ const PairCard = memo(function PairCard({
             <span className={chip({ tone: flag.tone })}>{flag.text}</span>
           )
         ) : null}
+        <span className={headEnd}>
+          <UnitMenu row={row} index={index} text={text} ai={ai} editable={editable} busy={busy} modelName={modelName} actions={actions} />
+        </span>
       </div>
       {only === 'trans' || !row.sentence ? null : <span className={original({ isGone: gone })}>{row.sentence.text}</span>}
       {editing ? (

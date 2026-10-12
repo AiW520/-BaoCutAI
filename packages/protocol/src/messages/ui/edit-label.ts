@@ -91,6 +91,8 @@ const en = {
   translateTo: (p: { language: string }) => `Translate to ${p.language}`,
   unnamedTranslation: 'Translation',
   editTranslation: 'Edit translation',
+  markTranslationStale: 'Mark translation out of date',
+  clearTranslationStale: 'Clear out-of-date mark',
   // 文字稿与章节
   cutText: 'Cut in transcript',
   restoreText: 'Restore cut content',

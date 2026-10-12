@@ -66,6 +66,8 @@ export const ko: EditLabelMessages = {
   translateTo: (p) => `${p.language}(으)로 번역`,
   unnamedTranslation: '번역',
   editTranslation: '번역 편집',
+  markTranslationStale: '번역을 오래됨으로 표시',
+  clearTranslationStale: '오래됨 표시 지우기',
   cutText: '전사본에서 잘라내기',
   restoreText: '잘라낸 내용 복원',
   editTranscript: '텍스트 편집',

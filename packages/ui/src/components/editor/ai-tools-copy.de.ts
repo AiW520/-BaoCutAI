@@ -100,7 +100,7 @@ export const de: AiToolsMessages = {
 
   whyRetranscribe: 'Braucht ein Sprachmodell, und die Transkription der Runtime fügt ein ganz neues Transkript hinzu, statt einen Bereich zu ersetzen; nur der Agent kann dies ausführen',
   whyCleanup: 'Schnittstellen zu finden heißt, jede Stelle im Zusammenhang abzuwägen; nur der Agent kann dies ausführen',
-  whyStale: 'Die Runtime hat noch keinen Workflow, um nur veraltete Sätze neu zu übersetzen; nur der Agent kann dies ausführen',
+  whyStale: 'Zum Neu-Übersetzen mit der Modell-API die KI-Schaltfläche der Übersetzungsliste im Untertitel-Bereich nutzen; diese Seite übergibt an den Agenten',
   whyCover: 'Ein Cover heißt Bilder erzeugen und zusammensetzen; nur der Agent kann dies ausführen',
   modelPromptLabel: 'Prompt',
   modelPicker: 'Textmodell',

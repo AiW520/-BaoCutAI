@@ -104,7 +104,7 @@ export const zhHans: AiToolsMessages = {
 
   whyRetranscribe: '要用语音模型，而 Runtime 的转录是整篇另加一份转写、不按范围替换，只能交给 Agent',
   whyCleanup: '找可剪的口要结合上下文逐处斟酌，只能交给 Agent',
-  whyStale: '只重译过期句子这件事 Runtime 还没有对应的流程，只能交给 Agent',
+  whyStale: '用模型 API 重译在字幕面板译文列表的 AI 钮里；这一页只能交给 Agent',
   whyCover: '做封面要生成、合成图片，只能交给 Agent',
   modelPromptLabel: '提示词',
   modelPicker: '文本模型',

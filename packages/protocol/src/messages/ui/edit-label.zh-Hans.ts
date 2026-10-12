@@ -66,6 +66,8 @@ export const zhHans: EditLabelMessages = {
   translateTo: (p) => `翻译成${p.language}`,
   unnamedTranslation: '译文',
   editTranslation: '改写译文',
+  markTranslationStale: '标为过期',
+  clearTranslationStale: '去掉过期标记',
   cutText: '在文稿里剪掉',
   restoreText: '恢复剪掉的内容',
   editTranscript: '改原文',

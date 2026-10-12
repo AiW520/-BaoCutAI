@@ -137,6 +137,8 @@ export const vi: AiToolsMessages = {
   sourceEdited: (n) => n === null ? 'nguồn đã sửa' : `${n} câu đã sửa trong nguồn`,
   sourceCut: (n) => n === null ? 'nguồn đã cắt' : `${n} câu đã cắt trong nguồn`,
   sourceJoin: (parts: readonly string[]) => parts.join(', '),
+  retranslateOne: (o) => `Dịch lại câu ${o.time ? `lúc ${o.time} ` : ''}trong ${o.p} (“${o.text}”) sang ${o.language}. Chỉ sửa bản dịch của câu này; giữ nguyên thời gian, kiểu phụ đề và mọi câu khác.`,
+  retranslateStale: (o) => `Bản dịch ${o.language} của ${o.p} có ${o.count} câu lỗi thời hoặc chưa dịch. Chỉ dịch lại những câu đó, giữ nguyên mọi thứ khác.`,
   intents: {
     shortscut: (o) => `Tìm trong ${o.scope ? `${o.p}: ${o.scope}` : o.p} những chủ đề đáng đăng riêng nhất và cắt mỗi chủ đề thành một video ngắn trọn vẹn: mỗi video là một video mới tham chiếu cùng tư liệu gốc, video gốc và dòng thời gian của nó giữ nguyên.`,
     stale: (o) => `Một số bản dịch trong ${o.p} đã cũ${o.why ? ` (${o.why})` : ' vì nguồn đã sửa'}. Chỉ dịch lại các câu đó${o.cut ? '; dịch lại câu bị cắt trong nguồn theo trạng thái cắt và gỡ bản dịch của câu đã cắt hoàn toàn cùng với câu nguồn' : ''}. Giữ nguyên mọi phần khác.`,

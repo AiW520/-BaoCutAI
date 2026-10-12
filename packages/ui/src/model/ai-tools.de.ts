@@ -219,6 +219,8 @@ export const de: AiToolsMessages = {
   sourceEdited: (n: number | null) => (n === null ? "Quelle bearbeitet" : pluralForm('de', n, { one: "1 Satz in Quelle bearbeitet", other: `${n} Sätze in Quelle bearbeitet` })),
   sourceCut: (n: number | null) => (n === null ? "Quelle geschnitten" : pluralForm('de', n, { one: "1 Satz in Quelle geschnitten", other: `${n} Sätze in Quelle geschnitten` })),
   sourceJoin: (parts: readonly string[]) => parts.join(", "),
+  retranslateOne: (o) => `Übersetze den Satz ${o.time ? `bei ${o.time} ` : ''}in ${o.p} („${o.text}“) neu (Zielsprache: ${o.language}). Ändere nur die Übersetzung dieses Satzes; Timing, Untertitelstil und alle anderen Sätze bleiben genau so, wie sie sind.`,
+  retranslateStale: (o) => `In der Übersetzung von ${o.p} (${o.language}) sind Sätze veraltet oder noch nicht übersetzt (${o.count}). Übersetze nur diese Sätze neu und lass alles andere genau so, wie es ist.`,
   intents: {
     shortscut: (o) => `Finde in ${o.scope ? `${o.scope} von ${o.p}` : o.p} die Themen, die sich am meisten für eine eigene Veröffentlichung lohnen, und schneide jedes zu einem vollständigen Kurzvideo: jedes ist ein neues Video, das dasselbe Quellmaterial referenziert; das ursprüngliche Video und seine Timeline bleiben unverändert.`,
     stale: (o: IntentArgs & { why: string }) =>

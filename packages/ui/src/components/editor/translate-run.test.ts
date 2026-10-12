@@ -22,9 +22,11 @@ import { resetTranscribe, useSubtitleRun } from './transcribe-run.ts';
 import {
   bindTranslate,
   editTranslation,
+  markTranslation,
   putOnScreen,
   resetTranslate,
   retryTranslate,
+  startRefresh,
   startTranslate,
   undoReceipt,
   useTranslateRun,
@@ -554,5 +556,119 @@ describe('改一句译文', () => {
       }),
     ).toBeNull();
     expect(applied).toHaveLength(1);
+  });
+});
+
+describe('就地重译过期句', () => {
+  it('只重译点名的句子：参数带 translationId 与 sentences、不建字幕层；完成给带撤销的提示，撤的是流程写的那一笔', async () => {
+    const { deps, toasts } = fake();
+    const undos: Array<() => void> = [];
+    bindTranslate({ ...deps, toast: (kind, message, undo) => (deps.toast(kind, message, undo), undo && undos.push(undo)) });
+    const model = { providerId: 'openai', modelId: 'gpt-5' };
+    expect(await startRefresh({ videoId: 'vid', record: translationRecord, language: 'en', sentences: ['s-w3'], count: 1, model })).toBe(true);
+    expect(deps.runtime.startTranslate).toHaveBeenCalledWith({
+      videoId: 'vid',
+      documentId: 'speech',
+      targetLanguage: 'en',
+      translationId: 'tr',
+      sentences: ['s-w3'],
+      provider: 'openai',
+      model: 'gpt-5',
+    });
+    expect(useTranslateRun.getState().refreshes.tr).toMatchObject({ jobId: 'p1', count: 1 });
+    // 同一份译文同时只刷新一次。
+    expect(await startRefresh({ videoId: 'vid', record: translationRecord, language: 'en', count: 2, model })).toBe(false);
+    // 这不是一次新翻译：不占翻译的运行态。
+    expect(useTranslateRun.getState().runs.vid).toBeUndefined();
+
+    const refresh = { revision: '2', sentences: ['s-w3'], removedUnitIds: [], captionDocumentIds: ['cap-en'], transactionId: 'tx-refresh' };
+    const done = job('completed', {
+      pipeline: { ...job('completed').pipeline!, params: { videoId: 'vid', targetLanguage: 'en', translationId: 'tr', sentences: ['s-w3'] }, summary: { ...summary(), refresh } },
+    });
+    useJobs.setState({ jobs: [done] });
+    await flush();
+    expect(useTranslateRun.getState().refreshes.tr).toBeUndefined();
+    expect(useTranslateRun.getState().receipts.vid).toBeUndefined();
+    expect(toasts).toEqual([['positive', '已重译 1 句 · 字幕跟着更新', true]]);
+    // 提示上的撤销：撤流程写译文连同字幕的那一笔。
+    undos[0]!();
+    expect(deps.runtime.videos.undo).toHaveBeenCalledWith({ transaction: 'tx-refresh' });
+  });
+
+  it('不点名时交给 Runtime 挑；失败挂问题卡（不给重试，从菜单再来）', async () => {
+    const { deps } = fake();
+    bindTranslate(deps);
+    await startRefresh({ videoId: 'vid', record: translationRecord, language: 'en', count: 2, model: null });
+    expect(deps.runtime.startTranslate).toHaveBeenCalledWith({ videoId: 'vid', documentId: 'speech', targetLanguage: 'en', translationId: 'tr' });
+    useJobs.setState({ jobs: [job('failed', { stoppedAt: 'translate', error: { code: 'MODEL_OUTPUT_INVALID', message: '模型回的不是合法的 JSON' } })] });
+    await flush();
+    expect(useTranslateRun.getState().refreshes.tr).toBeUndefined();
+    expect(useTranslateRun.getState().problems.vid).toMatchObject({ kind: 'failed', title: '重译失败', message: '模型回的不是合法的 JSON', retry: null });
+  });
+});
+
+describe('标为过期与去掉过期标记', () => {
+  const captionRecord = {
+    id: 'cap-en',
+    kind: 'caption',
+    name: 'English',
+    language: 'en',
+    sourceDocumentId: 'tr',
+    currentRevision: '1',
+    revisions: { '1': { revision: '1', contentHash: '', byteLength: 0, createdAt: '', createdBy: 'tx', summary: { cueCount: 2 } } },
+    extensions: { 'baocut.translationCues': { translationDocumentId: 'tr' } },
+  } as unknown as DocumentRecord;
+  const documents = { speech: speechRecord, tr: translationRecord, 'cap-en': captionRecord };
+  const captionBody = {
+    schema: 'baocut.caption/1',
+    clock: 'source-asset',
+    timescale: 1000,
+    cues: [
+      { id: 'q-t-s-w1', start: 0, end: 900, text: 'Hello world.' },
+      { id: 'q-t-s-w3', start: 3000, end: 3500, text: 'Goodbye.' },
+    ],
+  };
+
+  it('标为过期只写译文文档（字幕文字不变），进撤销历史；已经过期的不再写', async () => {
+    const { deps, applied, toasts, bodies } = fake();
+    bodies['cap-en'] = { document: captionRecord, revision: '1', body: captionBody };
+    bindTranslate(deps);
+    const sentences = speechSentences(speechBody)!;
+    const body = readTranslation(structuredClone(translationBody))!;
+    body.units = body.units.map((u, i) => ({ ...u, sourceFingerprint: sentences[i]!.fingerprint }));
+    const rows = pairRows(sentences, body);
+    const edit = { videoId: 'vid', record: translationRecord, body, row: rows[0]!, speech: readSpeechWords(speechBody)!, documents };
+
+    const next = await markTranslation({ ...edit, on: true });
+    expect(next?.units[0]).toMatchObject({ status: 'stale', naturalText: 'Hello world.' });
+    expect(applied).toHaveLength(1);
+    expect(applied[0]).toHaveLength(1);
+    expect(applied[0]![0]).toMatchObject({ type: 'putDocument', documentId: 'tr' });
+    expect(deps.runtime.videos.apply).toHaveBeenLastCalledWith(expect.anything(), expect.objectContaining({ key: 'editLabel.markTranslationStale' }));
+    expect(toasts).toEqual([['positive', '已标为过期 · 重译时会一起重译这一句', true]]);
+
+    const marked = pairRows(sentences, next!);
+    expect(await markTranslation({ ...edit, body: next!, row: marked[0]!, on: true })).toBeNull();
+    expect(applied).toHaveLength(1);
+  });
+
+  it('去掉过期标记：原句改过的单元按新的词重新绑定，字幕里这一句的几条跟着重切；同一笔事务', async () => {
+    const { deps, applied, toasts, bodies } = fake();
+    bodies['cap-en'] = { document: captionRecord, revision: '1', body: captionBody };
+    bindTranslate(deps);
+    const sentences = speechSentences(speechBody)!;
+    const body = readTranslation(structuredClone(translationBody))!;
+    // 第二句的指纹对上，第一句的指纹是旧的：原文改过。
+    body.units = body.units.map((u, i) => ({ ...u, sourceFingerprint: i === 1 ? sentences[1]!.fingerprint : 'sha256:old' }));
+    const rows = pairRows(sentences, body);
+    expect(rows[0]!.state).toBe('source-changed');
+
+    const next = await markTranslation({ videoId: 'vid', record: translationRecord, body, row: rows[0]!, speech: readSpeechWords(speechBody)!, documents, on: false });
+    expect(next?.units[0]).toMatchObject({ status: 'reviewed', sourceFingerprint: sentences[0]!.fingerprint });
+    expect(applied).toHaveLength(1);
+    const [translationPut, captionPut] = applied[0]! as Array<Extract<EditOperation, { type: 'putDocument' }>>;
+    expect(translationPut).toMatchObject({ documentId: 'tr' });
+    expect(captionPut).toMatchObject({ documentId: 'cap-en', body: { cues: [{ id: 'q-t-s-w1', text: 'Hello world.' }, { id: 'q-t-s-w3', text: 'Goodbye.' }] } });
+    expect(toasts).toEqual([['positive', '已去掉过期标记', true]]);
   });
 });

@@ -100,7 +100,7 @@ export const ptBR: AiToolsMessages = {
 
   whyRetranscribe: 'Precisa de um modelo de voz, e a transcrição do Runtime adiciona uma transcrição nova inteira em vez de substituir um trecho; só o agente pode fazer',
   whyCleanup: 'Encontrar cortes exige pesar cada ponto no contexto; só o agente pode fazer',
-  whyStale: 'O Runtime ainda não tem um fluxo para retraduzir só as frases desatualizadas; só o agente pode fazer',
+  whyStale: 'Para traduzir de novo com a API do modelo, use o botão de IA da lista de tradução no painel Legendas; esta página entrega ao agente',
   whyCover: 'Uma capa exige gerar e compor imagens; só o agente pode fazer',
   modelPromptLabel: 'Prompt',
   modelPicker: 'Modelo de texto',

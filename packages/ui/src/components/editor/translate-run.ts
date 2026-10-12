@@ -12,6 +12,7 @@ import {
   type Localized,
   type TransactionReceipt,
   type TranslateParams,
+  type TranslateRefreshSummary,
   type TranslateSummary,
   type UndoTarget,
 } from '@baocut/protocol';
@@ -23,7 +24,15 @@ import { jobRemedy, rejectionRemedy, type Remedy } from '../../model/task-facts.
 import { translateParams, type TranslateSetup } from '../../model/translate-setup.ts';
 import { retryNote, translationOf } from '../../model/translate-progress.ts';
 import { derivedFrom, pairedOriginal, retextCaption, translationCaptionOperations, translationCues } from '../../model/translation-cues.ts';
-import { editUnit, readTranslation, type PairRow, type SourceSentence, type TranslationBody } from '../../model/translation-doc.ts';
+import {
+  editUnit,
+  markUnit,
+  readTranslation,
+  type PairRow,
+  type SourceSentence,
+  type TranslationBody,
+  type TranslationUnit,
+} from '../../model/translation-doc.ts';
 import { isJobLive, useJobs } from '../../state/jobs-store.ts';
 import { canEdit, useVideo } from '../../state/video-store.ts';
 import { focusDocument, waitForDocument } from './transcribe-run.ts';
@@ -98,8 +107,23 @@ export interface ComparePref {
   documentId: Id | null;
 }
 
+/**
+ * 就地刷新一份译文（对照列表的「用模型 API 重译」，产品设计 §5.10「逐句与过期译文」）：`translate` 流程带 `translationId`，
+ * 只重译点名的句子（不点名时是过期与还没有译文的），写成同一份译文的新版本，字幕层里只换这几句。按译文记，同一份同时只刷一次。
+ */
+export interface RefreshRun {
+  videoId: Id;
+  translationId: Id;
+  /** 提交成功之前为 null。 */
+  jobId: Id | null;
+  /** 要重译的句数（统计条写「正在重译 N 句」）。 */
+  count: number;
+}
+
 interface TranslateRunState {
   runs: Record<Id, TranslateRun>;
+  /** 按译文文档记的就地刷新。 */
+  refreshes: Record<Id, RefreshRun>;
   problems: Record<Id, TranslateProblem>;
   receipts: Record<Id, TranslateReceipt>;
   compare: Record<Id, ComparePref>;
@@ -107,7 +131,7 @@ interface TranslateRunState {
   flow: Record<Id, boolean>;
 }
 
-const EMPTY: TranslateRunState = { runs: {}, problems: {}, receipts: {}, compare: {}, flow: {} };
+const EMPTY: TranslateRunState = { runs: {}, refreshes: {}, problems: {}, receipts: {}, compare: {}, flow: {} };
 
 export const useTranslateRun = create<TranslateRunState>()(() => ({ ...EMPTY }));
 
@@ -237,6 +261,91 @@ export async function startTranslate(setup: TranslateSetup & { bilingual: boolea
   }
 }
 
+/**
+ * 就地重译一份译文（不弹参数页）：给了 `sentences` 时只重译这几句（译文新鲜的也重译），不给时由 Runtime 挑过期与还没有译文的。
+ * 模型照翻译设置页缺省的那只（调用方给；null 时用文本生成的默认值）。被拒时问题卡挂在字幕面板上。
+ */
+export async function startRefresh(o: {
+  videoId: Id;
+  /** 译文文档。 */
+  record: DocumentRecord;
+  /** 译文的语言（就地刷新要求与它一致）。 */
+  language: string;
+  sentences?: readonly Id[];
+  /** 要重译的句数。 */
+  count: number;
+  model: { providerId: string; modelId: string } | null;
+}): Promise<boolean> {
+  const bound = deps;
+  const { videoId, record } = o;
+  if (!bound || useTranslateRun.getState().refreshes[record.id]) return false;
+  const run: RefreshRun = { videoId, translationId: record.id, jobId: null, count: o.count };
+  useTranslateRun.setState((s) => ({ refreshes: { ...s.refreshes, [record.id]: run }, problems: without(s.problems, videoId) }));
+  try {
+    const jobId = await bound.runtime.startTranslate({
+      videoId,
+      ...(record.sourceDocumentId ? { documentId: record.sourceDocumentId } : {}),
+      targetLanguage: o.language,
+      translationId: record.id,
+      ...(o.sentences ? { sentences: [...o.sentences] } : {}),
+      ...(o.model ? { provider: o.model.providerId, model: o.model.modelId } : {}),
+    });
+    useTranslateRun.setState((s) => (s.refreshes[record.id] ? { refreshes: { ...s.refreshes, [record.id]: { ...run, jobId } } } : {}));
+    settle(useJobs.getState().jobs);
+    return true;
+  } catch (error) {
+    endRefresh(record.id);
+    report(videoId, translateSubmitProblem(error));
+    return false;
+  }
+}
+
+function endRefresh(translationId: Id): void {
+  useTranslateRun.setState((s) => ({ refreshes: without(s.refreshes, translationId) }));
+}
+
+/** 就地刷新收尾：完成给一条带「撤销」的提示（撤的是写译文连同字幕的那一笔）；失败、中断挂问题卡（从菜单再来一次）。 */
+function finishRefresh(run: RefreshRun, job: JobRecord): void {
+  endRefresh(run.translationId);
+  if (job.state === 'cancelled') {
+    deps?.toast('neutral', C.refreshCancelled);
+    return;
+  }
+  if (job.state === 'needs-reconciliation') {
+    report(run.videoId, {
+      kind: 'decide',
+      title: C.refreshFailed,
+      message: jobErrorText(job.error) ?? '',
+      remedy: { label: C.decide, target: { tab: 'tasks', taskId: job.jobId }, hint: '' },
+      retry: null,
+    });
+    return;
+  }
+  if (job.state !== 'completed') {
+    report(run.videoId, {
+      kind: 'failed',
+      title: job.state === 'interrupted' ? C.refreshInterrupted : C.refreshFailed,
+      message: jobErrorText(job.error) ?? '',
+      remedy: jobRemedy({ kind: 'generateText', providerId: job.providerId, error: job.error }),
+      retry: null,
+    });
+    return;
+  }
+  const refresh = (job.pipeline?.summary as Partial<TranslateSummary> | null | undefined)?.refresh as TranslateRefreshSummary | undefined;
+  const count = refresh?.sentences.length ?? run.count;
+  const transactionId = refresh?.transactionId;
+  const bound = deps;
+  bound?.toast(
+    'positive',
+    C.retranslated(count),
+    transactionId
+      ? () => {
+          void bound.runtime.videos.undo({ transaction: transactionId });
+        }
+      : undefined,
+  );
+}
+
 /** 从停下的那一步重跑同一个任务（`pipelines.retry`），完成后照当初的设置放到画面上。 */
 export async function retryTranslate(videoId: Id): Promise<void> {
   const bound = deps;
@@ -263,6 +372,11 @@ export async function cancelTranslate(jobId: Id): Promise<void> {
 
 /** 盯着从这里提交的任务：结束了就收尾。每一轮只收一次——先同步改掉状态，后面的事件看到不是 `running` 就跳过。 */
 function settle(jobs: readonly JobRecord[]): void {
+  for (const run of Object.values(useTranslateRun.getState().refreshes)) {
+    if (!run.jobId) continue;
+    const job = jobs.find((candidate) => candidate.jobId === run.jobId);
+    if (job && !isJobLive(job)) finishRefresh(run, job);
+  }
   for (const run of Object.values(useTranslateRun.getState().runs)) {
     if (run.status !== 'running' || !run.jobId) continue;
     const job = jobs.find((candidate) => candidate.jobId === run.jobId);
@@ -460,8 +574,47 @@ export interface TranslationEdit {
 }
 
 /**
- * 就地改一句译文（单击译文侧、失焦提交）：一笔事务写译文文档的新版本，连同从它生成的字幕文档里这一句的几条
- * （`retextCaption`，别的条不动）。撤销一次两边一起回去。返回新的正文（面板在新版本取回来之前先用它）；没改动时 null。
+ * 一句译文改动的那一笔：译文文档的新版本；`retext` 时连同从它生成的字幕文档里这一句的几条（`retextCaption`，别的条不动）。
+ * 撤销一次两边一起回去。
+ */
+async function translationOperations(
+  bound: TranslateDeps,
+  edit: Pick<TranslationEdit, 'videoId' | 'record' | 'speech' | 'documents'>,
+  result: { body: TranslationBody; unit: TranslationUnit },
+  retext: boolean,
+): Promise<EditOperation[]> {
+  const previous = edit.record.revisions[edit.record.currentRevision]?.summary;
+  const operations: EditOperation[] = [
+    {
+      type: 'putDocument',
+      documentId: edit.record.id,
+      kind: edit.record.kind,
+      body: result.body,
+      summary: { ...(previous && typeof previous === 'object' ? previous : {}), unitCount: result.body.units.length },
+    },
+  ];
+  if (!retext) return operations;
+  const fresh = translationCues(edit.speech, [result.unit]);
+  for (const caption of Object.values(edit.documents)) {
+    if (!derivedFrom(caption, edit.record.id)) continue;
+    const content = await bound.runtime.readDocument(edit.videoId, caption.id);
+    if (typeof content.body !== 'object' || content.body === null) continue;
+    const body = retextCaption(content.body as Record<string, unknown>, result.unit.id, fresh, edit.speech.speakers);
+    const summary = caption.revisions[caption.currentRevision]?.summary;
+    operations.push({
+      type: 'putDocument',
+      documentId: caption.id,
+      kind: caption.kind,
+      body,
+      summary: { ...(summary && typeof summary === 'object' ? summary : {}), cueCount: Array.isArray(body.cues) ? body.cues.length : 0 },
+    });
+  }
+  return operations;
+}
+
+/**
+ * 就地改一句译文（单击译文侧、失焦提交）：一笔事务写译文文档的新版本，连同从它生成的字幕文档里这一句的几条。
+ * 改过的就是审过的，过期标记随这一笔去掉（`editUnit`）。返回新的正文（面板在新版本取回来之前先用它）；没改动时 null。
  */
 export async function editTranslation(edit: TranslationEdit): Promise<TranslationBody | null> {
   const bound = deps;
@@ -469,32 +622,7 @@ export async function editTranslation(edit: TranslationEdit): Promise<Translatio
   const result = await editUnit(edit.body, edit.sentences, edit.row, edit.text);
   if (!result) return null;
   try {
-    const previous = edit.record.revisions[edit.record.currentRevision]?.summary;
-    const operations: EditOperation[] = [
-      {
-        type: 'putDocument',
-        documentId: edit.record.id,
-        kind: edit.record.kind,
-        body: result.body,
-        summary: { ...(previous && typeof previous === 'object' ? previous : {}), unitCount: result.body.units.length },
-      },
-    ];
-    const fresh = translationCues(edit.speech, [result.unit]);
-    for (const caption of Object.values(edit.documents)) {
-      if (!derivedFrom(caption, edit.record.id)) continue;
-      const content = await bound.runtime.readDocument(edit.videoId, caption.id);
-      if (typeof content.body !== 'object' || content.body === null) continue;
-      const body = retextCaption(content.body as Record<string, unknown>, result.unit.id, fresh, edit.speech.speakers);
-      const summary = caption.revisions[caption.currentRevision]?.summary;
-      operations.push({
-        type: 'putDocument',
-        documentId: caption.id,
-        kind: caption.kind,
-        body,
-        summary: { ...(summary && typeof summary === 'object' ? summary : {}), cueCount: Array.isArray(body.cues) ? body.cues.length : 0 },
-      });
-    }
-    const receipt = await bound.runtime.videos.apply(operations, EditLabel.editTranslation());
+    const receipt = await bound.runtime.videos.apply(await translationOperations(bound, edit, result, true), EditLabel.editTranslation());
     if (!receipt) return null;
     bound.toast('positive', C.edited, () => {
       void bound.runtime.videos.undo({ transaction: receipt.transactionId });
@@ -502,6 +630,29 @@ export async function editTranslation(edit: TranslationEdit): Promise<Translatio
     return result.body;
   } catch (error) {
     bound.toast('negative', C.editFailed(messageOf(error)));
+    return null;
+  }
+}
+
+/**
+ * 标为过期或去掉过期标记（一句的 ⋯ 菜单）：一笔事务写译文文档的新版本，进撤销历史。字幕文字不变，不碰字幕；去掉标记时
+ * 原句改过的单元换了词成员，字幕里这一句的几条跟着按新的词重切（`markUnit` 的 `rebound`）。返回新的正文；没改动时 null。
+ */
+export async function markTranslation(edit: Omit<TranslationEdit, 'text' | 'sentences'> & { on: boolean }): Promise<TranslationBody | null> {
+  const bound = deps;
+  if (!bound) return null;
+  const result = markUnit(edit.body, edit.row, edit.on);
+  if (!result) return null;
+  try {
+    const label = edit.on ? EditLabel.markTranslationStale() : EditLabel.clearTranslationStale();
+    const receipt = await bound.runtime.videos.apply(await translationOperations(bound, edit, result, result.rebound), label);
+    if (!receipt) return null;
+    bound.toast('positive', edit.on ? C.markedStale : C.clearedStale, () => {
+      void bound.runtime.videos.undo({ transaction: receipt.transactionId });
+    });
+    return result.body;
+  } catch (error) {
+    bound.toast('negative', C.markFailed(messageOf(error)));
     return null;
   }
 }

@@ -20,6 +20,7 @@ import {
   LIST_GROUPS,
   listedTools,
   needsTranscript,
+  retranslatePrompt,
   sessionOptions,
   SHORTS_COUNTS,
   SHORTS_DEFAULTS,
@@ -121,6 +122,16 @@ describe('交给 Agent 的意图句', () => {
       '「A」有几句译文过期了（3 句原文改过、原文被剪切），只重译这些句子，被剪切的按剪后的原文重译、整句剪掉的随句一起剪掉，其余一个字不动。',
     );
     expect(intentPrompt({ tool: 'stale' })).toBe('这个视频有几句译文过期了：原文改过，只重译这些句子，其余一个字不动。');
+  });
+
+  it('译文列表交给 Agent 重译：一句写时间码与原文开头，一批写语言与句数；只改这几句', () => {
+    expect(retranslatePrompt({ title: 'A', language: '英语', scope: { time: '0:12', text: '我们先看第一个例子' } })).toBe(
+      '把「A」里0:12 「我们先看第一个例子」这一句重译成英语，只改这一句的译文，时间轴、字幕样式与别的句子一个字不动。',
+    );
+    expect(retranslatePrompt({ title: null, language: '英语', scope: { time: null, text: '剪掉了' } })).toBe(
+      '把这个视频里「剪掉了」这一句重译成英语，只改这一句的译文，时间轴、字幕样式与别的句子一个字不动。',
+    );
+    expect(retranslatePrompt({ title: 'A', language: '日语', count: 4 })).toBe('「A」的日语译文有 4 句过期或待翻译，只重译这些句子，其余一个字不动。');
   });
 
   it('起标题与做封面带个数，缺省 6 个 / 3 张', () => {
@@ -373,6 +384,13 @@ describe('英文界面', () => {
       'Some translations in this video are out of date (1 sentence edited in the source, 2 sentences cut in the source). Retranslate only those sentences; retranslate cut ones from the source as cut, and remove the translations of fully cut sentences along with them. Leave everything else exactly as it is.',
     );
     expect(intentPrompt({ tool: 'title' })).toContain('Suggest 6 title candidates');
+    expect(retranslatePrompt({ title: 'Code', language: 'Japanese', count: 1 })).toBe(
+      '1 sentence of the Japanese translation of “Code” is out of date or not yet translated. Retranslate only those sentences and leave everything else exactly as it is.',
+    );
+    expect(retranslatePrompt({ title: null, language: 'Japanese', scope: { time: '1:05', text: 'Hello' } })).toMatch(
+      /^Retranslate the sentence at 1:05 in this video \(“Hello”\) into Japanese\./,
+    );
+
     expect(cleanupExtra({ fillers: false, pauses: false, repeats: true })).toEqual(['Don’t look for filler words and long pauses']);
     expect(writingExtra('blog', { length: 'long', style: 'pop', view: 'viewer' })).toEqual(['Length: Long', 'Style: Explainer', 'Point of view: viewer']);
     expect(writingExtra('blog', { frames: true })).toEqual([
@@ -391,6 +409,8 @@ describe('英文界面', () => {
       expect(standingLines('summary', { language: 'X' })[0], locale).toContain('X');
       expect(sessionOptions({ canCreate: true, current: { id: 'c', title: 'T', messages: 3 } }).options[1]!.sub, locale).toContain('3');
       expect(groupSub('writing'), locale).toBeTruthy();
+      expect(retranslatePrompt({ title: 'T', language: 'L', count: 7 }), locale).toMatch(/7[^]*L|L[^]*7/);
+      expect(retranslatePrompt({ title: 'T', language: 'L', scope: { time: '0:01', text: 'Q' } }), locale).toMatch(/0:01[^]*Q/);
     }
   });
 });

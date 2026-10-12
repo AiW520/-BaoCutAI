@@ -66,6 +66,8 @@ export const es: EditLabelMessages = {
   translateTo: (p) => `Traducir a ${p.language}`,
   unnamedTranslation: 'Traducción',
   editTranslation: 'Editar traducción',
+  markTranslationStale: 'Marcar traducción como desactualizada',
+  clearTranslationStale: 'Quitar marca de desactualizada',
   cutText: 'Cortar en transcripción',
   restoreText: 'Restaurar contenido cortado',
   editTranscript: 'Editar texto',

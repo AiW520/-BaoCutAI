@@ -103,7 +103,7 @@ export const ko: AiToolsMessages = {
 
   whyRetranscribe: '음성 모델이 필요하고, Runtime의 전사는 범위를 바꾸지 않고 새 전사를 통째로 추가하므로 Agent만 할 수 있습니다',
   whyCleanup: '잘라낼 곳을 찾으려면 앞뒤 맥락에서 하나씩 판단해야 하므로 Agent만 할 수 있습니다',
-  whyStale: '오래된 문장만 다시 번역하는 흐름이 Runtime에 아직 없어 Agent만 할 수 있습니다',
+  whyStale: '모델 API로 다시 번역하려면 자막 패널 번역 목록의 AI 버튼을 쓰세요. 이 페이지는 Agent에게 맡깁니다',
   whyCover: '표지는 이미지를 생성하고 합성해야 하므로 Agent만 할 수 있습니다',
   modelPromptLabel: '프롬프트',
   modelPicker: '텍스트 모델',

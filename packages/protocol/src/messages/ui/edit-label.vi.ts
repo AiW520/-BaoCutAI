@@ -66,6 +66,8 @@ export const vi: EditLabelMessages = {
   translateTo: (p) => `Dịch sang ${p.language}`,
   unnamedTranslation: "Bản dịch",
   editTranslation: "Sửa bản dịch",
+  markTranslationStale: "Đánh dấu bản dịch lỗi thời",
+  clearTranslationStale: "Bỏ đánh dấu lỗi thời",
   cutText: "Cắt trong bản chép lời",
   restoreText: "Khôi phục nội dung cắt",
   editTranscript: "Chỉnh sửa văn bản",

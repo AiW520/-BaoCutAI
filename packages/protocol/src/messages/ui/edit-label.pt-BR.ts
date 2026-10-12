@@ -66,6 +66,8 @@ export const ptBR: EditLabelMessages = {
   translateTo: (p) => `Traduzir para ${p.language}`,
   unnamedTranslation: "Tradução",
   editTranslation: "Editar tradução",
+  markTranslationStale: "Marcar tradução como desatualizada",
+  clearTranslationStale: "Remover marca de desatualizada",
   cutText: "Cortar na transcrição",
   restoreText: "Restaurar conteúdo cortado",
   editTranscript: "Editar texto",

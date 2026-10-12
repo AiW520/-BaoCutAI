@@ -100,7 +100,7 @@ export const nl: AiToolsMessages = {
 
   whyRetranscribe: 'Vraagt om een spraakmodel, en de transcriptie van de Runtime voegt een heel nieuwe transcriptie toe in plaats van een stuk te vervangen; alleen de Agent kan dit doen',
   whyCleanup: 'Knippunten vinden betekent elke plek in context afwegen; alleen de Agent kan dit doen',
-  whyStale: 'De Runtime heeft nog geen workflow om alleen verouderde zinnen opnieuw te vertalen; alleen de Agent kan dit doen',
+  whyStale: 'Opnieuw vertalen met de model-API doe je via de AI-knop van de vertaallijst in het ondertitelpaneel; deze pagina geeft het aan de Agent',
   whyCover: 'Een cover vraagt om beelden genereren en samenstellen; alleen de Agent kan dit doen',
   modelPromptLabel: 'Prompt',
   modelPicker: 'Tekstmodel',

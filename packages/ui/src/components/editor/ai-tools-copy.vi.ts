@@ -64,7 +64,7 @@ export const vi: AiToolsMessages = {
 
   whyRetranscribe: 'Cần mô hình giọng nói, và việc chép lời của Runtime thêm hẳn một bản chép lời mới thay vì thay một đoạn, nên chỉ Agent thực hiện được',
   whyCleanup: 'Tìm chỗ cắt cần cân nhắc từng chỗ theo ngữ cảnh, nên chỉ Agent thực hiện được',
-  whyStale: 'Runtime chưa có quy trình chỉ dịch lại các câu đã cũ, nên chỉ Agent thực hiện được',
+  whyStale: 'Muốn dịch lại bằng API mô hình, dùng nút AI của danh sách bản dịch trong bảng Phụ đề; trang này giao việc cho Agent',
   whyCover: 'Làm ảnh bìa cần tạo và ghép ảnh, nên chỉ Agent thực hiện được',
   modelPromptLabel: 'Prompt',
   modelPicker: 'Mô hình văn bản',

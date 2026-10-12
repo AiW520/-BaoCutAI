@@ -242,3 +242,41 @@ export async function editUnit(
   const units = [...body.units.slice(0, at), unit, ...body.units.slice(at)];
   return { body: { ...body, units }, unit };
 }
+
+/**
+ * 标为过期或去掉过期标记（产品设计 §5.10「逐句与过期译文」）：「过期」与「待翻译」是同一个标记（`status: 'stale'`），刷新过期
+ * 译文与交给 Agent 都会重译它。只改单元的状态，返回新的正文与改动的单元；已经是那个样子、或这一行没有单元时 null。
+ *
+ * 去掉标记就是认下这一句现在的译文：记为 `reviewed`；原句改过（指纹不同）的同 `editUnit`，指纹与词成员换成现在这一句的，
+ * 不然标记去掉了还是过期（`rebound` 为 true，字幕里这一句的几条要跟着按新的词重切）。
+ */
+export function markUnit(
+  body: TranslationBody,
+  row: PairRow,
+  on: boolean,
+): { body: TranslationBody; unit: TranslationUnit; rebound: boolean } | null {
+  const current = row.unit;
+  if (!current || !editableRow(row)) return null;
+  const sentence = row.sentence!;
+  let next: TranslationUnit;
+  let rebound = false;
+  if (on) {
+    if (current.status === 'stale') return null;
+    next = { ...current, status: 'stale' };
+  } else {
+    if (!isStale(row.state)) return null;
+    rebound = current.sourceFingerprint !== sentence.fingerprint;
+    next = rebound
+      ? {
+          ...current,
+          status: 'reviewed',
+          sourceFingerprint: sentence.fingerprint,
+          alignment: current.alignment ? { ...current.alignment, sourceWordIds: [...sentence.wordIds] } : null,
+        }
+      : { ...current, status: 'reviewed' };
+  }
+  return { body: { ...body, units: body.units.map((u) => (u === current ? next : u)) }, unit: next, rebound };
+}
+
+/** 要重译的句子（批量重译的范围，与 Runtime 就地刷新不点名时一样）：过期的与还没有译文的。 */
+export const needsTranslation = (row: PairRow) => isStale(row.state) || row.state === 'untranslated' || row.state === 'empty';
