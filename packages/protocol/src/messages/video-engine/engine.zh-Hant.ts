@@ -52,6 +52,8 @@ export const zhHant: EngineMessages = {
   effectsNotVisual: '不是視覺媒體或合成，因此無法加上效果',
   cropRange: '每個裁切邊都必須在 [0, 1) 範圍內，且左 + 右、上 + 下都必須小於 1',
   cropNotVideoOrImage: '不是影片或圖片，因此無法裁切',
+  focalPointRange: '取景點的 x、y 都須在 [0, 1] 之間',
+  focalPointNotVideoOrImage: '不是影片或圖片，因此沒有取景點',
 
   // elements.rs
   itemSpanInvalid: '片段不能在零之前開始，且長度至少要有一個影格',

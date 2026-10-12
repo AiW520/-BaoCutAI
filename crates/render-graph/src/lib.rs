@@ -26,8 +26,8 @@ use editor_semantics::{MediaTime, Rate, Ratio, TimeError, TimeMap, frame_time, f
 use serde::{Deserialize, Serialize};
 use serde_json::{Map, Value};
 use video_model::{
-    AssetKind, AssetRecord, AudioItem, CompositionSource, Crop, Easing, EnvelopePoint, Fit, FrameSpan, Id, MediaFields, Place, Revision,
-    Sequence, SoloGroup, TimelineItem, Track, Transition, TransitionKind, VersionRef, VideoSnapshot,
+    AssetKind, AssetRecord, AudioItem, CompositionSource, Crop, Easing, EnvelopePoint, Fit, FocalPoint, FrameSpan, Id, MediaFields, Place,
+    Revision, Sequence, SoloGroup, TimelineItem, Track, Transition, TransitionKind, VersionRef, VideoSnapshot,
 };
 
 use crate::ducking::DuckingEnvelope;
@@ -678,6 +678,7 @@ fn visual_layer(
                 op(v.place.opacity()),
                 dims,
                 v.crop.as_ref(),
+                v.focal_point.as_ref(),
             )
         }
         TimelineItem::Image(i) => {
@@ -693,6 +694,7 @@ fn visual_layer(
                 op(i.place.opacity()),
                 dims,
                 i.crop.as_ref(),
+                i.focal_point.as_ref(),
             )
         }
         TimelineItem::Text(text) => {
@@ -743,6 +745,7 @@ fn visual_layer(
                         op(sticker.place.opacity()),
                         dims,
                         None,
+                        None,
                     )
                 }
                 // 图片贴纸按图片画，框按图片的宽高比。
@@ -757,6 +760,7 @@ fn visual_layer(
                         Fit::Contain,
                         op(sticker.place.opacity()),
                         dims,
+                        None,
                         None,
                     )
                 }
@@ -832,6 +836,7 @@ fn visual_layer(
                         op(p.place.opacity()),
                         dims,
                         None,
+                        None,
                     )
                 }
                 (Some(_), _) => unsupported(&p.base.id, &pixel, "placeholder-asset-not-supported"),
@@ -855,6 +860,7 @@ fn visual_layer(
                 op(w.place.opacity()),
                 dims,
                 None,
+                None,
             )
         }
         TimelineItem::Composition(composition) => {
@@ -873,6 +879,7 @@ fn visual_layer(
                         Fit::Contain,
                         op(composition.place.opacity()),
                         dims,
+                        None,
                         None,
                     )
                 }
@@ -1368,6 +1375,7 @@ fn media_layer(
     opacity: f64,
     source: Option<(f64, f64)>,
     crop: Option<&Crop>,
+    focal: Option<&FocalPoint>,
 ) -> Option<VisualLayer> {
     let opacity = drawable(pixel, opacity)?;
     let (bw, bh) = (pixel.width, pixel.height);
@@ -1386,13 +1394,15 @@ fn media_layer(
         (Fit::Cover, Some((sw, sh))) => {
             let scale = (bw / sw).max(bh / sh);
             let (u, v) = (bw / (sw * scale), bh / (sh * scale));
-            (
-                bw,
-                bh,
-                0.0,
-                0.0,
-                [(1.0 - u) / 2.0, (1.0 - v) / 2.0, (1.0 + u) / 2.0, (1.0 + v) / 2.0],
-            )
+            let rect = match focal.filter(|f| f.is_valid()) {
+                // 取景点：多出来的部分按 x、y 分到两边（0 贴左 / 上，1 贴右 / 下）。
+                Some(f) => {
+                    let (u0, v0) = ((1.0 - u) * f.x, (1.0 - v) * f.y);
+                    [u0, v0, u0 + u, v0 + v]
+                }
+                None => [(1.0 - u) / 2.0, (1.0 - v) / 2.0, (1.0 + u) / 2.0, (1.0 + v) / 2.0],
+            };
+            (bw, bh, 0.0, 0.0, rect)
         }
     };
 

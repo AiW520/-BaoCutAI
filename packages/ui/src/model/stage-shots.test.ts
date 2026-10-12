@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { AssetRecord, Crop, Sequence, SequenceItem } from '@baocut/protocol';
-import { cropOperations, gestureOperations, gesturePatch, memberOf, panGesture, stepGesture } from './stage-gesture.ts';
-import { isPannable, panCrop, sourceSize, type PannableVideo } from './stage-pose.ts';
+import { framingOperations, gestureOperations, gesturePatch, memberOf, panGesture, stepGesture } from './stage-gesture.ts';
+import { framingOf, isPannable, panCrop, panFraming, sourceSize, type PannableVideo } from './stage-pose.ts';
 import { applyFramingToAll, framingPieces, shotSeconds, showsShotChip } from './stage-shots.ts';
 import { patchItem } from './item-draft.ts';
 
@@ -33,8 +33,9 @@ const piece = (id: string, fromFrame: number, durationFrames: number, crop: Crop
 const seq = (items: SequenceItem[]) => ({ id: 's1', fps: { num: 30, den: 1 }, canvas, items }) as unknown as Sequence;
 
 describe('平移取景', () => {
-  it('只认铺满、cover、带裁剪的视频', () => {
+  it('只认铺满、cover、带裁剪或取景点的视频', () => {
     expect(isPannable(piece('a', 0, 30, window916(0.2)))).toBe(true);
+    expect(isPannable(piece('a', 0, 30, undefined, { focalPoint: { x: 0.4, y: 0.5 } }))).toBe(true);
     expect(isPannable(piece('a', 0, 30, window916(0.2), { fit: undefined }))).toBe(true);
     expect(isPannable(piece('a', 0, 30, undefined))).toBe(false);
     expect(isPannable(piece('a', 0, 30, window916(0.2), { fit: 'contain' }))).toBe(false);
@@ -71,20 +72,41 @@ describe('平移取景', () => {
     expect(down.left).toBe(0.2);
   });
 
-  it('手势：盒不动，草稿叠裁剪，松手写一笔 setStyle；没动不提交', () => {
+  it('手势：盒不动，只带裁剪的旧视频换成取景点再挪（源画面不裁），草稿跟手，松手写一笔 setStyle；没动不提交', () => {
     const item = piece('a', 0, 30, window916(0.3)) as PannableVideo;
     expect(sourceSize(item, assets)).toEqual({ width: 1920, height: 1080 });
     const g = panGesture(item, { x: 540, y: 960 }, canvas, assets);
     const env = { canvas, others: [], pxScale: 1 };
     const frame = stepGesture(g, { x: 648, y: 960 }, { shift: false, alt: false }, env);
     expect(frame.poses[0]).toEqual(memberOf(item, canvas, assets).start);
-    expect(frame.crop!.left).toBeCloseTo(0.2684, 4);
-    expect(gesturePatch(item, frame.poses[0]!, 1, canvas, assets, frame.crop)).toEqual({ crop: frame.crop });
-    expect(patchItem(item, { crop: frame.crop! })).toMatchObject({ crop: frame.crop });
-    expect(cropOperations('s1', item, frame.crop!)).toEqual([{ type: 'setStyle', sequenceId: 's1', itemId: 'a', crop: frame.crop }]);
-    expect(cropOperations('s1', item, item.crop)).toEqual([]);
+    // 看到的左边与挪裁剪窗口一样落在源宽的 0.2684；左右不再裁掉。
+    const framing = frame.framing!;
+    expect(framing.crop).toBeNull();
+    expect(framing.focalPoint!.x * (1 - 0.3164)).toBeCloseTo(0.2684, 3);
+    expect(framing.focalPoint!.y).toBe(0.5);
+    expect(gesturePatch(item, frame.poses[0]!, 1, canvas, assets, framing)).toEqual({ framing });
+    const patched = patchItem(item, { framing }) as PannableVideo;
+    expect(patched.crop).toBeUndefined();
+    expect(patched.focalPoint).toEqual(framing.focalPoint);
+    expect(framingOperations('s1', item, framing)).toEqual([
+      { type: 'setStyle', sequenceId: 's1', itemId: 'a', crop: null, focalPoint: framing.focalPoint },
+    ]);
+    expect(framingOperations('s1', item, framingOf(item))).toEqual([]);
+    expect(stepGesture(g, { x: 540, y: 960 }, { shift: false, alt: false }, env).framing).toEqual(framingOf(item));
     // 铺满的视频没有可挪的框：通用的移动手势写不出东西。
     expect(gestureOperations('s1', [g.member], frame.poses, 1, canvas)).toEqual([]);
+  });
+
+  it('换过的视频只挪取景点，拖过头停在边上；不知道源尺寸时按旧办法挪裁剪窗口', () => {
+    const item = piece('a', 0, 30, undefined, { focalPoint: { x: 0.5, y: 0.5 } }) as PannableVideo;
+    const source = { width: 1920, height: 1080 };
+    // 1920×1080 铺满 1080×1920：放大到 3413.3 宽，多出来 2333.3 画布像素。
+    expect(panFraming(item, -233.33, 0, canvas, source).focalPoint!.x).toBeCloseTo(0.6, 4);
+    expect(panFraming(item, 0, 300, canvas, source)).toEqual({ crop: null, focalPoint: { x: 0.5, y: 0.5 } });
+    expect(panFraming(item, 5000, 0, canvas, source).focalPoint!.x).toBe(0);
+    expect(panFraming(item, -5000, 0, canvas, source).focalPoint!.x).toBe(1);
+    const legacy = piece('b', 0, 30, window916(0.3)) as PannableVideo;
+    expect(panFraming(legacy, 108, 0, canvas, null)).toEqual({ crop: panCrop(window916(0.3), 108, 0, canvas, null), focalPoint: null });
   });
 });
 
@@ -116,5 +138,10 @@ describe('按镜头分段取景的小牌', () => {
       { type: 'setStyle', sequenceId: 's1', itemId: 'b', crop: window916(0.1) },
     ]);
     expect(applyFramingToAll('s1', b as PannableVideo, pieces).map((op) => 'itemId' in op && op.itemId)).toEqual(['a', 'c']);
+    // 换成取景点的一段套到只带裁剪的几段：裁剪去掉、写上取景点。
+    const focal = piece('f', 0, 225, undefined, { focalPoint: { x: 0.2, y: 0.5 } });
+    expect(applyFramingToAll('s1', focal as PannableVideo, framingPieces(seq([focal, b]), focal))).toEqual([
+      { type: 'setStyle', sequenceId: 's1', itemId: 'b', crop: null, focalPoint: { x: 0.2, y: 0.5 } },
+    ]);
   });
 });

@@ -519,6 +519,7 @@ interface VideoItem extends VisualItemBase, MediaFields {
   assetRef: VersionRef;
   timeMap: TimeMap;
   crop?: Crop;                         // §3.5
+  focalPoint?: FocalPoint;             // §3.5
   embeddedAudio: EmbeddedAudio;        // 内嵌音频的路由（§3.9）
 }
 
@@ -526,6 +527,7 @@ interface ImageItem extends VisualItemBase, MediaFields {
   type: 'image';
   assetRef: VersionRef;
   crop?: Crop;
+  focalPoint?: FocalPoint;
   tile?: Tile;                         // §3.5
   source?: 'file' | 'html';            // 图片的编辑来源；渲染只用 assetRef
   html?: string;                       // source 为 'html' 时保留的原始片段
@@ -567,7 +569,7 @@ type SequenceItem =
   - `place`、`animate`：全部画面实例；音频实例与字幕实例没有。音频实例也不能有 `animate`。
   - `mode`、`fit`、`bg`：视频、图片、占位框、白板，以及 `sticker.source` 为 `'asset'` 的贴纸（下称视觉媒体）。`mask`、`fx` 用于视觉媒体与合成实例。
   - `tile`：文字与图片。
-  - `crop`：视频与图片。
+  - `crop`、`focalPoint`：视频与图片。
   - `source`、`html`：只用于图片；有 `html` 时 `source` 必须是 `'html'`。
 - **`role`** 说明实例的作用，供界面分组与智能体理解，不改变渲染。词表开放，读到不认识的取值照常保留。其中五个值写入时校验与种类的搭配：`broll`（图片、视频）、`watermark`（文字、图片、视频、贴纸）、`screentext`（文字）、`overlay` 与 `frame`（图片、视频、贴纸）。其余常用的取值：`a-roll`、`narration`、`dub`、`music`、`sfx`；字幕实例用 `source`、`translation`。
 - **`extensions`** 的键是命名空间（例如 `baocut.import`）。引擎不解释其中的内容，写回时原样保留。画面元素的参数一律写正式字段，不放进这里（架构设计 §13.4）；这里只放说明来源的数据，例如导入时的原始 ID。
@@ -606,6 +608,7 @@ interface Tile {
 }
 
 interface Crop { left: number; top: number; right: number; bottom: number }   // 四边各裁掉的比例
+interface FocalPoint { x: number; y: number }   // cover 留下哪一段，[0, 1]
 ```
 
 - 数值都必须是有限数。`x`、`y` 可以落在画布之外。
@@ -617,6 +620,7 @@ interface Crop { left: number; top: number; right: number; bottom: number }   //
 - **平铺**。实例的画面按网格重复铺满画布：网格以画布中心为原点，排好点位后整体旋转 `angle`；横向步长是单格宽加 `gapX`% 的画布宽，纵向同理。点位由 `timeline::geometry::tile_stamp_points` 给出，预览与导出共用。
 - 文字的纵向钉点是 `TextItem.verticalAlign`（§3.6），不在 `place` 里。
 - **裁剪**（`crop`）从源的显示画面（已按旋转元数据摆正）四边各裁掉一个比例：每边在 [0, 1)，左右之和、上下之和都小于 1。四边都是 0 等于没有裁剪，不保存。裁剪在 `fit` 之前：留下的区域当作源画面，它的宽高比参与框的高与 `fit`。
+- **取景点**（`focalPoint`）决定 `cover` 裁掉多余部分时留哪一段，同 CSS `object-position` 的百分比：`x`、`y` 各在 [0, 1]，0 贴左（上）、0.5 居中、1 贴右（下），多出来的部分按它分到两边。它在裁剪之后定位，只对 `cover` 起作用，不改框，也不裁源画面：换画幅时多出来的画面还在。省略时居中，与没有这个字段的文档一样。换画幅的取景（剪成短视频）写取景点而不是把左右或上下裁掉；`videos.derive` 收到裁剪时，全屏加 `cover` 的视频按派生画布换成取景点，铺满方向上多出来的那一边不裁，另一边的裁剪（放大、去黑边）留着，看到的画面不变。
 - 选中框、命中框与露底检查读静态的 `place`；关键帧与元素动画叠在它上面（§3.15）。
 
 字段来源：`schema.rs` 的 `Place`、`CornerRadii`、`VisualMode`、`Fit`、`Background`、`Tile`；`geometry.rs` 的 `default_place`、`width_basis`、`static_box`、`media_box`、`tile_stamp_points`。
@@ -1451,7 +1455,7 @@ interface Provenance {
   }
   ```
 
-  `settings.crops` 与 `framing` 也是加上去的可选字段：派生时给了分段取景才写，旧文档没有它们照常读，按只有 `crop` 一份取景理解。`framing` 留给以后恢复剪口时按镜头补拆片段用；子视频里各片段的 `crop` 才是当前状态。
+  `settings.crops` 与 `framing` 也是加上去的可选字段：派生时给了分段取景才写，旧文档没有它们照常读，按只有 `crop` 一份取景理解。`framing` 留给以后恢复剪口时按镜头补拆片段用；子视频里各片段的 `crop` 与 `focalPoint` 才是当前状态（全屏加 `cover` 的片段按 §3.5 换成取景点，`settings` 与 `framing` 记的仍是给的裁剪）。
 
   `hook`、`reason`、`notes` 是加上去的可选字段（派生时调用方给了才写，不参与幂等键），旧文档没有它们照常读；界面没有 `hook` 时取子视频保留段的第一句，没有 `reason`、`notes` 时不显示。
 
@@ -2292,6 +2296,7 @@ interface PackageManifest {
 | 圆角的单位（§3.5） | 已定：540 短边下的像素，四角各自的值 `cornerRadii` | — |
 | 留边底色与画布背景（§3.2、§3.5） | 已定：实例的 `bg` 在全屏加 `contain` 时铺满画布；画布背景是纯色 | — |
 | `Crop`（§3.5） | 已定：四边各裁掉的比例，在 `fit` 之前，只用于视频与图片 | — |
+| `FocalPoint`（§3.5） | 已定：`cover` 留下哪一段，[0, 1]，省略时居中，只用于视频与图片 | — |
 | 生成类元素（§3.7） | 已定：取消内置生成器，计时、贴纸、声波、进度条、手绘、占位框、彩纸、白板各是实例的种类或参数，Lottie 是一种素材（§4.1） | — |
 | 预渲染替身的失效（§3.7） | 未跟踪 | 参数或代码包版本变化之后，替身怎么标为过期 |
 | 嵌套序列、调整层（§3.4） | 未纳入 | 是否以及何时加入 |

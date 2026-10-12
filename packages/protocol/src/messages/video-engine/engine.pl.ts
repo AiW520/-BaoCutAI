@@ -52,6 +52,8 @@ export const pl: EngineMessages = {
   effectsNotVisual: "nie jest wizualnym medium ani kompozycją, więc nie może mieć efektów",
   cropRange: "Każda krawędź kadrowania musi być w [0, 1), a left + right i top + bottom mniejsze niż 1",
   cropNotVideoOrImage: "nie jest wideo ani obrazem, więc nie może być kadrowane",
+  focalPointRange: "Współrzędne x i y punktu ostrości muszą mieścić się w [0, 1]",
+  focalPointNotVideoOrImage: "nie jest wideo ani obrazem, więc nie ma punktu ostrości",
 
   // elements.rs
   itemSpanInvalid: "Klip nie może zaczynać się przed zerem i musi trwać co najmniej jedną klatkę",

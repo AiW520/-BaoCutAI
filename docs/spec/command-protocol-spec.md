@@ -299,7 +299,7 @@ type EditOperation = { type: string; [field: string]: JsonValue };
 画面实例的字段、转场、效果、章节与闪避的语义见视频格式规范 §3.5–§3.9、§3.13、§3.15、§3.17，字段的取值与适用范围由引擎按元素模型校验（`crates/timeline`）。操作的约定如下：
 
 - `setTransform` 改画面实例的 `place`：`x`、`y`、`w`、`scale`、`scaleY`、`rot` 只改给出的，给 `null` 去掉（回到按种类的缺省）；`flipX`、`flipY` 是布尔。字幕与音频没有 `place`。
-- `setStyle` 只改给出的字段，给 `null` 去掉：`opacity`、`radius`、`cornerRadii` 写进 `place`；`mode`、`fit`、`bg`、`mask` 用于视觉媒体；`tile` 用于图片与文字；`style`、`stylePresetId`、`verticalAlign` 用于文字；`shape` 整个替换图形的参数；`crop` 用于视频与图片，给 `null` 去掉裁剪。
+- `setStyle` 只改给出的字段，给 `null` 去掉：`opacity`、`radius`、`cornerRadii` 写进 `place`；`mode`、`fit`、`bg`、`mask` 用于视觉媒体；`tile` 用于图片与文字；`style`、`stylePresetId`、`verticalAlign` 用于文字；`shape` 整个替换图形的参数；`crop` 用于视频与图片，给 `null` 去掉裁剪；`focalPoint` 用于视频与图片（视频格式规范 §3.5），给 `null` 去掉（居中）。
 - `trimItem`、`splitItem` 与 `removeRange` 改了实例的窗口时，关键帧绑定与音量包络按视频格式规范 §3.15 跟着换算（`timeline::keyframes` 的 `rewindow`、`split_keyframes`）：`localFrame` 按内容的位移换算，窗口外的帧去掉并在新边界补一帧取样值，`percent` 原样；拆分时左半保留原来的绑定 ID，右半的绑定是新的。`removeRange` 里只缩短的静态实例按跟随剪口的规则换算（起点不动）。
 - `joinItems` 给 `itemIds`（两个，同一条轨道上首尾相接）与可选的 `keep`（`first`、`second`，按 `itemIds` 的先后），是拆分的逆：种类相同；带源时钟的速率相同、源时间精确连续；其余字段一致（名字、身份与时间除外），关键帧与音量包络能用 `join_keyframes` 拼回同一串帧。字段不一致时须给 `keep`，取那一边的字段（关键帧拼不回时取那一边的原样）。留下时间上靠前的实例（ID、起点、源起点与 lineage），靠后的删掉，列在回执的 `deletedIds`；靠后那件的出场转场、闪避组与字幕的 `scopeItemIds` 改指留下的那件，两件之间的转场随靠后那件删掉，列在 `impact.removedTransitions`。不合时整笔拒绝（`INVALID_OPERATION`，`details.rule` 为 `kind`、`track`、`not-adjacent`、`rate`、`source-gap` 或 `attributes`，后者带不一致的字段名 `keys`）。
 - `setText` 给 `text` 或 `counter`（只给一个），给了的那个替换另一个。`setProps` 整个替换生成类元素与图形的种类参数（与实例种类同名的那一个）。`setAnimation` 整个替换元素动画三槽，`null` 去掉。`setKeyframes` 给 `property` 与 `keyframes`，整个替换这个属性的关键帧，`null` 或空表去掉这条绑定。`setTemplate` 整个替换序列的模板层，`null` 去掉。

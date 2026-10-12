@@ -73,6 +73,8 @@ const en = {
   effectsNotVisual: 'is not visual media or a composition, so it cannot have effects',
   cropRange: 'Each crop edge must be within [0, 1), and left + right and top + bottom must each be less than 1',
   cropNotVideoOrImage: 'is not a video or image, so it cannot be cropped',
+  focalPointRange: 'The focal point x and y must each be within [0, 1]',
+  focalPointNotVideoOrImage: 'is not a video or image, so it has no focal point',
 
   // elements.rs
   itemSpanInvalid: 'A clip cannot start before zero and must be at least one frame long',

@@ -52,6 +52,8 @@ export const vi: EngineMessages = {
   effectsNotVisual: "không phải tư liệu hình ảnh hoặc bố cục nên không có hiệu ứng",
   cropRange: "Mỗi cạnh cắt phải trong [0, 1), left + right và top + bottom mỗi tổng phải nhỏ hơn 1",
   cropNotVideoOrImage: "không phải video hoặc hình ảnh nên không cắt hình được",
+  focalPointRange: "x và y của điểm lấy nét phải nằm trong [0, 1]",
+  focalPointNotVideoOrImage: "không phải video hoặc hình ảnh nên không có điểm lấy nét",
 
   // elements.rs
   itemSpanInvalid: "Clip không bắt đầu trước 0 và phải dài ít nhất một khung hình",

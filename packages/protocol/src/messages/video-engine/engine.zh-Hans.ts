@@ -52,6 +52,8 @@ export const zhHans: EngineMessages = {
   effectsNotVisual: '不是视觉媒体或合成，不能加效果',
   cropRange: '裁剪的每一边须在 [0, 1) 之间，左右、上下之和须小于 1',
   cropNotVideoOrImage: '不是视频或图片，不能裁剪',
+  focalPointRange: '取景点的 x、y 都须在 [0, 1] 之间',
+  focalPointNotVideoOrImage: '不是视频或图片，没有取景点',
 
   // elements.rs
   itemSpanInvalid: '实例的起点不能为负，长度至少一帧',

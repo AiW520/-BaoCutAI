@@ -181,6 +181,21 @@ impl Crop {
     }
 }
 
+/// 取景点（§3.5）：`cover` 裁掉多余部分时留哪一段。`x`、`y` 在 [0, 1]：0 贴左（上）、0.5 居中、1 贴右（下），
+/// 同 CSS `object-position` 的百分比。源画面不裁，换画幅时多出来的画面还在。
+#[derive(Clone, Copy, Debug, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct FocalPoint {
+    pub x: f64,
+    pub y: f64,
+}
+
+impl FocalPoint {
+    pub fn is_valid(&self) -> bool {
+        [self.x, self.y].iter().all(|v| v.is_finite() && (0.0..=1.0).contains(v))
+    }
+}
+
 /// `#RRGGBB` 或 `#RRGGBBAA`（§3.7：颜色一律这两种写法）。
 pub fn is_color(text: &str) -> bool {
     matches!(text.len(), 7 | 9) && text.starts_with('#') && text[1..].chars().all(|c| c.is_ascii_hexdigit())
@@ -236,5 +251,13 @@ mod tests {
             }
             .is_valid()
         );
+    }
+
+    #[test]
+    fn focal_point_bounds() {
+        assert!(FocalPoint { x: 0.0, y: 1.0 }.is_valid());
+        assert!(!FocalPoint { x: -0.1, y: 0.5 }.is_valid());
+        assert!(!FocalPoint { x: 0.5, y: f64::NAN }.is_valid());
+        assert!(serde_json::from_value::<FocalPoint>(json!({ "x": 0.5, "y": 0.5, "z": 1 })).is_err());
     }
 }

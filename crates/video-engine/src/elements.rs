@@ -228,6 +228,11 @@ fn check_v3_fields(item: &TimelineItem) -> Result<(), Text> {
                 "Each crop edge must be within [0, 1), and left + right and top + bottom must each be less than 1"
             ));
         }
+        TimelineItem::Video(VideoItem { focal_point: Some(f), .. }) | TimelineItem::Image(ImageItem { focal_point: Some(f), .. })
+            if !f.is_valid() =>
+        {
+            return Err(msg!("engine.focalPointRange", "The focal point x and y must each be within [0, 1]"));
+        }
         TimelineItem::Text(t) => {
             if let Some(style) = &t.style {
                 if !style.is_object() {

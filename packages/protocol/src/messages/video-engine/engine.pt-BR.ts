@@ -52,6 +52,8 @@ export const ptBR: EngineMessages = {
   effectsNotVisual: "não é mídia visual nem composição e não pode ter efeitos",
   cropRange: "Cada borda deve estar em [0, 1), e left + right e top + bottom devem ser menores que 1",
   cropNotVideoOrImage: "não é vídeo nem imagem e não pode ser recortado",
+  focalPointRange: "x e y do ponto focal devem estar em [0, 1]",
+  focalPointNotVideoOrImage: "não é vídeo nem imagem e não tem ponto focal",
 
   // elements.rs
   itemSpanInvalid: "O clipe não pode começar antes de zero e deve durar ao menos um quadro",

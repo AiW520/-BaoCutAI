@@ -1692,6 +1692,7 @@ impl OverlayRenderPlan {
                     audio_fade_out: element.audio_fade_out.unwrap_or(0.0),
                     mode: element.mode.unwrap_or(VisualMode::Pip),
                     fit: element.fit.unwrap_or(Fit::Cover),
+                    focal: None,
                     bg: Some(element.bg.unwrap_or(Background::Black)),
                     text: element.text,
                     counter: element.counter,
@@ -5532,7 +5533,10 @@ impl OverlayRenderPlan {
                     }
                 }
             }
-            draw_fit_pixmap(&mut local, &filtered, element.fit, 1.0);
+            match element.focal.filter(|_| element.fit == Fit::Cover) {
+                Some(anchor) => draw_fit_pixmap_anchored(&mut local, &filtered, element.fit, 1.0, anchor),
+                None => draw_fit_pixmap(&mut local, &filtered, element.fit, 1.0),
+            }
             local
         };
         if transition.iris < 1.0 {

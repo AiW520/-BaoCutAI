@@ -70,6 +70,36 @@ fn cropped_pip_image_fills_the_planned_box() {
 }
 
 #[test]
+fn focal_point_picks_the_part_cover_keeps() {
+    // 左红右蓝的 640×90 铺满 160×90：多出来的 480 宽按取景点分到两边（格式规范 §3.5），源不裁。
+    let frame_at = |focal: Value| {
+        let mut body = json!({
+            "type": "image", "assetRef": { "id": "a_img", "revision": "rev_1" }, "place": {}, "mode": "fullscreen", "fit": "cover"
+        });
+        if !focal.is_null() {
+            body["focalPoint"] = focal;
+        }
+        let video = video(
+            vec![item("img", 0, 30, body)],
+            vec![image_asset("a_img", 640, 90)],
+            json!({}),
+        );
+        let mut media = Media::default().with("img", halves(640, 90, RED, BLUE));
+        render(&video, 0.5, &mut media)
+    };
+    let left = frame_at(json!({ "x": 0, "y": 0.5 }));
+    near(px(&left, 2, 45), RED, 2);
+    near(px(&left, 157, 45), RED, 2);
+    let right = frame_at(json!({ "x": 1, "y": 0.5 }));
+    near(px(&right, 2, 45), BLUE, 2);
+    near(px(&right, 157, 45), BLUE, 2);
+    // 没有取景点：居中，中线两边各一半。
+    let centered = frame_at(Value::Null);
+    near(px(&centered, 2, 45), RED, 2);
+    near(px(&centered, 157, 45), BLUE, 2);
+}
+
+#[test]
 fn text_is_drawn_with_its_opacity() {
     let video = video(
         vec![item(

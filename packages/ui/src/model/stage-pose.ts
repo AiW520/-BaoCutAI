@@ -1,5 +1,17 @@
 import { stageBox, stagePlace, type StageAsset, type StageItem } from '@baocut/editor-wasm';
-import { isVisualItem, type AssetRecord, type Crop, type Id, type Place, type SequenceItem, type VideoItem, type VisualItem } from '@baocut/protocol';
+import {
+  framingFromCrop,
+  isVisualItem,
+  videoDisplaySize,
+  type AssetRecord,
+  type Crop,
+  type FocalPoint,
+  type Id,
+  type Place,
+  type SequenceItem,
+  type VideoItem,
+  type VisualItem,
+} from '@baocut/protocol';
 import { round1, wrapRotation } from './geometry-panel.ts';
 
 /**
@@ -222,21 +234,57 @@ export function boxRect(pose: Pose): Rect {
 
 // ---- 平移取景 ----
 
-/** 铺满画面、`cover`、带裁剪的视频（剪成短视频的子视频按镜头分段取景就是这样）：画布上拖它是平移裁剪窗口。 */
-export type PannableVideo = VideoItem & { crop: Crop };
+/**
+ * 铺满画面、`cover`、带裁剪或取景点的视频（剪成短视频的子视频按镜头分段取景就是这样）：画布上拖它是平移取景。
+ */
+export type PannableVideo = VideoItem;
 
 export function isPannable(item: SequenceItem): item is PannableVideo {
-  return item.type === 'video' && item.mode === 'fullscreen' && (item.fit ?? 'cover') === 'cover' && !!item.crop;
+  return item.type === 'video' && item.mode === 'fullscreen' && (item.fit ?? 'cover') === 'cover' && !!(item.crop || item.focalPoint);
 }
 
 /** 源的显示尺寸（已按旋转交换，乘上像素宽高比；与 `render-graph` 的 `display_size` 同口径）；素材表里没有时 null。 */
 export function sourceSize(item: VideoItem, assets: Assets | undefined): { width: number; height: number } | null {
-  const video = assets?.[item.assetRef.id]?.revisions[item.assetRef.revision]?.video;
-  if (!video) return null;
-  const { num, den } = video.pixelAspectRatio;
-  const width = den > 0 ? (video.displayWidth * num) / den : 0;
-  const height = video.displayHeight;
-  return width > 0 && height > 0 ? { width, height } : null;
+  return videoDisplaySize(assets?.[item.assetRef.id]?.revisions[item.assetRef.revision]);
+}
+
+/** 视频的取景：裁剪与取景点（视频格式规范 §3.5），没有的是 null。 */
+export interface ItemFraming {
+  crop: Crop | null;
+  focalPoint: FocalPoint | null;
+}
+
+export const framingOf = (item: VideoItem): ItemFraming => ({ crop: item.crop ?? null, focalPoint: item.focalPoint ?? null });
+
+/**
+ * 平移取景（画布像素的指针位移 → 新的取景）：挪取景点，源画面不裁，换画幅时多出来的画面还在。只带裁剪的视频（旧的短视频）
+ * 先按 `framingFromCrop` 换成取景点（看到的不变）再挪。往右拖是画面跟着往右走，取景点往左挪；没有多出来的方向不动。
+ * 不知道源尺寸时只能按旧办法挪裁剪窗口（`panCrop`）。没动时原样返回。
+ */
+export function panFraming(
+  item: PannableVideo,
+  dx: number,
+  dy: number,
+  canvas: CanvasSize,
+  source: { width: number; height: number } | null,
+): ItemFraming {
+  const current = framingOf(item);
+  if (dx === 0 && dy === 0) return current;
+  if (!source) {
+    const crop = item.crop ? panCrop(item.crop, dx, dy, canvas, null) : null;
+    return crop && crop !== item.crop ? { ...current, crop } : current;
+  }
+  const lifted = framingFromCrop(item.crop, source, canvas, item.focalPoint);
+  if (!lifted) return current;
+  const c = lifted.crop ?? { left: 0, top: 0, right: 0, bottom: 0 };
+  const rw = (1 - c.left - c.right) * source.width;
+  const rh = (1 - c.top - c.bottom) * source.height;
+  const scale = Math.max(canvas.width / rw, canvas.height / rh);
+  // 铺满后多出来的画布像素：取景点从 0 到 1 走过这么远。
+  const spareX = rw * scale - canvas.width;
+  const spareY = rh * scale - canvas.height;
+  const move = (f: number, d: number, spare: number) => (spare > 1e-6 ? round4(clamp(f - d / spare, 0, 1)) : f);
+  return { crop: lifted.crop, focalPoint: { x: move(lifted.focalPoint.x, dx, spareX), y: move(lifted.focalPoint.y, dy, spareY) } };
 }
 
 const round4 = (v: number) => Math.round(v * 1e4) / 1e4;

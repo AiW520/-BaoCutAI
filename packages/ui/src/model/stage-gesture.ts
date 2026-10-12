@@ -1,4 +1,4 @@
-import type { Crop, EditOperation, Id } from '@baocut/protocol';
+import type { Crop, EditOperation, FocalPoint, Id } from '@baocut/protocol';
 import { asObject, num } from '../render/text-style.ts';
 import type { ItemPatch } from './item-draft.ts';
 import { editableTextStyle, patchTextStyle } from './property-values.ts';
@@ -15,7 +15,7 @@ import {
   groupShift,
   guidesFor,
   moveLimits,
-  panCrop,
+  panFraming,
   placeFields,
   poseOf,
   sizeRange,
@@ -24,6 +24,7 @@ import {
   type CanvasSize,
   type Guide,
   type Handle,
+  type ItemFraming,
   type Limits,
   type PannableVideo,
   type PlacedItem,
@@ -51,7 +52,7 @@ export type Gesture =
   | { kind: 'edge'; member: Member; handle: Handle; p0: Point }
   | { kind: 'corner'; member: Member; handle: Handle; p0: Point }
   | { kind: 'rotate'; member: Member; pivot: Point; p0: Point }
-  /** 平移取景：铺满、`cover`、带裁剪的视频，拖动只挪裁剪窗口（`source` 是源的显示尺寸，不知道时 null）。 */
+  /** 平移取景：铺满、`cover`、带裁剪或取景点的视频，拖动只挪取景（`source` 是源的显示尺寸，不知道时 null）。 */
   | { kind: 'pan'; member: Member & { item: PannableVideo }; source: { width: number; height: number } | null; p0: Point }
   | { kind: 'group-move'; members: Member[]; p0: Point }
   | { kind: 'group-scale'; members: Member[]; bounds: Rect; p0: Point };
@@ -68,12 +69,12 @@ export interface StageEnv {
   pxScale: number;
 }
 
-/** 这一刻的结果：每件的盒（与成员同序）、等比倍率（文字连字号一起放大用）、参考线；平移取景时另有新的裁剪（盒不动）。 */
+/** 这一刻的结果：每件的盒（与成员同序）、等比倍率（文字连字号一起放大用）、参考线；平移取景时另有新的取景（盒不动）。 */
 export interface GestureFrame {
   poses: Pose[];
   factor: number;
   guides: Guide[];
-  crop?: Crop;
+  framing?: ItemFraming;
 }
 
 export function memberOf(item: PlacedItem, canvas: CanvasSize, assets?: Assets): Member {
@@ -123,7 +124,7 @@ export function stepGesture(gesture: Gesture, p: Point, mods: Modifiers, env: St
     }
     case 'pan': {
       const { item, start } = gesture.member;
-      return { poses: [start], factor: 1, guides: [], crop: panCrop(item.crop, dx, dy, canvas, gesture.source) };
+      return { poses: [start], factor: 1, guides: [], framing: panFraming(item, dx, dy, canvas, gesture.source) };
     }
     case 'group-move': {
       const starts = gesture.members.map((m) => m.start);
@@ -154,9 +155,16 @@ export function scaledFontSize(item: PlacedItem, factor: number): number | null 
   return Math.min(400, Math.max(1, round1(size * factor)));
 }
 
-/** 拖动中叠给预览与属性页的草稿；平移取景只叠裁剪。 */
-export function gesturePatch(item: PlacedItem, pose: Pose, factor: number, canvas: CanvasSize, assets?: Assets, crop?: Crop): ItemPatch {
-  if (crop) return { crop };
+/** 拖动中叠给预览与属性页的草稿；平移取景只叠取景。 */
+export function gesturePatch(
+  item: PlacedItem,
+  pose: Pose,
+  factor: number,
+  canvas: CanvasSize,
+  assets?: Assets,
+  framing?: ItemFraming,
+): ItemPatch {
+  if (framing) return { framing };
   const fontSize = scaledFontSize(item, factor);
   return {
     place: placeFields(item, pose, canvas, assets),
@@ -186,13 +194,17 @@ export function gestureOperations(
   return operations;
 }
 
-const sameCrop = (a: Crop | undefined, b: Crop) =>
-  !!a && a.left === b.left && a.top === b.top && a.right === b.right && a.bottom === b.bottom;
+const sameCrop = (a: Crop | undefined, b: Crop | null) =>
+  a && b ? a.left === b.left && a.top === b.top && a.right === b.right && a.bottom === b.bottom : !a && !b;
+const sameFocal = (a: FocalPoint | undefined, b: FocalPoint | null) => (a && b ? a.x === b.x && a.y === b.y : !a && !b);
 
-/** 平移取景松手（或「套到整支」）：把裁剪写进一件视频；和原来一样时是空表（不提交）。 */
-export function cropOperations(sequenceId: Id, item: PlacedItem, crop: Crop): EditOperation[] {
-  if (item.type !== 'video' || sameCrop(item.crop, crop)) return [];
-  return [{ type: 'setStyle', sequenceId, itemId: item.id, crop: { ...crop } }];
+/** 平移取景松手（或「套到整支」）：把取景写进一件视频，只写变了的裁剪与取景点（null 去掉）；都一样时是空表（不提交）。 */
+export function framingOperations(sequenceId: Id, item: PlacedItem, framing: ItemFraming): EditOperation[] {
+  if (item.type !== 'video') return [];
+  const crop = sameCrop(item.crop, framing.crop) ? {} : { crop: framing.crop ? { ...framing.crop } : null };
+  const focal = sameFocal(item.focalPoint, framing.focalPoint) ? {} : { focalPoint: framing.focalPoint ? { ...framing.focalPoint } : null };
+  if (!('crop' in crop) && !('focalPoint' in focal)) return [];
+  return [{ type: 'setStyle', sequenceId, itemId: item.id, ...crop, ...focal }];
 }
 
 /** 方向键微调：一组实例平移同一个位移（限位按全组夹），只夹不吸。 */

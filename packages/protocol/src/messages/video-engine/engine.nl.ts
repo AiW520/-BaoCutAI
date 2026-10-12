@@ -49,6 +49,8 @@ export const nl: EngineMessages = {
   effectsNotVisual: "is geen visuele media of compositie, dus kan geen effecten hebben",
   cropRange: "Elke bijsnijrand moet liggen binnen [0, 1), en left + right en top + bottom moeten elk kleiner zijn dan 1",
   cropNotVideoOrImage: "is geen video of afbeelding, dus kan niet worden bijgesneden",
+  focalPointRange: "x en y van het focuspunt moeten elk binnen [0, 1] liggen",
+  focalPointNotVideoOrImage: "is geen video of afbeelding, dus heeft geen focuspunt",
 
   itemSpanInvalid: "Een clip mag niet vóór nul beginnen en moet minstens één frame lang zijn",
   keyframesNeedPicture: (p: P<'item'>) => `Clip ${p.item} heeft geen beeld, dus kan geen sleutelbeelden hebben`,

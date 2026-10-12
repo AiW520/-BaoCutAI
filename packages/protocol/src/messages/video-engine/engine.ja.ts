@@ -52,6 +52,8 @@ export const ja: EngineMessages = {
   effectsNotVisual: '視覚メディアでもコンポジションでもないため、エフェクトを適用できません',
   cropRange: 'クロップの各辺は [0, 1) の範囲内で、左右の合計と上下の合計はそれぞれ 1 未満にしてください',
   cropNotVideoOrImage: '動画でも画像でもないため、クロップできません',
+  focalPointRange: 'フォーカルポイントの x と y はどちらも [0, 1] の範囲内にしてください',
+  focalPointNotVideoOrImage: '動画でも画像でもないため、フォーカルポイントがありません',
 
   // elements.rs
   itemSpanInvalid: 'クリップは 0 より前から開始できず、長さは 1 フレーム以上必要です',

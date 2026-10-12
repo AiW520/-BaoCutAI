@@ -29,7 +29,7 @@ pub use animation::{Animation, AnimationBinding, AnimationSlot, Keyframe, Keyfra
 pub use ducking::{DuckingGroup, DuckingRule, DuckingTrigger};
 pub use effect::{
     Crop, EffectPreset, FX_SHADOW_BLUR_RANGE, FX_SHADOW_OPACITY_RANGE, FX_STROKE_WIDTH_MAX, FX_TEMPERATURE_RANGE, FilterPreset, Fx,
-    FxShadow, FxStroke, Mask, MaskShape, is_color,
+    FocalPoint, FxShadow, FxStroke, Mask, MaskShape, is_color,
 };
 pub use marker::{Marker, MarkerKind};
 pub use place::{Background, CornerRadii, Fit, MediaFields, Place, Tile, VisualMode};
@@ -307,6 +307,9 @@ pub struct VideoItem {
     /// 源画面的裁剪，在 `fit` 之前生效（§3.5）。
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub crop: Option<Crop>,
+    /// 取景点：`cover` 留下哪一段（§3.5）；没有时居中。
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub focal_point: Option<FocalPoint>,
     /// 内嵌音频的路由。拆开成独立音频实例之前，跟着画面播放。
     pub embedded_audio: EmbeddedAudio,
 }
@@ -340,6 +343,8 @@ pub struct ImageItem {
     pub asset_ref: VersionRef,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub crop: Option<Crop>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub focal_point: Option<FocalPoint>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tile: Option<Tile>,
     /// 图片的编辑来源（`file` / `html`）；渲染只用 `assetRef`。

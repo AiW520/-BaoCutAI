@@ -52,6 +52,8 @@ export const ko: EngineMessages = {
   effectsNotVisual: '시각 미디어나 합성이 아니어서 효과를 넣을 수 없습니다',
   cropRange: '자르기의 각 가장자리는 [0, 1) 범위여야 하며, 왼쪽 + 오른쪽과 위 + 아래는 각각 1보다 작아야 합니다',
   cropNotVideoOrImage: '영상이나 이미지가 아니어서 자를 수 없습니다',
+  focalPointRange: '초점의 x와 y는 각각 [0, 1] 범위여야 합니다',
+  focalPointNotVideoOrImage: '영상이나 이미지가 아니어서 초점이 없습니다',
 
   // elements.rs
   itemSpanInvalid: '클립은 0보다 앞에서 시작할 수 없고 길이가 한 프레임 이상이어야 합니다',

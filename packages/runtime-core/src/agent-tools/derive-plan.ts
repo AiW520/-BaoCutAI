@@ -1,11 +1,14 @@
 import { createHash } from 'node:crypto';
 import {
+  framingFromCrop,
   itemAssetRef,
   sequenceDurationFrames,
+  videoDisplaySize,
   type Crop,
   type DocumentRecord,
   type EditOperation,
   type FitMode,
+  type FocalPoint,
   type Id,
   type MediaTime,
   type Rate,
@@ -483,9 +486,27 @@ function itemInput(item: SequenceItem, settings: DeriveSettings, warnings: Deriv
   delete input.assetRef;
   if (item.type === 'video') {
     if (settings.fit) input.fit = settings.fit;
-    if (settings.crop) input.crop = settings.crop;
+    // 设置里的裁剪按居中铺满给：原来的取景点不算。
+    if (settings.crop) {
+      input.crop = settings.crop;
+      delete input.focalPoint;
+    }
   }
   return input;
+}
+
+/**
+ * 铺满画布的视频把「裁剪 + 铺满」换成不丢画面的取景（`framingFromCrop`，视频格式规范 §3.5）：剪成别的画幅只是取景，
+ * 源画面完整留着，以后改回原画幅还能看到全部；画布上看到的不变。不是全屏 + `cover`、没有裁剪或不知道源尺寸时原样。
+ */
+function keepFullPicture(entry: Record<string, unknown>, source: { width: number; height: number } | null, canvas: DeriveSettings) {
+  if (entry.type !== 'video' || entry.mode !== 'fullscreen' || (entry.fit ?? 'cover') !== 'cover' || !entry.crop || !source) return entry;
+  const framing = framingFromCrop(entry.crop as Crop, source, canvas, entry.focalPoint as FocalPoint | undefined);
+  if (!framing) return entry;
+  const out: Record<string, unknown> = { ...entry, focalPoint: framing.focalPoint };
+  if (framing.crop) out.crop = framing.crop;
+  else delete out.crop;
+  return out;
 }
 
 // ---- 分段取景：把主素材的视频实例在镜头边界上拆开 ----
@@ -547,10 +568,13 @@ function framedEntries(
   const { fps, range, framing } = context;
   const fallback = (entry.crop as Crop | undefined) ?? null;
   const cropAt = (frame: number): Crop | null => framing.at(frame) ?? fallback;
-  const withCrop = (e: Record<string, unknown>, crop: Crop | null) => {
+  const withCrop = (e: Record<string, unknown>, frame: number) => {
     const out = { ...e };
+    const crop = cropAt(frame);
     if (crop) out.crop = cropOf(crop);
     else delete out.crop;
+    // 分段取景按居中铺满给：原来的取景点不算。
+    if (framing.at(frame)) delete out.focalPoint;
     return out;
   };
   const a = item.span.fromFrame;
@@ -559,7 +583,7 @@ function framedEntries(
   if (!piece || piece === 'unsupported' || piece.assetId !== context.primary) {
     const lo = Math.max(a, range.startFrame);
     const hi = Math.min(b, range.endFrame);
-    return [withCrop(entry, cropAt(lo < hi ? Math.floor((lo + hi - 1) / 2) : a))];
+    return [withCrop(entry, lo < hi ? Math.floor((lo + hi - 1) / 2) : a)];
   }
   const bounds = [a, ...framing.splits.filter((f) => f > a && f < b), b];
   const last = bounds.length - 2;
@@ -594,7 +618,7 @@ function framedEntries(
       const source = toSource(piece, part);
       context.shots.push({ from: toNumber(source.start), to: toNumber(source.end), crop: crop ? cropOf(crop) : null });
     }
-    out.push(withCrop(e, crop));
+    out.push(withCrop(e, from));
   }
   return out;
 }
@@ -952,9 +976,12 @@ export function planDerivation(input: DerivationInput): DerivationPlan {
     const entry: Record<string, unknown> = { ...itemInput(item, settings, warnings), ...track };
     const asset = itemAssetRef(item);
     if (asset) entry.assetImportRef = importRefs.get(assetFileKey(asset));
-    const entries = framing
-      ? framedEntries(item, entry, { fps: sequence.fps, range, framing, primary: cutPlan.primaryAssetId, warnings, shots: framingShots })
-      : [entry];
+    const source = item.type === 'video' ? videoDisplaySize(snapshot.assets[item.assetRef.id]?.revisions[item.assetRef.revision]) : null;
+    const entries = (
+      framing
+        ? framedEntries(item, entry, { fps: sequence.fps, range, framing, primary: cutPlan.primaryAssetId, warnings, shots: framingShots })
+        : [entry]
+    ).map((e) => keepFullPicture(e, source, settings));
     inserted.push(...entries);
     piecesOf.set(
       item.id,

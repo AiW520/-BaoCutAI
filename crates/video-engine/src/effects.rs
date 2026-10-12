@@ -1,4 +1,4 @@
-//! 效果（视频格式规范 §3.8）与裁剪（§3.5）。
+//! 效果（视频格式规范 §3.8）、裁剪与取景点（§3.5）。
 //!
 //! 效果是 v2 的 `fx`：一组固定字段，按固定顺序作用。`setEffects` 整个替换；字段的取值区间由
 //! `elements::check_item` 交给 `timeline` 校验。
@@ -46,5 +46,33 @@ pub(crate) fn apply_crop(item: &mut TimelineItem, item_id: &str, crop: Option<&C
         _ => return Err(not_applicable(item_id, msg!("engine.cropNotVideoOrImage", "is not a video or image, so it cannot be cropped"))),
     };
     *slot = crop.filter(|c| !c.is_empty()).cloned();
+    Ok(())
+}
+
+pub(crate) fn check_focal_point(item_id: &str, focal: &FocalPoint) -> EngineResult<()> {
+    if !focal.is_valid() {
+        return Err(ErrorBody::invalid_operation(msg!("engine.focalPointRange", "The focal point x and y must each be within [0, 1]"))
+            .entities([item_id])
+            .details(json!({ "focalPoint": focal })));
+    }
+    Ok(())
+}
+
+/// `setStyle` 的 `focalPoint`：`null` 去掉（居中）。只有视频与图片有取景点。
+pub(crate) fn apply_focal_point(item: &mut TimelineItem, item_id: &str, focal: Option<&FocalPoint>) -> EngineResult<()> {
+    if let Some(f) = focal {
+        check_focal_point(item_id, f)?;
+    }
+    let slot = match item {
+        TimelineItem::Video(v) => &mut v.focal_point,
+        TimelineItem::Image(i) => &mut i.focal_point,
+        _ => {
+            return Err(not_applicable(
+                item_id,
+                msg!("engine.focalPointNotVideoOrImage", "is not a video or image, so it has no focal point"),
+            ));
+        }
+    };
+    *slot = focal.copied();
     Ok(())
 }

@@ -11,6 +11,18 @@ pub fn draw_fit_pixmap_at(
     opacity: f32,
     anchor_x: f64,
 ) {
+    draw_fit_pixmap_anchored(destination, source, fit, opacity, [anchor_x, 0.5]);
+}
+
+/// 同 [`draw_fit_pixmap`]，水平、竖直余量分别按 `anchor` 的 x、y 分配（视频格式规范 §3.5 的取景点）：
+/// 0 贴左（上）、0.5 居中、1 贴右（下）。
+pub fn draw_fit_pixmap_anchored(
+    destination: &mut Pixmap,
+    source: &Pixmap,
+    fit: Fit,
+    opacity: f32,
+    [anchor_x, anchor_y]: [f64; 2],
+) {
     let source_width = f64::from(source.width().max(1));
     let source_height = f64::from(source.height().max(1));
     let destination_width = f64::from(destination.width());
@@ -23,7 +35,7 @@ pub fn draw_fit_pixmap_at(
     let height = source_height * scale;
     let transform = Transform::from_scale(scale as f32, scale as f32).post_translate(
         ((destination_width - width) * anchor_x) as f32,
-        ((destination_height - height) / 2.0) as f32,
+        ((destination_height - height) * anchor_y) as f32,
     );
     destination.draw_pixmap(
         0,

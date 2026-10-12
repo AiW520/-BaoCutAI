@@ -4,6 +4,7 @@ import type {
   Crop,
   DrawProps,
   EmbeddedAudio,
+  FocalPoint,
   Fx,
   Id,
   Place,
@@ -44,8 +45,8 @@ export interface ItemPatch {
   embeddedAudio?: Partial<EmbeddedAudio>;
   /** 画面效果（整体替换；`null` 是去掉）。 */
   fx?: Fx | null;
-  /** 视频与图片的裁剪（整体替换）：画布上平移铺满画面的视频时跟手。 */
-  crop?: Crop;
+  /** 视频与图片的取景（裁剪与取景点整体替换，null 是去掉）：画布上平移铺满画面的视频时跟手。 */
+  framing?: { crop: Crop | null; focalPoint: FocalPoint | null };
 }
 
 /** 同一个片段、同一个版本上的草稿叠在一起（拖完一根滑杆、提交还没回来时又拖另一根，前一根不弹回）。 */
@@ -80,7 +81,7 @@ export function patchItem(item: SequenceItem, patch: ItemPatch): SequenceItem {
   if (item.type === 'audio') return patch.mix ? { ...item, mix: { ...item.mix, ...patch.mix } } : item;
   if (item.type === 'caption') return item;
   const moved = patch.place ? { ...item, place: { ...item.place, ...patch.place } } : item;
-  const placed = patch.crop && (moved.type === 'video' || moved.type === 'image') ? { ...moved, crop: patch.crop } : moved;
+  const placed = patch.framing && (moved.type === 'video' || moved.type === 'image') ? withFraming(moved, patch.framing) : moved;
   const props = patch.props;
   switch (placed.type) {
     case 'video':
@@ -116,6 +117,12 @@ export function patchItem(item: SequenceItem, patch: ItemPatch): SequenceItem {
         patch,
       );
   }
+}
+
+/** 换上取景：裁剪与取景点整体替换，`null` 的去掉字段（与引擎落盘一致）。 */
+function withFraming<T extends { crop?: Crop; focalPoint?: FocalPoint }>(item: T, framing: NonNullable<ItemPatch['framing']>): T {
+  const { crop: _crop, focalPoint: _focal, ...rest } = item;
+  return { ...rest, ...(framing.crop ? { crop: framing.crop } : {}), ...(framing.focalPoint ? { focalPoint: framing.focalPoint } : {}) } as T;
 }
 
 /** 换上或去掉 `fx`（`null` 去掉字段，与引擎落盘一致）。 */

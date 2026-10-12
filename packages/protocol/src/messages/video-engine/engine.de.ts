@@ -49,6 +49,8 @@ export const de: EngineMessages = {
   effectsNotVisual: "ist kein visuelles Material oder keine Komposition und kann daher keine Effekte haben",
   cropRange: "Jede Zuschnittkante muss in [0, 1) liegen; left + right und top + bottom müssen jeweils kleiner als 1 sein",
   cropNotVideoOrImage: "ist kein Video oder Bild und kann daher nicht zugeschnitten werden",
+  focalPointRange: "x und y des Fokuspunkts müssen jeweils in [0, 1] liegen",
+  focalPointNotVideoOrImage: "ist kein Video oder Bild und hat daher keinen Fokuspunkt",
 
   itemSpanInvalid: "Ein Clip darf nicht vor null beginnen und muss mindestens einen Frame lang sein",
   keyframesNeedPicture: (p: P<'item'>) => `Clip ${p.item} hat kein Bild und kann daher keine Keyframes haben`,

@@ -277,7 +277,7 @@ pub enum EditOperation {
     },
     /// 改画面实例的外观（§3.5、§3.6）。只改给出的字段，给 `null` 去掉（回到缺省）。`opacity`、`radius`、`cornerRadii`
     /// 写进 `place`；`mode`、`fit`、`bg`、`mask` 是视觉媒体的；`tile` 用于图片与文字；`style`、`stylePresetId`、
-    /// `verticalAlign` 用于文字；`shape` 整个替换图形的参数；`crop` 用于视频与图片。适用范围与取值由 `timeline` 校验。
+    /// `verticalAlign` 用于文字；`shape` 整个替换图形的参数；`crop`、`focalPoint` 用于视频与图片。适用范围与取值由 `timeline` 校验。
     SetStyle {
         #[serde(default)]
         sequence_id: Option<Id>,
@@ -309,6 +309,9 @@ pub enum EditOperation {
         /// 视频与图片的裁剪（§3.5）；`null` 去掉。
         #[serde(default, deserialize_with = "nullable", skip_serializing_if = "Option::is_none")]
         crop: Option<Option<Crop>>,
+        /// 视频与图片的取景点（§3.5）；`null` 去掉（居中）。
+        #[serde(default, deserialize_with = "nullable", skip_serializing_if = "Option::is_none")]
+        focal_point: Option<Option<FocalPoint>>,
     },
     /// 改文字实例的内容：`text` 与 `counter` 给且只给一个，给了的那个替换另一个（§3.6）。
     SetText {
@@ -970,6 +973,7 @@ pub fn apply_operation(state: &mut VideoState, index: usize, op: &EditOperation,
             vertical_align,
             shape,
             crop,
+            focal_point,
         } => set_style(
             state,
             sequence_id.as_deref(),
@@ -988,6 +992,7 @@ pub fn apply_operation(state: &mut VideoState, index: usize, op: &EditOperation,
                 vertical_align: vertical_align.clone(),
                 shape: shape.clone(),
                 crop: *crop,
+                focal_point: *focal_point,
             },
         ),
         EditOperation::SetTransition {
@@ -1574,6 +1579,7 @@ fn add_item(
                     media: full_canvas_media(),
                     asset_ref,
                     crop: None,
+                    focal_point: None,
                     tile: None,
                     source: None,
                     html: None,
@@ -1591,6 +1597,7 @@ fn add_item(
                         rate: Rate::new(1, 1)?,
                     },
                     crop: None,
+                    focal_point: None,
                     embedded_audio: EmbeddedAudio {
                         enabled: true,
                         volume: 1.0,
@@ -3084,6 +3091,7 @@ struct StyleInput {
     vertical_align: Option<Option<String>>,
     shape: Option<ShapeProps>,
     crop: Option<Option<Crop>>,
+    focal_point: Option<Option<FocalPoint>>,
 }
 
 fn set_style(state: &mut VideoState, sequence_id: Option<&str>, item_id: &str, input: StyleInput) -> EngineResult<()> {
@@ -3159,6 +3167,9 @@ fn set_style(state: &mut VideoState, sequence_id: Option<&str>, item_id: &str, i
     }
     if let Some(crop) = input.crop {
         crate::effects::apply_crop(item, item_id, crop.as_ref())?;
+    }
+    if let Some(focal) = input.focal_point {
+        crate::effects::apply_focal_point(item, item_id, focal.as_ref())?;
     }
     check_item(state, item_id)
 }

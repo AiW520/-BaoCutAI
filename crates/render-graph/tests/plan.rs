@@ -8,7 +8,7 @@ use std::path::PathBuf;
 use editor_semantics::{MediaTime, TimeMap};
 use render_graph::ducking::DuckingEnvelope;
 use render_graph::{FramePlan, LayerContent, LayerKind, TransitionRole, VideoView, VisualLayer, VoiceSource, plan_interactive};
-use video_model::{Fit, SoloGroup, TimelineItem, VideoSnapshot, VisualMode};
+use video_model::{Crop, Fit, FocalPoint, SoloGroup, TimelineItem, VideoSnapshot, VisualMode};
 
 /// 覆盖片段边界、子帧音频起止、定格与浮点帧边界的采样时刻。
 const SAMPLE_SECONDS: &[f64] = &[
@@ -136,6 +136,35 @@ fn cover_crops_the_source_around_its_center() {
     let kept = (1080.0f64 / 1920.0).powi(2);
     assert_eq!((u0, u1), (0.0, 1.0));
     assert!((v0 - (1.0 - kept) / 2.0).abs() < 1e-12 && (v1 - (1.0 + kept) / 2.0).abs() < 1e-12);
+}
+
+#[test]
+fn focal_point_moves_the_cover_window_without_cropping_the_source() {
+    let with = |focal: FocalPoint, crop: Option<Crop>| {
+        let mut video = fixture();
+        for item in &mut video.sequences.get_mut("seq_main").unwrap().items {
+            if let TimelineItem::Video(port) = item
+                && port.base.id == "item_port"
+            {
+                port.media.mode = Some(VisualMode::Fullscreen);
+                port.media.fit = Some(Fit::Cover);
+                port.focal_point = Some(focal);
+                port.crop = crop;
+            }
+        }
+        plan(&video, 1.0).layers.into_iter().find(|layer| layer.item_id == "item_port").unwrap().source_rect.unwrap()
+    };
+    // 1080×1920 铺满 1920×1080：多出来的高按 y 分到上下，0 贴上、1 贴下；横向没有多出来，x 不起作用。
+    let kept = (1080.0f64 / 1920.0).powi(2);
+    let top = with(FocalPoint { x: 0.0, y: 0.0 }, None);
+    assert_eq!((top[0], top[2]), (0.0, 1.0));
+    assert!(top[1].abs() < 1e-12 && (top[3] - kept).abs() < 1e-12);
+    let bottom = with(FocalPoint { x: 1.0, y: 1.0 }, None);
+    assert!((bottom[1] - (1.0 - kept)).abs() < 1e-12 && (bottom[3] - 1.0).abs() < 1e-12);
+    // 取景点在裁剪留下的画面里定位：上下各裁 10% 后贴上，窗口从 0.1 开始。
+    let crop = Crop { left: 0.0, top: 0.1, right: 0.0, bottom: 0.1 };
+    let cropped = with(FocalPoint { x: 0.5, y: 0.0 }, Some(crop));
+    assert!((cropped[1] - 0.1).abs() < 1e-12);
 }
 
 #[test]
@@ -371,6 +400,7 @@ fn captions_project_through_the_covering_scope_item() {
         style_document_id,
         sequence_seconds,
         scope: Some(scope),
+        ..
     }) = &caption.content
     else {
         panic!("字幕层带作用实例");

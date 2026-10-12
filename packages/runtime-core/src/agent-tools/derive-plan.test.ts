@@ -5,6 +5,7 @@ import path from 'node:path';
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { BaoCutClient } from '@baocut/client';
 import {
+  framingFromCrop,
   newId,
   type AudioItem,
   type DocumentRecord,
@@ -691,6 +692,61 @@ describe('planDerivation：分段取景（crops）', () => {
     expect(videoEntries(p).map((e) => [e.span.fromFrame, e.crop])).toEqual([
       [0, A],
       [90, A],
+    ]);
+  });
+});
+
+describe('planDerivation：铺满画布的取景不丢画面', () => {
+  const portrait = { width: 1080, height: 1920 };
+  const landscape = { width: 1920, height: 1080 };
+  /** 主素材是 1920×1080 的视频，两段视频实例都是全屏 + cover（`extra` 并进每个视频实例）。 */
+  function sized(extra: Loose = {}) {
+    const snapshot = video(items.map((i) => (i.type === 'video' ? { ...i, mode: 'fullscreen', fit: 'cover', ...extra } : i)) as SequenceItem[]);
+    (snapshot.assets.asset_v!.revisions['1'] as Loose).video = {
+      displayWidth: 1920,
+      displayHeight: 1080,
+      rotation: 0,
+      pixelAspectRatio: { num: 1, den: 1 },
+      frameRate: { kind: 'cfr', rate: { num: 30, den: 1 } },
+      ptsOrigin: { ticks: '0', timescale: 1 },
+      hasAlpha: false,
+    };
+    return snapshot;
+  }
+  const framingOf = (e: Loose) => [e.crop ?? null, e.focalPoint ?? null];
+
+  it('裁剪换成取景点：看到的不变，左右多出来的画面留着；记下的分段取景仍是给的裁剪', () => {
+    const p = framed(sized(), 1, 5, [shot(1, 100 / 30, A)]);
+    const a = framingFromCrop(A, landscape, portrait)!;
+    expect(a.crop).toBeNull();
+    expect(videoEntries(p).map(framingOf)).toEqual([
+      [null, a.focalPoint],
+      [null, a.focalPoint],
+      [null, null],
+    ]);
+    expect(p.derivation.framing?.shots[0]).toEqual({ from: 1, to: 3, crop: A });
+  });
+
+  it('设置里的裁剪同样换；上下的裁剪留着；原来的取景点不沿用，没盖住的片段保留它', () => {
+    const c = framingFromCrop(C, landscape, portrait)!;
+    expect(c.crop).toMatchObject({ left: 0, right: 0 });
+    const withCrop = plan(sized({ focalPoint: { x: 0, y: 0 } }), 1, 5, { ...settings, crop: C });
+    expect(videoEntries(withCrop).map(framingOf)).toEqual([
+      [c.crop, c.focalPoint],
+      [c.crop, c.focalPoint],
+    ]);
+    const p = framed(sized({ focalPoint: { x: 0, y: 0 } }), 1, 5, [shot(1, 100 / 30, A)]);
+    expect(videoEntries(p).map(framingOf).at(-1)).toEqual([null, { x: 0, y: 0 }]);
+  });
+
+  it('不是 cover、或不知道源尺寸时裁剪原样', () => {
+    expect(videoEntries(plan(sized(), 1, 5, { ...settings, fit: 'contain', crop: C })).map(framingOf)).toEqual([
+      [C, null],
+      [C, null],
+    ]);
+    expect(videoEntries(plan(video(items), 1, 5, { ...settings, crop: C })).map(framingOf)).toEqual([
+      [C, null],
+      [C, null],
     ]);
   });
 });

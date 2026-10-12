@@ -53,6 +53,8 @@ export const fr: EngineMessages = {
   effectsNotVisual: "n’est ni un média visuel ni une composition et ne peut pas avoir d’effets",
   cropRange: "Chaque bord de recadrage doit être dans [0, 1), left + right et top + bottom doivent être inférieurs à 1",
   cropNotVideoOrImage: "n’est ni une vidéo ni une image et ne peut pas être recadré",
+  focalPointRange: "Les valeurs x et y du point focal doivent être comprises dans [0, 1]",
+  focalPointNotVideoOrImage: "n’est ni une vidéo ni une image et n’a donc pas de point focal",
   // elements.rs
 
   itemSpanInvalid: "Un clip ne peut pas commencer avant zéro et doit durer au moins une image",

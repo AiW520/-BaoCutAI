@@ -19,7 +19,7 @@ import {
   type CaptionMoveFrame,
 } from '../../model/stage-caption-move.ts';
 import {
-  cropOperations,
+  framingOperations,
   gestureOperations,
   gesturePatch,
   memberOf,
@@ -318,7 +318,7 @@ export function StageObjects({ sequence, frame }: { sequence: Sequence; frame: F
       useEditor.getState().setDraft({
         itemId: m.item.id,
         revision: seq.revision,
-        patch: gesturePatch(m.item, result.poses[0]!, result.factor, seq.canvas, assets, result.crop),
+        patch: gesturePatch(m.item, result.poses[0]!, result.factor, seq.canvas, assets, result.framing),
       });
     }
     setGuides(live ? result.guides : []);
@@ -336,8 +336,8 @@ export function StageObjects({ sequence, frame }: { sequence: Sequence; frame: F
     const seq = latest.current;
     const operations =
       gesture.kind === 'pan'
-        ? result.crop
-          ? cropOperations(seq.id, gesture.member.item, result.crop)
+        ? result.framing
+          ? framingOperations(seq.id, gesture.member.item, result.framing)
           : []
         : gestureOperations(seq.id, membersOf(gesture), result.poses, result.factor, seq.canvas);
     if (!operations.length) return discard(gesture);

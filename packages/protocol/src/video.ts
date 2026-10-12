@@ -240,6 +240,15 @@ export interface Crop {
   bottom: number;
 }
 
+/**
+ * 取景点：`cover` 裁掉多余部分时留哪一段（视频格式规范 §3.5），同 CSS `object-position` 的百分比。`x`、`y` 在 [0, 1]：
+ * 0 贴左（上）、0.5 居中、1 贴右（下）。源画面不裁，换画幅时多出来的画面还在。
+ */
+export interface FocalPoint {
+  x: number;
+  y: number;
+}
+
 /** 视觉媒体的字段：视频、图片、素材贴纸、占位框与白板共用。 */
 export interface MediaFields {
   mode?: VisualMode;
@@ -273,6 +282,8 @@ export interface VideoItem extends VisualBase, MediaFields {
   timeMap: TimeMap;
   /** 没有裁剪时省略。 */
   crop?: Crop;
+  /** 没有时居中。 */
+  focalPoint?: FocalPoint;
   embeddedAudio: EmbeddedAudio;
 }
 
@@ -280,6 +291,7 @@ export interface ImageItem extends VisualBase, MediaFields {
   type: 'image';
   assetRef: VersionRef;
   crop?: Crop;
+  focalPoint?: FocalPoint;
   tile?: Tile;
   /** 图片的编辑来源（`file` / `html`）；渲染只用 `assetRef`。 */
   source?: string;
@@ -572,6 +584,61 @@ export function volumeToDb(volume: number): number {
 /** dB 换成线性倍数（显示用）。 */
 export function dbToVolume(db: number): number {
   return 10 ** (db / 20);
+}
+
+/** 视频素材版本的显示尺寸（已按旋转交换，乘上像素宽高比；与 `render-graph` 的 `display_size` 同口径）；不知道时 null。 */
+export function videoDisplaySize(revision: AssetRevision | undefined): { width: number; height: number } | null {
+  const video = revision?.video;
+  if (!video) return null;
+  const { num, den } = video.pixelAspectRatio;
+  const width = den > 0 ? (video.displayWidth * num) / den : 0;
+  const height = video.displayHeight;
+  return width > 0 && height > 0 ? { width, height } : null;
+}
+
+/** 视频或图片的取景：裁剪与取景点。 */
+export interface Framing {
+  crop: Crop | null;
+  focalPoint: FocalPoint;
+}
+
+/**
+ * 把「裁剪 + 铺满」的取景换成不丢画面的写法（视频格式规范 §3.5）：在 `canvas` 上看到的还是同一块，只是铺满时多出来的那一边
+ * 不再裁掉，改由取景点定位，换画幅时那部分画面还在。源比画布宽时放开左右（上下的裁剪留着，那是放大或去黑边），否则放开上下。
+ * `source` 是源的显示尺寸，`focalPoint` 是原来的取景点（缺省居中）。尺寸不可用或裁剪越界时 null。
+ */
+export function framingFromCrop(
+  crop: Crop | null | undefined,
+  source: { width: number; height: number },
+  canvas: { width: number; height: number },
+  focalPoint?: FocalPoint | null,
+): Framing | null {
+  const c = crop ?? { left: 0, top: 0, right: 0, bottom: 0 };
+  const rw = 1 - c.left - c.right;
+  const rh = 1 - c.top - c.bottom;
+  const sizes = [source.width, source.height, canvas.width, canvas.height, rw, rh];
+  if (!sizes.every((v) => Number.isFinite(v) && v > 0) || [c.left, c.top, c.right, c.bottom].some((v) => !(v >= 0))) return null;
+  // 现在在画布上看到的那块（源的归一化坐标）。
+  const scale = Math.max(canvas.width / (rw * source.width), canvas.height / (rh * source.height));
+  const u = canvas.width / (rw * source.width * scale);
+  const v = canvas.height / (rh * source.height * scale);
+  const fx = focalPoint?.x ?? 0.5;
+  const fy = focalPoint?.y ?? 0.5;
+  const vw = rw * u;
+  const vh = rh * v;
+  const vl = c.left + rw * (1 - u) * fx;
+  const vt = c.top + rh * (1 - v) * fy;
+  // 取四位小数（同画布上的平移取景），差不到源画面的千分之一。
+  const round4 = (n: number) => Math.round(n * 1e4) / 1e4;
+  const side = (n: number) => Math.max(0, round4(n));
+  const at = (offset: number, kept: number) => (kept < 1 - 1e-9 ? round4(Math.min(1, Math.max(0, offset / (1 - kept)))) : 0.5);
+  const wide = source.width / source.height >= canvas.width / canvas.height;
+  const next: Crop = wide
+    ? { left: 0, top: side(vt), right: 0, bottom: side(1 - vt - vh) }
+    : { left: side(vl), top: 0, right: side(1 - vl - vw), bottom: 0 };
+  const focal: FocalPoint = wide ? { x: at(vl, vw), y: 0.5 } : { x: 0.5, y: at(vt, vh) };
+  const empty = next.left === 0 && next.top === 0 && next.right === 0 && next.bottom === 0;
+  return { crop: empty ? null : next, focalPoint: focal };
 }
 
 /**
@@ -1083,7 +1150,7 @@ export type EditOperation =
   /**
    * 改画面实例的外观：只改给出的字段，给 `null` 去掉（回到缺省）。`opacity`、`radius`、`cornerRadii` 写进 `place`；
    * `mode`、`fit`、`bg`、`mask` 是视觉媒体的；`tile` 用于图片与文字；`style`、`stylePresetId`、`verticalAlign` 用于文字；
-   * `shape` 整个替换图形的参数；`crop` 用于视频与图片。适用范围与取值由引擎按元素模型校验。
+   * `shape` 整个替换图形的参数；`crop`、`focalPoint` 用于视频与图片。适用范围与取值由引擎按元素模型校验。
    */
   | {
       type: 'setStyle';
@@ -1103,6 +1170,8 @@ export type EditOperation =
       shape?: ShapeProps;
       /** 视频与图片的裁剪；`null` 去掉。 */
       crop?: Crop | null;
+      /** 视频与图片的取景点；`null` 去掉（居中）。 */
+      focalPoint?: FocalPoint | null;
     }
   /** 改文字实例的内容：`text` 与 `counter` 给且只给一个，给了的那个替换另一个。 */
   | { type: 'setText'; sequenceId?: Id; itemId: Id; text?: string; counter?: CounterProps }

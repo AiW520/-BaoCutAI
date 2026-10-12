@@ -52,6 +52,8 @@ export const tr: EngineMessages = {
   effectsNotVisual: "görsel medya veya kompozisyon değil; efekt içeremez",
   cropRange: "Her kırpma kenarı [0, 1) içinde olmalı; left + right ve top + bottom ayrı ayrı 1’den küçük olmalı",
   cropNotVideoOrImage: "video veya görsel değil; kırpılamaz",
+  focalPointRange: "Odak noktasının x ve y değerleri [0, 1] aralığında olmalı",
+  focalPointNotVideoOrImage: "video veya görsel değil; odak noktası yok",
 
   // elements.rs
   itemSpanInvalid: "Klip sıfırdan önce başlayamaz, en az bir kare uzun olmalı",

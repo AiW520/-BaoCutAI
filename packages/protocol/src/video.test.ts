@@ -5,6 +5,7 @@ import { methodParamSchemas } from './schemas.ts';
 import './messages/video-engine/index.ts';
 import {
   applyVideoEvent,
+  framingFromCrop,
   itemAssetRef,
   itemAssetRefs,
   itemRangeSeconds,
@@ -14,6 +15,8 @@ import {
   type AudioItem,
   type CaptionItem,
   type CompositionItem,
+  type Crop,
+  type FocalPoint,
   type VideoEvent,
   type VideoSnapshot,
   type VideoTopicSnapshot,
@@ -404,5 +407,57 @@ describe('事务的修改名', () => {
     expect(apply.safeParse({ ...base, labelRef: { key: 'editLabel.x', extra: 1 } }).success).toBe(false);
     expect(apply.safeParse({ ...base, labelRef: { key: 'editLabel.x', params: { a: { key: 'b.c', params: { d: { key: 'e.f' } } } } } }).success).toBe(false);
     expect(apply.safeParse({ ...base, labelRef: { key: 'editLabel.x', params: { a: 'y'.repeat(1001) } } }).success).toBe(false);
+  });
+});
+
+describe('framingFromCrop', () => {
+  type Size = { width: number; height: number };
+  /** 画布上看到的那块（源的归一化 `[左, 上, 宽, 高]`），同 `render-graph` 的 `media_layer`。 */
+  const visible = (crop: Crop | null, focal: FocalPoint | null, source: Size, canvas: Size) => {
+    const c = crop ?? { left: 0, top: 0, right: 0, bottom: 0 };
+    const rw = 1 - c.left - c.right;
+    const rh = 1 - c.top - c.bottom;
+    const scale = Math.max(canvas.width / (rw * source.width), canvas.height / (rh * source.height));
+    const u = canvas.width / (rw * source.width * scale);
+    const v = canvas.height / (rh * source.height * scale);
+    const { x, y } = focal ?? { x: 0.5, y: 0.5 };
+    return [c.left + rw * (1 - u) * x, c.top + rh * (1 - v) * y, rw * u, rh * v];
+  };
+  const landscape = { width: 1920, height: 1080 };
+  const portrait = { width: 1080, height: 1920 };
+  const same = (a: number[], b: number[]) => a.forEach((n, i) => expect(n).toBeCloseTo(b[i]!, 3));
+
+  it('横屏剪成竖屏的左右裁剪换成取景点，看到的不变', () => {
+    const crop = { left: 0.3205, top: 0, right: 0.3631, bottom: 0 };
+    const framing = framingFromCrop(crop, landscape, portrait)!;
+    expect(framing.crop).toBeNull();
+    expect(framing.focalPoint.y).toBe(0.5);
+    expect(framing.focalPoint.x).toBeCloseTo(0.3205 / (1 - 0.3164), 3);
+    same(visible(framing.crop, framing.focalPoint, landscape, portrait), visible(crop, null, landscape, portrait));
+  });
+
+  it('上下的裁剪（放大、去黑边）留着，只放开左右', () => {
+    const crop = { left: 0.4, top: 0.1, right: 0.3, bottom: 0.15 };
+    const framing = framingFromCrop(crop, landscape, portrait)!;
+    expect(framing.crop?.left).toBe(0);
+    expect(framing.crop?.right).toBe(0);
+    expect(framing.crop!.top + framing.crop!.bottom).toBeCloseTo(0.25, 4);
+    same(visible(framing.crop, framing.focalPoint, landscape, portrait), visible(crop, null, landscape, portrait));
+  });
+
+  it('竖屏源放开上下，原来的取景点也算进去', () => {
+    const crop = { left: 0.05, top: 0.3, right: 0.05, bottom: 0.2 };
+    const focal = { x: 0.5, y: 0.2 };
+    const framing = framingFromCrop(crop, portrait, landscape, focal)!;
+    expect(framing.crop?.top).toBe(0);
+    expect(framing.crop?.bottom).toBe(0);
+    expect(framing.focalPoint.x).toBe(0.5);
+    same(visible(framing.crop, framing.focalPoint, portrait, landscape), visible(crop, focal, portrait, landscape));
+  });
+
+  it('没有多出来的画面时取景点居中；尺寸不可用时 null', () => {
+    expect(framingFromCrop(null, landscape, landscape)).toEqual({ crop: null, focalPoint: { x: 0.5, y: 0.5 } });
+    expect(framingFromCrop(null, { width: 0, height: 1080 }, portrait)).toBeNull();
+    expect(framingFromCrop({ left: 0.6, top: 0, right: 0.5, bottom: 0 }, landscape, portrait)).toBeNull();
   });
 });
