@@ -52,6 +52,7 @@
 
 /// 画廊「动态排版」卡的真跑小样（与舞台同一套排版 / 镜头）。
 pub mod caption_sequence_demo;
+pub mod scene;
 pub mod word_animation_catalog;
 pub mod word_motion;
 pub mod word_motion_demo;

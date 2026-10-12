@@ -51,7 +51,14 @@ pub(crate) fn check_item(state: &VideoState, item_id: &str) -> EngineResult<()> 
     }
 
     match item {
-        TimelineItem::Caption(_) => Ok(()),
+        TimelineItem::Caption(c) => {
+            if let Some(p) = &c.presentation
+                && let Some(problem) = video_model::caption_style::presentation_problems(p).into_iter().next()
+            {
+                return Err(fail(problem));
+            }
+            Ok(())
+        },
         TimelineItem::Composition(c) => check_composition(item_id, c, keyframes).map_err(fail),
         _ => {
             let element = to_element(item, keyframes);

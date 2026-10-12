@@ -1,0 +1,554 @@
+use crate::{Expression, ValueType};
+use serde::{Deserialize, Serialize};
+use serde_json::Value;
+use std::collections::BTreeMap;
+
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct SceneStyle {
+    pub schema: String,
+    pub scene: SceneSource,
+    #[serde(default)]
+    pub parameters: BTreeMap<String, Value>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "kind", rename_all = "camelCase", deny_unknown_fields)]
+pub enum SceneSource {
+    Inline { value: Scene },
+}
+impl SceneStyle {
+    pub fn scene(&self) -> &Scene {
+        let SceneSource::Inline { value } = &self.scene;
+        value
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct Scene {
+    pub schema: String,
+    pub evaluation_version: u32,
+    #[serde(default)]
+    pub required_capabilities: Vec<String>,
+    #[serde(default)]
+    pub parameters: Vec<Parameter>,
+    pub layout: Layout,
+    #[serde(default)]
+    pub resources: Vec<serde_json::Value>,
+    #[serde(default)]
+    pub speech_state: SpeechState,
+    pub nodes: Vec<Node>,
+    #[serde(default)]
+    pub selectors: Vec<Selector>,
+    #[serde(default)]
+    pub functions: Vec<PureFunction>,
+    #[serde(default)]
+    pub animations: Vec<Animation>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct Parameter {
+    pub id: String,
+    #[serde(rename = "type")]
+    pub value_type: ValueType,
+    pub default: Value,
+    pub min: Option<f64>,
+    pub max: Option<f64>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct PureFunction {
+    pub id: String,
+    pub arguments: Vec<Argument>,
+    pub returns: ValueType,
+    pub body: Expression,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct Argument {
+    pub name: String,
+    #[serde(rename = "type")]
+    pub value_type: ValueType,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct Presentation {
+    #[serde(default)]
+    pub parameters: BTreeMap<String, Value>,
+    #[serde(default)]
+    pub cue_overrides: Vec<CueOverride>,
+    #[serde(default)]
+    pub word_tags: BTreeMap<String, Vec<String>>,
+    #[serde(default = "seed")]
+    pub seed: String,
+}
+impl Default for Presentation {
+    fn default() -> Self {
+        Self {
+            parameters: BTreeMap::new(),
+            cue_overrides: vec![],
+            word_tags: BTreeMap::new(),
+            seed: seed(),
+        }
+    }
+}
+fn seed() -> String {
+    "0000000000000000".into()
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct CueOverride {
+    pub cue_id: String,
+    pub occurrence_id: Option<String>,
+    pub parameters: BTreeMap<String, Value>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct Length {
+    pub value: f64,
+    pub parameter: Option<String>,
+    pub basis: LengthBasis,
+    #[serde(default)]
+    pub offset: f64,
+}
+#[derive(Clone, Copy, Debug, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub enum LengthBasis {
+    Absolute,
+    CanvasWidth,
+    CanvasHeight,
+    CanvasShortEdge,
+}
+impl Length {
+    pub fn resolve(&self, w: u32, h: u32, parameters: &BTreeMap<String, crate::Evaluated>) -> crate::Result<f64> {
+        let factor = match &self.parameter {
+            Some(id) => parameters
+                .get(&format!("params.{id}"))
+                .ok_or_else(|| crate::invalid(id, "missing layout parameter"))?
+                .number()?,
+            None => 1.0,
+        };
+        let basis = match self.basis {
+            LengthBasis::Absolute => 1.0,
+            LengthBasis::CanvasWidth => w as f64,
+            LengthBasis::CanvasHeight => h as f64,
+            LengthBasis::CanvasShortEdge => w.min(h) as f64,
+        };
+        let value = self.value * factor * basis + self.offset;
+        if !value.is_finite() || value.abs() > 1_000_000.0 {
+            return Err(crate::invalid("length", "resolved length out of range"));
+        }
+        Ok(value)
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct Layout {
+    #[serde(default)]
+    pub layout_evaluation: LayoutEvaluation,
+    pub width: Length,
+    pub x: Length,
+    pub y: Length,
+    #[serde(default = "lines")]
+    pub max_lines: usize,
+    #[serde(default)]
+    pub pagination: Pagination,
+    #[serde(default)]
+    pub align: Align,
+    #[serde(default)]
+    pub leading_gap: LeadingGap,
+}
+#[derive(Clone, Copy, Debug, Default, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "kebab-case")]
+pub enum LayoutEvaluation {
+    #[default]
+    Static,
+}
+fn lines() -> usize {
+    2
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct Pagination {
+    #[serde(default = "word_unit")]
+    pub unit: UnitKind,
+    pub max_units_per_page: Option<usize>,
+}
+fn word_unit() -> UnitKind {
+    UnitKind::Word
+}
+impl Default for Pagination {
+    fn default() -> Self {
+        Self {
+            unit: UnitKind::Word,
+            max_units_per_page: None,
+        }
+    }
+}
+#[derive(Clone, Copy, Debug, Default, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "kebab-case")]
+pub enum Align {
+    Left,
+    #[default]
+    Center,
+    Right,
+}
+#[derive(Clone, Copy, Debug, Default, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "kebab-case")]
+pub enum LeadingGap {
+    #[default]
+    Show,
+    Hide,
+}
+#[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct SpeechState {
+    #[serde(default)]
+    pub gap_policy: GapPolicy,
+    #[serde(default)]
+    pub tail_policy: TailPolicy,
+    #[serde(default)]
+    pub timing_policy: TimingPolicy,
+}
+#[derive(Clone, Copy, Debug, Default, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "kebab-case")]
+pub enum GapPolicy {
+    #[default]
+    None,
+    HoldPrevious,
+}
+#[derive(Clone, Copy, Debug, Default, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "kebab-case")]
+pub enum TailPolicy {
+    #[default]
+    None,
+    HoldLast,
+}
+#[derive(Clone, Copy, Debug, Default, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "kebab-case")]
+pub enum TimingPolicy {
+    #[default]
+    RequireWordTiming,
+    Estimated,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct Node {
+    pub id: String,
+    #[serde(rename = "type")]
+    pub kind: NodeKind,
+    #[serde(default)]
+    pub z_index: i32,
+    #[serde(default)]
+    pub children: Vec<Node>,
+    pub selector_id: Option<String>,
+    #[serde(default)]
+    pub style: TextStyle,
+    #[serde(default)]
+    pub state_styles: StateStyles,
+    #[serde(default)]
+    pub properties: BTreeMap<String, DynamicValue>,
+    pub text: Option<TextBinding>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "source", rename_all = "kebab-case", deny_unknown_fields)]
+pub enum TextBinding {
+    Cue,
+    Static { text: String },
+}
+#[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct StateStyles {
+    #[serde(default = "word_unit")]
+    pub unit: UnitKind,
+    pub active: Option<StatePaint>,
+    pub read: Option<StatePaint>,
+    pub unread: Option<StatePaint>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct StatePaint {
+    pub fill: String,
+}
+impl StateStyles {
+    pub fn get(&self, state: &WordState) -> Option<&String> {
+        match state {
+            WordState::Active => &self.active,
+            WordState::Read => &self.read,
+            WordState::Unread => &self.unread,
+        }
+        .as_ref()
+        .map(|p| &p.fill)
+    }
+    pub fn is_empty(&self) -> bool {
+        self.active.is_none() && self.read.is_none() && self.unread.is_none()
+    }
+}
+#[derive(Clone, Copy, Debug, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "kebab-case")]
+pub enum NodeKind {
+    Group,
+    Text,
+    Shape,
+    Repeat,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct TextStyle {
+    #[serde(default = "font")]
+    pub font_family: String,
+    #[serde(default = "font_size")]
+    pub font_size: Length,
+    #[serde(default = "weight")]
+    pub font_weight: u16,
+    #[serde(default)]
+    pub italic: bool,
+    #[serde(default)]
+    pub letter_spacing: f64,
+    #[serde(default = "line_height")]
+    pub line_height: f64,
+    #[serde(default = "white")]
+    pub fill: String,
+    pub stroke: Option<Stroke>,
+}
+fn font() -> String {
+    "Noto Sans SC".into()
+}
+fn font_size() -> Length {
+    Length {
+        value: 0.055,
+        parameter: None,
+        basis: LengthBasis::CanvasShortEdge,
+        offset: 0.0,
+    }
+}
+fn weight() -> u16 {
+    700
+}
+fn line_height() -> f64 {
+    1.2
+}
+fn white() -> String {
+    "#FFFFFF".into()
+}
+impl Default for TextStyle {
+    fn default() -> Self {
+        Self {
+            font_family: font(),
+            font_size: font_size(),
+            font_weight: weight(),
+            italic: false,
+            letter_spacing: 0.0,
+            line_height: line_height(),
+            fill: white(),
+            stroke: None,
+        }
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct Stroke {
+    pub width: f64,
+    pub color: String,
+}
+#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
+#[serde(rename_all = "kebab-case")]
+pub enum UnitKind {
+    Cue,
+    Page,
+    Line,
+    Word,
+    Grapheme,
+}
+impl Default for UnitKind {
+    fn default() -> Self {
+        Self::Word
+    }
+}
+#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
+#[serde(rename_all = "kebab-case")]
+pub enum WordState {
+    Active,
+    Read,
+    Unread,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct Selector {
+    pub id: String,
+    pub node_id: String,
+    pub unit: UnitKind,
+    #[serde(default)]
+    pub filter: Filter,
+}
+#[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "kind", rename_all = "kebab-case", deny_unknown_fields)]
+pub enum Filter {
+    #[default]
+    All,
+    State {
+        value: WordState,
+    },
+    Tag {
+        value: String,
+    },
+    Range {
+        start: usize,
+        end: usize,
+    },
+    Parity {
+        odd: bool,
+    },
+    And {
+        filters: Vec<Filter>,
+    },
+    Or {
+        filters: Vec<Filter>,
+    },
+    Not {
+        filter: Box<Filter>,
+    },
+}
+impl Filter {
+    pub fn matches(&self, index: usize, state: WordState, tags: &[String]) -> bool {
+        match self {
+            Self::All => true,
+            Self::State { value } => *value == state,
+            Self::Tag { value } => tags.contains(value),
+            Self::Range { start, end } => index >= *start && index < *end,
+            Self::Parity { odd } => (index % 2 == 1) == *odd,
+            Self::And { filters } => filters.iter().all(|f| f.matches(index, state, tags)),
+            Self::Or { filters } => filters.iter().any(|f| f.matches(index, state, tags)),
+            Self::Not { filter } => !filter.matches(index, state, tags),
+        }
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct Animation {
+    pub id: String,
+    pub target: Target,
+    pub property: String,
+    pub value: DynamicValue,
+    pub composite: Composite,
+    #[serde(default)]
+    pub priority: i32,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct Target {
+    pub node_id: String,
+    pub selector_id: Option<String>,
+}
+#[derive(Clone, Copy, Debug, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "kebab-case")]
+pub enum Composite {
+    Replace,
+    Add,
+    Multiply,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "kind", rename_all = "camelCase", deny_unknown_fields)]
+pub enum DynamicValue {
+    Constant {
+        value: Value,
+    },
+    Expression {
+        expression: Expression,
+    },
+    Keyframes {
+        clock: Clock,
+        keys: Vec<Keyframe>,
+        #[serde(default)]
+        interpolation: Interpolation,
+        #[serde(default)]
+        fill: Fill,
+    },
+}
+#[derive(Clone, Copy, Debug, Default, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "kebab-case")]
+pub enum Interpolation {
+    #[default]
+    Linear,
+    Step,
+    EaseOutQuad,
+    CubicBezier {
+        x1: f64,
+        y1: f64,
+        x2: f64,
+        y2: f64,
+    },
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct Keyframe {
+    pub at: f64,
+    pub value: Value,
+}
+#[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct Fill {
+    #[serde(default)]
+    pub before: FillMode,
+    #[serde(default)]
+    pub after: FillMode,
+}
+#[derive(Clone, Copy, Debug, Default, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "kebab-case")]
+pub enum FillMode {
+    #[default]
+    None,
+    Hold,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct Clock {
+    pub unit: UnitKind,
+    pub origin: Origin,
+    #[serde(default)]
+    pub offset: Time,
+    pub duration: Duration,
+    #[serde(default)]
+    pub stagger: Time,
+    pub repeat: Option<ClockRepeat>,
+}
+#[derive(Clone, Copy, Debug, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "kebab-case")]
+pub enum Origin {
+    Start,
+    End,
+}
+#[derive(Clone, Copy, Debug, PartialEq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct Time {
+    pub ticks: i64,
+    pub timescale: u32,
+}
+impl Default for Time {
+    fn default() -> Self {
+        Self { ticks: 0, timescale: 1000 }
+    }
+}
+impl Time {
+    pub fn seconds(self) -> f64 {
+        self.ticks as f64 / self.timescale as f64
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "kind", rename_all = "kebab-case", deny_unknown_fields)]
+pub enum Duration {
+    Fixed { ticks: i64, timescale: u32 },
+    UnitSpan,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct ClockRepeat {
+    pub iterations: u32,
+    pub mode: RepeatMode,
+}
+#[derive(Clone, Copy, Debug, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "kebab-case")]
+pub enum RepeatMode {
+    Loop,
+    Yoyo,
+}

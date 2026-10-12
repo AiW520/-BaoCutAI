@@ -410,8 +410,8 @@ impl FrameRenderer {
         for layer in &plan.layers {
             if layer.kind == LayerKind::Caption {
                 // 共用样式文档的字幕是一组，在组里第一层的位置画一次。
-                if self.options.captions && caption_groups.insert(caption_group(layer)) {
-                    self.draw_captions(video, sequence, plan, caption_group(layer), context.fps)?;
+                if self.options.captions && caption_groups.insert(caption_group(layer, &self.documents)) {
+                    self.draw_captions(video, sequence, plan, caption_group(layer, &self.documents), context.fps)?;
                 }
                 continue;
             }
@@ -966,11 +966,16 @@ impl FrameRenderer {
     /// 画一组字幕：组里画不出来的层按选项报错或跳过，其余的一起排、一起画。
     fn draw_captions(&mut self, video: VideoView, sequence: &Sequence, plan: &FramePlan, group: &str, fps: f64) -> Result<(), RenderError> {
         let mut admitted = Vec::new();
-        for layer in plan
+        let grouped = plan
             .layers
             .iter()
-            .filter(|l| l.kind == LayerKind::Caption && caption_group(l) == group)
-        {
+            .filter(|l| l.kind == LayerKind::Caption && caption_group(l, &self.documents) == group)
+            .collect::<Vec<_>>();
+        for layer in grouped {
+            if let Some(problem) = crate::support::caption_presentation_problem(layer, &self.documents) {
+                self.refuse_or_skip(vec![problem])?;
+                continue;
+            }
             let (documents, checks) = (&self.documents, &mut self.caption_checks);
             let items = check_layer_with(layer, None, &mut |document_id, style_document_id| {
                 let key = (document_id.to_owned(), style_document_id.map(str::to_owned));
@@ -1002,6 +1007,12 @@ impl FrameRenderer {
                 _ => None,
             })
             .collect();
+        let presentation = match &first.content {
+            Some(LayerContent::Caption { presentation, .. }) => presentation.clone(),
+            _ => None,
+        };
+        let occurrence = scope.as_ref().map(|s| s.item_id.as_str()).unwrap_or(first.item_id.as_str());
+        let instance_key = format!("{}|{}", first.item_id, occurrence);
         let prefix = format!("{group}|{}|", document_ids.join(","));
         let signature_key = (sequence.id.to_string(), prefix.clone());
         let signature = match self.caption_signatures.get(&signature_key) {
@@ -1012,7 +1023,10 @@ impl FrameRenderer {
                 signature
             }
         };
-        let key = format!("{prefix}{signature}");
+        let key = format!(
+            "{prefix}{signature}|{instance_key}|{}",
+            serde_json::to_string(&presentation).unwrap_or_default()
+        );
         if !self.captions.contains_key(&key) {
             let Ok(style) = CaptionStyle::read(style_document_id.as_deref().and_then(|id| self.documents.get(id))) else {
                 return Ok(());
@@ -1043,12 +1057,25 @@ impl FrameRenderer {
                         document.source_asset_id.as_deref(),
                         on_sequence,
                     );
-                    track.attach_words(&words, &placement);
+                    track.attach_words_with_units(&words, &placement, matches!(style, CaptionStyle::Scene(_)));
                 }
                 members.push((document, track));
             }
             let size = (self.options.width, self.options.height);
-            let compiled = CaptionPlan::compile(&style, &members, size, fps, engine, self.fonts.len()).map_err(RenderError::render)?;
+            let compiled = CaptionPlan::compile_with_presentation(
+                &style,
+                &members,
+                size,
+                fps,
+                engine,
+                self.fonts.len(),
+                presentation.unwrap_or_else(|| caption_scene::Presentation {
+                    seed: "0000000000000000".into(),
+                    ..Default::default()
+                }),
+                instance_key,
+            )
+            .map_err(RenderError::render)?;
             self.captions.insert(key.clone(), compiled);
         }
         let captions = self.captions.get_mut(&key).expect("刚编好");
@@ -1259,13 +1286,22 @@ pub const SVG_MEDIA_TYPE: &str = "image/svg+xml";
 /// GIF 图片素材的媒体类型：画面由帧光栅从素材字节解（动图按时刻取帧）。
 pub const GIF_MEDIA_TYPE: &str = "image/gif";
 
-/// 字幕层所在的组：样式文档的 ID，没有样式文档时是实例自己。
-fn caption_group(layer: &VisualLayer) -> &str {
+/// 旧字幕按样式文档分组；动态场景按实例隔离参数、词时间与随机种子。
+fn caption_group<'a>(layer: &'a VisualLayer, documents: &Documents) -> &'a str {
     match &layer.content {
         Some(LayerContent::Caption {
             style_document_id: Some(id),
             ..
-        }) => id,
+        }) => {
+            if documents
+                .get(id)
+                .is_some_and(|d| d.body.get("schema").and_then(Value::as_str) == Some(caption_scene::STYLE_SCHEMA))
+            {
+                &layer.item_id
+            } else {
+                id
+            }
+        }
         _ => &layer.item_id,
     }
 }

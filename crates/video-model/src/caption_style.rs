@@ -1,8 +1,7 @@
 //! 字幕样式文档的正文（视频格式规范 §5.6，文档 `kind: 'caption-style'`）。
 //!
-//! 两种正文：Studio 样式（`baocut.legacy-studio-style/0.1`，v2 字幕样式的 `style` 原样）与定位框样式
-//! （`baocut.boxed-caption-style/<N>`，外部工程导入写的）。引擎写入时只核对定位框样式的逐词动画
-//! （[`caption_style_body_problems`]），其余字段由渲染内核读，不校验。
+//! Studio、定位框及动态场景三种正文。旧样式保持既有校验规则；动态场景委托
+//! `caption-scene` 严格验证格式、类型、参数和执行能力，预览与导出复用同一合同。
 
 use message_ref::{Text, msg};
 use serde_json::Value;
@@ -77,9 +76,22 @@ pub const WORD_ANIMATION_IDS: [&str; 19] = [
 ];
 
 /// 正文与 §5.6 不合的地方（空表示合）。定位框样式：`style` 是对象；`style.animationPresetId` 出现时是逐词动画目录里的
-/// 一个 id。别的 schema 不核对。
+/// 一个 id；动态场景完整校验。其他 schema 保持既有行为。
 pub fn caption_style_body_problems(body: &Value) -> Vec<Text> {
     let schema = body.get("schema").and_then(Value::as_str).unwrap_or_default();
+    if schema.starts_with("baocut.caption-scene-style/") {
+        return caption_scene::parse_style(body)
+            .err()
+            .map(|error| {
+                msg!(
+                    "videoModel.bodyShape",
+                    "The body has fields of the wrong shape: {error}",
+                    error = error.to_string()
+                )
+            })
+            .into_iter()
+            .collect();
+    }
     if !is_boxed_style_schema(schema) {
         return Vec::new();
     }
@@ -143,4 +155,18 @@ mod tests {
         let studio = json!({ "schema": STUDIO_STYLE_SCHEMA, "style": { "wordAnimation": { "catalogId": "Color" } } });
         assert!(caption_style_body_problems(&studio).is_empty());
     }
+}
+
+pub fn presentation_problems(value: &caption_scene::Presentation) -> Vec<Text> {
+    caption_scene::validate_presentation(value, None)
+        .err()
+        .map(|error| {
+            msg!(
+                "videoModel.bodyShape",
+                "The body has fields of the wrong shape: {error}",
+                error = error.to_string()
+            )
+        })
+        .into_iter()
+        .collect()
 }

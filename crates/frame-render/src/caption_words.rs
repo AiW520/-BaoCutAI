@@ -224,6 +224,18 @@ pub fn cue_words_indexed(
     placement: &Placement,
     times: Option<&WordTimes>,
 ) -> Option<CueWords> {
+    cue_words_indexed_with_units(speech, refs, span, sequence_clock, placement, times, false)
+}
+
+pub fn cue_words_indexed_with_units(
+    speech: &SpeechWords,
+    refs: Option<&[usize]>,
+    span: (f64, f64),
+    sequence_clock: bool,
+    placement: &Placement,
+    times: Option<&WordTimes>,
+    preserve_words: bool,
+) -> Option<CueWords> {
     // 词的时刻换不到字幕的时钟上（序列时钟的字幕、转写投不上序列）时不给词。
     let usable = match placement {
         Placement::OnSequence(_) => sequence_clock && !speech.sequence_clock,
@@ -286,6 +298,10 @@ pub fn cue_words_indexed(
     let text = rebuild.then(|| speech_doc::atomize::join_word_texts(members.iter().map(|(word, _)| (word.text.as_str(), word.glue))));
     let mut words = Vec::new();
     for (word, (start, end)) in &members {
+        if preserve_words {
+            words.push(json!({ "id": word.id, "text": word.text, "t0": start, "t1": end }));
+            continue;
+        }
         for (id, text, t0, t1, _) in speech_doc::build::atomize_timed_word(&word.id, &word.text, *start, *end, word.glue) {
             words.push(json!({ "id": id, "text": text, "t0": t0, "t1": t1 }));
         }

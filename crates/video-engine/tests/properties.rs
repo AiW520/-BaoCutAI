@@ -546,3 +546,18 @@ fn opacity_and_mask_feather_take_the_spec_ranges() {
     }
     assert_eq!(video.revision(), before);
 }
+
+#[test]
+fn dynamic_caption_documents_validate_before_transaction_commit() {
+    let Fixture { mut video, .. } = fixture();
+    let body: Value = serde_json::from_str(include_str!("../../caption-scene/tests/fixtures/word-pop.json")).unwrap();
+    let put = |body| json!({"type":"putDocument","kind":"caption-style","name":"Dynamic","body":body});
+    apply(&mut video, "cmd_dynamic", vec![put(body.clone())]).unwrap();
+    let before = video.revision();
+    let mut invalid = body.clone();
+    invalid["scene"]["value"]["animations"][0]["property"] = json!("unknown.property");
+    let error = apply(&mut video, "cmd_bad_dynamic", vec![put(invalid)]).unwrap_err();
+    assert_eq!(error.code, "INVALID_OPERATION");
+    assert!(error.message.contains("CAPTION_PROPERTY_UNSUPPORTED"));
+    assert_eq!(video.revision(), before);
+}

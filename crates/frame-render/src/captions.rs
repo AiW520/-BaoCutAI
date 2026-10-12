@@ -20,7 +20,7 @@ use subtitle_render::{CaptionCompositeMode, OverlayIncludes, OverlayRenderPlan, 
 use timeline::template::TemplateDoc;
 use tiny_skia::BlendMode;
 
-use crate::caption_words::{Placement, SpeechWords, WordTimes, cue_words_indexed};
+use crate::caption_words::{Placement, SpeechWords, WordTimes};
 use crate::documents::FrozenDocument;
 
 pub const CAPTION_DOCUMENT: &str = "baocut.caption/1";
@@ -89,6 +89,9 @@ pub fn read_captions(body: &Value) -> Option<CaptionTrack> {
 impl CaptionTrack {
     /// 给每一句配上转写里的词（[`crate::caption_words`]）：剪掉的、隐藏的词不给，拿掉了词的句子按留下的词重拼文字。
     pub fn attach_words(&mut self, speech: &SpeechWords, placement: &Placement) {
+        self.attach_words_with_units(speech, placement, false);
+    }
+    pub fn attach_words_with_units(&mut self, speech: &SpeechWords, placement: &Placement, preserve_words: bool) {
         // 没写 `words` 的句子按时刻取词：索引在第一次用到时建，整份字幕共用。
         let mut times: Option<WordTimes> = None;
         for cue in &mut self.cues {
@@ -97,7 +100,15 @@ impl CaptionTrack {
                 Some(_) => None,
                 None => Some(&*times.get_or_insert_with(|| WordTimes::new(speech, placement))),
             };
-            if let Some(found) = cue_words_indexed(speech, refs.as_deref(), (cue.start, cue.end), self.sequence_clock, placement, times) {
+            if let Some(found) = crate::caption_words::cue_words_indexed_with_units(
+                speech,
+                refs.as_deref(),
+                (cue.start, cue.end),
+                self.sequence_clock,
+                placement,
+                times,
+                preserve_words,
+            ) {
                 cue.words = found.words;
                 if let Some(text) = found.text {
                     cue.text = text;
@@ -111,6 +122,7 @@ impl CaptionTrack {
 pub enum CaptionStyle {
     /// Studio 样式的根（v2 的 `style` 对象）。
     Studio(Value),
+    Scene(caption_scene::SceneStyle),
     /// 定位框样式的正文。
     Boxed(Value),
 }
@@ -128,6 +140,7 @@ impl CaptionStyle {
     /// 交给内核的 Studio 样式（`size` 是输出尺寸）。
     pub fn kernel_style(&self, size: (u32, u32)) -> KernelStyle {
         match self {
+            CaptionStyle::Scene(_) => unreachable!("scene styles have a separate compiler"),
             CaptionStyle::Studio(root) => KernelStyle {
                 root: root.clone(),
                 opacity: 1.0,
@@ -258,6 +271,9 @@ impl CaptionStyle {
             return Ok(CaptionStyle::Studio(video_model::caption_style::default_studio_style()));
         };
         match document.body.get("schema").and_then(Value::as_str) {
+            Some(caption_scene::STYLE_SCHEMA) => caption_scene::parse_style(&document.body)
+                .map(CaptionStyle::Scene)
+                .map_err(|e| Some(e.to_string())),
             Some(STUDIO_STYLE) => Ok(CaptionStyle::Studio(
                 document
                     .body
@@ -324,7 +340,7 @@ pub struct CaptionLayer {
 }
 
 /// 一组字幕编好的内核计划。
-pub struct CaptionPlan {
+struct LegacyCaptionPlan {
     plan: OverlayRenderPlan,
     sources: HashMap<(bool, String), (String, String)>,
     /// 组里第一份文档在序列时钟上。
@@ -336,7 +352,7 @@ pub struct CaptionPlan {
     missing: std::collections::BTreeSet<String>,
 }
 
-impl CaptionPlan {
+impl LegacyCaptionPlan {
     /// 编一组字幕：`members` 是组里各层的字幕文档（已确认读得懂），按层的顺序。
     pub fn compile(
         style: &CaptionStyle,
@@ -345,7 +361,7 @@ impl CaptionPlan {
         fps: f64,
         text: TextEngine,
         fonts_loaded: usize,
-    ) -> Result<CaptionPlan> {
+    ) -> Result<LegacyCaptionPlan> {
         let mut sources = HashMap::new();
         let mut cues = |translation: bool| -> Vec<Value> {
             let mut cues: Vec<(&FrozenDocument, &CaptionCue)> = members
@@ -420,7 +436,7 @@ impl CaptionPlan {
             fonts_loaded,
             text,
         )?;
-        Ok(CaptionPlan {
+        Ok(LegacyCaptionPlan {
             plan,
             sources,
             sequence_clock: members.first().is_some_and(|(_, track)| track.sequence_clock),
@@ -531,6 +547,167 @@ impl CaptionPlan {
         }
         self.missing.extend(self.plan.text.take_missing_families());
         (self.notes.clone(), self.missing.iter().cloned().collect())
+    }
+}
+
+/// A shared caption execution plan. Legacy styles keep their original path.
+pub struct CaptionPlan {
+    legacy: Option<LegacyCaptionPlan>,
+    scene: Option<subtitle_render::scene::ScenePlan>,
+    scene_hits: Vec<subtitle_render::scene::SceneHit>,
+    scene_time: Option<u64>,
+    scene_missing: std::collections::BTreeSet<String>,
+    pub sequence_clock: bool,
+    pub opacity: f32,
+}
+impl CaptionPlan {
+    pub fn compile(
+        style: &CaptionStyle,
+        members: &[(&FrozenDocument, CaptionTrack)],
+        size: (u32, u32),
+        fps: f64,
+        text: TextEngine,
+        fonts_loaded: usize,
+    ) -> Result<Self> {
+        Self::compile_with_presentation(
+            style,
+            members,
+            size,
+            fps,
+            text,
+            fonts_loaded,
+            caption_scene::Presentation {
+                seed: "0000000000000000".into(),
+                ..Default::default()
+            },
+            String::new(),
+        )
+    }
+    pub fn compile_with_presentation(
+        style: &CaptionStyle,
+        members: &[(&FrozenDocument, CaptionTrack)],
+        size: (u32, u32),
+        fps: f64,
+        text: TextEngine,
+        fonts_loaded: usize,
+        presentation: caption_scene::Presentation,
+        instance_id: String,
+    ) -> Result<Self> {
+        if let CaptionStyle::Scene(style) = style {
+            let cues = members
+                .iter()
+                .flat_map(|(doc, track)| {
+                    track.cues.iter().map(move |c| subtitle_render::scene::SceneCue {
+                        id: c.id.clone(),
+                        document_id: doc.document_id.clone(),
+                        text: c.text.clone(),
+                        start: c.start,
+                        end: c.end,
+                        words: c
+                            .words
+                            .iter()
+                            .filter_map(|w| {
+                                Some(subtitle_render::scene::SceneWord {
+                                    id: w.get("id")?.as_str()?.into(),
+                                    text: w.get("text")?.as_str()?.into(),
+                                    start: w.get("t0")?.as_f64()?,
+                                    end: w.get("t1")?.as_f64()?,
+                                })
+                            })
+                            .collect(),
+                    })
+                })
+                .collect();
+            let scene = subtitle_render::scene::ScenePlan::compile(style.clone(), presentation, cues, size, text, instance_id)?;
+            return Ok(Self {
+                legacy: None,
+                scene: Some(scene),
+                scene_hits: vec![],
+                scene_time: None,
+                scene_missing: Default::default(),
+                sequence_clock: members.first().is_some_and(|(_, t)| t.sequence_clock),
+                opacity: 1.0,
+            });
+        }
+        let legacy = LegacyCaptionPlan::compile(style, members, size, fps, text, fonts_loaded)?;
+        Ok(Self {
+            sequence_clock: legacy.sequence_clock,
+            opacity: legacy.opacity,
+            legacy: Some(legacy),
+            scene: None,
+            scene_hits: vec![],
+            scene_time: None,
+            scene_missing: Default::default(),
+        })
+    }
+    pub fn avoid_template(&mut self, template: Option<&TemplateDoc>) {
+        if let Some(l) = &mut self.legacy {
+            l.avoid_template(template);
+        }
+    }
+    pub fn into_text_engine(self) -> TextEngine {
+        match (self.legacy, self.scene) {
+            (Some(l), _) => l.into_text_engine(),
+            (_, Some(s)) => s.into_text_engine(),
+            _ => unreachable!(),
+        }
+    }
+    pub fn render(&mut self, seconds: f64) -> Result<Option<CaptionLayer>> {
+        if let Some(l) = &mut self.legacy {
+            return l.render(seconds);
+        }
+        let s = self.scene.as_mut().unwrap();
+        let frame = s.render(seconds)?;
+        self.scene_hits = frame.hits;
+        self.scene_time = Some(seconds.to_bits());
+        if !frame.rgba.chunks_exact(4).any(|p| p[3] != 0) {
+            return Ok(None);
+        }
+        Ok(Some(CaptionLayer {
+            rgba: frame.rgba,
+            width: s.width,
+            height: s.height,
+            rect: (0, 0, s.width as usize, s.height as usize),
+            blend: BlendMode::SourceOver,
+        }))
+    }
+    pub fn hits(&mut self, seconds: f64) -> Result<Vec<CaptionHit>> {
+        if let Some(l) = &mut self.legacy {
+            return l.hits(seconds);
+        }
+        // Public callers may query geometry without first painting this time.
+        if self.scene_time != Some(seconds.to_bits()) {
+            let (_, hits) = self.scene.as_mut().unwrap().record(seconds)?;
+            self.scene_hits = hits;
+            self.scene_time = Some(seconds.to_bits());
+        }
+        Ok(self
+            .scene_hits
+            .clone()
+            .into_iter()
+            .map(|h| CaptionHit {
+                layer_id: String::new(),
+                item_id: String::new(),
+                document_id: h.document_id,
+                cue_id: h.cue_id,
+                cx: h.bounds.x + h.bounds.width / 2.0,
+                cy: h.bounds.y + h.bounds.height / 2.0,
+                w: h.bounds.width,
+                h: h.bounds.height,
+                rotation: 0.0,
+            })
+            .collect())
+    }
+    pub fn notes(&mut self) -> (Vec<String>, Vec<String>) {
+        if let Some(l) = &mut self.legacy {
+            return l.notes();
+        }
+        let scene = self.scene.as_mut().unwrap();
+        self.scene_missing.extend(scene.text.take_missing_families());
+        (
+            scene.diagnostics.iter().map(ToString::to_string).collect(),
+            self.scene_missing.iter().cloned().collect(),
+        )
     }
 }
 

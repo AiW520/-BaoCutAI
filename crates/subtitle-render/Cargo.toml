@@ -17,6 +17,9 @@ host = ["render-raster/media", "timeline-render/media", "timeline-render/externa
 wasm-safe = ["render-raster/wasm-safe", "timeline-render/wasm-safe"]
 
 [dependencies]
+libm = "0.2.16"
+scene-primitives.workspace = true
+caption-scene.workspace = true
 # 无 I/O 的排版 / 光栅化 / DrawOp 内核与效果栈。
 render-raster = { workspace = true }
 # Timeline 文档模型、时钟映射与 `TimelineProjection`（host 注入的投影类型）。

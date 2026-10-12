@@ -865,3 +865,29 @@ fn preview_hits_follow_rendered_bilingual_lines_and_clear_between_frames() {
     render_with(&mut renderer, &video, 1.5, &mut Media::default());
     assert!(renderer.caption_hits().is_empty());
 }
+
+#[test]
+fn dynamic_scene_instances_do_not_merge_when_they_share_a_style() {
+    let mut style: Value = serde_json::from_str(include_str!("../../caption-scene/tests/fixtures/word-pop.json")).unwrap();
+    style["scene"]["value"]["speechState"]["timingPolicy"] = json!("estimated");
+    let docs = || {
+        vec![
+            caption_doc("d", "sequence", &[(0.0, 3.0, "One two")], "original"),
+            style_doc("s", style.clone()),
+        ]
+    };
+    let mut red = caption("red", "d", Some("s"), 90, &[]);
+    red["presentation"] = json!({"parameters":{"accent":"#FF0000"},"seed":"0000000000000001"});
+    let mut green = caption("green", "d", Some("s"), 90, &[]);
+    green["paintOrder"] = json!(1);
+    green["presentation"] = json!({"parameters":{"accent":"#00FF00"},"seed":"0000000000000002"});
+    let a = draw(docs(), vec![red], 0.3);
+    let b = draw(docs(), vec![green.clone()], 0.3);
+    assert_ne!(a, b);
+    assert!(a.chunks_exact(4).any(|p| p[0] > 100 && p[1] < 20 && p[3] > 100));
+    assert!(b.chunks_exact(4).any(|p| p[1] > 100 && p[0] < 20 && p[3] > 100));
+    let mut both = caption("red", "d", Some("s"), 90, &[]);
+    both["presentation"] = json!({"parameters":{"accent":"#FF0000"},"seed":"0000000000000001"});
+    let mixed = draw(docs(), vec![both, green], 0.3);
+    assert!(mixed.chunks_exact(4).any(|p| p[1] > 100 && p[0] < 20 && p[3] > 100));
+}

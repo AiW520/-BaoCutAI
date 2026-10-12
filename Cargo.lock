@@ -328,6 +328,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "caption-scene"
+version = "0.4.0"
+dependencies = [
+ "libm",
+ "motion",
+ "serde",
+ "serde_json",
+]
+
+[[package]]
 name = "castaway"
 version = "0.2.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1138,6 +1148,7 @@ name = "frame-render"
 version = "0.4.0"
 dependencies = [
  "anyhow",
+ "caption-scene",
  "editor-semantics",
  "motion",
  "render-graph",
@@ -3702,8 +3713,11 @@ name = "subtitle-render"
 version = "0.4.0"
 dependencies = [
  "anyhow",
+ "caption-scene",
+ "libm",
  "motion",
  "render-raster",
+ "scene-primitives",
  "serde",
  "serde_json",
  "sha2 0.11.0",
@@ -4659,6 +4673,7 @@ dependencies = [
 name = "video-model"
 version = "0.4.0"
 dependencies = [
+ "caption-scene",
  "editor-semantics",
  "message-ref",
  "serde",

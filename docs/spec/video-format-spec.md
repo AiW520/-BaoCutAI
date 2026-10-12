@@ -822,6 +822,7 @@ interface CaptionItem extends ItemBase {
   type: 'caption';
   span: FrameSpan;
   documentId: Id;                      // kind 为 caption 的文档（§4.6）
+  presentation?: CaptionPresentation; // 动态场景的实例参数、标签与 seed，见 §5.6
   styleDocumentId?: Id;                // kind 为 caption-style 的文档
   scopeItemIds?: Id[];
 }
@@ -1799,7 +1800,33 @@ interface CaptionStyleBody {
 - 原片中已经烧录的字幕位于源像素里，只关闭新的字幕层不会让它消失；覆盖、重构或修复必须声明新操作的性质。
 - 没有可信词时间的导入字幕可以作为普通字幕，不输出伪精确的逐词动画。
 
-**已落盘的样式正文**。`CaptionStyleBody` 还没有落盘，落盘时由一层确定的编译折成 Studio 样式（设计稿 §8），内核不换；现在字幕样式文档的正文是下面两种之一，渲染内核都读：
+#### 动态字幕场景正文
+
+`caption-style` 支持 `baocut.caption-scene-style/1`：`scene: { kind: 'inline', value: CaptionScene }` 加可选 `parameters`。场景使用 `schema: 'baocut.caption-scene/1'` 和 `evaluationVersion: 1`。完整 DTO 见 [`packages/protocol/src/caption-scene.ts`](../../packages/protocol/src/caption-scene.ts)，严格解析及语义验证由 [`caption-scene`](../../crates/caption-scene/README.md) 统一执行，模板预检和帧求值不各写一套语义。可运行的正文见 [word-pop.json](../../crates/caption-scene/tests/fixtures/word-pop.json)。
+
+`CaptionItem.presentation` 可保存实例参数、`cueOverrides`（cueId 及可选 occurrenceId）、`wordTags`（wordId 到标签数组）和 16 位十六进制 `seed`。seed 省略时固定为零。参数合并次序为模板默认值、样式参数、实例参数、cue 覆盖、匹配 occurrence 的覆盖；未知参数、错误类型和越界值拒绝。样式与内容仍由各自文档拥有，实际词时间只从有效词流取得；新场景保留源词组，旧样式继续既有拆字路径。
+
+当前共享 CPU 执行档的字段和能力：
+
+| 领域 | 生效合同 |
+| --- | --- |
+| 节点 | `text/group/shape/repeat`；稳定 ID、zIndex 与子节点顺序；text 绑定当前 cue 或 `{ source: 'static', text }`；repeat 引用文字选择器，首版生成 shape 装饰 |
+| 布局 | `layoutEvaluation: 'static'`；width/x/y 使用 `{value,basis,offset}`，basis 为 absolute/canvasWidth/canvasHeight/canvasShortEdge；可选 parameter 引用已声明 scalar，长度为 value × parameter × basis + offset，在准备布局时求值；按 Unicode 换行并由 maxLines 与 maxUnitsPerPage 分页；超长词按 grapheme 断行；leadingGap 为 show/hide |
+| 字体与涂装 | 每个文字节点的 fontFamily、fontSize（明确长度）、fontWeight、italic、letterSpacing（em）、lineHeight；fill 为十六进制 RGBA；可选 stroke 为 width（px）和 color；复用宿主注入的同一字体字节与字体解析机制 |
+| 选择器 | cue/page/line/word/grapheme；all、state、tag、range、parity、and/or/not；按基础文字整形的 cluster 归属单元，不把字形拆开 |
+| 状态 | stateStyles 的 unit 为 word，active/read/unread 各为 `{fill}`；gapPolicy 为 none/hold-previous，tailPolicy 为 none/hold-last；timingPolicy 默认 require-word-timing，可显式 estimated |
+| 动态属性 | transform.x/y/scale/scaleX/scaleY/rotation、opacity、fill；shape 另支持 width/height/radius；角度为弧度、表达式长度为解析后的 px |
+| 关键帧 | 明确语义 clock、start/end、精确 offset/duration/stagger；归一化 at；linear/step/ease-out-quad 或 `{ 'cubic-bezier': {x1,y1,x2,y2} }`；fill.before/after 为 none/hold；repeat 用 iterations 与 loop/yoyo，窗口边界无需顺序播放 |
+| 表达式 | 带类型 literal/read/call/if；scalar/integer/length/time/angle/bool/color；无环纯函数，时间/单元/基础布局/参数只读；共享数学曲线、连续 sin/cos、带 seed 的 random/noise；if 惰性求值，非法运算返回诊断 |
+| 合成 | replace/add/multiply 与 priority/声明顺序；颜色只允许 replace；乘法通道为无量纲数；父子变换及离屏组 opacity 通过共同 DrawOp 光栅执行 |
+
+`requiredCapabilities` 当前可声明 `caption-scene/1`、`caption-expressions/1` 和 `caption-unit-animation/1`。未知能力、属性或字段拒绝；artifact 形式的场景引用、非空 resources、图片节点、任意 shader、多层材质、逐采样布局和历史采样尚未开放，不能保存为成功后在渲染中忽略。完整扩展方向仍按[设计文档](../design/subtitle/dynamic-caption-format-design.md)维护。
+
+没有真实词时间时，默认不产生朗读高亮并跳过需要词时钟的关键帧；cue 入退场仍可用。显式 estimated 才均分显示词的时序，不写回转录。无词时间而需要多页显示时按页均分 cue 展示区间，这仅是分页时间，不是朗读时间。场景语义时钟由既有 source/sequence/occurrence 映射提供；页面窗口裁剪显示，不累计 deltaTime。渲染同一时刻不依赖已画过的帧。
+
+当前预算：每场景最多 256 个模板节点、128 个参数和纯函数、1024 条动画；每条轨最多 1024 个关键帧，每个 cue 最多 4096 个词；每帧最多 65536 次表达式/记录操作，画布最多 16777216 像素。预算和错误作为执行合同，不截断后继续画。共享样式的不同实例各自绑定参数与 occurrence，不按 style ID 把它们合并成一个场景。
+
+**已落盘的样式正文**。`CaptionStyleBody` 还没有落盘，落盘时由一层确定的编译折成 Studio 样式（设计稿 §8），内核不换；旧字幕样式文档继续支持下面两种正文，与上面的动态场景分支并存：
 
 - Studio 样式（`baocut.legacy-studio-style/0.1`）：`style` 是 v2 的字幕样式，逐词动画写在 `style.wordAnimation`（或 `style.anim`）里，`catalogId` 指逐词动画目录的一格。
 - 定位框样式（`baocut.boxed-caption-style/<N>`）：`canvas` 是样式所在画布的像素尺寸，`box` 是字幕框（相对画布中心的像素），`style` 是字号、颜色、对齐、底板等外观；渲染时换算成等价的 Studio 样式。`style.animationPresetId` 选逐词动画，取值是目录的 id，按那一格画，与 Studio 样式选中同一格相同；省略表示不动画。

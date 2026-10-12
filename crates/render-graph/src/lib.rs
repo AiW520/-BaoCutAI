@@ -167,6 +167,8 @@ pub enum LayerContent {
         duration_seconds: f64,
     },
     Caption {
+        #[serde(skip_serializing_if = "Option::is_none")]
+        presentation: Option<video_model::CaptionPresentation>,
         /// 字幕实例跟随文档的当前版本，所以给的是文档 ID。
         document_id: Id,
         #[serde(skip_serializing_if = "Option::is_none")]
@@ -500,6 +502,7 @@ pub fn plan_frame_with_speech(
                     }
                 };
                 let content = LayerContent::Caption {
+                    presentation: caption.presentation.clone(),
                     document_id: caption.document_id.clone(),
                     style_document_id: caption.style_document_id.clone(),
                     sequence_seconds: t.to_f64(),

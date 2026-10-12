@@ -34,3 +34,5 @@ export * from './seq.ts';
 export * from './ids.ts';
 export * from './limits.ts';
 export * from './code-bundle.ts';
+
+export * from './caption-scene.ts';

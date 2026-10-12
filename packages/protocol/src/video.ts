@@ -1,3 +1,4 @@
+import type { CaptionPresentation } from './caption-scene.ts';
 import type { Id, Seq } from './domain.ts';
 import { localizeText, type MessageRef } from './message-ref.ts';
 
@@ -466,6 +467,7 @@ export interface CompositionItem extends VisualBase {
 
 /** 字幕实例：在一段序列时间里显示一份字幕文档（视频格式规范 §3.8）。它跟随文档的当前版本，所以引用的是文档 ID。只在字幕轨道上。 */
 export interface CaptionItem extends ItemBase {
+  presentation?: CaptionPresentation;
   type: 'caption';
   span: FrameSpan;
   documentId: Id;

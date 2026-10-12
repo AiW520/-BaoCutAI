@@ -3647,7 +3647,7 @@ pub(crate) fn put_document(state: &mut VideoState, input: PutDocumentInput<'_>, 
         video_model::editorial_proposal::EDITORIAL_PROPOSAL_SCHEMA => {
             video_model::editorial_proposal::editorial_proposal_body_problems(input.body)
         }
-        s if video_model::caption_style::is_boxed_style_schema(s) => video_model::caption_style::caption_style_body_problems(input.body),
+        s if video_model::caption_style::is_boxed_style_schema(s) || s.starts_with("baocut.caption-scene-style/") => video_model::caption_style::caption_style_body_problems(input.body),
         _ => Vec::new(),
     };
     if !problems.is_empty() {

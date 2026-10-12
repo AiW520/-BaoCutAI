@@ -95,9 +95,13 @@ pub const SUPPORTED_TRANSITIONS: &[&str] = &["dissolve", "wipe", "slide", "zoom"
 
 /// 一层（不含它的转场）画不出来的地方。`template` 是序列的模板文档（模板层要查它的台标）。
 pub fn check_layer(layer: &VisualLayer, documents: &Documents, template: Option<&TemplateDoc>) -> Vec<UnsupportedItem> {
-    check_layer_with(layer, template, &mut |document_id, style_document_id| {
+    let mut problems = check_layer_with(layer, template, &mut |document_id, style_document_id| {
         caption_problem(documents, document_id, style_document_id)
-    })
+    });
+    if let Some(problem) = caption_presentation_problem(layer, documents) {
+        problems.push(problem);
+    }
+    problems
 }
 
 /// [`check_layer`]，字幕层画不画得出来问 `caption`（`(字幕文档, 样式文档)` → [`caption_problem`]）：渲染器按文档记住
@@ -297,4 +301,33 @@ pub fn caption_problem(documents: &Documents, document_id: &str, style_document_
 
 pub(crate) fn schema(value: &Value) -> Option<String> {
     value.get("schema").and_then(Value::as_str).map(str::to_string)
+}
+
+/// Instance overrides are checked separately from the document-only support cache.
+pub fn caption_presentation_problem(layer: &VisualLayer, documents: &Documents) -> Option<UnsupportedItem> {
+    let Some(LayerContent::Caption {
+        presentation: Some(p),
+        style_document_id,
+        ..
+    }) = &layer.content
+    else {
+        return None;
+    };
+    let style = style_document_id.as_deref().and_then(|id| documents.get(id));
+    let result = match CaptionStyle::read(style) {
+        Ok(CaptionStyle::Scene(s)) => caption_scene::validate_presentation(p, Some(s.scene())),
+        _ => Err(caption_scene::Diagnostic::new(
+            "CAPTION_SCENE_INVALID",
+            "presentation",
+            "scene style required",
+        )),
+    };
+    result.err().map(|e| {
+        UnsupportedItem::layer(
+            layer,
+            Some(caption_scene::STYLE_SCHEMA.into()),
+            "caption-scene-invalid",
+            e.to_string(),
+        )
+    })
 }

@@ -248,7 +248,9 @@ fn scenes() -> Vec<Scene> {
             &[15],
         )
         .picture("v", 64, 64, &[GREEN, BLUE]),
-        two_piece_crop().picture("v1", W, H, &[RED, GREEN, BLUE, YELLOW]).picture("v2", W, H, &[RED, GREEN, BLUE, YELLOW]),
+        two_piece_crop()
+            .picture("v1", W, H, &[RED, GREEN, BLUE, YELLOW])
+            .picture("v2", W, H, &[RED, GREEN, BLUE, YELLOW]),
         Scene::new(
             "stacked-layers",
             video(
@@ -643,6 +645,46 @@ fn scenes() -> Vec<Scene> {
     }
 
     // —— 字幕 ——
+    let mut dynamic_style: Value = serde_json::from_str(include_str!("../../caption-scene/tests/fixtures/word-pop.json")).unwrap();
+    dynamic_style["scene"]["value"]["speechState"]["timingPolicy"] = json!("estimated");
+    let mut dynamic = Scene::new(
+        "captions-dynamic-scene",
+        video(vec![caption("cap", "doc", Some("style"), 120, &[])], vec![], json!({})),
+        &[0, 2, 9, 32, 39, 65, 99, 119],
+    );
+    dynamic.documents = vec![
+        caption_doc("doc", "sequence", &[(0.0, 4.0, "One two three four")], "original"),
+        style_doc("style", dynamic_style),
+    ];
+    scenes.push(dynamic);
+    let mut wave_style: Value = serde_json::from_str(include_str!("../../caption-scene/tests/fixtures/word-pop.json")).unwrap();
+    let wave_scene = &mut wave_style["scene"]["value"];
+    wave_scene["speechState"]["timingPolicy"] = json!("estimated");
+    wave_scene["selectors"]
+        .as_array_mut()
+        .unwrap()
+        .push(json!({"id":"letters","nodeId":"caption","unit":"grapheme"}));
+    wave_scene["animations"].as_array_mut().unwrap().push(json!({
+        "id":"wave","target":{"nodeId":"caption","selectorId":"letters"},"property":"transform.y","composite":"add",
+        "value":{"kind":"expression","expression":{"op":"call","function":"mul","args":[
+            {"op":"literal","type":"length","value":4},
+            {"op":"call","function":"sin","args":[{"op":"call","function":"add","args":[
+                {"op":"call","function":"phase","args":[{"op":"read","path":"time.seconds"},{"op":"literal","type":"scalar","value":2}]},
+                {"op":"call","function":"mul","args":[{"op":"read","path":"unit.index"},{"op":"literal","type":"angle","value":0.8}]}
+            ]}]}
+        ]}}
+    }));
+    let mut wave = Scene::new(
+        "captions-dynamic-wave",
+        video(vec![caption("wave", "doc", Some("style"), 120, &[])], vec![], json!({})),
+        &[1, 3, 8, 19, 35],
+    );
+    wave.documents = vec![
+        caption_doc("doc", "sequence", &[(0.0, 4.0, "Wave é office")], "original"),
+        style_doc("style", wave_style),
+    ];
+    scenes.push(wave);
+
     let mut studio = Scene::new(
         "captions-studio",
         video(vec![caption("cap", "doc", Some("style"), 240, &[])], vec![], json!({})),
@@ -1087,7 +1129,13 @@ fn two_piece_crop() -> Scene {
         "video-two-piece-crop",
         video(
             vec![
-                video_item("v1", "a_v", 0, 30, json!({ "crop": { "left": 0, "top": 0, "right": 0.5, "bottom": 0 } })),
+                video_item(
+                    "v1",
+                    "a_v",
+                    0,
+                    30,
+                    json!({ "crop": { "left": 0, "top": 0, "right": 0.5, "bottom": 0 } }),
+                ),
                 video_item(
                     "v2",
                     "a_v",
@@ -1109,7 +1157,9 @@ fn two_piece_crop() -> Scene {
 #[test]
 fn two_piece_crop_switches_at_the_seam() {
     let scene = two_piece_crop();
-    let mut media = Media::default().with("v1", halves(W, H, RED, BLUE)).with("v2", halves(W, H, RED, BLUE));
+    let mut media = Media::default()
+        .with("v1", halves(W, H, RED, BLUE))
+        .with("v2", halves(W, H, RED, BLUE));
     for (frame, color) in [(15.0, RED), (29.0, RED), (30.0, BLUE), (45.0, BLUE)] {
         let pixels = render(&scene.video, at(frame), &mut media);
         for (x, y) in [(5, 5), (W / 2, H / 2), (W - 5, H - 5)] {

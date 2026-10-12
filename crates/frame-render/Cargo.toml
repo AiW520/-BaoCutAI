@@ -15,6 +15,7 @@ host = ["subtitle-render/host", "render-raster/media", "waveform/dsp"]
 wasm-safe = ["subtitle-render/wasm-safe", "render-raster/wasm-safe", "render-raster/svg"]
 
 [dependencies]
+caption-scene.workspace = true
 motion.workspace = true
 render-graph.workspace = true
 render-raster.workspace = true
