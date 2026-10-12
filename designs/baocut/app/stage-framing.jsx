@@ -55,13 +55,13 @@
     );
   }
 
-  /** ⓘ ＋ 弹层。`dir` 跟着落点走：画布小牌在画面下方，往上弹；面板里往下弹。 */
-  function FramingInfo({onFree, dir = 'down'}) {
+  /** ⓘ ＋ 弹层。`dir` / `align` 跟着落点走：画布小牌在画面下方，往上弹；面板里 ⓘ 在行尾，往下弹、右边对齐。 */
+  function FramingInfo({onFree, dir = 'down', align = 'left'}) {
     const [open, setOpen] = useState(false);
     return (
       <span className="framing-info">
         <IconBtn icon="info" size="s" tip={F.COPY.whyTip} onClick={() => setOpen((x) => !x)} />
-        <Popover open={open} onClose={() => setOpen(false)} dir={dir} width={280} label={F.COPY.whyTitle}>
+        <Popover open={open} onClose={() => setOpen(false)} dir={dir} align={align} width={280} label={F.COPY.whyTitle}>
           <FramingWhy onFree={onFree ? () => { setOpen(false); onFree(); } : null} />
         </Popover>
       </span>
@@ -135,7 +135,7 @@
         <div className="framing-mode">
           <Ic n="fullscreen" className="ic--16" />
           <span className="grow">{F.COPY.mode}</span>
-          <FramingInfo onFree={disabled ? null : () => freeFraming(ctx, id, app)} />
+          <FramingInfo align="right" onFree={disabled ? null : () => freeFraming(ctx, id, app)} />
         </div>
         <ValueRow label="放大" value={pct} min={100} max={F.MAX_ZOOM * 100} unit="%" onChange={zoom} />
         <div className="hint">{F.COPY.limits}</div>
