@@ -2998,12 +2998,13 @@
   }
 
   /* 内置 Agent 自己使用的 skills（设置 › Skills；语义与形状见 model-agent-skills.js）。
-     全部是虚构的演示内容：每条是一个文件夹，`files` 里至少有 SKILL.md。第三方默认关（只在选用时生效）。 */
+     全部是虚构的演示内容：每条是一个文件夹，`files` 里至少有 SKILL.md。第三方默认关（只在选用时生效）。
+     description 与 SKILL.md front matter 的一致；summary（界面上的一句话介绍）只有内置的有。 */
   const skillDoc = (name, description, body) => `---\nname: ${name}\ndescription: ${description}\n---\n\n${body.trim()}\n`;
   const agentSkills = [
     {id: 'caption-layout', name: '字幕排版规范', source: 'builtin', author: 'BaoCut', category: '字幕', enabled: true, updated: '2026-09-28',
       summary: '按每行字数、断句位置与停留时长整理字幕，读起来不赶。',
-      description: '整理字幕时用：控制每行字数和行数，在语义停顿处断行，过短的字幕并到相邻一条，保证每条停留时间够读完。只改排版与时间，不改原话。',
+      description: '整理字幕的每行字数、断句与停留时长。用户说「字幕太挤」「重排字幕」「字幕闪得太快」时使用。',
       examples: ['把这部视频的字幕按规范重排一遍，每行不超过 18 个字', '检查字幕里有没有停留不到 1 秒的，帮我合并'],
       files: [
         {path: 'SKILL.md', body: skillDoc('caption-layout', '整理字幕的每行字数、断句与停留时长。用户说「字幕太挤」「重排字幕」「字幕闪得太快」时使用。', `
@@ -3042,7 +3043,7 @@
       ]},
     {id: 'talking-head-cut', name: '口播精剪', source: 'builtin', author: 'BaoCut', category: '剪辑', enabled: true, updated: '2026-09-30',
       summary: '剪掉口癖、长停顿和说错重来的句子，保留自然的呼吸。',
-      description: '处理一个人对着镜头讲的视频：找出口癖、超过阈值的停顿和重复的坏镜头，给出剪口建议，确认后再剪。剪完节奏更紧，但不把话剪碎。',
+      description: '精剪口播视频：口癖、长停顿、说错重来。用户说「剪口播」「去掉嗯啊」「节奏紧一点」时使用。',
       examples: ['把这条口播里的口癖和长停顿剪掉', '找出我说错重来的地方，只留最后一遍'],
       files: [
         {path: 'SKILL.md', body: skillDoc('talking-head-cut', '精剪口播视频：口癖、长停顿、说错重来。用户说「剪口播」「去掉嗯啊」「节奏紧一点」时使用。', `
@@ -3068,7 +3069,7 @@
       ]},
     {id: 'shorts-segments', name: '短视频切片', source: 'builtin', author: 'BaoCut', category: '剪辑', enabled: true, updated: '2026-09-21',
       summary: '从长视频里找出最值得发的话题，每个剪成一条完整的竖屏短视频。',
-      description: '读完整份文稿，按话题切开，挑出有钩子、有落点、单独看得懂的话题，每个话题从开头剪到讲完，切成一部新的竖屏视频，并记下它来自原片的哪一段。几支、多长可以交给它按话题定。',
+      description: '把长视频切成几条竖屏短视频。用户说「切片」「做成短视频」「挑几个看点」时使用。',
       examples: ['从这期访谈里切 3 条竖屏短视频', '挑一个最有争议的观点，做成 60 秒以内的切片', '你看着办：有几个好话题就切几条，每条讲完整'],
       files: [
         {path: 'SKILL.md', body: skillDoc('shorts-segments', '把长视频切成几条竖屏短视频。用户说「切片」「做成短视频」「挑几个看点」时使用。', `
@@ -3102,7 +3103,7 @@
       ]},
     {id: 'cover-and-title', name: '封面与标题', source: 'builtin', author: 'BaoCut', category: '发布', enabled: true, updated: '2026-09-12',
       summary: '根据内容给出几组标题和封面文案，再生成封面图。',
-      description: '读文稿提炼主题，给出几组风格不同的标题与封面大字，用户选定后按画幅生成封面图，放进这部视频的产物里。',
+      description: '为视频写标题、封面文案并生成封面。用户说「起个标题」「做封面」时使用。',
       examples: ['给这部视频起 5 个标题，再配一张封面', '封面大字控制在 8 个字以内，给我三版'],
       files: [
         {path: 'SKILL.md', body: skillDoc('cover-and-title', '为视频写标题、封面文案并生成封面。用户说「起个标题」「做封面」时使用。', `
@@ -3126,7 +3127,7 @@
        剪成短视频 → shorts-segments，其余在这里。 */
     {id: 'transcribe-captions', name: '转录与字幕', source: 'builtin', author: 'BaoCut', category: '文稿', enabled: true, updated: '2026-10-09',
       summary: '用合适的语音模型转录，按词级时间整理成文稿与字幕。',
-      description: '转录或重新转录时用：按视频语言挑语音模型，保留词级时间，按语义停顿切句，专有名词按术语库写法。只换掉选定范围的文稿，其余不动。',
+      description: '转录或重新转录一段音频并整理成文稿与字幕。用户说「重新转录」「识别不准」时使用。',
       examples: ['把第 2 章重新转录一遍', '换一个更准的模型重跑整篇'],
       files: [
         {path: 'SKILL.md', body: skillDoc('transcribe-captions', '转录或重新转录一段音频并整理成文稿与字幕。用户说「重新转录」「识别不准」时使用。', `
@@ -3145,7 +3146,7 @@
       ]},
     {id: 'transcript-polish', name: '润色转写', source: 'builtin', author: 'BaoCut', category: '文稿', enabled: true, updated: '2026-10-09',
       summary: '修错字、补标点、自动分段，不改写说话人的表达。',
-      description: '润色转录文稿时用：只修能确定是识别错误的字词，补标点并按话题分段，不改写口语表达、不删内容；逐段给出对照，用户可以逐段还原。',
+      description: '润色转录文稿：错字、标点、分段。用户说「润色」「修错字」「分一下段」时使用。',
       examples: ['把这篇文稿润色一遍，保留口语感', '只修错字和标点，不要改我的说法'],
       files: [
         {path: 'SKILL.md', body: skillDoc('transcript-polish', '润色转录文稿：错字、标点、分段。用户说「润色」「修错字」「分一下段」时使用。', `
@@ -3165,7 +3166,7 @@
       ]},
     {id: 'chaptering', name: '分章节', source: 'builtin', author: 'BaoCut', category: '文稿', enabled: true, updated: '2026-10-09',
       summary: '按话题聚合段落，给每章一个短标题与起点时间。',
-      description: '生成章节时用：先看文稿是否已分段，按话题把段落聚成章，每章一个不超过 12 个字的标题，起点落在句子边界上；长视频 5–8 章，短视频 2–4 章。',
+      description: '给视频分章节并起标题。用户说「分章」「生成章节」「加时间点」时使用。',
       examples: ['给这部视频分章节', '章节太碎了，合并成 5 章'],
       files: [
         {path: 'SKILL.md', body: skillDoc('chaptering', '给视频分章节并起标题。用户说「分章」「生成章节」「加时间点」时使用。', `
@@ -3185,7 +3186,7 @@
       ]},
     {id: 'speaker-labeling', name: '说话人标注', source: 'builtin', author: 'BaoCut', category: '文稿', enabled: true, updated: '2026-10-09',
       summary: '按声纹区分说话人，结合自我介绍起名字，确认后再写入。',
-      description: '识别说话人时用：按声纹聚成几位，从文稿里的自我介绍、称呼推断名字，推不出的用「说话人 1」；每位给几段试听片段，用户确认后才写进字幕与文稿。',
+      description: '识别并标注说话人。用户说「谁在说话」「识别说话人」「标名字」时使用。',
       examples: ['标一下这段访谈里是谁在说', '把两位嘉宾的名字标到字幕上'],
       files: [
         {path: 'SKILL.md', body: skillDoc('speaker-labeling', '识别并标注说话人。用户说「谁在说话」「识别说话人」「标名字」时使用。', `
@@ -3204,7 +3205,7 @@
       ]},
     {id: 'subtitle-translation', name: '翻译字幕', source: 'builtin', author: 'BaoCut', category: '字幕', enabled: true, updated: '2026-10-09',
       summary: '逐句翻译并对齐时间码，术语按术语库，过期的只重译那几句。',
-      description: '翻译字幕或刷新过期译文时用：逐句翻译、按词级数据对齐时间，术语按术语库的固定译法；原文改过或被剪的句子只重译那几句，其余一个字不动。',
+      description: '翻译字幕与刷新过期译文。用户说「翻译」「翻成英文」「译文过期」时使用。',
       examples: ['把字幕翻成英文', '原文改过的那几句重新翻一下'],
       files: [
         {path: 'SKILL.md', body: skillDoc('subtitle-translation', '翻译字幕与刷新过期译文。用户说「翻译」「翻成英文」「译文过期」时使用。', `
@@ -3223,7 +3224,7 @@
       ]},
     {id: 'video-summary', name: '视频内容总结', source: 'builtin', author: 'BaoCut', category: '文稿', enabled: true, updated: '2026-10-09',
       summary: '先给结论，再列带时间码的要点，用文稿的语言写。',
-      description: '写总结时用：读完整份文稿，先用两三句给结论，再列要点，每条带时间码（mm:ss）并能在文稿里找到出处；用 Markdown、文稿的语言，不加文稿里没有的信息。',
+      description: '为视频写要点总结。用户说「总结」「写个摘要」「要点」时使用。',
       examples: ['给这部视频写一份总结', '要点带时间，我发给没看过的人'],
       files: [
         {path: 'SKILL.md', body: skillDoc('video-summary', '为视频写要点总结。用户说「总结」「写个摘要」「要点」时使用。', `
@@ -3242,7 +3243,7 @@
       ]},
     {id: 'blog-from-video', name: '写成博客文章', source: 'builtin', author: 'BaoCut', category: '文稿', enabled: true, updated: '2026-10-09',
       summary: '把文稿改写成一篇能单独读的文章，视角按视频来源定。',
-      description: '写博客时用：按章节组织成文章，口语改成书面语但保留原意；自己的视频以作者口吻写，别人的视频以观众视角写；引用原话时带时间码。',
+      description: '把视频改写成博客文章。用户说「写成文章」「博客」「图文版」时使用。',
       examples: ['把这期播客改写成一篇文章', '以观众的视角写一篇观后记'],
       files: [
         {path: 'SKILL.md', body: skillDoc('blog-from-video', '把视频改写成博客文章。用户说「写成文章」「博客」「图文版」时使用。', `
@@ -3261,7 +3262,7 @@
       ]},
     {id: 'title-and-description', name: '起标题与写简介', source: 'builtin', author: 'BaoCut', category: '发布', enabled: true, updated: '2026-10-09',
       summary: '几个角度不同的标题候选，简介带章节时间码与标签。',
-      description: '起标题或写简介时用：标题给几个角度各不相同的候选并各带一句理由，最后推荐一个；简介先一段概述，再列章节时间码，末尾一行标签；指定了平台就按平台的字数与格式写。',
+      description: '为视频起标题、写简介。用户说「起标题」「写简介」「视频描述」时使用。',
       examples: ['给这部视频起 6 个标题', '写一段带章节时间的简介，发 YouTube'],
       files: [
         {path: 'SKILL.md', body: skillDoc('title-and-description', '为视频起标题、写简介。用户说「起标题」「写简介」「视频描述」时使用。', `
@@ -3280,7 +3281,7 @@
       ]},
     {id: 'bilingual-proofread', name: '双语字幕校对', source: 'builtin', author: 'BaoCut', category: '字幕', enabled: false, updated: '2026-09-25',
       summary: '逐条对照原文和译文，找出漏译、误译与术语不一致。',
-      description: '翻译完成后使用：逐条比对原文与译文，核对术语库里的固定译法，标出漏译、误译和前后不一致的地方，给出修改建议而不直接覆盖。',
+      description: '校对双语字幕：漏译、误译、术语一致性。用户说「校对翻译」「检查译文」时使用。',
       examples: ['校对一遍英文字幕，重点看术语是不是统一', '找出译文比原文短很多的字幕，看看有没有漏译'],
       files: [
         {path: 'SKILL.md', body: skillDoc('bilingual-proofread', '校对双语字幕：漏译、误译、术语一致性。用户说「校对翻译」「检查译文」时使用。', `
@@ -3307,7 +3308,7 @@
     /* 设计稿（docs/design/canvas §7.1）：在输入框里选上它再说要做什么，智能体按它做一份设计稿 */
     {id: 'design', name: '设计稿', source: 'builtin', author: 'BaoCut', category: '设计', enabled: true, updated: '2026-10-11',
       summary: '在画布上做界面、网页、海报或图表的设计稿，可以预览、改和标注。',
-      description: '要做界面、网页、海报、图表这类视觉设计时用：在工作目录里建一份设计稿（canvas.json 加每块画板一个 .dc.html），写完用 design_check 检查一次，会话里出一张设计稿卡片，在右侧打开预览与修改。',
+      description: '做视觉设计稿：界面、网页、海报、图表。用户说「做个设计稿」「画个页面」「做张海报」时使用。',
       examples: ['给这门课做一个落地页：桌面首屏、手机首屏和报名卡片', '把这份数据画成一张信息图，竖版'],
       files: [
         {path: 'SKILL.md', body: skillDoc('design', '做视觉设计稿：界面、网页、海报、图表。用户说「做个设计稿」「画个页面」「做张海报」时使用。', `
@@ -3333,7 +3334,7 @@
     /* 设计系统（docs/design/canvas §10.5）：在输入框里选上它再说要做什么，智能体按它做一套设计系统；设计稿可以装上它 */
     {id: 'design-system', name: '设计系统', source: 'builtin', author: 'BaoCut', category: '设计', enabled: true, updated: '2026-10-11',
       summary: '把颜色、字体、组件与品牌素材整理成一套设计系统，做设计稿时可以装上它。',
-      description: '要给品牌或一个系列的物料定一套能复用的规范时用：在工作目录里建一个设计系统（design-system.json 索引、tokens.json、README.md、components/ 与素材），写完用 design_system_check 检查一次，会话里出一张设计系统卡片，在右侧打开查看。之后做设计稿可以装上它。',
+      description: '做设计系统：颜色、字体与文字样式、组件和品牌素材。用户说「做一套设计系统」「整理品牌规范」「统一配色和字体」时使用。',
       examples: ['把这门课的课件和落地页整理成一套设计系统', '按这份品牌手册做一套设计系统：颜色、字体、按钮和卡片'],
       files: [
         {path: 'SKILL.md', body: skillDoc('design-system', '做设计系统：颜色、字体与文字样式、组件和品牌素材。用户说「做一套设计系统」「整理品牌规范」「统一配色和字体」时使用。', `
@@ -3360,8 +3361,7 @@
 - manifest.json、tokens.css 与 api/ 由编辑器保存时生成，不要手改`},
       ]},
     {id: 'channel-intro', name: '频道片头规范', source: 'personal', author: '你', category: '品牌', enabled: true, updated: '2026-10-02',
-      summary: '每部视频开头加 3 秒片头：标志、栏目名和这一期的标题。',
-      description: '我的频道统一片头：前 3 秒放标志动画和栏目名，随后一行本期标题淡入。新做的视频和切片都按这份来。',
+      description: '按频道规范添加或检查片头。做新视频、切片或用户提到「片头」时使用。',
       examples: ['给这部视频加上频道片头', '按片头规范检查这部视频的开头'],
       files: [
         {path: 'SKILL.md', body: skillDoc('channel-intro', '按频道规范添加或检查片头。做新视频、切片或用户提到「片头」时使用。', `
@@ -3385,8 +3385,7 @@
 - 栏目名字体：与正文字幕相同，字重加粗`},
       ]},
     {id: 'interview-notes', name: '访谈纪要模板', source: 'personal', author: '你', category: '文稿', enabled: false, updated: '2026-09-18',
-      summary: '把访谈整理成一页纪要：背景、三个要点、原话摘录和待办。',
-      description: '访谈类视频转录完成后，按固定的四段结构出一份纪要文档，原话摘录带时间码，方便回看。',
+      description: '把访谈文稿整理成固定结构的一页纪要。用户说「出纪要」「整理访谈」时使用。',
       examples: ['按纪要模板整理这期访谈'],
       files: [
         {path: 'SKILL.md', body: skillDoc('interview-notes', '把访谈文稿整理成固定结构的一页纪要。用户说「出纪要」「整理访谈」时使用。', `
@@ -3405,8 +3404,7 @@
 - 纪要存成这个项目里的一份文档。`)},
       ]},
     {id: 'podcast-chapters', name: '播客章节标记', source: 'third-party', author: '示例作者 A', category: '社区', enabled: false, updated: '2026-08-30',
-      summary: '给长音频自动分章节，并写出每章一句话的摘要。',
-      description: '社区贡献的 skill：按话题转折给长音频或长视频分章节，每章起一个短标题和一句摘要。',
+      description: '给长音频或长视频分章节并写摘要。',
       examples: ['给这期节目分章节，每章起个标题'],
       files: [
         {path: 'SKILL.md', body: skillDoc('podcast-chapters', '给长音频或长视频分章节并写摘要。', `
@@ -3420,8 +3418,7 @@
 4. 把章节写入视频的章节轨。`)},
       ]},
     {id: 'lower-third-pack', name: '人名条样式包', source: 'third-party', author: '示例作者 B', category: '社区', enabled: false, updated: '2026-07-16',
-      summary: '说话人第一次出场时加人名条，带三种版式。',
-      description: '社区贡献的 skill：在每位说话人第一次开口时加一条人名条，停留 4 秒；版式有简洁、双行、带职位三种。',
+      description: '为说话人添加人名条。用户说「加人名条」「标一下谁在说话」时使用。',
       examples: ['给每位说话人加人名条，用双行版式'],
       files: [
         {path: 'SKILL.md', body: skillDoc('lower-third-pack', '为说话人添加人名条。用户说「加人名条」「标一下谁在说话」时使用。', `
@@ -3443,8 +3440,7 @@
   /* 「从本地文件夹添加」的演示文件夹：最后一个故意没有 SKILL.md，用来演示校验的错误态。 */
   const agentSkillFolders = [
     {path: '~/BaoCut/skills/片尾致谢/', skill: {id: 'outro-credits', name: '片尾致谢', author: '你', category: '品牌',
-      summary: '片尾加 5 秒致谢：出镜者、制作与一句订阅提醒。',
-      description: '每部视频结尾统一加 5 秒致谢页：出镜者名单、制作人员和一句订阅提醒，背景用视频最后一帧的模糊图。',
+      description: '在视频结尾添加致谢页。用户说「加片尾」「致谢」时使用。',
       examples: ['给这部视频加片尾致谢'],
       files: [{path: 'SKILL.md', body: skillDoc('outro-credits', '在视频结尾添加致谢页。用户说「加片尾」「致谢」时使用。', `
 # 片尾致谢
@@ -3456,8 +3452,7 @@
 3. 依次列出出镜者与制作人员，名单从说话人列表里取。
 4. 最后一行是订阅提醒。`)}]}},
     {path: '~/BaoCut/skills/课程录屏整理/', skill: {id: 'screencast-tidy', name: '课程录屏整理', author: '你', category: '剪辑',
-      summary: '录屏课程按知识点分段，剪掉等待加载的空白。',
-      description: '整理录屏课程：按知识点分章节，剪掉等待和误操作的片段，鼠标操作密集处自动放大。',
+      description: '整理录屏课程：分段、剪空白、放大操作区域。',
       examples: ['把这节录屏课按知识点分段'],
       files: [{path: 'SKILL.md', body: skillDoc('screencast-tidy', '整理录屏课程：分段、剪空白、放大操作区域。', `
 # 课程录屏整理

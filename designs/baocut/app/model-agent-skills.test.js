@@ -16,7 +16,7 @@ const list = () => [
   {id: 'd', name: '章节标记', summary: '分章节', source: 'third-party', author: '示例作者 A', category: '社区', enabled: false, updated: '2026-08-30', files: []},
 ];
 
-test('演示数据：15–20 条（AI 工具 Tab 每个工具一条内置），三种来源都有，每条有 SKILL.md 与 frontmatter，至少两条带 references/；第三方默认关', () => {
+test('演示数据：15–20 条（AI 工具 Tab 每个工具一条内置），三种来源都有，每条有 SKILL.md 与 frontmatter，至少两条带 references/；第三方默认关；只有内置的有一句话介绍', () => {
   assert.ok(DEMO.length >= 15 && DEMO.length <= 20, String(DEMO.length));
   assert.equal(new Set(DEMO.map((s) => s.id)).size, DEMO.length);
   K.SOURCES.forEach((s) => assert.ok(DEMO.some((x) => x.source === s.k), s.k));
@@ -25,8 +25,10 @@ test('演示数据：15–20 条（AI 工具 Tab 每个工具一条内置），�
     assert.ok(doc, s.id);
     const v = K.fileBlocks(doc.body);
     assert.match(v.frontmatter, /^name: .+\ndescription: .+$/, s.id);
+    assert.equal(v.frontmatter.split('\n')[1], 'description: ' + s.description, s.id);
     assert.ok(v.blocks.some((b) => b.type === 'h1') && v.blocks.some((b) => b.type === 'ol'), s.id);
-    assert.ok(s.name && s.summary && s.description && s.author && s.category && Array.isArray(s.examples), s.id);
+    assert.ok(s.name && s.description && s.author && s.category && Array.isArray(s.examples), s.id);
+    assert.equal(!!s.summary, s.source === 'builtin', s.id);
     assert.match(s.updated, /^\d{4}-\d{2}-\d{2}$/);
   });
   assert.ok(DEMO.filter((s) => s.files.some((f) => f.path.startsWith('references/'))).length >= 2);
@@ -58,6 +60,16 @@ test('开关只改 enabled；添加排最前且拒绝重复；移除拒绝内置
   assert.equal(K.remove(l, 'a').list, l);
   assert.deepEqual(K.remove(l, 'c').list.map((s) => s.id), ['a', 'b', 'd']);
   assert.ok(K.remove(l, 'nope').error);
+});
+
+test('一句话介绍：内置的用 summary，没有 summary 的（个人、第三方）退回 description', () => {
+  assert.equal(K.blurb({summary: ' 整理字幕 ', description: '给智能体看的'}), '整理字幕');
+  assert.equal(K.blurb({description: '按频道规范添加片头。'}), '按频道规范添加片头。');
+  assert.equal(K.blurb(null), '');
+  FOLDERS.filter((f) => f.skill).forEach((f) => assert.equal(K.blurb(f.skill), f.skill.description, f.path));
+  const gh = K.fromGithub(K.parseGithub('owner/repo'), []).skill;
+  assert.equal(gh.summary, undefined);
+  assert.equal(K.blurb(gh), '从 owner/repo 导入的 skill。');
 });
 
 test('输入框菜单：全部已添加的都在，开着的在前，描述截成一行', () => {

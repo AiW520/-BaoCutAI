@@ -12,7 +12,7 @@
     return <div className={cx('skl-card', !skill.enabled && 'is-off')}>
       <BCAction type="button" className="skl-card__main" aria-label={'查看 ' + skill.name} onClick={onOpen}>
         <b className="skl-card__name">{skill.name}</b>
-        <span className="skl-card__desc">{skill.description}</span>
+        <span className="skl-card__desc">{K.blurb(skill)}</span>
         <span className="skl-card__meta">{K.metaLine(skill)}</span>
       </BCAction>
       <span className="skl-card__switch"><Switch on={skill.enabled} ariaLabel={'启用 ' + skill.name} onChange={onToggle} /></span>

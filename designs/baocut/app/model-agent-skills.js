@@ -4,8 +4,11 @@
    - Skill = 一个文件夹（SKILL.md + 可选的 references/ 等文件），教 Agent 按某种方法做事。
    - 开关开：Agent 觉得相关时会自己用它。开关关：只在你从输入框「+」里选它时才用。关不是删除，移除才是删除。
    - 从「+」里选了某个 skill = 这条消息明确要求用它：输入框上挂一个可移除的 token，发送时在提示词末尾带一行 promptLine。
-   skill 形状：{id, name, summary, description, source: 'builtin'|'personal'|'third-party', author, category, enabled,
-   updated, examples: [...], files: [{path, body}]}。演示数据在 data.js 的 agentSkills / agentSkillFolders；不碰磁盘。 */
+   skill 形状：{id, name, summary?, description, source: 'builtin'|'personal'|'third-party', author, category, enabled,
+   updated, examples: [...], files: [{path, body}]}。演示数据在 data.js 的 agentSkills / agentSkillFolders；不碰磁盘。
+   - description 是 SKILL.md front matter 里写给智能体的那段（做什么、什么时候用），界面不直接显示。
+   - summary 只有内置 skill 有：界面上的一句话介绍，正式版按界面语言取自 skill 目录的 .baocut-meta.json（产品设计 §6.9）。
+   - 界面上的介绍一律走 blurb()：内置的显示 summary；个人、第三方的没有 summary，只能显示它自带的 description。 */
 (function () {
   const root = typeof window !== 'undefined' ? window : globalThis;
   const SOURCES = [
@@ -50,9 +53,11 @@
     return {list: list.filter((x) => x.id !== id), skill: s};
   }
   const clip = (text, n) => { const t = String(text || '').trim(); return t.length > n ? t.slice(0, n - 1) + '…' : t; };
-  /** 输入框「+ › 使用 Skill」的条目：全部已添加的，开着的在前，组内保持原顺序；描述截成一行。 */
+  /** 界面上的一句话介绍（设置的卡片与详情、输入框菜单）：有 summary 用 summary，没有时退回 description。 */
+  const blurb = (skill) => String((skill && (skill.summary || skill.description)) || '').trim();
+  /** 输入框「+ › 使用 Skill」的条目：全部已添加的，开着的在前，组内保持原顺序；介绍截成一行。 */
   function menuItems(list) {
-    const rows = (list || []).map((s) => ({id: s.id, name: s.name, desc: clip(s.summary || s.description, 20), enabled: !!s.enabled, category: s.category}));
+    const rows = (list || []).map((s) => ({id: s.id, name: s.name, desc: clip(blurb(s), 20), enabled: !!s.enabled, category: s.category}));
     return rows.filter((s) => s.enabled).concat(rows.filter((s) => !s.enabled));
   }
   /** 发送时带在提示词末尾的那一行。 */
@@ -118,7 +123,7 @@
     const id = `gh-${lc(parsed.owner)}-${lc(parsed.repo)}${parsed.path ? '-' + slug(parsed.path) : ''}`;
     if (byId(list, id)) return {error: '这个仓库里的 skill 已经添加过了。'};
     const summary = `从 ${parsed.owner}/${parsed.repo} 导入的 skill。`;
-    const skill = {id, name: parsed.name, summary, description: `${summary}第三方 skill 默认关闭：只在你从输入框「+」里选它时才用。打开开关后，Agent 觉得相关时会自己用它。`,
+    const skill = {id, name: parsed.name, description: summary,
       source: 'third-party', author: parsed.owner, category: '社区', enabled: false, updated: '刚刚', origin: parsed.url, examples: [],
       files: [{path: 'SKILL.md', body: `---\nname: ${parsed.name}\ndescription: ${summary}\n---\n\n# ${parsed.name}\n\n原型演示：正式版会在这里显示从仓库读到的 SKILL.md。\n\n## 来源\n\n- 仓库：${parsed.owner}/${parsed.repo}\n- 分支：${parsed.branch || '默认分支'}\n- 文件夹：${parsed.path || '仓库根目录'}`}]};
     return {skill};
@@ -189,7 +194,7 @@
   }
 
   root.BC_AGENT_SKILLS = {
-    SOURCES, TABS, THIRD_PARTY_NOTE, sourceLabel, find, counts, byId, toggle, add, remove, menuItems, promptLine, withSkill, withSkills,
+    SOURCES, TABS, THIRD_PARTY_NOTE, sourceLabel, find, counts, byId, toggle, add, remove, blurb, menuItems, promptLine, withSkill, withSkills,
     updatedLabel, metaLine, fromFolder, parseGithub, fromGithub, fileTree, fileBlocks, snapshot, apply,
   };
 })();

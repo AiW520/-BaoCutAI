@@ -91,7 +91,7 @@
           <p className="skl-detail__meta">{[K.sourceLabel(skill.source), '作者 ' + skill.author, K.updatedLabel(skill)].filter(Boolean).join(' · ')}</p>
           <p className="skl-detail__state">{skill.enabled ? '开着：Agent 觉得相关时会自己用它。' : '关着：只在你从输入框「+」里选它时才用。'}</p>
           {skill.source === 'third-party' ? <p className="skl-detail__note" role="note"><Ic n="alert" className="ic--16" /><span>{K.THIRD_PARTY_NOTE}</span></p> : null}
-          <p className="skl-detail__desc">{skill.description}</p>
+          <p className="skl-detail__desc">{K.blurb(skill)}</p>
           {skill.examples && skill.examples.length ? <section className="skl-try" aria-label="试一下">
             <h3>试一下</h3>
             {skill.examples.map((x) => <BCAction key={x} type="button" className="skl-try__row" onClick={() => tryIt(x)}>
