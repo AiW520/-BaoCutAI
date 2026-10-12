@@ -232,7 +232,7 @@ impl Encoder {
             .map_err(|e| MediaError::spawn(&tools.ffmpeg, e))?;
         let stdin = child.stdin.take();
         let mut stderr = child.stderr.take().expect("管道");
-        let log = std::thread::spawn(move || {
+        let log = crate::thread::spawn(move || {
             let mut text = String::new();
             let _ = stderr.read_to_string(&mut text);
             text
@@ -373,7 +373,7 @@ impl QueuedEncoder {
         let (finish, abort) = (Arc::clone(&finishing), Arc::clone(&aborting));
         let (opened, open_result) = channel::<Result<(), MediaError>>();
         let refill = recycle.clone();
-        let writer = std::thread::spawn(move || {
+        let writer = crate::thread::spawn(move || {
             let mut encoder = match open() {
                 Ok(sink) => {
                     let _ = opened.send(Ok(()));

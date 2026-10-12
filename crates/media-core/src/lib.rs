@@ -9,6 +9,7 @@
 pub mod decode;
 pub mod encode;
 pub mod probe;
+mod thread;
 
 use std::fmt;
 use std::path::PathBuf;

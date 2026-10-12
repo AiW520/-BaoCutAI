@@ -333,7 +333,7 @@ impl VideoDecoder {
             let from = (self.origin + seconds).max(0.0);
             let path = self.path.clone();
             let size = (self.width, self.height);
-            let puller = std::thread::spawn(move || pull_native(native, path, from, size, spares, frames));
+            let puller = crate::thread::spawn(move || pull_native(native, path, from, size, spares, frames));
             self.stream = Some(Stream {
                 child: None,
                 frames: Some(pulled),
@@ -366,7 +366,7 @@ impl VideoDecoder {
         let (sender, times) = channel();
         let log = Arc::new(Mutex::new(String::new()));
         let sink = Arc::clone(&log);
-        let reader = std::thread::spawn(move || {
+        let reader = crate::thread::spawn(move || {
             let mut last = f64::NAN;
             for line in BufReader::new(stderr).lines() {
                 let Ok(line) = line else { break };
@@ -386,7 +386,7 @@ impl VideoDecoder {
             }
         });
         let len = Picture::byte_len(self.width, self.height);
-        let puller = std::thread::spawn(move || pull_frames(stdout, times, spares, frames, len));
+        let puller = crate::thread::spawn(move || pull_frames(stdout, times, spares, frames, len));
         self.stream = Some(Stream {
             child: Some(child),
             frames: Some(pulled),

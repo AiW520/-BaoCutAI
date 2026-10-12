@@ -17,6 +17,7 @@ mod input;
 mod master;
 mod native;
 mod preflight;
+mod priority;
 mod render;
 mod sources;
 
@@ -52,6 +53,7 @@ pub fn emit(value: &Value) {
 }
 
 fn main() -> ExitCode {
+    priority::raise_for_export();
     let args: Vec<String> = std::env::args().skip(1).collect();
     let (command, path) = match args.as_slice() {
         [command, path] if matches!(command.as_str(), "preflight" | "census" | "render" | "master") => {
