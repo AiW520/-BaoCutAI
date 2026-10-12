@@ -1,4 +1,5 @@
 import {
+  focalZoom,
   refOf,
   sequenceDisplayName,
   type AssetRevision,
@@ -248,9 +249,10 @@ export function renderXmeml(video: VideoSnapshot, sequenceId: Id, assets: Map<st
       if (item.mask) omit(RcExport.omitMask());
       if (item.animate && Object.keys(item.animate).length > 0) omit(RcExport.omitAnimation());
       if (animated.has(item.id)) omit(RcExport.omitKeyframes());
-      // 取景点偏离居中时同裁剪一样写不进去。
+      // 取景点偏离居中或放大时同裁剪一样写不进去。
       const focal = item.type !== 'composition' ? item.focalPoint : undefined;
-      if ((item.type !== 'composition' && item.crop) || (focal && (focal.x !== 0.5 || focal.y !== 0.5))) omit(RcExport.omitCrop());
+      const framed = focal && (focal.x !== 0.5 || focal.y !== 0.5 || focalZoom(focal) !== 1);
+      if ((item.type !== 'composition' && item.crop) || framed) omit(RcExport.omitCrop());
       let inFrame = 0;
       if (item.type === 'video' || item.type === 'composition') {
         if (item.timeMap.kind !== 'linear') {

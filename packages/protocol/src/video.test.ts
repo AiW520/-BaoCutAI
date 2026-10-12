@@ -417,7 +417,7 @@ describe('framingFromCrop', () => {
     const c = crop ?? { left: 0, top: 0, right: 0, bottom: 0 };
     const rw = 1 - c.left - c.right;
     const rh = 1 - c.top - c.bottom;
-    const scale = Math.max(canvas.width / (rw * source.width), canvas.height / (rh * source.height));
+    const scale = Math.max(canvas.width / (rw * source.width), canvas.height / (rh * source.height)) * (focal?.zoom ?? 1);
     const u = canvas.width / (rw * source.width * scale);
     const v = canvas.height / (rh * source.height * scale);
     const { x, y } = focal ?? { x: 0.5, y: 0.5 };
@@ -453,6 +453,14 @@ describe('framingFromCrop', () => {
     expect(framing.crop?.bottom).toBe(0);
     expect(framing.focalPoint.x).toBe(0.5);
     same(visible(framing.crop, framing.focalPoint, portrait, landscape), visible(crop, focal, portrait, landscape));
+  });
+
+  it('原来的放大倍数算进看到的那块，换出来的取景点不再放大', () => {
+    const focal = { x: 0.3, y: 0.5, zoom: 2 };
+    const framing = framingFromCrop(null, landscape, portrait, focal)!;
+    expect(framing.focalPoint.zoom).toBeUndefined();
+    expect(framing.crop!.top + framing.crop!.bottom).toBeCloseTo(0.5, 4);
+    same(visible(framing.crop, framing.focalPoint, landscape, portrait), visible(null, focal, landscape, portrait));
   });
 
   it('没有多出来的画面时取景点居中；尺寸不可用时 null', () => {

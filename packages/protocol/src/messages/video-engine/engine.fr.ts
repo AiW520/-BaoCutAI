@@ -54,6 +54,7 @@ export const fr: EngineMessages = {
   cropRange: "Chaque bord de recadrage doit être dans [0, 1), left + right et top + bottom doivent être inférieurs à 1",
   cropNotVideoOrImage: "n’est ni une vidéo ni une image et ne peut pas être recadré",
   focalPointRange: "Les valeurs x et y du point focal doivent être comprises dans [0, 1]",
+  focalPointZoomRange: "Le zoom du point focal doit être compris dans [1, 4]",
   focalPointNotVideoOrImage: "n’est ni une vidéo ni une image et n’a donc pas de point focal",
   // elements.rs
 

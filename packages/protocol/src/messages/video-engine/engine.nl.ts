@@ -50,6 +50,7 @@ export const nl: EngineMessages = {
   cropRange: "Elke bijsnijrand moet liggen binnen [0, 1), en left + right en top + bottom moeten elk kleiner zijn dan 1",
   cropNotVideoOrImage: "is geen video of afbeelding, dus kan niet worden bijgesneden",
   focalPointRange: "x en y van het focuspunt moeten elk binnen [0, 1] liggen",
+  focalPointZoomRange: "De zoom van het focuspunt moet binnen [1, 4] liggen",
   focalPointNotVideoOrImage: "is geen video of afbeelding, dus heeft geen focuspunt",
 
   itemSpanInvalid: "Een clip mag niet vóór nul beginnen en moet minstens één frame lang zijn",

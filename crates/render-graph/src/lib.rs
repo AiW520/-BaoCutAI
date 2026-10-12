@@ -1393,8 +1393,11 @@ fn media_layer(
         }
         (Fit::Cover, Some((sw, sh))) => {
             let scale = (bw / sw).max(bh / sh);
-            let (u, v) = (bw / (sw * scale), bh / (sh * scale));
-            let rect = match focal.filter(|f| f.is_valid()) {
+            let focal = focal.filter(|f| f.is_valid());
+            // 取景点的放大倍数：取源的窗口按它缩小，于是源上 x、y 那一点仍落在框的 x、y 处，画面围着它放大。
+            let zoom = focal.map_or(1.0, FocalPoint::zoom);
+            let (u, v) = (bw / (sw * scale * zoom), bh / (sh * scale * zoom));
+            let rect = match focal {
                 // 取景点：多出来的部分按 x、y 分到两边（0 贴左 / 上，1 贴右 / 下）。
                 Some(f) => {
                     let (u0, v0) = ((1.0 - u) * f.x, (1.0 - v) * f.y);

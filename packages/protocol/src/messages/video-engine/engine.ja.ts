@@ -53,6 +53,7 @@ export const ja: EngineMessages = {
   cropRange: 'クロップの各辺は [0, 1) の範囲内で、左右の合計と上下の合計はそれぞれ 1 未満にしてください',
   cropNotVideoOrImage: '動画でも画像でもないため、クロップできません',
   focalPointRange: 'フォーカルポイントの x と y はどちらも [0, 1] の範囲内にしてください',
+  focalPointZoomRange: 'フォーカルポイントの拡大率は [1, 4] の範囲内にしてください',
   focalPointNotVideoOrImage: '動画でも画像でもないため、フォーカルポイントがありません',
 
   // elements.rs

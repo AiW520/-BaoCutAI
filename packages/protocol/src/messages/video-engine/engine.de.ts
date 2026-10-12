@@ -50,6 +50,7 @@ export const de: EngineMessages = {
   cropRange: "Jede Zuschnittkante muss in [0, 1) liegen; left + right und top + bottom müssen jeweils kleiner als 1 sein",
   cropNotVideoOrImage: "ist kein Video oder Bild und kann daher nicht zugeschnitten werden",
   focalPointRange: "x und y des Fokuspunkts müssen jeweils in [0, 1] liegen",
+  focalPointZoomRange: "Der Zoom des Fokuspunkts muss in [1, 4] liegen",
   focalPointNotVideoOrImage: "ist kein Video oder Bild und hat daher keinen Fokuspunkt",
 
   itemSpanInvalid: "Ein Clip darf nicht vor null beginnen und muss mindestens einen Frame lang sein",

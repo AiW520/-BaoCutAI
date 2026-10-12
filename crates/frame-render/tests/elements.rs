@@ -97,6 +97,13 @@ fn focal_point_picks_the_part_cover_keeps() {
     let centered = frame_at(Value::Null);
     near(px(&centered, 2, 45), RED, 2);
     near(px(&centered, 157, 45), BLUE, 2);
+    // 放大倍数围着取景点放大：x 0.4 时源上 256 那一点始终落在画面 64 处。不放大时取源 192..352，
+    // 右边缘越过中线是蓝；放大 2 倍只取 224..304，整幅都是红。
+    let plain = frame_at(json!({ "x": 0.4, "y": 0.5 }));
+    near(px(&plain, 157, 45), BLUE, 2);
+    let zoomed = frame_at(json!({ "x": 0.4, "y": 0.5, "zoom": 2 }));
+    near(px(&zoomed, 2, 45), RED, 2);
+    near(px(&zoomed, 157, 45), RED, 2);
 }
 
 #[test]

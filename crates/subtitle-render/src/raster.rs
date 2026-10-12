@@ -11,24 +11,26 @@ pub fn draw_fit_pixmap_at(
     opacity: f32,
     anchor_x: f64,
 ) {
-    draw_fit_pixmap_anchored(destination, source, fit, opacity, [anchor_x, 0.5]);
+    draw_fit_pixmap_anchored(destination, source, fit, opacity, [anchor_x, 0.5], 1.0);
 }
 
 /// 同 [`draw_fit_pixmap`]，水平、竖直余量分别按 `anchor` 的 x、y 分配（视频格式规范 §3.5 的取景点）：
-/// 0 贴左（上）、0.5 居中、1 贴右（下）。
+/// 0 贴左（上）、0.5 居中、1 贴右（下）。`zoom`（≥ 1）是 `cover` 在刚好铺满之上再放大多少：余量照旧按
+/// `anchor` 分，所以源上 anchor 那一点仍落在目标的 anchor 处，画面围着它放大。`contain` 不看它。
 pub fn draw_fit_pixmap_anchored(
     destination: &mut Pixmap,
     source: &Pixmap,
     fit: Fit,
     opacity: f32,
     [anchor_x, anchor_y]: [f64; 2],
+    zoom: f64,
 ) {
     let source_width = f64::from(source.width().max(1));
     let source_height = f64::from(source.height().max(1));
     let destination_width = f64::from(destination.width());
     let destination_height = f64::from(destination.height());
     let scale = match fit {
-        Fit::Cover => (destination_width / source_width).max(destination_height / source_height),
+        Fit::Cover => (destination_width / source_width).max(destination_height / source_height) * zoom.max(1.0),
         Fit::Contain => (destination_width / source_width).min(destination_height / source_height),
     };
     let width = source_width * scale;

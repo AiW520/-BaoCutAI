@@ -53,6 +53,7 @@ export const ptBR: EngineMessages = {
   cropRange: "Cada borda deve estar em [0, 1), e left + right e top + bottom devem ser menores que 1",
   cropNotVideoOrImage: "não é vídeo nem imagem e não pode ser recortado",
   focalPointRange: "x e y do ponto focal devem estar em [0, 1]",
+  focalPointZoomRange: "O zoom do ponto focal deve estar em [1, 4]",
   focalPointNotVideoOrImage: "não é vídeo nem imagem e não tem ponto focal",
 
   // elements.rs

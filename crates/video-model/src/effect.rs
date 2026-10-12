@@ -183,16 +183,31 @@ impl Crop {
 
 /// 取景点（§3.5）：`cover` 裁掉多余部分时留哪一段。`x`、`y` 在 [0, 1]：0 贴左（上）、0.5 居中、1 贴右（下），
 /// 同 CSS `object-position` 的百分比。源画面不裁，换画幅时多出来的画面还在。
+/// `zoom` 是在刚好铺满之上再放大多少，[1, [`FocalPoint::MAX_ZOOM`]]，省略为 1：源画面上 `x`、`y` 那一点
+/// 在画面上的位置不动，围着它放大。
 #[derive(Clone, Copy, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct FocalPoint {
     pub x: f64,
     pub y: f64,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub zoom: Option<f64>,
 }
 
 impl FocalPoint {
+    pub const MAX_ZOOM: f64 = 4.0;
+
     pub fn is_valid(&self) -> bool {
-        [self.x, self.y].iter().all(|v| v.is_finite() && (0.0..=1.0).contains(v))
+        [self.x, self.y].iter().all(|v| v.is_finite() && (0.0..=1.0).contains(v)) && self.zoom_is_valid()
+    }
+
+    pub fn zoom_is_valid(&self) -> bool {
+        self.zoom.is_none_or(|z| z.is_finite() && (1.0..=Self::MAX_ZOOM).contains(&z))
+    }
+
+    /// 放大倍数，省略为 1。
+    pub fn zoom(&self) -> f64 {
+        self.zoom.unwrap_or(1.0)
     }
 }
 
@@ -255,9 +270,21 @@ mod tests {
 
     #[test]
     fn focal_point_bounds() {
-        assert!(FocalPoint { x: 0.0, y: 1.0 }.is_valid());
-        assert!(!FocalPoint { x: -0.1, y: 0.5 }.is_valid());
-        assert!(!FocalPoint { x: 0.5, y: f64::NAN }.is_valid());
+        let at = |x: f64, y: f64, zoom: Option<f64>| FocalPoint { x, y, zoom };
+        assert!(at(0.0, 1.0, None).is_valid());
+        assert!(!at(-0.1, 0.5, None).is_valid());
+        assert!(!at(0.5, f64::NAN, None).is_valid());
+        assert!(at(0.5, 0.5, Some(1.0)).is_valid());
+        assert!(at(0.5, 0.5, Some(FocalPoint::MAX_ZOOM)).is_valid());
+        assert!(!at(0.5, 0.5, Some(0.9)).is_valid(), "比铺满还小会露出背景");
+        assert!(!at(0.5, 0.5, Some(4.5)).is_valid());
+        assert!(!at(0.5, 0.5, Some(f64::INFINITY)).zoom_is_valid());
+        assert_eq!(at(0.5, 0.5, None).zoom(), 1.0);
         assert!(serde_json::from_value::<FocalPoint>(json!({ "x": 0.5, "y": 0.5, "z": 1 })).is_err());
+        /* 没写 zoom 的照旧读写，写出时也不多出 zoom */
+        let plain: FocalPoint = serde_json::from_value(json!({ "x": 0.3, "y": 0.5 })).unwrap();
+        assert_eq!(serde_json::to_value(plain).unwrap(), json!({ "x": 0.3, "y": 0.5 }));
+        let zoomed: FocalPoint = serde_json::from_value(json!({ "x": 0.3, "y": 0.5, "zoom": 1.5 })).unwrap();
+        assert_eq!(zoomed.zoom(), 1.5);
     }
 }

@@ -53,6 +53,7 @@ export const ru: EngineMessages = {
   cropRange: "Каждая граница обрезки должна быть в [0, 1), а left + right и top + bottom — меньше 1",
   cropNotVideoOrImage: "не является видео или изображением и не может обрезаться",
   focalPointRange: "Координаты x и y точки фокуса должны быть в [0, 1]",
+  focalPointZoomRange: "Увеличение точки фокуса должно быть в [1, 4]",
   focalPointNotVideoOrImage: "не является видео или изображением и не имеет точки фокуса",
 
   // elements.rs

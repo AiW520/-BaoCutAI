@@ -53,6 +53,7 @@ export const zhHans: EngineMessages = {
   cropRange: '裁剪的每一边须在 [0, 1) 之间，左右、上下之和须小于 1',
   cropNotVideoOrImage: '不是视频或图片，不能裁剪',
   focalPointRange: '取景点的 x、y 都须在 [0, 1] 之间',
+  focalPointZoomRange: '取景点的放大倍数须在 [1, 4] 之间',
   focalPointNotVideoOrImage: '不是视频或图片，没有取景点',
 
   // elements.rs

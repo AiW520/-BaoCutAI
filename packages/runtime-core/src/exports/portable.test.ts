@@ -449,6 +449,8 @@ describe.skipIf(!engine || !ffmpeg)('便携包与工程导出（真实引擎）'
         itemId: snapshotOf(videoId).sequences[sequenceId]!.items.find((i) => i.type === 'audio')!.id,
         volume: 0.5,
       },
+      // 居中但放大的取景点同裁剪一样写不进工程。
+      { type: 'setStyle', sequenceId, itemId: clipItem.id, focalPoint: { x: 0.5, y: 0.5, zoom: 2 } },
       { type: 'addTrack', sequenceId, kind: 'visual', name: '标题' },
     ]);
     const titleTrack = snapshotOf(videoId).sequences[sequenceId]!.tracks.find((t) => t.name === '标题')!.id;
@@ -483,6 +485,7 @@ describe.skipIf(!engine || !ffmpeg)('便携包与工程导出（真实引擎）'
     expect(xml).toContain(`<start>${clipItem.type === 'video' ? clipItem.span.fromFrame : 0}</start>`);
     const omitted = job.warnings.filter((w) => w.code === 'PROJECT_ITEM_OMITTED');
     expect(omitted.some((w) => w.detail?.includes('音量'))).toBe(true);
+    expect(omitted.some((w) => w.detail?.includes(clipItem.id) && w.detail.includes('裁剪'))).toBe(true);
     // 文字没有写进工程，警告点名到实例。
     const text = snapshotOf(videoId).sequences[sequenceId]!.items.find((i) => i.type === 'text')!;
     expect(omitted.find((w) => w.detail?.includes(text.id))?.detail).toContain('文字');

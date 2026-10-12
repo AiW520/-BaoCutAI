@@ -156,15 +156,21 @@ fn focal_point_moves_the_cover_window_without_cropping_the_source() {
     };
     // 1080×1920 铺满 1920×1080：多出来的高按 y 分到上下，0 贴上、1 贴下；横向没有多出来，x 不起作用。
     let kept = (1080.0f64 / 1920.0).powi(2);
-    let top = with(FocalPoint { x: 0.0, y: 0.0 }, None);
+    let top = with(FocalPoint { x: 0.0, y: 0.0, zoom: None }, None);
     assert_eq!((top[0], top[2]), (0.0, 1.0));
     assert!(top[1].abs() < 1e-12 && (top[3] - kept).abs() < 1e-12);
-    let bottom = with(FocalPoint { x: 1.0, y: 1.0 }, None);
+    let bottom = with(FocalPoint { x: 1.0, y: 1.0, zoom: None }, None);
     assert!((bottom[1] - (1.0 - kept)).abs() < 1e-12 && (bottom[3] - 1.0).abs() < 1e-12);
     // 取景点在裁剪留下的画面里定位：上下各裁 10% 后贴上，窗口从 0.1 开始。
     let crop = Crop { left: 0.0, top: 0.1, right: 0.0, bottom: 0.1 };
-    let cropped = with(FocalPoint { x: 0.5, y: 0.0 }, Some(crop));
+    let cropped = with(FocalPoint { x: 0.5, y: 0.0, zoom: None }, Some(crop));
     assert!((cropped[1] - 0.1).abs() < 1e-12);
+    // 放大 2 倍：窗口宽高各减半，源上取景点那一点仍落在框里的同一处（x 0.3 → 框的 30%）。
+    let (fx, fy) = (0.3, 0.6);
+    let zoomed = with(FocalPoint { x: fx, y: fy, zoom: Some(2.0) }, None);
+    let (u, v) = (zoomed[2] - zoomed[0], zoomed[3] - zoomed[1]);
+    assert!((u - 0.5).abs() < 1e-12 && (v - kept / 2.0).abs() < 1e-12);
+    assert!(((fx - zoomed[0]) / u - fx).abs() < 1e-12 && ((fy - zoomed[1]) / v - fy).abs() < 1e-12);
 }
 
 #[test]

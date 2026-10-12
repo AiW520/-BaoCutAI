@@ -243,10 +243,21 @@ export interface Crop {
 /**
  * 取景点：`cover` 裁掉多余部分时留哪一段（视频格式规范 §3.5），同 CSS `object-position` 的百分比。`x`、`y` 在 [0, 1]：
  * 0 贴左（上）、0.5 居中、1 贴右（下）。源画面不裁，换画幅时多出来的画面还在。
+ * `zoom` 在刚好铺满之上再放大多少，[1, {@link FOCAL_MAX_ZOOM}]，省略为 1：源上 `x`、`y` 那一点在画面上的位置不动，围着它放大。
  */
 export interface FocalPoint {
   x: number;
   y: number;
+  zoom?: number;
+}
+
+/** 取景点放大倍数的上限（视频格式规范 §3.5）。 */
+export const FOCAL_MAX_ZOOM = 4;
+
+/** 取景点的放大倍数：省略或越界的按 [1, {@link FOCAL_MAX_ZOOM}] 夹取，缺省 1。 */
+export function focalZoom(focal: FocalPoint | null | undefined): number {
+  const z = focal?.zoom;
+  return typeof z === 'number' && Number.isFinite(z) ? Math.min(FOCAL_MAX_ZOOM, Math.max(1, z)) : 1;
 }
 
 /** 视觉媒体的字段：视频、图片、素材贴纸、占位框与白板共用。 */
@@ -605,7 +616,8 @@ export interface Framing {
 /**
  * 把「裁剪 + 铺满」的取景换成不丢画面的写法（视频格式规范 §3.5）：在 `canvas` 上看到的还是同一块，只是铺满时多出来的那一边
  * 不再裁掉，改由取景点定位，换画幅时那部分画面还在。源比画布宽时放开左右（上下的裁剪留着，那是放大或去黑边），否则放开上下。
- * `source` 是源的显示尺寸，`focalPoint` 是原来的取景点（缺省居中）。尺寸不可用或裁剪越界时 null。
+ * `source` 是源的显示尺寸，`focalPoint` 是原来的取景点（缺省居中）；它的放大倍数算进看到的那块，换出来的取景点不再放大。
+ * 尺寸不可用或裁剪越界时 null。
  */
 export function framingFromCrop(
   crop: Crop | null | undefined,
@@ -619,7 +631,7 @@ export function framingFromCrop(
   const sizes = [source.width, source.height, canvas.width, canvas.height, rw, rh];
   if (!sizes.every((v) => Number.isFinite(v) && v > 0) || [c.left, c.top, c.right, c.bottom].some((v) => !(v >= 0))) return null;
   // 现在在画布上看到的那块（源的归一化坐标）。
-  const scale = Math.max(canvas.width / (rw * source.width), canvas.height / (rh * source.height));
+  const scale = Math.max(canvas.width / (rw * source.width), canvas.height / (rh * source.height)) * focalZoom(focalPoint);
   const u = canvas.width / (rw * source.width * scale);
   const v = canvas.height / (rh * source.height * scale);
   const fx = focalPoint?.x ?? 0.5;

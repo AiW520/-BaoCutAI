@@ -57,6 +57,7 @@ pub fn visual_element<'a>(
         mode,
         fit,
         focal: None,
+        zoom: 1.0,
         // 合成替身没有底：全屏 + contain 的留边与透明像素都露出下层（视频格式规范 §3.7）。
         bg: match item {
             TimelineItem::Composition(_) => None,
@@ -81,10 +82,10 @@ pub fn visual_element<'a>(
         whiteboard: None,
     };
     match item {
-        TimelineItem::Video(video) => element.focal = focal(video.focal_point.as_ref()),
+        TimelineItem::Video(video) => (element.focal, element.zoom) = focal(video.focal_point.as_ref()),
         TimelineItem::Image(image) => {
             element.tile = image.tile.as_ref().map(video_model::Tile::to_timeline);
-            element.focal = focal(image.focal_point.as_ref());
+            (element.focal, element.zoom) = focal(image.focal_point.as_ref());
         }
         TimelineItem::Text(text) => {
             element.text = text.text.clone();
@@ -106,9 +107,12 @@ pub fn visual_element<'a>(
     Some(element)
 }
 
-/// `cover` 的取景点（§3.5）；越界的当作没有（居中），与帧计划相同。
-fn focal(point: Option<&video_model::FocalPoint>) -> Option<[f64; 2]> {
-    point.filter(|f| f.is_valid()).map(|f| [f.x, f.y])
+/// `cover` 的取景点与放大倍数（§3.5）；越界的当作没有（居中、不放大），与帧计划相同。
+fn focal(point: Option<&video_model::FocalPoint>) -> (Option<[f64; 2]>, f64) {
+    match point.filter(|f| f.is_valid()) {
+        Some(f) => (Some([f.x, f.y]), f.zoom()),
+        None => (None, 1.0),
+    }
 }
 
 /// 内核的元素种类。合成实例按视频画（它的画面是预渲染替身）。

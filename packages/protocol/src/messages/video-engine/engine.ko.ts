@@ -53,6 +53,7 @@ export const ko: EngineMessages = {
   cropRange: '자르기의 각 가장자리는 [0, 1) 범위여야 하며, 왼쪽 + 오른쪽과 위 + 아래는 각각 1보다 작아야 합니다',
   cropNotVideoOrImage: '영상이나 이미지가 아니어서 자를 수 없습니다',
   focalPointRange: '초점의 x와 y는 각각 [0, 1] 범위여야 합니다',
+  focalPointZoomRange: '초점 확대 배율은 [1, 4] 범위여야 합니다',
   focalPointNotVideoOrImage: '영상이나 이미지가 아니어서 초점이 없습니다',
 
   // elements.rs

@@ -295,7 +295,7 @@ export const EDIT_OPERATIONS: readonly EditOperationSpec[] = [
     type: 'setStyle',
     family: 'styles',
     doc: [
-      '- {"type":"setStyle","itemId","mode"?:"fullscreen"|"pip","fit"?:"cover"|"contain","bg"?:"blur"|"black"|"#RRGGBB","opacity"?,"radius"?,"mask"?:{"shape":"ellipse","feather"?},"crop"?:{"left","top","right","bottom"},"focalPoint"?:{"x","y"},"style"?:{…},"verticalAlign"?:"top"|"center"|"bottom"}：改片段的外观，只改给出的字段，给 null 回到缺省。mode 只用于视频、图片、素材贴纸、占位框与白板：fullscreen 铺满画布（画中画的位置与宽保留，切回 pip 时还原），pip 按 setTransform 的位置与宽摆放，缺省为 pip；fit 是铺满时裁切（cover）还是留边（contain），bg 是留边的底。opacity 在 0 到 1；radius 是圆角，按 540 短边下的像素；mask 的 feather 不小于 0；crop 每边是 0 到 1 的比例，左右、上下之和小于 1，只用于视频与图片；focalPoint 是 cover 裁掉多余部分时留哪一段（x、y 在 0 到 1，0 贴左 / 上，0.5 居中，1 贴右 / 下），源画面不裁，换画幅时还在，只用于视频与图片。style 与 verticalAlign 只用于文字片段。',
+      '- {"type":"setStyle","itemId","mode"?:"fullscreen"|"pip","fit"?:"cover"|"contain","bg"?:"blur"|"black"|"#RRGGBB","opacity"?,"radius"?,"mask"?:{"shape":"ellipse","feather"?},"crop"?:{"left","top","right","bottom"},"focalPoint"?:{"x","y","zoom"?},"style"?:{…},"verticalAlign"?:"top"|"center"|"bottom"}：改片段的外观，只改给出的字段，给 null 回到缺省。mode 只用于视频、图片、素材贴纸、占位框与白板：fullscreen 铺满画布（画中画的位置与宽保留，切回 pip 时还原），pip 按 setTransform 的位置与宽摆放，缺省为 pip；fit 是铺满时裁切（cover）还是留边（contain），bg 是留边的底。opacity 在 0 到 1；radius 是圆角，按 540 短边下的像素；mask 的 feather 不小于 0；crop 每边是 0 到 1 的比例，左右、上下之和小于 1，只用于视频与图片；focalPoint 是 cover 裁掉多余部分时留哪一段（x、y 在 0 到 1，0 贴左 / 上，0.5 居中，1 贴右 / 下），源画面不裁，换画幅时还在；zoom 是在刚好铺满之上再放大多少（1 到 4，缺省 1），源上 x、y 那一点在画面上不动、围着它放大；只用于视频与图片。style 与 verticalAlign 只用于文字片段。',
     ],
     schema: op('setStyle', {
       itemId: idOf('画面片段 ID'),
@@ -320,7 +320,11 @@ export const EDIT_OPERATIONS: readonly EditOperationSpec[] = [
         .optional()
         .describe('裁剪（视频与图片），每边 0 到 1'),
       focalPoint: z
-        .object({ x: z.number().describe('0 贴左、0.5 居中、1 贴右'), y: z.number().describe('0 贴上、0.5 居中、1 贴下') })
+        .object({
+          x: z.number().describe('0 贴左、0.5 居中、1 贴右'),
+          y: z.number().describe('0 贴上、0.5 居中、1 贴下'),
+          zoom: z.number().optional().describe('在刚好铺满之上再放大多少，1 到 4，缺省 1；围着取景点放大'),
+        })
         .nullable()
         .optional()
         .describe('取景点（视频与图片）：cover 留下哪一段'),

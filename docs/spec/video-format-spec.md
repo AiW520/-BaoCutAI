@@ -608,7 +608,7 @@ interface Tile {
 }
 
 interface Crop { left: number; top: number; right: number; bottom: number }   // 四边各裁掉的比例
-interface FocalPoint { x: number; y: number }   // cover 留下哪一段，[0, 1]
+interface FocalPoint { x: number; y: number; zoom?: number }   // cover 留下哪一段，[0, 1]；zoom 在铺满之上再放大，[1, 4]
 ```
 
 - 数值都必须是有限数。`x`、`y` 可以落在画布之外。
@@ -620,7 +620,7 @@ interface FocalPoint { x: number; y: number }   // cover 留下哪一段，[0, 1
 - **平铺**。实例的画面按网格重复铺满画布：网格以画布中心为原点，排好点位后整体旋转 `angle`；横向步长是单格宽加 `gapX`% 的画布宽，纵向同理。点位由 `timeline::geometry::tile_stamp_points` 给出，预览与导出共用。
 - 文字的纵向钉点是 `TextItem.verticalAlign`（§3.6），不在 `place` 里。
 - **裁剪**（`crop`）从源的显示画面（已按旋转元数据摆正）四边各裁掉一个比例：每边在 [0, 1)，左右之和、上下之和都小于 1。四边都是 0 等于没有裁剪，不保存。裁剪在 `fit` 之前：留下的区域当作源画面，它的宽高比参与框的高与 `fit`。
-- **取景点**（`focalPoint`）决定 `cover` 裁掉多余部分时留哪一段，同 CSS `object-position` 的百分比：`x`、`y` 各在 [0, 1]，0 贴左（上）、0.5 居中、1 贴右（下），多出来的部分按它分到两边。它在裁剪之后定位，只对 `cover` 起作用，不改框，也不裁源画面：换画幅时多出来的画面还在。省略时居中，与没有这个字段的文档一样。换画幅的取景（剪成短视频）写取景点而不是把左右或上下裁掉；`videos.derive` 收到裁剪时，全屏加 `cover` 的视频按派生画布换成取景点，铺满方向上多出来的那一边不裁，另一边的裁剪（放大、去黑边）留着，看到的画面不变。
+- **取景点**（`focalPoint`）决定 `cover` 裁掉多余部分时留哪一段，同 CSS `object-position` 的百分比：`x`、`y` 各在 [0, 1]，0 贴左（上）、0.5 居中、1 贴右（下），多出来的部分按它分到两边。它在裁剪之后定位，只对 `cover` 起作用，不改框，也不裁源画面：换画幅时多出来的画面还在。省略时居中，与没有这个字段的文档一样。`zoom` 是在刚好铺满之上再放大多少，在 [1, 4]，缺省 1；1 不保存（写 1 时去掉这个字段）。放大围着取景点：`cover` 的倍率乘上 `zoom`，源画面上 (`x`, `y`) 那一点仍落在框里的 (`x`, `y`) 处，所以画面始终铺满、不露底；它同样只对 `cover` 起作用，不改框。放大不借用 `place.scale`：`place.scale` 是可以打关键帧的整体倍率，铺满时按框中心放大，与取景点无关；取景的放大跟着取景点走，换画幅时随取景点一起重算。换画幅的取景（剪成短视频）写取景点而不是把左右或上下裁掉；`videos.derive` 收到裁剪时，全屏加 `cover` 的视频按派生画布换成取景点，铺满方向上多出来的那一边不裁，另一边的裁剪（放大、去黑边）留着，看到的画面不变。
 - 选中框、命中框与露底检查读静态的 `place`；关键帧与元素动画叠在它上面（§3.15）。
 
 字段来源：`schema.rs` 的 `Place`、`CornerRadii`、`VisualMode`、`Fit`、`Background`、`Tile`；`geometry.rs` 的 `default_place`、`width_basis`、`static_box`、`media_box`、`tile_stamp_points`。

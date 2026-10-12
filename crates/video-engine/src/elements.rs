@@ -231,6 +231,9 @@ fn check_v3_fields(item: &TimelineItem) -> Result<(), Text> {
         TimelineItem::Video(VideoItem { focal_point: Some(f), .. }) | TimelineItem::Image(ImageItem { focal_point: Some(f), .. })
             if !f.is_valid() =>
         {
+            if !f.zoom_is_valid() {
+                return Err(msg!("engine.focalPointZoomRange", "The focal point zoom must be within [1, 4]"));
+            }
             return Err(msg!("engine.focalPointRange", "The focal point x and y must each be within [0, 1]"));
         }
         TimelineItem::Text(t) => {

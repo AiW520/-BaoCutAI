@@ -53,6 +53,7 @@ export const zhHant: EngineMessages = {
   cropRange: '每個裁切邊都必須在 [0, 1) 範圍內，且左 + 右、上 + 下都必須小於 1',
   cropNotVideoOrImage: '不是影片或圖片，因此無法裁切',
   focalPointRange: '取景點的 x、y 都須在 [0, 1] 之間',
+  focalPointZoomRange: '取景點的放大倍數須在 [1, 4] 之間',
   focalPointNotVideoOrImage: '不是影片或圖片，因此沒有取景點',
 
   // elements.rs

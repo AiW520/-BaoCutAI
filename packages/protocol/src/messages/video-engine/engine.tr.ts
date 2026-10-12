@@ -53,6 +53,7 @@ export const tr: EngineMessages = {
   cropRange: "Her kırpma kenarı [0, 1) içinde olmalı; left + right ve top + bottom ayrı ayrı 1’den küçük olmalı",
   cropNotVideoOrImage: "video veya görsel değil; kırpılamaz",
   focalPointRange: "Odak noktasının x ve y değerleri [0, 1] aralığında olmalı",
+  focalPointZoomRange: "Odak noktasının yakınlaştırması [1, 4] aralığında olmalı",
   focalPointNotVideoOrImage: "video veya görsel değil; odak noktası yok",
 
   // elements.rs

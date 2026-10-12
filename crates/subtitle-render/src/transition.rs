@@ -264,6 +264,8 @@ pub struct TimelineVisualElement {
     pub fit: Fit,
     /// `cover` 的取景点 `[x, y]`（视频格式规范 §3.5）：多出来的部分按它分到两边。`None` 居中。
     pub focal: Option<[f64; 2]>,
+    /// 取景点的放大倍数（≥ 1，视频格式规范 §3.5）：`cover` 在刚好铺满之上再放大多少，围着 `focal` 放大。没有 `focal` 时为 1。
+    pub zoom: f64,
     /// 全屏 + contain 时留边的底。`None` 不预填底板：合成实例的预渲染替身（视频格式规范 §3.7）没有
     /// `bg`，透明区域要露出下层。
     pub bg: Option<Background>,
@@ -345,6 +347,7 @@ impl TimelineVisualElement {
             mode: VisualMode::Pip,
             fit: Fit::Cover,
             focal: None,
+            zoom: 1.0,
             bg: Some(Background::Black),
             text: None,
             counter: None,

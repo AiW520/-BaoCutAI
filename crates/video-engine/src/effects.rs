@@ -51,14 +51,17 @@ pub(crate) fn apply_crop(item: &mut TimelineItem, item_id: &str, crop: Option<&C
 
 pub(crate) fn check_focal_point(item_id: &str, focal: &FocalPoint) -> EngineResult<()> {
     if !focal.is_valid() {
-        return Err(ErrorBody::invalid_operation(msg!("engine.focalPointRange", "The focal point x and y must each be within [0, 1]"))
-            .entities([item_id])
-            .details(json!({ "focalPoint": focal })));
+        let message = if focal.zoom_is_valid() {
+            msg!("engine.focalPointRange", "The focal point x and y must each be within [0, 1]")
+        } else {
+            msg!("engine.focalPointZoomRange", "The focal point zoom must be within [1, 4]")
+        };
+        return Err(ErrorBody::invalid_operation(message).entities([item_id]).details(json!({ "focalPoint": focal })));
     }
     Ok(())
 }
 
-/// `setStyle` 的 `focalPoint`：`null` 去掉（居中）。只有视频与图片有取景点。
+/// `setStyle` 的 `focalPoint`：`null` 去掉（居中、不放大）。只有视频与图片有取景点。放大倍数 1 不写出。
 pub(crate) fn apply_focal_point(item: &mut TimelineItem, item_id: &str, focal: Option<&FocalPoint>) -> EngineResult<()> {
     if let Some(f) = focal {
         check_focal_point(item_id, f)?;
@@ -73,6 +76,6 @@ pub(crate) fn apply_focal_point(item: &mut TimelineItem, item_id: &str, focal: O
             ));
         }
     };
-    *slot = focal.copied();
+    *slot = focal.map(|f| FocalPoint { zoom: f.zoom.filter(|z| *z != 1.0), ..*f });
     Ok(())
 }
