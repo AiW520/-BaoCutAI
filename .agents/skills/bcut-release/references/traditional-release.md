@@ -72,7 +72,7 @@ remote branch HEAD.
    targeting it, with `--latest=false`. Retain its actual URL for the final report
    and open it in the Codex browser when useful. Write the prepared changelog with
    `--notes-file`, including new Bundle ID, architecture, signing/notarization and
-   verified dependencies. Preserve the old skill's GitHub Latest.
+   verified dependencies. Advance Latest only at the shared completion step.
 3. Upload ZIP, DMG, checksums, sanitized report and appcast. Remove local-only paths
    from the report. No private signing materials or intermediate submissions belong
    in release assets.
@@ -100,7 +100,7 @@ list. Publish only variants whose native job passed and whose artifact exists.
 The publisher checks candidate workflow/repository/source against the Mac report,
 verifies each file and update feed, appends immutable assets, independently reads
 them back, and then commits/pushes only Windows update pins. It preserves Mac assets
-and the historical skill's Latest. The run URL and full source SHA are recorded in
+and the previous Latest during publication. The run URL and full source SHA are recorded in
 the supplemental Windows reports. A rerun may skip identical assets, never overwrite
 different bytes. Failed or unverified GPU variants remain unpublished; native startup
 does not imply inference has been tested on CUDA/Vulkan hardware.
@@ -131,5 +131,6 @@ published release or platform continuation, include its URL and verify public
 downloads and the live feed. Then check the download links following
 [download links](download-links.md) and report the baocut.com check. No README or
 site change is needed.
-Also report the changelog comparison range and completed coverage reconciliation.
+Complete the shared [Latest step](../SKILL.md#complete-public-release), then report
+the verified Latest tag, changelog comparison range and coverage reconciliation.
 A local-only request must not trigger a tag push or GitHub publication.

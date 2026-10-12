@@ -32,7 +32,7 @@ scope; follow the user's explicit method and limits.
 - `apps/desktop/package.json` owns the App version. Synchronize root version and
   lockfile through npm; do not bump Cargo or protocol versions for an App release.
 - Query actual releases/feeds before choosing a build. Builds strictly increase;
-  already published tags/files are immutable and historical skill Latest is preserved.
+  already published tags/files are immutable.
 - Keep the tag and all platform artifacts tied to one full source SHA. Never ship
   dirty-source binaries, private signing materials or intermediate notary submissions.
 - For every new published version/build, follow [release notes](references/release-notes.md):
@@ -47,6 +47,24 @@ scope; follow the user's explicit method and limits.
 - Report actual checks and skips. A tag push or credential check alone is not a
   completed release; publication requires successful jobs, public read-back, feeds,
   verified release notes and a passing baocut.com download check.
+
+## Complete public release
+
+After all selected platforms have published, public assets and feeds have passed
+read-back, and the consolidated release notes are verified, mark the newest stable
+desktop release **Latest** in GitHub's Releases tab:
+
+```bash
+gh release edit "$release_tag" --repo "$release_repo" --latest
+gh api "repos/$release_repo/releases/latest" --jq '.tag_name'
+```
+
+Use the verified repository and tag for this task; the read-back must match that
+tag. Platform publishers preserve the previous Latest while validation and uploads
+are in progress, so this final step is required even when Actions succeeds.
+Local candidates, drafts and prereleases do not advance Latest. When continuing
+an older release, keep a newer published desktop version/build as Latest. Include
+the verified Latest tag in the completion report.
 
 The [desktop guide](../../../apps/desktop/README.md) owns packaging mechanics;
 mode-specific references explain when to load it. Requests only to change release

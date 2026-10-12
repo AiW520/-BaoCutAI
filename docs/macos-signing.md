@@ -201,7 +201,7 @@ rm -f "$RUNNER_TEMP/baocut-signing.p12" "$RUNNER_TEMP/baocut-notary.p8" \
 
 ### 5.4 Release tag 自动发布
 
-统一入口为 `.github/workflows/desktop-release.yml`，匹配 `baocut-v<MAJOR>.<MINOR>.<PATCH>-build.<BUILD>`，例如 `baocut-v3.0.1-build.61`。只接受不带前导零的稳定版本号和正整数 build；tag 版本必须同时等于根包、桌面包及 lockfile 中的版本。build 高于所有平台当前更新源，版本不倒退；tag 指向的提交必须已在 `main` 上。tag 与公开文件保持不可变，历史 skill 的 Latest 保持不变。
+统一入口为 `.github/workflows/desktop-release.yml`，匹配 `baocut-v<MAJOR>.<MINOR>.<PATCH>-build.<BUILD>`，例如 `baocut-v3.0.1-build.61`。只接受不带前导零的稳定版本号和正整数 build；tag 版本必须同时等于根包、桌面包及 lockfile 中的版本。build 高于所有平台当前更新源，版本不倒退；tag 指向的提交必须已在 `main` 上。tag 与公开文件保持不可变；全部选定平台发布与验证完成后，按[发布 skill 的完成步骤](../.agents/skills/bcut-release/SKILL.md#complete-public-release)将最新稳定桌面版本标记为 GitHub Latest。
 
 完成版本更新、验证并提交到 `main` 后，用已推送的完整源 commit 打 tag：
 

@@ -44,7 +44,8 @@ Find the `desktop-release.yml` push run whose tag and full source SHA match this
 release. Mac arm64 and Windows x64 CPU/CUDA/Vulkan build in parallel. All native
 jobs must pass before publishing. Mac publishes first, then all three Windows
 variants append to that same release, with public read-back before each feed update.
-The workflow preserves historical Latest, existing assets and unrelated feeds.
+The workflow preserves the previous Latest during publication, existing assets
+and unrelated feeds.
 
 Wait for the native jobs and both publishers, then merge the prepared changelog
 into the actual Release body and verify it by read-back as described in
@@ -52,7 +53,8 @@ into the actual Release body and verify it by read-back as described in
 release as described in [download links](download-links.md). No README or site
 change is needed. Merely pushing the tag is not a successful publication. Report
 the run/release URLs, full source SHA, published platforms, the baocut.com check
-and actual verification/skips.
+and actual verification/skips. Complete the shared [Latest step](../SKILL.md#complete-public-release)
+after all publication and download checks pass.
 UI/export, real model/GPU inference and paid Agent calls are not automated and
 must not be described as passed.
 

@@ -40,6 +40,6 @@ commit 的 type 与统一 scope 按[开发流程 §1.1](../../../../docs/develop
    gh release view "$release_tag" --repo "$release_repo" --json body,url,tagName
    ```
 
-   变量指向核实过的仓库、tag 和已整合的正文文件。不要在平台发布任务仍写正文时抢先覆盖，不改变 Latest、tag、assets 或 feeds。正文中已有本版本更新日志时更新该部分，保留其他段落，避免重试追加重复内容。
+   变量指向核实过的仓库、tag 和已整合的正文文件。不要在平台发布任务仍写正文时抢先覆盖；正文编辑不改变 Latest、tag、assets 或 feeds。全部发布与验证完成后，按 [skill 的完成步骤](../SKILL.md#complete-public-release)标记并读回 Latest。正文中已有本版本更新日志时更新该部分，保留其他段落，避免重试追加重复内容。
 3. 读回核对版本与范围、各类变更、来源链接、平台说明均保留且无重复。若发布任务重跑又修改正文，再核对并按需补回；未写入或读回不一致时，发布任务尚未完整完成。
 4. 最终报告提供 Release 链接、比较范围、覆盖数量与批次核对结果，并说明实际来源缺失或跳过项。不要把自动平台说明或 GitHub 自动生成的 PR 列表当作已整理完成的更新日志。

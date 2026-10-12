@@ -47,7 +47,7 @@ Electron-builder 先装成 `BaoCut.app`；签名脚本用完整证书指纹选�
 
 共享字体的产物检查用 `node apps/desktop/tools/check-file-fonts.mjs --out=/路径/BaoCut.app/Contents/Resources/app.asar/out`：隐藏 Electron 窗口读取最终 ASAR 中的页面和字体 URL，核对清单中的字体全部加载并注入预览内核；不启动 Runtime，也不读取用户数据。
 
-发布通过 GitHub Releases，归档文件名与内容不可变。`--download-base-url` 生成 App 自己的解析器验证过的 ZIP 更新清单；公开归档读回通过后才更新 `apps/desktop/releases/` 的版本钉。新版使用独立 ID，不将旧版官网的更新源直接换成新包；旧 skill 的 GitHub Latest 保持原状。具体顺序见发布 skill。
+发布通过 GitHub Releases，归档文件名与内容不可变。`--download-base-url` 生成 App 自己的解析器验证过的 ZIP 更新清单；公开归档读回通过后才更新 `apps/desktop/releases/` 的版本钉。新版使用独立 ID，不将旧版官网的更新源直接换成新包；全部选定平台发布与验证完成后，将最新稳定桌面版本标记为 GitHub Latest，步骤见[发布 skill](../../.agents/skills/bcut-release/SKILL.md#complete-public-release)。
 
 **GitHub Actions**：推送 `baocut-v<VERSION>-build.<BUILD>` release tag 自动触发 `desktop-release`，从 tag 的同一提交构建 Mac Apple Silicon 与 Windows x64 CPU、CUDA、Vulkan；全部原生检查通过后发布到同一个 Release，并更新各平台 appcast。tag 版本必须与 package.json / lockfile 一致、build 递增、提交已在 `main` 上；不能复用 Build 60。签名材料放在允许 `main` 和 release tag 的 `macos-release` Environment。`desktop-macos` 保留默认 `mode=validate` 的手动凭据验证入口。Secrets、命令和完整规则见[签名说明 §5](../../docs/macos-signing.md#5-github-actions-配置)；UI/导出与真实模型推理未由流水线验证，报告会明确标注。
 
@@ -112,7 +112,7 @@ gh workflow run desktop-windows-publish.yml --ref main \
   -f variants=cpu,cuda,vulkan
 ```
 
-构建来源固定在现有 Mac Release 的同一完整 commit；版本与 build 相同。构建环境修复可在 main 上执行工作流并传 `source_ref=<Mac 源 commit>`，报告分别记录产品与工作流 SHA。Windows Cargo 输出使用短路径 `D:\bt`，CMake 使用 Ninja，避免 Vulkan 着色器生成器触发 MSBuild 的长路径限制；`include_cpu=false` 可只重试 GPU 变体。发布工作流仅授予发布 job `contents: write` 和读取候选产物所需的 `actions: read`，不使用 Mac 证书或私钥。它核对候选工作流、仓库、来源 SHA、各选中变体的原生 job 结果、文件大小与 SHA-256、App 自己的更新清单解析结果，再把安装器、ZIP、校验文件、补充发布报告与清单追加到已有 Release。已存在的同名不同字节不覆盖；Mac 资产与历史 skill 的 Latest 保留原状。公开下载读回验证后，才提交与推送 Windows 各变体的更新清单。
+构建来源固定在现有 Mac Release 的同一完整 commit；版本与 build 相同。构建环境修复可在 main 上执行工作流并传 `source_ref=<Mac 源 commit>`，报告分别记录产品与工作流 SHA。Windows Cargo 输出使用短路径 `D:\bt`，CMake 使用 Ninja，避免 Vulkan 着色器生成器触发 MSBuild 的长路径限制；`include_cpu=false` 可只重试 GPU 变体。发布工作流仅授予发布 job `contents: write` 和读取候选产物所需的 `actions: read`，不使用 Mac 证书或私钥。它核对候选工作流、仓库、来源 SHA、各选中变体的原生 job 结果、文件大小与 SHA-256、App 自己的更新清单解析结果，再把安装器、ZIP、校验文件、补充发布报告与清单追加到已有 Release。已存在的同名不同字节不覆盖；Mac 资产保留，发布过程中保持原来的 Latest，完成后按发布 skill 标记最新稳定桌面版本。公开下载读回验证后，才提交与推送 Windows 各变体的更新清单。
 
 Windows 安装包尚无 Authenticode 签名。当前 Worker 链接 `MSVCP140.dll`、`VCRUNTIME140.dll` 与 `VCRUNTIME140_1.dll`，安装器和 ZIP 尚未随附这些运行库；用户需先安装 [Microsoft Visual C++ v14 x64 Redistributable](https://learn.microsoft.com/en-us/cpp/windows/latest-supported-vc-redist/)。Hosted runner 已装运行库，因此其自检不能证明全新系统无需此依赖。流水线中的启动、安装、同版覆盖升级、卸载与 ZIP 自检不替代真实 CUDA / Vulkan 硬件上的推理；没有通过 native job 的变体不得发布。验证发布门本身可运行 `node --test apps/desktop/tools/windows-release.test.mjs` 和 `actionlint .github/workflows/desktop-windows-publish.yml`。
 
