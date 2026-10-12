@@ -230,8 +230,9 @@ export class GrantService implements JobAdmission {
    */
   reconcile(): void {
     const store = this.#services.store;
-    const ids = new Set(store.providerIds());
     const kinds = this.#providerKinds();
+    // 包括未保存过配置、但出厂启用的智能体 Provider（架构设计 §6.9）。
+    const ids = new Set([...store.providerIds(), ...kinds.keys()]);
     for (const providerId of ids) {
       const config = store.configView(providerId);
       if (!config.enabled) {

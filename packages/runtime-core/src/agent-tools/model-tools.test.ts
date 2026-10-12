@@ -214,7 +214,7 @@ describe('模型工具：能力视图与提交时的拒绝（不需要 ffprobe�
     expect(model).toMatchObject({ maxCount: expect.any(Number), maxPromptChars: expect.any(Number), sizes: expect.any(Array) });
     // 智能体 Provider 也列出，带着如实的限制（这里的假 Driver 版本是 0，所以版本太旧）。
     const agent = image.providers.find((p: Loose) => p.providerId === 'agent:codex');
-    expect(agent).toMatchObject({ kind: 'agent', available: false, unavailableReason: 'outdated', enabled: false });
+    expect(agent).toMatchObject({ kind: 'agent', available: false, unavailableReason: 'outdated', enabled: true });
     expect(agent.models[0]).toMatchObject({ maxCount: 1, sizes: [], acceptsSeed: false, cost: 'subscription', notes: expect.any(String) });
     expect(JSON.stringify(after.body)).not.toMatch(/endpoint|credential|http:\/\//);
     expect(openai.requests).toHaveLength(0);

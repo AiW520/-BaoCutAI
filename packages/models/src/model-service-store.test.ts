@@ -64,6 +64,20 @@ describe('ModelServiceStore', () => {
     expect((await fs.readdir(path.dirname(paths.modelServicesFile))).sort()).toEqual(['model-credentials.json', 'model-services.json']);
   });
 
+  it('只有 Codex 生图默认开启；不落盘、不设置生图默认值，保存的关闭选择优先', async () => {
+    const store = await open();
+    expect(store.configView('agent:codex')).toMatchObject({ enabled: true, enabledAt: null });
+    expect(store.configView('agent:other').enabled).toBe(false);
+    expect(store.configView('openai').enabled).toBe(false);
+    expect(store.getDefault('generateImage')).toBeNull();
+    await expect(fs.stat(paths.modelServicesFile)).rejects.toThrow();
+    await store.updateProvider('agent:codex', { enabled: false });
+    const reopened = await open();
+    expect(reopened.configView('agent:codex')).toMatchObject({ enabled: false, enabledAt: null });
+    await reopened.updateProvider('agent:codex', { enabled: true }, () => 't1');
+    expect((await open()).configView('agent:codex')).toMatchObject({ enabled: true, enabledAt: 't1' });
+  });
+
   it('只读视图从不回显密钥；enabledAt 在重复启用时不变，停用时清空', async () => {
     const store = await open();
     await store.updateProvider('openai', { enabled: true, credential: KEY }, () => 't1');

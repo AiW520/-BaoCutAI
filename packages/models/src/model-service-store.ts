@@ -1,6 +1,7 @@
 import crypto from 'node:crypto';
 import fs from 'node:fs/promises';
 import {
+  AGENT_PROVIDER_PREFIX,
   DEFAULT_TEXT_CONCURRENCY,
   MAX_TEXT_CONCURRENCY,
   MODEL_SERVICE_CAPABILITIES,
@@ -312,7 +313,8 @@ export class ModelServiceStore {
   configView(providerId: string): ProviderConfigView {
     const stored = this.#services.providers[providerId];
     return {
-      enabled: stored?.enabled ?? false,
+      // Codex 生图的出厂开关；已保存的关闭选择优先，不为出厂值伪造启用时间（架构设计 §6.9）。
+      enabled: stored?.enabled ?? providerId === `${AGENT_PROVIDER_PREFIX}codex`,
       enabledAt: stored?.enabledAt ?? null,
       credential: this.hasCredential(providerId) ? 'set' : 'missing',
       accounts: (stored?.accounts ?? []).map((a) => this.#accountView(providerId, a)),

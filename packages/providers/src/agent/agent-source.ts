@@ -132,7 +132,7 @@ function unavailable(reason: ProviderUnavailableReason, detail: Localized): Avai
  *
  * - 可用性按顺序：Driver 没有安装（`not-installed`）、没有登录（`signed-out`）、别的不可用（`unsupported`）、版本低于
  *   最低版本（`outdated`）、用户没有启用（`not-configured`）。前三样的说明来自 Driver 的探测。
- * - 配置只有开关：没有密钥、端点与模型声明（用的是智能体运行时自己的登录）。启用即同意把提示词与参考图发给它的账号。
+ * - 配置只有开关：Codex 生图默认启用，已保存的开关优先；没有密钥、端点与模型声明（用的是智能体运行时自己的登录）。
  * - 探测：`probe` 总是问 Driver（Driver 注册表短时缓存）；`select` 与 `view` 在用户启用了它时问 Driver，没启用时用
  *   最近一次的结果，一次也没探测过就只报告没有启用——不为没启用的 Provider 去启动外部命令。
  * - 每个 Provider 一个队列，同时只运行 1 个任务。
@@ -276,14 +276,14 @@ export class AgentProviderSource implements ProviderSource {
   }
 
   async #availability(providerId: string, definition: AgentProviderDefinition, mode: DescribeMode): Promise<Availability> {
-    const enabled = this.#options.store.provider(providerId)?.enabled ?? false;
+    const { enabled } = this.#options.store.configView(providerId);
     const info = mode === 'probe' || enabled ? await this.#info(definition) : (this.#lastInfo.get(definition.driverId) ?? null);
     if (!info && !enabled) return unavailable('not-configured', PC.notEnabled());
     return evaluate(definition, info, enabled);
   }
 
   async #readiness(providerId: string, definition: AgentProviderDefinition): Promise<AgentReadiness> {
-    const enabled = this.#options.store.provider(providerId)?.enabled ?? false;
+    const { enabled } = this.#options.store.configView(providerId);
     const driver = this.#driver(definition);
     const info = await this.#info(definition);
     const availability = evaluate(definition, info, enabled);

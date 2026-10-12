@@ -1595,7 +1595,7 @@ Worker 内部用 f32 秒计算，输出一律换算为声明 `timescale` 的整�
 - **输出同样校验**。约定的输出是工作目录里的 `output.png`；没有它时取 staging 里唯一的一张图片（子目录也找，只收普通文件，不跟随符号链接），有多张时全部交出，由张数校验拒绝。声明的媒体类型是请求的格式，之后与其他 Provider 一样由 JobManager 核对摘要与长度、按文件头与 ffprobe 解码校验（§6.4、§7.1），实际的像素尺寸作为事实记在输出里，再发布为产物；给了视频时导入为候选素材，与其他 Provider 相同。智能体的文字回复不是输出：没有图片时 Job 以 `PROVIDER_REJECTED` 失败（`details.reason: 'no-image'`，附回复的摘录）；回合失败或被中断也是 `PROVIDER_REJECTED`（`turn-failed`、`turn-interrupted`）；写下的文件不是合格的 PNG 时是 `MODEL_OUTPUT_INVALID`。不重试，不换 Provider。
 - **描述如实声明限制**：一个模型（`image-gen`，实际的图片模型由智能体运行时与账号决定），`maxCount` 为 1，只有 `png`，`sizes` 与 `aspectRatios` 为空、`defaultSize` 为 null，`acceptsSeed` 为 false，费用状态是 `subscription`（「订阅内，额度未知」），`notes` 一句话说明串行、耗时与额度。不支持的参数在提交时拒绝，不标为被忽略：给了尺寸或宽高比、seed、多于一张、别的格式都是 `invalid-request`，不创建任务。队列按 Provider 划分，同一时间只运行 1 个任务。
 - **可用性来自 Driver 的状态**（§3.11），按顺序：没有安装（`not-installed`）、没有登录（`signed-out`）、Driver 别的不可用（`unsupported`）、版本低于这个 Provider 要求的最低版本（`outdated`；`agent:codex` 要求 0.158.0，即协议对照的版本）、用户没有启用（`not-configured`）。前四种的补救是 `setup-agent`：在智能体运行时自己的界面里安装、登录或升级，`hint` 给出做法；最后一种是 `enable-provider`。`models.capabilities` 只探测这个 Provider 对应的 Driver：Driver 注册表（§3.11）里 10 秒之内的结果直接用，否则只重新探测这一个 Driver 并等它，结果写回注册表的缓存（也经 `agents` 主题推送），不等别的 Driver 的探测；选择与视图只在用户启用了它时探测，没启用时用最近一次的结果，不为没启用的 Provider 启动外部命令。执行前再确认一次：排队期间被停用、退出登录或卸载的，不再开会话，Job 以 `MODEL_LOAD_FAILED` 失败。
-- **启用是唯一的配置**（§6.8）：用户在模型服务配置里显式启用它；没有密钥、端点与模型声明，用的是智能体运行时自己的登录。启用即同意把提示词与参考图交给该智能体运行时登录的账号与服务方，用的是用户自己的订阅额度。
+- **启用是唯一的配置**（§6.8）：`agent:codex` 未保存过配置时默认启用，视图的 `enabledAt` 为 null；已保存的开关优先，用户手动停用后重启仍保持停用。不为出厂开关写入配置或伪造启用时间；用户显式启用时按 §6.8 记录启用时间。没有密钥、端点与模型声明，用的是智能体运行时自己的登录。启用允许把提示词与参考图交给该智能体运行时登录的账号与服务方，用的是用户自己的订阅额度。
 - **选择规则不变**（§6.2）：它可以被显式指定，也可以被设为 `generateImage` 的默认；出厂默认不指向它。
 - 其他能力与其他 Driver 按同一模式加入，各自经过验证后开放。
 

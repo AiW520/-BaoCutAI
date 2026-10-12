@@ -137,9 +137,8 @@ describe('智能体图片 Provider：列出、可用性与配置（不需要 ffp
     expect(entry).toMatchObject({
       kind: 'agent',
       label: 'Codex',
-      available: false,
-      unavailableReason: 'not-configured',
-      config: { enabled: false, enabledAt: null, credential: 'none' },
+      available: true,
+      config: { enabled: true, enabledAt: null, credential: 'none' },
     });
     const [model] = entry.models as ImageModelInfo[];
     expect(model).toMatchObject({
@@ -172,6 +171,7 @@ describe('智能体图片 Provider：列出、可用性与配置（不需要 ffp
     ];
     for (const [scenario, reason, selectionReason, action] of cases) {
       side.fake.scenario(scenario);
+      if (reason === 'not-configured') await side.client.request('models.configure', { providerId: PROVIDER, enabled: false });
       const entry = (await agentEntry(side))!;
       expect(entry, reason).toMatchObject({ available: false, unavailableReason: reason });
       expect(entry.detail, reason).toMatch(/./);
@@ -230,6 +230,40 @@ describe('智能体图片 Provider：列出、可用性与配置（不需要 ffp
     expect(await agentEntry(side)).toMatchObject({ available: false, unavailableReason: 'not-configured' });
   });
 
+  it('默认开启；手动关闭后重启仍关闭，重新开启后可用', async () => {
+    side = await startSide();
+    expect(await agentEntry(side)).toMatchObject({ available: true, config: { enabled: true, enabledAt: null } });
+    const initialGrants = (await side.client.request('grants.list', { recipient: PROVIDER })).grants;
+    expect(initialGrants).toHaveLength(1);
+    expect(initialGrants[0]).toMatchObject({ origin: 'provider-enable', recipient: PROVIDER });
+    await side.client.request('models.configure', { providerId: PROVIDER, enabled: false });
+    expect((await side.client.request('grants.list', { recipient: PROVIDER })).grants).toEqual([]);
+    side.client.close();
+    await side.runtime.close();
+    side.runtime = await startRuntime({
+      home: side.home,
+      drivers: (log) => [new CodexDriver(log, { locate: side!.fake.locate })],
+      watchSpace: false,
+      engineHost: null,
+      modelWorker: null,
+      agentProviders: { probeMaxAgeMs: 0 },
+    });
+    const { endpoint, token } = side.runtime.discovery;
+    side.client = new BaoCutClient({
+      resolve: async () => ({ endpoint, token }),
+      client: { kind: 'desktop', name: 'test', version: '0' },
+      reconnect: false,
+    });
+    await side.client.connect();
+    expect(await agentEntry(side)).toMatchObject({ available: false, unavailableReason: 'not-configured', config: { enabled: false } });
+    expect((await side.client.request('grants.list', { recipient: PROVIDER })).grants).toEqual([]);
+    await side.client.request('models.configure', { providerId: PROVIDER, enabled: true });
+    expect(await agentEntry(side)).toMatchObject({ available: true, config: { enabled: true, enabledAt: expect.any(String) } });
+    const renewedGrants = (await side.client.request('grants.list', { recipient: PROVIDER })).grants;
+    expect(renewedGrants).toHaveLength(1);
+    expect(renewedGrants[0]!.grantId).not.toBe(initialGrants[0]!.grantId);
+  });
+
   it('不接受的参数在提交时拒绝（不悄悄忽略）：尺寸、宽高比、seed、多张、别的格式、超长提示词', async () => {
     side = await startSide();
     await side.client.request('models.configure', { providerId: PROVIDER, enabled: true });
@@ -254,7 +288,6 @@ describe.skipIf(!ffprobe)('智能体图片 Provider：执行（假 codex + ffpro
 
   beforeEach(async () => {
     side = await startSide({ turn: { files: { 'output.png': b64(pngFixture(24, 16, 3)) }, reply: 'Saved output.png' } });
-    await side.client.request('models.configure', { providerId: PROVIDER, enabled: true });
   });
 
   afterEach(async () => {
