@@ -12,6 +12,10 @@ function linkImportAfter(p: { target: string; name: string | null; transcribe: b
  return '';
 }
 
+function linkImportCookies(p: { cookies: string | null }): string {
+  return p.cookies ? `; usar os cookies de login de ${p.cookies}` : '';
+}
+
 export const ptBR: RcAgentToolsMessages = {
   instructionsNotSet: "As instruções da sessão não foram definidas: ordem de montagem do Runtime incorreta",
 
@@ -101,8 +105,8 @@ export const ptBR: RcAgentToolsMessages = {
 
   installToolSummary: (p: { tool: string; version: string; size: string; estimated: boolean; license: string; url: string; host: string }) =>
     `Instalar ${p.tool} ${p.version} (${p.estimated ? `cerca de ${p.size}` : p.size}, ${p.license}) de ${p.url} para baixar vídeos de links; downloads de ${p.host} precisam dele`,
-  linkImportSummary: (p: { tool: string; version: string; host: string; url: string; target: string; name: string | null; transcribe: boolean; language: string | null; provider: string | null; model: string | null; captions: boolean }) =>
-    `Baixar de ${p.host} com ${p.tool}${p.version ? ` ${p.version}` : ""}: ${p.url}${linkImportAfter(p)}`,
+  linkImportSummary: (p: { tool: string; version: string; host: string; url: string; target: string; name: string | null; transcribe: boolean; language: string | null; provider: string | null; model: string | null; captions: boolean; cookies: string | null }) =>
+    `Baixar de ${p.host} com ${p.tool}${p.version ? ` ${p.version}` : ""}: ${p.url}${linkImportAfter(p)}${linkImportCookies(p)}`,
   linkImportConsentSummary: (p: {
     tool: string;
     version: string;
@@ -116,8 +120,9 @@ export const ptBR: RcAgentToolsMessages = {
     provider: string | null;
     model: string | null;
     captions: boolean;
+    cookies: string | null;
   }) =>
-    `Permitir que o BaoCut use ${p.tool}${p.version ? ` ${p.version}` : ""} neste computador${p.path ? ` (${p.path})` : ""} para baixar vídeos de sites, e baixar de ${p.host}: ${p.url}${linkImportAfter(p)}`,
+    `Permitir que o BaoCut use ${p.tool}${p.version ? ` ${p.version}` : ""} neste computador${p.path ? ` (${p.path})` : ""} para baixar vídeos de sites, e baixar de ${p.host}: ${p.url}${linkImportAfter(p)}${linkImportCookies(p)}`,
 
   downloadSaveSummary: (p: { source: string; size: string; target: string }) =>
     `Copiar ${p.source} (${p.size}) da pasta de trabalho para Downloads: ${p.target} (nomes repetidos são numerados, nunca sobrescritos)`,

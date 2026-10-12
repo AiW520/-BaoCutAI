@@ -1,6 +1,14 @@
 import { z } from 'zod';
-import { LINK_IMPORT_PIPELINE, checkLink, isTerminal, type JobManager, type PipelineRunner } from '@baocut/jobs';
-import { RpcError, type ExternalToolStatus, type Id, type JobRecord, type PipelineVideoTarget } from '@baocut/protocol';
+import { COOKIE_BROWSER_LABELS, LINK_IMPORT_PIPELINE, checkLink, isTerminal, type JobManager, type PipelineRunner } from '@baocut/jobs';
+import {
+  LINK_COOKIE_BROWSERS,
+  RpcError,
+  type ExternalToolStatus,
+  type Id,
+  type JobRecord,
+  type LinkCookieBrowser,
+  type PipelineVideoTarget,
+} from '@baocut/protocol';
 import { RcAgentTools } from '@baocut/protocol/messages/runtime-core';
 import type { ExternalToolService } from '../external-tools/external-tool-service.ts';
 import { YT_DLP } from '../external-tools/tool-manifests.ts';
@@ -42,6 +50,11 @@ import { commandIdArg, videoArg } from './video-tools.ts';
  *
  * `transcribe` 给 `url` 时另带转写的参数（语言、服务与模型、提示、说话人）与 `captions`（转写之后建字幕层），原样交给流程；
  * `download` 不带它们，转写用默认值、不建字幕层。
+ *
+ * 网站登录（`cookieBrowsers`，§7.9）：智能体与 CLI 只用调用时显式给的浏览器（按尝试的顺序），不给时匿名；下载视频页面里的勾选
+ * 是那个表单自己的，不带到这里。给了的浏览器写进确认的摘要，用户同意即允许 yt-dlp 读取它们的 Cookie；冻结进流程参数，
+ * `jobs_retry` 沿用原来的（匿名失败的任务重跑仍匿名，要带上浏览器得重新提交）。对外服务不能给：读取本机浏览器的登录信息
+ * 由用户在 BaoCut 里决定，`auto` 等级的服务不逐次确认。
  */
 
 export interface LinkImportToolsDeps {
@@ -71,8 +84,21 @@ export interface LinkImportRequest {
   diarize?: boolean | undefined;
   /** 转写之后建字幕层（`transcribe` 给 `url` 且新建视频时）。 */
   captions?: boolean | undefined;
+  /** 读取哪些浏览器的登录 Cookie（按尝试的顺序）；不给或空时匿名。 */
+  cookieBrowsers?: LinkCookieBrowser[] | undefined;
   commandId?: string | undefined;
 }
+
+// i18n-ignore-start: 给模型的工具说明、错误与下一步
+/** `download` 与 `transcribe` 共用的 `cookieBrowsers` 参数。 */
+export const cookieBrowsersArg = z
+  .array(z.enum(LINK_COOKIE_BROWSERS))
+  .max(LINK_COOKIE_BROWSERS.length)
+  .refine((list) => new Set(list).size === list.length, { message: '浏览器不能重复' })
+  .describe(
+    `可选。网站登录：按顺序尝试读取这些浏览器的登录 Cookie（${LINK_COOKIE_BROWSERS.join('、')}），读不到或网站仍要求登录时换下一个；不给时匿名下载。只在用户说了用哪个浏览器的登录、或同意用它时给（确认时会列出这些浏览器）。下载视频页面里勾选的浏览器不带到这里，要显式给；对外服务不能给`,
+  );
+// i18n-ignore-end
 
 // i18n-ignore-start: 给模型的工具说明、错误与下一步
 const schemas = {
@@ -108,6 +134,7 @@ const schemas = {
       .optional()
       .describe('可选。同时下载这些语言的字幕文件（例如 ["en","zh-Hans"]），放在媒体旁边、不导入视频；平台没有时跳过'),
     audioOnly: z.boolean().optional().describe('可选。只下载音频'),
+    cookieBrowsers: cookieBrowsersArg.optional(),
     commandId: commandIdArg.optional().describe('可选。重试同一次提交时带上同一个值，不会重复创建任务'),
   }),
 };
@@ -123,6 +150,7 @@ const DEFINITIONS: Record<'download', ToolInfo> = {
       '要转写、加字幕、翻译的默认给 newVideo（或直接用 transcribe 给 url）：它新建视频、导入、放上时间线，transcribe 为 true 时再转写；之后 videos_list、videos_inspect 看得到它。新建的视频在之后的步骤失败时保留，不要再新建一次。',
       '只在用户明确要从网页链接取视频时用。会按访问模式向用户确认；yt-dlp 没有安装时会请用户同意下载它（显示来源、版本、大小与许可），这次只提交安装并返回 installJobId：用 jobs_wait 等它 completed，再调用一次本工具。',
       '立即返回 jobId。用 jobs_wait 等它结束（看进度用 jobs_inspect，progress.unit 为 bytes），state 为 completed 时 outputs 里有下载的文件与文稿（path）和导入的素材（assetId）；只下载时媒体的 artifactId 可以给 edits_apply 的 importAsset（文件要还在原处、没有改过）。失败时 error.code 是 LINK_LOGIN_REQUIRED、LINK_UNSUPPORTED、LINK_NETWORK_ERROR、LINK_DISK_FULL 等，error.details.remedy 说明怎么补救；不要用别的方式绕过（不要自己运行下载程序）。',
+      '要登录才能看的视频（LINK_LOGIN_REQUIRED）：问用户在哪个浏览器登录了这个网站，用 cookieBrowsers 给上它重新提交；不给时匿名下载，下载视频页面里勾选的浏览器不算。jobs_retry 沿用原来的参数，匿名失败的任务重跑仍匿名。',
       '对外服务的落点只能是范围之内的 video 或已登记的 project；newVideo 要同时给 project（新视频建在那个项目里，之后在服务的范围之内）；文件一律放进所属项目的 downloads/。',
     ].join('\n'),
     annotations: { destructiveHint: false, idempotentHint: true },
@@ -171,6 +199,12 @@ async function start(deps: LinkImportToolsDeps, args: LinkImportRequest, princip
   }
   if (args.name !== undefined && !args.newVideo) throw new ToolError('INVALID_ARGUMENTS', 'name 只与 newVideo 一起给');
   const service = access.principal.kind === 'service';
+  const cookieBrowsers = args.cookieBrowsers?.length ? args.cookieBrowsers : undefined;
+  if (service && cookieBrowsers) {
+    throw new ToolError('INVALID_ARGUMENTS', '对外服务不能读取本机浏览器的登录信息（cookieBrowsers）', {
+      next: '去掉 cookieBrowsers 匿名下载；视频要登录才能看时，请用户在 BaoCut 里用下载视频页面勾选浏览器下载。',
+    });
+  }
   if (service && args.video === undefined && args.project === undefined) {
     throw new ToolError(
       'INVALID_ARGUMENTS',
@@ -264,6 +298,7 @@ async function start(deps: LinkImportToolsDeps, args: LinkImportRequest, princip
     provider: args.provider ?? null,
     model: args.model ?? null,
     captions: args.captions ?? false,
+    cookies: cookieBrowsers ? cookieBrowsers.map((id) => COOKIE_BROWSER_LABELS[id]).join(RcAgentTools.listSeparator().text) : null,
   };
   const approval =
     status.consent?.state === 'granted'
@@ -296,6 +331,7 @@ async function start(deps: LinkImportToolsDeps, args: LinkImportRequest, princip
         ...(args.hint !== undefined ? { hint: args.hint } : {}),
         ...(args.diarize !== undefined ? { diarize: args.diarize } : {}),
         ...(args.captions !== undefined ? { captions: args.captions } : {}),
+        ...(cookieBrowsers ? { cookieBrowsers } : {}),
       },
       ...(args.commandId ? { commandId: scope.commandId(access, args.commandId) } : {}),
     },

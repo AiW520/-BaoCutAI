@@ -148,10 +148,10 @@ CLI 不区分「人敲的」与「Agent 敲的」。要让 Agent 宿主的权限
 
 | 名字 | 做什么 | 关键参数 |
 | --- | --- | --- |
-| `transcribe` | 转录流程（架构设计 §7.9）：按需新建视频 → 转写成新文稿 → 建字幕层 | 输入三选一：`file`（本机媒体）、`url`（链接，含下载）、`video`（已有视频，可给 `asset`）；`project`；`no-video`（只出 `.txt` 与 `.srt` 文件，不建视频）；`language`、`provider`、`model`、`diarize`、`glossary`；`no-captions` |
+| `transcribe` | 转录流程（架构设计 §7.9）：按需新建视频 → 转写成新文稿 → 建字幕层 | 输入三选一：`file`（本机媒体）、`url`（链接，含下载）、`video`（已有视频，可给 `asset`）；`project`；`no-video`（只出 `.txt` 与 `.srt` 文件，不建视频）；`language`、`provider`、`model`、`diarize`、`glossary`；`no-captions`；`cookie-browsers`（只与 `url`，同 `download`） |
 | `translate` | 由**配置好的文本模型**翻译一份转写或字幕文件，写成新译文并建字幕层 | `video` + `to`，可选 `document`、`style`、`glossary`、`bilingual`、`no-captions`；或 `file`（SRT / VTT）+ `to`。没有文本模型时以 `CAPABILITY_NOT_CONFIGURED` 拒绝，`next` 指向 Agent 自译路径（§4.4） |
 | `dub` | 翻译配音：缺译文先翻译，逐句合成，对齐，加配音轨 | `video`、`to`、`voice`、`translation`、`original`、`separate-background`、`provider`、`model` |
-| `download` | 从链接下载媒体（yt-dlp），可导入视频或新建视频并转写（现 `import-link`） | `url`；落点三选一：`project`（只下载）、`video`（导入已有视频，时间线还空着时同时放上主轨）、`new-video`（新建并放上时间线）；`transcribe`、`subs`、`audio-only`、`name` |
+| `download` | 从链接下载媒体（yt-dlp），可导入视频或新建视频并转写（现 `import-link`） | `url`；落点三选一：`project`（只下载）、`video`（导入已有视频，时间线还空着时同时放上主轨）、`new-video`（新建并放上时间线）；`transcribe`、`subs`、`audio-only`、`name`；`cookie-browsers`（网站登录，见下） |
 | `export` | 导出字幕、文稿、音频、成片、便携包或工程 | `video`、`kind`、`format`、`out`、`range`、`document`、`bilingual`、成片的 `codec` / `width` / `height` / `fps` / `crf` / `burn-captions` 等（现 `export` 全部选项） |
 | `transcode` | 文件到文件：压缩、按顺序合并、提取音轨（不建视频）；只有本机文件这一种输入，不在 MCP 面 | `files`、`merge`、`extract-audio`、`codec`、`max-height`、`crf`、`out-dir` |
 | `speak` | 合成语音 | `text` / `text-file`、`voice`、`provider`、`model`、`video`（导入为候选素材）、`out` |
@@ -584,6 +584,7 @@ SKILL.md 与 `references/` 的正文等 §10 的第 2 阶段（CLI 切到目录�
 - 下载进已有的空视频（同一次验收发现）：当时对外服务不收 `newVideo`（后一条已放开），要新视频只能先 `videos_create` 再 `download` 给 `video`；原来导入已有视频只导入素材、不放上时间线，接着的 `transcribe` 以 `TRANSCRIBE_ASSET_NOT_FOUND` 失败、导出也是空片。改为导入的视频时间线还空着（根序列上没有片段）时同一笔事务放上主轨，与 `newVideo` 一样（架构设计 §7.9）；已经有片段时仍只导入素材。终端与会话里的 `download --video` 同样适用。
 - 对外服务的 `download newVideo`（2026-10-06 端到端验收第二轮）：放开，条件是同时给已登记的 `project`（与 `videos_create` 相同），不给落点仍拒绝；流程新建的视频在父任务记下 `videoId` 时登记进服务的范围（访问策略是视频名单时写进名单，与 `videos_create` 一样），之后 `videos_list`、`videos_inspect` 看得到。`transcribe` 给 `url` 同理。依据是架构设计 §12.9「落点限于范围之内的已有视频或已登记的项目」：新视频建在已登记的项目里，不越出范围。原来「先 `videos_create` 再下载进去」的两步仍然可用。
 - `transcribe` 给 `url`（同一轮）：`language`、`hint`、`provider` / `model`、`diarize`、`name`、`noCaptions` 都透传给 `link-import` 流程，转写进视频之后默认建字幕层，与给 `video`、`file` 时相同（§4.2）；`download --transcribe` 仍用默认值、不建字幕层。
+- 智能体与 CLI 的网站登录（2026-10-12，一次 YouTube Shorts 在下载视频页面能下、经 `transcribe` 反复 `LINK_LOGIN_REQUIRED` 之后定）：`download` 与给 `url` 的 `transcribe` 收 `cookieBrowsers`（按尝试的顺序，不重复，取值同 `link-import`），原样交给流程；不给或空时匿名。下载视频页面的勾选是那个表单自己的，不带到智能体与 CLI 的任务。给了的浏览器写进确认的摘要，用户同意即允许读取它们的 Cookie；说明书要求只在用户说了用哪个浏览器、或同意用它时给。对外服务不收（`INVALID_ARGUMENTS`）：`auto` 等级的服务不逐次确认，读取本机浏览器的登录信息留给用户在 BaoCut 里决定。参数随流程冻结，`jobs_retry` 沿用原来的浏览器，匿名失败的任务要带上浏览器得重新提交；`jobs_inspect` 的 `pipeline.cookieBrowsers` 写这次用了哪些（空是匿名），`LINK_LOGIN_REQUIRED` 与 `LINK_COOKIES_UNAVAILABLE` 的 `next` 照此说明。
 - `mcp install` 在宿主没有环境变量段时明文写入令牌，`--help` 与结果里说明风险并建议 `ask` 等级：实际只有 Claude Code 能放进 `settings.json` 的 `env` 再引用；Codex 的 `bearer_token_env_var` 要在启动它的 shell 里导出，Gemini CLI 会滤掉名字像令牌的环境变量，Cursor 的配置没有可供请求头引用的环境变量段，这三家明文（Codex、Cursor、Gemini CLI 的接入未实际连通验证）。
 - 一级动词在工具桥里也露出（2026-10-06）：工具桥面的目录里有 `transcribe`、`download`、`dub`、`transcode`、`export` 这些一级动词，原来设想的 `models_transcribe`、`link_import_start` 不在任何一面的目录里；说明书在两面共有的编排一节写明有固定流程的事用一级动词一步提交整条流程，不自己拆成几步。
 - 无项目会话的视频（2026-10-08）：会话里新建视频不再先建项目、绑定，视频建在会话自己的工作目录里（架构设计 §3.10）；新增只在工具桥的 `projects_adopt_session { name? }`，用户明确要建项目时才把会话连同视频收进一个以视频命名的新项目，按 `edit` 确认。说明书 §4 写明：会话不属于项目时新视频不给 `project`；用户消息里「[目标语言]」这类没填的待填项先问清再动手。

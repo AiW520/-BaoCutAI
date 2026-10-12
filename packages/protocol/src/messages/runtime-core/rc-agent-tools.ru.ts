@@ -14,6 +14,10 @@ function linkImportAfter(p: { target: string; name: string | null; transcribe: b
   return '';
 }
 
+function linkImportCookies(p: { cookies: string | null }): string {
+  return p.cookies ? `; использовать cookie входа из ${p.cookies}` : '';
+}
+
 export const ru: RcAgentToolsMessages = {
   instructionsNotSet: "Инструкции сессии не заданы: неверный порядок сборки Runtime",
 
@@ -76,8 +80,8 @@ export const ru: RcAgentToolsMessages = {
   },
 
   installToolSummary: (p) => `Установить ${p.tool} ${p.version} (${p.estimated ? `около ${p.size}` : p.size}, ${p.license}) из ${p.url} для скачивания видео по ссылкам; скачивание из ${p.host} требует его`,
-  linkImportSummary: (p) => `Скачать из ${p.host} через ${p.tool}${p.version ? ` ${p.version}` : ""}: ${p.url}${linkImportAfter(p)}`,
-  linkImportConsentSummary: (p) => `Разрешить BaoCut использовать ${p.tool}${p.version ? ` ${p.version}` : ""} на этом компьютере${p.path ? ` (${p.path})` : ""} для скачивания видео с сайтов и скачать из ${p.host}: ${p.url}${linkImportAfter(p)}`,
+  linkImportSummary: (p) => `Скачать из ${p.host} через ${p.tool}${p.version ? ` ${p.version}` : ""}: ${p.url}${linkImportAfter(p)}${linkImportCookies(p)}`,
+  linkImportConsentSummary: (p) => `Разрешить BaoCut использовать ${p.tool}${p.version ? ` ${p.version}` : ""} на этом компьютере${p.path ? ` (${p.path})` : ""} для скачивания видео с сайтов и скачать из ${p.host}: ${p.url}${linkImportAfter(p)}${linkImportCookies(p)}`,
 
   downloadSaveSummary: (p) => `Скопировать ${p.source} (${p.size}) из рабочей папки в «Загрузки»: ${p.target} (с номером при совпадении имени, без перезаписи)`,
 

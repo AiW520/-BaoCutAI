@@ -13,6 +13,10 @@ function linkImportAfter(p: { target: string; name: string | null; transcribe: b
   return '';
 }
 
+function linkImportCookies(p: { cookies: string | null }): string {
+  return p.cookies ? `; utiliser les cookies de connexion de ${p.cookies}` : '';
+}
+
 export const fr: RcAgentToolsMessages = {
   instructionsNotSet: 'Les instructions de session n’ont pas été définies : l’ordre d’assemblage du Runtime est incorrect', listSeparator: ', ', clauseSeparator: ' ; ',
   createVideoSummary: (p) => `Créer la vidéo « ${p.name} »`,
@@ -45,8 +49,8 @@ export const fr: RcAgentToolsMessages = {
     return `Exporter ${exportKindLabel(p.kind)} (${p.format}${range}${size}${source})${p.fileName ? ` sous ${p.fileName}` : ''}${p.overwrite ? ', en écrasant le fichier existant' : ''}`;
   },
   installToolSummary: (p) => `Installer ${p.tool} ${p.version} (${p.estimated ? `environ ${p.size}` : p.size}, ${p.license}) depuis ${p.url} pour télécharger des vidéos depuis des liens ; le téléchargement depuis ${p.host} en a besoin`,
-  linkImportSummary: (p) => `Télécharger depuis ${p.host} avec ${p.tool}${p.version ? ` ${p.version}` : ''} : ${p.url}${linkImportAfter(p)}`,
-  linkImportConsentSummary: (p) => `Autoriser BaoCut à utiliser ${p.tool}${p.version ? ` ${p.version}` : ''} sur cet ordinateur${p.path ? ` (${p.path})` : ''} pour télécharger des vidéos depuis des sites web, et télécharger depuis ${p.host} : ${p.url}${linkImportAfter(p)}`,
+  linkImportSummary: (p) => `Télécharger depuis ${p.host} avec ${p.tool}${p.version ? ` ${p.version}` : ''} : ${p.url}${linkImportAfter(p)}${linkImportCookies(p)}`,
+  linkImportConsentSummary: (p) => `Autoriser BaoCut à utiliser ${p.tool}${p.version ? ` ${p.version}` : ''} sur cet ordinateur${p.path ? ` (${p.path})` : ''} pour télécharger des vidéos depuis des sites web, et télécharger depuis ${p.host} : ${p.url}${linkImportAfter(p)}${linkImportCookies(p)}`,
   downloadSaveSummary: (p) => `Copier ${p.source} (${p.size}) du dossier de travail vers le dossier Téléchargements : ${p.target} (numéroté si le nom existe déjà, jamais écrasé)`,
   grantSummary: (p) => `Partager des données avec ${p.recipients} : ${p.items}`, grantSummaryItem: (p) => `${p.purpose} (${p.maxCalls === null ? 'sans limite d’appels' : `${p.maxCalls} ${pluralForm('fr', p.maxCalls, { one: 'appel maximum', other: 'appels maximum' })}`})`,
   testModelSummary: (p) => `Vérifier le paquet de modèle local ${p.bundleId} : l’exécuter de bout en bout sur un exemple fixe`,

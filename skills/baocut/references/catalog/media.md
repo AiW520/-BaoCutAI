@@ -40,8 +40,11 @@ description: 媒体的机制：从链接下载、转码与合并、取帧看画�
 | 只要文件（用户明说） | {{tool:download}} 只给 {{arg:url}}：落到下载目录 |
 | 同时取平台字幕 | 加 {{arg:subs}}（语言列表），字幕文件放在媒体旁边、不导入视频 |
 | 只要音频 | 加 {{arg:audioOnly}} |
+| 视频要登录才能看 | 加 {{arg:cookieBrowsers}}（例如 `["chrome"]`，按顺序尝试）；{{tool:transcribe}} 给 {{arg:url}} 时同样可以带 |
 
 {{arg:video}}、{{arg:newVideo}}、{{arg:project}} 三选一。只取单个视频，不取播放列表。
+
+网站登录：不给 {{arg:cookieBrowsers}} 时匿名下载；BaoCut 下载视频页面里勾选的浏览器不带到你提交的任务。只在用户说了在哪个浏览器登录、或同意用它的登录时给，确认时会列出这些浏览器。对外服务（MCP）不能给，要登录的视频请用户在 BaoCut 里下载。
 
 要转写时知道语言或有人名、术语，直接用 {{tool:transcribe}} 给 {{arg:url}}，带上 {{arg:language}}、{{arg:hint}}（也可给 {{arg:provider}}、{{arg:diarize}}）：它下载、新建视频、转写并建字幕层；{{tool:download}} 的 {{arg:transcribe}} 只用默认设置转写、不建字幕层。
 
@@ -173,7 +176,7 @@ css、js、json 这类支持文件不导入，直接写进设计稿目录，用�
 
 | 错误码 | 下一步 |
 | --- | --- |
-| `LINK_LOGIN_REQUIRED`、`LINK_COOKIES_UNAVAILABLE` | 视频要登录才能看：照 `remedy` 请用户处理，不要自己找 cookies |
+| `LINK_LOGIN_REQUIRED`、`LINK_COOKIES_UNAVAILABLE` | 视频要登录才能看：问用户在哪个浏览器登录了这个网站，带上 {{arg:cookieBrowsers}} 重新提交（{{tool:jobs_retry}} 沿用原来的参数，匿名的仍匿名）；读不到 Cookie 时照 `remedy` 请用户处理。不要自己找 cookies |
 | `LINK_UNSUPPORTED` | 这个网站不支持：告诉用户，请他换链接或给本机文件 |
 | `LINK_NETWORK_ERROR` | 网络问题：可以重试一次，仍不行告诉用户 |
 | `LINK_DISK_FULL` | 磁盘满：告诉用户，不要自己删文件 |

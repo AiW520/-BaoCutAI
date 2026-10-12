@@ -32,6 +32,10 @@ function linkImportAfter(p: { target: string; name: string | null; transcribe: b
   return '';
 }
 
+function linkImportCookies(p: { cookies: string | null }): string {
+  return p.cookies ? `; usa i cookie di accesso di ${p.cookies}` : '';
+}
+
 function plural(count: number, one: string, many: string): string {
   return pluralForm('it', count, { one: `${count} ${one}`, other: `${count} ${many}` });
 }
@@ -126,8 +130,8 @@ export const it: RcAgentToolsMessages = {
 
   installToolSummary: (p: { tool: string; version: string; size: string; estimated: boolean; license: string; url: string; host: string }) =>
     `Installa ${p.tool} ${p.version} (${p.estimated ? `circa ${p.size}` : p.size}, ${p.license}) da ${p.url} per scaricare video da link; serve per scaricare da ${p.host}`,
-  linkImportSummary: (p: { tool: string; version: string; host: string; url: string; target: string; name: string | null; transcribe: boolean; language: string | null; provider: string | null; model: string | null; captions: boolean }) =>
-    `Scarica da ${p.host} con ${p.tool}${p.version ? ` ${p.version}` : ''}: ${p.url}${linkImportAfter(p)}`,
+  linkImportSummary: (p: { tool: string; version: string; host: string; url: string; target: string; name: string | null; transcribe: boolean; language: string | null; provider: string | null; model: string | null; captions: boolean; cookies: string | null }) =>
+    `Scarica da ${p.host} con ${p.tool}${p.version ? ` ${p.version}` : ''}: ${p.url}${linkImportAfter(p)}${linkImportCookies(p)}`,
   linkImportConsentSummary: (p: {
     tool: string;
     version: string;
@@ -141,8 +145,9 @@ export const it: RcAgentToolsMessages = {
     provider: string | null;
     model: string | null;
     captions: boolean;
+    cookies: string | null;
   }) =>
-    `Consenti a BaoCut di usare ${p.tool}${p.version ? ` ${p.version}` : ''} su questo computer${p.path ? ` (${p.path})` : ''} per scaricare video dai siti web e scarica da ${p.host}: ${p.url}${linkImportAfter(p)}`,
+    `Consenti a BaoCut di usare ${p.tool}${p.version ? ` ${p.version}` : ''} su questo computer${p.path ? ` (${p.path})` : ''} per scaricare video dai siti web e scarica da ${p.host}: ${p.url}${linkImportAfter(p)}${linkImportCookies(p)}`,
 
   downloadSaveSummary: (p: { source: string; size: string; target: string }) =>
     `Copia ${p.source} (${p.size}) dalla cartella di lavoro alla cartella Download: ${p.target} (con un numero se il nome è già usato, senza sovrascrivere)`,

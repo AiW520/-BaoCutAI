@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { Id, JobRecord } from '@baocut/protocol';
+import { FlowTools, type FlowToolsDeps } from './flow-tools.ts';
 import { LinkImportTools, startLinkImport, type LinkImportToolsDeps } from './link-import-tools.ts';
 import { ToolError } from './tool-catalog.ts';
 import { toolRisk, type ToolConfirmation, type ToolPrincipal } from './tool-scope.ts';
@@ -187,5 +188,39 @@ describe('transcribe 给 url：转写的参数', () => {
     const { deps, started } = harness();
     await new LinkImportTools(deps).dispatch('download', { url: LINK, newVideo: true, transcribe: true }, agent);
     for (const key of ['language', 'provider', 'model', 'hint', 'diarize', 'captions']) expect(started[0]).not.toHaveProperty(key);
+  });
+});
+
+describe('网站登录（cookieBrowsers）', () => {
+  it('download 与 transcribe 给 url 都把浏览器按顺序交给流程，确认说明里列出它们；不给与空列表匿名', async () => {
+    const { deps, started, confirmed } = harness();
+    const download = new LinkImportTools(deps);
+    const flow = new FlowTools({ pipelines: deps.pipelines, scope: deps.scope, linkImport: deps } as unknown as FlowToolsDeps);
+    await download.dispatch('download', { url: LINK, newVideo: true, cookieBrowsers: ['chrome'] }, agent);
+    await flow.dispatch('transcribe', { url: LINK, noCaptions: true, cookieBrowsers: ['safari', 'chrome'] }, agent);
+    await download.dispatch('download', { url: LINK, newVideo: true }, agent);
+    await flow.dispatch('transcribe', { url: LINK, cookieBrowsers: [] }, agent);
+    expect(started.map((p) => p.cookieBrowsers ?? null)).toEqual([['chrome'], ['safari', 'chrome'], null, null]);
+    expect(started[1]).toMatchObject({ transcribe: true, captions: false, target: { create: { conversationId: 'conv_1' } } });
+    expect(confirmed[0]!.summary).toContain('Chrome');
+    expect(confirmed[1]!.summary).toContain('Safari、Chrome');
+    expect(confirmed[2]!.summary).not.toContain('Cookie');
+    expect(confirmed[3]!.summary).not.toContain('Cookie');
+  });
+
+  it('schema 只收认得的浏览器、不重复；transcribe 不给 url 时拒绝；对外服务拒绝，不弹确认、不启动流程', async () => {
+    const { deps, started, confirmed } = harness();
+    const download = new LinkImportTools(deps);
+    const flow = new FlowTools({ pipelines: deps.pipelines, scope: deps.scope, linkImport: deps } as unknown as FlowToolsDeps);
+    expect(download.schemas.download.safeParse({ url: LINK, cookieBrowsers: ['chrome', 'edge'] }).success).toBe(true);
+    expect(download.schemas.download.safeParse({ url: LINK, cookieBrowsers: ['netscape'] }).success).toBe(false);
+    expect(download.schemas.download.safeParse({ url: LINK, cookieBrowsers: ['chrome', 'chrome'] }).success).toBe(false);
+    expect(flow.schemas.transcribe.safeParse({ url: LINK, cookieBrowsers: ['firefox'] }).success).toBe(true);
+    expect((await refused(flow.dispatch('transcribe', { file: 'talk.mp4', cookieBrowsers: ['chrome'] }, agent))).code).toBe('INVALID_ARGUMENTS');
+    expect((await refused(flow.dispatch('transcribe', { video: 'vid_1', cookieBrowsers: ['chrome'] }, agent))).code).toBe('INVALID_ARGUMENTS');
+    const fromService = await refused(download.dispatch('download', { url: LINK, project: 'prj_1', cookieBrowsers: ['chrome'] }, service));
+    expect(fromService.code).toBe('INVALID_ARGUMENTS');
+    expect(started).toHaveLength(0);
+    expect(confirmed).toHaveLength(0);
   });
 });

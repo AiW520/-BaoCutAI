@@ -8,11 +8,11 @@ import {
   TRANSLATE_SUBTITLES_PIPELINE,
   type PipelineRunner,
 } from '@baocut/jobs';
-import { RpcError, type CapabilityNotConfiguredDetails } from '@baocut/protocol';
+import { LINK_COOKIE_BROWSERS, RpcError, type CapabilityNotConfiguredDetails } from '@baocut/protocol';
 import { RcFlowTools } from '@baocut/protocol/messages/runtime-core';
 import { errorBody, ToolError, type ToolInfo, type ToolSet } from './tool-catalog.ts';
 import { approvalField, confirmSummary, type ToolAccess, type ToolPrincipal, type ToolScope } from './tool-scope.ts';
-import { startLinkImport, toolErrorOf, type LinkImportToolsDeps } from './link-import-tools.ts';
+import { cookieBrowsersArg, startLinkImport, toolErrorOf, type LinkImportToolsDeps } from './link-import-tools.ts';
 import { resolveUserPath } from './video-digest.ts';
 import { commandIdArg, videoArg } from './video-tools.ts';
 
@@ -125,6 +125,11 @@ const schemas = {
         '可选。识别提示：人名、术语、专有名词；视频里启用的转写术语表照样用上。只有收提示的模型用得上（models_capabilities 里的 acceptsHint；MOSS 不收）：不收时提示被忽略，转写任务记 hint-ignored 提醒；这时别带，人名与术语留给润色',
       ),
     noCaptions: z.boolean().optional().describe('可选。转写之后不建字幕层（默认建）'),
+    cookieBrowsers: cookieBrowsersArg
+      .optional()
+      .describe(
+        `可选。只与 url 一起给：网站登录，按顺序尝试读取这些浏览器的登录 Cookie（${LINK_COOKIE_BROWSERS.join('、')}，同 download）；不给时匿名下载。只在用户说了用哪个浏览器的登录、或同意用它时给；下载视频页面里勾选的浏览器不带到这里；对外服务不能给`,
+      ),
     commandId: commandIdArg.optional().describe('可选。重试同一次提交时带上同一个值，不会重复创建任务'),
   }),
   translate: z.strictObject({
@@ -201,6 +206,7 @@ const DEFINITIONS: Record<Name, ToolInfo> = {
       JOB_NOTE,
       '完成时 pipeline.summary.documentId 是新转写（可以给 documents_read），summary.captions 是字幕层，新建视频时 summary.videoId 是视频；summary.target 是落点（new-video、replace、first），replace 时 summary.replaced.transactionId 可以撤销，summary.translations 写各语言保留与过期的句数。',
       '对外服务不能给 file、outDir：给 video，或给 url 与 project（新视频建在那个已登记的项目里，之后在服务的范围之内；带 noVideo 时只下载并写文稿）。',
+      '给 url 的视频要登录才能看（LINK_LOGIN_REQUIRED）：问用户在哪个浏览器登录了这个网站，带上 cookieBrowsers 重新提交；jobs_retry 沿用原来的参数，匿名失败的任务重跑仍匿名。',
     ].join('\n'),
     annotations: { destructiveHint: false, idempotentHint: true },
     effect: 'job',
@@ -330,6 +336,9 @@ export class FlowTools implements ToolSet {
       throw new ToolError('INVALID_ARGUMENTS', 'outDir 只与 file、noVideo 一起给');
     }
     if (args.model !== undefined && args.provider === undefined) throw new ToolError('INVALID_ARGUMENTS', 'model 只与 provider 一起给');
+    if (args.cookieBrowsers !== undefined && args.url === undefined) {
+      throw new ToolError('INVALID_ARGUMENTS', 'cookieBrowsers 只与 url 一起给：网站登录只用于从链接下载');
+    }
     // i18n-ignore-end
     if (args.url !== undefined) return this.#transcribeLink(args, args.url, principal);
 
@@ -445,6 +454,7 @@ export class FlowTools implements ToolSet {
         ...(args.model !== undefined ? { model: args.model } : {}),
         ...(args.hint !== undefined ? { hint: args.hint } : {}),
         ...(args.diarize !== undefined ? { diarize: args.diarize } : {}),
+        ...(args.cookieBrowsers !== undefined ? { cookieBrowsers: args.cookieBrowsers } : {}),
         ...(args.commandId !== undefined ? { commandId: args.commandId } : {}),
       },
       principal,

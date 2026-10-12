@@ -51,6 +51,11 @@ function linkImportAfter(p: { target: string; name: string | null; transcribe: b
   return '';
 }
 
+/** 读取哪些浏览器的登录 Cookie（智能体显式给了 `cookieBrowsers` 时）。 */
+function linkImportCookies(p: { cookies: string | null }): string {
+  return p.cookies ? `; use website sign-in cookies from ${p.cookies}` : '';
+}
+
 function plural(count: number, one: string, many: string): string {
   return `${count} ${count === 1 ? one : many}`;
 }
@@ -148,8 +153,8 @@ const en = {
 
   installToolSummary: (p: { tool: string; version: string; size: string; estimated: boolean; license: string; url: string; host: string }) =>
     `Install ${p.tool} ${p.version} (${p.estimated ? `about ${p.size}` : p.size}, ${p.license}) from ${p.url} to download videos from links; downloading from ${p.host} needs it`,
-  linkImportSummary: (p: { tool: string; version: string; host: string; url: string; target: string; name: string | null; transcribe: boolean; language: string | null; provider: string | null; model: string | null; captions: boolean }) =>
-    `Download from ${p.host} with ${p.tool}${p.version ? ` ${p.version}` : ''}: ${p.url}${linkImportAfter(p)}`,
+  linkImportSummary: (p: { tool: string; version: string; host: string; url: string; target: string; name: string | null; transcribe: boolean; language: string | null; provider: string | null; model: string | null; captions: boolean; cookies: string | null }) =>
+    `Download from ${p.host} with ${p.tool}${p.version ? ` ${p.version}` : ''}: ${p.url}${linkImportAfter(p)}${linkImportCookies(p)}`,
   linkImportConsentSummary: (p: {
     tool: string;
     version: string;
@@ -163,8 +168,9 @@ const en = {
     provider: string | null;
     model: string | null;
     captions: boolean;
+    cookies: string | null;
   }) =>
-    `Allow BaoCut to use ${p.tool}${p.version ? ` ${p.version}` : ''} on this computer${p.path ? ` (${p.path})` : ''} to download videos from websites, and download from ${p.host}: ${p.url}${linkImportAfter(p)}`,
+    `Allow BaoCut to use ${p.tool}${p.version ? ` ${p.version}` : ''} on this computer${p.path ? ` (${p.path})` : ''} to download videos from websites, and download from ${p.host}: ${p.url}${linkImportAfter(p)}${linkImportCookies(p)}`,
 
   downloadSaveSummary: (p: { source: string; size: string; target: string }) =>
     `Copy ${p.source} (${p.size}) from the working folder to the Downloads folder: ${p.target} (numbered if the name is taken, never overwritten)`,

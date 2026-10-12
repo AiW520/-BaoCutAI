@@ -30,6 +30,10 @@ function linkImportAfter(p: { target: string; name: string | null; transcribe: b
   return '';
 }
 
+function linkImportCookies(p: { cookies: string | null }): string {
+  return p.cookies ? `。${p.cookies} のサイトログイン情報（Cookie）を使用` : '';
+}
+
 export const ja: RcAgentToolsMessages = {
 
   instructionsNotSet: 'セッションの指示が設定されていません：Runtime の組み立て順序が正しくありません',
@@ -97,9 +101,9 @@ export const ja: RcAgentToolsMessages = {
   installToolSummary: (p) =>
     `リンクから動画をダウンロードするため、${p.url} から ${p.tool} ${p.version}（${p.estimated ? `約 ${p.size}` : p.size}、${p.license}）をインストール。${p.host} からのダウンロードに必要です`,
   linkImportSummary: (p) =>
-    `${p.tool}${p.version ? ` ${p.version}` : ''} で ${p.host} からダウンロード：${p.url}${linkImportAfter(p)}`,
+    `${p.tool}${p.version ? ` ${p.version}` : ''} で ${p.host} からダウンロード：${p.url}${linkImportAfter(p)}${linkImportCookies(p)}`,
   linkImportConsentSummary: (p) =>
-    `BaoCut がこのコンピュータの ${p.tool}${p.version ? ` ${p.version}` : ''}${p.path ? `（${p.path}）` : ' '}を使って Web サイトから動画をダウンロードすることを許可し、${p.host} からダウンロード：${p.url}${linkImportAfter(p)}`,
+    `BaoCut がこのコンピュータの ${p.tool}${p.version ? ` ${p.version}` : ''}${p.path ? `（${p.path}）` : ' '}を使って Web サイトから動画をダウンロードすることを許可し、${p.host} からダウンロード：${p.url}${linkImportAfter(p)}${linkImportCookies(p)}`,
 
   downloadSaveSummary: (p) =>
     `作業フォルダの ${p.source}（${p.size}）をダウンロードフォルダにコピー：${p.target}（同名のファイルがあれば番号を付け、上書きしません）`,

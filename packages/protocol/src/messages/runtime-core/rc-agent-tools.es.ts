@@ -9,6 +9,10 @@ function linkImportAfter(p: { target: string; name: string | null; transcribe: b
  if (p.target === 'download') return `, guardar en la carpeta Descargas${p.transcribe ? ' y transcribir a TXT y SRT' : ''}`;
  return '';
 }
+
+function linkImportCookies(p: { cookies: string | null }): string {
+  return p.cookies ? `; usar las cookies de inicio de sesión de ${p.cookies}` : '';
+}
 const countEs = (n: number, one: string, other: string) => `${n} ${pluralForm('es', n, { one, other })}`;
 export const es: RcAgentToolsMessages = {
  instructionsNotSet: 'No se han establecido las instrucciones de la sesión: el orden de montaje del Runtime es incorrecto', listSeparator: ', ', clauseSeparator: '; ',
@@ -32,8 +36,8 @@ export const es: RcAgentToolsMessages = {
  const source = p.originalOnly ? ', solo audio original' : p.dubGroupId ? `, solo doblaje ${p.dubGroupId}` : '';
  return `Exportar ${exportKindLabel(p.kind)} (${p.format}${range}${size}${source})${p.fileName ? ` como ${p.fileName}` : ''}${p.overwrite ? ', sobrescribiendo el archivo existente' : ''}`;
  },
- installToolSummary: (p) => `Instalar ${p.tool} ${p.version} (${p.estimated ? `unos ${p.size}` : p.size}, ${p.license}) desde ${p.url} para descargar vídeos desde enlaces; descargar desde ${p.host} lo necesita`, linkImportSummary: (p) => `Descargar desde ${p.host} con ${p.tool}${p.version ? ` ${p.version}` : ''}: ${p.url}${linkImportAfter(p)}`,
- linkImportConsentSummary: (p) => `Permitir a BaoCut usar ${p.tool}${p.version ? ` ${p.version}` : ''} en este ordenador${p.path ? ` (${p.path})` : ''} para descargar vídeos de sitios web y descargar desde ${p.host}: ${p.url}${linkImportAfter(p)}`,
+ installToolSummary: (p) => `Instalar ${p.tool} ${p.version} (${p.estimated ? `unos ${p.size}` : p.size}, ${p.license}) desde ${p.url} para descargar vídeos desde enlaces; descargar desde ${p.host} lo necesita`, linkImportSummary: (p) => `Descargar desde ${p.host} con ${p.tool}${p.version ? ` ${p.version}` : ''}: ${p.url}${linkImportAfter(p)}${linkImportCookies(p)}`,
+ linkImportConsentSummary: (p) => `Permitir a BaoCut usar ${p.tool}${p.version ? ` ${p.version}` : ''} en este ordenador${p.path ? ` (${p.path})` : ''} para descargar vídeos de sitios web y descargar desde ${p.host}: ${p.url}${linkImportAfter(p)}${linkImportCookies(p)}`,
  downloadSaveSummary: (p) => `Copiar ${p.source} (${p.size}) de la carpeta de trabajo a la carpeta Descargas: ${p.target} (se numera si el nombre ya existe, nunca se sobrescribe)`,
  grantSummary: (p) => `Compartir datos con ${p.recipients}: ${p.items}`, grantSummaryItem: (p) => `${p.purpose} (${p.maxCalls === null ? 'sin límite de llamadas' : `hasta ${countEs(p.maxCalls, 'llamada', 'llamadas')}`})`,
  testModelSummary: (p) => `Comprobar el paquete de modelos local ${p.bundleId}: ejecutarlo de principio a fin con una muestra fija`, installModelSummary: (p) => `Descargar el modelo local ${p.bundleId}: ${p.estimated ? `unos ${p.size} (tamaño desconocido, estimado)` : p.size}${p.resumed ? `, reanudando ${p.resumed} ya descargados` : ''}, desde ${p.source} (${p.parts})`,

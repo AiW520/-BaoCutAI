@@ -14,6 +14,10 @@ function linkImportAfter(p: { target: string; name: string | null; transcribe: b
   return '';
 }
 
+function linkImportCookies(p: { cookies: string | null }): string {
+  return p.cookies ? `; użyj plików cookie logowania z ${p.cookies}` : '';
+}
+
 export const pl: RcAgentToolsMessages = {
   instructionsNotSet: "Instrukcje sesji nieustawione: błędna kolejność składania Runtime",
 
@@ -76,8 +80,8 @@ export const pl: RcAgentToolsMessages = {
   },
 
   installToolSummary: (p) => `Zainstaluj ${p.tool} ${p.version} (${p.estimated ? `około ${p.size}` : p.size}, ${p.license}) z ${p.url} dla pobierania wideo z linków; pobieranie z ${p.host} wymaga go`,
-  linkImportSummary: (p) => `Pobierz z ${p.host} przez ${p.tool}${p.version ? ` ${p.version}` : ""}: ${p.url}${linkImportAfter(p)}`,
-  linkImportConsentSummary: (p) => `Zezwól BaoCut używać ${p.tool}${p.version ? ` ${p.version}` : ""} na tym komputerze${p.path ? ` (${p.path})` : ""} dla pobierania wideo ze stron i pobierz z ${p.host}: ${p.url}${linkImportAfter(p)}`,
+  linkImportSummary: (p) => `Pobierz z ${p.host} przez ${p.tool}${p.version ? ` ${p.version}` : ""}: ${p.url}${linkImportAfter(p)}${linkImportCookies(p)}`,
+  linkImportConsentSummary: (p) => `Zezwól BaoCut używać ${p.tool}${p.version ? ` ${p.version}` : ""} na tym komputerze${p.path ? ` (${p.path})` : ""} dla pobierania wideo ze stron i pobierz z ${p.host}: ${p.url}${linkImportAfter(p)}${linkImportCookies(p)}`,
 
   downloadSaveSummary: (p) => `Skopiuj ${p.source} (${p.size}) z folderu roboczego do „Pobrane”: ${p.target} (z numerem przy zajętej nazwie, bez nadpisywania)`,
 

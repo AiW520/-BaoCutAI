@@ -10,6 +10,10 @@ function linkImportAfter(p: { target: string; name: string | null; transcribe: b
   if (p.target === 'download') return `, opslaan in de downloadmap${p.transcribe ? ' en transcriberen naar TXT en SRT' : ''}`;
   return '';
 }
+
+function linkImportCookies(p: { cookies: string | null }): string {
+  return p.cookies ? `; inlogcookies uit ${p.cookies} gebruiken` : '';
+}
 import { pluralForm } from '../../i18n.ts';
 import type { RcAgentToolsMessages } from './rc-agent-tools.ts';
 
@@ -103,8 +107,8 @@ export const nl: RcAgentToolsMessages = {
 
   installToolSummary: (p: { tool: string; version: string; size: string; estimated: boolean; license: string; url: string; host: string }) =>
     `Installeren: ${p.tool} ${p.version} (${p.estimated ? `ongeveer ${p.size}` : p.size}, ${p.license}) van ${p.url} om video’s te downloaden via links; downloaden van ${p.host} vereist dit`,
-  linkImportSummary: (p: { tool: string; version: string; host: string; url: string; target: string; name: string | null; transcribe: boolean; language: string | null; provider: string | null; model: string | null; captions: boolean }) =>
-    `Downloaden van ${p.host} met ${p.tool}${p.version ? ` ${p.version}` : ""}: ${p.url}${linkImportAfter(p)}`,
+  linkImportSummary: (p: { tool: string; version: string; host: string; url: string; target: string; name: string | null; transcribe: boolean; language: string | null; provider: string | null; model: string | null; captions: boolean; cookies: string | null }) =>
+    `Downloaden van ${p.host} met ${p.tool}${p.version ? ` ${p.version}` : ""}: ${p.url}${linkImportAfter(p)}${linkImportCookies(p)}`,
   linkImportConsentSummary: (p: {
     tool: string;
     version: string;
@@ -118,8 +122,9 @@ export const nl: RcAgentToolsMessages = {
     provider: string | null;
     model: string | null;
     captions: boolean;
+    cookies: string | null;
   }) =>
-    `BaoCut toestemming geven voor het gebruik van ${p.tool}${p.version ? ` ${p.version}` : ""} op deze computer${p.path ? ` (${p.path})` : ""} om video’s van websites te downloaden en downloaden van ${p.host}: ${p.url}${linkImportAfter(p)}`,
+    `BaoCut toestemming geven voor het gebruik van ${p.tool}${p.version ? ` ${p.version}` : ""} op deze computer${p.path ? ` (${p.path})` : ""} om video’s van websites te downloaden en downloaden van ${p.host}: ${p.url}${linkImportAfter(p)}${linkImportCookies(p)}`,
 
   downloadSaveSummary: (p: { source: string; size: string; target: string }) =>
     `Kopiëren: ${p.source} (${p.size}) vanuit de werkmap naar de downloadmap: ${p.target} (genummerd als de naam al bestaat, nooit overschreven)`,

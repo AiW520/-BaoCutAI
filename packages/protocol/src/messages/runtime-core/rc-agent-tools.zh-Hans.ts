@@ -28,6 +28,10 @@ function linkImportAfter(p: { target: string; name: string | null; transcribe: b
   return '';
 }
 
+function linkImportCookies(p: { cookies: string | null }): string {
+  return p.cookies ? `；读取 ${p.cookies} 的网站登录信息（Cookie）` : '';
+}
+
 export const zhHans: RcAgentToolsMessages = {
   instructionsNotSet: '会话指导还没有设上：Runtime 装配顺序有误',
 
@@ -89,9 +93,9 @@ export const zhHans: RcAgentToolsMessages = {
 
   installToolSummary: (p) =>
     `为了从链接下载视频，安装 ${p.tool} ${p.version}（${p.estimated ? `约 ${p.size}` : p.size}，${p.license}），来自 ${p.url}；之后从 ${p.host} 下载要用它`,
-  linkImportSummary: (p) => `用 ${p.tool}${p.version ? ` ${p.version}` : ''} 从 ${p.host} 下载：${p.url}${linkImportAfter(p)}`,
+  linkImportSummary: (p) => `用 ${p.tool}${p.version ? ` ${p.version}` : ''} 从 ${p.host} 下载：${p.url}${linkImportAfter(p)}${linkImportCookies(p)}`,
   linkImportConsentSummary: (p) =>
-    `允许 BaoCut 使用本机的 ${p.tool}${p.version ? ` ${p.version}` : ''}${p.path ? `（${p.path}）` : ''}从网站下载视频，并从 ${p.host} 下载：${p.url}${linkImportAfter(p)}`,
+    `允许 BaoCut 使用本机的 ${p.tool}${p.version ? ` ${p.version}` : ''}${p.path ? `（${p.path}）` : ''}从网站下载视频，并从 ${p.host} 下载：${p.url}${linkImportAfter(p)}${linkImportCookies(p)}`,
 
   downloadSaveSummary: (p) => `把工作目录里的 ${p.source}（${p.size}）复制到下载目录：${p.target}（重名时加序号，不覆盖）`,
 

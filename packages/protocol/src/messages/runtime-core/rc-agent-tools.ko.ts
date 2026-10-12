@@ -30,6 +30,10 @@ function linkImportAfter(p: { target: string; name: string | null; transcribe: b
   return '';
 }
 
+function linkImportCookies(p: { cookies: string | null }): string {
+  return p.cookies ? `; ${p.cookies}의 웹사이트 로그인 쿠키 사용` : '';
+}
+
 export const ko: RcAgentToolsMessages = {
 
   instructionsNotSet: '세션 지침이 설정되지 않았습니다: Runtime 조립 순서가 잘못되었습니다',
@@ -92,9 +96,9 @@ export const ko: RcAgentToolsMessages = {
 
   installToolSummary: (p) =>
     `${p.url}에서 ${p.tool} ${p.version} 설치(${p.estimated ? `약 ${p.size}` : p.size}, ${p.license}): 링크에서 영상을 다운로드하는 데 쓰며 ${p.host}에서 다운로드하려면 필요합니다`,
-  linkImportSummary: (p) => `${p.host}에서 다운로드(${p.tool}${p.version ? ` ${p.version}` : ''} 사용): ${p.url}${linkImportAfter(p)}`,
+  linkImportSummary: (p) => `${p.host}에서 다운로드(${p.tool}${p.version ? ` ${p.version}` : ''} 사용): ${p.url}${linkImportAfter(p)}${linkImportCookies(p)}`,
   linkImportConsentSummary: (p) =>
-    `BaoCut이 이 컴퓨터의 ${p.tool}${p.version ? ` ${p.version}` : ''}${p.path ? `(${p.path})` : ''} 도구로 웹사이트에서 영상을 다운로드하도록 허용하고 ${p.host}에서 다운로드: ${p.url}${linkImportAfter(p)}`,
+    `BaoCut이 이 컴퓨터의 ${p.tool}${p.version ? ` ${p.version}` : ''}${p.path ? `(${p.path})` : ''} 도구로 웹사이트에서 영상을 다운로드하도록 허용하고 ${p.host}에서 다운로드: ${p.url}${linkImportAfter(p)}${linkImportCookies(p)}`,
 
   downloadSaveSummary: (p) =>
     `작업 폴더의 ${p.source}(${p.size}) 파일을 다운로드 폴더에 복사: ${p.target}(이름이 겹치면 번호를 붙이며 덮어쓰지 않음)`,

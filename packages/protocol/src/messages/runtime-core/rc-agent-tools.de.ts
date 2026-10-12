@@ -10,6 +10,10 @@ function linkImportAfter(p: { target: string; name: string | null; transcribe: b
   if (p.target === 'download') return `, im Downloadordner speichern${p.transcribe ? ' und in TXT und SRT transkribieren' : ''}`;
   return '';
 }
+
+function linkImportCookies(p: { cookies: string | null }): string {
+  return p.cookies ? `; Anmelde-Cookies aus ${p.cookies} verwenden` : '';
+}
 import { pluralForm } from '../../i18n.ts';
 import type { RcAgentToolsMessages } from './rc-agent-tools.ts';
 
@@ -104,8 +108,8 @@ export const de: RcAgentToolsMessages = {
 
   installToolSummary: (p: { tool: string; version: string; size: string; estimated: boolean; license: string; url: string; host: string }) =>
     `Installieren: ${p.tool} ${p.version} (${p.estimated ? `etwa ${p.size}` : p.size}, ${p.license}) von ${p.url} zum Herunterladen von Videos aus Links; Download von ${p.host} benötigt dies`,
-  linkImportSummary: (p: { tool: string; version: string; host: string; url: string; target: string; name: string | null; transcribe: boolean; language: string | null; provider: string | null; model: string | null; captions: boolean }) =>
-    `Herunterladen von ${p.host} mit ${p.tool}${p.version ? ` ${p.version}` : ""}: ${p.url}${linkImportAfter(p)}`,
+  linkImportSummary: (p: { tool: string; version: string; host: string; url: string; target: string; name: string | null; transcribe: boolean; language: string | null; provider: string | null; model: string | null; captions: boolean; cookies: string | null }) =>
+    `Herunterladen von ${p.host} mit ${p.tool}${p.version ? ` ${p.version}` : ""}: ${p.url}${linkImportAfter(p)}${linkImportCookies(p)}`,
   linkImportConsentSummary: (p: {
     tool: string;
     version: string;
@@ -119,8 +123,9 @@ export const de: RcAgentToolsMessages = {
     provider: string | null;
     model: string | null;
     captions: boolean;
+    cookies: string | null;
   }) =>
-    `BaoCut die Nutzung erlauben von ${p.tool}${p.version ? ` ${p.version}` : ""} auf diesem Computer${p.path ? ` (${p.path})` : ""} zum Herunterladen von Videos von Websites und Download von ${p.host}: ${p.url}${linkImportAfter(p)}`,
+    `BaoCut die Nutzung erlauben von ${p.tool}${p.version ? ` ${p.version}` : ""} auf diesem Computer${p.path ? ` (${p.path})` : ""} zum Herunterladen von Videos von Websites und Download von ${p.host}: ${p.url}${linkImportAfter(p)}${linkImportCookies(p)}`,
 
   downloadSaveSummary: (p: { source: string; size: string; target: string }) =>
     `Kopieren: ${p.source} (${p.size}) aus dem Arbeitsordner in den Downloadordner: ${p.target} (bei vergebenem Namen nummeriert, niemals überschrieben)`,

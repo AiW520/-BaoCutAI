@@ -30,6 +30,10 @@ function linkImportAfter(p: { target: string; name: string | null; transcribe: b
   return '';
 }
 
+function linkImportCookies(p: { cookies: string | null }): string {
+  return p.cookies ? `；讀取 ${p.cookies} 的網站登入資訊（Cookie）` : '';
+}
+
 export const zhHant: RcAgentToolsMessages = {
 
   instructionsNotSet: '尚未設定對話指示：Runtime 組裝順序錯誤',
@@ -92,9 +96,9 @@ export const zhHant: RcAgentToolsMessages = {
 
   installToolSummary: (p) =>
     `從 ${p.url} 安裝 ${p.tool} ${p.version}（${p.estimated ? `約 ${p.size}` : p.size}，${p.license}），用於從連結下載影片；從 ${p.host} 下載需要它`,
-  linkImportSummary: (p) => `使用 ${p.tool}${p.version ? ` ${p.version}` : ''} 從 ${p.host} 下載：${p.url}${linkImportAfter(p)}`,
+  linkImportSummary: (p) => `使用 ${p.tool}${p.version ? ` ${p.version}` : ''} 從 ${p.host} 下載：${p.url}${linkImportAfter(p)}${linkImportCookies(p)}`,
   linkImportConsentSummary: (p) =>
-    `允許 BaoCut 使用這台電腦上的 ${p.tool}${p.version ? ` ${p.version}` : ''}${p.path ? `（${p.path}）` : ' '}從網站下載影片，並從 ${p.host} 下載：${p.url}${linkImportAfter(p)}`,
+    `允許 BaoCut 使用這台電腦上的 ${p.tool}${p.version ? ` ${p.version}` : ''}${p.path ? `（${p.path}）` : ' '}從網站下載影片，並從 ${p.host} 下載：${p.url}${linkImportAfter(p)}${linkImportCookies(p)}`,
 
   downloadSaveSummary: (p) =>
     `將工作資料夾中的 ${p.source}（${p.size}）複製到下載資料夾：${p.target}（名稱重複時加上編號，不會覆寫）`,

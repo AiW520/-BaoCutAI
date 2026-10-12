@@ -163,6 +163,10 @@ const FAILURE_NEXT: Record<string, string> = {
   APPLY_FAILED:
     '结果已经生成，但写入视频被拒绝：产物保留。重新 videos_inspect 看当前状态，告诉用户；需要时用 edits_apply 的 importAsset + artifactId（outputs 里的）再导入，不必重新生成。',
   JOB_INTERRUPTED: '任务被中断（Runtime 停止或重启）：需要时重新提交。',
+  LINK_LOGIN_REQUIRED:
+    '网站要求登录：jobs_retry 沿用原来的参数，不会补上登录信息。pipeline.cookieBrowsers 是这次给的浏览器（空的是匿名下载），error.details.attempts 是每个浏览器的结果。问用户在哪个浏览器登录了这个网站，用 download 或 transcribe 给 url 并带上 cookieBrowsers 重新提交；下载视频页面里勾选的浏览器不带到智能体的任务。用过的浏览器仍要求登录时，请用户在那个浏览器里打开链接确认能播放，再重新提交。对外服务不能给 cookieBrowsers：请用户在 BaoCut 的下载视频页面勾选浏览器下载。不要自己找 cookies 或运行下载程序。',
+  LINK_COOKIES_UNAVAILABLE:
+    '读不到所给浏览器的 Cookie（error.details.attempts 是每个浏览器的结果）：把 details.remedy 转告用户；用户处理好或改用别的浏览器后，用 download 或 transcribe 带上 cookieBrowsers 重新提交（jobs_retry 沿用原来的浏览器）。不要自己找 cookies。',
   TASK_PROTECTED:
     '这一步的写入触碰了任务合同里用户设的「不要改动」范围（被触碰的保护见 details），没有写入视频，前面步骤的结果保留。不要换办法绕过；告诉用户，由用户决定是否调整保护范围或自己处理。',
   EXPORT_VALIDATION_FAILED: '导出的文件没有通过校验，没有发布（details 列出问题）：告诉用户；不要原样重试。',
@@ -487,6 +491,7 @@ function digestJob(record: JobRecord) {
             steps: record.pipeline.steps.map((step) => ({ name: step.name, status: step.status })),
             stoppedAt: record.pipeline.stoppedAt,
             summary: record.pipeline.summary,
+            ...(record.pipeline.name === LINK_IMPORT_PIPELINE ? { cookieBrowsers: frozenCookieBrowsers(record.pipeline.params) } : {}),
           },
         }
       : {}),
@@ -501,6 +506,12 @@ function digestJob(record: JobRecord) {
       : {}),
     next: nextFor(record),
   };
+}
+
+/** 从链接下载冻结的网站登录：用了哪些浏览器（空是匿名）。之前的版本冻结的是一个 `cookieBrowser`。 */
+function frozenCookieBrowsers(params: Record<string, unknown>): string[] {
+  if (Array.isArray(params.cookieBrowsers)) return params.cookieBrowsers.filter((id): id is string => typeof id === 'string');
+  return typeof params.cookieBrowser === 'string' ? [params.cookieBrowser] : [];
 }
 
 function nextFor(record: JobRecord): string {
