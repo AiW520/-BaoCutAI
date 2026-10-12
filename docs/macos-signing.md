@@ -216,6 +216,8 @@ git push origin baocut-v3.0.1-build.61
 
 发布按 Mac、Windows 顺序执行，避免同时推送更新源。公开下载读回后，Mac 再次验证 App 与 DMG 的签名、票据、Gatekeeper 和 App Runtime；Windows 核对三种候选的来源、原生 job、摘要与 App 自己的清单解析结果。最后分别提交和推送各平台 appcast，其他平台和旧发布资产保持原状。报告明确标注 UI/导出、真实模型或 GPU 推理、付费 Agent 调用未运行；工作流存在不代表完整发布已实跑。
 
+App、解压复验的 App 和 DMG 的 `stapler staple` / `stapler validate`（含公开下载读回）遇到退出码 68，且诊断明确包含 `NSURLErrorDomain Code=-1005`（连接中断）或 `-1001`（超时）时，原地等待 2、5、10、20 秒后重试同一命令，总计最多 5 次；只记录操作、次数和等待时间。普通退出码 68、无效票据、签名或 Gatekeeper 拒绝、TLS 信任错误不走这条重试，`notarytool submit` 也不重复提交。重试耗尽仍阻止发布，并保留最后一次诊断；持续的 Apple 服务或网络问题不能保证由重试消除。
+
 失败后查看对应 job，优先重跑失败 job，复用原先已验证的候选。已公开版本/build 不重建为不同字节，不删除或移动 tag 来绕过不可变校验。
 
 ### 5.5 手动验证与单平台入口

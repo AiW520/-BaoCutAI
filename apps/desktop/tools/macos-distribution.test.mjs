@@ -3,7 +3,79 @@ import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { test } from 'node:test';
-import { archiveLocalMac } from './macos-distribution.mjs';
+import { archiveLocalMac, runMac } from './macos-distribution.mjs';
+
+const lostConnection = 'Error Domain=NSURLErrorDomain Code=-1005 "The network connection was lost."\nThe validate action failed! Error 68.';
+
+test('stapler validation recovers from the observed Apple connection loss without leaking arguments', () => {
+  const calls = [], waits = [], warnings = [];
+  const args = ['stapler', 'validate', '/private/fixture/BaoCut.app'];
+  const output = runMac('xcrun', args, {
+    spawn: (command, actualArgs, options) => {
+      calls.push({ command, args: actualArgs, options });
+      return calls.length === 1 ? { status: 68, stdout: lostConnection, stderr: 'warning\n' }
+        : { status: 0, stdout: 'The validate action worked!\n', stderr: '' };
+    },
+    sleep: (ms) => waits.push(ms), warn: (message) => warnings.push(message),
+  });
+  assert.equal(output, 'The validate action worked!\n');
+  assert.equal(calls.length, 2);
+  assert.deepEqual(calls[0], calls[1]);
+  assert.deepEqual(waits, [2000]);
+  assert.match(warnings[0], /stapler validate.*attempt 2\/5/);
+  assert.ok(!warnings[0].includes('/private/fixture'));
+});
+
+test('stapler attachment retries timeouts and connection loss with increasing delays', () => {
+  let calls = 0;
+  const waits = [];
+  assert.equal(runMac('xcrun', ['stapler', 'staple', '/fixture/BaoCut.dmg'], {
+    spawn: () => ++calls === 3 ? { status: 0, stdout: 'stapled', stderr: '' }
+      : { status: 68, stdout: '', stderr: calls === 1 ? 'NSURLErrorDomain Code=-1001 "timeout"' : lostConnection },
+    sleep: (ms) => waits.push(ms), warn: () => {},
+  }), 'stapled');
+  assert.deepEqual(waits, [2000, 5000]);
+});
+
+test('persistent Apple network errors still fail after five attempts with the last diagnostics', () => {
+  let calls = 0;
+  const waits = [];
+  assert.throws(() => runMac('xcrun', ['stapler', 'validate', '/fixture/BaoCut.app'], {
+    spawn: () => ({ status: 68, stdout: `failure ${++calls}\n`, stderr: lostConnection }),
+    sleep: (ms) => waits.push(ms), warn: () => {},
+  }), /after 5 attempts: failure 5/);
+  assert.equal(calls, 5);
+  assert.deepEqual(waits, [2000, 5000, 10000, 20000]);
+});
+
+test('invalid tickets, signature rejection and notarization submission failures are not retried', () => {
+  for (const [command, args, status, stderr] of [
+    ['xcrun', ['stapler', 'validate', '/fixture/BaoCut.app'], 68, 'The ticket is invalid. Error 68.'],
+    ['xcrun', ['stapler', 'validate', '/fixture/BaoCut.app'], 65, lostConnection],
+    ['xcrun', ['stapler', 'staple', '/fixture/BaoCut.dmg'], 68, 'NSURLErrorDomain Code=-1202 "untrusted certificate"'],
+    ['xcrun', ['notarytool', 'submit', '/fixture/submission.zip'], 68, lostConnection],
+    ['codesign', ['--verify', '/fixture/BaoCut.app'], 68, lostConnection],
+    ['spctl', ['--assess', '/fixture/BaoCut.app'], 68, lostConnection],
+  ]) {
+    let calls = 0;
+    assert.throws(() => runMac(command, args, {
+      spawn: () => { calls++; return { status, stdout: '', stderr }; },
+      sleep: () => assert.fail('must not wait'), warn: () => assert.fail('must not retry'),
+    }));
+    assert.equal(calls, 1);
+  }
+});
+
+test('command launch errors remain fatal and successful output is unchanged', () => {
+  const error = new Error('spawn ENOENT');
+  assert.throws(() => runMac('xcrun', ['stapler', 'validate', '/fixture/BaoCut.app'], {
+    spawn: () => ({ error, status: null }),
+    sleep: () => assert.fail('must not wait'), warn: () => assert.fail('must not retry'),
+  }), (actual) => actual === error);
+  assert.equal(runMac('codesign', ['-d'], {
+    spawn: () => ({ status: 0, stdout: 'out', stderr: 'err' }),
+  }), 'outerr');
+});
 
 test('local archives verify the extracted bundle and disk image and record checksums without notarization', async () => {
   const output = mkdtempSync(path.join(tmpdir(), 'baocut-local-mac-test-'));

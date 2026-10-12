@@ -4,11 +4,29 @@ import { createHash } from 'node:crypto';
 import { closeSync, createReadStream, mkdirSync, openSync, readSync, statSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 
-export function runMac(command, args) {
-  const result = spawnSync(command, args, { encoding: 'utf8', maxBuffer: 16 * 1024 * 1024 });
-  if (result.error) throw result.error;
-  if (result.status !== 0) throw new Error(`${command} (${result.status}): ${result.stderr || result.stdout}`);
-  return `${result.stdout}${result.stderr}`;
+const STAPLER_RETRY_DELAYS = [2000, 5000, 10000, 20000];
+const sleepSync = (ms) => Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, ms);
+
+// Only retry ticket attachment/validation after a diagnosed connection loss or timeout.
+// A generic stapler exit 68 can also mean an invalid ticket; notarization submissions
+// and signing/Gatekeeper failures must never be retried through this path.
+export function runMac(command, args, { spawn = spawnSync, sleep = sleepSync, warn = console.warn } = {}) {
+  const stapler = command === 'xcrun' && args[0] === 'stapler' && ['staple', 'validate'].includes(args[1]);
+  for (let attempt = 0; ; attempt++) {
+    const result = spawn(command, args, { encoding: 'utf8', maxBuffer: 16 * 1024 * 1024 });
+    if (result.error) throw result.error;
+    const output = `${result.stdout ?? ''}${result.stderr ?? ''}`;
+    if (result.status === 0) return output;
+    const transient = stapler && result.status === 68 && /\bNSURLErrorDomain\s+Code=-(?:1001|1005)\b/.test(output);
+    if (!transient || attempt >= STAPLER_RETRY_DELAYS.length) {
+      const attempts = attempt ? ` after ${attempt + 1} attempts` : '';
+      throw new Error(`${command} (${result.status})${attempts}: ${output}`);
+    }
+    const delay = STAPLER_RETRY_DELAYS[attempt];
+    // Build diagnostics contain no credential arguments or private subprocess output.
+    warn(`Retrying xcrun stapler ${args[1]} after an Apple network error: attempt ${attempt + 2}/5 in ${delay / 1000}s.`);
+    sleep(delay);
+  }
 }
 
 export function signingPreflight(sha1, profile, keychain) {
