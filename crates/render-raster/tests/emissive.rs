@@ -1,7 +1,9 @@
 use anyhow::{Result, bail};
 use motion::effect::BlendMode;
 use render_raster::drawop::{self, BitmapData, DrawOp, FrameOps};
-use render_raster::emissive::{composite_associated, has_emissive_components};
+use render_raster::emissive::{
+    composite_associated, has_emissive_components, has_emissive_components_within,
+};
 use render_raster::plan::{CompositeInput, CpuExecutor, PassExecutor, SurfaceId, SurfacePlan};
 use render_raster::raster::{FrameMedia, rasterize_with_media};
 use std::sync::Arc;
@@ -199,4 +201,47 @@ fn surface_executor_transforms_and_composites_emission_without_alpha_bounds_loss
             .to_string()
             .contains("EMISSIVE_BLEND_UNSUPPORTED")
     );
+}
+
+/// 分块扫描与逐像素的定义逐个对拍：任意长度（含块尾的零头）、任意位置上的一个超出 alpha 的分量都找得到；
+/// 只看框内时框外的发光不算数。
+#[test]
+fn block_scan_matches_the_per_pixel_definition_anywhere_in_the_buffer() {
+    let reference = |data: &[u8]| {
+        data.chunks_exact(4)
+            .any(|p| p[..3].iter().any(|c| *c > p[3]))
+    };
+    let mut state = 0x9e37_79b9_u32;
+    let mut next = || {
+        state ^= state << 13;
+        state ^= state >> 17;
+        state ^= state << 5;
+        state
+    };
+    for _ in 0..2000 {
+        let pixels = 1 + (next() % 700) as usize;
+        let mut data: Vec<u8> = (0..pixels)
+            .flat_map(|_| {
+                let a = (next() % 256) as u8;
+                [0, 1, 2]
+                    .map(|_| (next() % (u32::from(a) + 1)) as u8)
+                    .into_iter()
+                    .chain([a])
+            })
+            .collect();
+        if next() % 2 == 0 {
+            let at = (next() as usize % pixels) * 4;
+            data[at + 3] = data[at + 3].min(254);
+            data[at + (next() % 3) as usize] = data[at + 3] + 1;
+        }
+        assert_eq!(has_emissive_components(&data), reference(&data));
+    }
+    // 4×3 的图，发光像素在 (3, 2)。
+    let mut data = vec![0u8; 4 * 3 * 4];
+    data[(2 * 4 + 3) * 4] = 9;
+    assert!(has_emissive_components_within(&data, 4, (0, 0, 4, 3)));
+    assert!(has_emissive_components_within(&data, 4, (3, 2, 9, 9)));
+    assert!(!has_emissive_components_within(&data, 4, (0, 0, 3, 3)));
+    assert!(!has_emissive_components_within(&data, 4, (0, 0, 4, 2)));
+    assert!(!has_emissive_components_within(&data, 4, (4, 0, 4, 3)));
 }

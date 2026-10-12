@@ -5,9 +5,39 @@ use crate::drawop::Mat6;
 use anyhow::{Result, bail};
 use tiny_skia::{Mask, Pixmap, PixmapRef};
 
+/// 有没有颜色分量超过 alpha 的像素。合法的预乘像素（不透明的视频、全零的透明）找不到可以提前收手的地方，
+/// 每帧都要整幅扫完：按 64 个像素一块累加、块内不短路，编译器才能把块内的比较向量化（1080p 一幅快五倍多）。
 pub fn has_emissive_components(data: &[u8]) -> bool {
-    data.chunks_exact(4)
+    const BLOCK: usize = 64 * 4;
+    let mut blocks = data.chunks_exact(BLOCK);
+    for block in &mut blocks {
+        // 某个分量超过 alpha 时饱和减法非零。
+        let excess = block.chunks_exact(4).fold(0u8, |acc, p| {
+            acc | p[0].saturating_sub(p[3]) | p[1].saturating_sub(p[3]) | p[2].saturating_sub(p[3])
+        });
+        if excess != 0 {
+            return true;
+        }
+    }
+    blocks
+        .remainder()
+        .chunks_exact(4)
         .any(|p| p[..3].iter().any(|c| *c > p[3]))
+}
+
+/// [`has_emissive_components`]，只看 `width` 像素宽的图里 `(left, top, right, bottom)` 那一块（超出图的部分截掉）。
+/// 框外全零的图层（字幕层只在内核给的内容框里有字）不必整幅扫。
+pub fn has_emissive_components_within(
+    data: &[u8],
+    width: usize,
+    (left, top, right, bottom): (usize, usize, usize, usize),
+) -> bool {
+    let height = data.len() / 4 / width.max(1);
+    let (right, bottom) = (right.min(width), bottom.min(height));
+    left < right
+        && (top..bottom).any(|y| {
+            has_emissive_components(&data[(y * width + left) * 4..(y * width + right) * 4])
+        })
 }
 
 /// Affine inverse mapping at destination pixel centers, transparent bilinear

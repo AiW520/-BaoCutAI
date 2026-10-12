@@ -1155,7 +1155,8 @@ impl FrameRenderer {
             let opacity = first.opacity.clamp(0.0, 1.0) as f32 * style_opacity;
             let pixmap = PixmapRef::from_bytes(&layer.rgba, layer.width, layer.height)
                 .ok_or_else(|| RenderError::render(anyhow::anyhow!("字幕层的尺寸不对")))?;
-            if render_raster::emissive::has_emissive_components(pixmap.data())
+            // 字幕层只在内核给的字外包矩形里有像素，发光只在框里找。
+            if render_raster::emissive::has_emissive_components_within(pixmap.data(), layer.width as usize, layer.rect)
                 || render_raster::emissive::has_emissive_components(self.frame.data())
             {
                 if layer.blend != BlendMode::SourceOver {
@@ -1433,15 +1434,18 @@ fn without(fx: &Fx, skipped: &HashSet<String>) -> Fx {
 }
 
 fn over(target: &mut Pixmap, layer: &Pixmap) {
+    // 整幅不透明的层（整幅视频）原样拷过去：只有不透明与全零像素时，发光的叠法也是不透明的照拷、全零的不动，
+    // 先走这条就不必为发光把两幅图整幅扫一遍（导出每帧都要叠整幅视频）。
+    if render_raster::raster::copy_over(target, layer.as_ref(), Transform::identity()) {
+        return;
+    }
     if render_raster::emissive::has_emissive_components(layer.data()) || render_raster::emissive::has_emissive_components(target.data()) {
         render_raster::emissive::composite_associated(target, layer.as_ref(), 1.0, [1., 0., 0., 1., 0., 0.], None)
             .expect("identity associated composition uses valid surfaces");
         return;
     }
-    // 整幅不透明的层（整幅视频）原样拷过去；别的层（一行字、一张贴纸）只在非零像素的外包矩形里叠。都与下面逐字节相同。
-    if render_raster::raster::copy_over(target, layer.as_ref(), Transform::identity())
-        || render_raster::plan::composite_bounded(target, layer, 1.0, BlendMode::SourceOver).is_some()
-    {
+    // 别的层（一行字、一张贴纸）只在非零像素的外包矩形里叠，与下面逐字节相同。
+    if render_raster::plan::composite_bounded(target, layer, 1.0, BlendMode::SourceOver).is_some() {
         return;
     }
     target.draw_pixmap(

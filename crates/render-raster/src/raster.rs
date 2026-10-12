@@ -150,6 +150,11 @@ pub fn copy_over(out: &mut Pixmap, src: PixmapRef, transform: Transform) -> bool
             rows.push(Row::Clear);
             continue;
         }
+        // 整行不透明（视频）先按 alpha 字节一起与过去：不短路的折叠能向量化，比下面逐像素分支快得多。
+        if row.chunks_exact(4).fold(0xFF, |acc, pixel| acc & pixel[3]) == 0xFF {
+            rows.push(Row::Opaque);
+            continue;
+        }
         let mut opaque = true;
         for pixel in row.chunks_exact(4) {
             match pixel[3] {
