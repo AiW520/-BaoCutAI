@@ -1,10 +1,12 @@
 //! Declarative caption scenes. Layout, animation and recording are shared by native and WASM.
+mod angular_samples;
 mod component_filters;
 mod cue_unit_context;
 mod glyph_envelope;
 mod materials;
 mod noise_palette;
 mod page_envelope;
+mod page_window;
 mod sampled_layout;
 mod scalar_cluster;
 mod text_line_layout;
@@ -63,6 +65,7 @@ struct Line {
     bounds: Bounds,
     baseline: f64,
     max_font_size: f64,
+    display_span: Option<(f64, f64)>,
     glyph_ink: Vec<Option<Bounds>>,
     ink_bounds: Bounds,
 }
@@ -103,6 +106,7 @@ impl Line {
             bounds,
             baseline,
             max_font_size,
+            display_span: None,
             glyph_ink,
             ink_bounds,
         }
@@ -527,7 +531,11 @@ fn resolved_units(
         if let Some(pi) = l
             .pages
             .iter()
-            .position(|p| seconds >= p.start && seconds < p.end)
+            .enumerate()
+            .find(|(index, page)| {
+                page_window::contains(scene.layout.page_window.as_ref(), page, *index, seconds)
+            })
+            .map(|(index, _)| index)
         {
             let global = cue_unit_context::enabled(scene);
             let sampled_text_layout;
@@ -1012,14 +1020,12 @@ fn units_for(
                     && layout.words[*i].bytes.end > line.bytes.start
             })
             .collect::<Vec<_>>();
-        spans.insert(
-            UnitKind::Line,
-            span(
-                &layout.words,
-                members.iter().copied(),
-                (page.start, page.end),
-            ),
+        let raw_line_span = span(
+            &layout.words,
+            members.iter().copied(),
+            (page.start, page.end),
         );
+        spans.insert(UnitKind::Line, line.display_span.unwrap_or(raw_line_span));
         let mut u = base.clone();
         u.kind = UnitKind::Line;
         u.line_position = Some(li);
@@ -1144,9 +1150,7 @@ fn units_for(
             blank.count = 1;
             blank.bounds = whitespace_bounds(line, &blank.bytes);
             blank.ink_bounds = line.ink_for(&blank.bytes, blank.bounds);
-            blank
-                .spans
-                .insert(UnitKind::Grapheme, spans[&UnitKind::Line]);
+            blank.spans.insert(UnitKind::Grapheme, raw_line_span);
             all.push((blank, None));
         }
     }

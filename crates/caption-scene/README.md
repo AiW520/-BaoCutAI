@@ -59,3 +59,7 @@ cargo run --locked -p subtitle-render --no-default-features --features wasm-safe
 `caption-noise-palette-mix/1` 在唯一文字节点的页上下文求值固定空间噪声与冻结 PNG 色条，保持输入 alpha；局部纹理 domain 必须显式给出画布坐标，不推断 ink/advance 范围。数值核、边界和预算见视频格式规范，示例见 [noise-palette-mix.json](tests/fixtures/noise-palette-mix.json)。
 
 `caption-glow-color-matrix/1` 提供 glow-cascade 的可选静态 `glowColorMatrix`，以行优先 3×3 矩阵在 tint 后变换辉光 RGB，再 clamp 后合成。alpha 和原图不参与变换；省略/单位矩阵保持旧输出。
+
+`caption-angular-sample-blend/1` 在显式局部domain内执行60次角采样，aspect独立、angle为弧度；透明越界仍使用固定分母，再按平均alpha混合原图。零角度不是恒等操作，读取/变换均计入共享预算。示例见 [angular-sample-blend.json](tests/fixtures/angular-sample-blend.json)。
+
+`caption-page-window/1` 通过 `layout.pageWindow` 按相邻真实词的短/长 gap 分配固定页/行显示窗口，显式指定边界归属；不改原始词/字素时间。要求固定行、leadingGap hide 与正时长无重叠输入，重排继承窗口，反馈按时刻查询。示例见 [page-window.json](tests/fixtures/page-window.json)，需提供真实词时间。

@@ -19,6 +19,16 @@ impl Work {
         }
         Ok(())
     }
+    fn samples(&mut self, count: u64) -> Result<()> {
+        self.pixels = self
+            .pixels
+            .checked_add(count)
+            .ok_or_else(|| anyhow::anyhow!("CAPTION_BUDGET_EXCEEDED: angular sample work"))?;
+        if self.pixels > MAX_WORK_PIXELS {
+            bail!("CAPTION_BUDGET_EXCEEDED: angular sample work");
+        }
+        Ok(())
+    }
     fn components(&mut self, estimate: filters::WorkEstimate) -> Result<()> {
         for count in [
             estimate.texel_reads,
@@ -61,6 +71,7 @@ fn padding(materials: &[CaptionMaterial]) -> u32 {
                 libm::ceil(max) as u32
             }
             CaptionMaterial::SoftBand { .. }
+            | CaptionMaterial::AngularSampleBlend { .. }
             | CaptionMaterial::NoisePaletteMix { .. }
             | CaptionMaterial::GaussianAxis { .. }
             | CaptionMaterial::GlowCascade { .. } => 0,
@@ -494,6 +505,51 @@ impl ScenePlan {
                 )?;
                 Ok((source, hits))
             }
+            CaptionMaterial::AngularSampleBlend {
+                id,
+                context_node_id,
+                domain,
+                aspect,
+                angle,
+            } => {
+                let (mut source, hits) =
+                    self.material_prefix(ci, t, materials, prefix - 1, pad, size, budget, work)?;
+                let Some(mut context) =
+                    self.material_page_context(ci, t, context_node_id, budget)?
+                else {
+                    source.data_mut().fill(0);
+                    return Ok((source, vec![]));
+                };
+                context.stable_key.push_str(&format!("|material|{id}"));
+                let scene = self.style.scene();
+                let aspect =
+                    component_uniform(aspect, scene, &context, t, budget, 1.0, 0.0001, 10_000.0)?;
+                let angle = sample_value(angle, ValueType::Angle, scene, &context, t, budget)?
+                    .map(|v| v.number())
+                    .transpose()?
+                    .unwrap_or(0.0);
+                let mut rect = [0.0; 4];
+                for (i, value) in [&domain.x, &domain.y, &domain.width, &domain.height]
+                    .into_iter()
+                    .enumerate()
+                {
+                    let Some(value) =
+                        sample_value(value, ValueType::Length, scene, &context, t, budget)?
+                    else {
+                        source.data_mut().fill(0);
+                        return Ok((source, vec![]));
+                    };
+                    rect[i] = value.number()?;
+                }
+                // Clear/write the output once; the kernel charges actual 1/2/4
+                // texel reads before each read and all 60 sample transforms.
+                work.spend(size.0, size.1)?;
+                let image =
+                    super::angular_samples::apply(&source, pad, rect, aspect, angle, |count| {
+                        work.samples(count)
+                    })?;
+                Ok((image, hits))
+            }
             CaptionMaterial::GaussianAxis {
                 id,
                 context_node_id,
@@ -709,7 +765,8 @@ fn component_stack(materials: &[CaptionMaterial]) -> bool {
     materials.iter().any(|material| {
         matches!(
             material,
-            CaptionMaterial::NoisePaletteMix { .. }
+            CaptionMaterial::AngularSampleBlend { .. }
+                | CaptionMaterial::NoisePaletteMix { .. }
                 | CaptionMaterial::GaussianAxis { .. }
                 | CaptionMaterial::GlowCascade { .. }
         )

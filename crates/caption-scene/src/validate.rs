@@ -24,11 +24,13 @@ pub const CAPABILITIES: &[&str] = &[
     "caption-wave-displace/1",
     "caption-soft-band/1",
     "caption-noise-palette-mix/1",
+    "caption-angular-sample-blend/1",
     "caption-gaussian-axis/1",
     "caption-glow-cascade/1",
     "caption-glow-tint/1",
     "caption-glow-color-matrix/1",
     "caption-layout-per-sample/1",
+    "caption-page-window/1",
     "caption-unit-font-size/1",
     "caption-word-line-layout/1",
     "caption-text-line-layout/1",
@@ -287,6 +289,7 @@ pub fn validate_scene(s: &Scene) -> Result<()> {
     }
     validate_text_line_pattern(s)?;
     validate_word_line_pattern(&s.layout)?;
+    validate_page_window(s)?;
     if s.parameters.len() > 128 || s.functions.len() > 128 || s.selectors.len() > MAX_NODES || s.animations.len() > 1024 {
         return Err(invalid("scene", "declaration budget exceeded"));
     }
@@ -515,6 +518,38 @@ pub fn validate_scene(s: &Scene) -> Result<()> {
                         let n = typed_value(ValueType::Length, value)?.number()?;
                         if !n.is_finite() || !(low..=1_000_000.0).contains(&n) {
                             return Err(invalid(id, "material domain requires finite lengths and positive dimensions"));
+                        }
+                    }
+                }
+                id
+            }
+            CaptionMaterial::AngularSampleBlend {
+                id,
+                context_node_id,
+                domain,
+                aspect,
+                angle,
+            } => {
+                validate_component_context(s, &nodes, id, context_node_id, "caption-angular-sample-blend/1", 1.0)?;
+                validate_component_uniform(s, aspect, 0.0001, 10_000.0)?;
+                validate_value("transform.rotation", angle, s, UnitKind::Page)?;
+                if let DynamicValue::Constant { value } = angle {
+                    let n = typed_value(ValueType::Angle, value)?.number()?;
+                    if !n.is_finite() || !(-10_000.0..=10_000.0).contains(&n) {
+                        return Err(invalid(id, "angular sample angle must be finite in -10000..10000 radians"));
+                    }
+                }
+                for (value, low) in [
+                    (&domain.x, -1_000_000.0),
+                    (&domain.y, -1_000_000.0),
+                    (&domain.width, 0.001),
+                    (&domain.height, 0.001),
+                ] {
+                    validate_value("width", value, s, UnitKind::Page)?;
+                    if let DynamicValue::Constant { value } = value {
+                        let n = typed_value(ValueType::Length, value)?.number()?;
+                        if !n.is_finite() || !(low..=1_000_000.0).contains(&n) {
+                            return Err(invalid(id, "angular sample domain requires finite lengths and positive dimensions"));
                         }
                     }
                 }
@@ -1070,6 +1105,42 @@ fn validate_font_size_dependencies(value: &DynamicValue, scene: &Scene) -> Resul
     }
     if let DynamicValue::Expression { expression } = value {
         visit(expression, scene, &mut BTreeSet::new(), &mut 16_384)?;
+    }
+    Ok(())
+}
+
+fn validate_page_window(scene: &Scene) -> Result<()> {
+    let Some(window) = &scene.layout.page_window else {
+        return Ok(());
+    };
+    if !scene.required_capabilities.iter().any(|cap| cap == "caption-page-window/1") {
+        return Err(Diagnostic::new(
+            "CAPTION_CAPABILITY_REQUIRED",
+            "layout.pageWindow",
+            "caption-page-window/1",
+        ));
+    }
+    if !scene.layout.pagination.has_fixed_lines()
+        || scene.layout.leading_gap != LeadingGap::Hide
+        || scene.speech_state.timing_policy != TimingPolicy::RequireWordTiming
+    {
+        return Err(invalid(
+            "layout.pageWindow",
+            "fixed word/text lines, leadingGap hide and input word timing required",
+        ));
+    }
+    if window.gap_threshold.timescale == 0 || window.gap_threshold.ticks < 0 || window.gap_threshold.ticks > 9_007_199_254_740_991 {
+        return Err(invalid("layout.pageWindow", "nonnegative safe gapThreshold time required"));
+    }
+    for ratios in [window.short_gap, window.long_gap] {
+        if !ratios.before.is_finite()
+            || !ratios.after.is_finite()
+            || !(0.0..=1.0).contains(&ratios.before)
+            || !(0.0..=1.0).contains(&ratios.after)
+            || ratios.before + ratios.after > 1.0
+        {
+            return Err(invalid("layout.pageWindow", "before/after ratios must be 0..1 and sum at most 1"));
+        }
     }
     Ok(())
 }

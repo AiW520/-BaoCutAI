@@ -164,6 +164,29 @@ pub struct Layout {
     pub align: Align,
     #[serde(default)]
     pub leading_gap: LeadingGap,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub page_window: Option<PageWindow>,
+}
+/// Explicit display windows derived from neighboring input word gaps.
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct PageWindow {
+    pub gap_threshold: Time,
+    pub short_gap: GapRatios,
+    pub long_gap: GapRatios,
+    pub boundary: PageWindowBoundary,
+}
+#[derive(Clone, Copy, Debug, PartialEq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct GapRatios {
+    pub before: f64,
+    pub after: f64,
+}
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "kebab-case")]
+pub enum PageWindowBoundary {
+    StartInclusiveEndExclusive,
+    FirstStartInclusiveEndInclusive,
 }
 #[derive(Clone, Copy, Debug, Default, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "kebab-case")]
@@ -745,6 +768,14 @@ pub enum CaptionMaterial {
         palette_position: DynamicValue,
         phase: DynamicValue,
         domain: MaterialDomain,
+    },
+    AngularSampleBlend {
+        id: String,
+        #[serde(rename = "contextNodeId")]
+        context_node_id: String,
+        domain: MaterialDomain,
+        aspect: DynamicValue,
+        angle: DynamicValue,
     },
     GaussianAxis {
         id: String,

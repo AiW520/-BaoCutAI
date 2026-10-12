@@ -389,6 +389,7 @@ pub(super) fn reflow(
         lines.push(Line::new(text, bytes, shape, bounds, baseline, max_size));
         top += row_height;
     }
+    page_window::inherit_lines(&mut lines, &page.lines)?;
     Ok(Page {
         source_range: page.source_range.clone(),
         paint_start: page.paint_start,

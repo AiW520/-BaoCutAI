@@ -1,0 +1,117 @@
+{
+  "schema": "baocut.caption-scene-style/1",
+  "scene": {
+    "kind": "inline",
+    "value": {
+      "schema": "baocut.caption-scene/1",
+      "evaluationVersion": 1,
+      "requiredCapabilities": [
+        "caption-page-window/1",
+        "caption-word-line-layout/1"
+      ],
+      "parameters": [],
+      "layout": {
+        "width": {
+          "value": 140,
+          "basis": "absolute"
+        },
+        "x": {
+          "value": 80,
+          "basis": "absolute"
+        },
+        "y": {
+          "value": 45,
+          "basis": "absolute"
+        },
+        "maxLines": 1,
+        "pagination": {
+          "unit": "word",
+          "wordLinePattern": [
+            [
+              1
+            ]
+          ]
+        },
+        "leadingGap": "hide",
+        "pageWindow": {
+          "gapThreshold": {
+            "ticks": 1000,
+            "timescale": 1000
+          },
+          "shortGap": {
+            "before": 0.5,
+            "after": 0.5
+          },
+          "longGap": {
+            "before": 0.25,
+            "after": 0.25
+          },
+          "boundary": "first-start-inclusive-end-inclusive"
+        }
+      },
+      "speechState": {
+        "timingPolicy": "require-word-timing",
+        "gapPolicy": "none",
+        "tailPolicy": "none"
+      },
+      "nodes": [
+        {
+          "id": "caption",
+          "type": "text",
+          "style": {
+            "fontSize": {
+              "value": 16,
+              "basis": "absolute"
+            }
+          }
+        }
+      ],
+      "selectors": [
+        {
+          "id": "lines",
+          "nodeId": "caption",
+          "unit": "line"
+        }
+      ],
+      "animations": [
+        {
+          "id": "line-pop",
+          "target": {
+            "nodeId": "caption",
+            "selectorId": "lines"
+          },
+          "property": "transform.scale",
+          "composite": "multiply",
+          "value": {
+            "kind": "keyframes",
+            "clock": {
+              "unit": "line",
+              "origin": "start",
+              "duration": {
+                "kind": "unit-span"
+              }
+            },
+            "keys": [
+              {
+                "at": 0,
+                "value": 0.8
+              },
+              {
+                "at": 0.25,
+                "value": 1.15
+              },
+              {
+                "at": 1,
+                "value": 1
+              }
+            ],
+            "fill": {
+              "before": "hold",
+              "after": "hold"
+            }
+          }
+        }
+      ]
+    }
+  }
+}

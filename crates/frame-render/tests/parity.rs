@@ -868,6 +868,27 @@ fn scenes() -> Vec<Scene> {
         ..shot(15)
     });
     scenes.push(noise);
+    for (name, zero_angle) in [("captions-angular-sample-blend", false), ("captions-angular-zero-angle", true)] {
+        let mut style: Value = serde_json::from_str(include_str!("../../caption-scene/tests/fixtures/angular-sample-blend.json")).unwrap();
+        if zero_angle {
+            style["scene"]["value"]["materials"][0]["angle"] = json!({"kind":"constant","value":0});
+        }
+        let mut angular = Scene::new(
+            name,
+            video(vec![caption("angular", "doc", Some("style"), 120, &[])], vec![], json!({})),
+            &[0, 6, 15, 60, 100, 15],
+        );
+        angular.documents = vec![
+            caption_doc("doc", "sequence", &[(0., 4., "Arc 字幕")], "original"),
+            style_doc("style", style),
+        ];
+        angular.shots.push(Shot {
+            transparent: true,
+            associated_rgba: true,
+            ..shot(15)
+        });
+        scenes.push(angular);
+    }
     for (name, style) in [
         (
             "captions-page-envelope",
@@ -896,6 +917,29 @@ fn scenes() -> Vec<Scene> {
             .speech
             .push(json!({"documentId":"speech","body":{"schema":"baocut.speech/1","clock":"sequence","timescale":1000,"words":words}}));
         scenes.push(component);
+    }
+    for (name, boundary) in [
+        ("captions-page-window-closed", "first-start-inclusive-end-inclusive"),
+        ("captions-page-window-half-open", "start-inclusive-end-exclusive"),
+    ] {
+        let mut style: Value = serde_json::from_str(include_str!("../../caption-scene/tests/fixtures/page-window.json")).unwrap();
+        style["scene"]["value"]["layout"]["pageWindow"]["boundary"] = json!(boundary);
+        let mut window = Scene::new(
+            name,
+            video(vec![caption("page-window", "doc", Some("style"), 120, &[])], vec![], json!({})),
+            &[15, 0, 3, 14, 16, 37, 38, 58, 59, 75, 76, 119, 16],
+        );
+        let mut doc = caption_doc("doc", "sequence", &[(0., 4., "One two three")], "original");
+        doc["sourceDocumentId"] = json!("speech");
+        doc["body"]["cues"][0]["words"] = json!({"first":"w0","last":"w2"});
+        window.documents = vec![doc, style_doc("style", style)];
+        window.speech.push(
+            json!({"documentId":"speech","body":{"schema":"baocut.speech/1","clock":"sequence","timescale":1000,
+            "words":[{"id":"w0","text":"One","start":100,"end":300},
+                {"id":"w1","text":"two","start":700,"end":900},
+                {"id":"w2","text":"three","start":2300,"end":2500}]}}),
+        );
+        scenes.push(window);
     }
     let cue_word_style: Value = serde_json::from_str(include_str!("../../caption-scene/tests/fixtures/cue-word-context.json")).unwrap();
     let mut cue_word = Scene::new(

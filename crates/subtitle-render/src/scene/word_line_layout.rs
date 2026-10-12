@@ -208,6 +208,9 @@ pub(super) fn prepare(
             .map_or(cue.end, |page| page.start)
             .min(cue.end);
     }
+    if let Some(window) = &cfg.page_window {
+        page_window::apply(&mut pages, &words, content, window)?;
+    }
     Ok(TextLayout {
         pages,
         words,
@@ -224,7 +227,7 @@ pub(super) fn reflow(
     size: (u32, u32),
     params: &BTreeMap<String, Evaluated>,
 ) -> Result<Page> {
-    let lines = shape_page(
+    let mut lines = shape_page(
         text,
         &base.content,
         page.lines.iter().map(|line| line.bytes.clone()).collect(),
@@ -233,6 +236,7 @@ pub(super) fn reflow(
         size,
         params,
     )?;
+    page_window::inherit_lines(&mut lines, &page.lines)?;
     Ok(Page {
         source_range: page.source_range.clone(),
         paint_start: page.paint_start,
