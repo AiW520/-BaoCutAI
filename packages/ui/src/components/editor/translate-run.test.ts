@@ -603,7 +603,19 @@ describe('就地重译过期句', () => {
     useJobs.setState({ jobs: [job('failed', { stoppedAt: 'translate', error: { code: 'MODEL_OUTPUT_INVALID', message: '模型回的不是合法的 JSON' } })] });
     await flush();
     expect(useTranslateRun.getState().refreshes.tr).toBeUndefined();
-    expect(useTranslateRun.getState().problems.vid).toMatchObject({ kind: 'failed', title: '重译失败', message: '模型回的不是合法的 JSON', retry: null });
+    // 带着是哪一份译文：刷新过期译文的工具页只挂就地刷新的问题，新翻译的不挂。
+    expect(useTranslateRun.getState().problems.vid).toMatchObject({ kind: 'failed', title: '重译失败', message: '模型回的不是合法的 JSON', retry: null, refresh: 'tr' });
+  });
+
+  it('提交被拒：问题卡也带着是哪一份译文', async () => {
+    const { deps } = fake();
+    deps.runtime.startTranslate = vi.fn(async () => {
+      throw new Error('模型不支持结构化输出');
+    });
+    bindTranslate(deps);
+    expect(await startRefresh({ videoId: 'vid', record: translationRecord, language: 'en', count: 2, model: null })).toBe(false);
+    expect(useTranslateRun.getState().refreshes.tr).toBeUndefined();
+    expect(useTranslateRun.getState().problems.vid).toMatchObject({ kind: 'failed', message: '模型不支持结构化输出', refresh: 'tr' });
   });
 });
 

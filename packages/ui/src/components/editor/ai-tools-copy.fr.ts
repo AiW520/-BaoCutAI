@@ -1,3 +1,4 @@
+import { pluralForm } from '@baocut/protocol';
 import type { AiToolsMessages } from './ai-tools-copy.ts';
 
 export const fr: AiToolsMessages = {
@@ -100,7 +101,6 @@ export const fr: AiToolsMessages = {
 
   whyRetranscribe: "Il faut un modèle vocal, et la transcription du Runtime ajoute une transcription complète au lieu de remplacer un passage ; seul l’Agent peut le faire",
   whyCleanup: "Trouver les coupes demande de peser chaque endroit dans son contexte ; seul l’Agent peut le faire",
-  whyStale: "Pour retraduire avec l’API du modèle, utilisez le bouton IA de la liste de traduction dans le panneau Sous-titres ; cette page confie le travail à l’Agent",
   whyCover: "Une couverture demande de générer et composer des images ; seul l’Agent peut le faire",
   modelPromptLabel: 'Prompt',
   modelPicker: 'Modèle de texte',
@@ -125,6 +125,16 @@ export const fr: AiToolsMessages = {
   ctaTitle: 'Proposer des titres',
   ctaDesc: 'Écrire la description',
   noTextModel: 'Connectez d’abord un modèle de texte',
+  staleDirectSetup: 'Retraduit sur place les phrases marquées obsolètes, celles dont l’original a été modifié et celles pas encore traduites : la même traduction reçoit une nouvelle version, et seules ces lignes de sous-titres changent.',
+  staleTranslation: 'Traduction',
+  staleNoTranslation: 'Cette vidéo n’a pas encore de traduction. Traduisez-la d’abord depuis le panneau Sous-titres.',
+  staleReading: 'Lecture de la traduction…',
+  staleCounts: (parts) => `À retraduire : ${parts}`,
+  staleNothing: 'Rien n’est obsolète ou non traduit dans cette traduction',
+  staleCutNeedsAgent: 'Les phrases coupées dans l’original se retraduisent à partir de l’original coupé ; seul l’Agent peut le faire.',
+  staleNoPrompt: 'Retraduit comme l’outil de traduction, avec les glossaires de la vidéo ; aucune consigne, pièce jointe ni skill n’est envoyée. Pour le guider avec vos propres mots, confiez-le à l’Agent.',
+  staleGateBody: 'Cet outil envoie les phrases à retraduire, avec leur original, à un modèle de texte.',
+  ctaStale: (n) => (n ? `Retraduire ${n} ${pluralForm('fr', n, { one: 'phrase', other: 'phrases' })}` : 'Retraduire'),
   runSubmitting: 'Démarrage…',
   runQueued: 'En file d’attente',
   runRunning: (model) => `${model} travaille`,

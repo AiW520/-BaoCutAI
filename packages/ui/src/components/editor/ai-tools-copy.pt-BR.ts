@@ -1,3 +1,4 @@
+import { pluralForm } from '@baocut/protocol';
 import type { AiToolsMessages } from './ai-tools-copy.ts';
 
 export const ptBR: AiToolsMessages = {
@@ -100,7 +101,6 @@ export const ptBR: AiToolsMessages = {
 
   whyRetranscribe: 'Precisa de um modelo de voz, e a transcrição do Runtime adiciona uma transcrição nova inteira em vez de substituir um trecho; só o agente pode fazer',
   whyCleanup: 'Encontrar cortes exige pesar cada ponto no contexto; só o agente pode fazer',
-  whyStale: 'Para traduzir de novo com a API do modelo, use o botão de IA da lista de tradução no painel Legendas; esta página entrega ao agente',
   whyCover: 'Uma capa exige gerar e compor imagens; só o agente pode fazer',
   modelPromptLabel: 'Prompt',
   modelPicker: 'Modelo de texto',
@@ -125,6 +125,16 @@ export const ptBR: AiToolsMessages = {
   ctaTitle: 'Sugerir títulos',
   ctaDesc: 'Escrever descrição',
   noTextModel: 'Conecte um modelo de texto primeiro',
+  staleDirectSetup: 'Traduz de novo, no lugar, as frases marcadas como desatualizadas, as com o original editado e as ainda sem tradução: a mesma tradução ganha uma nova versão e só essas linhas de legenda mudam.',
+  staleTranslation: 'Tradução',
+  staleNoTranslation: 'Este vídeo ainda não tem tradução. Traduza primeiro no painel Legendas.',
+  staleReading: 'Lendo a tradução…',
+  staleCounts: (parts) => `Para traduzir de novo: ${parts}`,
+  staleNothing: 'Nada nesta tradução está desatualizado ou sem tradução',
+  staleCutNeedsAgent: 'Frases cortadas do original são traduzidas de novo a partir do original cortado; só o agente consegue fazer isso.',
+  staleNoPrompt: 'Traduz de novo do jeito da ferramenta de tradução, com os glossários do vídeo; nenhum prompt, anexo ou skill é enviado. Para orientar com suas palavras, entregue ao agente.',
+  staleGateBody: 'Esta ferramenta envia as frases a retraduzir, com o original, para um modelo de texto.',
+  ctaStale: (n) => (n ? `Traduzir de novo ${n} ${pluralForm('pt-BR', n, { one: 'frase', other: 'frases' })}` : 'Traduzir de novo'),
   runSubmitting: 'Iniciando…',
   runQueued: 'Na fila',
   runRunning: (model) => `${model} está trabalhando`,

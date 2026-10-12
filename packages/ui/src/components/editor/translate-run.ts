@@ -85,6 +85,8 @@ export interface TranslateProblem {
   remedy: Remedy | null;
   /** 能重试的流程：同一个任务；`note` 说重试会不会再计费。 */
   retry: { jobId: Id; note: 'charges' | 'free' | null; intent: TranslateIntent } | null;
+  /** 就地刷新这份译文没走通（字幕面板与刷新过期译文的工具页都挂）；新翻译的问题没有。 */
+  refresh?: Id;
 }
 
 /** 一次翻译放到画面上之后的收据（原型 `DoneView`）：一次 AI run 收尾一定留一个能撤销的出口。 */
@@ -262,8 +264,9 @@ export async function startTranslate(setup: TranslateSetup & { bilingual: boolea
 }
 
 /**
- * 就地重译一份译文（不弹参数页）：给了 `sentences` 时只重译这几句（译文新鲜的也重译），不给时由 Runtime 挑过期与还没有译文的。
- * 模型照翻译设置页缺省的那只（调用方给；null 时用文本生成的默认值）。被拒时问题卡挂在字幕面板上。
+ * 就地重译一份译文：给了 `sentences` 时只重译这几句（译文新鲜的也重译），不给时由 Runtime 挑过期与还没有译文的。
+ * 字幕面板不弹参数页，模型照翻译设置页缺省的那只；刷新过期译文的工具页用它自己选的那只（调用方给；null 时用文本生成的默认值）。
+ * 被拒时问题卡挂在字幕面板与工具页上（带 `refresh`）。
  */
 export async function startRefresh(o: {
   videoId: Id;
@@ -295,7 +298,7 @@ export async function startRefresh(o: {
     return true;
   } catch (error) {
     endRefresh(record.id);
-    report(videoId, translateSubmitProblem(error));
+    report(videoId, { ...translateSubmitProblem(error), refresh: record.id });
     return false;
   }
 }
@@ -318,6 +321,7 @@ function finishRefresh(run: RefreshRun, job: JobRecord): void {
       message: jobErrorText(job.error) ?? '',
       remedy: { label: C.decide, target: { tab: 'tasks', taskId: job.jobId }, hint: '' },
       retry: null,
+      refresh: run.translationId,
     });
     return;
   }
@@ -328,6 +332,7 @@ function finishRefresh(run: RefreshRun, job: JobRecord): void {
       message: jobErrorText(job.error) ?? '',
       remedy: jobRemedy({ kind: 'generateText', providerId: job.providerId, error: job.error }),
       retry: null,
+      refresh: run.translationId,
     });
     return;
   }

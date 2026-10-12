@@ -1,3 +1,4 @@
+import { pluralForm } from '@baocut/protocol';
 import type { AiToolsMessages } from './ai-tools-copy.ts';
 
 export const de: AiToolsMessages = {
@@ -100,7 +101,6 @@ export const de: AiToolsMessages = {
 
   whyRetranscribe: 'Braucht ein Sprachmodell, und die Transkription der Runtime fügt ein ganz neues Transkript hinzu, statt einen Bereich zu ersetzen; nur der Agent kann dies ausführen',
   whyCleanup: 'Schnittstellen zu finden heißt, jede Stelle im Zusammenhang abzuwägen; nur der Agent kann dies ausführen',
-  whyStale: 'Zum Neu-Übersetzen mit der Modell-API die KI-Schaltfläche der Übersetzungsliste im Untertitel-Bereich nutzen; diese Seite übergibt an den Agenten',
   whyCover: 'Ein Cover heißt Bilder erzeugen und zusammensetzen; nur der Agent kann dies ausführen',
   modelPromptLabel: 'Prompt',
   modelPicker: 'Textmodell',
@@ -125,6 +125,16 @@ export const de: AiToolsMessages = {
   ctaTitle: 'Titel vorschlagen',
   ctaDesc: 'Beschreibung schreiben',
   noTextModel: 'Verbinde zuerst ein Textmodell',
+  staleDirectSetup: 'Übersetzt die als veraltet markierten Sätze, die Sätze mit bearbeitetem Original und die noch unübersetzten an Ort und Stelle neu: Dieselbe Übersetzung erhält eine neue Version, und nur diese Untertitelzeilen ändern sich.',
+  staleTranslation: 'Übersetzung',
+  staleNoTranslation: 'Dieses Video hat noch keine Übersetzung. Übersetze es zuerst im Untertitel-Bereich.',
+  staleReading: 'Übersetzung wird gelesen…',
+  staleCounts: (parts) => `Neu zu übersetzen: ${parts}`,
+  staleNothing: 'In dieser Übersetzung ist nichts veraltet oder unübersetzt',
+  staleCutNeedsAgent: 'Sätze, deren Original geschnitten wurde, werden aus dem geschnittenen Original neu übersetzt – das kann nur der Agent.',
+  staleNoPrompt: 'Übersetzt so neu wie das Übersetzungswerkzeug, mit den Glossaren des Videos; Prompt, Anhänge und Skills werden nicht gesendet. Um es mit eigenen Worten zu steuern, übergib es dem Agenten.',
+  staleGateBody: 'Dieses Werkzeug schickt die neu zu übersetzenden Sätze samt Original an ein Textmodell.',
+  ctaStale: (n) => (n ? `${pluralForm('de', n, { one: `${n} Satz`, other: `${n} Sätze` })} neu übersetzen` : 'Neu übersetzen'),
   runSubmitting: 'Wird gestartet…',
   runQueued: 'In der Warteschlange',
   runRunning: (model) => `${model} arbeitet daran`,

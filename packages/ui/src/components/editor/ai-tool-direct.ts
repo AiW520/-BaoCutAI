@@ -1,12 +1,14 @@
-import { AI_TOOL_APPLY_KINDS, AI_TOOL_KINDS, type AiToolKind, type AiToolParams, type Id } from '@baocut/protocol';
+import { AI_TOOL_APPLY_KINDS, AI_TOOL_KINDS, type AiToolKind, type AiToolParams, type DocumentRecord, type Id } from '@baocut/protocol';
 import type { AgentToolId } from '../../model/ai-tools.ts';
+import { languageName } from '../../model/caption-tracks.ts';
+import { isStale, needsTranslation, type PairRow } from '../../model/translation-doc.ts';
 import { S } from '../shell-copy.ts';
 import { AI_TOOLS_COPY as C } from './ai-tools-copy.ts';
 
 /**
  * 工具页「用 › 直接调模型」的纯逻辑（产品设计 §5.10，原型 model-ai-prompt.js `contextPack` / `contextLine` / `hint`）：
  * 哪些工具能直接调模型、做不了的写什么原因，发给模型的上下文那一行、主按钮的字与它下面那行去向。
- * 运行走 Runtime 的 `ai-tool` 流程（`AI_TOOL_PIPELINE`），这里只折参数。
+ * 运行走 Runtime 的 `ai-tool` 流程（`AI_TOOL_PIPELINE`），这里只折参数；刷新过期译文走 `translate` 流程的就地刷新（`directRefresh`）。
  */
 
 /** 能直接调模型时是哪一种；做不了（只能交给 Agent）时 null。 */
@@ -14,16 +16,22 @@ export function directTool(tool: AgentToolId): AiToolKind | null {
   return (AI_TOOL_KINDS as readonly string[]).includes(tool) ? (tool as AiToolKind) : null;
 }
 
+/**
+ * 刷新过期译文直接调模型时不走 `ai-tool`：走 `translate` 流程就地刷新一份译文（`translationId`，不点名句子，由 Runtime 挑过期、
+ * 原句改过与还没有译文的），同字幕面板 AI 钮的「用模型 API 重译」（产品设计 §5.10「逐句与过期译文」）。
+ */
+export function directRefresh(tool: AgentToolId): boolean {
+  return tool === 'stale';
+}
+
 /** 「直接调模型」置灰时那一行原因；能直接调模型时 null。 */
 export function directBlocked(tool: AgentToolId): string | null {
-  if (directTool(tool)) return null;
+  if (directTool(tool) || directRefresh(tool)) return null;
   switch (tool) {
     case 'retranscribe':
       return C.whyRetranscribe;
     case 'cleanup':
       return C.whyCleanup;
-    case 'stale':
-      return C.whyStale;
     case 'cover':
       return C.whyCover;
     default:
@@ -132,4 +140,30 @@ export function directParams(o: {
     ...(o.model ? { provider: o.model.providerId, model: o.model.modelId } : {}),
     uiLanguage: o.uiLanguage,
   };
+}
+
+// ---- 刷新过期译文：直接调模型（`translate` 就地刷新） ----
+
+/** 能就地刷新的译文：译自视频里的一份转写。 */
+export function refreshableTranslations(documents: Record<Id, DocumentRecord>): DocumentRecord[] {
+  return Object.values(documents).filter((d) => d.kind === 'translation' && !!d.sourceDocumentId && documents[d.sourceDocumentId]?.kind === 'speech');
+}
+
+/**
+ * 刷新哪一份译文：选过且还在的；再是入口带来的（字幕面板带着那一份的 ID，或只带语言名）；再是第一份。没有译文时 null。
+ */
+export function pickTranslation(
+  translations: readonly DocumentRecord[],
+  o: { picked: Id | null; presetId?: Id | null; presetLanguage?: string | null },
+): DocumentRecord | null {
+  const byId = (id: Id | null | undefined) => (id ? translations.find((t) => t.id === id) : undefined);
+  const byLanguage = o.presetLanguage ? translations.find((t) => !!t.language && languageName(t.language) === o.presetLanguage) : undefined;
+  return byId(o.picked) ?? byId(o.presetId) ?? byLanguage ?? translations[0] ?? null;
+}
+
+/** 要重译几句（口径同字幕面板统计条的「过期」「未翻译」）：Runtime 不点名时挑的就是这些。 */
+export function refreshCounts(rows: readonly PairRow[]): { todo: number; stale: number; untranslated: number } {
+  const stale = rows.filter((r) => isStale(r.state)).length;
+  const todo = rows.filter(needsTranslation).length;
+  return { todo, stale, untranslated: todo - stale };
 }

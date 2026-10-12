@@ -33,15 +33,18 @@ import { transcribeModelInfo } from '../../model/transcribe-speakers.ts';
 import { useAiToolRunner, type AiToolRunner } from '../../state/ai-tool-runner-store.ts';
 import { useModels } from '../../state/models-store.ts';
 import { AsrMoreOptions, useSpeakerState } from '../tools/asr-more-options.tsx';
-import { directHasScope, directParams, directTool, scopedParagraphs } from './ai-tool-direct.ts';
+import { directHasScope, directParams, directRefresh, directTool, scopedParagraphs } from './ai-tool-direct.ts';
 import { DirectModelGate, DirectModelPicker, DirectProblem, DirectReceiptView, DirectResultView, DirectRunView, useDirectModel } from './ai-tool-direct-view.tsx';
 import { AiToolAgentRun } from './ai-tool-agent-run.tsx';
+import { refreshParts, StaleDirectStart, StaleRefreshView, translationLabel, useStaleDirect, useStaleRefreshLive } from './ai-tool-stale-direct.tsx';
 import { AgentUseRow, AiToolPrompt, SessionRow, useToolHandoff, type DirectPrompt } from './ai-tool-prompt.tsx';
 import { closeAiToolResult, runKey, startAiTool, useAiToolRun } from './ai-tool-run.ts';
 import type { Handoff } from './ai-tools-handoff.ts';
 import { AI_TOOLS_COPY as C } from './ai-tools-copy.ts';
 import { setAiToolAgentRun, useAiToolAgentRuns, type AiToolPreset } from './ai-tools-nav.ts';
 import { PanelHead } from './panel-head.tsx';
+import { TranslateProblemAlert } from './translate-status.tsx';
+import { useTranslateRun } from './translate-run.ts';
 import { EDITOR_COPY as E } from './editor-copy.ts';
 import { useDocumentBody } from './use-document-body.ts';
 
@@ -156,13 +159,18 @@ export function AiAgentToolPage({
   const scopeIndex = chapters.findIndex((c) => c.id === scopeKey);
   const scope = scopeIndex >= 0 ? C.scopeChapter(scopeIndex + 1, chapters[scopeIndex]!.label) : null;
 
-  // 「用」：按工具记住交给 Agent 还是直接调模型（直接调模型做不了的工具总是交给 Agent）。
+  // 「用」：按工具记住交给 Agent 还是直接调模型（直接调模型做不了的工具总是交给 Agent）。刷新过期译文直接调模型时
+  // 不走 `ai-tool`，走翻译流程的就地刷新（`viaRefresh`）。
   const kind = directTool(tool);
   const savedRunner = useAiToolRunner((s) => s.runners[tool]);
   const setRunner = useAiToolRunner((s) => s.setRunner);
-  const runner: AiToolRunner = kind && savedRunner === 'model' ? 'model' : 'agent';
+  const runner: AiToolRunner = (kind || directRefresh(tool)) && savedRunner === 'model' ? 'model' : 'agent';
   const viaModel = runner === 'model' && kind ? kind : null;
-  const model = useDirectModel(kind ?? 'summary');
+  const viaRefresh = runner === 'model' && directRefresh(tool);
+  const model = useDirectModel(directRefresh(tool) ? 'stale' : (kind ?? 'summary'));
+  const staleDirect = useStaleDirect(documents, preset, viaRefresh);
+  const refreshLive = useStaleRefreshLive(viaRefresh ? (staleDirect.record?.id ?? null) : null);
+  const refreshProblem = useTranslateRun((s) => (viaRefresh && s.problems[videoId]?.refresh ? s.problems[videoId] : null));
   const key = kind ? runKey(videoId, kind) : '';
   const run = useAiToolRun((s) => s.runs[key] ?? null);
   const result = useAiToolRun((s) => s.results[key] ?? null);
@@ -275,6 +283,18 @@ export function AiAgentToolPage({
 
   if (agentRun && !agentRun.restored) return <AiToolAgentRun videoId={videoId} tool={tool} run={agentRun} onBack={onBack} />;
 
+  // 就地刷新跑着：参数页原地换成进度（从字幕面板发起的同一份也算）；跑完回到参数页，提示里给撤销（translate-run.ts）。
+  if (refreshLive) {
+    return (
+      <>
+        <PanelHead title={info.name} back={{ label: C.back, onPress: onBack }} />
+        <div className={`${body} bc-scroll`}>
+          <StaleRefreshView live={refreshLive} />
+        </div>
+      </>
+    );
+  }
+
   // 直接调模型跑着、出了结果或收据：这一页换成那一态（同识别说话人的四态页）。结果与收据页的「返回」与「完成」一样回到参数页
   // （设置与提示词都还在），参数页的「返回」才回列表；跑着时没有参数页可回，「返回」回列表、任务在后台接着跑。
   if (kind && (run || result || receipt)) {
@@ -303,7 +323,12 @@ export function AiAgentToolPage({
             <DirectProblem runKey={key} problem={problem} />
           </div>
         ) : null}
-        <ToolCard name={info.name} lines={info.setup ?? [info.desc]} effect={toolEffect(tool)} />
+        {refreshProblem ? (
+          <div className={problemBox}>
+            <TranslateProblemAlert videoId={videoId} problem={refreshProblem} />
+          </div>
+        ) : null}
+        <ToolCard name={info.name} lines={viaRefresh ? [C.staleDirectSetup] : (info.setup ?? [info.desc])} effect={toolEffect(tool)} />
 
         {tool === 'cover' ? (
           <>
@@ -354,7 +379,7 @@ export function AiAgentToolPage({
               onChange={setFrames}
             />
           ) : null}
-          {viaModel ? null : <SessionRow handoff={handoff} />}
+          {viaModel || viaRefresh ? null : <SessionRow handoff={handoff} />}
 
           {tool === 'chapters' && !viaModel ? <Option label={C.prePolish} sub={pre ? C.prePolishOn : C.prePolishOff} isSelected={pre} onChange={setPre} /> : null}
           {tool === 'cleanup' ? (
@@ -364,7 +389,35 @@ export function AiAgentToolPage({
               ))}
             </div>
           ) : null}
-          {tool === 'stale' ? (
+          {viaRefresh ? (
+            <Row label={C.staleTranslation}>
+              {staleDirect.translations.length ? (
+                <Picker
+                  aria-label={C.staleTranslation}
+                  size="S"
+                  styles={field}
+                  isDisabled={staleDirect.translations.length < 2}
+                  selectedKey={staleDirect.record?.id ?? null}
+                  onSelectionChange={(key) => key && staleDirect.pick(String(key))}>
+                  {staleDirect.translations.map((t) => (
+                    <PickerItem key={t.id} id={t.id}>
+                      {translationLabel(t, staleDirect.translations)}
+                    </PickerItem>
+                  ))}
+                </Picker>
+              ) : null}
+              <p className={hint}>
+                {!staleDirect.translations.length
+                  ? C.staleNoTranslation
+                  : !staleDirect.counts
+                    ? C.staleReading
+                    : staleDirect.counts.todo
+                      ? C.staleCounts(refreshParts(staleDirect.counts))
+                      : C.staleNothing}
+              </p>
+              <p className={hint}>{C.staleCutNeedsAgent}</p>
+            </Row>
+          ) : tool === 'stale' ? (
             <div className={options}>
               <Option label={C.staleEdited} sub={C.staleEditedSub} isSelected={stale.edited} onChange={(on) => setStale((s) => ({ ...s, edited: on }))} />
               <Option label={C.staleCut} sub={C.staleCutSub} isSelected={stale.cut} onChange={(on) => setStale((s) => ({ ...s, cut: on }))} />
@@ -424,17 +477,26 @@ export function AiAgentToolPage({
           ) : null}
         </div>
 
-        <AiToolPrompt
-          key={tool}
-          videoId={videoId}
-          tool={tool}
-          template={template}
-          handoff={handoff}
-          isDisabled={staleEmpty}
-          onDone={onBack}
-          {...(stays ? { onHandedOff: (h: Handoff) => setAiToolAgentRun(draftKey, { conversationId: h.conversationId, taskId: h.taskId, handedAt: h.handedAt }) } : {})}
-          direct={direct}
-        />
+        {viaRefresh ? (
+          <StaleDirectStart
+            videoId={videoId}
+            stale={staleDirect}
+            model={model}
+            onNotReady={() => ToastQueue.neutral(model.selected?.why ?? C.noTextModel, { timeout: 4000 })}
+          />
+        ) : (
+          <AiToolPrompt
+            key={tool}
+            videoId={videoId}
+            tool={tool}
+            template={template}
+            handoff={handoff}
+            isDisabled={staleEmpty}
+            onDone={onBack}
+            {...(stays ? { onHandedOff: (h: Handoff) => setAiToolAgentRun(draftKey, { conversationId: h.conversationId, taskId: h.taskId, handedAt: h.handedAt }) } : {})}
+            direct={direct}
+          />
+        )}
       </div>
     </>
   );

@@ -126,7 +126,6 @@ const en = {
   /** 「用」一行里直接调模型做不了、只能交给 Agent 的工具各自的原因。 */
   whyRetranscribe: 'Needs a speech model, and the Runtime’s transcription adds a whole new transcript instead of replacing a range, so only the Agent can do it',
   whyCleanup: 'Finding cuts means weighing each spot in context, so only the Agent can do it',
-  whyStale: 'To retranslate with the model API, use the AI button on the translation list in the Subtitles panel; this page hands the work to the Agent',
   whyCover: 'A cover means generating and composing images, so only the Agent can do it',
   modelPromptLabel: 'Prompt',
   modelPicker: 'Text model',
@@ -154,6 +153,20 @@ const en = {
   ctaTitle: 'Suggest titles',
   ctaDesc: 'Write description',
   noTextModel: 'Connect a text model first',
+  // 刷新过期译文直接调模型：走 `translate` 就地刷新，没有提示词框（ai-tool-stale-direct.tsx）
+  staleDirectSetup:
+    'Retranslates, in place, the sentences marked out of date, the ones whose source you edited, and the ones not yet translated: the same translation gets a new version, and only those subtitle lines change.',
+  staleTranslation: 'Translation',
+  staleNoTranslation: 'This video has no translation yet. Translate it in the Subtitles panel first.',
+  staleReading: 'Reading the translation…',
+  /** `parts`：「3 out of date · 2 not translated」，用翻译文案的短计数拼。 */
+  staleCounts: (parts: string) => `To retranslate: ${parts}`,
+  staleNothing: 'Nothing in this translation is out of date or untranslated',
+  staleCutNeedsAgent: 'Sentences cut from the original need retranslating from the cut source, which only the Agent can do.',
+  staleNoPrompt:
+    'Retranslates the way the translation tool does, with the video’s glossaries; no prompt, attachments or skills are sent. To steer it in your own words, hand it to the Agent.',
+  staleGateBody: 'This tool sends the sentences to retranslate, with their source, to a text model.',
+  ctaStale: (n: number) => (n === 0 ? 'Retranslate' : n === 1 ? 'Retranslate 1 sentence' : `Retranslate ${n} sentences`),
 
   // 直接调模型：运行、结果与收据
   runSubmitting: 'Starting…',

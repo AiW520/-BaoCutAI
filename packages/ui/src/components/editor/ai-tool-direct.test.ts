@@ -8,10 +8,16 @@ import {
   directHasScope,
   directHint,
   directParams,
+  directRefresh,
   directTool,
   needsStructuredOutput,
+  pickTranslation,
+  refreshableTranslations,
+  refreshCounts,
   scopedParagraphs,
 } from './ai-tool-direct.ts';
+import type { DocumentRecord } from '@baocut/protocol';
+import type { PairRow } from '../../model/translation-doc.ts';
 
 const initial = getLocale();
 // 测试进程把 `BAOCUT_LOCALE` 定成中文：换语言要连它一起换。
@@ -28,17 +34,26 @@ afterEach(() => {
 const para = (...spans: [number, number][]) => ({ words: spans.map(([start, end]) => ({ placements: [{ start, end }] })) });
 
 describe('直接调模型：哪些工具能做', () => {
-  it('润色、章节与写作发布类能直接调模型；重新转录、找可剪的口、重译过期句、做封面置灰并写各自的原因', () => {
+  it('润色、章节与写作发布类能直接调模型；重新转录、找可剪的口、做封面置灰并写各自的原因', () => {
     for (const tool of ['polish', 'chapters', 'summary', 'blog', 'title', 'desc'] as const) {
       expect(directTool(tool)).toBe(tool);
+      expect(directRefresh(tool)).toBe(false);
       expect(directBlocked(tool)).toBeNull();
     }
-    const reasons = (['retranscribe', 'cleanup', 'stale', 'cover'] as const).map((tool) => {
+    const reasons = (['retranscribe', 'cleanup', 'cover'] as const).map((tool) => {
       expect(directTool(tool)).toBeNull();
+      expect(directRefresh(tool)).toBe(false);
       return directBlocked(tool);
     });
-    expect(new Set(reasons).size).toBe(4);
-    expect(reasons[3]).toMatch(/images/);
+    expect(new Set(reasons).size).toBe(3);
+    expect(reasons.every((r) => r && r.length > 0)).toBe(true);
+    expect(reasons[2]).toMatch(/images/);
+  });
+
+  it('刷新过期译文也能直接调模型：不走 ai-tool，走 translate 的就地刷新', () => {
+    expect(directTool('stale')).toBeNull();
+    expect(directRefresh('stale')).toBe(true);
+    expect(directBlocked('stale')).toBeNull();
   });
 
   it('润色与章节要结构化输出；章节总是整篇', () => {
@@ -148,5 +163,45 @@ describe('范围里的段数与流程参数', () => {
     expect(
       directParams({ videoId: 'vid', tool: 'chapters', prompt: 'x', range: { start: 1, end: 2 }, documentId: null, attachments: [], skills: [], model: null, uiLanguage: 'en' }),
     ).toEqual({ videoId: 'vid', tool: 'chapters', prompt: 'x', uiLanguage: 'en' });
+  });
+});
+
+describe('刷新过期译文：直接调模型', () => {
+  const doc = (id: string, kind: string, extra: Partial<DocumentRecord> = {}): DocumentRecord => ({
+    id,
+    kind,
+    name: id,
+    currentRevision: '1',
+    revisions: {},
+    ...extra,
+  });
+  const documents = {
+    speech: doc('speech', 'speech', { sourceAssetId: 'asset' }),
+    en: doc('en', 'translation', { language: 'en', sourceDocumentId: 'speech' }),
+    ja: doc('ja', 'translation', { language: 'ja', sourceDocumentId: 'speech' }),
+    stray: doc('stray', 'translation', { language: 'fr' }),
+    cap: doc('cap', 'caption', { sourceDocumentId: 'en' }),
+  };
+
+  it('只列译自转写的译文', () => {
+    expect(refreshableTranslations(documents).map((d) => d.id)).toEqual(['en', 'ja']);
+  });
+
+  it('刷新哪一份：选过的、入口带来的 ID、入口带来的语言名（`languageName`，各语言自称）、第一份', () => {
+    const list = refreshableTranslations(documents);
+    expect(pickTranslation(list, { picked: null })?.id).toBe('en');
+    expect(pickTranslation(list, { picked: null, presetLanguage: '日本語' })?.id).toBe('ja');
+    expect(pickTranslation(list, { picked: null, presetId: 'ja', presetLanguage: 'English' })?.id).toBe('ja');
+    expect(pickTranslation(list, { picked: 'en', presetId: 'ja' })?.id).toBe('en');
+    // 选过的那份没了：退回入口带来的。
+    expect(pickTranslation(list, { picked: 'gone', presetId: 'ja' })?.id).toBe('ja');
+    expect(pickTranslation([], { picked: null, presetId: 'ja' })).toBeNull();
+  });
+
+  it('要重译的句数：过期（标了的、原文改过的）加还没有译文的；原句没了的不算', () => {
+    const row = (state: PairRow['state']) => ({ state }) as PairRow;
+    const rows = ['ok', 'marked-stale', 'source-changed', 'untranslated', 'empty', 'sentence-gone', 'ok'].map((s) => row(s as PairRow['state']));
+    expect(refreshCounts(rows)).toEqual({ todo: 4, stale: 2, untranslated: 2 });
+    expect(refreshCounts([row('ok' as PairRow['state'])])).toEqual({ todo: 0, stale: 0, untranslated: 0 });
   });
 });

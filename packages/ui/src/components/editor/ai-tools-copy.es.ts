@@ -1,3 +1,4 @@
+import { pluralForm } from '@baocut/protocol';
 import type { AiToolsMessages } from './ai-tools-copy.ts';
 export const es: AiToolsMessages = {
   shortsShape: 'Qué cortar',
@@ -58,7 +59,6 @@ export const es: AiToolsMessages = {
 
   whyRetranscribe: 'Necesita un modelo de voz, y la transcripción del Runtime añade una transcripción nueva completa en lugar de reemplazar un tramo, por lo que solo el agente puede hacerlo',
   whyCleanup: 'Encontrar cortes exige valorar cada punto en su contexto, por lo que solo el agente puede hacerlo',
-  whyStale: 'Para volver a traducir con la API del modelo, usa el botón de IA de la lista de traducción en el panel Subtítulos; esta página se lo encarga al agente',
   whyCover: 'Una portada requiere generar y componer imágenes, por lo que solo el agente puede hacerlo',
   modelPromptLabel: 'Prompt',
   modelPicker: 'Modelo de texto',
@@ -83,6 +83,16 @@ export const es: AiToolsMessages = {
   ctaTitle: 'Proponer títulos',
   ctaDesc: 'Escribir descripción',
   noTextModel: 'Primero conecta un modelo de texto',
+  staleDirectSetup: 'Vuelve a traducir en su sitio las frases marcadas como desactualizadas, las que tienen el original editado y las que aún no tienen traducción: la misma traducción recibe una versión nueva y solo cambian esas líneas de subtítulo.',
+  staleTranslation: 'Traducción',
+  staleNoTranslation: 'Este vídeo aún no tiene traducción. Tradúcelo primero desde el panel Subtítulos.',
+  staleReading: 'Leyendo la traducción…',
+  staleCounts: (parts) => `Por traducir de nuevo: ${parts}`,
+  staleNothing: 'Nada en esta traducción está desactualizado ni sin traducir',
+  staleCutNeedsAgent: 'Las frases recortadas del original se traducen de nuevo a partir del original recortado; solo el agente puede hacerlo.',
+  staleNoPrompt: 'Traduce de nuevo como lo hace la herramienta de traducción, con los glosarios del vídeo; no se envían instrucciones, adjuntos ni skills. Para guiarlo con tus palabras, encárgaselo al agente.',
+  staleGateBody: 'Esta herramienta envía las frases que hay que volver a traducir, con su original, a un modelo de texto.',
+  ctaStale: (n) => (n ? `Traducir de nuevo ${n} ${pluralForm('es', n, { one: 'frase', other: 'frases' })}` : 'Traducir de nuevo'),
   runSubmitting: 'Iniciando…',
   runQueued: 'En cola',
   runRunning: (model) => `${model} está trabajando`,

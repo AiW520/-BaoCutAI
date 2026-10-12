@@ -1,3 +1,4 @@
+import { pluralForm } from '@baocut/protocol';
 import type { AiToolsMessages } from './ai-tools-copy.ts';
 
 export const nl: AiToolsMessages = {
@@ -100,7 +101,6 @@ export const nl: AiToolsMessages = {
 
   whyRetranscribe: 'Vraagt om een spraakmodel, en de transcriptie van de Runtime voegt een heel nieuwe transcriptie toe in plaats van een stuk te vervangen; alleen de Agent kan dit doen',
   whyCleanup: 'Knippunten vinden betekent elke plek in context afwegen; alleen de Agent kan dit doen',
-  whyStale: 'Opnieuw vertalen met de model-API doe je via de AI-knop van de vertaallijst in het ondertitelpaneel; deze pagina geeft het aan de Agent',
   whyCover: 'Een cover vraagt om beelden genereren en samenstellen; alleen de Agent kan dit doen',
   modelPromptLabel: 'Prompt',
   modelPicker: 'Tekstmodel',
@@ -125,6 +125,16 @@ export const nl: AiToolsMessages = {
   ctaTitle: 'Titels voorstellen',
   ctaDesc: 'Beschrijving schrijven',
   noTextModel: 'Verbind eerst een tekstmodel',
+  staleDirectSetup: 'Vertaalt ter plekke opnieuw de zinnen die als verouderd zijn gemarkeerd, waarvan het origineel is bewerkt of die nog geen vertaling hebben: dezelfde vertaling krijgt een nieuwe versie en alleen die ondertitelregels veranderen.',
+  staleTranslation: 'Vertaling',
+  staleNoTranslation: 'Deze video heeft nog geen vertaling. Vertaal hem eerst in het ondertitelpaneel.',
+  staleReading: 'Vertaling lezen…',
+  staleCounts: (parts) => `Opnieuw te vertalen: ${parts}`,
+  staleNothing: 'Niets in deze vertaling is verouderd of onvertaald',
+  staleCutNeedsAgent: 'Zinnen waarvan het origineel is geknipt, worden opnieuw vertaald vanaf het geknipte origineel; dat kan alleen de Agent.',
+  staleNoPrompt: 'Vertaalt opnieuw zoals de vertaaltool, met de woordenlijsten van de video; er worden geen prompt, bijlagen of skills meegestuurd. Wil je het in je eigen woorden sturen, geef het dan aan de Agent.',
+  staleGateBody: 'Deze tool stuurt de opnieuw te vertalen zinnen, met hun origineel, naar een tekstmodel.',
+  ctaStale: (n) => (n ? `${pluralForm('nl', n, { one: `${n} zin`, other: `${n} zinnen` })} opnieuw vertalen` : 'Opnieuw vertalen'),
   runSubmitting: 'Starten…',
   runQueued: 'In de wachtrij',
   runRunning: (model) => `${model} is ermee bezig`,

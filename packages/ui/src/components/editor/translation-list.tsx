@@ -277,7 +277,9 @@ export function TranslationList({
   const toAgent = useAgentRetranslate(videoId);
   // 正在就地刷新这份译文：从这里提交的（回执到之前也算），或别处发起的。
   const ownRefresh = useTranslateRun((s) => s.refreshes[record.id] ?? null);
-  const foreignRefresh = useJobs((s) => liveRefresh(s.jobs, record.id));
+  // 选出整份任务列表再算：`liveRefresh` 每次给新对象，直接当选择器会让 zustand 5 的订阅每次都以为变了。
+  const jobs = useJobs((s) => s.jobs);
+  const foreignRefresh = useMemo(() => liveRefresh(jobs, record.id), [jobs, record.id]);
   const refreshing = ownRefresh ? ownRefresh.count : foreignRefresh ? foreignRefresh.count : undefined;
   const loaded = useLoaded(record);
   // 刚改完、新版本还没取回来的译文：接着的改动在它上面做。
@@ -441,7 +443,7 @@ export function TranslationList({
         modelName={model.name}
         onDirect={() => void startRefresh({ videoId, record, language, count: todo, model: model.ref })}
         onAgent={() => toAgent({ language: languageLabel, count: todo })}
-        onCut={() => openAiTool(videoId, 'stale', { language: language ? languageName(language) : null })}
+        onCut={() => openAiTool(videoId, 'stale', { language: language ? languageName(language) : null, translationId: record.id })}
         onTranslateTool={() => openFlow(videoId, true)}
       />
       <div className={colhead({ isSingle: only === 'trans' })}>

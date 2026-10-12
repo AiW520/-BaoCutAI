@@ -17,6 +17,7 @@ import {
 import CheckmarkCircle from '@react-spectrum/s2/icons/CheckmarkCircle';
 import Copy from '@react-spectrum/s2/icons/Copy';
 import { style } from '@react-spectrum/s2/style' with { type: 'macro' };
+import { translateModelOptions } from '../../model/tool-runs.ts';
 import { findOption, initialModelKey, modelOptions, parseModelKey, type ToolModelOption } from '../../model/tools-models.ts';
 import { useRuntime } from '../../runtime/context.tsx';
 import { useAiToolRunner } from '../../state/ai-tool-runner-store.ts';
@@ -109,19 +110,24 @@ export interface DirectModel {
 
 /**
  * 这个工具直接调哪只文本模型：按工具记住的那只（还在菜单里就留着，哪怕现在不能用——页面给门卡），再是文本生成的默认值，
- * 再是第一只能用的。润色与章节要结构化输出，不支持的那几只照列、标原因、不能用。
+ * 再是第一只能用的。润色与章节要结构化输出，不支持的那几只照列、标原因、不能用。刷新过期译文走翻译流程，菜单同翻译设置页
+ * （`translateModelOptions`：云端文本模型，要结构化输出）。
  */
-export function useDirectModel(tool: AiToolKind): DirectModel {
+export function useDirectModel(tool: AiToolKind | 'stale'): DirectModel {
   const view = useModels((s) => s.capabilities);
   const saved = useAiToolRunner((s) => s.models[tool] ?? null);
   const setModel = useAiToolRunner((s) => s.setModel);
-  const structured = needsStructuredOutput(tool);
+  const structured = tool !== 'stale' && needsStructuredOutput(tool);
   const options = useMemo(
     () =>
-      (view ? modelOptions(view, 'generateText') : []).map((o) =>
-        structured && o.usable && o.info.structuredOutput === false ? { ...o, usable: false, why: C.modelNoStructured } : o,
-      ),
-    [view, structured],
+      !view
+        ? []
+        : tool === 'stale'
+          ? translateModelOptions(view)
+          : modelOptions(view, 'generateText').map((o) =>
+              structured && o.usable && o.info.structuredOutput === false ? { ...o, usable: false, why: C.modelNoStructured } : o,
+            ),
+    [view, tool, structured],
   );
   const selected = findOption(options, initialModelKey(options, saved, view?.generateText.effective ?? null));
   const ref = selected ? parseModelKey(selected.key) : null;
@@ -182,15 +188,15 @@ export function DirectModelPicker({ model }: { model: DirectModel }) {
   );
 }
 
-/** 选中的模型不能用时框下的门卡：去连接、或换用能用的那只（同翻译页）。本机模型去本机模型页。 */
-export function DirectModelGate({ model }: { model: DirectModel }) {
+/** 选中的模型不能用时框下的门卡：去连接、或换用能用的那只（同翻译页）。本机模型去本机模型页。`body` 说这个工具发给模型的是什么。 */
+export function DirectModelGate({ model, body = C.modelGateBody }: { model: DirectModel; body?: string }) {
   const go = useShell((s) => s.go);
   if (!model.options.length) {
     return (
       <InlineAlert variant="notice">
         <Heading>{C.noTextModel}</Heading>
         <Content>
-          {C.modelGateBody}
+          {body}
           <div className={alertActions}>
             <Button size="S" variant="accent" onPress={() => go({ tab: 'models', category: 'llm', page: 'cloud' })}>
               {GATE_COPY.goConnect}
@@ -209,7 +215,7 @@ export function DirectModelGate({ model }: { model: DirectModel }) {
     <ModelGate
       selected={selected}
       options={model.options}
-      body={C.modelGateBody}
+      body={body}
       onConnect={() => go({ tab: 'models', category: 'llm', page: 'cloud' })}
       onSwitch={(o) => model.select(o)}
     />

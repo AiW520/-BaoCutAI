@@ -1,3 +1,4 @@
+import { pluralForm } from '@baocut/protocol';
 import type { AiToolsMessages } from './ai-tools-copy.ts';
 
 export const it: AiToolsMessages = {
@@ -63,7 +64,6 @@ export const it: AiToolsMessages = {
 
   whyRetranscribe: 'Serve un modello vocale, e la trascrizione del Runtime aggiunge una trascrizione nuova intera invece di sostituire un tratto, quindi solo l’agente può farlo',
   whyCleanup: 'Trovare i tagli richiede di valutare ogni punto nel contesto, quindi solo l’agente può farlo',
-  whyStale: 'Per ritradurre con l’API del modello usa il pulsante IA dell’elenco traduzioni nel pannello Sottotitoli; questa pagina affida il lavoro all’agente',
   whyCover: 'Una copertina richiede di generare e comporre immagini, quindi solo l’agente può farlo',
   modelPromptLabel: 'Prompt',
   modelPicker: 'Modello di testo',
@@ -88,6 +88,16 @@ export const it: AiToolsMessages = {
   ctaTitle: 'Proponi titoli',
   ctaDesc: 'Scrivi descrizione',
   noTextModel: 'Collega prima un modello di testo',
+  staleDirectSetup: 'Ritraduce sul posto le frasi segnate come obsolete, quelle con l’originale modificato e quelle non ancora tradotte: la stessa traduzione riceve una nuova versione e cambiano solo quelle righe dei sottotitoli.',
+  staleTranslation: 'Traduzione',
+  staleNoTranslation: 'Questo video non ha ancora una traduzione. Traducilo prima dal pannello Sottotitoli.',
+  staleReading: 'Lettura della traduzione…',
+  staleCounts: (parts) => `Da ritradurre: ${parts}`,
+  staleNothing: 'In questa traduzione non c’è nulla di obsoleto o non tradotto',
+  staleCutNeedsAgent: 'Le frasi tagliate nell’originale vanno ritradotte dall’originale tagliato; può farlo solo l’agente.',
+  staleNoPrompt: 'Ritraduce come lo strumento di traduzione, con i glossari del video; non vengono inviati prompt, allegati né skill. Per guidarlo con parole tue, affidalo all’agente.',
+  staleGateBody: 'Questo strumento invia le frasi da ritradurre, con il loro originale, a un modello di testo.',
+  ctaStale: (n) => (n ? `Ritraduci ${pluralForm('it', n, { one: `${n} frase`, other: `${n} frasi` })}` : 'Ritraduci'),
   runSubmitting: 'Avvio…',
   runQueued: 'In coda',
   runRunning: (model) => `${model} sta lavorando`,

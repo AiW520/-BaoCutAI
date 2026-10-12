@@ -9,6 +9,8 @@ import { useEditor, type PanelTab } from '../../state/editor-store.ts';
 export interface AiToolPreset {
   /** 译文的语言名（「英语」）。 */
   language?: string | null;
+  /** 刷新过期译文：从哪一份译文过来（字幕面板的译文列表）；直接调模型时缺省刷新它。 */
+  translationId?: Id | null;
   /** 剪成短视频的「再切几支」：参数页勾上「已经切过的不再找」。 */
   skipDone?: boolean;
 }
