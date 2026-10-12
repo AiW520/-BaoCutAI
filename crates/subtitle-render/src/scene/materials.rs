@@ -36,6 +36,13 @@ fn padding(materials: &[CaptionMaterial]) -> u32 {
                 };
                 libm::ceil(max) as u32 * passes
             }
+            CaptionMaterial::WaveDisplace { amplitude, .. } => {
+                let max = match amplitude {
+                    DynamicValue::Constant { value } => value.as_f64().unwrap_or(256.0).abs(),
+                    _ => 256.0,
+                };
+                libm::ceil(max) as u32
+            }
             CaptionMaterial::Feedback {
                 samples, offset, ..
             } => libm::ceil(offset[0].abs().max(offset[1].abs()) * f64::from(*samples)) as u32,
@@ -218,6 +225,60 @@ impl ScenePlan {
                 }
                 Ok((source, hits))
             }
+            CaptionMaterial::WaveDisplace {
+                id,
+                amplitude,
+                wavelength,
+                phase,
+                axis,
+            } => {
+                let (source, hits) =
+                    self.material_prefix(ci, t, materials, prefix - 1, pad, size, budget, work)?;
+                let cue = &self.cues[ci];
+                let params =
+                    cue_parameters(&self.style, &self.presentation, cue, &self.instance_id)?;
+                let mut context = sampled_layout::early_context(
+                    cue,
+                    ci,
+                    self.cues.len(),
+                    t,
+                    &params,
+                    (self.width, self.height),
+                    &self.instance_id,
+                    &self.presentation.seed,
+                )?;
+                context.stable_key.push_str(&format!("|material|{id}"));
+                let mut sample = |value: &DynamicValue, ty, fallback| -> Result<f64> {
+                    Ok(
+                        sample_value(value, ty, self.style.scene(), &context, t, budget)?
+                            .map(|v| v.number())
+                            .transpose()?
+                            .unwrap_or(fallback),
+                    )
+                };
+                let amplitude = sample(amplitude, ValueType::Length, 0.0)?;
+                let wavelength = sample(wavelength, ValueType::Length, 1.0)?;
+                let phase = sample(phase, ValueType::Angle, 0.0)?;
+                if !amplitude.is_finite()
+                    || !(-256.0..=256.0).contains(&amplitude)
+                    || !wavelength.is_finite()
+                    || !(1.0..=1_000_000.0).contains(&wavelength)
+                    || !phase.is_finite()
+                {
+                    bail!("CAPTION_MATERIAL_INVALID: wave displacement uniforms");
+                }
+                if amplitude == 0.0 {
+                    return Ok((source, hits));
+                }
+                // Four source texels per bilinear destination sample.
+                for _ in 0..4 {
+                    work.spend(size.0, size.1)?;
+                }
+                Ok((
+                    wave_displace(&source, pad, amplitude, wavelength, phase, *axis)?,
+                    hits,
+                ))
+            }
             CaptionMaterial::Feedback {
                 samples,
                 step,
@@ -272,5 +333,130 @@ impl ScenePlan {
                 Ok((out, hits))
             }
         }
+    }
+}
+
+/// Pixel centers use canvas coordinates, independent of temporary material padding.
+/// The inverse map reads y + A*sin(tau*x/L + phase) for Y, and swaps axes for X.
+fn wave_displace(
+    source: &Pixmap,
+    pad: u32,
+    amplitude: f64,
+    wavelength: f64,
+    phase: f64,
+    axis: WaveAxis,
+) -> Result<Pixmap> {
+    let width = source.width();
+    let height = source.height();
+    let mut out = Pixmap::new(width, height)
+        .ok_or_else(|| anyhow::anyhow!("CAPTION_BUDGET_EXCEEDED: wave surface"))?;
+    let phase = libm::fmod(phase, std::f64::consts::TAU);
+    let count = if axis == WaveAxis::Y { width } else { height };
+    let displacement = (0..count)
+        .map(|coordinate| {
+            let position = f64::from(coordinate) + 0.5 - f64::from(pad);
+            amplitude * libm::sin(std::f64::consts::TAU * position / wavelength + phase)
+        })
+        .collect::<Vec<_>>();
+    for y in 0..height {
+        for x in 0..width {
+            let (sx, sy) = match axis {
+                WaveAxis::Y => (f64::from(x), f64::from(y) + displacement[x as usize]),
+                WaveAxis::X => (f64::from(x) + displacement[y as usize], f64::from(y)),
+            };
+            let color = bilinear_transparent(source, sx, sy);
+            let index = (y as usize * width as usize + x as usize) * 4;
+            out.data_mut()[index..index + 4].copy_from_slice(&color);
+        }
+    }
+    Ok(out)
+}
+
+/// Coordinates here index texel centers (integer zero is the first center).
+fn bilinear_transparent(source: &Pixmap, x: f64, y: f64) -> [u8; 4] {
+    let left = libm::floor(x) as i64;
+    let top = libm::floor(y) as i64;
+    let dx = x - left as f64;
+    let dy = y - top as f64;
+    let mut values = [0.0; 4];
+    for (tx, ty, weight) in [
+        (left, top, (1.0 - dx) * (1.0 - dy)),
+        (left + 1, top, dx * (1.0 - dy)),
+        (left, top + 1, (1.0 - dx) * dy),
+        (left + 1, top + 1, dx * dy),
+    ] {
+        if tx < 0 || ty < 0 || tx >= i64::from(source.width()) || ty >= i64::from(source.height()) {
+            continue;
+        }
+        let index = (ty as usize * source.width() as usize + tx as usize) * 4;
+        for channel in 0..4 {
+            values[channel] += f64::from(source.data()[index + channel]) * weight;
+        }
+    }
+    values.map(|value| libm::floor(value + 0.5).clamp(0.0, 255.0) as u8)
+}
+
+#[cfg(test)]
+mod wave_tests {
+    use super::*;
+
+    fn dot(width: u32, height: u32, x: usize, y: usize) -> Pixmap {
+        let mut image = Pixmap::new(width, height).unwrap();
+        let index = (y * width as usize + x) * 4;
+        image.data_mut()[index..index + 4].copy_from_slice(&[128, 64, 0, 128]);
+        image
+    }
+    fn pixel(image: &Pixmap, x: usize, y: usize) -> [u8; 4] {
+        let index = (y * image.width() as usize + x) * 4;
+        image.data()[index..index + 4].try_into().unwrap()
+    }
+    #[test]
+    fn bilinear_samples_premultiplied_channels_and_transparent_edges() {
+        let image = dot(2, 2, 0, 0);
+        assert_eq!(bilinear_transparent(&image, 0.0, 0.0), [128, 64, 0, 128]);
+        assert_eq!(bilinear_transparent(&image, -0.5, 0.0), [64, 32, 0, 64]);
+        assert_eq!(bilinear_transparent(&image, 0.5, 0.5), [32, 16, 0, 32]);
+        assert_eq!(bilinear_transparent(&image, -1.0, 0.0), [0; 4]);
+        assert_eq!(bilinear_transparent(&image, 2.0, 0.0), [0; 4]);
+    }
+    #[test]
+    fn inverse_wave_uses_pixel_centers_signed_amplitude_and_selected_axis() {
+        let phase = -std::f64::consts::FRAC_PI_4;
+        let source = dot(8, 8, 1, 3);
+        let up = wave_displace(&source, 0, 2.0, 4.0, phase, WaveAxis::Y).unwrap();
+        let down = wave_displace(&source, 0, -2.0, 4.0, phase, WaveAxis::Y).unwrap();
+        assert_eq!(pixel(&up, 1, 1), [128, 64, 0, 128]);
+        assert_eq!(pixel(&down, 1, 5), [128, 64, 0, 128]);
+        assert_eq!(pixel(&up, 1, 3), [0; 4]);
+        let source = dot(8, 8, 3, 1);
+        let left = wave_displace(&source, 0, 2.0, 4.0, phase, WaveAxis::X).unwrap();
+        assert_eq!(pixel(&left, 1, 1), [128, 64, 0, 128]);
+    }
+    #[test]
+    fn padding_does_not_change_canvas_phase_or_premultiplied_colors() {
+        let original = dot(8, 8, 2, 3);
+        let padded = dot(18, 18, 7, 8);
+        let a = wave_displace(&original, 0, 1.2, 5.7, 0.8, WaveAxis::Y).unwrap();
+        let b = wave_displace(&padded, 5, 1.2, 5.7, 0.8, WaveAxis::Y).unwrap();
+        for y in 0..8 {
+            for x in 0..8 {
+                assert_eq!(pixel(&a, x, y), pixel(&b, x + 5, y + 5));
+            }
+        }
+        assert!(
+            b.data()
+                .chunks_exact(4)
+                .all(|p| p[..3].iter().all(|c| *c <= p[3]))
+        );
+        let repeated = wave_displace(
+            &original,
+            0,
+            1.2,
+            5.7,
+            0.8 + std::f64::consts::TAU * 12.0,
+            WaveAxis::Y,
+        )
+        .unwrap();
+        assert_eq!(a.data(), repeated.data());
     }
 }

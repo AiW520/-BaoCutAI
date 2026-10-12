@@ -643,6 +643,13 @@ pub enum CaptionMaterial {
         #[serde(default = "one_pass")]
         passes: u32,
     },
+    WaveDisplace {
+        id: String,
+        amplitude: DynamicValue,
+        wavelength: DynamicValue,
+        phase: DynamicValue,
+        axis: WaveAxis,
+    },
     Feedback {
         id: String,
         samples: u32,
@@ -654,4 +661,12 @@ pub enum CaptionMaterial {
 }
 fn one_pass() -> u32 {
     1
+}
+
+/// Displacement direction; the sine varies along the other canvas axis.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum WaveAxis {
+    X,
+    Y,
 }

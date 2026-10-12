@@ -191,17 +191,14 @@ pub(super) fn reflow(
             Align::Right => x + width / 2.0 - shape.width,
         };
         let ly = y - height / 2.0 + i as f64 * fs * style.line_height;
-        lines.push(Line {
-            bytes,
-            bounds: Bounds {
-                x: lx,
-                y: ly,
-                width: shape.width,
-                height: fs * style.line_height,
-            },
-            baseline: ly + shape.ascent,
-            shape,
-        });
+        let bounds = Bounds {
+            x: lx,
+            y: ly,
+            width: shape.width,
+            height: fs * style.line_height,
+        };
+        let baseline = ly + shape.ascent;
+        lines.push(Line::new(text, bytes, shape, bounds, baseline));
     }
     Ok(Page {
         source_range: range,

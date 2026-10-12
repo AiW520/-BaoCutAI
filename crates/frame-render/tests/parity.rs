@@ -751,6 +751,39 @@ fn scenes() -> Vec<Scene> {
         style_doc("style", text_context_style),
     ];
     scenes.push(text_context);
+    let ink_context_style: Value = serde_json::from_str(include_str!("../../caption-scene/tests/fixtures/ink-context.json")).unwrap();
+    let mut ink_context = Scene::new(
+        "captions-ink-context",
+        video(vec![caption("ink-context", "doc", Some("style"), 120, &[])], vec![], json!({})),
+        &[0, 1, 4, 12, 20, 35, 55, 80, 100, 119],
+    );
+    ink_context.documents = vec![
+        caption_doc("doc", "sequence", &[(0.0, 4.0, "Ag é two three")], "original"),
+        style_doc("style", ink_context_style),
+    ];
+    scenes.push(ink_context);
+    let unit_context_style: Value = serde_json::from_str(include_str!("../../caption-scene/tests/fixtures/unit-context.json")).unwrap();
+    let mut unit_context = Scene::new(
+        "captions-unit-context",
+        video(vec![caption("unit-context", "doc", Some("style"), 120, &[])], vec![], json!({})),
+        &[0, 5, 20, 35, 60, 75, 90, 105, 119],
+    );
+    unit_context.documents = vec![
+        caption_doc("doc", "sequence", &[(0.0, 4.0, "One two three four")], "original"),
+        style_doc("style", unit_context_style),
+    ];
+    scenes.push(unit_context);
+    let wave_material_style: Value = serde_json::from_str(include_str!("../../caption-scene/tests/fixtures/wave-displace.json")).unwrap();
+    let mut wave_material = Scene::new(
+        "captions-wave-displace-material",
+        video(vec![caption("wave-material", "doc", Some("style"), 120, &[])], vec![], json!({})),
+        &[0, 1, 4, 12, 35, 80, 119, 7, 35, 0],
+    );
+    wave_material.documents = vec![
+        caption_doc("doc", "sequence", &[(0.0, 4.0, "Ripple over pixels")], "original"),
+        style_doc("style", wave_material_style),
+    ];
+    scenes.push(wave_material);
     let mut wave_style: Value = serde_json::from_str(include_str!("../../caption-scene/tests/fixtures/word-pop.json")).unwrap();
     let wave_scene = &mut wave_style["scene"]["value"];
     wave_scene["speechState"]["timingPolicy"] = json!("estimated");

@@ -108,11 +108,15 @@ pub fn context_type(path: &str) -> Option<ValueType> {
         | "time.durationSeconds"
         | "time.cueDurationSeconds"
         | "time.pageElapsedSeconds"
-        | "time.pageDurationSeconds" => ValueType::Time,
+        | "time.pageDurationSeconds"
+        | "time.lineElapsedSeconds"
+        | "time.lineDurationSeconds" => ValueType::Time,
         "unit.textIndex"
         | "unit.textCount"
         | "unit.pageTextIndex"
         | "unit.pageTextCount"
+        | "unit.pageIndex"
+        | "unit.pageCount"
         | "time.progress"
         | "time.clampedProgress"
         | "unit.index"
@@ -120,9 +124,19 @@ pub fn context_type(path: &str) -> Option<ValueType> {
         | "unit.selectedIndex"
         | "unit.selectedCount" => ValueType::Scalar,
         "unit.active" | "unit.read" | "unit.unread" => ValueType::Bool,
-        "layout.x" | "layout.y" | "layout.width" | "layout.height" | "layout.baseline" | "canvas.width" | "canvas.height" => {
-            ValueType::Length
-        }
+        "layout.x"
+        | "layout.y"
+        | "layout.width"
+        | "layout.height"
+        | "layout.baseline"
+        | "layout.inkX"
+        | "layout.inkY"
+        | "layout.inkWidth"
+        | "layout.inkHeight"
+        | "layout.lineInkY"
+        | "layout.lineInkHeight"
+        | "canvas.width"
+        | "canvas.height" => ValueType::Length,
         _ => return None,
     })
 }

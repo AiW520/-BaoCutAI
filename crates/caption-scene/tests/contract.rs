@@ -273,3 +273,49 @@ fn text_context_types_and_sqrt_reject_invalid_dependencies() {
     body["scene"]["value"]["layout"]["bindings"] = json!([{"property":"width","value":{"kind":"expression","expression":{"op":"call","function":"mul","args":[{"op":"literal","type":"length","value":20},{"op":"call","function":"div","args":[{"op":"read","path":"time.pageDurationSeconds"},{"op":"literal","type":"time","value":1}]}]}}}]);
     assert!(parse_style(&body).is_err(), "page clock is unavailable before layout");
 }
+
+#[test]
+fn ink_context_is_length_typed_and_unavailable_before_layout() {
+    let mut body = fixture();
+    body["scene"]["value"]["requiredCapabilities"] = json!(["caption-ink-context/1"]);
+    let style = parse_style(&body).unwrap();
+    for field in ["inkX", "inkY", "inkWidth", "inkHeight", "lineInkY", "lineInkHeight"] {
+        let read = expr(json!({"op":"read", "path":format!("layout.{field}")}));
+        assert_eq!(infer(&read, style.scene(), &BTreeMap::new()).unwrap(), ValueType::Length);
+        let mut early = body.clone();
+        early["scene"]["value"]["layout"]["layoutEvaluation"] = json!("per-sample");
+        early["scene"]["value"]["layout"]["bindings"] = json!([{
+            "property":"width", "value":{"kind":"expression", "expression": read}
+        }]);
+        assert_eq!(parse_style(&early).unwrap_err().code, "CAPTION_DEPENDENCY_CYCLE");
+    }
+    parse_style(&serde_json::from_str(include_str!("fixtures/ink-context.json")).unwrap()).unwrap();
+}
+
+#[test]
+fn unit_context_types_and_pre_layout_restrictions_are_explicit() {
+    let mut body = fixture();
+    body["scene"]["value"]["requiredCapabilities"] = json!(["caption-unit-context/1"]);
+    let style = parse_style(&body).unwrap();
+    for (path, ty) in [
+        ("unit.pageIndex", ValueType::Scalar),
+        ("unit.pageCount", ValueType::Scalar),
+        ("time.lineElapsedSeconds", ValueType::Time),
+        ("time.lineDurationSeconds", ValueType::Time),
+    ] {
+        let read = expr(json!({"op":"read", "path":path}));
+        assert_eq!(infer(&read, style.scene(), &BTreeMap::new()).unwrap(), ty);
+        let scalar = if ty == ValueType::Time {
+            json!({"op":"call","function":"div","args":[read,{"op":"literal","type":"time","value":1}]})
+        } else {
+            json!(read)
+        };
+        let mut early = body.clone();
+        early["scene"]["value"]["layout"]["layoutEvaluation"] = json!("per-sample");
+        early["scene"]["value"]["layout"]["bindings"] = json!([{
+            "nodeId":"caption", "property":"lineHeight", "value":{"kind":"expression", "expression":scalar}
+        }]);
+        assert_eq!(parse_style(&early).unwrap_err().code, "CAPTION_DEPENDENCY_CYCLE");
+    }
+    parse_style(&serde_json::from_str(include_str!("fixtures/unit-context.json")).unwrap()).unwrap();
+}

@@ -12532,6 +12532,1372 @@
                 "end": 4000,
                 "id": "c0",
                 "start": 0,
+                "text": "Ag é two three"
+              }
+            ],
+            "schema": "baocut.caption/1",
+            "timescale": 1000
+          },
+          "documentId": "doc",
+          "kind": "caption",
+          "lineKind": "original",
+          "schema": "baocut.caption/1"
+        },
+        {
+          "body": {
+            "scene": {
+              "kind": "inline",
+              "value": {
+                "animations": [
+                  {
+                    "composite": "multiply",
+                    "id": "reveal",
+                    "property": "opacity",
+                    "target": {
+                      "nodeId": "caption",
+                      "selectorId": "characters"
+                    },
+                    "value": {
+                      "expression": {
+                        "args": [
+                          {
+                            "args": [
+                              {
+                                "args": [
+                                  {
+                                    "args": [
+                                      {
+                                        "op": "read",
+                                        "path": "time.seconds"
+                                      },
+                                      {
+                                        "op": "read",
+                                        "path": "time.cueDurationSeconds"
+                                      }
+                                    ],
+                                    "function": "div",
+                                    "op": "call"
+                                  },
+                                  {
+                                    "op": "read",
+                                    "path": "unit.textCount"
+                                  }
+                                ],
+                                "function": "mul",
+                                "op": "call"
+                              },
+                              {
+                                "op": "read",
+                                "path": "unit.textIndex"
+                              }
+                            ],
+                            "function": "sub",
+                            "op": "call"
+                          },
+                          {
+                            "op": "literal",
+                            "type": "scalar",
+                            "value": 0
+                          },
+                          {
+                            "op": "literal",
+                            "type": "scalar",
+                            "value": 1
+                          }
+                        ],
+                        "function": "clamp",
+                        "op": "call"
+                      },
+                      "kind": "expression"
+                    }
+                  },
+                  {
+                    "composite": "multiply",
+                    "id": "page-scale",
+                    "property": "transform.scale",
+                    "target": {
+                      "nodeId": "caption",
+                      "selectorId": "characters"
+                    },
+                    "value": {
+                      "expression": {
+                        "args": [
+                          {
+                            "op": "literal",
+                            "type": "scalar",
+                            "value": 0.8
+                          },
+                          {
+                            "args": [
+                              {
+                                "op": "literal",
+                                "type": "scalar",
+                                "value": 0.2
+                              },
+                              {
+                                "args": [
+                                  {
+                                    "args": [
+                                      {
+                                        "args": [
+                                          {
+                                            "op": "read",
+                                            "path": "time.pageElapsedSeconds"
+                                          },
+                                          {
+                                            "op": "read",
+                                            "path": "time.pageDurationSeconds"
+                                          }
+                                        ],
+                                        "function": "div",
+                                        "op": "call"
+                                      },
+                                      {
+                                        "op": "literal",
+                                        "type": "scalar",
+                                        "value": 0
+                                      },
+                                      {
+                                        "op": "literal",
+                                        "type": "scalar",
+                                        "value": 1
+                                      }
+                                    ],
+                                    "function": "clamp",
+                                    "op": "call"
+                                  }
+                                ],
+                                "function": "sqrt",
+                                "op": "call"
+                              }
+                            ],
+                            "function": "mul",
+                            "op": "call"
+                          }
+                        ],
+                        "function": "add",
+                        "op": "call"
+                      },
+                      "kind": "expression"
+                    }
+                  }
+                ],
+                "evaluationVersion": 1,
+                "layout": {
+                  "maxLines": 2,
+                  "pagination": {
+                    "maxUnitsPerPage": 3
+                  },
+                  "width": {
+                    "basis": "absolute",
+                    "value": 140
+                  },
+                  "x": {
+                    "basis": "absolute",
+                    "value": 80
+                  },
+                  "y": {
+                    "basis": "absolute",
+                    "value": 45
+                  }
+                },
+                "nodes": [
+                  {
+                    "id": "caption",
+                    "style": {
+                      "fontSize": {
+                        "basis": "absolute",
+                        "value": 16
+                      },
+                      "lineHeight": 2.1
+                    },
+                    "type": "text"
+                  },
+                  {
+                    "children": [
+                      {
+                        "id": "caret",
+                        "properties": {
+                          "fill": {
+                            "kind": "constant",
+                            "value": "#FFCC00"
+                          },
+                          "height": {
+                            "expression": {
+                              "op": "read",
+                              "path": "layout.lineInkHeight"
+                            },
+                            "kind": "expression"
+                          },
+                          "opacity": {
+                            "expression": {
+                              "condition": {
+                                "args": [
+                                  {
+                                    "op": "read",
+                                    "path": "unit.pageTextIndex"
+                                  },
+                                  {
+                                    "args": [
+                                      {
+                                        "args": [
+                                          {
+                                            "op": "read",
+                                            "path": "unit.pageTextCount"
+                                          },
+                                          {
+                                            "op": "literal",
+                                            "type": "scalar",
+                                            "value": 1
+                                          }
+                                        ],
+                                        "function": "sub",
+                                        "op": "call"
+                                      },
+                                      {
+                                        "args": [
+                                          {
+                                            "args": [
+                                              {
+                                                "args": [
+                                                  {
+                                                    "op": "read",
+                                                    "path": "time.pageElapsedSeconds"
+                                                  },
+                                                  {
+                                                    "op": "read",
+                                                    "path": "time.pageDurationSeconds"
+                                                  }
+                                                ],
+                                                "function": "div",
+                                                "op": "call"
+                                              },
+                                              {
+                                                "op": "read",
+                                                "path": "unit.pageTextCount"
+                                              }
+                                            ],
+                                            "function": "mul",
+                                            "op": "call"
+                                          }
+                                        ],
+                                        "function": "floor",
+                                        "op": "call"
+                                      }
+                                    ],
+                                    "function": "min",
+                                    "op": "call"
+                                  }
+                                ],
+                                "function": "eq",
+                                "op": "call"
+                              },
+                              "else": {
+                                "op": "literal",
+                                "type": "scalar",
+                                "value": 0
+                              },
+                              "op": "if",
+                              "then": {
+                                "op": "literal",
+                                "type": "scalar",
+                                "value": 1
+                              }
+                            },
+                            "kind": "expression"
+                          },
+                          "transform.x": {
+                            "expression": {
+                              "args": [
+                                {
+                                  "args": [
+                                    {
+                                      "op": "read",
+                                      "path": "layout.inkX"
+                                    },
+                                    {
+                                      "op": "read",
+                                      "path": "layout.inkWidth"
+                                    }
+                                  ],
+                                  "function": "add",
+                                  "op": "call"
+                                },
+                                {
+                                  "op": "read",
+                                  "path": "layout.x"
+                                }
+                              ],
+                              "function": "sub",
+                              "op": "call"
+                            },
+                            "kind": "expression"
+                          },
+                          "transform.y": {
+                            "expression": {
+                              "args": [
+                                {
+                                  "op": "read",
+                                  "path": "layout.lineInkY"
+                                },
+                                {
+                                  "op": "read",
+                                  "path": "layout.y"
+                                }
+                              ],
+                              "function": "sub",
+                              "op": "call"
+                            },
+                            "kind": "expression"
+                          },
+                          "width": {
+                            "kind": "constant",
+                            "value": 2
+                          }
+                        },
+                        "type": "shape"
+                      }
+                    ],
+                    "id": "carets",
+                    "selectorId": "characters",
+                    "type": "repeat"
+                  },
+                  {
+                    "children": [
+                      {
+                        "id": "ink-background",
+                        "properties": {
+                          "fill": {
+                            "kind": "constant",
+                            "value": "#243F69"
+                          },
+                          "height": {
+                            "expression": {
+                              "op": "read",
+                              "path": "layout.inkHeight"
+                            },
+                            "kind": "expression"
+                          },
+                          "transform.x": {
+                            "expression": {
+                              "args": [
+                                {
+                                  "op": "read",
+                                  "path": "layout.inkX"
+                                },
+                                {
+                                  "op": "read",
+                                  "path": "layout.x"
+                                }
+                              ],
+                              "function": "sub",
+                              "op": "call"
+                            },
+                            "kind": "expression"
+                          },
+                          "transform.y": {
+                            "expression": {
+                              "args": [
+                                {
+                                  "op": "read",
+                                  "path": "layout.inkY"
+                                },
+                                {
+                                  "op": "read",
+                                  "path": "layout.y"
+                                }
+                              ],
+                              "function": "sub",
+                              "op": "call"
+                            },
+                            "kind": "expression"
+                          },
+                          "width": {
+                            "expression": {
+                              "op": "read",
+                              "path": "layout.inkWidth"
+                            },
+                            "kind": "expression"
+                          }
+                        },
+                        "type": "shape"
+                      }
+                    ],
+                    "id": "ink-backgrounds",
+                    "selectorId": "lines",
+                    "type": "repeat",
+                    "zIndex": -1
+                  }
+                ],
+                "parameters": [
+                  {
+                    "default": "#FFE600",
+                    "id": "accent",
+                    "type": "color"
+                  }
+                ],
+                "requiredCapabilities": [
+                  "caption-text-context/1",
+                  "caption-ink-context/1"
+                ],
+                "schema": "baocut.caption-scene/1",
+                "selectors": [
+                  {
+                    "id": "characters",
+                    "includeWhitespace": true,
+                    "nodeId": "caption",
+                    "unit": "grapheme"
+                  },
+                  {
+                    "id": "lines",
+                    "nodeId": "caption",
+                    "unit": "line"
+                  }
+                ],
+                "speechState": {
+                  "gapPolicy": "hold-previous",
+                  "tailPolicy": "hold-last",
+                  "timingPolicy": "estimated"
+                }
+              }
+            },
+            "schema": "baocut.caption-scene-style/1"
+          },
+          "documentId": "style",
+          "kind": "caption-style",
+          "schema": "baocut.caption-scene-style/1"
+        }
+      ],
+      "name": "captions-ink-context",
+      "pictures": [],
+      "shots": [
+        {
+          "captions": true,
+          "frame": 0,
+          "height": 90,
+          "sha256": "2e5aa23b2af701dd71d90fba5b284b2b71430cb1a330a10be498960982a75349",
+          "skipped": [],
+          "transparent": false,
+          "warnings": [],
+          "width": 160
+        },
+        {
+          "captions": true,
+          "frame": 1,
+          "height": 90,
+          "sha256": "8bbfed16f0aad2bd2545e43889831fb1d40946759f91ba7cbe90ef3d60e850ca",
+          "skipped": [],
+          "transparent": false,
+          "warnings": [],
+          "width": 160
+        },
+        {
+          "captions": true,
+          "frame": 4,
+          "height": 90,
+          "sha256": "a4977bac831fbd115eba5f43cf71af26d283d2e1aa6bd4a2ce5ae7da90416ab3",
+          "skipped": [],
+          "transparent": false,
+          "warnings": [],
+          "width": 160
+        },
+        {
+          "captions": true,
+          "frame": 12,
+          "height": 90,
+          "sha256": "d919f7d327be933f9d01cf51a0f565cb27c479a072daf3364e020abee6fc001c",
+          "skipped": [],
+          "transparent": false,
+          "warnings": [],
+          "width": 160
+        },
+        {
+          "captions": true,
+          "frame": 20,
+          "height": 90,
+          "sha256": "0af38357a054cdc78eb03cda6c2fd78a035ae6219b330f18a2d9dde12013b85f",
+          "skipped": [],
+          "transparent": false,
+          "warnings": [],
+          "width": 160
+        },
+        {
+          "captions": true,
+          "frame": 35,
+          "height": 90,
+          "sha256": "dc0cd89c165877543ac1e5c7cccaec6f7bcf5a789caef17e666586e8a0991efa",
+          "skipped": [],
+          "transparent": false,
+          "warnings": [],
+          "width": 160
+        },
+        {
+          "captions": true,
+          "frame": 55,
+          "height": 90,
+          "sha256": "21aa65a0e9aa661671a4719e12b563cc7635d448e711773902df2f61f018d0b9",
+          "skipped": [],
+          "transparent": false,
+          "warnings": [],
+          "width": 160
+        },
+        {
+          "captions": true,
+          "frame": 80,
+          "height": 90,
+          "sha256": "e3d3c0b1ca7791681365c5244c3f0ca2d8952c8fdf60a8a7b0ac0728a386ac3b",
+          "skipped": [],
+          "transparent": false,
+          "warnings": [],
+          "width": 160
+        },
+        {
+          "captions": true,
+          "frame": 100,
+          "height": 90,
+          "sha256": "cfb32bd01e7b14c5b43ab63083b909c6bdcafbfb9f9f241ca67bd65f1ffdfc75",
+          "skipped": [],
+          "transparent": false,
+          "warnings": [],
+          "width": 160
+        },
+        {
+          "captions": true,
+          "frame": 119,
+          "height": 90,
+          "sha256": "1b3ce84b57b433a6115b9ba4c5b426765e8c50802bcd5ac7f4a8d0424e882a89",
+          "skipped": [],
+          "transparent": false,
+          "warnings": [],
+          "width": 160
+        }
+      ],
+      "spectra": [],
+      "video": {
+        "assets": {},
+        "canvasVariants": {},
+        "checkpoints": {},
+        "documents": {},
+        "fonts": {},
+        "format": "baocut.video",
+        "id": "video_test",
+        "links": [],
+        "localizationSets": {},
+        "name": "测试",
+        "protections": {},
+        "revision": "1",
+        "rootSequenceId": "seq",
+        "schemaVersion": 3,
+        "sequences": {
+          "seq": {
+            "animationBindings": [],
+            "canvas": {
+              "background": "#000000",
+              "height": 90,
+              "width": 160,
+              "workingSpace": "srgb"
+            },
+            "ducking": [],
+            "durationPolicy": {
+              "kind": "derived"
+            },
+            "fps": {
+              "den": 1,
+              "num": 30
+            },
+            "id": "seq",
+            "items": [
+              {
+                "documentId": "doc",
+                "enabled": true,
+                "followPolicy": {
+                  "kind": "sequence-fixed"
+                },
+                "id": "ink-context",
+                "locked": false,
+                "paintOrder": 0,
+                "span": {
+                  "durationFrames": 120,
+                  "fromFrame": 0
+                },
+                "styleDocumentId": "style",
+                "trackId": "trk_s1",
+                "type": "caption"
+              }
+            ],
+            "markers": [],
+            "name": "测试序列",
+            "revision": "1",
+            "tracks": [
+              {
+                "id": "trk_v1",
+                "kind": "visual",
+                "locked": false,
+                "muted": false,
+                "order": 0,
+                "solo": {
+                  "enabled": false,
+                  "group": "visual"
+                },
+                "visible": true
+              },
+              {
+                "id": "trk_s1",
+                "kind": "subtitle",
+                "locked": false,
+                "muted": false,
+                "order": 1,
+                "solo": {
+                  "enabled": false,
+                  "group": "visual"
+                },
+                "visible": true
+              }
+            ],
+            "transitions": []
+          }
+        },
+        "syncGroups": {},
+        "timeContractVersion": 1
+      }
+    },
+    {
+      "assets": [],
+      "audioSpectra": [],
+      "documents": [
+        {
+          "body": {
+            "clock": "sequence",
+            "cues": [
+              {
+                "end": 4000,
+                "id": "c0",
+                "start": 0,
+                "text": "One two three four"
+              }
+            ],
+            "schema": "baocut.caption/1",
+            "timescale": 1000
+          },
+          "documentId": "doc",
+          "kind": "caption",
+          "lineKind": "original",
+          "schema": "baocut.caption/1"
+        },
+        {
+          "body": {
+            "scene": {
+              "kind": "inline",
+              "value": {
+                "animations": [
+                  {
+                    "composite": "add",
+                    "id": "alternate-page",
+                    "property": "transform.x",
+                    "target": {
+                      "nodeId": "caption"
+                    },
+                    "value": {
+                      "expression": {
+                        "args": [
+                          {
+                            "op": "literal",
+                            "type": "length",
+                            "value": 8
+                          },
+                          {
+                            "args": [
+                              {
+                                "op": "read",
+                                "path": "unit.pageIndex"
+                              },
+                              {
+                                "op": "read",
+                                "path": "unit.pageCount"
+                              }
+                            ],
+                            "function": "div",
+                            "op": "call"
+                          }
+                        ],
+                        "function": "mul",
+                        "op": "call"
+                      },
+                      "kind": "expression"
+                    }
+                  }
+                ],
+                "evaluationVersion": 1,
+                "layout": {
+                  "bindings": [
+                    {
+                      "property": "width",
+                      "value": {
+                        "kind": "constant",
+                        "value": 130
+                      }
+                    }
+                  ],
+                  "layoutEvaluation": "per-sample",
+                  "maxLines": 2,
+                  "pagination": {
+                    "maxUnitsPerPage": 2
+                  },
+                  "width": {
+                    "basis": "absolute",
+                    "value": 130
+                  },
+                  "x": {
+                    "basis": "absolute",
+                    "value": 80
+                  },
+                  "y": {
+                    "basis": "absolute",
+                    "value": 45
+                  }
+                },
+                "nodes": [
+                  {
+                    "id": "caption",
+                    "style": {
+                      "fontSize": {
+                        "basis": "absolute",
+                        "value": 16
+                      }
+                    },
+                    "type": "text"
+                  },
+                  {
+                    "children": [
+                      {
+                        "id": "line-bar",
+                        "properties": {
+                          "fill": {
+                            "expression": {
+                              "condition": {
+                                "op": "read",
+                                "path": "unit.active"
+                              },
+                              "else": {
+                                "op": "literal",
+                                "type": "color",
+                                "value": "#444444"
+                              },
+                              "op": "if",
+                              "then": {
+                                "op": "literal",
+                                "type": "color",
+                                "value": "#00CC88"
+                              }
+                            },
+                            "kind": "expression"
+                          },
+                          "height": {
+                            "kind": "constant",
+                            "value": 3
+                          },
+                          "transform.y": {
+                            "expression": {
+                              "op": "read",
+                              "path": "layout.height"
+                            },
+                            "kind": "expression"
+                          },
+                          "width": {
+                            "expression": {
+                              "args": [
+                                {
+                                  "op": "read",
+                                  "path": "layout.width"
+                                },
+                                {
+                                  "args": [
+                                    {
+                                      "args": [
+                                        {
+                                          "op": "read",
+                                          "path": "time.lineElapsedSeconds"
+                                        },
+                                        {
+                                          "op": "read",
+                                          "path": "time.lineDurationSeconds"
+                                        }
+                                      ],
+                                      "function": "div",
+                                      "op": "call"
+                                    },
+                                    {
+                                      "op": "literal",
+                                      "type": "scalar",
+                                      "value": 0
+                                    },
+                                    {
+                                      "op": "literal",
+                                      "type": "scalar",
+                                      "value": 1
+                                    }
+                                  ],
+                                  "function": "clamp",
+                                  "op": "call"
+                                }
+                              ],
+                              "function": "mul",
+                              "op": "call"
+                            },
+                            "kind": "expression"
+                          }
+                        },
+                        "type": "shape"
+                      }
+                    ],
+                    "id": "line-bars",
+                    "selectorId": "lines",
+                    "type": "repeat"
+                  }
+                ],
+                "requiredCapabilities": [
+                  "caption-unit-context/1",
+                  "caption-layout-per-sample/1"
+                ],
+                "schema": "baocut.caption-scene/1",
+                "selectors": [
+                  {
+                    "id": "lines",
+                    "nodeId": "caption",
+                    "unit": "line"
+                  }
+                ],
+                "speechState": {
+                  "gapPolicy": "none",
+                  "tailPolicy": "none",
+                  "timingPolicy": "estimated"
+                }
+              }
+            },
+            "schema": "baocut.caption-scene-style/1"
+          },
+          "documentId": "style",
+          "kind": "caption-style",
+          "schema": "baocut.caption-scene-style/1"
+        }
+      ],
+      "name": "captions-unit-context",
+      "pictures": [],
+      "shots": [
+        {
+          "captions": true,
+          "frame": 0,
+          "height": 90,
+          "sha256": "a95dbd958be35a70d1b77046a4e1669dc729b556741188b6ec301b781e708a63",
+          "skipped": [],
+          "transparent": false,
+          "warnings": [],
+          "width": 160
+        },
+        {
+          "captions": true,
+          "frame": 5,
+          "height": 90,
+          "sha256": "91c5f2a207bffd44dc564d36e4e9f20388c93ed71836acc60fc81abed8b8268d",
+          "skipped": [],
+          "transparent": false,
+          "warnings": [],
+          "width": 160
+        },
+        {
+          "captions": true,
+          "frame": 20,
+          "height": 90,
+          "sha256": "48af34aa3d615f0f880329a3283c4be75550023583b350f7b7a50fbd54aeabed",
+          "skipped": [],
+          "transparent": false,
+          "warnings": [],
+          "width": 160
+        },
+        {
+          "captions": true,
+          "frame": 35,
+          "height": 90,
+          "sha256": "17a1786b5a4b388dada2cac5d32a30eca24333df07dfce4fe47b34625a7d4179",
+          "skipped": [],
+          "transparent": false,
+          "warnings": [],
+          "width": 160
+        },
+        {
+          "captions": true,
+          "frame": 60,
+          "height": 90,
+          "sha256": "7705c1ade9dc85746af5a0c6e4283f174948cade456ae59c5304575d154897eb",
+          "skipped": [],
+          "transparent": false,
+          "warnings": [],
+          "width": 160
+        },
+        {
+          "captions": true,
+          "frame": 75,
+          "height": 90,
+          "sha256": "044f432aa652d557de8b1be0f3a334c92dd1d832a18d9b0233b6e310923b9865",
+          "skipped": [],
+          "transparent": false,
+          "warnings": [],
+          "width": 160
+        },
+        {
+          "captions": true,
+          "frame": 90,
+          "height": 90,
+          "sha256": "385d6d15aab076af78831d911e2264caa2ec8a9f9231184f3ca69d3efe02a2ab",
+          "skipped": [],
+          "transparent": false,
+          "warnings": [],
+          "width": 160
+        },
+        {
+          "captions": true,
+          "frame": 105,
+          "height": 90,
+          "sha256": "bf516a1a43206c2f89b18365942c9c983946d589afa8f121a91640741fd9294a",
+          "skipped": [],
+          "transparent": false,
+          "warnings": [],
+          "width": 160
+        },
+        {
+          "captions": true,
+          "frame": 119,
+          "height": 90,
+          "sha256": "3fdc78ddfd54eed981b93cfde282cae07b0f6b1d34dfa771aabc08b3be60770f",
+          "skipped": [],
+          "transparent": false,
+          "warnings": [],
+          "width": 160
+        }
+      ],
+      "spectra": [],
+      "video": {
+        "assets": {},
+        "canvasVariants": {},
+        "checkpoints": {},
+        "documents": {},
+        "fonts": {},
+        "format": "baocut.video",
+        "id": "video_test",
+        "links": [],
+        "localizationSets": {},
+        "name": "测试",
+        "protections": {},
+        "revision": "1",
+        "rootSequenceId": "seq",
+        "schemaVersion": 3,
+        "sequences": {
+          "seq": {
+            "animationBindings": [],
+            "canvas": {
+              "background": "#000000",
+              "height": 90,
+              "width": 160,
+              "workingSpace": "srgb"
+            },
+            "ducking": [],
+            "durationPolicy": {
+              "kind": "derived"
+            },
+            "fps": {
+              "den": 1,
+              "num": 30
+            },
+            "id": "seq",
+            "items": [
+              {
+                "documentId": "doc",
+                "enabled": true,
+                "followPolicy": {
+                  "kind": "sequence-fixed"
+                },
+                "id": "unit-context",
+                "locked": false,
+                "paintOrder": 0,
+                "span": {
+                  "durationFrames": 120,
+                  "fromFrame": 0
+                },
+                "styleDocumentId": "style",
+                "trackId": "trk_s1",
+                "type": "caption"
+              }
+            ],
+            "markers": [],
+            "name": "测试序列",
+            "revision": "1",
+            "tracks": [
+              {
+                "id": "trk_v1",
+                "kind": "visual",
+                "locked": false,
+                "muted": false,
+                "order": 0,
+                "solo": {
+                  "enabled": false,
+                  "group": "visual"
+                },
+                "visible": true
+              },
+              {
+                "id": "trk_s1",
+                "kind": "subtitle",
+                "locked": false,
+                "muted": false,
+                "order": 1,
+                "solo": {
+                  "enabled": false,
+                  "group": "visual"
+                },
+                "visible": true
+              }
+            ],
+            "transitions": []
+          }
+        },
+        "syncGroups": {},
+        "timeContractVersion": 1
+      }
+    },
+    {
+      "assets": [],
+      "audioSpectra": [],
+      "documents": [
+        {
+          "body": {
+            "clock": "sequence",
+            "cues": [
+              {
+                "end": 4000,
+                "id": "c0",
+                "start": 0,
+                "text": "Ripple over pixels"
+              }
+            ],
+            "schema": "baocut.caption/1",
+            "timescale": 1000
+          },
+          "documentId": "doc",
+          "kind": "caption",
+          "lineKind": "original",
+          "schema": "baocut.caption/1"
+        },
+        {
+          "body": {
+            "scene": {
+              "kind": "inline",
+              "value": {
+                "animations": [],
+                "evaluationVersion": 1,
+                "layout": {
+                  "maxLines": 2,
+                  "pagination": {
+                    "maxUnitsPerPage": 3
+                  },
+                  "width": {
+                    "basis": "absolute",
+                    "value": 140
+                  },
+                  "x": {
+                    "basis": "absolute",
+                    "value": 80
+                  },
+                  "y": {
+                    "basis": "absolute",
+                    "value": 45
+                  }
+                },
+                "materials": [
+                  {
+                    "amplitude": {
+                      "kind": "constant",
+                      "value": 4.5
+                    },
+                    "axis": "y",
+                    "id": "ripple",
+                    "kind": "wave-displace",
+                    "phase": {
+                      "expression": {
+                        "args": [
+                          {
+                            "args": [
+                              {
+                                "op": "read",
+                                "path": "time.seconds"
+                              },
+                              {
+                                "op": "literal",
+                                "type": "time",
+                                "value": 1
+                              }
+                            ],
+                            "function": "div",
+                            "op": "call"
+                          },
+                          {
+                            "op": "literal",
+                            "type": "angle",
+                            "value": -6.283185307179586
+                          }
+                        ],
+                        "function": "mul",
+                        "op": "call"
+                      },
+                      "kind": "expression"
+                    },
+                    "wavelength": {
+                      "kind": "constant",
+                      "value": 32
+                    }
+                  }
+                ],
+                "nodes": [
+                  {
+                    "id": "caption",
+                    "style": {
+                      "fontSize": {
+                        "basis": "absolute",
+                        "value": 16
+                      }
+                    },
+                    "type": "text"
+                  }
+                ],
+                "parameters": [
+                  {
+                    "default": "#FFE600",
+                    "id": "accent",
+                    "type": "color"
+                  }
+                ],
+                "requiredCapabilities": [
+                  "caption-wave-displace/1"
+                ],
+                "schema": "baocut.caption-scene/1",
+                "selectors": [],
+                "speechState": {
+                  "gapPolicy": "hold-previous",
+                  "tailPolicy": "hold-last"
+                }
+              }
+            },
+            "schema": "baocut.caption-scene-style/1"
+          },
+          "documentId": "style",
+          "kind": "caption-style",
+          "schema": "baocut.caption-scene-style/1"
+        }
+      ],
+      "name": "captions-wave-displace-material",
+      "pictures": [],
+      "shots": [
+        {
+          "captions": true,
+          "frame": 0,
+          "height": 90,
+          "sha256": "12dc902559feb27ea61dfc93b09849ef3dc060c705f603d3e2c0f12d742a0cb6",
+          "skipped": [],
+          "transparent": false,
+          "warnings": [],
+          "width": 160
+        },
+        {
+          "captions": true,
+          "frame": 1,
+          "height": 90,
+          "sha256": "27931f15868dbeb6b09577e5d40b31842fbf8764aa0a70b64c826fe0ce179c83",
+          "skipped": [],
+          "transparent": false,
+          "warnings": [],
+          "width": 160
+        },
+        {
+          "captions": true,
+          "frame": 4,
+          "height": 90,
+          "sha256": "30a4e9a938948f131968360ffcf13cc36d6c258a8a822c564675ce140722f717",
+          "skipped": [],
+          "transparent": false,
+          "warnings": [],
+          "width": 160
+        },
+        {
+          "captions": true,
+          "frame": 12,
+          "height": 90,
+          "sha256": "362b5064bccedf6f347861011fbc77c09ecafed9552d085379555987c54d8335",
+          "skipped": [],
+          "transparent": false,
+          "warnings": [],
+          "width": 160
+        },
+        {
+          "captions": true,
+          "frame": 35,
+          "height": 90,
+          "sha256": "4d54e0c9c960ff807cf16b3266199de2ed2b0fdc7d8fef19547b99d31ccbcd96",
+          "skipped": [],
+          "transparent": false,
+          "warnings": [],
+          "width": 160
+        },
+        {
+          "captions": true,
+          "frame": 80,
+          "height": 90,
+          "sha256": "8508b6bbf109d12c220ecc35c01143033fe9abca1a7a7b3c5bba96f65091509d",
+          "skipped": [],
+          "transparent": false,
+          "warnings": [],
+          "width": 160
+        },
+        {
+          "captions": true,
+          "frame": 119,
+          "height": 90,
+          "sha256": "b9b919c99da1c4191063073926aa2e8edb09a0429c84970441c028ea14a5048d",
+          "skipped": [],
+          "transparent": false,
+          "warnings": [],
+          "width": 160
+        },
+        {
+          "captions": true,
+          "frame": 7,
+          "height": 90,
+          "sha256": "9aff50b8df9c22c06031545ce224af1831999fa3d50260b1b7cf293c0ee710d1",
+          "skipped": [],
+          "transparent": false,
+          "warnings": [],
+          "width": 160
+        },
+        {
+          "captions": true,
+          "frame": 35,
+          "height": 90,
+          "sha256": "4d54e0c9c960ff807cf16b3266199de2ed2b0fdc7d8fef19547b99d31ccbcd96",
+          "skipped": [],
+          "transparent": false,
+          "warnings": [],
+          "width": 160
+        },
+        {
+          "captions": true,
+          "frame": 0,
+          "height": 90,
+          "sha256": "12dc902559feb27ea61dfc93b09849ef3dc060c705f603d3e2c0f12d742a0cb6",
+          "skipped": [],
+          "transparent": false,
+          "warnings": [],
+          "width": 160
+        }
+      ],
+      "spectra": [],
+      "video": {
+        "assets": {},
+        "canvasVariants": {},
+        "checkpoints": {},
+        "documents": {},
+        "fonts": {},
+        "format": "baocut.video",
+        "id": "video_test",
+        "links": [],
+        "localizationSets": {},
+        "name": "测试",
+        "protections": {},
+        "revision": "1",
+        "rootSequenceId": "seq",
+        "schemaVersion": 3,
+        "sequences": {
+          "seq": {
+            "animationBindings": [],
+            "canvas": {
+              "background": "#000000",
+              "height": 90,
+              "width": 160,
+              "workingSpace": "srgb"
+            },
+            "ducking": [],
+            "durationPolicy": {
+              "kind": "derived"
+            },
+            "fps": {
+              "den": 1,
+              "num": 30
+            },
+            "id": "seq",
+            "items": [
+              {
+                "documentId": "doc",
+                "enabled": true,
+                "followPolicy": {
+                  "kind": "sequence-fixed"
+                },
+                "id": "wave-material",
+                "locked": false,
+                "paintOrder": 0,
+                "span": {
+                  "durationFrames": 120,
+                  "fromFrame": 0
+                },
+                "styleDocumentId": "style",
+                "trackId": "trk_s1",
+                "type": "caption"
+              }
+            ],
+            "markers": [],
+            "name": "测试序列",
+            "revision": "1",
+            "tracks": [
+              {
+                "id": "trk_v1",
+                "kind": "visual",
+                "locked": false,
+                "muted": false,
+                "order": 0,
+                "solo": {
+                  "enabled": false,
+                  "group": "visual"
+                },
+                "visible": true
+              },
+              {
+                "id": "trk_s1",
+                "kind": "subtitle",
+                "locked": false,
+                "muted": false,
+                "order": 1,
+                "solo": {
+                  "enabled": false,
+                  "group": "visual"
+                },
+                "visible": true
+              }
+            ],
+            "transitions": []
+          }
+        },
+        "syncGroups": {},
+        "timeContractVersion": 1
+      }
+    },
+    {
+      "assets": [],
+      "audioSpectra": [],
+      "documents": [
+        {
+          "body": {
+            "clock": "sequence",
+            "cues": [
+              {
+                "end": 4000,
+                "id": "c0",
+                "start": 0,
                 "text": "Wave é office"
               }
             ],

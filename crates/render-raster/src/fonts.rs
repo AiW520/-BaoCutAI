@@ -418,6 +418,39 @@ fn resolve_scripts(text: &str) -> Vec<Script> {
     scripts
 }
 
+fn bitmap_ink_bounds(
+    width: u32,
+    height: u32,
+    rgba: &[u8],
+    left: i32,
+    top: i32,
+) -> Option<tiny_skia::Rect> {
+    if width == 0 || height == 0 {
+        return None;
+    }
+    let (mut x0, mut y0, mut x1, mut y1) = (width, height, 0, 0);
+    for (i, pixel) in rgba.chunks_exact(4).enumerate() {
+        if pixel[3] == 0 {
+            continue;
+        }
+        let x = i as u32 % width;
+        let y = i as u32 / width;
+        x0 = x0.min(x);
+        y0 = y0.min(y);
+        x1 = x1.max(x + 1);
+        y1 = y1.max(y + 1);
+    }
+    if x1 <= x0 || y1 <= y0 {
+        return None;
+    }
+    tiny_skia::Rect::from_xywh(
+        left as f32 + x0 as f32,
+        -(top as f32) + y0 as f32,
+        (x1 - x0) as f32,
+        (y1 - y0) as f32,
+    )
+}
+
 /// `COLR` 表 tag。`swash::Tag` 就是 `u32`，无需额外导入即可 const 求值。
 const COLR_TAG: swash::Tag = u32::from_be_bytes(*b"COLR");
 
@@ -1516,6 +1549,22 @@ impl TextEngine {
         }
     }
 
+    /// Unpainted glyph ink in baseline-relative coordinates (positive y down).
+    /// Excludes advance, stroke, shadows and transforms; spaces have no ink.
+    pub fn glyph_ink_bounds(&mut self, key: CacheKey) -> Option<tiny_skia::Rect> {
+        match self.glyph_render(key) {
+            GlyphRender::Outline(path) => path.compute_tight_bounds(),
+            GlyphRender::ColorBitmap {
+                width,
+                height,
+                rgba,
+                left,
+                top,
+            } => bitmap_ink_bounds(width, height, &rgba, left, top),
+            GlyphRender::Empty => None,
+        }
+    }
+
     /// BCF 录制器的彩色通道：彩色 face 且拿得到彩色光栅结果时，返回按
     /// `字号 × oversample` 光栅化的预乘 RGBA；否则 `None`，调用方照旧走
     /// [`glyph_path`](Self::glyph_path)——单色字形的指令流与指纹因此逐字节不变
@@ -2418,6 +2467,42 @@ mod tests {
                 "单色字形必须留在矢量轮廓通道"
             );
         }
+    }
+
+    #[test]
+    fn glyph_ink_excludes_spaces_and_retains_italic_overhang() {
+        let mut engine = TextEngine::with_document_fonts(&[include_bytes!(
+            "../assets/fonts/PlayfairDisplay-Italic.ttf"
+        )
+        .to_vec()]);
+        let shaped = engine.shape_styled("f", "Playfair Display", 64.0, 400, true);
+        let ink = engine.glyph_ink_bounds(shaped.glyphs[0].cache_key).unwrap();
+        assert!(
+            ink.right() as f64 > shaped.width,
+            "Italic overhang must extend beyond the advance"
+        );
+        assert!((ink.height() as f64) < shaped.ascent + shaped.descent.abs());
+        let space = engine.shape(" ", "Playfair Display", 64.0, 400);
+        assert!(!space.glyphs.is_empty());
+        assert!(
+            space
+                .glyphs
+                .iter()
+                .all(|g| engine.glyph_ink_bounds(g.cache_key).is_none())
+        );
+    }
+
+    #[test]
+    fn bitmap_ink_ignores_transparent_padding_and_preserves_placement() {
+        let mut rgba = vec![0; 5 * 4 * 4];
+        rgba[(1 * 5 + 2) * 4 + 3] = 1;
+        rgba[(2 * 5 + 3) * 4 + 3] = 255;
+        let ink = bitmap_ink_bounds(5, 4, &rgba, -3, 7).unwrap();
+        assert_eq!(
+            (ink.x(), ink.y(), ink.width(), ink.height()),
+            (-1.0, -6.0, 2.0, 2.0)
+        );
+        assert!(bitmap_ink_bounds(5, 4, &[0; 80], -3, 7).is_none());
     }
 
     #[test]

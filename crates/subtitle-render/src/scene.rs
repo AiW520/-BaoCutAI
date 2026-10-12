@@ -52,6 +52,74 @@ struct Line {
     shape: ShapedLine,
     bounds: Bounds,
     baseline: f64,
+    glyph_ink: Vec<Option<Bounds>>,
+    ink_bounds: Bounds,
+}
+impl Line {
+    fn new(
+        text: &mut TextEngine,
+        bytes: Range<usize>,
+        shape: ShapedLine,
+        bounds: Bounds,
+        baseline: f64,
+    ) -> Self {
+        let glyph_ink = shape
+            .glyphs
+            .iter()
+            .map(|glyph| {
+                text.glyph_ink_bounds(glyph.cache_key).map(|ink| Bounds {
+                    x: bounds.x + glyph.x + ink.x() as f64,
+                    y: baseline + glyph.y + ink.y() as f64,
+                    width: ink.width() as f64,
+                    height: ink.height() as f64,
+                })
+            })
+            .collect::<Vec<_>>();
+        let ink_bounds = if glyph_ink.iter().any(Option::is_some) {
+            union(glyph_ink.iter().copied().flatten())
+        } else {
+            Bounds {
+                x: bounds.x,
+                y: baseline - shape.ascent,
+                width: bounds.width,
+                height: shape.ascent + shape.descent.abs(),
+            }
+        };
+        Self {
+            bytes,
+            shape,
+            bounds,
+            baseline,
+            glyph_ink,
+            ink_bounds,
+        }
+    }
+    fn ink_for(&self, range: &Range<usize>, advance: Bounds) -> Bounds {
+        let ink = self
+            .shape
+            .glyphs
+            .iter()
+            .zip(&self.glyph_ink)
+            .filter_map(|(glyph, ink)| {
+                range
+                    .contains(&(self.bytes.start + glyph.cluster.start))
+                    .then_some(*ink)
+                    .flatten()
+            })
+            .collect::<Vec<_>>();
+        if ink.is_empty() {
+            // Whitespace retains its caret/advance horizontally and inherits the
+            // visual line vertically, including trailing unshaped whitespace.
+            Bounds {
+                x: advance.x,
+                width: advance.width,
+                y: self.ink_bounds.y,
+                height: self.ink_bounds.height,
+            }
+        } else {
+            union(ink.into_iter())
+        }
+    }
 }
 #[derive(Clone)]
 struct Page {
@@ -75,12 +143,16 @@ struct Unit {
     text_count: usize,
     page_text_index: usize,
     page_text_count: usize,
+    page_index: usize,
+    page_count: usize,
     kind: UnitKind,
     id: String,
     index: usize,
     count: usize,
     bytes: Range<usize>,
     bounds: Bounds,
+    ink_bounds: Bounds,
+    line_ink_bounds: Bounds,
     baseline: f64,
     spans: BTreeMap<UnitKind, (f64, f64)>,
     state: WordState,
@@ -548,17 +620,13 @@ fn prepare(
                 };
                 let ly = y - height / 2.0 + i as f64 * fs * style.line_height;
                 let baseline = ly + sh.ascent;
-                lines.push(Line {
-                    bytes,
-                    bounds: Bounds {
-                        x: lx,
-                        y: ly,
-                        width: sh.width,
-                        height: fs * style.line_height,
-                    },
-                    baseline,
-                    shape: sh,
-                });
+                let bounds = Bounds {
+                    x: lx,
+                    y: ly,
+                    width: sh.width,
+                    height: fs * style.line_height,
+                };
+                lines.push(Line::new(text, bytes, sh, bounds, baseline));
             }
             let Some(first) = lines.first() else { continue };
             let Some(last) = lines.last() else { continue };
@@ -690,18 +758,41 @@ fn units_for(
         (UnitKind::Cue, (cue.start, cue.end)),
         (UnitKind::Page, (page.start, page.end)),
     ]);
+    let page_ink = if page
+        .lines
+        .iter()
+        .any(|l| l.glyph_ink.iter().any(Option::is_some))
+    {
+        union(
+            page.lines
+                .iter()
+                .filter(|l| l.glyph_ink.iter().any(Option::is_some))
+                .map(|l| l.ink_bounds),
+        )
+    } else {
+        union(page.lines.iter().map(|l| l.ink_bounds))
+    };
+    let page_index = layout
+        .pages
+        .iter()
+        .position(|candidate| candidate.source_range == page.source_range)
+        .unwrap_or(0);
     let base = Unit {
         whitespace: false,
         text_index: 0,
         text_count: 0,
         page_text_index: 0,
         page_text_count: 0,
+        page_index,
+        page_count: layout.pages.len(),
         kind: UnitKind::Cue,
         id: cue.id.clone(),
         index: 0,
         count: 1,
         bytes: 0..layout.content.len(),
         bounds: page.bounds,
+        ink_bounds: page_ink,
+        line_ink_bounds: page_ink,
         baseline: page.lines.first().map_or(0.0, |l| l.baseline),
         spans: spans.clone(),
         state: WordState::Unread,
@@ -710,11 +801,7 @@ fn units_for(
     let mut all = vec![(base.clone(), None)];
     let mut p = base.clone();
     p.kind = UnitKind::Page;
-    p.index = layout
-        .pages
-        .iter()
-        .position(|p| std::ptr::eq(p, page))
-        .unwrap_or(0);
+    p.index = page_index;
     p.count = layout.pages.len();
     p.id = format!("page-{}", page.lines.first().map_or(0, |l| l.bytes.start));
     all.push((p, None));
@@ -744,8 +831,21 @@ fn units_for(
         u.id = format!("line-{}", line.bytes.start);
         u.bytes = line.bytes.clone();
         u.bounds = line.bounds;
+        u.ink_bounds = line.ink_bounds;
+        u.line_ink_bounds = line.ink_bounds;
         u.baseline = line.baseline;
         u.spans = spans.clone();
+        u.state = if active.is_some_and(|word| members.contains(&word)) {
+            WordState::Active
+        } else if !members.is_empty()
+            && members
+                .iter()
+                .all(|i| layout.words[*i].span.is_some_and(|(_, end)| t >= end))
+        {
+            WordState::Read
+        } else {
+            WordState::Unread
+        };
         all.push((u.clone(), Some(line.clone())));
         for (wi, i) in members.iter().enumerate() {
             let w = &layout.words[*i];
@@ -771,6 +871,7 @@ fn units_for(
                 .cloned()
                 .unwrap_or_default();
             u.bounds = glyph_bounds(line, &w.bytes);
+            u.ink_bounds = line.ink_for(&w.bytes, u.bounds);
             all.push((u.clone(), None));
             let content = &layout.content;
             if w.bytes.end <= content.len()
@@ -792,6 +893,7 @@ fn units_for(
                     gu.count = gs.len();
                     gu.bytes = w.bytes.start + at..w.bytes.start + at + g.len();
                     gu.bounds = glyph_bounds(line, &gu.bytes);
+                    gu.ink_bounds = line.ink_for(&gu.bytes, gu.bounds);
                     if let Some(s) = w.span {
                         gu.spans.insert(UnitKind::Grapheme, s);
                     }
@@ -841,6 +943,7 @@ fn units_for(
                     height: line.bounds.height,
                 };
             }
+            blank.ink_bounds = line.ink_for(&blank.bytes, blank.bounds);
             blank
                 .spans
                 .insert(UnitKind::Grapheme, spans[&UnitKind::Line]);
@@ -941,6 +1044,18 @@ fn context(u: &Unit, r: &RenderContext) -> Context {
                 .get(&UnitKind::Page)
                 .map_or(r.cue.end - r.cue.start, |s| s.1 - s.0),
         ),
+        (
+            "time.lineElapsedSeconds",
+            ValueType::Time,
+            r.seconds - u.spans.get(&UnitKind::Line).map_or(a, |s| s.0),
+        ),
+        (
+            "time.lineDurationSeconds",
+            ValueType::Time,
+            u.spans.get(&UnitKind::Line).map_or(b - a, |s| s.1 - s.0),
+        ),
+        ("unit.pageIndex", ValueType::Scalar, u.page_index as f64),
+        ("unit.pageCount", ValueType::Scalar, u.page_count as f64),
         ("unit.textIndex", ValueType::Scalar, u.text_index as f64),
         ("unit.textCount", ValueType::Scalar, u.text_count as f64),
         (
@@ -968,6 +1083,16 @@ fn context(u: &Unit, r: &RenderContext) -> Context {
         ("layout.width", ValueType::Length, u.bounds.width),
         ("layout.height", ValueType::Length, u.bounds.height),
         ("layout.baseline", ValueType::Length, u.baseline),
+        ("layout.inkX", ValueType::Length, u.ink_bounds.x),
+        ("layout.inkY", ValueType::Length, u.ink_bounds.y),
+        ("layout.inkWidth", ValueType::Length, u.ink_bounds.width),
+        ("layout.inkHeight", ValueType::Length, u.ink_bounds.height),
+        ("layout.lineInkY", ValueType::Length, u.line_ink_bounds.y),
+        (
+            "layout.lineInkHeight",
+            ValueType::Length,
+            u.line_ink_bounds.height,
+        ),
         ("canvas.width", ValueType::Length, r.size.0 as f64),
         ("canvas.height", ValueType::Length, r.size.1 as f64),
     ] {
@@ -1476,4 +1601,364 @@ fn scene_paint(
             }
         }
     })
+}
+
+#[cfg(test)]
+mod ink_tests {
+    use super::*;
+    fn input(
+        content: &str,
+        line_height: f64,
+    ) -> (
+        TextEngine,
+        SceneStyle,
+        SceneCue,
+        BTreeMap<String, Evaluated>,
+    ) {
+        let mut body: serde_json::Value = serde_json::from_str(include_str!(
+            "../../caption-scene/tests/fixtures/word-pop.json"
+        ))
+        .unwrap();
+        body["scene"]["value"]["nodes"][0]["style"]["fontSize"] =
+            serde_json::json!({"value": 24, "basis":"absolute"});
+        body["scene"]["value"]["nodes"][0]["style"]["lineHeight"] = serde_json::json!(line_height);
+        body["scene"]["value"]["layout"]["pagination"] = serde_json::json!({"maxUnitsPerPage":128});
+        let style = parse_style(&body).unwrap();
+        let params = parameters(style.scene(), &[]).unwrap();
+        let text = TextEngine::with_document_fonts(&[include_bytes!(
+            "../../render-raster/assets/fonts/NotoSansSC-Variable.ttf"
+        )
+        .to_vec()]);
+        let cue = SceneCue {
+            id: "cue".into(),
+            document_id: "doc".into(),
+            text: content.into(),
+            start: 0.0,
+            end: 4.0,
+            words: vec![],
+        };
+        (text, style, cue, params)
+    }
+    #[test]
+    fn ink_line_height_is_independent_of_leading_and_spaces_inherit_it() {
+        let measure = |line_height| {
+            let (mut text, style, cue, params) = input("Ag e\u{301} ", line_height);
+            let scene = style.scene();
+            let layout = prepare(
+                &mut text,
+                &cue,
+                &scene.nodes[0],
+                &scene.layout,
+                &scene.speech_state,
+                (160, 90),
+                &params,
+            )
+            .unwrap();
+            let page = &layout.pages[0];
+            assert_eq!(page.lines.len(), 1);
+            let line = &page.lines[0];
+            let units = units_for(
+                &cue,
+                &layout,
+                page,
+                0.5,
+                &scene.speech_state,
+                &Presentation::default(),
+            );
+            let spaces = units
+                .iter()
+                .filter(|(u, _)| u.whitespace)
+                .collect::<Vec<_>>();
+            assert_eq!(spaces.len(), 2);
+            for (space, _) in spaces {
+                assert_eq!(space.ink_bounds.y, line.ink_bounds.y);
+                assert_eq!(space.ink_bounds.height, line.ink_bounds.height);
+                assert_eq!(space.ink_bounds.x, space.bounds.x);
+                assert_eq!(space.ink_bounds.width, space.bounds.width);
+            }
+            for (unit, _) in &units {
+                assert_eq!(unit.line_ink_bounds.y, line.ink_bounds.y);
+                assert_eq!(unit.line_ink_bounds.height, line.ink_bounds.height);
+            }
+            (
+                line.ink_bounds.y - line.baseline,
+                line.ink_bounds.height,
+                line.bounds.height,
+            )
+        };
+        let tight = measure(1.0);
+        let loose = measure(3.0);
+        assert!((tight.0 - loose.0).abs() < 1e-9);
+        assert_eq!(tight.1, loose.1);
+        assert_eq!(loose.2, tight.2 * 3.0);
+        assert!(loose.1 < loose.2);
+    }
+    #[test]
+    fn whitespace_only_line_uses_font_metrics_not_line_height() {
+        let mut text = TextEngine::with_document_fonts(&[]);
+        let shape = ShapedLine {
+            width: 12.0,
+            ascent: 15.0,
+            descent: 5.0,
+            glyphs: vec![],
+        };
+        let line = Line::new(
+            &mut text,
+            0..1,
+            shape,
+            Bounds {
+                x: 10.0,
+                y: 20.0,
+                width: 12.0,
+                height: 100.0,
+            },
+            35.0,
+        );
+        assert_eq!(
+            (
+                line.ink_bounds.x,
+                line.ink_bounds.y,
+                line.ink_bounds.width,
+                line.ink_bounds.height
+            ),
+            (10.0, 20.0, 12.0, 20.0)
+        );
+        let space = line.ink_for(&(0..1), line.bounds);
+        assert_eq!(space.height, 20.0);
+    }
+    #[test]
+    fn sampled_reflow_refreshes_ink_without_mutating_the_frozen_layout() {
+        let (mut text, style, cue, params) = input("Ag", 2.5);
+        let scene = style.scene();
+        let layout = prepare(
+            &mut text,
+            &cue,
+            &scene.nodes[0],
+            &scene.layout,
+            &scene.speech_state,
+            (160, 90),
+            &params,
+        )
+        .unwrap();
+        let before = layout.pages[0].lines[0].ink_bounds.height;
+        let mut node = scene.nodes[0].clone();
+        node.style.font_size.value *= 2.0;
+        let page = sampled_layout::reflow(
+            &mut text,
+            &layout,
+            &layout.pages[0],
+            &node,
+            &scene.layout,
+            (160, 90),
+            &params,
+            &mut Budget::default(),
+        )
+        .unwrap();
+        assert!((page.lines[0].ink_bounds.height / before - 2.0).abs() < 0.05);
+        assert_eq!(layout.pages[0].lines[0].ink_bounds.height, before);
+    }
+
+    #[test]
+    fn line_state_uses_word_membership_and_respects_gap_tail_and_missing_timing() {
+        let (mut text, style, mut cue, params) = input("A\nB", 1.0);
+        cue.words = vec![
+            SceneWord {
+                id: "a".into(),
+                text: "A".into(),
+                start: 0.0,
+                end: 0.5,
+            },
+            SceneWord {
+                id: "b".into(),
+                text: "B".into(),
+                start: 1.0,
+                end: 1.5,
+            },
+        ];
+        let scene = style.scene();
+        let layout = prepare(
+            &mut text,
+            &cue,
+            &scene.nodes[0],
+            &scene.layout,
+            &scene.speech_state,
+            (160, 90),
+            &params,
+        )
+        .unwrap();
+        let mut cfg = scene.speech_state.clone();
+        cfg.gap_policy = GapPolicy::None;
+        cfg.tail_policy = TailPolicy::None;
+        let states = |t, cfg: &SpeechState| {
+            units_for(
+                &cue,
+                &layout,
+                &layout.pages[0],
+                t,
+                cfg,
+                &Presentation::default(),
+            )
+            .into_iter()
+            .filter(|(u, _)| u.kind == UnitKind::Line)
+            .map(|(u, _)| u.state)
+            .collect::<Vec<_>>()
+        };
+        assert_eq!(
+            states(0.25, &cfg),
+            vec![WordState::Active, WordState::Unread]
+        );
+        assert_eq!(states(0.75, &cfg), vec![WordState::Read, WordState::Unread]);
+        cfg.gap_policy = GapPolicy::HoldPrevious;
+        assert_eq!(
+            states(0.75, &cfg),
+            vec![WordState::Active, WordState::Unread]
+        );
+        assert_eq!(states(1.75, &cfg), vec![WordState::Read, WordState::Read]);
+        cfg.tail_policy = TailPolicy::HoldLast;
+        assert_eq!(states(1.75, &cfg), vec![WordState::Read, WordState::Active]);
+        cue.words.clear();
+        let untimed = prepare(
+            &mut text,
+            &cue,
+            &scene.nodes[0],
+            &scene.layout,
+            &cfg,
+            (160, 90),
+            &params,
+        )
+        .unwrap();
+        assert!(
+            units_for(
+                &cue,
+                &untimed,
+                &untimed.pages[0],
+                3.0,
+                &cfg,
+                &Presentation::default()
+            )
+            .iter()
+            .filter(|(u, _)| u.kind == UnitKind::Line)
+            .all(|(u, _)| u.state == WordState::Unread)
+        );
+    }
+    #[test]
+    fn stable_page_identity_survives_per_sample_clone_and_is_shared_by_all_units() {
+        let (mut text, mut style, cue, params) = input("A B C D", 1.0);
+        let SceneSource::Inline { value: scene } = &mut style.scene;
+        scene.layout.pagination.max_units_per_page = Some(1);
+        let layout = prepare(
+            &mut text,
+            &cue,
+            &scene.nodes[0],
+            &scene.layout,
+            &scene.speech_state,
+            (160, 90),
+            &params,
+        )
+        .unwrap();
+        assert_eq!(layout.pages.len(), 4);
+        let page = sampled_layout::reflow(
+            &mut text,
+            &layout,
+            &layout.pages[2],
+            &scene.nodes[0],
+            &scene.layout,
+            (160, 90),
+            &params,
+            &mut Budget::default(),
+        )
+        .unwrap();
+        let units = units_for(
+            &cue,
+            &layout,
+            &page,
+            2.5,
+            &scene.speech_state,
+            &Presentation::default(),
+        );
+        assert!(
+            units
+                .iter()
+                .all(|(u, _)| u.page_index == 2 && u.page_count == 4)
+        );
+        assert_eq!(
+            units
+                .iter()
+                .find(|(u, _)| u.kind == UnitKind::Page)
+                .unwrap()
+                .0
+                .index,
+            2
+        );
+    }
+    #[test]
+    fn line_clock_is_inherited_by_words_and_graphemes_with_explicit_parent_fallback() {
+        let (mut text, style, mut cue, params) = input("A\nB", 1.0);
+        cue.words = vec![
+            SceneWord {
+                id: "a".into(),
+                text: "A".into(),
+                start: 0.0,
+                end: 0.5,
+            },
+            SceneWord {
+                id: "b".into(),
+                text: "B".into(),
+                start: 1.0,
+                end: 1.5,
+            },
+        ];
+        let scene = style.scene();
+        let layout = prepare(
+            &mut text,
+            &cue,
+            &scene.nodes[0],
+            &scene.layout,
+            &scene.speech_state,
+            (160, 90),
+            &params,
+        )
+        .unwrap();
+        let units = units_for(
+            &cue,
+            &layout,
+            &layout.pages[0],
+            1.25,
+            &scene.speech_state,
+            &Presentation::default(),
+        );
+        let unit_map = BTreeMap::new();
+        let images = BTreeMap::new();
+        let r = RenderContext {
+            scene,
+            units: &unit_map,
+            params: &params,
+            seconds: 1.25,
+            seed: 0,
+            instance: "test",
+            cue: &cue,
+            size: (160, 90),
+            images: &images,
+        };
+        for (u, _) in &units {
+            let c = context(u, &r);
+            let expected = u
+                .spans
+                .get(&UnitKind::Line)
+                .or_else(|| u.spans.get(&u.kind))
+                .unwrap();
+            assert_eq!(
+                c.fields["time.lineElapsedSeconds"].number().unwrap(),
+                1.25 - expected.0
+            );
+            assert_eq!(
+                c.fields["time.lineDurationSeconds"].number().unwrap(),
+                expected.1 - expected.0
+            );
+            if matches!(u.kind, UnitKind::Word | UnitKind::Grapheme) && u.bytes.start == 2 {
+                assert_eq!(c.fields["time.lineElapsedSeconds"].number().unwrap(), 0.25);
+                assert_eq!(c.fields["time.lineDurationSeconds"].number().unwrap(), 0.5);
+            }
+        }
+    }
 }

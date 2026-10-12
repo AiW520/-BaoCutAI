@@ -1,0 +1,191 @@
+{
+  "schema": "baocut.caption-scene-style/1",
+  "scene": {
+    "kind": "inline",
+    "value": {
+      "schema": "baocut.caption-scene/1",
+      "evaluationVersion": 1,
+      "requiredCapabilities": [
+        "caption-unit-context/1",
+        "caption-layout-per-sample/1"
+      ],
+      "layout": {
+        "width": {
+          "value": 130,
+          "basis": "absolute"
+        },
+        "x": {
+          "value": 80,
+          "basis": "absolute"
+        },
+        "y": {
+          "value": 45,
+          "basis": "absolute"
+        },
+        "maxLines": 2,
+        "pagination": {
+          "maxUnitsPerPage": 2
+        },
+        "layoutEvaluation": "per-sample",
+        "bindings": [
+          {
+            "property": "width",
+            "value": {
+              "kind": "constant",
+              "value": 130
+            }
+          }
+        ]
+      },
+      "speechState": {
+        "timingPolicy": "estimated",
+        "gapPolicy": "none",
+        "tailPolicy": "none"
+      },
+      "nodes": [
+        {
+          "id": "caption",
+          "type": "text",
+          "style": {
+            "fontSize": {
+              "value": 16,
+              "basis": "absolute"
+            }
+          }
+        },
+        {
+          "id": "line-bars",
+          "type": "repeat",
+          "selectorId": "lines",
+          "children": [
+            {
+              "id": "line-bar",
+              "type": "shape",
+              "properties": {
+                "height": {
+                  "kind": "constant",
+                  "value": 3
+                },
+                "transform.y": {
+                  "kind": "expression",
+                  "expression": {
+                    "op": "read",
+                    "path": "layout.height"
+                  }
+                },
+                "width": {
+                  "kind": "expression",
+                  "expression": {
+                    "op": "call",
+                    "function": "mul",
+                    "args": [
+                      {
+                        "op": "read",
+                        "path": "layout.width"
+                      },
+                      {
+                        "op": "call",
+                        "function": "clamp",
+                        "args": [
+                          {
+                            "op": "call",
+                            "function": "div",
+                            "args": [
+                              {
+                                "op": "read",
+                                "path": "time.lineElapsedSeconds"
+                              },
+                              {
+                                "op": "read",
+                                "path": "time.lineDurationSeconds"
+                              }
+                            ]
+                          },
+                          {
+                            "op": "literal",
+                            "type": "scalar",
+                            "value": 0
+                          },
+                          {
+                            "op": "literal",
+                            "type": "scalar",
+                            "value": 1
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                },
+                "fill": {
+                  "kind": "expression",
+                  "expression": {
+                    "op": "if",
+                    "condition": {
+                      "op": "read",
+                      "path": "unit.active"
+                    },
+                    "then": {
+                      "op": "literal",
+                      "type": "color",
+                      "value": "#00CC88"
+                    },
+                    "else": {
+                      "op": "literal",
+                      "type": "color",
+                      "value": "#444444"
+                    }
+                  }
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "selectors": [
+        {
+          "id": "lines",
+          "nodeId": "caption",
+          "unit": "line"
+        }
+      ],
+      "animations": [
+        {
+          "id": "alternate-page",
+          "target": {
+            "nodeId": "caption"
+          },
+          "property": "transform.x",
+          "composite": "add",
+          "value": {
+            "kind": "expression",
+            "expression": {
+              "op": "call",
+              "function": "mul",
+              "args": [
+                {
+                  "op": "literal",
+                  "type": "length",
+                  "value": 8
+                },
+                {
+                  "op": "call",
+                  "function": "div",
+                  "args": [
+                    {
+                      "op": "read",
+                      "path": "unit.pageIndex"
+                    },
+                    {
+                      "op": "read",
+                      "path": "unit.pageCount"
+                    }
+                  ]
+                }
+              ]
+            }
+          }
+        }
+      ]
+    }
+  }
+}

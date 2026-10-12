@@ -1,0 +1,419 @@
+{
+  "schema": "baocut.caption-scene-style/1",
+  "scene": {
+    "kind": "inline",
+    "value": {
+      "schema": "baocut.caption-scene/1",
+      "evaluationVersion": 1,
+      "requiredCapabilities": [
+        "caption-text-context/1",
+        "caption-ink-context/1"
+      ],
+      "parameters": [
+        {
+          "id": "accent",
+          "type": "color",
+          "default": "#FFE600"
+        }
+      ],
+      "layout": {
+        "width": {
+          "value": 140,
+          "basis": "absolute"
+        },
+        "x": {
+          "value": 80,
+          "basis": "absolute"
+        },
+        "y": {
+          "value": 45,
+          "basis": "absolute"
+        },
+        "maxLines": 2,
+        "pagination": {
+          "maxUnitsPerPage": 3
+        }
+      },
+      "speechState": {
+        "gapPolicy": "hold-previous",
+        "tailPolicy": "hold-last",
+        "timingPolicy": "estimated"
+      },
+      "nodes": [
+        {
+          "id": "caption",
+          "type": "text",
+          "style": {
+            "fontSize": {
+              "value": 16,
+              "basis": "absolute"
+            },
+            "lineHeight": 2.1
+          }
+        },
+        {
+          "id": "carets",
+          "type": "repeat",
+          "selectorId": "characters",
+          "children": [
+            {
+              "id": "caret",
+              "type": "shape",
+              "properties": {
+                "width": {
+                  "kind": "constant",
+                  "value": 2
+                },
+                "height": {
+                  "kind": "expression",
+                  "expression": {
+                    "op": "read",
+                    "path": "layout.lineInkHeight"
+                  }
+                },
+                "opacity": {
+                  "kind": "expression",
+                  "expression": {
+                    "op": "if",
+                    "condition": {
+                      "op": "call",
+                      "function": "eq",
+                      "args": [
+                        {
+                          "op": "read",
+                          "path": "unit.pageTextIndex"
+                        },
+                        {
+                          "op": "call",
+                          "function": "min",
+                          "args": [
+                            {
+                              "op": "call",
+                              "function": "sub",
+                              "args": [
+                                {
+                                  "op": "read",
+                                  "path": "unit.pageTextCount"
+                                },
+                                {
+                                  "op": "literal",
+                                  "type": "scalar",
+                                  "value": 1
+                                }
+                              ]
+                            },
+                            {
+                              "op": "call",
+                              "function": "floor",
+                              "args": [
+                                {
+                                  "op": "call",
+                                  "function": "mul",
+                                  "args": [
+                                    {
+                                      "op": "call",
+                                      "function": "div",
+                                      "args": [
+                                        {
+                                          "op": "read",
+                                          "path": "time.pageElapsedSeconds"
+                                        },
+                                        {
+                                          "op": "read",
+                                          "path": "time.pageDurationSeconds"
+                                        }
+                                      ]
+                                    },
+                                    {
+                                      "op": "read",
+                                      "path": "unit.pageTextCount"
+                                    }
+                                  ]
+                                }
+                              ]
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    "then": {
+                      "op": "literal",
+                      "type": "scalar",
+                      "value": 1
+                    },
+                    "else": {
+                      "op": "literal",
+                      "type": "scalar",
+                      "value": 0
+                    }
+                  }
+                },
+                "fill": {
+                  "kind": "constant",
+                  "value": "#FFCC00"
+                },
+                "transform.y": {
+                  "kind": "expression",
+                  "expression": {
+                    "op": "call",
+                    "function": "sub",
+                    "args": [
+                      {
+                        "op": "read",
+                        "path": "layout.lineInkY"
+                      },
+                      {
+                        "op": "read",
+                        "path": "layout.y"
+                      }
+                    ]
+                  }
+                },
+                "transform.x": {
+                  "kind": "expression",
+                  "expression": {
+                    "op": "call",
+                    "function": "sub",
+                    "args": [
+                      {
+                        "op": "call",
+                        "function": "add",
+                        "args": [
+                          {
+                            "op": "read",
+                            "path": "layout.inkX"
+                          },
+                          {
+                            "op": "read",
+                            "path": "layout.inkWidth"
+                          }
+                        ]
+                      },
+                      {
+                        "op": "read",
+                        "path": "layout.x"
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          ]
+        },
+        {
+          "id": "ink-backgrounds",
+          "type": "repeat",
+          "selectorId": "lines",
+          "zIndex": -1,
+          "children": [
+            {
+              "id": "ink-background",
+              "type": "shape",
+              "properties": {
+                "fill": {
+                  "kind": "constant",
+                  "value": "#243F69"
+                },
+                "width": {
+                  "kind": "expression",
+                  "expression": {
+                    "op": "read",
+                    "path": "layout.inkWidth"
+                  }
+                },
+                "height": {
+                  "kind": "expression",
+                  "expression": {
+                    "op": "read",
+                    "path": "layout.inkHeight"
+                  }
+                },
+                "transform.x": {
+                  "kind": "expression",
+                  "expression": {
+                    "op": "call",
+                    "function": "sub",
+                    "args": [
+                      {
+                        "op": "read",
+                        "path": "layout.inkX"
+                      },
+                      {
+                        "op": "read",
+                        "path": "layout.x"
+                      }
+                    ]
+                  }
+                },
+                "transform.y": {
+                  "kind": "expression",
+                  "expression": {
+                    "op": "call",
+                    "function": "sub",
+                    "args": [
+                      {
+                        "op": "read",
+                        "path": "layout.inkY"
+                      },
+                      {
+                        "op": "read",
+                        "path": "layout.y"
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "selectors": [
+        {
+          "id": "characters",
+          "nodeId": "caption",
+          "unit": "grapheme",
+          "includeWhitespace": true
+        },
+        {
+          "id": "lines",
+          "nodeId": "caption",
+          "unit": "line"
+        }
+      ],
+      "animations": [
+        {
+          "id": "reveal",
+          "target": {
+            "nodeId": "caption",
+            "selectorId": "characters"
+          },
+          "property": "opacity",
+          "composite": "multiply",
+          "value": {
+            "kind": "expression",
+            "expression": {
+              "op": "call",
+              "function": "clamp",
+              "args": [
+                {
+                  "op": "call",
+                  "function": "sub",
+                  "args": [
+                    {
+                      "op": "call",
+                      "function": "mul",
+                      "args": [
+                        {
+                          "op": "call",
+                          "function": "div",
+                          "args": [
+                            {
+                              "op": "read",
+                              "path": "time.seconds"
+                            },
+                            {
+                              "op": "read",
+                              "path": "time.cueDurationSeconds"
+                            }
+                          ]
+                        },
+                        {
+                          "op": "read",
+                          "path": "unit.textCount"
+                        }
+                      ]
+                    },
+                    {
+                      "op": "read",
+                      "path": "unit.textIndex"
+                    }
+                  ]
+                },
+                {
+                  "op": "literal",
+                  "type": "scalar",
+                  "value": 0
+                },
+                {
+                  "op": "literal",
+                  "type": "scalar",
+                  "value": 1
+                }
+              ]
+            }
+          }
+        },
+        {
+          "id": "page-scale",
+          "target": {
+            "nodeId": "caption",
+            "selectorId": "characters"
+          },
+          "property": "transform.scale",
+          "composite": "multiply",
+          "value": {
+            "kind": "expression",
+            "expression": {
+              "op": "call",
+              "function": "add",
+              "args": [
+                {
+                  "op": "literal",
+                  "type": "scalar",
+                  "value": 0.8
+                },
+                {
+                  "op": "call",
+                  "function": "mul",
+                  "args": [
+                    {
+                      "op": "literal",
+                      "type": "scalar",
+                      "value": 0.2
+                    },
+                    {
+                      "op": "call",
+                      "function": "sqrt",
+                      "args": [
+                        {
+                          "op": "call",
+                          "function": "clamp",
+                          "args": [
+                            {
+                              "op": "call",
+                              "function": "div",
+                              "args": [
+                                {
+                                  "op": "read",
+                                  "path": "time.pageElapsedSeconds"
+                                },
+                                {
+                                  "op": "read",
+                                  "path": "time.pageDurationSeconds"
+                                }
+                              ]
+                            },
+                            {
+                              "op": "literal",
+                              "type": "scalar",
+                              "value": 0
+                            },
+                            {
+                              "op": "literal",
+                              "type": "scalar",
+                              "value": 1
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          }
+        }
+      ]
+    }
+  }
+}

@@ -5,6 +5,8 @@ use std::collections::{BTreeMap, BTreeSet};
 pub const CAPABILITIES: &[&str] = &[
     "caption-scene/1",
     "caption-text-context/1",
+    "caption-ink-context/1",
+    "caption-unit-context/1",
     "caption-expressions/1",
     "caption-bezier-expression/1",
     "caption-unit-animation/1",
@@ -12,6 +14,7 @@ pub const CAPABILITIES: &[&str] = &[
     "caption-paint-stack/1",
     "caption-blur/1",
     "caption-feedback/1",
+    "caption-wave-displace/1",
     "caption-layout-per-sample/1",
 ];
 pub fn property_type(property: &str) -> Option<ValueType> {
@@ -262,6 +265,46 @@ pub fn validate_scene(s: &Scene) -> Result<()> {
                     let n = typed_value(ValueType::Length, value)?.number()?;
                     if !(0.0..=64.0).contains(&n) {
                         return Err(invalid(id, "blur radius must be 0..64 pixels"));
+                    }
+                }
+                id
+            }
+            CaptionMaterial::WaveDisplace {
+                id,
+                amplitude,
+                wavelength,
+                phase,
+                ..
+            } => {
+                for (value, ty, low, high, label) in [
+                    (
+                        amplitude,
+                        ValueType::Length,
+                        -256.0,
+                        256.0,
+                        "wave amplitude must be -256..256 pixels",
+                    ),
+                    (
+                        wavelength,
+                        ValueType::Length,
+                        1.0,
+                        1_000_000.0,
+                        "wave wavelength must be 1..1000000 pixels",
+                    ),
+                    (
+                        phase,
+                        ValueType::Angle,
+                        f64::NEG_INFINITY,
+                        f64::INFINITY,
+                        "wave phase must be finite",
+                    ),
+                ] {
+                    validate_early_value(value, ty, s)?;
+                    if let DynamicValue::Constant { value } = value {
+                        let n = typed_value(ty, value)?.number()?;
+                        if !n.is_finite() || !(low..=high).contains(&n) {
+                            return Err(invalid(id, label));
+                        }
                     }
                 }
                 id
@@ -543,7 +586,11 @@ fn validate_value(property: &str, v: &DynamicValue, s: &Scene, unit: UnitKind) -
 
 /// Layout/material inputs may only read the frozen cue context, never the layout they produce.
 fn validate_early_value(value: &DynamicValue, ty: ValueType, scene: &Scene) -> Result<()> {
-    let property = if ty == ValueType::Length { "width" } else { "opacity" };
+    let property = match ty {
+        ValueType::Length => "width",
+        ValueType::Angle => "transform.rotation",
+        _ => "opacity",
+    };
     validate_value(property, value, scene, UnitKind::Cue)?;
     fn visit(e: &Expression, s: &Scene, budget: &mut usize) -> Result<()> {
         if *budget == 0 {

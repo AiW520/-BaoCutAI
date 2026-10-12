@@ -88,4 +88,5 @@ export interface CaptionPresentation {
 /** Ordered cue-local materials. Feedback evaluates finite past samples of the preceding stack. */
 export type CaptionMaterial =
   | { kind: 'blur'; id: string; radius: CaptionDynamicValue; passes?: number }
+  | { kind: 'wave-displace'; id: string; amplitude: CaptionDynamicValue; wavelength: CaptionDynamicValue; phase: CaptionDynamicValue; axis: 'x' | 'y' }
   | { kind: 'feedback'; id: string; samples: number; step: { ticks: number; timescale: number }; decay: number; offset?: [number, number] };
