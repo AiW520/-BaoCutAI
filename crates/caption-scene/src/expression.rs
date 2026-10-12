@@ -110,7 +110,13 @@ pub fn context_type(path: &str) -> Option<ValueType> {
         | "time.pageElapsedSeconds"
         | "time.pageDurationSeconds"
         | "time.lineElapsedSeconds"
-        | "time.lineDurationSeconds" => ValueType::Time,
+        | "time.lineDurationSeconds"
+        | "time.pageLastWordElapsedSeconds"
+        | "time.pageLastWordDurationSeconds"
+        | "time.cueFirstWordStartSeconds"
+        | "time.cueFirstWordEndSeconds"
+        | "time.cueSecondWordStartSeconds"
+        | "time.nextWordStartSeconds" => ValueType::Time,
         "unit.textIndex"
         | "unit.textCount"
         | "unit.pageTextIndex"
@@ -123,7 +129,14 @@ pub fn context_type(path: &str) -> Option<ValueType> {
         | "unit.count"
         | "unit.selectedIndex"
         | "unit.selectedCount" => ValueType::Scalar,
-        "unit.active" | "unit.read" | "unit.unread" => ValueType::Bool,
+        "unit.active"
+        | "unit.read"
+        | "unit.unread"
+        | "unit.pageLastWordTimed"
+        | "unit.cueFirstWordTimed"
+        | "unit.cueSecondWordTimed"
+        | "unit.wordTimed"
+        | "unit.nextWordTimed" => ValueType::Bool,
         "layout.x"
         | "layout.y"
         | "layout.width"
@@ -163,10 +176,18 @@ pub fn builtin_type(name: &str, args: &[ValueType]) -> Option<ValueType> {
         ("lt" | "gt", [a, b]) if a == b && numeric(*a) => Some(Bool),
         ("and" | "or", [Bool, Bool]) | ("not", [Bool]) => Some(Bool),
         ("random" | "noise", [Scalar]) => Some(Scalar),
+        ("shuffle-index", [Scalar, Scalar, Scalar]) => Some(Scalar),
         _ => None,
     }
 }
 pub fn infer(expr: &Expression, scene: &Scene, arguments: &BTreeMap<String, ValueType>) -> Result<ValueType> {
+    if scene
+        .required_capabilities
+        .iter()
+        .any(|capability| capability == "caption-function-dag/1")
+    {
+        return infer_dag(expr, scene, arguments);
+    }
     fn inner(e: &Expression, s: &Scene, a: &BTreeMap<String, ValueType>, stack: &mut Vec<String>, budget: &mut usize) -> Result<ValueType> {
         if *budget == 0 || stack.len() > 32 {
             return Err(Diagnostic::new("CAPTION_BUDGET_EXCEEDED", "expression", "expression expansion"));
@@ -229,6 +250,126 @@ pub fn infer(expr: &Expression, scene: &Scene, arguments: &BTreeMap<String, Valu
     }
     inner(expr, scene, arguments, &mut Vec::new(), &mut 4096)
 }
+#[derive(Clone, Copy)]
+struct FunctionTypeSummary {
+    value_type: ValueType,
+    /// Maximum evaluator depth below this expression, including called bodies.
+    height: usize,
+}
+
+/// Opt-in validation counts each dependency body once while checking every call's arguments.
+fn infer_dag(expr: &Expression, scene: &Scene, arguments: &BTreeMap<String, ValueType>) -> Result<ValueType> {
+    struct Checker<'a> {
+        scene: &'a Scene,
+        memo: BTreeMap<String, FunctionTypeSummary>,
+        visiting: std::collections::BTreeSet<String>,
+        unique_nodes: usize,
+    }
+    impl Checker<'_> {
+        fn visit(
+            &mut self,
+            e: &Expression,
+            arguments: &BTreeMap<String, ValueType>,
+            physical_nodes: &mut usize,
+            depth: usize,
+        ) -> Result<FunctionTypeSummary> {
+            *physical_nodes += 1;
+            self.unique_nodes += 1;
+            if *physical_nodes > 4096 || self.unique_nodes > 16_384 || depth > 64 {
+                return Err(Diagnostic::new(
+                    "CAPTION_BUDGET_EXCEEDED",
+                    "expression",
+                    "function DAG nodes or depth",
+                ));
+            }
+            let (value_type, height) = match e {
+                Expression::Literal { value_type, value } => {
+                    typed_value(*value_type, value)?;
+                    (*value_type, 0)
+                }
+                Expression::Read { path } => {
+                    let ty = if let Some(id) = path.strip_prefix("params.") {
+                        self.scene.parameters.iter().find(|p| p.id == id).map(|p| p.value_type)
+                    } else if let Some(id) = path.strip_prefix("args.") {
+                        arguments.get(id).copied()
+                    } else {
+                        context_type(path)
+                    };
+                    (
+                        ty.ok_or_else(|| Diagnostic::new("CAPTION_EXPRESSION_TYPE", path, "unknown context field"))?,
+                        0,
+                    )
+                }
+                Expression::If {
+                    condition,
+                    then,
+                    otherwise,
+                } => {
+                    let condition = self.visit(condition, arguments, physical_nodes, depth + 1)?;
+                    if condition.value_type != ValueType::Bool {
+                        return Err(invalid("if", "boolean condition required"));
+                    }
+                    let yes = self.visit(then, arguments, physical_nodes, depth + 1)?;
+                    let no = self.visit(otherwise, arguments, physical_nodes, depth + 1)?;
+                    if yes.value_type != no.value_type {
+                        return Err(invalid("if", "branch types differ"));
+                    }
+                    (yes.value_type, 1 + condition.height.max(yes.height).max(no.height))
+                }
+                Expression::Call { function, args } => {
+                    let args = args
+                        .iter()
+                        .map(|arg| self.visit(arg, arguments, physical_nodes, depth + 1))
+                        .collect::<Result<Vec<_>>>()?;
+                    let types = args.iter().map(|arg| arg.value_type).collect::<Vec<_>>();
+                    let argument_height = args.iter().map(|arg| arg.height).max().unwrap_or(0);
+                    if let Some(ty) = builtin_type(function, &types) {
+                        (ty, 1 + argument_height)
+                    } else {
+                        let scene = self.scene;
+                        let f = scene.functions.iter().find(|f| f.id == *function).ok_or_else(|| {
+                            Diagnostic::new("CAPTION_EXPRESSION_TYPE", function, "unknown function or invalid argument types")
+                        })?;
+                        if f.arguments.len() != types.len() || f.arguments.iter().zip(&types).any(|(arg, ty)| arg.value_type != *ty) {
+                            return Err(invalid(function, "argument types differ"));
+                        }
+                        if self.visiting.contains(function) {
+                            return Err(Diagnostic::new("CAPTION_DEPENDENCY_CYCLE", function, "recursive function"));
+                        }
+                        let summary = if let Some(summary) = self.memo.get(function) {
+                            *summary
+                        } else {
+                            self.visiting.insert(function.clone());
+                            let inner_args = f.arguments.iter().map(|arg| (arg.name.clone(), arg.value_type)).collect();
+                            let checked = self.visit(&f.body, &inner_args, &mut 0, depth + 1);
+                            self.visiting.remove(function);
+                            let checked = checked?;
+                            if checked.value_type != f.returns {
+                                return Err(invalid(function, "return type differs"));
+                            }
+                            self.memo.insert(function.clone(), checked);
+                            checked
+                        };
+                        (summary.value_type, 1 + argument_height.max(summary.height))
+                    }
+                }
+            };
+            // A cached body may be reached at a deeper call site than its first use.
+            if depth + height > 64 {
+                return Err(Diagnostic::new("CAPTION_BUDGET_EXCEEDED", "expression", "function DAG call depth"));
+            }
+            Ok(FunctionTypeSummary { value_type, height })
+        }
+    }
+    let mut checker = Checker {
+        scene,
+        memo: BTreeMap::new(),
+        visiting: Default::default(),
+        unique_nodes: 0,
+    };
+    Ok(checker.visit(expr, arguments, &mut 0, 0)?.value_type)
+}
+
 #[derive(Clone, Debug, Default)]
 pub struct Context {
     pub fields: BTreeMap<String, Evaluated>,
@@ -237,19 +378,86 @@ pub struct Context {
     pub stable_key: String,
 }
 #[derive(Debug)]
-pub struct Budget(pub usize);
+pub struct Budget {
+    remaining: usize,
+    permutations: BTreeMap<(usize, u32), Vec<u16>>,
+    cached_indices: usize,
+}
 impl Default for Budget {
     fn default() -> Self {
-        Self(MAX_OPERATIONS)
+        Self::new(MAX_OPERATIONS)
     }
 }
 impl Budget {
-    pub fn spend(&mut self) -> Result<()> {
-        if self.0 == 0 {
-            return Err(Diagnostic::new("CAPTION_BUDGET_EXCEEDED", "frame", "operation budget"));
+    pub fn new(limit: usize) -> Self {
+        Self {
+            remaining: limit,
+            permutations: BTreeMap::new(),
+            cached_indices: 0,
         }
-        self.0 -= 1;
+    }
+    pub fn remaining(&self) -> usize {
+        self.remaining
+    }
+    pub fn spend(&mut self) -> Result<()> {
+        self.spend_operations(1)
+    }
+    fn spend_operations(&mut self, count: usize) -> Result<()> {
+        self.remaining = self
+            .remaining
+            .checked_sub(count)
+            .ok_or_else(|| Diagnostic::new("CAPTION_BUDGET_EXCEEDED", "frame", "operation budget"))?;
         Ok(())
+    }
+    fn shuffle_index(&mut self, index: f64, count: f64, seed: f64) -> Result<f64> {
+        if !index.is_finite()
+            || index.fract() != 0.0
+            || !count.is_finite()
+            || count.fract() != 0.0
+            || !(1.0..=8192.0).contains(&count)
+            || index < 0.0
+            || index >= count
+            || !seed.is_finite()
+        {
+            return Err(invalid(
+                "shuffle-index",
+                "integer index/count require 0 <= index < count <= 8192 and a finite seed",
+            ));
+        }
+        let index = index as usize;
+        let count = count as usize;
+        // Floating-to-unsigned casts saturate; apply the specified wrapping before casting.
+        let mut wrapped_seed = libm::fmod(libm::trunc(seed), 4_294_967_296.0);
+        if wrapped_seed < 0.0 {
+            wrapped_seed += 4_294_967_296.0;
+        }
+        let seed = wrapped_seed as u32;
+        if let Some(values) = self.permutations.get(&(count, seed)) {
+            return Ok(f64::from(values[index]));
+        }
+        // Charge both initialization and every swap before allocating or computing.
+        self.spend_operations(count + count - 1)?;
+        let mut values = (0..count as u16).collect::<Vec<_>>();
+        let mut state = i64::from(seed);
+        for current in (1..count).rev() {
+            if state == 0 {
+                state = 123_459_876;
+            }
+            state = 16_807 * (state % 127_773) - 2_836 * (state / 127_773);
+            if state < 0 {
+                state += 2_147_483_647;
+            }
+            let random = (state % 2_147_483_647) as f64 / 2_147_483_647.0;
+            let selected = libm::floor(random * (current + 1) as f64) as usize;
+            values.swap(current, selected);
+        }
+        let value = f64::from(values[index]);
+        // The cache lives only in this budget. Capacity changes work, never output.
+        if self.permutations.len() < 16 && self.cached_indices + count <= 16_384 {
+            self.cached_indices += count;
+            self.permutations.insert((count, seed), values);
+        }
+        Ok(value)
     }
 }
 pub fn evaluate(expr: &Expression, scene: &Scene, ctx: &Context, budget: &mut Budget) -> Result<Evaluated> {
@@ -280,7 +488,11 @@ pub fn evaluate(expr: &Expression, scene: &Scene, ctx: &Context, budget: &mut Bu
                 let values = args.iter().map(|x| inner(x, s, c, a, b, depth + 1)).collect::<Result<Vec<_>>>()?;
                 let types = values.iter().map(Evaluated::value_type).collect::<Vec<_>>();
                 if let Some(t) = builtin_type(function, &types) {
-                    builtin(function, &values, t, c)?
+                    if function == "shuffle-index" {
+                        Evaluated::Number(t, b.shuffle_index(values[0].number()?, values[1].number()?, values[2].number()?)?)
+                    } else {
+                        builtin(function, &values, t, c)?
+                    }
                 } else {
                     let f = s
                         .functions

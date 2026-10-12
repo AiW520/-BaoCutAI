@@ -179,6 +179,16 @@ pub struct Pagination {
     #[serde(default = "word_unit")]
     pub unit: UnitKind,
     pub max_units_per_page: Option<usize>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub word_line_pattern: Option<Vec<Vec<usize>>>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub last_page_rule: Option<LastPageRule>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct LastPageRule {
+    pub if_row_count_is: usize,
+    pub previous_page_lines: Vec<usize>,
 }
 fn word_unit() -> UnitKind {
     UnitKind::Word
@@ -188,6 +198,8 @@ impl Default for Pagination {
         Self {
             unit: UnitKind::Word,
             max_units_per_page: None,
+            word_line_pattern: None,
+            last_page_rule: None,
         }
     }
 }
@@ -649,6 +661,18 @@ pub enum CaptionMaterial {
         wavelength: DynamicValue,
         phase: DynamicValue,
         axis: WaveAxis,
+    },
+    SoftBand {
+        id: String,
+        #[serde(rename = "contextNodeId")]
+        context_node_id: String,
+        axis: WaveAxis,
+        center: DynamicValue,
+        #[serde(rename = "halfWidth")]
+        half_width: DynamicValue,
+        feather: DynamicValue,
+        amount: DynamicValue,
+        opacity: DynamicValue,
     },
     Feedback {
         id: String,

@@ -43,6 +43,7 @@ fn padding(materials: &[CaptionMaterial]) -> u32 {
                 };
                 libm::ceil(max) as u32
             }
+            CaptionMaterial::SoftBand { .. } => 0,
             CaptionMaterial::Feedback {
                 samples, offset, ..
             } => libm::ceil(offset[0].abs().max(offset[1].abs()) * f64::from(*samples)) as u32,
@@ -155,6 +156,59 @@ impl ScenePlan {
             });
         }
         Ok((builder.finish(), hits))
+    }
+    fn material_page_context(
+        &mut self,
+        ci: usize,
+        t: f64,
+        node_id: &str,
+        budget: &mut Budget,
+    ) -> Result<Option<Context>> {
+        let cue = &self.cues[ci];
+        let params = cue_parameters(&self.style, &self.presentation, cue, &self.instance_id)?;
+        let early = sampled_layout::early_context(
+            cue,
+            ci,
+            self.cues.len(),
+            t,
+            &params,
+            (self.width, self.height),
+            &self.instance_id,
+            &self.presentation.seed,
+        )?;
+        let sampled = sampled_layout::sample_scene(self.style.scene(), &early, t, budget)?;
+        let scene = sampled.as_ref().unwrap_or(self.style.scene());
+        let units = resolved_units(
+            &mut self.text,
+            &self.layouts,
+            ci,
+            cue,
+            scene,
+            sampled.is_some(),
+            t,
+            &params,
+            &self.presentation,
+            (self.width, self.height),
+            budget,
+        )?;
+        let Some((unit, _)) = units
+            .get(node_id)
+            .and_then(|v| v.iter().find(|(u, _)| u.kind == UnitKind::Page))
+        else {
+            return Ok(None);
+        };
+        let render = RenderContext {
+            scene,
+            units: &units,
+            params: &params,
+            seconds: t,
+            seed: u64::from_str_radix(&self.presentation.seed, 16)?,
+            instance: &self.instance_id,
+            cue,
+            size: (self.width, self.height),
+            images: &self.images,
+        };
+        Ok(Some(context(unit, &render)))
     }
     fn material_prefix(
         &mut self,
@@ -279,6 +333,67 @@ impl ScenePlan {
                     hits,
                 ))
             }
+            CaptionMaterial::SoftBand {
+                id,
+                context_node_id,
+                axis,
+                center,
+                half_width,
+                feather,
+                amount,
+                opacity,
+            } => {
+                let (mut source, hits) =
+                    self.material_prefix(ci, t, materials, prefix - 1, pad, size, budget, work)?;
+                let Some(mut context) =
+                    self.material_page_context(ci, t, context_node_id, budget)?
+                else {
+                    source.data_mut().fill(0);
+                    return Ok((source, vec![]));
+                };
+                context.stable_key.push_str(&format!("|material|{id}"));
+                let mut sample = |value: &DynamicValue, fallback: f64| -> Result<f64> {
+                    Ok(sample_value(
+                        value,
+                        ValueType::Scalar,
+                        self.style.scene(),
+                        &context,
+                        t,
+                        budget,
+                    )?
+                    .map(|v| v.number())
+                    .transpose()?
+                    .unwrap_or(fallback))
+                };
+                let center = sample(center, 0.5)?;
+                let half_width = sample(half_width, 0.5)?;
+                let feather = sample(feather, 0.0)?;
+                let amount = sample(amount, 0.0)?;
+                let opacity = sample(opacity, 1.0)?;
+                if !(-4.0..=4.0).contains(&center)
+                    || !(0.0..=4.0).contains(&half_width)
+                    || !(0.0..=4.0).contains(&feather)
+                    || !(0.0..=1.0).contains(&amount)
+                    || !(0.0..=1.0).contains(&opacity)
+                {
+                    bail!("CAPTION_MATERIAL_INVALID: soft-band uniforms");
+                }
+                if amount != 0.0 || opacity != 1.0 {
+                    work.spend(size.0, size.1)?;
+                    soft_band(
+                        &mut source,
+                        pad,
+                        (self.width, self.height),
+                        *axis,
+                        center,
+                        half_width,
+                        feather,
+                        amount,
+                        opacity,
+                    );
+                }
+                Ok((source, hits))
+            }
             CaptionMaterial::Feedback {
                 samples,
                 step,
@@ -332,6 +447,47 @@ impl ScenePlan {
                 }
                 Ok((out, hits))
             }
+        }
+    }
+}
+
+/// Closed lower edge and open upper edge when feather is zero, matching step.
+fn band_smoothstep(low: f64, high: f64, u: f64) -> f64 {
+    if high == low {
+        return if u < low { 0.0 } else { 1.0 };
+    }
+    let t = ((u - low) / (high - low)).clamp(0.0, 1.0);
+    t * t * (3.0 - 2.0 * t)
+}
+fn soft_band(
+    source: &mut Pixmap,
+    pad: u32,
+    canvas: (u32, u32),
+    axis: WaveAxis,
+    center: f64,
+    half_width: f64,
+    feather: f64,
+    amount: f64,
+    opacity: f64,
+) {
+    let width = source.width() as usize;
+    let dimension = f64::from(if axis == WaveAxis::X {
+        canvas.0
+    } else {
+        canvas.1
+    });
+    for (i, pixel) in source.data_mut().chunks_exact_mut(4).enumerate() {
+        let coordinate = if axis == WaveAxis::X {
+            i % width
+        } else {
+            i / width
+        };
+        let u = (coordinate as f64 + 0.5 - f64::from(pad)) / dimension;
+        let band = band_smoothstep(center - half_width - feather, center - half_width, u)
+            * (1.0 - band_smoothstep(center + half_width, center + half_width + feather, u));
+        let factor = ((1.0 - amount) + amount * band) * opacity;
+        for channel in pixel {
+            *channel = libm::floor(f64::from(*channel) * factor + 0.5) as u8;
         }
     }
 }
@@ -458,5 +614,273 @@ mod wave_tests {
         )
         .unwrap();
         assert_eq!(a.data(), repeated.data());
+    }
+}
+
+#[cfg(test)]
+mod soft_band_tests {
+    use super::*;
+    fn solid(w: u32, h: u32) -> Pixmap {
+        let mut image = Pixmap::new(w, h).unwrap();
+        for pixel in image.data_mut().chunks_exact_mut(4) {
+            pixel.copy_from_slice(&[128, 64, 32, 128]);
+        }
+        image
+    }
+    #[test]
+    fn soft_band_equals_its_two_smoothstep_formula_including_outside_centers() {
+        let smooth = |low: f64, high: f64, u: f64| {
+            let t = ((u - low) / (high - low)).clamp(0.0, 1.0);
+            t * t * (3.0 - 2.0 * t)
+        };
+        for center in [-2.0, -0.3, 0.0, 0.5, 1.0, 1.7, 4.0] {
+            let mut image = solid(101, 1);
+            soft_band(
+                &mut image,
+                0,
+                (101, 1),
+                WaveAxis::X,
+                center,
+                0.2,
+                0.3,
+                1.0,
+                1.0,
+            );
+            for (x, pixel) in image.data().chunks_exact(4).enumerate() {
+                let u = (x as f64 + 0.5) / 101.0;
+                let alpha = smooth(center - 0.5, center - 0.2, u)
+                    * smooth(0.5 - center, 0.8 - center, 1.0 - u);
+                let expected =
+                    [128.0, 64.0, 32.0, 128.0].map(|c| libm::floor(c * alpha + 0.5) as u8);
+                assert_eq!(pixel, expected, "center={center}, x={x}");
+            }
+        }
+    }
+    #[test]
+    fn soft_band_zero_feather_step_amount_and_opacity_are_exact() {
+        let original = solid(4, 1);
+        let mut no_op = original.clone();
+        soft_band(&mut no_op, 0, (4, 1), WaveAxis::X, 4.0, 0.0, 0.0, 0.0, 1.0);
+        assert_eq!(no_op.data(), original.data());
+        let mut image = original.clone();
+        soft_band(&mut image, 0, (4, 1), WaveAxis::X, 0.5, 0.25, 0.0, 1.0, 1.0);
+        assert_eq!(
+            image
+                .data()
+                .chunks_exact(4)
+                .map(|p| p[3])
+                .collect::<Vec<_>>(),
+            vec![0, 128, 128, 0]
+        );
+        soft_band(&mut image, 0, (4, 1), WaveAxis::X, 0.5, 0.25, 0.0, 0.0, 0.5);
+        assert_eq!(
+            image
+                .data()
+                .chunks_exact(4)
+                .map(|p| p[3])
+                .collect::<Vec<_>>(),
+            vec![0, 64, 64, 0]
+        );
+        soft_band(&mut image, 0, (4, 1), WaveAxis::X, 0.5, 0.25, 0.0, 1.0, 0.0);
+        assert!(image.data().iter().all(|v| *v == 0));
+        assert_eq!(band_smoothstep(0.5, 0.5, 0.5), 1.0);
+        assert_eq!(band_smoothstep(0.5, 0.5, 0.49), 0.0);
+    }
+    #[test]
+    fn soft_band_uses_original_canvas_uv_for_both_axes_with_padding() {
+        for axis in [WaveAxis::X, WaveAxis::Y] {
+            let mut a = solid(8, 6);
+            let mut b = solid(18, 16);
+            soft_band(&mut a, 0, (8, 6), axis, 0.37, 0.13, 0.31, 0.82, 0.73);
+            soft_band(&mut b, 5, (8, 6), axis, 0.37, 0.13, 0.31, 0.82, 0.73);
+            for y in 0..6 {
+                for x in 0..8 {
+                    let ai = (y * 8 + x) * 4;
+                    let bi = ((y + 5) * 18 + x + 5) * 4;
+                    assert_eq!(&a.data()[ai..ai + 4], &b.data()[bi..bi + 4]);
+                }
+            }
+            assert!(
+                b.data()
+                    .chunks_exact(4)
+                    .all(|p| p[..3].iter().all(|c| *c <= p[3]))
+            );
+        }
+    }
+
+    fn fixture() -> serde_json::Value {
+        serde_json::from_str(include_str!(
+            "../../../caption-scene/tests/fixtures/soft-band.json"
+        ))
+        .unwrap()
+    }
+    fn cue(id: &str, start: f64, end: f64) -> SceneCue {
+        SceneCue {
+            id: id.into(),
+            document_id: "doc".into(),
+            text: "A B C D".into(),
+            start,
+            end,
+            words: ["A", "B", "C", "D"]
+                .iter()
+                .enumerate()
+                .map(|(i, text)| SceneWord {
+                    id: format!("{id}-{i}"),
+                    text: (*text).into(),
+                    start: start + i as f64 * (end - start) / 4.0,
+                    end: start + (i as f64 + 0.8) * (end - start) / 4.0,
+                })
+                .collect(),
+        }
+    }
+    fn plan(body: serde_json::Value, cues: Vec<SceneCue>) -> ScenePlan {
+        ScenePlan::compile(
+            parse_style(&body).unwrap(),
+            Presentation::default(),
+            cues,
+            (160, 90),
+            TextEngine::with_document_fonts(&[include_bytes!(
+                "../../../render-raster/assets/fonts/NotoSansSC-Variable.ttf"
+            )
+            .to_vec()]),
+            "instance".into(),
+        )
+        .unwrap()
+    }
+    #[test]
+    fn soft_band_neutral_parameters_preserve_rendered_rgba() {
+        let mut body = fixture();
+        body["scene"]["value"]["materials"][0]["amount"] =
+            serde_json::json!({"kind":"constant","value":0});
+        body["scene"]["value"]["materials"][0]["opacity"] =
+            serde_json::json!({"kind":"constant","value":1});
+        let mut masked = plan(body.clone(), vec![cue("same", 0.0, 4.0)]);
+        body["scene"]["value"]["materials"] = serde_json::json!([]);
+        let mut plain = plan(body, vec![cue("same", 0.0, 4.0)]);
+        for t in [0.2, 1.4, 2.2, 3.5] {
+            assert_eq!(
+                masked.render(t).unwrap().rgba,
+                plain.render(t).unwrap().rgba
+            );
+        }
+    }
+    #[test]
+    fn soft_band_context_uses_its_resolved_page_and_input_last_word_timing() {
+        let mut p = plan(fixture(), vec![cue("first", 0.0, 4.0)]);
+        for (t, page, last_start) in [(0.5, 0.0, 1.0), (2.5, 1.0, 3.0), (0.5, 0.0, 1.0)] {
+            let c = p
+                .material_page_context(0, t, "caption", &mut Budget::default())
+                .unwrap()
+                .unwrap();
+            assert_eq!(c.fields["unit.pageIndex"].number().unwrap(), page);
+            assert_eq!(c.fields["unit.pageCount"].number().unwrap(), 2.0);
+            assert!(c.fields["unit.pageLastWordTimed"].boolean().unwrap());
+            assert!(
+                (c.fields["time.pageLastWordElapsedSeconds"]
+                    .number()
+                    .unwrap()
+                    - (t - last_start))
+                    .abs()
+                    < 1e-12
+            );
+            assert!(
+                (c.fields["time.pageLastWordDurationSeconds"]
+                    .number()
+                    .unwrap()
+                    - 0.8)
+                    .abs()
+                    < 1e-12
+            );
+            assert!(c.fields["layout.inkHeight"].number().unwrap() > 0.0);
+        }
+        assert!(
+            p.material_page_context(0, 0.5, "missing", &mut Budget::default())
+                .unwrap()
+                .is_none()
+        );
+        let mut body = fixture();
+        body["scene"]["value"]["speechState"]["timingPolicy"] = serde_json::json!("estimated");
+        let mut untimed = cue("untimed", 0.0, 4.0);
+        untimed.words.clear();
+        let mut p = plan(body.clone(), vec![untimed]);
+        let c = p
+            .material_page_context(0, 2.5, "caption", &mut Budget::default())
+            .unwrap()
+            .unwrap();
+        assert!(!c.fields["unit.pageLastWordTimed"].boolean().unwrap());
+        assert_eq!(
+            c.fields["time.pageLastWordElapsedSeconds"]
+                .number()
+                .unwrap(),
+            0.0
+        );
+        assert_eq!(
+            c.fields["time.pageLastWordDurationSeconds"]
+                .number()
+                .unwrap(),
+            0.0
+        );
+        // Static text is display content, even when it happens to equal a timed cue.
+        body["scene"]["value"]["nodes"][0]["text"] =
+            serde_json::json!({"source":"static","text":"A B C D"});
+        let mut p = plan(body, vec![cue("timed", 0.0, 4.0)]);
+        assert!(
+            !p.material_page_context(0, 0.5, "caption", &mut Budget::default())
+                .unwrap()
+                .unwrap()
+                .fields["unit.pageLastWordTimed"]
+                .boolean()
+                .unwrap()
+        );
+    }
+    #[test]
+    fn soft_band_missing_page_and_invalid_sampled_uniforms_are_explicit() {
+        let mut body = fixture();
+        body["scene"]["value"]["layout"]["leadingGap"] = serde_json::json!("hide");
+        let mut delayed = cue("delayed", 0.0, 4.0);
+        for w in &mut delayed.words {
+            w.start += 0.5;
+            w.end += 0.5;
+        }
+        let mut p = plan(body, vec![delayed]);
+        assert!(
+            p.material_page_context(0, 0.1, "caption", &mut Budget::default())
+                .unwrap()
+                .is_none()
+        );
+        assert!(p.render(0.1).unwrap().rgba.iter().all(|v| *v == 0));
+        let mut body = fixture();
+        body["scene"]["value"]["materials"][0]["amount"] = serde_json::json!({"kind":"expression","expression":{"op":"literal","type":"scalar","value":2}});
+        let error = plan(body, vec![cue("invalid", 0.0, 4.0)])
+            .render(0.5)
+            .err()
+            .unwrap()
+            .to_string();
+        assert!(error.contains("CAPTION_MATERIAL_INVALID"), "{error}");
+    }
+    #[test]
+    fn soft_band_feedback_recomputes_each_history_page_and_cannot_cross_cues() {
+        let mut body = fixture();
+        body["scene"]["value"]["materials"].as_array_mut().unwrap().push(serde_json::json!({"kind":"feedback","id":"tail","samples":2,"step":{"ticks":150,"timescale":1000},"decay":0.6,"offset":[1,0]}));
+        let mut p = plan(
+            body.clone(),
+            vec![cue("first", 0.0, 4.0), cue("second", 4.0, 8.0)],
+        );
+        for t in [1.75, 2.05, 3.2, 4.02, 1.75] {
+            let now = p.render(t).unwrap();
+            let fresh = plan(
+                body.clone(),
+                vec![cue("first", 0.0, 4.0), cue("second", 4.0, 8.0)],
+            )
+            .render(t)
+            .unwrap();
+            assert_eq!(now.rgba, fresh.rgba);
+            assert_eq!(now.fingerprint, fresh.fingerprint);
+        }
+        assert!(p.render(3.72).unwrap().rgba.iter().any(|v| *v > 0));
+        let isolated = plan(body, vec![cue("second", 4.0, 8.0)])
+            .render(4.02)
+            .unwrap();
+        assert_eq!(p.render(4.02).unwrap().rgba, isolated.rgba);
     }
 }

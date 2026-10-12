@@ -773,6 +773,38 @@ fn scenes() -> Vec<Scene> {
         style_doc("style", unit_context_style),
     ];
     scenes.push(unit_context);
+    let soft_band_style: Value = serde_json::from_str(include_str!("../../caption-scene/tests/fixtures/soft-band.json")).unwrap();
+    let mut soft_band = Scene::new(
+        "captions-soft-band",
+        video(vec![caption("soft-band", "doc", Some("style"), 120, &[])], vec![], json!({})),
+        &[0, 4, 15, 28, 45, 58, 61, 75, 98, 115, 28],
+    );
+    let mut soft_band_doc = caption_doc("doc", "sequence", &[(0.0, 4.0, "One two three four")], "original");
+    soft_band_doc["sourceDocumentId"] = json!("speech");
+    soft_band_doc["body"]["cues"][0]["words"] = json!({"first":"w0","last":"w3"});
+    soft_band.documents = vec![soft_band_doc, style_doc("style", soft_band_style)];
+    soft_band.speech.push(
+        json!({"documentId":"speech","body":{"schema":"baocut.speech/1","clock":"sequence","timescale":1000,
+        "words":[{"id":"w0","text":"One","start":0,"end":800},{"id":"w1","text":"two","start":1000,"end":1800},
+                 {"id":"w2","text":"three","start":2000,"end":2800},{"id":"w3","text":"four","start":3000,"end":3800}]}}),
+    );
+    scenes.push(soft_band);
+    let cue_word_style: Value = serde_json::from_str(include_str!("../../caption-scene/tests/fixtures/cue-word-context.json")).unwrap();
+    let mut cue_word = Scene::new(
+        "captions-cue-word-context",
+        video(vec![caption("cue-word-context", "doc", Some("style"), 120, &[])], vec![], json!({})),
+        &[0, 4, 15, 25, 36, 55, 76, 98, 115, 25],
+    );
+    let mut cue_word_doc = caption_doc("doc", "sequence", &[(0.0, 4.0, "One two three four")], "original");
+    cue_word_doc["sourceDocumentId"] = json!("speech");
+    cue_word_doc["body"]["cues"][0]["words"] = json!({"first":"w0","last":"w3"});
+    cue_word.documents = vec![cue_word_doc, style_doc("style", cue_word_style)];
+    cue_word.speech.push(
+        json!({"documentId":"speech","body":{"schema":"baocut.speech/1","clock":"sequence","timescale":1000,
+        "words":[{"id":"w0","text":"One","start":0,"end":400},{"id":"w1","text":"two","start":1200,"end":1450},
+                 {"id":"w2","text":"three","start":1700,"end":2450},{"id":"w3","text":"four","start":3200,"end":3800}]}}),
+    );
+    scenes.push(cue_word);
     let wave_material_style: Value = serde_json::from_str(include_str!("../../caption-scene/tests/fixtures/wave-displace.json")).unwrap();
     let mut wave_material = Scene::new(
         "captions-wave-displace-material",
@@ -784,6 +816,28 @@ fn scenes() -> Vec<Scene> {
         style_doc("style", wave_material_style),
     ];
     scenes.push(wave_material);
+    let permutation_style: Value = serde_json::from_str(include_str!("../../caption-scene/tests/fixtures/permutation.json")).unwrap();
+    let mut permutation = Scene::new(
+        "captions-permutation",
+        video(vec![caption("permutation", "doc", Some("style"), 120, &[])], vec![], json!({})),
+        &[12, 0, 1, 30, 65, 100, 119, 30, 12],
+    );
+    permutation.documents = vec![
+        caption_doc("doc", "sequence", &[(0.0, 4.0, "Shuffle é rhythm")], "original"),
+        style_doc("style", permutation_style),
+    ];
+    scenes.push(permutation);
+    let word_line_style: Value = serde_json::from_str(include_str!("../../caption-scene/tests/fixtures/word-line-layout.json")).unwrap();
+    let mut word_line = Scene::new(
+        "captions-word-line-layout",
+        video(vec![caption("word-line", "doc", Some("style"), 120, &[])], vec![], json!({})),
+        &[0, 15, 45, 50, 82, 103, 119, 15],
+    );
+    word_line.documents = vec![
+        caption_doc("doc", "sequence", &[(0.0, 4.0, "A  B C D E\nF G H I J K L M")], "original"),
+        style_doc("style", word_line_style),
+    ];
+    scenes.push(word_line);
     let mut wave_style: Value = serde_json::from_str(include_str!("../../caption-scene/tests/fixtures/word-pop.json")).unwrap();
     let wave_scene = &mut wave_style["scene"]["value"];
     wave_scene["speechState"]["timingPolicy"] = json!("estimated");

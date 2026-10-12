@@ -143,6 +143,9 @@ pub(super) fn reflow(
     for _ in source.graphemes(true) {
         budget.spend()?;
     }
+    if cfg.pagination.word_line_pattern.is_some() {
+        return word_line_layout::reflow(text, base, page, node, cfg, size, params);
+    }
     let style = &node.style;
     let block = layout(
         source,

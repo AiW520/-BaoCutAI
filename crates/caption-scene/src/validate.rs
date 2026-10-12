@@ -7,7 +7,10 @@ pub const CAPABILITIES: &[&str] = &[
     "caption-text-context/1",
     "caption-ink-context/1",
     "caption-unit-context/1",
+    "caption-cue-word-context/1",
     "caption-expressions/1",
+    "caption-permutation/1",
+    "caption-function-dag/1",
     "caption-bezier-expression/1",
     "caption-unit-animation/1",
     "caption-image-png/1",
@@ -15,7 +18,9 @@ pub const CAPABILITIES: &[&str] = &[
     "caption-blur/1",
     "caption-feedback/1",
     "caption-wave-displace/1",
+    "caption-soft-band/1",
     "caption-layout-per-sample/1",
+    "caption-word-line-layout/1",
 ];
 pub fn property_type(property: &str) -> Option<ValueType> {
     Some(match property {
@@ -107,6 +112,37 @@ fn length(v: &Length, path: &str, scene: &Scene) -> Result<()> {
     }
     Ok(())
 }
+fn validate_word_line_pattern(layout: &Layout) -> Result<()> {
+    let pagination = &layout.pagination;
+    let Some(pattern) = &pagination.word_line_pattern else {
+        if pagination.last_page_rule.is_some() {
+            return Err(invalid("pagination.lastPageRule", "wordLinePattern required"));
+        }
+        return Ok(());
+    };
+    let valid_rows =
+        |rows: &[usize]| !rows.is_empty() && rows.len() <= layout.max_lines && rows.iter().all(|n| (1..=MAX_UNITS).contains(n));
+    if pagination.max_units_per_page.is_some() || pattern.is_empty() || pattern.len() > 256 || !pattern.iter().all(|rows| valid_rows(rows))
+    {
+        return Err(invalid(
+            "pagination.wordLinePattern",
+            "bounded nonempty word rows required; maxUnitsPerPage is exclusive",
+        ));
+    }
+    if let Some(rule) = &pagination.last_page_rule {
+        let largest_page: usize = pattern.iter().map(|rows| rows.iter().sum()).max().unwrap();
+        if !(1..=MAX_UNITS).contains(&rule.if_row_count_is)
+            || !valid_rows(&rule.previous_page_lines)
+            || rule.previous_page_lines.iter().sum::<usize>() < largest_page
+        {
+            return Err(invalid(
+                "pagination.lastPageRule",
+                "replacement rows must preserve or increase every pattern page capacity",
+            ));
+        }
+    }
+    Ok(())
+}
 pub fn validate_scene(s: &Scene) -> Result<()> {
     if s.schema != SCENE_SCHEMA || s.evaluation_version != 1 {
         return Err(Diagnostic::new(
@@ -146,6 +182,7 @@ pub fn validate_scene(s: &Scene) -> Result<()> {
     {
         return Err(invalid("layout", "invalid page/line limit"));
     }
+    validate_word_line_pattern(&s.layout)?;
     if s.parameters.len() > 128 || s.functions.len() > 128 || s.selectors.len() > MAX_NODES || s.animations.len() > 1024 {
         return Err(invalid("scene", "declaration budget exceeded"));
     }
@@ -197,6 +234,7 @@ pub fn validate_scene(s: &Scene) -> Result<()> {
                 "smoothstep",
                 "sqrt",
                 "cubic-bezier",
+                "shuffle-index",
             ]
             .contains(&f.id.as_str())
         {
@@ -303,6 +341,42 @@ pub fn validate_scene(s: &Scene) -> Result<()> {
                     if let DynamicValue::Constant { value } = value {
                         let n = typed_value(ty, value)?.number()?;
                         if !n.is_finite() || !(low..=high).contains(&n) {
+                            return Err(invalid(id, label));
+                        }
+                    }
+                }
+                id
+            }
+            CaptionMaterial::SoftBand {
+                id,
+                context_node_id,
+                center,
+                half_width,
+                feather,
+                amount,
+                opacity,
+                ..
+            } => {
+                if nodes.get(context_node_id.as_str()).is_none_or(|n| n.kind != NodeKind::Text)
+                    || nodes.values().any(|n| !matches!(n.kind, NodeKind::Group | NodeKind::Text))
+                    || nodes.values().filter(|n| n.kind == NodeKind::Text).count() != 1
+                {
+                    return Err(invalid(
+                        id,
+                        "soft-band requires its explicit context text as the only visual node, optionally inside groups",
+                    ));
+                }
+                for (value, low, high, label) in [
+                    (center, -4.0, 4.0, "soft-band center must be -4..4"),
+                    (half_width, 0.0, 4.0, "soft-band halfWidth must be 0..4"),
+                    (feather, 0.0, 4.0, "soft-band feather must be 0..4"),
+                    (amount, 0.0, 1.0, "soft-band amount must be 0..1"),
+                    (opacity, 0.0, 1.0, "soft-band opacity must be 0..1"),
+                ] {
+                    validate_value("opacity", value, s, UnitKind::Page)?;
+                    if let DynamicValue::Constant { value } = value {
+                        let n = typed_value(ValueType::Scalar, value)?.number()?;
+                        if !(low..=high).contains(&n) {
                             return Err(invalid(id, label));
                         }
                     }
@@ -592,7 +666,7 @@ fn validate_early_value(value: &DynamicValue, ty: ValueType, scene: &Scene) -> R
         _ => "opacity",
     };
     validate_value(property, value, scene, UnitKind::Cue)?;
-    fn visit(e: &Expression, s: &Scene, budget: &mut usize) -> Result<()> {
+    fn visit(e: &Expression, s: &Scene, budget: &mut usize, visited: &mut Option<BTreeSet<String>>) -> Result<()> {
         if *budget == 0 {
             return Err(invalid("expression", "dependency budget"));
         }
@@ -621,10 +695,12 @@ fn validate_early_value(value: &DynamicValue, ty: ValueType, scene: &Scene) -> R
             }
             Expression::Call { function, args } => {
                 for a in args {
-                    visit(a, s, budget)?;
+                    visit(a, s, budget, visited)?;
                 }
                 if let Some(f) = s.functions.iter().find(|f| f.id == *function) {
-                    visit(&f.body, s, budget)?;
+                    if visited.as_mut().is_none_or(|seen| seen.insert(function.clone())) {
+                        visit(&f.body, s, budget, visited)?;
+                    }
                 }
             }
             Expression::If {
@@ -632,16 +708,21 @@ fn validate_early_value(value: &DynamicValue, ty: ValueType, scene: &Scene) -> R
                 then,
                 otherwise,
             } => {
-                visit(condition, s, budget)?;
-                visit(then, s, budget)?;
-                visit(otherwise, s, budget)?;
+                visit(condition, s, budget, visited)?;
+                visit(then, s, budget, visited)?;
+                visit(otherwise, s, budget, visited)?;
             }
             _ => {}
         }
         Ok(())
     }
+    let dag = scene
+        .required_capabilities
+        .iter()
+        .any(|capability| capability == "caption-function-dag/1");
+    let mut visited = dag.then(BTreeSet::new);
     match value {
-        DynamicValue::Expression { expression } => visit(expression, scene, &mut 4096)?,
+        DynamicValue::Expression { expression } => visit(expression, scene, &mut if dag { 16_384 } else { 4096 }, &mut visited)?,
         DynamicValue::Keyframes { clock, .. } if clock.unit != UnitKind::Cue => {
             return Err(invalid("clock", "pre-layout values require cue clock"));
         }

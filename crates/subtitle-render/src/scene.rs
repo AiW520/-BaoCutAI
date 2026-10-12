@@ -1,6 +1,7 @@
 //! Declarative caption scenes. Layout, animation and recording are shared by native and WASM.
 mod materials;
 mod sampled_layout;
+mod word_line_layout;
 use anyhow::{Result, bail};
 use caption_scene::*;
 use render_raster::drawop::{
@@ -38,6 +39,7 @@ struct Word {
     id: String,
     bytes: Range<usize>,
     span: Option<(f64, f64)>,
+    input_timed: bool,
 }
 #[derive(Clone, Copy, Debug, Default)]
 pub struct Bounds {
@@ -145,6 +147,11 @@ struct Unit {
     page_text_count: usize,
     page_index: usize,
     page_count: usize,
+    page_last_word_span: Option<(f64, f64)>,
+    cue_first_word_span: Option<(f64, f64)>,
+    cue_second_word_start: Option<f64>,
+    word_timed: bool,
+    next_word_start: Option<f64>,
     kind: UnitKind,
     id: String,
     index: usize,
@@ -348,54 +355,19 @@ impl ScenePlan {
             )?;
             let sampled = sampled_layout::sample_scene(base_scene, &context, seconds, budget)?;
             let scene = sampled.as_ref().unwrap_or(base_scene);
-            let mut units = BTreeMap::new();
-            for ((idx, id), l) in self.layouts.iter().filter(|((idx, _), _)| *idx == ci) {
-                let _ = idx;
-                if let Some(pi) = l
-                    .pages
-                    .iter()
-                    .position(|p| seconds >= p.start && seconds < p.end)
-                {
-                    if sampled.is_some() {
-                        let node = sampled_layout::find_text(&scene.nodes, id)
-                            .expect("validated text node");
-                        let mut relayout = l.clone();
-                        relayout.pages[pi] = sampled_layout::reflow(
-                            &mut self.text,
-                            l,
-                            &l.pages[pi],
-                            node,
-                            &scene.layout,
-                            (self.width, self.height),
-                            &params,
-                            budget,
-                        )?;
-                        units.insert(
-                            id.clone(),
-                            units_for(
-                                cue,
-                                &relayout,
-                                &relayout.pages[pi],
-                                seconds,
-                                &scene.speech_state,
-                                &self.presentation,
-                            ),
-                        );
-                    } else {
-                        units.insert(
-                            id.clone(),
-                            units_for(
-                                cue,
-                                l,
-                                &l.pages[pi],
-                                seconds,
-                                &scene.speech_state,
-                                &self.presentation,
-                            ),
-                        );
-                    }
-                }
-            }
+            let units = resolved_units(
+                &mut self.text,
+                &self.layouts,
+                ci,
+                cue,
+                scene,
+                sampled.is_some(),
+                seconds,
+                &params,
+                &self.presentation,
+                (self.width, self.height),
+                budget,
+            )?;
             if units.is_empty() {
                 continue;
             }
@@ -468,6 +440,71 @@ fn cue_parameters(
     Ok(parameters(style.scene(), &layers)?)
 }
 
+// Shared post-layout unit resolution for text recording and page-bound materials.
+fn resolved_units(
+    text: &mut TextEngine,
+    layouts: &BTreeMap<(usize, String), TextLayout>,
+    ci: usize,
+    cue: &SceneCue,
+    scene: &Scene,
+    relayout_needed: bool,
+    seconds: f64,
+    params: &BTreeMap<String, Evaluated>,
+    presentation: &Presentation,
+    size: (u32, u32),
+    budget: &mut Budget,
+) -> Result<BTreeMap<String, Vec<(Unit, Option<Line>)>>> {
+    let mut units = BTreeMap::new();
+    for ((idx, id), l) in layouts.iter().filter(|((idx, _), _)| *idx == ci) {
+        let _ = idx;
+        if let Some(pi) = l
+            .pages
+            .iter()
+            .position(|p| seconds >= p.start && seconds < p.end)
+        {
+            if relayout_needed {
+                let node =
+                    sampled_layout::find_text(&scene.nodes, id).expect("validated text node");
+                let mut relayout = l.clone();
+                relayout.pages[pi] = sampled_layout::reflow(
+                    text,
+                    l,
+                    &l.pages[pi],
+                    node,
+                    &scene.layout,
+                    size,
+                    params,
+                    budget,
+                )?;
+                units.insert(
+                    id.clone(),
+                    units_for(
+                        cue,
+                        &relayout,
+                        &relayout.pages[pi],
+                        seconds,
+                        &scene.speech_state,
+                        presentation,
+                    ),
+                );
+            } else {
+                units.insert(
+                    id.clone(),
+                    units_for(
+                        cue,
+                        l,
+                        &l.pages[pi],
+                        seconds,
+                        &scene.speech_state,
+                        presentation,
+                    ),
+                );
+            }
+        }
+    }
+    Ok(units)
+}
+
 fn text_nodes(nodes: &[Node], out: &mut Vec<Node>) {
     for n in nodes {
         if n.kind == NodeKind::Text {
@@ -504,6 +541,7 @@ fn bind_words(
                 id: w.id.clone(),
                 bytes: a..b,
                 span: Some((w.start, w.end)),
+                input_timed: true,
             });
             at = b;
         }
@@ -514,6 +552,7 @@ fn bind_words(
                 id: format!("display-{a}"),
                 bytes: a..a + w.len(),
                 span: None,
+                input_timed: false,
             });
         }
         if words.is_empty() && !content.is_empty() {
@@ -521,6 +560,7 @@ fn bind_words(
                 id: "display-0".into(),
                 bytes: 0..content.len(),
                 span: None,
+                input_timed: false,
             });
         }
         if timing == TimingPolicy::Estimated {
@@ -557,6 +597,9 @@ fn prepare(
         speech.timing_policy,
         matches!(node.text, Some(TextBinding::Static { .. })),
     )?;
+    if cfg.pagination.word_line_pattern.is_some() {
+        return word_line_layout::prepare(text, cue, content, words, node, cfg, size, parameters);
+    }
     let fs = node.style.font_size.resolve(size.0, size.1, parameters)?;
     let width = cfg.width.resolve(size.0, size.1, parameters)?;
     if !(1.0..=4096.0).contains(&fs) || !(1.0..=65536.0).contains(&width) {
@@ -777,14 +820,25 @@ fn units_for(
         .iter()
         .position(|candidate| candidate.source_range == page.source_range)
         .unwrap_or(0);
+    let mut input_words = cue.words.iter().filter(|word| !word.text.is_empty());
+    let cue_first_word_span = input_words.next().map(|word| (word.start, word.end));
+    let cue_second_word_start = input_words.next().map(|word| word.start);
     let base = Unit {
         whitespace: false,
         text_index: 0,
         text_count: 0,
         page_text_index: 0,
         page_text_count: 0,
+        cue_first_word_span,
+        cue_second_word_start,
+        word_timed: false,
+        next_word_start: None,
         page_index,
         page_count: layout.pages.len(),
+        page_last_word_span: page.words.last().and_then(|i| {
+            let word = &layout.words[*i];
+            word.input_timed.then_some(word.span).flatten()
+        }),
         kind: UnitKind::Cue,
         id: cue.id.clone(),
         index: 0,
@@ -855,6 +909,16 @@ fn units_for(
             u.index = wi;
             u.count = members.len();
             u.bytes = w.bytes.clone();
+            u.word_timed = w.input_timed;
+            u.next_word_start = if w.input_timed {
+                layout
+                    .words
+                    .get(*i + 1)
+                    .filter(|word| word.input_timed)
+                    .and_then(|word| word.span.map(|span| span.0))
+            } else {
+                None
+            };
             u.state = if active == Some(*i) {
                 WordState::Active
             } else if w.span.is_some_and(|s| t >= s.0) {
@@ -1054,6 +1118,39 @@ fn context(u: &Unit, r: &RenderContext) -> Context {
             ValueType::Time,
             u.spans.get(&UnitKind::Line).map_or(b - a, |s| s.1 - s.0),
         ),
+        (
+            "time.pageLastWordElapsedSeconds",
+            ValueType::Time,
+            u.page_last_word_span.map_or(0.0, |s| r.seconds - s.0),
+        ),
+        (
+            "time.pageLastWordDurationSeconds",
+            ValueType::Time,
+            u.page_last_word_span.map_or(0.0, |s| s.1 - s.0),
+        ),
+        (
+            "time.cueFirstWordStartSeconds",
+            ValueType::Time,
+            u.cue_first_word_span
+                .map_or(0.0, |span| span.0 - r.cue.start),
+        ),
+        (
+            "time.cueFirstWordEndSeconds",
+            ValueType::Time,
+            u.cue_first_word_span
+                .map_or(0.0, |span| span.1 - r.cue.start),
+        ),
+        (
+            "time.cueSecondWordStartSeconds",
+            ValueType::Time,
+            u.cue_second_word_start
+                .map_or(0.0, |start| start - r.cue.start),
+        ),
+        (
+            "time.nextWordStartSeconds",
+            ValueType::Time,
+            u.next_word_start.map_or(0.0, |start| start - r.cue.start),
+        ),
         ("unit.pageIndex", ValueType::Scalar, u.page_index as f64),
         ("unit.pageCount", ValueType::Scalar, u.page_count as f64),
         ("unit.textIndex", ValueType::Scalar, u.text_index as f64),
@@ -1115,6 +1212,18 @@ fn context(u: &Unit, r: &RenderContext) -> Context {
     ] {
         fields.insert(k.into(), Evaluated::Bool(u.state == s));
     }
+    for (path, timed) in [
+        ("unit.cueFirstWordTimed", u.cue_first_word_span.is_some()),
+        ("unit.cueSecondWordTimed", u.cue_second_word_start.is_some()),
+        ("unit.wordTimed", u.word_timed),
+        ("unit.nextWordTimed", u.next_word_start.is_some()),
+    ] {
+        fields.insert(path.into(), Evaluated::Bool(timed));
+    }
+    fields.insert(
+        "unit.pageLastWordTimed".into(),
+        Evaluated::Bool(u.page_last_word_span.is_some()),
+    );
     Context {
         fields,
         spans: u.spans.clone(),
@@ -1959,6 +2068,220 @@ mod ink_tests {
                 assert_eq!(c.fields["time.lineElapsedSeconds"].number().unwrap(), 0.25);
                 assert_eq!(c.fields["time.lineDurationSeconds"].number().unwrap(), 0.5);
             }
+        }
+    }
+
+    fn bound_contexts(
+        cue: &SceneCue,
+        scene: &Scene,
+        layout: &TextLayout,
+        page: usize,
+        t: f64,
+        params: &BTreeMap<String, Evaluated>,
+    ) -> Vec<(Unit, Context)> {
+        let units = units_for(
+            cue,
+            layout,
+            &layout.pages[page],
+            t,
+            &scene.speech_state,
+            &Presentation::default(),
+        );
+        let empty_units = BTreeMap::new();
+        let images = BTreeMap::new();
+        let r = RenderContext {
+            scene,
+            units: &empty_units,
+            params,
+            seconds: t,
+            seed: 0,
+            instance: "word-context",
+            cue,
+            size: (160, 90),
+            images: &images,
+        };
+        units
+            .into_iter()
+            .map(|(unit, _)| {
+                let c = context(&unit, &r);
+                (unit, c)
+            })
+            .collect()
+    }
+    #[test]
+    fn cue_word_context_preserves_real_gaps_and_next_word_across_pages() {
+        let (mut text, mut style, mut cue, params) = input("Alpha Beta Gamma", 1.0);
+        cue.start = 10.0;
+        cue.end = 14.0;
+        cue.words = vec![
+            SceneWord {
+                id: "empty".into(),
+                text: "".into(),
+                start: 0.0,
+                end: 0.0,
+            },
+            SceneWord {
+                id: "a".into(),
+                text: "Alpha".into(),
+                start: 9.5,
+                end: 10.25,
+            },
+            SceneWord {
+                id: "b".into(),
+                text: "Beta".into(),
+                start: 11.0,
+                end: 11.0,
+            },
+            SceneWord {
+                id: "c".into(),
+                text: "Gamma".into(),
+                start: 12.4,
+                end: 13.4,
+            },
+        ];
+        let SceneSource::Inline { value: scene } = &mut style.scene;
+        scene.layout.pagination.max_units_per_page = Some(1);
+        let layout = prepare(
+            &mut text,
+            &cue,
+            &scene.nodes[0],
+            &scene.layout,
+            &scene.speech_state,
+            (160, 90),
+            &params,
+        )
+        .unwrap();
+        assert_eq!(layout.pages.len(), 3);
+        for (page, t, next) in [(0, 10.1, Some(1.0)), (1, 11.2, Some(2.4)), (2, 12.5, None)] {
+            for (u, c) in bound_contexts(&cue, scene, &layout, page, t, &params) {
+                assert!(c.fields["unit.cueFirstWordTimed"].boolean().unwrap());
+                assert!(c.fields["unit.cueSecondWordTimed"].boolean().unwrap());
+                assert_eq!(
+                    c.fields["time.cueFirstWordStartSeconds"].number().unwrap(),
+                    -0.5
+                );
+                assert_eq!(
+                    c.fields["time.cueFirstWordEndSeconds"].number().unwrap(),
+                    0.25
+                );
+                assert_eq!(
+                    c.fields["time.cueSecondWordStartSeconds"].number().unwrap(),
+                    1.0
+                );
+                if matches!(u.kind, UnitKind::Word | UnitKind::Grapheme) && !u.whitespace {
+                    assert!(c.fields["unit.wordTimed"].boolean().unwrap());
+                    assert_eq!(
+                        c.fields["unit.nextWordTimed"].boolean().unwrap(),
+                        next.is_some()
+                    );
+                    assert!(
+                        (c.fields["time.nextWordStartSeconds"].number().unwrap()
+                            - next.unwrap_or(0.0))
+                        .abs()
+                            < 1e-12
+                    );
+                    if page == 0 {
+                        assert_eq!(u.spans[&UnitKind::Word], (9.5, 10.25));
+                    }
+                    if page == 1 {
+                        assert_eq!(u.spans[&UnitKind::Word], (11.0, 11.0));
+                    }
+                } else {
+                    assert!(!c.fields["unit.wordTimed"].boolean().unwrap());
+                    assert!(!c.fields["unit.nextWordTimed"].boolean().unwrap());
+                    assert_eq!(c.fields["time.nextWordStartSeconds"].number().unwrap(), 0.0);
+                }
+            }
+        }
+    }
+    #[test]
+    fn cue_word_context_does_not_claim_estimated_or_static_word_binding() {
+        let (mut text, mut style, mut cue, params) = input("One two", 1.0);
+        let SceneSource::Inline { value: scene } = &mut style.scene;
+        scene.speech_state.timing_policy = TimingPolicy::Estimated;
+        let layout = prepare(
+            &mut text,
+            &cue,
+            &scene.nodes[0],
+            &scene.layout,
+            &scene.speech_state,
+            (160, 90),
+            &params,
+        )
+        .unwrap();
+        assert!(layout.words.iter().all(|word| word.span.is_some()));
+        for (_, c) in bound_contexts(&cue, scene, &layout, 0, 0.5, &params) {
+            for key in [
+                "unit.cueFirstWordTimed",
+                "unit.cueSecondWordTimed",
+                "unit.wordTimed",
+                "unit.nextWordTimed",
+            ] {
+                assert!(!c.fields[key].boolean().unwrap(), "{key}");
+            }
+            for key in [
+                "time.cueFirstWordStartSeconds",
+                "time.cueFirstWordEndSeconds",
+                "time.cueSecondWordStartSeconds",
+                "time.nextWordStartSeconds",
+            ] {
+                assert_eq!(c.fields[key].number().unwrap(), 0.0, "{key}");
+            }
+        }
+        cue.words = vec![
+            SceneWord {
+                id: "a".into(),
+                text: "One".into(),
+                start: 0.0,
+                end: 0.0,
+            },
+            SceneWord {
+                id: "b".into(),
+                text: "two".into(),
+                start: 2.5,
+                end: 3.0,
+            },
+        ];
+        scene.nodes[0].text = Some(TextBinding::Static {
+            text: "Standalone".into(),
+        });
+        let layout = prepare(
+            &mut text,
+            &cue,
+            &scene.nodes[0],
+            &scene.layout,
+            &scene.speech_state,
+            (160, 90),
+            &params,
+        )
+        .unwrap();
+        for (_, c) in bound_contexts(&cue, scene, &layout, 0, 0.5, &params) {
+            assert!(c.fields["unit.cueFirstWordTimed"].boolean().unwrap());
+            assert!(c.fields["unit.cueSecondWordTimed"].boolean().unwrap());
+            assert_eq!(
+                c.fields["time.cueFirstWordStartSeconds"].number().unwrap(),
+                0.0
+            );
+            assert_eq!(
+                c.fields["time.cueFirstWordEndSeconds"].number().unwrap(),
+                0.0
+            );
+            assert_eq!(
+                c.fields["time.cueSecondWordStartSeconds"].number().unwrap(),
+                2.5
+            );
+            assert!(!c.fields["unit.wordTimed"].boolean().unwrap());
+            assert!(!c.fields["unit.nextWordTimed"].boolean().unwrap());
+            assert_eq!(c.fields["time.nextWordStartSeconds"].number().unwrap(), 0.0);
+        }
+        cue.words.pop();
+        for (_, c) in bound_contexts(&cue, scene, &layout, 0, 0.5, &params) {
+            assert!(c.fields["unit.cueFirstWordTimed"].boolean().unwrap());
+            assert!(!c.fields["unit.cueSecondWordTimed"].boolean().unwrap());
+            assert_eq!(
+                c.fields["time.cueSecondWordStartSeconds"].number().unwrap(),
+                0.0
+            );
         }
     }
 }

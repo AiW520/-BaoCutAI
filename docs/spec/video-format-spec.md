@@ -1827,7 +1827,21 @@ interface CaptionStyleBody {
 | 表达式 | 带类型 literal/read/call/if；scalar/integer/length/time/angle/bool/color；无环纯函数，时间/单元/基础布局/参数只读；共享数学曲线、连续 sin/cos、带 seed 的 random/noise；if 惰性求值，非法运算返回诊断 |
 | 合成 | replace/add/multiply 与 priority/声明顺序；颜色只允许 replace；乘法通道为无量纲数；父子变换及离屏组 opacity 通过共同 DrawOp 光栅执行 |
 
-`requiredCapabilities` 当前可声明 `caption-scene/1`、`caption-expressions/1`、`caption-unit-animation/1`、`caption-image-png/1`、`caption-paint-stack/1`、`caption-blur/1`、`caption-feedback/1`、`caption-wave-displace/1`、`caption-layout-per-sample/1`、`caption-bezier-expression/1`、`caption-text-context/1`、`caption-ink-context/1` 和 `caption-unit-context/1`。未知能力、属性或字段拒绝；artifact 形式的场景引用、非 PNG 图片、任意 shader、无限递归反馈、节点级材质栈及改变分页成员的时间布局尚未开放，不能保存为成功后在渲染中忽略。完整扩展方向仍按[设计文档](../design/subtitle/dynamic-caption-format-design.md)维护。
+`requiredCapabilities` 当前可声明 `caption-scene/1`、`caption-expressions/1`、`caption-permutation/1`、`caption-function-dag/1`、`caption-unit-animation/1`、`caption-image-png/1`、`caption-paint-stack/1`、`caption-blur/1`、`caption-feedback/1`、`caption-wave-displace/1`、`caption-soft-band/1`、`caption-layout-per-sample/1`、`caption-word-line-layout/1`、`caption-bezier-expression/1`、`caption-text-context/1`、`caption-ink-context/1`、`caption-unit-context/1` 和 `caption-cue-word-context/1`。未知能力、属性或字段拒绝；artifact 形式的场景引用、非 PNG 图片、任意 shader、无限递归反馈、节点级材质栈及改变分页成员的时间布局尚未开放，不能保存为成功后在渲染中忽略。完整扩展方向仍按[设计文档](../design/subtitle/dynamic-caption-format-design.md)维护。
+
+`caption-word-line-layout/1` 增加固定词行分组，启用时使用 `pagination.wordLinePattern: number[][]`：外层为依次循环的页模式，内层每个正整数为该行词数。例如 `[[2,3]]` 表示每页两行，分别取两个词和三个词；`[[1],[2,1]]` 交替使用一词页与两行三词页。该字段与 `maxUnitsPerPage` 互斥，unit 必须是 word；模式1–256项，各页1–maxLines行，每行配额1–4096。未提供时保留原有硬换行、按宽度换行和分页行为。
+
+可选 `pagination.lastPageRule: { ifRowCountIs, previousPageLines }` 只对至少两页的初始计划生效：按实际词数截断各行/页后，若最后页任一非空行词数等于 ifRowCountIs，替换倒数第二页的行配额，再从头重消费词。规则只执行一次，不对重消费后的末页重复触发；词尾后的空行/空页丢弃。replacement的每行配额和行数受相同限制，总配额不得小于任何页模式的总配额，保证不丢词。`[[2,3]]` 加 `{ifRowCountIs:1,previousPageLines:[2,4]}` 在6/8/13词时分别得到 `[[2,4]]`、`[[2,4],[2]]`、`[[2,3],[2,4],[2]]`。
+
+固定模式下，词成员、页显示时间与行原始字节范围在准备阶段冻结，不能因宽度不足额外折行、拆词或增加页。`overflow: error` 对超宽行返回 `CAPTION_LAYOUT_OVERFLOW`；visible 允许越过声明行宽。每页行数必须不超过 maxLines。页从首词时间开始（leadingGap仍适用），到下一页首词开始，末页到cue结束；无词时间时沿用已声明的估算/可用时钟策略。
+
+固定模式的显示行折叠已有空白（包括自然换行）为一个空格，并隐藏行首尾空白；原本没有空白的词之间不会插入空格。标点不删除：行边界位于下一行首词的起始字节，词间非空白分隔符保留在前一行。源正文、词ID/byte range/span保持原样；shape使用临时规范化字符串，glyph cluster必须映射回原始行字节，因此 `unit.textIndex/textCount`、pageText索引及空白选择器继续以原文的字素为准，不变成显示字符串索引。逐采样布局复用相同的行shape及映射流程，只重算几何，不改变已冻结的词、行、页范围或时间。示例见 [word-line-layout.json](../../crates/caption-scene/tests/fixtures/word-line-layout.json)。
+
+`caption-function-dag/1` 显式选择纯函数依赖图的编译验证预算：每个根表达式及每个函数 body 的物理 AST 分别最多 4096 个节点；一个根可达的唯一函数依赖图连同根表达式最多 16384 个节点，每个函数 body 只计一次。每次调用点的参数 AST 仍在所属根/body 中逐项计数、检查类型与参数个数；已验证函数的类型摘要可复用，使用中的函数再次被访问时拒绝递归。所有声明函数即使未被使用，也独立检查参数、返回类型及依赖。展开求值路径深度最多 64，复用摘要时仍把函数内部深度计入调用点，不能通过共享函数绕过限制。未声明此能力时仍按旧规则重复展开计入 4096 节点预算，不静默放宽旧场景。此能力只改变编译验证的计数方式；执行时每个节点仍照常消耗共享 65536 次操作预算，不缓存函数求值结果或提高运行预算。布局/材质的提前依赖检查同样按唯一函数遍历，仍拒绝读取尚未产生的布局或单元状态。
+
+表达式内置 `shuffle-index(index, count, seed)` 接受三个 scalar，返回 scalar 类型的零基置换值；index/count 必须是整数且 `1 <= count <= 8192`、`0 <= index < count`，seed 必须有限，否则返回诊断。seed 先向零截断，再按 2³² 取非负余数作为状态；不使用实例 seed 或稳定键暗中混入随机性。初始化数组 `[0, 1, …, count−1]`，按 `current = count−1 … 1` 执行 Fisher–Yates：每步状态为零时先替换成 123459876；计算 `state = 16807 × (state % 127773) − 2836 × floor(state / 127773)`，负值加 2147483647；`random = (state % 2147483647) / 2147483647`，`j = floor(random × (current+1))`，交换 array[current]/array[j]。该函数返回 array[index]；相同参数在任意播放/seek 顺序下相同，模板应声明 `caption-permutation/1`。
+
+置换首次生成除表达式节点预算外，收取 count 次初始化与 count−1 次交换预算，先核对预算再分配/计算。同一个求值 Budget 可缓存规范化 `(count, seed)` 的结果，最多 16 项、总共 16384 个 u16 索引；命中后仍收取通常的调用与参数节点成本，缓存满时重新计算并照常收费。缓存仅属于本次预算，不跨帧共享，不改变置换结果；超限返回 `CAPTION_BUDGET_EXCEEDED`，不返回部分置换。
 
 表达式内置 `cubic-bezier(progress, x1, y1, x2, y2)` 接受五个 scalar，返回 scalar，复用共享 motion 求解器。progress 在两端截为 0/1，x 控制点必须在 [0,1]，y 允许超调；参数非有限或 x 越界返回诊断。可与 `elapsedSeconds / min(durationSeconds, 固定时间)` 组合，实现随单元时长自适应的曲线，不依赖播放历史。使用该函数的模板应声明 `caption-bezier-expression/1`。
 
@@ -1836,6 +1850,10 @@ interface CaptionStyleBody {
 选择器可显式设置 `includeWhitespace: true`，仅用于 grapheme。默认 false，保持既有选择集合。开启后空白字素也可绑定装饰；行尾未成形的空白定位于前一行末端，无真实词时间，grapheme 时钟继承行窗口。字素上下文按源顺序编号，不依赖装饰是否可见。布局前只允许 cue 时间字段，禁止读取页时钟或排版产生的字素字段。内置 `sqrt(scalar)` 返回 scalar，负输入报诊断；模板应声明上述能力。
 
 `caption-unit-context/1` 增加 `unit.pageIndex/pageCount`（scalar，文字节点固定分页中的零基页序号/总页数），每种单元和其 repeat 装饰都可读取。页身份使用冻结的源文本范围匹配，因此逐采样重排产生新的行或页副本后也不会回到第零页；原有 `unit.index/count` 仍表示当前单元类型的局部序号。
+
+`caption-cue-word-context/1` 提供原始输入词边界：`time.cueFirstWordStartSeconds/cueFirstWordEndSeconds/cueSecondWordStartSeconds` 为相对 cue 起点的 time，分别对应 `cue.words` 输入顺序中非空文本 token 的第一词起止与第二词开始；`unit.cueFirstWordTimed/cueSecondWordTimed` 为对应 bool 可用标记。所有单元和绑定装饰读取同一份 cue 信息，不随分页改变，也不按时间重新排序；静态文字节点可以读取所属 cue 的这组元信息。
+
+真实绑定的 Word/Grapheme 及其 repeat 装饰另有 `unit.wordTimed`，以及跨分页、按全局原词成员顺序查下一词的 `time.nextWordStartSeconds`（相对 cue 起点）与 `unit.nextWordTimed`。cue/page/line 和未绑定词的空白单元，其 current/next 标记始终 false，next 时间为 0；静态文字和 estimated 推导词时间也不会被标成真实绑定。任何缺失的对应输入时间均返回 0/false，真实负边界、零边界和零时长完整保留，因此模板必须看 bool 区分缺失。核心不延长 word.end，不填平真实 gap；需要按下一词开始调整外部效果窗口的模板自行用只读字段计算。上述新增字段均禁止布局前读取。示例见 [cue-word-context.json](../../crates/caption-scene/tests/fixtures/cue-word-context.json)。
 
 `time.lineElapsedSeconds/lineDurationSeconds`（time）提供所属行的词时间窗口，line/word/grapheme 及其装饰继承同一组值。cue/page 没有唯一所属行时明确回退到自身窗口。无词时间的行使用当前页显示窗口供视觉定时，但不据此伪造朗读状态。elapsed 不截断，持续时间可为零，表达式需自行保护除法。上述页序号和行时钟均禁止在布局前读取。
 
@@ -1849,19 +1867,24 @@ line 的 active/read/unread 状态按该行词成员求值：当前选中的活�
 
 布局表达式（包括间接调用的纯函数）只可读取参数、cue 时钟、cue 的稳定 index/count 与画布尺寸；不能读 layout、活动词或动态选择集合，关键帧只能使用 cue 时钟。布局阶段禁止依赖自身产生的行、页或框。动态字号限 1–4096 px、行高 0.1–10、字距 −2–10 em；非法采样结果拒绝。共享文字缓存已有字节预算，变化的字号不会无限累积缓存。行/词/字形框及装饰节点在重排后从同一结果计算。
 
-**模糊、波纹位移与反馈材质**。场景的 `materials` 按数组顺序执行，逐 cue 隔离，作用于该 cue 的完整文字和装饰合成；最多 8 项，每项 id 唯一。材质后的颜色仍是 sRGB 预乘 RGBA8，输出记录为 DrawOp 位图，精确预览与导出共用；点击几何来自当前时刻的文字，不把拖尾当作可编辑文字。
+**模糊、波纹位移、柔边遮罩与反馈材质**。场景的 `materials` 按数组顺序执行，逐 cue 隔离，作用于该 cue 的完整文字和装饰合成；最多 8 项，每项 id 唯一。材质后的颜色仍是 sRGB 预乘 RGBA8，输出记录为 DrawOp 位图，精确预览与导出共用；点击几何来自当前时刻的文字，不把拖尾当作可编辑文字。
 
 | kind | 字段与执行合同 |
 | --- | --- |
 | blur | radius 为 length 类型 DynamicValue，使用与布局相同的只读 cue 上下文；范围 0–64 输出像素，按 `floor(radius + 0.5)` 量化；passes 为 1–3，默认 1。每遍执行已有确定性预乘 box blur，不冒称 Gaussian。零半径跳过滤镜 |
 | wave-displace | amplitude 为 length 类型 DynamicValue，范围 −256–256 输出像素；wavelength 为 length 类型 DynamicValue，范围 1–1,000,000 输出像素；phase 为有限 angle 类型 DynamicValue（弧度）；axis 必填 x 或 y。三个动态值均使用只读 cue 上下文。按预乘 RGBA 双线性逆采样，画布外为透明；幅度为零时返回输入，但仍检查其余 uniform |
+| soft-band | contextNodeId 必填且明确引用唯一 Text；允许 Group 祖先与空 Group，拒绝其他 Text、Image、Shape 或 Repeat，即便其当前 opacity 为零。axis 必填 x/y；center、halfWidth、feather、amount、opacity 均为必填 scalar DynamicValue，范围依次为 [−4,4]、[0,4]、[0,4]、[0,1]、[0,1]；使用指定文字节点当前页的排版后上下文，允许页/墨迹字段。无有效关键帧值时回退到 .5/.5/0/0/1；无当前页则输出透明，不借用其他节点上下文 |
 | feedback | samples 为 1–16 个过去样本，step 为正的 `{ticks,timescale}`，总历史窗口至多 2 秒；decay 为 0–1，offset 为每个样本的像素位移（各轴绝对值不超过 256）。第 i 个样本重新求值 `t − i × step` 时刻的前缀材质栈，权重为 decay 的 i 次方、位移为 i × offset；按最远历史到当前帧 source-over 合成，当前帧权重为 1 |
+
+soft-band 固定以原始画布归一化坐标计算，`U = (x + .5 − padding) / canvasWidth`，y 轴相应使用 y/canvasHeight。令 c=center、h=halfWidth、f=feather，遮罩 `B = smoothstep(c−h−f,c−h,U) × (1−smoothstep(c+h,c+h+f,U))`，RGBA 每个预乘通道乘 `((1−amount)+amount×B)×opacity`，按 `floor(value+.5)` 回到 RGBA8。smoothstep 使用三次式 `t²(3−2t)`；f=0 时明确为 step，左边界包含、右边界不包含（h=f=0 时为空）。本材质不增加 padding，只消耗一次整面像素遍历；其他材质带来的 padding 不改变 UV。指定文字节点的静态/逐采样排版与文字录制使用同一解析过程，各个反馈历史时刻都重新求当前 cue 的页；非法动态值返回 `CAPTION_MATERIAL_INVALID`，不截断参数继续绘制。
+
+`caption-soft-band/1` 同时提供 `time.pageLastWordElapsedSeconds/pageLastWordDurationSeconds`（time）和 `unit.pageLastWordTimed`（bool），所有单元及装饰继承当前页成员顺序中最后一个词的输入时间。无输入词时间（包括 estimated 推导时间、静态文字）时返回 0/0/false，不虚构真实词时间；输入明确给出零时长时 Timed 仍为 true、Duration 为零，模板必须保护除法。elapsed 不截断，可在末词开始前为负。这些字段禁止在布局前读取。示例见 [soft-band.json](../../crates/caption-scene/tests/fixtures/soft-band.json)。
 
 波纹位移的坐标为左上原点、向右/向下为正的画布像素中心 `(x, y)`，不随离屏 padding 改变。`axis: y` 从 `(x, y + amplitude × sin(2π × x / wavelength + phase))` 读取源图；`axis: x` 从 `(x + amplitude × sin(2π × y / wavelength + phase), y)` 读取源图。相位先以确定性 `libm::fmod` 按 2π 归一，正弦使用 `libm::sin`；四个源像素的预乘通道分别加权后按 `floor(value + .5)` 转回 RGBA8。不夹到边缘像素，不在透明边界重新归一权重。点击几何仍来自未位移的基础文字。
 
 反馈前缀不包含它自身和后续材质，因此无无限递归；相同时间的输入、布局和前缀滤镜都重新按冻结数据计算，不读取先前播放缓存。多个反馈相乘的最坏基础采样数不得超过 32。仅采样同一 cue 的有效区间，cue 结束时拖尾也结束；变帧率不改变秒级历史窗口。模糊放在反馈前时，各历史样本使用各自时刻的半径；放在反馈后时，使用当前半径模糊合成结果。
 
-离屏表面按模糊传播范围、波纹最大幅度和最大反馈位移预留透明边界；波纹常量幅度按 `ceil(abs(amplitude))` 预留，动态幅度按上限 256 像素预留，最后才裁回画布，避免画布边缘的滤镜截断。执行前核对暂存/输出表面的保守上界（256 MiB），每次采样共享表达式预算，材质光栅/模糊/混合总像素工作量不超过 256 Mi 像素；波纹按每个输出像素四次源像素读取计费。超限报 `CAPTION_BUDGET_EXCEEDED`，不减少样本或降低效果。该预算是准入限制，不保证复杂反馈场景实时运行。
+离屏表面按模糊传播范围、波纹最大幅度和最大反馈位移预留透明边界；波纹常量幅度按 `ceil(abs(amplitude))` 预留，动态幅度按上限 256 像素预留，最后才裁回画布，避免画布边缘的滤镜截断。执行前核对暂存/输出表面的保守上界（256 MiB），每次采样共享表达式预算，材质光栅/模糊/混合总像素工作量不超过 256 Mi 像素；波纹按每个输出像素四次源像素读取计费，soft-band 按一遍输出像素计费，其排版后上下文解析同样使用共享表达式/重排预算。超限报 `CAPTION_BUDGET_EXCEEDED`，不减少样本或降低效果。该预算是准入限制，不保证复杂反馈场景实时运行。
 
 资源声明在写文档时与视频里的素材版本、内容摘要及 MIME 核对，`DocumentRevision.assetRefs` 由引擎生成。导出计划把文档依赖加入冻结素材集合；预览宿主只按该修订的依赖加载字节，不取素材的最新版本。清理保护仍被历史文档修订引用的资源，便携包恢复时重新核对正文、索引与素材；索引被删改也拒绝。字体清点只执行文字准备，不要求图片在线。
 

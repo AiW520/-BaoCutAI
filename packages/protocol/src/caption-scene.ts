@@ -63,7 +63,10 @@ export interface CaptionScene {
   layout: {
     width: CaptionLength; x: CaptionLength; y: CaptionLength; maxLines?: number;
     layoutEvaluation?: 'static' | 'per-sample'; overflow?: 'error' | 'visible';
-    bindings?: { nodeId?: string | null; property: 'width' | 'x' | 'y' | 'fontSize' | 'letterSpacing' | 'lineHeight'; value: CaptionDynamicValue }[]; pagination?: { unit?: 'word'; maxUnitsPerPage?: number | null }; align?: 'left' | 'center' | 'right'; leadingGap?: 'show' | 'hide';
+    bindings?: { nodeId?: string | null; property: 'width' | 'x' | 'y' | 'fontSize' | 'letterSpacing' | 'lineHeight'; value: CaptionDynamicValue }[];
+    pagination?: { unit?: 'word'; maxUnitsPerPage?: number | null; wordLinePattern?: number[][] | null;
+      lastPageRule?: { ifRowCountIs: number; previousPageLines: number[] } | null };
+    align?: 'left' | 'center' | 'right'; leadingGap?: 'show' | 'hide';
   };
   speechState?: { gapPolicy?: 'none' | 'hold-previous'; tailPolicy?: 'none' | 'hold-last'; timingPolicy?: 'require-word-timing' | 'estimated' };
   nodes: CaptionSceneNode[];
@@ -89,4 +92,5 @@ export interface CaptionPresentation {
 export type CaptionMaterial =
   | { kind: 'blur'; id: string; radius: CaptionDynamicValue; passes?: number }
   | { kind: 'wave-displace'; id: string; amplitude: CaptionDynamicValue; wavelength: CaptionDynamicValue; phase: CaptionDynamicValue; axis: 'x' | 'y' }
+  | { kind: 'soft-band'; id: string; contextNodeId: string; axis: 'x' | 'y'; center: CaptionDynamicValue; halfWidth: CaptionDynamicValue; feather: CaptionDynamicValue; amount: CaptionDynamicValue; opacity: CaptionDynamicValue }
   | { kind: 'feedback'; id: string; samples: number; step: { ticks: number; timescale: number }; decay: number; offset?: [number, number] };

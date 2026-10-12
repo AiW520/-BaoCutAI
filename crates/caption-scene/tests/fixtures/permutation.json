@@ -1,0 +1,133 @@
+{
+  "schema": "baocut.caption-scene-style/1",
+  "scene": {
+    "kind": "inline",
+    "value": {
+      "schema": "baocut.caption-scene/1",
+      "evaluationVersion": 1,
+      "requiredCapabilities": [
+        "caption-permutation/1",
+        "caption-text-context/1"
+      ],
+      "parameters": [],
+      "layout": {
+        "width": {
+          "value": 140,
+          "basis": "absolute"
+        },
+        "x": {
+          "value": 80,
+          "basis": "absolute"
+        },
+        "y": {
+          "value": 45,
+          "basis": "absolute"
+        },
+        "maxLines": 2,
+        "pagination": {
+          "unit": "word",
+          "maxUnitsPerPage": 4096
+        }
+      },
+      "speechState": {
+        "gapPolicy": "hold-previous",
+        "tailPolicy": "hold-last"
+      },
+      "nodes": [
+        {
+          "id": "caption",
+          "type": "text",
+          "style": {
+            "fontSize": {
+              "value": 16,
+              "basis": "absolute"
+            }
+          }
+        }
+      ],
+      "selectors": [
+        {
+          "id": "letters",
+          "nodeId": "caption",
+          "unit": "grapheme"
+        }
+      ],
+      "animations": [
+        {
+          "id": "random-order",
+          "target": {
+            "nodeId": "caption",
+            "selectorId": "letters"
+          },
+          "property": "opacity",
+          "composite": "multiply",
+          "value": {
+            "kind": "expression",
+            "expression": {
+              "op": "if",
+              "condition": {
+                "op": "call",
+                "function": "gt",
+                "args": [
+                  {
+                    "op": "call",
+                    "function": "div",
+                    "args": [
+                      {
+                        "op": "read",
+                        "path": "time.seconds"
+                      },
+                      {
+                        "op": "read",
+                        "path": "time.cueDurationSeconds"
+                      }
+                    ]
+                  },
+                  {
+                    "op": "call",
+                    "function": "div",
+                    "args": [
+                      {
+                        "op": "call",
+                        "function": "shuffle-index",
+                        "args": [
+                          {
+                            "op": "read",
+                            "path": "unit.textIndex"
+                          },
+                          {
+                            "op": "read",
+                            "path": "unit.textCount"
+                          },
+                          {
+                            "op": "literal",
+                            "type": "scalar",
+                            "value": -3.75
+                          }
+                        ]
+                      },
+                      {
+                        "op": "read",
+                        "path": "unit.textCount"
+                      }
+                    ]
+                  }
+                ]
+              },
+              "then": {
+                "op": "literal",
+                "type": "scalar",
+                "value": 1
+              },
+              "else": {
+                "op": "literal",
+                "type": "scalar",
+                "value": 0
+              }
+            }
+          }
+        }
+      ]
+    }
+  }
+}

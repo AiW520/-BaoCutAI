@@ -69,7 +69,7 @@ fn conditions_are_lazy_and_arithmetic_errors_are_not_zero() {
             .unwrap(),
         7.0
     );
-    assert!(evaluate(&choose, style.scene(), &Context::default(), &mut Budget(0)).is_err());
+    assert!(evaluate(&choose, style.scene(), &Context::default(), &mut Budget::new(0)).is_err());
 }
 #[test]
 fn fill_and_word_clock_use_exact_window_not_cue_duration() {
@@ -238,7 +238,7 @@ fn bezier_expression_supports_duration_dependent_progress_and_overshoot() {
     };
     assert!(evaluate(&make(-0.1), style.scene(), &Context::default(), &mut Budget::default()).is_err());
     assert!(evaluate(&make(1.1), style.scene(), &Context::default(), &mut Budget::default()).is_err());
-    assert!(evaluate(&make(0.2), style.scene(), &Context::default(), &mut Budget(0)).is_err());
+    assert!(evaluate(&make(0.2), style.scene(), &Context::default(), &mut Budget::new(0)).is_err());
     assert!(builtin_type("cubic-bezier", &[ValueType::Time; 5]).is_none());
     input["scene"]["value"]["functions"] =
         json!([{"id":"cubic-bezier","arguments":[],"returns":"scalar","body":{"op":"literal","type":"scalar","value":1}}]);
@@ -318,4 +318,88 @@ fn unit_context_types_and_pre_layout_restrictions_are_explicit() {
         assert_eq!(parse_style(&early).unwrap_err().code, "CAPTION_DEPENDENCY_CYCLE");
     }
     parse_style(&serde_json::from_str(include_str!("fixtures/unit-context.json")).unwrap()).unwrap();
+}
+
+#[test]
+fn soft_band_requires_one_explicit_text_and_scalar_post_layout_uniforms() {
+    let original: Value = serde_json::from_str(include_str!("fixtures/soft-band.json")).unwrap();
+    parse_style(&original).unwrap();
+    for (field, value) in [
+        ("center", 4.1),
+        ("center", -4.1),
+        ("halfWidth", -0.1),
+        ("halfWidth", 4.1),
+        ("feather", -0.1),
+        ("amount", 1.1),
+        ("opacity", -0.1),
+    ] {
+        let mut bad = original.clone();
+        bad["scene"]["value"]["materials"][0][field] = json!({"kind":"constant","value":value});
+        assert!(parse_style(&bad).is_err(), "{field}={value}");
+    }
+    for node in [
+        json!({"id":"extra","type":"text"}),
+        json!({"id":"extra","type":"shape"}),
+        json!({"id":"extra","type":"image"}),
+    ] {
+        let mut bad = original.clone();
+        bad["scene"]["value"]["nodes"].as_array_mut().unwrap().push(node);
+        assert!(parse_style(&bad).is_err());
+    }
+    let mut bad = original.clone();
+    bad["scene"]["value"]["materials"][0]["contextNodeId"] = json!("missing");
+    assert!(parse_style(&bad).is_err());
+    let mut grouped = original.clone();
+    let node = grouped["scene"]["value"]["nodes"][0].clone();
+    grouped["scene"]["value"]["nodes"] = json!([{"id":"wrapper","type":"group","children":[node]}]);
+    parse_style(&grouped).unwrap();
+    let style = parse_style(&original).unwrap();
+    assert_eq!(
+        infer(
+            &expr(json!({"op":"read","path":"unit.pageLastWordTimed"})),
+            style.scene(),
+            &BTreeMap::new()
+        )
+        .unwrap(),
+        ValueType::Bool
+    );
+    for field in ["time.pageLastWordElapsedSeconds", "time.pageLastWordDurationSeconds"] {
+        assert_eq!(
+            infer(&expr(json!({"op":"read","path":field})), style.scene(), &BTreeMap::new()).unwrap(),
+            ValueType::Time
+        );
+        let mut bad = original.clone();
+        bad["scene"]["value"]["layout"]["bindings"][0]["value"] = json!({"kind":"expression","expression":{
+            "op":"call","function":"mul","args":[{"op":"literal","type":"length","value":10},{"op":"call","function":"div","args":[{"op":"read","path":field},{"op":"literal","type":"time","value":1}]}]}});
+        assert_eq!(parse_style(&bad).unwrap_err().code, "CAPTION_DEPENDENCY_CYCLE");
+    }
+}
+
+#[test]
+fn cue_word_input_context_types_and_early_read_rejection_are_explicit() {
+    let body: Value = serde_json::from_str(include_str!("fixtures/cue-word-context.json")).unwrap();
+    let style = parse_style(&body).unwrap();
+    for (path, ty) in [
+        ("time.cueFirstWordStartSeconds", ValueType::Time),
+        ("time.cueFirstWordEndSeconds", ValueType::Time),
+        ("time.cueSecondWordStartSeconds", ValueType::Time),
+        ("time.nextWordStartSeconds", ValueType::Time),
+        ("unit.cueFirstWordTimed", ValueType::Bool),
+        ("unit.cueSecondWordTimed", ValueType::Bool),
+        ("unit.wordTimed", ValueType::Bool),
+        ("unit.nextWordTimed", ValueType::Bool),
+    ] {
+        let read = json!({"op":"read","path":path});
+        assert_eq!(infer(&expr(read.clone()), style.scene(), &BTreeMap::new()).unwrap(), ty);
+        let scalar = if ty == ValueType::Time {
+            json!({"op":"call","function":"div","args":[read,{"op":"literal","type":"time","value":1}]})
+        } else {
+            json!({"op":"if","condition":read,"then":{"op":"literal","type":"scalar","value":1},"else":{"op":"literal","type":"scalar","value":2}})
+        };
+        let mut bad = body.clone();
+        bad["scene"]["value"]["layout"]["layoutEvaluation"] = json!("per-sample");
+        bad["scene"]["value"]["layout"]["bindings"] =
+            json!([{"nodeId":"caption","property":"lineHeight","value":{"kind":"expression","expression":scalar}}]);
+        assert_eq!(parse_style(&bad).unwrap_err().code, "CAPTION_DEPENDENCY_CYCLE", "{path}");
+    }
 }

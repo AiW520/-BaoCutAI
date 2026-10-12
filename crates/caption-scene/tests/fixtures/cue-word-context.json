@@ -1,0 +1,217 @@
+{
+  "schema": "baocut.caption-scene-style/1",
+  "scene": {
+    "kind": "inline",
+    "value": {
+      "schema": "baocut.caption-scene/1",
+      "evaluationVersion": 1,
+      "requiredCapabilities": [
+        "caption-cue-word-context/1"
+      ],
+      "parameters": [
+        {
+          "id": "accent",
+          "type": "color",
+          "default": "#FFE600"
+        }
+      ],
+      "layout": {
+        "width": {
+          "value": 140,
+          "basis": "absolute"
+        },
+        "x": {
+          "value": 80,
+          "basis": "absolute"
+        },
+        "y": {
+          "value": 45,
+          "basis": "absolute"
+        },
+        "maxLines": 2,
+        "pagination": {
+          "maxUnitsPerPage": 1
+        }
+      },
+      "speechState": {
+        "gapPolicy": "hold-previous",
+        "tailPolicy": "hold-last"
+      },
+      "nodes": [
+        {
+          "id": "caption",
+          "type": "text",
+          "style": {
+            "fontSize": {
+              "value": 16,
+              "basis": "absolute"
+            }
+          }
+        },
+        {
+          "id": "indicators",
+          "type": "repeat",
+          "selectorId": "words",
+          "children": [
+            {
+              "id": "next-input-word",
+              "type": "shape",
+              "properties": {
+                "width": {
+                  "kind": "expression",
+                  "expression": {
+                    "op": "if",
+                    "condition": {
+                      "op": "read",
+                      "path": "unit.nextWordTimed"
+                    },
+                    "then": {
+                      "op": "call",
+                      "function": "mul",
+                      "args": [
+                        {
+                          "op": "literal",
+                          "type": "length",
+                          "value": 12
+                        },
+                        {
+                          "op": "call",
+                          "function": "div",
+                          "args": [
+                            {
+                              "op": "read",
+                              "path": "time.nextWordStartSeconds"
+                            },
+                            {
+                              "op": "literal",
+                              "type": "time",
+                              "value": 1
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    "else": {
+                      "op": "literal",
+                      "type": "length",
+                      "value": 3
+                    }
+                  }
+                },
+                "height": {
+                  "kind": "constant",
+                  "value": 3
+                },
+                "transform.y": {
+                  "kind": "expression",
+                  "expression": {
+                    "op": "read",
+                    "path": "layout.height"
+                  }
+                },
+                "fill": {
+                  "kind": "expression",
+                  "expression": {
+                    "op": "if",
+                    "condition": {
+                      "op": "read",
+                      "path": "unit.wordTimed"
+                    },
+                    "then": {
+                      "op": "literal",
+                      "type": "color",
+                      "value": "#33DD99"
+                    },
+                    "else": {
+                      "op": "literal",
+                      "type": "color",
+                      "value": "#AA3355"
+                    }
+                  }
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "selectors": [
+        {
+          "id": "words",
+          "nodeId": "caption",
+          "unit": "word"
+        }
+      ],
+      "animations": [
+        {
+          "id": "cue-input-window",
+          "target": {
+            "nodeId": "caption"
+          },
+          "property": "transform.x",
+          "composite": "add",
+          "value": {
+            "kind": "expression",
+            "expression": {
+              "op": "if",
+              "condition": {
+                "op": "call",
+                "function": "and",
+                "args": [
+                  {
+                    "op": "read",
+                    "path": "unit.cueFirstWordTimed"
+                  },
+                  {
+                    "op": "read",
+                    "path": "unit.cueSecondWordTimed"
+                  }
+                ]
+              },
+              "then": {
+                "op": "call",
+                "function": "mul",
+                "args": [
+                  {
+                    "op": "literal",
+                    "type": "length",
+                    "value": 6
+                  },
+                  {
+                    "op": "call",
+                    "function": "div",
+                    "args": [
+                      {
+                        "op": "call",
+                        "function": "sub",
+                        "args": [
+                          {
+                            "op": "read",
+                            "path": "time.cueSecondWordStartSeconds"
+                          },
+                          {
+                            "op": "read",
+                            "path": "time.cueFirstWordEndSeconds"
+                          }
+                        ]
+                      },
+                      {
+                        "op": "literal",
+                        "type": "time",
+                        "value": 1
+                      }
+                    ]
+                  }
+                ]
+              },
+              "else": {
+                "op": "literal",
+                "type": "length",
+                "value": 0
+              }
+            }
+          }
+        }
+      ]
+    }
+  }
+}
