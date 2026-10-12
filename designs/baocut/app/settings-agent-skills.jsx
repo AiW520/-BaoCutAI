@@ -10,8 +10,8 @@
 
   function SkillCard({skill, onOpen, onToggle}) {
     return <div className={cx('skl-card', !skill.enabled && 'is-off')}>
-      <BCAction type="button" className="skl-card__main" aria-label={'查看 ' + skill.name} onClick={onOpen}>
-        <b className="skl-card__name">{skill.name}</b>
+      <BCAction type="button" className="skl-card__main" aria-label={'查看 ' + K.fullName(skill)} onClick={onOpen}>
+        <b className="skl-card__name">{K.fullName(skill)}</b>
         <span className="skl-card__desc">{K.blurb(skill)}</span>
         <span className="skl-card__meta">{K.metaLine(skill)}</span>
       </BCAction>

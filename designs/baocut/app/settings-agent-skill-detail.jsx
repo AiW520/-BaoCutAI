@@ -35,7 +35,7 @@
     return <>
       <header className="skl-detail__bar">
         <IconBtn icon="back" tip="返回 skill 详情" onClick={onBack} />
-        <b className="grow">{skill.name} 的文件</b>
+        <b className="grow">{K.fullName(skill)} 的文件</b>
         <IconBtn icon="close" tip="关闭" onClick={onClose} />
       </header>
       <div className="skl-files">
@@ -70,7 +70,7 @@
       app.toast(`已移除「${skill.name}」（演示）`, null, {label: '撤销', run: () => app.setAgentSkills((l) => K.add(l, skill).list)});
     };
     const tryIt = (prompt) => { onClose(); app.newProject({entry: 'agent', prompt, skill: skill.id}); };
-    return <BCModal title={skill.name} size="L" onClose={onClose} className="skl-detail">
+    return <BCModal title={K.fullName(skill)} size="L" onClose={onClose} className="skl-detail">
       {view === 'files' ? <FilesView skill={skill} onBack={() => setView('info')} onClose={onClose} /> : <>
         <header className="skl-detail__bar">
           <R.Badge variant="neutral" size="S">{skill.category}</R.Badge>
@@ -87,7 +87,7 @@
           <IconBtn icon="close" tip="关闭" onClick={onClose} />
         </header>
         <div className="skl-detail__body">
-          <h2 className="skl-detail__name">{skill.name}</h2>
+          <h2 className="skl-detail__name">{K.fullName(skill)}</h2>
           <p className="skl-detail__meta">{[K.sourceLabel(skill.source), '作者 ' + skill.author, K.updatedLabel(skill)].filter(Boolean).join(' · ')}</p>
           <p className="skl-detail__state">{skill.enabled ? '开着：Agent 觉得相关时会自己用它。' : '关着：只在你从输入框「+」里选它时才用。'}</p>
           {skill.source === 'third-party' ? <p className="skl-detail__note" role="note"><Ic n="alert" className="ic--16" /><span>{K.THIRD_PARTY_NOTE}</span></p> : null}

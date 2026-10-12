@@ -8,7 +8,9 @@
    updated, examples: [...], files: [{path, body}]}。演示数据在 data.js 的 agentSkills / agentSkillFolders；不碰磁盘。
    - description 是 SKILL.md front matter 里写给智能体的那段（做什么、什么时候用），界面不直接显示。
    - summary 只有内置 skill 有：界面上的一句话介绍，正式版按界面语言取自 skill 目录的 .baocut-meta.json（产品设计 §6.9）。
-   - 界面上的介绍一律走 blurb()：内置的显示 summary；个人、第三方的没有 summary，只能显示它自带的 description。 */
+   - 界面上的介绍一律走 blurb()：内置的显示 summary；个人、第三方的没有 summary，只能显示它自带的 description。
+   - 输入框菜单、设置的卡片与详情里的名字走 fullName()：内置的带上原始名（SKILL.md 的 name，即 id），写成「design（设计）」，
+     与智能体说的、文件夹叫的对得上；token、提示与 toast 只用界面名。 */
 (function () {
   const root = typeof window !== 'undefined' ? window : globalThis;
   const SOURCES = [
@@ -55,10 +57,19 @@
   const clip = (text, n) => { const t = String(text || '').trim(); return t.length > n ? t.slice(0, n - 1) + '…' : t; };
   /** 界面上的一句话介绍（设置的卡片与详情、输入框菜单）：有 summary 用 summary，没有时退回 description。 */
   const blurb = (skill) => String((skill && (skill.summary || skill.description)) || '').trim();
+  /** 列表与详情里的名字：内置 skill 是「原始名（界面名）」；界面名就是原始名（英文界面的 Slides 之于 slides）时只写一次。
+      个人、第三方的没有界面名，只有它自带的名字。 */
+  function fullName(skill) {
+    if (!skill) return '';
+    const name = String(skill.name || '').trim();
+    if (!skill.summary || !skill.id) return name;
+    const norm = (s) => lc(s).replace(/[^\p{L}\p{N}]+/gu, '-').replace(/^-+|-+$/g, '');
+    return !name || norm(name) === norm(skill.id) ? skill.id : `${skill.id}（${name}）`;
+  }
   /** 输入框「+ › 使用 Skill」的条目：全部已添加的，开着的在前，组内保持原顺序。
       一句话介绍（summary）完整显示，长了就折行；退回 description 时它可能很长，截到 60 个字。 */
   function menuItems(list) {
-    const rows = (list || []).map((s) => ({id: s.id, name: s.name, desc: s.summary ? blurb(s) : clip(blurb(s), 60), enabled: !!s.enabled, category: s.category}));
+    const rows = (list || []).map((s) => ({id: s.id, name: fullName(s), desc: s.summary ? blurb(s) : clip(blurb(s), 60), enabled: !!s.enabled, category: s.category}));
     return rows.filter((s) => s.enabled).concat(rows.filter((s) => !s.enabled));
   }
   /** 发送时带在提示词末尾的那一行。 */
@@ -195,7 +206,7 @@
   }
 
   root.BC_AGENT_SKILLS = {
-    SOURCES, TABS, THIRD_PARTY_NOTE, sourceLabel, find, counts, byId, toggle, add, remove, blurb, menuItems, promptLine, withSkill, withSkills,
+    SOURCES, TABS, THIRD_PARTY_NOTE, sourceLabel, find, counts, byId, toggle, add, remove, blurb, fullName, menuItems, promptLine, withSkill, withSkills,
     updatedLabel, metaLine, fromFolder, parseGithub, fromGithub, fileTree, fileBlocks, snapshot, apply,
   };
 })();

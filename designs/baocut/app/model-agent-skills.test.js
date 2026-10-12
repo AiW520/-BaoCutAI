@@ -72,6 +72,15 @@ test('一句话介绍：内置的用 summary，没有 summary 的（个人、第
   assert.equal(K.blurb(gh), '从 owner/repo 导入的 skill。');
 });
 
+test('列表与详情的名字：内置的「原始名（界面名）」，界面名就是原始名时只写一次；个人、第三方的只有自带的名字', () => {
+  assert.equal(K.fullName({id: 'design', name: '设计稿', summary: '做设计稿'}), 'design（设计稿）');
+  assert.equal(K.fullName({id: 'design-system', name: 'Design system', summary: 'x'}), 'design-system');
+  assert.equal(K.fullName({id: 'cover-and-title', name: 'Cover & title', summary: 'x'}), 'cover-and-title（Cover & title）');
+  assert.equal(K.fullName({id: 'channel-intro', name: '频道片头规范', description: 'x'}), '频道片头规范');
+  assert.equal(K.fullName(null), '');
+  assert.equal(K.menuItems([{id: 'design', name: '设计稿', summary: '做设计稿', enabled: true}])[0].name, 'design（设计稿）');
+});
+
 test('输入框菜单：全部已添加的都在，开着的在前；一句话介绍完整显示，退回的描述截到 60 个字', () => {
   const l = list();
   assert.deepEqual(K.menuItems(l).map((s) => s.id), ['a', 'c', 'b', 'd']);
