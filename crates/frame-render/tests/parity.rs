@@ -868,6 +868,35 @@ fn scenes() -> Vec<Scene> {
         ..shot(15)
     });
     scenes.push(noise);
+    for (name, style) in [
+        (
+            "captions-page-envelope",
+            include_str!("../../caption-scene/tests/fixtures/page-envelope.json"),
+        ),
+        (
+            "captions-page-envelope-whitespace",
+            include_str!("../../caption-scene/tests/fixtures/page-envelope-whitespace.json"),
+        ),
+    ] {
+        let mut component = Scene::new(
+            name,
+            video(vec![caption("page-envelope", "doc", Some("style"), 120, &[])], vec![], json!({})),
+            &[0, 8, 15, 30, 50, 75, 95, 115, 15],
+        );
+        let mut doc = caption_doc("doc", "sequence", &[(0., 4., "One two three four five")], "original");
+        doc["sourceDocumentId"] = json!("speech");
+        doc["body"]["cues"][0]["words"] = json!({"first":"w0","last":"w4"});
+        component.documents = vec![doc, style_doc("style", serde_json::from_str(style).unwrap())];
+        let words: Vec<Value> = ["One", "two", "three", "four", "five"]
+            .iter()
+            .enumerate()
+            .map(|(i, text)| json!({"id":format!("w{i}"),"text":text,"start":i*800,"end":(i+1)*800}))
+            .collect();
+        component
+            .speech
+            .push(json!({"documentId":"speech","body":{"schema":"baocut.speech/1","clock":"sequence","timescale":1000,"words":words}}));
+        scenes.push(component);
+    }
     let cue_word_style: Value = serde_json::from_str(include_str!("../../caption-scene/tests/fixtures/cue-word-context.json")).unwrap();
     let mut cue_word = Scene::new(
         "captions-cue-word-context",

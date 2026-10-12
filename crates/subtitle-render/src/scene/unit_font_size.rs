@@ -153,7 +153,10 @@ fn sample_runs(
                 !path.starts_with("layout.")
                     && !matches!(
                         path.as_str(),
-                        "unit.lineEnvelopeAvailable" | "unit.rangeInkAvailable"
+                        "unit.lineEnvelopeAvailable"
+                            | "unit.rangeInkAvailable"
+                            | "unit.pageEnvelopeAvailable"
+                            | "unit.pageLineCount"
                     )
             });
             context.fields.insert(
@@ -351,13 +354,26 @@ pub(super) fn reflow(
         let row_height =
             (shape.ascent + shape.descent.abs()).max(max_size * node.style.line_height);
         height += row_height;
-        rows.push((line.bytes.clone(), shape, row_height));
+        let mut page_metric_size = max_size;
+        if page_envelope::enabled(scene) {
+            // Retain assigned sizes of source whitespace even when normalized
+            // shaping removes its glyph. This metadata must not alter row height.
+            let first = sizes.partition_point(|run| run.bytes.end <= line.bytes.start);
+            for run in sizes[first..]
+                .iter()
+                .take_while(|run| run.bytes.start < line.bytes.end)
+            {
+                budget.spend()?;
+                page_metric_size = page_metric_size.max(run.size);
+            }
+        }
+        rows.push((line.bytes.clone(), shape, row_height, page_metric_size));
     }
     let x = cfg.x.resolve(size.0, size.1, params)?;
     let y = cfg.y.resolve(size.0, size.1, params)?;
     let mut top = y - height / 2.0;
     let mut lines = Vec::with_capacity(rows.len());
-    for (bytes, shape, row_height) in rows {
+    for (bytes, shape, row_height, max_size) in rows {
         let left = match cfg.align {
             Align::Left => x - width / 2.0,
             Align::Center => x - shape.width / 2.0,
@@ -370,7 +386,7 @@ pub(super) fn reflow(
             width: shape.width,
             height: row_height,
         };
-        lines.push(Line::new(text, bytes, shape, bounds, baseline));
+        lines.push(Line::new(text, bytes, shape, bounds, baseline, max_size));
         top += row_height;
     }
     Ok(Page {
@@ -701,5 +717,65 @@ mod tests {
         assert_eq!((a.shape.width, b.shape.width), (0., 0.));
         assert!(b.bounds.height > a.bounds.height);
         assert!(b.bounds.height >= 30. * 1.3);
+    }
+    #[test]
+    fn page_envelope_is_inherited_and_preserves_whitespace_run_sizes() {
+        let mut body = body();
+        body["scene"]["value"]["requiredCapabilities"]
+            .as_array_mut()
+            .unwrap()
+            .push(json!("caption-page-envelope/1"));
+        body["scene"]["value"]["selectors"]
+            .as_array_mut()
+            .unwrap()
+            .push(json!({"id":"all-words","nodeId":"caption","unit":"word"}));
+        body["scene"]["value"]["layout"]["fontSizeBindings"] = json!([
+            {"id":"space-size","nodeId":"caption","selectorId":"pages","value":{"kind":"constant","value":48}},
+            {"id":"word-size","nodeId":"caption","selectorId":"all-words","value":{"kind":"constant","value":12}}
+        ]);
+        let mut p = plan(body.clone(), "A B");
+        let units = resolved(&mut p, 0.2);
+        let mut first = None;
+        for (unit, _) in &units {
+            let mut c = Context::default();
+            page_envelope::add_fields(&mut c, unit);
+            assert!(c.fields["unit.pageEnvelopeAvailable"].boolean().unwrap());
+            assert_eq!(c.fields["layout.pageMaxFontSize"].number().unwrap(), 48.0);
+            assert_eq!(c.fields["unit.pageLineCount"].number().unwrap(), 1.0);
+            if let Some(previous) = &first {
+                assert_eq!(previous, &c.fields);
+            } else {
+                first = Some(c.fields);
+            }
+        }
+        body["scene"]["value"]["layout"]["fontSizeBindings"]
+            .as_array_mut()
+            .unwrap()
+            .truncate(1);
+        let mut blank = plan(body.clone(), " ");
+        let blank_units = resolved(&mut blank, 0.2);
+        assert!(!blank_units.is_empty());
+        for (unit, _) in blank_units {
+            let mut c = Context::default();
+            page_envelope::add_fields(&mut c, &unit);
+            assert!(c.fields["unit.pageEnvelopeAvailable"].boolean().unwrap());
+            assert_eq!(c.fields["layout.pageMaxFontSize"].number().unwrap(), 48.0);
+            assert!(c.fields["layout.pageEnvelopeHeight"].number().unwrap() > 0.0);
+        }
+        // Uniform no-size-binding rows have empty normalized shapes. New
+        // page metrics query the actual font without modifying those shapes.
+        body["scene"]["value"]["layout"]["fontSizeBindings"] = json!([]);
+        body["scene"]["value"]["nodes"][0]["style"]["fontSize"] =
+            json!({"value":48,"basis":"absolute"});
+        let mut uniform = plan(body, " ");
+        let units = resolved(&mut uniform, 0.2);
+        assert!(!units.is_empty());
+        for (unit, _) in units {
+            let mut c = Context::default();
+            page_envelope::add_fields(&mut c, &unit);
+            assert!(c.fields["unit.pageEnvelopeAvailable"].boolean().unwrap());
+            assert_eq!(c.fields["layout.pageMaxFontSize"].number().unwrap(), 48.0);
+            assert!(c.fields["layout.pageEnvelopeHeight"].number().unwrap() > 0.0);
+        }
     }
 }

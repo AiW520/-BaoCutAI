@@ -1271,6 +1271,68 @@ mod soft_band_tests {
             .unwrap();
         assert_eq!(p.render(4.02).unwrap().rgba, isolated.rgba);
     }
+    #[test]
+    fn page_envelope_material_context_tracks_real_size_runs_and_feedback_samples() {
+        let body: serde_json::Value = serde_json::from_str(include_str!(
+            "../../../caption-scene/tests/fixtures/page-envelope.json"
+        ))
+        .unwrap();
+        let mut p = plan(body.clone(), vec![cue("first", 0.0, 4.0)]);
+        let initial = p
+            .material_page_context(0, 0.0, "caption", &mut Budget::default())
+            .unwrap()
+            .unwrap();
+        let peak = p
+            .material_page_context(0, 0.28, "caption", &mut Budget::default())
+            .unwrap()
+            .unwrap();
+        assert!(
+            initial.fields["unit.pageEnvelopeAvailable"]
+                .boolean()
+                .unwrap()
+        );
+        assert_eq!(initial.fields["unit.pageLineCount"].number().unwrap(), 2.0);
+        assert_eq!(
+            initial.fields["layout.pageMaxFontSize"].number().unwrap(),
+            20.0
+        );
+        assert!((peak.fields["layout.pageMaxFontSize"].number().unwrap() - 26.0).abs() < 1e-8);
+        assert!(
+            peak.fields["layout.pageEnvelopeHeight"].number().unwrap()
+                > initial.fields["layout.pageEnvelopeHeight"]
+                    .number()
+                    .unwrap()
+        );
+        let next = p
+            .material_page_context(0, 3.1, "caption", &mut Budget::default())
+            .unwrap()
+            .unwrap();
+        assert_eq!(next.fields["unit.pageLineCount"].number().unwrap(), 1.0);
+        assert!(next.fields["layout.pageMaxFontSize"].number().unwrap() < 26.0);
+        assert_eq!(
+            initial.fields,
+            p.material_page_context(0, 0.0, "caption", &mut Budget::default())
+                .unwrap()
+                .unwrap()
+                .fields
+        );
+
+        let mut feedback = body;
+        feedback["scene"]["value"]["requiredCapabilities"]
+            .as_array_mut()
+            .unwrap()
+            .push(serde_json::json!("caption-feedback/1"));
+        feedback["scene"]["value"]["materials"] = serde_json::json!([{"kind":"feedback","id":"trail","samples":2,"step":{"ticks":150,"timescale":1000},"decay":0.6,"offset":[1,0]}]);
+        let mut reused = plan(feedback.clone(), vec![cue("first", 0.0, 4.0)]);
+        for time in [0.28, 3.1, 1.5, 0.28] {
+            let frame = reused.render(time).unwrap();
+            let fresh = plan(feedback.clone(), vec![cue("first", 0.0, 4.0)])
+                .render(time)
+                .unwrap();
+            assert_eq!(frame.rgba, fresh.rgba);
+            assert_eq!(frame.fingerprint, fresh.fingerprint);
+        }
+    }
 }
 
 #[cfg(test)]

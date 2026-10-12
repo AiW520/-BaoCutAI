@@ -7,6 +7,7 @@ pub const CAPABILITIES: &[&str] = &[
     "caption-text-context/1",
     "caption-ink-context/1",
     "caption-glyph-envelope/1",
+    "caption-page-envelope/1",
     "caption-unit-context/1",
     "caption-cue-word-context/1",
     "caption-first-page-context/1",
@@ -1032,7 +1033,10 @@ fn validate_font_size_dependencies(value: &DynamicValue, scene: &Scene) -> Resul
                     || path.starts_with("canvas.")
                     || path.starts_with("time.")
                     || path.starts_with("unit."))
-                    || matches!(path.as_str(), "unit.lineEnvelopeAvailable" | "unit.rangeInkAvailable")
+                    || matches!(
+                        path.as_str(),
+                        "unit.lineEnvelopeAvailable" | "unit.rangeInkAvailable" | "unit.pageEnvelopeAvailable" | "unit.pageLineCount"
+                    )
                 {
                     return Err(Diagnostic::new(
                         "CAPTION_DEPENDENCY_CYCLE",

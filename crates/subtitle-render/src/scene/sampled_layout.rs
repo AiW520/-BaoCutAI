@@ -203,7 +203,7 @@ pub(super) fn reflow(
             height: fs * style.line_height,
         };
         let baseline = ly + shape.ascent;
-        lines.push(Line::new(text, bytes, shape, bounds, baseline));
+        lines.push(Line::new(text, bytes, shape, bounds, baseline, fs));
     }
     Ok(Page {
         source_range: range,

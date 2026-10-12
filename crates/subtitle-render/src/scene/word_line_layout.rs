@@ -137,7 +137,7 @@ fn shape_page(
             height: row_height,
         };
         let baseline = ly + shape.ascent;
-        lines.push(Line::new(text, bytes, shape, bounds, baseline));
+        lines.push(Line::new(text, bytes, shape, bounds, baseline, fs));
     }
     Ok(lines)
 }
@@ -553,6 +553,7 @@ mod tests {
                     height: 40.0,
                 },
                 50.0,
+                32.0,
             );
             // The shaper positions are f32 (e.g. -1.9e-6 at the visual left
             // edge); allow subpixel rounding, not a different caret edge.
@@ -592,6 +593,7 @@ mod tests {
                     height: 40.0,
                 },
                 50.0,
+                32.0,
             );
             let a = whitespace_bounds(&line, &(start..start + 1));
             let b = whitespace_bounds(&line, &(start + 1..start + 2));

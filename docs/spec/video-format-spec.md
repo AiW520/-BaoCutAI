@@ -1827,7 +1827,7 @@ interface CaptionStyleBody {
 | 表达式 | 带类型 literal/read/call/if；scalar/integer/length/time/angle/bool/color；无环纯函数，时间/单元/基础布局/参数只读；共享数学曲线、连续 sin/cos、带 seed 的 random/noise；if 惰性求值，非法运算返回诊断 |
 | 合成 | replace/add/multiply 与 priority/声明顺序；颜色只允许 replace；乘法通道为无量纲数；父子变换及离屏组 opacity 通过共同 DrawOp 光栅执行 |
 
-`requiredCapabilities` 当前可声明 `caption-scene/1`、`caption-expressions/1`、`caption-permutation/1`、`caption-function-dag/1`、`caption-unit-animation/1`、`caption-image-png/1`、`caption-paint-stack/1`、`caption-blur/1`、`caption-feedback/1`、`caption-wave-displace/1`、`caption-soft-band/1`、`caption-noise-palette-mix/1`、`caption-gaussian-axis/1`、`caption-glow-cascade/1`、`caption-glow-tint/1`、`caption-glow-color-matrix/1`、`caption-layout-per-sample/1`、`caption-unit-font-size/1`、`caption-word-line-layout/1`、`caption-text-line-layout/1`、`caption-scalar-cluster-layout/1`、`caption-bezier-expression/1`、`caption-text-context/1`、`caption-ink-context/1`、`caption-glyph-envelope/1`、`caption-unit-context/1`、`caption-cue-word-context/1`、`caption-first-page-context/1` 和 `caption-cue-unit-context/1`。未知能力、属性或字段拒绝；artifact 形式的场景引用、非 PNG 图片、任意 shader、无限递归反馈、节点级材质栈及改变分页成员的时间布局尚未开放，不能保存为成功后在渲染中忽略。完整扩展方向仍按[设计文档](../design/subtitle/dynamic-caption-format-design.md)维护。
+`requiredCapabilities` 当前可声明 `caption-scene/1`、`caption-expressions/1`、`caption-permutation/1`、`caption-function-dag/1`、`caption-unit-animation/1`、`caption-image-png/1`、`caption-paint-stack/1`、`caption-blur/1`、`caption-feedback/1`、`caption-wave-displace/1`、`caption-soft-band/1`、`caption-noise-palette-mix/1`、`caption-gaussian-axis/1`、`caption-glow-cascade/1`、`caption-glow-tint/1`、`caption-glow-color-matrix/1`、`caption-layout-per-sample/1`、`caption-unit-font-size/1`、`caption-word-line-layout/1`、`caption-text-line-layout/1`、`caption-scalar-cluster-layout/1`、`caption-bezier-expression/1`、`caption-text-context/1`、`caption-ink-context/1`、`caption-glyph-envelope/1`、`caption-page-envelope/1`、`caption-unit-context/1`、`caption-cue-word-context/1`、`caption-first-page-context/1` 和 `caption-cue-unit-context/1`。未知能力、属性或字段拒绝；artifact 形式的场景引用、非 PNG 图片、任意 shader、无限递归反馈、节点级材质栈及改变分页成员的时间布局尚未开放，不能保存为成功后在渲染中忽略。完整扩展方向仍按[设计文档](../design/subtitle/dynamic-caption-format-design.md)维护。
 
 显式 `maxUnitsPerPage` 按词配额人为切页时，第 2 个及后续词块开头若只有水平 Unicode 空白组成的词间分隔 run，该 run 不参与显示排版；空格、tab、NBSP、Unicode 空格均适用。若 run 含 CR/LF、VT/FF、NEL、LS 或 PS，则整段保留，不吞显式换行及其缩进。原始 cue 开头的缩进、默认按宽度换行均不变。源文本/页范围/字素索引保留分隔字节，空白装饰定位新页逻辑行首；逐采样重排使用冻结的显示起点，不恢复已隐藏的分隔空白。
 
@@ -1896,6 +1896,14 @@ line 的 active/read/unread 状态按该行词成员求值：当前选中的活�
 - `unit.lineEnvelopeAvailable/rangeInkAvailable`（bool）分别表示行绑定和范围内墨迹是否存在。Line/Word/Grapheme 使用其所属行，跨行词按当前行碎片计算；空白等无墨迹范围返回水平 0/0、rangeInkAvailable=false，但仍具有所属行的垂直包络。Cue/Page 没有唯一行绑定，四个数值为 0、两个标记均为 false，即使当前恰好只显示一行也不隐式绑定。合字归属于 cluster 起点所在单元，后续单元不能借用同一字形。
 
 repeat 装饰继承绑定单元的包络；逐采样排版与反馈历史在各自时刻重新从同一排版结果构建字段。只有声明能力的场景执行附加的每行字形排序/单元查询，并按字形与单元计入操作预算；未声明场景保持原记录和像素路径。当前矢量墨迹来自 tight Bézier bounds，彩色字形来自非零 alpha 像素框；字体度量沿用共享排版器的取值规则。这是明确的内部几何合同，不承诺与其他字体 API、字体表原始 bbox 或不同 ligature/RTL 切分结果相同。示例见 [glyph-envelope.json](../../crates/caption-scene/tests/fixtures/glyph-envelope.json)。
+
+`caption-page-envelope/1` 显式开放当前页的布局后度量，供材质和普通单元表达式共享；未声明时读取返回 `CAPTION_CAPABILITY_UNAVAILABLE`：
+
+- `layout.pageEnvelopeY/pageEnvelopeHeight`（length）：将当前页每行的字体与未涂装字形垂直包络求并集。每行公式与 lineEnvelope 相同；包含行基线之间的实际距离，但不加入第一行上方/末行下方的 lineHeight 余量，不包含涂装、节点/动画变换。它不是 page ink union，也不覆盖现有 `layout.height`。
+- `layout.pageMaxFontSize`（length）：当前页实际求值后的最大字号；普通排版取 resolved fontSize，逐单元字号布局取与各行源字节范围相交的已覆盖 size runs 的最大值。空格、空白行以及规范化时不绘制的源空白仍保留其有效字号；不能从可见 glyph 的 cache key 推断，也不能退回旧 base fontSize。记录该字段不改变已有行高计算。
+- `unit.pageLineCount`（scalar）是当前页实际排版行数；`unit.pageEnvelopeAvailable`（bool）表示存在当前页行度量。有占行的空白行使用实际字体 ascent/descent，标记 true；若规范化空串的缓存 shape 尚无字体度量，则用该行实际字号、family/weight/italic 测量空格，以该行 bounds.y 为字体框顶部，仅补充本能力的包络，不修改原 baseline/ink。没有页/行绑定时三个 length 与 count 均为 0，标记 false。
+
+Cue/Page/Line/Word/Grapheme 及 repeat 绑定单元均继承同一份当前页结果；它与所选词/字是否有墨迹无关。绑定唯一 Text 的材质页上下文同样可读，不通过猜测唯一行来改写旧 lineEnvelope 的不可用合同。逐采样排版、字号重排、反馈历史采样各自在该时刻重新构建结果；每页计算一次、单元共享，新增工作按行与单元计入预算，字号区间查询另按访问的 run 计费。布局和字号求值前禁止直接或通过函数读取这些字段（包括 count/available），避免循环依赖。省略能力不增加该度量查询工作，也不改变旧场景像素。示例见 [page-envelope.json](../../crates/caption-scene/tests/fixtures/page-envelope.json)。
 
 **逐采样布局**。`layout.bindings` 是最多 64 项的 `{ nodeId?, property, value: DynamicValue }` 数组。同一目标/属性不能重复。无 nodeId 的目标是场景的 width/x/y（length）；指定文字节点时可改 fontSize（length）、letterSpacing（scalar，em）与 lineHeight（scalar）。只有 `per-sample` 模式接受 bindings。静态字段先确定基础页成员、源文本字节区间及显示起止时间；每次采样只重新布局当前页，不将溢出文字移到新页。`overflow: 'error' | 'visible'` 默认 error：超过 maxLines 或单个字形仍超宽则报 `CAPTION_LAYOUT_OVERFLOW`；visible 保留所有页成员并允许更多行，最终仍按画布裁剪。
 

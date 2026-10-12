@@ -4,6 +4,7 @@ mod cue_unit_context;
 mod glyph_envelope;
 mod materials;
 mod noise_palette;
+mod page_envelope;
 mod sampled_layout;
 mod scalar_cluster;
 mod text_line_layout;
@@ -61,6 +62,7 @@ struct Line {
     shape: ShapedLine,
     bounds: Bounds,
     baseline: f64,
+    max_font_size: f64,
     glyph_ink: Vec<Option<Bounds>>,
     ink_bounds: Bounds,
 }
@@ -71,6 +73,7 @@ impl Line {
         shape: ShapedLine,
         bounds: Bounds,
         baseline: f64,
+        max_font_size: f64,
     ) -> Self {
         let glyph_ink = shape
             .glyphs
@@ -99,6 +102,7 @@ impl Line {
             shape,
             bounds,
             baseline,
+            max_font_size,
             glyph_ink,
             ink_bounds,
         }
@@ -182,6 +186,7 @@ fn page_word_input(layout: &TextLayout, page: Option<&Page>) -> PageWordInput {
 #[derive(Clone)]
 struct Unit {
     envelope: Option<Arc<glyph_envelope::Metrics>>,
+    page_envelope: Option<Arc<page_envelope::Metrics>>,
     word_position: Option<usize>,
     line_position: Option<usize>,
     cue_bindings: Option<Arc<cue_unit_context::CueBindings>>,
@@ -576,6 +581,17 @@ fn resolved_units(
                 &scene.speech_state,
                 presentation,
             );
+            if page_envelope::enabled(scene) {
+                let node =
+                    sampled_layout::find_text(&scene.nodes, id).expect("validated text node");
+                page_envelope::bind(
+                    &mut resolved_units,
+                    &resolved.pages[pi],
+                    text,
+                    &node.style,
+                    budget,
+                )?;
+            }
             if glyph_envelope::enabled(scene) {
                 glyph_envelope::bind(&mut resolved_units, &resolved.pages[pi], budget)?;
             }
@@ -781,7 +797,7 @@ fn prepare(
                     width: sh.width,
                     height: fs * style.line_height,
                 };
-                lines.push(Line::new(text, bytes, sh, bounds, baseline));
+                lines.push(Line::new(text, bytes, sh, bounds, baseline, fs));
             }
             let Some(first) = lines.first() else { continue };
             let Some(last) = lines.last() else { continue };
@@ -943,6 +959,7 @@ fn units_for(
     let cue_second_word_start = input_words.next().map(|word| word.start);
     let base = Unit {
         envelope: None,
+        page_envelope: None,
         word_position: None,
         line_position: None,
         cue_bindings: None,
@@ -1439,6 +1456,9 @@ fn context(u: &Unit, r: &RenderContext) -> Context {
         seed: r.seed,
         stable_key: format!("{}|{}|{}", r.instance, r.cue.id, u.id),
     };
+    if page_envelope::enabled(r.scene) {
+        page_envelope::add_fields(&mut out, u);
+    }
     if glyph_envelope::enabled(r.scene) {
         glyph_envelope::add_fields(&mut out, u);
     }
@@ -2051,6 +2071,7 @@ mod ink_tests {
                 height: 100.0,
             },
             35.0,
+            20.0,
         );
         assert_eq!(
             (

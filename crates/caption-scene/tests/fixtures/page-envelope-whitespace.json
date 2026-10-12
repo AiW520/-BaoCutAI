@@ -1,0 +1,229 @@
+{
+  "schema": "baocut.caption-scene-style/1",
+  "scene": {
+    "kind": "inline",
+    "value": {
+      "schema": "baocut.caption-scene/1",
+      "evaluationVersion": 1,
+      "requiredCapabilities": [
+        "caption-unit-font-size/1",
+        "caption-word-line-layout/1",
+        "caption-glyph-envelope/1",
+        "caption-page-envelope/1"
+      ],
+      "parameters": [],
+      "layout": {
+        "width": {
+          "value": 140,
+          "basis": "absolute"
+        },
+        "x": {
+          "value": 80,
+          "basis": "absolute"
+        },
+        "y": {
+          "value": 45,
+          "basis": "absolute"
+        },
+        "maxLines": 2,
+        "pagination": {
+          "unit": "word",
+          "wordLinePattern": [
+            [
+              1
+            ]
+          ]
+        },
+        "layoutEvaluation": "per-sample",
+        "overflow": "visible",
+        "fontSizeBindings": [
+          {
+            "id": "blank-font",
+            "nodeId": "caption",
+            "selectorId": "pages",
+            "value": {
+              "kind": "constant",
+              "value": 48
+            }
+          }
+        ]
+      },
+      "speechState": {
+        "gapPolicy": "hold-previous",
+        "tailPolicy": "hold-last",
+        "timingPolicy": "estimated"
+      },
+      "nodes": [
+        {
+          "id": "caption",
+          "type": "text",
+          "style": {
+            "fontSize": {
+              "value": 12,
+              "basis": "absolute"
+            },
+            "lineHeight": 1.3
+          },
+          "text": {
+            "source": "static",
+            "text": " "
+          }
+        },
+        {
+          "id": "envelopes",
+          "type": "repeat",
+          "selectorId": "pages",
+          "zIndex": 0,
+          "children": [
+            {
+              "id": "panel",
+              "type": "shape",
+              "properties": {
+                "width": {
+                  "kind": "expression",
+                  "expression": {
+                    "op": "call",
+                    "function": "add",
+                    "args": [
+                      {
+                        "op": "read",
+                        "path": "layout.width"
+                      },
+                      {
+                        "op": "read",
+                        "path": "layout.pageMaxFontSize"
+                      }
+                    ]
+                  }
+                },
+                "height": {
+                  "kind": "expression",
+                  "expression": {
+                    "op": "read",
+                    "path": "layout.pageEnvelopeHeight"
+                  }
+                },
+                "transform.x": {
+                  "kind": "expression",
+                  "expression": {
+                    "op": "call",
+                    "function": "mul",
+                    "args": [
+                      {
+                        "op": "read",
+                        "path": "layout.pageMaxFontSize"
+                      },
+                      {
+                        "op": "literal",
+                        "type": "scalar",
+                        "value": -0.5
+                      }
+                    ]
+                  }
+                },
+                "transform.y": {
+                  "kind": "expression",
+                  "expression": {
+                    "op": "call",
+                    "function": "sub",
+                    "args": [
+                      {
+                        "op": "read",
+                        "path": "layout.pageEnvelopeY"
+                      },
+                      {
+                        "op": "read",
+                        "path": "layout.y"
+                      }
+                    ]
+                  }
+                },
+                "fill": {
+                  "kind": "expression",
+                  "expression": {
+                    "op": "if",
+                    "condition": {
+                      "op": "call",
+                      "function": "gt",
+                      "args": [
+                        {
+                          "op": "read",
+                          "path": "unit.pageLineCount"
+                        },
+                        {
+                          "op": "literal",
+                          "type": "scalar",
+                          "value": 1
+                        }
+                      ]
+                    },
+                    "then": {
+                      "op": "literal",
+                      "type": "color",
+                      "value": "#3355DD80"
+                    },
+                    "else": {
+                      "op": "literal",
+                      "type": "color",
+                      "value": "#DDAA3380"
+                    }
+                  }
+                },
+                "radius": {
+                  "kind": "constant",
+                  "value": 2
+                },
+                "opacity": {
+                  "kind": "expression",
+                  "expression": {
+                    "op": "if",
+                    "condition": {
+                      "op": "read",
+                      "path": "unit.pageEnvelopeAvailable"
+                    },
+                    "then": {
+                      "op": "literal",
+                      "type": "scalar",
+                      "value": 1
+                    },
+                    "else": {
+                      "op": "literal",
+                      "type": "scalar",
+                      "value": 0
+                    }
+                  }
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "selectors": [
+        {
+          "id": "pages",
+          "nodeId": "caption",
+          "unit": "page"
+        },
+        {
+          "id": "second-line",
+          "nodeId": "caption",
+          "unit": "line",
+          "filter": {
+            "kind": "parity",
+            "odd": true
+          }
+        },
+        {
+          "id": "active-word",
+          "nodeId": "caption",
+          "unit": "word",
+          "filter": {
+            "kind": "state",
+            "value": "active"
+          }
+        }
+      ],
+      "animations": []
+    }
+  }
+}
