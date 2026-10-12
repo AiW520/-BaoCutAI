@@ -44,7 +44,7 @@ async function facts(file) {
   return { file: path.basename(file), size: statSync(file).size, sha256: hash.digest('hex') };
 }
 
-export async function distributeMac({ app, output, stem, version, build, appId, signingSha1, profile, keychain, executables, entitlements }) {
+export async function distributeMac({ app, output, stem, version, build, appId, signingSha1, profile, keychain, executables, entitlements, local = false }) {
   const { signAsync } = await import('@electron/osx-sign');
   for (const binary of executables) {
     for (const line of runMac('otool', ['-L', binary]).split('\n').slice(1)) {
@@ -55,7 +55,7 @@ export async function distributeMac({ app, output, stem, version, build, appId, 
     }
   }
   await signAsync({
-    app, platform: 'darwin', identity: signingSha1, identityValidation: false,
+    app, platform: 'darwin', identity: local ? '-' : signingSha1, identityValidation: false,
     ...(keychain ? { keychain } : {}),
     preAutoEntitlements: false, preEmbedProvisioningProfile: false,
     ignore: [(file) => {
@@ -69,8 +69,9 @@ export async function distributeMac({ app, output, stem, version, build, appId, 
           0xcafebabe, 0xbebafeca, 0xcafebabf, 0xbfbafeca].includes(magic.readUInt32BE());
       } finally { closeSync(fd); }
     }],
-    optionsForFile: () => ({ entitlements, hardenedRuntime: true }),
+    optionsForFile: () => ({ entitlements, hardenedRuntime: !local, ...(local ? { timestamp: 'none' } : {}) }),
   });
+  if (local) return archiveLocalMac({ app, output, stem, version, build, appId });
   const expected = { appId, version, build, signingSha1, output };
   writeFileSync(path.join(output, 'app-signature.txt'), verifyMacIdentity(app, expected));
   const submission = path.join(output, 'notary-submission.zip');
@@ -114,4 +115,34 @@ export async function distributeMac({ app, output, stem, version, build, appId, 
   for (const item of [portable, installer]) writeFileSync(path.join(output, `${item.file}.sha256`), `${item.sha256}  ${item.file}\n`);
   return { portable, installer, notarySubmissionId: notary.id, dmgNotarySubmissionId: dmgNotary.id,
     notarized: true, unsigned: false, signingSha1, verifiedApp };
+}
+
+// Local-only artifacts carry ad-hoc signatures and no update feed or notarization claims.
+export async function archiveLocalMac({ app, output, stem, version, build, appId }, run = runMac) {
+  const verify = (candidate) => {
+    const info = JSON.parse(run('plutil', ['-convert', 'json', '-o', '-', path.join(candidate, 'Contents/Info.plist')]));
+    if (info.CFBundleIdentifier !== appId || info.CFBundleShortVersionString !== version || String(info.CFBundleVersion) !== String(build)) {
+      throw new Error('Local App bundle ID, version or build differs from the package');
+    }
+    run('codesign', ['--verify', '--deep', '--strict', candidate]);
+  };
+  verify(app);
+  const zip = path.join(output, `${stem}.zip`);
+  run('ditto', ['-c', '-k', '--sequesterRsrc', '--keepParent', app, zip]);
+  const extracted = path.join(output, 'verified-extraction');
+  mkdirSync(extracted);
+  run('ditto', ['-x', '-k', zip, extracted]);
+  const verifiedApp = path.join(extracted, 'BaoCut.app');
+  verify(verifiedApp);
+  const dmgRoot = path.join(output, 'dmg-root');
+  mkdirSync(dmgRoot);
+  run('ditto', [verifiedApp, path.join(dmgRoot, 'BaoCut.app')]);
+  run('ln', ['-s', '/Applications', path.join(dmgRoot, 'Applications')]);
+  const dmg = path.join(output, `${stem}.dmg`);
+  run('hdiutil', ['create', '-volname', `BaoCut ${version}`, '-srcfolder', dmgRoot, '-format', 'ULFO', dmg]);
+  run('hdiutil', ['verify', dmg]);
+  const portable = { format: 'zip', ...await facts(zip) };
+  const installer = { format: 'dmg', ...await facts(dmg) };
+  for (const item of [portable, installer]) writeFileSync(path.join(output, `${item.file}.sha256`), `${item.sha256}  ${item.file}\n`);
+  return { portable, installer, local: true, notarized: false, unsigned: true, signature: 'ad-hoc', verifiedApp };
 }

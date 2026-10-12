@@ -96,6 +96,7 @@ export interface LocalProviderOptions {
   log?: JobsLogger;
   idleMs?: number;
   cancelGraceMs?: number;
+  /** Intel Mac 的首次 Metal 内核编译可能超过 5 秒；默认等 60 秒，其他平台等 5 秒。 */
   helloTimeoutMs?: number;
   closeGraceMs?: number;
   crashLimit?: number;
@@ -199,7 +200,7 @@ export class LocalTranscribeProvider implements TranscribeProvider {
     this.#log = options.log ?? silentLog;
     this.#idleMs = options.idleMs ?? 10 * 60_000;
     this.#cancelGraceMs = options.cancelGraceMs ?? 5_000;
-    this.#helloTimeoutMs = options.helloTimeoutMs ?? 5_000;
+    this.#helloTimeoutMs = options.helloTimeoutMs ?? (process.platform === 'darwin' && process.arch === 'x64' ? 60_000 : 5_000);
     this.#closeGraceMs = options.closeGraceMs ?? 5_000;
     this.#crashLimit = options.crashLimit ?? 3;
     this.#crashWindowMs = options.crashWindowMs ?? 5 * 60_000;

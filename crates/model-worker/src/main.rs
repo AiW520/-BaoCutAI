@@ -23,6 +23,8 @@ fn main() {
         }
     };
 
+    configure_intel_metal();
+
     let output = Output::stdout();
     let watchdog_output = output.clone();
     let watchdog = watchdog::spawn(parent_pid, move || {
@@ -66,6 +68,35 @@ fn main() {
         }
     }
 }
+
+/// The pinned ggml concurrent dispatch path can produce corrupt results on discrete
+/// AMD GPUs. Re-exec before starting threads to set its supported compatibility
+/// switch without mutating the environment of a multithreaded process.
+#[cfg(all(feature = "whisper-ggml-metal", target_os = "macos", target_arch = "x86_64"))]
+fn configure_intel_metal() {
+    use std::os::unix::process::CommandExt;
+
+    const SWITCH: &str = "GGML_METAL_CONCURRENCY_DISABLE";
+    if std::env::var_os(SWITCH).is_some() {
+        return;
+    }
+    let executable = match std::env::current_exe() {
+        Ok(path) => path,
+        Err(error) => {
+            eprintln!("model-worker: cannot locate executable for Metal configuration: {error}");
+            std::process::exit(1);
+        }
+    };
+    let error = std::process::Command::new(executable)
+        .args(std::env::args_os().skip(1))
+        .env(SWITCH, "1")
+        .exec();
+    eprintln!("model-worker: cannot apply Intel Metal configuration: {error}");
+    std::process::exit(1);
+}
+
+#[cfg(not(all(feature = "whisper-ggml-metal", target_os = "macos", target_arch = "x86_64")))]
+fn configure_intel_metal() {}
 
 fn parse_parent_pid(mut args: impl Iterator<Item = String>) -> Result<u32, String> {
     let mut parent_pid = None;

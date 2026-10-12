@@ -13,6 +13,7 @@
  * - `hang-on-cancel`：收到 `job.cancel` 照常确认，但任务再也不返回（Runtime 要在期限后结束进程）；
  * - `slow`：20 段，每 300 ms 一段；
  * - `slow-load`：`model.load` 要 1 秒；
+ * - 控制文件 `helloDelayMs`：延迟握手回应，模拟首次 GPU 内核编译；
  * - `invalid-output`：第二段的 start 早于第一段的 end（违反单调）；
  * - `load-fail:<code>`：`model.load` 返回这个错误码；
  * - `run-error:<code>`：`job.run` 返回这个错误码（`WORKER_PANIC` 之后进程退出，与规范一致）；
@@ -62,6 +63,7 @@ interface Request {
 }
 
 interface Control {
+  helloDelayMs?: number;
   faults?: string[];
   transcript?: string;
   capabilities?: string[];
@@ -156,6 +158,7 @@ async function handle(request: Request): Promise<void> {
   switch (method) {
     case 'worker.hello':
       if (params.contractVersion !== 1) return fail(id, 'CONTRACT_MISMATCH', '合同版本不符');
+      if (control().helloDelayMs) await sleep(control().helloDelayMs!);
       return respond(id, {
         workerVersion: WORKER_VERSION,
         contractVersion: 1,

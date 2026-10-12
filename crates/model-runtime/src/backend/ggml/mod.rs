@@ -5,7 +5,8 @@
 //! `whisper-ggml-cuda` 编 CUDA 后端（NVIDIA，构建要 CUDA Toolkit），
 //! `whisper-ggml-vulkan` 编 Vulkan 后端（AMD / Intel / NVIDIA 显卡与核显，运行期
 //! 只依赖显卡驱动自带的 Vulkan 运行时）。两个可以同时编进来。CUDA 与 Vulkan 都还
-//! 没有在实机上跑过（未实测）。
+//! 没有在实机上跑过（未实测）。`whisper-ggml-metal` 编 macOS Metal 后端，已用 AMD Radeon Pro 5500M
+//! 与 Whisper large-v3 Turbo q8_0 实测；Intel Worker 禁用 ggml 的并发 Metal 调度以避免独显上的计算错误。
 //!
 //! 设备选择只有一条规则：`BAOCUT_GPU=off` 强制 CPU；否则取 ggml 枚举到的第一
 //! 个 GPU 设备（与 whisper.cpp 的 `gpu_device = 0` 是同一台），没有就 CPU 并打印
@@ -16,7 +17,7 @@
 //!
 //! v3 的边界：模型包的 `asr` 组件（family `whisper-ggml`）列出一个 `.bin`（单文件 GGML 权重，词表内嵌，没有 `tokenizer`
 //! 组件）；切段的 Silero VAD 与可选的强制对齐器是 candle 的（[`super::candle`]），所以 `whisper-ggml` 连带 `backend-candle`。
-//! `worker.hello` 报 `devices`：用得上 GPU 时 `[<所选 GPU 的设备名>, "cpu"]`（`cuda` 或 `vulkan`，见
+//! `worker.hello` 报 `devices`：用得上 GPU 时 `[<所选 GPU 的设备名>, "cpu"]`（`cuda`、`vulkan` 或 `metal`，见
 //! [`GgmlDevice::protocol_label`]），否则 `["cpu"]`；模型包的 `device` 是 `cpu` 时一律跑 CPU。
 
 pub mod whisper;
@@ -40,6 +41,7 @@ pub use crate::gpu_env::{GPU_ENV, gpu_disabled_by_env};
 pub const DEVICE_CPU: &str = "cpu";
 pub const DEVICE_CUDA: &str = "cuda";
 pub const DEVICE_VULKAN: &str = "vulkan";
+pub const DEVICE_METAL: &str = "metal";
 
 /// ggml 看到的一个计算设备。
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -67,7 +69,7 @@ impl GgmlDevice {
     }
 
     /// 协议的设备标签，按后端注册名映射：`CUDA` 是 `cuda`，`Vulkan` 是 `vulkan`；别的 GPU 后端（HIP 构建注册为 `ROCm`、
-    /// SYCL、Metal 等，BaoCut 的构建都不编）取小写的注册名；不是 GPU 的（CPU，以及 macOS 上类型为加速器的 BLAS）一律 `cpu`。
+    /// SYCL 等，BaoCut 的构建都不编）取小写的注册名；不是 GPU 的（CPU，以及 macOS 上类型为加速器的 BLAS）一律 `cpu`。
     pub fn protocol_label(&self) -> String {
         if !self.is_gpu {
             return DEVICE_CPU.to_owned();
@@ -75,6 +77,7 @@ impl GgmlDevice {
         match self.backend.as_str() {
             "CUDA" => DEVICE_CUDA.to_owned(),
             "Vulkan" => DEVICE_VULKAN.to_owned(),
+            "Metal" => DEVICE_METAL.to_owned(),
             other => other.to_ascii_lowercase(),
         }
     }
@@ -158,6 +161,8 @@ pub fn gpu_backends_built() -> &'static [&'static str] {
         DEVICE_CUDA,
         #[cfg(feature = "whisper-ggml-vulkan")]
         DEVICE_VULKAN,
+        #[cfg(all(feature = "whisper-ggml-metal", target_os = "macos"))]
+        DEVICE_METAL,
     ];
     BUILT
 }
@@ -165,7 +170,10 @@ pub fn gpu_backends_built() -> &'static [&'static str] {
 /// 本次运行 Whisper 会用的设备。编进了 GPU 后端（CUDA 或 Vulkan）却没枚举到 GPU 时打印一次告警，点名编进来的后端。
 pub fn default_device() -> GgmlDevice {
     let disabled = gpu_disabled_by_env();
-    let device = choose_device(&devices(), disabled);
+    if disabled {
+        return GgmlDevice::cpu_fallback();
+    }
+    let device = choose_device(&devices(), false);
     let built = gpu_backends_built();
     if !built.is_empty() && !device.is_gpu && !disabled {
         static WARNED: Once = Once::new();
@@ -181,6 +189,7 @@ fn no_gpu_warning(built: &[&str]) -> String {
         .map(|backend| match *backend {
             DEVICE_CUDA => ("CUDA", "CUDA: no NVIDIA GPU or driver was found"),
             DEVICE_VULKAN => ("Vulkan", "Vulkan: the driver has no Vulkan runtime or no device was enumerated"),
+            DEVICE_METAL => ("Metal", "Metal: no compatible GPU was enumerated"),
             other => (other, other),
         })
         .unzip();
@@ -219,12 +228,13 @@ pub fn runtime_probe() -> WhisperRuntime {
     }
 }
 
-/// 编译期后端标识（不做任何枚举）：`ggml-cuda+vulkan`、`ggml-cuda`、`ggml-vulkan` 或 `ggml-cpu`。
+/// 编译期后端标识（不做任何枚举）：`ggml-cuda+vulkan`、`ggml-cuda`、`ggml-vulkan`、`ggml-metal` 或 `ggml-cpu`。
 pub const fn built_backend() -> &'static str {
     match (cfg!(feature = "whisper-ggml-cuda"), cfg!(feature = "whisper-ggml-vulkan")) {
         (true, true) => "ggml-cuda+vulkan",
         (true, false) => "ggml-cuda",
         (false, true) => "ggml-vulkan",
+        (false, false) if cfg!(all(feature = "whisper-ggml-metal", target_os = "macos")) => "ggml-metal",
         (false, false) => "ggml-cpu",
     }
 }
@@ -293,7 +303,7 @@ impl Backend for GgmlBackend {
     }
 }
 
-/// 模型包的设备：`cpu` 总能跑（不碰 GPU）；`cuda` / `vulkan` 要求本进程选中的 GPU（`worker.hello` 报的首选设备）正是它——
+/// 模型包的设备：`cpu` 总能跑（不碰 GPU）；`cuda` / `vulkan` / `metal` 要求本进程选中的 GPU（`worker.hello` 报的首选设备）正是它——
 /// 编进了对应的后端、枚举到了设备、`BAOCUT_GPU` 没关。同时编进 CUDA 与 Vulkan、选中 CUDA 的进程同样不收 `vulkan`。
 fn check_device(bundle: &VerifiedBundle) -> Result<GgmlDevice, ErrorBody> {
     let unsupported = |message: String| {
@@ -301,8 +311,8 @@ fn check_device(bundle: &VerifiedBundle) -> Result<GgmlDevice, ErrorBody> {
             .with_details(json!({ "backend": "ggml", "device": bundle.device, "reason": "unsupported-device" }))
     };
     match bundle.device.as_str() {
-        DEVICE_CPU => Ok(choose_device(&devices(), true)),
-        requested @ (DEVICE_CUDA | DEVICE_VULKAN) => {
+        DEVICE_CPU => Ok(GgmlDevice::cpu_fallback()),
+        requested @ (DEVICE_CUDA | DEVICE_VULKAN | DEVICE_METAL) => {
             let device = default_device();
             let label = device.protocol_label();
             if device.is_gpu && label == requested {
@@ -426,6 +436,7 @@ mod tests {
     /// 协议标签只看是不是 GPU 与后端注册名：别的 GPU 后端取小写注册名；不是 GPU 的设备（含 BLAS 这类加速器）都是 `cpu`。
     #[test]
     fn protocol_label_maps_backend_names() {
+        assert_eq!(gpu("Metal", "AMD Radeon Pro 5500M").protocol_label(), DEVICE_METAL);
         assert_eq!(gpu("ROCm", "AMD Radeon").protocol_label(), "rocm");
         assert_eq!(gpu("SYCL", "Intel Arc").protocol_label(), "sycl");
         let blas = GgmlDevice {
@@ -445,14 +456,22 @@ mod tests {
         let vulkan = no_gpu_warning(&[DEVICE_VULKAN]);
         assert!(vulkan.contains("no Vulkan GPU"), "{vulkan}");
         assert!(!vulkan.contains("CUDA"), "{vulkan}");
+        let metal = no_gpu_warning(&[DEVICE_METAL]);
+        assert!(metal.contains("no Metal GPU"), "{metal}");
     }
 
     #[test]
     fn built_backends_follow_the_features() {
         assert_eq!(gpu_backends_built().contains(&DEVICE_CUDA), cfg!(feature = "whisper-ggml-cuda"));
         assert_eq!(gpu_backends_built().contains(&DEVICE_VULKAN), cfg!(feature = "whisper-ggml-vulkan"));
+        assert_eq!(
+            gpu_backends_built().contains(&DEVICE_METAL),
+            cfg!(all(feature = "whisper-ggml-metal", target_os = "macos"))
+        );
         if gpu_backends_built().is_empty() {
             assert_eq!(built_backend(), "ggml-cpu");
+        } else if gpu_backends_built() == [DEVICE_METAL] {
+            assert_eq!(built_backend(), "ggml-metal");
         }
     }
 

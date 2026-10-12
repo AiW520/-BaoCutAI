@@ -22,6 +22,8 @@ cuda = ["backend-candle", "candle-core?/cuda", "candle-nn?/cuda"]
 whisper-ggml = ["backend-candle", "dep:whisper-rs"]
 # whisper.cpp 的 ggml Vulkan 后端：AMD / Intel / NVIDIA 显卡与核显一次覆盖；构建要 Vulkan SDK（glslc），运行只要显卡驱动带的 vulkan-1。
 whisper-ggml-vulkan = ["whisper-ggml", "whisper-rs?/vulkan"]
+# macOS 的 whisper.cpp Metal 后端，支持 Intel Mac 的 AMD 显卡；Metal 内核由 whisper-rs-sys 内嵌。
+whisper-ggml-metal = ["whisper-ggml", "whisper-rs?/metal"]
 # whisper.cpp 的 ggml CUDA 后端：NVIDIA 上 Whisper 走 CUDA（静态链接 ggml-cuda，运行要 cudart / cublas / cublasLt 与显卡驱动）。
 # 构建要 CUDA Toolkit（nvcc，Windows 上还要 CUDA_PATH），没有 GPU 的构建机要给 CMAKE_CUDA_ARCHITECTURES（打包脚本给）。可与
 # `whisper-ggml-vulkan` 同时开，运行期 CUDA 优先（ggml 先登记 CUDA）。与 candle 的 `cuda` 是两个独立的 feature。未实测。
