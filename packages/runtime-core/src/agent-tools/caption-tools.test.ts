@@ -263,6 +263,28 @@ describe.skipIf(!ready)('建字幕层工具（真实引擎）', () => {
     expect(cards.filter((c) => (c as Loose).label === '建立字幕层')).toHaveLength(4);
   });
 
+  it('改已有的译文：从它生成的字幕层在同一笔里只换改过的句子的字幕条，时间照旧；标了过期的句子去掉字幕条', async () => {
+    const session = await send('auto');
+    const { translationId } = await writeTranslation(session);
+    const layer = await tool(session, 'captions_create', { video: videoPath, documentId: translationId });
+    expect(layer.isError).toBe(false);
+    const captionId = layer.body.documentId as Id;
+    const read = await tool(session, 'documents_read', { video: videoPath, documentId: translationId });
+    const body = read.body.body;
+    body.units[0].naturalText = '您好呀。';
+    body.units[1].status = 'stale';
+    const before = video().revision;
+    const put = await tool(session, 'documents_put', { video: videoPath, document: translationId, label: '改一句译文', body });
+    expect(put.isError).toBe(false);
+    expect(put.body).toMatchObject({ syncedCaptions: 1, revision: { before, after: video().revision } });
+    const cues = (await tool(session, 'documents_read', { video: videoPath, documentId: captionId })).body.body.cues;
+    expect(cues.map((c: Loose) => [c.id, c.text, c.start, c.end])).toEqual([[`q-${body.units[0].id}`, '您好呀。', 0, 1000]]);
+    // 一笔修改：译文与字幕文档的新版本出自同一个事务。
+    const docs = video().documents;
+    const createdBy = (id: Id) => docs[id]!.revisions[docs[id]!.currentRevision]!.createdBy;
+    expect(createdBy(captionId)).toBe(createdBy(translationId));
+  });
+
   it('没有原文字幕层时给译文带 bilingual: true：一次调用两层都建、共用样式，pairedOriginal 标 created；撤销一笔两层一起撤', async () => {
     const session = await send('auto');
     const { translationId } = await writeTranslation(session);

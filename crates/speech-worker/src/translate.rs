@@ -2,7 +2,10 @@
 //!
 //! 编排照 v2 `bcut-engine/src/flows/translate.rs` 的 `translate_cmd_core` 移植，取它的缺省档：不跑全文 analysis、
 //! 译向简报单页且无术语时跳过、融合草稿 `rows`、对齐 `manyToOne` + 块对齐边、密度 `auto`、主对齐一轮修复、黏结收尾轮、
-//! 中文标点自动校正。每次执行都是新的一份译文（§7.9），所以目标语言那一格从空开始（检查点除外）。
+//! 中文标点自动校正。缺省每次执行都是新的一份译文（§7.9），所以目标语言那一格从空开始（检查点除外）。
+//!
+//! 就地刷新（输入带 `translation` 与 `sentences`）：底稿读进目标语言那一格，只重译点名的句子，对齐与黏结收尾也只碰
+//! 这些句子，不跑译向简报；写回时以底稿为准（单元 ID、顺序、审阅状态与扩展字段照旧），`sourceBasis` 换成这次的原文。
 //!
 //! 产出都写在 staging：`translation.json`（`baocut.translation/2` 正文，经 speech-doc-bridge 写出）、`cues.json`（目标语字幕）、
 //! `report.json`（统计与提示）。Worker 不写视频目录，Runtime 校验之后经 VideoEngine 写入。
@@ -58,11 +61,12 @@ pub fn run(input_path: &Path, staging: &Path, control: Rc<RefCell<Control>>) -> 
         duration: input.media.duration.clone(),
         sample_rate: input.media.sample_rate,
     };
+    let base = input.translation.as_slice();
     let mut doc = to_transcript_doc(&V3Documents {
         media: &media,
         language: input.source_language.as_deref(),
         speech: &input.speech,
-        translations: &[],
+        translations: base,
     })
     .map_err(|error| Failure::new("INPUT_UNREADABLE", format!("转写读不进字幕与翻译核心：{error}")))?;
     if primary_subtag(&lang) == primary_subtag(&doc.lang) {
@@ -77,6 +81,15 @@ pub fn run(input_path: &Path, staging: &Path, control: Rc<RefCell<Control>>) -> 
         return Err(Failure::new("INPUT_UNREADABLE", "转写里没有可翻译的句子"));
     }
     let total = sentences.len();
+    // 就地刷新的句子；`None` 是整篇新译。
+    let targets: Option<BTreeSet<String>> = input.sentences.as_ref().map(|ids| ids.iter().cloned().collect());
+    if let Some(targets) = &targets
+        && let Some(unknown) = targets.iter().find(|id| !sentences.iter().any(|sentence| &sentence.id == *id))
+    {
+        return Err(Failure::new("INPUT_UNREADABLE", format!("要重译的句子 {unknown} 不在转写里")));
+    }
+    // 进度的分母：刷新时是要重译的句数，按页报的进度只在整篇新译时有意义。
+    let goal = targets.as_ref().map_or(total, BTreeSet::len);
 
     let instructions = input.params.instructions.clone().filter(|value| !value.trim().is_empty());
     let checkpoints = Checkpoints::new(staging, checkpoint_key(&doc, &input, instructions.as_deref()));
@@ -87,7 +100,7 @@ pub fn run(input_path: &Path, staging: &Path, control: Rc<RefCell<Control>>) -> 
     if let Some((phase, translated)) = resumed_from {
         event(
             "resumed",
-            json!({ "phase": phase, "translatedSentences": translated, "totalSentences": total }),
+            json!({ "phase": phase, "translatedSentences": translated, "totalSentences": goal }),
         );
     }
 
@@ -101,9 +114,10 @@ pub fn run(input_path: &Path, staging: &Path, control: Rc<RefCell<Control>>) -> 
 
     // 译向简报：只在第一次定下，续跑沿用检查点里的。
     if checkpoint.phase == Phase::Brief {
-        progress("brief", 0, total);
+        progress("brief", 0, goal);
         let seed = glossary_context(&doc, &input, &lang);
-        let skip = brief_skippable_for_single_page(&sentences, translate_budget);
+        // 刷新几句不值得为整篇再做一次简报：术语照用，语境靠送翻页里冻结的相邻译句。
+        let skip = targets.is_some() || brief_skippable_for_single_page(&sentences, translate_budget);
         let from_seed = |seed: &Option<TargetContext>| seed.as_ref().map(|context| brief_from_target_context(context, None));
         checkpoint.brief = if skip {
             report.brief = "skipped";
@@ -145,7 +159,7 @@ pub fn run(input_path: &Path, staging: &Path, control: Rc<RefCell<Control>>) -> 
             source_lang: doc.lang.clone(),
             lang: lang.clone(),
             force: false,
-            sentences: None,
+            sentences: targets.clone(),
             page_budget: translate_budget,
             instructions: instructions.clone(),
             analysis: None,
@@ -158,8 +172,13 @@ pub fn run(input_path: &Path, staging: &Path, control: Rc<RefCell<Control>>) -> 
             worker_slots: None,
             provenance_stale: BTreeSet::new(),
         };
-        let already = doc.trans.get(&lang).map_or(0, |table| table.len().min(total));
-        progress("translate", already, total);
+        let already = if targets.is_some() {
+            0
+        } else {
+            doc.trans.get(&lang).map_or(0, |table| table.len().min(total))
+        };
+        progress("translate", already, goal);
+        let per_page = targets.is_none();
         let mut save_failure: Option<Failure> = None;
         let result = {
             let checkpoint = &mut checkpoint;
@@ -182,7 +201,9 @@ pub fn run(input_path: &Path, staging: &Path, control: Rc<RefCell<Control>>) -> 
                                     "checkpoint",
                                     json!({ "phase": "translating", "pages": checkpoint.pages, "translatedSentences": done }),
                                 );
-                                progress("translate", done, total);
+                                if per_page {
+                                    progress("translate", done, total);
+                                }
                             }
                             Err(failure) => *save_failure = Some(failure),
                         }
@@ -207,6 +228,9 @@ pub fn run(input_path: &Path, staging: &Path, control: Rc<RefCell<Control>>) -> 
             ));
         }
         report.translated_this_run = outcome.translated_sentences;
+        if targets.is_some() {
+            progress("translate", goal, goal);
+        }
         report.rows_page_retries = outcome.rows_page_retries;
         wrote_this_round = outcome.translated_sentences > 0;
         drafts = outcome.alignment_drafts;
@@ -226,8 +250,14 @@ pub fn run(input_path: &Path, staging: &Path, control: Rc<RefCell<Control>>) -> 
         ..AlignOptions::default()
     };
     if checkpoint.phase == Phase::Translating {
-        progress("align", 0, total);
-        let outcome = run_align_with_drafts_and_artifacts(&mut doc, &mut llm, &align_options, &drafts, &mut |_| {}, &mut sleep)
+        progress("align", 0, goal);
+        // 刷新时只对齐重译的句子（它们的译文都换了，已有的切分一律重做）；别的句子的对齐不动。
+        let main = AlignOptions {
+            sentences: targets.clone(),
+            force: targets.is_some(),
+            ..align_options.clone()
+        };
+        let outcome = run_align_with_drafts_and_artifacts(&mut doc, &mut llm, &main, &drafts, &mut |_| {}, &mut sleep)
             .map_err(|error| stopped(error, &llm, &control, &checkpoint))?;
         wrote_this_round |= outcome.aligned_sentences > 0;
         report.align = json!({
@@ -253,7 +283,16 @@ pub fn run(input_path: &Path, staging: &Path, control: Rc<RefCell<Control>>) -> 
 
     // 黏结收尾轮：一条译文钉住多行源字幕时，按 paired 密度定向重切一次（固定一轮，不带修复预算）。
     if checkpoint.phase == Phase::Aligned {
-        if let Ok(plan) = plan_row_repair_tail(&doc, &sentences, &cues, &lang, false, AlignDensity::Auto, wrote_this_round, None) {
+        if let Ok(plan) = plan_row_repair_tail(
+            &doc,
+            &sentences,
+            &cues,
+            &lang,
+            false,
+            AlignDensity::Auto,
+            wrote_this_round,
+            targets.as_ref(),
+        ) {
             progress("row-repair", 0, plan.keys.len());
             let tail = AlignOptions {
                 density: AlignDensity::Paired,
@@ -297,7 +336,7 @@ pub fn run(input_path: &Path, staging: &Path, control: Rc<RefCell<Control>>) -> 
         &doc,
         &WriteBase {
             speech: Some(&input.speech),
-            translations: &[],
+            translations: base,
             source_basis: Some(&basis),
         },
     )
@@ -307,7 +346,11 @@ pub fn run(input_path: &Path, staging: &Path, control: Rc<RefCell<Control>>) -> 
         .into_iter()
         .find(|body| body.language == lang)
         .ok_or_else(|| Failure::new("MODEL_OUTPUT_INVALID", "没有得到目标语言的译文"))?;
-    body.glossary_ref = input.glossary_ref.clone();
+    // 底稿沿用它自己的 sourceBasis（桥的规则）；这里写的是这次读的原文。glossaryRef 记的是整份译文翻译时的术语，刷新几句不换。
+    body.source_basis = basis;
+    if input.translation.is_none() {
+        body.glossary_ref = input.glossary_ref.clone();
+    }
 
     let timescale = input.speech.timescale.filter(|value| *value > 0).unwrap_or(1_000_000);
     let duration = media_seconds(&input).map_err(|message| Failure::new("INPUT_UNREADABLE", message))?;
@@ -325,6 +368,8 @@ pub fn run(input_path: &Path, staging: &Path, control: Rc<RefCell<Control>>) -> 
         "sourceLanguage": doc.lang,
         "sentenceDerivation": SENTENCE_DERIVATION,
         "totalSentences": total,
+        "mode": if targets.is_some() { "refresh" } else { "full" },
+        "targetSentences": goal,
         "unitCount": body.units.len(),
         "translatedThisRun": report.translated_this_run,
         "resumed": resumed_from.map(|(phase, translated)| json!({ "phase": phase, "translatedSentences": translated })),
@@ -394,9 +439,14 @@ fn stopped(error: LlmError, llm: &StdioLlm, control: &Rc<RefCell<Control>>, chec
     }
 }
 
-/// 检查点的指纹：词流、目标语言与影响译文的冻结参数（风格提示、术语）。任何一个变了，旧检查点作废。
+/// 检查点的指纹：词流、目标语言与影响译文的冻结参数（风格提示、术语；刷新时还有底稿与要重译的句子）。任何一个变了，
+/// 旧检查点作废。
 fn checkpoint_key(doc: &TranscriptDoc, input: &TranslateInput, instructions: Option<&str>) -> String {
     let mut settings = vec![format!("instructions={}", instructions.unwrap_or_default())];
+    if let (Some(base), Some(sentences)) = (&input.translation, &input.sentences) {
+        settings.push(format!("base={}", serde_json::to_string(base).expect("译文正文可以序列化")));
+        settings.push(format!("sentences={}", sentences.join("\u{1f}")));
+    }
     for term in &input.glossary {
         settings.push(format!(
             "term={}\u{1f}{}\u{1f}{}",

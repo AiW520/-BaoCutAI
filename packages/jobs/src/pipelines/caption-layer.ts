@@ -136,6 +136,15 @@ function withCaptionStyle(operations: EditOperation[], body: Json): EditOperatio
 export const SPEECH_CAPTION_EXTENSION = 'baocut.speechCues';
 /** 译文字幕的来源记录（与编辑器 translation-cues.ts 的 `TRANSLATION_CAPTION_EXTENSION` 相同）。 */
 export const TRANSLATION_CAPTION_EXTENSION = 'baocut.translationCues';
+
+/**
+ * 字幕文档是不是从这份译文生成的（与编辑器 `translation-cues.ts` 的 `derivedFrom` 相同）：只有这种在译文改了之后跟着换
+ * 字幕条；别处生成的切法不同，不去动。
+ */
+export function derivedFrom(record: DocumentRecord, translationDocumentId: Id): boolean {
+  const ext = record.extensions?.[TRANSLATION_CAPTION_EXTENSION] as { translationDocumentId?: unknown } | undefined;
+  return record.kind === 'caption' && record.sourceDocumentId === translationDocumentId && ext?.translationDocumentId === translationDocumentId;
+}
 const APPLY_ATTEMPTS = 3;
 
 /** 这一步的产出：建了的字幕文档与显示状态；没建时 `documentId` 为 null、`reason` 说明为什么。 */
@@ -737,7 +746,7 @@ function existingShown(sequence: Sequence, itemIds: readonly Id[]): boolean {
 }
 
 /** 句子 ID（`s-<首词 ID>`）→ 首词的说话人：Worker 的字幕条按句子记，说话人跟着那一句。 */
-function sentenceSpeakers(words: ReadonlyArray<{ id: string; speaker?: string }>): Map<string, string> {
+export function sentenceSpeakers(words: ReadonlyArray<{ id: string; speaker?: string }>): Map<string, string> {
   const out = new Map<string, string>();
   for (const word of words) if (word.speaker !== undefined) out.set(`s-${word.id.replace(/~\d+$/, '')}`, word.speaker);
   return out;

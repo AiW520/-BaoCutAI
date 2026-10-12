@@ -1,6 +1,16 @@
 import { describe, expect, it } from 'vitest';
 import type { CaptionItem, DocumentRecord, EditOperation, Sequence, Track, VideoItem } from '@baocut/protocol';
-import { CUE_PARAMS, displayWidth, readSpeechWords, translationCues, type CueTranslationUnit } from './caption-cues.ts';
+import {
+  CUE_PARAMS,
+  captionBody,
+  cueOfUnit,
+  displayWidth,
+  readSpeechWords,
+  retextCaption,
+  translationCues,
+  workerUnitCues,
+  type CueTranslationUnit,
+} from './caption-cues.ts';
 import {
   DEFAULT_CAPTION_STYLE_BODY,
   TRANSLATION_CAPTION_EXTENSION,
@@ -137,6 +147,58 @@ describe('译文 → 字幕条（与编辑器的 translationCues 相同）', () 
     expect(cues.length).toBeGreaterThan(1);
     expect(cues.every((c) => displayWidth(c.text) <= CUE_PARAMS.maxChars + CUE_PARAMS.overflowSlack)).toBe(true);
     expect(cues.map((c) => c.text).join('')).toBe(text);
+  });
+});
+
+describe('改一句译文 → 只换字幕里这一句的几条（与编辑器的 retextCaption 相同）', () => {
+  const units = [unit('t-s-w1', ['w1', 'w2'], 'Fine.'), unit('t-s-w10', ['w3', 'w4'], 'Go.')];
+  const body = captionBody(translationCues(speech, units), speech.speakers);
+
+  it('字幕条的归属按边界判：t-s-w1 不吞 t-s-w10', () => {
+    expect(cueOfUnit('q-t-s-w1', 't-s-w1')).toBe(true);
+    expect(cueOfUnit('q-t-s-w1~3', 't-s-w1')).toBe(true);
+    expect(cueOfUnit('q-t-s-w10', 't-s-w1')).toBe(false);
+    expect(cueOfUnit('q-t-s-w1-2', 't-s-w1')).toBe(false);
+  });
+
+  it('原处换掉，别的条（含手改过的字）不动', () => {
+    const edited = { ...body, cues: (body.cues as Array<Record<string, unknown>>).map((c) => (c.id === 'q-t-s-w10' ? { ...c, text: 'Go!!' } : c)) };
+    const fresh = translationCues(speech, [unit('t-s-w1', ['w1', 'w2'], 'It is a very fine day today, my friends, a truly lovely one.')]);
+    const next = retextCaption(edited, 't-s-w1', fresh, speech.speakers);
+    const cues = next.cues as Array<{ id: string; text: string; start: number; end: number }>;
+    expect(cues.at(-1)).toMatchObject({ id: 'q-t-s-w10', text: 'Go!!', start: 2000, end: 3000 });
+    expect(cues.slice(0, -1).every((c) => c.id.startsWith('q-t-s-w1') && c.end <= 1000)).toBe(true);
+    expect(cues.length).toBeGreaterThan(2);
+    expect(next.schema).toBe('baocut.caption/1');
+  });
+
+  it('改成空的就去掉这一句；原来没有的按时间插进去', () => {
+    const removed = retextCaption(body, 't-s-w1', [], speech.speakers);
+    expect((removed.cues as Array<{ id: string }>).map((c) => c.id)).toEqual(['q-t-s-w10']);
+    const back = retextCaption(removed, 't-s-w1', translationCues(speech, [units[0]!]), speech.speakers);
+    expect((back.cues as Array<{ id: string }>).map((c) => c.id)).toEqual(['q-t-s-w1', 'q-t-s-w10']);
+  });
+
+  it('Worker 的字幕条按单元取出、换成秒，编号与 workerCaptionBody 相同；字幕正文换回自己的刻度', () => {
+    const worker = {
+      timescale: 48_000,
+      cues: [
+        { unitId: 't-s-w1', sentenceId: 's-w1', text: 'It is', start: 0, end: 24_000 },
+        { unitId: 't-s-w1', sentenceId: 's-w1', text: 'fine.', start: 24_000, end: 48_000 },
+        { unitId: 't-s-w10', sentenceId: 's-w3', text: 'Go.', start: 96_000, end: 144_000 },
+      ],
+    };
+    const fresh = workerUnitCues(worker, 't-s-w1', new Map([['s-w1', 'A']]));
+    expect(fresh).toEqual([
+      { id: 'q-t-s-w1', start: 0, end: 0.5, text: 'It is', speaker: 'A' },
+      { id: 'q-t-s-w1~2', start: 0.5, end: 1, text: 'fine.', speaker: 'A' },
+    ]);
+    const next = retextCaption(body, 't-s-w1', fresh, speech.speakers);
+    expect((next.cues as Array<{ id: string; start: number; end: number }>).map((c) => [c.id, c.start, c.end])).toEqual([
+      ['q-t-s-w1', 0, 500],
+      ['q-t-s-w1~2', 500, 1000],
+      ['q-t-s-w10', 2000, 3000],
+    ]);
   });
 });
 

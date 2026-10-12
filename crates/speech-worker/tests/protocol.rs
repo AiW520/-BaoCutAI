@@ -436,6 +436,111 @@ fn a_terminal_error_stops_and_a_restart_does_not_redo_finished_pages() {
 }
 
 #[test]
+fn a_refresh_retranslates_only_the_named_sentence_onto_the_existing_translation() {
+    // 先整篇翻译一次，作为底稿。
+    let first = job(6, 6);
+    let mut worker = Worker::start();
+    let reply = worker.translate(&first, &mut Vec::new(), &mut |params, _| Answer::Text(fake_answer(params)));
+    assert!(reply.get("error").is_none(), "{reply}");
+    drop(worker);
+    let mut base = read(&first.staging.join("translation.json"));
+    // 第一句标为已审：刷新别的句子时它保持原样。
+    base["units"][0]["status"] = json!("reviewed");
+
+    // 改第三句的一个词（指纹变了），只重译这一句。
+    let second = job(6, 6);
+    let mut input = read(&second.input);
+    let words = input["speech"]["words"].as_array_mut().unwrap();
+    let word = words.iter_mut().find(|word| word["id"] == "w-2-1").unwrap();
+    word["text"] = json!(" changed");
+    let target = "s-w-2-0";
+    input["speechRef"]["revision"] = json!("rev-2");
+    input["translation"] = base.clone();
+    input["sentences"] = json!([target]);
+    std::fs::write(&second.input, serde_json::to_vec(&input).unwrap()).unwrap();
+
+    let mut worker = Worker::start();
+    let mut events = Vec::new();
+    let mut requested = Vec::new();
+    let reply = worker.translate(&second, &mut events, &mut |params, _| {
+        requested.extend(requested_sentences(params));
+        Answer::Text(fake_answer(params).replace("好的", "新的").replace("第", "新"))
+    });
+    assert!(reply.get("error").is_none(), "{reply}");
+    assert_eq!(requested, vec![target.to_owned()], "只送翻点名的那一句");
+    assert!(
+        events_named(&events, "llm.request")
+            .iter()
+            .all(|request| request["params"]["kind"] != "translate-brief"),
+        "刷新不做简报"
+    );
+
+    let body = read(&second.staging.join("translation.json"));
+    assert_eq!(body["sourceBasis"]["speechRef"]["revision"], "rev-2", "sourceBasis 换成这次的原文");
+    assert_eq!(body["glossaryRef"], base["glossaryRef"], "glossaryRef 沿用底稿的");
+    let units = body["units"].as_array().unwrap();
+    let base_units = base["units"].as_array().unwrap();
+    assert_eq!(units.len(), base_units.len());
+    for (unit, prior) in units.iter().zip(base_units) {
+        assert_eq!(unit["id"], prior["id"], "单元 ID 与顺序照旧");
+        if unit["sourceSentenceId"] == target {
+            assert!(unit["naturalText"].as_str().unwrap().contains('新'), "{unit}");
+            assert_ne!(unit["sourceFingerprint"], prior["sourceFingerprint"], "指纹换成改过的这一句");
+            assert_eq!(unit["status"], "draft");
+        } else {
+            assert_eq!(unit, prior, "别的单元逐字不变");
+        }
+    }
+    let report = read(&second.staging.join("report.json"));
+    assert_eq!(report["mode"], "refresh");
+    assert_eq!(report["targetSentences"], 1);
+}
+
+#[test]
+fn a_refresh_translates_a_sentence_that_has_no_unit_yet() {
+    let first = job(6, 6);
+    let mut worker = Worker::start();
+    let reply = worker.translate(&first, &mut Vec::new(), &mut |params, _| Answer::Text(fake_answer(params)));
+    assert!(reply.get("error").is_none(), "{reply}");
+    drop(worker);
+    let base = read(&first.staging.join("translation.json"));
+
+    // 隐藏第三句的首词：这一句的 ID 换成 `s-w-2-1`，底稿里没有它的单元。
+    let second = job(6, 6);
+    let mut input = read(&second.input);
+    let words = input["speech"]["words"].as_array_mut().unwrap();
+    words.iter_mut().find(|word| word["id"] == "w-2-0").unwrap()["hidden"] = json!(true);
+    let target = "s-w-2-1";
+    input["speechRef"]["revision"] = json!("rev-2");
+    input["translation"] = base.clone();
+    input["sentences"] = json!([target]);
+    std::fs::write(&second.input, serde_json::to_vec(&input).unwrap()).unwrap();
+
+    let mut worker = Worker::start();
+    let mut requested = Vec::new();
+    let reply = worker.translate(&second, &mut Vec::new(), &mut |params, _| {
+        requested.extend(requested_sentences(params));
+        Answer::Text(fake_answer(params))
+    });
+    assert!(reply.get("error").is_none(), "{reply}");
+    assert_eq!(requested, vec![target.to_owned()]);
+    let body = read(&second.staging.join("translation.json"));
+    let fresh = body["units"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|unit| unit["sourceSentenceId"] == target)
+        .unwrap_or_else(|| panic!("新句子要有单元：{body}"));
+    assert!(!fresh["naturalText"].as_str().unwrap().trim().is_empty(), "{fresh}");
+    assert!(fresh["sourceFingerprint"].as_str().unwrap().starts_with("5:w-2-1:"), "{fresh}");
+    let cues = read(&second.staging.join("cues.json"));
+    assert!(
+        cues["cues"].as_array().unwrap().iter().any(|cue| cue["unitId"] == fresh["id"]),
+        "新单元有字幕条"
+    );
+}
+
+#[test]
 fn long_sentences_come_back_as_aligned_rows() {
     let job = job(6, 30);
     let mut worker = Worker::start();

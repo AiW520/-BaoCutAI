@@ -505,3 +505,92 @@ export function workerCaptionBody(
     })),
   };
 }
+
+// ---- 只换一句译文的字幕条 ----
+
+/** 字幕条是不是这一句译文的：`q-<单元 ID>` 之后要么结束，要么紧跟 `~`（`t-s-w1` 不吞掉 `t-s-w10`）。 */
+export function cueOfUnit(cueId: string, unitId: Id): boolean {
+  const base = `q-${unitId}`;
+  if (!cueId.startsWith(base)) return false;
+  const rest = cueId.slice(base.length);
+  return rest === '' || rest[0] === '~';
+}
+
+/** 换进字幕正文的一条：时间是秒（素材时钟），`speaker` 是转写里的说话人 ID。 */
+export interface RetextCue {
+  id: string;
+  start: number;
+  end: number;
+  text: string;
+  speaker?: string;
+}
+
+interface BodyCue {
+  id?: unknown;
+  start: number;
+  end: number;
+  text?: unknown;
+  speaker?: unknown;
+}
+
+/**
+ * 换掉一句译文之后的字幕正文：去掉这一句原来的几条，`fresh` 放回原处（没有原来的就按时间插进去；`fresh` 为空就是去掉这一句），
+ * 再照 `captionBody` 的取整规矩修掉重叠。别的条原样不动（手工改过的字也保留）。只有原来写了说话人时新条才写（写显示名）。
+ *
+ * 来源（modified）：照搬编辑器的 `packages/ui/src/model/translation-cues.ts`（`retextCaption`），行为相同；就地重译
+ * （`translate.ts`）与智能体写译文之后同步字幕层用它。改规矩时两处一起改。
+ */
+export function retextCaption(body: Json, unitId: Id, fresh: readonly RetextCue[], speakers: ReadonlyMap<string, string>): Json {
+  const scale = typeof body.timescale === 'number' && body.timescale > 0 ? body.timescale : 1000;
+  const cues = (Array.isArray(body.cues) ? body.cues : []) as BodyCue[];
+  const mine = (cue: BodyCue) => typeof cue.id === 'string' && cueOfUnit(cue.id, unitId);
+  const firstOld = cues.findIndex(mine);
+  const kept = cues.filter((cue) => !mine(cue));
+  const withSpeaker = cues.some((cue) => typeof cue.speaker === 'string');
+  const made: BodyCue[] = fresh.map((cue) => ({
+    id: cue.id,
+    start: Math.round(cue.start * scale),
+    end: Math.round(cue.end * scale),
+    text: cue.text,
+    ...(withSpeaker && cue.speaker !== undefined ? { speaker: speakers.get(cue.speaker) ?? cue.speaker } : {}),
+  }));
+  let at: number;
+  if (firstOld >= 0) at = cues.slice(0, firstOld).filter((cue) => !mine(cue)).length;
+  else {
+    const from = made[0]?.start ?? 0;
+    at = kept.findIndex((cue) => cue.start > from);
+    if (at < 0) at = kept.length;
+  }
+  const merged = [...kept.slice(0, at), ...made, ...kept.slice(at)].map((cue) => ({ ...cue }));
+  merged.forEach((cue, i) => {
+    const next = merged[i + 1];
+    if (next && cue.end > next.start) cue.end = next.start;
+    if (cue.end <= cue.start) cue.end = cue.start + 1;
+    if (next && next.start < cue.end) next.start = cue.end;
+  });
+  return { ...body, cues: merged };
+}
+
+/**
+ * Speech Worker 切好的字幕条里一个单元的那几条 → `retextCaption` 的输入（秒；ID 与 `workerCaptionBody` 同一个编号：
+ * `q-<单元 ID>`，后几条跟 `~2`、`~3`……）。
+ */
+export function workerUnitCues(
+  cues: { timescale: number; cues: ReadonlyArray<{ unitId: Id | null; sentenceId: Id; text: string; start: number; end: number }> },
+  unitId: Id,
+  sentenceSpeakers: ReadonlyMap<string, string>,
+): RetextCue[] {
+  const base = `q-${unitId}`;
+  return cues.cues
+    .filter((cue) => cue.unitId === unitId && cue.text.trim() !== '' && cue.end > cue.start)
+    .map((cue, i) => {
+      const speaker = sentenceSpeakers.get(cue.sentenceId);
+      return {
+        id: i === 0 ? base : `${base}~${i + 1}`,
+        start: cue.start / cues.timescale,
+        end: cue.end / cues.timescale,
+        text: cue.text.trim(),
+        ...(speaker !== undefined ? { speaker } : {}),
+      };
+    });
+}

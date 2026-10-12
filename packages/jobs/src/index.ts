@@ -212,6 +212,7 @@ export {
   TRANSLATION_CAPTION_EXTENSION,
   captionPlacement,
   captionsStep,
+  derivedFrom,
   existingCaptionLayer,
   planCaptionLayer,
   type CaptionDocumentReader,
@@ -220,7 +221,7 @@ export {
   type CaptionSource,
   type CaptionVideos,
 } from './pipelines/caption-layer.ts';
-export { CUE_PARAMS, translationCues, type CueTranslationUnit } from './pipelines/caption-cues.ts';
+export { CUE_PARAMS, readSpeechWords, retextCaption, translationCues, type CueTranslationUnit } from './pipelines/caption-cues.ts';
 export {
   TARGET_STEP,
   createScopeOf,

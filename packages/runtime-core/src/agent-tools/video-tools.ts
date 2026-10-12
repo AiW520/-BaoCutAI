@@ -51,6 +51,7 @@ import { ToolError, type ToolInfo, type ToolSet } from './tool-catalog.ts';
 import { approvalField, confirmSummary, type ToolAccess, type ToolPrincipal, type ToolScope } from './tool-scope.ts';
 import { assetSegments, projectChapters, type ProjectedChapter } from './source-chapters.ts';
 import { fillTranslationAlignments } from './translation-alignment.ts';
+import { syncTranslationCaptions } from './translation-captions.ts';
 import { OperationShapeError, digestVideo, digestReceipt, normalizeOperations } from './video-digest.ts';
 import {
   DEFAULT_MIN_SHOT,
@@ -537,6 +538,7 @@ const DEFINITIONS: Record<ToolName, ToolInfo> = {
       '写入视频里一份文档（转写、译文等）的新版本，或新建一份文档。',
       '编译成一个 putDocument 操作，一笔修改、可以撤销。body 是完整的正文对象：替换时先用 documents_read 读出当前正文再改，给 document；新建时不给 document，给 kind。',
       '新建译文：kind "translation"、language 为目标语言、sourceDocument 为它译自的转写，body 照 documents_read 返回的 translationBasis 填（形状见 documents_read 的说明）；alignment 写成 null 时 Runtime 按句子补上句级对齐（结果的 filledAlignments 是补了几句）。写完用 captions_create 把译文做成字幕。',
+      '改已有的译文（给 document）：从它生成的字幕层由 Runtime 在同一笔里只换改过的几句的字幕条，时间照旧（结果的 syncedCaptions 是跟着换了几份字幕文档）；不要再建一层字幕。',
       '正文与原来相同时不产生新版本。不给 revision 时用最新的版本。',
       '返回与 edits_apply 相同的回执，另有文档的 documentId。',
     ].join('\n'),
@@ -950,6 +952,7 @@ export class VideoTools implements ToolSet {
     return {
       ...submitted.digest,
       ...(submitted.filledAlignments ? { filledAlignments: submitted.filledAlignments } : {}),
+      ...(submitted.syncedCaptions ? { syncedCaptions: submitted.syncedCaptions } : {}),
       ...approvalField(approval),
     };
   }
@@ -1036,11 +1039,11 @@ export class VideoTools implements ToolSet {
     const operations = normalizeOperations(resolved, opened.snapshot.video.rootSequenceId, base.cwd);
     if (base.confine) await confineImports(operations, base.confine);
     // 智能体写的译文：alignment 为 null 或缺字段的单元按句子补上句级对齐（视频格式规范 §5.3）。
-    const filledAlignments = await fillTranslationAlignments(
-      operations,
-      (this.#videos.mirror(opened.ref.videoId)?.video ?? opened.snapshot.video).documents,
-      async (documentId, revision) => (await this.#videos.document(opened.ref.videoId, documentId, revision)).body,
-    );
+    const documents = (this.#videos.mirror(opened.ref.videoId)?.video ?? opened.snapshot.video).documents;
+    const readBody = async (documentId: Id, revision?: string) => (await this.#videos.document(opened.ref.videoId, documentId, revision)).body;
+    const filledAlignments = await fillTranslationAlignments(operations, documents, readBody);
+    // 改了已有的译文：从它生成的字幕层在同一笔里换掉改过的几句的字幕条。
+    const syncedCaptions = await syncTranslationCaptions(operations, documents, readBody);
     const result = await this.#videos.apply(
       {
         videoId: opened.ref.videoId,
@@ -1060,7 +1063,7 @@ export class VideoTools implements ToolSet {
         typeof op.documentId === 'string' ? op.documentId : typeof op.ref === 'string' ? (result.receipt.refs?.[op.ref] ?? null) : null;
       this.#scope.translationWritten?.(access, { videoId: opened.ref.videoId, sourceDocumentId: source, language: op.language, documentId });
     }
-    return { result, digest: this.#receipt(opened, result, access), filledAlignments };
+    return { result, digest: this.#receipt(opened, result, access), filledAlignments, syncedCaptions };
   }
 
   /** 当前的视频：镜像里的最新状态，镜像不在时用打开时的快照。 */
@@ -1250,6 +1253,7 @@ export class VideoTools implements ToolSet {
       ...submitted.digest,
       documentId: submitted.result.receipt.refs?.[PUT_DOCUMENT_REF] ?? args.document ?? null,
       ...(submitted.filledAlignments ? { filledAlignments: submitted.filledAlignments } : {}),
+      ...(submitted.syncedCaptions ? { syncedCaptions: submitted.syncedCaptions } : {}),
       ...approvalField(approval),
     };
   }

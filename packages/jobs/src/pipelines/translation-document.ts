@@ -110,13 +110,18 @@ export function translationProblems(body: unknown, source: FrozenSource): string
 
 /**
  * 只按 §5.3 校验译文正文的形状与它指向的原文版本，不核对句子：句子由别处的规则派生时（Speech Worker 按字幕与翻译核心的
- * 句子规则，架构设计 §7.9）用它。
+ * 句子规则，架构设计 §7.9）用它。给了 `only` 时逐个单元的核对只做这些句子的（就地刷新：别的单元是底稿原样带回来的）。
  */
-export function translationShapeProblems(body: unknown, speechRef: { id: Id; revision: string }): string[] {
-  return documentProblems(body, speechRef, null);
+export function translationShapeProblems(body: unknown, speechRef: { id: Id; revision: string }, only?: ReadonlySet<Id>): string[] {
+  return documentProblems(body, speechRef, null, only);
 }
 
-function documentProblems(body: unknown, speechRef: { id: Id; revision: string }, source: FrozenSource | null): string[] {
+function documentProblems(
+  body: unknown,
+  speechRef: { id: Id; revision: string },
+  source: FrozenSource | null,
+  only?: ReadonlySet<Id>,
+): string[] {
   const problems: string[] = [];
   const t = body as Partial<TranslationBody> | null;
   if (!t || typeof t !== 'object') return [J.notObject().text];
@@ -145,6 +150,7 @@ function documentProblems(body: unknown, speechRef: { id: Id; revision: string }
   t.units.forEach((unit, i) => {
     if (ids.has(unit.id)) problems.push(J.unitDuplicate({ id: unit.id }).text);
     ids.add(unit.id);
+    if (only && !only.has(unit.sourceSentenceId)) return;
     if (source) {
       const sentence = source.sentences[i];
       if (!sentence || unit.sourceSentenceId !== sentence.id || unit.sourceFingerprint !== sentence.fingerprint) {

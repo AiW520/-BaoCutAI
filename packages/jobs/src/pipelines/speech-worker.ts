@@ -72,6 +72,12 @@ export interface SpeechTranslateInput {
   glossary: Array<{ source: string; target: string; note?: string }>;
   glossaryRef: GlossaryRef | null;
   params?: { instructions?: string; backoffScale?: number };
+  /**
+   * 就地刷新：这门语言已有的译文作底稿，只重译 `sentences` 里的句子，别的单元原样写回（命令协议规范 §4.5）。两项同给同不给；
+   * 这时 `glossaryRef` 沿用底稿的，不做译向简报。
+   */
+  translation?: TranslationBody;
+  sentences?: Id[];
 }
 
 /** Worker 写出的译文正文（`baocut.translation/2`；单元带核心的对齐块与显示改写）。 */
@@ -251,10 +257,12 @@ export async function runSpeechTranslate(options: SpeechTranslateOptions): Promi
       throw new PipelineStepError('WORKER_FAILED', JobsSpeechWorker.exited(), { exit: worker.alive ? null : await worker.exited });
     }
     const outputs = await readOutputs(staging, settled.value);
+    // 就地刷新时只核对点名的句子：别的单元与它们的字幕条是底稿原样带回来的，调用方也只取点名的那几句。
+    const only = input.sentences ? new Set(input.sentences) : undefined;
     const problems = [
-      ...translationShapeProblems(outputs.translation, input.speechRef),
+      ...translationShapeProblems(outputs.translation, input.speechRef, only),
       ...((outputs.translation as { language?: unknown }).language === input.targetLanguage ? [] : [JobsSpeechWorker.translationLanguage().text]),
-      ...cueProblems(outputs.cues, input),
+      ...cueProblems(onlyCues(outputs.cues, only), input),
     ];
     if (problems.length > 0) {
       throw new PipelineStepError('WORKER_OUTPUT_INVALID', JobsSpeechWorker.outputInvalid(), { problems: problems.slice(0, 20) });
@@ -358,6 +366,13 @@ async function readOutputs(
   const cues = await read(files?.cues, 'cues');
   const report = await read(files?.report, 'report');
   return { translation, cues, report: typeof report === 'object' && report !== null ? (report as Record<string, unknown>) : {} };
+}
+
+/** 只留点名句子的字幕条（就地刷新时核对用）；没有点名或形状不对时原样。 */
+function onlyCues(value: unknown, only: ReadonlySet<Id> | undefined): unknown {
+  const doc = value as { cues?: unknown } | null;
+  if (!only || !doc || typeof doc !== 'object' || !Array.isArray(doc.cues)) return value;
+  return { ...doc, cues: doc.cues.filter((cue) => typeof cue === 'object' && cue !== null && only.has((cue as { sentenceId?: Id }).sentenceId ?? '')) };
 }
 
 /** 字幕条的形状与时间：整数刻度、起点在终点之前、按时间排好且不重叠、不超出媒体时长。问题是按当前语言生成的文字。 */

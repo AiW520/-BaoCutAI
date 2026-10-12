@@ -266,12 +266,34 @@ class FakeVideos implements CaptionVideos {
     return { revision: rev, body: structuredClone(this.bodies.get(`${documentId}@${rev}`)) };
   }
 
-  /** 译文文档依次是 doc_tr1、doc_tr2……；字幕文档、样式是 doc_cap<n>；字幕实例记到根序列上。 */
+  /** 别处（编辑器、智能体）写了一份文档的新版本。 */
+  putBody(id: string, body: unknown, revision: string): void {
+    this.documents[id]!.currentRevision = revision;
+    this.bodies.set(`${id}@${revision}`, body);
+    this.revision = `r${Number(this.revision.slice(1)) + 1}`;
+  }
+
+  /** 一份文档当前版本的正文。 */
+  body<T = Record<string, unknown>>(id: string): T {
+    return structuredClone(this.bodies.get(`${id}@${this.documents[id]!.currentRevision}`)) as T;
+  }
+
+  /**
+   * 译文文档依次是 doc_tr1、doc_tr2……；字幕文档、样式是 doc_cap<n>；字幕实例记到根序列上。给了 `documentId` 的
+   * `putDocument` 写那份文档的下一个版本（d1 → d2）。
+   */
   async apply(_videoId: string, request: { commandId: string; expectedRevision: string; operations: EditOperation[] }) {
     if (request.expectedRevision !== this.revision) throw new RpcError('conflict', '版本不符');
     this.applied.push(request);
     const refs: Record<string, string> = {};
     for (const op of request.operations) {
+      if (op.type === 'putDocument' && op.documentId) {
+        const record = this.documents[op.documentId]!;
+        const next = `d${Number(record.currentRevision.slice(1)) + 1}`;
+        record.currentRevision = next;
+        this.bodies.set(`${op.documentId}@${next}`, op.body);
+        continue;
+      }
       if (op.type === 'putDocument') {
         const id = op.kind === 'translation' ? `doc_tr${++this.translations}` : `doc_cap${this.applied.length}_${Object.keys(refs).length}`;
         const source = (op as { sourceDocument?: { documentId: string } }).sourceDocument?.documentId;
@@ -279,7 +301,9 @@ class FakeVideos implements CaptionVideos {
           id,
           kind: op.kind,
           name: op.name ?? '',
+          ...(op.language ? { language: op.language } : {}),
           ...(source ? { sourceDocumentId: source } : {}),
+          ...(op.extensions ? { extensions: op.extensions } : {}),
           currentRevision: 'd1',
           revisions: {},
         } as DocumentRecord;
@@ -910,6 +934,157 @@ describe.skipIf(!command || !wasm)('翻译流程（真的 Speech Worker，假的
     expect(jobs.inspect(jobId)).toMatchObject({ state: 'cancelled', pipeline: { stoppedAt: 'translate' } });
     expect(videos.applied).toEqual([]);
   }, 60_000);
+
+  describe('就地刷新一份译文（translationId）', () => {
+    type Unit = { id: string; sourceSentenceId: string; sourceFingerprint: string; naturalText: string; status: string };
+    type Cue = { id: string; start: number; end: number; text: string };
+    const captionId = () => Object.values(videos.documents).find((d) => d.kind === 'caption')!.id;
+
+    /** 整篇翻译一次、建好字幕层（6 句，两个说话人），返回译文与字幕文档当时的正文。 */
+    async function translated(): Promise<{ units: Unit[]; cues: Cue[] }> {
+      videos.putSpeech('doc_speech', sentencesBody(6, true), 'd1', 'asset_1');
+      videos.placeAsset('asset_1');
+      const record = await translate({ captions: true });
+      expect(record.state, JSON.stringify(record.error)).toBe('completed');
+      return { units: videos.body<{ units: Unit[] }>('doc_tr1').units, cues: videos.body<{ cues: Cue[] }>(captionId()).cues };
+    }
+
+    /** 转写改了一个词（新版本 d2）。 */
+    function editWord(wordId: string, change: Record<string, unknown>): void {
+      const body = videos.body<{ words: Array<Record<string, unknown>> }>('doc_speech');
+      Object.assign(body.words.find((w) => w.id === wordId)!, change);
+      videos.putBody('doc_speech', body, 'd2');
+    }
+
+    it('不点名：只重译原句改过与标了过期的句子，写成同一份译文的新版本；字幕层在同一笔事务里只换这几句的字幕条', async () => {
+      const before = await translated();
+      editWord('w2b', { text: 'numeral' });
+      // 用户在编辑器里把第 5 句标为过期。
+      const marked = videos.body<{ units: Unit[] }>('doc_tr1');
+      marked.units[4]!.status = 'stale';
+      videos.putBody('doc_tr1', marked, 'd2');
+      const from = text.runs.length;
+      text.hook = (user) => fakeSpeechAnswer(user).replaceAll('好的', '新的');
+      const applied = videos.applied.length;
+
+      const record = await translate({ translationId: 'doc_tr1' });
+      expect(record.state, JSON.stringify(record.error)).toBe('completed');
+      expect(new Set(text.translated(from))).toEqual(new Set(['s-w2a', 's-w4a']));
+      // 一笔事务：译文的新版本与字幕文档，不新建文档、不新建字幕层。
+      expect(videos.applied).toHaveLength(applied + 1);
+      const ops = videos.applied.at(-1)!.operations as Array<Extract<EditOperation, { type: 'putDocument' }>>;
+      expect(ops.map((op) => [op.type, op.documentId, op.kind])).toEqual([
+        ['putDocument', 'doc_tr1', 'translation'],
+        ['putDocument', captionId(), 'caption'],
+      ]);
+      expect(Object.values(videos.documents).filter((d) => d.kind === 'translation')).toHaveLength(1);
+      expect(record.pipeline!.steps.at(-1)).toMatchObject({ name: 'captions', status: 'skipped' });
+
+      const units = videos.body<{ units: Unit[]; sourceBasis: { speechRef: unknown } }>('doc_tr1');
+      expect(videos.documents.doc_tr1!.currentRevision).toBe('d3');
+      expect(units.sourceBasis.speechRef).toEqual({ id: 'doc_speech', revision: 'd2' });
+      expect(units.units.map((u) => u.id)).toEqual(before.units.map((u) => u.id));
+      units.units.forEach((unit, i) => {
+        if (i === 2 || i === 4) {
+          expect(unit.naturalText).toContain('新的');
+          expect(unit.status).toBe('draft');
+        } else {
+          expect(unit).toEqual(before.units[i]);
+        }
+      });
+      expect(units.units[2]!.sourceFingerprint).not.toBe(before.units[2]!.sourceFingerprint);
+
+      // 字幕层：这两句的字幕条换成新译文、时间仍在原句之内；别的条逐字不变。
+      const cues = videos.body<{ cues: Cue[] }>(captionId()).cues;
+      const mine = (cue: Cue) => /^q-t-s-w[24]a(~\d+)?$/.test(cue.id);
+      expect(cues.filter((c) => !mine(c))).toEqual(before.cues.filter((c) => !mine(c)));
+      expect(cues.filter(mine).every((c) => c.text.includes('新的') || !c.text.includes('好的'))).toBe(true);
+      expect(cues.filter(mine).length).toBeGreaterThan(0);
+      // 时间轴照旧：同一句的字幕条与重译之前同样的起止。
+      const timing = (list: Cue[]) => list.filter(mine).map((c) => [c.id, c.start, c.end]);
+      expect(timing(cues)).toEqual(timing(before.cues));
+      expect(cues.find((c) => c.id === 'q-t-s-w2a')).toMatchObject({ speaker: '主持人' });
+
+      expect(record.pipeline!.summary).toMatchObject({
+        documentId: 'doc_tr1',
+        source: { documentId: 'doc_speech', revision: 'd2' },
+        unitCount: 6,
+        refresh: { revision: 'd3', sentences: ['s-w2a', 's-w4a'], removedUnitIds: [], captionDocumentIds: [captionId()], transactionId: `txn_${applied + 1}` },
+      });
+      expect(record.pipeline!.summary).not.toHaveProperty('captions');
+
+      // 都新鲜了：再不点名地刷新，启动就拒绝。
+      await expect(runner.start({ pipeline: 'translate', params: { videoId: 'vid_1', targetLanguage: 'zh-CN', translationId: 'doc_tr1' } }, { kind: 'connection', id: 'c' })).rejects.toMatchObject({
+        code: 'invalid-request',
+      });
+    }, 60_000);
+
+    it('点名：译文新鲜的句子也重译，只动这一句；首词被隐藏而换了 ID 的句子补一个单元，原来的单元与字幕条去掉', async () => {
+      const before = await translated();
+      const from = text.runs.length;
+      text.hook = (user) => fakeSpeechAnswer(user).replaceAll('好的', '新的');
+      const named = await translate({ translationId: 'doc_tr1', sentences: ['s-w1a'] });
+      expect(named.state, JSON.stringify(named.error)).toBe('completed');
+      expect(text.translated(from)).toEqual(['s-w1a']);
+      const units = videos.body<{ units: Unit[] }>('doc_tr1').units;
+      expect(units[1]!.naturalText).toContain('新的');
+      expect(units.filter((_, i) => i !== 1)).toEqual(before.units.filter((_, i) => i !== 1));
+
+      // 隐藏第 4 句的首词：句子 ID 换成 s-w3b，原来的单元 t-s-w3a 成了没有原句的。
+      editWord('w3a', { hidden: true });
+      const removal = await translate({ translationId: 'doc_tr1' });
+      expect(removal.state, JSON.stringify(removal.error)).toBe('completed');
+      const after = videos.body<{ units: Unit[] }>('doc_tr1').units;
+      expect(after.map((u) => u.sourceSentenceId)).toEqual(['s-w0a', 's-w1a', 's-w2a', 's-w3b', 's-w4a', 's-w5a']);
+      expect(after[3]).toMatchObject({ id: 't-s-w3b', status: 'draft' });
+      expect(removal.pipeline!.summary).toMatchObject({ refresh: { sentences: ['s-w3b'], removedUnitIds: ['t-s-w3a'] } });
+      const ids = videos.body<{ cues: Cue[] }>(captionId()).cues.map((c) => c.id);
+      expect(ids.some((id) => id.startsWith('q-t-s-w3a'))).toBe(false);
+      expect(ids.indexOf('q-t-s-w3b')).toBeGreaterThan(ids.indexOf('q-t-s-w2a'));
+      expect(ids.indexOf('q-t-s-w3b')).toBeLessThan(ids.indexOf('q-t-s-w4a'));
+    }, 60_000);
+
+    it('启动核对：点名的句子不在转写里、语言不符、不是译文、sentences 没配 translationId、与 captions 同给时拒绝，不建任务', async () => {
+      await translated();
+      const start = (params: Record<string, unknown>) =>
+        runner.start({ pipeline: 'translate', params: { videoId: 'vid_1', targetLanguage: 'zh-CN', ...params } }, { kind: 'connection', id: 'c' });
+      await expect(start({ translationId: 'doc_tr1', sentences: ['s-nope'] })).rejects.toMatchObject({ code: 'invalid-request' });
+      await expect(start({ translationId: 'doc_tr1', targetLanguage: 'ja' })).rejects.toMatchObject({ code: 'invalid-request' });
+      await expect(start({ translationId: 'doc_speech' })).rejects.toMatchObject({ code: 'invalid-request' });
+      await expect(start({ translationId: 'doc_missing' })).rejects.toMatchObject({ code: 'not-found' });
+      expect(() => parseTranslateParams({ videoId: 'v', targetLanguage: 'en', sentences: ['s-a'] })).toThrow(expect.objectContaining({ code: 'invalid-request' }));
+      expect(() => parseTranslateParams({ videoId: 'v', targetLanguage: 'en', translationId: 't', captions: true })).toThrow(
+        expect.objectContaining({ code: 'invalid-request' }),
+      );
+      expect(parseTranslateParams({ videoId: 'v', targetLanguage: 'en', translationId: 't', sentences: ['s-a', 's-a'] })).toMatchObject({
+        translationId: 't',
+        sentences: ['s-a'],
+      });
+    }, 60_000);
+
+    it('执行期间译文被改过：写入以 STALE_JOB_INPUT 失败，视频不变；重试按译文的当前版本重新挑句子', async () => {
+      await translated();
+      editWord('w2b', { text: 'numeral' });
+      const applied = videos.applied.length;
+      text.hook = (user) => {
+        if (videos.documents.doc_tr1!.currentRevision === 'd1') {
+          const edited = videos.body<{ units: Unit[] }>('doc_tr1');
+          edited.units[0]!.status = 'reviewed';
+          videos.putBody('doc_tr1', edited, 'd2');
+        }
+        return fakeSpeechAnswer(user);
+      };
+      const record = await translate({ translationId: 'doc_tr1' });
+      expect(record.state).toBe('failed');
+      expect(record.error).toMatchObject({ code: 'STALE_JOB_INPUT' });
+      expect(videos.applied).toHaveLength(applied);
+      text.hook = null;
+      const again = await retry(record.jobId);
+      expect(again.state, JSON.stringify(again.error)).toBe('completed');
+      const units = videos.body<{ units: Unit[] }>('doc_tr1').units;
+      expect(units[0]!.status).toBe('reviewed');
+    }, 60_000);
+  });
 });
 
 describe.skipIf(!command || !wasm)('翻译流程用库里的术语表', () => {

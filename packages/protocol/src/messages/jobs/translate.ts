@@ -49,6 +49,18 @@ const en = {
   transactionLabel: (p: { language: string }) => `Translate to ${p.language}`,
   noDocumentId: "The translation was written to the video, but its document ID wasn't returned",
   rejected: 'The transaction to write to the video was rejected. The translation is kept in the outputs.',
+  // 就地刷新一份译文（参数 translationId）。
+  sentencesNeedTranslation: "Parameter sentences can only be given together with translationId",
+  refreshNoCaptions: "Parameters captions, captionStyle and bilingual can't be used with translationId. Subtitle layers made from this translation are updated in place.",
+  notTranslation: (p: { documentId: string; kind: string }) => `Document ${p.documentId} is ${p.kind}, not a translation`,
+  translationNotRefreshable: (p: { documentId: string }) => `Translation ${p.documentId} doesn't record its source transcript or isn't in the current translation format, so it can't be updated in place. Translate the transcript again instead.`,
+  translationSourceMismatch: (p: { documentId: string; source: string }) => `Translation ${p.documentId} was translated from document ${p.source}, which doesn't match documentId`,
+  translationLanguageMismatch: (p: { language: string; target: string }) => `The translation is in ${p.language}, but targetLanguage is ${p.target}`,
+  unknownSentence: (p: { sentenceId: string }) => `The transcript has no sentence ${p.sentenceId}`,
+  nothingStale: "This translation has no outdated or untranslated sentences. Use sentences to choose which sentences to retranslate.",
+  translationGone: "The translation document is no longer in the video",
+  translationChanged: "The translation was edited during retranslation, so nothing was written to the video. Retrying retranslates against its current version.",
+  refreshLabel: (p: { language: string }) => `Retranslate sentences in ${p.language}`,
 };
 
 export type JobsTranslateMessages = typeof en;

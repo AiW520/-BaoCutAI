@@ -63,7 +63,7 @@ description: 文稿与字幕的机制：转录、润色写回、自己翻译并�
 一次 {{tool:documents_put}} 写完整份译文，不分几次写。
 <!-- /surface -->
 
-原文改过（润色、剪辑）之后译文会过期：重新读转写，句子 `id` 与 `fingerprint` 都对得上的单元原样保留，其余重译，再写回同一份译文。
+原文改过（润色、剪辑）之后译文会过期：重新读转写，句子 `id` 与 `fingerprint` 都对得上的单元原样保留，其余重译，再写回同一份译文。从这份译文建过的字幕层不用重建：写回时 Runtime 在同一笔里只换改过的句子的字幕条，时间照旧（回执的 `syncedCaptions`）。
 
 ### 建字幕层
 
@@ -86,7 +86,7 @@ description: 文稿与字幕的机制：转录、润色写回、自己翻译并�
 ## 结果怎么读
 
 - {{tool:transcribe}} 完成：`pipeline.summary.documentId` 是新转写，`summary.captions` 是字幕层，新建视频时 `summary.videoId` 是视频。给 url 时找不到 documentId 就 {{tool:videos_inspect}} 找来源素材是这段素材的 speech 文档；给 url 时另有 `summary.description`（截断的简介）与 `summary.sourceChapters`（作者章节的条数），大于 0 时分章用 {{tool:chapters_adopt}}（见 [editing](editing.md)）。
-- {{tool:documents_put}}：与修改相同的回执（新版本 `revision`、`transactionId`），另有文档的 `documentId`；`filledAlignments` 是 Runtime 补了几句对齐。正文与原来相同时不产生新版本。
+- {{tool:documents_put}}：与修改相同的回执（新版本 `revision`、`transactionId`），另有文档的 `documentId`；`filledAlignments` 是 Runtime 补了几句对齐，`syncedCaptions` 是改已有译文时跟着换了字幕条的字幕文档数。正文与原来相同时不产生新版本。
 - {{tool:captions_create}}：`documentId`（字幕文档）、`trackId`、`itemIds`、`cueCount`（字幕条数）、`enabled`；双语另有 `pairedOriginal`（`created` 为 true 是这次顺带建的原文层）。`existing` 不为空说明这份文档原本已有字幕层。
 
 ## 常见错误码

@@ -6,6 +6,7 @@ use editor_semantics::MediaTime;
 use serde::Deserialize;
 use serde_json::Value;
 use video_model::speech::SpeechBody;
+use video_model::translation::TranslationBody;
 use video_model::{Id, VersionRef};
 
 use crate::Failure;
@@ -31,6 +32,12 @@ pub struct TranslateInput {
     pub glossary_ref: Option<Value>,
     #[serde(default)]
     pub params: Params,
+    /// 就地刷新时的底稿：这门语言已有的译文（`baocut.translation/2`）。与 `sentences` 同给同不给。
+    #[serde(default)]
+    pub translation: Option<TranslationBody>,
+    /// 就地刷新时要重译的句子 ID（字幕与翻译核心的句子）；底稿里别的单元原样写回。
+    #[serde(default)]
+    pub sentences: Option<Vec<Id>>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -92,6 +99,21 @@ impl TranslateInput {
         }
         if !(input.params.backoff_scale >= 0.0 && input.params.backoff_scale.is_finite()) {
             return Err(Failure::new("INPUT_UNREADABLE", "params.backoffScale 应为非负数"));
+        }
+        match (&input.translation, &input.sentences) {
+            (None, None) => {}
+            (Some(base), Some(sentences)) => {
+                if base.language != input.target_language {
+                    return Err(Failure::new(
+                        "INPUT_UNREADABLE",
+                        format!("底稿译文的语言 {} 与目标语言 {lang} 不同", base.language),
+                    ));
+                }
+                if sentences.is_empty() {
+                    return Err(Failure::new("INPUT_UNREADABLE", "就地刷新至少要给一句"));
+                }
+            }
+            _ => return Err(Failure::new("INPUT_UNREADABLE", "translation 与 sentences 要一起给")),
         }
         Ok(input)
     }

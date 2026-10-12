@@ -9,6 +9,7 @@ import {
   type MediaTime,
   type TextModelInfo,
   type TranslateParams,
+  type TranslateRefreshSummary,
   type TranslateSummary,
 } from '@baocut/protocol';
 import type { TextGenerator } from '@baocut/models';
@@ -18,7 +19,16 @@ import type { ArtifactStore } from '../artifact-store.ts';
 import { canonicalJson, sha256Hex } from '../input-hash.ts';
 import { asLocalized } from '../job-text.ts';
 import { videoSelection } from '../library-selection.ts';
-import { readCaptionStyle, captionsStep, captionsSummary, type CaptionLayerOutput, type CaptionVideos } from './caption-layer.ts';
+import {
+  readCaptionStyle,
+  captionsStep,
+  captionsSummary,
+  derivedFrom,
+  sentenceSpeakers,
+  type CaptionLayerOutput,
+  type CaptionVideos,
+} from './caption-layer.ts';
+import { readSpeechWords, retextCaption, workerUnitCues } from './caption-cues.ts';
 import { ParamReader } from './params.ts';
 import {
   PipelineStepError,
@@ -42,7 +52,14 @@ import {
   type FrozenGlossaryUse,
 } from './translation-batches.ts';
 import { sourceSentences, translationProblems, type FrozenSource, type TranslationBody } from './translation-document.ts';
-import { SPEECH_WORKER_PROTOCOL, runSpeechTranslate, type SpeechTranslateInput } from './speech-worker.ts';
+import {
+  SPEECH_WORKER_CUES_SCHEMA,
+  SPEECH_WORKER_PROTOCOL,
+  runSpeechTranslate,
+  type SpeechTranslateInput,
+  type SpeechWorkerCues,
+} from './speech-worker.ts';
+import { mergeRefresh, refreshPlan, refreshableTranslation, type RefreshPlan } from './translation-refresh.ts';
 
 // 抽到 translation-batches.ts 的部分，原样从这里导出（翻译配音与测试从这里引用）。
 export {
@@ -70,6 +87,12 @@ export {
  * 重新执行：每次都新增一份译文文档，不替换已有的（它们可能有手工修改，架构设计 §10.3；与转写一致，§7.3）。
  * 执行期间源文档改了（或删了）：写入这一步以 `STALE_JOB_INPUT` 失败，视频不变，产物保留；重试时读取原文这一步
  * 的产出不再可用，从当前版本重新读取、重新翻译。
+ *
+ * 就地刷新（给了 `translationId`）：读取原文这一步同时冻结那份译文的当前版本，挑出要重译的句子（标了过期、原句改过、
+ * 还没有译文，或 `sentences` 点名的）与原句已经不在的单元（`translation-refresh.ts`）；Worker 以那份译文为底稿只重译这几句；
+ * 组装把它们并回原来的译文，别的单元原样；写入是一笔事务：同一份译文文档的新版本，连同从它生成的字幕文档里这几句的字幕条
+ * （别的条不动，时间仍取原句成员词的时间），撤销一次两边一起回去。不新建字幕层（`captions` 不能给）。执行期间转写或这份
+ * 译文改了：写入以 `STALE_JOB_INPUT` 失败，视频不变。
  */
 
 export const TRANSLATE_PIPELINE = 'translate';
@@ -156,6 +179,18 @@ const PARAMS_SCHEMA = {
       default: false,
       description: '字幕层双语显示：原文与译文两层字幕共用一份样式；只在 captions 为 true 时可以给',
     },
+    translationId: {
+      type: 'string',
+      description:
+        '就地刷新这份译文（translation 文档）：只重译过期与还没有译文的句子（或 sentences 点名的），写成它的新版本，从它生成的字幕层跟着更新；targetLanguage 要与它的语言相同，不能与 captions 同给',
+    },
+    sentences: {
+      type: 'array',
+      items: { type: 'string' },
+      minItems: 1,
+      maxItems: 500,
+      description: '就地刷新时重译的句子 ID（s-<首词 ID>），译文新鲜的也重译；只能与 translationId 一起给',
+    },
     // i18n-ignore-end
   },
   required: ['targetLanguage'],
@@ -171,6 +206,9 @@ interface FreezeOutput extends Record<string, unknown> {
   documentId: Id;
   revision: string;
   sentenceCount: number;
+  /** 就地刷新：冻结的那份译文（正文是产物）与要做的事。 */
+  translation?: { documentId: Id; revision: string; artifactId: string };
+  plan?: RefreshPlan;
 }
 
 interface TranslateOutput extends Record<string, unknown> {
@@ -188,10 +226,16 @@ interface TranslateOutput extends Record<string, unknown> {
 interface AssembleOutput extends Record<string, unknown> {
   artifactId: string;
   unitCount: number;
+  /** 就地刷新：换成新译文的单元（含新建的）。 */
+  changedUnitIds?: Id[];
 }
 
 interface WriteOutput extends Record<string, unknown> {
   documentId: Id;
+  /** 就地刷新：写入之后译文的版本、跟着换了字幕条的字幕文档与那笔事务。 */
+  revision?: string;
+  captionDocumentIds?: Id[];
+  transactionId?: Id;
 }
 
 export function translatePipeline(deps: TranslateDeps): PipelineDefinition<FrozenTranslateParams, TranslateParams> {
@@ -205,7 +249,8 @@ export function translatePipeline(deps: TranslateDeps): PipelineDefinition<Froze
     async prepare(params, options) {
       const state = deps.videos.state(params.videoId);
       if (!state) throw new RpcError('not-found', J.videoNotOpen());
-      const documentId = pickSource(state.documents, params.documentId);
+      const refresh = params.translationId !== undefined ? await prepareRefresh(deps.videos, params, state.documents) : null;
+      const documentId = refresh?.documentId ?? pickSource(state.documents, params.documentId);
       sameLanguageCheck(state.documents[documentId]?.language ?? null, params.targetLanguage);
       // 重试沿用冻结的术语表；第一次启动时解析调用时给的与视频启用的，冻结版本、内容写成产物。
       const glossaryUse =
@@ -236,7 +281,9 @@ export function translatePipeline(deps: TranslateDeps): PipelineDefinition<Froze
         providerId: selection.providerId,
         modelId: selection.modelId,
         videoId: params.videoId,
-        contentHash: `sha256:${sha256Hex(canonicalJson({ videoId: params.videoId, documentId, revision }))}`,
+        contentHash: `sha256:${sha256Hex(
+          canonicalJson({ videoId: params.videoId, documentId, revision, ...(refresh ? { refresh: refresh.key } : {}) }),
+        )}`,
         ...(glossaryUse?.entries.length
           ? { library: glossaryUse.entries.map(({ library, id, version, contentHash }) => ({ library, id, version, contentHash })) }
           : {}),
@@ -251,8 +298,11 @@ export function translatePipeline(deps: TranslateDeps): PipelineDefinition<Froze
         // 源文档有了新版本：冻结的原文过期，重试时从当前版本重新读取。没有冻结正文的旧产出也重新读取。
         reusable: async (output, { params, artifacts }) => {
           const o = output as Partial<FreezeOutput>;
+          const documents = deps.videos.state(params.videoId)?.documents;
           return (
-            deps.videos.state(params.videoId)?.documents[params.documentId]?.currentRevision === o.revision &&
+            documents?.[params.documentId]?.currentRevision === o.revision &&
+            (params.translationId === undefined ||
+              (o.translation !== undefined && documents?.[params.translationId]?.currentRevision === o.translation.revision)) &&
             typeof o.speechArtifactId === 'string' &&
             (await artifacts.locate(o.speechArtifactId)) !== null
           );
@@ -277,9 +327,22 @@ export function translatePipeline(deps: TranslateDeps): PipelineDefinition<Froze
         label: () => J.stepAssemble(),
         run: async ({ outputs, artifacts, progress }) => {
           progress(null, 'validating');
-          const source = await readArtifact<FrozenSource>(artifacts, (outputs['freeze-source'] as FreezeOutput).artifactId);
+          const frozen = outputs['freeze-source'] as FreezeOutput;
+          const source = await readArtifact<FrozenSource>(artifacts, frozen.artifactId);
           const translated = outputs.translate as TranslateOutput;
           const body = await readArtifact<TranslationBody>(artifacts, translated.artifactId);
+          if (frozen.translation && frozen.plan) {
+            const base = await readArtifact<TranslationBody>(artifacts, frozen.translation.artifactId);
+            const merged = mergeRefresh(base, body, source.sentences, frozen.plan, source.speechRef);
+            if ('problems' in merged) {
+              throw new PipelineStepError('WORKER_OUTPUT_INVALID', J.workerMismatch(), { problems: merged.problems.slice(0, 20) });
+            }
+            const { artifactId } = await artifacts.put(Buffer.from(JSON.stringify(merged.body)), 'json');
+            return {
+              output: { artifactId, unitCount: merged.body.units.length, changedUnitIds: merged.changedUnitIds } satisfies AssembleOutput,
+              result: { documentId: null, artifactId },
+            };
+          }
           // Worker 的句子与这里冻结的句子出自同一套规则：逐句的 ID、指纹与 editViewHash 都要对得上。
           const problems = translationProblems(body, source);
           if (problems.length > 0) {
@@ -297,7 +360,8 @@ export function translatePipeline(deps: TranslateDeps): PipelineDefinition<Froze
       {
         name: 'write',
         label: () => J.stepWrite(),
-        run: (context) => writeTranslation(deps.videos, context),
+        run: (context) =>
+          context.params.translationId !== undefined ? writeRefresh(deps.videos, context) : writeTranslation(deps.videos, context),
       },
       captionsStep<FrozenTranslateParams>(deps.videos, {
         captionStyle: (params) => params.captionStyle,
@@ -324,6 +388,27 @@ export function translatePipeline(deps: TranslateDeps): PipelineDefinition<Froze
       const assembled = outputs.assemble as AssembleOutput;
       const written = outputs.write as WriteOutput;
       const glossary = glossarySummary(params, translated);
+      if (frozen.translation && frozen.plan) {
+        const refresh: TranslateRefreshSummary = {
+          revision: written.revision ?? frozen.translation.revision,
+          sentences: frozen.plan.sentences,
+          removedUnitIds: frozen.plan.removeUnitIds,
+          captionDocumentIds: written.captionDocumentIds ?? [],
+          ...(written.transactionId ? { transactionId: written.transactionId } : {}),
+        };
+        const summary: TranslateSummary = {
+          videoId: params.videoId,
+          documentId: written.documentId,
+          source: { documentId: frozen.documentId, revision: frozen.revision },
+          targetLanguage: params.targetLanguage,
+          unitCount: assembled.unitCount,
+          providerId: params.provider,
+          modelId: params.model,
+          ...(glossary ? { glossary } : {}),
+          refresh,
+        };
+        return { summary: { ...summary }, result: { documentId: written.documentId, artifactId: assembled.artifactId } };
+      }
       const summary: TranslateSummary = {
         videoId: params.videoId,
         documentId: written.documentId,
@@ -360,6 +445,8 @@ export function parseTranslateParams(raw: Record<string, unknown>): TranslatePar
     'captions',
     'captionStyle',
     'bilingual',
+    'translationId',
+    'sentences',
   ]);
   const targetLanguage = reader.string('targetLanguage', { max: 35 });
   if (!/^[A-Za-z]{2,8}(-[A-Za-z0-9]{1,8})*$/.test(targetLanguage)) throw new RpcError('invalid-request', J.targetLanguageInvalid());
@@ -381,6 +468,15 @@ export function parseTranslateParams(raw: Record<string, unknown>): TranslatePar
   if (captionStyle && captions !== true) throw invalid('captionStyle', JobsParams.onlyOneOf({ other: 'captions: false' }));
   const bilingual = flag('bilingual');
   if (bilingual === true && captions !== true) throw new RpcError('invalid-request', J.bilingualNeedsCaptions());
+  const translationId = optional('translationId', 128);
+  const sentences = reader.array('sentences', { min: 1, max: 500, optional: true })?.map((id) => {
+    if (typeof id !== 'string' || id.trim() === '' || id.length > 200) throw invalid('sentences', JobsParams.mustBeNonEmptyString());
+    return id;
+  });
+  if (sentences && translationId === undefined) throw new RpcError('invalid-request', J.sentencesNeedTranslation());
+  if (translationId !== undefined && (captions === true || captionStyle !== undefined || bilingual === true)) {
+    throw new RpcError('invalid-request', J.refreshNoCaptions());
+  }
   return {
     videoId: reader.string('videoId', { max: 128 }),
     targetLanguage,
@@ -394,7 +490,44 @@ export function parseTranslateParams(raw: Record<string, unknown>): TranslatePar
     ...(captions !== undefined ? { captions } : {}),
     ...(captionStyle !== undefined ? { captionStyle } : {}),
     ...(bilingual !== undefined ? { bilingual } : {}),
+    ...(translationId !== undefined ? { translationId } : {}),
+    ...(sentences !== undefined ? { sentences: [...new Set(sentences)] } : {}),
   };
+}
+
+/**
+ * 就地刷新的启动核对：译文文档在、是 `translation`、记着译自哪份转写（给了 `documentId` 时要一致）、语言与 `targetLanguage`
+ * 相同、正文是能就地刷新的 `/2`；按当前版本挑出要做的事，点名了转写里没有的句子、或没有要做的事时 `invalid-request`。
+ * 返回原文的文档与参与去重的键（译文的版本与要做的事）。
+ */
+async function prepareRefresh(
+  videos: PipelineVideos,
+  params: TranslateParams,
+  documents: Record<Id, DocumentRecord>,
+): Promise<{ documentId: Id; key: unknown }> {
+  const translationId = params.translationId!;
+  const record = documents[translationId];
+  if (!record) throw new RpcError('not-found', J.noDocument({ documentId: translationId }));
+  if (record.kind !== 'translation') throw new RpcError('invalid-request', J.notTranslation({ documentId: translationId, kind: record.kind }));
+  const documentId = record.sourceDocumentId;
+  if (!documentId || documents[documentId]?.kind !== 'speech') {
+    throw new RpcError('invalid-request', J.translationNotRefreshable({ documentId: translationId }));
+  }
+  if (params.documentId !== undefined && params.documentId !== documentId) {
+    throw new RpcError('invalid-request', J.translationSourceMismatch({ documentId: translationId, source: documentId }));
+  }
+  const translation = refreshableTranslation((await videos.document(params.videoId, translationId, record.currentRevision)).body);
+  if (!translation) throw new RpcError('invalid-request', J.translationNotRefreshable({ documentId: translationId }));
+  const language = record.language ?? translation.language;
+  if (language.toLowerCase() !== params.targetLanguage.toLowerCase()) {
+    throw new RpcError('invalid-request', J.translationLanguageMismatch({ language, target: params.targetLanguage }));
+  }
+  const read = sourceSentences((await videos.document(params.videoId, documentId, documents[documentId]!.currentRevision)).body);
+  if ('problem' in read) throw new RpcError('invalid-request', asLocalized(read.problem, read.problemRef));
+  const plan = refreshPlan(translation, read.sentences, params.sentences);
+  if ('unknown' in plan) throw new RpcError('invalid-request', J.unknownSentence({ sentenceId: plan.unknown }));
+  if (plan.sentences.length === 0 && plan.removeUnitIds.length === 0) throw new RpcError('invalid-request', J.nothingStale());
+  return { documentId, key: { translationId, revision: record.currentRevision, plan } };
 }
 
 /** 启动时解析术语表：调用时给的与视频里启用的；用到库里的条目时把内容写成产物。都没有时 undefined。 */
@@ -458,6 +591,7 @@ async function freezeSource(videos: PipelineVideos, context: PipelineStepContext
     timescale: read.timescale,
     sentences: read.sentences,
   };
+  const refresh = params.translationId !== undefined ? await freezeRefresh(videos, context, state.documents, read.sentences) : null;
   const { artifactId } = await artifacts.put(Buffer.from(JSON.stringify(source)), 'json');
   const speech = await artifacts.put(Buffer.from(JSON.stringify(content.body)), 'json');
   const output: FreezeOutput = {
@@ -467,8 +601,30 @@ async function freezeSource(videos: PipelineVideos, context: PipelineStepContext
     documentId: params.documentId,
     revision: content.revision,
     sentenceCount: read.sentences.length,
+    ...(refresh ?? {}),
   };
   return { output, result: { documentId: null, artifactId } };
+}
+
+/** 就地刷新：冻结那份译文的当前版本（正文发布为产物），按冻结的原文挑出要做的事。 */
+async function freezeRefresh(
+  videos: PipelineVideos,
+  context: PipelineStepContext<FrozenTranslateParams>,
+  documents: Record<Id, DocumentRecord>,
+  sentences: FrozenSource['sentences'],
+): Promise<Pick<FreezeOutput, 'translation' | 'plan'>> {
+  const { params, artifacts } = context;
+  const translationId = params.translationId!;
+  const record = documents[translationId];
+  if (!record) throw new PipelineStepError('STALE_JOB_INPUT', J.translationGone(), { documentId: translationId });
+  const content = await videos.document(params.videoId, translationId, record.currentRevision);
+  const body = refreshableTranslation(content.body);
+  if (!body) throw new PipelineStepError('INPUT_UNREADABLE', J.translationNotRefreshable({ documentId: translationId }));
+  const plan = refreshPlan(body, sentences, params.sentences);
+  if ('unknown' in plan) throw new PipelineStepError('STALE_JOB_INPUT', J.unknownSentence({ sentenceId: plan.unknown }));
+  if (plan.sentences.length === 0 && plan.removeUnitIds.length === 0) throw new PipelineStepError('STALE_JOB_INPUT', J.nothingStale());
+  const { artifactId } = await artifacts.put(Buffer.from(JSON.stringify(body)), 'json');
+  return { translation: { documentId: translationId, revision: content.revision, artifactId }, plan };
 }
 
 /**
@@ -517,6 +673,24 @@ async function translateWithWorker(deps: TranslateDeps, context: PipelineStepCon
   }
   const frozen = outputs['freeze-source'] as FreezeOutput;
   const source = await readArtifact<FrozenSource>(artifacts, frozen.artifactId);
+  const base = frozen.translation ? await readArtifact<TranslationBody>(artifacts, frozen.translation.artifactId) : null;
+  if (base && frozen.plan?.sentences.length === 0) {
+    // 只有要去掉的单元：不必调用模型，产出是指向这次原文的底稿与空的字幕条。
+    const body: TranslationBody = {
+      ...base,
+      sourceBasis: { ...base.sourceBasis, speechRef: source.speechRef, sequenceId: source.sequenceId, editViewHash: source.editViewHash },
+    };
+    const cues: SpeechWorkerCues = { schema: SPEECH_WORKER_CUES_SCHEMA, language: base.language, timescale: source.timescale, cues: [] };
+    const translation = await artifacts.put(Buffer.from(JSON.stringify(body)), 'json');
+    const stored = await artifacts.put(Buffer.from(JSON.stringify(cues)), 'json');
+    const output: TranslateOutput = {
+      artifactId: translation.artifactId,
+      cuesArtifactId: stored.artifactId,
+      calls: { calls: 0, retries: 0, failures: 0 },
+      modelVersion: null,
+    };
+    return { output, result: { documentId: null, artifactId: output.artifactId } };
+  }
   const speech = await readArtifact<unknown>(artifacts, frozen.speechArtifactId);
   const snapshot = await loadGlossaries(artifacts, params);
   const terms = promptTerms(snapshot);
@@ -539,6 +713,7 @@ async function translateWithWorker(deps: TranslateDeps, context: PipelineStepCon
         ...(params.style !== undefined ? { instructions: params.style } : {}),
         ...(deps.backoffScale !== undefined ? { backoffScale: deps.backoffScale } : {}),
       },
+      ...(base && frozen.plan ? { translation: base, sentences: frozen.plan.sentences } : {}),
     },
     text: deps.text,
     provider: params.provider,
@@ -609,6 +784,99 @@ async function writeTranslation(videos: PipelineVideos, context: PipelineStepCon
       return { output: { documentId } satisfies WriteOutput, result: { documentId, artifactId: assembled.artifactId } };
     } catch (error) {
       // 视频在读与写之间被改过：重新读、重新核对源文档，换一个命令再提交。
+      if (error instanceof RpcError && error.code === 'conflict' && attempt < APPLY_ATTEMPTS) continue;
+      if (error instanceof PipelineStepError) throw error;
+      throw new PipelineStepError('APPLY_FAILED', J.rejected(), {
+        cause: error instanceof Error ? error.message : String(error),
+      });
+    }
+  }
+}
+
+/**
+ * 就地刷新的写入：一笔事务写同一份译文文档的新版本，连同从它生成的每份字幕文档里重译的与去掉的那几句的字幕条
+ * （`retextCaption`，字幕条用 Worker 切好的，别的条不动）。提交之前核对转写与这份译文都还是冻结的版本；视频在读与写之间
+ * 被改过（`conflict`）时重新读字幕文档、换一个命令再提交。
+ */
+async function writeRefresh(videos: PipelineVideos, context: PipelineStepContext<FrozenTranslateParams>): Promise<StepResult> {
+  const { params, outputs, artifacts, progress, jobId, run } = context;
+  progress(null, 'applying');
+  const frozen = outputs['freeze-source'] as FreezeOutput;
+  const translated = outputs.translate as TranslateOutput;
+  const assembled = outputs.assemble as AssembleOutput;
+  const frozenTranslation = frozen.translation!;
+  const translationId = frozenTranslation.documentId;
+  const body = await readArtifact<TranslationBody>(artifacts, assembled.artifactId);
+  const cues = await readArtifact<SpeechWorkerCues>(artifacts, translated.cuesArtifactId);
+  const speech = readSpeechWords(await readArtifact<unknown>(artifacts, frozen.speechArtifactId));
+  const bySentence = sentenceSpeakers(speech?.words ?? []);
+  const speakers = speech?.speakers ?? new Map<string, string>();
+  const changed = (assembled.changedUnitIds ?? []).map((unitId) => ({ unitId, fresh: workerUnitCues(cues, unitId, bySentence) }));
+  const removed = (frozen.plan?.removeUnitIds ?? []).map((unitId) => ({ unitId, fresh: [] }));
+  for (let attempt = 1; ; attempt++) {
+    const state = videos.state(params.videoId);
+    if (!state) throw new PipelineStepError('STALE_JOB_INPUT', J.videoClosedKept());
+    const source = state.documents[frozen.documentId];
+    if (!source || source.currentRevision !== frozen.revision) {
+      throw new PipelineStepError('STALE_JOB_INPUT', J.sourceChanged(), {
+        documentId: frozen.documentId,
+        frozenRevision: frozen.revision,
+        currentRevision: source?.currentRevision ?? null,
+      });
+    }
+    const record = state.documents[translationId];
+    if (!record) throw new PipelineStepError('STALE_JOB_INPUT', J.translationGone(), { documentId: translationId });
+    if (record.currentRevision !== frozenTranslation.revision) {
+      throw new PipelineStepError('STALE_JOB_INPUT', J.translationChanged(), {
+        documentId: translationId,
+        frozenRevision: frozenTranslation.revision,
+        currentRevision: record.currentRevision,
+      });
+    }
+    const previous = record.revisions?.[record.currentRevision]?.summary;
+    const operations: EditOperation[] = [
+      {
+        type: 'putDocument',
+        documentId: translationId,
+        kind: 'translation',
+        body,
+        summary: { ...(previous && typeof previous === 'object' ? previous : {}), unitCount: body.units.length, sourceRevision: frozen.revision },
+      },
+    ];
+    const captionDocumentIds: Id[] = [];
+    for (const caption of Object.values(state.documents)) {
+      if (!derivedFrom(caption, translationId)) continue;
+      const content = await videos.document(params.videoId, caption.id, caption.currentRevision);
+      if (typeof content.body !== 'object' || content.body === null) continue;
+      let next = content.body as Record<string, unknown>;
+      for (const { unitId, fresh } of [...changed, ...removed]) next = retextCaption(next, unitId, fresh, speakers);
+      const summary = caption.revisions?.[caption.currentRevision]?.summary;
+      operations.push({
+        type: 'putDocument',
+        documentId: caption.id,
+        kind: caption.kind,
+        body: next,
+        summary: { ...(summary && typeof summary === 'object' ? summary : {}), cueCount: Array.isArray(next.cues) ? next.cues.length : 0 },
+      });
+      captionDocumentIds.push(caption.id);
+    }
+    try {
+      const receipt = await videos.apply(params.videoId, {
+        commandId: `cmd_${jobId}_refresh_${attempt}`,
+        expectedRevision: state.revision,
+        operations,
+        label: J.refreshLabel({ language: params.targetLanguage }).text,
+        run,
+      });
+      const revision = videos.state(params.videoId)?.documents[translationId]?.currentRevision ?? frozenTranslation.revision;
+      const output: WriteOutput = {
+        documentId: translationId,
+        revision,
+        captionDocumentIds,
+        ...(receipt.transactionId ? { transactionId: receipt.transactionId } : {}),
+      };
+      return { output, result: { documentId: translationId, artifactId: assembled.artifactId } };
+    } catch (error) {
       if (error instanceof RpcError && error.code === 'conflict' && attempt < APPLY_ATTEMPTS) continue;
       if (error instanceof PipelineStepError) throw error;
       throw new PipelineStepError('APPLY_FAILED', J.rejected(), {

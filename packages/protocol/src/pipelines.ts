@@ -82,6 +82,9 @@ export interface GlossaryEntry {
  * 翻译（`translate`）：视频里一份 `speech` 文档 → 一份新的 `translation` 文档（视频格式规范 §5.3）。由流程逐批调用
  * 文本生成完成；文本模型没有配置时 `pipelines.start` 以 `CAPABILITY_NOT_CONFIGURED` 拒绝，不改交智能体。
  * 每次执行都新增一份译文文档，不替换已有的（它们可能有手工修改，架构设计 §10.3）。
+ *
+ * 给了 `translationId` 时是就地刷新：只重译那份译文里过期与还没有译文的句子（或 `sentences` 点名的句子），写成同一份译文的
+ * 新版本，别的单元原样保留；从这份译文生成的字幕文档在同一笔事务里只换这几句的字幕条，时间轴照旧。
  */
 export interface TranslateParams {
   /** 已打开的视频。`pipelines.start` 也可以改给 `target`（`{ videoId }` 或 `{ entryId }`，见 `PipelineTargetParams`）。 */
@@ -116,6 +119,16 @@ export interface TranslateParams {
    * 只在 `captions: true` 时可以给，否则 `invalid-request`。
    */
   bilingual?: boolean;
+  /**
+   * 就地刷新这份 `translation` 文档（不新增一份）：原文是它的 `sourceDocumentId`（给了 `documentId` 时要一致），
+   * `targetLanguage` 要与它的语言相同。不能与 `captions`、`captionStyle`、`bilingual` 同给（已有的字幕层跟着更新）。
+   */
+  translationId?: Id;
+  /**
+   * 就地刷新时重译的句子（`s-<首词 ID>`，最多 500 句），译文新鲜的也重译；不给时取标了过期、原句改过与还没有译文的句子。
+   * 只能与 `translationId` 一起给。
+   */
+  sentences?: Id[];
 }
 
 /** 翻译用到的术语表（`TranslateSummary.glossary`、`DubSummary.glossary`）。 */
@@ -161,6 +174,22 @@ export interface TranslateSummary {
   glossary?: TranslateGlossaryUse;
   /** 目标语言的字幕层；没有这一步的旧记录没有这个字段。 */
   captions?: PipelineCaptionsSummary;
+  /** 就地刷新（参数给了 `translationId`）时有：写成的版本、重译与去掉的单元、跟着更新的字幕文档。 */
+  refresh?: TranslateRefreshSummary;
+}
+
+/** 就地刷新一份译文的结果（`TranslateSummary.refresh`）。 */
+export interface TranslateRefreshSummary {
+  /** 写入之后译文文档的版本。 */
+  revision: string;
+  /** 重译的句子（`s-<首词 ID>`）。 */
+  sentences: Id[];
+  /** 原句已经不在、这次去掉的译文单元。 */
+  removedUnitIds: Id[];
+  /** 跟着换了字幕条的字幕文档（从这份译文生成的）。 */
+  captionDocumentIds: Id[];
+  /** 写入的那笔事务，按它撤销（`videos.undo` 的 `{ transaction }`）。 */
+  transactionId?: Id;
 }
 
 /**
