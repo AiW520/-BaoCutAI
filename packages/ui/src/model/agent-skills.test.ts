@@ -50,12 +50,14 @@ describe('列表的排序、搜索与筛选', () => {
     expect(sortSkills([...list].reverse()).map((s) => s.id)).toEqual(['brand', 'subtitle-style', 'chapters']);
   });
 
-  it('按列表里显示的名字排（内置的原始名在前），搜显示的名称与介绍', () => {
+  it('内置的按原始名排（不管括号怎么写），搜显示的名称与介绍', () => {
     const labelled = [
       skill('zz-chapters', { origin: 'builtin', labels: { name: { en: 'Chapters', 'zh-Hans': 'A 分章节' }, summary: { en: 'x', 'zh-Hans': '话题转换' } } }),
       skill('aa-blog', { origin: 'builtin', labels: { name: { en: 'Blog', 'zh-Hans': 'B 写成博客' }, summary: { en: 'y', 'zh-Hans': '完整文章' } } }),
     ];
     expect(sortSkills(labelled).map((s) => s.id)).toEqual(['aa-blog', 'zz-chapters']);
+    const design = (id: string, zh: string) => skill(id, { origin: 'builtin', labels: { name: { en: id, 'zh-Hans': zh }, summary: { en: 'x' } } });
+    expect(sortSkills([design('design-system', '设计系统'), design('design', '设计稿')]).map((s) => s.id)).toEqual(['design', 'design-system']);
     expect(filterSkills(labelled, '话题', 'all').map((s) => s.id)).toEqual(['zz-chapters']);
     expect(filterSkills(labelled, '写成博客', 'all').map((s) => s.id)).toEqual(['aa-blog']);
     expect(filterSkills(labelled, 'aa-blog', 'all').map((s) => s.id)).toEqual(['aa-blog']);

@@ -123,15 +123,16 @@ export function skillNameById(list: readonly SkillSummary[], id: string, fallbac
 }
 
 /**
- * `skills.list` 的顺序不是合同：按来源（内置、我的、第三方），再按列表里显示的名字（`skillFullName`，内置的就是按原始名）排
- * （当前语言的排序规则），名字相同按 id。界面换语言时整体重画、重新取列表，顺序跟着换。
+ * `skills.list` 的顺序不是合同：按来源（内置、我的、第三方），再按名字排：内置的按原始名（`skillFullName` 打头的那个，不受
+ * 括号的写法影响），其余按显示的名称（当前语言的排序规则）；名字相同按 id。界面换语言时整体重画、重新取列表，顺序跟着换。
  */
 export function sortSkills(list: readonly SkillSummary[]): SkillSummary[] {
   const locale = intlLocale();
+  const key = (s: SkillSummary) => (s.labels ? s.name : skillDisplayName(s));
   return [...list].sort(
     (a, b) =>
       ORIGIN_ORDER[a.origin] - ORIGIN_ORDER[b.origin] ||
-      skillFullName(a).localeCompare(skillFullName(b), locale) ||
+      key(a).localeCompare(key(b), locale) ||
       a.id.localeCompare(b.id),
   );
 }
