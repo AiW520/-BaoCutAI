@@ -9,6 +9,8 @@ const L = window.BC_SETTINGS_LINK;
 test('设置的节：落到那一节，位置写「设置 › 节名」', () => {
   assert.deepEqual(L.parse('/settings/agent'), {route: {r: 'settings', sec: 'agent'}, trail: '设置 › Agent 提供方'});
   assert.deepEqual(L.parse('/settings/shortcuts/'), {route: {r: 'settings', sec: 'shortcuts'}, trail: '设置 › 快捷键'});
+  /* 下载要登录时，智能体把用户带到网站登录所在的那一节 */
+  assert.deepEqual(L.parse('/settings/downloader'), {route: {r: 'settings', sec: 'downloader'}, trail: '设置 › 视频下载'});
 });
 
 test('模型的类与页：落到那一类的能力页或另一页；默认页的位置里不写页名', () => {
@@ -27,7 +29,7 @@ test('旧的本地 / 云端页落到那种能力的能力页；那种能力以�
 });
 
 test('认不出的链接返回 null，按普通文字显示', () => {
-  ['/settings/model', '/settings/models/llm/local', '/settings/models/asr/voices', '/settings/models/agent', '/settings/agent/skills', '/settings',
+  ['/settings/model', '/settings/models/llm/local', '/settings/models/asr/voices', '/settings/models/agent', '/settings/agent/skills', '/settings/downloader/cookies', '/settings',
     'https://example.com/settings/agent', 'settings/agent', '/space/all', '', null].forEach((href) => {
     assert.equal(L.parse(href), null, String(href));
   });

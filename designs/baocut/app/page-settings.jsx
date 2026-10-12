@@ -59,7 +59,6 @@
             <SaveDirRow />
             <window.AppUpdateAutoRow />
           </div>
-          <window.DownloaderSettings />
         </section>
       </>
     );
@@ -211,7 +210,7 @@
   const SkillsSection = () => <div className="agent-settings" data-screen-label="Skills 设置"><h1 className="t-heading-sm">Skills</h1><window.AgentSkillsManager /></div>;
 
   const SECTIONS = {
-    general: GeneralSection, shortcuts: ShortcutsSection, fonts: window.FontsSection, voices: window.VoicesSection,
+    general: GeneralSection, shortcuts: ShortcutsSection, fonts: window.FontsSection, downloader: window.DownloaderSection, voices: window.VoicesSection,
     providers: window.ProvidersSection, usage: window.UsageSection, agent: window.AgentSection, skills: SkillsSection,
     glossary: window.GlossarySection, privacy: PrivacySection,
     diagnostics: DiagnosticsSection, about: AboutSection,
@@ -234,7 +233,7 @@
     const Body = nav.capPage && r.sec !== 'voices' ? window.CapabilitySection : SECTIONS[r.sec] || GeneralSection;
     const R = window.RSP;
     const groups = NV.searchGroups('');
-    const icons = {general: 'Settings', shortcuts: 'Keyboard', providers: 'Cloud', usage: 'Data', asr: 'Transcript', tts: 'AudioWave', llm: 'Text', image: 'Image', music: 'MusicNote', sep: 'UnlinkHoriz', vision: 'Visibility', glossary: 'FileText', privacy: 'Lock', diagnostics: 'Properties', about: 'InfoCircle'};
+    const icons = {general: 'Settings', shortcuts: 'Keyboard', downloader: 'Download', providers: 'Cloud', usage: 'Data', asr: 'Transcript', tts: 'AudioWave', llm: 'Text', image: 'Image', music: 'MusicNote', sep: 'UnlinkHoriz', vision: 'Visibility', glossary: 'FileText', privacy: 'Lock', diagnostics: 'Properties', about: 'InfoCircle'};
     const href = (n) => window.BC_APP_IA.hrefFor(NV.routeFor(n.k, null, lastPage[n.k]));
     return (
       <div className="setpage">

@@ -167,3 +167,15 @@ test('planFor：带链接但目标语言没填，先问清再下载；填好了�
   assert.equal(ask.sim, undefined);
   assert.equal(S.planFor(`转录这个视频，并翻译成日语，做成双语字幕。${url}`, false).kind, 'download');
 });
+
+test('下载要登录：读完页面就停，Agent 用设置链接把用户带到设置 › 视频下载的网站登录', () => {
+  const sim = S.planFor('下载 https://lanshan.example/members/42', false).sim;
+  assert.equal(sim.task.scenario, 'login');
+  assert.equal(S.downloadFails(sim.task, S.LOGIN_FAIL_AT - 1), false);
+  assert.equal(S.downloadFails(sim.task, S.LOGIN_FAIL_AT), true);
+  assert.equal(S.downloadFails({...sim.task, retried: true}, 60), false);
+  const reply = S.loginReply(sim.task);
+  assert.match(reply, /\[设置 › 视频下载\]\(\/settings\/downloader\)/);
+  assert.match(reply, /lanshan\.example 仍然要求登录/);
+  assert.ok(window.BC_SETTINGS_LINK.parse('/settings/downloader'));
+});

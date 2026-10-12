@@ -240,6 +240,7 @@
       "app/settings-voices.jsx",
       "app/settings-update.jsx",
       "app/settings-fonts.jsx",
+      "app/settings-downloader.jsx",
       "app/page-settings.jsx",
       "app/agent-markdown.jsx",
       "app/agent-steps.jsx",
@@ -433,9 +434,9 @@
       "app/subtitle-motion.css",
       "app/subtitle-active.css"
     ],
-    "js": "generated/app.js?v=9822b28c537c",
-    "css": "generated/app.css?v=34d4fa82885e",
-    "bytes": 4023706
+    "js": "generated/app.js?v=f5e541ca45fe",
+    "css": "generated/app.css?v=34e823886361",
+    "bytes": 4027230
   },
   "web": {
     "file": "BaoCutWeb.html",

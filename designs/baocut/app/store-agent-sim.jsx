@@ -139,15 +139,19 @@
       });
     };
 
-    /** 驱动一件下载：在 34% 断的演示链接、取消、完成三条路。 */
+    /** 驱动一件下载：在 34% 断的演示链接、要登录的演示链接、取消、完成四条路。 */
     const driveDownload = (sid, tid, sim, from) => drive(sid, tid, sim, from, {
       stopped: () => stoppedTurn(sid, tid, sim),
       failed: (p) => {
-        const issue = window.BC_IMPORT.issues.network;
-        patchTask(tid, {...SIM.progress(sim, p), status: 'error', outcome: 'error', issue: 'network', error: issue.title, phase: null});
-        markTool(sid, tid, {status: 'failed', took: '16s', error: `${issue.title}（已下 ${p}%）`}, isRun);
+        const t = tasksRef.current.find((x) => x.id === tid) || {};
+        const login = t.scenario === 'login';
+        const key = login ? 'login' : 'network';
+        const issue = window.BC_IMPORT.issues[key];
+        patchTask(tid, {...SIM.progress(sim, p), status: 'error', outcome: 'error', issue: key, error: issue.title, phase: null});
+        markTool(sid, tid, {status: 'failed', took: login ? '4s' : '16s', error: login ? issue.title : `${issue.title}（已下 ${p}%）`}, isRun);
         patchSession(sid, {taskId: null});
-        const end = streamReply(sid, `下载在 ${p}% 断了：${issue.title}。检查网络后点下载卡上的「重试」，会从断点接着下。`, 300);
+        const end = streamReply(sid, login ? SIM.loginReply(t)
+          : `下载在 ${p}% 断了：${issue.title}。检查网络后点下载卡上的「重试」，会从断点接着下。`, 300);
         later(sid, end, () => {
           endTurn(sid);
           patchSession(sid, {status: 'idle'});
