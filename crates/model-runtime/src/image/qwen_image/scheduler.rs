@@ -1,9 +1,68 @@
 //! FlowMatchEulerDiscreteScheduler，按 `scheduler/scheduler_config.json` 的配置复刻
-//! （动态 shift、指数型 time shift、`shift_terminal` 拉伸）。纯逻辑，全平台编译。
+//! （动态 shift、指数型 time shift、`shift_terminal` 拉伸）；蒸馏版（Turbo）改用 `model_index.json` 里固定的
+//! `sample_sigmas`（[`Schedule`]）。纯逻辑，全平台编译。
 
-use anyhow::{Context, Result};
+use anyhow::{Context, Result, bail};
 use serde::Deserialize;
 use std::path::Path;
+
+use crate::protocol::ErrorBody;
+
+/// 一只模型的采样计划。原版按调度器配置与步数现算 sigma；蒸馏版（Qwen-Image-2.1-Turbo）在 `model_index.json` 的
+/// `sample_sigmas` 里给出固定的 sigma 表，步数就是表长（diffusers 同样以表为准、不看请求的步数），配置里的 shift 都已关掉。
+#[derive(Debug, Clone)]
+pub enum Schedule {
+    Computed(SchedulerConfig),
+    Fixed(Vec<f64>),
+}
+
+impl Schedule {
+    /// 读调度器配置；`model_index` 带 `sample_sigmas` 时改用固定表。
+    pub fn load(scheduler: &Path, model_index: Option<&Path>) -> Result<Self> {
+        if let Some(path) = model_index {
+            let s = std::fs::read_to_string(path).with_context(|| format!("read {}", path.display()))?;
+            let index: serde_json::Value = serde_json::from_str(&s)?;
+            if let Some(table) = index.get("sample_sigmas") {
+                let sigmas: Vec<f64> = serde_json::from_value(table.clone()).context("sample_sigmas 不是数字数组")?;
+                return Self::fixed(sigmas);
+            }
+        }
+        Ok(Self::Computed(SchedulerConfig::load(scheduler)?))
+    }
+
+    fn fixed(sigmas: Vec<f64>) -> Result<Self> {
+        if sigmas.is_empty() || sigmas.iter().any(|s| !(*s > 0.0 && *s <= 1.0)) || sigmas.windows(2).any(|w| w[0] <= w[1]) {
+            bail!("sample_sigmas 必须非空、落在 (0, 1] 且严格递减：{sigmas:?}");
+        }
+        Ok(Self::Fixed(sigmas))
+    }
+
+    /// 请求没给步数时用的步数：固定表是表长。
+    pub fn default_steps(&self, computed: u32) -> u32 {
+        match self {
+            Self::Computed(_) => computed,
+            Self::Fixed(s) => s.len() as u32,
+        }
+    }
+
+    /// 固定表只认表长那么多步；别的步数是 `INVALID_PARAMS`，不悄悄改步数。
+    pub fn check_steps(&self, steps: u32) -> Result<(), ErrorBody> {
+        match self {
+            Self::Fixed(s) if steps as usize != s.len() => {
+                Err(ErrorBody::invalid_params(format!("这只模型固定 {} 步去噪，收到 {steps}", s.len())))
+            }
+            _ => Ok(()),
+        }
+    }
+
+    /// 返回 N+1 个 sigma（末尾补 0）。
+    pub fn sigmas(&self, steps: usize, image_seq_len: usize) -> Vec<f64> {
+        match self {
+            Self::Computed(c) => c.sigmas(steps, image_seq_len),
+            Self::Fixed(s) => s.iter().copied().chain([0.0]).collect(),
+        }
+    }
+}
 
 #[derive(Debug, Clone, Deserialize)]
 pub struct SchedulerConfig {
@@ -123,5 +182,64 @@ mod tests {
     #[test]
     fn single_step_is_finite() {
         assert_eq!(cfg().sigmas(1, 4096), vec![1.0, 0.0]);
+    }
+
+    const TURBO: [f64; 8] = [1.0, 0.978453, 0.95418, 0.926626, 0.89508, 0.845148, 0.704534, 0.414568];
+
+    fn write(dir: &Path, name: &str, body: &str) -> std::path::PathBuf {
+        let path = dir.join(name);
+        std::fs::write(&path, body).unwrap();
+        path
+    }
+
+    #[test]
+    fn sample_sigmas_in_the_model_index_fix_the_schedule() {
+        let dir = tempfile::tempdir().unwrap();
+        let scheduler = write(dir.path(), "scheduler.json", r#"{"use_dynamic_shifting":false,"shift":1.0}"#);
+        let index = write(
+            dir.path(),
+            "model_index.json",
+            &serde_json::json!({ "_class_name": "QwenImage21Pipeline", "sample_sigmas": TURBO }).to_string(),
+        );
+        let schedule = Schedule::load(&scheduler, Some(&index)).unwrap();
+        assert_eq!(schedule.default_steps(20), 8);
+        let mut want = TURBO.to_vec();
+        want.push(0.0);
+        // 与图像大小无关。
+        assert_eq!(schedule.sigmas(8, 256), want);
+        assert_eq!(schedule.sigmas(8, 4096), want);
+        assert!(schedule.check_steps(8).is_ok());
+        let error = schedule.check_steps(20).unwrap_err();
+        assert_eq!(error.code, crate::protocol::codes::INVALID_PARAMS);
+    }
+
+    #[test]
+    fn a_model_index_without_sample_sigmas_keeps_the_computed_schedule() {
+        let dir = tempfile::tempdir().unwrap();
+        let scheduler = write(
+            dir.path(),
+            "scheduler.json",
+            r#"{"base_image_seq_len":256,"base_shift":0.5,"max_image_seq_len":8192,"max_shift":0.9,
+                "shift":1.0,"shift_terminal":0.02,"time_shift_type":"exponential","use_dynamic_shifting":true}"#,
+        );
+        let index = write(dir.path(), "model_index.json", r#"{"_class_name":"QwenImage21Pipeline"}"#);
+        for schedule in [
+            Schedule::load(&scheduler, Some(&index)).unwrap(),
+            Schedule::load(&scheduler, None).unwrap(),
+        ] {
+            assert_eq!(schedule.default_steps(20), 20);
+            assert!(schedule.check_steps(13).is_ok());
+            assert_eq!(schedule.sigmas(40, 4096), cfg().sigmas(40, 4096));
+        }
+    }
+
+    #[test]
+    fn malformed_sample_sigmas_are_rejected() {
+        for bad in ["[]", "[0.5, 0.9]", "[1.0, 0.0]", "[1.5, 0.5]", r#"["a"]"#] {
+            let dir = tempfile::tempdir().unwrap();
+            let scheduler = write(dir.path(), "scheduler.json", "{}");
+            let index = write(dir.path(), "model_index.json", &format!(r#"{{"sample_sigmas":{bad}}}"#));
+            assert!(Schedule::load(&scheduler, Some(&index)).is_err(), "{bad}");
+        }
     }
 }

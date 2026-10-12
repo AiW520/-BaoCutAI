@@ -140,8 +140,8 @@ pub const FAMILY_INDEX_TTS25: &str = "indextts2.5";
 pub const FAMILY_INDEX_TTS2_AUX: &str = "indextts2-aux";
 /// HTDemucs-FT（`aufklarer/HTDemucs-FT-MLX`）：`htdemucs_ft_config.json` + `htdemucs_ft.safetensors`，四个子模型同在一个文件里。
 pub const FAMILY_HTDEMUCS_FT: &str = "htdemucs-ft";
-/// Qwen-Image-2.1（`mlx-community/Qwen-Image-2.1-MLX-4bit`）：`processor/`、`scheduler/`、`text_encoder/`、`transformer/`、
-/// `vae/` 五个子目录同在 `image` 组件里。
+/// Qwen-Image-2.1（`mlx-community/Qwen-Image-2.1-MLX-4bit`，以及 Turbo 的 `ddalcu/Qwen-Image-2.1-Turbo-MLX-Serve-8bit`）：
+/// `processor/`、`scheduler/`、`text_encoder/`、`transformer/`、`vae/` 五个子目录同在 `image` 组件里。
 pub const FAMILY_QWEN_IMAGE: &str = "qwen-image";
 
 impl ModelFiles {

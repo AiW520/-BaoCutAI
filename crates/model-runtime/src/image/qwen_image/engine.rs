@@ -12,7 +12,7 @@ use mlx_rs::{Array, Dtype, memory, ops, random};
 
 use super::dit::{Dit, Overflow, Precision};
 use super::prompt::Prompter;
-use super::scheduler::SchedulerConfig;
+use super::scheduler::Schedule;
 use super::{text_encoder, vae};
 use crate::backend::mlx::runtime::{clear_memory_cache, ensure_metal_device, memory_snapshot};
 use crate::bundle::{FAMILY_QWEN_IMAGE, VerifiedFiles};
@@ -173,7 +173,7 @@ pub struct QwenImage {
     options: Options,
     files: Files,
     prompter: Prompter,
-    scheduler: SchedulerConfig,
+    scheduler: Schedule,
     /// auto 精度的探测结果；同一只引擎只量一次。
     picked: Option<Dtype>,
 }
@@ -194,6 +194,7 @@ impl QwenImage {
     pub fn load(files: &VerifiedFiles) -> Result<Self> {
         let tokenizer = files.require("processor/tokenizer.json")?.to_path_buf();
         let scheduler = files.require("scheduler/scheduler_config.json")?.to_path_buf();
+        let model_index = files.path("model_index.json").map(PathBuf::from);
         let files = Files {
             text_encoder: owned(files.require_extension_in("text_encoder", "safetensors")?),
             transformer: owned(files.require_extension_in("transformer", "safetensors")?),
@@ -206,7 +207,8 @@ impl QwenImage {
                 .with_details(serde_json::json!({ "component": "image", "reason": "unreadable" }))
         };
         let prompter = Prompter::load(&tokenizer).map_err(|e| corrupt("processor/tokenizer.json", e))?;
-        let scheduler = SchedulerConfig::load(&scheduler).map_err(|e| corrupt("scheduler/scheduler_config.json", e))?;
+        let scheduler = Schedule::load(&scheduler, model_index.as_deref())
+            .map_err(|e| corrupt("scheduler/scheduler_config.json / model_index.json", e))?;
         Ok(Self {
             options: Options::default(),
             files,
@@ -366,7 +368,7 @@ impl ImageEngine for QwenImage {
     }
 
     fn default_steps(&self) -> u32 {
-        super::DEFAULT_STEPS
+        self.scheduler.default_steps(super::DEFAULT_STEPS)
     }
 
     fn check_size(&self, width: u32, height: u32) -> Result<(), ErrorBody> {
@@ -378,6 +380,7 @@ impl ImageEngine for QwenImage {
         if request.steps == 0 {
             return Err(ErrorBody::invalid_params("steps 至少 1").into());
         }
+        self.scheduler.check_steps(request.steps)?;
         let image = self.run(request, progress, cancel)?;
         if (image.width, image.height) != (request.width, request.height) {
             return Err(anyhow!(
@@ -521,5 +524,95 @@ mod tests {
         assert!(active < UNLOADED_ACTIVE_MAX, "析构后活跃内存 {active} B");
         assert_eq!(cache, 0, "析构后缓存应已清空");
         assert_eq!(memory::set_cache_limit(before), 77 << 20, "缓存上限没还原");
+    }
+
+    /// 任意目录（不要求 `.bcut-manifest.json`）下的全部文件拼成 `image` 组件，供对比别的权重包。
+    fn directory(dir: &std::path::Path) -> VerifiedFiles {
+        fn walk(root: &std::path::Path, dir: &std::path::Path, out: &mut Vec<FileEntry>) {
+            for entry in std::fs::read_dir(dir).unwrap() {
+                let path = entry.unwrap().path();
+                if path.is_dir() {
+                    walk(root, &path, out);
+                } else if !path.file_name().unwrap().to_string_lossy().starts_with('.') {
+                    out.push(FileEntry {
+                        path: path.strip_prefix(root).unwrap().to_string_lossy().into_owned(),
+                        sha256: String::new(),
+                        byte_length: path.metadata().unwrap().len(),
+                    });
+                }
+            }
+        }
+        let mut files = Vec::new();
+        walk(dir, dir, &mut files);
+        ModelFiles {
+            family: FAMILY_QWEN_IMAGE.into(),
+            revision: "local".into(),
+            dir: dir.to_string_lossy().into_owned(),
+            files,
+        }
+        .verify("image")
+        .unwrap()
+    }
+
+    /// 样张与计时：按 JSON 清单（`[{id, prompt, width, height, seed}]`）逐张生成，写 `<id>.png` 与 `timing.jsonl`
+    /// （文本编码、每步去噪、VAE 解码与总耗时，秒）。`BAOCUT_BENCH_STEPS` 不给时用模型的默认步数。
+    ///
+    /// ```sh
+    /// BAOCUT_BENCH_MODEL_DIR=/path/to/pack BAOCUT_BENCH_PROMPTS=prompts.json BAOCUT_BENCH_OUT=out \
+    ///   cargo test -p model-runtime --release --lib -- --ignored bench_samples --nocapture
+    /// ```
+    #[test]
+    #[ignore = "需要 BAOCUT_BENCH_MODEL_DIR 下的 Qwen-Image 权重包与 Metal"]
+    fn bench_samples() {
+        let _lock = lock();
+        let env = |name: &str| std::env::var(name).unwrap_or_else(|_| panic!("{name}"));
+        let files = directory(std::path::Path::new(&env("BAOCUT_BENCH_MODEL_DIR")));
+        let prompts: Vec<serde_json::Value> = serde_json::from_slice(&std::fs::read(env("BAOCUT_BENCH_PROMPTS")).unwrap()).unwrap();
+        let out = PathBuf::from(env("BAOCUT_BENCH_OUT"));
+        std::fs::create_dir_all(&out).unwrap();
+        let mut engine = QwenImage::load(&files).unwrap();
+        let steps = std::env::var("BAOCUT_BENCH_STEPS")
+            .ok()
+            .and_then(|v| v.parse().ok())
+            .unwrap_or_else(|| engine.default_steps());
+        for item in prompts {
+            let id = item["id"].as_str().unwrap().to_owned();
+            let request = ImageRequest {
+                prompt: item["prompt"].as_str().unwrap().into(),
+                width: item["width"].as_u64().unwrap() as u32,
+                height: item["height"].as_u64().unwrap() as u32,
+                steps,
+                seed: item["seed"].as_u64().unwrap(),
+            };
+            let start = Instant::now();
+            let mut marks: Vec<(ImageProgress, f64)> = Vec::new();
+            let image = engine
+                .generate(&request, &mut |p| marks.push((p, start.elapsed().as_secs_f64())), &|| false)
+                .unwrap();
+            let total = start.elapsed().as_secs_f64();
+            std::fs::write(out.join(format!("{id}.png")), crate::image::png::encode_rgba(&image).unwrap()).unwrap();
+            let at = |want: ImageProgress| marks.iter().find(|(p, _)| *p == want).map(|(_, t)| *t).unwrap();
+            let denoise_start = at(ImageProgress::Denoising { done: 0, total: steps });
+            let decode_start = at(ImageProgress::Decoding);
+            let mut step_times = Vec::new();
+            let mut last = denoise_start;
+            for done in 1..=steps {
+                let t = at(ImageProgress::Denoising { done, total: steps });
+                step_times.push(((t - last) * 100.0).round() / 100.0);
+                last = t;
+            }
+            let line = serde_json::json!({
+                "id": id, "width": request.width, "height": request.height, "steps": steps, "seed": request.seed,
+                "text": denoise_start, "denoise": decode_start - denoise_start, "decode": total - decode_start,
+                "total": total, "stepSeconds": step_times,
+            });
+            eprintln!("{line}");
+            let mut log = std::fs::OpenOptions::new()
+                .create(true)
+                .append(true)
+                .open(out.join("timing.jsonl"))
+                .unwrap();
+            std::io::Write::write_all(&mut log, format!("{line}\n").as_bytes()).unwrap();
+        }
     }
 }

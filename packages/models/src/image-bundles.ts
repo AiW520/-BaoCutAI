@@ -14,15 +14,15 @@ import type { BundleDefinition } from './bundle-registry.ts';
 const MiB = 1024 * 1024;
 const GiB = 1024 * MiB;
 
-const QWEN_IMAGE_LICENSE: ModelLicense = {
+const qwenImageLicense = (model: string): ModelLicense => ({
   name: 'Qwen RESEARCH LICENSE AGREEMENT',
-  url: 'https://huggingface.co/Qwen/Qwen-Image-2.1/blob/main/LICENSE',
+  url: `https://huggingface.co/Qwen/${model}/blob/main/LICENSE`,
   commercialUse: false,
   // 许可摘要给人看：用 getter，读的时候（列出状态、序列化过线）按当前语言生成。
   get summary() {
     return M.qwenImageLicense().text;
   },
-};
+});
 
 /**
  * 宽高比与默认像素尺寸：长边 1024，短边按比例取 32 的倍数（与旧版的尺寸规则相同）。第一个是默认尺寸。
@@ -46,7 +46,7 @@ const QWEN_IMAGE_MLX: BundleDefinition = {
     image: { family: 'qwen-image', repo: 'mlx-community/Qwen-Image-2.1-MLX-4bit', revision: '4db4e8c0c0e7a1debf0320415bec8388e888494c' },
   },
   label: 'Qwen-Image-2.1',
-  license: QWEN_IMAGE_LICENSE,
+  license: qwenImageLicense('Qwen-Image-2.1'),
   image: {
     family: 'qwen-image',
     aspects: QWEN_IMAGE_ASPECTS,
@@ -81,4 +81,32 @@ const QWEN_IMAGE_CANDLE: BundleDefinition = {
   },
 };
 
-export const IMAGE_BUNDLES: readonly BundleDefinition[] = [QWEN_IMAGE_MLX, QWEN_IMAGE_CANDLE];
+/**
+ * Qwen-Image-2.1-Turbo（蒸馏版）：固定 8 步、不做无分类器引导，sigma 表写在 `model_index.json` 的 `sample_sigmas` 里（Model Worker
+ * 协议规范 §4.3），所以步数只收 8。用 mlx-serve 的 8-bit 包：本机实测与它的 4-bit 包每步一样快，4-bit 的小字偶尔丢笔画（同一
+ * seed 下「玉」少一点），8-bit 写对。只登记 MLX：candle 没有用这个包（分片的 DiT、不量化的词嵌入）的真实权重跑过。
+ */
+const QWEN_IMAGE_TURBO_MLX: BundleDefinition = {
+  bundleId: 'qwen-image-2.1-turbo@mlx-8bit',
+  capability: 'image',
+  backend: 'mlx',
+  device: 'metal',
+  components: {
+    image: {
+      family: 'qwen-image',
+      repo: 'ddalcu/Qwen-Image-2.1-Turbo-MLX-Serve-8bit',
+      revision: '214ca346520a59597b89bd77408afa49d526bde5',
+    },
+  },
+  label: 'Qwen-Image-2.1 Turbo',
+  license: qwenImageLicense('Qwen-Image-2.1-Turbo'),
+  image: {
+    ...QWEN_IMAGE_MLX.image!,
+    steps: { min: 8, max: 8, step: 8, default: 8 },
+    // 实测 Model Worker 的进程峰值（phys_footprint）：1024² 约 2.2 GB，比上面的 4-bit 包多出的约 1.2 GB 是文本编码器不量化的 bf16
+    // 词嵌入（[151936, 4096]），整张读入再在加载时量化；DiT 与 VAE 两段与 4-bit 包相当。留到 3 GiB 容更大的尺寸与抖动。
+    peakBytes: 3 * GiB,
+  },
+};
+
+export const IMAGE_BUNDLES: readonly BundleDefinition[] = [QWEN_IMAGE_MLX, QWEN_IMAGE_CANDLE, QWEN_IMAGE_TURBO_MLX];

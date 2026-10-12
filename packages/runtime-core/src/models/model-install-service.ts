@@ -29,6 +29,7 @@ import {
   bundleUsable,
   freezeReferenceFile,
   imageSelfTestParameters,
+  imageSelfTestSteps,
   imageSelfTestVerdict,
   inspectWav,
   localSpeechModelInfo,
@@ -265,7 +266,7 @@ export class ModelInstallService {
       await this.#speechTestInput(def);
       contentHash = `sha256:${sha256Hex(canonicalJson(speechSelfTestRequest(def)))}`;
     } else if (def.capability === 'image') {
-      contentHash = `sha256:${sha256Hex(canonicalJson(IMAGE_SELF_TEST))}`;
+      contentHash = `sha256:${sha256Hex(canonicalJson({ ...IMAGE_SELF_TEST, steps: imageSelfTestSteps(def.image!.steps) }))}`;
     } else if (def.capability === 'music') {
       contentHash = `sha256:${sha256Hex(canonicalJson(MUSIC_SELF_TEST))}`;
     } else {
@@ -564,6 +565,7 @@ export class ModelInstallService {
     const { record, fail } = this.#verdicts(run, bundleId);
     const staging = path.join(run.staging, 'attempt-1');
     await fs.mkdir(staging, { recursive: true });
+    const steps = imageSelfTestSteps(def.image!.steps);
     run.phase('loading');
     let attempt;
     try {
@@ -574,7 +576,7 @@ export class ModelInstallService {
           progress: (done, total, unit = 'outputs') => run.phase('generating', { done, total, unit }),
         },
         run.signal,
-        { steps: IMAGE_SELF_TEST.steps },
+        { steps },
       );
     } catch (error) {
       if (error instanceof ProviderFailure) return fail(providerCheckCode(error), RcModels.workerFailed({ reason: localizedOf(error) }), providerDetails(error));
@@ -597,7 +599,7 @@ export class ModelInstallService {
     run.phase('publishing');
     const { artifactId } = await this.#jobs.artifacts.put(bytes, 'png');
     const { width, height } = verdict.png;
-    await record('passed', RcModels.imagePassed({ width, height, steps: IMAGE_SELF_TEST.steps }));
+    await record('passed', RcModels.imagePassed({ width, height, steps }));
     this.#log.info('Model check passed', { bundleId, jobId: run.jobId, width, height });
     return { documentId: null, artifactId };
   }

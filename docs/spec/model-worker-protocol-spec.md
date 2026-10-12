@@ -212,7 +212,7 @@ params: {
     prompt: string;                   // 原样
     width: number;                    // 像素
     height: number;
-    steps: number | null;             // 去噪步数；null 用模型的默认值（Qwen-Image 为 20）。请求给了 `steps` 或模型包检查（§4.3）时给出
+    steps: number | null;             // 去噪步数；null 用模型的默认值（Qwen-Image 为 20；固定 sigma 表的权重包是表长，见下）。请求给了 `steps` 或模型包检查（§4.3）时给出
     seed: number;                     // 0..2^32-1；请求没给时 Runtime 在提交时抽一个并冻结，重试与重新执行用同一个
   };
   staging: string;
@@ -229,7 +229,7 @@ result: {
 
 阶段依次是 `encoding-prompt`（文本编码）、`denoising`（去噪；`job.progress` 的 `unit: 'steps'`，开始时报 `0/n`，每完成一步报一次）、`decoding`（VAE 解码与写 PNG）。取消在步间生效，之后 `outcome: 'cancelled'`，不写输出。同一台机器、同一个后端上同一组参数（含 seed）逐字节得到同一张图；初始噪声由 seed 决定，但 MLX 与 candle 各用自己的随机数生成器（candle 是主机上的 ChaCha20，同 v2），同一个 seed 在两个后端上得到不同的图。
 
-形状之外的检查都是 `INVALID_PARAMS`：`outputContract` 必须是 `baocut.image-png/v1`，`staging` 是绝对路径，`prompt` 去掉空白后非空，宽高为正，`steps` 不为 0；`options` 多出字段或缺 `seed` 是形状错误。模型出不了的尺寸在开跑前返回 `MODEL_UNSUPPORTED`（`details: { family, reason: 'unsupported-size', width, height, rule }`）；Qwen-Image 要求宽高都是 32 的倍数、长边不超过 1536、长短边之比不超过 3。Runtime 在提交时已按模型描述列出的尺寸拒绝过，这里是兜底。加载的不是文生图模型包时返回 `MODEL_UNSUPPORTED`（`details: { capability: 'image', reason: 'capability-not-loaded' }`），反之亦然。引擎在推理中失败是 `INFERENCE_FAILED`（`details.reason: 'generation-failed'`，消息不带路径），出图的尺寸与请求不符是 `reason: 'size-mismatch'`，写不出文件是 `reason: 'write-failed'`。
+形状之外的检查都是 `INVALID_PARAMS`：`outputContract` 必须是 `baocut.image-png/v1`，`staging` 是绝对路径，`prompt` 去掉空白后非空，宽高为正，`steps` 不为 0；权重包的 `model_index.json` 带 `sample_sigmas`（蒸馏的 Qwen-Image-2.1-Turbo，8 步）时按这张表采样、不按调度器配置现算，`steps` 必须等于表长（diffusers 同样以表为准），否则 `INVALID_PARAMS`；`options` 多出字段或缺 `seed` 是形状错误。模型出不了的尺寸在开跑前返回 `MODEL_UNSUPPORTED`（`details: { family, reason: 'unsupported-size', width, height, rule }`）；Qwen-Image 要求宽高都是 32 的倍数、长边不超过 1536、长短边之比不超过 3。Runtime 在提交时已按模型描述列出的尺寸拒绝过，这里是兜底。加载的不是文生图模型包时返回 `MODEL_UNSUPPORTED`（`details: { capability: 'image', reason: 'capability-not-loaded' }`），反之亦然。引擎在推理中失败是 `INFERENCE_FAILED`（`details.reason: 'generation-failed'`，消息不带路径），出图的尺寸与请求不符是 `reason: 'size-mismatch'`，写不出文件是 `reason: 'write-failed'`。
 
 #### 2.5.4 分离
 
@@ -410,7 +410,7 @@ interface ModelFiles {
 
 检查不判断读得对不对（那要另一个识别模型），只证明整条合成链路能出声。通过时记下时长与采样率，WAV 作为产物留存；不通过记下原因。
 
-**文生图**。用固定的提示词、256×256、4 步、seed 7 生成一张（参数在 `packages/models/src/image-self-test.ts`）。输出按 §5.1 核对长度与摘要，再判定：
+**文生图**。用固定的提示词、256×256、4 步、seed 7 生成一张（参数在 `packages/models/src/image-self-test.ts`；固定 sigma 表的权重包只收表长的步数，用它，如 Turbo 的 8 步）。输出按 §5.1 核对长度与摘要，再判定：
 
 - 能解码：8 位 PNG（灰度、RGB、带 alpha 的灰度或 RGBA），不隔行；
 - 宽高等于请求的 256×256；

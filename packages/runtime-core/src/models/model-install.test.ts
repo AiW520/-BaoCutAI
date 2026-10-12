@@ -80,6 +80,14 @@ const imageRepo: SyntheticRepo = {
   revision: imageDef.components.image!.revision,
   files: { 'model_index.json': Buffer.from('{"synthetic":"image"}'), 'vae/model.safetensors': syntheticBytes(50_000, 15) },
 };
+/** 固定步数的文生图模型包（Turbo 只收 8 步）：自检用它固定的步数，不用通常的 4 步。 */
+const TURBO_BUNDLE = 'qwen-image-2.1-turbo@mlx-8bit';
+const turboDef = BUNDLES.find((b) => b.bundleId === TURBO_BUNDLE)!;
+const turboRepo: SyntheticRepo = {
+  repo: turboDef.components.image!.repo,
+  revision: turboDef.components.image!.revision,
+  files: { 'model_index.json': Buffer.from('{"synthetic":"turbo"}'), 'vae/model.safetensors': syntheticBytes(50_000, 19) },
+};
 /** 本地人声分离：只有 `separator` 一个组件，自检把识别的样本分成两路（假 Worker 写人声与低 12 dB 的背景）。 */
 const SEPARATE_BUNDLE = 'htdemucs-ft@mlx';
 const separateDef = BUNDLES.find((b) => b.bundleId === SEPARATE_BUNDLE)!;
@@ -147,7 +155,7 @@ async function startSide(source: FakeModelSource, free: { bytes: number | null }
     modelInstall: {
       env: { [MODELS_ENDPOINT_ENV]: source.endpoint },
       installer: {
-        manifests: [...repos, ...diarizationRepos, defaultAsrRepo, speechRepo, imageRepo, separateRepo].map((r) => syntheticManifest(r)),
+        manifests: [...repos, ...diarizationRepos, defaultAsrRepo, speechRepo, imageRepo, turboRepo, separateRepo].map((r) => syntheticManifest(r)),
         freeBytes: async () => free.bytes,
         backoffMs: () => 5,
       },
@@ -197,7 +205,7 @@ describe('模型安装（假模型来源 + 假 Model Worker）', () => {
 
   beforeEach(async () => {
     source = await startFakeModelSource();
-    for (const repo of [...repos, ...diarizationRepos, defaultAsrRepo, speechRepo, imageRepo, separateRepo]) serveRepo(source, repo);
+    for (const repo of [...repos, ...diarizationRepos, defaultAsrRepo, speechRepo, imageRepo, turboRepo, separateRepo]) serveRepo(source, repo);
     free.bytes = 10 * 1024 * 1024 * 1024;
   });
 
@@ -558,6 +566,27 @@ describe('模型安装（假模型来源 + 假 Model Worker）', () => {
       });
     },
   );
+
+  it.skipIf(!appleSilicon)('固定步数的文生图模型包（Turbo）：自检用它固定的 8 步，不用通常的 4 步', async () => {
+    side = await startSide(source, free);
+    const runs = path.join(side.dir, 'runs.jsonl');
+    await fs.writeFile(side.control, JSON.stringify({ capabilities: ['transcribe', 'image'], record: runs }));
+    const plan = (await side.client.request('models.install', { bundleId: TURBO_BUNDLE })).plan;
+    const { jobId } = await side.client.request('models.install', { bundleId: TURBO_BUNDLE, confirmBytes: plan.confirmBytes });
+    expect((await until(() => terminal(jobOf(side!, jobId!)), 15_000)).state).toBe('completed');
+    const turboOf = () => side!.models()?.bundles.find((b) => b.bundleId === TURBO_BUNDLE);
+    await until(() => turboOf()?.state === 'installed');
+    expect(turboOf()).toMatchObject({ capability: 'image', label: 'Qwen-Image-2.1 Turbo' });
+
+    const { jobId: testJob } = await side.client.request('models.test', { bundleId: TURBO_BUNDLE });
+    expect(await until(() => terminal(jobOf(side!, testJob)), 15_000)).toMatchObject({ state: 'completed' });
+    expect(await until(() => turboOf()?.selfTest)).toMatchObject({ state: 'passed', jobId: testJob, detail: '256×256 · 8 步' });
+    const [run] = (await fs.readFile(runs, 'utf8'))
+      .trim()
+      .split('\n')
+      .map((line) => JSON.parse(line) as Record<string, unknown>);
+    expect(run).toMatchObject({ capability: 'image', options: { width: 256, height: 256, steps: 8, seed: 7 } });
+  });
 
   it.skipIf(!appleSilicon)('人声分离模型包：装好后自检把样本分成两路，等长、人声明显比背景响才通过；人声是静音判为不通过', async () => {
     side = await startSide(source, free);

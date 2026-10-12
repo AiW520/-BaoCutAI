@@ -26,7 +26,7 @@ use rand_distr::{Distribution, StandardNormal};
 use serde_json::{Value, json};
 
 use super::prompt::Prompter;
-use super::scheduler::SchedulerConfig;
+use super::scheduler::Schedule;
 use crate::backend::candle::annotate_out_of_memory;
 use crate::bundle::{FAMILY_QWEN_IMAGE, VerifiedFiles};
 use crate::image::{Cancelled, ImageEngine, ImageProgress, ImageRequest, RawImage};
@@ -56,7 +56,7 @@ pub struct QwenImage {
     device: Device,
     files: Files,
     prompter: Prompter,
-    scheduler: SchedulerConfig,
+    scheduler: Schedule,
 }
 
 fn seeded_noise(seed: u64, count: usize) -> Vec<f32> {
@@ -177,7 +177,8 @@ impl QwenImage {
                 .with_details(json!({ "component": "image", "reason": "unsupported-config" }))
         })?;
         let prompter = Prompter::load(&tokenizer).map_err(|e| unreadable("processor/tokenizer.json", e))?;
-        let scheduler = SchedulerConfig::load(&scheduler).map_err(|e| unreadable("scheduler/scheduler_config.json", e))?;
+        let scheduler = Schedule::load(&scheduler, Some(configs[0]))
+            .map_err(|e| unreadable("scheduler/scheduler_config.json / model_index.json", e))?;
         Ok(Self {
             device,
             files: paths,
@@ -271,7 +272,7 @@ impl ImageEngine for QwenImage {
     }
 
     fn default_steps(&self) -> u32 {
-        super::DEFAULT_STEPS
+        self.scheduler.default_steps(super::DEFAULT_STEPS)
     }
 
     fn check_size(&self, width: u32, height: u32) -> Result<(), ErrorBody> {
@@ -283,6 +284,7 @@ impl ImageEngine for QwenImage {
         if request.steps == 0 {
             return Err(ErrorBody::invalid_params("steps 至少 1").into());
         }
+        self.scheduler.check_steps(request.steps)?;
         let image = self.run(request, progress, cancel).map_err(|error| {
             if error.is::<Cancelled>() {
                 error

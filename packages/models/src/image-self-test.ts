@@ -10,7 +10,7 @@ import { ModelsImageSelfTest as M } from '@baocut/protocol/messages/models/image
 
 type ImageParameters = Extract<GenerationParameters, { capability: 'generateImage' }>;
 
-/** 自检的固定输入：小尺寸、少步数，几十秒内出结果；seed 固定，同一台机器上每次是同一张图。 */
+/** 自检的固定输入：小尺寸、少步数，几十秒内出结果；seed 固定，同一台机器上每次是同一张图。固定步数的模型包换步数（`imageSelfTestSteps`）。 */
 export const IMAGE_SELF_TEST = {
   prompt: 'A red apple on a wooden table',
   width: 256,
@@ -19,7 +19,15 @@ export const IMAGE_SELF_TEST = {
   steps: 4,
 } as const;
 
-/** 自检的冻结参数（与正式提交同一形状；步数另由 `IMAGE_SELF_TEST.steps` 指定）。 */
+/**
+ * 自检的步数：一般是 `IMAGE_SELF_TEST.steps`（少于界面能选的最少步数，不经提交时的范围检查）；固定步数的模型包
+ * （`steps.min === steps.max`，sigma 表写死在权重包里，如 Turbo 的 8 步）别的步数 Worker 不收，用它固定的那个。
+ */
+export function imageSelfTestSteps(range: { min: number; max: number }): number {
+  return range.min === range.max ? range.min : IMAGE_SELF_TEST.steps;
+}
+
+/** 自检的冻结参数（与正式提交同一形状；步数另由 `imageSelfTestSteps` 给出）。 */
 export function imageSelfTestParameters(): ImageParameters {
   const { prompt, width, height, seed } = IMAGE_SELF_TEST;
   return { capability: 'generateImage', prompt, size: `${width}x${height}`, aspectRatio: null, count: 1, format: 'png', seed };

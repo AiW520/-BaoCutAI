@@ -57,7 +57,7 @@ export function localImageSeed(seed: number | null): number {
 
 /**
  * 冻结的参数 → Worker 的 `job.run`（`image`）选项。尺寸与 seed 都已在提交时决定；缺了是调用方的错。步数取冻结的 `steps`，
- * 没有时取调用方给的（模型包自检用少步数出一张小图，不经提交时的范围检查），都没有时 null（用模型的默认步数）。
+ * 没有时取调用方给的（模型包自检用少步数出一张小图，不经提交时的范围检查；固定步数的模型包用它固定的步数），都没有时 null（用模型的默认步数）。
  */
 export function imageRunOf(parameters: ImageParameters, steps: number | null = null): ImageRunOptions {
   const match = /^(\d+)x(\d+)$/.exec(parameters.size ?? '');

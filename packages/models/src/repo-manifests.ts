@@ -59,6 +59,13 @@ const SEP_PINNED_LOCAL = ASR_PINNED_LOCAL;
 const IMAGE_PINNED_LOCAL =
   'sha256 of 9 files pinned for the same revision by legacy BaoCut (baocut-app, catalog.rs in bcut-models); the other 11 computed from a local install of the same revision; all sizes and hashes checked one by one against the local install';
 /**
+ * 本地文生图的 Turbo 包（mlx-serve 的 8-bit 转换）：四个 safetensors 的大小与 sha256 取自下载来源在这个版本上的 LFS 记录；配置文件
+ * 与分词器（不走 LFS）按这个版本下载后计算。11 个文件都和本机装好的同一版本逐个核对过。仓库里 mlx-serve 自己的元数据（根目录的
+ * `config.json`）、说明、示例图与许可文本不下载。
+ */
+const IMAGE_TURBO_HUB =
+  "Sizes and the sha256 of the four safetensors files come from the download source's LFS records at this revision; the seven config and tokenizer files were hashed after downloading at this revision; all 11 checked one by one against a local install";
+/**
  * 本地音乐生成（YuE2 的 GGUF）：两个 GGUF 的大小与 sha256 取自下载来源在这个版本上的 LFS 记录；四个配置文件（不走 LFS）按版本
  * 从下载来源流式读下来计算。没有在本机装过，也没有跑过推理。
  */
@@ -727,6 +734,41 @@ export const REPO_MANIFESTS: readonly RepoManifestSpec[] = [
     ],
     estimatedBytes: 10497208109,
     provenance: IMAGE_PINNED_LOCAL,
+  },
+  {
+    repo: 'ddalcu/Qwen-Image-2.1-Turbo-MLX-Serve-8bit',
+    revision: '214ca346520a59597b89bd77408afa49d526bde5',
+    files: [
+      { path: 'model_index.json', size: 578, sha256: '97e2febeb19d93cb41fa44807cde8bd42757950b5dffeacdb0331fb2d390cf20' },
+      { path: 'processor/tokenizer.json', size: 11422650, sha256: 'be75606093db2094d7cd20f3c2f385c212750648bd6ea4fb2bf507a6a4c55506' },
+      { path: 'processor/tokenizer_config.json', size: 705, sha256: 'fd42a0b35a8d13cd473e88e310b50cbf1bccaa9eb60ed0fd873af5f8f0c59307' },
+      { path: 'scheduler/scheduler_config.json', size: 486, sha256: '16c948c71f9152a34cce6e3a2f309e97ad2dca32beecbe5e2fd3a7925b7eb4bb' },
+      { path: 'text_encoder/config.json', size: 1542, sha256: '89050cba6b66c4f68f52305b54fc37efe28d95232246b94aa8dc0cfa36f3b734' },
+      {
+        path: 'text_encoder/model.safetensors',
+        size: 9367829459,
+        sha256: '4db3757e59b070b827e1285e506df8874527206bcbc708fdcf02b79bb9a915a2',
+      },
+      { path: 'transformer/config.json', size: 370, sha256: '2c567038ca190824728844b8d06d94ae02360e668707afd9734e789a7eb58ce3' },
+      {
+        path: 'transformer/diffusion_pytorch_model-00001-of-00002.safetensors',
+        size: 5407063648,
+        sha256: 'cff3e7601fa701d189ce6b013a3f7ca7a318ba49c8b4c8b820faf443adeb1ec8',
+      },
+      {
+        path: 'transformer/diffusion_pytorch_model-00002-of-00002.safetensors',
+        size: 2280158619,
+        sha256: '1a4117365d8e6a13b72d71abd13f2a3c60edcb9128a44c1018d0128182bf3728',
+      },
+      { path: 'vae/config.json', size: 2172, sha256: '42bfdec412459bbb7bc38a0617ab70edcfc873f84ec47e0c7d01c53ba09885a5' },
+      {
+        path: 'vae/diffusion_pytorch_model.safetensors',
+        size: 662000745,
+        sha256: '3ecb67f7df44bef3a74a65fa2a90d477122e45c7214906f04222a59ca4ca8aeb',
+      },
+    ],
+    estimatedBytes: 17728480974,
+    provenance: IMAGE_TURBO_HUB,
   },
   // ---- 本地音乐生成（music-bundles.ts）：只下载 Q8 主模型、F16 VAE 与配置文件 ----
   {

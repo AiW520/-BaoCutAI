@@ -6,7 +6,7 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import type { GenerationParameters, ModelBundleStatus } from '@baocut/protocol';
 import { BUNDLES } from './bundle-registry.ts';
 import { IMAGE_BUNDLES, QWEN_IMAGE_ASPECTS } from './image-bundles.ts';
-import { IMAGE_SELF_TEST, imageSelfTestParameters, imageSelfTestVerdict, inspectPng } from './image-self-test.ts';
+import { IMAGE_SELF_TEST, imageSelfTestParameters, imageSelfTestSteps, imageSelfTestVerdict, inspectPng } from './image-self-test.ts';
 import { imageRunOf, localImageModelInfo, localImageSeed } from './local-image.ts';
 import { ModelCatalog } from './model-catalog.ts';
 import { repoManifestFor } from './repo-manifests.ts';
@@ -16,13 +16,15 @@ import { repoManifestFor } from './repo-manifests.ts';
 type ImageParameters = Extract<GenerationParameters, { capability: 'generateImage' }>;
 const QWEN = IMAGE_BUNDLES[0]!;
 const QWEN_CANDLE = IMAGE_BUNDLES[1]!;
+const QWEN_TURBO = IMAGE_BUNDLES[2]!;
 const GiB = 1024 * 1024 * 1024;
 
 describe('本地文生图模型包的登记', () => {
-  it('MLX 与 candle 两个模型包，在总登记里，是 image；仓库整个是一个 image 组件，有许可与名字', () => {
-    expect(IMAGE_BUNDLES.map((b) => b.bundleId)).toEqual(['qwen-image-2.1@mlx-4bit', 'qwen-image-2.1@candle']);
+  it('MLX、candle 与 Turbo 三个模型包，在总登记里，是 image；仓库整个是一个 image 组件，有许可与名字', () => {
+    expect(IMAGE_BUNDLES.map((b) => b.bundleId)).toEqual(['qwen-image-2.1@mlx-4bit', 'qwen-image-2.1@candle', 'qwen-image-2.1-turbo@mlx-8bit']);
     expect(BUNDLES).toContain(QWEN);
     expect(BUNDLES).toContain(QWEN_CANDLE);
+    expect(BUNDLES).toContain(QWEN_TURBO);
     expect(QWEN).toMatchObject({ capability: 'image', backend: 'mlx', device: 'metal', label: 'Qwen-Image-2.1' });
     expect(Object.keys(QWEN.components)).toEqual(['image']);
     expect(QWEN.components.image!.family).toBe(QWEN.image!.family);
@@ -39,6 +41,51 @@ describe('本地文生图模型包的登记', () => {
     expect(mlxPeak).toBe(2 * GiB);
     expect(peakBytes).toBe(6 * GiB);
     expect(devicePeakBytes).toEqual({ cuda: 4 * GiB });
+  });
+
+  it('Turbo 是另一个仓库的 MLX 8-bit 包：步数固定 8，峰值 3 GiB，许可指向 Turbo 的；尺寸与提示词上限同 Qwen-Image-2.1', () => {
+    expect(QWEN_TURBO).toMatchObject({ capability: 'image', backend: 'mlx', device: 'metal', label: 'Qwen-Image-2.1 Turbo' });
+    expect(QWEN_TURBO.components).toEqual({
+      image: { family: 'qwen-image', repo: 'ddalcu/Qwen-Image-2.1-Turbo-MLX-Serve-8bit', revision: '214ca346520a59597b89bd77408afa49d526bde5' },
+    });
+    expect(QWEN_TURBO.license).toMatchObject({
+      name: QWEN.license!.name,
+      url: 'https://huggingface.co/Qwen/Qwen-Image-2.1-Turbo/blob/main/LICENSE',
+      commercialUse: false,
+      summary: QWEN.license!.summary,
+    });
+    const { steps, peakBytes, ...profile } = QWEN_TURBO.image!;
+    const { steps: _steps, peakBytes: _peak, ...mlxProfile } = QWEN.image!;
+    expect(profile).toEqual(mlxProfile);
+    expect(steps).toEqual({ min: 8, max: 8, step: 8, default: 8 });
+    expect(peakBytes).toBe(3 * GiB);
+  });
+
+  it('Turbo 的内置清单：11 个文件都有 sha256 与大小，估计字节等于大小之和；分片的 DiT、分词表与 model_index.json 都在', () => {
+    const source = QWEN_TURBO.components.image!;
+    const manifest = repoManifestFor(source.repo, source.revision)!;
+    expect(manifest).not.toBeNull();
+    expect(manifest.files).toHaveLength(11);
+    let total = 0;
+    for (const file of manifest.files) {
+      expect(file.sha256, file.path).toMatch(/^[0-9a-f]{64}$/);
+      expect(file.size, file.path).toBeGreaterThan(0);
+      total += file.size!;
+    }
+    expect(manifest.estimatedBytes).toBe(total);
+    const paths = manifest.files.map((f) => f.path);
+    for (const required of [
+      'model_index.json',
+      'processor/tokenizer.json',
+      'scheduler/scheduler_config.json',
+      'text_encoder/model.safetensors',
+      'transformer/diffusion_pytorch_model-00001-of-00002.safetensors',
+      'transformer/diffusion_pytorch_model-00002-of-00002.safetensors',
+      'vae/diffusion_pytorch_model.safetensors',
+      'vae/config.json',
+    ]) {
+      expect(paths).toContain(required);
+    }
   });
 
   it('内置清单：20 个文件都有 sha256 与大小，估计字节等于大小之和；三段的权重与分词表、调度器配置都在', () => {
@@ -94,8 +141,9 @@ describe('本地文生图模型包的登记', () => {
           .definitions()
           .filter((d) => d.capability === 'image')
           .map((d) => d.bundleId),
-      ).toEqual([QWEN.bundleId]);
+      ).toEqual([QWEN.bundleId, QWEN_TURBO.bundleId]);
       expect(await mac.status(QWEN.bundleId)).toMatchObject({ capability: 'image', state: 'not-installed', label: 'Qwen-Image-2.1' });
+      expect(await mac.status(QWEN_TURBO.bundleId)).toMatchObject({ capability: 'image', state: 'not-installed', label: 'Qwen-Image-2.1 Turbo' });
       expect(await mac.status(QWEN_CANDLE.bundleId)).toBeNull();
       for (const [platform, arch] of [
         ['win32', 'x64'],
@@ -112,6 +160,7 @@ describe('本地文生图模型包的登记', () => {
           `${platform}/${arch}`,
         ).toEqual([QWEN_CANDLE.bundleId]);
         expect(await other.status(QWEN.bundleId), `${platform}/${arch}`).toBeNull();
+        expect(await other.status(QWEN_TURBO.bundleId), `${platform}/${arch}`).toBeNull();
         expect(await other.status(QWEN_CANDLE.bundleId), `${platform}/${arch}`).toMatchObject({
           capability: 'image',
           state: 'not-installed',
@@ -203,13 +252,16 @@ describe('模型描述与冻结参数', () => {
       seed: 9,
     };
     expect(imageRunOf(parameters)).toEqual({ prompt: 'p', width: 1024, height: 576, steps: null, seed: 9 });
-    expect(imageRunOf(imageSelfTestParameters(), IMAGE_SELF_TEST.steps)).toEqual({
+    expect(imageRunOf(imageSelfTestParameters(), imageSelfTestSteps(QWEN.image!.steps))).toEqual({
       prompt: IMAGE_SELF_TEST.prompt,
       width: 256,
       height: 256,
       steps: 4,
       seed: 7,
     });
+    // 固定步数的模型包（Turbo）自检用它固定的步数，Worker 不收别的。
+    expect(imageSelfTestSteps(QWEN_CANDLE.image!.steps)).toBe(IMAGE_SELF_TEST.steps);
+    expect(imageSelfTestSteps(QWEN_TURBO.image!.steps)).toBe(8);
     // 冻结了步数时用冻结的。
     expect(imageRunOf({ ...parameters, steps: 12 })).toMatchObject({ steps: 12 });
     expect(() => imageRunOf({ ...parameters, size: null })).toThrow();

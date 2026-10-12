@@ -50,7 +50,7 @@ export {
   type MusicEngineRun,
 } from './local-music.ts';
 export { MUSIC_SELF_TEST, musicSelfTestParameters, musicSelfTestVerdict } from './music-self-test.ts';
-export { IMAGE_SELF_TEST, imageSelfTestParameters, imageSelfTestVerdict, inspectPng, type PngFacts } from './image-self-test.ts';
+export { IMAGE_SELF_TEST, imageSelfTestParameters, imageSelfTestSteps, imageSelfTestVerdict, inspectPng, type PngFacts } from './image-self-test.ts';
 export { MOSS_LANGUAGES, QWEN3_ASR_LANGUAGES, WHISPER_LANGUAGES, transcribeLanguages } from './asr-languages.ts';
 export {
   SPEECH_SELF_TEST_LIMITS,
