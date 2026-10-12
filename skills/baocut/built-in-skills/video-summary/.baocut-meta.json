@@ -1,0 +1,36 @@
+{
+  "name": {
+    "zh-Hans": "视频内容总结",
+    "zh-Hant": "影片內容摘要",
+    "en": "Summarize a video",
+    "ja": "動画を要約",
+    "ko": "영상 요약",
+    "es": "Resumir un vídeo",
+    "fr": "Résumer une vidéo",
+    "de": "Video zusammenfassen",
+    "nl": "Video samenvatten",
+    "pt-BR": "Resumir um vídeo",
+    "it": "Riassumi un video",
+    "ru": "Конспект видео",
+    "pl": "Podsumuj film",
+    "tr": "Videoyu özetle",
+    "vi": "Tóm tắt video"
+  },
+  "summary": {
+    "zh-Hans": "讲透最值得带走的几件事，另附带时间点的要点",
+    "zh-Hant": "講透最值得帶走的幾件事，另附帶有時間點的重點",
+    "en": "Explain the few things most worth taking away, plus timestamped key points",
+    "ja": "いちばん持ち帰るべき数点を掘り下げ、タイムスタンプ付きの要点も添える",
+    "ko": "꼭 기억할 몇 가지를 깊이 설명하고, 시간이 표시된 요점도 붙입니다",
+    "es": "Explica a fondo lo que más vale la pena y añade puntos clave con marcas de tiempo",
+    "fr": "Développe les quelques points essentiels et ajoute des points clés horodatés",
+    "de": "Das Wichtigste gründlich erklären, dazu Kernpunkte mit Zeitmarken",
+    "nl": "Leg de belangrijkste punten goed uit, met kernpunten voorzien van tijdcodes",
+    "pt-BR": "Explica a fundo o que mais vale guardar e inclui pontos-chave com marcação de tempo",
+    "it": "Approfondisce le poche cose che contano di più, con punti chiave e minutaggio",
+    "ru": "Подробно разобрать самое ценное и добавить ключевые моменты с таймкодами",
+    "pl": "Dokładnie omawia to, co najważniejsze, i dodaje kluczowe punkty ze znacznikami czasu",
+    "tr": "Akılda kalması gereken birkaç noktayı açar, zaman damgalı ana noktalar ekler",
+    "vi": "Giải thích kỹ vài điều đáng nhớ nhất, kèm các ý chính có mốc thời gian"
+  }
+}

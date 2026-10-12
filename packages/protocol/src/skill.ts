@@ -8,10 +8,17 @@
  * 这里是类型、上限与无依赖的 id 规则，随主入口进界面；入站校验在 `skill-schemas.ts`。
  */
 
+import { isLocale, type Locale } from './i18n.ts';
+
 /** skill 正文的文件名。没有它的目录不是 skill。 */
 export const SKILL_FILE = 'SKILL.md';
 /** BaoCut 自己记的来源（从哪个文件夹添加、从哪个 GitHub 地址与提交导入），放在 skill 目录里；点开头，不进文件清单，也不改用户的 `SKILL.md`。 */
 export const SKILL_SOURCE_FILE = '.baocut-skill.json';
+/**
+ * 内置 skill 给界面看的名称与一句话介绍（`SkillLabels`），按出货语言各一份，放在内置 skill 目录里；点开头，不进文件清单，
+ * 不交给智能体（智能体读 front matter 的 `name` 与 `description`）。用户目录里的不读。
+ */
+export const SKILL_META_FILE = '.baocut-meta.json';
 
 /**
  * skill 从哪里来：
@@ -35,6 +42,11 @@ export const SKILL_LIMITS = {
   name: 100,
   description: 1024,
   version: 64,
+  /** `SKILL_META_FILE` 里每种语言的名称与一句话介绍。 */
+  labelName: 40,
+  labelSummary: 120,
+  /** `SKILL_META_FILE` 的上限（字节，UTF-8）。 */
+  metaFileBytes: 64 * 1024,
   /** `SKILL.md` 的上限（字节，UTF-8）：点选时全文交给智能体，不能无限大。 */
   skillFileBytes: 64 * 1024,
   /** 一个 skill 目录里最多多少个文件（含 `SKILL.md`；点开头的不算）。添加、导入与列目录都按它。 */
@@ -92,6 +104,53 @@ export type SkillSource =
       importedAt: string;
     };
 
+/**
+ * 内置 skill 给界面看的文字（`SKILL_META_FILE`）：短名与一句话介绍，键是出货语言，都有英文（兜底）。front matter 的
+ * `name` 是给智能体的 id 式名字，`description` 是给智能体的触发说明，都不适合直接放进菜单与列表。
+ */
+export interface SkillLabels {
+  name: Partial<Record<Locale, string>> & { en: string };
+  summary: Partial<Record<Locale, string>> & { en: string };
+}
+
+/**
+ * `SKILL_META_FILE` 的内容 → `SkillLabels`：`name` 与 `summary` 都是「语言 → 文字」的对象，都要有英文；认不出的语言、空的或超长的
+ * 文字丢掉。不合规时 null（界面退回 front matter），不让一份界面文字挡住 skill 本身。
+ */
+export function parseSkillLabels(raw: unknown): SkillLabels | null {
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return null;
+  const pick = (value: unknown, limit: number): (Partial<Record<Locale, string>> & { en: string }) | null => {
+    if (!value || typeof value !== 'object' || Array.isArray(value)) return null;
+    const out: Partial<Record<Locale, string>> = {};
+    for (const [key, text] of Object.entries(value)) {
+      if (!isLocale(key) || typeof text !== 'string') continue;
+      const line = text.trim();
+      if (line && !/[\r\n]/.test(line) && line.length <= limit) out[key] = line;
+    }
+    return out.en ? (out as Partial<Record<Locale, string>> & { en: string }) : null;
+  };
+  const record = raw as Record<string, unknown>;
+  const name = pick(record.name, SKILL_LIMITS.labelName);
+  const summary = pick(record.summary, SKILL_LIMITS.labelSummary);
+  return name && summary ? { name, summary } : null;
+}
+
+/**
+ * 界面上显示的名称与一句话介绍：按语言取 `labels`，缺这种语言时英文；没有 `labels` 时是 front matter 的 `name` 与 `description`
+ * （由调用方截成一行）。
+ */
+export function skillLabel(
+  skill: Pick<SkillSummary, 'name' | 'description' | 'labels'>,
+  locale: Locale,
+): { name: string; summary: string } {
+  const labels = skill.labels;
+  if (!labels) return { name: skill.name, summary: skill.description };
+  return {
+    name: labels.name[locale] ?? labels.name.en,
+    summary: labels.summary[locale] ?? labels.summary.en,
+  };
+}
+
 /** 列表里的一个 skill。 */
 export interface SkillSummary {
   id: string;
@@ -99,6 +158,8 @@ export interface SkillSummary {
   name: string;
   /** front matter 的 `description`，原样。 */
   description: string;
+  /** 内置 skill 的 `SKILL_META_FILE`；用户目录里的 skill、没有或读不了时为 null。界面用 `skillLabel` 取当前语言的文字。 */
+  labels: SkillLabels | null;
   /** front matter 的 `version`；没有时为 null。 */
   version: string | null;
   origin: SkillOrigin;

@@ -17,9 +17,11 @@ import { style } from '@react-spectrum/s2/style' with { type: 'macro' };
 import { T } from './thread-copy.ts';
 import { HOME_COPY, sentAttachmentsLabel, SKILL_COPY } from '../../copy.ts';
 import { formatClock } from '../../model/format.ts';
+import { skillNameById } from '../../model/agent-skills.ts';
 import { sentAnnotationId } from '../../model/slide-annotations.ts';
 import { referenceDescription, referencesText } from '../../model/space-actions.ts';
 import { useRuntime } from '../../runtime/context.tsx';
+import { useSkills } from '../../state/skills-store.ts';
 import { AgentMarkdown } from './agent-markdown.tsx';
 import { CopyButton } from './copy-button.tsx';
 import { AnnotationsToken } from '../annotations-token.tsx';
@@ -127,6 +129,7 @@ function SentAttachment({ conversationId, attachment, attachments }: { conversat
 
 export const UserMessage = memo(function UserMessage({ item, conversationId }: { item: Item<'user-message'>; conversationId: Id }) {
   const context = item.context;
+  const skillCatalog = useSkills((s) => s.skills);
   const attachments = item.attachments ?? [];
   return (
     <div className={userRow} data-role="user">
@@ -165,7 +168,7 @@ export const UserMessage = memo(function UserMessage({ item, conversationId }: {
         // 发送时点选的 skill（产品设计 §6.9），按挂上的顺序各一行：只是标记，SKILL.md 正文交给了智能体，不在正文里。
         <div key={skill.id} className={contextLine} title={skill.id}>
           <Code />
-          <span>{SKILL_COPY.token(skill.name)}</span>
+          <span>{SKILL_COPY.token(skillNameById(skillCatalog, skill.id, skill.name))}</span>
         </div>
       ))}
       {item.slideAnnotations?.length ? (

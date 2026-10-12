@@ -6,6 +6,7 @@ import InfoCircle from '@react-spectrum/s2/icons/InfoCircle';
 import { iconStyle, style } from '@react-spectrum/s2/style' with { type: 'macro' };
 import { AGENT_PICKER, SKILL_COPY } from '../../copy.ts';
 import { applyAgentChange, draftSelection, harnessLabel, type AgentChange, type AgentChoice } from '../../model/agent-choice.ts';
+import { skillNameById } from '../../model/agent-skills.ts';
 import { handoffHint, sessionOptions, TOOL_SKILL, toolDraftKey, type AgentToolId, type AiToolId, type SessionOption } from '../../model/ai-tools.ts';
 import { currentConversation, messageCount } from '../../model/ai-tools-handoff.ts';
 import { gateGuide, homeGate, type GateGuide } from '../../model/home-brief.ts';
@@ -259,7 +260,7 @@ export function AiToolPrompt({
   const skillIds = useAiToolSkills((s) => s.skills[draftKey]) ?? defaultSkills;
   const attachSkill = (id: string) => attachAiToolSkill(draftKey, id, defaultSkills);
   const catalog = useSkillsLoader();
-  const nameOf = (id: string) => catalog.skills.find((s) => s.id === id)?.name ?? id;
+  const nameOf = (id: string) => skillNameById(catalog.skills, id);
   const session = handoff.session;
   const text = edited ?? template;
 

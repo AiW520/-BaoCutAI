@@ -1,4 +1,4 @@
-import { SKILL_ID_PATTERN, SKILL_LIMITS, type SkillSendRef, type SkillSummary } from '@baocut/protocol';
+import { getLocale, SKILL_ID_PATTERN, SKILL_LIMITS, skillLabel, type SkillSendRef, type SkillSummary } from '@baocut/protocol';
 import { M } from './skills-copy.ts';
 
 /**
@@ -12,10 +12,10 @@ function sourceText(skill: SkillSummary): string | null {
   return M.remoteSource(source.url, source.ref, source.commit.slice(0, 12), source.importedAt);
 }
 
-/** 添加、导入与开关之后的一行回执；`verb` 是文案目录里的动作（`M.added` 等）。 */
+/** 添加、导入与开关之后的一行回执；`verb` 是文案目录里的动作（`M.added` 等）。名称按当前语言（内置 skill 的 `labels`）。 */
 export function formatSkillChanged(verb: string, skill: SkillSummary): string {
   const source = sourceText(skill);
-  return M.changed(verb, skill.id, skill.name, skill.enabled, skill.path, source);
+  return M.changed(verb, skill.id, skillLabel(skill, getLocale()).name, skill.enabled, skill.path, source);
 }
 
 /** `--skill <id>` 与 `--id <id>`：本地先查 id 的形状，存在与否由 Runtime 判断（`SKILL_NOT_FOUND`）。 */

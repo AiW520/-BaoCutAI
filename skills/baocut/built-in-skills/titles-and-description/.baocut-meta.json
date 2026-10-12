@@ -1,0 +1,36 @@
+{
+  "name": {
+    "zh-Hans": "起标题与写简介",
+    "zh-Hant": "下標題與寫簡介",
+    "en": "Titles & description",
+    "ja": "タイトルと概要",
+    "ko": "제목과 설명",
+    "es": "Títulos y descripción",
+    "fr": "Titres et description",
+    "de": "Titel & Beschreibung",
+    "nl": "Titels en beschrijving",
+    "pt-BR": "Títulos e descrição",
+    "it": "Titoli e descrizione",
+    "ru": "Заголовки и описание",
+    "pl": "Tytuły i opis",
+    "tr": "Başlık ve açıklama",
+    "vi": "Tiêu đề và mô tả"
+  },
+  "summary": {
+    "zh-Hans": "给出标题候选，写视频简介（说明、章节、标签）",
+    "zh-Hant": "提供標題候選，撰寫影片簡介（說明、章節、標籤）",
+    "en": "Title options and a video description with chapters and tags",
+    "ja": "タイトル案と、チャプター・タグ付きの動画の概要を書く",
+    "ko": "제목 후보와 챕터·태그가 들어간 영상 설명을 씁니다",
+    "es": "Propone títulos y escribe la descripción del vídeo con capítulos y etiquetas",
+    "fr": "Propose des titres et rédige la description de la vidéo, chapitres et tags compris",
+    "de": "Titelvorschläge und eine Videobeschreibung mit Kapiteln und Tags",
+    "nl": "Titelvoorstellen en een videobeschrijving met hoofdstukken en tags",
+    "pt-BR": "Sugere títulos e escreve a descrição do vídeo com capítulos e tags",
+    "it": "Propone titoli e scrive la descrizione del video con capitoli e tag",
+    "ru": "Варианты заголовков и описание видео с главами и тегами",
+    "pl": "Propozycje tytułów i opis filmu z rozdziałami i tagami",
+    "tr": "Başlık seçenekleri ve bölümler ile etiketler içeren video açıklaması",
+    "vi": "Đề xuất tiêu đề và viết mô tả video kèm chương và thẻ"
+  }
+}

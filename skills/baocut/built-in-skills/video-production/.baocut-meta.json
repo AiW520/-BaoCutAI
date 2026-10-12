@@ -1,0 +1,36 @@
+{
+  "name": {
+    "zh-Hans": "从简报到成片",
+    "zh-Hant": "從需求到成片",
+    "en": "From brief to video",
+    "ja": "企画から完成まで",
+    "ko": "기획부터 완성까지",
+    "es": "Del briefing al vídeo",
+    "fr": "Du brief à la vidéo",
+    "de": "Vom Briefing zum Video",
+    "nl": "Van briefing tot video",
+    "pt-BR": "Do briefing ao vídeo",
+    "it": "Dal brief al video",
+    "ru": "От брифа до видео",
+    "pl": "Od briefu do filmu",
+    "tr": "Brieften videoya",
+    "vi": "Từ ý tưởng đến video"
+  },
+  "summary": {
+    "zh-Hans": "从零规划风格与分镜，出画面、配旁白，做成完整成片",
+    "zh-Hant": "從零規劃風格與分鏡，產出畫面、配上旁白，做成完整成片",
+    "en": "Plan the style and shots from scratch, make the visuals, add voice-over, and finish the video",
+    "ja": "スタイルと構成をゼロから計画し、映像を作り、ナレーションを付けて仕上げる",
+    "ko": "스타일과 콘티를 처음부터 계획하고, 화면을 만들고 내레이션을 넣어 완성합니다",
+    "es": "Planifica estilo y planos desde cero, crea las imágenes, añade la locución y termina el vídeo",
+    "fr": "Planifie style et plans de zéro, crée les visuels, ajoute la voix off et finalise la vidéo",
+    "de": "Stil und Einstellungen von Grund auf planen, Bilder erstellen, vertonen und das Video fertigstellen",
+    "nl": "Plan stijl en shots vanaf nul, maak de beelden, voeg voice-over toe en maak de video af",
+    "pt-BR": "Planeja estilo e cenas do zero, cria as imagens, adiciona narração e finaliza o vídeo",
+    "it": "Pianifica stile e inquadrature da zero, crea le immagini, aggiunge la voce e chiude il video",
+    "ru": "Спланировать стиль и кадры с нуля, сделать визуал, добавить озвучку и собрать готовое видео",
+    "pl": "Planuje styl i ujęcia od zera, tworzy obraz, dodaje lektora i kończy film",
+    "tr": "Stili ve çekimleri sıfırdan planlar, görselleri üretir, seslendirme ekler ve videoyu bitirir",
+    "vi": "Lên phong cách và phân cảnh từ đầu, tạo hình ảnh, thêm lời dẫn và hoàn thiện video"
+  }
+}

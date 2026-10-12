@@ -1,0 +1,36 @@
+{
+  "name": {
+    "zh-Hans": "动效图形",
+    "zh-Hant": "動態圖形",
+    "en": "Motion graphics",
+    "ja": "モーショングラフィックス",
+    "ko": "모션 그래픽",
+    "es": "Gráficos animados",
+    "fr": "Motion design",
+    "de": "Motion Graphics",
+    "nl": "Motion graphics",
+    "pt-BR": "Motion graphics",
+    "it": "Motion graphics",
+    "ru": "Моушн-графика",
+    "pl": "Grafika animowana",
+    "tr": "Hareketli grafikler",
+    "vi": "Đồ họa chuyển động"
+  },
+  "summary": {
+    "zh-Hans": "做下横栏、关键词、大数字、标注或品牌贴片，放上时间线",
+    "zh-Hant": "製作名條、關鍵字、大數字、標註或品牌貼片，放上時間軸",
+    "en": "Lower thirds, key words, big numbers, callouts or brand cards, placed on the timeline",
+    "ja": "テロップ、キーワード、大きな数字、注釈、ブランド表示を作ってタイムラインに置く",
+    "ko": "하단 자막, 키워드, 큰 숫자, 주석, 브랜드 카드를 만들어 타임라인에 올립니다",
+    "es": "Rótulos, palabras clave, cifras grandes, anotaciones o cortinillas de marca en la línea de tiempo",
+    "fr": "Bandeaux, mots-clés, grands chiffres, annotations ou habillages de marque, posés sur la timeline",
+    "de": "Bauchbinden, Schlagwörter, große Zahlen, Hinweise oder Marken-Einblender auf der Zeitleiste",
+    "nl": "Naamtitels, kernwoorden, grote cijfers, aantekeningen of merkkaarten op de tijdlijn",
+    "pt-BR": "Tarjas, palavras-chave, números grandes, anotações ou vinhetas de marca na linha do tempo",
+    "it": "Sottopancia, parole chiave, numeri grandi, annotazioni o grafiche del brand sulla timeline",
+    "ru": "Плашки, ключевые слова, крупные цифры, выноски или брендовые заставки на таймлайне",
+    "pl": "Belki, słowa kluczowe, duże liczby, objaśnienia lub plansze marki na osi czasu",
+    "tr": "Alt bant, anahtar kelime, büyük sayı, not veya marka kartı hazırlayıp zaman çizelgesine yerleştirir",
+    "vi": "Thanh tên, từ khóa, số lớn, chú thích hoặc thẻ thương hiệu, đặt lên dòng thời gian"
+  }
+}

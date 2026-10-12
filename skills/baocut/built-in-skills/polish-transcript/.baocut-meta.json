@@ -1,0 +1,36 @@
+{
+  "name": {
+    "zh-Hans": "润色转写",
+    "zh-Hant": "潤飾逐字稿",
+    "en": "Polish transcript",
+    "ja": "文字起こしを校正",
+    "ko": "전사본 다듬기",
+    "es": "Pulir transcripción",
+    "fr": "Améliorer la transcription",
+    "de": "Transkript verbessern",
+    "nl": "Transcript verbeteren",
+    "pt-BR": "Aprimorar transcrição",
+    "it": "Migliora trascrizione",
+    "ru": "Улучшить расшифровку",
+    "pl": "Ulepsz transkrypcję",
+    "tr": "Transkripti iyileştir",
+    "vi": "Chỉnh sửa bản chép lời"
+  },
+  "summary": {
+    "zh-Hans": "改错字与误听，统一术语与标点，词的时间不变",
+    "zh-Hant": "修正錯字與誤聽，統一術語與標點，字詞時間不變",
+    "en": "Fix typos and mishearings, make terms and punctuation consistent, keep the timing",
+    "ja": "誤字や聞き間違いを直し、用語と句読点をそろえる。タイミングはそのまま",
+    "ko": "오타와 잘못 들은 부분을 고치고 용어와 문장부호를 통일합니다. 타이밍은 그대로입니다",
+    "es": "Corrige erratas y errores de escucha, unifica términos y puntuación, sin cambiar los tiempos",
+    "fr": "Corrige fautes et erreurs d’écoute, harmonise termes et ponctuation, sans toucher au minutage",
+    "de": "Tipp- und Hörfehler korrigieren, Begriffe und Satzzeichen vereinheitlichen, Timing beibehalten",
+    "nl": "Verbeter typ- en luisterfouten, maak termen en interpunctie consistent en behoud de timing",
+    "pt-BR": "Corrige erros de digitação e de escuta, padroniza termos e pontuação, sem mudar os tempos",
+    "it": "Corregge refusi ed errori di ascolto, uniforma termini e punteggiatura, senza toccare i tempi",
+    "ru": "Исправить опечатки и ослышки, унифицировать термины и пунктуацию, не меняя тайминг",
+    "pl": "Poprawia literówki i przesłyszenia, ujednolica terminy i interpunkcję, nie zmienia czasów",
+    "tr": "Yazım ve duyma hatalarını düzeltir, terimleri ve noktalamayı tutarlı yapar, zamanlamayı korur",
+    "vi": "Sửa lỗi chính tả và nghe nhầm, thống nhất thuật ngữ và dấu câu, giữ nguyên thời gian"
+  }
+}

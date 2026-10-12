@@ -6,6 +6,8 @@ BaoCut 随应用分发的内置 Agent skill，也叫 craft（做法）：一件�
 
 ## 索引
 
+「名称」是 `.baocut-meta.json` 里的简体中文名称；「一句话」是给维护者看的概括，界面显示的一句话介绍以 `.baocut-meta.json` 为准。
+
 | id | 名称 | 一句话 |
 | --- | --- | --- |
 | [`subtitle-workflow`](subtitle-workflow/SKILL.md) | 转录与字幕 | 从链接或本机音视频建可编辑视频，转写、润色、按需翻译，放上字幕层，再按需导出 |
@@ -29,8 +31,9 @@ BaoCut 随应用分发的内置 Agent skill，也叫 craft（做法）：一件�
 ## 新增或修改一个 skill
 
 1. 新建 `skills/baocut/built-in-skills/<id>/`，`id` 用 kebab-case，不与已有目录重名。
-2. 写 `SKILL.md`：front matter 的 `name`（界面直接显示的短名）、`description`（做什么、什么时候用、什么时候不用；会话开始的索引只取前 300 个字符）、`version`；正文是做法，保持精炼。长的细则放进 `references/`，由智能体用 `skills_read` 按需取。
-3. skill 之间不互相引用文件，每个 skill 自包含；共享的模型资料与参考表放在说明书 `references/catalog/`，用 `skills_read` 读 `baocut-catalog-<页>`，同步脚本会为外部 Agent 改成目录页链接，不复制数据。正文只引用 Agent 真实拥有的 baocut 工具与文档类型，不重复说明书（入口指导）已经说过的通用规则。
-4. 做法对任意语言的视频与目标语言都适用，不假定中文或英文。
-5. 不放符号链接，不用点开头的文件（不算 skill 的内容）；上限见 `@baocut/protocol` 的 `SKILL_LIMITS`。
-6. 运行 `npm test -- packages/runtime-core/src/skills`：`builtin-skills.test.ts` 会加载这里的全部 skill，并核对清单、上限、上面的索引与说明书「内置 skill」表；新增或改名时同步更新测试里的清单、上面的索引、说明书 SKILL.md §1 的路由与 §3 的「内置 skill」表（之后运行 `npm run build:agent-skill` 重新生成 craft 副本）与[产品设计 §6.9](../../../docs/product/product-design.md#69-skillag-07) 的「来源」一条。
+2. 写 `SKILL.md`：front matter 的 `name`（与目录名相同的 id 式名字）、`description`（做什么、什么时候用、什么时候不用；会话开始的索引只取前 300 个字符）、`version`；正文是做法，保持精炼。长的细则放进 `references/`，由智能体用 `skills_read` 按需取。这三项都是给智能体的，界面不直接显示 `description`。
+3. 写 `.baocut-meta.json`：界面上的名称（`name`）与一句话介绍（`summary`），各是「语言 → 文字」的对象，键按 `@baocut/protocol` 的 `LOCALES` 顺序写全部出货语言。名称是用户看得懂的短名（不超过 `SKILL_LIMITS.labelName` 个字符），介绍是一行、说这个 skill 帮用户做成什么（不超过 `SKILL_LIMITS.labelSummary` 个字符），不写给智能体的触发条件与步骤；用词对照[术语表](../../../docs/glossary.md#界面英文用词)与界面已有的译文。它只给设置 › Skills 与输入框「+ › 使用 Skill」用，不进文件清单，不交给智能体。
+4. skill 之间不互相引用文件，每个 skill 自包含；共享的模型资料与参考表放在说明书 `references/catalog/`，用 `skills_read` 读 `baocut-catalog-<页>`，同步脚本会为外部 Agent 改成目录页链接，不复制数据。正文只引用 Agent 真实拥有的 baocut 工具与文档类型，不重复说明书（入口指导）已经说过的通用规则。
+5. 做法对任意语言的视频与目标语言都适用，不假定中文或英文。
+6. 不放符号链接；除了 `.baocut-meta.json`，不用点开头的文件（不算 skill 的内容）；上限见 `@baocut/protocol` 的 `SKILL_LIMITS`。
+7. 运行 `npm test -- packages/runtime-core/src/skills`：`builtin-skills.test.ts` 会加载这里的全部 skill，并核对清单、上限、每个 skill 的 `.baocut-meta.json` 写全了全部出货语言、上面的索引与说明书「内置 skill」表；新增或改名时同步更新测试里的清单、上面的索引、说明书 SKILL.md §1 的路由与 §3 的「内置 skill」表（之后运行 `npm run build:agent-skill` 重新生成 craft 副本）与[产品设计 §6.9](../../../docs/product/product-design.md#69-skillag-07) 的「来源」一条。

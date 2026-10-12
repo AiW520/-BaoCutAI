@@ -16,6 +16,7 @@ function summary(id: string, patch: Partial<SkillSummary> = {}): SkillSummary {
     id,
     name: id,
     description: '说明',
+    labels: null,
     version: null,
     origin: 'personal',
     enabled: true,

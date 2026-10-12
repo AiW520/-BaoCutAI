@@ -1,0 +1,36 @@
+{
+  "name": {
+    "zh-Hans": "切短视频",
+    "zh-Hant": "切短影音",
+    "en": "Cut into shorts",
+    "ja": "ショート動画に切り出す",
+    "ko": "쇼츠로 만들기",
+    "es": "Cortar en vídeos cortos",
+    "fr": "Découper en vidéos courtes",
+    "de": "In Kurzvideos schneiden",
+    "nl": "Korte video’s maken",
+    "pt-BR": "Cortar em vídeos curtos",
+    "it": "Dividi in video brevi",
+    "ru": "Нарезать короткие видео",
+    "pl": "Potnij na krótkie filmy",
+    "tr": "Kısa videolara böl",
+    "vi": "Cắt thành video ngắn"
+  },
+  "summary": {
+    "zh-Hans": "从长视频里挑出能单独发布的几段，各做成短视频",
+    "zh-Hant": "從長影片挑出能單獨發布的幾段，各做成短影音",
+    "en": "Pick clips from a long video that stand on their own and make each one a short",
+    "ja": "長い動画から単独で公開できる部分を選び、それぞれショート動画にする",
+    "ko": "긴 영상에서 따로 올릴 만한 구간을 골라 각각 쇼츠로 만듭니다",
+    "es": "Elige fragmentos de un vídeo largo que funcionen solos y crea un vídeo corto con cada uno",
+    "fr": "Repère dans une longue vidéo les passages autonomes et en fait des vidéos courtes",
+    "de": "Eigenständige Ausschnitte aus einem langen Video wählen und je ein Kurzvideo daraus machen",
+    "nl": "Kies zelfstandige fragmenten uit een lange video en maak van elk een korte video",
+    "pt-BR": "Escolhe trechos de um vídeo longo que funcionam sozinhos e faz um vídeo curto de cada",
+    "it": "Sceglie da un video lungo i passaggi autonomi e ne ricava un video breve ciascuno",
+    "ru": "Выбрать из длинного видео самостоятельные фрагменты и сделать из каждого короткое видео",
+    "pl": "Wybiera z długiego filmu samodzielne fragmenty i robi z każdego krótki film",
+    "tr": "Uzun videodan tek başına yayınlanabilecek bölümleri seçip her birini kısa videoya çevirir",
+    "vi": "Chọn các đoạn đứng riêng được từ video dài và làm mỗi đoạn thành một video ngắn"
+  }
+}

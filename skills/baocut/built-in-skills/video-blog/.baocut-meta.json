@@ -1,0 +1,36 @@
+{
+  "name": {
+    "zh-Hans": "写成博客文章",
+    "zh-Hant": "寫成部落格文章",
+    "en": "Turn into a blog post",
+    "ja": "ブログ記事にする",
+    "ko": "블로그 글로 쓰기",
+    "es": "Convertir en entrada de blog",
+    "fr": "En faire un article de blog",
+    "de": "Als Blogbeitrag schreiben",
+    "nl": "Blogbericht schrijven",
+    "pt-BR": "Transformar em post de blog",
+    "it": "Trasforma in articolo blog",
+    "ru": "Пост для блога",
+    "pl": "Wpis na blog",
+    "tr": "Blog yazısına dönüştür",
+    "vi": "Viết thành bài blog"
+  },
+  "summary": {
+    "zh-Hans": "把视频写成不看视频也能读懂的完整文章",
+    "zh-Hant": "把影片寫成不看影片也能讀懂的完整文章",
+    "en": "Write the video up as a full article that makes sense without watching",
+    "ja": "動画を見なくても読める、まとまった記事に書き起こす",
+    "ko": "영상을 보지 않아도 이해되는 완성된 글로 씁니다",
+    "es": "Escribe un artículo completo que se entiende sin ver el vídeo",
+    "fr": "Rédige un article complet qui se lit sans regarder la vidéo",
+    "de": "Einen vollständigen Artikel schreiben, der auch ohne das Video verständlich ist",
+    "nl": "Schrijf een volledig artikel dat ook zonder de video te begrijpen is",
+    "pt-BR": "Escreve um artigo completo que se entende sem assistir ao vídeo",
+    "it": "Scrive un articolo completo che si capisce anche senza guardare il video",
+    "ru": "Написать полноценную статью, понятную без просмотра видео",
+    "pl": "Pisze pełny artykuł, zrozumiały bez oglądania filmu",
+    "tr": "Videoyu izlemeden de anlaşılan eksiksiz bir yazıya dönüştürür",
+    "vi": "Viết video thành bài hoàn chỉnh, đọc hiểu được mà không cần xem"
+  }
+}

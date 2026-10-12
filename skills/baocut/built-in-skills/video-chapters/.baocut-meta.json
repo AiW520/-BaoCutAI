@@ -1,0 +1,36 @@
+{
+  "name": {
+    "zh-Hans": "分章节",
+    "zh-Hant": "分章節",
+    "en": "Chapters",
+    "ja": "チャプター分け",
+    "ko": "챕터 나누기",
+    "es": "Capítulos",
+    "fr": "Chapitres",
+    "de": "Kapitel",
+    "nl": "Hoofdstukken",
+    "pt-BR": "Capítulos",
+    "it": "Capitoli",
+    "ru": "Главы",
+    "pl": "Rozdziały",
+    "tr": "Bölümler",
+    "vi": "Chia chương"
+  },
+  "summary": {
+    "zh-Hans": "在话题转换处分章，每章一个标题和一句摘要",
+    "zh-Hant": "在話題轉換處分章，每章一個標題和一句摘要",
+    "en": "Split at topic changes, each chapter with a title and a one-line summary",
+    "ja": "話題の切り替わりで区切り、各チャプターにタイトルと一行の要約を付ける",
+    "ko": "주제가 바뀌는 곳에서 나누고 챕터마다 제목과 한 줄 요약을 붙입니다",
+    "es": "Divide donde cambia el tema, con un título y un resumen de una línea por capítulo",
+    "fr": "Découpe aux changements de sujet, avec un titre et un résumé d’une ligne par chapitre",
+    "de": "An Themenwechseln teilen, je Kapitel ein Titel und eine einzeilige Zusammenfassung",
+    "nl": "Splits bij een nieuw onderwerp, met per hoofdstuk een titel en een korte samenvatting",
+    "pt-BR": "Divide onde o assunto muda, com título e resumo de uma linha em cada capítulo",
+    "it": "Divide ai cambi di argomento, con un titolo e un riassunto di una riga per capitolo",
+    "ru": "Разбить по сменам темы: у каждой главы заголовок и описание в одну строку",
+    "pl": "Dzieli w miejscach zmiany tematu; każdy rozdział ma tytuł i jednozdaniowe streszczenie",
+    "tr": "Konu değiştiği yerlerden böler; her bölüme bir başlık ve tek satırlık özet ekler",
+    "vi": "Chia tại chỗ chuyển chủ đề, mỗi chương có tiêu đề và một câu tóm tắt"
+  }
+}

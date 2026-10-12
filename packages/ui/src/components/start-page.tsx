@@ -5,7 +5,7 @@ import { style } from '@react-spectrum/s2/style' with { type: 'macro' };
 import { S } from './shell-copy.ts';
 import { HOME_COPY } from '../copy.ts';
 import { applyAgentChange, draftSelection } from '../model/agent-choice.ts';
-import { sendFailureMessage } from '../model/agent-skills.ts';
+import { sendFailureMessage, skillNameById } from '../model/agent-skills.ts';
 import {
   addMaterials,
   canStartHome,
@@ -125,7 +125,7 @@ export function StartPage({ projectId: routeProjectId }: { projectId: string | n
   // 「+ › 使用 Skill」点选的那几个：标记和模板排在一行（列表由输入框取）。
   const skillIds = useDraftSkillIds(draftKey);
   const skillCatalog = useSkills((s) => s.skills);
-  const pickedSkills = skillIds.map((id) => ({ id, name: skillCatalog.find((k) => k.id === id)?.name ?? id }));
+  const pickedSkills = skillIds.map((id) => ({ id, name: skillNameById(skillCatalog, id) }));
   // 「+ › 最近的视频」：还能选的项目里最近活动的视频。
   const spaceEntries = useSpace((s) => s.entries);
   const recent = recentVideos(

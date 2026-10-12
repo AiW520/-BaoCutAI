@@ -1,0 +1,36 @@
+{
+  "name": {
+    "zh-Hans": "说话人标注",
+    "zh-Hant": "說話者標註",
+    "en": "Label speakers",
+    "ja": "話者を付ける",
+    "ko": "화자 표시",
+    "es": "Etiquetar hablantes",
+    "fr": "Étiqueter les intervenants",
+    "de": "Sprecher benennen",
+    "nl": "Sprekers labelen",
+    "pt-BR": "Rotular falantes",
+    "it": "Etichetta parlanti",
+    "ru": "Подписать спикеров",
+    "pl": "Oznacz mówców",
+    "tr": "Konuşmacıları etiketle",
+    "vi": "Gắn nhãn người nói"
+  },
+  "summary": {
+    "zh-Hans": "区分谁在说话，按文稿与来源里的线索标上真名",
+    "zh-Hant": "區分是誰在說話，依逐字稿與來源中的線索標上真名",
+    "en": "Tell who is speaking and name each speaker from clues in the transcript and source",
+    "ja": "誰が話しているかを区別し、文字起こしや出典の手がかりから実名を付ける",
+    "ko": "누가 말하는지 구분하고, 전사본과 출처의 단서로 실명을 붙입니다",
+    "es": "Distingue quién habla y pone nombre a cada hablante con pistas de la transcripción y la fuente",
+    "fr": "Distingue qui parle et nomme chaque intervenant d’après la transcription et la source",
+    "de": "Sprecher unterscheiden und anhand von Transkript und Quelle mit Namen versehen",
+    "nl": "Onderscheid wie er spreekt en geef elke spreker een naam op basis van transcript en bron",
+    "pt-BR": "Distingue quem está falando e dá nome a cada falante com pistas da transcrição e da fonte",
+    "it": "Distingue chi parla e dà un nome a ogni parlante in base alla trascrizione e alla fonte",
+    "ru": "Различить, кто говорит, и подписать спикеров по подсказкам из расшифровки и источника",
+    "pl": "Rozróżnia, kto mówi, i nadaje imiona na podstawie wskazówek z transkrypcji i źródła",
+    "tr": "Kimin konuştuğunu ayırt eder, transkript ve kaynaktaki ipuçlarıyla her konuşmacıyı adlandırır",
+    "vi": "Phân biệt ai đang nói và đặt tên thật dựa trên manh mối trong bản chép lời và nguồn"
+  }
+}

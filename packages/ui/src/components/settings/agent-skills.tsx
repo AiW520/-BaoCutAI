@@ -28,6 +28,7 @@ import {
   filterSkills,
   SKILL_ORIGIN_LABEL,
   SKILL_TABS,
+  skillDisplayName,
   skillErrorMessage,
   skillMetaLine,
   type SkillTab,
@@ -150,7 +151,7 @@ export function AgentSkills() {
 
   const toggle = (skill: SkillSummary, enabled: boolean) =>
     void setSkillEnabled(runtime, skill.id, enabled).then(
-      () => ToastQueue.neutral(enabled ? SKILLS_COPY.toggledOn(skill.name) : SKILLS_COPY.toggledOff(skill.name), { timeout: 5000 }),
+      () => ToastQueue.neutral(enabled ? SKILLS_COPY.toggledOn(skillDisplayName(skill)) : SKILLS_COPY.toggledOff(skillDisplayName(skill)), { timeout: 5000 }),
       (error) => ToastQueue.negative(skillErrorMessage(error, 'toggle'), { timeout: 5000 }),
     );
 
@@ -161,7 +162,7 @@ export function AgentSkills() {
     setAdding(true);
     try {
       const { skill } = await addSkillFromFolder(runtime, path);
-      ToastQueue.positive(SKILLS_COPY.added(skill.name), { timeout: 4000 });
+      ToastQueue.positive(SKILLS_COPY.added(skillDisplayName(skill)), { timeout: 4000 });
       setOpenId(skill.id);
     } catch (error) {
       ToastQueue.negative(skillErrorMessage(error, 'add'), { timeout: 8000 });
@@ -179,7 +180,7 @@ export function AgentSkills() {
     try {
       await removeSkill(runtime, skill.id);
       setOpenId(null);
-      ToastQueue.neutral(SKILLS_COPY.removed(skill.name), { timeout: 4000 });
+      ToastQueue.neutral(SKILLS_COPY.removed(skillDisplayName(skill)), { timeout: 4000 });
     } catch (error) {
       ToastQueue.negative(skillErrorMessage(error, 'remove'), { timeout: 6000 });
     }
@@ -237,15 +238,15 @@ export function AgentSkills() {
       <div className={grid} role="list">
         {rows.map((skill) => (
           <div key={skill.id} role="listitem" className={card}>
-            <button type="button" className={cardMain} aria-label={SKILLS_COPY.view(skill.name)} onClick={() => setOpenId(skill.id)}>
-              <span className={cardName({ isOff: !skill.enabled })} title={skill.name}>
-                {skill.name}
+            <button type="button" className={cardMain} aria-label={SKILLS_COPY.view(skillDisplayName(skill))} onClick={() => setOpenId(skill.id)}>
+              <span className={cardName({ isOff: !skill.enabled })} title={skillDisplayName(skill)}>
+                {skillDisplayName(skill)}
               </span>
               <span className={cardDesc}>{skill.description}</span>
               <span className={cardMeta}>{skillMetaLine(skill)}</span>
             </button>
             <span className={cardSwitch}>
-              <Switch aria-label={SKILLS_COPY.enable(skill.name)} isSelected={skill.enabled} onChange={(on) => toggle(skill, on)} />
+              <Switch aria-label={SKILLS_COPY.enable(skillDisplayName(skill))} isSelected={skill.enabled} onChange={(on) => toggle(skill, on)} />
             </span>
           </div>
         ))}
@@ -324,7 +325,7 @@ export function AgentSkills() {
         onImport={async (url) => {
           const { skill } = await importSkillFromGithub(runtime, url);
           setImporting(false);
-          ToastQueue.positive(SKILLS_COPY.imported(skill.name), { timeout: 4000 });
+          ToastQueue.positive(SKILLS_COPY.imported(skillDisplayName(skill)), { timeout: 4000 });
           setOpenId(skill.id);
         }}
         onClose={() => setImporting(false)}
@@ -333,7 +334,7 @@ export function AgentSkills() {
         {removing ? (
           <AlertDialog
             variant="destructive"
-            title={SKILL_DETAIL_COPY.removeTitle(removing.name)}
+            title={SKILL_DETAIL_COPY.removeTitle(skillDisplayName(removing))}
             primaryActionLabel={SKILL_DETAIL_COPY.remove}
             cancelLabel={SKILL_DETAIL_COPY.cancel}
             onPrimaryAction={() => void remove(removing)}>

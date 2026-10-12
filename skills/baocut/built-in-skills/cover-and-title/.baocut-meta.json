@@ -1,0 +1,36 @@
+{
+  "name": {
+    "zh-Hans": "封面与标题",
+    "zh-Hant": "封面與標題",
+    "en": "Cover & title",
+    "ja": "サムネイルとタイトル",
+    "ko": "커버와 제목",
+    "es": "Portada y título",
+    "fr": "Miniature et titre",
+    "de": "Cover & Titel",
+    "nl": "Omslag en titel",
+    "pt-BR": "Capa e título",
+    "it": "Copertina e titolo",
+    "ru": "Обложка и заголовок",
+    "pl": "Okładka i tytuł",
+    "tr": "Kapak ve başlık",
+    "vi": "Ảnh bìa và tiêu đề"
+  },
+  "summary": {
+    "zh-Hans": "挑定标题与封面文案，按画幅生成封面图",
+    "zh-Hant": "選定標題與封面文案，依畫面比例產生封面圖",
+    "en": "Choose a title and cover text, then generate cover images for each aspect ratio",
+    "ja": "タイトルとサムネイルの文言を決め、画面比率ごとにサムネイル画像を作る",
+    "ko": "제목과 커버 문구를 고른 뒤 화면 비율별로 커버 이미지를 만듭니다",
+    "es": "Elige el título y el texto de portada, y genera la imagen para cada formato",
+    "fr": "Choisit le titre et le texte de la miniature, puis génère l’image pour chaque format",
+    "de": "Titel und Covertext wählen, dann Coverbilder für jedes Seitenverhältnis erzeugen",
+    "nl": "Kies een titel en omslagtekst en maak omslagafbeeldingen per beeldverhouding",
+    "pt-BR": "Escolhe o título e o texto da capa e gera a imagem para cada proporção",
+    "it": "Sceglie titolo e testo di copertina, poi genera l’immagine per ogni formato",
+    "ru": "Выбрать заголовок и текст обложки, затем создать обложки под каждый формат кадра",
+    "pl": "Wybiera tytuł i tekst okładki, potem tworzy okładki dla każdych proporcji",
+    "tr": "Başlığı ve kapak metnini seçer, ardından her en-boy oranı için kapak görseli üretir",
+    "vi": "Chọn tiêu đề và chữ trên ảnh bìa, rồi tạo ảnh bìa theo từng tỷ lệ khung hình"
+  }
+}

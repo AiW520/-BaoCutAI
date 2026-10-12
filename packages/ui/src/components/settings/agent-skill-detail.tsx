@@ -22,7 +22,7 @@ import FileText from '@react-spectrum/s2/icons/FileText';
 import FolderOpen from '@react-spectrum/s2/icons/FolderOpen';
 import { style } from '@react-spectrum/s2/style' with { type: 'macro' };
 import { revealLabel } from '../../copy.ts';
-import { fileSizeLabel, SKILL_ORIGIN_LABEL, skillBody, skillErrorMessage, skillSourceLine } from '../../model/agent-skills.ts';
+import { fileSizeLabel, SKILL_ORIGIN_LABEL, skillBody, skillDisplayName, skillErrorMessage, skillSourceLine } from '../../model/agent-skills.ts';
 import { useRuntime } from '../../runtime/context.tsx';
 import { getSkill, readSkillFile } from '../../runtime/skill-commands.ts';
 import { remarkPlugins } from '../thread/remark-plugins.ts';
@@ -176,7 +176,7 @@ export function SkillDetailDialog({
     <DialogContainer onDismiss={close}>
       {skill ? (
         <Dialog size="L" isDismissible>
-          <Heading slot="title">{skill.name}</Heading>
+          <Heading slot="title">{skillDisplayName(skill)}</Heading>
           <Content>
             {viewing ? (
               <div className={body}>
@@ -237,7 +237,7 @@ function SkillInfo({
           {SKILL_ORIGIN_LABEL[skill.origin]}
         </Badge>
         <span className={spacer} />
-        <Switch aria-label={SKILLS_COPY.enable(skill.name)} isSelected={skill.enabled} onChange={onToggle} />
+        <Switch aria-label={SKILLS_COPY.enable(skillDisplayName(skill))} isSelected={skill.enabled} onChange={onToggle} />
       </div>
       <p className={stateLine}>{skill.enabled ? SKILL_DETAIL_COPY.stateOn : SKILL_DETAIL_COPY.stateOff}</p>
       {skill.origin === 'third-party' ? (

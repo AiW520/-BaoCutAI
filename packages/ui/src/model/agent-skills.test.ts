@@ -10,8 +10,11 @@ import {
   skillBody,
   skillErrorCode,
   skillErrorMessage,
+  skillDisplayName,
+  skillDisplaySummary,
   skillMenuItems,
   skillMetaLine,
+  skillNameById,
   skillSourceLine,
   sortSkills,
 } from './agent-skills.ts';
@@ -21,6 +24,7 @@ function skill(id: string, patch: Partial<SkillSummary> = {}): SkillSummary {
     id,
     name: id,
     description: `${id} 的说明`,
+    labels: null,
     version: null,
     origin: 'personal',
     enabled: true,
@@ -43,6 +47,17 @@ const list = [
 describe('列表的排序、搜索与筛选', () => {
   it('按来源（内置、我的、第三方）再按名称排，不依赖 Runtime 给的顺序', () => {
     expect(sortSkills([...list].reverse()).map((s) => s.id)).toEqual(['brand', 'subtitle-style', 'chapters']);
+  });
+
+  it('按显示的名称排，搜显示的名称与介绍', () => {
+    const labelled = [
+      skill('zz-chapters', { origin: 'builtin', labels: { name: { en: 'Chapters', 'zh-Hans': 'A 分章节' }, summary: { en: 'x', 'zh-Hans': '话题转换' } } }),
+      skill('aa-blog', { origin: 'builtin', labels: { name: { en: 'Blog', 'zh-Hans': 'B 写成博客' }, summary: { en: 'y', 'zh-Hans': '完整文章' } } }),
+    ];
+    expect(sortSkills(labelled).map((s) => s.id)).toEqual(['zz-chapters', 'aa-blog']);
+    expect(filterSkills(labelled, '话题', 'all').map((s) => s.id)).toEqual(['zz-chapters']);
+    expect(filterSkills(labelled, '写成博客', 'all').map((s) => s.id)).toEqual(['aa-blog']);
+    expect(filterSkills(labelled, 'aa-blog', 'all').map((s) => s.id)).toEqual(['aa-blog']);
   });
 
   it('搜名称、描述与 id，不分大小写；不假定语言', () => {
@@ -73,6 +88,32 @@ describe('输入框「+ › 使用 Skill」的条目', () => {
     expect(clipLine('😀😀😀😀😀', 3)).toBe('😀😀…');
     const [item] = skillMenuItems([skill('long', { description: 'x'.repeat(200) })]);
     expect([...item!.description]).toHaveLength(60);
+  });
+
+  it('内置 skill 显示当前语言的名称与一句话介绍（labels），介绍原样不截；缺这种语言时英文', () => {
+    const chapters = skill('video-chapters', {
+      origin: 'builtin',
+      description: '给智能体看的触发说明，很长'.repeat(10),
+      labels: {
+        name: { en: 'Chapters', 'zh-Hans': '分章节' },
+        summary: { en: 'Split at topic changes', 'zh-Hans': '在话题转换处分章，每章一个标题和一句摘要，'.repeat(3) },
+      },
+    });
+    // 测试在 zh-Hans 下跑（vitest.config.ts）。
+    expect(skillDisplayName(chapters)).toBe('分章节');
+    expect(skillDisplaySummary(chapters)).toBe(chapters.labels!.summary['zh-Hans']);
+    const [item] = skillMenuItems([chapters]);
+    expect(item).toMatchObject({ id: 'video-chapters', name: '分章节', description: chapters.labels!.summary['zh-Hans'] });
+    const english = skill('x', { labels: { name: { en: 'Only English' }, summary: { en: 'One line' } } });
+    expect([skillDisplayName(english), skillDisplaySummary(english)]).toEqual(['Only English', 'One line']);
+  });
+
+  it('按 id 找显示名称；不在列表里时用消息记下的名字或 id', () => {
+    const list = [skill('video-chapters', { labels: { name: { en: 'Chapters', 'zh-Hans': '分章节' }, summary: { en: 'x' } } }), skill('mine')];
+    expect(skillNameById(list, 'video-chapters')).toBe('分章节');
+    expect(skillNameById(list, 'mine')).toBe('mine');
+    expect(skillNameById(list, 'gone', 'gone-name')).toBe('gone-name');
+    expect(skillNameById(list, 'gone')).toBe('gone');
   });
 
   it('挂上的 skill 接在后面，已经挂着的不重复（内置的摘掉再加回也接在后面）', () => {

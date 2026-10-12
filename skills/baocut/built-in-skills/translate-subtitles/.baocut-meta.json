@@ -1,0 +1,36 @@
+{
+  "name": {
+    "zh-Hans": "翻译字幕",
+    "zh-Hant": "翻譯字幕",
+    "en": "Translate subtitles",
+    "ja": "字幕を翻訳",
+    "ko": "자막 번역",
+    "es": "Traducir subtítulos",
+    "fr": "Traduire les sous-titres",
+    "de": "Untertitel übersetzen",
+    "nl": "Ondertitels vertalen",
+    "pt-BR": "Traduzir legendas",
+    "it": "Traduci sottotitoli",
+    "ru": "Перевести субтитры",
+    "pl": "Przetłumacz napisy",
+    "tr": "Altyazıları çevir",
+    "vi": "Dịch phụ đề"
+  },
+  "summary": {
+    "zh-Hans": "逐句翻译成另一种语言，做译文字幕或双语字幕",
+    "zh-Hant": "逐句翻譯成另一種語言，做成譯文字幕或雙語字幕",
+    "en": "Translate line by line into another language for translated or bilingual subtitles",
+    "ja": "一文ずつ別の言語に翻訳し、翻訳字幕や二か国語字幕を作る",
+    "ko": "문장 단위로 다른 언어로 번역해 번역 자막이나 이중 언어 자막을 만듭니다",
+    "es": "Traduce frase a frase a otro idioma para subtítulos traducidos o bilingües",
+    "fr": "Traduit phrase par phrase vers une autre langue, en sous-titres traduits ou bilingues",
+    "de": "Satz für Satz in eine andere Sprache übersetzen, als übersetzte oder zweisprachige Untertitel",
+    "nl": "Vertaal zin voor zin naar een andere taal voor vertaalde of tweetalige ondertitels",
+    "pt-BR": "Traduz frase a frase para outro idioma, em legendas traduzidas ou bilíngues",
+    "it": "Traduce frase per frase in un’altra lingua, per sottotitoli tradotti o bilingui",
+    "ru": "Перевести фразу за фразой на другой язык: переведённые или двуязычные субтитры",
+    "pl": "Tłumaczy zdanie po zdaniu na inny język, jako napisy tłumaczone lub dwujęzyczne",
+    "tr": "Cümle cümle başka bir dile çevirir; çeviri ya da iki dilli altyazı hazırlar",
+    "vi": "Dịch từng câu sang ngôn ngữ khác để làm phụ đề dịch hoặc song ngữ"
+  }
+}

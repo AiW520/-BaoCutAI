@@ -6,6 +6,7 @@ const builtin: SkillSummary = {
   id: 'caption-layout',
   name: 'Caption layout',
   description: '字幕排版规则\n第二行',
+  labels: null,
   version: '1.0.0',
   origin: 'builtin',
   enabled: true,
@@ -44,6 +45,14 @@ describe('baocut skills 的输出', () => {
     expect(formatSkillChanged('已导入', imported)).toBe(
       '已导入 podcast-chapters（播客分章，关着）→ /home/skills/podcast-chapters\n来源：https://github.com/o/r（main@abcdef012345，2026-10-02T00:00:00.000Z）',
     );
+  });
+
+  it('内置 skill 的回执用当前语言的名称（labels），不是 front matter 的 name', () => {
+    const labelled: SkillSummary = {
+      ...builtin,
+      labels: { name: { en: 'Caption layout rules', 'zh-Hans': '字幕排版' }, summary: { en: 'Lay out captions' } },
+    };
+    expect(formatSkillChanged('已打开', labelled).startsWith('已打开 caption-layout（字幕排版，')).toBe(true);
   });
 
   it('--skill 与 --id 只查形状，不假定拉丁字母', () => {

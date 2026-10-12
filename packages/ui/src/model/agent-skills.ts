@@ -1,4 +1,15 @@
-import { defineMessages, live, RpcError, SKILL_LIMITS, type SkillOrigin, type SkillSource, type SkillSummary } from '@baocut/protocol';
+import {
+  defineMessages,
+  getLocale,
+  intlLocale,
+  live,
+  RpcError,
+  SKILL_LIMITS,
+  skillLabel,
+  type SkillOrigin,
+  type SkillSource,
+  type SkillSummary,
+} from '@baocut/protocol';
 import { zhHans } from './agent-skills.zh-Hans.ts';
 import { zhHant } from './agent-skills.zh-Hant.ts';
 import { ja } from './agent-skills.ja.ts';
@@ -55,7 +66,8 @@ const M = defineMessages(en, { 'zh-Hans': zhHans, 'zh-Hant': zhHant, ja, ko, es,
 
 /**
  * 内置 Agent 自己用的 skill（产品设计 §6.9，原型 model-agent-skills.js）：设置 › Skills 的搜索、按来源筛选与计数，
- * 输入框「+ › 使用 Skill」的条目，以及 `skills.*` 错误码换成的人话。名称、描述按原样，不假定语言。
+ * 输入框「+ › 使用 Skill」的条目，以及 `skills.*` 错误码换成的人话。内置 skill 的名称与一句话介绍按当前语言取它的 `labels`
+ * （`skillLabel`）；其余 skill 的名称、描述按原样，不假定语言。
  */
 
 /** 筛选页签：全部，或一种来源。 */
@@ -72,18 +84,46 @@ export const SKILL_TABS: readonly { key: SkillTab; label: string }[] = (['all', 
 
 const ORIGIN_ORDER: Readonly<Record<SkillOrigin, number>> = { builtin: 0, personal: 1, 'third-party': 2 };
 
-/** `skills.list` 的顺序不是合同：按来源（内置、我的、第三方），再按名称排，名称相同按 id。 */
+type SkillText = Pick<SkillSummary, 'name' | 'description' | 'labels'>;
+
+/** 界面上显示的名称：内置 skill 是当前语言的 `labels.name`，其余是 front matter 的 `name`。渲染时调用，不要存起来。 */
+export function skillDisplayName(skill: SkillText): string {
+  return skillLabel(skill, getLocale()).name;
+}
+
+/** 界面上显示的一句话介绍：内置 skill 是当前语言的 `labels.summary`，其余是 front matter 的 `description`（原样，由调用方截）。 */
+export function skillDisplaySummary(skill: SkillText): string {
+  return skillLabel(skill, getLocale()).summary;
+}
+
+/** 按 id 在列表里找 skill 的显示名称；不在列表里（还没取到、已移除）时用 `fallback`（消息记下的名字，或 id）。 */
+export function skillNameById(list: readonly SkillSummary[], id: string, fallback: string = id): string {
+  const found = list.find((s) => s.id === id);
+  return found ? skillDisplayName(found) : fallback;
+}
+
+/**
+ * `skills.list` 的顺序不是合同：按来源（内置、我的、第三方），再按显示的名称排（当前语言的排序规则），名称相同按 id。界面换语言时
+ * 整体重画、重新取列表，顺序跟着换。
+ */
 export function sortSkills(list: readonly SkillSummary[]): SkillSummary[] {
+  const locale = intlLocale();
   return [...list].sort(
-    (a, b) => ORIGIN_ORDER[a.origin] - ORIGIN_ORDER[b.origin] || a.name.localeCompare(b.name) || a.id.localeCompare(b.id),
+    (a, b) =>
+      ORIGIN_ORDER[a.origin] - ORIGIN_ORDER[b.origin] ||
+      skillDisplayName(a).localeCompare(skillDisplayName(b), locale) ||
+      a.id.localeCompare(b.id),
   );
 }
 
-/** 先按页签（来源）筛，再按名称、描述、id 搜（不分大小写）；顺序不变。 */
+/** 先按页签（来源）筛，再按显示的名称与介绍、front matter 的名称与描述、id 搜（不分大小写）；顺序不变。 */
 export function filterSkills(list: readonly SkillSummary[], query: string, tab: SkillTab): SkillSummary[] {
   const q = query.trim().toLocaleLowerCase();
   return list.filter(
-    (s) => (tab === 'all' || s.origin === tab) && (!q || [s.name, s.description, s.id].some((v) => v.toLocaleLowerCase().includes(q))),
+    (s) =>
+      (tab === 'all' || s.origin === tab) &&
+      (!q ||
+        [skillDisplayName(s), skillDisplaySummary(s), s.name, s.description, s.id].some((v) => v.toLocaleLowerCase().includes(q))),
   );
 }
 
@@ -117,9 +157,17 @@ export interface SkillMenuItem {
   enabled: boolean;
 }
 
-/** 输入框「+ › 使用 Skill」的条目：全部 skill，开着的在前，组内保持列表顺序；描述截成一行。 */
+/**
+ * 输入框「+ › 使用 Skill」的条目：全部 skill，开着的在前，组内保持列表顺序。名称与介绍按 `skillDisplayName` /
+ * `skillDisplaySummary`：内置 skill 的一句话介绍本来就是一行，原样给；没有 `labels` 的拿 description 截成一行。
+ */
 export function skillMenuItems(list: readonly SkillSummary[]): SkillMenuItem[] {
-  const rows = list.map((s) => ({ id: s.id, name: s.name, description: clipLine(s.description), enabled: s.enabled }));
+  const rows = list.map((s) => ({
+    id: s.id,
+    name: skillDisplayName(s),
+    description: clipLine(skillDisplaySummary(s), s.labels ? SKILL_LIMITS.labelSummary : undefined),
+    enabled: s.enabled,
+  }));
   return [...rows.filter((s) => s.enabled), ...rows.filter((s) => !s.enabled)];
 }
 

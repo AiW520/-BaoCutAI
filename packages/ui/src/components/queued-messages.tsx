@@ -10,6 +10,7 @@ import { style } from '@react-spectrum/s2/style' with { type: 'macro' };
 import { QUEUE_COPY, SKILL_COPY } from '../copy.ts';
 import { editQueuedMessage, removeQueuedMessage, type QueuedMessage } from '../model/message-queue.ts';
 import { useShell } from '../state/shell-store.ts';
+import { skillNameById } from '../model/agent-skills.ts';
 import { useSkills } from '../state/skills-store.ts';
 
 const EMPTY: QueuedMessage[] = [];
@@ -113,7 +114,7 @@ export function QueuedMessages({
                 {(message.skills ?? []).map((skill) => (
                   <span key={skill.id} className={meta}>
                     <Code />
-                    {SKILL_COPY.token(skills.find((k) => k.id === skill.id)?.name ?? skill.id)}
+                    {SKILL_COPY.token(skillNameById(skills, skill.id))}
                   </span>
                 ))}
                 <ActionButton isQuiet size="S" aria-label={QUEUE_COPY.edit} onPress={() => setEditing({ id: message.id, text: message.text })}>

@@ -2,7 +2,7 @@ import fs from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { SKILL_LIMITS } from '@baocut/protocol';
+import { LOCALES, SKILL_LIMITS, SKILL_META_FILE, parseSkillLabels } from '@baocut/protocol';
 import { SkillPrefsStore } from '@baocut/runtime-storage';
 import { SkillCatalog, resolveBuiltinSkillsDir, type LoadedSkill } from './skill-catalog.ts';
 
@@ -79,6 +79,21 @@ describe('仓库里的内置 skill', () => {
       expect(skill.body.trim(), skill.id).not.toBe('');
     }
     const names = skills.map((s) => s.name);
+    expect(new Set(names).size).toBe(names.length);
+  });
+
+  it(`每个都有 ${SKILL_META_FILE}：全部出货语言的名称与一句话介绍，各一行、在上限内，没有多余的键`, async () => {
+    for (const skill of skills) {
+      const raw = JSON.parse(await fs.readFile(path.join(skill.dir, SKILL_META_FILE), 'utf8')) as Record<string, Record<string, string>>;
+      expect(Object.keys(raw).sort(), skill.id).toEqual(['name', 'summary']);
+      for (const field of ['name', 'summary'] as const) {
+        expect(Object.keys(raw[field]!), `${skill.id} ${field}`).toEqual([...LOCALES]);
+      }
+      // 解析不丢任何一条（空的、多行的、超长的都会被丢掉），加载出来的就是文件内容。
+      expect(parseSkillLabels(raw), skill.id).toEqual(raw);
+      expect(skill.labels, skill.id).toEqual(raw);
+    }
+    const names = skills.map((s) => s.labels!.name.en);
     expect(new Set(names).size).toBe(names.length);
   });
 

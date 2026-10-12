@@ -1,0 +1,36 @@
+{
+  "name": {
+    "zh-Hans": "剪口播",
+    "zh-Hant": "剪口播",
+    "en": "Talking-head edit",
+    "ja": "話し手動画の編集",
+    "ko": "토킹헤드 편집",
+    "es": "Editar vídeos a cámara",
+    "fr": "Monter un face caméra",
+    "de": "Talking-Head-Schnitt",
+    "nl": "Talking head monteren",
+    "pt-BR": "Editar vídeo falado",
+    "it": "Montaggio parlato",
+    "ru": "Монтаж «говорящей головы»",
+    "pl": "Montaż gadającej głowy",
+    "tr": "Konuşma videosu kurgusu",
+    "vi": "Dựng video nói trước máy quay"
+  },
+  "summary": {
+    "zh-Hans": "去掉口癖、长停顿与录废的部分，收紧节奏",
+    "zh-Hant": "去除口頭禪、長停頓與錄壞的片段，收緊節奏",
+    "en": "Cut filler words, long pauses and flubbed takes to tighten the pace",
+    "ja": "口癖や長い間、撮り損じを切り、テンポを引き締める",
+    "ko": "군말, 긴 멈춤, 실수한 부분을 잘라 템포를 살립니다",
+    "es": "Quita muletillas, pausas largas y tomas fallidas para ajustar el ritmo",
+    "fr": "Retire tics de langage, longues pauses et prises ratées pour resserrer le rythme",
+    "de": "Füllwörter, lange Pausen und verpatzte Takes entfernen und das Tempo straffen",
+    "nl": "Knip stopwoorden, lange pauzes en mislukte takes weg voor een strakker tempo",
+    "pt-BR": "Remove vícios de linguagem, pausas longas e tomadas erradas para dar ritmo",
+    "it": "Toglie intercalari, pause lunghe e riprese sbagliate per stringere il ritmo",
+    "ru": "Вырезать слова-паразиты, долгие паузы и неудачные дубли, чтобы ускорить темп",
+    "pl": "Wycina wtrącenia, długie pauzy i nieudane ujęcia, by zagęścić tempo",
+    "tr": "Dolgu sözcüklerini, uzun duraklamaları ve bozuk çekimleri keserek tempoyu sıkılaştırır",
+    "vi": "Cắt từ đệm, khoảng lặng dài và đoạn hỏng để nhịp nhanh gọn hơn"
+  }
+}

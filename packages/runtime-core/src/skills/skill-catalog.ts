@@ -7,14 +7,17 @@ import {
   SKILL_DEFAULT_ENABLED,
   SKILL_FILE,
   SKILL_LIMITS,
+  SKILL_META_FILE,
   SKILL_SOURCE_FILE,
   normalizeSkillId,
+  parseSkillLabels,
   type Localized,
   type SkillChangeResult,
   type SkillDetail,
   type SkillDiagnostic,
   type SkillFileContent,
   type SkillFileEntry,
+  type SkillLabels,
   type SkillListResult,
   type SkillOrigin,
   type SkillSource,
@@ -33,6 +36,8 @@ import { RcSkills } from '@baocut/protocol/messages/runtime-core';
  * - 符号链接不跟随：skill 目录本身是链接、或目录里有链接、特殊文件时整个跳过，不会读到目录外的东西。
  * - 内置与用户目录同 id 时内置的优先，用户的那一份记 `builtin-conflict`。
  * - 开关 = 来源的默认值（`SKILL_DEFAULT_ENABLED`）加上 `SkillPrefsStore` 里的差量。
+ * - 内置 skill 目录里的 `SKILL_META_FILE` 是界面用的名称与一句话介绍（`labels`），按出货语言各一份；没有或不合规时为 null，
+ *   不影响 skill 本身（内置的由 builtin-skills.test.ts 把关）。
  * - 说明书页（`setGuidePages`，Agent 面设计 §8.6）：`skills/baocut/` 按工具桥面渲染出的目录页、做法总览与约定，
  *   在内存里、不在任何目录。它们是会话指导的一部分：总在会话开始的索引里、`skills_read` 能读，但不进 `list()`（设置里的
  *   skill 列表与 `skills_list`），不能开关；同 id 的内置目录与用户目录里的 skill 都让位给它们。
@@ -44,6 +49,8 @@ export interface LoadedSkill {
   name: string;
   description: string;
   version: string | null;
+  /** 内置 skill 的 `SKILL_META_FILE`（界面用的名称与一句话介绍）；用户目录与说明书页没有。 */
+  labels: SkillLabels | null;
   scope: 'builtin' | 'user';
   origin: SkillOrigin;
   dir: string;
@@ -240,6 +247,7 @@ export class SkillCatalog {
       id: skill.id,
       name: skill.name,
       description: skill.description,
+      labels: skill.labels,
       version: skill.version,
       origin: skill.origin,
       enabled: this.isEnabled(skill),
@@ -303,6 +311,7 @@ function guidePageSkill(page: AgentSkillPage, sourceDir: string, updatedAt: stri
     name: page.name,
     description: page.description,
     version: null,
+    labels: null,
     scope: 'builtin',
     origin: 'builtin',
     dir: path.dirname(path.join(sourceDir, ...page.file.split('/'))),
@@ -378,9 +387,24 @@ export async function loadSkill(dir: string, scope: 'builtin' | 'user'): Promise
 
   let source: SkillSource | null = null;
   if (scope === 'user') source = await readSkillSource(dir);
+  const labels = scope === 'builtin' ? await readSkillLabels(dir) : null;
   const origin: SkillOrigin = scope === 'builtin' ? 'builtin' : source?.kind === 'github' ? 'third-party' : 'personal';
   const stat = await fsp.stat(path.join(dir, SKILL_FILE));
-  return { id, ...parsed.meta, scope, origin, dir, source, files, updatedAt: stat.mtime.toISOString() };
+  return { id, ...parsed.meta, labels, scope, origin, dir, source, files, updatedAt: stat.mtime.toISOString() };
+}
+
+/** 内置 skill 的界面文字（`SKILL_META_FILE`）；没有、不是普通文件、超过上限或不合规时 null。 */
+export async function readSkillLabels(dir: string): Promise<SkillLabels | null> {
+  const file = path.join(dir, SKILL_META_FILE);
+  try {
+    const stat = await fsp.lstat(file);
+    if (!stat.isFile()) return null;
+    const bytes = await readCapped(file, SKILL_LIMITS.metaFileBytes);
+    const text = bytes === null ? null : decodeUtf8(bytes);
+    return text === null ? null : parseSkillLabels(JSON.parse(text));
+  } catch {
+    return null;
+  }
 }
 
 /** `SKILL.md` 的读取与 front matter 校验，添加与导入时校验暂存目录也用它。 */

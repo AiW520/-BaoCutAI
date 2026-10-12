@@ -40,6 +40,7 @@ import {
   type TemplateSourceKey,
 } from '../../model/home-templates.ts';
 import { slotParts } from '../../model/prompt-slots.ts';
+import { skillNameById } from '../../model/agent-skills.ts';
 import { useSkills } from '../../state/skills-store.ts';
 import { S } from '../shell-copy.ts';
 import { TemplateCover, TemplateKindBadge } from './template-cover.tsx';
@@ -319,7 +320,7 @@ function Detail({ template, picked, onUse }: { template: HomeTemplate; picked: b
   const assets = templateAssets(template);
   const fields = templateSlotFields(template);
   const skills = useSkills((s) => s.skills);
-  const skillNames = template.skills.map((id) => skills.find((k) => k.id === id)?.name ?? id);
+  const skillNames = template.skills.map((id) => skillNameById(skills, id));
   return (
     <aside className="bc-tpl-library__pane" aria-label={HOME_COPY.templateToken(template.title)}>
       <div className="bc-tpl-library__pane-scroll bc-scroll">

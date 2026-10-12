@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { methodParamSchemas } from './schemas.ts';
-import { messageSkills, SKILL_LIMITS, sendSkillRefs } from './skill.ts';
+import { messageSkills, parseSkillLabels, SKILL_LIMITS, sendSkillRefs, skillLabel } from './skill.ts';
 
 describe('conversations.send 点选的 skill', () => {
   const send = methodParamSchemas['conversations.send'];
@@ -34,5 +34,32 @@ describe('conversations.send 点选的 skill', () => {
     expect(messageSkills({})).toEqual([]);
     expect(messageSkills({ skill: ref('a') })).toEqual([ref('a')]);
     expect(messageSkills({ skills: [ref('a'), ref('b')] })).toEqual([ref('a'), ref('b')]);
+  });
+});
+
+describe('内置 skill 的界面文字（SKILL_META_FILE）', () => {
+  it('按语言收名称与一句话介绍：认不出的语言、空的、多行的、超长的丢掉；都要有英文', () => {
+    const labels = parseSkillLabels({
+      name: { en: ' Chapters ', 'zh-Hans': '分章节', xx: 'unknown', ja: '' },
+      summary: { en: 'Split at topic changes', 'zh-Hans': '第一行\n第二行', de: 'x'.repeat(SKILL_LIMITS.labelSummary + 1) },
+      extra: true,
+    });
+    expect(labels).toEqual({ name: { en: 'Chapters', 'zh-Hans': '分章节' }, summary: { en: 'Split at topic changes' } });
+    expect(parseSkillLabels({ name: { 'zh-Hans': '分章节' }, summary: { en: 'x' } })).toBeNull();
+    expect(parseSkillLabels({ name: { en: 'x' } })).toBeNull();
+    expect(parseSkillLabels([])).toBeNull();
+    expect(parseSkillLabels('x')).toBeNull();
+    expect(parseSkillLabels(null)).toBeNull();
+  });
+
+  it('按语言取，缺这种语言时英文；没有 labels 时是 front matter 的 name 与 description', () => {
+    const skill = {
+      name: 'video-chapters',
+      description: '给智能体看的触发说明',
+      labels: { name: { en: 'Chapters', 'zh-Hans': '分章节' }, summary: { en: 'Split at topic changes', 'zh-Hans': '在话题转换处分章' } },
+    };
+    expect(skillLabel(skill, 'zh-Hans')).toEqual({ name: '分章节', summary: '在话题转换处分章' });
+    expect(skillLabel(skill, 'ja')).toEqual({ name: 'Chapters', summary: 'Split at topic changes' });
+    expect(skillLabel({ ...skill, labels: null }, 'zh-Hans')).toEqual({ name: 'video-chapters', summary: '给智能体看的触发说明' });
   });
 });

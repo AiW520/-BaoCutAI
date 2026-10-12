@@ -91,7 +91,7 @@ import {
   type SlashCommand,
 } from '../copy.ts';
 import type { AgentChange } from '../model/agent-choice.ts';
-import { skillMenuItems } from '../model/agent-skills.ts';
+import { skillMenuItems, skillNameById } from '../model/agent-skills.ts';
 import { admitFiles, admitImages, rejectionMessage } from '../model/composer-attachments.ts';
 import {
   COMPLETION_TRIGGER,
@@ -333,7 +333,7 @@ export function Composer(props: ComposerProps) {
   // 「+ › 使用 Skill」点选的那几个（按草稿键存，按挂上的顺序，不重复）与 skill 列表（挂上、重连时取）。
   const skillIds = useDraftSkillIds(draftKey);
   const skills = useSkillsLoader();
-  const skillName = (id: string) => skills.skills.find((s) => s.id === id)?.name ?? id;
+  const skillName = (id: string) => skillNameById(skills.skills, id);
   const [sending, setSending] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [prompt, setPrompt, selectSlot] = usePromptValue(draft, (text) => setDraft(draftKey, text));

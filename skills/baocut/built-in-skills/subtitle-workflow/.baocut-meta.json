@@ -1,0 +1,36 @@
+{
+  "name": {
+    "zh-Hans": "转录与字幕",
+    "zh-Hant": "轉錄與字幕",
+    "en": "Transcribe & subtitle",
+    "ja": "文字起こしと字幕",
+    "ko": "전사와 자막",
+    "es": "Transcribir y subtitular",
+    "fr": "Transcrire et sous-titrer",
+    "de": "Transkribieren & untertiteln",
+    "nl": "Transcriberen en ondertitelen",
+    "pt-BR": "Transcrever e legendar",
+    "it": "Trascrivi e sottotitola",
+    "ru": "Расшифровка и субтитры",
+    "pl": "Transkrypcja i napisy",
+    "tr": "Transkript ve altyazı",
+    "vi": "Chép lời và phụ đề"
+  },
+  "summary": {
+    "zh-Hans": "从链接或本机音视频转写，润色、按需翻译，再加上字幕",
+    "zh-Hant": "從連結或本機影音轉寫，潤飾、視需要翻譯，再加上字幕",
+    "en": "Transcribe a link or local file, polish it, translate if needed, and add subtitles",
+    "ja": "リンクや手元の音声・動画を文字起こしし、校正と必要な翻訳をして字幕を付ける",
+    "ko": "링크나 로컬 음성·영상을 전사하고 다듬은 뒤, 필요하면 번역해 자막을 넣습니다",
+    "es": "Transcribe un enlace o un archivo local, lo pule, lo traduce si hace falta y añade subtítulos",
+    "fr": "Transcrit un lien ou un fichier local, l’améliore, le traduit au besoin et ajoute les sous-titres",
+    "de": "Link oder lokale Datei transkribieren, verbessern, bei Bedarf übersetzen und untertiteln",
+    "nl": "Transcribeer een link of lokaal bestand, verbeter het, vertaal waar nodig en voeg ondertitels toe",
+    "pt-BR": "Transcreve um link ou arquivo local, aprimora, traduz se preciso e adiciona legendas",
+    "it": "Trascrive un link o un file locale, lo migliora, lo traduce se serve e aggiunge i sottotitoli",
+    "ru": "Расшифровать ссылку или локальный файл, улучшить, при необходимости перевести и добавить субтитры",
+    "pl": "Transkrybuje link lub plik lokalny, poprawia, w razie potrzeby tłumaczy i dodaje napisy",
+    "tr": "Bağlantıdan veya yerel dosyadan transkript çıkarır, iyileştirir, gerekirse çevirir ve altyazı ekler",
+    "vi": "Chép lời từ liên kết hoặc tệp trên máy, chỉnh sửa, dịch nếu cần rồi thêm phụ đề"
+  }
+}

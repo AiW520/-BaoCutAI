@@ -2,7 +2,7 @@ import fs from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { RpcError, SKILL_LIMITS, SKILL_SOURCE_FILE, normalizeSkillId } from '@baocut/protocol';
+import { RpcError, SKILL_LIMITS, SKILL_META_FILE, SKILL_SOURCE_FILE, normalizeSkillId } from '@baocut/protocol';
 import { SkillPrefsStore } from '@baocut/runtime-storage';
 import { SkillCatalog } from './skill-catalog.ts';
 import { resolveSendSkills, skillIndexBlock, skillSendBlock } from './skill-brief.ts';
@@ -105,6 +105,23 @@ describe('skill 目录', () => {
     ]);
     expect(diagnostics.find((d) => d.dir === 'leaky')!.issues[0]).toMatch(/符号链接/);
     expect(diagnostics.find((d) => d.dir === 'no-description')!.issues[0]).toMatch(/description/);
+  });
+
+  it('内置 skill 的 .baocut-meta.json 进 labels，不进文件清单；坏了时为 null、skill 照常；用户目录里的不读', async () => {
+    const meta = { name: { en: 'Chapters', 'zh-Hans': '分章节' }, summary: { en: 'Split at topic changes', 'zh-Hans': '在话题转换处分章' } };
+    await writeSkill(builtin, 'chapters', { files: { [SKILL_META_FILE]: JSON.stringify(meta) } });
+    await writeSkill(builtin, 'broken-meta', { files: { [SKILL_META_FILE]: '{ not json' } });
+    await writeSkill(builtin, 'no-english', { files: { [SKILL_META_FILE]: JSON.stringify({ name: { ja: 'x' }, summary: { ja: 'y' } }) } });
+    await writeSkill(user, 'mine', { files: { [SKILL_META_FILE]: JSON.stringify(meta) } });
+
+    const { skills, diagnostics } = await catalog.list();
+    expect(diagnostics).toEqual([]);
+    const byId = Object.fromEntries(skills.map((s) => [s.id, s]));
+    expect(byId.chapters).toMatchObject({ name: 'chapters', labels: meta, fileCount: 1 });
+    expect(byId['broken-meta']!.labels).toBeNull();
+    expect(byId['no-english']!.labels).toBeNull();
+    expect(byId.mine!.labels).toBeNull();
+    expect((await catalog.get('chapters')).files.map((f) => f.path)).toEqual(['SKILL.md']);
   });
 
   it('同一来源里规范化后 id 相同的两个都跳过', async () => {

@@ -1,0 +1,36 @@
+{
+  "name": {
+    "zh-Hans": "旁白成片",
+    "zh-Hant": "旁白成片",
+    "en": "Narrated video",
+    "ja": "ナレーション動画",
+    "ko": "내레이션 영상",
+    "es": "Vídeo narrado",
+    "fr": "Vidéo narrée",
+    "de": "Video mit Sprecherstimme",
+    "nl": "Video met voice-over",
+    "pt-BR": "Vídeo narrado",
+    "it": "Video narrato",
+    "ru": "Видео с закадровым голосом",
+    "pl": "Film z narracją",
+    "tr": "Anlatımlı video",
+    "vi": "Video có lời dẫn"
+  },
+  "summary": {
+    "zh-Hans": "按语速写旁白稿，用同一个音色配音，再把画面剪到旁白上",
+    "zh-Hant": "依語速寫旁白稿，用同一個音色配音，再把畫面剪到旁白上",
+    "en": "Write a script that fits the pace, voice it in one voice, and cut the visuals to it",
+    "ja": "話す速さに合わせて原稿を書き、一つの声で読み上げ、映像をナレーションに合わせる",
+    "ko": "말 속도에 맞춰 원고를 쓰고 한 목소리로 녹음한 뒤, 화면을 내레이션에 맞춰 편집합니다",
+    "es": "Escribe un guion a la medida del ritmo, lo locuta con una sola voz y monta las imágenes sobre él",
+    "fr": "Écrit un texte calé sur le débit, l’enregistre avec une seule voix et monte les images dessus",
+    "de": "Skript passend zum Sprechtempo schreiben, mit einer Stimme vertonen und die Bilder darauf schneiden",
+    "nl": "Schrijf een tekst op spreektempo, spreek die in met één stem en monteer de beelden erop",
+    "pt-BR": "Escreve um roteiro no ritmo da fala, narra com uma só voz e monta as imagens sobre a narração",
+    "it": "Scrive un testo sul ritmo del parlato, lo registra con una sola voce e monta le immagini sopra",
+    "ru": "Написать текст под темп речи, озвучить одним голосом и смонтировать картинку под него",
+    "pl": "Pisze tekst pod tempo mowy, nagrywa go jednym głosem i montuje obraz pod narrację",
+    "tr": "Konuşma hızına uygun metin yazar, tek bir sesle seslendirir ve görüntüyü anlatıma göre keser",
+    "vi": "Viết lời dẫn theo tốc độ đọc, lồng tiếng bằng một giọng và dựng hình theo lời dẫn"
+  }
+}
