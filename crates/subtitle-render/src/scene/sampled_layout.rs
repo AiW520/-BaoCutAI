@@ -28,6 +28,7 @@ pub(super) fn early_context(
         ("time.seconds", ValueType::Time, t - cue.start),
         ("time.elapsedSeconds", ValueType::Time, t - cue.start),
         ("time.durationSeconds", ValueType::Time, duration),
+        ("time.cueDurationSeconds", ValueType::Time, duration),
         ("time.progress", ValueType::Scalar, progress),
         (
             "time.clampedProgress",

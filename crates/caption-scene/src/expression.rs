@@ -103,10 +103,22 @@ pub fn typed_value(t: ValueType, value: &Value) -> Result<Evaluated> {
 }
 pub fn context_type(path: &str) -> Option<ValueType> {
     Some(match path {
-        "time.elapsedSeconds" | "time.seconds" | "time.durationSeconds" => ValueType::Time,
-        "time.progress" | "time.clampedProgress" | "unit.index" | "unit.count" | "unit.selectedIndex" | "unit.selectedCount" => {
-            ValueType::Scalar
-        }
+        "time.elapsedSeconds"
+        | "time.seconds"
+        | "time.durationSeconds"
+        | "time.cueDurationSeconds"
+        | "time.pageElapsedSeconds"
+        | "time.pageDurationSeconds" => ValueType::Time,
+        "unit.textIndex"
+        | "unit.textCount"
+        | "unit.pageTextIndex"
+        | "unit.pageTextCount"
+        | "time.progress"
+        | "time.clampedProgress"
+        | "unit.index"
+        | "unit.count"
+        | "unit.selectedIndex"
+        | "unit.selectedCount" => ValueType::Scalar,
         "unit.active" | "unit.read" | "unit.unread" => ValueType::Bool,
         "layout.x" | "layout.y" | "layout.width" | "layout.height" | "layout.baseline" | "canvas.width" | "canvas.height" => {
             ValueType::Length
@@ -131,7 +143,7 @@ pub fn builtin_type(name: &str, args: &[ValueType]) -> Option<ValueType> {
         ("phase", [Time, Scalar]) => Some(Angle),
         ("mix", [a, b, Scalar]) if a == b && (numeric(*a) || *a == Color) => Some(*a),
         ("clamp", [a, b, c]) if a == b && b == c && numeric(*a) => Some(*a),
-        ("smoothstep", [Scalar]) => Some(Scalar),
+        ("smoothstep" | "sqrt", [Scalar]) => Some(Scalar),
         ("cubic-bezier", [Scalar, Scalar, Scalar, Scalar, Scalar]) => Some(Scalar),
         ("eq", [a, b]) if a == b => Some(Bool),
         ("lt" | "gt", [a, b]) if a == b && numeric(*a) => Some(Bool),
@@ -331,6 +343,12 @@ fn builtin(name: &str, v: &[Evaluated], t: ValueType, c: &Context) -> Result<Eva
                 return Err(invalid("clamp", "reversed limits"));
             }
             n[0].clamp(n[1], n[2])
+        }
+        "sqrt" => {
+            if n[0] < 0.0 {
+                return Err(invalid("sqrt", "negative argument"));
+            }
+            libm::sqrt(n[0])
         }
         "smoothstep" => {
             let u = n[0].clamp(0.0, 1.0);

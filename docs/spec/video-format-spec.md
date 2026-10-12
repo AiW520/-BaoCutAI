@@ -1823,9 +1823,13 @@ interface CaptionStyleBody {
 | 表达式 | 带类型 literal/read/call/if；scalar/integer/length/time/angle/bool/color；无环纯函数，时间/单元/基础布局/参数只读；共享数学曲线、连续 sin/cos、带 seed 的 random/noise；if 惰性求值，非法运算返回诊断 |
 | 合成 | replace/add/multiply 与 priority/声明顺序；颜色只允许 replace；乘法通道为无量纲数；父子变换及离屏组 opacity 通过共同 DrawOp 光栅执行 |
 
-`requiredCapabilities` 当前可声明 `caption-scene/1`、`caption-expressions/1`、`caption-unit-animation/1`、`caption-image-png/1`、`caption-paint-stack/1`、`caption-blur/1`、`caption-feedback/1`、`caption-layout-per-sample/1` 和 `caption-bezier-expression/1`。未知能力、属性或字段拒绝；artifact 形式的场景引用、非 PNG 图片、任意 shader、无限递归反馈、节点级材质栈及改变分页成员的时间布局尚未开放，不能保存为成功后在渲染中忽略。完整扩展方向仍按[设计文档](../design/subtitle/dynamic-caption-format-design.md)维护。
+`requiredCapabilities` 当前可声明 `caption-scene/1`、`caption-expressions/1`、`caption-unit-animation/1`、`caption-image-png/1`、`caption-paint-stack/1`、`caption-blur/1`、`caption-feedback/1`、`caption-layout-per-sample/1`、`caption-bezier-expression/1` 和 `caption-text-context/1`。未知能力、属性或字段拒绝；artifact 形式的场景引用、非 PNG 图片、任意 shader、无限递归反馈、节点级材质栈及改变分页成员的时间布局尚未开放，不能保存为成功后在渲染中忽略。完整扩展方向仍按[设计文档](../design/subtitle/dynamic-caption-format-design.md)维护。
 
 表达式内置 `cubic-bezier(progress, x1, y1, x2, y2)` 接受五个 scalar，返回 scalar，复用共享 motion 求解器。progress 在两端截为 0/1，x 控制点必须在 [0,1]，y 允许超调；参数非有限或 x 越界返回诊断。可与 `elapsedSeconds / min(durationSeconds, 固定时间)` 组合，实现随单元时长自适应的曲线，不依赖播放历史。使用该函数的模板应声明 `caption-bezier-expression/1`。
+
+`caption-text-context/1` 增加 `unit.textIndex/textCount`（当前文字节点完整内容中的 Unicode 字素位置/数量）和 `unit.pageTextIndex/pageTextCount`（当前页的源文本范围内位置/数量）；空格、换行和组合字素按原文计数，重排不改变它们。`time.cueDurationSeconds` 是整个 cue 的时长，`time.pageElapsedSeconds/pageDurationSeconds` 是当前页经过的时间/时长，类型均为 time，repeat 装饰继承所绑定单元的上下文。旧 `unit.index/count` 的局部含义保持不变。
+
+选择器可显式设置 `includeWhitespace: true`，仅用于 grapheme。默认 false，保持既有选择集合。开启后空白字素也可绑定装饰；行尾未成形的空白定位于前一行末端，无真实词时间，grapheme 时钟继承行窗口。字素上下文按源顺序编号，不依赖装饰是否可见。布局前只允许 cue 时间字段，禁止读取页时钟或排版产生的字素字段。内置 `sqrt(scalar)` 返回 scalar，负输入报诊断；模板应声明上述能力。
 
 **逐采样布局**。`layout.bindings` 是最多 64 项的 `{ nodeId?, property, value: DynamicValue }` 数组。同一目标/属性不能重复。无 nodeId 的目标是场景的 width/x/y（length）；指定文字节点时可改 fontSize（length）、letterSpacing（scalar，em）与 lineHeight（scalar）。只有 `per-sample` 模式接受 bindings。静态字段先确定基础页成员、源文本字节区间及显示起止时间；每次采样只重新布局当前页，不将溢出文字移到新页。`overflow: 'error' | 'visible'` 默认 error：超过 maxLines 或单个字形仍超宽则报 `CAPTION_LAYOUT_OVERFLOW`；visible 保留所有页成员并允许更多行，最终仍按画布裁剪。
 

@@ -12011,6 +12011,527 @@
                 "end": 4000,
                 "id": "c0",
                 "start": 0,
+                "text": "One é two three"
+              }
+            ],
+            "schema": "baocut.caption/1",
+            "timescale": 1000
+          },
+          "documentId": "doc",
+          "kind": "caption",
+          "lineKind": "original",
+          "schema": "baocut.caption/1"
+        },
+        {
+          "body": {
+            "scene": {
+              "kind": "inline",
+              "value": {
+                "animations": [
+                  {
+                    "composite": "multiply",
+                    "id": "reveal",
+                    "property": "opacity",
+                    "target": {
+                      "nodeId": "caption",
+                      "selectorId": "characters"
+                    },
+                    "value": {
+                      "expression": {
+                        "args": [
+                          {
+                            "args": [
+                              {
+                                "args": [
+                                  {
+                                    "args": [
+                                      {
+                                        "op": "read",
+                                        "path": "time.seconds"
+                                      },
+                                      {
+                                        "op": "read",
+                                        "path": "time.cueDurationSeconds"
+                                      }
+                                    ],
+                                    "function": "div",
+                                    "op": "call"
+                                  },
+                                  {
+                                    "op": "read",
+                                    "path": "unit.textCount"
+                                  }
+                                ],
+                                "function": "mul",
+                                "op": "call"
+                              },
+                              {
+                                "op": "read",
+                                "path": "unit.textIndex"
+                              }
+                            ],
+                            "function": "sub",
+                            "op": "call"
+                          },
+                          {
+                            "op": "literal",
+                            "type": "scalar",
+                            "value": 0
+                          },
+                          {
+                            "op": "literal",
+                            "type": "scalar",
+                            "value": 1
+                          }
+                        ],
+                        "function": "clamp",
+                        "op": "call"
+                      },
+                      "kind": "expression"
+                    }
+                  },
+                  {
+                    "composite": "multiply",
+                    "id": "page-scale",
+                    "property": "transform.scale",
+                    "target": {
+                      "nodeId": "caption",
+                      "selectorId": "characters"
+                    },
+                    "value": {
+                      "expression": {
+                        "args": [
+                          {
+                            "op": "literal",
+                            "type": "scalar",
+                            "value": 0.8
+                          },
+                          {
+                            "args": [
+                              {
+                                "op": "literal",
+                                "type": "scalar",
+                                "value": 0.2
+                              },
+                              {
+                                "args": [
+                                  {
+                                    "args": [
+                                      {
+                                        "args": [
+                                          {
+                                            "op": "read",
+                                            "path": "time.pageElapsedSeconds"
+                                          },
+                                          {
+                                            "op": "read",
+                                            "path": "time.pageDurationSeconds"
+                                          }
+                                        ],
+                                        "function": "div",
+                                        "op": "call"
+                                      },
+                                      {
+                                        "op": "literal",
+                                        "type": "scalar",
+                                        "value": 0
+                                      },
+                                      {
+                                        "op": "literal",
+                                        "type": "scalar",
+                                        "value": 1
+                                      }
+                                    ],
+                                    "function": "clamp",
+                                    "op": "call"
+                                  }
+                                ],
+                                "function": "sqrt",
+                                "op": "call"
+                              }
+                            ],
+                            "function": "mul",
+                            "op": "call"
+                          }
+                        ],
+                        "function": "add",
+                        "op": "call"
+                      },
+                      "kind": "expression"
+                    }
+                  }
+                ],
+                "evaluationVersion": 1,
+                "layout": {
+                  "maxLines": 2,
+                  "pagination": {
+                    "maxUnitsPerPage": 3
+                  },
+                  "width": {
+                    "basis": "absolute",
+                    "value": 140
+                  },
+                  "x": {
+                    "basis": "absolute",
+                    "value": 80
+                  },
+                  "y": {
+                    "basis": "absolute",
+                    "value": 45
+                  }
+                },
+                "nodes": [
+                  {
+                    "id": "caption",
+                    "style": {
+                      "fontSize": {
+                        "basis": "absolute",
+                        "value": 16
+                      }
+                    },
+                    "type": "text"
+                  },
+                  {
+                    "children": [
+                      {
+                        "id": "caret",
+                        "properties": {
+                          "fill": {
+                            "kind": "constant",
+                            "value": "#FFCC00"
+                          },
+                          "height": {
+                            "kind": "constant",
+                            "value": 8
+                          },
+                          "opacity": {
+                            "expression": {
+                              "condition": {
+                                "args": [
+                                  {
+                                    "op": "read",
+                                    "path": "unit.pageTextIndex"
+                                  },
+                                  {
+                                    "args": [
+                                      {
+                                        "args": [
+                                          {
+                                            "op": "read",
+                                            "path": "unit.pageTextCount"
+                                          },
+                                          {
+                                            "op": "literal",
+                                            "type": "scalar",
+                                            "value": 1
+                                          }
+                                        ],
+                                        "function": "sub",
+                                        "op": "call"
+                                      },
+                                      {
+                                        "args": [
+                                          {
+                                            "args": [
+                                              {
+                                                "args": [
+                                                  {
+                                                    "op": "read",
+                                                    "path": "time.pageElapsedSeconds"
+                                                  },
+                                                  {
+                                                    "op": "read",
+                                                    "path": "time.pageDurationSeconds"
+                                                  }
+                                                ],
+                                                "function": "div",
+                                                "op": "call"
+                                              },
+                                              {
+                                                "op": "read",
+                                                "path": "unit.pageTextCount"
+                                              }
+                                            ],
+                                            "function": "mul",
+                                            "op": "call"
+                                          }
+                                        ],
+                                        "function": "floor",
+                                        "op": "call"
+                                      }
+                                    ],
+                                    "function": "min",
+                                    "op": "call"
+                                  }
+                                ],
+                                "function": "eq",
+                                "op": "call"
+                              },
+                              "else": {
+                                "op": "literal",
+                                "type": "scalar",
+                                "value": 0
+                              },
+                              "op": "if",
+                              "then": {
+                                "op": "literal",
+                                "type": "scalar",
+                                "value": 1
+                              }
+                            },
+                            "kind": "expression"
+                          },
+                          "width": {
+                            "kind": "constant",
+                            "value": 2
+                          }
+                        },
+                        "type": "shape"
+                      }
+                    ],
+                    "id": "carets",
+                    "selectorId": "characters",
+                    "type": "repeat"
+                  }
+                ],
+                "parameters": [
+                  {
+                    "default": "#FFE600",
+                    "id": "accent",
+                    "type": "color"
+                  }
+                ],
+                "requiredCapabilities": [
+                  "caption-text-context/1"
+                ],
+                "schema": "baocut.caption-scene/1",
+                "selectors": [
+                  {
+                    "id": "characters",
+                    "includeWhitespace": true,
+                    "nodeId": "caption",
+                    "unit": "grapheme"
+                  }
+                ],
+                "speechState": {
+                  "gapPolicy": "hold-previous",
+                  "tailPolicy": "hold-last",
+                  "timingPolicy": "estimated"
+                }
+              }
+            },
+            "schema": "baocut.caption-scene-style/1"
+          },
+          "documentId": "style",
+          "kind": "caption-style",
+          "schema": "baocut.caption-scene-style/1"
+        }
+      ],
+      "name": "captions-text-context",
+      "pictures": [],
+      "shots": [
+        {
+          "captions": true,
+          "frame": 0,
+          "height": 90,
+          "sha256": "acd4964fd3eb908fce78675565a77a40333715305084ce867d586e94028b6263",
+          "skipped": [],
+          "transparent": false,
+          "warnings": [],
+          "width": 160
+        },
+        {
+          "captions": true,
+          "frame": 1,
+          "height": 90,
+          "sha256": "c3be869267218cfaf0a95e0d09d0cfddf5f60f07d0468a88b421d7438234fef6",
+          "skipped": [],
+          "transparent": false,
+          "warnings": [],
+          "width": 160
+        },
+        {
+          "captions": true,
+          "frame": 4,
+          "height": 90,
+          "sha256": "1774395cf49917f18ffcc0ee1e83fa035d6fc22d847bbecf2dbda134119dece9",
+          "skipped": [],
+          "transparent": false,
+          "warnings": [],
+          "width": 160
+        },
+        {
+          "captions": true,
+          "frame": 12,
+          "height": 90,
+          "sha256": "af3f3b66b62af25f0fedcd771c5d2f2e03617f1ca14750d9b453acc936d536eb",
+          "skipped": [],
+          "transparent": false,
+          "warnings": [],
+          "width": 160
+        },
+        {
+          "captions": true,
+          "frame": 20,
+          "height": 90,
+          "sha256": "460e596b08c3e7830910fbada9913eb7cfbd73ae27b5120890c4e7deaced550d",
+          "skipped": [],
+          "transparent": false,
+          "warnings": [],
+          "width": 160
+        },
+        {
+          "captions": true,
+          "frame": 35,
+          "height": 90,
+          "sha256": "dd0d145301d5a88abe99d7ea41d27d37360ac67ccd1191aa7183d2c8461a5958",
+          "skipped": [],
+          "transparent": false,
+          "warnings": [],
+          "width": 160
+        },
+        {
+          "captions": true,
+          "frame": 55,
+          "height": 90,
+          "sha256": "597a64d746697d9aa850657bf602efa7ccd81f089c534be1279ea0d56e665e7e",
+          "skipped": [],
+          "transparent": false,
+          "warnings": [],
+          "width": 160
+        },
+        {
+          "captions": true,
+          "frame": 80,
+          "height": 90,
+          "sha256": "5c07f8a6f0a741b14371d8452a6275700e80446f3cfdef36000d228c110d88e4",
+          "skipped": [],
+          "transparent": false,
+          "warnings": [],
+          "width": 160
+        },
+        {
+          "captions": true,
+          "frame": 100,
+          "height": 90,
+          "sha256": "84ab97ce2b476d44ba7e27eac0b68ed85103dbb26b688ff1d17a75bf513b3ca2",
+          "skipped": [],
+          "transparent": false,
+          "warnings": [],
+          "width": 160
+        },
+        {
+          "captions": true,
+          "frame": 119,
+          "height": 90,
+          "sha256": "c048233b090d51c28b9cb6078eb81e641afe67022ed0d71545e83cd0ea5eb046",
+          "skipped": [],
+          "transparent": false,
+          "warnings": [],
+          "width": 160
+        }
+      ],
+      "spectra": [],
+      "video": {
+        "assets": {},
+        "canvasVariants": {},
+        "checkpoints": {},
+        "documents": {},
+        "fonts": {},
+        "format": "baocut.video",
+        "id": "video_test",
+        "links": [],
+        "localizationSets": {},
+        "name": "测试",
+        "protections": {},
+        "revision": "1",
+        "rootSequenceId": "seq",
+        "schemaVersion": 3,
+        "sequences": {
+          "seq": {
+            "animationBindings": [],
+            "canvas": {
+              "background": "#000000",
+              "height": 90,
+              "width": 160,
+              "workingSpace": "srgb"
+            },
+            "ducking": [],
+            "durationPolicy": {
+              "kind": "derived"
+            },
+            "fps": {
+              "den": 1,
+              "num": 30
+            },
+            "id": "seq",
+            "items": [
+              {
+                "documentId": "doc",
+                "enabled": true,
+                "followPolicy": {
+                  "kind": "sequence-fixed"
+                },
+                "id": "text-context",
+                "locked": false,
+                "paintOrder": 0,
+                "span": {
+                  "durationFrames": 120,
+                  "fromFrame": 0
+                },
+                "styleDocumentId": "style",
+                "trackId": "trk_s1",
+                "type": "caption"
+              }
+            ],
+            "markers": [],
+            "name": "测试序列",
+            "revision": "1",
+            "tracks": [
+              {
+                "id": "trk_v1",
+                "kind": "visual",
+                "locked": false,
+                "muted": false,
+                "order": 0,
+                "solo": {
+                  "enabled": false,
+                  "group": "visual"
+                },
+                "visible": true
+              },
+              {
+                "id": "trk_s1",
+                "kind": "subtitle",
+                "locked": false,
+                "muted": false,
+                "order": 1,
+                "solo": {
+                  "enabled": false,
+                  "group": "visual"
+                },
+                "visible": true
+              }
+            ],
+            "transitions": []
+          }
+        },
+        "syncGroups": {},
+        "timeContractVersion": 1
+      }
+    },
+    {
+      "assets": [],
+      "audioSpectra": [],
+      "documents": [
+        {
+          "body": {
+            "clock": "sequence",
+            "cues": [
+              {
+                "end": 4000,
+                "id": "c0",
+                "start": 0,
                 "text": "Wave é office"
               }
             ],

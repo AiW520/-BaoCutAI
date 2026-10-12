@@ -740,6 +740,17 @@ fn scenes() -> Vec<Scene> {
         style_doc("style", bezier_style),
     ];
     scenes.push(bezier);
+    let text_context_style: Value = serde_json::from_str(include_str!("../../caption-scene/tests/fixtures/text-context.json")).unwrap();
+    let mut text_context = Scene::new(
+        "captions-text-context",
+        video(vec![caption("text-context", "doc", Some("style"), 120, &[])], vec![], json!({})),
+        &[0, 1, 4, 12, 20, 35, 55, 80, 100, 119],
+    );
+    text_context.documents = vec![
+        caption_doc("doc", "sequence", &[(0.0, 4.0, "One é two three")], "original"),
+        style_doc("style", text_context_style),
+    ];
+    scenes.push(text_context);
     let mut wave_style: Value = serde_json::from_str(include_str!("../../caption-scene/tests/fixtures/word-pop.json")).unwrap();
     let wave_scene = &mut wave_style["scene"]["value"];
     wave_scene["speechState"]["timingPolicy"] = json!("estimated");

@@ -4,6 +4,7 @@ use std::collections::{BTreeMap, BTreeSet};
 
 pub const CAPABILITIES: &[&str] = &[
     "caption-scene/1",
+    "caption-text-context/1",
     "caption-expressions/1",
     "caption-bezier-expression/1",
     "caption-unit-animation/1",
@@ -191,6 +192,7 @@ pub fn validate_scene(s: &Scene) -> Result<()> {
                 "floor",
                 "ceil",
                 "smoothstep",
+                "sqrt",
                 "cubic-bezier",
             ]
             .contains(&f.id.as_str())
@@ -299,6 +301,9 @@ pub fn validate_scene(s: &Scene) -> Result<()> {
     }
     let mut sels = BTreeSet::new();
     for sel in &s.selectors {
+        if sel.include_whitespace && sel.unit != UnitKind::Grapheme {
+            return Err(invalid(&sel.id, "includeWhitespace requires grapheme units"));
+        }
         if !name(&sel.id) || !sels.insert(&sel.id) || nodes.get(sel.node_id.as_str()).is_none_or(|n| n.kind != NodeKind::Text) {
             return Err(invalid(&sel.id, "invalid selector target or id"));
         }
@@ -549,7 +554,15 @@ fn validate_early_value(value: &DynamicValue, ty: ValueType, scene: &Scene) -> R
             Expression::Read { path } => {
                 if !(path.starts_with("params.")
                     || path.starts_with("args.")
-                    || path.starts_with("time.")
+                    || matches!(
+                        path.as_str(),
+                        "time.seconds"
+                            | "time.elapsedSeconds"
+                            | "time.durationSeconds"
+                            | "time.cueDurationSeconds"
+                            | "time.progress"
+                            | "time.clampedProgress"
+                    )
                     || matches!(path.as_str(), "unit.index" | "unit.count" | "canvas.width" | "canvas.height"))
                 {
                     return Err(Diagnostic::new(

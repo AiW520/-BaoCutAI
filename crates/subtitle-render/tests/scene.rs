@@ -561,3 +561,78 @@ fn feedback_never_samples_another_cues_text_or_parameters() {
     assert!(next.rgba.chunks_exact(4).any(|p| p[2] > 100));
     assert!(next.rgba.chunks_exact(4).all(|p| p[0] == 0));
 }
+
+#[test]
+fn global_grapheme_context_and_opt_in_space_decoration_are_seekable() {
+    let mut body = fixture();
+    let scene = &mut body["scene"]["value"];
+    scene["requiredCapabilities"] = json!(["caption-text-context/1"]);
+    scene["speechState"]["timingPolicy"] = json!("estimated");
+    scene["nodes"][0]["style"]["fill"] = json!("#FFFFFF00");
+    scene["animations"] = json!([]);
+    scene["selectors"] =
+        json!([{"id":"letters","nodeId":"caption","unit":"grapheme","includeWhitespace":true}]);
+    scene["nodes"].as_array_mut().unwrap().push(json!({
+        "id":"cursor","type":"repeat","selectorId":"letters","children":[{
+            "id":"pixel","type":"shape","properties":{"fill":{"kind":"constant","value":"#00FF00"},
+                "width":{"kind":"constant","value":5},"height":{"kind":"constant","value":5},
+                "opacity":{"kind":"expression","expression":{"op":"if","condition":{
+                    "op":"call","function":"and","args":[
+                        {"op":"call","function":"eq","args":[{"op":"read","path":"unit.textIndex"},{"op":"literal","type":"scalar","value":1}]},
+                        {"op":"call","function":"eq","args":[{"op":"read","path":"unit.textCount"},{"op":"literal","type":"scalar","value":3}]}
+                    ]},"then":{"op":"call","function":"div","args":[{"op":"read","path":"time.seconds"},{"op":"read","path":"time.cueDurationSeconds"}]},
+                    "else":{"op":"literal","type":"scalar","value":0}}}
+            }}]
+    }));
+    let mut enabled = plan(body.clone(), "A e\u{301}", vec![], Presentation::default());
+    let first = enabled.render(1.0).unwrap().rgba;
+    assert!(first.chunks_exact(4).any(|p| p[1] > 0 && p[3] > 0));
+    assert_ne!(first, enabled.render(3.0).unwrap().rgba);
+    assert_eq!(first, enabled.render(1.0).unwrap().rgba);
+    body["scene"]["value"]["selectors"][0]["includeWhitespace"] = json!(false);
+    assert!(
+        plan(body, "A e\u{301}", vec![], Presentation::default())
+            .render(1.0)
+            .unwrap()
+            .rgba
+            .iter()
+            .all(|p| *p == 0)
+    );
+}
+
+#[test]
+fn wrapped_word_grapheme_decorations_do_not_repeat_on_other_lines() {
+    let mut body = fixture();
+    let scene = &mut body["scene"]["value"];
+    scene["layout"]["width"] = json!({"value":30,"basis":"absolute"});
+    scene["layout"]["maxLines"] = json!(32);
+    scene["layout"]["overflow"] = json!("visible");
+    scene["layout"]["y"] = json!({"value":0,"basis":"absolute"});
+    scene["nodes"][0]["style"]["fill"] = json!("#FFFFFF00");
+    scene["nodes"][0]["style"]["fontSize"] = json!({"value":8,"basis":"absolute"});
+    scene["animations"] = json!([]);
+    scene["selectors"] =
+        json!([{"id":"letters","nodeId":"caption","unit":"grapheme","includeWhitespace":true}]);
+    scene["nodes"].as_array_mut().unwrap().push(json!({"id":"decorations","type":"repeat","selectorId":"letters","children":[{
+        "id":"mark","type":"shape","properties":{
+            "width":{"kind":"constant","value":2},"height":{"kind":"constant","value":2},
+            "fill":{"kind":"constant","value":"#00FF00"},
+            "opacity":{"kind":"expression","expression":{"op":"if","condition":{"op":"call","function":"eq","args":[{"op":"read","path":"unit.textIndex"},{"op":"literal","type":"scalar","value":0}]},"then":{"op":"literal","type":"scalar","value":1},"else":{"op":"literal","type":"scalar","value":0}}}
+        }}]}));
+    let pixels = plan(
+        body,
+        "abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz",
+        vec![],
+        Presentation::default(),
+    )
+    .render(0.5)
+    .unwrap()
+    .rgba;
+    // Duplicated off-line graphemes used to create a second marker at (0,0).
+    assert!(
+        pixels
+            .chunks_exact(4)
+            .take(160 * 2)
+            .all(|pixel| pixel[3] == 0)
+    );
+}

@@ -244,3 +244,32 @@ fn bezier_expression_supports_duration_dependent_progress_and_overshoot() {
         json!([{"id":"cubic-bezier","arguments":[],"returns":"scalar","body":{"op":"literal","type":"scalar","value":1}}]);
     assert!(parse_style(&input).is_err());
 }
+
+#[test]
+fn text_context_types_and_sqrt_reject_invalid_dependencies() {
+    let scene = parse_style(&fixture()).unwrap();
+    for path in ["time.cueDurationSeconds", "time.pageElapsedSeconds", "time.pageDurationSeconds"] {
+        assert_eq!(context_type(path), Some(ValueType::Time));
+    }
+    for path in ["unit.textIndex", "unit.textCount", "unit.pageTextIndex", "unit.pageTextCount"] {
+        assert_eq!(context_type(path), Some(ValueType::Scalar));
+    }
+    let sample = |value| {
+        evaluate(
+            &expr(json!({"op":"call","function":"sqrt","args":[{"op":"literal","type":"scalar","value":value}]})),
+            scene.scene(),
+            &Context::default(),
+            &mut Budget::default(),
+        )
+    };
+    assert_eq!(sample(9.0).unwrap().number().unwrap(), 3.0);
+    assert!(sample(-1.0).is_err());
+    assert!(builtin_type("sqrt", &[ValueType::Time]).is_none());
+    let mut body = fixture();
+    body["scene"]["value"]["selectors"][0]["includeWhitespace"] = json!(true);
+    assert!(parse_style(&body).is_err());
+    body = fixture();
+    body["scene"]["value"]["layout"]["layoutEvaluation"] = json!("per-sample");
+    body["scene"]["value"]["layout"]["bindings"] = json!([{"property":"width","value":{"kind":"expression","expression":{"op":"call","function":"mul","args":[{"op":"literal","type":"length","value":20},{"op":"call","function":"div","args":[{"op":"read","path":"time.pageDurationSeconds"},{"op":"literal","type":"time","value":1}]}]}}}]);
+    assert!(parse_style(&body).is_err(), "page clock is unavailable before layout");
+}

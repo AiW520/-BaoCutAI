@@ -23,3 +23,5 @@ cargo run --locked -p subtitle-render --no-default-features --features wasm-safe
 `--feedback` 使用 [reflow-feedback.json](tests/fixtures/reflow-feedback.json)，演示逐采样行宽/字号、预乘模糊与有界历史拖尾。基础分页和时间保持固定，所有历史画面在请求时刻重新求值；额外写入深色背景的 preview PNG，便于检查透明边缘。
 
 表达式 `cubic-bezier(progress, x1, y1, x2, y2)` 与关键帧共用 motion 曲线求解器，允许将语义时钟、单元时长和参数组合成连续曲线；能力名为 `caption-bezier-expression/1`。
+
+`caption-text-context/1` 提供整段/分页字素索引、cue/page 时钟和 `sqrt`；grapheme 选择器可显式包含空白，用于连续光标与错开显现。示例见 [text-context.json](tests/fixtures/text-context.json)。

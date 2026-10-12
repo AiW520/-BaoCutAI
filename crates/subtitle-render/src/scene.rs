@@ -70,6 +70,11 @@ struct TextLayout {
 }
 #[derive(Clone)]
 struct Unit {
+    whitespace: bool,
+    text_index: usize,
+    text_count: usize,
+    page_text_index: usize,
+    page_text_count: usize,
     kind: UnitKind,
     id: String,
     index: usize,
@@ -686,6 +691,11 @@ fn units_for(
         (UnitKind::Page, (page.start, page.end)),
     ]);
     let base = Unit {
+        whitespace: false,
+        text_index: 0,
+        text_count: 0,
+        page_text_index: 0,
+        page_text_count: 0,
         kind: UnitKind::Cue,
         id: cue.id.clone(),
         index: 0,
@@ -771,6 +781,10 @@ fn units_for(
                     .grapheme_indices(true)
                     .collect::<Vec<_>>();
                 for (gi, (at, g)) in gs.iter().enumerate() {
+                    let start = w.bytes.start + at;
+                    if start < line.bytes.start || start >= line.bytes.end {
+                        continue;
+                    }
                     let mut gu = u.clone();
                     gu.kind = UnitKind::Grapheme;
                     gu.id = format!("{}:{at}", w.id);
@@ -785,8 +799,78 @@ fn units_for(
                 }
             }
         }
+        // Whitespace has layout/caret geometry but no spoken-word timing.
+        // It is opt-in at selection time, preserving existing selector sets.
+        let start = if li == 0 {
+            page.source_range.start
+        } else {
+            line.bytes.start
+        };
+        let end = page
+            .lines
+            .get(li + 1)
+            .map_or(page.source_range.end, |next| next.bytes.start);
+        for (offset, grapheme) in layout.content[start..end].grapheme_indices(true) {
+            if !grapheme.chars().all(char::is_whitespace) {
+                continue;
+            }
+            let bytes = start + offset..start + offset + grapheme.len();
+            let next_word = layout
+                .words
+                .partition_point(|word| word.bytes.end <= bytes.start);
+            if layout
+                .words
+                .get(next_word)
+                .is_some_and(|word| word.bytes.start <= bytes.start && bytes.end <= word.bytes.end)
+            {
+                continue;
+            }
+            let mut blank = u.clone();
+            blank.kind = UnitKind::Grapheme;
+            blank.whitespace = true;
+            blank.id = format!("space-{}", bytes.start);
+            blank.bytes = bytes;
+            blank.index = 0;
+            blank.count = 1;
+            blank.bounds = glyph_bounds(line, &blank.bytes);
+            if blank.bounds.height == 0.0 {
+                blank.bounds = Bounds {
+                    x: line.bounds.x + line.bounds.width,
+                    y: line.bounds.y,
+                    width: 0.0,
+                    height: line.bounds.height,
+                };
+            }
+            blank
+                .spans
+                .insert(UnitKind::Grapheme, spans[&UnitKind::Line]);
+            all.push((blank, None));
+        }
+    }
+    let starts = layout
+        .content
+        .grapheme_indices(true)
+        .map(|(at, _)| at)
+        .collect::<Vec<_>>();
+    let page_start = starts.partition_point(|at| *at < page.source_range.start);
+    let page_end = starts.partition_point(|at| *at < page.source_range.end);
+    for (unit, _) in &mut all {
+        let at = if unit.kind == UnitKind::Page {
+            page.source_range.start
+        } else {
+            unit.bytes.start
+        };
+        unit.text_index = starts.partition_point(|start| *start < at);
+        unit.text_count = starts.len();
+        unit.page_text_index = unit.text_index.saturating_sub(page_start);
+        unit.page_text_count = page_end - page_start;
     }
     all
+}
+fn selected(selector: &Selector, unit: &Unit) -> bool {
+    unit.kind == selector.unit
+        && (!unit.whitespace || selector.include_whitespace)
+        && selector.filter.matches(unit.index, unit.state, &unit.tags)
 }
 fn glyph_bounds(line: &Line, range: &Range<usize>) -> Bounds {
     let mut boxes = Vec::new();
@@ -840,6 +924,35 @@ fn context(u: &Unit, r: &RenderContext) -> Context {
         ("time.seconds", ValueType::Time, r.seconds - r.cue.start),
         ("time.elapsedSeconds", ValueType::Time, r.seconds - a),
         ("time.durationSeconds", ValueType::Time, b - a),
+        (
+            "time.cueDurationSeconds",
+            ValueType::Time,
+            r.cue.end - r.cue.start,
+        ),
+        (
+            "time.pageElapsedSeconds",
+            ValueType::Time,
+            r.seconds - u.spans.get(&UnitKind::Page).map_or(r.cue.start, |s| s.0),
+        ),
+        (
+            "time.pageDurationSeconds",
+            ValueType::Time,
+            u.spans
+                .get(&UnitKind::Page)
+                .map_or(r.cue.end - r.cue.start, |s| s.1 - s.0),
+        ),
+        ("unit.textIndex", ValueType::Scalar, u.text_index as f64),
+        ("unit.textCount", ValueType::Scalar, u.text_count as f64),
+        (
+            "unit.pageTextIndex",
+            ValueType::Scalar,
+            u.page_text_index as f64,
+        ),
+        (
+            "unit.pageTextCount",
+            ValueType::Scalar,
+            u.page_text_count as f64,
+        ),
         ("time.progress", ValueType::Scalar, progress),
         (
             "time.clampedProgress",
@@ -921,7 +1034,7 @@ fn pose(
         .collect::<Vec<_>>();
     tracks.sort_by_key(|a| a.priority);
     for a in tracks {
-        let selected = match &a.target.selector_id {
+        let matches_target = match &a.target.selector_id {
             None => {
                 u.kind == UnitKind::Cue || matches!(node.kind, NodeKind::Shape | NodeKind::Image)
             }
@@ -930,9 +1043,9 @@ fn pose(
                 .selectors
                 .iter()
                 .find(|s| s.id == *id)
-                .is_some_and(|s| s.unit == u.kind && s.filter.matches(u.index, u.state, &u.tags)),
+                .is_some_and(|s| selected(s, u)),
         };
-        if !selected {
+        if !matches_target {
             continue;
         }
         // Missing real word timing disables spoken tracks; it never manufactures speech times.
@@ -946,9 +1059,7 @@ fn pose(
             if let Some(units) = r.units.get(&node.id) {
                 let selected = units
                     .iter()
-                    .filter(|(v, _)| {
-                        v.kind == sel.unit && sel.filter.matches(v.index, v.state, &v.tags)
-                    })
+                    .filter(|(v, _)| selected(sel, v))
                     .collect::<Vec<_>>();
                 let index = selected.iter().position(|(v, _)| v.id == u.id).unwrap_or(0);
                 c.fields.insert(
@@ -1057,9 +1168,7 @@ fn draw_nodes(
                 .find(|s| Some(&s.id) == n.selector_id.as_ref())
                 .unwrap();
             if let Some(units) = r.units.get(&s.node_id) {
-                for (u, _) in units.iter().filter(|(u, _)| {
-                    u.kind == s.unit && s.filter.matches(u.index, u.state, &u.tags)
-                }) {
+                for (u, _) in units.iter().filter(|(u, _)| selected(s, u)) {
                     draw_nodes(&n.children, parent, Some(u), r, text, b, hits, budget)?;
                 }
             }
@@ -1074,6 +1183,11 @@ fn draw_nodes(
             .unwrap();
         let u = bound.unwrap_or(root);
         let p = pose(n, u, r, budget)?;
+        // Still evaluate all leaf properties (and their diagnostics), but do not
+        // allocate an offscreen surface for an invisible decoration.
+        if matches!(n.kind, NodeKind::Shape | NodeKind::Image) && number(&p, "opacity") <= 0.0 {
+            continue;
+        }
         let t = parent.pre_concat(matrix(&p, u.bounds));
         b.push(DrawOp::PushLayer {
             opacity: number(&p, "opacity").clamp(0.0, 1.0) as f32,

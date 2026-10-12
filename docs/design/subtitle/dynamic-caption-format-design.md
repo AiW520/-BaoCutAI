@@ -269,11 +269,13 @@ interface PureFunctionDefinition {
 
 只读上下文提供：`time` 的语义时钟、`unit` 的稳定身份/索引/状态/标签、`layout` 的可访问框/基线、`canvas`、经校验的 `params` 及 `seed`。可访问字段由阶段和 target 决定；没有 word 目标却读取 `word.progress` 在编译时失败。邻词查询通过有限、显式的单元查询操作表达，不能任意遍历整份文稿。
 
+已实现的 `caption-text-context/1` 将文字节点全内容和当前页的字素索引分别提供为 `unit.textIndex/textCount`、`unit.pageTextIndex/pageTextCount`，包含原文空白；cue 时长和当前页时钟独立于当前词的时钟。grapheme 选择器通过 `includeWhitespace: true` 显式选入空白，供跨词连续光标和整段错开显现使用，旧选择器保持原集合。细节及预算见视频格式 §5.6。
+
 ### 8.2 内置函数与数值规则
 
 | 类别 | 首版操作 |
 | --- | --- |
-| 数学 | add/sub/mul/div、min/max、abs、clamp、smoothstep、sin/cos、取整 |
+| 数学 | add/sub/mul/div、min/max、abs、clamp、smoothstep、sqrt、sin/cos、取整 |
 | 插值 | mix、颜色插值、命名 easing、带声明参数的连续曲线 |
 | 字幕 | 状态判断、标签判断、稳定索引/总数、有限邻单元查询 |
 | 几何 | 布局框读取、空间转换、padding 外扩、对齐/锚点计算 |

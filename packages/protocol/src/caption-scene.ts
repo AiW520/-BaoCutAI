@@ -67,7 +67,7 @@ export interface CaptionScene {
   };
   speechState?: { gapPolicy?: 'none' | 'hold-previous'; tailPolicy?: 'none' | 'hold-last'; timingPolicy?: 'require-word-timing' | 'estimated' };
   nodes: CaptionSceneNode[];
-  selectors?: { id: string; nodeId: string; unit: CaptionUnit; filter?: CaptionFilter }[];
+  selectors?: { id: string; nodeId: string; unit: CaptionUnit; includeWhitespace?: boolean; filter?: CaptionFilter }[];
   functions?: { id: string; arguments: { name: string; type: CaptionValueType }[]; returns: CaptionValueType; body: CaptionExpression }[];
   animations?: { id: string; target: { nodeId: string; selectorId?: string | null }; property: string;
     value: CaptionDynamicValue; composite: 'replace' | 'add' | 'multiply'; priority?: number }[];

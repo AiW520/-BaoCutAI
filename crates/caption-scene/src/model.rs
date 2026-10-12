@@ -388,6 +388,8 @@ pub enum WordState {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct Selector {
+    #[serde(default)]
+    pub include_whitespace: bool,
     pub id: String,
     pub node_id: String,
     pub unit: UnitKind,
