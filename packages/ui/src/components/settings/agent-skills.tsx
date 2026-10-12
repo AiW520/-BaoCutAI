@@ -29,6 +29,7 @@ import {
   SKILL_ORIGIN_LABEL,
   SKILL_TABS,
   skillDisplayName,
+  skillDisplaySummary,
   skillErrorMessage,
   skillMetaLine,
   type SkillTab,
@@ -242,7 +243,7 @@ export function AgentSkills() {
               <span className={cardName({ isOff: !skill.enabled })} title={skillDisplayName(skill)}>
                 {skillDisplayName(skill)}
               </span>
-              <span className={cardDesc}>{skill.description}</span>
+              <span className={cardDesc}>{skillDisplaySummary(skill)}</span>
               <span className={cardMeta}>{skillMetaLine(skill)}</span>
             </button>
             <span className={cardSwitch}>

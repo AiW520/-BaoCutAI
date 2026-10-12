@@ -22,7 +22,15 @@ import FileText from '@react-spectrum/s2/icons/FileText';
 import FolderOpen from '@react-spectrum/s2/icons/FolderOpen';
 import { style } from '@react-spectrum/s2/style' with { type: 'macro' };
 import { revealLabel } from '../../copy.ts';
-import { fileSizeLabel, SKILL_ORIGIN_LABEL, skillBody, skillDisplayName, skillErrorMessage, skillSourceLine } from '../../model/agent-skills.ts';
+import {
+  fileSizeLabel,
+  SKILL_ORIGIN_LABEL,
+  skillBody,
+  skillDisplayName,
+  skillDisplaySummary,
+  skillErrorMessage,
+  skillSourceLine,
+} from '../../model/agent-skills.ts';
 import { useRuntime } from '../../runtime/context.tsx';
 import { getSkill, readSkillFile } from '../../runtime/skill-commands.ts';
 import { remarkPlugins } from '../thread/remark-plugins.ts';
@@ -248,7 +256,7 @@ function SkillInfo({
           <span>{SKILL_DETAIL_COPY.thirdPartyNote}</span>
         </p>
       ) : null}
-      <p className={desc}>{skill.description}</p>
+      <p className={desc}>{skillDisplaySummary(skill)}</p>
       <dl className={facts}>
         {source ? (
           <>
