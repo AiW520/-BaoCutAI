@@ -166,7 +166,7 @@
     return (
       <div className={cx('sb', on && 'is-on', ed && 'is-editing')} data-card={c.id} style={{borderLeftColor: spColor(c.sp)}} onClick={onPick}>
         <Seam seam={seam} />
-        <CardHead c={c} onSeek={onSeek} more={more} editing={ed} chips={<><Chip>拆成 {n} 行</Chip>{natural.chip}</>} />
+        <CardHead c={c} onSeek={onSeek} more={more} editing={ed} chips={<>{c.stale ? <Chip tone="notice">已过期</Chip> : null}<Chip>拆成 {n} 行</Chip>{natural.chip}</>} />
         <div className="blkpairs">
           {c.blocks.map((b, i) => (
             <div key={i} className={cx('tg2 blkpair', fx.only && 'tg2--one')}>
@@ -197,6 +197,7 @@
       <div className={cx('sb', on && 'is-on', ed && 'is-editing')} data-card={c.id} style={{borderLeftColor: spColor(c.sp)}} onClick={onPick}>
         <CardHead c={c} onSeek={onSeek} more={more} editing={ed} chips={
           <>
+            {c.stale ? <Chip tone="notice">已过期</Chip> : null}
             <Chip>1 行译文 · {c.subs.length} 条原文</Chip>
             {deficit ? <Chip tone="notice">{c.subs.length} 条原文共用一行</Chip> : null}
             {natural.chip}
@@ -225,7 +226,7 @@
     const ed = editingIn(fx, c);
     return (
       <div className={cx('sb', on && 'is-on', ed && 'is-editing')} data-card={c.id} style={{borderLeftColor: spColor(c.sp)}} onClick={onPick}>
-        <CardHead c={c} onSeek={onSeek} more={more} editing={ed} chips={<Chip>整句对应</Chip>} />
+        <CardHead c={c} onSeek={onSeek} more={more} editing={ed} chips={<>{c.stale ? <Chip tone="notice">已过期</Chip> : null}<Chip>整句对应</Chip></>} />
         <div className={cx('tg2', fx.only && 'tg2--one')}>
           {fx.only ? null : (
             <div className="tgo" title="整句对应卡的原文按词存——要改原文，切到「只看原文」">
@@ -433,7 +434,8 @@
   /* ---------- 双语对照列表（`only='trans'` 时只画译文一列） ---------- */
   function EditView({ctx, target, cur, only}) {
     const app = useApp();
-    const [stale, setStale] = useState('pending');   // pending | running | done
+    const [refreshing, setRefreshing] = useState(false);
+    const [staleMenu, setStaleMenu] = useState(false);
     const [editing, setEditingRaw] = useState(null);  // {k, caret}：正在编辑的片段 key、光标落在哪
     const setEditing = (k, caret) => setEditingRaw(k ? {k, caret} : null);
     /* 卡表与覆盖层一起由编辑器按语言保存，结构变化同一笔进入全局历史。 */
@@ -504,7 +506,11 @@
       setEditing(null);
       const nv = v.trim();
       if (nv === (base.get(k) || '')) return;
-      edits.put({[k]: nv});
+      const id = k.slice(0, k.indexOf(':'));
+      // 手工改了译文就是审过这一句（product-design §5.10）：过期标记随这一笔一起去掉，撤销一次两样都回去
+      if (side === 'trans' && cards.some((c) => c.id === id && c.stale)) {
+        putDoc({cards: withStale([id], false), overrides: {...doc.overrides, [k]: nv}});
+      } else edits.put({[k]: nv});
       app.toast(side === 'orig' ? '已改写原文 · 词级时间自动重排' : '已改写译文 · 块刻度已按新长度重算',
         'positive', {label: '撤销', undo: true, run: () => ctx.history.undo()});
     };
@@ -652,13 +658,45 @@
     /* ⋯ 菜单（台账 115 改制）：直接跑不弹窗（--sentences 定向本句，「按源行拆分对齐」额外带
        --align-density paired）。第 153 轮撤掉的「编辑译文」不回来：两侧文字本身就是编辑入口。 */
     const undo = {label: '撤销', undo: true, run: () => app.toast('已撤销')};
-    /* 前三条要调模型：Web 表面（model-surface.js）只留隐藏与复制 */
+    const historyUndo = {label: '撤销', undo: true, run: () => ctx.history.undo()};
+    /* 过期标记（product-design §5.10）：「过期」与「待翻译」是同一个标记（译文 status: stale），刷新与
+       「交给 Agent」都会重译它；改原文由 Runtime 自动标，这里是手工标与手工清。进全局历史，撤销一次回去。 */
+    const withStale = (ids, on) => cards.map((x) => (ids.includes(x.id) ? {...x, stale: on} : x));
+    const markStale = (c, on) => {
+      putDoc({...doc, cards: withStale([c.id], on)});
+      app.toast(on ? '已标为过期 · 刷新过期译文时会重译这一句' : '已去掉过期标记', 'positive', historyUndo);
+    };
+    /* 直接重译：Runtime 的 translate 流程就地刷新这份译文（translationId + sentences），同一笔事务
+       改从它生成的字幕层里这几句的字幕条、时间轴不动；撤销一次两边一起回去。 */
+    const retranslate = (ids, msg) => {
+      const overrides = {...doc.overrides};
+      // 没有译文的那几句填上演示译文（真实产品里是模型译的）
+      cards.forEach((c) => { if (ids.includes(c.id) && c.fill && !displayedTranslation(c).trim()) overrides[fragKey(c.id, 'trans', 't')] = c.fill; });
+      putDoc({cards: withStale(ids, false), overrides});
+      app.toast(msg, 'positive', historyUndo);
+    };
+    /* 交给 Agent（§5.10）：发到这部视频当前的会话（Home 左侧那条，或 Space 的悬浮会话）；没有就新开一条。
+       不切走：译文面板留在原地，Agent 写完的译文按同样的规矩跟着改字幕。 */
+    const toAgent = (intent) => {
+      if (!app.harness) { app.toast('还没有可用的编码 Agent · 连接后就能把这件事交给它'); app.go({r: 'settings', sec: 'agent'}); return; }
+      const r = app.route || {};
+      const sid = (r.r === 'agent' && r.movie ? r.id : (app.movieChats || {})[ctx.proj.id]) || null;
+      app.openAgent({project: ctx.proj.id, sid, send: true, stay: true, prompt: window.BC_AGENT.intentPrompt(intent, ctx.proj)});
+      app.toast(sid ? '已发到当前会话' : '已交给 Agent · 新会话');
+    };
+    const scopeOf = (c) => `${c.time}「${(c.orig || (c.words || []).join('') || (c.blocks || []).map((b) => b.o).join('') || (c.subs || []).join('')).slice(0, 24)}」`;
+    /* 前三条要调模型、「交给 Agent」要会话：Web 表面（model-surface.js）只留过期标记、隐藏与复制 */
     const moreFor = (c) => (window.BC_SURFACE.ai ? [
-      {icon: 'sparkle', label: '重译这一句', run: () => app.toast('已重译这一句 · 0.9s · claude-sonnet', 'positive', undo)},
+      {icon: 'sparkle', label: '重译这一句', run: () => retranslate([c.id], '已重译这一句 · 字幕跟着更新 · 0.9s · claude-sonnet')},
+      ...(window.BC_SURFACE.agent ? [{icon: 'agent', label: '交给 Agent 翻译这句',
+        run: () => toAgent({kind: 'retranslate', lang: cur.name, scope: scopeOf(c)})}] : []),
       {icon: 'refresh', label: '重新对齐这一句', run: () => app.toast('已重新对齐 · 0.4s', 'positive')},
       {icon: 'split', label: '按源行拆分对齐', run: () => app.toast('已按源行拆分对齐 · 1.2s · claude-sonnet', 'positive', undo)},
       '-',
     ] : []).concat([
+      c.stale
+        ? {icon: 'check', label: '去掉过期标记', run: () => markStale(c, false)}
+        : {icon: 'clock', label: '标为过期', run: () => markStale(c, true)},
       {icon: 'captions', label: '隐藏这一句的字幕', run: () => app.toast('已隐藏这一句的字幕 · 画面上不再出现', 'positive', undo)},
       {icon: 'copy', label: '复制译文', off: !fragText(fx, c.id, 'trans', 't', c.trans),
         run: () => app.toast('已复制译文')},
@@ -671,12 +709,13 @@
     ];
     const scopeLabel = SCOPES.find((x) => x.k === scope).short;
 
+    /* 批量重译的范围与 Runtime 不点名时一样：标了过期的与还没有译文的 */
+    const todoIds = cards.filter((c) => c.stale || !displayedTranslation(c).trim()).map((c) => c.id);
     const refresh = () => {
-      setStale('running');
+      setRefreshing(true);
       setTimeout(() => {
-        setStale('done');
-        app.toast(`已刷新 ${S.stale} 句过期译文 · 2.1s · claude-sonnet`, 'positive',
-          {label: '撤销', undo: true, run: () => { setStale('pending'); app.toast('已撤销'); }});
+        setRefreshing(false);
+        retranslate(todoIds, `已重译 ${todoIds.length} 句 · 字幕跟着更新 · 2.1s · claude-sonnet`);
       }, 1400);
     };
 
@@ -684,7 +723,7 @@
       // 读当前展示译文（含查找替换和就地改写），不使用演示数据中冻结的 cps。
       // 自然译句是可展开的参考，不与上屏译文重复计数。
       const text = displayedTranslation(c);
-      c = {...c, stale: c.stale && stale !== 'done', cutStale: cutStaleAt(T.parse(c.time)),
+      c = {...c, cutStale: cutStaleAt(T.parse(c.time)),
         readingSpeed: window.BC_SUBLIST.readingSpeed(text, c.duration, target)};
       const on = !!nowCard && nowCard.id === c.id;
       const pick = () => seekF(T.parse(c.time));
@@ -716,14 +755,25 @@
 
         <div className="statbar">
           <span>{S.cues} cues · {S.sentences} 句</span>
-          {S.untranslated > 0 ? <span className="warn">{S.untranslated} 句未翻译</span> : null}
           {S.deficits > 0 ? <span className="warn">{S.deficits} 处黏结</span> : null}
-          {stale === 'pending' && S.stale > 0
-            ? (window.BC_SURFACE.ai
-              ? <BCAction className="warn stlink" onClick={refresh}>{S.stale} 句译文已过期 · 刷新</BCAction>
-              : <span className="warn" title={window.BC_SURFACE.aiElsewhere('刷新译文')}>{S.stale} 句译文已过期</span>)
-            : stale === 'running'
-              ? <span className="warn">正在刷新 {S.stale} 句…</span>
+          {refreshing
+            ? <span className="warn">正在重译 {todoIds.length} 句…</span>
+            : todoIds.length > 0
+              ? <>
+                {S.untranslated > 0 ? <span className="warn">{S.untranslated} 句未翻译</span> : null}
+                {S.stale > 0 ? <span className="warn" title={window.BC_SURFACE.ai ? undefined : window.BC_SURFACE.aiElsewhere('刷新译文')}>{S.stale} 句译文已过期</span> : null}
+                {/* 过期与未翻译的一起重译：直接调模型（Runtime 就地刷新这份译文），或发到当前会话交给 Agent（§5.10） */}
+                {window.BC_SURFACE.ai ? <span>
+                  <BCAction className="warn stlink" onClick={() => setStaleMenu((v) => !v)}>重译</BCAction>
+                  <Popover open={staleMenu} onClose={() => setStaleMenu(false)} width={240}>
+                    <Menu>
+                      <MenuItem icon="sparkle" label={`直接重译这 ${todoIds.length} 句`} onClick={() => { setStaleMenu(false); refresh(); }} />
+                      {window.BC_SURFACE.agent ? <MenuItem icon="agent" label="交给 Agent · 发到当前会话"
+                        onClick={() => { setStaleMenu(false); toAgent({kind: 'stale', lang: cur.name, count: todoIds.length}); }} /> : null}
+                    </Menu>
+                  </Popover>
+                </span> : null}
+              </>
               : <span className="ok">译文全部最新 ✓</span>}
           {cutN > 0
             ? (window.BC_SURFACE.ai

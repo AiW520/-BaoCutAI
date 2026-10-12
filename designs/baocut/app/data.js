@@ -1603,7 +1603,8 @@
      trans: '而且模型已经跑得动了，这一年变化很大。',
      units: [{o: 'And the models run fine now —', t: '而且模型已经跑得动了，'}, {o: 'a lot changed this year.', t: '这一年变化很大。'}]},
     {id: 'x4', duration: 1.0, kind: 'plain', sp: 's2', time: '00:23.0', cps: 0, untranslated: true,
-     orig: 'Right, so we moved the whole pipeline onto the machine.', trans: ''},
+     // 重译后填进来的演示译文（字幕面板「重译这一句」与批量重译，product-design §5.10）
+     orig: 'Right, so we moved the whole pipeline onto the machine.', trans: '', fill: '所以我们把整条链路都搬到了本机上。'},
     {id: 'x5', duration: 3.4, kind: 'many', sp: 's3', time: '00:24.0', cps: 10,
      subs: ['Hold on —', 'let’s see how the export looks first.'],
      trans: '等一下，我们先看看导出的效果。',
@@ -1665,7 +1666,7 @@
        trans: 'And the models run fine now — a lot changed this year.',
        units: [{o: '而且模型已经跑得动了，', t: 'And the models run fine now —'}, {o: '这一年变化很大。', t: 'a lot changed this year.'}]},
       {id: 'x4', duration: 1.0, kind: 'plain', sp: 's2', time: '00:23.0', cps: 0, untranslated: true,
-       orig: '所以我们把整条链路搬到了本机。', trans: ''},
+       orig: '所以我们把整条链路搬到了本机。', trans: '', fill: 'So we moved the whole pipeline onto the machine.'},
       {id: 'x5', duration: 3.4, kind: 'many', sp: 's3', time: '00:24.0', cps: 10,
        subs: ['等一下，', '我们先看看导出的效果。'],
        trans: 'Hold on—let’s see how the export looks first.',

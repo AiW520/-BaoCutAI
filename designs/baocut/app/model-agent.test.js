@@ -154,6 +154,11 @@ test('intentPrompt：带项目名与范围 / 语言；未知意图回 text', () 
   assert.match(A.intentPrompt({kind: 'title'}, p), /起 6 个候选标题/);
   assert.match(A.intentPrompt({kind: 'desc'}, p), /简介，带章节时间码/);
   assert.match(A.intentPrompt({kind: 'cover', count: 4}, p), /做 4 张封面候选.*候选库/);
+  // 字幕面板逐句与批量交给 Agent（§5.10）：一句只改一句；批量带句数与语言
+  assert.match(A.intentPrompt({kind: 'retranslate', lang: 'English', scope: '00:12「我们先看第一段」'}, p),
+    /「科浪访谈 第 42 期」里00:12「我们先看第一段」重译成English，只改这一句/);
+  assert.match(A.intentPrompt({kind: 'stale', lang: 'English', count: 4}, p), /English译文有 4 句过期或待翻译，只重译这些句子/);
+  assert.match(A.intentPrompt({kind: 'stale'}, p), /有几句译文过期了：原文改过/);
 });
 
 test('planFor：按关键词挑脚本；无项目时不写、不建任务', () => {
