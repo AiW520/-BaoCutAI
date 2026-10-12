@@ -554,6 +554,12 @@ test('取景：裁成别的画幅时铺满画面，focusX 对着正中并夹住�
   assert.ok(Math.abs(edge.x - (50 + (100 * s - 100) / 2)) < 0.01, '到头就夹住，左边不露底');
   assert.equal(M.framePlace({ratio: '1:1', focusX: 0.2}, 9 / 16, 1).x, 50, '竖的原片放进方画幅只上下裁');
   assert.deepEqual([M.focusText(null), M.focusText(0.5), M.focusText(0.3), M.focusText(0.62)], ['居中', '居中', '偏左 20%', '偏右 12%']);
+  /* 同一份取景记成取景点（BC_FRAMING）：换画幅时按它重新对准；保留原画幅、没有 cut 时不记 */
+  assert.deepEqual(M.frameFocal({ratio: '9:16', focusX: 0.3}), {x: 0.3, y: 0.5, zoom: 1});
+  assert.deepEqual(M.frameFocal({ratio: '9:16', focusX: null}), {x: 0.5, y: 0.5, zoom: 1});
+  assert.equal(M.frameFocal({ratio: '9:16', focusX: 1.4}).x, 1, '夹在 [0, 1]');
+  assert.equal(M.frameFocal({ratio: 'source', focusX: 0.3}), null);
+  assert.equal(M.frameFocal(null), null);
 });
 
 test('全部导出：每支有保留段的各一条，没有可导出内容的跳过并说明；文案与生产 zh-Hans 一致', () => {
@@ -591,6 +597,8 @@ test('shotElements：在镜头边界处切开原片视频，每段按自己镜�
   assert.deepEqual(out.map((e) => e.place.x), [at(0.3), at(0.5), at(0.74), at(0.74)]);
   assert.equal(out[2].srcStart, 39.9, '右半的 srcStart 跟着切点走');
   assert.ok(out.every((e) => e.place.scale === M.coverScale(16 / 9, 9 / 16)), '每段都铺满');
+  assert.deepEqual(out.map((e) => e.focal.x), [0.3, 0.5, 0.74, 0.74], '每段记自己镜头的取景点');
+  assert.ok(out.every((e) => e.focal.y === 0.5 && e.focal.zoom === 1));
 });
 
 test('shotElements：镜头之前 / 之后（恢复回来的首尾句子）沿用首 / 末镜头；边界贴着元素两端不切', () => {
@@ -608,6 +616,8 @@ test('shotElements：没有镜头时与逐件 framePlace（居中）一样；不
   const out = M.shotElements(base().concat(sticker), [], 16 / 9, 9 / 16);
   assert.equal(out.length, 4);
   assert.ok(out.slice(0, 3).every((e) => e.shot == null && e.place.x === 50));
+  assert.ok(out.slice(0, 3).every((e) => e.focal.x === 0.5), '没有镜头时取景点居中');
+  assert.equal(out[3].focal, undefined, '只有视频记取景点');
   assert.equal(M.shotElements([sticker], SHOTS, 16 / 9, 9 / 16)[0], sticker);
 });
 

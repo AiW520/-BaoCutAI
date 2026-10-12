@@ -467,10 +467,16 @@
             {src && src.crop ? <span style={{display: 'block', height: fillH ? '100%' : null, aspectRatio: fillH ? null : `${src.naturalW} / ${src.naturalH}`,
                 filter: window.BC_EL.fxCss(vs) || null}}><window.CropVideo source={src} el={e} ctx={ctx} fillH /></span>
               : src && src.url ? <window.RemoteVideo source={src} el={e} ctx={ctx} style={vs} fillH={fillH} />
-              : <span style={{display: 'block', width: '100%',
+              : <span style={{display: 'block', width: '100%', position: 'relative',
               paddingTop: fillH ? 0 : '58%', height: fillH ? '100%' : null,
               filter: window.BC_EL.fxCss(vs) || null,
-              background: (src || D.sources.video[1]).grad}} />}
+              background: (src || D.sources.video[1]).grad}}>
+                {/* 剪成短视频的原片段没有真画面时画一幅演示场景（两个人，App 入口才有 `CropScene`）：
+                    取景对准了谁、放大了多少，画布上才看得见 */}
+                {ctx.composed && e.fromSource && window.CropScene ? <span className="vscene">
+                  <window.CropScene subjects={window.BC_CROP.demoSubjects('podcast')} ratio={window.BC_CROP.sourceRatio(src)} />
+                </span> : null}
+              </span>}
             {window.BC_EL.fxLayers(vs).map((l) => (
               <i key={l.k} className="fxlayer" style={{opacity: l.opacity,
                 background: l.background, backgroundSize: l.backgroundSize}} />
@@ -536,11 +542,14 @@
             /* 关键帧（G11a，示意）：**没选中**时按 `playT` 取样，位置 / 缩放 / 旋转取代静态值，不透明度
                在最外层再乘一层；选中时回到静态姿态——手柄改的是静态值，跟着运动跑的手柄没法拖。
                规范的取样在内核（动画下沉），这里只让人在画布上看见「它在动」。 */
+            /* 按原片取景的视频（`focal`，stage-framing.jsx）：盒由取景点和当前画幅现算，`pose` 里的位置、大小、旋转
+               与位置关键帧都不参与——换画幅时自动重新对准就靠这一条。翻转与不透明度仍读 `pose`。 */
+            const framing = window.framingFor ? window.framingFor(ctx, e.id, e) : null;
             const kfDoc = (ctx.elDocs[e.id] || {}).keyframes;
-            const kfOn = !on && !(multi && mine) && window.BC_KF.any(kfDoc);
+            const kfOn = !framing && !on && !(multi && mine) && window.BC_KF.any(kfDoc);
             const kfSpan = kfOn ? spanOf(e.id, e) : null;
-            const pose = kfOn
-              ? window.BC_KF.poseAt(poseOf(e.id), kfDoc, playT - kfSpan.start, kfSpan.end - kfSpan.start)
+            const pose = framing ? Object.assign(poseOf(e.id), framing.pose)
+              : kfOn ? window.BC_KF.poseAt(poseOf(e.id), kfDoc, playT - kfSpan.start, kfSpan.end - kfSpan.start)
               : poseOf(e.id);
             /* 盒宽 = `w% × scale`（与 App v2 `static_box` 同式）；`data-el` 是吸附时
                收集邻居盒用的钩子。
@@ -603,7 +612,7 @@
                 el={e.added ? e : elDoc(asAlt ? e.alt : e.kind)} ctx={ctx}
                 st={styleOf(e.id)} set={setOf(e)} style={box2}
                 inner={hasH ? {height: '100%'} : null}
-                pose={pose} setPose={(patch) => ctx.setElPose(e.id, patch)}
+                pose={pose} setPose={(patch) => ctx.setElPose(e.id, patch)} framing={framing}
                 frameRef={frameRef} onGuides={onGuides}
                 onDoubleClick={(ev) => { ev.stopPropagation(); beginEdit(e); }}
                 onClick={(ev) => {

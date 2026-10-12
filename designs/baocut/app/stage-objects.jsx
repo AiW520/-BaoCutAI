@@ -35,8 +35,12 @@
    工具条本体在 [stage-toolbar.jsx](stage-toolbar.jsx)。
    ============================================================================ */
 (function () {
-  const {useState, useRef, useLayoutEffect} = React;
+  const {useState, useRef, useLayoutEffect, useEffect} = React;
   const P = window.BC_POSE;
+  const F = window.BC_FRAMING;
+  /* 按原片取景（`framing`，stage-framing.jsx `framingFor`）只给四角：拖动放大、缩小，最小铺满 */
+  const FRAMING_HANDLES = ['nw', 'ne', 'sw', 'se'];
+  const HIT_MS = 2400;
 
   /* 兼容旧调用点的导出（第 39.7 轮之前这两张表在本文件里） */
   const FREE = Object.keys(P.CAPS).filter((k) => P.CAPS[k].rot);
@@ -90,44 +94,17 @@
       .map((n) => frameBox(n, fr));
   }
 
-  /* ---------- 按镜头分段取景的小牌（product-design §5.10「画面怎么取景」） ----------
-     子视频的原片按镜头切成了几段（BC_SHORTS_CUT.shotElements）：选中其中一段时挂一枚小牌，
-     说清楚现在拖的是哪一段（子视频时间线上的秒）——拖动本来就只改这一件。小牌上的次要操作「套到整支」
-     把这一段现在的摆位写到这支视频的每一段，记一步历史。挂在画面（`.frame`）左下角的外面：裁成竖屏后
-     视频盒比画面宽，贴着视频盒放会跑出视野；画面上方是视频工具条，画面里面会挡住要对的人。 */
-  function ShotChip({el, ctx, pose, frameRef}) {
-    const SC = window.BC_SHORTS_CUT;
-    const app = useApp();
-    const frame = frameRef && frameRef.current;
-    const root = frame && frame.parentElement;
-    if (!root) return null;
-    const segs = (ctx.elements || []).filter((e) => e.kind === 'video' && e.shot != null && !e.hidden);
-    const others = segs.filter((e) => e.id !== el.id);
-    const apply = () => {
-      const patch = {};
-      ['x', 'y', 'scale', 'w', 'h'].forEach((k) => { if (pose[k] != null) patch[k] = pose[k]; });
-      if (ctx.history) ctx.history.begin();
-      others.forEach((e) => ctx.setElPose(e.id, patch));
-      if (ctx.history) ctx.history.commit('pose');
-      /* 片段外整段划掉的那几件也一起写（恢复回来时不突兀），但提示里只数这一支里看得见的段 */
-      const fold = ctx.tmap ? ctx.tmap.fold : (t) => t;
-      const shown = segs.filter((e) => fold(e.end) - fold(e.start) > 0.05).length;
-      app.toast(SC.SHOT_COPY.appliedAll(shown), 'positive', {label: '撤销', undo: true, run: () => ctx.history.undo()});
-    };
-    const stop = (ev) => ev.stopPropagation();
-    return ReactDOM.createPortal(
-      <div className="shotchip" onMouseDown={stop} onClick={stop}
-        style={{left: frame.offsetLeft, top: Math.min(frame.offsetTop + frame.offsetHeight + 8, root.clientHeight - 40)}}>
-        <span className="shotchip__t">{SC.shotBadge(el, ctx.tmap ? ctx.tmap.fold : null)}</span>
-        {others.length ? (
-          <Btn size="s" variant="quiet" className="shotchip__all" title={SC.SHOT_COPY.applyAllTip}
-            onPress={apply}>{SC.SHOT_COPY.applyAll}</Btn>
-        ) : null}
-      </div>, root);
-  }
+  /* 按镜头分段的段号小牌与按原片取景的说明（product-design §5.10）在 [stage-framing.jsx](stage-framing.jsx) 的
+     `FramingChip`：选中视频时挂在画面左下角外面。 */
 
   /* ---------- 选中框 ---------- */
-  function SelectionBox({kind, id, el, ctx, st, set, style, inner, children, onClick,
+  /* `framing`：按原片取景的视频（stage-framing.jsx `framingFor`）走 `FramingSelection`，其余走自由摆放的
+     `FreeSelection`。分成两个组件而不是在一个里分支：「改成自由摆放」之后同一件换一套把手与手势，得重新挂载。 */
+  function SelectionBox(props) {
+    return props.kind === 'video' && props.framing ? <FramingSelection {...props} /> : <FreeSelection {...props} />;
+  }
+
+  function FreeSelection({kind, id, el, ctx, st, set, style, inner, children, onClick,
                          bottomAnchored, pose, setPose, frameRef, onGuides, onDoubleClick,
                          noToolbar}) {
     const cap = P.caps(kind);
@@ -335,12 +312,111 @@
             onClick={ev => ev.stopPropagation()}>{controls}</div>, overlay.root) : null}
 
         {videoSelection && ctx && ctx.composed && el && el.shot != null && !dragging
-          ? <ShotChip el={el} ctx={ctx} pose={pose} frameRef={frameRef} /> : null}
+          ? <window.FramingChip el={el} ctx={ctx} pose={pose} frameRef={frameRef} /> : null}
         {/* 主视频与视频元素共用视频工具条，写入由编辑目标适配。 */}
         {noToolbar ? null : (
           <window.Toolbar kind={kind} el={el} ctx={ctx} st={st} set={set}
             below={videoSelection || (cap.rot && !bottomAnchored)} raised={!videoSelection && bottomAnchored}
             yielding={rotating || dragging} clear={clear} />
+        )}
+      </div>
+    );
+  }
+
+  /* ---------- 按原片取景的选中框 ----------
+     盒就是整幅原片（`BC_FRAMING.poseFor`），所以四角落在原片的角上，可以在画面外面。
+     拖动改取景点：画面跟着手走，夹在原片范围里，不画对齐线（铺满的画面没有可对的边）。
+     四角改放大倍数：按指针到画面中心的距离比算，画面正中对着的那一点原片不动，于是角柄一直跟着手。
+     顶到原片边、缩到铺满、放大到上限时，把 `hit` 交给小牌说一句，过一会儿收回。 */
+  function FramingSelection({kind, id, el, ctx, st, set, style, inner, children, onClick, onDoubleClick,
+                             pose, frameRef, framing, noToolbar}) {
+    const boxRef = useRef(null);
+    const [overlay, setOverlay] = useState(null);
+    const [dragging, setDragging] = useState(false);
+    const [hit, setHit] = useState(null);
+    const timer = useRef(0);
+    useEffect(() => () => window.clearTimeout(timer.current), []);
+    const bump = (h) => {
+      if (!h) return;
+      setHit(h);
+      window.clearTimeout(timer.current);
+      timer.current = window.setTimeout(() => setHit(null), HIT_MS);
+    };
+
+    useLayoutEffect(() => {
+      const n = boxRef.current;
+      if (!n) return;
+      const stage = n.closest('.stage'), area = stage.getBoundingClientRect(), r = rectOf(n);
+      const next = {root: stage, left: r.left + r.width / 2 - area.left - n.offsetWidth / 2,
+        top: r.top + r.height / 2 - area.top - n.offsetHeight / 2,
+        width: n.offsetWidth, height: n.offsetHeight};
+      setOverlay(old => old && Object.keys(next).every(k => old[k] === next[k]) ? old : next);
+    });
+
+    /* 手势壳与 `FreeSelection` 的 `gesture` 同一套规矩（死区、一次手势一步历史、拖完吞掉那一下 click），
+       只是 `step` 返回的是 `{focal, hit}`，写的是取景点而不是 pose。 */
+    const drag = (e, begin, step) => {
+      if (e.button !== 0) return;
+      e.preventDefault(); e.stopPropagation();
+      const frameEl = frameRef && frameRef.current;
+      if (!frameEl) return;
+      const fr = rectOf(frameEl), p0 = {x: e.clientX, y: e.clientY};
+      const g = begin({fr, p0, start: framing.focal});
+      let moved = false;
+      DRAGGED = false;
+      setDragging(true);
+      /* 上一下留着的那句说明不带进这一下：缩到底之后马上往外拉，不该还写着「已经铺满」 */
+      window.clearTimeout(timer.current);
+      setHit(null);
+      const hist = ctx && ctx.history;
+      if (hist) hist.begin();
+      const move = (ev) => {
+        if (!moved && Math.abs(ev.clientX - p0.x) < P.DEAD_ZONE
+                   && Math.abs(ev.clientY - p0.y) < P.DEAD_ZONE) return;
+        moved = true;
+        const r = step(g, {x: ev.clientX, y: ev.clientY});
+        if (!r) return;
+        bump(r.hit);
+        framing.set(r.focal);
+      };
+      const up = () => {
+        setDragging(false);
+        DRAGGED = moved;
+        if (hist) { if (moved) hist.commit(); else hist.cancel(); }
+        window.removeEventListener('mousemove', move);
+        window.removeEventListener('mouseup', up);
+      };
+      window.addEventListener('mousemove', move);
+      window.addEventListener('mouseup', up);
+    };
+    const startPan = (e) => drag(e, (g) => g,
+      (g, p) => F.pan(g.start, (p.x - g.p0.x) / g.fr.width, (p.y - g.p0.y) / g.fr.height, framing.src, framing.out));
+    const startZoom = (e) => drag(e, (g) => {
+      const c = {x: g.fr.left + g.fr.width / 2, y: g.fr.top + g.fr.height / 2};
+      return Object.assign(g, {c, d0: Math.hypot(g.p0.x - c.x, g.p0.y - c.y)});
+    }, (g, p) => (g.d0 > 4
+      ? F.zoomTo(g.start, (g.start.zoom || 1) * Math.hypot(p.x - g.c.x, p.y - g.c.y) / g.d0, framing.src, framing.out)
+      : null));
+
+    return (
+      <div className="selwrap" style={style} data-el={id}>
+        <div ref={boxRef} className={cx('selbox', 'is-on', 'selbox--move', 'selbox--video', dragging && 'is-drag')}
+          style={inner} onMouseDown={startPan} onClick={onClick} onDoubleClick={onDoubleClick}>
+          {children}
+        </div>
+        {overlay ? ReactDOM.createPortal(
+          <div className="video-selection" data-video-selection={kind} data-framing=""
+            style={{left: overlay.left, top: overlay.top, width: overlay.width, height: overlay.height}}
+            onClick={ev => ev.stopPropagation()}>
+            {FRAMING_HANDLES.map((hd) => (
+              <div key={hd} className={cx('hnd', 'h' + hd, 'hnd--dot')} style={{cursor: P.resizeCursor(hd, 0)}}
+                title={F.COPY.cornerTip} onMouseDown={startZoom} />
+            ))}
+          </div>, overlay.root) : null}
+        {/* 小牌拖动中也留着：顶到边的那句说明正是拖的时候要看的 */}
+        <window.FramingChip el={el} ctx={ctx} pose={pose} framing={framing} hit={hit} frameRef={frameRef} />
+        {noToolbar ? null : (
+          <window.Toolbar kind={kind} el={el} ctx={ctx} st={st} set={set} below yielding={dragging} clear={0} />
         )}
       </div>
     );

@@ -274,8 +274,11 @@
           </div>
 
           <MediaSection v={v} set={set} onAdjust={onAdjust} onFilters={onFilters} />
-          {/* 几何段（几何面板设计稿 §8.2）：旋转 · 翻转 · 适应画布那一行放到本段末行 */}
-          {id ? (
+          {/* 几何段（几何面板设计稿 §8.2）：旋转 · 翻转 · 适应画布那一行放到本段末行。
+              按原片取景的视频（`focal`）换成「取景」段（stage-framing.jsx）：位置、大小、旋转由取景点和画幅现算，只留放大。 */}
+          {id && (ctx.elDocs[id] || {}).focal ? (
+            <window.FramingSection ctx={ctx} id={id} disabled={window.geometryReadOnly(ctx)} />
+          ) : id ? (
             <window.ElementGeometry ctx={ctx} id={id} kind="video" pose={window.BC_POSE.poseOf(ctx.elDocs[id])}
               disabled={window.geometryReadOnly(ctx)}>
               <TransformRow v={v} set={set} />

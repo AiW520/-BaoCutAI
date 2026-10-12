@@ -182,6 +182,20 @@
          盒子与画面框，倍率交给纯函数 `BC_POSE.fitPose` 算（`model-pose.test.js` 钉住）。
          量出来的比一张逐类型的宽高比表可靠——图片是 62% 高、贴纸看素材、形状看路径。 */
       const fitCanvas = (mode) => {
+        /* 按原片取景的视频（stage-framing.jsx）画面恒铺满：「填满画布」就是放大回 100%；「适应画布」要留边，
+           只能先改成自由摆放——说清楚为什么，出口挂在 toast 上。 */
+        const framing = window.framingFor && window.framingFor(ctx, el.id, el);
+        if (framing) {
+          onClose();
+          if (mode === 'fill') {
+            framing.set(window.BC_FRAMING.zoomTo(framing.focal, 1, framing.src, framing.out).focal);
+            app.toast(window.BC_FRAMING.COPY.filled, 'positive', {label: '撤销', undo: true, run: () => ctx.history.undo()});
+          } else {
+            app.toast(window.BC_FRAMING.COPY.fitBlocked, 'notice',
+              {label: window.BC_FRAMING.COPY.free, run: () => window.freeFraming(ctx, el.id, app)});
+          }
+          return;
+        }
         const trigger = anchorRef && anchorRef.current;
         const fr = trigger && (trigger.closest('.frame') || trigger.closest('.stage')?.querySelector('.frame'));
         const box = fr && fr.querySelector('[data-el="' + el.id + '"]');

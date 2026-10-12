@@ -951,13 +951,14 @@
        [editor-elements.jsx](editor-elements.jsx)——编辑器这一支只把选中口子递进去。 */
     /* 本地项目的起始元素：视频 = 按 clip 拆开的源视频；音频 = 建项配置预埋的那条声波
        （`BC_MEDIA.projectMedia().elements`，第 225 轮）——它是真元素，可选可换样式可删。 */
-    /* 子视频的取景就是画布上这段视频的摆位（§5.10）：裁成竖屏时先铺满、按 focusX 落位，之后在画布上拖。
+    /* 子视频的取景就是画布上这段视频的摆位（§5.10）：裁成竖屏时先铺满、按 focusX 对准，记成取景点（`focal`，BC_FRAMING），
+       之后在画布上拖动、放大；换画幅时按取景点重新对准。
        有 `cut.shots`（按镜头分段取景）时先在镜头边界处把视频切开，每段按自己那个镜头落位（BC_SHORTS_CUT.shotElements）。 */
     const childFraming = (list) => {
       if (!shortsChild) return list;
       const sr = window.BC_CROP.sourceRatio(setup.sources.video[0]), or = window.BC_LAYOUT.ratioValue(proj.ratio || '9:16');
       if (SC.shotsOf(proj.cut).length > 1) return SC.shotElements(list, SC.shotsOf(proj.cut), sr, or);
-      return list.map(e => ({...e, place: SC.framePlace(proj.cut, sr, or, e.place)}));
+      return list.map(e => ({...e, place: SC.framePlace(proj.cut, sr, or, e.place), focal: SC.frameFocal(proj.cut)}));
     };
     const mediaElements = useMemo(() => localMedia
       ? window.BC_VIDEO_EDIT.initial(localMedia.clips, proj.src.name).map(e => ({...e, name: proj.src.name}))
@@ -1115,14 +1116,15 @@
       if (!group.replaced.length) { app.toast('时间轴上的片段不在这份产物的处理范围里，或已锁定', 'notice'); return; }
       setPlaying(false); setPop(null); setVideoReplacement(null); setReplaceAll({candidate, group});
     };
-    /* 改了画幅、铺满画幅的视频会留黑边：一条 toast 直接把人带进智能裁剪。 */
+    /* 改了画幅、铺满画幅的视频会留黑边：一条 toast 直接把人带进智能裁剪。按原片取景的视频（`focal`）按新画幅重新对准、
+       始终铺满，不在此列。 */
     const prevRatio = useRef(ratio);
     useEffect(() => {
       const was = prevRatio.current; prevRatio.current = ratio;
       if (was === ratio || app.crop.sessions[proj.id]?.open) return;
       const VR = window.BC_VIDEO_REPLACE, C = window.BC_CROP, canvas = window.BC_LAYOUT.ratioValue(ratio);
       const clip = els.elements.map(e => ({...e, ...els.elDocs[e.id]})).find(e => {
-        if (e.kind !== 'video') return false;
+        if (e.kind !== 'video' || e.focal) return false;
         const src = sources.video.find(v => VR.sameSource(e, v));
         // 演示素材没有像素尺寸时按 16:9 看待，与裁剪模型同一口径
         return src && canvas > 0 && Math.abs(C.sourceRatio(src) - canvas) > .01 && VR.fullFrame(e, src, ratio);

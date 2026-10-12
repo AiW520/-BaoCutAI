@@ -3389,9 +3389,24 @@ html.is-col-resize, html.is-col-resize * { cursor: col-resize !important; }
 .trow__drop--above { top: -1px; }
 .trow__drop--below { bottom: -1px; }
 
-/* 按镜头分段取景的小牌（stage-objects.jsx `ShotChip`，product-design §5.10）：挂在画面左下角外面
-   （落位由组件按画面算），说清楚选中的是哪一段；「套到整支」是次要操作。 */
+/* 取景小牌（stage-framing.jsx `FramingChip`，product-design §5.10）：挂在画面左下角外面（落位由组件按画面算）。
+   按原片取景时写着模式与 ⓘ，顶到边那一下换成橙色的一句说明；按镜头分段时说清楚选中的是哪一段，「套到整支」是次要操作。 */
 .shotchip { position: absolute; z-index: 15; display: flex; align-items: center; gap: 4px;
   padding: 0 4px 0 8px; min-height: 32px; border-radius: 10px; background: var(--gray-25); box-shadow: var(--sh-pop);
   color: var(--gray-800); font-size: 12px; color-scheme: light; }
 .shotchip__t { white-space: nowrap; }
+.shotchip__mode { white-space: nowrap; font-weight: 500; }
+.shotchip.is-hit .shotchip__mode { color: var(--orange-1000); }
+.shotchip__sep { width: 1px; height: 16px; margin: 0 4px; background: var(--gray-300); }
+.framing-info { display: inline-flex; }
+/* 「为什么只能拖动和放大」弹层（`FramingWhy`）与属性面板「取景」段的模式行 */
+.framewhy { display: flex; flex-direction: column; gap: 6px; font-size: 12px; line-height: 1.6; color: var(--gray-800); }
+.framewhy__t { font-weight: 700; color: var(--gray-900); }
+.framewhy p { margin: 0; }
+.framewhy__hint { font-size: 11px; color: var(--gray-600); }
+.framewhy .bc-button { align-self: flex-start; margin-top: 4px; }
+.framing-mode { display: flex; align-items: center; gap: 6px; min-height: 32px; font-size: 12px; color: var(--gray-800); }
+.framing-mode .ic { color: var(--gray-600); }
+/* 剪成短视频的原片段没有真画面时的演示场景（stage-elements.jsx，App 入口的 `CropScene`）铺满视频盒 */
+.vscene { position: absolute; inset: 0; overflow: hidden; }
+.vscene > .cr-art { display: block; width: 100%; height: 100%; }

@@ -292,6 +292,12 @@
     const x = r > o ? Math.max(50 - room, Math.min(50 + room, 50 - (fx - 0.5) * span)) : 50;
     return Object.assign(b, {scale, x: +x.toFixed(2)});
   }
+  /** 子视频里原片的取景点（BC_FRAMING 的「按原片取景」）：保留原画幅时没有，原片自由摆放；否则按 focusX 对准、刚好铺满。
+      `place` 仍照 `framePlace` 给一份，画布按取景点重算盒，读 `place` 的别处（时间轴缩略、导出估算）不受影响。 */
+  function frameFocal(cut) {
+    if (!cut || cut.ratio === 'source') return null;
+    return {x: cut.focusX == null ? 0.5 : Math.max(0, Math.min(1, +cut.focusX)), y: 0.5, zoom: 1};
+  }
   /* 按镜头分段取景（per-shot framing）：原片里常有几个机位来回切（主讲近景 / 全景 / 采访者近景），一支子视频只用一个
      focusX 总有一段裁错人。`cut.shots: [{start, end, focusX}]`（原片时钟）把它拆成几段：原片视频元素在镜头边界处
      用 `BC_VIDEO_EDIT.splitElementAt` 切开，每段按自己那个镜头的 focusX 铺满落位，之后在画布上拖哪段只改哪段。
@@ -308,9 +314,11 @@
       返回的每一段带 `shot`（镜头下标，从 0 起）；拆出来的右半 id 是 `<原 id>-shot<k>`。 */
   function shotElements(elements, shots, srcRatio, outRatio) {
     const list = (shots || []).filter((x) => x && x.end > x.start).slice().sort((a, b) => a.start - b.start);
-    const place = (e, k) => Object.assign({}, e, {
-      place: framePlace({focusX: list[k] ? list[k].focusX : null}, srcRatio, outRatio, e.place)},
-      list.length ? {shot: k} : {});
+    const place = (e, k) => {
+      const cut = {focusX: list[k] ? list[k].focusX : null};
+      return Object.assign({}, e, {place: framePlace(cut, srcRatio, outRatio, e.place)},
+        e.kind === 'video' ? {focal: frameFocal(cut)} : {}, list.length ? {shot: k} : {});
+    };
     if (!list.length) return (elements || []).map((e) => place(e, -1));
     const VE = typeof window !== 'undefined' ? window.BC_VIDEO_EDIT : null;
     const cuts = list.slice(1).map((x) => x.start);
@@ -794,7 +802,7 @@
     indexAt, rangeOf, snap,
     isChild, hostId, childrenOf, parentOf, originLabel, countLabel, creatingTitle, createNote, doneBy, deleteNote,
     seedCuts, cutsOf, sourceDur, keptRanges, usedRanges, reclaimSpan, foldRows, clipTime, STEP, coverScale, framePlace, focusText,
-    shotsOf, shotAt, shotElements, shotBadge, SHOT_COPY, frameText,
+    shotsOf, shotAt, shotElements, shotBadge, SHOT_COPY, frameText, frameFocal,
     flags, visible, chosen, totalSec, resultHead, hookOf, tailOf, preselect,
     demoCandidates, manualCandidate,
     EXPORT_COPY, exportBatch, exportNotes,
