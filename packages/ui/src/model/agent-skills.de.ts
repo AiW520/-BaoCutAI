@@ -7,6 +7,7 @@ export const de: AgentSkillsMessages = {
   origin: { builtin: "Eingebaut", personal: "Meine", 'third-party': "Drittanbieter" } as Record<SkillOrigin, string>,
   all: "Alle",
   commit: (sha: string) => ` (${sha})`,
+  fullName: (raw: string, label: string) => `${raw} (${label})`,
   bytes: (n: number) => (pluralForm('de', n, { one: "1 Byte", other: `${n} Bytes` })),
   action: {
     load: "Skills laden",

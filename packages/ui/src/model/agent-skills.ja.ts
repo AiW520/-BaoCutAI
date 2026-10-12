@@ -4,6 +4,7 @@ export const ja: AgentSkillsMessages = {
   origin: { builtin: '内蔵', personal: 'マイ', 'third-party': 'サードパーティ' },
   all: 'すべて',
   commit: (sha: string) => `（${sha}）`,
+  fullName: (raw: string, label: string) => `${raw}（${label}）`,
   bytes: (n: number) => `${n} バイト`,
   action: {
     load: 'Skills を読み込み',

@@ -5,6 +5,7 @@ export const pl: AgentSkillsMessages = {
   origin: { builtin: "Wbudowany", personal: "Moje", 'third-party': "Zewnętrzny" },
   all: "Wszystko",
   commit: (sha: string) => ` (${sha})`,
+  fullName: (raw: string, label: string) => `${raw} (${label})`,
   bytes: (n: number) => pluralForm('pl', n, { one: `${n} bajt`, few: `${n} bajty`, many: `${n} bajtów`, other: `${n} bajtu` }),
   action: {
     load: "wczytać Skills",

@@ -26,9 +26,9 @@ import {
   fileSizeLabel,
   SKILL_ORIGIN_LABEL,
   skillBody,
-  skillDisplayName,
   skillDisplaySummary,
   skillErrorMessage,
+  skillFullName,
   skillSourceLine,
 } from '../../model/agent-skills.ts';
 import { useRuntime } from '../../runtime/context.tsx';
@@ -184,7 +184,7 @@ export function SkillDetailDialog({
     <DialogContainer onDismiss={close}>
       {skill ? (
         <Dialog size="L" isDismissible>
-          <Heading slot="title">{skillDisplayName(skill)}</Heading>
+          <Heading slot="title">{skillFullName(skill)}</Heading>
           <Content>
             {viewing ? (
               <div className={body}>
@@ -245,7 +245,7 @@ function SkillInfo({
           {SKILL_ORIGIN_LABEL[skill.origin]}
         </Badge>
         <span className={spacer} />
-        <Switch aria-label={SKILLS_COPY.enable(skillDisplayName(skill))} isSelected={skill.enabled} onChange={onToggle} />
+        <Switch aria-label={SKILLS_COPY.enable(skillFullName(skill))} isSelected={skill.enabled} onChange={onToggle} />
       </div>
       <p className={stateLine}>{skill.enabled ? SKILL_DETAIL_COPY.stateOn : SKILL_DETAIL_COPY.stateOff}</p>
       {skill.origin === 'third-party' ? (

@@ -30,6 +30,8 @@ const en = {
   origin: { builtin: 'Built-in', personal: 'Mine', 'third-party': 'Third-party' } as Record<SkillOrigin, string>,
   all: 'All',
   commit: (sha: string) => ` (${sha})`,
+  /** 内置 skill 在列表与详情里的名字：原始名（front matter 的 `name`）在前，界面名在括号里。 */
+  fullName: (raw: string, label: string) => `${raw} (${label})`,
   bytes: (n: number) => (n === 1 ? '1 byte' : `${n} bytes`),
   action: {
     load: 'load skills',
@@ -96,6 +98,24 @@ export function skillDisplaySummary(skill: SkillText): string {
   return skillLabel(skill, getLocale()).summary;
 }
 
+/**
+ * 列表与详情里的名字（输入框「+ › 使用 Skill」、设置的卡片与详情，原型 `fullName`）：内置 skill 是「原始名（界面名）」，原始名是
+ * front matter 的 `name`，与智能体说的、文件夹叫的对得上；界面名就是原始名（英文界面的 Slides 之于 slides）时只写一次。没有
+ * `labels` 的只有自带的名字。标记、提示与会话里的消息只用 `skillDisplayName`。
+ */
+export function skillFullName(skill: SkillText): string {
+  const label = skillDisplayName(skill);
+  if (!skill.labels) return label;
+  return nameKey(label) === nameKey(skill.name) ? skill.name : M.fullName(skill.name, label);
+}
+
+const nameKey = (name: string) =>
+  name
+    .normalize('NFKC')
+    .toLowerCase()
+    .replace(/[^\p{L}\p{N}]+/gu, '-')
+    .replace(/^-+|-+$/g, '');
+
 /** 按 id 在列表里找 skill 的显示名称；不在列表里（还没取到、已移除）时用 `fallback`（消息记下的名字，或 id）。 */
 export function skillNameById(list: readonly SkillSummary[], id: string, fallback: string = id): string {
   const found = list.find((s) => s.id === id);
@@ -103,15 +123,15 @@ export function skillNameById(list: readonly SkillSummary[], id: string, fallbac
 }
 
 /**
- * `skills.list` 的顺序不是合同：按来源（内置、我的、第三方），再按显示的名称排（当前语言的排序规则），名称相同按 id。界面换语言时
- * 整体重画、重新取列表，顺序跟着换。
+ * `skills.list` 的顺序不是合同：按来源（内置、我的、第三方），再按列表里显示的名字（`skillFullName`，内置的就是按原始名）排
+ * （当前语言的排序规则），名字相同按 id。界面换语言时整体重画、重新取列表，顺序跟着换。
  */
 export function sortSkills(list: readonly SkillSummary[]): SkillSummary[] {
   const locale = intlLocale();
   return [...list].sort(
     (a, b) =>
       ORIGIN_ORDER[a.origin] - ORIGIN_ORDER[b.origin] ||
-      skillDisplayName(a).localeCompare(skillDisplayName(b), locale) ||
+      skillFullName(a).localeCompare(skillFullName(b), locale) ||
       a.id.localeCompare(b.id),
   );
 }
@@ -158,13 +178,13 @@ export interface SkillMenuItem {
 }
 
 /**
- * 输入框「+ › 使用 Skill」的条目：全部 skill，开着的在前，组内保持列表顺序。名称与介绍按 `skillDisplayName` /
+ * 输入框「+ › 使用 Skill」的条目：全部 skill，开着的在前，组内保持列表顺序。名称与介绍按 `skillFullName` /
  * `skillDisplaySummary`：内置 skill 的一句话介绍本来就是一行，原样给；没有 `labels` 的拿 description 截成一行。
  */
 export function skillMenuItems(list: readonly SkillSummary[]): SkillMenuItem[] {
   const rows = list.map((s) => ({
     id: s.id,
-    name: skillDisplayName(s),
+    name: skillFullName(s),
     description: clipLine(skillDisplaySummary(s), s.labels ? SKILL_LIMITS.labelSummary : undefined),
     enabled: s.enabled,
   }));

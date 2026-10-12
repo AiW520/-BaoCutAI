@@ -4,6 +4,7 @@ export const tr: AgentSkillsMessages = {
   origin: { builtin: "Yerleşik", personal: "Benim", 'third-party': "Üçüncü taraf" },
   all: "Hepsi",
   commit: (sha: string) => ` (${sha})`,
+  fullName: (raw: string, label: string) => `${raw} (${label})`,
   bytes: (n) => `${n} bayt`,
   action: {
     load: "Skill’leri yükle",

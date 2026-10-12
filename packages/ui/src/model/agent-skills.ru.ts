@@ -5,6 +5,7 @@ export const ru: AgentSkillsMessages = {
   origin: { builtin: "Встроенный", personal: "Мои", 'third-party': "Сторонний" },
   all: "Все",
   commit: (sha: string) => ` (${sha})`,
+  fullName: (raw: string, label: string) => `${raw} (${label})`,
   bytes: (n: number) => pluralForm('ru', n, { one: `${n} байт`, few: `${n} байта`, many: `${n} байтов`, other: `${n} байта` }),
   action: {
     load: "загрузить Skills",

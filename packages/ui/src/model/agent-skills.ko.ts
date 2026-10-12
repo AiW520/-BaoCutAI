@@ -4,6 +4,7 @@ export const ko: AgentSkillsMessages = {
   origin: { builtin: '내장', personal: '내 Skill', 'third-party': '서드파티' },
   all: '전체',
   commit: (sha: string) => `(${sha})`,
+  fullName: (raw: string, label: string) => `${raw}(${label})`,
   bytes: (n: number) => `${n}바이트`,
   action: {
     load: 'Skill 목록 불러오기',

@@ -31,6 +31,7 @@ import {
   skillDisplayName,
   skillDisplaySummary,
   skillErrorMessage,
+  skillFullName,
   skillMetaLine,
   type SkillTab,
 } from '../../model/agent-skills.ts';
@@ -84,11 +85,9 @@ const cardMain = style({
   outlineColor: 'focus-ring',
 });
 const cardName = style({
-  display: 'block',
   paddingEnd: 56,
-  overflow: 'hidden',
-  textOverflow: 'ellipsis',
-  whiteSpace: 'nowrap',
+  lineClamp: 2,
+  overflowWrap: 'anywhere',
   font: 'ui',
   fontWeight: 'bold',
   color: { default: 'gray-900', isOff: 'gray-700' },
@@ -239,15 +238,15 @@ export function AgentSkills() {
       <div className={grid} role="list">
         {rows.map((skill) => (
           <div key={skill.id} role="listitem" className={card}>
-            <button type="button" className={cardMain} aria-label={SKILLS_COPY.view(skillDisplayName(skill))} onClick={() => setOpenId(skill.id)}>
-              <span className={cardName({ isOff: !skill.enabled })} title={skillDisplayName(skill)}>
-                {skillDisplayName(skill)}
+            <button type="button" className={cardMain} aria-label={SKILLS_COPY.view(skillFullName(skill))} onClick={() => setOpenId(skill.id)}>
+              <span className={cardName({ isOff: !skill.enabled })} title={skillFullName(skill)}>
+                {skillFullName(skill)}
               </span>
               <span className={cardDesc}>{skillDisplaySummary(skill)}</span>
               <span className={cardMeta}>{skillMetaLine(skill)}</span>
             </button>
             <span className={cardSwitch}>
-              <Switch aria-label={SKILLS_COPY.enable(skillDisplayName(skill))} isSelected={skill.enabled} onChange={(on) => toggle(skill, on)} />
+              <Switch aria-label={SKILLS_COPY.enable(skillFullName(skill))} isSelected={skill.enabled} onChange={(on) => toggle(skill, on)} />
             </span>
           </div>
         ))}

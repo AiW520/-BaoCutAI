@@ -1,5 +1,5 @@
-import { describe, expect, it } from 'vitest';
-import { RpcError, type SkillSummary } from '@baocut/protocol';
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import { RpcError, setLocale, type SkillSummary } from '@baocut/protocol';
 import {
   appendSkillId,
   clipLine,
@@ -12,6 +12,7 @@ import {
   skillErrorMessage,
   skillDisplayName,
   skillDisplaySummary,
+  skillFullName,
   skillMenuItems,
   skillMetaLine,
   skillNameById,
@@ -49,12 +50,12 @@ describe('列表的排序、搜索与筛选', () => {
     expect(sortSkills([...list].reverse()).map((s) => s.id)).toEqual(['brand', 'subtitle-style', 'chapters']);
   });
 
-  it('按显示的名称排，搜显示的名称与介绍', () => {
+  it('按列表里显示的名字排（内置的原始名在前），搜显示的名称与介绍', () => {
     const labelled = [
       skill('zz-chapters', { origin: 'builtin', labels: { name: { en: 'Chapters', 'zh-Hans': 'A 分章节' }, summary: { en: 'x', 'zh-Hans': '话题转换' } } }),
       skill('aa-blog', { origin: 'builtin', labels: { name: { en: 'Blog', 'zh-Hans': 'B 写成博客' }, summary: { en: 'y', 'zh-Hans': '完整文章' } } }),
     ];
-    expect(sortSkills(labelled).map((s) => s.id)).toEqual(['zz-chapters', 'aa-blog']);
+    expect(sortSkills(labelled).map((s) => s.id)).toEqual(['aa-blog', 'zz-chapters']);
     expect(filterSkills(labelled, '话题', 'all').map((s) => s.id)).toEqual(['zz-chapters']);
     expect(filterSkills(labelled, '写成博客', 'all').map((s) => s.id)).toEqual(['aa-blog']);
     expect(filterSkills(labelled, 'aa-blog', 'all').map((s) => s.id)).toEqual(['aa-blog']);
@@ -76,6 +77,11 @@ describe('列表的排序、搜索与筛选', () => {
 });
 
 describe('输入框「+ › 使用 Skill」的条目', () => {
+  afterEach(() => {
+    vi.unstubAllEnvs();
+    setLocale('zh-Hans');
+  });
+
   it('开着的在前、组内保持原顺序；关着的也列出来（点选不看开关）', () => {
     const items = skillMenuItems([skill('a', { enabled: false }), skill('b'), skill('c', { enabled: false }), skill('d')]);
     expect(items.map((i) => i.id)).toEqual(['b', 'd', 'a', 'c']);
@@ -103,9 +109,30 @@ describe('输入框「+ › 使用 Skill」的条目', () => {
     expect(skillDisplayName(chapters)).toBe('分章节');
     expect(skillDisplaySummary(chapters)).toBe(chapters.labels!.summary['zh-Hans']);
     const [item] = skillMenuItems([chapters]);
-    expect(item).toMatchObject({ id: 'video-chapters', name: '分章节', description: chapters.labels!.summary['zh-Hans'] });
+    expect(item).toMatchObject({ id: 'video-chapters', name: 'video-chapters（分章节）', description: chapters.labels!.summary['zh-Hans'] });
     const english = skill('x', { labels: { name: { en: 'Only English' }, summary: { en: 'One line' } } });
     expect([skillDisplayName(english), skillDisplaySummary(english)]).toEqual(['Only English', 'One line']);
+  });
+
+  it('内置 skill 的名字是「原始名（界面名）」，括号随语言；界面名就是原始名时只写一次；其余只有自带的名字', () => {
+    const labels = (en: string, zh: string, ko: string, fr: string) => ({ name: { en, 'zh-Hans': zh, ko, fr }, summary: { en: 'x' } });
+    const chapters = skill('video-chapters', { origin: 'builtin', labels: labels('Chapters', '分章节', '챕터 나누기', 'Chapitres') });
+    const system = skill('design-system', { origin: 'builtin', labels: labels('Design system', '设计系统', '디자인 시스템', 'Système de design') });
+    const mine = skill('mine', { name: 'My Style', labels: null });
+    const names = () => [chapters, system, mine].map(skillFullName);
+    const use = (locale: 'en' | 'ko' | 'fr') => {
+      vi.stubEnv('BAOCUT_LOCALE', locale);
+      setLocale(locale);
+    };
+    expect(names()).toEqual(['video-chapters（分章节）', 'design-system（设计系统）', 'My Style']);
+    use('en');
+    expect(names()).toEqual(['video-chapters (Chapters)', 'design-system', 'My Style']);
+    use('ko');
+    expect(names()).toEqual(['video-chapters(챕터 나누기)', 'design-system(디자인 시스템)', 'My Style']);
+    use('fr');
+    expect(names()).toEqual(['video-chapters (Chapitres)', 'design-system (Système de design)', 'My Style']);
+    // 标记、提示与会话里的消息仍只用界面名。
+    expect(skillDisplayName(chapters)).toBe('Chapitres');
   });
 
   it('按 id 找显示名称；不在列表里时用消息记下的名字或 id', () => {

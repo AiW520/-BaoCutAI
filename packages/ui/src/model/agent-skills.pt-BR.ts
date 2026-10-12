@@ -2,7 +2,7 @@ import type { AgentSkillsMessages } from './agent-skills.ts';
 import { pluralForm } from '@baocut/protocol';
 
 export const ptBR: AgentSkillsMessages = {
-  origin: { builtin: 'Integrada', personal: 'Minha', 'third-party': 'De terceiros' }, all: 'Todas', commit: (sha: string) => ` (${sha})`,
+  origin: { builtin: 'Integrada', personal: 'Minha', 'third-party': 'De terceiros' }, all: 'Todas', commit: (sha: string) => ` (${sha})`, fullName: (raw: string, label: string) => `${raw} (${label})`,
   bytes: (n: number) => pluralForm('pt-BR', n, { one: `${n} byte`, other: `${n} bytes` }),
   action: { load: 'carregar skills', toggle: 'alterar a opção', add: 'adicionar', import: 'importar', remove: 'remover', read: 'abrir o arquivo', send: 'enviar' },
   exists: (id: string | null) => `Já existe uma skill chamada “${id ?? 'esta'}” e ela não será sobrescrita. Remova a anterior primeiro ou renomeie a pasta e adicione novamente.`,

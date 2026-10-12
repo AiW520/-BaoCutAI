@@ -4,6 +4,7 @@ export const vi: AgentSkillsMessages = {
   origin: { builtin: "Có sẵn", personal: "Của tôi", 'third-party': "Bên thứ ba" },
   all: "Tất cả",
   commit: (sha: string) => ` (${sha})`,
+  fullName: (raw: string, label: string) => `${raw} (${label})`,
   bytes: (n) => `${n} byte`,
   action: {
     load: "tải Skill",

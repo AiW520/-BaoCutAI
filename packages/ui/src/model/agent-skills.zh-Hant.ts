@@ -4,6 +4,7 @@ export const zhHant: AgentSkillsMessages = {
   origin: { builtin: '內建', personal: '我的', 'third-party': '第三方' },
   all: '全部',
   commit: (sha: string) => `（${sha}）`,
+  fullName: (raw: string, label: string) => `${raw}（${label}）`,
   bytes: (n: number) => `${n} 位元組`,
   action: {
     load: '載入 Skills',
