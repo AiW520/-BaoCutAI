@@ -4,6 +4,7 @@ mod bound_label;
 mod component_filters;
 mod cue_unit_context;
 mod glyph_envelope;
+mod gradient_smear;
 mod materials;
 mod noise_palette;
 mod page_envelope;

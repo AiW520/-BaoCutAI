@@ -71,6 +71,7 @@ fn padding(materials: &[CaptionMaterial]) -> u32 {
                 libm::ceil(max) as u32
             }
             CaptionMaterial::SoftBand { .. }
+            | CaptionMaterial::GradientSmear { .. }
             | CaptionMaterial::AngularSampleBlend { .. }
             | CaptionMaterial::NoisePaletteMix { .. }
             | CaptionMaterial::GaussianAxis { .. }
@@ -505,6 +506,95 @@ impl ScenePlan {
                 )?;
                 Ok((source, hits))
             }
+            CaptionMaterial::GradientSmear {
+                id,
+                context_node_id,
+                domain,
+                rect_scale,
+                evolution,
+                seed,
+                stretch,
+                progress,
+                strength,
+                noise,
+                uv_y,
+            } => {
+                let (mut source, hits) =
+                    self.material_prefix(ci, t, materials, prefix - 1, pad, size, budget, work)?;
+                let Some(mut context) =
+                    self.material_page_context(ci, t, context_node_id, budget)?
+                else {
+                    source.data_mut().fill(0);
+                    return Ok((source, vec![]));
+                };
+                context.stable_key.push_str(&format!("|material|{id}"));
+                let scene = self.style.scene();
+                let mut rect = [0.0; 4];
+                for (i, value) in [&domain.x, &domain.y, &domain.width, &domain.height]
+                    .into_iter()
+                    .enumerate()
+                {
+                    let Some(value) =
+                        sample_value(value, ValueType::Length, scene, &context, t, budget)?
+                    else {
+                        source.data_mut().fill(0);
+                        return Ok((source, vec![]));
+                    };
+                    rect[i] = value.number()?;
+                }
+                let scale = [
+                    component_uniform(
+                        &rect_scale[0],
+                        scene,
+                        &context,
+                        t,
+                        budget,
+                        1.0,
+                        0.001,
+                        10_000.0,
+                    )?,
+                    component_uniform(
+                        &rect_scale[1],
+                        scene,
+                        &context,
+                        t,
+                        budget,
+                        1.0,
+                        0.001,
+                        10_000.0,
+                    )?,
+                ];
+                let amount = [
+                    component_uniform(&strength[0], scene, &context, t, budget, 0.0, -16.0, 16.0)?,
+                    component_uniform(&strength[1], scene, &context, t, budget, 0.0, -16.0, 16.0)?,
+                ];
+                let uniforms = super::gradient_smear::Uniforms {
+                    rect_scale: scale.map(|n| n as f32),
+                    evolution: component_uniform(
+                        evolution, scene, &context, t, budget, 0.0, -100_000.0, 100_000.0,
+                    )? as f32,
+                    seed: component_uniform(
+                        seed, scene, &context, t, budget, 0.0, -100_000.0, 100_000.0,
+                    )? as f32,
+                    stretch: component_uniform(stretch, scene, &context, t, budget, 0.0, -2.0, 2.0)?
+                        as f32,
+                    progress: component_uniform(
+                        progress, scene, &context, t, budget, 0.0, 0.0, 1.0,
+                    )? as f32,
+                    strength: amount.map(|n| n as f32),
+                };
+                work.spend(size.0, size.1)?;
+                let image = super::gradient_smear::apply(
+                    &source,
+                    pad,
+                    rect,
+                    &uniforms,
+                    noise,
+                    *uv_y,
+                    |count| work.samples(count),
+                )?;
+                Ok((image, hits))
+            }
             CaptionMaterial::AngularSampleBlend {
                 id,
                 context_node_id,
@@ -766,6 +856,7 @@ fn component_stack(materials: &[CaptionMaterial]) -> bool {
         matches!(
             material,
             CaptionMaterial::AngularSampleBlend { .. }
+                | CaptionMaterial::GradientSmear { .. }
                 | CaptionMaterial::NoisePaletteMix { .. }
                 | CaptionMaterial::GaussianAxis { .. }
                 | CaptionMaterial::GlowCascade { .. }

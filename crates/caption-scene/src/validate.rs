@@ -26,6 +26,7 @@ pub const CAPABILITIES: &[&str] = &[
     "caption-soft-band/1",
     "caption-noise-palette-mix/1",
     "caption-angular-sample-blend/1",
+    "caption-gradient-smear/1",
     "caption-gaussian-axis/1",
     "caption-glow-cascade/1",
     "caption-glow-tint/1",
@@ -523,6 +524,65 @@ pub fn validate_scene(s: &Scene) -> Result<()> {
                         let n = typed_value(ValueType::Length, value)?.number()?;
                         if !n.is_finite() || !(low..=1_000_000.0).contains(&n) {
                             return Err(invalid(id, "material domain requires finite lengths and positive dimensions"));
+                        }
+                    }
+                }
+                id
+            }
+            CaptionMaterial::GradientSmear {
+                id,
+                context_node_id,
+                domain,
+                rect_scale,
+                evolution,
+                seed,
+                stretch,
+                progress,
+                strength,
+                noise,
+                ..
+            } => {
+                validate_component_context(s, &nodes, id, context_node_id, "caption-gradient-smear/1", 1.0)?;
+                for value in rect_scale {
+                    validate_component_uniform(s, value, 0.001, 10_000.0)?;
+                }
+                for value in [evolution, seed] {
+                    validate_component_uniform(s, value, -100_000.0, 100_000.0)?;
+                }
+                validate_component_uniform(s, stretch, -2.0, 2.0)?;
+                validate_component_uniform(s, progress, 0.0, 1.0)?;
+                for value in strength {
+                    validate_component_uniform(s, value, -16.0, 16.0)?;
+                }
+                for (value, low, high) in [
+                    (noise.complexity, 1.0, 10.0),
+                    (noise.cycle, 0.0, 10_000.0),
+                    (noise.brightness, -4.0, 4.0),
+                    (noise.range, 0.0, 16.0),
+                    (noise.rotation, -10_000.0, 10_000.0),
+                    (noise.sub_rotation, -10_000.0, 10_000.0),
+                    (noise.sub_impact, 0.0, 1.0),
+                    (noise.sub_scale, 1.0, 10_000.0),
+                ]
+                .into_iter()
+                .chain(noise.scale1.into_iter().chain(noise.scale2).map(|n| (n, 0.001, 10_000.0)))
+                .chain(noise.offset.into_iter().chain(noise.sub_offset).map(|n| (n, -10_000.0, 10_000.0)))
+                {
+                    if !value.is_finite() || !(low..=high).contains(&value) {
+                        return Err(invalid(id, "gradient smear noise outside finite bounds"));
+                    }
+                }
+                for (value, low) in [
+                    (&domain.x, -1_000_000.0),
+                    (&domain.y, -1_000_000.0),
+                    (&domain.width, 0.001),
+                    (&domain.height, 0.001),
+                ] {
+                    validate_value("width", value, s, UnitKind::Page)?;
+                    if let DynamicValue::Constant { value } = value {
+                        let n = typed_value(ValueType::Length, value)?.number()?;
+                        if !n.is_finite() || !(low..=1_000_000.0).contains(&n) {
+                            return Err(invalid(id, "gradient smear domain outside finite bounds"));
                         }
                     }
                 }

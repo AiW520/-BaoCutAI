@@ -1,0 +1,162 @@
+{
+  "schema": "baocut.caption-scene-style/1",
+  "scene": {
+    "kind": "inline",
+    "value": {
+      "schema": "baocut.caption-scene/1",
+      "evaluationVersion": 1,
+      "requiredCapabilities": [
+        "caption-scene/1",
+        "caption-expressions/1",
+        "caption-gradient-smear/1"
+      ],
+      "parameters": [],
+      "layout": {
+        "width": {
+          "value": 140,
+          "basis": "absolute"
+        },
+        "x": {
+          "value": 80,
+          "basis": "absolute"
+        },
+        "y": {
+          "value": 45,
+          "basis": "absolute"
+        },
+        "maxLines": 2,
+        "pagination": {
+          "maxUnitsPerPage": 2
+        }
+      },
+      "speechState": {
+        "gapPolicy": "hold-previous",
+        "tailPolicy": "hold-last",
+        "timingPolicy": "estimated"
+      },
+      "nodes": [
+        {
+          "id": "caption",
+          "type": "text",
+          "style": {
+            "fontSize": {
+              "value": 16,
+              "basis": "absolute"
+            },
+            "fill": "#FFFFFF"
+          },
+          "properties": {
+            "opacity": {
+              "kind": "constant",
+              "value": 0.5
+            }
+          }
+        }
+      ],
+      "selectors": [],
+      "animations": [],
+      "materials": [
+        {
+          "kind": "gradient-smear",
+          "id": "smear",
+          "contextNodeId": "caption",
+          "domain": {
+            "x": {
+              "kind": "constant",
+              "value": 0
+            },
+            "y": {
+              "kind": "constant",
+              "value": 0
+            },
+            "width": {
+              "kind": "constant",
+              "value": 160
+            },
+            "height": {
+              "kind": "constant",
+              "value": 90
+            }
+          },
+          "rectScale": [
+            {
+              "kind": "constant",
+              "value": 8
+            },
+            {
+              "kind": "constant",
+              "value": 2
+            }
+          ],
+          "evolution": {
+            "kind": "expression",
+            "expression": {
+              "op": "call",
+              "function": "div",
+              "args": [
+                {
+                  "op": "read",
+                  "path": "time.seconds"
+                },
+                {
+                  "op": "literal",
+                  "type": "time",
+                  "value": 1
+                }
+              ]
+            }
+          },
+          "seed": {
+            "kind": "constant",
+            "value": 3
+          },
+          "stretch": {
+            "kind": "constant",
+            "value": 0.35
+          },
+          "progress": {
+            "kind": "constant",
+            "value": 0.2
+          },
+          "strength": [
+            {
+              "kind": "constant",
+              "value": 3.3
+            },
+            {
+              "kind": "constant",
+              "value": 2
+            }
+          ],
+          "uvY": "up",
+          "noise": {
+            "complexity": 3,
+            "cycle": 0,
+            "brightness": 0,
+            "range": 0.30000001192092896,
+            "scale1": [
+              1,
+              4
+            ],
+            "scale2": [
+              3,
+              1
+            ],
+            "offset": [
+              0.10000000149011612,
+              0.10000000149011612
+            ],
+            "rotation": 0,
+            "subImpact": 0.40000003576278687,
+            "subScale": 56,
+            "subRotation": 0,
+            "subOffset": [
+              0,
+              0
+            ]
+          }
+        }
+      ]
+    }
+  }
+}

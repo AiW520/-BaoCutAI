@@ -31,7 +31,7 @@ fn texel(
         f32::from(image.data()[offset + c]) / 255.0
     }))
 }
-fn sample(
+pub(super) fn sample(
     image: &Pixmap,
     uv: [f32; 2],
     domain: [f64; 4],

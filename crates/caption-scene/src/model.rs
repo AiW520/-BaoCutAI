@@ -763,6 +763,22 @@ fn deserialize_glow_color_matrix<'de, D: serde::Deserializer<'de>>(deserializer:
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "kind", rename_all = "kebab-case", deny_unknown_fields)]
 pub enum CaptionMaterial {
+    GradientSmear {
+        id: String,
+        #[serde(rename = "contextNodeId")]
+        context_node_id: String,
+        domain: MaterialDomain,
+        #[serde(rename = "rectScale")]
+        rect_scale: [DynamicValue; 2],
+        evolution: DynamicValue,
+        seed: DynamicValue,
+        stretch: DynamicValue,
+        progress: DynamicValue,
+        strength: [DynamicValue; 2],
+        noise: GradientSmearNoise,
+        #[serde(rename = "uvY")]
+        uv_y: MaterialUvY,
+    },
     Blur {
         id: String,
         radius: DynamicValue,
@@ -853,6 +869,31 @@ pub enum CaptionMaterial {
         #[serde(default)]
         offset: [f64; 2],
     },
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "kebab-case")]
+pub enum MaterialUvY {
+    Up,
+    Down,
+}
+
+/// Frozen, bounded octave settings; all angles are radians.
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct GradientSmearNoise {
+    pub complexity: f64,
+    pub cycle: f64,
+    pub brightness: f64,
+    pub range: f64,
+    pub scale1: [f64; 2],
+    pub scale2: [f64; 2],
+    pub offset: [f64; 2],
+    pub rotation: f64,
+    pub sub_impact: f64,
+    pub sub_scale: f64,
+    pub sub_rotation: f64,
+    pub sub_offset: [f64; 2],
 }
 
 /// Explicit axis-aligned canvas coordinates for a material's local texture domain.

@@ -885,6 +885,32 @@ fn scenes() -> Vec<Scene> {
         ..shot(20)
     });
     scenes.push(typography);
+    for (name, axis, zero) in [
+        ("captions-gradient-smear-up", "up", false),
+        ("captions-gradient-smear-down", "down", false),
+        ("captions-gradient-smear-zero", "up", true),
+    ] {
+        let mut style: Value = serde_json::from_str(include_str!("../../caption-scene/tests/fixtures/gradient-smear.json")).unwrap();
+        style["scene"]["value"]["materials"][0]["uvY"] = json!(axis);
+        if zero {
+            style["scene"]["value"]["materials"][0]["strength"] = json!([{"kind":"constant","value":0},{"kind":"constant","value":0}]);
+        }
+        let mut smear = Scene::new(
+            name,
+            video(vec![caption("smear", "doc", Some("style"), 120, &[])], vec![], json!({})),
+            &[0, 6, 15, 60, 100, 15],
+        );
+        smear.documents = vec![
+            caption_doc("doc", "sequence", &[(0., 4., "Flow 字幕")], "original"),
+            style_doc("style", style),
+        ];
+        smear.shots.push(Shot {
+            transparent: true,
+            associated_rgba: true,
+            ..shot(15)
+        });
+        scenes.push(smear);
+    }
     for (name, zero_angle) in [("captions-angular-sample-blend", false), ("captions-angular-zero-angle", true)] {
         let mut style: Value = serde_json::from_str(include_str!("../../caption-scene/tests/fixtures/angular-sample-blend.json")).unwrap();
         if zero_angle {
