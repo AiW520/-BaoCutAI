@@ -190,6 +190,8 @@ export const tr: InspectorMessages = {
   resolution: (requested, actual, frame, fps) => `İstenen ${requested} → gerçek ${actual} (kare ${frame}, ${fps})`,
   shiftMs: (ms) => `, sapma ${ms} ms`,
   geometry: "Geometri",
+  framing: "Çerçeveleme",
+  framingZoom: "Yakınlaştırma",
   anchor: "Çapa",
   measureFrom: (name) => `Ölçüm başlangıcı: ${name}`,
   width: "G",

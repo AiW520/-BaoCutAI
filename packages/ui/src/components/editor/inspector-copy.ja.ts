@@ -190,6 +190,8 @@ export const ja: InspectorMessages = {
   resolution: (requested: string, actual: string, frame: number, fps: string) => `指定 ${requested} → 実際 ${actual}（${frame} フレーム目、${fps}）`,
   shiftMs: (ms: string) => `、ずれ ${ms} ミリ秒`,
   geometry: 'ジオメトリ',
+  framing: 'フレーミング',
+  framingZoom: '拡大',
   anchor: 'アンカー',
   measureFrom: (name: string) => `${name}から測る`,
   width: '幅',

@@ -190,6 +190,8 @@ export const fr: InspectorMessages = {
   resolution: (requested: string, actual: string, frame: number, fps: string) => `Demandé ${requested} → réel ${actual} (image ${frame}, ${fps})`,
   shiftMs: (ms: string) => `, écart de ${ms} ms`,
   geometry: "Géométrie",
+  framing: "Cadrage",
+  framingZoom: "Zoom",
   anchor: "Ancre",
   measureFrom: (name: string) => `Mesurer depuis ${name}`,
   width: "L",

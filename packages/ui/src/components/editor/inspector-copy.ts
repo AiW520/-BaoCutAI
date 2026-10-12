@@ -205,6 +205,9 @@ const en = {
   resolution: (requested: string, actual: string, frame: number, fps: string) => `Requested ${requested} → actual ${actual} (frame ${frame}, ${fps})`,
   shiftMs: (ms: string) => `, off by ${ms} ms`,
   geometry: 'Geometry',
+  /** 按原片取景的视频顶替「几何」的那一段（`stage-framing.ts`）。 */
+  framing: 'Framing',
+  framingZoom: 'Zoom',
   anchor: 'Anchor',
   measureFrom: (name: string) => `Measure from ${name}`,
   width: 'W',

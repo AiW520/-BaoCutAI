@@ -190,6 +190,8 @@ export const ko: InspectorMessages = {
   resolution: (requested: string, actual: string, frame: number, fps: string) => `요청 ${requested} → 실제 ${actual}(프레임 ${frame}, ${fps})`,
   shiftMs: (ms: string) => `, ${ms} ms 어긋남`,
   geometry: '지오메트리',
+  framing: '프레이밍',
+  framingZoom: '확대',
   anchor: '고정점',
   measureFrom: (name: string) => `${name} 기준으로 측정`,
   width: '너비',

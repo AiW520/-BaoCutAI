@@ -193,6 +193,8 @@ export const pl: InspectorMessages = {
   resolution: (requested: string, actual: string, frame: number, fps: string) => `Żądano ${requested} → faktycznie ${actual} (klatka ${frame}, ${fps})`,
   shiftMs: (ms: string) => `, różnica ${ms} ms`,
   geometry: "Geometria",
+  framing: "Kadrowanie",
+  framingZoom: "Powiększenie",
   anchor: "Punkt zakotwiczenia",
   measureFrom: (name: string) => `Mierz od ${name}`,
   width: "S",

@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState, type KeyboardEvent, type MouseEvent, type PointerEvent, type ReactNode } from 'react';
 import type { CaptionItem, DocumentRecord, Id, Localized, Place, Revision, Sequence, SequenceItem } from '@baocut/protocol';
 import { EditLabel } from '@baocut/protocol/messages/ui';
+import { ToastQueue } from '@react-spectrum/s2';
 import { style } from '@react-spectrum/s2/style' with { type: 'macro' };
 import { STAGE_COPY } from '../../copy.ts';
 import { captionKind } from '../../model/caption-tracks.ts';
@@ -18,30 +19,28 @@ import {
   type CaptionMove,
   type CaptionMoveFrame,
 } from '../../model/stage-caption-move.ts';
+import { framingAnchor, framingOperations, isFramed, stagePose, type FramingHit } from '../../model/stage-framing.ts';
 import {
-  framingOperations,
   gestureOperations,
   gesturePatch,
   memberOf,
   membersOf,
   nudgeOperations,
-  panGesture,
   resetRotation,
   stepGesture,
+  zoomGesture,
   type Gesture,
   type GestureFrame,
   type Modifiers,
   type StageEnv,
 } from '../../model/stage-gesture.ts';
 import { hitAt, isMainVideo, marqueeHits, marqueeSelection, visibleItems } from '../../model/stage-hit.ts';
-import { showsShotChip } from '../../model/stage-shots.ts';
 import {
   DEAD_ZONE,
   aabbOf,
   boundsOf,
   boxRect,
   cornerScales,
-  isPannable,
   isPlaced,
   marqueeRect,
   nudgeDelta,
@@ -67,9 +66,9 @@ import { previewCaptionStyle, saveCaptionStyle } from './caption-style-edit.ts';
 import { draftedBody } from './draft-documents.ts';
 import { useEditorActions } from './editor-context.tsx';
 import type { PreviewEngine } from './preview-engine.ts';
-import { GroupBox, Guides, ItemBox, Marquee, ThinBox, type View } from './stage-boxes.tsx';
+import { FramingAnchor, GroupBox, Guides, ItemBox, Marquee, ThinBox, type View } from './stage-boxes.tsx';
 import { StageCaptionToolbar } from './stage-caption-toolbar.tsx';
-import { StageShotChip } from './stage-shot-chip.tsx';
+import { StageFramingChip } from './stage-framing-chip.tsx';
 import { StageTextEdit } from './stage-text-edit.tsx';
 import { StageToolbar } from './stage-toolbar.tsx';
 
@@ -85,6 +84,8 @@ import { StageToolbar } from './stage-toolbar.tsx';
  *   拖动中走 store 的文档草稿（预览与属性页一起跟手），松手写入样式文档，用同一份样式的字幕一起动。双语时只拖选中的那一行
  *   （原型里每条字幕轨各拖各的），框选或 ⇧ / ⌘ 单击把两行都选上再拖才整组动（框选同时框到画面元素时只留元素）。
  * - 只读、锁定或正在播放时不出把手，只读时点选照常；播放中按下画面只暂停（原型 stage.jsx），停下后再点选。
+ * - 按原片取景的视频（`stage-framing`，原型 stage-objects.jsx `FramingSelection`）：框是整幅原片，只有四角，拖角围着取景点
+ *   放大、缩小；拖画面本身不动它，只让小牌说一句为什么（不提交）。整组拖动、缩放与方向键都不挪它。
  */
 
 const root = style({ position: 'absolute', inset: 0, outlineStyle: 'none', userSelect: 'none', touchAction: 'none' });
@@ -98,16 +99,20 @@ export interface FrameRect {
   height: number;
 }
 
-/** 每种拖动提交时的修改名；提交时才生成，跟着当时的语言。 */
+/** 每种拖动提交时的修改名；提交时才生成，跟着当时的语言（`hold` 什么都不提交）。 */
 const LABEL: Record<Gesture['kind'], () => Localized> = {
   move: EditLabel.move,
   edge: EditLabel.resize,
   corner: EditLabel.scale,
   rotate: EditLabel.rotate,
-  pan: EditLabel.reframe,
+  zoom: EditLabel.zoomFraming,
+  hold: EditLabel.move,
   'group-move': EditLabel.groupMove,
   'group-scale': EditLabel.groupScale,
 };
+
+/** 小牌上那句「为什么」留多久（原型 stage-objects.jsx `HIT_MS`）。 */
+const HIT_MS = 2400;
 
 /**
  * 拖字幕：起手时的样式文档、正文与根样式，拖到某处时根样式变成什么（整组挪根样式，双语单拖一行写那一行的覆盖），
@@ -198,6 +203,9 @@ export function StageObjects({ sequence, frame }: { sequence: Sequence; frame: F
   const [override, setOverride] = useState<Override | null>(null);
   const [editing, setEditing] = useState<Id | null>(null);
   const [captionShift, setCaptionShift] = useState<{ hits: CaptionHit[]; dx: number; dy: number } | null>(null);
+  const [hit, setHit] = useState<FramingHit | null>(null);
+  const hitTimer = useRef(0);
+  useEffect(() => () => window.clearTimeout(hitTimer.current), []);
 
   const canvas = sequence.canvas;
   // 媒体框的高按源的宽高比推，要查素材表。
@@ -216,7 +224,7 @@ export function StageObjects({ sequence, frame }: { sequence: Sequence; frame: F
   useEffect(() => {
     if (override?.until != null && override.until !== sequence.revision) setOverride(null);
   }, [override, sequence.revision]);
-  const poseFor = (item: PlacedItem) => overridePoses?.get(item.id) ?? poseOf(item, canvas, assets);
+  const poseFor = (item: PlacedItem) => overridePoses?.get(item.id) ?? stagePose(item, canvas, assets);
 
   // 选中的、此刻画面上有的、有布局框的那几件。改字中的文字在画布上藏着（不在帧计划里），照样算。
   const onStage = new Set(visible);
@@ -229,6 +237,13 @@ export function StageObjects({ sequence, frame }: { sequence: Sequence; frame: F
   const group = !single && others.length >= 2 ? others : null;
   const groupBounds = group ? boundsOf(group.map((item) => aabbOf(poseFor(item)))) : null;
   const groupChangeable = !!group && group.every(changeable);
+  // 整组拖动、缩放时按原片取景的视频留在原地（位置跟着取景点，大小由放大倍数定）。
+  const groupMovers = group?.filter((item) => !isFramed(item)) ?? [];
+  // 换了选中就收起上一件小牌上的那句说明。
+  useEffect(() => {
+    window.clearTimeout(hitTimer.current);
+    setHit(null);
+  }, [single?.id]);
   // 选中的全是字幕、用同一份样式、都能改、此刻画面上有它们：出字幕的工具条（字幕没有布局框，不走上面那几件）。
   const pickedCaptions = selection.map((id) => byId.get(id)).filter((item): item is CaptionItem => item?.type === 'caption');
   const captionBar =
@@ -283,7 +298,8 @@ export function StageObjects({ sequence, frame }: { sequence: Sequence; frame: F
   };
   const hitTest = (p: Point) => {
     const selected = new Set(useEditor.getState().selection);
-    const boxes = new Map(picked.map((item) => [item.id, poseFor(item)]));
+    // 按原片取景的框是整幅原片、伸到画面外面：画面里那一截按图层点中，外面那一截按下去是点空白。
+    const boxes = new Map(picked.filter((item) => !isFramed(item)).map((item) => [item.id, poseFor(item)]));
     return hitAt(engine.plan?.layers ?? [], p, {
       captionHits: engine.captionHits,
       skip: (id) => isMain(id) && !selected.has(id),
@@ -300,8 +316,18 @@ export function StageObjects({ sequence, frame }: { sequence: Sequence; frame: F
 
   // ---- 手势 ----
 
+  /** 小牌上说一句为什么，过一会儿收回；`null` 是这一下没撞到什么（上一句照常到点收回）。 */
+  const bump = (next: FramingHit | null | undefined) => {
+    if (!next) return;
+    setHit(next);
+    window.clearTimeout(hitTimer.current);
+    hitTimer.current = window.setTimeout(() => setHit(null), HIT_MS);
+  };
+
   /** 把这一步画出来；`live` 是手势还在进行（出参考线与角度气泡），松手提交时只画终值。 */
   const show = (gesture: Gesture, result: GestureFrame, live = true) => {
+    if (live) bump(result.hit);
+    if (gesture.kind === 'hold') return;
     const seq = latest.current;
     const members = membersOf(gesture);
     if ('members' in gesture) {
@@ -335,11 +361,13 @@ export function StageObjects({ sequence, frame }: { sequence: Sequence; frame: F
   const commit = (gesture: Gesture, result: GestureFrame) => {
     const seq = latest.current;
     const operations =
-      gesture.kind === 'pan'
-        ? result.framing
-          ? framingOperations(seq.id, gesture.member.item, result.framing)
-          : []
-        : gestureOperations(seq.id, membersOf(gesture), result.poses, result.factor, seq.canvas);
+      gesture.kind === 'hold'
+        ? []
+        : gesture.kind === 'zoom'
+          ? result.framing
+            ? framingOperations(seq.id, gesture.member.item, result.framing)
+            : []
+          : gestureOperations(seq.id, membersOf(gesture), result.poses, result.factor, seq.canvas);
     if (!operations.length) return discard(gesture);
     show(gesture, result, false);
     if ('members' in gesture) setOverride((o) => (o ? { ...o, until: seq.revision } : o));
@@ -471,17 +499,21 @@ export function StageObjects({ sequence, frame }: { sequence: Sequence; frame: F
     let moving = new Set<Id>();
 
     if (group && groupBounds && inGroup && handleEl) {
-      if (groupChangeable)
-        gesture = { kind: 'group-scale', members: group.map((item) => memberOf(item, seq.canvas, assets)), bounds: groupBounds, p0: p };
+      if (groupChangeable && groupMovers.length)
+        gesture = { kind: 'group-scale', members: groupMovers.map((item) => memberOf(item, seq.canvas, assets)), bounds: groupBounds, p0: p };
     } else if (single && handleEl) {
       const handle = handleEl.dataset.handle as Handle;
-      const member = memberOf(single, seq.canvas, assets);
-      gesture = { kind: cornerScales(resizeKindOf(single), handle) ? 'corner' : 'edge', member, handle, p0: p };
+      if (isFramed(single)) gesture = zoomGesture(single, p, seq.canvas, assets);
+      else {
+        const member = memberOf(single, seq.canvas, assets);
+        gesture = { kind: cornerScales(resizeKindOf(single), handle) ? 'corner' : 'edge', member, handle, p0: p };
+      }
       moving = new Set([single.id]);
     } else if (single && target.closest('[data-rotate]')) {
       gesture = { kind: 'rotate', member: memberOf(single, seq.canvas, assets), pivot: pivotOf(single, seq.canvas, assets), p0: p };
     } else if (group && inGroup && !additive) {
-      if (groupChangeable) gesture = { kind: 'group-move', members: group.map((item) => memberOf(item, seq.canvas, assets)), p0: p };
+      if (groupChangeable && groupMovers.length)
+        gesture = { kind: 'group-move', members: groupMovers.map((item) => memberOf(item, seq.canvas, assets)), p0: p };
     } else if (hit && !additive) {
       // 按在一件上：没选中的先选中，拖动就移动它（原型要先选中才能拖；这里与常见剪辑器一致，按下即可拖）。
       // 选中的全是同一份样式的字幕（双语两行都框选或 ⇧ / ⌘ 点选上了）时按下不收成一件，拖动整组动；不动就松手才只留这一行。
@@ -498,8 +530,8 @@ export function StageObjects({ sequence, frame }: { sequence: Sequence; frame: F
       if (captionGroup) click = () => select([hit]);
       else if (!current.includes(hit) || current.length > 1) select([hit]);
       if (item?.type === 'caption') useEditor.getState().showPanel('props');
-      // 铺满、cover、带裁剪的视频（剪成短视频的子视频）没有可挪的框：拖动是平移它的裁剪窗口，只改这一段。
-      if (item && isPannable(item) && changeable(item)) gesture = panGesture(item, p, seq.canvas, assets);
+      // 按原片取景的视频（剪成短视频的子视频）位置跟着取景点：拖不动，只让小牌说一句为什么。
+      if (item && isFramed(item) && changeable(item)) gesture = { kind: 'hold', member: memberOf(item, seq.canvas, assets), p0: p };
       else if (item && isPlaced(item) && changeable(item)) gesture = { kind: 'move', member: memberOf(item, seq.canvas, assets), p0: p };
       else if (item?.type === 'caption' && changeable(item) && (!captionGroup || current.every((id) => changeable(byId.get(id)!))))
         caption = captionDragOf(item, p, captionGroup);
@@ -508,6 +540,12 @@ export function StageObjects({ sequence, frame }: { sequence: Sequence; frame: F
       // 空白、主视频面、或按着 ⇧ / ⌘：拖过 4px 起框选，不动松手是一次点击。
       marqueeMode = { additive };
       click = additive ? () => under && toggle(under) : () => select(under ? [under] : []);
+    }
+
+    // 上一下留着的那句说明不带进这一下：缩到底之后马上往外拉，不该还写着「已经铺满」。
+    if (gesture?.kind === 'zoom' || gesture?.kind === 'hold') {
+      window.clearTimeout(hitTimer.current);
+      setHit(null);
     }
 
     press.current = {
@@ -654,10 +692,13 @@ export function StageObjects({ sequence, frame }: { sequence: Sequence; frame: F
     const seq = latest.current;
     const delta = nudgeDelta(event.key, event.shiftKey, event.altKey, seq.canvas);
     if (!delta) return;
-    // 选中压过播放：有能推的就推，没有就让给编辑器（逐帧、播放中跳 5 秒）。
-    const targets = picked.filter((item) => !isMainVideo(item, seq) && !locked(item));
-    if (!targets.length) return;
+    // 选中压过播放：有能推的就推，没有就让给编辑器（逐帧、播放中跳 5 秒）。按原片取景的视频位置跟着取景点，不推；
+    // 只选了它们时说一句为什么（原型 editor-keys.jsx）——子视频的原片就在主轨上，也要说。
+    const candidates = picked.filter((item) => !locked(item) && (isFramed(item) || !isMainVideo(item, seq)));
+    if (!candidates.length) return;
     event.preventDefault();
+    const targets = candidates.filter((item) => !isFramed(item));
+    if (!targets.length) return void ToastQueue.info(STAGE_COPY.framingLocked, { timeout: 5000 });
     // 连按时上一笔还没回来：从上一笔的落点接着推，不从旧位置重算。
     const pending = nudges.current;
     const base = targets.map((item) => {
@@ -680,7 +721,7 @@ export function StageObjects({ sequence, frame }: { sequence: Sequence; frame: F
 
   // ---- 画 ----
 
-  const dragging = active === 'move' || active === 'group-move' || active === 'pan';
+  const dragging = active === 'move' || active === 'group-move';
   const editingItem = editing ? byId.get(editing) : undefined;
   let boxes: ReactNode = null;
   if (editingItem?.type === 'text') {
@@ -701,18 +742,23 @@ export function StageObjects({ sequence, frame }: { sequence: Sequence; frame: F
     );
   } else if (single) {
     const can = changeable(single);
+    const framed = isFramed(single);
     boxes = (
-      <ItemBox
-        id={single.id}
-        pose={poseFor(single)}
-        view={view}
-        kind={resizeKindOf(single)}
-        video={single.type === 'video'}
-        controls={can}
-        movable={can}
-        dragging={dragging}
-        angle={active === 'rotate' ? angle : null}
-      />
+      <>
+        <ItemBox
+          id={single.id}
+          pose={poseFor(single)}
+          view={view}
+          kind={resizeKindOf(single)}
+          video={single.type === 'video'}
+          controls={can}
+          movable={can && !framed}
+          dragging={dragging}
+          angle={active === 'rotate' ? angle : null}
+          framing={framed}
+        />
+        {framed && active === 'zoom' ? <FramingAnchor at={framingAnchor(single, canvas)} view={view} /> : null}
+      </>
     );
   } else if (group) {
     boxes = (
@@ -756,8 +802,8 @@ export function StageObjects({ sequence, frame }: { sequence: Sequence; frame: F
       {single && !editingItem && changeable(single) ? (
         <StageToolbar key={single.id} item={single} sequence={sequence} frame={frame} view={view} yielding={active !== null} />
       ) : null}
-      {single && isPannable(single) && changeable(single) && !dragging && showsShotChip(sequence, single) ? (
-        <StageShotChip key={single.id} item={single} sequence={sequence} frame={frame} />
+      {single && !editingItem && isFramed(single) && changeable(single) ? (
+        <StageFramingChip key={single.id} item={single} sequence={sequence} frame={frame} hit={hit} />
       ) : null}
       {captionBar && !editing ? (
         <StageCaptionToolbar items={captionBar} sequence={sequence} hits={captionHits} frame={frame} view={view} yielding={active !== null} />

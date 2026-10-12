@@ -190,6 +190,8 @@ export const zhHans: InspectorMessages = {
   resolution: (requested: string, actual: string, frame: number, fps: string) => `请求 ${requested} → 实际 ${actual}（第 ${frame} 帧，${fps}）`,
   shiftMs: (ms: string) => `，偏差 ${ms} 毫秒`,
   geometry: '几何',
+  framing: '取景',
+  framingZoom: '放大',
   anchor: '钉点',
   measureFrom: (name: string) => `从${name}量起`,
   width: '宽',

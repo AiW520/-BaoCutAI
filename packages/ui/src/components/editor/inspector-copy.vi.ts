@@ -190,6 +190,8 @@ export const vi: InspectorMessages = {
   resolution: (requested, actual, frame, fps) => `Yêu cầu ${requested} → thực tế ${actual} (khung hình ${frame}, ${fps})`,
   shiftMs: (ms) => `, lệch ${ms} ms`,
   geometry: "Hình học",
+  framing: "Căn khung",
+  framingZoom: "Phóng to",
   anchor: "Điểm neo",
   measureFrom: (name) => `Đo từ ${name}`,
   width: "R",

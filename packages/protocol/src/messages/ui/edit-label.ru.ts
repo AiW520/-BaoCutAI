@@ -49,6 +49,8 @@ export const ru: EditLabelMessages = {
   editText: "Редактировать текст",
   nudgePosition: "Сдвинуть положение",
   applyFramingToAll: 'Применить ко всему шортсу',
+  zoomFraming: 'Масштаб кадра',
+  freePlacement: 'Свободное размещение',
   aspectRatio: (p) => `Соотношение сторон ${p.ratio}`,
   originalRatio: 'Исходное',
   renameVideo: "Переименовать видео",

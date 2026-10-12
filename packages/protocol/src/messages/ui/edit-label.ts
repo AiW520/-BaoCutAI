@@ -71,6 +71,8 @@ const en = {
   editText: 'Edit text',
   nudgePosition: 'Nudge position',
   applyFramingToAll: 'Apply to whole short',
+  zoomFraming: 'Zoom framing',
+  freePlacement: 'Switch to free placement',
   aspectRatio: (p: { ratio: string }) => `Aspect ratio ${p.ratio}`,
   /** `aspectRatio` 的 `ratio`：原始画幅。 */
   originalRatio: 'Original',

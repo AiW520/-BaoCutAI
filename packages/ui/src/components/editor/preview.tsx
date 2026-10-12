@@ -32,8 +32,17 @@ const head = style({
 });
 const problemsAt = style({ display: 'flex', alignItems: 'center', gap: 2, marginStart: 'auto' });
 const problemList = style({ margin: 0, paddingStart: 16 });
-/** 舞台：全屏播放时整格进浏览器的全屏（`enterPreviewFullscreen`），画面之外一律纯黑。 */
-const stage = style({ position: 'relative', flexGrow: 1, minHeight: 0, backgroundColor: { default: 'transparent', isFullscreen: 'black' } });
+/**
+ * 舞台：全屏播放时整格进浏览器的全屏（`enterPreviewFullscreen`），画面之外一律纯黑。
+ * 裁到舞台：按原片取景的选中框是整幅原片，放大后伸出舞台，不能盖到属性页、时间线上去抢指针。
+ */
+const stage = style({
+  position: 'relative',
+  flexGrow: 1,
+  minHeight: 0,
+  overflow: 'hidden',
+  backgroundColor: { default: 'transparent', isFullscreen: 'black' },
+});
 const frame = style({
   position: 'absolute',
   overflow: 'hidden',

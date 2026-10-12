@@ -190,6 +190,8 @@ export const ptBR: InspectorMessages = {
   resolution: (requested: string, actual: string, frame: number, fps: string) => `Solicitado ${requested} → real ${actual} (quadro ${frame}, ${fps})`,
   shiftMs: (ms: string) => `, diferença de ${ms} ms`,
   geometry: "Geometria",
+  framing: "Enquadramento",
+  framingZoom: "Zoom",
   anchor: "Âncora",
   measureFrom: (name: string) => `Medir de ${name}`,
   width: "Largura",

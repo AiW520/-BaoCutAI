@@ -49,6 +49,8 @@ export const ptBR: EditLabelMessages = {
   editText: 'Editar texto',
   nudgePosition: 'Deslocar posição',
   applyFramingToAll: 'Aplicar ao short inteiro',
+  zoomFraming: 'Zoom do enquadramento',
+  freePlacement: 'Mudar para posicionamento livre',
   aspectRatio: (p) => `Proporção ${p.ratio}`,
   originalRatio: 'Original',
   renameVideo: "Renomear vídeo",

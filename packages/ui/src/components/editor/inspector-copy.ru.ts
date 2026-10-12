@@ -193,6 +193,8 @@ export const ru: InspectorMessages = {
   resolution: (requested: string, actual: string, frame: number, fps: string) => `Запрошено ${requested} → фактически ${actual} (кадр ${frame}, ${fps})`,
   shiftMs: (ms: string) => `, отклонение ${ms} мс`,
   geometry: "Геометрия",
+  framing: "Кадрирование",
+  framingZoom: "Масштаб",
   anchor: "Опорная точка",
   measureFrom: (name: string) => `Измерять от ${name}`,
   width: "Ш",

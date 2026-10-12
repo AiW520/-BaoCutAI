@@ -1,17 +1,5 @@
 import { stageBox, stagePlace, type StageAsset, type StageItem } from '@baocut/editor-wasm';
-import {
-  framingFromCrop,
-  isVisualItem,
-  videoDisplaySize,
-  type AssetRecord,
-  type Crop,
-  type FocalPoint,
-  type Id,
-  type Place,
-  type SequenceItem,
-  type VideoItem,
-  type VisualItem,
-} from '@baocut/protocol';
+import { isVisualItem, type AssetRecord, type Id, type Place, type SequenceItem, type VisualItem } from '@baocut/protocol';
 import { round1, wrapRotation } from './geometry-panel.ts';
 
 /**
@@ -230,88 +218,6 @@ export function aabbOf(pose: Pose): Rect {
 /** 未旋转的盒（吸附按它算，与原型 `frameBox` 同口径）。 */
 export function boxRect(pose: Pose): Rect {
   return { x: pose.cx - pose.w / 2, y: pose.cy - pose.h / 2, w: pose.w, h: pose.h };
-}
-
-// ---- 平移取景 ----
-
-/**
- * 铺满画面、`cover`、带裁剪或取景点的视频（剪成短视频的子视频按镜头分段取景就是这样）：画布上拖它是平移取景。
- */
-export type PannableVideo = VideoItem;
-
-export function isPannable(item: SequenceItem): item is PannableVideo {
-  return item.type === 'video' && item.mode === 'fullscreen' && (item.fit ?? 'cover') === 'cover' && !!(item.crop || item.focalPoint);
-}
-
-/** 源的显示尺寸（已按旋转交换，乘上像素宽高比；与 `render-graph` 的 `display_size` 同口径）；素材表里没有时 null。 */
-export function sourceSize(item: VideoItem, assets: Assets | undefined): { width: number; height: number } | null {
-  return videoDisplaySize(assets?.[item.assetRef.id]?.revisions[item.assetRef.revision]);
-}
-
-/** 视频的取景：裁剪与取景点（视频格式规范 §3.5），没有的是 null。 */
-export interface ItemFraming {
-  crop: Crop | null;
-  focalPoint: FocalPoint | null;
-}
-
-export const framingOf = (item: VideoItem): ItemFraming => ({ crop: item.crop ?? null, focalPoint: item.focalPoint ?? null });
-
-/**
- * 平移取景（画布像素的指针位移 → 新的取景）：挪取景点，源画面不裁，换画幅时多出来的画面还在。只带裁剪的视频（旧的短视频）
- * 先按 `framingFromCrop` 换成取景点（看到的不变）再挪。往右拖是画面跟着往右走，取景点往左挪；没有多出来的方向不动。
- * 不知道源尺寸时只能按旧办法挪裁剪窗口（`panCrop`）。没动时原样返回。
- */
-export function panFraming(
-  item: PannableVideo,
-  dx: number,
-  dy: number,
-  canvas: CanvasSize,
-  source: { width: number; height: number } | null,
-): ItemFraming {
-  const current = framingOf(item);
-  if (dx === 0 && dy === 0) return current;
-  if (!source) {
-    const crop = item.crop ? panCrop(item.crop, dx, dy, canvas, null) : null;
-    return crop && crop !== item.crop ? { ...current, crop } : current;
-  }
-  const lifted = framingFromCrop(item.crop, source, canvas, item.focalPoint);
-  if (!lifted) return current;
-  const c = lifted.crop ?? { left: 0, top: 0, right: 0, bottom: 0 };
-  const rw = (1 - c.left - c.right) * source.width;
-  const rh = (1 - c.top - c.bottom) * source.height;
-  const scale = Math.max(canvas.width / rw, canvas.height / rh);
-  // 铺满后多出来的画布像素：取景点从 0 到 1 走过这么远。
-  const spareX = rw * scale - canvas.width;
-  const spareY = rh * scale - canvas.height;
-  const move = (f: number, d: number, spare: number) => (spare > 1e-6 ? round4(clamp(f - d / spare, 0, 1)) : f);
-  return { crop: lifted.crop, focalPoint: { x: move(lifted.focalPoint.x, dx, spareX), y: move(lifted.focalPoint.y, dy, spareY) } };
-}
-
-const round4 = (v: number) => Math.round(v * 1e4) / 1e4;
-
-/**
- * 平移裁剪窗口（画布像素的指针位移 → 新的裁剪）：窗口大小不变（左右之和、上下之和不变），只挪位置，夹在源画面里。
- * 往右拖是画面跟着往右走，窗口往左挪（`left` 变小）。一个画布像素合多少源画面按 `cover` 的缩放算（窗口按长的那一边铺满画布）；
- * 不知道源尺寸时按窗口正好铺满画布算。上下之和是 0（窗口与源一样高）时竖直方向不动。取四位小数；没动时原样返回同一个对象。
- */
-export function panCrop(crop: Crop, dx: number, dy: number, canvas: CanvasSize, source: { width: number; height: number } | null): Crop {
-  const sumX = crop.left + crop.right;
-  const sumY = crop.top + crop.bottom;
-  const cw = 1 - sumX;
-  const ch = 1 - sumY;
-  if (!(cw > 0) || !(ch > 0) || !(canvas.width > 0) || !(canvas.height > 0)) return crop;
-  // 每个画布像素是源画面宽 / 高的几分之几。
-  let fx = cw / canvas.width;
-  let fy = ch / canvas.height;
-  if (source) {
-    const scale = Math.max(canvas.width / (cw * source.width), canvas.height / (ch * source.height));
-    fx = 1 / (scale * source.width);
-    fy = 1 / (scale * source.height);
-  }
-  const left = sumX > 0 ? round4(clamp(crop.left - dx * fx, 0, sumX)) : crop.left;
-  const top = sumY > 0 ? round4(clamp(crop.top - dy * fy, 0, sumY)) : crop.top;
-  if (left === crop.left && top === crop.top) return crop;
-  return { left, top, right: round4(Math.max(0, sumX - left)), bottom: round4(Math.max(0, sumY - top)) };
 }
 
 // ---- 移动 ----

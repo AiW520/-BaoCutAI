@@ -49,6 +49,8 @@ export const it: EditLabelMessages = {
   editText: 'Modifica testo',
   nudgePosition: 'Sposta posizione',
   applyFramingToAll: 'Applica a tutto lo short',
+  zoomFraming: 'Zoom dell’inquadratura',
+  freePlacement: 'Passa al posizionamento libero',
   aspectRatio: (p) => `Rapporto d’aspetto ${p.ratio}`,
   originalRatio: 'Originale',
   renameVideo: "Rinomina video",

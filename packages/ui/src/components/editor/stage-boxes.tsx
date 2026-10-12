@@ -11,6 +11,7 @@ import {
   smallHandles,
   type Guide,
   type Handle,
+  type Point,
   type Pose,
   type Rect,
   type ResizeKind,
@@ -118,7 +119,31 @@ const marqueeBox = style({
   opacity: 0.22,
   pointerEvents: 'none',
 });
+const anchorRing = style({
+  position: 'absolute',
+  zIndex: 3,
+  size: 20,
+  boxSizing: 'border-box',
+  borderRadius: 'full',
+  borderStyle: 'solid',
+  borderWidth: 2,
+  borderColor: 'blue-800',
+  boxShadow: 'elevated',
+  pointerEvents: 'none',
+});
+const anchorInner = style({
+  position: 'absolute',
+  inset: 0,
+  boxSizing: 'border-box',
+  borderRadius: 'full',
+  borderStyle: 'solid',
+  borderWidth: 2,
+  borderColor: 'gray-25',
+});
+const anchorDot = style({ position: 'absolute', top: 4, left: 4, size: 4, borderRadius: 'full', backgroundColor: 'blue-800' });
 const guideLine = style({ position: 'absolute', backgroundColor: 'blue-800', pointerEvents: 'none' });
+
+const CORNERS: Handle[] = ['nw', 'ne', 'sw', 'se'];
 
 /** 盒在舞台上的位置（未旋转；旋转交给 CSS 绕中心转，与盒的口径一致）。 */
 export function displayRect(pose: Pose, view: View): CSSProperties {
@@ -147,7 +172,11 @@ function handleTip(kind: ResizeKind, h: Handle): string {
   return h === 'n' || h === 's' ? STAGE_COPY.edgeHeightTip : STAGE_COPY.edgeWidthTip;
 }
 
-/** 单件的选中框：可改时带把手与旋转钮；旋转中出角度气泡（反向抵消框的旋转，读数不歪）。 */
+/**
+ * 单件的选中框：可改时带把手与旋转钮；旋转中出角度气泡（反向抵消框的旋转，读数不歪）。
+ * 按原片取景的视频（`framing`，原型 stage-objects.jsx `FramingSelection`）：框是整幅原片，可以超出画面；只出四角、没有旋转钮，
+ * 框身不接指针（画面外那一截按下去是点空白，画面里那一截由叠加层按图层点中）。
+ */
 export function ItemBox({
   id,
   pose,
@@ -158,6 +187,7 @@ export function ItemBox({
   movable,
   dragging,
   angle,
+  framing = false,
   children,
 }: {
   id: Id;
@@ -171,30 +201,31 @@ export function ItemBox({
   movable: boolean;
   dragging: boolean;
   angle: number | null;
+  framing?: boolean;
   children?: ReactNode;
 }) {
   const w = pose.w * view.kx;
   const h = pose.h * view.ky;
-  const small = smallHandles(w, h);
+  const small = !framing && smallHandles(w, h);
   return (
     <div
       className={itemBox({ isVideo: video, isMovable: movable, isDragging: dragging })}
-      style={{ ...displayRect(pose, view), transform: `rotate(${pose.rotation}deg)` }}
+      style={{ ...displayRect(pose, view), transform: `rotate(${pose.rotation}deg)`, ...(framing ? { pointerEvents: 'none' } : {}) }}
       data-box={id}
     >
       {children}
       {controls
-        ? handlesFor(kind, w, h).map((hd) => (
+        ? (framing ? CORNERS : handlesFor(kind, w, h)).map((hd) => (
             <div
               key={hd}
               className={`${handle} bc-stage-handle`}
-              style={{ ...handlePlace(hd, small), cursor: resizeCursor(hd, pose.rotation) }}
-              title={handleTip(kind, hd)}
+              style={{ ...handlePlace(hd, small), cursor: resizeCursor(hd, pose.rotation), ...(framing ? { pointerEvents: 'auto' } : {}) }}
+              title={framing ? STAGE_COPY.framingCornerTip : handleTip(kind, hd)}
               data-handle={hd}
             />
           ))
         : null}
-      {controls ? (
+      {controls && !framing ? (
         <div className={`${knob} bc-stage-rotate`} title={STAGE_COPY.rotateTip} data-rotate={id}>
           <RotateCW styles={knobIcon} data-bc-icons="own" />
         </div>
@@ -213,7 +244,6 @@ export function ThinBox({ pose, view }: { pose: Pose; view: View }) {
   return <div className={thinBox} style={{ ...displayRect(pose, view), transform: `rotate(${pose.rotation}deg)` }} />;
 }
 
-const GROUP_CORNERS: Handle[] = ['nw', 'ne', 'sw', 'se'];
 
 /** 多选统一框（原型 MultiBox）：虚线外包框，整体拖动、四角整体等比缩放，没有旋转钮；下方角标「已选 N 个」。 */
 export function GroupBox({
@@ -236,7 +266,7 @@ export function GroupBox({
       data-group
     >
       {controls
-        ? GROUP_CORNERS.map((hd) => (
+        ? CORNERS.map((hd) => (
             <div
               key={hd}
               className={`${handle} bc-stage-handle`}
@@ -250,6 +280,17 @@ export function GroupBox({
         {STAGE_COPY.picked(count)}
       </div>
     </div>
+  );
+}
+
+/** 按原片取景拖角时画在取景点落点上的准星（原型 ui.css 的 .framing-anchor）：说明放大围着谁。`at` 是画布像素。 */
+export function FramingAnchor({ at, view }: { at: Point; view: View }) {
+  return (
+    <span className={anchorRing} style={{ left: at.x * view.kx - 10, top: at.y * view.ky - 10 }} aria-hidden="true">
+      <span className={anchorInner}>
+        <span className={anchorDot} />
+      </span>
+    </span>
   );
 }
 

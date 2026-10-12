@@ -14,6 +14,7 @@ import {
   Popover,
   SubmenuTrigger,
   Text,
+  ToastQueue,
   ToggleButton,
   Tooltip,
   TooltipTrigger,
@@ -58,10 +59,11 @@ import VisibilityOff from '@react-spectrum/s2/icons/VisibilityOff';
 import VolumeTwo from '@react-spectrum/s2/icons/VolumeTwo';
 import ZoomFitToScreen from '@react-spectrum/s2/icons/ZoomFitToScreen';
 import { style } from '@react-spectrum/s2/style' with { type: 'macro' };
-import { STAGE_TOOLBAR_COPY as COPY } from '../../copy.ts';
+import { STAGE_COPY, STAGE_TOOLBAR_COPY as COPY } from '../../copy.ts';
 import { canArrange } from '../../model/editor-ops.ts';
 import { fitCanvas } from '../../model/geometry-panel.ts';
 import { patchTextStyle } from '../../model/property-values.ts';
+import { fillFramingOperations, isFramed } from '../../model/stage-framing.ts';
 import { placeFields, poseOf, type PlacedItem } from '../../model/stage-pose.ts';
 import { M as TOOLBAR_COPY } from '../../model/stage-toolbar-copy.ts';
 import { ARRANGE_COPY, ARRANGE_ROWS, brandTarget, itemAsset, type InspectorSection, type MenuGroup, type Tool, type ToolId } from '../../model/stage-toolbar.ts';
@@ -70,6 +72,7 @@ import type { RuntimeSession } from '../../runtime/session.ts';
 import { useEditor } from '../../state/editor-store.ts';
 import { saveAssetToBrand } from './brand-save.ts';
 import type { EditorActions } from './editor-context.tsx';
+import { freeFraming } from './framing-info.tsx';
 import { ValueRow } from './inspector-controls.tsx';
 import { OpacityRow, TimeSection, type ItemPageProps } from './inspector-sections.tsx';
 import { openItemReplace } from './item-replace.tsx';
@@ -238,6 +241,28 @@ export function runTool(tool: Tool, { item, sequence, assets, edit }: ToolProps,
         const target = brandTarget(asset);
         if (asset && 'source' in target) void saveAssetToBrand(runtime, asset, target.kind, target.source);
         return;
+      }
+      // 按原片取景的视频画面恒铺满（原型 stage-toolbar-menu.jsx）：「填满画布」是放大回 100%；「适应画布」要留边，
+      // 说明为什么不行，给「改成自由摆放」。
+      if ((tool.id === 'fit-canvas' || tool.id === 'fill-canvas') && isFramed(item)) {
+        if (tool.id === 'fit-canvas')
+          return void ToastQueue.info(STAGE_COPY.framingFitBlocked, {
+            timeout: 8000,
+            actionLabel: STAGE_COPY.framingFree,
+            onAction: () => freeFraming(actions, sequence, item, assets),
+            shouldCloseOnAction: true,
+          });
+        const operations = fillFramingOperations(sequence.id, item);
+        if (!operations.length) return;
+        return void actions.apply(operations, EditLabel.fillCanvas()).then((receipt) => {
+          if (!receipt) return;
+          ToastQueue.positive(STAGE_COPY.framingFilled, {
+            timeout: 5000,
+            actionLabel: STAGE_COPY.undo,
+            onAction: () => void actions.undo({ transaction: receipt.transactionId }),
+            shouldCloseOnAction: true,
+          });
+        });
       }
       if (tool.id === 'fit-canvas' || tool.id === 'fill-canvas') {
         const pose = poseOf(item, sequence.canvas, assets);

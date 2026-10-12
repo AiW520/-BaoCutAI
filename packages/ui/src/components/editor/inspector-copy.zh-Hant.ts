@@ -191,6 +191,8 @@ export const zhHant: InspectorMessages = {
     `要求 ${requested} → 實際 ${actual}（第 ${frame} 影格，${fps}）`,
   shiftMs: (ms: string) => `，偏差 ${ms} 毫秒`,
   geometry: '幾何',
+  framing: '取景',
+  framingZoom: '放大',
   anchor: '錨點',
   measureFrom: (name: string) => `從${name}起算`,
   width: '寬',
