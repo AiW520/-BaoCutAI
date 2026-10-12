@@ -126,6 +126,8 @@ impl Line {
 #[derive(Clone)]
 struct Page {
     source_range: Range<usize>,
+    // Artificial word-quota separators retain source identity but are not indentation.
+    paint_start: usize,
     lines: Vec<Line>,
     words: Vec<usize>,
     start: f64,
@@ -138,6 +140,38 @@ struct TextLayout {
     words: Vec<Word>,
     content: String,
 }
+#[derive(Clone, Copy, Default)]
+struct PageWordInput {
+    first_start: Option<f64>,
+    last_end: Option<f64>,
+    next_start: Option<f64>,
+}
+fn page_word_input(layout: &TextLayout, page: Option<&Page>) -> PageWordInput {
+    let Some(page) = page else {
+        return PageWordInput::default();
+    };
+    let span = |index: usize| {
+        layout
+            .words
+            .get(index)
+            .filter(|word| word.input_timed)
+            .and_then(|word| word.span)
+    };
+    PageWordInput {
+        first_start: page
+            .words
+            .first()
+            .and_then(|index| span(*index).map(|s| s.0)),
+        last_end: page
+            .words
+            .last()
+            .and_then(|index| span(*index).map(|s| s.1)),
+        next_start: page
+            .words
+            .last()
+            .and_then(|index| span(*index + 1).map(|s| s.0)),
+    }
+}
 #[derive(Clone)]
 struct Unit {
     whitespace: bool,
@@ -148,6 +182,8 @@ struct Unit {
     page_index: usize,
     page_count: usize,
     page_last_word_span: Option<(f64, f64)>,
+    first_page_input: PageWordInput,
+    page_input: PageWordInput,
     cue_first_word_span: Option<(f64, f64)>,
     cue_second_word_start: Option<f64>,
     word_timed: bool,
@@ -578,6 +614,22 @@ fn bind_words(
     }
     Ok(words)
 }
+fn quota_paint_start(content: &str, range: &Range<usize>) -> usize {
+    let mut start = range.start;
+    for (offset, ch) in content[range.clone()].char_indices() {
+        if !ch.is_whitespace() {
+            break;
+        }
+        if matches!(
+            ch,
+            '\n' | '\r' | '\u{000b}' | '\u{000c}' | '\u{0085}' | '\u{2028}' | '\u{2029}'
+        ) {
+            return range.start;
+        }
+        start = range.start + offset + ch.len_utf8();
+    }
+    start
+}
 fn prepare(
     text: &mut TextEngine,
     cue: &SceneCue,
@@ -617,8 +669,13 @@ fn prepare(
         last.end = content.len();
     }
     let mut pages = Vec::new();
-    for range in ranges {
-        let source = &content[range.clone()];
+    for (quota_index, range) in ranges.into_iter().enumerate() {
+        let paint_origin = if quota_index > 0 && cfg.pagination.max_units_per_page.is_some() {
+            quota_paint_start(content, &range)
+        } else {
+            range.start
+        };
+        let source = &content[paint_origin..range.end];
         let style = &node.style;
         let block = layout(
             source,
@@ -641,13 +698,13 @@ fn prepare(
                 }
             },
         );
-        for rowgroup in block.lines.chunks(cfg.max_lines) {
+        for (rowgroup_index, rowgroup) in block.lines.chunks(cfg.max_lines).enumerate() {
             let x = cfg.x.resolve(size.0, size.1, parameters)?;
             let y = cfg.y.resolve(size.0, size.1, parameters)?;
             let mut lines = Vec::new();
             let height = rowgroup.len() as f64 * fs * style.line_height;
             for (i, line) in rowgroup.iter().enumerate() {
-                let bytes = range.start + line.bytes.start..range.start + line.paint_end;
+                let bytes = paint_origin + line.bytes.start..paint_origin + line.paint_end;
                 let sh = text.shape_spaced(
                     &content[bytes.clone()],
                     &style.font_family,
@@ -680,9 +737,15 @@ fn prepare(
                 .map(|(i, _)| i)
                 .collect::<Vec<_>>();
             let bounds = union(lines.iter().map(|l| l.bounds));
+            let paint_start = paint_origin + rowgroup.first().unwrap().bytes.start;
+            let source_start = if rowgroup_index == 0 && paint_origin > range.start {
+                range.start
+            } else {
+                paint_start
+            };
             pages.push(Page {
-                source_range: range.start + rowgroup.first().unwrap().bytes.start
-                    ..range.start + rowgroup.last().unwrap().bytes.end,
+                source_range: source_start..paint_origin + rowgroup.last().unwrap().bytes.end,
+                paint_start,
                 lines,
                 words: member,
                 start: cue.start,
@@ -829,6 +892,8 @@ fn units_for(
         text_count: 0,
         page_text_index: 0,
         page_text_count: 0,
+        first_page_input: page_word_input(layout, layout.pages.first()),
+        page_input: page_word_input(layout, Some(page)),
         cue_first_word_span,
         cue_second_word_start,
         word_timed: false,
@@ -998,15 +1063,7 @@ fn units_for(
             blank.bytes = bytes;
             blank.index = 0;
             blank.count = 1;
-            blank.bounds = glyph_bounds(line, &blank.bytes);
-            if blank.bounds.height == 0.0 {
-                blank.bounds = Bounds {
-                    x: line.bounds.x + line.bounds.width,
-                    y: line.bounds.y,
-                    width: 0.0,
-                    height: line.bounds.height,
-                };
-            }
+            blank.bounds = whitespace_bounds(line, &blank.bytes);
             blank.ink_bounds = line.ink_for(&blank.bytes, blank.bounds);
             blank
                 .spans
@@ -1038,6 +1095,50 @@ fn selected(selector: &Selector, unit: &Unit) -> bool {
     unit.kind == selector.unit
         && (!unit.whitespace || selector.include_whitespace)
         && selector.filter.matches(unit.index, unit.state, &unit.tags)
+}
+fn whitespace_bounds(line: &Line, range: &Range<usize>) -> Bounds {
+    // A normalized space may cover multiple source graphemes. They all retain
+    // the collapsed space geometry instead of jumping to the visual line end.
+    if let Some(glyph) = line.shape.glyphs.iter().find(|glyph| {
+        line.bytes.start + glyph.cluster.start < range.end
+            && line.bytes.start + glyph.cluster.end > range.start
+    }) {
+        let start = line.bytes.start + glyph.cluster.start;
+        return glyph_bounds(line, &(start..line.bytes.start + glyph.cluster.end));
+    }
+    let next = line
+        .shape
+        .glyphs
+        .iter()
+        .filter(|glyph| line.bytes.start + glyph.cluster.start >= range.end)
+        .min_by_key(|glyph| glyph.cluster.start);
+    let previous = line
+        .shape
+        .glyphs
+        .iter()
+        .filter(|glyph| line.bytes.start + glyph.cluster.end <= range.start)
+        .max_by_key(|glyph| glyph.cluster.end);
+    let edge = |glyph: &render_raster::fonts::ShapedGlyph, before: bool| {
+        let start = line.bytes.start + glyph.cluster.start;
+        let bounds = glyph_bounds(line, &(start..line.bytes.start + glyph.cluster.end));
+        // Existing shaper direction resolves mixed runs and single-glyph RTL;
+        // source order is independent of ascending visual x coordinates.
+        if before == glyph.rtl {
+            bounds.x + bounds.width
+        } else {
+            bounds.x
+        }
+    };
+    let x = next.map_or_else(
+        || previous.map_or(line.bounds.x, |glyph| edge(glyph, false)),
+        |glyph| edge(glyph, true),
+    );
+    Bounds {
+        x,
+        y: line.bounds.y,
+        width: 0.0,
+        height: line.bounds.height,
+    }
 }
 fn glyph_bounds(line: &Line, range: &Range<usize>) -> Bounds {
     let mut boxes = Vec::new();
@@ -1151,6 +1252,35 @@ fn context(u: &Unit, r: &RenderContext) -> Context {
             ValueType::Time,
             u.next_word_start.map_or(0.0, |start| start - r.cue.start),
         ),
+        (
+            "time.firstPageFirstWordStartSeconds",
+            ValueType::Time,
+            u.first_page_input
+                .first_start
+                .map_or(0.0, |v| v - r.cue.start),
+        ),
+        (
+            "time.firstPageLastWordEndSeconds",
+            ValueType::Time,
+            u.first_page_input.last_end.map_or(0.0, |v| v - r.cue.start),
+        ),
+        (
+            "time.firstPageNextWordStartSeconds",
+            ValueType::Time,
+            u.first_page_input
+                .next_start
+                .map_or(0.0, |v| v - r.cue.start),
+        ),
+        (
+            "time.pageFirstWordStartSeconds",
+            ValueType::Time,
+            u.page_input.first_start.map_or(0.0, |v| v - r.cue.start),
+        ),
+        (
+            "time.pageNextWordStartSeconds",
+            ValueType::Time,
+            u.page_input.next_start.map_or(0.0, |v| v - r.cue.start),
+        ),
         ("unit.pageIndex", ValueType::Scalar, u.page_index as f64),
         ("unit.pageCount", ValueType::Scalar, u.page_count as f64),
         ("unit.textIndex", ValueType::Scalar, u.text_index as f64),
@@ -1213,6 +1343,23 @@ fn context(u: &Unit, r: &RenderContext) -> Context {
         fields.insert(k.into(), Evaluated::Bool(u.state == s));
     }
     for (path, timed) in [
+        (
+            "unit.firstPageFirstWordTimed",
+            u.first_page_input.first_start.is_some(),
+        ),
+        (
+            "unit.firstPageLastWordTimed",
+            u.first_page_input.last_end.is_some(),
+        ),
+        (
+            "unit.firstPageNextWordTimed",
+            u.first_page_input.next_start.is_some(),
+        ),
+        (
+            "unit.pageFirstWordTimed",
+            u.page_input.first_start.is_some(),
+        ),
+        ("unit.pageNextWordTimed", u.page_input.next_start.is_some()),
         ("unit.cueFirstWordTimed", u.cue_first_word_span.is_some()),
         ("unit.cueSecondWordTimed", u.cue_second_word_start.is_some()),
         ("unit.wordTimed", u.word_timed),
@@ -2283,5 +2430,281 @@ mod ink_tests {
                 0.0
             );
         }
+    }
+
+    #[test]
+    fn first_page_input_context_keeps_actual_boundaries_across_page_and_reflow() {
+        let (mut text, mut style, mut cue, params) = input("Alpha Beta Gamma", 1.0);
+        cue.start = 10.0;
+        cue.end = 16.0;
+        cue.words = vec![
+            SceneWord {
+                id: "a".into(),
+                text: "Alpha".into(),
+                start: 9.5,
+                end: 10.5,
+            },
+            SceneWord {
+                id: "b".into(),
+                text: "Beta".into(),
+                start: 11.0,
+                end: 11.25,
+            },
+            SceneWord {
+                id: "c".into(),
+                text: "Gamma".into(),
+                start: 13.0,
+                end: 14.0,
+            },
+        ];
+        let SceneSource::Inline { value: scene } = &mut style.scene;
+        scene.layout.pagination.max_units_per_page = Some(2);
+        let layout = prepare(
+            &mut text,
+            &cue,
+            &scene.nodes[0],
+            &scene.layout,
+            &scene.speech_state,
+            (160, 90),
+            &params,
+        )
+        .unwrap();
+        assert_eq!(layout.pages.len(), 2);
+        assert_eq!(layout.pages[0].end, 13.0); // Display window includes the real gap.
+        assert_eq!(layout.pages[1].end, 16.0); // Final display window extends to cue end.
+        let mut sampled = layout.clone();
+        let mut larger = scene.nodes[0].clone();
+        larger.style.font_size.value = 25.0;
+        sampled.pages[1] = sampled_layout::reflow(
+            &mut text,
+            &layout,
+            &layout.pages[1],
+            &larger,
+            &scene.layout,
+            (160, 90),
+            &params,
+            &mut Budget::default(),
+        )
+        .unwrap();
+        for current in [&layout, &sampled] {
+            for (page, t, first, next) in [(0, 10.2, -0.5, Some(3.0)), (1, 15.0, 3.0, None)] {
+                for (_, c) in bound_contexts(&cue, scene, current, page, t, &params) {
+                    for key in [
+                        "unit.firstPageFirstWordTimed",
+                        "unit.firstPageLastWordTimed",
+                        "unit.firstPageNextWordTimed",
+                        "unit.pageFirstWordTimed",
+                    ] {
+                        assert!(c.fields[key].boolean().unwrap(), "{key}");
+                    }
+                    assert_eq!(
+                        c.fields["time.firstPageFirstWordStartSeconds"]
+                            .number()
+                            .unwrap(),
+                        -0.5
+                    );
+                    assert_eq!(
+                        c.fields["time.firstPageLastWordEndSeconds"]
+                            .number()
+                            .unwrap(),
+                        1.25
+                    );
+                    assert_eq!(
+                        c.fields["time.firstPageNextWordStartSeconds"]
+                            .number()
+                            .unwrap(),
+                        3.0
+                    );
+                    assert_eq!(
+                        c.fields["time.pageFirstWordStartSeconds"].number().unwrap(),
+                        first
+                    );
+                    assert_eq!(
+                        c.fields["unit.pageNextWordTimed"].boolean().unwrap(),
+                        next.is_some()
+                    );
+                    assert_eq!(
+                        c.fields["time.pageNextWordStartSeconds"].number().unwrap(),
+                        next.unwrap_or(0.0)
+                    );
+                }
+            }
+        }
+    }
+    #[test]
+    fn first_page_input_context_keeps_zero_and_does_not_invent_static_or_estimated_inputs() {
+        let (mut text, mut style, mut cue, params) = input("A", 1.0);
+        cue.words = vec![SceneWord {
+            id: "a".into(),
+            text: "A".into(),
+            start: 0.0,
+            end: 0.0,
+        }];
+        let SceneSource::Inline { value: scene } = &mut style.scene;
+        let layout = prepare(
+            &mut text,
+            &cue,
+            &scene.nodes[0],
+            &scene.layout,
+            &scene.speech_state,
+            (160, 90),
+            &params,
+        )
+        .unwrap();
+        for (_, c) in bound_contexts(&cue, scene, &layout, 0, 0.5, &params) {
+            assert!(c.fields["unit.firstPageFirstWordTimed"].boolean().unwrap());
+            assert!(c.fields["unit.firstPageLastWordTimed"].boolean().unwrap());
+            assert_eq!(
+                c.fields["time.firstPageFirstWordStartSeconds"]
+                    .number()
+                    .unwrap(),
+                0.0
+            );
+            assert_eq!(
+                c.fields["time.firstPageLastWordEndSeconds"]
+                    .number()
+                    .unwrap(),
+                0.0
+            );
+            assert!(!c.fields["unit.firstPageNextWordTimed"].boolean().unwrap());
+        }
+        scene.speech_state.timing_policy = TimingPolicy::Estimated;
+        for static_text in [false, true] {
+            if static_text {
+                scene.nodes[0].text = Some(TextBinding::Static { text: "A".into() });
+            } else {
+                cue.words.clear();
+            }
+            if static_text {
+                cue.words = vec![SceneWord {
+                    id: "a".into(),
+                    text: "A".into(),
+                    start: 0.0,
+                    end: 1.0,
+                }];
+            }
+            let layout = prepare(
+                &mut text,
+                &cue,
+                &scene.nodes[0],
+                &scene.layout,
+                &scene.speech_state,
+                (160, 90),
+                &params,
+            )
+            .unwrap();
+            for (_, c) in bound_contexts(&cue, scene, &layout, 0, 0.5, &params) {
+                for key in [
+                    "unit.firstPageFirstWordTimed",
+                    "unit.firstPageLastWordTimed",
+                    "unit.firstPageNextWordTimed",
+                    "unit.pageFirstWordTimed",
+                    "unit.pageNextWordTimed",
+                ] {
+                    assert!(!c.fields[key].boolean().unwrap(), "{key}");
+                }
+                for key in [
+                    "time.firstPageFirstWordStartSeconds",
+                    "time.firstPageLastWordEndSeconds",
+                    "time.firstPageNextWordStartSeconds",
+                    "time.pageFirstWordStartSeconds",
+                    "time.pageNextWordStartSeconds",
+                ] {
+                    assert_eq!(c.fields[key].number().unwrap(), 0.0, "{key}");
+                }
+            }
+        }
+    }
+
+    #[test]
+    fn word_quota_preserves_source_indices_and_freezes_hidden_horizontal_prefix() {
+        for content in ["aa bb aa bb", "  aa bb aa bb", "aa bb\t\u{a0}\u{2003}aa bb"] {
+            let (mut text, mut style, mut cue, params) = input(content, 1.0);
+            cue.words = [("aa", 0.0), ("bb", 0.8), ("aa", 2.2), ("bb", 3.2)]
+                .into_iter()
+                .enumerate()
+                .map(|(i, (text, start))| SceneWord {
+                    id: format!("w{i}"),
+                    text: text.into(),
+                    start,
+                    end: start + 0.3,
+                })
+                .collect();
+            let SceneSource::Inline { value: scene } = &mut style.scene;
+            scene.layout.pagination.max_units_per_page = Some(2);
+            let base = prepare(
+                &mut text,
+                &cue,
+                &scene.nodes[0],
+                &scene.layout,
+                &scene.speech_state,
+                (160, 90),
+                &params,
+            )
+            .unwrap();
+            assert_eq!(base.pages.len(), 2);
+            assert_eq!(base.content, content);
+            assert_eq!(
+                base.pages[0].paint_start, 0,
+                "cue indentation is original content"
+            );
+            let previous_end = content.find("bb").unwrap() + 2;
+            let painted = content[previous_end..].find("aa").unwrap() + previous_end;
+            let page = &base.pages[1];
+            assert_eq!(page.source_range.start, previous_end);
+            assert_eq!(page.paint_start, painted);
+            assert_eq!(page.lines[0].bytes.start, painted);
+            assert_eq!(page.start, 2.2);
+            let next = sampled_layout::reflow(
+                &mut text,
+                &base,
+                page,
+                &scene.nodes[0],
+                &scene.layout,
+                (160, 90),
+                &params,
+                &mut Budget::default(),
+            )
+            .unwrap();
+            assert_eq!(next.source_range, page.source_range);
+            assert_eq!(next.paint_start, page.paint_start);
+            assert_eq!(next.lines[0].bounds.width, page.lines[0].bounds.width);
+            let units = units_for(
+                &cue,
+                &base,
+                page,
+                2.4,
+                &scene.speech_state,
+                &Presentation::default(),
+            );
+            let word = &units
+                .iter()
+                .find(|(u, _)| u.kind == UnitKind::Word && u.id == "w2")
+                .unwrap()
+                .0;
+            assert_eq!(word.text_index, content[..painted].graphemes(true).count());
+            assert!(
+                units
+                    .iter()
+                    .any(|(u, _)| u.whitespace && u.bytes.start == previous_end)
+            );
+            if !content.starts_with(' ') {
+                assert_eq!(base.pages[0].bounds.width, page.bounds.width);
+            }
+        }
+    }
+    #[test]
+    fn word_quota_does_not_trim_runs_containing_vertical_separators() {
+        for separator in [
+            " \n ", "\r\n\t", "\u{000b}", "\u{000c}", "\u{0085}", "\u{2028}", "\u{2029}",
+        ] {
+            let source = format!("aa bb{separator}aa bb");
+            assert_eq!(quota_paint_start(&source, &(5..source.len())), 5);
+        }
+        let horizontal = " \t\u{a0}\u{2003}x";
+        assert_eq!(
+            quota_paint_start(horizontal, &(0..horizontal.len())),
+            horizontal.find('x').unwrap()
+        );
     }
 }

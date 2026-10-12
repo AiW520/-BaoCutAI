@@ -403,3 +403,43 @@ fn cue_word_input_context_types_and_early_read_rejection_are_explicit() {
         assert_eq!(parse_style(&bad).unwrap_err().code, "CAPTION_DEPENDENCY_CYCLE", "{path}");
     }
 }
+
+#[test]
+fn first_page_input_context_is_typed_and_rejected_before_layout() {
+    let body: Value = serde_json::from_str(include_str!("fixtures/first-page-context.json")).unwrap();
+    let style = parse_style(&body).unwrap();
+    for field in [
+        "firstPageFirstWordStartSeconds",
+        "firstPageLastWordEndSeconds",
+        "firstPageNextWordStartSeconds",
+        "pageFirstWordStartSeconds",
+        "pageNextWordStartSeconds",
+    ] {
+        let read = json!({"op":"read","path":format!("time.{field}")});
+        assert_eq!(
+            infer(&expr(read.clone()), style.scene(), &BTreeMap::new()).unwrap(),
+            ValueType::Time
+        );
+        let mut bad = body.clone();
+        bad["scene"]["value"]["layout"]["layoutEvaluation"] = json!("per-sample");
+        bad["scene"]["value"]["layout"]["bindings"] = json!([{"nodeId":"caption","property":"lineHeight","value":{"kind":"expression","expression":{"op":"call","function":"div","args":[read,{"op":"literal","type":"time","value":1}]}}}]);
+        assert_eq!(parse_style(&bad).unwrap_err().code, "CAPTION_DEPENDENCY_CYCLE");
+    }
+    for field in [
+        "firstPageFirstWordTimed",
+        "firstPageLastWordTimed",
+        "firstPageNextWordTimed",
+        "pageFirstWordTimed",
+        "pageNextWordTimed",
+    ] {
+        let read = json!({"op":"read","path":format!("unit.{field}")});
+        assert_eq!(
+            infer(&expr(read.clone()), style.scene(), &BTreeMap::new()).unwrap(),
+            ValueType::Bool
+        );
+        let mut bad = body.clone();
+        bad["scene"]["value"]["layout"]["layoutEvaluation"] = json!("per-sample");
+        bad["scene"]["value"]["layout"]["bindings"] = json!([{"nodeId":"caption","property":"lineHeight","value":{"kind":"expression","expression":{"op":"if","condition":read,"then":{"op":"literal","type":"scalar","value":1},"else":{"op":"literal","type":"scalar","value":2}}}}]);
+        assert_eq!(parse_style(&bad).unwrap_err().code, "CAPTION_DEPENDENCY_CYCLE");
+    }
+}

@@ -116,7 +116,12 @@ pub fn context_type(path: &str) -> Option<ValueType> {
         | "time.cueFirstWordStartSeconds"
         | "time.cueFirstWordEndSeconds"
         | "time.cueSecondWordStartSeconds"
-        | "time.nextWordStartSeconds" => ValueType::Time,
+        | "time.nextWordStartSeconds"
+        | "time.firstPageFirstWordStartSeconds"
+        | "time.firstPageLastWordEndSeconds"
+        | "time.firstPageNextWordStartSeconds"
+        | "time.pageFirstWordStartSeconds"
+        | "time.pageNextWordStartSeconds" => ValueType::Time,
         "unit.textIndex"
         | "unit.textCount"
         | "unit.pageTextIndex"
@@ -136,7 +141,12 @@ pub fn context_type(path: &str) -> Option<ValueType> {
         | "unit.cueFirstWordTimed"
         | "unit.cueSecondWordTimed"
         | "unit.wordTimed"
-        | "unit.nextWordTimed" => ValueType::Bool,
+        | "unit.nextWordTimed"
+        | "unit.firstPageFirstWordTimed"
+        | "unit.firstPageLastWordTimed"
+        | "unit.firstPageNextWordTimed"
+        | "unit.pageFirstWordTimed"
+        | "unit.pageNextWordTimed" => ValueType::Bool,
         "layout.x"
         | "layout.y"
         | "layout.width"

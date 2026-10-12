@@ -146,6 +146,8 @@ pub(super) fn reflow(
     if cfg.pagination.word_line_pattern.is_some() {
         return word_line_layout::reflow(text, base, page, node, cfg, size, params);
     }
+    let paint_range = page.paint_start..range.end;
+    let source = &content[paint_range.clone()];
     let style = &node.style;
     let block = layout(
         source,
@@ -179,7 +181,7 @@ pub(super) fn reflow(
     let height = block.lines.len() as f64 * fs * style.line_height;
     let mut lines = Vec::new();
     for (i, line) in block.lines.iter().enumerate() {
-        let bytes = range.start + line.bytes.start..range.start + line.paint_end;
+        let bytes = paint_range.start + line.bytes.start..paint_range.start + line.paint_end;
         let shape = text.shape_spaced(
             &content[bytes.clone()],
             &style.font_family,
@@ -205,6 +207,7 @@ pub(super) fn reflow(
     }
     Ok(Page {
         source_range: range,
+        paint_start: page.paint_start,
         bounds: union(lines.iter().map(|l| l.bounds)),
         lines,
         words: page.words.clone(),

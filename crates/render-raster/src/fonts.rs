@@ -470,6 +470,8 @@ pub struct ShapedGlyph {
     /// 也不进 `ShapeKey` 缓存键，所以加这个字段对既有 golden 是**零像素影响**。
     /// 连字会让一个字形跨越 part 边界，归属规则是取 `cluster.start` 所在的 part。
     pub cluster: std::ops::Range<usize>,
+    /// Shaper-resolved BiDi direction for logical caret edges; not part of DrawOps.
+    pub rtl: bool,
 }
 
 #[derive(Debug, Clone, Default)]
@@ -1194,6 +1196,7 @@ impl TextEngine {
                         x: glyph.x as f64,
                         y: (glyph.y + glyph.y_offset) as f64,
                         cluster: glyph.start..glyph.end,
+                        rtl: glyph.level.is_rtl(),
                     });
                     if let Some(font) = self.font_system.get_font(glyph.font_id, glyph.font_weight)
                     {
@@ -1462,6 +1465,7 @@ impl TextEngine {
                     x: g.x as f64,
                     y: g.y as f64 + g.y_offset as f64,
                     cluster: g.start..g.end,
+                    rtl: g.level.is_rtl(),
                 });
             }
             break; // 单行

@@ -805,6 +805,26 @@ fn scenes() -> Vec<Scene> {
                  {"id":"w2","text":"three","start":1700,"end":2450},{"id":"w3","text":"four","start":3200,"end":3800}]}}),
     );
     scenes.push(cue_word);
+    let first_page_style: Value = serde_json::from_str(include_str!("../../caption-scene/tests/fixtures/first-page-context.json")).unwrap();
+    let mut first_page = Scene::new(
+        "captions-first-page-context",
+        video(
+            vec![caption("first-page-context", "doc", Some("style"), 120, &[])],
+            vec![],
+            json!({}),
+        ),
+        &[0, 4, 15, 28, 40, 60, 80, 100, 115, 28],
+    );
+    let mut first_page_doc = caption_doc("doc", "sequence", &[(0.0, 4.0, "One two three four")], "original");
+    first_page_doc["sourceDocumentId"] = json!("speech");
+    first_page_doc["body"]["cues"][0]["words"] = json!({"first":"w0","last":"w3"});
+    first_page.documents = vec![first_page_doc, style_doc("style", first_page_style)];
+    first_page.speech.push(
+        json!({"documentId":"speech","body":{"schema":"baocut.speech/1","clock":"sequence","timescale":1000,
+        "words":[{"id":"w0","text":"One","start":0,"end":400},{"id":"w1","text":"two","start":900,"end":1300},
+                 {"id":"w2","text":"three","start":2100,"end":2450},{"id":"w3","text":"four","start":3000,"end":3500}]}}),
+    );
+    scenes.push(first_page);
     let wave_material_style: Value = serde_json::from_str(include_str!("../../caption-scene/tests/fixtures/wave-displace.json")).unwrap();
     let mut wave_material = Scene::new(
         "captions-wave-displace-material",

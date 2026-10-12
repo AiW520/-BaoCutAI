@@ -37,3 +37,5 @@ cargo run --locked -p subtitle-render --no-default-features --features wasm-safe
 `caption-word-line-layout/1` 提供循环词行配额和一次性的末页调整；行、页成员与时间冻结，超宽按 error/visible 处理。显示空白可折叠，源文本字素索引及词字节范围保持不变；逐采样布局重用同一shape映射。示例见 [word-line-layout.json](tests/fixtures/word-line-layout.json)。
 
 `caption-cue-word-context/1` 提供 cue 首两词原始输入边界、真实绑定词标记与跨页下一词开始时间；保留负值、零值和真实 gap，不延长词结束，也不把 estimated 时序冒充输入。所有边界配有可用标记，见 [cue-word-context.json](tests/fixtures/cue-word-context.json)。
+
+`caption-first-page-context/1` 提供固定第一页与当前页的真实首词/末词/下一原词输入边界及可用标记，按文字节点绑定继承，区别真实词结束与延长的页面显示窗口。见 [first-page-context.json](tests/fixtures/first-page-context.json)。

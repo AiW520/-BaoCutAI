@@ -174,6 +174,7 @@ pub(super) fn prepare(
         let lines = shape_page(text, content, ranges, node, cfg, size, params)?;
         pages.push(Page {
             source_range: byte_at(first)..byte_at(last),
+            paint_start: byte_at(first),
             bounds: union(lines.iter().map(|line| line.bounds)),
             lines,
             words: (first..last).collect(),
@@ -229,6 +230,7 @@ pub(super) fn reflow(
     )?;
     Ok(Page {
         source_range: page.source_range.clone(),
+        paint_start: page.paint_start,
         words: page.words.clone(),
         start: page.start,
         end: page.end,
@@ -519,5 +521,81 @@ mod tests {
             plan.render(0.1).unwrap().rgba,
             "seek order cannot change row groups"
         );
+    }
+
+    #[test]
+    fn word_line_rtl_whitespace_carets_follow_logical_edges_and_collapsed_clusters() {
+        let mut text = TextEngine::with_document_fonts(&[include_bytes!(
+            "../../../render-raster/assets/fonts/Rubik.ttf"
+        )
+        .to_vec()]);
+        let mut style = TextStyle::default();
+        style.font_family = "Rubik".into();
+        for token in ["אב", "اب", "א", "ا"] {
+            let source = format!("  {token}  ");
+            let shape = shape_row(&mut text, &source, &style, 32.0);
+            assert!(!shape.glyphs.is_empty());
+            assert!(shape.glyphs.iter().all(|glyph| glyph.rtl));
+            let width = shape.width;
+            let line = Line::new(
+                &mut text,
+                0..source.len(),
+                shape,
+                Bounds {
+                    x: 10.0,
+                    y: 20.0,
+                    width,
+                    height: 40.0,
+                },
+                50.0,
+            );
+            // The shaper positions are f32 (e.g. -1.9e-6 at the visual left
+            // edge); allow subpixel rounding, not a different caret edge.
+            let tolerance = 1e-4;
+            for range in [0..1, 1..2] {
+                assert!(
+                    (whitespace_bounds(&line, &range).x - (10.0 + width)).abs() < tolerance,
+                    "{source:?}"
+                );
+            }
+            for at in source.len() - 2..source.len() {
+                assert!(
+                    (whitespace_bounds(&line, &(at..at + 1)).x - 10.0).abs() < tolerance,
+                    "{source:?}: x={}, glyphs={:?}",
+                    whitespace_bounds(&line, &(at..at + 1)).x,
+                    line.shape
+                        .glyphs
+                        .iter()
+                        .map(|g| (&g.cluster, g.x, g.rtl))
+                        .collect::<Vec<_>>()
+                );
+            }
+        }
+        for (first, last) in [("א", "ב"), ("ا", "ب")] {
+            let source = format!("{first}\t\t{last}");
+            let start = first.len();
+            let shape = shape_row(&mut text, &source, &style, 32.0);
+            let width = shape.width;
+            let line = Line::new(
+                &mut text,
+                0..source.len(),
+                shape,
+                Bounds {
+                    x: 10.0,
+                    y: 20.0,
+                    width,
+                    height: 40.0,
+                },
+                50.0,
+            );
+            let a = whitespace_bounds(&line, &(start..start + 1));
+            let b = whitespace_bounds(&line, &(start + 1..start + 2));
+            assert_eq!(a.x, b.x);
+            assert_eq!(a.width, b.width);
+            assert!(
+                a.x > 10.0 && a.x < 10.0 + width,
+                "collapsed internal space stays inside the RTL line"
+            );
+        }
     }
 }

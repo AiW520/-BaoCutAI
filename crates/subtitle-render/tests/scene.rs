@@ -636,3 +636,135 @@ fn wrapped_word_grapheme_decorations_do_not_repeat_on_other_lines() {
             .all(|pixel| pixel[3] == 0)
     );
 }
+
+#[test]
+fn normalized_internal_and_leading_whitespace_keep_caret_pixels_in_source_position() {
+    fn marker(content: &str, index: usize) -> Vec<u8> {
+        let mut body = fixture();
+        let scene = &mut body["scene"]["value"];
+        scene["requiredCapabilities"] =
+            json!(["caption-word-line-layout/1", "caption-text-context/1"]);
+        scene["layout"]["pagination"] = json!({"wordLinePattern":[[2]]});
+        scene["layout"]["maxLines"] = json!(1);
+        scene["layout"]["width"] = json!({"value":150,"basis":"absolute"});
+        scene["nodes"][0]["style"]["fontSize"] = json!({"value":32,"basis":"absolute"});
+        scene["nodes"][0]["style"]["fill"] = json!("#FFFFFF00");
+        scene["animations"] = json!([]);
+        scene["selectors"] = json!([{"id":"graphemes","nodeId":"caption","unit":"grapheme","includeWhitespace":true}]);
+        scene["nodes"].as_array_mut().unwrap().push(json!({"id":"carets","type":"repeat","selectorId":"graphemes","children":[{
+            "id":"caret","type":"shape","properties":{"width":{"kind":"constant","value":2},"height":{"kind":"constant","value":4},
+            "fill":{"kind":"constant","value":"#00FF00"},"opacity":{"kind":"expression","expression":{"op":"if","condition":{
+                "op":"call","function":"eq","args":[{"op":"read","path":"unit.textIndex"},{"op":"literal","type":"scalar","value":index}]},
+                "then":{"op":"literal","type":"scalar","value":1},"else":{"op":"literal","type":"scalar","value":0}}}}}]}));
+        plan(body, content, vec![], Presentation::default())
+            .render(1.0)
+            .unwrap()
+            .rgba
+            .as_ref()
+            .clone()
+    }
+    let left = |pixels: &[u8]| {
+        pixels
+            .chunks_exact(4)
+            .enumerate()
+            .filter(|(_, p)| p[3] > 4)
+            .map(|(i, _)| i % 160)
+            .min()
+            .unwrap()
+    };
+    let first = marker("A\t\tB", 1);
+    let second = marker("A\t\tB", 2);
+    let b = marker("A\t\tB", 3);
+    assert_eq!(
+        first, second,
+        "both source tabs occupy the same collapsed space"
+    );
+    assert!(
+        left(&second) < left(&b),
+        "an internal source space must precede B, not jump to line end"
+    );
+    let leading0 = marker("  AB", 0);
+    let leading1 = marker("  AB", 1);
+    let a = marker("  AB", 2);
+    assert_eq!(leading0, leading1);
+    assert_eq!(
+        leading0, a,
+        "stripped leading spaces retain the start-of-line caret"
+    );
+}
+
+#[test]
+fn repeated_word_quota_pages_have_identical_static_and_sampled_pixels_without_losing_indentation_or_newlines()
+ {
+    let source_words = || {
+        ["aa", "bb", "aa", "bb"]
+            .iter()
+            .zip([0.0, 0.8, 2.2, 3.2])
+            .enumerate()
+            .map(|(i, (text, start))| SceneWord {
+                id: format!("w{i}"),
+                text: (*text).into(),
+                start,
+                end: start + 0.3,
+            })
+            .collect::<Vec<_>>()
+    };
+    for sampled in [false, true] {
+        let mut body = fixture();
+        let scene = &mut body["scene"]["value"];
+        scene["animations"] = json!([]);
+        scene["selectors"] = json!([]);
+        scene["layout"]["pagination"] = json!({"maxUnitsPerPage":2});
+        scene["layout"]["maxLines"] = json!(4);
+        if sampled {
+            scene["layout"]["layoutEvaluation"] = json!("per-sample");
+            scene["layout"]["bindings"] =
+                json!([{"property":"width","value":{"kind":"constant","value":140}}]);
+        }
+        let plain = plan(body.clone(), "aa bb", vec![], Presentation::default())
+            .render(0.2)
+            .unwrap()
+            .rgba;
+        let mut repeated = plan(
+            body.clone(),
+            "aa bb aa bb",
+            source_words(),
+            Presentation::default(),
+        );
+        for t in [0.2, 2.4, 1.9, 3.9, 0.2] {
+            assert_eq!(
+                repeated.render(t).unwrap().rgba,
+                plain,
+                "sampled={sampled}, t={t}"
+            );
+        }
+        let mut indented = plan(
+            body.clone(),
+            "  aa bb aa bb",
+            source_words(),
+            Presentation::default(),
+        );
+        let expected_indent = plan(body.clone(), "  aa bb", vec![], Presentation::default())
+            .render(0.2)
+            .unwrap()
+            .rgba;
+        assert_eq!(indented.render(0.2).unwrap().rgba, expected_indent);
+        assert_ne!(expected_indent, plain);
+        assert_eq!(indented.render(2.4).unwrap().rgba, plain);
+        let mut newline = plan(
+            body.clone(),
+            "aa bb\n  aa bb",
+            source_words(),
+            Presentation::default(),
+        );
+        let explicit_newline = plan(body, "\n  aa bb", vec![], Presentation::default())
+            .render(0.2)
+            .unwrap()
+            .rgba;
+        assert_eq!(
+            newline.render(2.4).unwrap().rgba,
+            explicit_newline,
+            "explicit line break and indentation must survive"
+        );
+    }
+}

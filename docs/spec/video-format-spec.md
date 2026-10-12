@@ -1827,9 +1827,13 @@ interface CaptionStyleBody {
 | 表达式 | 带类型 literal/read/call/if；scalar/integer/length/time/angle/bool/color；无环纯函数，时间/单元/基础布局/参数只读；共享数学曲线、连续 sin/cos、带 seed 的 random/noise；if 惰性求值，非法运算返回诊断 |
 | 合成 | replace/add/multiply 与 priority/声明顺序；颜色只允许 replace；乘法通道为无量纲数；父子变换及离屏组 opacity 通过共同 DrawOp 光栅执行 |
 
-`requiredCapabilities` 当前可声明 `caption-scene/1`、`caption-expressions/1`、`caption-permutation/1`、`caption-function-dag/1`、`caption-unit-animation/1`、`caption-image-png/1`、`caption-paint-stack/1`、`caption-blur/1`、`caption-feedback/1`、`caption-wave-displace/1`、`caption-soft-band/1`、`caption-layout-per-sample/1`、`caption-word-line-layout/1`、`caption-bezier-expression/1`、`caption-text-context/1`、`caption-ink-context/1`、`caption-unit-context/1` 和 `caption-cue-word-context/1`。未知能力、属性或字段拒绝；artifact 形式的场景引用、非 PNG 图片、任意 shader、无限递归反馈、节点级材质栈及改变分页成员的时间布局尚未开放，不能保存为成功后在渲染中忽略。完整扩展方向仍按[设计文档](../design/subtitle/dynamic-caption-format-design.md)维护。
+`requiredCapabilities` 当前可声明 `caption-scene/1`、`caption-expressions/1`、`caption-permutation/1`、`caption-function-dag/1`、`caption-unit-animation/1`、`caption-image-png/1`、`caption-paint-stack/1`、`caption-blur/1`、`caption-feedback/1`、`caption-wave-displace/1`、`caption-soft-band/1`、`caption-layout-per-sample/1`、`caption-word-line-layout/1`、`caption-bezier-expression/1`、`caption-text-context/1`、`caption-ink-context/1`、`caption-unit-context/1`、`caption-cue-word-context/1` 和 `caption-first-page-context/1`。未知能力、属性或字段拒绝；artifact 形式的场景引用、非 PNG 图片、任意 shader、无限递归反馈、节点级材质栈及改变分页成员的时间布局尚未开放，不能保存为成功后在渲染中忽略。完整扩展方向仍按[设计文档](../design/subtitle/dynamic-caption-format-design.md)维护。
+
+显式 `maxUnitsPerPage` 按词配额人为切页时，第 2 个及后续词块开头若只有水平 Unicode 空白组成的词间分隔 run，该 run 不参与显示排版；空格、tab、NBSP、Unicode 空格均适用。若 run 含 CR/LF、VT/FF、NEL、LS 或 PS，则整段保留，不吞显式换行及其缩进。原始 cue 开头的缩进、默认按宽度换行均不变。源文本/页范围/字素索引保留分隔字节，空白装饰定位新页逻辑行首；逐采样重排使用冻结的显示起点，不恢复已隐藏的分隔空白。
 
 `caption-word-line-layout/1` 增加固定词行分组，启用时使用 `pagination.wordLinePattern: number[][]`：外层为依次循环的页模式，内层每个正整数为该行词数。例如 `[[2,3]]` 表示每页两行，分别取两个词和三个词；`[[1],[2,1]]` 交替使用一词页与两行三词页。该字段与 `maxUnitsPerPage` 互斥，unit 必须是 word；模式1–256项，各页1–maxLines行，每行配额1–4096。未提供时保留原有硬换行、按宽度换行和分页行为。
+
+词行模式将连续源空白折叠成一个显示空格时，每个被折叠的源空白字素仍保留原索引，并共享该显示空格的 advance/caret 几何；剥离空白按源串逻辑顺序定位到相邻字形的 caret 边：行首使用首字形前沿，行尾使用末字形后沿，并沿用整形器给出的 BiDi 方向（LTR 前沿在左，RTL 前沿在右），避免逐字装饰跳至后面的词。
 
 可选 `pagination.lastPageRule: { ifRowCountIs, previousPageLines }` 只对至少两页的初始计划生效：按实际词数截断各行/页后，若最后页任一非空行词数等于 ifRowCountIs，替换倒数第二页的行配额，再从头重消费词。规则只执行一次，不对重消费后的末页重复触发；词尾后的空行/空页丢弃。replacement的每行配额和行数受相同限制，总配额不得小于任何页模式的总配额，保证不丢词。`[[2,3]]` 加 `{ifRowCountIs:1,previousPageLines:[2,4]}` 在6/8/13词时分别得到 `[[2,4]]`、`[[2,4],[2]]`、`[[2,3],[2,4],[2]]`。
 
@@ -1854,6 +1858,8 @@ interface CaptionStyleBody {
 `caption-cue-word-context/1` 提供原始输入词边界：`time.cueFirstWordStartSeconds/cueFirstWordEndSeconds/cueSecondWordStartSeconds` 为相对 cue 起点的 time，分别对应 `cue.words` 输入顺序中非空文本 token 的第一词起止与第二词开始；`unit.cueFirstWordTimed/cueSecondWordTimed` 为对应 bool 可用标记。所有单元和绑定装饰读取同一份 cue 信息，不随分页改变，也不按时间重新排序；静态文字节点可以读取所属 cue 的这组元信息。
 
 真实绑定的 Word/Grapheme 及其 repeat 装饰另有 `unit.wordTimed`，以及跨分页、按全局原词成员顺序查下一词的 `time.nextWordStartSeconds`（相对 cue 起点）与 `unit.nextWordTimed`。cue/page/line 和未绑定词的空白单元，其 current/next 标记始终 false，next 时间为 0；静态文字和 estimated 推导词时间也不会被标成真实绑定。任何缺失的对应输入时间均返回 0/false，真实负边界、零边界和零时长完整保留，因此模板必须看 bool 区分缺失。核心不延长 word.end，不填平真实 gap；需要按下一词开始调整外部效果窗口的模板自行用只读字段计算。上述新增字段均禁止布局前读取。示例见 [cue-word-context.json](../../crates/caption-scene/tests/fixtures/cue-word-context.json)。
+
+`caption-first-page-context/1` 暴露当前文字节点固定第一页成员的真实输入边界：`time.firstPageFirstWordStartSeconds`、`time.firstPageLastWordEndSeconds`、`time.firstPageNextWordStartSeconds`，以及对应 `unit.firstPageFirstWordTimed/firstPageLastWordTimed/firstPageNextWordTimed`。另提供当前页的 `time.pageFirstWordStartSeconds/pageNextWordStartSeconds` 与 `unit.pageFirstWordTimed/pageNextWordTimed`。所有 time 均相对 cue 起点；next 指页末词之后的下一全局原词，不受当前页显示窗口或采样位置限制。当前页所有单元及其绑定装饰共享这些值，逐采样重排保持固定成员身份。静态文字、estimated 或缺少对应输入词时返回 0/false；零、负边界及真实 gap 保持不变。第一页末词结束与页面显示结束明确区分，不把延至下一页或 cue 结束的显示窗口当作词结束。上述字段均禁止布局前读取，见 [first-page-context.json](../../crates/caption-scene/tests/fixtures/first-page-context.json)。
 
 `time.lineElapsedSeconds/lineDurationSeconds`（time）提供所属行的词时间窗口，line/word/grapheme 及其装饰继承同一组值。cue/page 没有唯一所属行时明确回退到自身窗口。无词时间的行使用当前页显示窗口供视觉定时，但不据此伪造朗读状态。elapsed 不截断，持续时间可为零，表达式需自行保护除法。上述页序号和行时钟均禁止在布局前读取。
 

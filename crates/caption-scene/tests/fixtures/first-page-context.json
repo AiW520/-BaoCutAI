@@ -1,0 +1,129 @@
+{
+  "schema": "baocut.caption-scene-style/1",
+  "scene": {
+    "kind": "inline",
+    "value": {
+      "schema": "baocut.caption-scene/1",
+      "evaluationVersion": 1,
+      "requiredCapabilities": [
+        "caption-first-page-context/1"
+      ],
+      "parameters": [
+        {
+          "id": "accent",
+          "type": "color",
+          "default": "#FFE600"
+        }
+      ],
+      "layout": {
+        "width": {
+          "value": 140,
+          "basis": "absolute"
+        },
+        "x": {
+          "value": 80,
+          "basis": "absolute"
+        },
+        "y": {
+          "value": 45,
+          "basis": "absolute"
+        },
+        "maxLines": 2,
+        "pagination": {
+          "maxUnitsPerPage": 2
+        }
+      },
+      "speechState": {
+        "gapPolicy": "hold-previous",
+        "tailPolicy": "hold-last"
+      },
+      "nodes": [
+        {
+          "id": "caption",
+          "type": "text",
+          "style": {
+            "fontSize": {
+              "value": 16,
+              "basis": "absolute"
+            }
+          },
+          "properties": {
+            "transform.x": {
+              "kind": "expression",
+              "expression": {
+                "op": "if",
+                "condition": {
+                  "op": "read",
+                  "path": "unit.firstPageLastWordTimed"
+                },
+                "then": {
+                  "op": "call",
+                  "function": "mul",
+                  "args": [
+                    {
+                      "op": "literal",
+                      "type": "length",
+                      "value": 5
+                    },
+                    {
+                      "op": "call",
+                      "function": "div",
+                      "args": [
+                        {
+                          "op": "call",
+                          "function": "sub",
+                          "args": [
+                            {
+                              "op": "read",
+                              "path": "time.seconds"
+                            },
+                            {
+                              "op": "read",
+                              "path": "time.firstPageLastWordEndSeconds"
+                            }
+                          ]
+                        },
+                        {
+                          "op": "literal",
+                          "type": "time",
+                          "value": 1
+                        }
+                      ]
+                    }
+                  ]
+                },
+                "else": {
+                  "op": "literal",
+                  "type": "length",
+                  "value": 0
+                }
+              }
+            },
+            "fill": {
+              "kind": "expression",
+              "expression": {
+                "op": "if",
+                "condition": {
+                  "op": "read",
+                  "path": "unit.pageNextWordTimed"
+                },
+                "then": {
+                  "op": "literal",
+                  "type": "color",
+                  "value": "#FFE066"
+                },
+                "else": {
+                  "op": "literal",
+                  "type": "color",
+                  "value": "#55CCFF"
+                }
+              }
+            }
+          }
+        }
+      ],
+      "selectors": [],
+      "animations": []
+    }
+  }
+}
