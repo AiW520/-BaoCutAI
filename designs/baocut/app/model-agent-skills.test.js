@@ -72,11 +72,13 @@ test('一句话介绍：内置的用 summary，没有 summary 的（个人、第
   assert.equal(K.blurb(gh), '从 owner/repo 导入的 skill。');
 });
 
-test('输入框菜单：全部已添加的都在，开着的在前，描述截成一行', () => {
+test('输入框菜单：全部已添加的都在，开着的在前；一句话介绍完整显示，退回的描述截到 60 个字', () => {
   const l = list();
   assert.deepEqual(K.menuItems(l).map((s) => s.id), ['a', 'c', 'b', 'd']);
-  const long = K.menuItems([{id: 'x', name: 'X', summary: '很'.repeat(60), enabled: true}])[0];
-  assert.equal(long.desc.length, 20);
+  const summary = '在话题转换处分章，每章一个标题和一句摘要，写进视频的章节，'.repeat(3);
+  assert.equal(K.menuItems([{id: 'x', name: 'X', summary, description: '给智能体看的', enabled: true}])[0].desc, summary.trim());
+  const long = K.menuItems([{id: 'y', name: 'Y', description: '很'.repeat(80), enabled: true}])[0];
+  assert.equal(long.desc.length, 60);
   assert.ok(long.desc.endsWith('…'));
   assert.deepEqual(K.menuItems([]), []);
 });

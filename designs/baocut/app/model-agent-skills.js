@@ -55,9 +55,10 @@
   const clip = (text, n) => { const t = String(text || '').trim(); return t.length > n ? t.slice(0, n - 1) + '…' : t; };
   /** 界面上的一句话介绍（设置的卡片与详情、输入框菜单）：有 summary 用 summary，没有时退回 description。 */
   const blurb = (skill) => String((skill && (skill.summary || skill.description)) || '').trim();
-  /** 输入框「+ › 使用 Skill」的条目：全部已添加的，开着的在前，组内保持原顺序；介绍截成一行。 */
+  /** 输入框「+ › 使用 Skill」的条目：全部已添加的，开着的在前，组内保持原顺序。
+      一句话介绍（summary）完整显示，长了就折行；退回 description 时它可能很长，截到 60 个字。 */
   function menuItems(list) {
-    const rows = (list || []).map((s) => ({id: s.id, name: s.name, desc: clip(blurb(s), 20), enabled: !!s.enabled, category: s.category}));
+    const rows = (list || []).map((s) => ({id: s.id, name: s.name, desc: s.summary ? blurb(s) : clip(blurb(s), 60), enabled: !!s.enabled, category: s.category}));
     return rows.filter((s) => s.enabled).concat(rows.filter((s) => !s.enabled));
   }
   /** 发送时带在提示词末尾的那一行。 */
