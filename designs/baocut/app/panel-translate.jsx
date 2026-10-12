@@ -34,6 +34,12 @@
   const F = window.BC_FIND;
   const R = window.BC_TRUN;
 
+  /* 重译的两条路要让人分得清（product-design §5.10）：模型 API 不经过对话、按用量计费；Agent 在会话里做、用订阅、写入前会问。
+     模型取翻译工具记住的那只，原型固定写演示用的那只。 */
+  const DIRECT_MODEL = 'claude-sonnet';
+  const AGENT_SUB = '在当前会话里做 · 用 Agent 订阅';
+  const DIRECT_SUB = `直接调 ${DIRECT_MODEL} · 按用量计费`;
+
   const spColor = (sp) => `oklch(0.5 0.14 ${D.speakers[sp].hue})`;
   const spName = (sp) => D.speakers[sp].name;
 
@@ -121,11 +127,11 @@
     return (
       <span className={cx('sbmore', open && 'is-open')} onClick={(e) => e.stopPropagation()}>
         <IconBtn icon="more" size="xs" tip="这一句的更多操作" on={open} onClick={() => setOpen((v) => !v)} />
-        <Popover open={open} onClose={() => setOpen(false)} align="right" width={220}>
+        <Popover open={open} onClose={() => setOpen(false)} align="right" width={248}>
           <Menu>
             {items.map((it, i) => (it === '-'
               ? <MenuRule key={i} />
-              : <MenuItem key={i} icon={it.icon} label={it.label} disabled={it.off}
+              : <MenuItem key={i} icon={it.icon} label={it.label} sub={it.sub} disabled={it.off}
                   onClick={() => { setOpen(false); it.run(); }} />))}
           </Menu>
         </Popover>
@@ -687,8 +693,8 @@
     const scopeOf = (c) => `${c.time}「${(c.orig || (c.words || []).join('') || (c.blocks || []).map((b) => b.o).join('') || (c.subs || []).join('')).slice(0, 24)}」`;
     /* 前三条要调模型、「交给 Agent」要会话：Web 表面（model-surface.js）只留过期标记、隐藏与复制 */
     const moreFor = (c) => (window.BC_SURFACE.ai ? [
-      {icon: 'sparkle', label: '重译这一句', run: () => retranslate([c.id], '已重译这一句 · 字幕跟着更新 · 0.9s · claude-sonnet')},
-      ...(window.BC_SURFACE.agent ? [{icon: 'agent', label: '交给 Agent 翻译这句',
+      {icon: 'sparkle', label: '用模型 API 重译这一句', sub: DIRECT_SUB, run: () => retranslate([c.id], '已重译这一句 · 字幕跟着更新 · 0.9s · claude-sonnet')},
+      ...(window.BC_SURFACE.agent ? [{icon: 'agent', label: '交给 Agent 重译这一句', sub: AGENT_SUB,
         run: () => toAgent({kind: 'retranslate', lang: cur.name, scope: scopeOf(c)})}] : []),
       {icon: 'refresh', label: '重新对齐这一句', run: () => app.toast('已重新对齐 · 0.4s', 'positive')},
       {icon: 'split', label: '按源行拆分对齐', run: () => app.toast('已按源行拆分对齐 · 1.2s · claude-sonnet', 'positive', undo)},
@@ -754,7 +760,7 @@
           } />
 
         {/* 统计条一行放下（product-design §5.10）：左边只写句数与要处理的计数（全称在 tip 里），动作都是右边的图标钮。
-            「重译」一枚管过期与未翻译的句子（直接重译 / 交给 Agent），原文被剪切的「处理」也收在它的菜单里。 */}
+            「重译」一组管过期与未翻译的句子（用模型 API / 交给 Agent），原文被剪切的「处理」也收在它的菜单里。 */}
         <div className="statbar statbar--one">
           <span className="statbar__counts">
             {refreshing
@@ -775,11 +781,11 @@
           {window.BC_SURFACE.ai ? <span className="statbar__menu">
             <IconBtn icon="sparkle" size="s" on={staleMenu}
               tip={refreshing ? `正在重译 ${todoIds.length} 句` : '重译与翻译'} onClick={() => setStaleMenu((v) => !v)} />
-            <Popover open={staleMenu} onClose={() => setStaleMenu(false)} align="right" width={256}>
+            <Popover open={staleMenu} onClose={() => setStaleMenu(false)} align="right" width={272}>
               <Menu>
-                {todoIds.length > 0 ? <MenuItem icon="refresh" label={`直接重译这 ${todoIds.length} 句`} sub="过期与未翻译的句子 · 字幕跟着更新"
+                {todoIds.length > 0 ? <MenuItem icon="sparkle" label={`用模型 API 重译这 ${todoIds.length} 句`} sub={DIRECT_SUB}
                   disabled={refreshing} onClick={() => { setStaleMenu(false); refresh(); }} /> : null}
-                {todoIds.length > 0 && window.BC_SURFACE.agent ? <MenuItem icon="agent" label={`交给 Agent 重译这 ${todoIds.length} 句`} sub="发到当前会话"
+                {todoIds.length > 0 && window.BC_SURFACE.agent ? <MenuItem icon="agent" label={`交给 Agent 重译这 ${todoIds.length} 句`} sub={AGENT_SUB}
                   onClick={() => { setStaleMenu(false); toAgent({kind: 'stale', lang: cur.name, count: todoIds.length}); }} /> : null}
                 {cutN > 0 ? <MenuItem icon="split" label={`处理原文被剪切的 ${cutN} 句`} sub="打开刷新过期译文"
                   onClick={() => { setStaleMenu(false); ctx.requestAi('stale', {k: 'cut', label: `原文被剪切的 ${cutN} 句`, count: cutN}); }} /> : null}
