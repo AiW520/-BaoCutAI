@@ -2243,7 +2243,7 @@ mod tests {
         // 键必须在**同一个词内**逐帧推进。宿主的 `unchanged` 只看键：键若按
         // (cue, 当前词) 定身份，第一帧之后每帧都会 `unchanged`，字幕出得来但动画
         // 冻住——静态截图看不出来的假修复。逐词动画正是靠 `motion_id.is_some()`
-        // 同时点亮 `word_box_animated`，让缓存键带上帧号。
+        // 同时点亮 `word_box_animated`，让缓存键带上各词这一帧的姿态。
         let mid_word = plan.render_subtitle_raster_layer(1.5).unwrap();
         let late_word = plan.render_subtitle_raster_layer(2.0).unwrap();
         assert_ne!(
@@ -2262,6 +2262,45 @@ mod tests {
         let blank = quiet.render_subtitle_raster_layer(0.2).unwrap();
         assert_eq!((blank.width, blank.height), (0, 0));
         assert!(blank.rgba.is_empty());
+    }
+
+    /// 只在词边界换色的目录动画（编辑器里的「Color」= `colourHighlight`）按姿态进键：一个词高亮期间各帧
+    /// 共用一张缓存图，不必每帧重画描边与阴影；换色的那一刻键要跟着变，命中的图与冷启动画的逐字节相同。
+    #[test]
+    fn colour_highlight_frames_within_a_word_share_one_cached_layer() {
+        let mut doc = document("Color", "none");
+        doc["style"]["wordAnimation"] = json!({
+            "animationId": "magic-wbw", "animationName": "Color", "catalogId": "colourHighlight",
+            "active": {"color": "#FFD43B"}
+        });
+        doc["style"]["dropShadow"] =
+            json!({"on": true, "color": "#000000", "blur": 0.1, "distance": 0.1});
+        let mut plan = OverlayRenderPlan::compile(&doc, 320, 180, 3.0, 30.0, None).unwrap();
+        assert!(plan.word_box_animated());
+        // 「Hello」0.5–1.2 秒：第 20–33 帧都在它换了色、还没换回来的那段里。
+        let first = plan.render_subtitle_frame(20.0 / 30.0).unwrap();
+        for frame in 21..=33 {
+            let time = f64::from(frame) / 30.0;
+            let hit = plan.render_subtitle_frame(time).unwrap();
+            assert_eq!(hit.key, first.key, "第 {frame} 帧");
+            assert!(
+                Arc::ptr_eq(&hit.rgba, &first.rgba),
+                "第 {frame} 帧没有命中缓存"
+            );
+            assert!(hit.next_change.is_some_and(|next| next > time));
+            let mut cold = OverlayRenderPlan::compile(&doc, 320, 180, 3.0, 30.0, None).unwrap();
+            assert_eq!(
+                cold.render_subtitle_frame(time).unwrap().rgba,
+                hit.rgba,
+                "第 {frame} 帧命中的图与冷画的不同"
+            );
+        }
+        let before = plan.render_subtitle_frame(0.4).unwrap();
+        let world = plan.render_subtitle_frame(1.8).unwrap();
+        assert_ne!(before.key, first.key);
+        assert_ne!(world.key, first.key);
+        assert_ne!(*before.rgba, *first.rgba, "换色前后像素应当不同");
+        assert_ne!(*world.rgba, *first.rgba, "第二个词换色后像素应当不同");
     }
 
     fn emphasis_document(look: Option<Value>, emphasis: Option<Value>) -> Value {

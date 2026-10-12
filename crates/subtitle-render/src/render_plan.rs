@@ -2385,10 +2385,15 @@ impl OverlayRenderPlan {
             .collect::<Vec<_>>()
             .join("|");
         let (motion_changes, motion_key, _) = self.text_motion_state(time);
-        let transition = if self.per_frame_subtitle(pose.active) || motion_changes {
-            format!("@{}", (time * self.fps).round() as i64)
-        } else {
+        let frame = || format!("@{}", (time * self.fps).round() as i64);
+        let transition = if pose.active || self.designed_caption_active() || motion_changes {
+            frame()
+        } else if !self.word_box_animated() {
             "@settled".to_owned()
+        } else {
+            // 逐词动画按这一帧各词的姿态定身份：姿态相同就是同一张图。
+            self.word_motion_state(time)
+                .map_or_else(frame, |state| format!("@settled{state}"))
         };
         // 真被压掉的那些帧必须与不压制时分键：Designed Caption 活跃时逐帧键
         // 只按帧号取值，两种状态会在同一帧号上撞成同一个键、却是两张不同的图。
@@ -2517,6 +2522,35 @@ impl OverlayRenderPlan {
     /// `(cue, 当前词)` 定身份」。
     pub fn word_box_animated(&self) -> bool {
         self.word_box_animated
+    }
+
+    /// 目录逐词动画（`motion_id`）这一帧的样子：原文行只按 [`motion_for_item`] 的姿态变（`layout_motion`
+    /// 与 [`word_visual`]），姿态相同的帧逐字节相同。`colourHighlight` 这类只在词边界换色的动画一句只有几种画面，
+    /// 按姿态进缓存键就不必每帧重画描边、阴影与模糊。块时间轨在动、Designed Caption、分层文字动画（KTV 预告行
+    /// 也由它带出）还有别的时间依赖，返回 `None` 照旧逐帧。
+    fn word_motion_state(&self, time: f64) -> Option<String> {
+        if self.has_text_motion() {
+            return None;
+        }
+        let animation = &self.look_at(time).animation;
+        if animation.caption.is_some()
+            || animation
+                .box_track
+                .as_ref()
+                .is_some_and(WordBoxTrack::is_animated)
+        {
+            return None;
+        }
+        let Some(id) = animation.motion_id.as_deref() else {
+            return Some(String::new());
+        };
+        let item = mode_lines(self.mode, &self.order)
+            .contains(&LineKind::Original)
+            .then(|| active_at(&self.cues, time))
+            .flatten();
+        Some(item.map_or_else(String::new, |item| {
+            format!("/wm{:?}", motion_for_item(id, item, time))
+        }))
     }
 
     /// 字幕层是否必须逐帧出图（转场姿态 ／ Designed Caption ／ 逐词块时间轨）。
@@ -4456,7 +4490,7 @@ impl OverlayRenderPlan {
             return Ok(RenderedSubtitleFrame {
                 key,
                 rgba: hit.rgba.clone(),
-                next_change: hit.next_change,
+                next_change,
                 bounds: hit.bounds.clone(),
                 composite: hit.composite,
             });
@@ -4567,11 +4601,12 @@ impl OverlayRenderPlan {
         };
         let next_change = self.next_change_after(time, self.per_frame_subtitle(pose.active));
         if let Some(frame) = self.cache.iter().find(|frame| frame.key == key) {
-            // Arc 共享：命中不再复制整幅 RGBA。
+            // Arc 共享：命中不再复制整幅 RGBA。同一张图可能在别的时刻画好（逐词动画按姿态进键），
+            // 下一次变化按这一刻算。
             return Ok(RenderedSubtitleFrame {
                 key,
                 rgba: frame.rgba.clone(),
-                next_change: frame.next_change,
+                next_change,
                 bounds: frame.bounds.clone(),
                 composite: frame.composite,
             });

@@ -14,7 +14,7 @@
 //
 // 用法：node tools/export-bench.ts [--seconds 60] [--mono | --no-captions] [--style <预设>] [--worker <export-worker>] [--runs 1]
 //       [--json <输出文件>] [--keep]
-// `--style` 选字幕样式预设：缺省 `studio-color`（逐词变色，画面只在句与词的边界变，约 1 ms/帧）；其余走字幕内核每帧重画的路径：
+// `--style` 选字幕样式预设：缺省 `studio-color`（编辑器里的逐词变色「Color」，画面只在句与词的边界变，约 1 ms/帧）；其余走字幕内核每帧重画的路径：
 // `studio-transition`（入场姿态＋出场）、`studio-wordbox`（药丸高亮块随词缩放淡入）、`designed`（Designed Caption 配方＋逐词强调）、
 // `boxed-reveal`（定位框样式＋逐字显现，原文与译文各一个框；词到了才亮出来，只在词界变）、`boxed-motion`（同样的框，词入场连续位移）。
 // `--worker` 缺省是 `<target>/release/export-worker`（`cargo build --release -p export-worker`；打包的应用用 release），
@@ -219,8 +219,15 @@ function styleDocuments(style: StyleName): { orig: unknown; trans: unknown } {
   };
   switch (style) {
     case "studio-color":
-      // 逐词变色：画面只在句子与词的边界变。
-      return studio({ anim: { name: "Color" } });
+      // 逐词变色，编辑器里「Color」写出来的形状（目录动画 `colourHighlight`）：画面只在句子与词的边界变。
+      return studio({
+        wordAnimation: {
+          animationId: "magic-wbw",
+          animationName: "Color",
+          catalogId: "colourHighlight",
+          active: { color: "#18E1D6" },
+        },
+      });
     case "studio-transition":
       // 入场姿态（淡入＋缩放）与出场（textMotion.out）：句首句尾每帧重画。
       return studio({
