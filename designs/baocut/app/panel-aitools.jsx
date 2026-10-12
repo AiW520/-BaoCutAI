@@ -57,6 +57,13 @@
     const [stalePick, setStalePick] = useState({edited: !(scope && scope.k === 'cut'), cut: true});
     const staleIm = ctx.transImpact || {stale: [], whole: 0, partial: 0, trimmed: 0, fixed: 0};
     const si = AICUT.staleIntent(stalePick, 3, staleIm);
+    /* 刷新过期译文直接调模型（§5.10）：走翻译流程的就地刷新，设置行换成选哪一份译文、要重译几句；
+       不出提示词框；跑着时原地画进度（可取消），完成回到参数页、提示里给撤销，没有收据页。 */
+    const staleDirect = id === 'stale' && !runner.agent;
+    const transDone = D.transLangs.filter((l) => l.done && l.code !== D.srcLang.code);
+    const [staleLang, setStaleLang] = useState(D.dstLang.code);
+    const sd = P.staleDirect({stale: 3, untranslated: 0});
+    const refreshRun = useRef(null);
     // 跑起来那一刻的计数：跑完后覆盖层里的待处理项会被收掉，收据与结果卡不能跟着变成 0
     const [ran, setRan] = useState(null);
     const rs = ran || si;
@@ -69,7 +76,14 @@
     const jobUndone = !!(job && job.undone);
     const setUndone = (v) => { if (job) app.patchTask(job.id, {undone: v}); };
     useEffect(() => { if (phase === 'agent' && ag.prog.done) setPhase('done'); }, [phase, ag.prog.done]);
-    useEffect(() => { if (phase === 'run' && ai.task && ai.task.status === 'done') setPhase('done'); }, [phase, ai.task && ai.task.status]);
+    useEffect(() => {
+      if (phase !== 'run' || !ai.task || ai.task.status !== 'done') return;
+      if (!refreshRun.current) { setPhase('done'); return; }
+      const n = refreshRun.current;
+      refreshRun.current = null;
+      setPhase('setup');
+      app.toast(`已重译 ${n} 句 · 字幕跟着更新`, 'positive', {label: '撤销', run: () => setUndone(true)});
+    }, [phase, ai.task && ai.task.status]);
     /* 重新打开工具页时接上还在跑的那条（取最新一条）：Agent 源的接会话，直接调模型的接任务记录。 */
     useEffect(() => {
       const t = app.tasks.filter((x) => x.kind === id && x.project === ctx.proj.id && x.status === 'running').slice(-1)[0];
@@ -135,6 +149,7 @@
         return sendToAgent(app, ctx, runner.cur, intent, onBack, o);
       }
       setPhase('run');
+      refreshRun.current = staleDirect ? sd.todo : null;
       const tid = ai.begin({
         kind: id, flow: id, project: ctx.proj.id,
         title: `${t.name} · ${ctx.proj.title}`,
@@ -146,6 +161,13 @@
       // 进度同时写进任务记录：顶栏胶囊、侧栏迷你条、后台任务页读的是同一条
       fakeRun(timer, (p) => { setPct(p); ai.progress(tid, p); }, 4, 90,
         () => ai.finish(tid, {undoable: true}));
+    };
+    const cancelRefresh = () => {
+      clearInterval(timer.current);
+      refreshRun.current = null;
+      if (ai.task) app.patchTask(ai.task.id, {status: 'error', outcome: 'canceled', phase: null, error: '已取消', canceled: true});
+      setPhase('setup');
+      app.toast('已取消重译', 'notice');
     };
     useEffect(() => { if (waitPack && packReady) { setWaitPack(false); start(); } }, [waitPack, packReady]);
 
@@ -203,7 +225,7 @@
           <>
             <div className="aicard">
               <b>{t.name}</b>
-              {t.setup.map((l, i) => <span key={i}>{l}</span>)}
+              {(staleDirect ? [P.STALE_DIRECT_SETUP] : t.setup).map((l, i) => <span key={i}>{l}</span>)}
               <span className="ail__effect"><Ic n="info" className="ic--14" />{P.EFFECT[id]}</span>
             </div>
             {asr ? (
@@ -263,6 +285,7 @@
                  模型与范围就地可改。默认 API 直连，不需要装任何东西。 */
               <window.ToolSetup plan={{step: id === 'stale' ? {...STEP.stale, count: si.count} : STEP[id]}} runner={runner}
                 pre={id === 'chapters' && pre ? '润色 42 段' : null}
+                hint={staleDirect ? <>{sd.line}<br />{P.STALE_CUT_NOTE}</> : null}
                 scope={tscope} onScope={pickScope} chapters={ctx.chapters}>
                 {t.needsPolish ? (
                   <window.ToolOption on={pre} onChange={setPre} label="先润色一遍（自动分段）"
@@ -272,7 +295,8 @@
                   <window.GlossaryOption gl={gl} on={useTerms} onChange={setUseTerms} kind="polish" />
                 ) : null}
                 {id === 'cleanup' ? <AICUT.CleanupOptions opts={opts} onChange={setOpts} /> : null}
-                {id === 'stale' ? <AICUT.StaleOptions pick={stalePick} onChange={setStalePick} edited={3} impact={staleIm} /> : null}
+                {staleDirect ? <AICUT.StaleTranslationRow langs={transDone} value={staleLang} onChange={setStaleLang} />
+                  : id === 'stale' ? <AICUT.StaleOptions pick={stalePick} onChange={setStalePick} edited={3} impact={staleIm} /> : null}
                 {runner.agent ? <window.ToolSessionRow ctx={ctx} value={session && session.k} onChange={setSession} /> : null}
               </window.ToolSetup>
             )}
@@ -280,7 +304,9 @@
             {id === 'cleanup' ? <AICUT.CleanupGuide agent={runner.agent} runnerLabel={runner.cur && runner.cur.label} /> : null}
             {/* 提示词框（§5.10）：交给 Agent 时是会发出的那条消息；直接调模型时是指令，下面一行写清随它发出的上下文。
                 重新转录直接跑的是本机语音模型，没有提示词，仍是一枚「开始」。 */}
-            {asr && !runner.agent ? (
+            {staleDirect ? (
+              <AICUT.StaleDirectStart runner={runner} counts={sd} onStart={() => start(null)} />
+            ) : asr && !runner.agent ? (
               <RunCta runner={runner} label={sp && sp.missing ? (waitPack ? '正在下载模型…' : '下载模型并开始') : '开始'} onStart={() => start(null)}
                 hintApi="默认设置就能开始；完成后自动应用，随时可一键撤销。" />
             ) : (
@@ -293,8 +319,15 @@
 
         {phase === 'run' ? (
           <>
-            <Job title={t.name + '…'} pct={pct} stages={stages} cur={Math.min(stages.length - 1, Math.floor(pct / (104 / stages.length)))} activity={activity} />
-            <div className="signpost">可先继续编辑 · 任务在后台运行，完成后自动应用并给出收据。</div>
+            <Job title={staleDirect ? `正在重译 ${sd.todo} 句…` : t.name + '…'} pct={pct} stages={stages} cur={Math.min(stages.length - 1, Math.floor(pct / (104 / stages.length)))} activity={activity} />
+            {staleDirect ? (
+              <>
+                <div className="signpost">可先继续编辑 · 重译的句子写好后直接更新到字幕。</div>
+                <div className="row gap6">
+                  <Btn variant="secondary" size="s" onClick={cancelRefresh}>取消</Btn>
+                </div>
+              </>
+            ) : <div className="signpost">可先继续编辑 · 任务在后台运行，完成后自动应用并给出收据。</div>}
             {fail === 'retry' ? (
               <div className="failc">
                 <b>网络中断，正在自动重试（第 2 次）…</b>

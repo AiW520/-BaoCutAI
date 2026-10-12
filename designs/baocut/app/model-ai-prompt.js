@@ -2,7 +2,7 @@
    · 工具列表分批：从文稿出发的三组（整理文稿 / 写作 / 发布）加「画面」组里的剪成短视频，翻译与智能裁剪之后搬入；
    · 工具页的提示词模板：意图句 + 几行固定约束，预填进输入框，用户可改。语言、风格、篇幅、视角不再是
      下拉——都写在模板里，改一句话比翻一个下拉更直接，也让新用户看见「会发出去什么」；
-   · 直接调模型时发给模型的上下文包（文稿、章节、译文、附件）折成一行人话；
+   · 直接调模型时发给模型的上下文包（文稿、章节、附件）折成一行人话；刷新过期译文直接调模型不出提示词框，另有一组文案；
    · 交给 Agent 时发到哪条会话：缺省新开一条、把这部视频作为上下文（同一条长会话每次都要重发整段历史，
      prompt cache 过期后是额外成本；一件事一条会话也更好找），可改成接着这部视频当前的会话。
    无 React、无 DOM，`node --test` 直接跑。 */
@@ -81,7 +81,6 @@
     if (tool === 'cover') items.push({k: 'frames', label: '关键帧', detail: `${c.frames || 0} 张`});
     if (paras) items.push({k: 'transcript', label: c.scope ? `文稿 · ${c.scope}` : '文稿', detail: `${paras} 段${words} · 带时间码与说话人`});
     if (c.chapters) items.push({k: 'chapters', label: '章节', detail: `${c.chapters} 章`});
-    if (tool === 'stale' && c.stale) items.push({k: 'translation', label: '译文', detail: `过期的 ${c.stale} 句及前后各一句`});
     if (c.attachments) items.push({k: 'attachments', label: '附件', detail: `${c.attachments} 个`});
     if (c.skills && c.skills.length) items.push({k: 'skills', label: 'Skill', detail: c.skills.join('、')});
     return items;
@@ -89,6 +88,21 @@
   function contextLine(items) {
     if (!items.length) return '发给模型的：只有上面的提示词';
     return '发给模型的：提示词 + ' + items.map((i) => `${i.label} ${i.detail}`).join(' · ');
+  }
+
+  /* 刷新过期译文「直接调模型」（§5.10「直接调模型」「逐句与过期译文」）：走翻译流程的就地刷新，不带提示词、附件与 Skill，
+     参数页不出提示词框。要重译的句数口径同字幕面板统计条：过期（标了过期、原文改过）+ 未翻译；
+     原文被剪切的句子要按剪后的原文重译，Runtime 判不出，只能交给 Agent。 */
+  const STALE_DIRECT_SETUP = '就地重译标了过期、原文改过与还没有译文的句子：写成同一份译文的新版本，字幕里只换这几句。';
+  const STALE_CUT_NOTE = '原文被剪切的句子要按剪后的原文重译，只能交给 Agent。';
+  const STALE_NO_PROMPT = '按翻译工具的做法重译，视频启用的术语表照用；不带提示词、附件与 Skill。想用自己的话指点，交给 Agent。';
+  /** 要重译几句、那一行怎么写、主按钮写什么。零的那类不写。 */
+  function staleDirect(o) {
+    const stale = (o && o.stale) || 0;
+    const untranslated = (o && o.untranslated) || 0;
+    const todo = stale + untranslated;
+    const parts = [stale ? `${stale} 过期` : '', untranslated ? `${untranslated} 未翻译` : ''].filter(Boolean);
+    return {todo, line: todo ? `要重译：${parts.join(' · ')}` : '这份译文没有过期或还没翻译的句子', cta: todo ? `重译 ${todo} 句` : '重译'};
   }
 
   /** 交给 Agent 发到哪条会话。`sessions` 最新在前；只认挂在这部视频上的会话。 */
@@ -128,5 +142,5 @@
 
   Object.assign(window, {BC_AIPROMPT: {GROUPS_NOW, GROUPS_LATER, OPEN_IN_GROUP, LATER_NOTE, listed, EFFECT,
     TOOL_SKILL, defaultSkills, standing, template, contextPack, contextLine, sessionOptions, hint,
-    backTarget, agentLeavesPage}});
+    backTarget, agentLeavesPage, STALE_DIRECT_SETUP, STALE_CUT_NOTE, STALE_NO_PROMPT, staleDirect}});
 })();

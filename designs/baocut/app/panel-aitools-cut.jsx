@@ -1,6 +1,6 @@
 /* AI Tools · 剪口播两个工具页的专用件（第 196 轮，§15.3）：
    「找可剪的口」默认交给 Agent、可选直接调模型，两条路各有引导与进度；
-   「刷新过期译文」多一类来源——原文被剪切的句子（§13.1）。
+   「刷新过期译文」多一类来源——原文被剪切的句子（§13.1）；直接调模型时走就地刷新，设置行与主按钮另有一套（§5.10）。
    这里只放这两页独有的卡与勾选项，DocFlow 仍在 panel-aitools.jsx 里组合它们。 */
 (function () {
   const AG = window.BC_AGENT;
@@ -115,6 +115,52 @@
     return {edited: ed, cut, count: ed + cut};
   }
 
+  /* ---------- 刷新过期译文 · 直接调模型（product-design §5.10「直接调模型」） ---------- */
+
+  /** 设置态里的「译文」一行：刷新哪一份（只有一份时不能换；从字幕面板进来时缺省是那一份）。 */
+  function StaleTranslationRow({langs, value, onChange}) {
+    const [pop, setPop] = React.useState(false);
+    const cur = langs.find((l) => l.code === value) || langs[0];
+    return (
+      <div className="tsetup__row">
+        <span className="tsetup__lb">译文</span>
+        {cur ? (
+          <Picker size="s" value={cur.native} open={pop} popWidth={200} disabled={langs.length < 2}
+            onClick={() => setPop((v) => !v)} onClose={() => setPop(false)}>
+            <Menu>
+              {langs.map((l) => (
+                <MenuItem key={l.code} label={l.native} on={l.code === cur.code} onClick={() => { onChange(l.code); setPop(false); }} />
+              ))}
+            </Menu>
+          </Picker>
+        ) : <span className="t-body-sm">这部视频还没有译文，先在字幕面板翻译。</span>}
+      </div>
+    );
+  }
+
+  /** 代替提示词框的下半截：文本模型（同翻译工具）、不带提示词的说明、主按钮「重译 N 句」与一行去向；没有要重译的句子时主按钮置灰。 */
+  function StaleDirectStart({runner, counts, onStart}) {
+    const P = window.BC_AIPROMPT;
+    const model = runner.apiModel;
+    return (
+      <div className="aitp">
+        <div className="aitp__hd">
+          <span className="t-detail-xs">文本模型</span>
+          <span className="spacer" />
+          <window.ToolModelPick value={model ? model.id : null} onChange={(m) => runner.pick({k: `api:${m.id}`, kind: 'api', model: m.id})} />
+        </div>
+        <div className="aitp__ctx">
+          <Ic n="info" className="ic--14" />
+          <span>{P.STALE_NO_PROMPT}</span>
+        </div>
+        <div className="flowcta">
+          <Btn variant="accent" disabled={!counts.todo} onClick={onStart} style={{width: '100%'}}>{counts.cta}</Btn>
+        </div>
+        <div className="hint">{P.hint({model: model ? model.name : null, cloud: !!model})}</div>
+      </div>
+    );
+  }
+
   Object.assign(window, {BC_AICUT: {CLEANUP_OPTS, AGENT_STAGES, API_STAGES, cleanupExtra, cleanupActivity,
-    CleanupOptions, CleanupGuide, AgentRun, useAgentRun, StaleOptions, staleIntent}});
+    CleanupOptions, CleanupGuide, AgentRun, useAgentRun, StaleOptions, staleIntent, StaleTranslationRow, StaleDirectStart}});
 })();

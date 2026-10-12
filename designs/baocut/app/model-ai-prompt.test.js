@@ -71,8 +71,6 @@ test('上下文包按工具取材，折成一行', () => {
   const items = P.contextPack('summary', {paras: 42, words: 6200, chapters: 4, attachments: 1});
   assert.deepEqual(items.map((i) => i.k), ['transcript', 'chapters', 'attachments']);
   assert.match(P.contextLine(items), /^发给模型的：提示词 \+ 文稿 42 段 · 约 6,200 字/);
-  const stale = P.contextPack('stale', {paras: 42, stale: 3});
-  assert.ok(stale.some((i) => i.k === 'translation'));
   const cover = P.contextPack('cover', {paras: 42, frames: 6});
   assert.equal(cover[0].k, 'frames');
   const scoped = P.contextPack('polish', {paras: 9, scope: '第 2 章 · 现场访谈'});
@@ -110,4 +108,10 @@ test('交给 Agent 后缺省离开工具页；找可剪的口与刷新过期译�
   ['summary', 'blog', 'desc', 'title', 'cover', 'polish', 'chapters', 'speakers', 'translate', 'shortscut'].forEach((t) => assert.equal(P.agentLeavesPage(t), true, t));
   assert.equal(P.agentLeavesPage('cleanup'), false);
   assert.equal(P.agentLeavesPage('stale'), false);
+});
+
+test('刷新过期译文直接调模型：计数折成一行与主按钮，零的那类不写', () => {
+  assert.deepEqual(P.staleDirect({stale: 3, untranslated: 2}), {todo: 5, line: '要重译：3 过期 · 2 未翻译', cta: '重译 5 句'});
+  assert.equal(P.staleDirect({stale: 0, untranslated: 2}).line, '要重译：2 未翻译');
+  assert.deepEqual(P.staleDirect({}), {todo: 0, line: '这份译文没有过期或还没翻译的句子', cta: '重译'});
 });
