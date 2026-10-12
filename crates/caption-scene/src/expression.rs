@@ -133,7 +133,13 @@ pub fn context_type(path: &str) -> Option<ValueType> {
         | "unit.index"
         | "unit.count"
         | "unit.selectedIndex"
-        | "unit.selectedCount" => ValueType::Scalar,
+        | "unit.selectedCount"
+        | "unit.cueWordIndex"
+        | "unit.cueWordCount"
+        | "unit.cueLineIndex"
+        | "unit.cueLineCount"
+        | "unit.cueSelectedIndex"
+        | "unit.cueSelectedCount" => ValueType::Scalar,
         "unit.active"
         | "unit.read"
         | "unit.unread"
@@ -146,7 +152,10 @@ pub fn context_type(path: &str) -> Option<ValueType> {
         | "unit.firstPageLastWordTimed"
         | "unit.firstPageNextWordTimed"
         | "unit.pageFirstWordTimed"
-        | "unit.pageNextWordTimed" => ValueType::Bool,
+        | "unit.pageNextWordTimed"
+        | "unit.cueWordBound"
+        | "unit.cueLineBound"
+        | "unit.cueSelectionAvailable" => ValueType::Bool,
         "layout.x"
         | "layout.y"
         | "layout.width"
@@ -162,6 +171,28 @@ pub fn context_type(path: &str) -> Option<ValueType> {
         | "canvas.height" => ValueType::Length,
         _ => return None,
     })
+}
+fn require_context_capability(path: &str, scene: &Scene) -> Result<()> {
+    if matches!(
+        path,
+        "unit.cueWordIndex"
+            | "unit.cueWordCount"
+            | "unit.cueLineIndex"
+            | "unit.cueLineCount"
+            | "unit.cueSelectedIndex"
+            | "unit.cueSelectedCount"
+            | "unit.cueWordBound"
+            | "unit.cueLineBound"
+            | "unit.cueSelectionAvailable"
+    ) && !scene.required_capabilities.iter().any(|c| c == "caption-cue-unit-context/1")
+    {
+        return Err(Diagnostic::new(
+            "CAPTION_CAPABILITY_UNAVAILABLE",
+            path,
+            "caption-cue-unit-context/1 must be declared",
+        ));
+    }
+    Ok(())
 }
 pub fn builtin_type(name: &str, args: &[ValueType]) -> Option<ValueType> {
     use ValueType::*;
@@ -209,6 +240,7 @@ pub fn infer(expr: &Expression, scene: &Scene, arguments: &BTreeMap<String, Valu
                 Ok(*value_type)
             }
             Expression::Read { path } => {
+                require_context_capability(path, s)?;
                 let t = if let Some(id) = path.strip_prefix("params.") {
                     s.parameters.iter().find(|p| p.id == id).map(|p| p.value_type)
                 } else if let Some(id) = path.strip_prefix("args.") {
@@ -298,6 +330,7 @@ fn infer_dag(expr: &Expression, scene: &Scene, arguments: &BTreeMap<String, Valu
                     (*value_type, 0)
                 }
                 Expression::Read { path } => {
+                    require_context_capability(path, self.scene)?;
                     let ty = if let Some(id) = path.strip_prefix("params.") {
                         self.scene.parameters.iter().find(|p| p.id == id).map(|p| p.value_type)
                     } else if let Some(id) = path.strip_prefix("args.") {

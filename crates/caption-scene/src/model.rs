@@ -674,6 +674,30 @@ pub enum CaptionMaterial {
         amount: DynamicValue,
         opacity: DynamicValue,
     },
+    GaussianAxis {
+        id: String,
+        #[serde(rename = "contextNodeId")]
+        context_node_id: String,
+        axis: WaveAxis,
+        samples: DynamicValue,
+        #[serde(rename = "stepUv")]
+        step_uv: DynamicValue,
+        #[serde(rename = "sigmaUv")]
+        sigma_uv: DynamicValue,
+        gamma: f64,
+        boundary: ComponentBoundary,
+    },
+    GlowCascade {
+        id: String,
+        #[serde(rename = "contextNodeId")]
+        context_node_id: String,
+        levels: Vec<GlowLevel>,
+        gamma: f64,
+        intensity: DynamicValue,
+        #[serde(rename = "originalOpacity")]
+        original_opacity: DynamicValue,
+        composite: GlowComposite,
+    },
     Feedback {
         id: String,
         samples: u32,
@@ -682,6 +706,40 @@ pub enum CaptionMaterial {
         #[serde(default)]
         offset: [f64; 2],
     },
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "kebab-case")]
+pub enum ComponentBoundary {
+    Normalize,
+    Replicate,
+    Transparent,
+}
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "kebab-case")]
+pub enum GlowComposite {
+    Screen,
+    SourceOverGlow,
+}
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct SurfaceScale {
+    pub num: u32,
+    pub den: u32,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct GaussianStage {
+    pub scale: SurfaceScale,
+    pub samples: DynamicValue,
+    pub step_uv: DynamicValue,
+    pub sigma_uv: DynamicValue,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct GlowLevel {
+    pub horizontal: GaussianStage,
+    pub vertical: GaussianStage,
 }
 fn one_pass() -> u32 {
     1

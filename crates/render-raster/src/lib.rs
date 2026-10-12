@@ -47,6 +47,7 @@ pub mod audio;
 pub mod bcf;
 pub mod drawop;
 pub mod effects;
+pub mod emissive;
 #[cfg(feature = "media")]
 pub mod exec;
 pub mod fonts;

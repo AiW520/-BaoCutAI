@@ -1155,6 +1155,19 @@ impl FrameRenderer {
             let opacity = first.opacity.clamp(0.0, 1.0) as f32 * style_opacity;
             let pixmap = PixmapRef::from_bytes(&layer.rgba, layer.width, layer.height)
                 .ok_or_else(|| RenderError::render(anyhow::anyhow!("字幕层的尺寸不对")))?;
+            if render_raster::emissive::has_emissive_components(pixmap.data())
+                || render_raster::emissive::has_emissive_components(self.frame.data())
+            {
+                if layer.blend != BlendMode::SourceOver {
+                    return Err(RenderError::new(
+                        "EMISSIVE_BLEND_UNSUPPORTED",
+                        "Associated emission requires source-over composition",
+                    ));
+                }
+                render_raster::emissive::composite_associated(&mut self.frame, pixmap, opacity, [1., 0., 0., 1., 0., 0.], None)
+                    .map_err(RenderError::render)?;
+                return Ok(());
+            }
             // 字幕层大片透明：只在内核给的字外包矩形里叠（与整幅画逐字节相同），不复制、不重扫。
             if render_raster::plan::composite_bounded_rect(&mut self.frame, pixmap, layer.rect, opacity, layer.blend).is_none() {
                 self.frame.draw_pixmap(
@@ -1420,6 +1433,11 @@ fn without(fx: &Fx, skipped: &HashSet<String>) -> Fx {
 }
 
 fn over(target: &mut Pixmap, layer: &Pixmap) {
+    if render_raster::emissive::has_emissive_components(layer.data()) || render_raster::emissive::has_emissive_components(target.data()) {
+        render_raster::emissive::composite_associated(target, layer.as_ref(), 1.0, [1., 0., 0., 1., 0., 0.], None)
+            .expect("identity associated composition uses valid surfaces");
+        return;
+    }
     // 整幅不透明的层（整幅视频）原样拷过去；别的层（一行字、一张贴纸）只在非零像素的外包矩形里叠。都与下面逐字节相同。
     if render_raster::raster::copy_over(target, layer.as_ref(), Transform::identity())
         || render_raster::plan::composite_bounded(target, layer, 1.0, BlendMode::SourceOver).is_some()

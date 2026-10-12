@@ -217,6 +217,11 @@ fn disassemble(frame: &FrameOps) -> Vec<String> {
                 opacity,
                 tf,
             } => format!("DrawBitmap #{bitmap} o={} {}", f(*opacity), mat(tf)),
+            DrawOp::DrawEmissiveBitmap {
+                bitmap,
+                opacity,
+                tf,
+            } => format!("DrawEmissiveBitmap #{bitmap} o={} {}", f(*opacity), mat(tf)),
         })
         .collect()
 }

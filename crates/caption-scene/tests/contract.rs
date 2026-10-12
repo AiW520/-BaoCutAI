@@ -443,3 +443,45 @@ fn first_page_input_context_is_typed_and_rejected_before_layout() {
         assert_eq!(parse_style(&bad).unwrap_err().code, "CAPTION_DEPENDENCY_CYCLE");
     }
 }
+
+#[test]
+fn cue_unit_context_requires_opt_in_and_cannot_be_read_before_layout() {
+    let body: Value = serde_json::from_str(include_str!("fixtures/cue-unit-context.json")).unwrap();
+    let style = parse_style(&body).unwrap();
+    let paths = [
+        ("unit.cueWordIndex", ValueType::Scalar),
+        ("unit.cueWordCount", ValueType::Scalar),
+        ("unit.cueLineIndex", ValueType::Scalar),
+        ("unit.cueLineCount", ValueType::Scalar),
+        ("unit.cueSelectedIndex", ValueType::Scalar),
+        ("unit.cueSelectedCount", ValueType::Scalar),
+        ("unit.cueWordBound", ValueType::Bool),
+        ("unit.cueLineBound", ValueType::Bool),
+        ("unit.cueSelectionAvailable", ValueType::Bool),
+    ];
+    for (path, ty) in paths {
+        let read = json!({"op":"read","path":path});
+        assert_eq!(infer(&expr(read.clone()), style.scene(), &BTreeMap::new()).unwrap(), ty);
+        let mut legacy = style.scene().clone();
+        legacy.required_capabilities.retain(|cap| cap != "caption-cue-unit-context/1");
+        assert_eq!(
+            infer(&expr(read.clone()), &legacy, &BTreeMap::new()).unwrap_err().code,
+            "CAPTION_CAPABILITY_UNAVAILABLE"
+        );
+        legacy.required_capabilities.push("caption-function-dag/1".into());
+        assert_eq!(
+            infer(&expr(read.clone()), &legacy, &BTreeMap::new()).unwrap_err().code,
+            "CAPTION_CAPABILITY_UNAVAILABLE"
+        );
+        let scalar = if ty == ValueType::Bool {
+            json!({"op":"if","condition":read,"then":{"op":"literal","type":"scalar","value":1},"else":{"op":"literal","type":"scalar","value":2}})
+        } else {
+            read
+        };
+        let mut early = body.clone();
+        early["scene"]["value"]["layout"]["layoutEvaluation"] = json!("per-sample");
+        early["scene"]["value"]["layout"]["bindings"] =
+            json!([{"nodeId":"caption","property":"lineHeight","value":{"kind":"expression","expression":scalar}}]);
+        assert_eq!(parse_style(&early).unwrap_err().code, "CAPTION_DEPENDENCY_CYCLE");
+    }
+}

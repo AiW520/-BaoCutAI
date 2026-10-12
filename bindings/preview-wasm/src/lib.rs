@@ -31,8 +31,9 @@
 //!   `{plan, warnings, skipped, spectra, fonts, faces}`，画面在 `bc_frame_ptr` / `bc_frame_len`。`spectra` 是声波用到、还没送进来的
 //!   素材频谱（`[{itemId, asset}]`）；`fonts` 是这一帧用到、字体库里没有的字体族名；`faces` 是到目前为止排字时点了名的
 //!   face（`[{family, weight, italic}]`，常设）：宿主对照报过缺的族去要本机字体的那一个 face，经 `bc_add_font` 送进来再画。
-//!   `flags` 的第 0 位：画字幕层；第 1 位：不铺背景（缩略图），画面是非预乘的 RGBA，
-//!   否则是不透明的 RGBA。
+//!   `flags` 数值 1：画字幕层；数值 2：不铺背景，默认输出非预乘 RGBA；
+//!   数值 4 (`RENDER_ASSOCIATED_RGBA`, 1 << 2)：输出原始关联/发光 RGBA8。旧透明输出不能表达 RGB > alpha 时返回诊断；
+//!   不使用数值 4 的普通帧保持原输出；不设数值 2 时仍铺不透明背景。
 //! - `bc_measure_text(ptr, len)`：`{text, style, wrapWidth?, canvas: {width, height}}`，输出区是文字元素要多大的框
 //!   `{width, height}`（序列像素，`frame_render::text_measure`）：与画字同一台排版引擎、同一批字体，要先注入字体。
 //! - 返回 0 表示成功，输出区（`bc_output_ptr` / `bc_output_len`）是结果 JSON；否则输出区是 `{code, message}`。
@@ -170,6 +171,7 @@ struct State {
     analysis: Option<SpectrumStream>,
     /// 透明底那一帧还原成非预乘的字节；不透明的帧直接用渲染器的画面，这里是空的。
     straight: Vec<u8>,
+    frame_valid: bool,
 }
 
 /// 同时留着几台渲染器：预览播放与停住各用一种尺寸（`render-planner` 的播放画质），来回切时各自的排版、字幕编译与
@@ -427,11 +429,35 @@ pub fn spectrum_finish() -> Result<Vec<u8>, PlanError> {
         .map_err(|error| failure("INVALID_AUDIO", format!("{error:#}")))
 }
 
-/// 求 `seconds` 这一刻的计划并画出来（`width`×`height`，与序列画布同比例）。画不出来的东西跳过、报在 `skipped` 里，
-/// 预览照常出画面。`transparent` 时不铺背景，画面是非预乘的 RGBA（缩略图）。返回 `{plan, warnings, skipped, spectra, fonts, faces, captionHits}`
+/// Opt-in ABI flag value 4 (1 << 2): return associated/emissive RGBA8 verbatim.
+pub const RENDER_ASSOCIATED_RGBA: u32 = 4;
+
+/// 求指定时刻的计划并画出来；不能画的层通过 skipped 报告。`transparent` 时不铺背景，画面是非预乘的 RGBA（缩略图）。返回 `{plan, warnings, skipped, spectra, fonts, faces, captionHits}`
 /// （`spectra` 是还没送进来的素材频谱，`fonts` 是这一帧用到、字体库里没有的字体族，`faces` 是排字时点了名的 face）；
 /// `captionHits` 是这一帧字幕行的序列画布几何与所属实例；画面经 [`frame`] 取。
 pub fn render(seconds: f64, width: u32, height: u32, captions: bool, transparent: bool) -> Result<String, PlanError> {
+    render_with_output(seconds, width, height, captions, transparent, false)
+}
+
+fn straight_output(data: &[u8], transparent: bool, associated_rgba: bool) -> Result<Vec<u8>, PlanError> {
+    if transparent && !associated_rgba {
+        frame_render::demultiplied_checked(data)
+            .map_err(|code| failure(code, "Straight-alpha output cannot represent emission; request associated RGBA"))
+    } else {
+        // Empty storage explicitly selects the untouched renderer bytes in frame_bytes.
+        Ok(Vec::new())
+    }
+}
+
+/// Render with an explicit associated-RGBA output contract; flags 1|2|4 select transparent caption components.
+pub fn render_with_output(
+    seconds: f64,
+    width: u32,
+    height: u32,
+    captions: bool,
+    transparent: bool,
+    associated_rgba: bool,
+) -> Result<String, PlanError> {
     STATE.with_borrow_mut(|state| {
         let State {
             video,
@@ -443,8 +469,11 @@ pub fn render(seconds: f64, width: u32, height: u32, captions: bool, transparent
             renderers,
             media,
             straight,
+            frame_valid,
             ..
         } = state;
+        *frame_valid = false;
+        straight.clear();
         let (video, sequence_id) = video.as_ref().ok_or_else(|| failure("NO_VIDEO", "还没有送进视频"))?;
         let speech = speech_of(video, sequence_id, speech_documents, speech)?;
         let speakers = speakers_of(video, sequence_id, speech_documents, speakers)?;
@@ -476,17 +505,13 @@ pub fn render(seconds: f64, width: u32, height: u32, captions: bool, transparent
         }
         renderer.clear_reports();
         renderer.render(video.view(), &plan, seconds, media).map_err(render_failure)?;
-        *straight = if transparent {
-            frame_render::demultiplied(renderer.frame().data())
-        } else {
-            Vec::new()
-        };
+        *straight = straight_output(renderer.frame().data(), transparent, associated_rgba)?;
         let spectra: Vec<Value> = renderer
             .missing_spectra()
             .iter()
             .map(|(item_id, asset)| json!({ "itemId": item_id, "asset": asset }))
             .collect();
-        let output = json!({
+        let mut output = json!({
             "plan": plan,
             "warnings": renderer.warnings(),
             "skipped": renderer.skipped(),
@@ -499,6 +524,10 @@ pub fn render(seconds: f64, width: u32, height: u32, captions: bool, transparent
                 .map(|(family, weight, italic)| json!({ "family": family, "weight": weight, "italic": italic }))
                 .collect::<Vec<_>>(),
         });
+        if associated_rgba {
+            output["pixelFormat"] = json!("associated-rgba8");
+        }
+        *frame_valid = true;
         Ok(output.to_string())
     })
 }
@@ -556,6 +585,9 @@ pub fn frame() -> Vec<u8> {
 }
 
 fn frame_bytes(state: &State) -> &[u8] {
+    if !state.frame_valid {
+        return &[];
+    }
     if !state.straight.is_empty() {
         return &state.straight;
     }
@@ -709,7 +741,17 @@ pub extern "C" fn bc_spectrum_finish() -> u32 {
 
 #[unsafe(no_mangle)]
 pub extern "C" fn bc_render(seconds: f64, width: u32, height: u32, flags: u32) -> u32 {
-    finish(render(seconds, width, height, flags & 1 != 0, flags & 2 != 0).map(String::into_bytes))
+    finish(
+        render_with_output(
+            seconds,
+            width,
+            height,
+            flags & 1 != 0,
+            flags & 2 != 0,
+            flags & RENDER_ASSOCIATED_RGBA != 0,
+        )
+        .map(String::into_bytes),
+    )
 }
 
 /// # Safety
@@ -737,4 +779,29 @@ pub extern "C" fn bc_output_ptr() -> *const u8 {
 #[unsafe(no_mangle)]
 pub extern "C" fn bc_output_len() -> usize {
     STATE.with_borrow(|state| state.output.len())
+}
+
+#[cfg(test)]
+mod associated_output_tests {
+    use super::*;
+    #[test]
+    fn raw_flag_is_additive_and_failed_render_hides_previous_frame_bytes() {
+        assert_eq!(RENDER_ASSOCIATED_RGBA, 4);
+        assert!(straight_output(&[200, 100, 0, 0], true, false).is_err());
+        assert!(straight_output(&[200, 100, 0, 0], true, true).unwrap().is_empty());
+        assert!(straight_output(&[200, 100, 0, 255], false, false).unwrap().is_empty());
+        assert_eq!(
+            straight_output(&[40, 20, 0, 64], true, false).unwrap(),
+            frame_render::demultiplied(&[40, 20, 0, 64])
+        );
+        STATE.with_borrow_mut(|state| {
+            *state = State::default();
+            state.straight = vec![200, 100, 0, 0];
+            state.frame_valid = true;
+        });
+        assert_eq!(frame(), [200, 100, 0, 0]);
+        assert!(render_with_output(0.0, 1, 1, true, true, true).is_err());
+        assert!(frame().is_empty());
+        assert_eq!(bc_frame_len(), 0);
+    }
 }

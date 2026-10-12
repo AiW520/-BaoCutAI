@@ -38,6 +38,7 @@ struct Shot {
     height: u32,
     captions: bool,
     transparent: bool,
+    associated_rgba: bool,
 }
 
 fn shot(frame: i64) -> Shot {
@@ -47,6 +48,7 @@ fn shot(frame: i64) -> Shot {
         height: H,
         captions: true,
         transparent: false,
+        associated_rgba: false,
     }
 }
 
@@ -789,6 +791,32 @@ fn scenes() -> Vec<Scene> {
                  {"id":"w2","text":"three","start":2000,"end":2800},{"id":"w3","text":"four","start":3000,"end":3800}]}}),
     );
     scenes.push(soft_band);
+    for (name, style) in [
+        (
+            "captions-gaussian-components",
+            include_str!("../../caption-scene/tests/fixtures/gaussian-axis.json"),
+        ),
+        (
+            "captions-glow-components",
+            include_str!("../../caption-scene/tests/fixtures/glow-cascade.json"),
+        ),
+    ] {
+        let mut component = Scene::new(
+            name,
+            video(vec![caption("components", "doc", Some("style"), 120, &[])], vec![], json!({})),
+            &[3, 15, 30, 61, 100, 15],
+        );
+        component.documents = vec![
+            caption_doc("doc", "sequence", &[(0., 4., "One two three four")], "original"),
+            style_doc("style", serde_json::from_str(style).unwrap()),
+        ];
+        component.shots.push(Shot {
+            transparent: true,
+            associated_rgba: true,
+            ..shot(15)
+        });
+        scenes.push(component);
+    }
     let cue_word_style: Value = serde_json::from_str(include_str!("../../caption-scene/tests/fixtures/cue-word-context.json")).unwrap();
     let mut cue_word = Scene::new(
         "captions-cue-word-context",
@@ -825,6 +853,25 @@ fn scenes() -> Vec<Scene> {
                  {"id":"w2","text":"three","start":2100,"end":2450},{"id":"w3","text":"four","start":3000,"end":3500}]}}),
     );
     scenes.push(first_page);
+    let cue_unit_style: Value = serde_json::from_str(include_str!("../../caption-scene/tests/fixtures/cue-unit-context.json")).unwrap();
+    let mut cue_unit_item = caption("cue-unit-context", "doc", Some("style"), 180, &[]);
+    cue_unit_item["presentation"] = json!({"wordTags":{"w1":["keyword"],"w4":["keyword"],"w5":["keyword"]}});
+    let mut cue_unit = Scene::new(
+        "captions-cue-unit-context",
+        video(vec![cue_unit_item], vec![], json!({})),
+        &[0, 10, 35, 59, 65, 90, 119, 125, 150, 179, 35],
+    );
+    let mut cue_unit_doc = caption_doc("doc", "sequence", &[(0.0, 6.0, "One two three four five six")], "original");
+    cue_unit_doc["sourceDocumentId"] = json!("speech");
+    cue_unit_doc["body"]["cues"][0]["words"] = json!({"first":"w0","last":"w5"});
+    cue_unit.documents = vec![cue_unit_doc, style_doc("style", cue_unit_style)];
+    cue_unit.speech.push(
+        json!({"documentId":"speech","body":{"schema":"baocut.speech/1","clock":"sequence","timescale":1000,
+        "words":[{"id":"w0","text":"One","start":0,"end":700},{"id":"w1","text":"two","start":1000,"end":1700},
+                 {"id":"w2","text":"three","start":2000,"end":2700},{"id":"w3","text":"four","start":3000,"end":3700},
+                 {"id":"w4","text":"five","start":4000,"end":4700},{"id":"w5","text":"six","start":5000,"end":5700}]}}),
+    );
+    scenes.push(cue_unit);
     let wave_material_style: Value = serde_json::from_str(include_str!("../../caption-scene/tests/fixtures/wave-displace.json")).unwrap();
     let mut wave_material = Scene::new(
         "captions-wave-displace-material",
@@ -1309,7 +1356,12 @@ fn render_scene(scene: &Value) -> Vec<Value> {
             let t = Ratio::new(i128::from(shot["frame"].as_i64().unwrap()), 30).unwrap();
             let plan = plan_frame(view, "seq", t).unwrap();
             let frame = renderer.render(view, &plan, t.to_f64(), &mut media).unwrap();
-            let bytes = if transparent { demultiplied(frame) } else { frame.to_vec() };
+            let associated = shot.get("associatedRgba").and_then(Value::as_bool).unwrap_or(false);
+            let bytes = if transparent && !associated {
+                demultiplied(frame)
+            } else {
+                frame.to_vec()
+            };
             let mut out = shot.clone();
             out["sha256"] = json!(hex(&Sha256::digest(&bytes)));
             out["warnings"] = json!(renderer.warnings());
@@ -1385,9 +1437,11 @@ fn build_fixture() -> Value {
                     .collect::<Vec<_>>(),
                 "spectra": scene.spectra.iter().map(|(item, bytes)| json!({ "itemId": item, "hex": hex(bytes) })).collect::<Vec<_>>(),
                 "audioSpectra": scene.audio_spectra.iter().map(|(key, bytes)| json!({ "key": key, "hex": hex(bytes) })).collect::<Vec<_>>(),
-                "shots": scene.shots.iter().map(|s| json!({
-                    "frame": s.frame, "width": s.width, "height": s.height, "captions": s.captions, "transparent": s.transparent
-                })).collect::<Vec<_>>(),
+                "shots": scene.shots.iter().map(|s| {
+                    let mut value=json!({"frame":s.frame,"width":s.width,"height":s.height,"captions":s.captions,"transparent":s.transparent});
+                    if s.associated_rgba {value["associatedRgba"]=json!(true);}
+                    value
+                }).collect::<Vec<_>>(),
             });
             if !scene.speech.is_empty() {
                 value["speech"] = json!(scene.speech);

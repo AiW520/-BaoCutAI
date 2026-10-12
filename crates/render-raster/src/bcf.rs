@@ -153,7 +153,8 @@ impl Compiled {
                         | DrawOp::ClipPath { tf, .. }
                         | DrawOp::FillPathPaint { tf, .. }
                         | DrawOp::StrokePathPaint { tf, .. }
-                        | DrawOp::DrawBitmap { tf, .. } => Some(tf),
+                        | DrawOp::DrawBitmap { tf, .. }
+                        | DrawOp::DrawEmissiveBitmap { tf, .. } => Some(tf),
                         DrawOp::Clear { .. }
                         | DrawOp::PushLayer { .. }
                         | DrawOp::PopLayer

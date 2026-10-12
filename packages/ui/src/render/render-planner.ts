@@ -93,6 +93,8 @@ export interface CaptionHit {
 
 /** 一帧画完：这一刻的计划，与画的时候报出来的东西。画面经 `frame()` 取。 */
 export interface RenderedFrame {
+  /** Present for explicitly requested independent associated/emissive components. */
+  pixelFormat?: 'associated-rgba8';
   plan: FramePlan;
   warnings: RenderWarning[];
   skipped: SkippedItem[];
@@ -361,14 +363,15 @@ export class RenderPlanner {
   /**
    * 求 `seconds` 这一刻的计划并画成 `width`×`height`（与序列画布同比例）。画不出来的东西跳过，报在结果里。
    * `captions: false` 不画字幕层；`transparent` 不铺背景（缩略图）。
+   * `associatedRgba` 保留独立关联/发光分量；消费方须核对返回的 pixelFormat 并在底图上合成，不直接交给 ImageData。
    */
-  render(seconds: number, width: number, height: number, options: { captions?: boolean; transparent?: boolean } = {}): RenderedFrame {
-    const flags = (options.captions === false ? 0 : 1) | (options.transparent ? 2 : 0);
+  render(seconds: number, width: number, height: number, options: { captions?: boolean; transparent?: boolean; associatedRgba?: boolean } = {}): RenderedFrame {
+    const flags = (options.captions === false ? 0 : 1) | (options.transparent ? 2 : 0) | (options.associatedRgba ? 4 : 0);
     return JSON.parse(this.#call((exports) => exports.bc_render(seconds, width, height, flags))) as RenderedFrame;
   }
 
   /**
-   * 上一次 `render` 画好的帧：非预乘的 RGBA（不铺背景时有透明处，否则不透明）。是 WASM 内存的视图，不复制：
+   * 上一次 `render` 画好的帧：默认非预乘 RGBA；显式 associatedRgba 时按返回的 pixelFormat 读取独立关联分量。是 WASM 内存的视图，不复制：
    * 下一次调用 WASM 之前用完（内存增长时旧视图会失效）。
    */
   frame(): Uint8ClampedArray<ArrayBuffer> {

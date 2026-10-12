@@ -41,6 +41,100 @@ fn words() -> Vec<SceneWord> {
         })
         .collect()
 }
+
+#[test]
+fn component_materials_keep_emission_and_are_repeatable_with_feedback() {
+    for source in [
+        include_str!("../../caption-scene/tests/fixtures/gaussian-axis.json"),
+        include_str!("../../caption-scene/tests/fixtures/glow-cascade.json"),
+    ] {
+        let body: Value = serde_json::from_str(source).unwrap();
+        let mut rendered = plan(
+            body.clone(),
+            "One two three four",
+            words(),
+            Presentation::default(),
+        );
+        let first = rendered.render(0.2).unwrap();
+        assert!(
+            first
+                .rgba
+                .chunks_exact(4)
+                .any(|p| p[..3].iter().any(|c| *c > p[3])),
+            "emission must not be clamped to alpha"
+        );
+        assert_ne!(first.rgba, rendered.render(0.9).unwrap().rgba);
+        assert_eq!(first.rgba, rendered.render(0.2).unwrap().rgba);
+        let (ops, _) = rendered.record(0.2).unwrap();
+        assert!(
+            ops.ops
+                .iter()
+                .any(|op| matches!(op, render_raster::drawop::DrawOp::DrawEmissiveBitmap { .. }))
+        );
+        let mut with_feedback = body;
+        with_feedback["scene"]["value"]["materials"].as_array_mut().unwrap().push(json!({"kind":"feedback","id":"trail","samples":2,"step":{"ticks":1,"timescale":5},"decay":0.5,"offset":[2,0]}));
+        let mut rendered = plan(
+            with_feedback.clone(),
+            "One two three four",
+            words(),
+            Presentation::default(),
+        );
+        let a = rendered.render(0.8).unwrap();
+        let _ = rendered.render(3.1).unwrap();
+        assert_eq!(a.rgba, rendered.render(0.8).unwrap().rgba);
+        assert_eq!(
+            a.rgba,
+            plan(
+                with_feedback,
+                "One two three four",
+                words(),
+                Presentation::default()
+            )
+            .render(0.8)
+            .unwrap()
+            .rgba
+        );
+    }
+}
+#[test]
+fn component_materials_share_sampled_layout_and_preserve_empty_cue_gaps() {
+    let mut body: Value = serde_json::from_str(include_str!(
+        "../../caption-scene/tests/fixtures/glow-cascade.json"
+    ))
+    .unwrap();
+    let scene = &mut body["scene"]["value"];
+    scene["requiredCapabilities"]
+        .as_array_mut()
+        .unwrap()
+        .push(json!("caption-layout-per-sample/1"));
+    scene["layout"]["layoutEvaluation"] = json!("per-sample");
+    scene["layout"]["bindings"] = json!([{"nodeId":"caption","property":"fontSize","value":{"kind":"keyframes","clock":{"unit":"cue","origin":"start","duration":{"kind":"unit-span"}},"keys":[{"at":0,"value":12},{"at":1,"value":20}]}}]);
+    let cue = |id: &str, start: f64, end: f64| SceneCue {
+        id: id.into(),
+        document_id: "doc".into(),
+        text: "Light".into(),
+        start,
+        end,
+        words: vec![],
+    };
+    let mut rendered = ScenePlan::compile(
+        parse_style(&body).unwrap(),
+        Presentation::default(),
+        vec![cue("a", 0., 1.), cue("b", 2., 3.)],
+        (160, 90),
+        TextEngine::with_document_fonts(&[include_bytes!(
+            "../../render-raster/assets/fonts/NotoSansSC-Variable.ttf"
+        )
+        .to_vec()]),
+        "test".into(),
+    )
+    .unwrap();
+    let start = rendered.render(0.2).unwrap();
+    assert!(start.rgba.iter().any(|v| *v != 0));
+    assert!(rendered.render(1.5).unwrap().rgba.iter().all(|v| *v == 0));
+    assert_eq!(start.rgba, rendered.render(2.2).unwrap().rgba);
+    assert_eq!(start.rgba, rendered.render(0.2).unwrap().rgba);
+}
 #[test]
 fn real_word_pages_highlight_and_seek_are_shared_pixels() {
     let mut p = plan(

@@ -965,6 +965,19 @@ impl EvaluatedSceneElement {
                     opacity: *opacity,
                     tf: *tf,
                 },
+                DrawOp::DrawEmissiveBitmap {
+                    bitmap,
+                    opacity,
+                    tf,
+                } => DrawOp::DrawEmissiveBitmap {
+                    bitmap: *bitmap_ids.get(*bitmap as usize).ok_or_else(|| {
+                        anyhow::anyhow!(
+                            "scene reference DrawEmissiveBitmap 引用未知 bitmap {bitmap}"
+                        )
+                    })?,
+                    opacity: *opacity,
+                    tf: *tf,
+                },
             };
             builder.push(remapped);
         }

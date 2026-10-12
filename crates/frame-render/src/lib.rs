@@ -46,6 +46,14 @@ pub fn premultiplied(width: u32, height: u32, mut data: Vec<u8>) -> Option<Pixma
     Pixmap::from_vec(data, IntSize::from_wh(width, height)?)
 }
 
+/// Straight-alpha output cannot represent emission above alpha without losing light.
+pub fn demultiplied_checked(data: &[u8]) -> Result<Vec<u8>, &'static str> {
+    if render_raster::emissive::has_emissive_components(data) {
+        return Err("EMISSIVE_STRAIGHT_ALPHA_UNSUPPORTED");
+    }
+    Ok(demultiplied(data))
+}
+
 /// 预乘的 RGBA 还原成非预乘（界面的 ImageData 要非预乘）。
 pub fn demultiplied(data: &[u8]) -> Vec<u8> {
     let mut out = data.to_vec();

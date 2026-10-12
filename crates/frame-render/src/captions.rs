@@ -666,7 +666,7 @@ impl CaptionPlan {
         let frame = s.render(seconds)?;
         self.scene_hits = frame.hits;
         self.scene_time = Some(seconds.to_bits());
-        if !frame.rgba.chunks_exact(4).any(|p| p[3] != 0) {
+        if !frame.rgba.iter().any(|component| *component != 0) {
             return Ok(None);
         }
         Ok(Some(CaptionLayer {

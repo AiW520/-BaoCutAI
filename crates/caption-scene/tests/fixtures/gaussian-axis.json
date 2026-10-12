@@ -1,0 +1,100 @@
+{
+  "schema": "baocut.caption-scene-style/1",
+  "scene": {
+    "kind": "inline",
+    "value": {
+      "schema": "baocut.caption-scene/1",
+      "evaluationVersion": 1,
+      "requiredCapabilities": [
+        "caption-scene/1",
+        "caption-expressions/1",
+        "caption-gaussian-axis/1"
+      ],
+      "parameters": [],
+      "layout": {
+        "width": {
+          "value": 140,
+          "basis": "absolute"
+        },
+        "x": {
+          "value": 80,
+          "basis": "absolute"
+        },
+        "y": {
+          "value": 45,
+          "basis": "absolute"
+        },
+        "maxLines": 2,
+        "pagination": {
+          "maxUnitsPerPage": 2
+        }
+      },
+      "speechState": {
+        "gapPolicy": "hold-previous",
+        "tailPolicy": "hold-last",
+        "timingPolicy": "estimated"
+      },
+      "nodes": [
+        {
+          "id": "caption",
+          "type": "text",
+          "style": {
+            "fontSize": {
+              "value": 16,
+              "basis": "absolute"
+            },
+            "fill": "#FFFFFF"
+          }
+        }
+      ],
+      "selectors": [],
+      "animations": [],
+      "materials": [
+        {
+          "kind": "gaussian-axis",
+          "id": "soften",
+          "contextNodeId": "caption",
+          "axis": "x",
+          "samples": {
+            "kind": "keyframes",
+            "clock": {
+              "unit": "page",
+              "origin": "start",
+              "duration": {
+                "kind": "unit-span"
+              }
+            },
+            "keys": [
+              {
+                "at": 0.0,
+                "value": 3
+              },
+              {
+                "at": 0.5,
+                "value": 0
+              },
+              {
+                "at": 1.0,
+                "value": 3
+              }
+            ],
+            "fill": {
+              "before": "hold",
+              "after": "hold"
+            }
+          },
+          "stepUv": {
+            "kind": "constant",
+            "value": 0.01
+          },
+          "sigmaUv": {
+            "kind": "constant",
+            "value": 0.012
+          },
+          "gamma": 2.2,
+          "boundary": "normalize"
+        }
+      ]
+    }
+  }
+}

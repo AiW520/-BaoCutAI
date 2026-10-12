@@ -1,4 +1,6 @@
 //! Declarative caption scenes. Layout, animation and recording are shared by native and WASM.
+mod component_filters;
+mod cue_unit_context;
 mod materials;
 mod sampled_layout;
 mod word_line_layout;
@@ -174,6 +176,10 @@ fn page_word_input(layout: &TextLayout, page: Option<&Page>) -> PageWordInput {
 }
 #[derive(Clone)]
 struct Unit {
+    word_position: Option<usize>,
+    line_position: Option<usize>,
+    cue_bindings: Option<Arc<cue_unit_context::CueBindings>>,
+    cue_selector: Option<String>,
     whitespace: bool,
     text_index: usize,
     text_count: usize,
@@ -208,6 +214,8 @@ pub struct SceneHit {
     pub bounds: Bounds,
 }
 pub struct SceneFrame {
+    /// Associated RGBA8. Component materials may emit RGB above alpha; use an
+    /// emission-aware compositor or checked conversion before straight export.
     pub rgba: Arc<Vec<u8>>,
     pub hits: Vec<SceneHit>,
     pub fingerprint: u64,
@@ -498,44 +506,53 @@ fn resolved_units(
             .iter()
             .position(|p| seconds >= p.start && seconds < p.end)
         {
-            if relayout_needed {
+            let global = cue_unit_context::enabled(scene);
+            let sampled_text_layout;
+            let resolved = if relayout_needed {
                 let node =
                     sampled_layout::find_text(&scene.nodes, id).expect("validated text node");
                 let mut relayout = l.clone();
-                relayout.pages[pi] = sampled_layout::reflow(
-                    text,
-                    l,
-                    &l.pages[pi],
-                    node,
-                    &scene.layout,
-                    size,
-                    params,
+                let reflow_all = global && scene.layout.pagination.word_line_pattern.is_none();
+                for page_index in 0..l.pages.len() {
+                    if page_index != pi && !reflow_all {
+                        continue;
+                    }
+                    relayout.pages[page_index] = sampled_layout::reflow(
+                        text,
+                        l,
+                        &l.pages[page_index],
+                        node,
+                        &scene.layout,
+                        size,
+                        params,
+                        budget,
+                    )?;
+                }
+                sampled_text_layout = relayout;
+                &sampled_text_layout
+            } else {
+                l
+            };
+            let mut resolved_units = units_for(
+                cue,
+                resolved,
+                &resolved.pages[pi],
+                seconds,
+                &scene.speech_state,
+                presentation,
+            );
+            if global {
+                cue_unit_context::bind(
+                    scene,
+                    id,
+                    resolved,
+                    pi,
+                    &mut resolved_units,
+                    presentation,
                     budget,
                 )?;
-                units.insert(
-                    id.clone(),
-                    units_for(
-                        cue,
-                        &relayout,
-                        &relayout.pages[pi],
-                        seconds,
-                        &scene.speech_state,
-                        presentation,
-                    ),
-                );
-            } else {
-                units.insert(
-                    id.clone(),
-                    units_for(
-                        cue,
-                        l,
-                        &l.pages[pi],
-                        seconds,
-                        &scene.speech_state,
-                        presentation,
-                    ),
-                );
             }
+            units.insert(id.clone(), resolved_units);
         }
     }
     Ok(units)
@@ -887,6 +904,10 @@ fn units_for(
     let cue_first_word_span = input_words.next().map(|word| (word.start, word.end));
     let cue_second_word_start = input_words.next().map(|word| word.start);
     let base = Unit {
+        word_position: None,
+        line_position: None,
+        cue_bindings: None,
+        cue_selector: None,
         whitespace: false,
         text_index: 0,
         text_count: 0,
@@ -945,6 +966,7 @@ fn units_for(
         );
         let mut u = base.clone();
         u.kind = UnitKind::Line;
+        u.line_position = Some(li);
         u.index = li;
         u.count = page.lines.len();
         u.id = format!("line-{}", line.bytes.start);
@@ -970,6 +992,7 @@ fn units_for(
             let w = &layout.words[*i];
             let mut u = u.clone();
             u.kind = UnitKind::Word;
+            u.word_position = Some(*i);
             u.id = w.id.clone();
             u.index = wi;
             u.count = members.len();
@@ -1371,12 +1394,15 @@ fn context(u: &Unit, r: &RenderContext) -> Context {
         "unit.pageLastWordTimed".into(),
         Evaluated::Bool(u.page_last_word_span.is_some()),
     );
-    Context {
+    let mut out = Context {
         fields,
         spans: u.spans.clone(),
         seed: r.seed,
         stable_key: format!("{}|{}|{}", r.instance, r.cue.id, u.id),
-    }
+    };
+    cue_unit_context::add_fields(&mut out, u);
+    cue_unit_context::select(&mut out, u, u.cue_selector.as_deref());
+    out
 }
 fn pose(
     node: &Node,
@@ -1453,6 +1479,14 @@ fn pose(
                 );
             }
         }
+        cue_unit_context::select(
+            &mut c,
+            u,
+            a.target
+                .selector_id
+                .as_deref()
+                .or(u.cue_selector.as_deref()),
+        );
         c.stable_key = format!("{}|{}|{}|{}|{}", r.instance, r.cue.id, u.id, node.id, a.id);
         if let Some(v) = sample_value(
             &a.value,
@@ -1550,7 +1584,13 @@ fn draw_nodes(
                 .unwrap();
             if let Some(units) = r.units.get(&s.node_id) {
                 for (u, _) in units.iter().filter(|(u, _)| selected(s, u)) {
-                    draw_nodes(&n.children, parent, Some(u), r, text, b, hits, budget)?;
+                    if u.cue_bindings.is_some() {
+                        let mut bound = u.clone();
+                        bound.cue_selector = Some(s.id.clone());
+                        draw_nodes(&n.children, parent, Some(&bound), r, text, b, hits, budget)?;
+                    } else {
+                        draw_nodes(&n.children, parent, Some(u), r, text, b, hits, budget)?;
+                    }
                 }
             }
             continue;

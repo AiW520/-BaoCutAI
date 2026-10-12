@@ -89,8 +89,16 @@ export interface CaptionPresentation {
 }
 
 /** Ordered cue-local materials. Feedback evaluates finite past samples of the preceding stack. */
+export interface CaptionGaussianStage {
+  scale: { num: number; den: number };
+  samples: CaptionDynamicValue;
+  stepUv: CaptionDynamicValue;
+  sigmaUv: CaptionDynamicValue;
+}
 export type CaptionMaterial =
   | { kind: 'blur'; id: string; radius: CaptionDynamicValue; passes?: number }
   | { kind: 'wave-displace'; id: string; amplitude: CaptionDynamicValue; wavelength: CaptionDynamicValue; phase: CaptionDynamicValue; axis: 'x' | 'y' }
   | { kind: 'soft-band'; id: string; contextNodeId: string; axis: 'x' | 'y'; center: CaptionDynamicValue; halfWidth: CaptionDynamicValue; feather: CaptionDynamicValue; amount: CaptionDynamicValue; opacity: CaptionDynamicValue }
+  | { kind: 'gaussian-axis'; id: string; contextNodeId: string; axis: 'x' | 'y'; samples: CaptionDynamicValue; stepUv: CaptionDynamicValue; sigmaUv: CaptionDynamicValue; gamma: number; boundary: 'normalize' | 'replicate' | 'transparent' }
+  | { kind: 'glow-cascade'; id: string; contextNodeId: string; levels: { horizontal: CaptionGaussianStage; vertical: CaptionGaussianStage }[]; gamma: number; intensity: CaptionDynamicValue; originalOpacity: CaptionDynamicValue; composite: 'screen' | 'source-over-glow' }
   | { kind: 'feedback'; id: string; samples: number; step: { ticks: number; timescale: number }; decay: number; offset?: [number, number] };

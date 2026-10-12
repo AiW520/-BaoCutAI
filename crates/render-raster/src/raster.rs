@@ -3,6 +3,7 @@
 //! （image 直引 / video 顺序解码），DrawBitmap 直接取帧内的位图侧表。
 
 use crate::drawop::{DrawOp, FrameOps, MatteMode, PaintData, PathData, StaticPrefix};
+use crate::emissive::{composite_associated, has_emissive_components};
 #[cfg(feature = "media")]
 use crate::media::MediaStore;
 use crate::plan::blend_to_skia;
@@ -614,6 +615,19 @@ pub fn rasterize_with_media(
                     target!().draw_pixmap(0, 0, pm.as_ref().as_ref(), &paint, tf, clip);
                 }
             }
+            DrawOp::DrawEmissiveBitmap {
+                bitmap,
+                opacity,
+                tf,
+            } => {
+                let data = frame
+                    .bitmaps
+                    .get(*bitmap as usize)
+                    .ok_or_else(|| anyhow!("EMISSIVE_BITMAP_MISSING: {bitmap}"))?;
+                let pixels = PixmapRef::from_bytes(&data.rgba, data.width, data.height)
+                    .ok_or_else(|| anyhow!("EMISSIVE_BITMAP_SIZE_INVALID: {bitmap}"))?;
+                composite_associated(target!(), pixels, *opacity, *tf, clip)?;
+            }
             DrawOp::DrawBitmap {
                 bitmap,
                 opacity,
@@ -632,6 +646,9 @@ pub fn rasterize_with_media(
                             data.rgba.len()
                         )
                     })?;
+                if has_emissive_components(pixels.data()) {
+                    return Err(anyhow!("EMISSIVE_BITMAP_OP_REQUIRED"));
+                }
                 target!().draw_pixmap(
                     0,
                     0,
@@ -741,6 +758,21 @@ pub fn rasterize_with_media(
                     .pop()
                     .ok_or_else(|| anyhow!("PopLayer 无匹配 PushLayer"))?;
                 // 层回贴不受裁剪影响：裁剪已经在层内的每次绘制上生效过了。
+                if has_emissive_components(layer.data())
+                    || has_emissive_components(target!().data())
+                {
+                    if blend_mode != tiny_skia::BlendMode::SourceOver {
+                        return Err(anyhow!("EMISSIVE_BLEND_UNSUPPORTED"));
+                    }
+                    composite_associated(
+                        target!(),
+                        layer.as_ref(),
+                        opacity,
+                        [1., 0., 0., 1., 0., 0.],
+                        None,
+                    )?;
+                    continue;
+                }
                 target!().draw_pixmap(
                     0,
                     0,

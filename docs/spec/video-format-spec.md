@@ -1827,7 +1827,7 @@ interface CaptionStyleBody {
 | 表达式 | 带类型 literal/read/call/if；scalar/integer/length/time/angle/bool/color；无环纯函数，时间/单元/基础布局/参数只读；共享数学曲线、连续 sin/cos、带 seed 的 random/noise；if 惰性求值，非法运算返回诊断 |
 | 合成 | replace/add/multiply 与 priority/声明顺序；颜色只允许 replace；乘法通道为无量纲数；父子变换及离屏组 opacity 通过共同 DrawOp 光栅执行 |
 
-`requiredCapabilities` 当前可声明 `caption-scene/1`、`caption-expressions/1`、`caption-permutation/1`、`caption-function-dag/1`、`caption-unit-animation/1`、`caption-image-png/1`、`caption-paint-stack/1`、`caption-blur/1`、`caption-feedback/1`、`caption-wave-displace/1`、`caption-soft-band/1`、`caption-layout-per-sample/1`、`caption-word-line-layout/1`、`caption-bezier-expression/1`、`caption-text-context/1`、`caption-ink-context/1`、`caption-unit-context/1`、`caption-cue-word-context/1` 和 `caption-first-page-context/1`。未知能力、属性或字段拒绝；artifact 形式的场景引用、非 PNG 图片、任意 shader、无限递归反馈、节点级材质栈及改变分页成员的时间布局尚未开放，不能保存为成功后在渲染中忽略。完整扩展方向仍按[设计文档](../design/subtitle/dynamic-caption-format-design.md)维护。
+`requiredCapabilities` 当前可声明 `caption-scene/1`、`caption-expressions/1`、`caption-permutation/1`、`caption-function-dag/1`、`caption-unit-animation/1`、`caption-image-png/1`、`caption-paint-stack/1`、`caption-blur/1`、`caption-feedback/1`、`caption-wave-displace/1`、`caption-soft-band/1`、`caption-gaussian-axis/1`、`caption-glow-cascade/1`、`caption-layout-per-sample/1`、`caption-word-line-layout/1`、`caption-bezier-expression/1`、`caption-text-context/1`、`caption-ink-context/1`、`caption-unit-context/1`、`caption-cue-word-context/1`、`caption-first-page-context/1` 和 `caption-cue-unit-context/1`。未知能力、属性或字段拒绝；artifact 形式的场景引用、非 PNG 图片、任意 shader、无限递归反馈、节点级材质栈及改变分页成员的时间布局尚未开放，不能保存为成功后在渲染中忽略。完整扩展方向仍按[设计文档](../design/subtitle/dynamic-caption-format-design.md)维护。
 
 显式 `maxUnitsPerPage` 按词配额人为切页时，第 2 个及后续词块开头若只有水平 Unicode 空白组成的词间分隔 run，该 run 不参与显示排版；空格、tab、NBSP、Unicode 空格均适用。若 run 含 CR/LF、VT/FF、NEL、LS 或 PS，则整段保留，不吞显式换行及其缩进。原始 cue 开头的缩进、默认按宽度换行均不变。源文本/页范围/字素索引保留分隔字节，空白装饰定位新页逻辑行首；逐采样重排使用冻结的显示起点，不恢复已隐藏的分隔空白。
 
@@ -1859,6 +1859,12 @@ interface CaptionStyleBody {
 
 真实绑定的 Word/Grapheme 及其 repeat 装饰另有 `unit.wordTimed`，以及跨分页、按全局原词成员顺序查下一词的 `time.nextWordStartSeconds`（相对 cue 起点）与 `unit.nextWordTimed`。cue/page/line 和未绑定词的空白单元，其 current/next 标记始终 false，next 时间为 0；静态文字和 estimated 推导词时间也不会被标成真实绑定。任何缺失的对应输入时间均返回 0/false，真实负边界、零边界和零时长完整保留，因此模板必须看 bool 区分缺失。核心不延长 word.end，不填平真实 gap；需要按下一词开始调整外部效果窗口的模板自行用只读字段计算。上述新增字段均禁止布局前读取。示例见 [cue-word-context.json](../../crates/caption-scene/tests/fixtures/cue-word-context.json)。
 
+`caption-cue-unit-context/1` 必须显式声明后才能读取整段逻辑单元索引；未声明时验证返回 `CAPTION_CAPABILITY_UNAVAILABLE`，不隐式启用额外排版。`unit.cueWordIndex/cueWordCount`（scalar）以当前文字节点 TextLayout 的全部词成员为零基顺序，Word 碎片和其 Grapheme 跨行/跨页保持同一词序号；由 `unit.cueWordBound`（bool）标识有效绑定。词成员可来自真实输入或显示分词，此标记与 `unit.wordTimed` 的时间真实性不同，不以全文字素索引代替词序号。`unit.cueLineIndex/cueLineCount` 按整个 cue 所有页的视觉行逻辑顺序计数，Line/Word/Grapheme 及空白装饰继承所属行，由 `unit.cueLineBound` 标识。对应没有词/行绑定的单元返回 index=0、count=0、bound=false；原 `unit.index/count`、`selectedIndex/selectedCount` 含义不变。
+
+`unit.cueSelectedIndex/cueSelectedCount`（scalar）及 `unit.cueSelectionAvailable`（bool）只在动画 target 或 repeat 明确绑定 word 选择器，且整个 filter 仅含 All、Tag 及 And/Or/Not 组合时有效：按全 cue 所有匹配词排序，包括当前不可见页。Tag 只读取 `Presentation.word_tags`，不从文案、字体、颜色或动画推断关键词。State、Range、Parity、含这些条件的组合、非 word 选择器或未明确绑定均返回 0/0/false。普通属性不借用其他选择器；repeat 子装饰继承其选择器，动画逐条重新绑定，不泄漏前一轨的选集。各选择器匹配表按文字节点在本次求值中共享，每个词及布尔过滤节点计入操作预算。
+
+只在声明本能力的场景中，逐采样排版才在同一时刻重排整个 cue 的全部页，以计算真实全局行前缀及总数；前后页均计入既有重排预算，不能静默采用旧行数。固定 `wordLinePattern` 使用冻结行数，只重排当前页的绘制几何。未声明能力的场景继续仅重排当前页。所有新增字段禁止布局前读取，见 [cue-unit-context.json](../../crates/caption-scene/tests/fixtures/cue-unit-context.json)。
+
 `caption-first-page-context/1` 暴露当前文字节点固定第一页成员的真实输入边界：`time.firstPageFirstWordStartSeconds`、`time.firstPageLastWordEndSeconds`、`time.firstPageNextWordStartSeconds`，以及对应 `unit.firstPageFirstWordTimed/firstPageLastWordTimed/firstPageNextWordTimed`。另提供当前页的 `time.pageFirstWordStartSeconds/pageNextWordStartSeconds` 与 `unit.pageFirstWordTimed/pageNextWordTimed`。所有 time 均相对 cue 起点；next 指页末词之后的下一全局原词，不受当前页显示窗口或采样位置限制。当前页所有单元及其绑定装饰共享这些值，逐采样重排保持固定成员身份。静态文字、estimated 或缺少对应输入词时返回 0/false；零、负边界及真实 gap 保持不变。第一页末词结束与页面显示结束明确区分，不把延至下一页或 cue 结束的显示窗口当作词结束。上述字段均禁止布局前读取，见 [first-page-context.json](../../crates/caption-scene/tests/fixtures/first-page-context.json)。
 
 `time.lineElapsedSeconds/lineDurationSeconds`（time）提供所属行的词时间窗口，line/word/grapheme 及其装饰继承同一组值。cue/page 没有唯一所属行时明确回退到自身窗口。无词时间的行使用当前页显示窗口供视觉定时，但不据此伪造朗读状态。elapsed 不截断，持续时间可为零，表达式需自行保护除法。上述页序号和行时钟均禁止在布局前读取。
@@ -1873,14 +1879,36 @@ line 的 active/read/unread 状态按该行词成员求值：当前选中的活�
 
 布局表达式（包括间接调用的纯函数）只可读取参数、cue 时钟、cue 的稳定 index/count 与画布尺寸；不能读 layout、活动词或动态选择集合，关键帧只能使用 cue 时钟。布局阶段禁止依赖自身产生的行、页或框。动态字号限 1–4096 px、行高 0.1–10、字距 −2–10 em；非法采样结果拒绝。共享文字缓存已有字节预算，变化的字号不会无限累积缓存。行/词/字形框及装饰节点在重排后从同一结果计算。
 
-**模糊、波纹位移、柔边遮罩与反馈材质**。场景的 `materials` 按数组顺序执行，逐 cue 隔离，作用于该 cue 的完整文字和装饰合成；最多 8 项，每项 id 唯一。材质后的颜色仍是 sRGB 预乘 RGBA8，输出记录为 DrawOp 位图，精确预览与导出共用；点击几何来自当前时刻的文字，不把拖尾当作可编辑文字。
+**关联颜色与发光位图传输**。共享 DrawOp 的 `DrawEmissiveBitmap { bitmap, opacity, tf }` 使用位图侧表的四个独立 RGBA8 UNORM 分量，RGB 可以大于 alpha，甚至在 alpha 为零时仍贡献光。该 op 使用 BCOP v6 的 tag 14，后跟 bitmap u32、opacity f32、六个仿射 f32（均 little-endian），侧表布局沿用 v5。仅实际含该 op 的帧提升到 v6；普通 v3/v4/v5 帧的编码不变。普通 `DrawBitmap` 仍要求预乘像素，不能暗中承载发光分量。
+
+CPU/native/WASM 对发光位图执行同一个 source-over：`Cout = Cs + (1−As)Cd`、`Aout = As + (1−As)Ad`。逆仿射在目标像素中心求源坐标，源像素中心使用双线性过滤，图外为透明零，不夹到边缘；opacity 和 clip 覆盖率同时乘源的全部四个分量。合成结果各分量独立按最近整数舍入并限于 0–255，不将 RGB 限到 alpha。离屏组、遮罩和透明内容判定不能仅因 alpha 为零而丢弃非零 RGB。含发光分量时，未定义的非 Normal 混合返回 `EMISSIVE_BLEND_UNSUPPORTED`；尚未支持关联分量的通用滤镜/转场返回明确能力错误，不默用普通预乘路径。当前执行器为共享 CPU reference；GPU feature 尚不可用，未宣称额外 GPU 支持。
+
+预览 ABI 的 `bc_render` flags 数值 1 为字幕、2 为透明背景、4（`RENDER_ASSOCIATED_RGBA = 1 << 2`）为原始关联 RGBA8 输出；例如 7 返回透明字幕的关联分量，并在结果 JSON 标记 `pixelFormat: "associated-rgba8"`。原有 flags 3 仍输出非预乘透明 RGBA，但若实际输出含 RGB > alpha，返回 `EMISSIVE_STRAIGHT_ALPHA_UNSUPPORTED` 并使 `bc_frame_len` 为零，避免返回截断颜色或上一帧。原始关联分量须由宿主按上述 source-over 合到查看背景，不能直接当作 straight-alpha ImageData；背景不属于渲染取样数据。不透明背景最终输出与旧普通帧行为不变。
+
+**模糊、发光、位移、遮罩与反馈材质**。场景的 `materials` 按数组顺序执行，逐 cue 隔离，作用于该 cue 的完整文字和装饰合成；最多 8 项，每项 id 唯一。材质输出使用 sRGB 关联 RGBA8；普通颜色满足 RGB ≤ alpha，显式发光分量允许 RGB > alpha，输出记录为相应 DrawOp 位图，精确预览与导出共用；点击几何来自当前时刻的文字，不把拖尾当作可编辑文字。
 
 | kind | 字段与执行合同 |
 | --- | --- |
 | blur | radius 为 length 类型 DynamicValue，使用与布局相同的只读 cue 上下文；范围 0–64 输出像素，按 `floor(radius + 0.5)` 量化；passes 为 1–3，默认 1。每遍执行已有确定性预乘 box blur，不冒称 Gaussian。零半径跳过滤镜 |
 | wave-displace | amplitude 为 length 类型 DynamicValue，范围 −256–256 输出像素；wavelength 为 length 类型 DynamicValue，范围 1–1,000,000 输出像素；phase 为有限 angle 类型 DynamicValue（弧度）；axis 必填 x 或 y。三个动态值均使用只读 cue 上下文。按预乘 RGBA 双线性逆采样，画布外为透明；幅度为零时返回输入，但仍检查其余 uniform |
 | soft-band | contextNodeId 必填且明确引用唯一 Text；允许 Group 祖先与空 Group，拒绝其他 Text、Image、Shape 或 Repeat，即便其当前 opacity 为零。axis 必填 x/y；center、halfWidth、feather、amount、opacity 均为必填 scalar DynamicValue，范围依次为 [−4,4]、[0,4]、[0,4]、[0,1]、[0,1]；使用指定文字节点当前页的排版后上下文，允许页/墨迹字段。无有效关键帧值时回退到 .5/.5/0/0/1；无当前页则输出透明，不借用其他节点上下文 |
+| gaussian-axis | contextNodeId 指向场景唯一 Text；axis 为 x/y；samples、stepUv、sigmaUv 为 scalar DynamicValue，范围分别为 [0,1024]、[0,1]、[0,1024]；gamma 为固定有限数 [0.1,8]；boundary 必填 normalize/replicate/transparent。尺寸保持原画布，采用下述独立分量高斯合同 |
+| glow-cascade | contextNodeId 指向场景唯一 Text；levels 为 1–7 个 `{horizontal, vertical}`；每个 stage 是 `{scale:{num,den}, samples, stepUv, sigmaUv}`，后三项同高斯动态参数，scale 要求 `1 <= num <= den <= 4096`；gamma 为固定有限数 [0.1,8]，作用于每个 pass 及强度映射；intensity、originalOpacity 为 scalar DynamicValue，分别限 [0,16]、[0,1]；composite 必填 screen/source-over-glow |
 | feedback | samples 为 1–16 个过去样本，step 为正的 `{ticks,timescale}`，总历史窗口至多 2 秒；decay 为 0–1，offset 为每个样本的像素位移（各轴绝对值不超过 256）。第 i 个样本重新求值 `t − i × step` 时刻的前缀材质栈，权重为 decay 的 i 次方、位移为 i × offset；按最远历史到当前帧 source-over 合成，当前帧权重为 1 |
+
+`gaussian-axis` 和 `glow-cascade` 分别必须显式声明 `caption-gaussian-axis/1`、`caption-glow-cascade/1`，缺失返回 `CAPTION_CAPABILITY_REQUIRED`。`contextNodeId` 必须明确指向场景中唯一的 Text；允许 Group 祖先及空 Group，拒绝其他 Text、Shape、Image、Repeat，包括当前不可见的节点。动态参数在该文字节点当前页排版完成后求值，可读取已开放的页、词时间和墨迹上下文；无当前页时输出透明。无有效关键帧值时 samples/stepUv/sigmaUv/intensity 回退为 0、originalOpacity 回退为 1；求得非法数值报 `CAPTION_MATERIAL_INVALID`，不能夹到合法范围继续执行。示例见 [gaussian-axis.json](../../crates/caption-scene/tests/fixtures/gaussian-axis.json)、[glow-cascade.json](../../crates/caption-scene/tests/fixtures/glow-cascade.json)。
+
+**独立分量高斯**。材质入口从前缀合成结果截取原始画布，忽略其他材质预留的 padding；本材质不增加边界，最终结果写回相同画布区域。取 `N=floor(samples)`，中心权重为 1，沿指定轴两侧第 i 个样本偏移 `i×stepUv`，权重 `exp(−.5×(i×stepUv/sigmaUv)²)`，i=1…N。N≥1 时 sigmaUv 必须大于 0；N=0 只执行尺寸转换（同尺寸为复制），不做 gamma 编解码。stepUv/sigmaUv 均以**该 pass 输入纹理**的指定轴归一化维度为单位，先乘输入宽或高换算为像素；不能误乘输出维度。重采样以像素中心 `(outIndex+.5)×inputSize/outputSize−.5` 对齐，同尺寸轴直接使用整数中心。
+
+每个纹理读取先对四个独立关联分量做双线性插值；随后仅 RGB 做 `pow(channel,gamma)`，alpha 保持原值。加权平均后仅 RGB 做 `pow(channel,1/gamma)`，每个输出分量独立按 `floor(.5+255×clamp(value,0,1))` 写入 UNORM8。RGB 不受 alpha 上限约束；不能改成插值前 gamma、解预乘后滤波、RGB≤alpha 钳制或跨 pass 只量化一次。指数与幂运算使用共享确定性 libm 实现。
+
+boundary 按样本 UV 是否在闭区间 [0,1] 判断：normalize 丢弃越界样本及其权重，保留样本重新归一；transparent 保留越界样本权重但贡献四通道零值；replicate 将越界 UV 夹到边缘。落在 [0,1] 内的双线性读取在首末像素中心处夹边，因此 transparent 不等于四个相邻 texel 各自透明补零。上述边界是原画布或当前缩放纹理的边界，不随外层 padding 改变。
+
+**多尺度级联发光**。每级先 horizontal 高斯，再 vertical 高斯；首级输入是入口原图，其后各级输入是上一级 vertical 输出，并保留每级 vertical 图用于最终合成。每个 stage 的宽高分别为 `max(1,floor(originalCanvasDimension×num/den))`，始终相对入口原画布计算，不能在上一 stage 尺寸上再次乘 scale。每个 stage 的采样步距及 sigma 仍乘自身**输入**纹理尺寸，固定使用 replicate 边界，沿用上述逐 pass gamma 与 UNORM8 量化。
+
+最终将原图及各级 vertical 图按像素中心双线性采样回原画布。令 `gain=(intensity×.5)^(1/gamma)`，各级分量为 `Lk`，则 `G=clamp((1−Πk(1−clamp(Lk×gain,0,1)))×max(gain,1),0,1)`；令 `O=original×originalOpacity`，包括 alpha 也同乘。screen 对每个 RGBA 分量分别执行 `1−(1−G)×(1−O)`；source-over-glow 执行 `O+G×(1−Oalpha)`。最后独立量化四个通道，不添加未声明的着色、饱和度或背景。intensity=0 时 G=0，originalOpacity=1 时结果为原图；发光结果通过前述 `DrawEmissiveBitmap` 和关联 RGBA ABI 传输。
+
+**组件滤镜预算与有效区域**。两种材质仍受整个材质栈 256 MiB 暂存/输出表面上界、256 Mi 单次采样工作量与共享表达式预算约束；级联另核对入口原图、已保留 vertical 层、暂存 horizontal/vertical 层及最终输出的峰值。工作量同时计入实际需要的源 texel 读取、入口非零区域扫描、各输出面的像素分配/清零/写入，以及画布裁切/回填；整数中心或边缘退化的双线性读取按实际 1/2/4 个 texel 计费，不虚构统一四次读取。有效区域以**任何 RGBA 分量非零**判断，不能用 alpha-only 框；后续 pass 保守传播滤波支持范围，写输出时同步更新区域。区域优化只跳过可证明为零的输入/输出，不截断可能存在的低亮度或零 alpha 发光。预检超限返回 `CAPTION_BUDGET_EXCEEDED`，不减少层数、抽样或分辨率。
 
 soft-band 固定以原始画布归一化坐标计算，`U = (x + .5 − padding) / canvasWidth`，y 轴相应使用 y/canvasHeight。令 c=center、h=halfWidth、f=feather，遮罩 `B = smoothstep(c−h−f,c−h,U) × (1−smoothstep(c+h,c+h+f,U))`，RGBA 每个预乘通道乘 `((1−amount)+amount×B)×opacity`，按 `floor(value+.5)` 回到 RGBA8。smoothstep 使用三次式 `t²(3−2t)`；f=0 时明确为 step，左边界包含、右边界不包含（h=f=0 时为空）。本材质不增加 padding，只消耗一次整面像素遍历；其他材质带来的 padding 不改变 UV。指定文字节点的静态/逐采样排版与文字录制使用同一解析过程，各个反馈历史时刻都重新求当前 cue 的页；非法动态值返回 `CAPTION_MATERIAL_INVALID`，不截断参数继续绘制。
 
@@ -1890,7 +1918,7 @@ soft-band 固定以原始画布归一化坐标计算，`U = (x + .5 − padding)
 
 反馈前缀不包含它自身和后续材质，因此无无限递归；相同时间的输入、布局和前缀滤镜都重新按冻结数据计算，不读取先前播放缓存。多个反馈相乘的最坏基础采样数不得超过 32。仅采样同一 cue 的有效区间，cue 结束时拖尾也结束；变帧率不改变秒级历史窗口。模糊放在反馈前时，各历史样本使用各自时刻的半径；放在反馈后时，使用当前半径模糊合成结果。
 
-离屏表面按模糊传播范围、波纹最大幅度和最大反馈位移预留透明边界；波纹常量幅度按 `ceil(abs(amplitude))` 预留，动态幅度按上限 256 像素预留，最后才裁回画布，避免画布边缘的滤镜截断。执行前核对暂存/输出表面的保守上界（256 MiB），每次采样共享表达式预算，材质光栅/模糊/混合总像素工作量不超过 256 Mi 像素；波纹按每个输出像素四次源像素读取计费，soft-band 按一遍输出像素计费，其排版后上下文解析同样使用共享表达式/重排预算。超限报 `CAPTION_BUDGET_EXCEEDED`，不减少样本或降低效果。该预算是准入限制，不保证复杂反馈场景实时运行。
+box blur、波纹位移与反馈按各自传播范围预留透明边界；独立分量高斯/级联发光则按上述固定原画布边界执行，不扩大滤镜输入；波纹常量幅度按 `ceil(abs(amplitude))` 预留，动态幅度按上限 256 像素预留，最后才裁回画布，避免画布边缘的滤镜截断。执行前核对暂存/输出表面的保守上界（256 MiB），每次采样共享表达式预算，材质光栅/模糊/混合总像素工作量不超过 256 Mi 像素；波纹按每个输出像素四次源像素读取计费，soft-band 按一遍输出像素计费，其排版后上下文解析同样使用共享表达式/重排预算。超限报 `CAPTION_BUDGET_EXCEEDED`，不减少样本或降低效果。该预算是准入限制，不保证复杂反馈场景实时运行。
 
 资源声明在写文档时与视频里的素材版本、内容摘要及 MIME 核对，`DocumentRevision.assetRefs` 由引擎生成。导出计划把文档依赖加入冻结素材集合；预览宿主只按该修订的依赖加载字节，不取素材的最新版本。清理保护仍被历史文档修订引用的资源，便携包恢复时重新核对正文、索引与素材；索引被删改也拒绝。字体清点只执行文字准备，不要求图片在线。
 

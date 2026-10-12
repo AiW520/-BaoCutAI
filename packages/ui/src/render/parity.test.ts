@@ -23,6 +23,7 @@ interface Shot {
   height: number;
   captions: boolean;
   transparent: boolean;
+  associatedRgba?: boolean;
   sha256: string;
   warnings: RenderWarning[];
   skipped: SkippedItem[];
@@ -78,14 +79,14 @@ function load(planner: RenderPlanner, scene: Scene, sequenceId: string): void {
 function draw(
   planner: RenderPlanner,
   scene: Scene,
-  shot: Pick<Shot, 'width' | 'height' | 'captions' | 'transparent'>,
+  shot: Pick<Shot, 'width' | 'height' | 'captions' | 'transparent' | 'associatedRgba'>,
   seconds: number,
 ): ReturnType<RenderPlanner['render']> {
   planner.clearPictures();
   for (const picture of scene.pictures) {
     planner.setPicture(picture.itemId, bands(picture.width, picture.height, picture.bands), picture.width, picture.height);
   }
-  return planner.render(seconds, shot.width, shot.height, { captions: shot.captions, transparent: shot.transparent });
+  return planner.render(seconds, shot.width, shot.height, { captions: shot.captions, transparent: shot.transparent, associatedRgba: shot.associatedRgba });
 }
 
 const sha256 = (pixels: Uint8Array | Uint8ClampedArray) => createHash('sha256').update(pixels).digest('hex');
@@ -160,6 +161,7 @@ describe.skipIf(!built)('预览与导出逐字节一致', () => {
         expect(rendered.skipped, label).toEqual(shot.skipped);
         expect(rendered.warnings, label).toEqual(shot.warnings);
         expect(rendered.spectra, label).toEqual([]);
+        if(shot.associatedRgba)expect(rendered.pixelFormat,label).toBe('associated-rgba8');
         const pixels = planner.frame();
         expect(pixels.length, label).toBe(shot.width * shot.height * 4);
         expect(sha256(pixels), label).toBe(shot.sha256);

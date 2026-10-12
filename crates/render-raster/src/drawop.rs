@@ -107,6 +107,13 @@ pub enum DrawOp {
         opacity: f32,
         tf: Mat6,
     },
+    /// Associated RGBA8 components (v6): RGB may exceed alpha, including alpha zero.
+    /// Affine bilinear transparent sampling and source-over preserve that emission.
+    DrawEmissiveBitmap {
+        bitmap: u32,
+        opacity: f32,
+        tf: Mat6,
+    },
 }
 
 /// 轨道遮罩模式（Lottie 的 `tt`）。
@@ -169,7 +176,8 @@ pub enum PaintData {
     },
 }
 
-/// 位图侧表条目（v5）：**预乘** RGBA8，逐行紧排，`rgba.len() == width × height × 4`。
+/// 位图侧表条目：RGBA8 逐行紧排，`rgba.len() == width × height × 4`。
+/// DrawBitmap 要求预乘；DrawEmissiveBitmap 允许独立发光分量 RGB > alpha。
 #[derive(Clone, PartialEq)]
 pub struct BitmapData {
     pub width: u32,
@@ -330,6 +338,7 @@ const MAGIC: u32 = 0x42_43_4F_50; // "BCOP"
 /// * v3：`PushLayer` 增加 `blend`，新增 `ClipPath` / `PopClip`（ADR-M04）
 /// * v4：paint 侧表（渐变 / even-odd 填充）与 `PushMatte` / `PopMatte`（ADR-M11）
 /// * v5：位图侧表与 `DrawBitmap`（BCF 文字的彩色字形）
+/// * v6：允许 RGB > alpha 的 `DrawEmissiveBitmap`，沿用位图侧表布局
 ///
 /// `encode` 写的是**这一帧真正需要的**版本（[`required_version`]）：一条 v4
 /// 原语都没有的帧仍然产出 v3 字节。这不是省事，而是承诺——阶段 0 录下的
@@ -340,12 +349,19 @@ const PAINT_VERSION: u32 = 4;
 /// 引入位图侧表的版本。
 const BITMAP_VERSION: u32 = 5;
 /// `encode` 可能产出、`decode` 必须认得的最高版本。
-pub const MAX_VERSION: u32 = BITMAP_VERSION;
+pub const MAX_VERSION: u32 = 6;
 /// `decode` 接受的最低版本。
 pub const MIN_DECODABLE_VERSION: u32 = 2;
 
 /// 这一帧最低需要哪个信封版本。
 pub fn required_version(frame: &FrameOps) -> u32 {
+    if frame
+        .ops
+        .iter()
+        .any(|op| matches!(op, DrawOp::DrawEmissiveBitmap { .. }))
+    {
+        return 6;
+    }
     let needs_v5 = !frame.bitmaps.is_empty()
         || frame
             .ops
@@ -568,6 +584,16 @@ pub fn encode(frame: &FrameOps) -> Vec<u8> {
                 tf,
             } => {
                 out.push(13);
+                put_u32(&mut out, *bitmap);
+                put_f32(&mut out, *opacity);
+                put_mat(&mut out, tf);
+            }
+            DrawOp::DrawEmissiveBitmap {
+                bitmap,
+                opacity,
+                tf,
+            } => {
+                out.push(14);
                 put_u32(&mut out, *bitmap);
                 put_f32(&mut out, *opacity);
                 put_mat(&mut out, tf);
@@ -834,6 +860,11 @@ pub fn decode(bytes: &[u8]) -> Result<(u32, FrameOps)> {
                 DrawOp::PopMatte { mode }
             }
             13 if version >= 5 => DrawOp::DrawBitmap {
+                bitmap: r.u32()?,
+                opacity: r.f32()?,
+                tf: r.mat()?,
+            },
+            14 if version >= 6 => DrawOp::DrawEmissiveBitmap {
                 bitmap: r.u32()?,
                 opacity: r.f32()?,
                 tf: r.mat()?,

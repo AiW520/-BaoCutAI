@@ -10,6 +10,7 @@ use super::frame_plan::FramePlan;
 use super::pass::RenderPass;
 use super::surface::{CompositeInput, SurfaceId, SurfacePlan};
 use crate::drawop::FrameOps;
+use crate::emissive::{composite_associated, has_emissive_components};
 use crate::raster::{FrameMedia, rasterize_with_media};
 use anyhow::{Result, anyhow, bail};
 use motion::effect::{BlendMode, EffectRef, UniformMap};
@@ -89,6 +90,10 @@ pub trait PassExecutor {
     ) -> Result<Pixmap> {
         let mut out = Pixmap::new(surface.width, surface.height)
             .ok_or_else(|| anyhow!("surface 尺寸无效"))?;
+        if has_emissive_components(input.data()) {
+            composite_associated(&mut out, input.as_ref(), 1.0, *tf, None)?;
+            return Ok(out);
+        }
         out.draw_pixmap(
             0,
             0,
@@ -195,6 +200,16 @@ impl PassExecutor for CpuExecutor {
                 )
                 .ok_or_else(|| anyhow!("surface {:?} 清屏色非法", surface.id))?,
             );
+            if has_emissive_components(pixmap.data()) {
+                composite_associated(
+                    &mut base,
+                    pixmap.as_ref(),
+                    1.0,
+                    [1., 0., 0., 1., 0., 0.],
+                    None,
+                )?;
+                return Ok(base);
+            }
             base.draw_pixmap(
                 0,
                 0,
@@ -215,6 +230,9 @@ impl PassExecutor for CpuExecutor {
         effect: &EffectRef,
         uniforms: &UniformMap,
     ) -> Result<Pixmap> {
+        if has_emissive_components(input.data()) {
+            bail!("EMISSIVE_FILTER_UNSUPPORTED");
+        }
         // 相对长度的基准是**输出 surface 的短边**：同一份配方在不同画幅下
         // 得到成比例的半径 / 羽化（设计 §5.5 的 `canvasShortEdge`）。
         let short_edge = f64::from(surface.width.min(surface.height));
@@ -230,6 +248,9 @@ impl PassExecutor for CpuExecutor {
         progress: f32,
         uniforms: &UniformMap,
     ) -> Result<Pixmap> {
+        if has_emissive_components(from.data()) || has_emissive_components(to.data()) {
+            bail!("EMISSIVE_TRANSITION_UNSUPPORTED");
+        }
         // 与 `filter` 同一口径：相对长度的基准是输出 surface 的短边。
         let short_edge = f64::from(surface.width.min(surface.height));
         crate::effects::apply_transition(effect, uniforms, from, to, progress, short_edge)
@@ -247,6 +268,21 @@ impl PassExecutor for CpuExecutor {
             .ok_or_else(|| anyhow!("surface {:?} 尺寸非法", surface.id))?;
         let mut blank = true;
         for (input, pixmap, _) in inputs {
+            if has_emissive_components(pixmap.data()) || has_emissive_components(out.data()) {
+                if input.blend != BlendMode::Normal {
+                    bail!("EMISSIVE_BLEND_UNSUPPORTED");
+                }
+                if composite_associated(
+                    &mut out,
+                    pixmap.as_ref().as_ref(),
+                    input.opacity,
+                    [1., 0., 0., 1., 0., 0.],
+                    None,
+                )? {
+                    blank = false;
+                }
+                continue;
+            }
             if composite_layer(&mut out, pixmap, input.opacity, input.blend, blank) {
                 blank = false;
             }

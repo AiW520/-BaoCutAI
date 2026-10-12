@@ -9,6 +9,7 @@ pub const CAPABILITIES: &[&str] = &[
     "caption-unit-context/1",
     "caption-cue-word-context/1",
     "caption-first-page-context/1",
+    "caption-cue-unit-context/1",
     "caption-expressions/1",
     "caption-permutation/1",
     "caption-function-dag/1",
@@ -20,6 +21,8 @@ pub const CAPABILITIES: &[&str] = &[
     "caption-feedback/1",
     "caption-wave-displace/1",
     "caption-soft-band/1",
+    "caption-gaussian-axis/1",
+    "caption-glow-cascade/1",
     "caption-layout-per-sample/1",
     "caption-word-line-layout/1",
 ];
@@ -384,6 +387,44 @@ pub fn validate_scene(s: &Scene) -> Result<()> {
                 }
                 id
             }
+            CaptionMaterial::GaussianAxis {
+                id,
+                context_node_id,
+                samples,
+                step_uv,
+                sigma_uv,
+                gamma,
+                ..
+            } => {
+                validate_component_context(s, &nodes, id, context_node_id, "caption-gaussian-axis/1", *gamma)?;
+                validate_gaussian_uniforms(s, samples, step_uv, sigma_uv)?;
+                id
+            }
+            CaptionMaterial::GlowCascade {
+                id,
+                context_node_id,
+                levels,
+                gamma,
+                intensity,
+                original_opacity,
+                ..
+            } => {
+                validate_component_context(s, &nodes, id, context_node_id, "caption-glow-cascade/1", *gamma)?;
+                if levels.is_empty() || levels.len() > 7 {
+                    return Err(invalid(id, "glow requires 1..7 finite levels"));
+                }
+                validate_component_uniform(s, intensity, 0.0, 16.0)?;
+                validate_component_uniform(s, original_opacity, 0.0, 1.0)?;
+                for level in levels {
+                    for stage in [&level.horizontal, &level.vertical] {
+                        if stage.scale.num == 0 || stage.scale.num > stage.scale.den || stage.scale.den > 4096 {
+                            return Err(invalid(id, "surface scale requires 1 <= num <= den <= 4096"));
+                        }
+                        validate_gaussian_uniforms(s, &stage.samples, &stage.step_uv, &stage.sigma_uv)?;
+                    }
+                }
+                id
+            }
             CaptionMaterial::Feedback {
                 id,
                 samples: n,
@@ -600,6 +641,53 @@ pub fn validate_scene(s: &Scene) -> Result<()> {
         let t = validate_value(&a.property, &a.value, s, unit)?;
         if (t == ValueType::Color && a.composite != Composite::Replace) || (a.composite == Composite::Multiply && t != ValueType::Scalar) {
             return Err(invalid(&a.id, "invalid composite for property type"));
+        }
+    }
+    Ok(())
+}
+
+fn validate_component_context(
+    scene: &Scene,
+    nodes: &BTreeMap<&str, &Node>,
+    id: &str,
+    node_id: &str,
+    capability: &str,
+    gamma: f64,
+) -> Result<()> {
+    if !scene.required_capabilities.iter().any(|c| c == capability) {
+        return Err(Diagnostic::new("CAPTION_CAPABILITY_REQUIRED", id, capability));
+    }
+    if !gamma.is_finite() || !(0.1..=8.0).contains(&gamma) {
+        return Err(invalid(id, "component gamma must be finite in 0.1..8"));
+    }
+    if nodes.get(node_id).is_none_or(|n| n.kind != NodeKind::Text)
+        || nodes.values().filter(|n| n.kind == NodeKind::Text).count() != 1
+        || nodes.values().any(|n| !matches!(n.kind, NodeKind::Text | NodeKind::Group))
+    {
+        return Err(invalid(
+            id,
+            "component filter requires its explicit context text as the sole visual node, optionally inside groups",
+        ));
+    }
+    Ok(())
+}
+fn validate_component_uniform(scene: &Scene, value: &DynamicValue, low: f64, high: f64) -> Result<()> {
+    validate_value("opacity", value, scene, UnitKind::Page)?;
+    if let DynamicValue::Constant { value } = value {
+        let n = typed_value(ValueType::Scalar, value)?.number()?;
+        if !n.is_finite() || !(low..=high).contains(&n) {
+            return Err(invalid("materials", "component uniform outside its finite range"));
+        }
+    }
+    Ok(())
+}
+fn validate_gaussian_uniforms(scene: &Scene, samples: &DynamicValue, step: &DynamicValue, sigma: &DynamicValue) -> Result<()> {
+    validate_component_uniform(scene, samples, 0.0, 1024.0)?;
+    validate_component_uniform(scene, step, 0.0, 1.0)?;
+    validate_component_uniform(scene, sigma, 0.0, 1024.0)?;
+    if let (DynamicValue::Constant { value: count }, DynamicValue::Constant { value: width }) = (samples, sigma) {
+        if count.as_f64().is_some_and(|n| n >= 1.0) && width.as_f64() == Some(0.0) {
+            return Err(invalid("materials", "nonzero Gaussian side count requires positive sigma"));
         }
     }
     Ok(())
