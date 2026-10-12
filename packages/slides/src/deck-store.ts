@@ -522,10 +522,21 @@ export function watchExternalEdits(store: DeckStore, onChange: (event: DeckChang
     }
     for (const [dir, identity] of directories) {
       if (watchers.has(dir)) continue;
-      const watcher = watch(dir, (_event, name) => {
+      const watcher = watch(dir, (event, name) => {
         if (stopped) return;
         if (name) {
-          const rel = path.relative(store.root, path.join(dir, String(name))).split(path.sep).join('/');
+          const changed = path.join(dir, String(name));
+          // Linux 删除重建目录时可能复用 inode；收到父目录的 rename 就废弃旧 handle，
+          // 不能只靠 refresh 的 dev/ino 判断。子目录的监听也仍绑定在被删除的树上。
+          if (event === 'rename' && watchers.has(changed)) {
+            for (const [watchedDir, item] of watchers) {
+              if (watchedDir === changed || watchedDir.startsWith(changed + path.sep)) {
+                item.watcher.close();
+                watchers.delete(watchedDir);
+              }
+            }
+          }
+          const rel = path.relative(store.root, changed).split(path.sep).join('/');
           if (isIgnoredWatchPath(rel) || !layout.watches(rel)) return;
         }
         clearTimeout(timer);

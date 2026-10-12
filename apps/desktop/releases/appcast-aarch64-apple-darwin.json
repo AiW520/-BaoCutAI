@@ -2,15 +2,15 @@
   "schema": 1,
   "target": "aarch64-apple-darwin",
   "variant": "cpu",
-  "version": "3.3.0",
-  "build": 67,
-  "date": "2026-10-11",
+  "version": "3.4.0",
+  "build": 68,
+  "date": "2026-10-12",
   "notes": "",
   "notesLocalized": {},
   "app": {
     "format": "zip",
-    "url": "https://github.com/jimliu/baocut/releases/download/baocut-v3.3.0-build.67/BaoCut-3.3.0-build.67-aarch64-apple-darwin.zip",
-    "size": 252964451,
-    "sha256": "5cf6908f0fbc20636266f68dc6d3d48f94baf7b541fefa3f8d3a31a914987ff9"
+    "url": "https://github.com/jimliu/baocut/releases/download/baocut-v3.4.0-build.68/BaoCut-3.4.0-build.68-aarch64-apple-darwin.zip",
+    "size": 257500803,
+    "sha256": "78758b461d91555aa94fd4f73a02325295d41bec518d3eae86daea3d434d0365"
   }
 }

@@ -1,4 +1,4 @@
-// 桌面端打包：Windows x64 用 package:win* 出未签名 NSIS / ZIP；Apple Silicon 用 package:mac 出 Developer ID 签名、公证的 ZIP / DMG。
+// 桌面端打包：Windows x64 出未签名 NSIS / ZIP；Apple Silicon 出签名公证的 ZIP / DMG；Mac --local 出本机临时签名包（含 Intel Metal）。
 // 两个平台共用 staging 与 Runtime 资源布局。Mac 要 --build、--sign-sha1、全新输出目录与干净提交，签名流程在 macos-distribution.mjs。
 // Mac 选项：--platform mac、--notary-profile、--sign-keychain、--metallib；Windows 专属选项与流程如下。
 //
@@ -54,6 +54,7 @@ import { ensureCargo } from '../../../tools/cargo-path.mjs';
 import { DISTRIBUTED_NOTICES } from '../../../tools/third-party-notices.ts';
 import { distributeMac, runMac, signingPreflight } from './macos-distribution.mjs';
 import { macElectronLanguages, shareMacFonts } from './macos-package-resources.mjs';
+import { macPackagePlan } from './macos-package-plan.mjs';
 import { LOCALES } from '../../../packages/protocol/src/i18n.ts';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
@@ -112,6 +113,7 @@ const { values: options } = parseArgs({
   options: {
     variant: { type: 'string', default: 'cpu' },
     platform: { type: 'string', default: 'win' },
+    local: { type: 'boolean', default: false },
     target: { type: 'string' },
     'sign-sha1': { type: 'string' },
     'notary-profile': { type: 'string', default: process.env.BAOCUT_NOTARY_PROFILE || 'baocut-notary' },
@@ -182,19 +184,22 @@ function modelWorkerBuildEnv() {
 
 const isMac = options.platform === 'mac';
 if (!['win', 'mac'].includes(options.platform)) fail('--platform must be win or mac');
-options.target ??= isMac ? 'aarch64-apple-darwin' : 'x86_64-pc-windows-msvc';
+if (options.local && !isMac) fail('--local is only supported for Mac packaging');
+let macPlan;
+try { if (isMac) macPlan = macPackagePlan(options); } catch (error) { fail(error.message); }
+options.target ??= isMac ? macPlan.target : 'x86_64-pc-windows-msvc';
 options.targets ??= isMac ? 'dmg,zip' : 'nsis,zip';
-FEED_TARGET = feedTarget(isMac ? 'darwin' : 'win32', isMac ? 'arm64' : 'x64');
+FEED_TARGET = feedTarget(isMac ? 'darwin' : 'win32', isMac ? macPlan.electronArch : 'x64');
 const variant = VARIANTS[options.variant];
 if (!variant) fail(`不认识的变体 ${options.variant}（cpu、cuda 或 vulkan）`);
-if (isMac ? options.target !== 'aarch64-apple-darwin' : !options.target.includes('windows')) fail(`Unsupported target: ${options.target}`);
-if (isMac && (process.platform !== 'darwin' || process.arch !== 'arm64' || options.variant !== 'cpu')) fail('macOS release requires native Apple Silicon and no Windows GPU variant');
+if (!isMac && !options.target.includes('windows')) fail(`Unsupported target: ${options.target}`);
 const exe = (name) => isMac ? name : `${name}.exe`;
 const outDir = path.resolve(options.out ?? path.join(DESKTOP, 'dist', isMac ? 'mac' : options.variant));
 const packageTargets = options.targets.split(',').filter(Boolean);
 const build = options.build === undefined || options.build === '' ? 0 : Number(options.build);
 if (!Number.isInteger(build) || build < 0) fail(`--build 要正整数，收到 ${options.build}`);
 const downloadBase = options['download-base-url'] || null;
+if (options.local && (downloadBase || build || options['sign-sha1'] || options['sign-keychain'])) fail('Local Mac packages cannot specify a public feed, build number or signing identity');
 if (downloadBase) {
   if (!/^https:\/\/[^\s?#]+$/.test(downloadBase)) fail(`--download-base-url 要不带查询参数的 https 地址，收到 ${downloadBase}`);
   if (build === 0) fail('--download-base-url 要同时给 --build');
@@ -208,11 +213,11 @@ if (rolloutHours !== null) {
 
 let sourceCommit = null;
 if (isMac) {
-  if (build === 0 || options.targets !== 'dmg,zip') fail('Mac release requires --build and --targets dmg,zip');
+  if ((!options.local && build === 0) || options.targets !== 'dmg,zip') fail('Mac packaging requires --targets dmg,zip; releases also require --build');
   if (existsSync(outDir) && readdirSync(outDir).length) fail('Mac release output directory must be new or empty');
   if (runMac('git', ['status', '--porcelain=v1', '--untracked-files=all']).trim()) fail('Commit source changes before building a Mac release');
   sourceCommit = runMac('git', ['rev-parse', 'HEAD']).trim();
-  signingPreflight(options['sign-sha1'], options['notary-profile'], options['sign-keychain']);
+  if (!options.local) signingPreflight(options['sign-sha1'], options['notary-profile'], options['sign-keychain']);
 }
 
 for (const required of [
@@ -260,8 +265,8 @@ if (options['bin-dir']) {
   const cargo = ['build', '--release', '--locked', '--target', options.target];
   run('cargo', [...cargo, ...BUNDLED_EXECUTABLES.filter((name) => name !== 'model-worker').flatMap((name) => ['-p', name]),
     ...(isMac ? ['--features', 'export-worker/external-fonts'] : [])]);
-  const features = [...(isMac ? [] : variant.modelWorkerFeatures), ...options['worker-features'].split(',').filter(Boolean)];
-  run('cargo', [...cargo, '-p', 'model-worker', ...(isMac ? [] : ['--no-default-features']), ...(features.length ? ['--features', features.join(',')] : [])], isMac ? process.env : modelWorkerBuildEnv());
+  const features = [...(isMac ? macPlan.modelWorkerFeatures : variant.modelWorkerFeatures), ...options['worker-features'].split(',').filter(Boolean)];
+  run('cargo', [...cargo, '-p', 'model-worker', ...(!isMac || macPlan.noDefaultFeatures ? ['--no-default-features'] : []), ...(features.length ? ['--features', features.join(',')] : [])], isMac ? process.env : modelWorkerBuildEnv());
   const metadata = spawnSync('cargo', ['metadata', '--format-version', '1', '--no-deps'], {
     cwd: ROOT,
     encoding: 'utf8',
@@ -322,6 +327,7 @@ try {
   for (const name of BUNDLED_EXECUTABLES) {
     const file = path.join(binSource, exe(name));
     if (!existsSync(file)) fail(`没有 ${file}`);
+    if (isMac) runMac('lipo', [file, '-verify_arch', macPlan.intel ? 'x86_64' : 'arm64']);
     cpSync(file, path.join(bin, exe(name)));
   }
   if (options.variant === 'cuda') {
@@ -337,7 +343,7 @@ try {
     }
     writeFileSync(path.join(bin, 'CUDA-RUNTIME-NOTICE.txt'), CUDA_NOTICE);
   }
-  if (isMac) {
+  if (isMac && macPlan.needsMlxLibrary) {
     const buildDir = path.join(binSource, 'build');
     const candidates = existsSync(buildDir) ? readdirSync(buildDir).filter((name) => name.startsWith('pmetal-mlx-sys-')).map((name) => path.join(buildDir, name, 'out/build/lib/mlx.metallib')).filter((file) => existsSync(file)) : [];
     const metallib = options.metallib || (candidates.length === 1 ? candidates[0] : null);
@@ -362,10 +368,10 @@ try {
   const electronVersion = JSON.parse(readFileSync(path.join(resolvePackage('electron', ROOT), 'package.json'), 'utf8')).version;
   const onWindows = process.platform === 'win32';
   const buildPart = build > 0 ? `-build.${build}` : '';
-  const artifact = `${PRODUCT_NAME}-\${version}${buildPart}-${isMac ? 'aarch64-apple-darwin' : `win-x64${variant.suffix}`}`;
+  const artifact = `${PRODUCT_NAME}-\${version}${buildPart}-${isMac ? options.target : `win-x64${variant.suffix}`}`;
   await buildElectron({
     projectDir: appDir,
-    targets: isMac ? Platform.MAC.createTarget(['dir'], Arch.arm64) : Platform.WINDOWS.createTarget(packageTargets, Arch.x64),
+    targets: isMac ? Platform.MAC.createTarget(['dir'], Arch[macPlan.electronArch]) : Platform.WINDOWS.createTarget(packageTargets, Arch.x64),
     publish: 'never',
     config: {
       appId: APP_ID,
@@ -414,7 +420,7 @@ try {
   });
 
   // 5. 核对解开的包。
-  const unpacked = isMac ? path.join(outDir, 'mac-arm64', `${PRODUCT_NAME}.app`) : path.join(outDir, 'win-unpacked');
+  const unpacked = isMac ? path.join(outDir, macPlan.directory, `${PRODUCT_NAME}.app`) : path.join(outDir, 'win-unpacked');
   verifyUnpacked(unpacked, options.variant);
   for (const name of readdirSync(outDir)) {
     const file = path.join(outDir, name);
@@ -424,15 +430,16 @@ try {
 
   // 6. 发布报告与更新源。
   if (isMac) {
-    const stem = `${PRODUCT_NAME}-${desktop.version}${buildPart}-aarch64-apple-darwin`;
+    const stem = `${PRODUCT_NAME}-${desktop.version}${buildPart}-${options.target}${options.local ? '-local' : ''}`;
     const distribution = await distributeMac({ app: unpacked, output: outDir, stem, version: desktop.version, build, appId: APP_ID,
+      local: options.local,
       signingSha1: options['sign-sha1'], profile: options['notary-profile'], keychain: options['sign-keychain'],
       executables: BUNDLED_EXECUTABLES.map((name) => path.join(unpacked, 'Contents/Resources/bin', name)),
       entitlements: path.join(DESKTOP, 'build/entitlements.mac.plist') });
     run(process.execPath, [path.join(HERE, 'check-packaged-app.mjs'), distribution.verifiedApp]);
     run(process.execPath, [path.join(HERE, 'check-file-fonts.mjs'),
       `--out=${path.join(distribution.verifiedApp, 'Contents/Resources/app.asar/out')}`]);
-    const report = { schema: 1, product: PRODUCT_NAME, appId: APP_ID, version: desktop.version, build, target: FEED_TARGET,
+    const report = { schema: 1, product: PRODUCT_NAME, appId: APP_ID, version: desktop.version, build, target: options.target,
       sourceCommit, minimumSystemVersion: '14.0', ...distribution };
     writeFileSync(path.join(outDir, 'app-release.json'), `${JSON.stringify(report, null, 2)}\n`);
     if (downloadBase) {

@@ -1,9 +1,13 @@
+import { EventEmitter } from 'node:events';
+import * as fsSync from 'node:fs';
 import { mkdir, mkdtemp, readdir, readFile, rename, rm, symlink, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
-import { afterAll, beforeEach, describe, expect, it } from 'vitest';
+import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { assetExtensionOf, contentTypeOf, deckFileOf, DeckStore, isDeckFile, isIgnoredWatchPath, sha256, versionOf, watchExternalEdits } from './deck-store.ts';
 import { isProjectPath, type ConflictError, type DeckChangeEvent, type GenericPublishError, type WireEntry } from './file-protocol.ts';
+
+vi.mock('node:fs', async importOriginal => ({ ...await importOriginal<typeof import('node:fs')>() }));
 
 const b64 = (s: string) => Buffer.from(s).toString('base64');
 const write = (content: string, ifMatch?: string): WireEntry => ({ base64: b64(content), contentType: 'text/html', ...(ifMatch ? { ifMatch } : {}) });
@@ -307,5 +311,54 @@ describe('DeckStore', () => {
     } finally {
       stop();
     }
+  });
+
+  it.each(['slides', 'ds/brand'])('watchExternalEdits：%s 重建时复用 inode 也能监听后续修改', async folder => {
+    const file = path.join(root, folder, 's01.html');
+    await mkdir(path.dirname(file), { recursive: true });
+    await writeFile(file, 'initial');
+    const changedDir = path.join(root, folder.split('/')[0]!);
+    const errors: unknown[] = [];
+    const events: DeckChangeEvent[] = [];
+    const handles: { dir: string; listener: fsSync.WatchListener<string>; watcher: fsSync.FSWatcher; deleted: boolean; closed: boolean }[] = [];
+    // 模拟 Linux：删除后旧 handle 不再收到事件；同名新目录可以复用 dev/ino。
+    const originalStat = fsSync.lstatSync;
+    const statSpy = vi.spyOn(fsSync, 'lstatSync').mockImplementation(((...args: Parameters<typeof fsSync.lstatSync>) =>
+      Object.assign(originalStat(...args)!, { dev: 1, ino: 1 })) as typeof fsSync.lstatSync);
+    const watchSpy = vi.spyOn(fsSync, 'watch').mockImplementation(((dir: string, listener: fsSync.WatchListener<string>) => {
+      const watcher = new EventEmitter() as fsSync.FSWatcher;
+      const handle = { dir, listener, watcher, deleted: false, closed: false };
+      watcher.close = () => { handle.closed = true; };
+      handles.push(handle);
+      return watcher;
+    }) as typeof fsSync.watch);
+    const notify = (dir: string, event: 'rename' | 'change', name: string) => {
+      for (const handle of [...handles]) {
+        if (handle.dir === dir && !handle.deleted && !handle.closed) handle.listener(event, name);
+      }
+    };
+    const stop = watchExternalEdits(store, event => events.push(event), error => errors.push(error));
+    try {
+      await new Promise(resolve => setTimeout(resolve, 100));
+      for (const handle of handles) {
+        if (handle.dir === changedDir || handle.dir.startsWith(changedDir + path.sep)) handle.deleted = true;
+      }
+      await rm(changedDir, { recursive: true });
+      await mkdir(path.dirname(file), { recursive: true });
+      await writeFile(file, 'replacement');
+      notify(root, 'rename', path.basename(changedDir));
+      await expect.poll(() => events.length, { timeout: 3000 }).toBe(1);
+      expect(events[0]!.paths).toEqual([`project/${folder}/s01.html`]);
+      await writeFile(file, 'next edit');
+      notify(path.dirname(file), 'change', path.basename(file));
+      await expect.poll(() => events.length, { timeout: 3000 }).toBe(2);
+      expect(events[1]!.paths).toEqual([`project/${folder}/s01.html`]);
+      expect(errors).toEqual([]);
+    } finally {
+      stop();
+      statSpy.mockRestore();
+      watchSpy.mockRestore();
+    }
+    expect(handles.every(handle => handle.closed)).toBe(true);
   });
 });
