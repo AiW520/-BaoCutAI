@@ -177,8 +177,10 @@
     if (!frameEl) return null;
     const fr = rectOf(frameEl);
 
+    /* 按原片取景的视频位置跟着取景点、大小由放大倍数定（model-framing.js），整组拖动、缩放时它留在原地 */
     const gesture = (e, step) => runGesture(ctx, setDrag, e,
-      members.map((s) => Object.assign({sel: s}, poseOfSel(ctx, s))), step);
+      members.filter((s) => !(ctx.elDocs[s.id] || {}).focal)
+        .map((s) => Object.assign({sel: s}, poseOfSel(ctx, s))), step);
 
     const startMove = (e) => {
       if (e.button !== 0) return;

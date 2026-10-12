@@ -342,7 +342,9 @@
         : mode === 'max' ? Math.max.apply(null, vals)
         : vals.reduce((a, b) => a + b, 0) / vals.length;
       ctx.history.begin();
-      ids.forEach((id) => ctx.setElPose(id, {[axis]: window.BC_POSE.round1(to)}));
+      /* 按原片取景的视频位置跟着取景点：参与算对齐线，自己不挪 */
+      ids.filter((id) => !(ctx.elDocs[id] || {}).focal)
+        .forEach((id) => ctx.setElPose(id, {[axis]: window.BC_POSE.round1(to)}));
       ctx.history.commit();
       app.toast(`已对齐 ${ids.length} 个元素`, 'positive',
         {label: '撤销', undo: true, run: () => ctx.history.undo()});

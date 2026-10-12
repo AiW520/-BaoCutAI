@@ -1,18 +1,18 @@
-/* 按原片取景的纯模型（product-design §5.10「画面怎么取景」）：取景点 + 放大倍数 → 画面上的盒，拖动与缩放的换算和夹取，
+/* 按原片取景的纯模型（product-design §5.10「画面怎么取景」）：取景点 + 放大倍数 → 画面上的盒，缩放的换算和夹取，
    以及画布上说明它的文案。不碰 DOM、不依赖 React；node --test 直接 require。
 
    视频在画布上有两种摆法（2026-10-12 定）：
-   - 带取景点（元素文档的 `focal: {x, y, zoom}`）的视频按原片取景。剪成短视频时每一段原片都这样摆。它记的是对准原片的哪里
-     （`x`、`y` 同 CSS object-position 的百分比：0 贴左 / 上，1 贴右 / 下）和在「刚好铺满」之上再放大多少（`zoom` ≥ 1），
-     不是画面上的一个框：换画幅时按新画幅重算盒，永远铺满、不露背景。所以画布上只能在原片范围里拖动、放大，
-     不能缩到比画面小、拉伸或旋转。实现里对应视频格式的 `focalPoint` 与 `place.scale`（相对铺满）。
-   - 没有取景点的视频像其它素材一样自由摆放：`pose` 按画面的百分比记，可以拖出画面、缩到比画面小；换画幅时按百分比重排。
-   带取景点的视频不会因为拖过头自己变成自由摆放，只能用「改成自由摆放」明确地换。 */
+   - 带取景点（元素文档的 `focal: {x, y, zoom}`）的视频按原片取景。剪成短视频时每一段原片都这样摆：`x`、`y` 是剪的时候
+     按画面里的人找到的位置（同 CSS object-position 的百分比：0 贴左 / 上，1 贴右 / 下；原片上 `x` 那一点永远落在画面的
+     `x` 处），按镜头分段时每段各有一份，用户不改；`zoom`（≥ 1）是在「刚好铺满」之上再放大多少，是用户唯一能调的。
+     它不是画面上的一个框：换画幅时按新画幅重算盒，永远铺满、不露背景。所以画布上只能以取景点为中心放大、缩小，
+     不能拖动、缩到比画面小、拉伸或旋转。实现里对应视频格式的 `focalPoint` 与 `place.scale`（相对铺满）。
+   - 没有取景点的视频像其它素材一样自由摆放：`pose` 按画面的百分比记，可以拖出画面、缩到比画面小露出背景；换画幅时按百分比重排。
+   带取景点的视频只能用「改成自由摆放」明确地换成自由摆放。 */
 (function () {
   const MAX_ZOOM = 4;
-  /* 拖过头多少（画面宽或高的比例）才算顶到边：手上的抖动不该一直弹提示。 */
+  /* 缩过头、放过头多少倍才弹提示：手上的抖动不该一直弹。 */
   const SLACK = 0.03;
-  const EPS = 1e-6;
 
   const clamp01 = (v) => (v < 0 ? 0 : v > 1 ? 1 : v);
   const round = (v, d) => { const k = Math.pow(10, d); return Math.round(v * k) / k; };
@@ -39,33 +39,17 @@
       w: round(s.w * 100, 2), h: round(s.h * 100, 2), scale: 1, rot: 0};
   }
 
-  /** 拖动：`dx`、`dy` 是从起手到现在指针移了画面宽、高的多少（往右、往下为正，画面跟着手走），从起手那份取景算。
-      夹在原片范围里；`hit` 为 'edge' 时说明这一下顶到了原片边上，再拖就会露出背景。 */
-  function pan(start, dx, dy, srcRatio, outRatio) {
-    const s = sizeOf(start, srcRatio, outRatio);
-    const axis = (f, d, over) => {
-      if (!(over > EPS)) return {v: f, over: Math.abs(d)};
-      const want = f - d / over, v = clamp01(want);
-      return {v, over: Math.abs(want - v) * over};
-    };
-    const ax = axis(axisOf(start && start.x), dx || 0, s.w - 1);
-    const ay = axis(axisOf(start && start.y), dy || 0, s.h - 1);
-    return {focal: {x: round(ax.v, 4), y: round(ay.v, 4), zoom: zoomOf(start)},
-      hit: ax.over > SLACK || ay.over > SLACK ? 'edge' : null};
+  /** 取景点落在画面上的哪一点（画面宽、高的比例）：缩放就以它为中心，画布上画的那个准星也在这里。 */
+  function anchorOf(focal) {
+    return {x: axisOf(focal && focal.x), y: axisOf(focal && focal.y)};
   }
 
-  /** 缩放：放大倍数改成 `zoom`，画面正中对着的那一点原片不动；夹在 [1, MAX_ZOOM]。
+  /** 缩放：只改放大倍数，取景点不动（于是它在画面上的位置也不动，原片围着它放大）；夹在 [1, MAX_ZOOM]。
       想缩到比铺满还小时 `hit` 为 'min'，超过上限时为 'max'。 */
-  function zoomTo(start, zoom, srcRatio, outRatio) {
+  function zoomTo(start, zoom) {
     const want = Number.isFinite(zoom) ? zoom : 1;
     const z = Math.max(1, Math.min(MAX_ZOOM, want));
-    const c = coverSize(srcRatio, outRatio), s0 = sizeOf(start, srcRatio, outRatio);
-    const axis = (f, n0, n1) => {
-      const p = (0.5 + (n0 - 1) * f) / n0;          // 原片上对着画面正中的那一点
-      return n1 - 1 > EPS ? clamp01((p * n1 - 0.5) / (n1 - 1)) : f;
-    };
-    const fx = axisOf(start && start.x), fy = axisOf(start && start.y);
-    return {focal: {x: round(axis(fx, s0.w, c.w * z), 4), y: round(axis(fy, s0.h, c.h * z), 4), zoom: round(z, 3)},
+    return {focal: {x: axisOf(start && start.x), y: axisOf(start && start.y), zoom: round(z, 3)},
       hit: want < 1 - SLACK ? 'min' : want > MAX_ZOOM + SLACK ? 'max' : null};
   }
 
@@ -74,24 +58,26 @@
 
   const COPY = {
     mode: '按原片取景',
-    whyTip: '为什么只能拖动和放大',
-    whyTitle: '为什么只能拖动和放大',
-    why: '这一段记的是对准原片的哪里、放大多少，不是画面上的一个框。换画幅时，它会按新画幅重新对准，画面始终铺满，不露背景。',
-    limits: '所以这里只能在原片范围里拖动和放大，不能缩到比画面小，也不能拉伸或旋转。',
-    freeHint: '想像其它素材一样随意摆放，可以改成自由摆放。之后换画幅时，这一段不再自动对准。',
+    whyTip: '为什么只能放大',
+    whyTitle: '为什么只能放大',
+    why: '这一段的位置是剪成短视频时按画面里的人对准的：按镜头分段时每段各对准各的人，换画幅时也会按新画幅重新对准，画面始终铺满。',
+    limits: '所以这里只能以取景点为中心放大或缩小，最小刚好铺满；不能拖动，也不能拉伸或旋转。',
+    freeHint: '想自己挪位置、缩到比画面小或留边，可以改成自由摆放。之后换画幅时，这一段不再自动对准。',
     free: '改成自由摆放',
     freed: '已改成自由摆放 · 换画幅时这一段不再自动对准',
-    cornerTip: '拖动放大或缩小 · 最小铺满画面',
+    cornerTip: '拖角放大或缩小 · 以取景点为中心',
     filled: '已填满画布 · 放大回 100%',
-    fitBlocked: '按原片取景时画面始终铺满，不能留边 · 要留边先改成自由摆放',
+    fitBlocked: '按原片取景最小是铺满，不能留边 · 要留边先改成自由摆放',
+    applyAllTip: '把这一段的放大倍数用到这支视频的每一段 · 各段仍对准各自的人',
+    appliedAll: (n) => `已把这一段的放大倍数用到全部 ${n} 段`,
     hit: {
-      edge: '到原片边上了 · 再拖就会露出背景',
-      min: '已经铺满画面 · 再缩小就会露出背景',
+      locked: '位置跟着取景点 · 不能拖动，只能放大',
+      min: '按原片取景最小是铺满 · 要留边先改成自由摆放',
       max: `最多放大到 ${MAX_ZOOM} 倍`,
     },
   };
 
-  const api = {MAX_ZOOM, SLACK, coverSize, sizeOf, poseFor, pan, zoomTo, sameFocal, COPY};
+  const api = {MAX_ZOOM, SLACK, coverSize, sizeOf, poseFor, anchorOf, zoomTo, sameFocal, COPY};
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   if (typeof window !== 'undefined') window.BC_FRAMING = api;
 })();

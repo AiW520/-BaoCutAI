@@ -329,12 +329,15 @@
             return;
           }
           /* 有元素选中：方向键改摆位（⇧ 一次 5%；⌥↑/↓ 一次 0.1%——⌥←/→ 已让给时间微调，
-             与几何面板 NumField 的 ⌥ 步长同一档）。 */
+             与几何面板 NumField 的 ⌥ 步长同一档）。按原片取景的视频位置跟着取景点，不挪（model-framing.js）；
+             只选了它们时说一句为什么，不记空的一步。 */
           if (elIds.length && (!e.altKey || dy)) {
             stop();
             const step = e.altKey ? 0.1 : e.shiftKey ? 5 : 1;
+            const free = elIds.filter((id) => !(c.elDocs[id] || {}).focal);
+            if (!free.length) { app.toast(window.BC_FRAMING.COPY.hit.locked, 'notice'); return; }
             c.history.begin();
-            elIds.forEach((id) => c.setElPose(id, SEL.nudge(POSE.poseOf(c.elDocs[id]), dx * step, dy * step)));
+            free.forEach((id) => c.setElPose(id, SEL.nudge(POSE.poseOf(c.elDocs[id]), dx * step, dy * step)));
             c.history.commit('nudge-pose');
             return;
           }

@@ -188,7 +188,7 @@
         if (framing) {
           onClose();
           if (mode === 'fill') {
-            framing.set(window.BC_FRAMING.zoomTo(framing.focal, 1, framing.src, framing.out).focal);
+            framing.set(window.BC_FRAMING.zoomTo(framing.focal, 1).focal);
             app.toast(window.BC_FRAMING.COPY.filled, 'positive', {label: '撤销', undo: true, run: () => ctx.history.undo()});
           } else {
             app.toast(window.BC_FRAMING.COPY.fitBlocked, 'notice',

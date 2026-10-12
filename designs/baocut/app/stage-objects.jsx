@@ -38,7 +38,7 @@
   const {useState, useRef, useLayoutEffect, useEffect} = React;
   const P = window.BC_POSE;
   const F = window.BC_FRAMING;
-  /* 按原片取景（`framing`，stage-framing.jsx `framingFor`）只给四角：拖动放大、缩小，最小铺满 */
+  /* 按原片取景（`framing`，stage-framing.jsx `framingFor`）只给四角：拖角以取景点为中心放大、缩小，最小铺满 */
   const FRAMING_HANDLES = ['nw', 'ne', 'sw', 'se'];
   const HIT_MS = 2400;
 
@@ -325,9 +325,10 @@
 
   /* ---------- 按原片取景的选中框 ----------
      盒就是整幅原片（`BC_FRAMING.poseFor`），所以四角落在原片的角上，可以在画面外面。
-     拖动改取景点：画面跟着手走，夹在原片范围里，不画对齐线（铺满的画面没有可对的边）。
-     四角改放大倍数：按指针到画面中心的距离比算，画面正中对着的那一点原片不动，于是角柄一直跟着手。
-     顶到原片边、缩到铺满、放大到上限时，把 `hit` 交给小牌说一句，过一会儿收回。 */
+     位置是剪的时候按人对准的取景点，用户不改：拖画面本身不动它，只让小牌说一句为什么（不记历史）。
+     四角只改放大倍数：取景点落在画面上的那一点不动，盒围着它放大，所以按指针到那一点的距离比算，角柄一直跟着手。
+     手势进行中在那一点画一个准星，让人看见是围着谁放大的。
+     拖画面、缩到铺满、放大到上限时，把 `hit` 交给小牌说一句，过一会儿收回。 */
   function FramingSelection({kind, id, el, ctx, st, set, style, inner, children, onClick, onDoubleClick,
                              pose, frameRef, framing, noToolbar}) {
     const boxRef = useRef(null);
@@ -354,7 +355,7 @@
     });
 
     /* 手势壳与 `FreeSelection` 的 `gesture` 同一套规矩（死区、一次手势一步历史、拖完吞掉那一下 click），
-       只是 `step` 返回的是 `{focal, hit}`，写的是取景点而不是 pose。 */
+       只是 `step` 返回的是 `{focal, hit}`，写的是取景点而不是 pose；`focal` 为空时只说话不写，这一下也不记历史。 */
     const drag = (e, begin, step) => {
       if (e.button !== 0) return;
       e.preventDefault(); e.stopPropagation();
@@ -364,44 +365,47 @@
       const g = begin({fr, p0, start: framing.focal});
       let moved = false;
       DRAGGED = false;
-      setDragging(true);
       /* 上一下留着的那句说明不带进这一下：缩到底之后马上往外拉，不该还写着「已经铺满」 */
       window.clearTimeout(timer.current);
       setHit(null);
       const hist = ctx && ctx.history;
       if (hist) hist.begin();
+      let wrote = false;
       const move = (ev) => {
         if (!moved && Math.abs(ev.clientX - p0.x) < P.DEAD_ZONE
                    && Math.abs(ev.clientY - p0.y) < P.DEAD_ZONE) return;
+        if (!moved) setDragging(true);    // 过了死区才算手势：单击不让工具条闪、不画准星
         moved = true;
         const r = step(g, {x: ev.clientX, y: ev.clientY});
         if (!r) return;
         bump(r.hit);
-        framing.set(r.focal);
+        if (r.focal) { framing.set(r.focal); wrote = true; }
       };
       const up = () => {
         setDragging(false);
         DRAGGED = moved;
-        if (hist) { if (moved) hist.commit(); else hist.cancel(); }
+        if (hist) { if (wrote) hist.commit(); else hist.cancel(); }
         window.removeEventListener('mousemove', move);
         window.removeEventListener('mouseup', up);
       };
       window.addEventListener('mousemove', move);
       window.addEventListener('mouseup', up);
     };
-    const startPan = (e) => drag(e, (g) => g,
-      (g, p) => F.pan(g.start, (p.x - g.p0.x) / g.fr.width, (p.y - g.p0.y) / g.fr.height, framing.src, framing.out));
+    const startHold = (e) => drag(e, (g) => g, () => ({focal: null, hit: 'locked'}));
     const startZoom = (e) => drag(e, (g) => {
-      const c = {x: g.fr.left + g.fr.width / 2, y: g.fr.top + g.fr.height / 2};
+      const a = F.anchorOf(g.start);
+      const c = {x: g.fr.left + a.x * g.fr.width, y: g.fr.top + a.y * g.fr.height};
       return Object.assign(g, {c, d0: Math.hypot(g.p0.x - c.x, g.p0.y - c.y)});
     }, (g, p) => (g.d0 > 4
-      ? F.zoomTo(g.start, (g.start.zoom || 1) * Math.hypot(p.x - g.c.x, p.y - g.c.y) / g.d0, framing.src, framing.out)
+      ? F.zoomTo(g.start, (g.start.zoom || 1) * Math.hypot(p.x - g.c.x, p.y - g.c.y) / g.d0)
       : null));
+    const frameEl = frameRef && frameRef.current;
+    const anchor = F.anchorOf(framing.focal);
 
     return (
       <div className="selwrap" style={style} data-el={id}>
-        <div ref={boxRef} className={cx('selbox', 'is-on', 'selbox--move', 'selbox--video', dragging && 'is-drag')}
-          style={inner} onMouseDown={startPan} onClick={onClick} onDoubleClick={onDoubleClick}>
+        <div ref={boxRef} className={cx('selbox', 'is-on', 'selbox--video', dragging && 'is-drag')}
+          style={inner} onMouseDown={startHold} onClick={onClick} onDoubleClick={onDoubleClick}>
           {children}
         </div>
         {overlay ? ReactDOM.createPortal(
@@ -413,7 +417,11 @@
                 title={F.COPY.cornerTip} onMouseDown={startZoom} />
             ))}
           </div>, overlay.root) : null}
-        {/* 小牌拖动中也留着：顶到边的那句说明正是拖的时候要看的 */}
+        {dragging && frameEl && frameEl.parentElement ? ReactDOM.createPortal(
+          <span className="framing-anchor" aria-hidden="true"
+            style={{left: frameEl.offsetLeft + anchor.x * frameEl.offsetWidth,
+              top: frameEl.offsetTop + anchor.y * frameEl.offsetHeight}} />, frameEl.parentElement) : null}
+        {/* 小牌拖动中也留着：拖不动、缩到底的那句说明正是拖的时候要看的 */}
         <window.FramingChip el={el} ctx={ctx} pose={pose} framing={framing} hit={hit} frameRef={frameRef} />
         {noToolbar ? null : (
           <window.Toolbar kind={kind} el={el} ctx={ctx} st={st} set={set} below yielding={dragging} clear={0} />
