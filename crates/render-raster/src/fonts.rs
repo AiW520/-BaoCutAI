@@ -1027,6 +1027,12 @@ impl TextEngine {
 
     /// 记下排字时点了名的族：库里没有就进 [`Self::take_missing_families`]；装了 face 记录时连同字重与斜体记进去。
     /// 只在真正排字时记，按候选链试探的 [`Self::has_family`] 不算。空族名是缺省无衬线族，不算。
+    /// Record a declarative face dependency even if its conditional run is not
+    /// active in the census frame. This performs no shaping or font loading.
+    pub fn note_font_face(&mut self, family: &str, weight: u16, italic: bool) {
+        self.note_family(family, weight, italic);
+    }
+
     fn note_family(&mut self, family: &str, weight: u16, italic: bool) {
         if family.is_empty() {
             return;

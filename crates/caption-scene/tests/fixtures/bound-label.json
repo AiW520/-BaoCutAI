@@ -1,0 +1,217 @@
+{
+  "schema": "baocut.caption-scene-style/1",
+  "scene": {
+    "kind": "inline",
+    "value": {
+      "schema": "baocut.caption-scene/1",
+      "evaluationVersion": 1,
+      "requiredCapabilities": [
+        "caption-bound-label/1",
+        "caption-word-line-layout/1",
+        "caption-ink-context/1",
+        "caption-unit-context/1"
+      ],
+      "layout": {
+        "x": {
+          "value": 80,
+          "basis": "absolute"
+        },
+        "y": {
+          "value": 45,
+          "basis": "absolute"
+        },
+        "width": {
+          "value": 150,
+          "basis": "absolute"
+        },
+        "overflow": "visible",
+        "pagination": {
+          "wordLinePattern": [
+            [
+              2
+            ]
+          ]
+        }
+      },
+      "nodes": [
+        {
+          "id": "caption",
+          "type": "text",
+          "style": {
+            "fontFamily": "Noto Sans SC",
+            "fontSize": {
+              "value": 16,
+              "basis": "absolute"
+            }
+          }
+        },
+        {
+          "id": "pageLabels",
+          "type": "repeat",
+          "selectorId": "pages",
+          "children": [
+            {
+              "id": "pageLabel",
+              "type": "label",
+              "text": {
+                "source": "static",
+                "text": "PAGE"
+              },
+              "style": {
+                "fontFamily": "Noto Sans SC",
+                "fontSize": {
+                  "value": 12,
+                  "basis": "absolute"
+                },
+                "fill": "#44FFAA"
+              },
+              "properties": {
+                "transform.y": {
+                  "kind": "constant",
+                  "value": -22
+                },
+                "transform.x": {
+                  "kind": "expression",
+                  "expression": {
+                    "op": "call",
+                    "function": "mul",
+                    "args": [
+                      {
+                        "op": "read",
+                        "path": "layout.labelWidth"
+                      },
+                      {
+                        "op": "literal",
+                        "type": "scalar",
+                        "value": 0.1
+                      }
+                    ]
+                  }
+                },
+                "opacity": {
+                  "kind": "expression",
+                  "expression": {
+                    "op": "if",
+                    "condition": {
+                      "op": "call",
+                      "function": "lt",
+                      "args": [
+                        {
+                          "op": "read",
+                          "path": "time.pageElapsedSeconds"
+                        },
+                        {
+                          "op": "literal",
+                          "type": "time",
+                          "value": 0.5
+                        }
+                      ]
+                    },
+                    "then": {
+                      "op": "literal",
+                      "type": "scalar",
+                      "value": 1
+                    },
+                    "else": {
+                      "op": "literal",
+                      "type": "scalar",
+                      "value": 0.35
+                    }
+                  }
+                }
+              }
+            }
+          ]
+        },
+        {
+          "id": "wordLabels",
+          "type": "repeat",
+          "selectorId": "words",
+          "children": [
+            {
+              "id": "wordLabel",
+              "type": "label",
+              "text": {
+                "source": "static",
+                "text": "+"
+              },
+              "style": {
+                "fontFamily": "Noto Sans SC",
+                "fontSize": {
+                  "value": 10,
+                  "basis": "absolute"
+                },
+                "fill": "#FF55AA"
+              },
+              "properties": {
+                "fontSize": {
+                  "kind": "expression",
+                  "expression": {
+                    "op": "call",
+                    "function": "mul",
+                    "args": [
+                      {
+                        "op": "read",
+                        "path": "layout.height"
+                      },
+                      {
+                        "op": "literal",
+                        "type": "scalar",
+                        "value": 0.75
+                      }
+                    ]
+                  }
+                },
+                "transform.y": {
+                  "kind": "expression",
+                  "expression": {
+                    "op": "call",
+                    "function": "add",
+                    "args": [
+                      {
+                        "op": "literal",
+                        "type": "length",
+                        "value": 14
+                      },
+                      {
+                        "op": "call",
+                        "function": "mul",
+                        "args": [
+                          {
+                            "op": "read",
+                            "path": "layout.labelMaxGlyphInkHeight"
+                          },
+                          {
+                            "op": "literal",
+                            "type": "scalar",
+                            "value": 0.1
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "selectors": [
+        {
+          "id": "pages",
+          "nodeId": "caption",
+          "unit": "page"
+        },
+        {
+          "id": "words",
+          "nodeId": "caption",
+          "unit": "word",
+          "filter": {
+            "kind": "state",
+            "value": "active"
+          }
+        }
+      ]
+    }
+  }
+}

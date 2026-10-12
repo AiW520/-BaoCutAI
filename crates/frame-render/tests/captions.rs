@@ -913,3 +913,34 @@ fn dynamic_scene_font_census_does_not_require_image_bytes() {
     .unwrap();
     assert!(!usage.faces.is_empty());
 }
+
+#[test]
+fn font_census_includes_inactive_unit_font_style_dependencies() {
+    let mut body: Value = serde_json::from_str(include_str!("../../caption-scene/tests/fixtures/unit-font-style.json")).unwrap();
+    body["scene"]["value"]["selectors"]
+        .as_array_mut()
+        .unwrap()
+        .push(json!({"id":"future-tag","nodeId":"caption","unit":"word","filter":{"kind":"tag","value":"not-provided"}}));
+    body["scene"]["value"]["layout"]["fontStyleBindings"] = json!([
+        {"id":"future-family","nodeId":"caption","selectorId":"future-tag","style":{"fontFamily":"Uninstalled Future Caption Family"}},
+        {"id":"future-weight","nodeId":"caption","selectorId":"future-tag","style":{"fontWeight":600,"italic":true}}
+    ]);
+    let documents = Documents::new(vec![
+        caption_doc("d", "sequence", &[(0., 3., "One two")], "original"),
+        style_doc("s", body),
+    ]);
+    let video = video(vec![caption("cap", "d", Some("s"), 90, &[])], vec![], json!({}));
+    let frame = plan(&video, 0.3);
+    let usage = frame_render::font_usage(
+        render_graph::VideoView::from(&video),
+        &frame,
+        0.3,
+        &frame.layers,
+        documents,
+        fonts().into_iter().map(std::sync::Arc::new).collect(),
+        true,
+    )
+    .unwrap();
+    assert!(usage.faces.contains(&("Uninstalled Future Caption Family".into(), 600, true)));
+    assert!(usage.missing.contains("Uninstalled Future Caption Family"));
+}

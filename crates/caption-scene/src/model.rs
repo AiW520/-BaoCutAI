@@ -151,6 +151,8 @@ pub struct Layout {
     pub bindings: Vec<LayoutBinding>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub font_size_bindings: Vec<FontSizeBinding>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub font_style_bindings: Vec<FontStyleBinding>,
     #[serde(default)]
     pub overflow: LayoutOverflow,
     pub width: Length,
@@ -377,6 +379,7 @@ impl StateStyles {
 pub enum NodeKind {
     Group,
     Text,
+    Label,
     Shape,
     Image,
     Repeat,
@@ -721,6 +724,33 @@ pub struct FontSizeBinding {
     pub selector_id: String,
     pub value: DynamicValue,
 }
+/// A static font patch selected by frozen semantic membership.
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct FontStyleBinding {
+    pub id: String,
+    pub node_id: String,
+    pub selector_id: String,
+    pub style: FontStylePatch,
+}
+#[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct FontStylePatch {
+    #[serde(default, skip_serializing_if = "Option::is_none", deserialize_with = "deserialize_font_field")]
+    pub font_family: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none", deserialize_with = "deserialize_font_field")]
+    pub font_weight: Option<u16>,
+    #[serde(default, skip_serializing_if = "Option::is_none", deserialize_with = "deserialize_font_field")]
+    pub italic: Option<bool>,
+}
+fn deserialize_font_field<'de, D, T>(deserializer: D) -> Result<Option<T>, D::Error>
+where
+    D: serde::Deserializer<'de>,
+    T: Deserialize<'de>,
+{
+    T::deserialize(deserializer).map(Some)
+}
+
 fn deserialize_glow_tint<'de, D: serde::Deserializer<'de>>(deserializer: D) -> Result<Option<DynamicValue>, D::Error> {
     // Missing means default white; an explicit field must contain a typed value.
     DynamicValue::deserialize(deserializer).map(Some)

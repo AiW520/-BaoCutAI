@@ -1,0 +1,178 @@
+{
+  "schema": "baocut.caption-scene-style/1",
+  "scene": {
+    "kind": "inline",
+    "value": {
+      "schema": "baocut.caption-scene/1",
+      "evaluationVersion": 1,
+      "requiredCapabilities": [
+        "caption-unit-font-size/1",
+        "caption-word-line-layout/1",
+        "caption-glyph-envelope/1",
+        "caption-unit-font-style/1",
+        "caption-page-envelope/1"
+      ],
+      "parameters": [],
+      "layout": {
+        "width": {
+          "value": 140,
+          "basis": "absolute"
+        },
+        "x": {
+          "value": 80,
+          "basis": "absolute"
+        },
+        "y": {
+          "value": 45,
+          "basis": "absolute"
+        },
+        "maxLines": 1,
+        "pagination": {
+          "wordLinePattern": [
+            [
+              3
+            ]
+          ]
+        },
+        "layoutEvaluation": "per-sample",
+        "overflow": "visible",
+        "fontSizeBindings": [
+          {
+            "id": "page-base",
+            "nodeId": "caption",
+            "selectorId": "pages",
+            "value": {
+              "kind": "constant",
+              "value": 12
+            }
+          },
+          {
+            "id": "line-large",
+            "nodeId": "caption",
+            "selectorId": "second-line",
+            "value": {
+              "kind": "constant",
+              "value": 20
+            }
+          },
+          {
+            "id": "word-grow",
+            "nodeId": "caption",
+            "selectorId": "active-word",
+            "value": {
+              "kind": "keyframes",
+              "clock": {
+                "unit": "word",
+                "origin": "start",
+                "duration": {
+                  "kind": "unit-span"
+                }
+              },
+              "keys": [
+                {
+                  "at": 0,
+                  "value": 18
+                },
+                {
+                  "at": 0.35,
+                  "value": 26
+                },
+                {
+                  "at": 1,
+                  "value": 18
+                }
+              ],
+              "fill": {
+                "before": "hold",
+                "after": "hold"
+              }
+            }
+          }
+        ],
+        "fontStyleBindings": [
+          {
+            "id": "page-serif",
+            "nodeId": "caption",
+            "selectorId": "pages",
+            "style": {
+              "fontFamily": "Playfair Display",
+              "fontWeight": 400,
+              "italic": false
+            }
+          },
+          {
+            "id": "active-sans",
+            "nodeId": "caption",
+            "selectorId": "active-word",
+            "style": {
+              "fontFamily": "Rubik",
+              "fontWeight": 700
+            }
+          },
+          {
+            "id": "first-italic",
+            "nodeId": "caption",
+            "selectorId": "first-word",
+            "style": {
+              "italic": true
+            }
+          }
+        ]
+      },
+      "speechState": {
+        "gapPolicy": "hold-previous",
+        "tailPolicy": "hold-last",
+        "timingPolicy": "estimated"
+      },
+      "nodes": [
+        {
+          "id": "caption",
+          "type": "text",
+          "style": {
+            "fontSize": {
+              "value": 12,
+              "basis": "absolute"
+            },
+            "lineHeight": 1.3
+          }
+        }
+      ],
+      "selectors": [
+        {
+          "id": "pages",
+          "nodeId": "caption",
+          "unit": "page"
+        },
+        {
+          "id": "second-line",
+          "nodeId": "caption",
+          "unit": "line",
+          "filter": {
+            "kind": "parity",
+            "odd": true
+          }
+        },
+        {
+          "id": "active-word",
+          "nodeId": "caption",
+          "unit": "word",
+          "filter": {
+            "kind": "state",
+            "value": "active"
+          }
+        },
+        {
+          "id": "first-word",
+          "nodeId": "caption",
+          "unit": "word",
+          "filter": {
+            "kind": "range",
+            "start": 0,
+            "end": 1
+          }
+        }
+      ],
+      "animations": []
+    }
+  }
+}

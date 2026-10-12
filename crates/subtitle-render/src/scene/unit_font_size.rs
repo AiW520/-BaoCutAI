@@ -1,23 +1,107 @@
-//! Size runs are sampled from frozen semantic membership before rich shaping.
-//! No resulting geometry is available while selecting or evaluating a size run.
+//! Typography runs are sampled from frozen semantic membership before rich shaping.
+//! No resulting geometry is available while selecting or evaluating a typography run.
 use super::*;
 use scene_primitives::text_layout::{FontStyle, Run};
 use serde_json::{Map, Value, json};
 
 const MAX_RUNS: usize = 8192;
 #[derive(Clone, Debug)]
-struct SizeRun {
+struct TypographyRun {
     bytes: Range<usize>,
     size: f64,
+    family: Arc<str>,
+    weight: u16,
+    italic: bool,
 }
 
+impl TypographyRun {
+    fn same_font(&self, other: &Self) -> bool {
+        self.size.to_bits() == other.size.to_bits()
+            && self.family == other.family
+            && self.weight == other.weight
+            && self.italic == other.italic
+    }
+    fn patch(&mut self, style: &FontStylePatch) {
+        if let Some(family) = &style.font_family {
+            self.family = Arc::from(family.as_str());
+        }
+        if let Some(weight) = style.font_weight {
+            self.weight = weight;
+        }
+        if let Some(italic) = style.italic {
+            self.italic = italic;
+        }
+    }
+}
 pub(super) fn applies(scene: &Scene, node: &str) -> bool {
     scene
         .layout
         .font_size_bindings
         .iter()
-        .any(|binding| binding.node_id == node)
+        .any(|b| b.node_id == node)
+        || scene
+            .layout
+            .font_style_bindings
+            .iter()
+            .any(|b| b.node_id == node)
 }
+pub(super) fn style_needs_word_timing(scene: &Scene) -> bool {
+    fn reads_state(filter: &Filter) -> bool {
+        match filter {
+            Filter::State { .. } => true,
+            Filter::And { filters } | Filter::Or { filters } => filters.iter().any(reads_state),
+            Filter::Not { filter } => reads_state(filter),
+            _ => false,
+        }
+    }
+    scene.layout.font_style_bindings.iter().any(|binding| {
+        scene.selectors.iter().any(|selector| {
+            selector.id == binding.selector_id
+                && selector.unit == UnitKind::Word
+                && reads_state(&selector.filter)
+        })
+    })
+}
+/// Conservatively enumerate conditional patches before the first census frame.
+/// Each patch may be inactive; retaining both choices catches face combinations
+/// formed by family-only, weight-only and italic-only rules without guessing tags.
+pub(super) fn note_faces(text: &mut TextEngine, scene: &Scene, node: &Node) -> Result<()> {
+    let bindings = scene
+        .layout
+        .font_style_bindings
+        .iter()
+        .filter(|b| b.node_id == node.id)
+        .collect::<Vec<_>>();
+    if bindings.is_empty() {
+        return Ok(());
+    }
+    let mut faces = std::collections::BTreeSet::from([(
+        node.style.font_family.clone(),
+        node.style.font_weight,
+        node.style.italic,
+    )]);
+    for binding in bindings {
+        let changed = faces
+            .iter()
+            .map(|(family, weight, italic)| {
+                (
+                    binding.style.font_family.as_ref().unwrap_or(family).clone(),
+                    binding.style.font_weight.unwrap_or(*weight),
+                    binding.style.italic.unwrap_or(*italic),
+                )
+            })
+            .collect::<Vec<_>>();
+        faces.extend(changed);
+        if faces.len() > 4096 {
+            bail!("CAPTION_BUDGET_EXCEEDED: declared font faces");
+        }
+    }
+    for (family, weight, italic) in faces {
+        text.note_font_face(&family, weight, italic);
+    }
+    Ok(())
+}
+
 fn matches(filter: &Filter, unit: &Unit, budget: &mut Budget) -> Result<bool> {
     budget.spend()?;
     Ok(match filter {
@@ -42,29 +126,31 @@ fn matches(filter: &Filter, unit: &Unit, budget: &mut Budget) -> Result<bool> {
     })
 }
 fn assign(
-    runs: &mut Vec<SizeRun>,
+    runs: &mut Vec<TypographyRun>,
     range: Range<usize>,
-    size: f64,
+    size: Option<f64>,
+    style: Option<&FontStylePatch>,
     budget: &mut Budget,
 ) -> Result<()> {
     if range.is_empty() {
         return Ok(());
     }
-    let mut output: Vec<SizeRun> = Vec::with_capacity(runs.len() + 2);
-    let mut push = |bytes: Range<usize>, size: f64| -> Result<()> {
+    let mut output: Vec<TypographyRun> = Vec::with_capacity(runs.len() + 2);
+    let mut push = |mut run: TypographyRun, bytes: Range<usize>| -> Result<()> {
         if bytes.is_empty() {
             return Ok(());
         }
+        run.bytes = bytes;
         if let Some(last) = output.last_mut() {
-            if last.bytes.end == bytes.start && last.size.to_bits() == size.to_bits() {
-                last.bytes.end = bytes.end;
+            if last.bytes.end == run.bytes.start && last.same_font(&run) {
+                last.bytes.end = run.bytes.end;
                 return Ok(());
             }
         }
         if output.len() == MAX_RUNS {
-            bail!("CAPTION_BUDGET_EXCEEDED: font size runs");
+            bail!("CAPTION_BUDGET_EXCEEDED: typography runs");
         }
-        output.push(SizeRun { bytes, size });
+        output.push(run);
         Ok(())
     };
     for run in runs.iter() {
@@ -72,16 +158,24 @@ fn assign(
         let start = run.bytes.start.max(range.start);
         let end = run.bytes.end.min(range.end);
         if start >= end {
-            push(run.bytes.clone(), run.size)?;
+            push(run.clone(), run.bytes.clone())?;
             continue;
         }
-        push(run.bytes.start..start, run.size)?;
-        push(start..end, size)?;
-        push(end..run.bytes.end, run.size)?;
+        push(run.clone(), run.bytes.start..start)?;
+        let mut selected = run.clone();
+        if let Some(size) = size {
+            selected.size = size;
+        }
+        if let Some(style) = style {
+            selected.patch(style);
+        }
+        push(selected, start..end)?;
+        push(run.clone(), end..run.bytes.end)?;
     }
     *runs = output;
     Ok(())
 }
+
 fn sample_runs(
     base: &TextLayout,
     page_index: usize,
@@ -94,15 +188,18 @@ fn sample_runs(
     presentation: &Presentation,
     instance: &str,
     budget: &mut Budget,
-) -> Result<Vec<SizeRun>> {
+) -> Result<Vec<TypographyRun>> {
     let page = &base.pages[page_index];
     let base_size = node.style.font_size.resolve(size.0, size.1, params)?;
     if !(1.0..=4096.0).contains(&base_size) {
         bail!("CAPTION_LAYOUT_INVALID: base font size");
     }
-    let mut runs = vec![SizeRun {
+    let mut runs = vec![TypographyRun {
         bytes: page.source_range.clone(),
         size: base_size,
+        family: Arc::from(node.style.font_family.as_str()),
+        weight: node.style.font_weight,
+        italic: node.style.italic,
     }];
     let mut units = units_for(cue, base, page, t, &scene.speech_state, presentation);
     if cue_unit_context::enabled(scene) {
@@ -191,7 +288,48 @@ fn sample_runs(
             if !value.is_finite() || !(1.0..=4096.0).contains(&value) {
                 bail!("CAPTION_LAYOUT_INVALID: unit font size");
             }
-            assign(&mut runs, unit.bytes.clone(), value, budget)?;
+            assign(&mut runs, unit.bytes.clone(), Some(value), None, budget)?;
+        }
+    }
+    for binding in scene
+        .layout
+        .font_style_bindings
+        .iter()
+        .filter(|b| b.node_id == node.id)
+    {
+        let selector = scene
+            .selectors
+            .iter()
+            .find(|s| s.id == binding.selector_id)
+            .expect("validated font style selector");
+        for (unit, _) in &units {
+            budget.spend()?;
+            if unit.kind == selector.unit && matches(&selector.filter, unit, budget)? {
+                assign(
+                    &mut runs,
+                    unit.bytes.clone(),
+                    None,
+                    Some(&binding.style),
+                    budget,
+                )?;
+            }
+        }
+    }
+    if scene
+        .layout
+        .font_style_bindings
+        .iter()
+        .any(|b| b.node_id == node.id)
+    {
+        let mut boundaries = std::collections::BTreeSet::from([base.content.len()]);
+        for (at, _) in base.content.grapheme_indices(true) {
+            budget.spend()?;
+            boundaries.insert(at);
+        }
+        if runs.iter().any(|run| {
+            !boundaries.contains(&run.bytes.start) || !boundaries.contains(&run.bytes.end)
+        }) {
+            bail!("CAPTION_LAYOUT_INVALID: typography boundary splits a grapheme");
         }
     }
     Ok(runs)
@@ -202,7 +340,7 @@ fn rich_row(
     bytes: Range<usize>,
     style: &TextStyle,
     base_size: f64,
-    sizes: &[SizeRun],
+    sizes: &[TypographyRun],
     budget: &mut Budget,
 ) -> Result<(ShapedLine, f64)> {
     let source = &content[bytes.clone()];
@@ -217,46 +355,79 @@ fn rich_row(
             .map(|run| run.size)
             .fold(0.0_f64, f64::max);
         let max_size = if max_size > 0.0 { max_size } else { base_size };
-        // Measure an actual space for font metrics, but preserve the normalized
-        // empty row's zero width/no-glyph content.
-        let mut shape = text.shape_spaced(
-            " ",
-            &style.font_family,
-            max_size,
-            style.font_weight,
-            style.italic,
-            style.letter_spacing * max_size,
-        );
+        let changed_faces = sizes
+            .iter()
+            .filter(|run| run.bytes.start < bytes.end && run.bytes.end > bytes.start)
+            .any(|run| {
+                run.family.as_ref() != style.font_family
+                    || run.weight != style.font_weight
+                    || run.italic != style.italic
+            });
+        let mut shape = if changed_faces {
+            let mut measured = ShapedLine::default();
+            for run in sizes
+                .iter()
+                .filter(|run| run.bytes.start < bytes.end && run.bytes.end > bytes.start)
+            {
+                budget.spend()?;
+                let metrics = text.shape_spaced(
+                    " ",
+                    &run.family,
+                    run.size,
+                    run.weight,
+                    run.italic,
+                    style.letter_spacing * run.size,
+                );
+                measured.ascent = measured.ascent.max(metrics.ascent);
+                measured.descent = measured.descent.max(metrics.descent);
+            }
+            measured
+        } else {
+            text.shape_spaced(
+                " ",
+                &style.font_family,
+                max_size,
+                style.font_weight,
+                style.italic,
+                style.letter_spacing * max_size,
+            )
+        };
         shape.width = 0.0;
         shape.glyphs.clear();
         return Ok((shape, max_size));
     }
-    let mut spans: Vec<SizeRun> = Vec::new();
+    let mut spans: Vec<TypographyRun> = Vec::new();
     let mut max_size = 0.0_f64;
     for (at, character) in normalized.char_indices() {
         budget.spend()?;
         let original = bytes.start + mapping[at].start;
         let index = sizes.partition_point(|run| run.bytes.end <= original);
-        let font_size = sizes
+        let mut font = sizes
             .get(index)
             .filter(|run| run.bytes.contains(&original))
-            .map_or(base_size, |run| run.size);
-        max_size = max_size.max(font_size);
+            .cloned()
+            .unwrap_or_else(|| TypographyRun {
+                bytes: 0..0,
+                size: base_size,
+                family: Arc::from(style.font_family.as_str()),
+                weight: style.font_weight,
+                italic: style.italic,
+            });
+        max_size = max_size.max(font.size);
         let end = at + character.len_utf8();
         if let Some(previous) = spans.last_mut() {
-            if previous.bytes.end == at && previous.size.to_bits() == font_size.to_bits() {
+            if previous.bytes.end == at && previous.same_font(&font) {
                 previous.bytes.end = end;
                 continue;
             }
         }
         if spans.len() == MAX_RUNS {
-            bail!("CAPTION_BUDGET_EXCEEDED: normalized font runs");
+            bail!("CAPTION_BUDGET_EXCEEDED: normalized typography runs");
         }
-        spans.push(SizeRun {
-            bytes: at..end,
-            size: font_size,
-        });
+        font.bytes = at..end;
+        spans.push(font);
     }
+
     let base_font = FontStyle {
         family: &style.font_family,
         size: base_size,
@@ -264,10 +435,12 @@ fn rich_row(
         italic: style.italic,
         spacing: style.letter_spacing * base_size,
     };
-    let mut shape = if spans
-        .iter()
-        .all(|run| run.size.to_bits() == base_size.to_bits())
-    {
+    let mut shape = if spans.iter().all(|run| {
+        run.size.to_bits() == base_size.to_bits()
+            && run.family.as_ref() == style.font_family
+            && run.weight == style.font_weight
+            && run.italic == style.italic
+    }) {
         // Empty run list preserves the existing uniform-font shaping path.
         text.shape_rich(&normalized, 0..normalized.len(), base_font, &[])
     } else {
@@ -276,6 +449,12 @@ fn rich_row(
             .map(|run| {
                 let mut style = Map::<String, Value>::new();
                 style.insert("fontSize".into(), json!(run.size));
+                style.insert("font".into(), json!(run.family.as_ref()));
+                style.insert("fontWeight".into(), json!(run.weight));
+                style.insert(
+                    "fontStyle".into(),
+                    json!(if run.italic { "italic" } else { "normal" }),
+                );
                 style.insert(
                     "letterSpacing".into(),
                     json!(base_font.spacing / base_size * run.size),
@@ -495,22 +674,25 @@ mod tests {
     }
     #[test]
     fn replacement_runs_cover_gaps_keep_order_and_merge_equal_neighbors() {
-        let mut runs = vec![SizeRun {
+        let mut runs = vec![TypographyRun {
             bytes: 0..10,
             size: 12.,
+            family: "Noto Sans SC".into(),
+            weight: 700,
+            italic: false,
         }];
         let mut budget = Budget::default();
-        assign(&mut runs, 2..7, 20., &mut budget).unwrap();
-        assign(&mut runs, 5..9, 30., &mut budget).unwrap();
+        assign(&mut runs, 2..7, Some(20.), None, &mut budget).unwrap();
+        assign(&mut runs, 5..9, Some(30.), None, &mut budget).unwrap();
         assert_eq!(
             runs.iter()
                 .map(|run| (run.bytes.clone(), run.size))
                 .collect::<Vec<_>>(),
             vec![(0..2, 12.), (2..5, 20.), (5..9, 30.), (9..10, 12.)]
         );
-        assign(&mut runs, 0..10, 12., &mut budget).unwrap();
+        assign(&mut runs, 0..10, Some(12.), None, &mut budget).unwrap();
         assert_eq!(runs.len(), 1);
-        assert!(assign(&mut runs, 0..1, 14., &mut Budget::new(0)).is_err());
+        assert!(assign(&mut runs, 0..1, Some(14.), None, &mut Budget::new(0)).is_err());
     }
     #[test]
     fn page_line_word_precedence_really_shapes_each_size_and_preserves_space_mapping() {
@@ -777,6 +959,260 @@ mod tests {
             assert!(c.fields["unit.pageEnvelopeAvailable"].boolean().unwrap());
             assert_eq!(c.fields["layout.pageMaxFontSize"].number().unwrap(), 48.0);
             assert!(c.fields["layout.pageEnvelopeHeight"].number().unwrap() > 0.0);
+        }
+    }
+    fn style_body() -> Value {
+        serde_json::from_str(include_str!(
+            "../../../caption-scene/tests/fixtures/unit-font-style.json"
+        ))
+        .unwrap()
+    }
+    fn mixed_fonts() -> Vec<Vec<u8>> {
+        vec![
+            include_bytes!("../../../render-raster/assets/fonts/NotoSansSC-Variable.ttf").to_vec(),
+            include_bytes!("../../../render-raster/assets/fonts/Rubik.ttf").to_vec(),
+            include_bytes!("../../../render-raster/assets/fonts/PlayfairDisplay-Regular.ttf")
+                .to_vec(),
+            include_bytes!("../../../render-raster/assets/fonts/PlayfairDisplay-Italic.ttf")
+                .to_vec(),
+        ]
+    }
+    fn style_plan(mut b: Value, content: &str) -> ScenePlan {
+        b["scene"]["value"]["layout"]["width"] = json!({"value":300,"basis":"absolute"});
+        b["scene"]["value"]["layout"]["x"] = json!({"value":160,"basis":"absolute"});
+        b["scene"]["value"]["layout"]["y"] = json!({"value":90,"basis":"absolute"});
+        ScenePlan::compile(
+            parse_style(&b).unwrap(),
+            Presentation::default(),
+            vec![SceneCue {
+                id: "cue".into(),
+                document_id: "doc".into(),
+                text: content.into(),
+                start: 0.,
+                end: 4.,
+                words: vec![],
+            }],
+            (320, 180),
+            TextEngine::with_document_fonts(&mixed_fonts()),
+            "style-instance".into(),
+        )
+        .unwrap()
+    }
+    #[test]
+    fn font_patch_fields_compose_with_size_and_only_last_provided_field_wins() {
+        let mut runs = vec![TypographyRun {
+            bytes: 0..6,
+            size: 12.,
+            family: "Rubik".into(),
+            weight: 400,
+            italic: false,
+        }];
+        let mut budget = Budget::default();
+        assign(&mut runs, 0..3, Some(30.), None, &mut budget).unwrap();
+        let family = FontStylePatch {
+            font_family: Some("Playfair Display".into()),
+            font_weight: None,
+            italic: Some(true),
+        };
+        assign(&mut runs, 0..6, None, Some(&family), &mut budget).unwrap();
+        let weight = FontStylePatch {
+            font_family: None,
+            font_weight: Some(700),
+            italic: None,
+        };
+        assign(&mut runs, 2..5, None, Some(&weight), &mut budget).unwrap();
+        assert_eq!(
+            runs.iter()
+                .map(|r| (r.bytes.clone(), r.size, r.weight, r.italic))
+                .collect::<Vec<_>>(),
+            vec![
+                (0..2, 30., 400, true),
+                (2..3, 30., 700, true),
+                (3..5, 12., 700, true),
+                (5..6, 12., 400, true)
+            ]
+        );
+        assert!(runs.iter().all(|r| r.family.as_ref() == "Playfair Display"));
+    }
+    #[test]
+    fn mixed_faces_and_sizes_change_real_shaping_and_neighbor_positions() {
+        let mut b = style_body();
+        b["scene"]["value"]["layout"]["fontSizeBindings"][2]["value"] =
+            json!({"kind":"constant","value":30});
+        b["scene"]["value"]["layout"]["fontStyleBindings"]
+            .as_array_mut()
+            .unwrap()
+            .truncate(2);
+        let mut mixed = style_plan(b.clone(), "WWW AV text");
+        let units = resolved(&mut mixed, 0.2);
+        let line = units.iter().find_map(|(_, l)| l.as_ref()).unwrap();
+        let first = line
+            .shape
+            .glyphs
+            .iter()
+            .find(|g| g.cluster.start == 0)
+            .unwrap();
+        let last = line
+            .shape
+            .glyphs
+            .iter()
+            .find(|g| g.cluster.start >= 7)
+            .unwrap();
+        assert_ne!(first.cache_key.font_id, last.cache_key.font_id);
+        assert_eq!(f32::from_bits(first.cache_key.font_size_bits), 30.);
+        assert_eq!(f32::from_bits(last.cache_key.font_size_bits), 12.);
+        b["scene"]["value"]["layout"]["fontStyleBindings"]
+            .as_array_mut()
+            .unwrap()
+            .truncate(1);
+        let mut same_face = style_plan(b, "WWW AV text");
+        let uniform = resolved(&mut same_face, 0.2);
+        let word_x = |units: &[(Unit, Option<Line>)]| {
+            units
+                .iter()
+                .find(|(u, _)| u.kind == UnitKind::Word && u.index == 1)
+                .unwrap()
+                .0
+                .bounds
+                .x
+        };
+        assert_ne!(word_x(&units), word_x(&uniform));
+        assert_eq!(line.baseline, line.bounds.y + line.shape.ascent);
+        let first = mixed.render(0.2).unwrap().rgba;
+        assert_ne!(first, mixed.render(1.8).unwrap().rgba);
+        assert_eq!(first, mixed.render(0.2).unwrap().rgba);
+    }
+    #[test]
+    fn complete_rich_shaping_preserves_arabic_context_and_latin_kerning() {
+        let mut text = TextEngine::with_document_fonts(&mixed_fonts());
+        let content = "سلام AV";
+        let split = "سلام ".len();
+        let mut style = TextStyle::default();
+        style.font_family = "Rubik".into();
+        style.font_weight = 400;
+        let runs = vec![
+            TypographyRun {
+                bytes: 0..split,
+                size: 18.,
+                family: "Rubik".into(),
+                weight: 400,
+                italic: false,
+            },
+            TypographyRun {
+                bytes: split..content.len(),
+                size: 24.,
+                family: "Playfair Display".into(),
+                weight: 400,
+                italic: false,
+            },
+        ];
+        let (actual, max) = rich_row(
+            &mut text,
+            content,
+            0..content.len(),
+            &style,
+            18.,
+            &runs,
+            &mut Budget::default(),
+        )
+        .unwrap();
+        let expected=text.shape_rich(content,0..content.len(),FontStyle {family:"Rubik",size:18.,weight:400,italic:false,spacing:0.},
+            &[Run {bytes:0..split,style:serde_json::from_value(json!({"font":"Rubik","fontSize":18,"fontWeight":400,"fontStyle":"normal","letterSpacing":0})).unwrap()},
+              Run {bytes:split..content.len(),style:serde_json::from_value(json!({"font":"Playfair Display","fontSize":24,"fontWeight":400,"fontStyle":"normal","letterSpacing":0})).unwrap()}]);
+        assert_eq!(max, 24.);
+        assert_eq!(
+            (actual.width, actual.ascent, actual.descent),
+            (expected.width, expected.ascent, expected.descent)
+        );
+        assert_eq!(
+            actual
+                .glyphs
+                .iter()
+                .map(|g| (g.cache_key, g.cluster.clone(), g.x, g.y))
+                .collect::<Vec<_>>(),
+            expected
+                .glyphs
+                .iter()
+                .map(|g| (g.cache_key, g.cluster.clone(), g.x, g.y))
+                .collect::<Vec<_>>()
+        );
+        assert!(
+            actual
+                .glyphs
+                .iter()
+                .any(|g| g.rtl && g.cluster.start < split)
+        );
+    }
+    #[test]
+    fn selected_whitespace_uses_its_face_metrics_not_base_face_at_largest_size() {
+        let mut text = TextEngine::with_document_fonts(&mixed_fonts());
+        let style = TextStyle::default();
+        let runs = vec![TypographyRun {
+            bytes: 0..3,
+            size: 32.,
+            family: "Playfair Display".into(),
+            weight: 400,
+            italic: true,
+        }];
+        let (actual, max) = rich_row(
+            &mut text,
+            "   ",
+            0..3,
+            &style,
+            12.,
+            &runs,
+            &mut Budget::default(),
+        )
+        .unwrap();
+        let expected = text.shape_spaced(" ", "Playfair Display", 32., 400, true, 0.);
+        assert_eq!(
+            (actual.ascent, actual.descent),
+            (expected.ascent, expected.descent)
+        );
+        assert_eq!(max, 32.);
+        assert_eq!(actual.width, 0.);
+        assert!(actual.glyphs.is_empty());
+    }
+    #[test]
+    fn static_font_dependencies_include_inactive_patches_and_composed_faces() {
+        let mut body = style_body();
+        body["scene"]["value"]["layout"]["fontStyleBindings"] = json!([
+            {"id":"face","nodeId":"caption","selectorId":"active-word","style":{"fontFamily":"Missing Future Family"}},
+            {"id":"weight","nodeId":"caption","selectorId":"first-word","style":{"fontWeight":600}},
+            {"id":"slant","nodeId":"caption","selectorId":"pages","style":{"italic":true}}
+        ]);
+        let scene = parse_style(&body).unwrap();
+        let mut text = TextEngine::with_document_fonts(&mixed_fonts());
+        let log = render_raster::fonts::FaceLog::default();
+        text.set_face_log(Some(log.clone()));
+        note_faces(&mut text, scene.scene(), &scene.scene().nodes[0]).unwrap();
+        assert!(
+            log.lock()
+                .unwrap()
+                .contains(&("Missing Future Family".into(), 600, true))
+        );
+        assert!(
+            text.take_missing_families()
+                .contains(&"Missing Future Family".into())
+        );
+    }
+    #[test]
+    fn identity_style_binding_keeps_old_size_only_pixels() {
+        let base = body();
+        let mut changed = base.clone();
+        changed["scene"]["value"]["requiredCapabilities"]
+            .as_array_mut()
+            .unwrap()
+            .push(json!("caption-unit-font-style/1"));
+        changed["scene"]["value"]["layout"]["fontStyleBindings"] = json!([{"id":"same","nodeId":"caption","selectorId":"pages","style":{"fontFamily":"Noto Sans SC","fontWeight":700,"italic":false}}]);
+        for t in [0.2, 1.5, 3.2] {
+            assert_eq!(
+                plan(base.clone(), "One two three").render(t).unwrap().rgba,
+                plan(changed.clone(), "One two three")
+                    .render(t)
+                    .unwrap()
+                    .rgba
+            );
         }
     }
 }

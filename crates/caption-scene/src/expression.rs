@@ -141,7 +141,8 @@ pub fn context_type(path: &str) -> Option<ValueType> {
         | "unit.cueLineCount"
         | "unit.cueSelectedIndex"
         | "unit.cueSelectedCount" => ValueType::Scalar,
-        "unit.active"
+        "unit.labelInkAvailable"
+        | "unit.active"
         | "unit.read"
         | "unit.unread"
         | "unit.pageLastWordTimed"
@@ -160,7 +161,11 @@ pub fn context_type(path: &str) -> Option<ValueType> {
         | "unit.cueSelectionAvailable"
         | "unit.lineEnvelopeAvailable"
         | "unit.rangeInkAvailable" => ValueType::Bool,
-        "layout.x"
+        "layout.labelWidth"
+        | "layout.labelHeight"
+        | "layout.labelMaxGlyphInkWidth"
+        | "layout.labelMaxGlyphInkHeight"
+        | "layout.x"
         | "layout.y"
         | "layout.width"
         | "layout.pageEnvelopeY"
@@ -184,6 +189,21 @@ pub fn context_type(path: &str) -> Option<ValueType> {
     })
 }
 fn require_context_capability(path: &str, scene: &Scene) -> Result<()> {
+    if matches!(
+        path,
+        "layout.labelWidth"
+            | "layout.labelHeight"
+            | "layout.labelMaxGlyphInkWidth"
+            | "layout.labelMaxGlyphInkHeight"
+            | "unit.labelInkAvailable"
+    ) && !scene.required_capabilities.iter().any(|c| c == "caption-bound-label/1")
+    {
+        return Err(Diagnostic::new(
+            "CAPTION_CAPABILITY_UNAVAILABLE",
+            path,
+            "caption-bound-label/1 must be declared",
+        ));
+    }
     if matches!(
         path,
         "layout.pageEnvelopeY"

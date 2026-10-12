@@ -868,6 +868,23 @@ fn scenes() -> Vec<Scene> {
         ..shot(15)
     });
     scenes.push(noise);
+    let mut typography = Scene::new(
+        "captions-unit-font-style",
+        video(vec![caption("mixed-type", "doc", Some("style"), 120, &[])], vec![], json!({})),
+        &[0, 8, 20, 45, 65, 100, 8],
+    );
+    typography.documents = vec![
+        caption_doc("doc", "sequence", &[(0., 4., "Wide AV text")], "original"),
+        style_doc(
+            "style",
+            serde_json::from_str(include_str!("../../caption-scene/tests/fixtures/unit-font-style.json")).unwrap(),
+        ),
+    ];
+    typography.shots.push(Shot {
+        transparent: true,
+        ..shot(20)
+    });
+    scenes.push(typography);
     for (name, zero_angle) in [("captions-angular-sample-blend", false), ("captions-angular-zero-angle", true)] {
         let mut style: Value = serde_json::from_str(include_str!("../../caption-scene/tests/fixtures/angular-sample-blend.json")).unwrap();
         if zero_angle {
@@ -940,6 +957,32 @@ fn scenes() -> Vec<Scene> {
                 {"id":"w2","text":"three","start":2300,"end":2500}]}}),
         );
         scenes.push(window);
+    }
+    for (name, feedback) in [("captions-bound-label", false), ("captions-bound-label-feedback", true)] {
+        let mut style: Value = serde_json::from_str(include_str!("../../caption-scene/tests/fixtures/bound-label.json")).unwrap();
+        if feedback {
+            style["scene"]["value"]["requiredCapabilities"]
+                .as_array_mut()
+                .unwrap()
+                .push(json!("caption-feedback/1"));
+            style["scene"]["value"]["materials"] =
+                json!([{"kind":"feedback","id":"label-trail","samples":2,"step":{"ticks":1,"timescale":10},"decay":0.5,"offset":[2,0]}]);
+        }
+        let mut label = Scene::new(
+            name,
+            video(vec![caption("bound-label", "doc", Some("style"), 120, &[])], vec![], json!({})),
+            &[3, 18, 36, 63, 93, 3],
+        );
+        let mut doc = caption_doc("doc", "sequence", &[(0.0, 4.0, "One two three four")], "original");
+        doc["sourceDocumentId"] = json!("speech");
+        doc["body"]["cues"][0]["words"] = json!({"first":"w0","last":"w3"});
+        label.documents = vec![doc, style_doc("style", style)];
+        label.speech.push(
+            json!({"documentId":"speech","body":{"schema":"baocut.speech/1","clock":"sequence","timescale":1000,
+            "words":[{"id":"w0","text":"One","start":0,"end":800},{"id":"w1","text":"two","start":1000,"end":1800},
+            {"id":"w2","text":"three","start":2000,"end":2800},{"id":"w3","text":"four","start":3000,"end":3800}]}}),
+        );
+        scenes.push(label);
     }
     let cue_word_style: Value = serde_json::from_str(include_str!("../../caption-scene/tests/fixtures/cue-word-context.json")).unwrap();
     let mut cue_word = Scene::new(

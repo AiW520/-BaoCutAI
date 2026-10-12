@@ -63,3 +63,7 @@ cargo run --locked -p subtitle-render --no-default-features --features wasm-safe
 `caption-angular-sample-blend/1` 在显式局部domain内执行60次角采样，aspect独立、angle为弧度；透明越界仍使用固定分母，再按平均alpha混合原图。零角度不是恒等操作，读取/变换均计入共享预算。示例见 [angular-sample-blend.json](tests/fixtures/angular-sample-blend.json)。
 
 `caption-page-window/1` 通过 `layout.pageWindow` 按相邻真实词的短/长 gap 分配固定页/行显示窗口，显式指定边界归属；不改原始词/字素时间。要求固定行、leadingGap hide 与正时长无重叠输入，重排继承窗口，反馈按时刻查询。示例见 [page-window.json](tests/fixtures/page-window.json)，需提供真实词时间。
+
+`caption-bound-label/1` 提供 Repeat 直接子节点 `label`：静态单行内容用自己的字体整形，继承绑定单元时钟/布局；字号先求值，own advance/font/ink 度量只供后置 pose，直接或函数间接的字号循环均拒绝。复用字体缓存、缺字体登记、彩色字形与 paint 路径，不创建独立页或命中框，见 [bound-label.json](tests/fixtures/bound-label.json)。
+
+`caption-unit-font-style/1` 通过 `layout.fontStyleBindings` 对固定page/line/word成员应用静态字体族、字重、斜体patch，与字号runs合并后整体rich shaping，真实更新行宽/基线。未活跃face也进入字体依赖清点，不推断关键词。示例见 [unit-font-style.json](tests/fixtures/unit-font-style.json)。

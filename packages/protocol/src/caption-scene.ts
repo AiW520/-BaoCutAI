@@ -7,6 +7,10 @@ export type CaptionValue = number | boolean | string;
 export type CaptionGlyphEnvelopeReadPath =
   | 'layout.lineEnvelopeY' | 'layout.lineEnvelopeHeight' | 'layout.firstInkLeft' | 'layout.lastInkRight'
   | 'unit.lineEnvelopeAvailable' | 'unit.rangeInkAvailable';
+/** Only post-size label pose may read these fields; requires caption-bound-label/1. */
+export type CaptionBoundLabelReadPath =
+  | 'layout.labelWidth' | 'layout.labelHeight'
+  | 'layout.labelMaxGlyphInkWidth' | 'layout.labelMaxGlyphInkHeight' | 'unit.labelInkAvailable';
 /** Built-in cubic-bezier(progress, x1, y1, x2, y2) accepts five scalars; x controls are in [0, 1]. */
 export type CaptionExpression =
   | { op: 'literal'; type: CaptionValueType; value: CaptionValue }
@@ -37,13 +41,13 @@ export type CaptionFilter =
   | { kind: 'not'; filter: CaptionFilter };
 export interface CaptionSceneNode {
   id: string;
-  type: 'group' | 'text' | 'shape' | 'image' | 'repeat';
+  type: 'group' | 'text' | 'label' | 'shape' | 'image' | 'repeat';
   resourceId?: string | null;
   fit?: 'contain' | 'cover' | 'stretch';
   zIndex?: number;
   children?: CaptionSceneNode[];
   selectorId?: string | null;
-  /** Omit to bind the cue; a string is a static text layer. */
+  /** Text may bind the cue. A label requires static one-line text and a direct Repeat parent. */
   text?: { source: 'cue' } | { source: 'static'; text: string } | null;
   style?: {
     fontFamily?: string; fontSize?: CaptionLength; fontWeight?: number; italic?: boolean;
@@ -55,6 +59,7 @@ export interface CaptionSceneNode {
     }[];
   };
   stateStyles?: { unit?: 'word'; active?: { fill: string } | null; read?: { fill: string } | null; unread?: { fill: string } | null };
+  /** Label-only fontSize is a length; its pose sees bound-unit geometry and post-size label metrics. */
   properties?: Record<string, CaptionDynamicValue>;
 }
 export interface CaptionScene {
@@ -73,6 +78,7 @@ export interface CaptionScene {
     bindings?: { nodeId?: string | null; property: 'width' | 'x' | 'y' | 'fontSize' | 'letterSpacing' | 'lineHeight'; value: CaptionDynamicValue }[];
     /** Ordered replacement sizes on frozen page/line/word membership; requires caption-unit-font-size/1. */
     fontSizeBindings?: { id: string; nodeId: string; selectorId: string; value: CaptionDynamicValue }[];
+    fontStyleBindings?: { id: string; nodeId: string; selectorId: string; style: { fontFamily?: string; fontWeight?: number; italic?: boolean } }[];
     pagination?: { unit?: 'word'; maxUnitsPerPage?: number | null; wordLinePattern?: number[][] | null;
       textLinePattern?: { unit: 'unicode-scalar' | 'grapheme' | 'scalar-cluster'; lines: number[][];
         clusterRules?: { attachments?: { next: [number, number][]; previous?: [number, number][] | null; headExcluded?: [number, number][] | null }[];

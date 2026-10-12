@@ -1,5 +1,6 @@
 //! Declarative caption scenes. Layout, animation and recording are shared by native and WASM.
 mod angular_samples;
+mod bound_label;
 mod component_filters;
 mod cue_unit_context;
 mod glyph_envelope;
@@ -279,6 +280,10 @@ impl ScenePlan {
         };
         let mut nodes = Vec::new();
         text_nodes(&p.style.scene().nodes, &mut nodes);
+        bound_label::register_fonts(&p.style.scene().nodes, &mut p.text);
+        for node in &nodes {
+            unit_font_size::note_faces(&mut p.text, p.style.scene(), node)?;
+        }
         let mut glyph_count = 0usize;
         for i in 0..p.cues.len() {
             let cue = &p.cues[i];
@@ -290,7 +295,7 @@ impl ScenePlan {
                 bail!("CAPTION_SCENE_INVALID: cue span or text");
             }
             if cue.words.is_empty() && p.style.scene().speech_state.timing_policy==TimingPolicy::RequireWordTiming &&
-                (nodes.iter().any(|n|!n.state_styles.is_empty()) || p.style.scene().animations.iter().any(|a|matches!(&a.value,DynamicValue::Keyframes{clock,..} if matches!(clock.unit,UnitKind::Word|UnitKind::Grapheme))) || p.style.scene().layout.font_size_bindings.iter().any(|b|matches!(&b.value,DynamicValue::Keyframes{clock,..} if clock.unit==UnitKind::Word))) {
+                (nodes.iter().any(|n|!n.state_styles.is_empty()) || p.style.scene().animations.iter().any(|a|matches!(&a.value,DynamicValue::Keyframes{clock,..} if matches!(clock.unit,UnitKind::Word|UnitKind::Grapheme))) || p.style.scene().layout.font_size_bindings.iter().any(|b|matches!(&b.value,DynamicValue::Keyframes{clock,..} if clock.unit==UnitKind::Word)) || unit_font_size::style_needs_word_timing(p.style.scene())) {
                 p.diagnostics.push(Diagnostic::new("CAPTION_TIMING_UNAVAILABLE",&cue.id,"word"));
             }
             let params = cue_parameters(&p.style, &p.presentation, cue, &p.instance_id)?;
@@ -1476,12 +1481,39 @@ fn pose(
     r: &RenderContext,
     budget: &mut Budget,
 ) -> Result<BTreeMap<String, Evaluated>> {
-    let mut c = context(u, r);
+    pose_context(node, u, r, budget, context(u, r), None)
+}
+fn pose_context(
+    node: &Node,
+    u: &Unit,
+    r: &RenderContext,
+    budget: &mut Budget,
+    mut c: Context,
+    font_size_only: Option<bool>,
+) -> Result<BTreeMap<String, Evaluated>> {
+    let accepts = |name: &str| font_size_only.is_none_or(|only| (name == "fontSize") == only);
     c.stable_key.push_str(&format!("|{}", node.id));
     let mut p = BTreeMap::new();
-    if u.kind == UnitKind::Cue || matches!(node.kind, NodeKind::Shape | NodeKind::Image) {
+    if u.kind == UnitKind::Cue
+        || matches!(
+            node.kind,
+            NodeKind::Shape | NodeKind::Image | NodeKind::Label
+        )
+    {
         p.insert("fill".into(), Evaluated::Color(color(&node.style.fill)?));
+        if node.kind == NodeKind::Label && accepts("fontSize") {
+            p.insert(
+                "fontSize".into(),
+                Evaluated::Number(
+                    ValueType::Length,
+                    node.style.font_size.resolve(r.size.0, r.size.1, r.params)?,
+                ),
+            );
+        }
         for (name, value) in &node.properties {
+            if !accepts(name) {
+                continue;
+            }
             if let Some(v) = sample_value(
                 value,
                 property_type(name).unwrap(),
@@ -1503,13 +1535,17 @@ fn pose(
         .scene
         .animations
         .iter()
-        .filter(|a| a.target.node_id == node.id)
+        .filter(|a| a.target.node_id == node.id && accepts(&a.property))
         .collect::<Vec<_>>();
     tracks.sort_by_key(|a| a.priority);
     for a in tracks {
         let matches_target = match &a.target.selector_id {
             None => {
-                u.kind == UnitKind::Cue || matches!(node.kind, NodeKind::Shape | NodeKind::Image)
+                u.kind == UnitKind::Cue
+                    || matches!(
+                        node.kind,
+                        NodeKind::Shape | NodeKind::Image | NodeKind::Label
+                    )
             }
             Some(id) => r
                 .scene
@@ -1669,6 +1705,12 @@ fn draw_nodes(
             .map(|(u, _)| u)
             .unwrap();
         let u = bound.unwrap_or(root);
+        if n.kind == NodeKind::Label {
+            let unit =
+                bound.ok_or_else(|| anyhow::anyhow!("CAPTION_SCENE_INVALID: unbound label"))?;
+            bound_label::draw(n, unit, parent, r, text, b, budget)?;
+            continue;
+        }
         let p = pose(n, u, r, budget)?;
         // Still evaluate all leaf properties (and their diagnostics), but do not
         // allocate an offscreen surface for an invisible decoration.
@@ -1838,80 +1880,18 @@ fn draw_nodes(
                                 (line.bounds.x + glyph.x) as f32,
                                 (line.baseline + glyph.y) as f32,
                             );
-                            match text.glyph_render(glyph.cache_key) {
-                                GlyphRender::Outline(path) => {
-                                    let id = b.path_id(path_from_skia(&path));
-                                    if !n.style.paints.is_empty() {
-                                        for layer in &n.style.paints {
-                                            budget.spend()?;
-                                            let paint = scene_paint(
-                                                &layer.paint,
-                                                line.bounds,
-                                                (line.bounds.x + glyph.x, line.baseline + glyph.y),
-                                                opacity,
-                                            )?;
-                                            let paint = b.paint_id(paint);
-                                            let transform = origin.pre_translate(
-                                                layer.offset[0] as f32,
-                                                layer.offset[1] as f32,
-                                            );
-                                            if layer.stroke_width > 0.0 {
-                                                b.push(DrawOp::StrokePathPaint {
-                                                    path: id,
-                                                    paint,
-                                                    width: layer.stroke_width as f32,
-                                                    cap: 1,
-                                                    join: 1,
-                                                    miter: 4.0,
-                                                    tf: tf(transform),
-                                                });
-                                            } else {
-                                                b.push(DrawOp::FillPathPaint {
-                                                    path: id,
-                                                    paint,
-                                                    even_odd: false,
-                                                    tf: tf(transform),
-                                                });
-                                            }
-                                        }
-                                        continue;
-                                    }
-                                    if let Some(s) = &n.style.stroke {
-                                        let mut sc = color(&s.color)?;
-                                        sc[3] *= opacity.clamp(0.0, 1.0);
-                                        b.push(DrawOp::StrokePath {
-                                            path: id,
-                                            color: sc.map(|v| v as f32),
-                                            width: s.width as f32,
-                                            tf: tf(origin),
-                                        });
-                                    }
-                                    b.push(DrawOp::FillPath {
-                                        path: id,
-                                        color: c.map(|v| v.clamp(0.0, 1.0) as f32),
-                                        tf: tf(origin),
-                                    });
-                                }
-                                GlyphRender::ColorBitmap {
-                                    width,
-                                    height,
-                                    rgba,
-                                    left,
-                                    top,
-                                } => {
-                                    let id = b.bitmap_id(BitmapData {
-                                        width,
-                                        height,
-                                        rgba,
-                                    });
-                                    b.push(DrawOp::DrawBitmap {
-                                        bitmap: id,
-                                        opacity: opacity.clamp(0.0, 1.0) as f32,
-                                        tf: tf(origin.pre_translate(left as f32, -top as f32)),
-                                    });
-                                }
-                                GlyphRender::Empty => {}
-                            }
+                            bound_label::record_glyph(
+                                &n.style,
+                                glyph,
+                                c,
+                                opacity,
+                                origin,
+                                line.bounds,
+                                (line.bounds.x + glyph.x, line.baseline + glyph.y),
+                                text,
+                                b,
+                                budget,
+                            )?;
                         }
                         hits.push(SceneHit {
                             cue_id: r.cue.id.clone(),
@@ -1921,7 +1901,7 @@ fn draw_nodes(
                     }
                 }
             }
-            NodeKind::Repeat => unreachable!(),
+            NodeKind::Repeat | NodeKind::Label => unreachable!(),
         }
         b.push(DrawOp::PopLayer);
     }

@@ -3,6 +3,7 @@ use serde_json::Value;
 use std::collections::{BTreeMap, BTreeSet};
 
 pub const CAPABILITIES: &[&str] = &[
+    "caption-bound-label/1",
     "caption-scene/1",
     "caption-text-context/1",
     "caption-ink-context/1",
@@ -32,13 +33,14 @@ pub const CAPABILITIES: &[&str] = &[
     "caption-layout-per-sample/1",
     "caption-page-window/1",
     "caption-unit-font-size/1",
+    "caption-unit-font-style/1",
     "caption-word-line-layout/1",
     "caption-text-line-layout/1",
     "caption-scalar-cluster-layout/1",
 ];
 pub fn property_type(property: &str) -> Option<ValueType> {
     Some(match property {
-        "transform.x" | "transform.y" | "width" | "height" | "radius" => ValueType::Length,
+        "transform.x" | "transform.y" | "width" | "height" | "radius" | "fontSize" => ValueType::Length,
         "transform.rotation" => ValueType::Angle,
         "transform.scale" | "transform.scaleX" | "transform.scaleY" | "opacity" => ValueType::Scalar,
         "fill" => ValueType::Color,
@@ -355,7 +357,7 @@ pub fn validate_scene(s: &Scene) -> Result<()> {
             return Err(invalid(&f.id, "return type mismatch"));
         }
     }
-    fn walk<'a>(nodes: &'a [Node], out: &mut BTreeMap<&'a str, &'a Node>, depth: usize) -> Result<()> {
+    fn walk<'a>(nodes: &'a [Node], out: &mut BTreeMap<&'a str, &'a Node>, depth: usize, parent: Option<NodeKind>) -> Result<()> {
         if depth > 16 {
             return Err(invalid("nodes", "tree depth exceeded"));
         }
@@ -366,15 +368,18 @@ pub fn validate_scene(s: &Scene) -> Result<()> {
             if out.len() > MAX_NODES {
                 return Err(invalid("nodes", "node budget exceeded"));
             }
-            if matches!(n.kind, NodeKind::Text | NodeKind::Shape | NodeKind::Image) && !n.children.is_empty() {
+            if matches!(n.kind, NodeKind::Text | NodeKind::Label | NodeKind::Shape | NodeKind::Image) && !n.children.is_empty() {
                 return Err(invalid(&n.id, "leaf node has children"));
             }
-            walk(&n.children, out, depth + 1)?;
+            if n.kind == NodeKind::Label && parent != Some(NodeKind::Repeat) {
+                return Err(invalid(&n.id, "label must be a direct repeat child"));
+            }
+            walk(&n.children, out, depth + 1, Some(n.kind))?;
         }
         Ok(())
     }
     let mut nodes = BTreeMap::new();
-    walk(&s.nodes, &mut nodes, 0)?;
+    walk(&s.nodes, &mut nodes, 0, None)?;
     if !nodes.values().any(|n| n.kind == NodeKind::Text) {
         return Err(invalid("nodes", "text node required"));
     }
@@ -721,6 +726,56 @@ pub fn validate_scene(s: &Scene) -> Result<()> {
             }
         }
     }
+    if !s.layout.font_style_bindings.is_empty() {
+        if !s.required_capabilities.iter().any(|cap| cap == "caption-unit-font-style/1") {
+            return Err(Diagnostic::new(
+                "CAPTION_CAPABILITY_REQUIRED",
+                "layout.fontStyleBindings",
+                "caption-unit-font-style/1",
+            ));
+        }
+        if s.layout.font_style_bindings.len() > 64
+            || s.layout.layout_evaluation != LayoutEvaluation::PerSample
+            || !s.layout.pagination.has_fixed_lines()
+        {
+            return Err(invalid(
+                "layout.fontStyleBindings",
+                "at most 64 bindings require per-sample and fixed word/text line membership",
+            ));
+        }
+        let mut ids = BTreeSet::new();
+        for binding in &s.layout.font_style_bindings {
+            if !name(&binding.id)
+                || !ids.insert(&binding.id)
+                || nodes.get(binding.node_id.as_str()).is_none_or(|node| node.kind != NodeKind::Text)
+            {
+                return Err(invalid(&binding.id, "invalid font style binding id or text node"));
+            }
+            let selector = s
+                .selectors
+                .iter()
+                .find(|selector| selector.id == binding.selector_id)
+                .ok_or_else(|| invalid(&binding.id, "font style selector missing"))?;
+            if selector.node_id != binding.node_id || !matches!(selector.unit, UnitKind::Page | UnitKind::Line | UnitKind::Word) {
+                return Err(invalid(
+                    &binding.id,
+                    "font style selector must address this text node's page, line or word units",
+                ));
+            }
+            let patch = &binding.style;
+            if patch.font_family.is_none() && patch.font_weight.is_none() && patch.italic.is_none() {
+                return Err(invalid(&binding.id, "font style patch must specify at least one field"));
+            }
+            if patch
+                .font_family
+                .as_ref()
+                .is_some_and(|family| family.trim().is_empty() || family.len() > 256 || family.chars().any(char::is_control))
+                || patch.font_weight.is_some_and(|weight| !(1..=1000).contains(&weight))
+            {
+                return Err(invalid(&binding.id, "invalid static font family or weight"));
+            }
+        }
+    }
     fn bindings(nodes: &[Node], unit: UnitKind, scene: &Scene, out: &mut BTreeMap<String, UnitKind>) {
         for n in nodes {
             out.insert(n.id.clone(), unit);
@@ -791,8 +846,28 @@ pub fn validate_scene(s: &Scene) -> Result<()> {
             }
         }
 
-        if n.kind != NodeKind::Text && (n.text.is_some() || !n.state_styles.is_empty() || n.style != TextStyle::default()) {
+        if !matches!(n.kind, NodeKind::Text | NodeKind::Label)
+            && (n.text.is_some() || !n.state_styles.is_empty() || n.style != TextStyle::default())
+        {
             return Err(invalid(&n.id, "text/style fields require a text node"));
+        }
+        if n.kind == NodeKind::Label {
+            if !s.required_capabilities.iter().any(|c| c == "caption-bound-label/1") {
+                return Err(Diagnostic::new("CAPTION_CAPABILITY_REQUIRED", &n.id, "caption-bound-label/1"));
+            }
+            let Some(TextBinding::Static { text }) = &n.text else {
+                return Err(invalid(&n.id, "label requires static text"));
+            };
+            if text.len() > 4096
+                || text
+                    .chars()
+                    .any(|c| matches!(c, '\n' | '\r' | '\u{000b}' | '\u{000c}' | '\u{0085}' | '\u{2028}' | '\u{2029}'))
+                || !n.state_styles.is_empty()
+            {
+                return Err(invalid(&n.id, "label requires one line, at most 4096 bytes, and no state styles"));
+            }
+        } else if n.properties.contains_key("fontSize") {
+            return Err(invalid(&n.id, "fontSize pose belongs to labels"));
         }
         if n.kind == NodeKind::Image && (n.properties.contains_key("fill") || n.properties.contains_key("radius")) {
             return Err(invalid(&n.id, "image does not accept fill/radius"));
@@ -803,7 +878,7 @@ pub fn validate_scene(s: &Scene) -> Result<()> {
         if n.kind == NodeKind::Repeat && !n.properties.is_empty() {
             return Err(invalid(&n.id, "repeat properties belong on its children"));
         }
-        if matches!(n.kind, NodeKind::Group | NodeKind::Text)
+        if matches!(n.kind, NodeKind::Group | NodeKind::Text | NodeKind::Label)
             && n.properties.keys().any(|p| matches!(p.as_str(), "width" | "height" | "radius"))
         {
             return Err(invalid(&n.id, "shape geometry property on non-shape node"));
@@ -835,18 +910,24 @@ pub fn validate_scene(s: &Scene) -> Result<()> {
             if !n.selector_id.as_ref().is_some_and(|id| sels.contains(id)) {
                 return Err(invalid(&n.id, "repeat requires a selector"));
             }
-            if n.children.iter().any(|n| !matches!(n.kind, NodeKind::Shape | NodeKind::Image)) {
+            if n.children
+                .iter()
+                .any(|n| !matches!(n.kind, NodeKind::Shape | NodeKind::Image | NodeKind::Label))
+            {
                 return Err(Diagnostic::new(
                     "CAPTION_CAPABILITY_UNAVAILABLE",
                     &n.id,
-                    "repeat children must be shapes or images in evaluation version 1",
+                    "repeat children must be shapes, images, or capability-gated labels",
                 ));
             }
         } else if n.selector_id.is_some() {
             return Err(invalid(&n.id, "selectorId belongs to repeat nodes"));
         }
         for (p, v) in &n.properties {
-            validate_value(p, v, s, bound_units[n.id.as_str()])?;
+            if p == "fontSize" {
+                validate_label_size_literals(v)?;
+            }
+            validate_value_context(p, v, s, bound_units[n.id.as_str()], n.kind == NodeKind::Label && p != "fontSize")?;
         }
     }
     let mut animations = BTreeSet::new();
@@ -866,13 +947,23 @@ pub fn validate_scene(s: &Scene) -> Result<()> {
         };
         let node = nodes[a.target.node_id.as_str()];
         if node.kind == NodeKind::Repeat
+            || (a.property == "fontSize" && node.kind != NodeKind::Label)
             || (!matches!(node.kind, NodeKind::Shape | NodeKind::Image) && matches!(a.property.as_str(), "width" | "height" | "radius"))
             || (node.kind == NodeKind::Group && a.property == "fill")
             || (node.kind == NodeKind::Image && matches!(a.property.as_str(), "fill" | "radius"))
         {
             return Err(invalid(&a.id, "property does not apply to this node"));
         }
-        let t = validate_value(&a.property, &a.value, s, unit)?;
+        if a.property == "fontSize" && a.composite == Composite::Replace {
+            validate_label_size_literals(&a.value)?;
+        }
+        let t = validate_value_context(
+            &a.property,
+            &a.value,
+            s,
+            unit,
+            node.kind == NodeKind::Label && a.property != "fontSize",
+        )?;
         if (t == ValueType::Color && a.composite != Composite::Replace) || (a.composite == Composite::Multiply && t != ValueType::Scalar) {
             return Err(invalid(&a.id, "invalid composite for property type"));
         }
@@ -927,6 +1018,12 @@ fn validate_gaussian_uniforms(scene: &Scene, samples: &DynamicValue, step: &Dyna
     Ok(())
 }
 fn validate_value(property: &str, v: &DynamicValue, s: &Scene, unit: UnitKind) -> Result<ValueType> {
+    validate_value_context(property, v, s, unit, false)
+}
+fn validate_value_context(property: &str, v: &DynamicValue, s: &Scene, unit: UnitKind, label_metrics: bool) -> Result<ValueType> {
+    if !label_metrics {
+        validate_label_dependencies(v, s)?;
+    }
     let t = property_type(property).ok_or_else(|| Diagnostic::new("CAPTION_PROPERTY_UNSUPPORTED", property, "unknown property"))?;
     match v {
         DynamicValue::Constant { value } => {
@@ -983,6 +1080,7 @@ fn validate_value(property: &str, v: &DynamicValue, s: &Scene, unit: UnitKind) -
 
 /// Layout/material inputs may only read the frozen cue context, never the layout they produce.
 fn validate_early_value(value: &DynamicValue, ty: ValueType, scene: &Scene) -> Result<()> {
+    validate_label_dependencies(value, scene)?;
     let property = match ty {
         ValueType::Length => "width",
         ValueType::Angle => "transform.rotation",
@@ -1141,6 +1239,69 @@ fn validate_page_window(scene: &Scene) -> Result<()> {
         {
             return Err(invalid("layout.pageWindow", "before/after ratios must be 0..1 and sum at most 1"));
         }
+    }
+    Ok(())
+}
+
+/// Label-own geometry exists only after that label's size and shaping pass.
+fn validate_label_dependencies(value: &DynamicValue, scene: &Scene) -> Result<()> {
+    fn visit(expr: &Expression, scene: &Scene, seen: &mut BTreeSet<String>, left: &mut usize) -> Result<()> {
+        if *left == 0 {
+            return Err(invalid("label", "dependency budget"));
+        }
+        *left -= 1;
+        match expr {
+            Expression::Read { path }
+                if matches!(
+                    path.as_str(),
+                    "layout.labelWidth"
+                        | "layout.labelHeight"
+                        | "layout.labelMaxGlyphInkWidth"
+                        | "layout.labelMaxGlyphInkHeight"
+                        | "unit.labelInkAvailable"
+                ) =>
+            {
+                return Err(Diagnostic::new(
+                    "CAPTION_DEPENDENCY_CYCLE",
+                    path,
+                    "label metrics require a post-size label pose",
+                ));
+            }
+            Expression::Call { function, args } => {
+                for arg in args {
+                    visit(arg, scene, seen, left)?;
+                }
+                if let Some(f) = scene.functions.iter().find(|f| f.id == *function) {
+                    if seen.insert(f.id.clone()) {
+                        visit(&f.body, scene, seen, left)?;
+                    }
+                }
+            }
+            Expression::If {
+                condition,
+                then,
+                otherwise,
+            } => {
+                visit(condition, scene, seen, left)?;
+                visit(then, scene, seen, left)?;
+                visit(otherwise, scene, seen, left)?;
+            }
+            _ => {}
+        }
+        Ok(())
+    }
+    if let DynamicValue::Expression { expression } = value {
+        visit(expression, scene, &mut BTreeSet::new(), &mut 16_384)?;
+    }
+    Ok(())
+}
+
+fn validate_label_size_literals(value: &DynamicValue) -> Result<()> {
+    let valid = |v: &Value| v.as_f64().is_some_and(|n| n.is_finite() && (1.0..=4096.0).contains(&n));
+    if matches!(value, DynamicValue::Constant { value } if !valid(value))
+        || matches!(value, DynamicValue::Keyframes { keys, .. } if keys.iter().any(|k| !valid(&k.value)))
+    {
+        return Err(invalid("fontSize", "label font size must be 1..4096 pixels"));
     }
     Ok(())
 }
