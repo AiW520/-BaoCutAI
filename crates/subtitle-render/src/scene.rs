@@ -6,6 +6,7 @@ mod materials;
 mod sampled_layout;
 mod scalar_cluster;
 mod text_line_layout;
+mod unit_font_size;
 mod word_line_layout;
 use anyhow::{Result, bail};
 use caption_scene::*;
@@ -279,16 +280,26 @@ impl ScenePlan {
                 bail!("CAPTION_SCENE_INVALID: cue span or text");
             }
             if cue.words.is_empty() && p.style.scene().speech_state.timing_policy==TimingPolicy::RequireWordTiming &&
-                (nodes.iter().any(|n|!n.state_styles.is_empty()) || p.style.scene().animations.iter().any(|a|matches!(&a.value,DynamicValue::Keyframes{clock,..} if matches!(clock.unit,UnitKind::Word|UnitKind::Grapheme)))) {
+                (nodes.iter().any(|n|!n.state_styles.is_empty()) || p.style.scene().animations.iter().any(|a|matches!(&a.value,DynamicValue::Keyframes{clock,..} if matches!(clock.unit,UnitKind::Word|UnitKind::Grapheme))) || p.style.scene().layout.font_size_bindings.iter().any(|b|matches!(&b.value,DynamicValue::Keyframes{clock,..} if clock.unit==UnitKind::Word))) {
                 p.diagnostics.push(Diagnostic::new("CAPTION_TIMING_UNAVAILABLE",&cue.id,"word"));
             }
             let params = cue_parameters(&p.style, &p.presentation, cue, &p.instance_id)?;
             for n in &nodes {
+                // Unit sizes are sampled later; freeze membership even if the unsampled
+                // base font would overflow. Each actual rich reflow enforces overflow.
+                let preparation_layout =
+                    unit_font_size::applies(p.style.scene(), &n.id).then(|| {
+                        let mut layout = p.style.scene().layout.clone();
+                        layout.overflow = LayoutOverflow::Visible;
+                        layout
+                    });
                 let l = prepare(
                     &mut p.text,
                     cue,
                     n,
-                    &p.style.scene().layout,
+                    preparation_layout
+                        .as_ref()
+                        .unwrap_or(&p.style.scene().layout),
                     &p.style.scene().speech_state,
                     size,
                     &params,
@@ -413,6 +424,7 @@ impl ScenePlan {
                 seconds,
                 &params,
                 &self.presentation,
+                &self.instance_id,
                 (self.width, self.height),
                 budget,
             )?;
@@ -499,6 +511,7 @@ fn resolved_units(
     seconds: f64,
     params: &BTreeMap<String, Evaluated>,
     presentation: &Presentation,
+    instance: &str,
     size: (u32, u32),
     budget: &mut Budget,
 ) -> Result<BTreeMap<String, Vec<(Unit, Option<Line>)>>> {
@@ -521,16 +534,33 @@ fn resolved_units(
                     if page_index != pi && !reflow_all {
                         continue;
                     }
-                    relayout.pages[page_index] = sampled_layout::reflow(
-                        text,
-                        l,
-                        &l.pages[page_index],
-                        node,
-                        &scene.layout,
-                        size,
-                        params,
-                        budget,
-                    )?;
+                    relayout.pages[page_index] = if unit_font_size::applies(scene, id) {
+                        unit_font_size::reflow(
+                            text,
+                            l,
+                            page_index,
+                            cue,
+                            node,
+                            scene,
+                            seconds,
+                            size,
+                            params,
+                            presentation,
+                            instance,
+                            budget,
+                        )?
+                    } else {
+                        sampled_layout::reflow(
+                            text,
+                            l,
+                            &l.pages[page_index],
+                            node,
+                            &scene.layout,
+                            size,
+                            params,
+                            budget,
+                        )?
+                    };
                 }
                 sampled_text_layout = relayout;
                 &sampled_text_layout

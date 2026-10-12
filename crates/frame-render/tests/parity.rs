@@ -948,6 +948,25 @@ fn scenes() -> Vec<Scene> {
         style_doc("style", envelope_style),
     ];
     scenes.push(envelope);
+    for (name, feedback) in [("captions-unit-font-size", false), ("captions-unit-font-size-feedback", true)] {
+        let mut style: Value = serde_json::from_str(include_str!("../../caption-scene/tests/fixtures/unit-font-size.json")).unwrap();
+        if feedback {
+            style["scene"]["value"]["materials"] = json!([{
+                "kind":"feedback", "id":"font-trail", "samples":3,
+                "step":{"ticks":100,"timescale":1000}, "decay":0.6, "offset":[-4,0]
+            }]);
+        }
+        let mut sized = Scene::new(
+            name,
+            video(vec![caption("unit-font", "doc", Some("style"), 120, &[])], vec![], json!({})),
+            &[3, 15, 28, 45, 63, 82, 103, 119, 15, 3],
+        );
+        sized.documents = vec![
+            caption_doc("doc", "sequence", &[(0.0, 4.0, "Aé   office ffi BIG tiny End")], "original"),
+            style_doc("style", style),
+        ];
+        scenes.push(sized);
+    }
     let mut wave_style: Value = serde_json::from_str(include_str!("../../caption-scene/tests/fixtures/word-pop.json")).unwrap();
     let wave_scene = &mut wave_style["scene"]["value"];
     wave_scene["speechState"]["timingPolicy"] = json!("estimated");

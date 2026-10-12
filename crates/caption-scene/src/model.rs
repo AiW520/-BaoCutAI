@@ -149,6 +149,8 @@ pub struct Layout {
     pub layout_evaluation: LayoutEvaluation,
     #[serde(default)]
     pub bindings: Vec<LayoutBinding>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub font_size_bindings: Vec<FontSizeBinding>,
     #[serde(default)]
     pub overflow: LayoutOverflow,
     pub width: Length,
@@ -686,6 +688,14 @@ pub enum LayoutOverflow {
 pub struct LayoutBinding {
     pub node_id: Option<String>,
     pub property: String,
+    pub value: DynamicValue,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct FontSizeBinding {
+    pub id: String,
+    pub node_id: String,
+    pub selector_id: String,
     pub value: DynamicValue,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]

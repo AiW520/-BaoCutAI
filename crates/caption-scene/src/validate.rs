@@ -25,6 +25,7 @@ pub const CAPABILITIES: &[&str] = &[
     "caption-gaussian-axis/1",
     "caption-glow-cascade/1",
     "caption-layout-per-sample/1",
+    "caption-unit-font-size/1",
     "caption-word-line-layout/1",
     "caption-text-line-layout/1",
     "caption-scalar-cluster-layout/1",
@@ -582,6 +583,56 @@ pub fn validate_scene(s: &Scene) -> Result<()> {
         }
         filter(&sel.filter, 0)?;
     }
+    if !s.layout.font_size_bindings.is_empty() {
+        if !s.required_capabilities.iter().any(|cap| cap == "caption-unit-font-size/1") {
+            return Err(Diagnostic::new(
+                "CAPTION_CAPABILITY_REQUIRED",
+                "layout.fontSizeBindings",
+                "caption-unit-font-size/1",
+            ));
+        }
+        if s.layout.font_size_bindings.len() > 64
+            || s.layout.layout_evaluation != LayoutEvaluation::PerSample
+            || !s.layout.pagination.has_fixed_lines()
+        {
+            return Err(invalid(
+                "layout.fontSizeBindings",
+                "at most 64 bindings require per-sample and fixed word/text line membership",
+            ));
+        }
+        let mut ids = BTreeSet::new();
+        for binding in &s.layout.font_size_bindings {
+            if !name(&binding.id)
+                || !ids.insert(&binding.id)
+                || nodes.get(binding.node_id.as_str()).is_none_or(|node| node.kind != NodeKind::Text)
+            {
+                return Err(invalid(&binding.id, "invalid font size binding id or text node"));
+            }
+            let selector = s
+                .selectors
+                .iter()
+                .find(|selector| selector.id == binding.selector_id)
+                .ok_or_else(|| invalid(&binding.id, "font size selector missing"))?;
+            if selector.node_id != binding.node_id || !matches!(selector.unit, UnitKind::Page | UnitKind::Line | UnitKind::Word) {
+                return Err(invalid(
+                    &binding.id,
+                    "font size selector must address this text node's page, line or word units",
+                ));
+            }
+            validate_value("width", &binding.value, s, selector.unit)?;
+            validate_font_size_dependencies(&binding.value, s)?;
+            let valid_size = |value: &Value| value.as_f64().is_some_and(|n| n.is_finite() && (1.0..=4096.0).contains(&n));
+            match &binding.value {
+                DynamicValue::Constant { value } if !valid_size(value) => {
+                    return Err(invalid(&binding.id, "font size must be 1..4096 pixels"));
+                }
+                DynamicValue::Keyframes { keys, .. } if keys.iter().any(|key| !valid_size(&key.value)) => {
+                    return Err(invalid(&binding.id, "font size keys must be 1..4096 pixels"));
+                }
+                _ => {}
+            }
+        }
+    }
     fn bindings(nodes: &[Node], unit: UnitKind, scene: &Scene, out: &mut BTreeMap<String, UnitKind>) {
         for n in nodes {
             out.insert(n.id.clone(), unit);
@@ -911,6 +962,58 @@ fn validate_early_value(value: &DynamicValue, ty: ValueType, scene: &Scene) -> R
             return Err(invalid("clock", "pre-layout values require cue clock"));
         }
         _ => {}
+    }
+    Ok(())
+}
+
+/// Unit font sizing sees frozen semantic membership and clocks, never resulting geometry.
+fn validate_font_size_dependencies(value: &DynamicValue, scene: &Scene) -> Result<()> {
+    fn visit(expr: &Expression, scene: &Scene, seen: &mut BTreeSet<String>, budget: &mut usize) -> Result<()> {
+        if *budget == 0 {
+            return Err(invalid("layout.fontSizeBindings", "dependency budget"));
+        }
+        *budget -= 1;
+        match expr {
+            Expression::Read { path } => {
+                if !(path.starts_with("params.")
+                    || path.starts_with("args.")
+                    || path.starts_with("canvas.")
+                    || path.starts_with("time.")
+                    || path.starts_with("unit."))
+                    || matches!(path.as_str(), "unit.lineEnvelopeAvailable" | "unit.rangeInkAvailable")
+                {
+                    return Err(Diagnostic::new(
+                        "CAPTION_DEPENDENCY_CYCLE",
+                        path,
+                        "font sizing cannot depend on resulting layout or ink",
+                    ));
+                }
+            }
+            Expression::Call { function, args } => {
+                for arg in args {
+                    visit(arg, scene, seen, budget)?;
+                }
+                if let Some(function) = scene.functions.iter().find(|f| f.id == *function) {
+                    if seen.insert(function.id.clone()) {
+                        visit(&function.body, scene, seen, budget)?;
+                    }
+                }
+            }
+            Expression::If {
+                condition,
+                then,
+                otherwise,
+            } => {
+                visit(condition, scene, seen, budget)?;
+                visit(then, scene, seen, budget)?;
+                visit(otherwise, scene, seen, budget)?;
+            }
+            _ => {}
+        }
+        Ok(())
+    }
+    if let DynamicValue::Expression { expression } = value {
+        visit(expression, scene, &mut BTreeSet::new(), &mut 16_384)?;
     }
     Ok(())
 }

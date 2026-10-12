@@ -235,6 +235,7 @@ mod tests {
             t,
             &BTreeMap::new(),
             &plan.presentation,
+            &plan.instance_id,
             (160, 90),
             budget,
         )

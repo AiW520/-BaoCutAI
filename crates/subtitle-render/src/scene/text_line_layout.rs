@@ -374,6 +374,7 @@ mod tests {
             2.1,
             &params,
             &plan.presentation,
+            &plan.instance_id,
             (160, 90),
             &mut Budget::new(8),
         )

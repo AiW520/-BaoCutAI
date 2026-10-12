@@ -1827,7 +1827,7 @@ interface CaptionStyleBody {
 | 表达式 | 带类型 literal/read/call/if；scalar/integer/length/time/angle/bool/color；无环纯函数，时间/单元/基础布局/参数只读；共享数学曲线、连续 sin/cos、带 seed 的 random/noise；if 惰性求值，非法运算返回诊断 |
 | 合成 | replace/add/multiply 与 priority/声明顺序；颜色只允许 replace；乘法通道为无量纲数；父子变换及离屏组 opacity 通过共同 DrawOp 光栅执行 |
 
-`requiredCapabilities` 当前可声明 `caption-scene/1`、`caption-expressions/1`、`caption-permutation/1`、`caption-function-dag/1`、`caption-unit-animation/1`、`caption-image-png/1`、`caption-paint-stack/1`、`caption-blur/1`、`caption-feedback/1`、`caption-wave-displace/1`、`caption-soft-band/1`、`caption-gaussian-axis/1`、`caption-glow-cascade/1`、`caption-layout-per-sample/1`、`caption-word-line-layout/1`、`caption-text-line-layout/1`、`caption-scalar-cluster-layout/1`、`caption-bezier-expression/1`、`caption-text-context/1`、`caption-ink-context/1`、`caption-glyph-envelope/1`、`caption-unit-context/1`、`caption-cue-word-context/1`、`caption-first-page-context/1` 和 `caption-cue-unit-context/1`。未知能力、属性或字段拒绝；artifact 形式的场景引用、非 PNG 图片、任意 shader、无限递归反馈、节点级材质栈及改变分页成员的时间布局尚未开放，不能保存为成功后在渲染中忽略。完整扩展方向仍按[设计文档](../design/subtitle/dynamic-caption-format-design.md)维护。
+`requiredCapabilities` 当前可声明 `caption-scene/1`、`caption-expressions/1`、`caption-permutation/1`、`caption-function-dag/1`、`caption-unit-animation/1`、`caption-image-png/1`、`caption-paint-stack/1`、`caption-blur/1`、`caption-feedback/1`、`caption-wave-displace/1`、`caption-soft-band/1`、`caption-gaussian-axis/1`、`caption-glow-cascade/1`、`caption-layout-per-sample/1`、`caption-unit-font-size/1`、`caption-word-line-layout/1`、`caption-text-line-layout/1`、`caption-scalar-cluster-layout/1`、`caption-bezier-expression/1`、`caption-text-context/1`、`caption-ink-context/1`、`caption-glyph-envelope/1`、`caption-unit-context/1`、`caption-cue-word-context/1`、`caption-first-page-context/1` 和 `caption-cue-unit-context/1`。未知能力、属性或字段拒绝；artifact 形式的场景引用、非 PNG 图片、任意 shader、无限递归反馈、节点级材质栈及改变分页成员的时间布局尚未开放，不能保存为成功后在渲染中忽略。完整扩展方向仍按[设计文档](../design/subtitle/dynamic-caption-format-design.md)维护。
 
 显式 `maxUnitsPerPage` 按词配额人为切页时，第 2 个及后续词块开头若只有水平 Unicode 空白组成的词间分隔 run，该 run 不参与显示排版；空格、tab、NBSP、Unicode 空格均适用。若 run 含 CR/LF、VT/FF、NEL、LS 或 PS，则整段保留，不吞显式换行及其缩进。原始 cue 开头的缩进、默认按宽度换行均不变。源文本/页范围/字素索引保留分隔字节，空白装饰定位新页逻辑行首；逐采样重排使用冻结的显示起点，不恢复已隐藏的分隔空白。
 
@@ -1900,6 +1900,18 @@ repeat 装饰继承绑定单元的包络；逐采样排版与反馈历史在各�
 **逐采样布局**。`layout.bindings` 是最多 64 项的 `{ nodeId?, property, value: DynamicValue }` 数组。同一目标/属性不能重复。无 nodeId 的目标是场景的 width/x/y（length）；指定文字节点时可改 fontSize（length）、letterSpacing（scalar，em）与 lineHeight（scalar）。只有 `per-sample` 模式接受 bindings。静态字段先确定基础页成员、源文本字节区间及显示起止时间；每次采样只重新布局当前页，不将溢出文字移到新页。`overflow: 'error' | 'visible'` 默认 error：超过 maxLines 或单个字形仍超宽则报 `CAPTION_LAYOUT_OVERFLOW`；visible 保留所有页成员并允许更多行，最终仍按画布裁剪。
 
 布局表达式（包括间接调用的纯函数）只可读取参数、cue 时钟、cue 的稳定 index/count 与画布尺寸；不能读 layout、活动词或动态选择集合，关键帧只能使用 cue 时钟。布局阶段禁止依赖自身产生的行、页或框。动态字号限 1–4096 px、行高 0.1–10、字距 −2–10 em；非法采样结果拒绝。共享文字缓存已有字节预算，变化的字号不会无限累积缓存。行/词/字形框及装饰节点在重排后从同一结果计算。
+
+**按语义单元重排字号**。显式能力 `caption-unit-font-size/1` 开放 `layout.fontSizeBindings: [{id,nodeId,selectorId,value}]`，最多 64 项、id 唯一，value 为 length 类型 DynamicValue，字号限 1–4096 输出像素。目标必须是 Text，选择器必须引用同一 Text 的 page/line/word；不支持 grapheme 或额外 composite/priority。非空绑定要求 `layoutEvaluation: 'per-sample'`，且显式使用 `wordLinePattern` 或 `textLinePattern` 固定页/行成员。不能借此开放按动态字宽重分页或换行。
+
+每次采样先执行既有 cue 级 `layout.bindings`，取得当前整节点基础字号/字距/行高，再基于编译时冻结的源字节、词、逻辑行、页和显示时间创建语义单元。字号绑定按数组顺序 replace，重叠范围由最后一个有值的绑定获胜；未匹配或关键帧 fill 无值的范围保留先前绑定结果，未被任何绑定覆盖的文字/空白保持本次整节点基础样式。不累计上一帧字号，不暗做整数取整；没有输入词窗口且未启用 estimated 时跳过需要该窗口的字号关键帧，并沿用词时间缺失诊断。
+
+字号表达式只可读取 params/args/canvas/time/unit 的已定义字段；禁止任何 `layout.*` 及 `unit.lineEnvelopeAvailable/rangeInkAvailable`，包括通过纯函数间接读取。`unit.selectedIndex/selectedCount` 从当前页、同一文字节点、该绑定选择器匹配的冻结语义集合计算；状态筛选仅由冻结词时间和 gap/tail 策略决定，不读取缩放后的几何。显式 whole-cue 选集字段仍遵守其自身能力及静态 tag 条件。语义时钟、分页索引、单元 ID 和 source bytes 不因字号变化而改变。无法取得的必填时钟读数仍报诊断，不伪造朗读时间。
+
+解析后的字号区间完整覆盖页面源文本，包括未选文字和间隙；每页至多 8192 个合并后区间。固定行显示空白继续按原规则归一化，并将字号区间同时映射到显示 UTF-8 字节：折叠空格取其第一个源字节所在区间的样式，行末被去掉的空白不生成字形。相邻相同样式区间合并后交给共享 `shape_rich`，保留可共享的 kerning/ligature，不通过逐词独立 shaping 或绘制期 transform.scale 模拟字号。每个区间的 em 字距乘该区间字号换算为像素；字体族、字重、italic 及涂装仍沿用节点定义，不将固定像素描边/装饰尺寸自动按字号缩放。输出 glyph.cluster 映回原源字节，用于词、字素、命中框和装饰绑定。
+
+各行使用富文本整形得到的最大字体 ascent A、descent D，以及该行显示区间最大字号 F，行高 `H=max(A+abs(D), F×lineHeight)`；基线为行顶部+A，额外 leading 留在行底。页面按各行 H 之和在 y 锚点居中，行宽与水平对齐按本次实际 shaping 结果计算。全空白行用有效字号区间中的最大字号测量空格字体度量，随后保持无 glyph、零显示宽度；字号仍能改变其占行高度。冻结成员准备阶段不因尚未采样的基础字号超宽提前拒绝这些目标；实际每帧按 overflow:error 检查固定行宽，超限报 `CAPTION_LAYOUT_OVERFLOW`，visible 保留行/页身份并允许超出画布。取值或执行预算非法分别报告 `CAPTION_LAYOUT_INVALID`/`CAPTION_BUDGET_EXCEEDED`，不自动缩字、拆词或改页。
+
+字形位置、基线、行框、词框、ink 与 glyph envelope 都在重新整形后从同一结果计算；repeat 装饰随之更新。反馈历史每个采样点都重新求字号规则与布局。选择器遍历、布尔条件、区间切分/合并及文本 shaping 输入均计入共享 65536 操作预算，区间和字体缓存有界，不因缓存命中放宽输入工作预算。无字号绑定的目标继续原重排路径，空字段不写入已有样式的序列化输出。此能力只新增通用固定成员字号重排，未提供按文本生成任意分页计划、页面 case 元数据或兄弟行几何查询。示例见 [unit-font-size.json](../../crates/caption-scene/tests/fixtures/unit-font-size.json)。
 
 **关联颜色与发光位图传输**。共享 DrawOp 的 `DrawEmissiveBitmap { bitmap, opacity, tf }` 使用位图侧表的四个独立 RGBA8 UNORM 分量，RGB 可以大于 alpha，甚至在 alpha 为零时仍贡献光。该 op 使用 BCOP v6 的 tag 14，后跟 bitmap u32、opacity f32、六个仿射 f32（均 little-endian），侧表布局沿用 v5。仅实际含该 op 的帧提升到 v6；普通 v3/v4/v5 帧的编码不变。普通 `DrawBitmap` 仍要求预乘像素，不能暗中承载发光分量。
 

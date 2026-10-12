@@ -49,3 +49,5 @@ cargo run --locked -p subtitle-render --no-default-features --features wasm-safe
 `caption-glyph-envelope/1` 提供不含 leading 的整行字体/墨迹垂直包络，以及源 cluster 顺序首/末墨迹横端点，附行绑定与范围墨迹可用标记。它不等同 advance 或墨迹 union，保留 RTL 逆序端点；repeat、逐采样排版和反馈共用结果，不改旧 bounds/像素。示例见 [glyph-envelope.json](tests/fixtures/glyph-envelope.json)。
 
 `caption-scalar-cluster-layout/1` 为 textLinePattern 增加显式规则的两轮 scalar-cluster 计数；只用于完整词分页配额，不改实际 glyph 整形。规则区间有严格 Unicode/数量验证，同一 TextLayout 所有词共享有界计数预算，见 [scalar-cluster-layout.json](tests/fixtures/scalar-cluster-layout.json)。
+
+`caption-unit-font-size/1` 通过 `layout.fontSizeBindings` 在冻结 page/line/word 成员上求字号，完整映射文字与空白后调用共享 rich shaping；重叠规则按声明顺序 replace。要求 per-sample 和显式固定行布局，禁止字号读取其产出的布局几何，真实更新行宽、基线、ink/envelope，反馈历史也重新求值。示例见 [unit-font-size.json](tests/fixtures/unit-font-size.json)。

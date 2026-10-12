@@ -68,6 +68,8 @@ export interface CaptionScene {
     width: CaptionLength; x: CaptionLength; y: CaptionLength; maxLines?: number;
     layoutEvaluation?: 'static' | 'per-sample'; overflow?: 'error' | 'visible';
     bindings?: { nodeId?: string | null; property: 'width' | 'x' | 'y' | 'fontSize' | 'letterSpacing' | 'lineHeight'; value: CaptionDynamicValue }[];
+    /** Ordered replacement sizes on frozen page/line/word membership; requires caption-unit-font-size/1. */
+    fontSizeBindings?: { id: string; nodeId: string; selectorId: string; value: CaptionDynamicValue }[];
     pagination?: { unit?: 'word'; maxUnitsPerPage?: number | null; wordLinePattern?: number[][] | null;
       textLinePattern?: { unit: 'unicode-scalar' | 'grapheme' | 'scalar-cluster'; lines: number[][];
         clusterRules?: { attachments?: { next: [number, number][]; previous?: [number, number][] | null; headExcluded?: [number, number][] | null }[];

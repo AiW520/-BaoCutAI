@@ -247,6 +247,7 @@ mod integration_tests {
             time,
             &params,
             &plan.presentation,
+            &plan.instance_id,
             (160, 90),
             &mut budget,
         )

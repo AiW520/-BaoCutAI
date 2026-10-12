@@ -46,7 +46,7 @@ fn groups(total: usize, pagination: &Pagination) -> Vec<Vec<Range<usize>>> {
     initial
 }
 
-fn normalized_row(source: &str) -> (String, Vec<Range<usize>>) {
+pub(super) fn normalized_row(source: &str) -> (String, Vec<Range<usize>>) {
     let mut normalized = String::new();
     let mut mapping = Vec::new();
     let mut pending: Option<Range<usize>> = None;

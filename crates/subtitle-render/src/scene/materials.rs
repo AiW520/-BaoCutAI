@@ -224,6 +224,7 @@ impl ScenePlan {
             t,
             &params,
             &self.presentation,
+            &self.instance_id,
             (self.width, self.height),
             budget,
         )?;
