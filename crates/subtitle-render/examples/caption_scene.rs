@@ -9,8 +9,11 @@ fn main() -> anyhow::Result<()> {
             .ok_or_else(|| anyhow::anyhow!("output directory required"))?,
     );
     std::fs::create_dir_all(&output)?;
-    let rich = std::env::args().nth(2).as_deref() == Some("--rich");
-    let value = serde_json::from_str(if rich {
+    let mode = std::env::args().nth(2);
+    let rich = mode.as_deref() == Some("--rich");
+    let value = serde_json::from_str(if mode.as_deref() == Some("--feedback") {
+        include_str!("../../caption-scene/tests/fixtures/reflow-feedback.json")
+    } else if rich {
         include_str!("../../caption-scene/tests/fixtures/image-paint.json")
     } else {
         include_str!("../../caption-scene/tests/fixtures/word-pop.json")
@@ -49,12 +52,25 @@ fn main() -> anyhow::Result<()> {
     })?;
     for (i, t) in [0.0, 0.081, 0.3, 1.3, 2.3, 3.3].iter().enumerate() {
         let frame = plan.render(*t)?;
-        tiny_skia::Pixmap::from_vec(
+        let image = tiny_skia::Pixmap::from_vec(
             frame.rgba.as_ref().clone(),
             tiny_skia::IntSize::from_wh(160, 90).unwrap(),
         )
-        .unwrap()
-        .save_png(output.join(format!("frame-{i}.png")))?;
+        .unwrap();
+        image.save_png(output.join(format!("frame-{i}.png")))?;
+        if mode.as_deref() == Some("--feedback") {
+            let mut preview = tiny_skia::Pixmap::new(160, 90).unwrap();
+            preview.fill(tiny_skia::Color::from_rgba8(20, 24, 32, 255));
+            preview.draw_pixmap(
+                0,
+                0,
+                image.as_ref(),
+                &tiny_skia::PixmapPaint::default(),
+                tiny_skia::Transform::identity(),
+                None,
+            );
+            preview.save_png(output.join(format!("preview-{i}.png")))?;
+        }
     }
     Ok(())
 }

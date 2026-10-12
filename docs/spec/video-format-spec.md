@@ -1413,7 +1413,7 @@ interface Provenance {
 | `speech` | 一段录音的转写：词、说话人、句子、章节 | `baocut.speech/1` | §5.2 |
 | `translation` | 一种目标语言的译文单元 | `baocut.translation/2`（按 §5.3，新写入一律用它）；`baocut.translation/1`（旧项目导入，只读兼容） | §5.3 |
 | `caption` | 一种语言的字幕行 | `baocut.caption/1` | §5.4 |
-| `caption-style` | 字幕的样式与布局 | `baocut.legacy-studio-style/0.1`（Studio 样式）；`baocut.boxed-caption-style/<N>`（定位框样式，外部项目导入，`<N>` 是来源格式的版本号） | §5.6 |
+| `caption-style` | 字幕的样式与布局 | `baocut.legacy-studio-style/0.1`（Studio 样式）；`baocut.boxed-caption-style/<N>`（定位框样式，`<N>` 是来源格式的版本号）；`baocut.caption-scene-style/1`（动态场景） | §5.6 |
 | `library-selection` | 视频里启用的用户库条目：每一步的术语表、说话人的音色 | `baocut.library-selection/1` | 见下 |
 | `export-record` | 导出过的成片与字幕文件在哪里 | `baocut.export-record/1` | — |
 | `import-record` | 这部视频从别的格式导入时的明细 | `baocut.import-record/1` | — |
@@ -1812,7 +1812,7 @@ interface CaptionStyleBody {
 | 领域 | 生效合同 |
 | --- | --- |
 | 节点 | `text/group/shape/image/repeat`；稳定 ID、zIndex 与子节点顺序；text 绑定当前 cue 或 `{ source: 'static', text }`；repeat 引用文字选择器，生成 shape/image 装饰 |
-| 布局 | `layoutEvaluation: 'static'`；width/x/y 使用 `{value,basis,offset}`，basis 为 absolute/canvasWidth/canvasHeight/canvasShortEdge；可选 parameter 引用已声明 scalar，长度为 value × parameter × basis + offset，在准备布局时求值；按 Unicode 换行并由 maxLines 与 maxUnitsPerPage 分页；超长词按 grapheme 断行；leadingGap 为 show/hide |
+| 布局 | `layoutEvaluation: 'static' | 'per-sample'`；width/x/y 使用 `{value,basis,offset}`，basis 为 absolute/canvasWidth/canvasHeight/canvasShortEdge；可选 parameter 引用已声明 scalar，长度为 value × parameter × basis + offset，在准备布局时求值；按 Unicode 换行并由 maxLines 与 maxUnitsPerPage 分页；超长词按 grapheme 断行；leadingGap 为 show/hide |
 | 字体与涂装 | 每个文字节点的 fontFamily、fontSize（明确长度）、fontWeight、italic、letterSpacing（em）、lineHeight；fill 为十六进制 RGBA；可选 stroke 为 width（px）和 color；复用宿主注入的同一字体字节与字体解析机制 |
 | 图片 | resources 项声明 id、assetRef（id/revision）和 contentHash（sha256: 小写摘要）；image 节点以 resourceId 引用，fit 为 contain/cover/stretch，默认 contain；只读 PNG 静态图，保留预乘 alpha |
 | 有序涂装 | style.paints 按数组顺序覆盖普通 fill/stroke；每层有稳定 id、paint、strokeWidth（0 为填充，大于 0 为描边）、offset；paint 为 solid 或 linear，渐变 from/to 是基础视觉行框的归一化坐标；色标有序且在 0–1。与 fill 动画、stateStyles 或旧 stroke 同用时拒绝，避免隐式覆盖 |
@@ -1823,7 +1823,22 @@ interface CaptionStyleBody {
 | 表达式 | 带类型 literal/read/call/if；scalar/integer/length/time/angle/bool/color；无环纯函数，时间/单元/基础布局/参数只读；共享数学曲线、连续 sin/cos、带 seed 的 random/noise；if 惰性求值，非法运算返回诊断 |
 | 合成 | replace/add/multiply 与 priority/声明顺序；颜色只允许 replace；乘法通道为无量纲数；父子变换及离屏组 opacity 通过共同 DrawOp 光栅执行 |
 
-`requiredCapabilities` 当前可声明 `caption-scene/1`、`caption-expressions/1`、`caption-unit-animation/1`、`caption-image-png/1` 和 `caption-paint-stack/1`。未知能力、属性或字段拒绝；artifact 形式的场景引用、非 PNG 图片、任意 shader、模糊/反馈材质、逐采样布局和历史采样尚未开放，不能保存为成功后在渲染中忽略。完整扩展方向仍按[设计文档](../design/subtitle/dynamic-caption-format-design.md)维护。
+`requiredCapabilities` 当前可声明 `caption-scene/1`、`caption-expressions/1`、`caption-unit-animation/1`、`caption-image-png/1`、`caption-paint-stack/1`、`caption-blur/1`、`caption-feedback/1` 和 `caption-layout-per-sample/1`。未知能力、属性或字段拒绝；artifact 形式的场景引用、非 PNG 图片、任意 shader、无限递归反馈、节点级材质栈及改变分页成员的时间布局尚未开放，不能保存为成功后在渲染中忽略。完整扩展方向仍按[设计文档](../design/subtitle/dynamic-caption-format-design.md)维护。
+
+**逐采样布局**。`layout.bindings` 是最多 64 项的 `{ nodeId?, property, value: DynamicValue }` 数组。同一目标/属性不能重复。无 nodeId 的目标是场景的 width/x/y（length）；指定文字节点时可改 fontSize（length）、letterSpacing（scalar，em）与 lineHeight（scalar）。只有 `per-sample` 模式接受 bindings。静态字段先确定基础页成员、源文本字节区间及显示起止时间；每次采样只重新布局当前页，不将溢出文字移到新页。`overflow: 'error' | 'visible'` 默认 error：超过 maxLines 或单个字形仍超宽则报 `CAPTION_LAYOUT_OVERFLOW`；visible 保留所有页成员并允许更多行，最终仍按画布裁剪。
+
+布局表达式（包括间接调用的纯函数）只可读取参数、cue 时钟、cue 的稳定 index/count 与画布尺寸；不能读 layout、活动词或动态选择集合，关键帧只能使用 cue 时钟。布局阶段禁止依赖自身产生的行、页或框。动态字号限 1–4096 px、行高 0.1–10、字距 −2–10 em；非法采样结果拒绝。共享文字缓存已有字节预算，变化的字号不会无限累积缓存。行/词/字形框及装饰节点在重排后从同一结果计算。
+
+**模糊与反馈材质**。场景的 `materials` 按数组顺序执行，逐 cue 隔离，作用于该 cue 的完整文字和装饰合成；最多 8 项，每项 id 唯一。材质后的颜色仍是 sRGB 预乘 RGBA8，输出记录为 DrawOp 位图，精确预览与导出共用；点击几何来自当前时刻的文字，不把拖尾当作可编辑文字。
+
+| kind | 字段与执行合同 |
+| --- | --- |
+| blur | radius 为 length 类型 DynamicValue，使用与布局相同的只读 cue 上下文；范围 0–64 输出像素，按 `floor(radius + 0.5)` 量化；passes 为 1–3，默认 1。每遍执行已有确定性预乘 box blur，不冒称 Gaussian。零半径跳过滤镜 |
+| feedback | samples 为 1–16 个过去样本，step 为正的 `{ticks,timescale}`，总历史窗口至多 2 秒；decay 为 0–1，offset 为每个样本的像素位移（各轴绝对值不超过 256）。第 i 个样本重新求值 `t − i × step` 时刻的前缀材质栈，权重为 decay 的 i 次方、位移为 i × offset；按最远历史到当前帧 source-over 合成，当前帧权重为 1 |
+
+反馈前缀不包含它自身和后续材质，因此无无限递归；相同时间的输入、布局和前缀滤镜都重新按冻结数据计算，不读取先前播放缓存。多个反馈相乘的最坏基础采样数不得超过 32。仅采样同一 cue 的有效区间，cue 结束时拖尾也结束；变帧率不改变秒级历史窗口。模糊放在反馈前时，各历史样本使用各自时刻的半径；放在反馈后时，使用当前半径模糊合成结果。
+
+离屏表面按模糊传播范围和最大反馈位移预留透明边界，最后才裁回画布，避免画布边缘的滤镜截断。执行前核对暂存/输出表面的保守上界（256 MiB），每次采样共享表达式预算，材质光栅/模糊/混合总像素工作量不超过 256 Mi 像素。超限报 `CAPTION_BUDGET_EXCEEDED`，不减少样本或降低效果。该预算是准入限制，不保证复杂反馈场景实时运行。
 
 资源声明在写文档时与视频里的素材版本、内容摘要及 MIME 核对，`DocumentRevision.assetRefs` 由引擎生成。导出计划把文档依赖加入冻结素材集合；预览宿主只按该修订的依赖加载字节，不取素材的最新版本。清理保护仍被历史文档修订引用的资源，便携包恢复时重新核对正文、索引与素材；索引被删改也拒绝。字体清点只执行文字准备，不要求图片在线。
 

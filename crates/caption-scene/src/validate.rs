@@ -8,6 +8,9 @@ pub const CAPABILITIES: &[&str] = &[
     "caption-unit-animation/1",
     "caption-image-png/1",
     "caption-paint-stack/1",
+    "caption-blur/1",
+    "caption-feedback/1",
+    "caption-layout-per-sample/1",
 ];
 pub fn property_type(property: &str) -> Option<ValueType> {
     Some(match property {
@@ -222,6 +225,75 @@ pub fn validate_scene(s: &Scene) -> Result<()> {
     walk(&s.nodes, &mut nodes, 0)?;
     if !nodes.values().any(|n| n.kind == NodeKind::Text) {
         return Err(invalid("nodes", "text node required"));
+    }
+    if s.layout.bindings.len() > 64 || (s.layout.layout_evaluation == LayoutEvaluation::Static && !s.layout.bindings.is_empty()) {
+        return Err(invalid("layout.bindings", "per-sample mode and at most 64 bindings required"));
+    }
+    let mut seen_bindings = BTreeSet::new();
+    for b in &s.layout.bindings {
+        if !seen_bindings.insert((&b.node_id, &b.property)) {
+            return Err(invalid("layout.bindings", "duplicate target/property"));
+        }
+        let ty = match (b.node_id.as_deref(), b.property.as_str()) {
+            (None, "width" | "x" | "y") => ValueType::Length,
+            (Some(id), "fontSize") if nodes.get(id).is_some_and(|n| n.kind == NodeKind::Text) => ValueType::Length,
+            (Some(id), "letterSpacing" | "lineHeight") if nodes.get(id).is_some_and(|n| n.kind == NodeKind::Text) => ValueType::Scalar,
+            _ => return Err(invalid("layout.bindings", "unsupported layout target/property")),
+        };
+        validate_early_value(&b.value, ty, s)?;
+    }
+    if s.materials.len() > 8 {
+        return Err(invalid("materials", "at most 8 materials"));
+    }
+    let mut names = BTreeSet::new();
+    let mut samples = 1u32;
+    for material in &s.materials {
+        let id = match material {
+            CaptionMaterial::Blur { id, radius, passes } => {
+                if !(1..=3).contains(passes) {
+                    return Err(invalid(id, "blur passes must be 1..3"));
+                }
+                validate_early_value(radius, ValueType::Length, s)?;
+                if let DynamicValue::Constant { value } = radius {
+                    let n = typed_value(ValueType::Length, value)?.number()?;
+                    if !(0.0..=64.0).contains(&n) {
+                        return Err(invalid(id, "blur radius must be 0..64 pixels"));
+                    }
+                }
+                id
+            }
+            CaptionMaterial::Feedback {
+                id,
+                samples: n,
+                step,
+                decay,
+                offset,
+            } => {
+                if *n == 0
+                    || *n > 16
+                    || step.timescale == 0
+                    || step.ticks <= 0
+                    || step.ticks.unsigned_abs() > 9_007_199_254_740_991
+                    || step.seconds() * f64::from(*n) > 2.0
+                    || !decay.is_finite()
+                    || !(0.0..=1.0).contains(decay)
+                    || offset.iter().any(|x| !x.is_finite() || x.abs() > 256.0)
+                {
+                    return Err(invalid(
+                        id,
+                        "feedback needs 1..16 past samples, positive step, window <= 2 seconds, decay 0..1, offset <= 256px",
+                    ));
+                }
+                samples = samples.checked_mul(n + 1).ok_or_else(|| invalid(id, "feedback sample budget"))?;
+                if samples > 32 {
+                    return Err(invalid(id, "combined feedback sample budget exceeds 32"));
+                }
+                id
+            }
+        };
+        if !name(id) || !names.insert(id) {
+            return Err(invalid("materials", "invalid or duplicate id"));
+        }
     }
     let mut sels = BTreeSet::new();
     for sel in &s.selectors {
@@ -460,4 +532,58 @@ fn validate_value(property: &str, v: &DynamicValue, s: &Scene, unit: UnitKind) -
         }
     }
     Ok(t)
+}
+
+/// Layout/material inputs may only read the frozen cue context, never the layout they produce.
+fn validate_early_value(value: &DynamicValue, ty: ValueType, scene: &Scene) -> Result<()> {
+    let property = if ty == ValueType::Length { "width" } else { "opacity" };
+    validate_value(property, value, scene, UnitKind::Cue)?;
+    fn visit(e: &Expression, s: &Scene, budget: &mut usize) -> Result<()> {
+        if *budget == 0 {
+            return Err(invalid("expression", "dependency budget"));
+        }
+        *budget -= 1;
+        match e {
+            Expression::Read { path } => {
+                if !(path.starts_with("params.")
+                    || path.starts_with("args.")
+                    || path.starts_with("time.")
+                    || matches!(path.as_str(), "unit.index" | "unit.count" | "canvas.width" | "canvas.height"))
+                {
+                    return Err(Diagnostic::new(
+                        "CAPTION_DEPENDENCY_CYCLE",
+                        path,
+                        "layout-dependent input is unavailable before layout",
+                    ));
+                }
+            }
+            Expression::Call { function, args } => {
+                for a in args {
+                    visit(a, s, budget)?;
+                }
+                if let Some(f) = s.functions.iter().find(|f| f.id == *function) {
+                    visit(&f.body, s, budget)?;
+                }
+            }
+            Expression::If {
+                condition,
+                then,
+                otherwise,
+            } => {
+                visit(condition, s, budget)?;
+                visit(then, s, budget)?;
+                visit(otherwise, s, budget)?;
+            }
+            _ => {}
+        }
+        Ok(())
+    }
+    match value {
+        DynamicValue::Expression { expression } => visit(expression, scene, &mut 4096)?,
+        DynamicValue::Keyframes { clock, .. } if clock.unit != UnitKind::Cue => {
+            return Err(invalid("clock", "pre-layout values require cue clock"));
+        }
+        _ => {}
+    }
+    Ok(())
 }

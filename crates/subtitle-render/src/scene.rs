@@ -1,4 +1,6 @@
 //! Declarative caption scenes. Layout, animation and recording are shared by native and WASM.
+mod materials;
+mod sampled_layout;
 use anyhow::{Result, bail};
 use caption_scene::*;
 use render_raster::drawop::{
@@ -53,6 +55,7 @@ struct Line {
 }
 #[derive(Clone)]
 struct Page {
+    source_range: Range<usize>,
     lines: Vec<Line>,
     words: Vec<usize>,
     start: f64,
@@ -230,6 +233,19 @@ impl ScenePlan {
         self.text
     }
     pub fn record(&mut self, seconds: f64) -> Result<(FrameOps, Vec<SceneHit>)> {
+        let mut budget = Budget::default();
+        if self.style.scene().materials.is_empty() {
+            self.record_base(seconds, None, &mut budget)
+        } else {
+            self.record_materials(seconds, &mut budget)
+        }
+    }
+    fn record_base(
+        &mut self,
+        seconds: f64,
+        only_cue: Option<usize>,
+        budget: &mut Budget,
+    ) -> Result<(FrameOps, Vec<SceneHit>)> {
         if !seconds.is_finite() {
             bail!("CAPTION_SCENE_INVALID: sample time");
         }
@@ -238,34 +254,69 @@ impl ScenePlan {
         }
         let mut builder = FrameBuilder::default();
         let mut hits = Vec::new();
-        let mut budget = Budget::default();
-        let scene = self.style.scene();
-        for (ci, cue) in self
-            .cues
-            .iter()
-            .enumerate()
-            .filter(|(_, c)| seconds >= c.start && seconds < c.end)
-        {
+        let base_scene = self.style.scene();
+        for (ci, cue) in self.cues.iter().enumerate().filter(|(i, c)| {
+            only_cue.is_none_or(|id| id == *i) && seconds >= c.start && seconds < c.end
+        }) {
             let params = cue_parameters(&self.style, &self.presentation, cue, &self.instance_id)?;
+            let context = sampled_layout::early_context(
+                cue,
+                ci,
+                self.cues.len(),
+                seconds,
+                &params,
+                (self.width, self.height),
+                &self.instance_id,
+                &self.presentation.seed,
+            )?;
+            let sampled = sampled_layout::sample_scene(base_scene, &context, seconds, budget)?;
+            let scene = sampled.as_ref().unwrap_or(base_scene);
             let mut units = BTreeMap::new();
             for ((idx, id), l) in self.layouts.iter().filter(|((idx, _), _)| *idx == ci) {
                 let _ = idx;
-                if let Some(page) = l
+                if let Some(pi) = l
                     .pages
                     .iter()
-                    .find(|p| seconds >= p.start && seconds < p.end)
+                    .position(|p| seconds >= p.start && seconds < p.end)
                 {
-                    units.insert(
-                        id.clone(),
-                        units_for(
-                            cue,
+                    if sampled.is_some() {
+                        let node = sampled_layout::find_text(&scene.nodes, id)
+                            .expect("validated text node");
+                        let mut relayout = l.clone();
+                        relayout.pages[pi] = sampled_layout::reflow(
+                            &mut self.text,
                             l,
-                            page,
-                            seconds,
-                            &scene.speech_state,
-                            &self.presentation,
-                        ),
-                    );
+                            &l.pages[pi],
+                            node,
+                            &scene.layout,
+                            (self.width, self.height),
+                            &params,
+                            budget,
+                        )?;
+                        units.insert(
+                            id.clone(),
+                            units_for(
+                                cue,
+                                &relayout,
+                                &relayout.pages[pi],
+                                seconds,
+                                &scene.speech_state,
+                                &self.presentation,
+                            ),
+                        );
+                    } else {
+                        units.insert(
+                            id.clone(),
+                            units_for(
+                                cue,
+                                l,
+                                &l.pages[pi],
+                                seconds,
+                                &scene.speech_state,
+                                &self.presentation,
+                            ),
+                        );
+                    }
                 }
             }
             if units.is_empty() {
@@ -290,7 +341,7 @@ impl ScenePlan {
                 &mut self.text,
                 &mut builder,
                 &mut hits,
-                &mut budget,
+                budget,
             )?;
         }
         Ok((builder.finish(), hits))
@@ -514,6 +565,8 @@ fn prepare(
                 .collect::<Vec<_>>();
             let bounds = union(lines.iter().map(|l| l.bounds));
             pages.push(Page {
+                source_range: range.start + rowgroup.first().unwrap().bytes.start
+                    ..range.start + rowgroup.last().unwrap().bytes.end,
                 lines,
                 words: member,
                 start: cue.start,

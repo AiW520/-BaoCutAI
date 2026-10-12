@@ -645,6 +645,32 @@ fn scenes() -> Vec<Scene> {
     }
 
     // —— 字幕 ——
+    for (name, variant) in [
+        ("captions-reflow-feedback", 0),
+        ("captions-per-sample-layout", 1),
+        ("captions-blur", 2),
+    ] {
+        let mut style: Value = serde_json::from_str(include_str!("../../caption-scene/tests/fixtures/reflow-feedback.json")).unwrap();
+        if variant == 1 {
+            style["scene"]["value"]["materials"] = json!([]);
+        }
+        if variant == 2 {
+            style["scene"]["value"]["layout"]["layoutEvaluation"] = json!("static");
+            style["scene"]["value"]["layout"]["bindings"] = json!([]);
+            style["scene"]["value"]["materials"].as_array_mut().unwrap().truncate(1);
+        }
+        let mut scene = Scene::new(
+            name,
+            video(vec![caption("dynamic", "doc", Some("style"), 120, &[])], vec![], json!({})),
+            &[0, 3, 37, 75, 89, 91, 111],
+        );
+        scene.documents = vec![
+            caption_doc("doc", "sequence", &[(0.0, 4.0, "One two three four")], "original"),
+            style_doc("style", style),
+        ];
+        scenes.push(scene);
+    }
+
     let badge = include_bytes!("../../caption-scene/tests/fixtures/badge.png").to_vec();
     let hash = format!(
         "sha256:{}",

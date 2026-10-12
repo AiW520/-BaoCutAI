@@ -154,3 +154,36 @@ fn repeated_decoration_inherits_its_word_clock() {
     input["scene"]["value"]["animations"].as_array_mut().unwrap().push(track);
     assert!(parse_style(&input).is_ok());
 }
+
+#[test]
+fn sampled_layout_rejects_cycles_through_functions_and_page_clocks() {
+    let mut body = fixture();
+    body["scene"]["value"]["layout"]["layoutEvaluation"] = json!("per-sample");
+    body["scene"]["value"]["functions"] =
+        json!([{"id":"width","arguments":[],"returns":"length","body":{"op":"read","path":"layout.width"}}]);
+    body["scene"]["value"]["layout"]["bindings"] =
+        json!([{"property":"width","value":{"kind":"expression","expression":{"op":"call","function":"width","args":[]}}}]);
+    assert_eq!(parse_style(&body).unwrap_err().code, "CAPTION_DEPENDENCY_CYCLE");
+    body["scene"]["value"]["layout"]["bindings"][0]["value"] = json!({"kind":"keyframes","clock":{"unit":"page","origin":"start","duration":{"kind":"unit-span"}},"keys":[{"at":0,"value":40},{"at":1,"value":120}]});
+    assert!(parse_style(&body).is_err());
+    body["scene"]["value"]["layout"]["bindings"][0]["value"] = json!({"kind":"constant","value":50});
+    assert!(parse_style(&body).is_ok());
+    body["scene"]["value"]["layout"]["layoutEvaluation"] = json!("static");
+    assert!(parse_style(&body).is_err());
+}
+#[test]
+fn material_validation_limits_nested_history_and_blur() {
+    let mut body = fixture();
+    let root = &mut body["scene"]["value"];
+    root["materials"] = json!([{"kind":"blur","id":"blur","radius":{"kind":"constant","value":65}}]);
+    assert!(parse_style(&body).is_err());
+    body["scene"]["value"]["materials"] = json!([
+        {"kind":"feedback","id":"a","samples":8,"step":{"ticks":100,"timescale":1000},"decay":0.5},
+        {"kind":"feedback","id":"b","samples":8,"step":{"ticks":100,"timescale":1000},"decay":0.5}
+    ]);
+    assert!(parse_style(&body).is_err());
+    body["scene"]["value"]["materials"].as_array_mut().unwrap().pop();
+    assert!(parse_style(&body).is_ok());
+    body["scene"]["value"]["materials"][0]["step"]["ticks"] = json!(0);
+    assert!(parse_style(&body).is_err());
+}

@@ -295,3 +295,269 @@ fn png_dimension_overflow_is_rejected_before_decode() {
             .contains("CAPTION_BUDGET_EXCEEDED")
     );
 }
+
+fn sampled_style() -> Value {
+    let mut body = fixture();
+    let scene = &mut body["scene"]["value"];
+    scene["animations"] = json!([]);
+    scene["layout"]["layoutEvaluation"] = json!("per-sample");
+    scene["layout"]["overflow"] = json!("visible");
+    scene["layout"]["bindings"] = json!([
+        {"property":"width","value":{"kind":"expression","expression":{"op":"call","function":"mix","args":[{"op":"literal","type":"length","value":120},{"op":"literal","type":"length","value":40},{"op":"read","path":"time.clampedProgress"}]}}},
+        {"nodeId":"caption","property":"fontSize","value":{"kind":"expression","expression":{"op":"call","function":"mix","args":[{"op":"literal","type":"length","value":14},{"op":"literal","type":"length","value":24},{"op":"read","path":"time.clampedProgress"}]}}}
+    ]);
+    body
+}
+#[test]
+fn sampled_layout_reflows_without_reassigning_pages_and_updates_hits() {
+    let body = sampled_style();
+    let mut p = plan(
+        body.clone(),
+        "One two three four",
+        words(),
+        Presentation::default(),
+    );
+    let early = p.render(0.1).unwrap();
+    let later = p.render(2.5).unwrap();
+    assert_ne!(early.rgba, later.rgba);
+    assert!(later.hits.len() > early.hits.len());
+    for t in [2.5, 0.1, 3.3, 1.23, 3.3] {
+        let actual = p.render(t).unwrap();
+        let expected = plan(
+            body.clone(),
+            "One two three four",
+            words(),
+            Presentation::default(),
+        )
+        .render(t)
+        .unwrap();
+        assert_eq!(actual.rgba, expected.rgba);
+        assert_eq!(actual.fingerprint, expected.fingerprint);
+    }
+    let last = p.render(3.3).unwrap();
+    assert!(!last.hits.is_empty());
+    assert!(last.hits.len() < later.hits.len());
+}
+#[test]
+fn sampled_layout_overflow_is_explicit() {
+    let mut body = sampled_style();
+    body["scene"]["value"]["layout"]["maxLines"] = json!(1);
+    body["scene"]["value"]["layout"]["overflow"] = json!("error");
+    let mut p = plan(body, "One two three", vec![], Presentation::default());
+    assert!(
+        p.render(2.5)
+            .err()
+            .unwrap()
+            .to_string()
+            .contains("CAPTION_LAYOUT_OVERFLOW")
+    );
+}
+#[test]
+fn blur_spreads_alpha_preserves_premultiplication_and_zero_is_identity() {
+    let mut body = fixture();
+    body["scene"]["value"]["animations"] = json!([]);
+    let plain = plan(body.clone(), "One", vec![], Presentation::default())
+        .render(1.0)
+        .unwrap();
+    body["scene"]["value"]["materials"] =
+        json!([{"kind":"blur","id":"soft","radius":{"kind":"constant","value":2},"passes":2}]);
+    let blurred = plan(body.clone(), "One", vec![], Presentation::default())
+        .render(1.0)
+        .unwrap();
+    let count = |f: &SceneFrame| f.rgba.chunks_exact(4).filter(|p| p[3] > 0).count();
+    assert!(count(&blurred) > count(&plain));
+    assert!(
+        blurred
+            .rgba
+            .chunks_exact(4)
+            .all(|p| p[0] <= p[3] && p[1] <= p[3] && p[2] <= p[3])
+    );
+    body["scene"]["value"]["materials"][0]["radius"]["value"] = json!(0);
+    assert_eq!(
+        plain.rgba,
+        plan(body, "One", vec![], Presentation::default())
+            .render(1.0)
+            .unwrap()
+            .rgba
+    );
+}
+#[test]
+fn feedback_is_bounded_seekable_and_uses_historical_layout() {
+    let mut body = sampled_style();
+    body["scene"]["value"]["materials"] = json!([
+        {"kind":"blur","id":"soft","radius":{"kind":"constant","value":1}},
+        {"kind":"feedback","id":"trail","samples":3,"step":{"ticks":100,"timescale":1000},"decay":0.6,"offset":[-6,0]}
+    ]);
+    let mut p = plan(
+        body.clone(),
+        "One two three four",
+        words(),
+        Presentation::default(),
+    );
+    let a = p.render(2.5).unwrap();
+    p.render(0.2).unwrap();
+    assert_eq!(a.rgba, p.render(2.5).unwrap().rgba);
+    assert_eq!(
+        a.rgba,
+        plan(
+            body.clone(),
+            "One two three four",
+            words(),
+            Presentation::default()
+        )
+        .render(2.5)
+        .unwrap()
+        .rgba
+    );
+    assert!(p.render(4.0).unwrap().rgba.iter().all(|x| *x == 0));
+    body["scene"]["value"]["materials"] = json!([]);
+    let no_trail = plan(body, "One two three four", words(), Presentation::default())
+        .render(2.5)
+        .unwrap();
+    assert_ne!(a.rgba, no_trail.rgba);
+}
+
+#[test]
+fn material_order_and_page_boundary_history_are_observable() {
+    let mut a = sampled_style();
+    let blur = json!({"kind":"blur","id":"soft","radius":{"kind":"expression","expression":{"op":"call","function":"mix","args":[{"op":"literal","type":"length","value":0},{"op":"literal","type":"length","value":8},{"op":"read","path":"time.clampedProgress"}]}}});
+    let trail = json!({"kind":"feedback","id":"trail","samples":3,"step":{"ticks":250,"timescale":1000},"decay":0.75,"offset":[-8,0]});
+    a["scene"]["value"]["materials"] = json!([blur.clone(), trail.clone()]);
+    let mut b = a.clone();
+    b["scene"]["value"]["materials"] = json!([trail, blur]);
+    let first = plan(
+        a.clone(),
+        "One two three four",
+        words(),
+        Presentation::default(),
+    )
+    .render(3.05)
+    .unwrap();
+    let second = plan(b, "One two three four", words(), Presentation::default())
+        .render(3.05)
+        .unwrap();
+    assert_ne!(first.rgba, second.rgba);
+    let mut reused = plan(
+        a.clone(),
+        "One two three four",
+        words(),
+        Presentation::default(),
+    );
+    for t in [3.05, 1.17, 0.02, 2.99, 3.01] {
+        let actual = reused.render(t).unwrap();
+        let fresh = plan(
+            a.clone(),
+            "One two three four",
+            words(),
+            Presentation::default(),
+        )
+        .render(t)
+        .unwrap();
+        assert_eq!(actual.rgba, fresh.rgba);
+    }
+}
+#[test]
+fn materials_guard_surface_budget_and_dynamic_uniform_ranges() {
+    let mut body = fixture();
+    body["scene"]["value"]["materials"] = json!([{"kind":"blur","id":"soft","radius":{"kind":"expression","expression":{"op":"literal","type":"length","value":65}}}]);
+    let mut p = plan(body.clone(), "One", vec![], Presentation::default());
+    assert!(
+        p.render(1.0)
+            .err()
+            .unwrap()
+            .to_string()
+            .contains("CAPTION_MATERIAL_INVALID")
+    );
+    body["scene"]["value"]["materials"] = json!([{"kind":"feedback","id":"trail","samples":16,"step":{"ticks":100,"timescale":1000},"decay":0.5,"offset":[256,256]}]);
+    let mut p = plan(body, "One", vec![], Presentation::default());
+    assert!(
+        p.render(1.0)
+            .err()
+            .unwrap()
+            .to_string()
+            .contains("CAPTION_BUDGET_EXCEEDED")
+    );
+}
+
+#[test]
+fn blur_uses_transparent_padding_before_canvas_crop() {
+    let mut body = fixture();
+    body["scene"]["value"]["animations"] = json!([]);
+    body["scene"]["value"]["layout"]["x"]["value"] = json!(0);
+    body["scene"]["value"]["materials"] =
+        json!([{"kind":"blur","id":"soft","radius":{"kind":"constant","value":2},"passes":2}]);
+    let edge = plan(body.clone(), "One", vec![], Presentation::default())
+        .render(1.0)
+        .unwrap();
+    body["scene"]["value"]["layout"]["x"]["value"] = json!(8);
+    body["scene"]["value"]["layout"]["y"]["value"] = json!(53);
+    let mut larger = ScenePlan::compile(
+        parse_style(&body).unwrap(),
+        Presentation::default(),
+        vec![SceneCue {
+            id: "cue".into(),
+            document_id: "doc".into(),
+            text: "One".into(),
+            start: 0.0,
+            end: 4.0,
+            words: vec![],
+        }],
+        (176, 106),
+        TextEngine::with_document_fonts(&[include_bytes!(
+            "../../render-raster/assets/fonts/NotoSansSC-Variable.ttf"
+        )
+        .to_vec()]),
+        "caption|occurrence".into(),
+    )
+    .unwrap();
+    let large = larger.render(1.0).unwrap();
+    let mut cropped = Vec::new();
+    for y in 8..98 {
+        cropped.extend_from_slice(&large.rgba[(y * 176 + 8) * 4..(y * 176 + 168) * 4]);
+    }
+    assert_eq!(edge.rgba.as_ref(), &cropped);
+}
+#[test]
+fn feedback_never_samples_another_cues_text_or_parameters() {
+    let mut body = fixture();
+    let s = &mut body["scene"]["value"];
+    s["animations"] = json!([]);
+    s["nodes"][0]["properties"] =
+        json!({"fill":{"kind":"expression","expression":{"op":"read","path":"params.accent"}}});
+    s["materials"] = json!([{"kind":"feedback","id":"tail","samples":3,"step":{"ticks":100,"timescale":1000},"decay":0.8,"offset":[-10,0]}]);
+    let presentation:Presentation=serde_json::from_value(json!({"cueOverrides":[{"cueId":"first","parameters":{"accent":"#FF0000"}},{"cueId":"second","parameters":{"accent":"#0000FF"}}]})).unwrap();
+    let cues = vec![
+        SceneCue {
+            id: "first".into(),
+            document_id: "doc".into(),
+            text: "AAAA".into(),
+            start: 0.0,
+            end: 1.0,
+            words: vec![],
+        },
+        SceneCue {
+            id: "second".into(),
+            document_id: "doc".into(),
+            text: "BBBB".into(),
+            start: 1.0,
+            end: 2.0,
+            words: vec![],
+        },
+    ];
+    let mut p = ScenePlan::compile(
+        parse_style(&body).unwrap(),
+        presentation,
+        cues,
+        (160, 90),
+        TextEngine::with_document_fonts(&[include_bytes!(
+            "../../render-raster/assets/fonts/NotoSansSC-Variable.ttf"
+        )
+        .to_vec()]),
+        "caption|occurrence".into(),
+    )
+    .unwrap();
+    p.render(0.95).unwrap();
+    let next = p.render(1.02).unwrap();
+    assert!(next.rgba.chunks_exact(4).any(|p| p[2] > 100));
+    assert!(next.rgba.chunks_exact(4).all(|p| p[0] == 0));
+}

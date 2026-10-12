@@ -54,13 +54,15 @@ export interface CaptionSceneNode {
 }
 export interface CaptionScene {
   schema: 'baocut.caption-scene/1';
+  materials?: CaptionMaterial[];
   evaluationVersion: 1;
   requiredCapabilities?: string[];
   resources?: { id: string; assetRef: { id: string; revision: string }; contentHash: string }[];
   parameters?: { id: string; type: CaptionValueType; default: CaptionValue; min?: number | null; max?: number | null }[];
   layout: {
     width: CaptionLength; x: CaptionLength; y: CaptionLength; maxLines?: number;
-    layoutEvaluation?: 'static'; pagination?: { unit?: 'word'; maxUnitsPerPage?: number | null }; align?: 'left' | 'center' | 'right'; leadingGap?: 'show' | 'hide';
+    layoutEvaluation?: 'static' | 'per-sample'; overflow?: 'error' | 'visible';
+    bindings?: { nodeId?: string | null; property: 'width' | 'x' | 'y' | 'fontSize' | 'letterSpacing' | 'lineHeight'; value: CaptionDynamicValue }[]; pagination?: { unit?: 'word'; maxUnitsPerPage?: number | null }; align?: 'left' | 'center' | 'right'; leadingGap?: 'show' | 'hide';
   };
   speechState?: { gapPolicy?: 'none' | 'hold-previous'; tailPolicy?: 'none' | 'hold-last'; timingPolicy?: 'require-word-timing' | 'estimated' };
   nodes: CaptionSceneNode[];
@@ -81,3 +83,8 @@ export interface CaptionPresentation {
   /** 16 hexadecimal digits; omitted values resolve to zero. */
   seed?: string;
 }
+
+/** Ordered cue-local materials. Feedback evaluates finite past samples of the preceding stack. */
+export type CaptionMaterial =
+  | { kind: 'blur'; id: string; radius: CaptionDynamicValue; passes?: number }
+  | { kind: 'feedback'; id: string; samples: number; step: { ticks: number; timescale: number }; decay: number; offset?: [number, number] };

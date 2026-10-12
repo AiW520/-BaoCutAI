@@ -43,6 +43,8 @@ pub struct Scene {
     pub functions: Vec<PureFunction>,
     #[serde(default)]
     pub animations: Vec<Animation>,
+    #[serde(default)]
+    pub materials: Vec<CaptionMaterial>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
@@ -145,6 +147,10 @@ impl Length {
 pub struct Layout {
     #[serde(default)]
     pub layout_evaluation: LayoutEvaluation,
+    #[serde(default)]
+    pub bindings: Vec<LayoutBinding>,
+    #[serde(default)]
+    pub overflow: LayoutOverflow,
     pub width: Length,
     pub x: Length,
     pub y: Length,
@@ -162,6 +168,7 @@ pub struct Layout {
 pub enum LayoutEvaluation {
     #[default]
     Static,
+    PerSample,
 }
 fn lines() -> usize {
     2
@@ -608,4 +615,41 @@ pub enum ScenePaint {
 pub struct PaintStop {
     pub at: f64,
     pub color: String,
+}
+
+/// Reflow never changes the baseline page membership or display window.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "kebab-case")]
+pub enum LayoutOverflow {
+    #[default]
+    Error,
+    Visible,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct LayoutBinding {
+    pub node_id: Option<String>,
+    pub property: String,
+    pub value: DynamicValue,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "kind", rename_all = "kebab-case", deny_unknown_fields)]
+pub enum CaptionMaterial {
+    Blur {
+        id: String,
+        radius: DynamicValue,
+        #[serde(default = "one_pass")]
+        passes: u32,
+    },
+    Feedback {
+        id: String,
+        samples: u32,
+        step: Time,
+        decay: f64,
+        #[serde(default)]
+        offset: [f64; 2],
+    },
+}
+fn one_pass() -> u32 {
+    1
 }
