@@ -47,6 +47,8 @@ const en = {
     recheck: 'Check again',
     pick: 'Choose location…',
     pickUnavailable: 'Choose location (can’t pick files here)',
+    /** 下载视频工具页与失败卡片上去设置 › 视频下载的按钮。 */
+    changeSettings: 'Change download settings',
   },
   update: {
     stop: 'Stop update',

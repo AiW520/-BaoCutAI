@@ -19,6 +19,7 @@ export const zhHans: SettingsNavMessages = {
     general: '通用',
     shortcuts: '快捷键',
     fonts: '字体',
+    downloader: '视频下载',
     agent: 'Agent 提供方',
     skills: 'Skills',
     glossary: '术语库',

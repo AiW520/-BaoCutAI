@@ -12,6 +12,7 @@ export const pl: SettingDescriptionMessages = {
   'transcribe.afterComplete': "Po transkrypcji: open-video otwiera wideo, notify tylko powiadamia, nothing nic nie robi",
   'downloads.directory':
     "Lokalizacja zapisu wyników narzędzi bez wideo, multimediów z linków i plików downloads_save (ścieżka bezwzględna); null używa ~/Downloads na hoście niezależnie od projektu",
+  'downloads.cookieBrowsers': 'Logowanie do witryny przy pobieraniu z linków (Pobieranie wideo, transkrypcja z linku oraz download i transcribe agenta): all używa wszystkich przeglądarek z magazynem cookie na tym hoście, od ostatnio używanej; lista id przeglądarek (chrome, edge, firefox, safari, brave, chromium, opera, vivaldi, whale) jest próbowana w tej kolejności; pusta lista pobiera anonimowo. Rozwijane według przeglądarek wykrytych na początku każdego pobierania',
   'models.downloadEndpoint': "Źródło modeli lokalnych (bazowy URL serwera lustrzanego, http(s)://); null używa publicznego repozytorium, https://www.modelscope.cn pobiera z ModelScope. BAOCUT_MODELS_ENDPOINT ma pierwszeństwo",
   'models.dir':
     "Folder modeli lokalnych (ścieżka bezwzględna); null używa models w folderze danych. BAOCUT_MODELS_DIR ma pierwszeństwo. Zmieniaj przez models.setDir, nie settings set",

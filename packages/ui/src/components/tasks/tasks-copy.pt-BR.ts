@@ -15,7 +15,7 @@ export const ptBR: TasksMessages = {
     action: {
       retry: "Tentar baixar novamente",
       'change-link': "Usar outro link",
-      'use-file': "Usar arquivo local",
+      'use-file': "Usar arquivo local", 'sign-in': 'Alterar configurações de download',
       tools: "Verificar ferramentas de download",
       restart: "Recomeçar importação",
       downloads: "Mudar local de download…",

@@ -18,5 +18,9 @@ export const ja: LinkCookiesMessages = {
     `Windows では、${names.join('、')} は通常 App-Bound Encryption で Cookie を保護しているため、ブラウザを終了しても yt-dlp が読み取れないことがあります。`,
   firefoxTip: 'サインインが必要な場合は、Firefox でサイトにサインインし、代わりに Firefox にチェックを入れてください。',
   noBrowsers: 'このコンピュータにはブラウザの Cookie が見つからないため、匿名でしかダウンロードできません。ブラウザでサイトにサインインしたら、「ブラウザを再検出」をクリックしてください。',
+  anonymous: 'オフ（匿名でダウンロード）',
+  subOne: (name: string) => `${name} の Cookie を使用`,
+  subMany: (names: readonly string[]) => `${names.join('、')} の Cookie を順に試す`,
+  summary: (text: string) => `Web サイトへのサインイン：${text}`,
   used: (name: string) => `${name} の Cookie を使用しました`,
 };

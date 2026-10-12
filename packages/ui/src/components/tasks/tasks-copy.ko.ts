@@ -15,7 +15,7 @@ export const ko: TasksMessages = {
     action: {
       retry: '다운로드 다시 시도',
       'change-link': '다른 링크 사용',
-      'use-file': '대신 로컬 파일 사용',
+      'use-file': '대신 로컬 파일 사용', 'sign-in': '다운로드 설정 변경',
       tools: '다운로드 도구 확인',
       restart: '가져오기 처음부터 다시 시작',
       downloads: '다운로드 위치 변경…',

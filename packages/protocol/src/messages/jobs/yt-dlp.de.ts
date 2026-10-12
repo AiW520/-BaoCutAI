@@ -3,7 +3,7 @@ import type { JobsYtDlpMessages } from './yt-dlp.ts';
 export const de: JobsYtDlpMessages = {
   toolNotFound: (p: { code: string }) => `Ausführbares yt-dlp nicht gefunden (${p.code})`,
   remedyUnsupported: "Das Downloadwerkzeug unterstützt diesen Link nicht: den Link zur Videoseite selbst verwenden (keine Wiedergabeliste, Livestream- oder Suchseite)",
-  remedyLoginRequired: "Im Browser bei der Website anmelden, dann diesen Browser unter „Website-Anmeldung“ auswählen und erneut herunterladen",
+  remedyLoginRequired: 'Im Browser bei der Website anmelden, dann diesen Browser unter Einstellungen › Video-Download › Website-Anmeldung auswählen und erneut herunterladen',
   remedyCookiesUnavailable: "Browser-Cookies konnten nicht gelesen werden: Prüfen Sie, ob Sie im Browser angemeldet sind; bei belegter Datenbank den Browser vollständig beenden (einschließlich Hintergrundprozessen); bei verweigertem Schlüsselbundzugriff diesen erlauben; Safari benötigt Vollzugriff auf die Festplatte; unter Windows kann yt-dlp keine Cookies lesen, die Chrome, Edge oder Brave mit appgebundener Verschlüsselung schützen, daher Firefox verwenden; oder einen anderen Browser versuchen",
   remedyToolUpdateRequired: "Die Website konnte nicht ausgewertet werden oder das Werkzeug ist veraltet: yt-dlp aktualisieren, erneut erkennen und erneut versuchen",
   remedyUnavailable: "Das Video ist nicht verfügbar (gelöscht, regional beschränkt oder ohne herunterladbares Format)",

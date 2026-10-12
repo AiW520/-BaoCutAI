@@ -571,7 +571,7 @@ export const ja: ToolsMessages = {
     project: '文字起こしをプロジェクトに追加（任意）',
     noProject: 'プロジェクトに追加しない',
     projectNote: 'プロジェクトに関連付けるだけで、ファイルは上で指定したフォルダに保存されます。',
-    editLink: 'リンクまたは Cookie の設定を変更',
+    editLink: 'リンクを編集',
   },
   taskRun: {
     stopped: '実行が停止しました',

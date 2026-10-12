@@ -52,11 +52,11 @@ export const fr: LinkImportMessages = {
     },
     LINK_LOGIN_REQUIRED: {
       title: "Cette vidéo nécessite une connexion",
-      body: "Connectez-vous d’abord au site, revenez à Télécharger la vidéo, cochez ce navigateur dans « Connexion au site » et réessayez.",
+      body: 'Connectez-vous d’abord au site dans votre navigateur. Cochez ensuite ce navigateur dans Réglages › Téléchargement de vidéos › Connexion au site, puis relancez le téléchargement.',
     },
     LINK_COOKIES_UNAVAILABLE: {
       title: "Cookies de navigateur illisibles",
-      body: "Vérifiez la connexion. Base verrouillée : fermez entièrement le navigateur, arrière-plan compris. Vérifiez trousseau et Accès complet au disque pour Safari. Sous Windows, cookies Chrome, Edge, Brave protégés par chiffrement lié à l’application illisibles ; cochez Firefox. Ou essayez un autre navigateur.",
+      body: "Vérifiez la connexion. Base verrouillée : fermez entièrement le navigateur, arrière-plan compris. Vérifiez trousseau et Accès complet au disque pour Safari. Sous Windows, cookies Chrome, Edge, Brave protégés par chiffrement lié à l’application illisibles ; cochez Firefox. Ou cochez un autre navigateur dans Réglages › Téléchargement de vidéos.",
     },
     LINK_TOOL_UPDATE_REQUIRED: {
       title: "yt-dlp doit être mis à jour",

@@ -31,7 +31,7 @@ export const ko: StartMessages = {
     preparing: '다운로드 도구 준비 중',
     recheck: '다시 확인',
     pick: '위치 선택…',
-    pickUnavailable: '위치 선택(여기서는 파일을 고를 수 없음)',
+    pickUnavailable: '위치 선택(여기서는 파일을 고를 수 없음)', changeSettings: '다운로드 설정 변경',
   },
   update: {
     stop: '업데이트 중지',

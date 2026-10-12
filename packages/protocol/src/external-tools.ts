@@ -1,6 +1,6 @@
 import type { Id } from './domain.ts';
 import { localizeText, type MessageRef } from './message-ref.ts';
-import type { LinkCookieBrowser } from './pipelines.ts';
+import type { CookieBrowsersSetting, LinkCookieBrowser } from './pipelines.ts';
 
 /**
  * 受管外部工具（架构设计 §12.9）：BaoCut 用到、但不随应用发布的程序。能由 BaoCut 下载的只有下载工具 `yt-dlp`；ffmpeg 照旧从
@@ -149,6 +149,24 @@ export interface CookieBrowserInfo {
   label: string;
   /** Cookie 库最近一次改动的时间（ISO 8601）；读不到（例如没有权限）时 null，排在最后。 */
   lastUsedAt: string | null;
+}
+
+type DetectedBrowsers = readonly Pick<CookieBrowserInfo, 'id'>[];
+
+/**
+ * 网站登录的设置（`downloads.cookieBrowsers`）→ 这一次下载按顺序试的浏览器：`all` 是检测到的全部，列表只留还检测得到的，
+ * 都按检测到的顺序（最近用过的在前）。界面、Runtime 的智能体工具都在下载开始时用它展开，结果冻结进那一次下载。
+ */
+export function resolveCookieBrowsers(setting: CookieBrowsersSetting, detected: DetectedBrowsers): LinkCookieBrowser[] {
+  if (setting === 'all') return detected.map((b) => b.id);
+  const set = new Set(setting);
+  return detected.map((b) => b.id).filter((id) => set.has(id));
+}
+
+/** 勾选的浏览器 → 存回设置的值：检测到的都勾上存 `all`（之后新检测到的也算在内），否则存按检测顺序排好的列表（空的是匿名下载）。 */
+export function cookieBrowsersSetting(checked: readonly LinkCookieBrowser[], detected: DetectedBrowsers): CookieBrowsersSetting {
+  const list = resolveCookieBrowsers([...checked], detected);
+  return detected.length > 0 && list.length === detected.length ? 'all' : list;
 }
 
 /**

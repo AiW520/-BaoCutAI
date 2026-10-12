@@ -1,6 +1,6 @@
 import { spawn, type ChildProcess } from 'node:child_process';
 import { killProcessTree, type SpawnProcess } from '@baocut/process-host';
-import { LINK_COOKIE_BROWSERS, type LinkCookieBrowser, type Localized } from '@baocut/protocol';
+import { DOWNLOADER_SETTINGS_HREF, LINK_COOKIE_BROWSERS, type LinkCookieBrowser, type Localized } from '@baocut/protocol';
 import { JobsYtDlp } from '@baocut/protocol/messages/jobs/yt-dlp.ts';
 import type { JobText } from '../job-text.ts';
 import { COOKIE_BROWSER_LABELS } from './cookie-browsers.ts';
@@ -190,6 +190,13 @@ export function linkFailureRemedy(code: string): string | undefined {
   return remedies[code]?.().text;
 }
 
+/** 错误的 `details` 里的补救：给人看的一句；网站要求登录、Cookie 读不到时另带设置 › 视频下载的地址（界面与智能体据此给设置链接）。 */
+function remedyDetails(code: string): { remedy: string | undefined; settingsHref?: string } {
+  return { remedy: linkFailureRemedy(code), ...(worthAnotherCookieBrowserCode(code) ? { settingsHref: DOWNLOADER_SETTINGS_HREF } : {}) };
+}
+
+const worthAnotherCookieBrowserCode = (code: string) => code === 'LINK_COOKIES_UNAVAILABLE' || code === 'LINK_LOGIN_REQUIRED';
+
 /** 按 yt-dlp 的报错（标准错误的结尾）判断失败的种类。链接在报错里一律脱敏。 */
 export function classifyFailure(stderr: string, exitCode: number | null): PipelineStepError {
   const text = redactUrlsInText(stderr).trim();
@@ -240,12 +247,12 @@ export function classifyFailure(stderr: string, exitCode: number | null): Pipeli
   })();
   // 工具的原话照原样；没有时说明退出码。
   const message: JobText = errorLine.replace(/^ERROR:\s*/, '').slice(0, 300) || JobsYtDlp.exited({ code: exitCode });
-  return new PipelineStepError(code, message, { exitCode, stderr: text.slice(-1000), remedy: linkFailureRemedy(code) });
+  return new PipelineStepError(code, message, { exitCode, stderr: text.slice(-1000), ...remedyDetails(code) });
 }
 
 /** 换下一个浏览器的 Cookie 可能有用的失败：读不到这个浏览器的 Cookie，或网站仍要求登录。别的失败换浏览器也一样。 */
 export function worthAnotherCookieBrowser(error: PipelineStepError): boolean {
-  return error.code === 'LINK_COOKIES_UNAVAILABLE' || error.code === 'LINK_LOGIN_REQUIRED';
+  return worthAnotherCookieBrowserCode(error.code);
 }
 
 /**
@@ -262,7 +269,7 @@ export function cookieAttemptsFailure(attempts: ReadonlyArray<{ browser: CookieB
   return new PipelineStepError(code, JobsYtDlp.cookieAttemptsFailed({ count: attempts.length, reasons }), {
     ...last.details,
     attempts: attempts.map((a) => ({ browser: a.browser, code: a.error.code, message: a.error.message })),
-    remedy: linkFailureRemedy(code),
+    ...remedyDetails(code),
   });
 }
 

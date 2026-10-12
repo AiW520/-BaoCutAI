@@ -348,3 +348,47 @@ export function DownloaderCard({ view }: { view: DownloaderView }) {
     </section>
   );
 }
+
+const summaryLine = style({ margin: 0, font: 'ui-xs', color: 'gray-600', overflowWrap: 'anywhere' });
+
+/**
+ * 下载视频工具页的摘要（产品设计 §2.7；设计稿 tool-link.jsx 的 DownloadSummary）：下载工具与网站登录都在设置 › 视频下载里管理，
+ * 这里只写 yt-dlp 的状态与版本、这次下载按什么试哪些浏览器的 Cookie；没就绪时就地给主按钮（安装、同意、更新），其余去设置里改。
+ */
+export function DownloaderSummary({ view, cookies, onSettings }: { view: DownloaderView; cookies: string; onSettings(): void }) {
+  const runtime = useRuntime();
+  const { card: c, busy, job, error } = view;
+  const tone =
+    c.state === 'ready' || c.state === 'updating' ? undefined : c.state === 'install' || c.state === 'consent' || c.state === 'installing' ? 'setup' : 'problem';
+  const progress = job?.progress;
+  const pct = progress && progress.total ? Math.max(0, Math.min(100, Math.floor((progress.done / progress.total) * 100))) : null;
+  const version = view.status?.version;
+  return (
+    <section className={card({ tone })} aria-label={ST.downloader.card}>
+      <div className={head}>
+        <span className={headIcon} aria-hidden>
+          <Download />
+        </span>
+        <span className={headTitle}>{c.title}</span>
+        <Badge variant={BADGE[c.state]} fillStyle="subtle" size="S">
+          {ST.downloader.badge[c.state]}
+        </Badge>
+      </div>
+      {c.state === 'ready' ? null : <p className={bodyText}>{error && !view.status ? ST.downloader.checkFailed(error) : c.body}</p>}
+      <p className={summaryLine}>
+        {version ? `yt-dlp ${version}` : 'yt-dlp'} · {cookies}
+      </p>
+      {c.state === 'installing' ? <ProgressBar aria-label={ST.downloader.preparing} size="S" isIndeterminate={pct === null} value={pct ?? undefined} /> : null}
+      <div className={actions}>
+        {c.action ? (
+          <Button variant="accent" size="S" isPending={busy} onPress={() => void fixDownloader(runtime, c.state)}>
+            {c.action}
+          </Button>
+        ) : null}
+        <ActionButton size="S" isQuiet onPress={onSettings}>
+          <Text>{ST.downloader.changeSettings}</Text>
+        </ActionButton>
+      </div>
+    </section>
+  );
+}

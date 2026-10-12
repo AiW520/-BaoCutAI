@@ -554,7 +554,7 @@ export const zhHans: ToolsMessages = {
     project: '转录结果放到项目（可选）',
     noProject: '不放到项目',
     projectNote: '仅关联项目，文件仍保存在上方指定的目录。',
-    editLink: '修改链接或 Cookie 设置',
+    editLink: '修改链接',
   },
   taskRun: {
     stopped: '运行停住了',

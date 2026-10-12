@@ -31,7 +31,7 @@ export const zhHant: StartMessages = {
     preparing: '正在準備下載工具',
     recheck: '重新檢查',
     pick: '選擇位置…',
-    pickUnavailable: '選擇位置（這裡無法選擇檔案）',
+    pickUnavailable: '選擇位置（這裡無法選擇檔案）', changeSettings: '變更下載設定',
   },
   update: {
     stop: '停止更新',

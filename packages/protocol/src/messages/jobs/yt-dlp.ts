@@ -18,7 +18,7 @@ import { vi } from './yt-dlp.vi.ts';
 const en = {
   toolNotFound: (p: { code: string }) => `Can't find an executable yt-dlp (${p.code})`,
   remedyUnsupported: "The download tool doesn't support this link: use the link to the video page itself (not a playlist, live stream, or search page)",
-  remedyLoginRequired: 'Sign in to the site in your browser, then select that browser under “Website sign-in” and download again',
+  remedyLoginRequired: 'Sign in to the site in your browser, then check that browser under Settings › Video downloader › Website sign-in and download again',
   remedyCookiesUnavailable: "Can't read browser cookies: make sure you're signed in in the browser; if the database is in use, quit the browser completely (including background processes); if keychain access is denied, allow it; Safari needs Full Disk Access; on Windows, yt-dlp can't read cookies that Chrome, Edge, or Brave protect with app-bound encryption, so use Firefox; or try another browser",
   remedyToolUpdateRequired: 'The site failed to parse or the tool is out of date: update yt-dlp, detect it again, and try again',
   remedyUnavailable: 'The video is unavailable (deleted, region-restricted, or no downloadable format)',

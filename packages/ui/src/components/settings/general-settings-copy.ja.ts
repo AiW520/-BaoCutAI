@@ -28,11 +28,7 @@ export const ja: GeneralSettingsMessages = {
   downloadsGroup: 'ダウンロードと更新',
   autoUpdateOn: '更新の自動確認とダウンロードをオンにしました',
   autoUpdateOff: '更新の自動ダウンロードをオフにしました',
-  downloader: '動画ダウンロードツール',
   downloaderWeb: 'ブラウザではこのコンピュータのダウンロードツールを確認しません。BaoCut デスクトップアプリで確認してください。',
-  checking: '確認中…',
-  checkFailed: (message: string) => `確認できませんでした：${message}`,
-  checkAgain: '再確認',
 
   sourcesGroup: 'ダウンロード元とオフライン',
   modelsEndpoint: 'モデルのダウンロード元',

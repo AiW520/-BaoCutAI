@@ -20,5 +20,9 @@ export const fr: LinkCookiesMessages = {
 
   firefoxTip: " Si connexion nécessaire, connectez-vous dans Firefox et cochez Firefox.",
   noBrowsers: "Aucun cookie local trouvé, téléchargements anonymes seulement. Après connexion dans un navigateur, cliquez « Détecter à nouveau les navigateurs ».",
+  anonymous: 'Désactivée (téléchargement anonyme)',
+  subOne: (name: string) => `Utilise les cookies de ${name}`,
+  subMany: (names: readonly string[]) => `Essaie tour à tour les cookies de ${names.join(', ')}`,
+  summary: (text: string) => `Connexion au site : ${text}`,
   used: (name: string) => `Utilisé : ${name} : cookies`,
 };

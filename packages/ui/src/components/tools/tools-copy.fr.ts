@@ -636,7 +636,7 @@ export const fr: ToolsMessages = {
     noProject: "Ne pas ajouter à un projet",
     projectNote: "Seulement lié au projet ; fichiers toujours dans le dossier ci-dessus.",
 
-    editLink: "Changer le lien ou les cookies",
+    editLink: 'Modifier le lien',
   },
 
 

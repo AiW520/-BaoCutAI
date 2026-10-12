@@ -664,7 +664,7 @@ const en = {
     noProject: 'Don’t add to a project',
     projectNote: 'Only linked to the project; files are still saved in the folder above.',
     /** 下载出问题停住时，回到表单改链接或 Cookie。 */
-    editLink: 'Change link or cookie settings',
+    editLink: 'Edit link',
   },
 
   /** 后台任务详情里的视频工具运行（设计稿 tool-run-view.jsx `ToolTaskPanel`）。 */

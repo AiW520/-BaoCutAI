@@ -19,6 +19,7 @@ export const pl: SettingsNavMessages = {
     general: "Ogólne",
     shortcuts: "Skróty",
     fonts: "Czcionki",
+    downloader: 'Pobieranie filmów',
     agent: "Dostawcy agentów",
     skills: "Skills",
     glossary: "Słownik",

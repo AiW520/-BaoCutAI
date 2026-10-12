@@ -578,7 +578,7 @@ export const ko: ToolsMessages = {
     project: '전사본을 추가할 프로젝트(선택 사항)',
     noProject: '프로젝트에 추가하지 않음',
     projectNote: '프로젝트에 연결만 되며, 파일은 위 폴더에 저장됩니다.',
-    editLink: '링크 또는 쿠키 설정 변경',
+    editLink: '링크 수정',
   },
   taskRun: {
     stopped: '실행 중지됨',

@@ -15,7 +15,7 @@ export const zhHant: TasksMessages = {
     action: {
       retry: '重試下載',
       'change-link': '改用其他連結',
-      'use-file': '改用本機檔案',
+      'use-file': '改用本機檔案', 'sign-in': '變更下載設定',
       tools: '檢查下載工具',
       restart: '重新開始匯入',
       downloads: '更改下載位置…',

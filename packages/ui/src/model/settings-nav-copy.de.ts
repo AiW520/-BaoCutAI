@@ -19,6 +19,7 @@ export const de: SettingsNavMessages = {
     general: "Allgemein",
     shortcuts: "Tastenkürzel",
     fonts: "Schriften",
+    downloader: 'Video-Download',
     agent: "Agentenanbieter",
     skills: "Skills",
     glossary: "Glossar",

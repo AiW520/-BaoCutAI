@@ -29,11 +29,7 @@ export const de: GeneralSettingsMessages = {
   downloadsGroup: "Downloads und Aktualisierungen",
   autoUpdateOn: "Automatische Updateprüfung und Downloads aktiviert",
   autoUpdateOff: "Automatische Updatedownloads deaktiviert",
-  downloader: "Video-Downloadwerkzeug",
   downloaderWeb: "Der Browser prüft keine Downloadwerkzeuge auf diesem Computer; in der BaoCut-Desktop-App prüfen.",
-  checking: "Überprüfen…",
-  checkFailed: (message: string) => `Prüfung fehlgeschlagen: ${message}`,
-  checkAgain: "Erneut prüfen",
 
   sourcesGroup: "Downloadquellen und Offline",
   modelsEndpoint: "Modelldownloadquelle",

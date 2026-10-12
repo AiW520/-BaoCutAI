@@ -44,11 +44,7 @@ const en = {
   downloadsGroup: 'Downloads and updates',
   autoUpdateOn: 'Turned on automatic update checks and downloads',
   autoUpdateOff: 'Turned off automatic update downloads',
-  downloader: 'Video downloader',
   downloaderWeb: "The browser doesn't check for download tools on this computer; check in the BaoCut desktop app.",
-  checking: 'Checking…',
-  checkFailed: (message: string) => `Couldn't check: ${message}`,
-  checkAgain: 'Check again',
 
   sourcesGroup: 'Download sources and offline',
   modelsEndpoint: 'Model download source',

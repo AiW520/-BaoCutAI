@@ -50,11 +50,11 @@ export const zhHant: LinkImportMessages = {
     },
     LINK_LOGIN_REQUIRED: {
       title: '這部影片需要登入',
-      body: '請先在瀏覽器中登入該網站，然後回到下載影片步驟，在「網站登入」中勾選該瀏覽器並重新下載。',
+      body: '請先在瀏覽器中登入該網站，再到「設定 › 影片下載」的網站登入中勾選該瀏覽器，然後重新下載。',
     },
     LINK_COOKIES_UNAVAILABLE: {
       title: '無法讀取瀏覽器 Cookie',
-      body: '請確認已在瀏覽器中登入。如果資料庫被鎖定，請完全結束瀏覽器（包括在背景執行的），並檢查鑰匙圈權限（Safari 需要在「完整磁碟取用權限」中允許 BaoCut）。在 Windows 上，Chrome、Edge 和 Brave 以應用程式綁定加密保護的 Cookie 無法讀取，請改勾選 Firefox。或勾選其他瀏覽器後重新下載。',
+      body: '請確認已在瀏覽器中登入。如果資料庫被鎖定，請完全結束瀏覽器（包括在背景執行的），並檢查鑰匙圈權限（Safari 需要在「完整磁碟取用權限」中允許 BaoCut）。在 Windows 上，Chrome、Edge 和 Brave 以應用程式綁定加密保護的 Cookie 無法讀取，請改勾選 Firefox。或在「設定 › 影片下載」中勾選其他瀏覽器後重新下載。',
     },
     LINK_TOOL_UPDATE_REQUIRED: {
       title: 'yt-dlp 需要更新',

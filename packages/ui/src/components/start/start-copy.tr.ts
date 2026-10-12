@@ -31,7 +31,7 @@ export const tr: StartMessages = {
     preparing: "İndirme aracı hazırlanıyor",
     recheck: "Yeniden denetle",
     pick: "Konum seç…",
-    pickUnavailable: "Konum seç (burada dosya seçilemez)",
+    pickUnavailable: "Konum seç (burada dosya seçilemez)", changeSettings: 'İndirme ayarlarını değiştir',
   },
   update: {
     stop: "Güncellemeyi durdur",

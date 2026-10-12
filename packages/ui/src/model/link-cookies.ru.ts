@@ -14,5 +14,9 @@ export const ru: LinkCookiesMessages = {
   appBound: (names: readonly string[]) => `В Windows ${andList(names)} обычно ${names.length > 1 ? "защищают" : "защищает"} cookie с помощью App-Bound Encryption, из-за чего yt-dlp может не прочитать их даже после закрытия браузера.`,
   firefoxTip: " Если нужен вход, войдите на сайте через Firefox и отметьте Firefox.",
   noBrowsers: "Cookie браузеров на этом компьютере не найдены, доступно только анонимное скачивание. Войдите на сайте через браузер и нажмите «Определить браузеры снова».",
+  anonymous: 'Выключен (анонимная загрузка)',
+  subOne: (name: string) => `Используются cookie ${name}`,
+  subMany: (names: readonly string[]) => `По очереди пробуются cookie ${names.join(', ')}`,
+  summary: (text: string) => `Вход на сайт: ${text}`,
   used: (name: string) => `Использованы ${name} — cookie`,
 };

@@ -34,6 +34,7 @@ const en = {
     general: 'General',
     shortcuts: 'Shortcuts',
     fonts: 'Fonts',
+    downloader: 'Video downloader',
     agent: 'Agent providers',
     skills: 'Skills',
     glossary: 'Glossary',

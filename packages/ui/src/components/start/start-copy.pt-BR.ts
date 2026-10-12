@@ -31,7 +31,7 @@ export const ptBR: StartMessages = {
     preparing: "Preparando ferramenta de download",
     recheck: "Verificar novamente",
     pick: "Escolher local…",
-    pickUnavailable: "Escolher local (seletor indisponível aqui)",
+    pickUnavailable: "Escolher local (seletor indisponível aqui)", changeSettings: 'Alterar configurações de download',
   },
   update: {
     stop: "Parar atualização",

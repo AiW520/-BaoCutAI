@@ -367,6 +367,15 @@ export const LINK_COOKIE_BROWSERS = ['chrome', 'edge', 'firefox', 'safari', 'bra
 export type LinkCookieBrowser = (typeof LINK_COOKIE_BROWSERS)[number];
 
 /**
+ * 网站登录的设置（`downloads.cookieBrowsers`，设置 › 视频下载）：`all` 是所有检测到的浏览器（之后新检测到的也算在内）；
+ * 列表是勾选的浏览器；空列表是匿名下载。每次下载开始时按当时的检测结果展开成浏览器列表（`resolveCookieBrowsers`），冻结进那一次下载。
+ */
+export type CookieBrowsersSetting = 'all' | LinkCookieBrowser[];
+
+/** 设置 › 视频下载在界面里的地址：网站要求登录、Cookie 读不到时，错误的 `details.settingsHref` 与智能体的设置链接都指向它。 */
+export const DOWNLOADER_SETTINGS_HREF = '/settings/downloader';
+
+/**
  * 从链接导入（`link-import`，架构设计 §7.9）：用受管的下载工具（yt-dlp，§12.9）把一个视频页面的媒体下载到指定目录，
  * 可选地导入一个视频（`target`：已有的，或新建的并放上时间线）、再提交转写。下载工具要已安装并得到用户同意，否则
  * `pipelines.start` 以 `conflict`（`TOOL_NOT_INSTALLED` / `TOOL_CONSENT_REQUIRED`）拒绝。

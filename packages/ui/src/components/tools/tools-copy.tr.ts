@@ -551,7 +551,7 @@ export const tr: ToolsMessages = {
     project: "Dökümü projeye ekle (isteğe bağlı)",
     noProject: "Projeye ekleme",
     projectNote: "Yalnızca projeye bağlanır; dosyalar yine yukarıdaki klasöre kaydedilir.",
-    editLink: "Bağlantıyı veya çerez ayarlarını değiştir",
+    editLink: 'Bağlantıyı düzenle',
   },
   taskRun: {
     stopped: "Çalıştırma durduruldu",

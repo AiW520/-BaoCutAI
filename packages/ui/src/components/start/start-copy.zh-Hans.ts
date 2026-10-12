@@ -31,7 +31,7 @@ export const zhHans: StartMessages = {
     preparing: '正在准备下载工具',
     recheck: '重新检测',
     pick: '指定位置…',
-    pickUnavailable: '指定位置（这个环境不能选文件）',
+    pickUnavailable: '指定位置（这个环境不能选文件）', changeSettings: '更改下载设置',
   },
   update: {
     stop: '停止更新',

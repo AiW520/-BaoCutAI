@@ -14,5 +14,9 @@ export const es: LinkCookiesMessages = {
  appBound: (names) => `En Windows, ${andEs(names)} ${pluralForm('es', names.length, { one: 'suele proteger', other: 'suelen proteger' })} las cookies con App-Bound Encryption, que yt-dlp puede no poder leer incluso después de cerrar el navegador.`,
  firefoxTip: ' Si necesitas iniciar sesión, inicia sesión en el sitio desde Firefox y marca Firefox en su lugar.',
  noBrowsers: 'No se encontraron cookies de navegador en este ordenador, por lo que las descargas solo pueden ser anónimas. Después de iniciar sesión en el sitio desde un navegador, haz clic en «Detectar navegadores de nuevo».',
+ anonymous: 'Desactivado (descarga anónima)',
+ subOne: (name: string) => `Usa las cookies de ${name}`,
+ subMany: (names: readonly string[]) => `Prueba por turnos las cookies de ${names.join(', ')}`,
+ summary: (text: string) => `Inicio de sesión en sitios web: ${text}`,
  used: (name) => `Se usaron las cookies de ${name}`,
 };

@@ -4,7 +4,7 @@ export const ko: JobsYtDlpMessages = {
   toolNotFound: (p: { code: string }) => `실행할 수 있는 yt-dlp를 찾을 수 없습니다(${p.code})`,
   remedyUnsupported:
     '다운로드 도구가 이 링크를 지원하지 않습니다: 영상 페이지 자체의 링크를 사용하세요(재생목록, 라이브 스트림, 검색 페이지 제외)',
-  remedyLoginRequired: '브라우저에서 사이트에 로그인한 뒤 “웹사이트 로그인”에서 그 브라우저를 선택하고 다시 다운로드하세요',
+  remedyLoginRequired: '브라우저에서 사이트에 로그인한 뒤 “설정 › 동영상 다운로드”의 웹사이트 로그인에서 그 브라우저를 체크하고 다시 다운로드하세요',
   remedyCookiesUnavailable:
     '브라우저 쿠키를 읽을 수 없습니다: 브라우저에 로그인되어 있는지 확인하세요. 데이터베이스가 사용 중이면 브라우저를 완전히 종료하세요(백그라운드 프로세스 포함). 키체인 접근이 거부되었으면 허용하세요. Safari에는 전체 디스크 접근 권한이 필요합니다. Windows에서는 Chrome, Edge, Brave가 앱 바인딩 암호화로 보호하는 쿠키를 yt-dlp가 읽을 수 없으니 Firefox를 사용하세요. 또는 다른 브라우저를 시도하세요',
   remedyToolUpdateRequired: '사이트 분석에 실패했거나 도구가 오래되었습니다: yt-dlp를 업데이트하고 다시 감지한 뒤 다시 시도하세요',

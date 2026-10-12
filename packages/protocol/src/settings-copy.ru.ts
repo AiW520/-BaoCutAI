@@ -12,6 +12,7 @@ export const ru: SettingDescriptionMessages = {
   'transcribe.afterComplete': "После расшифровки: open-video открывает видео, notify только уведомляет, nothing ничего не делает",
   'downloads.directory':
     "Место сохранения результатов инструментов без видео, медиа из ссылок и файлов downloads_save (абсолютный путь); null использует ~/Downloads на этом хосте независимо от проекта",
+  'downloads.cookieBrowsers': 'Вход на сайт для загрузок по ссылкам («Скачать видео», расшифровка по ссылке, а также download и transcribe агента): all использует все браузеры с хранилищем cookie на этом хосте, сначала недавно использованные; список id браузеров (chrome, edge, firefox, safari, brave, chromium, opera, vivaldi, whale) пробуется в этом порядке; пустой список — анонимная загрузка. Раскрывается по браузерам, найденным в момент начала каждой загрузки',
   'models.downloadEndpoint': "Источник локальных моделей (базовый URL зеркала, http(s)://); null использует публичный репозиторий, https://www.modelscope.cn — ModelScope. BAOCUT_MODELS_ENDPOINT имеет приоритет",
   'models.dir':
     "Папка локальных моделей (абсолютный путь); null использует models в папке данных. BAOCUT_MODELS_DIR имеет приоритет. Менять через models.setDir, не settings set",

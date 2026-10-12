@@ -29,11 +29,7 @@ export const ptBR: GeneralSettingsMessages = {
   downloadsGroup: "Downloads e atualizações",
   autoUpdateOn: "Verificação e download automáticos ativados",
   autoUpdateOff: "Download automático de atualizações desativado",
-  downloader: "Ferramenta de download de vídeo",
   downloaderWeb: "Navegador não verifica ferramentas locais; use desktop.",
-  checking: "Verificando…",
-  checkFailed: (message: string) => `Não foi possível verificar: ${message}`,
-  checkAgain: "Verificar novamente",
 
   sourcesGroup: "Fontes de download e off-line",
   modelsEndpoint: "Fonte de download de modelos",

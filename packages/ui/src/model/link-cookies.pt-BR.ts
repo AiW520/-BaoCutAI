@@ -11,5 +11,9 @@ export const ptBR: LinkCookiesMessages = {
   appBound: (names: readonly string[]) => `No Windows, ${names.join(', ')} ${names.length > 1 ? 'costumam proteger' : 'costuma proteger'} os cookies com criptografia vinculada ao aplicativo, que o yt-dlp pode não conseguir ler mesmo após fechar o navegador.`,
   firefoxTip: ' Se precisar entrar, entre no site pelo Firefox e marque Firefox.',
   noBrowsers: 'Nenhum cookie de navegador foi encontrado neste computador, então só é possível baixar anonimamente. Após entrar no site em um navegador, clique em “Detectar navegadores novamente”.',
+  anonymous: 'Desativado (download anônimo)',
+  subOne: (name: string) => `Usa os cookies do ${name}`,
+  subMany: (names: readonly string[]) => `Tenta os cookies de ${names.join(', ')}, um por vez`,
+  summary: (text: string) => `Login no site: ${text}`,
   used: (name: string) => `Usou cookies de ${name}`,
 };

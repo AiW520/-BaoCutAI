@@ -33,8 +33,9 @@ export const WEB_SESSION_TTL_MS = 12 * 60 * 60_000;
  * （等同暂停，暂存区保留）。模型目录（`models.getDir`、`models.inspectDir`、`models.setDir`）同理不开放：更改要搬动几 GB 的文件、
  * 选择本机的文件夹，结果里是本机路径；浏览器里的设置页不显示模型目录卡片。
  *
- * 受管外部工具（`externalTools.*`，§12.9）整个不在其中，连 `list` 也不开放：安装、指定路径与同意决定这台机器下载并执行哪个
- * 第三方程序；状态里有本机路径。从链接导入（`pipelines.start` 的 `link-import`）随 `pipelines.*` 一并不开放。
+ * 受管外部工具（`externalTools.*`，§12.9）不在其中，连 `list` 也不开放：安装、指定路径与同意决定这台机器下载并执行哪个
+ * 第三方程序；状态里有本机路径。只开放 `externalTools.cookieBrowsers`：它只列出有 Cookie 库的浏览器（名称与修改时间，不读内容、
+ * 不带路径），设置 › 视频下载在浏览器里只读地列出网站登录。从链接导入（`pipelines.start` 的 `link-import`）随 `pipelines.*` 一并不开放。
  */
 export const WEB_DEFAULT_METHODS: readonly string[] = [
   'runtime.info',
@@ -87,6 +88,8 @@ export const WEB_DEFAULT_METHODS: readonly string[] = [
   'nodes.list',
   'nodes.discover',
   'settings.get',
+  // 设置 › 视频下载的网站登录：只列出本机检测到的浏览器（不读 Cookie、不带路径）；其余 `externalTools.*` 不开放。
+  'externalTools.cookieBrowsers',
   // 创作模板目录（模板包规范 §6）只读：句柄只发给清单登记的随附文件。
   'templates.*',
   // Agent 的 skill（§3.8）：看与开关逐个列出。添加、导入与移除（`skills.add`、`skills.importGithub`、`skills.remove`，§12.9）
@@ -142,6 +145,7 @@ export const WEB_READ_METHODS: readonly RpcMethod[] = [
   'nodes.list',
   'nodes.discover',
   'settings.get',
+  'externalTools.cookieBrowsers',
   'templates.list',
   'templates.get',
   'templates.openHandle',

@@ -505,7 +505,6 @@ describe('Web 服务', () => {
       ['externalTools.setPath', { name: 'yt-dlp', path: '/tmp/yt-dlp' }],
       ['externalTools.remove', { name: 'yt-dlp' }],
       ['externalTools.consent', { name: 'yt-dlp', grant: true }],
-      ['externalTools.cookieBrowsers', {}],
       ['fonts.resolve', { faces: [{ family: 'Lobster', weight: 400, italic: false }], download: true }],
       ['fonts.catalogue', {}],
       ['fonts.download', { family: 'Lobster' }],
@@ -530,6 +529,10 @@ describe('Web 服务', () => {
       code: 'forbidden',
       details: { code: 'WEB_METHOD_NOT_ALLOWED', method: 'externalTools.list' },
     });
+    // 只开放本机浏览器的列表（设置 › 视频下载只读地列出网站登录）：只有名称与修改时间，没有路径。
+    const detected = (await page.request('externalTools.cookieBrowsers', {})) as unknown as { platform: string; browsers: Record<string, unknown>[] };
+    expect(detected.platform).toBe(process.platform);
+    for (const browser of detected.browsers) expect(Object.keys(browser).sort()).toEqual(['id', 'label', 'lastUsedAt']);
     expect(details(await page.request('services.list', {}).catch((e: unknown) => e))).toMatchObject({
       code: 'forbidden',
       details: { code: 'WEB_METHOD_NOT_ALLOWED' },

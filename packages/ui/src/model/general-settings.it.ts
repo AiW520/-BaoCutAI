@@ -15,11 +15,4 @@ export const it: GeneralSettingsModelMessages = {
     pickFailed: (message: string) => `Impossibile scegliere una cartella: ${message}`,
     webNote: 'Un browser non può scegliere una cartella su questo computer. Impostala nell’app desktop BaoCut.',
   },
-  source: { system: 'Installato sul sistema', user: 'Posizione che hai scelto', managed: 'Scaricato da BaoCut', bundled: 'Incluso in BaoCut', env: 'Impostato da una variabile d’ambiente' },
-  notInstalled: 'Non installato',
-  missingDesc: 'yt-dlp non è ancora installato. Quando l’agente importa da un link, ti chiederà prima di consentirne il download (mostrando origine, versione, dimensione e licenza).',
-  consentRevoked: 'Consenso ritirato',
-  revokedDesc: (facts: string) => `${facts}. Hai ritirato il consenso al suo utilizzo, quindi l’importazione da un link lo richiederà di nuovo.`,
-  available: 'Disponibile', needsUpdate: 'Aggiornamento necessario', cannotRun: 'Impossibile eseguire',
-  factsWhy: (facts: string, why: string) => `${facts}. ${why}`,
 };

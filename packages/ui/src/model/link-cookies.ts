@@ -35,17 +35,23 @@ const en = {
   /** 接在上一句后面（英文带前导空格）。 */
   firefoxTip: ' If you need to sign in, sign in to the site in Firefox and check Firefox instead.',
   noBrowsers: 'No browser cookies were found on this computer, so downloads can only be anonymous. After you sign in to the site in a browser, click “Detect browsers again”.',
+  anonymous: 'Off (downloads anonymously)',
+  subOne: (name: string) => `Uses ${name} cookies`,
+  subMany: (names: readonly string[]) => `Tries ${names.join(', ')} cookies in turn`,
+  summary: (text: string) => `Website sign-in: ${text}`,
   used: (name: string) => `Used ${name} cookies`,
 };
 export type LinkCookiesMessages = typeof en;
 const M = defineMessages(en, { 'zh-Hans': zhHans, 'zh-Hant': zhHant, ja, ko, es, fr, de, nl, 'pt-BR': ptBR, it, ru, pl, tr, vi });
 
 /**
- * 下载视频的「网站登录」（产品设计 §2.7「下载视频」，架构设计 §7.9 Cookie、§12.9「本机浏览器」；设计稿 model-tool-cookies.js）。
+ * 设置 › 视频下载的「网站登录」（产品设计 §2.7「下载视频」，架构设计 §7.9 Cookie、§12.9「本机浏览器」；设计稿 model-tool-cookies.js）。
  *
  * - 只列出 Runtime 检测到有 Cookie 库的浏览器（`externalTools.cookieBrowsers`），最近用过的在前。
  * - 勾选的浏览器按列出的顺序逐个试（不是按点选的先后）：读不到 Cookie 或网站仍要求登录时换下一个，用上一个就停。
- * - 「所有浏览器」不是一个取值：勾上就是全选检测到的，提交的仍是浏览器列表；只勾了一部分时半选。都不勾是匿名下载。
+ * - 「所有浏览器」在界面上是全选检测到的（只勾了一部分时半选），提交给下载的仍是浏览器列表。都不勾是匿名下载。
+ * - 这是一项设置（`downloads.cookieBrowsers`），下载视频、从链接转录与智能体的下载都用它；默认 `all`（所有检测到的浏览器）。
+ *   勾成全选时存回 `all`，之后新检测到的浏览器跟着算进去；其余存浏览器列表（`cookieBrowsersSetting`），空列表是匿名下载。
  * - 系统授权的提示看 Runtime 所在主机的平台（检测结果带的 `platform`），不看这个界面跑在哪。
  */
 
@@ -132,3 +138,9 @@ onLocaleChange(() => {
 
 /** 运行的结果里写明用上的浏览器。 */
 export const usedCookieText = (id: LinkCookieBrowser): string => M.used(cookieBrowserLabel(id));
+
+/** 下载视频工具页摘要里的「网站登录：…」：匿名下载、用哪个浏览器，或依次试哪几个（设计稿 model-tool-cookies.js 的 subText）。 */
+export function cookieSummary(list: readonly LinkCookieBrowser[]): string {
+  const names = list.map(cookieBrowserLabel);
+  return M.summary(names.length === 0 ? M.anonymous : names.length === 1 ? M.subOne(names[0]!) : M.subMany(names));
+}

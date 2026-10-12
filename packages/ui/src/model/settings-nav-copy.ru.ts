@@ -19,6 +19,7 @@ export const ru: SettingsNavMessages = {
     general: "Общие",
     shortcuts: "Сочетания клавиш",
     fonts: "Шрифты",
+    downloader: 'Загрузка видео',
     agent: "Поставщики агентов",
     skills: "Skills",
     glossary: "Глоссарий",

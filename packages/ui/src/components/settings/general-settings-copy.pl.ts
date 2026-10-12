@@ -27,11 +27,7 @@ export const pl: GeneralSettingsMessages = {
   downloadsGroup: "Pobieranie i aktualizacje",
   autoUpdateOn: "Włączono automatyczne sprawdzanie i pobieranie aktualizacji",
   autoUpdateOff: "Wyłączono automatyczne pobieranie aktualizacji",
-  downloader: "Narzędzie pobierania wideo",
   downloaderWeb: "Przeglądarka nie sprawdza narzędzi pobierania na komputerze; sprawdź w aplikacji komputerowej BaoCut.",
-  checking: "Sprawdzanie…",
-  checkFailed: (message: string) => `Nie udało się sprawdzić: ${message}`,
-  checkAgain: "Sprawdź ponownie",
 
   sourcesGroup: "Źródła pobierania i offline",
   modelsEndpoint: "Źródło pobierania modeli",

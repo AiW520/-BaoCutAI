@@ -19,6 +19,7 @@ export const it: SettingsNavMessages = {
     general: "Generali",
     shortcuts: "Scorciatoie",
     fonts: "Font",
+    downloader: 'Download dei video',
     agent: "Provider degli agenti",
     skills: "Skill",
     glossary: "Glossario",

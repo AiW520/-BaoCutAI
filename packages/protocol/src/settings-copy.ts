@@ -27,6 +27,8 @@ const en = {
   'transcribe.afterComplete': 'After transcription: open-video opens the video, notify only notifies, nothing does nothing',
   'downloads.directory':
     'Default save location for tool results without a video, media downloaded from links, and files handed over by downloads_save (absolute path); null uses ~/Downloads on this host, regardless of project',
+  'downloads.cookieBrowsers':
+    'Website sign-in for downloads from links (Download video, transcribe from a link, and the Agent\'s download and transcribe): all uses every browser with a cookie store on this host, most recently used first; a list of browser ids (chrome, edge, firefox, safari, brave, chromium, opera, vivaldi, whale) tries them in that order; an empty list downloads anonymously. Expanded against the browsers detected when each download starts',
   'models.downloadEndpoint':
     'Download source for local models (mirror base URL, http(s)://); null uses the public model hub; https://www.modelscope.cn downloads from ModelScope. The BAOCUT_MODELS_ENDPOINT environment variable takes precedence',
   'models.dir':

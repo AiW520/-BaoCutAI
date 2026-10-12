@@ -34,6 +34,7 @@ import { useRuntime } from '../../runtime/context.tsx';
 import { useDirectory } from '../../state/directory-store.ts';
 import { useSetting } from '../../state/settings-store.ts';
 import { changeDownloadDir, useDownloaderTool } from '../start/downloader-card.tsx';
+import { useCookieBrowserChoice } from '../../state/cookie-browsers-store.ts';
 import { LinkSource } from '../start/flow-media.tsx';
 import { SaveDirRow } from './tool-frame.tsx';
 import { GrantCard, ProjectPicker, ToolFrame, ToolSourceSwitch } from './tool-run-view.tsx';
@@ -95,6 +96,8 @@ export function TranscribeTool() {
   const asr = useAsrPick();
   const link = draft.source === 'link';
   const downloader = useDownloaderTool(link);
+  // 从链接转录也按设置 › 视频下载的网站登录：开始时展开成浏览器列表，冻结进这一次下载。
+  const cookies = useCookieBrowserChoice(link);
   const downloadSetting = useSetting('downloads.directory');
   const [saveOverride, setSaveOverride] = useState<string | null>(null);
 
@@ -150,8 +153,9 @@ export function TranscribeTool() {
     else if (!create) params = transcribeFileParams({ entryId: row.entryId }, choice, outDir);
     else if (projectId && spaceMedia) params = transcribeParams({ create: { projectId, media: spaceMedia } }, choice);
   } else if (link && urlOk) {
-    if (!create) params = { url, transcribe: true };
-    else if (projectId) params = linkParams({ url, target: 'create', projectId, transcribe: true });
+    const cookieBrowsers = cookies.list.length ? { cookieBrowsers: cookies.list } : {};
+    if (!create) params = { url, transcribe: true, ...cookieBrowsers };
+    else if (projectId) params = { ...linkParams({ url, target: 'create', projectId, transcribe: true }), ...cookieBrowsers };
   }
   const request = params ? toolRequest(status.byId.get(via), input, params) : null;
   const key = request ? JSON.stringify(request) : '';
@@ -181,7 +185,7 @@ export function TranscribeTool() {
     link && !downloader.ready && needTool,
     !link && asrWhy,
     !!starter.asking && FORM_COPY.needGrant,
-    !request && FORM_COPY.loading,
+    (!request || (link && cookies.pending)) && FORM_COPY.loading,
   );
 
   const start = () => {

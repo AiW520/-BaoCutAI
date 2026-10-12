@@ -5,7 +5,6 @@ import {
   newId,
   type GrantRequestItem,
   type Id,
-  type LinkCookieBrowser,
   type TranscribeDestination,
 } from '@baocut/protocol';
 import { ToastQueue } from '@react-spectrum/s2';
@@ -76,8 +75,6 @@ export interface DubDraft {
 
 export interface LinkDraft {
   url: string;
-  /** 「网站登录」勾选的浏览器；提交时按检测到的顺序排（就是尝试的顺序），都不勾是匿名下载。 */
-  cookieBrowsers: LinkCookieBrowser[];
   target: ToolTargetKey;
   entryId: Id | null;
   projectId: Id | null;
@@ -124,7 +121,7 @@ export const useVideoTools = create<VideoToolsState>()((set) => ({
   transcribe: { source: 'file', path: null, url: '', entryId: null, projectId: null, target: 'none', dest: null, retry: null },
   'translate-subtitles': { source: 'space', entryId: null, documentId: null, file: null, lang: null, bilingual: true, model: null },
   dub: { entryId: null, translation: null, lang: null, original: 'duck', engine: null, textModel: null },
-  'link-import': { url: '', cookieBrowsers: [], target: 'none', entryId: null, projectId: null, transcribe: false },
+  'link-import': { url: '', target: 'none', entryId: null, projectId: null, transcribe: false },
   views: {},
   meta: {},
   preset: null,

@@ -19,6 +19,7 @@ import {
   customAgentProviderView,
   newId,
   nowIso,
+  resolveCookieBrowsers,
   type CustomAgentProvider,
   type Id,
   type RuntimeDiscovery,
@@ -98,7 +99,7 @@ import { ContentIndex } from './space/content-index.ts';
 import { SpaceThumbnails } from './space/space-thumbnails.ts';
 import { openSettings, type RuntimeSettings } from './settings-topic.ts';
 import { openServices, type RuntimeServices, type ServicesOptions } from './services/open-services.ts';
-import { FileLinkSources, isTerminal, resolveSpeechWorkerCommand, type HostLookup } from '@baocut/jobs';
+import { detectCookieBrowsers, FileLinkSources, isTerminal, resolveSpeechWorkerCommand, type HostLookup } from '@baocut/jobs';
 import { LegacyUpgrade } from './legacy-upgrade.ts';
 import { RuntimeActivity, type IdleExitOptions } from './runtime-activity.ts';
 import { ExternalToolService, toolsDownloadEndpoint, type ExternalToolServiceOptions } from './external-tools/external-tool-service.ts';
@@ -713,6 +714,8 @@ export async function startRuntime(options: StartRuntimeOptions = {}): Promise<R
         pipelines: models.pipelines,
         jobs: models.jobs,
         offlineStrict: () => settings.store.get('offline.strict'),
+        // 不给 cookieBrowsers 时按设置 › 视频下载的网站登录，按此刻检测到的浏览器展开（冻结进这一次下载）。
+        settingCookieBrowsers: async () => resolveCookieBrowsers(settings.store.get('downloads.cookieBrowsers'), await detectCookieBrowsers()),
         scope: toolScope,
       };
       return [

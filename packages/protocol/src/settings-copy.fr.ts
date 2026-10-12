@@ -13,6 +13,7 @@ export const fr: SettingDescriptionMessages = {
   'transcribe.afterComplete': "Après transcription : open-video ouvre la vidéo, notify notifie seulement, nothing ne fait rien",
   'downloads.directory':
     "Emplacement par défaut pour résultats sans vidéo, médias téléchargés par lien et fichiers de downloads_save (chemin absolu) ; null utilise ~/Downloads de cet hôte, indépendamment du projet",
+  'downloads.cookieBrowsers': 'Connexion au site pour les téléchargements depuis un lien (Télécharger la vidéo, transcription depuis un lien, et download et transcribe de l’Agent) : all utilise tous les navigateurs ayant un magasin de cookies sur cet hôte, du plus récemment utilisé au plus ancien ; une liste d’ids de navigateurs (chrome, edge, firefox, safari, brave, chromium, opera, vivaldi, whale) les essaie dans cet ordre ; une liste vide télécharge anonymement. Développé selon les navigateurs détectés au début de chaque téléchargement',
   'models.downloadEndpoint':
     "Source des modèles locaux (URL de base de miroir, http(s)://) ; null utilise le hub public ; https://www.modelscope.cn télécharge depuis ModelScope. BAOCUT_MODELS_ENDPOINT a priorité",
   'models.dir':

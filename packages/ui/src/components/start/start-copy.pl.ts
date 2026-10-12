@@ -31,7 +31,7 @@ export const pl: StartMessages = {
     preparing: "Przygotowywanie narzędzia pobierania",
     recheck: "Sprawdź ponownie",
     pick: "Wybierz lokalizację…",
-    pickUnavailable: "Wybierz lokalizację (tutaj nie można wybierać plików)",
+    pickUnavailable: "Wybierz lokalizację (tutaj nie można wybierać plików)", changeSettings: 'Zmień ustawienia pobierania',
   },
   update: {
     stop: "Zatrzymaj aktualizację",

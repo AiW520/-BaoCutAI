@@ -19,6 +19,7 @@ export const ptBR: SettingsNavMessages = {
     general: "Geral",
     shortcuts: "Atalhos",
     fonts: "Fontes",
+    downloader: 'Download de vídeos',
     agent: "Provedores de agentes",
     skills: "Skills",
     glossary: "Glossário",

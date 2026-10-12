@@ -31,7 +31,7 @@ export const ja: StartMessages = {
     preparing: 'ダウンロードツールを準備中',
     recheck: '再確認',
     pick: '場所を指定…',
-    pickUnavailable: '場所を指定（この環境ではファイルを選択できません）',
+    pickUnavailable: '場所を指定（この環境ではファイルを選択できません）', changeSettings: 'ダウンロード設定を変更',
   },
   update: {
     stop: '更新を停止',

@@ -128,7 +128,7 @@ const schemas = {
     cookieBrowsers: cookieBrowsersArg
       .optional()
       .describe(
-        `可选。只与 url 一起给：网站登录，按顺序尝试读取这些浏览器的登录 Cookie（${LINK_COOKIE_BROWSERS.join('、')}，同 download）；不给时匿名下载。只在用户说了用哪个浏览器的登录、或同意用它时给；下载视频页面里勾选的浏览器不带到这里；对外服务不能给`,
+        `可选。只与 url 一起给：网站登录，按顺序尝试读取这些浏览器的登录 Cookie（${LINK_COOKIE_BROWSERS.join('、')}，同 download）；[] 是匿名下载。不给时按用户在设置 › 视频下载里选的网站登录（默认所有检测到的浏览器），一般不用给；只在用户这一次指定了浏览器或要求匿名时给。对外服务不能给，一律匿名`,
       ),
     commandId: commandIdArg.optional().describe('可选。重试同一次提交时带上同一个值，不会重复创建任务'),
   }),
@@ -206,7 +206,7 @@ const DEFINITIONS: Record<Name, ToolInfo> = {
       JOB_NOTE,
       '完成时 pipeline.summary.documentId 是新转写（可以给 documents_read），summary.captions 是字幕层，新建视频时 summary.videoId 是视频；summary.target 是落点（new-video、replace、first），replace 时 summary.replaced.transactionId 可以撤销，summary.translations 写各语言保留与过期的句数。',
       '对外服务不能给 file、outDir：给 video，或给 url 与 project（新视频建在那个已登记的项目里，之后在服务的范围之内；带 noVideo 时只下载并写文稿）。',
-      '给 url 的视频要登录才能看（LINK_LOGIN_REQUIRED）：问用户在哪个浏览器登录了这个网站，带上 cookieBrowsers 重新提交；jobs_retry 沿用原来的参数，匿名失败的任务重跑仍匿名。',
+      '给 url 时网站登录同 download：不给 cookieBrowsers 时按设置 › 视频下载里选的浏览器。视频要登录才能看（LINK_LOGIN_REQUIRED）：请用户先在浏览器里登录这个网站，再到设置 › 视频下载确认勾选了那个浏览器（用 error.details.settingsHref 写成 Markdown 设置链接），弄好后重新提交；jobs_retry 沿用原来的浏览器，改了设置也不变。',
     ].join('\n'),
     annotations: { destructiveHint: false, idempotentHint: true },
     effect: 'job',

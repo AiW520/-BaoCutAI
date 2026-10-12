@@ -1,9 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import { SETTING_DEFAULTS, type ExternalToolStatus } from '@baocut/protocol';
+import { SETTING_DEFAULTS } from '@baocut/protocol';
 import { settingValueSchemas } from '@baocut/protocol/schemas';
 import {
   autoUpdateOn,
-  downloaderLine,
   endpointProblem,
   endpointValue,
   LINE_LENGTH_PRESETS,
@@ -77,47 +76,5 @@ describe('回收站保留天数', () => {
     expect(trashDaysValue(14.6)).toBe(15);
     expect(trashDaysValue(0)).toBe(1);
     expect(trashDaysValue(99999)).toBe(3650);
-  });
-});
-
-describe('视频下载工具一行', () => {
-  const base: ExternalToolStatus = {
-    name: 'yt-dlp',
-    label: 'yt-dlp',
-    purpose: '从链接下载视频',
-    state: 'installed',
-    reason: null,
-    path: '/opt/homebrew/bin/yt-dlp',
-    version: '2026.09.01',
-    source: 'system',
-    minVersion: '2025.01.01',
-    installable: true,
-    offer: null,
-    consentRequired: true,
-    consent: { state: 'granted', at: '2026-09-30T00:00:00Z', via: 'agent-approval' },
-    managed: null,
-    userPath: null,
-    installJobId: null,
-    update: null,
-    updateJobId: null,
-    platform: 'darwin',
-    remedy: null,
-  };
-
-  it('没在登记表里或没装：未安装，并说明谁会来问', () => {
-    expect(downloaderLine(null)).toMatchObject({ status: '未安装', tone: 'neutral' });
-    expect(downloaderLine({ ...base, state: 'missing', path: null, version: null, source: null }).desc).toMatch(/请你同意/);
-  });
-
-  it('能用：版本与来源', () => {
-    expect(downloaderLine(base)).toEqual({ status: '可用', tone: 'positive', desc: 'yt-dlp · 2026.09.01 · 系统里装的' });
-  });
-
-  it('撤回过同意、版本太低、不能运行：各写原因', () => {
-    expect(downloaderLine({ ...base, consent: { state: 'revoked', at: '2026-09-30T00:00:00Z', via: 'app' } }).status).toBe('已撤回同意');
-    expect(downloaderLine({ ...base, state: 'outdated', reason: '版本低于 2025.01.01' })).toMatchObject({ status: '需要更新', tone: 'notice' });
-    const broken = downloaderLine({ ...base, state: 'unavailable', reason: '不能执行', remedy: '检查文件权限' });
-    expect(broken).toMatchObject({ status: '不能运行', tone: 'negative' });
-    expect(broken.desc).toContain('检查文件权限');
   });
 });

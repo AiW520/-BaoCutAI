@@ -51,11 +51,11 @@ export const de: LinkImportMessages = {
     },
     LINK_LOGIN_REQUIRED: {
       title: "Dieses Video benötigt Anmeldung",
-      body: "Zuerst im Browser auf der Website anmelden. Unter Video herunterladen diesen Browser bei „Website-Anmeldung“ auswählen und erneut herunterladen.",
+      body: 'Zuerst im Browser auf der Website anmelden. Dann diesen Browser unter Einstellungen › Video-Download › Website-Anmeldung auswählen und den Download neu starten.',
     },
     LINK_COOKIES_UNAVAILABLE: {
       title: "Browser-Cookies konnten nicht gelesen werden",
-      body: "Browseranmeldung prüfen. Bei gesperrter Datenbank Browser vollständig beenden, auch Hintergrundprozesse; Schlüsselbundberechtigungen prüfen (für Safari BaoCut Festplattenvollzugriff erlauben). Unter Windows sind appgebunden verschlüsselte Chrome-, Edge- und Brave-Cookies nicht lesbar; Firefox wählen. Oder anderen Browser auswählen und erneut herunterladen.",
+      body: "Browseranmeldung prüfen. Bei gesperrter Datenbank Browser vollständig beenden, auch Hintergrundprozesse; Schlüsselbundberechtigungen prüfen (für Safari BaoCut Festplattenvollzugriff erlauben). Unter Windows sind appgebunden verschlüsselte Chrome-, Edge- und Brave-Cookies nicht lesbar; Firefox wählen. Oder unter Einstellungen › Video-Download einen anderen Browser auswählen und erneut herunterladen.",
     },
     LINK_TOOL_UPDATE_REQUIRED: {
       title: "yt-dlp benötigt Aktualisierung",

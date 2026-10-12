@@ -14,5 +14,9 @@ export const pl: LinkCookiesMessages = {
   appBound: (names: readonly string[]) => `W Windows ${andList(names)} zwykle ${names.length > 1 ? "chronią" : "chroni"} cookie przez App-Bound Encryption, co może uniemożliwić yt-dlp odczyt nawet po zamknięciu przeglądarki.`,
   firefoxTip: " Jeśli wymagane jest logowanie, zaloguj się na stronie w Firefox i zaznacz Firefox.",
   noBrowsers: "Nie znaleziono cookie przeglądarek na tym komputerze, więc możliwe jest tylko anonimowe pobieranie. Po zalogowaniu się na stronie w przeglądarce kliknij „Wykryj przeglądarki ponownie”.",
+  anonymous: 'Wyłączone (pobieranie anonimowe)',
+  subOne: (name: string) => `Używa cookie z ${name}`,
+  subMany: (names: readonly string[]) => `Próbuje po kolei cookie z ${names.join(', ')}`,
+  summary: (text: string) => `Logowanie do witryny: ${text}`,
   used: (name: string) => `Użyto ${name} – cookie`,
 };

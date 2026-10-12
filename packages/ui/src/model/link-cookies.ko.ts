@@ -15,5 +15,9 @@ export const ko: LinkCookiesMessages = {
     `Windows에서는 ${names.join(', ')} 브라우저가 보통 앱 바인딩 암호화로 쿠키를 보호하므로, 브라우저를 종료해도 yt-dlp가 읽지 못할 수 있습니다.`,
   firefoxTip: ' 로그인이 필요하면 Firefox에서 사이트에 로그인한 뒤 대신 Firefox를 체크하세요.',
   noBrowsers: '이 컴퓨터에서 브라우저 쿠키를 찾지 못해 익명으로만 다운로드할 수 있습니다. 브라우저에서 사이트에 로그인한 뒤 “브라우저 다시 감지”를 클릭하세요.',
+  anonymous: '끔(익명으로 다운로드)',
+  subOne: (name: string) => `${name} 쿠키 사용`,
+  subMany: (names: readonly string[]) => `${names.join(', ')} 쿠키를 차례로 시도`,
+  summary: (text: string) => `웹사이트 로그인: ${text}`,
   used: (name: string) => `${name} 쿠키 사용함`,
 };

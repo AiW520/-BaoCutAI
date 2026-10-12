@@ -4,7 +4,7 @@ import { pluralForm } from '../../i18n.ts';
 export const ptBR: JobsYtDlpMessages = {
   toolNotFound: (p) => `Não é possível encontrar um yt-dlp executável (${p.code})`,
   remedyUnsupported: 'A ferramenta de download não oferece suporte a este link: use o link da própria página do vídeo (não uma playlist, transmissão ao vivo ou página de pesquisa)',
-  remedyLoginRequired: 'Entre no site pelo navegador, selecione esse navegador em “Login no site” e baixe novamente',
+  remedyLoginRequired: 'Entre no site pelo navegador, marque esse navegador em Configurações › Download de vídeos › Login no site e baixe novamente',
   remedyCookiesUnavailable: 'Não é possível ler cookies do navegador: confirme que você entrou pelo navegador; se o banco estiver em uso, feche completamente o navegador (incluindo processos em segundo plano); se o acesso às Chaves for negado, permita; Safari precisa de Acesso Total ao Disco; no Windows, o yt-dlp não consegue ler cookies protegidos por Chrome, Edge ou Brave com criptografia vinculada ao aplicativo, então use Firefox; ou tente outro navegador',
   remedyToolUpdateRequired: 'O site não pôde ser interpretado ou a ferramenta está desatualizada: atualize o yt-dlp, detecte novamente e tente outra vez',
   remedyUnavailable: 'O vídeo está indisponível (excluído, restrito por região ou sem formato disponível para baixar)',

@@ -28,11 +28,7 @@ export const ko: GeneralSettingsMessages = {
   downloadsGroup: '다운로드 및 업데이트',
   autoUpdateOn: '업데이트 자동 확인 및 다운로드를 켰습니다',
   autoUpdateOff: '업데이트 자동 다운로드를 껐습니다',
-  downloader: '영상 다운로더',
   downloaderWeb: '브라우저에서는 이 컴퓨터의 다운로드 도구를 확인하지 않습니다. BaoCut 데스크톱 앱에서 확인하세요.',
-  checking: '확인 중…',
-  checkFailed: (message: string) => `확인하지 못했습니다: ${message}`,
-  checkAgain: '다시 확인',
 
   sourcesGroup: '다운로드 소스 및 오프라인',
   modelsEndpoint: '모델 다운로드 소스',

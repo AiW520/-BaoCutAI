@@ -31,6 +31,7 @@ const en = {
       retry: 'Retry download',
       'change-link': 'Use a different link',
       'use-file': 'Use a local file instead',
+      'sign-in': 'Change download settings',
       tools: 'Check download tools',
       restart: 'Start the import over',
       downloads: 'Change download location…',

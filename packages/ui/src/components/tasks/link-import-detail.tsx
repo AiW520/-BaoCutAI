@@ -187,6 +187,7 @@ function Recovery({ job, issue, run }: { job: JobRecord; issue: LinkIssue; run: 
     // 改用本地文件：到这个项目的起始页，输入框空着时填上对应的快捷开始（加字幕，纯音频是音频转视频），文件从「+」或拖放加。
     else if (action === 'use-file') openHome(projectId, { prompt: starterOf(flow === 'a2v' ? 'a2v' : 'sub').prompt });
     else if (action === 'tools') setToolsOpen((v) => !v);
+    else if (action === 'sign-in') useShell.getState().go({ tab: 'settings', section: 'downloader' });
     else void changeDownloadDir(runtime);
   };
   const label = (action: LinkAction) =>

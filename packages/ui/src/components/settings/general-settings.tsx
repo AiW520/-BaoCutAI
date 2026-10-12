@@ -1,10 +1,9 @@
-import { useCallback, useEffect, useState, type ReactNode } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import {
   LOCALES,
   LOCALE_NATIVE_NAMES,
   isLanguagePreference,
   resolveLanguage,
-  type ExternalToolStatus,
 } from '@baocut/protocol';
 import {
   Button,
@@ -13,7 +12,6 @@ import {
   PickerItem,
   SegmentedControl,
   SegmentedControlItem,
-  StatusLight,
   Switch,
   TextField,
   ToastQueue,
@@ -26,7 +24,6 @@ import {
   LINE_LENGTH_PRESETS,
   TRASH_DAYS,
   autoUpdateOn,
-  downloaderLine,
   endpointProblem,
   endpointValue,
   lineLengthKey,
@@ -36,7 +33,6 @@ import {
 import { CUE_PARAMS } from '../../model/speech-cues.ts';
 import { useRuntime } from '../../runtime/context.tsx';
 import { useAppUpdate } from '../../state/app-update-store.ts';
-import { useConnection } from '../../state/connection-store.ts';
 import { useSetting, useSettings } from '../../state/settings-store.ts';
 import { useShell, type ColorScheme } from '../../state/shell-store.ts';
 import { ModelSourceRow } from '../models/model-source-row.tsx';
@@ -167,7 +163,6 @@ function DownloadsGroup({ web, ready }: { web: boolean; ready: boolean }) {
     <Group title={M.downloadsGroup}>
       <SaveDirRow web={web} ready={ready} />
       <AutoUpdateRow ready={ready} />
-      <DownloaderRow web={web} />
     </Group>
   );
 }
@@ -236,44 +231,6 @@ function SaveDirRow({ web, ready }: { web: boolean; ready: boolean }) {
       ) : null}
       <Button variant="secondary" size="S" isDisabled={off} onPress={() => void pick()}>
         {SAVE_DIR_ROW.change}
-      </Button>
-    </Row>
-  );
-}
-
-type ToolCheck = { status: 'checking' } | { status: 'done'; tool: ExternalToolStatus | null } | { status: 'failed'; message: string };
-
-/**
- * 视频下载工具（设计稿 `DownloaderSettings`）：只读的一行，写 yt-dlp 此刻能不能用。检测只在本机跑 `yt-dlp --version`、不联网
- * （`externalTools.detect`）。设计稿的安装、更新与「安装范围」不在这里做：BaoCut 只在 Agent 从链接导入、你同意之后才下载它。
- * 浏览器里不检测（Runtime 不对网页开放外部工具）。
- */
-function DownloaderRow({ web }: { web: boolean }) {
-  const runtime = useRuntime();
-  const connected = useConnection((s) => s.state.status === 'connected');
-  const [check, setCheck] = useState<ToolCheck>({ status: 'checking' });
-  const recheck = useCallback(() => {
-    setCheck({ status: 'checking' });
-    runtime.detectExternalTool('yt-dlp').then(
-      (tool) => setCheck({ status: 'done', tool }),
-      (error: Error) => setCheck({ status: 'failed', message: error.message }),
-    );
-  }, [runtime]);
-  useEffect(() => {
-    if (!web && connected) recheck();
-  }, [web, connected, recheck]);
-  if (web) return <Row label={M.downloader} desc={M.downloaderWeb} />;
-  const line = check.status === 'done' ? downloaderLine(check.tool) : null;
-  const desc = check.status === 'checking' ? M.checking : check.status === 'failed' ? M.checkFailed(check.message) : (line?.desc ?? '');
-  return (
-    <Row label={M.downloader} desc={desc}>
-      {line ? (
-        <StatusLight size="S" variant={line.tone}>
-          {line.status}
-        </StatusLight>
-      ) : null}
-      <Button variant="secondary" size="S" isDisabled={!connected} isPending={check.status === 'checking' && connected} onPress={recheck}>
-        {M.checkAgain}
       </Button>
     </Row>
   );

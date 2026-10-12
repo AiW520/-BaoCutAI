@@ -15,7 +15,7 @@ export const tr: TasksMessages = {
     action: {
       retry: "İndirmeyi yeniden dene",
       'change-link': "Başka bağlantı kullan",
-      'use-file': "Yerel dosya kullan",
+      'use-file': "Yerel dosya kullan", 'sign-in': 'İndirme ayarlarını değiştir',
       tools: "İndirme araçlarını denetle",
       restart: "İçe aktarmayı baştan başlat",
       downloads: "İndirme konumunu değiştir…",

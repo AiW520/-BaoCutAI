@@ -1,4 +1,4 @@
-import { defineMessages, live, localizeToolStatus, SETTING_DEFAULTS, type CaptionLineLength, type ExternalToolSource, type ExternalToolStatus } from '@baocut/protocol';
+import { defineMessages, live, SETTING_DEFAULTS, type CaptionLineLength } from '@baocut/protocol';
 import { zhHans } from './general-settings.zh-Hans.ts';
 import { zhHant } from './general-settings.zh-Hant.ts';
 import { ja } from './general-settings.ja.ts';
@@ -39,21 +39,6 @@ const en = {
     pickFailed: (message: string) => `Couldn’t choose a folder: ${message}`,
     webNote: 'A browser can’t choose a folder on this computer. Set this in the BaoCut desktop app.',
   },
-  source: {
-    system: 'Installed on the system',
-    user: 'Location you chose',
-    managed: 'Downloaded by BaoCut',
-    bundled: 'Bundled with BaoCut',
-    env: 'Set by an environment variable',
-  } as Record<ExternalToolSource, string>,
-  notInstalled: 'Not installed',
-  missingDesc: 'yt-dlp isn’t installed yet. When the Agent imports from a link, it will first ask you to agree to download it (showing the source, version, size, and license).',
-  consentRevoked: 'Consent withdrawn',
-  revokedDesc: (facts: string) => `${facts}. You withdrew consent to use it, so importing from a link will ask you again first.`,
-  available: 'Available',
-  needsUpdate: 'Update needed',
-  cannotRun: 'Can’t run',
-  factsWhy: (facts: string, why: string) => `${facts}. ${why}`,
 };
 export type GeneralSettingsModelMessages = typeof en;
 const M = defineMessages(en, { 'zh-Hans': zhHans, 'zh-Hant': zhHant, ja, ko, es, fr, de, nl, 'pt-BR': ptBR, it, ru, pl, tr, vi });
@@ -143,41 +128,4 @@ export const TRASH_DAYS = { min: 1, max: 3650 } as const;
 export function trashDaysValue(input: number): number | null {
   if (!Number.isFinite(input)) return null;
   return Math.min(TRASH_DAYS.max, Math.max(TRASH_DAYS.min, Math.round(input)));
-}
-
-// ---- 视频下载工具（`externalTools.list` 的 yt-dlp 一项） ----
-
-const SOURCE_LABEL: Record<ExternalToolSource, string> = live(() => M.source);
-
-export interface DownloaderLine {
-  /** 行尾的状态词。 */
-  status: string;
-  tone: 'positive' | 'notice' | 'negative' | 'neutral';
-  /** 行下的说明：版本与来源，不能用时是原因与补救。 */
-  desc: string;
-}
-
-/**
- * yt-dlp 这一行怎么写（设计稿 `DownloaderSettings` 的状态 chip 与「yt-dlp · 版本 · 来源」）。登记表里没有它（null）时照未安装写。
- * 设计稿的安装、更新与「安装范围」在这里不做：BaoCut 只在 Agent 从链接导入、请你同意之后才下载它（link-import-tools.ts）。
- */
-export function downloaderLine(probed: ExternalToolStatus | null): DownloaderLine {
-  const status = probed && localizeToolStatus(probed);
-  if (!status || status.state === 'missing') {
-    return { status: M.notInstalled, tone: 'neutral', desc: M.missingDesc };
-  }
-  const facts = ['yt-dlp', status.version, status.source ? SOURCE_LABEL[status.source] : null].filter(Boolean).join(' · ');
-  const why = status.remedy ?? status.reason;
-  switch (status.state) {
-    case 'installed': {
-      const revoked = status.consentRequired && status.consent?.state === 'revoked';
-      return revoked
-        ? { status: M.consentRevoked, tone: 'notice', desc: M.revokedDesc(facts) }
-        : { status: M.available, tone: 'positive', desc: facts };
-    }
-    case 'outdated':
-      return { status: M.needsUpdate, tone: 'notice', desc: why ? M.factsWhy(facts, why) : facts };
-    case 'unavailable':
-      return { status: M.cannotRun, tone: 'negative', desc: why ? M.factsWhy(facts, why) : facts };
-  }
 }

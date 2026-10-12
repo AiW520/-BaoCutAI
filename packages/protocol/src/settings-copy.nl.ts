@@ -13,6 +13,7 @@ export const nl: SettingDescriptionMessages = {
   'transcribe.afterComplete': "Na transcriptie: open-video opent de video, notify geeft alleen een melding, nothing doet niets",
   'downloads.directory':
     "Standaardopslaglocatie voor toolresultaten zonder video, media gedownload via links en bestanden overgedragen door downloads_save (absoluut pad); null gebruikt ~/Downloads op deze host, ongeacht het project",
+  'downloads.cookieBrowsers': 'Website-inlog voor downloads via een link (Video downloaden, transcriberen via een link, en download en transcribe van de agent): all gebruikt alle browsers met een cookieopslag op deze host, meest recent gebruikt eerst; een lijst browser-id’s (chrome, edge, firefox, safari, brave, chromium, opera, vivaldi, whale) wordt in die volgorde geprobeerd; een lege lijst downloadt anoniem. Wordt bij de start van elke download uitgewerkt met de dan gevonden browsers',
   'models.downloadEndpoint':
     "Downloadbron voor lokale modellen (basis-URL van spiegelserver, http(s)://); null gebruikt de openbare modelhub; https://www.modelscope.cn downloadt van ModelScope. De omgevingsvariabele BAOCUT_MODELS_ENDPOINT heeft voorrang",
   'models.dir':

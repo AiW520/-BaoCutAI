@@ -12,6 +12,7 @@ export const ko: SettingDescriptionMessages = {
   'transcribe.afterComplete': '전사가 끝난 뒤: open-video는 영상을 열고, notify는 알림만 보내고, nothing은 아무것도 하지 않습니다',
   'downloads.directory':
     '영상이 없는 도구 결과, 링크에서 다운로드한 미디어, downloads_save가 넘긴 파일의 기본 저장 위치(절대 경로). null이면 프로젝트와 관계없이 이 호스트의 ~/Downloads를 사용합니다',
+  'downloads.cookieBrowsers': '링크에서 다운로드할 때의 웹사이트 로그인(영상 다운로드, 링크에서 전사, Agent의 download와 transcribe): all은 이 호스트에서 쿠키 저장소가 감지된 모든 브라우저를 최근에 쓴 순서로 사용합니다. 브라우저 id 목록(chrome, edge, firefox, safari, brave, chromium, opera, vivaldi, whale)은 그 순서대로 시도합니다. 빈 목록은 익명으로 다운로드합니다. 다운로드를 시작할 때마다 그때 감지된 브라우저로 펼칩니다',
   'models.downloadEndpoint':
     '로컬 모델의 다운로드 소스(미러 기본 URL, http(s)://). null이면 공개 모델 허브를, https://www.modelscope.cn이면 ModelScope를 사용합니다. BAOCUT_MODELS_ENDPOINT 환경 변수가 우선합니다',
   'models.dir':

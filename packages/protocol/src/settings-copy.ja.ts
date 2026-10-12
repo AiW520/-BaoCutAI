@@ -12,6 +12,7 @@ export const ja: SettingDescriptionMessages = {
   'transcribe.afterComplete': '文字起こしの完了後：open-video は動画を開く、notify は通知のみ、nothing は何もしない',
   'downloads.directory':
     '既定の保存先：動画のないツールの結果、リンクからダウンロードしたメディア、downloads_save で渡されたファイルをここに置きます（絶対パス）。null は、プロジェクトに関係なくこのホストの ~/Downloads を使います',
+  'downloads.cookieBrowsers': 'リンクからダウンロードするときの Web サイトへのサインイン（動画をダウンロード、リンクからの文字起こし、Agent の download と transcribe）：all はこのホストで Cookie ストアが検出されたすべてのブラウザを、最近使った順に使います。ブラウザ id のリスト（chrome、edge、firefox、safari、brave、chromium、opera、vivaldi、whale）はその順に試します。空のリストは匿名でダウンロードします。ダウンロードを開始するたびに、その時点で検出されたブラウザで展開します',
   'models.downloadEndpoint':
     'ローカルモデルのダウンロード元（ミラーのベース URL、http(s)://）。null は公開モデルハブ、https://www.modelscope.cn は ModelScope からダウンロード。環境変数 BAOCUT_MODELS_ENDPOINT が優先されます',
   'models.dir':

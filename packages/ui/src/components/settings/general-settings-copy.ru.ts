@@ -27,11 +27,7 @@ export const ru: GeneralSettingsMessages = {
   downloadsGroup: "Скачивания и обновления",
   autoUpdateOn: "Автоматическая проверка и скачивание обновлений включены",
   autoUpdateOff: "Автоматическое скачивание обновлений отключено",
-  downloader: "Инструмент скачивания видео",
   downloaderWeb: "Браузер не проверяет инструменты скачивания на компьютере; проверьте в настольном BaoCut.",
-  checking: "Проверка…",
-  checkFailed: (message: string) => `Не удалось проверить: ${message}`,
-  checkAgain: "Проверьте еще раз",
 
   sourcesGroup: "Источники скачивания и офлайн",
   modelsEndpoint: "Источник скачивания моделей",

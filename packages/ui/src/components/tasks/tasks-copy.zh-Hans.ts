@@ -15,7 +15,7 @@ export const zhHans: TasksMessages = {
     action: {
       retry: '重试下载',
       'change-link': '换个链接',
-      'use-file': '改用本地文件',
+      'use-file': '改用本地文件', 'sign-in': '更改下载设置',
       tools: '检查下载工具',
       restart: '重新开始导入',
       downloads: '换下载位置…',

@@ -4,6 +4,7 @@ import {
   allBrowsersState,
   COOKIE_BROWSER_LABEL,
   cookieNotes,
+  cookieSummary,
   orderedBrowsers,
   toggleAllBrowsers,
   toggleBrowser,
@@ -75,5 +76,11 @@ describe('网站登录', () => {
   it('结果写明用上的浏览器；每个取值都有名字', () => {
     expect(usedCookieText('chrome')).toBe('用了 Chrome 的 Cookie');
     expect(LINK_COOKIE_BROWSERS.every((id) => !!COOKIE_BROWSER_LABEL[id])).toBe(true);
+  });
+
+  it('下载视频工具页的摘要：匿名、一个浏览器、依次试几个（设计稿 subText）', () => {
+    expect(cookieSummary([])).toBe('网站登录：匿名下载');
+    expect(cookieSummary(['safari'])).toBe('网站登录：使用 Safari 的 Cookie');
+    expect(cookieSummary(['chrome', 'firefox'])).toBe('网站登录：依次试 Chrome、Firefox 的 Cookie');
   });
 });

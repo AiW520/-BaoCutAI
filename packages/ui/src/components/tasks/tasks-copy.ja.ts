@@ -15,7 +15,7 @@ export const ja: TasksMessages = {
     action: {
       retry: 'ダウンロードを再試行',
       'change-link': '別のリンクを使う',
-      'use-file': '代わりにローカルファイルを使う',
+      'use-file': '代わりにローカルファイルを使う', 'sign-in': 'ダウンロード設定を変更',
       tools: 'ダウンロードツールを確認',
       restart: '読み込みを最初からやり直す',
       downloads: 'ダウンロード先を変更…',

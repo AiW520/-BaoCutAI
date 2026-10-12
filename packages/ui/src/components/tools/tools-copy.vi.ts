@@ -551,7 +551,7 @@ export const vi: ToolsMessages = {
     project: "Thêm bản chép lời vào dự án (tùy chọn)",
     noProject: "Không thêm vào dự án",
     projectNote: "Chỉ liên kết với dự án; tệp vẫn lưu trong thư mục bên trên.",
-    editLink: "Đổi liên kết hoặc thiết lập cookie",
+    editLink: 'Sửa liên kết',
   },
   taskRun: {
     stopped: "Đã dừng lần chạy",

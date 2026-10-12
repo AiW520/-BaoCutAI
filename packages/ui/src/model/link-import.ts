@@ -208,7 +208,8 @@ export function linkStages(job: Pick<JobRecord, 'pipeline' | 'state'>, follow: F
 
 // ---- 失败的说法与补救 ----
 
-export type LinkAction = 'retry' | 'change-link' | 'use-file' | 'tools' | 'restart' | 'downloads';
+/** `sign-in`：到设置 › 视频下载改网站登录；重试沿用冻结的浏览器列表，改过之后要「重新导入」才按新的设置。 */
+export type LinkAction = 'retry' | 'change-link' | 'use-file' | 'tools' | 'restart' | 'downloads' | 'sign-in';
 
 export interface LinkIssue {
   code: string;
@@ -228,8 +229,8 @@ const LINK_ISSUE_ACTIONS: Record<string, LinkAction[]> = {
   TOOL_OUTDATED: ['tools', 'retry'],
   OFFLINE_STRICT: ['use-file'],
   LINK_UNSUPPORTED: ['change-link', 'use-file'],
-  LINK_LOGIN_REQUIRED: ['use-file', 'change-link'],
-  LINK_COOKIES_UNAVAILABLE: ['change-link', 'retry'],
+  LINK_LOGIN_REQUIRED: ['sign-in', 'restart', 'use-file'],
+  LINK_COOKIES_UNAVAILABLE: ['sign-in', 'retry', 'restart'],
   LINK_TOOL_UPDATE_REQUIRED: ['tools', 'retry'],
   LINK_UNAVAILABLE: ['change-link', 'use-file'],
   LINK_NETWORK_ERROR: ['retry', 'use-file'],

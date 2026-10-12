@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react';
 import { ActionButton, Badge, Text, TextField } from '@react-spectrum/s2';
 import Folder from '@react-spectrum/s2/icons/Folder';
 import Link from '@react-spectrum/s2/icons/Link';
@@ -61,10 +62,12 @@ export interface LinkSourceProps {
   onChangeDir(): void;
   /** 「下载到」下面那句说明。 */
   note: string;
+  /** 换掉下面的下载工具卡片（下载视频工具页只放摘要）。 */
+  tool?: ReactNode;
 }
 
 /** 链接档：地址、链接卡、「下载到 …」与下载工具卡片。 */
-export function LinkSource({ url, onUrl, downloader, downloadDir, onChangeDir, note }: LinkSourceProps) {
+export function LinkSource({ url, onUrl, downloader, downloadDir, onChangeDir, note, tool }: LinkSourceProps) {
   const trimmed = url.trim();
   const ok = urlValid(trimmed);
   const facts = ok ? linkFacts(trimmed) : null;
@@ -102,7 +105,7 @@ export function LinkSource({ url, onUrl, downloader, downloadDir, onChangeDir, n
         </ActionButton>
       </div>
       <p className={hint}>{note}</p>
-      <DownloaderCard view={downloader} />
+      {tool ?? <DownloaderCard view={downloader} />}
     </>
   );
 }

@@ -1,6 +1,7 @@
 import { DEFAULT_AGENT_MODE, type AgentMode } from './access.ts';
 import type { Autonomy } from './domain.ts';
 import type { LanguagePreference } from './i18n.ts';
+import type { CookieBrowsersSetting } from './pipelines.ts';
 import type { ResourceCapacitySetting } from './resources.ts';
 import { SETTING_DESCRIPTION_MESSAGES } from './settings-copy.ts';
 
@@ -47,6 +48,12 @@ export interface SettingValues {
    * null 表示当前主机的 ~/Downloads，独立于项目归属。
    */
   'downloads.directory': string | null;
+  /**
+   * 网站登录（设置 › 视频下载，产品设计 §2.7、架构设计 §7.9）：从链接下载时读取哪些浏览器的 Cookie。`all` 是所有检测到的浏览器，
+   * 列表按检测顺序逐个试，空列表是匿名下载。下载视频工具、从链接转录与智能体的 `download` / `transcribe`（不给 `cookieBrowsers` 时）都按它；
+   * 每次下载开始时按当时检测到的浏览器展开，冻结进那一次下载。对外服务不用它。
+   */
+  'downloads.cookieBrowsers': CookieBrowsersSetting;
   /**
    * 本地模型的下载来源（基址，`http(s)://`，不含凭据）；null 为公共模型仓库（`https://huggingface.co`），
    * `https://www.modelscope.cn` 从 ModelScope 下载。环境变量 `BAOCUT_MODELS_ENDPOINT` 优先于它（架构设计 §6.3）。
@@ -109,6 +116,7 @@ export const SETTING_KEYS = [
   'captions.maxLineLength',
   'transcribe.afterComplete',
   'downloads.directory',
+  'downloads.cookieBrowsers',
   'models.downloadEndpoint',
   'models.dir',
   'tools.downloadEndpoint',
@@ -134,6 +142,7 @@ export const SETTING_DEFAULTS: Readonly<SettingValues> = Object.freeze({
   'captions.maxLineLength': Object.freeze({ cjk: 16, other: 42 }),
   'transcribe.afterComplete': 'open-video',
   'downloads.directory': null,
+  'downloads.cookieBrowsers': 'all',
   'models.downloadEndpoint': null,
   'models.dir': null,
   'tools.downloadEndpoint': null,

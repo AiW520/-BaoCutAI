@@ -27,11 +27,7 @@ export const tr: GeneralSettingsMessages = {
   downloadsGroup: "İndirmeler ve güncellemeler",
   autoUpdateOn: "Otomatik güncelleme denetimi ve indirme açıldı",
   autoUpdateOff: "Otomatik güncelleme indirme kapatıldı",
-  downloader: "Video indirici",
   downloaderWeb: "Tarayıcı bu bilgisayardaki indirme araçlarını denetlemez; BaoCut masaüstü uygulamasında denetleyin.",
-  checking: "Denetleniyor…",
-  checkFailed: (message) => `Denetlenemedi: ${message}`,
-  checkAgain: "Yeniden denetle",
 
   sourcesGroup: "İndirme kaynakları ve çevrimdışı",
   modelsEndpoint: "Model indirme kaynağı",

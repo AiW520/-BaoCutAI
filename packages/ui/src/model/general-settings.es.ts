@@ -11,8 +11,4 @@ export const es: GeneralSettingsModelMessages = {
  pickTitle: 'Elegir ubicación de guardado predeterminada', changed: 'Ubicación de guardado predeterminada cambiada', resetDone: 'Restablecida la carpeta Descargas',
  pickFailed: (message) => `No se pudo elegir una carpeta: ${message}`, webNote: 'Un navegador no puede elegir una carpeta en este ordenador. Configúralo en la aplicación de escritorio de BaoCut.',
  },
- source: { system: 'Instalado en el sistema', user: 'Ubicación que elegiste', managed: 'Descargado por BaoCut', bundled: 'Incluido con BaoCut', env: 'Establecido por una variable de entorno' },
- notInstalled: 'Sin instalar', missingDesc: 'yt-dlp aún no está instalado. Cuando el agente importe desde un enlace, primero te pedirá que aceptes descargarlo (mostrando el origen, la versión, el tamaño y la licencia).',
- consentRevoked: 'Consentimiento retirado', revokedDesc: (facts) => `${facts}. Retiraste tu consentimiento para usarlo, por lo que importar desde un enlace volverá a preguntarte primero.`,
- available: 'Disponible', needsUpdate: 'Necesita actualizarse', cannotRun: 'No se puede ejecutar', factsWhy: (facts, why) => `${facts}. ${why}`,
 };

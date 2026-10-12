@@ -12,6 +12,7 @@ export const zhHans: SettingDescriptionMessages = {
   'transcribe.afterComplete': '转写完成后：open-video 打开视频，notify 只通知，nothing 什么都不做',
   'downloads.directory':
     '默认保存位置：工具没有视频的结果、从链接下载的媒体与 downloads_save 交出的文件都放这里（绝对路径）；null 使用当前主机的 ~/Downloads，与项目归属无关',
+  'downloads.cookieBrowsers': '从链接下载时的网站登录（下载视频、从链接转录，以及 Agent 的下载与转录）：all 用这台主机上检测到有 Cookie 库的所有浏览器，最近用过的在前；浏览器 id 列表（chrome、edge、firefox、safari、brave、chromium、opera、vivaldi、whale）按顺序逐个试；空列表匿名下载。每次下载开始时按当时检测到的浏览器展开',
   'models.downloadEndpoint': '本地模型的下载来源（镜像的基址，http(s)://）；null 为公共模型仓库，https://www.modelscope.cn 从 ModelScope 下载。环境变量 BAOCUT_MODELS_ENDPOINT 优先',
   'models.dir':
     '本地模型放在哪个文件夹（绝对路径）；null 为数据目录下的 models。环境变量 BAOCUT_MODELS_DIR 优先。用 models.setDir 更改，不能用 settings set',

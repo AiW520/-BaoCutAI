@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { capabilitySettingsHref, MODEL_SERVICE_CAPABILITIES, setLocale } from '@baocut/protocol';
+import { capabilitySettingsHref, DOWNLOADER_SETTINGS_HREF, MODEL_SERVICE_CAPABILITIES, setLocale } from '@baocut/protocol';
 import { settingsLink } from './settings-link.ts';
 import { useShell } from '../state/shell-store.ts';
 
@@ -12,11 +12,13 @@ describe('回复里的设置链接', () => {
     expect(settingsLink('/settings/models/asr/cloud')?.route).toEqual({ tab: 'models', category: 'asr', page: 'cloud' });
     expect(settingsLink('/settings/models/tts/voices')?.route).toEqual({ tab: 'models', category: 'tts', page: 'voices' });
     expect(settingsLink('/settings/agent/')?.route).toEqual({ tab: 'settings', section: 'agent' });
+    // 要登录才能下载时，错误详情里的 settingsHref 链到设置 › 视频下载
+    expect(settingsLink(DOWNLOADER_SETTINGS_HREF)).toEqual({ route: { tab: 'settings', section: 'downloader' }, trail: '设置 › 视频下载' });
   });
 
   it.each(['/settings', '/settings/model', '/settings/models', '/settings/models/asr/voices',
     '/settings/models/sep/cloud', '/settings/models/llm/local', '/settings/agent/skills', '/settings/general/extra',
-    '/settings/models/asr/cloud/extra', '/settings/models/asr?tab=cloud', 'https://example.com/settings/agent', '//example.com/settings/agent',
+    '/settings/models/asr/cloud/extra', '/settings/downloader/cookies', '/settings/models/asr?tab=cloud', 'https://example.com/settings/agent', '//example.com/settings/agent',
     '/settings/unknown', 'javascript:alert(1)'])('未知地址 %s 只显示文字', (href) => {
     expect(settingsLink(href)).toBeNull();
   });

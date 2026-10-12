@@ -12,6 +12,7 @@ export const zhHant: SettingDescriptionMessages = {
   'transcribe.afterComplete': '轉錄完成後：open-video 會開啟影片，notify 只發出通知，nothing 不做任何事',
   'downloads.directory':
     '預設儲存位置：沒有影片的工具結果、從連結下載的媒體，以及 downloads_save 交出的檔案（絕對路徑）；null 使用這台主機上的 ~/Downloads，與專案無關',
+  'downloads.cookieBrowsers': '從連結下載時的網站登入（下載影片、從連結轉錄，以及 Agent 的下載與轉錄）：all 使用這台主機上偵測到有 Cookie 資料庫的所有瀏覽器，最近使用過的在前；瀏覽器 id 清單（chrome、edge、firefox、safari、brave、chromium、opera、vivaldi、whale）依序逐一嘗試；空清單則匿名下載。每次下載開始時依當時偵測到的瀏覽器展開',
   'models.downloadEndpoint':
     '本機模型的下載來源（鏡像站的基礎 URL，http(s)://）；null 使用公開的模型庫，https://www.modelscope.cn 從 ModelScope 下載。環境變數 BAOCUT_MODELS_ENDPOINT 優先',
   'models.dir':

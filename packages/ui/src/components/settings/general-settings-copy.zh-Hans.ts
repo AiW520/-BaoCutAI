@@ -28,11 +28,7 @@ export const zhHans: GeneralSettingsMessages = {
   downloadsGroup: '下载与更新',
   autoUpdateOn: '已开启自动检查并下载更新',
   autoUpdateOff: '已关闭自动下载更新',
-  downloader: '视频下载工具',
   downloaderWeb: '浏览器里不检测这台电脑上的下载工具：请在 BaoCut 桌面应用里查看。',
-  checking: '正在检测…',
-  checkFailed: (message: string) => `没能检测：${message}`,
-  checkAgain: '重新检测',
 
   sourcesGroup: '下载来源与离线',
   modelsEndpoint: '模型下载来源',

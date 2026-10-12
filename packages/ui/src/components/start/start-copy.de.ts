@@ -31,7 +31,7 @@ export const de: StartMessages = {
     preparing: "Downloadwerkzeug wird vorbereitet",
     recheck: "Erneut prüfen",
     pick: "Speicherort auswählen…",
-    pickUnavailable: "Speicherort auswählen (hier keine Dateiauswahl)",
+    pickUnavailable: "Speicherort auswählen (hier keine Dateiauswahl)", changeSettings: 'Download-Einstellungen ändern',
   },
   update: {
     stop: "Aktualisierung stoppen",

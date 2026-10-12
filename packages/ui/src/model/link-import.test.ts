@@ -190,7 +190,9 @@ describe('失败的说法', () => {
   it('认得的码给补救按钮，带上下载工具的原话', () => {
     const issue = linkIssue({ code: 'LINK_NETWORK_ERROR', message: 'x', details: { stderr: 'ERROR: timed out', remedy: 'r', step: 'download' } });
     expect(issue).toMatchObject({ title: '连接中断了', actions: ['retry', 'use-file'], diag: 'ERROR: timed out' });
-    expect(linkIssue({ code: 'LINK_LOGIN_REQUIRED', message: 'x' })!.actions[0]).toBe('use-file');
+    // 要登录：先去设置 › 视频下载改网站登录，再重新导入（重试沿用这一次的浏览器）
+    expect(linkIssue({ code: 'LINK_LOGIN_REQUIRED', message: 'x' })!.actions).toEqual(['sign-in', 'restart', 'use-file']);
+    expect(linkIssue({ code: 'LINK_COOKIES_UNAVAILABLE', message: 'x' })!.actions[0]).toBe('sign-in');
     expect(linkIssue({ code: 'TOOL_CONSENT_REQUIRED', message: 'x' })!.actions).toEqual(['tools']);
     expect(linkIssue({ code: 'LINK_SOURCE_EXPIRED', message: 'x' })!.actions).toEqual(['restart']);
   });

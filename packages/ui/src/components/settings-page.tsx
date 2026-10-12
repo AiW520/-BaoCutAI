@@ -16,6 +16,7 @@ import {
   Tooltip,
   TooltipTrigger,
 } from '@react-spectrum/s2';
+import Download from '@react-spectrum/s2/icons/Download';
 import FileText from '@react-spectrum/s2/icons/FileText';
 import HelpCircle from '@react-spectrum/s2/icons/HelpCircle';
 import InfoCircle from '@react-spectrum/s2/icons/InfoCircle';
@@ -53,6 +54,7 @@ import { AgentPermissions } from './settings/agent-permissions.tsx';
 import { AgentSettings } from './settings/agent-settings.tsx';
 import { AgentSkills } from './settings/agent-skills.tsx';
 import { DataGrants } from './settings/data-grants.tsx';
+import { DownloaderSettings } from './settings/downloader-settings.tsx';
 import { FontSettings } from './settings/font-settings.tsx';
 import { GeneralSettings } from './settings/general-settings.tsx';
 import { GlossarySettings } from './settings/glossary-settings.tsx';
@@ -165,6 +167,7 @@ const SECTION_ICON: Record<SettingsSection, ComponentType> = {
   general: Settings,
   shortcuts: Keyboard,
   fonts: TextIcon,
+  downloader: Download,
   agent: AgentIcon,
   skills: Code,
   glossary: FileText,
@@ -282,6 +285,8 @@ export function SettingsPage({ section = 'general', model, platform }: {
               <Shortcuts mac={platform === 'darwin'} />
             ) : section === 'fonts' && !web ? (
               <FontSettings />
+            ) : section === 'downloader' ? (
+              <DownloaderSettings />
             ) : section === 'agent' ? (
               <AgentSettings />
             ) : section === 'skills' ? (

@@ -17,7 +17,7 @@ type ExternalToolMethod =
 
 /**
  * `externalTools.*` 的处理函数（架构设计 §12.9），由 `handlers.ts` 并进方法表。它们管的是这台机器（下载并执行第三方程序、
- * 代用户执行更新命令），只给界面与 CLI：Web 服务的白名单里没有 `externalTools.*`，对外服务不走网关、工具目录里也没有安装与更新。
+ * 代用户执行更新命令），只给界面与 CLI：Web 服务的白名单里只有只读的 `externalTools.cookieBrowsers`，对外服务不走网关、工具目录里也没有安装与更新。
  */
 export function externalToolMethods(tools: () => ExternalToolService): Pick<RpcHandlers['methods'], ExternalToolMethod> {
   const own = (principal: TrustedPrincipal) => {
@@ -47,7 +47,8 @@ export function externalToolMethods(tools: () => ExternalToolService): Pick<RpcH
       own(principal);
       return tools().consent(p);
     },
-    // 只看各浏览器的 Cookie 库在不在、什么时候改过，不读内容；与从链接导入一样只给界面与 CLI（白名单里没有）。
+    // 只看各浏览器的 Cookie 库在不在、什么时候改过，不读内容，结果里没有本机路径：设置 › 视频下载在浏览器里也列得出
+    // （Web 白名单里只开放这一个 `externalTools.*`），浏览器里只看、不改（`settings.set` 不开放）。
     'externalTools.cookieBrowsers': async () => ({ platform: process.platform, browsers: await detectCookieBrowsers() }),
   };
 }

@@ -560,7 +560,7 @@ export const zhHant: ToolsMessages = {
     project: '將逐字稿加入專案（選填）',
     noProject: '不加入專案',
     projectNote: '只與專案建立關聯，檔案仍儲存在上方的資料夾中。',
-    editLink: '修改連結或 Cookie 設定',
+    editLink: '修改連結',
   },
   taskRun: {
     stopped: '執行已停止',

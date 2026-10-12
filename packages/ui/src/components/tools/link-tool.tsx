@@ -1,16 +1,14 @@
-import { useCallback, useEffect } from 'react';
-import { create } from 'zustand';
-import { ActionButton, Checkbox, Picker, PickerItem, Switch, ToastQueue } from '@react-spectrum/s2';
-import { style } from '@react-spectrum/s2/style' with { type: 'macro' };
-import type { CookieBrowserInfo, LinkCookieBrowser } from '@baocut/protocol';
-import { allBrowsersState, cookieNotes, NO_COOKIE_BROWSERS, orderedBrowsers, toggleAllBrowsers, toggleBrowser } from '../../model/link-cookies.ts';
+import { Picker, PickerItem, Switch } from '@react-spectrum/s2';
+import { cookieSummary } from '../../model/link-cookies.ts';
 import { downloadDirLabel } from '../../model/link-import.ts';
 import { urlValid } from '../../model/new-flow.ts';
 import { toolRequest, type RunMeta } from '../../model/tool-runs.ts';
 import { useRuntime } from '../../runtime/context.tsx';
+import { useCookieBrowserChoice } from '../../state/cookie-browsers-store.ts';
 import { useDirectory } from '../../state/directory-store.ts';
 import { useSetting } from '../../state/settings-store.ts';
-import { changeDownloadDir, useDownloaderTool } from '../start/downloader-card.tsx';
+import { useShell } from '../../state/shell-store.ts';
+import { changeDownloadDir, DownloaderSummary, useDownloaderTool } from '../start/downloader-card.tsx';
 import { LinkSource } from '../start/flow-media.tsx';
 import { GrantCard, ToolFrame } from './tool-run-view.tsx';
 import { detail, Section, submitOnModEnter } from './tool-parts.tsx';
@@ -20,68 +18,9 @@ import { useToolStart, useVideoTools, type LinkDraft } from './use-video-tools.t
 import { firstWhy, lede, SubmitBar, useRefreshWhenReady } from './video-tool-parts.tsx';
 
 /**
- * 本机检测到的浏览器（`externalTools.cookieBrowsers`）：进下载视频时检测一次，「重新检测浏览器」再检测。
- * Web 服务不开放 `externalTools.*`，浏览器里不检测、也不显示「网站登录」。
+ * 下载视频（产品设计 §2.7）。下载工具与网站登录都在设置 › 视频下载里管理，这里只摘要（设计稿 tool-link.jsx 的 DownloadSummary）；
+ * 开始时按当时检测到的浏览器把网站登录的设置（`downloads.cookieBrowsers`）展开成浏览器列表，冻结进这一次下载。
  */
-interface CookieBrowsersState {
-  state: 'idle' | 'checking' | 'done' | 'failed';
-  /** Runtime 所在主机的平台：系统授权的提示看它。 */
-  platform: string | null;
-  browsers: CookieBrowserInfo[];
-  error: string | null;
-}
-
-const useCookieBrowsers = create<CookieBrowsersState>()(() => ({ state: 'idle', platform: null, browsers: [], error: null }));
-
-function useDetectedBrowsers(enabled: boolean): CookieBrowsersState & { detect(announce: boolean): void } {
-  const runtime = useRuntime();
-  const state = useCookieBrowsers();
-  const detect = useCallback(
-    (announce: boolean) => {
-      useCookieBrowsers.setState({ state: 'checking' });
-      runtime.cookieBrowsers().then(
-        ({ platform, browsers }) => {
-          useCookieBrowsers.setState({ state: 'done', platform, browsers, error: null });
-          if (announce) ToastQueue.neutral(LINK_TOOL_COPY.detected(browsers.length), { timeout: 4000 });
-        },
-        (error: unknown) => useCookieBrowsers.setState({ state: 'failed', browsers: [], error: error instanceof Error ? error.message : String(error) }),
-      );
-    },
-    [runtime],
-  );
-  useEffect(() => {
-    if (enabled && useCookieBrowsers.getState().state === 'idle') detect(false);
-  }, [enabled, detect]);
-  return { ...state, detect };
-}
-
-const browserRow = style({ display: 'flex', flexWrap: 'wrap', alignItems: 'center', columnGap: 16, rowGap: 4, minWidth: 0 });
-
-/** 「网站登录」：只列出检测到的浏览器，最前面是「所有浏览器」（全选 / 半选）；都不勾是匿名下载。 */
-function CookieSection({ checked, onChange, detected }: {
-  checked: LinkCookieBrowser[];
-  onChange(next: LinkCookieBrowser[]): void;
-  detected: ReturnType<typeof useDetectedBrowsers>;
-}) {
-  const list = orderedBrowsers(checked, detected.browsers);
-  const all = allBrowsersState(list, detected.browsers);
-  const checking = detected.state === 'checking' || detected.state === 'idle';
-  const first = checking && !detected.browsers.length;
-  return <Section title={LINK_TOOL_COPY.cookies}
-    aside={<ActionButton isQuiet size="S" isDisabled={checking} onPress={() => detected.detect(true)}>{checking ? LINK_TOOL_COPY.detecting : LINK_TOOL_COPY.redetect}</ActionButton>}>
-    {first ? <span className={detail}>{LINK_TOOL_COPY.detectingFirst}</span>
-      : detected.state === 'failed' ? <span className={detail}>{LINK_TOOL_COPY.detectFailed(detected.error)}</span>
-        : !detected.browsers.length ? <span className={detail}>{NO_COOKIE_BROWSERS}</span>
-          : <>
-            <div className={browserRow} role="group" aria-label={LINK_TOOL_COPY.browsersLabel}>
-              <Checkbox size="S" isSelected={all.selected} isIndeterminate={all.indeterminate} onChange={() => onChange(toggleAllBrowsers(list, detected.browsers))}>{LINK_TOOL_COPY.allBrowsers}</Checkbox>
-              {detected.browsers.map((b) => <Checkbox key={b.id} size="S" isSelected={list.includes(b.id)} onChange={(on) => onChange(toggleBrowser(list, b.id, on, detected.browsers))}>{b.label}</Checkbox>)}
-            </div>
-            {cookieNotes(list, detected.platform).map((line) => <span key={line} className={detail}>{line}</span>)}
-          </>}
-  </Section>;
-}
-
 /** Download a file; optional transcription publishes TXT/SRT without an editing video. */
 export function LinkTool() {
   const runtime = useRuntime();
@@ -93,9 +32,8 @@ export function LinkTool() {
   const downloader = useDownloaderTool(true);
   const downloadSetting = useSetting('downloads.directory');
   useRefreshWhenReady(downloader.ready);
-  const web = runtime.host.platform === 'web';
-  const detected = useDetectedBrowsers(!web);
-  const cookieBrowsers = orderedBrowsers(draft.cookieBrowsers, detected.browsers);
+  const cookies = useCookieBrowserChoice(true);
+  const cookieBrowsers = cookies.list;
   const projectId = draft.transcribe && projects.some((p) => p.id === draft.projectId) ? draft.projectId : null;
   const params = {
     url: draft.url.trim(), transcribe: draft.transcribe,
@@ -109,7 +47,7 @@ export function LinkTool() {
   const needTool = downloader.updating ? FORM_COPY.toolUpdating : FORM_COPY.needTool;
   const why = firstWhy(block && !downloader.ready ? needTool : block,
     !urlValid(params.url) && FORM_COPY.needUrl, !downloader.ready && needTool,
-    !!starter.asking && FORM_COPY.needGrant, !request && FORM_COPY.loading);
+    !!starter.asking && FORM_COPY.needGrant, (!request || cookies.pending) && FORM_COPY.loading);
   const start = () => {
     if (why || !request) return;
     const meta: RunMeta = { tool: 'link-import', input: 'link', title: `${LINK_TOOL_COPY.title} · ${params.url.replace(/^https?:\/\//, '')}`,
@@ -123,9 +61,10 @@ export function LinkTool() {
     <Section>
       <LinkSource url={draft.url} onUrl={(url) => patch({ url })} downloader={downloader}
         downloadDir={downloadDirLabel(downloadSetting ?? null, null)} onChangeDir={() => void changeDownloadDir(runtime)}
-        note={LINK_TOOL_COPY.sourceNote} />
+        note={LINK_TOOL_COPY.sourceNote}
+        tool={<DownloaderSummary view={downloader} cookies={cookieSummary(cookieBrowsers)}
+          onSettings={() => useShell.getState().go({ tab: 'settings', section: 'downloader' })} />} />
     </Section>
-    {web ? null : <CookieSection checked={draft.cookieBrowsers} onChange={(next) => patch({ cookieBrowsers: next })} detected={detected} />}
     <Section>
       <Switch isSelected={draft.transcribe} onChange={(transcribe) => patch({ transcribe })}>{LINK_TOOL_COPY.transcribe}</Switch>
       {draft.transcribe ? <>

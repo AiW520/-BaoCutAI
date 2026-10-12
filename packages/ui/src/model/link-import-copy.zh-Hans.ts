@@ -34,11 +34,11 @@ export const zhHans: LinkImportMessages = {
     },
     LINK_LOGIN_REQUIRED: {
       title: '这个视频需要登录才能看',
-      body: '先在浏览器登录目标网站，再回到下载视频，在「网站登录」里勾选该浏览器后重新下载。',
+      body: '先在浏览器登录目标网站，再到「设置 › 视频下载」的网站登录里勾选该浏览器，然后重新下载。',
     },
     LINK_COOKIES_UNAVAILABLE: {
       title: '浏览器 Cookie 读取失败',
-      body: '确认浏览器已登录；数据库被占用时完全退出浏览器（包括在后台运行的），检查系统密钥权限（Safari 要在完全磁盘访问权限里允许 BaoCut）。Windows 上 Chrome、Edge、Brave 用应用绑定加密保护 Cookie 时读不到，改勾 Firefox。或勾选别的浏览器后重新下载。',
+      body: '确认浏览器已登录；数据库被占用时完全退出浏览器（包括在后台运行的），检查系统密钥权限（Safari 要在完全磁盘访问权限里允许 BaoCut）。Windows 上 Chrome、Edge、Brave 用应用绑定加密保护 Cookie 时读不到，改勾 Firefox。或在「设置 › 视频下载」里勾选别的浏览器后重新下载。',
     },
     LINK_TOOL_UPDATE_REQUIRED: { title: '需要更新 yt-dlp', body: '网站解析方式已变化。按原安装方式更新 yt-dlp，重新检测后重试。' },
     LINK_UNAVAILABLE: {

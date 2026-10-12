@@ -13,5 +13,9 @@ export const zhHans: LinkCookiesMessages = {
   appBound: (names: readonly string[]) => `${names.join('、')} 在 Windows 上通常用应用绑定加密保护 Cookie，yt-dlp 目前可能读不到，退出浏览器也不行。`,
   firefoxTip: '需要登录时，建议在 Firefox 里登录目标网站后改勾 Firefox。',
   noBrowsers: '这台电脑上没有找到浏览器的 Cookie，只能匿名下载。在浏览器里登录过目标网站后，点「重新检测浏览器」。',
+  anonymous: '匿名下载',
+  subOne: (name: string) => `使用 ${name} 的 Cookie`,
+  subMany: (names: readonly string[]) => `依次试 ${names.join('、')} 的 Cookie`,
+  summary: (text: string) => `网站登录：${text}`,
   used: (name: string) => `用了 ${name} 的 Cookie`,
 };

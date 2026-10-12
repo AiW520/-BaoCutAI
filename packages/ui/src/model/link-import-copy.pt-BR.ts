@@ -52,11 +52,11 @@ export const ptBR: LinkImportMessages = {
     },
     LINK_LOGIN_REQUIRED: {
       title: "Este vídeo exige login",
-      body: "Entre no site pelo navegador, volte a Baixar vídeo, marque em “Login no site” e repita.",
+      body: 'Entre no site pelo navegador primeiro. Depois marque esse navegador em Configurações › Download de vídeos › Login no site e inicie o download de novo.',
     },
     LINK_COOKIES_UNAVAILABLE: {
       title: "Cookies ilegíveis",
-      body: "Confira login. Banco bloqueado: feche navegador inteiro, segundo plano também. Verifique Chaves e Acesso total ao disco para Safari. No Windows, Chrome, Edge, Brave com criptografia vinculada ao aplicativo não são lidos; marque Firefox. Ou outro navegador.",
+      body: "Confira login. Banco bloqueado: feche navegador inteiro, segundo plano também. Verifique Chaves e Acesso total ao disco para Safari. No Windows, Chrome, Edge, Brave com criptografia vinculada ao aplicativo não são lidos; marque Firefox. Ou marque outro navegador em Configurações › Download de vídeos.",
     },
     LINK_TOOL_UPDATE_REQUIRED: {
       title: "yt-dlp precisa atualizar",

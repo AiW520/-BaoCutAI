@@ -3,7 +3,7 @@ import type { JobsYtDlpMessages } from './yt-dlp.ts';
 export const zhHant: JobsYtDlpMessages = {
   toolNotFound: (p: { code: string }) => `找不到可執行的 yt-dlp（${p.code}）`,
   remedyUnsupported: '下載工具不支援這個連結：請改用影片頁面本身的連結（不是播放清單、直播或搜尋頁面）',
-  remedyLoginRequired: '請先在瀏覽器中登入該網站，再到「網站登入」中選擇該瀏覽器，然後重新下載',
+  remedyLoginRequired: '請先在瀏覽器中登入該網站，再到「設定 › 影片下載」的網站登入中勾選該瀏覽器，然後重新下載',
   remedyCookiesUnavailable: '無法讀取瀏覽器 Cookie：請確認已在瀏覽器中登入；資料庫被佔用時，請完全結束瀏覽器（包括在背景執行的處理程序）；鑰匙圈存取遭拒時，請允許存取；Safari 需要「完整磁碟取用權限」；在 Windows 上，Chrome、Edge、Brave 用應用程式綁定加密保護的 Cookie，yt-dlp 無法讀取，請改用 Firefox；或換一個瀏覽器',
   remedyToolUpdateRequired: '網站解析失敗或工具版本過舊：請更新 yt-dlp，重新偵測後再試一次',
   remedyUnavailable: '影片無法使用（已刪除、有地區限制，或沒有可下載的格式）',

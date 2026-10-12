@@ -6,6 +6,7 @@ import { MODEL_API_MAX_CONCURRENT_LIMIT, SERVICE_IDS, SERVICE_LEVELS } from './s
 import { AGENT_MODES, LEGACY_AGENT_MODES, normalizeAgentMode } from './access.ts';
 import { GRANT_DATA_KINDS } from './grants.ts';
 import { LANGUAGE_PREFERENCES } from './i18n.ts';
+import { LINK_COOKIE_BROWSERS } from './pipelines.ts';
 import { languageTag } from './language-schemas.ts';
 import { USAGE_PERIODS } from './usage.ts';
 import { MAX_SELECTED_GLOSSARIES, MAX_SPEAKER_VOICES } from './library.ts';
@@ -447,6 +448,14 @@ export const settingValueSchemas = {
   'captions.maxLineLength': z.object({ cjk: z.number().int().min(4).max(60), other: z.number().int().min(10).max(120) }).strict(),
   'transcribe.afterComplete': z.enum(['open-video', 'notify', 'nothing']),
   'downloads.directory': absolutePath.nullable(),
+  'downloads.cookieBrowsers': z.union([
+    z.literal('all'),
+    z
+      .array(z.enum(LINK_COOKIE_BROWSERS))
+      .max(LINK_COOKIE_BROWSERS.length)
+      // 重复的去掉，保留第一次出现的位置
+      .transform((list) => [...new Set(list)]),
+  ]),
   'models.dir': absolutePath.nullable(),
   'models.downloadEndpoint': z
     .string()

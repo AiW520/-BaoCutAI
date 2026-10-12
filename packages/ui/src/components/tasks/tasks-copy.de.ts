@@ -15,7 +15,7 @@ export const de: TasksMessages = {
     action: {
       retry: "Download erneut versuchen",
       'change-link': "Anderen Link verwenden",
-      'use-file': "Stattdessen lokale Datei verwenden",
+      'use-file': "Stattdessen lokale Datei verwenden", 'sign-in': 'Download-Einstellungen ändern',
       tools: "Downloadwerkzeuge prüfen",
       restart: "Import neu beginnen",
       downloads: "Downloadspeicherort ändern…",

@@ -36,11 +36,11 @@ export const pl: LinkImportMessages = {
     },
     LINK_LOGIN_REQUIRED: {
       title: "Wideo wymaga logowania",
-      body: "Zaloguj na stronie w przeglądarce, wróć do „Pobierz wideo”, zaznacz przeglądarkę w „Logowanie do witryny” i pobierz ponownie.",
+      body: 'Najpierw zaloguj się na stronie w przeglądarce, potem zaznacz tę przeglądarkę w „Ustawienia › Pobieranie filmów › Logowanie do witryny” i uruchom pobieranie ponownie.',
     },
     LINK_COOKIES_UNAVAILABLE: {
       title: "Nie można odczytać cookie przeglądarki",
-      body: "Sprawdź logowanie. Przy blokadzie bazy zamknij przeglądarkę całkowicie (także w tle) i uprawnienia Pęku kluczy (Safari: zezwól BaoCut na pełny dostęp do dysku). W Windows cookie Chrome, Edge i Brave z app-bound encryption nieczytelne; wybierz Firefox. Lub inną przeglądarkę i pobierz ponownie.",
+      body: "Sprawdź logowanie. Przy blokadzie bazy zamknij przeglądarkę całkowicie (także w tle) i uprawnienia Pęku kluczy (Safari: zezwól BaoCut na pełny dostęp do dysku). W Windows cookie Chrome, Edge i Brave z app-bound encryption nieczytelne; wybierz Firefox. Lub zaznacz inną przeglądarkę w „Ustawienia › Pobieranie filmów” i pobierz ponownie.",
     },
     LINK_TOOL_UPDATE_REQUIRED: { title: "yt-dlp wymaga aktualizacji", body: "Strona zmieniła dostarczanie wideo. Zaktualizuj yt-dlp metodą instalacji, sprawdź i spróbuj ponownie." },
     LINK_UNAVAILABLE: {

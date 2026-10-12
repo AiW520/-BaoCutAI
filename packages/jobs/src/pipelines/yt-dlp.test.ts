@@ -107,6 +107,9 @@ describe('参数', () => {
     expect(both).toMatchObject({ code: 'LINK_LOGIN_REQUIRED', message: '试了 2 个浏览器的 Cookie 都没成功（Chrome：读不到 Cookie；Safari：网站仍要求登录）' });
     expect(both.details).toMatchObject({ attempts: [{ browser: 'chrome', code: 'LINK_COOKIES_UNAVAILABLE' }, { browser: 'safari', code: 'LINK_LOGIN_REQUIRED' }] });
     expect(cookieAttemptsFailure([{ browser: 'chrome', error: cookies }, { browser: 'edge', error: cookies }]).code).toBe('LINK_COOKIES_UNAVAILABLE');
+    // 要登录、读不到 Cookie 的都带上设置 › 视频下载的地址，界面与智能体从这里链过去；其他失败不带
+    for (const failure of [cookies, login, both]) expect(failure.details).toMatchObject({ settingsHref: '/settings/downloader' });
+    expect(classifyFailure('ERROR: nsig extraction failed', 1).details).not.toHaveProperty('settingsHref');
   });
 
   it('文件名：去掉路径与保留字符、不以点或 - 开头；空格与单引号保留', () => {

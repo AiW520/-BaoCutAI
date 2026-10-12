@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { methodParamSchemas, settingValueSchemas, settingsPatchSchema } from './schemas.ts';
+import { cookieBrowsersSetting, resolveCookieBrowsers } from './external-tools.ts';
 import { SETTING_DEFAULTS, SETTING_DESCRIPTIONS, SETTING_KEYS, defaultSettingsSnapshot, isSettingKey } from './settings.ts';
 
 describe('偏好设置注册表', () => {
@@ -32,6 +33,25 @@ describe('偏好设置注册表', () => {
     expect(settingsPatchSchema.safeParse({ 'downloads.directory': '/Users/me/Downloads' }).success).toBe(true);
     expect(settingsPatchSchema.safeParse({ 'downloads.directory': 'D:\\Downloads' }).success).toBe(true);
     expect(settingsPatchSchema.safeParse({ 'updates.autoCheck': 'yes' }).success).toBe(false);
+  });
+
+  it('网站登录：默认所有浏览器；列表去重、只收认得的浏览器；按检测结果展开，全勾上存回 all', () => {
+    const schema = settingValueSchemas['downloads.cookieBrowsers'];
+    expect(SETTING_DEFAULTS['downloads.cookieBrowsers']).toBe('all');
+    expect(schema.parse([])).toEqual([]);
+    expect(schema.parse(['firefox', 'chrome', 'firefox'])).toEqual(['firefox', 'chrome']);
+    expect(schema.safeParse(['netscape']).success).toBe(false);
+    expect(schema.safeParse('none').success).toBe(false);
+    const detected = [{ id: 'safari' as const }, { id: 'chrome' as const }, { id: 'firefox' as const }];
+    expect(resolveCookieBrowsers('all', detected)).toEqual(['safari', 'chrome', 'firefox']);
+    // 列表按检测到的顺序试；检测不到的不试
+    expect(resolveCookieBrowsers(['firefox', 'edge', 'safari'], detected)).toEqual(['safari', 'firefox']);
+    expect(resolveCookieBrowsers([], detected)).toEqual([]);
+    expect(resolveCookieBrowsers('all', [])).toEqual([]);
+    expect(cookieBrowsersSetting(['firefox', 'chrome', 'safari'], detected)).toBe('all');
+    expect(cookieBrowsersSetting(['firefox', 'safari'], detected)).toEqual(['safari', 'firefox']);
+    expect(cookieBrowsersSetting([], detected)).toEqual([]);
+    expect(cookieBrowsersSetting([], [])).toEqual([]);
   });
 
   it('访问模式：新值原样接受，旧值换成新值', () => {

@@ -636,7 +636,7 @@ export const ptBR: ToolsMessages = {
     noProject: "Não adicionar a projeto",
     projectNote: "Só vincula ao projeto; arquivos na pasta acima.",
 
-    editLink: "Mudar link ou cookies",
+    editLink: 'Editar link',
   },
 
 

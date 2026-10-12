@@ -15,7 +15,8 @@ const LINK = 'https://video.example.com/watch?v=abc';
 const service = { kind: 'service', serviceId: 'mcp', clientId: 'cli_1', clientName: '剪辑助手' } as unknown as ToolPrincipal;
 const agent = { kind: 'agent', conversationId: 'conv_1' } as unknown as ToolPrincipal;
 
-function harness() {
+/** `setting`：设置 › 视频下载的网站登录展开后的列表（假的，默认匿名）。 */
+function harness(setting: string[] = []) {
   const started: Record<string, unknown>[] = [];
   const confirmed: ToolConfirmation[] = [];
   const adopted: Id[] = [];
@@ -39,6 +40,7 @@ function harness() {
       inspect: () => current,
     },
     offlineStrict: () => false,
+    settingCookieBrowsers: async () => setting,
     scope: {
       authorize: (principal: ToolPrincipal) => ({
         principal,
@@ -192,7 +194,7 @@ describe('transcribe 给 url：转写的参数', () => {
 });
 
 describe('网站登录（cookieBrowsers）', () => {
-  it('download 与 transcribe 给 url 都把浏览器按顺序交给流程，确认说明里列出它们；不给与空列表匿名', async () => {
+  it('download 与 transcribe 给 url 都把浏览器按顺序交给流程，确认说明里列出它们；设置是匿名时不给与空列表都匿名', async () => {
     const { deps, started, confirmed } = harness();
     const download = new LinkImportTools(deps);
     const flow = new FlowTools({ pipelines: deps.pipelines, scope: deps.scope, linkImport: deps } as unknown as FlowToolsDeps);
@@ -222,5 +224,20 @@ describe('网站登录（cookieBrowsers）', () => {
     expect(fromService.code).toBe('INVALID_ARGUMENTS');
     expect(started).toHaveLength(0);
     expect(confirmed).toHaveLength(0);
+  });
+
+  it('不给时按设置 › 视频下载展开的浏览器，写进确认说明；空列表仍匿名；对外服务不用这项设置', async () => {
+    const { deps, started, confirmed } = harness(['edge', 'firefox']);
+    const download = new LinkImportTools(deps);
+    const flow = new FlowTools({ pipelines: deps.pipelines, scope: deps.scope, linkImport: deps } as unknown as FlowToolsDeps);
+    await download.dispatch('download', { url: LINK, newVideo: true }, agent);
+    await flow.dispatch('transcribe', { url: LINK }, agent);
+    await download.dispatch('download', { url: LINK, newVideo: true, cookieBrowsers: [] }, agent);
+    await download.dispatch('download', { url: LINK, newVideo: true, cookieBrowsers: ['safari'] }, agent);
+    await download.dispatch('download', { url: LINK, project: 'prj_1' }, service);
+    expect(started.map((p) => p.cookieBrowsers ?? null)).toEqual([['edge', 'firefox'], ['edge', 'firefox'], null, ['safari'], null]);
+    expect(confirmed[0]!.summary).toContain('Edge、Firefox');
+    expect(confirmed[1]!.summary).toContain('Edge、Firefox');
+    expect(confirmed[2]!.summary).not.toContain('Cookie');
   });
 });

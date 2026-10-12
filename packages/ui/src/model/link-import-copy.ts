@@ -79,11 +79,11 @@ const en = {
     },
     LINK_LOGIN_REQUIRED: {
       title: 'This video requires signing in',
-      body: 'Sign in to the site in your browser first, then go back to Download video, check that browser under “Website sign-in” and download again.',
+      body: 'Sign in to the site in your browser first. Then check that browser under Settings › Video downloader › Website sign-in and start the download again.',
     },
     LINK_COOKIES_UNAVAILABLE: {
       title: 'Couldn’t read browser cookies',
-      body: 'Make sure you’re signed in in the browser. If its database is locked, quit the browser completely (including anything running in the background), and check keychain permissions (for Safari, allow BaoCut under Full Disk Access). On Windows, Chrome, Edge and Brave cookies protected by app-bound encryption can’t be read; check Firefox instead. Or check another browser and download again.',
+      body: 'Make sure you’re signed in in the browser. If its database is locked, quit the browser completely (including anything running in the background), and check keychain permissions (for Safari, allow BaoCut under Full Disk Access). On Windows, Chrome, Edge and Brave cookies protected by app-bound encryption can’t be read; check Firefox instead. Or check another browser under Settings › Video downloader and download again.',
     },
     LINK_TOOL_UPDATE_REQUIRED: {
       title: 'yt-dlp needs an update',

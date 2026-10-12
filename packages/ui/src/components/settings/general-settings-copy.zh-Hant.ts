@@ -28,11 +28,7 @@ export const zhHant: GeneralSettingsMessages = {
   downloadsGroup: '下載與更新',
   autoUpdateOn: '已開啟自動檢查並下載更新',
   autoUpdateOff: '已關閉自動下載更新',
-  downloader: '影片下載工具',
   downloaderWeb: '瀏覽器不會檢查這台電腦上的下載工具；請在 BaoCut 桌面應用程式中查看。',
-  checking: '正在檢查…',
-  checkFailed: (message: string) => `無法檢查：${message}`,
-  checkAgain: '重新檢查',
 
   sourcesGroup: '下載來源與離線',
   modelsEndpoint: '模型下載來源',

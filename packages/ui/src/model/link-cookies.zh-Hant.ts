@@ -15,5 +15,9 @@ export const zhHant: LinkCookiesMessages = {
     `在 Windows 上，${names.join('、')} 通常會以應用程式綁定加密（App-Bound Encryption）保護 Cookie，yt-dlp 可能無法讀取，即使結束瀏覽器也一樣。`,
   firefoxTip: '如果需要登入，請改在 Firefox 中登入該網站，並勾選 Firefox。',
   noBrowsers: '在這台電腦上找不到瀏覽器 Cookie，因此只能匿名下載。在瀏覽器中登入該網站後，請點選「重新偵測瀏覽器」。',
+  anonymous: '匿名下載',
+  subOne: (name: string) => `使用 ${name} 的 Cookie`,
+  subMany: (names: readonly string[]) => `依序嘗試 ${names.join('、')} 的 Cookie`,
+  summary: (text: string) => `網站登入：${text}`,
   used: (name: string) => `已使用 ${name} 的 Cookie`,
 };

@@ -15,7 +15,7 @@ export const pl: TasksMessages = {
     action: {
       retry: "Ponów pobieranie",
       'change-link': "Użyj innego linku",
-      'use-file': "Użyj pliku lokalnego",
+      'use-file': "Użyj pliku lokalnego", 'sign-in': 'Zmień ustawienia pobierania',
       tools: "Sprawdź narzędzia pobierania",
       restart: "Rozpocznij import od nowa",
       downloads: "Zmień lokalizację pobierania…",

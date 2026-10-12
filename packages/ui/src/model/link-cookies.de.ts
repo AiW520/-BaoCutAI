@@ -19,5 +19,9 @@ export const de: LinkCookiesMessages = {
 
   firefoxTip: " Bei Anmeldebedarf in Firefox anmelden und stattdessen Firefox auswählen.",
   noBrowsers: "Keine Browser-Cookies auf diesem Computer gefunden; nur anonyme Downloads möglich. Nach Websiteanmeldung im Browser auf „Browser erneut erkennen“ klicken.",
+  anonymous: 'Aus (anonymer Download)',
+  subOne: (name: string) => `Verwendet Cookies von ${name}`,
+  subMany: (names: readonly string[]) => `Probiert nacheinander Cookies von ${names.join(', ')}`,
+  summary: (text: string) => `Website-Anmeldung: ${text}`,
   used: (name: string) => `Verwendet: ${name}-Cookies`,
 };
