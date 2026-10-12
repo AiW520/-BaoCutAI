@@ -327,13 +327,19 @@ random 对同 key 永远返回同值；时间噪声通过明确的连续坐标�
 
 材质首版采用版本化内置节点及有类型的 uniform，把扫光、纹理滚动、噪声遮罩等开放为参数。保留 shader 材质扩展合同：资源摘要、入口、输入/输出格式、uniform 类型、纹理/采样器、pass 依赖、所需能力；实际支持的 shader 方言和后端在专门阶段验证后开放。纯函数算出的模糊半径或材质参数只有在渲染器支持时才有效。 当前 `caption-wave-displace/1` 提供 cue 级正弦逆向位移：幅度、波长、相位可纯函数求值，方向为 x/y，使用预乘双线性透明边界采样；具体范围、像素中心与预算合同见视频格式 §5.6。
 
-当前 `caption-gaussian-axis/1` 与 `caption-glow-cascade/1` 增加单文字子树的独立分量高斯和多尺度级联发光。二者显式绑定唯一 Text 的排版后页上下文；每个 pass 的采样距离以输入纹理 UV 定义，输出缩放按原画布有理比例向下取整，逐 pass 执行 gamma 与 UNORM8 量化。固定画布边界、normalize/replicate/transparent 行为、级联顺序和合成公式均按视频格式 §5.6，不与 box blur 混同。优化按任意 RGBA 分量非零的有效区域传播，实际采样工作与表面峰值都计入预算。
+当前 `caption-gaussian-axis/1` 与 `caption-glow-cascade/1` 增加单文字子树的独立分量高斯和多尺度级联发光。二者显式绑定唯一 Text 的排版后页上下文；每个 pass 的采样距离以输入纹理 UV 定义，输出缩放按原画布有理比例向下取整，逐 pass 执行 gamma 与 UNORM8 量化。固定画布边界、normalize/replicate/transparent 行为、级联顺序和合成公式均按视频格式 §5.6，不与 box blur 混同。优化按任意 RGBA 分量非零的有效区域传播，实际采样工作与表面峰值都计入预算。可选 `glowTint` 以 `caption-glow-tint/1` 显式启用，使用同一文字节点排版后的页上下文；只在各级发光聚合及 clamp 后乘 RGB，再与原图合成，忽略 tint alpha 并保留发光 alpha。省略为白，旧文档不新增字段或求值成本，旧像素保持不变。
 
 这些材质允许关联 RGBA8 的 RGB 大于 alpha，并通过显式发光位图及原始关联输出保留。透明宿主不能先解预乘再截断颜色，也不能把查看背景写进字幕测试数据；不支持的混合/输出格式返回诊断。此能力没有开放任意 shader 或多 Text 材质绑定。
 
 颜色与 alpha 延续 [架构 §9.3](../../architecture/architecture-design.md#93-颜色与-alpha) 的合同。内部 pass 若需要别的精度/颜色空间必须显式声明转换；shader、CPU 和 GPU 路径不能各自隐式处理。需要 backdrop 的效果声明对背景子图的依赖，不能当作独立透明贴片缓存。
 
 缺少某项能力时预检给出具体节点/属性/材质的原因，精确导出拒绝；预览可使用明确标记的简化模式。当前 GPU feature 尚不可用，丰富材质不能仅凭字段存在就标记为已支持。平台能力按 macOS、Windows 与 Web 分别验证。
+
+### 9.1 局部纹理噪声与色条
+
+共享材质增加 `noise-palette-mix`，以显式 `domain` 描述画布中局部UV范围，绑定冻结PNG色条，并在文字当前页上下文求值噪声phase和色条位置。固定有界噪声核保持输入alpha，只改变RGB；输出RGBA8后可接现有Gaussian/Glow材质。局部坐标与渲染参数由格式明确提供，不能自动以inkBounds或词advance代替；轴对齐domain不隐式跟随旋转。该能力不引入任意shader或脚本执行，完整系数、边界与预算见视频格式规范的“显式局部纹理的噪声色条混合”。
+
+`caption-glow-color-matrix/1` 为 glow-cascade 增加可选静态 `glowColorMatrix`（行优先 9 个有限数）。它在聚合 clamp 和 glowTint 之后变换辉光 RGB，再 clamp 后与原图合成；不影响 alpha 或原图。省略/单位矩阵保持既有像素与序列化兼容，非法形状、null、非有限系数及乘法溢出拒绝。
 
 ## 10. 求值管线与缓存
 

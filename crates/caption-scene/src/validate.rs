@@ -22,8 +22,11 @@ pub const CAPABILITIES: &[&str] = &[
     "caption-feedback/1",
     "caption-wave-displace/1",
     "caption-soft-band/1",
+    "caption-noise-palette-mix/1",
     "caption-gaussian-axis/1",
     "caption-glow-cascade/1",
+    "caption-glow-tint/1",
+    "caption-glow-color-matrix/1",
     "caption-layout-per-sample/1",
     "caption-unit-font-size/1",
     "caption-word-line-layout/1",
@@ -483,6 +486,39 @@ pub fn validate_scene(s: &Scene) -> Result<()> {
                 }
                 id
             }
+            CaptionMaterial::NoisePaletteMix {
+                id,
+                context_node_id,
+                palette_resource_id,
+                palette_position,
+                phase,
+                domain,
+            } => {
+                validate_component_context(s, &nodes, id, context_node_id, "caption-noise-palette-mix/1", 1.0)?;
+                if !s.required_capabilities.iter().any(|c| c == "caption-image-png/1") {
+                    return Err(Diagnostic::new("CAPTION_CAPABILITY_REQUIRED", id, "caption-image-png/1"));
+                }
+                if !s.resources.iter().any(|r| &r.id == palette_resource_id) {
+                    return Err(invalid(id, "palette resource must reference a frozen PNG"));
+                }
+                validate_component_uniform(s, palette_position, 0.0, 1.0)?;
+                validate_component_uniform(s, phase, -1_000_000.0, 1_000_000.0)?;
+                for (value, low) in [
+                    (&domain.x, -1_000_000.0),
+                    (&domain.y, -1_000_000.0),
+                    (&domain.width, 0.001),
+                    (&domain.height, 0.001),
+                ] {
+                    validate_value("width", value, s, UnitKind::Page)?;
+                    if let DynamicValue::Constant { value } = value {
+                        let n = typed_value(ValueType::Length, value)?.number()?;
+                        if !n.is_finite() || !(low..=1_000_000.0).contains(&n) {
+                            return Err(invalid(id, "material domain requires finite lengths and positive dimensions"));
+                        }
+                    }
+                }
+                id
+            }
             CaptionMaterial::GaussianAxis {
                 id,
                 context_node_id,
@@ -503,6 +539,8 @@ pub fn validate_scene(s: &Scene) -> Result<()> {
                 gamma,
                 intensity,
                 original_opacity,
+                glow_tint,
+                glow_color_matrix,
                 ..
             } => {
                 validate_component_context(s, &nodes, id, context_node_id, "caption-glow-cascade/1", *gamma)?;
@@ -511,6 +549,20 @@ pub fn validate_scene(s: &Scene) -> Result<()> {
                 }
                 validate_component_uniform(s, intensity, 0.0, 16.0)?;
                 validate_component_uniform(s, original_opacity, 0.0, 1.0)?;
+                if let Some(tint) = glow_tint {
+                    if !s.required_capabilities.iter().any(|c| c == "caption-glow-tint/1") {
+                        return Err(Diagnostic::new("CAPTION_CAPABILITY_REQUIRED", id, "caption-glow-tint/1"));
+                    }
+                    validate_value("fill", tint, s, UnitKind::Page)?;
+                }
+                if let Some(matrix) = glow_color_matrix {
+                    if !s.required_capabilities.iter().any(|c| c == "caption-glow-color-matrix/1") {
+                        return Err(Diagnostic::new("CAPTION_CAPABILITY_REQUIRED", id, "caption-glow-color-matrix/1"));
+                    }
+                    if matrix.iter().any(|c| !c.is_finite()) {
+                        return Err(invalid(id, "glow color matrix needs nine finite coefficients"));
+                    }
+                }
                 for level in levels {
                     for stage in [&level.horizontal, &level.vertical] {
                         if stage.scale.num == 0 || stage.scale.num > stage.scale.den || stage.scale.den > 4096 {

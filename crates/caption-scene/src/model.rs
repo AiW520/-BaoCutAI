@@ -698,6 +698,15 @@ pub struct FontSizeBinding {
     pub selector_id: String,
     pub value: DynamicValue,
 }
+fn deserialize_glow_tint<'de, D: serde::Deserializer<'de>>(deserializer: D) -> Result<Option<DynamicValue>, D::Error> {
+    // Missing means default white; an explicit field must contain a typed value.
+    DynamicValue::deserialize(deserializer).map(Some)
+}
+
+fn deserialize_glow_color_matrix<'de, D: serde::Deserializer<'de>>(deserializer: D) -> Result<Option<[f64; 9]>, D::Error> {
+    <[f64; 9]>::deserialize(deserializer).map(Some)
+}
+
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "kind", rename_all = "kebab-case", deny_unknown_fields)]
 pub enum CaptionMaterial {
@@ -726,6 +735,17 @@ pub enum CaptionMaterial {
         amount: DynamicValue,
         opacity: DynamicValue,
     },
+    NoisePaletteMix {
+        id: String,
+        #[serde(rename = "contextNodeId")]
+        context_node_id: String,
+        #[serde(rename = "paletteResourceId")]
+        palette_resource_id: String,
+        #[serde(rename = "palettePosition")]
+        palette_position: DynamicValue,
+        phase: DynamicValue,
+        domain: MaterialDomain,
+    },
     GaussianAxis {
         id: String,
         #[serde(rename = "contextNodeId")]
@@ -748,6 +768,20 @@ pub enum CaptionMaterial {
         intensity: DynamicValue,
         #[serde(rename = "originalOpacity")]
         original_opacity: DynamicValue,
+        #[serde(
+            rename = "glowTint",
+            default,
+            skip_serializing_if = "Option::is_none",
+            deserialize_with = "deserialize_glow_tint"
+        )]
+        glow_tint: Option<DynamicValue>,
+        #[serde(
+            rename = "glowColorMatrix",
+            default,
+            skip_serializing_if = "Option::is_none",
+            deserialize_with = "deserialize_glow_color_matrix"
+        )]
+        glow_color_matrix: Option<[f64; 9]>,
         composite: GlowComposite,
     },
     Feedback {
@@ -758,6 +792,16 @@ pub enum CaptionMaterial {
         #[serde(default)]
         offset: [f64; 2],
     },
+}
+
+/// Explicit axis-aligned canvas coordinates for a material's local texture domain.
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct MaterialDomain {
+    pub x: DynamicValue,
+    pub y: DynamicValue,
+    pub width: DynamicValue,
+    pub height: DynamicValue,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]

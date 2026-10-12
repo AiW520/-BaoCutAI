@@ -14715,6 +14715,1114 @@
                 "end": 4000,
                 "id": "c0",
                 "start": 0,
+                "text": "Glow 字幕"
+              }
+            ],
+            "schema": "baocut.caption/1",
+            "timescale": 1000
+          },
+          "documentId": "doc",
+          "kind": "caption",
+          "lineKind": "original",
+          "schema": "baocut.caption/1"
+        },
+        {
+          "body": {
+            "scene": {
+              "kind": "inline",
+              "value": {
+                "animations": [],
+                "evaluationVersion": 1,
+                "layout": {
+                  "maxLines": 2,
+                  "pagination": {
+                    "maxUnitsPerPage": 2
+                  },
+                  "width": {
+                    "basis": "absolute",
+                    "value": 140
+                  },
+                  "x": {
+                    "basis": "absolute",
+                    "value": 80
+                  },
+                  "y": {
+                    "basis": "absolute",
+                    "value": 45
+                  }
+                },
+                "materials": [
+                  {
+                    "composite": "screen",
+                    "contextNodeId": "caption",
+                    "gamma": 2.2,
+                    "glowTint": {
+                      "clock": {
+                        "duration": {
+                          "kind": "fixed",
+                          "ticks": 2000,
+                          "timescale": 1000
+                        },
+                        "origin": "start",
+                        "unit": "page"
+                      },
+                      "fill": {
+                        "after": "hold",
+                        "before": "hold"
+                      },
+                      "interpolation": "linear",
+                      "keys": [
+                        {
+                          "at": 0,
+                          "value": "#FF206000"
+                        },
+                        {
+                          "at": 1,
+                          "value": "#2080FFFF"
+                        }
+                      ],
+                      "kind": "keyframes"
+                    },
+                    "id": "bloom",
+                    "intensity": {
+                      "clock": {
+                        "duration": {
+                          "kind": "unit-span"
+                        },
+                        "origin": "start",
+                        "unit": "page"
+                      },
+                      "fill": {
+                        "after": "hold",
+                        "before": "hold"
+                      },
+                      "keys": [
+                        {
+                          "at": 0.0,
+                          "value": 0.05
+                        },
+                        {
+                          "at": 0.5,
+                          "value": 0.3
+                        },
+                        {
+                          "at": 1.0,
+                          "value": 0.1
+                        }
+                      ],
+                      "kind": "keyframes"
+                    },
+                    "kind": "glow-cascade",
+                    "levels": [
+                      {
+                        "horizontal": {
+                          "samples": {
+                            "kind": "constant",
+                            "value": 2
+                          },
+                          "scale": {
+                            "den": 1,
+                            "num": 1
+                          },
+                          "sigmaUv": {
+                            "kind": "constant",
+                            "value": 0.005
+                          },
+                          "stepUv": {
+                            "kind": "constant",
+                            "value": 0.00625
+                          }
+                        },
+                        "vertical": {
+                          "samples": {
+                            "kind": "constant",
+                            "value": 2
+                          },
+                          "scale": {
+                            "den": 1,
+                            "num": 1
+                          },
+                          "sigmaUv": {
+                            "kind": "constant",
+                            "value": 0.005
+                          },
+                          "stepUv": {
+                            "kind": "constant",
+                            "value": 0.00625
+                          }
+                        }
+                      },
+                      {
+                        "horizontal": {
+                          "samples": {
+                            "kind": "constant",
+                            "value": 2
+                          },
+                          "scale": {
+                            "den": 2,
+                            "num": 1
+                          },
+                          "sigmaUv": {
+                            "kind": "constant",
+                            "value": 0.005
+                          },
+                          "stepUv": {
+                            "kind": "constant",
+                            "value": 0.00625
+                          }
+                        },
+                        "vertical": {
+                          "samples": {
+                            "kind": "constant",
+                            "value": 2
+                          },
+                          "scale": {
+                            "den": 2,
+                            "num": 1
+                          },
+                          "sigmaUv": {
+                            "kind": "constant",
+                            "value": 0.005
+                          },
+                          "stepUv": {
+                            "kind": "constant",
+                            "value": 0.00625
+                          }
+                        }
+                      }
+                    ],
+                    "originalOpacity": {
+                      "kind": "constant",
+                      "value": 0.7
+                    }
+                  }
+                ],
+                "nodes": [
+                  {
+                    "id": "caption",
+                    "style": {
+                      "fill": "#FFFFFF",
+                      "fontSize": {
+                        "basis": "absolute",
+                        "value": 16
+                      }
+                    },
+                    "type": "text"
+                  }
+                ],
+                "parameters": [],
+                "requiredCapabilities": [
+                  "caption-scene/1",
+                  "caption-glow-cascade/1",
+                  "caption-glow-tint/1"
+                ],
+                "schema": "baocut.caption-scene/1",
+                "selectors": [],
+                "speechState": {
+                  "gapPolicy": "hold-previous",
+                  "tailPolicy": "hold-last",
+                  "timingPolicy": "estimated"
+                }
+              }
+            },
+            "schema": "baocut.caption-scene-style/1"
+          },
+          "documentId": "style",
+          "kind": "caption-style",
+          "schema": "baocut.caption-scene-style/1"
+        }
+      ],
+      "name": "captions-glow-tint",
+      "pictures": [],
+      "shots": [
+        {
+          "captions": true,
+          "frame": 3,
+          "height": 90,
+          "sha256": "2cb58d4826f61b3316726b85bb09f036a4bfd05af488433c96dfaa9ee277a67b",
+          "skipped": [],
+          "transparent": false,
+          "warnings": [],
+          "width": 160
+        },
+        {
+          "captions": true,
+          "frame": 15,
+          "height": 90,
+          "sha256": "8ad0b03bb5731e3911d1e1a6c8e66437ec63ac7b4c4e1b95e074967072ee36ce",
+          "skipped": [],
+          "transparent": false,
+          "warnings": [],
+          "width": 160
+        },
+        {
+          "captions": true,
+          "frame": 30,
+          "height": 90,
+          "sha256": "ec0e7ebfdbc8a1133a817159de0135940a8271d115692ae739a88c177d77e7fd",
+          "skipped": [],
+          "transparent": false,
+          "warnings": [],
+          "width": 160
+        },
+        {
+          "captions": true,
+          "frame": 61,
+          "height": 90,
+          "sha256": "20af1e0d2582e960c41de04a46ed33afd1003134902919af4ef0aab4a656f3c7",
+          "skipped": [],
+          "transparent": false,
+          "warnings": [],
+          "width": 160
+        },
+        {
+          "captions": true,
+          "frame": 100,
+          "height": 90,
+          "sha256": "0a3087d64e3e29736d5363f3c555e5efd1232f696ed854958d7329b6e1315c4d",
+          "skipped": [],
+          "transparent": false,
+          "warnings": [],
+          "width": 160
+        },
+        {
+          "captions": true,
+          "frame": 15,
+          "height": 90,
+          "sha256": "8ad0b03bb5731e3911d1e1a6c8e66437ec63ac7b4c4e1b95e074967072ee36ce",
+          "skipped": [],
+          "transparent": false,
+          "warnings": [],
+          "width": 160
+        },
+        {
+          "associatedRgba": true,
+          "captions": true,
+          "frame": 15,
+          "height": 90,
+          "sha256": "d10e97400ea4eddfb92308cf4be19f1e4c8cfaf5028ee1712235afb8a2e434e0",
+          "skipped": [],
+          "transparent": true,
+          "warnings": [],
+          "width": 160
+        }
+      ],
+      "spectra": [],
+      "video": {
+        "assets": {},
+        "canvasVariants": {},
+        "checkpoints": {},
+        "documents": {},
+        "fonts": {},
+        "format": "baocut.video",
+        "id": "video_test",
+        "links": [],
+        "localizationSets": {},
+        "name": "测试",
+        "protections": {},
+        "revision": "1",
+        "rootSequenceId": "seq",
+        "schemaVersion": 3,
+        "sequences": {
+          "seq": {
+            "animationBindings": [],
+            "canvas": {
+              "background": "#000000",
+              "height": 90,
+              "width": 160,
+              "workingSpace": "srgb"
+            },
+            "ducking": [],
+            "durationPolicy": {
+              "kind": "derived"
+            },
+            "fps": {
+              "den": 1,
+              "num": 30
+            },
+            "id": "seq",
+            "items": [
+              {
+                "documentId": "doc",
+                "enabled": true,
+                "followPolicy": {
+                  "kind": "sequence-fixed"
+                },
+                "id": "colored-glow",
+                "locked": false,
+                "paintOrder": 0,
+                "span": {
+                  "durationFrames": 120,
+                  "fromFrame": 0
+                },
+                "styleDocumentId": "style",
+                "trackId": "trk_s1",
+                "type": "caption"
+              }
+            ],
+            "markers": [],
+            "name": "测试序列",
+            "revision": "1",
+            "tracks": [
+              {
+                "id": "trk_v1",
+                "kind": "visual",
+                "locked": false,
+                "muted": false,
+                "order": 0,
+                "solo": {
+                  "enabled": false,
+                  "group": "visual"
+                },
+                "visible": true
+              },
+              {
+                "id": "trk_s1",
+                "kind": "subtitle",
+                "locked": false,
+                "muted": false,
+                "order": 1,
+                "solo": {
+                  "enabled": false,
+                  "group": "visual"
+                },
+                "visible": true
+              }
+            ],
+            "transitions": []
+          }
+        },
+        "syncGroups": {},
+        "timeContractVersion": 1
+      }
+    },
+    {
+      "assets": [],
+      "audioSpectra": [],
+      "documents": [
+        {
+          "body": {
+            "clock": "sequence",
+            "cues": [
+              {
+                "end": 4000,
+                "id": "c0",
+                "start": 0,
+                "text": "Glow 字幕"
+              }
+            ],
+            "schema": "baocut.caption/1",
+            "timescale": 1000
+          },
+          "documentId": "doc",
+          "kind": "caption",
+          "lineKind": "original",
+          "schema": "baocut.caption/1"
+        },
+        {
+          "body": {
+            "scene": {
+              "kind": "inline",
+              "value": {
+                "animations": [],
+                "evaluationVersion": 1,
+                "layout": {
+                  "maxLines": 2,
+                  "pagination": {
+                    "maxUnitsPerPage": 2
+                  },
+                  "width": {
+                    "basis": "absolute",
+                    "value": 140
+                  },
+                  "x": {
+                    "basis": "absolute",
+                    "value": 80
+                  },
+                  "y": {
+                    "basis": "absolute",
+                    "value": 45
+                  }
+                },
+                "materials": [
+                  {
+                    "composite": "screen",
+                    "contextNodeId": "caption",
+                    "gamma": 2.2,
+                    "glowColorMatrix": [
+                      1.0,
+                      0.0,
+                      0.0,
+                      -0.15,
+                      1.4,
+                      -0.2,
+                      0.2,
+                      -0.1,
+                      1.1
+                    ],
+                    "glowTint": {
+                      "clock": {
+                        "duration": {
+                          "kind": "fixed",
+                          "ticks": 2000,
+                          "timescale": 1000
+                        },
+                        "origin": "start",
+                        "unit": "page"
+                      },
+                      "fill": {
+                        "after": "hold",
+                        "before": "hold"
+                      },
+                      "interpolation": "linear",
+                      "keys": [
+                        {
+                          "at": 0,
+                          "value": "#FF206000"
+                        },
+                        {
+                          "at": 1,
+                          "value": "#2080FFFF"
+                        }
+                      ],
+                      "kind": "keyframes"
+                    },
+                    "id": "bloom",
+                    "intensity": {
+                      "clock": {
+                        "duration": {
+                          "kind": "unit-span"
+                        },
+                        "origin": "start",
+                        "unit": "page"
+                      },
+                      "fill": {
+                        "after": "hold",
+                        "before": "hold"
+                      },
+                      "keys": [
+                        {
+                          "at": 0.0,
+                          "value": 0.05
+                        },
+                        {
+                          "at": 0.5,
+                          "value": 0.3
+                        },
+                        {
+                          "at": 1.0,
+                          "value": 0.1
+                        }
+                      ],
+                      "kind": "keyframes"
+                    },
+                    "kind": "glow-cascade",
+                    "levels": [
+                      {
+                        "horizontal": {
+                          "samples": {
+                            "kind": "constant",
+                            "value": 2
+                          },
+                          "scale": {
+                            "den": 1,
+                            "num": 1
+                          },
+                          "sigmaUv": {
+                            "kind": "constant",
+                            "value": 0.005
+                          },
+                          "stepUv": {
+                            "kind": "constant",
+                            "value": 0.00625
+                          }
+                        },
+                        "vertical": {
+                          "samples": {
+                            "kind": "constant",
+                            "value": 2
+                          },
+                          "scale": {
+                            "den": 1,
+                            "num": 1
+                          },
+                          "sigmaUv": {
+                            "kind": "constant",
+                            "value": 0.005
+                          },
+                          "stepUv": {
+                            "kind": "constant",
+                            "value": 0.00625
+                          }
+                        }
+                      },
+                      {
+                        "horizontal": {
+                          "samples": {
+                            "kind": "constant",
+                            "value": 2
+                          },
+                          "scale": {
+                            "den": 2,
+                            "num": 1
+                          },
+                          "sigmaUv": {
+                            "kind": "constant",
+                            "value": 0.005
+                          },
+                          "stepUv": {
+                            "kind": "constant",
+                            "value": 0.00625
+                          }
+                        },
+                        "vertical": {
+                          "samples": {
+                            "kind": "constant",
+                            "value": 2
+                          },
+                          "scale": {
+                            "den": 2,
+                            "num": 1
+                          },
+                          "sigmaUv": {
+                            "kind": "constant",
+                            "value": 0.005
+                          },
+                          "stepUv": {
+                            "kind": "constant",
+                            "value": 0.00625
+                          }
+                        }
+                      }
+                    ],
+                    "originalOpacity": {
+                      "kind": "constant",
+                      "value": 0.7
+                    }
+                  }
+                ],
+                "nodes": [
+                  {
+                    "id": "caption",
+                    "style": {
+                      "fill": "#FFFFFF",
+                      "fontSize": {
+                        "basis": "absolute",
+                        "value": 16
+                      }
+                    },
+                    "type": "text"
+                  }
+                ],
+                "parameters": [],
+                "requiredCapabilities": [
+                  "caption-scene/1",
+                  "caption-glow-cascade/1",
+                  "caption-glow-tint/1",
+                  "caption-glow-color-matrix/1"
+                ],
+                "schema": "baocut.caption-scene/1",
+                "selectors": [],
+                "speechState": {
+                  "gapPolicy": "hold-previous",
+                  "tailPolicy": "hold-last",
+                  "timingPolicy": "estimated"
+                }
+              }
+            },
+            "schema": "baocut.caption-scene-style/1"
+          },
+          "documentId": "style",
+          "kind": "caption-style",
+          "schema": "baocut.caption-scene-style/1"
+        }
+      ],
+      "name": "captions-glow-color-matrix",
+      "pictures": [],
+      "shots": [
+        {
+          "captions": true,
+          "frame": 3,
+          "height": 90,
+          "sha256": "c7e4d148aa1a655de1009526fa302d0b94c597120ed41f0bd0194cfc3fba2c3b",
+          "skipped": [],
+          "transparent": false,
+          "warnings": [],
+          "width": 160
+        },
+        {
+          "captions": true,
+          "frame": 15,
+          "height": 90,
+          "sha256": "55891cf012117306df41f4fe905f9646e5aeac8d29b9c6fc30b89143fa3b9b0c",
+          "skipped": [],
+          "transparent": false,
+          "warnings": [],
+          "width": 160
+        },
+        {
+          "captions": true,
+          "frame": 30,
+          "height": 90,
+          "sha256": "fcf19a195962c18939059978058034bc61f9f885a901ad029f266b0c94a64216",
+          "skipped": [],
+          "transparent": false,
+          "warnings": [],
+          "width": 160
+        },
+        {
+          "captions": true,
+          "frame": 61,
+          "height": 90,
+          "sha256": "fd0efdcef012540e94628ddd6cb05844e783c644cebf777c5cf7672cb69c6c54",
+          "skipped": [],
+          "transparent": false,
+          "warnings": [],
+          "width": 160
+        },
+        {
+          "captions": true,
+          "frame": 100,
+          "height": 90,
+          "sha256": "b100caba695b93168bb05432dc49b90dd6b8df5e315e8a9bd39886e14a4bec37",
+          "skipped": [],
+          "transparent": false,
+          "warnings": [],
+          "width": 160
+        },
+        {
+          "captions": true,
+          "frame": 15,
+          "height": 90,
+          "sha256": "55891cf012117306df41f4fe905f9646e5aeac8d29b9c6fc30b89143fa3b9b0c",
+          "skipped": [],
+          "transparent": false,
+          "warnings": [],
+          "width": 160
+        },
+        {
+          "associatedRgba": true,
+          "captions": true,
+          "frame": 15,
+          "height": 90,
+          "sha256": "115c16ff99b5014027a15232263a3944b184ff37faa9003e32ba449822c61000",
+          "skipped": [],
+          "transparent": true,
+          "warnings": [],
+          "width": 160
+        }
+      ],
+      "spectra": [],
+      "video": {
+        "assets": {},
+        "canvasVariants": {},
+        "checkpoints": {},
+        "documents": {},
+        "fonts": {},
+        "format": "baocut.video",
+        "id": "video_test",
+        "links": [],
+        "localizationSets": {},
+        "name": "测试",
+        "protections": {},
+        "revision": "1",
+        "rootSequenceId": "seq",
+        "schemaVersion": 3,
+        "sequences": {
+          "seq": {
+            "animationBindings": [],
+            "canvas": {
+              "background": "#000000",
+              "height": 90,
+              "width": 160,
+              "workingSpace": "srgb"
+            },
+            "ducking": [],
+            "durationPolicy": {
+              "kind": "derived"
+            },
+            "fps": {
+              "den": 1,
+              "num": 30
+            },
+            "id": "seq",
+            "items": [
+              {
+                "documentId": "doc",
+                "enabled": true,
+                "followPolicy": {
+                  "kind": "sequence-fixed"
+                },
+                "id": "colored-glow",
+                "locked": false,
+                "paintOrder": 0,
+                "span": {
+                  "durationFrames": 120,
+                  "fromFrame": 0
+                },
+                "styleDocumentId": "style",
+                "trackId": "trk_s1",
+                "type": "caption"
+              }
+            ],
+            "markers": [],
+            "name": "测试序列",
+            "revision": "1",
+            "tracks": [
+              {
+                "id": "trk_v1",
+                "kind": "visual",
+                "locked": false,
+                "muted": false,
+                "order": 0,
+                "solo": {
+                  "enabled": false,
+                  "group": "visual"
+                },
+                "visible": true
+              },
+              {
+                "id": "trk_s1",
+                "kind": "subtitle",
+                "locked": false,
+                "muted": false,
+                "order": 1,
+                "solo": {
+                  "enabled": false,
+                  "group": "visual"
+                },
+                "visible": true
+              }
+            ],
+            "transitions": []
+          }
+        },
+        "syncGroups": {},
+        "timeContractVersion": 1
+      }
+    },
+    {
+      "assets": [
+        {
+          "hex": "89504e470d0a1a0a0000000d4948445200000004000000010806000000f93c0fcd0000001549444154789c63f8cfc0f0ffff7f86ff601248000051bf09f7b3a5e1dc0000000049454e44ae426082",
+          "key": "noise-palette@rev_1"
+        }
+      ],
+      "audioSpectra": [],
+      "documents": [
+        {
+          "body": {
+            "clock": "sequence",
+            "cues": [
+              {
+                "end": 4000,
+                "id": "c0",
+                "start": 0,
+                "text": "Palette 字幕"
+              }
+            ],
+            "schema": "baocut.caption/1",
+            "timescale": 1000
+          },
+          "documentId": "doc",
+          "kind": "caption",
+          "lineKind": "original",
+          "schema": "baocut.caption/1"
+        },
+        {
+          "body": {
+            "scene": {
+              "kind": "inline",
+              "value": {
+                "animations": [],
+                "evaluationVersion": 1,
+                "layout": {
+                  "maxLines": 2,
+                  "pagination": {
+                    "maxUnitsPerPage": 2
+                  },
+                  "width": {
+                    "basis": "absolute",
+                    "value": 140
+                  },
+                  "x": {
+                    "basis": "absolute",
+                    "value": 80
+                  },
+                  "y": {
+                    "basis": "absolute",
+                    "value": 45
+                  }
+                },
+                "materials": [
+                  {
+                    "contextNodeId": "caption",
+                    "domain": {
+                      "height": {
+                        "kind": "constant",
+                        "value": 90
+                      },
+                      "width": {
+                        "kind": "constant",
+                        "value": 160
+                      },
+                      "x": {
+                        "kind": "constant",
+                        "value": 0
+                      },
+                      "y": {
+                        "kind": "constant",
+                        "value": 0
+                      }
+                    },
+                    "id": "texture",
+                    "kind": "noise-palette-mix",
+                    "palettePosition": {
+                      "kind": "constant",
+                      "value": 0.25
+                    },
+                    "paletteResourceId": "palette",
+                    "phase": {
+                      "expression": {
+                        "op": "read",
+                        "path": "time.progress"
+                      },
+                      "kind": "expression"
+                    }
+                  }
+                ],
+                "nodes": [
+                  {
+                    "id": "caption",
+                    "style": {
+                      "fill": "#FFFFFF",
+                      "fontSize": {
+                        "basis": "absolute",
+                        "value": 16
+                      }
+                    },
+                    "type": "text"
+                  }
+                ],
+                "parameters": [],
+                "requiredCapabilities": [
+                  "caption-scene/1",
+                  "caption-expressions/1",
+                  "caption-image-png/1",
+                  "caption-noise-palette-mix/1"
+                ],
+                "resources": [
+                  {
+                    "assetRef": {
+                      "id": "noise-palette",
+                      "revision": "rev_1"
+                    },
+                    "contentHash": "sha256:76c8f5964b64b0a1c56fb729ed4759ebd90ce912b9cb25c1e67f545e2622e0be",
+                    "id": "palette"
+                  }
+                ],
+                "schema": "baocut.caption-scene/1",
+                "selectors": [],
+                "speechState": {
+                  "gapPolicy": "hold-previous",
+                  "tailPolicy": "hold-last",
+                  "timingPolicy": "estimated"
+                }
+              }
+            },
+            "schema": "baocut.caption-scene-style/1"
+          },
+          "documentId": "style",
+          "kind": "caption-style",
+          "schema": "baocut.caption-scene-style/1"
+        }
+      ],
+      "name": "captions-noise-palette",
+      "pictures": [],
+      "shots": [
+        {
+          "captions": true,
+          "frame": 0,
+          "height": 90,
+          "sha256": "83eec2d01a0f29ce247c81ee1aa39e63d9dbf7c88e70f5450545c20888fd10f3",
+          "skipped": [],
+          "transparent": false,
+          "warnings": [],
+          "width": 160
+        },
+        {
+          "captions": true,
+          "frame": 3,
+          "height": 90,
+          "sha256": "6388892a98464f2c7e4cace21ce2682e2091cb04a7a4a68c141cb54f9acf33a3",
+          "skipped": [],
+          "transparent": false,
+          "warnings": [],
+          "width": 160
+        },
+        {
+          "captions": true,
+          "frame": 15,
+          "height": 90,
+          "sha256": "615d799ae0a091d6b430e00713335833217e66e9df7da172c14d7e32ff714e8d",
+          "skipped": [],
+          "transparent": false,
+          "warnings": [],
+          "width": 160
+        },
+        {
+          "captions": true,
+          "frame": 30,
+          "height": 90,
+          "sha256": "f4c154fde34a8e6e1f87298d25eeb29fddc5468201167bbd00f7010380a01a9c",
+          "skipped": [],
+          "transparent": false,
+          "warnings": [],
+          "width": 160
+        },
+        {
+          "captions": true,
+          "frame": 61,
+          "height": 90,
+          "sha256": "a39262d889f62d4c40f3c3f5b6fd8ed5d07fd8cf018f1ff739166cd383246106",
+          "skipped": [],
+          "transparent": false,
+          "warnings": [],
+          "width": 160
+        },
+        {
+          "captions": true,
+          "frame": 100,
+          "height": 90,
+          "sha256": "f518706602fe8e7483767d7564aa00c873da6d97139a109e4fcc496e59017b71",
+          "skipped": [],
+          "transparent": false,
+          "warnings": [],
+          "width": 160
+        },
+        {
+          "captions": true,
+          "frame": 15,
+          "height": 90,
+          "sha256": "615d799ae0a091d6b430e00713335833217e66e9df7da172c14d7e32ff714e8d",
+          "skipped": [],
+          "transparent": false,
+          "warnings": [],
+          "width": 160
+        },
+        {
+          "associatedRgba": true,
+          "captions": true,
+          "frame": 15,
+          "height": 90,
+          "sha256": "302673573cf5149f48f107ced4bc0d46fe8f6a8d0f7989925aae2f58fbdbeccf",
+          "skipped": [],
+          "transparent": true,
+          "warnings": [],
+          "width": 160
+        }
+      ],
+      "spectra": [],
+      "video": {
+        "assets": {},
+        "canvasVariants": {},
+        "checkpoints": {},
+        "documents": {},
+        "fonts": {},
+        "format": "baocut.video",
+        "id": "video_test",
+        "links": [],
+        "localizationSets": {},
+        "name": "测试",
+        "protections": {},
+        "revision": "1",
+        "rootSequenceId": "seq",
+        "schemaVersion": 3,
+        "sequences": {
+          "seq": {
+            "animationBindings": [],
+            "canvas": {
+              "background": "#000000",
+              "height": 90,
+              "width": 160,
+              "workingSpace": "srgb"
+            },
+            "ducking": [],
+            "durationPolicy": {
+              "kind": "derived"
+            },
+            "fps": {
+              "den": 1,
+              "num": 30
+            },
+            "id": "seq",
+            "items": [
+              {
+                "documentId": "doc",
+                "enabled": true,
+                "followPolicy": {
+                  "kind": "sequence-fixed"
+                },
+                "id": "noise-palette",
+                "locked": false,
+                "paintOrder": 0,
+                "span": {
+                  "durationFrames": 120,
+                  "fromFrame": 0
+                },
+                "styleDocumentId": "style",
+                "trackId": "trk_s1",
+                "type": "caption"
+              }
+            ],
+            "markers": [],
+            "name": "测试序列",
+            "revision": "1",
+            "tracks": [
+              {
+                "id": "trk_v1",
+                "kind": "visual",
+                "locked": false,
+                "muted": false,
+                "order": 0,
+                "solo": {
+                  "enabled": false,
+                  "group": "visual"
+                },
+                "visible": true
+              },
+              {
+                "id": "trk_s1",
+                "kind": "subtitle",
+                "locked": false,
+                "muted": false,
+                "order": 1,
+                "solo": {
+                  "enabled": false,
+                  "group": "visual"
+                },
+                "visible": true
+              }
+            ],
+            "transitions": []
+          }
+        },
+        "syncGroups": {},
+        "timeContractVersion": 1
+      }
+    },
+    {
+      "assets": [],
+      "audioSpectra": [],
+      "documents": [
+        {
+          "body": {
+            "clock": "sequence",
+            "cues": [
+              {
+                "end": 4000,
+                "id": "c0",
+                "start": 0,
                 "text": "One two three four",
                 "words": {
                   "first": "w0",

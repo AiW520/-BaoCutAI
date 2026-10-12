@@ -3,6 +3,7 @@ mod component_filters;
 mod cue_unit_context;
 mod glyph_envelope;
 mod materials;
+mod noise_palette;
 mod sampled_layout;
 mod scalar_cluster;
 mod text_line_layout;

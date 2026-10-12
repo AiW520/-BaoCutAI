@@ -817,6 +817,57 @@ fn scenes() -> Vec<Scene> {
         });
         scenes.push(component);
     }
+    for (name, matrix) in [("captions-glow-tint", false), ("captions-glow-color-matrix", true)] {
+        let mut style: Value = serde_json::from_str(include_str!("../../caption-scene/tests/fixtures/glow-cascade.json")).unwrap();
+        let scene = &mut style["scene"]["value"];
+        scene["requiredCapabilities"]
+            .as_array_mut()
+            .unwrap()
+            .push(json!("caption-glow-tint/1"));
+        scene["materials"][0]["glowTint"] = json!({"kind":"keyframes","clock":{"unit":"page","origin":"start","duration":{"kind":"fixed","ticks":2000,"timescale":1000}},"keys":[{"at":0,"value":"#FF206000"},{"at":1,"value":"#2080FFFF"}],"interpolation":"linear","fill":{"before":"hold","after":"hold"}});
+        if matrix {
+            scene["requiredCapabilities"]
+                .as_array_mut()
+                .unwrap()
+                .push(json!("caption-glow-color-matrix/1"));
+            scene["materials"][0]["glowColorMatrix"] = json!([1., 0., 0., -0.15, 1.4, -0.2, 0.2, -0.1, 1.1]);
+        }
+        let mut component = Scene::new(
+            name,
+            video(vec![caption("colored-glow", "doc", Some("style"), 120, &[])], vec![], json!({})),
+            &[3, 15, 30, 61, 100, 15],
+        );
+        component.documents = vec![
+            caption_doc("doc", "sequence", &[(0., 4., "Glow 字幕")], "original"),
+            style_doc("style", style),
+        ];
+        component.shots.push(Shot {
+            transparent: true,
+            associated_rgba: true,
+            ..shot(15)
+        });
+        scenes.push(component);
+    }
+    let noise_style: Value = serde_json::from_str(include_str!("../../caption-scene/tests/fixtures/noise-palette-mix.json")).unwrap();
+    let mut noise = Scene::new(
+        "captions-noise-palette",
+        video(vec![caption("noise-palette", "doc", Some("style"), 120, &[])], vec![], json!({})),
+        &[0, 3, 15, 30, 61, 100, 15],
+    );
+    noise.documents = vec![
+        caption_doc("doc", "sequence", &[(0., 4., "Palette 字幕")], "original"),
+        style_doc("style", noise_style),
+    ];
+    noise.binary_assets.push((
+        "noise-palette@rev_1",
+        include_bytes!("../../caption-scene/tests/fixtures/noise-palette.png").to_vec(),
+    ));
+    noise.shots.push(Shot {
+        transparent: true,
+        associated_rgba: true,
+        ..shot(15)
+    });
+    scenes.push(noise);
     let cue_word_style: Value = serde_json::from_str(include_str!("../../caption-scene/tests/fixtures/cue-word-context.json")).unwrap();
     let mut cue_word = Scene::new(
         "captions-cue-word-context",

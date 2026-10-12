@@ -61,6 +61,7 @@ fn padding(materials: &[CaptionMaterial]) -> u32 {
                 libm::ceil(max) as u32
             }
             CaptionMaterial::SoftBand { .. }
+            | CaptionMaterial::NoisePaletteMix { .. }
             | CaptionMaterial::GaussianAxis { .. }
             | CaptionMaterial::GlowCascade { .. } => 0,
             CaptionMaterial::Feedback {
@@ -431,6 +432,68 @@ impl ScenePlan {
                 }
                 Ok((source, hits))
             }
+            CaptionMaterial::NoisePaletteMix {
+                id,
+                context_node_id,
+                palette_resource_id,
+                palette_position,
+                phase,
+                domain,
+            } => {
+                let (mut source, hits) =
+                    self.material_prefix(ci, t, materials, prefix - 1, pad, size, budget, work)?;
+                let Some(mut context) =
+                    self.material_page_context(ci, t, context_node_id, budget)?
+                else {
+                    source.data_mut().fill(0);
+                    return Ok((source, vec![]));
+                };
+                context.stable_key.push_str(&format!("|material|{id}"));
+                let scene = self.style.scene();
+                let phase = component_uniform(
+                    phase,
+                    scene,
+                    &context,
+                    t,
+                    budget,
+                    0.0,
+                    -1_000_000.0,
+                    1_000_000.0,
+                )?;
+                let position =
+                    component_uniform(palette_position, scene, &context, t, budget, 0.0, 0.0, 1.0)?;
+                let mut rect = [0.0; 4];
+                for (index, value) in [&domain.x, &domain.y, &domain.width, &domain.height]
+                    .into_iter()
+                    .enumerate()
+                {
+                    let Some(value) =
+                        sample_value(value, ValueType::Length, scene, &context, t, budget)?
+                    else {
+                        source.data_mut().fill(0);
+                        return Ok((source, vec![]));
+                    };
+                    rect[index] = value.number()?;
+                }
+                let palette = self.images.get(palette_resource_id).ok_or_else(|| {
+                    anyhow::anyhow!("CAPTION_RESOURCE_MISSING: {palette_resource_id}")
+                })?;
+                // Fixed-cost six-corner noise and color arithmetic per destination.
+                // Charge the full surface before evaluating any pixels.
+                for _ in 0..32 {
+                    work.spend(size.0, size.1)?;
+                }
+                super::noise_palette::apply(
+                    source.data_mut(),
+                    size,
+                    pad,
+                    rect,
+                    phase,
+                    palette,
+                    position,
+                )?;
+                Ok((source, hits))
+            }
             CaptionMaterial::GaussianAxis {
                 id,
                 context_node_id,
@@ -492,6 +555,8 @@ impl ScenePlan {
                 gamma,
                 intensity,
                 original_opacity,
+                glow_tint,
+                glow_color_matrix,
                 composite,
             } => {
                 let (mut source, hits) =
@@ -550,6 +615,8 @@ impl ScenePlan {
                         0.0,
                         1.0,
                     )?,
+                    glow_tint: component_glow_tint(glow_tint.as_ref(), scene, &context, t, budget)?,
+                    glow_color_matrix: glow_color_matrix.unwrap_or(filters::IDENTITY_GLOW_MATRIX),
                     composite: match composite {
                         GlowComposite::Screen => filters::GlowComposite::Screen,
                         GlowComposite::SourceOverGlow => filters::GlowComposite::SourceOverGlow,
@@ -642,7 +709,9 @@ fn component_stack(materials: &[CaptionMaterial]) -> bool {
     materials.iter().any(|material| {
         matches!(
             material,
-            CaptionMaterial::GaussianAxis { .. } | CaptionMaterial::GlowCascade { .. }
+            CaptionMaterial::NoisePaletteMix { .. }
+                | CaptionMaterial::GaussianAxis { .. }
+                | CaptionMaterial::GlowCascade { .. }
         )
     })
 }
@@ -666,6 +735,32 @@ fn component_uniform(
     }
     Ok(value)
 }
+fn component_glow_tint(
+    value: Option<&DynamicValue>,
+    scene: &Scene,
+    context: &Context,
+    t: f64,
+    budget: &mut Budget,
+) -> Result<[f64; 3]> {
+    // Omitted tint retains the old evaluation budget and exact white behavior.
+    let Some(value) = value else {
+        return Ok([1.0; 3]);
+    };
+    let color = match sample_value(value, ValueType::Color, scene, context, t, budget)? {
+        Some(Evaluated::Color(color)) => color,
+        None => [1.0; 4],
+        _ => bail!("CAPTION_MATERIAL_INVALID: glow tint color"),
+    };
+    if color
+        .iter()
+        .any(|c| !c.is_finite() || !(0.0..=1.0).contains(c))
+    {
+        bail!("CAPTION_MATERIAL_INVALID: glow tint color");
+    }
+    // The alpha channel is validated as color data but is never a glow gain.
+    Ok([color[0], color[1], color[2]])
+}
+
 fn component_stage(
     stage: &GaussianStage,
     axis: filters::Axis,
@@ -1175,5 +1270,89 @@ mod soft_band_tests {
             .render(4.02)
             .unwrap();
         assert_eq!(p.render(4.02).unwrap().rgba, isolated.rgba);
+    }
+}
+
+#[cfg(test)]
+mod glow_tint_tests {
+    use super::*;
+    use serde_json::json;
+
+    #[test]
+    fn glow_tint_uses_shared_budget_color_type_and_white_keyframe_fallback() {
+        let body = serde_json::from_str(include_str!(
+            "../../../caption-scene/tests/fixtures/glow-cascade.json"
+        ))
+        .unwrap();
+        let style = caption_scene::parse_style(&body).unwrap();
+        let mut context = Context::default();
+        context.spans.insert(UnitKind::Page, (1.0, 2.0));
+        let mut none_budget = Budget::new(0);
+        assert_eq!(
+            component_glow_tint(None, style.scene(), &context, 0.0, &mut none_budget).unwrap(),
+            [1.0; 3]
+        );
+        assert_eq!(none_budget.remaining(), 0);
+        let value: DynamicValue =
+            serde_json::from_value(json!({"kind":"constant","value":"#FFFFFF00"})).unwrap();
+        assert!(
+            component_glow_tint(
+                Some(&value),
+                style.scene(),
+                &context,
+                0.0,
+                &mut Budget::new(0)
+            )
+            .unwrap_err()
+            .to_string()
+            .contains("CAPTION_BUDGET_EXCEEDED")
+        );
+        assert_eq!(
+            component_glow_tint(
+                Some(&value),
+                style.scene(),
+                &context,
+                0.0,
+                &mut Budget::new(1)
+            )
+            .unwrap(),
+            [1.0; 3]
+        );
+        let keys: DynamicValue = serde_json::from_value(json!({"kind":"keyframes","clock":{"unit":"page","origin":"start","duration":{"kind":"unit-span"}},"keys":[{"at":0,"value":"#FF0000"},{"at":1,"value":"#0000FF"}]})).unwrap();
+        assert_eq!(
+            component_glow_tint(
+                Some(&keys),
+                style.scene(),
+                &context,
+                0.0,
+                &mut Budget::default()
+            )
+            .unwrap(),
+            [1.0; 3]
+        );
+        assert_eq!(
+            component_glow_tint(
+                Some(&keys),
+                style.scene(),
+                &context,
+                1.0,
+                &mut Budget::default()
+            )
+            .unwrap(),
+            [1.0, 0.0, 0.0]
+        );
+        let invalid: DynamicValue = serde_json::from_value(json!({"kind":"expression","expression":{"op":"call","function":"mix","args":[{"op":"literal","type":"color","value":"#000000"},{"op":"literal","type":"color","value":"#FFFFFF"},{"op":"literal","type":"scalar","value":2}]}})).unwrap();
+        assert!(
+            component_glow_tint(
+                Some(&invalid),
+                style.scene(),
+                &context,
+                0.0,
+                &mut Budget::default()
+            )
+            .unwrap_err()
+            .to_string()
+            .contains("CAPTION_MATERIAL_INVALID")
+        );
     }
 }

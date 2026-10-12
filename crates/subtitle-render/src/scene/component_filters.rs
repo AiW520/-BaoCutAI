@@ -610,9 +610,14 @@ pub(super) struct GlowConfig {
     /// Exponent denominator for intensity shaping; per-pass gamma is separate.
     pub gamma: f64,
     pub original_opacity: f64,
+    /// RGB multiplier applied after cascade aggregation, before composition.
+    pub glow_tint: [f64; 3],
+    /// Row-major RGB matrix after tint, with clamping before source composition.
+    pub glow_color_matrix: [f64; 9],
     pub composite: GlowComposite,
     pub output: Size,
 }
+pub(super) const IDENTITY_GLOW_MATRIX: [f64; 9] = [1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0];
 impl GlowConfig {
     fn validate(&self) -> Result<f64> {
         ensure!(
@@ -627,6 +632,16 @@ impl GlowConfig {
         ensure!(
             self.original_opacity.is_finite() && (0.0..=1.0).contains(&self.original_opacity),
             "CAPTION_MATERIAL_INVALID: original opacity"
+        );
+        ensure!(
+            self.glow_tint
+                .iter()
+                .all(|c| c.is_finite() && (0.0..=1.0).contains(c)),
+            "CAPTION_MATERIAL_INVALID: glow tint"
+        );
+        ensure!(
+            self.glow_color_matrix.iter().all(|c| c.is_finite()),
+            "CAPTION_MATERIAL_INVALID: glow color matrix"
         );
         self.output.pixels()?;
         for level in &self.levels {
@@ -680,7 +695,7 @@ fn composite_pixel(
     gain: f64,
     x: u32,
     y: u32,
-) -> [f64; 4] {
+) -> Result<[f64; 4]> {
     let mut original = if cfg.original_opacity > 0.0 {
         sample(
             input,
@@ -706,11 +721,25 @@ fn composite_pixel(
             }
         }
     }
-    let glow = product.map(|value| ((1.0 - value) * gain.max(1.0)).clamp(0.0, 1.0));
-    std::array::from_fn(|channel| match cfg.composite {
+    let mut glow = product.map(|value| ((1.0 - value) * gain.max(1.0)).clamp(0.0, 1.0));
+    for (channel, tint) in glow.iter_mut().take(3).zip(cfg.glow_tint) {
+        *channel *= tint;
+    }
+    if cfg.glow_color_matrix != IDENTITY_GLOW_MATRIX {
+        let rgb = [glow[0], glow[1], glow[2]];
+        for (channel, row) in cfg.glow_color_matrix.chunks_exact(3).enumerate() {
+            let value = row[0] * rgb[0] + row[1] * rgb[1] + row[2] * rgb[2];
+            ensure!(
+                value.is_finite(),
+                "CAPTION_MATERIAL_INVALID: glow color matrix overflow"
+            );
+            glow[channel] = value.clamp(0.0, 1.0);
+        }
+    }
+    Ok(std::array::from_fn(|channel| match cfg.composite {
         GlowComposite::Screen => 1.0 - (1.0 - glow[channel]) * (1.0 - original[channel]),
         GlowComposite::SourceOverGlow => original[channel] + glow[channel] * (1.0 - original[3]),
-    })
+    }))
 }
 pub(super) fn cascade_glow(input: &ComponentImage, cfg: &GlowConfig) -> Result<GlowResult> {
     let gain = cfg.validate()?;
@@ -728,7 +757,7 @@ pub(super) fn cascade_glow(input: &ComponentImage, cfg: &GlowConfig) -> Result<G
     if let Some(roi) = composite_support(input.size, input.support, &metadata, cfg, gain) {
         for y in roi.top..roi.bottom {
             for x in roi.left..roi.right {
-                image.write(x, y, composite_pixel(input, &levels, cfg, gain, x, y));
+                image.write(x, y, composite_pixel(input, &levels, cfg, gain, x, y)?);
             }
         }
     }
@@ -1251,6 +1280,8 @@ mod tests {
             intensity: 0.2,
             gamma: 2.2,
             original_opacity: 0.7,
+            glow_tint: [1.0; 3],
+            glow_color_matrix: IDENTITY_GLOW_MATRIX,
             composite,
             output,
         }
@@ -1367,6 +1398,221 @@ mod tests {
     }
 
     #[test]
+    fn glow_tint_matches_dense_reference_after_aggregation_without_coloring_original_or_alpha() {
+        let input = image(
+            9,
+            7,
+            &[
+                (2, 2, [255, 255, 255, 200]),
+                (3, 2, [255, 255, 255, 200]),
+                (4, 3, [30, 90, 160, 255]),
+                (6, 4, [180, 70, 2, 0]),
+            ],
+        );
+        for composite in [GlowComposite::Screen, GlowComposite::SourceOverGlow] {
+            for intensity in [0.2, 8.0] {
+                let mut cfg = glow_config(input.size(), input.size(), composite);
+                cfg.intensity = intensity;
+                let baseline = cascade_glow(&input, &cfg).unwrap();
+                // This independent dense filter path computes its own levels;
+                // tint is applied to the completed emission, never its inputs.
+                let first =
+                    dense_gaussian(&dense_gaussian(&input, cfg.levels[0].x), cfg.levels[0].y);
+                let second =
+                    dense_gaussian(&dense_gaussian(&first, cfg.levels[1].x), cfg.levels[1].y);
+                let gain = libm::pow(intensity * 0.5, 1.0 / cfg.gamma);
+                for tint in [[1.0; 3], [0.0, 0.25, 0.75], [0.0; 3]] {
+                    cfg.glow_tint = tint;
+                    let actual = cascade_glow(&input, &cfg).unwrap();
+                    assert_eq!(actual.levels[0].data(), first.data());
+                    assert_eq!(actual.levels[1].data(), second.data());
+                    let mut expected = ComponentImage::zeroed(cfg.output).unwrap();
+                    for y in 0..cfg.output.height {
+                        for x in 0..cfg.output.width {
+                            let original = dense_sample(&input, x as f64, y as f64);
+                            let layers = [&first, &second].map(|level| {
+                                dense_sample(
+                                    level,
+                                    (x as f64 + 0.5) * level.width() as f64
+                                        / cfg.output.width as f64
+                                        - 0.5,
+                                    (y as f64 + 0.5) * level.height() as f64
+                                        / cfg.output.height as f64
+                                        - 0.5,
+                                )
+                            });
+                            let color = std::array::from_fn(|channel| {
+                                let combined = 1.0
+                                    - (1.0 - (layers[0][channel] * gain).clamp(0.0, 1.0))
+                                        * (1.0 - (layers[1][channel] * gain).clamp(0.0, 1.0));
+                                let emission = (combined * gain.max(1.0)).clamp(0.0, 1.0)
+                                    * if channel < 3 { tint[channel] } else { 1.0 };
+                                let original_channel = original[channel] * cfg.original_opacity;
+                                match composite {
+                                    GlowComposite::Screen => {
+                                        1.0 - (1.0 - emission) * (1.0 - original_channel)
+                                    }
+                                    GlowComposite::SourceOverGlow => {
+                                        original_channel
+                                            + emission * (1.0 - original[3] * cfg.original_opacity)
+                                    }
+                                }
+                            });
+                            expected.write(x, y, color);
+                        }
+                    }
+                    assert_eq!(actual.image.data(), expected.data());
+                    for (colored, white) in actual
+                        .image
+                        .data()
+                        .chunks_exact(4)
+                        .zip(baseline.image.data().chunks_exact(4))
+                    {
+                        assert_eq!(colored[3], white[3], "tint never changes alpha");
+                    }
+                    if tint == [1.0; 3] {
+                        assert_eq!(
+                            actual.image.data(),
+                            baseline.image.data(),
+                            "white is byte-identical"
+                        );
+                    }
+                    if tint == [0.0; 3] {
+                        for (colored, original) in actual
+                            .image
+                            .data()
+                            .chunks_exact(4)
+                            .zip(input.data().chunks_exact(4))
+                        {
+                            for channel in 0..3 {
+                                assert_eq!(
+                                    colored[channel],
+                                    quantize(
+                                        original[channel] as f64 / 255.0 * cfg.original_opacity
+                                    ),
+                                    "black glow tint retains original RGB"
+                                );
+                            }
+                        }
+                    }
+                }
+                cfg.glow_tint = [f64::NAN, 1.0, 1.0];
+                assert!(cascade_glow(&input, &cfg).is_err());
+                cfg.glow_tint = [1.01, 1.0, 1.0];
+                assert!(estimate_glow_reads(&input, &cfg).is_err());
+            }
+        }
+    }
+
+    #[test]
+    fn glow_matrix_matches_independent_rgb_reference_after_tint_and_preserves_alpha() {
+        let input = image(
+            3,
+            2,
+            &[
+                (0, 0, [255, 255, 255, 96]),
+                (1, 0, [12, 210, 45, 255]),
+                (2, 0, [180, 60, 240, 0]),
+                (0, 1, [0, 255, 0, 40]),
+                (1, 1, [70, 10, 200, 90]),
+                (2, 1, [170, 140, 15, 150]),
+            ],
+        );
+        let swap = [0.0, 0.0, 1.0, 1.0, 0.0, 0.0, 0.0, 1.0, 0.0];
+        let selective = [
+            1.0, 0.0, 0.0, -0.104270, 1.148957, -0.044687, -0.104270, -0.351043, 1.455313,
+        ];
+        for composite in [GlowComposite::Screen, GlowComposite::SourceOverGlow] {
+            for intensity in [0.2, 8.0] {
+                let mut cfg = glow_config(input.size(), input.size(), composite);
+                cfg.intensity = intensity;
+                for level in &mut cfg.levels {
+                    level.x.output = input.size();
+                    level.y.output = input.size();
+                    level.x.sample_count = 0.0;
+                    level.y.sample_count = 0.0;
+                }
+                cfg.glow_tint = [0.4, 0.7, 0.2];
+                let baseline = cascade_glow(&input, &cfg).unwrap();
+                let gain = libm::pow(intensity * 0.5, 1.0 / cfg.gamma);
+                for matrix in [IDENTITY_GLOW_MATRIX, swap, selective, [0.0; 9]] {
+                    cfg.glow_color_matrix = matrix;
+                    let actual = cascade_glow(&input, &cfg).unwrap();
+                    let mut expected = Vec::new();
+                    for source in input.data().chunks_exact(4) {
+                        let original: [f64; 4] = std::array::from_fn(|i| source[i] as f64 / 255.0);
+                        let aggregated = original.map(|v| {
+                            let level = (v * gain).clamp(0.0, 1.0);
+                            ((1.0 - (1.0 - level) * (1.0 - level)) * gain.max(1.0)).clamp(0.0, 1.0)
+                        });
+                        let rgb: [f64; 3] =
+                            std::array::from_fn(|i| aggregated[i] * cfg.glow_tint[i]);
+                        // Independent reference formulas: channel permutation and
+                        // selective G/B luminance adjustment, not the matrix loop.
+                        let transformed = if matrix == IDENTITY_GLOW_MATRIX {
+                            rgb
+                        } else if matrix == swap {
+                            [rgb[2], rgb[0], rgb[1]]
+                        } else if matrix == [0.0; 9] {
+                            [0.0; 3]
+                        } else {
+                            let luminance =
+                                0.208540 * rgb[0] + 0.702086 * rgb[1] + 0.089374 * rgb[2];
+                            [
+                                rgb[0],
+                                (1.5 * rgb[1] - 0.5 * luminance).clamp(0.0, 1.0),
+                                (1.5 * rgb[2] - 0.5 * luminance).clamp(0.0, 1.0),
+                            ]
+                        };
+                        for channel in 0..4 {
+                            let g = if channel < 3 {
+                                transformed[channel]
+                            } else {
+                                aggregated[3]
+                            };
+                            let o = original[channel] * cfg.original_opacity;
+                            expected.push(quantize(match composite {
+                                GlowComposite::Screen => 1.0 - (1.0 - g) * (1.0 - o),
+                                GlowComposite::SourceOverGlow => {
+                                    o + g * (1.0 - original[3] * cfg.original_opacity)
+                                }
+                            }));
+                        }
+                    }
+                    assert_eq!(actual.image.data(), expected.as_slice());
+                    for (current, original) in actual
+                        .image
+                        .data()
+                        .chunks_exact(4)
+                        .zip(baseline.image.data().chunks_exact(4))
+                    {
+                        assert_eq!(current[3], original[3]);
+                    }
+                    if matrix == IDENTITY_GLOW_MATRIX {
+                        assert_eq!(actual.image.data(), baseline.image.data());
+                    }
+                    assert_eq!(
+                        actual.levels[0].data(),
+                        input.data(),
+                        "matrix never colors source levels"
+                    );
+                }
+                cfg.intensity = 8.0;
+                cfg.glow_tint = [1.0; 3];
+                cfg.glow_color_matrix = [f64::MAX; 9];
+                assert!(
+                    cascade_glow(&input, &cfg)
+                        .unwrap_err()
+                        .to_string()
+                        .contains("CAPTION_MATERIAL_INVALID")
+                );
+                cfg.glow_color_matrix = [f64::NAN; 9];
+                assert!(estimate_glow_reads(&input, &cfg).is_err());
+            }
+        }
+    }
+
+    #[test]
     fn sparse_text_sized_work_stays_bounded_without_changing_pass_resolution() {
         for size in [
             Size {
@@ -1442,6 +1688,8 @@ mod tests {
                 intensity: 0.05,
                 gamma: 2.2,
                 original_opacity: 1.0,
+                glow_tint: [1.0; 3],
+                glow_color_matrix: IDENTITY_GLOW_MATRIX,
                 composite: GlowComposite::Screen,
                 output: size,
             };

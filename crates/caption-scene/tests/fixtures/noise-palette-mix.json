@@ -1,0 +1,102 @@
+{
+  "schema": "baocut.caption-scene-style/1",
+  "scene": {
+    "kind": "inline",
+    "value": {
+      "schema": "baocut.caption-scene/1",
+      "evaluationVersion": 1,
+      "requiredCapabilities": [
+        "caption-scene/1",
+        "caption-expressions/1",
+        "caption-image-png/1",
+        "caption-noise-palette-mix/1"
+      ],
+      "parameters": [],
+      "layout": {
+        "width": {
+          "value": 140,
+          "basis": "absolute"
+        },
+        "x": {
+          "value": 80,
+          "basis": "absolute"
+        },
+        "y": {
+          "value": 45,
+          "basis": "absolute"
+        },
+        "maxLines": 2,
+        "pagination": {
+          "maxUnitsPerPage": 2
+        }
+      },
+      "speechState": {
+        "gapPolicy": "hold-previous",
+        "tailPolicy": "hold-last",
+        "timingPolicy": "estimated"
+      },
+      "nodes": [
+        {
+          "id": "caption",
+          "type": "text",
+          "style": {
+            "fontSize": {
+              "value": 16,
+              "basis": "absolute"
+            },
+            "fill": "#FFFFFF"
+          }
+        }
+      ],
+      "selectors": [],
+      "animations": [],
+      "materials": [
+        {
+          "kind": "noise-palette-mix",
+          "id": "texture",
+          "contextNodeId": "caption",
+          "paletteResourceId": "palette",
+          "palettePosition": {
+            "kind": "constant",
+            "value": 0.25
+          },
+          "phase": {
+            "kind": "expression",
+            "expression": {
+              "op": "read",
+              "path": "time.progress"
+            }
+          },
+          "domain": {
+            "x": {
+              "kind": "constant",
+              "value": 0
+            },
+            "y": {
+              "kind": "constant",
+              "value": 0
+            },
+            "width": {
+              "kind": "constant",
+              "value": 160
+            },
+            "height": {
+              "kind": "constant",
+              "value": 90
+            }
+          }
+        }
+      ],
+      "resources": [
+        {
+          "id": "palette",
+          "assetRef": {
+            "id": "noise-palette",
+            "revision": "rev_1"
+          },
+          "contentHash": "sha256:76c8f5964b64b0a1c56fb729ed4759ebd90ce912b9cb25c1e67f545e2622e0be"
+        }
+      ]
+    }
+  }
+}
