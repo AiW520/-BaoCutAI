@@ -47,10 +47,13 @@
 
   const slug = (s) => String(s || '视频').replace(/[\\/:*?"<>|]/g, ' ').trim();
 
-  /* 下载：话里的链接；演示的失败链接（带 fail）在 34% 断网，下载卡写原因与重试 */
+  /* 下载：话里的链接；演示的失败链接（带 fail）在 34% 断网，下载卡写原因与重试；要登录的链接（带 login、members）
+     在开头就停下，Agent 用设置链接请用户去设置 › 视频下载的网站登录（loginReply） */
   const URL_RE = /https?:\/\/[^\s，。、）)」]+/i;
   const DOWNLOAD_RE = /下载|拉下来|保存这个视频/;
   const FAIL_AT = 34;
+  const LOGIN_FAIL_AT = 3;
+  const LOGIN_RE = /login|signin|members|private/i;
   const hostOf = (u) => { const m = /^https?:\/\/([^/?#]+)/i.exec(u); return m ? m[1].replace(/^www\./i, '').toLowerCase() : ''; };
   function fileOf(u) {
     const m = /\/([^/?#]+\.(mp4|mov|mkv|webm|m4v))(?:[?#]|$)/i.exec(u);
@@ -84,7 +87,7 @@
       close: null,
       sim: {kind: 'download', tool: 'downloads_fetch', args: {site: p.site, name: p.name},
         task: {url: u, site: p.site, name: p.name, title: p.title, sizeMB: p.sizeMB, mediaSec: p.durationSec, hue: p.hue,
-          scenario: /fail|broken/i.test(u) ? 'network' : 'success'},
+          scenario: /fail|broken/i.test(u) ? 'network' : LOGIN_RE.test(u) ? 'login' : 'success'},
         result: {}},
     };
   }
@@ -263,9 +266,21 @@
     return sim.step || (PACE[sim.kind] || PACE.export).step;
   }
 
-  /** 下载这一拍该不该断：演示的失败链接在 FAIL_AT 断一次；重试过的不再断。 */
+  /** 下载这一拍该不该断：演示的失败链接在 FAIL_AT 断一次；重试过的不再断。要登录的链接读完页面就停（LOGIN_FAIL_AT）。 */
   function downloadFails(task, pct) {
-    return !!task && task.scenario === 'network' && !task.retried && pct >= FAIL_AT;
+    if (!task || task.retried) return false;
+    if (task.scenario === 'login') return pct >= LOGIN_FAIL_AT;
+    return task.scenario === 'network' && pct >= FAIL_AT;
+  }
+
+  /** 下载要登录时 Agent 的话：已经按网站登录的设置试过浏览器的 Cookie，网站仍要求登录。去哪里改写成设置链接
+      （product-design §3.2.2；正式客户端里地址来自 LINK_LOGIN_REQUIRED 错误的 details.settingsHref，Agent 不自己猜）。 */
+  function loginReply(task) {
+    const L = window.BC_SETTINGS_LINK;
+    const href = '/settings/downloader';
+    const site = (task && task.site) || '这个网站';
+    return `这个视频要登录才能看：试过的浏览器 Cookie 里，${site} 仍然要求登录。`
+      + `先在浏览器里登录 ${site}，再到[${L.parse(href).trail}](${href})确认网站登录勾选了那个浏览器。弄好后告诉我，我重新下载。`;
   }
 
   /** 下载完成后 Agent 的收尾话与接着起的转录。 */
@@ -285,7 +300,7 @@
       : `${what}已取消，视频里没有写入任何东西。要接着做，再说一声就行。`;
   }
 
-  window.BC_AGENT_SIM = {TRANSCRIBE_RE, URL_RE, SCHEDULE, PACE, LANG, FAIL_AT, planFor, transcribePlan, noTranscriberPlan, downloadPlan, probe, simFor, retrySim,
+  window.BC_AGENT_SIM = {TRANSCRIBE_RE, URL_RE, SCHEDULE, PACE, LANG, FAIL_AT, LOGIN_FAIL_AT, planFor, transcribePlan, noTranscriberPlan, downloadPlan, probe, simFor, retrySim,
     asrTask, waitPlan, waitClose,
-    stageAt, progress, done, pace, downloadFails, afterDownload, stoppedText};
+    stageAt, progress, done, pace, downloadFails, loginReply, afterDownload, stoppedText};
 })();

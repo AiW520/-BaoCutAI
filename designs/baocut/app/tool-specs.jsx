@@ -112,7 +112,7 @@
   /**
    * 下载视频。st: {url, transcribe, saveDir, cookieBrowsers, lang?, model?, modelName?}
    * 媒体文件与（勾了下载后转录时）文稿、字幕都保存在 `saveDir`，各是一个 Space 条目。
-   * cookieBrowsers 已按尝试顺序排好；演示里第一个就用上，失败时第一个读不到 Cookie、其余仍要求登录（product-design §2.7）。
+   * cookieBrowsers 来自设置 › 视频下载的网站登录，已按尝试顺序排好；演示里第一个就用上，失败时第一个读不到 Cookie、其余仍要求登录（product-design §2.7）。
    */
   function link(app, st) {
     const media = Run().linkMedia(st.url);
@@ -123,7 +123,7 @@
     const browsers = st.cookieBrowsers || [];
     return {params: paramsOf(st), tool: 'link', input: 'link', opts, title: `下载视频 · ${media.title}`, sub: CK.subText(browsers),
       failMessage: browsers.length ? CK.failureText(browsers.map((browser, i) => ({browser, login: i > 0})), (app.downloader && app.downloader.demoHost) || 'darwin')
-        : '网站要求登录或验证。先在浏览器中登录目标网站，再在「网站登录」里勾选该浏览器后重新下载；网站解析失败时更新 yt-dlp 并重新检测。',
+        : '网站要求登录或验证。先在浏览器中登录目标网站，再在「设置 › 视频下载」的网站登录里勾选该浏览器后重新下载；网站解析失败时更新 yt-dlp 并重新检测。',
       movie: null, create: null, saveDir,
       effects: {
         store: (ctx) => Run().storeDownload(ctx.app, ctx, media, null),

@@ -5,6 +5,8 @@
     {k: 'general', label: '通用', pages: ['general']},
     {k: 'shortcuts', label: '快捷键', pages: ['shortcuts']},
     {k: 'fonts', label: '字体', pages: ['fonts']},   // 按需下载的字体（product-design §5.9、§7.6），settings-fonts.jsx
+    /* 视频下载：yt-dlp 的状态与维护、网站登录（浏览器 Cookie），下载视频工具与智能体都按它下载（product-design §2.7），settings-downloader.jsx */
+    {k: 'downloader', label: '视频下载', pages: ['downloader']},
     /* Agent 自成一组：提供方与 Skills 各一项；智能体登录在这里，不是 API 提供方（§7.6）。 */
     {k: 'agent', label: 'Agent 提供方', pages: ['agent']},
     {k: 'skills', label: 'Skills', pages: ['skills']},
@@ -34,7 +36,8 @@
     vision: '识别人像、说话人和画面内容，辅助智能裁剪。只用这台电脑上的模型。',
   };
   /* 只有语音合成一项有两页（Tab）；其余页名只用于搜索 */
-  const PAGE_LABEL = {tts: '模型', voices: '我的声音', providers: 'API 提供方 服务商 账号 密钥', usage: '用量 花费 余额', agent: 'Agent 提供方', skills: 'Skills'};
+  const PAGE_LABEL = {tts: '模型', voices: '我的声音', providers: 'API 提供方 服务商 账号 密钥', usage: '用量 花费 余额', agent: 'Agent 提供方', skills: 'Skills',
+    downloader: 'yt-dlp 下载工具 网站登录 浏览器 Cookie'};
   const LOCAL_TABS = NAV.filter((n) => n.local).map((n) => n.local);
   /* 旧「云端模型」页的 tab → 能力页 */
   const CLOUD_TAB = {stt: 'asr', llm: 'llm', tts: 'tts', image: 'image'};   // 音乐生成没有云端页，不在这张表
@@ -65,7 +68,7 @@
   }
 
   const GROUPS = [
-    {id: 'preferences', label: '偏好设置', keys: ['general', 'shortcuts', 'fonts']},
+    {id: 'preferences', label: '偏好设置', keys: ['general', 'shortcuts', 'fonts', 'downloader']},
     {id: 'agents', label: 'Agent', keys: ['agent', 'skills']},   // 组 id 不能与条目键重名：SideNav 把两者放在同一个集合里
     {id: 'models', label: '模型', keys: NAV.filter((n) => n.model).map((n) => n.k)},
     {id: 'app', label: '应用', keys: ['glossary', 'privacy', 'diagnostics', 'about']},

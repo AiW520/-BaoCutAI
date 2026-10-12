@@ -93,3 +93,22 @@ test('演示挡位与检测结果按主机一一对应；Windows 上没有 Safar
   assert.equal(C.demoDetected('win32', 'one'), C.DEMO_DETECTED.win32.one);
   assert.equal(C.demoDetected('linux', 'bogus'), C.DEMO_DETECTED.darwin.several);
 });
+
+test('设置默认带 Cookie：没设置过是所有检测到的浏览器，之后新检测到的也算进去', () => {
+  const two = [{id: 'chrome'}, {id: 'safari'}];
+  const three = two.concat({id: 'firefox'});
+  assert.equal(C.setting({}), C.ALL);
+  assert.equal(C.setting(null), C.ALL);
+  assert.deepEqual(C.resolve(C.setting({}), two), ['chrome', 'safari']);
+  assert.deepEqual(C.resolve(C.ALL, three), ['chrome', 'safari', 'firefox']);
+  assert.deepEqual(C.resolve(C.ALL, []), []);
+});
+
+test('勾选结果存回设置：全选存 ALL，部分勾选存按检测顺序的列表，都不勾存空列表（匿名下载）', () => {
+  const detected = [{id: 'chrome'}, {id: 'safari'}, {id: 'firefox'}];
+  assert.equal(C.save(['firefox', 'chrome', 'safari'], detected), C.ALL);
+  assert.deepEqual(C.save(['firefox', 'chrome'], detected), ['chrome', 'firefox']);
+  assert.deepEqual(C.save([], detected), []);
+  assert.deepEqual(C.setting({cookieBrowsers: []}), []);
+  assert.deepEqual(C.resolve(C.setting({cookieBrowsers: ['firefox', 'edge']}), detected), ['firefox']);
+});

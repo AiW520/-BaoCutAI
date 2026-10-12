@@ -1,9 +1,11 @@
-/* 下载视频的「网站登录」（product-design §2.7「下载视频」，architecture §7.9 Cookie、§12.9「本机浏览器」）——window.BC_TOOL_COOKIES。
+/* 设置 › 视频下载的「网站登录」（product-design §2.7「下载视频」，architecture §7.9 Cookie、§12.9「本机浏览器」）——window.BC_TOOL_COOKIES。
    纯函数，无 React、无 DOM；只在 App 入口加载。
 
    - 只列出 Runtime 检测到有 Cookie 库的浏览器（`externalTools.cookieBrowsers`），最近用过的在前。
    - 勾选的浏览器按列出的顺序逐个试（不是按点选的先后）：读不到 Cookie 或网站仍要求登录时换下一个，用上一个就停。
-   - 「所有浏览器」不是一个取值：勾上就是全选检测到的，提交的仍是浏览器列表；只勾了一部分时半选。都不勾是匿名下载。 */
+   - 「所有浏览器」在界面上是全选检测到的（只勾了一部分时半选），提交给下载的仍是浏览器列表。都不勾是匿名下载。
+   - 这是一项设置，下载视频工具、从链接转录与智能体下载都用它。默认带 Cookie：没设置过是 `ALL`（所有检测到的浏览器）；
+     勾成全选时也存回 `ALL`，之后新检测到的浏览器跟着算进去；其余存浏览器列表，空列表是匿名下载。 */
 (function () {
   const root = typeof window !== 'undefined' ? window : globalThis;
 
@@ -100,6 +102,25 @@
     return lines;
   }
 
+  /* 设置的取值：`ALL` 或浏览器列表（空列表 = 匿名下载） */
+  const ALL = 'all';
+
+  /** 设置里存的值；没设置过是 `ALL`（默认带 Cookie）。 */
+  function setting(prefs) {
+    const v = prefs ? prefs.cookieBrowsers : undefined;
+    return Array.isArray(v) ? v : ALL;
+  }
+
+  /** 设置 → 这一次下载按顺序试的浏览器：`ALL` 是检测到的全部，列表只留还检测得到的。 */
+  function resolve(value, detected) {
+    return value === ALL ? (detected || []).map((b) => b.id) : ordered(value, detected);
+  }
+
+  /** 勾选结果 → 存回设置的值：检测到的全勾上存 `ALL`，否则存按检测顺序排好的列表。 */
+  function save(list, detected) {
+    return allState(list, detected).selected ? ALL : ordered(list, detected);
+  }
+
   /** 一个都没检测到时的说明。 */
   const EMPTY = '这台电脑上没有找到浏览器的 Cookie，只能匿名下载。在浏览器里登录过目标网站后，点「重新检测浏览器」。';
 
@@ -120,7 +141,7 @@
   function failureText(attempts, platform) {
     if (attempts.length === 1) {
       const id = attempts[0].browser;
-      if (attempts[0].login) return '网站要求登录或验证。先在浏览器中登录目标网站，再在「网站登录」里勾选该浏览器后重新下载。';
+      if (attempts[0].login) return '网站要求登录或验证。先在浏览器中登录目标网站，再在「设置 › 视频下载」的网站登录里勾选该浏览器后重新下载。';
       if (id === 'safari') return '读取不到 Safari 的 Cookie。在「系统设置 › 隐私与安全性 › 完全磁盘访问权限」里允许 BaoCut，或换一个浏览器。';
       /* Windows 上没有系统密钥授权这一说：Chromium 内核的先要完全退出，Chrome、Edge、Brave 还可能是应用绑定加密 */
       if (platform === 'win32' && CHROMIUM.indexOf(id) >= 0) {
@@ -134,5 +155,6 @@
     return `试了 ${attempts.length} 个浏览器的 Cookie 都没成功（${reasons}）。确认在其中一个浏览器里登录了目标网站后重新下载。`;
   }
 
-  root.BC_TOOL_COOKIES = {LABEL, DEMO_DETECTED, EMPTY, label, demoDetected, demoScenes, ordered, allState, toggleAll, toggle, notes, subText, usedText, failureText};
+  root.BC_TOOL_COOKIES = {LABEL, DEMO_DETECTED, EMPTY, ALL, label, demoDetected, demoScenes, ordered, allState, toggleAll, toggle, setting, resolve, save,
+    notes, subText, usedText, failureText};
 })();

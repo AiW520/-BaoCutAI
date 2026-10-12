@@ -345,8 +345,13 @@
 .tool-link__url { width: 100%; }
 /* 网站登录的浏览器：一组复选框横排，放不下自然换行（product-design §2.7） */
 .tool-link__browsers { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 16px; }
+/* 设置 › 视频下载（settings-downloader.jsx）：卡片里是一列说明与控件，不是 setrow；网站登录的标题行右边是「重新检测浏览器」 */
+.setdl__lead { margin: 0 0 24px; }
+.setdl__card { display: flex; flex-direction: column; gap: 8px; padding-block: 16px; }
+.setdl__head { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
+.setdl__head h2 { margin: 0; font-size: 14px; font-weight: 500; }
 
-/* 下载工具的更新（tool-link.jsx）：一行命令（代码块，右边是执行与复制）、命令下面的输出 */
+/* 下载工具的更新（settings-downloader.jsx）：一行命令（代码块，右边是执行与复制）、命令下面的输出 */
 .tool-update { display: flex; flex-direction: column; gap: 8px; padding-top: 12px; border-top: 2px solid var(--gray-100); }
 .tool-update__manual { display: flex; flex-direction: column; gap: 4px; }
 .tool-update__out { display: flex; flex-direction: column; gap: 8px; }
