@@ -3650,6 +3650,8 @@ pub(crate) fn put_document(state: &mut VideoState, input: PutDocumentInput<'_>, 
         s if video_model::caption_style::is_boxed_style_schema(s) || s.starts_with("baocut.caption-scene-style/") => video_model::caption_style::caption_style_body_problems(input.body),
         _ => Vec::new(),
     };
+    let mut problems = problems;
+    problems.extend(video_model::caption_style::scene_resource_problems(input.body, &state.assets));
     if !problems.is_empty() {
         return Err(ErrorBody::invalid_operation(msg!(
             "engine.bodyNotSchema",
@@ -3784,6 +3786,7 @@ pub(crate) fn put_document(state: &mut VideoState, input: PutDocumentInput<'_>, 
     record.revisions.insert(
         revision.clone(),
         DocumentRevision {
+            asset_refs: video_model::caption_style::scene_asset_refs(input.body).unwrap_or_default(),
             revision: revision.clone(),
             content_hash: content_hash.clone(),
             byte_length: text.len() as u64,

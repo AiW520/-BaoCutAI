@@ -561,3 +561,54 @@ fn dynamic_caption_documents_validate_before_transaction_commit() {
     assert!(error.message.contains("CAPTION_PROPERTY_UNSUPPORTED"));
     assert_eq!(video.revision(), before);
 }
+
+#[test]
+fn scene_resources_are_versioned_and_retained_by_document_history() {
+    let Fixture { mut video, _dir, .. } = fixture();
+    let png = _dir.path().join("badge.png");
+    std::fs::write(&png, include_bytes!("../../caption-scene/tests/fixtures/badge.png")).unwrap();
+    let imported = apply(
+        &mut video,
+        "cmd_badge",
+        vec![json!({"type":"importAsset","path":png,"storage":"managed","ref":"badge"})],
+    )
+    .unwrap();
+    let id = imported.receipt.refs["badge"].clone();
+    let asset = &video.state().assets[&id];
+    let revision = asset.current_revision.clone();
+    let hash = asset.revisions[&revision].content_hash.clone();
+    let mut body: Value = serde_json::from_str(include_str!("../../caption-scene/tests/fixtures/word-pop.json")).unwrap();
+    body["scene"]["value"]["resources"] = json!([{"id":"badge","assetRef":{"id":id,"revision":revision},"contentHash":hash}]);
+    let before = video.revision();
+    let mut bad = body.clone();
+    bad["scene"]["value"]["resources"][0]["contentHash"] = json!(format!("sha256:{}", "0".repeat(64)));
+    assert!(
+        apply(
+            &mut video,
+            "cmd_bad_resource",
+            vec![json!({"type":"putDocument","kind":"caption-style","body":bad})]
+        )
+        .is_err()
+    );
+    assert_eq!(video.revision(), before);
+    let committed = apply(
+        &mut video,
+        "cmd_resource_style",
+        vec![json!({"type":"putDocument","kind":"caption-style","body":body,"ref":"style"})],
+    )
+    .unwrap();
+    let style = committed.receipt.refs["style"].clone();
+    let record = &video.state().documents[&style];
+    assert_eq!(record.revisions[&record.current_revision].asset_refs[0].id, id);
+    assert!(!video.unused_assets().iter().any(|a| a.asset_id == id));
+    body["scene"]["value"]["resources"] = json!([]);
+    apply(
+        &mut video,
+        "cmd_remove_style_resource",
+        vec![json!({"type":"putDocument","documentId":style,"kind":"caption-style","body":body})],
+    )
+    .unwrap();
+    assert!(!video.unused_assets().iter().any(|a| a.asset_id == id));
+    let users = video_engine::asset_usage::asset_users(video.state());
+    assert!(users[&id].contains(&style));
+}

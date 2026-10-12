@@ -170,3 +170,45 @@ pub fn presentation_problems(value: &caption_scene::Presentation) -> Vec<Text> {
         .into_iter()
         .collect()
 }
+
+/// Frozen resources referenced by a supported scene style; other documents have no scene refs.
+pub fn scene_asset_refs(body: &Value) -> Result<Vec<crate::VersionRef>, String> {
+    if body.get("schema").and_then(Value::as_str) != Some(caption_scene::STYLE_SCHEMA) {
+        return Ok(vec![]);
+    }
+    let style = caption_scene::parse_style(body).map_err(|e| e.to_string())?;
+    Ok(style
+        .scene()
+        .resources
+        .iter()
+        .map(|r| crate::VersionRef {
+            id: r.asset_ref.id.clone(),
+            revision: r.asset_ref.revision.clone(),
+        })
+        .collect())
+}
+pub fn scene_resource_problems(body: &Value, assets: &std::collections::BTreeMap<crate::Id, crate::AssetRecord>) -> Vec<Text> {
+    if body.get("schema").and_then(Value::as_str) != Some(caption_scene::STYLE_SCHEMA) {
+        return vec![];
+    }
+    let Ok(style) = caption_scene::parse_style(body) else {
+        return caption_style_body_problems(body);
+    };
+    style
+        .scene()
+        .resources
+        .iter()
+        .filter_map(|r| {
+            let found = assets.get(&r.asset_ref.id).and_then(|a| a.revisions.get(&r.asset_ref.revision));
+            if found.is_some_and(|a| a.content_hash == r.content_hash && a.media_type == "image/png") {
+                None
+            } else {
+                Some(msg!(
+                    "videoModel.bodyShape",
+                    "The body has fields of the wrong shape: {error}",
+                    error = format!("CAPTION_RESOURCE_MISSING_OR_MISMATCH: {}@{}", r.asset_ref.id, r.asset_ref.revision)
+                ))
+            }
+        })
+        .collect()
+}

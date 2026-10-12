@@ -2,7 +2,13 @@ use crate::*;
 use serde_json::Value;
 use std::collections::{BTreeMap, BTreeSet};
 
-pub const CAPABILITIES: &[&str] = &["caption-scene/1", "caption-expressions/1", "caption-unit-animation/1"];
+pub const CAPABILITIES: &[&str] = &[
+    "caption-scene/1",
+    "caption-expressions/1",
+    "caption-unit-animation/1",
+    "caption-image-png/1",
+    "caption-paint-stack/1",
+];
 pub fn property_type(property: &str) -> Option<ValueType> {
     Some(match property {
         "transform.x" | "transform.y" | "width" | "height" | "radius" => ValueType::Length,
@@ -106,12 +112,21 @@ pub fn validate_scene(s: &Scene) -> Result<()> {
             return Err(Diagnostic::new("CAPTION_CAPABILITY_UNAVAILABLE", "requiredCapabilities", c));
         }
     }
-    if !s.resources.is_empty() {
-        return Err(Diagnostic::new(
-            "CAPTION_CAPABILITY_UNAVAILABLE",
-            "resources",
-            "external scene resources are not supported by this execution profile",
-        ));
+    if s.resources.len() > 64 {
+        return Err(invalid("resources", "resource budget exceeded"));
+    }
+    let mut resources = BTreeSet::new();
+    for r in &s.resources {
+        let hash = r.content_hash.strip_prefix("sha256:").unwrap_or("");
+        if !name(&r.id)
+            || !resources.insert(&r.id)
+            || r.asset_ref.id.is_empty()
+            || r.asset_ref.revision.is_empty()
+            || hash.len() != 64
+            || !hash.bytes().all(|b| b.is_ascii_digit() || (b'a'..=b'f').contains(&b))
+        {
+            return Err(invalid("resources", "invalid resource id, revision or digest"));
+        }
     }
     if s.layout.pagination.unit != UnitKind::Word {
         return Err(invalid("pagination.unit", "word required"));
@@ -196,7 +211,7 @@ pub fn validate_scene(s: &Scene) -> Result<()> {
             if out.len() > MAX_NODES {
                 return Err(invalid("nodes", "node budget exceeded"));
             }
-            if matches!(n.kind, NodeKind::Text | NodeKind::Shape) && !n.children.is_empty() {
+            if matches!(n.kind, NodeKind::Text | NodeKind::Shape | NodeKind::Image) && !n.children.is_empty() {
                 return Err(invalid(&n.id, "leaf node has children"));
             }
             walk(&n.children, out, depth + 1)?;
@@ -252,8 +267,63 @@ pub fn validate_scene(s: &Scene) -> Result<()> {
     let mut bound_units = BTreeMap::new();
     bindings(&s.nodes, UnitKind::Cue, s, &mut bound_units);
     for n in nodes.values() {
+        if n.kind == NodeKind::Image {
+            if !n.resource_id.as_ref().is_some_and(|id| resources.contains(id)) {
+                return Err(invalid(&n.id, "image requires a declared resourceId"));
+            }
+        } else if n.resource_id.is_some() || n.fit != ImageFit::Contain {
+            return Err(invalid(&n.id, "image fields on non-image node"));
+        }
+        if n.style.paints.len() > 16 {
+            return Err(invalid(&n.id, "paint budget exceeded"));
+        }
+        if !n.style.paints.is_empty()
+            && (n.style.stroke.is_some()
+                || !n.state_styles.is_empty()
+                || n.properties.contains_key("fill")
+                || s.animations.iter().any(|a| a.target.node_id == n.id && a.property == "fill"))
+        {
+            return Err(invalid(
+                &n.id,
+                "paint stack cannot be combined with fill overrides or legacy stroke",
+            ));
+        }
+        let mut paints = BTreeSet::new();
+        for layer in &n.style.paints {
+            if !name(&layer.id)
+                || !paints.insert(&layer.id)
+                || !layer.stroke_width.is_finite()
+                || !(0.0..=256.0).contains(&layer.stroke_width)
+                || layer.offset.iter().any(|x| !x.is_finite() || x.abs() > 4096.0)
+            {
+                return Err(invalid(&n.id, "invalid paint layer"));
+            }
+            match &layer.paint {
+                ScenePaint::Solid { color: c } => {
+                    color(c)?;
+                }
+                ScenePaint::Linear { from, to, stops } => {
+                    if from == to
+                        || from.iter().chain(to).any(|n| !n.is_finite() || n.abs() > 16.0)
+                        || stops.len() < 2
+                        || stops.len() > 32
+                        || stops.iter().any(|s| !s.at.is_finite() || !(0.0..=1.0).contains(&s.at))
+                        || stops.windows(2).any(|s| s[0].at >= s[1].at)
+                    {
+                        return Err(invalid(&n.id, "invalid gradient"));
+                    }
+                    for stop in stops {
+                        color(&stop.color)?;
+                    }
+                }
+            }
+        }
+
         if n.kind != NodeKind::Text && (n.text.is_some() || !n.state_styles.is_empty() || n.style != TextStyle::default()) {
             return Err(invalid(&n.id, "text/style fields require a text node"));
+        }
+        if n.kind == NodeKind::Image && (n.properties.contains_key("fill") || n.properties.contains_key("radius")) {
+            return Err(invalid(&n.id, "image does not accept fill/radius"));
         }
         if n.kind == NodeKind::Group && n.properties.contains_key("fill") {
             return Err(invalid(&n.id, "fill is not a group property"));
@@ -293,11 +363,11 @@ pub fn validate_scene(s: &Scene) -> Result<()> {
             if !n.selector_id.as_ref().is_some_and(|id| sels.contains(id)) {
                 return Err(invalid(&n.id, "repeat requires a selector"));
             }
-            if n.children.iter().any(|n| n.kind != NodeKind::Shape) {
+            if n.children.iter().any(|n| !matches!(n.kind, NodeKind::Shape | NodeKind::Image)) {
                 return Err(Diagnostic::new(
                     "CAPTION_CAPABILITY_UNAVAILABLE",
                     &n.id,
-                    "repeat children must be shapes in evaluation version 1",
+                    "repeat children must be shapes or images in evaluation version 1",
                 ));
             }
         } else if n.selector_id.is_some() {
@@ -324,8 +394,9 @@ pub fn validate_scene(s: &Scene) -> Result<()> {
         };
         let node = nodes[a.target.node_id.as_str()];
         if node.kind == NodeKind::Repeat
-            || (node.kind != NodeKind::Shape && matches!(a.property.as_str(), "width" | "height" | "radius"))
+            || (!matches!(node.kind, NodeKind::Shape | NodeKind::Image) && matches!(a.property.as_str(), "width" | "height" | "radius"))
             || (node.kind == NodeKind::Group && a.property == "fill")
+            || (node.kind == NodeKind::Image && matches!(a.property.as_str(), "fill" | "radius"))
         {
             return Err(invalid(&a.id, "property does not apply to this node"));
         }

@@ -640,6 +640,12 @@ impl CaptionPlan {
             scene_missing: Default::default(),
         })
     }
+    pub fn load_scene_resources(&mut self, read: impl FnMut(&caption_scene::ImageResource) -> Option<Vec<u8>>) -> Result<()> {
+        if let Some(scene) = &mut self.scene {
+            scene.load_resources(read)?;
+        }
+        Ok(())
+    }
     pub fn avoid_template(&mut self, template: Option<&TemplateDoc>) {
         if let Some(l) = &mut self.legacy {
             l.avoid_template(template);

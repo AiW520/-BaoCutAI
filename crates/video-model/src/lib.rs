@@ -996,6 +996,8 @@ pub struct DocumentRecord {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct DocumentRevision {
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub asset_refs: Vec<VersionRef>,
     pub revision: Revision,
     pub content_hash: String,
     pub byte_length: u64,

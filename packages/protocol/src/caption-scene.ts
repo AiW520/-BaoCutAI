@@ -32,7 +32,9 @@ export type CaptionFilter =
   | { kind: 'not'; filter: CaptionFilter };
 export interface CaptionSceneNode {
   id: string;
-  type: 'group' | 'text' | 'shape' | 'repeat';
+  type: 'group' | 'text' | 'shape' | 'image' | 'repeat';
+  resourceId?: string | null;
+  fit?: 'contain' | 'cover' | 'stretch';
   zIndex?: number;
   children?: CaptionSceneNode[];
   selectorId?: string | null;
@@ -42,6 +44,10 @@ export interface CaptionSceneNode {
     fontFamily?: string; fontSize?: CaptionLength; fontWeight?: number; italic?: boolean;
     letterSpacing?: number; lineHeight?: number; fill?: string;
     stroke?: { width: number; color: string } | null;
+    paints?: { id: string; strokeWidth?: number; offset?: [number, number]; paint:
+      | { kind: 'solid'; color: string }
+      | { kind: 'linear'; from: [number, number]; to: [number, number]; stops: { at: number; color: string }[] }
+    }[];
   };
   stateStyles?: { unit?: 'word'; active?: { fill: string } | null; read?: { fill: string } | null; unread?: { fill: string } | null };
   properties?: Record<string, CaptionDynamicValue>;
@@ -50,7 +56,7 @@ export interface CaptionScene {
   schema: 'baocut.caption-scene/1';
   evaluationVersion: 1;
   requiredCapabilities?: string[];
-  resources?: [];
+  resources?: { id: string; assetRef: { id: string; revision: string }; contentHash: string }[];
   parameters?: { id: string; type: CaptionValueType; default: CaptionValue; min?: number | null; max?: number | null }[];
   layout: {
     width: CaptionLength; x: CaptionLength; y: CaptionLength; maxLines?: number;

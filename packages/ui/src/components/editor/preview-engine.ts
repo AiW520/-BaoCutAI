@@ -1078,6 +1078,17 @@ export class PreviewEngine {
   /** Lottie 层与 SVG、GIF 图片层的素材字节：取到的送进去（同一份只送一次），还在取的层记进 `pending`。 */
   #sendAssets(planner: RenderPlanner, layers: VisualLayer[], pending: Set<Id>): void {
     for (const layer of layers) {
+      if (layer.kind === 'caption') {
+        const id = layer.content.styleDocumentId;
+        const record = id ? this.#documentRecords[id] : undefined;
+        for (const asset of record?.revisions?.[record.currentRevision]?.assetRefs ?? []) {
+          if (!this.#assets) continue;
+          const state = this.#assets.get(asset, BYTES);
+          if (state.state === 'ready') planner.setAsset(asset, state.value);
+          else if (state.state === 'loading') pending.add(layer.itemId);
+        }
+        continue;
+      }
       let asset: unknown;
       if (layer.kind === 'generator' && layer.content.generator === 'baocut.lottie') asset = layer.content.parameters.asset;
       else if (isMediaLayer(layer) && this.#kernelDecoded(layer)) asset = layer.asset;

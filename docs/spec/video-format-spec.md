@@ -1370,6 +1370,7 @@ interface DocumentRecord {
 }
 
 interface DocumentRevision {
+  assetRefs?: VersionRef[];             // 引擎从正文派生的冻结素材依赖，包含历史版本的保留关系
   revision: Revision;
   contentHash: string;
   byteLength: number;
@@ -1810,17 +1811,23 @@ interface CaptionStyleBody {
 
 | 领域 | 生效合同 |
 | --- | --- |
-| 节点 | `text/group/shape/repeat`；稳定 ID、zIndex 与子节点顺序；text 绑定当前 cue 或 `{ source: 'static', text }`；repeat 引用文字选择器，首版生成 shape 装饰 |
+| 节点 | `text/group/shape/image/repeat`；稳定 ID、zIndex 与子节点顺序；text 绑定当前 cue 或 `{ source: 'static', text }`；repeat 引用文字选择器，生成 shape/image 装饰 |
 | 布局 | `layoutEvaluation: 'static'`；width/x/y 使用 `{value,basis,offset}`，basis 为 absolute/canvasWidth/canvasHeight/canvasShortEdge；可选 parameter 引用已声明 scalar，长度为 value × parameter × basis + offset，在准备布局时求值；按 Unicode 换行并由 maxLines 与 maxUnitsPerPage 分页；超长词按 grapheme 断行；leadingGap 为 show/hide |
 | 字体与涂装 | 每个文字节点的 fontFamily、fontSize（明确长度）、fontWeight、italic、letterSpacing（em）、lineHeight；fill 为十六进制 RGBA；可选 stroke 为 width（px）和 color；复用宿主注入的同一字体字节与字体解析机制 |
+| 图片 | resources 项声明 id、assetRef（id/revision）和 contentHash（sha256: 小写摘要）；image 节点以 resourceId 引用，fit 为 contain/cover/stretch，默认 contain；只读 PNG 静态图，保留预乘 alpha |
+| 有序涂装 | style.paints 按数组顺序覆盖普通 fill/stroke；每层有稳定 id、paint、strokeWidth（0 为填充，大于 0 为描边）、offset；paint 为 solid 或 linear，渐变 from/to 是基础视觉行框的归一化坐标；色标有序且在 0–1。与 fill 动画、stateStyles 或旧 stroke 同用时拒绝，避免隐式覆盖 |
 | 选择器 | cue/page/line/word/grapheme；all、state、tag、range、parity、and/or/not；按基础文字整形的 cluster 归属单元，不把字形拆开 |
 | 状态 | stateStyles 的 unit 为 word，active/read/unread 各为 `{fill}`；gapPolicy 为 none/hold-previous，tailPolicy 为 none/hold-last；timingPolicy 默认 require-word-timing，可显式 estimated |
-| 动态属性 | transform.x/y/scale/scaleX/scaleY/rotation、opacity、fill；shape 另支持 width/height/radius；角度为弧度、表达式长度为解析后的 px |
+| 动态属性 | transform.x/y/scale/scaleX/scaleY/rotation、opacity、fill；shape 另支持 width/height/radius，image 支持 width/height；角度为弧度、表达式长度为解析后的 px |
 | 关键帧 | 明确语义 clock、start/end、精确 offset/duration/stagger；归一化 at；linear/step/ease-out-quad 或 `{ 'cubic-bezier': {x1,y1,x2,y2} }`；fill.before/after 为 none/hold；repeat 用 iterations 与 loop/yoyo，窗口边界无需顺序播放 |
 | 表达式 | 带类型 literal/read/call/if；scalar/integer/length/time/angle/bool/color；无环纯函数，时间/单元/基础布局/参数只读；共享数学曲线、连续 sin/cos、带 seed 的 random/noise；if 惰性求值，非法运算返回诊断 |
 | 合成 | replace/add/multiply 与 priority/声明顺序；颜色只允许 replace；乘法通道为无量纲数；父子变换及离屏组 opacity 通过共同 DrawOp 光栅执行 |
 
-`requiredCapabilities` 当前可声明 `caption-scene/1`、`caption-expressions/1` 和 `caption-unit-animation/1`。未知能力、属性或字段拒绝；artifact 形式的场景引用、非空 resources、图片节点、任意 shader、多层材质、逐采样布局和历史采样尚未开放，不能保存为成功后在渲染中忽略。完整扩展方向仍按[设计文档](../design/subtitle/dynamic-caption-format-design.md)维护。
+`requiredCapabilities` 当前可声明 `caption-scene/1`、`caption-expressions/1`、`caption-unit-animation/1`、`caption-image-png/1` 和 `caption-paint-stack/1`。未知能力、属性或字段拒绝；artifact 形式的场景引用、非 PNG 图片、任意 shader、模糊/反馈材质、逐采样布局和历史采样尚未开放，不能保存为成功后在渲染中忽略。完整扩展方向仍按[设计文档](../design/subtitle/dynamic-caption-format-design.md)维护。
+
+资源声明在写文档时与视频里的素材版本、内容摘要及 MIME 核对，`DocumentRevision.assetRefs` 由引擎生成。导出计划把文档依赖加入冻结素材集合；预览宿主只按该修订的依赖加载字节，不取素材的最新版本。清理保护仍被历史文档修订引用的资源，便携包恢复时重新核对正文、索引与素材；索引被删改也拒绝。字体清点只执行文字准备，不要求图片在线。
+
+图片绘制前验证 SHA-256、PNG 签名、尺寸和解码预算；每张编码图最多 16 MiB，所有解码图合计最多 64 MiB，最多 64 个资源。资源准备原子完成，缺失/不匹配时整层报告，不画成空白。图片和文字都进入同一 DrawOp 流。彩色字形继续使用字体自身的色彩位图，有序涂装仅作用于轮廓字形；图片不接受文字 fill/描边参数。
 
 没有真实词时间时，默认不产生朗读高亮并跳过需要词时钟的关键帧；cue 入退场仍可用。显式 estimated 才均分显示词的时序，不写回转录。无词时间而需要多页显示时按页均分 cue 展示区间，这仅是分页时间，不是朗读时间。场景语义时钟由既有 source/sequence/occurrence 映射提供；页面窗口裁剪显示，不累计 deltaTime。渲染同一时刻不依赖已画过的帧。
 

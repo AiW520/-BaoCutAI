@@ -33,7 +33,7 @@ pub struct Scene {
     pub parameters: Vec<Parameter>,
     pub layout: Layout,
     #[serde(default)]
-    pub resources: Vec<serde_json::Value>,
+    pub resources: Vec<ImageResource>,
     #[serde(default)]
     pub speech_state: SpeechState,
     pub nodes: Vec<Node>,
@@ -241,6 +241,9 @@ pub struct Node {
     #[serde(default)]
     pub children: Vec<Node>,
     pub selector_id: Option<String>,
+    pub resource_id: Option<String>,
+    #[serde(default)]
+    pub fit: ImageFit,
     #[serde(default)]
     pub style: TextStyle,
     #[serde(default)]
@@ -289,6 +292,7 @@ pub enum NodeKind {
     Group,
     Text,
     Shape,
+    Image,
     Repeat,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -309,6 +313,8 @@ pub struct TextStyle {
     #[serde(default = "white")]
     pub fill: String,
     pub stroke: Option<Stroke>,
+    #[serde(default)]
+    pub paints: Vec<PaintLayer>,
 }
 fn font() -> String {
     "Noto Sans SC".into()
@@ -341,6 +347,7 @@ impl Default for TextStyle {
             line_height: line_height(),
             fill: white(),
             stroke: None,
+            paints: vec![],
         }
     }
 }
@@ -551,4 +558,54 @@ pub struct ClockRepeat {
 pub enum RepeatMode {
     Loop,
     Yoyo,
+}
+
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct ImageResource {
+    pub id: String,
+    pub asset_ref: ResourceRef,
+    pub content_hash: String,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct ResourceRef {
+    pub id: String,
+    pub revision: String,
+}
+#[derive(Clone, Copy, Debug, Default, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "kebab-case")]
+pub enum ImageFit {
+    #[default]
+    Contain,
+    Cover,
+    Stretch,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct PaintLayer {
+    pub id: String,
+    pub paint: ScenePaint,
+    #[serde(default)]
+    pub stroke_width: f64,
+    #[serde(default)]
+    pub offset: [f64; 2],
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "kind", rename_all = "kebab-case", deny_unknown_fields)]
+pub enum ScenePaint {
+    Solid {
+        color: String,
+    },
+    Linear {
+        from: [f64; 2],
+        to: [f64; 2],
+        stops: Vec<PaintStop>,
+    },
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct PaintStop {
+    pub at: f64,
+    pub color: String,
 }

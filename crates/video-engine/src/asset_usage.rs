@@ -53,6 +53,12 @@ pub fn asset_users(state: &VideoState) -> BTreeMap<Id, BTreeSet<Id>> {
         }
     }
     for document in state.documents.values() {
+        for revision in document.revisions.values() {
+            for asset in &revision.asset_refs {
+                users.entry(asset.id.clone()).or_default().insert(document.id.clone());
+            }
+        }
+
         if let Some(asset) = &document.source_asset_id {
             users.entry(asset.clone()).or_default().insert(document.id.clone());
         }

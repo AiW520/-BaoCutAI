@@ -23,6 +23,9 @@ const CENSUS_LONG_EDGE: u32 = 480;
 struct NoMedia;
 
 impl LayerMedia for NoMedia {
+    fn captions_text_only(&self) -> bool {
+        true
+    }
     fn picture(&mut self, _layer: &VisualLayer) -> Result<Option<&Pixmap>, RenderError> {
         Ok(None)
     }

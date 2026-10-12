@@ -179,6 +179,16 @@ fn read_package(package_dir: &Path) -> EngineResult<(VideoState, Vec<DocumentBod
                     id
                 )));
             }
+            let parsed: Value = serde_json::from_str(&body).expect("validated object");
+            let expected = video_model::caption_style::scene_asset_refs(&parsed)
+                .map_err(|error| invalid(msg!("videoModel.bodyShape", "The body has fields of the wrong shape: {error}", error)))?;
+            let problems = video_model::caption_style::scene_resource_problems(&parsed, &state.assets);
+            if expected != version.asset_refs || !problems.is_empty() {
+                return Err(invalid(msg!(
+                    "videoModel.bodyShape", "The body has fields of the wrong shape: {error}",
+                    error = "CAPTION_RESOURCE_REFERENCE_MISMATCH"
+                )));
+            }
             documents.push(DocumentBody {
                 document_id: id.clone(),
                 revision: revision.clone(),

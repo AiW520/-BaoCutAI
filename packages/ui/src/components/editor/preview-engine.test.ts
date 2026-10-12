@@ -859,3 +859,26 @@ test('监听音量变了时通知订阅者；订阅时先给一次当前的', ()
   ]);
   engine.dispose();
 });
+
+test('字幕场景按样式文档的冻结素材版本加载字节', async () => {
+  const cap = { type: 'caption', id: 'cap', enabled: true, documentId: 'caption', styleDocumentId: 'style', span: { fromFrame: 0, durationFrames: 90 } };
+  const scene = { ...sequence, items: [cap] } as unknown as Sequence;
+  const layers = [{ kind: 'caption', itemId: 'cap', matrix: [1, 0, 0, 1, 0, 0], opacity: 1, content: { documentId: 'caption', styleDocumentId: 'style', sequenceSeconds: 0 } }];
+  const plan = { canvas: { width: 1920, height: 1080, background: '#000000', backgroundAlpha: 1 }, layers, voices: [] };
+  const sent: unknown[] = [];
+  const planner = { ...fakePlanner(), planAt: () => plan, setDocuments: () => {}, clearPictures: () => {},
+    setAsset: (asset: unknown) => sent.push(asset), render: () => ({ plan, warnings: [], skipped: [], spectra: [] }),
+    frame: () => new Uint8ClampedArray(960 * 540 * 4) } as unknown as RenderPlanner;
+  const documents = { peek: () => ({}), load: () => {}, subscribe: () => () => {} };
+  const assets = { get: () => ({ state: 'ready', value: new Uint8Array([1, 2, 3]) }), subscribe: () => () => {} };
+  const engine = new PreviewEngine({ onTime: () => {}, onEnded: () => {} }, () => Promise.resolve(planner), documents, assets as never);
+  const canvas = { width: 0, height: 0, getContext: () => ({ canvas, putImageData: () => {} }) };
+  engine.attachCanvas(canvas as unknown as HTMLCanvasElement, 0.5);
+  engine.setVideo(scene, {}, {
+    caption: { id: 'caption', kind: 'caption', currentRevision: '1', revisions: {} },
+    style: { id: 'style', kind: 'caption-style', currentRevision: '2', revisions: { '2': { assetRefs: [{ id: 'badge', revision: 'old-version' }] } } },
+  } as never);
+  await new Promise((resolve) => setTimeout(resolve, 20));
+  expect(sent).toContainEqual({ id: 'badge', revision: 'old-version' });
+  engine.dispose();
+});

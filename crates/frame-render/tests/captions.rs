@@ -891,3 +891,25 @@ fn dynamic_scene_instances_do_not_merge_when_they_share_a_style() {
     let mixed = draw(docs(), vec![both, green], 0.3);
     assert!(mixed.chunks_exact(4).any(|p| p[1] > 100 && p[0] < 20 && p[3] > 100));
 }
+
+#[test]
+fn dynamic_scene_font_census_does_not_require_image_bytes() {
+    let body: Value = serde_json::from_str(include_str!("../../caption-scene/tests/fixtures/image-paint.json")).unwrap();
+    let documents = Documents::new(vec![
+        caption_doc("d", "sequence", &[(0.0, 3.0, "One two")], "original"),
+        style_doc("s", body),
+    ]);
+    let video = video(vec![caption("cap", "d", Some("s"), 90, &[])], vec![], json!({}));
+    let frame = plan(&video, 0.3);
+    let usage = frame_render::font_usage(
+        render_graph::VideoView::from(&video),
+        &frame,
+        0.3,
+        &frame.layers,
+        documents,
+        fonts().into_iter().map(std::sync::Arc::new).collect(),
+        true,
+    )
+    .unwrap();
+    assert!(!usage.faces.is_empty());
+}

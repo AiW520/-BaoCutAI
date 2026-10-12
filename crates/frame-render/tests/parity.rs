@@ -645,6 +645,35 @@ fn scenes() -> Vec<Scene> {
     }
 
     // —— 字幕 ——
+    let badge = include_bytes!("../../caption-scene/tests/fixtures/badge.png").to_vec();
+    let hash = format!(
+        "sha256:{}",
+        Sha256::digest(&badge).iter().map(|b| format!("{b:02x}")).collect::<String>()
+    );
+    let mut image_style: Value = serde_json::from_str(include_str!("../../caption-scene/tests/fixtures/word-pop.json")).unwrap();
+    let scene = &mut image_style["scene"]["value"];
+    scene["speechState"]["timingPolicy"] = json!("estimated");
+    scene["resources"] = json!([{"id":"badge","assetRef":{"id":"badge","revision":"rev_1"},"contentHash":hash}]);
+    scene["animations"].as_array_mut().unwrap().remove(0);
+    scene["nodes"][0]["style"]["paints"] = json!([
+        {"id":"edge","strokeWidth":2,"paint":{"kind":"solid","color":"#000000"}},
+        {"id":"gradient","paint":{"kind":"linear","from":[0,0],"to":[1,1],"stops":[{"at":0,"color":"#FF0000"},{"at":1,"color":"#00FFFF"}]}}
+    ]);
+    scene["nodes"].as_array_mut().unwrap().push(json!({"id":"icons","type":"repeat","selectorId":"words","children":[{"id":"badge-image","type":"image","resourceId":"badge","properties":{"width":{"kind":"constant","value":12},"height":{"kind":"constant","value":8},"transform.y":{"kind":"constant","value":-12}}}]}));
+    let mut asset = image_asset("badge", 2, 1);
+    asset.1["revisions"]["rev_1"]["contentHash"] = json!(hash);
+    let mut rich = Scene::new(
+        "captions-dynamic-image-paint",
+        video(vec![caption("rich", "doc", Some("style"), 120, &[])], vec![asset], json!({})),
+        &[0, 2, 9, 32, 65],
+    );
+    rich.documents = vec![
+        caption_doc("doc", "sequence", &[(0.0, 4.0, "One two three")], "original"),
+        style_doc("style", image_style),
+    ];
+    rich.binary_assets.push(("badge@rev_1".into(), badge));
+    scenes.push(rich);
+
     let mut dynamic_style: Value = serde_json::from_str(include_str!("../../caption-scene/tests/fixtures/word-pop.json")).unwrap();
     dynamic_style["scene"]["value"]["speechState"]["timingPolicy"] = json!("estimated");
     let mut dynamic = Scene::new(

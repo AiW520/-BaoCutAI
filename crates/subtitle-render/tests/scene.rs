@@ -202,3 +202,96 @@ fn layout_parameters_are_resolved_before_shaping_with_occurrence_precedence() {
     let larger = plan(body, "One two", vec![], p).render(0.4).unwrap();
     assert!(larger.hits[0].bounds.width > base.hits[0].bounds.width * 1.4);
 }
+
+fn png_resource() -> (Vec<u8>, String) {
+    use sha2::{Digest, Sha256};
+    let mut png = tiny_skia::Pixmap::new(2, 1).unwrap();
+    png.data_mut()
+        .copy_from_slice(&[255, 0, 0, 255, 0, 0, 128, 128]);
+    let bytes = png.encode_png().unwrap();
+    let hash = format!(
+        "sha256:{}",
+        Sha256::digest(&bytes)
+            .iter()
+            .map(|b| format!("{b:02x}"))
+            .collect::<String>()
+    );
+    (bytes, hash)
+}
+fn image_style(hash: &str) -> Value {
+    let mut body = fixture();
+    body["scene"]["value"]["animations"] = json!([]);
+    body["scene"]["value"]["resources"] =
+        json!([{"id":"badge","assetRef":{"id":"asset_badge","revision":"r1"},"contentHash":hash}]);
+    body["scene"]["value"]["nodes"].as_array_mut().unwrap().push(json!({"id":"icon","type":"image","resourceId":"badge","fit":"cover","properties":{"width":{"kind":"constant","value":24},"height":{"kind":"constant","value":16},"transform.y":{"kind":"constant","value":-20}}}));
+    body
+}
+#[test]
+fn frozen_png_images_validate_bytes_and_render_on_random_seek() {
+    let (bytes, hash) = png_resource();
+    let mut p = plan(
+        image_style(&hash),
+        "One two",
+        vec![],
+        Presentation::default(),
+    );
+    assert!(
+        p.render(0.3)
+            .err()
+            .unwrap()
+            .to_string()
+            .contains("CAPTION_RESOURCE_MISSING")
+    );
+    assert!(
+        p.load_resources(|_| Some(vec![1, 2, 3]))
+            .unwrap_err()
+            .to_string()
+            .contains("CAPTION_RESOURCE_DIGEST")
+    );
+    p.load_resources(|_| Some(bytes.clone())).unwrap();
+    let frame = p.render(0.3).unwrap();
+    assert!(
+        frame
+            .rgba
+            .chunks_exact(4)
+            .any(|p| p[0] > 200 && p[1] == 0 && p[2] == 0)
+    );
+    p.render(2.0).unwrap();
+    assert_eq!(frame.rgba, p.render(0.3).unwrap().rgba);
+}
+#[test]
+fn ordered_gradient_and_stroke_keep_native_text_geometry() {
+    let mut body = fixture();
+    body["scene"]["value"]["animations"] = json!([]);
+    body["scene"]["value"]["nodes"][0]["style"]["paints"] = json!([
+        {"id":"outline","strokeWidth":2,"paint":{"kind":"solid","color":"#000000"}},
+        {"id":"gradient","paint":{"kind":"linear","from":[0,0],"to":[1,0],"stops":[{"at":0,"color":"#FF0000"},{"at":1,"color":"#0000FF"}]}}
+    ]);
+    let mut p = plan(body, "One two", vec![], Presentation::default());
+    let frame = p.render(0.3).unwrap();
+    assert!(frame.rgba.chunks_exact(4).any(|p| p[0] > p[2] && p[0] > 40));
+    assert!(frame.rgba.chunks_exact(4).any(|p| p[2] > p[0] && p[2] > 40));
+    assert_eq!(frame.rgba, p.render(0.3).unwrap().rgba);
+}
+
+#[test]
+fn png_dimension_overflow_is_rejected_before_decode() {
+    use sha2::{Digest, Sha256};
+    let (mut bytes, _) = png_resource();
+    bytes[16..20].copy_from_slice(&u32::MAX.to_be_bytes());
+    bytes[20..24].copy_from_slice(&u32::MAX.to_be_bytes());
+    let hash = format!(
+        "sha256:{}",
+        Sha256::digest(&bytes)
+            .iter()
+            .map(|b| format!("{b:02x}"))
+            .collect::<String>()
+    );
+    let mut p = plan(image_style(&hash), "One", vec![], Presentation::default());
+    assert!(
+        p.load_resources(|_| Some(bytes.clone()))
+            .unwrap_err()
+            .to_string()
+            .contains("CAPTION_BUDGET_EXCEEDED")
+    );
+}

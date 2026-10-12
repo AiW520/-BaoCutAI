@@ -1,13 +1,16 @@
 //! Declarative caption scenes. Layout, animation and recording are shared by native and WASM.
 use anyhow::{Result, bail};
 use caption_scene::*;
-use render_raster::drawop::{BitmapData, DrawOp, FrameBuilder, path_from_skia};
+use render_raster::drawop::{
+    BitmapData, DrawOp, FrameBuilder, GradientStop, PaintData, path_from_skia,
+};
 use render_raster::fonts::{GlyphRender, ShapedLine};
 use render_raster::{FrameMedia, FrameOps, TextEngine, rasterize_with_media};
 use scene_primitives::{
     layout::TextMetricsLine,
     text_layout::{Wrap, layout},
 };
+use sha2::{Digest, Sha256};
 use std::{collections::BTreeMap, ops::Range, sync::Arc};
 use tiny_skia::{Pixmap, Transform};
 use unicode_segmentation::UnicodeSegmentation;
@@ -97,6 +100,7 @@ pub struct ScenePlan {
     pub width: u32,
     pub height: u32,
     instance_id: String,
+    images: BTreeMap<String, BitmapData>,
 }
 impl ScenePlan {
     pub fn compile(
@@ -125,6 +129,7 @@ impl ScenePlan {
             width: size.0,
             height: size.1,
             instance_id,
+            images: BTreeMap::new(),
         };
         let mut nodes = Vec::new();
         text_nodes(&p.style.scene().nodes, &mut nodes);
@@ -167,12 +172,69 @@ impl ScenePlan {
         }
         Ok(p)
     }
+    /// Resolve frozen PNG resources atomically before recording frames.
+    pub fn load_resources(
+        &mut self,
+        mut read: impl FnMut(&ImageResource) -> Option<Vec<u8>>,
+    ) -> Result<()> {
+        let mut images = BTreeMap::new();
+        let mut decoded = 0usize;
+        for r in &self.style.scene().resources {
+            let bytes =
+                read(r).ok_or_else(|| anyhow::anyhow!("CAPTION_RESOURCE_MISSING: {}", r.id))?;
+            if bytes.len() > 16 * 1024 * 1024 {
+                bail!("CAPTION_BUDGET_EXCEEDED: encoded image");
+            }
+            if format!(
+                "sha256:{}",
+                Sha256::digest(&bytes)
+                    .iter()
+                    .map(|b| format!("{b:02x}"))
+                    .collect::<String>()
+            ) != r.content_hash
+            {
+                bail!("CAPTION_RESOURCE_DIGEST: {}", r.id);
+            }
+            if bytes.len() < 24 || &bytes[..8] != b"\x89PNG\r\n\x1a\n" || &bytes[12..16] != b"IHDR"
+            {
+                bail!("CAPTION_RESOURCE_FORMAT: {}", r.id);
+            }
+            let width = u32::from_be_bytes(bytes[16..20].try_into().unwrap());
+            let height = u32::from_be_bytes(bytes[20..24].try_into().unwrap());
+            let size = u64::from(width)
+                .checked_mul(u64::from(height))
+                .and_then(|n| n.checked_mul(4))
+                .ok_or_else(|| anyhow::anyhow!("CAPTION_BUDGET_EXCEEDED: image dimensions"))?;
+            if width == 0
+                || height == 0
+                || size > 64 * 1024 * 1024
+                || decoded as u64 + size > 64 * 1024 * 1024
+            {
+                bail!("CAPTION_BUDGET_EXCEEDED: decoded images");
+            }
+            let image = Pixmap::decode_png(&bytes)?;
+            decoded += size as usize;
+            images.insert(
+                r.id.clone(),
+                BitmapData {
+                    width: image.width(),
+                    height: image.height(),
+                    rgba: Arc::from(image.data()),
+                },
+            );
+        }
+        self.images = images;
+        Ok(())
+    }
     pub fn into_text_engine(self) -> TextEngine {
         self.text
     }
     pub fn record(&mut self, seconds: f64) -> Result<(FrameOps, Vec<SceneHit>)> {
         if !seconds.is_finite() {
             bail!("CAPTION_SCENE_INVALID: sample time");
+        }
+        if self.images.len() != self.style.scene().resources.len() {
+            bail!("CAPTION_RESOURCE_MISSING: unresolved scene images");
         }
         let mut builder = FrameBuilder::default();
         let mut hits = Vec::new();
@@ -218,6 +280,7 @@ impl ScenePlan {
                 instance: &self.instance_id,
                 cue,
                 size: (self.width, self.height),
+                images: &self.images,
             };
             draw_nodes(
                 &scene.nodes,
@@ -704,6 +767,7 @@ struct RenderContext<'a> {
     instance: &'a str,
     cue: &'a SceneCue,
     size: (u32, u32),
+    images: &'a BTreeMap<String, BitmapData>,
 }
 fn context(u: &Unit, r: &RenderContext) -> Context {
     let mut fields = r.params.clone();
@@ -776,7 +840,7 @@ fn pose(
     let mut c = context(u, r);
     c.stable_key.push_str(&format!("|{}", node.id));
     let mut p = BTreeMap::new();
-    if u.kind == UnitKind::Cue || node.kind == NodeKind::Shape {
+    if u.kind == UnitKind::Cue || matches!(node.kind, NodeKind::Shape | NodeKind::Image) {
         p.insert("fill".into(), Evaluated::Color(color(&node.style.fill)?));
         for (name, value) in &node.properties {
             if let Some(v) = sample_value(
@@ -805,7 +869,9 @@ fn pose(
     tracks.sort_by_key(|a| a.priority);
     for a in tracks {
         let selected = match &a.target.selector_id {
-            None => u.kind == UnitKind::Cue || node.kind == NodeKind::Shape,
+            None => {
+                u.kind == UnitKind::Cue || matches!(node.kind, NodeKind::Shape | NodeKind::Image)
+            }
             Some(id) => r
                 .scene
                 .selectors
@@ -980,6 +1046,54 @@ fn draw_nodes(
                     tf: tf(t),
                 });
             }
+            NodeKind::Image => {
+                let resource = n.resource_id.as_ref().unwrap();
+                let image = r
+                    .images
+                    .get(resource)
+                    .ok_or_else(|| anyhow::anyhow!("CAPTION_RESOURCE_MISSING: {resource}"))?;
+                let width = p
+                    .get("width")
+                    .map_or(u.bounds.width, |v| v.number().unwrap())
+                    .max(0.0);
+                let height = p
+                    .get("height")
+                    .map_or(u.bounds.height, |v| v.number().unwrap())
+                    .max(0.0);
+                if width > 0.0 && height > 0.0 {
+                    let sx = width / image.width as f64;
+                    let sy = height / image.height as f64;
+                    let (sx, sy) = match n.fit {
+                        ImageFit::Contain => (sx.min(sy), sx.min(sy)),
+                        ImageFit::Cover => (sx.max(sy), sx.max(sy)),
+                        ImageFit::Stretch => (sx, sy),
+                    };
+                    let x = u.bounds.x + (width - image.width as f64 * sx) / 2.0;
+                    let y = u.bounds.y + (height - image.height as f64 * sy) / 2.0;
+                    if n.fit == ImageFit::Cover {
+                        let path = render_raster::raster::rounded_rect_path(
+                            u.bounds.x, u.bounds.y, width, height, 0.0,
+                        )
+                        .ok_or_else(|| anyhow::anyhow!("CAPTION_SCENE_INVALID: image bounds"))?;
+                        let id = b.path_id(path_from_skia(&path));
+                        b.push(DrawOp::ClipPath {
+                            path: id,
+                            tf: tf(t),
+                        });
+                    }
+                    let bitmap = b.bitmap_id(image.clone());
+                    b.push(DrawOp::DrawBitmap {
+                        bitmap,
+                        opacity: 1.0,
+                        tf: tf(t
+                            .pre_translate(x as f32, y as f32)
+                            .pre_scale(sx as f32, sy as f32)),
+                    });
+                    if n.fit == ImageFit::Cover {
+                        b.push(DrawOp::PopClip);
+                    }
+                }
+            }
             NodeKind::Text => {
                 if let Some(units) = r.units.get(&n.id) {
                     let page = units
@@ -1073,6 +1187,41 @@ fn draw_nodes(
                             match text.glyph_render(glyph.cache_key) {
                                 GlyphRender::Outline(path) => {
                                     let id = b.path_id(path_from_skia(&path));
+                                    if !n.style.paints.is_empty() {
+                                        for layer in &n.style.paints {
+                                            budget.spend()?;
+                                            let paint = scene_paint(
+                                                &layer.paint,
+                                                line.bounds,
+                                                (line.bounds.x + glyph.x, line.baseline + glyph.y),
+                                                opacity,
+                                            )?;
+                                            let paint = b.paint_id(paint);
+                                            let transform = origin.pre_translate(
+                                                layer.offset[0] as f32,
+                                                layer.offset[1] as f32,
+                                            );
+                                            if layer.stroke_width > 0.0 {
+                                                b.push(DrawOp::StrokePathPaint {
+                                                    path: id,
+                                                    paint,
+                                                    width: layer.stroke_width as f32,
+                                                    cap: 1,
+                                                    join: 1,
+                                                    miter: 4.0,
+                                                    tf: tf(transform),
+                                                });
+                                            } else {
+                                                b.push(DrawOp::FillPathPaint {
+                                                    path: id,
+                                                    paint,
+                                                    even_odd: false,
+                                                    tf: tf(transform),
+                                                });
+                                            }
+                                        }
+                                        continue;
+                                    }
                                     if let Some(s) = &n.style.stroke {
                                         let mut sc = color(&s.color)?;
                                         sc[3] *= opacity.clamp(0.0, 1.0);
@@ -1123,4 +1272,41 @@ fn draw_nodes(
         b.push(DrawOp::PopLayer);
     }
     Ok(())
+}
+
+fn scene_paint(
+    paint: &ScenePaint,
+    bounds: Bounds,
+    origin: (f64, f64),
+    opacity: f64,
+) -> Result<PaintData> {
+    let rgba = |c: &str| -> Result<[f32; 4]> {
+        let mut c = color(c)?;
+        c[3] *= opacity.clamp(0.0, 1.0);
+        Ok(c.map(|c| c as f32))
+    };
+    Ok(match paint {
+        ScenePaint::Solid { color } => PaintData::Solid(rgba(color)?),
+        ScenePaint::Linear { from, to, stops } => {
+            let point = |v: [f64; 2]| {
+                [
+                    (bounds.x + v[0] * bounds.width - origin.0) as f32,
+                    (bounds.y + v[1] * bounds.height - origin.1) as f32,
+                ]
+            };
+            PaintData::Linear {
+                p0: point(*from),
+                p1: point(*to),
+                stops: stops
+                    .iter()
+                    .map(|s| {
+                        Ok(GradientStop {
+                            offset: s.at as f32,
+                            color: rgba(&s.color)?,
+                        })
+                    })
+                    .collect::<Result<Vec<_>>>()?,
+            }
+        }
+    })
 }

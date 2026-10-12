@@ -1,10 +1,10 @@
 # caption-scene
 
-动态字幕的持久合同、严格验证和确定性表达式求值。纯 Rust，无文件、网络、系统时钟或 UI 依赖；视频模型、共享渲染和 WASM 使用同一实现。
+动态字幕的持久合同、严格验证和确定性表达式求值，包含版本锁定的 PNG 资源与有序文字涂装。纯 Rust，无文件、网络、系统时钟或 UI 依赖；视频模型、共享渲染和 WASM 使用同一实现。
 
 - 生效格式与当前执行能力：[视频格式 §5.6](../../docs/spec/video-format-spec.md#56-layoutprofile样式与导出)。
 - 完整目标：[动态字幕格式设计](../../docs/design/subtitle/dynamic-caption-format-design.md)。
-- 可运行样式：[word-pop.json](tests/fixtures/word-pop.json)。
+- 可运行样式：[word-pop.json](tests/fixtures/word-pop.json)、[image-paint.json](tests/fixtures/image-paint.json)。
 - 验证入口：`parse_style`、`validate_presentation`；动态值入口：`infer`、`evaluate`、`sample_value`。
 - 渲染入口：`subtitle_render::scene::ScenePlan`；由 `frame-render` 的新样式分支接入预览与导出。
 
@@ -17,3 +17,5 @@ cargo run --locked -p subtitle-render --no-default-features --features wasm-safe
 ```
 
 该命令使用内存字体和共享 CPU 光栅器，在指定目录写六张 PNG；不需要启动编辑器。
+
+在示例命令末尾添加 `--rich`，生成包含按词重复图片、线性渐变和描边的字幕帧。图片字节来自随示例维护的 PNG 夹具，并按场景声明的摘要校验。

@@ -249,3 +249,49 @@ fn a_tampered_or_newer_package_is_rejected_and_leaves_nothing() {
     assert_eq!(err.code, "INVALID_OPERATION");
     assert!(target.join("别人的文件").exists());
 }
+
+#[test]
+fn scene_resource_dependencies_survive_package_and_cannot_be_forged() {
+    let root = tempfile::tempdir().unwrap();
+    let source = source_video(root.path());
+    let source_dir = source.dir().to_path_buf();
+    drop(source);
+    let mut source = Video::open(&source_dir, OpenMode::Write, Path::new("ffprobe")).unwrap();
+    let png = root.path().join("badge.png");
+    fs::write(&png, include_bytes!("../../caption-scene/tests/fixtures/badge.png")).unwrap();
+    apply(
+        &mut source,
+        "cmd_image",
+        vec![json!({"type":"importAsset","path":png,"storage":"managed"})],
+    );
+    let asset = source
+        .state()
+        .assets
+        .values()
+        .find(|a| a.revisions[&a.current_revision].media_type == "image/png")
+        .unwrap();
+    let asset_id = asset.id.clone();
+    let revision = asset.current_revision.clone();
+    let hash = asset.revisions[&revision].content_hash.clone();
+    let mut style: Value = serde_json::from_str(include_str!("../../caption-scene/tests/fixtures/word-pop.json")).unwrap();
+    style["scene"]["value"]["resources"] = json!([{"id":"badge","assetRef":{"id":asset_id,"revision":revision},"contentHash":hash}]);
+    apply(
+        &mut source,
+        "cmd_style",
+        vec![json!({"type":"putDocument","kind":"caption-style","body":style})],
+    );
+    let record = source.state().documents.values().find(|r| r.kind == "caption-style").unwrap();
+    let id = record.id.clone();
+    let rev = record.current_revision.clone();
+    let package = root.path().join("package");
+    write_package(&source, &package);
+    let target = root.path().join("loaded");
+    let loaded = import_package(&target, &package, None, &ffprobe()).unwrap();
+    assert_eq!(loaded.state().documents[&id].revisions[&rev].asset_refs[0].id, asset_id);
+    drop(loaded);
+    let path = package.join(PACKAGE_SNAPSHOT);
+    let mut snapshot: Value = serde_json::from_str(&fs::read_to_string(&path).unwrap()).unwrap();
+    snapshot["documents"][&id]["revisions"][&rev]["assetRefs"] = json!([]);
+    fs::write(&path, snapshot.to_string()).unwrap();
+    assert!(import_package(&root.path().join("forged"), &package, None, &ffprobe()).is_err());
+}

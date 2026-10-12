@@ -79,6 +79,10 @@ pub const RENDER_NOTE: &str = "EXPORT_RENDER_NOTE";
 
 /// 层要的素材从哪里来（导出时是解码器与素材文件，预览时是宿主送进来的帧）。
 pub trait LayerMedia {
+    /// Font census only: shape caption text without loading image resources.
+    fn captions_text_only(&self) -> bool {
+        false
+    }
     /// 视频或图片层这一刻的画面（按源的显示尺寸，预乘的 RGBA）。`None`：这一层的素材在跳过的清单里，不画。
     fn picture(&mut self, layer: &VisualLayer) -> Result<Option<&Pixmap>, RenderError>;
 
@@ -411,7 +415,7 @@ impl FrameRenderer {
             if layer.kind == LayerKind::Caption {
                 // 共用样式文档的字幕是一组，在组里第一层的位置画一次。
                 if self.options.captions && caption_groups.insert(caption_group(layer, &self.documents)) {
-                    self.draw_captions(video, sequence, plan, caption_group(layer, &self.documents), context.fps)?;
+                    self.draw_captions(video, sequence, plan, caption_group(layer, &self.documents), context.fps, media)?;
                 }
                 continue;
             }
@@ -964,7 +968,15 @@ impl FrameRenderer {
     }
 
     /// 画一组字幕：组里画不出来的层按选项报错或跳过，其余的一起排、一起画。
-    fn draw_captions(&mut self, video: VideoView, sequence: &Sequence, plan: &FramePlan, group: &str, fps: f64) -> Result<(), RenderError> {
+    fn draw_captions(
+        &mut self,
+        video: VideoView,
+        sequence: &Sequence,
+        plan: &FramePlan,
+        group: &str,
+        fps: f64,
+        media: &mut dyn LayerMedia,
+    ) -> Result<(), RenderError> {
         let mut admitted = Vec::new();
         let grouped = plan
             .layers
@@ -1062,7 +1074,7 @@ impl FrameRenderer {
                 members.push((document, track));
             }
             let size = (self.options.width, self.options.height);
-            let compiled = CaptionPlan::compile_with_presentation(
+            let mut compiled = CaptionPlan::compile_with_presentation(
                 &style,
                 &members,
                 size,
@@ -1076,6 +1088,27 @@ impl FrameRenderer {
                 instance_key,
             )
             .map_err(RenderError::render)?;
+            if media.captions_text_only() && matches!(style, CaptionStyle::Scene(_)) {
+                let (_, missing) = compiled.notes();
+                self.note_missing_fonts(&first.item_id, missing);
+                self.spare_engine(compiled.into_text_engine());
+                return Ok(());
+            }
+            if let Err(error) = compiled.load_scene_resources(|r| {
+                media.asset_bytes(&VersionRef {
+                    id: r.asset_ref.id.clone(),
+                    revision: r.asset_ref.revision.clone(),
+                })
+            }) {
+                self.spare_engine(compiled.into_text_engine());
+                self.refuse_or_skip(vec![UnsupportedItem::layer(
+                    first,
+                    Some(caption_scene::STYLE_SCHEMA.into()),
+                    "caption-resource-invalid",
+                    error.to_string(),
+                )])?;
+                return Ok(());
+            }
             self.captions.insert(key.clone(), compiled);
         }
         let captions = self.captions.get_mut(&key).expect("刚编好");

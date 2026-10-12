@@ -614,6 +614,11 @@ impl Video {
         for item in self.state.items.values() {
             wanted.extend(item.value.asset_refs().map(|r| (r.id.as_str(), r.revision.as_str())));
         }
+        for document in self.state.documents.values() {
+            for revision in document.revisions.values() {
+                wanted.extend(revision.asset_refs.iter().map(|r| (r.id.as_str(), r.revision.as_str())));
+            }
+        }
         wanted
             .into_iter()
             .filter_map(|(asset_id, revision)| {

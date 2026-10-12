@@ -340,6 +340,16 @@ pub fn plan(video: &Video, value: PlanParams) -> Result<Value, ErrorBody> {
                     }
                 }
             }
+            for id in &document_ids {
+                if let Some(document) = snapshot.documents.get(id)
+                    && let Some(revision) = document.revisions.get(&document.current_revision)
+                {
+                    for asset in &revision.asset_refs {
+                        let key = (asset.id.clone(), asset.revision.clone());
+                        if !refs.contains(&key) { refs.push(key); }
+                    }
+                }
+            }
             let mut assets = Vec::new();
             if !value.skip_assets {
                 for (id, revision) in &refs {
@@ -353,6 +363,11 @@ pub fn plan(video: &Video, value: PlanParams) -> Result<Value, ErrorBody> {
                     if let Some(record) = snapshot.assets.get(&asset.id) {
                         records.insert(asset.id.clone(), serde_json::to_value(record).expect("能序列化"));
                     }
+                }
+            }
+            for (id, _) in &refs {
+                if let Some(record) = snapshot.assets.get(id) {
+                    records.insert(id.clone(), serde_json::to_value(record).expect("asset record"));
                 }
             }
             result["document"] = json!({
@@ -462,6 +477,96 @@ fn asset_entry(video: &Video, snapshot: &video_engine::model::VideoSnapshot, ass
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn caption_image_dependencies_are_frozen_without_picture_clips() {
+        use video_engine::model::{Actor, ActorKind};
+        use video_engine::{CreateOptions, VideoTransaction};
+        let dir = tempfile::tempdir().unwrap();
+        let png = dir.path().join("badge.png");
+        std::fs::write(&png, include_bytes!("../../caption-scene/tests/fixtures/badge.png")).unwrap();
+        let mut video = Video::create(
+            &dir.path().join("video"),
+            &CreateOptions {
+                name: "Captions".into(),
+                fps: editor_semantics::Rate { num: 30, den: 1 },
+                width: 160,
+                height: 90,
+            },
+            std::path::Path::new("ffprobe"),
+        )
+        .unwrap();
+        let apply = |video: &mut Video, id: &str, operations: Vec<Value>| {
+            video
+                .apply(&VideoTransaction {
+                    command_id: id.into(),
+                    expected_revision: video.revision(),
+                    label: None,
+                    label_ref: None,
+                    operations,
+                    actor: Actor {
+                        kind: ActorKind::User,
+                        id: "user".into(),
+                    },
+                    task_id: None,
+                })
+                .unwrap()
+        };
+        let imported = apply(
+            &mut video,
+            "image",
+            vec![json!({"type":"importAsset","path":png,"storage":"managed","ref":"badge"})],
+        );
+        let asset_id = imported.receipt.refs["badge"].clone();
+        let asset = &video.state().assets[&asset_id];
+        let rev = asset.current_revision.clone();
+        let hash = asset.revisions[&rev].content_hash.clone();
+        let mut body: Value = serde_json::from_str(include_str!("../../caption-scene/tests/fixtures/word-pop.json")).unwrap();
+        body["scene"]["value"]["resources"] = json!([{"id":"badge","assetRef":{"id":asset_id,"revision":rev},"contentHash":hash}]);
+        let seq = video.state().root_sequence_id.clone();
+        let created = apply(
+            &mut video,
+            "documents",
+            vec![
+                json!({"type":"addTrack","sequenceId":seq,"kind":"subtitle"}),
+                json!({"type":"putDocument","kind":"caption-style","body":body,"ref":"style"}),
+                json!({"type":"putDocument","kind":"caption","ref":"caption","body":{"schema":"baocut.caption/1","clock":"sequence","timescale":1000,"cues":[{"id":"c","start":0,"end":1000,"text":"Test"}]}}),
+            ],
+        );
+        let track = video
+            .state()
+            .tracks
+            .values()
+            .find(|t| t.value.kind == video_engine::model::TrackKind::Subtitle)
+            .unwrap()
+            .value
+            .id
+            .clone();
+        apply(
+            &mut video,
+            "place",
+            vec![
+                json!({"type":"insertItems","sequenceId":seq,"items":[{"type":"caption","trackId":track,"documentId":created.receipt.refs["caption"],"styleDocumentId":created.receipt.refs["style"],"span":{"fromFrame":0,"durationFrames":30}}]}),
+            ],
+        );
+        let request: PlanParams = serde_json::from_value(json!({"videoId":video.id(),"kind":"video"})).unwrap();
+        let frozen = plan(&video, request).unwrap();
+        assert!(
+            frozen["assets"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .any(|a| a["assetId"] == asset_id && a["revision"] == rev)
+        );
+        assert!(frozen["document"]["assets"].get(&asset_id).is_some());
+        let doc = frozen["documents"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .find(|d| d["kind"] == "caption-style")
+            .unwrap();
+        assert_eq!(doc["body"]["scene"]["value"]["resources"][0]["contentHash"], hash);
+    }
 
     #[test]
     fn source_clock_follows_document_ancestry_and_stops_at_direct_assets() {

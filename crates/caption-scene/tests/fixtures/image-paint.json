@@ -1,0 +1,170 @@
+{
+  "scene": {
+    "kind": "inline",
+    "value": {
+      "animations": [
+        {
+          "composite": "multiply",
+          "id": "word-pop",
+          "property": "transform.scale",
+          "target": {
+            "nodeId": "caption",
+            "selectorId": "words"
+          },
+          "value": {
+            "clock": {
+              "duration": {
+                "kind": "fixed",
+                "ticks": 180,
+                "timescale": 1000
+              },
+              "origin": "start",
+              "unit": "word"
+            },
+            "keys": [
+              {
+                "at": 0,
+                "value": 0.85
+              },
+              {
+                "at": 0.45,
+                "value": 1.18
+              },
+              {
+                "at": 1,
+                "value": 1
+              }
+            ],
+            "kind": "keyframes"
+          }
+        }
+      ],
+      "evaluationVersion": 1,
+      "layout": {
+        "maxLines": 2,
+        "pagination": {
+          "maxUnitsPerPage": 3
+        },
+        "width": {
+          "basis": "absolute",
+          "value": 140
+        },
+        "x": {
+          "basis": "absolute",
+          "value": 80
+        },
+        "y": {
+          "basis": "absolute",
+          "value": 45
+        }
+      },
+      "nodes": [
+        {
+          "id": "caption",
+          "style": {
+            "fontSize": {
+              "basis": "absolute",
+              "value": 16
+            },
+            "paints": [
+              {
+                "id": "edge",
+                "paint": {
+                  "color": "#000000",
+                  "kind": "solid"
+                },
+                "strokeWidth": 2
+              },
+              {
+                "id": "gradient",
+                "paint": {
+                  "from": [
+                    0,
+                    0
+                  ],
+                  "kind": "linear",
+                  "stops": [
+                    {
+                      "at": 0,
+                      "color": "#FF0000"
+                    },
+                    {
+                      "at": 1,
+                      "color": "#00FFFF"
+                    }
+                  ],
+                  "to": [
+                    1,
+                    1
+                  ]
+                }
+              }
+            ]
+          },
+          "type": "text"
+        },
+        {
+          "children": [
+            {
+              "id": "badge-image",
+              "properties": {
+                "height": {
+                  "kind": "constant",
+                  "value": 8
+                },
+                "transform.y": {
+                  "kind": "constant",
+                  "value": -12
+                },
+                "width": {
+                  "kind": "constant",
+                  "value": 12
+                }
+              },
+              "resourceId": "badge",
+              "type": "image"
+            }
+          ],
+          "id": "icons",
+          "selectorId": "words",
+          "type": "repeat"
+        }
+      ],
+      "parameters": [
+        {
+          "default": "#FFE600",
+          "id": "accent",
+          "type": "color"
+        }
+      ],
+      "requiredCapabilities": [
+        "caption-scene/1",
+        "caption-expressions/1"
+      ],
+      "resources": [
+        {
+          "assetRef": {
+            "id": "badge",
+            "revision": "rev_1"
+          },
+          "contentHash": "sha256:5a43ec1305804c9be3f99944cc19630ecb0839f0743c32deffd29357409efe54",
+          "id": "badge"
+        }
+      ],
+      "schema": "baocut.caption-scene/1",
+      "selectors": [
+        {
+          "id": "words",
+          "nodeId": "caption",
+          "unit": "word"
+        }
+      ],
+      "speechState": {
+        "gapPolicy": "hold-previous",
+        "tailPolicy": "hold-last",
+        "timingPolicy": "estimated"
+      }
+    }
+  },
+  "schema": "baocut.caption-scene-style/1"
+}

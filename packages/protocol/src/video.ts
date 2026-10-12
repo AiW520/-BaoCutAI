@@ -768,6 +768,8 @@ export interface AssetRecord {
 }
 
 export interface DocumentRevision {
+  /** Frozen resource references derived and validated by the engine. */
+  assetRefs?: VersionRef[];
   revision: Revision;
   contentHash: string;
   byteLength: number;

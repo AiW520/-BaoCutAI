@@ -9,9 +9,12 @@ fn main() -> anyhow::Result<()> {
             .ok_or_else(|| anyhow::anyhow!("output directory required"))?,
     );
     std::fs::create_dir_all(&output)?;
-    let value = serde_json::from_str(include_str!(
-        "../../caption-scene/tests/fixtures/word-pop.json"
-    ))?;
+    let rich = std::env::args().nth(2).as_deref() == Some("--rich");
+    let value = serde_json::from_str(if rich {
+        include_str!("../../caption-scene/tests/fixtures/image-paint.json")
+    } else {
+        include_str!("../../caption-scene/tests/fixtures/word-pop.json")
+    })?;
     let words = ["One", "two", "three", "four"]
         .iter()
         .enumerate()
@@ -40,6 +43,10 @@ fn main() -> anyhow::Result<()> {
         .to_vec()]),
         "caption|occurrence".into(),
     )?;
+    plan.load_resources(|r| {
+        (r.id == "badge")
+            .then(|| include_bytes!("../../caption-scene/tests/fixtures/badge.png").to_vec())
+    })?;
     for (i, t) in [0.0, 0.081, 0.3, 1.3, 2.3, 3.3].iter().enumerate() {
         let frame = plan.render(*t)?;
         tiny_skia::Pixmap::from_vec(
