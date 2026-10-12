@@ -30,6 +30,46 @@ fn background_is_the_sequence_colour() {
 }
 
 #[test]
+fn an_exchanged_canvas_never_shows_through_the_next_frame() {
+    // 导出把画好的帧整块交给编码队列、换回一块旧缓冲当下一帧的画布（`exchange_frame`）：下一帧照样从铺底画起。
+    // 整幅不透明的层直接接管帧，半透明的层、画中画与空序列先铺底；换回来的是什么都不影响结果。
+    let assets = || vec![image_asset("a_a", 16, 9)];
+    let background = |colour: &str| json!({ "canvas": { "width": W, "height": H, "workingSpace": "srgb", "background": colour } });
+    let cases = [
+        video(vec![image("a", 0, 0, 30, json!({ "mode": "fullscreen" }))], assets(), json!({})),
+        video(
+            vec![
+                image("a", 0, 0, 30, json!({ "mode": "fullscreen" })),
+                image("a", 1, 0, 30, json!({ "place": { "w": 50, "opacity": 0.5 } })),
+            ],
+            assets(),
+            json!({}),
+        ),
+        video(
+            vec![image("a", 0, 0, 30, json!({ "mode": "fullscreen", "place": { "opacity": 0.5 } }))],
+            assets(),
+            background("#00FF0080"),
+        ),
+        video(
+            vec![image("a", 0, 0, 30, json!({ "place": { "w": 50 } }))],
+            assets(),
+            background("#0000FF"),
+        ),
+        video(vec![], vec![], background("#00FF0080")),
+    ];
+    for case in &cases {
+        let mut renderer = renderer(false, Documents::default());
+        let mut media = Media::default().with("a", solid(16, 9, RED));
+        let first = render_with(&mut renderer, case, 0.0, &mut media);
+        assert_eq!(renderer.exchange_frame(vec![0x7F; first.len()]).unwrap(), first);
+        assert_eq!(render_with(&mut renderer, case, 0.0, &mut media), first);
+        // 长度不是一帧的缓冲不换，原样还回去。
+        assert_eq!(renderer.exchange_frame(vec![1; 8]).unwrap_err(), vec![1; 8]);
+        assert_eq!(renderer.frame().data(), first.as_slice());
+    }
+}
+
+#[test]
 fn layers_follow_place_opacity_crop_order_and_mirror() {
     let assets = || vec![image_asset("a_a", 16, 9), image_asset("a_b", 16, 9)];
     let media = || Media::default().with("a", solid(16, 9, RED)).with("b", halves(16, 9, RED, BLUE));

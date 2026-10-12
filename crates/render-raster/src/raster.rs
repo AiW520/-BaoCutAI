@@ -104,6 +104,15 @@ fn to_tf(m: &[f32; 6]) -> Transform {
     Transform::from_row(m[0], m[1], m[2], m[3], m[4], m[5])
 }
 
+/// 预乘 RGBA 的每个像素 alpha 都是 255（不透明：src-over 时完全遮住下层，也不可能有超过 alpha 的发光分量）。
+///
+/// 导出每帧都要对整幅视频问一次：按块把 alpha 字节一起与过去，不短路的折叠能向量化，比逐像素短路快得多；块与块之间
+/// 仍然短路，有半透明的图扫到第一块不满就停。
+pub fn is_opaque(data: &[u8]) -> bool {
+    data.chunks(4096)
+        .all(|block| block.chunks_exact(4).fold(0xFF, |acc, pixel| acc & pixel[3]) == 0xFF)
+}
+
 /// `out.draw_pixmap(0, 0, src, &PixmapPaint::default(), transform, None)` 的捷径（不透明度 1、src-over、不裁剪；
 /// 平移时 tiny-skia 不论要的是什么滤波都按最近邻取）：`transform` 是整数平移（含恒等），且盖到的源像素只有不透明的
 /// 与全零的时，src-over 就是把不透明像素原样拷过去、全零像素不动。先扫一遍再拷：有半透明像素就什么都不改、返回
@@ -154,8 +163,8 @@ pub fn copy_over(out: &mut Pixmap, src: PixmapRef, transform: Transform) -> bool
             rows.push(Row::Clear);
             continue;
         }
-        // 整行不透明（视频）先按 alpha 字节一起与过去：不短路的折叠能向量化，比下面逐像素分支快得多。
-        if row.chunks_exact(4).fold(0xFF, |acc, pixel| acc & pixel[3]) == 0xFF {
+        // 整行不透明（视频）先按块折叠 alpha（[`is_opaque`]），比下面逐像素分支快得多。
+        if is_opaque(row) {
             rows.push(Row::Opaque);
             continue;
         }
@@ -481,11 +490,14 @@ pub fn rasterize_with_media(
         .map(|StaticPrefix { key, ops }| ((key, width, height), ops));
     let mut start = 0;
     let mut store_at = None;
+    // `base` 还是新建时的全零（没接上前缀缓存、还没画过东西）：画实例的 DrawOp 都以透明清屏开头，这一遍整幅写零可以省。
+    let mut untouched = true;
     if let Some((key, ops)) = prefix {
         match static_prefix_get(key) {
             Some(hit) => {
                 base.data_mut().copy_from_slice(hit.data());
                 start = ops;
+                untouched = false;
             }
             None => store_at = Some((key, ops)),
         }
@@ -518,7 +530,11 @@ pub fn rasterize_with_media(
             store_at = None;
         }
         let clip = clips.last().map(|entry| &entry.mask);
+        // 透明清屏预乘后是全零，落在全零的新底图上什么都不改；别的指令（含开层）之后底图就不算新的了。
+        let blank = untouched && matches!(op, DrawOp::Clear { color } if color[3] <= 0.0 && !color.iter().any(|c| c.is_nan()));
+        untouched = blank;
         match op {
+            DrawOp::Clear { .. } if blank => {}
             DrawOp::Clear { color } => {
                 target!().fill(
                     Color::from_rgba(
@@ -1108,5 +1124,64 @@ mod copy_over_tests {
         check(&soft, Transform::identity(), false);
         let invalid = pixmap(8, 8, |x, _| if x == 3 { [9, 0, 0, 0] } else { [0; 4] });
         check(&invalid, Transform::identity(), false);
+    }
+}
+
+#[cfg(test)]
+mod clear_tests {
+    use super::*;
+    use crate::drawop::{DrawOp, FrameBuilder};
+
+    struct NoMedia;
+
+    impl FrameMedia for NoMedia {
+        fn frame(&mut self, id: &str, _media_ms: i64) -> Result<Arc<Pixmap>> {
+            Err(anyhow!("no media {id}"))
+        }
+    }
+
+    const NONE: [f32; 4] = [0.0; 4];
+    const RED: [f32; 4] = [1.0, 0.0, 0.0, 1.0];
+
+    fn rasterize(ops: Vec<DrawOp>) -> Vec<u8> {
+        let mut builder = FrameBuilder::default();
+        for op in ops {
+            builder.push(op);
+        }
+        rasterize_with_media(&builder.finish(), 4, 2, &mut NoMedia).unwrap().data().to_vec()
+    }
+
+    #[test]
+    fn transparent_clear_is_skipped_only_on_a_fresh_canvas() {
+        let clear = |color| DrawOp::Clear { color };
+        let rect = DrawOp::FillRect {
+            x: 0.0,
+            y: 0.0,
+            w: 4.0,
+            h: 2.0,
+            radius: 0.0,
+            color: RED,
+            tf: [1.0, 0.0, 0.0, 1.0, 0.0, 0.0],
+        };
+        let red = [255, 0, 0, 255].repeat(8);
+        // 新底图本来全零：开头的透明清屏省掉，结果不变。
+        assert_eq!(rasterize(vec![clear(NONE)]), vec![0; 32]);
+        assert_eq!(rasterize(vec![clear(NONE), clear(NONE), rect.clone()]), red);
+        // 画过之后的透明清屏、不透明的清屏照做。
+        assert_eq!(rasterize(vec![clear(NONE), rect, clear(NONE)]), vec![0; 32]);
+        assert_eq!(rasterize(vec![clear(NONE), clear(RED)]), red);
+    }
+
+    #[test]
+    fn is_opaque_reads_every_alpha() {
+        // 跨块边界（4096 字节）与不满一块的尾巴：任一像素 alpha 不是 255 都不算不透明。
+        let mut data = [7, 8, 9, 255].repeat(1500);
+        assert!(is_opaque(&data));
+        for at in [0, 1023, 1024, 1499] {
+            data[at * 4 + 3] = 254;
+            assert!(!is_opaque(&data), "pixel {at}");
+            data[at * 4 + 3] = 255;
+        }
+        assert!(is_opaque(&[]));
     }
 }

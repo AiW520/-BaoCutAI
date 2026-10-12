@@ -9227,7 +9227,8 @@ impl OverlayRenderPlan {
     }
 }
 
-/// 逐像素检查 alpha 是否全为 255（premultiplied 下即不透明，source-over 时完全遮住下层）。
+/// 逐像素检查 alpha 是否全为 255（premultiplied 下即不透明，source-over 时完全遮住下层）。导出每帧都对整幅视频扫一遍，
+/// 走向量化的块折叠（[`render_raster::raster::is_opaque`]）。
 fn is_opaque(pixmap: &Pixmap) -> bool {
-    pixmap.data().chunks_exact(4).all(|pixel| pixel[3] == 255)
+    render_raster::raster::is_opaque(pixmap.data())
 }

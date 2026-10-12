@@ -123,8 +123,8 @@ pub fn run(path: &Path) -> Result<ExitCode, Failure> {
             let plan = plan_frame(view, &input.sequence_id, t).map_err(|e| Failure::new(&e.code, e.message))?;
             renderer.render(view, &plan, t.to_f64(), &mut sources).map_err(render_failure)?;
             let encode_failure = |e: media_core::MediaError| Failure::new(e.code, e.message);
-            let mut frame = encoder.buffer().map_err(encode_failure)?;
-            boxed.place(renderer.frame().data(), &mut frame);
+            let frame = encoder.buffer().map_err(encode_failure)?;
+            let frame = boxed.deliver(&mut renderer, frame);
             encoder.submit(frame).map_err(encode_failure)
         })();
         if let Err(failure) = step {
@@ -298,6 +298,20 @@ impl Letterbox {
             full: picture.x == 0 && picture.y == 0 && picture.width == width && picture.height == height,
             stride: width as usize * 4,
         }
+    }
+
+    /// 把画好的一帧交进输出帧缓冲 `frame`。不加黑边时整块换：画好的帧直接交给编码队列，`frame` 换给渲染器当下一帧的画布，
+    /// 省一次整帧拷贝；加黑边时把画面写进 `frame`（黑边已经铺好）。
+    fn deliver(&self, renderer: &mut FrameRenderer, frame: Vec<u8>) -> Vec<u8> {
+        let mut frame = match self.full {
+            true => match renderer.exchange_frame(frame) {
+                Ok(drawn) => return drawn,
+                Err(frame) => frame,
+            },
+            false => frame,
+        };
+        self.place(renderer.frame().data(), &mut frame);
+        frame
     }
 
     /// 把画面写进输出帧 `frame`（黑边已经铺好）。

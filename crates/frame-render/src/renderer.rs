@@ -125,6 +125,11 @@ pub struct FrameRenderer {
     /// 交给内核的字体字节（共享：几台排版引擎只占一份内存）。
     fonts: Vec<Arc<Vec<u8>>>,
     frame: Pixmap,
+    /// 这一帧还没铺的底：`Some(背景色)`，背景色为 `None` 时只清屏。推迟到第一次往帧上画（[`Self::paint_background`]）：
+    /// 第一层整幅不透明时直接接管那一层（[`Self::composite`]），底就不用铺了。
+    background: Option<Option<Color>>,
+    /// 帧里确定没有超过 alpha 的发光分量（只铺过底、只照拷过不透明像素）：叠字幕时不必为发光把整帧扫一遍。
+    frame_plain: bool,
     /// 画实例用的内核计划：编一次，每层把 `elements` 换成那一个实例。
     elements: Option<OverlayRenderPlan>,
     captions: HashMap<String, CaptionPlan>,
@@ -182,6 +187,8 @@ impl FrameRenderer {
             documents,
             fonts,
             frame,
+            background: None,
+            frame_plain: false,
             elements: None,
             captions: HashMap::new(),
             caption_checks: HashMap::new(),
@@ -389,14 +396,13 @@ impl FrameRenderer {
             .get(&plan.sequence_id)
             .ok_or_else(|| RenderError::new("INVALID_PARAMS", format!("序列 {} 不在了", plan.sequence_id)))?;
         self.caption_hits.clear();
-        self.frame.fill(if self.transparent { Color::TRANSPARENT } else { Color::BLACK });
         // 背景色读不懂时保持黑色。
         let [r, g, b, a] = hex_rgba(&plan.canvas.background).unwrap_or([0, 0, 0, 255]);
         let alpha = (f64::from(a) / 255.0 * plan.canvas.background_alpha.clamp(0.0, 1.0)) as f32;
-        if alpha > 0.0 && !self.transparent {
-            let colour = Color::from_rgba(f32::from(r) / 255.0, f32::from(g) / 255.0, f32::from(b) / 255.0, alpha).unwrap_or(Color::BLACK);
-            fill(&mut self.frame, colour);
-        }
+        self.background =
+            Some((alpha > 0.0 && !self.transparent).then(|| {
+                Color::from_rgba(f32::from(r) / 255.0, f32::from(g) / 255.0, f32::from(b) / 255.0, alpha).unwrap_or(Color::BLACK)
+            }));
         let mut context = SequenceContext::new(sequence, video.assets);
         // 声波按序列的声音计划取素材频谱（整条序列，时间从 0 起）；没有声波的帧不求。
         let visualizer = |layer: &VisualLayer| matches!(&layer.content, Some(LayerContent::Generator { generator, .. }) if generator == "baocut.audio-visualizer");
@@ -436,7 +442,7 @@ impl FrameRenderer {
                 continue;
             };
             let Some(tr) = transition else {
-                over(&mut self.frame, &own.pixmap);
+                self.composite(own.pixmap);
                 continue;
             };
             let partner = match tr.partner.as_deref() {
@@ -456,9 +462,52 @@ impl FrameRenderer {
             };
             let mut out = Pixmap::new(self.options.width, self.options.height).expect("尺寸在构造时检查过");
             compose(&tr.kind, &tr.params, a.map(|l| &l.pixmap), Some(&b.pixmap), b.geom, e, &mut out);
-            over(&mut self.frame, &out);
+            self.composite(out);
         }
+        self.paint_background();
         Ok(self.frame.data())
+    }
+
+    /// 把画好的这一帧整块交出去，换进 `spare` 当下一帧的画布：宿主省掉一次整帧拷贝。`spare` 原来是什么不要紧，
+    /// 下一帧照样从铺底画起。`spare` 不是一帧的长度时不换，原样还回去。
+    pub fn exchange_frame(&mut self, spare: Vec<u8>) -> Result<Vec<u8>, Vec<u8>> {
+        let size = IntSize::from_wh(self.options.width, self.options.height).expect("尺寸在构造时检查过");
+        if spare.len() != self.frame.data().len() {
+            return Err(spare);
+        }
+        let spare = Pixmap::from_vec(spare, size).expect("长度刚核对过");
+        self.frame_plain = false;
+        Ok(std::mem::replace(&mut self.frame, spare).take())
+    }
+
+    /// 铺这一帧的底（[`Self::background`]）：先清成黑（透明底清成全零），背景色不透明度大于零时再叠一层背景色。
+    /// 铺过了不再铺。
+    fn paint_background(&mut self) {
+        let Some(colour) = self.background.take() else { return };
+        self.frame.fill(if self.transparent { Color::TRANSPARENT } else { Color::BLACK });
+        if let Some(colour) = colour {
+            fill(&mut self.frame, colour);
+        }
+        // 清屏是黑或全零；背景色叠在不透明的黑上，结果仍不透明：都没有超过 alpha 的分量。
+        self.frame_plain = true;
+    }
+
+    /// 把一层叠到帧上。帧上还只有没铺的底、这一层又整幅不透明时，叠出来就是这一层本身：直接接管它，省掉铺底与整帧拷贝
+    /// （导出每帧的整幅视频）。
+    fn composite(&mut self, layer: Pixmap) {
+        if self.background.is_some()
+            && (layer.width(), layer.height()) == (self.frame.width(), self.frame.height())
+            && render_raster::raster::is_opaque(layer.data())
+        {
+            self.frame = layer;
+            self.background = None;
+            self.frame_plain = true;
+            return;
+        }
+        self.paint_background();
+        if !over(&mut self.frame, &layer, self.frame_plain) {
+            self.frame_plain = false;
+        }
     }
 
     /// 画一层（不含转场）。整层不画（素材在跳过清单里、实例不在了）时为 `None`。
@@ -1152,10 +1201,14 @@ impl FrameRenderer {
         }
         self.note_missing_fonts(&first.item_id, missing);
         let opacity = first.opacity.clamp(0.0, 1.0) as f32 * style_opacity;
+        if !rendered.is_empty() {
+            self.paint_background();
+        }
         // Instance/group opacity is applied to each ordered output, before its
         // own blend. Do not flatten Screen into a transparent intermediate.
         for layer in rendered {
-            composite_caption_layer(&mut self.frame, &layer, opacity)?;
+            let plain = std::mem::replace(&mut self.frame_plain, false);
+            composite_caption_layer(&mut self.frame, &layer, opacity, plain)?;
         }
         Ok(())
     }
@@ -1305,8 +1358,13 @@ pub const SVG_MEDIA_TYPE: &str = "image/svg+xml";
 /// GIF 图片素材的媒体类型：画面由帧光栅从素材字节解（动图按时刻取帧）。
 pub const GIF_MEDIA_TYPE: &str = "image/gif";
 
-/// Composite one caption plane onto the current video backdrop.
-fn composite_caption_layer(target: &mut Pixmap, layer: &crate::captions::CaptionLayer, opacity: f32) -> Result<(), RenderError> {
+/// Composite one caption plane onto the current video backdrop. `plain`：调用方确知 `target` 没有发光分量（省一遍整幅扫描）。
+fn composite_caption_layer(
+    target: &mut Pixmap,
+    layer: &crate::captions::CaptionLayer,
+    opacity: f32,
+    plain: bool,
+) -> Result<(), RenderError> {
     let pixmap = PixmapRef::from_bytes(&layer.rgba, layer.width, layer.height)
         .ok_or_else(|| RenderError::render(anyhow::anyhow!("字幕层的尺寸不对")))?;
     if layer.associated_blend == Some(render_raster::drawop::AssociatedBlend::Screen) {
@@ -1323,7 +1381,7 @@ fn composite_caption_layer(target: &mut Pixmap, layer: &crate::captions::Caption
     }
     // 字幕层只在内核给的字外包矩形里有像素，发光只在框里找。
     if render_raster::emissive::has_emissive_components_within(pixmap.data(), layer.width as usize, layer.rect)
-        || render_raster::emissive::has_emissive_components(target.data())
+        || (!plain && render_raster::emissive::has_emissive_components(target.data()))
     {
         if layer.blend != BlendMode::SourceOver {
             return Err(RenderError::new(
@@ -1453,20 +1511,24 @@ fn without(fx: &Fx, skipped: &HashSet<String>) -> Fx {
     fx
 }
 
-fn over(target: &mut Pixmap, layer: &Pixmap) {
+/// 把一层叠到 `target` 上。`plain` 是调用方确知 `target` 没有发光分量（省一遍整幅扫描）。返回 true 时只照拷了不透明像素：
+/// `target` 原来没有发光分量，叠完也没有。
+fn over(target: &mut Pixmap, layer: &Pixmap, plain: bool) -> bool {
     // 整幅不透明的层（整幅视频）原样拷过去：只有不透明与全零像素时，发光的叠法也是不透明的照拷、全零的不动，
     // 先走这条就不必为发光把两幅图整幅扫一遍（导出每帧都要叠整幅视频）。
     if render_raster::raster::copy_over(target, layer.as_ref(), Transform::identity()) {
-        return;
+        return true;
     }
-    if render_raster::emissive::has_emissive_components(layer.data()) || render_raster::emissive::has_emissive_components(target.data()) {
+    if render_raster::emissive::has_emissive_components(layer.data())
+        || (!plain && render_raster::emissive::has_emissive_components(target.data()))
+    {
         render_raster::emissive::composite_associated(target, layer.as_ref(), 1.0, [1., 0., 0., 1., 0., 0.], None)
             .expect("identity associated composition uses valid surfaces");
-        return;
+        return false;
     }
     // 别的层（一行字、一张贴纸）只在非零像素的外包矩形里叠，与下面逐字节相同。
     if render_raster::plan::composite_bounded(target, layer, 1.0, BlendMode::SourceOver).is_some() {
-        return;
+        return false;
     }
     target.draw_pixmap(
         0,
@@ -1480,6 +1542,7 @@ fn over(target: &mut Pixmap, layer: &Pixmap) {
         Transform::identity(),
         None,
     );
+    false
 }
 
 fn fill(target: &mut Pixmap, color: Color) {
@@ -1534,14 +1597,14 @@ mod associated_caption_tests {
             ([0, 0, 100, 0], AssociatedBlend::SourceOver),
         ];
         for (rgba, blend) in outputs {
-            composite_caption_layer(&mut target, &layer(rgba, blend), 0.5).unwrap();
+            composite_caption_layer(&mut target, &layer(rgba, blend), 0.5, false).unwrap();
             expected = reference(expected, rgba, 0.5, blend);
             assert_eq!(target.data(), expected);
         }
         // Rendering on transparent first would calculate different Screen RGB.
         let mut flat = Pixmap::new(1, 1).unwrap();
         for (rgba, blend) in outputs {
-            composite_caption_layer(&mut flat, &layer(rgba, blend), 0.5).unwrap();
+            composite_caption_layer(&mut flat, &layer(rgba, blend), 0.5, false).unwrap();
         }
         let wrong = reference([40, 80, 120, 255], flat.data().try_into().unwrap(), 1., AssociatedBlend::SourceOver);
         assert_ne!(target.data(), wrong);
@@ -1552,7 +1615,7 @@ mod associated_caption_tests {
             let mut target = Pixmap::new(1, 1).unwrap();
             let backdrop = [50, 90, 110, 160];
             target.data_mut().copy_from_slice(&backdrop);
-            composite_caption_layer(&mut target, &layer(rgba, AssociatedBlend::Screen), 0.25).unwrap();
+            composite_caption_layer(&mut target, &layer(rgba, AssociatedBlend::Screen), 0.25, false).unwrap();
             assert_eq!(target.data(), reference(backdrop, rgba, 0.25, AssociatedBlend::Screen));
         }
     }
