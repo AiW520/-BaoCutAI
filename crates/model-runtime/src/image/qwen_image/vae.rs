@@ -4,12 +4,12 @@
 //! `time_conv` 都走 "Rep"/首块分支而被跳过，所以这里只剩 2D 卷积、通道 RMSNorm、单头注意力，
 //! 以及残差上 / 下采样块里的 DupUp3D / AvgDown3D 捷径（首帧版本）。
 //!
-//! 权重在两种包里都存成 F32（4-bit 包是 MLX 布局、8-bit 包是 PyTorch 布局，加载时统一成
-//! MLX 布局），逐张量转成计算精度（缺省 f16，`--vae-dtype` 可换 bf16 / f32 对照）。
+//! 权重存成 F32 或 BF16（Turbo 8-bit 包），4-bit 包是 MLX 布局、8-bit 包是 PyTorch 布局，加载时
+//! 统一成 MLX 布局，用到前逐张量转成计算精度（缺省 f16，`--vae-dtype` 可换 bf16 / f32 对照）。
 
 use crate::backend::mlx::qwen3::WeightStore;
 use anyhow::{Context, Result, bail};
-use mlx_rs::ops::indexing::IndexOp;
+use mlx_rs::ops::indexing::{IndexOp, TryIndexMutOp};
 use mlx_rs::{Array, Dtype, fast, nn, ops};
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
@@ -41,7 +41,6 @@ impl Conv {
             let k = w.dim(1);
             let rev = Array::from_slice(&(0..k).rev().collect::<Vec<i32>>(), &[k]);
             w = w.take_axis(&rev, 1)?.take_axis(&rev, 2)?;
-            w.eval()?;
         }
         Ok(Self {
             w,
@@ -50,6 +49,11 @@ impl Conv {
             stride,
             flip,
         })
+    }
+    fn materialize(&self) -> Result<()> {
+        self.w.eval()?;
+        self.b.eval()?;
+        Ok(())
     }
     fn conv(&self, x: &Array, stride: i32, pad: i32) -> Result<Array> {
         Ok(ops::conv_general(
@@ -78,15 +82,23 @@ impl Conv {
     fn forward_bands(&self, x: &Array, bands: i64) -> Result<Array> {
         let h = x.dim(1);
         let rows = ((h as i64 + bands - 1) / bands) as i32;
-        let mut outs = Vec::new();
+        let mut out = self.rows_out(x, h, x.dim(2))?;
         let mut r0 = 0;
         while r0 < h {
             let r1 = (r0 + rows).min(h);
             let (u0, u1) = ((r0 - 1).max(0), (r1 + 1).min(h));
-            outs.push(self.conv_rows(&x.index((.., u0..u1, .., ..)), r0, r1, u0, u1, None)?);
+            let y = self.conv_rows(&x.index((.., u0..u1, .., ..)), r0, r1, u0, u1, None)?;
+            put_rows(&mut out, r0, &y)?;
             r0 = r1;
         }
-        Ok(ops::concatenate_axis(&outs, 1)?)
+        Ok(out)
+    }
+
+    /// 条带卷积的整张输出缓冲（`h × w`、`O` 通道），已求值。
+    fn rows_out(&self, x: &Array, h: i32, w: i32) -> Result<Array> {
+        let out = ops::zeros_dtype(&[1, h, w, self.w.dim(0)], x.dtype())?;
+        out.eval()?;
+        Ok(out)
     }
 
     /// `slab` 是输入的 `[u0, u1)` 行，算输出的 `[r0, r1)` 行：`u0`/`u1` 被图像边缘截掉的那
@@ -109,12 +121,12 @@ impl Conv {
         let (h, w, c) = (x.dim(1), x.dim(2), x.dim(3));
         let hu = 2 * h;
         let elems = 4 * h as i64 * w as i64 * c as i64;
-        if elems <= BAND_ELEMS {
+        if elems <= UP_BAND_ELEMS {
             return Ok(self.forward(&upsample2x(x)?)?.add(&shortcut(0, hu)?)?);
         }
-        let bands = (elems + BAND_ELEMS - 1) / BAND_ELEMS;
+        let bands = (elems + UP_BAND_ELEMS - 1) / UP_BAND_ELEMS;
         let rows = (hu as u64).div_ceil(bands as u64).next_multiple_of(2) as i32;
-        let mut outs = Vec::new();
+        let mut out = self.rows_out(x, hu, 2 * w)?;
         let mut r0 = 0;
         while r0 < hu {
             let r1 = (r0 + rows).min(hu);
@@ -123,15 +135,29 @@ impl Conv {
             let (l0, l1) = (u0 / 2, (u1 + 1) / 2);
             let up = upsample2x(&x.index((.., l0..l1, .., ..)))?;
             let up = up.index((.., u0 - 2 * l0..u1 - 2 * l0, .., ..));
-            outs.push(self.conv_rows(&up, r0, r1, u0, u1, Some(shortcut(r0, r1)?))?);
+            let y = self.conv_rows(&up, r0, r1, u0, u1, Some(shortcut(r0, r1)?))?;
+            put_rows(&mut out, r0, &y)?;
             r0 = r1;
         }
-        Ok(ops::concatenate_axis(&outs, 1)?)
+        Ok(out)
     }
 }
 
 /// 超过这个元素数（f32 约 256 MB）的 3×3 卷积输入改走条带。
 const BAND_ELEMS: i64 = 64 << 20;
+
+/// 上采样卷积的输出超过这个元素数就按行条带算。要明显低于 `TAIL_ELEMS`：尾段条带最大的张量
+/// 正是 up_block 3 上采样卷积的输出（1024² 时 66M），整张算时 2× 拷贝、卷积输出与捷径的两次
+/// 物化同时在场，约 3.5 倍输出大小。
+const UP_BAND_ELEMS: i64 = 16 << 20;
+
+/// 把求值好的条带 `piece` 写进 `out` 的第 `r0..` 行并求值。`out` 只被这里引用，MLX 就地更新，
+/// 峰值是整张输出加一条带；拼接则要整张输出的两倍。
+fn put_rows(out: &mut Array, r0: i32, piece: &Array) -> Result<()> {
+    out.try_index_mut((.., r0..r0 + piece.dim(1), .., ..), piece)?;
+    out.eval()?;
+    Ok(())
+}
 
 /// `F.normalize(x, dim=C) * sqrt(C) * gamma` 等价于通道上的 RMSNorm。
 struct RmsNorm {
@@ -143,6 +169,9 @@ impl RmsNorm {
         Ok(Self {
             gamma: s.take(&format!("{p}.gamma"))?,
         })
+    }
+    fn materialize(&self) -> Result<()> {
+        Ok(self.gamma.eval()?)
     }
     fn forward(&self, x: &Array) -> Result<Array> {
         Ok(fast::rms_norm(x, &self.gamma, 1e-12)?)
@@ -171,6 +200,13 @@ impl ResBlock {
             },
         })
     }
+    fn materialize(&self) -> Result<()> {
+        self.norm1.materialize()?;
+        self.conv1.materialize()?;
+        self.norm2.materialize()?;
+        self.conv2.materialize()?;
+        self.shortcut.as_ref().map_or(Ok(()), Conv::materialize)
+    }
     fn forward(&self, x: &Array) -> Result<Array> {
         let h = match &self.shortcut {
             Some(c) => c.forward(x)?,
@@ -195,6 +231,11 @@ impl Attention {
             to_qkv: Conv::load(s, &format!("{p}.to_qkv"), 0, 1)?,
             proj: Conv::load(s, &format!("{p}.proj"), 0, 1)?,
         })
+    }
+    fn materialize(&self) -> Result<()> {
+        self.norm.materialize()?;
+        self.to_qkv.materialize()?;
+        self.proj.materialize()
     }
     fn forward(&self, x: &Array) -> Result<Array> {
         let (h, w, c) = (x.dim(1), x.dim(2), x.dim(3));
@@ -227,6 +268,11 @@ impl MidBlock {
             attn: Attention::load(s, &format!("{p}.attentions.0"))?,
             res1: ResBlock::load(s, &format!("{p}.resnets.1"), dim, dim)?,
         })
+    }
+    fn materialize(&self) -> Result<()> {
+        self.res0.materialize()?;
+        self.attn.materialize()?;
+        self.res1.materialize()
     }
     fn forward(&self, x: &Array) -> Result<Array> {
         let x = self.res0.forward(x)?;
@@ -271,6 +317,12 @@ struct UpBlock {
 }
 
 impl UpBlock {
+    fn materialize(&self) -> Result<()> {
+        for r in &self.resnets {
+            r.materialize()?;
+        }
+        self.upsampler.as_ref().map_or(Ok(()), Conv::materialize)
+    }
     fn forward(&self, x: &Array) -> Result<Array> {
         let mut y = x.clone();
         for r in &self.resnets {
@@ -308,8 +360,8 @@ fn auto_tail_rows(width: i32) -> i32 {
     ((TAIL_ELEMS / per_row.max(1)) as i32 - 2 * TAIL_HALO).max(TAIL_HALO)
 }
 
-/// 尾段一条带里最大张量的元素上限。1024² 时是 8 条 × 32 行，解码 MLX 峰值 0.87 GB（86 行
-/// 1.23 GB、整张 2.26 GB），已经高过 DiT 阶段（0.63 GB），所以不为省 halo 重算放大条带。
+/// 尾段一条带里最大张量的元素上限。1024² 时是 8 条 × 32 行，解码 MLX 峰值 0.70 GB（落在条带里
+/// up_block 4 的首个残差块），与 DiT 阶段相当，所以不为省 halo 重算放大条带。
 const TAIL_ELEMS: i64 = 64 << 20;
 
 pub struct Decoder {
@@ -330,8 +382,8 @@ struct VaeConfig {
     latents_std: Vec<f32>,
 }
 
-/// 惰性打开后逐张量转成 `dtype` 并立即求值：F32 原件一次只在内存里留一个张量。
-/// `time_conv` 只在多帧时使用，单帧不读。
+/// 惰性打开并接上布局转换与转 `dtype`，不求值：各块在用到前逐张量 `materialize`，原件一次只在
+/// 内存里留一个张量，前段算完即丢的块也不会和尾段权重同时常驻。`time_conv` 只在多帧时使用，单帧不读。
 fn load_store(files: &[PathBuf], prefix: &'static str, dtype: Dtype) -> Result<WeightStore> {
     let lazy = super::weights::lazy(files, move |k| {
         let ours = match prefix {
@@ -365,9 +417,7 @@ fn load_store(files: &[PathBuf], prefix: &'static str, dtype: Dtype) -> Result<W
         } else {
             v
         };
-        let c = v.as_dtype(dtype)?;
-        c.eval()?;
-        cast.insert(k, c);
+        cast.insert(k, v.as_dtype(dtype)?);
     }
     WeightStore::from_arrays(cast)
 }
@@ -432,8 +482,8 @@ impl Decoder {
         self.decode_raw(&z, tail_rows)
     }
 
-    /// 编码器原始 mu（未归一化）→ 图像。前段（mid 与 up_block 0–1）算完即丢权重，尾段按
-    /// `tail_rows` 行一条带（`None` 自动选，`Some(0)` 整张）。
+    /// 编码器原始 mu（未归一化）→ 图像。各块权重用到前才读入；前段（mid 与 up_block 0–1）算完
+    /// 即丢，尾段按 `tail_rows` 行一条带（`None` 自动选，`Some(0)` 整张）。
     pub fn decode_raw(self, z: &Array, tail_rows: Option<usize>) -> Result<Array> {
         let Self {
             post_quant_conv,
@@ -446,12 +496,16 @@ impl Decoder {
             ..
         } = self;
         let tail = ups.split_off(TAIL_FROM);
+        post_quant_conv.materialize()?;
+        conv_in.materialize()?;
+        mid.materialize()?;
         let x = post_quant_conv.forward(&z.as_dtype(dtype)?)?;
         let x = conv_in.forward(&x)?;
         let mut x = mid.forward(&x)?;
         x.eval()?;
         drop((post_quant_conv, conv_in, mid));
         for (i, b) in ups.into_iter().enumerate() {
+            b.materialize()?;
             x = b.forward(&x)?;
             trace!("[vae] up_block {i} -> {:?}", x.shape());
         }
@@ -464,6 +518,11 @@ impl Decoder {
         let bands = (h + rows - 1) / rows;
         let rows = (h + bands - 1) / bands;
         let scale = 1 << tail.iter().filter(|b| b.upsampler.is_some()).count();
+        for b in &tail {
+            b.materialize()?;
+        }
+        norm_out.materialize()?;
+        conv_out.materialize()?;
         let mut outs = Vec::with_capacity(bands as usize);
         let mut r0 = 0;
         while r0 < h {
