@@ -42,7 +42,7 @@ test('能力表照设计稿 §4：OpenAI 自由尺寸 + 透明底；智谱一次
   const cx = I.capabilities(I.CODEX_ID);
   assert.equal(cx.sizes, 'fixed'); assert.equal(cx.maxN, 1); assert.ok(cx.aspects.indexOf('3:4') < 0, 'Codex 没有 3:4');
   const lc = I.capabilities(I.LOCAL_ID);
-  assert.equal(lc.sizes.multiple, 32); assert.equal(lc.refs, 0); assert.equal(lc.negative, false); assert.equal(lc.seed, true);
+  assert.equal(lc.sizes.multiple, 32); assert.equal(lc.refs, 10); assert.equal(lc.edit, true); assert.equal(lc.negative, false); assert.equal(lc.seed, true);
   assert.equal(I.capabilities('cloud:nobody/none').maxN, 4, '不认识的模型给保守默认');
 });
 
@@ -59,6 +59,23 @@ test('画幅 → 尺寸（§4.5）：倍数规则按长边取整、枚举按档�
   const lc = I.capabilities(I.LOCAL_ID);
   const s = I.resolveSize(lc, '16:9', 'normal');
   assert.equal(s[0] % 32, 0); assert.equal(s[1] % 32, 0);
+  assert.deepEqual(I.resolveSize(lc, '16:9', '2k'), [2752, 1536], '本地 2K 按原生预设表，不按长边 2048 算');
+  assert.deepEqual(I.resolveSize(lc, '1:1', '2k'), [2048, 2048]);
+  for (const a of lc.aspects) {
+    const k2 = I.resolveSize(lc, a, '2k');
+    assert.equal(I.checkSize(lc, k2), null, `本地 2K ${a} ${k2.join('x')} 要合本地的尺寸规则`);
+  }
+});
+
+test('尺寸档位跟模型走（2026-10-13）：本地与 Gemini 3 有 1K / 2K，Flash Lite 只有 1K，Codex 不给', () => {
+  const tiers = (id, a) => I.sizeTiers(I.capabilities(id), a).map((t) => `${t.label} ${t.size.join('x')}`);
+  assert.deepEqual(tiers(I.LOCAL_TURBO_ID, '16:9'), ['1K 1024x576', '2K 2752x1536']);
+  assert.deepEqual(tiers('cloud:google/gemini-3-pro-image', '1:1'), ['1K 1024x1024', '2K 2048x2048']);
+  assert.deepEqual(tiers('cloud:google/gemini-3.1-flash-lite-image', '1:1'), ['1K 1024x1024']);
+  assert.deepEqual(I.sizeTiers(I.capabilities(I.CODEX_ID), '1:1'), []);
+  const f = I.switchModel(Object.assign(I.blank(I.LOCAL_TURBO_ID), {quality: '2k'}), 'cloud:google/gemini-3.1-flash-lite-image');
+  assert.equal(f.quality, 'normal', '换到没有 2K 的模型落回 1K');
+  assert.equal(I.switchModel(Object.assign(I.blank(I.LOCAL_TURBO_ID), {quality: '2k'}), I.LOCAL_ID).quality, '2k', '两只本地模型之间 2K 保留');
 });
 
 test('checkSize：倍数 / 最长边 / 长宽比三条都给最近合法值', () => {
@@ -161,7 +178,8 @@ test('switchModel：不认的画幅 / 张数 / 旋钮跟着模型收', () => {
   const h = I.switchModel(f, I.LOCAL_ID);
   // 参考图留在草稿里（换回认参考图的模型还在），送出去时才按能力裁
   assert.deepEqual(h.refs, ['a', 'b']); assert.equal(h.seed, '7'); assert.equal(h.n, 1);
-  assert.deepEqual(I.usedRefs(h, I.capabilities(I.LOCAL_ID)), []);
+  assert.deepEqual(I.usedRefs(h, I.capabilities(I.LOCAL_ID)), ['a', 'b'], '本地 Qwen 认参考图（2026-10-13）');
+  assert.deepEqual(I.usedRefs(h, I.capabilities('cloud:zhipu/glm-image')), []);
   assert.deepEqual(I.usedRefs(g, I.capabilities(I.CODEX_ID)), ['a', 'b']);
   assert.deepEqual(I.usedRefs({refs: ['a', 'b']}, I.capabilities('cloud:minimax/image-01')), ['a']);
 });
@@ -173,8 +191,10 @@ test('参考图：文件登记、解析与提示句', () => {
   assert.equal(I.refInfo('m1', [{id: 'm1', name: '徽标'}]).name, '徽标');
   assert.equal(I.refInfo('gone').missing, true);
   const local = I.capabilities(I.LOCAL_ID);
-  assert.match(I.refsNote({refs: []}, local, 'Qwen-Image-2.1'), /不认参考图$/);
-  assert.match(I.refsNote({refs: ids}, local, 'Qwen-Image-2.1'), /已选的 2 张这次不会用/);
+  assert.match(I.refsNote({refs: []}, local, 'Qwen-Image-2.1'), /^最多 10 张 · 第一张是要改的图$/);
+  assert.match(I.refsNote({refs: ids}, local, 'Qwen-Image-2.1'), /只在这台电脑上读，不上传/);
+  assert.match(I.refsNote({refs: ids}, I.capabilities(I.CODEX_ID), 'Codex'), /作为参考 · 参考图会上传给服务商/);
+  assert.match(I.refsNote({refs: ids}, I.capabilities('cloud:zhipu/glm-image'), 'GLM'), /不认参考图，已选的 2 张这次不会用/);
   const mm = I.capabilities('cloud:minimax/image-01');
   assert.match(I.refsNote({refs: ids}, mm, 'MiniMax'), /最多 1 张 · 作为参考 · 参考图会上传给服务商 · 超出的 1 张不送/);
   assert.match(I.refsNote({refs: []}, I.capabilities('cloud:openai/gpt-image-2'), 'OpenAI'), /会按参考图编辑/);

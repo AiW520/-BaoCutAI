@@ -287,6 +287,27 @@
     );
   }
 
+  /* ---------- 尺寸 chip：这只模型在当前画幅下的几档（2026-10-13）----------
+     档位跟模型走（IM.sizeTiers 读能力表）：有几档画几档，只有一档时写明只有这一档；Codex 只认画幅，整行不画。
+     「跟视频画布」时按折出来的那一档画幅算像素。 */
+  function SizeRow({f, set, cap, ctx}) {
+    const fitted = ctx ? IM.fitAspect(ctx.ratio || '16:9', cap.aspects) : null;
+    const aspect = f.fit && fitted ? fitted : f.aspect;
+    const tiers = IM.sizeTiers(cap, aspect);
+    const on = tiers.some((t) => t.k === f.quality) ? f.quality : 'normal';
+    return (
+      <BCChoiceGroup className="imgen__aspects" value={on} onChange={(q) => set({quality: q})} aria-label="尺寸">
+        {tiers.map((t) => (
+          <BCAction key={t.k} type="button" choiceKey={t.k} className={cx('imgen__aspect', on === t.k && 'is-on')}>
+            <b>{t.label}</b>{t.size ? <span>{t.size.join('×')}</span> : null}
+          </BCAction>
+        ))}
+        <span className="t-detail-xs">{tiers.length < 2 ? '这只模型只有这一档'
+          : cap.local ? '2K 更清楚，在本机要慢好几倍' : '2K 更清楚，也更贵、更慢'}</span>
+      </BCChoiceGroup>
+    );
+  }
+
   /* ---------- 参考图：从素材库挑 ---------- */
   /* 参考图一行（§2.4 第 5 条）：素材库里选（面板给了 sources 才有）、从文件选（真开文件选择器）、拖图片进来。
      选进来的文件登记在 IM.FILE_REFS（只留名字与预览 url，正式版是拷进素材库再引用）。认不认、上限几张看能力表。 */
@@ -350,7 +371,7 @@
     const cap = IM.capabilities(f.model);
     const p = String(f.prompt || '');
     const st = cap.steps;
-    const hasAdvanced = cap.quality.length > 1 || cap.negative || cap.seed || cap.transparent || !!st;
+    const hasAdvanced = cap.negative || cap.seed || cap.transparent || !!st;
     return (
       <>
         <ImageGenSection compact={compact}>
@@ -386,6 +407,12 @@
           <AspectRow f={f} set={set} cap={cap} ctx={ctx} />
         </ImageGenSection>
 
+        {cap.sizes !== 'fixed' ? (
+          <ImageGenSection compact={compact} title="尺寸">
+            <SizeRow f={f} set={set} cap={cap} ctx={ctx} />
+          </ImageGenSection>
+        ) : null}
+
         {cap.maxN > 1 ? (
           <ImageGenSection compact={compact} title="数量">
             <div className="ttsw__row">
@@ -400,9 +427,6 @@
           <ImageGenSection compact={compact} title="高级" aside={<BCAction className="viewall" onClick={() => set({advanced: !f.advanced})}>{f.advanced ? '收起' : '展开'}</BCAction>}>
             {f.advanced ? (
               <div className="imgen__adv">
-                {cap.quality.length > 1 ? <div className="ttsw__row"><span className="ttsw__lab">质量</span>
-                  <Segmented size="s" value={f.quality} onChange={(q) => set({quality: q})} items={[{k: 'normal', label: '标准 · 1K'}, {k: '2k', label: '高 · 2K'}]} />
-                  <span className="t-detail-xs">2K 更贵、更慢</span></div> : null}
                 {cap.negative ? <div className="ttsw__row"><span className="ttsw__lab">不要出现</span>
                   <Field size="s" className="grow" value={f.negative} placeholder="负向提示 · 例如 文字、水印、模糊" onChange={(ev) => set({negative: ev.target.value})} /></div> : null}
                 {cap.seed ? <div className="ttsw__row"><span className="ttsw__lab">种子</span>
@@ -418,7 +442,7 @@
                     onDec={() => set({steps: f.steps - st.step})} onInc={() => set({steps: f.steps + st.step})} />
                   <span className="t-detail-xs">默认 {st.default} · 越多越慢</span></div> : null}
               </div>
-            ) : <span className="t-detail-xs">{[cap.quality.length > 1 ? '质量' : null, cap.negative ? '负向提示' : null, cap.seed ? '种子' : null, cap.transparent ? '透明底' : null,
+            ) : <span className="t-detail-xs">{[cap.negative ? '负向提示' : null, cap.seed ? '种子' : null, cap.transparent ? '透明底' : null,
               st ? (st.min === st.max ? `固定 ${st.min} 步` : '步数') : null].filter(Boolean).join(' · ')}</span>}
           </ImageGenSection>
         ) : null}

@@ -25,7 +25,7 @@
   }
 
   /* ---------- 能力表（§4）----------
-     sizes：`{multiple, maxEdge, maxRatio}`（OpenAI / 本地）、`{enum: {aspect: {normal: [w,h], k2: [w,h]}}}`、`'fixed'`（Codex 忽略尺寸）。
+     sizes：`{multiple, maxEdge, maxRatio, presets?}`（OpenAI / 本地；`presets: {k2: {aspect: [w,h]}}` 是某一档按画幅写死的尺寸，先查它再按长边算）、`{enum: {aspect: {normal: [w,h], k2: [w,h]}}}`、`'fixed'`（Codex 忽略尺寸）。
      refs：0 = 不认参考图；n = 最多 n 张。 */
   const ENUM_1K = {'1:1': [1024, 1024], '16:9': [1344, 768], '9:16': [768, 1344], '4:3': [1152, 896], '3:4': [896, 1152], '2.35:1': [1536, 640]};
   const ENUM_2K = {'1:1': [2048, 2048], '16:9': [2688, 1536], '9:16': [1536, 2688], '4:3': [2304, 1792], '3:4': [1792, 2304], '2.35:1': [3072, 1280]};
@@ -135,7 +135,13 @@
      一张表列出全部本地生图模型，菜单、能力查表、记录元数据都从它来。`caps.steps` 是去噪步数的范围，形状同模型描述的
      `local.steps`（{min, max, step, default}）；min === max 是步数固定的模型（蒸馏版），界面只写「固定 N 步」，不给步进器。
      Turbo 排在基础版前面（2026-10-12）：本地模型的列表与菜单都先列它，本地的默认模型取第一个装好能用的。 */
-  const LOCAL_CAPS = (steps) => caps({sizes: {multiple: 32, maxEdge: 1536, maxRatio: 3}, quality: ['normal'], maxN: 1, seed: true, promptMax: 1024, steps});
+  /* 本地两档尺寸（2026-10-13）：1K 是长边 1024（与原先的几档相同）；2K 按 Qwen-Image-2.1 原生的约 4 MP 预设（1:1 2048²、16:9 2752×1536），
+     各画幅取 32 的倍数，2.35:1 落在 3072×1312。2K 的耗时与内存还没在本机实测。
+     参考图：Qwen-Image-2.1 的文本编码器是带视觉塔的 Qwen3-VL，能按一张底图加最多 9 张参考图做指令编辑——共 10 张，第一张是要改的图。
+     参考图只在本机读，不上传（`local: true` 让提示换一句）。 */
+  const LOCAL_2K = {'1:1': [2048, 2048], '16:9': [2752, 1536], '9:16': [1536, 2752], '4:3': [2400, 1792], '3:4': [1792, 2400], '2.35:1': [3072, 1312]};
+  const LOCAL_CAPS = (steps) => caps({sizes: {multiple: 32, maxEdge: 3072, maxRatio: 3, presets: {k2: LOCAL_2K}}, quality: ['normal', '2k'], maxN: 1,
+    seed: true, promptMax: 1024, refs: 10, edit: true, local: true, steps});
   /* POC 实测（§6.2）：512² 20 步 ≈ 214 s、1024² ≈ 881 s、VAE 解码 10.4 s——每步秒数按像素线性插值 */
   const QWEN_PACE = {512: 9.9, 1024: 43.5, decode: 10.4};
   const LOCAL_MODELS = [
@@ -158,8 +164,9 @@
     const m = LOCAL[id];
     if (!m) return 0;
     const px = (w || 1024) * (h || 1024);
+    // 1024² 以上按同一斜率外推（2K 约 5 倍于 1024² 的增量）；没有实测，偏乐观
     const t = px <= 512 * 512 ? m.pace[512] * (px / (512 * 512))
-      : m.pace[512] + (m.pace[1024] - m.pace[512]) * Math.min(3, (px - 512 * 512) / (1024 * 1024 - 512 * 512));
+      : m.pace[512] + (m.pace[1024] - m.pace[512]) * ((px - 512 * 512) / (1024 * 1024 - 512 * 512));
     return Math.round(t * (steps || m.caps.steps.default) + m.pace.decode);
   }
 
@@ -247,10 +254,19 @@
       const row = cap.sizes.enum[a] || cap.sizes.enum['1:1'];
       return (q === '2k' && row.k2) || row.normal;
     }
+    const preset = cap.sizes.presets && cap.sizes.presets[q === '2k' ? 'k2' : 'normal'];
+    if (preset && preset[a]) return preset[a];
     const long = Math.min(cap.sizes.maxEdge, q === '2k' ? 2048 : 1024);
     const r = ratioOf(a);
     const k = cap.sizes.multiple;
     return r >= 1 ? [roundTo(long, k), roundTo(long / r, k)] : [roundTo(long * r, k), roundTo(long, k)];
+  }
+  /** 尺寸那一行的几档：这只模型在这个画幅下能出的每一档与它的像素尺寸；只认画幅的模型（Codex）给空表。
+      档位来自能力表的 `quality`，所以各家不同：Gemini 3 / 百炼 / 本地 Qwen 有 1K 与 2K，Flash Lite / MiniMax / 智谱只有 1K。 */
+  const TIER_LABEL = {normal: '1K', '2k': '2K'};
+  function sizeTiers(cap, aspect) {
+    if (cap.sizes === 'fixed') return [];
+    return cap.quality.map((q) => ({k: q, label: TIER_LABEL[q] || q, size: resolveSize(cap, aspect, q)}));
   }
   /** 显式尺寸合不合规则；不合就给最近合法值 */
   function checkSize(cap, size) {
@@ -341,8 +357,9 @@
   function refsNote(f, cap, engineName) {
     const n = (f.refs || []).length;
     if (!cap.refs) return `${engineName || '这只模型'} 不认参考图${n ? `，已选的 ${n} 张这次不会用` : ''}`;
-    const tail = cap.edit ? ' · 会按参考图编辑' : ' · 作为参考';
-    return `最多 ${cap.refs} 张${tail}${n ? ' · 参考图会上传给服务商' : ''}${n > cap.refs ? ` · 超出的 ${n - cap.refs} 张不送` : ''}`;
+    const tail = cap.edit ? (cap.local ? ' · 第一张是要改的图' : ' · 会按参考图编辑') : ' · 作为参考';
+    const where = cap.local ? ' · 只在这台电脑上读，不上传' : ' · 参考图会上传给服务商';
+    return `最多 ${cap.refs} 张${tail}${n ? where : ''}${n > cap.refs ? ` · 超出的 ${n - cap.refs} 张不送` : ''}`;
   }
   /** 示例缩略（CSS 渐变）里的几个色站，给「下载图片」画一张真 PNG 用 */
   const artColors = (art) => (String(art || '').match(/#[0-9A-Fa-f]{6}/g) || DEMO_ART[0].match(/#[0-9A-Fa-f]{6}/g));
@@ -501,7 +518,7 @@
     PREFIX, AGENT_PREFIX, CODEX_ID, CODEX_MIN_VER, CODEX_API_KEY_CAUTION, LOCAL_ID, LOCAL_TURBO_ID, ASPECTS, PROVIDERS, LOCAL, LOCAL_MODELS, SEED_SAVED, EMPTY_PROMPT, DEMO_ART, LICENSE_LABEL,
     ratioOf, fitAspect, isCloud, isAgent, isLocal, family, modelId, parse, providerOf,
     customProvider, providers, providerById, modelOf, capabilities, CUSTOM_CAPS,
-    localEta, stepsOf, fixedSteps, codexReady, codexCanEnable, compareVer,
+    localEta, stepsOf, fixedSteps, sizeTiers, codexReady, codexCanEnable, compareVer,
     engines, engineOf, modelIn, preferred, anyReady,
     resolveSize, checkSize, blank, switchModel, validate, costOf, statusLine, headerChip,
     makeRecord, recordMeta, provenance, toSource, phase, clock, stepProgress, timeLine, demoArt, agentPrompt, toolStatus,
