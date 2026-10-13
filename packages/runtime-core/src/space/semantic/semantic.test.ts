@@ -324,6 +324,86 @@ describe('语义派生库', () => {
     expect(store.source('v1')).toBeNull();
     store.close();
   });
+
+  it('格式 1 的库原地升到 2：文字索引原样保留，补上画面的表', () => {
+    const dir = path.join(tmp, 'store');
+    const store = new SemanticStore(dir);
+    const { chunks, sentences } = chunkVideo('v1', [
+      { kind: 'speech', documentId: 'd1', language: 'en', clock: 'sequence', start: 0, end: 1, text: 'Hello there.', speaker: null, sentenceIds: ['s-1'] },
+    ]);
+    const keyed = chunks.map((c) => ({ ...c, embeddingKey: `k-${c.chunkId}` }));
+    store.putEmbeddings(keyed.map((c) => ({ key: c.embeddingKey, encoderProfileId: 'enc@1', vector: new Float32Array([1, 0, 0, 0]) })));
+    const frozen = store.freeze('v1', '/v1', 'p1', 'r1');
+    const base = { videoId: 'v1', encoderProfileId: 'enc@1', embeddingSpaceId: 'space', dims: 4, chunks: keyed, sentences };
+    expect(store.publish({ ...base, revision: 'r1', expectedGeneration: frozen.expectedGeneration }).published).toBe(true);
+    store.close();
+    // 退回格式 1 的样子：没有画面的表。
+    const v1 = new DatabaseSync(path.join(dir, SEMANTIC_STORE_FILE));
+    v1.exec('DROP TABLE visual_frames; DROP TABLE visual_sources; PRAGMA user_version = 1;');
+    v1.close();
+
+    const reopened = new SemanticStore(dir);
+    expect(reopened.activeGenerations(['v1']).get('v1')).toMatchObject({ channel: 'text', revision: 'r1', chunkCount: 1 });
+    expect(reopened.partition(reopened.activeGenerations(['v1']).get('v1')!.id)!.chunks).toHaveLength(1);
+    expect(reopened.visualSources()).toEqual([]);
+    reopened.close();
+    const check = new DatabaseSync(path.join(dir, SEMANTIC_STORE_FILE));
+    expect((check.prepare('PRAGMA user_version').get() as { user_version: number }).user_version).toBe(2);
+    check.close();
+  });
+
+  it('画面世代：与文字各自的版本与指针，发布同样做 CAS；发布文字时回收向量不动画面的，撤下视频两边都撤', () => {
+    const dir = path.join(tmp, 'store');
+    const store = new SemanticStore(dir);
+    const vector = new Float32Array([0, 1, 0, 0]);
+    const frames = [
+      { assetId: 'a1', contentHash: 'h1', sourceSec: 0, embeddingKey: 'vis-0' },
+      { assetId: 'a1', contentHash: 'h1', sourceSec: 8, embeddingKey: 'vis-8' },
+    ];
+    const base = { videoId: 'v1', encoderProfileId: 'img@1', embeddingSpaceId: 'space', dims: 4, frames };
+    const first = store.freezeVisual('v1', 'vr1');
+    expect(store.publishVisual({ ...base, revision: 'vr1', expectedGeneration: first.expectedGeneration })).toEqual({
+      published: false,
+      reason: 'missing-vectors',
+    });
+    store.putEmbeddings(frames.map((f) => ({ key: f.embeddingKey, encoderProfileId: 'img@1', vector })));
+    store.putEmbeddings([{ key: 'orphan', encoderProfileId: 'img@1', vector }]);
+    const second = store.freezeVisual('v1', 'vr2');
+    expect(store.publishVisual({ ...base, revision: 'vr1', expectedGeneration: first.expectedGeneration })).toEqual({ published: false, reason: 'stale' });
+    expect(store.publishVisual({ ...base, revision: 'vr2', expectedGeneration: second.expectedGeneration }).published).toBe(true);
+    expect(store.visualSource('v1')).toMatchObject({ state: 'indexed', wantedRevision: 'vr2' });
+    // 画面世代不占文字的指针。
+    expect(store.source('v1')).toBeNull();
+    expect(store.activeGenerations(['v1']).size).toBe(0);
+    const generation = store.activeVisualGenerations(['v1']).get('v1')!;
+    expect(generation).toMatchObject({ channel: 'visual', chunkCount: 2 });
+    const partition = store.visualPartition(generation.id)!;
+    expect(partition.frames.map((f) => [f.assetId, f.sourceSec])).toEqual([
+      ['a1', 0],
+      ['a1', 8],
+    ]);
+    expect(Array.from(partition.vectors.slice(4, 8))).toEqual([0, 1, 0, 0]);
+
+    // 所有向量都过了宽限期；发布一次文字（触发回收）：画面引用的留下，没人引用的删掉。
+    const db = new DatabaseSync(path.join(dir, SEMANTIC_STORE_FILE));
+    db.exec('UPDATE embeddings SET created_at = 0');
+    db.close();
+    const { chunks, sentences } = chunkVideo('v2', [
+      { kind: 'speech', documentId: 'd1', language: 'en', clock: 'sequence', start: 0, end: 1, text: 'Hi.', speaker: null, sentenceIds: ['s-1'] },
+    ]);
+    const keyed = chunks.map((c) => ({ ...c, embeddingKey: `k-${c.chunkId}` }));
+    store.putEmbeddings(keyed.map((c) => ({ key: c.embeddingKey, encoderProfileId: 'enc@1', vector })));
+    const text = store.freeze('v2', '/v2', 'p1', 'r1');
+    store.publish({ videoId: 'v2', revision: 'r1', expectedGeneration: text.expectedGeneration, encoderProfileId: 'enc@1', embeddingSpaceId: 'space', dims: 4, chunks: keyed, sentences });
+    expect(store.embeddings(['vis-0', 'vis-8'], 'img@1', 4).size).toBe(2);
+    expect(store.embeddings(['orphan'], 'img@1', 4).size).toBe(0);
+
+    store.removeVideos(['v1']);
+    expect(store.activeVisualGenerations(['v1']).size).toBe(0);
+    expect(store.visualSource('v1')).toBeNull();
+    expect(store.visualPartition(generation.id)).toBeNull();
+    store.close();
+  });
 });
 
 // ---- 增量构建 ----
