@@ -15,7 +15,7 @@ import {
   withZoom,
   type FramedVideo,
 } from './stage-framing.ts';
-import { gestureOperations, gesturePatch, memberOf, stepGesture, zoomGesture } from './stage-gesture.ts';
+import { gestureOperations, gesturePatch, memberOf, nudgeOperations, stepGesture, zoomGesture } from './stage-gesture.ts';
 import { alignOperations } from './stage-align.ts';
 import { poseOf, type PlacedItem } from './stage-pose.ts';
 import { applyFramingToAll, framingPieces, shotSeconds, showsShotChip } from './stage-shots.ts';
@@ -249,6 +249,16 @@ describe('铺满画布、没有取景点的媒体', () => {
     const framed = piece('f', 0, 30, undefined, { focalPoint: { x: 0.3, y: 0.5 } }) as PlacedItem;
     const start = stagePose(framed, canvas, assets);
     expect(placeOperations('s1', framed, { ...start, cx: start.cx + 200 }, canvas, assets)).toEqual([]);
+  });
+
+  it('方向键：铺满的原片（主轨上那条也一样）第一下换成画中画，从画面上那一幅挪一步', () => {
+    const item = plain();
+    const start = stagePose(item, canvas, assets);
+    const ops = nudgeOperations('s1', [item], { x: 54, y: 0 }, canvas, assets);
+    expect(ops.map((op) => op.type)).toEqual(['setStyle', 'setTransform']);
+    const after = poseOf(applied(item, ops), canvas, assets);
+    expect(Math.abs(after.cx - (start.cx + 54))).toBeLessThan(1);
+    expect(Math.abs(after.w - start.w)).toBeLessThan(1);
   });
 
   it('对齐按画面上那一幅量，挪动了就换成画中画', () => {

@@ -692,9 +692,9 @@ export function StageObjects({ sequence, frame }: { sequence: Sequence; frame: F
     const seq = latest.current;
     const delta = nudgeDelta(event.key, event.shiftKey, event.altKey, seq.canvas);
     if (!delta) return;
-    // 选中压过播放：有能推的就推，没有就让给编辑器（逐帧、播放中跳 5 秒）。按原片取景的视频位置跟着取景点，不推；
-    // 只选了它们时说一句为什么（原型 editor-keys.jsx）——子视频的原片就在主轨上，也要说。
-    const candidates = picked.filter((item) => !locked(item) && (isFramed(item) || !isMainVideo(item, seq)));
+    // 选中压过播放：有能推的就推，没有就让给编辑器（逐帧、播放中跳 5 秒）。主轨上的视频选中了也推（铺满的第一下换成画中画），
+    // 与原型 editor-keys.jsx 一样；按原片取景的视频位置跟着取景点，不推，只选了它们时说一句为什么。
+    const candidates = picked.filter((item) => !locked(item));
     if (!candidates.length) return;
     event.preventDefault();
     const targets = candidates.filter((item) => !isFramed(item));
