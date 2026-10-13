@@ -3,7 +3,7 @@
      默认收起；没拨过的键不进表单、合成时也不传（副题写「按模型默认」），「恢复默认」把键删掉而不是写回默认值。
    - `OmniDescribe`：OmniVoice 的「描述」不是一句自由文字，是按类挑项（性别 / 年龄 / 音高 / 风格，念英语多英语口音、念中文多汉语方言），
      每类至多一项；上面一排三组现成挑法当起点。
-   - `withModelLicense`：权重不许商用（data.js 该行 `license.commercialUse: false`：OmniVoice、Qwen-Image-2.1）的模型，
+   - `withModelLicense`：权重不许商用（data.js 该行 `license.commercialUse: false`：OmniVoice、Qwen-Image-2.1 与 Turbo）的模型，
      第一次下载前弹「许可」确认；可商用的直接下。音频面板的下载卡、设置 › 本地模型的下载 / 补齐、配音设置的「下载缺的模型」、
      生成图片的下载卡都经这里；末尾那句按模型的类说（合成的声音 / 画出的图）。
    词表、区间与拼接规则在 model-tts.js（`LOCAL_KNOBS` / `OMNI_DESIGN`），这里只画。

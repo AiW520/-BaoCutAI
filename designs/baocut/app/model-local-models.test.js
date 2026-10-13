@@ -162,7 +162,7 @@ test('语音合成：引擎表里的每只模型都有设置行；只有 OmniVoi
   assert.equal(byId('voxcpm2').size, 2870);
   assert.equal(byId('omnivoice').size, 1049);
   const nc = M.filter((m) => m.license && m.license.commercialUse === false).map((m) => m.id);
-  assert.deepEqual(nc, ['omnivoice', 'qwen-image-2.1', 'yue2-3b']);
+  assert.deepEqual(nc, ['omnivoice', 'qwen-image-2.1', 'qwen-image-2.1-turbo', 'yue2-3b']);
   assert.equal(byId('omnivoice').license.name, 'CC-BY-NC-4.0');
   // 新行各自一个仓库：公共组件照旧只有 12Hz 编解码器
   const tts = L.layout(M, C, 'tts');
@@ -207,6 +207,7 @@ test('详情的许可行：权重的许可，加上要署名或许可不同的�
   assert.equal(L.licenseLines(byId('speaker-diarization'), C)[1].comp, true);
   // Qwen-Image-2.1：不可商用，只有权重那条
   assert.deepEqual(lines('qwen-image-2.1'), ['模型权重:Qwen RESEARCH LICENSE AGREEMENT']);
+  assert.deepEqual(lines('qwen-image-2.1-turbo'), ['模型权重:Qwen RESEARCH LICENSE AGREEMENT']);
   // 对齐器与权重同为 Apache-2.0 不重复列；Whisper large-v3 turbo 是 MIT，对齐器另列
   assert.deepEqual(lines('qwen3-asr-0.6b'), ['模型权重:Apache-2.0']);
   assert.deepEqual(lines('whisper-large-v3'), ['模型权重:Apache-2.0']);

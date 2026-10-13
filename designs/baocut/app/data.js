@@ -2472,7 +2472,7 @@
        ttsModels: ['index-tts2.5', 'gpt-sovits-v2'],
        tasks: ['asr', 'tts', 'image', 'separate', 'download', 'export'],
        taskModels: {asr: ['moss-transcribe', 'whisper-large-v3', 'qwen3-asr-0.6b'],
-         tts: ['index-tts2.5', 'gpt-sovits-v2'], image: ['qwen-image-2.1'], separate: ['htdemucs-ft']},
+         tts: ['index-tts2.5', 'gpt-sovits-v2'], image: ['qwen-image-2.1', 'qwen-image-2.1-turbo'], separate: ['htdemucs-ft']},
        exportSpeed: 2.4},  // 导出编码速度是这台 Mac 的几倍（节点 healthz 报；原型给一个演示值）
       {id: 'n2', name: 'older-imac.local', addr: '192.168.1.18:24350',
        meta: 'Intel · bcut 1.09 · 1 个模型', state: 'offline'},
@@ -2703,6 +2703,11 @@
     {id: 'qwen-image-2.1', name: 'Qwen-Image-2.1', cat: 'image', size: 10035, installed: false, platform: 'macos-arm64,windows-x64,linux-x64',
      note: '文生图 · 4-bit · Apple Silicon / Windows / Linux · CPU 较慢', repo: 'mlx-community/Qwen-Image-2.1-MLX-4bit', uses: [],
      license: {name: 'Qwen RESEARCH LICENSE AGREEMENT', url: 'https://huggingface.co/Qwen/Qwen-Image-2.1/blob/main/LICENSE', commercialUse: false,
+       summary: '只许非商业用途（研究 / 评估），商用要向 Qwen 另行申请；MLX 包是它的派生物，受同一许可'}},
+    /* 蒸馏的 Turbo 版（2026-10-12）：mlx-serve 的 8-bit 转换，固定 8 步、每步与基础版一样快；只登记 MLX，所以只在 Apple Silicon 列出 */
+    {id: 'qwen-image-2.1-turbo', name: 'Qwen-Image-2.1 Turbo', cat: 'image', size: 18125, installed: false, platform: 'macos-arm64',
+     note: '文生图 · 蒸馏版 · 8-bit · 固定 8 步 · 比基础版快 2 倍多 · 只在 Apple Silicon', repo: 'ddalcu/Qwen-Image-2.1-Turbo-MLX-Serve-8bit', uses: [],
+     license: {name: 'Qwen RESEARCH LICENSE AGREEMENT', url: 'https://huggingface.co/Qwen/Qwen-Image-2.1-Turbo/blob/main/LICENSE', commercialUse: false,
        summary: '只许非商业用途（研究 / 评估），商用要向 Qwen 另行申请；MLX 包是它的派生物，受同一许可'}},
     /* 音乐生成（2026-10-11）：YuE2 3B 的 GGUF 包（Q8 语言模型 + VAE），由 audio.cpp 引擎跑。引擎是这只模型的组件
        （audiocpp-engine，按平台从 audio.cpp 的 GitHub 发布页下载），和语音识别的分词器一样装模型时一起下，不另装；

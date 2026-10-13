@@ -183,7 +183,7 @@
             ))}
             <MenuRule />
             <MenuItem icon="settings" label="管理 API 提供方…" sub="添加账号、添加模型 · 设置 › 模型 › API 提供方" wrap onClick={() => { setOpen(false); app.go({r: 'settings', sec: 'providers'}); }} />
-            <MenuItem icon="settings" label="管理本地模型…" sub="下载 Qwen-Image-2.1 · 设置 › 模型 › 图像生成" wrap onClick={() => { setOpen(false); app.go({r: 'settings', sec: 'local', tab: 'image'}); }} />
+            <MenuItem icon="settings" label="管理本地模型…" sub="下载 Qwen-Image-2.1 或 Turbo · 设置 › 模型 › 图像生成" wrap onClick={() => { setOpen(false); app.go({r: 'settings', sec: 'local', tab: 'image'}); }} />
           </Menu>
         </Picker>
         {e ? <span className={cx('ttseng__inst', e.ready && 'is-ok')}>{e.ready ? <><Ic n="ok" className="ic--12" />{e.family === 'cloud' ? '已连接' : e.family === 'agent' ? '已打开' : '已安装'}</> : e.why}</span> : null}
@@ -305,7 +305,8 @@
     const e = IM.engineOf(engines, f.model);
     const cap = IM.capabilities(f.model);
     const p = String(f.prompt || '');
-    const hasAdvanced = cap.quality.length > 1 || cap.negative || cap.seed || cap.transparent || (e && e.family === 'local');
+    const st = cap.steps;
+    const hasAdvanced = cap.quality.length > 1 || cap.negative || cap.seed || cap.transparent || !!st;
     return (
       <>
         <ImageGenSection compact={compact}>
@@ -364,12 +365,17 @@
                   <Field size="s" style={{width: 140}} value={f.seed} placeholder="留空随机" inputMode="numeric" onChange={(ev) => set({seed: ev.target.value.replace(/[^\d]/g, '')})} />
                   <span className="t-detail-xs">{e && e.family === 'local' ? '同种子同权重可复现' : '云端不保证复现'}</span></div> : null}
                 {cap.transparent ? <div className="ttsw__row"><Checkbox on={f.transparent} onChange={(v) => set({transparent: v})} label="透明底（RGBA PNG）" /></div> : null}
-                {e && e.family === 'local' ? <div className="ttsw__row"><span className="ttsw__lab">步数</span>
-                  <Stepper value={f.steps} decTip="少 4 步" incTip="多 4 步" disabledDec={f.steps <= 8} disabledInc={f.steps >= 40}
-                    onDec={() => set({steps: f.steps - 4})} onInc={() => set({steps: f.steps + 4})} />
-                  <span className="t-detail-xs">默认 20 · 越多越慢</span></div> : null}
+                {/* 步数的范围来自模型（BC_CLOUD_IMAGE.stepsOf）；min === max 的蒸馏模型不给步进器，只写固定几步 */}
+                {st && st.min === st.max ? <div className="ttsw__row"><span className="ttsw__lab">步数</span>
+                  <span className="t-body-sm">固定 {st.min} 步</span>
+                  <span className="t-detail-xs">蒸馏模型只按这个步数出图，不能调</span></div>
+                  : st ? <div className="ttsw__row"><span className="ttsw__lab">步数</span>
+                  <Stepper value={f.steps} decTip={`少 ${st.step} 步`} incTip={`多 ${st.step} 步`} disabledDec={f.steps <= st.min} disabledInc={f.steps >= st.max}
+                    onDec={() => set({steps: f.steps - st.step})} onInc={() => set({steps: f.steps + st.step})} />
+                  <span className="t-detail-xs">默认 {st.default} · 越多越慢</span></div> : null}
               </div>
-            ) : <span className="t-detail-xs">{[cap.quality.length > 1 ? '质量' : null, cap.negative ? '负向提示' : null, cap.seed ? '种子' : null, cap.transparent ? '透明底' : null, e && e.family === 'local' ? '步数' : null].filter(Boolean).join(' · ')}</span>}
+            ) : <span className="t-detail-xs">{[cap.quality.length > 1 ? '质量' : null, cap.negative ? '负向提示' : null, cap.seed ? '种子' : null, cap.transparent ? '透明底' : null,
+              st ? (st.min === st.max ? `固定 ${st.min} 步` : '步数') : null].filter(Boolean).join(' · ')}</span>}
           </ImageGenSection>
         ) : null}
       </>
@@ -556,7 +562,7 @@
           <p className="t-detail">{cloud ? `把这句提示词${used.length ? '和参考图' : ''}发给所选模型生图，检查能否返回一张 PNG。按张计费，这次 ${priceLine}。提供方可能按用量计费。停止等待不会撤回已经发送的请求。`
             : '在这台电脑上画一张小图看看效果，不联网。会占重活槽，别的本地模型任务要等它跑完。'}</p>
           <Card className="cloud-result" role="status" aria-live="polite">
-            <b className={cx('t-title-sm', state === 'error' && 't-negative')}>{({ready: '等待开始', running: cloud ? '正在发送提示词并等待图片…' : '正在画 512² · 8 步…', ok: `${cloud ? '测试通过' : '画好了'} · ${res && res.time} · 演示结果`, error: `${cloud ? '测试失败' : '没画出来'} · 演示结果`})[state]}</b>
+            <b className={cx('t-title-sm', state === 'error' && 't-negative')}>{({ready: '等待开始', running: cloud ? '正在发送提示词并等待图片…' : `正在画 512² · ${engine.steps || 8} 步…`, ok: `${cloud ? '测试通过' : '画好了'} · ${res && res.time} · 演示结果`, error: `${cloud ? '测试失败' : '没画出来'} · 演示结果`})[state]}</b>
             {state === 'running' ? <Progress value={cloud ? 60 : 35} thin /> : null}
             {res && res.state === 'error' && cloud ? <p className="t-body-sm">{res.text}</p> : null}
             {res && res.state === 'error' && !cloud ? <window.ModelTryNote view={window.BC_LOCALCHECK.tryFailure(res.kind, 'image')}

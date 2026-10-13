@@ -365,7 +365,7 @@
       const IM = window.BC_CLOUD_IMAGE; const g = s.gen || {};
       const scope = (ctx.proj && ctx.proj.id) || 'proj';
       window.BC_IMAGE_JOBS.drafts[scope] = Object.assign(IM.blank(g.model), {prompt: g.prompt || '', aspect: g.aspect || '16:9', fit: false,
-        negative: g.negative || '', quality: g.quality || 'normal', transparent: !!g.transparent, steps: g.steps || 20, refs: [], advanced: !!(g.negative || g.quality === '2k' || g.transparent)});
+        negative: g.negative || '', quality: g.quality || 'normal', transparent: !!g.transparent, steps: g.steps || IM.blank(g.model).steps, refs: [], advanced: !!(g.negative || g.quality === '2k' || g.transparent)});
       setView('gen');
     };
 

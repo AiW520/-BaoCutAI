@@ -1,7 +1,8 @@
 /* 图像生成的纯模型 —— docs/design/image/bcut-image-generation-design.md（2026-09-25，原型先行）。
    三族引擎共一张能力表：云端 API 提供方 `cloud:<provider>/<model>`（OpenAI / Gemini / 百炼 / 火山引擎 / MiniMax / 智谱 /
    OpenRouter + OpenAI-compatible 自建；提供方 id 与 model-vendors.js 的目录一致，product-design §7.6）、Codex CLI 画图 `agent:codex/image-gen`（不走密钥，用装好并登录的
-   Codex）、本地模型 `qwen-image-2.1`（4-bit，Apple Silicon / Windows / Linux）。这里放：三族 id 的判别与拆拼、API 提供方种子表、
+   Codex）、本地模型 `qwen-image-2.1`（4-bit，Apple Silicon / Windows / Linux）与蒸馏的 `qwen-image-2.1-turbo`
+   （8-bit，只在 Apple Silicon，固定 8 步）。这里放：三族 id 的判别与拆拼、API 提供方种子表、
    按 (provider, model) 的能力表（§4）、画幅 → 尺寸（§4.5）、参数门（§10.2）、费用 / 状态一句、Codex 就绪判定（§2.2）、
    工具页与图片 Tab 共用的表单 / 记录 / 出处侧车（§7.5）、交给 Agent 的提示。真相将来在 `bcut_image::capabilities`
    与 `bcut-kernel/services/image_gen.rs`，这里照设计稿抄。只算，不画。 */
@@ -11,6 +12,7 @@
   const CODEX_ID = 'agent:codex/image-gen';
   const CODEX_MIN_VER = '0.130.0';
   const LOCAL_ID = 'qwen-image-2.1';
+  const LOCAL_TURBO_ID = 'qwen-image-2.1-turbo';
 
   /* ---------- 画幅 ---------- */
   const ASPECTS = ['1:1', '16:9', '9:16', '4:3', '3:4', '2.35:1'];
@@ -29,7 +31,7 @@
   const ENUM_2K = {'1:1': [2048, 2048], '16:9': [2688, 1536], '9:16': [1536, 2688], '4:3': [2304, 1792], '3:4': [1792, 2304], '2.35:1': [3072, 1280]};
   const enumSizes = (k2) => ({enum: Object.fromEntries(ASPECTS.map((a) => [a, {normal: ENUM_1K[a], k2: k2 ? ENUM_2K[a] : null}]))});
   const caps = (o) => Object.assign({aspects: ASPECTS, sizes: enumSizes(true), quality: ['normal', '2k'], maxN: 4, refs: 0,
-    negative: false, seed: false, transparent: false, promptMax: 4000, edit: false}, o);
+    negative: false, seed: false, transparent: false, promptMax: 4000, edit: false, steps: null}, o);
 
   /* ---------- API 提供方种子表（§3.3）----------
      `api`：线上形状。价格是「每张 · 美元」两档（§9.1），写稿时未核实，落地时逐家从官方价目抄（§12.1）。 */
@@ -129,14 +131,26 @@
     return prov ? (prov.models.find((m) => m.id === p.model) || null) : null;
   }
 
-  /* ---------- 本地模型 ---------- */
-  const LOCAL = {
-    [LOCAL_ID]: {id: LOCAL_ID, name: 'Qwen-Image-2.1', size: 9.8 * 1024, platform: 'macos-arm64,windows-x64,linux-x64', steps: 20,
+  /* ---------- 本地模型 ----------
+     一张表列出全部本地生图模型，菜单、能力查表、记录元数据都从它来。`caps.steps` 是去噪步数的范围，形状同模型描述的
+     `local.steps`（{min, max, step, default}）；min === max 是步数固定的模型（蒸馏版），界面只写「固定 N 步」，不给步进器。 */
+  const LOCAL_CAPS = (steps) => caps({sizes: {multiple: 32, maxEdge: 1536, maxRatio: 3}, quality: ['normal'], maxN: 1, seed: true, promptMax: 1024, steps});
+  /* POC 实测（§6.2）：512² 20 步 ≈ 214 s、1024² ≈ 881 s、VAE 解码 10.4 s——每步秒数按像素线性插值 */
+  const QWEN_PACE = {512: 9.9, 1024: 43.5, decode: 10.4};
+  const LOCAL_MODELS = [
+    {id: LOCAL_ID, name: 'Qwen-Image-2.1', size: 9.8 * 1024, platform: 'macos-arm64,windows-x64,linux-x64',
       desc: '文生图 · 4-bit · Apple Silicon / Windows / Linux · CPU 较慢',
-      /* POC 实测（§6.2）：512² 20 步 ≈ 214 s、1024² ≈ 881 s、VAE 解码 10.4 s——每步秒数按像素线性插值 */
-      pace: {512: 9.9, 1024: 43.5, decode: 10.4},
-      caps: caps({sizes: {multiple: 32, maxEdge: 1536, maxRatio: 3}, quality: ['normal'], maxN: 1, seed: true, promptMax: 1024})},
-  };
+      pace: QWEN_PACE, caps: LOCAL_CAPS({min: 8, max: 40, step: 4, default: 20})},
+    /* 蒸馏版：sigma 表写死在权重包里，只收 8 步；本机实测每步与基础版一样快，所以整张约快 2 倍多。没有 candle 变体，只在 Apple Silicon 列出 */
+    {id: LOCAL_TURBO_ID, name: 'Qwen-Image-2.1 Turbo', size: 17.7 * 1024, platform: 'macos-arm64',
+      desc: '文生图 · 蒸馏版 · 8-bit · 固定 8 步 · 比基础版快 2 倍多 · 只在 Apple Silicon',
+      pace: QWEN_PACE, caps: LOCAL_CAPS({min: 8, max: 8, step: 8, default: 8})},
+  ];
+  const LOCAL = Object.fromEntries(LOCAL_MODELS.map((m) => [m.id, m]));
+  /** 这只模型的步数范围；不是本地模型给 null */
+  const stepsOf = (id) => (LOCAL[id] ? LOCAL[id].caps.steps : null);
+  /** 步数固定的模型给那个数，否则 null */
+  const fixedSteps = (id) => { const s = stepsOf(id); return s && s.min === s.max ? s.min : null; };
   /** 本地生成的耗时估算（秒）：每步秒数按像素在 512² 与 1024² 之间线性插值，加解码 */
   function localEta(id, w, h, steps) {
     const m = LOCAL[id];
@@ -144,7 +158,7 @@
     const px = (w || 1024) * (h || 1024);
     const t = px <= 512 * 512 ? m.pace[512] * (px / (512 * 512))
       : m.pace[512] + (m.pace[1024] - m.pace[512]) * Math.min(3, (px - 512 * 512) / (1024 * 1024 - 512 * 512));
-    return Math.round(t * (steps || m.steps) + m.pace.decode);
+    return Math.round(t * (steps || m.caps.steps.default) + m.pace.decode);
   }
 
   /* ---------- Codex 画图（§2.2 / §4.3）---------- */
@@ -185,8 +199,8 @@
     const cr = codexReady(o && o.codex && o.codex.h, o && o.codex && o.codex.on);
     out.push({id: CODEX_ID, family: 'agent', name: 'Codex 画图', desc: '不用密钥 · 一次一张 · 忽略尺寸 · 慢 5–10 倍', ready: cr.ready, why: cr.why, problem: cr.problem,
       models: [{id: CODEX_ID, model: 'image-gen', desc: '用 Codex 自带的图像生成工具', price: null, caps: CODEX_CAPS}]});
-    Object.keys(LOCAL).forEach((id) => {
-      const m = LOCAL[id];
+    LOCAL_MODELS.forEach((m) => {
+      const id = m.id;
       const on = !!(o && o.installed && o.installed(id));
       const platform = !o || o.platform == null || m.platform.split(',').includes(o.platform);
       out.push({id, family: 'local', name: m.name, desc: m.desc, size: m.size, ready: on && platform,
@@ -249,7 +263,8 @@
 
   /* ---------- 表单 ---------- */
   function blank(model) {
-    return {prompt: '', model: model || null, aspect: '16:9', fit: true, quality: 'normal', n: 1, refs: [], negative: '', seed: '', transparent: false, steps: 20, advanced: false};
+    const st = stepsOf(model);
+    return {prompt: '', model: model || null, aspect: '16:9', fit: true, quality: 'normal', n: 1, refs: [], negative: '', seed: '', transparent: false, steps: st ? st.default : 20, advanced: false};
   }
   /** 换模型：不认的画幅落到它的第一档、数量夹到上限、不认的旋钮清零 */
   function switchModel(f, id, extra) {
@@ -263,6 +278,13 @@
     if (!cap.negative) next.negative = '';
     if (!cap.seed) next.seed = '';
     if (!cap.transparent) next.transparent = false;
+    // 步数跟着模型走：换进固定步数的模型就是那个数；从固定步数的模型换出来、或原值是上一只的默认，落到新模型的默认；否则夹进范围
+    const st = cap.steps;
+    if (st) {
+      const prev = stepsOf(f.model);
+      const s = Number(f.steps);
+      next.steps = !prev || prev.min === prev.max || s === prev.default || !s ? st.default : Math.min(st.max, Math.max(st.min, s));
+    }
     return next;
   }
   /** 参数门（§10.2）：一次报完所有违反项；空提示词是第一条 */
@@ -281,6 +303,9 @@
     if (f.seed !== '' && f.seed != null && !/^\d+$/.test(String(f.seed))) errs.push('种子要是整数');
     if (f.transparent && !cap.transparent) errs.push('这只模型不能出透明底');
     if (f.size) { const bad = checkSize(cap, f.size); if (bad) errs.push(bad); }
+    if (cap.steps && f.steps != null && (f.steps < cap.steps.min || f.steps > cap.steps.max)) {
+      errs.push(cap.steps.min === cap.steps.max ? `这只模型固定 ${cap.steps.min} 步` : `步数要在 ${cap.steps.min}–${cap.steps.max} 之间`);
+    }
     return errs;
   }
 
@@ -433,10 +458,10 @@
   }
 
   const BC_CLOUD_IMAGE = {
-    PREFIX, AGENT_PREFIX, CODEX_ID, CODEX_MIN_VER, LOCAL_ID, ASPECTS, PROVIDERS, LOCAL, SEED_SAVED, EMPTY_PROMPT, DEMO_ART, LICENSE_LABEL,
+    PREFIX, AGENT_PREFIX, CODEX_ID, CODEX_MIN_VER, LOCAL_ID, LOCAL_TURBO_ID, ASPECTS, PROVIDERS, LOCAL, LOCAL_MODELS, SEED_SAVED, EMPTY_PROMPT, DEMO_ART, LICENSE_LABEL,
     ratioOf, fitAspect, isCloud, isAgent, isLocal, family, modelId, parse, providerOf,
     customProvider, providers, providerById, modelOf, capabilities, CUSTOM_CAPS,
-    localEta, codexReady, codexCanEnable, compareVer,
+    localEta, stepsOf, fixedSteps, codexReady, codexCanEnable, compareVer,
     engines, engineOf, modelIn, preferred, anyReady,
     resolveSize, checkSize, blank, switchModel, validate, costOf, statusLine, headerChip,
     makeRecord, recordMeta, provenance, toSource, phase, demoArt, agentPrompt, toolStatus,

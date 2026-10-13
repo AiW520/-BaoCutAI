@@ -236,7 +236,7 @@
               ))}
             </div>
             <p className="t-detail-xs oai-ret">错误体与 OpenAI 同形：<code>{'{"error":{"message","type","param","code"}}'}</code>。</p>
-            {ep.cap === 'image' ? <p className="t-detail-xs oai-ret">Qwen-Image-2.1 的权重只许非商业用途，响应里 <code>x_baocut.license</code> 写的是 non-commercial。</p> : null}
+            {ep.cap === 'image' ? <p className="t-detail-xs oai-ret">Qwen-Image-2.1 与 Turbo 的权重只许非商业用途，响应里 <code>x_baocut.license</code> 写的是 non-commercial。</p> : null}
           </div>
           <TryIt ep={ep} key={ep.id} />
         </div>

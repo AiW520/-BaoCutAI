@@ -89,7 +89,7 @@
     useEffect(() => { if (half) setOpen(true); }, [half]);
     useEffect(() => { if (!ready) { setTest(false); clearInterval(ckTimer.current); setCheck({phase: 'idle'}); } }, [ready]);
     const brief = cat === 'tts' ? TTS.modelBrief(m.id) : null;
-    // 不许商用的权重（OmniVoice、Qwen-Image-2.1，data.js 该行 `license.commercialUse: false`）：行上标「仅限非商用」、写许可提要，
+    // 不许商用的权重（OmniVoice、Qwen-Image-2.1 与 Turbo，data.js 该行 `license.commercialUse: false`）：行上标「仅限非商用」、写许可提要，
     // 下载权重前先弹「许可」确认（panel-tts-local.jsx）；权重已在、只补齐组件时不再问
     const lic = window.ttsLicenseOf ? window.ttsLicenseOf(m.id) : null;
     const lics = LM.licenseLines(m, comps);

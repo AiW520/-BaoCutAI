@@ -202,6 +202,42 @@ test('费用 / 状态一句：云端算钱、本机估时、Codex 说慢', () =>
   assert.equal(I.localEta(I.LOCAL_ID, 512, 512, 20), 208);
 });
 
+test('本地生图两只：Turbo 只在 Apple Silicon、固定 8 步，步数跟着模型走（2026-10-12）', () => {
+  const ids = I.LOCAL_MODELS.map((m) => m.id);
+  assert.deepEqual(ids, [I.LOCAL_ID, I.LOCAL_TURBO_ID]);
+  const mac = I.engines({installed: () => true, platform: 'macos-arm64'}).filter((e) => e.family === 'local');
+  assert.deepEqual(mac.map((e) => [e.id, e.ready]), [[I.LOCAL_ID, true], [I.LOCAL_TURBO_ID, true]], '菜单里两只都列');
+  for (const platform of ['windows-x64', 'linux-x64']) {
+    const t = I.engines({installed: () => true, platform}).find((e) => e.id === I.LOCAL_TURBO_ID);
+    assert.equal(t.ready, false, platform);
+    assert.equal(t.why, '此平台或构建暂不可用', platform);
+  }
+  assert.deepEqual(I.stepsOf(I.LOCAL_ID), {min: 8, max: 40, step: 4, default: 20});
+  assert.deepEqual(I.stepsOf(I.LOCAL_TURBO_ID), {min: 8, max: 8, step: 8, default: 8});
+  assert.equal(I.stepsOf('cloud:openai/gpt-image-2'), null);
+  assert.equal(I.fixedSteps(I.LOCAL_TURBO_ID), 8);
+  assert.equal(I.fixedSteps(I.LOCAL_ID), null);
+  assert.equal(I.blank(I.LOCAL_TURBO_ID).steps, 8, '默认模型是 Turbo 时新表单就是 8 步');
+  assert.equal(I.blank(I.LOCAL_ID).steps, 20);
+  const base = Object.assign(I.blank(I.LOCAL_ID), {steps: 32});
+  const turbo = I.switchModel(base, I.LOCAL_TURBO_ID);
+  assert.equal(turbo.steps, 8, '换进 Turbo 一定是 8 步');
+  assert.equal(I.switchModel(turbo, I.LOCAL_ID).steps, 20, '从固定步数换出来回到默认');
+  assert.equal(I.switchModel(base, I.LOCAL_ID).steps, 32, '同一只模型保留调过的步数');
+  assert.equal(I.switchModel(I.blank('cloud:openai/gpt-image-2'), I.LOCAL_TURBO_ID).steps, 8);
+  const cap = I.capabilities(I.LOCAL_TURBO_ID);
+  assert.deepEqual(I.validate(Object.assign(I.blank(I.LOCAL_TURBO_ID), {prompt: 'x', steps: 20}), cap), ['这只模型固定 8 步']);
+  assert.deepEqual(I.validate(Object.assign(I.blank(I.LOCAL_ID), {prompt: 'x', steps: 44}), I.capabilities(I.LOCAL_ID)), ['步数要在 8–40 之间']);
+  assert.deepEqual(I.validate(Object.assign(I.blank(I.LOCAL_TURBO_ID), {prompt: 'x'}), cap), []);
+  const l = I.engines({installed: () => true, platform: 'macos-arm64'});
+  const r = I.makeRecord(Object.assign(I.blank(I.LOCAL_TURBO_ID), {prompt: 'x'}), 1, l, () => 0);
+  assert.equal(r.steps, 8);
+  assert.equal(I.phase(r, 50), '第 4/8 步');
+  assert.match(I.recordMeta(r), /Qwen-Image-2\.1 Turbo · 本机/);
+  assert.equal(I.localEta(I.LOCAL_TURBO_ID, 512, 512), 90, '每步与基础版一样快，只是 8 步');
+  assert.ok(I.localEta(I.LOCAL_ID, 1024, 1024) / I.localEta(I.LOCAL_TURBO_ID, 1024, 1024) > 2);
+});
+
 test('记录与侧车：n 张各自的种子可复现；Codex 只出一张、无尺寸；许可三值', () => {
   const l = list();
   const rnd = () => 0.5;
