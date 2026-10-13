@@ -46,6 +46,7 @@ const en = {
     separate: 'Separate',
     music: 'Music',
     diarize: 'Speaker diarization',
+    embed: 'Semantic index',
   } as Record<ModelBundleStatus['capability'], string>,
   /** 默认菜单里「不设默认，用出厂默认」那一项。 */
   auto: 'Automatic',

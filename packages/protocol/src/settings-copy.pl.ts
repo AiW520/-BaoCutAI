@@ -31,4 +31,8 @@ export const pl: SettingDescriptionMessages = {
   'updates.autoDownload': "Pobieraj nowe wersje w tle (bez automatycznej instalacji)",
   'diagnostics.enabled': "Wysyłaj anonimowe statystyki użycia i podsumowania wydajności (bez multimediów, tekstu i ścieżek)",
   'offline.strict': "Ścisły offline: nie wysyłaj nic do usług online",
+  'semantic.channels': 'Kanały indeksu semantycznego: text (wypowiedzi: transkrypcje, napisy, tłumaczenia, rozdziały); visual i audio nie są jeszcze dostępne',
+  'semantic.indexedProjects': 'Projekty, których wideo dostają indeks semantyczny: all albo lista id projektów (wideo spoza projektów tylko przy all)',
+  'semantic.translationMemory': 'Podczas tłumaczenia proponuj wcześniejsze tłumaczenia niemal identycznych zdań (wymaga modelu wyszukiwania tekstu)',
+  'semantic.glossaryCandidates': 'Proponuj terminy słowniczka na podstawie niemal identycznych zapisów w transkrypcjach (wymaga modelu wyszukiwania tekstu)',
 };

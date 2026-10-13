@@ -34,6 +34,7 @@ export const fr: AiToolsMessages = {
     lineFrame: (ratio, focus) => (ratio ? `Format ${ratio}, cadrage ${focus}` : 'Format : garder l’original, sans recadrer'),
     lineSubtitles: (tracks, style) => `Sous-titres : ${tracks}, ${style}`,
     lineSkipDone: 'Ignorez les passages déjà découpés en vidéos courtes',
+    lineTopic: (topic) => `Ne cherchez que dans les passages qui parlent de « ${topic} » : trouvez-les d’abord avec speech_relevant, puis choisissez parmi eux`,
     lineDirect: 'Créez les vidéos dès qu’elles sont trouvées ; inutile de me demander avant',
   },
   groups: {

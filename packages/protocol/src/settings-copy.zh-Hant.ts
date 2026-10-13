@@ -34,4 +34,8 @@ export const zhHant: SettingDescriptionMessages = {
   'updates.autoDownload': '在背景下載新版本（不會自動安裝）',
   'diagnostics.enabled': '傳送匿名的使用統計與效能摘要（不含媒體、文字或路徑）',
   'offline.strict': '嚴格離線：不傳送任何內容到任何線上服務',
+  'semantic.channels': '要建立語意索引的通道：text（講話內容：文稿、字幕、譯文、章節）；畫面（visual）與聲音（audio）還不可用',
+  'semantic.indexedProjects': '建立語意索引的專案：all 是全部，或專案 ID 清單（不屬於專案的影片只在 all 時建立）',
+  'semantic.translationMemory': '翻譯時提示以前譯過的幾乎相同的句子（需要文字搜尋模型）',
+  'semantic.glossaryCandidates': '從各份文稿裡幾乎相同的寫法提示術語候選（需要文字搜尋模型）',
 };

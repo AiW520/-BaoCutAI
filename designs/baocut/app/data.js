@@ -2178,6 +2178,16 @@
          {id: 'm2', role: 'assistant', text: '读了那一期的 4 个章节标题，都是「动词 + 对象」四到六个字。这一期我按同样的口径起了 4 个，写入前给你看。'},
          {id: 'm3', role: 'receipt', text: '已应用 · 4 个章节改名 · 0.3s', taskId: null},
        ]},
+      /* 本机语义（embedding-integration §2.10）：Agent 按主题取材，工具行写「按主题读取 12 段」；没装模型时同一工具退回字面匹配并写明 */
+      {id: 's31', title: '写一篇讲「为什么做本地」的博客', project: 'p1', harness: 'claude', model: 'sonnet', effort: 'mid',
+       status: 'done', ago: 900, taskId: null,
+       messages: [
+         {id: 'm1', role: 'user', text: '围绕「为什么要做本地」写一篇博客，每段标出处。', ...turnDone(900, 41)},
+         {id: 'm2', role: 'assistant', text: '先按主题把相关的段落挑出来，不整篇读。'},
+         {id: 'm3', role: 'tool', tool: 'speech_relevant', args: {topic: '为什么要做本地', paragraphs: 12, chapters: 3, mode: 'hybrid'}, status: 'done', took: '0.3s', out: '12 段 · 覆盖 3 章'},
+         {id: 'm4', role: 'tool', tool: 'documents_read', args: {document: '文稿 · 按主题挑出的段落', sentences: 12}, status: 'done', took: '0.1s'},
+         {id: 'm5', role: 'assistant', text: '写好了，存成 Space 里的「博客 · 我们为什么把视频工具做在本机.md」。8 段里 7 段有出处；最后一段是我的推断，标了「模型推断」。'},
+       ]},
       {id: 's3', title: '给 4 个章节重新起名', project: 'p7', harness: 'claude', model: 'opus', effort: 'high',
        status: 'done', ago: 62, taskId: 'ag3', unread: true,
        messages: [
@@ -3512,6 +3522,106 @@
 
   const app = {version: '2.2.1', build: 56, skillVersion: '1.4.2'};   // 2026-10-01：对齐自动更新契约的示例，演示 feed 的新版本是 2.3.0（Build 57）
 
+  /* ---------- 本机语义索引（embedding-integration-design §2，2026-10-12 原型） ----------
+     向量不在原型里：「按意思找」用一张手写的概念表模拟（concepts：查询里出现这些词就命中这些句子），
+     纯语义命中没有字面重合时不画高亮（v0.1 §11.3）。语料是几部演示视频里的句子；p1 的句子直接引用 cues。
+     模型包体积按 v0.1 §4.2（LiteRT 模型卡的下载体积，不是安装包增量）。 */
+  const C = (id) => cues.find((c) => c.id === id);
+  const fromCue = (video, id) => ({id: `${video}:${id}`, video, cue: id, t: C(id).start, end: C(id).end, sp: C(id).sp, text: C(id).text});
+  const semantic = {
+    packages: [
+      {id: 'sem-text', name: '文字搜索', size: '165 MB', channels: ['text'],
+       desc: '讲话内容与文档：Space 搜索、写作按主题选材、术语候选、翻译记忆、重录候选都用它。'},
+      {id: 'sem-full', name: '多模态搜索', size: '485 MB', channels: ['text', 'visual', 'audio'],
+       desc: '在文字之外再认画面与声音。装了它不必再装文字搜索。画面与声音的检索在后续版本开放。'},
+    ],
+    /* 实际后端：自检后选的那一个（v0.1 §4.4），不是「检测到显卡就用 GPU」 */
+    backend: {k: 'gpu', label: 'GPU · Metal', note: '自检通过；失败会自动退回 CPU'},
+    cacheBytes: 327155712,
+    /* 已索引的项目与通道（§2.11）。text：有文稿的视频里建好了几部；pending = 还在转录、没有文稿的 */
+    projects: [
+      {dir: 'd1', text: {done: 4, total: 4}, visual: {assets: 30, minutes: 25, size: '约 140 MB'}, audio: {assets: 6, minutes: 8, size: '约 30 MB'}},
+      {dir: 'd2', text: {done: 1, total: 1}, visual: {assets: 12, minutes: 10, size: '约 60 MB'}, audio: {assets: 2, minutes: 3, size: '约 10 MB'}},
+      {dir: 'd3', text: {done: 2, total: 3, pending: 1}, visual: {assets: 18, minutes: 15, size: '约 90 MB'}, audio: {assets: 3, minutes: 4, size: '约 15 MB'}},
+      {dir: 'd4', text: {done: 1, total: 1}, visual: {assets: 4, minutes: 40, size: '约 210 MB'}, audio: {assets: 1, minutes: 12, size: '约 40 MB'}},
+      {dir: 'd5', text: {done: 0, total: 1, pending: 1}, visual: {assets: 9, minutes: 8, size: '约 40 MB'}, audio: {assets: 1, minutes: 2, size: '约 8 MB'}},
+      {dir: 'd6', text: {done: 0, total: 2, none: 2}, visual: {assets: 22, minutes: 12, size: '约 70 MB'}, audio: {assets: 5, minutes: 3, size: '约 12 MB'}},
+    ],
+    /* Space 搜索的语料（v0.1 §13.1）：几部视频里的句子；p1 / p10 是同一期节目（同一份 cues） */
+    corpus: [
+      fromCue('p1', 'g5'), fromCue('p1', 'g6'), fromCue('p1', 'g7'), fromCue('p1', 'g8'), fromCue('p1', 'g9'), fromCue('p1', 'g10'),
+      fromCue('p1', 'g12'), fromCue('p1', 'g13'), fromCue('p1', 'g14'), fromCue('p1', 'g17'), fromCue('p1', 'g18'), fromCue('p1', 'g20'),
+      fromCue('p10', 'g28'), fromCue('p10', 'g34'),
+      {id: 'p7:e1', video: 'p7', t: 31.4, end: 36.0, sp: 's2', text: 'Because the footage isn’t ours. Uploading is itself a decision.'},
+      {id: 'p7:e2', video: 'p7', t: 112.0, end: 117.5, sp: 's3', text: 'Same project, two machines, identical frames.'},
+      {id: 'p4:c1', video: 'p4', t: 312.5, end: 318.0, sp: 's1', text: '我们的合同里写了，客户的素材不能离开公司网络。'},
+      {id: 'p4:c2', video: 'p4', t: 1104.2, end: 1110.8, sp: 's2', text: '按分钟付费的转写，一个月下来比剪辑师的工资还贵。'},
+      {id: 'p4:c3', video: 'p4', t: 1650.0, end: 1655.2, sp: 's1', text: '能不能先在笔记本上跑一遍，确认没问题再交出去？'},
+      {id: 'p8:t1', video: 'p8', t: 26.0, end: 33.0, sp: 's1', text: '过去几年大家默认语音识别是云上的事，上传是唯一选择。'},
+      {id: 'p8:t2', video: 'p8', t: 63.0, end: 70.0, sp: 's1', text: '访谈、内部会议、还没发布的产品演示，这些素材本来就不该往外传。'},
+      {id: 'p8:t3', video: 'p8', t: 141.0, end: 148.0, sp: 's1', text: '语音识别在本机是电费，在云上是账单，量一大就不是一个量级。'},
+      {id: 'p8:t4', video: 'p8', t: 152.0, end: 158.0, sp: 's1', text: '飞机上、客户机房里、断网的展会现场，语音这一步不能是必须联网的一步。'},
+    ],
+    /* 「按意思找」的演示概念表：查询里出现 keys 里的任何一个词就命中 hits（按相关度排好）。 */
+    concepts: [
+      {k: 'privacy', keys: ['隐私', '不上传', '为什么不上传', '数据安全', '外传', 'privacy', '素材安全'],
+       hits: ['p1:g6', 'p8:t2', 'p4:c1', 'p7:e1', 'p1:g7']},
+      {k: 'cost', keys: ['成本', '费用', '花钱', '省钱', '贵', 'cost', '账单'], hits: ['p8:t3', 'p4:c2', 'p1:g9']},
+      {k: 'determinism', keys: ['确定性', '一模一样', '可复现', '同样的帧', 'deterministic', '渲染为什么要确定'], hits: ['p1:g12', 'p1:g13', 'p7:e2', 'p1:g14']},
+      {k: 'offline', keys: ['离线', '断网', '没网', 'offline'], hits: ['p8:t4', 'p4:c3']},
+      {k: 'local', keys: ['本地', '本机', '为什么做本地', 'local'], hits: ['p1:g5', 'p1:g10', 'p8:t1', 'p1:g8', 'p4:c3']},
+      {k: 'truth', keys: ['真相源', '文稿是真相', '时间轴不乱', '字幕层'], hits: ['p1:g17', 'p1:g18', 'p1:g20']},
+    ],
+    /* 已经从时间线上剪掉的句子：搜得到，但卡片上没有「在时间线打开」 */
+    cutOut: ['p10:g28', 'p4:c2'],
+    examples: ['为什么不上传素材', '讲成本的那段', '渲染为什么要确定', '我哪一期讲过离线？'],
+    /* 写作「按主题」挑出的句子（integration §2.2 第 1 条）：p1 的 cue id，按时间排；chapters = 覆盖的章 */
+    topicPick: ['g5', 'g6', 'g7', 'g8', 'g9', 'g10', 'g12', 'g13', 'g14', 'g17', 'g18', 'g20'],
+    /* 系列写作的候选视频（§2.2 第 4 条）：同一项目里有文稿的；切出的短视频内容已在来源视频里，不列为可选 */
+    seriesExclude: {p5: '切出的短视频 · 内容已在来源视频里', p12: '切出的短视频 · 内容已在来源视频里'},
+    /* 翻译记忆（§2.6）：x2、x2b 两句沿用上一期的译文；术语不一致两处（got 是译文里实际的写法，统一时按它替换） */
+    tm: {
+      reused: {x2: 'Code & Wander 第 41 期', x2b: 'Code & Wander 第 41 期'},
+      refs: 14,
+      refsByLang: {en: 14, ja: 3},   // 同一语言方向才算（§2.6）：中 → EN 有 14 句，中 → 日 只有 3 句
+      conflicts: [
+        {term: '动画', want: 'motion graphics', spots: [{card: 'x1', time: '00:12.1', got: 'animations'}]},
+        {term: '检查', want: 'check', spots: [{card: 'x6', time: '00:31.2', got: 'review'}]},
+      ],
+    },
+    /* 润色的术语候选（§2.5）：语义或发音相近、写法不同的片段；mode: semantic = 本机语义找的，exact = 记下的误听写法 */
+    termCands: [
+      {id: 'tc1', from: '马与远方', to: '码与远方', at: ['00:00', '02:58'], n: 2, mode: 'exact'},
+      {id: 'tc2', from: '码语远方', to: '码与远方', at: ['01:34'], n: 1, mode: 'exact'},
+      {id: 'tc3', from: '林彻', to: '林澈', at: ['00:00', '00:22', '02:44'], n: 3, mode: 'exact'},
+      {id: 'tc4', from: '词集对齐', to: '词级对齐', at: ['02:01'], n: 1, mode: 'exact'},
+      {id: 'tc5', from: '真像源', to: '真相源', at: ['01:56'], n: 1, mode: 'semantic', why: '读音相近，上下文是「字幕这一层」'},
+      {id: 'tc6', from: '编一', to: '编译', at: ['01:47'], n: 1, mode: 'semantic', why: '读音相近，上下文是「编译器那套」'},
+    ],
+    /* 文稿里写法不一致、库里还没有的专名（§2.5「反向」） */
+    termVariants: [
+      {id: 'tv1', forms: ['科浪', '柯浪'], counts: [5, 2], pick: '科浪'},
+    ],
+    /* 剪口播的重录候选（§2.7）：每组几遍；diff 只在「相似但有差异」里给 */
+    retakes: [
+      {id: 'rt1', at: 47.2, takes: [
+        {id: 'a', t: 47.2, dur: 3.1, text: '那时候每一个小改动都要——', complete: false},
+        {id: 'b', t: 50.3, dur: 3.5, text: '每一个小改动都要三次签字。', complete: true},
+      ]},
+      {id: 'rt2', at: 118.6, takes: [
+        {id: 'a', t: 118.6, dur: 4.2, text: '同一份工程，两台机器要出一模一样的帧。', complete: true},
+        {id: 'b', t: 124.0, dur: 4.0, text: '同一份工程，两台机器，要出一模一样的帧。', complete: true},
+        {id: 'c', t: 129.3, dur: 4.4, text: '同一份工程，两台机器要出一模一样的帧，对。', complete: true},
+      ]},
+    ],
+    retakesDiffer: [
+      {id: 'rd1', at: 140.2, takes: [
+        {id: 'a', t: 140.2, dur: 3.6, text: '导出只重渲染改动波及的 3 个片段。', complete: true},
+        {id: 'b', t: 146.0, dur: 3.8, text: '导出不会重渲染改动波及的 5 个片段。', complete: true},
+      ]},
+    ],
+  };
+
   window.BC_DATA = {
     DUR, speakers, chapters, projectTitle, clips, cues, paras, initialSegments,
     srcLang: LANG.zh, dstLang: LANG.en, activateProject, projectSetup,
@@ -3525,6 +3635,6 @@
     setModels, setComponents, setShortcuts, setCrashes,
     canvasStyle, templateItems, elementSpecs,
     textCats, textPresets, textAnims, textStylePresets,
-    entries, cutSuggestions,
+    entries, cutSuggestions, semantic,
   };
 })();

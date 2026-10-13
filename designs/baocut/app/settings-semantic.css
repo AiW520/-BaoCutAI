@@ -1,0 +1,15 @@
+/* 设置 › 语义索引（embedding-integration-design §2.11）—— 只在 App 加载（settings-semantic.jsx）。 */
+.semset__lead { margin: 0 0 16px; }
+.semset__alert { margin-bottom: 16px; }
+.semset__sub { margin: 0 0 8px; }
+.semset__card { display: flex; flex-direction: column; gap: 12px; padding: 12px 16px; }
+.semset__pkg { display: flex; flex-direction: column; gap: 6px; }
+.semset__pkg + .semset__pkg { padding-top: 12px; border-top: 1px solid var(--gray-100); }
+.semset__pkg b { font-size: 14px; color: var(--gray-900); }
+.semset__proj { display: flex; flex-direction: column; gap: 8px; }
+.semset__proj + .semset__proj { padding-top: 12px; border-top: 1px solid var(--gray-100); }
+.semset__projh { display: flex; align-items: baseline; gap: 8px; }
+.semset__projh b { font-size: 14px; color: var(--gray-900); }
+.semset__chs { display: flex; flex-wrap: wrap; gap: 8px 24px; }
+.semset__ch { display: flex; align-items: flex-start; gap: 8px; }
+.semset__chx { display: flex; flex-direction: column; }

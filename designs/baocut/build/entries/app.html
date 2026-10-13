@@ -10,6 +10,7 @@
 <link rel="stylesheet" href="_ds/adobe-spectrum-2/tokens/layout.css">
 <!-- 控件层与外壳；Agent 设置布局独立，复用共享控件 -->
 <link rel="stylesheet" href="app/ui.css?v=20261002-0120">
+<link rel="stylesheet" href="app/semantic.css?v=20261012-emb">
 <link rel="stylesheet" href="app/text-inspector.css?v=20260904-r143">
 <link rel="stylesheet" href="app/subtitle-inspector.css?v=20260907-r207">
 <link rel="stylesheet" href="app/settings-agent.css?v=20261001-1200">
@@ -20,9 +21,10 @@
 <link rel="stylesheet" href="app/settings-usage.css?v=20261006-0300">
 <link rel="stylesheet" href="app/settings-local.css?v=20260930-0208">
 <link rel="stylesheet" href="app/settings-models-dir.css">
-<link rel="stylesheet" href="app/settings-glossary.css?v=20261002-0004">
+<link rel="stylesheet" href="app/settings-glossary.css?v=20261013-emb">
 <link rel="stylesheet" href="app/settings-voices.css?v=20260924-1931">
 <link rel="stylesheet" href="app/settings-update.css?v=20261001-1455">
+<link rel="stylesheet" href="app/settings-semantic.css?v=20261012-emb">
 <link rel="stylesheet" href="app/video-library.css?v=20260916-0045">
 <link rel="stylesheet" href="app/shorts-source.css?v=20260928-1516">
 <link rel="stylesheet" href="app/stock.css?v=20260920-0308">
@@ -53,6 +55,7 @@
 <link rel="stylesheet" href="app/tools.css?v=20260926-1540">
 <link rel="stylesheet" href="app/image-gen.css?v=20261002-0004">
 <link rel="stylesheet" href="app/panel-aitools-write.css?v=20260928-1317">
+<link rel="stylesheet" href="app/panel-aitools-semantic.css?v=20261013-emb">
 <link rel="stylesheet" href="app/panel-aitools.css">
 <!-- react-spectrum S2（App / Web / Components 统一基础控件）：全部规则在 @layer 里；
      -font.css 是 build.mjs 生成的无层覆盖，让 S2 的字族吃 --sans（Source Sans 3） -->
@@ -66,6 +69,7 @@
 <link rel="stylesheet" href="app/media-preview-image.css">
 <link rel="stylesheet" href="app/apprail.css?v=20261002-0317">
 <link rel="stylesheet" href="app/space.css?v=20261002-0100">
+<link rel="stylesheet" href="app/space-search.css?v=20261012-emb">
 <link rel="stylesheet" href="app/home-slides.css">
 <link rel="stylesheet" href="app/home-design.css">
 <link rel="stylesheet" href="app/home-design-system.css">
@@ -127,7 +131,7 @@
 <script src="app/model-home-browser.js"></script>
 <script src="app/model-nav.js?v=20261001-2325"></script>
 <script src="app/browser-nav.js"></script>
-<script src="app/model-settings-nav.js?v=20261006-0300"></script>
+<script src="app/model-settings-nav.js?v=20261012-emb"></script>
 <script src="app/model-models-dir.js"></script>
 <script src="app/model-app-update.js?v=20261002-0004"></script>
 <script src="app/model-chapters.js?v=20260826-r31a"></script>
@@ -196,7 +200,8 @@
 <script src="app/model-vendors.js?v=20261006-0300"></script>
 <script src="app/model-usage.js?v=20261006-0300"></script>
 <script src="app/model-writing.js?v=20261002-0004"></script>
-<script src="app/model-ai-prompt.js"></script>
+<script src="app/model-writing-cites.js?v=20261012-emb"></script>
+<script src="app/model-ai-prompt.js?v=20261012-emb"></script>
 <script src="app/model-tts.js?v=20260927-1850"></script>
 <script src="app/model-voices.js?v=20260926-1540"></script>
 <script src="app/model-crop.js?v=20260916-1952"></script>
@@ -218,21 +223,24 @@
 <script src="app/model-tool-handover.js"></script>
 <script src="app/model-tool-space-input.js"></script>
 <script src="app/model-tool-extract.js"></script>
+<script src="app/model-tool-semantic.js?v=20261013-emb"></script>
 <script src="app/model-dub.js?v=20261002-0004"></script>
 <script src="app/model-local-models.js?v=20261002-0004"></script>
 <script src="app/model-local-check.js?v=20261005-0000"></script>
 <script src="app/model-daoyazi.js?v=20260918-0324"></script>
 <script src="app/model-glossary.js?v=20260920-1520"></script>
-<script src="app/data.js?v=20261006-0300"></script>
+<script src="app/data.js?v=20261012-emb"></script>
+<script src="app/model-semantic.js?v=20261012-emb"></script>
 <!-- App rail / Home / Space 的纯模型（2026-10-01，只在 App 入口） -->
 <script src="app/model-agent-projects.js?v=20261002-0004"></script>
 <script src="app/model-space.js?v=20261001-2325"></script>
 <script src="app/model-space-tools.js"></script>
+<script src="app/model-space-search.js?v=20261013-find"></script>
 <script src="app/model-task-outputs.js"></script>
 <script src="app/model-app-ia.js?v=20261002-0100"></script>
 <!-- Agent 消息流：逐字显示、Markdown 分块、工具步骤行与回合页脚的纯模型（只在 App 入口） -->
 <script src="app/model-agent-stream.js"></script>
-<script src="app/model-agent-tools.js"></script>
+<script src="app/model-agent-tools.js?v=20261012-emb"></script>
 <script src="app/model-agent-turn.js"></script>
 <!-- 「智能体在干活」的像素加载图形按步骤类别取哪几个图（只在 App 入口；agent-steps.jsx 与会话输入框读它） -->
 <script src="app/model-agent-loader.js"></script>
@@ -258,6 +266,7 @@
 <script type="text/jsx" src="app/store-agent-sim.jsx"></script>
 <script type="text/jsx" src="app/store.jsx?v=20261006-0300"></script>
 <script type="text/jsx" src="app/apprail-store.jsx?v=20261002-0004"></script>
+<script type="text/jsx" src="app/semantic-state.jsx?v=20261012-emb"></script>
 <script type="text/jsx" src="app/voice-picker.jsx?v=20260924-1931"></script>
 <script type="text/jsx" src="app/export-preview.jsx?v=20260927-2045"></script>
 <script type="text/jsx" src="app/export-range.jsx?v=20261002-0317"></script>
@@ -272,8 +281,8 @@
 <script type="text/jsx" src="app/task-pill.jsx?v=20261002-0317"></script>
 <script type="text/jsx" src="app/shell.jsx?v=20261002-0317"></script>
 <script type="text/jsx" src="app/agent-picker.jsx?v=20260929-0256"></script>
-<script type="text/jsx" src="app/tool-setup.jsx?v=20261002-0317"></script>
-<script type="text/jsx" src="app/tool-prompt.jsx"></script>
+<script type="text/jsx" src="app/tool-setup.jsx?v=20261012-emb"></script>
+<script type="text/jsx" src="app/tool-prompt.jsx?v=20261012-emb"></script>
 <script type="text/jsx" src="app/page-projects.jsx?v=20261002-0317"></script>
 <script type="text/jsx" src="app/project-info.jsx?v=20261002-0004"></script>
 <script type="text/jsx" src="app/legacy-import.jsx"></script>
@@ -334,7 +343,8 @@
 <script type="text/jsx" src="app/settings-update.jsx?v=20261002-0317"></script>
 <script type="text/jsx" src="app/settings-fonts.jsx"></script>
 <script type="text/jsx" src="app/settings-downloader.jsx"></script>
-<script type="text/jsx" src="app/page-settings.jsx?v=20261006-0300"></script>
+<script type="text/jsx" src="app/settings-semantic.jsx?v=20261012-emb"></script>
+<script type="text/jsx" src="app/page-settings.jsx?v=20261012-emb"></script>
 <!-- 第 109 轮：Agent 升到左侧主入口——线程（三宿主共用）＋ Agent 页 / 全部会话页 / 编辑器左抽屉 -->
 <script type="text/jsx" src="app/agent-markdown.jsx"></script>
 <script type="text/jsx" src="app/agent-steps.jsx"></script>
@@ -346,7 +356,8 @@
 <script type="text/jsx" src="app/home-session.jsx?v=20261001-2325"></script>
 <script type="text/jsx" src="app/space-list.jsx?v=20261001-2325"></script>
 <script type="text/jsx" src="app/space-viewer.jsx?v=20261001-2325"></script>
-<script type="text/jsx" src="app/page-space.jsx?v=20261001-2325"></script>
+<script type="text/jsx" src="app/space-search.jsx?v=20261012-emb"></script>
+<script type="text/jsx" src="app/page-space.jsx?v=20261012-emb"></script>
 <script type="text/jsx" src="app/stage-framing.jsx?v=20261012-0001"></script>
 <script type="text/jsx" src="app/stage-objects.jsx?v=20260916-1205"></script>
 <script type="text/jsx" src="app/stage-crop.jsx?v=20260916-1955"></script>
@@ -394,24 +405,28 @@
 <script type="text/jsx" src="app/panel-subactive.jsx?v=20261009-cs1"></script>
 <script type="text/jsx" src="app/panel-submotion.jsx?v=20261009-cs1"></script>
 <script type="text/jsx" src="app/panel-subprops.jsx?v=20261002-0317"></script>
-<script type="text/jsx" src="app/panel-translate.jsx?v=20261002-0317"></script>
+<script type="text/jsx" src="app/subtitle-tm.jsx?v=20261013-emb"></script>
+<script type="text/jsx" src="app/panel-translate.jsx?v=20261013-emb"></script>
 <script type="text/jsx" src="app/panel-subtitle.jsx?v=20261002-0317"></script>
-<script type="text/jsx" src="app/glossary-tool.jsx?v=20261002-0317"></script>
-<script type="text/jsx" src="app/panel-aitools-flows.jsx?v=20261002-0317"></script>
+<script type="text/jsx" src="app/glossary-tool.jsx?v=20261013-emb"></script>
+<script type="text/jsx" src="app/panel-aitools-flows.jsx?v=20261012-emb"></script>
 <script type="text/jsx" src="app/panel-crop-review.jsx?v=20261002-0317"></script>
 <script type="text/jsx" src="app/panel-crop.jsx?v=20261002-0317"></script>
 <script type="text/jsx" src="app/panel-aitools-shorts-result.jsx?v=20261002-0317"></script>
-<script type="text/jsx" src="app/panel-aitools-shorts.jsx?v=20261002-0317"></script>
+<script type="text/jsx" src="app/panel-aitools-shorts.jsx?v=20261012-emb"></script>
 <script type="text/jsx" src="app/panel-dub-fit.jsx?v=20261002-0317"></script>
 <script type="text/jsx" src="app/panel-dub-readings.jsx?v=20261002-0004"></script>
 <script type="text/jsx" src="app/panel-dub-setup.jsx?v=20261002-0317"></script>
 <script type="text/jsx" src="app/panel-dub.jsx?v=20261002-0317"></script>
-<script type="text/jsx" src="app/panel-aitools-cut.jsx?v=20261002-0004"></script>
+<script type="text/jsx" src="app/panel-aitools-cut.jsx?v=20261012-emb"></script>
+<script type="text/jsx" src="app/panel-aitools-cites.jsx?v=20261012-emb"></script>
+<script type="text/jsx" src="app/panel-aitools-topic.jsx?v=20261012-emb"></script>
+<script type="text/jsx" src="app/panel-aitools-semantic.jsx?v=20261013-emb"></script>
 <script type="text/jsx" src="app/panel-aitools-cover-art.jsx?v=20260928-1317"></script>
-<script type="text/jsx" src="app/panel-aitools-write.jsx?v=20261002-0317"></script>
+<script type="text/jsx" src="app/panel-aitools-write.jsx?v=20261012-emb"></script>
 <script type="text/jsx" src="app/panel-aitools-cover.jsx?v=20261002-0317"></script>
 <script type="text/jsx" src="app/panel-aitools-list.jsx"></script>
-<script type="text/jsx" src="app/panel-aitools.jsx?v=20261002-0317"></script>
+<script type="text/jsx" src="app/panel-aitools.jsx?v=20261013-emb"></script>
 <script type="text/jsx" src="app/panel-elements-tile.jsx?v=20261002-0317"></script>
 <script type="text/jsx" src="app/panel-elements-sections.jsx?v=20261002-0317"></script>
 <script type="text/jsx" src="app/panel-elements.jsx?v=20261002-0317"></script>
@@ -450,7 +465,7 @@
 <script type="text/jsx" src="app/editor-history.jsx?v=20260916-0300"></script>
 <script type="text/jsx" src="app/editor-keys.jsx?v=20261002-0317"></script>
 <script type="text/jsx" src="app/editor-cuts.jsx?v=20261001-0322"></script>
-<script type="text/jsx" src="app/editor.jsx?v=20261002-0317"></script>
+<script type="text/jsx" src="app/editor.jsx?v=20261012-emb"></script>
 <script type="text/jsx" src="app/home-workspace-store.jsx"></script>
 <script type="text/jsx" src="app/home-browser.jsx"></script>
 <script type="text/jsx" src="app/home-shell-chrome.jsx"></script>

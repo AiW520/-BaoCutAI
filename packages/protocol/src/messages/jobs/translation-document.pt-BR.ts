@@ -17,6 +17,7 @@ export const ptBR: JobsTranslationDocumentMessages = {
   unitNoText: (p: { id: string }) => `A unidade de tradução ${p.id} não tem tradução`,
   unitBadStatus: (p: { id: string }) => `A unidade de tradução ${p.id} tem status inválido`,
   unitBadAlignment: (p: { id: string }) => `A unidade de tradução ${p.id} tem alignment inválido`,
+  unitBadReuse: (p: { id: string }) => `A unidade de tradução ${p.id} tem reuse inválido (precisa de fromVideoId e unitId)`,
   unitAlignmentFields: (p: { id: string }) => `A unidade de tradução ${p.id} tem campos ausentes em alignment`,
   unitHashMismatch: (p: { id: string }) => `A unidade de tradução ${p.id} tem textHash que não corresponde à tradução`,
   unitExtraFields: (p: { id: string; fields: string }) => `A unidade de tradução ${p.id} tem campos fora de §5.3: ${p.fields}`,

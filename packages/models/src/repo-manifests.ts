@@ -36,6 +36,8 @@ export interface RepoManifestSpec {
   provenance: string;
 }
 
+/** 本机语义检索：大小与 sha256 取自下载来源在这个版本上的 LFS 记录，按版本下载后在本机重新算过，一致。 */
+const EMBEDDING_HUB = "Sizes and sha256 come from the download source's LFS records at this revision; recomputed after downloading at this revision, identical";
 const LEGACY_PINNED = 'sha256 pinned for the same revision by legacy BaoCut (baocut-app, catalog.rs in bcut-models); not re-verified offline in this repo; sizes unknown';
 /** 本地语音合成：sha256 取自旧版的固定清单，大小与 sha256 和本机已装好的同一版本逐个比对一致。 */
 const TTS_PINNED_LOCAL =
@@ -784,6 +786,21 @@ export const REPO_MANIFESTS: readonly RepoManifestSpec[] = [
     ],
     estimatedBytes: 4531978293,
     provenance: MUSIC_PINNED_HUB,
+  },
+  // 本机语义检索（EmbeddingGemma 2，`embedding-bundles.ts`）：只下载 `.litertlm` 单文件。
+  {
+    repo: 'litert-community/embeddinggemma-2-text-270m-litert-lm',
+    revision: '9be6e8b90982095dc05c2bd162e4b954ee4dbac7',
+    files: [{ path: 'embeddinggemma-2-text-270m.litertlm', size: 164626432, sha256: '2d079ee2f6f066b1f368e8d7c819f55214eaef1d0513b312321901f30ab286fb' }],
+    estimatedBytes: 164626432,
+    provenance: EMBEDDING_HUB,
+  },
+  {
+    repo: 'litert-community/embeddinggemma-2-740m-litert-lm',
+    revision: '24d962e906c7d332c6428e71c9676855024569e2',
+    files: [{ path: 'embeddinggemma-2-740m.litertlm', size: 484622336, sha256: 'e7a8a2204b91e0f96e92960e84a09a89212e1633dcb7575a9bf3378b4df77f4c' }],
+    estimatedBytes: 484622336,
+    provenance: EMBEDDING_HUB,
   },
 ];
 

@@ -40,20 +40,24 @@
     retranscribe: '会换掉这一范围的文稿：完成后应用，一步撤销',
     cleanup: '只写建议，不直接剪；在文稿里逐条决定',
     stale: '只重译过期的那几句，其余不动',
-    summary: '不改视频：结果给你读、拷走',
-    blog: '不改视频：结果给你读、拷走',
+    /* 2026-10-12（embedding-integration §2.1）：写作结果存成 Space 里的一份文档，每段带出处 */
+    summary: '不改视频：结果存成 Space 里的一份文档，每段带出处',
+    blog: '不改视频：结果存成 Space 里的一份文档，每段带出处',
     title: '不改视频：挑一个选用',
     desc: '不改视频：结果给你读、拷走',
     cover: '不改视频：挑一张选用',
   };
+
+  /* 出处（embedding-integration §2.1、§3.4）：每段末尾写依据的句子编号；Runtime 校验，引用了没发的句子会被丢掉 */
+  const CITE_RULE = '每段末尾用 [s编号] 写出处，只引用发给你的句子；没有依据的推断不写出处。';
 
   /* 固定约束：以前是下拉（语言 / 风格 / 篇幅 / 视角），现在是模板里的几行字。 */
   function standing(tool, o) {
     const lang = o.lang ? `用${o.lang}` : '语言与文稿相同';
     const md = `用 Markdown 写，${lang}。`;
     switch (tool) {
-      case 'summary': return [md, '正文先给结论，再列要点；每条要点带时间码（mm:ss）。', '篇幅适中，三到五段。'];
-      case 'blog': return [md, '视角按视频来源判断：我自己的视频以作者口吻写，别人的视频以观众视角写。', '风格平实，不用营销腔。'];
+      case 'summary': return [md, '正文先给结论，再列要点；每条要点带时间码（mm:ss）。', '篇幅适中，三到五段。', CITE_RULE];
+      case 'blog': return [md, '视角按视频来源判断：我自己的视频以作者口吻写，别人的视频以观众视角写。', '风格平实，不用营销腔。', CITE_RULE];
       case 'title': return [lang + '。', '每个候选一行，后面跟一句理由；角度各不相同，最后推荐一个。'];
       case 'desc': return [md, '带章节时间码和一行标签。'];
       case 'cover': return ['封面上的字跟文稿的语言。'];
@@ -79,7 +83,10 @@
     const paras = c.paras || 0;
     const words = c.words ? ` · 约 ${c.words.toLocaleString('zh-CN')} 字` : '';
     if (tool === 'cover') items.push({k: 'frames', label: '关键帧', detail: `${c.frames || 0} 张`});
-    if (paras) items.push({k: 'transcript', label: c.scope ? `文稿 · ${c.scope}` : '文稿', detail: `${paras} 段${words} · 带时间码与说话人`});
+    /* 按主题（§2.2）：只发挑出来的段落，写明覆盖几章；系列写作（§2.2 第 4 条）写明几部视频 */
+    if (c.topic) items.push({k: 'transcript', label: '文稿', detail: `${c.topic.paras} 段（按主题挑选，覆盖 ${c.topic.chapters} 章）`});
+    else if (paras) items.push({k: 'transcript', label: c.scope ? `文稿 · ${c.scope}` : '文稿', detail: `${paras} 段${words} · 带时间码与说话人`});
+    if (c.series > 1) items.push({k: 'series', label: '系列', detail: `${c.series} 部视频的文稿`});
     if (c.chapters) items.push({k: 'chapters', label: '章节', detail: `${c.chapters} 章`});
     if (c.attachments) items.push({k: 'attachments', label: '附件', detail: `${c.attachments} 个`});
     if (c.skills && c.skills.length) items.push({k: 'skills', label: 'Skill', detail: c.skills.join('、')});
@@ -124,7 +131,8 @@
       return `${where}，这部视频作为上下文；Agent 读完视频、写入前都会先问你。`;
     }
     const who = c.model ? `直接调 ${c.model}` : '直接调模型';
-    return `${who}，不经过对话；${c.readonly ? '结果给你读、挑、拷走，不写进视频' : '完成即应用，可一键撤销'}。${c.cloud ? '云端模型按用量计费。' : '本机模型，不出本机。'}`;
+    const ro = c.saved ? '结果存成 Space 里的一份文档，不写进视频' : '结果给你读、挑、拷走，不写进视频';
+    return `${who}，不经过对话；${c.readonly ? ro : '完成即应用，可一键撤销'}。${c.cloud ? '云端模型按用量计费。' : '本机模型，不出本机。'}`;
   }
 
   /* 工具页的导航（§5.10）：结果页 / 收据页 / 确认页 / 候选页的「返回」回参数页，设置与提示词都在；
@@ -141,6 +149,6 @@
   }
 
   Object.assign(window, {BC_AIPROMPT: {GROUPS_NOW, GROUPS_LATER, OPEN_IN_GROUP, LATER_NOTE, listed, EFFECT,
-    TOOL_SKILL, defaultSkills, standing, template, contextPack, contextLine, sessionOptions, hint,
+    TOOL_SKILL, defaultSkills, CITE_RULE, standing, template, contextPack, contextLine, sessionOptions, hint,
     backTarget, agentLeavesPage, STALE_DIRECT_SETUP, STALE_CUT_NOTE, STALE_NO_PROMPT, staleDirect}});
 })();

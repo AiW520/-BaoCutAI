@@ -134,6 +134,8 @@ export const TOOL_RISK: Readonly<Record<string, RiskLevel>> = {
   videos_frames: 'read',
   // 镜头切换：只读，不改视频、不写文件，规划模式也能用。
   videos_shots: 'read',
+  // 按句编号读讲话（写作出处）：只读，不改视频、不写文件。
+  speech_sentences: 'read',
   // 预览代码画面：不改视频，只在离屏宿主里取帧，写进 .baocut-out/frames/，与 videos_frames 同级。
   compositions_preview: 'read',
   videos_history: 'read',
@@ -152,6 +154,10 @@ export const TOOL_RISK: Readonly<Record<string, RiskLevel>> = {
   models_install: 'command',
   space_list: 'read',
   space_search: 'read',
+  // 本机语义检索与取材（只读）：不改视频、不写文件；取材的出处编号只在内存里。
+  space_search_v2: 'read',
+  space_resolve_search_hit: 'read',
+  speech_relevant: 'read',
   // skill 的正文（§3.8）：只读 skill 目录里登记的文件。
   skills_read: 'read',
   grants_request: 'high',

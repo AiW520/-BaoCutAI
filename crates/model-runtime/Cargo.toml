@@ -7,7 +7,10 @@ license-file.workspace = true
 publish.workspace = true
 
 [features]
-default = ["backend-mlx", "backend-coreml"]
+default = ["backend-mlx", "backend-coreml", "backend-litert"]
+# 全平台：文本嵌入走 LiteRT-LM 的 C API（EmbeddingGemma 2）。库在运行期从模型包的 `litertlm-runtime` 组件 dlopen，
+# 构建时不链接，也不要额外的工具链。
+backend-litert = ["dep:libloading"]
 # Apple Silicon 专属：mlx-rs（Metal）推理。其他平台开着也能编译，只是后端报告不可用。
 backend-mlx = ["dep:mlx-rs", "dep:mlx-sys"]
 # Apple Silicon 专属：CoreML 上的 Whisper（`.mlmodelc`）。VAD 仍是 MLX 的 Silero，所以连带 `backend-mlx`。
@@ -41,6 +44,8 @@ hound = "3.5.1"
 # 无空格书写（日、泰等）的分词：估计词时间时按词切开段文本。
 icu_segmenter = "2.2"
 libc = "0.2.189"
+# LiteRT-LM C API 的运行期加载（`backend-litert`）。
+libloading = { version = "0.8.9", optional = true }
 memmap2 = "0.9.11"
 # 本地文生图的输出（`baocut.image-png/v1`）。
 png = "0.18.1"

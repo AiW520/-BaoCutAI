@@ -81,7 +81,8 @@ const WEB_DENY = [
   /^app\/main\.jsx/, /^app\/voice-picker/, /^app\/model-openai-api/, /^app\/panel-image-gen/, /^app\/image-gen/, /^app\/model-writing/,
   /^app\/model-settings-nav/, /^app\/model-settings-link/, /^app\/model-app-update/, /^app\/model-models-dir/, /^app\/model-local-check/,
   /* App rail / Home / Space（2026-10-01）：只属于 App 外壳，且全部用 react-spectrum */
-  /^app\/apprail/, /^app\/home-/, /^app\/space/, /^app\/model-home/, /^app\/model-space/, /^app\/model-app-ia/,
+  /^app\/apprail/, /^app\/home-/, /^app\/space/, /^app\/model-home/, /^app\/model-space(?!-search\.js)/, /^app\/model-app-ia/,
+  /* model-space-search.js 例外：编辑器文稿查找条下的「意思相近」（embedding-integration-design §2.1）两端都有，用它的纯函数 */
   /^app\/model-agent-projects/, /^app\/model-llm-tools/,
   /* 视频工具的目标与运行（2026-10-03）：只在 App 的工具页；/^app\/model-tool-/ 不含 Web 也加载的 model-tools.js */
   /^app\/model-tool-/,

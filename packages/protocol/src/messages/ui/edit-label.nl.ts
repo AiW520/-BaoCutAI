@@ -70,6 +70,7 @@ export const nl: EditLabelMessages = {
   editTranslation: 'Vertaling herschrijven',
   markTranslationStale: 'Vertaling als verouderd markeren',
   clearTranslationStale: 'Markering verouderd verwijderen',
+  unifyGlossaryTerms: 'Gelijktrekken met woordenlijst',
   cutText: 'Via transcriptie wegknippen',
   restoreText: 'Geknipte inhoud herstellen',
   editTranscript: 'Brontekst wijzigen',

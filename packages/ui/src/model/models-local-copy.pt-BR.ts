@@ -28,6 +28,7 @@ export const ptBR: ModelsLocalMessages = {
     separate: "Separar",
     music: 'Música',
     diarize: "Diarização de falantes",
+    embed: "Índice semântico",
   },
   auto: "Automático",
   notInstalled: (name) => `${name} (não instalado)`,

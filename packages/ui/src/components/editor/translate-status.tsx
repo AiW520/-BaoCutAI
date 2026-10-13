@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { pipelineStepLabel, type DocumentRecord, type Id, type JobRecord } from '@baocut/protocol';
+import { pipelineStepLabel, type DocumentRecord, type Id, type JobRecord, type TranslateMemoryUse } from '@baocut/protocol';
 import { Button, Content, Heading, InlineAlert, ProgressBar } from '@react-spectrum/s2';
 import { style } from '@react-spectrum/s2/style' with { type: 'macro' };
 import { TASK_VIEW_COPY, VIDEO_CARD_COPY } from '../../copy.ts';
@@ -9,6 +9,7 @@ import { isTranslateJob, refreshOf, sourceOf, targetOf, translateProgress, type 
 import { isJobLive, useJobs } from '../../state/jobs-store.ts';
 import { useShell } from '../../state/shell-store.ts';
 import { useOpenConversation } from '../tasks/task-card.tsx';
+import { SemanticNote } from '../semantic-note.tsx';
 import { TRANSLATE_COPY as C } from './translate-copy.ts';
 import {
   cancelTranslate,
@@ -237,6 +238,19 @@ export function TranslateProblemAlert({ videoId, problem }: { videoId: Id; probl
   );
 }
 
+/** 收据上翻译记忆那一行：沿用、参考了几句；退回只认原文相同的句子时补上原因（共用的那一句）。都是 0 且没退回时不写。 */
+function MemoryUse({ memory }: { memory: TranslateMemoryUse }) {
+  const used = memory.reused > 0 || memory.referenced > 0;
+  const reason = memory.effectiveMode === 'lexical' ? memory.reason : null;
+  if (!used && !reason) return null;
+  return (
+    <>
+      {used ? <div>{C.memoryUsed(memory.reused, memory.referenced)}</div> : null}
+      {reason ? <SemanticNote entry="tm" reason={reason} /> : null}
+    </>
+  );
+}
+
 /** 收据（原型 `DoneView`）：翻译放到画面上之后留一个「撤销」的出口；撤销后如实说原文没动、译文还在。 */
 export function TranslateReceiptCard({ videoId, receipt }: { videoId: Id; receipt: TranslateReceipt }) {
   return (
@@ -245,6 +259,7 @@ export function TranslateReceiptCard({ videoId, receipt }: { videoId: Id; receip
         <Heading>{receipt.undone ? C.undone(receipt.language) : C.applied(receipt.language, receipt.count)}</Heading>
         <Content>
           <div>{receipt.undone ? C.undoneNote : C.appliedNote(receipt.bilingual)}</div>
+          {receipt.undone || !receipt.memory ? null : <MemoryUse memory={receipt.memory} />}
           <div className={alertActions}>
             {receipt.undone || !receipt.transactionId ? null : (
               <Button size="S" variant="secondary" onPress={() => void undoReceipt(videoId)}>

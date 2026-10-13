@@ -1,8 +1,9 @@
 import { DEFAULT_AGENT_MODE, type AgentMode } from './access.ts';
-import type { Autonomy } from './domain.ts';
+import type { Autonomy, Id } from './domain.ts';
 import type { LanguagePreference } from './i18n.ts';
 import type { CookieBrowsersSetting } from './pipelines.ts';
 import type { ResourceCapacitySetting } from './resources.ts';
+import type { SemanticChannel } from './semantic.ts';
 import { SETTING_DESCRIPTION_MESSAGES } from './settings-copy.ts';
 
 /**
@@ -98,6 +99,17 @@ export interface SettingValues {
    * 整数 1–1440。桌面端与手动启动的 Runtime 不受它影响。
    */
   'runtime.idleExitMinutes': number;
+  /**
+   * 本机语义检索（创作辅助集成设计 §3.10，设置分组 `semantic`）：要建索引的通道。首版只有 `text`（讲话内容）；`visual`、`audio`
+   * 可以写进来，但在对应通道实现之前不建索引（`space.indexStatus` 标为不可用）。
+   */
+  'semantic.channels': SemanticChannel[];
+  /** 建语义索引的项目：`all`，或项目 ID 列表（不属于项目的视频只在 `all` 时建）。不影响检索的范围，只影响哪些视频排进构建。 */
+  'semantic.indexedProjects': 'all' | Id[];
+  /** 翻译记忆（§2.6）：翻译时提示以前译过的几乎相同的句子。 */
+  'semantic.translationMemory': boolean;
+  /** 术语候选（§2.5）：从文稿里几乎相同的写法提示术语。 */
+  'semantic.glossaryCandidates': boolean;
   'updates.autoCheck': boolean;
   'updates.autoDownload': boolean;
   'diagnostics.enabled': boolean;
@@ -127,6 +139,10 @@ export const SETTING_KEYS = [
   'cache.maxSizeMiB',
   'resources.capacity',
   'runtime.idleExitMinutes',
+  'semantic.channels',
+  'semantic.indexedProjects',
+  'semantic.translationMemory',
+  'semantic.glossaryCandidates',
   'updates.autoCheck',
   'updates.autoDownload',
   'diagnostics.enabled',
@@ -153,6 +169,10 @@ export const SETTING_DEFAULTS: Readonly<SettingValues> = Object.freeze({
   'cache.maxSizeMiB': 2048,
   'resources.capacity': null,
   'runtime.idleExitMinutes': 10,
+  'semantic.channels': Object.freeze(['text']) as unknown as SemanticChannel[],
+  'semantic.indexedProjects': 'all',
+  'semantic.translationMemory': true,
+  'semantic.glossaryCandidates': true,
   'updates.autoCheck': true,
   'updates.autoDownload': true,
   'diagnostics.enabled': false,

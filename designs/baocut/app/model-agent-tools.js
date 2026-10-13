@@ -55,6 +55,9 @@
     videos_inspect: (a) => ({kind: 'video-read', label: '读取视频', icon: 'film', summary: a.video || base(a.path)}),
     timeline_query: (a) => ({kind: 'timeline', label: '查询时间线', icon: 'layers', summary: join(a.video, a.range || a.query)}),
     speech_search: (a) => ({kind: 'speech-search', label: '检索文稿', icon: 'search', summary: a.query || ''}),
+    /* 本机语义取材（embedding-integration §2.10）：按主题读取 N 段；没装模型时 Runtime 退回字面匹配（mode: lexical），这里写明 */
+    speech_relevant: (a) => ({kind: 'speech-search', label: '按主题读取', icon: 'search',
+      summary: join(n(a.paragraphs, '段'), a.topic ? `「${a.topic}」` : null, a.mode === 'lexical' ? '字面匹配' : null)}),
     documents_read: (a) => ({kind: 'document-read', label: '读取文稿', icon: 'transcript', summary: join(a.document || a.name, n(a.sentences, '句'))}),
     edits_apply: editKind,
     edits_propose: (a) => Object.assign(editKind(a), {label: '提出修改', icon: 'edit'}),

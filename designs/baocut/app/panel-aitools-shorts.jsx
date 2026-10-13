@@ -129,7 +129,7 @@
       : scopeOpt && scopeOpt.k === 'sel' ? {k: 'sel', label: `当前选区 ${SC.spanText(scopeOpt)}`, start: scopeOpt.start, end: scopeOpt.end} : null;
     const scopeName = chapter ? chapter.title.replace(/^第 \d+ 章 · /, '') : scope ? scope.label : null;
     const defaultText = P.template('shortscut', AG.intentPrompt({kind: 'shortscut', scope: scopeName}, host),
-      {extra: SC.agentExtra(p, {children: kids.length})});
+      {extra: SC.agentExtra(p, {children: kids.length}).concat(window.BC_WRTOPIC.shortsExtra(p.topic))});
     const showFocus = p.ratio !== 'source' && !(s.facts.portrait && p.ratio === '9:16');
 
     const start = (payload) => {
@@ -177,6 +177,8 @@
             <window.ToolOption on={p.skipDone} onChange={(v) => set({skipDone: v})} label="已经切过的不再找"
               sub={p.skipDone ? `跳过那 ${kids.length} 支用到的区间` : '照找，可能和切过的几支重叠'} />
           ) : null}
+          {/* 主题（embedding-integration §2.8）：可空；写了就先由本机圈出讲这件事的片段 */}
+          <window.BC_WRTOPIC.ShortsTopicRow value={p.topic || ''} onChange={(v) => set({topic: v})} />
         </window.ToolSetup>
 
         <SecHead aside={SC.summaryLine(p)}>切成什么样</SecHead>

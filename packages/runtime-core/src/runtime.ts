@@ -74,6 +74,7 @@ import { createFaceDetector } from './face-detection.ts';
 import { LibraryService } from './library/library-service.ts';
 import { VoiceCloneService } from './library/voice-clone-service.ts';
 import { openModelJobs, type ModelJobs, type ModelJobsOptions } from './models/model-jobs.ts';
+import { createTranslationMemory } from './models/translation-memory.ts';
 import { ModelInstallTools } from './agent-tools/model-install-tools.ts';
 import { ExportService } from './exports/export-service.ts';
 import { FontService } from './fonts/font-service.ts';
@@ -83,6 +84,9 @@ import { sweepLeftovers } from './exports/leftover-files.ts';
 import { resolveExportWorkerCommand } from './exports/video-export.ts';
 import { ExportTools } from './agent-tools/export-tools.ts';
 import { SpaceTools } from './agent-tools/space-tools.ts';
+import { SemanticTools } from './agent-tools/semantic-tools.ts';
+import { openSemanticServices, type SemanticServices } from './space/semantic/services.ts';
+import type { EmbeddingProvider } from '@baocut/models';
 import { VideoDeleteTools } from './agent-tools/video-delete-tools.ts';
 import { VideoTrash } from './videos/video-trash.ts';
 import { locateFileTarget } from './handlers.ts';
@@ -110,6 +114,8 @@ import { entryPlace } from './videos/pipeline-targets.ts';
 import { FlowTools } from './agent-tools/flow-tools.ts';
 import { LinkImportTools } from './agent-tools/link-import-tools.ts';
 import { DownloadTools } from './agent-tools/download-tools.ts';
+import { SpeechSentenceTools } from './agent-tools/speech-sentence-tools.ts';
+import { MemoryCitationRegistry } from './ai-tools/citation-registry.ts';
 import { TemplateCatalog, resolveBuiltinTemplatesDir } from './templates/template-catalog.ts';
 import { SkillCatalog, resolveBuiltinSkillsDir } from './skills/skill-catalog.ts';
 import { SkillInstaller } from './skills/skill-installer.ts';
@@ -167,6 +173,11 @@ export interface StartRuntimeOptions {
   credentialHelper?: CredentialStoreOptions['helper'];
   /** 对外服务（§4.8）的调节项。测试缩短服务审批的时限。 */
   services?: ServicesOptions;
+  /**
+   * 本机语义检索（EmbeddingGemma 2 检索集成方案 v0.1）的编码 Provider。不给时用本机模型包（`models.embedding`）；null 时没有
+   * 语义一路：`space.searchV2` 只有字面，不建语义索引（测试注入确定性的 Provider 或关掉）。`model` 是设置页显示的模型包；`debounceMs` 是内容索引变化后多久再规划（测试缩短）。
+   */
+  semantic?: { provider: EmbeddingProvider | null; model?: () => { bundleId: string; label: string } | null; debounceMs?: number };
   /** 模型安装（§6.3）的调节项。测试把下载来源指向本机的假服务，注入可用空间、内置清单与自检样本；不访问真实网络。 */
   modelInstall?: ModelJobsOptions['modelInstall'];
   /** 测试用：卡住或打断模型目录的移动、假装跨盘。 */
@@ -283,6 +294,7 @@ const STOP_ORDER = [
   'usage',
   'initiator',
   'discovery',
+  'semantic-index',
   'space',
   'slides',
   'compositions',
@@ -442,6 +454,8 @@ export async function startRuntime(options: StartRuntimeOptions = {}): Promise<R
     let harnessRef: Harness | null = null;
     // 流程的 `{ entryId }` 目标按 Space 目录解析（§7.9）：Space 在后面才建，解析时再取。
     let spaceRef: SpaceCatalog | null = null;
+    // 本机语义检索（Space 目录之后才建好）：工具调用时再取。
+    let semanticRef: SemanticServices | null = null;
     const linkSources = new FileLinkSources(path.join(home.root, 'store', 'link-sources.json'));
     const toolOverrides = options.externalTools?.overrides ?? process.env;
     const requireHarness = () => {
@@ -478,6 +492,14 @@ export async function startRuntime(options: StartRuntimeOptions = {}): Promise<R
       env: toolEnv,
       // 音乐引擎（§6.5）是音乐模型包的组件：`BAOCUT_AUDIOCPP_CLI` 与工具下载镜像按外部工具的覆盖读（测试不读真实环境）。
       toolOverrides,
+      // 翻译记忆（创作辅助集成设计 §2.6）：Space 目录与语义检索在后面才建，查找时再取；设置关掉时不查。
+      translationMemory: createTranslationMemory({
+        catalog: () => spaceRef,
+        readContent: (dir) => videos.readContent(dir),
+        semantic: () => semanticRef,
+        enabled: () => settingsStore?.get('semantic.translationMemory') ?? true,
+        log: log.child('translation-memory'),
+      }),
       // 偏好设置在后面才读入：做安装计划时再取。
       toolsEndpoint: () => toolsDownloadEndpoint(toolOverrides, settingsStore?.get('tools.downloadEndpoint') ?? null),
       idleMs: options.jobIdleMs,
@@ -560,6 +582,7 @@ export async function startRuntime(options: StartRuntimeOptions = {}): Promise<R
             skills: () => aiToolRef().skills,
             attachments: () => aiToolRef().attachments,
             exports: () => aiToolRef().exports,
+            semantic: () => semanticRef,
           },
           context,
         ),
@@ -708,6 +731,8 @@ export async function startRuntime(options: StartRuntimeOptions = {}): Promise<R
       process.env.BAOCUT_FFMPEG || (await findOnPath('ffmpeg', (await toolEnv()).PATH ?? '')) || 'ffmpeg';
     // 导入与预览的主体：工具（会话、终端、对外服务）与界面的 `compositions.*` 共用这一个，宿主也是同一个。
     const compositions = new CompositionService({ videos, ffmpeg: compositionFfmpeg, host: compositionHost, log });
+    // 智能体写作的句子编号（创作辅助集成设计 §3.4「智能体路径」）：`speech_sentences` 发、`downloads_save` 校验，按会话分开。
+    const citationRegistry = new MemoryCitationRegistry();
     const toolSets = (toolScope: ToolScope): ToolSet[] => {
       // 从链接下载：`download` 与 `transcribe` 给 `url` 时共用。
       const linkImport = {
@@ -737,6 +762,8 @@ export async function startRuntime(options: StartRuntimeOptions = {}): Promise<R
         new LibraryTools({ library, scope: toolScope }),
         // Space 目录在后面才建好：工具调用时再取。
         new SpaceTools({ space: () => space, scope: toolScope, jobs: models.jobs }),
+        // 本机语义检索与按意图取材（只读）；取材的句子编号与 speech_sentences 共用一份登记。
+        new SemanticTools({ semantic: () => semanticRef, scope: toolScope, jobs: models.jobs, registry: citationRegistry }),
         new SkillTools({ skills, scope: toolScope }),
         new GrantTools({ models, scope: toolScope }),
         new TaskTools({ harness, scope: toolScope }),
@@ -749,7 +776,12 @@ export async function startRuntime(options: StartRuntimeOptions = {}): Promise<R
           // 交出的文件登记为 Space 交付物（§3.5）；Space 目录在后面才建好，调用时再取。
           register: (handover) =>
             space.recordHandover(handover).catch((error: unknown) => log.warn('Registering a handed-over download failed', { error: String(error) })),
+          citations: {
+            registry: citationRegistry,
+            publish: async (file) => (await models.jobs.artifacts.put(Buffer.from(JSON.stringify(file)), 'json')).artifactId,
+          },
         }),
+        new SpeechSentenceTools({ videos, scope: toolScope, registry: citationRegistry }),
         new VideoDeleteTools({
           space: () => space,
           trash: () => videoTrash,
@@ -835,6 +867,31 @@ export async function startRuntime(options: StartRuntimeOptions = {}): Promise<R
     );
     space.start();
     sweepTrash();
+    // 本机语义检索（v0.1 PR 3–5）：派生库在 `<cache>/semantic-index/v1/`，跟着内容索引增量构建；没有 Provider 时只有字面一路。
+    const semantic = openSemanticServices({
+      cacheDir: home.cacheDir,
+      catalog: space,
+      reader: { readContent: (dir) => videos.readContent(dir) },
+      // 不给时用本机的 EmbeddingGemma 2 模型包（Model Worker 经 LiteRT-LM 编码）；没装时 `profile` 报没装，检索只有字面一路。
+      provider: options.semantic?.provider !== undefined ? options.semantic.provider : models.embedding,
+      settings: () => ({
+        channels: settings.store.get('semantic.channels'),
+        indexedProjects: settings.store.get('semantic.indexedProjects'),
+      }),
+      log,
+      model: options.semantic?.model ?? (() => models.embedding.current()),
+      ...(options.semantic?.debounceMs !== undefined ? { debounceMs: options.semantic.debounceMs } : {}),
+    });
+    semanticRef = semantic;
+    stops.add('semantic-index', () => semantic.close(), 'Stopping the semantic index failed');
+    semantic.coordinator.start();
+    // 模型包装好、删掉或自检之后，因为没模型停下的索引要重新规划；改了索引的通道或项目也一样。
+    models.catalog.onChange((bundleId) => {
+      if (models.catalog.definitions().some((d) => d.bundleId === bundleId && d.capability === 'embed')) semantic.coordinator.schedule();
+    });
+    settings.store.onChange((changed) => {
+      if ('semantic.channels' in changed || 'semantic.indexedProjects' in changed) semantic.coordinator.schedule();
+    });
     // 上次被强杀留下的导出临时文件与打开便携包的暂存目录（§5.8）：首次扫描之后在后台清一次。
     void space.ready
       .then(() => sweepLeftovers({ jobs: () => models.jobs.list(), sourceRoots: () => space.sourceRoots(), log }))
@@ -895,6 +952,7 @@ export async function startRuntime(options: StartRuntimeOptions = {}): Promise<R
     const token = crypto.randomBytes(32).toString('base64url');
     const handlerDeps = {
       harness,
+      semantic,
       setup,
       space,
       media,

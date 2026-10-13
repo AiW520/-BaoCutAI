@@ -132,6 +132,13 @@ export const frTranslate: TranslateMessages = {
   staleShort: (n: number) => `${n} obsolètes`,
   cutShort: (n: number) => `${n} coupées`,
   goneShort: (n: number) => `${n} supprimées`,
+  termsShort: (n: number) => `${n} ${n === 1 ? 'terme divergent' : 'termes divergents'}`,
+  terms: (n: number) => `${n} ${n === 1 ? 'endroit n’utilise' : 'endroits n’utilisent'} pas la traduction du glossaire`,
+  termsTitle: 'Termes non conformes au glossaire',
+  termsLead: 'Ces traductions n’utilisent pas la traduction du glossaire. Les harmoniser est une modification ordinaire, annulable.',
+  termsSpot: (got: string, want: string) => ` · traduit par « ${got} », le glossaire indique « ${want} »`,
+  termsUnify: 'Utiliser les traductions du glossaire',
+  termsUnified: (n: number) => `${n} ${n === 1 ? 'endroit remplacé' : 'endroits remplacés'} par la traduction du glossaire`,
   cut: (n: number) => `${sentences(n)} de l’original ${pluralForm('fr', n, { one: 'a été coupée', other: 'ont été coupées' })} de la vidéo`,
   webHint: 'Retraduire fait appel à un modèle ou à l’agent : lancez-le depuis l’agent ou l’app BaoCut',
   refreshing: (n: number | null) => (n === null ? 'Retraduction…' : `Retraduction de ${sentences(n)}…`),
@@ -158,6 +165,18 @@ export const frTranslate: TranslateMessages = {
   refreshFailed: 'Échec de la retraduction',
   refreshInterrupted: 'La retraduction a été interrompue',
   refreshCancelled: 'Retraduction annulée',
+  // 翻译记忆（创作辅助集成设计 §2.6）
+  chipReused: 'Réutilisée',
+  reusedTip: (video: string | null) =>
+    video ? `Traduction réutilisée de « ${video} » : l’original est presque identique` : 'Traduction réutilisée d’une autre de vos vidéos : l’original est presque identique',
+  directReused: 'Retraduire plutôt',
+  directReusedSub: (video: string | null) => `Ne réutilise plus ${video ? `la traduction de « ${video} »` : 'la traduction existante'} et retraduit avec l’API du modèle`,
+  memory: 'Mémoire de traduction',
+  memoryOn:
+    'Les phrases identiques à celles déjà traduites dans vos autres vidéos (même paire de langues) reprennent cette traduction et sont marquées « Réutilisée » ; les phrases proches sont transmises au modèle comme références.',
+  memoryOff: 'La mémoire de traduction est désactivée dans les Réglages : aucune traduction existante n’est reprise ni consultée.',
+  memoryUsed: (reused: number, referenced: number) => `Mémoire de traduction : ${reused} réutilisée(s) · ${referenced} traduction(s) existante(s) en référence`,
+
 };
 
 export const frTextNotConfigured: TextNotConfiguredMessages = {

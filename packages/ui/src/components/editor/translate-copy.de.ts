@@ -131,6 +131,13 @@ export const deTranslate: TranslateMessages = {
   staleShort: (n: number) => `${n} veraltet`,
   cutShort: (n: number) => `${n} geschnitten`,
   goneShort: (n: number) => `${n} gelöscht`,
+  termsShort: (n: number) => `${n} ${n === 1 ? 'Begriff abweichend' : 'Begriffe abweichend'}`,
+  terms: (n: number) => `An ${n} ${n === 1 ? 'Stelle' : 'Stellen'} wird die Übersetzung aus dem Glossar nicht verwendet`,
+  termsTitle: 'Abweichende Begriffe',
+  termsLead: 'Diese Übersetzungen verwenden nicht die Übersetzung aus dem Glossar. Angleichen ist eine normale Bearbeitung und lässt sich rückgängig machen.',
+  termsSpot: (got: string, want: string) => ` · übersetzt als „${got}“, im Glossar „${want}“`,
+  termsUnify: 'Glossar-Übersetzungen verwenden',
+  termsUnified: (n: number) => `${n} ${n === 1 ? 'Stelle' : 'Stellen'} an die Glossar-Übersetzung angeglichen`,
   cut: (n: number) => `${sentences(n)} des Originals ${pluralForm('de', n, { one: 'wurde', other: 'wurden' })} aus dem Video geschnitten`,
   webHint: 'Neu übersetzen nutzt ein Modell oder den Agenten: starte es im Agenten oder in der BaoCut-App',
   refreshing: (n: number | null) => (n === null ? 'Wird neu übersetzt…' : `${sentences(n)} werden neu übersetzt…`),
@@ -157,6 +164,18 @@ export const deTranslate: TranslateMessages = {
   refreshFailed: 'Neu übersetzen fehlgeschlagen',
   refreshInterrupted: 'Neu übersetzen wurde unterbrochen',
   refreshCancelled: 'Neu übersetzen abgebrochen',
+  // 翻译记忆（创作辅助集成设计 §2.6）
+  chipReused: 'Wiederverwendet',
+  reusedTip: (video: string | null) =>
+    video ? `Übersetzung aus „${video}“ wiederverwendet: das Original ist fast gleich` : 'Übersetzung aus einem deiner anderen Videos wiederverwendet: das Original ist fast gleich',
+  directReused: 'Stattdessen neu übersetzen',
+  directReusedSub: (video: string | null) => `Verwendet ${video ? `die Übersetzung aus „${video}“` : 'die vorhandene Übersetzung'} nicht mehr und übersetzt mit der Modell-API neu`,
+  memory: 'Übersetzungsspeicher',
+  memoryOn:
+    'Sätze, die mit bereits übersetzten Sätzen in deinen anderen Videos übereinstimmen (gleiche Sprachrichtung), übernehmen diese Übersetzung und werden mit „Wiederverwendet“ markiert; ähnliche gehen als Referenz an das Modell.',
+  memoryOff: 'Der Übersetzungsspeicher ist in den Einstellungen aus: vorhandene Übersetzungen werden weder übernommen noch als Referenz genutzt.',
+  memoryUsed: (reused: number, referenced: number) => `Übersetzungsspeicher: ${reused} wiederverwendet · ${referenced} vorhandene Übersetzungen als Referenz`,
+
 };
 
 export const deTextNotConfigured: TextNotConfiguredMessages = {

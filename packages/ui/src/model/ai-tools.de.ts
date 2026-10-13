@@ -67,6 +67,7 @@ export const de: AiToolsMessages = {
     lineFrame: (ratio, focus) => (ratio ? `Seitenverhältnis ${ratio}, Ausschnitt ${focus}` : 'Seitenverhältnis: Original beibehalten, nicht zuschneiden'),
     lineSubtitles: (tracks, style) => `Untertitel: ${tracks}, ${style}`,
     lineSkipDone: 'Bereits zu Kurzvideos geschnittene Stellen überspringen',
+    lineTopic: (topic) => `Suche nur in den Stellen, in denen es um „${topic}“ geht: finde sie zuerst mit speech_relevant und wähle dann daraus`,
     lineDirect: 'Erstelle die Videos, sobald sie gefunden sind; du musst mich vorher nicht fragen',
   },
   groups: {

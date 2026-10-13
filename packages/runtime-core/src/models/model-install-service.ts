@@ -27,6 +27,8 @@ import {
   appFileMissing,
   builtinReferenceFile,
   bundleUsable,
+  embeddingSelfTestTexts,
+  embeddingSelfTestVerdict,
   freezeReferenceFile,
   imageSelfTestParameters,
   imageSelfTestSteps,
@@ -45,6 +47,7 @@ import {
   speechParameters,
   speechSelfTestRequest,
   speechSelfTestVerdict,
+  truncateAndNormalize,
   validateAsrResult,
   type BundleDefinition,
   type InstallPlanDetail,
@@ -72,6 +75,7 @@ import {
   type ModelSelfTestResult,
 } from '@baocut/protocol';
 import { RcModels } from '@baocut/protocol/messages/runtime-core';
+import { ModelsEmbedding } from '@baocut/protocol/messages/models/embedding.ts';
 import { localizedOf, taskFailure } from '../localized.ts';
 
 /**
@@ -245,7 +249,8 @@ export class ModelInstallService {
   /**
    * 检查：固定样本走一遍完整的 Worker 流程。识别的模型包识别一段固定录音、核对文字；合成的模型包用默认声音合成一句固定的短句，
    * 核对输出能解码、时长合理、不是静音；文生图的模型包用固定的提示词与 seed 少步数生成一张小图，核对 PNG 能解码、尺寸对、
-   * 不是纯色；分离的模型包把识别用的同一段录音（只有人声）分成两路，核对等长、人声明显比背景响（Model Worker 协议规范 §4.3）。
+   * 不是纯色；分离的模型包把识别用的同一段录音（只有人声）分成两路，核对等长、人声明显比背景响（Model Worker 协议规范 §4.3）；
+   * embedding 的模型包编码三条固定文本，核对向量形状、单位长度与相关文档排在无关文档前面（§4.5）。
    */
   async test(params: { bundleId: string; commandId?: Id }, submitter: JobSubmitter): Promise<{ jobId: Id }> {
     const def = this.#definition(params.bundleId);
@@ -269,6 +274,8 @@ export class ModelInstallService {
       contentHash = `sha256:${sha256Hex(canonicalJson({ ...IMAGE_SELF_TEST, steps: imageSelfTestSteps(def.image!.steps) }))}`;
     } else if (def.capability === 'music') {
       contentHash = `sha256:${sha256Hex(canonicalJson(MUSIC_SELF_TEST))}`;
+    } else if (def.capability === 'embed') {
+      contentHash = `sha256:${sha256Hex(canonicalJson({ texts: embeddingSelfTestTexts(), profile: def.embedding ?? null }))}`;
     } else {
       sampleFile = selfTestSampleFile(this.#sample);
       const hex = sampleFile ? await sha256File(sampleFile).catch(() => null) : null;
@@ -299,7 +306,9 @@ export class ModelInstallService {
         // 用这个模型包的 Model Worker（与转写共用 holder）；用户在界面上等着结果，按交互优先。
         resources: { ...resources, priority: 'interactive' },
         run: (run) =>
-          def.capability === 'image'
+          def.capability === 'embed'
+            ? this.#runEmbeddingTest(run, def)
+            : def.capability === 'image'
             ? this.#runImageTest(run, def)
             : def.capability === 'music'
               ? this.#runMusicTest(run, def)
@@ -557,6 +566,52 @@ export class ModelInstallService {
     const { durationSec, sampleRate } = verdict.wav;
     await record('passed', RcModels.speechPassed({ duration: durationSec.toFixed(2), sampleRate }));
     this.#log.info('Model check passed', { bundleId, jobId: run.jobId, durationSec, sampleRate });
+    return { documentId: null, artifactId };
+  }
+
+  /**
+   * embedding 模型包的检查：三条固定文本（查询、相关文档、无关文档）经 `embed.run` 编码，截到存储维度再归一化，核对条数、维度、
+   * 有限、单位长度，相关文档比无关文档更像查询（Model Worker 协议规范 §4.5）。
+   */
+  async #runEmbeddingTest(run: TaskRun, def: BundleDefinition): Promise<NonNullable<JobRecord['result']>> {
+    const bundleId = def.bundleId;
+    const { record, fail } = this.#verdicts(run, bundleId);
+    const spec = def.embedding!;
+    run.phase('loading');
+    let result;
+    try {
+      result = await this.#options.provider.embed(
+        bundleId,
+        embeddingSelfTestTexts(),
+        { outputSize: spec.outputSize, insertSpecialTokens: spec.insertSpecialTokens },
+        run.signal,
+      );
+    } catch (error) {
+      run.signal.throwIfAborted();
+      if (error instanceof ProviderFailure) return fail(providerCheckCode(error), RcModels.workerFailed({ reason: localizedOf(error) }), providerDetails(error));
+      throw error;
+    }
+    run.signal.throwIfAborted();
+    run.phase('validating');
+    let vectors: Float32Array[];
+    try {
+      vectors = result.vectors.map((vector) => truncateAndNormalize(vector, spec.dims));
+    } catch (error) {
+      return fail('MODEL_OUTPUT_WRONG', error instanceof Error ? error.message : String(error));
+    }
+    const verdict = embeddingSelfTestVerdict(vectors, spec.dims);
+    if (!verdict.passed) return fail('MODEL_OUTPUT_WRONG', verdict.problem, verdict.facts ? { ...verdict.facts } : {});
+    run.phase('publishing');
+    const facts = { ...verdict.facts, device: result.device, elapsedMs: result.elapsedMs, workerVersion: result.workerVersion };
+    const { artifactId } = await this.#jobs.artifacts.put(Buffer.from(JSON.stringify(facts)), 'json');
+    const detail = ModelsEmbedding.selfTestPassed({
+      dims: spec.dims,
+      relevant: verdict.facts.relevant.toFixed(4),
+      irrelevant: verdict.facts.irrelevant.toFixed(4),
+      device: result.device,
+    });
+    await record('passed', detail);
+    this.#log.info('Model check passed', { bundleId, jobId: run.jobId, ...facts });
     return { documentId: null, artifactId };
   }
 

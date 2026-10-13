@@ -55,6 +55,10 @@ export const ja: RcSpaceMessages = {
   labelGenerateImage: '生成した画像',
   labelGenerateMusic: '生成した音楽',
   labelGenerateText: '生成したテキスト',
+  labelSummary: '要約',
+  labelBlog: 'ブログ',
+  labelTitles: 'タイトル',
+  labelDescription: '説明文',
   labelExport: '書き出し',
 
   engineUnavailable: '動画エンジンを使用できません',
@@ -62,6 +66,7 @@ export const ja: RcSpaceMessages = {
   conversationCantSee:
     'このセッションからはこの項目が見えません。プロジェクトに属する項目は、同じプロジェクトのセッションに入れてください',
   serviceUsesMcp: '外部サービスは MCP ツールを通じて Space にアクセスします',
+  relatedNotVideo: '関連動画を表示できるのは動画だけです',
   materialTextOnly: (p) =>
     `読み取れるのは .txt と .md のドキュメント、.srt と .vtt の字幕のテキストのみです：${p.fileName}`,
   materialTooLarge: (p) => `${p.fileName} は ${p.bytes} バイトで、資料の上限 ${p.limit} を超えています`,

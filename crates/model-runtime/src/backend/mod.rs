@@ -16,6 +16,9 @@
 //!
 //! 识别模型包按 `asr` 组件的 family 选加载器，每个 family 有自己要求的组件（[`load`]）；这个构建能加载哪些
 //! family 由 [`transcribe_families`] 报给 `worker.hello`。带 `image` 组件的是文生图模型包（[`crate::image`]）。
+//!
+//! - `litert-lm`：LiteRT-LM C API 上的文本嵌入（[`crate::embed`]）。`backend-litert` feature 时编译进来，否则报告
+//!   `not-compiled`；C 库在模型包的 `litertlm-runtime` 组件里，加载时才打开。只加载带 `embedding` 组件的模型包。
 
 use serde_json::json;
 
@@ -176,13 +179,25 @@ pub struct LoadedImage {
     pub memory: fn() -> Option<MemorySnapshot>,
 }
 
-/// 一个模型包加载出来的东西：识别（VAD + ASR）、合成（TTS 引擎）、分离、文生图（图像引擎）或说话人区分。
+/// 加载好的文本嵌入引擎（`embed.run`）。与 [`LoadedModel`] 一样只能在加载它的线程上使用。
+pub struct LoadedEmbedding {
+    pub engine: Box<dyn crate::embed::EmbeddingEngine>,
+    /// 加载与预热的耗时（毫秒）：`model.load` 的 `warmupMs` 报这个。
+    pub load_ms: u64,
+    /// 加载后的常驻字节数；后端报告不了时 `None`。
+    pub resident_bytes: Option<u64>,
+    /// 后端的内存快照（任务之后刷新 `worker.status`）。
+    pub memory: fn() -> Option<MemorySnapshot>,
+}
+
+/// 一个模型包加载出来的东西：识别（VAD + ASR）、合成（TTS 引擎）、分离、文生图（图像引擎）、说话人区分或文本嵌入。
 pub enum Loaded {
     Transcription(Box<dyn LoadedModel>),
     Synthesis(LoadedSynthesis),
     Separation(LoadedSeparation),
     Image(LoadedImage),
     Diarization(LoadedDiarization),
+    Embedding(LoadedEmbedding),
 }
 
 impl Loaded {
@@ -193,6 +208,7 @@ impl Loaded {
             Self::Separation(separation) => (separation.memory)(),
             Self::Image(image) => (image.memory)(),
             Self::Diarization(diarization) => (diarization.memory)(),
+            Self::Embedding(embedding) => (embedding.memory)(),
         }
     }
 
@@ -203,6 +219,7 @@ impl Loaded {
             Self::Separation(separation) => separation.resident_bytes,
             Self::Image(image) => image.resident_bytes,
             Self::Diarization(diarization) => diarization.resident_bytes,
+            Self::Embedding(embedding) => embedding.resident_bytes,
         }
     }
 
@@ -213,6 +230,7 @@ impl Loaded {
             Self::Separation(separation) => separation.load_ms,
             Self::Image(image) => image.load_ms,
             Self::Diarization(diarization) => diarization.load_ms,
+            Self::Embedding(embedding) => embedding.load_ms,
         }
     }
 }
@@ -254,8 +272,8 @@ pub trait Backend: Sync {
 }
 
 /// 本构建认识的全部后端。
-pub fn all() -> [&'static dyn Backend; 4] {
-    [mlx_backend(), coreml_backend(), candle_backend(), ggml_backend()]
+pub fn all() -> [&'static dyn Backend; 5] {
+    [mlx_backend(), coreml_backend(), candle_backend(), ggml_backend(), &LiteRtBackend]
 }
 
 /// 本构建认识的识别主模型 family（`components.asr.family`）。
@@ -366,7 +384,7 @@ pub fn statuses() -> Vec<BackendStatus> {
     all().iter().map(|backend| backend.status()).collect()
 }
 
-/// 检查组件与预算，再交给对应后端加载。带 `separator` 的是分离的模型包；带 `image` 的是文生图的模型包；带 `tts` 的
+/// 检查组件与预算，再交给对应后端加载。带 `embedding` 的（或后端是 `litert-lm` 的）是文本嵌入的模型包；带 `separator` 的是分离的模型包；带 `image` 的是文生图的模型包；带 `tts` 的
 /// 是合成的模型包，按它的 family 加载引擎；带 `segmentation` 而没有 `asr` 的是说话人区分的模型包；其余是识别。
 ///
 /// 文生图不按权重总量查 `memoryBudgetBytes`：三段权重逐层流式读入、从不同时驻留，权重总量（约 10 GB）不是峰值；
@@ -376,6 +394,10 @@ pub fn load(bundle: &VerifiedBundle, phase: &mut PhaseCallback<'_>) -> Result<Lo
         ErrorBody::new(codes::MODEL_UNSUPPORTED, "unknown backend")
             .with_details(json!({ "backend": bundle.backend, "reason": "unknown-backend" }))
     })?;
+    if bundle.embedding.is_some() || bundle.litertlm_runtime.is_some() || backend.id() == crate::embed::BACKEND_ID {
+        crate::embed::check_bundle(bundle)?;
+        return crate::embed::load(bundle, phase).map(Loaded::Embedding);
+    }
     if let Some(separator) = bundle.separator.as_ref() {
         check_separation(bundle, separator)?;
         check_budget(bundle)?;
@@ -756,6 +778,41 @@ impl Backend for GgmlUnavailable {
     }
 }
 
+/// LiteRT-LM（文本嵌入）。C 库随模型包而来，加载时才打开：编译进来就报可用，设备是 CPU。
+struct LiteRtBackend;
+
+impl Backend for LiteRtBackend {
+    fn id(&self) -> &'static str {
+        crate::embed::BACKEND_ID
+    }
+
+    fn status(&self) -> BackendStatus {
+        if cfg!(feature = "backend-litert") {
+            BackendStatus {
+                id: crate::embed::BACKEND_ID,
+                available: true,
+                reason: None,
+                devices: vec!["cpu".into()],
+            }
+        } else {
+            BackendStatus {
+                id: crate::embed::BACKEND_ID,
+                available: false,
+                reason: Some(REASON_NOT_COMPILED.into()),
+                devices: Vec::new(),
+            }
+        }
+    }
+
+    /// 只加载嵌入的模型包（经 [`load`] 的嵌入分支），从不加载识别模型。
+    fn load(&self, _bundle: &VerifiedBundle, _phase: &mut PhaseCallback<'_>) -> Result<Box<dyn LoadedModel>, ErrorBody> {
+        Err(
+            ErrorBody::new(codes::MODEL_UNSUPPORTED, "the litert-lm backend only loads embedding bundles")
+                .with_details(json!({ "backend": crate::embed::BACKEND_ID, "reason": "unknown-backend" })),
+        )
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -765,8 +822,9 @@ mod tests {
         let statuses = statuses();
         assert_eq!(
             statuses.iter().map(|status| status.id).collect::<Vec<_>>(),
-            ["mlx", "coreml", "candle", "ggml"]
+            ["mlx", "coreml", "candle", "ggml", "litert-lm"]
         );
+        assert_eq!(statuses[4].available, cfg!(feature = "backend-litert"));
         let candle = &statuses[2];
         if cfg!(feature = "backend-candle") {
             // candle 不挑机器：编译进来就可用，CPU 总在设备列表的最后。

@@ -57,6 +57,10 @@ export const de: RcSpaceMessages = {
   labelGenerateImage: "Erzeugtes Bild",
   labelGenerateMusic: 'Erzeugte Musik',
   labelGenerateText: "Erzeugter Text",
+  labelSummary: "Zusammenfassung",
+  labelBlog: "Blogbeitrag",
+  labelTitles: "Titel",
+  labelDescription: "Beschreibung",
   labelExport: "Exportieren",
 
   engineUnavailable: "Die Video-Engine ist nicht verfügbar",
@@ -70,4 +74,5 @@ export const de: RcSpaceMessages = {
     `${p.fileName} ist ${p.bytes} Bytes, über dem Materiallimit von ${p.limit}`,
   afterMaterial: (p: { reason: string }) => `Nach Hinzufügen des Materials: ${p.reason}`,
   invalidParams: "Ungültige Parameter",
+  relatedNotVideo: 'Nur Videos zeigen ähnliche Videos an',
 };

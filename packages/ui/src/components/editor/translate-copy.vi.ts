@@ -125,6 +125,13 @@ export const viTranslate: TranslateMessages = {
   staleShort: (n) => `${n} lỗi thời`,
   cutShort: (n) => `${n} bị cắt`,
   goneShort: (n) => `${n} đã xóa`,
+  termsShort: (n: number) => `${n} thuật ngữ lệch`,
+  terms: (n: number) => `${n} chỗ không dùng bản dịch trong bảng thuật ngữ`,
+  termsTitle: 'Thuật ngữ lệch',
+  termsLead: 'Các bản dịch này không dùng cách dịch trong bảng thuật ngữ. Thống nhất là một lần sửa bình thường, có thể hoàn tác.',
+  termsSpot: (got: string, want: string) => ` · được dịch là “${got}”, bảng thuật ngữ ghi “${want}”`,
+  termsUnify: 'Dùng bản dịch trong bảng thuật ngữ',
+  termsUnified: (n: number) => `Đã thống nhất ${n} chỗ theo bảng thuật ngữ`,
   cut: (n) => `Hình của ${n} câu gốc đã bị cắt khỏi video`,
   webHint: 'Dịch lại cần gọi mô hình hoặc Agent: hãy bắt đầu từ Agent hoặc ứng dụng BaoCut',
   refreshing: (n) => (n === null ? 'Đang dịch lại…' : `Đang dịch lại ${n} câu…`),
@@ -151,6 +158,18 @@ export const viTranslate: TranslateMessages = {
   refreshFailed: 'Dịch lại thất bại',
   refreshInterrupted: 'Việc dịch lại bị gián đoạn',
   refreshCancelled: 'Đã hủy dịch lại',
+  // 翻译记忆（创作辅助集成设计 §2.6）
+  chipReused: 'Dùng lại',
+  reusedTip: (video: string | null) =>
+    video ? `Dùng lại bản dịch từ “${video}”: câu gốc gần như giống hệt` : 'Dùng lại bản dịch từ một video khác của bạn: câu gốc gần như giống hệt',
+  directReused: 'Dịch lại thay vào đó',
+  directReusedSub: (video: string | null) => `Không dùng lại ${video ? `bản dịch từ “${video}”` : 'bản dịch có sẵn'} nữa và dịch lại câu này bằng API mô hình`,
+  memory: 'Bộ nhớ dịch',
+  memoryOn:
+    'Câu trùng với câu bạn đã dịch trong các video khác (cùng chiều ngôn ngữ) sẽ dùng lại bản dịch đó và được đánh dấu “Dùng lại”; câu tương tự được gửi cho mô hình để tham khảo.',
+  memoryOff: 'Bộ nhớ dịch đang tắt trong Cài đặt: không dùng lại hay tham khảo bản dịch có sẵn.',
+  memoryUsed: (reused: number, referenced: number) => `Bộ nhớ dịch: dùng lại ${reused} câu · tham khảo ${referenced} bản dịch có sẵn`,
+
 };
 
 export const viTextNotConfigured: TextNotConfiguredMessages = {

@@ -1,5 +1,7 @@
 import {
+  languageMatches,
   RpcError,
+  termOccurs,
   type FrozenLibraryEntry,
   type GlossaryEntry,
   type Id,
@@ -10,6 +12,9 @@ import {
 import type { LibraryStore } from '@baocut/runtime-storage/library';
 import { JobsTranslationGlossary as J } from '@baocut/protocol/messages/jobs/translation-glossary.ts';
 import { canonicalJson, sha256Hex } from '../input-hash.ts';
+
+/** 写法比较搬到了协议包，界面与 Runtime 共用（这里转出，供原有的引用）。 */
+export { languageMatches, termOccurs };
 
 /**
  * 翻译用的术语表（架构设计 §7.9；视频格式规范 §5.3 的 `glossaryRef`）：
@@ -69,15 +74,6 @@ export interface GlossaryRef {
   terms: Array<{ entryId: Id | null; source: string; target: string }>;
   /** 出现的术语多于 `MAX_RECORDED_TERMS` 条、没有记全时为 true。 */
   termsTruncated?: true;
-}
-
-/**
- * BCP 47 标签是否相配：相同，或一个是另一个在子标签边界上的前缀（`en` 与 `en-US` 相配，`zh-Hans` 与 `zh-Hant` 不配）。
- */
-export function languageMatches(a: string, b: string): boolean {
-  const x = a.toLowerCase();
-  const y = b.toLowerCase();
-  return x === y || x.startsWith(`${y}-`) || y.startsWith(`${x}-`);
 }
 
 /**
@@ -198,20 +194,6 @@ export function promptTerms(snapshot: GlossarySnapshot): PromptTerm[] {
     for (const entry of snapshot.entries) if (entry.origin === origin) for (const t of entry.terms) add(t, entry.id);
   }
   return out;
-}
-
-/**
- * 原文写法是否出现在文本里：不分大小写；只由拉丁字母、数字与常见连接符组成的写法要落在词边界上（`AI` 不匹配 `said`），
- * 其他（中文等）按子串。
- */
-export function termOccurs(source: string, text: string): boolean {
-  const needle = source.trim();
-  if (needle === '') return false;
-  if (/^[\p{Script=Latin}\d][\p{Script=Latin}\d .'’&+-]*$/u.test(needle)) {
-    const escaped = needle.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-    return new RegExp(`(?<![\\p{Script=Latin}\\d])${escaped}(?![\\p{Script=Latin}\\d])`, 'iu').test(text);
-  }
-  return text.toLowerCase().includes(needle.toLowerCase());
 }
 
 const lineLength = (t: PromptTerm) => [...`- ${t.source} → ${t.target}${t.note ? ` (${t.note})` : ''}`].length + 1;

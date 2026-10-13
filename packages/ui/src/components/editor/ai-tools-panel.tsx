@@ -104,7 +104,7 @@ export function AiToolsPanel({ sequence, documents }: { sequence: Sequence; docu
   }
   return (
     <AiAgentToolPage
-      key={tool.id}
+      key={`${tool.id}\n${page.preset?.topic ?? ''}`}
       videoId={videoId}
       tool={tool.id as AgentToolId}
       preset={page.preset}

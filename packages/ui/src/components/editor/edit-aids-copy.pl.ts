@@ -1,0 +1,55 @@
+import type { EditAidsMessages } from './edit-aids-copy.ts';
+
+const many = (n: number, one: string, few: string, other: string) => {
+  const d = n % 10;
+  const t = n % 100;
+  return n === 1 ? one : d >= 2 && d <= 4 && (t < 12 || t > 14) ? few : other;
+};
+
+export const pl: EditAidsMessages = {
+  termOption: 'Szukaj prawdopodobnych błędów rozpoznania według słownika',
+  termOptionSub: 'Pokazuje zapisy podobne formą lub znaczeniem do terminu ze słownika; nic się nie zmienia, dopóki ich nie zaznaczysz',
+  termOff: 'Kandydaci ze słownika są wyłączeni w Ustawienia › Indeks semantyczny',
+  termTitle: (n: number) => `${n} ${many(n, 'kandydat', 'kandydaci', 'kandydatów')} ze słownika`,
+  termIntro: 'Możliwe błędy rozpoznania terminów ze słownika. Zaznaczone zostaną zastąpione jedną edycją, którą można cofnąć; reszta zostaje bez zmian.',
+  termLoading: 'Szukanie prawdopodobnych błędów rozpoznania…',
+  termNoGlossary: 'Dla tego filmu nie włączono żadnego słownika transkrypcji, więc nie ma z czym porównać.',
+  termNone: 'Nie znaleziono prawdopodobnych błędów rozpoznania.',
+  termPlaces: (n: number) => `${n} ${many(n, 'miejsce', 'miejsca', 'miejsc')}`,
+  termExact: 'Błędnie usłyszany zapis zapisany w słowniku',
+  termSemantic: (glossary: string) => `Podobne formą i znaczeniem do terminu z „${glossary}”`,
+  termReplace: (from: string, to: string) => `Zmień „${from}” na „${to}”`,
+  termApply: (n: number) => (n === 0 ? 'Zastąp zaznaczone' : `Zastąp zaznaczone: ${n}`),
+  termApplied: (n: number) => `Zastąpiono według słownika: ${n}`,
+  failed: (message: string) => `Nie udało się wyszukać: ${message}`,
+  retry: 'Spróbuj ponownie',
+  discoverTitle: (n: number) => `Terminy znalezione w transkrypcji: ${n}`,
+  discoverIntro: 'Nazwy, które się powtarzają lub są zapisywane na kilka sposobów. Dodaj wybrane do słownika, aby kolejne filmy też je dobrze rozpoznawały.',
+  discoverForm: (text: string, n: number) => `„${text}” ×${n}`,
+  discoverAdd: 'Dodaj do słownika',
+  discoverAdded: (term: string, glossary: string) => `Dodano „${term}” do „${glossary}”`,
+  discoverMerged: (term: string, glossary: string) => `„${term}” już jest w „${glossary}”; dodano pozostałe zapisy`,
+  discoverFailed: (message: string) => `Nie udało się dodać do słownika: ${message}`,
+  discoverNoGlossary: 'Nie ma jeszcze słownika transkrypcji, do którego można dodać.',
+  glossaries: 'Słowniki…',
+  retakeOption: 'Powtórzone ujęcia',
+  retakeOptionSub: 'To samo zdanie nagrane kilka razy: pokazane w grupach, wybierasz, które ujęcie zostaje',
+  retakeTitle: (n: number) => `Powtórzone ujęcia: ${n} ${many(n, 'grupa', 'grupy', 'grup')}`,
+  retakeIntro: 'To samo zdanie nagrane kilka razy. Każda grupa tylko sugeruje, które ujęcie zostawić; nic nie jest zaznaczone. Potwierdzone grupy są wycinane jedną edycją, którą można cofnąć.',
+  retakeLoading: 'Szukanie powtórzonych ujęć…',
+  retakeNone: 'Nie znaleziono powtórzonych ujęć.',
+  retakeDiffer: 'Podobne, ale różne',
+  retakeConfirm: 'Potwierdź tę grupę',
+  retakeConfirmDiffer: 'Mimo to traktuj jako powtórzenia',
+  retakeDifference: { number: 'liczby', negation: 'przeczenie', name: 'nazwy' },
+  retakeDiffers: (kinds: string) => `Różnią się: ${kinds}`,
+  retakeGroup: (time: string, n: number) => `${time} · ${n} ${many(n, 'ujęcie', 'ujęcia', 'ujęć')}`,
+  retakeMeta: (seconds: string, complete: boolean) => `${seconds} s · ${complete ? 'pełne' : 'urwane'}`,
+  retakeKept: 'Zostaw to ujęcie',
+  retakeKeep: 'Zostaw zamiast tego to',
+  retakeSuggest: (time: string) => `Sugestia: zostawić ujęcie z ${time}; nic nie zostanie wycięte przed potwierdzeniem.`,
+  retakeDifferHint: 'Te ujęcia zawierają inne liczby, przeczenia lub nazwy, więc mogą nie być tym samym zdaniem. Posłuchaj przed decyzją.',
+  retakeApply: (n: number) => (n === 0 ? 'Wytnij potwierdzone' : `Wytnij pozostałe ujęcia w potwierdzonych grupach: ${n}`),
+  retakePending: (takes: number, seconds: string) => `${takes} ${many(takes, 'ujęcie', 'ujęcia', 'ujęć')} · ${seconds} s`,
+  retakeNoneConfirmed: 'Nie potwierdzono jeszcze żadnej grupy',
+};

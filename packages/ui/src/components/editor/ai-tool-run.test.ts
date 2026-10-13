@@ -5,16 +5,19 @@ import { useJobs } from '../../state/jobs-store.ts';
 import {
   attachAiToolSkill,
   bindAiToolRun,
+  canRewriteAiToolSection,
   closeAiToolResult,
   detachAiToolSkill,
   resetAiToolRun,
   restoreAiToolPrompt,
   retryAiTool,
+  rewriteAiToolSection,
   setAiToolPrompt,
   setAiToolSkills,
   runKey,
   startAiTool,
   undoAiTool,
+  undoAiToolSection,
   useAiToolPrompts,
   useAiToolRun,
   useAiToolSkills,
@@ -32,6 +35,8 @@ const textSummary: AiToolSummary = {
   text: '# Summary\n\n- point',
   artifactId: 'art_1',
   finishReason: 'stop',
+  citations: null,
+  citationsArtifactId: null,
 };
 const polishSummary: AiToolSummary = { ...textSummary, tool: 'polish', applied: { transactionId: 'tx_apply', changes: 4 }, text: null };
 
@@ -151,6 +156,74 @@ describe('直接调模型的运行', () => {
     expect(useAiToolRun.getState().runs[key]).toBeUndefined();
     expect(useAiToolRun.getState().problems[key]).toBeUndefined();
     expect(toasts).toHaveLength(1);
+  });
+});
+
+describe('重写一段', () => {
+  const blog: AiToolSummary = { ...textSummary, tool: 'blog', text: '## A\n\nOne.\n\nTwo.', citationsArtifactId: 'sha256:c1' };
+  const rewritten: AiToolSummary = { ...blog, text: '## A\n\nNew one.\n\nNew more.\n\nTwo.', citationsArtifactId: 'sha256:c2', context: { ...context, section: { index: 1, paragraphs: 2 } } };
+
+  it('沿用上一次的提示词与模型，不带范围与选材；跑完记着上一版，撤回换回去', async () => {
+    const { deps, toasts } = fake();
+    const key = runKey('vid', 'blog');
+    await startAiTool(
+      { videoId: 'vid', tool: 'blog', prompt: 'Blog it', provider: 'openai', model: 'gpt-5-mini', range: { start: 0, end: 9 }, selection: { mode: 'topic', intent: 'x' }, videoIds: ['v2'] },
+      'gpt-5-mini',
+    );
+    useJobs.setState({ jobs: [job('p1', 'completed', blog)] });
+    const first = useAiToolRun.getState().results[key]!;
+    expect(canRewriteAiToolSection(key, first)).toBe(true);
+    expect(await rewriteAiToolSection(key, 1, ['cite:0'])).toBe(true);
+    expect(deps.runtime.startPipeline).toHaveBeenLastCalledWith('ai-tool', {
+      videoId: 'vid',
+      tool: 'blog',
+      prompt: 'Blog it',
+      provider: 'openai',
+      model: 'gpt-5-mini',
+      section: { citationsArtifactId: 'sha256:c1', index: 1, exclude: ['cite:0'] },
+    });
+    // 跑着时这一页是进度，没有结果。
+    expect(useAiToolRun.getState().results[key]).toBeUndefined();
+    useJobs.setState({ jobs: [job('p1', 'completed', blog), job('p2', 'completed', rewritten)] });
+    const next = useAiToolRun.getState().results[key]!;
+    expect(next.summary.citationsArtifactId).toBe('sha256:c2');
+    expect(next.rewrite).toMatchObject({ index: 1, span: 2 });
+    expect(next.rewrite!.prev.summary.citationsArtifactId).toBe('sha256:c1');
+    // 重写的结果上还能再重写（重写那一版沿用的仍是整篇那次的参数）。
+    expect(canRewriteAiToolSection(key, next)).toBe(true);
+    undoAiToolSection(key);
+    expect(useAiToolRun.getState().results[key]?.summary.citationsArtifactId).toBe('sha256:c1');
+    expect(useAiToolRun.getState().results[key]?.rewrite).toBeUndefined();
+    expect(toasts).toHaveLength(1);
+  });
+
+  it('勾了插图：结果记着要配图，任务参数里没有；重写出的那一版照样配图', async () => {
+    const { deps } = fake();
+    const key = runKey('vid', 'blog');
+    await startAiTool({ videoId: 'vid', tool: 'blog', prompt: 'Blog it' }, 'gpt-5-mini', { figures: true });
+    expect(deps.runtime.startPipeline).toHaveBeenLastCalledWith('ai-tool', { videoId: 'vid', tool: 'blog', prompt: 'Blog it' });
+    useJobs.setState({ jobs: [job('p1', 'completed', blog)] });
+    expect(useAiToolRun.getState().results[key]?.figures).toBe(true);
+    await rewriteAiToolSection(key, 1);
+    useJobs.setState({ jobs: [job('p1', 'completed', blog), job('p2', 'completed', rewritten)] });
+    expect(useAiToolRun.getState().results[key]?.figures).toBe(true);
+  });
+
+  it('没跑成：放回上一版，原因只提示；没有整篇跑过的参数时不能重写', async () => {
+    const { toasts } = fake();
+    const key = runKey('vid', 'blog');
+    await startAiTool({ videoId: 'vid', tool: 'blog', prompt: 'Blog it' }, 'm');
+    useJobs.setState({ jobs: [job('p1', 'completed', blog)] });
+    await rewriteAiToolSection(key, 1);
+    useJobs.setState({ jobs: [job('p1', 'completed', blog), job('p2', 'failed', null, { error: { code: 'X', message: 'model down' } as JobRecord['error'] })] });
+    expect(useAiToolRun.getState().results[key]?.summary.citationsArtifactId).toBe('sha256:c1');
+    expect(useAiToolRun.getState().problems[key]).toBeUndefined();
+    expect(toasts.at(-1)).toContain('model down');
+    resetAiToolRun();
+    fake();
+    useAiToolRun.setState({ results: { [key]: { videoId: 'vid', tool: 'blog', jobId: 'p9', summary: { ...blog, text: blog.text! } } } });
+    expect(canRewriteAiToolSection(key, useAiToolRun.getState().results[key]!)).toBe(false);
+    expect(await rewriteAiToolSection(key, 1)).toBe(false);
   });
 });
 

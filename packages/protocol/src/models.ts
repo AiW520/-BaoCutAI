@@ -12,15 +12,18 @@ import type { MessageRef } from './message-ref.ts';
  * 模型包能做什么：`transcribe` / `align` 是语音识别的模型包，`synthesize` 是本地语音合成的模型包（对外即 `synthesizeSpeech`），
  * `separate` 是人声与伴奏分离的模型包（配音的 `separateAudio` 由它执行），`image` 是本地文生图的模型包（对外即 `generateImage`）。
  * `diarize` 是「说话人区分」模型包（Pyannote 分段 + WeSpeaker 声纹，架构设计 §6.6）：它自己不跑任务，装好之后不自带区分的
- * 识别模型包（Qwen3-ASR、Whisper）转写时带上它的组件、给段与词标说话人。
+ * 识别模型包（Qwen3-ASR、Whisper）转写时带上它的组件、给段与词标说话人。`embed` 是本地文本嵌入的模型包（EmbeddingGemma 2，
+ * 语义检索规范 v0.1 §4）：不对外暴露为任务，只给 Space 的语义索引与检索算向量。
  */
-export type ModelCapability = 'transcribe' | 'align' | 'synthesize' | 'separate' | 'image' | 'diarize' | 'music';
+export type ModelCapability = 'transcribe' | 'align' | 'synthesize' | 'separate' | 'image' | 'diarize' | 'music' | 'embed';
 /**
  * `mlx`、`coreml`（Whisper 的 CoreML 包）只在 Apple Silicon 的 macOS 上可用；`candle` 全平台；`ggml`（Whisper 的 whisper.cpp 包）
  * 全平台，Apple Silicon 上不列出。`audio-cpp` 是本地音乐生成的模型包（GGUF 权重，由 audio.cpp 的 `audiocpp_cli` 执行，
- * 架构设计 §6.5）：全平台，设备按引擎的构建（Metal、CUDA、Vulkan 或 CPU）。
+ * 架构设计 §6.5）：全平台，设备按引擎的构建（Metal、CUDA、Vulkan 或 CPU）。`litert-lm` 是文本嵌入的模型包（`.litertlm` 权重，
+ * 由 Model Worker 在运行期加载 LiteRT-LM 的 C 库执行）：库是 GitHub 发布页的共享组件 `litertlm-runtime`，主机平台没有库包时
+ * 是 `error` / `unsupported`；设备 CPU。
  */
-export type ModelBackend = 'mlx' | 'coreml' | 'candle' | 'ggml' | 'audio-cpp';
+export type ModelBackend = 'mlx' | 'coreml' | 'candle' | 'ggml' | 'audio-cpp' | 'litert-lm';
 
 /**
  * - `not-installed`：清单缺失、文件缺失或大小不符，或校验 sha256 不过、加载时报告文件不对；部分组件已经装好、另一些缺失时

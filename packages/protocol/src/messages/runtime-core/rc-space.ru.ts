@@ -50,6 +50,10 @@ export const ru: RcSpaceMessages = {
   labelGenerateImage: "Созданное изображение",
   labelGenerateMusic: 'Созданная музыка',
   labelGenerateText: "Созданный текст",
+  labelSummary: "Сводка",
+  labelBlog: "Запись в блоге",
+  labelTitles: "Заголовки",
+  labelDescription: "Описание",
   labelExport: "Экспорт",
 
   engineUnavailable: "Видеодвижок недоступен",
@@ -60,4 +64,5 @@ export const ru: RcSpaceMessages = {
   materialTooLarge: (p) => `${p.fileName} — длительность ${p.bytes} байт, превышает лимит материала ${p.limit}`,
   afterMaterial: (p) => `После добавления материала: ${p.reason}`,
   invalidParams: "Недопустимые параметры",
+  relatedNotVideo: 'Похожие видео есть только у видео',
 };

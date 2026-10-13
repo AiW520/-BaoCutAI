@@ -70,6 +70,7 @@ export const it: EditLabelMessages = {
   editTranslation: 'Modifica traduzione',
   markTranslationStale: 'Segna la traduzione come obsoleta',
   clearTranslationStale: 'Rimuovi il segno di obsoleta',
+  unifyGlossaryTerms: 'Uniforma al glossario',
   cutText: 'Taglia nella trascrizione',
   restoreText: 'Ripristina contenuto tagliato',
   editTranscript: 'Modifica testo',

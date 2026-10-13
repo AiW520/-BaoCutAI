@@ -115,3 +115,18 @@ test('刷新过期译文直接调模型：计数折成一行与主按钮，零�
   assert.equal(P.staleDirect({stale: 0, untranslated: 2}).line, '要重译：2 未翻译');
   assert.deepEqual(P.staleDirect({}), {todo: 0, line: '这份译文没有过期或还没翻译的句子', cta: '重译'});
 });
+
+test('按主题与系列写作：上下文那一行写明挑了几段、覆盖几章、几部视频（embedding §2.2）', () => {
+  const items = P.contextPack('blog', {paras: 62, topic: {paras: 12, chapters: 3}, chapters: 4, skills: ['写博客']});
+  assert.equal(P.contextLine(items), '发给模型的：提示词 + 文稿 12 段（按主题挑选，覆盖 3 章） · 章节 4 章 · Skill 写博客');
+  const series = P.contextPack('blog', {paras: 120, series: 2});
+  assert.match(P.contextLine(series), /系列 2 部视频的文稿/);
+});
+
+test('写作结果带出处、存进 Space（embedding §2.1）', () => {
+  assert.match(P.EFFECT.blog, /Space.*出处/);
+  assert.ok(P.standing('blog', {}).includes(P.CITE_RULE));
+  assert.ok(P.standing('summary', {}).includes(P.CITE_RULE));
+  assert.ok(!P.standing('title', {}).includes(P.CITE_RULE));
+  assert.match(P.hint({model: 'm', readonly: true, saved: true}), /存成 Space 里的一份文档，不写进视频/);
+});

@@ -16,6 +16,7 @@ export const ru: JobsTranslationDocumentMessages = {
   unitNoText: (p: { id: string }) => `Единица перевода ${p.id} не содержит перевода`,
   unitBadStatus: (p: { id: string }) => `Единица перевода ${p.id} имеет недопустимый статус`,
   unitBadAlignment: (p: { id: string }) => `Единица перевода ${p.id} имеет недопустимое alignment`,
+  unitBadReuse: (p: { id: string }) => `Единица перевода ${p.id} имеет недопустимое reuse (нужны fromVideoId и unitId)`,
   unitAlignmentFields: (p: { id: string }) => `alignment единицы перевода ${p.id} не содержит полей`,
   unitHashMismatch: (p: { id: string }) => `textHash единицы перевода ${p.id} не совпадает с переводом`,
   unitExtraFields: (p: { id: string; fields: string }) => `Единица перевода ${p.id} содержит поля вне §5.3: ${p.fields}`,

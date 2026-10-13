@@ -28,6 +28,7 @@ export const ja: ModelsLocalMessages = {
     separate: '分離',
     music: '音楽',
     diarize: '話者分離',
+    embed: 'セマンティックインデックス',
   },
   auto: '自動',
   notInstalled: (name) => `${name}（未インストール）`,

@@ -34,6 +34,8 @@ pub mod codes {
     pub const INFERENCE_FAILED: &str = "INFERENCE_FAILED";
     /// 输出文件写不进 staging（磁盘满、权限）：与模型无关，不算模型包的失败。
     pub const OUTPUT_WRITE_FAILED: &str = "OUTPUT_WRITE_FAILED";
+    /// `embed.run` 的一条文本超过模型的最大输入长度（`details.index` 指出哪一条）。不可重试：同一条文本再跑还是超长。
+    pub const INPUT_TOO_LONG: &str = "INPUT_TOO_LONG";
     pub const WORKER_PANIC: &str = "WORKER_PANIC";
 }
 

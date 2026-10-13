@@ -1,0 +1,90 @@
+/* AI 工具 · 用到本机语义的几块（embedding-integration-design §2.2、§2.3、§2.5、§2.7）—— 只在 App。
+   写作结果的出处（wcite，panel-aitools-cites.jsx）、参数页的按主题与系列（wtopic，panel-aitools-topic.jsx）、
+   润色的术语候选（trmc）与剪口播的重录（retk，panel-aitools-semantic.jsx）。颜色一律 token。 */
+
+/* ---------- 写作结果：每段带出处 ---------- */
+.wcite { display: flex; flex-direction: column; gap: 4px; }
+.wcite__lead { margin: 0 0 8px; }
+.wcite__h { margin: 8px 0 4px; line-height: 1.4; font-weight: 700; color: var(--gray-900); }
+h1.wcite__h { margin-top: 0; font-size: 16px; }
+h2.wcite__h { font-size: 14px; }
+h3.wcite__h { font-size: 12px; }
+.wcite__p { position: relative; display: flex; align-items: flex-start; gap: 4px; padding: 4px 6px; border-radius: 8px; font-size: 12px; line-height: 1.7; color: var(--gray-800);
+  transition: background 150ms cubic-bezier(0.45, 0, 0.4, 1); }
+.wcite__p:hover, .wcite__p.is-open { background: var(--gray-50); }
+.wcite__p--li { padding-left: 16px; }
+.wcite__p--quote { border-left: 2px solid var(--gray-300); border-radius: 0 8px 8px 0; color: var(--gray-600); }
+.wcite__p.is-inferred { border-left: 2px dashed var(--orange-700); border-radius: 0 8px 8px 0; }
+.wcite__body { flex: 1 1 auto; min-width: 0; }
+.wcite__text { user-select: text; }
+.wcite__dot { margin: 0 6px 0 -12px; color: var(--gray-500); }
+.wcite__chips { display: inline-flex; flex-wrap: wrap; gap: 4px; margin-left: 4px; vertical-align: baseline; }
+.wcite__chip { white-space: nowrap; }
+.wcite__chip.is-on { background: var(--blue-200); }
+.wcite__chip--other { background: var(--gray-100); color: var(--gray-800); }
+.wcite__chip--other:hover { background: var(--gray-200); }
+.wcite__inf { display: inline-flex; margin-left: 4px; vertical-align: middle; }
+.wcite__rev { margin-left: 4px; font-size: 10px; color: var(--gray-500); }
+.wcite__menu { display: inline-flex; flex: none; opacity: 0; transition: opacity 150ms cubic-bezier(0.45, 0, 0.4, 1); }
+.wcite__p:hover .wcite__menu, .wcite__p.is-open .wcite__menu, .wcite__menu:focus-within { opacity: 1; }
+.wcite__src { display: flex; flex-direction: column; gap: 2px; margin-top: 4px; padding: 6px 8px; border-radius: 8px; background: var(--gray-25);
+  box-shadow: inset 0 0 0 1px var(--gray-200); }
+.wcite__srcrow { display: flex; align-items: baseline; gap: 8px; width: 100%; padding: 4px; border-radius: 8px; text-align: left; cursor: pointer; }
+.wcite__srcrow:hover { background: var(--gray-75); }
+.wcite__srct { flex: none; font-size: 11px; font-variant-numeric: tabular-nums; font-weight: 700; color: var(--blue-1000); }
+.wcite__srcx { flex: 1 1 auto; min-width: 0; font-size: 12px; line-height: 1.5; color: var(--gray-800); }
+.wcite__fig { margin: 4px 0 8px; display: flex; flex-direction: column; gap: 4px; }
+.wcite__img { width: 100%; aspect-ratio: 16 / 9; border-radius: 8px; overflow: hidden; }
+.wcite__cap { display: flex; align-items: center; gap: 8px; font-size: 11px; color: var(--gray-600); }
+.wcite__mat { display: flex; flex-direction: column; max-height: 360px; overflow-y: auto; }
+.wcite__matrow { padding: 4px 0; }
+.wcite__matrow + .wcite__matrow { border-top: 1px solid var(--gray-100); }
+.wcite__matl { display: flex; align-items: baseline; gap: 8px; }
+.wcite__saved { display: flex; align-items: center; gap: 6px; margin-top: 8px; padding: 6px 8px; border-radius: 8px;
+  background: var(--gray-50); font-size: 12px; color: var(--gray-800); }
+.wcite__saved > .ic--14 { flex: none; color: var(--gray-700); }
+.wcite__savedx { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.wcite__stats { justify-content: space-between; }
+
+/* ---------- 参数页：按主题、系列、边界、主题句 ---------- */
+.wtopic__line { display: flex; align-items: baseline; flex-wrap: wrap; gap: 8px; padding: 0 0 6px 48px; }
+.wtopic__note { margin: 0 0 6px 48px; }
+.wtopic__grow { flex: 1 1 120px; min-width: 0; }
+.wtopic__lead { margin: 0 0 8px; }
+.wtopic__list { display: flex; flex-direction: column; max-height: 280px; overflow-y: auto; margin-bottom: 12px; }
+.wtopic__row { display: flex; align-items: center; gap: 8px; padding: 4px 0; }
+.wtopic__row + .wtopic__row { border-top: 1px solid var(--gray-100); }
+.wtopic__rowl { display: flex; align-items: baseline; gap: 8px; min-width: 0; }
+.wtopic__ch { flex: none; font-size: 11px; color: var(--gray-500); }
+
+/* ---------- 润色：术语候选 ---------- */
+.trmc { display: flex; flex-direction: column; gap: 8px; margin-top: 12px; padding: 12px; border-radius: 10px;
+  box-shadow: inset 0 0 0 1px var(--gray-200); }
+.trmc > .row > b { font-size: 14px; }
+.trmc__tbl { display: flex; flex-direction: column; }
+.trmc__row { display: flex; align-items: flex-start; gap: 8px; padding: 6px 0; }
+.trmc__row + .trmc__row { border-top: 1px solid var(--gray-100); }
+.trmc__row.is-done { opacity: 0.6; }
+.trmc__main { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.trmc__line { display: flex; align-items: baseline; flex-wrap: wrap; gap: 4px 6px; }
+.trmc__from { font-size: 12px; color: var(--gray-600); text-decoration: line-through; text-decoration-color: var(--gray-400); }
+.trmc__arr { font-size: 11px; color: var(--gray-500); }
+.trmc__to { font-size: 12px; font-weight: 700; color: var(--gray-900); }
+.trmc__n { margin-left: auto; font-size: 11px; font-variant-numeric: tabular-nums; color: var(--gray-600); }
+.trmc__why { flex: 1 1 auto; min-width: 0; }
+.trmc__at { display: flex; flex-wrap: wrap; gap: 4px; }
+
+/* ---------- 找可剪的口：重录 ---------- */
+.retk { display: flex; flex-direction: column; gap: 8px; margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--gray-200); }
+.retk > .row > b { font-size: 14px; }
+.retk__g { display: flex; flex-direction: column; gap: 4px; padding: 8px 12px; border-radius: 10px; background: var(--gray-25);
+  box-shadow: inset 0 0 0 1px var(--gray-200); }
+.retk__g.is-on { box-shadow: inset 0 0 0 2px var(--blue-800); }
+.retk__take { display: flex; flex-direction: column; gap: 2px; padding: 4px 0; font-size: 12px; line-height: 1.5; color: var(--gray-800); }
+.retk__take + .retk__take { border-top: 1px solid var(--gray-200); padding-top: 8px; }
+.retk__take.is-keep .retk__x { font-weight: 700; color: var(--gray-900); }
+.retk__l1 { display: flex; align-items: baseline; gap: 8px; }
+.retk__l2 { display: flex; align-items: center; gap: 8px; padding-left: 48px; }
+.retk__x { flex: 1 1 auto; min-width: 0; }
+.retk__meta { flex: 1 1 auto; }
+.retk__hl { padding: 0 2px; border-radius: 8px; background: var(--orange-200); color: var(--orange-1100); }

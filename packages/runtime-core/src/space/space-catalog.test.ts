@@ -469,6 +469,31 @@ describe('Space 目录', () => {
     });
   });
 
+  it('写作类 AI 工具的结果：派生为 Markdown 文档条目，归到视频的项目，带出处旁文件', async () => {
+    const text = '# 标题\n\n正文';
+    jobs.put(
+      job({
+        kind: 'pipeline',
+        state: 'completed',
+        videoId: 'v1',
+        endedAt: '2026-10-12T08:30:00.000Z',
+        result: { documentId: null, artifactId: 'sha256:blog' },
+        pipeline: { name: 'ai-tool', params: {}, steps: [], current: null, stoppedAt: null, summary: { tool: 'blog', text, citationsArtifactId: 'sha256:cit' } },
+      }),
+    );
+    const { catalog } = await open();
+    const entry = catalog.entries().find((e) => e.id === 'sha256:blog');
+    expect(entry).toMatchObject({
+      kind: 'document',
+      fileName: expect.stringMatching(/-20261012-083000\.md$/),
+      ref: { artifactId: 'sha256:blog' },
+      citations: { artifactId: 'sha256:cit' },
+      media: { mediaType: 'text/markdown' },
+      origin: { source: 'generated', videoId: 'v1', capability: 'ai-tool', provider: { providerId: 'local', modelId: 'm' } },
+    });
+    expect(entry!.origin!.projectId).not.toBeNull();
+  });
+
   /** 一次完成的导出：设置、发布的文件（路径）与产物 id。 */
   function exportJob(settings: object, file: string, artifactId: string, state: JobRecord['state'] = 'completed'): JobRecord {
     return job({

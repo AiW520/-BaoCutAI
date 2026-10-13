@@ -3,6 +3,7 @@ import path from 'node:path';
 import type { ModelInstallPlan, ModelSelfTestResult } from '@baocut/protocol';
 import { ModelsModelCatalog as MC } from '@baocut/protocol/messages/models/model-catalog.ts';
 import { ModelsModelDownloader as MD } from '@baocut/protocol/messages/models/model-downloader.ts';
+import { ModelsEmbedding as ME } from '@baocut/protocol/messages/models/embedding.ts';
 import { ModelsModelInstaller as M } from '@baocut/protocol/messages/models/model-installer.ts';
 import { requiredSources, type BundleComponentSource, type BundleDefinition, type ComponentReleaseAsset } from './bundle-registry.ts';
 import { readInstallRecord, updateInstallRecord } from './install-record.ts';
@@ -311,7 +312,8 @@ export class ModelInstaller {
     const asset = this.#catalog.releaseAsset(source);
     if (!asset) {
       const platform = this.#catalog.platformKey;
-      throw new DownloadError('MODEL_DOWNLOAD_SOURCE', MC.engineNoBuild({ platform }), { repo: source.repo, platform });
+      const detail = release.workerLibrary ? ME.runtimeNoBuild({ platform }) : MC.engineNoBuild({ platform });
+      throw new DownloadError('MODEL_DOWNLOAD_SOURCE', detail, { repo: source.repo, platform });
     }
     if (!repair && (await this.#catalog.componentInstalled(source))) return keep();
     if (repair) {
@@ -403,7 +405,8 @@ export class ModelInstaller {
     }
     if (hadOld) await fs.rm(aside, { recursive: true, force: true });
     await discardReleaseStaging(toolsDir, release);
-    if (this.#options.probeExecutable) {
+    // 交给 Worker 的动态库（`workerLibrary`）不能当程序运行：不探测，加载时由 Worker 报错。
+    if (this.#options.probeExecutable && !release.workerLibrary) {
       try {
         await this.#options.probeExecutable(path.join(target, asset.executable));
       } catch (error) {

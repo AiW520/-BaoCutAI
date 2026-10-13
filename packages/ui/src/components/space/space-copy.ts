@@ -210,6 +210,27 @@ const en = {
   hitSpeakerNone: 'None of these matches has a speaker',
   hitsNoneFiltered: 'Nothing matches this type or speaker. Try another one.',
   hitsMore: (n: number) => `Show ${n} more`,
+  // 综合搜索（space.searchV2，创作辅助集成设计 §2.4；设计稿 space-search.jsx）
+  searchMode: 'Search by',
+  modeHybrid: 'Meaning & text',
+  modeLexical: 'Exact text',
+  channelsLabel: 'Channels',
+  channelSpeech: 'Speech',
+  channelVisual: 'Visuals',
+  channelAudio: 'Sounds',
+  channelsLater: 'Visuals and sounds aren’t indexed in this version',
+  byBoth: 'Words and meaning match',
+  byLexical: 'Words match',
+  bySemantic: 'Similar meaning; these words aren’t in it',
+  hitNotInTimeline: 'This line was cut from the timeline, so the video opens without moving the playhead',
+  hitGone: 'This line is no longer in the video',
+  hitWrite: 'Use for writing',
+  hitHandoverDraft: (name: string, at: string, text: string) => `Look at this line in “${name}” at ${at}: “${text}”`,
+  hitWriting: (tool: string, query: string) => `${tool}: material picked by topic “${query}”`,
+  hitAsk: 'Answer this question',
+  hitAskHint: 'Hands it to the Agent: it searches your videos and cites each point with a time you can click',
+  hitAskDraft: (question: string, inProject: boolean) => (inProject ? `Answer from my videos in this project: ${question}` : `Answer from my videos: ${question}`),
+  hitsNoneSemantic: 'Nothing said in videos is about this. Try other words.',
 
   // 页面里的其余文字
   cancel: 'Cancel',
@@ -268,6 +289,10 @@ const en = {
   shortsTitle: 'Shorts cut from this video',
   shortsInList: 'Show in list',
   shortsMore: (n: number) => (n === 1 ? '1 more short. Show them all in the list.' : `${n} more shorts. Show them all in the list.`),
+  relatedTitle: 'Videos about similar content',
+  relatedEmpty: 'No other videos talk about similar content',
+  relatedNoNames: 'No videos with similar names',
+  relatedShared: (word: string) => `Both names include “${word}”`,
   /** 一支短视频在父视频上的区间（`from`、`to` 是时间码）。 */
   shortsSpan: (from: string, to: string) => `Original ${from}–${to}`,
   /** 短视频的查看框：换成父视频的查看框。 */

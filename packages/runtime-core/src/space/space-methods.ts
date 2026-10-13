@@ -1,4 +1,4 @@
-import { RpcError, type Id, type SpaceEntry } from '@baocut/protocol';
+import { AI_TOOL_TOPIC_DEFAULT_CHUNKS, RpcError, mediaTimeToSeconds, type Id, type SpaceEntry } from '@baocut/protocol';
 import type { Harness } from '@baocut/harness';
 import type { TrustedPrincipal } from '../gateway.ts';
 import type { RpcHandlers } from '../handlers.ts';
@@ -6,7 +6,12 @@ import type { SpaceCatalog } from '../space-catalog.ts';
 import type { VideoTrash } from '../videos/video-trash.ts';
 import type { SpaceThumbnails } from './space-thumbnails.ts';
 import { continueInConversation } from './space-continue.ts';
-import { USER_VIEWER, listEntries, searchContent, visibleEntry, type SpaceViewer } from './space-queries.ts';
+import { USER_VIEWER, listEntries, searchContent, searchScope, visibleEntry, type SpaceViewer } from './space-queries.ts';
+import { readCitations, type CitationArtifacts } from './space-citations.ts';
+import { relatedVideos } from './related-videos.ts';
+import { resolveSearchHit } from './search-hit-resolver.ts';
+import { semanticError } from './semantic/errors.ts';
+import { lexicalOnlySearch, type SemanticServices } from './semantic/services.ts';
 import { RcSpace } from '@baocut/protocol/messages/runtime-core';
 
 type SpaceMethod =
@@ -22,7 +27,15 @@ type SpaceMethod =
   | 'space.openForEdit'
   | 'space.thumbnail'
   | 'space.continueInConversation'
-  | 'space.rebuildIndex';
+  | 'space.rebuildIndex'
+  | 'space.searchV2'
+  | 'space.indexStatus'
+  | 'space.indexBuild'
+  | 'space.indexControl'
+  | 'space.resolveSearchHit'
+  | 'space.citations'
+  | 'space.relevantChunks'
+  | 'space.relatedVideos';
 
 export interface SpaceMethodDeps {
   harness: Harness;
@@ -30,6 +43,10 @@ export interface SpaceMethodDeps {
   trash: VideoTrash;
   /** 条目的缩略图（`space.thumbnail`）。 */
   thumbnails: SpaceThumbnails;
+  /** 本机语义检索（`space.searchV2`、`space.index*`、`space.resolveSearchHit`）。不给时只有字面一路，建索引报没装模型。 */
+  semantic?: SemanticServices | null;
+  /** 任务产物库（`space.citations` 读出处旁文件）。 */
+  artifacts?: CitationArtifacts | null;
 }
 
 /**
@@ -81,6 +98,8 @@ export function viewerOf(principal: TrustedPrincipal): SpaceViewer {
  */
 export function spaceMethods(space: SpaceCatalog, deps: SpaceMethodDeps): Pick<RpcHandlers['methods'], SpaceMethod> {
   const { harness, trash, thumbnails } = deps;
+  const semantic = deps.semantic ?? null;
+  const search = semantic?.search ?? lexicalOnlySearch(space);
   return {
     'space.list': (p, principal) => listEntries(space, viewerOf(principal), p),
     'space.get': (p, principal) => ({ entry: visibleEntry(space, viewerOf(principal), p.entryId) }),
@@ -103,5 +122,63 @@ export function spaceMethods(space: SpaceCatalog, deps: SpaceMethodDeps): Pick<R
       return continueInConversation(space, harness, p);
     },
     'space.rebuildIndex': () => space.rebuild(),
+    'space.searchV2': (p, principal) => search.searchV2(viewerOf(principal), p),
+    'space.indexStatus': (p, principal) => search.indexStatus(viewerOf(principal), p),
+    'space.indexBuild': (p, principal) => {
+      const viewer = viewerOf(principal);
+      if (p.channels?.some((channel) => channel !== 'text')) throw semanticError('CHANNEL_UNAVAILABLE');
+      if (!semantic?.scheduler()) throw semanticError('MODEL_NOT_INSTALLED');
+      if (!semantic.store()) throw semanticError('INDEX_NOT_READY');
+      // 范围与检索相同：主体看得到的、按项目与 videoId 筛过的视频。
+      const dirs = new Set(searchScope(space, viewer, p).videos.map((v) => v.dir));
+      const planned = semantic.coordinator.build(
+        space.videos().filter((video) => dirs.has(video.dir)),
+        p.rebuild ? { rebuild: true } : {},
+      );
+      return { jobId: null, planned };
+    },
+    'space.indexControl': async (p, principal) => {
+      viewerOf(principal);
+      if (!semantic?.store()) throw semanticError('INDEX_NOT_READY');
+      if (p.action === 'pause') semantic.coordinator.pause();
+      else if (p.action === 'resume') semantic.coordinator.resume();
+      else await semantic.coordinator.clear();
+      return { paused: semantic.coordinator.paused };
+    },
+    'space.resolveSearchHit': (p, principal) =>
+      resolveSearchHit(semantic?.resolver ?? { catalog: space, reader: null }, viewerOf(principal), p.hitId),
+    'space.citations': async (p, principal) => ({
+      citations: await readCitations(visibleEntry(space, viewerOf(principal), p.entryId), deps.artifacts ?? null),
+    }),
+    'space.relatedVideos': async (p, principal) => relatedVideos(space, semantic, viewerOf(principal), p),
+    'space.relevantChunks': async (p, principal) => {
+      const viewer = viewerOf(principal);
+      // 与 `ai-tool` 的按主题选材同一个查询（`ai-tool-wiring.ts`）：没有语义服务时是 `none`，界面照样发整篇。
+      if (!semantic) return { effectiveMode: 'none', reason: 'MODEL_NOT_INSTALLED', coverage: { chapters: [], stale: false }, chunks: [] };
+      const set = await semantic.context(viewer).findRelevantChunks({
+        intent: p.intent,
+        scope: { videoIds: p.videoIds, view: 'sequence' },
+        channel: 'text',
+        limit: p.limit ?? AI_TOOL_TOPIC_DEFAULT_CHUNKS,
+        order: 'time',
+        neighbors: 1,
+        kinds: ['speech'],
+      });
+      return {
+        effectiveMode: set.effectiveMode,
+        reason: set.reason,
+        coverage: { chapters: set.coverage.chapters, stale: set.coverage.stale },
+        chunks: set.chunks.map((chunk) => ({
+          chunkId: chunk.chunkId,
+          videoId: chunk.videoId,
+          chapter: chunk.chapter?.title ?? null,
+          clock: chunk.anchor.clock,
+          start: chunk.sentences[0]?.start ?? mediaTimeToSeconds(chunk.anchor.start),
+          end: chunk.sentences.at(-1)?.end ?? mediaTimeToSeconds(chunk.anchor.end),
+          text: chunk.text,
+          ...(chunk.weak ? { weak: true } : {}),
+        })),
+      };
+    },
   };
 }

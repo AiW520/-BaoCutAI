@@ -133,6 +133,13 @@ export const jaTranslate: TranslateMessages = {
   staleShort: (n) => `要更新 ${n}`,
   cutShort: (n) => `カット済み ${n}`,
   goneShort: (n) => `原文削除 ${n}`,
+  termsShort: (n: number) => `用語不一致 ${n}`,
+  terms: (n: number) => `${n} か所で用語集の訳語が使われていません`,
+  termsTitle: '用語の不一致',
+  termsLead: 'これらの訳文は用語集の訳語になっていません。統一は通常の編集で、元に戻せます。',
+  termsSpot: (got: string, want: string) => ` · 「${got}」と訳されています。用語集では「${want}」`,
+  termsUnify: '用語集の訳語に統一',
+  termsUnified: (n: number) => `${n} か所を用語集の訳語に統一しました`,
   cut: (n) => `${n} 文の原文の映像がカットされています`,
   webHint: '訳し直しにはモデルか会話が必要です：Agent か BaoCut アプリから始めてください',
   refreshing: (n) => (n === null ? '訳し直しています…' : `${n} 文を訳し直しています…`),
@@ -159,6 +166,16 @@ export const jaTranslate: TranslateMessages = {
   refreshFailed: '訳し直しに失敗しました',
   refreshInterrupted: '訳し直しが中断されました',
   refreshCancelled: '訳し直しをキャンセルしました',
+  // 翻译记忆（创作辅助集成设计 §2.6）
+  chipReused: '流用',
+  reusedTip: (video: string | null) => (video ? `「${video}」の訳文を流用 · 原文がほぼ同じ` : 'ほかの動画の訳文を流用 · 原文がほぼ同じ'),
+  directReused: '再翻訳に切り替え',
+  directReusedSub: (video: string | null) => `${video ? `「${video}」` : '既存'}の訳文の流用をやめ、モデル API でこの文を再翻訳します`,
+  memory: '翻訳メモリ',
+  memoryOn: 'ほかの動画（同じ言語方向）で訳した文と原文が同じ文はその訳文を流用し、「流用」と表示します。似た文は参考としてモデルに渡します。',
+  memoryOff: '翻訳メモリは設定でオフです：既存の訳文を流用も参照もしません。',
+  memoryUsed: (reused: number, referenced: number) => `翻訳メモリ：${reused} 文を流用 · 既存の訳文 ${referenced} 文を参照`,
+
 };
 
 export const jaTextNotConfigured: TextNotConfiguredMessages = {

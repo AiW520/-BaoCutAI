@@ -33,6 +33,7 @@ const en = {
   unitNoText: (p: { id: string }) => `Translation unit ${p.id} has no translation`,
   unitBadStatus: (p: { id: string }) => `Translation unit ${p.id} has an invalid status`,
   unitBadAlignment: (p: { id: string }) => `Translation unit ${p.id} has an invalid alignment`,
+  unitBadReuse: (p: { id: string }) => `Translation unit ${p.id} has an invalid reuse (it needs fromVideoId and unitId)`,
   unitAlignmentFields: (p: { id: string }) => `The alignment of translation unit ${p.id} is missing fields`,
   unitHashMismatch: (p: { id: string }) => `The textHash of translation unit ${p.id} doesn't match the translation`,
   unitExtraFields: (p: { id: string; fields: string }) => `Translation unit ${p.id} has fields outside §5.3: ${p.fields}`,

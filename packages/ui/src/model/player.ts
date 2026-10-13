@@ -79,9 +79,17 @@ export function seekFrame(
   assets: Record<Id, AssetRecord>,
   seconds: number,
 ): { asset: VersionRef; at: number } | null {
-  const fps = sequence.fps;
   const grid = thumbnailGrid(durationSeconds(sequence) / 100);
-  const at = Math.floor(seconds / grid) * grid;
+  return visibleFrame(sequence, assets, seconds, Math.floor(seconds / grid) * grid);
+}
+
+/** 序列时间 `seconds` 上看得见的那一帧（同 `seekFrame`，但不按胶片条的格子取整）：写作结果的插图按出处时间取帧用。 */
+export function sequenceFrame(sequence: Sequence, assets: Record<Id, AssetRecord>, seconds: number): { asset: VersionRef; at: number } | null {
+  return visibleFrame(sequence, assets, seconds, seconds);
+}
+
+function visibleFrame(sequence: Sequence, assets: Record<Id, AssetRecord>, seconds: number, at: number): { asset: VersionRef; at: number } | null {
+  const fps = sequence.fps;
   const tracks = new Map(sequence.tracks.map((track) => [track.id, track]));
   let best: { order: number; asset: VersionRef; at: number } | null = null;
   for (const item of sequence.items) {

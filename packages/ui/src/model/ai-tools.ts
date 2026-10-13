@@ -298,6 +298,7 @@ const en = {
     lineFrame: (ratio: string | null, focus: string) => (ratio ? `Aspect ratio ${ratio}, framing ${focus}` : 'Aspect ratio: keep the original, no cropping'),
     lineSubtitles: (tracks: string, style: string) => `Subtitles: ${tracks}, ${style}`,
     lineSkipDone: 'Skip the parts already cut into shorts',
+    lineTopic: (topic: string) => `Only look in the parts that talk about “${topic}”: find them first with speech_relevant, then pick from those`,
     lineDirect: 'Create the videos as soon as they’re found; no need to ask me first',
   },
   coverText: {
@@ -692,10 +693,11 @@ export function shortsAutoHint(s: Pick<ShortsSettings, 'count' | 'length'>): str
 
 /**
  * 设置态折成提示词里的参数行（原型 model-shorts-cut.js `agentExtra`），一行一句：几支、多长（自动的一半交给 Agent 按话题定）、画幅与取景、字幕，
- * 勾着「已经切过的不再找」时一句；最后一行「找好就直接创建」，可以单独删掉。
+ * 勾着「已经切过的不再找」时一句；写了主题（创作辅助集成设计 §2.8，调用方只在本机语义能用时给）时一句「只在讲……的片段里找」，
+ * 让 Agent 先用 `speech_relevant` 圈出候选段落；最后一行「找好就直接创建」，可以单独删掉。
  * 「跟着说话的人」这一版不开放，落回自动；没有译文时字幕只有原文。
  */
-export function shortsLines(s: ShortsSettings, o: { hasTranslation: boolean }): string[] {
+export function shortsLines(s: ShortsSettings, o: { hasTranslation: boolean; topic?: string | null }): string[] {
   const count = clampShortsCount(s.count);
   const len = shortsLengthRange(s);
   const focus = s.focus === 'manual' ? 'manual' : 'auto';
@@ -706,6 +708,8 @@ export function shortsLines(s: ShortsSettings, o: { hasTranslation: boolean }): 
     M.shorts.lineSubtitles(M.shorts.tracks[tracks], M.shorts.styles[s.style].label),
   ];
   if (s.skipDone) out.push(M.shorts.lineSkipDone);
+  const topic = o.topic?.trim();
+  if (topic) out.push(M.shorts.lineTopic(topic));
   out.push(M.shorts.lineDirect);
   return out;
 }

@@ -16,6 +16,7 @@ export const zhHant: JobsTranslationDocumentMessages = {
   unitNoText: (p: { id: string }) => `譯文單元 ${p.id} 沒有譯文`,
   unitBadStatus: (p: { id: string }) => `譯文單元 ${p.id} 的 status 無效`,
   unitBadAlignment: (p: { id: string }) => `譯文單元 ${p.id} 的 alignment 無效`,
+  unitBadReuse: (p: { id: string }) => `譯文單元 ${p.id} 的 reuse 無效（要有 fromVideoId 與 unitId）`,
   unitAlignmentFields: (p: { id: string }) => `譯文單元 ${p.id} 的 alignment 缺少欄位`,
   unitHashMismatch: (p: { id: string }) => `譯文單元 ${p.id} 的 textHash 與譯文不符`,
   unitExtraFields: (p: { id: string; fields: string }) => `譯文單元 ${p.id} 含有 §5.3 以外的欄位：${p.fields}`,

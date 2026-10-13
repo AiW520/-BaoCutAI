@@ -555,7 +555,7 @@
   }
 
   /** 查找条。两行：查找 + 导航 / 替换 + 匹配选项。extra 给翻译面板挂替换范围选择器。 */
-  function FindBar({find, placeholder, extra, hint}) {
+  function FindBar({find, placeholder, extra, hint, meaning}) {
     const f = find;
     if (!f.open) return null;
     const n = f.matches.length;
@@ -608,7 +608,42 @@
               关掉 Aa / 全词有 {f.relaxed} 条——中文没有空格，词被别的字黏着时全词匹配查不到
             </BCAction>
           ) : hint ? <div className="findbar__note"><Ic n="info" className="ic--14" />{hint}</div> : null}
+        {meaning || null}
       </div>
+    );
+  }
+
+  /** 查找条下面「意思相近」那一块（embedding-integration-design §2.1：编辑器里的查找片段与 Space 搜索是同一服务）：
+      字面命中照旧在文稿里高亮；这里只列这部视频里意思相近、原句里没有这些字的句子，按时间排，点了跳过去。
+      没装模型时只有入口的那一句（只按精确文字找了 + 去设置）；正则查找时不按意思找。 */
+  function FindMeaning({find, video, onSeek}) {
+    const Q = window.BC_SPACE_SEARCH;
+    const SEM = window.BC_DATA.semantic;
+    const [st] = window.BC_SEMSTATE.useSemantic();
+    if (!find.open || !find.q.trim()) return null;
+    const status = window.BC_SEMANTIC.status(st);
+    const r = Q.inVideo(find.q, {corpus: SEM.corpus, concepts: SEM.concepts, video, status, regex: find.opts.regex});
+    const mmss = (t) => `${String(Math.floor(t / 60)).padStart(2, '0')}:${String(Math.floor(t % 60)).padStart(2, '0')}`;
+    if (!r.usable) return <window.SemNote entry="search" className="findbar__semnote" />;
+    if (find.opts.regex || !r.rows.length) return null;
+    return (
+      <section className="findbar__sem" aria-label="意思相近的句子">
+        <div className="findbar__sem-h">
+          <span>意思相近</span><span className="findbar__sem-n">{r.rows.length}</span>
+          <span className="findbar__sem-why">原句里没有这些字</span>
+        </div>
+        {r.stale ? <window.SemNote entry="search" className="findbar__semnote" /> : null}
+        <ul className="findbar__sem-list">
+          {r.rows.map((x) => (
+            <li key={x.id}>
+              <BCAction className="findbar__sem-row" title={x.text} onClick={() => onSeek(x.t)}>
+                <span className="findbar__sem-t t-mono">{mmss(x.t)}</span>
+                <span className="findbar__sem-x">{x.text}</span>
+              </BCAction>
+            </li>
+          ))}
+        </ul>
+      </section>
     );
   }
 
@@ -677,5 +712,5 @@
   }
 
   Object.assign(window, {
-    peekProps, SecHead, PRow, ValueRow, ColorPanel, ColorField, TimeField, PanelHead, ChapterTitle, LiveHead, EditableText, Hl, FindBar, useFind, useTextEdits, Receipt});
+    peekProps, SecHead, PRow, ValueRow, ColorPanel, ColorField, TimeField, PanelHead, ChapterTitle, LiveHead, EditableText, Hl, FindBar, FindMeaning, useFind, useTextEdits, Receipt});
 })();

@@ -22,6 +22,7 @@ import { resetTranscribe, useSubtitleRun } from './transcribe-run.ts';
 import {
   bindTranslate,
   editTranslation,
+  unifyTranslationTerms,
   markTranslation,
   putOnScreen,
   resetTranslate,
@@ -356,6 +357,23 @@ describe('翻译完成', () => {
     expect(deps.runtime.videos.undo).toHaveBeenCalledWith({ transaction: 'tx-cap' });
   });
 
+  it('翻译记忆沿用、参考了几句写进收据；没用翻译记忆时没有这一项', async () => {
+    const { deps } = fake();
+    bindTranslate(deps);
+    await startTranslate(setup);
+    const memory = { reused: 3, referenced: 5, videos: 2, effectiveMode: 'semantic' as const, reason: null };
+    useJobs.setState({
+      jobs: [
+        job('completed', {
+          result: { documentId: 'tr', artifactId: 'a' },
+          pipeline: { ...job('completed').pipeline!, summary: { ...summary(created), memory } },
+        }),
+      ],
+    });
+    await flush();
+    expect(useTranslateRun.getState().receipts.vid?.memory).toEqual(memory);
+  });
+
   it('没建字幕层：投不到画面上、流程没建时留一句去对照列表放；没有可显示的句子如实说', async () => {
     const { deps, applied } = fake();
     bindTranslate(deps);
@@ -551,6 +569,82 @@ describe('改一句译文', () => {
         sentences,
         row: rows[1]!,
         text: ' Goodbye. ',
+        speech: readSpeechWords(speechBody)!,
+        documents,
+      }),
+    ).toBeNull();
+    expect(applied).toHaveLength(1);
+  });
+});
+
+describe('统一为术语表译法', () => {
+  it('几句一笔事务：译文文档一个新版本，字幕里每句改了的条都重切；提示带撤销', async () => {
+    const { deps, applied, toasts, bodies } = fake();
+    bindTranslate(deps);
+    const captionRecord = {
+      id: 'cap-en',
+      kind: 'caption',
+      name: 'English',
+      language: 'en',
+      sourceDocumentId: 'tr',
+      currentRevision: '1',
+      revisions: { '1': { revision: '1', contentHash: '', byteLength: 0, createdAt: '', createdBy: 'tx', summary: { cueCount: 2 } } },
+      extensions: { 'baocut.translationCues': { translationDocumentId: 'tr' } },
+    } as unknown as DocumentRecord;
+    bodies['cap-en'] = {
+      document: captionRecord,
+      revision: '1',
+      body: {
+        schema: 'baocut.caption/1',
+        clock: 'source-asset',
+        timescale: 1000,
+        cues: [
+          { id: 'q-t-s-w1', start: 0, end: 900, text: 'Hello world.' },
+          { id: 'q-t-s-w3', start: 3000, end: 3500, text: 'Goodbye.' },
+        ],
+      },
+    };
+    const sentences = speechSentences(speechBody)!;
+    const body = readTranslation(translationBody)!;
+    body.units = body.units.map((u, i) => ({ ...u, sourceFingerprint: sentences[i]!.fingerprint }));
+    const rows = pairRows(sentences, body);
+    const documents = { speech: speechRecord, tr: translationRecord, 'cap-en': captionRecord };
+
+    const next = await unifyTranslationTerms({
+      videoId: 'vid',
+      record: translationRecord,
+      body,
+      sentences,
+      changes: [
+        { row: rows[0]!, text: 'Hello earth.' },
+        { row: rows[1]!, text: 'Farewell.' },
+      ],
+      spots: 2,
+      speech: readSpeechWords(speechBody)!,
+      documents,
+    });
+    expect(next?.units.map((u) => [u.naturalText, u.status])).toEqual([
+      ['Hello earth.', 'reviewed'],
+      ['Farewell.', 'reviewed'],
+    ]);
+    expect(applied).toHaveLength(1);
+    const [translationPut, captionPut] = applied[0]! as Array<Extract<EditOperation, { type: 'putDocument' }>>;
+    expect(translationPut).toMatchObject({ documentId: 'tr', body: { units: [{ naturalText: 'Hello earth.' }, { naturalText: 'Farewell.' }] } });
+    expect(captionPut).toMatchObject({
+      documentId: 'cap-en',
+      body: { cues: [{ id: 'q-t-s-w1', text: 'Hello earth.' }, { id: 'q-t-s-w3', text: 'Farewell.' }] },
+    });
+    expect(toasts).toEqual([['positive', '已统一 2 处为术语表译法', true]]);
+
+    // 都没变：不写。
+    expect(
+      await unifyTranslationTerms({
+        videoId: 'vid',
+        record: translationRecord,
+        body,
+        sentences,
+        changes: [{ row: rows[1]!, text: 'Goodbye.' }],
+        spots: 1,
         speech: readSpeechWords(speechBody)!,
         documents,
       }),

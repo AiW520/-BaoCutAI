@@ -95,6 +95,7 @@ const en = {
   editTranslation: 'Edit translation',
   markTranslationStale: 'Mark translation out of date',
   clearTranslationStale: 'Clear out-of-date mark',
+  unifyGlossaryTerms: 'Use glossary translations',
   // 文字稿与章节
   cutText: 'Cut in transcript',
   restoreText: 'Restore cut content',

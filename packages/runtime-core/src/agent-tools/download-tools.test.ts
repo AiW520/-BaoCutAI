@@ -4,6 +4,8 @@ import os from 'node:os';
 import path from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import type { AgentPrincipal } from './grants.ts';
+import type { CitationsFile } from '@baocut/protocol';
+import { MemoryCitationRegistry } from '../ai-tools/citation-registry.ts';
 import { DownloadTools, downloadFileName, prepareDownloadSave, type DownloadHandover } from './download-tools.ts';
 import { ToolError } from './tool-catalog.ts';
 import { TOOL_RISK, toolRisk, type ToolConfirmation, type ToolScope } from './tool-scope.ts';
@@ -58,6 +60,41 @@ function fakeScope(write = true): { scope: ToolScope; confirmed: ToolConfirmatio
 const principal = { kind: 'agent', conversationId: 'conv_1' } as unknown as AgentPrincipal;
 
 describe('downloads_save', () => {
+  it('带句子编号的 Markdown：按会话发过的编号校验，交出去掉编号的正文，出处另存并随登记带上；没发过的编号丢弃、段落标推断', async () => {
+    const registry = new MemoryCitationRegistry();
+    const sentence = (sentenceId: string, start: number, text: string) => ({ videoId: 'v1', documentId: 'd1', sentenceId, text, start, end: start + 2, speaker: null });
+    const issued = registry.issue('conversation:conv_1', [sentence('s-w1', 0, '第一句。'), sentence('s-w5', 2, '第二句。'), sentence('s-w9', 30, '第三句。')]);
+    expect(issued.map((s) => s.ref)).toEqual(['s1', 's2', 's3']);
+    // 别的会话的编号互不相干。
+    registry.issue('conversation:other', [sentence('s-w20', 50, '别处。')]);
+    await fs.writeFile(path.join(root, 'post.md'), '# 标题\n\n第一段 [s1, s2]。\n\n- 要点 [s3]\n- 没依据 [s9]\n');
+    const { scope } = fakeScope();
+    const handovers: DownloadHandover[] = [];
+    const published: CitationsFile[] = [];
+    const tools = new DownloadTools({
+      scope,
+      downloadsDirectory: () => downloads,
+      register: async (handover) => void handovers.push(handover),
+      citations: { registry, publish: async (file) => (published.push(file), 'sha256:cit') },
+    });
+    const saved = (await tools.dispatch('downloads_save', { path: 'post.md' }, principal)) as Record<string, unknown>;
+    const written = await fs.readFile(path.join(downloads, 'post.md'), 'utf8');
+    expect(written).toBe('# 标题\n\n第一段。\n\n- 要点\n- 没依据\n');
+    expect(saved.citations).toEqual({ cited: 2, inferred: 1, dropped: 1, saved: true });
+    expect(handovers[0]).toMatchObject({ citationsArtifactId: 'sha256:cit', artifactId: `sha256:${createHash('sha256').update(written).digest('hex')}` });
+    expect(published[0]!.videoIds).toEqual(['v1']);
+    expect(published[0]!.paragraphs[1]!.cites).toEqual([
+      { videoId: 'v1', documentId: 'd1', sentenceIds: ['s-w1', 's-w5'], clock: 'sequence', startSec: 0, endSec: 4, text: '第一句。 第二句。' },
+    ]);
+
+    // 没有编号的 Markdown 与别的文件原样复制，不存出处。
+    await fs.writeFile(path.join(root, 'plain.md'), '# 只是笔记\n');
+    const plain = (await tools.dispatch('downloads_save', { path: 'plain.md' }, principal)) as Record<string, unknown>;
+    expect(plain.citations).toBeUndefined();
+    expect(await fs.readFile(path.join(downloads, 'plain.md'), 'utf8')).toBe('# 只是笔记\n');
+    expect(handovers[1]!.citationsArtifactId).toBeNull();
+  });
+
   it('复制之后登记为 Space 交付物：下载目录里的真实路径、字节数、内容摘要与提交者；登记失败不影响结果', async () => {
     await fs.writeFile(path.join(root, 'post.md'), '# 你好\n');
     const { scope } = fakeScope();
@@ -66,7 +103,7 @@ describe('downloads_save', () => {
     const saved = (await tools.dispatch('downloads_save', { path: 'post.md' }, principal)) as Record<string, unknown>;
     const expected = `sha256:${createHash('sha256').update('# 你好\n').digest('hex')}`;
     expect(handovers).toEqual([
-      { path: path.join(downloads, 'post.md'), bytes: saved.bytes, artifactId: expected, submitter: { kind: 'agent', id: 'conv_1', taskId: 'task_1' }, at: expect.any(String) },
+      { path: path.join(downloads, 'post.md'), bytes: saved.bytes, artifactId: expected, submitter: { kind: 'agent', id: 'conv_1', taskId: 'task_1' }, at: expect.any(String), citationsArtifactId: null },
     ]);
 
     const failing = new DownloadTools({ scope, downloadsDirectory: () => downloads, register: () => Promise.reject(new Error('space not ready')) });

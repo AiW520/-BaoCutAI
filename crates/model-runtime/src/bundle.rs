@@ -35,6 +35,9 @@ pub struct ModelBundle {
     pub threads: u32,
     #[serde(default)]
     pub memory_budget_bytes: Option<u64>,
+    /// 后端可写的缓存目录（LiteRT-LM 嵌入引擎的编译缓存）。没给时后端用系统临时目录。
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub cache_dir: Option<String>,
 }
 
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
@@ -70,6 +73,12 @@ pub struct Components {
     /// 本地文生图的模型（§4.2，Qwen-Image：一个仓库里的文本编码器、DiT、VAE 与分词器）。带了它的模型包只做文生图。
     #[serde(default)]
     pub image: Option<ModelFiles>,
+    /// 文本嵌入模型（EmbeddingGemma 2 的 `.litertlm`）。带了它的模型包只做嵌入（`embed.run`），还要 `litertlm-runtime`。
+    #[serde(default)]
+    pub embedding: Option<ModelFiles>,
+    /// LiteRT-LM C API 的动态库（GitHub release 的共享组件）：Worker 运行期 `dlopen`，不在构建时链接。
+    #[serde(default, rename = "litertlm-runtime")]
+    pub litertlm_runtime: Option<ModelFiles>,
 }
 
 impl Components {
@@ -143,6 +152,10 @@ pub const FAMILY_HTDEMUCS_FT: &str = "htdemucs-ft";
 /// Qwen-Image-2.1（`mlx-community/Qwen-Image-2.1-MLX-4bit`，以及 Turbo 的 `ddalcu/Qwen-Image-2.1-Turbo-MLX-Serve-8bit`）：
 /// `processor/`、`scheduler/`、`text_encoder/`、`transformer/`、`vae/` 五个子目录同在 `image` 组件里。
 pub const FAMILY_QWEN_IMAGE: &str = "qwen-image";
+/// EmbeddingGemma 2 的 LiteRT-LM 包（单个 `.litertlm`：text 270M 或多模态 740M，这一阶段只用文本编码器）。
+pub const FAMILY_EMBEDDINGGEMMA2_LITERT: &str = "embeddinggemma2-litert";
+/// LiteRT-LM C API 的动态库（`libCLiteRTLM_mac.dylib` 等），由 `embedding` 组件的后端在运行期加载。
+pub const FAMILY_LITERTLM_RUNTIME: &str = "litertlm-runtime";
 
 impl ModelFiles {
     /// 单独校验一个组件的文件（与 [`verify`] 对每个组件做的检查相同）。给 [`Components`] 还没有
@@ -318,6 +331,7 @@ pub struct VerifiedBundle {
     pub device: String,
     pub threads: u32,
     pub memory_budget_bytes: Option<u64>,
+    pub cache_dir: Option<PathBuf>,
     pub asr: Option<VerifiedFiles>,
     pub vad: Option<VerifiedFiles>,
     pub aligner: Option<VerifiedFiles>,
@@ -329,10 +343,12 @@ pub struct VerifiedBundle {
     pub aux: Option<VerifiedFiles>,
     pub separator: Option<VerifiedFiles>,
     pub image: Option<VerifiedFiles>,
+    pub embedding: Option<VerifiedFiles>,
+    pub litertlm_runtime: Option<VerifiedFiles>,
 }
 
 impl VerifiedBundle {
-    /// 按组件名（`asr` / `vad` / `aligner` / `speaker` / `segmentation` / `tokenizer` / `tts` / `codec` / `aux` / `separator` / `image`）取文件集；模型包没带这个组件是 `MODEL_UNSUPPORTED`，
+    /// 按组件名（`asr` / `vad` / `aligner` / `speaker` / `segmentation` / `tokenizer` / `tts` / `codec` / `aux` / `separator` / `image` / `embedding` / `litertlm-runtime`）取文件集；模型包没带这个组件是 `MODEL_UNSUPPORTED`，
     /// 与 `backend::load` 对必需组件的检查同一个形状。认不出的组件名是调用方的错，同样报 `MODEL_UNSUPPORTED`。
     pub fn component(&self, name: &str) -> Result<&VerifiedFiles, ErrorBody> {
         let files = match name {
@@ -347,6 +363,8 @@ impl VerifiedBundle {
             "aux" => self.aux.as_ref(),
             "separator" => self.separator.as_ref(),
             "image" => self.image.as_ref(),
+            "embedding" => self.embedding.as_ref(),
+            "litertlm-runtime" => self.litertlm_runtime.as_ref(),
             _ => None,
         };
         files.ok_or_else(|| {
@@ -368,6 +386,8 @@ impl VerifiedBundle {
             &self.aux,
             &self.separator,
             &self.image,
+            &self.embedding,
+            &self.litertlm_runtime,
         ]
         .into_iter()
         .flatten()
@@ -385,6 +405,11 @@ pub fn verify(bundle: &ModelBundle) -> Result<VerifiedBundle, ErrorBody> {
         device: bundle.device.clone(),
         threads: bundle.threads,
         memory_budget_bytes: bundle.memory_budget_bytes,
+        cache_dir: match bundle.cache_dir.as_deref() {
+            None => None,
+            Some(dir) if Path::new(dir).is_absolute() => Some(PathBuf::from(dir)),
+            Some(_) => return Err(ErrorBody::invalid_params("cacheDir 必须是绝对路径")),
+        },
         asr: c.asr.as_ref().map(|files| verify_files("asr", files)).transpose()?,
         vad: c.vad.as_ref().map(|files| verify_files("vad", files)).transpose()?,
         aligner: c.aligner.as_ref().map(|files| verify_files("aligner", files)).transpose()?,
@@ -400,6 +425,12 @@ pub fn verify(bundle: &ModelBundle) -> Result<VerifiedBundle, ErrorBody> {
         aux: c.aux.as_ref().map(|files| verify_files("aux", files)).transpose()?,
         separator: c.separator.as_ref().map(|files| verify_files("separator", files)).transpose()?,
         image: c.image.as_ref().map(|files| verify_files("image", files)).transpose()?,
+        embedding: c.embedding.as_ref().map(|files| verify_files("embedding", files)).transpose()?,
+        litertlm_runtime: c
+            .litertlm_runtime
+            .as_ref()
+            .map(|files| verify_files("litertlm-runtime", files))
+            .transpose()?,
     })
 }
 
@@ -482,6 +513,7 @@ mod tests {
             },
             threads: 1,
             memory_budget_bytes: None,
+            cache_dir: None,
         }
     }
 

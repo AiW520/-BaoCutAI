@@ -3,6 +3,7 @@ import { setLocale } from '@baocut/protocol';
 import { revealLabel } from '../../copy.ts';
 import { BRAND_COPY } from './brand-copy.ts';
 import { DUB_GROUP_COPY } from './dub-group-copy.ts';
+import { EDIT_AIDS_COPY } from './edit-aids-copy.ts';
 import { EDITOR_COPY } from './editor-copy.ts';
 import { ELEMENTS_COPY } from './elements-copy.ts';
 import { FONT_COPY } from './font-copy.ts';
@@ -11,6 +12,8 @@ import { MEDIA_COPY } from './media-copy.ts';
 import { QUICK_CHAT_COPY } from './quick-chat-copy.ts';
 import { SUBTITLE_COPY } from './subtitle-copy.ts';
 import { TRANSCRIPT_TOOLS_COPY } from './transcript-copy.ts';
+import { WRITING_CITES_COPY } from './writing-cites-copy.ts';
+import { WRITING_TOPIC_COPY } from './writing-topic-copy.ts';
 import { VIDEO_BAR_COPY } from './video-bar-copy.ts';
 
 const CJK = /[　-〿㐀-鿿＀-￯]/;
@@ -26,7 +29,7 @@ function strings(catalog: object): string[] {
   return out;
 }
 
-const CATALOGS = { BRAND_COPY, DUB_GROUP_COPY, EDITOR_COPY, ELEMENTS_COPY, FONT_COPY, INSPECTOR_COPY, MEDIA_COPY, QUICK_CHAT_COPY, VIDEO_BAR_COPY };
+const CATALOGS = { BRAND_COPY, DUB_GROUP_COPY, EDIT_AIDS_COPY, EDITOR_COPY, ELEMENTS_COPY, FONT_COPY, INSPECTOR_COPY, MEDIA_COPY, QUICK_CHAT_COPY, VIDEO_BAR_COPY, WRITING_CITES_COPY, WRITING_TOPIC_COPY };
 
 describe('editor copy in English', () => {
   beforeEach(() => {

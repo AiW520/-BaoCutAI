@@ -144,7 +144,7 @@
           <h1 className="space__title">{catLabel}<span className="space__n">{rows.length}</span></h1>
           <div className="space__actions">
             <div className="space__search">
-              <R.SearchField aria-label="搜索 Space" placeholder="搜索名称或文件" size="M" value={q} onChange={setQ} />
+              <R.SearchField aria-label="搜索 Space" placeholder="搜索名称、文件或讲话内容" size="M" value={q} onChange={setQ} />
             </div>
             <NewMenu dir={dir && dir !== 'none' ? dir : null} onImport={() => setImporting(true)} />
           </div>
@@ -179,6 +179,9 @@
             <R.ActionButton size="S" isQuiet onPress={() => app.replace({r: 'projects', sec: route.sec, id: route.id})}>清除筛选</R.ActionButton>
           </div>
         ) : null}
+        {/* 按内容找（embedding-integration §2.1）：搜索框有字时在名称匹配上面；空着时给几条示例。回收站里不找 */}
+        {cat !== 'trash' ? <window.SpaceContentSearch q={q} setQ={setQ} dir={dir} /> : null}
+        {q.trim() && cat !== 'trash' ? <h2 className="space__sub">名称与文件</h2> : null}
         <div className="space__list">
           {mode === 'list'
             ? <window.SpaceTable rows={rows} movies={movies} dirs={dirsById} onAct={onAct} empty={empty} />

@@ -181,7 +181,7 @@ pub struct SplitLegacy {
 }
 
 /// 只核对本规范为 `baocut.translation/2` 补充的字段（§5.3）：`displayRewrite.naturalFingerprint`、
-/// `alignment.split`、对齐块的 `confidence` 与 `flags`。别的字段不在这里校验。
+/// `alignment.split`、对齐块的 `confidence` 与 `flags`、翻译记忆的 `reuse`。别的字段不在这里校验。
 pub fn translation_body_problems(body: &Value) -> Vec<Text> {
     // 这些结构只用来核对形状：读得进来就对，有的字段读进来之后不再看。
     #[derive(Deserialize)]
@@ -197,6 +197,15 @@ pub fn translation_body_problems(body: &Value) -> Vec<Text> {
         display_rewrite: Option<DisplayRewriteAdditions>,
         #[serde(default)]
         alignment: Option<AlignmentAdditions>,
+        #[serde(default)]
+        reuse: Option<ReuseAdditions>,
+    }
+    #[derive(Deserialize)]
+    #[serde(rename_all = "camelCase")]
+    #[allow(dead_code)]
+    struct ReuseAdditions {
+        from_video_id: String,
+        unit_id: String,
     }
     #[derive(Deserialize)]
     #[serde(rename_all = "camelCase")]
@@ -295,6 +304,8 @@ mod tests {
     fn added_fields_are_checked_only_for_shape() {
         for bad in [
             json!({ "units": [{ "displayRewrite": { "naturalFingerprint": 3 } }] }),
+            json!({ "units": [{ "reuse": { "fromVideoId": "v" } }] }),
+            json!({ "units": [{ "reuse": "v" }] }),
             json!({ "units": [{ "alignment": { "blocks": [{ "confidence": 2 }] } }] }),
             json!({ "units": [{ "alignment": { "blocks": [{ "flags": "weak" }] } }] }),
             json!({ "units": [{ "alignment": { "split": { "mode": "manyToOne", "wordAnchored": false, "pieces": [{ "text": "a" }] } } }] }),
@@ -305,5 +316,6 @@ mod tests {
         }
         // 只有已有字段、没有补充字段的正文不受影响。
         assert!(translation_body_problems(&json!({ "units": [{ "alignment": null }] })).is_empty());
+        assert!(translation_body_problems(&json!({ "units": [{ "reuse": { "fromVideoId": "v", "unitId": "u" } }] })).is_empty());
     }
 }

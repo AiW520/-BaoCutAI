@@ -157,7 +157,10 @@ export class SpaceTools implements ToolSet {
   }
 }
 
-/** 主体 → 能看到的 Space 范围。终端里的用户本人与界面相同，看得到全部。别的工具（生图的输入图）也按它查条目。 */
+/**
+ * 主体 → 能看到的 Space 范围（`space_*`、语义检索的工具与生图的输入图共用）。终端里的用户本人与界面相同，看得到全部；
+ * 会话里的智能体看会话的来源目录；对外服务看策略里的视频与自己提交的任务。
+ */
 export function spaceViewerOf(scope: ToolScope, jobs: { list(): JobRecord[] }, principal: ToolPrincipal): SpaceViewer {
   const access: ToolAccess = scope.authorize(principal, false);
   if (access.principal.kind === 'local') return USER_VIEWER;

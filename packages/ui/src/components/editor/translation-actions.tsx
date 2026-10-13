@@ -1,6 +1,6 @@
-import { useMemo, type RefObject } from 'react';
+import { useMemo, useState, type ReactNode, type RefObject } from 'react';
 import type { Id } from '@baocut/protocol';
-import { ActionButton, ActionMenu, Menu, MenuItem, MenuSection, MenuTrigger, Text, ToastQueue, Tooltip, TooltipTrigger } from '@react-spectrum/s2';
+import { ActionButton, ActionMenu, Button, DialogTrigger, Menu, MenuItem, MenuSection, MenuTrigger, Popover, Text, ToastQueue, Tooltip, TooltipTrigger } from '@react-spectrum/s2';
 import AIMark from '@react-spectrum/s2/icons/AIMark';
 import Chat from '@react-spectrum/s2/icons/Chat';
 import Checkmark from '@react-spectrum/s2/icons/Checkmark';
@@ -8,6 +8,7 @@ import Clock from '@react-spectrum/s2/icons/Clock';
 import Copy from '@react-spectrum/s2/icons/Copy';
 import Translate from '@react-spectrum/s2/icons/Translate';
 import { style } from '@react-spectrum/s2/style' with { type: 'macro' };
+import { Button as RACButton } from 'react-aria-components';
 import { retranslatePrompt, TOOL_SKILL } from '../../model/ai-tools.ts';
 import { currentConversation } from '../../model/ai-tools-handoff.ts';
 import { gateGuide, homeGate } from '../../model/home-brief.ts';
@@ -60,6 +61,27 @@ const counts = style({
 });
 const warn = style({ color: 'orange-1000', fontWeight: 'medium' });
 const fresh = style({ color: 'green-1000' });
+/** 「N 术语不一致」：同别的计数一样的字，点开列出位置（原型 subtitle-tm.jsx `TmConflicts`）。 */
+const termsButton = style({
+  padding: 0,
+  borderWidth: 0,
+  backgroundColor: 'transparent',
+  font: 'ui-xs',
+  color: 'orange-1000',
+  fontWeight: 'medium',
+  cursor: 'pointer',
+  textDecoration: { isHovered: 'underline' },
+  borderRadius: 'sm',
+  outlineStyle: { default: 'none', isFocusVisible: 'solid' },
+  outlineColor: 'focus-ring',
+  outlineWidth: 2,
+});
+const termsPop = style({ display: 'flex', flexDirection: 'column', alignItems: 'start', gap: 8, width: 320, maxWidth: '[100%]' });
+const termsLead = style({ font: 'ui-xs', color: 'gray-600' });
+const termsList = style({ display: 'flex', flexDirection: 'column', gap: 4, margin: 0, padding: 0, listStyleType: 'none', maxHeight: 240, overflowY: 'auto', alignSelf: 'stretch' });
+const termsRow = style({ display: 'flex', alignItems: 'baseline', gap: 4, minWidth: 0 });
+const termsTime = style({ flexShrink: 0 });
+const termsText = style({ flexGrow: 1, minWidth: 0, font: 'ui-xs', color: 'gray-800', overflowWrap: 'anywhere' });
 
 /**
  * 直接重译用哪只文本模型：同翻译设置页的缺省（文本生成的默认值，不能用时第一只能用的；翻译要结构化输出）。
@@ -129,6 +151,8 @@ export interface StatbarProps {
   onAgent(): void;
   onCut(): void;
   onTranslateTool(): void;
+  /** 统计条上的「N 术语不一致」（没有时 null）。 */
+  terms: ReactNode;
 }
 
 /** 统计条（原型 `.statbar--one`）：一行放下，左边句数与计数（全称在提示里），右边一枚 AI 钮收下所有要调模型或会话的动作。 */
@@ -166,6 +190,7 @@ export function TranslationStatbar(p: StatbarProps) {
                 {C.goneShort(stats.gone)}
               </span>
             ) : null}
+            {p.terms}
             {todo + cut + stats.gone ? null : <span className={fresh}>{C.allFresh}</span>}
           </>
         )}
@@ -225,6 +250,70 @@ export function TranslationStatbar(p: StatbarProps) {
   );
 }
 
+/** 术语不一致的一处（`termSpots` 加上这一句在序列上的时间）。 */
+export interface TermSpotItem {
+  key: string;
+  /** 这一句在序列上的起点；画面剪掉了时 null。 */
+  at: number | null;
+  time: string | null;
+  term: string;
+  got: string;
+  want: string;
+}
+
+/**
+ * 统计条上的「N 术语不一致」（创作辅助集成设计 §2.6、§3.7；原型 subtitle-tm.jsx `TmConflicts`）：点开列出位置（点时间跳过去），
+ * 「统一为术语表译法」是一笔普通编辑，Web 也有（不调模型）。只读的视频能看不能统一。
+ */
+export function TermMismatches({ spots, editable, onSeek, onUnify }: { spots: readonly TermSpotItem[]; editable: boolean; onSeek(at: number): void; onUnify(): void }) {
+  const [open, setOpen] = useState(false);
+  if (!spots.length) return null;
+  return (
+    <DialogTrigger isOpen={open} onOpenChange={setOpen}>
+      <RACButton className={termsButton} aria-label={C.terms(spots.length)}>
+        <span title={C.terms(spots.length)}>{C.termsShort(spots.length)}</span>
+      </RACButton>
+      <Popover placement="bottom start" aria-label={C.termsTitle}>
+        <div className={termsPop}>
+          <span className={termsLead}>{C.termsLead}</span>
+          <ul className={termsList}>
+            {spots.map((spot) => (
+              <li key={`${spot.key}:${spot.term}`} className={termsRow}>
+                <ActionButton
+                  isQuiet
+                  size="XS"
+                  styles={termsTime}
+                  isDisabled={spot.at === null}
+                  aria-label={C.seekTip}
+                  onPress={() => {
+                    setOpen(false);
+                    if (spot.at !== null) onSeek(spot.at);
+                  }}>
+                  <Text>{spot.time ?? '—'}</Text>
+                </ActionButton>
+                <span className={termsText}>
+                  <b>{spot.term}</b>
+                  {C.termsSpot(spot.got, spot.want)}
+                </span>
+              </li>
+            ))}
+          </ul>
+          <Button
+            size="S"
+            variant="accent"
+            isDisabled={!editable}
+            onPress={() => {
+              setOpen(false);
+              onUnify();
+            }}>
+            {C.termsUnify}
+          </Button>
+        </div>
+      </Popover>
+    </DialogTrigger>
+  );
+}
+
 /** 一句的 ⋯ 菜单里能做的（TranslationList 每次渲染换成最新的一份，卡经 ref 调）。 */
 export interface UnitMenuActions {
   direct(row: PairRow): void;
@@ -234,7 +323,8 @@ export interface UnitMenuActions {
 
 /**
  * 一句的 ⋯ 菜单（原型 `moreFor`）：用模型 API 重译这一句、交给 Agent 重译这一句（只在桌面端），标为过期或去掉过期标记，
- * 复制译文。原句没了的只能复制；只读时只能复制。
+ * 复制译文。原句没了的只能复制；只读时只能复制。沿用的译文（翻译记忆，原型 subtitle-tm.jsx）第一项写作「改为重译」：
+ * 同一次就地刷新，重译后的单元不再带 `reuse`，提示里的撤销连同沿用标记一起放回来。
  */
 export function UnitMenu({
   row,
@@ -244,6 +334,7 @@ export function UnitMenu({
   editable,
   busy,
   modelName,
+  reused = null,
   actions,
 }: {
   row: PairRow;
@@ -256,6 +347,8 @@ export function UnitMenu({
   /** 这份译文正在重译：不再发一次。 */
   busy: boolean;
   modelName: string | null;
+  /** 沿用的译文：来源视频的名字（找不到时空串）；不是沿用的为 null。 */
+  reused?: string | null;
   actions: RefObject<UnitMenuActions>;
 }) {
   const stale = isStale(row.state);
@@ -274,10 +367,10 @@ export function UnitMenu({
         else if (key === 'copy') void navigator.clipboard.writeText(text).then(() => ToastQueue.positive(C.copied, { timeout: 3000 }));
       }}>
       {editable && ai ? (
-        <MenuItem id="direct" textValue={C.directOne}>
+        <MenuItem id="direct" textValue={reused === null ? C.directOne : C.directReused}>
           <AIMark />
-          <Text slot="label">{C.directOne}</Text>
-          <Text slot="description">{C.viaModel(modelName)}</Text>
+          <Text slot="label">{reused === null ? C.directOne : C.directReused}</Text>
+          <Text slot="description">{reused === null ? C.viaModel(modelName) : `${C.directReusedSub(reused || null)} · ${C.viaModel(modelName)}`}</Text>
         </MenuItem>
       ) : null}
       {editable && ai ? (

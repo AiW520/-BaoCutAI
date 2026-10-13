@@ -12,6 +12,7 @@ import type {
   ModelInstallProgress,
 } from '@baocut/protocol';
 import { ModelsModelCatalog as M } from '@baocut/protocol/messages/models/model-catalog.ts';
+import { ModelsEmbedding as E } from '@baocut/protocol/messages/models/embedding.ts';
 import {
   backendSupported,
   candleResidentBytes,
@@ -22,6 +23,7 @@ import {
   type BundleDefinition,
   type ComponentReleaseAsset,
 } from './bundle-registry.ts';
+import { EMBEDDING_WORKER_OVERHEAD_BYTES } from './embedding-bundles.ts';
 import { readInstallRecord } from './install-record.ts';
 import { stagedBytes } from './model-staging.ts';
 import { modelDetail, type ModelText } from './model-text.ts';
@@ -82,6 +84,11 @@ export interface ModelCatalogOptions {
   platformKey?: string;
   /** 交给 Worker 的 CPU 线程数上限。默认取可用核数减二，至少 1、至多 8。 */
   threads?: number;
+  /**
+   * LiteRT-LM 的引擎缓存目录（绝对路径，Runtime 传 `<home>/cache/litertlm`）：`litert-lm` 模型包交给 Worker 时带上（`cacheDir`，
+   * Model Worker 协议规范 §4.5）。不给时 Worker 用系统临时目录。
+   */
+  engineCacheDir?: string;
   /** 换掉内置的仓库清单（测试用）：暂停的安装据它报告总字节数。 */
   manifests?: readonly RepoManifestSpec[];
 }
@@ -171,6 +178,7 @@ export class ModelCatalog {
   readonly #engineOverride: string | null;
   readonly #platformKey: string;
   readonly #threads: number;
+  readonly #engineCacheDir: string | null;
   readonly #runtime = new Map<string, RuntimeBundleState>();
   readonly #blocked = new Map<string, { state: 'not-installed' | 'error'; reason: ModelBundleReason; detail?: ModelText }>();
   readonly #verified = new Map<string, VerifyResult>();
@@ -190,6 +198,7 @@ export class ModelCatalog {
     this.#engineOverride = options.engineOverride || null;
     this.#platformKey = options.platformKey ?? hostPlatformKey(this.#platform, this.#arch);
     this.#threads = options.threads ?? Math.max(1, Math.min(8, os.availableParallelism() - 2));
+    this.#engineCacheDir = options.engineCacheDir ?? null;
     this.#manifests = options.manifests ?? REPO_MANIFESTS;
   }
 
@@ -225,7 +234,8 @@ export class ModelCatalog {
 
   /** 发布页组件此刻由 `engineOverride` 满足：给了覆盖、而且是存在的文件。 */
   engineOverridden(source: Pick<BundleComponentSource, 'release'>): boolean {
-    return source.release !== undefined && this.#engineOverride !== null && isFile(this.#engineOverride);
+    // 交给 Worker 的动态库（`workerLibrary`）不是引擎，覆盖不替它。
+    return source.release !== undefined && !source.release.workerLibrary && this.#engineOverride !== null && isFile(this.#engineOverride);
   }
 
   /**
@@ -235,7 +245,7 @@ export class ModelCatalog {
    */
   engineExecutable(bundleId: string): string | null {
     const def = this.#bundles.get(bundleId);
-    const source = def ? componentsOf(def).find(([, s]) => s.release)?.[1] : undefined;
+    const source = def ? componentsOf(def).find(([, s]) => s.release && !s.release.workerLibrary)?.[1] : undefined;
     if (!source?.release) return null;
     if (this.#engineOverride !== null) return isFile(this.#engineOverride) ? this.#engineOverride : null;
     const asset = releaseAsset(source.release, this.#platformKey);
@@ -319,8 +329,9 @@ export class ModelCatalog {
   async #workerComponents(def: BundleDefinition): Promise<Array<[BundleComponent, BundleComponentSource]>> {
     const out: Array<[BundleComponent, BundleComponentSource]> = [];
     for (const [name, source] of componentsOf(def)) {
-      // 发布页组件（audio.cpp 引擎）不交给 Worker：执行它的 Provider 自己找可执行文件（`engineExecutable`）。
-      if (source.release) continue;
+      // 发布页组件（audio.cpp 引擎）不交给 Worker：执行它的 Provider 自己找可执行文件（`engineExecutable`）。交给 Worker 的
+      // 动态库（`workerLibrary`，LiteRT-LM）照常交。
+      if (source.release && !source.release.workerLibrary) continue;
       if (source.optional && !(await this.#checkComponent(source)).ok) continue;
       out.push([name, source]);
     }
@@ -376,6 +387,11 @@ export class ModelCatalog {
    */
   async workerFootprint(bundleId: string): Promise<WorkerFootprint | null> {
     const def = this.#bundles.get(bundleId);
+    if (def?.capability === 'embed') {
+      // LiteRT-LM 在 CPU 上：模型文件与 C 库映射进内存，加上推理的工作区，计在内存。
+      const bytes = weightBytes(requiredSources(def), this.#manifests, this.#platformKey);
+      return bytes === null ? null : { bytes: bytes + EMBEDDING_WORKER_OVERHEAD_BYTES, pool: 'memory' };
+    }
     const synthesizeOnCandle = def?.capability === 'synthesize' && def.backend === 'candle';
     const local = def?.capability === 'transcribe' || def?.capability === 'separate' || def?.capability === 'diarize';
     if (!def || (!local && !synthesizeOnCandle)) return null;
@@ -557,7 +573,7 @@ export class ModelCatalog {
     const components: ModelBundle['components'] = {};
     // 没装好的可选组件不交给 Worker；装好了的「说话人区分」模型包的组件一并交给它。
     for (const [name, source] of await this.#workerComponents(def)) {
-      const dir = this.repoDir(source.repo);
+      const dir = this.componentDir(source);
       const manifest = await readManifest(dir);
       if (!manifest || manifest.revision !== source.revision) throw new Error(M.notInstalled({ repo: source.repo }).text);
       const files: ModelFiles['files'] = manifest.files.map((f) => ({ path: f.path, sha256: f.sha256, byteLength: f.size }));
@@ -572,6 +588,7 @@ export class ModelCatalog {
       components,
       threads: this.#threads,
       memoryBudgetBytes: options.memoryBudgetBytes ?? null,
+      ...(def.backend === 'litert-lm' && this.#engineCacheDir ? { cacheDir: this.#engineCacheDir } : {}),
     };
   }
 
@@ -638,6 +655,8 @@ export class ModelCatalog {
 
   /** 旧版（受管外部工具）装下的发布页组件：组件目录里有这个平台的可执行文件，没有清单。 */
   async #legacyRelease(source: Pick<BundleComponentSource, 'repo' | 'release'>): Promise<boolean> {
+    // 交给 Worker 的动态库没有旧版装法：没有清单就是没装（交给 Worker 时要清单里的文件列表）。
+    if (source.release?.workerLibrary) return false;
     const asset = this.releaseAsset(source);
     if (!asset) return false;
     const stat = await fs.stat(path.join(this.componentDir(source), asset.executable)).catch(() => null);
@@ -647,13 +666,21 @@ export class ModelCatalog {
   async #checkComponent(source: Pick<BundleComponentSource, 'repo' | 'revision' | 'release'>): Promise<DiskCheck> {
     if (source.release) {
       if (this.engineOverridden(source)) return { ok: true, overridden: true };
-      if (!this.releaseAsset(source)) return { ok: false, reason: 'unsupported', detail: M.engineNoBuild({ platform: this.#platformKey }) };
+      if (!this.releaseAsset(source)) {
+        const detail = source.release.workerLibrary
+          ? E.runtimeNoBuild({ platform: this.#platformKey })
+          : M.engineNoBuild({ platform: this.#platformKey });
+        return { ok: false, reason: 'unsupported', detail };
+      }
     }
     const dir = this.componentDir(source);
     const manifest = await readManifest(dir);
     if (!manifest && source.release) {
       if (await this.#legacyRelease(source)) return { ok: true, bytes: await rootFileBytes(dir) };
-      return { ok: false, reason: 'missing-file', detail: M.engineNotInstalled({ version: source.release.version }) };
+      const detail = source.release.workerLibrary
+        ? E.runtimeNotInstalled({ version: source.release.version })
+        : M.engineNotInstalled({ version: source.release.version });
+      return { ok: false, reason: 'missing-file', detail };
     }
     if (!manifest) return { ok: false, reason: 'missing-manifest', detail: M.noManifest({ repo: source.repo }) };
     if (manifest.revision !== source.revision) {

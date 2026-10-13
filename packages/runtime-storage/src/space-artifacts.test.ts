@@ -94,6 +94,31 @@ describe('Space 的产物记录', () => {
     expect(isFilePipelineJob({ kind: 'pipeline', pipeline: { name: 'transcribe' }, result: null })).toBe(false);
   });
 
+  it('写作类 AI 工具：完成的正文留成文档，带出处旁文件；润色、章节与没完成的不留', async () => {
+    const summary = { tool: 'blog', text: '# 标题\n\n正文', citationsArtifactId: 'sha256:cit' };
+    const record = job({
+      jobId: 'job_w',
+      kind: 'pipeline',
+      result: { documentId: null, artifactId: 'sha256:md' },
+      pipeline: { name: 'ai-tool', params: { prompt: '不该留下' }, steps: [], current: null, stoppedAt: null, summary } as never,
+    });
+    const facts = spaceJobFacts(record)!;
+    expect(facts.result).toEqual({ artifactId: 'sha256:md' });
+    expect(facts.pipeline).toEqual({ name: 'ai-tool', document: { tool: 'blog', byteLength: Buffer.byteLength(summary.text), citationsArtifactId: 'sha256:cit' } });
+    // 出处不是条目：清除只看正文。
+    expect(artifactIdsOf(facts)).toEqual(['sha256:md']);
+    const store = new SpaceArtifactStore(file);
+    await store.load();
+    await store.put([facts]);
+    const reread = new SpaceArtifactStore(file);
+    expect(await reread.load()).toEqual({ skipped: 0, quarantined: null });
+    expect(reread.get('job_w')).toEqual(facts);
+
+    const polish = { ...record, pipeline: { ...record.pipeline!, summary: { tool: 'polish', text: null } } } as JobRecord;
+    expect(spaceJobFacts(polish)).toBeNull();
+    expect(spaceJobFacts({ ...record, state: 'failed' })).toBeNull();
+  });
+
   it('只留结束了、有结果、会留下产物的任务，只留派生用的字段', () => {
     const facts = spaceJobFacts(job({}))!;
     expect(facts).toMatchObject({ jobId: 'job_1', kind: 'generateImage', state: 'completed', videoId: 'v1' });

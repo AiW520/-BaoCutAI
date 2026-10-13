@@ -20,6 +20,7 @@ export const pl: SettingsNavMessages = {
     shortcuts: "Skróty",
     fonts: "Czcionki",
     downloader: 'Pobieranie filmów',
+    semantic: 'Indeks semantyczny',
     agent: "Dostawcy agentów",
     skills: "Skills",
     glossary: "Słownik",

@@ -35,6 +35,7 @@ const en = {
     shortcuts: 'Shortcuts',
     fonts: 'Fonts',
     downloader: 'Video downloader',
+    semantic: 'Semantic index',
     agent: 'Agent providers',
     skills: 'Skills',
     glossary: 'Glossary',

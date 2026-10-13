@@ -125,6 +125,13 @@ export const ruTranslate: TranslateMessages = {
   staleShort: (n: number) => `устарело: ${n}`,
   cutShort: (n: number) => `вырезано: ${n}`,
   goneShort: (n: number) => `удалено: ${n}`,
+  termsShort: (n: number) => `расхождений с глоссарием: ${n}`,
+  terms: (n: number) => `Мест, где не используется перевод из глоссария: ${n}`,
+  termsTitle: 'Расхождения с глоссарием',
+  termsLead: 'В этих переводах не используется перевод из глоссария. Приведение к глоссарию — обычная правка, её можно отменить.',
+  termsSpot: (got: string, want: string) => ` · переведено как «${got}», в глоссарии — «${want}»`,
+  termsUnify: 'Использовать переводы из глоссария',
+  termsUnified: (n: number) => `Приведено к глоссарию мест: ${n}`,
   cut: (n: number) => `Кадры вырезаны из видео: ${sentences(n)} оригинала`,
   webHint: 'Повторный перевод вызывает модель или агента: запустите его из агента или приложения BaoCut',
   refreshing: (n: number | null) => (n === null ? 'Повторный перевод…' : `Повторный перевод: ${sentences(n)}…`),
@@ -151,6 +158,18 @@ export const ruTranslate: TranslateMessages = {
   refreshFailed: 'Не удалось перевести заново',
   refreshInterrupted: 'Повторный перевод прерван',
   refreshCancelled: 'Повторный перевод отменён',
+  // 翻译记忆（创作辅助集成设计 §2.6）
+  chipReused: 'Повторно использовано',
+  reusedTip: (video: string | null) =>
+    video ? `Перевод взят из «${video}»: оригинал почти совпадает` : 'Перевод взят из другого вашего видео: оригинал почти совпадает',
+  directReused: 'Перевести заново',
+  directReusedSub: (video: string | null) => `Больше не использует ${video ? `перевод из «${video}»` : 'готовый перевод'} и переводит заново через API модели`,
+  memory: 'Память переводов',
+  memoryOn:
+    'Предложения, совпадающие с уже переведёнными в других ваших видео (то же направление перевода), берут этот перевод и помечаются «Повторно использовано»; похожие передаются модели как образцы.',
+  memoryOff: 'Память переводов отключена в настройках: готовые переводы не используются и не учитываются.',
+  memoryUsed: (reused: number, referenced: number) => `Память переводов: использовано ${reused} · ${referenced} готовых переводов как образцы`,
+
 };
 
 export const ruTextNotConfigured: TextNotConfiguredMessages = {

@@ -35,6 +35,7 @@ export const ptBR: AiToolsMessages = {
     lineFrame: (ratio, focus) => (ratio ? `Proporção ${ratio}, enquadramento ${focus}` : 'Proporção: manter a original, sem recortar'),
     lineSubtitles: (tracks, style) => `Legendas: ${tracks}, ${style}`,
     lineSkipDone: 'Pule as partes que já viraram vídeos curtos',
+    lineTopic: (topic) => `Procure só nas partes que falam de “${topic}”: encontre-as primeiro com speech_relevant e escolha entre elas`,
     lineDirect: 'Crie os vídeos assim que encontrá-los; não precisa me perguntar antes',
   },
   groups: {

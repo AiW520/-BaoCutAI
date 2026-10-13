@@ -29,6 +29,7 @@ export const ja: AiToolsMessages = {
     lineFrame: (ratio, focus) => (ratio ? `アスペクト比 ${ratio}、フレーミングは${focus}` : 'アスペクト比：元のまま、切り抜かない'),
     lineSubtitles: (tracks, style) => `字幕：${tracks}、${style}`,
     lineSkipDone: 'すでに切り出した部分は探さない',
+    lineTopic: (topic) => `「${topic}」について話している部分だけから探す：まず speech_relevant でその部分を見つけ、その中から選ぶ`,
     lineDirect: '見つかったらそのまま動画として作成する。先に確認しなくてよい',
   },
   groups: {

@@ -57,6 +57,10 @@ export const ptBR: RcSpaceMessages = {
   labelGenerateImage: "Gerar imagem",
   labelGenerateMusic: 'Música gerada',
   labelGenerateText: "Texto gerado",
+  labelSummary: "Resumo",
+  labelBlog: "Post de blog",
+  labelTitles: "Títulos",
+  labelDescription: "Descrição",
   labelExport: "Exportar",
 
   engineUnavailable: "Mecanismo de vídeo indisponível",
@@ -70,4 +74,5 @@ export const ptBR: RcSpaceMessages = {
     `${p.fileName} é ${p.bytes} bytes, acima do limite de material de ${p.limit}`,
   afterMaterial: (p: { reason: string }) => `Após adicionar o material: ${p.reason}`,
   invalidParams: "Parâmetros inválidos",
+  relatedNotVideo: 'Só vídeos mostram vídeos relacionados',
 };

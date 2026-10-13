@@ -1,4 +1,5 @@
 import type { Id } from './domain.ts';
+import type { CitationsFile, SemanticEffectiveMode, SemanticReason } from './semantic.ts';
 
 /**
  * 固定流程（架构设计 §7.9）：步骤固定、不需要模型规划的多步工作，由 Runtime 编排，执行主体是 `system:pipeline`，
@@ -129,6 +130,24 @@ export interface TranslateParams {
    * 只能与 `translationId` 一起给。
    */
   sentences?: Id[];
+  /**
+   * 翻译记忆（创作辅助集成设计 §2.6、§3.7），默认开：在用户其他视频里同一语言方向的已有译文里，原文规范化后相同的句子沿用
+   * 已有译法（不送翻，单元标 `reuse`），语义相近的作为参考附在提示里。`false` 关掉。就地刷新时不用（重译就是要换译法）。
+   */
+  memory?: boolean;
+}
+
+/** 翻译记忆用了多少（`TranslateSummary.memory`）。 */
+export interface TranslateMemoryUse {
+  /** 沿用已有译文的句数（输出与已有译文相同的才算）。 */
+  reused: number;
+  /** 作为参考附在提示里的已有译句数。 */
+  referenced: number;
+  /** 查过的已有译文所在的视频数。 */
+  videos: number;
+  /** `semantic`：沿用 + 语义参考；`lexical`：只沿用原文相同的（原因见 `reason`）。 */
+  effectiveMode: 'semantic' | 'lexical';
+  reason: string | null;
 }
 
 /** 翻译用到的术语表（`TranslateSummary.glossary`、`DubSummary.glossary`）。 */
@@ -176,6 +195,8 @@ export interface TranslateSummary {
   captions?: PipelineCaptionsSummary;
   /** 就地刷新（参数给了 `translationId`）时有：写成的版本、重译与去掉的单元、跟着更新的字幕文档。 */
   refresh?: TranslateRefreshSummary;
+  /** 翻译记忆；关掉、就地刷新或旧记录没有这个字段。 */
+  memory?: TranslateMemoryUse;
 }
 
 /** 就地刷新一份译文的结果（`TranslateSummary.refresh`）。 */
@@ -754,7 +775,8 @@ export interface ApplySpeakersParams {
 /**
  * AI 工具的「直接调模型」（`ai-tool`，产品设计 §5.10）：不经过对话，把提示词与这个视频的上下文（文稿、章节、附件）直接交给
  * 一个文本模型；挂着的 skill 作为系统提示词，只带 `SKILL.md` 与它用到的 `references/` 文件。`polish`、`chapters` 完成即写进
- * 视频（一笔可撤销的事务）；其余工具的结果只给人读、挑、拷走，不写进视频（`AiToolSummary.text`）。
+ * 视频（一笔可撤销的事务）；其余工具（写作类）的结果不写进视频，保存成 Space 的一份文档条目（`AiToolSummary.text`，
+ * 条目 ID 即 `artifactId`），并带出处旁文件（`baocut.citations/1`，创作辅助集成设计 §3.4）。
  * 文本模型没有配置时 `pipelines.start` 以 `CAPABILITY_NOT_CONFIGURED` 拒绝，不改交智能体。
  */
 export const AI_TOOL_PIPELINE = 'ai-tool';
@@ -787,6 +809,64 @@ export interface AiToolParams {
   model?: string;
   /** 用户的界面语言（BCP 47，如 `zh-Hans`、`en`），写进系统提示词；不给时不写。 */
   uiLanguage?: string;
+  /**
+   * 写作类工具的选材（创作辅助集成设计 §2.2、§3.4）：不给时按 `range` 发整篇（现有做法）。`topic` 按意图句在这几部视频里挑
+   * 相关的句群（本机语义索引；没有模型时退回字面匹配，再没有就整篇，`AiToolContext.selection` 写明实际怎么选的）。
+   */
+  selection?: AiToolSelection;
+  /**
+   * 系列文章：同时取材的另几部视频（写作类工具才有，最多 `AI_TOOL_SERIES_MAX` 部，`videoId` 之外）。编号带视频前缀
+   * （`v2:s17`），出处带视频。按主题选材时直接用语义索引里的句子，这几部不必打开；整篇时它们要已经打开。`range` 只用于 `videoId`。
+   */
+  videoIds?: Id[];
+  /**
+   * 生成章节的边界（创作辅助集成设计 §2.4、§3.6）：`topic` 先在本机按相邻句群的语义距离找出话题转折的候选边界，模型只在
+   * 候选处分章（可以合并，不能新增）；`model`（缺省）由模型决定。没有语义模型或索引时退回 `model`，`AiToolContext.boundaries`
+   * 写明。只有 `chapters` 接受。
+   */
+  boundaries?: 'topic' | 'model';
+  /**
+   * 重写一段（创作辅助集成设计 §2.2「这段不对」、§3.4「局部改写」）：上一次写作结果的出处旁文件与段落序号。材料是这一段原来的
+   * 出处，加上以这一段文字为意图再挑的句群（`exclude` 去掉用户勾掉的）；连同全文大纲发给模型，只换掉这一段，其余段落原样。
+   * 结果是新的一份文档条目。写作类工具才有，不与 `range`、`selection`、`videoIds` 同用。
+   */
+  section?: AiToolSection;
+}
+
+/** `AiToolParams.section`。 */
+export interface AiToolSection {
+  /** 上一次结果的出处旁文件（`AiToolSummary.citationsArtifactId`、Space 条目的 `citations.artifactId`）。 */
+  citationsArtifactId: Id;
+  /** 要重写的段落（`CitationParagraph.index`，正文段）。 */
+  index: number;
+  /**
+   * 换材料重写时勾掉的材料：重新找来的句群写 `space.relevantChunks`（意图是这一段原文、`limit` 为 `AI_TOOL_SECTION_CHUNKS`）的
+   * `chunkId`；这一段原有的出处写 `cite:<第几处>`（`AI_TOOL_SECTION_CITE_PREFIX`，从 0 数，按 `CitationParagraph.cites` 的次序）。
+   */
+  exclude?: string[];
+}
+
+/** 重写一段时按这一段原文重新找几个句群（`space.relevantChunks` 预览用同一个数）。 */
+export const AI_TOOL_SECTION_CHUNKS = 8;
+/** 重写一段时，这一段原有出处在 `AiToolSection.exclude` 里的写法前缀（`cite:0` 是第一处）。 */
+export const AI_TOOL_SECTION_CITE_PREFIX = 'cite:';
+
+/** 系列文章最多几部视频（含 `videoId`）。 */
+export const AI_TOOL_SERIES_MAX = 8;
+/** 按主题选材最多挑几个句群。 */
+export const AI_TOOL_TOPIC_MAX_CHUNKS = 60;
+/** 按主题选材默认挑几个句群（`selection.limit` 与 `space.relevantChunks` 的 `limit` 不给时）。 */
+export const AI_TOOL_TOPIC_DEFAULT_CHUNKS = 24;
+
+/** 写作类工具按主题选材（`AiToolParams.selection`）。 */
+export interface AiToolSelection {
+  mode: 'topic';
+  /** 意图句；不给时用提示词。 */
+  intent?: string;
+  /** 最多挑几个句群（默认 24，上限 `AI_TOOL_TOPIC_MAX_CHUNKS`）。 */
+  limit?: number;
+  /** 用户在「查看挑选的段落」里勾掉的句群（`space.relevantChunks` 给的 `chunkId`）。 */
+  exclude?: string[];
 }
 
 /** 发给模型的上下文（`AiToolSummary.context`，同工具页那行「发给模型的」）。 */
@@ -802,6 +882,25 @@ export interface AiToolContext {
   /** 作为系统提示词的 skill，与一起带上的 `references/` 文件数。 */
   skills: string[];
   references: number;
+  /** 系列文章取材的视频数（含 `videoId`）；单部时不给。 */
+  videos?: number;
+  /**
+   * 按主题选材时实际怎么选的（冻结在任务里）：`effectiveMode` 是 `semantic`（语义索引）、`lexical`（退回字面匹配）或 `none`
+   * （没挑出来，发了整篇）；`chunks` 是发给模型的句群，`chapters` 是覆盖的章节标题；没按主题时不给。
+   */
+  selection?: {
+    effectiveMode: SemanticEffectiveMode;
+    reason: SemanticReason | null;
+    chunks: number;
+    chunkIds: string[];
+    chapters: string[];
+    /** 其中弱命中（与意图勉强相关）的句群数。 */
+    weak: number;
+  };
+  /** 重写一段时：重写的是第几段、换成了几段。 */
+  section?: { index: number; paragraphs: number };
+  /** 生成章节按话题找边界时：候选边界数与实际用的方式（`model` 表示退回了模型决定，`reason` 写明原因）。 */
+  boundaries?: { mode: 'topic' | 'model'; candidates: number; reason: SemanticReason | null };
 }
 
 /** `ai-tool` 完成时父任务的 `pipeline.summary`。 */
@@ -813,10 +912,17 @@ export interface AiToolSummary {
   context: AiToolContext;
   /** 写进视频的那笔事务与改了几处（润色：改了文字的词数；章节：写入的章数）；只给结果的工具为 null。 */
   applied: { transactionId: Id | null; changes: number } | null;
-  /** 只给结果的工具：模型写的正文（Markdown）。写进视频的工具为 null。 */
+  /** 只给结果的工具：模型写的正文（Markdown，句子编号已去掉）。写进视频的工具为 null。 */
   text: string | null;
-  /** 模型输出的产物（原样）。 */
+  /** 写作类工具：正文（`.md`）的产物，也是 Space 文档条目的 ID；写进视频的工具：模型输出的原样。 */
   artifactId: Id;
+  /**
+   * 写作类工具的出处（创作辅助集成设计 §3.4）：文稿以编了号的句子发出，模型在每段末尾回引编号，校验后对应回原句。
+   * 没有文稿（只有提示词）或写进视频的工具为 null。
+   */
+  citations: CitationsFile | null;
+  /** 出处旁文件（`baocut.citations/1` 的 JSON）的产物；`citations` 为 null 时 null。 */
+  citationsArtifactId: Id | null;
   /** 模型的停止原因：`length` 表示输出到了上限、可能不完整。 */
   finishReason: 'stop' | 'length';
 }

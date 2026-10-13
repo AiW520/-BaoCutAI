@@ -18,6 +18,7 @@ BaoCut 随应用分发的内置 Agent skill，也叫 craft（做法）：一件�
 | [`video-blog`](video-blog/SKILL.md) | 写成博客文章 | 把视频写成不看视频也能读明白的完整文章，分作者视角与观众视角 |
 | [`titles-and-description`](titles-and-description/SKILL.md) | 起标题与写简介 | 标题候选与视频简介（说明、章节、标签），每句都由视频兑现 |
 | [`cover-and-title`](cover-and-title/SKILL.md) | 封面与标题 | 标题与封面文案候选，用户挑定后按画幅生成封面图，放进候选素材 |
+| [`cross-video-qa`](cross-video-qa/SKILL.md) | 跨视频问答 | 在多部视频里按意思找某件事讲在哪、怎么讲的，只凭原话回答，每条注明视频与时间 |
 | [`video-chapters`](video-chapters/SKILL.md) | 分章节 | 在话题自然转换处分章，每章一个标题和一句摘要，写进视频的章节 |
 | [`talking-head-cut`](talking-head-cut/SKILL.md) | 剪口播 | 去口癖、长停顿与录废的部分，收紧节奏，按需加强调、B-roll、竖屏取景与配乐闪避 |
 | [`shorts-segments`](shorts-segments/SKILL.md) | 切短视频 | 从长视频里挑出能单独发布的几段，每段建成可编辑的子视频 |

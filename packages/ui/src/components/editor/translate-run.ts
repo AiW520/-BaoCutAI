@@ -11,6 +11,7 @@ import {
   type JobRecord,
   type Localized,
   type TransactionReceipt,
+  type TranslateMemoryUse,
   type TranslateParams,
   type TranslateRefreshSummary,
   type TranslateSummary,
@@ -98,6 +99,8 @@ export interface TranslateReceipt {
   count: number;
   bilingual: boolean;
   undone: boolean;
+  /** 翻译记忆沿用、参考了几句（`summary.memory`）；关掉了或旧记录没有。 */
+  memory?: TranslateMemoryUse;
 }
 
 export type CompareMode = 'src' | 'bi' | 'trans';
@@ -430,7 +433,8 @@ function finish(run: TranslateRun, job: JobRecord): void {
     endRun(run.videoId, { kind: 'failed', title: C.failed, message: C.badDocument, remedy: null, retry: null });
     return;
   }
-  const captions = (job.pipeline?.summary as Partial<TranslateSummary> | null | undefined)?.captions;
+  const summary = job.pipeline?.summary as Partial<TranslateSummary> | null | undefined;
+  const captions = summary?.captions;
   const language = languageName(run.targetLanguage);
   const compare: ComparePref = { mode: run.bilingual ? 'bi' : 'trans', documentId: translationDocumentId };
   if (captions?.status === 'empty') {
@@ -456,6 +460,7 @@ function finish(run: TranslateRun, job: JobRecord): void {
     count: captions.cueCount ?? cueCountOf(run.videoId, captions.documentId ?? null),
     bilingual: captions.bilingual ?? run.bilingual,
     undone: false,
+    ...(summary?.memory ? { memory: summary.memory } : {}),
   };
   useTranslateRun.setState((s) => ({
     runs: without(s.runs, run.videoId),
@@ -585,7 +590,7 @@ export interface TranslationEdit {
 async function translationOperations(
   bound: TranslateDeps,
   edit: Pick<TranslationEdit, 'videoId' | 'record' | 'speech' | 'documents'>,
-  result: { body: TranslationBody; unit: TranslationUnit },
+  result: { body: TranslationBody; units: readonly TranslationUnit[] },
   retext: boolean,
 ): Promise<EditOperation[]> {
   const previous = edit.record.revisions[edit.record.currentRevision]?.summary;
@@ -599,12 +604,12 @@ async function translationOperations(
     },
   ];
   if (!retext) return operations;
-  const fresh = translationCues(edit.speech, [result.unit]);
   for (const caption of Object.values(edit.documents)) {
     if (!derivedFrom(caption, edit.record.id)) continue;
     const content = await bound.runtime.readDocument(edit.videoId, caption.id);
     if (typeof content.body !== 'object' || content.body === null) continue;
-    const body = retextCaption(content.body as Record<string, unknown>, result.unit.id, fresh, edit.speech.speakers);
+    let body = content.body as Record<string, unknown>;
+    for (const unit of result.units) body = retextCaption(body, unit.id, translationCues(edit.speech, [unit]), edit.speech.speakers);
     const summary = caption.revisions[caption.currentRevision]?.summary;
     operations.push({
       type: 'putDocument',
@@ -627,12 +632,44 @@ export async function editTranslation(edit: TranslationEdit): Promise<Translatio
   const result = await editUnit(edit.body, edit.sentences, edit.row, edit.text);
   if (!result) return null;
   try {
-    const receipt = await bound.runtime.videos.apply(await translationOperations(bound, edit, result, true), EditLabel.editTranslation());
+    const receipt = await bound.runtime.videos.apply(await translationOperations(bound, edit, { body: result.body, units: [result.unit] }, true), EditLabel.editTranslation());
     if (!receipt) return null;
     bound.toast('positive', C.edited, () => {
       void bound.runtime.videos.undo({ transaction: receipt.transactionId });
     });
     return result.body;
+  } catch (error) {
+    bound.toast('negative', C.editFailed(messageOf(error)));
+    return null;
+  }
+}
+
+/**
+ * 统一为术语表译法（统计条的「N 术语不一致」，创作辅助集成设计 §3.7）：几句译文一起改，一笔事务写译文文档的新版本，连同从它
+ * 生成的字幕文档里这几句的条，撤销一次全部回去。每一句照就地改一句的规矩（`editUnit`）。返回新的正文；都没改动时 null。
+ */
+export async function unifyTranslationTerms(
+  edit: Omit<TranslationEdit, 'row' | 'text'> & { changes: ReadonlyArray<{ row: PairRow; text: string }>; spots: number },
+): Promise<TranslationBody | null> {
+  const bound = deps;
+  if (!bound) return null;
+  let body = edit.body;
+  const units: TranslationUnit[] = [];
+  // 改一句只换掉那一个单元，别的单元还是原来的对象，所以每一行的 `unit` 在逐句改的过程中仍认得出来。
+  for (const change of edit.changes) {
+    const result = await editUnit(body, edit.sentences, change.row, change.text);
+    if (!result) continue;
+    body = result.body;
+    units.push(result.unit);
+  }
+  if (!units.length) return null;
+  try {
+    const receipt = await bound.runtime.videos.apply(await translationOperations(bound, edit, { body, units }, true), EditLabel.unifyGlossaryTerms());
+    if (!receipt) return null;
+    bound.toast('positive', C.termsUnified(edit.spots), () => {
+      void bound.runtime.videos.undo({ transaction: receipt.transactionId });
+    });
+    return body;
   } catch (error) {
     bound.toast('negative', C.editFailed(messageOf(error)));
     return null;
@@ -650,7 +687,7 @@ export async function markTranslation(edit: Omit<TranslationEdit, 'text' | 'sent
   if (!result) return null;
   try {
     const label = edit.on ? EditLabel.markTranslationStale() : EditLabel.clearTranslationStale();
-    const receipt = await bound.runtime.videos.apply(await translationOperations(bound, edit, result, result.rebound), label);
+    const receipt = await bound.runtime.videos.apply(await translationOperations(bound, edit, { body: result.body, units: [result.unit] }, result.rebound), label);
     if (!receipt) return null;
     bound.toast('positive', edit.on ? C.markedStale : C.clearedStale, () => {
       void bound.runtime.videos.undo({ transaction: receipt.transactionId });

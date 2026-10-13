@@ -17,6 +17,7 @@ import {
   resolvePlayerKey,
   seekFraction,
   seekFrame,
+  sequenceFrame,
   stepTime,
   timeAt,
   type PlayerAction,
@@ -166,6 +167,12 @@ describe('悬停气泡的那一格画面', () => {
   it('取整落到片段开头之前时从片段开头取', () => {
     const seq = sequence([track('v1', 1, 'visual')], [clip('a', 'v1', 0, 15, 'movie'), clip('b', 'v1', 15, 2985, 'movie', linear(40))]);
     expect(seekFrame(seq, assets, 0.9)).toEqual({ asset: { id: 'movie', revision: '1' }, at: 40 });
+  });
+
+  it('插图取帧用确切的时间，不按胶片条的格子取整', () => {
+    const seq = sequence([track('v1', 1, 'visual')], [clip('main', 'v1', 0, 3000, 'movie', linear(10))]);
+    expect(sequenceFrame(seq, assets, 4.6)).toEqual({ asset: { id: 'movie', revision: '1' }, at: 14.6 });
+    expect(sequenceFrame(seq, assets, 120)).toBeNull();
   });
 
   it('素材没有画面时不取', () => {

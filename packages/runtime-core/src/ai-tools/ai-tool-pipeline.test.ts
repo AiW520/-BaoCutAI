@@ -7,6 +7,7 @@ import { JobManager, PipelineRunner, type TranscribeRouter } from '@baocut/jobs'
 import type { TextGenerateRequest, TextResult } from '@baocut/models';
 import { RpcError, type AiToolSummary, type DocumentRecord, type EditOperation, type JobRecord, type TextModelInfo } from '@baocut/protocol';
 import { aiToolPipeline, parseAiToolParams, polishedBody, type AiToolDeps } from './ai-tool-pipeline.ts';
+import type { RelevantChunk, RelevantChunkSet } from '../space/semantic/context.ts';
 import { aiToolMessages, chapterDrafts, parseTimestamp, polishBatches, polishEdits, type ContextWord } from './ai-tool-prompt.ts';
 
 /**
@@ -109,6 +110,19 @@ describe('交给模型的消息', () => {
     expect(() => parseAiToolParams({ videoId: 'v', tool: 'blog', prompt: 'p', uiLanguage: 'not a tag' })).toThrow(expect.objectContaining({ code: 'invalid-request', details: expect.objectContaining({ key: 'uiLanguage' }) }));
     expect(() => parseAiToolParams({ videoId: 'v', tool: 'cover', prompt: 'p' })).toThrow(expect.objectContaining({ code: 'invalid-request', details: expect.objectContaining({ key: 'tool' }) }));
     expect(() => parseAiToolParams({ videoId: 'v', tool: 'chapters', prompt: 'p', range: { start: 0, end: 5 } })).toThrow(RpcError);
+    // 按主题与系列文章只给写作类工具；按主题不与范围同用；另几部不含这一部、不重复。边界只给章节。
+    expect(parseAiToolParams({ videoId: 'v', tool: 'blog', prompt: 'p', selection: { mode: 'topic', limit: 12 }, videoIds: ['w'] })).toMatchObject({ selection: { mode: 'topic', limit: 12 } });
+    const bad = [
+      { tool: 'polish', selection: { mode: 'topic' } },
+      { tool: 'chapters', videoIds: ['w'] },
+      { tool: 'blog', selection: { mode: 'topic' }, range: { start: 0, end: 5 } },
+      { tool: 'blog', videoIds: ['v'] },
+      { tool: 'blog', videoIds: ['w', 'w'] },
+      { tool: 'blog', selection: { mode: 'topic', limit: 61 } },
+      { tool: 'blog', boundaries: 'topic' },
+    ];
+    for (const extra of bad) expect(() => parseAiToolParams({ videoId: 'v', prompt: 'p', ...extra }), JSON.stringify(extra)).toThrow(RpcError);
+    expect(parseAiToolParams({ videoId: 'v', tool: 'chapters', prompt: 'p', boundaries: 'topic' })).toMatchObject({ boundaries: 'topic' });
   });
 });
 
@@ -139,6 +153,13 @@ describe('ai-tool 流程', () => {
   let structured: boolean;
   let skillCalls: number;
   let attachmentDir: string;
+  let sentences: Map<string, string>;
+  let relevantSet: RelevantChunkSet;
+  let relevantCalls: Array<{ videoIds: string[]; intent: string; limit: number }>;
+  let secondOpen: boolean;
+  let wordList: ContextWord[];
+  let duration: number;
+  let embed: (texts: string[]) => Promise<Float32Array[]>;
 
   const docs = (): Record<string, DocumentRecord> => ({ doc_1: { id: 'doc_1', kind: 'speech', currentRevision: revision } as DocumentRecord });
 
@@ -151,6 +172,15 @@ describe('ai-tool 流程', () => {
     revision = 'r1';
     structured = true;
     skillCalls = 0;
+    sentences = new Map();
+    relevantCalls = [];
+    secondOpen = false;
+    wordList = WORDS;
+    duration = 120;
+    embed = async () => {
+      throw new RpcError('conflict', 'no model', { reason: 'MODEL_NOT_INSTALLED' });
+    };
+    relevantSet = { chunks: [], coverage: { chapters: [], indexed: false, stale: false }, effectiveMode: 'none', reason: 'MODEL_NOT_INSTALLED' };
     reply = () => ({ text: 'RESULT' });
     const router: TranscribeRouter = {
       selectTranscribe: async () => {
@@ -182,8 +212,9 @@ describe('ai-tool 流程', () => {
     await jobs.open();
     const deps: AiToolDeps = {
       videos: {
-        state: (videoId) => (videoId === 'vid_1' ? { revision: `v-${revision}`, rootSequenceId: 'seq_1', documents: docs() } : null),
-        sequence: () => ({ duration: 120, chapters: 2 }),
+        state: (videoId) =>
+          videoId === 'vid_1' || (videoId === 'vid_2' && secondOpen) ? { revision: `v-${revision}`, rootSequenceId: 'seq_1', documents: docs() } : null,
+        sequence: () => ({ duration, chapters: 2, chapterMarks: [{ at: 0, title: 'Intro' }, { at: 60, title: 'Second' }] }),
         document: async () => ({
           revision,
           body: { schema: 'baocut.speech/1', words: WORDS.map((w) => ({ id: w.id, text: w.text })), speakers: [] },
@@ -205,7 +236,8 @@ describe('ai-tool 流程', () => {
         paragraphs: range ? 1 : 2,
         characters: range ? 2 : 4,
       }),
-      words: async (_videoId, { range }) => (range ? WORDS.slice(2) : WORDS),
+      words: async (_videoId, { range }) => (range ? WORDS.slice(2) : wordList),
+      sentenceOf: async () => sentences,
       skills: async (refs) => {
         skillCalls += 1;
         return { text: refs.map((r) => `<skill id="${r.id}">BODY</skill>`).join('\n'), skills: refs.map((r) => r.id), references: refs.length };
@@ -218,6 +250,11 @@ describe('ai-tool 流程', () => {
           path: path.join(attachmentDir, id),
         })),
       artifacts: jobs.artifacts,
+      embed: (texts) => embed(texts),
+      relevant: async ({ videoIds, intent, limit }) => {
+        relevantCalls.push({ videoIds, intent, limit });
+        return relevantSet;
+      },
     };
     await fs.writeFile(path.join(attachmentDir, 'att_txt'), 'Glossary: BaoCut');
     await fs.writeFile(path.join(attachmentDir, 'att_img'), 'PNG');
@@ -262,8 +299,41 @@ describe('ai-tool 流程', () => {
       applied: null,
       text: 'RESULT',
       finishReason: 'stop',
+      // 转写读不出句子：退回导出文稿的写法，不发出处。
+      citations: null,
+      citationsArtifactId: null,
       context: { paragraphs: 2, characters: 4, chapters: 2, attachments: 1, skippedAttachments: 1, skills: ['video-summary', 'mine'], references: 2 },
     });
+  });
+
+  it('写作的出处：文稿是编了号的句子，段末的编号校验后对应回原句，正文去掉编号', async () => {
+    sentences = new Map([
+      ['w1', 's-w1'],
+      ['w2', 's-w1'],
+      ['w3', 's-w3'],
+      ['w4', 's-w3'],
+    ]);
+    reply = () => ({ text: '## Overview\n\nThey say hello. [s1]\n\nThen the second part [s2, s9].\n\nA conclusion of my own.' });
+    const record = await run({ tool: 'blog' });
+    expect(record.state).toBe('completed');
+    const sent = requests[0]!.messages[1]!.content as string;
+    expect(sent).toContain('## Intro [00:00]\n[s1] [00:00] Helo world.\n\n## Second [01:00]\n[s2] [01:00] Second part.');
+    expect(requests[0]!.messages[0]!.content).toContain('cite the numbers of the sentences');
+    const summary = record.pipeline!.summary as unknown as AiToolSummary;
+    expect(summary.text).toBe('## Overview\n\nThey say hello.\n\nThen the second part.\n\nA conclusion of my own.');
+    expect(summary.citationsArtifactId).toMatch(/^sha256:/);
+    const file = summary.citations!;
+    expect(file).toMatchObject({ schema: 'baocut.citations/1', videoIds: ['vid_1'], effectiveMode: 'none', droppedCites: 1 });
+    expect(file.paragraphs.map((p) => [p.role, p.inferred, p.cites.map((c) => c.sentenceIds)])).toEqual([
+      ['heading', false, []],
+      ['body', false, [['s-w1']]],
+      ['body', false, [['s-w3']]],
+      ['body', true, []],
+    ]);
+    expect(file.paragraphs[2]!.cites[0]).toMatchObject({ videoId: 'vid_1', documentId: 'doc_1', clock: 'sequence', startSec: 60, text: 'Second part.' });
+    // 正文与出处都是产物：Space 的文档条目从正文的产物派生。
+    expect((await jobs.artifacts.read(summary.artifactId))!.toString('utf8')).toBe(summary.text);
+    expect(JSON.parse((await jobs.artifacts.read(summary.citationsArtifactId!))!.toString('utf8'))).toEqual(file);
   });
 
   it('范围：文稿只取这一段', async () => {
@@ -341,5 +411,213 @@ describe('ai-tool 流程', () => {
 
   it('视频没有打开：启动就拒绝', async () => {
     await expect(runner.start({ pipeline: 'ai-tool', params: { videoId: 'vid_x', tool: 'desc', prompt: '' } }, { kind: 'connection', id: 'c' })).rejects.toMatchObject({ code: 'not-found' });
+  });
+
+  const chunk = (chunkId: string, videoId: string, chapter: string | null, rows: Array<[string, string, number, number]>, weak = false): RelevantChunk => ({
+    chunkId,
+    videoId,
+    documentId: 'doc_1',
+    documentKind: 'speech',
+    sentenceIds: rows.map((r) => r[0]),
+    text: rows.map((r) => r[1]).join(' '),
+    anchor: { clock: 'sequence', start: { ticks: '0', timescale: 1 }, end: { ticks: '0', timescale: 1 } },
+    ...(chapter ? { chapter: { id: chapter, title: chapter } } : {}),
+    score: weak ? 0.5 : 0.9,
+    ...(weak ? { weak: true } : {}),
+    sentences: rows.map(([sentenceId, text, start, end]) => ({ sentenceId, documentId: 'doc_1', text, clock: 'sequence', start, end, speaker: 'A', neighbor: false })),
+  });
+
+  it('按主题选材：意图句找来的句群按时间编号、跳过的地方写省略号，勾掉的不发；怎么选的冻结在任务里', async () => {
+    relevantSet = {
+      chunks: [
+        chunk('c1', 'vid_1', 'Intro', [['s-a', 'We picked a model.', 10, 14], ['s-b', 'It was cheap.', 14, 16]]),
+        chunk('c2', 'vid_1', 'Second', [['s-c', 'Latency mattered most.', 300, 304]], true),
+        chunk('c3', 'vid_1', 'Second', [['s-d', 'Unrelated aside.', 400, 402]]),
+      ],
+      coverage: { chapters: ['Intro', 'Second'], indexed: true, stale: false },
+      effectiveMode: 'semantic',
+      reason: null,
+    };
+    reply = () => ({ text: 'We chose a cheap model. [s1, s2]\n\nSpeed decided it. [s3]' });
+    const record = await run({ tool: 'blog', prompt: 'Write about model choice', selection: { mode: 'topic', exclude: ['c3'] } });
+    expect(record.state).toBe('completed');
+    expect(relevantCalls).toEqual([{ videoIds: ['vid_1'], intent: 'Write about model choice', limit: 24 }]);
+    const sent = requests[0]!.messages[1]!.content as string;
+    expect(sent).toContain('## Intro\n[s1] [00:10] A: We picked a model.\n[s2] [00:14] A: It was cheap.\n…\n\n## Second\n[s3] [05:00] A: Latency mattered most.');
+    expect(sent).not.toContain('Unrelated aside');
+    expect(requests[0]!.messages[0]!.content).toContain('selection of excerpts');
+    const summary = record.pipeline!.summary as unknown as AiToolSummary;
+    expect(summary.context.selection).toEqual({ effectiveMode: 'semantic', reason: null, chunks: 2, chunkIds: ['c1', 'c2'], chapters: ['Intro', 'Second'], weak: 1 });
+    expect(summary.context.paragraphs).toBe(2);
+    expect(summary.citations).toMatchObject({ effectiveMode: 'semantic', videoIds: ['vid_1'], droppedCites: 0 });
+    expect(summary.citations!.paragraphs[1]!.cites[0]).toMatchObject({ sentenceIds: ['s-c'], startSec: 300 });
+  });
+
+  it('按主题选材挑不出来（没有模型、没有索引）：发整篇，写明原因', async () => {
+    const record = await run({ tool: 'summary', selection: { mode: 'topic', intent: 'pricing' } });
+    expect(record.state).toBe('completed');
+    expect(requests[0]!.messages[1]!.content).toContain('<transcript>\n## Intro');
+    expect(requests[0]!.messages[0]!.content).not.toContain('selection of excerpts');
+    expect((record.pipeline!.summary as unknown as AiToolSummary).context.selection).toEqual({
+      effectiveMode: 'none',
+      reason: 'MODEL_NOT_INSTALLED',
+      chunks: 0,
+      chunkIds: [],
+      chapters: [],
+      weak: 0,
+    });
+  });
+
+  it('系列文章（按主题）：另几部不必打开，编号带视频前缀，出处带视频', async () => {
+    relevantSet = {
+      chunks: [chunk('c2', 'vid_2', null, [['s-x', 'Part two opens.', 5, 7]]), chunk('c1', 'vid_1', null, [['s-a', 'Part one ends.', 50, 52]])],
+      coverage: { chapters: [], indexed: true, stale: false },
+      effectiveMode: 'lexical',
+      reason: 'MODEL_NOT_INSTALLED',
+    };
+    reply = () => ({ text: 'One then two. [v1:s1, v2:s1]' });
+    const record = await run({ tool: 'blog', videoIds: ['vid_2'], selection: { mode: 'topic' } });
+    expect(record.state).toBe('completed');
+    expect(relevantCalls[0]!.videoIds).toEqual(['vid_1', 'vid_2']);
+    expect(requests[0]!.messages[1]!.content).toContain('# v1\n[v1:s1] [00:50] A: Part one ends.\n\n# v2\n[v2:s1] [00:05] A: Part two opens.');
+    expect(requests[0]!.messages[0]!.content).toContain('from 2 videos');
+    const summary = record.pipeline!.summary as unknown as AiToolSummary;
+    expect(summary.context).toMatchObject({ videos: 2, selection: { effectiveMode: 'lexical', reason: 'MODEL_NOT_INSTALLED' } });
+    expect(summary.citations!.videoIds).toEqual(['vid_1', 'vid_2']);
+    expect(summary.citations!.paragraphs[0]!.cites.map((c) => c.videoId)).toEqual(['vid_1', 'vid_2']);
+  });
+
+  it('系列文章（整篇）：另几部要打开着，各自编号；智能体与对外服务不能选几部视频', async () => {
+    await expect(runner.start({ pipeline: 'ai-tool', params: { videoId: 'vid_1', tool: 'blog', prompt: '', videoIds: ['vid_2'] } }, { kind: 'connection', id: 'c' })).rejects.toMatchObject({
+      code: 'not-found',
+      details: { code: 'VIDEO_NOT_OPEN', videoId: 'vid_2' },
+    });
+    secondOpen = true;
+    sentences = new Map([
+      ['w1', 's-w1'],
+      ['w2', 's-w1'],
+      ['w3', 's-w3'],
+      ['w4', 's-w3'],
+    ]);
+    reply = () => ({ text: 'Both start the same way. [v1:s1, v2:s1]' });
+    const record = await run({ tool: 'blog', videoIds: ['vid_2'] });
+    expect(record.state).toBe('completed');
+    const sent = requests[0]!.messages[1]!.content as string;
+    expect(sent).toContain('# v1\n## Intro [00:00]\n[v1:s1] [00:00] Helo world.');
+    expect(sent).toContain('# v2\n## Intro [00:00]\n[v2:s1] [00:00] Helo world.');
+    const summary = record.pipeline!.summary as unknown as AiToolSummary;
+    expect(summary.context).toMatchObject({ videos: 2, paragraphs: 4 });
+    expect(summary.citations!.paragraphs[0]!.cites.map((c) => c.videoId)).toEqual(['vid_1', 'vid_2']);
+    await expect(
+      runner.start({ pipeline: 'ai-tool', params: { videoId: 'vid_1', tool: 'blog', prompt: '', videoIds: ['vid_2'] } }, { kind: 'agent', id: 'agt_1', taskId: 'task_1' }),
+    ).rejects.toMatchObject({ code: 'forbidden', details: { code: 'SERIES_USER_ONLY' } });
+  });
+
+  it('章节按话题找边界：段落向量的转折是候选，模型只能在第一段与候选处分章（可以合并，不能新增）', async () => {
+    duration = 600;
+    const topics = ['alpha', 'alpha', 'alpha', 'beta', 'beta', 'beta'];
+    wordList = topics.flatMap((topic, i) => [word(`p${i}a`, topic, i * 60, true), word(`p${i}b`, `talk${i}.`, i * 60 + 30)]);
+    embed = async (texts) => texts.map((text) => Float32Array.from(text.startsWith('alpha') ? [1, 0] : [0, 1]));
+    reply = () => ({
+      json: {
+        chapters: [
+          { at: '00:00', title: 'Alpha', summary: 'A' },
+          { at: '02:58', title: 'Beta', summary: 'B' },
+          // 不在候选处：吸到最近的候选（03:00）上，与上一章重了，丢掉。
+          { at: '04:00', title: 'Extra', summary: 'X' },
+        ],
+      },
+    });
+    const record = await run({ tool: 'chapters', boundaries: 'topic' });
+    expect(record.state).toBe('completed');
+    expect(requests[0]!.messages[0]!.content).toContain('never start a chapter anywhere else');
+    expect(requests[0]!.messages[1]!.content).toContain('<chapter_candidates>\n[03:00] … alpha talk2. ‖ beta talk3. …\n</chapter_candidates>');
+    const op = applied[0]![0] as Extract<EditOperation, { type: 'setChapters' }>;
+    expect(op.chapters.map((c) => [c.at, c.title])).toEqual([
+      [{ unit: 'seconds', value: '0.000' }, 'Alpha'],
+      [{ unit: 'seconds', value: '180.000' }, 'Beta'],
+    ]);
+    expect((record.pipeline!.summary as unknown as AiToolSummary).context.boundaries).toEqual({ mode: 'topic', candidates: 1, reason: null });
+  });
+
+  it('章节按话题找边界而没有语义模型：退回由模型决定，写明原因', async () => {
+    wordList = [0, 30, 60, 90].map((at, i) => word(`p${i}`, `part${i}.`, at, true));
+    reply = () => ({ json: { chapters: [{ at: '00:00', title: 'Intro', summary: 'Hello' }, { at: '01:00', title: 'Second', summary: 'Part' }] } });
+    const record = await run({ tool: 'chapters', boundaries: 'topic' });
+    expect(record.state).toBe('completed');
+    expect(requests[0]!.messages[1]!.content).not.toContain('<chapter_candidates>');
+    expect((record.pipeline!.summary as unknown as AiToolSummary).context.boundaries).toEqual({ mode: 'model', candidates: 0, reason: 'MODEL_NOT_INSTALLED' });
+    expect((applied[0]![0] as Extract<EditOperation, { type: 'setChapters' }>).chapters).toHaveLength(2);
+  });
+
+  it('重写一段：材料是这段原来的出处加再挑的句群，连同大纲发给模型；只换掉这一段，其余段落与出处原样', async () => {
+    sentences = new Map([
+      ['w1', 's-w1'],
+      ['w2', 's-w1'],
+      ['w3', 's-w3'],
+      ['w4', 's-w3'],
+    ]);
+    reply = () => ({ text: '## Overview\n\nThey say hello. [s1]\n\nThen the second part [s2].\n\nA conclusion of my own.' });
+    const first = (await run({ tool: 'blog' })).pipeline!.summary as unknown as AiToolSummary;
+    relevantSet = {
+      chunks: [chunk('c9', 'vid_1', 'Intro', [['s-e', 'Extra detail.', 30, 32]])],
+      coverage: { chapters: ['Intro'], indexed: true, stale: false },
+      effectiveMode: 'semantic',
+      reason: null,
+    };
+    requests = [];
+    reply = () => ({ text: 'They greet the world warmly. [s1, s2]' });
+    const record = await run({ tool: 'blog', prompt: 'Make it warmer', section: { citationsArtifactId: first.citationsArtifactId, index: 1 } });
+    expect(record.state).toBe('completed');
+    expect(relevantCalls.at(-1)).toEqual({ videoIds: ['vid_1'], intent: 'They say hello.', limit: 8 });
+    const [system, user] = requests[0]!.messages;
+    expect(system!.content).toContain('a replacement for the single paragraph');
+    expect(system!.content).not.toContain('the blog post itself');
+    expect(user!.content).toContain('<outline>\n1. ## Overview\n>> 2. They say hello.\n3. Then the second part.\n4. A conclusion of my own.\n</outline>');
+    expect(user!.content).toContain('<paragraph_to_rewrite>\nThey say hello.\n</paragraph_to_rewrite>');
+    expect(user!.content).toContain('[s1] [00:00] Helo world.\n…\n\n## Intro\n[s2] [00:30] A: Extra detail.');
+    const summary = record.pipeline!.summary as unknown as AiToolSummary;
+    expect(summary.text).toBe('## Overview\n\nThey greet the world warmly.\n\nThen the second part.\n\nA conclusion of my own.');
+    expect(summary.context.section).toEqual({ index: 1, paragraphs: 1 });
+    expect(summary.citations!.paragraphs.map((p) => [p.index, p.cites.flatMap((c) => c.sentenceIds)])).toEqual([
+      [0, []],
+      [1, ['s-w1', 's-e']],
+      [2, ['s-w3']],
+      [3, []],
+    ]);
+    expect(summary.citationsArtifactId).not.toBe(first.citationsArtifactId);
+    // 标题段不能重写；出处旁文件找不到时启动就拒绝。
+    await expect(runner.start({ pipeline: 'ai-tool', params: { videoId: 'vid_1', tool: 'blog', prompt: '', section: { citationsArtifactId: first.citationsArtifactId!, index: 0 } } }, { kind: 'connection', id: 'c' })).rejects.toMatchObject({ code: 'invalid-request' });
+    await expect(runner.start({ pipeline: 'ai-tool', params: { videoId: 'vid_1', tool: 'blog', prompt: '', section: { citationsArtifactId: 'sha256:nope', index: 1 } } }, { kind: 'connection', id: 'c' })).rejects.toMatchObject({
+      code: 'not-found',
+      details: { code: 'CITATIONS_NOT_FOUND' },
+    });
+  });
+
+  it('换材料重写：排除的原出处（cite:序号）与句群都不进材料，新段落只引留下的', async () => {
+    sentences = new Map([
+      ['w1', 's-w1'],
+      ['w2', 's-w1'],
+      ['w3', 's-w3'],
+      ['w4', 's-w3'],
+    ]);
+    reply = () => ({ text: '## Overview\n\nThey say hello. [s1]\n\nThen the second part [s2].' });
+    const first = (await run({ tool: 'blog' })).pipeline!.summary as unknown as AiToolSummary;
+    relevantSet = {
+      chunks: [chunk('c9', 'vid_1', 'Intro', [['s-e', 'Extra detail.', 30, 32]]), chunk('c8', 'vid_1', 'Intro', [['s-x', 'Skip me.', 40, 42]])],
+      coverage: { chapters: ['Intro'], indexed: true, stale: false },
+      effectiveMode: 'semantic',
+      reason: null,
+    };
+    requests = [];
+    reply = () => ({ text: 'Only the extra detail. [s1]' });
+    const record = await run({ tool: 'blog', prompt: '', section: { citationsArtifactId: first.citationsArtifactId, index: 1, exclude: ['cite:0', 'c8'] } });
+    expect(record.state).toBe('completed');
+    const user = requests[0]!.messages[1]!.content;
+    expect(user).not.toContain('Helo world.');
+    expect(user).not.toContain('Skip me.');
+    expect(user).toContain('[s1] [00:30] A: Extra detail.');
+    const summary = record.pipeline!.summary as unknown as AiToolSummary;
+    expect(summary.citations!.paragraphs[1]!.cites.flatMap((c) => c.sentenceIds)).toEqual(['s-e']);
   });
 });

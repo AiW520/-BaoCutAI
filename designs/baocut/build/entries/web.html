@@ -10,6 +10,7 @@
 <link rel="stylesheet" href="_ds/adobe-spectrum-2/tokens/layout.css">
 <!-- 控件层与外壳（与 BaoCut.html 同一份） -->
 <link rel="stylesheet" href="app/ui.css?v=20261002-0120">
+<link rel="stylesheet" href="app/semantic.css?v=20261012-emb">
 <link rel="stylesheet" href="app/text-inspector.css?v=20260904-r143">
 <link rel="stylesheet" href="app/subtitle-inspector.css?v=20260907-r207">
 <link rel="stylesheet" href="app/video-library.css?v=20260916-0045">
@@ -140,7 +141,7 @@
 <script src="app/model-agent-skills.js?v=20261005-0900"></script>
 <!-- 会话线程的纯模型（逐字显示切块 / 回合与工具步骤）：store.jsx 的 Agent 路径引用它们，与 model-agent.js 一样随 store 进 Web；markdown-it 与视图仍只在 App -->
 <script src="app/model-agent-stream.js"></script>
-<script src="app/model-agent-tools.js"></script>
+<script src="app/model-agent-tools.js?v=20261012-emb"></script>
 <script src="app/model-agent-turn.js"></script>
 <script src="app/model-readings.js?v=20260926-1540"></script>
 <script src="app/model-cloud-tts.js?v=20261006-0300"></script>
@@ -159,7 +160,9 @@
 <script src="app/model-local-models.js?v=20261002-0004"></script>
 <script src="app/model-daoyazi.js?v=20260918-0324"></script>
 <script src="app/model-glossary.js?v=20260920-1520"></script>
-<script src="app/data.js?v=20261006-0300"></script>
+<script src="app/data.js?v=20261012-emb"></script>
+<script src="app/model-semantic.js?v=20261012-emb"></script>
+<script src="app/model-space-search.js?v=20261013-find"></script>
 
 <!-- 视图层：与 BaoCut.html 同序，只是不加载 AI 工具 / 配音 / 智能裁剪 / 生成语音 / Agent / App 各页 / 新建向导 / 帮助中心 -->
 <script src="vendor/react-spectrum-s2/react-spectrum-s2.js?v=20261001-2326"></script>
@@ -169,6 +172,7 @@
 <script type="text/jsx" src="app/attachment-files.jsx"></script>
 <script type="text/jsx" src="app/ui.jsx?v=20261002-0317"></script>
 <script type="text/jsx" src="app/store.jsx?v=20261006-0300"></script>
+<script type="text/jsx" src="app/semantic-state.jsx?v=20261012-emb"></script>
 <script type="text/jsx" src="app/export-preview.jsx?v=20260927-2045"></script>
 <script type="text/jsx" src="app/export-range.jsx?v=20261002-0317"></script>
 <script type="text/jsx" src="app/transcript-copy.jsx"></script>
@@ -227,7 +231,8 @@
 <script type="text/jsx" src="app/panel-subactive.jsx?v=20261009-cs1"></script>
 <script type="text/jsx" src="app/panel-submotion.jsx?v=20261009-cs1"></script>
 <script type="text/jsx" src="app/panel-subprops.jsx?v=20261002-0317"></script>
-<script type="text/jsx" src="app/panel-translate.jsx?v=20261002-0317"></script>
+<script type="text/jsx" src="app/subtitle-tm.jsx?v=20261013-emb"></script>
+<script type="text/jsx" src="app/panel-translate.jsx?v=20261013-emb"></script>
 <script type="text/jsx" src="app/panel-subtitle.jsx?v=20261002-0317"></script>
 <script type="text/jsx" src="app/panel-elements-tile.jsx?v=20261002-0317"></script>
 <script type="text/jsx" src="app/panel-elements-sections.jsx?v=20261002-0317"></script>
@@ -264,7 +269,7 @@
 <script type="text/jsx" src="app/editor-history.jsx?v=20260916-0300"></script>
 <script type="text/jsx" src="app/editor-keys.jsx?v=20261002-0317"></script>
 <script type="text/jsx" src="app/editor-cuts.jsx?v=20261001-0322"></script>
-<script type="text/jsx" src="app/editor.jsx?v=20261002-0317"></script>
+<script type="text/jsx" src="app/editor.jsx?v=20261012-emb"></script>
 <!-- Web 独有：视频列表侧栏 ＋ 空页 ＋ 入口。其余模块与 BaoCut.html 同一份、同一缓存串（model-surface.test.js 对拍） -->
 <script type="text/jsx" src="app/web-shell.jsx?v=20261002-0317"></script>
 <script type="text/jsx" src="app/web-main.jsx?v=20261002-0317"></script>

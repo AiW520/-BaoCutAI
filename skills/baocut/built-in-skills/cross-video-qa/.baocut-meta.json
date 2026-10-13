@@ -1,0 +1,36 @@
+{
+  "name": {
+    "zh-Hans": "跨视频问答",
+    "zh-Hant": "跨影片問答",
+    "en": "Ask across videos",
+    "ja": "動画をまたいで質問",
+    "ko": "여러 동영상에 질문",
+    "es": "Preguntar en varios vídeos",
+    "fr": "Interroger plusieurs vidéos",
+    "de": "Videos übergreifend fragen",
+    "nl": "Vragen over video’s heen",
+    "pt-BR": "Perguntar em vários vídeos",
+    "it": "Chiedi tra più video",
+    "ru": "Вопрос по всем видео",
+    "pl": "Pytanie o wiele filmów",
+    "tr": "Videolar arasında sor",
+    "vi": "Hỏi trên nhiều video"
+  },
+  "summary": {
+    "zh-Hans": "在你的视频里找哪一期讲过某件事，回答附上视频与时间",
+    "zh-Hant": "在你的影片裡找哪一集講過某件事，回答附上影片與時間",
+    "en": "Find which of your videos covered something, with the video and time for each answer",
+    "ja": "どの動画で何を話したかを探し、答えに動画と時刻を添える",
+    "ko": "어느 동영상에서 무엇을 다뤘는지 찾아 답마다 동영상과 시간을 붙입니다",
+    "es": "Encuentra en qué vídeo se habló de algo, con el vídeo y el momento en cada respuesta",
+    "fr": "Retrouve dans quelle vidéo un sujet a été abordé, avec la vidéo et le moment",
+    "de": "Findet, in welchem Video etwas vorkam, mit Video und Zeit zu jeder Antwort",
+    "nl": "Vindt in welke video iets aan bod kwam, met de video en het tijdstip erbij",
+    "pt-BR": "Encontra em qual vídeo algo foi falado, com o vídeo e o momento em cada resposta",
+    "it": "Trova in quale video si è parlato di qualcosa, con video e momento per ogni risposta",
+    "ru": "Находит, в каком видео шла речь о чём-то, и указывает видео и время",
+    "pl": "Znajduje, w którym filmie o czymś mówiono, z filmem i czasem przy każdej odpowiedzi",
+    "tr": "Bir konunun hangi videoda geçtiğini bulur, her yanıta video ve zamanı ekler",
+    "vi": "Tìm video nào đã nói về một điều, kèm video và thời điểm cho mỗi câu trả lời"
+  }
+}

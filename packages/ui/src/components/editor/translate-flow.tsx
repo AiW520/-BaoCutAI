@@ -29,7 +29,10 @@ import {
 import { speechSentences } from '../../model/translation-doc.ts';
 import { useRuntime } from '../../runtime/context.tsx';
 import type { RuntimeSession } from '../../runtime/session.ts';
-import { onLibraryEntries } from '../../state/library-feed.ts';
+import { useTranslationGlossaries, useVideoSelection } from './use-translation-glossaries.ts';
+import { M as SEMANTIC_COPY } from '../../model/semantic-copy.ts';
+import { useSetting } from '../../state/settings-store.ts';
+import { SemanticNote } from '../semantic-note.tsx';
 import { useModels } from '../../state/models-store.ts';
 import { useShell } from '../../state/shell-store.ts';
 import { canEdit, useVideo } from '../../state/video-store.ts';
@@ -72,73 +75,6 @@ const messageOf = (error: unknown) => (error instanceof Error ? error.message : 
 /** 文本模型：翻译要结构化输出，不支持的那只列着但标明用不了（Runtime 也会拒）。 */
 function translateModelOptions(options: ToolModelOption<TextModelInfo>[]): ToolModelOption<TextModelInfo>[] {
   return options.map((o) => (o.usable && o.info.structuredOutput === false ? { ...o, usable: false, why: C.noStructured } : o));
-}
-
-/** 库里的翻译用术语表（`library` 主题的摘要，再按版本读内容拿方向与词条）。 */
-function useTranslationGlossaries(runtime: RuntimeSession): { ready: boolean; candidates: GlossaryCandidate[] } {
-  const [summaries, setSummaries] = useState<{ id: Id; name: string; version: number }[] | null>(null);
-  const [contents, setContents] = useState<Record<string, GlossaryCandidate['content']>>({});
-  useEffect(
-    () =>
-      onLibraryEntries((entries) =>
-        setSummaries(
-          entries.filter((e) => e.library === 'glossaries' && e.kind === 'translation').map((e) => ({ id: e.id, name: e.name, version: e.version })),
-        ),
-      ),
-    [],
-  );
-  // 读过（或正在读）的版本记一笔：换了摘要时只读新的；在读的不会因为重排被丢下。
-  const requested = useRef(new Set<string>());
-  const mounted = useRef(true);
-  useEffect(() => {
-    mounted.current = true;
-    return () => {
-      mounted.current = false;
-    };
-  }, []);
-  useEffect(() => {
-    if (!summaries) return;
-    for (const summary of summaries) {
-      const key = `${summary.id}@${summary.version}`;
-      if (requested.current.has(key)) continue;
-      requested.current.add(key);
-      runtime.getLibraryEntry({ library: 'glossaries', id: summary.id, version: summary.version }).then(
-        (entry) => {
-          if (!mounted.current) return;
-          const content = entry.content as GlossaryCandidate['content'] & { kind?: string };
-          setContents((c) => ({ ...c, [key]: content && content.kind === 'translation' ? content : null }));
-        },
-        () => mounted.current && setContents((c) => ({ ...c, [key]: null })),
-      );
-    }
-  }, [runtime, summaries]);
-  const candidates = useMemo(
-    () => (summaries ?? []).map((s) => ({ id: s.id, name: s.name, content: contents[`${s.id}@${s.version}`] })),
-    [summaries, contents],
-  );
-  return { ready: summaries !== null, candidates };
-}
-
-/**
- * 视频里启用的条目（`library.getVideoSelection`）：跟着视频里那份 `library-selection` 文档的版本重读，
- * 撤销、别处改了都跟得上；界面不另存一份。
- */
-export function useVideoSelection(runtime: RuntimeSession, videoId: Id, documents: Record<Id, DocumentRecord>) {
-  const doc = Object.values(documents).find((d) => d.kind === 'library-selection');
-  const key = `${videoId}:${doc?.id ?? ''}:${doc?.currentRevision ?? ''}`;
-  const [state, setState] = useState<{ key: string; selection: LibrarySelection | null; error: string | null } | null>(null);
-  useEffect(() => {
-    let alive = true;
-    runtime.getVideoSelection(videoId).then(
-      (result) => alive && setState({ key, selection: result.selection, error: null }),
-      (error) => alive && setState({ key, selection: null, error: messageOf(error) }),
-    );
-    return () => {
-      alive = false;
-    };
-  }, [runtime, videoId, key]);
-  // 换了版本、新的还没读回来时先用上一份，免得勾选框闪一下。
-  return state;
 }
 
 /**
@@ -341,6 +277,8 @@ export function TranslateFlow({
           editable={editable}
         />
 
+        <MemorySection />
+
         <div className={secHead}>
           <h3 className={secTitle}>{C.bilingual}</h3>
         </div>
@@ -355,6 +293,27 @@ export function TranslateFlow({
         </Button>
         <p className={hint}>{busy ? C.busy : !editable ? C.readOnly : C.ctaHint}</p>
       </div>
+    </>
+  );
+}
+
+/**
+ * 翻译记忆一节（创作辅助集成设计 §2.6；原型 panel-aitools-semantic.jsx `TmLine`）：开着时说明会沿用、参考什么，没装文字搜索模型
+ * 等原因退回只认原文相同的句子时由共用的那一句说明；设置里关掉时只说关掉了，桌面端给去设置的入口。实际沿用、参考了几句要等
+ * Runtime 查过才知道，写在完成后的收据上。
+ */
+function MemorySection() {
+  const on = useSetting('semantic.translationMemory') ?? true;
+  const web = useRuntime().host.platform === 'web';
+  const go = useShell((s) => s.go);
+  return (
+    <>
+      <div className={secHead}>
+        <h3 className={secTitle}>{C.memory}</h3>
+        {on || web ? null : <SectionLink onPress={() => go({ tab: 'settings', section: 'semantic' })}>{SEMANTIC_COPY.note.openSettings}</SectionLink>}
+      </div>
+      <p className={hint}>{on ? C.memoryOn : C.memoryOff}</p>
+      {on ? <SemanticNote entry="tm" /> : null}
     </>
   );
 }

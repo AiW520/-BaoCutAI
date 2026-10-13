@@ -38,7 +38,7 @@ const en = {
   prePolishOff: 'An unpolished transcript has only 1 paragraph, so chapters will be coarse',
   framesLabel: 'Add keyframe illustrations',
   framesSub: 'Takes frames from the video and places them where a picture helps; off by default',
-  framesSubModel: 'A direct model call can’t get frames from the video; hand it to the Agent to add them',
+  framesSubModel: 'No multimodal search installed: takes a frame at each paragraph’s cited time, not picked by content; off by default',
   staleEdited: 'Sentences edited in the original',
   staleEditedSub: 'You changed words in the transcript, but the translation is still the old one',
   staleCut: 'Sentences cut from the original',
@@ -78,6 +78,10 @@ const en = {
   shortsSkipDone: 'Skip parts already cut',
   shortsSkipDoneOn: 'Doesn’t look again in ranges that earlier shorts used',
   shortsSkipDoneOff: 'Looks everywhere; may overlap shorts already cut',
+  shortsTopic: 'Topic',
+  shortsTopicPlaceholder: 'Optional: e.g. “why we run it locally”',
+  shortsTopicEmpty: 'Optional: leave it empty to analyze the whole video',
+  shortsTopicOn: 'Finds the parts about this on this computer first, then the agent picks from them',
   shortsHint: 'Starts a new session to find the segments and create the videos; the original video and its timeline stay as they are.',
 
   // 还做不了的

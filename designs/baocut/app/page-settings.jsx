@@ -211,6 +211,7 @@
 
   const SECTIONS = {
     general: GeneralSection, shortcuts: ShortcutsSection, fonts: window.FontsSection, downloader: window.DownloaderSection, voices: window.VoicesSection,
+    semantic: window.SemanticSection,   // 语义索引（embedding-integration §2.11），settings-semantic.jsx
     providers: window.ProvidersSection, usage: window.UsageSection, agent: window.AgentSection, skills: SkillsSection,
     glossary: window.GlossarySection, privacy: PrivacySection,
     diagnostics: DiagnosticsSection, about: AboutSection,
@@ -233,7 +234,7 @@
     const Body = nav.capPage && r.sec !== 'voices' ? window.CapabilitySection : SECTIONS[r.sec] || GeneralSection;
     const R = window.RSP;
     const groups = NV.searchGroups('');
-    const icons = {general: 'Settings', shortcuts: 'Keyboard', downloader: 'Download', providers: 'Cloud', usage: 'Data', asr: 'Transcript', tts: 'AudioWave', llm: 'Text', image: 'Image', music: 'MusicNote', sep: 'UnlinkHoriz', vision: 'Visibility', glossary: 'FileText', privacy: 'Lock', diagnostics: 'Properties', about: 'InfoCircle'};
+    const icons = {general: 'Settings', shortcuts: 'Keyboard', downloader: 'Download', semantic: 'Search', providers: 'Cloud', usage: 'Data', asr: 'Transcript', tts: 'AudioWave', llm: 'Text', image: 'Image', music: 'MusicNote', sep: 'UnlinkHoriz', vision: 'Visibility', glossary: 'FileText', privacy: 'Lock', diagnostics: 'Properties', about: 'InfoCircle'};
     const href = (n) => window.BC_APP_IA.hrefFor(NV.routeFor(n.k, null, lastPage[n.k]));
     return (
       <div className="setpage">

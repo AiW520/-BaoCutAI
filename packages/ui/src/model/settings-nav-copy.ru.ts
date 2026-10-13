@@ -20,6 +20,7 @@ export const ru: SettingsNavMessages = {
     shortcuts: "Сочетания клавиш",
     fonts: "Шрифты",
     downloader: 'Загрузка видео',
+    semantic: 'Семантический индекс',
     agent: "Поставщики агентов",
     skills: "Skills",
     glossary: "Глоссарий",

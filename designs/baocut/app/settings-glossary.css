@@ -109,4 +109,5 @@
 .gls-harv > .t-detail-xs { color: var(--gray-600); }
 .gls-harv__row { display: flex; align-items: center; gap: 8px; padding: 8px 0; }
 .gls-harv__row + .gls-harv__row { border-top: 1px solid var(--gray-100); }
-.gls-harv__row .t-detail-xs { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.gls-harv__main { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.gls-harv__main .t-detail-xs { overflow-wrap: anywhere; }

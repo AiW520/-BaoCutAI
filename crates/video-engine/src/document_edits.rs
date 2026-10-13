@@ -192,7 +192,8 @@ pub(crate) fn patch_document(
             }
         }
     }
-    // 与 Runtime 的全文译文写入一致：改过的自然译句同步句级摘要；块级对应保留旧摘要供失效判断。
+    // 与 Runtime 的全文译文写入一致：改过的自然译句同步句级摘要；块级对应保留旧摘要供失效判断。改过的自然译句不再是
+    // 翻译记忆沿用的译文，去掉 `reuse`（视频格式规范 §5.3）。
     if state.documents[id].kind == "translation"
         && body.get("schema").and_then(Value::as_str) == Some(video_model::translation::TRANSLATION_SCHEMA)
         && let Some(units) = body.get_mut("units").and_then(Value::as_array_mut)
@@ -205,16 +206,20 @@ pub(crate) fn patch_document(
             .filter_map(|u| Some((u.get("id")?.as_str()?, u.get("naturalText")?.as_str()?)))
             .collect();
         for unit in units {
-            if unit.get("status").and_then(Value::as_str) == Some("stale") {
-                continue;
-            }
             let Some(text) = unit.get("naturalText").and_then(Value::as_str) else {
                 continue;
             };
-            if text.trim().is_empty() || unit.get("id").and_then(Value::as_str).and_then(|id| previous.get(id)).copied() == Some(text) {
+            if unit.get("id").and_then(Value::as_str).and_then(|id| previous.get(id)).copied() == Some(text) {
                 continue;
             }
-            let hash = crate::video::sha256_text(text);
+            let text = text.to_owned();
+            if let Some(object) = unit.as_object_mut() {
+                object.remove("reuse");
+            }
+            if unit.get("status").and_then(Value::as_str) == Some("stale") || text.trim().is_empty() {
+                continue;
+            }
+            let hash = crate::video::sha256_text(&text);
             if let Some(alignment) = unit.get_mut("alignment").and_then(Value::as_object_mut) {
                 let sentence_level = alignment.get("correspondence").and_then(Value::as_str) == Some("sentence")
                     && alignment.get("blocks").and_then(Value::as_array).is_some_and(Vec::is_empty)

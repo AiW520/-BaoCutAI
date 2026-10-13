@@ -9,6 +9,8 @@
     {k: 'fillers', label: '口癖', sub: '嗯、啊、就是、然后这类词', agentOff: '口癖不找'},
     {k: 'pauses',  label: '长停顿 ≥ 0.8s', sub: '本机按词级时间找，不用模型', agentOff: '停顿不动'},
     {k: 'repeats', label: '重复起句', sub: '同一句起了两次，留后一次', agentOff: '重复起句不找'},
+    /* 重录（embedding-integration §2.7）：成组列出、只建议不预勾；没装本机语义模型时只找文字完全相同的 */
+    {k: 'retakes', label: '重录', sub: '同一句录了几遍：成组列出，你挑留哪遍', agentOff: '重录不找'},
   ];
   const AGENT_STAGES = ['读视频与文稿', '等你放行', '执行 bcut cleanup', '写入建议'];
   const API_STAGES = ['读词级时间', '本机找停顿', '模型找口癖与重复', '写入建议'];
@@ -28,7 +30,10 @@
 
   function CleanupOptions({opts, onChange}) {
     return CLEANUP_OPTS.map((o) => (
-      <window.ToolOption key={o.k} on={!!opts[o.k]} onChange={(v) => onChange({...opts, [o.k]: v})} label={o.label} sub={o.sub} />
+      <React.Fragment key={o.k}>
+        <window.ToolOption on={!!opts[o.k]} onChange={(v) => onChange({...opts, [o.k]: v})} label={o.label} sub={o.sub} />
+        {o.k === 'retakes' && opts.retakes ? <window.SemNote entry="retakes" className="wtopic__note" /> : null}
+      </React.Fragment>
     ));
   }
 

@@ -1,0 +1,23 @@
+/* 本机语义索引 · 共享样式（embedding-integration-design §2.6、§2.11）—— App 与 Web 都加载。
+   semantic-state.jsx 的入口说明一行（semnote）与 subtitle-tm.jsx 的翻译记忆（semtm）。颜色一律 token。 */
+
+/* 入口那一句：置灰 / 退回的原因 + 去设置；索引在更新时是不阻塞的提醒 */
+.semnote { display: flex; align-items: flex-start; gap: 6px; padding: 6px 8px; border-radius: 8px;
+  background: var(--gray-50); font-size: 11px; line-height: 1.5; color: var(--gray-700); }
+.semnote > .ic--14 { flex: none; margin-top: 2px; color: var(--gray-600); }
+.semnote__x { flex: 1 1 auto; min-width: 0; }
+.semnote .tsetup__lnk { flex: none; }
+.semnote--notice { background: var(--orange-100); color: var(--orange-1000); }
+.semnote--notice > .ic--14 { color: var(--orange-900); }
+
+/* 翻译记忆：卡头的「沿用」与统计条的「N 处术语不一致」 */
+.semtm__chip { display: inline-flex; flex: none; }
+.semtm { display: inline-flex; flex: none; }
+.semtm__n { font-size: inherit; cursor: pointer; text-decoration: underline; text-decoration-style: dotted; text-underline-offset: 2px; }
+.semtm__pop { display: flex; flex-direction: column; align-items: flex-start; gap: 8px; padding: 12px; }
+.semtm__row { display: flex; align-items: baseline; gap: 8px; width: 100%; }
+.semtm__t { flex: none; padding: 0 4px; border-radius: 8px; background: var(--blue-100); color: var(--blue-1000);
+  font-size: 11px; font-variant-numeric: tabular-nums; cursor: pointer; }
+.semtm__t:hover { background: var(--blue-200); }
+.semtm__x { flex: 1 1 auto; min-width: 0; font-size: 12px; line-height: 1.5; color: var(--gray-800); }
+.semtm__x b { font-weight: 700; color: var(--gray-900); }

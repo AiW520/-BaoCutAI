@@ -1,0 +1,55 @@
+import type { EditAidsMessages } from './edit-aids-copy.ts';
+
+const many = (n: number, one: string, few: string, other: string) => {
+  const d = n % 10;
+  const t = n % 100;
+  return d === 1 && t !== 11 ? one : d >= 2 && d <= 4 && (t < 12 || t > 14) ? few : other;
+};
+
+export const ru: EditAidsMessages = {
+  termOption: 'Искать вероятные ошибки распознавания по глоссарию',
+  termOptionSub: 'Показывает написания, похожие на термин из глоссария по форме или смыслу; ничего не меняется, пока вы их не отметите',
+  termOff: 'Кандидаты из глоссария отключены в Настройки › Семантический индекс',
+  termTitle: (n: number) => `${n} ${many(n, 'кандидат', 'кандидата', 'кандидатов')} из глоссария`,
+  termIntro: 'Возможные ошибки распознавания терминов из глоссария. Отмеченные заменяются одной правкой, которую можно отменить; остальные остаются как есть.',
+  termLoading: 'Ищем вероятные ошибки распознавания…',
+  termNoGlossary: 'Для этого видео не включён ни один глоссарий распознавания, поэтому сравнивать не с чем.',
+  termNone: 'Вероятных ошибок распознавания не найдено.',
+  termPlaces: (n: number) => `${n} ${many(n, 'место', 'места', 'мест')}`,
+  termExact: 'Ошибочное написание, сохранённое в глоссарии',
+  termSemantic: (glossary: string) => `Похоже по форме и смыслу на термин из «${glossary}»`,
+  termReplace: (from: string, to: string) => `Заменить «${from}» на «${to}»`,
+  termApply: (n: number) => (n === 0 ? 'Заменить отмеченные' : `Заменить отмеченные: ${n}`),
+  termApplied: (n: number) => `По глоссарию заменено: ${n}`,
+  failed: (message: string) => `Не удалось выполнить поиск: ${message}`,
+  retry: 'Повторить',
+  discoverTitle: (n: number) => `В расшифровке найдено терминов: ${n}`,
+  discoverIntro: 'Имена, которые повторяются или пишутся по-разному. Добавьте нужные в глоссарий, чтобы и следующие видео распознавали их правильно.',
+  discoverForm: (text: string, n: number) => `«${text}» ×${n}`,
+  discoverAdd: 'Добавить в глоссарий',
+  discoverAdded: (term: string, glossary: string) => `«${term}» добавлен в «${glossary}»`,
+  discoverMerged: (term: string, glossary: string) => `«${term}» уже есть в «${glossary}»; добавлены другие написания`,
+  discoverFailed: (message: string) => `Не удалось добавить в глоссарий: ${message}`,
+  discoverNoGlossary: 'Пока нет глоссария распознавания, куда можно добавить.',
+  glossaries: 'Глоссарии…',
+  retakeOption: 'Дубли',
+  retakeOptionSub: 'Одна и та же фраза записана несколько раз: показываются группами, вы выбираете, какой дубль оставить',
+  retakeTitle: (n: number) => `Дубли: ${n} ${many(n, 'группа', 'группы', 'групп')}`,
+  retakeIntro: 'Одна и та же фраза записана несколько раз. В каждой группе только предлагается, какой дубль оставить; ничего не отмечено. Подтверждённые группы вырезаются одной правкой, которую можно отменить.',
+  retakeLoading: 'Ищем дубли…',
+  retakeNone: 'Дублей не найдено.',
+  retakeDiffer: 'Похожие, но разные',
+  retakeConfirm: 'Подтвердить группу',
+  retakeConfirmDiffer: 'Всё равно считать дублями',
+  retakeDifference: { number: 'числа', negation: 'отрицание', name: 'имена' },
+  retakeDiffers: (kinds: string) => `Различаются: ${kinds}`,
+  retakeGroup: (time: string, n: number) => `${time} · ${n} ${many(n, 'дубль', 'дубля', 'дублей')}`,
+  retakeMeta: (seconds: string, complete: boolean) => `${seconds} с · ${complete ? 'полностью' : 'не договорено'}`,
+  retakeKept: 'Оставить этот дубль',
+  retakeKeep: 'Оставить этот вместо',
+  retakeSuggest: (time: string) => `Предлагается оставить дубль в ${time}; ничего не вырезается, пока вы не подтвердите.`,
+  retakeDifferHint: 'В этих дублях разные числа, отрицания или имена, так что это может быть не одна и та же фраза. Послушайте, прежде чем решать.',
+  retakeApply: (n: number) => (n === 0 ? 'Вырезать подтверждённые' : `Вырезать остальные дубли в подтверждённых группах: ${n}`),
+  retakePending: (takes: number, seconds: string) => `${takes} ${many(takes, 'дубль', 'дубля', 'дублей')} · ${seconds} с`,
+  retakeNoneConfirmed: 'Ни одна группа ещё не подтверждена',
+};

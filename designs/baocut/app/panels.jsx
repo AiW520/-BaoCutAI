@@ -447,7 +447,8 @@
           {/* 2026-10-09：这里原来有一只 ✦ 菜单（整理全文 / 从文稿出发 / 交给 Agent）。AI 工具有了自己的 Tab（rail 第三格，
               product-design §5.10），同一份工具列表只留一处；按章 / 按段的入口仍在下面的 ScopeMenu 里，带着范围去那个 Tab。 */}
         </div>
-        <FindBar find={find} placeholder="在文稿里查找" hint={lockHint} />
+        <FindBar find={find} placeholder="在文稿里查找" hint={lockHint}
+          meaning={<FindMeaning find={find} video={ctx.proj.id} onSeek={seekF} />} />
         <div className="tsctop">
           <div className="row gap6">
             <Picker size="s" value={curShort} open={pop === 'lang'} popAlign="left" popWidth={232}

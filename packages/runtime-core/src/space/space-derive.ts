@@ -224,6 +224,18 @@ export function deriveEntries(input: DeriveInput): Map<Id, DerivedEntry> {
     if (job.state === 'completed') succeededLater.set(`${job.kind}\0${job.inputHash}`, job.createdAt);
   }
   for (const job of jobs) {
+    // 写作类 AI 工具的正文（产品设计 §5.10，创作辅助集成设计 §3.4）：一份 Markdown 文档条目，带出处旁文件。
+    const writing = job.kind === 'pipeline' ? job.pipeline?.document : undefined;
+    if (writing && job.result) {
+      const video = job.videoId ? (videos.get(job.videoId) ?? null) : null;
+      const origin: SpaceEntryOrigin = { ...originOf(job, video?.source.projectId ?? null, input), capability: job.pipeline!.name };
+      const file = input.artifactFile(job.result.artifactId);
+      const name = `${writingLabelOf(writing.tool)}-${stampOf(job)}.md`;
+      const derived = artifactEntry(job, job.result.artifactId, 'document', name, file, writing.byteLength, origin, { mediaType: 'text/markdown' });
+      if (writing.citationsArtifactId) derived.entry.citations = { artifactId: writing.citationsArtifactId };
+      out.set(job.result.artifactId, derived);
+      continue;
+    }
     // 流程新建的视频（§7.9）：视频条目的来源是这次运行。
     if (job.kind === 'pipeline') {
       const created = createdVideoOf(job);
@@ -249,7 +261,10 @@ export function deriveEntries(input: DeriveInput): Map<Id, DerivedEntry> {
           const download = job.pipeline?.name === 'link-import';
           const projectId = job.pipeline?.params?.projectId;
           const assigned = download ? { ...origin, source: 'imported' as const, projectId: output.media.kind === 'text' && typeof projectId === 'string' ? projectId : null } : origin;
-          addExport(out, input, job, output, assigned, null);
+          const derived = addExport(out, input, job, output, assigned, null);
+          // 智能体交出的带出处的 Markdown（创作辅助集成设计 §3.4「智能体路径」）：条目带出处旁文件。
+          const citations = job.pipeline?.citationsArtifactId;
+          if (derived && citations) derived.entry.citations = { artifactId: citations };
         }
       }
       continue;
@@ -453,8 +468,8 @@ function addExport(
   output: GeneratedOutput,
   origin: SpaceEntryOrigin,
   video: KnownVideo | null,
-): void {
-  if (!output.path) return;
+): DerivedEntry | null {
+  if (!output.path) return null;
   const kind = job.export ? exportKind(job.export.settings) : (input.classify(path.basename(output.path)) ?? 'document');
   const frozen = job.export?.videoRevision ?? null;
   const status = (): { status: SpaceEntryStatus; statusDetail?: SpaceEntry['statusDetail'] } =>
@@ -477,31 +492,28 @@ function addExport(
         file: { path: former ? path.join(source.realRoot, ...rel.split('/')) : output.path },
         ...status(),
       });
-      return;
+      return scanned;
     }
     // 扫描里没有：被删掉了，或在扫描不进的目录里。
     const stat = input.pathStat(output.path);
     if (stat === null) {
-      out.set(
-        output.artifactId,
-        exportEntry(job, output, kind, origin, null, { status: 'missing', statusDetail: { reason: RcSpace.exportedFileGone().text } }),
-      );
-      return;
+      const missing = exportEntry(job, output, kind, origin, null, { status: 'missing', statusDetail: { reason: RcSpace.exportedFileGone().text } });
+      out.set(output.artifactId, missing);
+      return missing;
     }
     break;
   }
   const stat = input.pathStat(output.path);
-  out.set(
-    output.artifactId,
-    exportEntry(
-      job,
-      output,
-      kind,
-      origin,
-      stat ?? null,
-      stat === null ? { status: 'missing', statusDetail: { reason: RcSpace.exportedFileGone().text } } : status(),
-    ),
+  const derived = exportEntry(
+    job,
+    output,
+    kind,
+    origin,
+    stat ?? null,
+    stat === null ? { status: 'missing', statusDetail: { reason: RcSpace.exportedFileGone().text } } : status(),
   );
+  out.set(output.artifactId, derived);
+  return derived;
 }
 
 function exportEntry(
@@ -601,11 +613,29 @@ function extensionOf(output: GeneratedOutput, file: FileStat | null | undefined)
 
 /** 产物条目的文件名：能力与完成时间（不用提示词或原文：生成参数只在 Job 记录里）。 */
 function fileNameOf(job: SpaceJobFacts, ext: string, index: number | null): string {
-  const at = (job.endedAt ?? job.createdAt)
+  return `${labelOf(job.kind)}-${stampOf(job)}${index !== null ? `-${index}` : ''}.${ext}`;
+}
+
+/** 文件名里的完成时间：`20261012-083000`。 */
+function stampOf(job: SpaceJobFacts): string {
+  return (job.endedAt ?? job.createdAt)
     .replace(/\.\d+Z$/, '')
     .replace(/[-:]/g, '')
     .replace('T', '-');
-  return `${labelOf(job.kind)}-${at}${index !== null ? `-${index}` : ''}.${ext}`;
+}
+
+/** 写作类工具的文档名。 */
+function writingLabelOf(tool: string): string {
+  switch (tool) {
+    case 'summary':
+      return RcSpace.labelSummary().text;
+    case 'blog':
+      return RcSpace.labelBlog().text;
+    case 'title':
+      return RcSpace.labelTitles().text;
+    default:
+      return RcSpace.labelDescription().text;
+  }
 }
 
 /** birthtime 不可用时不以 ctime 或修改时间冒充创建时间。 */

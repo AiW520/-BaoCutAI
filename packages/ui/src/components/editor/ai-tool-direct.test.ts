@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { getLocale, setLocale, type Locale } from '@baocut/protocol';
+import { aiToolParamsSchema } from '@baocut/protocol/schemas';
 import {
   contextItems,
   contextLine,
@@ -163,6 +164,40 @@ describe('范围里的段数与流程参数', () => {
     expect(
       directParams({ videoId: 'vid', tool: 'chapters', prompt: 'x', range: { start: 1, end: 2 }, documentId: null, attachments: [], skills: [], model: null, uiLanguage: 'en' }),
     ).toEqual({ videoId: 'vid', tool: 'chapters', prompt: 'x', uiLanguage: 'en' });
+  });
+
+  it('按主题选材时不发范围，系列只随按主题发；边界只给生成章节，选材不给润色与章节', () => {
+    const base = { videoId: 'vid', prompt: 'x', range: { start: 1, end: 2 }, documentId: null, attachments: [], skills: [], model: null, uiLanguage: 'en' };
+    const selection = { mode: 'topic' as const, intent: 'model choice', exclude: ['c2'] };
+    expect(aiToolParamsSchema.parse(directParams({ ...base, tool: 'blog', selection, videoIds: ['v2', 'v3'], boundaries: 'topic' }))).toEqual({
+      videoId: 'vid',
+      tool: 'blog',
+      prompt: 'x',
+      uiLanguage: 'en',
+      selection,
+      videoIds: ['v2', 'v3'],
+    });
+    expect(directParams({ ...base, tool: 'summary', selection: null, videoIds: ['v2'] })).toEqual({ videoId: 'vid', tool: 'summary', prompt: 'x', uiLanguage: 'en', range: { start: 1, end: 2 } });
+    expect(aiToolParamsSchema.parse(directParams({ ...base, tool: 'chapters', selection, boundaries: 'topic' }))).toEqual({
+      videoId: 'vid',
+      tool: 'chapters',
+      prompt: 'x',
+      uiLanguage: 'en',
+      boundaries: 'topic',
+    });
+    expect(directParams({ ...base, tool: 'polish', selection })).not.toHaveProperty('selection');
+  });
+
+  it('上下文那一行：按主题写挑了几段、覆盖几章；还没预览时只说按主题挑；系列写几部视频', () => {
+    const c = { tool: 'blog' as const, paragraphs: 40, scope: null, chapters: 4, attachments: 0, skills: [] };
+    expect(contextItems({ ...c, topic: { paragraphs: 12, chapters: 3 }, videos: 3 })).toEqual([
+      'transcript 12 passages (picked by topic, 3 chapters)',
+      'series of 3 videos',
+      'chapters 4',
+    ]);
+    expect(contextItems({ ...c, topic: { paragraphs: null, chapters: 0 } })[0]).toBe('transcript passages picked by topic');
+    use('zh-Hans');
+    expect(contextItems({ ...c, topic: { paragraphs: 12, chapters: 3 } })[0]).toBe('文稿 12 段（按主题挑选，覆盖 3 章）');
   });
 });
 

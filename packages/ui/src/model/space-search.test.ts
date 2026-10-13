@@ -1,18 +1,27 @@
 import { describe, expect, it } from 'vitest';
-import type { SpaceEntry, SpaceSearchHit } from '@baocut/protocol';
+import { SEMANTIC_QUERY_MAX_CHARS, SPACE_SEARCH_V2_MAX_LIMIT, type SpaceEntry, type SpaceSearchHit, type SpaceSearchV2Hit } from '@baocut/protocol';
 import {
   ANY_HIT,
+  canWriteFromHit,
   collectSpeakers,
   exactSpeaker,
   groupHits,
   hitChip,
   hitTarget,
+  hitVideoEntry,
   hitWhere,
+  matchedByKind,
+  MEANING_IN_VIDEO_SHOWN,
+  meaningInVideoRequest,
+  meaningInVideoRows,
+  meaningQueryReady,
   planGroupRows,
   SEARCH_LIMIT,
   searchNote,
   searchRequest,
+  searchV2Request,
   seekSeconds,
+  semanticHitRows,
   snippetParts,
   speakerOptions,
 } from './space-search.ts';
@@ -53,6 +62,16 @@ describe('打开命中', () => {
     expect(hitTarget({ entryId: null, videoId: 'gone' }, entries)).toBeNull();
     expect(seekSeconds({ time: { clock: 'sequence', start: 12.5, end: 13 } })).toBe(12.5);
     expect(seekSeconds({ time: { clock: 'source', start: 12.5, end: 13 } })).toBeNull();
+  });
+
+  it('交给 Agent 带命中所在视频的条目；用于写作只给讲话内容、只在有 AI 工具的宿主', () => {
+    const entries = [video('v1', 'vid1'), video('v2', 'vid2', { user: { favorite: false, displayName: null, trashedAt: '2026-10-01T00:00:00.000Z' } })];
+    expect(hitVideoEntry({ entryId: null, videoId: 'vid1' }, entries)?.id).toBe('v1');
+    expect(hitVideoEntry({ entryId: 'v2', videoId: 'vid2' }, entries)).toBeNull();
+    expect(hitVideoEntry({ entryId: null, videoId: 'gone' }, entries)).toBeNull();
+    expect(canWriteFromHit({ documentKind: 'speech' }, false)).toBe(true);
+    expect(canWriteFromHit({ documentKind: 'speech' }, true)).toBe(false);
+    for (const documentKind of ['caption', 'translation', 'chapter'] as const) expect(canWriteFromHit({ documentKind }, false)).toBe(false);
   });
 
   it('结果不全时说明', () => {
@@ -125,5 +144,96 @@ describe('过滤与分组', () => {
     expect(hitChip({ documentKind: 'chapter', language: null })).toBe('章节');
     expect(hitWhere({ time: { clock: 'sequence', start: 65, end: 70 }, speaker: '宝玉' })).toBe('1:05 · 宝玉');
     expect(hitWhere({ time: { clock: 'source', start: 3, end: 4 }, speaker: null })).toBe('素材时间 0:03');
+  });
+});
+
+const v2 = (patch: Partial<SpaceSearchV2Hit> = {}): SpaceSearchV2Hit => ({
+  hitId: 'h1',
+  target: { kind: 'document-span', videoId: 'v1', documentId: 'd1', documentKind: 'speech', sentenceIds: ['s1', 's2'] },
+  videoName: '访谈',
+  entryId: 'e1',
+  projectId: 'p1',
+  matchChannels: ['text'],
+  matchedBy: ['semantic'],
+  evidenceType: 'transcript',
+  snippet: '我们先把定价讲清楚',
+  highlights: [],
+  speaker: '宝玉',
+  language: 'zh',
+  anchor: { clock: 'sequence', start: { ticks: '65', timescale: 1 }, end: { ticks: '70', timescale: 1 }, startSec: 65, endSec: 70, boundary: 'exact' },
+  indexedRevision: 'r1',
+  needsResolve: false,
+  chapter: null,
+  rank: 1,
+  actions: ['preview', 'open-in-timeline', 'cite'],
+  ...patch,
+});
+
+describe('综合搜索', () => {
+  it('请求：综合模式只找讲话内容，查询按上限截断；项目与种类照旧', () => {
+    const long = 'x'.repeat(SEMANTIC_QUERY_MAX_CHARS + 10);
+    expect(searchV2Request(long, null, ANY_HIT)).toEqual({
+      query: { kind: 'text', text: 'x'.repeat(SEMANTIC_QUERY_MAX_CHARS) },
+      mode: 'hybrid',
+      channels: ['text'],
+      limit: SPACE_SEARCH_V2_MAX_LIMIT,
+    });
+    expect(searchV2Request('定价', 'none', { ...ANY_HIT, kind: 'caption' })).toMatchObject({ projectId: null, kinds: ['caption'] });
+    expect(searchV2Request('定价', 'p1', ANY_HIT)).toMatchObject({ projectId: 'p1' });
+  });
+
+  it('命中摊平成旧的形状，另带怎么找到的、在不在时间线上、要不要重新解析；素材片段命中不收', () => {
+    const rows = semanticHitRows([
+      v2(),
+      v2({ hitId: 'h2', actions: ['preview', 'cite'], needsResolve: true, videoName: null, matchedBy: ['lexical', 'semantic'] }),
+      v2({ hitId: 'h3', target: { kind: 'asset-span', assetId: 'a1', videoId: 'v1', representation: 'keyframe' } }),
+    ]);
+    expect(rows.map((r) => r.hitId)).toEqual(['h1', 'h2']);
+    expect(rows[0]).toMatchObject({
+      videoId: 'v1',
+      videoName: '访谈',
+      documentKind: 'speech',
+      time: { clock: 'sequence', start: 65, end: 70 },
+      inTimeline: true,
+      needsResolve: false,
+    });
+    expect(rows[1]).toMatchObject({ videoName: 'v1', inTimeline: false, needsResolve: true });
+    expect(groupHits(rows)).toHaveLength(1);
+  });
+
+  it('怎么找到的：两路都对上、只是字面、只是意思相近', () => {
+    expect(matchedByKind(['lexical', 'semantic'])).toBe('both');
+    expect(matchedByKind(['lexical'])).toBe('lexical');
+    expect(matchedByKind(['semantic'])).toBe('semantic');
+  });
+});
+
+describe('文稿查找条下的意思相近', () => {
+  it('至少两个字、不是正则时才找；只找这部视频的讲话内容，按时间线投影，查询去掉首尾空白并截断', () => {
+    expect(meaningQueryReady('定', false)).toBe(false);
+    expect(meaningQueryReady('  定价 ', false)).toBe(true);
+    expect(meaningQueryReady('定价', true)).toBe(false);
+    expect(meaningInVideoRequest(' 定价 ', 'v1')).toEqual({
+      query: { kind: 'text', text: '定价' },
+      mode: 'hybrid',
+      channels: ['text'],
+      videoIds: ['v1'],
+      kinds: ['speech'],
+      view: 'sequence',
+      limit: SPACE_SEARCH_V2_MAX_LIMIT,
+    });
+    expect(meaningInVideoRequest('x'.repeat(SEMANTIC_QUERY_MAX_CHARS + 5), 'v1').query).toEqual({ kind: 'text', text: 'x'.repeat(SEMANTIC_QUERY_MAX_CHARS) });
+  });
+
+  it('只留只靠意思找到的：字面命中（含两路都对上的）不列；按名次取前几条再按时间排', () => {
+    const at = (s: number) => ({ clock: 'sequence' as const, start: { ticks: String(s), timescale: 1 }, end: { ticks: String(s + 2), timescale: 1 }, startSec: s, endSec: s + 2, boundary: 'exact' as const });
+    const hits = [
+      v2({ hitId: 'lex', matchedBy: ['lexical'], anchor: at(1) }),
+      v2({ hitId: 'both', matchedBy: ['lexical', 'semantic'], anchor: at(2) }),
+      ...Array.from({ length: MEANING_IN_VIDEO_SHOWN + 2 }, (_, i) => v2({ hitId: `s${i}`, anchor: at(100 - i * 10) })),
+    ];
+    const rows = meaningInVideoRows(hits);
+    expect(rows.map((r) => r.hitId)).toEqual(['s4', 's3', 's2', 's1', 's0']);
+    expect(rows.map((r) => r.time.start)).toEqual([60, 70, 80, 90, 100]);
   });
 });

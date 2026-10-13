@@ -32,6 +32,7 @@ export const pl: AiToolsMessages = {
     lineFrame: (ratio, focus) => (ratio ? `Proporcje ${ratio}, kadr ${focus}` : 'Proporcje: zachowaj oryginalne, bez przycinania'),
     lineSubtitles: (tracks, style) => `Napisy: ${tracks}, ${style}`,
     lineSkipDone: 'Pomiń fragmenty już pocięte na krótkie filmy',
+    lineTopic: (topic) => `Szukaj tylko we fragmentach, które mówią o „${topic}”: najpierw znajdź je przez speech_relevant, potem wybieraj spośród nich`,
     lineDirect: 'Twórz filmy od razu, gdy je znajdziesz; nie musisz mnie najpierw pytać',
   },
   groups: {

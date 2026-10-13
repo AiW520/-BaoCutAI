@@ -1662,6 +1662,7 @@ interface TranslationUnit {
     split?: AlignmentSplit;             // 字幕上的显示切分
   } | null;
   status: 'draft' | 'reviewed' | 'stale';
+  reuse?: { fromVideoId: Id; unitId: Id };   // 翻译记忆沿用的译文：取自哪部视频的哪个单元
 }
 
 // 本规范补全
@@ -1692,6 +1693,7 @@ interface AlignmentSplit {
 - `textHash` 是 `'sha256:' +` 自然译句 UTF-8 字节的 sha256（小写十六进制）。`targetTextRange` 有 `split` 时指各片文本按顺序拼起来的串，没有时指 `basis` 所指的文本（自然译句或显示改写）；片的拼接与它规范化之后相同，不要求逐字相同。块的 ID 在单元内唯一，写入方新造的块按顺序编为 `b1`、`b2`……
 - `split` 记字幕上怎么把这句译文切成几片显示。`independent`：译文按目标语自己的习惯切，不与源词对应；`many-to-one`：每片对应一段连续的源词，`from`、`to` 是闭区间的下标；`one-to-one` 只出现在旧项目里，按整句对应读。`wordAnchored` 为真时，片的下标与块的源侧都指 `sourceWordIds`，那是对齐时句子的可见词（时间线剪过之后是剩下的子序列）；为假时片的下标指源句现在的可见词。没有明写 `correspondence` 时，`legacy.crossing`、`independent` 与没有词锚的片只按整句对应，其余按块对应；推出的值就是 `alignment.correspondence`。片的拼接与 `basis` 所指的文本规范化之后不同、或片的边界不落在块的边界上时，切分过期，显示降级为整句。
 - `sourceFingerprint` 是字幕与翻译核心的内容指纹 `<词数>:<首词 ID>:<末词 ID>:<摘要>`（词数与首末词只算可见的词，摘要是句内可见词文本的 FNV-1a，36 进制）。空字符串表示没有记下指纹，不算过期；别的写法当作原句改过。
+- `reuse` 记这句的自然译句沿用了用户另一部视频里已有的译文（翻译记忆，创作辅助集成设计 §3.7）：`fromVideoId` 是那部视频，`unitId` 是那份译文里的单元。只是来源的记录，不影响对齐、字幕与配音；写入方改了 `naturalText`（编辑、改为重译）就去掉它，只改显示改写时保留。引擎核对它的形状（两个字符串），不核对引用的视频在不在。
 - `displayRewrite.naturalFingerprint` 是写改写时自然译句的指纹；自然译句的指纹与它不符，改写就过期（删掉改写与这句的切分）。没有这个字段时按过期处理。
 - 与字幕与翻译核心的映射（§5.2）：一份译文对应 `TranscriptDoc` 的一种语言，`naturalText`、`displayRewrite`（`reason` 对应 v2 的 `basis`）、`split` 连同块、`sourceFingerprint` 分别对应 v2 按句子 ID 的 `trans`、`transDisplay`、`transAlign`、`transSrc`；`/1` 的译文不能换算。`status: 'stale'` 在 v2 里写成 `transSrc` 的 `stale:<sourceFingerprint>`，它不等于任何真实指纹，核心因此把这句当作原文改过；写回时去掉前缀、恢复 `stale`。写回时单元的 ID、`reviewed`、`status`、扩展字段从底稿按句子 ID 带回：译句与改写都没变的单元沿用底稿的状态，变了的是 `draft`。v2 没有切分的句子，底稿的对齐没有 `split` 时照用（译句变了只更新 `textHash`），底稿是 null 时仍是 null，其余写句级降级记录，`sourceWordIds` 取底稿的，没有底稿时取核心派生的源句的可见词。新单元的 ID 是 `t-<句子 ID>`，按首词的位置插进底稿的单元之间。新语言的 `sourceBasis` 由调用方给。
 - 正文的 `schema` 为 `baocut.translation/2` 时，字段严格是上面的 `TranslationDocumentVersion`，除了上面标为可选的字段不多不少；`id` 与 `revision` 由文档记录给出，正文里不重复。整份转写一起翻译时 `sourceBasis.scopeLineage` 为空。源 SpeechDocument 的句子按字幕与翻译核心的规则从词得出（`speech-doc/sentences`，不读存下的 `sentences`）：句末标点之后断句，分号不算句末；停顿不少于 1.8 秒、换了说话人、句内满 80 个词、分段与章节的边界也断句；隐藏的词不进句子，句子 ID 是 `s-<首词 ID>`。`sourceFingerprint` 见上，`editViewHash` 是 `'sha256:' +` 派生规则的名字与全部句子的 ID、指纹的摘要。写译文的 Worker、核对译文的 Runtime 与界面用同一份实现（架构设计 §7.9）。没有对齐块时用句级降级。

@@ -32,6 +32,7 @@ export const ru: AiToolsMessages = {
     lineFrame: (ratio, focus) => (ratio ? `Соотношение сторон ${ratio}, кадр ${focus}` : 'Соотношение сторон: как в оригинале, без обрезки'),
     lineSubtitles: (tracks, style) => `Субтитры: ${tracks}, ${style}`,
     lineSkipDone: 'Пропустите места, уже нарезанные в короткие видео',
+    lineTopic: (topic) => `Ищите только в фрагментах, где говорится о «${topic}»: сначала найдите их через speech_relevant, затем выбирайте из них`,
     lineDirect: 'Создавайте видео сразу, как найдёте; спрашивать меня заранее не нужно',
   },
   groups: {

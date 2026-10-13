@@ -70,6 +70,7 @@ export const ko: EditLabelMessages = {
   editTranslation: '번역 편집',
   markTranslationStale: '번역을 오래됨으로 표시',
   clearTranslationStale: '오래됨 표시 지우기',
+  unifyGlossaryTerms: '용어집 번역으로 통일',
   cutText: '전사본에서 잘라내기',
   restoreText: '잘라낸 내용 복원',
   editTranscript: '텍스트 편집',

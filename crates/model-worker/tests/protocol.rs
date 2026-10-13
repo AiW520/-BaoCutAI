@@ -97,6 +97,14 @@ fn hello_reports_version_backends_and_capabilities() {
     if !image.is_empty() {
         expected.push("image");
     }
+    // 文本嵌入（LiteRT-LM）编进来时声明 `embed`，并带上 `embeddingCapabilities`；没编进来时字段省略。
+    if cfg!(feature = "backend-litert") {
+        expected.push("embed");
+        assert_eq!(hello["embeddingCapabilities"]["families"], json!(["embeddinggemma2-litert"]));
+        assert_eq!(hello["embeddingCapabilities"]["maxBatch"], 16);
+    } else {
+        assert!(hello.get("embeddingCapabilities").is_none(), "{hello}");
+    }
     assert_eq!(hello["capabilities"], json!(expected));
     #[cfg(all(target_os = "macos", target_arch = "aarch64", feature = "backend-mlx"))]
     {
@@ -133,7 +141,8 @@ fn hello_reports_version_backends_and_capabilities() {
     }
     let backends = hello["backends"].as_array().unwrap();
     let ids: Vec<&str> = backends.iter().map(|backend| backend["id"].as_str().unwrap()).collect();
-    assert_eq!(ids, ["mlx", "coreml", "candle", "ggml"]);
+    assert_eq!(ids, ["mlx", "coreml", "candle", "ggml", "litert-lm"]);
+    assert_eq!(backends[4]["available"], cfg!(feature = "backend-litert"));
     for backend in backends {
         assert!(backend["devices"].is_array());
         if backend["available"] == false {

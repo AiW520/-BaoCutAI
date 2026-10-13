@@ -28,6 +28,7 @@ export const pl: ModelsLocalMessages = {
     separate: "Separacja",
     music: 'Muzyka',
     diarize: "Rozróżnianie mówców",
+    embed: "Indeks semantyczny",
   },
   auto: "Automatycznie",
   notInstalled: (name) => `${name} (niezainstalowany)`,

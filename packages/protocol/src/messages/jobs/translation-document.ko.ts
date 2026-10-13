@@ -18,6 +18,7 @@ export const ko: JobsTranslationDocumentMessages = {
   unitNoText: (p: { id: string }) => `${p.id} 번역 단위에 번역이 없습니다`,
   unitBadStatus: (p: { id: string }) => `${p.id} 번역 단위의 상태가 올바르지 않습니다`,
   unitBadAlignment: (p: { id: string }) => `${p.id} 번역 단위의 정렬이 올바르지 않습니다`,
+  unitBadReuse: (p: { id: string }) => `${p.id} 번역 단위의 reuse가 올바르지 않습니다(fromVideoId와 unitId가 필요합니다)`,
   unitAlignmentFields: (p: { id: string }) => `${p.id} 번역 단위의 정렬에 필드가 빠져 있습니다`,
   unitHashMismatch: (p: { id: string }) => `${p.id} 번역 단위의 textHash가 번역과 일치하지 않습니다`,
   unitExtraFields: (p: { id: string; fields: string }) => `${p.id} 번역 단위에 §5.3 밖의 필드가 있습니다: ${p.fields}`,

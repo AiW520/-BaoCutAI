@@ -2,6 +2,7 @@
 import './asr-result.ts';
 import './bundle-registry.ts';
 import './download-source.ts';
+import './embedding.ts';
 import './generation-options.ts';
 import './image-bundles.ts';
 import './image-self-test.ts';

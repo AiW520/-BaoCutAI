@@ -20,6 +20,7 @@ export const ja: SettingsNavMessages = {
     shortcuts: 'ショートカット',
     fonts: 'フォント',
     downloader: '動画のダウンロード',
+    semantic: 'セマンティックインデックス',
     agent: 'Agent プロバイダ',
     skills: 'Skills',
     glossary: '用語集',

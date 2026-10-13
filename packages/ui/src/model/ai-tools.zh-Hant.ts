@@ -29,6 +29,7 @@ export const zhHant: AiToolsMessages = {
     lineFrame: (ratio, focus) => (ratio ? `長寬比 ${ratio}，取景${focus}` : '長寬比：保留原長寬比，不裁切'),
     lineSubtitles: (tracks, style) => `字幕：${tracks}，${style}`,
     lineSkipDone: '已經切過的不再找',
+    lineTopic: (topic) => `只在講「${topic}」的片段裡找：先用 speech_relevant 找出這些片段，再從中挑`,
     lineDirect: '找好就直接建立成影片，不用先問我',
   },
   groups: {

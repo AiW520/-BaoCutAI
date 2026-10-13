@@ -19,4 +19,8 @@ export const es: SettingDescriptionMessages = {
  'resources.capacity': 'Avanzado: capacidad del ordenador para planificar recursos { memoryMiB, gpuMemoryMiB, cpuThreads }; una propiedad en null se detecta automáticamente; null detecta todo (memoria y CPU del sistema, memoria de GPU en Apple silicon estimada de memoria unificada)',
  'runtime.idleExitMinutes': 'Minutos que un Runtime iniciado por la CLI permanece inactivo antes de terminar solo (1–1440): sin conexiones, tareas ni servicios externos abiertos. No afecta a la aplicación de escritorio ni a Runtimes iniciados manualmente',
  'updates.autoCheck': 'Comprobar actualizaciones de la aplicación automáticamente', 'updates.autoDownload': 'Descargar versiones nuevas en segundo plano (sin instalarlas automáticamente)', 'diagnostics.enabled': 'Enviar estadísticas anónimas de uso y resúmenes de rendimiento (sin medios, texto ni rutas)', 'offline.strict': 'Sin conexión estricto: no enviar nada a ningún servicio en línea',
+  'semantic.channels': 'Canales del índice semántico que se crean: text (lo hablado: transcripciones, subtítulos, traducciones, capítulos); visual y audio aún no están disponibles',
+  'semantic.indexedProjects': 'Proyectos cuyos vídeos tienen índice semántico: all, o una lista de ids de proyecto (los vídeos fuera de proyectos solo con all)',
+  'semantic.translationMemory': 'Sugerir traducciones anteriores de frases casi idénticas al traducir (requiere el modelo de búsqueda de texto)',
+  'semantic.glossaryCandidates': 'Sugerir términos del glosario a partir de grafías casi idénticas entre transcripciones (requiere el modelo de búsqueda de texto)',
 };

@@ -370,6 +370,7 @@ mod tests {
             device: "metal".into(),
             threads: 1,
             memory_budget_bytes: None,
+            cache_dir: None,
             asr: None,
             vad: None,
             aligner: None,
@@ -381,6 +382,8 @@ mod tests {
             aux: None,
             separator: None,
             image: None,
+            embedding: None,
+            litertlm_runtime: None,
         }
     }
 

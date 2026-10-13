@@ -5,6 +5,7 @@ import { jobErrorText } from '../../model/localized-text.ts';
 import { jobRemedy, rejectionRemedy, type Remedy } from '../../model/task-facts.ts';
 import { isJobLive, useJobs } from '../../state/jobs-store.ts';
 import { AI_TOOLS_COPY as C } from './ai-tools-copy.ts';
+import { WRITING_CITES_COPY as W } from './writing-cites-copy.ts';
 
 /**
  * 工具页「用 › 直接调模型」的运行（产品设计 §5.10）：提交 `pipelines.start('ai-tool')`，经 `jobs` 主题跟住父任务；完成时
@@ -27,6 +28,8 @@ export interface AiToolRun {
   model: string;
   /** 重试时任务的 `updatedAt`：镜像里还是那条已经结束的记录时不收尾。 */
   retriedAt: string | null;
+  /** 写博客勾了「添加关键帧插图」：结果页按出处时间配图（model/writing-figures.ts）。不进任务参数。 */
+  figures?: boolean;
 }
 
 /** 只给结果的工具：模型写的正文。 */
@@ -35,6 +38,16 @@ export interface AiToolResult {
   tool: AiToolKind;
   jobId: Id;
   summary: AiToolSummary & { text: string };
+  /** 重写了一段（`AiToolParams.section`）得来的：上一版（撤回用）、从哪一段起换成了几段。 */
+  rewrite?: AiToolRewrite;
+  /** 结果页配关键帧插图。 */
+  figures?: boolean;
+}
+
+export interface AiToolRewrite {
+  prev: AiToolResult;
+  index: number;
+  span: number;
 }
 
 /** 写进视频的工具：那笔事务的收据（一键撤销，不给重做）。 */
@@ -134,6 +147,12 @@ export interface AiToolRunDeps {
 
 let deps: AiToolRunDeps | null = null;
 let unwatch: (() => void) | null = null;
+/** 每个「视频 · 工具」上一次整篇开跑的参数：重写一段沿用它的提示词、模型与附件。 */
+const lastParams = new Map<string, AiToolParams>();
+/** 每个「视频 · 工具」上一次开跑时要不要配插图：重试沿用。 */
+const figuresWanted = new Map<string, boolean>();
+/** 正在重写一段的：上一版结果与段落序号（没跑成时放回上一版）。 */
+const rewriting = new Map<string, { prev: AiToolResult; index: number }>();
 
 /** 工具页挂上时绑定会话与提示；第一次绑定时开始盯 `jobs` 主题。 */
 export function bindAiToolRun(next: AiToolRunDeps): void {
@@ -146,6 +165,9 @@ export function resetAiToolRun(): void {
   unwatch?.();
   unwatch = null;
   deps = null;
+  lastParams.clear();
+  figuresWanted.clear();
+  rewriting.clear();
   useAiToolRun.setState({ ...EMPTY });
   useAiToolPrompts.setState({ prompts: {} });
   useAiToolSkills.setState({ skills: {} });
@@ -159,6 +181,14 @@ const without = <T>(record: Record<string, T>, key: string): Record<string, T> =
 const messageOf = (error: unknown) => (error instanceof Error ? error.message : String(error));
 
 function endRun(key: string, problem?: AiToolProblem): void {
+  const rewrite = rewriting.get(key);
+  if (rewrite) {
+    // 重写一段没跑成：放回上一版，原因只给提示（问题卡在设置态才画，那里看不到这份结果）。
+    rewriting.delete(key);
+    useAiToolRun.setState((s) => ({ runs: without(s.runs, key), results: { ...s.results, [key]: rewrite.prev } }));
+    if (problem) deps?.toast('negative', W.rewriteFailed(problem.message || problem.title));
+    return;
+  }
   useAiToolRun.setState((s) => ({
     runs: without(s.runs, key),
     problems: problem ? { ...s.problems, [key]: problem } : s.problems,
@@ -172,16 +202,22 @@ export function dismissAiToolProblem(key: string): void {
 
 /** 结果与收据上的「完成」：回到设置态。 */
 export function closeAiToolResult(key: string): void {
+  rewriting.delete(key);
   useAiToolRun.setState((s) => ({ results: without(s.results, key), receipts: without(s.receipts, key) }));
 }
 
-/** 开始。同一个视频的同一个工具同时只跑一次。`model` 是运行态与问题卡上写的模型名字。 */
-export async function startAiTool(params: AiToolParams, model: string): Promise<boolean> {
+/** 开始。同一个视频的同一个工具同时只跑一次。`model` 是运行态与问题卡上写的模型名字；`figures` 是结果页要不要配插图。 */
+export async function startAiTool(params: AiToolParams, model: string, opts: { figures?: boolean } = {}): Promise<boolean> {
   const bound = deps;
   const key = runKey(params.videoId, params.tool);
   if (!bound || useAiToolRun.getState().runs[key]) return false;
+  if (!params.section) lastParams.set(key, params);
+  figuresWanted.set(key, !!opts.figures);
   useAiToolRun.setState((s) => ({
-    runs: { ...s.runs, [key]: { videoId: params.videoId, tool: params.tool, jobId: null, status: 'submitting', model, retriedAt: null } },
+    runs: {
+      ...s.runs,
+      [key]: { videoId: params.videoId, tool: params.tool, jobId: null, status: 'submitting', model, retriedAt: null, ...(opts.figures ? { figures: true } : {}) },
+    },
     results: without(s.results, key),
     receipts: without(s.receipts, key),
     problems: without(s.problems, key),
@@ -198,6 +234,36 @@ export async function startAiTool(params: AiToolParams, model: string): Promise<
   }
 }
 
+/**
+ * 重写结果里的一段（创作辅助集成设计 §2.2「这段不对」）：沿用上一次的提示词与模型，材料由 Runtime 按这一段重新挑；`exclude`
+ * 是「换材料重写」里勾掉的（`AiToolSection.exclude`）。跑完的结果记着上一版，可撤回。
+ */
+export async function rewriteAiToolSection(key: string, index: number, exclude: readonly string[] = []): Promise<boolean> {
+  const result = useAiToolRun.getState().results[key];
+  const base = lastParams.get(key);
+  const citationsArtifactId = result?.summary.citationsArtifactId;
+  if (!result || !base || !citationsArtifactId || useAiToolRun.getState().runs[key]) return false;
+  // 重写一段不与范围、按主题选材、系列同用：材料是那一段的出处与按它重找的句群。
+  const { range: _range, selection: _selection, videoIds: _videoIds, boundaries: _boundaries, ...rest } = base;
+  rewriting.set(key, { prev: result, index });
+  return startAiTool({ ...rest, section: { citationsArtifactId, index, ...(exclude.length ? { exclude: [...exclude] } : {}) } }, result.summary.modelId, {
+    figures: result.figures,
+  });
+}
+
+/** 能不能重写一段：这一次是从这里整篇跑出来的，且有出处旁文件。 */
+export function canRewriteAiToolSection(key: string, result: AiToolResult): boolean {
+  return lastParams.has(key) && !!result.summary.citationsArtifactId;
+}
+
+/** 撤回上一次重写：换回上一版（重写出的那一份仍留在 Space 里）。 */
+export function undoAiToolSection(key: string): void {
+  const prev = useAiToolRun.getState().results[key]?.rewrite?.prev;
+  if (!prev) return;
+  useAiToolRun.setState((s) => ({ results: { ...s.results, [key]: prev } }));
+  deps?.toast('neutral', W.rewriteUndone);
+}
+
 /** 从停下的那一步重跑同一个任务（`pipelines.retry`）。 */
 export async function retryAiTool(key: string): Promise<void> {
   const bound = deps;
@@ -207,7 +273,7 @@ export async function retryAiTool(key: string): Promise<void> {
   const { videoId, tool } = problem;
   const before = useJobs.getState().jobs.find((job) => job.jobId === jobId);
   useAiToolRun.setState((s) => ({
-    runs: { ...s.runs, [key]: { videoId, tool, jobId, status: 'submitting', model: problem.model, retriedAt: null } },
+    runs: { ...s.runs, [key]: { videoId, tool, jobId, status: 'submitting', model: problem.model, retriedAt: null, ...(figuresWanted.get(key) ? { figures: true } : {}) } },
     problems: without(s.problems, key),
   }));
   try {
@@ -287,7 +353,17 @@ function finish(key: string, run: AiToolRun, job: JobRecord): void {
     endRun(key, { ...base, title: C.failed, message: C.badResult });
     return;
   }
-  const result: AiToolResult = { videoId: run.videoId, tool: run.tool, jobId: job.jobId, summary: { ...summary, text: summary.text } };
+  const result: AiToolResult = {
+    videoId: run.videoId,
+    tool: run.tool,
+    jobId: job.jobId,
+    summary: { ...summary, text: summary.text },
+    ...(run.figures ? { figures: true } : {}),
+  };
+  const rewrite = rewriting.get(key);
+  rewriting.delete(key);
+  const section = summary.context.section;
+  if (rewrite && section) result.rewrite = { prev: rewrite.prev, index: section.index, span: section.paragraphs };
   useAiToolRun.setState((s) => ({ runs: without(s.runs, key), results: { ...s.results, [key]: result } }));
 }
 

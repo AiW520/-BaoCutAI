@@ -1,0 +1,45 @@
+{
+  "rankingVersion": "rrf-k60-text-v1",
+  "fusion": {
+    "k": { "value": 60, "calibrated": false },
+    "weights": {
+      "lexical": { "value": 1, "calibrated": false },
+      "semantic": { "value": 1, "calibrated": false }
+    },
+    "perRouteCandidates": { "value": 80, "calibrated": false },
+    "mergedCandidates": { "value": 100, "calibrated": false }
+  },
+  "chunking": {
+    "targetTokens": { "value": 200, "calibrated": false },
+    "minTokens": { "value": 120, "calibrated": false },
+    "maxTokens": { "value": 512, "calibrated": false },
+    "overlapSentences": { "value": 1, "calibrated": false }
+  },
+  "thresholds": {
+    "weakHit": { "value": 0.731, "calibrated": false },
+    "reuse": { "value": 0.9825, "calibrated": false },
+    "retake": { "value": 0.93, "calibrated": false },
+    "glossary": { "value": 0.86, "calibrated": false },
+    "related": { "value": 0.75, "calibrated": false }
+  },
+  "aids": {
+    "retakeWindowSec": { "value": 90, "calibrated": false },
+    "retakeShortRatio": { "value": 0.6, "calibrated": false },
+    "retakeMinChars": { "value": 6, "calibrated": false },
+    "glossaryCharSimilarity": { "value": 0.5, "calibrated": false },
+    "glossaryMaxWindows": { "value": 2000, "calibrated": false },
+    "discoveryMinCount": { "value": 3, "calibrated": false },
+    "discoveryCharSimilarity": { "value": 0.75, "calibrated": false },
+    "memoryReference": { "value": 0.86, "calibrated": false },
+    "memoryMinChars": { "value": 4, "calibrated": false },
+    "memoryReferencesPerSentence": { "value": 3, "calibrated": false },
+    "memoryReferenceTotal": { "value": 120, "calibrated": false },
+    "memoryMaxVideos": { "value": 20, "calibrated": false },
+    "memoryPairPool": { "value": 1500, "calibrated": false }
+  },
+  "chapterBoundary": {
+    "k": { "value": 1.5, "calibrated": false },
+    "minChapterSec": { "value": 60, "calibrated": false },
+    "maxChapters": { "value": 24, "calibrated": false }
+  }
+}

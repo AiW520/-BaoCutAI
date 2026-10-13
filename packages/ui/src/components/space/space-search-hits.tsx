@@ -1,11 +1,17 @@
 import { useEffect, useRef, useState } from 'react';
-import type { Id, SpaceEntry, SpaceSearchHit, SpaceSearchResult } from '@baocut/protocol';
-import { Badge, Picker, PickerItem, ProgressCircle, ToastQueue } from '@react-spectrum/s2';
+import type { Id, SpaceEntry, SpaceSearchHit, SpaceSearchResult, SpaceSearchV2Result } from '@baocut/protocol';
+import { ActionButton, Badge, Checkbox, Picker, PickerItem, ProgressCircle, SegmentedControl, SegmentedControlItem, Text, ToastQueue } from '@react-spectrum/s2';
+import MagicWand from '@react-spectrum/s2/icons/MagicWand';
 import Filmstrip from '@react-spectrum/s2/icons/Filmstrip';
 import { Button as RACButton } from 'react-aria-components';
 import { style } from '@react-spectrum/s2/style' with { type: 'macro' };
+import { aiTool } from '../../model/ai-tools.ts';
+import { mergeDraft } from '../../model/ai-tools-handoff.ts';
+import { formatClock } from '../../model/format.ts';
+import { videoTargetOf } from '../../model/space.ts';
 import {
   ANY_HIT,
+  canWriteFromHit,
   collectSpeakers,
   DOCUMENT_KIND_LABEL,
   exactSpeaker,
@@ -13,22 +19,35 @@ import {
   HIT_KIND_FILTERS,
   hitChip,
   hitTarget,
+  hitVideoEntry,
   hitWhere,
+  matchedByKind,
   planGroupRows,
   SEARCH_DEBOUNCE_MS,
   searchNote,
   searchRequest,
+  searchV2Request,
   seekSeconds,
+  semanticHitRows,
   snippetParts,
   speakerOptions,
   type HitFilter,
   type HitGroup,
   type HitKindFilter,
+  type SemanticHitRow,
+  type SpaceSearchMode,
 } from '../../model/space-search.ts';
+import { coverageLine } from '../../model/semantic-status.ts';
 import { useRuntime } from '../../runtime/context.tsx';
+import type { RuntimeSession } from '../../runtime/session.ts';
+import { useDraftSkills } from '../../state/draft-skills-store.ts';
 import { useEditor } from '../../state/editor-store.ts';
 import { useShell } from '../../state/shell-store.ts';
 import { useVideo } from '../../state/video-store.ts';
+import { openAiTool, setPanelLanding } from '../editor/ai-tools-nav.ts';
+import { SemanticNote } from '../semantic-note.tsx';
+import { openHome, startDraftKey } from '../start/open-home.ts';
+import { OUTPUT_COPY } from '../tools/tools-copy.ts';
 import { SPACE_COPY as COPY } from './space-copy.ts';
 
 const section = style({ display: 'flex', flexDirection: 'column', gap: 8, flexShrink: 0 });
@@ -100,11 +119,18 @@ const rowMeta = style({ font: 'ui-xs', color: 'gray-600' });
 const snippet = style({ font: 'ui-sm', color: 'gray-800', overflowWrap: 'anywhere' });
 const mark = style({ backgroundColor: 'yellow-400', color: 'gray-900', borderRadius: 'sm' });
 const chip = style({ flexShrink: 0 });
+const acts = style({ display: 'flex', flexWrap: 'wrap', gap: 4, paddingStart: 32 });
+const ask = style({ display: 'flex', flexWrap: 'wrap', alignItems: 'center', columnGap: 8, rowGap: 4 });
+const channelBox = style({ display: 'flex', alignItems: 'center', flexWrap: 'wrap', columnGap: 12 });
 
 type SearchState =
   | { status: 'loading'; query: string }
-  | { status: 'done'; query: string; result: SpaceSearchResult }
+  | { status: 'done'; query: string; mode: 'lexical'; result: SpaceSearchResult }
+  | { status: 'done'; query: string; mode: 'hybrid'; result: SpaceSearchV2Result; rows: SemanticHitRow[] }
   | { status: 'error'; query: string; error: string };
+
+type Hit = SpaceSearchHit | SemanticHitRow;
+const isSemantic = (hit: Hit): hit is SemanticHitRow => 'hitId' in hit;
 
 const ALL = 'all';
 const speakerKey = (name: string) => `speaker:${name}`;
@@ -116,10 +142,16 @@ const speakerKey = (name: string) => `speaker:${name}`;
  * 结果按视频分组（设计稿 page-projects.jsx HitGroup）：组头打开视频、不挪播放头；每组先给十条，「再显示 N 条」再放十条。
  * 可按文档种类、说话人筛（合同 `kinds`、`speaker`）：说话人的选项来自这个词搜到过的命中；Runtime 按「名字里含有」找，
  * 这里再按整串对一遍。设计稿没有这两个筛选控件，样子照 Space 页现有的筛选 Picker。
+ *
+ * 方式（创作辅助集成设计 §2.4、§2.11；设计稿 space-search.jsx）：「综合」（缺省）走 `space.searchV2`，按意思与字面两路找；
+ * 「精确文字」是原来的 `space.search`。综合搜索的命中写明怎么找到的（不给分数）、剪掉了的写「已从时间线剪掉」；顶上一行按通道写
+ * 完整性，没装模型退回字面或索引在更新时各入口那一句（`SemanticNote`）。画面与声音这一版没有索引，勾选框置灰并写明。
  */
 export function SpaceSearchHits({ query, projectId, entries }: { query: string; projectId: Id | 'none' | null; entries: readonly SpaceEntry[] }) {
   const runtime = useRuntime();
+  const web = runtime.host.platform === 'web';
   const [state, setState] = useState<SearchState | null>(null);
+  const [mode, setMode] = useState<SpaceSearchMode>('hybrid');
   const [filter, setFilter] = useState<HitFilter>(ANY_HIT);
   // 这个词（与项目）搜到过的说话人；换词时重来。
   const [speakers, setSpeakers] = useState<{ key: string; names: string[] }>({ key: '', names: [] });
@@ -128,7 +160,7 @@ export function SpaceSearchHits({ query, projectId, entries }: { query: string; 
   const seq = useRef(0);
   const q = query.trim();
   const scopeKey = `${q}\n${projectId ?? ''}`;
-  const resultKey = `${scopeKey}\n${filter.kind}\n${filter.speaker ?? ''}`;
+  const resultKey = `${scopeKey}\n${mode}\n${filter.kind}\n${filter.speaker ?? ''}`;
 
   useEffect(() => {
     const id = ++seq.current;
@@ -139,13 +171,19 @@ export function SpaceSearchHits({ query, projectId, entries }: { query: string; 
     setState({ status: 'loading', query: q });
     const scope = `${q}\n${projectId ?? ''}`;
     const timer = setTimeout(() => {
-      runtime
-        .searchSpace(searchRequest(q, projectId, filter))
-        .then((result) => {
+      const search: Promise<SearchState & { status: 'done' }> =
+        mode === 'lexical'
+          ? runtime.searchSpace(searchRequest(q, projectId, filter)).then((result) => ({ status: 'done', query: q, mode, result }))
+          : runtime.client
+              .request('space.searchV2', searchV2Request(q, projectId, filter))
+              .then((result) => ({ status: 'done', query: q, mode: 'hybrid', result, rows: semanticHitRows(result.hits) }));
+      search
+        .then((done) => {
           if (id !== seq.current) return;
-          setState({ status: 'done', query: q, result });
+          setState(done);
+          const found: readonly Hit[] = done.mode === 'lexical' ? done.result.hits : done.rows;
           setSpeakers((s) => {
-            const names = collectSpeakers(s.key === scope ? s.names : [], result.hits);
+            const names = collectSpeakers(s.key === scope ? s.names : [], found);
             return s.key === scope && names.length === s.names.length ? s : { key: scope, names };
           });
         })
@@ -154,16 +192,23 @@ export function SpaceSearchHits({ query, projectId, entries }: { query: string; 
         });
     }, SEARCH_DEBOUNCE_MS);
     return () => clearTimeout(timer);
-  }, [runtime, q, projectId, filter]);
+  }, [runtime, q, projectId, filter, mode]);
 
   if (!state) return null;
-  const hits = state.status === 'done' ? exactSpeaker(state.result.hits, filter.speaker) : [];
-  const groups = groupHits(hits);
-  const extra = state.status === 'done' ? searchNote(state.result) : null;
+  const found: readonly Hit[] = state.status !== 'done' ? [] : state.mode === 'lexical' ? state.result.hits : state.rows;
+  const hits = exactSpeaker(found, filter.speaker);
+  const groups = groupHits<Hit>(hits);
+  const extra =
+    state.status !== 'done'
+      ? null
+      : state.mode === 'lexical'
+        ? searchNote(state.result)
+        : searchNote({ complete: true, pendingVideos: 0, truncated: state.result.truncated, hits: state.rows });
+  const semantic = state.status === 'done' && state.mode === 'hybrid' ? state.result : null;
   const options = speakerOptions(speakers.key === scopeKey ? speakers.names : [], filter.speaker);
   const filtered = filter.kind !== 'all' || filter.speaker !== null;
   const counts = shown.key === resultKey ? shown.counts : {};
-  const showMore = (g: HitGroup) =>
+  const showMore = (g: HitGroup<Hit>) =>
     setShown((s) => {
       const before = s.key === resultKey ? s.counts : {};
       return { key: resultKey, counts: { ...before, [g.videoId]: planGroupRows(g.hits, before[g.videoId]).next } };
@@ -181,6 +226,24 @@ export function SpaceSearchHits({ query, projectId, entries }: { query: string; 
         ) : null}
       </div>
       <div className={filters}>
+        <SegmentedControl
+          aria-label={COPY.searchMode}
+          selectedKey={mode}
+          onSelectionChange={(key) => setMode(key === 'lexical' ? 'lexical' : 'hybrid')}>
+          <SegmentedControlItem id="hybrid">{COPY.modeHybrid}</SegmentedControlItem>
+          <SegmentedControlItem id="lexical">{COPY.modeLexical}</SegmentedControlItem>
+        </SegmentedControl>
+        <div className={channelBox} role="group" aria-label={COPY.channelsLabel}>
+          <Checkbox size="S" isDisabled isSelected>
+            {COPY.channelSpeech}
+          </Checkbox>
+          <Checkbox size="S" isDisabled isSelected={false}>
+            {COPY.channelVisual}
+          </Checkbox>
+          <Checkbox size="S" isDisabled isSelected={false}>
+            {COPY.channelAudio}
+          </Checkbox>
+        </div>
         <Picker
           aria-label={COPY.hitKind}
           size="S"
@@ -208,9 +271,24 @@ export function SpaceSearchHits({ query, projectId, entries }: { query: string; 
         </Picker>
         {state.status === 'done' && hits.length && !options.length ? <span className={note}>{COPY.hitSpeakerNone}</span> : null}
       </div>
+      {mode === 'hybrid' ? (
+        <p className={note}>{semantic ? `${coverageLine(semantic.coverage)} · ${COPY.channelsLater}` : COPY.channelsLater}</p>
+      ) : null}
+      {mode === 'hybrid' ? <SemanticNote entry="search" reason={semantic?.degraded?.reason ?? null} /> : null}
       {state.status === 'error' ? <p className={note}>{COPY.hitsError(state.error)}</p> : null}
-      {state.status === 'done' && !hits.length ? <p className={note}>{filtered ? COPY.hitsNoneFiltered : COPY.hitsNone}</p> : null}
+      {state.status === 'done' && !hits.length ? (
+        <p className={note}>{filtered ? COPY.hitsNoneFiltered : semantic && semantic.effectiveMode !== 'lexical' ? COPY.hitsNoneSemantic : COPY.hitsNone}</p>
+      ) : null}
       {extra ? <p className={note}>{extra}</p> : null}
+      {state.status === 'done' && hits.length ? (
+        <div className={ask}>
+          <ActionButton size="S" onPress={() => askAcrossVideos(q, projectId)}>
+            <MagicWand />
+            <Text>{COPY.hitAsk}</Text>
+          </ActionButton>
+          <span className={note}>{COPY.hitAskHint}</span>
+        </div>
+      ) : null}
       {groups.length ? (
         <div className={list}>
           {groups.map((g) => {
@@ -227,12 +305,12 @@ export function SpaceSearchHits({ query, projectId, entries }: { query: string; 
                 <ul className={rows}>
                   {plan.rows.map((hit, index) => (
                     <li key={`${hit.documentId ?? 'chapter'}:${hit.time.start}:${index}`}>
-                      <RACButton className={(s) => row(s)} onPress={() => openHit(hit, entries)}>
+                      <RACButton className={(s) => row(s)} onPress={() => (isSemantic(hit) ? void openSemanticHit(runtime, hit, entries) : openHit(hit, entries))}>
                         <Badge variant="neutral" fillStyle="subtle" size="S" styles={chip}>
                           {hitChip(hit)}
                         </Badge>
                         <span className={rowBody}>
-                          <span className={rowMeta}>{hitWhere(hit)}</span>
+                          <span className={rowMeta}>{rowWhere(hit)}</span>
                           <span className={snippet}>
                             {snippetParts(hit.snippet, hit.highlights).map((part, i) =>
                               part.hit ? (
@@ -246,6 +324,7 @@ export function SpaceSearchHits({ query, projectId, entries }: { query: string; 
                           </span>
                         </span>
                       </RACButton>
+                      <HitActions hit={hit} entries={entries} query={q} web={web} runtime={runtime} />
                     </li>
                   ))}
                 </ul>
@@ -263,8 +342,77 @@ export function SpaceSearchHits({ query, projectId, entries }: { query: string; 
   );
 }
 
+/**
+ * 命中行下面的两样（创作辅助集成设计 §2.1，设计稿 space-search.jsx `ResultCard`）：「交给 Agent」把这一句作为引用带进会话
+ * （`space.continueInConversation` 带上视频条目，预填一句可改写的话，不自动发送）；「用于写作」打开这部视频的写博客，范围落在
+ * 「按主题」、主题就是搜的这句话（写作按主题挑材料时用同一个索引，挑出的就是这里命中的这几段及前后句）。
+ */
+function HitActions({ hit, entries, query, web, runtime }: { hit: Hit; entries: readonly SpaceEntry[]; query: string; web: boolean; runtime: RuntimeSession }) {
+  const entry = hitVideoEntry(hit, entries);
+  const write = canWriteFromHit(hit, web) && !!entry;
+  if (!entry) return null;
+  return (
+    <div className={acts}>
+      <ActionButton isQuiet size="XS" onPress={() => handOverHit(runtime, hit, entry)}>
+        {OUTPUT_COPY.handover}
+      </ActionButton>
+      {write ? (
+        <ActionButton isQuiet size="XS" onPress={() => writeFromHit(hit, entry, query)}>
+          {COPY.hitWrite}
+        </ActionButton>
+      ) : null}
+    </div>
+  );
+}
+
+/**
+ * 「回答这个问题」（创作辅助集成设计 §2.9；原型 space-search.jsx `Answer`）：Space 里不调模型，把问题交给新会话，挂上内置 skill
+ * `cross-video-qa`，由智能体检索、回答并附可点的出处（回答里的视频时间链接）。按 Space 当前筛到的项目开会话、话里写明只在这个项目里找（skill 才知道要限定项目），没筛项目时是无项目会话；
+ * 只放进输入框（接在已有的话后面），由用户发出。
+ */
+export function askAcrossVideos(question: string, projectId: Id | 'none' | null): void {
+  const project = projectId && projectId !== 'none' ? projectId : null;
+  const key = startDraftKey(project);
+  const shell = useShell.getState();
+  shell.setDraft(key, mergeDraft(shell.drafts[key], COPY.hitAskDraft(question, project !== null)));
+  useDraftSkills.getState().add(key, CROSS_VIDEO_QA_SKILL);
+  openHome(project);
+}
+
+/** 跨视频问答的内置 skill（仓库根 `skills/baocut/built-in-skills/cross-video-qa/`）。 */
+const CROSS_VIDEO_QA_SKILL = 'cross-video-qa';
+
+function handOverHit(runtime: RuntimeSession, hit: Hit, entry: SpaceEntry): void {
+  runtime
+    .continueSpaceEntry(entry.id)
+    .then(({ conversation, created }) => {
+      const shell = useShell.getState();
+      shell.setDraft(conversation.id, mergeDraft(shell.drafts[conversation.id], COPY.hitHandoverDraft(hit.videoName, formatClock(hit.time.start), hit.snippet)));
+      shell.go({ tab: 'home', conversationId: conversation.id, projectId: null });
+      ToastQueue.positive(OUTPUT_COPY.handedOver(created, entry.name, conversation.title || OUTPUT_COPY.untitled), { timeout: 6000 });
+    })
+    .catch((e: Error) => ToastQueue.negative(OUTPUT_COPY.handoverFailed(e.message), { timeout: 6000 }));
+}
+
+function writeFromHit(hit: Hit, entry: SpaceEntry, query: string): void {
+  openAiTool(hit.videoId, 'blog', { topic: query });
+  setPanelLanding(hit.videoId, 'aitools');
+  useShell.getState().openVideo(videoTargetOf(entry));
+  ToastQueue.info(COPY.hitWriting(aiTool('blog').name, query), { timeout: 5000 });
+}
+
+/**
+ * 命中行的位置；综合搜索的命中再写怎么找到的。不在列表里写「已剪掉」：素材时间的命中也可能只是没有时间线（或译文对不上时间），
+ * 是不是真剪掉了要打开时按当前版本解析才知道（`openSemanticHit`）。
+ */
+function rowWhere(hit: Hit): string {
+  if (!isSemantic(hit)) return hitWhere(hit);
+  const by = { both: COPY.byBoth, lexical: COPY.byLexical, semantic: COPY.bySemantic }[matchedByKind(hit.matchedBy)];
+  return [hitWhere(hit), by].join(' · ');
+}
+
 /** 点组头：打开视频，不挪播放头（设计稿：没有落点的不硬编一个）。 */
-function openGroup(group: HitGroup, entries: readonly SpaceEntry[]): void {
+function openGroup(group: HitGroup<Hit>, entries: readonly SpaceEntry[]): void {
   const target = hitTarget(group.hits[0]!, entries);
   if (!target) {
     ToastQueue.neutral(COPY.hitUnopenable, { timeout: 5000 });
@@ -310,4 +458,36 @@ function openHit(hit: SpaceSearchHit, entries: readonly SpaceEntry[]): void {
     stop();
     clearTimeout(timer);
   }
+}
+
+/**
+ * 打开综合搜索的命中：还在时间线上、索引就是当前版本的直接跳到那一秒；否则先按当前版本重新解析（`space.resolveSearchHit`），
+ * 解析到时间线上的那一段就跳过去，剪掉了或不在了的只打开视频并说一句。
+ */
+async function openSemanticHit(runtime: RuntimeSession, hit: SemanticHitRow, entries: readonly SpaceEntry[]): Promise<void> {
+  const target = hitTarget(hit, entries);
+  if (!target) {
+    ToastQueue.neutral(COPY.hitUnopenable, { timeout: 5000 });
+    return;
+  }
+  let at = hit.inTimeline && !hit.needsResolve ? seekSeconds(hit) : null;
+  let notice: string | null = null;
+  if (at === null) {
+    try {
+      const resolved = await runtime.client.request('space.resolveSearchHit', { hitId: hit.hitId });
+      const span = resolved.spans.find((s) => s.clock === 'sequence');
+      if (resolved.status === 'resolved' && span) at = span.startSec;
+      else notice = resolved.status === 'gone' ? COPY.hitGone : COPY.hitNotInTimeline;
+    } catch {
+      notice = hit.inTimeline ? COPY.hitStale : COPY.hitNotInTimeline;
+      at = hit.inTimeline ? seekSeconds(hit) : null;
+    }
+  }
+  if (at !== null) {
+    const editor = useEditor.getState();
+    editor.attach(hit.videoId);
+    editor.setPlayhead(at);
+  }
+  useShell.getState().openVideo(target);
+  if (notice) ToastQueue.neutral(notice, { timeout: 5000 });
 }

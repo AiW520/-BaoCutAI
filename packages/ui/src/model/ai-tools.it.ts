@@ -31,6 +31,7 @@ export const it: AiToolsMessages = {
     lineFrame: (ratio, focus) => (ratio ? `Proporzioni ${ratio}, inquadratura ${focus}` : 'Proporzioni: mantieni l’originale, senza ritagliare'),
     lineSubtitles: (tracks, style) => `Sottotitoli: ${tracks}, ${style}`,
     lineSkipDone: 'Salta le parti già tagliate in video brevi',
+    lineTopic: (topic) => `Cerca solo nelle parti che parlano di «${topic}»: trovale prima con speech_relevant, poi scegli tra quelle`,
     lineDirect: 'Crea i video appena li trovi; non serve chiedermelo prima',
   },
   groups: { frame: 'Fotogramma', transcript: 'Trascrizione', translate: 'Traduzione', writing: 'Scrittura', publish: 'Pubblicazione', sound: 'Suono' },

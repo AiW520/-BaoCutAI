@@ -572,7 +572,7 @@ export function switchSourceOperations(
 
 /**
  * 改几句译文（「改译文并重配」的第一步）：合成念的是译文的 `naturalText`，所以改的是它（有字幕显示改写的单元，改写不动、
- * 字幕照旧），改过的单元记为 `reviewed`、`textHash` 跟着换。文字没变或是空的不改。没有改动时 null。
+ * 字幕照旧），改过的单元记为 `reviewed`、`textHash` 跟着换、沿用的标记去掉。文字没变或是空的不改。没有改动时 null。
  */
 export async function retextTranslation(body: TranslationBody, texts: ReadonlyMap<Id, string>): Promise<{ body: TranslationBody; changed: Id[] } | null> {
   const changed: Id[] = [];
@@ -583,7 +583,8 @@ export async function retextTranslation(body: TranslationBody, texts: ReadonlyMa
       if (value === '' || value === unit.naturalText.trim()) return unit;
       changed.push(unit.id);
       const alignment = unit.alignment && !unit.displayRewrite ? { ...unit.alignment, textHash: await textHash(value) } : unit.alignment;
-      return { ...unit, naturalText: value, alignment, status: 'reviewed' as const };
+      const { reuse: _reuse, ...rest } = unit;
+      return { ...rest, naturalText: value, alignment, status: 'reviewed' as const };
     }),
   );
   return changed.length > 0 ? { body: { ...body, units }, changed } : null;

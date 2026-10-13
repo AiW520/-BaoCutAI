@@ -28,6 +28,7 @@ export const ko: ModelsLocalMessages = {
     separate: '분리',
     music: '음악',
     diarize: '화자 구분',
+    embed: '의미 색인',
   },
   auto: '자동 선택',
   notInstalled: (name) => `${name}(설치되지 않음)`,

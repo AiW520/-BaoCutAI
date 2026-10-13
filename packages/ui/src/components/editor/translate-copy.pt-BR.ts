@@ -132,6 +132,13 @@ export const ptBRTranslate: TranslateMessages = {
   staleShort: (n: number) => `${n} desatualizadas`,
   cutShort: (n: number) => `${n} cortadas`,
   goneShort: (n: number) => `${n} excluídas`,
+  termsShort: (n: number) => `${n} ${n === 1 ? 'termo divergente' : 'termos divergentes'}`,
+  terms: (n: number) => `${n} ${n === 1 ? 'trecho não usa' : 'trechos não usam'} a tradução do glossário`,
+  termsTitle: 'Termos fora do glossário',
+  termsLead: 'Estas traduções não usam a tradução do glossário. Unificar é uma edição comum, que pode ser desfeita.',
+  termsSpot: (got: string, want: string) => ` · traduzido como “${got}”, o glossário diz “${want}”`,
+  termsUnify: 'Usar as traduções do glossário',
+  termsUnified: (n: number) => `${n} ${n === 1 ? 'trecho alterado' : 'trechos alterados'} para a tradução do glossário`,
   cut: (n: number) => `${sentences(n)} do original ${pluralForm('pt-BR', n, { one: 'foi cortada', other: 'foram cortadas' })} do vídeo`,
   webHint: 'Traduzir de novo usa um modelo ou o agente: comece pelo agente ou pelo app BaoCut',
   refreshing: (n: number | null) => (n === null ? 'Traduzindo de novo…' : `Traduzindo de novo ${sentences(n)}…`),
@@ -158,6 +165,18 @@ export const ptBRTranslate: TranslateMessages = {
   refreshFailed: 'Falha ao traduzir de novo',
   refreshInterrupted: 'A nova tradução foi interrompida',
   refreshCancelled: 'Nova tradução cancelada',
+  // 翻译记忆（创作辅助集成设计 §2.6）
+  chipReused: 'Reaproveitada',
+  reusedTip: (video: string | null) =>
+    video ? `Tradução reaproveitada de “${video}”: o original é quase idêntico` : 'Tradução reaproveitada de outro vídeo seu: o original é quase idêntico',
+  directReused: 'Traduzir de novo',
+  directReusedSub: (video: string | null) => `Deixa de reaproveitar ${video ? `a tradução de “${video}”` : 'a tradução existente'} e traduz de novo com a API do modelo`,
+  memory: 'Memória de tradução',
+  memoryOn:
+    'Frases iguais às que você já traduziu em outros vídeos (mesmo par de idiomas) reaproveitam essa tradução e ficam marcadas como “Reaproveitada”; as parecidas vão para o modelo como referência.',
+  memoryOff: 'A memória de tradução está desativada nas Configurações: traduções existentes não são reaproveitadas nem consultadas.',
+  memoryUsed: (reused: number, referenced: number) => `Memória de tradução: ${reused} reaproveitadas · ${referenced} traduções existentes como referência`,
+
 };
 
 export const ptBRTextNotConfigured: TextNotConfiguredMessages = {

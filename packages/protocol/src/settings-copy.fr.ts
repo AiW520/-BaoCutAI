@@ -35,4 +35,8 @@ export const fr: SettingDescriptionMessages = {
   'updates.autoDownload': "Télécharger les nouvelles versions en arrière-plan (sans installation automatique)",
   'diagnostics.enabled': "Envoyer des statistiques anonymes et résumés de performance (sans média, texte ni chemin)",
   'offline.strict': "Hors ligne strict : ne rien envoyer à un service en ligne",
+  'semantic.channels': 'Canaux de l’index sémantique à créer : text (le parlé : transcriptions, sous-titres, traductions, chapitres) ; visual et audio ne sont pas encore disponibles',
+  'semantic.indexedProjects': 'Projets dont les vidéos ont un index sémantique : all, ou une liste d’ids de projet (les vidéos hors projet seulement avec all)',
+  'semantic.translationMemory': 'Proposer d’anciennes traductions de phrases presque identiques lors de la traduction (nécessite le modèle de recherche de texte)',
+  'semantic.glossaryCandidates': 'Proposer des termes de glossaire à partir de graphies presque identiques entre transcriptions (nécessite le modèle de recherche de texte)',
 } satisfies Record<SettingKey, string>;

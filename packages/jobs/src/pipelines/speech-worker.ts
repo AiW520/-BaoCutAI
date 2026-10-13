@@ -14,6 +14,7 @@ import {
 } from '@baocut/process-host';
 import { JobsSpeechWorker } from '@baocut/protocol/messages/jobs/speech-worker.ts';
 import { CallCounter, PipelineStepError, type ProgressReporter } from './pipeline.ts';
+import type { SpeechWorkerMemory } from './translation-memory.ts';
 import { translationShapeProblems, type TranslationBody } from './translation-document.ts';
 import type { GlossaryRef } from './translation-glossary.ts';
 
@@ -78,6 +79,11 @@ export interface SpeechTranslateInput {
    */
   translation?: TranslationBody;
   sentences?: Id[];
+  /**
+   * 翻译记忆（`translation-memory.ts`）：`reuse` 的句子预先填进译文表、不再送翻（照样对齐）；`references` 附在送翻的提示里作参考。
+   * 就地刷新时不给。
+   */
+  memory?: SpeechWorkerMemory;
 }
 
 /** Worker 写出的译文正文（`baocut.translation/2`；单元带核心的对齐块与显示改写）。 */

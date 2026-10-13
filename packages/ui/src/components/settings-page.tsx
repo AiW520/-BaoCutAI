@@ -24,6 +24,7 @@ import Keyboard from '@react-spectrum/s2/icons/Keyboard';
 import Code from '@react-spectrum/s2/icons/Code';
 import Lock from '@react-spectrum/s2/icons/Lock';
 import Properties from '@react-spectrum/s2/icons/Properties';
+import Search from '@react-spectrum/s2/icons/Search';
 import Settings from '@react-spectrum/s2/icons/Settings';
 import TextIcon from '@react-spectrum/s2/icons/Text';
 import { style } from '@react-spectrum/s2/style' with { type: 'macro' };
@@ -55,6 +56,7 @@ import { AgentSettings } from './settings/agent-settings.tsx';
 import { AgentSkills } from './settings/agent-skills.tsx';
 import { DataGrants } from './settings/data-grants.tsx';
 import { DownloaderSettings } from './settings/downloader-settings.tsx';
+import { SemanticSettings } from './settings/semantic-settings.tsx';
 import { FontSettings } from './settings/font-settings.tsx';
 import { GeneralSettings } from './settings/general-settings.tsx';
 import { GlossarySettings } from './settings/glossary-settings.tsx';
@@ -168,6 +170,7 @@ const SECTION_ICON: Record<SettingsSection, ComponentType> = {
   shortcuts: Keyboard,
   fonts: TextIcon,
   downloader: Download,
+  semantic: Search,
   agent: AgentIcon,
   skills: Code,
   glossary: FileText,
@@ -287,6 +290,8 @@ export function SettingsPage({ section = 'general', model, platform }: {
               <FontSettings />
             ) : section === 'downloader' ? (
               <DownloaderSettings />
+            ) : section === 'semantic' ? (
+              <SemanticSettings />
             ) : section === 'agent' ? (
               <AgentSettings />
             ) : section === 'skills' ? (

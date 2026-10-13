@@ -218,6 +218,16 @@ describe('剪成短视频', () => {
     ]);
   });
 
+  it('写了主题（§2.8）时多一句只在讲这件事的片段里找、先用 speech_relevant 圈出，排在直接创建之前；空白不加', () => {
+    const lines = shortsLines({ ...SHORTS_DEFAULTS, skipDone: true }, { hasTranslation: true, topic: '  为什么做本地 ' });
+    expect(lines.slice(-3)).toEqual([
+      '已经切过的不再找',
+      '只在讲「为什么做本地」的片段里找：先用 speech_relevant 找出这些片段，再从中挑',
+      '找好就直接创建成视频，不用先问我',
+    ]);
+    expect(shortsLines(SHORTS_DEFAULTS, { hasTranslation: true, topic: '   ' })).toEqual(shortsLines(SHORTS_DEFAULTS, { hasTranslation: true }));
+  });
+
   it('保留原画幅不裁；没有译文只带原文；「跟着说话的人」不开放、落回自动；不叫 Agent 把视频收进项目', () => {
     const lines = shortsLines(
       { ...SHORTS_DEFAULTS, count: 12, length: 'medium', ratio: 'source', tracks: 'translation', style: 'video', skipDone: false },

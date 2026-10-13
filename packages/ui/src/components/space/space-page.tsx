@@ -104,6 +104,7 @@ import { useVideoTools } from '../tools/use-video-tools.ts';
 import { failedTranscribeJob, spaceTranscribeAction, transcribeState, type SpaceTranscribeAction } from '../../model/tool-targets.ts';
 import { useJobs } from '../../state/jobs-store.ts';
 import { SpaceViewer, type ViewerActions } from './space-viewer.tsx';
+import { useRelatedVideos } from './use-related-videos.ts';
 
 const page = style({ display: 'flex', flexGrow: 1, minHeight: 0, minWidth: 0 });
 const navRow = style({ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, width: 'full' });
@@ -316,6 +317,8 @@ function SpaceMain({ category, projectId, from }: { category: SpaceCategory; pro
   }, [entries, viewing]);
   const viewingParent = useMemo(() => (viewing ? parentVideoOf(entries, viewing) : null), [entries, viewing]);
   const viewingTools = useEntryTools(viewing);
+  // 讲相近内容的视频（创作辅助集成设计 §2.4）：打开视频的查看框时才算。
+  const viewingRelated = useRelatedVideos(viewing, entries);
   const viewingConversationId = viewing ? entryConversationId(viewing) : null;
   const viewingConversation = viewingConversationId ? conversations.find((c) => c.id === viewingConversationId) : undefined;
   const filtered = query.trim() !== '' || projectId !== null || status !== 'any' || !!from;
@@ -760,6 +763,7 @@ function SpaceMain({ category, projectId, from }: { category: SpaceCategory; pro
         host={viewingHost}
         shorts={viewingShorts}
         parent={viewingParent}
+        related={viewingRelated}
       />
       <SpaceDialogs
         dialog={dialog}

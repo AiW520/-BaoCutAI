@@ -29,6 +29,7 @@ export const ko: AiToolsMessages = {
     lineFrame: (ratio, focus) => (ratio ? `화면 비율 ${ratio}, 프레이밍: ${focus}` : '화면 비율: 원본 유지, 자르지 않기'),
     lineSubtitles: (tracks, style) => `자막: ${tracks}, ${style}`,
     lineSkipDone: '이미 잘라 낸 부분은 다시 찾지 않기',
+    lineTopic: (topic) => `“${topic}”에 대해 말하는 부분에서만 찾기: 먼저 speech_relevant로 그 부분을 찾은 뒤 그중에서 고르기`,
     lineDirect: '찾으면 바로 영상으로 만들기, 먼저 묻지 않아도 됨',
   },
   groups: {

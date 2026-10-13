@@ -8,6 +8,7 @@ import path from 'node:path';
  * 不删的：
  * - `content-index/`：跨视频检索的 SQLite 库（`index.db` 与 `-wal`、`-shm`）。运行中删掉会弄坏打开着的库；它自己在启动时清理
  *   遗留的临时文件（§5.11）。
+ * - `semantic-index/`：语义检索的派生库（EmbeddingGemma 2 检索集成方案 v0.1 §8），同样是打开着的 SQLite 库；删掉只能整库重建。
  * - `baocut-composition-host/`：代码画面宿主的脚本，活着的宿主进程正在用它，很小。
  * - 修改时间在宽限期（1 小时）内的临时文件（名字含 `.tmp`）：正在写的转码与分析结果。
  *
@@ -15,7 +16,7 @@ import path from 'node:path';
  */
 
 /** `cache/` 下不参与淘汰的顶层子目录。 */
-export const CACHE_PROTECTED_DIRS: readonly string[] = ['content-index', 'baocut-composition-host'];
+export const CACHE_PROTECTED_DIRS: readonly string[] = ['content-index', 'semantic-index', 'baocut-composition-host'];
 
 const TEMPORARY_GRACE_MS = 60 * 60 * 1000;
 

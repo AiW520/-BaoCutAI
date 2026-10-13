@@ -70,6 +70,7 @@ export const ja: EditLabelMessages = {
   editTranslation: '訳文を編集',
   markTranslationStale: '訳文を要更新にする',
   clearTranslationStale: '要更新の印を外す',
+  unifyGlossaryTerms: '用語集の訳語に統一',
   cutText: '文字起こしでカット',
   restoreText: 'カットした内容を復元',
   editTranscript: 'テキストを編集',

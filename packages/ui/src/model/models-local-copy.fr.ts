@@ -32,6 +32,7 @@ export const fr: ModelsLocalMessages = {
     separate: "Séparation",
     music: 'Musique',
     diarize: "Diarisation des locuteurs",
+    embed: "Index sémantique",
   } as Record<ModelBundleStatus['capability'], string>,
 
   auto: "Automatique",

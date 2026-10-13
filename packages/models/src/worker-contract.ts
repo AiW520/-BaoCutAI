@@ -45,7 +45,14 @@ export type ModelFamily =
    * audio.cpp 引擎（`audiocpp-engine` 组件，§4.4）：上游 GitHub 发布页的预编译包，按主机平台取一个压缩包解开；不交给 Model Worker，
    * 音乐生成的本地 Provider 直接执行它。
    */
-  | 'audio-cpp-engine';
+  | 'audio-cpp-engine'
+  /**
+   * 本地文本嵌入（`embedding` 组件，§4.5）：EmbeddingGemma 2 的 LiteRT-LM 包（单个 `.litertlm`）。文字搜索（text 270M）与多模态搜索
+   * （740M）两个模型包同一个 family；这一阶段只用文本编码器。
+   */
+  | 'embeddinggemma2-litert'
+  /** LiteRT-LM 的 C 动态库（`litertlm-runtime` 组件，§4.5）：GitHub 发布页的预编译包，Model Worker 运行期打开它。 */
+  | 'litertlm-runtime';
 /**
  * `asr` / `vad` / `aligner` / `speaker` / `segmentation` / `tokenizer` 是识别的组件；`tts` / `codec` / `aux` 是语音合成的组件（§4.1）；
  * `separator` 是人声与伴奏分离的组件，`image` 是文生图的组件（§4.2）：两者都不与别的组件同在一个模型包里。
@@ -68,7 +75,14 @@ export type BundleComponent =
    * 音乐生成模型包的 audio.cpp 引擎（§4.4）：平台专属的共享组件，来自 GitHub 发布页而不是模型仓库，装在 Runtime Home 的
    * `tools/audiocpp/<版本>/`，不在模型目录里，也不交给 Model Worker。
    */
-  | 'audiocpp-engine';
+  | 'audiocpp-engine'
+  /** 文本嵌入的模型（§4.5）：不与识别、合成等组件同在一个模型包里；必须带上 `litertlm-runtime`。 */
+  | 'embedding'
+  /**
+   * 文本嵌入模型包的 LiteRT-LM C 库（§4.5）：平台专属的共享组件，来自 GitHub 发布页，装在 Runtime Home 的
+   * `tools/litertlm-runtime/<版本>/`；与 `audiocpp-engine` 不同，它交给 Model Worker（Worker 运行期 `dlopen`）。
+   */
+  | 'litertlm-runtime';
 export const SPEECH_COMPONENTS: readonly BundleComponent[] = ['tts', 'codec', 'aux'];
 
 export interface ModelFiles {
@@ -87,6 +101,8 @@ export interface ModelBundle {
   components: Partial<Record<BundleComponent, ModelFiles>>;
   threads: number;
   memoryBudgetBytes: number | null;
+  /** 后端可写的缓存目录（绝对路径；LiteRT-LM 的编译缓存）。没给时 Worker 用系统临时目录。 */
+  cacheDir?: string;
 }
 
 // ---- §2 方法 ----
@@ -117,6 +133,22 @@ export interface WorkerHello {
    * 文生图的模型包只交给列出了它的 family 的 Worker（§2.1）。
    */
   imageFamilies: ModelFamily[];
+  /**
+   * 文本嵌入（`embed.run`，§2.5.6）：这个构建编进了 LiteRT-LM 后端时才有，同时 `capabilities` 含 `embed`。缺省即不支持
+   * （旧的 Worker 没有这个字段）。
+   */
+  embeddingCapabilities?: EmbeddingCapabilities;
+}
+
+export interface EmbeddingCapabilities {
+  /** 能加载的 `components.embedding.family`。 */
+  families: ModelFamily[];
+  /** 引擎接受的 `outputSize`。 */
+  outputSizes: number[];
+  /** 一次 `embed.run` 至多几条文本。 */
+  maxBatch: number;
+  /** 引擎的最大输入长度（token）；超过时报 `INPUT_TOO_LONG`。 */
+  maxInputTokens: number;
 }
 
 export interface ModelLoadResult {
@@ -470,7 +502,38 @@ export interface SegmentsHeader {
   timescale: number;
 }
 
+// ---- §2.5.6 文本嵌入 ----
+
+/** 一次 `embed.run` 至多这么多条文本（Worker 的上限；Runtime 按它分批）。 */
+export const EMBED_MAX_BATCH = 16;
+
+/**
+ * `embed.run` 的参数。文本已经加好任务前缀（`formatEmbeddingInput`），Worker 不改写；引擎按 `outputSize` 输出、开着归一化，
+ * 超长报错不截断。一批在推理线程上一次算完，中途不响应取消：`worker.status` 的 `job.jobId` 是 `requestId`，`job.cancel` 照常确认，
+ * 结果照常返回，由 Runtime 丢弃。
+ */
+export interface EmbedRunParams {
+  requestId: string;
+  texts: string[];
+  outputSize: number;
+  insertSpecialTokens: boolean;
+}
+
+/**
+ * `embed.run` 的结果：每条文本一个向量，little-endian `float32` 的标准 base64，次序同 `texts`。C API 不报每条的 token 数，
+ * 所以没有 `inputLengths`。
+ */
+export interface EmbedRunResult {
+  vectors: string[];
+  dims: number;
+  device: string;
+  elapsedMs: number;
+}
+
 // ---- §7 错误 ----
+
+/** `embed.run` 的一条文本超过模型的最大输入长度：`details.index` 指出哪一条。不可重试。 */
+export const INPUT_TOO_LONG = 'INPUT_TOO_LONG';
 
 /** `model.load` 只会返回这三种失败。 */
 export const LOAD_FAILURE_CODES = ['MODEL_NOT_INSTALLED', 'MODEL_UNSUPPORTED', 'MODEL_RESOURCE'] as const;

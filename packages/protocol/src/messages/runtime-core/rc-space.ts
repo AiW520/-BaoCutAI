@@ -76,6 +76,10 @@ const en = {
   labelGenerateImage: 'Generated image',
   labelGenerateMusic: 'Generated music',
   labelGenerateText: 'Generated text',
+  labelSummary: 'Summary',
+  labelBlog: 'Blog post',
+  labelTitles: 'Titles',
+  labelDescription: 'Description',
   labelExport: 'Export',
 
   // 内容索引、继续、素材
@@ -84,6 +88,7 @@ const en = {
   conversationCantSee:
     "This session can't see this item. Items that belong to a project must go into a session in the same project",
   serviceUsesMcp: 'External services access Space through MCP tools',
+  relatedNotVideo: 'Only videos list related videos',
   materialTextOnly: (p: { fileName: string }) =>
     `Only text from .txt and .md documents and .srt and .vtt subtitles can be read: ${p.fileName}`,
   materialTooLarge: (p: { fileName: string; bytes: number; limit: number }) =>

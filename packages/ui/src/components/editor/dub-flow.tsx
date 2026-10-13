@@ -70,7 +70,8 @@ import { DubNotices, DubRunHead, useDubLive } from './dub-status.tsx';
 import { useEditorActions } from './editor-context.tsx';
 import { PanelHead } from './panel-head.tsx';
 import { useDocumentBody } from './use-document-body.ts';
-import { GlossarySection, useVideoSelection } from './translate-flow.tsx';
+import { GlossarySection } from './translate-flow.tsx';
+import { useVideoSelection } from './use-translation-glossaries.ts';
 import { EDITOR_COPY as E } from './editor-copy.ts';
 
 const body = style({ flexGrow: 1, minHeight: 0, overflowY: 'auto', paddingX: 12, paddingTop: 4, paddingBottom: 16 });

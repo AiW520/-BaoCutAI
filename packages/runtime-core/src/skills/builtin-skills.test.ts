@@ -12,6 +12,7 @@ import { SkillCatalog, resolveBuiltinSkillsDir, type LoadedSkill } from './skill
  */
 const EXPECTED_IDS = [
   'cover-and-title',
+  'cross-video-qa',
   'design',
   'design-system',
   'motion-graphics',

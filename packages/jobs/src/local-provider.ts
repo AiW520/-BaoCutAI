@@ -2,11 +2,14 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import { JobsLocalProvider as L } from '@baocut/protocol/messages/jobs/local-provider.ts';
 import { ModelsGenerationOptions as GO } from '@baocut/protocol/messages/models/generation-options.ts';
+import { ModelsEmbedding as E } from '@baocut/protocol/messages/models/embedding.ts';
 import { errorText, jobWarning, type JobText } from './job-text.ts';
 
 import {
   BUILTIN_REFERENCE_LABEL,
   CRASH_CODES,
+  EMBED_MAX_BATCH,
+  INPUT_TOO_LONG,
   IMAGE_OUTPUT_FILE,
   IMAGE_PNG_CONTRACT,
   OUTPUT_WRITE_FAILED,
@@ -33,6 +36,8 @@ import {
   type GenerationSink,
   type DiarizeRunResult,
   type GenerationOutputFile,
+  type EmbedRunParams,
+  type EmbedRunResult,
   type ImageRunResult,
   type JobOutput,
   type JobRunParams,
@@ -84,6 +89,8 @@ import { modelWorkerHolder } from './resource-profiles.ts';
  * - 已有转写的说话人区分（`diarize`，经 `diarize()`，识别说话人的流程直接调用）同样共用：「说话人区分」模型包单独加载（只带
  *   `segmentation` 与 `speaker` 组件），要求报告 `diarize`，规则同上。
  * - 合成结果的 `readingsDropped`（念不了的读音标注）逐条转成任务的 `reading-dropped` 警告，不静默丢弃。
+ * - 本机 embedding（`embed`，经 `embed()`，语义检索的 Provider 直接调用，不是任务）同样共用：embedding 模型包要求报告 `embed` 且
+ *   `embeddingCapabilities.families` 列出它的 `embedding` family，规则同上。一批几百毫秒，Worker 忙时排队等它空下来，不报 `worker-busy`。
  */
 
 /** 进程持有资源调度里的 holder（`ResourceScheduler.retain`）。 */
@@ -166,8 +173,25 @@ interface RunSpec {
   inputDetails?: Record<string, unknown>;
 }
 
+/** 一次 `embed.run`（Model Worker 协议规范 §2.5.6）：文本已加好任务前缀，至多 `EMBED_MAX_BATCH` 条。 */
+export interface LocalEmbedOptions {
+  outputSize: number;
+  insertSpecialTokens: boolean;
+}
+
+/** `embed.run` 的结果，向量已解码。 */
+export interface LocalEmbedResult {
+  vectors: Float32Array[];
+  dims: number;
+  device: string;
+  elapsedMs: number;
+  workerVersion: string;
+}
+
 interface Slot {
   bundleId: string;
+  /** 等 `job` 空下来的 `embed()`（按到达次序）。 */
+  waiters: Array<() => void>;
   loaded: Loaded | null;
   acquiring: Promise<Loaded> | null;
   /** 空闲卸载或取消时结束的进程：新进程要等它真的退出。 */
@@ -197,6 +221,7 @@ export class LocalTranscribeProvider implements TranscribeProvider {
   readonly #crashLimit: number;
   readonly #crashWindowMs: number;
   #closed = false;
+  #embedSeq = 0;
 
   constructor(options: LocalProviderOptions) {
     this.#options = options;
@@ -496,6 +521,115 @@ export class LocalTranscribeProvider implements TranscribeProvider {
     };
   }
 
+  /**
+   * 本机 embedding 的一批（EmbeddingGemma 2 检索集成方案 v0.1 §4、§16.1）：按需起 Worker、加载模型包，`embed.run` 后解码向量。
+   * Worker 正在跑别的（检查任务、另一批）时排队等它空下来。`embed.run` 中途不响应取消：`signal` 只在等待与加载时生效，
+   * 已经交给 Worker 的一批算完再丢弃。失败是 `ProviderFailure`：超长是 `protocol`，`details.workerCode` 为 `INPUT_TOO_LONG`、
+   * `details.index` 指出哪一条。
+   */
+  async embed(bundleId: string, texts: readonly string[], options: LocalEmbedOptions, signal?: AbortSignal): Promise<LocalEmbedResult> {
+    if (texts.length === 0 || texts.length > EMBED_MAX_BATCH) {
+      throw new ProviderFailure('protocol', E.embedReturned({ code: 'INVALID_PARAMS' }), { count: texts.length, max: EMBED_MAX_BATCH });
+    }
+    signal?.throwIfAborted();
+    if (this.#closed) throw new ProviderFailure('unavailable', L.runtimeStopping());
+    if (this.#catalog.blocked(bundleId)) {
+      const status = await this.#catalog.status(bundleId);
+      throw new ProviderFailure('unavailable', L.bundleDisabled(), { reason: status?.reason ?? 'resource', state: status?.state });
+    }
+    const slot = this.#slot(bundleId);
+    while (slot.job) {
+      await new Promise<void>((resolve, reject) => {
+        const onAbort = () => {
+          slot.waiters.splice(slot.waiters.indexOf(wake), 1);
+          reject(signal!.reason);
+        };
+        const wake = () => {
+          signal?.removeEventListener('abort', onAbort);
+          resolve();
+        };
+        slot.waiters.push(wake);
+        signal?.addEventListener('abort', onAbort, { once: true });
+      });
+      if (this.#closed) throw new ProviderFailure('unavailable', L.runtimeStopping());
+    }
+    this.#clearIdle(slot);
+    const requestId = `embed-${++this.#embedSeq}`;
+    slot.job = { jobId: requestId, route: () => {} };
+    let loaded: Loaded;
+    try {
+      const acquiring = this.#acquire(slot, () => {});
+      const raced = signal ? await raceAbort(acquiring, signal) : await acquiring;
+      if (raced === ABORTED) {
+        this.#release(slot);
+        acquiring.then(
+          () => this.#scheduleIdle(slot),
+          () => {},
+        );
+        throw signal!.reason;
+      }
+      loaded = raced;
+    } catch (error) {
+      if (slot.job?.jobId === requestId) this.#release(slot);
+      throw error;
+    }
+    const { worker, hello } = loaded;
+    this.#catalog.setRuntimeState(slot.bundleId, 'busy');
+    const params: EmbedRunParams = { requestId, texts: [...texts], ...options };
+    try {
+      const result = await worker.request<EmbedRunResult>('embed.run', params);
+      if (result.vectors.length !== texts.length) {
+        throw new ProviderFailure('protocol', E.countMismatch({ expected: texts.length, actual: result.vectors.length }));
+      }
+      const vectors = result.vectors.map((vector) => decodeF32(vector));
+      if (vectors.some((v) => v.length !== result.dims)) {
+        throw new ProviderFailure('protocol', E.wrongDims({ expected: result.dims, actual: vectors.find((v) => v.length !== result.dims)!.length }));
+      }
+      return { vectors, dims: result.dims, device: result.device, elapsedMs: result.elapsedMs, workerVersion: hello.workerVersion };
+    } catch (error) {
+      if (error instanceof ProviderFailure) throw error;
+      if (error instanceof WorkerExitedError) {
+        this.#recordCrash(slot);
+        throw new ProviderFailure('crashed', L.workerExitedDuringJob(), {
+          exitCode: error.exit?.code ?? null,
+          signal: error.exit?.signal ?? null,
+          stderrTail: worker.stderrTail(),
+          workerVersion: hello.workerVersion,
+        });
+      }
+      if (error instanceof WorkerRequestError) {
+        const details = {
+          workerCode: error.code,
+          workerMessage: error.body.message,
+          workerVersion: hello.workerVersion,
+          ...(error.body.details !== undefined ? { workerDetails: error.body.details } : {}),
+        };
+        if (error.code === INPUT_TOO_LONG) {
+          const index = (error.body.details as { index?: unknown } | undefined)?.index;
+          throw new ProviderFailure('protocol', E.embedReturned({ code: error.code }), { ...details, ...(typeof index === 'number' ? { index } : {}) });
+        }
+        if ((CRASH_CODES as readonly string[]).includes(error.code)) {
+          this.#recordCrash(slot);
+          throw new ProviderFailure('crashed', L.inferenceFailed({ code: error.code }), { ...details, stderrTail: worker.stderrTail() });
+        }
+        throw new ProviderFailure('protocol', E.embedReturned({ code: error.code }), details);
+      }
+      throw error;
+    } finally {
+      this.#release(slot);
+      if (slot.loaded?.worker === worker && worker.alive) {
+        this.#catalog.setRuntimeState(slot.bundleId, 'ready');
+        this.#scheduleIdle(slot);
+      }
+    }
+  }
+
+  /** 任务结束：清掉 `job`，叫醒下一个等着的 `embed()`。 */
+  #release(slot: Slot): void {
+    slot.job = null;
+    slot.waiters.shift()?.();
+  }
+
   async #run<R extends { outcome: 'completed' | 'cancelled'; output: JobOutput | null }>(
     spec: RunSpec,
     signal: AbortSignal,
@@ -528,7 +662,7 @@ export class LocalTranscribeProvider implements TranscribeProvider {
       const raced = await raceAbort(acquiring, signal);
       if (raced === ABORTED) {
         // 加载在后台继续：模型留在内存里，下一个任务直接用。
-        slot.job = null;
+        this.#release(slot);
         acquiring.then(
           () => this.#scheduleIdle(slot),
           () => {},
@@ -537,13 +671,13 @@ export class LocalTranscribeProvider implements TranscribeProvider {
       }
       loaded = raced;
     } catch (error) {
-      slot.job = null;
+      this.#release(slot);
       throw error;
     }
 
     const { worker, hello } = loaded;
     if (spec.expectedWorkerVersion && hello.workerVersion !== spec.expectedWorkerVersion) {
-      slot.job = null;
+      this.#release(slot);
       this.#scheduleIdle(slot);
       throw new ProviderFailure('version-changed', L.workerVersionChanged(), {
         expected: spec.expectedWorkerVersion,
@@ -615,7 +749,7 @@ export class LocalTranscribeProvider implements TranscribeProvider {
     } finally {
       signal.removeEventListener('abort', onAbort);
       if (cancelTimer) clearTimeout(cancelTimer);
-      slot.job = null;
+      this.#release(slot);
       if (slot.loaded?.worker === worker && worker.alive) {
         this.#catalog.setRuntimeState(slot.bundleId, 'ready');
         this.#scheduleIdle(slot);
@@ -640,7 +774,7 @@ export class LocalTranscribeProvider implements TranscribeProvider {
   #slot(bundleId: string): Slot {
     let slot = this.#slots.get(bundleId);
     if (!slot) {
-      slot = { bundleId, loaded: null, acquiring: null, retiring: null, job: null, idleTimer: null, crashes: [] };
+      slot = { bundleId, loaded: null, acquiring: null, retiring: null, job: null, idleTimer: null, crashes: [], waiters: [] };
       this.#slots.set(bundleId, slot);
     }
     return slot;
@@ -752,7 +886,21 @@ export class LocalTranscribeProvider implements TranscribeProvider {
       // 合成的模型包要 Worker 声明 `synthesize` 且列出这个 family，分离的要声明 `separate` 且列出 `separator` 的 family，文生图的
       // 要声明 `image` 且列出 `image` 的 family，识别的要声明 `transcribe` 且列出 `asr` 的 family：不认识的 Worker 不去试
       // （`model.load` 的 `MODEL_UNSUPPORTED` 会停用模型包），也不停用模型包（换了 Worker 就能用）。
-      if (bundle.components.separator) {
+      if (bundle.components.embedding) {
+        const family = bundle.components.embedding.family;
+        const families = hello.embeddingCapabilities?.families ?? [];
+        if (!hello.capabilities.includes('embed') || !families.includes(family)) {
+          return fail(
+            new ProviderFailure('load-failed', E.cannotEmbed(), {
+              reason: 'unsupported',
+              detail: 'capability-missing',
+              family,
+              capabilities: hello.capabilities,
+              embeddingFamilies: families,
+            }),
+          );
+        }
+      } else if (bundle.components.separator) {
         const family = bundle.components.separator.family;
         const families = hello.separateFamilies ?? [];
         if (!hello.capabilities.includes('separate') || !families.includes(family)) {
@@ -1039,4 +1187,12 @@ function builtinUnreadable(file: string): { message: JobText; details: Record<st
 
 function isDiarizePhase(phase: string): phase is 'decoding' | 'diarizing' | 'finalizing' {
   return phase === 'decoding' || phase === 'diarizing' || phase === 'finalizing';
+}
+
+/** `embed.run` 的向量：little-endian `float32` 的标准 base64。 */
+function decodeF32(base64: string): Float32Array {
+  const bytes = Buffer.from(base64, 'base64');
+  const out = new Float32Array(bytes.length >> 2);
+  for (let i = 0; i < out.length; i++) out[i] = bytes.readFloatLE(i * 4);
+  return out;
 }

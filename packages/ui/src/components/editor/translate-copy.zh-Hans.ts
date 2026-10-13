@@ -125,6 +125,13 @@ export const zhTranslate: TranslateMessages = {
   staleShort: (n) => `${n} 过期`,
   cutShort: (n) => `${n} 被剪切`,
   goneShort: (n) => `${n} 原句已删`,
+  termsShort: (n: number) => `${n} 术语不一致`,
+  terms: (n: number) => `${n} 处术语不一致：译文没按术语表的译法`,
+  termsTitle: '术语不一致',
+  termsLead: '这些译文没按术语表里的译法翻。统一是一笔普通编辑，可撤销。',
+  termsSpot: (got: string, want: string) => ` · 译成了「${got}」，术语表是「${want}」`,
+  termsUnify: '统一为术语表译法',
+  termsUnified: (n: number) => `已统一 ${n} 处为术语表译法`,
   cut: (n) => `${n} 句原文的画面被剪掉了`,
   webHint: '重译要调模型或会话：从 Agent 或 BaoCut App 发起',
   refreshing: (n) => (n === null ? '正在重译…' : `正在重译 ${n} 句…`),
@@ -151,6 +158,16 @@ export const zhTranslate: TranslateMessages = {
   refreshFailed: '重译失败',
   refreshInterrupted: '重译中断了',
   refreshCancelled: '已取消重译',
+  // 翻译记忆（创作辅助集成设计 §2.6）
+  chipReused: '沿用',
+  reusedTip: (video: string | null) => (video ? `沿用「${video}」里的译文 · 原文几乎相同` : '沿用你其他视频里的译文 · 原文几乎相同'),
+  directReused: '改为重译',
+  directReusedSub: (video: string | null) => `不再沿用${video ? `「${video}」` : '已有'}的译文，用模型 API 重译这一句`,
+  memory: '翻译记忆',
+  memoryOn: '与你其他视频（同一语言方向）里原文相同的句子沿用已有译文，标为「沿用」；相近的作为参考交给模型。',
+  memoryOff: '翻译记忆已在设置里关掉：不沿用也不参考已有译文。',
+  memoryUsed: (reused: number, referenced: number) => `翻译记忆：沿用 ${reused} 句 · 参考了 ${referenced} 句已有译文`,
+
 };
 
 export const zhTextNotConfigured: TextNotConfiguredMessages = {

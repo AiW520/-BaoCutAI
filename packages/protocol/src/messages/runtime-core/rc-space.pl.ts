@@ -50,6 +50,10 @@ export const pl: RcSpaceMessages = {
   labelGenerateImage: "Wygenerowany obraz",
   labelGenerateMusic: 'Wygenerowana muzyka',
   labelGenerateText: "Wygenerowany tekst",
+  labelSummary: "Podsumowanie",
+  labelBlog: "Wpis na blogu",
+  labelTitles: "Tytuły",
+  labelDescription: "Opis",
   labelExport: "Eksportuj",
 
   engineUnavailable: "Silnik wideo niedostępny",
@@ -60,4 +64,5 @@ export const pl: RcSpaceMessages = {
   materialTooLarge: (p) => `${p.fileName} ma długość ${p.bytes} bajtów, przekracza limit materiału ${p.limit}`,
   afterMaterial: (p) => `Po dodaniu materiału: ${p.reason}`,
   invalidParams: "Nieprawidłowe parametry",
+  relatedNotVideo: 'Powiązane filmy są dostępne tylko dla filmów',
 };

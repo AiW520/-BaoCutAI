@@ -1,4 +1,4 @@
-import { defineMessages, MAX_SELECTED_GLOSSARIES, type DocumentRecord, type GlossaryEntry, type Id, type TranslateParams, type TranslationGlossary } from '@baocut/protocol';
+import { defineMessages, languageMatches, MAX_SELECTED_GLOSSARIES, type DocumentRecord, type GlossaryEntry, type Id, type TranslateParams, type TranslationGlossary } from '@baocut/protocol';
 import { languageName } from './caption-tracks.ts';
 import { langName } from './tools-models.ts';
 import { zhHans } from './translate-setup.zh-Hans.ts';
@@ -85,15 +85,8 @@ export function defaultTarget(options: readonly TargetOption[], sourceLanguage: 
   return (options.find((o) => o.tag === preferred && !o.disabled) ?? options.find((o) => !o.disabled))?.tag ?? null;
 }
 
-/**
- * 术语表上的语言标签相不相配（照抄 jobs 的 `languageMatches`，Runtime 按它拒绝语言不符的术语表）：相同，或一个是另一个
- * 在子标签边界上的前缀（`en` 配 `en-US`；`zh-CN` 不配 `zh-Hans`）。
- */
-export function languageMatches(a: string, b: string): boolean {
-  const x = a.toLowerCase();
-  const y = b.toLowerCase();
-  return x === y || x.startsWith(`${y}-`) || y.startsWith(`${x}-`);
-}
+/** 术语表上的语言标签相不相配：与 Runtime 同一份实现（协议包），它按这个拒绝语言不符的术语表。 */
+export { languageMatches };
 
 /** 术语表的方向对不对得上：目标语言相配；源语言不限，或与原文相配（原文语言不明时只看目标）。 */
 export function glossaryFits(glossary: Pick<TranslationGlossary, 'sourceLanguage' | 'targetLanguage'>, source: string | null, target: string): boolean {

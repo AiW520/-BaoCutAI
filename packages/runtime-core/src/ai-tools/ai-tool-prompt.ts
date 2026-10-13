@@ -1,4 +1,5 @@
 import type { AiToolKind, TextMessage } from '@baocut/protocol';
+import { CITATION_INSTRUCTIONS } from './ai-tool-citations.ts';
 // i18n-ignore-file: 这个文件只生成交给文本模型的提示词与输出格式，不在界面显示
 
 /**
@@ -25,6 +26,18 @@ const OUTPUT: Record<AiToolKind, string> = {
   title: 'Output: the candidate titles as a numbered Markdown list, one title per item. No preamble, no closing remarks.',
   desc: 'Output: the description itself, ready to paste. No preamble, no closing remarks.',
 };
+
+/** 重写一段时的输出格式（取代工具的输出格式）。 */
+const SECTION_OUTPUT = [
+  'Output: a replacement for the single paragraph in <paragraph_to_rewrite>, in Markdown, following the request. It may be one paragraph or a few, but nothing else from the document.',
+  'The <outline> lists every paragraph of the document (the one to rewrite is marked ">>"): keep the replacement consistent with it and do not repeat what other paragraphs say. No preamble, no closing remarks.',
+].join('\n');
+
+/** 章节按话题找了候选边界时附在系统提示词里（创作辅助集成设计 §3.6）。 */
+const BOUNDARY_INSTRUCTIONS = [
+  'Topic shifts were detected in advance and are listed in <chapter_candidates>: each line is a candidate start time, with the end of the text before it and the start of the text after it (separated by ‖).',
+  'Start the first chapter at the first paragraph, and start every other chapter exactly at one of the candidate times. You may skip candidates to merge chapters, but never start a chapter anywhere else.',
+].join('\n');
 
 /** 结构化输出的 JSON Schema（润色与章节）；其余工具是正文。 */
 export function outputSchema(tool: AiToolKind): Record<string, unknown> | null {
@@ -67,12 +80,15 @@ export function outputSchema(tool: AiToolKind): Record<string, unknown> | null {
   return null;
 }
 
-/** 润色用的一个词：转写里的 id 与文本，是否一段的开头，时间线上的起点（秒）。 */
+/** 时间线上的一个词：转写里的 id 与文本，是否一段的开头，时间线上的起止（秒）与说话人。 */
 export interface ContextWord {
   id: string;
   text: string;
   paragraphStart: boolean;
   start: number;
+  /** 写作的出处要；润色与章节不用。 */
+  end?: number;
+  speaker?: string | null;
 }
 
 /** 附上全文的附件。 */
@@ -93,12 +109,29 @@ export interface AiToolMessageInput {
   attachments: readonly ContextAttachment[];
   /** 用户的界面语言（BCP 47）；给了时在系统提示词里说明，输出用什么语言由 skill 与输出格式决定。 */
   uiLanguage?: string;
+  /** 文稿是编了号的句子、要模型回引编号（写作类工具，创作辅助集成设计 §3.4）。 */
+  citations?: boolean;
+  /** 文稿的来历（几部视频、按主题的节选，`materialInstructions`）：附在引用说明后面。 */
+  material?: string;
+  /** 重写一段：全文大纲（要重写的那段以 `>>` 标出）与这一段原文。给了时输出格式换成「只交这一段」。 */
+  section?: { outline: string; paragraph: string };
+  /** 生成章节按话题找到的候选边界（每行 `[mm:ss] … 前文 ‖ 后文 …`）：章节只能从第一段或这些时刻开始。 */
+  boundaries?: string;
 }
 
 /** 交给模型的消息：系统一条，用户一条。 */
 export function aiToolMessages(input: AiToolMessageInput): TextMessage[] {
   const language = input.uiLanguage ? `The user's interface language is ${input.uiLanguage}.` : '';
-  const system = [input.system.trim(), language, OUTPUT[input.tool]].filter(Boolean).join('\n\n');
+  const system = [
+    input.system.trim(),
+    language,
+    input.section ? SECTION_OUTPUT : OUTPUT[input.tool],
+    input.citations ? CITATION_INSTRUCTIONS : '',
+    input.material ?? '',
+    input.boundaries ? BOUNDARY_INSTRUCTIONS : '',
+  ]
+    .filter(Boolean)
+    .join('\n\n');
   const parts: string[] = [];
   parts.push(input.prompt.trim() ? `<request>\n${input.prompt.trim()}\n</request>` : '<request />');
   if (input.words) {
@@ -110,6 +143,11 @@ export function aiToolMessages(input: AiToolMessageInput): TextMessage[] {
   } else if (input.transcript !== null) {
     parts.push(`<transcript>\n${input.transcript.trim()}\n</transcript>`);
   }
+  if (input.section) {
+    parts.push(`<outline>\n${input.section.outline}\n</outline>`);
+    parts.push(`<paragraph_to_rewrite>\n${input.section.paragraph.trim()}\n</paragraph_to_rewrite>`);
+  }
+  if (input.boundaries) parts.push(`<chapter_candidates>\n${input.boundaries}\n</chapter_candidates>`);
   for (const a of input.attachments) parts.push(`<attachment name="${a.name.replace(/"/g, "'")}">\n${a.content}\n</attachment>`);
   return [
     { role: 'system', content: system },

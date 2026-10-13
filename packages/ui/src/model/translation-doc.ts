@@ -70,6 +70,8 @@ export interface TranslationUnit {
     textHash: string;
   } | null;
   status: 'draft' | 'reviewed' | 'stale';
+  /** 翻译记忆沿用的译文：取自哪部视频的哪个单元（视频格式规范 §5.3）。改了自然译句就去掉。 */
+  reuse?: { fromVideoId: Id; unitId: Id };
 }
 
 export interface TranslationBody {
@@ -250,7 +252,8 @@ export const editableRow = (row: PairRow) => row.sentence !== null && row.state 
 /**
  * 就地改一句译文，返回新的正文与改动的单元；文字没变、或这一行不能改时 null。
  *
- * - 有字幕显示改写的单元改的是改写（`naturalText` 不动，§5.3：改写不得覆盖自然译文）；否则改 `naturalText` 并更新 `textHash`。
+ * - 有字幕显示改写的单元改的是改写（`naturalText` 不动，§5.3：改写不得覆盖自然译文）；否则改 `naturalText` 并更新 `textHash`，
+ *   沿用的标记（`reuse`）随之去掉。
  * - 改过的单元记为 `reviewed`；原句改过或标了过期的，用户对着现在的原文改，单元的指纹与词成员换成现在这一句的。
  * - 还没有译文的句子新建一个单元，插在前面最近一句已有译文的单元后面。
  */
@@ -272,7 +275,8 @@ export async function editUnit(
     if (current.displayRewrite) {
       next = { ...current, displayRewrite: { ...current.displayRewrite, text: value, reviewed: true }, alignment };
     } else {
-      next = { ...current, naturalText: value, alignment: alignment ? { ...alignment, textHash: await textHash(value) } : null };
+      const { reuse: _reuse, ...rest } = current;
+      next = { ...rest, naturalText: value, alignment: alignment ? { ...alignment, textHash: await textHash(value) } : null };
     }
     next = { ...next, status: 'reviewed', ...(rebind ? { sourceFingerprint: sentence.fingerprint } : {}) };
     return { body: { ...body, units: body.units.map((u) => (u === current ? next : u)) }, unit: next };
@@ -346,3 +350,12 @@ export function markUnit(
 
 /** 要重译的句子（批量重译的范围，与 Runtime 就地刷新不点名时一样）：过期的与还没有译文的。 */
 export const needsTranslation = (row: PairRow) => isStale(row.state) || row.state === 'untranslated' || row.state === 'empty';
+
+/**
+ * 这一句沿用的是哪部视频的译文（创作辅助集成设计 §2.6；原型 subtitle-tm.jsx `TmChip`）：单元标着 `reuse`、译文新鲜时给来源视频，
+ * 否则 null。设置里关掉翻译记忆（`on` 为 false）时不标——与原型一致，关掉后两样都不画。
+ */
+export function reusedFrom(row: PairRow, on: boolean): Id | null {
+  if (!on || row.state !== 'ok') return null;
+  return row.unit?.reuse?.fromVideoId ?? null;
+}

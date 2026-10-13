@@ -44,7 +44,39 @@ export interface SpaceJobFacts {
    * 流程的名字与步骤（Job Ledger 里的流程才有；新建视频的步骤给出视频条目的来源，§7.9）。产物记录里有两种流程：文件到文件的
    * 保留名字与显式项目归属（下载转录）；新建了视频的，步骤只留完成了的 `create`、产出只留 `videoId`：Job Ledger 修剪掉这次运行之后，视频条目的来源照样在。
    */
-  pipeline?: { name: string; steps?: PipelineRun['steps']; params?: { projectId?: unknown } };
+  pipeline?: {
+    name: string;
+    steps?: PipelineRun['steps'];
+    params?: { projectId?: unknown };
+    document?: WritingDocumentFacts;
+    /** `downloads-save` 交出的带出处的 Markdown：出处旁文件（`baocut.citations/1`，创作辅助集成设计 §3.4「智能体路径」）。 */
+    citationsArtifactId?: string;
+  };
+}
+
+/**
+ * 写作类 AI 工具（`ai-tool` 的总结、博客、标题、简介）的结果：一份 Markdown 文档条目（产品设计 §5.10，创作辅助集成设计
+ * §3.4），条目 ID 是正文的产物，出处旁文件是另一个产物。
+ */
+export interface WritingDocumentFacts {
+  tool: string;
+  byteLength: number;
+  citationsArtifactId: string | null;
+}
+
+/** 写成文档条目的 `ai-tool` 工具。 */
+const WRITING_TOOLS: ReadonlySet<string> = new Set(['summary', 'blog', 'title', 'desc']);
+
+/** 写作类 AI 工具完成了的任务：它的正文列成文档条目。 */
+export function writingDocumentOf(job: JobRecord): WritingDocumentFacts | null {
+  if (job.kind !== 'pipeline' || job.pipeline?.name !== 'ai-tool' || job.state !== 'completed' || !job.result) return null;
+  const summary = job.pipeline.summary as { tool?: unknown; text?: unknown; citationsArtifactId?: unknown } | null;
+  if (!summary || typeof summary.tool !== 'string' || !WRITING_TOOLS.has(summary.tool) || typeof summary.text !== 'string') return null;
+  return {
+    tool: summary.tool,
+    byteLength: Buffer.byteLength(summary.text, 'utf8'),
+    citationsArtifactId: typeof summary.citationsArtifactId === 'string' ? summary.citationsArtifactId : null,
+  };
 }
 
 /** 会留下产物条目的任务种类。 */
@@ -77,6 +109,8 @@ export function isFilePipelineJob(job: {
  * 另外留新建了视频的流程（结束了、`create` 步骤完成了）：只为视频条目的来源，没有产物，也不随产物的清除去掉。
  */
 export function spaceJobFacts(job: JobRecord): SpaceJobFacts | null {
+  const document = writingDocumentOf(job);
+  if (document) return { ...baseFacts(job), result: { artifactId: job.result!.artifactId }, pipeline: { name: job.pipeline!.name, document } };
   if (job.kind === 'pipeline' && !isFilePipelineJob(job)) return createdVideoFacts(job);
   if (!(ARTIFACT_KINDS.has(job.kind) || isFilePipelineJob(job)) || !TERMINAL.has(job.state) || !job.result) return createdVideoFacts(job);
   const last = job.applications?.at(-1);
@@ -123,6 +157,25 @@ export function spaceJobFacts(job: JobRecord): SpaceJobFacts | null {
   };
 }
 
+/** 任务记录里派生条目都要的部分（结果与流程另给）。 */
+function baseFacts(job: JobRecord): Omit<SpaceJobFacts, 'result'> {
+  return {
+    jobId: job.jobId,
+    kind: job.kind,
+    state: job.state,
+    videoId: job.videoId,
+    providerId: job.providerId,
+    modelId: job.modelId,
+    inputHash: job.inputHash,
+    submitter: job.submitter,
+    createdAt: job.createdAt,
+    updatedAt: job.updatedAt,
+    endedAt: job.endedAt,
+    error: job.error ? { code: job.error.code, message: job.error.message } : null,
+    progress: null,
+  };
+}
+
 /** 新建了视频的流程的事实：结果与产物都不留，步骤只留完成了的 `create` 与它新建的视频。 */
 function createdVideoFacts(job: JobRecord): SpaceJobFacts | null {
   if (!TERMINAL.has(job.state) || !job.pipeline) return null;
@@ -152,7 +205,7 @@ function createdVideoFacts(job: JobRecord): SpaceJobFacts | null {
 export function artifactIdsOf(facts: SpaceJobFacts): string[] {
   if (!facts.result) return [];
   const ids = new Set<string>();
-  if (facts.kind === 'generateText') ids.add(facts.result.artifactId);
+  if (facts.kind === 'generateText' || facts.pipeline?.document) ids.add(facts.result.artifactId);
   for (const output of facts.result.outputs ?? []) ids.add(output.artifactId);
   return [...ids];
 }
@@ -351,6 +404,18 @@ function isRefs(row: unknown): row is RetainedArtifactRefs {
   );
 }
 
+/** 写作类 AI 工具的文档：结果有正文的产物，流程带 `document`。 */
+function isWritingFacts(r: Record<string, unknown>): boolean {
+  const result = r.result as { artifactId?: unknown } | null | undefined;
+  const document = (r.pipeline as { document?: { tool?: unknown; byteLength?: unknown; citationsArtifactId?: unknown } } | undefined)?.document;
+  return (
+    typeof result?.artifactId === 'string' &&
+    typeof document?.tool === 'string' &&
+    typeof document.byteLength === 'number' &&
+    (document.citationsArtifactId === null || typeof document.citationsArtifactId === 'string')
+  );
+}
+
 function isFacts(row: unknown): row is SpaceJobFacts {
   if (typeof row !== 'object' || row === null) return false;
   const r = row as Record<string, unknown>;
@@ -365,6 +430,7 @@ function isFacts(row: unknown): row is SpaceJobFacts {
     r.submitter !== null;
   if (!common) return false;
   const filePipeline = isFilePipelineJob(r as { kind: JobKind; pipeline?: { name: string }; result?: { outputs?: unknown[] } | null });
+  if (r.kind === 'pipeline' && isWritingFacts(r)) return true;
   if (r.kind === 'pipeline' && (!filePipeline || !r.result)) {
     // 新建了视频的流程：步骤里有完成了的 `create` 与它的 `videoId`。
     const pipeline = r.pipeline as { name?: unknown; steps?: unknown } | undefined;

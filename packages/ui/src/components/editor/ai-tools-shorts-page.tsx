@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import type { DocumentRecord, Id, Sequence } from '@baocut/protocol';
-import { NumberField, Picker, PickerItem, Radio, RadioGroup, SegmentedControl, SegmentedControlItem } from '@react-spectrum/s2';
+import { NumberField, Picker, PickerItem, Radio, RadioGroup, SegmentedControl, SegmentedControlItem, TextField } from '@react-spectrum/s2';
 import { style } from '@react-spectrum/s2/style' with { type: 'macro' };
 import {
   aiTool,
@@ -27,6 +27,9 @@ import {
   type ShortsTracks,
 } from '../../model/ai-tools.ts';
 import { chapterPieces } from '../../model/export-range.ts';
+import { topicUsable } from '../../model/writing-topic.ts';
+import { useSemanticStatus } from '../../state/semantic-store.ts';
+import { SemanticNote } from '../semantic-note.tsx';
 import { AgentGateLine } from './agent-gate-line.tsx';
 import { AiToolPrompt, useToolHandoff } from './ai-tool-prompt.tsx';
 import { Option, Row, ToolCard } from './ai-tools-agent-page.tsx';
@@ -44,7 +47,7 @@ const radioSub = style({ display: 'block', paddingStart: 24, marginTop: -2, marg
 
 /**
  * 剪成短视频的参数页（原型 panel-aitools-shorts.jsx `ShortsCutSetup`，产品设计 §5.10「参数页」）：只交给 Agent，所以没有「用」一行；
- * 总是新开一条会话，所以也没有「会话」一行。自上而下：说明卡（找出值得单独发的话题、各剪成一支新的子视频），范围与「已经切过的不再找」，
+ * 总是新开一条会话，所以也没有「会话」一行。自上而下：说明卡（找出值得单独发的话题、各剪成一支新的子视频），范围、「已经切过的不再找」与主题，
  * 切成什么样（几支、多长缺省都是「自动」——交给 Agent 按话题定，下面一行说明自动怎么定；画幅），取景（画幅不是保留原画幅时），
  * 字幕（带哪几轨、样式），提示词框（意图句加一行一句的参数，最后一行
  * 「找好就直接创建」可以单独删），主按钮与去向。按下就新开会话发出去，那条会话打开到眼前，工具页回列表；这一轮记下来（`recordShortsRun`），
@@ -79,8 +82,14 @@ export function ShortsToolPage({
   const range = shortsLengthRange(s);
   const autoHint = shortsAutoHint(s);
 
+  // 主题（创作辅助集成设计 §2.8）：可空；写了且本机语义能用时提示词多一句，Agent 先用 `speech_relevant` 圈出讲这件事的段落。
+  // 没装模型时照常全片分析，写一句原因。
+  const [topic, setTopic] = useState('');
+  const topicOk = topicUsable(useSemanticStatus().status);
+  const topicOn = topicOk && topic.trim() !== '';
+
   const intent = intentPrompt({ tool: 'shortscut', title: handoff.ref?.name ?? null, scope });
-  const template = toolTemplate('shortscut', intent, { lines: shortsLines(s, { hasTranslation }) });
+  const template = toolTemplate('shortscut', intent, { lines: shortsLines(s, { hasTranslation, topic: topicOn ? topic : null }) });
 
   return (
     <>
@@ -116,6 +125,10 @@ export function ShortsToolPage({
             isSelected={s.skipDone}
             onChange={(on) => set({ skipDone: on })}
           />
+          <Row label={C.shortsTopic}>
+            <TextField aria-label={C.shortsTopic} size="S" styles={field} placeholder={C.shortsTopicPlaceholder} value={topic} onChange={setTopic} />
+            {topic.trim() && !topicOk ? <SemanticNote entry="shorts" /> : <p className={hint}>{topicOn ? C.shortsTopicOn : C.shortsTopicEmpty}</p>}
+          </Row>
         </div>
 
         <h3 className={secHead}>{C.shortsShape}</h3>

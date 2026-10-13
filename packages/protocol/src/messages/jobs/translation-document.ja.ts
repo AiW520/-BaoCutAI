@@ -17,6 +17,7 @@ export const ja: JobsTranslationDocumentMessages = {
   unitNoText: (p: { id: string }) => `翻訳ユニット ${p.id} に翻訳がありません`,
   unitBadStatus: (p: { id: string }) => `翻訳ユニット ${p.id} の status が無効です`,
   unitBadAlignment: (p: { id: string }) => `翻訳ユニット ${p.id} の alignment が無効です`,
+  unitBadReuse: (p: { id: string }) => `翻訳ユニット ${p.id} の reuse が無効です（fromVideoId と unitId が必要です）`,
   unitAlignmentFields: (p: { id: string }) => `翻訳ユニット ${p.id} の alignment にフィールドが不足しています`,
   unitHashMismatch: (p: { id: string }) => `翻訳ユニット ${p.id} の textHash が翻訳と一致しません`,
   unitExtraFields: (p: { id: string; fields: string }) => `翻訳ユニット ${p.id} に §5.3 にないフィールドがあります：${p.fields}`,

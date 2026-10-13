@@ -43,6 +43,7 @@ import { deriveVideo, spaceDerivedFinder } from './videos/video-derive.ts';
 import { videoShots } from './agent-tools/video-shots.ts';
 import type { VideoTrash } from './videos/video-trash.ts';
 import type { ModelJobs } from './models/model-jobs.ts';
+import type { SemanticServices } from './space/semantic/services.ts';
 import { applySpeakerProposal } from './models/speakers-apply.ts';
 import type { ExportService } from './exports/export-service.ts';
 import type { RuntimeSettings } from './settings-topic.ts';
@@ -62,6 +63,7 @@ import type { FontService } from './fonts/font-service.ts';
 import { fontMethods } from './fonts/font-methods.ts';
 import type { CompositionService } from './compositions/composition-service.ts';
 import { compositionMethods } from './compositions/composition-methods.ts';
+import { editAidMethods } from './ai-tools/edit-aids.ts';
 import { PackageImporter } from './videos/package-import.ts';
 import { RcRuntime } from '@baocut/protocol/messages/runtime-core';
 import type { ToolCatalog } from './agent-tools/tool-catalog.ts';
@@ -86,6 +88,8 @@ export interface RpcHandlers {
  */
 export interface HandlerDeps {
   harness: Harness;
+  /** 本机语义检索（`space.searchV2`、`space.index*`、`space.resolveSearchHit`）。不给时只有字面一路。 */
+  semantic?: SemanticServices | null;
   /** Agent 的安装、升级与登录动作（架构设计 §12.9）。 */
   setup: AgentSetup;
   space: SpaceCatalog;
@@ -206,6 +210,7 @@ export function createHandlers({
   activity,
   requestStop,
   legacyUpgrade,
+  semantic,
 }: HandlerDeps): RpcHandlers {
   const { catalog, jobs, services, pipelines } = models;
   const packages = new PackageImporter(videos);
@@ -391,7 +396,7 @@ export function createHandlers({
         await space.rescan();
         return { ok: true as const };
       },
-      ...spaceMethods(space, { harness, trash: videoTrash, thumbnails: spaceThumbnails }),
+      ...spaceMethods(space, { harness, trash: videoTrash, thumbnails: spaceThumbnails, semantic: semantic ?? null, artifacts: jobs.artifacts }),
       'media.resolve': async (p, principal) => {
         if ('localPath' in p) {
           // 桌面端的本机文件（§4.5）：只对桌面客户端，以文件自己的目录为根，只给普通文件；浏览器与对外服务按原来的访问范围拒绝。
@@ -475,6 +480,7 @@ export function createHandlers({
       'edits.undo': (p, principal) => videos.undo(p, principal),
       'edits.undoState': (p, principal) => videos.undoState(p.videoId, principal),
       'edits.applySpeakers': (p, principal) => applySpeakerProposal({ videos, jobs }, p, principal),
+      ...editAidMethods({ videos, library, semantic: () => semantic ?? null }),
       // 代码画面（§8）：界面不经过智能体预览与导入，与工具 compositions_preview / compositions_import 同一个服务。
       ...compositionMethods({ compositions, videos, harness, media }),
       'models.list': async () => ({ bundles: await catalog.list() }),

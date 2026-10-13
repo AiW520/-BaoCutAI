@@ -38,6 +38,7 @@ BaoCut 是以**可编辑视频**为中心的剪辑工具：素材在时间线上
 | 分章、加时间轴目录 | 写进视频的章节 | [editing](references/catalog/editing.md) | {{skill:video-chapters}} |
 | 总结、提炼要点 | 读带时间的文稿，写总结与可跳转的要点 | [subtitles](references/catalog/subtitles.md) | {{skill:video-summary}} |
 | 写成博客、公众号文章 | 读文稿写成完整文章 | [subtitles](references/catalog/subtitles.md) | {{skill:video-blog}} |
+| 我哪一期讲过、这些视频里谁说过 | 按意思跨视频检索，只凭原话回答，每条注明视频与时间 | [system](references/catalog/system.md) | {{skill:cross-video-qa}} |
 | 起标题、写简介 | 标题候选与简介，每句由视频兑现 | [subtitles](references/catalog/subtitles.md) | {{skill:titles-and-description}} |
 | 做封面、封面大字 | 标题与封面文案候选，挑定后按画幅生成封面图，导入为候选素材 | [media](references/catalog/media.md) | {{skill:cover-and-title}} |
 | 下载这个链接 | 新建视频并导入；用户明说只要文件才只下载 | [media](references/catalog/media.md) | — |
@@ -136,6 +137,7 @@ BaoCut 自带的 craft（做法）。第 1 节的表按用户的话指到其中�
 | {{skill:video-blog}} | 写成博客文章 | 把视频写成不看视频也能读明白的完整文章，分作者视角与观众视角 |
 | {{skill:titles-and-description}} | 起标题与写简介 | 标题候选与视频简介（说明、章节、标签），每句都由视频兑现 |
 | {{skill:cover-and-title}} | 封面与标题 | 标题与封面文案候选，用户挑定后按画幅生成封面图，放进候选素材 |
+| {{skill:cross-video-qa}} | 跨视频问答 | 在多部视频里按意思找某件事讲在哪、怎么讲的，只凭原话回答，每条注明视频与时间 |
 | {{skill:video-chapters}} | 分章节 | 在话题自然转换处分章，每章一个标题和一句摘要，写进视频的章节 |
 | {{skill:talking-head-cut}} | 剪口播 | 去口癖、长停顿与录废的部分，收紧节奏，按需加强调、B-roll、竖屏取景与配乐闪避 |
 | {{skill:shorts-segments}} | 切短视频 | 从长视频里找出能单独发布的话题，每个话题从钩子剪到讲完，建成可编辑的子视频 |

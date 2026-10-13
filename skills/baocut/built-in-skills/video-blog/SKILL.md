@@ -1,7 +1,7 @@
 ---
 name: video-blog
 description: 用户要把一个视频写成博客文章、公众号或专栏文章、图文稿时用：一篇不看视频也能读明白的完整文章，分作者视角（用户自己的视频，以用户名义发布）与观众视角（别人的视频，带出处的转述）。需要视频的转写。不用于只要摘要要点（用视频内容总结），也不用于与视频无关的写作。
-version: 2.2.0
+version: 2.3.0
 ---
 
 # 视频写成博客文章
@@ -15,7 +15,7 @@ version: 2.2.0
 ## 1. 取材料
 
 1. 用 videos_inspect 看视频的文档。没有转写（kind 为 speech 的文档）时先转写，告诉用户转写在进行。转写没润色过时人名、术语可能有错字，对照视频信息核对。
-2. 带时间码的文稿：export（kind `transcript`、format `md`、timestamps `true`；有几份文稿时按它列出的候选用 documentId 指定），jobs_inspect 等到 completed，读 outputs 里的文件。时间是剪辑后时间线上的时间；要标时间点时取它，不要自己估算。
+2. 带时间码的文稿：先用 speech_sentences 取按句编号的文稿（每句带编号与时间，正文段落末尾回引编号，见写作基线「句子编号与出处」；长视频按 next 分几次取）；它说没有可编号的句子时再用 export（kind `transcript`、format `md`、timestamps `true`；有几份文稿时按它列出的候选用 documentId 指定），jobs_inspect 等到 completed，读 outputs 里的文件。时间是剪辑后时间线上的时间；要标时间点时取它，不要自己估算。
 3. 视频信息：videos_inspect 给出的视频名与章节；来源标题、作者、发布平台、链接只用视频信息里有的和用户提供的。
 4. 没有视频（例如只从链接下载并转写）：jobs_inspect 的 outputs 里有 SRT、TXT，直接读。
 5. 长文稿先分段读（按章节或时间），每段记下主题块、要引用的原话和它们的时间码，再合起来写成品。只读了一部分时不写成品。

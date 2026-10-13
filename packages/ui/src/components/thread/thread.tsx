@@ -56,6 +56,8 @@ const threadVars = style({
   '--bc-at-del-text': { type: 'color', value: 'red-1100' },
   '--bc-at-code-bg': { type: 'backgroundColor', value: 'gray-100' },
   '--bc-at-code-bg-hover': { type: 'backgroundColor', value: 'gray-200' },
+  '--bc-at-time-bg': { type: 'backgroundColor', value: 'blue-100' },
+  '--bc-at-time-bg-hover': { type: 'backgroundColor', value: 'blue-200' },
   '--bc-at-row-hover': { type: 'backgroundColor', value: 'gray-75' },
   '--bc-at-pre-bg': { type: 'backgroundColor', value: 'gray-50' },
   '--bc-at-err-bg': { type: 'backgroundColor', value: 'red-100' },

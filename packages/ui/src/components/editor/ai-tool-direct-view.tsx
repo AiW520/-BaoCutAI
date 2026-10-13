@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import type { AiToolKind, JobRecord, TextModelInfo } from '@baocut/protocol';
+import type { AiToolKind, CitationParagraph, Id, JobRecord, TextModelInfo } from '@baocut/protocol';
 import {
   ActionButton,
   Button,
@@ -18,6 +18,7 @@ import CheckmarkCircle from '@react-spectrum/s2/icons/CheckmarkCircle';
 import Copy from '@react-spectrum/s2/icons/Copy';
 import { style } from '@react-spectrum/s2/style' with { type: 'macro' };
 import { translateModelOptions } from '../../model/tool-runs.ts';
+import { citedMarkdown, type CopyMode } from '../../model/writing-cites.ts';
 import { findOption, initialModelKey, modelOptions, parseModelKey, type ToolModelOption } from '../../model/tools-models.ts';
 import { useRuntime } from '../../runtime/context.tsx';
 import { useAiToolRunner } from '../../state/ai-tool-runner-store.ts';
@@ -30,10 +31,13 @@ import { needsStructuredOutput } from './ai-tool-direct.ts';
 import {
   bindAiToolRun,
   cancelAiTool,
+  canRewriteAiToolSection,
   closeAiToolResult,
   dismissAiToolProblem,
   retryAiTool,
+  rewriteAiToolSection,
   undoAiTool,
+  undoAiToolSection,
   useAiToolRun,
   type AiToolProblem,
   type AiToolReceipt,
@@ -42,6 +46,9 @@ import {
   type AiToolRunDeps,
 } from './ai-tool-run.ts';
 import { AI_TOOLS_COPY as C } from './ai-tools-copy.ts';
+import { CitedResult, SavedLine, useCiteNames, type SectionActions } from './ai-tool-cites.tsx';
+import { SectionMaterialDialog } from './ai-tool-section.tsx';
+import { WRITING_CITES_COPY as W } from './writing-cites-copy.ts';
 
 const stack = style({ display: 'flex', flexDirection: 'column', gap: 12 });
 const head = style({ display: 'flex', flexDirection: 'column', gap: 8 });
@@ -260,8 +267,22 @@ export function DirectRunView({ run }: { run: AiToolRun }) {
 // ---- 结果 ----
 
 /** 只给结果的工具：正文原样、复制、完成（回到设置态，提示词框还在）。 */
-export function DirectResultView({ runKey: key, result, model }: { runKey: string; result: AiToolResult; model: string }) {
-  const [copied, setCopied] = useState(false);
+export function DirectResultView({
+  runKey: key,
+  result,
+  model,
+  videoId,
+  projectId,
+}: {
+  runKey: string;
+  result: AiToolResult;
+  model: string;
+  videoId: Id;
+  projectId: Id | null;
+}) {
+  const [copied, setCopied] = useState<CopyMode | null>(null);
+  const cites = result.summary.citations;
+  const names = useCiteNames(cites, videoId, projectId);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
   useEffect(
     () => () => {
@@ -269,18 +290,32 @@ export function DirectResultView({ runKey: key, result, model }: { runKey: strin
     },
     [],
   );
-  const copy = async () => {
+  // 有出处时复制两种：去掉出处（缺省，就是正文）与带时间码（每段末尾写时间，自己核对用）。
+  const copy = async (mode: CopyMode) => {
+    const text =
+      cites && mode === 'timecodes' ? citedMarkdown(cites, 'timecodes', { videoId, names, other: W.otherVideo, inferred: W.inferred }) : (result.summary.text ?? '');
     try {
-      await navigator.clipboard.writeText(result.summary.text);
+      await navigator.clipboard.writeText(text);
     } catch {
       ToastQueue.negative(C.copyFailed, { timeout: 5000 });
       return;
     }
-    setCopied(true);
+    setCopied(mode);
     if (timer.current) clearTimeout(timer.current);
-    timer.current = setTimeout(() => setCopied(false), 2000);
+    timer.current = setTimeout(() => setCopied(null), 2000);
   };
   const skipped = result.summary.context.skippedAttachments;
+  // 段落菜单里的重写：沿用这一次的提示词与模型另起一次 `section` 任务；跑着时这一页换成进度，跑完是新的一版，可撤回。
+  const [material, setMaterial] = useState<CitationParagraph | null>(null);
+  const section: SectionActions | null =
+    cites && canRewriteAiToolSection(key, result)
+      ? {
+          rewritten: result.rewrite ? { index: result.rewrite.index, span: result.rewrite.span } : null,
+          onRewrite: (index) => void rewriteAiToolSection(key, index),
+          onMaterial: setMaterial,
+          onUndo: () => undoAiToolSection(key),
+        }
+      : null;
   return (
     <div className={stack}>
       <span className={activity}>{C.resultFrom(model)}</span>
@@ -289,13 +324,32 @@ export function DirectResultView({ runKey: key, result, model }: { runKey: strin
           <Content>{C.resultCut}</Content>
         </InlineAlert>
       ) : null}
-      <pre className={output}>{result.summary.text}</pre>
+      {cites ? <SavedLine projectId={projectId} /> : null}
+      {cites ? <CitedResult file={cites} videoId={videoId} names={names} section={section} figures={!!result.figures} /> : <pre className={output}>{result.summary.text}</pre>}
+      {cites && material ? (
+        <SectionMaterialDialog
+          file={cites}
+          paragraph={material}
+          names={names}
+          onClose={() => setMaterial(null)}
+          onApply={(exclude) => {
+            setMaterial(null);
+            void rewriteAiToolSection(key, material.index, exclude);
+          }}
+        />
+      ) : null}
       {skipped ? <p className={note}>{C.resultSkipped(skipped)}</p> : null}
       <div className={actions}>
-        <Button size="S" variant="accent" onPress={() => void copy()}>
-          {copied ? <CheckmarkCircle /> : <Copy />}
-          <Text>{copied ? C.copied : C.copy}</Text>
+        <Button size="S" variant="accent" onPress={() => void copy('plain')}>
+          {copied === 'plain' ? <CheckmarkCircle /> : <Copy />}
+          <Text>{copied === 'plain' ? C.copied : cites ? W.copyPlain : C.copy}</Text>
         </Button>
+        {cites ? (
+          <Button size="S" variant="secondary" onPress={() => void copy('timecodes')}>
+            {copied === 'timecodes' ? <CheckmarkCircle /> : <Copy />}
+            <Text>{copied === 'timecodes' ? C.copied : W.copyTimecodes}</Text>
+          </Button>
+        ) : null}
         <Button size="S" variant="secondary" onPress={() => closeAiToolResult(key)}>
           {C.done}
         </Button>

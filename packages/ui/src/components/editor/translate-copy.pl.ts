@@ -125,6 +125,13 @@ export const plTranslate: TranslateMessages = {
   staleShort: (n: number) => `nieaktualne: ${n}`,
   cutShort: (n: number) => `wycięte: ${n}`,
   goneShort: (n: number) => `usunięte: ${n}`,
+  termsShort: (n: number) => `niezgodne terminy: ${n}`,
+  terms: (n: number) => `Miejsca bez tłumaczenia z glosariusza: ${n}`,
+  termsTitle: 'Terminy niezgodne z glosariuszem',
+  termsLead: 'Te tłumaczenia nie używają tłumaczenia z glosariusza. Ujednolicenie to zwykła edycja, którą można cofnąć.',
+  termsSpot: (got: string, want: string) => ` · przetłumaczono jako „${got}”, w glosariuszu „${want}”`,
+  termsUnify: 'Użyj tłumaczeń z glosariusza',
+  termsUnified: (n: number) => `Ujednolicono miejsca według glosariusza: ${n}`,
   cut: (n: number) => `Obraz wycięty z wideo: ${sentences(n)} oryginału`,
   webHint: 'Ponowne tłumaczenie korzysta z modelu lub agenta: uruchom je z agenta lub aplikacji BaoCut',
   refreshing: (n: number | null) => (n === null ? 'Ponowne tłumaczenie…' : `Ponowne tłumaczenie: ${sentences(n)}…`),
@@ -151,6 +158,18 @@ export const plTranslate: TranslateMessages = {
   refreshFailed: 'Ponowne tłumaczenie nie powiodło się',
   refreshInterrupted: 'Ponowne tłumaczenie zostało przerwane',
   refreshCancelled: 'Anulowano ponowne tłumaczenie',
+  // 翻译记忆（创作辅助集成设计 §2.6）
+  chipReused: 'Użyte ponownie',
+  reusedTip: (video: string | null) =>
+    video ? `Tłumaczenie z „${video}”: oryginał jest prawie identyczny` : 'Tłumaczenie z innego Twojego wideo: oryginał jest prawie identyczny',
+  directReused: 'Przetłumacz od nowa',
+  directReusedSub: (video: string | null) => `Przestaje używać ${video ? `tłumaczenia z „${video}”` : 'istniejącego tłumaczenia'} i tłumaczy ponownie przez API modelu`,
+  memory: 'Pamięć tłumaczeń',
+  memoryOn:
+    'Zdania zgodne z już przetłumaczonymi w innych Twoich wideo (ten sam kierunek) używają tamtego tłumaczenia i są oznaczone „Użyte ponownie”; podobne trafiają do modelu jako odniesienia.',
+  memoryOff: 'Pamięć tłumaczeń jest wyłączona w Ustawieniach: istniejące tłumaczenia nie są używane ani brane pod uwagę.',
+  memoryUsed: (reused: number, referenced: number) => `Pamięć tłumaczeń: użyto ponownie ${reused} · ${referenced} istniejących tłumaczeń jako odniesienia`,
+
 };
 
 export const plTextNotConfigured: TextNotConfiguredMessages = {

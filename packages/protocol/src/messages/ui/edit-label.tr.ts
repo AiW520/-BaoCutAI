@@ -70,6 +70,7 @@ export const tr: EditLabelMessages = {
   editTranslation: "Çeviriyi düzenle",
   markTranslationStale: "Çeviriyi güncel değil olarak işaretle",
   clearTranslationStale: "Güncel değil işaretini kaldır",
+  unifyGlossaryTerms: "Sözlükteki çeviriye eşitle",
   cutText: "Dökümde kes",
   restoreText: "Kesilen içeriği geri yükle",
   editTranscript: "Metni düzenle",

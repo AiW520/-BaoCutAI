@@ -90,6 +90,8 @@ export interface TranslationUnit {
     textHash: string;
   } | null;
   status: 'draft' | 'reviewed' | 'stale';
+  /** 翻译记忆沿用的译文：取自哪部视频的哪个单元（§5.3）。改为重译时去掉。 */
+  reuse?: { fromVideoId: Id; unitId: Id };
 }
 
 export interface TranslationBody {
@@ -176,8 +178,19 @@ function documentProblems(
         problems.push(J.unitHashMismatch({ id: unit.id }).text);
       }
     }
+    const reuse = (unit as { reuse?: unknown }).reuse;
+    if (
+      reuse !== undefined &&
+      (!reuse ||
+        typeof reuse !== 'object' ||
+        typeof (reuse as { fromVideoId?: unknown }).fromVideoId !== 'string' ||
+        typeof (reuse as { unitId?: unknown }).unitId !== 'string' ||
+        Object.keys(reuse).some((k) => k !== 'fromVideoId' && k !== 'unitId'))
+    ) {
+      problems.push(J.unitBadReuse({ id: unit.id }).text);
+    }
     const extra = Object.keys(unit).filter(
-      (k) => !['id', 'sourceSentenceId', 'sourceFingerprint', 'naturalText', 'displayRewrite', 'alignment', 'status'].includes(k),
+      (k) => !['id', 'sourceSentenceId', 'sourceFingerprint', 'naturalText', 'displayRewrite', 'alignment', 'status', 'reuse'].includes(k),
     );
     if (extra.length > 0) problems.push(J.unitExtraFields({ id: unit.id, fields: joinList(extra) }).text);
   });

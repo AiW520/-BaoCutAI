@@ -56,6 +56,14 @@ export interface ContentSegment {
   end: number;
   text: string;
   speaker: string | null;
+  /**
+   * 稳定的句子身份（语义检索的 chunk 与回引用，EmbeddingGemma 2 检索集成方案 v0.1 §6.1）：转写是 `baocut.transcript` 的句子 ID
+   * （转写没有存句子时是 `s-<首词 ID>`，与译文的约定相同），字幕是字幕条 ID，译文是它译自的那一句，章节为空。只在内存里：
+   * 内容索引的库不存它（§19：语义检索期间不改旧索引的表结构）。
+   */
+  sentenceIds?: string[];
+  /** 章节标记的 ID（`kind: 'chapter'`）。 */
+  markerId?: string;
 }
 
 /** Space 目录与工具的候选输入用的视频事实。 */
@@ -205,6 +213,7 @@ export function extractContent(result: ReadContentResult, videoDir: string): Ext
         end: round(piece.end),
         text,
         speaker: piece.speaker,
+        sentenceIds: pieceSentenceIds(piece),
       });
     }
     if (kind === 'speech') {
@@ -238,6 +247,7 @@ export function extractContent(result: ReadContentResult, videoDir: string): Ext
         end: round(time.end),
         text,
         speaker: null,
+        sentenceIds: [v2 ? unit.sourceSentenceId! : unit.id],
       });
     }
   }
@@ -260,6 +270,8 @@ export function extractContent(result: ReadContentResult, videoDir: string): Ext
         end: round(end),
         text,
         speaker: null,
+        sentenceIds: [],
+        markerId: marker.id,
       });
     }
   }
@@ -577,6 +589,44 @@ function pseudoPlan(doc: ReadContentDocument, unit: 'speech' | 'caption', entrie
     sourceCount: entries.length,
     omittedCount: 0,
   };
+}
+
+/**
+ * 一份转写或字幕在源时间上的句子段落（不看时间线投影）：结果定位（`search-hit-resolver.ts`）用它分辨「这句还在文稿里、只是不在
+ * 当前时间线上」与「这句已经没有了」。不是转写或字幕、正文读不出时为空。
+ */
+export function sourceSegmentsOf(doc: ReadContentDocument): ContentSegment[] {
+  if (doc.error !== undefined) return [];
+  if (doc.schema !== 'baocut.speech/1' && doc.schema !== 'baocut.caption/1') return [];
+  const kind: SpaceSearchDocumentKind = doc.schema === 'baocut.speech/1' ? 'speech' : 'caption';
+  const plan = kind === 'speech' ? sourcePlanOfSpeech(doc) : sourcePlanOfCaption(doc);
+  if (!plan) return [];
+  let pieces;
+  try {
+    pieces = segmentsOf({ primary: { document: plannedOf(doc), plan }, secondary: null }, []);
+  } catch {
+    return [];
+  }
+  return pieces
+    .filter((piece) => piece.text.trim() !== '')
+    .map((piece) => ({
+      kind,
+      documentId: doc.documentId,
+      language: doc.language ?? null,
+      clock: 'source' as const,
+      start: round(piece.start),
+      end: round(piece.end),
+      text: piece.text.trim(),
+      speaker: piece.speaker,
+      sentenceIds: pieceSentenceIds(piece),
+    }));
+}
+
+/** 一段的句子身份：知道句子时是那一句；不知道时按首词（`s-<词 ID>`）；都没有时为空。 */
+function pieceSentenceIds(piece: { sentenceId: string | null; words: { id: string }[] | null }): string[] {
+  if (piece.sentenceId !== null) return [piece.sentenceId];
+  const first = piece.words?.[0]?.id;
+  return first ? [`s-${first}`] : [];
 }
 
 function round(seconds: number): number {

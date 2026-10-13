@@ -918,6 +918,11 @@ export interface SpaceEntry {
    * 直接任务另存的副本。文件不在了时没有；来源目录里扫描到的普通文件也没有（按来源目录与 `relPath` 拼）。
    */
   file?: { path: string };
+  /**
+   * 写作类 AI 工具的文档条目的出处旁文件（`baocut.citations/1`，创作辅助集成设计 §3.4）：段落 → 原句。条目的正文是
+   * `ref.artifactId`，出处是另一个产物，用 `space.citations` 读。
+   */
+  citations?: { artifactId: string };
 }
 
 /** 某个来源目录的扫描没有列全（文件太多或读不了），如实告诉界面。 */

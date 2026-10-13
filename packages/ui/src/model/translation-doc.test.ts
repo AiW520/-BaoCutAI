@@ -10,6 +10,7 @@ import {
   pairStats,
   readLegacyTranslation,
   readTranslation,
+  reusedFrom,
   sha256Hex,
   speechSentences,
   unitState,
@@ -218,6 +219,14 @@ describe('就地改一句译文', () => {
     expect(result!.body.sourceBasis).toBe(body.sourceBasis);
   });
 
+  it('改了自然译句的沿用单元去掉 reuse；只改字幕显示改写时保留', async () => {
+    const reuse = { fromVideoId: 'vid_other', unitId: 'u1' };
+    const body = translation([unit('s1', 'one', { reuse }), unit('s3', 'three', { reuse, displayRewrite: { text: 'Three', reason: 'width', reviewed: false } })]);
+    const rows = pairRows([sentences[0]!, sentences[2]!], body);
+    expect((await editUnit(body, [sentences[0]!, sentences[2]!], rows[0]!, 'One!'))!.unit.reuse).toBeUndefined();
+    expect((await editUnit(body, [sentences[0]!, sentences[2]!], rows[1]!, 'Tres'))!.unit.reuse).toEqual(reuse);
+  });
+
   it('原句改过的：对着现在的原文改，指纹与词成员换成现在这一句的', async () => {
     const body = translation([unit('s1', 'one'), unit('s2', 'two'), unit('s3', 'three')]);
     const rows = pairRows(sentences, body);
@@ -321,5 +330,15 @@ describe.skipIf(!editorWasmAvailable())('Speech Worker 写出的译文在界面�
       '然后我们混音。',
     );
     expect(pairRows(changed, result!.body).every((r) => r.state === 'ok')).toBe(true);
+  });
+});
+
+describe('翻译记忆的沿用标记', () => {
+  it('新鲜的沿用单元给来源视频；过期、没沿用或设置关掉时不标', () => {
+    const reuse = { fromVideoId: 'vid_other', unitId: 'u1' };
+    const sentences = [sentence('s1', '一'), sentence('s2', '二', 'fp-new'), sentence('s3', '三')];
+    const rows = pairRows(sentences, translation([unit('s1', 'one', { reuse }), unit('s2', 'two', { reuse }), unit('s3', 'three')]));
+    expect(rows.map((r) => reusedFrom(r, true))).toEqual(['vid_other', null, null]);
+    expect(rows.map((r) => reusedFrom(r, false))).toEqual([null, null, null]);
   });
 });

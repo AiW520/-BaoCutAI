@@ -25,17 +25,23 @@ import {
   type CoverRatio,
   type CoverText,
 } from '../../model/ai-tools.ts';
+import { durationSeconds } from '../../model/editor.ts';
 import { chapterPieces } from '../../model/export-range.ts';
 import { bundleName } from '../../model/models-local.ts';
 import { readSpeechWords } from '../../model/speech-cues.ts';
 import { transcriptParagraphs, transcriptWords } from '../../model/transcript-cut.ts';
 import { transcribeModelInfo } from '../../model/transcribe-speakers.ts';
+import { boundaryDefault, pickedChunks, TOPIC_LONG_SECONDS, topicDefault, topicSelection, topicTool, topicUsable } from '../../model/writing-topic.ts';
 import { useAiToolRunner, type AiToolRunner } from '../../state/ai-tool-runner-store.ts';
 import { useModels } from '../../state/models-store.ts';
+import { useSemanticStatus } from '../../state/semantic-store.ts';
 import { AsrMoreOptions, useSpeakerState } from '../tools/asr-more-options.tsx';
 import { directHasScope, directParams, directRefresh, directTool, scopedParagraphs } from './ai-tool-direct.ts';
 import { DirectModelGate, DirectModelPicker, DirectProblem, DirectReceiptView, DirectResultView, DirectRunView, useDirectModel } from './ai-tool-direct-view.tsx';
 import { AiToolAgentRun } from './ai-tool-agent-run.tsx';
+import { GlossaryOption, PolishTermCandidates, RetakeGroups, RetakeOption } from './ai-tools-edit-aids.tsx';
+import { BoundaryRow, TopicRows, TopicScopeNote, useTopicPreview } from './ai-tools-topic.tsx';
+import { WRITING_TOPIC_COPY as T } from './writing-topic-copy.ts';
 import { refreshParts, StaleDirectStart, StaleRefreshView, translationLabel, useStaleDirect, useStaleRefreshLive } from './ai-tool-stale-direct.tsx';
 import { AgentUseRow, AiToolPrompt, SessionRow, useToolHandoff, type DirectPrompt } from './ai-tool-prompt.tsx';
 import { closeAiToolResult, runKey, startAiTool, useAiToolRun } from './ai-tool-run.ts';
@@ -155,17 +161,37 @@ export function AiAgentToolPage({
   const writing = isWritingTool(tool);
 
   const chapters = useMemo(() => chapterPieces(sequence), [sequence]);
-  const [scopeKey, setScopeKey] = useState<string>('all');
-  const scopeIndex = chapters.findIndex((c) => c.id === scopeKey);
-  const scope = scopeIndex >= 0 ? C.scopeChapter(scopeIndex + 1, chapters[scopeIndex]!.label) : null;
 
   // 「用」：按工具记住交给 Agent 还是直接调模型（直接调模型做不了的工具总是交给 Agent）。刷新过期译文直接调模型时
   // 不走 `ai-tool`，走翻译流程的就地刷新（`viaRefresh`）。
   const kind = directTool(tool);
   const savedRunner = useAiToolRunner((s) => s.runners[tool]);
   const setRunner = useAiToolRunner((s) => s.setRunner);
-  const runner: AiToolRunner = (kind || directRefresh(tool)) && savedRunner === 'model' ? 'model' : 'agent';
+  // Space 搜索的「用于写作」带来主题时这一次直接调模型（按主题只在这条路上有），不改记住的选择；用户换了就按用户的。
+  const [runnerAsked, setRunnerAsked] = useState<AiToolRunner | null>(preset?.topic && kind ? 'model' : null);
+  const runner: AiToolRunner = runnerAsked ?? ((kind || directRefresh(tool)) && savedRunner === 'model' ? 'model' : 'agent');
   const viaModel = runner === 'model' && kind ? kind : null;
+
+  // 写总结、写博客直接调模型时范围多一项「按主题」（创作辅助集成设计 §2.2）：本机语义能用且视频超过 30 分钟时缺省按主题，
+  // 用户动过范围就按用户的；生成章节直接调模型时多一行「边界」（§2.4）。交给 Agent 时都没有：Agent 自己用 `speech_relevant`。
+  const semantic = useSemanticStatus();
+  const topicOk = topicUsable(semantic.status);
+  const topicHere = !!viaModel && topicTool(tool);
+  const duration = useMemo(() => durationSeconds(sequence), [sequence]);
+  const long = duration > TOPIC_LONG_SECONDS;
+  const [scopePicked, setScopePicked] = useState<string | null>(preset?.topic ? 'topic' : null);
+  const scopeWanted = scopePicked ?? (topicHere ? topicDefault({ usable: topicOk, duration }) : 'all');
+  const scopeKey = scopeWanted === 'topic' && !(topicHere && topicOk) ? 'all' : scopeWanted;
+  const topicOn = scopeKey === 'topic';
+  const scopeIndex = chapters.findIndex((c) => c.id === scopeKey);
+  const scope = scopeIndex >= 0 ? C.scopeChapter(scopeIndex + 1, chapters[scopeIndex]!.label) : null;
+  const [topic, setTopic] = useState(preset?.topic ?? '');
+  const [series, setSeries] = useState<Id[]>([]);
+  const [excluded, setExcluded] = useState<Set<string>>(new Set());
+  const preview = useTopicPreview({ on: topicOn, videoId, series, topic });
+  const picked = preview.load.state === 'ok' ? pickedChunks(preview.load.data.chunks, excluded) : null;
+  const [boundaryPicked, setBoundary] = useState<'topic' | 'model' | null>(null);
+  const boundaries = boundaryPicked && topicOk ? boundaryPicked : boundaryDefault(topicOk);
   const viaRefresh = runner === 'model' && directRefresh(tool);
   const model = useDirectModel(directRefresh(tool) ? 'stale' : (kind ?? 'summary'));
   const staleDirect = useStaleDirect(documents, preset, viaRefresh);
@@ -186,11 +212,15 @@ export function AiAgentToolPage({
   const [pre, setPre] = useState(true);
   const [cleanup, setCleanup] = useState<Record<CleanupKey, boolean>>({ fillers: true, pauses: true, repeats: true });
   const [stale, setStale] = useState({ edited: true, cut: true });
+  // 润色的术语候选、找可剪的口的重录（创作辅助集成设计 §2.5、§2.7）：本机现查，不进提示词；设置里关掉术语候选时一个请求都不发。
+  const [terms, setTerms] = useState(true);
+  const [retakes, setRetakes] = useState(true);
 
   const [platform, setPlatform] = useState('');
-  // 写博客的「添加关键帧插图」：默认不加；画面只有 Agent 取得到，直接调模型时置灰、也不进模板。
+  // 写博客的「添加关键帧插图」：默认不加。交给 Agent 时进模板（Agent 自己取帧）；直接调模型时不进模板，结果页按每段出处的时间
+  // 配图（创作辅助集成设计 §2.3 的退路，model/writing-figures.ts）。
   const [frames, setFrames] = useState(false);
-  const framesOn = tool === 'blog' && frames && !viaModel;
+  const framesOn = tool === 'blog' && frames;
   const [count, setCount] = useState<number>(tool === 'cover' ? COVER_COUNT.initial : TITLE_COUNT.initial);
   const [idea, setIdea] = useState('');
   const [ratio, setRatio] = useState<CoverRatio>('project');
@@ -213,7 +243,7 @@ export function AiAgentToolPage({
         idea,
         ratio: ratio === 'project' ? projectRatio : ratio,
         coverText,
-        frames: framesOn,
+        frames: framesOn && !viaModel,
       })
     : [
         tool === 'chapters' && pre && !viaModel ? C.chaptersPolishFirst : null,
@@ -250,6 +280,8 @@ export function AiAgentToolPage({
           paragraphs: scopedParagraphs(paragraphs, range),
           scope: range ? scope : null,
           chapters: chapters.length,
+          topic: topicOn ? { paragraphs: picked ? picked.chunks.length : null, chapters: picked?.chapters ?? 0 } : null,
+          ...(topicOn && series.length ? { videos: series.length + 1 } : {}),
         },
         model: { name: model.name, local: model.local, ready: model.ready },
         picker: <DirectModelPicker model={model} />,
@@ -275,8 +307,12 @@ export function AiAgentToolPage({
               skills,
               model: model.ref,
               uiLanguage: getLocale(),
+              selection: topicOn ? topicSelection({ topic, excluded }) : null,
+              videoIds: topicOn ? series : [],
+              boundaries: viaModel === 'chapters' ? boundaries : null,
             }),
             model.name ?? '',
+            { figures: framesOn },
           ),
       }
     : null;
@@ -305,7 +341,7 @@ export function AiAgentToolPage({
           {run ? (
             <DirectRunView run={run} />
           ) : result ? (
-            <DirectResultView runKey={key} result={result} model={result.summary.modelId} />
+            <DirectResultView runKey={key} result={result} model={result.summary.modelId} videoId={videoId} projectId={ref?.source.projectId ?? null} />
           ) : receipt ? (
             <DirectReceiptView runKey={key} receipt={receipt} />
           ) : null}
@@ -342,7 +378,10 @@ export function AiAgentToolPage({
             handoff={handoff}
             tool={tool}
             runner={runner}
-            onRunner={(next) => setRunner(tool, next)}
+            onRunner={(next) => {
+              setRunnerAsked(null);
+              setRunner(tool, next);
+            }}
             modelName={model.name}
           />
 
@@ -352,13 +391,21 @@ export function AiAgentToolPage({
                 aria-label={C.scope}
                 size="S"
                 styles={field}
-                isDisabled={!chapters.length}
-                selectedKey={scopeIndex >= 0 ? scopeKey : 'all'}
-                onSelectionChange={(key) => setScopeKey(String(key ?? 'all'))}>
+                isDisabled={!chapters.length && !topicHere}
+                selectedKey={scopeIndex >= 0 || topicOn ? scopeKey : 'all'}
+                disabledKeys={topicOk ? [] : ['topic']}
+                onSelectionChange={(key) => setScopePicked(String(key ?? 'all'))}>
                 {[
                   <PickerItem key="all" id="all">
                     {C.scopeAll}
                   </PickerItem>,
+                  ...(topicHere
+                    ? [
+                        <PickerItem key="topic" id="topic">
+                          {T.scopeTopic}
+                        </PickerItem>,
+                      ]
+                    : []),
                   ...chapters.map((c, i) => (
                     <PickerItem key={c.id} id={c.id}>
                       {C.scopeChapter(i + 1, c.label)}
@@ -366,27 +413,51 @@ export function AiAgentToolPage({
                   )),
                 ]}
               </Picker>
-              {chapters.length ? null : <p className={hint}>{C.scopeNoChapters}</p>}
+              {chapters.length || topicHere ? null : <p className={hint}>{C.scopeNoChapters}</p>}
+              {topicHere ? <TopicScopeNote usable={topicOk} on={topicOn} long={long} /> : null}
             </Row>
           ) : null}
+          {topicOn ? (
+            <TopicRows
+              videoId={videoId}
+              videoName={ref?.name ?? ''}
+              projectId={ref?.source.projectId ?? null}
+              topic={topic}
+              onTopic={(next) => {
+                setTopic(next);
+                setExcluded(new Set());
+              }}
+              load={preview.load}
+              retry={preview.retry}
+              excluded={excluded}
+              onExcluded={setExcluded}
+              series={series}
+              onSeries={(next) => {
+                setSeries(next);
+                setExcluded(new Set());
+              }}
+            />
+          ) : null}
+          {viaModel === 'chapters' ? <BoundaryRow value={boundaries} usable={topicOk} onChange={setBoundary} /> : null}
 
           {tool === 'blog' ? (
             <Option
               label={C.framesLabel}
               sub={viaModel ? C.framesSubModel : C.framesSub}
               isSelected={framesOn}
-              isDisabled={!!viaModel}
               onChange={setFrames}
             />
           ) : null}
           {viaModel || viaRefresh ? null : <SessionRow handoff={handoff} />}
 
           {tool === 'chapters' && !viaModel ? <Option label={C.prePolish} sub={pre ? C.prePolishOn : C.prePolishOff} isSelected={pre} onChange={setPre} /> : null}
+          {tool === 'polish' ? <GlossaryOption on={terms} onChange={setTerms} /> : null}
           {tool === 'cleanup' ? (
             <div className={options}>
               {CLEANUP_OPTIONS.map((o) => (
                 <Option key={o.key} label={o.label} sub={o.sub} isSelected={cleanup[o.key]} onChange={(on) => setCleanup((c) => ({ ...c, [o.key]: on }))} />
               ))}
+              <RetakeOption on={retakes} onChange={setRetakes} />
             </div>
           ) : null}
           {viaRefresh ? (
@@ -497,6 +568,8 @@ export function AiAgentToolPage({
             direct={direct}
           />
         )}
+        {tool === 'polish' && speech ? <PolishTermCandidates videoId={videoId} documentId={speech.id} on={terms} /> : null}
+        {tool === 'cleanup' && retakes && speech ? <RetakeGroups videoId={videoId} speech={speech} sequence={sequence} /> : null}
       </div>
     </>
   );

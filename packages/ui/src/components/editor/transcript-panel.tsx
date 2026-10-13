@@ -104,6 +104,7 @@ import { copyScope, TranscriptCopyButton } from './transcript-copy-button.tsx';
 import { TRANSCRIPT_COPY as C, TRANSCRIPT_TOOLS_COPY as T } from './transcript-copy.ts';
 import { TranscriptFindBar } from './transcript-find-bar.tsx';
 import { LiveTranscript, useLiveTranscriptJob } from './transcript-live.tsx';
+import { TranscriptMeaning } from './transcript-meaning.tsx';
 import { Paragraph, type ParagraphAction, type ParagraphMoves, type ParaMarks } from './transcript-paragraph.tsx';
 import { mediaCandidates } from './transcribe-run.ts';
 import { RowHoldContext, useVirtualRows, type VirtualRows } from './use-virtual-rows.ts';
@@ -1062,6 +1063,7 @@ export function TranscriptPanel({
           hint={current ? lockOf(current) : null}
           onReplace={() => current && replace([current])}
           onReplaceAll={() => replace(matches)}
+          meaning={<TranscriptMeaning videoId={videoId} query={query} regex={options.regex} onSeek={seekHere} />}
         />
       ) : null}
       <div className={modeRow}>

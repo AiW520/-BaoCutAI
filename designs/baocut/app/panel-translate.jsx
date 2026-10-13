@@ -151,6 +151,7 @@
         </BCAction>
         <span className="sbt">{c.time}</span>
         {chips}
+        <window.TmChip c={c} />{/* 翻译记忆「沿用」（embedding-integration §2.6），subtitle-tm.jsx */}
         {c.cutStale ? <Chip tone="notice">原文被剪切</Chip> : null}
         {editing || !c.readingSpeed || c.readingSpeed.level === 'none' ? null : <span className={cx('cps', c.readingSpeed.level === 'warn' && 'is-warn', c.readingSpeed.level === 'bad' && 'is-hot')}>{c.readingSpeed.value} cps</span>}
         {more && !editing ? <MoreBtn items={more} /> : null}
@@ -674,12 +675,13 @@
     };
     /* 直接重译：Runtime 的 translate 流程就地刷新这份译文（translationId + sentences），同一笔事务
        改从它生成的字幕层里这几句的字幕条、时间轴不动；撤销一次两边一起回去。 */
-    const retranslate = (ids, msg) => {
+    /* opts.onUndo：撤销时一起还原的面板外状态（「改为重译」放回沿用标记，subtitle-tm.jsx） */
+    const retranslate = (ids, msg, opts) => {
       const overrides = {...doc.overrides};
       // 没有译文的那几句填上演示译文（真实产品里是模型译的）
       cards.forEach((c) => { if (ids.includes(c.id) && c.fill && !displayedTranslation(c).trim()) overrides[fragKey(c.id, 'trans', 't')] = c.fill; });
       putDoc({cards: withStale(ids, false), overrides});
-      app.toast(msg, 'positive', historyUndo);
+      app.toast(msg, 'positive', opts && opts.onUndo ? {...historyUndo, run: () => { ctx.history.undo(); opts.onUndo(); }} : historyUndo);
     };
     /* 交给 Agent（§5.10）：发到这部视频当前的会话（Home 左侧那条，或 Space 的悬浮会话）；没有就新开一条。
        不切走：译文面板留在原地，Agent 写完的译文按同样的规矩跟着改字幕。 */
@@ -693,6 +695,7 @@
     const scopeOf = (c) => `${c.time}「${(c.orig || (c.words || []).join('') || (c.blocks || []).map((b) => b.o).join('') || (c.subs || []).join('')).slice(0, 24)}」`;
     /* 前三条要调模型、「交给 Agent」要会话：Web 表面（model-surface.js）只留过期标记、隐藏与复制 */
     const moreFor = (c) => (window.BC_SURFACE.ai ? [
+      ...window.BC_SEMTM.moreItems(c, app, retranslate), // 沿用的句子「改为重译」：去掉沿用并接着重译这一句（embedding-integration §2.6）
       {icon: 'sparkle', label: '用模型 API 重译这一句', sub: DIRECT_SUB, run: () => retranslate([c.id], '已重译这一句 · 字幕跟着更新 · 0.9s · claude-sonnet')},
       ...(window.BC_SURFACE.agent ? [{icon: 'agent', label: '交给 Agent 重译这一句', sub: AGENT_SUB,
         run: () => toAgent({kind: 'retranslate', lang: cur.name, scope: scopeOf(c)})}] : []),
@@ -771,6 +774,9 @@
                 {S.stale > 0 ? <span className="warn" title={`${S.stale} 句译文已过期${window.BC_SURFACE.ai ? '' : ' · ' + window.BC_SURFACE.aiElsewhere('重译')}`}>{S.stale} 过期</span> : null}
                 {cutN > 0 ? <span className="warn" title={`${cutN} 句原文被剪切`}>{cutN} 被剪切</span> : null}
                 {S.deficits > 0 ? <span className="warn" title={`${S.deficits} 处黏结：一行译文停留太久`}>{S.deficits} 黏结</span> : null}
+                {/* 术语不一致（embedding-integration §2.6）：统一是一笔普通编辑，Web 也有 */}
+                <window.TmConflicts cards={cards} textOf={(k, d) => edits.get(k, d)} onSeek={seekF}
+                  onFix={(ov, n) => { putDoc({...doc, overrides: {...doc.overrides, ...ov}}); app.toast(`已统一 ${n} 处为术语表译法`, 'positive', historyUndo); }} />
                 {todoIds.length + cutN + S.deficits === 0 ? <span className="ok">全部最新</span> : null}
               </>}
           </span>

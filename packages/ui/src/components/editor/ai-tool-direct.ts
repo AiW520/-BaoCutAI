@@ -1,9 +1,10 @@
-import { AI_TOOL_APPLY_KINDS, AI_TOOL_KINDS, type AiToolKind, type AiToolParams, type DocumentRecord, type Id } from '@baocut/protocol';
+import { AI_TOOL_APPLY_KINDS, AI_TOOL_KINDS, type AiToolKind, type AiToolParams, type AiToolSelection, type DocumentRecord, type Id } from '@baocut/protocol';
 import type { AgentToolId } from '../../model/ai-tools.ts';
 import { languageName } from '../../model/caption-tracks.ts';
 import { isStale, needsTranslation, type PairRow } from '../../model/translation-doc.ts';
 import { S } from '../shell-copy.ts';
 import { AI_TOOLS_COPY as C } from './ai-tools-copy.ts';
+import { WRITING_TOPIC_COPY as T } from './writing-topic-copy.ts';
 
 /**
  * 工具页「用 › 直接调模型」的纯逻辑（产品设计 §5.10，原型 model-ai-prompt.js `contextPack` / `contextLine` / `hint`）：
@@ -83,12 +84,18 @@ export interface DirectContext {
   attachments: number;
   /** 挂着的 skill 的名字，按挂上的顺序。 */
   skills: readonly string[];
+  /** 按主题选材：挑中几段、覆盖几章；还没预览过（不知道几段）时 `paragraphs` 为 null。 */
+  topic?: { paragraphs: number | null; chapters: number } | null;
+  /** 系列文章一共几部视频（含这部）；单部时不给。 */
+  videos?: number;
 }
 
 /** 发给模型的上下文，一项一句（原型 `contextPack`）。 */
 export function contextItems(c: DirectContext): string[] {
   const items: string[] = [];
-  if (c.paragraphs > 0) items.push(C.contextTranscript(c.paragraphs, c.scope));
+  if (c.topic) items.push(c.topic.paragraphs === null ? T.contextTopicPending : T.contextTopic(c.topic.paragraphs, c.topic.chapters));
+  else if (c.paragraphs > 0) items.push(C.contextTranscript(c.paragraphs, c.scope));
+  if (c.topic && c.videos && c.videos > 1) items.push(T.contextSeries(c.videos));
   if (c.tool !== 'polish' && c.paragraphs > 0 && c.chapters > 0) items.push(C.contextChapters(c.chapters));
   if (c.attachments > 0) items.push(C.contextAttachments(c.attachments));
   // 并列的名字按产品自己的列举写法（中文「A、B」），不是句子里的「和」。
@@ -128,12 +135,22 @@ export function directParams(o: {
   model: { providerId: string; modelId: string } | null;
   /** 界面语言（`getLocale()`）。 */
   uiLanguage: string;
+  /** 写作类工具按主题选材（与范围互斥：给了就不发范围）。 */
+  selection?: AiToolSelection | null;
+  /** 系列文章：一起取材的另几部视频（只随按主题发：整篇时那几部要先打开）。 */
+  videoIds?: readonly Id[];
+  /** 生成章节的边界。 */
+  boundaries?: 'topic' | 'model' | null;
 }): AiToolParams {
+  const selection = o.selection && !directApplies(o.tool) ? o.selection : null;
   return {
     videoId: o.videoId,
     tool: o.tool,
     prompt: o.prompt,
-    ...(o.range && directHasScope(o.tool) ? { range: { start: o.range.start, end: o.range.end } } : {}),
+    ...(o.range && directHasScope(o.tool) && !selection ? { range: { start: o.range.start, end: o.range.end } } : {}),
+    ...(selection ? { selection } : {}),
+    ...(selection && o.videoIds?.length ? { videoIds: [...o.videoIds] } : {}),
+    ...(o.boundaries && o.tool === 'chapters' ? { boundaries: o.boundaries } : {}),
     ...(o.documentId ? { documentId: o.documentId } : {}),
     ...(o.attachments.length ? { attachments: [...o.attachments] } : {}),
     ...(o.skills.length ? { skills: o.skills.map((id) => ({ id })) } : {}),

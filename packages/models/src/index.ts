@@ -15,11 +15,30 @@ export {
   type BundleDefinition,
   type ComponentRelease,
   type ComponentReleaseAsset,
+  type EmbeddingBundleProfile,
   type ImageBundleProfile,
   type MusicBundleProfile,
   type SpeechBundleProfile,
 } from './bundle-registry.ts';
 export { SPEECH_BUNDLES } from './speech-bundles.ts';
+export {
+  EMBEDDING_BUNDLES,
+  EMBEDDING_WORKER_OVERHEAD_BYTES,
+  EMBEDDINGGEMMA2_MULTIMODAL_BUNDLE,
+  EMBEDDINGGEMMA2_TEXT_BUNDLE,
+  LITERTLM_RUNTIME_COMPONENT,
+  LITERTLM_RUNTIME_RELEASE,
+  LITERTLM_RUNTIME_TOOL,
+  LITERTLM_VERSION,
+} from './embedding-bundles.ts';
+export {
+  EMBEDDING_SELF_TEST,
+  EMBEDDING_SELF_TEST_LIMITS,
+  embeddingSelfTestTexts,
+  embeddingSelfTestVerdict,
+  type EmbeddingSelfTestFacts,
+  type EmbeddingSelfTestVerdict,
+} from './embedding-self-test.ts';
 export { IMAGE_BUNDLES, QWEN_IMAGE_2K, QWEN_IMAGE_ASPECTS, QWEN_IMAGE_TIERED_ASPECTS } from './image-bundles.ts';
 export { imageRunOf, localImageModelInfo, localImageSeed } from './local-image.ts';
 export { AUDIO_CPP_ENGINE, MUSIC_BUNDLES, YUE2_SEMANTIC_TOKENS_PER_SEC } from './music-bundles.ts';
@@ -250,3 +269,18 @@ export {
 } from './model-installer.ts';
 export { TRANSCRIBE_SELF_TEST, normalizeTranscript, selfTestMatches, selfTestSampleFile, type SelfTestSample } from './self-test-sample.ts';
 export { modelDetail, modelTextRef, type ModelText } from './model-text.ts';
+export {
+  EmbeddingError,
+  HashingEmbeddingProvider,
+  PROMPT_PAIR_MODEL_CARD,
+  digestText,
+  formatEmbeddingInput,
+  truncateAndNormalize,
+  type EmbeddingInput,
+  type EmbeddingProfile,
+  type EmbeddingProvider,
+  type EmbeddingPurpose,
+  type EmbeddingRequest,
+  type EmbeddingResult,
+  type EmbeddingRole,
+} from './embedding-provider.ts';

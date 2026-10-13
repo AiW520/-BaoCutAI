@@ -20,11 +20,14 @@ export {
   type LiveSegmentsUpdate,
   type TranscribeRouter,
 } from './job-manager.ts';
+export { LocalEmbeddingProvider, type LocalEmbeddingProviderOptions } from './local-embedding-provider.ts';
 export { LocalMusicProvider, type LocalMusicProviderOptions } from './local-music-provider.ts';
 export {
   LocalTranscribeProvider,
   type LocalDiarizeOutcome,
   type LocalDiarizeRun,
+  type LocalEmbedOptions,
+  type LocalEmbedResult,
   type LocalProviderOptions,
   type LocalSeparateOutcome,
   type LocalSeparateRun,
@@ -132,6 +135,7 @@ export {
 export { PIPELINE_ACTOR_ID, PipelineRunner, jobErrorOf, type PipelineRunnerOptions } from './pipelines/pipeline-runner.ts';
 export { TRANSCODE_PIPELINE, transcodePipeline, type TranscodeDeps } from './pipelines/transcode.ts';
 export { TRANSLATE_PIPELINE, translatePipeline, type PipelineVideos, type TranslateDeps } from './pipelines/translate.ts';
+export type { TranslationMemory, TranslationMemoryLookup } from './pipelines/translation-memory.ts';
 export {
   MAX_SUBTITLE_BYTES,
   SubtitleFileError,

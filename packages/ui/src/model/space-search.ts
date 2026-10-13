@@ -1,7 +1,9 @@
 import {
   defineMessages,
   live,
+  SEMANTIC_QUERY_MAX_CHARS,
   SPACE_SEARCH_MAX_LIMIT,
+  SPACE_SEARCH_V2_MAX_LIMIT,
   type FileTarget,
   type Id,
   type SpaceEntry,
@@ -9,6 +11,8 @@ import {
   type SpaceSearchHit,
   type SpaceSearchParams,
   type SpaceSearchResult,
+  type SpaceSearchV2Hit,
+  type SpaceSearchV2Params,
 } from '@baocut/protocol';
 import { formatClock } from './format.ts';
 import { videoTargetOf } from './space.ts';
@@ -86,6 +90,20 @@ export function hitTarget(hit: Pick<SpaceSearchHit, 'entryId' | 'videoId'>, entr
   return hit.entryId && !entry ? { entryId: hit.entryId } : null;
 }
 
+/** 命中所在视频的 Space 条目（「交给 Agent」带它进会话）；不在 Space 里或在回收站里的没有。 */
+export function hitVideoEntry(hit: Pick<SpaceSearchHit, 'entryId' | 'videoId'>, entries: readonly SpaceEntry[]): SpaceEntry | null {
+  const entry = entries.find((e) => (hit.entryId ? e.id === hit.entryId : !!e.ref && 'videoId' in e.ref && e.ref.videoId === hit.videoId));
+  return entry && entry.kind === 'video' && !entry.user.trashedAt ? entry : null;
+}
+
+/**
+ * 「用于写作」（创作辅助集成设计 §2.1）：只给讲话内容的命中（写作按主题从这部视频的讲话里挑材料，字幕、译文、章节不是），
+ * 只在有 AI 工具 Tab 的宿主（网页没有）。
+ */
+export function canWriteFromHit(hit: Pick<SpaceSearchHit, 'documentKind'>, web: boolean): boolean {
+  return !web && hit.documentKind === 'speech';
+}
+
 /** 打开后跳到哪一秒：只有序列时间能直接跳；源时间不跳。 */
 export function seekSeconds(hit: Pick<SpaceSearchHit, 'time'>): number | null {
   return hit.time.clock === 'sequence' ? hit.time.start : null;
@@ -129,7 +147,7 @@ export function searchRequest(query: string, projectId: Id | 'none' | null, filt
 }
 
 /** Runtime 按「名字里含有」找说话人；下拉里选的是一个确切的名字，「宝玉」不该带出「宝玉的嘉宾」。 */
-export function exactSpeaker(hits: readonly SpaceSearchHit[], speaker: string | null): SpaceSearchHit[] {
+export function exactSpeaker<T extends Pick<SpaceSearchHit, 'speaker'>>(hits: readonly T[], speaker: string | null): T[] {
   return speaker ? hits.filter((hit) => hit.speaker === speaker) : [...hits];
 }
 
@@ -147,18 +165,18 @@ export function speakerOptions(seen: readonly string[], selected: string | null)
   return [...names].sort((a, b) => a.localeCompare(b, 'zh-Hans-CN'));
 }
 
-export interface HitGroup {
+export interface HitGroup<T extends SpaceSearchHit = SpaceSearchHit> {
   videoId: Id;
   videoName: string;
-  hits: SpaceSearchHit[];
+  hits: T[];
 }
 
 /**
  * 按视频分组（设计稿：同一个视频里命中十几条时，平铺会把别的视频挤出去，「哪些视频里有这个词」才是这一屏要回答的）。
  * 组按第一次出现的先后，组里保持 Runtime 给的顺序（按时间）。
  */
-export function groupHits(hits: readonly SpaceSearchHit[]): HitGroup[] {
-  const groups = new Map<Id, HitGroup>();
+export function groupHits<T extends SpaceSearchHit>(hits: readonly T[]): HitGroup<T>[] {
+  const groups = new Map<Id, HitGroup<T>>();
   for (const hit of hits) {
     const group = groups.get(hit.videoId);
     if (group) group.hits.push(hit);
@@ -189,4 +207,96 @@ export function hitWhere(hit: Pick<SpaceSearchHit, 'time' | 'speaker'>): string 
   const parts = [hit.time.clock === 'sequence' ? clock : M.sourceTime(clock)];
   if (hit.speaker) parts.push(hit.speaker);
   return parts.join(' · ');
+}
+
+/* ---------- 综合搜索（`space.searchV2`，创作辅助集成设计 §2.4；设计稿 model-space-search.js） ---------- */
+
+/** 「综合」按意思与字面两路找、按名次融合；「精确文字」是原来的 `space.search`（全部词都出现）。 */
+export type SpaceSearchMode = 'hybrid' | 'lexical';
+
+/** `space.searchV2` 的参数：只找讲话内容；说话人由界面按整串筛（V2 没有 `speaker`）。 */
+export function searchV2Request(query: string, projectId: Id | 'none' | null, filter: HitFilter): SpaceSearchV2Params {
+  return {
+    query: { kind: 'text', text: query.slice(0, SEMANTIC_QUERY_MAX_CHARS) },
+    mode: 'hybrid',
+    channels: ['text'],
+    limit: SPACE_SEARCH_V2_MAX_LIMIT,
+    ...(projectId === null ? {} : { projectId: projectId === 'none' ? null : projectId }),
+    ...(filter.kind === 'all' ? {} : { kinds: [filter.kind] }),
+  };
+}
+
+/**
+ * 综合搜索的命中摊平成与 `space.search` 同一个形状，分组、分页、筛说话人与打开都复用；另带它自己的几样：怎么找到的、
+ * 还在不在时间线上、要不要先按当前版本重新解析。只收讲话内容（文档句群）的命中。
+ */
+export interface SemanticHitRow extends SpaceSearchHit {
+  hitId: string;
+  matchedBy: SpaceSearchV2Hit['matchedBy'];
+  inTimeline: boolean;
+  needsResolve: boolean;
+}
+
+export function semanticHitRows(hits: readonly SpaceSearchV2Hit[]): SemanticHitRow[] {
+  const rows: SemanticHitRow[] = [];
+  for (const hit of hits) {
+    if (hit.target.kind !== 'document-span') continue;
+    rows.push({
+      videoId: hit.target.videoId,
+      videoName: hit.videoName ?? hit.target.videoId,
+      entryId: hit.entryId,
+      projectId: hit.projectId,
+      documentId: hit.target.documentId,
+      documentKind: hit.target.documentKind,
+      language: hit.language,
+      speaker: hit.speaker,
+      snippet: hit.snippet,
+      highlights: hit.highlights,
+      time: { clock: hit.anchor.clock, start: hit.anchor.startSec, end: hit.anchor.endSec },
+      indexedRevision: hit.indexedRevision,
+      hitId: hit.hitId,
+      matchedBy: hit.matchedBy,
+      inTimeline: hit.actions.includes('open-in-timeline'),
+      needsResolve: hit.needsResolve,
+    });
+  }
+  return rows;
+}
+
+/* ---------- 编辑器文稿查找条下的「意思相近」（创作辅助集成设计 §2.1；设计稿 model-space-search.js `inVideo`） ---------- */
+
+/** 最多列几句。 */
+export const MEANING_IN_VIDEO_SHOWN = 5;
+
+/** 要不要按意思找：至少两个字，正则查找时不找。 */
+export function meaningQueryReady(query: string, regex: boolean): boolean {
+  return !regex && [...query.trim()].length >= 2;
+}
+
+/** 只在这部视频的讲话内容里找，命中按当前时间线投影。 */
+export function meaningInVideoRequest(query: string, videoId: Id): SpaceSearchV2Params {
+  return {
+    query: { kind: 'text', text: query.trim().slice(0, SEMANTIC_QUERY_MAX_CHARS) },
+    mode: 'hybrid',
+    channels: ['text'],
+    videoIds: [videoId],
+    kinds: ['speech'],
+    view: 'sequence',
+    limit: SPACE_SEARCH_V2_MAX_LIMIT,
+  };
+}
+
+/** 只留意思相近、原句里没有这些字的（字面命中已在文稿里高亮），按时间排，最多 `MEANING_IN_VIDEO_SHOWN` 句。 */
+export function meaningInVideoRows(hits: readonly SpaceSearchV2Hit[]): SemanticHitRow[] {
+  return semanticHitRows(hits)
+    .filter((row) => matchedByKind(row.matchedBy) === 'semantic')
+    .slice(0, MEANING_IN_VIDEO_SHOWN)
+    .sort((a, b) => a.time.start - b.time.start);
+}
+
+/** 怎么找到的（设计稿 `BY`）：两路都对上、只是字面、只是意思相近。不写分数。 */
+export function matchedByKind(matchedBy: readonly ('lexical' | 'semantic')[]): 'both' | 'lexical' | 'semantic' {
+  const lexical = matchedBy.includes('lexical');
+  const semantic = matchedBy.includes('semantic');
+  return lexical && semantic ? 'both' : semantic ? 'semantic' : 'lexical';
 }

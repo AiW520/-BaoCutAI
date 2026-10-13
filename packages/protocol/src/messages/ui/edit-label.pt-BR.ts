@@ -70,6 +70,7 @@ export const ptBR: EditLabelMessages = {
   editTranslation: "Editar tradução",
   markTranslationStale: "Marcar tradução como desatualizada",
   clearTranslationStale: "Remover marca de desatualizada",
+  unifyGlossaryTerms: "Unificar com o glossário",
   cutText: "Cortar na transcrição",
   restoreText: "Restaurar conteúdo cortado",
   editTranscript: "Editar texto",

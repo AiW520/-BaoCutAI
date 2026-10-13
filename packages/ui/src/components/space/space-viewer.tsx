@@ -41,10 +41,12 @@ import { SLIDES } from '../../model/slides-copy.ts';
 import { MADE_SHOWN } from '../../model/shorts-result.ts';
 import { formatBytes, isPlayable, KIND_LABEL, measureText, SPACE_STATUS, statusText } from '../../model/space.ts';
 import { FilePreview } from '../file-preview.tsx';
+import { SemanticNote } from '../semantic-note.tsx';
 import type { EntryTools } from '../tools/use-entry-tools.ts';
 import { SPACE_COPY as COPY } from './space-copy.ts';
 import { EntryThumb } from './space-list.tsx';
 import { ToolActions, ToolFacts } from './space-viewer-tools.tsx';
+import type { RelatedVideos } from './use-related-videos.ts';
 
 const facts = style({
   display: 'grid',
@@ -137,6 +139,7 @@ export function SpaceViewer({
   host = null,
   shorts = [],
   parent = null,
+  related = null,
 }: {
   entry: SpaceEntry | null;
   source: string;
@@ -156,6 +159,8 @@ export function SpaceViewer({
   shorts?: readonly SpaceEntry[];
   /** 短视频的父视频（`parentVideoOf`）。 */
   parent?: SpaceEntry | null;
+  /** 讲相近内容的视频（`useRelatedVideos`）；还没算出来或不是视频时 null。 */
+  related?: RelatedVideos | null;
 }) {
   return (
     <DialogContainer onDismiss={actions.onClose}>
@@ -173,6 +178,7 @@ export function SpaceViewer({
             host={host}
             shorts={shorts}
             parent={parent}
+            related={related}
           />
         </Dialog>
       ) : null}
@@ -192,6 +198,7 @@ function ViewerBody({
   host,
   shorts,
   parent,
+  related,
 }: {
   entry: SpaceEntry;
   source: string;
@@ -204,6 +211,7 @@ function ViewerBody({
   host: SpaceEntry | null;
   shorts: readonly SpaceEntry[];
   parent: SpaceEntry | null;
+  related: RelatedVideos | null;
 }) {
   const trashed = entry.user.trashedAt !== null;
   const failed = isFailedPlaceholder(entry);
@@ -251,6 +259,7 @@ function ViewerBody({
         {isVideo && shorts.length ? (
           <VideoShorts shorts={shorts} onSwitch={actions.onSwitch} onList={actions.onShorts ? () => actions.onShorts?.(entry) : null} />
         ) : null}
+        {isVideo && related ? <VideoRelated related={related} onSwitch={actions.onSwitch} /> : null}
         {isVideo && files.length ? <VideoFiles files={files} onSwitch={actions.onSwitch} /> : null}
         <dl className={facts}>
           <dt className={term}>{COPY.factSource}</dt>
@@ -479,6 +488,50 @@ function VideoShorts({ shorts, onSwitch, onList }: { shorts: readonly SpaceEntry
         })}
       </ul>
       {shorts.length > shown.length ? <p className={filesHint}>{COPY.shortsMore(shorts.length - shown.length)}</p> : null}
+    </section>
+  );
+}
+
+/**
+ * 讲相近内容的视频（创作辅助集成设计 §2.4「相关视频」；原型 MovieRelated）：一行一部，下面一行灰字是那部视频里最接近的一段讲话与
+ * 时间（按意思找到时），或两个名字里共同的词（语义一路用不了、退回名字相近时，上面那一句写明原因）。不给分数；点一行换成那部视频
+ * 的查看框。
+ */
+function VideoRelated({ related, onSwitch }: { related: RelatedVideos; onSwitch: (entryId: Id) => void }) {
+  const { basis, reason, rows } = related;
+  return (
+    <section className={filesSection} aria-label={COPY.relatedTitle}>
+      <h3 className={filesHead}>
+        {COPY.relatedTitle}
+        {rows.length ? <span className={filesCount}>{rows.length}</span> : null}
+      </h3>
+      <SemanticNote entry="related" reason={reason} />
+      {rows.length ? (
+        <ul className={fileList}>
+          {rows.map(({ video, entry }) => {
+            const line = video.passage
+              ? `${formatClock(video.passage.start)} · ${video.passage.text.replace(/\s+/g, ' ').trim()}`
+              : video.sharedName
+                ? COPY.relatedShared(video.sharedName)
+                : KIND_LABEL[entry.kind];
+            return (
+              <li key={entry.id}>
+                <RACButton className={(s) => fileRow(s)} onPress={() => onSwitch(entry.id)}>
+                  <EntryThumb entry={entry} small />
+                  <span className={fileBody}>
+                    <span className={fileName}>{entry.name}</span>
+                    <span className={fileMeta} title={line}>
+                      {line}
+                    </span>
+                  </span>
+                </RACButton>
+              </li>
+            );
+          })}
+        </ul>
+      ) : (
+        <p className={filesHint}>{basis === 'name' ? COPY.relatedNoNames : COPY.relatedEmpty}</p>
+      )}
     </section>
   );
 }

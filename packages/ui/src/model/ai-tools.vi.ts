@@ -29,6 +29,7 @@ export const vi: AiToolsMessages = {
     lineFrame: (ratio, focus) => (ratio ? `Tỷ lệ khung hình ${ratio}, khung ${focus}` : 'Tỷ lệ khung hình: giữ nguyên bản gốc, không cắt'),
     lineSubtitles: (tracks, style) => `Phụ đề: ${tracks}, ${style}`,
     lineSkipDone: 'Bỏ qua những phần đã cắt thành video ngắn',
+    lineTopic: (topic) => `Chỉ tìm trong những đoạn nói về “${topic}”: trước hết dùng speech_relevant để tìm các đoạn đó, rồi chọn trong số đó`,
     lineDirect: 'Tìm được là tạo video luôn, không cần hỏi tôi trước',
   },
   groups: {

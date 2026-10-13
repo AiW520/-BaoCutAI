@@ -122,6 +122,26 @@ import type {
   VideoDeleteResult,
   VideoRestoreResult,
 } from './space.ts';
+import type {
+  SemanticIndexBuildParams,
+  SemanticIndexBuildResult,
+  SemanticIndexControlParams,
+  SemanticIndexControlResult,
+  SemanticIndexStatus,
+  SemanticIndexStatusParams,
+  SemanticResolveParams,
+  SemanticResolveResult,
+  SpaceCitationsResult,
+  SpaceRelevantChunksParams,
+  SpaceRelatedVideosParams,
+  SpaceRelatedVideosResult,
+  EditCandidatesParams,
+  GlossaryCandidatesResult,
+  RetakeCandidatesResult,
+  SpaceRelevantChunksResult,
+  SpaceSearchV2Params,
+  SpaceSearchV2Result,
+} from './semantic.ts';
 import type { SettingInputValues, SettingKey, SettingsSnapshot, SettingsView } from './settings.ts';
 import type {
   McpConnectionInfo,
@@ -508,6 +528,25 @@ export interface RpcMethods {
   'space.get': { params: { entryId: Id }; result: { entry: SpaceEntry } };
   /** 跨视频的内容检索（架构设计 §5.11）：查派生的内容索引，不打开视频。 */
   'space.search': { params: SpaceSearchParams; result: SpaceSearchResult };
+  /**
+   * 本机语义检索（EmbeddingGemma 2 检索集成方案 v0.1 §10–§11）：字面、语义或综合；范围先按调用方过滤再计算。语义一路不可用时
+   * `semantic` 报错（`details.reason`），`hybrid` 退回字面并写明 `degraded.reason`。`space.search` 的旧合同不变。
+   */
+  'space.searchV2': { params: SpaceSearchV2Params; result: SpaceSearchV2Result };
+  /** 语义索引的状态：模型、各通道、范围内的覆盖、缓存大小与暂停（§11.4）。 */
+  'space.indexStatus': { params: SemanticIndexStatusParams; result: SemanticIndexStatus };
+  /** 把范围内的视频排进语义索引（`rebuild` 时不用已有向量）；没装模型时报 `MODEL_NOT_INSTALLED`。 */
+  'space.indexBuild': { params: SemanticIndexBuildParams; result: SemanticIndexBuildResult };
+  /** 暂停、继续或清理语义索引（只给用户本人）。 */
+  'space.indexControl': { params: SemanticIndexControlParams; result: SemanticIndexControlResult };
+  /** 按视频当前版本重新定位一条 `space.searchV2` 命中（§12.2）：`resolved` / `not-in-timeline` / `gone` / `unsupported`。 */
+  'space.resolveSearchHit': { params: SemanticResolveParams; result: SemanticResolveResult };
+  /** 写作结果文档条目的出处（创作辅助集成设计 §3.4，`baocut.citations/1`）；可见性同 `space.get`。 */
+  'space.citations': { params: { entryId: Id }; result: SpaceCitationsResult };
+  /** 写作「按主题」挑出的句群的预览（创作辅助集成设计 §2.2）：与 `ai-tool` 的 `selection` 同一个查询；只给用户本人。 */
+  'space.relevantChunks': { params: SpaceRelevantChunksParams; result: SpaceRelevantChunksResult };
+  /** 讲相近内容的视频（创作辅助集成设计 §2.4「相关视频」）：查看框打开视频时才算；语义一路用不了时退回名字相近。 */
+  'space.relatedVideos': { params: SpaceRelatedVideosParams; result: SpaceRelatedVideosResult };
   /** 把一个文件登记为项目的素材，不放进任何视频。项目之外的文件先复制进项目的 `imports/`。 */
   'space.import': { params: { projectId: Id; path: string; name?: string }; result: { entry: SpaceEntry; copied: boolean } };
   /** 显示名；`null` 恢复文件名。等同于 `space.update` 的 `displayName`。 */
@@ -701,6 +740,8 @@ export interface RpcMethods {
    * 文稿或译文在识别之后改过时 `conflict`（`STALE_JOB_INPUT`）。
    */
   'edits.applySpeakers': { params: ApplySpeakersParams; result: EditResult };
+  'edits.glossaryCandidates': { params: EditCandidatesParams; result: GlossaryCandidatesResult };
+  'edits.retakeCandidates': { params: EditCandidatesParams; result: RetakeCandidatesResult };
   /**
    * 代码画面（动效图形，架构设计 §8）的预览：界面不经过智能体，按合成内部的时刻取帧（与工具 `compositions_preview` 同一个服务）。
    * 帧写成 PNG，返回各帧的受限读取句柄。视频要已经打开；不改视频。

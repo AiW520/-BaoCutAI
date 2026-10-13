@@ -738,7 +738,8 @@
       const q = app.toolReq;
       if (!q || q.movie !== proj.id) return;
       app.clearToolReq();
-      requestAi(q.tool, null, {sid: q.sid});
+      /* 没带会话的单（Space 搜索的「用于写作」、过期译文的刷新）只开工具页，不当成 Agent 跑完落结果 */
+      requestAi(q.tool, null, q.sid ? {sid: q.sid} : null);
     }, [app.toolReq, proj.id]);
 
     const editorBar = {

@@ -35,4 +35,8 @@ export const de: SettingDescriptionMessages = {
   'updates.autoDownload': "Neue Versionen im Hintergrund herunterladen (ohne automatische Installation)",
   'diagnostics.enabled': "Anonyme Nutzungsstatistiken und Leistungszusammenfassungen senden (keine Medien, Texte oder Pfade)",
   'offline.strict': "Strikter Offlinemodus: nichts an Onlinedienste senden",
+  'semantic.channels': 'Kanäle des semantischen Index: text (Gesprochenes: Transkripte, Untertitel, Übersetzungen, Kapitel); visual und audio sind noch nicht verfügbar',
+  'semantic.indexedProjects': 'Projekte, deren Videos einen semantischen Index bekommen: all oder eine Liste von Projekt-IDs (Videos außerhalb von Projekten nur bei all)',
+  'semantic.translationMemory': 'Beim Übersetzen frühere Übersetzungen nahezu gleicher Sätze vorschlagen (benötigt das Textsuchmodell)',
+  'semantic.glossaryCandidates': 'Glossarbegriffe aus nahezu gleichen Schreibweisen in Transkripten vorschlagen (benötigt das Textsuchmodell)',
 } satisfies Record<SettingKey, string>;

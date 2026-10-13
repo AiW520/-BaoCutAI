@@ -2,7 +2,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { describe, expect, it } from 'vitest';
 import type { ResourceCapacity, ResourcePriority } from '@baocut/protocol';
-import { IMAGE_BUNDLES, ModelCatalog, requiredSources, weightBytes, type WorkerFootprint } from '@baocut/models';
+import { EMBEDDING_WORKER_OVERHEAD_BYTES, IMAGE_BUNDLES, ModelCatalog, requiredSources, weightBytes, type WorkerFootprint } from '@baocut/models';
 import { unifiedGpuEstimate } from './machine-capacity.ts';
 import {
   MODEL_WORKER_DEMAND,
@@ -53,7 +53,7 @@ describe('Model Worker 的需求', () => {
     expect(localTranscribeResources('a@mlx').holder.demand).toEqual(MODEL_WORKER_DEMAND);
   });
 
-  it('Apple Silicon：识别与分离模型包按权重估计（分离按文件的两倍），8 GiB 的 Mac 也放得下；合成模型包仍是原来的固定需求', async () => {
+  it('Apple Silicon：识别与分离模型包按权重估计（分离按文件的两倍），文本嵌入按文件加余量计内存，8 GiB 的 Mac 也放得下；合成模型包仍是原来的固定需求', async () => {
     // 模型目录是空的：可选组件都没装。
     const catalog = new ModelCatalog({ root: noModels, platform: 'darwin', arch: 'arm64' });
     for (const def of catalog.definitions()) {
@@ -67,6 +67,10 @@ describe('Model Worker 的需求', () => {
       } else if (def.capability === 'separate') {
         expect(footprint, def.bundleId).toEqual({ bytes: 2 * weightBytes(requiredSources(def))!, pool: 'gpuMemory' });
         expect(await catalog.workerWeightBytes(def.bundleId), def.bundleId).toBe(footprint!.bytes);
+      } else if (def.capability === 'embed') {
+        // 文本嵌入跑在 CPU 上：模型文件 + LiteRT-LM 动态库的压缩包 + 余量，计在内存。
+        expect(footprint, def.bundleId).toEqual({ bytes: weightBytes(requiredSources(def))! + EMBEDDING_WORKER_OVERHEAD_BYTES, pool: 'memory' });
+        expect(demand.gpuMemory, def.bundleId).toBe(0);
       } else {
         expect(footprint, def.bundleId).toBeNull();
         expect(demand, def.bundleId).toEqual({ memory: 1 * GiB, gpuMemory: 2 * GiB, cpuThreads: 2 });

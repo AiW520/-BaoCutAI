@@ -70,6 +70,7 @@ export const ru: EditLabelMessages = {
   editTranslation: "Изменить перевод",
   markTranslationStale: "Пометить перевод как устаревший",
   clearTranslationStale: "Снять пометку «устарело»",
+  unifyGlossaryTerms: "Привести к глоссарию",
   cutText: "Вырезать в расшифровке",
   restoreText: "Восстановить вырезанное",
   editTranscript: "Редактировать текст",

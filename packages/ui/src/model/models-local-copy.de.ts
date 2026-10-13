@@ -32,6 +32,7 @@ export const de: ModelsLocalMessages = {
     separate: "Trennung",
     music: 'Musik',
     diarize: "Sprechertrennung",
+    embed: "Semantischer Index",
   } as Record<ModelBundleStatus['capability'], string>,
 
   auto: "Automatisch",

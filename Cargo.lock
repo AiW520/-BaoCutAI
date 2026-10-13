@@ -2375,6 +2375,7 @@ dependencies = [
  "icu_segmenter",
  "image",
  "libc",
+ "libloading 0.8.9",
  "memmap2",
  "objc2 0.6.4",
  "objc2-core-ml",

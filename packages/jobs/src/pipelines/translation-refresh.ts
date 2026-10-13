@@ -66,6 +66,8 @@ export function refreshPlan(
  * 去掉的单元拿掉；原来没有单元的句子插在前面最近一句已有译文的单元后面（与编辑器 `editUnit` 新建单元的位置相同）。
  * `sourceBasis` 换成这次的原文版本，`glossaryRef` 与别的单元不动。
  *
+ * 重译的单元不再是沿用的译文：去掉 `reuse`（Worker 按原来的单元带回了它）。
+ *
  * 只核对重译的那几句：Worker 交回了、句子 ID 与指纹是冻结的那一句的、有译文、`textHash` 对得上。有问题时返回 `{ problems }`。
  */
 export function mergeRefresh(
@@ -99,7 +101,7 @@ export function mergeRefresh(
     if (next) {
       replaced.add(unit.sourceSentenceId);
       changedUnitIds.push(unit.id);
-      units.push({ ...next, id: unit.id });
+      units.push({ ...withoutReuse(next), id: unit.id });
     } else {
       units.push(unit);
     }
@@ -107,7 +109,7 @@ export function mergeRefresh(
   const ids = new Set(units.map((u) => u.id));
   for (const id of plan.sentences) {
     if (replaced.has(id)) continue;
-    const unit = { ...fresh.get(id)! };
+    const unit = withoutReuse(fresh.get(id)!);
     for (let n = 2; ids.has(unit.id); n++) unit.id = `t-${id}-${n}`;
     ids.add(unit.id);
     changedUnitIds.push(unit.id);
@@ -123,4 +125,9 @@ export function mergeRefresh(
     units.splice(at, 0, unit);
   }
   return { body: { ...base, sourceBasis: worker.sourceBasis, units }, changedUnitIds };
+}
+
+function withoutReuse(unit: TranslationUnit): TranslationUnit {
+  const { reuse: _reuse, ...rest } = unit;
+  return rest;
 }

@@ -656,3 +656,53 @@ fn bad_input_is_an_error_not_a_crash() {
     assert_eq!(reply["id"], id);
     assert_eq!(reply["error"]["code"], "INVALID_PARAMS");
 }
+
+#[test]
+fn memory_reuse_skips_the_model_and_references_reach_the_prompt() {
+    let job = job(6, 6);
+    let ids = crate_sentence_ids(&job);
+    let reused = ids[1].clone();
+    let mut input = read(&job.input);
+    input["memory"] = json!({
+        "reuse": [{ "sentenceId": reused, "text": "沿用的译句。" }],
+        "references": [{ "source": "word0 word1 word2.", "target": "参考译句。" }],
+    });
+    std::fs::write(&job.input, serde_json::to_vec(&input).unwrap()).unwrap();
+
+    let mut worker = Worker::start();
+    let mut requested = Vec::new();
+    let mut prompts = Vec::new();
+    let reply = worker.translate(&job, &mut Vec::new(), &mut |params, _| {
+        if params["kind"] == "translate" {
+            prompts.push(format!(
+                "{}\n{}",
+                params["system"].as_str().unwrap(),
+                params["user"].as_str().unwrap()
+            ));
+        }
+        requested.extend(requested_sentences(params));
+        Answer::Text(fake_answer(params))
+    });
+    assert!(reply.get("error").is_none(), "{reply}");
+    assert!(!requested.contains(&reused), "沿用的句子不送翻：{requested:?}");
+    assert_eq!(requested.len(), ids.len() - 1);
+    assert!(
+        prompts
+            .iter()
+            .all(|prompt| prompt.contains("Reference translations") && prompt.contains("参考译句。"))
+    );
+
+    let body = read(&job.staging.join("translation.json"));
+    let unit = body["units"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|unit| unit["sourceSentenceId"] == reused.as_str())
+        .unwrap_or_else(|| panic!("沿用的句子也有单元：{body}"));
+    assert_eq!(unit["naturalText"], "沿用的译句。");
+    let cues = read(&job.staging.join("cues.json"));
+    assert!(
+        cues["cues"].as_array().unwrap().iter().any(|cue| cue["unitId"] == unit["id"]),
+        "沿用的单元照样有字幕条"
+    );
+}

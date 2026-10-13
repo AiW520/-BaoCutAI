@@ -4,8 +4,10 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import { z } from 'zod';
 import { sanitizeFileName } from '@baocut/jobs';
-import type { JobSubmitter } from '@baocut/protocol';
+import type { CitationsFile, JobSubmitter } from '@baocut/protocol';
 import { RcAgentTools } from '@baocut/protocol/messages/runtime-core';
+import { checkCitations, extractCites } from '../ai-tools/ai-tool-citations.ts';
+import { citationKeyOf, type CitationRegistry } from '../ai-tools/citation-registry.ts';
 import { inside, refuseVideoDirectory } from './artifact-save.ts';
 import { formatBytes } from './model-install-tools.ts';
 import { ToolError, type ToolInfo, type ToolSet } from './tool-catalog.ts';
@@ -23,6 +25,9 @@ import { approvalField, confirmSummary, type ToolPrincipal, type ToolScope } fro
  *   下载文件同级。只给会话里的智能体（`surfaces` 只有 `agent`）：对外服务与 CLI 没有会话工作目录。
  * - 交出的文件登记为 Space 交付物（`register`，§5.7）：与从链接下载的文件同一条路，进 Space 的产物记录，按产物记录定位，
  *   回复里的链接按条目在文件标签里打开。登记失败不影响复制的结果。
+ * - 带出处的写作（创作辅助集成设计 §3.4「智能体路径」）：Markdown 里有 `[s12, s15]` 这样的句子编号时，按这个会话发过的编号
+ *   （`speech_sentences`、`speech_relevant`）校验，与直接调模型的写作同一个 `checkCitations`：交出的文件是去掉编号的正文，
+ *   出处另存成 `baocut.citations/1` 旁文件，Space 条目带上它；没发过的编号丢弃，没有有效出处的正文段标为推断。
  */
 
 /**
@@ -41,7 +46,17 @@ export interface DownloadToolsDeps {
   downloadsDirectory: () => string;
   /** 复制完成后把文件登记为 Space 交付物（`SpaceCatalog.recordHandover`）。没有时不登记（测试、工具目录）。 */
   register?: (handover: DownloadHandover) => Promise<void>;
+  /** 带出处的 Markdown：会话发过的句子编号与出处旁文件的存放。没有时原样复制（测试、工具目录）。 */
+  citations?: {
+    registry: CitationRegistry;
+    /** 把出处旁文件存进产物库，返回产物 ID。 */
+    publish: (file: CitationsFile) => Promise<string>;
+  };
 }
+
+/** 读进来检查出处的 Markdown 上限：再大的不是写作结果，原样复制。 */
+const CITED_MARKDOWN_MAX_BYTES = 4 * 1024 * 1024;
+const MARKDOWN = /\.(md|markdown)$/i;
 
 /** 一次 `downloads_save` 交出的文件：下载目录里的真实路径、字节数、内容摘要与提交者。 */
 export interface DownloadHandover {
@@ -51,6 +66,8 @@ export interface DownloadHandover {
   artifactId: string;
   submitter: JobSubmitter;
   at: string;
+  /** 带出处的 Markdown 的出处旁文件；没有时 null。 */
+  citationsArtifactId: string | null;
 }
 
 // i18n-ignore-start: 给模型的工具说明、错误与下一步
@@ -75,6 +92,7 @@ const DEFINITIONS: Record<'downloads_save', ToolInfo> = {
       '把工作目录里的一个文件复制到下载目录（设置 downloads.directory，默认系统的下载文件夹），交给用户。会话不属于项目时，工作目录用户看不到：你自己做出的结果（例如译好的 SRT 字幕、文稿）写在工作目录里，再用它放进下载目录。',
       `path 相对工作目录，不能用 .. 或符号链接指到外面，不能是视频目录或 .bcut 里的文件；只能是普通文件，不超过 ${formatBytes(DOWNLOAD_SAVE_MAX_BYTES)}。只新建文件、不覆盖：重名时自动加序号。`,
       '会按访问模式向用户确认。返回下载目录里的绝对路径 path 与字节数 bytes：把 path 告诉用户。',
+      '写作结果（.md）里可以在段落末尾回引 speech_sentences / speech_relevant 给出的句子编号，例如 [s12, s15]：交出时按这个会话发过的编号校验，正文里的编号去掉，出处随 Space 条目保存；返回的 citations 写有几段有出处、几段是推断、丢了几个无效编号。',
     ].join('\n'),
     annotations: { destructiveHint: false },
     effect: 'mutation',
@@ -100,6 +118,19 @@ export class DownloadTools implements ToolSet {
     return this.#save(args as Args, principal);
   }
 
+  /** 带句子编号的 Markdown：校验出处，返回去掉编号的正文与出处旁文件；不是写作结果或没有编号时 null（原样复制）。 */
+  async #cited(plan: DownloadSavePlan, principal: ToolPrincipal): Promise<{ content: Buffer; file: CitationsFile } | null> {
+    const citations = this.#deps.citations;
+    if (!citations || !MARKDOWN.test(plan.name) || plan.bytes > CITED_MARKDOWN_MAX_BYTES) return null;
+    const text = (await plan.read()).toString('utf8');
+    if (!text.split(/\n\s*\n/).some((block) => extractCites(block).refs.length > 0)) return null;
+    const sentences = citations.registry.issued(citationKeyOf(principal as Parameters<typeof citationKeyOf>[0]));
+    // 智能体怎样选的材料（按主题还是整篇）这里不知道：记 `none`，出处本身照样精确到句。
+    const checked = checkCitations({ output: text, sentences, videoIds: [], effectiveMode: 'none' });
+    const videoIds = [...new Set(checked.file.paragraphs.flatMap((p) => p.cites.map((c) => c.videoId)))];
+    return { content: Buffer.from(checked.markdown.endsWith('\n') ? checked.markdown : `${checked.markdown}\n`, 'utf8'), file: { ...checked.file, videoIds } };
+  }
+
   /** 先检查源与文件名（不合法的不生成审批），确认之后才建目录、写文件。 */
   async #save(args: Args, principal: ToolPrincipal) {
     const { scope } = this.#deps;
@@ -116,19 +147,41 @@ export class DownloadTools implements ToolSet {
       targets: [planned],
       ...confirmSummary(RcAgentTools.downloadSaveSummary({ source: plan.source, size: formatBytes(plan.bytes), target: planned })),
     });
-    const saved = await plan.commit();
+    const cited = await this.#cited(plan, principal);
+    const saved = await plan.commit(cited?.content);
+    let citationsArtifactId: string | null = null;
+    if (cited && this.#deps.citations) citationsArtifactId = await this.#deps.citations.publish(cited.file).catch(() => null);
     // 登记是附带的：文件已经交出去了，登记失败（Space 还没就绪、写记录失败）不让这次调用失败。
     await this.#deps
-      .register?.({ path: saved.path, bytes: saved.bytes, artifactId: saved.artifactId, submitter: access.submitter, at: new Date().toISOString() })
+      .register?.({
+        path: saved.path,
+        bytes: saved.bytes,
+        artifactId: saved.artifactId,
+        submitter: access.submitter,
+        at: new Date().toISOString(),
+        citationsArtifactId,
+      })
       .catch(() => {});
     return {
       path: saved.path,
       bytes: saved.bytes,
+      ...(cited ? { citations: citationSummary(cited.file, citationsArtifactId !== null) } : {}),
       ...approvalField(approval),
       // i18n-ignore: 给模型的工具说明、错误与下一步
       next: '文件已复制到下载目录（path 是绝对路径）。把这个路径告诉用户；工作目录里的原文件不变。',
     };
   }
+}
+
+/** 交给模型的出处统计：几段有出处、几段是推断、丢了几个编号，出处有没有存下。 */
+function citationSummary(file: CitationsFile, saved: boolean) {
+  const body = file.paragraphs.filter((p) => p.role === 'body');
+  return {
+    cited: body.filter((p) => !p.inferred).length,
+    inferred: body.filter((p) => p.inferred).length,
+    dropped: file.droppedCites,
+    saved,
+  };
 }
 
 /** 检查过的复制计划：源（相对工作目录）、目标目录与文件名（重名时 `commit` 加序号）、源的大小。 */
@@ -137,7 +190,10 @@ export interface DownloadSavePlan {
   directory: string;
   name: string;
   bytes: number;
-  commit(): Promise<SavedDownload>;
+  /** 读源文件（检查出处用）。 */
+  read(): Promise<Buffer>;
+  /** 写出：给了 `content` 时写它（去掉了编号的正文），否则复制源文件；两种都先核对源还是检查过的那个文件。 */
+  commit(content?: Uint8Array): Promise<SavedDownload>;
 }
 
 /** 写好的文件：真实路径、字节数与内容摘要（`sha256:<hex>`）。 */
@@ -193,7 +249,8 @@ export async function prepareDownloadSave(params: PrepareParams): Promise<Downlo
     directory,
     name,
     bytes: stat.size,
-    commit: () => copyInto(file, stat, directory, name, max),
+    read: () => fs.readFile(file),
+    commit: (content) => copyInto(file, stat, directory, name, max, content),
   };
 }
 
@@ -218,6 +275,7 @@ async function copyInto(
   directory: string,
   name: string,
   max: number,
+  content?: Uint8Array,
 ): Promise<SavedDownload> {
   // 不跟随符号链接打开源，再按句柄核对它还是检查过的那个文件。
   let source: fs.FileHandle;
@@ -260,15 +318,22 @@ async function copyInto(
       let bytes = 0;
       const hash = crypto.createHash('sha256');
       try {
-        // 按块从句柄读、往句柄写，不把整个文件读进内存；读到的超过上限（检查之后文件变大了）时放弃。
-        const buffer = Buffer.allocUnsafe(1024 * 1024);
-        for (;;) {
-          const { bytesRead } = await source.read(buffer, 0, buffer.length, bytes);
-          if (bytesRead === 0) break;
-          bytes += bytesRead;
-          if (bytes > max) throw tooLarge(bytes, max);
-          hash.update(buffer.subarray(0, bytesRead));
-          for (let written = 0; written < bytesRead;) written += (await out.write(buffer, written, bytesRead - written)).bytesWritten;
+        if (content) {
+          // 改写过的正文（去掉了出处编号）：不比源大，已在内存里。
+          for (let written = 0; written < content.length;) written += (await out.write(content, written, content.length - written)).bytesWritten;
+          bytes = content.length;
+          hash.update(content);
+        } else {
+          // 按块从句柄读、往句柄写，不把整个文件读进内存；读到的超过上限（检查之后文件变大了）时放弃。
+          const buffer = Buffer.allocUnsafe(1024 * 1024);
+          for (;;) {
+            const { bytesRead } = await source.read(buffer, 0, buffer.length, bytes);
+            if (bytesRead === 0) break;
+            bytes += bytesRead;
+            if (bytes > max) throw tooLarge(bytes, max);
+            hash.update(buffer.subarray(0, bytesRead));
+            for (let written = 0; written < bytesRead;) written += (await out.write(buffer, written, bytesRead - written)).bytesWritten;
+          }
         }
       } catch (error) {
         await out.close().catch(() => {});

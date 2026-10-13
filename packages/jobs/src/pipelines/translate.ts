@@ -1,5 +1,6 @@
 import { invalid } from './params.ts';
 import { JobsParams } from '@baocut/protocol/messages/jobs/params.ts';
+import fs from 'node:fs/promises';
 import path from 'node:path';
 import {
   RpcError,
@@ -60,6 +61,7 @@ import {
   type SpeechWorkerCues,
 } from './speech-worker.ts';
 import { mergeRefresh, refreshPlan, refreshableTranslation, type RefreshPlan } from './translation-refresh.ts';
+import { markReuse, memoryUse, workerMemory, type TranslationMemory, type TranslationMemoryLookup } from './translation-memory.ts';
 
 // 抽到 translation-batches.ts 的部分，原样从这里导出（翻译配音与测试从这里引用）。
 export {
@@ -132,6 +134,8 @@ export interface TranslateDeps {
   library?: GlossaryLibrary;
   /** 产物库：启动时把用到的库里术语表的内容写成产物（之后只读它，不再读库）。用到库里的术语表时必须有。 */
   artifacts?: Pick<ArtifactStore, 'put'>;
+  /** 翻译记忆（用户其他视频里同一语言方向的已有译文）；没有时不沿用、不参考。 */
+  memory?: TranslationMemory;
 }
 
 /** 冻结的参数：源文档、Provider 与模型、批大小都已确定。 */
@@ -191,6 +195,11 @@ const PARAMS_SCHEMA = {
       maxItems: 500,
       description: '就地刷新时重译的句子 ID（s-<首词 ID>），译文新鲜的也重译；只能与 translationId 一起给',
     },
+    memory: {
+      type: 'boolean',
+      default: true,
+      description: '翻译记忆（默认开）：原文相同的句子沿用其他视频里已有的译法，语义相近的作为参考；就地刷新时不用',
+    },
     // i18n-ignore-end
   },
   required: ['targetLanguage'],
@@ -221,11 +230,15 @@ interface TranslateOutput extends Record<string, unknown> {
   /** 去重之后的术语条数；`cappedBatches` 是摘要里沿用的字段，字幕与翻译核心不截断术语，总是 0。 */
   glossaryTerms?: number;
   cappedBatches?: number;
+  /** 翻译记忆的查找结果（沿用与参考）；没用时没有。 */
+  memory?: TranslationMemoryLookup;
 }
 
 interface AssembleOutput extends Record<string, unknown> {
   artifactId: string;
   unitCount: number;
+  /** 标了沿用的单元数。 */
+  reused?: number;
   /** 就地刷新：换成新译文的单元（含新建的）。 */
   changedUnitIds?: Id[];
 }
@@ -350,9 +363,17 @@ export function translatePipeline(deps: TranslateDeps): PipelineDefinition<Froze
               problems: problems.slice(0, 20),
             });
           }
+          const marked = markReuse(body, translated.memory?.reuse ?? []);
+          if (marked.reused === 0) {
+            return {
+              output: { artifactId: translated.artifactId, unitCount: body.units.length } satisfies AssembleOutput,
+              result: { documentId: null, artifactId: translated.artifactId },
+            };
+          }
+          const { artifactId } = await artifacts.put(Buffer.from(JSON.stringify(marked.body)), 'json');
           return {
-            output: { artifactId: translated.artifactId, unitCount: body.units.length } satisfies AssembleOutput,
-            result: { documentId: null, artifactId: translated.artifactId },
+            output: { artifactId, unitCount: body.units.length, reused: marked.reused } satisfies AssembleOutput,
+            result: { documentId: null, artifactId },
           };
         },
         reusable: async (output, { artifacts }) => (await artifacts.locate((output as AssembleOutput).artifactId)) !== null,
@@ -418,6 +439,7 @@ export function translatePipeline(deps: TranslateDeps): PipelineDefinition<Froze
         providerId: params.provider,
         modelId: params.model,
         ...(glossary ? { glossary } : {}),
+        ...(translated.memory ? { memory: memoryUse(translated.memory, assembled.reused ?? 0) } : {}),
         captions: captionsSummary(
           deps.videos,
           params.captions === true,
@@ -447,6 +469,7 @@ export function parseTranslateParams(raw: Record<string, unknown>): TranslatePar
     'bilingual',
     'translationId',
     'sentences',
+    'memory',
   ]);
   const targetLanguage = reader.string('targetLanguage', { max: 35 });
   if (!/^[A-Za-z]{2,8}(-[A-Za-z0-9]{1,8})*$/.test(targetLanguage)) throw new RpcError('invalid-request', J.targetLanguageInvalid());
@@ -458,7 +481,7 @@ export function parseTranslateParams(raw: Record<string, unknown>): TranslatePar
   const provider = optional('provider', 128);
   const model = optional('model', 256);
   const batchSize = reader.int('batchSize', 1, 100);
-  const flag = (key: 'captions' | 'bilingual') => {
+  const flag = (key: 'captions' | 'bilingual' | 'memory') => {
     const value = raw[key];
     if (value !== undefined && typeof value !== 'boolean') throw new RpcError('invalid-request', J.flagInvalid({ key }));
     return value as boolean | undefined;
@@ -467,6 +490,7 @@ export function parseTranslateParams(raw: Record<string, unknown>): TranslatePar
   const captions = flag('captions');
   if (captionStyle && captions !== true) throw invalid('captionStyle', JobsParams.onlyOneOf({ other: 'captions: false' }));
   const bilingual = flag('bilingual');
+  const memory = flag('memory');
   if (bilingual === true && captions !== true) throw new RpcError('invalid-request', J.bilingualNeedsCaptions());
   const translationId = optional('translationId', 128);
   const sentences = reader.array('sentences', { min: 1, max: 500, optional: true })?.map((id) => {
@@ -492,6 +516,7 @@ export function parseTranslateParams(raw: Record<string, unknown>): TranslatePar
     ...(bilingual !== undefined ? { bilingual } : {}),
     ...(translationId !== undefined ? { translationId } : {}),
     ...(sentences !== undefined ? { sentences: [...new Set(sentences)] } : {}),
+    ...(memory !== undefined ? { memory } : {}),
   };
 }
 
@@ -692,6 +717,8 @@ async function translateWithWorker(deps: TranslateDeps, context: PipelineStepCon
     return { output, result: { documentId: null, artifactId: output.artifactId } };
   }
   const speech = await readArtifact<unknown>(artifacts, frozen.speechArtifactId);
+  const memory = base ? null : await lookupMemory(deps, context, source);
+  const memoryInput = memory ? workerMemory(memory) : null;
   const snapshot = await loadGlossaries(artifacts, params);
   const terms = promptTerms(snapshot);
   const glossaryRef = glossaryRefOf(snapshot, source.sentences.map((s) => s.text).join('\n'));
@@ -714,6 +741,7 @@ async function translateWithWorker(deps: TranslateDeps, context: PipelineStepCon
         ...(deps.backoffScale !== undefined ? { backoffScale: deps.backoffScale } : {}),
       },
       ...(base && frozen.plan ? { translation: base, sentences: frozen.plan.sentences } : {}),
+      ...(memoryInput ? { memory: memoryInput } : {}),
     },
     text: deps.text,
     provider: params.provider,
@@ -730,8 +758,44 @@ async function translateWithWorker(deps: TranslateDeps, context: PipelineStepCon
     calls: result.calls,
     modelVersion: result.modelVersion,
     ...(terms.length > 0 ? { glossaryTerms: terms.length, cappedBatches: 0 } : {}),
+    ...(memory ? { memory } : {}),
   };
   return { output, result: { documentId: null, artifactId: translation.artifactId } };
+}
+
+/**
+ * 翻译记忆的查找（整篇新译时；就地刷新不用）。结果存在这一步的 staging 里：中断后重试沿用同一份（Worker 的检查点按它分），
+ * 不因为期间别的视频多了译文而从头再译。查不了时照常翻译，原因写进摘要。
+ */
+async function lookupMemory(
+  deps: TranslateDeps,
+  context: PipelineStepContext<FrozenTranslateParams>,
+  source: FrozenSource,
+): Promise<TranslationMemoryLookup | null> {
+  const { params, signal, staging } = context;
+  if (!deps.memory || params.memory === false) return null;
+  const file = path.join(staging, 'memory.json');
+  try {
+    return JSON.parse(await fs.readFile(file, 'utf8')) as TranslationMemoryLookup;
+  } catch {
+    // 第一次：查找并存下。
+  }
+  let lookup: TranslationMemoryLookup;
+  try {
+    lookup = await deps.memory.lookup({
+      videoId: params.videoId,
+      sourceLanguage: source.language,
+      targetLanguage: params.targetLanguage,
+      sentences: source.sentences.map((s) => ({ id: s.id, text: s.text })),
+      signal,
+    });
+  } catch (error) {
+    if (signal.aborted) throw error;
+    lookup = { reuse: [], references: [], videos: 0, effectiveMode: 'lexical', reason: (error as { code?: string }).code ?? 'MEMORY_UNAVAILABLE' };
+  }
+  await fs.mkdir(staging, { recursive: true });
+  await fs.writeFile(file, JSON.stringify(lookup));
+  return lookup;
 }
 
 async function writeTranslation(videos: PipelineVideos, context: PipelineStepContext<FrozenTranslateParams>): Promise<StepResult> {

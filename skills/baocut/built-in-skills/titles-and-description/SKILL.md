@@ -1,7 +1,7 @@
 ---
 name: titles-and-description
 description: 用户要为准备发布的视频起标题、要几个标题候选、再来一批或照某个再来几个，或要写视频简介（视频页标题下的说明文字、章节列表、标签）时用。写给发布视频的人：吸引人，并且每句都由视频兑现。需要视频的转写。不用于给文章起标题等与视频无关的写作。
-version: 2.0.0
+version: 2.1.0
 ---
 
 # 起标题与写简介
@@ -15,7 +15,7 @@ version: 2.0.0
 ## 1. 取材料
 
 1. 用 videos_inspect 看视频：名字、章节（chapters 的 atSeconds 与 title）、文档。没有转写（kind 为 speech 的文档）时先转写，告诉用户转写在进行。转写没润色过时人名、术语可能有错字，对照视频信息核对。
-2. 读文稿：export（kind `transcript`、format `md`、timestamps `true`；有几份文稿时按它列出的候选用 documentId 指定），jobs_inspect 等到 completed，读 outputs 里的文件。没有视频、只有从链接下载并转写的结果时，读 jobs_inspect 的 outputs 里的 TXT 或 SRT。
+2. 读文稿：先用 speech_sentences 取按句编号的文稿（简介里依据文稿的段落末尾回引编号，见写作基线「句子编号与出处」；标题不回引）；它说没有可编号的句子时再用 export（kind `transcript`、format `md`、timestamps `true`；有几份文稿时按它列出的候选用 documentId 指定），jobs_inspect 等到 completed，读 outputs 里的文件。没有视频、只有从链接下载并转写的结果时，读 jobs_inspect 的 outputs 里的 TXT 或 SRT。
 3. 视频信息：来源标题、作者、原视频链接、发布平台只用视频信息里有的和用户提供的。
 4. 用户这次的要求：语言、篇幅、风格、候选个数、发布平台、视角；已选定的标题；之前给过的候选与用户想跟随的那一个，都在这段对话里找。用户说了标题和简介发在同一个平台时，两者按同一个平台写。
 

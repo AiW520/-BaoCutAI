@@ -20,6 +20,7 @@ export const ko: SettingsNavMessages = {
     shortcuts: '단축키',
     fonts: '글꼴',
     downloader: '동영상 다운로드',
+    semantic: '의미 색인',
     agent: 'Agent 공급자',
     skills: 'Skills',
     glossary: '용어집',

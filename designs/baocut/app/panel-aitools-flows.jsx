@@ -389,6 +389,8 @@
               scope={tsc} onScope={setTsc} chapters={ctx.chapters}>
               <window.GlossaryOption gl={gl} on={useTerms} onChange={setUseTerms} kind="translate" />
               {useTerms ? <window.GlossaryHits gl={gl} /> : null}
+              {/* 翻译记忆（embedding-integration §2.6）：参考了几句已有译文；没装模型时只做精确匹配 */}
+              <window.BC_SEMTOOLS.TmLine to={target} />
               <div className="tsetup__row">
                 <Switch on={bi} onChange={setBi} label="双语显示" />
                 <span className="t-detail-xs">翻译完成后原文 + 译文一起显示在画面上</span>

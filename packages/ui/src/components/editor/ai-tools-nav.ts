@@ -13,6 +13,8 @@ export interface AiToolPreset {
   translationId?: Id | null;
   /** 剪成短视频的「再切几支」：参数页勾上「已经切过的不再找」。 */
   skipDone?: boolean;
+  /** Space 搜索的「用于写作」（创作辅助集成设计 §2.1）：搜的那句话作主题，写作参数页落在「按主题」、这一次直接调模型。 */
+  topic?: string | null;
 }
 
 export interface AiToolPage {

@@ -1,4 +1,4 @@
-import type { KeyboardEvent as ReactKeyboardEvent } from 'react';
+import type { KeyboardEvent as ReactKeyboardEvent, ReactNode } from 'react';
 import { ActionButton, Button, TextField, ToggleButton, Tooltip, TooltipTrigger } from '@react-spectrum/s2';
 import ChevronDown from '@react-spectrum/s2/icons/ChevronDown';
 import ChevronUp from '@react-spectrum/s2/icons/ChevronUp';
@@ -59,6 +59,7 @@ export function TranscriptFindBar({
   hint,
   onReplace,
   onReplaceAll,
+  meaning,
 }: {
   query: string;
   setQuery(value: string): void;
@@ -79,6 +80,8 @@ export function TranscriptFindBar({
   hint: string | null;
   onReplace(): void;
   onReplaceAll(): void;
+  /** 下面「意思相近」那一块（`TranscriptMeaning`）。 */
+  meaning?: ReactNode;
 }) {
   const label = error ? T.badRegex : !query ? '' : count ? `${index + 1} / ${count}` : T.noResults;
   const escape = (event: ReactKeyboardEvent) => {
@@ -149,6 +152,7 @@ export function TranscriptFindBar({
         </div>
       ) : null}
       {error ? <div className={findNote}>{T.regexError(error)}</div> : null}
+      {meaning}
     </div>
   );
 }

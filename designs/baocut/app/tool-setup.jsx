@@ -106,8 +106,9 @@
         onClick={() => setPop((v) => !v)} onClose={() => setPop(false)}>
         <Menu>
           {options.map((o) => (
-            <MenuItem key={o.k} label={o.label} sub={o.k === 'all' ? null : `约 ${o.count} ${cur.unit || ''}`.trim()} on={o.k === cur.k}
-              onClick={() => { onChange(o); setPop(false); }} />
+            /* 宿主追加的范围（如写作的「按主题」，embedding-integration §2.2）可自带副题与置灰 */
+            <MenuItem key={o.k} label={o.label} sub={o.sub !== undefined ? o.sub : o.k === 'all' ? null : `约 ${o.count} ${cur.unit || ''}`.trim()} on={o.k === cur.k}
+              disabled={o.disabled} onClick={() => { onChange(o); setPop(false); }} />
           ))}
         </Menu>
       </Picker>

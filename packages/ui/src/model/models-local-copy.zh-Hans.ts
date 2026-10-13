@@ -28,6 +28,7 @@ export const zhHans: ModelsLocalMessages = {
     separate: '分离',
     music: '音乐',
     diarize: '说话人区分',
+    embed: '语义索引',
   },
   auto: '自动选择',
   notInstalled: (name) => `${name}（未安装）`,

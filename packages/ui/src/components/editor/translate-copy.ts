@@ -154,6 +154,13 @@ const en = {
   staleShort: (n: number) => `${n} out of date`,
   cutShort: (n: number) => `${n} cut`,
   goneShort: (n: number) => `${n} deleted`,
+  termsShort: (n: number) => `${n} term ${n === 1 ? 'mismatch' : 'mismatches'}`,
+  terms: (n: number) => `${n} ${n === 1 ? 'place doesn’t' : 'places don’t'} use the glossary’s translation`,
+  termsTitle: 'Term mismatches',
+  termsLead: 'These translations don’t use the glossary’s translation. Unifying them is an ordinary edit you can undo.',
+  termsSpot: (got: string, want: string) => ` · translated as “${got}”, the glossary says “${want}”`,
+  termsUnify: 'Use glossary translations',
+  termsUnified: (n: number) => `Changed ${n} ${n === 1 ? 'place' : 'places'} to the glossary translation`,
   cut: (n: number) => `${n} original ${n === 1 ? 'sentence has' : 'sentences have'} been cut from the video`,
   webHint: 'Retranslating calls a model or the Agent: start it from the Agent or the BaoCut app',
   refreshing: (n: number | null) => (n === null ? 'Retranslating…' : `Retranslating ${sentences(n)}…`),
@@ -180,6 +187,19 @@ const en = {
   refreshFailed: 'Retranslation failed',
   refreshInterrupted: 'Retranslation was interrupted',
   refreshCancelled: 'Retranslation cancelled',
+  // 翻译记忆（创作辅助集成设计 §2.6）
+  chipReused: 'Reused',
+  reusedTip: (video: string | null) =>
+    video ? `Reused the translation from “${video}”: the original is nearly identical` : 'Reused a translation from another of your videos: the original is nearly identical',
+  directReused: 'Retranslate instead',
+  directReusedSub: (video: string | null) => `Stops reusing ${video ? `the translation from “${video}”` : 'the earlier translation'} and retranslates with the model API`,
+  memory: 'Translation memory',
+  memoryOn:
+    'Sentences that match ones you translated in your other videos (same language pair) reuse that translation and are marked “Reused”; similar ones go to the model as references.',
+  memoryOff: 'Translation memory is off in Settings: earlier translations aren’t reused or referenced.',
+  memoryUsed: (reused: number, referenced: number) =>
+    `Translation memory: reused ${sentences(reused)} · referenced ${referenced} earlier ${referenced === 1 ? 'translation' : 'translations'}`,
+
 };
 
 export type TranslateMessages = typeof en;

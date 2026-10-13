@@ -8,7 +8,8 @@ import {
   type SpaceSearchParams,
   type SpaceSearchResult,
 } from '@baocut/protocol';
-import type { SpaceCatalog } from '../space-catalog.ts';
+import type { SpaceCatalog, SpaceVideo } from '../space-catalog.ts';
+import type { ContentIndex } from './content-index.ts';
 import type { SearchableVideo } from './content-search.ts';
 import { RcSpace } from '@baocut/protocol/messages/runtime-core';
 
@@ -68,7 +69,7 @@ export function visibleTo(viewer: SpaceViewer, entry: SpaceEntry): boolean {
 }
 
 /** 看不到的与不存在的一样回答。 */
-export function visibleEntry(catalog: SpaceCatalog, viewer: SpaceViewer, entryId: Id): SpaceEntry {
+export function visibleEntry(catalog: Pick<SpaceCatalog, 'get'>, viewer: SpaceViewer, entryId: Id): SpaceEntry {
   const entry = catalog.get(entryId);
   if (!visibleTo(viewer, entry)) throw new RpcError('not-found', RcSpace.entryGone());
   return entry;
@@ -104,14 +105,28 @@ export function listEntries(catalog: SpaceCatalog, viewer: SpaceViewer, params: 
   };
 }
 
+/** 跨视频检索用到的那一部分 Space 目录（`SpaceCatalog` 满足它；语义检索与测试也用它）。 */
+export interface SpaceSearchSource {
+  videos(): SpaceVideo[];
+  readonly index: Pick<ContentIndex, 'at' | 'pendingCount' | 'search'> | null;
+  readonly scanning: boolean;
+}
+
+/** 检索范围里的视频（按主体过滤之后）与还不能检索的个数。 */
+export interface SearchScope {
+  videos: SearchableVideo[];
+  /** 还没有索引、正在重建、索引落后于当前版本的视频数。 */
+  pending: number;
+}
+
 /**
- * 跨视频检索（§5.11）。范围是来源目录里的视频（按主体过滤之后）；还没有索引、正在重建、索引落后于当前版本的视频
- * 计入 `pendingVideos`，有它们时 `complete` 为 false。落后的视频照样用旧的索引检索。
+ * 检索的范围（`space.search` 与 `space.searchV2` 共用，§8.3「先确定授权范围再检索」）：来源目录里按主体、项目与 videoId 名单
+ * 过滤之后的视频。对外服务的名单之外的视频既不进范围，也不进待索引的计数。
  */
-export function searchContent(catalog: SpaceCatalog, viewer: SpaceViewer, params: SpaceSearchParams): SpaceSearchResult {
+export function searchScope(catalog: SpaceSearchSource, viewer: SpaceViewer, params: { projectId?: Id | null; videoIds?: readonly Id[] }): SearchScope {
   const index = catalog.index;
   const wanted = params.videoIds ? new Set(params.videoIds) : null;
-  const searchable: SearchableVideo[] = [];
+  const videos: SearchableVideo[] = [];
   let pending = 0;
   for (const video of catalog.videos()) {
     if (params.projectId !== undefined && video.projectId !== params.projectId) continue;
@@ -126,7 +141,7 @@ export function searchContent(catalog: SpaceCatalog, viewer: SpaceViewer, params
     if (wanted && !wanted.has(indexed.videoId)) continue;
     if (viewer.kind === 'service' && viewer.videos !== 'all' && !viewer.videos.has(indexed.videoId)) continue;
     if (index!.pendingCount([video.dir]) > 0) pending++;
-    searchable.push({
+    videos.push({
       dir: indexed.dir,
       videoId: indexed.videoId,
       videoName: indexed.name,
@@ -135,6 +150,16 @@ export function searchContent(catalog: SpaceCatalog, viewer: SpaceViewer, params
       revision: indexed.revision,
     });
   }
+  return { videos, pending };
+}
+
+/**
+ * 跨视频检索（§5.11）。范围是来源目录里的视频（按主体过滤之后）；还没有索引、正在重建、索引落后于当前版本的视频
+ * 计入 `pendingVideos`，有它们时 `complete` 为 false。落后的视频照样用旧的索引检索。
+ */
+export function searchContent(catalog: SpaceSearchSource, viewer: SpaceViewer, params: SpaceSearchParams): SpaceSearchResult {
+  const index = catalog.index;
+  const { videos: searchable, pending } = searchScope(catalog, viewer, params);
   const { hits, truncated } = (index?.search(searchable, {
     query: params.query,
     ...(params.kinds ? { kinds: params.kinds } : {}),

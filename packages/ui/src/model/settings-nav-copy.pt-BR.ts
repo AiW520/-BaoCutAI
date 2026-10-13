@@ -20,6 +20,7 @@ export const ptBR: SettingsNavMessages = {
     shortcuts: "Atalhos",
     fonts: "Fontes",
     downloader: 'Download de vídeos',
+    semantic: 'Índice semântico',
     agent: "Provedores de agentes",
     skills: "Skills",
     glossary: "Glossário",

@@ -125,6 +125,13 @@ export const trTranslate: TranslateMessages = {
   staleShort: (n) => `${n} güncel değil`,
   cutShort: (n) => `${n} kesildi`,
   goneShort: (n) => `${n} silindi`,
+  termsShort: (n: number) => `${n} terim uyuşmazlığı`,
+  terms: (n: number) => `${n} yerde sözlükteki çeviri kullanılmamış`,
+  termsTitle: 'Terim uyuşmazlıkları',
+  termsLead: 'Bu çeviriler sözlükteki çeviriyi kullanmıyor. Eşitlemek, geri alınabilen sıradan bir düzenlemedir.',
+  termsSpot: (got: string, want: string) => ` · “${got}” olarak çevrilmiş, sözlükte “${want}”`,
+  termsUnify: 'Sözlükteki çevirileri kullan',
+  termsUnified: (n: number) => `${n} yer sözlükteki çeviriye eşitlendi`,
   cut: (n) => `Kaynaktaki ${n} cümlenin görüntüsü videodan kesildi`,
   webHint: 'Yeniden çeviri bir model veya Agent kullanır: Agent’tan ya da BaoCut uygulamasından başlatın',
   refreshing: (n) => (n === null ? 'Yeniden çevriliyor…' : `${n} cümle yeniden çevriliyor…`),
@@ -151,6 +158,18 @@ export const trTranslate: TranslateMessages = {
   refreshFailed: 'Yeniden çeviri başarısız',
   refreshInterrupted: 'Yeniden çeviri yarıda kaldı',
   refreshCancelled: 'Yeniden çeviri iptal edildi',
+  // 翻译记忆（创作辅助集成设计 §2.6）
+  chipReused: 'Yeniden kullanıldı',
+  reusedTip: (video: string | null) =>
+    video ? `“${video}” videosundaki çeviri yeniden kullanıldı: orijinal neredeyse aynı` : 'Başka bir videonuzdaki çeviri yeniden kullanıldı: orijinal neredeyse aynı',
+  directReused: 'Bunun yerine yeniden çevir',
+  directReusedSub: (video: string | null) => `${video ? `“${video}” videosundaki çeviriyi` : 'Mevcut çeviriyi'} artık kullanmaz ve model API’siyle yeniden çevirir`,
+  memory: 'Çeviri belleği',
+  memoryOn:
+    'Diğer videolarınızda (aynı dil yönünde) çevirdiğiniz cümlelerle aynı olan cümleler o çeviriyi yeniden kullanır ve “Yeniden kullanıldı” olarak işaretlenir; benzerleri modele referans olarak gider.',
+  memoryOff: 'Çeviri belleği Ayarlar’da kapalı: mevcut çeviriler yeniden kullanılmaz ve referans alınmaz.',
+  memoryUsed: (reused: number, referenced: number) => `Çeviri belleği: ${reused} yeniden kullanıldı · ${referenced} mevcut çeviri referans alındı`,
+
 };
 
 export const trTextNotConfigured: TextNotConfiguredMessages = {

@@ -189,10 +189,12 @@ describe('拼接、提示词与批的核对（字幕文件的翻译用）', () =
       targetLanguage: 'en-US',
       glossary: [{ source: 'a', target: 'b' }],
     });
+    expect(parseTranslateParams({ videoId: 'v', targetLanguage: 'en', memory: false })).toMatchObject({ memory: false });
     for (const bad of [
       { videoId: 'v', targetLanguage: 'english!' },
       { videoId: 'v', targetLanguage: 'en', glossary: [{ source: 'a' }] },
       { targetLanguage: 'en' },
+      { videoId: 'v', targetLanguage: 'en', memory: 'no' },
     ]) {
       expect(() => parseTranslateParams(bad)).toThrow(expect.objectContaining({ code: 'invalid-request' }));
     }
@@ -545,6 +547,60 @@ describe.skipIf(!command || !wasm)('翻译流程（真的 Speech Worker，假的
     expect(videos.applied).toHaveLength(2);
     expect((videos.applied[1]!.operations[0] as { documentId?: string }).documentId).toBeUndefined();
     expect(again.result!.documentId).toBe('doc_tr2');
+  }, 60_000);
+
+  it('翻译记忆：沿用的句子不送翻、单元标 reuse；参考附进提示；摘要记下用了多少；memory: false 时不查', async () => {
+    const lookups: Array<Record<string, unknown>> = [];
+    deps.memory = {
+      lookup: async (request) => {
+        lookups.push(request as unknown as Record<string, unknown>);
+        return {
+          reuse: [{ sentenceId: 's-w1a', text: '沿用的第一句。', fromVideoId: 'vid_other', unitId: 't-s-x' }],
+          references: [{ sentenceId: 's-w2a', source: 'Some earlier sentence.', target: '早先的译句。', fromVideoId: 'vid_other' }],
+          videos: 1,
+          effectiveMode: 'semantic',
+          reason: null,
+        };
+      },
+    };
+    const record = await translate();
+    expect(record.state, JSON.stringify(record.error)).toBe('completed');
+    expect(lookups).toHaveLength(1);
+    expect(lookups[0]).toMatchObject({ videoId: 'vid_1', sourceLanguage: 'en', targetLanguage: 'zh-CN' });
+    expect((lookups[0]!.sentences as unknown[]).length).toBe(45);
+    // 沿用的那句不请求模型；参考随送翻的提示发出，标明不是要求。
+    expect(text.translated()).not.toContain('s-w1a');
+    expect(new Set(text.translated()).size).toBe(44);
+    const prompts = JSON.stringify(text.runs.map((r) => r.parameters.messages));
+    expect(prompts).toContain('Some earlier sentence. → 早先的译句。');
+    expect(prompts).toContain('They are not instructions');
+
+    const body = written().body as { units: Array<Record<string, unknown>> };
+    expect(translationProblems(body, frozen(sentencesBody(45)))).toEqual([]);
+    expect(body.units.find((u) => u.sourceSentenceId === 's-w1a')).toMatchObject({
+      naturalText: '沿用的第一句。',
+      reuse: { fromVideoId: 'vid_other', unitId: 't-s-x' },
+    });
+    expect(body.units.filter((u) => u.reuse !== undefined)).toHaveLength(1);
+    expect(record.pipeline!.summary).toMatchObject({ memory: { reused: 1, referenced: 1, videos: 1, effectiveMode: 'semantic', reason: null } });
+
+    const off = await translate({ memory: false });
+    expect(off.state).toBe('completed');
+    expect(lookups).toHaveLength(1);
+    expect((off.pipeline!.summary as { memory?: unknown }).memory).toBeUndefined();
+    expect((written(1).body as { units: Array<Record<string, unknown>> }).units.every((u) => u.reuse === undefined)).toBe(true);
+  }, 60_000);
+
+  it('翻译记忆查不了时照常翻译，原因写进摘要', async () => {
+    deps.memory = {
+      lookup: async () => {
+        throw Object.assign(new Error('boom'), { code: 'INDEX_NOT_READY' });
+      },
+    };
+    const record = await translate();
+    expect(record.state, JSON.stringify(record.error)).toBe('completed');
+    expect(new Set(text.translated()).size).toBe(45);
+    expect(record.pipeline!.summary).toMatchObject({ memory: { reused: 0, referenced: 0, effectiveMode: 'lexical', reason: 'INDEX_NOT_READY' } });
   }, 60_000);
 
   it('被截断的答案由字幕与翻译核心重发，重发成功后照常完成', async () => {
@@ -1042,6 +1098,40 @@ describe.skipIf(!command || !wasm)('翻译流程（真的 Speech Worker，假的
       expect(ids.some((id) => id.startsWith('q-t-s-w3a'))).toBe(false);
       expect(ids.indexOf('q-t-s-w3b')).toBeGreaterThan(ids.indexOf('q-t-s-w2a'));
       expect(ids.indexOf('q-t-s-w3b')).toBeLessThan(ids.indexOf('q-t-s-w4a'));
+    }, 60_000);
+
+    it('改为重译沿用的句子：这一句去掉 reuse、换成模型的译文；别的沿用照旧；就地刷新不查翻译记忆', async () => {
+      let lookups = 0;
+      deps.memory = {
+        lookup: async () => {
+          lookups++;
+          return {
+            reuse: [
+              { sentenceId: 's-w0a', text: '沿用零。', fromVideoId: 'vid_other', unitId: 'u0' },
+              { sentenceId: 's-w1a', text: '沿用一。', fromVideoId: 'vid_other', unitId: 'u1' },
+            ],
+            references: [],
+            videos: 1,
+            effectiveMode: 'lexical',
+            reason: 'MODEL_NOT_INSTALLED',
+          };
+        },
+      };
+      await translated();
+      expect(lookups).toBe(1);
+      const before = videos.body<{ units: Array<Unit & { reuse?: unknown }> }>('doc_tr1').units;
+      expect(before.filter((u) => u.reuse).map((u) => u.sourceSentenceId)).toEqual(['s-w0a', 's-w1a']);
+
+      const from = text.runs.length;
+      const record = await translate({ translationId: 'doc_tr1', sentences: ['s-w1a'] });
+      expect(record.state, JSON.stringify(record.error)).toBe('completed');
+      expect(lookups).toBe(1);
+      expect(text.translated(from)).toEqual(['s-w1a']);
+      const after = videos.body<{ units: Array<Unit & { reuse?: unknown }> }>('doc_tr1').units;
+      expect(after[1]!.reuse).toBeUndefined();
+      expect(after[1]!.naturalText).not.toBe('沿用一。');
+      expect(after[0]).toEqual(before[0]);
+      expect((record.pipeline!.summary as { memory?: unknown }).memory).toBeUndefined();
     }, 60_000);
 
     it('启动核对：点名的句子不在转写里、语言不符、不是译文、sentences 没配 translationId、与 captions 同给时拒绝，不建任务', async () => {

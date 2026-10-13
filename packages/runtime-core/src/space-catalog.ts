@@ -31,6 +31,7 @@ import {
   artifactIdsOf,
   artifactRefsOf,
   spaceJobFacts,
+  writingDocumentOf,
   type SpaceArtifactStore,
   type SpaceJobFacts,
   type SpaceMarkStore,
@@ -862,7 +863,14 @@ export class SpaceCatalog {
    * `downloads-save` 的文件到文件记录（不经 Job Ledger），派生成条目（`id` 是内容摘要，来源目录之外的单独成条），
    * 回复里的链接按条目打开。写完重算一次，返回时目录里已经有它。没有产物记录时不登记。
    */
-  async recordHandover(handover: { path: string; bytes: number; artifactId: string; submitter: JobSubmitter; at: string }): Promise<void> {
+  async recordHandover(handover: {
+    path: string;
+    bytes: number;
+    artifactId: string;
+    submitter: JobSubmitter;
+    at: string;
+    citationsArtifactId?: string | null;
+  }): Promise<void> {
     if (!this.#artifacts) return;
     const facts: SpaceJobFacts = {
       jobId: newId('job'),
@@ -891,7 +899,7 @@ export class SpaceCatalog {
           },
         ],
       },
-      pipeline: { name: 'downloads-save' },
+      pipeline: { name: 'downloads-save', ...(handover.citationsArtifactId ? { citationsArtifactId: handover.citationsArtifactId } : {}) },
     };
     await this.#artifacts.put([facts]);
     // 来源目录之外的发布路径按缓存的文件状态派生：先忘掉这条路径（同名文件之前可能记成不在了），再重算。
@@ -904,7 +912,8 @@ export class SpaceCatalog {
 
   /** 任务输入：Ledger 里的任务，加上产物记录里 Ledger 已经修剪掉的。 */
   #jobFacts(): SpaceJobFacts[] {
-    const live = this.#jobs?.list() ?? [];
+    // 写作类 AI 工具的结果（§5.10）：换成带 `pipeline.document` 的事实，派生成 Markdown 文档条目。
+    const live = (this.#jobs?.list() ?? []).map((job): SpaceJobFacts => (writingDocumentOf(job) ? (spaceJobFacts(job) ?? job) : job));
     if (!this.#artifacts) return live;
     const seen = new Set(live.map((job) => job.jobId));
     return [...live, ...this.#artifacts.list().filter((facts) => !seen.has(facts.jobId))];
@@ -1184,7 +1193,7 @@ export class SpaceCatalog {
     const paths = new Set<string>();
     for (const job of this.#jobFacts()) {
       if (!job.result) continue;
-      if (job.kind === 'generateText') artifacts.add(job.result.artifactId);
+      if (job.kind === 'generateText' || job.pipeline?.document) artifacts.add(job.result.artifactId);
       for (const output of job.result.outputs ?? []) {
         // 发布的文件，以及直接任务另存在保存位置的副本（§7.9）。
         if (output.path) paths.add(output.path);

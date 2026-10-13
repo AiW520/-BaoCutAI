@@ -18,6 +18,7 @@ export const nl: JobsTranslationDocumentMessages = {
   unitNoText: (p: { id: string }) => `Vertaaleenheid ${p.id} heeft geen vertaling`,
   unitBadStatus: (p: { id: string }) => `Vertaaleenheid ${p.id} heeft een ongeldige status`,
   unitBadAlignment: (p: { id: string }) => `Vertaaleenheid ${p.id} heeft een ongeldige uitlijning`,
+  unitBadReuse: (p: { id: string }) => `Vertaaleenheid ${p.id} heeft een ongeldig reuse (fromVideoId en unitId zijn nodig)`,
   unitAlignmentFields: (p: { id: string }) => `De uitlijning van vertaaleenheid ${p.id} mist velden`,
   unitHashMismatch: (p: { id: string }) => `De textHash van vertaaleenheid ${p.id} komt niet overeen met de vertaling`,
   unitExtraFields: (p: { id: string; fields: string }) => `Vertaaleenheid ${p.id} bevat velden buiten §5.3: ${p.fields}`,

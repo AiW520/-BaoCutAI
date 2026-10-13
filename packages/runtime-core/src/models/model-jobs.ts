@@ -3,6 +3,7 @@ import path from 'node:path';
 import { TopicLog, type Logger } from '@baocut/harness';
 import {
   JobManager,
+  LocalEmbeddingProvider,
   LocalMusicProvider,
   LocalTranscribeProvider,
   MachineCapacity,
@@ -32,6 +33,7 @@ import {
   type PipelineVideos,
   type ProbeToolResolver,
   type CapacitySource,
+  type TranslationMemory,
 } from '@baocut/jobs';
 import {
   AUDIO_CPP_BACKEND_ENV,
@@ -96,6 +98,11 @@ export const PIPELINE_ACTOR: Actor = { kind: 'system', id: PIPELINE_ACTOR_ID };
 export interface ModelJobs {
   catalog: ModelCatalog;
   provider: LocalTranscribeProvider;
+  /**
+   * 本机 embedding（EmbeddingGemma 2 检索集成方案 v0.1 §3.1）：语义检索的 `EmbeddingProvider`，经 `provider` 的 Model Worker 编码。
+   * 没装 embedding 模型包时它的 `profile` 报 `MODEL_NOT_INSTALLED`，检索只有字面一路。
+   */
+  embedding: LocalEmbeddingProvider;
   /** 模型服务：Provider 注册表、配置与选择（§6.1、§6.2）。 */
   services: ModelServices;
   jobs: JobManager;
@@ -132,6 +139,8 @@ export interface ModelJobsOptions {
    * 读外部工具覆盖的环境（`BAOCUT_AUDIOCPP_CLI`：音乐引擎的开发者覆盖）；默认 `process.env`。测试给不含真实环境变量的对象。
    */
   toolOverrides?: NodeJS.ProcessEnv;
+  /** 翻译记忆（创作辅助集成设计 §2.6）：整篇新译时查用户其他视频里的已有译文；不给时不查。 */
+  translationMemory?: TranslationMemory;
   /**
    * 发布页组件（音乐模型包的 audio.cpp 引擎）的下载镜像：`BAOCUT_TOOLS_ENDPOINT` 或设置 `tools.downloadEndpoint`，做计划时取一次；
    * 不合法时抛出（`TOOL_DOWNLOAD_SOURCE`）。不给时用官方地址。
@@ -221,6 +230,8 @@ export async function openModelJobs(options: ModelJobsOptions): Promise<ModelJob
     toolsDir: path.join(home.root, 'tools'),
     engineOverride: toolOverrides[AUDIO_CPP_CLI_ENV] || null,
     workerAvailable: () => options.worker() !== null,
+    // LiteRT-LM 的引擎缓存（embedding 模型包）：在缓存目录里，删了下次加载重建。
+    engineCacheDir: path.join(home.cacheDir, 'litertlm'),
     ...(manifests ? { manifests } : {}),
     ...(testBundles ? { bundles: testBundles } : {}),
   });
@@ -241,6 +252,7 @@ export async function openModelJobs(options: ModelJobsOptions): Promise<ModelJob
     idleMs: options.idleMs,
     resources,
   });
+  const embedding = new LocalEmbeddingProvider({ catalog, worker: provider });
   // 本地音乐生成（§6.1）：audio.cpp 引擎每个任务一个进程，不经 Model Worker。
   const music = new LocalMusicProvider({
     catalog,
@@ -325,6 +337,7 @@ export async function openModelJobs(options: ModelJobsOptions): Promise<ModelJob
           selectText: (target) => services.selectText(target),
           speechWorker,
           ...(options.library ? { library: options.library } : {}),
+          ...(options.translationMemory ? { memory: options.translationMemory } : {}),
           artifacts: jobs.artifacts,
         }),
         grants,
@@ -352,6 +365,7 @@ export async function openModelJobs(options: ModelJobsOptions): Promise<ModelJob
               selectText: (target) => services.selectText(target),
               speechWorker,
               ...(options.library ? { library: options.library } : {}),
+              ...(options.translationMemory ? { memory: options.translationMemory } : {}),
               artifacts: jobs.artifacts,
             },
             speech: dubSpeech({ services, grants, library: options.library }),
@@ -486,7 +500,7 @@ export async function openModelJobs(options: ModelJobsOptions): Promise<ModelJob
     await usage.flush();
     await store.flush();
   };
-  return { catalog, provider, services, jobs, pipelines, topic, modelsTopic, installs, dir, grants, voiceCloner, flushUsage };
+  return { catalog, provider, embedding, services, jobs, pipelines, topic, modelsTopic, installs, dir, grants, voiceCloner, flushUsage };
 }
 
 /**

@@ -41,6 +41,11 @@
  * 默认列出全部文生图 family，控制文件的 `imageFamilies` 可以收窄。生图按请求的宽高写一张渐变的 RGB PNG，故障标记
  * `flat-output` 写一整片纯色，`slow` 每步 200 ms。
  *
+ * 本机 embedding（`embed.run`，§2.5.6）：`capabilities` 含 `embed` 时报告它与 `embeddingCapabilities`（family 默认
+ * `['embeddinggemma2-litert']`，控制文件的 `embeddingFamilies` 可以收窄）。每条文本按字符二元组哈希成 `outputSize` 维、归一化的
+ * 向量（字面相近 → 余弦高），base64 编码；`embed-too-long:<i>` 时第 i 条（从 0 数）报 `INPUT_TOO_LONG`，`slow` 时一批 200 ms，
+ * 运行期间状态是 `busy`。`record` 给出时参数同样追加到那个文件。
+ *
  * 本文件不引用仓库里的任何包：它作为独立脚本运行。
  */
 import crypto from 'node:crypto';
@@ -72,6 +77,7 @@ interface Control {
   separateFamilies?: string[];
   separateSeconds?: number;
   imageFamilies?: string[];
+  embeddingFamilies?: string[];
   readingsDropped?: unknown[];
   record?: string;
 }
@@ -177,6 +183,16 @@ async function handle(request: Request): Promise<void> {
           : [],
         separateFamilies: (control().capabilities ?? []).includes('separate') ? (control().separateFamilies ?? SEPARATE_FAMILIES) : [],
         imageFamilies: (control().capabilities ?? []).includes('image') ? (control().imageFamilies ?? IMAGE_FAMILIES) : [],
+        ...((control().capabilities ?? []).includes('embed')
+          ? {
+              embeddingCapabilities: {
+                families: control().embeddingFamilies ?? ['embeddinggemma2-litert'],
+                outputSizes: [128, 256, 512, 768],
+                maxBatch: 16,
+                maxInputTokens: 2048,
+              },
+            }
+          : {}),
       });
     case 'model.load': {
       if (state !== 'empty') return fail(id, 'ALREADY_LOADED', '已经加载了一个模型包');
@@ -214,6 +230,12 @@ async function handle(request: Request): Promise<void> {
       if (params.capability === 'image') return image(id, params);
       if (params.capability === 'diarize') return diarize(id, params);
       return params.capability === 'synthesize' ? synthesize(id, params) : run(id, params);
+    }
+    case 'embed.run': {
+      if (state !== 'ready') return fail(id, 'WORKER_BUSY', `Worker 状态是 ${state}`, true, { state });
+      const record = control().record;
+      if (record) fs.appendFileSync(record, `${JSON.stringify({ method, ...params })}\n`);
+      return embed(id, params);
     }
     case 'job.cancel':
       if (!job || job.jobId !== params.jobId) return fail(id, 'NOT_FOUND', '没有这个任务');
@@ -734,4 +756,37 @@ function fakePng(width: number, height: number, flat: boolean): Buffer {
 
 function stats(speechSeconds: number) {
   return { decodeMs: 1, vadMs: 1, asrMs: 1, alignMs: 0, speechSeconds };
+}
+
+async function embed(id: number, params: Record<string, unknown>): Promise<void> {
+  const texts = params.texts as string[];
+  const size = Number(params.outputSize);
+  const started = Date.now();
+  state = 'busy';
+  job = { jobId: String(params.requestId), phase: 'embedding', startedAt: new Date().toISOString(), cancelled: false };
+  try {
+    if (fault('slow')) await sleep(200);
+    const tooLong = faultArg('embed-too-long');
+    if (tooLong !== null && Number(tooLong) < texts.length) {
+      return fail(id, 'INPUT_TOO_LONG', 'the text is longer than the model input limit', false, { index: Number(tooLong) });
+    }
+    const vectors = texts.map((text) => {
+      const v = new Float32Array(size);
+      const chars = [...text];
+      for (let i = 0; i + 1 < chars.length; i++) {
+        const h = crypto.createHash('md5').update(chars[i]! + chars[i + 1]!).digest();
+        v[h.readUInt32LE(0) % size]! += h[4]! & 1 ? 1 : -1;
+      }
+      if (chars.length < 2) v[0] = 1;
+      let norm = 0;
+      for (const x of v) norm += x * x;
+      norm = Math.sqrt(norm) || 1;
+      for (let i = 0; i < size; i++) v[i]! /= norm;
+      return Buffer.from(v.buffer).toString('base64');
+    });
+    return respond(id, { vectors, dims: size, device: 'cpu', elapsedMs: Date.now() - started });
+  } finally {
+    state = 'ready';
+    job = null;
+  }
 }

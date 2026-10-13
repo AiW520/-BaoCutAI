@@ -101,6 +101,8 @@ Space / 编辑器 / CLI / AI 智能体
 
 **产品主后端：** LiteRT-LM，优先使用分发的量化包。在现有 Rust Model Worker 中增加 `litert-lm` 后端，C++ shim 通过窄 C ABI 提供创建/销毁/批量编码/能力探测。不要重写 Gemma 4 网络，也不因为 BaoCut 已有 Candle/MLX 就假定它们已支持这个模型。
 
+**实现（2026-10-13 修订）：** 不写 C++ shim。LiteRT-LM 0.18.0 发布页自带 C API（`CLiteRTLM_mac.xcframework`，`litert_lm_embedding_engine_*`），Model Worker 的 `litert-lm` 后端在运行期 `dlopen` 它（libloading），构建时不链接；库是共享组件 `litertlm-runtime`，随模型包从发布页下载、校验 SHA-256（[Model Worker 协议 §4.5](../../spec/model-worker-protocol-spec.md)）。C API 自己捕获 C++ 异常、返回空指针与线程局部的错误文字，所有权按 G0 记录的调用顺序（`tools/embedding-eval/README.md`）。G0 已验证 C API 与 Python 轮子逐向量相同。
+
 LiteRT-LM 的实际 C++ `EmbeddingEngine` 提供 `ComputeEmbedding`、`ComputeEmbeddingBatch`，返回 embedding、input_length、truncated_length 和 num_chunks；配置提供输出维度、归一化和输入溢出处理。[S5][R11]
 
 如 LiteRT 的链接依赖阻塞既有 Model Worker 发布，工程退路是独立的 `bcut-embedding-worker` 可执行文件，使用同一 private worker 合同和同一管理器。不要顺势做出另一套 daemon、任务系统或公开 HTTP 服务。
@@ -133,6 +135,8 @@ WorkerHello     += embeddingCapabilities（按协商版本可选）
 | Windows x64：Intel/AMD | CPU 基线；每类 GPU 单测 | 不宣传所有显卡通用加速 | CPU 回退 |
 | Linux x64/ARM64 | 分构建目标验收 | CPU 基线、GPU 按目标矩阵 | 不与 Windows/macOS 共用兼容性结论 |
 | BaoCut Web 客户端 | 复用连接的 Runtime | 不在浏览器重复建立整库索引 | 显示 Runtime 能力状态 |
+
+**首版实际（2026-10-13）：** 只有 macOS Apple Silicon 登记了 `litertlm-runtime` 库包（CPU）。上游 0.18.0 没有 Windows、Linux 的 C 库；macOS Intel 的 Model Worker 构建暂不带 `backend-litert`，所以这些平台的文本嵌入模型包显示 `unsupported`，语义检索退回字面。GPU 等 §4.4 的自检之后再开。发布构建启用 hardened runtime 时，`dlopen` 别家签名的库要给 Model Worker 关掉库验证（`com.apple.security.cs.disable-library-validation`），这是发布前待定的签名事项。
 
 官方提供跨平台 LiteRT 能力不等于 BaoCut 的这些构建已验证。[S4] 发布前固定 SDK tag/commit、模型 revision、每个文件的 SHA-256、许可证、目标架构、系统最低要求和 GPU delegate 文件。不把开发机上的自动选择行为当作发布合同。
 
@@ -421,8 +425,9 @@ API 只接受已有授权素材引用，不接受让智能体随意传任意磁�
 | `space.indexBuild` | 用户明确启用/重建指定范围与通道 | 返回现有 Job ID |
 | `space.resolveSearchHit` | 当前版本重新解析锚点 | 异步只读 |
 | `space.createSearchSelection` | 固定已选择候选与版本，供编辑/问答 | 使用现有 Artifact 机制 |
-| `space_search_v2` | 智能体检索 | 不写工程 |
-| `space_resolve_search_hit` | 智能体读取可用当前区间 | 不写工程 |
+| `space_search_v2` | 智能体检索；在当前时间线上的命中带 `href`（`/videos/<videoId>?t=<秒>`，回答里照抄成链接，产品设计 §3.2.2） | 不写工程 |
+| `space_resolve_search_hit` | 智能体读取可用当前区间；resolved 时带第一段的 `href` | 不写工程 |
+| `space.relatedVideos` | 查看框里讲相近内容的视频（集成设计 §2.4）：本视频讲话向量的平均在别的视频文字索引里逐部取最近一段，按阈值 `related` 过滤；语义不可用时退回名字相近并给原因码 | 只读查询，打开查看框时调用 |
 
 高频搜索不为每次按键创建持久 Job；冷启动 embedding 的临时调用复用资源租约和取消机制。全库建索引、深度分析、B-roll/短片提案属于持久 Job。
 
@@ -609,7 +614,7 @@ PR 3 和 PR 4 期间不改旧索引表结构。PR 5 之前不把 API 原型宣�
 
 ## 21. 开发前必须落实、但不阻塞本文设计的事项
 
-**前缀与后端兼容性：** 已发现上游文档差异，尚需 G0 实验验证。**SDK 锁定：** 已看到 LiteRT-LM embedding API，不代表每个目标平台的选定发布包完成集成。**视频接口：** 原生 clip 输入或逐帧降级需由适配器测试决定。**性能：** 文中延迟/内存是验收设定，不是 BaoCut 实测。**时间映射：** 所有复杂编辑必须通过当前引擎能力或明确返回不支持。
+**前缀与后端兼容性：** G0 已验证（§5.2、§18.3），锁定模型卡配对。**SDK 锁定：** macOS Apple Silicon 已用 LiteRT-LM 0.18.0 的 C API 完成集成（§4.1、§4.3）；其他平台等上游的 C 库，Intel Mac 要另出带 `backend-litert` 的构建；发布签名的库验证待定。**视频接口：** 原生 clip 输入或逐帧降级需由适配器测试决定。**性能：** 文中延迟/内存是验收设定，不是 BaoCut 实测。**时间映射：** 所有复杂编辑必须通过当前引擎能力或明确返回不支持。
 
 这些是开发验收事项，不是要求用户重新选择架构的前置问题。
 

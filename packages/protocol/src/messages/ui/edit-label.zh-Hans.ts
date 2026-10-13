@@ -70,6 +70,7 @@ export const zhHans: EditLabelMessages = {
   editTranslation: '改写译文',
   markTranslationStale: '标为过期',
   clearTranslationStale: '去掉过期标记',
+  unifyGlossaryTerms: '统一为术语表译法',
   cutText: '在文稿里剪掉',
   restoreText: '恢复剪掉的内容',
   editTranscript: '改原文',

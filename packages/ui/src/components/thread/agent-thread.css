@@ -178,6 +178,32 @@
   text-decoration: underline;
   text-underline-offset: 2px;
 }
+/* 回答里的视频某一刻（video-time-link.tsx；原型 `.wrtime`）：夹在正文里的蓝底时间码，点了跳到那一刻。 */
+.bc-amd .bc-amd-time {
+  display: inline;
+  height: auto;
+  min-height: 0;
+  min-width: 0;
+  padding: 0 4px;
+  margin: 0 2px;
+  border-radius: 4px;
+  vertical-align: baseline;
+  background: var(--bc-at-time-bg);
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+  line-height: inherit;
+  color: var(--bc-at-link-hover);
+  cursor: pointer;
+}
+.bc-amd .bc-amd-time * {
+  font: inherit;
+  color: inherit;
+  padding: 0;
+  margin: 0;
+}
+.bc-amd .bc-amd-time:hover {
+  background: var(--bc-at-time-bg-hover);
+}
 
 /* ---------- 工作记录 ---------- */
 /* 两段文字之间的那一行摘要（steps-group.tsx）：灰字 + 箭头，不放图标，字号跟正文；悬停与点开时字色加深。

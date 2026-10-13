@@ -8,8 +8,9 @@
 //!
 //! 识别、合成、分离与文生图共用这套线程模型：模型包带 `tts` 组件时加载出来的是一只 TTS 引擎（[`Loaded::Synthesis`]），
 //! 带 `separator` 组件时是分离模型（[`Loaded::Separation`]），带 `image` 组件时是一只图像引擎（[`Loaded::Image`]），
-//! 只带 `segmentation` 与 `speaker` 时是说话人区分（[`Loaded::Diarization`]）；`job.run` 按 `capability` 分到
-//! [`transcribe::run`]、[`synthesize::job::run`]、[`separate::job::run`]、[`image::job::run`] 或 [`diarize::run`]。
+//! 只带 `segmentation` 与 `speaker` 时是说话人区分（[`Loaded::Diarization`]），带 `embedding` 组件时是一只文本嵌入引擎
+//! （[`Loaded::Embedding`]）；`job.run` 按 `capability` 分到 [`transcribe::run`]、[`synthesize::job::run`]、
+//! [`separate::job::run`]、[`image::job::run`] 或 [`diarize::run`]，`embed.run` 交给 [`embed::run`]。
 
 use std::io::{BufWriter, Stdout, Write};
 use std::panic::{AssertUnwindSafe, catch_unwind};
@@ -22,6 +23,7 @@ use std::time::{SystemTime, UNIX_EPOCH};
 use model_runtime::backend::{self, Loaded, ModelPhase};
 use model_runtime::bundle::{self, VerifiedBundle};
 use model_runtime::diarize;
+use model_runtime::embed::{self, EmbedRunParams};
 use model_runtime::image;
 use model_runtime::priority;
 use model_runtime::protocol::{
@@ -149,6 +151,7 @@ enum Work {
     Separate { id: Value, params: Box<SeparateRunParams> },
     Image { id: Value, params: Box<ImageRunParams> },
     Diarize { id: Value, params: Box<DiarizeRunParams> },
+    Embed { id: Value, params: Box<EmbedRunParams> },
 }
 
 struct Inference {
@@ -169,6 +172,7 @@ impl Inference {
                 | Work::Separate { id, .. }
                 | Work::Image { id, .. }
                 | Work::Diarize { id, .. } => (id.clone(), "job.run"),
+                Work::Embed { id, .. } => (id.clone(), "embed.run"),
             };
             if catch_unwind(AssertUnwindSafe(|| self.handle(item))).is_err() {
                 panic_exit(&self.output, &id, method);
@@ -231,9 +235,12 @@ impl Inference {
                         transcribe::run(model.as_mut(), bundle, &params, &self.shared.cancel, &mut sink)
                             .and_then(|result| serde_json::to_value(result).map_err(serialize_failed))
                     }
-                    (Some(Loaded::Synthesis(_) | Loaded::Separation(_) | Loaded::Image(_) | Loaded::Diarization(_)), _) => {
-                        Err(capability_not_loaded("transcribe"))
-                    }
+                    (
+                        Some(
+                            Loaded::Synthesis(_) | Loaded::Separation(_) | Loaded::Image(_) | Loaded::Diarization(_) | Loaded::Embedding(_),
+                        ),
+                        _,
+                    ) => Err(capability_not_loaded("transcribe")),
                     _ => Err(ErrorBody::new(codes::WORKER_BUSY, "no model is loaded")),
                 };
                 self.finish_job(&id, response);
@@ -251,9 +258,9 @@ impl Inference {
                         }
                         result.and_then(|result| serde_json::to_value(result).map_err(serialize_failed))
                     }
-                    Some(Loaded::Transcription(_) | Loaded::Separation(_) | Loaded::Image(_) | Loaded::Diarization(_)) => {
-                        Err(capability_not_loaded("synthesize"))
-                    }
+                    Some(
+                        Loaded::Transcription(_) | Loaded::Separation(_) | Loaded::Image(_) | Loaded::Diarization(_) | Loaded::Embedding(_),
+                    ) => Err(capability_not_loaded("synthesize")),
                     None => Err(ErrorBody::new(codes::WORKER_BUSY, "no model is loaded")),
                 };
                 self.finish_job(&id, response);
@@ -271,9 +278,9 @@ impl Inference {
                         }
                         result.and_then(|result| serde_json::to_value(result).map_err(serialize_failed))
                     }
-                    Some(Loaded::Transcription(_) | Loaded::Synthesis(_) | Loaded::Image(_) | Loaded::Diarization(_)) => {
-                        Err(capability_not_loaded("separate"))
-                    }
+                    Some(
+                        Loaded::Transcription(_) | Loaded::Synthesis(_) | Loaded::Image(_) | Loaded::Diarization(_) | Loaded::Embedding(_),
+                    ) => Err(capability_not_loaded("separate")),
                     None => Err(ErrorBody::new(codes::WORKER_BUSY, "no model is loaded")),
                 };
                 self.finish_job(&id, response);
@@ -291,9 +298,13 @@ impl Inference {
                         }
                         result.and_then(|result| serde_json::to_value(result).map_err(serialize_failed))
                     }
-                    Some(Loaded::Transcription(_) | Loaded::Synthesis(_) | Loaded::Separation(_) | Loaded::Diarization(_)) => {
-                        Err(capability_not_loaded("image"))
-                    }
+                    Some(
+                        Loaded::Transcription(_)
+                        | Loaded::Synthesis(_)
+                        | Loaded::Separation(_)
+                        | Loaded::Diarization(_)
+                        | Loaded::Embedding(_),
+                    ) => Err(capability_not_loaded("image")),
                     None => Err(ErrorBody::new(codes::WORKER_BUSY, "no model is loaded")),
                 };
                 self.finish_job(&id, response);
@@ -311,10 +322,31 @@ impl Inference {
                         }
                         result.and_then(|result| serde_json::to_value(result).map_err(serialize_failed))
                     }
-                    (Some(Loaded::Transcription(_) | Loaded::Synthesis(_) | Loaded::Separation(_) | Loaded::Image(_)), _) => {
-                        Err(capability_not_loaded("diarize"))
-                    }
+                    (
+                        Some(
+                            Loaded::Transcription(_)
+                            | Loaded::Synthesis(_)
+                            | Loaded::Separation(_)
+                            | Loaded::Image(_)
+                            | Loaded::Embedding(_),
+                        ),
+                        _,
+                    ) => Err(capability_not_loaded("diarize")),
                     _ => Err(ErrorBody::new(codes::WORKER_BUSY, "no model is loaded")),
+                };
+                self.finish_job(&id, response);
+            }
+            Work::Embed { id, params } => {
+                let response = match self.model.as_mut() {
+                    Some(Loaded::Embedding(loaded)) => {
+                        let result = embed::run(loaded.engine.as_mut(), &params);
+                        if let Some(snapshot) = (loaded.memory)() {
+                            self.shared.status().memory = Some(snapshot);
+                        }
+                        result.and_then(|result| serde_json::to_value(result).map_err(serialize_failed))
+                    }
+                    Some(_) => Err(capability_not_loaded("embed")),
+                    None => Err(ErrorBody::new(codes::WORKER_BUSY, "no model is loaded")),
                 };
                 self.finish_job(&id, response);
             }
@@ -453,6 +485,7 @@ impl Worker {
             "model.load" => self.load(id, params).err().map(Err),
             "model.unload" => self.unload(id, params),
             "job.run" => self.run(id, params).err().map(Err),
+            "embed.run" => self.embed(id, params).err().map(Err),
             _ => Some(Err(ErrorBody::new(codes::UNKNOWN_METHOD, format!("unknown method: {method}")))),
         }
     }
@@ -492,7 +525,12 @@ impl Worker {
         if !image_families.is_empty() {
             capabilities.push("image");
         }
-        Ok(json!({
+        // 文本嵌入（`embed.run`，§2.5.6）：这个构建编进了 LiteRT-LM 后端才声明；没有时 `embeddingCapabilities` 省略。
+        let embedding_capabilities = embed::hello_capabilities();
+        if embedding_capabilities.is_some() {
+            capabilities.push("embed");
+        }
+        let mut hello = json!({
             "workerVersion": WORKER_VERSION,
             "contractVersion": CONTRACT_VERSION,
             "pid": std::process::id(),
@@ -502,7 +540,11 @@ impl Worker {
             "synthesizeFamilies": synthesize_families,
             "separateFamilies": separate_families,
             "imageFamilies": image_families,
-        }))
+        });
+        if let Some(embedding) = embedding_capabilities {
+            hello["embeddingCapabilities"] = embedding;
+        }
+        Ok(hello)
     }
 
     fn status_value(&self) -> Value {
@@ -632,6 +674,30 @@ impl Worker {
         self.shared.cancel.store(false, Ordering::SeqCst);
         drop(status);
         self.forward(work);
+        Ok(())
+    }
+
+    /// `embed.run`（协议规范 §2.5.6）：参数先按形状检查，再检查状态；`worker.status` 的 `job.jobId` 报 `requestId`。
+    /// 一批至多 16 条，在推理线程上一次算完，中途不响应取消（`job.cancel` 照常确认，结果照常返回，由 Runtime 丢弃）。
+    fn embed(&self, id: &Value, params: Value) -> Result<(), ErrorBody> {
+        let run: EmbedRunParams = parse_params(params)?;
+        run.validate()?;
+        let mut status = self.shared.status();
+        if status.state != State::Ready {
+            return Err(state_error(codes::WORKER_BUSY, "the worker is not ready for a job", status.state));
+        }
+        status.state = State::Busy;
+        status.job = Some(JobInfo {
+            job_id: run.request_id.clone(),
+            phase: "embedding".into(),
+            started_at: utc_now(),
+        });
+        self.shared.cancel.store(false, Ordering::SeqCst);
+        drop(status);
+        self.forward(Work::Embed {
+            id: id.clone(),
+            params: Box::new(run),
+        });
         Ok(())
     }
 

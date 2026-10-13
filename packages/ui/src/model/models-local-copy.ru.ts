@@ -28,6 +28,7 @@ export const ru: ModelsLocalMessages = {
     separate: "Разделение",
     music: 'Музыка',
     diarize: "Разделение говорящих",
+    embed: "Семантический индекс",
   },
   auto: "Автоматически",
   notInstalled: (name) => `${name} (не установлено)`,

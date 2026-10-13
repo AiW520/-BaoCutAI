@@ -40,7 +40,12 @@
     const runner = window.useToolRunner(STEP[id], id);
     /* 第 196 轮：找可剪的口——三类口各自可勾；刷新过期译文——两类来源各自可勾
        （原文改过的 / 原文被剪切的，后者按剪口覆盖层实数，从文稿剪辑条过来时只勾它）。 */
-    const [opts, setOpts] = useState({fillers: true, pauses: true, repeats: true});
+    const [opts, setOpts] = useState({fillers: true, pauses: true, repeats: true, retakes: true});
+    /* 本机语义（embedding-integration §2.3、§2.5）：章节边界、润色的术语候选；没装模型时各自退回并写明 */
+    const SEMT = window.BC_SEMTOOLS, TOPIC = window.BC_WRTOPIC;
+    const [boundary, setBoundary] = useState(null);
+    const [termCand, setTermCand] = useState(() => window.BC_SEMSTATE.get().terms !== false);
+    const bnd = TOPIC.effectiveBoundary(boundary, window.BC_SEMANTIC.status(window.BC_SEMSTATE.get()));
     /* 2026-09-20：润色顺手按术语库纠正专有名词（§15.10）。它不是独立工具——术语命中要和
        错字、标点一起看，逐条复核和撤销才在同一处；独立一遍等于让人把同一篇文稿读两次。 */
     const gl = window.useGlossary(ctx.proj.id, {kind: 'asr', from: D.srcLang.code});
@@ -118,6 +123,7 @@
     /* 模板：意图句（范围、勾选项折在里面）+ 几行固定约束，预填进提示词框 */
     const intentBase = {kind: id, scope: eff ? eff.label : null, edited: si.edited, cut: si.cut, extra: [
       id === 'chapters' && pre ? '先润色并分段，再生成章节' : null,
+      id === 'chapters' && bnd === 'topic' ? '只在本机检测到的话题转折处分章，可以合并不可新增' : null,
       asr ? `用 ${model.name}` : null,
       sp && sp.step ? '转写后识别说话人' : null,
       ...(id === 'cleanup' ? AICUT.cleanupExtra(opts) : []),
@@ -294,6 +300,8 @@
                 {id === 'polish' ? (
                   <window.GlossaryOption gl={gl} on={useTerms} onChange={setUseTerms} kind="polish" />
                 ) : null}
+                {id === 'polish' ? <SEMT.TermOption on={termCand} onChange={setTermCand} /> : null}
+                {id === 'chapters' ? <TOPIC.BoundaryRow value={boundary} onChange={setBoundary} /> : null}
                 {id === 'cleanup' ? <AICUT.CleanupOptions opts={opts} onChange={setOpts} /> : null}
                 {staleDirect ? <AICUT.StaleTranslationRow langs={transDone} value={staleLang} onChange={setStaleLang} />
                   : id === 'stale' ? <AICUT.StaleOptions pick={stalePick} onChange={setStalePick} edited={3} impact={staleIm} /> : null}
@@ -385,7 +393,9 @@
                     <div className="dift">{rev[d.id] ? d.before : d.after}</div>
                   </div>
                 ))}
-                {useTerms ? <window.GlossaryHarvest gl={gl} /> : null}
+                {termCand ? <SEMT.TermCandidates ctx={ctx} gl={gl} /> : null}
+                {/* 一张「发现术语」清单（§2.5）：库里没有的疑似专名 + 写法不一致的专名 */}
+                {useTerms || termCand ? <window.GlossaryHarvest gl={gl} cands={useTerms} variants={termCand ? SEMT.harvestVariants() : null} /> : null}
               </>
             ) : id === 'chapters' ? (
               <>
@@ -400,7 +410,7 @@
                 <SecHead>分布 · 旧 → 新</SecHead>
                 <div className="distb"><i style={{flex: 42, background: 'var(--gray-400)'}} /><i style={{flex: 58, background: 'var(--gray-500)'}} /></div>
                 <div className="distb"><i style={{flex: 35, background: 'var(--blue-900)'}} /><i style={{flex: 42, background: 'var(--blue-600)'}} /><i style={{flex: 23, background: 'var(--blue-400)'}} /></div>
-                <div className="hint">2 章 → {ctx.chapters.length} 章 · 边界按段落话题重新聚合</div>
+                <div className="hint">2 章 → {ctx.chapters.length} 章 · {bnd === 'topic' ? '边界由本机按话题检测，模型只命名；重跑只换标题' : '边界与标题都由模型决定'}</div>
               </>
             ) : id === 'retranscribe' ? (
               <>
@@ -438,6 +448,7 @@
                     <Btn variant="secondary" size="s" onClick={toDoc}>去文稿逐条看</Btn>
                     {sug.length ? <Btn variant="accent" size="s" onClick={ctx.cutOps.acceptAll}>全部接受</Btn> : null}
                   </div>
+                  {opts.retakes ? <SEMT.RetakeGroups ctx={ctx} /> : null}
                 </div>
               );
             })() : (

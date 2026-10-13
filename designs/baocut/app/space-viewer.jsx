@@ -82,6 +82,48 @@
 
   /* S2 的 Dialog 会把 children 在标题区、正文区、底栏各渲染一遍（每处只露自己那个 slot），
      所以这里不能有自己的 state——编辑态放在外面的 SpaceViewer 里，三处共用。 */
+  /** 讲相近内容的视频（embedding-integration-design §2.4 P2）：打开查看框时才算，只列用户自己的视频；一行一部，
+      下面一行灰字是那部视频里最接近的一句与时间（同搜索结果卡的写法）。不给分数。没装模型或这部视频还没建好索引时
+      退回名字相近，顶上写明（§2.13）；点一行换成那部视频的查看框。纯逻辑在 model-space-search.js `related`。 */
+  function MovieRelated({it, movies, onSwitch}) {
+    const R = window.RSP;
+    const Q = window.BC_SPACE_SEARCH;
+    const D = window.BC_DATA;
+    const app = useApp();
+    const [, sem] = window.BC_SEMSTATE.useSemantic();
+    const r = Q.related(it.id, {items: app.spaceItems, corpus: D.semantic.corpus, concepts: D.semantic.concepts, status: sem});
+    const note = Q.relatedNote(r);
+    const mmss = (t) => window.BC_WRCITES.mmss(t);
+    const line = (x) => (x.why ? `${mmss(x.why.t)} · ${x.why.text}` : `名字里都有「${x.shared}」`);
+    return (
+      <section className="spv__files" aria-label="讲相近内容的视频">
+        <h3 className="spv__files-h">讲相近内容的视频{r.rows.length ? <span className="spv__files-n">{r.rows.length + r.more}</span> : null}</h3>
+        {note ? (
+          <div className={cx('semnote', note.tone === 'notice' && 'semnote--notice')}>
+            <Ic n={note.tone === 'notice' ? 'refresh' : 'info'} className="ic--14" /><span className="semnote__x">{note.text}</span>
+            {note.settings && window.BC_SURFACE.ai ? <BCAction className="tsetup__lnk" onClick={() => app.go({r: 'settings', sec: 'semantic'})}>去设置</BCAction> : null}
+          </div>
+        ) : null}
+        {r.rows.length ? (
+          <R.GridList aria-label="讲相近内容的视频" items={r.rows.map((x) => Object.assign({id: x.video}, x))} className="spv__files-list" onAction={(k) => onSwitch(String(k))}>
+            {(x) => {
+              const target = app.spaceItems.find((i) => i.id === x.video);
+              return (
+                <R.GridListItem id={x.video} textValue={x.name} className="spv__file">
+                  {target ? <window.SpaceItemPreview it={target} movie={movies[x.video]} small /> : null}
+                  <span className="spv__file-body">
+                    <span className="spv__file-t">{x.name}</span>
+                    <span className="spv__file-d" title={line(x)}>{line(x)}</span>
+                  </span>
+                </R.GridListItem>
+              );
+            }}
+          </R.GridList>
+        ) : <p className="spv__hint">{r.by === 'name' ? '没有名字相近的视频' : '没找到讲相近内容的视频'}</p>}
+      </section>
+    );
+  }
+
   function ViewerBody({it, movies, dirs, close, onSwitch, editing, setEditing, text, setText, source, setSource}) {
     const app = useApp();
     const R = window.RSP;
@@ -167,6 +209,7 @@
             )}
             {shorts.length ? <MovieShorts shorts={shorts} movies={movies} onSwitch={onSwitch}
               onList={() => { close(); app.go({r: 'projects', from: it.id}); }} /> : null}
+            {it.kind === 'movie' ? <MovieRelated it={it} movies={movies} onSwitch={onSwitch} /> : null}
             {files.length ? <MovieFiles files={files} onSwitch={onSwitch} /> : null}
             <dl className="spv__facts">
               <Fact k="来源">

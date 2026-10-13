@@ -31,8 +31,11 @@ export function localMusicModels(view: ModelCapabilitiesView | null): Map<string
   return new Map((local?.models ?? []).map((m) => [m.modelId, m]));
 }
 
-/** 模型包属于哪一类：转写、对齐与说话人区分都是语音识别，合成是语音合成，文生图是图像生成，分离是音源分离。 */
-export function bundleCategory(bundle: Pick<ModelBundleStatus, 'capability'>): ModelCategory {
+/**
+ * 模型包属于哪一类：转写、对齐与说话人区分都是语音识别，合成是语音合成，文生图是图像生成，分离是音源分离。文本嵌入（`embed`）
+ * 不在模型分类里（它属于设置里的「语义索引」），是 `null`：模型页的列表不列它。
+ */
+export function bundleCategory(bundle: Pick<ModelBundleStatus, 'capability'>): ModelCategory | null {
   switch (bundle.capability) {
     case 'transcribe':
     case 'align':
@@ -46,6 +49,8 @@ export function bundleCategory(bundle: Pick<ModelBundleStatus, 'capability'>): M
       return 'music';
     case 'separate':
       return 'sep';
+    case 'embed':
+      return null;
   }
 }
 
@@ -163,7 +168,7 @@ export function bundleChips(bundle: ModelBundleStatus, isDefault: boolean, ownFi
   return chips;
 }
 
-const BACKEND_LABEL: Record<ModelBundleStatus['backend'], string> = { mlx: 'MLX', coreml: 'Core ML', candle: 'Candle', ggml: 'GGML', 'audio-cpp': 'audio.cpp' };
+const BACKEND_LABEL: Record<ModelBundleStatus['backend'], string> = { mlx: 'MLX', coreml: 'Core ML', candle: 'Candle', ggml: 'GGML', 'audio-cpp': 'audio.cpp', 'litert-lm': 'LiteRT-LM' };
 
 /** 一行模型包的事实：用途 · 后端 · 设备 · 补充说明。 */
 export function bundleFacts(bundle: ModelBundleStatus): string {

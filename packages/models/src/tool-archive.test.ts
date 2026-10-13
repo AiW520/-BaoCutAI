@@ -182,6 +182,33 @@ describe('extractToolArchive', () => {
     if (process.platform !== 'win32') expect((await fs.stat(path.join(dest, 'audiocpp_cli.exe'))).mode & 0o111).not.toBe(0);
   });
 
+  it('root：只解开包内那个目录下直接的普通文件（xcframework 里的动态库）', async () => {
+    const archive = path.join(dir, 'x.zip');
+    const root = 'CLiteRTLM_mac.xcframework/macos-arm64_x86_64';
+    await fs.writeFile(
+      archive,
+      zip([
+        { name: 'CLiteRTLM_mac.xcframework/', unixMode: 0o040755 },
+        { name: 'CLiteRTLM_mac.xcframework/Info.plist', body: 'plist' },
+        { name: `${root}/`, unixMode: 0o040755 },
+        { name: `${root}/libCLiteRTLM_mac.dylib`, body: 'dylib'.repeat(50), deflate: true, unixMode: 0o100555 },
+        { name: `${root}/Headers/engine.h`, body: 'header' },
+        { name: `${root}-other/evil.dylib`, body: 'no' },
+        { name: `${root}/../escape.dylib`, body: 'no' },
+      ]),
+    );
+    const names = await extractToolArchive(archive, { format: 'zip', skip: [], root }, dest);
+    expect(names).toEqual(['libCLiteRTLM_mac.dylib']);
+    expect(await fs.readFile(path.join(dest, 'libCLiteRTLM_mac.dylib'), 'utf8')).toBe('dylib'.repeat(50));
+    expect(rootEntryName(`${root}/a.dylib`, `${root}/`)).toBe('a.dylib');
+    expect(rootEntryName('a.dylib', root)).toBeNull();
+    const tarArchive = path.join(dir, 'x.tar.gz');
+    await fs.writeFile(tarArchive, tarGz([{ name: 'pkg/lib/liblitert.so', body: 'so' }, { name: 'pkg/README', body: 'r' }]));
+    const tarDest = path.join(dir, 'tar-out');
+    await fs.mkdir(tarDest);
+    expect(await extractToolArchive(tarArchive, { format: 'tar.gz', skip: [], root: 'pkg/lib' }, tarDest)).toEqual(['liblitert.so']);
+  });
+
   it('zip：不是 zip、或根目录没有文件时报错', async () => {
     await fs.writeFile(path.join(dir, 'n.zip'), 'not a zip at all, definitely not');
     await expect(extractToolArchive(path.join(dir, 'n.zip'), { format: 'zip', skip: [] }, dest)).rejects.toBeInstanceOf(ToolArchiveError);

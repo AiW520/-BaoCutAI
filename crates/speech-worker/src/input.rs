@@ -38,6 +38,34 @@ pub struct TranslateInput {
     /// 就地刷新时要重译的句子 ID（字幕与翻译核心的句子）；底稿里别的单元原样写回。
     #[serde(default)]
     pub sentences: Option<Vec<Id>>,
+    /// 翻译记忆（创作辅助集成设计 §3.7）：沿用的译句预先填进译文表、不再送翻（照样对齐）；参考附在送翻的提示里。就地刷新时不给。
+    #[serde(default)]
+    pub memory: Option<Memory>,
+}
+
+#[derive(Debug, Default, Deserialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct Memory {
+    #[serde(default)]
+    pub reuse: Vec<MemoryReuse>,
+    #[serde(default)]
+    pub references: Vec<MemoryReference>,
+}
+
+/// 原文规范化后相同的句子：沿用这句已有的译文。
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct MemoryReuse {
+    pub sentence_id: Id,
+    pub text: String,
+}
+
+/// 语义相近的已有译句：只作参考。
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct MemoryReference {
+    pub source: String,
+    pub target: String,
 }
 
 #[derive(Debug, Deserialize)]

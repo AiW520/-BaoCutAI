@@ -164,16 +164,20 @@
     const [pop, setPop] = useState(false);
     const put = (pack) => {
       app.setGlossary((list) => list.map((p) => (p.id === pack.id
-        ? {...p, updated: '刚刚', terms: [...p.terms, {id: 'gt' + Date.now(), source: cand.source, variants: []}]}
+        ? {...p, updated: '刚刚', terms: [...p.terms, {id: 'gt' + Date.now(), source: cand.source, variants: cand.variants || []}]}
         : p)));
       setPop(false);
       onDone();
-      app.toast(`已收进「${pack.name}」· 以后转录和润色都认得它`, 'positive');
+      app.toast(cand.variants && cand.variants.length
+        ? `已把「${cand.source}」收进「${pack.name}」· 误听写法：${cand.variants.join('、')}`
+        : `已收进「${pack.name}」· 以后转录和润色都认得它`, 'positive');
     };
     return (
       <div className="gls-harv__row">
-        <b className="t-ui t-strong">{cand.source}</b>
-        <span className="t-detail-xs grow">出现 {cand.count} 次 · 「{cand.sample}」</span>
+        <span className="gls-harv__main grow">
+          <b className="t-ui t-strong">{cand.source}</b>
+          <span className="t-detail-xs">{cand.line}</span>
+        </span>
         <Picker size="s" value="收进…" open={pop} popWidth={240}
           onClick={() => setPop((v) => !v)} onClose={() => setPop(false)}>
           <Menu>
@@ -186,18 +190,23 @@
     );
   }
 
-  function GlossaryHarvest({gl}) {
+  /** 润色结果里唯一一张「发现术语」清单（embedding-integration §2.5 反向）。
+      cands：库里没记过、这一篇反复出现的词（用了术语表才找）；variants：写法不一致的专名
+      （设置 › 语义索引的「术语候选」开着才给，BC_SEMTOOLS.harvestVariants）。两种合成一份
+      （BC_TOOL_SEMANTIC.harvestRows），一行也不预先收：用户逐行挑表收进，写法不一致的连误听写法一起收。 */
+  function GlossaryHarvest({gl, cands = true, variants = null}) {
     const [gone, setGone] = useState({});
-    const list = gl.harvest().filter((c) => !gone[c.source]);
+    const lib = gl.packs.filter((p) => G.kindOf(p) === 'asr').reduce((a, p) => a.concat(p.terms || []), []);
+    const list = window.BC_TOOL_SEMANTIC.harvestRows(cands ? gl.harvest() : [], variants, lib).filter((c) => !gone[c.key]);
     if (!list.length) return null;
     return (
       <div className="gls-harv">
         <b>库里还没有的疑似专名 {list.length} 个</b>
         <span className="t-detail-xs">
-          这一篇反复出现、但库里没记过的词。收一次，以后每部视频的转录和翻译都认得它。
+          这一篇反复出现、或写法前后不一、但库里没记过的词。收一次，以后每部视频的转录和翻译都认得它。
         </span>
         {list.map((c) => (
-          <HarvestRow key={c.source} cand={c} gl={gl} onDone={() => setGone((g) => ({...g, [c.source]: true}))} />
+          <HarvestRow key={c.key} cand={c} gl={gl} onDone={() => setGone((g) => ({...g, [c.key]: true}))} />
         ))}
       </div>
     );

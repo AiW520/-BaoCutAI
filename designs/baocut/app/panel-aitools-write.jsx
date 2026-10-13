@@ -6,7 +6,9 @@
    交给 Agent：发出提示词后这一页回到列表、那条会话到眼前，生成在会话里进行；写完的结果落进写作记录，
    再进这个工具（或 Agent 收尾时把人带回来，landed）就停在成稿上。只有直接调模型才在这一页画进度、出结果（§5.10）。
    结果页的「返回」回参数页（设置与提示词都在），参数页的「返回」才回列表。
-   已选用的标题、封面候选库放在模块级 store（按项目），写简介、做封面、工具列表读同一份。纯逻辑在 model-writing.js。 */
+   已选用的标题、封面候选库放在模块级 store（按项目），写简介、做封面、工具列表读同一份。纯逻辑在 model-writing.js。
+   2026-10-12（embedding-integration §2.1–2.3）：写总结、写博客的正文每段带出处、存成 Space 文档（panel-aitools-cites.jsx）；
+   范围多「按主题」与系列视频（panel-aitools-topic.jsx）。 */
 (function () {
   const {useState, useEffect, useRef} = React;
   const W = window.BC_WRITING;
@@ -181,31 +183,6 @@
     return <div className="hint hint--tight">{`原型只备了 ${W.DEMO_LANGS.map(nameOf).join(' / ')} 两份样张，这里显示${nameOf(dl.code)}的；真产品按你选的${nameOf(code)}写。`}</div>;
   }
 
-  /* ---------- Markdown 正文：点时间码跳播放头 ---------- */
-  function Inline({text, onSeek}) {
-    return W.mdInline(text).map((s, i) => (
-      s.k === 'b' ? <b key={i}>{s.v}</b>
-        : s.k === 'time' ? <BCAction key={i} className="wrtime" onClick={() => onSeek(s.s)}>{s.v}</BCAction>
-          : <React.Fragment key={i}>{s.v}</React.Fragment>
-    ));
-  }
-  function Md({text, onSeek}) {
-    const blocks = W.mdBlocks(text);
-    const out = [];
-    let list = null;
-    blocks.forEach((b, i) => {
-      if (b.type === 'li') {
-        if (!list) { list = []; out.push(<ul key={'ul' + i}>{list}</ul>); }
-        list.push(<li key={i}><Inline text={b.text} onSeek={onSeek} /></li>);
-        return;
-      }
-      list = null;
-      const Tag = b.type === 'quote' ? 'blockquote' : b.type === 'p' ? 'p' : b.type;
-      out.push(<Tag key={i}><Inline text={b.text} onSeek={onSeek} /></Tag>);
-    });
-    return <div className="wrmd">{out}</div>;
-  }
-
   /* ---------- 结果下面那排：复制 / 追问微调 / 再写一版 ---------- */
   function Actions({copies, onRefine, onAgain, onSetup}) {
     const app = useApp();
@@ -243,22 +220,33 @@
     const [st, set] = useWriting(pid);
     const s = useWrSettings(id, ctx);
     const runner = window.useToolRunner(STEP[id]);
-    const [tsc, setTsc] = useState(null);
+    /* Space 搜索的「用于写作」带来的句子：范围先落在「按主题」（useTopic 接走这几句） */
+    const [tsc, setTsc] = useState(() => {
+      const pre = (id === 'blog' || id === 'summary') && window.BC_WRTOPIC.peekPreset(ctx.proj.id);
+      return pre ? {k: 'topic', label: '按主题', count: pre.length} : null;
+    });
     const out = st.out[id] || null;
-    const [phase, setPhase] = useState(out ? 'done' : 'setup');
+    const [phase, setPhase] = useState(out && !(tsc && tsc.k === 'topic') ? 'done' : 'setup');
     const g = useGen(ctx, onBack);
     const picked = W.pickedTitle(st.titles);
     const [prompt, setPrompt] = useState(null);
     const [session, setSession] = useState(null);
     /* 写博客：关键帧插图默认不加；画面只有智能体取得到，直接调模型时这一项置灰、也不进模板 */
     const [frames, setFrames] = useState(false);
-    const framesOn = id === 'blog' && frames && !!runner.agent;
+    /* 2026-10-12（§2.3）：直接调模型也能加——装了多模态按段落内容挑，没装按出处时间取帧 */
+    const framesOn = id === 'blog' && frames;
+    const cited = id === 'blog' || id === 'summary';
+    /* 写简介也按主题选材（§2.2 第 5 条，2026-10-13）：范围与「按主题」两行同写总结；结果仍是一段简介 */
+    const topical = cited || id === 'desc';
+    const tp = window.BC_WRTOPIC.useTopic(ctx, tsc);
+    const [semSt] = window.BC_SEMSTATE.useSemantic();
+    const V = window.BC_WRCITE_VIEW;
     /* 模板：意图句（范围、发到哪、已选用的标题、插图折在里面）+ Markdown / 语言 / 篇幅等固定约束 */
     const extra = W.intentExtra(id, {platform: s.platform, picked: id === 'desc' ? picked : null, frames: framesOn});
-    if (tsc && tsc.k !== 'all') extra.unshift(`只看${tsc.label.replace(/^第 \d+ 章 · /, '')}`);
+    if (tsc && tsc.k !== 'all' && tsc.k !== 'topic') extra.unshift(`只看${tsc.label.replace(/^第 \d+ 章 · /, '')}`);
     const defaultText = P.template(id, AG.intentPrompt({kind: id, extra}, ctx.proj), {lang: nameOf(s.lang)});
-    const context = P.contextPack(id, {paras: tsc && tsc.k !== 'all' ? tsc.count : STEP[id].count, scope: tsc && tsc.k !== 'all' ? tsc.label : null,
-      chapters: (ctx.chapters || []).length, words: 6200});
+    const context = P.contextPack(id, Object.assign({paras: tsc && tsc.k !== 'all' ? tsc.count : STEP[id].count, scope: tsc && tsc.k !== 'all' ? tsc.label : null,
+      chapters: (ctx.chapters || []).length, words: 6200}, topical ? tp.context : null));
     const opts = (pl) => pl ? {sid: session && session.k === 'current' ? session.sid : null, attachments: pl.attachments, mode: pl.mode, effort: pl.effort} : null;
     /** pl：提示词框的 payload（首次）；refine：结果页「再改一句」的话，接在上次那段话后面 */
     const start = (pl, refine) => {
@@ -272,6 +260,14 @@
       const body = id === 'summary' ? W.demoSummary(dl, s.length)
         : id === 'blog' ? {text: W.demoBlog(dl, s.rv.view)}
           : W.demoDescription({lang: dl, view: s.rv.view, platform: s.platform, title: picked, chapters: ctx.chapters || D.chapters, length: s.length});
+      /* 写总结、写博客：带出处的正文（演示稿按 p1 的 cues 写），存成 Space 文档（§2.1） */
+      if (cited) {
+        const sc = tp.topicOn ? tsc : tsc && tsc.k !== 'topic' ? tsc : null;
+        const md = window.BC_WRCITES.demo(id, {series: tp.series.length > 0});
+        const bs = window.BC_WRCITES.blocks(md, V.sentSet(ctx.cues && ctx.cues.length ? ctx.cues : D.cues, sc, tp.picked, tp.series), pid);
+        const n = ((st.out[id] && st.out[id].stamp) || 0) + 1;
+        Object.assign(body, {md, scope: sc, picked: tp.picked, series: tp.series, frames: framesOn, stamp: n, saved: V.save(app, ctx, id, bs, n)});
+      }
       set((cur) => ({out: Object.assign({}, cur.out, {[id]: Object.assign({lang: s.lang, view: s.rv, refine: refine || null, platform: id === 'desc' ? s.platform : null}, body)})}));
     };
     useEffect(() => { if (landed && !out) { fill(); setPhase('done'); } }, [landed]);
@@ -280,19 +276,22 @@
         {id === 'desc' ? <PickedLine pid={pid} onOpenTool={onOpenTool} /> : null}
         <div className="aicard"><b>{t.name}</b><span>{t.desc}</span><span className="ail__effect"><Ic n="info" className="ic--14" />{P.EFFECT[id]}</span></div>
         <div className="wrsetup">
-          <window.ToolSetup plan={{step: STEP[id]}} runner={runner} scope={tsc} onScope={setTsc} chapters={ctx.chapters}>
+          <window.ToolSetup plan={{step: STEP[id]}} runner={runner} scope={tsc} onScope={setTsc} chapters={ctx.chapters} scopes={topical ? tp.scopes : undefined}>
+            {topical ? <window.BC_WRTOPIC.TopicRows t={tp} ctx={ctx} scope={tsc} /> : null}
             {id === 'desc' ? <PlatformRow s={s} /> : null}
-            {id === 'blog' ? <window.ToolOption on={framesOn} onChange={setFrames} disabled={!runner.agent} label="添加关键帧插图"
-              sub={runner.agent ? '从视频里取画面，插在需要配图的地方；默认不加' : '直接调模型拿不到画面，交给智能体才能加'} /> : null}
+            {id === 'blog' ? <window.ToolOption on={framesOn} onChange={setFrames} label="添加关键帧插图"
+              sub={semSt.install === 'full' ? '按段落内容从画面里挑，插在段落后面；默认不加' : '没装多模态搜索：按每段出处的时间取帧，未按内容挑选；默认不加'} /> : null}
             {runner.agent ? <window.ToolSessionRow ctx={ctx} value={session && session.k} onChange={setSession} /> : null}
           </window.ToolSetup>
         </div>
         <window.ToolPrompt ctx={ctx} tool={id} runner={runner} value={prompt} onChange={setPrompt} defaultText={defaultText}
-          session={session || {k: 'new'}} context={context} readonly onStart={(pl) => start(pl)}
+          session={session || {k: 'new'}} context={context} readonly={cited ? 'saved' : true} onStart={(pl) => start(pl)}
           label={id === 'desc' ? '写简介' : id === 'blog' ? '写博客' : '写总结'} />
       </>
     );
     const seek = (sec) => ctx.seek(sec);
+    /* 正文的块（重写 / 换材料之后的最新一版）：复制读它 */
+    const [blocks, setBlocks] = useState(null);
     return (
       <div className="pscroll bc-scroll">
         <Head t={t} onBack={P.backTarget(phase) === 'setup' ? () => setPhase('setup') : onBack} busy={!!g.busy} />
@@ -303,17 +302,19 @@
               <>
                 {id === 'desc' ? <PickedLine pid={pid} onOpenTool={onOpenTool} /> : null}
                 <DemoLangNote code={out.lang} />
+                {cited ? <V.SavedLine entry={out.saved} /> : null}
                 {out.refine ? <div className="wrmeta"><Chip>{`按「${out.refine}」改过`}</Chip></div> : null}
                 {id === 'blog' ? (
                   <>
                     <div className="wrmeta"><Chip>{`${W.VIEW_NAME[out.view.view]}视角`}</Chip>
                       <span className="t-detail-xs">{out.view.auto ? `自动：${out.view.reason}` : '你选定的'}</span></div>
-                    <div className="wrdoc"><Md text={out.text} onSeek={seek} /></div>
+                    <V.CitedResult tool={id} ctx={ctx} md={out.md} scope={out.scope} picked={out.picked} series={out.series}
+                      frames={out.frames} install={semSt.install} onBlocks={setBlocks} />
                   </>
                 ) : null}
                 {id === 'summary' ? (
                   <>
-                    <div className="wrdoc"><Md text={out.body} onSeek={seek} /></div>
+                    <V.CitedResult tool={id} ctx={ctx} md={out.md} scope={out.scope} picked={out.picked} series={out.series} onBlocks={setBlocks} />
                     <SecHead aside="点时间跳到那里">要点</SecHead>
                     <div className="wrpts">
                       {out.points.map((p, i) => (
@@ -334,9 +335,9 @@
                 <Actions
                   copies={id === 'desc'
                     ? [{label: '复制全文', text: out.text, what: '全文'}, {label: '复制标签', text: out.tags.map((x) => '#' + x).join(' '), what: '标签'}]
-                    : id === 'blog'
-                      ? [{label: '复制 Markdown', text: out.text, what: ' Markdown'}]
-                      : [{label: '复制全文', text: out.body + '\n\n' + out.points.map((p) => `${W.mmss(p.t)} ${p.text}`).join('\n'), what: '全文'}]}
+                    : id === 'blog' || !blocks
+                      ? V.copies(ctx, blocks || [])
+                      : V.copies(ctx, blocks).map((c) => Object.assign({}, c, {text: c.text + '\n\n' + out.points.map((p) => `${W.mmss(p.t)} ${p.text}`).join('\n')}))}
                   onRefine={(q) => start(null, q)} onAgain={() => start(null)} onSetup={() => setPhase('setup')} />
               </>
             ) : null}
@@ -392,6 +393,8 @@
     const step = Object.assign({}, STEP.title, {unit: `段文稿起 ${s.count} 个候选标题`});
     const runner = window.useToolRunner(step);
     const [tsc, setTsc] = useState(null);
+    /* 起标题也按主题选材（§2.2 第 5 条，2026-10-13）：从讲这件事的段落里起标题 */
+    const tp = window.BC_WRTOPIC.useTopic(ctx, tsc);
     const [phase, setPhase] = useState(st.titles.batches.length ? 'done' : 'setup');
     const [more, setMore] = useState(false);
     const g = useGen(ctx, onBack);
@@ -399,10 +402,10 @@
     const [prompt, setPrompt] = useState(null);
     const [session, setSession] = useState(null);
     const extra = W.intentExtra('title', {platform: s.platform});
-    if (tsc && tsc.k !== 'all') extra.unshift(`只看${tsc.label.replace(/^第 \d+ 章 · /, '')}`);
+    if (tsc && tsc.k !== 'all' && tsc.k !== 'topic') extra.unshift(`只看${tsc.label.replace(/^第 \d+ 章 · /, '')}`);
     const defaultText = P.template('title', AG.intentPrompt({kind: 'title', count: s.count, extra}, ctx.proj), {lang: nameOf(s.lang)});
-    const context = P.contextPack('title', {paras: tsc && tsc.k !== 'all' ? tsc.count : STEP.title.count, scope: tsc && tsc.k !== 'all' ? tsc.label : null,
-      chapters: (ctx.chapters || []).length, words: 6200});
+    const context = P.contextPack('title', Object.assign({paras: tsc && tsc.k !== 'all' ? tsc.count : STEP.title.count, scope: tsc && tsc.k !== 'all' ? tsc.label : null,
+      chapters: (ctx.chapters || []).length, words: 6200}, tp.context));
     /** kind：first（提示词框的 payload 在 pl 里）/ more / like——后两种接在上次那段话后面 */
     const gen = (kind, like, pl) => {
       const base = pl ? pl.text : (prompt != null ? prompt : defaultText);
@@ -428,7 +431,8 @@
           <>
             <div className="aicard"><b>{t.name}</b><span>{t.desc}</span><span className="ail__effect"><Ic n="info" className="ic--14" />{P.EFFECT.title}</span></div>
             <div className="wrsetup">
-              <window.ToolSetup plan={{step}} runner={runner} scope={tsc} onScope={setTsc} chapters={ctx.chapters}>
+              <window.ToolSetup plan={{step}} runner={runner} scope={tsc} onScope={setTsc} chapters={ctx.chapters} scopes={tp.scopes}>
+                <window.BC_WRTOPIC.TopicRows t={tp} ctx={ctx} scope={tsc} />
                 <Row label="候选数">
                   <Stepper value={s.count} onDec={() => s.setCount((n) => Math.max(W.TITLE_COUNT.min, n - 1))} onInc={() => s.setCount((n) => Math.min(W.TITLE_COUNT.max, n + 1))}
                     disabledDec={s.count <= W.TITLE_COUNT.min} disabledInc={s.count >= W.TITLE_COUNT.max} decTip="少一个" incTip="多一个" />

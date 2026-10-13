@@ -57,6 +57,10 @@ export const nl: RcSpaceMessages = {
   labelGenerateImage: "Gegenereerde afbeelding",
   labelGenerateMusic: 'Gegenereerde muziek',
   labelGenerateText: "Gegenereerde tekst",
+  labelSummary: "Samenvatting",
+  labelBlog: "Blogbericht",
+  labelTitles: "Titels",
+  labelDescription: "Beschrijving",
   labelExport: "Exporteren",
 
   engineUnavailable: "De video-engine is niet beschikbaar",
@@ -70,4 +74,5 @@ export const nl: RcSpaceMessages = {
     `${p.fileName} is ${p.bytes} bytes, boven de medialimiet van ${p.limit}`,
   afterMaterial: (p: { reason: string }) => `Na het toevoegen van de media: ${p.reason}`,
   invalidParams: "Ongeldige parameters",
+  relatedNotVideo: 'Alleen video’s tonen verwante video’s',
 };

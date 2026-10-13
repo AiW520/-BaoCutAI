@@ -68,3 +68,9 @@ test('spoken 与 callText', () => {
   assert.equal(T.callText('speech_search', {}), 'speech_search');
   assert.equal(T.callText('speech.search', {query: '嗯'}), 'speech_search {\n  "query": "嗯"\n}');
 });
+
+test('按主题读取（embedding §2.10）：写明读了几段；没装模型退回字面匹配时也写明', () => {
+  assert.deepEqual(T.describe('speech_relevant', {topic: '为什么要做本地', paragraphs: 12, mode: 'hybrid'}),
+    {kind: 'speech-search', label: '按主题读取', icon: 'search', summary: '12 段 · 「为什么要做本地」'});
+  assert.match(T.describe('speech_relevant', {paragraphs: 5, mode: 'lexical'}).summary, /字面匹配$/);
+});

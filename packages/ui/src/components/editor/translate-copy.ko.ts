@@ -135,6 +135,13 @@ export const koTranslate: TranslateMessages = {
   staleShort: (n) => `오래됨 ${n}`,
   cutShort: (n) => `잘림 ${n}`,
   goneShort: (n) => `원문 삭제 ${n}`,
+  termsShort: (n: number) => `용어 불일치 ${n}`,
+  terms: (n: number) => `${n}곳에서 용어집 번역을 쓰지 않았습니다`,
+  termsTitle: '용어 불일치',
+  termsLead: '이 번역은 용어집의 번역어를 따르지 않았습니다. 통일은 일반 편집이라 실행 취소할 수 있습니다.',
+  termsSpot: (got: string, want: string) => ` · “${got}”(으)로 번역됨, 용어집은 “${want}”`,
+  termsUnify: '용어집 번역으로 통일',
+  termsUnified: (n: number) => `${n}곳을 용어집 번역으로 통일했습니다`,
   cut: (n) => `원문 ${n}문장의 화면이 잘렸습니다`,
   webHint: '다시 번역하려면 모델이나 대화가 필요합니다: Agent나 BaoCut 앱에서 시작하세요',
   refreshing: (n) => (n === null ? '다시 번역하는 중…' : `${n}문장 다시 번역하는 중…`),
@@ -161,6 +168,16 @@ export const koTranslate: TranslateMessages = {
   refreshFailed: '다시 번역하지 못했습니다',
   refreshInterrupted: '다시 번역이 중단되었습니다',
   refreshCancelled: '다시 번역을 취소했습니다',
+  // 翻译记忆（创作辅助集成设计 §2.6）
+  chipReused: '재사용',
+  reusedTip: (video: string | null) => (video ? `“${video}”의 번역을 재사용 · 원문이 거의 같음` : '다른 동영상의 번역을 재사용 · 원문이 거의 같음'),
+  directReused: '다시 번역으로 전환',
+  directReusedSub: (video: string | null) => `${video ? `“${video}”의` : '기존'} 번역을 더 이상 쓰지 않고 모델 API로 이 문장을 다시 번역합니다`,
+  memory: '번역 메모리',
+  memoryOn: '다른 동영상(같은 언어 방향)에서 번역한 문장과 원문이 같은 문장은 그 번역을 재사용하고 “재사용”으로 표시합니다. 비슷한 문장은 참고용으로 모델에 전달합니다.',
+  memoryOff: '번역 메모리가 설정에서 꺼져 있어 기존 번역을 재사용하거나 참고하지 않습니다.',
+  memoryUsed: (reused: number, referenced: number) => `번역 메모리: ${reused}문장 재사용 · 기존 번역 ${referenced}문장 참고`,
+
 };
 
 export const koTextNotConfigured: TextNotConfiguredMessages = {

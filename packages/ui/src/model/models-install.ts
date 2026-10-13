@@ -138,7 +138,8 @@ export function separationDownload(bundles: readonly ModelBundleStatus[]): Model
  * 或下到一半、权重已经落地）时是补齐——只下载缺的，不再问许可；否则是下载。公共组件按它那一类的模型包算（`hasOwnFiles`）。
  */
 export function inlineInstallMode(bundle: ModelBundleStatus, bundles: readonly ModelBundleStatus[]): 'install' | 'complete' {
-  return hasOwnFiles(bundle, sharedComponents(bundles, bundleCategory(bundle))) ? 'complete' : 'install';
+  const category = bundleCategory(bundle);
+  return hasOwnFiles(bundle, category ? sharedComponents(bundles, category) : []) ? 'complete' : 'install';
 }
 
 export interface DownloadView {

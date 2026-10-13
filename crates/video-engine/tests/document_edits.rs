@@ -192,9 +192,9 @@ fn no_op_and_malformed_changes_keep_the_current_document_version() {
 }
 
 #[test]
-fn translation_text_updates_refresh_sentence_hash_without_changing_other_units() {
+fn translation_text_updates_refresh_sentence_hash_and_drop_reuse_without_changing_other_units() {
     let (_dir, mut video, speech_id, _) = setup();
-    let unit = |id: &str, correspondence: &str| json!({"id":id,"sourceSentenceId":"sentence","sourceFingerprint":"fingerprint","naturalText":"old","status":"reviewed","alignment":{"basis":"natural","correspondence":correspondence,"blocks":[],"sourceWordIds":["w0"],"textHash":video_engine::video::sha256_text("old")}});
+    let unit = |id: &str, correspondence: &str| json!({"id":id,"sourceSentenceId":"sentence","sourceFingerprint":"fingerprint","naturalText":"old","status":"reviewed","alignment":{"basis":"natural","correspondence":correspondence,"blocks":[],"sourceWordIds":["w0"],"textHash":video_engine::video::sha256_text("old")},"reuse":{"fromVideoId":"vid_other","unitId":id}});
     let body =
         json!({"schema":"baocut.translation/2","language":"en","units":[unit("u1","sentence"),unit("u2","sentence"),unit("u3","block")]});
     let created = video.apply(&tx(&video,"cmd_translation",vec![json!({"type":"putDocument","kind":"translation","ref":"translation","sourceDocument":{"documentId":speech_id},"body":body})])).unwrap();
@@ -220,4 +220,8 @@ fn translation_text_updates_refresh_sentence_hash_without_changing_other_units()
     );
     assert_eq!(updated["units"][1], body["units"][1]);
     assert_eq!(updated["units"][2]["alignment"], body["units"][2]["alignment"]);
+    // 改过自然译句的单元不再是沿用的译文；没改的照旧（§5.3）。
+    assert!(updated["units"][0].get("reuse").is_none());
+    assert!(updated["units"][2].get("reuse").is_none());
+    assert_eq!(updated["units"][1]["reuse"], json!({"fromVideoId":"vid_other","unitId":"u2"}));
 }

@@ -1,5 +1,6 @@
 import { createContext, memo, useContext, useEffect, useMemo, useId, useRef, useState, type ReactNode } from 'react';
 import Markdown, { defaultUrlTransform, type Components } from 'react-markdown';
+import { parseVideoTimeHref } from '@baocut/protocol';
 import { ActionButton, Tooltip, TooltipTrigger } from '@react-spectrum/s2';
 import { Link } from '@react-spectrum/s2/Link';
 import Settings from '@react-spectrum/s2/icons/Settings';
@@ -14,6 +15,7 @@ import { T } from './thread-copy.ts';
 import { remarkPlugins } from './remark-plugins.ts';
 import './agent-thread.css';
 import { openMarkdownPath, ThreadMediaPreview } from './thread-media-preview.tsx';
+import { VideoTimeLink } from './video-time-link.tsx';
 
 /**
  * Agent 回复正文（产品设计 §3.2.2）：逐字匀速显示，按 Markdown 块渲染。
@@ -112,6 +114,9 @@ function PathLink({ raw, token }: { raw: string; token: PathToken }) {
 function MarkdownLink({ href, children, title }: { href?: string; children?: ReactNode; title?: string }) {
   const scope = useContext(PathScope);
   const runtime = useRuntime();
+  // 视频某一刻（检索工具给的地址）：时间码，点了打开视频跳到那一秒。
+  const moment = href ? parseVideoTimeHref(href) : null;
+  if (moment) return <VideoTimeLink videoId={moment.videoId} seconds={moment.seconds}>{children}</VideoTimeLink>;
   // 设置路径优先于外部网页与文件；浏览器和未知设置路径只显示文字（§3.2.2）。
   if (href && /^\/settings(?:\/|$)/.test(href)) {
     const hit = runtime.host.platform !== 'web' ? settingsLink(href) : null;

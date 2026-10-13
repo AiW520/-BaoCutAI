@@ -50,6 +50,10 @@ const en = {
   'updates.autoDownload': 'Download new versions in the background (without installing them automatically)',
   'diagnostics.enabled': 'Send anonymous usage statistics and performance summaries (no media, text, or paths)',
   'offline.strict': "Strict offline: don't send anything to any online service",
+  'semantic.channels': 'Semantic index channels to build: text (speech, captions, translations, chapters); visual and audio are not available yet',
+  'semantic.indexedProjects': 'Projects whose videos get a semantic index: all, or a list of project ids (videos outside projects only with all)',
+  'semantic.translationMemory': 'Suggest earlier translations of near-identical sentences when translating (needs the text search model)',
+  'semantic.glossaryCandidates': 'Suggest glossary terms from near-identical spellings across transcripts (needs the text search model)',
 } satisfies Record<SettingKey, string>;
 
 export type SettingDescriptionMessages = typeof en;

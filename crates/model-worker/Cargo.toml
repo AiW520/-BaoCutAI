@@ -11,8 +11,10 @@ name = "model-worker"
 path = "src/main.rs"
 
 [features]
-default = ["backend-mlx", "backend-coreml"]
+default = ["backend-mlx", "backend-coreml", "backend-litert"]
 backend-mlx = ["model-runtime/backend-mlx"]
+# 文本嵌入：LiteRT-LM C API，运行期从模型包的 `litertlm-runtime` 组件 dlopen，构建不链接。
+backend-litert = ["model-runtime/backend-litert"]
 backend-coreml = ["model-runtime/backend-coreml"]
 backend-candle = ["model-runtime/backend-candle"]
 cuda = ["backend-candle", "model-runtime/cuda"]

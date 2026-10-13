@@ -28,23 +28,28 @@ import {
   pairStats,
   readLegacyTranslation,
   readTranslation,
+  reusedFrom,
   speechSentences,
   unitText,
   type PairRow,
   type TranslationBody,
 } from '../../model/translation-doc.ts';
+import { consistencyTerms, recordedTerms, termSpots, unifiedTexts } from '../../model/term-consistency.ts';
 import { liveRefresh } from '../../model/translate-progress.ts';
 import { useRuntime } from '../../runtime/context.tsx';
 import { useEditor } from '../../state/editor-store.ts';
 import { useJobs } from '../../state/jobs-store.ts';
+import { useSetting } from '../../state/settings-store.ts';
+import { useSpace } from '../../state/space-store.ts';
 import { canEdit, useVideo } from '../../state/video-store.ts';
 import { openAiTool } from './ai-tools-nav.ts';
 import { useEditorActions } from './editor-context.tsx';
 import { usePlaybackFollow } from './use-playback-follow.ts';
 import { useDocumentBody } from './use-document-body.ts';
 import { TRANSLATE_COPY as C } from './translate-copy.ts';
-import { editTranslation, markTranslation, openFlow, putOnScreen, startRefresh, useTranslateRun, type CompareMode } from './translate-run.ts';
-import { TranslationStatbar, UnitMenu, useAgentRetranslate, useRetranslateModel, type UnitMenuActions } from './translation-actions.tsx';
+import { editTranslation, markTranslation, openFlow, putOnScreen, startRefresh, unifyTranslationTerms, useTranslateRun, type CompareMode } from './translate-run.ts';
+import { TermMismatches, TranslationStatbar, UnitMenu, useAgentRetranslate, useRetranslateModel, type TermSpotItem, type UnitMenuActions } from './translation-actions.tsx';
+import { useTranslationGlossaries, useVideoSelection } from './use-translation-glossaries.ts';
 import { useVirtualRows } from './use-virtual-rows.ts';
 
 /** 对照条（原型 panel-subtitle.jsx `ListBar`、.sublist）。 */
@@ -275,9 +280,17 @@ export function TranslationList({
 }) {
   const { seek } = useEditorActions();
   const videoEditable = useVideo((s) => canEdit(s.video));
-  const web = useRuntime().host.platform === 'web';
+  const runtime = useRuntime();
+  const web = runtime.host.platform === 'web';
   const model = useRetranslateModel();
   const toAgent = useAgentRetranslate(videoId);
+  // 翻译记忆（§2.6）：关掉时不标「沿用」；来源视频的名字从视频库里找（删了或还没扫到时只说「其他视频」）。
+  const memoryOn = useSetting('semantic.translationMemory') ?? true;
+  const entries = useSpace((s) => s.entries);
+  const videoName = useCallback(
+    (id: Id) => entries.find((e) => e.kind === 'video' && e.ref && 'videoId' in e.ref && e.ref.videoId === id)?.name ?? '',
+    [entries],
+  );
   // 正在就地刷新这份译文：从这里提交的（回执到之前也算），或别处发起的。
   const ownRefresh = useTranslateRun((s) => s.refreshes[record.id] ?? null);
   // 选出整份任务列表再算：`liveRefresh` 每次给新对象，直接当选择器会让 zustand 5 的订阅每次都以为变了。
@@ -316,6 +329,25 @@ export function TranslationList({
     return translation ? pairRows(ready, translation) : [];
   }, [translation, legacy, ready]);
   const stats = useMemo(() => pairStats(rows), [rows]);
+
+  // 术语一致（创作辅助集成设计 §2.6、§3.7）：译句没按视频启用的术语表的译法，按当前译文实时算；随翻译记忆的开关一起关。
+  // 浏览器页面读不到用户库（架构设计 §5.9），改用这份译文翻译时记下的术语，只找得出没翻的原文。
+  const glossaries = useTranslationGlossaries(runtime);
+  const selection = useVideoSelection(runtime, videoId, documents, !web);
+  const targetLanguage = translation?.language || record.language || '';
+  const enabledGlossaries = selection?.selection?.glossaries.translate;
+  const terms = useMemo(
+    () =>
+      !memoryOn || !translation
+        ? []
+        : web
+          ? recordedTerms(translation)
+          : targetLanguage && enabledGlossaries?.length
+            ? consistencyTerms(glossaries.candidates, enabledGlossaries, speechRecord?.language ?? null, targetLanguage)
+            : [],
+    [memoryOn, translation, web, targetLanguage, enabledGlossaries, glossaries.candidates, speechRecord?.language],
+  );
+  const spots = useMemo(() => (translation ? termSpots(rows, translation, terms) : []), [rows, translation, terms]);
 
   /** 每一句在序列上第一次出现的区间（素材时钟的词经实例投过去；剪掉的没有）。 */
   const spans = useMemo(() => {
@@ -408,6 +440,15 @@ export function TranslationList({
     const next = await editTranslation({ videoId, record, body: translation, sentences: ready, row, text, speech: words, documents });
     if (next) setLocal({ base: loaded, body: next });
   };
+  const unify = async () => {
+    if (!translation) return;
+    const next = await unifyTranslationTerms({ videoId, record, body: translation, sentences: ready, changes: unifiedTexts(spots), spots: spots.length, speech: words, documents });
+    if (next) setLocal({ base: loaded, body: next });
+  };
+  const spotItems: TermSpotItem[] = spots.map((spot) => {
+    const at = spot.row.sentence ? spans.get(spot.row.sentence.id)?.start : undefined;
+    return { key: spot.row.key, at: at ?? null, time: at === undefined ? null : formatClock(at), term: spot.term, got: spot.got, want: spot.want };
+  });
   actions.current = {
     seek: seekHere,
     begin: (row) => {
@@ -463,6 +504,7 @@ export function TranslationList({
           onAgent={() => toAgent({ language: languageLabel, count: todo })}
           onCut={() => openAiTool(videoId, 'stale', { language: language ? languageName(language) : null, translationId: record.id })}
           onTranslateTool={() => openFlow(videoId, true)}
+          terms={<TermMismatches spots={spotItems} editable={editable} onSeek={seekHere} onUnify={() => void unify()} />}
         />
       )}
       <div className={colhead({ isSingle: only === 'trans' })}>
@@ -475,6 +517,7 @@ export function TranslationList({
           if ('gap' in segment) return <div key={`gap:${n}`} aria-hidden style={{ height: segment.gap }} />;
           const index = segment.index;
           const row = rows[index]!;
+          const from = reusedFrom(row, memoryOn);
           return (
             <div
               key={row.key}
@@ -494,6 +537,7 @@ export function TranslationList({
                 ai={!web}
                 busy={refreshing !== undefined}
                 modelName={model.name}
+                reused={from === null ? null : videoName(from)}
                 actions={actions}
               />
             </div>
@@ -530,6 +574,7 @@ const PairCard = memo(function PairCard({
   ai,
   busy,
   modelName,
+  reused,
   actions,
 }: {
   row: PairRow;
@@ -544,6 +589,8 @@ const PairCard = memo(function PairCard({
   ai: boolean;
   busy: boolean;
   modelName: string | null;
+  /** 沿用的译文：来源视频的名字（找不到时空串）；不是沿用的为 null。 */
+  reused: string | null;
   actions: RefObject<PairActions & UnitMenuActions>;
 }) {
   const gone = row.state === 'sentence-gone';
@@ -579,8 +626,14 @@ const PairCard = memo(function PairCard({
             <span className={chip({ tone: flag.tone })}>{flag.text}</span>
           )
         ) : null}
+        {reused === null ? null : (
+          <TooltipTrigger>
+            <RACButton className={chip({ tone: 'info' })}>{C.chipReused}</RACButton>
+            <Tooltip>{C.reusedTip(reused || null)}</Tooltip>
+          </TooltipTrigger>
+        )}
         <span className={headEnd}>
-          <UnitMenu row={row} index={index} text={text} ai={ai} editable={editable} busy={busy} modelName={modelName} actions={actions} />
+          <UnitMenu row={row} index={index} text={text} ai={ai} editable={editable} busy={busy} modelName={modelName} reused={reused} actions={actions} />
         </span>
       </div>
       {only === 'trans' || !row.sentence ? null : <span className={original({ isGone: gone })}>{row.sentence.text}</span>}

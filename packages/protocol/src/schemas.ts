@@ -481,6 +481,10 @@ export const settingValueSchemas = {
   'space.trashRetentionDays': z.number().int().min(1).max(3650),
   'cache.maxSizeMiB': z.number().int().min(256).max(1024 * 1024),
   'runtime.idleExitMinutes': z.number().int().min(1).max(1440),
+  'semantic.channels': z.array(z.enum(['text', 'visual', 'audio'])).max(3),
+  'semantic.indexedProjects': z.union([z.literal('all'), z.array(z.string().min(1).max(200)).max(1000)]),
+  'semantic.translationMemory': z.boolean(),
+  'semantic.glossaryCandidates': z.boolean(),
   'resources.capacity': z
     .object({
       memoryMiB: z
@@ -992,6 +996,8 @@ export const methodParamSchemas = {
       names: z.record(id, z.string().trim().min(1).max(100)).optional(),
     })
     .strict(),
+  'edits.glossaryCandidates': z.object({ videoId: id, documentId: id.optional() }).strict(),
+  'edits.retakeCandidates': z.object({ videoId: id, documentId: id.optional() }).strict(),
   'models.list': empty,
   'models.transcribe': z
     .object({

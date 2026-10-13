@@ -11,6 +11,7 @@ import type {
   VoiceMode,
 } from '@baocut/protocol';
 import { ModelsBundleRegistry as M } from '@baocut/protocol/messages/models/bundle-registry.ts';
+import { EMBEDDING_BUNDLES } from './embedding-bundles.ts';
 import { IMAGE_BUNDLES } from './image-bundles.ts';
 import { MUSIC_BUNDLES } from './music-bundles.ts';
 import { SPEECH_BUNDLES } from './speech-bundles.ts';
@@ -62,9 +63,12 @@ export interface ComponentReleaseAsset {
   fileName: string;
   size: number;
   sha256: string;
-  /** 压缩包的格式与解开时略过的文件（包根目录里同包的其他工具）。只解开包根目录里的普通文件。 */
-  archive: { format: 'tar.gz' | 'zip'; skip: readonly string[] };
-  /** 解开之后必须有的可执行文件（相对组件目录）。 */
+  /**
+   * 压缩包的格式与解开时略过的文件（包根目录里同包的其他工具）。只解开包根目录里的普通文件；给了 `root` 时把包里的这个目录
+   * 当作根目录（LiteRT-LM 的动态库在 xcframework 的子目录里）。
+   */
+  archive: { format: 'tar.gz' | 'zip'; skip: readonly string[]; root?: string };
+  /** 解开之后必须有的可执行文件（相对组件目录）；`workerLibrary` 的组件是那个动态库。 */
   executable: string;
 }
 
@@ -77,6 +81,11 @@ export interface ComponentRelease {
   urlTemplate: string;
   /** 平台键（`darwin-arm64`、`darwin-x64`、`linux-x64`、`win32-x64`……）→ 压缩包；没有的平台不支持。 */
   assets: Readonly<Partial<Record<string, ComponentReleaseAsset>>>;
+  /**
+   * 交给 Model Worker 的动态库（LiteRT-LM 的 C 库），不是 Runtime 直接执行的引擎：安装后不跑 `--version`，引擎覆盖
+   * （`BAOCUT_AUDIOCPP_CLI`）与 `engineExecutable` 不认它，交给 Worker 时与模型仓库的组件一样带上文件清单。
+   */
+  workerLibrary?: true;
 }
 
 export interface BundleDefinition {
@@ -95,6 +104,8 @@ export interface BundleDefinition {
   image?: ImageBundleProfile;
   /** `music` 模型包的特性：`local` Provider 据此描述 `generateMusic` 模型、在提交时检查请求、资源调度据此计引擎进程的峰值。 */
   music?: MusicBundleProfile;
+  /** `embed` 模型包的特性：本机 embedding Provider 据此定向量配置与身份（EmbeddingGemma 2 检索集成方案 v0.1 §4.2、§5）。 */
+  embedding?: EmbeddingBundleProfile;
   /**
    * 识别模型包用哪个「说话人区分」模型包（`capability: 'diarize'`，架构设计 §6.6）：它装好了，交给 Worker 的模型包带上它的组件
    * （`segmentation` 与 `speaker`），转写要说话人时识别完成后区分。没装时不带，要说话人只报 `diarization-unavailable`。
@@ -129,6 +140,31 @@ export interface ImageBundleProfile {
    * `peakBytesEach`（DiT 为条件图缓存的键值，实测），计在任务自己的需求里、与 Worker 同一个池（`ModelCatalog.imageEditBytes`）。
    */
   inputs?: { max: number; img2img: boolean; peakBytesEach: number };
+}
+
+/**
+ * 一个本机 embedding 模型包的向量配置（EmbeddingGemma 2 检索集成方案 v0.1 §5）。Worker 按 `outputSize` 出向量（引擎已归一化），
+ * Provider 截到 `dims` 维再归一化后存储与比较。`variant` 与 `quantGroup` 进 `embeddingSpaceId`，`modelFile` 的 sha256 进
+ * `encoderProfileId`：换了量化包就是新空间，旧索引不与新查询向量比较。
+ */
+export interface EmbeddingBundleProfile {
+  /** 权重系列里的变体：`text-270m`（只有文字编码器）、`740m`（完整多模态包，这一阶段只用文字编码器）。 */
+  variant: string;
+  /** 量化兼容组：同组的包出的向量可以互相比较。没经过一致性评测的包各自一组。 */
+  quantGroup: string;
+  /** 组件里的模型文件与它的 sha256（与清单一致）。 */
+  modelFile: string;
+  modelSha256: string;
+  /** 向 Worker 要的维度（`outputSize`）。 */
+  outputSize: number;
+  /** 存储与比较的维度（Matryoshka 截断后重新归一化）。 */
+  dims: number;
+  /** 单条输入的 token 上限（引擎的 `max_input_length`）。 */
+  maxInputTokens: number;
+  /** 引擎是否插入特殊 token（BOS/EOS）：与 SentenceTransformers 参考实现一致时为 true（G0 实测）。 */
+  insertSpecialTokens: boolean;
+  /** 能编码的输入模态。这一阶段两个包都只开文字。 */
+  modalities: readonly ['text'];
 }
 
 /**
@@ -617,13 +653,15 @@ export const BUNDLES: readonly BundleDefinition[] = [
   ...SPEECH_BUNDLES,
   ...IMAGE_BUNDLES,
   ...MUSIC_BUNDLES,
+  ...EMBEDDING_BUNDLES,
   HTDEMUCS_FT,
   onCandle(HTDEMUCS_FT, 'htdemucs-ft@candle'),
 ];
 
 /**
  * backend 能不能在这台机器上用：`mlx` 与 `coreml` 只有 Apple Silicon 的 macOS；`candle` 与 `ggml` 全平台（CPU）；`audio-cpp` 全平台
- * （引擎按构建选 Metal、CUDA、Vulkan 或 CPU；引擎是模型包的 `audiocpp-engine` 组件，主机平台没有它的压缩包时模型目录另报 `unsupported`）。
+ * （引擎按构建选 Metal、CUDA、Vulkan 或 CPU；引擎是模型包的 `audiocpp-engine` 组件，主机平台没有它的压缩包时模型目录另报 `unsupported`）；
+ * `litert-lm` 同理全平台登记，C 库是 `litertlm-runtime` 组件，目前只有 macOS 的库包，别的平台另报 `unsupported`。
  */
 export function backendSupported(backend: ModelBackend, platform: NodeJS.Platform, arch: string): boolean {
   if (backend === 'mlx' || backend === 'coreml') return platform === 'darwin' && arch === 'arm64';

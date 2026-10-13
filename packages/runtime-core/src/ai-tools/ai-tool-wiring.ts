@@ -1,16 +1,18 @@
-import { framesToSeconds, sequenceDurationFrames, type Id } from '@baocut/protocol';
+import { framesToSeconds, sequenceDurationFrames } from '@baocut/protocol';
 import type { PipelineDefinition } from '@baocut/jobs';
 import type { ExtraPipelineContext } from '../models/model-jobs.ts';
 import { withPipelineGrants } from '../grants/pipeline-grants.ts';
 import { grantedTextGenerator } from '../grants/pipeline-grants.ts';
 import type { ExportService } from '../exports/export-service.ts';
-import type { TextPlanResult } from '../exports/export-plan.ts';
 import type { AttachmentStore } from '../attachments.ts';
 import type { SkillCatalog } from '../skills/skill-catalog.ts';
 import { skillSystemPrompt } from '../skills/skill-brief.ts';
 import type { VideoService } from '../videos/video-service.ts';
 import { AI_TOOL_DATA_KINDS, aiToolPipeline } from './ai-tool-pipeline.ts';
-import type { ContextWord } from './ai-tool-prompt.ts';
+import { chapterMarksOf, sentenceMapOf, timelineWords } from './timeline-sentences.ts';
+import type { SemanticServices } from '../space/semantic/services.ts';
+import { USER_VIEWER } from '../space/space-queries.ts';
+import { semanticError } from '../space/semantic/errors.ts';
 
 /**
  * AI 工具「直接调模型」在 Runtime 里的接线（产品设计 §5.10）：流程在 JobManager 建好时登记，skill 目录、附件与导出服务在
@@ -22,6 +24,11 @@ export interface AiToolWiring {
   skills: () => SkillCatalog;
   attachments: () => AttachmentStore;
   exports: () => ExportService;
+  /**
+   * 本机语义检索（按主题选材）：在 Runtime 启动的后面才建好，调用时再取；没有时按主题退回整篇。范围用用户本人的：只有用户本人
+   * 能选另几部视频（`prepare` 核对发起方），别的发起方只在它打开的这一部里挑。
+   */
+  semantic?: () => SemanticServices | null;
 }
 
 export function aiToolDefinition(wiring: AiToolWiring, context: ExtraPipelineContext): PipelineDefinition<any, any> {
@@ -37,10 +44,8 @@ export function aiToolDefinition(wiring: AiToolWiring, context: ExtraPipelineCon
           const video = videos.mirror(videoId)?.video;
           const sequence = video?.sequences[video.rootSequenceId];
           if (!sequence) return null;
-          return {
-            duration: framesToSeconds(sequenceDurationFrames(sequence), sequence.fps),
-            chapters: sequence.markers.filter((m) => m.kind === 'chapter').length,
-          };
+          const chapterMarks = chapterMarksOf(videos, videoId);
+          return { duration: framesToSeconds(sequenceDurationFrames(sequence), sequence.fps), chapters: chapterMarks.length, chapterMarks };
         },
       },
       text: grantedTextGenerator(context.services.textGenerator(), context.grants, context.services, dataKinds),
@@ -61,31 +66,38 @@ export function aiToolDefinition(wiring: AiToolWiring, context: ExtraPipelineCon
         const output = rendered.outputs[0]!;
         return { content: output.content, paragraphs: output.entries, characters: output.words + output.cjkCharacters };
       },
-      async words(videoId, { documentId, range }) {
-        const video = videos.mirror(videoId)?.video;
-        if (!video) return [];
-        const plan = await videos.exportPlan<TextPlanResult>(videoId, {
-          kind: 'text',
-          sequenceId: video.rootSequenceId,
-          ranges: range ? [range] : [],
-          documentIds: [documentId],
-          scopeItemIds: [],
-        });
-        const part = plan.parts[0]?.plans[0];
-        if (!part) return [];
-        const offset = part.range.startSeconds;
-        const seen = new Set<Id>();
-        const words: ContextWord[] = [];
-        for (const entry of part.entries) {
-          if (seen.has(entry.id)) continue;
-          seen.add(entry.id);
-          words.push({ id: entry.id, text: entry.text, paragraphStart: entry.paragraphStart === true, start: offset + entry.start });
-        }
-        return words;
+      words: (videoId, { documentId, range }) => timelineWords(videos, videoId, documentId, range),
+      async sentenceOf(videoId, documentId, revision) {
+        return sentenceMapOf(await context.videos.document(videoId, documentId, revision));
       },
       skills: (refs) => skillSystemPrompt(wiring.skills(), refs),
       attachments: (ids) => wiring.attachments().resolve(ids),
       artifacts: context.jobs.artifacts,
+      ...(wiring.semantic
+        ? {
+            async relevant({ videoIds, intent, limit, signal }) {
+              const semantic = wiring.semantic!();
+              if (!semantic) {
+                return { chunks: [], coverage: { chapters: [], indexed: false, stale: false }, effectiveMode: 'none' as const, reason: 'MODEL_NOT_INSTALLED' as const };
+              }
+              return semantic.context(USER_VIEWER).findRelevantChunks({
+                intent,
+                scope: { videoIds, view: 'sequence' },
+                channel: 'text',
+                limit,
+                order: 'time',
+                neighbors: 1,
+                kinds: ['speech'],
+                signal,
+              });
+            },
+            async embed(texts, signal) {
+              const semantic = wiring.semantic!();
+              if (!semantic) throw semanticError('MODEL_NOT_INSTALLED');
+              return semantic.context(USER_VIEWER).embedTexts(texts, { role: 'document', signal });
+            },
+          }
+        : {}),
     }),
     context.grants,
     dataKinds,

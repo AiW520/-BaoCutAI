@@ -13,8 +13,8 @@ describe('设置分组', () => {
     expect(SETTINGS_GROUPS.map((g) => g.id)).toEqual(['preferences', 'agents', 'app']);
     expect(SETTINGS_GROUPS.find((g) => g.id === 'agents')).toMatchObject({ label: 'Agent', keys: ['agent', 'skills'] });
     expect(SETTINGS_GROUPS.find((g) => g.id === 'app')?.keys).toEqual(['glossary', 'privacy', 'diagnostics', 'about']);
-    // 视频下载（yt-dlp 与网站登录）在偏好设置里，跟在字体后面
-    expect(SETTINGS_GROUPS.find((g) => g.id === 'preferences')?.keys).toEqual(['general', 'shortcuts', 'fonts', 'downloader']);
+    // 视频下载（yt-dlp 与网站登录）在偏好设置里，跟在字体后面；语义索引跟在视频下载后面
+    expect(SETTINGS_GROUPS.find((g) => g.id === 'preferences')?.keys).toEqual(['general', 'shortcuts', 'fonts', 'downloader', 'semantic']);
   });
 
   it('每个分节恰好属于一组，且都有标签', () => {
@@ -25,6 +25,7 @@ describe('设置分组', () => {
     expect(label('skills')).toBe('Skills');
     expect(label('privacy')).toBe('隐私与权限');
     expect(label('downloader')).toBe('视频下载');
+    expect(label('semantic')).toBe('语义索引');
   });
 
   it('组 id 与条目 key 不重名（S2 SideNav 共用一个 id 空间，撞名会抛 RangeError）', () => {

@@ -18,6 +18,7 @@ export const de: JobsTranslationDocumentMessages = {
   unitNoText: (p: { id: string }) => `Übersetzungseinheit ${p.id} hat keine Übersetzung`,
   unitBadStatus: (p: { id: string }) => `Übersetzungseinheit ${p.id} hat einen ungültigen Status`,
   unitBadAlignment: (p: { id: string }) => `Übersetzungseinheit ${p.id} hat eine ungültige Ausrichtung`,
+  unitBadReuse: (p: { id: string }) => `Übersetzungseinheit ${p.id} hat ein ungültiges reuse (fromVideoId und unitId erforderlich)`,
   unitAlignmentFields: (p: { id: string }) => `Die Ausrichtung der Übersetzungseinheit ${p.id} enthält nicht alle Felder`,
   unitHashMismatch: (p: { id: string }) => `Der textHash der Übersetzungseinheit ${p.id} stimmt nicht mit der Übersetzung überein`,
   unitExtraFields: (p: { id: string; fields: string }) => `Übersetzungseinheit ${p.id} enthält Felder außerhalb von §5.3: ${p.fields}`,
