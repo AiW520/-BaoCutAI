@@ -354,6 +354,41 @@ pub mod host {
         }
         Ok(out)
     }
+    /// Fish's bounded loader: map the file and skip buffers before allocation.
+    pub(crate) fn load_safetensors_filtered_deferred(files: &[&Path], keep: impl Fn(&str) -> bool) -> Result<HashMap<String, Array>> {
+        use candle_core::safetensors::Load;
+        let device = device();
+        let mut out = HashMap::new();
+        for path in files {
+            let file = std::fs::File::open(path)?;
+            // SAFETY: model files are immutable for this load; the mapping is
+            // read-only and its views are copied into owned tensors before drop.
+            let mapped = unsafe { memmap2::MmapOptions::new().map(&file)? };
+            let tensors = safetensors::SafeTensors::deserialize(&mapped)?;
+            for (key, view) in tensors.tensors() {
+                if !keep(&key) {
+                    continue;
+                }
+                let tensor = if view.dtype() == safetensors::Dtype::BOOL {
+                    Tensor::from_raw_buffer(view.data(), DType::U8, view.shape(), &device)?
+                } else {
+                    view.load(&device)?
+                };
+                let tensor = if !device.is_cuda() && tensor.dtype().is_float() {
+                    tensor.to_dtype(DType::F32)?
+                } else {
+                    tensor
+                };
+                if out.insert(key.clone(), Array(tensor)).is_some() {
+                    bail!("duplicate tensor {key}");
+                }
+            }
+        }
+        if out.is_empty() {
+            bail!("no selected safetensors tensors");
+        }
+        Ok(out)
+    }
     /// candle 的单测与 MLX 一样串行跑：真实权重的用例峰值内存大。
     #[cfg(test)]
     pub(crate) static TEST_LOCK: std::sync::Mutex<()> = std::sync::Mutex::new(());

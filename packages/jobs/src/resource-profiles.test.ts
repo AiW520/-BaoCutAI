@@ -53,7 +53,7 @@ describe('Model Worker 的需求', () => {
     expect(localTranscribeResources('a@mlx').holder.demand).toEqual(MODEL_WORKER_DEMAND);
   });
 
-  it('Apple Silicon：识别与分离模型包按权重估计（分离按文件的两倍），文本嵌入按文件加余量计内存，8 GiB 的 Mac 也放得下；合成模型包仍是原来的固定需求', async () => {
+  it('Apple Silicon：识别与分离模型包按权重估计（分离按文件的两倍），文本嵌入按文件加余量计内存，8 GiB 的 Mac 也放得下；合成模型包使用登记的常驻量或原来的固定需求', async () => {
     // 模型目录是空的：可选组件都没装。
     const catalog = new ModelCatalog({ root: noModels, platform: 'darwin', arch: 'arm64' });
     for (const def of catalog.definitions()) {
@@ -71,13 +71,17 @@ describe('Model Worker 的需求', () => {
         // 文本嵌入跑在 CPU 上：模型文件 + LiteRT-LM 动态库的压缩包 + 余量，计在内存。
         expect(footprint, def.bundleId).toEqual({ bytes: weightBytes(requiredSources(def))! + EMBEDDING_WORKER_OVERHEAD_BYTES, pool: 'memory' });
         expect(demand.gpuMemory, def.bundleId).toBe(0);
+      } else if (def.speech?.residentBytes !== undefined) {
+        expect(footprint).toEqual({bytes:def.speech.residentBytes,pool:'gpuMemory'});
+        expect(demand.gpuMemory).toBe(def.speech.residentBytes + GiB);
       } else {
         expect(footprint, def.bundleId).toBeNull();
         expect(demand, def.bundleId).toEqual({ memory: 1 * GiB, gpuMemory: 2 * GiB, cpuThreads: 2 });
       }
       for (const total of [8 * GiB, 16 * GiB]) {
         for (const priority of ['background', 'interactive'] as const) {
-          expect(admitted(def.bundleId, footprint, total, priority), `${def.bundleId} ${total / GiB} GiB ${priority}`).toBe(true);
+          const expected = def.speech?.residentBytes !== undefined && total === 8 * GiB ? false : true;
+          expect(admitted(def.bundleId, footprint, total, priority), `${def.bundleId} ${total / GiB} GiB ${priority}`).toBe(expected);
         }
       }
     }

@@ -47,6 +47,7 @@ test('公共组件按同一分类里声明它的模型数算：两只以上放�
   assert.deepEqual(tts.rows.find((r) => r.m.id === 'qwen3-tts-1.7b-base').common, ['tts-codec']);
   assert.deepEqual(tts.rows.find((r) => r.m.id === 'index-tts2.5').own.map((c) => c.id), ['indextts-aux']);
   assert.deepEqual(tts.rows.find((r) => r.m.id === 'indextts2').own, []);
+  assert.deepEqual(tts.rows.find((r) => r.m.id === 'fish-s2-pro').own.map((c) => c.id), ['fish-s2-pro-codec']);
   assert.deepEqual(L.layout(M, C, 'sep').shared, []);
 });
 
@@ -149,7 +150,7 @@ test('公共组件借谁补齐：缺得最少的那只，一样多按目录顺�
   assert.deepEqual(L.compAction(comps[0], models, comps, {x: true}), {kind: 'later'});
 });
 
-test('语音合成：引擎表里的每只模型都有设置行；只有 OmniVoice 标不能商用（2026-09-26）', () => {
+test('语音合成：引擎表里的每只模型都有设置行；OmniVoice 与 Fish S2 Pro 标不能商用（2026-09-26）', () => {
   require('./model-tts.js');
   const TTS = global.window.BC_TTS;
   Object.keys(TTS.MODELS).forEach((id) => {
@@ -162,7 +163,7 @@ test('语音合成：引擎表里的每只模型都有设置行；只有 OmniVoi
   assert.equal(byId('voxcpm2').size, 2870);
   assert.equal(byId('omnivoice').size, 1049);
   const nc = M.filter((m) => m.license && m.license.commercialUse === false).map((m) => m.id);
-  assert.deepEqual(nc, ['omnivoice', 'qwen-image-2.1-turbo', 'qwen-image-2.1', 'yue2-3b']);
+  assert.deepEqual(nc, ['omnivoice', 'fish-s2-pro', 'qwen-image-2.1-turbo', 'qwen-image-2.1', 'yue2-3b']);
   assert.equal(byId('omnivoice').license.name, 'CC-BY-NC-4.0');
   // 新行各自一个仓库：公共组件照旧只有 12Hz 编解码器
   const tts = L.layout(M, C, 'tts');

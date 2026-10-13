@@ -43,6 +43,29 @@ impl Weights {
         Ok(Self { tensors })
     }
 
+    /// Evaluate and convert one tensor at a time, excluding unused buffers
+    /// before reading them into memory. Used by Fish's quantized model and codec.
+    pub(crate) fn load_filtered(files: &[&Path], keep: impl Fn(&str) -> bool, dtype: Option<Dtype>) -> Result<Self> {
+        let mut tensors = crate::synthesize::tensor::host::load_safetensors_filtered_deferred(files, keep)?;
+        #[cfg(all(feature = "backend-mlx", target_os = "macos", target_arch = "aarch64"))]
+        crate::synthesize::tensor::memory::set_cache_limit(128 << 20);
+        let mut keys: Vec<_> = tensors.keys().cloned().collect();
+        keys.sort();
+        for key in keys {
+            let value = tensors.remove(&key).expect("listed key");
+            let target = dtype.unwrap_or(if value.dtype() == Dtype::Float16 {
+                Dtype::Bfloat16
+            } else {
+                value.dtype()
+            });
+            let value = value.as_dtype(target)?;
+            value.eval()?;
+            tensors.insert(key, value);
+            crate::synthesize::tensor::host::clear_memory_cache()?;
+        }
+        Ok(Self { tensors })
+    }
+
     /// 直接由张量表构造（合成权重的单测用；VoxCPM2 / OmniVoice 的单测会用到）。
     #[cfg(test)]
     #[allow(dead_code)]
