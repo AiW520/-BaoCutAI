@@ -70,7 +70,6 @@ const en = {
 
   /** `tested` 为 false 的 Agent：能开会话，但没在 BaoCut 里真机跑通过完整会话。 */
   untested: {
-    badge: 'Not tested in BaoCut',
     body: "This one hasn't completed a full session in BaoCut on a real machine. Detection, sign-in and the model list work as usual; for problems during a session, follow its own documentation.",
   },
 

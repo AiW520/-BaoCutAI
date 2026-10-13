@@ -42,7 +42,6 @@ export const zhHant: AgentMessages = {
   fullAccessOnly: '它無法逐步請求核准，所以 BaoCut 只能以「完全存取」模式執行它：執行指令或修改檔案前不會先詢問你。',
 
   untested: {
-    badge: '未在 BaoCut 中測試',
     body: '這個 Agent 尚未在實機上的 BaoCut 中完成過完整對話。偵測、登入和模型清單照常運作；對話中遇到問題時，請以它自己的說明文件為準。',
   },
 

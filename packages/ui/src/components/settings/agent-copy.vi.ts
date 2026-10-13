@@ -54,7 +54,6 @@ export const vi: AgentMessages = {
 
   /** `tested` 为 false 的 Agent：能开会话，但没在 BaoCut 里真机跑通过完整会话。 */
   untested: {
-    badge: "Chưa được kiểm thử trong BaoCut",
     body: "Agent này chưa hoàn tất một phiên đầy đủ trong BaoCut trên máy thật. Phát hiện, đăng nhập và danh sách mô hình hoạt động như thường; nếu có lỗi trong phiên, hãy xem tài liệu riêng của nó.",
   },
 

@@ -41,7 +41,6 @@ export const tr: AgentMessages = {
   fullAccessOnly: "Adım adım onay isteme imkânı yok; BaoCut yalnızca Tam erişim modunda çalıştırabilir. Komut çalıştırmadan veya dosya değiştirmeden önce size sormaz.",
 
   untested: {
-    badge: "BaoCut içinde denenmedi",
     body: "Bu Ajan gerçek bilgisayarda BaoCut içinde tam bir oturumu tamamlamadı. Algılama, oturum açma ve model listesi normal çalışır; oturumdaki sorunlar için kendi belgelerini izleyin.",
   },
 

@@ -53,7 +53,6 @@ export const ptBR: AgentMessages = {
 
 
   untested: {
-    badge: "Não testado no BaoCut",
     body: "Ainda não concluiu sessão real no BaoCut. Detecção, login e modelos funcionam; problemas em sessão devem seguir documentação própria.",
   },
 

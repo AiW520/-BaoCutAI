@@ -53,7 +53,6 @@ export const de: AgentMessages = {
 
 
   untested: {
-    badge: "Nicht in BaoCut getestet",
     body: "Hat noch keine vollständige BaoCut-Sitzung auf einem echten Computer durchlaufen. Erkennung, Anmeldung und Modellliste funktionieren normal; bei Sitzungsproblemen die eigene Dokumentation beachten.",
   },
 

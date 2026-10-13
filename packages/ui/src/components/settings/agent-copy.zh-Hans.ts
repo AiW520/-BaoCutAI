@@ -42,7 +42,6 @@ export const zhHans: AgentMessages = {
   fullAccessOnly: '它没有逐次询问的通道，BaoCut 只能让它在「完全访问」模式下运行：执行命令和修改文件之前不会先问你。',
 
   untested: {
-    badge: '未在 BaoCut 实测',
     body: '这一家没有在 BaoCut 里真机跑通过完整会话：探测、登录与模型表照常，会话里遇到问题以它自己的说明为准。',
   },
 

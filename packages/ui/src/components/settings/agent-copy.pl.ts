@@ -26,7 +26,7 @@ export const pl: AgentMessages = {
   scanProgress: 'Wyszukiwanie Agentów', faqLabel: 'Częste pytania', goCloudModels: 'Przejdź do modeli w chmurze', goSkills: 'Przejdź do Skills',
   moreProviders: { title: (count) => `Inni obsługiwani Agenci · ${count}`, sub: (names) => `${names} · Żadnego nie wykryto na tym komputerze`, expand: 'Pokaż', collapse: 'Ukryj' },
   fullAccessOnly: 'Nie ma możliwości proszenia o zatwierdzenie kolejnych kroków, więc BaoCut może uruchamiać go tylko w trybie Pełny dostęp: nie zapyta Cię przed uruchomieniem poleceń ani zmianą plików.',
-  untested: { badge: 'Nie przetestowano w BaoCut', body: 'Ten Agent nie ukończył pełnej sesji w BaoCut na rzeczywistym komputerze. Wykrywanie, logowanie i lista modeli działają jak zwykle; w razie problemów podczas sesji skorzystaj z jego dokumentacji.' },
+  untested: { body: 'Ten Agent nie ukończył pełnej sesji w BaoCut na rzeczywistym komputerze. Wykrywanie, logowanie i lista modeli działają jak zwykle; w razie problemów podczas sesji skorzystaj z jego dokumentacji.' },
   catalog: {
     heading: 'Dodaj więcej Agentów', hint: 'Można też dodać innych Agentów wiersza poleceń obsługujących ACP (Agent Client Protocol). BaoCut nie sprawdzał ich pojedynczo; możliwość użycia zależy od wyniku sprawdzania.',
     custom: 'Własne polecenie…', search: 'Wyszukaj Agentów do dodania', searchPlaceholder: 'Szukaj według nazwy, opisu lub polecenia', count: (total) => `${total} w katalogu`, found: (n) => `Znaleziono: ${n}`, list: 'Agenci, których możesz dodać', add: 'Dodaj', addTo: (name) => `Dodaj Agenta ${name}`, added: 'Dodano',

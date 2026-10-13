@@ -377,11 +377,6 @@ export function AgentProviderCard({
                 {ADDED_COPY.chip}
               </Badge>
             ) : null}
-            {driver.tested ? null : (
-              <Badge variant="notice" size="S" fillStyle="outline">
-                {UNTESTED.badge}
-              </Badge>
-            )}
           </div>
           <p className={sub}>
             {added
