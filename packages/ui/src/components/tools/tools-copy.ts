@@ -236,7 +236,6 @@ const en = {
     sample: 'Fill in a sample',
     refs: 'Reference images',
     pickRefs: 'Choose reference images',
-    refsNote: 'This version of the generation API doesn’t take reference images yet',
     model: 'Model',
     manage: 'Manage image models…',
     modelPicker: 'Image model',

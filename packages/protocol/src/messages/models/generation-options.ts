@@ -47,6 +47,16 @@ const en = {
   durationRange: (p: { modelId: string; max: number }) => `Duration must be a positive number of seconds, at most ${p.max} for model ${p.modelId}`,
   targetOverMax: 'targetDurationSec can\'t exceed maxDurationSec',
   planningUnsupported: (p: { modelId: string; planning: string; options: string }) => `Model ${p.modelId} doesn't support planning ${p.planning} (options: ${p.options})`,
+  imagesUnsupported: (p: { modelId: string }) => `Model ${p.modelId} doesn't take input images`,
+  imagesTooMany: (p: { modelId: string; count: number; max: number }) => `Model ${p.modelId} takes at most ${p.max} input images; ${p.count} were given`,
+  img2imgUnsupported: (p: { modelId: string }) => `Model ${p.modelId} can't redraw from an image (imageMode img2img)`,
+  img2imgCount: (p: { count: number }) => `With imageMode img2img the number of images follows the input images (${p.count}); leave count out`,
+  strengthRange: (p: { min: number; max: number }) => `strength must be between ${p.min} and ${p.max}`,
+  imageTooLarge: (p: { name: string; modelId: string; limitMb: string }) => `Input image ${p.name} is over the ${p.limitMb} MB limit of model ${p.modelId}`,
+  imagesTooLarge: (p: { modelId: string; limitMb: string }) => `The input images add up to more than ${p.limitMb} MB, the limit of model ${p.modelId}`,
+  imageUnreadable: (p: { name: string }) => `Can't read input image ${p.name}`,
+  imageFormatUnsupported: (p: { name: string }) => `Input image ${p.name} isn't a PNG, JPEG or WebP file`,
+  imageChanged: (p: { name: string }) => `Input image ${p.name} changed after the task was submitted`,
 };
 
 export type ModelsGenerationOptionsMessages = typeof en;

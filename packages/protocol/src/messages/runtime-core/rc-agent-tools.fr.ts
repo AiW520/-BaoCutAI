@@ -37,6 +37,8 @@ export const fr: RcAgentToolsMessages = {
   transcribePurpose: (p) => `Transcrire le média ${p.assetId}`, transcribeSummary: (p) => `Transcrire le média ${p.assetId}${p.provider ? ` (${p.provider}${p.model ? ` ${p.model}` : ''})` : ''}`,
   speechPurpose: (p) => `Synthétiser la voix (${p.chars} ${pluralForm('fr', p.chars, { one: 'caractère', other: 'caractères' })})`,
   speechSummary: (p) => `Synthétiser la voix (${p.chars} ${pluralForm('fr', p.chars, { one: 'caractère', other: 'caractères' })}${p.provider ? `, ${p.provider}` : ''}${p.voice ? `, voix ${p.voice}` : ''})`,
+  imageInputsSpaceUnavailable: 'Le catalogue Space n’est pas encore prêt : impossible de donner des images d’entrée par entrée Space',
+  imageInputsPurpose: (p) => `Générer une image (images d’entrée : ${p.inputs}) : ${p.prompt}`,
   imagePurpose: (p) => `Générer une image : ${p.prompt}`,
   musicPurpose: (p: { style: string }) => `Générer de la musique : ${p.style}`,
   musicSummary: (p: { mode: string; seconds: number | null; provider: string | null; style: string }) => `Générer ${p.mode === 'song' ? 'une chanson' : 'un morceau instrumental'}${p.seconds ? `, jusqu’à ${p.seconds} s` : ''}${p.provider ? `, ${p.provider}` : ''} : ${p.style}`, imageSummary: (p) => `Générer ${p.count} ${pluralForm('fr', p.count, { one: 'image', other: 'images' })}${p.size ? `, ${p.size}` : ''}${p.provider ? `, ${p.provider}` : ''} : ${p.prompt}`,

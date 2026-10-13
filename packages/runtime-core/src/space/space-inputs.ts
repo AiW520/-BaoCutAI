@@ -9,9 +9,11 @@ import {
   decodeSubtitleBytes,
   subtitleFormatOf,
   subtitleText,
+  type GenerateImageSubmission,
 } from '@baocut/jobs';
 import {
   RpcError,
+  type GenerateImageRequest,
   type GenerateTextRequest,
   type Id,
   type Localized,
@@ -35,6 +37,8 @@ export interface SpaceFileResolver {
 export const MEDIA_ENTRY_KINDS: readonly SpaceEntryKind[] = ['video-file', 'export', 'audio'];
 /** 字幕文件的翻译的 `input`。 */
 export const SUBTITLE_ENTRY_KINDS: readonly SpaceEntryKind[] = ['subtitle'];
+/** 生图的输入图。 */
+export const IMAGE_ENTRY_KINDS: readonly SpaceEntryKind[] = ['image'];
 /** 语音合成与文本生成的素材：文档与字幕。 */
 export const MATERIAL_ENTRY_KINDS: readonly SpaceEntryKind[] = ['document', 'subtitle'];
 
@@ -132,4 +136,20 @@ export async function withTextMaterial(space: SpaceFileResolver, request: Genera
   if (last === -1) messages.push({ role: 'user', content: block });
   else messages[last] = { ...messages[last]!, content: `${messages[last]!.content.trimEnd()}\n\n${block}` };
   return recheck('models.generateText', { ...rest, messages });
+}
+
+/**
+ * `models.generateImage` 的输入图里换掉 Space 条目：`{ entryId }` 换成条目的文件与名字（冻结时记下条目 id，§6.1）。
+ * 路径与 `{ assetId }` 原样留给任务层。
+ */
+export function withImageEntries(space: SpaceFileResolver, request: GenerateImageRequest): GenerateImageSubmission {
+  if (!request.images?.some((input) => typeof input === 'object' && 'entryId' in input)) return request;
+  return {
+    ...request,
+    images: request.images.map((input) => {
+      if (typeof input !== 'object' || !('entryId' in input)) return input;
+      const { entry, file } = space.resolveFile(input.entryId, IMAGE_ENTRY_KINDS);
+      return { entryId: input.entryId, file, name: entry.fileName || path.basename(file) };
+    }),
+  };
 }

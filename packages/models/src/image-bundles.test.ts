@@ -239,7 +239,7 @@ describe('本地文生图模型包的登记', () => {
 describe('模型描述与冻结参数', () => {
   const status = { detail: undefined } as unknown as ModelBundleStatus;
 
-  it('一次一张、只出 PNG、不收参考图、接受 seed、免费；尺寸与宽高比来自模型包，提示耗时', () => {
+  it('一次一张、只出 PNG、暂时不收输入图、接受 seed、免费；尺寸与宽高比来自模型包，提示耗时', () => {
     const info = localImageModelInfo(QWEN, status, true);
     expect(info).toMatchObject({
       modelId: QWEN.bundleId,
@@ -252,6 +252,7 @@ describe('模型描述与冻结参数', () => {
       formats: ['png'],
       defaultFormat: 'png',
       referenceImages: null,
+      img2img: null,
       acceptsSeed: true,
       cost: 'free-local',
       available: true,

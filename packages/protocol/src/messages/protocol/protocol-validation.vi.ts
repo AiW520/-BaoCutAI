@@ -13,4 +13,7 @@ listSeparator: ', ', notEmpty: 'Không được rỗng', noSurroundingSpace: 'Kh
   translationFieldsCount: (p: { count: number }) => `Phải có cùng số fields với template.json (${p.count})`,
   translationBeatsCount: (p: { count: number }) => `Phải có cùng số beats với template.json (${p.count})`,
   translationAssetUnknown: (p: { path: string }) => `Không phải tài nguyên được liệt kê trong template.json: ${p.path}`,
+  imageModeNeedsImages: 'imageMode và strength cần có images',
+  strengthNeedsImg2Img: 'strength chỉ dùng với imageMode img2img',
+  imageAssetNeedsVideo: 'Ảnh { assetId } cần có videoId',
 };

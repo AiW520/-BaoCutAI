@@ -5,7 +5,15 @@ import { cloudModelOptions, initialModelKey } from './tools-models.ts';
 import { imageJob, imageOut } from './tools-test-fixtures.ts';
 import {
   BLANK_IMAGE,
+  addRefs,
   emptyPrompt,
+  imageRefMode,
+  imageRefModes,
+  outputCount,
+  refsNote,
+  refsCount,
+  strengthFor,
+  usedRefs,
   againDraft,
   aspectOptions,
   countFor,
@@ -322,7 +330,18 @@ describe('记录', () => {
   });
 
   it('再来一版：带回提示词与设置，种子留空', () => {
-    expect(againDraft(done)).toEqual({ prompt: '山间小路', model: 'openai/gpt-image-1', size: '3:2', count: 2, seed: '', steps: null });
+    expect(againDraft(done)).toEqual({
+      prompt: '山间小路',
+      model: 'openai/gpt-image-1',
+      size: '3:2',
+      count: 2,
+      seed: '',
+      steps: null,
+      refs: [],
+      refMode: 'ref',
+      strength: null,
+      dropped: 0,
+    });
   });
 
   it('再试一次：照冻结的参数原样再提交', () => {
@@ -361,5 +380,104 @@ describe('放大查看', () => {
       { target: { entryId: 'e3' }, name: 'e3.png' },
       { target: { entryId: 'e1' }, name: 'e1.png' },
     ]);
+  });
+});
+
+describe('参考图（§6.1 生图的输入图）', () => {
+  const refs = { max: 3, edit: true, maxBytesEach: null, maxBytesTotal: null };
+  const editing = imageModel('gpt-image-1', { maxCount: 4, referenceImages: refs, img2img: null });
+  const plain = imageModel('gemini-image', { maxCount: 1, referenceImages: { ...refs, edit: false }, img2img: null });
+  const none = imageModel('dall-e', { maxCount: 4, referenceImages: null, img2img: null });
+  const redraw = imageModel('qwen-image-2.1@mlx-4bit', {
+    label: 'Qwen-Image-2.1',
+    maxCount: 1,
+    referenceImages: { ...refs, max: 10 },
+    img2img: { max: 1, strength: { min: 0.1, max: 1, step: 0.05, default: 0.6 } },
+  });
+  const a = { entryId: 'e1', name: 'a.png' };
+  const b = { assetId: 'as1', name: 'b.png' };
+  const c = { path: '/tmp/c.png', name: 'c.png' };
+  const d = { entryId: 'e2', name: 'd.png' };
+  const draft = (patch: Partial<ImageDraft> = {}): ImageDraft => ({ ...BLANK_IMAGE, prompt: '雪景', ...patch });
+
+  it('加图：不重复、按剩下的名额截，报没加进去的张数', () => {
+    expect(addRefs([a], [a, b, c], 1)).toEqual({ refs: [a, b], dropped: 1 });
+    expect(addRefs([], [c, c], 5)).toEqual({ refs: [c], dropped: 0 });
+  });
+
+  it('按提示词改图：几张一起送，张数照表单；不认参考图的模型一张不送也不算错', () => {
+    const f = draft({ refs: [a, b, c], count: 2 });
+    expect(imageRequest(f, option(editing))).toMatchObject({ count: 2, images: [{ entryId: 'e1' }, { assetId: 'as1' }, '/tmp/c.png'], imageMode: 'ref' });
+    expect(imageRequest(f, option(editing))).not.toHaveProperty('strength');
+    expect(imageRequest(f, option(none))).not.toHaveProperty('images');
+    expect(imageProblems(f, option(none))).toEqual([]);
+    expect(refsNote(f, option(none))).toBe('dall-e 不认参考图，已选的 3 张这次不会用');
+    expect(imageRefModes(editing.referenceImages ? editing : none).map((m) => m.label)).toEqual(['按提示词改图']);
+    expect(imageRefModes(plain).map((m) => m.label)).toEqual(['作为参考']);
+    expect(imageRefModes(none)).toEqual([]);
+  });
+
+  it('超过上限：报一条，计数标红，说明写超出几张不送；真送出去的按上限截', () => {
+    const f = draft({ refs: [a, b, c, d] });
+    expect(imageProblems(f, option(editing))).toEqual(['参考图最多 3 张']);
+    expect(refsCount(f, editing)).toEqual({ text: '4 / 3', over: true });
+    expect(usedRefs(f, editing)).toEqual([a, b, c]);
+    expect(refsNote(f, option(editing))).toBe('最多 3 张 · 会按参考图编辑 · 参考图会上传给服务商 · 超出的 1 张不送');
+    expect(imageStatus(draft({ refs: [a] }), option(editing), false).text).toBe('gpt-image-1 · 1024×1024 · 1 张 · 参考图 1 张');
+  });
+
+  it('以图为底重画：张数是底图的组数、带改动幅度（没给用默认）；没有底图、幅度越界都报', () => {
+    const f = draft({ refs: [a, c], refMode: 'img2img', count: 4 });
+    expect(imageRefMode(f, redraw)).toBe('img2img');
+    expect(outputCount(f, redraw)).toBe(2);
+    expect(strengthFor(f, redraw)).toBe(0.6);
+    const local = option(redraw, { providerId: 'local', key: 'local/qwen-image-2.1@mlx-4bit', local: true });
+    expect(imageRequest(f, local)).toMatchObject({ count: 2, images: [{ entryId: 'e1' }, '/tmp/c.png'], imageMode: 'img2img', strength: 0.6 });
+    expect(imageRequest({ ...f, strength: 0.3 }, local)).toMatchObject({ strength: 0.3 });
+    expect(refsNote(f, local)).toBe('最多 10 张 · 2 张底图各重画一张 · 只在这台电脑上读，不上传');
+    expect(imageProblems(draft({ refMode: 'img2img' }), local)).toEqual(['以图为底重画要先选一张底图']);
+    expect(imageProblems({ ...f, strength: 0 }, local)).toEqual(['改动幅度要在 0.1–1 之间']);
+    // 换到不能以图为底重画的模型：回到 ref，参考图留着。
+    expect(switchImageModel(f, option(editing))).toMatchObject({ refMode: 'ref' });
+    expect(switchImageModel(f, option(editing))).not.toHaveProperty('refs');
+    expect(imageRefMode(f, editing)).toBe('ref');
+    expect(imageRequest(f, option(editing))).toMatchObject({ count: 4, imageMode: 'ref' });
+  });
+
+  it('再来一版与再试一次：冻结的输入图按来源回到草稿或原样再交；工具页带不回素材', () => {
+    const job = imageJob({
+      state: 'completed',
+      generation: {
+        capability: 'generateImage',
+        prompt: '雪景',
+        size: null,
+        aspectRatio: '1:1',
+        count: 2,
+        format: 'png',
+        seed: null,
+        imageMode: 'img2img',
+        strength: 0.4,
+        images: [
+          { source: 'space', entryId: 'e1', path: '/s/a.png', sha256: 'sha256:a', byteLength: 1, mediaType: 'image/png', name: 'a.png' },
+          { source: 'asset', assetId: 'as1', revision: 'r1', path: '/v/b.png', sha256: 'sha256:b', byteLength: 1, mediaType: 'image/png', name: 'b.png' },
+          { source: 'file', path: '/tmp/c.png', sha256: 'sha256:c', byteLength: 1, mediaType: 'image/jpeg', name: 'c.png' },
+        ],
+      },
+    });
+    expect(againDraft(job)).toMatchObject({ refs: [a, c], refMode: 'img2img', strength: 0.4, dropped: 1 });
+    expect(againDraft(job)).not.toHaveProperty('count');
+    expect(againDraft(job, true)).toMatchObject({ refs: [a, b, c], dropped: 0 });
+    expect(retryRequest(job)).toMatchObject({
+      count: 2,
+      images: [{ entryId: 'e1' }, { assetId: 'as1' }, '/tmp/c.png'],
+      imageMode: 'img2img',
+      strength: 0.4,
+    });
+    expect(imageBatchMeta(job, 'OpenAI')).toBe('OpenAI · gpt-image-1 · 1:1 · 2 张 · 以图为底 · 幅度 0.4');
+  });
+
+  it('模型那一行写参考图上限', () => {
+    expect(imageModelLine(editing)).toContain('参考图最多 3 张');
+    expect(imageModelLine(none)).not.toContain('参考图');
   });
 });

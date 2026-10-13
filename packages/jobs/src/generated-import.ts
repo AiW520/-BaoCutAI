@@ -1,3 +1,4 @@
+import { withoutImagePaths } from '@baocut/models';
 import type { EditOperation, GenerationParameters, JobRecord } from '@baocut/protocol';
 import { JobsGeneratedImport as J } from '@baocut/protocol/messages/jobs/generated-import.ts';
 
@@ -6,7 +7,8 @@ import { JobsGeneratedImport as J } from '@baocut/protocol/messages/jobs/generat
  * 之后把产物「加到视频」也用它（智能体经 `edits_apply` 的 `importAsset` + `artifactId`），两条路记下的来源完全相同。
  *
  * - bytes 总是收进视频目录（`managed`）：产物库里的文件不是用户的原文件，不能链接（视频格式规范 §4.2）。
- * - 来源只记任务、Provider、模型、参数与摘要，不记原文与提示词（它们只在任务记录里）。
+ * - 来源只记任务、Provider、模型、参数与摘要，不记原文与提示词（它们只在任务记录里）；输入图只记名字、摘要与条目或素材 id，
+ *   不记本机路径。
  */
 export function generatedImportOperation(
   record: JobRecord,
@@ -15,7 +17,10 @@ export function generatedImportOperation(
 ): EditOperation {
   const generation = record.generation!;
   const base = options.name ?? defaultAssetName(generation);
-  const { text: _text, prompt: _prompt, ...parameters } = generation as GenerationParameters & { text?: string; prompt?: string };
+  const { text: _text, prompt: _prompt, ...parameters } = withoutImagePaths(generation) as GenerationParameters & {
+    text?: string;
+    prompt?: string;
+  };
   return {
     type: 'importAsset',
     path: output.file,

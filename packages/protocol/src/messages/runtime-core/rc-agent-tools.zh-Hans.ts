@@ -68,6 +68,8 @@ export const zhHans: RcAgentToolsMessages = {
   transcribeSummary: (p) => `转写素材 ${p.assetId}${p.provider ? `（${p.provider}${p.model ? ` ${p.model}` : ''}）` : ''}`,
   speechPurpose: (p) => `合成语音（${p.chars} 个字符）`,
   speechSummary: (p) => `合成语音（${p.chars} 个字符${p.provider ? `，${p.provider}` : ''}${p.voice ? `，音色 ${p.voice}` : ''}）`,
+  imageInputsSpaceUnavailable: 'Space 目录还没有准备好，不能按条目给输入图',
+  imageInputsPurpose: (p) => `按 ${p.inputs} 张输入图生成图片：${p.prompt}`,
   imagePurpose: (p) => `生成图片：${p.prompt}`,
   musicPurpose: (p: { style: string }) => `生成音乐：${p.style}`,
   musicSummary: (p: { mode: string; seconds: number | null; provider: string | null; style: string }) => `生成${p.mode === 'song' ? '歌曲' : '纯音乐'}${p.seconds ? `，最长 ${p.seconds} 秒` : ''}${p.provider ? `，${p.provider}` : ''}：${p.style}`,

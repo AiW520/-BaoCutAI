@@ -1,6 +1,11 @@
+import fs from 'node:fs/promises';
+import os from 'node:os';
+import path from 'node:path';
 import { describe, expect, it } from 'vitest';
-import type { ImageModelInfo, ProviderView, SpeechModelInfo } from '@baocut/protocol';
-import { codePointLength, imageParameters, speechParameters } from './generation-options.ts';
+import type { FrozenImageInput, ImageModelInfo, ProviderView, SpeechModelInfo } from '@baocut/protocol';
+import { codePointLength, imageInputPlan, imageParameters, speechParameters } from './generation-options.ts';
+import { freezeImageInput, readFrozenImage, sniffImageMediaType, withoutImagePaths } from './image-inputs.ts';
+import { ProviderFailure } from './transcribe-provider.ts';
 import { selectModel, type ModelChoice } from './model-selection.ts';
 
 /** 生成请求的提交时检查与选择（架构设计 §6.2、§6.6）：不合的拒绝，不悄悄改参数；合成没有出厂默认，生图按 §6.2 的顺序取第一个可用的。 */
@@ -38,6 +43,7 @@ const imageModel = (extra: Partial<ImageModelInfo> = {}): ImageModelInfo => ({
   formats: ['png'],
   defaultFormat: 'png',
   referenceImages: null,
+  img2img: null,
   acceptsSeed: true,
   cost: 'unknown',
   ...extra,
@@ -153,6 +159,98 @@ describe('imageParameters', () => {
     }
     expect(message).toMatch(/\b8\b/);
     expect(message).not.toMatch(/8 (and|到) 8/);
+  });
+});
+
+describe('生图的输入图（§6.1）', () => {
+  const frozen = (name: string, byteLength = 10): FrozenImageInput => ({
+    source: 'file',
+    path: `/tmp/${name}`,
+    sha256: `sha256:${'0'.repeat(64)}`,
+    byteLength,
+    mediaType: 'image/png',
+    name,
+  });
+  const refs = { max: 3, edit: true, maxBytesEach: 100, maxBytesTotal: 150 };
+  const img2img = { max: 1, strength: { min: 0.1, max: 1, step: 0.05, default: 0.6 } };
+  const editing = choice('generateImage', imageModel({ referenceImages: refs }));
+  const redraw = choice('generateImage', imageModel({ referenceImages: refs, img2img }));
+
+  it('模型不收输入图、张数超过上限、不收 img2img 时拒绝，在冻结之前', () => {
+    const plain = choice('generateImage', imageModel());
+    expect(() => imageInputPlan(plain, { prompt: 'x', images: ['/a.png'] })).toThrow(invalid({ referenceImages: null }));
+    expect(() => imageInputPlan(editing, { prompt: 'x', images: ['/a', '/b', '/c', '/d'] })).toThrow(invalid({ referenceImages: refs }));
+    expect(() => imageInputPlan(editing, { prompt: 'x', images: ['/a'], imageMode: 'img2img' })).toThrow(invalid({ img2img: null }));
+    expect(imageInputPlan(editing, { prompt: 'x' })).toBeNull();
+    expect(imageInputPlan(editing, { prompt: 'x', images: ['/a', '/b'], count: 2 })).toEqual({ mode: 'ref', strength: null, count: 2 });
+  });
+
+  it('img2img：张数是底图的组数，给了别的张数拒绝；强度默认取模型的 default，超出范围拒绝', () => {
+    expect(imageInputPlan(redraw, { prompt: 'x', images: ['/a', '/b', '/c'], imageMode: 'img2img' })).toEqual({
+      mode: 'img2img',
+      strength: 0.6,
+      count: 3,
+    });
+    expect(() => imageInputPlan(redraw, { prompt: 'x', images: ['/a', '/b'], imageMode: 'img2img', count: 1 })).toThrow(invalid({ count: 2 }));
+    expect(() => imageInputPlan(redraw, { prompt: 'x', images: ['/a'], imageMode: 'img2img', strength: 0.05 })).toThrow(
+      invalid({ strength: img2img.strength }),
+    );
+    const params = imageParameters(redraw, { prompt: 'x', images: ['/a', '/b', '/c'], imageMode: 'img2img', strength: 0.3 }, [
+      frozen('a'),
+      frozen('b'),
+      frozen('c'),
+    ]);
+    // 组数不受 maxCount（2）限制：本地模型逐组各跑一次。
+    expect(params).toMatchObject({ count: 3, imageMode: 'img2img', strength: 0.3 });
+    expect(params.images!.map((i) => i.name)).toEqual(['a', 'b', 'c']);
+  });
+
+  it('冻结后按模型的字节上限检查：单张与合计；ref 模式不带 strength', () => {
+    expect(() => imageParameters(editing, { prompt: 'x', images: ['/a'] }, [frozen('a', 101)])).toThrow(
+      invalid({ code: 'INPUT_TOO_LARGE', limit: 100 }),
+    );
+    expect(() => imageParameters(editing, { prompt: 'x', images: ['/a', '/b'] }, [frozen('a', 80), frozen('b', 80)])).toThrow(
+      invalid({ code: 'INPUT_TOO_LARGE', limit: 150 }),
+    );
+    const params = imageParameters(editing, { prompt: 'x', images: ['/a'] }, [frozen('a')]);
+    expect(params).toMatchObject({ imageMode: 'ref', count: 1 });
+    expect(params).not.toHaveProperty('strength');
+    // 出处与给智能体看的参数里没有本机路径。
+    const { path: _path, ...withoutPath } = frozen('a');
+    expect(withoutImagePaths(params).images).toEqual([withoutPath]);
+  });
+
+  it('按文件头认格式（扩展名不算）；冻结摘要，文件变了执行前读出时失败', async () => {
+    const png = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0, 0, 0, 0]);
+    expect(sniffImageMediaType(png)).toBe('image/png');
+    expect(sniffImageMediaType(Buffer.from([0xff, 0xd8, 0xff, 0xe0]))).toBe('image/jpeg');
+    expect(sniffImageMediaType(Buffer.from('RIFF\0\0\0\0WEBPVP8 ', 'latin1'))).toBe('image/webp');
+    expect(sniffImageMediaType(Buffer.from('GIF89a'))).toBeNull();
+
+    const dir = await fs.mkdtemp(path.join(os.tmpdir(), 'baocut-image-input-'));
+    try {
+      const file = path.join(dir, 'photo.jpg');
+      await fs.writeFile(file, png);
+      const input = await freezeImageInput({ source: 'space', path: file, entryId: 'ent_1', name: 'Photo' });
+      expect(input).toMatchObject({ source: 'space', mediaType: 'image/png', byteLength: png.length, name: 'Photo', entryId: 'ent_1' });
+      expect(input.sha256).toMatch(/^sha256:[0-9a-f]{64}$/);
+      expect((await readFrozenImage(input)).equals(png)).toBe(true);
+      await fs.writeFile(file, Buffer.concat([png, Buffer.from([1])]));
+      await expect(readFrozenImage(input)).rejects.toBeInstanceOf(ProviderFailure);
+      await expect(readFrozenImage(input)).rejects.toMatchObject({ kind: 'input-unreadable', details: { reason: 'changed', name: 'Photo' } });
+
+      await fs.writeFile(path.join(dir, 'anim.png'), Buffer.from('GIF89a......'));
+      await expect(freezeImageInput({ source: 'file', path: path.join(dir, 'anim.png') })).rejects.toMatchObject({
+        code: 'invalid-request',
+        details: { code: 'INPUT_FORMAT_UNSUPPORTED' },
+      });
+      await expect(freezeImageInput({ source: 'file', path: path.join(dir, 'missing.png') })).rejects.toMatchObject({
+        code: 'invalid-request',
+        details: { code: 'INPUT_UNREADABLE' },
+      });
+    } finally {
+      await fs.rm(dir, { recursive: true, force: true });
+    }
   });
 });
 

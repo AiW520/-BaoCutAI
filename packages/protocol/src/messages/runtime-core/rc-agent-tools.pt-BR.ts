@@ -64,6 +64,8 @@ export const ptBR: RcAgentToolsMessages = {
   speechPurpose: (p: { chars: number }) => `Sintetizar fala (${plural(p.chars, "caractere", "caracteres")})`,
   speechSummary: (p: { chars: number; provider: string | null; voice: string | null }) =>
     `Sintetizar fala (${plural(p.chars, "caractere", "caracteres")}${p.provider ? `, ${p.provider}` : ""}${p.voice ? `, voz ${p.voice}` : ""})`,
+  imageInputsSpaceUnavailable: 'O catálogo do Space ainda não está pronto, então não é possível informar imagens de entrada como itens do Space',
+  imageInputsPurpose: (p) => `Gerar imagem (imagens de entrada: ${p.inputs}): ${p.prompt}`,
   imagePurpose: (p: { prompt: string }) => `Gerar imagem: ${p.prompt}`,
   musicPurpose: (p: { style: string }) => `Gerar música: ${p.style}`,
   musicSummary: (p: { mode: string; seconds: number | null; provider: string | null; style: string }) => `Gerar ${p.mode === 'song' ? 'uma música' : 'música instrumental'}${p.seconds ? `, até ${p.seconds} s` : ''}${p.provider ? `, ${p.provider}` : ''}: ${p.style}`,

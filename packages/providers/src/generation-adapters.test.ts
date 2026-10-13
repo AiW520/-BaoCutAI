@@ -2,9 +2,9 @@ import fs from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
-import { ModelServiceStore, ProviderFailure, type GenerationRun, type ImageParameters, type SpeechParameters } from '@baocut/models';
+import { ModelServiceStore, ProviderFailure, freezeImageInput, type GenerationRun, type ImageParameters, type SpeechParameters } from '@baocut/models';
 import { FileCredentialStore } from '@baocut/runtime-storage';
-import type { AdapterConfig, ImageAdapter, SpeechAdapter } from './adapter.ts';
+import type { AdapterConfig, ImageAdapter, ImageInputBytes, SpeechAdapter } from './adapter.ts';
 import { ElevenLabsAdapter } from './elevenlabs/elevenlabs-adapter.ts';
 import { GoogleImageAdapter, parseImageInteraction } from './google/google-image.ts';
 import { ProviderAborted } from './http/provider-fetch.ts';
@@ -72,12 +72,20 @@ function synthesize(
   return adapter.synthesize({ config: cfg, model, parameters, signal, http });
 }
 
-function generate(adapter: ImageAdapter, cfg: AdapterConfig, modelId: string, parameters: ImageParameters, progress: number[] = []) {
+function generate(
+  adapter: ImageAdapter,
+  cfg: AdapterConfig,
+  modelId: string,
+  parameters: ImageParameters,
+  progress: number[] = [],
+  inputs: ImageInputBytes[] = [],
+) {
   const model = adapter.models(cfg).find((m) => m.modelId === modelId)!;
   return adapter.generate({
     config: cfg,
     model,
     parameters,
+    inputs,
     signal: new AbortController().signal,
     http,
     progress: (n) => progress.push(n),
@@ -173,6 +181,35 @@ describe('OpenAI 图片', () => {
     expect(server.requests[0]!.json).toEqual({ model: 'gpt-image-2', prompt: 'a fox', n: 3, size: '1536x864', output_format: 'png' });
   });
 
+  it('带输入图时走 /images/edits：images 是 data URL 的 image_url，顺序不变，其余字段相同', async () => {
+    server = await startFakeProviderServer(fakeOpenAiHandler());
+    const inputs: ImageInputBytes[] = [
+      { bytes: pngFixture(4, 4, 0), mediaType: 'image/png', name: 'a.png' },
+      { bytes: Buffer.from([0xff, 0xd8, 0xff, 0xe0]), mediaType: 'image/jpeg', name: 'b.jpg' },
+    ];
+    const out = await generate(
+      new OpenAiImageAdapter(),
+      config(`${server.origin}/v1`, OPENAI_KEY),
+      'gpt-image-2',
+      image({ count: 2, size: '1024x1024' }),
+      [],
+      inputs,
+    );
+    expect(out.images).toHaveLength(2);
+    expect(server.requests[0]!.path).toBe('/v1/images/edits');
+    expect(server.requests[0]!.json).toEqual({
+      model: 'gpt-image-2',
+      images: [
+        { image_url: `data:image/png;base64,${pngFixture(4, 4, 0).toString('base64')}` },
+        { image_url: 'data:image/jpeg;base64,/9j/4A==' },
+      ],
+      prompt: 'a fox',
+      n: 2,
+      size: '1024x1024',
+      output_format: 'png',
+    });
+  });
+
   it('张数不对、没有 b64_json：协议错误', async () => {
     server = await startFakeProviderServer(() => ({ status: 200, json: { data: [{ b64_json: 'AAAA' }] } }));
     const cfg = config(`${server.origin}/v1`, OPENAI_KEY);
@@ -187,6 +224,8 @@ describe('OpenAI 图片', () => {
     expect(def.modelId).toBe('gpt-image-2');
     expect(def.aspectRatios).toContainEqual({ ratio: '16:9', size: '1536x864' });
     expect(models.every((m) => m.maxCount === 10 && m.maxPromptChars === 32_000 && !m.acceptsSeed)).toBe(true);
+    expect(def.referenceImages).toEqual({ max: 16, edit: true, maxBytesEach: 50_000_000, maxBytesTotal: null });
+    expect(models.every((m) => m.img2img === null)).toBe(true);
   });
 });
 
@@ -262,6 +301,22 @@ describe('Google 图片', () => {
       input: [{ type: 'text', text: 'a fox' }],
       response_format: { type: 'image', mime_type: 'image/jpeg', aspect_ratio: '16:9', image_size: '2K' },
     });
+  });
+
+  it('参考图接在提示词后面内联成 image 块；每次请求都带上', async () => {
+    server = await startFakeProviderServer(fakeGoogleHandler());
+    const ref = { bytes: pngFixture(4, 4, 0), mediaType: 'image/png' as const, name: 'a.png' };
+    await generate(new GoogleImageAdapter(), config(`${server.origin}/v1beta`, GOOGLE_KEY), 'gemini-3.1-flash-image', image({ count: 2 }), [], [ref]);
+    expect(server.requests).toHaveLength(2);
+    for (const request of server.requests) {
+      expect((request.json as { input: unknown }).input).toEqual([
+        { type: 'text', text: 'a fox' },
+        { type: 'image', mime_type: 'image/png', data: pngFixture(4, 4, 0).toString('base64') },
+      ]);
+    }
+    const models = new GoogleImageAdapter().models(config('x', null));
+    expect(models.find((m) => m.modelId === 'gemini-3.1-flash-image')!.referenceImages).toMatchObject({ max: 14, edit: false });
+    expect(models.every((m) => m.img2img === null)).toBe(true);
   });
 
   it('不给尺寸时不发宽高比；2.5 只发宽高比', async () => {
@@ -385,6 +440,20 @@ describe('OnlineGenerator', () => {
       await server.waitForRequests(2);
       controller.abort();
       expect(await pending).toEqual({ outcome: 'cancelled' });
+
+      // 输入图按冻结的摘要核对后才发出：文件改过就是 input-unreadable，不发请求。
+      server.handler = fakeOpenAiHandler();
+      const refFile = path.join(staging, 'ref.png');
+      await fs.writeFile(refFile, pngFixture(4, 4, 0));
+      const frozen = await freezeImageInput({ source: 'file', path: refFile });
+      const withRef = image({ images: [frozen], imageMode: 'ref' });
+      const before = server.requests.length;
+      expect(await generator.generate(run(withRef, 'gpt-image-1'), sink, new AbortController().signal)).toMatchObject({ outcome: 'completed' });
+      expect(server.requests[before]!.path).toBe('/v1/images/edits');
+      await fs.writeFile(refFile, pngFixture(4, 4, 1));
+      const changed = await failure(generator.generate(run(withRef, 'gpt-image-1'), sink, new AbortController().signal));
+      expect(changed).toMatchObject({ kind: 'input-unreadable', details: { reason: 'changed', name: 'ref.png' } });
+      expect(server.requests).toHaveLength(before + 1);
 
       current = null;
       expect((await failure(generator.generate(run(speech(), 'gpt-4o-mini-tts'), sink, new AbortController().signal))).kind).toBe(

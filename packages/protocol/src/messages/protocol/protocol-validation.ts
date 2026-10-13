@@ -107,6 +107,9 @@ const en = {
   translationFieldsCount: (p: { count: number }) => `Must have as many fields as template.json (${p.count})`,
   translationBeatsCount: (p: { count: number }) => `Must have as many beats as template.json (${p.count})`,
   translationAssetUnknown: (p: { path: string }) => `Not an asset listed in template.json: ${p.path}`,
+  imageModeNeedsImages: 'imageMode and strength need images',
+  strengthNeedsImg2Img: 'strength only applies with imageMode img2img',
+  imageAssetNeedsVideo: 'An { assetId } image needs videoId',
 };
 
 export type ProtocolValidationMessages = typeof en;

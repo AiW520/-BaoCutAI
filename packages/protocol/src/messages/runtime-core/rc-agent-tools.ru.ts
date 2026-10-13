@@ -55,6 +55,8 @@ export const ru: RcAgentToolsMessages = {
   transcribeSummary: (p) => `Расшифровать материал ${p.assetId}${p.provider ? ` (${p.provider}${p.model ? ` ${p.model}` : ""})` : ""}`,
   speechPurpose: (p) => `Синтезировать речь (${pluralForm('ru', p.chars, { one: `${p.chars} символ`, few: `${p.chars} символа`, many: `${p.chars} символов`, other: `${p.chars} символа` })})`,
   speechSummary: (p) => `Синтезировать речь (${pluralForm('ru', p.chars, { one: `${p.chars} символ`, few: `${p.chars} символа`, many: `${p.chars} символов`, other: `${p.chars} символа` })}${p.provider ? `, ${p.provider}` : ""}${p.voice ? `, голос ${p.voice}` : ""})`,
+  imageInputsSpaceUnavailable: 'Каталог Space ещё не готов, поэтому входные изображения нельзя указать как элементы Space',
+  imageInputsPurpose: (p) => `Сгенерировать изображение (входных изображений: ${p.inputs}): ${p.prompt}`,
   imagePurpose: (p) => `Сгенерировать изображение: ${p.prompt}`,
   musicPurpose: (p: { style: string }) => `Создать музыку: ${p.style}`,
   musicSummary: (p: { mode: string; seconds: number | null; provider: string | null; style: string }) => `Создать ${p.mode === 'song' ? 'песню' : 'инструментальную музыку'}${p.seconds ? `, до ${p.seconds} с` : ''}${p.provider ? `, ${p.provider}` : ''}: ${p.style}`,

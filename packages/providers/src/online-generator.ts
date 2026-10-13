@@ -4,6 +4,7 @@ import path from 'node:path';
 import {
   ProviderFailure,
   codePointLength,
+  readFrozenImage,
   type GenerationAttempt,
   type GenerationOutputFile,
   type GenerationProvider,
@@ -132,12 +133,18 @@ export class OnlineGenerator implements GenerationProvider {
     const adapter = this.#options.image;
     const model = adapter?.models(config).find((m) => m.modelId === run.modelId);
     if (!adapter || !model) throw new ProviderFailure('unavailable', PC.noImageModel({ label, model: run.modelId }).text, { providerId: this.id });
+    // 输入图在发出请求前按冻结的摘要核对（§6.1）：文件变了或不见了就失败，不换成别的图。
+    const inputs = [];
+    for (const image of parameters.images ?? []) {
+      inputs.push({ bytes: await readFrozenImage(image), mediaType: image.mediaType, name: image.name });
+    }
     sink.generating();
     send();
     const output = await adapter.generate({
       config,
       model,
       parameters,
+      inputs,
       signal,
       http,
       progress: (done) => sink.progress(done, parameters.count),

@@ -179,7 +179,6 @@ export const tr: ToolsMessages = {
     sample: "Örnek doldur",
     refs: "Referans görseller",
     pickRefs: "Referans görseller seç",
-    refsNote: "Oluşturma API arayüzünün bu sürümü henüz referans görsel kabul etmiyor",
     model: "Modeli",
     manage: "Görsel modellerini yönet…",
     modelPicker: "Görsel modeli",

@@ -772,6 +772,18 @@ describe('Web 服务', () => {
     expect(
       details(await page.request('models.generateText', { ...prompt, saveDir: path.join(project.path, 'a', 'b') }).catch((e: unknown) => e)),
     ).toMatchObject({ details: { code: 'CAPABILITY_NOT_CONFIGURED' } });
+    // 生图的输入图给路径时同样只能在项目目录里（按真实路径）；项目里的图到达处理函数（这里没有配置生图模型）。
+    const outsideImage = path.join(process.env.BAOCUT_DOWNLOADS_DIR!, 'outside.png');
+    await fs.writeFile(outsideImage, 'x');
+    expect(
+      details(await page.request('models.generateImage', { prompt: 'x', images: [outsideImage] }).catch((e: unknown) => e)),
+    ).toMatchObject({ code: 'forbidden', details: { code: 'PATH_OUTSIDE_PROJECT' } });
+    await fs.writeFile(path.join(project.path, 'inside.png'), 'x');
+    expect(
+      details(
+        await page.request('models.generateImage', { prompt: 'x', images: [path.join(project.path, 'inside.png')] }).catch((e: unknown) => e),
+      ),
+    ).toMatchObject({ details: { code: 'CAPABILITY_NOT_CONFIGURED' } });
     await desktop.request('settings.set', { values: { 'downloads.directory': null } });
     // 桌面照常拿到补救。
     const desktopTools = (await desktop.request('tools.list', {})).tools;

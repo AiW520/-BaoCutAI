@@ -81,6 +81,16 @@ describe('请求带上视频', () => {
     expect(editorImageRequest({ ...draft, fit: false }, imageOption(ratios), 'v1', LANDSCAPE).size).toBe('2:3');
   });
 
+  it('图片：这个视频的素材作参考图按 assetId 交，与 videoId 一起', () => {
+    const refs = { max: 4, edit: true, maxBytesEach: null, maxBytesTotal: null };
+    const draft: EditorImageDraft = { ...BLANK_IMAGE, prompt: '一只纸鹤', fit: false, refs: [{ assetId: 'a1', name: '纸鹤.png' }] };
+    expect(editorImageRequest(draft, imageOption({ ...ratios, referenceImages: refs }), 'v1', LANDSCAPE)).toMatchObject({
+      videoId: 'v1',
+      images: [{ assetId: 'a1' }],
+      imageMode: 'ref',
+    });
+  });
+
   it('重试补回 videoId；参数不全时照旧 null', () => {
     expect(withVideo(retryRequest(imageJob()), 'v1')).toMatchObject({ prompt: '水墨风格的山间小路', videoId: 'v1' });
     expect(withVideo(null, 'v1')).toBeNull();

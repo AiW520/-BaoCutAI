@@ -66,6 +66,8 @@ export const nl: RcAgentToolsMessages = {
   speechPurpose: (p: { chars: number }) => `Spraak synthetiseren (${`${p.chars} ${pluralForm('nl', p.chars, { one: "teken", other: "tekens" })}`})`,
   speechSummary: (p: { chars: number; provider: string | null; voice: string | null }) =>
     `Spraak synthetiseren (${`${p.chars} ${pluralForm('nl', p.chars, { one: "teken", other: "tekens" })}`}${p.provider ? `, ${p.provider}` : ""}${p.voice ? `, stem ${p.voice}` : ""})`,
+  imageInputsSpaceUnavailable: 'De Space-catalogus is nog niet klaar, dus invoerafbeeldingen kunnen niet als Space-items worden opgegeven',
+  imageInputsPurpose: (p) => `Afbeelding genereren (invoerafbeeldingen: ${p.inputs}): ${p.prompt}`,
   imagePurpose: (p: { prompt: string }) => `Afbeelding genereren: ${p.prompt}`,
   musicPurpose: (p: { style: string }) => `Muziek genereren: ${p.style}`,
   musicSummary: (p: { mode: string; seconds: number | null; provider: string | null; style: string }) => `${p.mode === 'song' ? 'Een liedje' : 'Instrumentale muziek'} genereren${p.seconds ? `, tot ${p.seconds} s` : ''}${p.provider ? `, ${p.provider}` : ''}: ${p.style}`,

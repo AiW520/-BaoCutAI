@@ -112,6 +112,8 @@ const en = {
   speechPurpose: (p: { chars: number }) => `Synthesize speech (${plural(p.chars, 'character', 'characters')})`,
   speechSummary: (p: { chars: number; provider: string | null; voice: string | null }) =>
     `Synthesize speech (${plural(p.chars, 'character', 'characters')}${p.provider ? `, ${p.provider}` : ''}${p.voice ? `, voice ${p.voice}` : ''})`,
+  imageInputsSpaceUnavailable: 'The Space catalog isn’t ready yet, so input images can’t be given as Space entries',
+  imageInputsPurpose: (p: { prompt: string; inputs: number }) => `Generate image (input images: ${p.inputs}): ${p.prompt}`,
   imagePurpose: (p: { prompt: string }) => `Generate image: ${p.prompt}`,
   musicPurpose: (p: { style: string }) => `Generate music: ${p.style}`,
   musicSummary: (p: { mode: string; seconds: number | null; provider: string | null; style: string }) => `Generate ${p.mode === 'song' ? 'a song' : 'instrumental music'}${p.seconds ? `, up to ${p.seconds} s` : ''}${p.provider ? `, ${p.provider}` : ''}: ${p.style}`,

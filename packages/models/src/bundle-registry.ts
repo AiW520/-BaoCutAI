@@ -101,7 +101,7 @@ export interface BundleDefinition {
   diarization?: string;
 }
 
-/** 一个本地文生图模型包能做什么（架构设计 §6.1、§6.3）。一次一张、只出 PNG、不收参考图、接受 seed。 */
+/** 一个本地文生图模型包能做什么（架构设计 §6.1、§6.3）。一次一张、只出 PNG、接受 seed；输入图等 Model Worker 接上（§6.1）。 */
 export interface ImageBundleProfile {
   family: string;
   /** 宽高比与它的像素尺寸；第一个是默认尺寸。 */

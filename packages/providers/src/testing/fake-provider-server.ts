@@ -241,7 +241,7 @@ export function geminiTextReply(request: RecordedRequest, text: string, options:
   };
 }
 
-/** 假 OpenAI：`/models`、`/audio/transcriptions`、`/audio/speech`、`/images/generations` 与 `/chat/completions`。 */
+/** 假 OpenAI：`/models`、`/audio/transcriptions`、`/audio/speech`、`/images/generations`、`/images/edits` 与 `/chat/completions`。 */
 export function fakeOpenAiHandler(text = 'hello world'): FakeHandler {
   return (request) => {
     if (request.method === 'GET' && request.path.endsWith('/models')) return { status: 200, json: { object: 'list', data: [] } };
@@ -250,7 +250,7 @@ export function fakeOpenAiHandler(text = 'hello world'): FakeHandler {
     if (request.method === 'POST' && request.path.endsWith('/audio/speech')) {
       return audioReply(String((request.json as { response_format?: string } | undefined)?.response_format ?? 'mp3'));
     }
-    if (request.method === 'POST' && request.path.endsWith('/images/generations')) return openAiImagesReply(request);
+    if (request.method === 'POST' && /\/images\/(generations|edits)$/.test(request.path)) return openAiImagesReply(request);
     return { status: 404, json: { error: { message: 'not found' } } };
   };
 }

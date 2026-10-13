@@ -185,6 +185,7 @@ describe('本地文生图（假 Model Worker）', () => {
       formats: ['png'],
       acceptsSeed: true,
       referenceImages: null,
+      img2img: null,
       cost: 'free-local',
       local: { steps: { min: 8, max: 40, step: 4, default: 20 } },
     });

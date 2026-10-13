@@ -27,4 +27,7 @@ export const es: ProtocolValidationMessages = {
   translationFieldsCount: (p: { count: number }) => `Debe tener tantos fields como template.json (${p.count})`,
   translationBeatsCount: (p: { count: number }) => `Debe tener tantos beats como template.json (${p.count})`,
   translationAssetUnknown: (p: { path: string }) => `No es un material listado en template.json: ${p.path}`,
+  imageModeNeedsImages: 'imageMode y strength necesitan images',
+  strengthNeedsImg2Img: 'strength solo se usa con imageMode img2img',
+  imageAssetNeedsVideo: 'Una imagen { assetId } necesita videoId',
 };

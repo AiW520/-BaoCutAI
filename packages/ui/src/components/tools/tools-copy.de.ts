@@ -212,7 +212,6 @@ export const de: ToolsMessages = {
     sample: "Beispiel einfügen",
     refs: "Referenzbilder",
     pickRefs: "Referenzbilder auswählen",
-    refsNote: "Die Erzeugungs-API dieser Version akzeptiert noch keine Referenzbilder",
     model: "Modell",
     manage: "Bildmodelle verwalten…",
     modelPicker: "Bildmodell",

@@ -5,7 +5,7 @@ import path from 'node:path';
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { BaoCutClient } from '@baocut/client';
 import { JobLedger } from '@baocut/jobs';
-import { fakeGoogleHandler, fakeOpenAiHandler, startFakeProviderServer, type FakeProviderServer } from '@baocut/providers/testing';
+import { fakeGoogleHandler, fakeOpenAiHandler, pngFixture, startFakeProviderServer, type FakeProviderServer } from '@baocut/providers/testing';
 import { newId, type AgentMode, type Autonomy, type Id, type Project } from '@baocut/protocol';
 import { resolveRuntimeHome, type RuntimeHome } from '@baocut/runtime-storage';
 import { resolveEngineHostCommand } from '../videos/engine-host.ts';
@@ -445,6 +445,38 @@ describe.skipIf(!ffprobe)('模型工具：生成任务（假供应商，不带�
     for (const output of job.outputs) expect(output).toMatchObject({ mediaType: 'image/png', assetId: null, media: { kind: 'image' } });
     expect(google.requests[0]!.headers['x-goog-api-key']).toBe(GOOGLE_KEY);
     await expectNoSecret(side, GOOGLE_KEY);
+    await expectNoSecret(side, OPENAI_KEY);
+  });
+
+  it('图片的输入图（§6.1）：按会话能看到的 Space 图片条目给；别的项目的条目看不到；本机路径不收；参数里没有本机路径', async () => {
+    await side.client.request('models.configure', { providerId: 'openai', enabled: true, credential: OPENAI_KEY });
+    await fs.writeFile(path.join(side.project.path, 'cover.png'), pngFixture(4, 4, 0));
+    const { project: elsewhere } = await side.client.request('projects.create', { name: '别的项目的图' });
+    await fs.writeFile(path.join(elsewhere.path, 'secret.png'), pngFixture(4, 4, 1));
+    await side.client.request('space.rescan', {});
+    await side.runtime.space.idle();
+    const entryOf = async (projectId: Id) => (await side.client.request('space.list', { projectId, kind: 'image' })).entries[0]!;
+    const mine = await entryOf(side.project.id);
+    const theirs = await entryOf(elsewhere.id);
+
+    const { session } = await send(side, { autonomy: 'authorized' });
+    const submitted = await call(side, session, 'image', { prompt: 'snowy', provider: 'openai', images: [{ entryId: mine.id }] });
+    expect(submitted.isError, JSON.stringify(submitted.body)).toBe(false);
+    const job = await settle(side, session, submitted.body.jobId);
+    expect(job).toMatchObject({
+      state: 'completed',
+      parameters: { imageMode: 'ref', images: [{ source: 'space', entryId: mine.id, name: 'cover.png', mediaType: 'image/png' }] },
+    });
+    expect(JSON.stringify(job.parameters)).not.toContain(side.project.path);
+    const edit = openai.requests.find((r) => r.path === '/v1/images/edits')!;
+    expect(edit.json).toMatchObject({ images: [{ image_url: `data:image/png;base64,${pngFixture(4, 4, 0).toString('base64')}` }] });
+
+    const hidden = await call(side, session, 'image', { prompt: 'x', provider: 'openai', images: [{ entryId: theirs.id }] });
+    expect(hidden.isError).toBe(true);
+    expect(hidden.body.error).toMatchObject({ code: 'NOT_FOUND' });
+    const rawPath = await call(side, session, 'image', { prompt: 'x', provider: 'openai', images: [path.join(elsewhere.path, 'secret.png')] });
+    expect(rawPath.isError).toBe(true);
+    expect(openai.requests.filter((r) => r.path === '/v1/images/edits')).toHaveLength(1);
     await expectNoSecret(side, OPENAI_KEY);
   });
 

@@ -1065,6 +1065,14 @@ export const methodParamSchemas = {
       format: imageFormat.optional(),
       seed: seed.optional(),
       steps: z.number().int().min(1).max(1000).optional(),
+      // 输入图（§6.1）：本机路径、Space 条目或 `videoId` 视频里的素材；张数、字节数与用法按模型在提交时检查。
+      images: z
+        .array(z.union([absolutePath, spaceEntryInput, z.object({ assetId: id }).strict()]))
+        .min(1)
+        .max(64)
+        .optional(),
+      imageMode: z.enum(['ref', 'img2img']).optional(),
+      strength: z.number().min(0).max(1).optional(),
       provider: providerId.optional(),
       model: modelId.optional(),
       videoId: id.optional(),
@@ -1073,7 +1081,19 @@ export const methodParamSchemas = {
       saveDir: absolutePath.optional(),
       commandId: id.optional(),
     })
-    .strict(),
+    .strict()
+    .refine((r) => r.images !== undefined || (r.imageMode === undefined && r.strength === undefined), {
+      error: () => V.imageModeNeedsImages().text,
+      path: ['images'],
+    })
+    .refine((r) => r.strength === undefined || r.imageMode === 'img2img', {
+      error: () => V.strengthNeedsImg2Img().text,
+      path: ['strength'],
+    })
+    .refine((r) => r.videoId !== undefined || !r.images?.some((i) => typeof i === 'object' && 'assetId' in i), {
+      error: () => V.imageAssetNeedsVideo().text,
+      path: ['videoId'],
+    }),
   'models.generateMusic': z
     .object({
       mode: z.enum(['song', 'instrumental']),

@@ -212,7 +212,6 @@ export const fr: ToolsMessages = {
     sample: "Insérer un exemple",
     refs: "Images de référence",
     pickRefs: "Choisir des images de référence",
-    refsNote: "Cette API ne prend pas encore d’images de référence",
     model: "Modèle",
     manage: "Gérer les modèles d'image…",
     modelPicker: "Modèle d’image",

@@ -1,4 +1,4 @@
-// Google Gemini 图片生成适配器（架构设计 §6.4）。2026-10-03 读过的文档：
+// Google Gemini 图片生成适配器（架构设计 §6.4）。2026-10-03 读过的文档（参考图 2026-10-13 重读 image-generation）：
 //   https://ai.google.dev/gemini-api/docs/image-generation
 //   https://ai.google.dev/gemini-api/docs/models/gemini-3.1-flash-image
 //   https://ai.google.dev/gemini-api/docs/models/gemini-3-pro-image
@@ -7,11 +7,13 @@
 // 顶层 `response_format: { type: 'image', mime_type, aspect_ratio, image_size }`（`image_size` 取 '512'、'1K'、'2K'、'4K'，
 // K 大写）；结果在 `steps[]` 里 `type: 'model_output'` 的 `content[]`，图片块 `{ type: 'image', data（base64）, mime_type }`，
 // `type: 'thought'` 的 step 里是不收费的中间图（不取）；各模型的宽高比与像素尺寸表（这里照抄）；3.1 Flash Image 输入上限
-// 131,072 token，3 Pro Image 与 3.1 Flash Lite Image 65,536；参考图 3.x 最多 14 张、2.5 最多 3 张（这一版不用）；
+// 131,072 token，3 Pro Image 与 3.1 Flash Lite Image 65,536；参考图 3.x 最多 14 张、2.5 最多 3 张，作为 `input` 里
+// 提示词之后的 `{ type: 'image', mime_type, data（base64）}`；没有以图为底按强度重画的参数（`img2img` 为 null）；
 // gemini-2.5-flash-image 只接受 `aspect_ratio`。
 // 没能确认的：一次请求出几张图（文档没有张数参数，所以一张一次请求，最多 4 张是我们的上限）；`seed`（不开放）；
 // `mime_type: 'image/webp'`（不提供）；3.1 Flash Lite Image 各宽高比的像素尺寸（文档只给了宽高比，按 3.1 Flash Image 的 1K
-// 尺寸声明）；提示词按字符的上限（按 32000 字符声明，远低于 token 上限）。
+// 尺寸声明）；提示词按字符的上限（按 32000 字符声明，远低于 token 上限）；内联请求的总大小上限（图片理解文档的 20 MB，
+// 按原图合计 14 MB 声明）与各类参考图（物体、人物、风格）的分项上限（不区分，只按总数）；输入图格式（按 PNG、JPEG、WebP 声明）。
 import { ProviderFailure } from '@baocut/models';
 import type { ImageAspectRatio, ImageFormat, ImageModelInfo } from '@baocut/protocol';
 import {
@@ -108,7 +110,9 @@ function model(
       maxPromptChars: 32_000,
       formats: ['png', 'jpeg'],
       defaultFormat: 'png',
-      referenceImages: { max: referenceImages },
+      // 参考图内联进请求（base64）：整个请求不超过 20 MB，所以原图合计按 14 MB 算（base64 后约 18.7 MB，留出提示词的余量）。
+      referenceImages: { max: referenceImages, edit: false, maxBytesEach: null, maxBytesTotal: 14 * 1000 * 1000 },
+      img2img: null,
       acceptsSeed: false,
       cost: 'unknown',
       ...extra,
@@ -148,7 +152,11 @@ export class GoogleImageAdapter implements ImageAdapter {
     const mimeType = IMAGE_MEDIA[parameters.format].mediaType;
     const body = JSON.stringify({
       model: request.model.modelId,
-      input: [{ type: 'text', text: parameters.prompt }],
+      // 输入图（§6.1）作为参考，接在提示词后面内联（base64）。
+      input: [
+        { type: 'text', text: parameters.prompt },
+        ...request.inputs.map((input) => ({ type: 'image', mime_type: input.mediaType, data: input.bytes.toString('base64') })),
+      ],
       response_format: {
         type: 'image',
         mime_type: mimeType,

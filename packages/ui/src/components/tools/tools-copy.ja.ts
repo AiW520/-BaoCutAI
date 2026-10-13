@@ -186,7 +186,6 @@ export const ja: ToolsMessages = {
     sample: 'サンプルを入れる',
     refs: '参照画像',
     pickRefs: '参照画像を選択',
-    refsNote: 'このバージョンの生成 API はまだ参照画像に対応していません',
     model: 'モデル',
     manage: '画像モデルを管理…',
     modelPicker: '画像モデル',

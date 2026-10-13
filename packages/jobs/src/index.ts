@@ -10,6 +10,8 @@ export {
   type FileJobObserver,
   type FileJobOutput,
   type FileTranscribeRequest,
+  type GenerateImageSubmission,
+  type ResolvedImageEntry,
   type StandaloneTranscribeRequest,
   type JobAssetSource,
   type JobManagerOptions,

@@ -86,7 +86,7 @@ description: 媒体的机制：从链接下载、转码与合并、取帧看画�
 
 ### 生成图片
 
-{{tool:image}}：{{arg:prompt}}；可给 {{arg:size}}、{{arg:count}}、{{arg:seed}}、{{arg:provider}}、{{arg:model}}、{{arg:video}}（结果导入为那个视频的候选素材，不放上时间线）。不接受参考图。什么时候画、画成什么样由各 craft 决定（封面、B-roll、旁白成片的画面、分镜、文章与幻灯片的插图），这一节只讲怎么画。
+{{tool:image}}：{{arg:prompt}}；可给 {{arg:size}}、{{arg:count}}、{{arg:seed}}、{{arg:provider}}、{{arg:model}}、{{arg:video}}（结果导入为那个视频的候选素材，不放上时间线）、{{arg:images}}、{{arg:imageMode}}、{{arg:strength}}（输入图，见下）。什么时候画、画成什么样由各 craft 决定（封面、B-roll、旁白成片的画面、分镜、文章与幻灯片的插图），这一节只讲怎么画。
 
 **先看能力**：{{tool:models_capabilities}}，{{arg:capability}} 给 `generateImage`。`effective` 是不指定服务时用谁（null 时不指定服务的调用会被拒），`usableProviders` 是能用的服务；再看要用的模型的 `sizes`、`aspectRatios`、`maxCount`、`maxPromptChars`、`acceptsSeed`、`cost` 与 `notes`。各服务差别很大：
 
@@ -95,6 +95,8 @@ description: 媒体的机制：从链接下载、转码与合并、取帧看画�
 - Codex 用 API key 而不是 ChatGPT 订阅登录时，它的 `cost` 为 `unknown`、`notes` 写明可能画不了，出厂顺序会跳过它；用户点名要它时照样可以给。
 - 智能体服务（如 `agent:codex`）可能不收尺寸与种子：`sizes` 与 `aspectRatios` 都为空的模型不给 {{arg:size}} 和 {{arg:seed}}，在提示词里写明横竖与构图，用的时候再裁。
 - `maxCount` 为 1 的模型要几张就分几次提交；一次只跑一个任务的服务会排队。张数多或模型慢时，先告诉用户大约要等多久。
+
+**输入图**：用户要按某张图改、照某张图的样子画时给 {{arg:images}}，按顺序列出：Space 里的图给 `{ entryId }`（{{tool:space_list}} 找 `kind` 为 `image` 的条目），视频素材库里的图给 `{ assetId }` 并同时给 {{arg:video}}；不收本机路径，工作目录里的图先 {{tool:assets_import}} 进视频再用素材 id。先看模型的 `referenceImages`：为 null 的模型不收输入图；`max` 是张数上限；`edit` 为 true 的模型按提示词改图（第一张是要改的图），否则只作参考。{{arg:imageMode}} 默认 `ref`（所有图一起出图）；`img2img` 以图为底按 {{arg:strength}} 重画，只有 `img2img` 不为 null 的模型接受，张数是底图的组数（每 `img2img.max` 张一组），不给 {{arg:count}}。改动幅度小（只调色、换细节）给小的强度，要大改给大的。
 
 **尺寸**：按图要去的地方选比例：视频画面按画幅（`16:9`、`9:16`、`1:1`），幻灯片与文章按图框。{{arg:size}} 用模型 `aspectRatios` 里的比例或 `sizes` 里的尺寸；没有正好的取最接近的一种，放上去时裁掉多出的部分。
 

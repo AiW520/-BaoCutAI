@@ -103,6 +103,7 @@ const CODEX: AgentProviderDefinition = {
     formats: ['png'],
     defaultFormat: 'png',
     referenceImages: null,
+    img2img: null,
     acceptsSeed: false,
     cost: 'subscription',
     get notes() {

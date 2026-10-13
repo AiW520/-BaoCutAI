@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { RpcError, type Id, type JobRecord, type JobState } from '@baocut/protocol';
+import { withoutImagePaths } from '@baocut/models';
 import {
   DUB_PIPELINE,
   isTerminal,
@@ -432,7 +433,7 @@ function digestJob(record: JobRecord) {
             inputChars: messages.reduce((sum, m) => sum + [...m.content].length, 0),
             responseFormat: responseFormat.type,
           }))(record.generation)
-        : record.generation
+        : withoutImagePaths(record.generation)
     : undefined;
   const outputs = record.result?.outputs?.map((o) => ({
     artifactId: o.artifactId,

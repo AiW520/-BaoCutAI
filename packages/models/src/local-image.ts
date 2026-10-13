@@ -11,7 +11,7 @@ import type { ImageRunOptions } from './worker-contract.ts';
 
 type ImageParameters = Extract<GenerationParameters, { capability: 'generateImage' }>;
 
-/** `generateImage` 的模型描述：一次一张、只出 PNG、不收参考图、接受 seed 与步数；尺寸是模型包登记的几档。 */
+/** `generateImage` 的模型描述：一次一张、只出 PNG、接受 seed 与步数（输入图等 Model Worker 接上，暂时不收）；尺寸是模型包登记的几档。 */
 export function localImageModelInfo(def: BundleDefinition, status: ModelBundleStatus, usable: boolean): ImageModelInfo {
   const profile = def.image!;
   return {
@@ -24,7 +24,10 @@ export function localImageModelInfo(def: BundleDefinition, status: ModelBundleSt
     maxPromptChars: profile.maxPromptChars,
     formats: ['png'],
     defaultFormat: 'png',
+    // Qwen-Image-2.1 能按一张底图加至多 9 张参考图改图、也能以一张底图重画（架构设计 §6.1），但 Worker 还不收输入图：
+    // 等 `job.run` 带上输入图再声明，在那之前收到输入图在提交时拒绝。
     referenceImages: null,
+    img2img: null,
     acceptsSeed: true,
     cost: 'free-local',
     available: usable,

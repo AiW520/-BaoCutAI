@@ -67,6 +67,8 @@ export const de: RcAgentToolsMessages = {
   speechPurpose: (p: { chars: number }) => `Sprache synthetisieren (${`${p.chars} ${pluralForm('de', p.chars, { one: "Zeichen", other: "Zeichen" })}`})`,
   speechSummary: (p: { chars: number; provider: string | null; voice: string | null }) =>
     `Sprache synthetisieren (${`${p.chars} ${pluralForm('de', p.chars, { one: "Zeichen", other: "Zeichen" })}`}${p.provider ? `, ${p.provider}` : ""}${p.voice ? `, Stimme ${p.voice}` : ""})`,
+  imageInputsSpaceUnavailable: 'Der Space-Katalog ist noch nicht bereit, daher können Eingabebilder nicht als Space-Einträge angegeben werden',
+  imageInputsPurpose: (p) => `Bild erzeugen (Eingabebilder: ${p.inputs}): ${p.prompt}`,
   imagePurpose: (p: { prompt: string }) => `Bild erzeugen: ${p.prompt}`,
   musicPurpose: (p: { style: string }) => `Musik erzeugen: ${p.style}`,
   musicSummary: (p: { mode: string; seconds: number | null; provider: string | null; style: string }) => `${p.mode === 'song' ? 'Einen Song' : 'Instrumentalmusik'} erzeugen${p.seconds ? `, bis zu ${p.seconds} s` : ''}${p.provider ? `, ${p.provider}` : ''}: ${p.style}`,

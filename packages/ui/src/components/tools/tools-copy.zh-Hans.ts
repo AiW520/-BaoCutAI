@@ -181,7 +181,6 @@ export const zhHans: ToolsMessages = {
     sample: '填一句示例',
     refs: '参考图',
     pickRefs: '选参考图',
-    refsNote: '这一版的生成接口还不带参考图',
     model: '模型',
     manage: '管理生图模型…',
     modelPicker: '生图模型',

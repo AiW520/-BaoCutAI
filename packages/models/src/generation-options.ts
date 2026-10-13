@@ -3,7 +3,9 @@ import {
   type FrozenSpeechReference,
   type GenerateImageRequest,
   type GenerateMusicRequest,
+  type FrozenImageInput,
   type GenerationParameters,
+  type ImageInputMode,
   type ImageModelInfo,
   type MusicModelInfo,
   type SpeechModelInfo,
@@ -11,6 +13,7 @@ import {
 } from '@baocut/protocol';
 import { ModelsGenerationOptions as M } from '@baocut/protocol/messages/models/generation-options.ts';
 import { canonicalLanguageTag } from './asr-result.ts';
+import { megabytes } from './image-inputs.ts';
 import { builtinReferenceFile, frozenVoiceOf, planLocalVoice, type LocalVoicePlan } from './local-speech.ts';
 import type { ModelChoice } from './model-selection.ts';
 
@@ -197,7 +200,84 @@ function localSpeechParameters(
   };
 }
 
-export function imageParameters(choice: ModelChoice<'generateImage'>, request: GenerateImageRequest): ImageParameters {
+/** 生图请求的检查只看输入图的张数与顺序，不管它们是路径、条目还是换好的文件。 */
+export type ImageRequestShape = Omit<GenerateImageRequest, 'images'> & { images?: readonly unknown[] };
+
+/** 输入图的用法：模型是否接受、张数、改动幅度，以及这次出几张。 */
+export interface ImageInputPlan {
+  mode: ImageInputMode;
+  strength: number | null;
+  /** 这次出几张：`img2img` 是底图的组数，`ref` 是请求的 `count`（默认 1）。 */
+  count: number;
+}
+
+/**
+ * 输入图的检查（架构设计 §6.1「生图的输入图」）：只看请求与模型的描述，不读文件，所以在读文件之前先过这一关。没有输入图时
+ * null。不接受输入图、张数超过上限、模型不能以图为底重画、`count` 与底图的组数不符、`strength` 超出范围都是 `invalid-request`。
+ */
+export function imageInputPlan(choice: ModelChoice<'generateImage'>, request: ImageRequestShape): ImageInputPlan | null {
+  const images = request.images;
+  if (!images?.length) return null;
+  const model: ImageModelInfo = choice.model;
+  const where = { providerId: choice.providerId, modelId: choice.modelId };
+  const refs = model.referenceImages;
+  if (!refs) throw new RpcError('invalid-request', M.imagesUnsupported({ modelId: choice.modelId }), { ...where, referenceImages: null });
+  if (images.length > refs.max) {
+    throw new RpcError('invalid-request', M.imagesTooMany({ modelId: choice.modelId, count: images.length, max: refs.max }), {
+      ...where,
+      referenceImages: refs,
+    });
+  }
+  const mode = request.imageMode ?? 'ref';
+  if (mode === 'ref') return { mode, strength: null, count: request.count ?? 1 };
+  const img2img = model.img2img;
+  if (!img2img) throw new RpcError('invalid-request', M.img2imgUnsupported({ modelId: choice.modelId }), { ...where, img2img: null });
+  const groups = Math.ceil(images.length / img2img.max);
+  if (request.count !== undefined && request.count !== groups) {
+    throw new RpcError('invalid-request', M.img2imgCount({ count: groups }), { ...where, count: groups, img2img });
+  }
+  const range = img2img.strength;
+  const strength = request.strength ?? range.default;
+  if (!(strength >= range.min && strength <= range.max)) {
+    throw new RpcError('invalid-request', M.strengthRange({ min: range.min, max: range.max }), { ...where, strength: range });
+  }
+  return { mode, strength, count: groups };
+}
+
+/** 冻结好的输入图按模型的字节上限检查（每张、合计）；超了 `invalid-request`（`INPUT_TOO_LARGE`）。 */
+function checkImageBytes(choice: ModelChoice<'generateImage'>, images: readonly FrozenImageInput[]): void {
+  const refs = choice.model.referenceImages;
+  if (!refs) return;
+  const where = { providerId: choice.providerId, modelId: choice.modelId, code: 'INPUT_TOO_LARGE' };
+  if (refs.maxBytesEach !== null) {
+    const big = images.find((i) => i.byteLength > refs.maxBytesEach!);
+    if (big) {
+      throw new RpcError('invalid-request', M.imageTooLarge({ name: big.name, modelId: choice.modelId, limitMb: megabytes(refs.maxBytesEach) }), {
+        ...where,
+        name: big.name,
+        byteLength: big.byteLength,
+        limit: refs.maxBytesEach,
+      });
+    }
+  }
+  const total = images.reduce((sum, i) => sum + i.byteLength, 0);
+  if (refs.maxBytesTotal !== null && total > refs.maxBytesTotal) {
+    throw new RpcError('invalid-request', M.imagesTooLarge({ modelId: choice.modelId, limitMb: megabytes(refs.maxBytesTotal) }), {
+      ...where,
+      byteLength: total,
+      limit: refs.maxBytesTotal,
+    });
+  }
+}
+
+/**
+ * `images` 是提交时冻结好的输入图（与请求的 `images` 一一对应）；请求带输入图却没有冻结好的是调用方的错。
+ */
+export function imageParameters(
+  choice: ModelChoice<'generateImage'>,
+  request: ImageRequestShape,
+  images: readonly FrozenImageInput[] = [],
+): ImageParameters {
   const model: ImageModelInfo = choice.model;
   const where = { providerId: choice.providerId, modelId: choice.modelId };
   const prompt = request.prompt;
@@ -235,8 +315,14 @@ export function imageParameters(choice: ModelChoice<'generateImage'>, request: G
     }
   }
 
-  const count = request.count ?? 1;
-  if (!Number.isInteger(count) || count < 1 || count > model.maxCount) {
+  const plan = imageInputPlan(choice, request);
+  if (plan && images.length !== request.images!.length) {
+    throw new Error(`Input images for image generation were not frozen: ${choice.modelId}`);
+  }
+  if (plan) checkImageBytes(choice, images);
+  // 以图为底重画时张数是底图的组数，上限由 `referenceImages.max` 管，不看 `maxCount`（本地模型一次一张，逐组各跑一次）。
+  const count = plan?.count ?? request.count ?? 1;
+  if (plan?.mode !== 'img2img' && (!Number.isInteger(count) || count < 1 || count > model.maxCount)) {
     throw new RpcError('invalid-request', M.maxCount({ modelId: choice.modelId, max: model.maxCount }), {
       ...where,
       maxCount: model.maxCount,
@@ -258,7 +344,17 @@ export function imageParameters(choice: ModelChoice<'generateImage'>, request: G
     }
     steps = request.steps;
   }
-  return { capability: 'generateImage', prompt, size, aspectRatio, count, format, seed, ...(steps !== null ? { steps } : {}) };
+  return {
+    capability: 'generateImage',
+    prompt,
+    size,
+    aspectRatio,
+    count,
+    format,
+    seed,
+    ...(steps !== null ? { steps } : {}),
+    ...(plan ? { images: [...images], imageMode: plan.mode, ...(plan.strength !== null ? { strength: plan.strength } : {}) } : {}),
+  };
 }
 
 /** 步数超出范围的说明：上下限相同（蒸馏模型的固定步数）时直接说只收这一个值。 */

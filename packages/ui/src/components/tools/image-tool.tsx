@@ -1,7 +1,6 @@
 import { useMemo, useRef, useState } from 'react';
 import type { JobRecord, SpaceEntry } from '@baocut/protocol';
 import { ActionButton, Button, NumberField, Text, TextField, ToastQueue } from '@react-spectrum/s2';
-import Add from '@react-spectrum/s2/icons/Add';
 import ImageIcon from '@react-spectrum/s2/icons/Image';
 import { style } from '@react-spectrum/s2/style' with { type: 'macro' };
 import { ToggleButton, ToggleButtonGroup } from 'react-aria-components';
@@ -10,6 +9,7 @@ import {
   aspectOptions,
   countFor,
   IMAGE_SAMPLES,
+  imageRefMode,
   imageHeaderChip,
   imageModelLine,
   imageProblems,
@@ -36,6 +36,8 @@ import { ImageLightbox } from '../media/image-lightbox.tsx';
 import { EmptyCard, PageStatus } from '../models/model-parts.tsx';
 import { useNow } from '../use-now.ts';
 import { ImageRecord } from './image-record.tsx';
+import { ImageRefModeRow, ImageRefsRow } from './image-refs.tsx';
+import { M as IMG } from '../../model/tools-image-copy.ts';
 import { LocalModelGate } from './local-model-gate.tsx';
 import { ModelRow, SaveDirRow } from './tool-frame.tsx';
 import {
@@ -62,12 +64,11 @@ import { useRerun } from './video-tool-parts.tsx';
 
 /*
  * 设计稿 tool-image.jsx `ImageToolPage`（32-88）与 image-gen.jsx `ImageGenForm`（299-373）的云端与本机部分：
- * 提示词、模型、画幅、数量、高级（种子；本机模型另有步数），右边生成记录。参考图与局域网节点这一版没有后端，置灰写原因。
+ * 提示词与参考图（从 Space 或文件选、拖进来；能以图为底重画的模型另有用法与改动幅度）、模型、画幅、数量、高级（种子；本机模型另有步数），
+ * 右边生成记录。局域网节点这一版没有后端，置灰写原因。
  */
 
 const textFoot = style({ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0 });
-const refs = style({ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 8, minWidth: 0 });
-const refsLabel = style({ font: 'detail', fontWeight: 'bold', color: 'gray-700' });
 const aspects = style({ display: 'flex', flexWrap: 'wrap', gap: 8 });
 const aspect = style({
   display: 'flex',
@@ -97,6 +98,8 @@ const countField = style({ width: 112 });
 const seedField = style({ width: 140 });
 const stepsField = style({ width: 112 });
 const stepsFixed = style({ font: 'ui-sm', color: 'gray-800', flexShrink: 0 });
+
+const SPACE_SOURCE = { kind: 'space' } as const;
 
 /** 画幅示意框：长边 18px（设计稿 `AspectRow` 的 `box`）。 */
 function boxSize(ratio: number): { width: number; height: number } {
@@ -155,9 +158,10 @@ export function ImageTool() {
   const again = (job: JobRecord) => {
     const next = againDraft(job);
     if (!next) return;
-    patch(next);
+    const { dropped, ...rest } = next;
+    patch(rest);
     promptRef.current?.focus();
-    ToastQueue.neutral(IMAGE_COPY.againDone, { timeout: 3000 });
+    ToastQueue.neutral(dropped ? IMG.refsAssetsDropped(dropped) : IMAGE_COPY.againDone, { timeout: dropped ? 5000 : 3000 });
   };
   useRerun('generate-image', again);
 
@@ -193,14 +197,6 @@ export function ImageTool() {
           onChange={(prompt) => patch({ prompt })}
           placeholder={IMAGE_COPY.promptPlaceholder}
         />
-        <div className={refs}>
-          <span className={refsLabel}>{IMAGE_COPY.refs}</span>
-          <Button variant="secondary" size="S" isDisabled>
-            <Add />
-            <Text>{IMAGE_COPY.pickRefs}</Text>
-          </Button>
-          <span className={detail}>{IMAGE_COPY.refsNote}</span>
-        </div>
         <div className={textFoot}>
           <span className={maxChars && chars > maxChars ? detailOver : detailGrow}>{IMAGE_COPY.chars(chars, maxChars || null)}</span>
           {draft.prompt ? (
@@ -215,6 +211,12 @@ export function ImageTool() {
             </SectionLink>
           )}
         </div>
+        {option ? (
+          <>
+            <ImageRefsRow draft={draft} option={option} patch={patch} source={SPACE_SOURCE} />
+            <ImageRefModeRow draft={draft} option={option} patch={patch} />
+          </>
+        ) : null}
       </Section>
 
       <ModelRow
@@ -305,7 +307,7 @@ function ImageOptions({ draft, option, patch }: { draft: ImageDraft; option: Ima
         )}
       </Section>
 
-      {info.maxCount > 1 ? (
+      {info.maxCount > 1 && imageRefMode(draft, info) !== 'img2img' ? (
         <Section title={IMAGE_COPY.count}>
           <Row>
             <NumberField

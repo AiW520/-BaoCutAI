@@ -2,6 +2,7 @@ import fs from 'node:fs/promises';
 import { z } from 'zod';
 import {
   IMAGE_FORMATS,
+  IMAGE_INPUT_MODES,
   MUSIC_MODES,
   MUSIC_PLANNINGS,
   MODEL_SERVICE_CAPABILITIES,
@@ -10,16 +11,21 @@ import {
   type CapabilityView,
   type GrantRequestItem,
   type Id,
+  type ImageInputMode,
   type ModelServiceCapability,
   type RiskLevel,
 } from '@baocut/protocol';
-import type { JobGrantHint } from '@baocut/jobs';
+import type { GenerateImageSubmission, JobGrantHint } from '@baocut/jobs';
 import { RcAgentTools } from '@baocut/protocol/messages/runtime-core';
 import { outboundPurpose, type OutboundCall, type OutboundPlan } from '../grants/grant-service.ts';
+import type { SpaceCatalog } from '../space-catalog.ts';
+import { IMAGE_ENTRY_KINDS } from '../space/space-inputs.ts';
+import { visibleEntry } from '../space/space-queries.ts';
+import { spaceViewerOf } from './space-tools.ts';
 import type { ModelJobs } from '../models/model-jobs.ts';
 import { prepareArtifactSave } from './artifact-save.ts';
 import { modelCallRisk, outboundGrantOf } from './outbound-grants.ts';
-import type { ToolInfo, ToolSet } from './tool-catalog.ts';
+import { ToolError, type ToolInfo, type ToolSet } from './tool-catalog.ts';
 import { approvalField, confirmSummary, type ToolAccess, type ToolApprovalNote, type ToolPrincipal, type ToolScope } from './tool-scope.ts';
 import { commandIdArg, videoArg } from './video-tools.ts';
 
@@ -42,6 +48,8 @@ import { commandIdArg, videoArg } from './video-tools.ts';
 export interface ModelToolsDeps {
   models: ModelJobs;
   scope: ToolScope;
+  /** 生图的输入图按 Space 条目给时用（§6.1）；Space 目录在工具目录之后才建好：调用时再取。 */
+  space?: () => SpaceCatalog;
 }
 
 // i18n-ignore-start: 给模型的工具说明、错误与下一步
@@ -95,11 +103,37 @@ const schemas = {
       .regex(/^(\d{1,5}x\d{1,5}|\d{1,3}:\d{1,3})$/)
       .optional()
       .describe('可选。尺寸 WIDTHxHEIGHT（模型的 sizes 之一）或宽高比 W:H（模型的 aspectRatios 之一）；不给时用 defaultSize'),
-    count: z.number().int().min(1).max(16).optional().describe('可选。张数，默认 1，不超过模型的 maxCount'),
+    count: z
+      .number()
+      .int()
+      .min(1)
+      .max(16)
+      .optional()
+      .describe('可选。张数，默认 1，不超过模型的 maxCount；imageMode 为 img2img 时张数是底图的组数，不用给'),
     format: z
       .enum(IMAGE_FORMATS as [string, ...string[]])
       .optional()
       .describe(`可选。图片格式：${IMAGE_FORMATS.join('、')}；不给时用模型的 defaultFormat`),
+    images: z
+      .array(
+        z.union([
+          z.strictObject({ entryId: z.string().min(1).max(200).describe('space_list 给出的图片条目 id（kind 为 image）') }),
+          z.strictObject({ assetId: z.string().min(1).max(200).describe('video 那个视频素材库里的图片素材 id（要同时给 video）') }),
+        ]),
+      )
+      .min(1)
+      .max(64)
+      .optional()
+      .describe(
+        '可选。输入图，按顺序：Space 的图片条目 { entryId } 或视频素材 { assetId }。张数不超过模型的 referenceImages.max；模型的 referenceImages 为 null 时不能给',
+      ),
+    imageMode: z
+      .enum(IMAGE_INPUT_MODES as [ImageInputMode, ...ImageInputMode[]])
+      .optional()
+      .describe(
+        '可选。输入图的用法：ref（默认）所有图一起进一次请求出图，referenceImages.edit 为 true 的模型按提示词改图，否则只作参考；img2img 以图为底按 strength 重画，只有 img2img 不为 null 的模型接受，每 img2img.max 张底图出一张',
+      ),
+    strength: z.number().min(0).max(1).optional().describe('可选。img2img 的改动幅度，在模型的 img2img.strength 范围内，不给时用它的 default'),
     seed: seedArg.optional(),
     provider: providerArg.optional(),
     model: modelArg.optional(),
@@ -192,7 +226,8 @@ const DEFINITIONS: Record<ToolName, ToolInfo> = {
     title: '生成图片',
     description: [
       '按提示词生成图片。',
-      '这个版本不接受参考图。尺寸、张数、格式要在模型声明的范围内，提示词不能超过 maxPromptChars。',
+      '尺寸、张数、格式要在模型声明的范围内，提示词不能超过 maxPromptChars。',
+      '输入图（images）先用 models_capabilities 看模型的 referenceImages（张数上限、edit 是否按提示词改图）与 img2img（以图为底重画、strength 范围）；Space 里的图用 space_list 找 kind 为 image 的条目，视频素材库的图给 assetId 并同时给 video。不接受本机路径。',
       '用户没点名模型时不给 provider 与 model：用用户设的默认，没设时按出厂顺序取第一个能用的（ChatGPT 订阅登录的 Codex › 本机模型 › OpenAI › Google Gemini › 其余已连接的服务）。用户点名了服务或模型才照着给。',
       '给了 video 时，完成后每张图片导入为那个视频的候选素材（jobs_inspect 给出 assetId），不会放上时间线；要用时再 edits_apply 的 addItem。',
       ARTIFACT_RULES,
@@ -202,6 +237,7 @@ const DEFINITIONS: Record<ToolName, ToolInfo> = {
     examples: [
       { title: '生成一张封面', args: { prompt: '夕阳下的海边小镇，水彩风格' } },
       { title: '按宽高比生成两张并导入视频', args: { prompt: 'a minimalist title card', size: '16:9', count: 2, video: 'demo' } },
+      { title: '按提示词改一张 Space 里的图', args: { prompt: '把背景换成雪山', images: [{ entryId: 'ent_1' }] } },
     ],
     surfaces: ['agent', 'mcp', 'cli'],
     positional: 'prompt',
@@ -251,9 +287,12 @@ export class ModelTools implements ToolSet {
   readonly #models: ModelJobs;
   readonly #scope: ToolScope;
 
+  readonly #space: (() => SpaceCatalog) | undefined;
+
   constructor(deps: ModelToolsDeps) {
     this.#models = deps.models;
     this.#scope = deps.scope;
+    this.#space = deps.space;
   }
 
   dispatch(name: string, args: unknown, principal: ToolPrincipal): Promise<unknown> {
@@ -323,20 +362,26 @@ export class ModelTools implements ToolSet {
   async #generateImage(args: Args<'image'>, principal: ToolPrincipal) {
     const access = this.#scope.authorize(principal, true);
     const videoId = args.video !== undefined ? (await this.#scope.open(args.video, access)).ref.videoId : undefined;
+    const images = this.#imageInputs(args.images, principal);
+    // 以图为底重画时张数是底图的组数，选定模型之前不知道：按底图张数（上限）估计额度。
+    const count = args.imageMode === 'img2img' ? (images?.length ?? 1) : (args.count ?? 1);
+    const prompt = clip(args.prompt, 40);
     const plan = await this.#plan(access, {
       capability: 'generateImage',
       providerId: args.provider,
       modelId: args.model,
       videoId: videoId ?? null,
-      quantity: { count: args.count ?? 1 },
-      ...outboundPurpose(RcAgentTools.imagePurpose({ prompt: clip(args.prompt, 40) })),
+      quantity: { count },
+      ...outboundPurpose(
+        images ? RcAgentTools.imageInputsPurpose({ prompt, inputs: images.length }) : RcAgentTools.imagePurpose({ prompt }),
+      ),
     });
     const approval = await this.#scope.confirm(access, {
       tool: 'image',
       ...(args.video !== undefined ? { video: args.video } : {}),
       ...confirmSummary(
         RcAgentTools.imageSummary({
-          count: args.count ?? 1,
+          count,
           size: args.size ?? null,
           provider: args.provider ?? null,
           prompt: clip(args.prompt, 80),
@@ -345,7 +390,7 @@ export class ModelTools implements ToolSet {
       ...this.#risk(plan),
     });
     const hint = this.#grantHint(plan, approval, access);
-    const { video: _, format, commandId, ...rest } = args;
+    const { video: _, format, commandId, images: _images, ...rest } = args;
     const { jobId } = await this.#models.grants.submitWith(hint, () =>
       this.#models.jobs.submitGenerateImage(
         {
@@ -353,6 +398,7 @@ export class ModelTools implements ToolSet {
           ...optional({
             format: format as (typeof IMAGE_FORMATS)[number] | undefined,
             videoId,
+            images,
             commandId: this.#commandId(access, commandId),
           }),
           prompt: args.prompt,
@@ -407,6 +453,22 @@ export class ModelTools implements ToolSet {
       ),
     );
     return { ...this.#submitted(jobId), ...approvalField(approval) };
+  }
+
+  /**
+   * 输入图的 Space 条目按调用方能看到的范围换成文件（§6.1、§7.9）：看不到的与不在一样（`not-found`），回收站里的、不是图片的
+   * 按 `SpaceCatalog.resolveFile` 拒绝。素材 `{ assetId }` 原样交给任务层，在 `video` 的素材库里取。
+   */
+  #imageInputs(inputs: Args<'image'>['images'], principal: ToolPrincipal): GenerateImageSubmission['images'] {
+    if (!inputs) return undefined;
+    return inputs.map((input) => {
+      if ('assetId' in input) return { assetId: input.assetId };
+      if (!this.#space) throw new ToolError('UNAVAILABLE', RcAgentTools.imageInputsSpaceUnavailable().text);
+      const space = this.#space();
+      visibleEntry(space, spaceViewerOf(this.#scope, this.#models.jobs, principal), input.entryId);
+      const { entry, file } = space.resolveFile(input.entryId, IMAGE_ENTRY_KINDS);
+      return { entryId: input.entryId, file, name: entry.fileName || entry.name };
+    });
   }
 
   /**

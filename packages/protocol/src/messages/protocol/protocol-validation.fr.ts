@@ -31,4 +31,7 @@ export const fr: ProtocolValidationMessages = {
   translationFieldsCount: (p: { count: number }) => `Doit avoir autant de fields que template.json (${p.count})`,
   translationBeatsCount: (p: { count: number }) => `Doit avoir autant de beats que template.json (${p.count})`,
   translationAssetUnknown: (p: { path: string }) => `Ce média n’est pas listé dans template.json : ${p.path}`,
+  imageModeNeedsImages: 'imageMode et strength nécessitent images',
+  strengthNeedsImg2Img: 'strength ne s’applique qu’avec imageMode img2img',
+  imageAssetNeedsVideo: 'Une image { assetId } nécessite videoId',
 };

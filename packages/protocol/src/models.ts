@@ -573,13 +573,44 @@ export interface ImageModelInfo extends ModelInfoBase {
   maxPromptChars: number;
   formats: ImageFormat[];
   defaultFormat: ImageFormat;
-  /** 模型是否接受参考图（以及最多几张）。这一版的 `models.generateImage` 还不带参考图，这里只描述模型。 */
-  referenceImages: { max: number } | null;
+  /** 模型收不收输入图（请求的 `images`，`imageMode: 'ref'`）与上限；null 是只按提示词生成。 */
+  referenceImages: ImageReferenceTraits | null;
+  /** 能不能以输入图为底重画（`imageMode: 'img2img'`）；null 是不能。 */
+  img2img: ImageToImageTraits | null;
   acceptsSeed: boolean;
   cost: ModelCost;
   /** 本地文生图模型独有的描述；在线模型不给。 */
   local?: LocalImageTraits;
 }
+
+/**
+ * 输入图（`imageMode: 'ref'`）：所有输入图进同一次请求、出 `count` 张。`edit` 为 true 时输入图是要按提示词修改的图（界面写
+ * 「按提示词改图」），false 时只作为参考。字节上限按提交时读到的文件算：`maxBytesEach` 是每张，`maxBytesTotal` 是一次请求里
+ * 所有输入图的总和（例如内联进 JSON 的供应商）；null 为不限。格式只收 PNG、JPEG、WebP（按文件头判断）。
+ */
+export interface ImageReferenceTraits {
+  max: number;
+  edit: boolean;
+  maxBytesEach: number | null;
+  maxBytesTotal: number | null;
+}
+
+/**
+ * 以图为底重画（`imageMode: 'img2img'`）：一次运行吃 `max` 张底图，输入图按顺序每 `max` 张一组、每组出一张，所以张数由输入图
+ * 的张数决定（`ceil(n / max)`）。`strength` 是改动幅度（0–1，越小越像原图），请求不给时用 `default`。
+ */
+export interface ImageToImageTraits {
+  max: number;
+  strength: { min: number; max: number; step: number; default: number };
+}
+
+/** 输入图的两种用法（`GenerateImageRequest.imageMode`）。 */
+export type ImageInputMode = 'ref' | 'img2img';
+export const IMAGE_INPUT_MODES: readonly ImageInputMode[] = ['ref', 'img2img'];
+
+/** 输入图收的格式（按文件头判断）。 */
+export const IMAGE_INPUT_MEDIA_TYPES = ['image/png', 'image/jpeg', 'image/webp'] as const;
+export type ImageInputMediaType = (typeof IMAGE_INPUT_MEDIA_TYPES)[number];
 
 /** 本地文生图模型的旋钮：去噪步数的范围与默认值（请求的 `steps`）。 */
 export interface LocalImageTraits {

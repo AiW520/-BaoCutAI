@@ -74,6 +74,8 @@ export const ja: RcAgentToolsMessages = {
   speechPurpose: (p) => `音声合成（${p.chars} 文字）`,
   speechSummary: (p) =>
     `音声合成（${p.chars} 文字${p.provider ? `、${p.provider}` : ''}${p.voice ? `、声 ${p.voice}` : ''}）`,
+  imageInputsSpaceUnavailable: 'Space の一覧がまだ準備できていないため、項目で入力画像を指定できません',
+  imageInputsPurpose: (p) => `入力画像 ${p.inputs} 枚から画像を生成：${p.prompt}`,
   imagePurpose: (p) => `画像を生成：${p.prompt}`,
   musicPurpose: (p: { style: string }) => `音楽を生成: ${p.style}`,
   musicSummary: (p: { mode: string; seconds: number | null; provider: string | null; style: string }) => `${p.mode === 'song' ? '楽曲' : 'インスト'}を生成${p.seconds ? `（最長 ${p.seconds} 秒）` : ''}${p.provider ? `、${p.provider}` : ''}: ${p.style}`,

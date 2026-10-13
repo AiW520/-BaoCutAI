@@ -728,7 +728,7 @@ export async function startRuntime(options: StartRuntimeOptions = {}): Promise<R
           // Space 目录在后面才建好：派生时再取。
           findDerived: (parentVideoId, key) => spaceDerivedFinder(space)(parentVideoId, key),
         }),
-        new ModelTools({ models, scope: toolScope }),
+        new ModelTools({ models, scope: toolScope, space: () => space }),
         new JobTools({ jobs: models.jobs, pipelines: models.pipelines, scope: toolScope }),
         new ExportTools({ exports, scope: toolScope }),
         new ModelInstallTools({ installs: models.installs, catalog: models.catalog, scope: toolScope }),

@@ -13,4 +13,7 @@ listSeparator: ', ', notEmpty: 'Boş olamaz', noSurroundingSpace: 'Boşlukla ba�
   translationFieldsCount: (p: { count: number }) => `template.json ile aynı sayıda fields olmalı (${p.count})`,
   translationBeatsCount: (p: { count: number }) => `template.json ile aynı sayıda beats olmalı (${p.count})`,
   translationAssetUnknown: (p: { path: string }) => `template.json içinde listelenen bir materyal değil: ${p.path}`,
+  imageModeNeedsImages: 'imageMode ve strength için images gerekir',
+  strengthNeedsImg2Img: 'strength yalnızca imageMode img2img ile geçerlidir',
+  imageAssetNeedsVideo: '{ assetId } görseli için videoId gerekir',
 };

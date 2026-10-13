@@ -1,13 +1,16 @@
-// OpenAI 的语音合成与图片生成接口形状（`openai` 与 `openai-compatible` 共用）。2026-10-03 读过的文档：
+// OpenAI 的语音合成与图片生成接口形状（`openai` 与 `openai-compatible` 共用）。2026-10-03 读过的文档（图片编辑 2026-10-13 重读）：
 //   https://developers.openai.com/api/reference/resources/audio/subresources/speech/methods/create
 //   https://developers.openai.com/api/docs/guides/text-to-speech
 //   https://developers.openai.com/api/reference/resources/images/methods/generate
+//   https://developers.openai.com/api/reference/resources/images
 //   https://developers.openai.com/api/docs/guides/image-generation
 // 文档确认的：`POST {base}/audio/speech`，JSON `model`、`input`（≤ 4096 字符）、`voice`（内置音色名，或自定义音色
 // `{ id }`）、`instructions`（tts-1 / tts-1-hd 不接受）、`response_format`（mp3、opus、aac、flac、wav、pcm）、
 // `speed`（0.25–4.0）；响应体就是音频字节。`POST {base}/images/generations`，JSON `model`、`prompt`（≤ 32000 字符）、
 // `n`（1–10）、`size`、`output_format`（png、jpeg、webp）；GPT image 模型总是返回 `data[].b64_json`（`response_format`
-// 已弃用），响应带 `usage`。鉴权 `Authorization: Bearer`。
+// 已弃用），响应带 `usage`。带输入图时走 `POST {base}/images/edits`：JSON 的 `images` 是 `[{ image_url }]`（完整地址或
+// base64 data URL，GPT image 模型至多 16 张），其余字段同上，响应形状相同；`input_fidelity` 不发（gpt-image-2 不接受）。
+// 鉴权 `Authorization: Bearer`。
 // 没能确认的：兼容端点是否接受这些字段、是否返回 `b64_json`（这里对兼容端点额外发 `response_format: 'b64_json'`；
 // 只返回 `url` 的端点不支持——不去下载响应里给的任意地址）。
 import { ProviderFailure } from '@baocut/models';
@@ -51,9 +54,12 @@ export async function openAiSynthesize(request: SpeechRequest, style: OpenAiGene
 }
 
 export async function openAiGenerateImages(request: ImageRequest, style: OpenAiGenerationStyle): Promise<ImageOutput> {
-  const { config, model, parameters } = request;
+  const { config, model, parameters, inputs } = request;
+  // 输入图（§6.1）：按提示词改图，所有图放进同一次编辑请求，以 data URL 内联（不上传成文件）。
+  const edit = inputs.length > 0;
   const body = {
     model: model.modelId,
+    ...(edit ? { images: inputs.map((input) => ({ image_url: `data:${input.mediaType};base64,${input.bytes.toString('base64')}` })) } : {}),
     prompt: parameters.prompt,
     n: parameters.count,
     ...(parameters.size ? { size: parameters.size } : {}),
@@ -62,7 +68,7 @@ export async function openAiGenerateImages(request: ImageRequest, style: OpenAiG
   };
   const response = await providerFetch(httpOptions(style.label, config, request.http), {
     method: 'POST',
-    url: `${config.baseUrl}/images/generations`,
+    url: `${config.baseUrl}/images/${edit ? 'edits' : 'generations'}`,
     headers: { 'content-type': 'application/json' },
     auth: authOf(config),
     body: () => JSON.stringify(body),

@@ -152,23 +152,27 @@ export class SpaceTools implements ToolSet {
     }
   }
 
-  /** 主体 → 能看到的范围。终端里的用户本人与界面相同，看得到全部。 */
   #viewer(principal: ToolPrincipal): SpaceViewer {
-    const access: ToolAccess = this.#deps.scope.authorize(principal, false);
-    if (access.principal.kind === 'local') return USER_VIEWER;
-    if (access.principal.kind === 'agent') {
-      const { conversation } = access as AgentAccess;
-      return { kind: 'source', projectId: conversation.projectId ?? null, conversationId: conversation.folderOf ?? conversation.id };
-    }
-    const { policy } = access as ServiceAccess;
-    const records = new Map(this.#deps.jobs.list().map((r) => [r.jobId, r]));
-    return {
-      kind: 'service',
-      videos: policy.videos === 'all' ? 'all' : new Set(policy.videos.ids),
-      owns: (record) => this.#deps.scope.owns(record, access),
-      jobs: (jobId) => records.get(jobId) ?? null,
-    };
+    return spaceViewerOf(this.#deps.scope, this.#deps.jobs, principal);
   }
+}
+
+/** 主体 → 能看到的 Space 范围。终端里的用户本人与界面相同，看得到全部。别的工具（生图的输入图）也按它查条目。 */
+export function spaceViewerOf(scope: ToolScope, jobs: { list(): JobRecord[] }, principal: ToolPrincipal): SpaceViewer {
+  const access: ToolAccess = scope.authorize(principal, false);
+  if (access.principal.kind === 'local') return USER_VIEWER;
+  if (access.principal.kind === 'agent') {
+    const { conversation } = access as AgentAccess;
+    return { kind: 'source', projectId: conversation.projectId ?? null, conversationId: conversation.folderOf ?? conversation.id };
+  }
+  const { policy } = access as ServiceAccess;
+  const records = new Map(jobs.list().map((r) => [r.jobId, r]));
+  return {
+    kind: 'service',
+    videos: policy.videos === 'all' ? 'all' : new Set(policy.videos.ids),
+    owns: (record) => scope.owns(record, access),
+    jobs: (jobId) => records.get(jobId) ?? null,
+  };
 }
 
 /** 给智能体的条目：不带来源目录的绝对路径。 */

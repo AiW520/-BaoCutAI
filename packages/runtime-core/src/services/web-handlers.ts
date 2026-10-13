@@ -135,7 +135,7 @@ export function webHandlers(base: RpcHandlers, deps: WebHandlerDeps): RpcHandler
       if (typeof saveDir === 'string' && !(await insideRegisteredProject(deps.harness, saveDir))) {
         throw new RpcError('forbidden', RcWeb.saveDirOutsideProject(), { code: 'PATH_OUTSIDE_PROJECT' });
       }
-      return submit(params, principal);
+      return submit(name === 'models.generateImage' ? await confineImagePaths(deps.harness, params) : params, principal);
     };
   }
 
@@ -200,6 +200,29 @@ async function insideRegisteredProject(harness: Harness, dir: string): Promise<b
     if (root && within(target, root)) return true;
   }
   return false;
+}
+
+/**
+ * 生图的输入图给的是路径时（§6.1），按真实路径必须在某个已登记的项目目录里，换成真实路径交下去；Space 条目与素材 id
+ * 不受影响（它们由 Runtime 自己换成文件）。
+ */
+async function confineImagePaths(harness: Harness, params: unknown): Promise<unknown> {
+  const images = (params as { images?: unknown }).images;
+  if (!Array.isArray(images) || !images.some((input) => typeof input === 'string')) return params;
+  const confined = [];
+  for (const input of images) {
+    if (typeof input !== 'string') {
+      confined.push(input);
+      continue;
+    }
+    const real = path.isAbsolute(input) ? await fs.realpath(input).catch(() => null) : null;
+    if (!real) throw new RpcError('not-found', RcWeb.fileMissing());
+    if (!(await insideRegisteredProject(harness, real))) {
+      throw new RpcError('forbidden', RcWeb.importOutsideProject(), { code: 'PATH_OUTSIDE_PROJECT' });
+    }
+    confined.push(real);
+  }
+  return { ...(params as object), images: confined };
 }
 
 /** 已登记的项目（按真实路径比较）。 */

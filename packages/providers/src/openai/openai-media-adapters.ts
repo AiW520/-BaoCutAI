@@ -1,15 +1,17 @@
-// OpenAI 语音合成与图片生成的模型（架构设计 §6.4）。2026-10-03 读过的文档：
+// OpenAI 语音合成与图片生成的模型（架构设计 §6.4）。2026-10-03 读过的文档（图片编辑 2026-10-13 重读）：
 //   https://developers.openai.com/api/reference/resources/audio/subresources/speech/methods/create
 //   https://developers.openai.com/api/docs/guides/text-to-speech
 //   https://developers.openai.com/api/reference/resources/images/methods/generate
+//   https://developers.openai.com/api/reference/resources/images
 //   https://developers.openai.com/api/docs/guides/image-generation
 // 文档确认的：语音模型 tts-1、tts-1-hd、gpt-4o-mini-tts；13 个内置音色，tts-1 / tts-1-hd 只有其中 9 个；指南推荐 marin、cedar；
 // 文本 ≤ 4096 字符；语言大体同 Whisper（指南列出的语言）；mp3 是默认格式；`speed` 0.25–4.0；`instructions` 不用于 tts-1 系列；
 // 没有 `seed`。图片模型 gpt-image-1、gpt-image-1-mini、gpt-image-1.5、gpt-image-2（dall-e-2/3 已于 2026-05-12 退役）；
 // 尺寸 1024x1024、1536x1024、1024x1536 与 `auto`（不给 `size`）；gpt-image-2 接受任意 WIDTHxHEIGHT（边长是 16 的倍数、
 // 宽高比 1:3–3:1、最大 3840x2160，超过 2560x1440 为实验性）；`n` 1–10；提示词 ≤ 32000 字符；没有 `seed`；
-// 参考图走 `/images/edits`（这一版不用）。
-// 没能确认的：自定义音色（`{ id }`）只按 gpt-4o-mini-tts 声明；opus、aac 的容器（不提供）；参考图的张数上限（按 16 声明）；
+// 输入图走 `/images/edits`，按提示词改图，GPT image 模型至多 16 张；没有以图为底按强度重画的参数（`img2img` 为 null）。
+// 没能确认的：自定义音色（`{ id }`）只按 gpt-4o-mini-tts 声明；opus、aac 的容器（不提供）；输入图的单张大小上限（参考文档
+// 没写，按图片编辑指南的每张小于 50 MB 声明）与格式（按 PNG、JPEG、WebP 声明）；
 // gpt-image-2 的非标准尺寸只列出几个 16:9 的常用值，不开放任意尺寸。
 import type { ImageAspectRatio, ImageModelInfo, SpeechModelInfo, SpeechVoice } from '@baocut/protocol';
 import type { AdapterConfig, ImageAdapter, ImageOutput, ImageRequest, SpeechAdapter, SpeechOutput, SpeechRequest } from '../adapter.ts';
@@ -79,7 +81,9 @@ const IMAGE_BASE = {
   maxPromptChars: 32_000,
   formats: ['png', 'jpeg', 'webp'],
   defaultFormat: 'png',
-  referenceImages: { max: 16 },
+  // 编辑接口：一次至多 16 张（GPT image 模型），每张按小于 50 MB 声明。
+  referenceImages: { max: 16, edit: true, maxBytesEach: 50 * 1000 * 1000, maxBytesTotal: null },
+  img2img: null,
   acceptsSeed: false,
   cost: 'unknown',
 } satisfies Partial<ImageModelInfo>;

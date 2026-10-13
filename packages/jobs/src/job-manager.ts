@@ -10,6 +10,7 @@ import {
   nowIso,
   type ApplicationRecord,
   type EditOperation,
+  type FrozenImageInput,
   type GenerateImageRequest,
   type GenerateMusicRequest,
   type GenerateTextRequest,
@@ -51,7 +52,9 @@ import {
   canonicalLanguageTag,
   capabilityNotConfiguredError,
   checkTranscribeOptions,
+  imageInputPlan,
   imageParameters,
+  freezeImageInput,
   freezeReferenceFile,
   localImageSeed,
   localMusicSeed,
@@ -83,6 +86,7 @@ import { ApplicationLedger, type StoredApplication, type VideoPlace } from './ap
 import { ArtifactStore, artifactIdOf, collectArtifactIds, type ArtifactExtension } from './artifact-store.ts';
 import { generatedImportOperation } from './generated-import.ts';
 import { JobsManager as J } from '@baocut/protocol/messages/jobs/job-manager.ts';
+import { ProtocolValidation as V } from '@baocut/protocol/messages/protocol/protocol-validation.ts';
 import { LocalizedError, asLocalized, errorText, jobError, jobWarning, withCause, type JobText } from './job-text.ts';
 import {
   canonicalJson,
@@ -217,6 +221,18 @@ export interface JobVideos {
   /** 一份文档某个版本（不给时当前版本）的正文。换用文稿要它。 */
   document?(videoId: Id, documentId: Id, revision?: string): Promise<{ revision: string; body: unknown }>;
 }
+
+/** 方法层按 Space 目录换好的输入图条目（§7.9「Space 条目作为输入」）。 */
+export interface ResolvedImageEntry {
+  entryId: Id;
+  file: string;
+  name: string;
+}
+
+/** JobManager 收的生图请求：输入图里的 `{ entryId }` 要先在方法层换成 `ResolvedImageEntry`，没换的在提交时报错。 */
+export type GenerateImageSubmission = Omit<GenerateImageRequest, 'images'> & {
+  images?: Array<NonNullable<GenerateImageRequest['images']>[number] | ResolvedImageEntry>;
+};
 
 /** 文件目标的转写任务（远端任务）。 */
 export interface FileTranscribeRequest {
@@ -1058,21 +1074,46 @@ export class JobManager {
     return { parameters: speechParameters(choice, request, { plan, reference }), ...(library ? { library } : {}) };
   }
 
-  /** 图片生成（§6.6）。本地生图的 seed 在提交时冻结（没给时抽一个），重试与重新执行出同一张图。 */
-  submitGenerateImage(request: GenerateImageRequest, submitter: JobSubmitter, grant?: JobGrantHint): Promise<{ jobId: Id }> {
+  /**
+   * 图片生成（§6.6）。本地生图的 seed 在提交时冻结（没给时抽一个），重试与重新执行出同一张图。输入图（§6.1）先按模型的描述查
+   * 张数与用法，再读出摘要冻结：Space 条目由调用方换好（`ResolvedImageEntry`），`{ assetId }` 在这里取 `videoId` 视频里那个素材
+   * 此刻的版本。
+   */
+  submitGenerateImage(request: GenerateImageSubmission, submitter: JobSubmitter, grant?: JobGrantHint): Promise<{ jobId: Id }> {
     return this.#submitGeneration(
       'generateImage',
       request,
       submitter,
-      (choice) => {
-        const parameters = imageParameters(choice, request);
+      async (choice) => {
+        const images = imageInputPlan(choice, request) ? await this.#freezeImages(request) : [];
+        const parameters = imageParameters(choice, request, images);
         return { parameters: choice.providerId === 'local' ? { ...parameters, seed: localImageSeed(parameters.seed) } : parameters };
       },
       request.prompt,
       grant,
-      { count: request.count ?? 1 },
+      // 以图为底重画时张数是底图的组数，冻结后才知道。
+      (parameters) => ({ count: parameters.capability === 'generateImage' ? parameters.count : 1 }),
       readableStem(request.prompt, 'image'),
     );
+  }
+
+  /** 读出输入图的摘要、大小与格式（按请求的顺序）。 */
+  async #freezeImages(request: GenerateImageSubmission): Promise<FrozenImageInput[]> {
+    const frozen: FrozenImageInput[] = [];
+    for (const input of request.images ?? []) {
+      if (typeof input === 'string') {
+        frozen.push(await freezeImageInput({ source: 'file', path: input }));
+      } else if ('assetId' in input) {
+        if (!request.videoId) throw new RpcError('invalid-request', V.imageAssetNeedsVideo(), { assetId: input.assetId });
+        const source = await this.#videos.source(request.videoId, input.assetId);
+        frozen.push(await freezeImageInput({ source: 'asset', path: source.file, assetId: input.assetId, revision: source.revision }));
+      } else if ('file' in input) {
+        frozen.push(await freezeImageInput({ source: 'space', path: input.file, name: input.name, entryId: input.entryId }));
+      } else {
+        throw new Error(`Space entry ${input.entryId} was not resolved before submitting image generation`);
+      }
+    }
+    return frozen;
   }
 
   /**
@@ -1122,7 +1163,7 @@ export class JobManager {
       | Promise<{ parameters: GenerationParameters; library?: JobLibraryUse }>,
     source: string,
     grant: JobGrantHint | undefined,
-    quantity: { count?: number; chars?: number },
+    quantity: { count?: number; chars?: number } | ((parameters: GenerationParameters) => { count?: number; chars?: number }),
     saveStem: string,
   ): Promise<{ jobId: Id }> {
     if (this.#closing) throw new RpcError('busy', J.runtimeStopping());
@@ -1161,7 +1202,7 @@ export class JobManager {
     if (this.#closing) throw new RpcError('busy', J.runtimeStopping());
 
     const jobId = newId('job');
-    const grantUse = this.#admit(jobId, capability, selection, videoId, submitter, grant, quantity);
+    const grantUse = this.#admit(jobId, capability, selection, videoId, submitter, grant, typeof quantity === 'function' ? quantity(parameters) : quantity);
     // 本地合成的 candle 模型包按常驻量估计 Model Worker（MLX 的是 null，用固定的需求）。
     const workerFootprint = capability === 'synthesizeSpeech' ? await this.#workerFootprint(selection.providerId, selection.modelId) : null;
     const now = nowIso();

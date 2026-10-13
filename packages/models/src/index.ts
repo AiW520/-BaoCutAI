@@ -65,6 +65,14 @@ export { BUILTIN_VOICES, builtinVoice, builtinVoiceFile, defaultBuiltinVoice, ty
 export { APP_FILE_MISSING, MODEL_ASSETS_ENV, appFileMissing, modelAssetPath, resolveModelAssetsDir } from './model-assets.ts';
 export { FACE_DETECTION_MODEL, faceDetectionModelFile, type FaceDetectionModel } from './face-detection-model.ts';
 export {
+  freezeImageInput,
+  megabytes,
+  readFrozenImage,
+  sniffImageMediaType,
+  withoutImagePaths,
+  type ImageInputToFreeze,
+} from './image-inputs.ts';
+export {
   BUILTIN_REFERENCE_LABEL,
   LOCAL_SPEECH_MAX_CHARS,
   builtinReferenceFile,
@@ -146,6 +154,9 @@ export type {
 export {
   codePointLength,
   imageParameters,
+  imageInputPlan,
+  type ImageInputPlan,
+  type ImageRequestShape,
   musicParameters,
   speechParameters,
   type ImageParameters,

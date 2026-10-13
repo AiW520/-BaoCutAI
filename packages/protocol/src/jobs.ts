@@ -1,7 +1,8 @@
 import type { Id } from './domain.ts';
 import type { ExportJobInfo, ExportValidation } from './exports.ts';
 import type { JobLibraryUse } from './library.ts';
-import type { ImageFormat, MusicMode, MusicPlanning, SpeechFormat, TextEffort, VoiceMode } from './models.ts';
+import type { ImageFormat, ImageInputMediaType, ImageInputMode, MusicMode, MusicPlanning, SpeechFormat, TextEffort, VoiceMode } from './models.ts';
+import type { SpaceEntryInput } from './pipelines.ts';
 import type { JobGrantUse } from './grants.ts';
 import type { JobWait } from './resources.ts';
 import { localizeText, type MessageRef } from './message-ref.ts';
@@ -211,6 +212,27 @@ export interface FrozenSpeechReference {
 }
 
 /**
+ * 生图冻结的一张输入图（`GenerateImageRequest.images` 的一项）。`source`：`file` 是请求给的本机路径；`space` 是 Space 里的
+ * 图片条目；`asset` 是 `videoId` 那个视频素材库里的图片素材（固定在提交时的版本）。提交时读出摘要、大小与格式（按文件头），
+ * 执行前按摘要再核对一次，变了或读不出时任务以 `ASSET_MISSING` 失败（`details.reason` 是 `changed` 或 `unreadable`），不换图。`path` 是本机绝对路径，只在本机的任务记录里
+ * 出现，不进日志与产物的出处（出处只记名字、摘要与条目或素材 id）。
+ */
+export interface FrozenImageInput {
+  source: 'file' | 'space' | 'asset';
+  path: string;
+  /** `sha256:<hex>` */
+  sha256: string;
+  byteLength: number;
+  mediaType: ImageInputMediaType;
+  /** 给人看的名字：文件名、条目名或素材名。 */
+  name: string;
+  entryId?: Id;
+  assetId?: Id;
+  /** `asset` 的素材版本。 */
+  revision?: string;
+}
+
+/**
  * 生成任务冻结的参数（提交时确定，执行与重试都用这一份：不会换模型、换声音）。原文与提示词照原样记下，生成的东西
  * 可以按它们追溯与复现；视频里的素材来源只记摘要（`inputHash`），不记原文。
  */
@@ -249,6 +271,13 @@ export type GenerationParameters =
       seed: number | null;
       /** 本地生图的去噪步数；请求没给时不写（用模型的默认步数），在线任务没有。 */
       steps?: number;
+      /**
+       * 输入图（按请求的顺序）与用法；没有输入图时三项都不写。`img2img` 时 `count` 是底图的组数（每组 `img2img.max` 张、出一张），
+       * 第 i 张输出用第 i 组；`strength` 只在 `img2img` 时有（请求没给时是模型的默认值）。
+       */
+      images?: FrozenImageInput[];
+      imageMode?: ImageInputMode;
+      strength?: number;
     }
   | {
       /**
@@ -625,6 +654,9 @@ export interface SynthesizeSpeechRequest {
   commandId?: Id;
 }
 
+/** 生图的一张输入图：本机绝对路径、Space 条目或 `videoId` 视频里的素材。 */
+export type ImageInput = string | SpaceEntryInput | { assetId: Id };
+
 /** `models.generateImage` 的参数：按提示词生成图片。选择、上限与视频的规则同 `SynthesizeSpeechRequest`。 */
 export interface GenerateImageRequest {
   prompt: string;
@@ -636,6 +668,20 @@ export interface GenerateImageRequest {
   seed?: number;
   /** 本地模型的去噪步数；只有模型的 `local.steps` 列出时接受，范围见那里。 */
   steps?: number;
+  /**
+   * 输入图（架构设计 §6.1「生图的输入图」），按顺序：Space 里的图片条目（`{ entryId }`，拒绝同 `SpaceEntryInput`）、`videoId`
+   * 那个视频素材库里的图片素材（`{ assetId }`，必须同时给 `videoId`），或本机绝对路径（桌面界面的文件选择与拖入；浏览器只能
+   * 给已登记项目目录里的）。只收 PNG、JPEG、WebP。张数与字节数按模型的 `referenceImages` 检查，超了拒绝，不截掉多的。
+   */
+  images?: ImageInput[];
+  /**
+   * 输入图怎么用，默认 `ref`：所有输入图进同一次请求、出 `count` 张（模型 `referenceImages.edit` 时是按提示词改图，否则作为参考）。
+   * `img2img`：以图为底重画，只有模型的 `img2img` 不为 null 时接受；张数由输入图分组决定（`ceil(张数 / img2img.max)`），
+   * 给了不一致的 `count` 时拒绝。没有输入图时不收。
+   */
+  imageMode?: ImageInputMode;
+  /** `img2img` 的改动幅度，在模型的 `img2img.strength` 范围内；不给时用它的 `default`。别的用法不收。 */
+  strength?: number;
   provider?: string;
   model?: string;
   videoId?: Id;

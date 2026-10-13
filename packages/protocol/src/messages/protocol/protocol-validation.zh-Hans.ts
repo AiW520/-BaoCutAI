@@ -91,4 +91,7 @@ export const zhHans: ProtocolValidationMessages = {
   translationFieldsCount: (p: { count: number }) => `项数要与 template.json 相同（${p.count}）`,
   translationBeatsCount: (p: { count: number }) => `分镜要点的条数要与 template.json 相同（${p.count}）`,
   translationAssetUnknown: (p: { path: string }) => `不是 template.json 登记的素材：${p.path}`,
+  imageModeNeedsImages: 'imageMode 与 strength 要和 images 一起给',
+  strengthNeedsImg2Img: 'strength 只用于 imageMode 为 img2img 时',
+  imageAssetNeedsVideo: '{ assetId } 形式的输入图要同时给 videoId',
 };

@@ -152,6 +152,7 @@ describe('智能体图片 Provider：列出、可用性与配置（不需要 ffp
       defaultFormat: 'png',
       acceptsSeed: false,
       referenceImages: null,
+      img2img: null,
       cost: 'subscription',
     });
     expect(model!.notes).toMatch(/一张/);

@@ -313,6 +313,59 @@ describe.skipIf(!ffprobe)('生成任务：假供应商 → 校验 → 产物', (
     await expectNoSecret(side, GOOGLE_KEY);
   });
 
+  it('输入图（§6.1）：OpenAI 走编辑接口，冻结名字与摘要；模型不收的用法与不合的参数在提交时拒绝；文件变了以 ASSET_MISSING 失败', async () => {
+    await side.client.request('models.configure', { providerId: 'openai', enabled: true, credential: OPENAI_KEY });
+    const ref = path.join(side.dir, 'ref.png');
+    await fs.writeFile(ref, pngFixture(4, 4, 0));
+    const { jobId } = await side.client.request('models.generateImage', { prompt: 'make it snow', provider: 'openai', images: [ref] });
+    const job = await settled(side, jobId);
+    expect(job).toMatchObject({
+      state: 'completed',
+      generation: {
+        imageMode: 'ref',
+        images: [{ source: 'file', name: 'ref.png', mediaType: 'image/png', byteLength: pngFixture(4, 4, 0).length }],
+      },
+    });
+    expect(job.generation).not.toHaveProperty('strength');
+    const edit = openai.requests.find((r) => r.path === '/v1/images/edits')!;
+    expect(edit.json).toMatchObject({
+      model: 'gpt-image-2',
+      prompt: 'make it snow',
+      images: [{ image_url: `data:image/png;base64,${pngFixture(4, 4, 0).toString('base64')}` }],
+    });
+
+    // 提交时的拒绝：不建任务、不发请求。
+    const before = openai.requests.length;
+    const reject = (params: Record<string, unknown>) =>
+      side.client.request('models.generateImage', { prompt: 'x', provider: 'openai', ...params } as never).catch((e: unknown) => e);
+    expect(await reject({ images: [ref], strength: 0.5 })).toMatchObject({ code: 'invalid-request' });
+    expect(await reject({ images: [ref], imageMode: 'img2img' })).toMatchObject({ code: 'invalid-request', details: { img2img: null } });
+    expect(await reject({ imageMode: 'ref' })).toMatchObject({ code: 'invalid-request' });
+    expect(await reject({ images: [{ assetId: 'ast_1' }] })).toMatchObject({ code: 'invalid-request' });
+    expect(await reject({ images: [path.join(side.dir, 'missing.png')] })).toMatchObject({
+      code: 'invalid-request',
+      details: { code: 'INPUT_UNREADABLE' },
+    });
+    await fs.writeFile(path.join(side.dir, 'notes.png'), 'not an image');
+    expect(await reject({ images: [path.join(side.dir, 'notes.png')] })).toMatchObject({
+      code: 'invalid-request',
+      details: { code: 'INPUT_FORMAT_UNSUPPORTED' },
+    });
+    expect(openai.requests).toHaveLength(before);
+
+    // 排队之后、执行之前文件换了：按冻结的摘要核对，失败而不是换成新图。
+    openai.handler = () => 'hang';
+    const { jobId: blocker } = await side.client.request('models.generateImage', { prompt: 'block', provider: 'openai' });
+    await openai.waitForRequests(before + 1);
+    openai.handler = fakeOpenAiHandler();
+    const { jobId: queued } = await side.client.request('models.generateImage', { prompt: 'y', provider: 'openai', images: [ref] });
+    await fs.writeFile(ref, pngFixture(4, 4, 1));
+    await side.client.request('jobs.cancel', { jobId: blocker });
+    expect(await settled(side, queued)).toMatchObject({ state: 'failed', error: { code: 'ASSET_MISSING', details: { reason: 'changed', name: 'ref.png' } } });
+    expect(openai.requests.filter((r) => r.path === '/v1/images/edits')).toHaveLength(1);
+    await expectNoSecret(side, OPENAI_KEY);
+  });
+
   it('ElevenLabs：音色属于账号，不给音色在提交时拒绝；给了音色走 xi-api-key 与 output_format', async () => {
     await side.client.request('models.configure', { providerId: 'elevenlabs', enabled: true, credential: ELEVENLABS_KEY });
     const noVoice = await side.client

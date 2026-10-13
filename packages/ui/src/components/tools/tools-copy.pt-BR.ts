@@ -212,7 +212,6 @@ export const ptBR: ToolsMessages = {
     sample: "Usar um exemplo",
     refs: "Referências",
     pickRefs: "Escolher imagens de referência",
-    refsNote: "Esta API ainda não aceita imagens de referência",
     model: "Modelos",
     manage: "Gerenciar modelos de imagem…",
     modelPicker: "Modelo de imagem",

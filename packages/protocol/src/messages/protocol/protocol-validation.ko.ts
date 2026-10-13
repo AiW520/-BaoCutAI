@@ -91,4 +91,7 @@ export const ko: ProtocolValidationMessages = {
   translationFieldsCount: (p: { count: number }) => `template.json과 같은 수의 fields가 필요합니다(${p.count})`,
   translationBeatsCount: (p: { count: number }) => `template.json과 같은 수의 beats가 필요합니다(${p.count})`,
   translationAssetUnknown: (p: { path: string }) => `template.json에 등록되지 않은 소재입니다: ${p.path}`,
+  imageModeNeedsImages: 'imageMode와 strength는 images와 함께 지정하세요',
+  strengthNeedsImg2Img: 'strength는 imageMode가 img2img일 때만 사용합니다',
+  imageAssetNeedsVideo: '{ assetId } 입력 이미지에는 videoId도 지정하세요',
 };

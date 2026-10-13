@@ -71,6 +71,8 @@ export const ko: RcAgentToolsMessages = {
   transcribeSummary: (p) => `소재 ${p.assetId} 전사${p.provider ? `(${p.provider}${p.model ? ` ${p.model}` : ''})` : ''}`,
   speechPurpose: (p) => `음성 합성(${p.chars}자)`,
   speechSummary: (p) => `음성 합성(${p.chars}자${p.provider ? `, ${p.provider}` : ''}${p.voice ? `, 목소리 ${p.voice}` : ''})`,
+  imageInputsSpaceUnavailable: 'Space 목록이 아직 준비되지 않아 항목으로 입력 이미지를 지정할 수 없습니다',
+  imageInputsPurpose: (p) => `입력 이미지 ${p.inputs}장으로 이미지 생성: ${p.prompt}`,
   imagePurpose: (p) => `이미지 생성: ${p.prompt}`,
   musicPurpose: (p: { style: string }) => `음악 생성: ${p.style}`,
   musicSummary: (p: { mode: string; seconds: number | null; provider: string | null; style: string }) => `${p.mode === 'song' ? '노래' : '연주곡'} 생성${p.seconds ? `, 최대 ${p.seconds}초` : ''}${p.provider ? `, ${p.provider}` : ''}: ${p.style}`,

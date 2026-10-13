@@ -182,7 +182,6 @@ export const zhHant: ToolsMessages = {
     sample: '填入範例',
     refs: '參考圖',
     pickRefs: '選擇參考圖',
-    refsNote: '這個版本的生成 API 還不接受參考圖',
     model: '模型',
     manage: '管理影像模型…',
     modelPicker: '影像模型',

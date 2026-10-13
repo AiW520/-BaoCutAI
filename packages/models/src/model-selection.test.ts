@@ -227,6 +227,7 @@ describe('selectModel', () => {
       formats: ['png'],
       defaultFormat: 'png',
       referenceImages: null,
+      img2img: null,
       acceptsSeed: false,
       cost: 'unknown',
       ...extra,

@@ -61,6 +61,7 @@ export function imageModel(modelId: string, patch: Partial<ImageModelInfo> = {})
     formats: ['png'],
     defaultFormat: 'png',
     referenceImages: null,
+    img2img: null,
     acceptsSeed: false,
     cost: 'unknown',
     ...patch,

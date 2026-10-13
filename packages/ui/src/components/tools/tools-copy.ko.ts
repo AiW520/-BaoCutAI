@@ -192,7 +192,6 @@ export const ko: ToolsMessages = {
     sample: '예시 넣기',
     refs: '참고 이미지',
     pickRefs: '참고 이미지 선택',
-    refsNote: '이 버전의 생성 API는 아직 참고 이미지를 받지 않습니다',
     model: '모델',
     manage: '이미지 모델 관리…',
     modelPicker: '이미지 모델',

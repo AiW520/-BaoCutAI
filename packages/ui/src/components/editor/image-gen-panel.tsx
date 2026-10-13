@@ -23,6 +23,7 @@ import {
 } from '../../model/media-generation.ts';
 import { cancellationCost } from '../../model/task-facts.ts';
 import {
+  addRefs,
   againDraft,
   aspectOptions,
   countFor,
@@ -33,8 +34,10 @@ import {
   imageModelOptions,
   imageProblems,
   imagePrompt,
+  imageRefMode,
   imageResults,
   imageStatus,
+  refRoom,
   sizeKeyFor,
   fixedSteps,
   stepsFor,
@@ -42,6 +45,7 @@ import {
   type ImageOption,
   type ImageResult,
 } from '../../model/tools-image.ts';
+import { M as IMG } from '../../model/tools-image-copy.ts';
 import { codePoints, findOption, initialModelKey, providerName } from '../../model/tools-models.ts';
 import { didNotFinish, listedRecords, recordStatus, stateLabel } from '../../model/tools-records.ts';
 import { useRuntime } from '../../runtime/context.tsx';
@@ -52,6 +56,7 @@ import { useShell } from '../../state/shell-store.ts';
 import { useTools } from '../../state/tools-store.ts';
 import { canEdit, useVideo } from '../../state/video-store.ts';
 import { CancelledCard, ErrorCard, RunningCard } from '../tools/image-record.tsx';
+import { ImageRefModeRow, ImageRefsRow } from '../tools/image-refs.tsx';
 import { LocalModelGate } from '../tools/local-model-gate.tsx';
 import { ModelGate, ModelLine } from '../tools/tool-model.tsx';
 import { Gate, recordHead, recordRow, SectionLink, submitOnModEnter, ToolTextArea } from '../tools/tool-parts.tsx';
@@ -66,7 +71,8 @@ import { EDITOR_COPY as E } from './editor-copy.ts';
 /*
  * 图片 Tab 的「AI 生成」段（设计稿 panel-image-gen.jsx `ImageGenPane`）：工具页那张表单压扁一点，多一颗「跟视频画布」画幅；
  * 下面是这个视频最近 3 批结果。生成走 `models.generateImage` 带 `videoId`：做完由 Runtime 直接收进这个视频的素材库
- * （设计稿里「收进素材库」那一步因此成了状态），「放到画布」放在播放头处。参考图这一版的接口不带，置灰写原因。
+ * （设计稿里「收进素材库」那一步因此成了状态），「放到画布」放在播放头处。参考图从这个视频的图片素材或文件里选，结果格的
+ * 「用作参考」把那一张加进去。
  */
 
 const FIT = '__fit';
@@ -80,7 +86,7 @@ const field = style({ width: 'full' });
 const textFoot = style({ display: 'flex', alignItems: 'center', gap: 8, marginTop: 4, minWidth: 0 });
 const textStat = style({ flexGrow: 1, minWidth: 0, font: 'ui-xs', color: { default: 'gray-600', isOver: 'red-900' } });
 const gateWrap = style({ marginTop: 12 });
-const refs = style({ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 8, marginTop: 8, minWidth: 0 });
+const refs = style({ display: 'flex', flexDirection: 'column', gap: 12, marginTop: 12, minWidth: 0 });
 const refsNote = style({ flexGrow: 1, minWidth: 0, font: 'ui-xs', color: 'gray-600' });
 const aspects = style({ display: 'grid', gridTemplateColumns: '[repeat(auto-fill, minmax(72px, 1fr))]', gap: 8 });
 const aspect = style({
@@ -206,12 +212,31 @@ export function ImageGenPane({ videoId, sequence, assets }: { videoId: Id; seque
 
   // 「再来一版」：带回那一批的提示词与设置（画幅按那一批的，不再跟画布），种子留空。
   const again = (job: JobRecord) => {
-    const next = againDraft(job);
+    const next = againDraft(job, true);
     if (!next) return;
-    patchImage(videoId, { ...next, fit: false });
+    const { dropped: _dropped, ...rest } = next;
+    patchImage(videoId, { ...rest, fit: false });
     scrollRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
     ToastQueue.neutral(IMAGE_COPY.againDone, { timeout: 3000 });
   };
+
+  // 「用作参考」：把这一张（已经收进素材库的）加进参考图；这只模型不认参考图或已经满了时按钮不可点。
+  const refsFull = !option?.info.referenceImages || refRoom(draft, option.info) === 0;
+  const addAsRef = (assetId: Id, name: string) => {
+    if (!option?.info.referenceImages) return;
+    const { refs: next } = addRefs(draft.refs, [{ assetId, name }], refRoom(draft, option.info));
+    patchImage(videoId, { refs: next });
+    scrollRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
+    ToastQueue.positive(IMG.refAdded(name), { timeout: 3000 });
+  };
+  const refTip = !option?.info.referenceImages
+    ? option
+      ? IMG.refsUnsupported(option.label)
+      : null
+    : refRoom(draft, option.info) === 0
+      ? IMG.refsFull(option.info.referenceImages.max)
+      : null;
+  const refAction: RefAction = { add: addAsRef, disabledWhy: refTip, isFull: refsFull };
 
   const maxChars = option?.info.maxPromptChars ?? 0;
   const chars = codePoints(draft.prompt.trim());
@@ -259,13 +284,12 @@ export function ImageGenPane({ videoId, sequence, assets }: { videoId: Id; seque
           </SectionLink>
         )}
       </div>
-      <div className={refs}>
-        <Button variant="secondary" size="S" isDisabled>
-          <ImageAdd />
-          <Text>{IMAGE_COPY.pickRefs}</Text>
-        </Button>
-        <span className={refsNote}>{IMAGE_COPY.refsNote}</span>
-      </div>
+      {option ? (
+        <div className={refs}>
+          <ImageRefsRow draft={draft} option={option} patch={(p) => patchImage(videoId, p)} source={{ kind: 'video', videoId, assets }} />
+          <ImageRefModeRow draft={draft} option={option} patch={(p) => patchImage(videoId, p)} />
+        </div>
+      ) : null}
 
       {options.length ? (
         <>
@@ -325,6 +349,7 @@ export function ImageGenPane({ videoId, sequence, assets }: { videoId: Id; seque
               assets={assets}
               editable={editable}
               onAgain={again}
+              onRef={refAction}
             />
           ))}
         </div>
@@ -400,7 +425,7 @@ function ImageOptions({
         <p className={hint}>{IMAGE_COPY.aspectAuto}</p>
       )}
 
-      {info.maxCount > 1 ? (
+      {info.maxCount > 1 && imageRefMode(draft, info) !== 'img2img' ? (
         <>
           <SubHead title={IMAGE_COPY.count} />
           <div className={countRow}>
@@ -489,6 +514,7 @@ function VideoImageRecord({
   assets,
   editable,
   onAgain,
+  onRef,
 }: {
   job: JobRecord;
   all: readonly JobRecord[];
@@ -499,6 +525,7 @@ function VideoImageRecord({
   assets: Record<Id, AssetRecord>;
   editable: boolean;
   onAgain: (job: JobRecord) => void;
+  onRef: RefAction;
 }) {
   const provider = providerName(view, 'generateImage', job.providerId);
   if (job.state === 'cancelled') {
@@ -508,7 +535,7 @@ function VideoImageRecord({
   const status = recordStatus(job);
   if (status === 'queued' || status === 'running') return <RunningCard job={job} all={all} provider={provider} />;
   if (didNotFinish(job)) return <ErrorCard job={job} videoId={videoId} />;
-  return <DoneBatch job={job} provider={provider} now={now} sequence={sequence} assets={assets} editable={editable} onAgain={onAgain} />;
+  return <DoneBatch job={job} provider={provider} now={now} sequence={sequence} assets={assets} editable={editable} onAgain={onAgain} onRef={onRef} />;
 }
 
 function DoneBatch({
@@ -519,6 +546,7 @@ function DoneBatch({
   assets,
   editable,
   onAgain,
+  onRef,
 }: {
   job: JobRecord;
   provider: string;
@@ -527,6 +555,7 @@ function DoneBatch({
   assets: Record<Id, AssetRecord>;
   editable: boolean;
   onAgain: (job: JobRecord) => void;
+  onRef: RefAction;
 }) {
   const goTo = useShell((s) => s.go);
   const hide = useTools((s) => s.hide);
@@ -566,7 +595,7 @@ function DoneBatch({
       {results.length ? (
         <div className={grid({ isOne: results.length === 1 })}>
           {results.map((r) => (
-            <ImageCard key={r.artifactId} job={job} result={r} sequence={sequence} assets={assets} editable={editable} onAgain={onAgain} />
+            <ImageCard key={r.artifactId} job={job} result={r} sequence={sequence} assets={assets} editable={editable} onAgain={onAgain} onRef={onRef} />
           ))}
         </div>
       ) : (
@@ -576,7 +605,14 @@ function DoneBatch({
   );
 }
 
-/** 一张结果（设计稿 `ImageCard` 的四个动作）：放到画布 · 已在素材库（状态）· 用作参考（置灰）· 再来一版。 */
+/** 「用作参考」：`disabledWhy` 不为 null 时按钮不可点，提示写原因。 */
+interface RefAction {
+  add(assetId: Id, name: string): void;
+  disabledWhy: string | null;
+  isFull: boolean;
+}
+
+/** 一张结果（设计稿 `ImageCard` 的四个动作）：放到画布 · 已在素材库（状态）· 用作参考 · 再来一版。 */
 function ImageCard({
   job,
   result,
@@ -584,6 +620,7 @@ function ImageCard({
   assets,
   editable,
   onAgain,
+  onRef,
 }: {
   job: JobRecord;
   result: ImageResult;
@@ -591,6 +628,7 @@ function ImageCard({
   assets: Record<Id, AssetRecord>;
   editable: boolean;
   onAgain: (job: JobRecord) => void;
+  onRef: RefAction;
 }) {
   const { apply } = useEditorActions();
   const media = useArtifactUrl(result.artifactId);
@@ -628,9 +666,17 @@ function ImageCard({
           </ActionButton>
           <Tooltip>{IMAGE_COPY.again}</Tooltip>
         </TooltipTrigger>
-        <ActionButton isQuiet size="S" aria-label={E.withNote(C.useAsRef, IMAGE_COPY.refsNote)} isDisabled>
-          <ImageAdd />
-        </ActionButton>
+        <TooltipTrigger>
+          <ActionButton
+            isQuiet
+            size="S"
+            aria-label={onRef.disabledWhy ? E.withNote(C.useAsRef, onRef.disabledWhy) : C.useAsRef}
+            isDisabled={!asset || onRef.isFull}
+            onPress={() => asset && onRef.add(asset.id, asset.name)}>
+            <ImageAdd />
+          </ActionButton>
+          <Tooltip>{onRef.disabledWhy ?? C.useAsRef}</Tooltip>
+        </TooltipTrigger>
       </div>
     </figure>
   );

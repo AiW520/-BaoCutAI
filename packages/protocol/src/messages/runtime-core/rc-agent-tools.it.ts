@@ -89,6 +89,8 @@ export const it: RcAgentToolsMessages = {
   speechPurpose: (p: { chars: number }) => `Sintetizza voce (${plural(p.chars, 'carattere', 'caratteri')})`,
   speechSummary: (p: { chars: number; provider: string | null; voice: string | null }) =>
     `Sintetizza voce (${plural(p.chars, 'carattere', 'caratteri')}${p.provider ? `, ${p.provider}` : ''}${p.voice ? `, voce ${p.voice}` : ''})`,
+  imageInputsSpaceUnavailable: 'Il catalogo di Space non è ancora pronto, quindi non si possono indicare immagini di input come voci di Space',
+  imageInputsPurpose: (p) => `Genera immagine (immagini di input: ${p.inputs}): ${p.prompt}`,
   imagePurpose: (p: { prompt: string }) => `Genera immagine: ${p.prompt}`,
   musicPurpose: (p: { style: string }) => `Genera musica: ${p.style}`,
   musicSummary: (p: { mode: string; seconds: number | null; provider: string | null; style: string }) => `Genera ${p.mode === 'song' ? 'una canzone' : 'musica strumentale'}${p.seconds ? `, fino a ${p.seconds} s` : ''}${p.provider ? `, ${p.provider}` : ''}: ${p.style}`,

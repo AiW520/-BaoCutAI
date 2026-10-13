@@ -55,6 +55,8 @@ export const pl: RcAgentToolsMessages = {
   transcribeSummary: (p) => `Transkrybuj materiał ${p.assetId}${p.provider ? ` (${p.provider}${p.model ? ` ${p.model}` : ""})` : ""}`,
   speechPurpose: (p) => `Syntezuj mowę (${pluralForm('pl', p.chars, { one: `${p.chars} znak`, few: `${p.chars} znaki`, many: `${p.chars} znaków`, other: `${p.chars} znaku` })})`,
   speechSummary: (p) => `Syntezuj mowę (${pluralForm('pl', p.chars, { one: `${p.chars} znak`, few: `${p.chars} znaki`, many: `${p.chars} znaków`, other: `${p.chars} znaku` })}${p.provider ? `, ${p.provider}` : ""}${p.voice ? `, głos ${p.voice}` : ""})`,
+  imageInputsSpaceUnavailable: 'Katalog Space nie jest jeszcze gotowy, więc nie można podać obrazów wejściowych jako pozycji Space',
+  imageInputsPurpose: (p) => `Generuj obraz (obrazy wejściowe: ${p.inputs}): ${p.prompt}`,
   imagePurpose: (p) => `Generuj obraz: ${p.prompt}`,
   musicPurpose: (p: { style: string }) => `Wygeneruj muzykę: ${p.style}`,
   musicSummary: (p: { mode: string; seconds: number | null; provider: string | null; style: string }) => `Wygeneruj ${p.mode === 'song' ? 'piosenkę' : 'muzykę instrumentalną'}${p.seconds ? `, do ${p.seconds} s` : ''}${p.provider ? `, ${p.provider}` : ''}: ${p.style}`,

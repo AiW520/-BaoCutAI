@@ -93,4 +93,7 @@ export const ja: ProtocolValidationMessages = {
   translationFieldsCount: (p: { count: number }) => `template.json と同じ数の fields が必要です（${p.count}）`,
   translationBeatsCount: (p: { count: number }) => `template.json と同じ数の beats が必要です（${p.count}）`,
   translationAssetUnknown: (p: { path: string }) => `template.json に記載されていない素材です：${p.path}`,
+  imageModeNeedsImages: 'imageMode と strength は images と一緒に指定してください',
+  strengthNeedsImg2Img: 'strength は imageMode が img2img のときだけ使えます',
+  imageAssetNeedsVideo: '{ assetId } の入力画像には videoId も指定してください',
 };

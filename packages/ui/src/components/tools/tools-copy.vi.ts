@@ -179,7 +179,6 @@ export const vi: ToolsMessages = {
     sample: "Điền đoạn mẫu",
     refs: "Ảnh tham chiếu",
     pickRefs: "Chọn ảnh tham chiếu",
-    refsNote: "Phiên bản API tạo ảnh này chưa nhận ảnh tham chiếu",
     model: "Mô hình",
     manage: "Quản lý mô hình hình ảnh…",
     modelPicker: "Mô hình ảnh",

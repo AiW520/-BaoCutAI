@@ -71,6 +71,8 @@ export const zhHant: RcAgentToolsMessages = {
   transcribeSummary: (p) => `轉錄素材 ${p.assetId}${p.provider ? `（${p.provider}${p.model ? ` ${p.model}` : ''}）` : ''}`,
   speechPurpose: (p) => `合成語音（${p.chars} 字）`,
   speechSummary: (p) => `合成語音（${p.chars} 字${p.provider ? `，${p.provider}` : ''}${p.voice ? `，音色 ${p.voice}` : ''}）`,
+  imageInputsSpaceUnavailable: 'Space 目錄還沒有準備好，不能按項目給輸入圖',
+  imageInputsPurpose: (p) => `依 ${p.inputs} 張輸入圖生成圖片：${p.prompt}`,
   imagePurpose: (p) => `生成圖片：${p.prompt}`,
   musicPurpose: (p: { style: string }) => `生成音樂：${p.style}`,
   musicSummary: (p: { mode: string; seconds: number | null; provider: string | null; style: string }) => `生成${p.mode === 'song' ? '歌曲' : '純音樂'}${p.seconds ? `，最長 ${p.seconds} 秒` : ''}${p.provider ? `，${p.provider}` : ''}：${p.style}`,

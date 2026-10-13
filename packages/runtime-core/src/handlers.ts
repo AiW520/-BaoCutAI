@@ -35,7 +35,7 @@ import {
   type SlidesOpener,
 } from './slides.ts';
 import type { SpaceCatalog } from './space-catalog.ts';
-import { resolvePipelineEntryInputs, withSpeechMaterial, withTextMaterial } from './space/space-inputs.ts';
+import { resolvePipelineEntryInputs, withImageEntries, withSpeechMaterial, withTextMaterial } from './space/space-inputs.ts';
 import { spaceMethods, updateEntry } from './space/space-methods.ts';
 import type { SpaceThumbnails } from './space/space-thumbnails.ts';
 import type { VideoService } from './videos/video-service.ts';
@@ -488,7 +488,9 @@ export function createHandlers({
       // Space 条目作为素材（§7.9）：在这里换成文字，任务只看到文本。
       'models.synthesizeSpeech': async (p, principal) =>
         jobs.submitSynthesizeSpeech(await withSpeechMaterial(space, p), { kind: 'connection', id: principal.connectionId }),
-      'models.generateImage': (p, principal) => jobs.submitGenerateImage(p, { kind: 'connection', id: principal.connectionId }),
+      // 输入图里的 Space 条目同样在这里换成文件（§6.1）。
+      'models.generateImage': (p, principal) =>
+        jobs.submitGenerateImage(withImageEntries(space, p), { kind: 'connection', id: principal.connectionId }),
       'models.generateMusic': (p, principal) => jobs.submitGenerateMusic(p, { kind: 'connection', id: principal.connectionId }),
       'models.generateText': async (p, principal) =>
         jobs.submitGenerateText(await withTextMaterial(space, p), { kind: 'connection', id: principal.connectionId }),

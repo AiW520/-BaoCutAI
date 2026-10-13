@@ -92,4 +92,7 @@ export const nl: ProtocolValidationMessages = {
   translationFieldsCount: (p: { count: number }) => `Moet evenveel fields hebben als template.json (${p.count})`,
   translationBeatsCount: (p: { count: number }) => `Moet evenveel beats hebben als template.json (${p.count})`,
   translationAssetUnknown: (p: { path: string }) => `Geen media die in template.json staat: ${p.path}`,
+  imageModeNeedsImages: 'imageMode en strength hebben images nodig',
+  strengthNeedsImg2Img: 'strength geldt alleen bij imageMode img2img',
+  imageAssetNeedsVideo: 'Een afbeelding als { assetId } heeft videoId nodig',
 };

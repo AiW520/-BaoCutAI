@@ -1,4 +1,15 @@
-import type { GenerateImageRequest, ImageModelInfo, JobProgress, JobRecord, ModelCapabilitiesView, SpaceEntry } from '@baocut/protocol';
+import type {
+  FrozenImageInput,
+  GenerateImageRequest,
+  Id,
+  ImageInput,
+  ImageInputMode,
+  ImageModelInfo,
+  JobProgress,
+  JobRecord,
+  ModelCapabilitiesView,
+  SpaceEntry,
+} from '@baocut/protocol';
 import type { ImageCandidate } from './image-preview.ts';
 import { formatClock } from './format.ts';
 import { M } from './tools-image-copy.ts';
@@ -15,7 +26,7 @@ import {
 
 /**
  * 生成图片工作台（设计稿 tool-image.jsx、image-gen.jsx `ImageGenForm`、model-cloud-image.js 的云端与本机部分）：
- * 提示词、模型、画幅、数量、种子，本机模型另有步数。参考图、局域网节点这一版没有后端，页面上置灰写原因。
+ * 提示词、参考图（与它的用法、改动幅度）、模型、画幅、数量、种子，本机模型另有步数。局域网节点这一版没有后端，页面上置灰写原因。
  */
 
 export type ImageOption = ToolModelOption<ImageModelInfo>;
@@ -71,9 +82,32 @@ export interface ImageDraft {
   advanced: boolean;
   /** 本机模型的去噪步数；null 为模型的默认。 */
   steps: number | null;
+  /** 参考图，按选的先后（架构设计 §6.1「生图的输入图」）。换到不认参考图的模型时留着，只是这次不送。 */
+  refs: ImageRef[];
+  /** 参考图怎么用：`ref` 一起送进去出图，`img2img` 以图为底重画（模型能时才有）。 */
+  refMode: ImageInputMode;
+  /** 以图为底重画的改动幅度；null 为模型的默认。 */
+  strength: number | null;
 }
 
-export const BLANK_IMAGE: ImageDraft = { prompt: '', model: null, size: null, count: 1, seed: '', advanced: false, steps: null };
+/**
+ * 一张参考图：Space 里的图片条目、这个视频的图片素材（只有编辑器里有），或桌面端从文件选、拖进来的本机文件。
+ * 草稿会存进本机存储，所以这里只放引用与名字，缩略图在显示时取。
+ */
+export type ImageRef = ({ entryId: Id } | { assetId: Id } | { path: string }) & { name: string };
+
+export const BLANK_IMAGE: ImageDraft = {
+  prompt: '',
+  model: null,
+  size: null,
+  count: 1,
+  seed: '',
+  advanced: false,
+  steps: null,
+  refs: [],
+  refMode: 'ref',
+  strength: null,
+};
 
 // ---- 画幅 ----
 
@@ -149,9 +183,119 @@ export function fixedSteps(info: Pick<ImageModelInfo, 'local'>): number | null {
   return range && range.min === range.max ? range.min : null;
 }
 
-/** 换一只模型：画幅与张数回到这只认的范围，提示词与种子留着。 */
+/** 换一只模型：画幅与张数回到这只认的范围，提示词、种子与参考图留着；不能以图为底重画的模型回到 `ref`。 */
 export function switchImageModel(draft: ImageDraft, option: ImageOption): Partial<ImageDraft> {
-  return { model: option.key, size: sizeKeyFor({ size: draft.size }, option.info), count: countFor(draft, option.info) };
+  return {
+    model: option.key,
+    size: sizeKeyFor({ size: draft.size }, option.info),
+    count: countFor(draft, option.info),
+    ...(draft.refMode === 'img2img' && !option.info.img2img ? { refMode: 'ref' as const } : {}),
+  };
+}
+
+// ---- 参考图（设计稿 model-cloud-image.js 的 `refMode` / `refModes` / `strengthOf` / `usedRefs` / `outputCount` / `refsNote`）----
+
+/** 同一张参考图的键（去重、列表的 key）。 */
+export function refKey(ref: ImageRef): string {
+  return 'entryId' in ref ? `entry:${ref.entryId}` : 'assetId' in ref ? `asset:${ref.assetId}` : `file:${ref.path}`;
+}
+
+/** 把几张加进草稿：已经有的不重复加，最多加到 `room` 张。返回新的列表与没加进去的张数（超出上限的）。 */
+export function addRefs(current: readonly ImageRef[], more: readonly ImageRef[], room: number): { refs: ImageRef[]; dropped: number } {
+  const seen = new Set(current.map(refKey));
+  const fresh = more.filter((r) => {
+    const key = refKey(r);
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+  const take = fresh.slice(0, Math.max(0, room));
+  return { refs: [...current, ...take], dropped: fresh.length - take.length };
+}
+
+/** 还能再加几张（不认参考图的模型 0）。 */
+export function refRoom(draft: Pick<ImageDraft, 'refs'>, info: Pick<ImageModelInfo, 'referenceImages'>): number {
+  return info.referenceImages ? Math.max(0, info.referenceImages.max - draft.refs.length) : 0;
+}
+
+/** 这次真会送出去的参考图：模型不认就一张不送，认的按上限截。 */
+export function usedRefs(draft: Pick<ImageDraft, 'refs'>, info: Pick<ImageModelInfo, 'referenceImages'>): ImageRef[] {
+  return info.referenceImages ? draft.refs.slice(0, info.referenceImages.max) : [];
+}
+
+/** 草稿的用法在这只模型下成不成立：选了以图为底重画、模型也能时才是 `img2img`。 */
+export function imageRefMode(draft: Pick<ImageDraft, 'refMode'>, info: Pick<ImageModelInfo, 'img2img'>): ImageInputMode {
+  return draft.refMode === 'img2img' && info.img2img ? 'img2img' : 'ref';
+}
+
+/** 用法的几个选项：模型能以图为底重画时两个，否则一个（只有一个时界面不出这一行）。认编辑的模型第一项叫「按提示词改图」。 */
+export function imageRefModes(info: Pick<ImageModelInfo, 'referenceImages' | 'img2img'>): Array<{ key: ImageInputMode; label: string }> {
+  if (!info.referenceImages) return [];
+  const first = { key: 'ref' as const, label: info.referenceImages.edit ? M.refModeEdit : M.refModeReference };
+  return info.img2img ? [first, { key: 'img2img', label: M.refModeImg2img }] : [first];
+}
+
+/** 改动幅度：草稿没给就用模型的默认值；模型不能以图为底重画时 null。 */
+export function strengthFor(draft: Pick<ImageDraft, 'strength'>, info: Pick<ImageModelInfo, 'img2img'>): number | null {
+  if (!info.img2img) return null;
+  return draft.strength !== null && Number.isFinite(draft.strength) ? draft.strength : info.img2img.strength.default;
+}
+
+/** 这次出几张：以图为底重画按底图分组（每组一张），否则是表单的张数。 */
+export function outputCount(draft: Pick<ImageDraft, 'count' | 'refs' | 'refMode'>, info: Pick<ImageModelInfo, 'maxCount' | 'referenceImages' | 'img2img'>): number {
+  if (imageRefMode(draft, info) === 'img2img') return Math.max(1, Math.ceil(usedRefs(draft, info).length / info.img2img!.max));
+  return countFor(draft, info);
+}
+
+/** 交给 Runtime 的一张输入图。 */
+export function refInput(ref: ImageRef): ImageInput {
+  return 'entryId' in ref ? { entryId: ref.entryId } : 'assetId' in ref ? { assetId: ref.assetId } : ref.path;
+}
+
+/**
+ * 参考图那一行的说明（设计稿 `refsNote`）：认不认、上限几张、这次怎么用、送不送出这台电脑、超了几张。
+ * 不认时用模型的名字说「谁不认」。
+ */
+export function refsNote(draft: Pick<ImageDraft, 'refs' | 'refMode'>, option: Pick<ImageOption, 'info' | 'local' | 'label'>): string {
+  const info = option.info;
+  const refs = info.referenceImages;
+  const n = draft.refs.length;
+  if (!refs) return n ? M.refsIgnored(option.label, n) : M.refsUnsupported(option.label);
+  const used = Math.min(n, refs.max);
+  const tail =
+    imageRefMode(draft, info) === 'img2img'
+      ? info.img2img!.max > 1
+        ? M.refsGroup(info.img2img!.max)
+        : used > 1
+          ? M.refsEach(used)
+          : M.refsBase
+      : refs.edit
+        ? option.local
+          ? M.refsEditLocal
+          : M.refsEdit
+        : M.refsReference;
+  return [M.refsMax(refs.max), tail, n ? (option.local ? M.refsLocal : M.refsUpload) : null, n > refs.max ? M.refsOver(n - refs.max) : null]
+    .filter(Boolean)
+    .join(' · ');
+}
+
+/** 计数「2 / 16」（不认参考图时 null）。 */
+export function refsCount(draft: Pick<ImageDraft, 'refs'>, info: Pick<ImageModelInfo, 'referenceImages'>): { text: string; over: boolean } | null {
+  const refs = info.referenceImages;
+  return refs ? { text: `${draft.refs.length} / ${refs.max}`, over: draft.refs.length > refs.max } : null;
+}
+
+/** 冻结的输入图回到草稿里的参考图；`withAssets` 为 false 时（工具页没有视频）素材那几张不要。 */
+export function refsFromFrozen(images: readonly FrozenImageInput[] | undefined, withAssets: boolean): { refs: ImageRef[]; dropped: number } {
+  const refs: ImageRef[] = [];
+  let dropped = 0;
+  for (const image of images ?? []) {
+    if (image.source === 'space' && image.entryId) refs.push({ entryId: image.entryId, name: image.name });
+    else if (image.source === 'asset' && image.assetId && withAssets) refs.push({ assetId: image.assetId, name: image.name });
+    else if (image.source === 'file' && image.path) refs.push({ path: image.path, name: image.name });
+    else dropped++;
+  }
+  return { refs, dropped };
 }
 
 // ---- 校验与请求 ----
@@ -164,7 +308,15 @@ export function imageProblems(draft: ImageDraft, option: ImageOption | null): st
   const info = option.info;
   const n = codePoints(prompt);
   if (n > info.maxPromptChars) problems.push(M.promptTooLong(n, info.maxPromptChars));
-  if (draft.count > info.maxCount) problems.push(M.maxImages(info.maxCount));
+  const img2img = imageRefMode(draft, info) === 'img2img';
+  if (!img2img && draft.count > info.maxCount) problems.push(M.maxImages(info.maxCount));
+  // 不认参考图的模型：已选的这次不送，不算错（那一行写着）；认的才按上限报。
+  if (info.referenceImages && draft.refs.length > info.referenceImages.max) problems.push(M.maxRefs(info.referenceImages.max));
+  if (img2img) {
+    if (!draft.refs.length) problems.push(M.img2imgNeedsBase);
+    const range = info.img2img!.strength;
+    if (draft.strength !== null && !(draft.strength >= range.min && draft.strength <= range.max)) problems.push(M.strengthRange(range.min, range.max));
+  }
   if (info.acceptsSeed && !parseSeed(draft.seed).ok) problems.push(M.seedInteger);
   return problems;
 }
@@ -175,14 +327,19 @@ export function imageRequest(draft: ImageDraft, option: ImageOption): Omit<Gener
   const size = sizeKeyFor(draft, info);
   const seed = parseSeed(draft.seed);
   const steps = stepsFor(draft, info);
+  const refs = usedRefs(draft, info);
+  const mode = imageRefMode(draft, info);
+  const strength = mode === 'img2img' ? strengthFor(draft, info) : null;
   return {
     prompt: draft.prompt.trim(),
     provider: option.providerId,
     model: option.modelId,
     ...(size ? { size } : {}),
-    count: countFor(draft, info),
+    count: outputCount(draft, info),
     ...(info.acceptsSeed && seed.ok && seed.seed !== null ? { seed: seed.seed } : {}),
     ...(steps !== null ? { steps } : {}),
+    ...(refs.length ? { images: refs.map(refInput), imageMode: mode } : {}),
+    ...(refs.length && strength !== null ? { strength } : {}),
   };
 }
 
@@ -206,8 +363,9 @@ export function imageStatus(draft: ImageDraft, option: ImageOption | null, tried
       bad: false,
     };
   }
-  const count = countFor(draft, option.info);
-  return { text: [option.modelId, size ? times(size) : null, M.images(count)].filter(Boolean).join(' · '), bad: false };
+  const count = outputCount(draft, option.info);
+  const refs = usedRefs(draft, option.info).length;
+  return { text: [option.modelId, size ? times(size) : null, M.images(count), refs ? M.refsSent(refs) : null].filter(Boolean).join(' · '), bad: false };
 }
 
 /** 模型那一行右边的一句（设计稿 image-gen.jsx `ModelLine` 的 `m.desc`）：从能力描述里来——画幅几种、一次几张、收不收种子。 */
@@ -217,6 +375,7 @@ export function imageModelLine(info: ImageModelInfo): string {
     info.notes ?? null,
     aspects ? M.aspects(aspects) : M.providerSize,
     M.maxImages(info.maxCount),
+    info.referenceImages ? M.maxRefs(info.referenceImages.max) : null,
     info.acceptsSeed ? M.takesSeed : null,
   ]
     .filter(Boolean)
@@ -339,23 +498,33 @@ export function imageBatchMeta(job: JobRecord, provider: string): string {
     `${provider} · ${job.modelId}`,
     g ? (g.aspectRatio ?? (g.size ? times(g.size) : null)) : null,
     g ? M.images(g.count) : null,
+    g?.imageMode === 'img2img' && g.strength !== undefined ? M.img2imgMeta(g.strength) : g?.images?.length ? M.refsSent(g.images.length) : null,
     g?.steps !== undefined ? M.steps(g.steps) : null,
   ]
     .filter(Boolean)
     .join(' · ');
 }
 
-/** 「再来一版」：这一版的提示词与设置回到表单，种子留空重新随机。 */
-export function againDraft(job: JobRecord): Partial<ImageDraft> | null {
+/**
+ * 「再来一版」：这一版的提示词与设置（含参考图与用法）回到表单，种子留空重新随机。以图为底重画那一批的张数是底图的组数，
+ * 不带回「数量」。`withAssets` 为 false 时（工具页）视频素材那几张参考图带不回来，`dropped` 报几张。
+ */
+export function againDraft(job: JobRecord, withAssets = false): (Partial<ImageDraft> & { dropped: number }) | null {
   const g = job.generation?.capability === 'generateImage' ? job.generation : null;
   if (!g) return null;
+  const { refs, dropped } = refsFromFrozen(g.images, withAssets);
+  const img2img = g.imageMode === 'img2img';
   return {
     prompt: g.prompt,
     model: modelKeyOf(job.providerId, job.modelId),
     size: g.aspectRatio ?? g.size,
-    count: g.count,
+    ...(img2img ? {} : { count: g.count }),
     seed: '',
     steps: g.steps ?? null,
+    refs,
+    refMode: g.imageMode ?? 'ref',
+    strength: g.strength ?? null,
+    dropped,
   };
 }
 
@@ -373,7 +542,16 @@ export function retryRequest(job: JobRecord): Omit<GenerateImageRequest, 'comman
     format: g.format,
     ...(g.seed !== null ? { seed: g.seed } : {}),
     ...(g.steps !== undefined ? { steps: g.steps } : {}),
+    ...(g.images?.length ? { images: g.images.map(frozenInput), imageMode: g.imageMode ?? 'ref' } : {}),
+    ...(g.strength !== undefined ? { strength: g.strength } : {}),
   };
+}
+
+/** 冻结的输入图照原样再交一次：Space 条目与素材按 id（Runtime 重新读、重新冻结），本机文件按路径。 */
+function frozenInput(image: FrozenImageInput): ImageInput {
+  if (image.source === 'space' && image.entryId) return { entryId: image.entryId };
+  if (image.source === 'asset' && image.assetId) return { assetId: image.assetId };
+  return image.path;
 }
 
 /** 生图下载的文件名：「图片 1.png」按产物的类型取扩展名。 */

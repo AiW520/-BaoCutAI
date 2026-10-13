@@ -2,6 +2,7 @@ import type { ImageParameters, LanguageOption, SpeechParameters, TextParameters,
 import type {
   DeclaredModel,
   ImageFormat,
+  ImageInputMediaType,
   ImageModelInfo,
   SpeechFormat,
   SpeechModelInfo,
@@ -136,10 +137,18 @@ export interface ImageRequest {
   config: AdapterConfig;
   model: ImageModelInfo;
   parameters: ImageParameters;
+  /** 冻结的输入图（`parameters.images`）读出并核对过摘要的字节，顺序相同；没有输入图时空数组。 */
+  inputs: ImageInputBytes[];
   signal: AbortSignal;
   http: AdapterHttp;
   /** 已经拿到第几张（多次请求凑齐张数的适配器报告进度用）。 */
   progress(done: number): void;
+}
+
+export interface ImageInputBytes {
+  bytes: Buffer;
+  mediaType: ImageInputMediaType;
+  name: string;
 }
 
 export interface ImageOutput {
