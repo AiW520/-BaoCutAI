@@ -488,7 +488,7 @@ export class RuntimeSession {
   watchLegacyImport(onChange: (state: import('@baocut/protocol').LegacyImportSnapshot) => void): () => void {
     let state: import('@baocut/protocol').LegacyImportSnapshot = { prompt: null, run: null };
     return this.client.subscribeLegacyImport({
-      snapshot: (snapshot) => onChange((state = { prompt: snapshot.prompt, run: snapshot.run ?? null })),
+      snapshot: (snapshot) => onChange((state = { prompt: snapshot.prompt, run: snapshot.run ?? null, ...(snapshot.settingsReport ? { settingsReport: snapshot.settingsReport } : {}) })),
       event: (event) => onChange((state = event.type === 'prompt.updated' ? { ...state, prompt: event.prompt } : { ...state, run: event.run })),
     });
   }

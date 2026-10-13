@@ -36,6 +36,19 @@ const en = {
   neverDone: 'You won’t be reminded to import earlier projects again. The original files stay as they are.',
   skipped: 'Skipped. You’ll be asked again the next time BaoCut starts.',
   failed: (message: string) => `Couldn’t import: ${message}`,
+  settingsTitle: 'Settings recovery from an earlier version',
+  settingsLeadAdopted: 'The earlier model directory was adopted during the upgrade. Installation checks existing files against the current manifest and downloads only missing or damaged files.',
+  settingsLeadPreserved: 'Your current settings and model directory were kept. Some earlier transcription preferences were not carried over.',
+  settingsDirectory: 'Model directory adopted during the upgrade',
+  settingsPreferences: 'Preferences to select again',
+  settingsModel: 'The earlier default transcription model was not carried over. Complete any required components, then choose a default model in Speech recognition settings.',
+  settingsLanguage: 'The earlier recognition language was not carried over. In this version, choose the language for each transcription.',
+  settingsHint: 'You can view this report anytime in Settings › Speech recognition. Acknowledging it does not install models or change preferences.',
+  settingsAcknowledge: 'Got it',
+  settingsOpen: 'View Speech recognition settings',
+  settingsNotice: 'Earlier transcription preferences need to be selected again.',
+  settingsNoticeDetail: 'Existing model files can be verified and reused. View recovery details and next steps.',
+  settingsViewReport: 'View recovery report',
 };
 
 export type LegacyImportMessages = typeof en;

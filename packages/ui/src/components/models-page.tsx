@@ -26,6 +26,7 @@ import { LocalModels } from './models/local-models.tsx';
 import { ModelsDirCard } from './models/models-dir-card.tsx';
 import { MODELS_PAGE_COPY } from './models/models-copy.ts';
 import { MyVoices } from './models/my-voices.tsx';
+import { LegacySettingsNotice } from './legacy-import/legacy-settings-report.tsx';
 
 /** 页头（.setpage__intro）：分类名 22/700，下面一句说明。 */
 const intro = style({ marginBottom: 24 });
@@ -81,6 +82,7 @@ export function ModelSettings({ category, page: requested }: { category: ModelCa
         <p className={lede}>{info.description}</p>
       </header>
       {/* 同时有本机与云端模型的能力：一个默认模型放在页签之上，本地、云端页里不再各设一个（产品设计 §7.6）。 */}
+      {category === 'asr' ? <LegacySettingsNotice /> : null}
       <CapabilityDefault category={category} />
       {info.pages.length > 1 ? (
         <Tabs

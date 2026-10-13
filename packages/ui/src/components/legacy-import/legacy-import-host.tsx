@@ -12,6 +12,7 @@ import { useLegacyImport } from '../../state/legacy-import-store.ts';
 import { useShell } from '../../state/shell-store.ts';
 import { LI } from './legacy-import-copy.ts';
 import { useOpenImported } from './legacy-import-task.tsx';
+import { LegacySettingsReportDialog } from './legacy-settings-report.tsx';
 
 /*
  * 启动时的旧版项目导入询问（设计稿 legacy-import.jsx；架构设计 §2.7）：挂在外壳根上。Runtime 发现还没导入的旧版项目、
@@ -69,6 +70,7 @@ export function LegacyImportHost() {
   const web = runtime.host.platform === 'web';
   const connected = useConnection((s) => s.state.status === 'connected');
   const prompt = useLegacyImport((s) => s.prompt);
+  const settingsReportOpen = useLegacyImport((s) => s.settingsReportOpen);
   const [skipped, setSkipped] = useState(skippedThisLaunch);
   // 回答成功到 Runtime 推来「询问没了」之间，这一问不再显示，免得再点一次。
   const [answered, setAnswered] = useState<string | null>(null);
@@ -82,7 +84,8 @@ export function LegacyImportHost() {
     });
   }, [runtime, web, onRun]);
 
-  if (web || !connected || !prompt || skipped || prompt.promptId === answered) return null;
+  if (web || !connected) return null;
+  if (!prompt || skipped || prompt.promptId === answered) return settingsReportOpen ? <LegacySettingsReportDialog /> : null;
   return (
     <LegacyImportDialog
       key={prompt.promptId}
