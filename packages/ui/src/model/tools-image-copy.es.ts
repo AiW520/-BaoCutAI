@@ -15,5 +15,5 @@ export const es: ToolsImageMessages = {
   localChip: 'Generado en este ordenador · sin conexión',
   cloudChip: (provider: string) => `En línea · ${provider} · facturado por uso`,
   imageName: (n: number) => `Imagen ${n}`, seed: (seed: number) => `Semilla ${seed}`,
-  decoding: 'Decodificando', stepOf: (done: number, total: number) => `Paso ${done}/${total}`,
+  loadingModel: 'Cargando el modelo', elapsed: (clock: string) => `${clock} transcurridos`, timeLeft: (clock: string) => `Quedan ${clock}`, decoding: 'Decodificando', stepOf: (done: number, total: number) => `Paso ${done}/${total}`,
 };

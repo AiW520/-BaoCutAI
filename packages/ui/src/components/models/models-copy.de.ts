@@ -55,7 +55,9 @@ export const de: ModelsMessages = {
     tryNote:
       "Erzeugt ein kleines Bild auf diesem Computer, um das Ergebnis offline zu prüfen. Belegt den Platz für schwere Aufgaben; andere lokale Modellaufgaben warten auf den Abschluss. Schließen des Dialogs stoppt nicht; die Ausführung erscheint auch unter Hintergrundaufgaben.",
     tryReady: "Bereit zum Start",
-    tryRunning: (steps: number) => `512² wird gezeichnet · ${steps} Schritte…`,
+    tryRunning: (step: string) => `512² wird gezeichnet · ${step}`,
+    tryLoading: 'Modell wird geladen…',
+    tryDecoding: (steps: number) => `Wird decodiert · ${steps}/${steps} Schritte gezeichnet`,
     tryDone: (seconds: number | null) => (seconds !== null ? `Fertig · ${seconds}s` : "Fertig"),
     tryFailed: "Bild konnte nicht gezeichnet werden",
     tryResult: "Testergebnis",

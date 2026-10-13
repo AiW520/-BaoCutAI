@@ -51,9 +51,9 @@ describe('接着做', () => {
     ]);
   });
 
-  it('媒体文件以此新建视频；写进视频的结果先打开编辑，再按产出它的工具接着做', () => {
+  it('音频与视频文件以此新建视频，生成的图片不接；写进视频的结果先打开编辑，再按产出它的工具接着做', () => {
     expect(followUps({ kind: 'audio' }).map((f) => f.label)).toEqual(['以此新建视频']);
-    expect(followUps({ kind: 'image' }).map((f) => f.id)).toEqual(['new-movie']);
+    expect(followUps({ kind: 'image' })).toEqual([]);
     expect(followUps({ kind: 'video' }, 'transcribe').map((f) => f.id)).toEqual(['open-movie', 'translate-subtitles', 'dub']);
     expect(followUps({ kind: 'video' }, 'translate-subtitles').map((f) => f.id)).toEqual(['open-movie', 'dub']);
     expect(followUps({ kind: 'video' }, 'link-import').map((f) => f.id)).toEqual(['open-movie', 'transcribe']);

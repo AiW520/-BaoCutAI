@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { ImageModelInfo, ModelCapabilitiesView } from '@baocut/protocol';
+import type { ImageModelInfo, ModelCapabilitiesView, SpaceEntry } from '@baocut/protocol';
 import { fixtureView, imageModel } from './models-test-fixtures.ts';
 import { cloudModelOptions, initialModelKey } from './tools-models.ts';
 import { imageJob, imageOut } from './tools-test-fixtures.ts';
@@ -19,7 +19,12 @@ import {
   imageRequest,
   imageResults,
   imageStatus,
+  imageDecoding,
+  imageGallery,
   imageStepPhase,
+  imageTimeLeft,
+  imageTimeLeftText,
+  imageTimeLine,
   localImageOptions,
   ratioOfSize,
   retryRequest,
@@ -217,11 +222,33 @@ describe('本机模型', () => {
     expect(imageHeaderChip(ready)).toBe('在这台电脑上出图 · 不联网');
   });
 
-  it('跑起来按步报：第 x/N 步，走完是解码；没有按步的进度时 null', () => {
-    expect(imageStepPhase({ progress: { unit: 'steps', done: 3, total: 20 } })).toBe('第 3/20 步');
+  it('跑起来按步报：写正在画的第 done+1/N 步，走完是解码；本机还没按步时是加载模型，云端 null', () => {
     expect(imageStepPhase({ progress: { unit: 'steps', done: 0, total: 20 } })).toBe('第 1/20 步');
+    expect(imageStepPhase({ progress: { unit: 'steps', done: 3, total: 20 } })).toBe('第 4/20 步');
+    expect(imageStepPhase({ progress: { unit: 'steps', done: 19, total: 20 } })).toBe('第 20/20 步');
     expect(imageStepPhase({ progress: { unit: 'steps', done: 20, total: 20 } })).toBe('解码');
-    expect(imageStepPhase({ progress: null })).toBeNull();
+    expect(imageStepPhase({ progress: null, providerId: 'local', phase: 'generating' })).toBe('加载模型');
+    expect(imageStepPhase({ progress: null, providerId: 'local', phase: 'starting' })).toBeNull();
+    expect(imageStepPhase({ progress: null, providerId: 'openai', phase: 'generating' })).toBeNull();
+    expect(imageStepPhase({ progress: { unit: 'outputs', done: 0, total: 1 }, providerId: 'openai', phase: 'generating' })).toBeNull();
+    expect(imageDecoding({ progress: { unit: 'steps', done: 20, total: 20 } })).toBe(true);
+    expect(imageDecoding({ progress: { unit: 'steps', done: 4, total: 20 } })).toBe(false);
+  });
+
+  it('剩余时间从 updatedAt 起往下数；开头、解码与云端没有剩余，只写已用', () => {
+    const at = Date.parse('2026-10-03T00:00:02.000Z');
+    const local = (done: number, remainingSec: number | null) =>
+      imageJob({ providerId: 'local', progress: { unit: 'steps', done, total: 8, remainingSec } });
+    expect(imageTimeLeft(local(3, 20), at + 4_500)).toBe(15.5);
+    expect(imageTimeLeft(local(3, 2), at + 9_000)).toBe(0);
+    expect(imageTimeLeftText(local(3, 20), at + 4_500)).toBe('剩余 0:16');
+    expect(imageTimeLeft(local(0, null), at)).toBeNull();
+    expect(imageTimeLeft(local(8, null), at)).toBeNull();
+    expect(imageTimeLeft({ ...local(3, 20), state: 'completed' }, at)).toBeNull();
+    // 已用从 startedAt（00:00:00.5）算，向下取整秒。
+    expect(imageTimeLine(local(3, 20), at + 6_400)).toBe('已用 0:07 · 剩余 0:14');
+    expect(imageTimeLine(imageJob({ progress: { unit: 'outputs', done: 0, total: 1 } }), at + 6_400)).toBe('已用 0:07');
+    expect(imageTimeLine({ ...local(3, 20), state: 'queued', startedAt: null }, at)).toBeNull();
   });
 });
 
@@ -248,5 +275,38 @@ describe('记录', () => {
   it('再试一次：照冻结的参数原样再提交', () => {
     expect(retryRequest(done)).toEqual({ prompt: '山间小路', provider: 'openai', model: 'gpt-image-1', size: '3:2', count: 2, format: 'png', seed: 7 });
     expect(retryRequest(imageJob({ generation: undefined }))).toBeNull();
+  });
+});
+
+describe('放大查看', () => {
+  const entry = (id: string, artifactId: string, trashedAt: string | null = null): SpaceEntry => ({
+    id,
+    kind: 'image',
+    name: `${id}.png`,
+    fileName: `${id}.png`,
+    source: { projectId: null, conversationId: null },
+    relPath: `${id}.png`,
+    size: 1024,
+    lastActivityAt: '2026-10-01T00:00:00.000Z',
+    status: null,
+    ref: { artifactId },
+    user: { favorite: false, displayName: null, trashedAt },
+  });
+
+  it('做完的各批里收进 Space 的图，按页上的先后；没收进或进了废纸篓的不在里面', () => {
+    const jobs = [
+      imageJob({ jobId: 'b', state: 'completed', result: { documentId: null, artifactId: 'sha256:3', outputs: [imageOut('sha256:3')] } }),
+      imageJob({ jobId: 'r', state: 'running' }),
+      imageJob({
+        jobId: 'a',
+        state: 'completed',
+        result: { documentId: null, artifactId: 'sha256:1', outputs: [imageOut('sha256:1'), imageOut('sha256:2'), imageOut('sha256:4')] },
+      }),
+    ];
+    const entries = [entry('e1', 'sha256:1'), entry('e2', 'sha256:2', '2026-10-02T00:00:00.000Z'), entry('e3', 'sha256:3')];
+    expect(imageGallery(jobs, entries)).toEqual([
+      { target: { entryId: 'e3' }, name: 'e3.png' },
+      { target: { entryId: 'e1' }, name: 'e1.png' },
+    ]);
   });
 });

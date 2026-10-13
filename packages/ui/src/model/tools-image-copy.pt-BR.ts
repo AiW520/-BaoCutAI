@@ -21,6 +21,9 @@ export const ptBR: ToolsImageMessages = {
   cloudChip: (provider) => `Online · ${provider} · cobrado pelo uso`,
   imageName: (n) => `Imagem ${n}`,
   seed: (seed) => `Semente ${seed}`,
+  loadingModel: 'Carregando o modelo',
+  elapsed: (clock: string) => `${clock} decorridos`,
+  timeLeft: (clock: string) => `Faltam ${clock}`,
   decoding: 'Decodificando',
   stepOf: (done, total) => `Etapa ${done}/${total}`,
 };

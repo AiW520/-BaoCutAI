@@ -27,6 +27,7 @@ import { pl } from './task-facts.pl.ts';
 import { tr } from './task-facts.tr.ts';
 import { vi } from './task-facts.vi.ts';
 import { remedyHintText } from './localized-text.ts';
+import { imageTimeLeft } from './tools-image.ts';
 
 /** 「详情」表的行名与生图请求那一行（译文在 `task-facts.<语言>.ts`）。 */
 const en = {
@@ -40,6 +41,7 @@ const en = {
     phase: 'Phase',
     images: 'Images',
     took: 'Time taken',
+    left: 'Time left',
     cost: 'Cost',
   },
   imageCount: (count: number) => `${count} ${count === 1 ? 'image' : 'images'}`,
@@ -49,7 +51,7 @@ const M = defineMessages(en, { 'zh-Hans': zhHans, 'zh-Hant': zhHant, ja, ko, es,
 
 /**
  * 任务详情的事实（原型 model-task-facts.js）：「详情」表、错误卡片的补救去处、产物行。
- * 只产出真有数据的行，缺席不写占位；原型里没有后端的（费用、调用记录、行数、帧与速度、预计剩余）不出。
+ * 只产出真有数据的行，缺席不写占位；原型里没有后端的（费用、调用记录、行数、帧与速度）不出。预计剩余只有本机生图去噪时有（`progress.remainingSec`）。
  */
 
 /** `42s` / `12m 40s` / `1h 5m`（原型 `took`）。 */
@@ -104,7 +106,7 @@ function submitterLabel(job: JobRecord): string {
 }
 
 /**
- * 「详情」行 `[label, value]`（原型 `details`）：类型、发起方、状态、开始于、跑在、语言、阶段、图片、用时。
+ * 「详情」行 `[label, value]`（原型 `details`）：类型、发起方、状态、开始于、跑在、语言、阶段、图片、预计剩余、用时。
  * 用时：结束了按结束时间算，还在跑的按 `now` 现算，还在排队的不写。
  */
 export function taskFacts(row: TaskRow, source: { job?: JobRecord; task?: TaskSummary }, now: number): FactRow[] {
@@ -125,6 +127,8 @@ export function taskFacts(row: TaskRow, source: { job?: JobRecord; task?: TaskSu
     if (job.generation?.capability === 'generateImage') {
       add(F.images, `${job.result?.outputs?.length ?? 0}/${job.generation.count}`);
     }
+    const left = job.kind === 'generateImage' ? imageTimeLeft(job, now) : null;
+    if (left !== null) add(F.left, took(Math.ceil(left) * 1000));
     if (job.startedAt) add(F.took, took((job.endedAt ? Date.parse(job.endedAt) : now) - Date.parse(job.startedAt)));
     if (job.cancellation) add(F.cost, cancellationCost(job.cancellation));
   } else {

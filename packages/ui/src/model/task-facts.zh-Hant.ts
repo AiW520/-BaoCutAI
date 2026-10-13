@@ -11,6 +11,7 @@ export const zhHant: TaskFactsMessages = {
     phase: '階段',
     images: '圖片',
     took: '耗時',
+    left: '預計剩餘',
     cost: '費用',
   },
   imageCount: (count: number) => `${count} 張`,

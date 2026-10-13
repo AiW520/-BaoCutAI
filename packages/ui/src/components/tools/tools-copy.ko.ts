@@ -232,6 +232,7 @@ export const ko: ToolsMessages = {
       const count = n.toLocaleString(intlLocale());
       return max ? `${count} / ${max.toLocaleString(intlLocale())}자` : `${count}자`;
     },
+    zoom: (name: string) => `${name} 크게 보기`,
     alt: (name: string, prompt: string) => `${name}: ${prompt}`,
   },
   text: {

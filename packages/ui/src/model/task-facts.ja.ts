@@ -11,6 +11,7 @@ export const ja: TaskFactsMessages = {
     phase: 'フェーズ',
     images: '画像',
     took: '所要時間',
+    left: '残り時間',
     cost: '費用',
   },
   imageCount: (count: number) => `${count} 枚`,

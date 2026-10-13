@@ -56,7 +56,9 @@ export const fr: ModelsMessages = {
     tryNote:
       "Dessine une petite image localement pour vérifier le résultat, sans réseau. Utilise le créneau lourd ; autres tâches locales attendent. Fermer la fenêtre ne l’arrête pas ; exécution aussi dans Tâches en arrière-plan.",
     tryReady: "Prêt à démarrer",
-    tryRunning: (steps: number) => `Dessin 512² · ${steps} étapes…`,
+    tryRunning: (step: string) => `Dessin 512² · ${step}`,
+    tryLoading: 'Chargement du modèle…',
+    tryDecoding: (steps: number) => `Décodage · ${steps}/${steps} étapes dessinées`,
     tryDone: (seconds: number | null) => (seconds !== null ? `Terminé · ${seconds}s` : "Terminé"),
     tryFailed: "Impossible de dessiner l’image",
     tryResult: "Résultat du test",

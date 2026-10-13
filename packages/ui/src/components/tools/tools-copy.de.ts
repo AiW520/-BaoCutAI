@@ -254,6 +254,7 @@ export const de: ToolsMessages = {
       return max ? `${count} / ${max.toLocaleString(intlLocale())} Zeichen` : `${count} ${pluralForm('de', n, { one: "Zeichen", other: "Zeichen" })}`;
     },
 
+    zoom: (name: string) => `${name} vergrößert anzeigen`,
     alt: (name: string, prompt: string) => `${name}: ${prompt}`,
   },
 

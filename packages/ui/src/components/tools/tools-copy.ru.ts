@@ -221,6 +221,7 @@ export const ru: ToolsMessages = {
       const count = n.toLocaleString(intlLocale());
       return max ? `${count} / ${max.toLocaleString(intlLocale())} символов` : `${count} ${pluralForm('ru', n, { one: "символ", few: "символа", many: "символов", other: "символа" })}`;
     },
+    zoom: (name: string) => `Открыть ${name} крупно`,
     alt: (name: string, prompt: string) => `${name}: ${prompt}`,
   },
   text: {

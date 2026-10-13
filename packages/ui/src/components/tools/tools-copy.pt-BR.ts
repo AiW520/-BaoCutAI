@@ -254,6 +254,7 @@ export const ptBR: ToolsMessages = {
       return max ? `${count} / ${max.toLocaleString(intlLocale())} caracteres` : `${count} ${pluralForm('pt-BR', n, { one: "caractere", other: "caracteres" })}`;
     },
 
+    zoom: (name: string) => `Ver ${name} ampliada`,
     alt: (name: string, prompt: string) => `${name}: ${prompt}`,
   },
 

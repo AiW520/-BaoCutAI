@@ -1,4 +1,6 @@
-import type { GenerateImageRequest, ImageModelInfo, JobRecord, ModelCapabilitiesView } from '@baocut/protocol';
+import type { GenerateImageRequest, ImageModelInfo, JobProgress, JobRecord, ModelCapabilitiesView, SpaceEntry } from '@baocut/protocol';
+import type { ImageCandidate } from './image-preview.ts';
+import { formatClock } from './format.ts';
 import { M } from './tools-image-copy.ts';
 import { cloudModelOptions, codePoints, localModelOptions, localNotDownloaded, modelKeyOf, parseSeed, type ToolModelOption } from './tools-models.ts';
 
@@ -240,14 +242,66 @@ export function imageResults(job: JobRecord): ImageResult[] {
   );
 }
 
-/**
- * 本机生图在跑时的一句（设计稿 model-cloud-image.js `phase` 的本机分支）：去噪按步报（`steps`），步数走完是解码。
- * 没有按步的进度（云端，或本机还在加载模型、编码提示词）时 null，用通用的阶段说法。
- */
-export function imageStepPhase(job: Pick<JobRecord, 'progress'>): string | null {
+/** 去噪按步的进度（本机生图）；别的进度、没有进度时 null。 */
+function stepProgress(job: Pick<JobRecord, 'progress'>): (JobProgress & { total: number }) | null {
   const p = job.progress;
-  if (!p || p.unit !== 'steps' || !p.total) return null;
-  return p.done >= p.total ? M.decoding : M.stepOf(Math.max(1, p.done), p.total);
+  return p && p.unit === 'steps' && p.total ? { ...p, total: p.total } : null;
+}
+
+/**
+ * 本机生图在跑时的一句（设计稿 model-cloud-image.js `stepProgress` 的 `phase`）：去噪按步报（`steps`），写正在画的那一步
+ * （开始报 0/N 时是第 1 步），步数走完是解码；本机还没有按步的进度时是加载模型（含编码提示词）。
+ * 云端与局域网节点没有按步的进度，null，用通用的阶段说法。
+ */
+export function imageStepPhase(job: Pick<JobRecord, 'progress'> & Partial<Pick<JobRecord, 'providerId' | 'phase'>>): string | null {
+  const p = stepProgress(job);
+  if (p) return p.done >= p.total ? M.decoding : M.stepOf(Math.min(p.total, Math.max(0, p.done) + 1), p.total);
+  return job.providerId === 'local' && job.phase === 'generating' ? M.loadingModel : null;
+}
+
+/** 正在解码：去噪的步数已经走完，进度条不定（这一段的耗时报不上来）。 */
+export function imageDecoding(job: Pick<JobRecord, 'progress'>): boolean {
+  const p = stepProgress(job);
+  return !!p && p.done >= p.total;
+}
+
+/**
+ * 预计还要多少秒走完剩下的步数（命令协议 §4.1 `progress.remainingSec`）：Runtime 按已走完各步的平均耗时推算，
+ * 以记录的 `updatedAt` 为准，这里扣掉之后过去的时间（不小于 0）。还没走完一步、在解码、或不是本机按步的进度时 null。
+ */
+export function imageTimeLeft(job: Pick<JobRecord, 'state' | 'progress' | 'updatedAt'>, now: number): number | null {
+  const p = stepProgress(job);
+  if (job.state !== 'running' || !p || p.done >= p.total || typeof p.remainingSec !== 'number') return null;
+  const since = Math.max(0, now - Date.parse(job.updatedAt)) / 1000;
+  return Math.max(0, p.remainingSec - (Number.isFinite(since) ? since : 0));
+}
+
+/** 「剩余 0:12」；算不出时 null（与导出的剩余时间同一个写法，产品设计 §8.3）。 */
+export function imageTimeLeftText(job: Pick<JobRecord, 'state' | 'progress' | 'updatedAt'>, now: number): string | null {
+  const left = imageTimeLeft(job, now);
+  return left === null ? null : M.timeLeft(formatClock(Math.ceil(left)));
+}
+
+/** 在跑时那一行时间（设计稿 `timeLine`）：「已用 0:08 · 剩余 0:12」；没有剩余只写已用（云端），还没开始跑时 null。 */
+export function imageTimeLine(job: Pick<JobRecord, 'state' | 'progress' | 'updatedAt' | 'startedAt'>, now: number): string | null {
+  if (job.state !== 'running' || !job.startedAt) return null;
+  const elapsed = M.elapsed(formatClock(Math.max(0, now - Date.parse(job.startedAt)) / 1000));
+  return [elapsed, imageTimeLeftText(job, now)].filter(Boolean).join(' · ');
+}
+
+/**
+ * 放大查看的那一组图（设计稿 image-gen.jsx `ImageViewer`，与会话里的图片查看器共用）：页上做完的各批里已经收进 Space 的图，
+ * 按页上的先后。还没收进 Space（或已经移到废纸篓）的图不在里面，也不给放大。
+ */
+export function imageGallery(jobs: readonly JobRecord[], entries: readonly SpaceEntry[]): ImageCandidate[] {
+  return jobs.flatMap((job) =>
+    job.state !== 'completed'
+      ? []
+      : imageResults(job).flatMap((r) => {
+          const entry = entries.find((e) => !e.user.trashedAt && e.ref && 'artifactId' in e.ref && e.ref.artifactId === r.artifactId);
+          return entry ? [{ target: { entryId: entry.id }, name: entry.name }] : [];
+        }),
+  );
 }
 
 /** 生图任务的提示词。 */

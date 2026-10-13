@@ -5,7 +5,8 @@ export const es: TaskFactsMessages = {
   fact: {
     kind: 'Tipo', submitter: 'Iniciado por', status: 'Estado', startedAt: 'Inicio',
     runsOn: 'Se ejecuta en', language: 'Idioma', phase: 'Fase', images: 'Imágenes',
-    took: 'Tiempo empleado', cost: 'Coste',
+    took: 'Tiempo empleado',
+    left: 'Tiempo restante', cost: 'Coste',
   },
   imageCount: (count: number) => `${count} ${pluralForm('es', count, { one: 'imagen', other: 'imágenes' })}`,
 };

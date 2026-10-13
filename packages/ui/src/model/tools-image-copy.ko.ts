@@ -20,6 +20,9 @@ export const ko: ToolsImageMessages = {
   cloudChip: (provider) => `온라인 · ${provider} · 사용량 과금`,
   imageName: (n) => `이미지 ${n}`,
   seed: (seed) => `시드 ${seed}`,
+  loadingModel: '모델 불러오는 중',
+  elapsed: (clock: string) => `${clock} 경과`,
+  timeLeft: (clock: string) => `${clock} 남음`,
   decoding: '디코딩',
   stepOf: (done, total) => `${done}/${total}단계`,
 };

@@ -4,6 +4,7 @@ import type { Id, JobLiveSegment, JobRecord, JobsEvent, JobsSnapshot } from '@ba
 import { exportSpeed, trackSpeed, type ExportSpeed, type SpeedTrack } from '../model/export-speed.ts';
 import { holdSegments } from '../model/live-transcript.ts';
 import { jobLive } from '../model/task-list.ts';
+import { imageTimeLeftText } from '../model/tools-image.ts';
 
 type Segments = Readonly<Record<Id, readonly JobLiveSegment[]>>;
 type Speeds = Readonly<Record<Id, SpeedTrack>>;
@@ -85,4 +86,10 @@ export function useExportSpeed(jobId: Id | null | undefined): ExportSpeed | null
   const track = useJobs((s) => (jobId ? s.speeds[jobId] : undefined));
   const job = useJobs((s) => (jobId && s.speeds[jobId] ? s.jobs.find((j) => j.jobId === jobId) : undefined));
   return track && job ? exportSpeed(track, job) : null;
+}
+
+/** 本机生图去噪时的预计剩余时间（「剩余 0:12」，按 `progress.remainingSec` 往下数）；别的任务、算不出时 null。 */
+export function useImageTimeLeft(jobId: Id | null | undefined, now: number): string | null {
+  const job = useJobs((s) => (jobId ? s.jobs.find((j) => j.jobId === jobId && j.kind === 'generateImage') : undefined));
+  return job ? imageTimeLeftText(job, now) : null;
 }

@@ -10,5 +10,5 @@ export const fr: ToolsImageMessages = {
   images: (n) => `${n} ${pluralForm('fr', n, { one: 'image', other: 'images' })}`, aspects: (n) => `${n} ${pluralForm('fr', n, { one: 'format', other: 'formats' })}`,
   providerSize: 'Taille définie par le fournisseur', takesSeed: 'Accepte une graine', localChip: 'Généré sur cet ordinateur · hors ligne',
   cloudChip: (provider) => `En ligne · ${provider} · facturation à l’utilisation`, imageName: (n) => `Image ${n}`, seed: (seed) => `Graine ${seed}`,
-  decoding: 'Décodage', stepOf: (done, total) => `Étape ${done}/${total}`,
+  loadingModel: 'Chargement du modèle', elapsed: (clock: string) => `${clock} écoulées`, timeLeft: (clock: string) => `Temps restant : ${clock}`, decoding: 'Décodage', stepOf: (done, total) => `Étape ${done}/${total}`,
 };

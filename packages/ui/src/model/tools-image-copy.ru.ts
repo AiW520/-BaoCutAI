@@ -21,6 +21,9 @@ export const ru: ToolsImageMessages = {
   cloudChip: (provider) => `Онлайн · ${provider} · оплата по использованию`,
   imageName: (n) => `Изображение ${n}`,
   seed: (seed) => `Сид ${seed}`,
+  loadingModel: 'Загрузка модели',
+  elapsed: (clock: string) => `${clock} прошло`,
+  timeLeft: (clock: string) => `Осталось ${clock}`,
   decoding: "Декодирование",
   stepOf: (done, total) => `Шаг ${done}/${total}`,
 };

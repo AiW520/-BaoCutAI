@@ -278,6 +278,7 @@ const en = {
       return max ? `${count} / ${max.toLocaleString(intlLocale())} characters` : `${count} ${n === 1 ? 'character' : 'characters'}`;
     },
     /** 生成图片的替代文字：文件名与提示词。 */
+    zoom: (name: string) => `View ${name} larger`,
     alt: (name: string, prompt: string) => `${name}: ${prompt}`,
   },
 

@@ -20,6 +20,9 @@ export const ja: ToolsImageMessages = {
   cloudChip: (provider) => `オンライン · ${provider} · 使用量に応じて課金`,
   imageName: (n) => `画像 ${n}`,
   seed: (seed) => `シード ${seed}`,
+  loadingModel: 'モデルを読み込み中',
+  elapsed: (clock: string) => `経過時間 ${clock}`,
+  timeLeft: (clock: string) => `残り ${clock}`,
   decoding: 'デコード中',
   stepOf: (done, total) => `ステップ ${done}/${total}`,
 };

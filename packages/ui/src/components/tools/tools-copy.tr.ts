@@ -215,6 +215,7 @@ export const tr: ToolsMessages = {
     submitted: "Oluşturma başladı",
     submitFailed: (message) => `Başlamadı: ${message}`,
     chars: (n,max) => { const count=n.toLocaleString(intlLocale()); return max ? `${count} / ${max.toLocaleString(intlLocale())} karakter` : `${count} karakter`; },
+    zoom: (name: string) => `${name} büyüt`,
     alt: (name: string, prompt: string) => `${name}: ${prompt}`,
   },
   text: {

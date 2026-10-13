@@ -56,7 +56,9 @@ export const ptBR: ModelsMessages = {
     tryNote:
       "Desenha imagem pequena localmente, sem rede. Usa a vaga pesada; outras tarefas locais esperam. Fechar não para; execução também em Tarefas em segundo plano.",
     tryReady: "Pronto para testar",
-    tryRunning: (steps: number) => `Desenhando 512² · ${steps} passos…`,
+    tryRunning: (step: string) => `Desenhando 512² · ${step}`,
+    tryLoading: 'Carregando o modelo…',
+    tryDecoding: (steps: number) => `Decodificando · ${steps}/${steps} passos desenhados`,
     tryDone: (seconds: number | null) => (seconds !== null ? `Concluído · ${seconds} s` : "Concluído"),
     tryFailed: "Não foi possível desenhar a imagem",
     tryResult: "Resultado do teste",

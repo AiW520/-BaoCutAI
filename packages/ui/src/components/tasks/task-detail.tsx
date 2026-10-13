@@ -15,7 +15,7 @@ import { chargesOnRetry, reconcileOptions } from '../../model/task-reconcile.ts'
 import { rerunOf, toolOfTask } from '../../model/tool-rerun.ts';
 import { toolRunOf } from '../../model/tool-runs.ts';
 import { useRuntime } from '../../runtime/context.tsx';
-import { useExportSpeed, useJobs } from '../../state/jobs-store.ts';
+import { useExportSpeed, useImageTimeLeft, useJobs } from '../../state/jobs-store.ts';
 import { useLegacyImport } from '../../state/legacy-import-store.ts';
 import { useShell } from '../../state/shell-store.ts';
 import { useTasks } from '../../state/tasks-store.ts';
@@ -116,6 +116,7 @@ function TaskDetailBody({ row, job, task, backButton }: { row: TaskRow; job?: Jo
   const openConversation = useOpenConversation(row);
   const now = useNow(1000, row.live);
   const speed = exportSpeedParts(useExportSpeed(job?.jobId));
+  const imageLeft = useImageTimeLeft(job?.jobId, now);
   const remedy = job ? jobRemedy(job) : null;
   const failed = job ? job.state === 'failed' : task?.status === 'failed';
   // 视频工具的运行（转录、翻译字幕、翻译配音）：步骤、停住的说明与重试都在 ToolRunPanel 里，不再另写一段失败说明。
@@ -139,7 +140,7 @@ function TaskDetailBody({ row, job, task, backButton }: { row: TaskRow; job?: Jo
           />
         </div>
       ) : null}
-      {row.live && row.phase ? <p className={phaseLine}>{[row.phase, ...speed].join(' · ')}</p> : null}
+      {row.live && row.phase ? <p className={phaseLine}>{[row.phase, ...speed, imageLeft].filter(Boolean).join(' · ')}</p> : null}
       {job && toolRun ? <ToolRunPanel job={job} tool={toolRun} /> : null}
       {row.action ? (
         <div className={actionRow}>

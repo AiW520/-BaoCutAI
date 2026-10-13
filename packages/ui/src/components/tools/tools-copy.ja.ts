@@ -226,6 +226,7 @@ export const ja: ToolsMessages = {
       const count = n.toLocaleString(intlLocale());
       return max ? `${count} / ${max.toLocaleString(intlLocale())} 文字` : `${count} 文字`;
     },
+    zoom: (name: string) => `${name} を拡大表示`,
     alt: (name: string, prompt: string) => `${name}：${prompt}`,
   },
   text: {
