@@ -1,0 +1,12 @@
+{
+ "labeledBy": "agent-viewed-frames",
+ "humanVerified": false,
+ "notes": "Shape of <frames-dir>/labels.json for embed-frames.py and score-frames.py. The real file describes frames from the user's library and stays outside the repo. kind: visual (describes what is on screen), narration (a script sentence that neither describes the frame nor copies on-screen text), transcript (a burned-in subtitle line rewritten as a script sentence), screen-text (asks for words shown on screen), none (no frame matches). relevant lists every matching frame id from manifest.json.",
+ "queries": [
+  { "id": "q00", "kind": "visual", "lang": "en", "text": "a red bicycle leaning against a brick wall", "relevant": ["v00-f03", "v00-f04"] },
+  { "id": "q01", "kind": "visual", "lang": "zh", "text": "靠在砖墙上的红色自行车", "relevant": ["v00-f03", "v00-f04"] },
+  { "id": "q02", "kind": "narration", "lang": "zh", "text": "那天我们骑车绕着老城走了一圈", "relevant": ["v00-f03"] },
+  { "id": "q03", "kind": "screen-text", "lang": "en", "text": "a slide titled Quarterly Results", "relevant": ["v01-f07"] },
+  { "id": "q04", "kind": "none", "lang": "en", "text": "a dog running on the beach", "relevant": [] }
+ ]
+}

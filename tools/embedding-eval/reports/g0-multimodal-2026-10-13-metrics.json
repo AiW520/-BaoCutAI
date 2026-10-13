@@ -1,0 +1,4666 @@
+{
+ "corpus": {
+  "videos": 14,
+  "frames": 170,
+  "categories": {
+   "explainer": 1,
+   "illustration": 1,
+   "keynote-slides": 1,
+   "lecture-slides": 1,
+   "music-video": 1,
+   "news": 1,
+   "screen-recording": 2,
+   "talking-head": 2,
+   "travel": 2,
+   "vertical-short": 1,
+   "whiteboard": 1
+  },
+  "queries": {
+   "narration": 9,
+   "none": 6,
+   "screen-text": 6,
+   "transcript": 10,
+   "visual": 41
+  },
+  "labeledBy": "agent-viewed-frames",
+  "humanVerified": false
+ },
+ "runs": {
+  "cpu-vt140": {
+   "run": "cpu-vt140",
+   "model": "embeddinggemma-2-740m.litertlm",
+   "visionTokensPerImage": 140,
+   "engineCreateSec": 1.89,
+   "frames": 170,
+   "frameMsFirst": 1228,
+   "frameMsMedian": 1133,
+   "frameMsP90": 1656,
+   "queryMsMedian": 54,
+   "maxRssMiB": 1240,
+   "engineCacheMiB": 367
+  },
+  "cpu-vt70": {
+   "run": "cpu-vt70",
+   "model": "embeddinggemma-2-740m.litertlm",
+   "visionTokensPerImage": 70,
+   "engineCreateSec": 1.96,
+   "frames": 170,
+   "frameMsFirst": 622,
+   "frameMsMedian": 435,
+   "frameMsP90": 587,
+   "queryMsMedian": 71,
+   "maxRssMiB": 1098,
+   "engineCacheMiB": 367
+  },
+  "cpu": {
+   "run": "cpu",
+   "model": "embeddinggemma-2-740m.litertlm",
+   "visionTokensPerImage": null,
+   "engineCreateSec": 2.27,
+   "frames": 170,
+   "frameMsFirst": 1443,
+   "frameMsMedian": 1191,
+   "frameMsP90": 2789,
+   "queryMsMedian": 70,
+   "maxRssMiB": 1243,
+   "engineCacheMiB": 367
+  },
+  "gpu-fp32": {
+   "run": "gpu-fp32",
+   "model": "embeddinggemma-2-740m.litertlm",
+   "visionTokensPerImage": null,
+   "engineCreateSec": 2.29,
+   "frames": 170,
+   "frameMsFirst": 568,
+   "frameMsMedian": 467,
+   "frameMsP90": 534,
+   "queryMsMedian": 32,
+   "maxRssMiB": 920,
+   "engineCacheMiB": 305
+  },
+  "gpu": {
+   "run": "gpu",
+   "model": "embeddinggemma-2-740m.litertlm",
+   "visionTokensPerImage": null,
+   "engineCreateSec": 4.19,
+   "frames": 170,
+   "frameMsFirst": 368,
+   "frameMsMedian": 301,
+   "frameMsP90": 309,
+   "queryMsMedian": 28,
+   "maxRssMiB": 816,
+   "engineCacheMiB": 304
+  }
+ },
+ "retrieval": {
+  "cpu-vt140/modelcard-v1": {
+   "library": {
+    "narration": {
+     "n": 9,
+     "r1": 0.778,
+     "r5": 0.889,
+     "mrr": 0.81
+    },
+    "narration/en": {
+     "n": 4,
+     "r1": 0.75,
+     "r5": 0.75,
+     "mrr": 0.76
+    },
+    "narration/zh": {
+     "n": 5,
+     "r1": 0.8,
+     "r5": 1.0,
+     "mrr": 0.85
+    },
+    "screen-text": {
+     "n": 6,
+     "r1": 1.0,
+     "r5": 1.0,
+     "mrr": 1.0
+    },
+    "screen-text/en": {
+     "n": 4,
+     "r1": 1.0,
+     "r5": 1.0,
+     "mrr": 1.0
+    },
+    "screen-text/zh": {
+     "n": 2,
+     "r1": 1.0,
+     "r5": 1.0,
+     "mrr": 1.0
+    },
+    "transcript": {
+     "n": 10,
+     "r1": 0.9,
+     "r5": 1.0,
+     "mrr": 0.933
+    },
+    "transcript/en": {
+     "n": 2,
+     "r1": 1.0,
+     "r5": 1.0,
+     "mrr": 1.0
+    },
+    "transcript/zh": {
+     "n": 8,
+     "r1": 0.875,
+     "r5": 1.0,
+     "mrr": 0.917
+    },
+    "visual": {
+     "n": 41,
+     "r1": 1.0,
+     "r5": 1.0,
+     "mrr": 1.0
+    },
+    "visual/en": {
+     "n": 23,
+     "r1": 1.0,
+     "r5": 1.0,
+     "mrr": 1.0
+    },
+    "visual/zh": {
+     "n": 18,
+     "r1": 1.0,
+     "r5": 1.0,
+     "mrr": 1.0
+    }
+   },
+   "libraryVisualByCategory": {
+    "explainer": {
+     "n": 2,
+     "r1": 1.0,
+     "r5": 1.0,
+     "mrr": 1.0
+    },
+    "illustration": {
+     "n": 4,
+     "r1": 1.0,
+     "r5": 1.0,
+     "mrr": 1.0
+    },
+    "keynote-slides": {
+     "n": 3,
+     "r1": 1.0,
+     "r5": 1.0,
+     "mrr": 1.0
+    },
+    "lecture-slides": {
+     "n": 2,
+     "r1": 1.0,
+     "r5": 1.0,
+     "mrr": 1.0
+    },
+    "music-video": {
+     "n": 2,
+     "r1": 1.0,
+     "r5": 1.0,
+     "mrr": 1.0
+    },
+    "news": {
+     "n": 4,
+     "r1": 1.0,
+     "r5": 1.0,
+     "mrr": 1.0
+    },
+    "screen-recording": {
+     "n": 4,
+     "r1": 1.0,
+     "r5": 1.0,
+     "mrr": 1.0
+    },
+    "talking-head": {
+     "n": 2,
+     "r1": 1.0,
+     "r5": 1.0,
+     "mrr": 1.0
+    },
+    "travel": {
+     "n": 16,
+     "r1": 1.0,
+     "r5": 1.0,
+     "mrr": 1.0
+    },
+    "whiteboard": {
+     "n": 2,
+     "r1": 1.0,
+     "r5": 1.0,
+     "mrr": 1.0
+    }
+   },
+   "video": {
+    "narration": {
+     "n": 9,
+     "r1": 0.778,
+     "r5": 0.889,
+     "mrr": 0.812
+    },
+    "narration/en": {
+     "n": 4,
+     "r1": 0.75,
+     "r5": 0.75,
+     "mrr": 0.766
+    },
+    "narration/zh": {
+     "n": 5,
+     "r1": 0.8,
+     "r5": 1.0,
+     "mrr": 0.85
+    },
+    "screen-text": {
+     "n": 6,
+     "r1": 1.0,
+     "r5": 1.0,
+     "mrr": 1.0
+    },
+    "screen-text/en": {
+     "n": 4,
+     "r1": 1.0,
+     "r5": 1.0,
+     "mrr": 1.0
+    },
+    "screen-text/zh": {
+     "n": 2,
+     "r1": 1.0,
+     "r5": 1.0,
+     "mrr": 1.0
+    },
+    "transcript": {
+     "n": 10,
+     "r1": 0.9,
+     "r5": 1.0,
+     "mrr": 0.933
+    },
+    "transcript/en": {
+     "n": 2,
+     "r1": 1.0,
+     "r5": 1.0,
+     "mrr": 1.0
+    },
+    "transcript/zh": {
+     "n": 8,
+     "r1": 0.875,
+     "r5": 1.0,
+     "mrr": 0.917
+    },
+    "visual": {
+     "n": 39,
+     "r1": 1.0,
+     "r5": 1.0,
+     "mrr": 1.0
+    },
+    "visual/en": {
+     "n": 22,
+     "r1": 1.0,
+     "r5": 1.0,
+     "mrr": 1.0
+    },
+    "visual/zh": {
+     "n": 17,
+     "r1": 1.0,
+     "r5": 1.0,
+     "mrr": 1.0
+    }
+   },
+   "video20FramesOnly": {
+    "n": 33,
+    "r1": 0.939,
+    "r5": 0.97,
+    "mrr": 0.951
+   },
+   "videoMeanCandidates": 15.2,
+   "scores": {
+    "visualBestRelevant": {
+     "min": 0.67,
+     "p10": 0.705,
+     "median": 0.745,
+     "max": 0.805
+    },
+    "noAnswerBest": {
+     "min": 0.619,
+     "p10": 0.624,
+     "median": 0.642,
+     "max": 0.685
+    }
+   },
+   "misses": [
+    {
+     "query": "q46",
+     "setting": "library",
+     "kind": "transcript",
+     "rank": 3,
+     "top1": "v07-f09"
+    },
+    {
+     "query": "q46",
+     "setting": "video",
+     "kind": "transcript",
+     "rank": 3,
+     "top1": "v07-f09"
+    },
+    {
+     "query": "q66",
+     "setting": "library",
+     "kind": "narration",
+     "rank": 4,
+     "top1": "v09-f00"
+    },
+    {
+     "query": "q66",
+     "setting": "video",
+     "kind": "narration",
+     "rank": 4,
+     "top1": "v09-f00"
+    },
+    {
+     "query": "q68",
+     "setting": "library",
+     "kind": "narration",
+     "rank": 25,
+     "top1": "v02-f07"
+    },
+    {
+     "query": "q68",
+     "setting": "video",
+     "kind": "narration",
+     "rank": 16,
+     "top1": "v02-f07"
+    }
+   ]
+  },
+  "cpu-vt140/litert-docs-v1": {
+   "library": {
+    "narration": {
+     "n": 9,
+     "r1": 0.556,
+     "r5": 0.889,
+     "mrr": 0.699
+    },
+    "narration/en": {
+     "n": 4,
+     "r1": 0.25,
+     "r5": 0.75,
+     "mrr": 0.51
+    },
+    "narration/zh": {
+     "n": 5,
+     "r1": 0.8,
+     "r5": 1.0,
+     "mrr": 0.85
+    },
+    "screen-text": {
+     "n": 6,
+     "r1": 1.0,
+     "r5": 1.0,
+     "mrr": 1.0
+    },
+    "screen-text/en": {
+     "n": 4,
+     "r1": 1.0,
+     "r5": 1.0,
+     "mrr": 1.0
+    },
+    "screen-text/zh": {
+     "n": 2,
+     "r1": 1.0,
+     "r5": 1.0,
+     "mrr": 1.0
+    },
+    "transcript": {
+     "n": 10,
+     "r1": 0.9,
+     "r5": 1.0,
+     "mrr": 0.933
+    },
+    "transcript/en": {
+     "n": 2,
+     "r1": 1.0,
+     "r5": 1.0,
+     "mrr": 1.0
+    },
+    "transcript/zh": {
+     "n": 8,
+     "r1": 0.875,
+     "r5": 1.0,
+     "mrr": 0.917
+    },
+    "visual": {
+     "n": 41,
+     "r1": 1.0,
+     "r5": 1.0,
+     "mrr": 1.0
+    },
+    "visual/en": {
+     "n": 23,
+     "r1": 1.0,
+     "r5": 1.0,
+     "mrr": 1.0
+    },
+    "visual/zh": {
+     "n": 18,
+     "r1": 1.0,
+     "r5": 1.0,
+     "mrr": 1.0
+    }
+   },
+   "libraryVisualByCategory": {
+    "explainer": {
+     "n": 2,
+     "r1": 1.0,
+     "r5": 1.0,
+     "mrr": 1.0
+    },
+    "illustration": {
+     "n": 4,
+     "r1": 1.0,
+     "r5": 1.0,
+     "mrr": 1.0
+    },
+    "keynote-slides": {
+     "n": 3,
+     "r1": 1.0,
+     "r5": 1.0,
+     "mrr": 1.0
+    },
+    "lecture-slides": {
+     "n": 2,
+     "r1": 1.0,
+     "r5": 1.0,
+     "mrr": 1.0
+    },
+    "music-video": {
+     "n": 2,
+     "r1": 1.0,
+     "r5": 1.0,
+     "mrr": 1.0
+    },
+    "news": {
+     "n": 4,
+     "r1": 1.0,
+     "r5": 1.0,
+     "mrr": 1.0
+    },
+    "screen-recording": {
+     "n": 4,
+     "r1": 1.0,
+     "r5": 1.0,
+     "mrr": 1.0
+    },
+    "talking-head": {
+     "n": 2,
+     "r1": 1.0,
+     "r5": 1.0,
+     "mrr": 1.0
+    },
+    "travel": {
+     "n": 16,
+     "r1": 1.0,
+     "r5": 1.0,
+     "mrr": 1.0
+    },
+    "whiteboard": {
+     "n": 2,
+     "r1": 1.0,
+     "r5": 1.0,
+     "mrr": 1.0
+    }
+   },
+   "video": {
+    "narration": {
+     "n": 9,
+     "r1": 0.667,
+     "r5": 0.889,
+     "mrr": 0.757
+    },
+    "narration/en": {
+     "n": 4,
+     "r1": 0.5,
+     "r5": 0.75,
+     "mrr": 0.642
+    },
+    "narration/zh": {
+     "n": 5,
+     "r1": 0.8,
+     "r5": 1.0,
+     "mrr": 0.85
+    },
+    "screen-text": {
+     "n": 6,
+     "r1": 1.0,
+     "r5": 1.0,
+     "mrr": 1.0
+    },
+    "screen-text/en": {
+     "n": 4,
+     "r1": 1.0,
+     "r5": 1.0,
+     "mrr": 1.0
+    },
+    "screen-text/zh": {
+     "n": 2,
+     "r1": 1.0,
+     "r5": 1.0,
+     "mrr": 1.0
+    },
+    "transcript": {
+     "n": 10,
+     "r1": 0.9,
+     "r5": 1.0,
+     "mrr": 0.933
+    },
+    "transcript/en": {
+     "n": 2,
+     "r1": 1.0,
+     "r5": 1.0,
+     "mrr": 1.0
+    },
+    "transcript/zh": {
+     "n": 8,
+     "r1": 0.875,
+     "r5": 1.0,
+     "mrr": 0.917
+    },
+    "visual": {
+     "n": 39,
+     "r1": 1.0,
+     "r5": 1.0,
+     "mrr": 1.0
+    },
+    "visual/en": {
+     "n": 22,
+     "r1": 1.0,
+     "r5": 1.0,
+     "mrr": 1.0
+    },
+    "visual/zh": {
+     "n": 17,
+     "r1": 1.0,
+     "r5": 1.0,
+     "mrr": 1.0
+    }
+   },
+   "video20FramesOnly": {
+    "n": 33,
+    "r1": 0.939,
+    "r5": 0.97,
+    "mrr": 0.952
+   },
+   "videoMeanCandidates": 15.2,
+   "scores": {
+    "visualBestRelevant": {
+     "min": 0.687,
+     "p10": 0.722,
+     "median": 0.761,
+     "max": 0.818
+    },
+    "noAnswerBest": {
+     "min": 0.65,
+     "p10": 0.65,
+     "median": 0.662,
+     "max": 0.693
+    }
+   },
+   "misses": [
+    {
+     "query": "q46",
+     "setting": "library",
+     "kind": "transcript",
+     "rank": 3,
+     "top1": "v07-f09"
+    },
+    {
+     "query": "q46",
+     "setting": "video",
+     "kind": "transcript",
+     "rank": 3,
+     "top1": "v07-f09"
+    },
+    {
+     "query": "q66",
+     "setting": "library",
+     "kind": "narration",
+     "rank": 4,
+     "top1": "v09-f00"
+    },
+    {
+     "query": "q66",
+     "setting": "video",
+     "kind": "narration",
+     "rank": 4,
+     "top1": "v09-f00"
+    },
+    {
+     "query": "q68",
+     "setting": "library",
+     "kind": "narration",
+     "rank": 25,
+     "top1": "v02-f06"
+    },
+    {
+     "query": "q68",
+     "setting": "video",
+     "kind": "narration",
+     "rank": 15,
+     "top1": "v02-f06"
+    },
+    {
+     "query": "q69",
+     "setting": "library",
+     "kind": "narration",
+     "rank": 2,
+     "top1": "v01-f09"
+    },
+    {
+     "query": "q71",
+     "setting": "library",
+     "kind": "narration",
+     "rank": 2,
+     "top1": "v05-f01"
+    },
+    {
+     "query": "q71",
+     "setting": "video",
+     "kind": "narration",
+     "rank": 2,
+     "top1": "v05-f01"
+    }
+   ]
+  },
+  "cpu-vt140/no-prefix": {
+   "library": {
+    "narration": {
+     "n": 9,
+     "r1": 0.556,
+     "r5": 0.889,
+     "mrr": 0.701
+    },
+    "narration/en": {
+     "n": 4,
+     "r1": 0.25,
+     "r5": 0.75,
+     "mrr": 0.514
+    },
+    "narration/zh": {
+     "n": 5,
+     "r1": 0.8,
+     "r5": 1.0,
+     "mrr": 0.85
+    },
+    "screen-text": {
+     "n": 6,
+     "r1": 1.0,
+     "r5": 1.0,
+     "mrr": 1.0
+    },
+    "screen-text/en": {
+     "n": 4,
+     "r1": 1.0,
+     "r5": 1.0,
+     "mrr": 1.0
+    },
+    "screen-text/zh": {
+     "n": 2,
+     "r1": 1.0,
+     "r5": 1.0,
+     "mrr": 1.0
+    },
+    "transcript": {
+     "n": 10,
+     "r1": 0.9,
+     "r5": 1.0,
+     "mrr": 0.933
+    },
+    "transcript/en": {
+     "n": 2,
+     "r1": 1.0,
+     "r5": 1.0,
+     "mrr": 1.0
+    },
+    "transcript/zh": {
+     "n": 8,
+     "r1": 0.875,
+     "r5": 1.0,
+     "mrr": 0.917
+    },
+    "visual": {
+     "n": 41,
+     "r1": 1.0,
+     "r5": 1.0,
+     "mrr": 1.0
+    },
+    "visual/en": {
+     "n": 23,
+     "r1": 1.0,
+     "r5": 1.0,
+     "mrr": 1.0
+    },
+    "visual/zh": {
+     "n": 18,
+     "r1": 1.0,
+     "r5": 1.0,
+     "mrr": 1.0
+    }
+   },
+   "libraryVisualByCategory": {
+    "explainer": {
+     "n": 2,
+     "r1": 1.0,
+     "r5": 1.0,
+     "mrr": 1.0
+    },
+    "illustration": {
+     "n": 4,
+     "r1": 1.0,
+     "r5": 1.0,
+     "mrr": 1.0
+    },
+    "keynote-slides": {
+     "n": 3,
+     "r1": 1.0,
+     "r5": 1.0,
+     "mrr": 1.0
+    },
+    "lecture-slides": {
+     "n": 2,
+     "r1": 1.0,
+     "r5": 1.0,
+     "mrr": 1.0
+    },
+    "music-video": {
+     "n": 2,
+     "r1": 1.0,
+     "r5": 1.0,
+     "mrr": 1.0
+    },
+    "news": {
+     "n": 4,
+     "r1": 1.0,
+     "r5": 1.0,
+     "mrr": 1.0
+    },
+    "screen-recording": {
+     "n": 4,
+     "r1": 1.0,
+     "r5": 1.0,
+     "mrr": 1.0
+    },
+    "talking-head": {
+     "n": 2,
+     "r1": 1.0,
+     "r5": 1.0,
+     "mrr": 1.0
+    },
+    "travel": {
+     "n": 16,
+     "r1": 1.0,
+     "r5": 1.0,
+     "mrr": 1.0
+    },
+    "whiteboard": {
+     "n": 2,
+     "r1": 1.0,
+     "r5": 1.0,
+     "mrr": 1.0
+    }
+   },
+   "video": {
+    "narration": {
+     "n": 9,
+     "r1": 0.667,
+     "r5": 0.889,
+     "mrr": 0.757
+    },
+    "narration/en": {
+     "n": 4,
+     "r1": 0.5,
+     "r5": 0.75,
+     "mrr": 0.642
+    },
+    "narration/zh": {
+     "n": 5,
+     "r1": 0.8,
+     "r5": 1.0,
+     "mrr": 0.85
+    },
+    "screen-text": {
+     "n": 6,
+     "r1": 1.0,
+     "r5": 1.0,
+     "mrr": 1.0
+    },
+    "screen-text/en": {
+     "n": 4,
+     "r1": 1.0,
+     "r5": 1.0,
+     "mrr": 1.0
+    },
+    "screen-text/zh": {
+     "n": 2,
+     "r1": 1.0,
+     "r5": 1.0,
+     "mrr": 1.0
+    },
+    "transcript": {
+     "n": 10,
+     "r1": 0.9,
+     "r5": 1.0,
+     "mrr": 0.933
+    },
+    "transcript/en": {
+     "n": 2,
+     "r1": 1.0,
+     "r5": 1.0,
+     "mrr": 1.0
+    },
+    "transcript/zh": {
+     "n": 8,
+     "r1": 0.875,
+     "r5": 1.0,
+     "mrr": 0.917
+    },
+    "visual": {
+     "n": 39,
+     "r1": 1.0,
+     "r5": 1.0,
+     "mrr": 1.0
+    },
+    "visual/en": {
+     "n": 22,
+     "r1": 1.0,
+     "r5": 1.0,
+     "mrr": 1.0
+    },
+    "visual/zh": {
+     "n": 17,
+     "r1": 1.0,
+     "r5": 1.0,
+     "mrr": 1.0
+    }
+   },
+   "video20FramesOnly": {
+    "n": 33,
+    "r1": 0.939,
+    "r5": 0.97,
+    "mrr": 0.952
+   },
+   "videoMeanCandidates": 15.2,
+   "scores": {
+    "visualBestRelevant": {
+     "min": 0.644,
+     "p10": 0.683,
+     "median": 0.714,
+     "max": 0.803
+    },
+    "noAnswerBest": {
+     "min": 0.584,
+     "p10": 0.586,
+     "median": 0.598,
+     "max": 0.636
+    }
+   },
+   "misses": [
+    {
+     "query": "q46",
+     "setting": "library",
+     "kind": "transcript",
+     "rank": 3,
+     "top1": "v07-f09"
+    },
+    {
+     "query": "q46",
+     "setting": "video",
+     "kind": "transcript",
+     "rank": 3,
+     "top1": "v07-f09"
+    },
+    {
+     "query": "q66",
+     "setting": "library",
+     "kind": "narration",
+     "rank": 4,
+     "top1": "v09-f00"
+    },
+    {
+     "query": "q66",
+     "setting": "video",
+     "kind": "narration",
+     "rank": 4,
+     "top1": "v09-f00"
+    },
+    {
+     "query": "q68",
+     "setting": "library",
+     "kind": "narration",
+     "rank": 18,
+     "top1": "v02-f05"
+    },
+    {
+     "query": "q68",
+     "setting": "video",
+     "kind": "narration",
+     "rank": 15,
+     "top1": "v02-f05"
+    },
+    {
+     "query": "q70",
+     "setting": "library",
+     "kind": "narration",
+     "rank": 2,
+     "top1": "v12-f04"
+    },
+    {
+     "query": "q71",
+     "setting": "library",
+     "kind": "narration",
+     "rank": 2,
+     "top1": "v05-f01"
+    },
+    {
+     "query": "q71",
+     "setting": "video",
+     "kind": "narration",
+     "rank": 2,
+     "top1": "v05-f01"
+    }
+   ]
+  },
+  "cpu-vt70/modelcard-v1": {
+   "library": {
+    "narration": {
+     "n": 9,
+     "r1": 0.556,
+     "r5": 0.778,
+     "mrr": 0.659
+    },
+    "narration/en": {
+     "n": 4,
+     "r1": 0.5,
+     "r5": 0.75,
+     "mrr": 0.641
+    },
+    "narration/zh": {
+     "n": 5,
+     "r1": 0.6,
+     "r5": 0.8,
+     "mrr": 0.673
+    },
+    "screen-text": {
+     "n": 6,
+     "r1": 1.0,
+     "r5": 1.0,
+     "mrr": 1.0
+    },
+    "screen-text/en": {
+     "n": 4,
+     "r1": 1.0,
+     "r5": 1.0,
+     "mrr": 1.0
+    },
+    "screen-text/zh": {
+     "n": 2,
+     "r1": 1.0,
+     "r5": 1.0,
+     "mrr": 1.0
+    },
+    "transcript": {
+     "n": 10,
+     "r1": 0.9,
+     "r5": 1.0,
+     "mrr": 0.933
+    },
+    "transcript/en": {
+     "n": 2,
+     "r1": 1.0,
+     "r5": 1.0,
+     "mrr": 1.0
+    },
+    "transcript/zh": {
+     "n": 8,
+     "r1": 0.875,
+     "r5": 1.0,
+     "mrr": 0.917
+    },
+    "visual": {
+     "n": 41,
+     "r1": 0.976,
+     "r5": 1.0,
+     "mrr": 0.982
+    },
+    "visual/en": {
+     "n": 23,
+     "r1": 1.0,
+     "r5": 1.0,
+     "mrr": 1.0
+    },
+    "visual/zh": {
+     "n": 18,
+     "r1": 0.944,
+     "r5": 1.0,
+     "mrr": 0.958
+    }
+   },
+   "libraryVisualByCategory": {
+    "explainer": {
+     "n": 2,
+     "r1": 0.5,
+     "r5": 1.0,
+     "mrr": 0.625
+    },
+    "illustration": {
+     "n": 4,
+     "r1": 1.0,
+     "r5": 1.0,
+     "mrr": 1.0
+    },
+    "keynote-slides": {
+     "n": 3,
+     "r1": 1.0,
+     "r5": 1.0,
+     "mrr": 1.0
+    },
+    "lecture-slides": {
+     "n": 2,
+     "r1": 1.0,
+     "r5": 1.0,
+     "mrr": 1.0
+    },
+    "music-video": {
+     "n": 2,
+     "r1": 1.0,
+     "r5": 1.0,
+     "mrr": 1.0
+    },
+    "news": {
+     "n": 4,
+     "r1": 1.0,
+     "r5": 1.0,
+     "mrr": 1.0
+    },
+    "screen-recording": {
+     "n": 4,
+     "r1": 1.0,
+     "r5": 1.0,
+     "mrr": 1.0
+    },
+    "talking-head": {
+     "n": 2,
+     "r1": 1.0,
+     "r5": 1.0,
+     "mrr": 1.0
+    },
+    "travel": {
+     "n": 16,
+     "r1": 1.0,
+     "r5": 1.0,
+     "mrr": 1.0
+    },
+    "whiteboard": {
+     "n": 2,
+     "r1": 1.0,
+     "r5": 1.0,
+     "mrr": 1.0
+    }
+   },
+   "video": {
+    "narration": {
+     "n": 9,
+     "r1": 0.556,
+     "r5": 0.889,
+     "mrr": 0.697
+    },
+    "narration/en": {
+     "n": 4,
+     "r1": 0.5,
+     "r5": 0.75,
+     "mrr": 0.643
+    },
+    "narration/zh": {
+     "n": 5,
+     "r1": 0.6,
+     "r5": 1.0,
+     "mrr": 0.74
+    },
+    "screen-text": {
+     "n": 6,
+     "r1": 1.0,
+     "r5": 1.0,
+     "mrr": 1.0
+    },
+    "screen-text/en": {
+     "n": 4,
+     "r1": 1.0,
+     "r5": 1.0,
+     "mrr": 1.0
+    },
+    "screen-text/zh": {
+     "n": 2,
+     "r1": 1.0,
+     "r5": 1.0,
+     "mrr": 1.0
+    },
+    "transcript": {
+     "n": 10,
+     "r1": 0.9,
+     "r5": 1.0,
+     "mrr": 0.933
+    },
+    "transcript/en": {
+     "n": 2,
+     "r1": 1.0,
+     "r5": 1.0,
+     "mrr": 1.0
+    },
+    "transcript/zh": {
+     "n": 8,
+     "r1": 0.875,
+     "r5": 1.0,
+     "mrr": 0.917
+    },
+    "visual": {
+     "n": 39,
+     "r1": 0.974,
+     "r5": 1.0,
+     "mrr": 0.987
+    },
+    "visual/en": {
+     "n": 22,
+     "r1": 1.0,
+     "r5": 1.0,
+     "mrr": 1.0
+    },
+    "visual/zh": {
+     "n": 17,
+     "r1": 0.941,
+     "r5": 1.0,
+     "mrr": 0.971
+    }
+   },
+   "video20FramesOnly": {
+    "n": 33,
+    "r1": 0.909,
+    "r5": 0.97,
+    "mrr": 0.937
+   },
+   "videoMeanCandidates": 15.2,
+   "scores": {
+    "visualBestRelevant": {
+     "min": 0.667,
+     "p10": 0.706,
+     "median": 0.745,
+     "max": 0.813
+    },
+    "noAnswerBest": {
+     "min": 0.637,
+     "p10": 0.643,
+     "median": 0.654,
+     "max": 0.698
+    }
+   },
+   "misses": [
+    {
+     "query": "q13",
+     "setting": "library",
+     "kind": "visual",
+     "rank": 4,
+     "top1": "v13-f00"
+    },
+    {
+     "query": "q13",
+     "setting": "video",
+     "kind": "visual",
+     "rank": 2,
+     "top1": "v13-f00"
+    },
+    {
+     "query": "q45",
+     "setting": "library",
+     "kind": "transcript",
+     "rank": 3,
+     "top1": "v07-f17"
+    },
+    {
+     "query": "q45",
+     "setting": "video",
+     "kind": "transcript",
+     "rank": 3,
+     "top1": "v07-f17"
+    },
+    {
+     "query": "q64",
+     "setting": "library",
+     "kind": "narration",
+     "rank": 6,
+     "top1": "v09-f02"
+    },
+    {
+     "query": "q64",
+     "setting": "video",
+     "kind": "narration",
+     "rank": 2,
+     "top1": "v07-f08"
+    },
+    {
+     "query": "q66",
+     "setting": "library",
+     "kind": "narration",
+     "rank": 5,
+     "top1": "v09-f00"
+    },
+    {
+     "query": "q66",
+     "setting": "video",
+     "kind": "narration",
+     "rank": 5,
+     "top1": "v09-f00"
+    },
+    {
+     "query": "q68",
+     "setting": "library",
+     "kind": "narration",
+     "rank": 16,
+     "top1": "v02-f07"
+    },
+    {
+     "query": "q68",
+     "setting": "video",
+     "kind": "narration",
+     "rank": 14,
+     "top1": "v02-f07"
+    },
+    {
+     "query": "q71",
+     "setting": "library",
+     "kind": "narration",
+     "rank": 2,
+     "top1": "v05-f01"
+    },
+    {
+     "query": "q71",
+     "setting": "video",
+     "kind": "narration",
+     "rank": 2,
+     "top1": "v05-f01"
+    }
+   ]
+  },
+  "cpu-vt70/litert-docs-v1": {
+   "library": {
+    "narration": {
+     "n": 9,
+     "r1": 0.444,
+     "r5": 0.778,
+     "mrr": 0.577
+    },
+    "narration/en": {
+     "n": 4,
+     "r1": 0.25,
+     "r5": 0.75,
+     "mrr": 0.474
+    },
+    "narration/zh": {
+     "n": 5,
+     "r1": 0.6,
+     "r5": 0.8,
+     "mrr": 0.66
+    },
+    "screen-text": {
+     "n": 6,
+     "r1": 1.0,
+     "r5": 1.0,
+     "mrr": 1.0
+    },
+    "screen-text/en": {
+     "n": 4,
+     "r1": 1.0,
+     "r5": 1.0,
+     "mrr": 1.0
+    },
+    "screen-text/zh": {
+     "n": 2,
+     "r1": 1.0,
+     "r5": 1.0,
+     "mrr": 1.0
+    },
+    "transcript": {
+     "n": 10,
+     "r1": 0.8,
+     "r5": 1.0,
+     "mrr": 0.883
+    },
+    "transcript/en": {
+     "n": 2,
+     "r1": 1.0,
+     "r5": 1.0,
+     "mrr": 1.0
+    },
+    "transcript/zh": {
+     "n": 8,
+     "r1": 0.75,
+     "r5": 1.0,
+     "mrr": 0.854
+    },
+    "visual": {
+     "n": 41,
+     "r1": 0.976,
+     "r5": 1.0,
+     "mrr": 0.988
+    },
+    "visual/en": {
+     "n": 23,
+     "r1": 1.0,
+     "r5": 1.0,
+     "mrr": 1.0
+    },
+    "visual/zh": {
+     "n": 18,
+     "r1": 0.944,
+     "r5": 1.0,
+     "mrr": 0.972
+    }
+   },
+   "libraryVisualByCategory": {
+    "explainer": {
+     "n": 2,
+     "r1": 0.5,
+     "r5": 1.0,
+     "mrr": 0.75
+    },
+    "illustration": {
+     "n": 4,
+     "r1": 1.0,
+     "r5": 1.0,
+     "mrr": 1.0
+    },
+    "keynote-slides": {
+     "n": 3,
+     "r1": 1.0,
+     "r5": 1.0,
+     "mrr": 1.0
+    },
+    "lecture-slides": {
+     "n": 2,
+     "r1": 1.0,
+     "r5": 1.0,
+     "mrr": 1.0
+    },
+    "music-video": {
+     "n": 2,
+     "r1": 1.0,
+     "r5": 1.0,
+     "mrr": 1.0
+    },
+    "news": {
+     "n": 4,
+     "r1": 1.0,
+     "r5": 1.0,
+     "mrr": 1.0
+    },
+    "screen-recording": {
+     "n": 4,
+     "r1": 1.0,
+     "r5": 1.0,
+     "mrr": 1.0
+    },
+    "talking-head": {
+     "n": 2,
+     "r1": 1.0,
+     "r5": 1.0,
+     "mrr": 1.0
+    },
+    "travel": {
+     "n": 16,
+     "r1": 1.0,
+     "r5": 1.0,
+     "mrr": 1.0
+    },
+    "whiteboard": {
+     "n": 2,
+     "r1": 1.0,
+     "r5": 1.0,
+     "mrr": 1.0
+    }
+   },
+   "video": {
+    "narration": {
+     "n": 9,
+     "r1": 0.556,
+     "r5": 0.889,
+     "mrr": 0.669
+    },
+    "narration/en": {
+     "n": 4,
+     "r1": 0.5,
+     "r5": 0.75,
+     "mrr": 0.643
+    },
+    "narration/zh": {
+     "n": 5,
+     "r1": 0.6,
+     "r5": 1.0,
+     "mrr": 0.69
+    },
+    "screen-text": {
+     "n": 6,
+     "r1": 1.0,
+     "r5": 1.0,
+     "mrr": 1.0
+    },
+    "screen-text/en": {
+     "n": 4,
+     "r1": 1.0,
+     "r5": 1.0,
+     "mrr": 1.0
+    },
+    "screen-text/zh": {
+     "n": 2,
+     "r1": 1.0,
+     "r5": 1.0,
+     "mrr": 1.0
+    },
+    "transcript": {
+     "n": 10,
+     "r1": 0.9,
+     "r5": 1.0,
+     "mrr": 0.933
+    },
+    "transcript/en": {
+     "n": 2,
+     "r1": 1.0,
+     "r5": 1.0,
+     "mrr": 1.0
+    },
+    "transcript/zh": {
+     "n": 8,
+     "r1": 0.875,
+     "r5": 1.0,
+     "mrr": 0.917
+    },
+    "visual": {
+     "n": 39,
+     "r1": 0.974,
+     "r5": 1.0,
+     "mrr": 0.987
+    },
+    "visual/en": {
+     "n": 22,
+     "r1": 1.0,
+     "r5": 1.0,
+     "mrr": 1.0
+    },
+    "visual/zh": {
+     "n": 17,
+     "r1": 0.941,
+     "r5": 1.0,
+     "mrr": 0.971
+    }
+   },
+   "video20FramesOnly": {
+    "n": 33,
+    "r1": 0.909,
+    "r5": 0.97,
+    "mrr": 0.929
+   },
+   "videoMeanCandidates": 15.2,
+   "scores": {
+    "visualBestRelevant": {
+     "min": 0.691,
+     "p10": 0.723,
+     "median": 0.762,
+     "max": 0.827
+    },
+    "noAnswerBest": {
+     "min": 0.656,
+     "p10": 0.667,
+     "median": 0.681,
+     "max": 0.712
+    }
+   },
+   "misses": [
+    {
+     "query": "q13",
+     "setting": "library",
+     "kind": "visual",
+     "rank": 2,
+     "top1": "v13-f00"
+    },
+    {
+     "query": "q13",
+     "setting": "video",
+     "kind": "visual",
+     "rank": 2,
+     "top1": "v13-f00"
+    },
+    {
+     "query": "q43",
+     "setting": "library",
+     "kind": "transcript",
+     "rank": 2,
+     "top1": "v06-f05"
+    },
+    {
+     "query": "q45",
+     "setting": "library",
+     "kind": "transcript",
+     "rank": 3,
+     "top1": "v07-f17"
+    },
+    {
+     "query": "q45",
+     "setting": "video",
+     "kind": "transcript",
+     "rank": 3,
+     "top1": "v07-f17"
+    },
+    {
+     "query": "q64",
+     "setting": "library",
+     "kind": "narration",
+     "rank": 10,
+     "top1": "v07-f08"
+    },
+    {
+     "query": "q64",
+     "setting": "video",
+     "kind": "narration",
+     "rank": 4,
+     "top1": "v07-f08"
+    },
+    {
+     "query": "q66",
+     "setting": "library",
+     "kind": "narration",
+     "rank": 5,
+     "top1": "v09-f08"
+    },
+    {
+     "query": "q66",
+     "setting": "video",
+     "kind": "narration",
+     "rank": 5,
+     "top1": "v09-f08"
+    },
+    {
+     "query": "q68",
+     "setting": "library",
+     "kind": "narration",
+     "rank": 16,
+     "top1": "v02-f06"
+    },
+    {
+     "query": "q68",
+     "setting": "video",
+     "kind": "narration",
+     "rank": 14,
+     "top1": "v02-f06"
+    },
+    {
+     "query": "q69",
+     "setting": "library",
+     "kind": "narration",
+     "rank": 3,
+     "top1": "v01-f04"
+    },
+    {
+     "query": "q71",
+     "setting": "library",
+     "kind": "narration",
+     "rank": 2,
+     "top1": "v05-f01"
+    },
+    {
+     "query": "q71",
+     "setting": "video",
+     "kind": "narration",
+     "rank": 2,
+     "top1": "v05-f01"
+    }
+   ]
+  },
+  "cpu-vt70/no-prefix": {
+   "library": {
+    "narration": {
+     "n": 9,
+     "r1": 0.556,
+     "r5": 0.778,
+     "mrr": 0.652
+    },
+    "narration/en": {
+     "n": 4,
+     "r1": 0.5,
+     "r5": 0.75,
+     "mrr": 0.646
+    },
+    "narration/zh": {
+     "n": 5,
+     "r1": 0.6,
+     "r5": 0.8,
+     "mrr": 0.657
+    },
+    "screen-text": {
+     "n": 6,
+     "r1": 1.0,
+     "r5": 1.0,
+     "mrr": 1.0
+    },
+    "screen-text/en": {
+     "n": 4,
+     "r1": 1.0,
+     "r5": 1.0,
+     "mrr": 1.0
+    },
+    "screen-text/zh": {
+     "n": 2,
+     "r1": 1.0,
+     "r5": 1.0,
+     "mrr": 1.0
+    },
+    "transcript": {
+     "n": 10,
+     "r1": 0.9,
+     "r5": 1.0,
+     "mrr": 0.95
+    },
+    "transcript/en": {
+     "n": 2,
+     "r1": 1.0,
+     "r5": 1.0,
+     "mrr": 1.0
+    },
+    "transcript/zh": {
+     "n": 8,
+     "r1": 0.875,
+     "r5": 1.0,
+     "mrr": 0.938
+    },
+    "visual": {
+     "n": 41,
+     "r1": 0.976,
+     "r5": 1.0,
+     "mrr": 0.988
+    },
+    "visual/en": {
+     "n": 23,
+     "r1": 1.0,
+     "r5": 1.0,
+     "mrr": 1.0
+    },
+    "visual/zh": {
+     "n": 18,
+     "r1": 0.944,
+     "r5": 1.0,
+     "mrr": 0.972
+    }
+   },
+   "libraryVisualByCategory": {
+    "explainer": {
+     "n": 2,
+     "r1": 0.5,
+     "r5": 1.0,
+     "mrr": 0.75
+    },
+    "illustration": {
+     "n": 4,
+     "r1": 1.0,
+     "r5": 1.0,
+     "mrr": 1.0
+    },
+    "keynote-slides": {
+     "n": 3,
+     "r1": 1.0,
+     "r5": 1.0,
+     "mrr": 1.0
+    },
+    "lecture-slides": {
+     "n": 2,
+     "r1": 1.0,
+     "r5": 1.0,
+     "mrr": 1.0
+    },
+    "music-video": {
+     "n": 2,
+     "r1": 1.0,
+     "r5": 1.0,
+     "mrr": 1.0
+    },
+    "news": {
+     "n": 4,
+     "r1": 1.0,
+     "r5": 1.0,
+     "mrr": 1.0
+    },
+    "screen-recording": {
+     "n": 4,
+     "r1": 1.0,
+     "r5": 1.0,
+     "mrr": 1.0
+    },
+    "talking-head": {
+     "n": 2,
+     "r1": 1.0,
+     "r5": 1.0,
+     "mrr": 1.0
+    },
+    "travel": {
+     "n": 16,
+     "r1": 1.0,
+     "r5": 1.0,
+     "mrr": 1.0
+    },
+    "whiteboard": {
+     "n": 2,
+     "r1": 1.0,
+     "r5": 1.0,
+     "mrr": 1.0
+    }
+   },
+   "video": {
+    "narration": {
+     "n": 9,
+     "r1": 0.556,
+     "r5": 0.889,
+     "mrr": 0.671
+    },
+    "narration/en": {
+     "n": 4,
+     "r1": 0.5,
+     "r5": 0.75,
+     "mrr": 0.648
+    },
+    "narration/zh": {
+     "n": 5,
+     "r1": 0.6,
+     "r5": 1.0,
+     "mrr": 0.69
+    },
+    "screen-text": {
+     "n": 6,
+     "r1": 1.0,
+     "r5": 1.0,
+     "mrr": 1.0
+    },
+    "screen-text/en": {
+     "n": 4,
+     "r1": 1.0,
+     "r5": 1.0,
+     "mrr": 1.0
+    },
+    "screen-text/zh": {
+     "n": 2,
+     "r1": 1.0,
+     "r5": 1.0,
+     "mrr": 1.0
+    },
+    "transcript": {
+     "n": 10,
+     "r1": 0.9,
+     "r5": 1.0,
+     "mrr": 0.95
+    },
+    "transcript/en": {
+     "n": 2,
+     "r1": 1.0,
+     "r5": 1.0,
+     "mrr": 1.0
+    },
+    "transcript/zh": {
+     "n": 8,
+     "r1": 0.875,
+     "r5": 1.0,
+     "mrr": 0.938
+    },
+    "visual": {
+     "n": 39,
+     "r1": 0.974,
+     "r5": 1.0,
+     "mrr": 0.987
+    },
+    "visual/en": {
+     "n": 22,
+     "r1": 1.0,
+     "r5": 1.0,
+     "mrr": 1.0
+    },
+    "visual/zh": {
+     "n": 17,
+     "r1": 0.941,
+     "r5": 1.0,
+     "mrr": 0.971
+    }
+   },
+   "video20FramesOnly": {
+    "n": 33,
+    "r1": 0.909,
+    "r5": 0.97,
+    "mrr": 0.935
+   },
+   "videoMeanCandidates": 15.2,
+   "scores": {
+    "visualBestRelevant": {
+     "min": 0.658,
+     "p10": 0.675,
+     "median": 0.71,
+     "max": 0.79
+    },
+    "noAnswerBest": {
+     "min": 0.588,
+     "p10": 0.59,
+     "median": 0.612,
+     "max": 0.647
+    }
+   },
+   "misses": [
+    {
+     "query": "q13",
+     "setting": "library",
+     "kind": "visual",
+     "rank": 2,
+     "top1": "v13-f00"
+    },
+    {
+     "query": "q13",
+     "setting": "video",
+     "kind": "visual",
+     "rank": 2,
+     "top1": "v13-f00"
+    },
+    {
+     "query": "q45",
+     "setting": "library",
+     "kind": "transcript",
+     "rank": 2,
+     "top1": "v07-f17"
+    },
+    {
+     "query": "q45",
+     "setting": "video",
+     "kind": "transcript",
+     "rank": 2,
+     "top1": "v07-f17"
+    },
+    {
+     "query": "q64",
+     "setting": "library",
+     "kind": "narration",
+     "rank": 12,
+     "top1": "v09-f02"
+    },
+    {
+     "query": "q64",
+     "setting": "video",
+     "kind": "narration",
+     "rank": 4,
+     "top1": "v07-f08"
+    },
+    {
+     "query": "q66",
+     "setting": "library",
+     "kind": "narration",
+     "rank": 5,
+     "top1": "v09-f00"
+    },
+    {
+     "query": "q66",
+     "setting": "video",
+     "kind": "narration",
+     "rank": 5,
+     "top1": "v09-f00"
+    },
+    {
+     "query": "q68",
+     "setting": "library",
+     "kind": "narration",
+     "rank": 12,
+     "top1": "v02-f12"
+    },
+    {
+     "query": "q68",
+     "setting": "video",
+     "kind": "narration",
+     "rank": 11,
+     "top1": "v02-f12"
+    },
+    {
+     "query": "q71",
+     "setting": "library",
+     "kind": "narration",
+     "rank": 2,
+     "top1": "v05-f01"
+    },
+    {
+     "query": "q71",
+     "setting": "video",
+     "kind": "narration",
+     "rank": 2,
+     "top1": "v05-f01"
+    }
+   ]
+  },
+  "cpu/modelcard-v1": {
+   "library": {
+    "narration": {
+     "n": 9,
+     "r1": 0.778,
+     "r5": 0.889,
+     "mrr": 0.81
+    },
+    "narration/en": {
+     "n": 4,
+     "r1": 0.75,
+     "r5": 0.75,
+     "mrr": 0.76
+    },
+    "narration/zh": {
+     "n": 5,
+     "r1": 0.8,
+     "r5": 1.0,
+     "mrr": 0.85
+    },
+    "screen-text": {
+     "n": 6,
+     "r1": 1.0,
+     "r5": 1.0,
+     "mrr": 1.0
+    },
+    "screen-text/en": {
+     "n": 4,
+     "r1": 1.0,
+     "r5": 1.0,
+     "mrr": 1.0
+    },
+    "screen-text/zh": {
+     "n": 2,
+     "r1": 1.0,
+     "r5": 1.0,
+     "mrr": 1.0
+    },
+    "transcript": {
+     "n": 10,
+     "r1": 0.9,
+     "r5": 1.0,
+     "mrr": 0.933
+    },
+    "transcript/en": {
+     "n": 2,
+     "r1": 1.0,
+     "r5": 1.0,
+     "mrr": 1.0
+    },
+    "transcript/zh": {
+     "n": 8,
+     "r1": 0.875,
+     "r5": 1.0,
+     "mrr": 0.917
+    },
+    "visual": {
+     "n": 41,
+     "r1": 1.0,
+     "r5": 1.0,
+     "mrr": 1.0
+    },
+    "visual/en": {
+     "n": 23,
+     "r1": 1.0,
+     "r5": 1.0,
+     "mrr": 1.0
+    },
+    "visual/zh": {
+     "n": 18,
+     "r1": 1.0,
+     "r5": 1.0,
+     "mrr": 1.0
+    }
+   },
+   "libraryVisualByCategory": {
+    "explainer": {
+     "n": 2,
+     "r1": 1.0,
+     "r5": 1.0,
+     "mrr": 1.0
+    },
+    "illustration": {
+     "n": 4,
+     "r1": 1.0,
+     "r5": 1.0,
+     "mrr": 1.0
+    },
+    "keynote-slides": {
+     "n": 3,
+     "r1": 1.0,
+     "r5": 1.0,
+     "mrr": 1.0
+    },
+    "lecture-slides": {
+     "n": 2,
+     "r1": 1.0,
+     "r5": 1.0,
+     "mrr": 1.0
+    },
+    "music-video": {
+     "n": 2,
+     "r1": 1.0,
+     "r5": 1.0,
+     "mrr": 1.0
+    },
+    "news": {
+     "n": 4,
+     "r1": 1.0,
+     "r5": 1.0,
+     "mrr": 1.0
+    },
+    "screen-recording": {
+     "n": 4,
+     "r1": 1.0,
+     "r5": 1.0,
+     "mrr": 1.0
+    },
+    "talking-head": {
+     "n": 2,
+     "r1": 1.0,
+     "r5": 1.0,
+     "mrr": 1.0
+    },
+    "travel": {
+     "n": 16,
+     "r1": 1.0,
+     "r5": 1.0,
+     "mrr": 1.0
+    },
+    "whiteboard": {
+     "n": 2,
+     "r1": 1.0,
+     "r5": 1.0,
+     "mrr": 1.0
+    }
+   },
+   "video": {
+    "narration": {
+     "n": 9,
+     "r1": 0.778,
+     "r5": 0.889,
+     "mrr": 0.812
+    },
+    "narration/en": {
+     "n": 4,
+     "r1": 0.75,
+     "r5": 0.75,
+     "mrr": 0.766
+    },
+    "narration/zh": {
+     "n": 5,
+     "r1": 0.8,
+     "r5": 1.0,
+     "mrr": 0.85
+    },
+    "screen-text": {
+     "n": 6,
+     "r1": 1.0,
+     "r5": 1.0,
+     "mrr": 1.0
+    },
+    "screen-text/en": {
+     "n": 4,
+     "r1": 1.0,
+     "r5": 1.0,
+     "mrr": 1.0
+    },
+    "screen-text/zh": {
+     "n": 2,
+     "r1": 1.0,
+     "r5": 1.0,
+     "mrr": 1.0
+    },
+    "transcript": {
+     "n": 10,
+     "r1": 0.9,
+     "r5": 1.0,
+     "mrr": 0.933
+    },
+    "transcript/en": {
+     "n": 2,
+     "r1": 1.0,
+     "r5": 1.0,
+     "mrr": 1.0
+    },
+    "transcript/zh": {
+     "n": 8,
+     "r1": 0.875,
+     "r5": 1.0,
+     "mrr": 0.917
+    },
+    "visual": {
+     "n": 39,
+     "r1": 1.0,
+     "r5": 1.0,
+     "mrr": 1.0
+    },
+    "visual/en": {
+     "n": 22,
+     "r1": 1.0,
+     "r5": 1.0,
+     "mrr": 1.0
+    },
+    "visual/zh": {
+     "n": 17,
+     "r1": 1.0,
+     "r5": 1.0,
+     "mrr": 1.0
+    }
+   },
+   "video20FramesOnly": {
+    "n": 33,
+    "r1": 0.939,
+    "r5": 0.97,
+    "mrr": 0.951
+   },
+   "videoMeanCandidates": 15.2,
+   "scores": {
+    "visualBestRelevant": {
+     "min": 0.67,
+     "p10": 0.705,
+     "median": 0.745,
+     "max": 0.805
+    },
+    "noAnswerBest": {
+     "min": 0.619,
+     "p10": 0.624,
+     "median": 0.642,
+     "max": 0.685
+    }
+   },
+   "misses": [
+    {
+     "query": "q46",
+     "setting": "library",
+     "kind": "transcript",
+     "rank": 3,
+     "top1": "v07-f09"
+    },
+    {
+     "query": "q46",
+     "setting": "video",
+     "kind": "transcript",
+     "rank": 3,
+     "top1": "v07-f09"
+    },
+    {
+     "query": "q66",
+     "setting": "library",
+     "kind": "narration",
+     "rank": 4,
+     "top1": "v09-f00"
+    },
+    {
+     "query": "q66",
+     "setting": "video",
+     "kind": "narration",
+     "rank": 4,
+     "top1": "v09-f00"
+    },
+    {
+     "query": "q68",
+     "setting": "library",
+     "kind": "narration",
+     "rank": 25,
+     "top1": "v02-f07"
+    },
+    {
+     "query": "q68",
+     "setting": "video",
+     "kind": "narration",
+     "rank": 16,
+     "top1": "v02-f07"
+    }
+   ]
+  },
+  "cpu/litert-docs-v1": {
+   "library": {
+    "narration": {
+     "n": 9,
+     "r1": 0.556,
+     "r5": 0.889,
+     "mrr": 0.699
+    },
+    "narration/en": {
+     "n": 4,
+     "r1": 0.25,
+     "r5": 0.75,
+     "mrr": 0.51
+    },
+    "narration/zh": {
+     "n": 5,
+     "r1": 0.8,
+     "r5": 1.0,
+     "mrr": 0.85
+    },
+    "screen-text": {
+     "n": 6,
+     "r1": 1.0,
+     "r5": 1.0,
+     "mrr": 1.0
+    },
+    "screen-text/en": {
+     "n": 4,
+     "r1": 1.0,
+     "r5": 1.0,
+     "mrr": 1.0
+    },
+    "screen-text/zh": {
+     "n": 2,
+     "r1": 1.0,
+     "r5": 1.0,
+     "mrr": 1.0
+    },
+    "transcript": {
+     "n": 10,
+     "r1": 0.9,
+     "r5": 1.0,
+     "mrr": 0.933
+    },
+    "transcript/en": {
+     "n": 2,
+     "r1": 1.0,
+     "r5": 1.0,
+     "mrr": 1.0
+    },
+    "transcript/zh": {
+     "n": 8,
+     "r1": 0.875,
+     "r5": 1.0,
+     "mrr": 0.917
+    },
+    "visual": {
+     "n": 41,
+     "r1": 1.0,
+     "r5": 1.0,
+     "mrr": 1.0
+    },
+    "visual/en": {
+     "n": 23,
+     "r1": 1.0,
+     "r5": 1.0,
+     "mrr": 1.0
+    },
+    "visual/zh": {
+     "n": 18,
+     "r1": 1.0,
+     "r5": 1.0,
+     "mrr": 1.0
+    }
+   },
+   "libraryVisualByCategory": {
+    "explainer": {
+     "n": 2,
+     "r1": 1.0,
+     "r5": 1.0,
+     "mrr": 1.0
+    },
+    "illustration": {
+     "n": 4,
+     "r1": 1.0,
+     "r5": 1.0,
+     "mrr": 1.0
+    },
+    "keynote-slides": {
+     "n": 3,
+     "r1": 1.0,
+     "r5": 1.0,
+     "mrr": 1.0
+    },
+    "lecture-slides": {
+     "n": 2,
+     "r1": 1.0,
+     "r5": 1.0,
+     "mrr": 1.0
+    },
+    "music-video": {
+     "n": 2,
+     "r1": 1.0,
+     "r5": 1.0,
+     "mrr": 1.0
+    },
+    "news": {
+     "n": 4,
+     "r1": 1.0,
+     "r5": 1.0,
+     "mrr": 1.0
+    },
+    "screen-recording": {
+     "n": 4,
+     "r1": 1.0,
+     "r5": 1.0,
+     "mrr": 1.0
+    },
+    "talking-head": {
+     "n": 2,
+     "r1": 1.0,
+     "r5": 1.0,
+     "mrr": 1.0
+    },
+    "travel": {
+     "n": 16,
+     "r1": 1.0,
+     "r5": 1.0,
+     "mrr": 1.0
+    },
+    "whiteboard": {
+     "n": 2,
+     "r1": 1.0,
+     "r5": 1.0,
+     "mrr": 1.0
+    }
+   },
+   "video": {
+    "narration": {
+     "n": 9,
+     "r1": 0.667,
+     "r5": 0.889,
+     "mrr": 0.757
+    },
+    "narration/en": {
+     "n": 4,
+     "r1": 0.5,
+     "r5": 0.75,
+     "mrr": 0.642
+    },
+    "narration/zh": {
+     "n": 5,
+     "r1": 0.8,
+     "r5": 1.0,
+     "mrr": 0.85
+    },
+    "screen-text": {
+     "n": 6,
+     "r1": 1.0,
+     "r5": 1.0,
+     "mrr": 1.0
+    },
+    "screen-text/en": {
+     "n": 4,
+     "r1": 1.0,
+     "r5": 1.0,
+     "mrr": 1.0
+    },
+    "screen-text/zh": {
+     "n": 2,
+     "r1": 1.0,
+     "r5": 1.0,
+     "mrr": 1.0
+    },
+    "transcript": {
+     "n": 10,
+     "r1": 0.9,
+     "r5": 1.0,
+     "mrr": 0.933
+    },
+    "transcript/en": {
+     "n": 2,
+     "r1": 1.0,
+     "r5": 1.0,
+     "mrr": 1.0
+    },
+    "transcript/zh": {
+     "n": 8,
+     "r1": 0.875,
+     "r5": 1.0,
+     "mrr": 0.917
+    },
+    "visual": {
+     "n": 39,
+     "r1": 1.0,
+     "r5": 1.0,
+     "mrr": 1.0
+    },
+    "visual/en": {
+     "n": 22,
+     "r1": 1.0,
+     "r5": 1.0,
+     "mrr": 1.0
+    },
+    "visual/zh": {
+     "n": 17,
+     "r1": 1.0,
+     "r5": 1.0,
+     "mrr": 1.0
+    }
+   },
+   "video20FramesOnly": {
+    "n": 33,
+    "r1": 0.939,
+    "r5": 0.97,
+    "mrr": 0.952
+   },
+   "videoMeanCandidates": 15.2,
+   "scores": {
+    "visualBestRelevant": {
+     "min": 0.687,
+     "p10": 0.722,
+     "median": 0.761,
+     "max": 0.818
+    },
+    "noAnswerBest": {
+     "min": 0.65,
+     "p10": 0.65,
+     "median": 0.662,
+     "max": 0.693
+    }
+   },
+   "misses": [
+    {
+     "query": "q46",
+     "setting": "library",
+     "kind": "transcript",
+     "rank": 3,
+     "top1": "v07-f09"
+    },
+    {
+     "query": "q46",
+     "setting": "video",
+     "kind": "transcript",
+     "rank": 3,
+     "top1": "v07-f09"
+    },
+    {
+     "query": "q66",
+     "setting": "library",
+     "kind": "narration",
+     "rank": 4,
+     "top1": "v09-f00"
+    },
+    {
+     "query": "q66",
+     "setting": "video",
+     "kind": "narration",
+     "rank": 4,
+     "top1": "v09-f00"
+    },
+    {
+     "query": "q68",
+     "setting": "library",
+     "kind": "narration",
+     "rank": 25,
+     "top1": "v02-f06"
+    },
+    {
+     "query": "q68",
+     "setting": "video",
+     "kind": "narration",
+     "rank": 15,
+     "top1": "v02-f06"
+    },
+    {
+     "query": "q69",
+     "setting": "library",
+     "kind": "narration",
+     "rank": 2,
+     "top1": "v01-f09"
+    },
+    {
+     "query": "q71",
+     "setting": "library",
+     "kind": "narration",
+     "rank": 2,
+     "top1": "v05-f01"
+    },
+    {
+     "query": "q71",
+     "setting": "video",
+     "kind": "narration",
+     "rank": 2,
+     "top1": "v05-f01"
+    }
+   ]
+  },
+  "cpu/no-prefix": {
+   "library": {
+    "narration": {
+     "n": 9,
+     "r1": 0.556,
+     "r5": 0.889,
+     "mrr": 0.701
+    },
+    "narration/en": {
+     "n": 4,
+     "r1": 0.25,
+     "r5": 0.75,
+     "mrr": 0.514
+    },
+    "narration/zh": {
+     "n": 5,
+     "r1": 0.8,
+     "r5": 1.0,
+     "mrr": 0.85
+    },
+    "screen-text": {
+     "n": 6,
+     "r1": 1.0,
+     "r5": 1.0,
+     "mrr": 1.0
+    },
+    "screen-text/en": {
+     "n": 4,
+     "r1": 1.0,
+     "r5": 1.0,
+     "mrr": 1.0
+    },
+    "screen-text/zh": {
+     "n": 2,
+     "r1": 1.0,
+     "r5": 1.0,
+     "mrr": 1.0
+    },
+    "transcript": {
+     "n": 10,
+     "r1": 0.9,
+     "r5": 1.0,
+     "mrr": 0.933
+    },
+    "transcript/en": {
+     "n": 2,
+     "r1": 1.0,
+     "r5": 1.0,
+     "mrr": 1.0
+    },
+    "transcript/zh": {
+     "n": 8,
+     "r1": 0.875,
+     "r5": 1.0,
+     "mrr": 0.917
+    },
+    "visual": {
+     "n": 41,
+     "r1": 1.0,
+     "r5": 1.0,
+     "mrr": 1.0
+    },
+    "visual/en": {
+     "n": 23,
+     "r1": 1.0,
+     "r5": 1.0,
+     "mrr": 1.0
+    },
+    "visual/zh": {
+     "n": 18,
+     "r1": 1.0,
+     "r5": 1.0,
+     "mrr": 1.0
+    }
+   },
+   "libraryVisualByCategory": {
+    "explainer": {
+     "n": 2,
+     "r1": 1.0,
+     "r5": 1.0,
+     "mrr": 1.0
+    },
+    "illustration": {
+     "n": 4,
+     "r1": 1.0,
+     "r5": 1.0,
+     "mrr": 1.0
+    },
+    "keynote-slides": {
+     "n": 3,
+     "r1": 1.0,
+     "r5": 1.0,
+     "mrr": 1.0
+    },
+    "lecture-slides": {
+     "n": 2,
+     "r1": 1.0,
+     "r5": 1.0,
+     "mrr": 1.0
+    },
+    "music-video": {
+     "n": 2,
+     "r1": 1.0,
+     "r5": 1.0,
+     "mrr": 1.0
+    },
+    "news": {
+     "n": 4,
+     "r1": 1.0,
+     "r5": 1.0,
+     "mrr": 1.0
+    },
+    "screen-recording": {
+     "n": 4,
+     "r1": 1.0,
+     "r5": 1.0,
+     "mrr": 1.0
+    },
+    "talking-head": {
+     "n": 2,
+     "r1": 1.0,
+     "r5": 1.0,
+     "mrr": 1.0
+    },
+    "travel": {
+     "n": 16,
+     "r1": 1.0,
+     "r5": 1.0,
+     "mrr": 1.0
+    },
+    "whiteboard": {
+     "n": 2,
+     "r1": 1.0,
+     "r5": 1.0,
+     "mrr": 1.0
+    }
+   },
+   "video": {
+    "narration": {
+     "n": 9,
+     "r1": 0.667,
+     "r5": 0.889,
+     "mrr": 0.757
+    },
+    "narration/en": {
+     "n": 4,
+     "r1": 0.5,
+     "r5": 0.75,
+     "mrr": 0.642
+    },
+    "narration/zh": {
+     "n": 5,
+     "r1": 0.8,
+     "r5": 1.0,
+     "mrr": 0.85
+    },
+    "screen-text": {
+     "n": 6,
+     "r1": 1.0,
+     "r5": 1.0,
+     "mrr": 1.0
+    },
+    "screen-text/en": {
+     "n": 4,
+     "r1": 1.0,
+     "r5": 1.0,
+     "mrr": 1.0
+    },
+    "screen-text/zh": {
+     "n": 2,
+     "r1": 1.0,
+     "r5": 1.0,
+     "mrr": 1.0
+    },
+    "transcript": {
+     "n": 10,
+     "r1": 0.9,
+     "r5": 1.0,
+     "mrr": 0.933
+    },
+    "transcript/en": {
+     "n": 2,
+     "r1": 1.0,
+     "r5": 1.0,
+     "mrr": 1.0
+    },
+    "transcript/zh": {
+     "n": 8,
+     "r1": 0.875,
+     "r5": 1.0,
+     "mrr": 0.917
+    },
+    "visual": {
+     "n": 39,
+     "r1": 1.0,
+     "r5": 1.0,
+     "mrr": 1.0
+    },
+    "visual/en": {
+     "n": 22,
+     "r1": 1.0,
+     "r5": 1.0,
+     "mrr": 1.0
+    },
+    "visual/zh": {
+     "n": 17,
+     "r1": 1.0,
+     "r5": 1.0,
+     "mrr": 1.0
+    }
+   },
+   "video20FramesOnly": {
+    "n": 33,
+    "r1": 0.939,
+    "r5": 0.97,
+    "mrr": 0.952
+   },
+   "videoMeanCandidates": 15.2,
+   "scores": {
+    "visualBestRelevant": {
+     "min": 0.644,
+     "p10": 0.683,
+     "median": 0.714,
+     "max": 0.803
+    },
+    "noAnswerBest": {
+     "min": 0.584,
+     "p10": 0.586,
+     "median": 0.598,
+     "max": 0.636
+    }
+   },
+   "misses": [
+    {
+     "query": "q46",
+     "setting": "library",
+     "kind": "transcript",
+     "rank": 3,
+     "top1": "v07-f09"
+    },
+    {
+     "query": "q46",
+     "setting": "video",
+     "kind": "transcript",
+     "rank": 3,
+     "top1": "v07-f09"
+    },
+    {
+     "query": "q66",
+     "setting": "library",
+     "kind": "narration",
+     "rank": 4,
+     "top1": "v09-f00"
+    },
+    {
+     "query": "q66",
+     "setting": "video",
+     "kind": "narration",
+     "rank": 4,
+     "top1": "v09-f00"
+    },
+    {
+     "query": "q68",
+     "setting": "library",
+     "kind": "narration",
+     "rank": 18,
+     "top1": "v02-f05"
+    },
+    {
+     "query": "q68",
+     "setting": "video",
+     "kind": "narration",
+     "rank": 15,
+     "top1": "v02-f05"
+    },
+    {
+     "query": "q70",
+     "setting": "library",
+     "kind": "narration",
+     "rank": 2,
+     "top1": "v12-f04"
+    },
+    {
+     "query": "q71",
+     "setting": "library",
+     "kind": "narration",
+     "rank": 2,
+     "top1": "v05-f01"
+    },
+    {
+     "query": "q71",
+     "setting": "video",
+     "kind": "narration",
+     "rank": 2,
+     "top1": "v05-f01"
+    }
+   ]
+  },
+  "gpu-fp32/modelcard-v1": {
+   "library": {
+    "narration": {
+     "n": 9,
+     "r1": 0.556,
+     "r5": 0.889,
+     "mrr": 0.726
+    },
+    "narration/en": {
+     "n": 4,
+     "r1": 0.25,
+     "r5": 0.75,
+     "mrr": 0.509
+    },
+    "narration/zh": {
+     "n": 5,
+     "r1": 0.8,
+     "r5": 1.0,
+     "mrr": 0.9
+    },
+    "screen-text": {
+     "n": 6,
+     "r1": 1.0,
+     "r5": 1.0,
+     "mrr": 1.0
+    },
+    "screen-text/en": {
+     "n": 4,
+     "r1": 1.0,
+     "r5": 1.0,
+     "mrr": 1.0
+    },
+    "screen-text/zh": {
+     "n": 2,
+     "r1": 1.0,
+     "r5": 1.0,
+     "mrr": 1.0
+    },
+    "transcript": {
+     "n": 10,
+     "r1": 0.9,
+     "r5": 1.0,
+     "mrr": 0.933
+    },
+    "transcript/en": {
+     "n": 2,
+     "r1": 1.0,
+     "r5": 1.0,
+     "mrr": 1.0
+    },
+    "transcript/zh": {
+     "n": 8,
+     "r1": 0.875,
+     "r5": 1.0,
+     "mrr": 0.917
+    },
+    "visual": {
+     "n": 41,
+     "r1": 0.976,
+     "r5": 1.0,
+     "mrr": 0.988
+    },
+    "visual/en": {
+     "n": 23,
+     "r1": 1.0,
+     "r5": 1.0,
+     "mrr": 1.0
+    },
+    "visual/zh": {
+     "n": 18,
+     "r1": 0.944,
+     "r5": 1.0,
+     "mrr": 0.972
+    }
+   },
+   "libraryVisualByCategory": {
+    "explainer": {
+     "n": 2,
+     "r1": 0.5,
+     "r5": 1.0,
+     "mrr": 0.75
+    },
+    "illustration": {
+     "n": 4,
+     "r1": 1.0,
+     "r5": 1.0,
+     "mrr": 1.0
+    },
+    "keynote-slides": {
+     "n": 3,
+     "r1": 1.0,
+     "r5": 1.0,
+     "mrr": 1.0
+    },
+    "lecture-slides": {
+     "n": 2,
+     "r1": 1.0,
+     "r5": 1.0,
+     "mrr": 1.0
+    },
+    "music-video": {
+     "n": 2,
+     "r1": 1.0,
+     "r5": 1.0,
+     "mrr": 1.0
+    },
+    "news": {
+     "n": 4,
+     "r1": 1.0,
+     "r5": 1.0,
+     "mrr": 1.0
+    },
+    "screen-recording": {
+     "n": 4,
+     "r1": 1.0,
+     "r5": 1.0,
+     "mrr": 1.0
+    },
+    "talking-head": {
+     "n": 2,
+     "r1": 1.0,
+     "r5": 1.0,
+     "mrr": 1.0
+    },
+    "travel": {
+     "n": 16,
+     "r1": 1.0,
+     "r5": 1.0,
+     "mrr": 1.0
+    },
+    "whiteboard": {
+     "n": 2,
+     "r1": 1.0,
+     "r5": 1.0,
+     "mrr": 1.0
+    }
+   },
+   "video": {
+    "narration": {
+     "n": 9,
+     "r1": 0.667,
+     "r5": 0.889,
+     "mrr": 0.784
+    },
+    "narration/en": {
+     "n": 4,
+     "r1": 0.5,
+     "r5": 0.75,
+     "mrr": 0.64
+    },
+    "narration/zh": {
+     "n": 5,
+     "r1": 0.8,
+     "r5": 1.0,
+     "mrr": 0.9
+    },
+    "screen-text": {
+     "n": 6,
+     "r1": 1.0,
+     "r5": 1.0,
+     "mrr": 1.0
+    },
+    "screen-text/en": {
+     "n": 4,
+     "r1": 1.0,
+     "r5": 1.0,
+     "mrr": 1.0
+    },
+    "screen-text/zh": {
+     "n": 2,
+     "r1": 1.0,
+     "r5": 1.0,
+     "mrr": 1.0
+    },
+    "transcript": {
+     "n": 10,
+     "r1": 0.9,
+     "r5": 1.0,
+     "mrr": 0.933
+    },
+    "transcript/en": {
+     "n": 2,
+     "r1": 1.0,
+     "r5": 1.0,
+     "mrr": 1.0
+    },
+    "transcript/zh": {
+     "n": 8,
+     "r1": 0.875,
+     "r5": 1.0,
+     "mrr": 0.917
+    },
+    "visual": {
+     "n": 39,
+     "r1": 1.0,
+     "r5": 1.0,
+     "mrr": 1.0
+    },
+    "visual/en": {
+     "n": 22,
+     "r1": 1.0,
+     "r5": 1.0,
+     "mrr": 1.0
+    },
+    "visual/zh": {
+     "n": 17,
+     "r1": 1.0,
+     "r5": 1.0,
+     "mrr": 1.0
+    }
+   },
+   "video20FramesOnly": {
+    "n": 33,
+    "r1": 0.939,
+    "r5": 0.97,
+    "mrr": 0.951
+   },
+   "videoMeanCandidates": 15.2,
+   "scores": {
+    "visualBestRelevant": {
+     "min": 0.665,
+     "p10": 0.705,
+     "median": 0.745,
+     "max": 0.806
+    },
+    "noAnswerBest": {
+     "min": 0.624,
+     "p10": 0.625,
+     "median": 0.639,
+     "max": 0.692
+    }
+   },
+   "misses": [
+    {
+     "query": "q13",
+     "setting": "library",
+     "kind": "visual",
+     "rank": 2,
+     "top1": "v09-f03"
+    },
+    {
+     "query": "q46",
+     "setting": "library",
+     "kind": "transcript",
+     "rank": 3,
+     "top1": "v07-f09"
+    },
+    {
+     "query": "q46",
+     "setting": "video",
+     "kind": "transcript",
+     "rank": 3,
+     "top1": "v07-f09"
+    },
+    {
+     "query": "q66",
+     "setting": "library",
+     "kind": "narration",
+     "rank": 2,
+     "top1": "v09-f00"
+    },
+    {
+     "query": "q66",
+     "setting": "video",
+     "kind": "narration",
+     "rank": 2,
+     "top1": "v09-f00"
+    },
+    {
+     "query": "q68",
+     "setting": "library",
+     "kind": "narration",
+     "rank": 27,
+     "top1": "v02-f07"
+    },
+    {
+     "query": "q68",
+     "setting": "video",
+     "kind": "narration",
+     "rank": 17,
+     "top1": "v02-f07"
+    },
+    {
+     "query": "q70",
+     "setting": "library",
+     "kind": "narration",
+     "rank": 2,
+     "top1": "v12-f04"
+    },
+    {
+     "query": "q71",
+     "setting": "library",
+     "kind": "narration",
+     "rank": 2,
+     "top1": "v05-f01"
+    },
+    {
+     "query": "q71",
+     "setting": "video",
+     "kind": "narration",
+     "rank": 2,
+     "top1": "v05-f01"
+    }
+   ]
+  },
+  "gpu-fp32/litert-docs-v1": {
+   "library": {
+    "narration": {
+     "n": 9,
+     "r1": 0.444,
+     "r5": 0.889,
+     "mrr": 0.643
+    },
+    "narration/en": {
+     "n": 4,
+     "r1": 0.0,
+     "r5": 0.75,
+     "mrr": 0.384
+    },
+    "narration/zh": {
+     "n": 5,
+     "r1": 0.8,
+     "r5": 1.0,
+     "mrr": 0.85
+    },
+    "screen-text": {
+     "n": 6,
+     "r1": 1.0,
+     "r5": 1.0,
+     "mrr": 1.0
+    },
+    "screen-text/en": {
+     "n": 4,
+     "r1": 1.0,
+     "r5": 1.0,
+     "mrr": 1.0
+    },
+    "screen-text/zh": {
+     "n": 2,
+     "r1": 1.0,
+     "r5": 1.0,
+     "mrr": 1.0
+    },
+    "transcript": {
+     "n": 10,
+     "r1": 0.9,
+     "r5": 1.0,
+     "mrr": 0.933
+    },
+    "transcript/en": {
+     "n": 2,
+     "r1": 1.0,
+     "r5": 1.0,
+     "mrr": 1.0
+    },
+    "transcript/zh": {
+     "n": 8,
+     "r1": 0.875,
+     "r5": 1.0,
+     "mrr": 0.917
+    },
+    "visual": {
+     "n": 41,
+     "r1": 0.976,
+     "r5": 1.0,
+     "mrr": 0.988
+    },
+    "visual/en": {
+     "n": 23,
+     "r1": 1.0,
+     "r5": 1.0,
+     "mrr": 1.0
+    },
+    "visual/zh": {
+     "n": 18,
+     "r1": 0.944,
+     "r5": 1.0,
+     "mrr": 0.972
+    }
+   },
+   "libraryVisualByCategory": {
+    "explainer": {
+     "n": 2,
+     "r1": 0.5,
+     "r5": 1.0,
+     "mrr": 0.75
+    },
+    "illustration": {
+     "n": 4,
+     "r1": 1.0,
+     "r5": 1.0,
+     "mrr": 1.0
+    },
+    "keynote-slides": {
+     "n": 3,
+     "r1": 1.0,
+     "r5": 1.0,
+     "mrr": 1.0
+    },
+    "lecture-slides": {
+     "n": 2,
+     "r1": 1.0,
+     "r5": 1.0,
+     "mrr": 1.0
+    },
+    "music-video": {
+     "n": 2,
+     "r1": 1.0,
+     "r5": 1.0,
+     "mrr": 1.0
+    },
+    "news": {
+     "n": 4,
+     "r1": 1.0,
+     "r5": 1.0,
+     "mrr": 1.0
+    },
+    "screen-recording": {
+     "n": 4,
+     "r1": 1.0,
+     "r5": 1.0,
+     "mrr": 1.0
+    },
+    "talking-head": {
+     "n": 2,
+     "r1": 1.0,
+     "r5": 1.0,
+     "mrr": 1.0
+    },
+    "travel": {
+     "n": 16,
+     "r1": 1.0,
+     "r5": 1.0,
+     "mrr": 1.0
+    },
+    "whiteboard": {
+     "n": 2,
+     "r1": 1.0,
+     "r5": 1.0,
+     "mrr": 1.0
+    }
+   },
+   "video": {
+    "narration": {
+     "n": 9,
+     "r1": 0.667,
+     "r5": 0.889,
+     "mrr": 0.757
+    },
+    "narration/en": {
+     "n": 4,
+     "r1": 0.5,
+     "r5": 0.75,
+     "mrr": 0.642
+    },
+    "narration/zh": {
+     "n": 5,
+     "r1": 0.8,
+     "r5": 1.0,
+     "mrr": 0.85
+    },
+    "screen-text": {
+     "n": 6,
+     "r1": 1.0,
+     "r5": 1.0,
+     "mrr": 1.0
+    },
+    "screen-text/en": {
+     "n": 4,
+     "r1": 1.0,
+     "r5": 1.0,
+     "mrr": 1.0
+    },
+    "screen-text/zh": {
+     "n": 2,
+     "r1": 1.0,
+     "r5": 1.0,
+     "mrr": 1.0
+    },
+    "transcript": {
+     "n": 10,
+     "r1": 0.9,
+     "r5": 1.0,
+     "mrr": 0.933
+    },
+    "transcript/en": {
+     "n": 2,
+     "r1": 1.0,
+     "r5": 1.0,
+     "mrr": 1.0
+    },
+    "transcript/zh": {
+     "n": 8,
+     "r1": 0.875,
+     "r5": 1.0,
+     "mrr": 0.917
+    },
+    "visual": {
+     "n": 39,
+     "r1": 1.0,
+     "r5": 1.0,
+     "mrr": 1.0
+    },
+    "visual/en": {
+     "n": 22,
+     "r1": 1.0,
+     "r5": 1.0,
+     "mrr": 1.0
+    },
+    "visual/zh": {
+     "n": 17,
+     "r1": 1.0,
+     "r5": 1.0,
+     "mrr": 1.0
+    }
+   },
+   "video20FramesOnly": {
+    "n": 33,
+    "r1": 0.939,
+    "r5": 0.97,
+    "mrr": 0.952
+   },
+   "videoMeanCandidates": 15.2,
+   "scores": {
+    "visualBestRelevant": {
+     "min": 0.682,
+     "p10": 0.723,
+     "median": 0.759,
+     "max": 0.823
+    },
+    "noAnswerBest": {
+     "min": 0.646,
+     "p10": 0.649,
+     "median": 0.66,
+     "max": 0.701
+    }
+   },
+   "misses": [
+    {
+     "query": "q13",
+     "setting": "library",
+     "kind": "visual",
+     "rank": 2,
+     "top1": "v09-f03"
+    },
+    {
+     "query": "q46",
+     "setting": "library",
+     "kind": "transcript",
+     "rank": 3,
+     "top1": "v07-f10"
+    },
+    {
+     "query": "q46",
+     "setting": "video",
+     "kind": "transcript",
+     "rank": 3,
+     "top1": "v07-f10"
+    },
+    {
+     "query": "q66",
+     "setting": "library",
+     "kind": "narration",
+     "rank": 4,
+     "top1": "v09-f00"
+    },
+    {
+     "query": "q66",
+     "setting": "video",
+     "kind": "narration",
+     "rank": 4,
+     "top1": "v09-f00"
+    },
+    {
+     "query": "q68",
+     "setting": "library",
+     "kind": "narration",
+     "rank": 29,
+     "top1": "v02-f07"
+    },
+    {
+     "query": "q68",
+     "setting": "video",
+     "kind": "narration",
+     "rank": 15,
+     "top1": "v02-f07"
+    },
+    {
+     "query": "q69",
+     "setting": "library",
+     "kind": "narration",
+     "rank": 2,
+     "top1": "v01-f09"
+    },
+    {
+     "query": "q70",
+     "setting": "library",
+     "kind": "narration",
+     "rank": 2,
+     "top1": "v12-f04"
+    },
+    {
+     "query": "q71",
+     "setting": "library",
+     "kind": "narration",
+     "rank": 2,
+     "top1": "v05-f01"
+    },
+    {
+     "query": "q71",
+     "setting": "video",
+     "kind": "narration",
+     "rank": 2,
+     "top1": "v05-f01"
+    }
+   ]
+  },
+  "gpu-fp32/no-prefix": {
+   "library": {
+    "narration": {
+     "n": 9,
+     "r1": 0.556,
+     "r5": 0.889,
+     "mrr": 0.728
+    },
+    "narration/en": {
+     "n": 4,
+     "r1": 0.25,
+     "r5": 0.75,
+     "mrr": 0.512
+    },
+    "narration/zh": {
+     "n": 5,
+     "r1": 0.8,
+     "r5": 1.0,
+     "mrr": 0.9
+    },
+    "screen-text": {
+     "n": 6,
+     "r1": 1.0,
+     "r5": 1.0,
+     "mrr": 1.0
+    },
+    "screen-text/en": {
+     "n": 4,
+     "r1": 1.0,
+     "r5": 1.0,
+     "mrr": 1.0
+    },
+    "screen-text/zh": {
+     "n": 2,
+     "r1": 1.0,
+     "r5": 1.0,
+     "mrr": 1.0
+    },
+    "transcript": {
+     "n": 10,
+     "r1": 0.9,
+     "r5": 1.0,
+     "mrr": 0.925
+    },
+    "transcript/en": {
+     "n": 2,
+     "r1": 1.0,
+     "r5": 1.0,
+     "mrr": 1.0
+    },
+    "transcript/zh": {
+     "n": 8,
+     "r1": 0.875,
+     "r5": 1.0,
+     "mrr": 0.906
+    },
+    "visual": {
+     "n": 41,
+     "r1": 1.0,
+     "r5": 1.0,
+     "mrr": 1.0
+    },
+    "visual/en": {
+     "n": 23,
+     "r1": 1.0,
+     "r5": 1.0,
+     "mrr": 1.0
+    },
+    "visual/zh": {
+     "n": 18,
+     "r1": 1.0,
+     "r5": 1.0,
+     "mrr": 1.0
+    }
+   },
+   "libraryVisualByCategory": {
+    "explainer": {
+     "n": 2,
+     "r1": 1.0,
+     "r5": 1.0,
+     "mrr": 1.0
+    },
+    "illustration": {
+     "n": 4,
+     "r1": 1.0,
+     "r5": 1.0,
+     "mrr": 1.0
+    },
+    "keynote-slides": {
+     "n": 3,
+     "r1": 1.0,
+     "r5": 1.0,
+     "mrr": 1.0
+    },
+    "lecture-slides": {
+     "n": 2,
+     "r1": 1.0,
+     "r5": 1.0,
+     "mrr": 1.0
+    },
+    "music-video": {
+     "n": 2,
+     "r1": 1.0,
+     "r5": 1.0,
+     "mrr": 1.0
+    },
+    "news": {
+     "n": 4,
+     "r1": 1.0,
+     "r5": 1.0,
+     "mrr": 1.0
+    },
+    "screen-recording": {
+     "n": 4,
+     "r1": 1.0,
+     "r5": 1.0,
+     "mrr": 1.0
+    },
+    "talking-head": {
+     "n": 2,
+     "r1": 1.0,
+     "r5": 1.0,
+     "mrr": 1.0
+    },
+    "travel": {
+     "n": 16,
+     "r1": 1.0,
+     "r5": 1.0,
+     "mrr": 1.0
+    },
+    "whiteboard": {
+     "n": 2,
+     "r1": 1.0,
+     "r5": 1.0,
+     "mrr": 1.0
+    }
+   },
+   "video": {
+    "narration": {
+     "n": 9,
+     "r1": 0.667,
+     "r5": 0.889,
+     "mrr": 0.785
+    },
+    "narration/en": {
+     "n": 4,
+     "r1": 0.5,
+     "r5": 0.75,
+     "mrr": 0.641
+    },
+    "narration/zh": {
+     "n": 5,
+     "r1": 0.8,
+     "r5": 1.0,
+     "mrr": 0.9
+    },
+    "screen-text": {
+     "n": 6,
+     "r1": 1.0,
+     "r5": 1.0,
+     "mrr": 1.0
+    },
+    "screen-text/en": {
+     "n": 4,
+     "r1": 1.0,
+     "r5": 1.0,
+     "mrr": 1.0
+    },
+    "screen-text/zh": {
+     "n": 2,
+     "r1": 1.0,
+     "r5": 1.0,
+     "mrr": 1.0
+    },
+    "transcript": {
+     "n": 10,
+     "r1": 0.9,
+     "r5": 1.0,
+     "mrr": 0.925
+    },
+    "transcript/en": {
+     "n": 2,
+     "r1": 1.0,
+     "r5": 1.0,
+     "mrr": 1.0
+    },
+    "transcript/zh": {
+     "n": 8,
+     "r1": 0.875,
+     "r5": 1.0,
+     "mrr": 0.906
+    },
+    "visual": {
+     "n": 39,
+     "r1": 1.0,
+     "r5": 1.0,
+     "mrr": 1.0
+    },
+    "visual/en": {
+     "n": 22,
+     "r1": 1.0,
+     "r5": 1.0,
+     "mrr": 1.0
+    },
+    "visual/zh": {
+     "n": 17,
+     "r1": 1.0,
+     "r5": 1.0,
+     "mrr": 1.0
+    }
+   },
+   "video20FramesOnly": {
+    "n": 33,
+    "r1": 0.939,
+    "r5": 0.97,
+    "mrr": 0.949
+   },
+   "videoMeanCandidates": 15.2,
+   "scores": {
+    "visualBestRelevant": {
+     "min": 0.651,
+     "p10": 0.683,
+     "median": 0.709,
+     "max": 0.808
+    },
+    "noAnswerBest": {
+     "min": 0.583,
+     "p10": 0.583,
+     "median": 0.6,
+     "max": 0.637
+    }
+   },
+   "misses": [
+    {
+     "query": "q46",
+     "setting": "library",
+     "kind": "transcript",
+     "rank": 4,
+     "top1": "v07-f09"
+    },
+    {
+     "query": "q46",
+     "setting": "video",
+     "kind": "transcript",
+     "rank": 4,
+     "top1": "v07-f09"
+    },
+    {
+     "query": "q66",
+     "setting": "library",
+     "kind": "narration",
+     "rank": 2,
+     "top1": "v09-f00"
+    },
+    {
+     "query": "q66",
+     "setting": "video",
+     "kind": "narration",
+     "rank": 2,
+     "top1": "v09-f00"
+    },
+    {
+     "query": "q68",
+     "setting": "library",
+     "kind": "narration",
+     "rank": 20,
+     "top1": "v02-f07"
+    },
+    {
+     "query": "q68",
+     "setting": "video",
+     "kind": "narration",
+     "rank": 16,
+     "top1": "v02-f07"
+    },
+    {
+     "query": "q70",
+     "setting": "library",
+     "kind": "narration",
+     "rank": 2,
+     "top1": "v12-f04"
+    },
+    {
+     "query": "q71",
+     "setting": "library",
+     "kind": "narration",
+     "rank": 2,
+     "top1": "v05-f01"
+    },
+    {
+     "query": "q71",
+     "setting": "video",
+     "kind": "narration",
+     "rank": 2,
+     "top1": "v05-f01"
+    }
+   ]
+  },
+  "gpu/modelcard-v1": {
+   "library": {
+    "narration": {
+     "n": 9,
+     "r1": 0.556,
+     "r5": 0.889,
+     "mrr": 0.731
+    },
+    "narration/en": {
+     "n": 4,
+     "r1": 0.25,
+     "r5": 0.75,
+     "mrr": 0.519
+    },
+    "narration/zh": {
+     "n": 5,
+     "r1": 0.8,
+     "r5": 1.0,
+     "mrr": 0.9
+    },
+    "screen-text": {
+     "n": 6,
+     "r1": 1.0,
+     "r5": 1.0,
+     "mrr": 1.0
+    },
+    "screen-text/en": {
+     "n": 4,
+     "r1": 1.0,
+     "r5": 1.0,
+     "mrr": 1.0
+    },
+    "screen-text/zh": {
+     "n": 2,
+     "r1": 1.0,
+     "r5": 1.0,
+     "mrr": 1.0
+    },
+    "transcript": {
+     "n": 10,
+     "r1": 0.9,
+     "r5": 1.0,
+     "mrr": 0.933
+    },
+    "transcript/en": {
+     "n": 2,
+     "r1": 1.0,
+     "r5": 1.0,
+     "mrr": 1.0
+    },
+    "transcript/zh": {
+     "n": 8,
+     "r1": 0.875,
+     "r5": 1.0,
+     "mrr": 0.917
+    },
+    "visual": {
+     "n": 41,
+     "r1": 0.976,
+     "r5": 1.0,
+     "mrr": 0.988
+    },
+    "visual/en": {
+     "n": 23,
+     "r1": 1.0,
+     "r5": 1.0,
+     "mrr": 1.0
+    },
+    "visual/zh": {
+     "n": 18,
+     "r1": 0.944,
+     "r5": 1.0,
+     "mrr": 0.972
+    }
+   },
+   "libraryVisualByCategory": {
+    "explainer": {
+     "n": 2,
+     "r1": 0.5,
+     "r5": 1.0,
+     "mrr": 0.75
+    },
+    "illustration": {
+     "n": 4,
+     "r1": 1.0,
+     "r5": 1.0,
+     "mrr": 1.0
+    },
+    "keynote-slides": {
+     "n": 3,
+     "r1": 1.0,
+     "r5": 1.0,
+     "mrr": 1.0
+    },
+    "lecture-slides": {
+     "n": 2,
+     "r1": 1.0,
+     "r5": 1.0,
+     "mrr": 1.0
+    },
+    "music-video": {
+     "n": 2,
+     "r1": 1.0,
+     "r5": 1.0,
+     "mrr": 1.0
+    },
+    "news": {
+     "n": 4,
+     "r1": 1.0,
+     "r5": 1.0,
+     "mrr": 1.0
+    },
+    "screen-recording": {
+     "n": 4,
+     "r1": 1.0,
+     "r5": 1.0,
+     "mrr": 1.0
+    },
+    "talking-head": {
+     "n": 2,
+     "r1": 1.0,
+     "r5": 1.0,
+     "mrr": 1.0
+    },
+    "travel": {
+     "n": 16,
+     "r1": 1.0,
+     "r5": 1.0,
+     "mrr": 1.0
+    },
+    "whiteboard": {
+     "n": 2,
+     "r1": 1.0,
+     "r5": 1.0,
+     "mrr": 1.0
+    }
+   },
+   "video": {
+    "narration": {
+     "n": 9,
+     "r1": 0.667,
+     "r5": 0.889,
+     "mrr": 0.787
+    },
+    "narration/en": {
+     "n": 4,
+     "r1": 0.5,
+     "r5": 0.75,
+     "mrr": 0.646
+    },
+    "narration/zh": {
+     "n": 5,
+     "r1": 0.8,
+     "r5": 1.0,
+     "mrr": 0.9
+    },
+    "screen-text": {
+     "n": 6,
+     "r1": 1.0,
+     "r5": 1.0,
+     "mrr": 1.0
+    },
+    "screen-text/en": {
+     "n": 4,
+     "r1": 1.0,
+     "r5": 1.0,
+     "mrr": 1.0
+    },
+    "screen-text/zh": {
+     "n": 2,
+     "r1": 1.0,
+     "r5": 1.0,
+     "mrr": 1.0
+    },
+    "transcript": {
+     "n": 10,
+     "r1": 0.9,
+     "r5": 1.0,
+     "mrr": 0.933
+    },
+    "transcript/en": {
+     "n": 2,
+     "r1": 1.0,
+     "r5": 1.0,
+     "mrr": 1.0
+    },
+    "transcript/zh": {
+     "n": 8,
+     "r1": 0.875,
+     "r5": 1.0,
+     "mrr": 0.917
+    },
+    "visual": {
+     "n": 39,
+     "r1": 1.0,
+     "r5": 1.0,
+     "mrr": 1.0
+    },
+    "visual/en": {
+     "n": 22,
+     "r1": 1.0,
+     "r5": 1.0,
+     "mrr": 1.0
+    },
+    "visual/zh": {
+     "n": 17,
+     "r1": 1.0,
+     "r5": 1.0,
+     "mrr": 1.0
+    }
+   },
+   "video20FramesOnly": {
+    "n": 33,
+    "r1": 0.939,
+    "r5": 0.97,
+    "mrr": 0.952
+   },
+   "videoMeanCandidates": 15.2,
+   "scores": {
+    "visualBestRelevant": {
+     "min": 0.664,
+     "p10": 0.707,
+     "median": 0.739,
+     "max": 0.817
+    },
+    "noAnswerBest": {
+     "min": 0.621,
+     "p10": 0.624,
+     "median": 0.643,
+     "max": 0.68
+    }
+   },
+   "misses": [
+    {
+     "query": "q13",
+     "setting": "library",
+     "kind": "visual",
+     "rank": 2,
+     "top1": "v09-f03"
+    },
+    {
+     "query": "q46",
+     "setting": "library",
+     "kind": "transcript",
+     "rank": 3,
+     "top1": "v07-f09"
+    },
+    {
+     "query": "q46",
+     "setting": "video",
+     "kind": "transcript",
+     "rank": 3,
+     "top1": "v07-f09"
+    },
+    {
+     "query": "q66",
+     "setting": "library",
+     "kind": "narration",
+     "rank": 2,
+     "top1": "v09-f00"
+    },
+    {
+     "query": "q66",
+     "setting": "video",
+     "kind": "narration",
+     "rank": 2,
+     "top1": "v09-f00"
+    },
+    {
+     "query": "q68",
+     "setting": "library",
+     "kind": "narration",
+     "rank": 13,
+     "top1": "v02-f07"
+    },
+    {
+     "query": "q68",
+     "setting": "video",
+     "kind": "narration",
+     "rank": 12,
+     "top1": "v02-f07"
+    },
+    {
+     "query": "q70",
+     "setting": "library",
+     "kind": "narration",
+     "rank": 2,
+     "top1": "v12-f04"
+    },
+    {
+     "query": "q71",
+     "setting": "library",
+     "kind": "narration",
+     "rank": 2,
+     "top1": "v05-f01"
+    },
+    {
+     "query": "q71",
+     "setting": "video",
+     "kind": "narration",
+     "rank": 2,
+     "top1": "v05-f01"
+    }
+   ]
+  },
+  "gpu/litert-docs-v1": {
+   "library": {
+    "narration": {
+     "n": 9,
+     "r1": 0.444,
+     "r5": 0.889,
+     "mrr": 0.657
+    },
+    "narration/en": {
+     "n": 4,
+     "r1": 0.0,
+     "r5": 0.75,
+     "mrr": 0.353
+    },
+    "narration/zh": {
+     "n": 5,
+     "r1": 0.8,
+     "r5": 1.0,
+     "mrr": 0.9
+    },
+    "screen-text": {
+     "n": 6,
+     "r1": 1.0,
+     "r5": 1.0,
+     "mrr": 1.0
+    },
+    "screen-text/en": {
+     "n": 4,
+     "r1": 1.0,
+     "r5": 1.0,
+     "mrr": 1.0
+    },
+    "screen-text/zh": {
+     "n": 2,
+     "r1": 1.0,
+     "r5": 1.0,
+     "mrr": 1.0
+    },
+    "transcript": {
+     "n": 10,
+     "r1": 0.9,
+     "r5": 1.0,
+     "mrr": 0.933
+    },
+    "transcript/en": {
+     "n": 2,
+     "r1": 1.0,
+     "r5": 1.0,
+     "mrr": 1.0
+    },
+    "transcript/zh": {
+     "n": 8,
+     "r1": 0.875,
+     "r5": 1.0,
+     "mrr": 0.917
+    },
+    "visual": {
+     "n": 41,
+     "r1": 0.976,
+     "r5": 1.0,
+     "mrr": 0.988
+    },
+    "visual/en": {
+     "n": 23,
+     "r1": 1.0,
+     "r5": 1.0,
+     "mrr": 1.0
+    },
+    "visual/zh": {
+     "n": 18,
+     "r1": 0.944,
+     "r5": 1.0,
+     "mrr": 0.972
+    }
+   },
+   "libraryVisualByCategory": {
+    "explainer": {
+     "n": 2,
+     "r1": 0.5,
+     "r5": 1.0,
+     "mrr": 0.75
+    },
+    "illustration": {
+     "n": 4,
+     "r1": 1.0,
+     "r5": 1.0,
+     "mrr": 1.0
+    },
+    "keynote-slides": {
+     "n": 3,
+     "r1": 1.0,
+     "r5": 1.0,
+     "mrr": 1.0
+    },
+    "lecture-slides": {
+     "n": 2,
+     "r1": 1.0,
+     "r5": 1.0,
+     "mrr": 1.0
+    },
+    "music-video": {
+     "n": 2,
+     "r1": 1.0,
+     "r5": 1.0,
+     "mrr": 1.0
+    },
+    "news": {
+     "n": 4,
+     "r1": 1.0,
+     "r5": 1.0,
+     "mrr": 1.0
+    },
+    "screen-recording": {
+     "n": 4,
+     "r1": 1.0,
+     "r5": 1.0,
+     "mrr": 1.0
+    },
+    "talking-head": {
+     "n": 2,
+     "r1": 1.0,
+     "r5": 1.0,
+     "mrr": 1.0
+    },
+    "travel": {
+     "n": 16,
+     "r1": 1.0,
+     "r5": 1.0,
+     "mrr": 1.0
+    },
+    "whiteboard": {
+     "n": 2,
+     "r1": 1.0,
+     "r5": 1.0,
+     "mrr": 1.0
+    }
+   },
+   "video": {
+    "narration": {
+     "n": 9,
+     "r1": 0.667,
+     "r5": 0.889,
+     "mrr": 0.769
+    },
+    "narration/en": {
+     "n": 4,
+     "r1": 0.5,
+     "r5": 0.75,
+     "mrr": 0.606
+    },
+    "narration/zh": {
+     "n": 5,
+     "r1": 0.8,
+     "r5": 1.0,
+     "mrr": 0.9
+    },
+    "screen-text": {
+     "n": 6,
+     "r1": 1.0,
+     "r5": 1.0,
+     "mrr": 1.0
+    },
+    "screen-text/en": {
+     "n": 4,
+     "r1": 1.0,
+     "r5": 1.0,
+     "mrr": 1.0
+    },
+    "screen-text/zh": {
+     "n": 2,
+     "r1": 1.0,
+     "r5": 1.0,
+     "mrr": 1.0
+    },
+    "transcript": {
+     "n": 10,
+     "r1": 0.9,
+     "r5": 1.0,
+     "mrr": 0.933
+    },
+    "transcript/en": {
+     "n": 2,
+     "r1": 1.0,
+     "r5": 1.0,
+     "mrr": 1.0
+    },
+    "transcript/zh": {
+     "n": 8,
+     "r1": 0.875,
+     "r5": 1.0,
+     "mrr": 0.917
+    },
+    "visual": {
+     "n": 39,
+     "r1": 1.0,
+     "r5": 1.0,
+     "mrr": 1.0
+    },
+    "visual/en": {
+     "n": 22,
+     "r1": 1.0,
+     "r5": 1.0,
+     "mrr": 1.0
+    },
+    "visual/zh": {
+     "n": 17,
+     "r1": 1.0,
+     "r5": 1.0,
+     "mrr": 1.0
+    }
+   },
+   "video20FramesOnly": {
+    "n": 33,
+    "r1": 0.939,
+    "r5": 0.97,
+    "mrr": 0.952
+   },
+   "videoMeanCandidates": 15.2,
+   "scores": {
+    "visualBestRelevant": {
+     "min": 0.683,
+     "p10": 0.72,
+     "median": 0.755,
+     "max": 0.829
+    },
+    "noAnswerBest": {
+     "min": 0.647,
+     "p10": 0.649,
+     "median": 0.662,
+     "max": 0.686
+    }
+   },
+   "misses": [
+    {
+     "query": "q13",
+     "setting": "library",
+     "kind": "visual",
+     "rank": 2,
+     "top1": "v09-f03"
+    },
+    {
+     "query": "q46",
+     "setting": "library",
+     "kind": "transcript",
+     "rank": 3,
+     "top1": "v07-f09"
+    },
+    {
+     "query": "q46",
+     "setting": "video",
+     "kind": "transcript",
+     "rank": 3,
+     "top1": "v07-f09"
+    },
+    {
+     "query": "q66",
+     "setting": "library",
+     "kind": "narration",
+     "rank": 2,
+     "top1": "v09-f00"
+    },
+    {
+     "query": "q66",
+     "setting": "video",
+     "kind": "narration",
+     "rank": 2,
+     "top1": "v09-f00"
+    },
+    {
+     "query": "q68",
+     "setting": "library",
+     "kind": "narration",
+     "rank": 13,
+     "top1": "v02-f07"
+    },
+    {
+     "query": "q68",
+     "setting": "video",
+     "kind": "narration",
+     "rank": 11,
+     "top1": "v02-f07"
+    },
+    {
+     "query": "q69",
+     "setting": "library",
+     "kind": "narration",
+     "rank": 2,
+     "top1": "v01-f09"
+    },
+    {
+     "query": "q70",
+     "setting": "library",
+     "kind": "narration",
+     "rank": 2,
+     "top1": "v12-f04"
+    },
+    {
+     "query": "q71",
+     "setting": "library",
+     "kind": "narration",
+     "rank": 3,
+     "top1": "v05-f09"
+    },
+    {
+     "query": "q71",
+     "setting": "video",
+     "kind": "narration",
+     "rank": 3,
+     "top1": "v05-f09"
+    }
+   ]
+  },
+  "gpu/no-prefix": {
+   "library": {
+    "narration": {
+     "n": 9,
+     "r1": 0.556,
+     "r5": 0.889,
+     "mrr": 0.731
+    },
+    "narration/en": {
+     "n": 4,
+     "r1": 0.25,
+     "r5": 0.75,
+     "mrr": 0.521
+    },
+    "narration/zh": {
+     "n": 5,
+     "r1": 0.8,
+     "r5": 1.0,
+     "mrr": 0.9
+    },
+    "screen-text": {
+     "n": 6,
+     "r1": 1.0,
+     "r5": 1.0,
+     "mrr": 1.0
+    },
+    "screen-text/en": {
+     "n": 4,
+     "r1": 1.0,
+     "r5": 1.0,
+     "mrr": 1.0
+    },
+    "screen-text/zh": {
+     "n": 2,
+     "r1": 1.0,
+     "r5": 1.0,
+     "mrr": 1.0
+    },
+    "transcript": {
+     "n": 10,
+     "r1": 0.9,
+     "r5": 1.0,
+     "mrr": 0.933
+    },
+    "transcript/en": {
+     "n": 2,
+     "r1": 1.0,
+     "r5": 1.0,
+     "mrr": 1.0
+    },
+    "transcript/zh": {
+     "n": 8,
+     "r1": 0.875,
+     "r5": 1.0,
+     "mrr": 0.917
+    },
+    "visual": {
+     "n": 41,
+     "r1": 1.0,
+     "r5": 1.0,
+     "mrr": 1.0
+    },
+    "visual/en": {
+     "n": 23,
+     "r1": 1.0,
+     "r5": 1.0,
+     "mrr": 1.0
+    },
+    "visual/zh": {
+     "n": 18,
+     "r1": 1.0,
+     "r5": 1.0,
+     "mrr": 1.0
+    }
+   },
+   "libraryVisualByCategory": {
+    "explainer": {
+     "n": 2,
+     "r1": 1.0,
+     "r5": 1.0,
+     "mrr": 1.0
+    },
+    "illustration": {
+     "n": 4,
+     "r1": 1.0,
+     "r5": 1.0,
+     "mrr": 1.0
+    },
+    "keynote-slides": {
+     "n": 3,
+     "r1": 1.0,
+     "r5": 1.0,
+     "mrr": 1.0
+    },
+    "lecture-slides": {
+     "n": 2,
+     "r1": 1.0,
+     "r5": 1.0,
+     "mrr": 1.0
+    },
+    "music-video": {
+     "n": 2,
+     "r1": 1.0,
+     "r5": 1.0,
+     "mrr": 1.0
+    },
+    "news": {
+     "n": 4,
+     "r1": 1.0,
+     "r5": 1.0,
+     "mrr": 1.0
+    },
+    "screen-recording": {
+     "n": 4,
+     "r1": 1.0,
+     "r5": 1.0,
+     "mrr": 1.0
+    },
+    "talking-head": {
+     "n": 2,
+     "r1": 1.0,
+     "r5": 1.0,
+     "mrr": 1.0
+    },
+    "travel": {
+     "n": 16,
+     "r1": 1.0,
+     "r5": 1.0,
+     "mrr": 1.0
+    },
+    "whiteboard": {
+     "n": 2,
+     "r1": 1.0,
+     "r5": 1.0,
+     "mrr": 1.0
+    }
+   },
+   "video": {
+    "narration": {
+     "n": 9,
+     "r1": 0.667,
+     "r5": 0.889,
+     "mrr": 0.787
+    },
+    "narration/en": {
+     "n": 4,
+     "r1": 0.5,
+     "r5": 0.75,
+     "mrr": 0.646
+    },
+    "narration/zh": {
+     "n": 5,
+     "r1": 0.8,
+     "r5": 1.0,
+     "mrr": 0.9
+    },
+    "screen-text": {
+     "n": 6,
+     "r1": 1.0,
+     "r5": 1.0,
+     "mrr": 1.0
+    },
+    "screen-text/en": {
+     "n": 4,
+     "r1": 1.0,
+     "r5": 1.0,
+     "mrr": 1.0
+    },
+    "screen-text/zh": {
+     "n": 2,
+     "r1": 1.0,
+     "r5": 1.0,
+     "mrr": 1.0
+    },
+    "transcript": {
+     "n": 10,
+     "r1": 0.9,
+     "r5": 1.0,
+     "mrr": 0.933
+    },
+    "transcript/en": {
+     "n": 2,
+     "r1": 1.0,
+     "r5": 1.0,
+     "mrr": 1.0
+    },
+    "transcript/zh": {
+     "n": 8,
+     "r1": 0.875,
+     "r5": 1.0,
+     "mrr": 0.917
+    },
+    "visual": {
+     "n": 39,
+     "r1": 1.0,
+     "r5": 1.0,
+     "mrr": 1.0
+    },
+    "visual/en": {
+     "n": 22,
+     "r1": 1.0,
+     "r5": 1.0,
+     "mrr": 1.0
+    },
+    "visual/zh": {
+     "n": 17,
+     "r1": 1.0,
+     "r5": 1.0,
+     "mrr": 1.0
+    }
+   },
+   "video20FramesOnly": {
+    "n": 33,
+    "r1": 0.939,
+    "r5": 0.97,
+    "mrr": 0.952
+   },
+   "videoMeanCandidates": 15.2,
+   "scores": {
+    "visualBestRelevant": {
+     "min": 0.652,
+     "p10": 0.681,
+     "median": 0.716,
+     "max": 0.821
+    },
+    "noAnswerBest": {
+     "min": 0.581,
+     "p10": 0.584,
+     "median": 0.597,
+     "max": 0.639
+    }
+   },
+   "misses": [
+    {
+     "query": "q46",
+     "setting": "library",
+     "kind": "transcript",
+     "rank": 3,
+     "top1": "v07-f09"
+    },
+    {
+     "query": "q46",
+     "setting": "video",
+     "kind": "transcript",
+     "rank": 3,
+     "top1": "v07-f09"
+    },
+    {
+     "query": "q66",
+     "setting": "library",
+     "kind": "narration",
+     "rank": 2,
+     "top1": "v09-f00"
+    },
+    {
+     "query": "q66",
+     "setting": "video",
+     "kind": "narration",
+     "rank": 2,
+     "top1": "v09-f00"
+    },
+    {
+     "query": "q68",
+     "setting": "library",
+     "kind": "narration",
+     "rank": 12,
+     "top1": "v02-f07"
+    },
+    {
+     "query": "q68",
+     "setting": "video",
+     "kind": "narration",
+     "rank": 12,
+     "top1": "v02-f07"
+    },
+    {
+     "query": "q70",
+     "setting": "library",
+     "kind": "narration",
+     "rank": 2,
+     "top1": "v12-f04"
+    },
+    {
+     "query": "q71",
+     "setting": "library",
+     "kind": "narration",
+     "rank": 2,
+     "top1": "v05-f09"
+    },
+    {
+     "query": "q71",
+     "setting": "video",
+     "kind": "narration",
+     "rank": 2,
+     "top1": "v05-f09"
+    }
+   ]
+  }
+ },
+ "sameSpace": {
+  "cpu~cpu-vt140": {
+   "frameCosMin": 1.0,
+   "frameCosMean": 1.0,
+   "queryCosMin": 1.0
+  },
+  "cpu~cpu-vt70": {
+   "frameCosMin": 0.914,
+   "frameCosMean": 0.9662,
+   "queryCosMin": 1.0
+  },
+  "cpu~gpu-fp32": {
+   "frameCosMin": 0.9771,
+   "frameCosMean": 0.9961,
+   "queryCosMin": 0.9975
+  },
+  "cpu~gpu": {
+   "frameCosMin": 0.9718,
+   "frameCosMean": 0.9937,
+   "queryCosMin": 0.9767
+  }
+ }
+}

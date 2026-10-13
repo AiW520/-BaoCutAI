@@ -19,7 +19,10 @@
 | `embed-litert.py` | LiteRT-LM（轮子）编码，CPU 或 GPU；附带引擎创建耗时、缓存文件、`output_size`、单条与批量、长输入、RSS |
 | `check-c-api.py`、`c-smoke/embedding-smoke.c` | 用 xcframework 的 C API 编码同一批输入，与轮子结果逐向量比较；同时比较 FP32 与默认激活精度 |
 | `score.py` | 只读缓存，算检索、跨后端、向量一致、对称对与术语误听的指标，输出指标 JSON 与阈值建议 |
-| `fixtures/` | 手写的合成夹具，无用户媒体：`corpus.json`（57 个句群）、`queries.json`（34 条标注查询）、`symmetric-pairs.json`（54 对）、`glossary.json`（36 对） |
+| `sample-frames.py` | 多模态 G0：从本机视频按时间均匀取帧（ffmpeg 只读源文件，长边 512 的 JPEG），写帧与 `manifest.json` 到仓库外的 `frames-eval/` |
+| `embed-frames.py` | 多模态 G0：740m 包的视觉编码器编码每一帧、文字编码器编码查询（三套前缀）；CPU、GPU 默认激活、GPU FP32 激活，可选每图视觉 token 数 |
+| `score-frames.py` | 多模态 G0：全库与单部视频两种范围的 R@1/R@5/MRR，按查询类型与画面类别分开；无答案查询的最高分；各次运行之间的余弦 |
+| `fixtures/` | 手写的合成夹具，无用户媒体（`frame-labels.example.json` 只是多模态标注的格式示例，真实标注在仓库外）：`corpus.json`（57 个句群）、`queries.json`（34 条标注查询）、`symmetric-pairs.json`（54 对）、`glossary.json`（36 对） |
 | `reports/` | 评测报告、指标 JSON 与阈值建议 JSON |
 
 ## 外部文件放在哪里
@@ -36,6 +39,8 @@ $BAOCUT_EMBED_EVAL_ROOT/
   litert-lm-0.18.0/CLiteRTLM_mac.xcframework/   C API（头文件 + dylib）
   litert-cache/  litert-cache-c/   LiteRT 引擎缓存（必须预先存在）
   eval-cache/                   各后端的向量 .npz 与运行清单 .json
+  weights/litert-740m/embeddinggemma-2-740m.litertlm   多模态 G0 用的完整包
+  frames-eval/                  多模态 G0：videos.tsv、frames/、manifest.json、labels.json、runs/（取自用户自己的视频库，不进仓库）
   build/                        C 冒烟程序与输入文件
 ```
 
@@ -50,6 +55,7 @@ $BAOCUT_EMBED_EVAL_ROOT/
 | litert-lm-api | 0.18.0，`litert_lm_api-0.18.0-py3-none-macosx_12_0_arm64.whl` sha256 `9fd0c55835e469a035c1b75cde4797b26292963c2c36d9fcdfceb965ffa08a37`；包内 `liblitert-lm.dylib` sha256 `cbec999a8156f10d277484ad3c6b6d9ac012375c4a03019aa1b0eab68ccaa4e9` |
 | CLiteRTLM_mac.xcframework | LiteRT-LM 0.18.0；zip sha256 `5f6ee68d95eeccb084c6e66d5ee47255e3020fa0fb29696dd0301ae26d6cfb4f`，`libCLiteRTLM_mac.dylib`（arm64 + x86_64）sha256 `9526db9ee35e7eb4a5a58ac1e53330032f22a13890bd4ee01818fb380a57a362` |
 | `google/embeddinggemma-2` | commit `914f7f89142e33e77833254d9c9b90c3cef7303b`；`model.safetensors` sha256 `197a32965d4b1105faf060417baa899e193fb73cd401f42ec9295234d5553d79`，`tokenizer.json` `4d777ef5bdc1aa36227abdfb77c3e49e7b9c892d16e1b6bda41c393504828be4`，`tokenizer.model` `e594c8a90eb08d8bda498ff4747977dc827ae0c3c56b5c0d41a605a22d02ef03` |
+| `litert-community/embeddinggemma-2-740m-litert-lm` | commit `24d962e906c7d332c6428e71c9676855024569e2`；`embeddinggemma-2-740m.litertlm`（484,622,336 字节）sha256 `e7a8a2204b91e0f96e92960e84a09a89212e1633dcb7575a9bf3378b4df77f4c` |
 | `litert-community/embeddinggemma-2-text-270m-litert-lm` | commit `9be6e8b90982095dc05c2bd162e4b954ee4dbac7`；`embeddinggemma-2-text-270m.litertlm`（164,626,432 字节）sha256 `2d079ee2f6f066b1f368e8d7c819f55214eaef1d0513b312321901f30ab286fb` |
 
 其余传递依赖见 `uv.lock`。
@@ -95,6 +101,22 @@ $PY -I score.py --out reports/g0-<日期>-metrics.json --thresholds-out reports/
 ```
 
 `-I` 让解释器不从当前目录加载模块；脚本自己把本目录加进 `sys.path`。
+
+多模态 G0（[报告](reports/g0-multimodal-2026-10-13.md)）另走一条：
+
+```sh
+F=$BAOCUT_EMBED_EVAL_ROOT/frames-eval
+# videos.tsv 每行：类别<TAB>帧数<TAB>标题<TAB>视频绝对路径；只读源文件
+$PY -I sample-frames.py $F/videos.tsv --out $F
+# 看帧写 $F/labels.json（格式见 fixtures/frame-labels.example.json）
+$PY -I embed-frames.py --run cpu
+$PY -I embed-frames.py --run gpu
+$PY -I embed-frames.py --run gpu-fp32
+$PY -I embed-frames.py --run cpu --vision-tokens 70   # 实测 140 与默认相同，280、560 建引擎失败
+$PY -I score-frames.py --out reports/g0-multimodal-<日期>-metrics.json
+```
+
+每次运行用一份新的引擎缓存（约 300–370 MB），跑完删掉。
 
 ## 夹具约定
 

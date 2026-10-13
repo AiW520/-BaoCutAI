@@ -22,6 +22,12 @@ REFERENCE_MODEL_DIR = DEFAULT_MODEL_ROOT / "weights" / "google-embeddinggemma-2"
 LITERT_MODEL_PATH = (
     DEFAULT_MODEL_ROOT / "weights" / "litert-text-270m" / "embeddinggemma-2-text-270m.litertlm"
 )
+# Full multimodal package (text + vision + audio towers); multimodal G0 only.
+LITERT_740M_MODEL_PATH = (
+    DEFAULT_MODEL_ROOT / "weights" / "litert-740m" / "embeddinggemma-2-740m.litertlm"
+)
+# Frames, manifest and labels from the user's own library: outside the repo.
+FRAMES_EVAL_DIR = DEFAULT_MODEL_ROOT / "frames-eval"
 
 # Retrieval prompt pairs (promptPairId candidates).
 # Note the two official sources use "search result" for opposite roles:
