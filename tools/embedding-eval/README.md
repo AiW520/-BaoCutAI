@@ -23,6 +23,7 @@
 | `embed-frames.py` | 多模态 G0：740m 包的视觉编码器编码每一帧、文字编码器编码查询（三套前缀）；CPU、GPU 默认激活、GPU FP32 激活，可选每图视觉 token 数 |
 | `score-frames.py` | 多模态 G0：全库与单部视频两种范围的 R@1/R@5/MRR，按查询类型与画面类别分开；无答案查询的最高分；各次运行之间的余弦 |
 | `chapter-boundaries-eval.ts` | 章节边界候选的校准（Node，不用 Python）：`export` 只读打开一个 BaoCut 主目录的语义索引，按 `--truth`（`{ "<videoId>": [秒, …] }`，作者章节）导出句群的时间与向量（不带文字）；`score` 在 k、窗口、最短章节长度的网格上算 ±15 秒内的精确率、召回率与 F1。测试在 `tools/chapter-boundaries-eval.test.ts` |
+| `search-eval.ts` | 产品级检索评测（Node）：走真的 `space.searchV2`（内容索引、语义库、增量构建、融合、去重、弱命中），不只测模型。文字用 `fixtures/` 的句群（每个句群一部合成视频）与标注查询；`--frames <frames-eval 目录>` 再加多模态 G0 的标注帧（每部视频的帧排成一个合成素材）。按路线（文字 `hybrid` / `semantic` / `lexical`、画面、文字加画面）与查询类别出 R@1/R@5/R@10/MRR 与弱命中的两面（`strongPerQuery`、`relevantWeak`、`noAnswerStrong`）。用本机装好的模型包与 Model Worker（`--models`、`--tools` 只读，不安装、不自检）。改排序、融合或弱命中阈值时报改前改后的数字。测试在 `tools/search-eval.test.ts` |
 | `fixtures/` | 手写的合成夹具，无用户媒体（`frame-labels.example.json` 只是多模态标注的格式示例，真实标注在仓库外）：`corpus.json`（57 个句群）、`queries.json`（34 条标注查询）、`symmetric-pairs.json`（54 对）、`glossary.json`（36 对） |
 | `reports/` | 评测报告、指标 JSON 与阈值建议 JSON |
 
@@ -42,6 +43,7 @@ $BAOCUT_EMBED_EVAL_ROOT/
   eval-cache/                   各后端的向量 .npz 与运行清单 .json
   weights/litert-740m/embeddinggemma-2-740m.litertlm   多模态 G0 用的完整包
   chapters-eval/                章节边界校准的数据集与结果（向量取自用户自己的视频，不进仓库）
+  search-eval/                  产品级检索评测的工作目录：临时内容索引与语义库（向量按内容寻址，重跑不重编）、LiteRT 缓存、每条查询的明细
   frames-eval/                  多模态 G0：videos.tsv、frames/、manifest.json、labels.json、runs/（取自用户自己的视频库，不进仓库）
   build/                        C 冒烟程序与输入文件
 ```
