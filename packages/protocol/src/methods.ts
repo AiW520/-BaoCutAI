@@ -9,6 +9,7 @@ import type {
   AttachmentRef,
   Autonomy,
   Conversation,
+  SpaceReadScope,
   DriverId,
   DriverInfo,
   DriverInstallOption,
@@ -329,11 +330,13 @@ export interface RpcMethods {
    * `agent.defaultAccessMode`（§3.12），给了等于建好后切换一次（接受旧值）。
    * `folderOf`：新会话用这条会话的工作目录（从一部不属于项目的视频发起新会话时，新会话要能打开它与它旁边的文件，§3.10）；
    * 那条会话属于项目时新会话就建在那个项目里，`projectId` 不看。
+   * `spaceReadScope`：用户给这条会话放宽的只读检索范围（`Conversation.spaceReadScope`）。
    */
   'conversations.create': {
     params: {
       projectId?: Id | null;
       folderOf?: Id;
+      spaceReadScope?: SpaceReadScope;
       title?: string;
       commandId?: Id;
       driverId?: DriverId;
@@ -365,6 +368,8 @@ export interface RpcMethods {
       effort?: string | null;
       accessMode?: AgentMode | Autonomy | null;
       pendingReferences?: null;
+      /** 收回放宽的只读检索范围（只能收回，不能放宽）。 */
+      spaceReadScope?: null;
     };
     result: { conversation: Conversation };
   };

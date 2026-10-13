@@ -758,6 +758,7 @@ export const methodParamSchemas = {
   'conversations.create': z.object({
     projectId: id.nullable().optional(),
     folderOf: id.optional(),
+    spaceReadScope: z.enum(['all', 'unfiled']).optional(),
     title: z.string().max(200).optional(),
     commandId: id.optional(),
     driverId: driverId.optional(),
@@ -776,6 +777,7 @@ export const methodParamSchemas = {
     effort: agentEffort.optional(),
     accessMode: agentMode.nullable().optional(),
     pendingReferences: z.null().optional(),
+    spaceReadScope: z.null().optional(),
   }),
   'conversations.markRead': z.object({ conversationId: id }),
   'conversations.delete': z.object({ conversationId: id }),

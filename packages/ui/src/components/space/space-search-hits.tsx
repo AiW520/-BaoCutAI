@@ -47,6 +47,7 @@ import { useVideo } from '../../state/video-store.ts';
 import { openAiTool, setPanelLanding } from '../editor/ai-tools-nav.ts';
 import { SemanticNote } from '../semantic-note.tsx';
 import { openHome, startDraftKey } from '../start/open-home.ts';
+import { useStartBrief } from '../../state/start-brief-store.ts';
 import { OUTPUT_COPY } from '../tools/tools-copy.ts';
 import { SPACE_COPY as COPY } from './space-copy.ts';
 
@@ -369,6 +370,9 @@ function HitActions({ hit, entries, query, web, runtime }: { hit: Hit; entries: 
  * 「回答这个问题」（创作辅助集成设计 §2.9；原型 space-search.jsx `Answer`）：Space 里不调模型，把问题交给新会话，挂上内置 skill
  * `cross-video-qa`，由智能体检索、回答并附可点的出处（回答里的视频时间链接）。按 Space 当前筛到的项目开会话、话里写明只在这个项目里找（skill 才知道要限定项目），没筛项目时是无项目会话；
  * 只放进输入框（接在已有的话后面），由用户发出。
+ *
+ * 无项目会话的智能体本来只看会话自己的视频（架构设计 §4.8），所以没筛项目时给新会话挂上只读检索范围（`Conversation.spaceReadScope`）：
+ * 「全部项目」是全部视频，「不属于项目」是不属于项目的视频。输入框上方写明，可以摘掉。
  */
 export function askAcrossVideos(question: string, projectId: Id | 'none' | null): void {
   const project = projectId && projectId !== 'none' ? projectId : null;
@@ -376,6 +380,7 @@ export function askAcrossVideos(question: string, projectId: Id | 'none' | null)
   const shell = useShell.getState();
   shell.setDraft(key, mergeDraft(shell.drafts[key], COPY.hitAskDraft(question, project !== null)));
   useDraftSkills.getState().add(key, CROSS_VIDEO_QA_SKILL);
+  useStartBrief.getState().patch(key, { readScope: project ? null : projectId === 'none' ? 'unfiled' : 'all' });
   openHome(project);
 }
 

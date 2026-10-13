@@ -136,7 +136,7 @@ export class SemanticTools implements ToolSet {
   async dispatch(name: string, args: unknown, principal: ToolPrincipal): Promise<unknown> {
     const semantic = this.#deps.semantic();
     if (!semantic) throw new ToolError('SEMANTIC_UNAVAILABLE', '本机语义检索还没有就绪，稍后再试');
-    const viewer = spaceViewerOf(this.#deps.scope, this.#deps.jobs, principal);
+    const viewer = spaceViewerOf(this.#deps.scope, this.#deps.jobs, principal, { retrieval: true });
     switch (name as ToolName) {
       case 'space_search_v2': {
         const p = args as z.infer<(typeof schemas)['space_search_v2']>;

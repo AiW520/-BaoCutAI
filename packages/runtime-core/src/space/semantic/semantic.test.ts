@@ -13,7 +13,8 @@ import { resolveSearchHit } from '../search-hit-resolver.ts';
 import { readCitations } from '../space-citations.ts';
 import { spaceMethods } from '../space-methods.ts';
 import type { TrustedPrincipal } from '../../gateway.ts';
-import { USER_VIEWER, searchContent, type SpaceViewer } from '../space-queries.ts';
+import { USER_VIEWER, searchContent, visibleTo, type SpaceViewer } from '../space-queries.ts';
+import { SpaceTools, spaceViewerOf } from '../../agent-tools/space-tools.ts';
 import { MemoryCitationRegistry } from '../../ai-tools/citation-registry.ts';
 import { SemanticTools } from '../../agent-tools/semantic-tools.ts';
 import type { ToolPrincipal, ToolScope } from '../../agent-tools/tool-scope.ts';
@@ -719,10 +720,9 @@ describe('space.citations', () => {
 // ---- 智能体工具 ----
 
 describe('语义检索的智能体工具', () => {
-  function tools(registry = new MemoryCitationRegistry()) {
+  function tools(registry = new MemoryCitationRegistry(), conversation: object = { id: 'c-x', projectId: 'p1', folderOf: null }) {
     const scope = {
-      authorize: (principal: ToolPrincipal) =>
-        principal.kind === 'agent' ? { principal, conversation: { id: 'c-x', projectId: 'p1', folderOf: null } } : { principal },
+      authorize: (principal: ToolPrincipal) => (principal.kind === 'agent' ? { principal, conversation } : { principal }),
     } as unknown as ToolScope;
     return { registry, tools: new SemanticTools({ semantic: () => services, scope, jobs: { list: () => [] }, registry }) };
   }
@@ -768,5 +768,50 @@ describe('语义检索的智能体工具', () => {
     expect(resolved.href).toBe(videoTimeHref('v1', span.startSec));
     services = null;
     await expect(t.dispatch('space_search_v2', { query: 'x' }, agent)).rejects.toMatchObject({ code: 'SEMANTIC_UNAVAILABLE' });
+  });
+
+  it('用户给会话放宽的只读检索范围：all 看得到全部视频，unfiled 只多看不属于项目的；别的用途不放宽', async () => {
+    services = open();
+    await build(services);
+    const videosOf = async (conversation: object) => {
+      const { tools: t } = tools(undefined, conversation);
+      const result = (await t.dispatch('space_search_v2', { query: 'battery', mode: 'lexical' }, agent)) as { hits: { videoId: string }[] };
+      return [...new Set(result.hits.map((h) => h.videoId))].sort();
+    };
+    // 无项目会话 c-y 本来什么也看不到（三部视频都不在它的工作目录里）。
+    expect(await videosOf({ id: 'c-y', projectId: null })).toEqual([]);
+    expect(await videosOf({ id: 'c-y', projectId: null, spaceReadScope: 'all' })).toEqual(['v1', 'v2', 'v3']);
+    expect(await videosOf({ id: 'c-y', projectId: null, spaceReadScope: 'unfiled' })).toEqual(['v3']);
+    // 旧的 Space 工具（space_search，与 space_list 同一个取范围的入口）同样放宽。
+    const spaceSearch = async (conversation: object) => {
+      const scope = { authorize: (principal: ToolPrincipal) => ({ principal, conversation }) } as unknown as ToolScope;
+      const space = () => ({ videos: () => videos, index, scanning: false }) as unknown as SpaceCatalog;
+      const result = (await new SpaceTools({ space, scope, jobs: { list: () => [] } }).dispatch('space_search', { query: 'battery' }, agent)) as { hits: { videoId: string }[] };
+      return [...new Set(result.hits.map((h) => h.videoId))].sort();
+    };
+    expect(await spaceSearch({ id: 'c-y', projectId: null })).toEqual([]);
+    expect(await spaceSearch({ id: 'c-y', projectId: null, spaceReadScope: 'all' })).toEqual(['v1', 'v2', 'v3']);
+    // 放宽的命中也能重新定位。
+    const { tools: wide } = tools(undefined, { id: 'c-y', projectId: null, spaceReadScope: 'all' });
+    const hits = (await wide.dispatch('space_search_v2', { query: 'confidential budget', mode: 'lexical' }, agent)) as { hits: { hitId: string; videoId: string }[] };
+    expect(hits.hits[0]!.videoId).toBe('v2');
+    expect(await wide.dispatch('space_resolve_search_hit', { hitId: hits.hits[0]!.hitId }, agent)).toMatchObject({ status: 'resolved' });
+    // 不是检索的用途（生图取输入图等）不带放宽的范围。
+    const scope = { authorize: (principal: ToolPrincipal) => ({ principal, conversation: { id: 'c-y', projectId: null, spaceReadScope: 'all' } }) } as unknown as ToolScope;
+    expect(spaceViewerOf(scope, { list: () => [] }, agent)).toEqual({ kind: 'source', projectId: null, conversationId: 'c-y' });
+    expect(spaceViewerOf(scope, { list: () => [] }, agent, { retrieval: true })).toMatchObject({ readScope: 'all' });
+  });
+});
+
+describe('放宽的只读检索范围只多看视频条目', () => {
+  it('visibleTo：范围里的视频条目看得到，别处的文件看不到', () => {
+    const viewer: SpaceViewer = { kind: 'source', projectId: null, conversationId: 'c-y', readScope: 'all' };
+    const entry = (kind: SpaceEntry['kind'], projectId: string | null) =>
+      ({ kind, source: { projectId, conversationId: projectId ? null : 'c-other' }, origin: null }) as unknown as SpaceEntry;
+    expect(visibleTo(viewer, entry('video', 'p1'))).toBe(true);
+    expect(visibleTo(viewer, entry('image', 'p1'))).toBe(false);
+    expect(visibleTo({ ...viewer, readScope: 'unfiled' }, entry('video', 'p1'))).toBe(false);
+    expect(visibleTo({ ...viewer, readScope: 'unfiled' }, entry('video', null))).toBe(true);
+    expect(visibleTo({ ...viewer, readScope: 'unfiled' }, entry('document', null))).toBe(false);
   });
 });
