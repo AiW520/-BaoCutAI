@@ -26,12 +26,13 @@
 
   /* ---------- 能力表（§4）----------
      sizes：`{multiple, maxEdge, maxRatio, presets?}`（OpenAI / 本地；`presets: {k2: {aspect: [w,h]}}` 是某一档按画幅写死的尺寸，先查它再按长边算）、`{enum: {aspect: {normal: [w,h], k2: [w,h]}}}`、`'fixed'`（Codex 忽略尺寸）。
-     refs：0 = 不认参考图；n = 最多 n 张。 */
+     refs：0 = 不认参考图；n = 最多 n 张。
+     img2img：null = 不能以图为底重画；`{max, strength: {min, max, step, default}}` = 能，一次最多吃 max 张底图（2026-10-13）。 */
   const ENUM_1K = {'1:1': [1024, 1024], '16:9': [1344, 768], '9:16': [768, 1344], '4:3': [1152, 896], '3:4': [896, 1152], '2.35:1': [1536, 640]};
   const ENUM_2K = {'1:1': [2048, 2048], '16:9': [2688, 1536], '9:16': [1536, 2688], '4:3': [2304, 1792], '3:4': [1792, 2304], '2.35:1': [3072, 1280]};
   const enumSizes = (k2) => ({enum: Object.fromEntries(ASPECTS.map((a) => [a, {normal: ENUM_1K[a], k2: k2 ? ENUM_2K[a] : null}]))});
   const caps = (o) => Object.assign({aspects: ASPECTS, sizes: enumSizes(true), quality: ['normal', '2k'], maxN: 4, refs: 0,
-    negative: false, seed: false, transparent: false, promptMax: 4000, edit: false, steps: null}, o);
+    negative: false, seed: false, transparent: false, promptMax: 4000, edit: false, img2img: null, steps: null}, o);
 
   /* ---------- API 提供方种子表（§3.3）----------
      `api`：线上形状。价格是「每张 · 美元」两档（§9.1），写稿时未核实，落地时逐家从官方价目抄（§12.1）。 */
@@ -138,10 +139,12 @@
   /* 本地两档尺寸（2026-10-13）：1K 是长边 1024（与原先的几档相同）；2K 按 Qwen-Image-2.1 原生的约 4 MP 预设（1:1 2048²、16:9 2752×1536），
      各画幅取 32 的倍数，2.35:1 落在 3072×1312。2K 的耗时与内存还没在本机实测。
      参考图：Qwen-Image-2.1 的文本编码器是带视觉塔的 Qwen3-VL，能按一张底图加最多 9 张参考图做指令编辑——共 10 张，第一张是要改的图。
-     参考图只在本机读，不上传（`local: true` 让提示换一句）。 */
+     参考图只在本机读，不上传（`local: true` 让提示换一句）。
+     图生图：同一个模型包还能以一张底图为底、按「改动幅度」（diffusers 的 strength，0–1）重画；一次一张底图，选了几张就逐张各出一张。 */
   const LOCAL_2K = {'1:1': [2048, 2048], '16:9': [2752, 1536], '9:16': [1536, 2752], '4:3': [2400, 1792], '3:4': [1792, 2400], '2.35:1': [3072, 1312]};
   const LOCAL_CAPS = (steps) => caps({sizes: {multiple: 32, maxEdge: 3072, maxRatio: 3, presets: {k2: LOCAL_2K}}, quality: ['normal', '2k'], maxN: 1,
-    seed: true, promptMax: 1024, refs: 10, edit: true, local: true, steps});
+    seed: true, promptMax: 1024, refs: 10, edit: true, local: true, steps,
+    img2img: {max: 1, strength: {min: 0.1, max: 1, step: 0.05, default: 0.6}}});
   /* POC 实测（§6.2）：512² 20 步 ≈ 214 s、1024² ≈ 881 s、VAE 解码 10.4 s——每步秒数按像素线性插值 */
   const QWEN_PACE = {512: 9.9, 1024: 43.5, decode: 10.4};
   const LOCAL_MODELS = [
@@ -286,7 +289,7 @@
   /* ---------- 表单 ---------- */
   function blank(model) {
     const st = stepsOf(model);
-    return {prompt: '', model: model || null, aspect: '16:9', fit: true, quality: 'normal', n: 1, refs: [], negative: '', seed: '', transparent: false, steps: st ? st.default : 20, advanced: false};
+    return {prompt: '', model: model || null, aspect: '16:9', fit: true, quality: 'normal', n: 1, refs: [], refMode: 'ref', strength: null, negative: '', seed: '', transparent: false, steps: st ? st.default : 20, advanced: false};
   }
   /** 换模型：不认的画幅落到它的第一档、数量夹到上限、不认的旋钮清零 */
   function switchModel(f, id, extra) {
@@ -300,6 +303,7 @@
     if (!cap.negative) next.negative = '';
     if (!cap.seed) next.seed = '';
     if (!cap.transparent) next.transparent = false;
+    if (!cap.img2img) next.refMode = 'ref';
     // 步数跟着模型走：换进固定步数的模型就是那个数；从固定步数的模型换出来、或原值是上一只的默认，落到新模型的默认；否则夹进范围
     const st = cap.steps;
     if (st) {
@@ -320,6 +324,12 @@
     if ((f.n || 1) > cap.maxN) errs.push(`一次最多 ${cap.maxN} 张`);
     // 不认参考图的模型：已选的参考图这次不用，不算错（表单里写提示）；认的才按上限报
     if (cap.refs && (f.refs || []).length > cap.refs) errs.push(`参考图最多 ${cap.refs} 张`);
+    if (f.refMode === 'img2img' && !cap.img2img) errs.push('这只模型不能以图为底重画');
+    if (refMode(f, cap) === 'img2img') {
+      if (!(f.refs || []).length) errs.push('以图为底重画要先选一张底图');
+      const sr = cap.img2img.strength;
+      if (f.strength != null && (f.strength < sr.min || f.strength > sr.max)) errs.push(`改动幅度要在 ${sr.min}–${sr.max} 之间`);
+    }
     if (f.negative && !cap.negative) errs.push('这只模型不认负向提示');
     if (f.seed !== '' && f.seed != null && !cap.seed) errs.push('这只模型不认种子');
     if (f.seed !== '' && f.seed != null && !/^\d+$/.test(String(f.seed))) errs.push('种子要是整数');
@@ -353,11 +363,29 @@
     const refs = (f.refs || []).slice();
     return cap.refs ? refs.slice(0, cap.refs) : [];
   }
+  /* ---------- 参考图的两种用法（2026-10-13）----------
+     `ref`：几张图一起送进去出一张——认编辑的模型「按提示词改图」，不认的「作为参考」；
+     `img2img`：以图为底重画，改动幅度越小越像原图。模型一次只吃 `img2img.max` 张底图，多选的逐组各出一张。 */
+  const refMode = (f, cap) => (f.refMode === 'img2img' && cap.img2img ? 'img2img' : 'ref');
+  function refModes(cap) {
+    if (!cap.refs) return [];
+    const first = {k: 'ref', label: cap.edit ? '按提示词改图' : '作为参考'};
+    return cap.img2img ? [first, {k: 'img2img', label: '以图为底重画'}] : [first];
+  }
+  /** 改动幅度：草稿没给就用模型的默认值 */
+  const strengthOf = (f, cap) => (cap.img2img ? (f.strength != null ? f.strength : cap.img2img.strength.default) : null);
+  /** 这次出几张：以图为底重画按底图分组（一组一张），否则是表单的张数 */
+  function outputCount(f, cap) {
+    if (refMode(f, cap) === 'img2img') return Math.max(1, Math.ceil(usedRefs(f, cap).length / cap.img2img.max));
+    return Math.min(Math.max(1, f.n || 1), cap.maxN);
+  }
   /** 参考图那一行的提示：认 / 不认 / 超了 */
   function refsNote(f, cap, engineName) {
     const n = (f.refs || []).length;
     if (!cap.refs) return `${engineName || '这只模型'} 不认参考图${n ? `，已选的 ${n} 张这次不会用` : ''}`;
-    const tail = cap.edit ? (cap.local ? ' · 第一张是要改的图' : ' · 会按参考图编辑') : ' · 作为参考';
+    const tail = refMode(f, cap) === 'img2img'
+      ? (cap.img2img.max > 1 ? ` · 每 ${cap.img2img.max} 张底图一起出一张` : n > 1 ? ` · ${Math.min(n, cap.refs)} 张底图各重画一张` : ' · 以这张为底重画')
+      : cap.edit ? (cap.local ? ' · 第一张是要改的图' : ' · 会按参考图编辑') : ' · 作为参考';
     const where = cap.local ? ' · 只在这台电脑上读，不上传' : ' · 参考图会上传给服务商';
     return `最多 ${cap.refs} 张${tail}${n ? where : ''}${n > cap.refs ? ` · 超出的 ${n - cap.refs} 张不送` : ''}`;
   }
@@ -370,7 +398,8 @@
     const m = modelIn(list, f.model);
     if (!m || !m.price) return null;
     const per = f.quality === '2k' && m.price.k2 != null ? m.price.k2 : m.price.normal;
-    return {per, total: per * (f.n || 1), n: f.n || 1};
+    const n = outputCount(f, capabilities(f.model));
+    return {per, total: per * n, n};
   }
   /** 生成按钮旁那句：联网的算钱、本机的估时、Codex 说明慢 */
   function statusLine(f, list, size) {
@@ -380,8 +409,9 @@
     if (e.family === 'local') {
       if (!e.measuredPace) return '本机 · 不联网 · 耗时取决于设备';
       const s = size || [1024, 1024];
-      const eta = localEta(f.model, s[0], s[1], f.steps);
-      return `本机 · 约 ${eta >= 90 ? Math.round(eta / 60) + ' 分钟' : eta + ' 秒'} · 不联网`;
+      const k = outputCount(f, capabilities(f.model));
+      const eta = localEta(f.model, s[0], s[1], f.steps) * k;
+      return `本机${k > 1 ? ` · ${k} 张` : ''} · 约 ${eta >= 90 ? Math.round(eta / 60) + ' 分钟' : eta + ' 秒'} · 不联网`;
     }
     const c = costOf(f, list);
     return `联网 · ${e.name}${c ? ` · ${c.n > 1 ? `${c.n} 张约 ${usd(c.total)}` : `每张约 ${usd(c.per)}`}` : ' · 价格以服务商为准'}`;
@@ -417,17 +447,22 @@
     const e = engineOf(list, f.model) || {name: '?', family: 'cloud'};
     const cap = capabilities(f.model);
     const size = resolveSize(cap, f.aspect, f.quality, f.size);
-    const n = e.family === 'agent' ? 1 : Math.min(f.n || 1, cap.maxN);
+    const mode = refMode(f, cap);
+    const used = usedRefs(f, cap);
+    const n = e.family === 'agent' ? 1 : outputCount(f, cap);
+    const per = mode === 'img2img' ? cap.img2img.max : 0;
     const c = costOf(f, list);
     return {
       id: 'img' + seq, seq, status: 'queued', pct: 0, taskId: null, ago: null,
       prompt: String(f.prompt || '').trim(), model: f.model, family: e.family, engineName: e.name,
       provider: e.family === 'cloud' ? e.name : null,
-      aspect: f.aspect, size, quality: f.quality, n, refs: usedRefs(f, cap), negative: f.negative || null,
+      aspect: f.aspect, size, quality: f.quality, n, refs: used, refMode: mode, strength: mode === 'img2img' ? strengthOf(f, cap) : null,
+      negative: f.negative || null,
       transparent: !!f.transparent, steps: e.family === 'local' ? f.steps : null,
       cost: c ? c.total : null,
-      eta: e.family === 'local' ? (e.measuredPace && size ? localEta(f.model, size[0], size[1], f.steps) : null) : e.family === 'agent' ? 120 : 12,
-      images: Array.from({length: n}, (_, i) => { const seed = seedFor(f, i, rnd); return {id: `img${seq}-${i + 1}`, name: `图片-${pad(seq)}-${shortName(f.model)}-${seed}.png`, seed, art: demoArt(seed)}; }),
+      eta: e.family === 'local' ? (e.measuredPace && size ? localEta(f.model, size[0], size[1], f.steps) * n : null) : e.family === 'agent' ? 120 : 12,
+      images: Array.from({length: n}, (_, i) => { const seed = seedFor(f, i, rnd); return {id: `img${seq}-${i + 1}`, name: `图片-${pad(seq)}-${shortName(f.model)}-${seed}.png`, seed, art: demoArt(seed),
+        base: per ? used.slice(i * per, (i + 1) * per) : null}; }),
       form: Object.assign({}, f),
     };
   }
@@ -435,13 +470,15 @@
   function recordMeta(r) {
     const model = isCloud(r.model) ? parse(r.model).model : isAgent(r.model) ? 'Codex' : (LOCAL[r.model] || {name: r.model}).name;
     return [r.size ? r.size.join('×') : '尺寸由 Codex 定', r.aspect, r.engineName, isAgent(r.model) ? null : model, r.n > 1 ? `${r.n} 张` : null,
+      r.refMode === 'img2img' ? `以图为底 · 幅度 ${r.strength}` : null,
       r.cost != null ? `约 ${usd(r.cost)}` : r.family === 'local' ? '本机' : r.family === 'agent' ? '订阅额度' : null].filter(Boolean).join(' · ');
   }
   /** 出处侧车（§7.5 的 JSON 形状）：收进素材库时随文件写一份 */
   function provenance(r, img) {
     return {kind: 'image-gen', v: 1, model: r.model, provider: r.family === 'cloud' ? providerOf(r.model) : r.family,
       engineName: r.engineName, modelName: isCloud(r.model) ? parse(r.model).model : null,
-      prompt: r.prompt, negative: r.negative, aspect: r.aspect, size: r.size, quality: r.quality, seed: img.seed, refs: r.refs,
+      prompt: r.prompt, negative: r.negative, aspect: r.aspect, size: r.size, quality: r.quality, seed: img.seed, refs: img.base || r.refs,
+      refMode: r.refMode || 'ref', strength: r.strength != null ? r.strength : null,
       createdAt: r.createdAt || null, elapsedMs: r.elapsed != null ? Math.round(r.elapsed * 1000) : null,
       cost: r.cost != null ? {amount: r.cost, currency: 'USD'} : null,
       license: r.family === 'cloud' ? (modelOf(r.model) && !providerById(providerOf(r.model)).custom ? 'provider-terms' : 'unknown') : r.family === 'local' ? 'local' : 'provider-terms'};
@@ -499,7 +536,8 @@
     const name = !e ? '默认模型' : e.family === 'cloud' ? `${e.name} ${parse(f.model).model}（云端）` : e.family === 'agent' ? 'Codex 画图' : e.name + '（本机）';
     const parts = [`模型 ${name}`, `画幅 ${f.aspect}`];
     if ((f.n || 1) > 1) parts.push(`${f.n} 张`);
-    if (f.refs && f.refs.length) parts.push(`参考图 ${f.refs.length} 张`);
+    const cap = capabilities(f.model);
+    if (f.refs && f.refs.length) parts.push(refMode(f, cap) === 'img2img' ? `以参考图为底重画 ${f.refs.length} 张（改动幅度 ${strengthOf(f, cap)}）` : `参考图 ${f.refs.length} 张`);
     if (f.quality === '2k') parts.push('2K');
     if (f.transparent) parts.push('透明底');
     return `用 BaoCut 生成图片（bcut image）：${parts.join('，')}。生成好放进视频素材库，不要改我的提示词。要画的画面：\n\n${String(f.prompt || '').trim() || '（把要画的画面放在这里）'}`;
@@ -522,7 +560,7 @@
     engines, engineOf, modelIn, preferred, anyReady,
     resolveSize, checkSize, blank, switchModel, validate, costOf, statusLine, headerChip,
     makeRecord, recordMeta, provenance, toSource, phase, clock, stepProgress, timeLine, demoArt, agentPrompt, toolStatus,
-    addFileRefs, refInfo, usedRefs, refsNote, artColors, FILE_REFS,
+    addFileRefs, refInfo, usedRefs, refsNote, refMode, refModes, strengthOf, outputCount, artColors, FILE_REFS,
   };
   if (typeof module !== 'undefined') module.exports = BC_CLOUD_IMAGE;
   if (typeof window !== 'undefined') Object.assign(window, {BC_CLOUD_IMAGE});

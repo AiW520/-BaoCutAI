@@ -106,7 +106,7 @@
             {g.negative ? <><dt>不要出现</dt><dd>{g.negative}</dd></> : null}
             <dt>尺寸</dt><dd>{g.size ? g.size.join('×') : g.aspect}{g.quality === '2k' ? ' · 2K' : ''}{g.transparent ? ' · 透明底' : ''}</dd>
             <dt>种子</dt><dd>{g.seed}</dd>
-            {g.refs && g.refs.length ? <><dt>参考图</dt><dd>{g.refs.length} 张</dd></> : null}
+            {g.refs && g.refs.length ? <><dt>参考图</dt><dd>{g.refs.length} 张{g.refMode === 'img2img' ? ` · 以图为底重画 · 改动幅度 ${g.strength}` : ''}</dd></> : null}
             {g.steps ? <><dt>步数</dt><dd>{g.steps}</dd></> : null}
             <dt>时间</dt><dd>{g.createdAt || s.meta}</dd>
             <dt>许可</dt><dd>{IM.LICENSE_LABEL[g.license] || g.license || '按服务商条款'}</dd>

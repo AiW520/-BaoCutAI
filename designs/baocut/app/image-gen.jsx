@@ -308,6 +308,29 @@
     );
   }
 
+  /* ---------- 参考图的用法与改动幅度（2026-10-13）----------
+     模型能以图为底重画时才出这一行：「按提示词改图」把几张图一起送进去出一张，「以图为底重画」按改动幅度逐张重画。
+     改动幅度只在后者出现；出几张由底图数决定，所以那时不给「数量」。 */
+  function RefModeRow({f, set, cap}) {
+    const modes = IM.refModes(cap);
+    if (modes.length < 2) return null;
+    const mode = IM.refMode(f, cap);
+    const sr = cap.img2img.strength;
+    const v = IM.strengthOf(f, cap);
+    return (
+      <div className="imgen__refmode">
+        <Segmented size="s" value={mode} onChange={(k) => set({refMode: k})} items={modes} />
+        {mode === 'img2img' ? (
+          <div className="row gap8">
+            <span className="t-detail">改动幅度</span>
+            <Slider className="imgen__strength" label="改动幅度" value={v} min={sr.min} max={sr.max} step={sr.step} onChange={(x) => set({strength: x})} />
+            <span className="t-detail-xs">越小越像底图 · 底图按下面的画幅与尺寸裁切</span>
+          </div>
+        ) : null}
+      </div>
+    );
+  }
+
   /* ---------- 参考图：从素材库挑 ---------- */
   /* 参考图一行（§2.4 第 5 条）：素材库里选（面板给了 sources 才有）、从文件选（真开文件选择器）、拖图片进来。
      选进来的文件登记在 IM.FILE_REFS（只留名字与预览 url，正式版是拷进素材库再引用）。认不认、上限几张看能力表。 */
@@ -383,7 +406,7 @@
               <span className="t-section">参考图</span>
               {f.model && cap.refs ? <span className={cx('t-detail-xs', (f.refs || []).length > cap.refs && 'ttsw__over')}>{(f.refs || []).length} / {cap.refs}</span> : null}
             </div>
-            {f.model && cap.refs ? <RefsRow f={f} set={set} cap={cap} sources={sources} engineName={e ? e.name : null} />
+            {f.model && cap.refs ? <><RefsRow f={f} set={set} cap={cap} sources={sources} engineName={e ? e.name : null} /><RefModeRow f={f} set={set} cap={cap} /></>
               : <div className="imgen__refs imgen__refs--off">
                 <Btn size="s" icon="plus" disabled>选参考图</Btn>
                 <span className="t-detail-xs">{f.model ? IM.refsNote(f, cap, e ? e.name : null) : '先选一只模型'}</span>
@@ -413,7 +436,7 @@
           </ImageGenSection>
         ) : null}
 
-        {cap.maxN > 1 ? (
+        {cap.maxN > 1 && IM.refMode(f, cap) !== 'img2img' ? (
           <ImageGenSection compact={compact} title="数量">
             <div className="ttsw__row">
               <Stepper value={f.n} decTip="少一张" incTip="多一张" disabledDec={f.n <= 1} disabledInc={f.n >= cap.maxN}

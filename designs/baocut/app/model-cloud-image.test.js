@@ -325,3 +325,34 @@ test('本机按步进度：加载时没有剩余；走完一步起按平均步�
   assert.equal(I.clock(3723000), '1:02:03');
   assert.equal(I.timeLine(I.stepProgress([], 8, null, null)), null);
 });
+
+test('参考图两种用法（2026-10-13）：本地能以图为底重画，逐张各出一张；云端只有改图 / 参考', () => {
+  const lc = I.capabilities(I.LOCAL_TURBO_ID);
+  assert.deepEqual(I.refModes(lc).map((m) => m.label), ['按提示词改图', '以图为底重画']);
+  assert.deepEqual(I.refModes(I.capabilities('cloud:google/gemini-3-pro-image')).map((m) => m.k), ['ref'], 'Gemini 只作为参考');
+  assert.deepEqual(I.refModes(I.capabilities('cloud:zhipu/glm-image')), [], '不认参考图就没有用法');
+  const f = Object.assign(I.blank(I.LOCAL_TURBO_ID), {prompt: '改成水彩', refMode: 'img2img', refs: ['a', 'b', 'c']});
+  assert.equal(I.strengthOf(f, lc), 0.6);
+  assert.equal(I.outputCount(f, lc), 3, '一次一张底图：三张各出一张');
+  assert.match(I.refsNote(f, lc), /3 张底图各重画一张 · 只在这台电脑上读，不上传/);
+  assert.deepEqual(I.validate(f, lc), []);
+  assert.ok(I.validate(Object.assign({}, f, {refs: []}), lc).includes('以图为底重画要先选一张底图'));
+  assert.ok(I.validate(Object.assign({}, f, {strength: 0}), lc).some((e) => /改动幅度要在 0.1–1 之间/.test(e)));
+  const l = I.engines({installed: () => true, platform: 'macos-arm64'});
+  const r = I.makeRecord(f, 1, l, () => 0);
+  assert.equal(r.n, 3); assert.equal(r.refMode, 'img2img'); assert.equal(r.strength, 0.6);
+  assert.deepEqual(r.images.map((img) => img.base), [['a'], ['b'], ['c']]);
+  assert.match(I.recordMeta(r), /3 张 · 以图为底 · 幅度 0.6/);
+  assert.deepEqual(I.provenance(r, r.images[1]).refs, ['b']);
+  assert.equal(I.provenance(r, r.images[1]).refMode, 'img2img');
+  assert.match(I.statusLine(f, l, [1024, 1024]), /本机 · 3 张 · 约/);
+  assert.match(I.agentPrompt(f, l), /以参考图为底重画 3 张（改动幅度 0.6）/);
+  // 换到不能以图为底的模型：落回参考用法，参考图留着
+  const g = I.switchModel(f, 'cloud:openai/gpt-image-2');
+  assert.equal(g.refMode, 'ref'); assert.deepEqual(g.refs, ['a', 'b', 'c']);
+  assert.equal(I.outputCount(g, I.capabilities('cloud:openai/gpt-image-2')), 1);
+  // 改图用法：几张一起出一张
+  const h = Object.assign({}, f, {refMode: 'ref'});
+  assert.equal(I.outputCount(h, lc), 1);
+  assert.equal(I.makeRecord(h, 2, l, () => 0).images[0].base, null);
+});
