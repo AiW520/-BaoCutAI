@@ -18,7 +18,7 @@ BaoCut 编码代理的通用规则。本文只保留全局约束和阅读入口�
 | 产品、架构、格式、协议或领域行为 | [文档阅读路线](docs/README.md#阅读路线)，选择对应主题与章节 |
 | 修改规范或其他文档 | [文档约定](docs/README.md#文档约定)；[开发流程 §1](docs/development-workflow.md#1-规范与实现) |
 | 准备验证改动 | [开发流程 §2](docs/development-workflow.md#2-验证)；通过标准见[验收与测试](docs/acceptance/acceptance-spec.md) |
-| 修改用户可见 UI（原型先行） | [开发流程 §3](docs/development-workflow.md#3-多端同步)；图标见[仓库约定 §4](docs/repo-conventions.md#4-界面图标) |
+| 修改用户可见 UI（按改动分档） | [开发流程 §3](docs/development-workflow.md#3-多端同步)；图标见[仓库约定 §4](docs/repo-conventions.md#4-界面图标) |
 | 修改原型 | [原型 README](designs/baocut/README.md) → [原型局部协议](designs/baocut/AGENTS.md) |
 | 启动或重启设计网页 | [原型局部协议「HTTP 预览」](designs/baocut/AGENTS.md#http-预览) |
 | 修改提示词、语言处理或平台专属实现 | [开发流程 §4](docs/development-workflow.md#4-语言与平台) |
@@ -30,7 +30,7 @@ BaoCut 编码代理的通用规则。本文只保留全局约束和阅读入口�
 ## 通用约束
 
 - 协议、格式或公开行为有意变化时，在同一任务同步实现、对应规范与测试；发现冲突明确说明，不为迁就实现擅改规格。
-- UI 变化先只改原型并交用户确认，确认后才改 Electron 与 Web（[开发流程 §3](docs/development-workflow.md#3-多端同步)）；届时审计三个表面的对应功能并同步适用部分，无对应功能说明原因。后台改动未改变用户可见行为时不触发 UI 同步。
+- UI 变化按[开发流程 §3](docs/development-workflow.md#3-多端同步)分档：小而明确的直接改原型与 Electron / Web；简单但要取舍的先问评审模型；复杂或不可逆的先只改原型，交用户确认后再改实现。改实现时审计三个表面的对应功能并同步适用部分，无对应功能说明原因。后台改动未改变用户可见行为时不触发 UI 同步。
 - 验证按影响选择最小但充分的范围；视觉改动检查实际页面，文档改动核对链接、路径与命令，不把未执行的检查写成通过。
 - 产品能力不假定中文或英文；语言分支有明确兜底，平台专属代码条件化；系统集成必须审计 Windows / macOS 与 Web 的能力差异，按[开发流程 §4.1](docs/development-workflow.md#41-跨平台系统集成)验证。
 - 依赖变化同步相应 lockfile；生成物遵守所属目录规则，临时产物放仓库外的临时目录。
