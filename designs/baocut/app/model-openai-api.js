@@ -260,13 +260,13 @@
     const c = capBy(cap);
     const notFound = (hint) => ({error: 'model_not_found', message: `The model \`${w}\` does not exist or is not mapped to a downloaded model.`, hint});
     if (!w) {
-      if (!optional) return {error: 'invalid_request', param: 'model', message: 'Missing required field `model`.', hint: '没写 model。'};
+      if (!optional) return {error: 'invalid_request', message: 'Missing required field `model`.', hint: '没写 model。'};
       const d = ctx.dflt[cap];
       return d ? {model: d, via: 'default'} : {error: 'model_not_found', message: `No ${cap} model is downloaded.`, hint: `还没有下载${c.name}模型。`};
     }
     const hit = ctx.byId[w];
     if (hit) {
-      if (hit.cap !== cap) return {error: 'model_wrong_capability', param: 'model', message: `The model \`${w}\` is a ${hit.cap} model and cannot serve this endpoint.`, hint: `${w} 是${capBy(hit.cap).name}模型。`};
+      if (hit.cap !== cap) return {error: 'model_wrong_capability', message: `The model \`${w}\` is a ${hit.cap} model and cannot serve this endpoint.`, hint: `${w} 是${capBy(hit.cap).name}模型。`};
       if (!isReady(ctx, cap, w)) return notFound(`${hit.m.name} 还没有下载，去 设置 › 模型 › 本地模型 下载。`);
       return {model: hit.m, via: 'exact'};
     }
@@ -280,17 +280,20 @@
     return notFound(`${w} 不是本机模型，也不在模型映射里。`);
   }
 
-  /** GET /models 的 data：已下载的本机模型 + 能落到已下载模型的映射名。`onlyCap` = 某一类的独立端口。 */
+  /** 能力键 → 内核的能力名（`baocut.capability`）。 */
+  const CAPABILITY = {asr: 'transcribe', tts: 'synthesizeSpeech', image: 'generateImage'};
+  /** GET /models 的一项，形状同内核：`owned_by` 是 Provider，`baocut` 写能力、Provider、落到的模型与是不是映射名。 */
+  const modelEntry = (id, cap, modelId, alias) => ({id, object: 'model', created: 0, owned_by: 'local',
+    baocut: {capability: CAPABILITY[cap], providerId: 'local', modelId, alias}});
+  /** GET /models 的 data：已下载的本机模型 + 能落到已下载模型的映射名（落到几类就列几项）。`onlyCap` = 某一类的独立端口。 */
   function listModels(ctx, onlyCap) {
     const caps = CAPS.filter((c) => !onlyCap || c.k === onlyCap).map((c) => c.k);
     const out = [];
-    caps.forEach((cap) => ctx.ready[cap].forEach((m) => out.push({id: m.id, object: 'model', created: 0, owned_by: 'baocut',
-      x_baocut: {task: cap, name: m.name, default: !!ctx.dflt[cap] && ctx.dflt[cap].id === m.id}})));
-    ctx.map.forEach((r) => {
-      const lands = {};
-      caps.forEach((cap) => { const hit = resolveModel(r.name, cap, ctx); if (hit.model) lands[cap] = hit.model.id; });
-      if (Object.keys(lands).length) out.push({id: r.name, object: 'model', created: 0, owned_by: 'baocut', x_baocut: {mapsTo: lands}});
-    });
+    caps.forEach((cap) => ctx.ready[cap].forEach((m) => out.push(modelEntry(m.id, cap, m.id, false))));
+    ctx.map.forEach((r) => caps.forEach((cap) => {
+      const hit = resolveModel(r.name, cap, ctx);
+      if (hit.model) out.push(modelEntry(r.name, cap, hit.model.id, true));
+    }));
     return out;
   }
 
@@ -453,7 +456,10 @@
     const p = (n, w) => String(n).padStart(w, '0');
     return `${p(Math.floor(ms / 3600000), 2)}:${p(Math.floor(ms / 60000) % 60, 2)}:${p(Math.floor(ms / 1000) % 60, 2)}${sep}${p(ms % 1000, 3)}`;
   };
-  function transcriptBody(fmt, words) {
+  /** JSON 响应的 `baocut`（同内核）：这次的任务与实际用的 Provider、模型；任务号也在响应头 X-BaoCut-Job-Id。 */
+  const DEMO_JOB = 'job_01k7demo4p2x';
+  const trace = (modelId) => ({jobId: DEMO_JOB, providerId: 'local', modelId});
+  function transcriptBody(fmt, words, baocut) {
     const text = DEMO_SEGS.map((s) => s[2]).join('');
     if (fmt === 'text') return {type: 'text/plain', text};
     if (fmt === 'srt') return {type: 'text/plain', text: DEMO_SEGS.map((s, i) => `${i + 1}\n${tc(s[0], ',')} --> ${tc(s[1], ',')}\n${s[2]}\n`).join('\n')};
@@ -462,13 +468,14 @@
       const o = {task: 'transcribe', language: 'zh', duration: 12.4, text,
         segments: DEMO_SEGS.map((s, i) => ({id: i, start: s[0], end: s[1], text: s[2]}))};
       if (words) o.words = [{word: '大家', start: 0.0, end: 0.42}, {word: '好', start: 0.42, end: 0.61}, {word: '…', start: 0.61, end: 12.4}];
-      return {type: 'application/json', json: o};
+      return {type: 'application/json', json: {...o, baocut}};
     }
-    return {type: 'application/json', json: {text}};
+    return {type: 'application/json', json: {text, baocut}};
   }
-  const errBody = (code, message, param) => ({type: 'application/json',
-    json: {error: {message, type: ERRORS[code][1], param: param || null, code}}});
-  const fail = (code, message, param, hint) => ({status: ERRORS[code][0], ms: 12, body: errBody(code, message, param), hint});
+  /** 错误体同内核：`param` 恒为 null（说明写在 message 里）。 */
+  const errBody = (code, message) => ({type: 'application/json',
+    json: {error: {message, type: ERRORS[code][1], param: null, code}}});
+  const fail = (code, message, hint) => ({status: ERRORS[code][0], ms: 12, body: errBody(code, message), hint});
 
   /** ctx: ctxOf 的结果 + {seed, onlyCap}。返回 {status, ms, model?, alias?, body: {type, text?|json?|audio?|image?}, meta?, hint?}。 */
   function demoResponse(ep, values, ctx) {
@@ -478,28 +485,28 @@
       const hit = listModels(ctx, ctx.onlyCap).find((m) => m.id === String(v.model || '').trim());
       if (!hit) {
         const known = ctx.byId[String(v.model || '').trim()];
-        return fail('model_not_found', `The model \`${v.model || ''}\` does not exist.`, 'model',
+        return fail('model_not_found', `The model \`${v.model || ''}\` does not exist.`,
           known ? `${known.m.name} 还没有下载。` : `${v.model || '（空）'} 不是已下载的本机模型，也不是能落到已下载模型的映射名。`);
       }
       return {status: 200, ms: 9, body: {type: 'application/json', json: hit}};
     }
     const mp = ep.params.find((p) => p.kind === 'model');
     const r = resolveModel(v.model, ep.cap, ctx, !!mp.optionalModel);
-    if (r.error) return fail(r.error, r.message, r.param || (r.error === 'invalid_request' ? 'model' : null), r.hint);
+    if (r.error) return fail(r.error, r.message, r.hint);
     const model = r.model.id;
     const ok = (ms, body, meta) => ({status: 200, ms, model, alias: r.alias || null, body, meta});
     const missing = ep.params.find((p) => p.req && p.kind !== 'model' && (v[p.name] == null || String(p.kind === 'file' ? (v[p.name] || {}).name || '' : v[p.name]).trim() === ''));
-    if (missing) return fail('invalid_request', `Missing required field \`${missing.name}\`.`, missing.name, `没写 ${missing.name}。`);
+    if (missing) return fail('invalid_request', `Missing required field \`${missing.name}\`.`, `没写 ${missing.name}。`);
     const bad = ep.params.find((p) => p.reject && v[p.name] != null && v[p.name] !== '' && p.values.indexOf(v[p.name]) < 0);
-    if (bad) return fail(ep.cap === 'image' ? 'unsupported_param' : 'invalid_request', `\`${v[bad.name]}\` is not a supported ${bad.name}.`, bad.name, `${bad.name} 不收 ${v[bad.name]}。`);
+    if (bad) return fail(ep.cap === 'image' ? 'unsupported_param' : 'invalid_request', `\`${v[bad.name]}\` is not a supported ${bad.name}.`, `${bad.name} 不收 ${v[bad.name]}。`);
 
     if (ep.id === 'asr.transcriptions') {
-      return ok(2400, transcriptBody(v.response_format || 'json', (v['timestamp_granularities[]'] || []).indexOf('word') >= 0));
+      return ok(2400, transcriptBody(v.response_format || 'json', (v['timestamp_granularities[]'] || []).indexOf('word') >= 0, trace(model)));
     }
     if (ep.id === 'tts.speech') {
       const sup = ttsSupport(model);
       if (v.reference_audio && !sup.reference_audio) {
-        return fail('unsupported_param', `${model} does not accept \`reference_audio\`.`, 'reference_audio', `${r.model.name} 不收参考音频，换一只能克隆的模型。`);
+        return fail('unsupported_param', `${model} does not accept \`reference_audio\`.`, `${r.model.name} 不收参考音频，换一只能克隆的模型。`);
       }
       const dropped = ep.params.filter((p) => p.by && p.by !== 'reference_audio' && v[p.name] && !supports(p, model)).map((p) => p.name);
       const voice = sup.voice === 'preset'
@@ -511,24 +518,24 @@
         `${fmt.toUpperCase()} · ${voice}${dropped.length ? ` · 这只模型不看 ${dropped.join('、')}，已忽略` : ''}`);
     }
     if (ep.id === 'image.generations') {
-      if (Number(v.n) > 1) return fail('unsupported_param', `${model} can only generate 1 image per request.`, 'n', `${r.model.name} 一次只能画 1 张。`);
+      if (Number(v.n) > 1) return fail('unsupported_param', `${model} can only generate 1 image per request.`, `${r.model.name} 一次只能画 1 张。`);
       const size = v.size && v.size !== 'auto' ? v.size : '1024x576';
       const [w, h] = size.split('x').map(Number);
       if (w % 32 || h % 32) {
         const fix = (n) => Math.round(n / 32) * 32;
-        return fail('invalid_size', `\`${size}\` is not a valid size for \`${model}\`: width and height must be multiples of 32, the longer edge at most 1536 and the aspect ratio at most 3:1. Try \`${fix(w)}x${fix(h)}\`, or \`auto\` (1024x576).`, 'size', `宽高要是 32 的倍数，建议 ${fix(w)}x${fix(h)}，或者用 auto（1024x576）。`);
+        return fail('invalid_size', `\`${size}\` is not a valid size for \`${model}\`: width and height must be multiples of 32, the longer edge at most 1536 and the aspect ratio at most 3:1. Try \`${fix(w)}x${fix(h)}\`, or \`auto\` (1024x576).`, `宽高要是 32 的倍数，建议 ${fix(w)}x${fix(h)}，或者用 auto（1024x576）。`);
       }
       const range = imageSteps(model);
       const steps = v.steps !== '' && v.steps != null ? Number(v.steps) : range.dflt;
       if (!Number.isInteger(steps) || steps < range.min || steps > range.max) {
         const span = range.min === range.max ? `only runs at ${range.min} steps` : `takes ${range.min}–${range.max} steps`;
-        return fail('invalid_request', `\`${v.steps}\` is not a valid steps for \`${model}\`: this model ${span}.`, 'steps',
+        return fail('invalid_request', `\`${v.steps}\` is not a valid steps for \`${model}\`: this model ${span}.`,
           range.min === range.max ? `${r.model.name} 固定 ${range.min} 步，不写或写 ${range.min}。` : `步数要在 ${range.min}–${range.max} 之间。`);
       }
       const seed = v.seed !== '' && v.seed != null ? Number(v.seed) : (ctx.seed || 20250927);
       return ok(steps * 2600, {type: 'application/json', image: {w, h, seed},
         json: {created: 1790000000, data: [{b64_json: 'iVBORw0KGgoAAAANSUhEUgAABUAAAAMA…（约 1.9 MB）'}], output_format: 'png', size: `${w}x${h}`,
-          x_baocut: {model, seed, steps, elapsedMs: steps * 2600, license: 'non-commercial'}}},
+          baocut: {...trace(model), seed, ...(v.steps !== '' && v.steps != null ? {steps} : {})}}},
         `${w} × ${h} · PNG · 种子 ${seed} · ${steps} 步`);
     }
     return ok(10, {type: 'application/json', json: {}});

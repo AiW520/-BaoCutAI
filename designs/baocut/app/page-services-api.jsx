@@ -225,7 +225,7 @@
             ) : null}
             <div className="t-section oai-doc__hd">返回</div>
             <p className="t-detail oai-ret">{RETURNS[ep.resp]}</p>
-            {ep.cap ? <p className="t-detail-xs oai-ret">响应头 <code>X-BaoCut-Model</code> 写着这次实际用的本机模型；用映射名请求时看它就知道落到了哪只。</p> : null}
+            {ep.cap ? <p className="t-detail-xs oai-ret">响应头 <code>X-BaoCut-Job-Id</code> 是这次的任务号；JSON 响应的 <code>baocut</code> 另写着实际用的 Provider 与模型（<code>providerId</code>、<code>modelId</code>），用映射名请求时看它就知道落到了哪只。</p> : null}
             <div className="t-section oai-doc__hd">错误码</div>
             <div className="oai-errs">
               {ep.errors.map((code) => (
@@ -235,8 +235,8 @@
                 </div>
               ))}
             </div>
-            <p className="t-detail-xs oai-ret">错误体与 OpenAI 同形：<code>{'{"error":{"message","type","param","code"}}'}</code>。</p>
-            {ep.cap === 'image' ? <p className="t-detail-xs oai-ret">Qwen-Image-2.1 与 Turbo 的权重只许非商业用途，响应里 <code>x_baocut.license</code> 写的是 non-commercial。</p> : null}
+            <p className="t-detail-xs oai-ret">错误体与 OpenAI 同形：<code>{'{"error":{"message","type","param","code"}}'}</code>；<code>param</code> 恒为 null，哪个字段不对写在 <code>message</code> 里。</p>
+            {ep.cap === 'image' ? <p className="t-detail-xs oai-ret">Qwen-Image-2.1 与 Turbo 的权重只许非商业用途（许可见 设置 › 模型 › 本地模型），响应里不另写许可。</p> : null}
           </div>
           <TryIt ep={ep} key={ep.id} />
         </div>
@@ -245,11 +245,11 @@
   }
 
   const RETURNS = {
-    models: '{object:"list", data:[{id, object:"model", created, owned_by:"baocut", x_baocut}]}。本机模型的 x_baocut 是 {task, name, default}；映射名的是 {mapsTo:{asr:"…"}}，写着每一类落到哪只。',
+    models: '{object:"list", data:[{id, object:"model", created, owned_by:"local", baocut}]}。baocut 是 {capability, providerId, modelId, alias}：capability 为 transcribe、synthesizeSpeech 或 generateImage；映射名的 alias 为 true，modelId 写着它落到哪只，落到几类就列几项。',
     model: '一个 Model 对象，形状同上。',
-    text: 'json 返回 {text}；verbose_json 返回 task、language、duration、text、segments，要了 word 时再带 words；text / srt / vtt 是纯文本。',
+    text: 'json 返回 {text, baocut}；verbose_json 返回 task、language、duration、text、segments，要了 word 时再带 words，另有 baocut；text / srt / vtt 是纯文本。baocut 是 {jobId, providerId, modelId}。',
     audio: '音频字节，Content-Type 随 response_format（audio/mpeg、audio/wav…）。',
-    image: '{created, data:[{b64_json}], output_format:"png", size, x_baocut:{model, seed, steps, elapsedMs, license}}。',
+    image: '{created, data:[{b64_json}], output_format:"png", size, baocut:{jobId, providerId, modelId, seed, steps}}。seed 是这次冻结的种子（没写时抽的那个）；steps 只在请求写了时带回。',
   };
 
   /** 收这个字段的模型（只列目录里的语音合成模型，按 TTS_SUPPORT）。 */

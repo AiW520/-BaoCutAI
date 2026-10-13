@@ -113,7 +113,11 @@ test('/models：已下载模型 + 能落地的映射名；独立端口只列那�
   const ids = A.listModels(ctx).map((m) => m.id);
   assert.ok(ids.indexOf('moss-transcribe') >= 0 && ids.indexOf('whisper-1') >= 0 && ids.indexOf('tts-1') >= 0);
   assert.ok(ids.indexOf('gpt-image-1') < 0, '图像没下载，映射名不列');
-  assert.deepEqual(A.listModels(ctx).find((m) => m.id === 'whisper-1').x_baocut.mapsTo, {asr: 'moss-transcribe'});
+  // 形状同内核：owned_by 是 Provider；baocut 写能力、Provider、落到的模型与是不是映射名
+  assert.deepEqual(A.listModels(ctx).find((m) => m.id === 'whisper-1'),
+    {id: 'whisper-1', object: 'model', created: 0, owned_by: 'local', baocut: {capability: 'transcribe', providerId: 'local', modelId: 'moss-transcribe', alias: true}});
+  assert.deepEqual(A.listModels(ctx).find((m) => m.id === 'moss-transcribe').baocut, {capability: 'transcribe', providerId: 'local', modelId: 'moss-transcribe', alias: false});
+  assert.ok(A.listModels(ctx).every((m) => !('x_baocut' in m)));
   const asrOnly = A.listModels(ctx, 'asr').map((m) => m.id);
   assert.ok(asrOnly.indexOf('tts-1') < 0 && asrOnly.indexOf('qwen3-tts-0.6b-customvoice') < 0);
   // 一只都没下载时是空列表
@@ -202,6 +206,10 @@ test('演示响应：状态码与错误体照 OpenAI 的形状', () => {
   const nf = A.demoResponse(asr, {...A.initialValues(asr, ctx), model: 'whisper-2'}, ctx);
   assert.equal(nf.status, 404);
   assert.deepEqual(Object.keys(nf.body.json.error).sort(), ['code', 'message', 'param', 'type']);
+  assert.equal(nf.body.json.error.param, null, 'param 恒为 null，同内核');
+  const json = A.demoResponse(asr, {...A.initialValues(asr, ctx), response_format: 'json'}, ctx).body.json;
+  assert.deepEqual(json.baocut, {jobId: json.baocut.jobId, providerId: 'local', modelId: 'moss-transcribe'});
+  assert.ok(/^job_/.test(json.baocut.jobId));
   assert.equal(nf.body.json.error.code, 'model_not_found');
   assert.equal(nf.body.json.error.type, 'invalid_request_error');
   assert.equal(A.demoResponse(asr, {...A.initialValues(asr, ctx), model: ''}, ctx).status, 400);
@@ -220,7 +228,8 @@ test('演示响应：状态码与错误体照 OpenAI 的形状', () => {
   const good = A.demoResponse(img, iv, ctx);
   assert.equal(good.status, 200);
   assert.equal(good.model, 'qwen-image-2.1');
-  assert.equal(good.body.json.x_baocut.license, 'non-commercial');
+  assert.deepEqual(Object.keys(good.body.json.baocut).sort(), ['jobId', 'modelId', 'providerId', 'seed'], '没写 steps 不带回');
+  assert.equal(good.body.json.baocut.modelId, 'qwen-image-2.1');
   assert.equal(good.body.json.size, '1024x576', 'auto = 模型缺省尺寸（与内核 resolve_size 一致）');
   const bad = A.demoResponse(img, {...iv, size: '1000x1000'}, ctx);
   assert.equal(bad.body.json.error.code, 'invalid_size');
@@ -246,14 +255,15 @@ test('出图的步数按模型：不写用默认，Turbo 固定 8 步，超出�
   const iv = A.initialValues(img, ctx);
   assert.equal(iv.steps, '', '表单不预填步数');
   assert.ok(A.sentFields(img, iv).every(([p]) => p.name !== 'steps'));
-  assert.equal(A.demoResponse(img, iv, ctx).body.json.x_baocut.steps, 20);
+  assert.ok(/ 20 步$/.test(A.demoResponse(img, iv, ctx).meta));
   const turbo = {...iv, model: 'qwen-image-2.1-turbo'};
-  assert.equal(A.demoResponse(img, turbo, ctx).body.json.x_baocut.steps, 8);
-  assert.equal(A.demoResponse(img, {...turbo, steps: 8}, ctx).status, 200);
+  assert.ok(/ 8 步$/.test(A.demoResponse(img, turbo, ctx).meta));
+  assert.equal(A.demoResponse(img, turbo, ctx).body.json.baocut.steps, undefined, '没写 steps 不带回');
+  assert.equal(A.demoResponse(img, {...turbo, steps: 8}, ctx).body.json.baocut.steps, 8);
   const off = A.demoResponse(img, {...turbo, steps: 20}, ctx);
   assert.equal(off.status, 400);
   assert.equal(off.body.json.error.code, 'invalid_request');
-  assert.equal(off.body.json.error.param, 'steps');
+  assert.equal(off.body.json.error.param, null);
   assert.ok(/only runs at 8 steps/.test(off.body.json.error.message));
   assert.equal(A.demoResponse(img, {...iv, steps: 44}, ctx).body.json.error.code, 'invalid_request');
   assert.equal(A.demoResponse(img, {...iv, steps: 40}, ctx).status, 200);
