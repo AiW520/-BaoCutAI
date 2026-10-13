@@ -3530,10 +3530,20 @@
   const fromCue = (video, id) => ({id: `${video}:${id}`, video, cue: id, t: C(id).start, end: C(id).end, sp: C(id).sp, text: C(id).text});
   const semantic = {
     packages: [
-      {id: 'sem-text', name: '文字搜索', size: '165 MB', channels: ['text'],
-       desc: '讲话内容与文档：Space 搜索、写作按主题选材、术语候选、翻译记忆、重录候选都用它。'},
-      {id: 'sem-full', name: '多模态搜索', size: '485 MB', channels: ['text', 'visual', 'audio'],
-       desc: '在文字之外再认画面与声音。装了它不必再装文字搜索。画面与声音的检索在后续版本开放。'},
+      /* parts：一次下载的几个部分（packages/models embedding-bundles.ts）。模型文件从模型仓库下，LiteRT-LM 运行时从 GitHub 发布页下，
+         两种来源各自可换（BC_DLSRC）；按顺序下，下好的先存下，没下成的那一部分补齐时单独下 */
+      {id: 'sem-text', name: '文字搜索', size: '200 MB', channels: ['text'], model: 'EmbeddingGemma 2 Text 270M',
+       desc: '讲话内容与文档：Space 搜索、写作按主题选材、术语候选、翻译记忆、重录候选都用它。',
+       parts: [
+         {id: 'embedding', name: '模型文件', size: 157, repo: 'litert-community/embeddinggemma-2-text-270m-litert-lm'},
+         {id: 'litertlm-runtime', name: 'LiteRT-LM 运行时', size: 43, release: 'google-ai-edge/LiteRT-LM v0.18.0'},
+       ]},
+      {id: 'sem-full', name: '多模态搜索', size: '505 MB', channels: ['text', 'visual', 'audio'], model: 'EmbeddingGemma 2 740M',
+       desc: '在文字之外再认画面与声音。装了它不必再装文字搜索。画面与声音的检索在后续版本开放。',
+       parts: [
+         {id: 'embedding', name: '模型文件', size: 462, repo: 'litert-community/embeddinggemma-2-740m-litert-lm'},
+         {id: 'litertlm-runtime', name: 'LiteRT-LM 运行时', size: 43, release: 'google-ai-edge/LiteRT-LM v0.18.0'},
+       ]},
     ],
     /* 实际后端：自检后选的那一个（v0.1 §4.4），不是「检测到显卡就用 GPU」 */
     backend: {k: 'gpu', label: 'GPU · Metal', note: '自检通过；失败会自动退回 CPU'},
