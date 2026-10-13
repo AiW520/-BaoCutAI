@@ -81,7 +81,7 @@ const PEAKS_RETRY_MS = 1000;
 const FAILURE_TTL_MS = 60_000;
 /** 镜头切换的 ffmpeg 输出上限（字节）：阈值很低时每帧一行，超了就停。 */
 const SCENE_OUTPUT_MAX_BYTES = 8 * 1024 * 1024;
-/** 探测 WebM 的编码与时长（`media.playback`）：时限与输出上限。 */
+/** 探测播放源的编码与时长（`media.playback`）：时限与输出上限。 */
 const PROBE_TIMEOUT_MS = 20_000;
 const PROBE_MAX_BYTES = 64 * 1024;
 /** 记住这么多个文件的探测结果，多了整个清掉重来。 */
@@ -95,10 +95,11 @@ export type PlaybackPreparation =
   | { status: 'pending'; retryAfterMs: number; progress?: number }
   | { status: 'ready'; root: string; file: string };
 
-/** WebM 源文件的首条画面与声音的编码（ffprobe 的 `codec_name`，没有这条流是 null）与时长（秒）。 */
+/** 播放源的首条画面与声音的编码（ffprobe 的 `codec_name`，没有这条流是 null）、透明通道与时长（秒）。 */
 interface PlaybackSource {
   video: string | null;
   audio: string | null;
+  alpha: boolean;
   durationSec: number | null;
 }
 
@@ -283,40 +284,50 @@ export class MediaAnalysis {
   }
 
   /**
-   * WebM 的播放地址（架构设计 §4.5）。首条画面与声音的编码都在 `playable`（客户端能原生解码的编码）里时回 `original`，
-   * 直接放原文件；否则用 Runtime 自己的 H.264/AAC 兼容副本缓存，编码中回 `pending` 与进度。不写项目与原文件。
+   * WebM / QuickTime 的播放地址（架构设计 §4.5）。客户端能放的 WebM 回 `original`；否则准备播放副本。
+   * 不透明用 H.264/AAC，带 alpha 用 VP9/Opus；编码中回 `pending` 与进度。不写项目与原文件。
    */
-  async playback(realPath: string, playable: readonly string[] = []): Promise<PlaybackPreparation> {
+  async playback(realPath: string, playable: readonly string[] = [], mimeType = 'video/webm'): Promise<PlaybackPreparation> {
     if (this.#closed) throw new RpcError('internal', RcRuntime.runtimeStopping());
+    const quicktime = mimeType === 'video/quicktime';
+    const demuxers = quicktime ? 'mov' : 'matroska,webm';
     const identity = async () => {
       const stat = await fs.stat(realPath, { bigint: true }).catch(() => { throw new RpcError('not-found', RcRuntime.fileNotFound()); });
-      return crypto.createHash('sha256').update(JSON.stringify(['webm-h264-aac-v1', realPath, String(stat.size), String(stat.mtimeNs)])).digest('hex');
+      return crypto.createHash('sha256').update(JSON.stringify(['playback-alpha-v2', demuxers, realPath, String(stat.size), String(stat.mtimeNs)])).digest('hex');
     };
     const key = await identity();
-    if (playable.length > 0) {
-      const source = await this.#playbackSource(realPath, key);
+    const source = await this.#playbackSource(realPath, key, demuxers);
+    // MOV may contain ProRes 4444. Never guess opaque when its alpha cannot be inspected.
+    if (quicktime && !source) throw new RpcError('internal', RcRuntime.ffmpegCannotRead());
+    if (!quicktime && playable.length > 0) {
       if (source && (source.video !== null || source.audio !== null) && [source.video, source.audio].every((codec) => codec === null || playable.includes(codec))) {
         return { status: 'original' };
       }
     }
     const root = path.join(this.#options.cacheDir, 'playback');
-    const file = path.join(root, `${key}.mp4`);
+    const alpha = source?.alpha ?? false;
+    const file = path.join(root, `${key}.${alpha ? 'webm' : 'mp4'}`);
     if ((await fs.stat(file).catch(() => null))?.size) return { status: 'ready', root, file };
     this.#recentFailure(file);
     if (!this.#playbackJobs.has(file)) {
       const job = this.#playbackSlots.run(async () => {
         if (await identity() !== key) throw new RpcError('not-found', RcRuntime.fileNotFound());
         await fs.mkdir(root, { recursive: true });
-        const temporary = `${file}.${crypto.randomBytes(6).toString('hex')}.tmp.mp4`;
+        const temporary = `${file}.${crypto.randomBytes(6).toString('hex')}.tmp.${alpha ? 'webm' : 'mp4'}`;
         // 进度按 `-progress` 报的输出时刻除以源时长（时长探测不到就不报）。
-        const total = (await this.#playbackSource(realPath, key))?.durationSec ?? null;
+        const total = source?.durationSec ?? null;
+        // FFmpeg's native VP8/VP9 decoder ignores WebM alpha; libvpx decodes it.
+        const before = alpha && !quicktime && (source?.video === 'vp8' || source?.video === 'vp9')
+          ? ['-c:v', source.video === 'vp9' ? 'libvpx-vp9' : 'libvpx'] : [];
+        const encoding = alpha
+          ? ['-c:v', 'libvpx-vp9', '-deadline', 'realtime', '-cpu-used', '4', '-crf', '23', '-b:v', '0', '-pix_fmt', 'yuva420p', '-auto-alt-ref', '0', '-c:a', 'libopus', '-b:a', '192k']
+          : ['-c:v', 'libx264', '-preset', 'ultrafast', '-crf', '23', '-pix_fmt', 'yuv420p', '-c:a', 'aac', '-b:a', '192k', '-movflags', '+faststart'];
         let carry = '';
         try {
-          await this.#ffmpeg({ realPath, demuxers: 'matroska,webm' }, [
+          await this.#ffmpeg({ realPath, demuxers, before }, [
             '-y', '-map', '0:v:0?', '-map', '0:a:0?', '-sn', '-dn',
             '-vf', "scale=w='min(1280,iw)':h='min(1280,ih)':force_original_aspect_ratio=decrease:force_divisible_by=2",
-            '-c:v', 'libx264', '-preset', 'ultrafast', '-crf', '23', '-pix_fmt', 'yuv420p',
-            '-threads', '2', '-c:a', 'aac', '-b:a', '192k', '-movflags', '+faststart',
+            ...encoding, '-threads', '2',
             '-progress', 'pipe:1', '-nostats', temporary,
           ], {
             timeoutMs: 2 * 60 * 60 * 1000,
@@ -332,7 +343,7 @@ export class MediaAnalysis {
             },
           });
           // Decode the first samples of both optional streams before atomic publication.
-          await this.#ffmpeg({ realPath: temporary, demuxers: 'mov,mp4,m4a,3gp,3g2,mj2' }, [
+          await this.#ffmpeg({ realPath: temporary, demuxers: alpha ? 'matroska,webm' : 'mov', before: alpha ? ['-c:v', 'libvpx-vp9'] : [] }, [
             '-map', '0:v:0?', '-map', '0:a:0?', '-t', '0.1', '-f', 'null', '-',
           ], { timeoutMs: 60_000, onData: () => {} });
           if (await identity() !== key) throw new RpcError('not-found', RcRuntime.fileNotFound());
@@ -354,10 +365,10 @@ export class MediaAnalysis {
   }
 
   /** 源文件的编码与时长（按身份记住，同时的请求共用一次探测）。没有 ffprobe、探测失败或认不出时 null。 */
-  #playbackSource(realPath: string, key: string): Promise<PlaybackSource | null> {
+  #playbackSource(realPath: string, key: string, demuxers: string): Promise<PlaybackSource | null> {
     let probe = this.#playbackSources.get(key);
     if (!probe) {
-      probe = this.#probeWebm(realPath).catch((error: unknown) => {
+      probe = this.#probePlayback(realPath, demuxers).catch((error: unknown) => {
         // 不写路径：错误信息里可能带着它。
         this.#log.warn('ffprobe failed', { error: (error as NodeJS.ErrnoException)?.code ?? (error as Error)?.name ?? 'Error' });
         return null;
@@ -368,13 +379,13 @@ export class MediaAnalysis {
     return probe;
   }
 
-  /** 跑一次 ffprobe：不经 shell，只许读本地文件、只许用 Matroska / WebM 解复用器。 */
-  async #probeWebm(realPath: string): Promise<PlaybackSource | null> {
+  /** 跑一次 ffprobe：不经 shell，只许读本地文件、只许用源容器对应的解复用器。 */
+  async #probePlayback(realPath: string, demuxers: string): Promise<PlaybackSource | null> {
     if (!this.#options.ffprobe || this.#closed) return null;
     const { command, env } = await this.#options.ffprobe();
     const args = [
-      '-v', 'error', '-protocol_whitelist', 'file', '-format_whitelist', 'matroska,webm',
-      '-show_entries', 'stream=codec_type,codec_name:format=duration', '-of', 'json', `file:${realPath}`,
+      '-v', 'error', '-protocol_whitelist', 'file', '-format_whitelist', demuxers,
+      '-show_entries', 'stream=codec_type,codec_name,pix_fmt:stream_tags=alpha_mode:format=duration', '-of', 'json', `file:${realPath}`,
     ];
     const stdout = await new Promise<string>((resolve, reject) => {
       const child = execFile(command, args, { env, timeout: PROBE_TIMEOUT_MS, maxBuffer: PROBE_MAX_BYTES, windowsHide: true }, (error, out) => {
@@ -384,13 +395,15 @@ export class MediaAnalysis {
       });
       this.#children.add(child);
     });
-    const parsed = JSON.parse(stdout) as { streams?: { codec_type?: unknown; codec_name?: unknown }[]; format?: { duration?: unknown } };
+    const parsed = JSON.parse(stdout) as { streams?: { codec_type?: unknown; codec_name?: unknown; pix_fmt?: string; tags?: { alpha_mode?: string } }[]; format?: { duration?: unknown } };
     const first = (type: string) => {
       const name = parsed.streams?.find((stream) => stream.codec_type === type)?.codec_name;
       return typeof name === 'string' ? name : null;
     };
     const duration = Number(parsed.format?.duration);
-    return { video: first('video'), audio: first('audio'), durationSec: Number.isFinite(duration) && duration > 0 ? duration : null };
+    const video = parsed.streams?.find((stream) => stream.codec_type === 'video');
+    const alpha = !!video && (/^(yuva|gbrap|rgba|bgra|argb|abgr|ya)/.test(video.pix_fmt ?? '') || video.tags?.alpha_mode === '1');
+    return { video: first('video'), audio: first('audio'), alpha, durationSec: Number.isFinite(duration) && duration > 0 ? duration : null };
   }
 
   /** 素材声音的峰值。没有缓存时启动分析，等一小会儿；还没做完就回 `pending`。 */

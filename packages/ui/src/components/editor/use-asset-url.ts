@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import type { Id, VersionRef } from '@baocut/protocol';
 import { useRuntime } from '../../runtime/context.tsx';
 import { mediaUrlKey } from '../../runtime/media-url-cache.ts';
+import { PlaybackPreparationError } from '../../runtime/media-playback.ts';
 import { useConnection } from '../../state/connection-store.ts';
 
 /**
@@ -9,11 +10,11 @@ import { useConnection } from '../../state/connection-store.ts';
  * 媒体元素报错时调用 `retry` 重新取一次；重新连上之后也重新取。
  * 地址经视频控制器的地址缓存要（同一素材版本共用一个请求）；缓存里已有新鲜的地址时第一次渲染就给出。
  */
-export function useAssetUrl(videoId: Id | null, asset: VersionRef): { url: string | null; error: string | null; retry(): void } {
+export function useAssetUrl(videoId: Id | null, asset: VersionRef): { url: string | null; error: string | null; preparationFailed: boolean; retry(): void } {
   const urls = useRuntime().videos.mediaUrls;
   const connected = useConnection((s) => s.state.status === 'connected');
   const key = videoId ? mediaUrlKey(videoId, asset) : null;
-  const initial = () => ({ key, url: videoId ? urls.peek(videoId, asset) : null, error: null as string | null });
+  const initial = () => ({ key, url: videoId ? urls.peek(videoId, asset) : null, error: null as string | null, preparationFailed: false });
   const [state, setState] = useState(initial);
   // 换了素材（或视频）时不拿上一个的地址或错误顶着：先看缓存，没有就空着，等这次的结果。
   const current = state.key === key ? state : initial();
@@ -33,9 +34,9 @@ export function useAssetUrl(videoId: Id | null, asset: VersionRef): { url: strin
     urls.get(videoId, target).then(
       (url) => {
         if (cancelled) return;
-        setState((prev) => (prev.key === k && prev.url === url && prev.error === null ? prev : { key: k, url, error: null }));
+        setState((prev) => (prev.key === k && prev.url === url && prev.error === null ? prev : { key: k, url, error: null, preparationFailed: false }));
       },
-      (error: Error) => !cancelled && setState({ key: k, url: null, error: error.message }),
+      (error: Error) => !cancelled && setState({ key: k, url: null, error: error.message, preparationFailed: error instanceof PlaybackPreparationError }),
     );
     return () => {
       cancelled = true;
@@ -50,5 +51,5 @@ export function useAssetUrl(videoId: Id | null, asset: VersionRef): { url: strin
     }
     setAttempt((n) => (n < 3 ? n + 1 : n));
   }, [urls, videoId, asset.id, asset.revision]);
-  return { url: current.url, error: current.error, retry };
+  return { url: current.url, error: current.error, preparationFailed: current.preparationFailed, retry };
 }

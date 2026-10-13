@@ -312,24 +312,30 @@ function MediaSource({
   onOutcome?: (mediaKey: MediaKey, asset: VersionRef, outcome: MediaOutcome) => void;
 }) {
   const { engine } = useEditorActions();
-  const { url, error, retry } = useAssetUrl(videoId, asset);
+  const { url, error, preparationFailed, retry } = useAssetUrl(videoId, asset);
   const [element, setElement] = useState<HTMLVideoElement | HTMLImageElement | HTMLAudioElement | null>(null);
+  const decodeFailures = useRef(0);
   useEffect(() => {
     engine.register(mediaKey, element);
     return () => engine.register(mediaKey, null);
   }, [engine, mediaKey, element]);
   const { id, revision } = asset;
   useEffect(() => {
-    if (error) onOutcome?.(mediaKey, { id, revision }, { kind: 'unresolved' });
-  }, [error, onOutcome, mediaKey, id, revision]);
+    if (error) onOutcome?.(mediaKey, { id, revision }, preparationFailed ? { kind: 'preparation-error', message: error } : { kind: 'unresolved' });
+  }, [error, preparationFailed, onOutcome, mediaKey, id, revision]);
   if (!url) return null;
   if (kind === 'image') return <img ref={setElement} src={url} crossOrigin="anonymous" alt="" draggable={false} onError={retry} />;
   const failed = (event: SyntheticEvent<HTMLMediaElement>) => {
     const problem = event.currentTarget.error;
     onOutcome?.(mediaKey, asset, { kind: 'error', code: problem?.code ?? 0, message: problem?.message ?? '' });
+    // Refresh an expired address once. A second decode / format failure belongs to the existing error card.
+    if ((problem?.code === 3 || problem?.code === 4) && ++decodeFailures.current >= 2) return;
     retry();
   };
-  const loaded = () => onOutcome?.(mediaKey, asset, { kind: 'loaded' });
+  const loaded = () => {
+    decodeFailures.current = 0;
+    onOutcome?.(mediaKey, asset, { kind: 'loaded' });
+  };
   if (kind === 'audio') return <audio ref={setElement} src={url} crossOrigin="anonymous" preload="auto" onError={failed} onLoadedData={loaded} />;
   return <video ref={setElement} src={url} crossOrigin="anonymous" preload="auto" playsInline muted onError={failed} onLoadedData={loaded} />;
 }

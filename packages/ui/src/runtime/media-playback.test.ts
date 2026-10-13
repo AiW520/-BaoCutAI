@@ -1,11 +1,20 @@
 import { describe, expect, it, vi } from 'vitest';
 import type { MediaHandle, MediaPlayback } from '@baocut/protocol';
-import { preparePlaybackMedia } from './media-playback.ts';
+import { PlaybackPreparationError, preparePlaybackMedia } from './media-playback.ts';
 
 const original: MediaHandle = { url: '/media/source/clip.webm', mimeType: 'video/webm', fileName: 'clip.webm', size: 42, expiresAt: '2099-01-01T00:00:00Z' };
 const compatible: MediaHandle = { ...original, url: '/media/cache/preview.mp4', mimeType: 'video/mp4' };
 
 describe('compatible playback handles', () => {
+  it('requests a compatible playback handle for ProRes MOV, including an alpha WebM result', async () => {
+    const mov = { ...original, url: '/media/source/baked.mov', fileName: 'baked.mov', mimeType: 'video/quicktime; codecs="ap4h"' };
+    const alpha = { ...mov, url: '/media/cache/alpha.webm', mimeType: 'video/webm' };
+    const request = vi.fn<() => Promise<MediaPlayback>>().mockResolvedValue({ status: 'ready', media: alpha });
+    expect(await preparePlaybackMedia({ request }, mov, undefined, { playable: ['vp9', 'opus'] })).toBe(alpha);
+    expect(request).toHaveBeenCalledWith('media.playback', { url: mov.url, playable: ['vp9', 'opus'] });
+    expect(mov.url).toBe('/media/source/baked.mov');
+  });
+
   it('polls short requests until ready without replacing the download handle', async () => {
     vi.useFakeTimers();
     try {
@@ -92,6 +101,12 @@ describe('compatible playback handles', () => {
   it('propagates conversion failures through the existing player error path', async () => {
     const error = new Error('codec unavailable');
     const request = vi.fn().mockRejectedValue(error);
-    await expect(preparePlaybackMedia({ request }, original)).rejects.toBe(error);
+    await expect(preparePlaybackMedia({ request }, original)).rejects.toMatchObject({ name: 'PlaybackPreparationError', message: error.message, cause: error });
+    await expect(preparePlaybackMedia({ request }, original)).rejects.toBeInstanceOf(PlaybackPreparationError);
+  });
+
+  it('keeps expired grant failures on the source recovery path', async () => {
+    const error = Object.assign(new Error('expired'), { code: 'not-found' });
+    await expect(preparePlaybackMedia({ request: vi.fn().mockRejectedValue(error) }, original)).rejects.toBe(error);
   });
 });

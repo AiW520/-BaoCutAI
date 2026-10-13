@@ -172,7 +172,7 @@ export function recoveredAssets(before: readonly MissingAsset[] | null, after: r
 }
 
 /** 源元素一次载入的结果：载入了；出错了（`MediaError` 的 code 与原话）；地址取不到（`media.resolve` 失败）。 */
-export type MediaOutcome = { kind: 'loaded' } | { kind: 'error'; code: number; message: string } | { kind: 'unresolved' };
+export type MediaOutcome = { kind: 'loaded' } | { kind: 'error'; code: number; message: string } | { kind: 'unresolved' } | { kind: 'preparation-error'; message: string };
 
 /** 每个源元素（按预览的媒体键）连续几次解不了，最后一次的原话。 */
 export type PlaybackLog = Readonly<Record<string, { ref: string; failures: number; message: string }>>;
@@ -193,6 +193,8 @@ export function notePlayback(log: PlaybackLog, key: string, ref: VersionRef, out
     delete rest[key];
     return rest;
   }
+  // Conversion already failed in the Runtime: another media address cannot repair the encoding.
+  if (outcome.kind === 'preparation-error') return { ...log, [key]: { ref: refKey(ref), failures: UNPLAYABLE_AFTER, message: outcome.message } };
   if (outcome.kind !== 'error' || (outcome.code !== MEDIA_ERR_DECODE && outcome.code !== MEDIA_ERR_SRC_NOT_SUPPORTED)) return log;
   const previous = log[key];
   const failures = previous && previous.ref === refKey(ref) ? previous.failures + 1 : 1;

@@ -11,7 +11,113 @@ const ffmpeg = process.env.BAOCUT_FFMPEG || 'ffmpeg';
 const ffprobe = process.env.BAOCUT_FFPROBE || 'ffprobe';
 const tools = (() => { try { execFileSync(ffmpeg, ['-version'], { stdio: 'ignore' }); execFileSync(ffprobe, ['-version'], { stdio: 'ignore' }); return true; } catch { return false; } })();
 
-describe.skipIf(!tools)('WebM playback compatibility', () => {
+describe.skipIf(!tools)('media playback compatibility', () => {
+  it.each([false, true])('prepares baked ProRes (alpha=%s), preserving transparency, timing, audio and original bytes', async (alpha) => {
+    const root = await fs.mkdtemp(path.join(os.tmpdir(), 'baocut-prores-playback-'));
+    const tool = (command: string) => async () => ({ command, env: process.env });
+    const analysis = new MediaAnalysis({ cacheDir: path.join(root, 'cache'), log: silentLogger, ffmpeg: tool(ffmpeg), ffprobe: tool(ffprobe) });
+    const registry = new MediaRegistry({ log: silentLogger, originAllowed: () => true });
+    registry.setBaseUrl('http://localhost:12345');
+    try {
+      const source = path.join(root, 'baked animation #.mov');
+      execFileSync(ffmpeg, [
+        '-v', 'error', '-y', '-f', 'lavfi', '-i',
+        "nullsrc=size=162x90:rate=10:duration=1,format=rgba,geq=r='if(lt(T,0.5),255,0)':g=0:b='if(lt(T,0.5),0,255)':a='if(lt(X,W/2),0,128)'",
+        '-f', 'lavfi', '-i', 'sine=frequency=440:duration=1',
+        '-c:v', 'prores_ks', '-profile:v', alpha ? '4444' : '3', '-pix_fmt', alpha ? 'yuva444p10le' : 'yuv422p10le',
+        '-threads', '2', '-c:a', 'pcm_s16le', source,
+      ], { stdio: 'pipe' });
+      const before = await fs.readFile(source);
+      const raw = await registry.issue(root, source);
+      expect(raw.mimeType).toBe('video/quicktime');
+      const prepare = (file: string, mimeType: string) => analysis.playback(file, ['vp9', 'opus'], mimeType);
+      expect(await registry.playback(raw.url, prepare)).toMatchObject({ status: 'pending' });
+      const deadline = Date.now() + 15_000;
+      let result = await registry.playback(raw.url, prepare);
+      while (result.status === 'pending') {
+        expect(Date.now()).toBeLessThan(deadline);
+        await new Promise(resolve => setTimeout(resolve, 20));
+        result = await registry.playback(raw.url, prepare);
+      }
+      expect(result.media).toMatchObject({ fileName: raw.fileName, mimeType: alpha ? 'video/webm' : 'video/mp4' });
+      const cached = await prepare(await fs.realpath(source), raw.mimeType);
+      if (cached.status !== 'ready') throw new Error('not ready');
+      const probe = JSON.parse(execFileSync(ffprobe, ['-v', 'error', '-show_streams', '-show_format', '-of', 'json', cached.file], { encoding: 'utf8' }));
+      expect(probe.streams[0].codec_name).toBe(alpha ? 'vp9' : 'h264');
+      expect(probe.streams[1].codec_name).toBe(alpha ? 'opus' : 'aac');
+      expect(Math.abs(Number(probe.format.duration) - 1)).toBeLessThan(.15);
+      // Seek both ways, decode real pixels, and check the two colors plus transparent / translucent regions.
+      for (const at of [0.8, 0.2]) {
+        const pixels = execFileSync(ffmpeg, [
+          '-v', 'error', '-ss', String(at), ...(alpha ? ['-c:v', 'libvpx-vp9'] : []), '-i', cached.file,
+          '-frames:v', '1', '-f', 'rawvideo', '-pix_fmt', 'rgba', '-',
+        ]);
+        const offset = (45 * 162 + 120) * 4;
+        expect(pixels[offset + (at < .5 ? 0 : 2)]).toBeGreaterThan(220);
+        expect(pixels[offset + (at < .5 ? 2 : 0)]).toBeLessThan(30);
+        if (alpha) {
+          expect(pixels[(45 * 162 + 20) * 4 + 3]).toBe(0);
+          expect(pixels[offset + 3]).toBeGreaterThan(120);
+          expect(pixels[offset + 3]).toBeLessThan(136);
+        } else expect(pixels[offset + 3]).toBe(255);
+      }
+      const pcm = execFileSync(ffmpeg, ['-v', 'error', '-i', cached.file, '-vn', '-f', 'f32le', '-']);
+      expect(Array.from({ length: pcm.length / 4 }, (_, i) => Math.abs(pcm.readFloatLE(i * 4))).some(v => v > .01)).toBe(true);
+      expect(await fs.readFile(source)).toEqual(before);
+      expect(await prepare(await fs.realpath(source), raw.mimeType)).toEqual(cached);
+    } finally { analysis.close(); await fs.rm(root, { recursive: true, force: true }); }
+  }, 30_000);
+
+  it('refuses unprobed QuickTime instead of silently discarding possible alpha', async () => {
+    const root = await fs.mkdtemp(path.join(os.tmpdir(), 'baocut-prores-unprobed-'));
+    const analysis = new MediaAnalysis({ cacheDir: root, log: silentLogger, ffmpeg: async () => { throw new Error('must not encode'); } });
+    try {
+      const source = path.join(root, 'unknown.mov');
+      await fs.writeFile(source, 'unknown');
+      await expect(analysis.playback(source, [], 'video/quicktime')).rejects.toMatchObject({ code: 'internal' });
+      expect(await fs.readdir(root)).toEqual(['unknown.mov']);
+    } finally { analysis.close(); await fs.rm(root, { recursive: true, force: true }); }
+  });
+
+  it('preserves WebM alpha when an unsupported audio codec requires conversion', async () => {
+    const root = await fs.mkdtemp(path.join(os.tmpdir(), 'baocut-webm-alpha-'));
+    const tool = (command: string) => async () => ({ command, env: process.env });
+    const analysis = new MediaAnalysis({ cacheDir: root, log: silentLogger, ffmpeg: tool(ffmpeg), ffprobe: tool(ffprobe) });
+    try {
+      const source = path.join(root, 'alpha.webm');
+      execFileSync(ffmpeg, [
+        '-v', 'error', '-y', '-f', 'lavfi', '-i', 'color=red@0.5:size=162x90:rate=10:duration=1,format=rgba',
+        '-f', 'lavfi', '-i', 'sine=frequency=440:duration=1', '-c:v', 'libvpx-vp9', '-pix_fmt', 'yuva420p', '-threads', '2', '-c:a', 'libvorbis', source,
+      ], { stdio: 'pipe' });
+      const real = await fs.realpath(source);
+      expect(await analysis.playback(real, ['vp9', 'vorbis'])).toEqual({ status: 'original' });
+      let result = await analysis.playback(real, ['vp9', 'opus']);
+      const deadline = Date.now() + 15_000;
+      while (result.status === 'pending') {
+        expect(Date.now()).toBeLessThan(deadline);
+        await new Promise(resolve => setTimeout(resolve, 20));
+        result = await analysis.playback(real, ['vp9', 'opus']);
+      }
+      if (result.status !== 'ready') throw new Error('not ready');
+      expect(result.file).toMatch(/\.webm$/);
+      const pixels = execFileSync(ffmpeg, ['-v', 'error', '-c:v', 'libvpx-vp9', '-i', result.file, '-frames:v', '1', '-f', 'rawvideo', '-pix_fmt', 'rgba', '-']);
+      expect(pixels[3]).toBeGreaterThan(120);
+      expect(pixels[3]).toBeLessThan(136);
+    } finally { analysis.close(); await fs.rm(root, { recursive: true, force: true }); }
+  }, 20_000);
+
+  it('rejects a playlist renamed to MOV without following its file references', async () => {
+    const root = await fs.mkdtemp(path.join(os.tmpdir(), 'baocut-mov-whitelist-'));
+    const analysis = new MediaAnalysis({ cacheDir: root, log: silentLogger,
+      ffmpeg: async () => { throw new Error('must not encode'); }, ffprobe: async () => ({ command: ffprobe, env: process.env }) });
+    try {
+      const source = path.join(root, 'playlist.mov');
+      await fs.writeFile(source, "ffconcat version 1.0\nfile 'outside.mov'\n");
+      await expect(analysis.playback(source, [], 'video/quicktime')).rejects.toMatchObject({ code: 'internal' });
+      expect(await fs.readdir(root)).toEqual(['playlist.mov']);
+    } finally { analysis.close(); await fs.rm(root, { recursive: true, force: true }); }
+  });
+
   it('publishes H.264/AAC, retains real sound, reuses cache and leaves the source bytes intact', async () => {
     const root = await fs.mkdtemp(path.join(os.tmpdir(), 'baocut-playback-'));
     const analysis = new MediaAnalysis({ cacheDir: path.join(root, 'cache'), log: silentLogger, ffmpeg: async () => ({ command: ffmpeg, env: process.env }) });

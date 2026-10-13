@@ -15,6 +15,14 @@ const CODEC_TYPES: Record<PlaybackCodec, string> = {
 
 let detected: PlaybackCodec[] | null = null;
 
+/** The source resolved, but its playback copy could not be prepared. Keep the Runtime's localized reason. */
+export class PlaybackPreparationError extends Error {
+  constructor(cause: unknown) {
+    super(cause instanceof Error ? cause.message : String(cause), { cause });
+    this.name = 'PlaybackPreparationError';
+  }
+}
+
 /** 这个浏览器能原生解码的 WebM 编码（Chromium 与 Electron 全都能，Safari 看版本）。没有 DOM 时是空的。 */
 export function playableCodecs(): PlaybackCodec[] {
   if (detected) return detected;
@@ -27,6 +35,7 @@ export function playableCodecs(): PlaybackCodec[] {
 /**
  * Playback only: downloads and file viewers keep the original handle. WebM whose codecs this browser decodes plays
  * from the original file; otherwise the Runtime prepares a compatible copy and we poll until it is ready.
+ * QuickTime (including baked ProRes) also needs a copy, with transparency preserved by the Runtime.
  * `onProgress` hears every pending poll: how far the copy is (0–1), or null while the Runtime doesn't know yet.
  */
 export async function preparePlaybackMedia(
@@ -38,11 +47,16 @@ export async function preparePlaybackMedia(
   signal?.throwIfAborted();
   // Unsent attachments belong to the browser, not the Runtime grant registry.
   if (/^(blob|data):/i.test(original.url)) return original;
-  if (!['video/webm', 'audio/webm'].includes(original.mimeType.split(';')[0]!.trim().toLowerCase())) return original;
+  if (!['video/webm', 'audio/webm', 'video/quicktime'].includes(original.mimeType.split(';')[0]!.trim().toLowerCase())) return original;
   const params = playable.length > 0 ? { url: original.url, playable } : { url: original.url };
   for (;;) {
     signal?.throwIfAborted();
-    const result = await client.request('media.playback', params);
+    const result = await client.request('media.playback', params).catch((error: unknown) => {
+      signal?.throwIfAborted();
+      // Expired grants / disconnected Runtime still follow the source-resolution recovery path.
+      if ((error as { code?: string })?.code === 'not-found' || (error as { code?: string })?.code === 'unavailable') throw error;
+      throw new PlaybackPreparationError(error);
+    });
     signal?.throwIfAborted();
     if (result.status === 'ready') return result.media;
     onProgress?.(result.progress ?? null);

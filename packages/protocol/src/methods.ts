@@ -544,7 +544,7 @@ export interface RpcMethods {
    */
   'media.resolve': { params: MediaTarget; result: MediaHandle };
   /**
-   * 已签发的文件句柄的播放地址（架构设计 §4.5）：WebM 的编码都在 `playable` 里时直接给原句柄，否则准备兼容副本并轮询；
+   * 已签发的文件句柄的播放地址（架构设计 §4.5）：WebM 的编码都在 `playable` 里时直接给原句柄，否则准备兼容副本并轮询；QuickTime 也准备副本并保留 alpha；
    * 原始字节始终经 media.resolve。
    */
   'media.playback': { params: { url: string; playable?: PlaybackCodec[] }; result: MediaPlayback };

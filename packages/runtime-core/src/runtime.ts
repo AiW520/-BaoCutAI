@@ -396,7 +396,7 @@ export async function startRuntime(options: StartRuntimeOptions = {}): Promise<R
       designSystemEditorDist: options.designSystemEditorDist === undefined ? undefined : () => options.designSystemEditorDist ?? null,
     });
     stops.add('slides', () => slides.close(), null);
-    // 生成的音频与图片、参考录音都用 ffprobe 解码校验（与引擎同一个 ffprobe）；WebM 播放也用它探测编码。
+    // 生成的音频与图片、参考录音都用 ffprobe 解码校验（与引擎同一个 ffprobe）；WebM / QuickTime 播放也用它探测编码与 alpha。
     const ffprobe = async () => ({ command: process.env.BAOCUT_FFPROBE || 'ffprobe', env: await toolEnv() });
     const analysis = new MediaAnalysis({
       cacheDir: path.join(home.cacheDir, 'media'),

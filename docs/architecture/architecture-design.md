@@ -753,9 +753,11 @@ BaoCut 工具经 Codex 的 MCP 调用会等审批，Codex 默认 60 秒就放弃
 
 ### 4.5 控制通道与媒体通道分离
 
-WebM 播放通过 `media.playback { url, playable? }` 取播放地址：`url` 必须是当前媒体通道已签发、未过期的受限句柄，不能用本机路径或其他来源的 URL。`playable` 是客户端按 `canPlayType` 测出的、能原生解码的 WebM 编码（`vp8`、`vp9`、`av1`、`opus`、`vorbis`）；Runtime 用 ffprobe 探测源文件首条画面与声音的编码（按源身份记住），都在其中时直接回原句柄，不做副本、不必等待（Chromium 与 Electron 走这条）。否则准备兼容副本：Runtime 再检查源文件真实路径，在 `<home>/cache/media/playback/` 按源真实路径、大小、纳秒 mtime 与编码配方修订生成 H.264/yuv420p + AAC MP4。最长边不超过 1280，保持比例与源时间，音轨存在时保留；无声视频和纯音频 WebM 同样支持。后台单槽编码、重复申请合并、校验可解码后原子发布；源变化重建，失败不发布半成品，Runtime 关闭时停止子进程。缓存只用于播放，项目素材、下载与导出仍引用原文件。
+WebM 与 QuickTime（包括代码动画烘焙的 ProRes MOV）播放通过 `media.playback { url, playable? }` 取播放地址：`url` 必须是当前媒体通道已签发、未过期的受限句柄，不能用本机路径或其他来源的 URL。`playable` 是客户端按 `canPlayType` 测出的、能原生解码的 WebM 编码（`vp8`、`vp9`、`av1`、`opus`、`vorbis`）；Runtime 用 ffprobe 探测源文件首条画面与声音的编码、像素格式、透明标记与时长（按源身份记住），WebM 的编码都在其中时直接回原句柄。QuickTime 始终准备副本；探测失败时明确失败，不把可能带 alpha 的 MOV 当成不透明素材。探测与转换只放行本地文件及源容器的解复用器（WebM 用 Matroska，QuickTime 用 MOV）。
 
-副本未就绪时立即返回 `{ status: 'pending', retryAfterMs: 250, progress? }`（`progress` 是按 ffmpeg 报的输出时刻除以探测到的源时长得出的 0–1，探测不到时长时省略），完成返回 `{ status: 'ready', media: MediaHandle }`，失败沿用已有媒体错误。客户端以短请求轮询，不把整片编码挂在一条 RPC 上；独立播放器、聊天中的媒体预览和编辑器素材地址共用准备流程，保留已有的定位、音量、倍速和暂停语义。Electron 与 Web 共用同一 UI；Web 用自己的受限句柄表与同源地址，只读模式也可生成派生缓存。非 WebM 与客户端能原生解码的 WebM 直接复用原句柄。尚未发送附件的 `blob:` / `data:` 地址留在浏览器中，不请求 Runtime 转换或上传。`media.resolve` 与 `?download=1` 始终提供原始 bytes。
+兼容副本在 `<home>/cache/media/playback/` 按源真实路径、大小、纳秒 mtime、容器与编码配方修订缓存：不透明画面用 H.264/yuv420p + AAC MP4；带 alpha 的画面用 VP9/yuva420p + Opus WebM，保留透明和半透明合成效果，不能退化为不透明 H.264。转换带 alpha 的 VP8/VP9 WebM 时强制使用 libvpx 解码。最长边不超过 1280，保持比例与源时间，音轨存在时保留；无声视频和纯音频 WebM 同样支持。后台单槽编码、重复申请合并、校验可解码后原子发布；源变化重建，失败不发布半成品，Runtime 关闭时停止子进程。缓存只用于播放，项目素材、下载与导出仍引用原文件。
+
+副本未就绪时立即返回 `{ status: 'pending', retryAfterMs: 250, progress? }`（`progress` 是按 ffmpeg 报的输出时刻除以探测到的源时长得出的 0–1，探测不到时长时省略），完成返回 `{ status: 'ready', media: MediaHandle }`，失败沿用已有媒体错误。客户端以短请求轮询，不把整片编码挂在一条 RPC 上；独立播放器、聊天中的媒体预览和编辑器素材地址共用准备流程，保留已有的定位、音量、倍速和暂停语义。编辑器的副本准备失败交给既有的无法播放提示，并保留错误原因，不继续显示在等媒体；句柄过期仍走地址恢复流程。Electron 与 Web 共用同一 UI；Web 用自己的受限句柄表与同源地址，只读模式也可生成派生缓存。其他容器与客户端能原生解码的 WebM 直接复用原句柄。尚未发送附件的 `blob:` / `data:` 地址留在浏览器中，不请求 Runtime 转换或上传。`media.resolve` 与 `?download=1` 始终提供原始 bytes。
 
 每个客户端到每个 Runtime 一条多路复用的业务 WebSocket；视频、会话和任务按资源订阅。视频与音频的 bytes、预览帧和缩略图经过认证的 HTTP Range、受限句柄或专门的媒体通道传输，不把每一帧的 Base64 塞进对话事件。小于 1 MB 的单张缩略图可以走请求的响应（时间线胶片条的 `media.thumbnail`、Space 卡片的 `space.thumbnail`，§5.7）：客户端按需请求，不进事件流，也不随订阅推送。
 

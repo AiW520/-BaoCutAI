@@ -1185,6 +1185,30 @@ describe.skipIf(!engine || !ffmpeg)('Web 服务：浏览器里的编辑（真实
   let sequenceId: Id;
   let videoPath: string;
 
+  it('prepares transparent ProRes through the Web grant registry without exposing the original or cache paths', async () => {
+    const source = path.join(project.path, 'animation.mov');
+    execFileSync('ffmpeg', [
+      '-v', 'error', '-y', '-f', 'lavfi', '-i', 'color=red@0.5:size=162x90:rate=10:duration=1,format=rgba',
+      '-c:v', 'prores_ks', '-profile:v', '4444', '-pix_fmt', 'yuva444p10le', '-threads', '2', source,
+    ]);
+    const before = await fs.readFile(source);
+    const handle = await page.request('media.resolve', { projectId: project.id, path: 'animation.mov' });
+    expect(handle.mimeType).toBe('video/quicktime');
+    const params = { url: handle.url, playable: ['vp9', 'opus'] as const };
+    let result = await page.request('media.playback', { ...params, playable: [...params.playable] });
+    const deadline = Date.now() + 15_000;
+    while (result.status === 'pending') {
+      expect(Date.now()).toBeLessThan(deadline);
+      await new Promise(resolve => setTimeout(resolve, 50));
+      result = await page.request('media.playback', { ...params, playable: [...params.playable] });
+    }
+    expect(result.media).toMatchObject({ mimeType: 'video/webm', fileName: 'animation.mov' });
+    expect(result.media.url).toMatch(/^\/media\/[A-Za-z0-9_-]+\/.*\.webm$/);
+    expect(result.media.url).not.toContain(project.path);
+    await expect(desktop.request('media.playback', { url: result.media.url })).rejects.toMatchObject({ code: 'not-found' });
+    expect(await fs.readFile(source)).toEqual(before);
+  }, 25_000);
+
   beforeAll(async () => {
     fixtures = await fs.mkdtemp(path.join(os.tmpdir(), 'baocut-web-fixtures-'));
     clip = path.join(fixtures, 'clip.mp4');

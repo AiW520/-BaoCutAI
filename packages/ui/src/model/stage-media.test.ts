@@ -273,6 +273,12 @@ describe('放不出来的判据', () => {
   const ref = { id: 'a', revision: '1' };
   const decode = { kind: 'error', code: 3, message: 'PIPELINE_ERROR_DECODE' } as const;
 
+  it('shows a failed playback preparation immediately, and clears it once playback recovers', () => {
+    const log = notePlayback({}, 'k', ref, { kind: 'preparation-error', message: 'Encoder unavailable' });
+    expect(unplayableRefs(log).get('a@1')).toBe('Encoder unavailable');
+    expect(unplayableRefs(notePlayback(log, 'k', ref, { kind: 'loaded' })).size).toBe(0);
+  });
+
   it('换了地址还是解不了才算：第一次报错可能只是句柄过期', () => {
     let log: PlaybackLog = {};
     log = notePlayback(log, 'video:a@1#0', ref, decode);
