@@ -35,6 +35,13 @@
   /** OpenAI 自家音色名：本机模型没有这些说话人，收到按默认音色念（内核 OPENAI_VOICES）。 */
   const OPENAI_VOICES = ['alloy', 'ash', 'ballad', 'cedar', 'coral', 'echo', 'fable', 'marin', 'nova', 'onyx', 'sage', 'shimmer', 'verse'];
 
+  /* ---------- 出图：按模型的步数范围（与 BC_CLOUD_IMAGE 的 caps.steps 同）。上下限相同 = 蒸馏模型固定步数 ---------- */
+  const IMAGE_STEPS = {
+    'qwen-image-2.1': {min: 8, max: 40, dflt: 20},
+    'qwen-image-2.1-turbo': {min: 8, max: 8, dflt: 8},
+  };
+  const imageSteps = (id) => IMAGE_STEPS[id] || IMAGE_STEPS['qwen-image-2.1'];
+
   /* ---------- 端点表 ----------
      group: 'models' 或能力键；path 与 OpenAI 相同（相对 /v1）。
      param: {name, loc: 'path'|'form'|'json', kind: 'file'|'model'|'voice'|'text'|'longtext'|'enum'|'multi'|'int',
@@ -103,7 +110,7 @@
       summary: '传入一句描述，在这台电脑上画一张图。本机出图一张要几十秒，请求会一直等到画完。',
       params: [
         {name: 'prompt', loc: 'json', kind: 'longtext', req: true, dflt: '清晨的海边小镇，水彩风格，柔和的光',
-          doc: '要画的画面。有中文字时建议把 steps 调到 40。'},
+          doc: '要画的画面。有中文字时，Qwen-Image-2.1 建议把 steps 调到 40；Turbo 固定 8 步，不用调。'},
         {name: 'model', loc: 'json', kind: 'model', optionalModel: true,
           doc: '与 OpenAI 一样可以不写，不写用 设置 › 模型 › 本地模型 里的默认图像模型；写了就按本机 id 或映射名找，都不是返回 404。'},
         {name: 'size', loc: 'json', kind: 'enum', dflt: 'auto', values: ['auto', '1024x1024', '1344x768', '768x1344'], tryValues: ['auto', '1024x1024', '1344x768', '768x1344', '1000x1000'],
@@ -116,7 +123,8 @@
         {name: 'background', loc: 'json', kind: 'enum', dflt: 'auto', values: ['auto', 'opaque'], more: true, reject: true,
           doc: 'transparent 返回 400 unsupported_param：本机模型画不了透明底。'},
         {name: 'seed', loc: 'json', kind: 'int', more: true, ext: true, doc: '种子。同一模型、同一描述、同一种子画出同一张。'},
-        {name: 'steps', loc: 'json', kind: 'int', dflt: 20, more: true, ext: true, doc: '采样步数，越多越细也越慢。'},
+        {name: 'steps', loc: 'json', kind: 'int', more: true, ext: true, placeholder: '按模型',
+          doc: '采样步数，越多越细也越慢。不写用模型的默认值：Qwen-Image-2.1 是 20，可写 8–40；Turbo 是蒸馏版，固定 8 步。超出模型的范围返回 400 invalid_request。'},
         {name: 'quality', loc: 'json', ignored: true},
         {name: 'style', loc: 'json', ignored: true},
         {name: 'moderation', loc: 'json', ignored: true},
@@ -510,7 +518,13 @@
         const fix = (n) => Math.round(n / 32) * 32;
         return fail('invalid_size', `\`${size}\` is not a valid size for \`${model}\`: width and height must be multiples of 32, the longer edge at most 1536 and the aspect ratio at most 3:1. Try \`${fix(w)}x${fix(h)}\`, or \`auto\` (1024x576).`, 'size', `宽高要是 32 的倍数，建议 ${fix(w)}x${fix(h)}，或者用 auto（1024x576）。`);
       }
-      const steps = Number(v.steps) || 20;
+      const range = imageSteps(model);
+      const steps = v.steps !== '' && v.steps != null ? Number(v.steps) : range.dflt;
+      if (!Number.isInteger(steps) || steps < range.min || steps > range.max) {
+        const span = range.min === range.max ? `only runs at ${range.min} steps` : `takes ${range.min}–${range.max} steps`;
+        return fail('invalid_request', `\`${v.steps}\` is not a valid steps for \`${model}\`: this model ${span}.`, 'steps',
+          range.min === range.max ? `${r.model.name} 固定 ${range.min} 步，不写或写 ${range.min}。` : `步数要在 ${range.min}–${range.max} 之间。`);
+      }
       const seed = v.seed !== '' && v.seed != null ? Number(v.seed) : (ctx.seed || 20250927);
       return ok(steps * 2600, {type: 'application/json', image: {w, h, seed},
         json: {created: 1790000000, data: [{b64_json: 'iVBORw0KGgoAAAANSUhEUgAABUAAAAMA…（约 1.9 MB）'}], output_format: 'png', size: `${w}x${h}`,
@@ -522,7 +536,7 @@
   const fmtMs = (ms) => (ms < 1000 ? ms + ' ms' : (ms / 1000).toFixed(1) + ' s');
 
   const BC_OPENAI_API = {
-    CAPS, capBy, ENDPOINTS, epBy, epsOf, ERRORS, OPENAI_VOICES, ttsSupport, supports,
+    CAPS, capBy, ENDPOINTS, epBy, epsOf, ERRORS, OPENAI_VOICES, ttsSupport, supports, IMAGE_STEPS, imageSteps,
     apiBase, epPath, epUrl, defaultOf, ctxOf, resolveModel, listModels,
     MAP_SEED, mapRows, mapIssues, mapSummary, targetInfo, targetsOf, capOfTarget,
     suggestPort, parseCapPort, blocker, suggestModel, modelChoices,

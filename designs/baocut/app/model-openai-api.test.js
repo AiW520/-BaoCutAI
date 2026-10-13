@@ -233,3 +233,28 @@ test('演示响应：状态码与错误体照 OpenAI 的形状', () => {
   assert.equal(A.fmtMs(640), '640 ms');
   assert.equal(A.fmtMs(2400), '2.4 s');
 });
+
+test('出图的步数按模型：不写用默认，Turbo 固定 8 步，超出范围 400 invalid_request', () => {
+  const I = require('./model-cloud-image.js');
+  Object.entries(A.IMAGE_STEPS).forEach(([id, r]) => {
+    const s = I.stepsOf(id);
+    assert.deepEqual([r.min, r.max, r.dflt], [s.min, s.max, s.default], `${id} 与 BC_CLOUD_IMAGE 的步数一致`);
+  });
+  const models = MODELS.concat([{id: 'qwen-image-2.1-turbo', name: 'Qwen-Image-2.1 Turbo', cat: 'image'}]);
+  const ctx = A.ctxOf(models, on(['qwen-image-2.1', 'qwen-image-2.1-turbo']), {}, {});
+  const img = A.epBy('image.generations');
+  const iv = A.initialValues(img, ctx);
+  assert.equal(iv.steps, '', '表单不预填步数');
+  assert.ok(A.sentFields(img, iv).every(([p]) => p.name !== 'steps'));
+  assert.equal(A.demoResponse(img, iv, ctx).body.json.x_baocut.steps, 20);
+  const turbo = {...iv, model: 'qwen-image-2.1-turbo'};
+  assert.equal(A.demoResponse(img, turbo, ctx).body.json.x_baocut.steps, 8);
+  assert.equal(A.demoResponse(img, {...turbo, steps: 8}, ctx).status, 200);
+  const off = A.demoResponse(img, {...turbo, steps: 20}, ctx);
+  assert.equal(off.status, 400);
+  assert.equal(off.body.json.error.code, 'invalid_request');
+  assert.equal(off.body.json.error.param, 'steps');
+  assert.ok(/only runs at 8 steps/.test(off.body.json.error.message));
+  assert.equal(A.demoResponse(img, {...iv, steps: 44}, ctx).body.json.error.code, 'invalid_request');
+  assert.equal(A.demoResponse(img, {...iv, steps: 40}, ctx).status, 200);
+});
