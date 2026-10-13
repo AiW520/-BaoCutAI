@@ -31,44 +31,44 @@
   /* 章节条按**成片时钟**画（第 197 轮）：章节区间与播放头都经 `tmap.fold` 折掉已剪段，
      点击反折回时间轴时钟；没传 `tmap` 时是恒等（Components 样本页等）。 */
   function ChapterBand({chapters, playT, seek, title, duration, tmap, clearSel}) {
-    const [hover, setHover] = useState(-1);
+    const [hover, setHover] = useState(null);
     const ref = useRef(null);
     const fold = tmap ? tmap.fold : (t) => t, unfold = tmap ? tmap.unfold : (t) => t;
     const spans = TL.playbackSpans(chapters, duration, title)
       .map((c) => ({...c, start: fold(c.start), end: fold(c.end)})).filter((c) => c.end - c.start > 0.001);
     duration = fold(duration); playT = fold(playT);
     /* 章节条整条都是「舞台之外的空处」：按下即取消所有选中（第 215 轮），
-       与标尺、轨道空白同一条规矩；段上的 seek 走 onClick，两者不冲突。 */
+       与标尺、轨道空白同一条规矩；进度条上的 seek 走 onClick，两者不冲突。 */
+    const timeAtX = (clientX) => {
+      const rect = ref.current?.querySelector('.chbar')?.getBoundingClientRect();
+      return rect ? PL.timeAt(clientX, rect, duration) : 0;
+    };
     return (
-      <div className="chband" ref={ref} onMouseLeave={() => setHover(-1)}
+      <div className="chband" ref={ref} onMouseLeave={() => setHover(null)}
         onMouseDown={() => { if (clearSel) clearSel(); }}>
-        <div className="chbar">
-          {spans.map((c, i) => {
+        <div className="chbar" onMouseMove={(e) => setHover(timeAtX(e.clientX))}
+          onClick={(e) => seek(unfold(timeAtX(e.clientX)))}>
+          {spans.map((c) => {
             const span = c.end - c.start;
             const done = Math.max(0, Math.min(1, (playT - c.start) / span));
             return (
-              <div key={c.id} className="chseg" style={{flex: span}}
-                onMouseEnter={() => setHover(i)}
-                onClick={(e) => {
-                  if (!c.playbackOnly) { seek(unfold(c.start)); return; }
-                  const r = e.currentTarget.getBoundingClientRect();
-                  seek(unfold(((e.clientX - r.left) / Math.max(1, r.width)) * duration));
-                }}>
+              <div key={c.id} className={'chseg' + (hover !== null && hover >= c.start && hover <= c.end ? ' is-hovered' : '')} style={{flex: span}}>
                 <div className="chseg__f" style={{width: done * 100 + '%'}} />
               </div>
             );
           })}
         </div>
-        {hover >= 0 ? (() => {
-          const c = spans[hover];
+        {hover !== null ? (() => {
+          const c = spans.find((span) => hover >= span.start && hover <= span.end);
+          if (!c) return null;
           const w = ref.current ? ref.current.clientWidth - 28 : 800;
-          const mid = 14 + ((c.start + c.end) / 2 / Math.max(0.1, duration)) * w;
+          const mid = 14 + (hover / Math.max(0.1, duration)) * w;
           const left = Math.max(8, Math.min((ref.current ? ref.current.clientWidth : 900) - 138, mid - 65));
           return (
-            <div className="chprev" style={{left, top: 18}}>
-              <div className="chprev__th" style={{background: `linear-gradient(135deg, oklch(0.7 0.1 ${spans[hover].start + 200}), oklch(0.5 0.12 ${spans[hover].end + 120}))`}} />
+            <div className="chprev" style={{left, top: 24}}>
+              <div className="chprev__th" style={{background: `linear-gradient(135deg, oklch(0.7 0.1 ${hover + 200}), oklch(0.5 0.12 ${hover + 120}))`}} />
               <div className="chprev__m">
-                <span className="t-mono t-detail-xs">{T.timecode(c.start, {decimals: 0})}</span>
+                <span className="t-mono t-detail-xs">{T.timecode(hover, {decimals: 1})}</span>
                 <span className="t-detail-xs t-truncate">{c.title}</span>
               </div>
             </div>
