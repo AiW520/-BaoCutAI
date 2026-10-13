@@ -392,6 +392,26 @@ fn fill_content(
     else {
         return false;
     };
+    if blend == tiny_skia::BlendMode::SourceOver
+        && opacity >= 1.0
+        && right <= layer.width() as usize
+        && bottom <= layer.height() as usize
+    {
+        let (out_width, layer_width) = (out.width() as usize, layer.width() as usize);
+        let right = right.min(out_width);
+        let bottom = bottom.min(out.height() as usize);
+        if left < right {
+            let source = layer.data();
+            let target = out.data_mut();
+            for y in top..bottom {
+                source_over_row(
+                    &mut target[(y * out_width + left) * 4..(y * out_width + right) * 4],
+                    &source[(y * layer_width + left) * 4..(y * layer_width + right) * 4],
+                );
+            }
+        }
+        return true;
+    }
     // 与 `draw_pixmap` 内部拼的那支 Paint 相同（Nearest、Pad、不抗锯齿），只把
     // 填充矩形从整幅收窄到内容框。
     let paint = tiny_skia::Paint {
@@ -408,6 +428,35 @@ fn fill_content(
     };
     out.fill_rect(rect, &paint, tiny_skia::Transform::identity(), None);
     true
+}
+
+/// 一段像素的 src-over，与 `fill_content` 里那支 Paint（最近邻、恒等变换、不透明度 1）走的 tiny-skia highp 管线
+/// （`seed_shader → gather → source_over_rgba`）逐字节相同：u8 乘 `1/255` 进 f32，`d·(1−sa) + s`（先乘后加，不融合），
+/// 夹到 [0, 1] 乘 255 后取最近的整数、恰在中间取偶数（tiny-skia 在 NEON、SSE2 与 WASM 上的向量取整都是这样）。
+/// 全零的 src 不改 dst，alpha 255 的 src 结果就是它本身，两种都不必算：字幕层大片透明、字心不透明，只剩描边与
+/// 抗锯齿的边缘真的要算（`tests::source_over_row_matches_tiny_skia` 对全部 src、alpha、dst 组合穷举对拍）。
+fn source_over_row(dst: &mut [u8], src: &[u8]) {
+    const FACTOR: f32 = 1.0 / 255.0;
+    const BLOCK: usize = 16 * 4;
+    static ZEROS: [u8; BLOCK] = [0; BLOCK];
+    for (dst, src) in dst.chunks_mut(BLOCK).zip(src.chunks(BLOCK)) {
+        if src == &ZEROS[..src.len()] {
+            continue;
+        }
+        for (d, s) in dst.chunks_exact_mut(4).zip(src.chunks_exact(4)) {
+            match s[3] {
+                0 if s == [0, 0, 0, 0] => {}
+                255 => d.copy_from_slice(s),
+                alpha => {
+                    let inverse = 1.0 - f32::from(alpha) * FACTOR;
+                    for (d, s) in d.iter_mut().zip(s) {
+                        let value = f32::from(*d) * FACTOR * inverse + f32::from(*s) * FACTOR;
+                        *d = (value.clamp(0.0, 1.0) * 255.0).round_ties_even() as u8;
+                    }
+                }
+            }
+        }
+    }
 }
 
 /// 宽 `width` 的 RGBA 行里非零字节的外包矩形 `(left, top, right, bottom)`，像素单位、
@@ -817,6 +866,56 @@ mod tests {
                         }
                     }
                 }
+            }
+        }
+    }
+
+    /// src-over 的逐像素捷径与 tiny-skia 的 `fill_rect`（同一支 Pattern Paint）逐字节相同：穷举 src 的每个 alpha，
+    /// 一个通道取遍 0–255（含预乘不合法的 rgb > alpha），dst 取遍 0–255。
+    #[test]
+    fn source_over_row_matches_tiny_skia() {
+        let size = 256;
+        let mut backdrop = Pixmap::new(size, size).unwrap();
+        for (i, pixel) in backdrop.data_mut().chunks_exact_mut(4).enumerate() {
+            let d = (i % 256) as u8;
+            pixel.copy_from_slice(&[d, 255 - d, d / 2, d]);
+        }
+        for alpha in 0..=255u8 {
+            let mut layer = Pixmap::new(size, size).unwrap();
+            for (i, pixel) in layer.data_mut().chunks_exact_mut(4).enumerate() {
+                let s = (i / 256) as u8;
+                pixel.copy_from_slice(&[s, s.min(alpha), alpha / 3, alpha]);
+            }
+            let mut expected = backdrop.clone();
+            let paint = tiny_skia::Paint {
+                shader: tiny_skia::Pattern::new(
+                    layer.as_ref(),
+                    tiny_skia::SpreadMode::Pad,
+                    tiny_skia::FilterQuality::Nearest,
+                    1.0,
+                    tiny_skia::Transform::identity(),
+                ),
+                anti_alias: false,
+                ..Default::default()
+            };
+            let rect = tiny_skia::Rect::from_xywh(0.0, 0.0, size as f32, size as f32).unwrap();
+            expected.fill_rect(rect, &paint, tiny_skia::Transform::identity(), None);
+            let mut actual = backdrop.clone();
+            source_over_row(actual.data_mut(), layer.data());
+            if let Some((i, _)) = expected
+                .data()
+                .chunks_exact(4)
+                .zip(actual.data().chunks_exact(4))
+                .enumerate()
+                .find(|(_, (e, a))| e != a)
+            {
+                panic!(
+                    "alpha {alpha}：src {:?} dst {:?} → tiny-skia {:?}，捷径 {:?}",
+                    &layer.data()[i * 4..i * 4 + 4],
+                    &backdrop.data()[i * 4..i * 4 + 4],
+                    &expected.data()[i * 4..i * 4 + 4],
+                    &actual.data()[i * 4..i * 4 + 4]
+                );
             }
         }
     }
