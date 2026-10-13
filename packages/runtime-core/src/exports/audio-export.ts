@@ -1,6 +1,7 @@
 import { spawn } from 'node:child_process';
 import path from 'node:path';
-import { rm, writeFile } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { mkdtemp, rm, writeFile } from 'node:fs/promises';
 import {
   refOf,
   type AudioExportFormat,
@@ -252,25 +253,41 @@ export function gainExpression(segment: AudioSegment): string | null {
  */
 export type FilterScriptOption = '-/filter_complex' | '-filter_complex_script';
 
-/** 按 `ffmpeg -h long` 的说明挑：说明里提到 `-/filter_complex`（旧选项的弃用说明）的认新写法，否则用旧选项。 */
-export function filterScriptOption(help: string): FilterScriptOption {
-  return /-\/filter_complex\b/.test(help) ? '-/filter_complex' : '-filter_complex_script';
-}
-
 const scriptOptions = new Map<string, Promise<FilterScriptOption>>();
 
-/** 这个 ffmpeg 认哪种写法（按命令缓存；问不出来时用旧选项，不缓存）。 */
+/** 实际从文件读一帧静音到空输出：帮助文本不保证列出通用的 `-/` 写法，不能据此回退旧参数。 */
+async function probeFilterScriptOption(ffmpeg: ToolCommand): Promise<FilterScriptOption> {
+  const staging = await mkdtemp(path.join(tmpdir(), 'baocut-filter-probe-'));
+  try {
+    const graph = path.join(staging, 'probe.graph');
+    await writeFile(graph, 'anullsrc=r=8000:cl=mono,atrim=end_sample=1[out]');
+    const probe = (option: FilterScriptOption) => runTool(ffmpeg, [
+      '-hide_banner', '-loglevel', 'error', option, graph, '-map', '[out]', '-frames:a', '1', '-f', 'null', '-',
+    ]);
+    try {
+      await probe('-/filter_complex');
+      return '-/filter_complex';
+    } catch (error) {
+      if (error instanceof ToolFailure && error.kind === 'missing') throw error;
+    }
+    // 旧参数也必须实际通过；失败时保留工具错误，不猜一个选项继续导出。
+    await probe('-filter_complex_script');
+    return '-filter_complex_script';
+  } finally {
+    await rm(staging, { recursive: true, force: true });
+  }
+}
+
+/** 按命令与执行环境缓存成功的能力探测（并发共用一次）；失败不缓存，后续导出可重试。 */
 export function detectFilterScriptOption(ffmpeg: ToolCommand): Promise<FilterScriptOption> {
-  const known = scriptOptions.get(ffmpeg.command);
+  const key = JSON.stringify([ffmpeg.command, ffmpeg.env ?? process.env]);
+  const known = scriptOptions.get(key);
   if (known) return known;
-  const asked = runTool(ffmpeg, ['-hide_banner', '-h', 'long']).then(
-    ({ stdout }) => filterScriptOption(stdout),
-    () => {
-      scriptOptions.delete(ffmpeg.command);
-      return '-filter_complex_script' as const;
-    },
-  );
-  scriptOptions.set(ffmpeg.command, asked);
+  const asked = probeFilterScriptOption(ffmpeg).catch((error: unknown) => {
+    scriptOptions.delete(key);
+    throw error;
+  });
+  scriptOptions.set(key, asked);
   return asked;
 }
 

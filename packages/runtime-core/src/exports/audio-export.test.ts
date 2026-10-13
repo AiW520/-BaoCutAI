@@ -1,8 +1,11 @@
-import { execFileSync } from 'node:child_process';
+import { execFileSync, spawn } from 'node:child_process';
+import { EventEmitter } from 'node:events';
+import { readFileSync } from 'node:fs';
 import fs from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { PassThrough } from 'node:stream';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { resolveEngineHostCommand } from '../videos/engine-host.ts';
 import {
   detectFilterScriptOption,
@@ -10,12 +13,110 @@ import {
   mixArgs,
   renderAudio,
   runTool,
+  ToolFailure,
   type AudioOutputSettings,
   type MasterRequest,
   type MasterRunner,
 } from './audio-export.ts';
 import type { AudioPlan, PlannedAsset } from './export-plan.ts';
 import { masterRunner, resolveExportWorkerCommand } from './video-export.ts';
+
+vi.mock('node:child_process', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('node:child_process')>();
+  return { ...actual, spawn: vi.fn(actual.spawn) };
+});
+
+describe('滤镜图文件参数的能力探测', () => {
+  const actualSpawn = vi.importActual<typeof import('node:child_process')>('node:child_process');
+  let attempts: Array<{ command: string; args: string[]; graph: string }>;
+  let supported: Set<string>;
+  let missing: boolean;
+  let command: string;
+  let serial = 0;
+
+  beforeEach(() => {
+    attempts = [];
+    supported = new Set();
+    missing = false;
+    command = `ffmpeg-probe-test-${serial++}`;
+    vi.mocked(spawn).mockImplementation((executable, args) => {
+      const argv = args as string[];
+      const option = argv[3]!;
+      const graph = argv[4]!;
+      attempts.push({ command: executable, args: [...argv], graph: readFileSync(graph, 'utf8') });
+      const child = Object.assign(new EventEmitter(), { stdout: new PassThrough(), stderr: new PassThrough() });
+      queueMicrotask(() => {
+        if (missing) child.emit('error', Object.assign(new Error('not found'), { code: 'ENOENT' }));
+        else {
+          if (!supported.has(option)) child.stderr.write(`Unrecognized option '${option.slice(1)}'.`);
+          child.emit('close', supported.has(option) ? 0 : 8);
+        }
+      });
+      return child as unknown as ReturnType<typeof spawn>;
+    });
+  });
+
+  afterEach(async () => {
+    vi.mocked(spawn).mockImplementation((await actualSpawn).spawn);
+    for (const attempt of attempts) {
+      await expect(fs.access(path.dirname(attempt.args[4]!))).rejects.toMatchObject({ code: 'ENOENT' });
+    }
+  });
+
+  it.each([
+    { label: '旧版只支持旧参数', options: ['-filter_complex_script'], expected: '-filter_complex_script', count: 2 },
+    { label: '新旧参数均可用', options: ['-/filter_complex', '-filter_complex_script'], expected: '-/filter_complex', count: 1 },
+    { label: 'FFmpeg 9 只支持新参数且帮助未列出', options: ['-/filter_complex'], expected: '-/filter_complex', count: 1 },
+  ])('$label：根据实际执行结果选择参数', async ({ options, expected, count }) => {
+    supported = new Set(options);
+    expect(await detectFilterScriptOption({ command })).toBe(expected);
+    expect(attempts).toHaveLength(count);
+    expect(attempts.map((attempt) => attempt.args[3])).toEqual(
+      count === 2 ? ['-/filter_complex', '-filter_complex_script'] : ['-/filter_complex'],
+    );
+    for (const attempt of attempts) {
+      expect(attempt.graph).toBe('anullsrc=r=8000:cl=mono,atrim=end_sample=1[out]');
+      expect(attempt.args).not.toContain('-h');
+      expect(attempt.args.slice(5)).toEqual(['-map', '[out]', '-frames:a', '1', '-f', 'null', '-']);
+    }
+  });
+
+  it('并发与后续调用共用成功的探测', async () => {
+    supported.add('-/filter_complex');
+    const tool = { command };
+    const first = detectFilterScriptOption(tool);
+    expect(detectFilterScriptOption(tool)).toBe(first);
+    expect(await first).toBe('-/filter_complex');
+    expect(await detectFilterScriptOption(tool)).toBe('-/filter_complex');
+    expect(attempts).toHaveLength(1);
+  });
+
+  it('同一命令的不同执行环境分别探测', async () => {
+    supported.add('-/filter_complex');
+    expect(await detectFilterScriptOption({ command, env: { PATH: '/modern' } })).toBe('-/filter_complex');
+    supported = new Set(['-filter_complex_script']);
+    expect(await detectFilterScriptOption({ command, env: { PATH: '/legacy' } })).toBe('-filter_complex_script');
+    expect(attempts).toHaveLength(3);
+  });
+
+  it('两种参数都失败时保留错误，不缓存猜测，后续调用可以重试', async () => {
+    await expect(detectFilterScriptOption({ command })).rejects.toMatchObject({ kind: 'failed' });
+    expect(attempts).toHaveLength(2);
+    supported.add('-/filter_complex');
+    expect(await detectFilterScriptOption({ command })).toBe('-/filter_complex');
+    expect(attempts).toHaveLength(3);
+  });
+
+  it('程序不存在时直接报告缺失，恢复后重新探测', async () => {
+    missing = true;
+    await expect(detectFilterScriptOption({ command })).rejects.toBeInstanceOf(ToolFailure);
+    expect(attempts).toHaveLength(1);
+    missing = false;
+    supported.add('-/filter_complex');
+    expect(await detectFilterScriptOption({ command })).toBe('-/filter_complex');
+    expect(attempts).toHaveLength(2);
+  });
+});
 
 /** 音频导出的混音、母带与编码：真实的 ffmpeg（母带可以是替身，也可以是真的 Render Worker）。缺 ffmpeg 时跳过。 */
 
@@ -194,15 +295,13 @@ describe.skipIf(!ffmpeg)('混音的滤镜图从文件读', () => {
     expect((await fs.readdir(staging)).sort()).toEqual(['dense.wav', 'tone.wav']);
   });
 
-  it('检测出的写法与旧选项 -filter_complex_script（新版本里弃用但照样执行）在本机的 ffmpeg 上都跑得通', async () => {
-    const detected = await detectFilterScriptOption({ command: 'ffmpeg' });
-    for (const option of new Set([detected, '-filter_complex_script' as const])) {
-      const file = path.join(staging, 'mix.graph');
-      const out = path.join(staging, `${option.replace(/\W/g, '')}.wav`);
-      const { args, graph } = mixArgs(silent, new Map(), 48_000, 2, out, { option, file });
-      await fs.writeFile(file, graph);
-      await runTool({ command: 'ffmpeg' }, args);
-      expect((await fs.stat(out)).size).toBeGreaterThanOrEqual(DURATION * 48_000 * 2 * 4);
-    }
+  it('检测出的写法在本机 ffmpeg 上能读取滤镜图并完成混音', async () => {
+    const option = await detectFilterScriptOption({ command: 'ffmpeg' });
+    const file = path.join(staging, 'mix.graph');
+    const out = path.join(staging, `${option.replace(/\W/g, '')}.wav`);
+    const { args, graph } = mixArgs(silent, new Map(), 48_000, 2, out, { option, file });
+    await fs.writeFile(file, graph);
+    await runTool({ command: 'ffmpeg' }, args);
+    expect((await fs.stat(out)).size).toBeGreaterThanOrEqual(DURATION * 48_000 * 2 * 4);
   });
 });
