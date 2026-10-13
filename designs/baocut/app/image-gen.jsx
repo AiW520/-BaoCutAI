@@ -424,14 +424,43 @@
 
   /* ---------- 结果格 ---------- */
   /** `extra(r, img)`：卡片下面再挂的一块（工具页挂产物行：在 Space 中查看、交给 Agent、接着用工具） */
-  function ImageCard({r, img, onPlace, onKeep, onRef, onAgain, kept, extra}) {
+  /** 演示图（CSS 渐变）画成 PNG 的 data URL，交给会话里同一个图片查看器；按 id 缓存。真实的图片直接用文件。 */
+  const artUrls = new Map();
+  function artUrl(img, size) {
+    const key = `${img.id}|${size ? size.join('x') : ''}`;
+    if (artUrls.has(key)) return artUrls.get(key);
+    const [w, h] = size || [1024, 1024];
+    const cv = document.createElement('canvas'); cv.width = w; cv.height = h;
+    const g = cv.getContext('2d');
+    const colors = IM.artColors(img.art);
+    const grad = g.createLinearGradient(0, 0, w, h);
+    colors.forEach((c, i) => grad.addColorStop(colors.length > 1 ? i / (colors.length - 1) : 0, c));
+    g.fillStyle = grad; g.fillRect(0, 0, w, h);
+    const url = cv.toDataURL('image/png');
+    artUrls.set(key, url);
+    return url;
+  }
+  /** 生成记录里的图在查看器里的样子（与会话附件同形：name + url） */
+  const viewerItem = (r, img) => ({id: `imgen:${img.id}`, name: img.name, url: artUrl(img, r.size), mime: 'image/png'});
+  /** 点图看大图：会话里的全窗口图片查看器（media-preview-attachment.jsx），同一批记录里的图可以切换；工具页不是会话，不出修改图片的输入。 */
+  function ImageViewer({open, list, onClose}) {
+    if (!open || !window.MediaAttachmentPreview) return null;
+    const items = list.filter((r) => r.status === 'done').flatMap((r) => r.images.map((img) => viewerItem(r, img)));
+    return <window.MediaAttachmentPreview item={viewerItem(open.r, open.img)} items={items} onClose={onClose} />;
+  }
+
+  /* ---------- 结果格 ---------- */
+  /** `extra(r, img)`：卡片下面再挂的一块（工具页挂产物行：在 Space 中查看、在文件夹中显示、交给 Agent）；
+      `onOpen`：点图看大图；`onKeep`：只在视频里生成时有（收进素材库）。 */
+  function ImageCard({r, img, onPlace, onKeep, onRef, onAgain, onOpen, kept, extra}) {
     return (
       <div className={cx('imgen__card', kept && 'is-kept')}>
         {/* @ds-allow: 生成结果的缩略是素材本身 */}
         <span className={cx('imgen__thumb', r.transparent && 'checker')} style={{background: img.art, aspectRatio: r.size ? `${r.size[0]} / ${r.size[1]}` : '1 / 1'}}>
-          <span className="imgen__acts">
+          {onOpen ? <BCAction className="imgen__open" aria-label={`放大查看图片：${img.name}`} onClick={() => onOpen(r, img)} /> : null}
+          <span className={cx('imgen__acts', onOpen && 'imgen__acts--pass')}>
             {onPlace ? <Btn variant="accent" size="s" icon="plus" onClick={() => onPlace(r, img)}>放到画布</Btn> : null}
-            <Btn variant="secondary" size="s" icon="download" onClick={() => onKeep(r, img)}>{onPlace ? '收进素材库' : kept ? '已收进视频' : '加到视频…'}</Btn>
+            {onKeep ? <Btn variant="secondary" size="s" icon="download" onClick={() => onKeep(r, img)}>收进素材库</Btn> : null}
             <span className="row gap4">
               {onRef ? <Btn variant="quiet" size="s" icon="image" onClick={() => onRef(r, img)}>用作参考</Btn> : null}
               <Btn variant="quiet" size="s" icon="refresh" onClick={() => onAgain(r, img)}>再来一版</Btn>
@@ -478,7 +507,7 @@
     );
   }
   /** 结果区：最近几批；每批一个小标题（模型 · 尺寸 · 时间） */
-  function ImageResults({list, keep, onPlace, onKeep, onRef, onAgain, batches, extra}) {
+  function ImageResults({list, keep, onPlace, onKeep, onRef, onAgain, onOpen, batches, extra}) {
     const shown = list.slice(0, batches || 3);
     if (!shown.length) return null;
     return (
@@ -488,7 +517,7 @@
             {r.status === 'done' ? <>
               <div className="imgen__batchhd"><span className="t-detail-xs grow t-truncate">{IM.recordMeta(r)}</span><span className="t-detail-xs">{r.ago}</span></div>
               <div className={cx('imgen__grid', r.images.length === 1 && 'imgen__grid--one')}>
-                {r.images.map((img) => <ImageCard key={img.id} r={r} img={img} kept={!!(keep && keep[img.id])} onPlace={onPlace} onKeep={onKeep} onRef={onRef} onAgain={onAgain} extra={r.status === 'done' ? extra : null} />)}
+                {r.images.map((img) => <ImageCard key={img.id} r={r} img={img} kept={!!(keep && keep[img.id])} onPlace={onPlace} onKeep={onKeep} onRef={onRef} onAgain={onAgain} onOpen={onOpen} extra={r.status === 'done' ? extra : null} />)}
               </div>
             </> : r.status === 'error' ? <ErrorCard r={r} /> : r.status === 'canceled' ? null : <RunningCard r={r} list={list} />}
           </div>
@@ -645,7 +674,7 @@
   }
 
   Object.assign(window, {
-    useImageEngines, useImageRecords, ImageGenForm, ImageResults, ImageAgentSection, ImageCard, ImageProbeDialog, RefsRow,
+    useImageEngines, useImageRecords, ImageGenForm, ImageResults, ImageAgentSection, ImageCard, ImageViewer, ImageProbeDialog, RefsRow,
     BC_IMAGE_JOBS: {enqueue, cancelRec, removeRec, requeue, setFailNext, statusOf, imageNode, drafts: jobs.drafts, jobs, SAMPLES, PLATFORM},
   });
 })();

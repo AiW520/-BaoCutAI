@@ -153,7 +153,7 @@
     doc: ['translate', 'tts', 'new-movie'],
     subtitle: ['translate', 'tts', 'new-movie'],
     audio: ['new-movie', 'add-to-movie'],
-    image: ['new-movie', 'add-to-movie'],
+    image: [],          // 生成的图只看、存、交给 Agent，不在这里加到视频或以此新建视频
     final: ['new-movie', 'add-to-movie'],
   };
   const FOLLOW_MOVIE = {transcribe: ['translate', 'dub'], translate: ['dub'], dub: []};
