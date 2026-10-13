@@ -2,10 +2,13 @@ import { editorWasmAvailable } from '@baocut/editor-wasm';
 import { describe, expect, it } from 'vitest';
 import {
   editUnit,
+  legacyPairRows,
+  legacySpeechSentences,
   markUnit,
   needsTranslation,
   pairRows,
   pairStats,
+  readLegacyTranslation,
   readTranslation,
   sha256Hex,
   speechSentences,
@@ -68,6 +71,67 @@ describe.skipIf(!editorWasmAvailable())('原文的句子与指纹（字幕与翻
 
   it('译文的 textHash 是 SHA-256', async () => {
     expect(await sha256Hex('Bonjour le monde.')).toBe('4178c4d4c2fd95163ebbe7eca64d886ca5e6f69a9c1f51d0760ac80207a343e6');
+  });
+});
+
+describe('旧项目译文的只读对照', () => {
+  const body = {
+    schema: 'baocut.translation/1',
+    units: [
+      { id: 'old-1', text: '你好世界', display: '你好，世界。', source: { fingerprint: 'legacy-fp' } },
+      { id: 'old-2', text: '稍后见', source: { first: 'w3', last: 'w3' } },
+      { id: 'removed', text: '保留的译句' },
+    ],
+  };
+  const source = {
+    schema: 'baocut.speech/1',
+    words: [
+      { id: 'w1', text: 'Hello' },
+      { id: 'hidden', text: 'um', hidden: true },
+      { id: 'w2', text: 'world.' },
+      { id: 'w3', text: 'Later.' },
+    ],
+    sentences: [{ id: 'old-1', first: 'w1', last: 'w2' }],
+  };
+
+  it('保留旧句 ID 与显示改写；按存下的词范围和 source 回退配对，不重切句或核对旧指纹', () => {
+    const before = JSON.stringify(body);
+    const legacy = readLegacyTranslation(body)!;
+    const sentences = legacySpeechSentences(source, legacy)!;
+    expect(sentences).toEqual([
+      sentence('old-1', 'Hello world.', '', ['w1', 'w2']),
+      sentence('old-2', 'Later.', '', ['w3']),
+    ]);
+    const rows = legacyPairRows(sentences, legacy);
+    expect(rows.map((r) => [r.sentence?.id, r.unit?.naturalText, r.state])).toEqual([
+      ['old-1', '你好，世界。', 'ok'],
+      ['old-2', '稍后见', 'ok'],
+      [undefined, '保留的译句', 'sentence-gone'],
+    ]);
+    expect(readTranslation(body)).toBeNull();
+    expect(JSON.stringify(body)).toBe(before);
+  });
+
+  it('支持 wordIds、源词顺序、前导空格与未翻译的旧句', () => {
+    const legacy = readLegacyTranslation({ schema: 'baocut.translation/1', units: [{ id: 'cjk', text: 'Hello', display: ' ' }] })!;
+    const sentences = legacySpeechSentences({
+      schema: 'baocut.speech/1',
+      words: [{ id: 'a', text: '你' }, { id: 'b', text: '好。' }, { id: 'c', text: ' Next.' }],
+      sentences: [{ id: 'later', wordIds: ['c'] }, { id: 'cjk', wordIds: ['a', 'b'] }],
+    }, legacy)!;
+    expect(sentences.map((s) => [s.id, s.text])).toEqual([['cjk', '你好。'], ['later', 'Next.']]);
+    expect(legacyPairRows(sentences, legacy).map((r) => [r.unit?.naturalText, r.state])).toEqual([
+      ['Hello', 'ok'], [undefined, 'untranslated'],
+    ]);
+  });
+
+  it('不接受未知或损坏的格式，空译文仍可查看', () => {
+    expect(readLegacyTranslation(null)).toBeNull();
+    expect(readLegacyTranslation(translation([]))).toBeNull();
+    expect(readLegacyTranslation({ ...body, units: [{ id: 'x' }] })).toBeNull();
+    expect(readLegacyTranslation({ ...body, units: [{ id: 'x', text: 'a', display: 1 }] })).toBeNull();
+    expect(readLegacyTranslation({ schema: 'baocut.translation/1', units: [] })).not.toBeNull();
+    expect(legacySpeechSentences(null, readLegacyTranslation(body)!)).toBeNull();
   });
 });
 

@@ -1,5 +1,6 @@
 import { EditorWasmError, EditorWasmUnavailable, speechSentences as deriveSentences } from '@baocut/editor-wasm';
 import type { Id } from '@baocut/protocol';
+import { joinWords } from './speech-cues.ts';
 
 /**
  * 译文文档（视频格式规范 §5.3，`baocut.translation/2`）在界面这边的读与改：原文的句子、句子的内容指纹、
@@ -79,7 +80,7 @@ export interface TranslationBody {
   units: TranslationUnit[];
 }
 
-/** 读 `/2` 的译文正文；别的格式（旧项目的 `/1`）返回 null，界面只读不改。 */
+/** 新版编辑流程读 `/2` 正文；旧项目的 `/1` 由只读列表单独读取。 */
 export function readTranslation(body: unknown): TranslationBody | null {
   if (!isObject(body) || body.schema !== TRANSLATION_SCHEMA || !Array.isArray(body.units)) return null;
   const units = body.units.filter(
@@ -87,6 +88,71 @@ export function readTranslation(body: unknown): TranslationBody | null {
       isObject(u) && typeof u.id === 'string' && typeof u.sourceSentenceId === 'string' && typeof u.naturalText === 'string',
   );
   return units.length === body.units.length ? (body as unknown as TranslationBody) : null;
+}
+
+export interface LegacyTranslationBody {
+  schema: 'baocut.translation/1';
+  units: Array<{ id: Id; text: string; display?: string; source?: unknown }>;
+}
+
+/** 旧项目的只读正文；不把旧指纹、对齐或显示改写换算成 `/2`。 */
+export function readLegacyTranslation(body: unknown): LegacyTranslationBody | null {
+  if (!isObject(body) || body.schema !== 'baocut.translation/1' || !Array.isArray(body.units)) return null;
+  const valid = body.units.every((u) =>
+    isObject(u) && typeof u.id === 'string' && typeof u.text === 'string' &&
+    (u.display === undefined || typeof u.display === 'string'));
+  return valid ? body as unknown as LegacyTranslationBody : null;
+}
+
+/** `/1` 按存下的句子 ID 对照；不能用新版派生规则重新切句，否则已有译文会配错。 */
+export function legacySpeechSentences(body: unknown, translation: LegacyTranslationBody): SourceSentence[] | null {
+  if (!isObject(body) || body.schema !== SPEECH_SCHEMA || !Array.isArray(body.words)) return null;
+  const words = body.words.filter(
+    (w): w is Json & { id: string; text: string } => isObject(w) && typeof w.id === 'string' && typeof w.text === 'string',
+  );
+  const position = new Map(words.map((w, i) => [w.id, i]));
+  const byId = new Map(words.map((w) => [w.id, w]));
+  const leading = words.some((w) => /^\s/.test(w.text));
+  const sentences = new Map<Id, SourceSentence>();
+  const add = (id: string, range: unknown) => {
+    if (!isObject(range) || sentences.has(id)) return;
+    let members: string[] = [];
+    if (Array.isArray(range.wordIds)) members = range.wordIds.filter((id): id is string => typeof id === 'string');
+    else {
+      const first = typeof range.first === 'string' ? position.get(range.first) : undefined;
+      const last = typeof range.last === 'string' ? position.get(range.last) : first;
+      if (first !== undefined && last !== undefined && last >= first) members = words.slice(first, last + 1).map((w) => w.id);
+    }
+    const visible = members.flatMap((id) => {
+      const word = byId.get(id);
+      return word && word.hidden !== true ? [word] : [];
+    });
+    if (visible.length) sentences.set(id, {
+      id,
+      wordIds: visible.map((w) => w.id),
+      text: joinWords(visible.map((w) => w.text), leading),
+      fingerprint: '',
+    });
+  };
+  for (const raw of Array.isArray(body.sentences) ? body.sentences : []) {
+    if (isObject(raw) && typeof raw.id === 'string') add(raw.id, raw);
+  }
+  for (const unit of translation.units) add(unit.id, unit.source);
+  return [...sentences.values()].sort((a, b) => position.get(a.wordIds[0]!)! - position.get(b.wordIds[0]!)!);
+}
+
+/** 仅供列表展示的行；空指纹表示旧格式无法核对新规则，不写回文档或生成字幕。 */
+export function legacyPairRows(sentences: readonly SourceSentence[], translation: LegacyTranslationBody): PairRow[] {
+  return pairRows(sentences, {
+    units: translation.units.map((unit) => ({
+      id: unit.id,
+      sourceSentenceId: unit.id,
+      sourceFingerprint: '',
+      naturalText: unit.display?.trim() || unit.text,
+      alignment: null,
+      status: 'draft',
+    })),
+  });
 }
 
 /** 画面与导出用的译文：有字幕显示改写时用它（§5.3 的双语合并同一个取法）。 */
@@ -127,7 +193,7 @@ export interface PairRow {
  * 原文与译文逐句配对：按转写的句子次序；原句已经没了的译文单元排在它在译文里前一个单元的后面；
  * 翻译之后新出现、还没有译文的句子也列出来（state `untranslated`）。
  */
-export function pairRows(sentences: readonly SourceSentence[], translation: TranslationBody): PairRow[] {
+export function pairRows(sentences: readonly SourceSentence[], translation: Pick<TranslationBody, 'units'>): PairRow[] {
   const bySentence = new Map<Id, TranslationUnit>();
   for (const unit of translation.units) if (!bySentence.has(unit.sourceSentenceId)) bySentence.set(unit.sourceSentenceId, unit);
   const known = new Set(sentences.map((s) => s.id));

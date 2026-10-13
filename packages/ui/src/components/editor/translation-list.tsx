@@ -21,9 +21,12 @@ import { estimateLines } from '../../model/virtual-rows.ts';
 import {
   editableRow,
   isStale,
+  legacyPairRows,
+  legacySpeechSentences,
   needsTranslation,
   pairRows,
   pairStats,
+  readLegacyTranslation,
   readTranslation,
   speechSentences,
   unitText,
@@ -271,7 +274,7 @@ export function TranslationList({
   only: 'trans' | null;
 }) {
   const { seek } = useEditorActions();
-  const editable = useVideo((s) => canEdit(s.video));
+  const videoEditable = useVideo((s) => canEdit(s.video));
   const web = useRuntime().host.platform === 'web';
   const model = useRetranslateModel();
   const toAgent = useAgentRetranslate(videoId);
@@ -291,6 +294,8 @@ export function TranslationList({
     () => (local && local.base === loaded ? local.body : derive(loaded, 'translation', readTranslation)),
     [local, loaded],
   );
+  const legacy = useMemo(() => derive(loaded, 'legacy-translation', readLegacyTranslation), [loaded]);
+  const editable = videoEditable && !legacy;
 
   const speechId = record.sourceDocumentId ?? translation?.sourceBasis.speechRef.id ?? null;
   const speechRecord = speechId ? documents[speechId] : undefined;
@@ -299,10 +304,17 @@ export function TranslationList({
     () => (speechBody === undefined ? null : derive(speechBody, 'words', (body) => readSpeechWords(body))),
     [speechBody],
   );
-  // 句子与指纹经 editor-wasm 同步求出（WASM 随 bundle 内联，第一次调用时同步实例化）：按正文算一次。
-  const ready = useMemo(() => (speechBody === undefined ? null : derive(speechBody, 'sentences', speechSentences)), [speechBody]);
+  // 新版句子与指纹经 editor-wasm 求出；旧译文按存下的句子 ID 只读对照，不重新切句。
+  const ready = useMemo(() => {
+    if (speechBody === undefined) return null;
+    return legacy ? legacySpeechSentences(speechBody, legacy) : derive(speechBody, 'sentences', speechSentences);
+  }, [speechBody, legacy]);
 
-  const rows = useMemo(() => (translation && ready ? pairRows(ready, translation) : []), [translation, ready]);
+  const rows = useMemo(() => {
+    if (!ready) return [];
+    if (legacy) return legacyPairRows(ready, legacy);
+    return translation ? pairRows(ready, translation) : [];
+  }, [translation, legacy, ready]);
   const stats = useMemo(() => pairStats(rows), [rows]);
 
   /** 每一句在序列上第一次出现的区间（素材时钟的词经实例投过去；剪掉的没有）。 */
@@ -374,11 +386,11 @@ export function TranslationList({
   const placed = Object.values(documents).some((d) => derivedFrom(d, record.id));
 
   if (loaded === undefined) return <div className={muted}>{C.reading}</div>;
-  if (!translation) return <div className={muted}>{C.unreadable}</div>;
+  if (!translation && !legacy) return <div className={muted}>{C.unreadable}</div>;
   if (!speechRecord) return <div className={muted}>{C.speechMissing}</div>;
   if (!ready || !words) return <div className={muted}>{speechBody === undefined ? C.reading : C.unreadable}</div>;
 
-  const language = translation.language || record.language || '';
+  const language = translation?.language || record.language || '';
   const languageLabel = language ? languageName(language) : C.unnamed;
   const sourceLanguage = speechRecord.language ? langName(speechRecord.language) : C.source;
   const todo = rows.filter(needsTranslation).length;
@@ -389,6 +401,7 @@ export function TranslationList({
     return { time: at === undefined ? null : formatClock(at), text: (row.sentence?.text ?? '').trim().slice(0, 24) };
   };
   const commit = async (row: PairRow, text: string) => {
+    if (!translation) return;
     setEditing(null);
     const before = row.unit ? unitText(row.unit) : '';
     if (text.trim() === before) return;
@@ -409,15 +422,17 @@ export function TranslationList({
       void startRefresh({ videoId, record, language, sentences: [row.sentence.id], count: 1, model: model.ref });
     },
     agent: (row) => toAgent({ language: languageLabel, scope: scopeOf(row) }),
-    mark: (row, on) =>
+    mark: (row, on) => {
+      if (!translation) return;
       void markTranslation({ videoId, record, body: translation, row, on, speech: words, documents }).then((next) => {
         if (next) setLocal({ base: loaded, body: next });
-      }),
+      });
+    },
   };
 
   return (
     <>
-      {placed ? null : (
+      {placed || legacy ? null : (
         <div className={place}>
           <span className={placeText}>{C.notPlaced}</span>
           <Button
@@ -433,19 +448,23 @@ export function TranslationList({
           </Button>
         </div>
       )}
-      <TranslationStatbar
-        stats={stats}
-        cut={cut}
-        todo={todo}
-        refreshing={refreshing}
-        web={web}
-        editable={editable}
-        modelName={model.name}
-        onDirect={() => void startRefresh({ videoId, record, language, count: todo, model: model.ref })}
-        onAgent={() => toAgent({ language: languageLabel, count: todo })}
-        onCut={() => openAiTool(videoId, 'stale', { language: language ? languageName(language) : null, translationId: record.id })}
-        onTranslateTool={() => openFlow(videoId, true)}
-      />
+      {legacy ? (
+        <div className={bar}><span className={barLabel}>{C.stats(stats.sentences)}</span></div>
+      ) : (
+        <TranslationStatbar
+          stats={stats}
+          cut={cut}
+          todo={todo}
+          refreshing={refreshing}
+          web={web}
+          editable={editable}
+          modelName={model.name}
+          onDirect={() => void startRefresh({ videoId, record, language, count: todo, model: model.ref })}
+          onAgent={() => toAgent({ language: languageLabel, count: todo })}
+          onCut={() => openAiTool(videoId, 'stale', { language: language ? languageName(language) : null, translationId: record.id })}
+          onTranslateTool={() => openFlow(videoId, true)}
+        />
+      )}
       <div className={colhead({ isSingle: only === 'trans' })}>
         {only === 'trans' ? null : <span>{C.original(sourceLanguage)}</span>}
         <span>{C.translation(language ? languageName(language) : C.unnamed)}</span>
