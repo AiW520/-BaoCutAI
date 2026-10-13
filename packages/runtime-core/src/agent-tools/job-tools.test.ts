@@ -71,3 +71,42 @@ describe('从链接下载要求登录', () => {
     expect((await inspect(failed({ url: 'u', cookieBrowser: 'firefox' }))).pipeline.cookieBrowsers).toEqual(['firefox']);
   });
 });
+
+describe('任务参数里的本机路径', () => {
+  const inspect = (record: JobRecord) => {
+    const deps = { jobs: {}, pipelines: {}, scope: { authorize: () => ({}), visibleJob: async () => record } } as unknown as JobToolsDeps;
+    const agent = { kind: 'agent', conversationId: 'conv_1' } as unknown as ToolPrincipal;
+    return new JobTools(deps).dispatch('jobs_inspect', { jobId: 'job_1' }, agent) as Promise<{ parameters: Record<string, unknown> }>;
+  };
+
+  it('语音合成的参考录音不给本机路径，留来源、摘要、大小与原文（§6.1）', async () => {
+    const ref = '/Users/me/voices/ref.wav';
+    const record = {
+      jobId: 'job_1',
+      kind: 'synthesizeSpeech',
+      state: 'completed',
+      attempt: 1,
+      videoId: null,
+      submitter: { kind: 'agent', id: 'conv_1' },
+      warnings: [],
+      generation: {
+        capability: 'synthesizeSpeech',
+        text: '你好',
+        voice: 'reference',
+        language: null,
+        format: 'wav',
+        instructions: null,
+        speed: null,
+        seed: null,
+        voiceMode: 'clone',
+        reference: { source: 'file', path: ref, sha256: 'sha256:ab', byteLength: 8, transcript: '我的声音' },
+      },
+    } as unknown as JobRecord;
+    const digest = await inspect(record);
+    expect(digest.parameters).toMatchObject({
+      textChars: 2,
+      reference: { source: 'file', sha256: 'sha256:ab', byteLength: 8, transcript: '我的声音' },
+    });
+    expect(JSON.stringify(digest)).not.toContain(ref);
+  });
+});

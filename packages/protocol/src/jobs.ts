@@ -199,7 +199,8 @@ export interface JobWarning {
 
 /**
  * 本地语音合成冻结的参考录音。`source`：`file` 来自请求的 `reference.file`；`library` 来自音色库条目（固定在提交时的版本）；
- * `builtin` 是内置音色随应用分发的录音。`path` 是本机绝对路径，只在本机的任务记录里出现，不进日志与产物。
+ * `builtin` 是内置音色随应用分发的录音。`path` 是本机绝对路径，只在本机的任务记录里出现，不进日志与产物的出处，也不给智能体看
+ * （出处与智能体看到的参数只留来源、摘要、大小与原文）。
  */
 export interface FrozenSpeechReference {
   source: 'file' | 'library' | 'builtin';

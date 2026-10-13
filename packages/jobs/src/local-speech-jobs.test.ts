@@ -19,6 +19,7 @@ import {
   speechSelfTestVerdict,
   type BundleDefinition,
 } from '@baocut/models';
+import { generatedImportOperation } from './generated-import.ts';
 import { JobManager, type JobVideos } from './job-manager.ts';
 import { LocalTranscribeProvider } from './local-provider.ts';
 import { FAKE_MODEL_WORKER } from './index.ts';
@@ -283,6 +284,12 @@ describe('本地语音合成（假 Model Worker）', () => {
         reference: { source: 'file', path: ref, transcript: '我的声音', byteLength: 8 },
       },
     });
+    // 导入视频的出处不记参考录音的本机路径（§6.1、§7.3）。
+    const imported = generatedImportOperation(job, { artifactId: 'art_1', file: path.join(dir, 'out.wav'), index: 0, total: 1 });
+    expect(imported).toMatchObject({
+      provenance: { source: { parameters: { reference: { source: 'file', byteLength: 8, transcript: '我的声音' } } } },
+    });
+    expect(JSON.stringify(imported)).not.toContain(ref);
 
     // 提交后、执行前改掉文件：慢的任务占着 Worker，第二个任务排在后面。
     await control({ capabilities: ['transcribe', 'synthesize'], faults: ['slow'] });

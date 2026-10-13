@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { RpcError, type Id, type JobRecord, type JobState } from '@baocut/protocol';
-import { withoutImagePaths } from '@baocut/models';
+import { withoutInputPaths } from '@baocut/models';
 import {
   DUB_PIPELINE,
   isTerminal,
@@ -423,17 +423,19 @@ function linkImportCaptionsNext(captions: unknown): string {
 
 /** 任务记录给模型看的版本：冻结的选择与参数、错误与下一步、每个输出。 */
 function digestJob(record: JobRecord) {
-  const generation = record.generation
-    ? record.generation.capability === 'synthesizeSpeech'
-      ? (({ text, ...rest }) => ({ ...rest, textChars: [...text].length }))(record.generation)
-      : record.generation.capability === 'generateText'
+  // 输入图与参考录音的本机路径不给模型看（架构设计 §6.1）。
+  const frozen = record.generation ? withoutInputPaths(record.generation) : undefined;
+  const generation = frozen
+    ? frozen.capability === 'synthesizeSpeech'
+      ? (({ text, ...rest }) => ({ ...rest, textChars: [...text].length }))(frozen)
+      : frozen.capability === 'generateText'
         ? (({ messages, responseFormat, ...rest }) => ({
             ...rest,
             messages: messages.length,
             inputChars: messages.reduce((sum, m) => sum + [...m.content].length, 0),
             responseFormat: responseFormat.type,
-          }))(record.generation)
-        : withoutImagePaths(record.generation)
+          }))(frozen)
+        : frozen
     : undefined;
   const outputs = record.result?.outputs?.map((o) => ({
     artifactId: o.artifactId,

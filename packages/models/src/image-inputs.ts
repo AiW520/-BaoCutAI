@@ -1,7 +1,7 @@
 import crypto from 'node:crypto';
 import fs from 'node:fs/promises';
 import path from 'node:path';
-import { RpcError, type FrozenImageInput, type GenerationParameters, type ImageInputMediaType } from '@baocut/protocol';
+import { RpcError, type FrozenImageInput, type ImageInputMediaType } from '@baocut/protocol';
 import { ModelsGenerationOptions as M } from '@baocut/protocol/messages/models/generation-options.ts';
 import { sha256File } from './model-catalog.ts';
 import { ProviderFailure } from './transcribe-provider.ts';
@@ -89,14 +89,6 @@ export async function readFrozenImage(input: FrozenImageInput): Promise<Buffer> 
   const actual = `sha256:${crypto.createHash('sha256').update(bytes).digest('hex')}`;
   if (actual !== input.sha256) throw new ProviderFailure('input-unreadable', M.imageChanged({ name: input.name }), { ...details, reason: 'changed' });
   return bytes;
-}
-
-/**
- * 出处与给智能体看的参数里去掉输入图的本机路径（§6.1）：只留来源、名字、摘要、大小、格式与条目或素材 id。别的能力原样返回。
- */
-export function withoutImagePaths<T extends GenerationParameters>(parameters: T): T {
-  if (parameters.capability !== 'generateImage' || !parameters.images) return parameters;
-  return { ...parameters, images: parameters.images.map(({ path: _path, ...rest }) => rest) };
 }
 
 /** 字节数写成 MB（十进制，至多一位小数）。 */

@@ -458,3 +458,18 @@ export function musicParameters(choice: ModelChoice<'generateMusic'>, request: G
     ...(steps !== null ? { steps } : {}),
   };
 }
+
+/**
+ * 出处与给智能体看的参数里去掉输入的本机路径（架构设计 §6.1）：生图的输入图只留来源、名字、摘要、大小、格式与条目或素材 id；
+ * 语音合成的参考录音只留来源、摘要、大小与原文（音色库条目的 id 在 `voice` 里）。别的能力与没有输入的参数原样返回。
+ */
+export function withoutInputPaths<T extends GenerationParameters>(parameters: T): T {
+  if (parameters.capability === 'generateImage' && parameters.images) {
+    return { ...parameters, images: parameters.images.map(({ path: _path, ...rest }) => rest) };
+  }
+  if (parameters.capability === 'synthesizeSpeech' && parameters.reference) {
+    const { path: _path, ...reference } = parameters.reference;
+    return { ...parameters, reference };
+  }
+  return parameters;
+}

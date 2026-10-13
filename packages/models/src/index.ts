@@ -69,7 +69,6 @@ export {
   megabytes,
   readFrozenImage,
   sniffImageMediaType,
-  withoutImagePaths,
   type ImageInputToFreeze,
 } from './image-inputs.ts';
 export {
@@ -163,6 +162,7 @@ export {
   type LocalSpeechFreeze,
   type MusicParameters,
   type SpeechParameters,
+  withoutInputPaths,
 } from './generation-options.ts';
 export {
   TextCallCancelled,

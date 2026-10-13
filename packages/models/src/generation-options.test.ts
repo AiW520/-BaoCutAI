@@ -3,8 +3,8 @@ import os from 'node:os';
 import path from 'node:path';
 import { describe, expect, it } from 'vitest';
 import type { FrozenImageInput, ImageModelInfo, ProviderView, SpeechModelInfo } from '@baocut/protocol';
-import { codePointLength, imageInputPlan, imageParameters, speechParameters } from './generation-options.ts';
-import { freezeImageInput, readFrozenImage, sniffImageMediaType, withoutImagePaths } from './image-inputs.ts';
+import { codePointLength, imageInputPlan, imageParameters, speechParameters, withoutInputPaths, type SpeechParameters } from './generation-options.ts';
+import { freezeImageInput, readFrozenImage, sniffImageMediaType } from './image-inputs.ts';
 import { ProviderFailure } from './transcribe-provider.ts';
 import { selectModel, type ModelChoice } from './model-selection.ts';
 
@@ -104,6 +104,28 @@ describe('speechParameters', () => {
       voice: 'JBFqnCBsd6RMkjVDRZzb',
       language: 'ja',
     });
+  });
+});
+
+describe('withoutInputPaths', () => {
+  const speech: SpeechParameters = {
+    capability: 'synthesizeSpeech',
+    text: '你好',
+    voice: 'reference',
+    language: null,
+    format: 'wav',
+    instructions: null,
+    speed: null,
+    seed: null,
+    voiceMode: 'clone',
+  };
+
+  it('参考录音去掉本机路径，留来源、摘要、大小与原文；没有参考录音时原样返回', () => {
+    const reference = { source: 'file' as const, path: '/Users/me/voices/ref.wav', sha256: 'sha256:ab', byteLength: 8, transcript: '我的声音' };
+    const stripped = withoutInputPaths({ ...speech, reference });
+    expect(stripped.reference).toEqual({ source: 'file', sha256: 'sha256:ab', byteLength: 8, transcript: '我的声音' });
+    expect(JSON.stringify(stripped)).not.toContain('/Users/me');
+    expect(withoutInputPaths(speech)).toBe(speech);
   });
 });
 
@@ -217,7 +239,7 @@ describe('生图的输入图（§6.1）', () => {
     expect(params).not.toHaveProperty('strength');
     // 出处与给智能体看的参数里没有本机路径。
     const { path: _path, ...withoutPath } = frozen('a');
-    expect(withoutImagePaths(params).images).toEqual([withoutPath]);
+    expect(withoutInputPaths(params).images).toEqual([withoutPath]);
   });
 
   it('按文件头认格式（扩展名不算）；冻结摘要，文件变了执行前读出时失败', async () => {
