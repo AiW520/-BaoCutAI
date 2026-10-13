@@ -83,7 +83,7 @@ fn fish_s2_pro_real_weights() {
             {
                 let (active, cache, peak) = model_runtime::backend::mlx::runtime::memory_snapshot();
                 eprintln!("memory active={active} cache={cache} peak={peak}");
-                assert!(active + cache < 5usize << 30);
+                assert!(active + cache < 9usize << 29);
             }
             true
         })
@@ -125,10 +125,9 @@ fn fish_s2_pro_real_weights() {
     let wav = out.join("fish-s2-pro.wav");
     synthesize::wav::write_wav_pcm16(&wav, &result.samples, result.sample_rate).unwrap();
     if let Some(baseline) = std::env::var_os("BAOCUT_FISH_BASELINE_WAV") {
-        assert_eq!(
-            std::fs::read(wav).unwrap(),
-            std::fs::read(baseline).unwrap(),
-            "memory staging must preserve the baseline WAV bytes"
+        assert!(
+            std::fs::read(wav).unwrap() == std::fs::read(baseline).unwrap(),
+            "memory optimizations must preserve the baseline WAV bytes"
         );
     }
 }
@@ -142,7 +141,7 @@ fn check_idle_memory() {
         "finished or cancelled synthesis must not retain model weights"
     );
     assert!(
-        peak < 5usize << 30,
-        "quantized S2 Pro must stay below the measured 5 GiB regression budget"
+        peak < 9usize << 29,
+        "quantized S2 Pro must stay below the 4.5 GiB regression budget"
     );
 }

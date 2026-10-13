@@ -2,6 +2,7 @@
 //! Copyright 2025 Ivan Digital; Rust/MLX/Candle changes. License and scope: mod.rs.
 use super::config::{BlockConfig, Config};
 use super::projection::Projection as Linear;
+use super::vocabulary::{COMPACT_EOS, Vocabulary};
 use crate::synthesize::qwen3_tts::layers::{KvCache, RmsNorm};
 use crate::synthesize::qwen3_tts::weights::Weights;
 use crate::synthesize::tensor::nn::silu;
@@ -146,9 +147,10 @@ pub(super) struct Backbone {
     fast_norm: RmsNorm,
     fast_output: Linear,
     pub config: Config,
+    vocabulary: Vocabulary,
 }
 impl Backbone {
-    pub fn load(w: &mut Weights, c: Config) -> Result<Self> {
+    pub fn load(w: &mut Weights, c: Config, vocabulary: Vocabulary) -> Result<Self> {
         let (group, bits) = c.quantization.as_ref().map_or((0, 0), |q| (q.group_size, q.bits));
         // The conversion keeps Hugging Face names; older exports use flat names.
         let mut slow = w.split_prefix("text_model.model.");
@@ -201,6 +203,7 @@ impl Backbone {
             fast_norm,
             fast_output,
             config: c,
+            vocabulary,
         })
     }
     pub fn prefill(&self, rows: &[Vec<i32>], state: &mut State) -> Result<(Array, Array)> {
@@ -218,11 +221,12 @@ impl Backbone {
     }
     pub fn slow(&self, rows: &[Vec<i32>], state: &mut State) -> Result<(Array, Array)> {
         let n = rows[0].len() as i32;
-        let ids = Array::from_slice(&rows[0], &[1, n]);
+        let ids = rows[0].iter().map(|&id| self.vocabulary.word(id)).collect::<Result<Vec<_>>>()?;
+        let ids = Array::from_slice(&ids, &[1, n]);
         let text = self.embeddings.embedding(&ids)?;
         let mut sum = ops::zeros::<f32>(&[1, n, self.config.text_config.dim as i32])?.as_dtype(text.dtype())?;
         for (i, row) in rows[1..].iter().enumerate() {
-            let ids: Vec<i32> = row.iter().map(|v| v + (i * super::CODEBOOK_SIZE) as i32).collect();
+            let ids = row.iter().map(|&id| Vocabulary::codebook(i, id)).collect::<Result<Vec<_>>>()?;
             sum = sum.add(self.codebook_embeddings.embedding(&Array::from_slice(&ids, &[1, n]))?)?;
         }
         let mask: Vec<f32> = rows[0]
@@ -251,7 +255,7 @@ impl Backbone {
         let h = self.slow_norm.forward(&h.index((.., n - 1..n, ..)))?;
         let logits = match &self.slow_output {
             Some(out) => out.forward(&h)?,
-            None => self.embeddings.forward(&h)?,
+            None => self.embeddings.first_rows(COMPACT_EOS + 1)?.forward(&h)?,
         };
         Ok((logits.as_dtype(Dtype::Float32)?, h))
     }

@@ -96,6 +96,25 @@ mod tests {
         }
     }
     #[test]
+    fn compact_logits_preserve_seeded_sampling_repetition_and_eos() {
+        let s = Sampling::new(&SamplingOptions::default()).unwrap();
+        // Equal scores exercise stable tie ordering and the EOS candidate.
+        let full = [99., 99., 99., 0.3, 0.3, 0.4, 0.3, 99., 0.4];
+        let compact = [0.3, 0.3, 0.4, 0.3, 0.4];
+        for temperature in [0., 0.7] {
+            let s = Sampling { temperature, ..s.clone() };
+            let (mut a, mut b) = (Rng::new(42), Rng::new(42));
+            let (mut original, mut mapped) = (Vec::new(), Vec::new());
+            for _ in 0..200 {
+                let id = s.semantic(&full, 3..=6, 8, &original, &mut a).unwrap();
+                let index = s.semantic(&compact, 0..=3, 4, &mapped, &mut b).unwrap();
+                assert_eq!(id, if index == 4 { 8 } else { index + 3 });
+                original.push(id);
+                mapped.push(index);
+            }
+        }
+    }
+    #[test]
     fn greedy_and_nonfinite_logits() {
         let s = Sampling {
             temperature: 0.0,

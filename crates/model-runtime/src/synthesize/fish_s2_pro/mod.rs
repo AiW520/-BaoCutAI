@@ -35,6 +35,11 @@ pub mod sampling;
     feature = "backend-candle",
     all(feature = "backend-mlx", target_os = "macos", target_arch = "aarch64")
 ))]
+mod vocabulary;
+#[cfg(any(
+    feature = "backend-candle",
+    all(feature = "backend-mlx", target_os = "macos", target_arch = "aarch64")
+))]
 pub use engine::FishS2Pro;
 pub const SAMPLE_RATE: u32 = 44_100;
 pub const CODEBOOKS: usize = 10;

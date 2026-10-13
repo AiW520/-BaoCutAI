@@ -7,6 +7,7 @@ use super::{
     config::Config,
     prompt,
     sampling::Sampling,
+    vocabulary::{COMPACT_EOS, Vocabulary},
 };
 use crate::bundle::VerifiedFiles;
 use crate::synthesize::qwen3_tts::{sampling::Rng, weights::Weights};
@@ -50,7 +51,7 @@ impl FishS2Pro {
         let guard = ModelMemoryCacheGuard;
         // Validate the actual transformer during model.load. During synthesis
         // it is reloaded only for code generation, never alongside the codec.
-        let backbone = Self::load_backbone(model, config.clone())?;
+        let backbone = Self::load_backbone(model, config.clone(), &[])?;
         drop(backbone);
         drop(ModelMemoryCacheGuard);
         Ok(Self {
@@ -63,7 +64,7 @@ impl FishS2Pro {
             _memory: memory,
         })
     }
-    fn load_backbone(model: &VerifiedFiles, config: Config) -> Result<Backbone> {
+    fn load_backbone(model: &VerifiedFiles, config: Config, prompt: &[i32]) -> Result<Backbone> {
         let started = std::time::Instant::now();
         let _cache = ModelMemoryCacheGuard;
         let weights = model.require_extension_in("", "safetensors")?;
@@ -72,13 +73,14 @@ impl FishS2Pro {
             .filter(|p| p.file_name().is_some_and(|n| n.to_string_lossy().starts_with("model")))
             .collect();
         ensure!(!weights.is_empty(), "Fish transformer weights missing");
-        let mut weights = Weights::load_filtered(&weights, |_| true, None)?;
+        let vocabulary = Vocabulary::new(&config, prompt)?;
+        let mut weights = Weights::load_filtered_rows(&weights, |_| true, None, |key| vocabulary.rows(key))?;
         let mut flat = weights.split_prefix("model.");
         let backbone = if flat.keys().is_empty() {
-            Backbone::load(&mut weights, config)?
+            Backbone::load(&mut weights, config, vocabulary)?
         } else {
             ensure!(weights.keys().is_empty(), "unexpected Fish weights outside model prefix");
-            Backbone::load(&mut flat, config)?
+            Backbone::load(&mut flat, config, vocabulary)?
         };
         if crate::backend::speech_timing_enabled() {
             eprintln!("[fish-s2-pro] transformer loaded in {:?}", started.elapsed());
@@ -131,20 +133,14 @@ impl FishS2Pro {
                 backbone.slow(&rows, &mut state)?
             };
             logits.eval()?;
-            let token = sampling.semantic(
-                &logits.as_slice::<f32>(),
-                c.semantic_start_token_id..=c.semantic_end_token_id,
-                c.eos_token_id,
-                &previous,
-                rng,
-            )?;
-            if token == c.eos_token_id {
+            let token = sampling.semantic(&logits.as_slice::<f32>(), 0..=COMPACT_EOS - 1, COMPACT_EOS, &previous, rng)?;
+            if token == COMPACT_EOS {
                 ensure!(!codes[0].is_empty(), "Fish generated no audio");
                 return Ok(codes);
             }
             ensure!(step < sampling.max_tokens, "Fish generation reached token limit before EOS");
             previous.push(token);
-            let first = token - c.semantic_start_token_id;
+            let first = token;
             let mut frame = vec![first];
             let mut fast = State::new(c.audio_decoder_config.n_layer);
             backbone.fast(&h, &mut fast)?.eval()?;
@@ -153,7 +149,7 @@ impl FishS2Pro {
                 logits.eval()?;
                 frame.push(sampling.sample(&logits.as_slice::<f32>(), 0..1024, rng)?);
             }
-            rows = vec![vec![token]];
+            rows = vec![vec![c.semantic_start_token_id + token]];
             for (i, id) in frame.into_iter().enumerate() {
                 codes[i].push(id);
                 rows.push(vec![id]);
@@ -225,7 +221,7 @@ impl TtsEngine for FishS2Pro {
             }) {
                 bail!("synthesis cancelled");
             }
-            self.backbone = Some(Self::load_backbone(&self.model_files, self.config.clone())?);
+            self.backbone = Some(Self::load_backbone(&self.model_files, self.config.clone(), &rows[0])?);
             super::memory::trace("transformer-ready");
             let generated = self.generate(rows, &sampling, &mut rng, index, progress);
             // Also release the transformer on cancellation or generation failure.

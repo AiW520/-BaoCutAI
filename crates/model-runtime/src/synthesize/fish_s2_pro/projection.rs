@@ -26,6 +26,19 @@ impl Projection {
             bias: w.take_optional(&format!("{p}.bias")),
         })
     }
+    /// A view into the semantic/EOS prefix of the tied embedding. Keep the
+    /// prompt-only text rows out of the output head without duplicating weights.
+    pub fn first_rows(&self, count: i32) -> Result<Self> {
+        ensure!(count > 0 && count <= self.weight.dim(0), "invalid Fish output prefix");
+        Ok(Self {
+            weight: self.weight.index(..count),
+            quantized: self
+                .quantized
+                .as_ref()
+                .map(|(s, b, g, bits)| (s.index(..count), b.index(..count), *g, *bits)),
+            bias: self.bias.as_ref().map(|b| b.index(..count)),
+        })
+    }
     fn dequantize(&self, weight: &Array, scales: &Array, biases: &Array, group: usize, bits: u32) -> Result<Array> {
         #[cfg(all(feature = "backend-mlx", target_os = "macos", target_arch = "aarch64"))]
         {
@@ -122,6 +135,11 @@ mod tests {
             for (r, value) in y.as_slice::<f32>().iter().enumerate() {
                 assert!((value - 64.0 * ((r % levels) as f32 * 0.5 - 2.0)).abs() < 1e-4);
             }
+            let prefix = projection.first_rows(131).unwrap();
+            let selected = prefix.forward(&Array::from_slice(&[1.0f32; 64], &[1, 1, 64])).unwrap();
+            selected.eval().unwrap();
+            assert_eq!(&*selected.as_slice::<f32>(), &y.as_slice::<f32>()[..131]);
+            assert!(projection.first_rows(261).is_err());
             let e = projection.embedding(&Array::from_slice(&[1i32, 259], &[1, 2])).unwrap();
             e.eval().unwrap();
             let values = e.as_slice::<f32>();
