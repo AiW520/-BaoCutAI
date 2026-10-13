@@ -349,7 +349,12 @@ fn open_inner(out: &Path, setup: WriterSetup) -> Result<AvWriter> {
             Some(&video_settings),
         )
     };
-    unsafe { video_input.setExpectsMediaDataInRealTime(false) };
+    // 视频轨按实时源声明：离线模式下 AVFoundation 内部编码管线（CoreMedia 与 VideoToolbox
+    // 的线程）有一批在 utility 档（20），机器一忙就被默认档的编译、批处理挤掉，硬件编码器
+    // 空等——M4 上 12 个忙进程时 900 帧只剩约 59 fps，声明成实时约 183 fps。我们照旧等
+    // `isReadyForMoreMediaData` 再追加，不丢帧；本机实测码流结构（High、B 帧、关键帧数）、
+    // 码率与 PSNR/SSIM 和离线模式相同，音视频交织更紧（架构设计 §9.11「调度优先级」）。
+    unsafe { video_input.setExpectsMediaDataInRealTime(true) };
     // 非整数帧率把媒体时基钉在分子上：缺省 600 会把 29.97 的帧长取整成 20/600，
     // 读回来就是 30 fps（`bcut-kernel` 的 `pin_media_time_scale` 同一条规则）。
     if fps_den > 1
