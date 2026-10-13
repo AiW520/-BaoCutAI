@@ -121,7 +121,7 @@
       } else if (k === 'write') {
         /* 这部视频里命中的几句一起作为预选材料，打开写博客，范围落在「按主题」 */
         const same = res.results.filter((x) => x.video === r.video && x.cue).map((x) => x.cue);
-        window.BC_WRTOPIC.setPreset(r.video, same);
+        window.BC_WRTOPIC.setPreset(r.video, same, query);
         app.openTool(r.video, 'blog', null);
         app.toast(`用「${vname(r.video)}」里命中的 ${same.length} 句写博客`);
       }
