@@ -18,7 +18,7 @@ stdout 不是终端时默认输出 JSON（加 `--json` 也一样），不用解�
 - 成功：`{ "ok": true, "result": …, "next"?: "…", "runtime"?: { "started": true } }`。`result` 就是工具的结果对象；`next` 是建议的下一条命令，只在信封顶层出现。
 - 失败：`{ "ok": false, "error": { "code", "message", "retryability"?, "recovery"?, "remedy"?, "next"? } }`。CLI 自己发现的问题（参数不对、缺 `--yes`、Runtime 不可用）也是这个形状。
 - `baocut spec` 与 `baocut version` 输出裸 JSON，没有信封。
-- 进度写在 stderr，不混进 stdout 的 JSON；`--progress jsonl` 时每行一个事件（`progress` / `artifact` / `warning` / `done`，带 `jobId`）。
+- 进度写在 stderr，不混进 stdout 的 JSON；`--progress jsonl` 时每行一个事件（`progress` / `artifact` / `warning` / `done`，带 `jobId`）。`progress` 事件有进度时带 `done`、`total`、`unit`；本机生图按去噪步（`unit: 'steps'`）报进度时另带 `remainingSec`（预计剩余秒数，开头和解码时为 null），拿它告诉用户还要等多久，不必反复 `jobs inspect`。
 
 ## 3. 退出码
 

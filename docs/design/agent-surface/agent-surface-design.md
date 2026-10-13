@@ -230,7 +230,7 @@ export --video V --kind subtitles --format srt --bilingual
 - 成功：薄信封 `{ ok: true, result, next? }`，`result` 就是工具的结果对象（与 MCP 工具结果的 JSON 相同）；`next` 是建议的下一条命令（例如 `transcribe` 之后给 `captions create` 或 `export`）。
 - 失败：`{ ok: false, error: { code, message, retryability?, recovery?, remedy?, next? } }`，与 `ToolCatalog.errorBody` 完全相同。`code` 是封闭的错误码（命令协议 §11），`next` 用 CLI 的写法（`baocut models install …`），MCP 面上同一条 `next` 写成工具名——两种写法由共用层按主体渲染，不手写两份。
 - `CAPABILITY_NOT_CONFIGURED` 的 `remedy.settingsHref` 提供对应能力的设置路径；Agent 按 `next` 用它写出可点击的设置链接，不猜地址。
-- 进度到 stderr：`--progress jsonl` 时每行一个事件（`progress` / `artifact` / `warning` / `done`，带 `jobId`、`stage`、`pct`），默认按 TTY 给人读的一行刷新。
+- 进度到 stderr：`--progress jsonl` 时每行一个事件（`progress` / `artifact` / `warning` / `done`，带 `jobId`、`stage`、`pct`；有进度时 `progress` 另带 `done`、`total`、`unit`，本机生图按去噪步报进度时再带 `remainingSec`，命令协议 §4.1），默认按 TTY 给人读的一行刷新（按步的进度写 `3/8` 并接剩余时间）。MCP 的 `jobs_inspect` 透传同一个 `progress`。
 
 ### 5.2 退出码
 

@@ -98,6 +98,7 @@ export const pl: CliMessages = {
   jobEnded: (state) => `Operacja zakończona: ${state}.`,
   statusFullNext:
     "baocut status --full pokazuje dostawców i modele według możliwości; dla jednej uruchom baocut models capabilities --capability <capability>, dla pakietów baocut models list.",
+  jobRemaining: (clock: string) => `zostało ${clock}`,
   waitTimeout: (seconds, jobId) => `Oczekiwanie zatrzymano po ${seconds} s; operacja ${jobId} nadal działa.`,
 
   noRuntimeClient: "Polecenie nie łączy się z Runtime",

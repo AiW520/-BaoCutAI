@@ -155,6 +155,21 @@ describe('本地文生图（假 Model Worker）', () => {
     return manager.inspect(jobId);
   }
 
+  it('去噪按步的进度带预计剩余：第一次进度与走完的那次是 null，中间是不小于 0 的整秒', async () => {
+    const seen: Array<JobRecord['progress']> = [];
+    const off = manager.onChange((job) => {
+      if (job.kind === 'generateImage' && job.progress?.unit === 'steps') seen.push(job.progress);
+    });
+    await draw({ size: '512x512', steps: 8 });
+    off();
+    // 走完之后的校验、发布也发记录，进度不再变
+    const steps = seen.filter((p, i) => i === 0 || p!.done !== seen[i - 1]!.done);
+    expect(steps.map((p) => p!.done)).toEqual([0, 1, 2, 3, 4, 5, 6, 7, 8]);
+    expect(steps[0]!.remainingSec).toBeNull();
+    expect(steps.at(-1)!.remainingSec).toBeNull();
+    for (const p of steps.slice(1, -1)) expect(Number.isInteger(p!.remainingSec)).toBe(true);
+  });
+
   it('能力视图：local 提供 generateImage，模型描述来自模型包（一次一张、PNG、接受 seed、免费）', async () => {
     const view = await services.refresh();
     expect(view.generateImage.default).toBeNull();

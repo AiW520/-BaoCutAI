@@ -132,6 +132,7 @@ const en = {
   jobEnded: (state: string) => `The job ended: ${state}.`,
   statusFullNext:
     'baocut status --full lists every provider and model for each capability; for one capability run baocut models capabilities --capability <capability>, for bundle details baocut models list.',
+  jobRemaining: (clock: string) => `${clock} left`,
   waitTimeout: (seconds: number, jobId: string) => `Stopped waiting after ${seconds} s; job ${jobId} keeps running.`,
 
   // 管理桶（admin/context.ts）

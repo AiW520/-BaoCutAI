@@ -102,6 +102,7 @@ export const zhHans: CliMessages = {
   jobEnded: (state) => `任务结束：${state}。`,
   statusFullNext:
     'baocut status --full 列出每种能力的全部服务与模型；只看一种能力用 baocut models capabilities --capability <能力>，本地模型包的详情用 baocut models list。',
+  jobRemaining: (clock: string) => `剩余 ${clock}`,
   waitTimeout: (seconds, jobId) => `等了 ${seconds} 秒没有结束，不再等待；任务 ${jobId} 照旧在跑。`,
 
   noRuntimeClient: '这条命令不连 Runtime',

@@ -139,6 +139,11 @@ export interface JobProgress {
    * `frames`：成片导出已经画完的帧数。
    */
   unit: 'seconds' | 'segments' | 'outputs' | 'steps' | 'units' | 'bytes' | 'frames';
+  /**
+   * 预计还要多少秒走完剩下的步数，以记录的 `updatedAt` 为准（之后每过一秒少一秒）。只有本机生图按去噪步报进度时有这个字段：
+   * 从收到的第一次进度量起，按已走完各步的平均耗时推算；一步都还没走完或步数已走完（解码）时为 null。不含解码与发布的耗时。
+   */
+  remainingSec?: number | null;
   /** 按片段或逐句调用模型的步骤：已经发出的调用、重试与失败（事实计数，架构设计 §7.9）。父任务汇总在跑的那一步的计数。 */
   calls?: JobCallCounts;
 }
