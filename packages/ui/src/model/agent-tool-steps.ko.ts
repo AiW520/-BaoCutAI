@@ -37,6 +37,7 @@ export const ko: AgentToolStepsMessages = {
     relatedVideos: '관련 동영상 찾기',
     findRetakes: '재촬영 찾기',
     checkTerms: '용어 표기 확인',
+    topicShifts: '주제 전환 찾기',
     readSkill: 'Skill 읽기',
     requestGrant: '허가 요청',
     readContract: '작업 계약 읽기',

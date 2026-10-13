@@ -22,8 +22,8 @@ export interface SemanticThresholds {
   chunking: { targetTokens: Tunable; minTokens: Tunable; maxTokens: Tunable; overlapSentences: Tunable };
   /** `related`：相关视频里一部视频最近的那段与这部视频整体（讲话向量的平均）的余弦下限（创作辅助集成设计 §2.4）。 */
   thresholds: { weakHit: Tunable; reuse: Tunable; retake: Tunable; glossary: Tunable; related: Tunable };
-  /** 章节边界候选（创作辅助集成设计 §3.6）：阈值 = 中位数 + k·MAD，最短章节秒数，最多几章。 */
-  chapterBoundary: { k: Tunable; minChapterSec: Tunable; maxChapters: Tunable };
+  /** 章节边界候选（创作辅助集成设计 §3.6）：深度阈值 = 中位数 + k·MAD，两侧窗口几个句群，最短章节秒数，最多几章。 */
+  chapterBoundary: { k: Tunable; window: Tunable; minChapterSec: Tunable; maxChapters: Tunable };
   /**
    * 编辑辅助（§3.7、§3.8）：重录的比较窗口（秒）、「没说完」的时长比、参与比较的最短句（规范化后的字符数）；术语候选的字符相似度
    * 复核线与送去编码的窗口上限；发现术语的最少出现次数与写法相似度。
@@ -64,7 +64,7 @@ export function parseThresholds(input: unknown): SemanticThresholds {
   check(t.fusion?.mergedCandidates, 'fusion.mergedCandidates');
   for (const key of ['targetTokens', 'minTokens', 'maxTokens', 'overlapSentences'] as const) check(t.chunking?.[key], `chunking.${key}`);
   for (const key of ['weakHit', 'reuse', 'retake', 'glossary', 'related'] as const) check(t.thresholds?.[key], `thresholds.${key}`);
-  for (const key of ['k', 'minChapterSec', 'maxChapters'] as const) check(t.chapterBoundary?.[key], `chapterBoundary.${key}`);
+  for (const key of ['k', 'window', 'minChapterSec', 'maxChapters'] as const) check(t.chapterBoundary?.[key], `chapterBoundary.${key}`);
   for (const key of [
     'retakeWindowSec',
     'retakeShortRatio',

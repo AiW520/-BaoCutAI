@@ -37,6 +37,7 @@ export const tr: AgentToolStepsMessages = {
     relatedVideos: "İlgili videoları bul",
     findRetakes: "Tekrar çekimleri bul",
     checkTerms: "Terimleri denetle",
+    topicShifts: "Konu geçişlerini bul",
     readSkill: "Skill oku",
     requestGrant: "İzin iste",
     readContract: "Görev sözleşmesini oku",

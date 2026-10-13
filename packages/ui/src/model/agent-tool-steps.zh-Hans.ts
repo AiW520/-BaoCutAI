@@ -37,6 +37,7 @@ export const zhHans: AgentToolStepsMessages = {
     relatedVideos: '找相关视频',
     findRetakes: '找重录',
     checkTerms: '查术语写法',
+    topicShifts: '找话题转折',
     readSkill: '读取 skill',
     requestGrant: '申请授权',
     readContract: '读取任务合同',

@@ -37,6 +37,7 @@ export const zhHant: AgentToolStepsMessages = {
     relatedVideos: '找相關影片',
     findRetakes: '找重錄',
     checkTerms: '查術語寫法',
+    topicShifts: '找話題轉折',
     readSkill: '讀取 Skill',
     requestGrant: '申請授權',
     readContract: '讀取任務合約',

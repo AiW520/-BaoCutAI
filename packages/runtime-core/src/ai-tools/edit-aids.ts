@@ -11,6 +11,8 @@ import { pickTranscript } from './ai-tool-pipeline.ts';
 import { glossaryCandidates, type GlossaryTerm } from './glossary-candidates.ts';
 import { retakeCandidates } from './retake-candidates.ts';
 import { sentenceMapOf, timelineWords } from './timeline-sentences.ts';
+import { topicBoundaries, type TopicBoundaries } from './topic-boundaries.ts';
+import type { BoundaryOptions } from './chapter-boundaries.ts';
 
 /**
  * 编辑辅助的只读方法（创作辅助集成设计 §2.5、§2.7、§3.7、§3.8）：`edits.glossaryCandidates` 与 `edits.retakeCandidates` 只给
@@ -62,6 +64,34 @@ export async function retakeCandidatesOf(deps: EditAidDeps, videoId: Id, request
   const record = mirror.video.documents[documentId]!;
   const sentenceOf = sentenceMapOf(await deps.videos.document(videoId, documentId, record.currentRevision));
   const result = await retakeCandidates({ words, sentenceOf, ...symmetric(deps) });
+  return { documentId, ...result };
+}
+
+/**
+ * 一部已打开视频的话题转折（章节边界候选，§3.6）：与「生成章节」按话题找边界同一份实现（`topicBoundaries`）。调用方已经核过
+ * 主体能用这部视频；读的是这部视频自己的索引，不检索别的视频。
+ */
+export async function topicBoundariesOf(
+  deps: EditAidDeps,
+  videoId: Id,
+  requested: Id | undefined,
+  options: Partial<BoundaryOptions>,
+  signal: AbortSignal,
+): Promise<TopicBoundaries & { documentId: Id }> {
+  const { documentId, words } = await transcript(deps, videoId, requested);
+  const semantic = deps.semantic();
+  const context = semantic?.context(USER_VIEWER) ?? null;
+  const result = await topicBoundaries(
+    context
+      ? {
+          topicUnits: (id, doc) => context.topicUnits({ videoId: id, documentId: doc }),
+          embed: (texts, s) => context.embedTexts(texts, { role: 'document', signal: s }),
+        }
+      : {},
+    { videoId, documentId, words },
+    signal,
+    options,
+  );
   return { documentId, ...result };
 }
 

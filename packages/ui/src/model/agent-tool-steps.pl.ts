@@ -38,6 +38,7 @@ export const pl: AgentToolStepsMessages = {
     relatedVideos: "Znajdź powiązane filmy",
     findRetakes: "Znajdź powtórki",
     checkTerms: "Sprawdź terminy",
+    topicShifts: "Znajdź zmiany tematu",
     readSkill: "Odczytaj Skill",
     requestGrant: "Poproś o uprawnienie",
     readContract: "Odczytaj kontrakt zadania",

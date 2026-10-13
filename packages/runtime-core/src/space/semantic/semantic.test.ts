@@ -628,6 +628,35 @@ describe('SemanticContext', () => {
     await expect(bare.matchFrames({ text: 'x', videoId: 'v1', limit: 1 })).rejects.toThrow();
   });
 
+  it('章节边界用的句群：直接取当前版本索引里的向量，起点跳过与上一个句群重叠的那句；没有模型时 null', async () => {
+    const long: FakeVideo = {
+      videoId: 'v9',
+      name: 'Long talk',
+      revision: 'r1',
+      sentences: Array.from({ length: 24 }, (_, i) => `Sentence number ${i} talks about the topic of this part of the long recorded talk in some detail.`),
+    };
+    await addVideo(long, null, null);
+    await syncIndex();
+    services = open();
+    await build(services);
+    const units = await services.context(USER_VIEWER).topicUnits({ videoId: 'v9', documentId: 'd-v9' });
+    const generation = services.store()!.activeGenerations(['v9']).get('v9')!;
+    const chunks = services.store()!.generationChunks(generation.id).filter((c) => c.documentKind === 'speech').sort((a, b) => a.ord - b.ord);
+    expect(chunks.length).toBeGreaterThanOrEqual(3);
+    expect(units).toHaveLength(chunks.length);
+    expect(units![0]!.start).toBe(chunks[0]!.start);
+    // 相邻句群重叠一句：从第二个起，起点是第二句的开头（晚于句群自己的起点），时间线上递增。
+    const sentenceStarts = long.sentences.map((_, i) => 100 + i * 5);
+    for (let i = 1; i < units!.length; i++) {
+      expect(units![i]!.start).toBeGreaterThan(chunks[i]!.start);
+      expect(sentenceStarts).toContain(units![i]!.start);
+      expect(units![i]!.start).toBeGreaterThan(units![i - 1]!.start);
+    }
+    expect(units![0]!.vector).toHaveLength(generation.dims);
+    expect(await services.context(USER_VIEWER).topicUnits({ videoId: 'v9', documentId: 'other' })).toBeNull();
+    expect(await open({ provider: null }).context(USER_VIEWER).topicUnits({ videoId: 'v9', documentId: 'd-v9' })).toBeNull();
+  });
+
   it('对称相似只比较看得到的视频', async () => {
     services = open();
     await build(services);

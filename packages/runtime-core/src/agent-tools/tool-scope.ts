@@ -138,6 +138,7 @@ export const TOOL_RISK: Readonly<Record<string, RiskLevel>> = {
   speech_sentences: 'read',
   // 重录与术语候选：只读，不改视频、不写文件；语义比较的向量不落盘。
   speech_retakes: 'read',
+  speech_topic_boundaries: 'read',
   speech_glossary_candidates: 'read',
   // 预览代码画面：不改视频，只在离屏宿主里取帧，写进 .baocut-out/frames/，与 videos_frames 同级。
   compositions_preview: 'read',

@@ -39,6 +39,7 @@
   },
   "chapterBoundary": {
     "k": { "value": 1.5, "calibrated": false },
+    "window": { "value": 2, "calibrated": false },
     "minChapterSec": { "value": 60, "calibrated": false },
     "maxChapters": { "value": 24, "calibrated": false }
   }

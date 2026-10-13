@@ -117,7 +117,20 @@ export interface SemanticStatus {
   stale: number;
 }
 
+/**
+ * 章节边界（创作辅助集成设计 §3.6）用的句群：一份讲话转写在当前版本语义索引里的句群（时间线时间，按顺序）与它们的文档向量。
+ * `start` 是这个句群里第一句不与上一个句群重叠的句子的起点（句群之间重叠几句），即从这里往后才是新内容。
+ */
+export interface TopicUnit {
+  start: number;
+  end: number;
+  text: string;
+  vector: Float32Array;
+}
+
 export interface SemanticContext {
+  /** 当前版本已建好索引时，这份转写的句群与向量（不重新编码）；没有模型、索引不是这一版或没有这份转写时 null。 */
+  topicUnits(req: { videoId: Id; documentId: Id }): Promise<TopicUnit[] | null>;
   embedTexts(texts: string[], opts: { role: EmbeddingRole; profileId?: string; signal?: AbortSignal }): Promise<Float32Array[]>;
   findRelevantChunks(req: FindRelevantChunksRequest): Promise<RelevantChunkSet>;
   matchFrames(req: { text: string; videoId: Id; near?: { sentenceId: string; windowSec: number }; limit: number }): Promise<FrameCandidate[]>;
@@ -172,6 +185,32 @@ export function createSemanticContext(deps: SemanticContextDeps, viewer: SpaceVi
 
   return {
     embedTexts: (texts, opts) => embed(texts, opts.role, opts.profileId, opts.signal),
+
+    async topicUnits({ videoId, documentId }) {
+      const store = deps.store();
+      const profiled = await deps.search.profile();
+      if (!store || !('profile' in profiled)) return null;
+      const entry = deps.search.resolveScope(viewer, { videoIds: [videoId] }, profiled.profile).videos.find((v) => v.video.videoId === videoId);
+      if (entry?.state !== 'indexed' || !entry.generation) return null;
+      const partition = store.partition(entry.generation.id);
+      if (!partition) return null;
+      const ofDocument = (row: { documentKind: SpaceSearchDocumentKind; documentId: Id | null; clock: 'sequence' | 'source' }) =>
+        row.documentKind === 'speech' && row.documentId === documentId && row.clock === 'sequence';
+      const dims = partition.generation.dims;
+      const picked = partition.chunks.flatMap((chunk, i) => (ofDocument(chunk) ? [{ chunk, vector: partition.vectors.subarray(i * dims, (i + 1) * dims) }] : []));
+      picked.sort((a, b) => a.chunk.ord - b.chunk.ord);
+      const rows = store.sentences(entry.generation.id).filter(ofDocument);
+      const units: TopicUnit[] = [];
+      let previous = new Set<string>();
+      for (const { chunk, vector } of picked) {
+        const ids = new Set(chunk.sentenceIds);
+        // 重叠过来的句子之后的第一句；一句太长被切成几块时没有新句子，用这一块自己的起点。
+        const fresh = rows.find((row) => row.sentenceIds.some((id) => ids.has(id) && !previous.has(id)));
+        units.push({ start: fresh?.start ?? chunk.start, end: chunk.end, text: chunk.text, vector });
+        previous = ids;
+      }
+      return units.length > 0 ? units : null;
+    },
 
     async findRelevantChunks(req) {
       const intent = req.intent.trim();

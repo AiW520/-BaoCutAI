@@ -1,12 +1,14 @@
 import { z } from 'zod';
-import { glossaryCandidatesOf, retakeCandidatesOf, type EditAidDeps } from '../ai-tools/edit-aids.ts';
+import { videoTimeHref } from '@baocut/protocol';
+import { glossaryCandidatesOf, retakeCandidatesOf, topicBoundariesOf, type EditAidDeps } from '../ai-tools/edit-aids.ts';
 import { ToolError, type ToolInfo, type ToolSet } from './tool-catalog.ts';
 import type { ToolPrincipal, ToolScope } from './tool-scope.ts';
 import { videoArg } from './video-tools.ts';
 
 /**
- * 编辑辅助的只读工具（创作辅助集成设计 §2.5、§2.7、§3.7、§3.8）：与编辑器 AI 工具页的「重录候选」「术语候选」同一份实现
- * （`ai-tools/edit-aids.ts`），只给候选，不改视频；剪掉哪一遍、改哪个写法由智能体再用 `edits_apply` 提交，与其他编辑同样撤销。
+ * 编辑辅助的只读工具（创作辅助集成设计 §2.4、§2.5、§2.7、§3.6–§3.8）：与编辑器 AI 工具页的「重录候选」「术语候选」、「生成章节」
+ * 按话题找边界同一份实现（`ai-tools/edit-aids.ts`），只给候选，不改视频；剪掉哪一遍、改哪个写法、在哪分章由智能体再用
+ * `edits_apply` 提交，与其他编辑同样撤销。
  *
  * 语义比较用本机对称编码（装了文本嵌入模型包时），没有时退回字面，`effectiveMode` 与 `reason` 写明。术语候选读视频转写启用的
  * 术语表（与 `library_show` 同样只读用户库），所以与 `speech_sentences` 一样只在工具桥与终端，不在 MCP 面。
@@ -22,6 +24,12 @@ const documentArg = z.string().min(1).max(200).optional().describe('可选。讲
 const schemas = {
   speech_retakes: z.strictObject({ video: videoArg, documentId: documentArg }),
   speech_glossary_candidates: z.strictObject({ video: videoArg, documentId: documentArg }),
+  speech_topic_boundaries: z.strictObject({
+    video: videoArg,
+    documentId: documentArg,
+    minChapterSec: z.number().min(10).max(3600).optional().describe('可选。两个边界之间至少隔多少秒，10 到 3600；默认 60'),
+    maxChapters: z.number().int().min(2).max(200).optional().describe('可选。最多几章（边界数 + 1），2 到 200；默认 24'),
+  }),
 };
 
 type ToolName = keyof typeof schemas;
@@ -53,6 +61,20 @@ const DEFINITIONS: Record<ToolName, ToolInfo> = {
     annotations: { readOnlyHint: true },
     effect: 'query',
     examples: [{ title: '找误听', args: { video: 'demo' } }],
+    surfaces: ['agent', 'cli'],
+    positional: 'video',
+  },
+  speech_topic_boundaries: {
+    title: '找话题转折',
+    description: [
+      '按意思找一部视频讲话里话题转折的地方，作章节边界的候选。',
+      'mode 为 topic 时 candidates 按时间排：at 是新章节可以开始的时间线秒（段落或句子的开头），href 是这一刻的链接，before / after 是转折前后各一小段原文；depth 越大转折越明显（只在同一部视频的候选之间比），first 是第一段的起点。',
+      '用法：章节只落在 first 与这些候选处，可以合并相邻的几处，不在别处新开；depth 明显小的几处多半是小插曲，按目标章数合并掉。阈值未经校准（calibrated: false）。',
+      'mode 为 model 时没有候选（reason 给原因：没装语义模型等；reason 为 null 是没找到明显的转折），照读文稿自己判断。source 是 index（用的是建好的语义索引）或 embedded（现算）。只读。',
+    ].join('\n'),
+    annotations: { readOnlyHint: true },
+    effect: 'query',
+    examples: [{ title: '找转折', args: { video: 'demo' } }],
     surfaces: ['agent', 'cli'],
     positional: 'video',
   },
@@ -111,6 +133,27 @@ export class EditAidTools implements ToolSet {
             occurrences: c.occurrences.map((o) => ({ start: round(o.start), end: round(o.end), words: o.words })),
           })),
           discovered: result.discovered.map((d) => ({ source: d.source, forms: d.forms, count: d.count })),
+        };
+      }
+      case 'speech_topic_boundaries': {
+        const q = args as z.infer<(typeof schemas)['speech_topic_boundaries']>;
+        const options = { ...(q.minChapterSec !== undefined ? { minChapterSec: q.minChapterSec } : {}), ...(q.maxChapters !== undefined ? { maxChapters: q.maxChapters } : {}) };
+        const result = await topicBoundariesOf(this.#deps, videoId, q.documentId, options, new AbortController().signal);
+        return {
+          videoId,
+          documentId: result.documentId,
+          mode: result.mode,
+          source: result.source,
+          reason: result.reason,
+          calibrated: false,
+          first: result.first === null ? null : round(result.first),
+          candidates: result.candidates.map((c) => ({
+            at: round(c.at),
+            href: videoTimeHref(videoId, c.at),
+            depth: round(c.depth),
+            before: c.before,
+            after: c.after,
+          })),
         };
       }
       default:

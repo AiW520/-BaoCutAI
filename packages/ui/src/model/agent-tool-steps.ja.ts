@@ -37,6 +37,7 @@ export const ja: AgentToolStepsMessages = {
     relatedVideos: '関連動画を探す',
     findRetakes: '撮り直しを探す',
     checkTerms: '用語の表記を確認',
+    topicShifts: '話題の切り替わりを探す',
     readSkill: 'Skill を読む',
     requestGrant: '許可をリクエスト',
     readContract: 'タスク契約を読む',

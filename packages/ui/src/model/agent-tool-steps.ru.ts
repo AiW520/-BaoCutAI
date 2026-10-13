@@ -38,6 +38,7 @@ export const ru: AgentToolStepsMessages = {
     relatedVideos: "Найти похожие видео",
     findRetakes: "Найти дубли",
     checkTerms: "Проверить термины",
+    topicShifts: "Найти смены темы",
     readSkill: "Прочитать Skill",
     requestGrant: "Запросить разрешение",
     readContract: "Прочитать контракт задачи",

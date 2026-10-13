@@ -37,6 +37,7 @@ export const vi: AgentToolStepsMessages = {
     relatedVideos: "Tìm video liên quan",
     findRetakes: "Tìm đoạn quay lại",
     checkTerms: "Kiểm tra thuật ngữ",
+    topicShifts: "Tìm chỗ chuyển chủ đề",
     readSkill: "Đọc Skill",
     requestGrant: "Yêu cầu ủy quyền",
     readContract: "Đọc hợp đồng tác vụ",

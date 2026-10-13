@@ -163,6 +163,11 @@ describe.skipIf(!ready)('按句编号读讲话与带出处的交付（真实引�
     ]);
     const terms = await tool(session, 'speech_glossary_candidates', { video: videoPath });
     expect(terms.body).toMatchObject({ videoId, glossaries: 0, candidates: [] });
+    // 话题转折：没有语义模型（或文稿太短）时没有候选，交回给智能体自己判断。
+    expect(TOOL_RISK.speech_topic_boundaries).toBe('read');
+    const topics = await tool(session, 'speech_topic_boundaries', { video: videoPath });
+    expect(topics.isError).toBe(false);
+    expect(topics.body).toMatchObject({ videoId, documentId: speechId, mode: 'model', calibrated: false, candidates: [] });
   });
 
   it('句子按时间线编号、再取时编号不变；带编号的 Markdown 交出时去掉编号，出处随 Space 条目保存', async () => {
