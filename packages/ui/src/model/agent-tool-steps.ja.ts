@@ -35,6 +35,7 @@ export const ja: AgentToolStepsMessages = {
     indexStatus: 'セマンティックインデックスを確認',
     buildIndex: 'セマンティックインデックスを作成',
     relatedVideos: '関連動画を探す',
+    findFrames: '合う映像を探す',
     findRetakes: '撮り直しを探す',
     checkTerms: '用語の表記を確認',
     topicShifts: '話題の切り替わりを探す',

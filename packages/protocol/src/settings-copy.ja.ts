@@ -34,7 +34,7 @@ export const ja: SettingDescriptionMessages = {
   'updates.autoDownload': '新しいバージョンをバックグラウンドでダウンロード（自動ではインストールしません）',
   'diagnostics.enabled': '匿名の使用統計とパフォーマンスの概要を送信（メディア、テキスト、パスは含みません）',
   'offline.strict': '厳格なオフライン：オンラインサービスに何も送信しません',
-  'semantic.channels': '意味インデックスを作るチャンネル：text（発話内容：書き起こし、字幕、翻訳、チャプター）。映像（visual）と音（audio）はまだ使えません',
+  'semantic.channels': '意味インデックスを作るチャンネル：text（発話内容：書き起こし、字幕、翻訳、チャプター）。映像（visual）は 8 秒ごとのキーフレームで、マルチモーダルのモデルパッケージが必要で時間もかかります。音（audio）はまだ使えません',
   'semantic.indexedProjects': '意味インデックスを作るプロジェクト：all はすべて、またはプロジェクト ID のリスト（プロジェクト外の動画は all のときのみ）',
   'semantic.translationMemory': '翻訳時に、以前訳したほぼ同じ文を提案（テキスト検索モデルが必要）',
   'semantic.glossaryCandidates': '書き起こし間のほぼ同じ表記から用語の候補を提案（テキスト検索モデルが必要）',

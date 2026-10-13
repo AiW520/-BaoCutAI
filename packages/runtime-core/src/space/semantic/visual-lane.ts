@@ -3,6 +3,7 @@ import { mediaTimeToSeconds, type Id, type VideoSnapshot } from '@baocut/protoco
 import { EmbeddingError, type EmbeddingFrames, type EmbeddingProfile } from '@baocut/models';
 import type { Logger } from '@baocut/harness';
 import type { SpaceVideo } from '../../space-catalog.ts';
+import { assetSegments, projectSourceTime, type AssetSegment } from '../../agent-tools/source-chapters.ts';
 import type { ContentReader } from '../content-index.ts';
 import { validVector, type SemanticCatalogSource, type SemanticSettings } from './coordinator.ts';
 import type { EmbeddingScheduler } from './scheduler.ts';
@@ -159,7 +160,7 @@ export class VisualLane {
     this.kick();
   }
 
-  /** 明确要建这些视频的画面（`space.indexBuild`）：排到队首，不看设置。返回计划处理的视频数。 */
+  /** 明确要建这些视频的画面（`space.indexBuild`）：排到队首，不看设置里开没开画面（项目的纳入照看）。返回计划处理的视频数。 */
   build(videos: readonly SpaceVideo[], options: { rebuild?: boolean } = {}): number {
     const store = this.#options.store();
     if (!store) return 0;
@@ -181,8 +182,9 @@ export class VisualLane {
     const indexed = index.at(video.dir);
     if (!indexed || index.pendingCount([video.dir]) > 0) return null;
     const source = store.visualSource(indexed.videoId);
-    // 设置没开画面时只跟着要过的视频走；开了时按建索引的项目。
-    if (!options.explicit && !source && !(options.all && this.#wantedProject(video.projectId))) return null;
+    // 设置里没纳入语义索引的项目不建（明确要也不建，与讲话一路一样）；没开画面时只跟着要过的视频走。
+    if (!this.#wantedProject(video.projectId)) return null;
+    if (!options.explicit && !source && !options.all) return null;
     const item: Planned = { dir: video.dir, videoId: indexed.videoId, rebuild: options.rebuild };
     if (options.rebuild) return item;
     if (!options.explicit && source?.state === 'failed' && source.wantedRevision === indexed.revision) return null;
@@ -272,8 +274,11 @@ export class VisualLane {
     const content = await reader.readContent(item.dir);
     signal.throwIfAborted();
     const { expectedGeneration } = store.freezeVisual(content.videoId, content.revision);
+    const root = content.snapshot.sequences?.[content.snapshot.rootSequenceId] ?? null;
     const planned: (PublishVisualInput['frames'][number] & { asset: VisualAsset; at: number })[] = [];
     for (const asset of visualAssetsOf(content.snapshot)) {
+      // 这一版时间线上的位置跟着世代存（世代就是这个版本的）：检索时不用再读视频；版本变了由 resolveSearchHit 重新投影。
+      const segments = root ? assetSegments(root, asset.assetId) : [];
       for (const at of frameTimes(asset.durationSec)) {
         const millis = Math.round(at * 1000);
         planned.push({
@@ -282,6 +287,7 @@ export class VisualLane {
           assetId: asset.assetId,
           contentHash: asset.contentHash,
           sourceSec: millis / 1000,
+          sequenceSec: sequenceSecOf(segments, millis / 1000),
           embeddingKey: frameKeyOf(profile.encoderProfileId, asset.contentHash, millis),
         });
       }
@@ -332,7 +338,7 @@ export class VisualLane {
       dims: profile.dims,
       frames: planned
         .filter((f) => !skipped.has(f.embeddingKey))
-        .map(({ assetId, contentHash, sourceSec, embeddingKey }) => ({ assetId, contentHash, sourceSec, embeddingKey })),
+        .map(({ assetId, contentHash, sourceSec, sequenceSec, embeddingKey }) => ({ assetId, contentHash, sourceSec, sequenceSec, embeddingKey })),
     });
     if (published.published) {
       if (expectedGeneration !== null) this.#options.scanner.invalidate([expectedGeneration]);
@@ -343,4 +349,11 @@ export class VisualLane {
       throw new Error('embedding cache lost vectors before publish');
     }
   }
+}
+
+/** 素材源时刻在时间线上的位置（根序列秒，取最早一处）；落在剪掉的部分或素材不在时间线上时 null。 */
+export function sequenceSecOf(segments: readonly AssetSegment[], sourceSec: number): number | null {
+  if (segments.length === 0) return null;
+  const { at, offTimeline } = projectSourceTime(segments, sourceSec);
+  return offTimeline ? null : Math.round(at * 1000) / 1000;
 }

@@ -86,6 +86,7 @@ export async function topicBoundariesOf(
       ? {
           topicUnits: (id, doc) => context.topicUnits({ videoId: id, documentId: doc }),
           embed: (texts, s) => context.embedTexts(texts, { role: 'document', signal: s }),
+          timelineFrames: (id) => context.timelineFrames({ videoId: id }),
         }
       : {},
     { videoId, documentId, words },

@@ -23,7 +23,7 @@ export const ptBR: SettingDescriptionMessages = {
   'runtime.idleExitMinutes': 'Minutos que um Runtime iniciado pela CLI permanece ocioso antes de sair sozinho (1–1440): sem conexões, tarefas ou serviços externos abertos. O aplicativo de desktop e Runtimes iniciados manualmente não são afetados',
   'updates.autoCheck': 'Verificar atualizações do aplicativo automaticamente', 'updates.autoDownload': 'Baixar novas versões em segundo plano (sem instalar automaticamente)',
   'diagnostics.enabled': 'Enviar estatísticas anônimas de uso e resumos de desempenho (sem mídia, texto ou caminhos)', 'offline.strict': 'Estritamente off-line: não enviar nada a nenhum serviço online',
-  'semantic.channels': 'Canais do índice semântico a criar: text (fala: transcrições, legendas, traduções, capítulos); visual e audio ainda não estão disponíveis',
+  'semantic.channels': 'Canais do índice semântico a criar: text (fala: transcrições, legendas, traduções, capítulos); visual (um quadro-chave a cada 8 segundos; requer um pacote de modelo multimodal e leva mais tempo); audio ainda não está disponível',
   'semantic.indexedProjects': 'Projetos cujos vídeos recebem índice semântico: all, ou uma lista de ids de projeto (vídeos fora de projetos só com all)',
   'semantic.translationMemory': 'Sugerir traduções anteriores de frases quase idênticas ao traduzir (requer o modelo de busca de texto)',
   'semantic.glossaryCandidates': 'Sugerir termos de glossário a partir de grafias quase idênticas entre transcrições (requer o modelo de busca de texto)',

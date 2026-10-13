@@ -35,6 +35,7 @@ export const vi: AgentToolStepsMessages = {
     indexStatus: "Xem chỉ mục ngữ nghĩa",
     buildIndex: "Xây dựng chỉ mục ngữ nghĩa",
     relatedVideos: "Tìm video liên quan",
+    findFrames: "Tìm khung hình phù hợp",
     findRetakes: "Tìm đoạn quay lại",
     checkTerms: "Kiểm tra thuật ngữ",
     topicShifts: "Tìm chỗ chuyển chủ đề",

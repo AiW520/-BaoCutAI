@@ -1,10 +1,11 @@
 {
-  "rankingVersion": "rrf-k60-text-v1",
+  "rankingVersion": "rrf-k60-text-visual-v2",
   "fusion": {
     "k": { "value": 60, "calibrated": false },
     "weights": {
       "lexical": { "value": 1, "calibrated": false },
-      "semantic": { "value": 1, "calibrated": false }
+      "semantic": { "value": 1, "calibrated": false },
+      "visual": { "value": 1, "calibrated": false }
     },
     "perRouteCandidates": { "value": 80, "calibrated": false },
     "mergedCandidates": { "value": 100, "calibrated": false }
@@ -17,6 +18,7 @@
   },
   "thresholds": {
     "weakHit": { "value": 0.731, "calibrated": false },
+    "visualWeakHit": { "value": 0.7, "calibrated": false },
     "reuse": { "value": 0.9825, "calibrated": false },
     "retake": { "value": 0.93, "calibrated": false },
     "glossary": { "value": 0.86, "calibrated": false },

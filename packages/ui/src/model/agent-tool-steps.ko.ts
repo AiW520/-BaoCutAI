@@ -35,6 +35,7 @@ export const ko: AgentToolStepsMessages = {
     indexStatus: '의미 색인 확인',
     buildIndex: '의미 색인 만들기',
     relatedVideos: '관련 동영상 찾기',
+    findFrames: '어울리는 장면 찾기',
     findRetakes: '재촬영 찾기',
     checkTerms: '용어 표기 확인',
     topicShifts: '주제 전환 찾기',

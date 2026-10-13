@@ -35,6 +35,7 @@ export const tr: AgentToolStepsMessages = {
     indexStatus: "Anlamsal dizini görüntüle",
     buildIndex: "Anlamsal dizini oluştur",
     relatedVideos: "İlgili videoları bul",
+    findFrames: "Eşleşen kareleri bul",
     findRetakes: "Tekrar çekimleri bul",
     checkTerms: "Terimleri denetle",
     topicShifts: "Konu geçişlerini bul",

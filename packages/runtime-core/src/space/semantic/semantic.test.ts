@@ -43,6 +43,8 @@ interface FakeVideo {
   captions?: boolean;
   /** 素材 a1 是有画面的视频（画面索引取帧用）：内容哈希与时长（秒）。 */
   clip?: { contentHash: string; seconds: number };
+  /** 素材 a1 放在时间线开头：从源时间 `sourceIn` 起放 `seconds` 秒（30 fps）。 */
+  placed?: { sourceIn: number; seconds: number };
 }
 
 function captionDoc(video: FakeVideo): ReadContentDocument {
@@ -103,7 +105,25 @@ function speechDoc(video: FakeVideo): ReadContentDocument {
 function contentOf(video: FakeVideo): ReadContentResult {
   const snapshot = {
     rootSequenceId: 'seq',
-    sequences: { seq: { id: 'seq', fps: { num: 30, den: 1 }, items: [], markers: [] } },
+    sequences: {
+      seq: {
+        id: 'seq',
+        fps: { num: 30, den: 1 },
+        items: video.placed
+          ? [
+              {
+                id: 'i1',
+                type: 'video',
+                enabled: true,
+                assetRef: { id: 'a1', revision: 'r1' },
+                timeMap: { kind: 'linear', sourceIn: { ticks: video.placed.sourceIn * 1000, timescale: 1000 }, rate: { num: 1, den: 1 } },
+                span: { fromFrame: 0, durationFrames: video.placed.seconds * 30 },
+              },
+            ]
+          : [],
+        markers: [],
+      },
+    },
     assets: {
       a1: {
         id: 'a1',
@@ -215,12 +235,17 @@ async function syncIndex(mtime = 1): Promise<void> {
 class FakeFrames implements KeyframeSource {
   calls = 0;
   readonly broken = new Set<number>();
+  /** 按素材内容哈希给每一帧的「画面」（文字）；没给的写素材与时间。 */
+  readonly scenes: Record<string, (at: number) => string>;
+  constructor(scenes: Record<string, (at: number) => string> = {}) {
+    this.scenes = scenes;
+  }
   async keyframe(_dir: string, asset: VisualAsset, at: number): Promise<string> {
     this.calls++;
     if (this.broken.has(at)) throw new Error('decode failed');
     const file = path.join(tmp, 'frames', `${asset.contentHash}-${Math.round(at * 1000)}.jpg`);
     await fs.mkdir(path.dirname(file), { recursive: true });
-    await fs.writeFile(file, `frame ${asset.contentHash} at ${at}`);
+    await fs.writeFile(file, this.scenes[asset.contentHash]?.(at) ?? `frame ${asset.contentHash} at ${at}`);
     return file;
   }
 }
@@ -403,8 +428,8 @@ describe('语义派生库', () => {
     const store = new SemanticStore(dir);
     const vector = new Float32Array([0, 1, 0, 0]);
     const frames = [
-      { assetId: 'a1', contentHash: 'h1', sourceSec: 0, embeddingKey: 'vis-0' },
-      { assetId: 'a1', contentHash: 'h1', sourceSec: 8, embeddingKey: 'vis-8' },
+      { assetId: 'a1', contentHash: 'h1', sourceSec: 0, sequenceSec: null, embeddingKey: 'vis-0' },
+      { assetId: 'a1', contentHash: 'h1', sourceSec: 8, sequenceSec: 12, embeddingKey: 'vis-8' },
     ];
     const base = { videoId: 'v1', encoderProfileId: 'img@1', embeddingSpaceId: 'space', dims: 4, frames };
     const first = store.freezeVisual('v1', 'vr1');
@@ -665,6 +690,197 @@ describe('画面索引', () => {
     expect(reasonOf(await rejection(call(visual, ['audio'])))).toBe('CHANNEL_UNAVAILABLE');
     const missing = await rejection(call(visual, ['visual']));
     expect(missing.details).toMatchObject({ reason: 'MODEL_NOT_INSTALLED', channel: 'visual' });
+  });
+});
+
+describe('画面检索', () => {
+  const STREET = { contentHash: 'h-street', seconds: 40 };
+  const KITCHEN = { contentHash: 'h-kitchen', seconds: 40 };
+  const scenes = {
+    'h-street': (at: number) => (at === 20 ? 'red car crossing the old bridge' : 'empty street at night'),
+    'h-kitchen': () => 'chef chopping onions in a kitchen',
+  };
+
+  /** v1 的街景从源时间 10 秒起放了 20 秒在时间线上；v2 的厨房没放上时间线；v3 没有画面。 */
+  async function visualServices(options: { noVision?: boolean } = {}): Promise<SemanticServices> {
+    reader.videos.set(videos[0]!.dir, { ...V1, revision: 'r2', clip: STREET, placed: { sourceIn: 10, seconds: 20 } });
+    reader.videos.set(videos[1]!.dir, { ...V2, revision: 'r2', clip: KITCHEN });
+    await syncIndex(2);
+    const s = open({ channels: ['text', 'visual'], frames: new FakeFrames(scenes) });
+    await build(s);
+    provider.noVision = options.noVision ?? false;
+    return s;
+  }
+
+  it('建索引时记下帧在这一版时间线上的位置；剪掉的部分为 null', async () => {
+    services = await visualServices();
+    const store = services.store()!;
+    const generation = store.activeVisualGenerations(['v1']).get('v1')!;
+    expect(store.visualPartition(generation.id)!.frames.map((f) => [f.sourceSec, f.sequenceSec])).toEqual([
+      [4, null],
+      [12, 2],
+      [20, 10],
+      [28, 18],
+      [36, null],
+    ]);
+    // 章节转折的画面佐证用：只要时间线上的帧，按时间线秒排；没有画面的视频为 null。
+    const context = services.context(USER_VIEWER);
+    expect((await context.timelineFrames({ videoId: 'v1' }))!.map((f) => [f.at, f.vector.length])).toEqual([
+      [2, 64],
+      [10, 64],
+      [18, 64],
+    ]);
+    expect(await context.timelineFrames({ videoId: 'v3' })).toBeNull();
+  });
+
+  it('文字找画面：素材片段命中、候选窗口；在时间线上的给时间线位置，不在的给源时间；解析按当前时间线重新投影', async () => {
+    services = await visualServices();
+    const search = (text: string) => services!.search.searchV2(USER_VIEWER, { query: { kind: 'text', text }, mode: 'semantic', channels: ['visual'] });
+
+    const street = await search('red car on the bridge');
+    const top = street.hits[0]!;
+    expect(top.target).toEqual({ kind: 'asset-span', assetId: 'a1', videoId: 'v1', representation: 'keyframe' });
+    expect(top).toMatchObject({ matchChannels: ['visual'], matchedBy: ['semantic'], evidenceType: 'visual', snippet: '', needsResolve: false });
+    expect(top.anchor).toMatchObject({ clock: 'sequence', startSec: 6, endSec: 14, boundary: 'window' });
+    expect(top.actions).toContain('open-in-timeline');
+    expect(street.coverage).toHaveLength(1);
+    expect(street.coverage[0]).toMatchObject({ channel: 'visual', indexed: 2, missingInput: 1, knownScopeComplete: true });
+    const resolver = { catalog: { videos: () => videos, index, scanning: false } as unknown as SpaceCatalog, reader };
+    expect(await resolveSearchHit(resolver, USER_VIEWER, top.hitId)).toMatchObject({
+      status: 'resolved',
+      boundary: 'window',
+      spans: [{ clock: 'sequence', startSec: 6, endSec: 14 }],
+    });
+
+    const kitchen = await search('chef chopping onions');
+    const offTimeline = kitchen.hits[0]!;
+    expect(offTimeline.target).toMatchObject({ assetId: 'a1', videoId: 'v2' });
+    expect(offTimeline.anchor).toMatchObject({ clock: 'source', boundary: 'window' });
+    expect(offTimeline.actions).not.toContain('open-in-timeline');
+    expect(await resolveSearchHit(resolver, USER_VIEWER, offTimeline.hitId)).toMatchObject({ status: 'not-in-timeline', spans: [{ clock: 'source' }] });
+
+    // 素材换了内容：原来的画面不在了。
+    reader.videos.set(videos[0]!.dir, { ...V1, revision: 'r3', clip: { contentHash: 'h-other', seconds: 40 }, placed: { sourceIn: 10, seconds: 20 } });
+    expect((await resolveSearchHit(resolver, USER_VIEWER, top.hitId)).status).toBe('gone');
+  });
+
+  it('文字与画面一起请求：两路按名次合在一起，各给覆盖；画面不可用时文字照常并写明原因', async () => {
+    services = await visualServices();
+    const both = await services.search.searchV2(USER_VIEWER, { query: { kind: 'text', text: 'battery' }, mode: 'hybrid', channels: ['text', 'visual'] });
+    expect(new Set(both.hits.map((h) => h.matchChannels[0]))).toEqual(new Set(['text', 'visual']));
+    expect(both.coverage.map((c) => c.channel)).toEqual(['text', 'visual']);
+    const ranks = both.hits.map((h) => h.rank);
+    expect(ranks).toEqual([...ranks].sort((a, b) => b - a));
+
+    provider.noVision = true;
+    const textOnly = await services.search.searchV2(USER_VIEWER, { query: { kind: 'text', text: 'battery' }, mode: 'hybrid', channels: ['text', 'visual'] });
+    expect(textOnly.hits.length).toBeGreaterThan(0);
+    expect(textOnly.hits.every((h) => h.matchChannels[0] === 'text')).toBe(true);
+    expect(textOnly.degraded).toEqual({ reason: 'MODEL_NOT_INSTALLED' });
+    const error = await rejection(services.search.searchV2(USER_VIEWER, { query: { kind: 'text', text: 'car' }, mode: 'semantic', channels: ['visual'] }));
+    expect(error.details).toMatchObject({ reason: 'MODEL_NOT_INSTALLED', channel: 'visual' });
+    const status = await services.search.indexStatus(USER_VIEWER);
+    expect(status.channels.visual).toEqual({ enabled: true, available: false });
+    provider.noVision = false;
+    expect((await services.search.indexStatus(USER_VIEWER)).channels.visual).toEqual({ enabled: true, available: true });
+
+    expect(reasonOf(await rejection(services.search.searchV2(USER_VIEWER, { query: { kind: 'text', text: 'car' }, mode: 'lexical', channels: ['visual'] })))).toBe(
+      'CHANNEL_UNAVAILABLE',
+    );
+  });
+
+  it('matchFrames：一部视频里最像的画面，句子附近的排前面；不按阈值筛，弱的标出', async () => {
+    services = await visualServices();
+    const context = services.context(USER_VIEWER);
+    const all = await context.matchFrames({ text: 'red car on the bridge', videoId: 'v1', limit: 3 });
+    expect(all[0]).toMatchObject({ assetId: 'a1', videoId: 'v1', clock: 'sequence', startSec: 6, endSec: 14, at: 20, near: false });
+    expect(all.length).toBeLessThanOrEqual(3);
+
+    const store = services.store()!;
+    const text = store.activeGenerations(['v1']).get('v1')!;
+    const first = store.sentences(text.id).find((s) => s.clock === 'sequence')!;
+    // 讲话在时间线 100 秒之后；画面在 0–22 秒：窗口够大才算附近。
+    const far = await context.matchFrames({ text: 'empty street', videoId: 'v1', near: { sentenceId: first.sentenceIds[0]!, windowSec: 20 }, limit: 5 });
+    expect(far.some((c) => c.near)).toBe(false);
+    const wide = await context.matchFrames({ text: 'empty street', videoId: 'v1', near: { sentenceId: first.sentenceIds[0]!, windowSec: 95 }, limit: 5 });
+    expect(wide[0]!.near).toBe(true);
+    expect(wide.findIndex((c) => !c.near)).not.toBe(0);
+
+    await expect(context.matchFrames({ text: 'x', videoId: 'nope', limit: 1 })).rejects.toMatchObject({ details: { reason: 'SOURCE_MISSING' } });
+  });
+
+  /** 会话属于 p1（只看得到 v1）的智能体工具。 */
+  function agentTools() {
+    const registry = new MemoryCitationRegistry();
+    const scope = {
+      authorize: (principal: ToolPrincipal) => (principal.kind === 'agent' ? { principal, conversation: { id: 'c-x', projectId: 'p1', folderOf: null } } : { principal }),
+    } as unknown as ToolScope;
+    const space = () => ({ videos: () => videos, index, scanning: false }) as unknown as SpaceCatalog;
+    return new SemanticTools({ semantic: () => services, space, scope, jobs: { list: () => [] }, registry });
+  }
+  const agent = { kind: 'agent', conversationId: 'c-x' } as unknown as ToolPrincipal;
+
+  it('智能体工具：space_search_v2 按画面找、videos_match_frames 按句子出处或时刻找附近的画面', async () => {
+    services = await visualServices();
+    const t = agentTools();
+    const found = (await t.dispatch('space_search_v2', { query: 'red car on the bridge', channels: ['visual'], mode: 'semantic' }, agent)) as {
+      hits: Record<string, unknown>[];
+    };
+    expect(found.hits[0]).toMatchObject({ videoId: 'v1', assetId: 'a1', evidenceType: 'visual', time: { clock: 'sequence', start: 6, end: 14, window: true } });
+    expect(found.hits[0]).not.toHaveProperty('snippet');
+    expect(found.hits[0]!.href).toBe(videoTimeHref('v1', 6));
+
+    type Frames = { frames: { clock: string; start: number; end: number; near?: true; href?: string; framesRange?: string }[] };
+    const frames = (await t.dispatch('videos_match_frames', { videoId: 'v1', text: 'red car on the bridge', limit: 2 }, agent)) as Frames;
+    expect(frames.frames[0]).toMatchObject({ clock: 'sequence', start: 6, end: 14, href: videoTimeHref('v1', 6), framesRange: '6:14' });
+    expect(frames.frames.length).toBeLessThanOrEqual(2);
+
+    const atMoment = (await t.dispatch('videos_match_frames', { videoId: 'v1', text: 'empty street', at: 18, windowSec: 2 }, agent)) as Frames;
+    expect(atMoment.frames[0]!.near).toBe(true);
+    // 剪掉的部分（源时间 0–8 秒）：素材的源时间，没有链接。
+    const all = (await t.dispatch('videos_match_frames', { videoId: 'v1', text: 'empty street', limit: 10 }, agent)) as Frames;
+    const offTimeline = all.frames.find((f) => f.clock === 'source')!;
+    expect(offTimeline).toMatchObject({ start: 0, end: 8 });
+    expect(offTimeline.href).toBeUndefined();
+
+    // 句子出处编号：只认这个会话发过的、这部视频的。
+    const material = (await t.dispatch('speech_relevant', { intent: 'battery', neighbors: 0 }, agent)) as { chunks: { sentences: { ref?: string }[] }[] };
+    const ref = material.chunks.flatMap((c) => c.sentences).find((s) => s.ref)!.ref!;
+    const nearRef = (await t.dispatch('videos_match_frames', { videoId: 'v1', text: 'empty street', near: ref, windowSec: 200 }, agent)) as Frames;
+    expect(nearRef.frames[0]!.near).toBe(true);
+    await expect(t.dispatch('videos_match_frames', { videoId: 'v1', text: 'x', near: 's999' }, agent)).rejects.toMatchObject({ code: 'UNKNOWN_REF' });
+    await expect(t.dispatch('videos_match_frames', { videoId: 'v1', text: 'x', near: ref, at: 3 }, agent)).rejects.toMatchObject({ code: 'INVALID_ARGS' });
+  });
+
+  it('智能体工具：画面索引的状况；设置没开画面时 space_index_build 只给点名的视频建，没纳入的项目不建', async () => {
+    reader.videos.set(videos[0]!.dir, { ...V1, revision: 'r2', clip: STREET, placed: { sourceIn: 10, seconds: 20 } });
+    reader.videos.set(videos[1]!.dir, { ...V2, revision: 'r2', clip: KITCHEN });
+    await syncIndex(2);
+    services = open({ frames: new FakeFrames(scenes) });
+    await build(services);
+    const t = agentTools();
+    type Status = { available: boolean; reason: string | null; planned?: number; videos: { videoId: string; state: string }[]; settled?: boolean };
+    const before = (await t.dispatch('space_index_status', { channel: 'visual' }, agent)) as Status;
+    expect(before).toMatchObject({ available: true, reason: null, videos: [{ videoId: 'v1', state: 'excluded' }] });
+    expect(((await t.dispatch('space_index_status', {}, agent)) as Status).videos).toEqual([expect.objectContaining({ videoId: 'v1', state: 'indexed' })]);
+
+    const built = (await t.dispatch('space_index_build', { videoIds: ['v1'], channel: 'visual', waitSec: 5 }, agent)) as Status;
+    expect(built.planned).toBe(1);
+    expect(built).toMatchObject({ settled: true, videos: [{ videoId: 'v1', state: 'indexed' }] });
+    const store = services.store()!;
+    expect(store.activeVisualGenerations(['v1', 'v2']).has('v2')).toBe(false);
+
+    provider.noVision = true;
+    expect(await t.dispatch('space_index_status', { channel: 'visual' }, agent)).toMatchObject({ available: false, reason: 'MODEL_NOT_INSTALLED' });
+    expect(await t.dispatch('space_index_build', { videoIds: ['v1'], channel: 'visual' }, agent)).toMatchObject({ planned: 0, reason: 'MODEL_NOT_INSTALLED' });
+    provider.noVision = false;
+
+    // 用户没把这个项目纳入语义索引：明确要重建也不建画面（已经建好的照旧能用，与讲话一路一样）。
+    expect(await t.dispatch('space_index_build', { videoIds: ['v1'], channel: 'visual', rebuild: true }, agent)).toMatchObject({ planned: 1 });
+    await services.coordinator.idle();
+    await services.close();
+    services = open({ frames: new FakeFrames(scenes), indexedProjects: ['p-other'] });
+    expect(await t.dispatch('space_index_build', { videoIds: ['v1'], channel: 'visual', rebuild: true }, agent)).toMatchObject({ planned: 0 });
   });
 });
 

@@ -10,7 +10,7 @@ import { USER_VIEWER, listEntries, searchContent, searchScope, visibleEntry, typ
 import { readCitations, type CitationArtifacts } from './space-citations.ts';
 import { relatedVideos } from './related-videos.ts';
 import { resolveSearchHit } from './search-hit-resolver.ts';
-import { reasonOf, semanticError, semanticMessage } from './semantic/errors.ts';
+import { reasonOf, semanticError } from './semantic/errors.ts';
 import { lexicalOnlySearch, type SemanticServices } from './semantic/services.ts';
 import { RcSpace } from '@baocut/protocol/messages/runtime-core';
 
@@ -137,8 +137,7 @@ export function spaceMethods(space: SpaceCatalog, deps: SpaceMethodDeps): Pick<R
       if (channels.includes('visual')) {
         // 只装了文字模型包时画面建不了：现在就告诉调用方（`details.channel` 指明缺的是能读图的模型包）。
         await scheduler.profile('text-to-visual').catch((error: unknown) => {
-          const reason = reasonOf(error);
-          throw new RpcError(semanticError(reason).code, semanticMessage(reason), { reason, channel: 'visual' });
+          throw semanticError(reasonOf(error), { channel: 'visual' });
         });
       }
       // 范围与检索相同：主体看得到的、按项目与 videoId 筛过的视频。

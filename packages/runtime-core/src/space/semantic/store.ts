@@ -127,6 +127,7 @@ const VISUAL_SCHEMA = `
     asset_id TEXT NOT NULL,
     content_hash TEXT NOT NULL,
     source_sec REAL NOT NULL,
+    sequence_sec REAL,
     embedding_key TEXT NOT NULL,
     PRIMARY KEY (generation_id, ord)
   );
@@ -215,6 +216,8 @@ export interface StoredFrame {
   assetId: Id;
   contentHash: string;
   sourceSec: number;
+  /** 这一版时间线上的位置（根序列秒）；素材的这一刻不在时间线上时 null。 */
+  sequenceSec: number | null;
   embeddingKey: string;
 }
 
@@ -432,9 +435,9 @@ export class SemanticStore {
           .lastInsertRowid,
       );
       const frame = this.#prepare(
-        `INSERT INTO visual_frames (generation_id, ord, asset_id, content_hash, source_sec, embedding_key) VALUES (?, ?, ?, ?, ?, ?)`,
+        `INSERT INTO visual_frames (generation_id, ord, asset_id, content_hash, source_sec, sequence_sec, embedding_key) VALUES (?, ?, ?, ?, ?, ?, ?)`,
       );
-      input.frames.forEach((f, ord) => frame.run(generationId, ord, f.assetId, f.contentHash, f.sourceSec, f.embeddingKey));
+      input.frames.forEach((f, ord) => frame.run(generationId, ord, f.assetId, f.contentHash, f.sourceSec, f.sequenceSec, f.embeddingKey));
       this.#prepare(`UPDATE visual_sources SET active_generation = ?, state = ?, error = NULL, updated_at = ? WHERE video_id = ?`).run(
         generationId,
         input.frames.length > 0 ? 'indexed' : 'empty',
@@ -480,6 +483,7 @@ export class SemanticStore {
         assetId: row.asset_id,
         contentHash: row.content_hash,
         sourceSec: row.source_sec,
+        sequenceSec: row.sequence_sec,
         embeddingKey: row.embedding_key,
       });
     }
@@ -724,6 +728,7 @@ interface RawFrame {
   asset_id: string;
   content_hash: string;
   source_sec: number;
+  sequence_sec: number | null;
   embedding_key: string;
 }
 

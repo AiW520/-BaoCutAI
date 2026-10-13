@@ -131,6 +131,7 @@ function world(fakes: Fake[]) {
         }
         return hits.sort((a, b) => b.score - a.score).slice(0, k);
       },
+      exactFrameSearch: () => [],
       invalidate: () => {},
     },
   };

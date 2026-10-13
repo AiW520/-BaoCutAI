@@ -164,6 +164,7 @@ export const TOOL_RISK: Readonly<Record<string, RiskLevel>> = {
   speech_relevant: 'read',
   space_index_status: 'read',
   space_related_videos: 'read',
+  videos_match_frames: 'read',
   // 催建语义索引：不改视频、只写 BaoCut 的缓存，但占用本机算力（重建时可能很久），与样本检查同级。
   space_index_build: 'command',
   // skill 的正文（§3.8）：只读 skill 目录里登记的文件。

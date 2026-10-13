@@ -34,7 +34,7 @@ export const ko: SettingDescriptionMessages = {
   'updates.autoDownload': '새 버전을 백그라운드에서 다운로드(자동으로 설치하지 않음)',
   'diagnostics.enabled': '익명 사용 통계와 성능 요약 보내기(미디어, 텍스트, 경로는 포함하지 않음)',
   'offline.strict': '엄격한 오프라인: 어떤 온라인 서비스에도 아무것도 보내지 않습니다',
-  'semantic.channels': '의미 색인을 만들 채널: text(말한 내용: 대본, 자막, 번역, 챕터). 화면(visual)과 소리(audio)는 아직 사용할 수 없습니다',
+  'semantic.channels': '의미 색인을 만들 채널: text(말한 내용: 대본, 자막, 번역, 챕터). 화면(visual)은 8초마다 키프레임 하나로, 멀티모달 모델 패키지가 필요하고 더 오래 걸립니다. 소리(audio)는 아직 사용할 수 없습니다',
   'semantic.indexedProjects': '의미 색인을 만들 프로젝트: all은 전체, 또는 프로젝트 ID 목록(프로젝트 밖의 영상은 all일 때만)',
   'semantic.translationMemory': '번역할 때 이전에 번역한 거의 같은 문장을 제안(텍스트 검색 모델 필요)',
   'semantic.glossaryCandidates': '대본들 사이의 거의 같은 표기에서 용어 후보를 제안(텍스트 검색 모델 필요)',

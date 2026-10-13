@@ -35,6 +35,7 @@ export const zhHans: AgentToolStepsMessages = {
     indexStatus: '查看语义索引',
     buildIndex: '建语义索引',
     relatedVideos: '找相关视频',
+    findFrames: '找相符的画面',
     findRetakes: '找重录',
     checkTerms: '查术语写法',
     topicShifts: '找话题转折',

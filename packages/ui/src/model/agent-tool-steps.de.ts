@@ -36,6 +36,7 @@ export const de: AgentToolStepsMessages = {
     indexStatus: "Semantischen Index prüfen",
     buildIndex: "Semantischen Index erstellen",
     relatedVideos: "Ähnliche Videos finden",
+    findFrames: "Passende Bilder finden",
     findRetakes: "Wiederholungen finden",
     checkTerms: "Begriffe prüfen",
     topicShifts: "Themenwechsel finden",

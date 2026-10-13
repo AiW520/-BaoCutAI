@@ -35,7 +35,7 @@ export const nl: SettingDescriptionMessages = {
   'updates.autoDownload': "Nieuwe versies op de achtergrond downloaden (zonder automatisch te installeren)",
   'diagnostics.enabled': "Anonieme gebruiksstatistieken en prestatiesamenvattingen verzenden (geen media, tekst of paden)",
   'offline.strict': "Strikte offlinemodus: niets naar onlinediensten sturen",
-  'semantic.channels': 'Kanalen van de semantische index: text (gesproken inhoud: transcripties, ondertitels, vertalingen, hoofdstukken); visual en audio zijn nog niet beschikbaar',
+  'semantic.channels': 'Kanalen van de semantische index: text (gesproken inhoud: transcripties, ondertitels, vertalingen, hoofdstukken); visual (elke 8 seconden een sleutelbeeld; vraagt een multimodaal modelpakket en duurt langer); audio is nog niet beschikbaar',
   'semantic.indexedProjects': 'Projecten waarvan de video’s een semantische index krijgen: all, of een lijst met project-id’s (video’s buiten projecten alleen bij all)',
   'semantic.translationMemory': 'Bij vertalen eerdere vertalingen van bijna identieke zinnen voorstellen (vereist het tekstzoekmodel)',
   'semantic.glossaryCandidates': 'Woordenlijsttermen voorstellen op basis van bijna identieke schrijfwijzen in transcripties (vereist het tekstzoekmodel)',

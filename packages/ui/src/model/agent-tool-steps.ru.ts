@@ -36,6 +36,7 @@ export const ru: AgentToolStepsMessages = {
     indexStatus: "Проверить семантический индекс",
     buildIndex: "Построить семантический индекс",
     relatedVideos: "Найти похожие видео",
+    findFrames: "Найти подходящие кадры",
     findRetakes: "Найти дубли",
     checkTerms: "Проверить термины",
     topicShifts: "Найти смены темы",

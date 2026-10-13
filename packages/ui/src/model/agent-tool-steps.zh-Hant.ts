@@ -35,6 +35,7 @@ export const zhHant: AgentToolStepsMessages = {
     indexStatus: '查看語意索引',
     buildIndex: '建立語意索引',
     relatedVideos: '找相關影片',
+    findFrames: '找相符的畫面',
     findRetakes: '找重錄',
     checkTerms: '查術語寫法',
     topicShifts: '找話題轉折',

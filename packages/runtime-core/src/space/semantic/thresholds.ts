@@ -15,13 +15,17 @@ export interface SemanticThresholds {
   rankingVersion: string;
   fusion: {
     k: Tunable;
-    weights: { lexical: Tunable; semantic: Tunable };
+    /** 每一路的权重；`visual` 是画面一路（只在请求了画面通道时参与）。 */
+    weights: { lexical: Tunable; semantic: Tunable; visual: Tunable };
     perRouteCandidates: Tunable;
     mergedCandidates: Tunable;
   };
   chunking: { targetTokens: Tunable; minTokens: Tunable; maxTokens: Tunable; overlapSentences: Tunable };
-  /** `related`：相关视频里一部视频最近的那段与这部视频整体（讲话向量的平均）的余弦下限（创作辅助集成设计 §2.4）。 */
-  thresholds: { weakHit: Tunable; reuse: Tunable; retake: Tunable; glossary: Tunable; related: Tunable };
+  /**
+   * `related`：相关视频里一部视频最近的那段与这部视频整体（讲话向量的平均）的余弦下限（创作辅助集成设计 §2.4）。
+   * `visualWeakHit`：画面命中（文字找关键帧）的弱命中线；G0 多模态评测里正确答案的余弦最低 0.667、p10 0.707，没有答案的查询最高 0.681。
+   */
+  thresholds: { weakHit: Tunable; visualWeakHit: Tunable; reuse: Tunable; retake: Tunable; glossary: Tunable; related: Tunable };
   /** 章节边界候选（创作辅助集成设计 §3.6）：深度阈值 = 中位数 + k·MAD，两侧窗口几个句群，最短章节秒数，最多几章。 */
   chapterBoundary: { k: Tunable; window: Tunable; minChapterSec: Tunable; maxChapters: Tunable };
   /**
@@ -60,10 +64,11 @@ export function parseThresholds(input: unknown): SemanticThresholds {
   check(t.fusion?.k, 'fusion.k');
   check(t.fusion?.weights?.lexical, 'fusion.weights.lexical');
   check(t.fusion?.weights?.semantic, 'fusion.weights.semantic');
+  check(t.fusion?.weights?.visual, 'fusion.weights.visual');
   check(t.fusion?.perRouteCandidates, 'fusion.perRouteCandidates');
   check(t.fusion?.mergedCandidates, 'fusion.mergedCandidates');
   for (const key of ['targetTokens', 'minTokens', 'maxTokens', 'overlapSentences'] as const) check(t.chunking?.[key], `chunking.${key}`);
-  for (const key of ['weakHit', 'reuse', 'retake', 'glossary', 'related'] as const) check(t.thresholds?.[key], `thresholds.${key}`);
+  for (const key of ['weakHit', 'visualWeakHit', 'reuse', 'retake', 'glossary', 'related'] as const) check(t.thresholds?.[key], `thresholds.${key}`);
   for (const key of ['k', 'window', 'minChapterSec', 'maxChapters'] as const) check(t.chapterBoundary?.[key], `chapterBoundary.${key}`);
   for (const key of [
     'retakeWindowSec',

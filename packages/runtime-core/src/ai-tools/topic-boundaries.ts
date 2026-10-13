@@ -12,12 +12,17 @@ import { chapterBoundaryCandidates, DEFAULT_BOUNDARY_OPTIONS, type BoundaryChunk
  *    吸到最近的段落开头（不远于 `SNAP_SEC`），吸不到时留在句子开头。
  * 2. 否则把时间线上的段落现算文档向量（段落太长时截断）。
  * 3. 没有语义模型时由模型决定边界，原因写进结果；没找到转折时也由模型决定（候选 0）。
+ *
+ * 这一版有画面索引时，每个候选另给 `visualShift`：转折前后各 `VISUAL_WINDOW_SEC` 秒里关键帧的平均向量差多远。只作佐证（讲话
+ * 转了题、画面也换了更像章节），不参与打分；未校准。
  */
 export interface TopicBoundaryDeps {
   /** 当前版本语义索引里这份转写的句群与向量；没有时 null。 */
   topicUnits?(videoId: Id, documentId: Id): Promise<TopicUnit[] | null>;
   /** 给一组文字算文档向量（L2 归一化）；模型不可用时抛带原因码的错误。 */
   embed?(texts: string[], signal: AbortSignal): Promise<Float32Array[]>;
+  /** 当前版本画面索引里时间线上的关键帧与向量（按时间排）；没有时 null。 */
+  timelineFrames?(videoId: Id): Promise<{ at: number; vector: Float32Array }[] | null>;
 }
 
 export interface TopicBoundaryCandidate {
@@ -30,6 +35,8 @@ export interface TopicBoundaryCandidate {
   /** 边界前的最后一点与之后的开头一点原文。 */
   before: string;
   after: string;
+  /** 转折前后画面的差异（1 − 两侧关键帧平均向量的余弦，0 是一样）；没有这一版的画面索引、或一侧没有帧时没有。 */
+  visualShift?: number;
 }
 
 export interface TopicBoundaries {
@@ -51,6 +58,8 @@ export const BOUNDARY_CONTEXT_CHARS = 160;
 const SNAP_SEC = 15;
 /** 索引的时间线终点与现在的文稿终点相差超过这么多秒时，不信这份索引（时间线改过还没重建），改为现算。 */
 const INDEX_END_TOLERANCE_SEC = 1;
+/** 比画面时转折前后各取这么多秒的关键帧（每 8 秒一帧，约三帧）。 */
+const VISUAL_WINDOW_SEC = 24;
 
 interface Paragraph {
   start: number;
@@ -75,8 +84,11 @@ export async function topicBoundaries(
   });
   if (first === null) return fallback(null);
   const merged = { ...DEFAULT_BOUNDARY_OPTIONS, ...options };
-  const finish = (candidates: TopicBoundaryCandidate[], source: 'index' | 'embedded'): TopicBoundaries =>
-    candidates.length > 0 ? { mode: 'topic', source, reason: null, first, candidates } : fallback(null, source);
+  const finish = async (candidates: TopicBoundaryCandidate[], source: 'index' | 'embedded'): Promise<TopicBoundaries> => {
+    if (candidates.length === 0) return fallback(null, source);
+    const frames = deps.timelineFrames ? await deps.timelineFrames(input.videoId).catch(() => null) : null;
+    return { mode: 'topic', source, reason: null, first, candidates: frames && frames.length > 0 ? withVisualShift(candidates, frames) : candidates };
+  };
 
   const units = deps.topicUnits ? await deps.topicUnits(input.videoId, input.documentId).catch(() => null) : null;
   const end = Math.max(...paragraphs.map((p) => p.end));
@@ -115,6 +127,31 @@ export async function topicBoundaries(
     })),
     'embedded',
   );
+}
+
+/** 每个候选前后各 `VISUAL_WINDOW_SEC` 秒的关键帧平均向量之间的余弦距离。 */
+function withVisualShift(candidates: TopicBoundaryCandidate[], frames: readonly { at: number; vector: Float32Array }[]): TopicBoundaryCandidate[] {
+  const mean = (picked: readonly { vector: Float32Array }[]): Float32Array | null => {
+    if (picked.length === 0) return null;
+    const sum = new Float32Array(picked[0]!.vector.length);
+    for (const { vector } of picked) for (let i = 0; i < sum.length; i++) sum[i]! += vector[i]!;
+    return sum;
+  };
+  return candidates.map((c) => {
+    const before = mean(frames.filter((f) => f.at < c.at && f.at >= c.at - VISUAL_WINDOW_SEC));
+    const after = mean(frames.filter((f) => f.at >= c.at && f.at < c.at + VISUAL_WINDOW_SEC));
+    if (!before || !after) return c;
+    let dot = 0;
+    let a = 0;
+    let b = 0;
+    for (let i = 0; i < before.length; i++) {
+      dot += before[i]! * after[i]!;
+      a += before[i]! * before[i]!;
+      b += after[i]! * after[i]!;
+    }
+    const cosine = a > 0 && b > 0 ? dot / Math.sqrt(a * b) : 1;
+    return { ...c, visualShift: Math.max(0, 1 - cosine) };
+  });
 }
 
 /** 时间线上的段落：词按 `paragraphStart` 分组（中日文字不加空格）。 */
