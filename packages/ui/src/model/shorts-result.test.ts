@@ -156,7 +156,7 @@ describe('framingShots', () => {
     expect(framingShots({ shots: 1 })).toBeNull();
     expect(framingShots({ shots: 0 })).toBeNull();
     expect(framingShots(null)).toBeNull();
-    expect(SHORTS_COPY.framingShots(3)).toBe('按 3 个镜头分别取景 · 打开后在画布上拖某一段改');
+    expect(SHORTS_COPY.framingShots(3)).toBe('按 3 个镜头分别取景 · 打开后选中某一段可以放大，要挪位置先改成自由摆放');
   });
 });
 

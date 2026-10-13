@@ -18,7 +18,7 @@ export const it: ShortsMessages = {
   hookLabel: 'Inizia con',
   reasonLabel: 'Perché questo',
   framingLabel: 'Inquadratura',
-  framingShots: (n) => `Inquadrato per inquadratura (${n} riprese) · Aprilo e trascina una parte sull’area di lavoro per cambiarla`,
+  framingShots: (n) => `Inquadrato per inquadratura (${n} riprese) · Aprilo e seleziona una parte per ingrandirla; per spostarla passa prima al posizionamento libero`,
   rename: 'Fai clic per rinominare',
   renameLabel: 'Titolo dello short',
   failed: (reason) => `Non è riuscito: ${reason}`,

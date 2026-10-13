@@ -18,7 +18,7 @@ export const tr: ShortsMessages = {
   hookLabel: 'Açılış',
   reasonLabel: 'Neden bu',
   framingLabel: 'Çerçeve',
-  framingShots: (n) => `Çekim başına çerçevelendi (${n} çekim) · Açıp tuvalde bir bölümü sürükleyerek değiştir`,
+  framingShots: (n) => `Çekim başına çerçevelendi (${n} çekim) · Açıp bir bölümü seçerek yakınlaştır; taşımak için önce serbest yerleşime geç`,
   rename: 'Adını değiştirmek için tıklayın',
   renameLabel: 'Short başlığı',
   failed: (reason) => `Yapılamadı: ${reason}`,

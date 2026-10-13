@@ -18,7 +18,7 @@ export const nl: ShortsMessages = {
   hookLabel: 'Begint met',
   reasonLabel: 'Waarom deze',
   framingLabel: 'Uitsnede',
-  framingShots: (n) => `Per shot uitgesneden (${n} shots) · Open hem en sleep een deel op het canvas om het te wijzigen`,
+  framingShots: (n) => `Per shot uitgesneden (${n} shots) · Open hem en selecteer een deel om in te zoomen; schakel eerst over op vrije plaatsing om het te verplaatsen`,
   rename: 'Klik om de naam te wijzigen',
   renameLabel: 'Titel van de short',
   failed: (reason) => `Dat lukte niet: ${reason}`,

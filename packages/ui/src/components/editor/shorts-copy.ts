@@ -36,9 +36,9 @@ const en = {
   span: (from: string, to: string, length: string) => `${from} – ${to} · ${length}`,
   hookLabel: 'Opens with',
   reasonLabel: 'Why this one',
-  /** 卡上「取景」那一行（原型 `frameText`）：按镜头分段取景时写几个镜头、去画布上拖哪一段改。 */
+  /** 卡上「取景」那一行（原型 `frameText`）：按镜头分段取景时写几个镜头；打开后能放大，挪位置要先改成自由摆放。 */
   framingLabel: 'Framing',
-  framingShots: (n: number) => `Framed per shot (${n} shots) · Open it and drag a part on the canvas to change`,
+  framingShots: (n: number) => `Framed per shot (${n} shots) · Open it and select a part to zoom in; to move it, switch to free placement first`,
   rename: 'Click to rename',
   renameLabel: 'Short title',
   failed: (reason: string) => `Couldn’t do that: ${reason}`,

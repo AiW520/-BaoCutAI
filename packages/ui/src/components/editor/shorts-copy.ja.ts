@@ -18,7 +18,7 @@ export const ja: ShortsMessages = {
   hookLabel: '冒頭',
   reasonLabel: '選んだ理由',
   framingLabel: 'フレーミング',
-  framingShots: (n) => `${n} ショットごとにフレーミング · 開いてキャンバス上で区間をドラッグして変更`,
+  framingShots: (n) => `${n} ショットごとにフレーミング · 開いて区間を選ぶと拡大できます。位置を動かすには先に自由配置に切り替えます`,
   rename: 'クリックしてタイトルを変更',
   renameLabel: 'ショートのタイトル',
   failed: (reason) => `実行できませんでした：${reason}`,
