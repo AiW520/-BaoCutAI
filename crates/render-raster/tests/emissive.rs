@@ -1,8 +1,9 @@
 use anyhow::{Result, bail};
 use motion::effect::BlendMode;
-use render_raster::drawop::{self, BitmapData, DrawOp, FrameOps};
+use render_raster::drawop::{self, AssociatedBlend, BitmapData, DrawOp, FrameOps};
 use render_raster::emissive::{
-    composite_associated, has_emissive_components, has_emissive_components_within,
+    composite_associated, composite_associated_with_blend, has_emissive_components,
+    has_emissive_components_within,
 };
 use render_raster::plan::{CompositeInput, CpuExecutor, PassExecutor, SurfaceId, SurfacePlan};
 use render_raster::raster::{FrameMedia, rasterize_with_media};
@@ -23,6 +24,7 @@ fn fixture() -> FrameOps {
             rgba: Arc::from([200, 80, 0, 0]),
         }],
         ops: vec![DrawOp::DrawEmissiveBitmap {
+            blend: AssociatedBlend::SourceOver,
             bitmap: 0,
             opacity: 1.,
             tf: IDENTITY,
@@ -102,6 +104,7 @@ fn zero_alpha_emission_survives_opacity_layers_and_opaque_composition() {
 fn affine_bilinear_filter_and_clip_preserve_independent_channels() {
     let mut frame = fixture();
     frame.ops = vec![DrawOp::DrawEmissiveBitmap {
+        blend: AssociatedBlend::SourceOver,
         bitmap: 0,
         opacity: 1.,
         tf: [1., 0., 0., 1., 0.5, 0.],
@@ -110,6 +113,7 @@ fn affine_bilinear_filter_and_clip_preserve_independent_channels() {
     assert_eq!(pixel(&image, 0, 0), [100, 40, 0, 0]);
     assert_eq!(pixel(&image, 1, 0), [100, 40, 0, 0]);
     frame.ops = vec![DrawOp::DrawEmissiveBitmap {
+        blend: AssociatedBlend::SourceOver,
         bitmap: 0,
         opacity: 1.,
         tf: [0., 1., -1., 0., 2., 0.],
@@ -244,4 +248,230 @@ fn block_scan_matches_the_per_pixel_definition_anywhere_in_the_buffer() {
     assert!(!has_emissive_components_within(&data, 4, (0, 0, 3, 3)));
     assert!(!has_emissive_components_within(&data, 4, (0, 0, 4, 2)));
     assert!(!has_emissive_components_within(&data, 4, (4, 0, 4, 3)));
+}
+
+#[test]
+fn associated_screen_uses_v7_tag15_and_keeps_legacy_v6_bytes() {
+    // Independently written v6 fixture: header, one RGBA bitmap, tag14 payload.
+    let legacy = [
+        80, 79, 67, 66, 6, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1,
+        0, 0, 0, 200, 80, 0, 0, 1, 0, 0, 0, 14, 0, 0, 0, 0, 0, 0, 128, 63, 0, 0, 128, 63, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 128, 63, 0, 0, 0, 0, 0, 0, 0, 0,
+    ];
+    assert_eq!(drawop::encode(&fixture()), legacy);
+    let mut frame = fixture();
+    if let DrawOp::DrawEmissiveBitmap { blend, .. } = &mut frame.ops[0] {
+        *blend = AssociatedBlend::Screen;
+    }
+    let encoded = drawop::encode(&frame);
+    let mut expected = legacy.to_vec();
+    expected[4] = 7;
+    expected[40] = 15;
+    assert_eq!(encoded, expected);
+    assert_eq!(drawop::required_version(&frame), 7);
+    let (version, decoded) = drawop::decode(&encoded).unwrap();
+    assert_eq!(version, 7);
+    assert!(matches!(
+        decoded.ops[0],
+        DrawOp::DrawEmissiveBitmap {
+            blend: AssociatedBlend::Screen,
+            ..
+        }
+    ));
+    assert_eq!(drawop::encode(&decoded), encoded);
+    for version in 2u32..=6 {
+        let mut downgraded = encoded.clone();
+        downgraded[4..8].copy_from_slice(&version.to_le_bytes());
+        assert!(
+            drawop::decode(&downgraded).is_err(),
+            "tag15 is invalid in v{version}"
+        );
+    }
+}
+
+#[test]
+fn associated_screen_reads_real_backdrop_instead_of_flattened_alpha() {
+    let mut frame = fixture();
+    frame.bitmaps[0].rgba = Arc::from([128, 200, 0, 51]);
+    frame.ops = vec![
+        DrawOp::Clear {
+            color: [0.3, 0.2, 0.1, 1.],
+        },
+        DrawOp::DrawEmissiveBitmap {
+            blend: AssociatedBlend::Screen,
+            bitmap: 0,
+            opacity: 1.,
+            tf: IDENTITY,
+        },
+    ];
+    let result = raster(&frame, 1, 1);
+    let mut backdrop = Pixmap::new(1, 1).unwrap();
+    backdrop.fill(tiny_skia::Color::from_rgba(0.3, 0.2, 0.1, 1.).unwrap());
+    let expected: Vec<_> = [128., 200., 0., 51.]
+        .iter()
+        .zip(backdrop.data())
+        .map(|(s, d)| (s + f64::from(*d) * (1. - s / 255.)).round() as u8)
+        .collect();
+    assert_eq!(result.data(), expected);
+    if let DrawOp::DrawEmissiveBitmap { blend, .. } = &mut frame.ops[1] {
+        *blend = AssociatedBlend::SourceOver;
+    }
+    assert_ne!(
+        raster(&frame, 1, 1).data(),
+        result.data(),
+        "transparent flatten + source-over must not pass"
+    );
+}
+
+#[test]
+fn screen_independent_rgba_coverage_affine_and_invalid_inputs() {
+    let mut source = Pixmap::new(1, 1).unwrap();
+    source.data_mut().copy_from_slice(&[220, 150, 40, 10]);
+    let mut mask = Mask::new(2, 1).unwrap();
+    mask.data_mut().copy_from_slice(&[128, 255]);
+    let mut out = Pixmap::new(2, 1).unwrap();
+    out.data_mut()
+        .copy_from_slice(&[80, 20, 120, 30, 15, 60, 200, 0]);
+    let original = out.data().to_vec();
+    composite_associated_with_blend(
+        &mut out,
+        source.as_ref(),
+        0.5,
+        [1., 0., 0., 1., 0.5, 0.],
+        Some(&mask),
+        AssociatedBlend::Screen,
+    )
+    .unwrap();
+    for pixel in 0..2 {
+        for channel in 0..4 {
+            let s = f64::from(source.data()[channel]) * 0.5 * 0.5 * f64::from(mask.data()[pixel])
+                / 255.;
+            let expected =
+                (s + f64::from(original[pixel * 4 + channel]) * (1. - s / 255.)).round() as u8;
+            assert_eq!(out.data()[pixel * 4 + channel], expected);
+        }
+    }
+    assert!(has_emissive_components(out.data()));
+    let before = out.data().to_vec();
+    assert!(
+        !composite_associated_with_blend(
+            &mut out,
+            source.as_ref(),
+            0.,
+            IDENTITY,
+            None,
+            AssociatedBlend::Screen
+        )
+        .unwrap()
+    );
+    assert_eq!(out.data(), before);
+    assert!(
+        composite_associated_with_blend(
+            &mut out,
+            source.as_ref(),
+            f32::NAN,
+            IDENTITY,
+            None,
+            AssociatedBlend::Screen
+        )
+        .is_err()
+    );
+    assert!(
+        composite_associated_with_blend(
+            &mut out,
+            source.as_ref(),
+            1.,
+            [f32::INFINITY, 0., 0., 1., 0., 0.],
+            None,
+            AssociatedBlend::Screen
+        )
+        .is_err()
+    );
+    let bad_mask = Mask::new(1, 1).unwrap();
+    assert!(
+        composite_associated_with_blend(
+            &mut out,
+            source.as_ref(),
+            1.,
+            IDENTITY,
+            Some(&bad_mask),
+            AssociatedBlend::Screen
+        )
+        .is_err()
+    );
+    let mut rotated = Pixmap::new(3, 2).unwrap();
+    composite_associated_with_blend(
+        &mut rotated,
+        source.as_ref(),
+        1.,
+        [0., 1., -1., 0., 2., 0.],
+        None,
+        AssociatedBlend::Screen,
+    )
+    .unwrap();
+    assert_eq!(pixel(&rotated, 1, 0), source.data());
+    assert_eq!(pixel(&rotated, 0, 0), [0, 0, 0, 0]);
+}
+
+#[test]
+fn screen_rejects_offscreen_layers_and_mattes_even_without_excess_rgb() {
+    for matte in [false, true] {
+        let mut frame = fixture();
+        frame.bitmaps[0].rgba = Arc::from([20, 10, 0, 100]);
+        frame.ops = vec![DrawOp::PushLayer {
+            opacity: 1.,
+            blend: BlendMode::Normal,
+        }];
+        if matte {
+            frame.ops.push(DrawOp::PushMatte);
+        }
+        frame.ops.push(DrawOp::DrawEmissiveBitmap {
+            blend: AssociatedBlend::Screen,
+            bitmap: 0,
+            opacity: 1.,
+            tf: IDENTITY,
+        });
+        if matte {
+            frame.ops.push(DrawOp::PopMatte { mode: 0 });
+        }
+        frame.ops.push(DrawOp::PopLayer);
+        assert!(
+            rasterize_with_media(&frame, 1, 1, &mut Empty)
+                .unwrap_err()
+                .to_string()
+                .contains("ASSOCIATED_SCREEN_OFFSCREEN_UNSUPPORTED")
+        );
+    }
+}
+
+#[test]
+fn screen_root_clip_limits_coverage_without_replacing_backdrop() {
+    let mut frame = fixture();
+    frame.bitmaps[0] = BitmapData {
+        width: 2,
+        height: 1,
+        rgba: Arc::from([200, 80, 0, 0, 200, 80, 0, 0]),
+    };
+    let path =
+        tiny_skia::PathBuilder::from_rect(tiny_skia::Rect::from_xywh(0., 0., 1., 1.).unwrap());
+    frame.paths.push(drawop::path_from_skia(&path));
+    frame.ops = vec![
+        DrawOp::Clear {
+            color: [0., 0., 0.5, 1.],
+        },
+        DrawOp::ClipPath {
+            path: 0,
+            tf: IDENTITY,
+        },
+        DrawOp::DrawEmissiveBitmap {
+            blend: AssociatedBlend::Screen,
+            bitmap: 0,
+            opacity: 1.,
+            tf: IDENTITY,
+        },
+        DrawOp::PopClip,
+    ];
+    let result = raster(&frame, 2, 1);
+    assert_eq!(pixel(&result, 0, 0), [200, 80, 128, 255]);
+    assert_eq!(pixel(&result, 1, 0), [0, 0, 128, 255]);
 }

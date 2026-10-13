@@ -1120,11 +1120,11 @@ impl FrameRenderer {
             scope.as_ref().map(|s| s.source_seconds)
         };
         let rendered = match at {
-            Some(at) => captions.render(at).map_err(RenderError::render)?,
-            None => None,
+            Some(at) => captions.render_layers(at).map_err(RenderError::render)?,
+            None => Vec::new(),
         };
         let style_opacity = captions.opacity;
-        if self.collect_caption_hits && rendered.is_some() && first.opacity * f64::from(style_opacity) > 0.0 {
+        if self.collect_caption_hits && !rendered.is_empty() && first.opacity * f64::from(style_opacity) > 0.0 {
             for mut hit in captions.hits(at.unwrap()).map_err(RenderError::render)? {
                 let Some(layer) = admitted.iter().find(|layer| {
                     matches!(
@@ -1151,39 +1151,11 @@ impl FrameRenderer {
             self.warn(RENDER_NOTE, format!("{}：{note}", first.item_id));
         }
         self.note_missing_fonts(&first.item_id, missing);
-        if let Some(layer) = rendered {
-            let opacity = first.opacity.clamp(0.0, 1.0) as f32 * style_opacity;
-            let pixmap = PixmapRef::from_bytes(&layer.rgba, layer.width, layer.height)
-                .ok_or_else(|| RenderError::render(anyhow::anyhow!("字幕层的尺寸不对")))?;
-            // 字幕层只在内核给的字外包矩形里有像素，发光只在框里找。
-            if render_raster::emissive::has_emissive_components_within(pixmap.data(), layer.width as usize, layer.rect)
-                || render_raster::emissive::has_emissive_components(self.frame.data())
-            {
-                if layer.blend != BlendMode::SourceOver {
-                    return Err(RenderError::new(
-                        "EMISSIVE_BLEND_UNSUPPORTED",
-                        "Associated emission requires source-over composition",
-                    ));
-                }
-                render_raster::emissive::composite_associated(&mut self.frame, pixmap, opacity, [1., 0., 0., 1., 0., 0.], None)
-                    .map_err(RenderError::render)?;
-                return Ok(());
-            }
-            // 字幕层大片透明：只在内核给的字外包矩形里叠（与整幅画逐字节相同），不复制、不重扫。
-            if render_raster::plan::composite_bounded_rect(&mut self.frame, pixmap, layer.rect, opacity, layer.blend).is_none() {
-                self.frame.draw_pixmap(
-                    0,
-                    0,
-                    pixmap,
-                    &PixmapPaint {
-                        opacity,
-                        blend_mode: layer.blend,
-                        quality: FilterQuality::Nearest,
-                    },
-                    Transform::identity(),
-                    None,
-                );
-            }
+        let opacity = first.opacity.clamp(0.0, 1.0) as f32 * style_opacity;
+        // Instance/group opacity is applied to each ordered output, before its
+        // own blend. Do not flatten Screen into a transparent intermediate.
+        for layer in rendered {
+            composite_caption_layer(&mut self.frame, &layer, opacity)?;
         }
         Ok(())
     }
@@ -1333,6 +1305,54 @@ pub const SVG_MEDIA_TYPE: &str = "image/svg+xml";
 /// GIF 图片素材的媒体类型：画面由帧光栅从素材字节解（动图按时刻取帧）。
 pub const GIF_MEDIA_TYPE: &str = "image/gif";
 
+/// Composite one caption plane onto the current video backdrop.
+fn composite_caption_layer(target: &mut Pixmap, layer: &crate::captions::CaptionLayer, opacity: f32) -> Result<(), RenderError> {
+    let pixmap = PixmapRef::from_bytes(&layer.rgba, layer.width, layer.height)
+        .ok_or_else(|| RenderError::render(anyhow::anyhow!("字幕层的尺寸不对")))?;
+    if layer.associated_blend == Some(render_raster::drawop::AssociatedBlend::Screen) {
+        render_raster::emissive::composite_associated_with_blend(
+            target,
+            pixmap,
+            opacity,
+            [1., 0., 0., 1., 0., 0.],
+            None,
+            render_raster::drawop::AssociatedBlend::Screen,
+        )
+        .map_err(RenderError::render)?;
+        return Ok(());
+    }
+    // 字幕层只在内核给的字外包矩形里有像素，发光只在框里找。
+    if render_raster::emissive::has_emissive_components_within(pixmap.data(), layer.width as usize, layer.rect)
+        || render_raster::emissive::has_emissive_components(target.data())
+    {
+        if layer.blend != BlendMode::SourceOver {
+            return Err(RenderError::new(
+                "EMISSIVE_BLEND_UNSUPPORTED",
+                "Associated emission requires source-over composition",
+            ));
+        }
+        render_raster::emissive::composite_associated(target, pixmap, opacity, [1., 0., 0., 1., 0., 0.], None)
+            .map_err(RenderError::render)?;
+        return Ok(());
+    }
+    // 字幕层大片透明：只在内核给的字外包矩形里叠（与整幅画逐字节相同），不复制、不重扫。
+    if render_raster::plan::composite_bounded_rect(target, pixmap, layer.rect, opacity, layer.blend).is_none() {
+        target.draw_pixmap(
+            0,
+            0,
+            pixmap,
+            &PixmapPaint {
+                opacity,
+                blend_mode: layer.blend,
+                quality: FilterQuality::Nearest,
+            },
+            Transform::identity(),
+            None,
+        );
+    }
+    Ok(())
+}
+
 /// 旧字幕按样式文档分组；动态场景按实例隔离参数、词时间与随机种子。
 fn caption_group<'a>(layer: &'a VisualLayer, documents: &Documents) -> &'a str {
     match &layer.content {
@@ -1473,4 +1493,67 @@ fn fill(target: &mut Pixmap, color: Color) {
 /// 缺字体的提示（与字幕内核编译时报的同一句）。
 pub fn missing_font_note(family: &str) -> String {
     format!("字体 {family:?} 在当前字体库中不可用，将使用 Noto Sans SC fallback")
+}
+
+#[cfg(test)]
+mod associated_caption_tests {
+    use super::composite_caption_layer;
+    use crate::captions::CaptionLayer;
+    use render_raster::drawop::AssociatedBlend;
+    use std::sync::Arc;
+    use tiny_skia::{BlendMode, Pixmap};
+
+    fn layer(rgba: [u8; 4], blend: AssociatedBlend) -> CaptionLayer {
+        CaptionLayer {
+            rgba: Arc::new(rgba.to_vec()),
+            width: 1,
+            height: 1,
+            rect: (0, 0, 1, 1),
+            blend: BlendMode::SourceOver,
+            associated_blend: Some(blend),
+        }
+    }
+    fn reference(destination: [u8; 4], source: [u8; 4], opacity: f64, blend: AssociatedBlend) -> [u8; 4] {
+        std::array::from_fn(|c| {
+            let s = f64::from(source[c]) * opacity;
+            let factor = match blend {
+                AssociatedBlend::SourceOver => 1. - f64::from(source[3]) * opacity / 255.,
+                AssociatedBlend::Screen => 1. - s / 255.,
+            };
+            (s + f64::from(destination[c]) * factor).round().clamp(0., 255.) as u8
+        })
+    }
+    #[test]
+    fn ordered_caption_planes_read_backdrop_and_apply_opacity_independently() {
+        let mut target = Pixmap::new(1, 1).unwrap();
+        let mut expected = [40, 80, 120, 255];
+        target.data_mut().copy_from_slice(&expected);
+        let outputs = [
+            ([180, 0, 0, 0], AssociatedBlend::SourceOver),
+            ([30, 160, 90, 20], AssociatedBlend::Screen),
+            ([0, 0, 100, 0], AssociatedBlend::SourceOver),
+        ];
+        for (rgba, blend) in outputs {
+            composite_caption_layer(&mut target, &layer(rgba, blend), 0.5).unwrap();
+            expected = reference(expected, rgba, 0.5, blend);
+            assert_eq!(target.data(), expected);
+        }
+        // Rendering on transparent first would calculate different Screen RGB.
+        let mut flat = Pixmap::new(1, 1).unwrap();
+        for (rgba, blend) in outputs {
+            composite_caption_layer(&mut flat, &layer(rgba, blend), 0.5).unwrap();
+        }
+        let wrong = reference([40, 80, 120, 255], flat.data().try_into().unwrap(), 1., AssociatedBlend::SourceOver);
+        assert_ne!(target.data(), wrong);
+    }
+    #[test]
+    fn associated_screen_dispatch_does_not_depend_on_rgb_exceeding_alpha() {
+        for rgba in [[30, 60, 80, 120], [180, 40, 200, 0]] {
+            let mut target = Pixmap::new(1, 1).unwrap();
+            let backdrop = [50, 90, 110, 160];
+            target.data_mut().copy_from_slice(&backdrop);
+            composite_caption_layer(&mut target, &layer(rgba, AssociatedBlend::Screen), 0.25).unwrap();
+            assert_eq!(target.data(), reference(backdrop, rgba, 0.25, AssociatedBlend::Screen));
+        }
+    }
 }

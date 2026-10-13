@@ -3,6 +3,9 @@ use serde_json::Value;
 use std::collections::{BTreeMap, BTreeSet};
 
 pub const CAPABILITIES: &[&str] = &[
+    "caption-render-layers/1",
+    "caption-image-sequence/1",
+    "caption-noisy-sweep/1",
     "caption-bound-label/1",
     "caption-scene/1",
     "caption-text-context/1",
@@ -280,6 +283,33 @@ pub fn validate_scene(s: &Scene) -> Result<()> {
             return Err(invalid("resources", "invalid resource id, revision or digest"));
         }
     }
+    if s.sequences.len() > 64 {
+        return Err(invalid("sequences", "at most 64 sequences"));
+    }
+    let mut sequence_ids = BTreeSet::new();
+    for sequence in &s.sequences {
+        if !name(&sequence.id)
+            || !sequence_ids.insert(&sequence.id)
+            || sequence.frames.is_empty()
+            || sequence.frames.len() > 256
+            || !s.required_capabilities.iter().any(|c| c == "caption-image-sequence/1")
+        {
+            return Err(invalid("sequences", "unique id, 1..256 frames and capability required"));
+        }
+        let mut frame_ids = BTreeSet::new();
+        for r in &sequence.frames {
+            let hash = r.content_hash.strip_prefix("sha256:").unwrap_or("");
+            if !name(&r.id)
+                || !frame_ids.insert(&r.id)
+                || r.asset_ref.id.is_empty()
+                || r.asset_ref.revision.is_empty()
+                || hash.len() != 64
+                || !hash.bytes().all(|b| b.is_ascii_digit() || (b'a'..=b'f').contains(&b))
+            {
+                return Err(invalid("sequences", "invalid frame resource"));
+            }
+        }
+    }
     if s.layout.pagination.unit != UnitKind::Word {
         return Err(invalid("pagination.unit", "word required"));
     }
@@ -403,10 +433,99 @@ pub fn validate_scene(s: &Scene) -> Result<()> {
     if s.materials.len() > 8 {
         return Err(invalid("materials", "at most 8 materials"));
     }
+    if s.render_layers.len() > 8
+        || (!s.render_layers.is_empty()
+            && (!s.materials.is_empty() || !s.required_capabilities.iter().any(|c| c == "caption-render-layers/1")))
+    {
+        return Err(invalid(
+            "renderLayers",
+            "at most 8 independent layers, capability required; global materials must be empty",
+        ));
+    }
+    let mut layer_ids = BTreeSet::new();
+    for layer in &s.render_layers {
+        if !name(&layer.id) || !layer_ids.insert(&layer.id) || layer.materials.len() > 8 {
+            return Err(invalid("renderLayers", "unique id and at most 8 materials per layer required"));
+        }
+        match &layer.source {
+            CaptionLayerSource::Nodes { node_ids } => {
+                let mut selected = BTreeSet::new();
+                if node_ids.is_empty()
+                    || node_ids.len() > MAX_NODES
+                    || node_ids
+                        .iter()
+                        .any(|id| !selected.insert(id) || !s.nodes.iter().any(|n| &n.id == id))
+                {
+                    return Err(invalid(&layer.id, "source must select unique scene root nodes"));
+                }
+            }
+            CaptionLayerSource::ImageSequence {
+                context_node_id,
+                sequence_id,
+                frame,
+                domain,
+                uv_scale,
+                uv_offset,
+            } => {
+                let context_nodes = nodes
+                    .get(context_node_id.as_str())
+                    .map(|n| BTreeMap::from([(context_node_id.as_str(), *n)]))
+                    .unwrap_or_default();
+                validate_component_context(s, &context_nodes, &layer.id, context_node_id, "caption-image-sequence/1", 1.0)?;
+                if !sequence_ids.contains(sequence_id) {
+                    return Err(invalid(&layer.id, "unknown sequence"));
+                }
+                let count = s.sequences.iter().find(|q| &q.id == sequence_id).unwrap().frames.len();
+                validate_component_uniform(s, frame, 0.0, (count - 1) as f64)?;
+                validate_material_domain(s, domain)?;
+                if uv_scale.iter().any(|n| !n.is_finite() || !(0.001..=1024.0).contains(n))
+                    || uv_offset.iter().any(|n| !n.is_finite() || !(-1024.0..=1024.0).contains(n))
+                {
+                    return Err(invalid(&layer.id, "invalid sequence UV transform"));
+                }
+            }
+        }
+    }
     let mut names = BTreeSet::new();
     let mut samples = 1u32;
-    for material in &s.materials {
+    for (source, material) in s.materials.iter().map(|m| (None, m)).chain(
+        s.render_layers
+            .iter()
+            .flat_map(|l| l.materials.iter().map(move |m| (Some(&l.source), m))),
+    ) {
+        let mut scoped_nodes = BTreeMap::new();
+        match source {
+            Some(CaptionLayerSource::Nodes { node_ids }) => {
+                for node in s.nodes.iter().filter(|n| node_ids.contains(&n.id)) {
+                    walk(std::slice::from_ref(node), &mut scoped_nodes, 0, None)?;
+                }
+            }
+            Some(CaptionLayerSource::ImageSequence { context_node_id, .. }) => {
+                if let Some(node) = nodes.get(context_node_id.as_str()) {
+                    scoped_nodes.insert(context_node_id.as_str(), *node);
+                }
+            }
+            None => {}
+        }
+        let nodes = if source.is_some() { &scoped_nodes } else { &nodes };
+
         let id = match material {
+            CaptionMaterial::NoisySweep {
+                id,
+                context_node_id,
+                domain,
+                position,
+                mask_scale,
+                ..
+            } => {
+                validate_component_context(s, &nodes, id, context_node_id, "caption-noisy-sweep/1", 1.0)?;
+                validate_component_uniform(s, position, -1024.0, 1024.0)?;
+                validate_material_domain(s, domain)?;
+                if mask_scale.iter().any(|n| !n.is_finite() || !(0.001..=1024.0).contains(n)) {
+                    return Err(invalid(id, "invalid noisy sweep mask scale"));
+                }
+                id
+            }
             CaptionMaterial::Blur { id, radius, passes } => {
                 if !(1..=3).contains(passes) {
                     return Err(invalid(id, "blur passes must be 1..3"));
@@ -1362,6 +1481,24 @@ fn validate_label_size_literals(value: &DynamicValue) -> Result<()> {
         || matches!(value, DynamicValue::Keyframes { keys, .. } if keys.iter().any(|k| !valid(&k.value)))
     {
         return Err(invalid("fontSize", "label font size must be 1..4096 pixels"));
+    }
+    Ok(())
+}
+
+fn validate_material_domain(scene: &Scene, domain: &MaterialDomain) -> Result<()> {
+    for (value, low) in [
+        (&domain.x, -1_000_000.0),
+        (&domain.y, -1_000_000.0),
+        (&domain.width, 0.001),
+        (&domain.height, 0.001),
+    ] {
+        validate_value("width", value, scene, UnitKind::Page)?;
+        if let DynamicValue::Constant { value } = value {
+            let n = typed_value(ValueType::Length, value)?.number()?;
+            if !n.is_finite() || !(low..=1_000_000.0).contains(&n) {
+                return Err(invalid("domain", "finite lengths and positive dimensions required"));
+            }
+        }
     }
     Ok(())
 }

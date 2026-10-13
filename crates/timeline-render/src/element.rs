@@ -966,10 +966,12 @@ impl EvaluatedSceneElement {
                     tf: *tf,
                 },
                 DrawOp::DrawEmissiveBitmap {
+                    blend,
                     bitmap,
                     opacity,
                     tf,
                 } => DrawOp::DrawEmissiveBitmap {
+                    blend: *blend,
                     bitmap: *bitmap_ids.get(*bitmap as usize).ok_or_else(|| {
                         anyhow::anyhow!(
                             "scene reference DrawEmissiveBitmap 引用未知 bitmap {bitmap}"
@@ -1443,6 +1445,54 @@ mod tests {
         .expect("visualizer is compositor-owned");
         assert!(matches!(evaluated.node, Some(SceneNode::Vectors(_))));
         assert_eq!(evaluated.reference.ops.len(), 1);
+    }
+
+    #[test]
+    fn associated_screen_reference_preserves_blend_opacity_transform_and_bitmap_mapping() {
+        use render_raster::drawop::{AssociatedBlend, BitmapData};
+        let mut builder = FrameBuilder::default();
+        builder.bitmap_id(BitmapData {
+            width: 1,
+            height: 1,
+            rgba: Arc::from([0, 0, 0, 0]),
+        });
+        let tf = [0., 2., -3., 0., 12., 17.];
+        let reference = FrameOps {
+            bitmaps: vec![BitmapData {
+                width: 1,
+                height: 1,
+                rgba: Arc::from([180, 60, 0, 15]),
+            }],
+            ops: vec![DrawOp::DrawEmissiveBitmap {
+                blend: AssociatedBlend::Screen,
+                bitmap: 0,
+                opacity: 0.4,
+                tf,
+            }],
+            ..Default::default()
+        };
+        EvaluatedSceneElement {
+            node: None,
+            reference: Arc::new(reference),
+        }
+        .append_reference_to(&mut builder)
+        .unwrap();
+        let frame = builder.finish();
+        assert_eq!(frame.bitmaps.len(), 2);
+        match &frame.ops[0] {
+            DrawOp::DrawEmissiveBitmap {
+                blend,
+                bitmap,
+                opacity,
+                tf: actual,
+            } => {
+                assert_eq!(*blend, AssociatedBlend::Screen);
+                assert_eq!(*bitmap, 1);
+                assert_eq!(*opacity, 0.4);
+                assert_eq!(*actual, tf);
+            }
+            _ => panic!("associated screen reference changed its operation"),
+        }
     }
 
     #[test]

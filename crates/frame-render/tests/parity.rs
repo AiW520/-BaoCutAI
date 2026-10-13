@@ -911,6 +911,116 @@ fn scenes() -> Vec<Scene> {
         });
         scenes.push(smear);
     }
+    // Original 2x2 indexed PNGs: PLTE+tRNS, packed 1-bit and 4-bit rows.
+    // Include partial alpha, opaque color, and hidden RGB at alpha zero.
+    let indexed_one = unhex(
+        "89504e470d0a1a0a0000000d494844520000000200000002010300000048789f6700000006504c5445c97f0311c8fab918a1400000000274524e5365006e1952da0000000c49444154789c637060680000014400c13a7a1c560000000049454e44ae426082",
+    );
+    let indexed_four = unhex(
+        "89504e470d0a1a0a0000000d4948445200000002000000020403000000809810170000000c504c5445ff01c8c97f031600ff08f064a21009e70000000474524e538065ff0083f224180000000c49444154789c636064500600002a002502b7ffdb0000000049454e44ae426082",
+    );
+    let indexed_resource = |id: &str, bytes: &[u8]| {
+        json!({
+            "id":id,"assetRef":{"id":id,"revision":"1"},"contentHash":format!("sha256:{}",hex(&Sha256::digest(bytes)))
+        })
+    };
+    let scalar = |value: f64| json!({"op":"literal","type":"scalar","value":value});
+    let progress = json!({"op":"read","path":"time.progress"});
+    let constant = |value: f64| json!({"kind":"constant","value":value});
+    let indexed_domain = json!({"x":constant(20.),"y":constant(10.),"width":constant(120.),"height":constant(70.)});
+    let indexed_style = json!({"schema":"baocut.caption-scene-style/1","scene":{"kind":"inline","value":{
+        "schema":"baocut.caption-scene/1","evaluationVersion":1,
+        "requiredCapabilities":["caption-render-layers/1","caption-image-sequence/1","caption-noisy-sweep/1","caption-expressions/1"],
+        "layout":{"x":{"value":80,"basis":"absolute"},"y":{"value":45,"basis":"absolute"},"width":{"value":145,"basis":"absolute"}},
+        "nodes":[{"id":"text","type":"text","style":{"fontFamily":"Noto Sans SC","fontSize":{"value":24,"basis":"absolute"},"fill":"#FFFFCC"}}],
+        "sequences":[{"id":"indexed","premultiply":"shifted-byte","frames":[indexed_resource("indexed-one",&indexed_one),indexed_resource("indexed-four",&indexed_four)]}],
+        "renderLayers":[
+            {"id":"sweep","source":{"kind":"nodes","nodeIds":["text"]},"blend":"source-over","materials":[{
+                "kind":"noisy-sweep","id":"mask","contextNodeId":"text","domain":indexed_domain,
+                "position":{"kind":"expression","expression":{"op":"call","function":"add","args":[scalar(0.1),{"op":"call","function":"mul","args":[scalar(0.82),progress]}]}},
+                "maskScale":[1.3125,1.3125],"reveal":true,"uvY":"up"
+            }]},
+            {"id":"indexed-plane","source":{"kind":"image-sequence","contextNodeId":"text","sequenceId":"indexed",
+                "frame":{"kind":"expression","expression":{"op":"if","condition":{"op":"call","function":"lt","args":[progress,scalar(0.5)]},"then":scalar(0.),"else":scalar(1.)}},
+                "domain":indexed_domain,"uvScale":[0.75,0.75],"uvOffset":[0.12,-0.06]},"blend":"screen"}
+        ]
+    }}});
+    let mut indexed = Scene::new(
+        "captions-noisy-sweep-indexed-sequence",
+        video(
+            vec![caption("indexed", "doc", Some("style"), 150, &[])],
+            vec![],
+            json!({"canvas":{"width":W,"height":H,"workingSpace":"srgb","background":"#273B59"}}),
+        ),
+        &[0, 6, 15, 30, 59, 60, 90, 119, 135, 60, 15],
+    );
+    indexed.documents = vec![
+        caption_doc("doc", "sequence", &[(0., 4., "Wave 字幕")], "original"),
+        style_doc("style", indexed_style),
+    ];
+    indexed.binary_assets.push(("indexed-one@1", indexed_one));
+    indexed.binary_assets.push(("indexed-four@1", indexed_four));
+    indexed.shots.push(Shot {
+        width: W * 2,
+        height: H * 2,
+        ..shot(30)
+    });
+    indexed.shots.push(Shot {
+        width: W / 2,
+        height: H / 2,
+        ..shot(90)
+    });
+    indexed.shots.push(Shot {
+        transparent: true,
+        associated_rgba: true,
+        ..shot(30)
+    });
+    indexed.shots.push(Shot {
+        transparent: true,
+        associated_rgba: true,
+        ..shot(90)
+    });
+    scenes.push(indexed);
+    let plane = |id: &str, fill: &str, x: f64| {
+        json!({
+            "id":id,"type":"text","style":{"fontFamily":"Noto Sans SC","fontSize":{"value":28,"basis":"absolute"},"fill":fill},
+            "properties":{"transform.x":{"kind":"constant","value":x}}
+        })
+    };
+    let layered_style = json!({"schema":"baocut.caption-scene-style/1","scene":{"kind":"inline","value":{
+        "schema":"baocut.caption-scene/1","evaluationVersion":1,"requiredCapabilities":["caption-render-layers/1"],
+        "layout":{"x":{"value":80,"basis":"absolute"},"y":{"value":45,"basis":"absolute"},"width":{"value":150,"basis":"absolute"}},
+        "nodes":[plane("base","#2266EE80",-8.),plane("middle","#44CC7740",0.),plane("light","#FF330060",8.)],
+        "renderLayers":[
+            {"id":"first","source":{"kind":"nodes","nodeIds":["base"]},"blend":"source-over"},
+            {"id":"second","source":{"kind":"nodes","nodeIds":["middle"]},"blend":"source-over"},
+            {"id":"third","source":{"kind":"nodes","nodeIds":["light"]},"blend":"screen"}
+        ]
+    }}});
+    let mut layered = Scene::new(
+        "captions-ordered-associated-screen",
+        video(
+            vec![caption("ordered", "doc", Some("style"), 120, &[])],
+            vec![],
+            json!({"canvas":{"width":W,"height":H,"workingSpace":"srgb","background":"#334D66"}}),
+        ),
+        &[0, 6, 15, 45, 75, 110, 15],
+    );
+    layered.documents = vec![
+        caption_doc("doc", "sequence", &[(0., 3., "H 字幕")], "original"),
+        style_doc("style", layered_style),
+    ];
+    layered.shots.push(Shot {
+        transparent: true,
+        associated_rgba: true,
+        ..shot(15)
+    });
+    layered.shots.push(Shot {
+        width: W * 2,
+        height: H * 2,
+        ..shot(45)
+    });
+    scenes.push(layered);
     for (name, zero_angle) in [("captions-angular-sample-blend", false), ("captions-angular-zero-angle", true)] {
         let mut style: Value = serde_json::from_str(include_str!("../../caption-scene/tests/fixtures/angular-sample-blend.json")).unwrap();
         if zero_angle {

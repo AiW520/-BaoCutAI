@@ -944,3 +944,70 @@ fn font_census_includes_inactive_unit_font_style_dependencies() {
     assert!(usage.faces.contains(&("Uninstalled Future Caption Family".into(), 600, true)));
     assert!(usage.missing.contains("Uninstalled Future Caption Family"));
 }
+
+#[test]
+fn scene_output_screen_uses_video_backdrop_and_preserves_order_on_seek() {
+    let node = |id: &str, fill: &str| {
+        json!({
+            "id":id,"type":"text","style":{"fontFamily":"Noto Sans SC","fontSize":{"value":28,"basis":"absolute"},"fill":fill}
+        })
+    };
+    let mut style = json!({"schema":"baocut.caption-scene-style/1","scene":{"kind":"inline","value":{
+        "schema":"baocut.caption-scene/1","evaluationVersion":1,"requiredCapabilities":["caption-render-layers/1"],
+        "layout":{"x":{"value":80,"basis":"absolute"},"y":{"value":45,"basis":"absolute"},"width":{"value":140,"basis":"absolute"}},
+        "nodes":[node("blue","#0066FF80"),node("red","#FF220040")],
+        "renderLayers":[
+            {"id":"base","source":{"kind":"nodes","nodeIds":["blue"]},"blend":"source-over"},
+            {"id":"light","source":{"kind":"nodes","nodeIds":["red"]},"blend":"screen"}
+        ]
+    }}});
+    let make = |style: Value| {
+        let docs = Documents::new(vec![
+            caption_doc("d", "sequence", &[(0., 2., "H")], "original"),
+            style_doc("s", style),
+        ]);
+        renderer(false, docs)
+    };
+    let video = video(
+        vec![caption("c", "d", Some("s"), 90, &[])],
+        vec![],
+        json!({"canvas":{"width":W,"height":H,"workingSpace":"srgb","background":"#334D66"}}),
+    );
+    let mut actual = make(style.clone());
+    let first = render_with(&mut actual, &video, 0.2, &mut Media::default());
+    let later = render_with(&mut actual, &video, 1.2, &mut Media::default());
+    assert_eq!(first, later);
+    assert_eq!(first, render_with(&mut actual, &video, 0.2, &mut Media::default()));
+    let mut planes = Vec::new();
+    for id in ["blue", "red"] {
+        style["scene"]["value"]["renderLayers"] = json!([{ "id":"plane","source":{"kind":"nodes","nodeIds":[id]},"blend":"source-over" }]);
+        let mut isolated = make(style.clone());
+        isolated.set_transparent(true);
+        planes.push(render_with(&mut isolated, &video, 0.2, &mut Media::default()));
+    }
+    let mut painted_pixels = 0;
+    let mut differs_from_flattened = 0;
+    for (i, out) in first.chunks_exact(4).enumerate() {
+        let b = &planes[0][i * 4..i * 4 + 4];
+        let s = &planes[1][i * 4..i * 4 + 4];
+        if b[3] > 0 || s[3] > 0 {
+            painted_pixels += 1;
+        }
+        let backdrop = [51., 77., 102., 255.];
+        for c in 0..4 {
+            let base = (f64::from(b[c]) + backdrop[c] * (1. - f64::from(b[3]) / 255.)).round();
+            let expected = (f64::from(s[c]) + base * (1. - f64::from(s[c]) / 255.)).round();
+            assert!((f64::from(out[c]) - expected).abs() <= 1., "channel {c}: {} != {expected}", out[c]);
+            let flat = (f64::from(s[c]) + f64::from(b[c]) * (1. - f64::from(s[c]) / 255.)).round();
+            let flat_alpha = (f64::from(s[3]) + f64::from(b[3]) * (1. - f64::from(s[3]) / 255.)).round();
+            let wrong = (flat + backdrop[c] * (1. - flat_alpha / 255.)).round();
+            if (wrong - expected).abs() > 2. {
+                differs_from_flattened += 1;
+            }
+        }
+    }
+    assert!(painted_pixels > 10);
+    assert!(differs_from_flattened > 10);
+    let end = render_with(&mut actual, &video, 2.2, &mut Media::default());
+    assert!(end.chunks_exact(4).all(|p| p == [51, 77, 102, 255]));
+}

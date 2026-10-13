@@ -39,6 +39,7 @@ serde_json = { version = "1.0.151", features = ["float_roundtrip"] }
 # v2 是 0.10；本仓库已解析到 0.11，跟本仓库（同 `render-raster`）。
 sha2 = "0.11.0"
 tiny-skia = "0.11.4"
+png = "0.18.1"
 unicode-segmentation = "1.12"
 
 [dev-dependencies]

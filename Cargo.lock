@@ -3716,6 +3716,7 @@ dependencies = [
  "caption-scene",
  "libm",
  "motion",
+ "png 0.18.1",
  "render-raster",
  "scene-primitives",
  "serde",

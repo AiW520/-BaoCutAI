@@ -34,6 +34,10 @@ pub struct Scene {
     pub layout: Layout,
     #[serde(default)]
     pub resources: Vec<ImageResource>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub sequences: Vec<ImageSequenceResource>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub render_layers: Vec<CaptionRenderLayer>,
     #[serde(default)]
     pub speech_state: SpeechState,
     pub nodes: Vec<Node>,
@@ -658,6 +662,56 @@ pub struct ImageResource {
     pub asset_ref: ResourceRef,
     pub content_hash: String,
 }
+/// Ordered independent surfaces. Nodes remain available for layout even when not selected.
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct CaptionRenderLayer {
+    pub id: String,
+    pub source: CaptionLayerSource,
+    #[serde(default)]
+    pub materials: Vec<CaptionMaterial>,
+    pub blend: CaptionLayerBlend,
+}
+#[derive(Clone, Copy, Debug, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "kebab-case")]
+pub enum CaptionLayerBlend {
+    SourceOver,
+    Screen,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "kind", rename_all = "kebab-case", deny_unknown_fields)]
+pub enum CaptionLayerSource {
+    Nodes {
+        #[serde(rename = "nodeIds")]
+        node_ids: Vec<String>,
+    },
+    ImageSequence {
+        #[serde(rename = "contextNodeId")]
+        context_node_id: String,
+        #[serde(rename = "sequenceId")]
+        sequence_id: String,
+        frame: DynamicValue,
+        domain: MaterialDomain,
+        #[serde(rename = "uvScale")]
+        uv_scale: [f64; 2],
+        #[serde(rename = "uvOffset")]
+        uv_offset: [f64; 2],
+    },
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct ImageSequenceResource {
+    pub id: String,
+    pub frames: Vec<ImageResource>,
+    pub premultiply: SequencePremultiply,
+}
+#[derive(Clone, Copy, Debug, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "kebab-case")]
+pub enum SequencePremultiply {
+    Rounded,
+    ShiftedByte,
+}
+
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct ResourceRef {
@@ -763,6 +817,18 @@ fn deserialize_glow_color_matrix<'de, D: serde::Deserializer<'de>>(deserializer:
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "kind", rename_all = "kebab-case", deny_unknown_fields)]
 pub enum CaptionMaterial {
+    NoisySweep {
+        id: String,
+        #[serde(rename = "contextNodeId")]
+        context_node_id: String,
+        domain: MaterialDomain,
+        position: DynamicValue,
+        #[serde(rename = "maskScale")]
+        mask_scale: [f64; 2],
+        reveal: bool,
+        #[serde(rename = "uvY")]
+        uv_y: MaterialUvY,
+    },
     GradientSmear {
         id: String,
         #[serde(rename = "contextNodeId")]

@@ -1,7 +1,7 @@
 //! Associated RGBA8 with independent emission components (RGB may exceed alpha).
 //! All four UNORM channels use the same opacity and clip coverage. Color is never
 //! clamped to alpha; source-over clamps each final component to the UNORM range.
-use crate::drawop::Mat6;
+use crate::drawop::{AssociatedBlend, Mat6};
 use anyhow::{Result, bail};
 use tiny_skia::{Mask, Pixmap, PixmapRef};
 
@@ -48,6 +48,20 @@ pub fn composite_associated(
     opacity: f32,
     tf: Mat6,
     clip: Option<&Mask>,
+) -> Result<bool> {
+    composite_associated_with_blend(out, source, opacity, tf, clip, AssociatedBlend::SourceOver)
+}
+
+/// Apply opacity and clip to all source channels, then blend with the current
+/// backdrop. Screen computes S + D * (1 - S) independently for RGBA; alpha is
+/// never used as a multiplier for RGB, including when RGB exceeds alpha.
+pub fn composite_associated_with_blend(
+    out: &mut Pixmap,
+    source: PixmapRef<'_>,
+    opacity: f32,
+    tf: Mat6,
+    clip: Option<&Mask>,
+    blend: AssociatedBlend,
 ) -> Result<bool> {
     if !opacity.is_finite() || tf.iter().any(|v| !v.is_finite()) {
         bail!("EMISSIVE_TRANSFORM_INVALID");
@@ -130,8 +144,11 @@ pub fn composite_associated(
             let remaining = 1.0 - color[3] * coverage / 255.0;
             let destination = &mut out.data_mut()[index * 4..index * 4 + 4];
             for channel in 0..4 {
-                let value = (color[channel] * coverage
-                    + f64::from(destination[channel]) * remaining)
+                let factor = match blend {
+                    AssociatedBlend::SourceOver => remaining,
+                    AssociatedBlend::Screen => 1.0 - color[channel] * coverage / 255.0,
+                };
+                let value = (color[channel] * coverage + f64::from(destination[channel]) * factor)
                     .round()
                     .clamp(0.0, 255.0) as u8;
                 changed |= destination[channel] != value;

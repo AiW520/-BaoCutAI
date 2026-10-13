@@ -70,7 +70,8 @@ fn padding(materials: &[CaptionMaterial]) -> u32 {
                 };
                 libm::ceil(max) as u32
             }
-            CaptionMaterial::SoftBand { .. }
+            CaptionMaterial::NoisySweep { .. }
+            | CaptionMaterial::SoftBand { .. }
             | CaptionMaterial::GradientSmear { .. }
             | CaptionMaterial::AngularSampleBlend { .. }
             | CaptionMaterial::NoisePaletteMix { .. }
@@ -129,6 +130,85 @@ impl ScenePlan {
         }) {
             return self.record_base(t, None, budget);
         }
+        self.record_stack(
+            t,
+            &materials,
+            None,
+            CaptionLayerBlend::SourceOver,
+            false,
+            0,
+            budget,
+            &mut Work { pixels: 0 },
+        )
+    }
+    pub(super) fn record_layered_materials(
+        &mut self,
+        t: f64,
+        budget: &mut Budget,
+    ) -> Result<(FrameOps, Vec<SceneHit>)> {
+        if !t.is_finite() {
+            bail!("CAPTION_SCENE_INVALID: sample time");
+        }
+        let layers = self.style.scene().render_layers.clone();
+        let active = self
+            .cues
+            .iter()
+            .filter(|c| t >= c.start && t < c.end)
+            .count() as u64;
+        // Both FrameOps bytes and the public Vec-backed output planes coexist briefly.
+        let retained =
+            u64::from(self.width) * u64::from(self.height) * 8 * active * layers.len() as u64;
+        if retained > MAX_SURFACE_BYTES {
+            bail!("CAPTION_BUDGET_EXCEEDED: layer outputs");
+        }
+        let mut result = FrameOps::default();
+        let mut hits = Vec::new();
+        let mut work = Work { pixels: 0 };
+        for layer in layers {
+            let (mut ops, layer_hits) = self.record_stack(
+                t,
+                &layer.materials,
+                Some(&layer.source),
+                layer.blend,
+                true,
+                retained,
+                budget,
+                &mut work,
+            )?;
+            let base = result.bitmaps.len() as u32;
+            for op in &mut ops.ops {
+                if let DrawOp::DrawEmissiveBitmap { bitmap, .. } = op {
+                    *bitmap += base;
+                }
+            }
+            result.bitmaps.extend(ops.bitmaps);
+            result.ops.extend(ops.ops);
+            for hit in layer_hits {
+                if !hits.iter().any(|existing: &SceneHit| {
+                    existing.cue_id == hit.cue_id
+                        && existing.document_id == hit.document_id
+                        && existing.bounds.x == hit.bounds.x
+                        && existing.bounds.y == hit.bounds.y
+                        && existing.bounds.width == hit.bounds.width
+                        && existing.bounds.height == hit.bounds.height
+                }) {
+                    hits.push(hit);
+                }
+            }
+        }
+        Ok((result, hits))
+    }
+    fn record_stack(
+        &mut self,
+        t: f64,
+        materials: &[CaptionMaterial],
+        source: Option<&CaptionLayerSource>,
+        blend: CaptionLayerBlend,
+        layered: bool,
+        retained: u64,
+        budget: &mut Budget,
+        work: &mut Work,
+    ) -> Result<(FrameOps, Vec<SceneHit>)> {
         let pad = padding(&materials);
         let width = self
             .width
@@ -149,7 +229,7 @@ impl ScenePlan {
             .sum::<u64>()
             + 4
             + raster_depth(&self.style.scene().nodes);
-        if bytes * surface_count > MAX_SURFACE_BYTES {
+        if bytes * surface_count + retained > MAX_SURFACE_BYTES {
             bail!("CAPTION_BUDGET_EXCEEDED: material surfaces");
         }
         let indices = self
@@ -167,17 +247,17 @@ impl ScenePlan {
         }
         let mut builder = FrameBuilder::default();
         let mut hits = Vec::new();
-        let mut work = Work { pixels: 0 };
         for ci in indices {
             let (image, current_hits) = self.material_prefix(
                 ci,
                 t,
-                &materials,
+                materials,
+                source,
                 materials.len(),
                 pad,
                 (width, height),
                 budget,
-                &mut work,
+                work,
             )?;
             hits.extend(current_hits);
             let mut cropped = Vec::with_capacity(self.width as usize * self.height as usize * 4);
@@ -190,9 +270,15 @@ impl ScenePlan {
                 height: self.height,
                 rgba: Arc::from(cropped),
             });
-            if component_stack(&materials) {
+            if layered || component_stack(materials) {
                 builder.push(DrawOp::DrawEmissiveBitmap {
                     bitmap: id,
+                    blend: match blend {
+                        CaptionLayerBlend::SourceOver => {
+                            render_raster::drawop::AssociatedBlend::SourceOver
+                        }
+                        CaptionLayerBlend::Screen => render_raster::drawop::AssociatedBlend::Screen,
+                    },
                     opacity: 1.0,
                     tf: [1.0, 0.0, 0.0, 1.0, 0.0, 0.0],
                 });
@@ -265,6 +351,7 @@ impl ScenePlan {
         ci: usize,
         t: f64,
         materials: &[CaptionMaterial],
+        source_spec: Option<&CaptionLayerSource>,
         prefix: usize,
         pad: u32,
         size: (u32, u32),
@@ -280,7 +367,14 @@ impl ScenePlan {
             ));
         }
         if prefix == 0 {
-            let (mut ops, hits) = self.record_base(t, Some(ci), budget)?;
+            if let Some(CaptionLayerSource::ImageSequence { .. }) = source_spec {
+                return self.sequence_source(ci, t, source_spec.unwrap(), pad, size, budget, work);
+            }
+            let selected = match source_spec {
+                Some(CaptionLayerSource::Nodes { node_ids }) => Some(node_ids.as_slice()),
+                _ => None,
+            };
+            let (mut ops, hits) = self.record_selected_nodes(t, Some(ci), selected, budget)?;
             translated(&mut ops, pad);
             work.spend(size.0, size.1)?;
             return Ok((
@@ -289,9 +383,70 @@ impl ScenePlan {
             ));
         }
         match &materials[prefix - 1] {
+            CaptionMaterial::NoisySweep {
+                id,
+                context_node_id,
+                domain,
+                position,
+                mask_scale,
+                reveal,
+                uv_y,
+            } => {
+                let (mut source, hits) = self.material_prefix(
+                    ci,
+                    t,
+                    materials,
+                    source_spec,
+                    prefix - 1,
+                    pad,
+                    size,
+                    budget,
+                    work,
+                )?;
+                let Some(mut context) =
+                    self.material_page_context(ci, t, context_node_id, budget)?
+                else {
+                    source.data_mut().fill(0);
+                    return Ok((source, vec![]));
+                };
+                context.stable_key.push_str(&format!("|material|{id}"));
+                let rect = sample_domain(domain, self.style.scene(), &context, t, budget)?;
+                let position = component_uniform(
+                    position,
+                    self.style.scene(),
+                    &context,
+                    t,
+                    budget,
+                    0.0,
+                    -1024.0,
+                    1024.0,
+                )?;
+                Ok((
+                    super::noisy_sweep::apply(
+                        &source,
+                        pad,
+                        rect,
+                        position,
+                        *mask_scale,
+                        *reveal,
+                        *uv_y,
+                        |n| work.samples(n),
+                    )?,
+                    hits,
+                ))
+            }
             CaptionMaterial::Blur { id, radius, passes } => {
-                let (mut source, hits) =
-                    self.material_prefix(ci, t, materials, prefix - 1, pad, size, budget, work)?;
+                let (mut source, hits) = self.material_prefix(
+                    ci,
+                    t,
+                    materials,
+                    source_spec,
+                    prefix - 1,
+                    pad,
+                    size,
+                    budget,
+                    work,
+                )?;
                 let cue = &self.cues[ci];
                 let params =
                     cue_parameters(&self.style, &self.presentation, cue, &self.instance_id)?;
@@ -336,8 +491,17 @@ impl ScenePlan {
                 phase,
                 axis,
             } => {
-                let (source, hits) =
-                    self.material_prefix(ci, t, materials, prefix - 1, pad, size, budget, work)?;
+                let (source, hits) = self.material_prefix(
+                    ci,
+                    t,
+                    materials,
+                    source_spec,
+                    prefix - 1,
+                    pad,
+                    size,
+                    budget,
+                    work,
+                )?;
                 let cue = &self.cues[ci];
                 let params =
                     cue_parameters(&self.style, &self.presentation, cue, &self.instance_id)?;
@@ -393,8 +557,17 @@ impl ScenePlan {
                 amount,
                 opacity,
             } => {
-                let (mut source, hits) =
-                    self.material_prefix(ci, t, materials, prefix - 1, pad, size, budget, work)?;
+                let (mut source, hits) = self.material_prefix(
+                    ci,
+                    t,
+                    materials,
+                    source_spec,
+                    prefix - 1,
+                    pad,
+                    size,
+                    budget,
+                    work,
+                )?;
                 let Some(mut context) =
                     self.material_page_context(ci, t, context_node_id, budget)?
                 else {
@@ -452,8 +625,17 @@ impl ScenePlan {
                 phase,
                 domain,
             } => {
-                let (mut source, hits) =
-                    self.material_prefix(ci, t, materials, prefix - 1, pad, size, budget, work)?;
+                let (mut source, hits) = self.material_prefix(
+                    ci,
+                    t,
+                    materials,
+                    source_spec,
+                    prefix - 1,
+                    pad,
+                    size,
+                    budget,
+                    work,
+                )?;
                 let Some(mut context) =
                     self.material_page_context(ci, t, context_node_id, budget)?
                 else {
@@ -519,8 +701,17 @@ impl ScenePlan {
                 noise,
                 uv_y,
             } => {
-                let (mut source, hits) =
-                    self.material_prefix(ci, t, materials, prefix - 1, pad, size, budget, work)?;
+                let (mut source, hits) = self.material_prefix(
+                    ci,
+                    t,
+                    materials,
+                    source_spec,
+                    prefix - 1,
+                    pad,
+                    size,
+                    budget,
+                    work,
+                )?;
                 let Some(mut context) =
                     self.material_page_context(ci, t, context_node_id, budget)?
                 else {
@@ -602,8 +793,17 @@ impl ScenePlan {
                 aspect,
                 angle,
             } => {
-                let (mut source, hits) =
-                    self.material_prefix(ci, t, materials, prefix - 1, pad, size, budget, work)?;
+                let (mut source, hits) = self.material_prefix(
+                    ci,
+                    t,
+                    materials,
+                    source_spec,
+                    prefix - 1,
+                    pad,
+                    size,
+                    budget,
+                    work,
+                )?;
                 let Some(mut context) =
                     self.material_page_context(ci, t, context_node_id, budget)?
                 else {
@@ -650,8 +850,17 @@ impl ScenePlan {
                 gamma,
                 boundary,
             } => {
-                let (mut source, hits) =
-                    self.material_prefix(ci, t, materials, prefix - 1, pad, size, budget, work)?;
+                let (mut source, hits) = self.material_prefix(
+                    ci,
+                    t,
+                    materials,
+                    source_spec,
+                    prefix - 1,
+                    pad,
+                    size,
+                    budget,
+                    work,
+                )?;
                 let Some(mut context) =
                     self.material_page_context(ci, t, context_node_id, budget)?
                 else {
@@ -705,8 +914,17 @@ impl ScenePlan {
                 glow_color_matrix,
                 composite,
             } => {
-                let (mut source, hits) =
-                    self.material_prefix(ci, t, materials, prefix - 1, pad, size, budget, work)?;
+                let (mut source, hits) = self.material_prefix(
+                    ci,
+                    t,
+                    materials,
+                    source_spec,
+                    prefix - 1,
+                    pad,
+                    size,
+                    budget,
+                    work,
+                )?;
                 let Some(mut context) =
                     self.material_page_context(ci, t, context_node_id, budget)?
                 else {
@@ -803,6 +1021,7 @@ impl ScenePlan {
                         ci,
                         past,
                         materials,
+                        source_spec,
                         prefix - 1,
                         pad,
                         size,
@@ -855,7 +1074,8 @@ fn component_stack(materials: &[CaptionMaterial]) -> bool {
     materials.iter().any(|material| {
         matches!(
             material,
-            CaptionMaterial::AngularSampleBlend { .. }
+            CaptionMaterial::NoisySweep { .. }
+                | CaptionMaterial::AngularSampleBlend { .. }
                 | CaptionMaterial::GradientSmear { .. }
                 | CaptionMaterial::NoisePaletteMix { .. }
                 | CaptionMaterial::GaussianAxis { .. }
@@ -1564,5 +1784,133 @@ mod glow_tint_tests {
             .to_string()
             .contains("CAPTION_MATERIAL_INVALID")
         );
+    }
+}
+
+fn sample_domain(
+    domain: &MaterialDomain,
+    scene: &Scene,
+    context: &Context,
+    t: f64,
+    budget: &mut Budget,
+) -> Result<[f64; 4]> {
+    let mut rect = [0.0; 4];
+    for (i, value) in [&domain.x, &domain.y, &domain.width, &domain.height]
+        .into_iter()
+        .enumerate()
+    {
+        rect[i] = sample_value(value, ValueType::Length, scene, context, t, budget)?
+            .ok_or_else(|| anyhow::anyhow!("CAPTION_MATERIAL_INVALID: missing domain"))?
+            .number()?;
+        let low = if i < 2 { -1_000_000.0 } else { 0.001 };
+        if !rect[i].is_finite() || !(low..=1_000_000.0).contains(&rect[i]) {
+            bail!("CAPTION_MATERIAL_INVALID: domain");
+        }
+    }
+    Ok(rect)
+}
+impl ScenePlan {
+    fn sequence_source(
+        &mut self,
+        ci: usize,
+        t: f64,
+        source: &CaptionLayerSource,
+        pad: u32,
+        size: (u32, u32),
+        budget: &mut Budget,
+        work: &mut Work,
+    ) -> Result<(Pixmap, Vec<SceneHit>)> {
+        let CaptionLayerSource::ImageSequence {
+            context_node_id,
+            sequence_id,
+            frame,
+            domain,
+            uv_scale,
+            uv_offset,
+        } = source
+        else {
+            unreachable!()
+        };
+        work.spend(size.0, size.1)?;
+        let mut out = Pixmap::new(size.0, size.1)
+            .ok_or_else(|| anyhow::anyhow!("CAPTION_BUDGET_EXCEEDED: sequence surface"))?;
+        let Some(context) = self.material_page_context(ci, t, context_node_id, budget)? else {
+            return Ok((out, vec![]));
+        };
+        let count = self
+            .style
+            .scene()
+            .sequences
+            .iter()
+            .find(|s| &s.id == sequence_id)
+            .unwrap()
+            .frames
+            .len();
+        let index = component_uniform(
+            frame,
+            self.style.scene(),
+            &context,
+            t,
+            budget,
+            0.0,
+            0.0,
+            (count - 1) as f64,
+        )?;
+        let rect = sample_domain(domain, self.style.scene(), &context, t, budget)?;
+        let bitmap = self
+            .sequences
+            .frame(sequence_id, libm::floor(index) as usize)?;
+        let x0 = libm::floor(rect[0] + f64::from(pad))
+            .max(0.0)
+            .min(f64::from(size.0)) as u32;
+        let y0 = libm::floor(rect[1] + f64::from(pad))
+            .max(0.0)
+            .min(f64::from(size.1)) as u32;
+        let x1 = libm::ceil(rect[0] + rect[2] + f64::from(pad))
+            .max(0.0)
+            .min(f64::from(size.0)) as u32;
+        let y1 = libm::ceil(rect[1] + rect[3] + f64::from(pad))
+            .max(0.0)
+            .min(f64::from(size.1)) as u32;
+        work.samples(u64::from(x1.saturating_sub(x0)) * u64::from(y1.saturating_sub(y0)) * 5)?;
+        for y in y0..y1 {
+            for x in x0..x1 {
+                let local = [
+                    (f64::from(x) + 0.5 - f64::from(pad) - rect[0]) / rect[2],
+                    (f64::from(y) + 0.5 - f64::from(pad) - rect[1]) / rect[3],
+                ];
+                if local.iter().any(|n| *n < 0.0 || *n >= 1.0) {
+                    continue;
+                }
+                let uv: [f64; 2] = std::array::from_fn(|i| {
+                    ((local[i] - 0.5) / uv_scale[i] + 0.5 + uv_offset[i]).clamp(0.0, 1.0)
+                });
+                let pos = [
+                    (uv[0] * f64::from(bitmap.width) - 0.5).clamp(0.0, f64::from(bitmap.width - 1)),
+                    (uv[1] * f64::from(bitmap.height) - 0.5)
+                        .clamp(0.0, f64::from(bitmap.height - 1)),
+                ];
+                let ix = libm::floor(pos[0]) as u32;
+                let iy = libm::floor(pos[1]) as u32;
+                let fx = (pos[0] - f64::from(ix)) as f32;
+                let fy = (pos[1] - f64::from(iy)) as f32;
+                let mut pixel = [0.0f32; 4];
+                for (dy, wy) in [(0, 1.0 - fy), (1, fy)] {
+                    for (dx, wx) in [(0, 1.0 - fx), (1, fx)] {
+                        let off = (((iy + dy).min(bitmap.height - 1) * bitmap.width
+                            + (ix + dx).min(bitmap.width - 1))
+                            * 4) as usize;
+                        for c in 0..4 {
+                            pixel[c] += f32::from(bitmap.rgba[off + c]) * wx * wy;
+                        }
+                    }
+                }
+                let off = ((y * size.0 + x) * 4) as usize;
+                for c in 0..4 {
+                    out.data_mut()[off + c] = libm::floorf(pixel[c] + 0.5).clamp(0.0, 255.0) as u8;
+                }
+            }
+        }
+        Ok((out, vec![]))
     }
 }

@@ -5,8 +5,10 @@ mod component_filters;
 mod cue_unit_context;
 mod glyph_envelope;
 mod gradient_smear;
+mod image_sequences;
 mod materials;
 mod noise_palette;
+mod noisy_sweep;
 mod page_envelope;
 mod page_window;
 mod sampled_layout;
@@ -230,6 +232,10 @@ pub struct SceneHit {
     pub document_id: String,
     pub bounds: Bounds,
 }
+pub struct SceneOutput {
+    pub rgba: Arc<Vec<u8>>,
+    pub blend: render_raster::drawop::AssociatedBlend,
+}
 pub struct SceneFrame {
     /// Associated RGBA8. Component materials may emit RGB above alpha; use an
     /// emission-aware compositor or checked conversion before straight export.
@@ -249,6 +255,7 @@ pub struct ScenePlan {
     pub height: u32,
     instance_id: String,
     images: BTreeMap<String, BitmapData>,
+    sequences: image_sequences::ImageSequenceCache,
 }
 impl ScenePlan {
     pub fn compile(
@@ -278,6 +285,7 @@ impl ScenePlan {
             height: size.1,
             instance_id,
             images: BTreeMap::new(),
+            sequences: Default::default(),
         };
         let mut nodes = Vec::new();
         text_nodes(&p.style.scene().nodes, &mut nodes);
@@ -385,7 +393,13 @@ impl ScenePlan {
                 },
             );
         }
+        let sequences = image_sequences::ImageSequenceCache::load(
+            &self.style.scene().sequences,
+            decoded as u64,
+            &mut read,
+        )?;
         self.images = images;
+        self.sequences = sequences;
         Ok(())
     }
     pub fn into_text_engine(self) -> TextEngine {
@@ -393,7 +407,9 @@ impl ScenePlan {
     }
     pub fn record(&mut self, seconds: f64) -> Result<(FrameOps, Vec<SceneHit>)> {
         let mut budget = Budget::default();
-        if self.style.scene().materials.is_empty() {
+        if !self.style.scene().render_layers.is_empty() {
+            self.record_layered_materials(seconds, &mut budget)
+        } else if self.style.scene().materials.is_empty() {
             self.record_base(seconds, None, &mut budget)
         } else {
             self.record_materials(seconds, &mut budget)
@@ -403,6 +419,15 @@ impl ScenePlan {
         &mut self,
         seconds: f64,
         only_cue: Option<usize>,
+        budget: &mut Budget,
+    ) -> Result<(FrameOps, Vec<SceneHit>)> {
+        self.record_selected_nodes(seconds, only_cue, None, budget)
+    }
+    fn record_selected_nodes(
+        &mut self,
+        seconds: f64,
+        only_cue: Option<usize>,
+        selected: Option<&[String]>,
         budget: &mut Budget,
     ) -> Result<(FrameOps, Vec<SceneHit>)> {
         if !seconds.is_finite() {
@@ -458,8 +483,16 @@ impl ScenePlan {
                 size: (self.width, self.height),
                 images: &self.images,
             };
+            let selected_nodes = selected.map(|ids| {
+                scene
+                    .nodes
+                    .iter()
+                    .filter(|n| ids.contains(&n.id))
+                    .cloned()
+                    .collect::<Vec<_>>()
+            });
             draw_nodes(
-                &scene.nodes,
+                selected_nodes.as_deref().unwrap_or(&scene.nodes),
                 Transform::identity(),
                 None,
                 &context,
@@ -471,7 +504,42 @@ impl ScenePlan {
         }
         Ok((builder.finish(), hits))
     }
+    /// Preserve ordered blend planes for composition against the actual video backdrop.
+    pub fn render_outputs(&mut self, seconds: f64) -> Result<(Vec<SceneOutput>, Vec<SceneHit>)> {
+        if self.style.scene().render_layers.is_empty() {
+            let frame = self.render(seconds)?;
+            return Ok((
+                vec![SceneOutput {
+                    rgba: frame.rgba,
+                    blend: render_raster::drawop::AssociatedBlend::SourceOver,
+                }],
+                frame.hits,
+            ));
+        }
+        let (ops, hits) = self.record(seconds)?;
+        let mut outputs = Vec::new();
+        for op in &ops.ops {
+            let DrawOp::DrawEmissiveBitmap { bitmap, blend, .. } = op else {
+                bail!("CAPTION_SCENE_INVALID: layered output operation");
+            };
+            let bitmap = &ops.bitmaps[*bitmap as usize];
+            outputs.push(SceneOutput {
+                rgba: Arc::new(bitmap.rgba.to_vec()),
+                blend: *blend,
+            });
+        }
+        Ok((outputs, hits))
+    }
     pub fn render(&mut self, seconds: f64) -> Result<SceneFrame> {
+        if self
+            .style
+            .scene()
+            .render_layers
+            .iter()
+            .any(|l| l.blend == CaptionLayerBlend::Screen)
+        {
+            bail!("CAPTION_BACKDROP_REQUIRED: use render_outputs for screen layers");
+        }
         let (ops, hits) = self.record(seconds)?;
         struct NoMedia;
         impl FrameMedia for NoMedia {

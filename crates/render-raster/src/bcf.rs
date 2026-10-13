@@ -143,34 +143,78 @@ impl Compiled {
                 tf[5] *= scale;
             }
             if let crate::RenderPass::Draw { ops, .. } = pass {
-                for op in &mut ops.ops {
-                    use crate::drawop::DrawOp;
-                    let tf = match op {
-                        DrawOp::FillRect { tf, .. }
-                        | DrawOp::FillPath { tf, .. }
-                        | DrawOp::StrokePath { tf, .. }
-                        | DrawOp::DrawMedia { tf, .. }
-                        | DrawOp::ClipPath { tf, .. }
-                        | DrawOp::FillPathPaint { tf, .. }
-                        | DrawOp::StrokePathPaint { tf, .. }
-                        | DrawOp::DrawBitmap { tf, .. }
-                        | DrawOp::DrawEmissiveBitmap { tf, .. } => Some(tf),
-                        DrawOp::Clear { .. }
-                        | DrawOp::PushLayer { .. }
-                        | DrawOp::PopLayer
-                        | DrawOp::PopClip
-                        | DrawOp::PushMatte
-                        | DrawOp::PopMatte { .. } => None,
-                    };
-                    if let Some(tf) = tf {
-                        for component in tf {
-                            *component *= scale;
-                        }
-                    }
-                }
+                scale_draw_ops(ops, scale);
             }
         }
         Ok(())
+    }
+}
+
+fn scale_draw_ops(ops: &mut crate::drawop::FrameOps, scale: f32) {
+    for op in &mut ops.ops {
+        use crate::drawop::DrawOp;
+        let tf = match op {
+            DrawOp::FillRect { tf, .. }
+            | DrawOp::FillPath { tf, .. }
+            | DrawOp::StrokePath { tf, .. }
+            | DrawOp::DrawMedia { tf, .. }
+            | DrawOp::ClipPath { tf, .. }
+            | DrawOp::FillPathPaint { tf, .. }
+            | DrawOp::StrokePathPaint { tf, .. }
+            | DrawOp::DrawBitmap { tf, .. }
+            | DrawOp::DrawEmissiveBitmap { tf, .. } => Some(tf),
+            DrawOp::Clear { .. }
+            | DrawOp::PushLayer { .. }
+            | DrawOp::PopLayer
+            | DrawOp::PopClip
+            | DrawOp::PushMatte
+            | DrawOp::PopMatte { .. } => None,
+        };
+        if let Some(tf) = tf {
+            for component in tf {
+                *component *= scale;
+            }
+        }
+    }
+}
+
+#[cfg(test)]
+mod associated_tests {
+    use super::scale_draw_ops;
+    use crate::drawop::{AssociatedBlend, DrawOp, FrameOps};
+
+    #[test]
+    fn preview_scale_preserves_associated_blend_and_opacity() {
+        let mut frame = FrameOps::default();
+        for blend in [AssociatedBlend::SourceOver, AssociatedBlend::Screen] {
+            frame.ops.push(DrawOp::DrawEmissiveBitmap {
+                blend,
+                bitmap: 3,
+                opacity: 0.25,
+                tf: [1., 2., 3., 4., 5., 6.],
+            });
+        }
+        scale_draw_ops(&mut frame, 2.0);
+        for (op, expected) in frame
+            .ops
+            .iter()
+            .zip([AssociatedBlend::SourceOver, AssociatedBlend::Screen])
+        {
+            match op {
+                DrawOp::DrawEmissiveBitmap {
+                    blend,
+                    bitmap,
+                    opacity,
+                    tf,
+                } => {
+                    assert_eq!(*blend, expected);
+                    assert_eq!(*bitmap, 3);
+                    assert_eq!(*opacity, 0.25);
+                    assert_eq!(*tf, [2., 4., 6., 8., 10., 12.]);
+                }
+                _ => panic!("bitmap operation changed"),
+            }
+        }
     }
 }
 

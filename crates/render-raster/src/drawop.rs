@@ -108,12 +108,22 @@ pub enum DrawOp {
         tf: Mat6,
     },
     /// Associated RGBA8 components (v6): RGB may exceed alpha, including alpha zero.
-    /// Affine bilinear transparent sampling and source-over preserve that emission.
+    /// Affine bilinear transparent sampling preserves emission; Screen requires v7.
     DrawEmissiveBitmap {
+        blend: AssociatedBlend,
         bitmap: u32,
         opacity: f32,
         tf: Mat6,
     },
+}
+
+/// Independent associated RGBA component blending. Screen reads the actual backdrop;
+/// it is not the ordinary premultiplied-alpha blend mode.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+pub enum AssociatedBlend {
+    #[default]
+    SourceOver,
+    Screen,
 }
 
 /// 轨道遮罩模式（Lottie 的 `tt`）。
@@ -339,6 +349,7 @@ const MAGIC: u32 = 0x42_43_4F_50; // "BCOP"
 /// * v4：paint 侧表（渐变 / even-odd 填充）与 `PushMatte` / `PopMatte`（ADR-M11）
 /// * v5：位图侧表与 `DrawBitmap`（BCF 文字的彩色字形）
 /// * v6：允许 RGB > alpha 的 `DrawEmissiveBitmap`，沿用位图侧表布局
+/// * v7：独立 RGBA Screen 输出（tag 15），v6 source-over 编码保持不变
 ///
 /// `encode` 写的是**这一帧真正需要的**版本（[`required_version`]）：一条 v4
 /// 原语都没有的帧仍然产出 v3 字节。这不是省事，而是承诺——阶段 0 录下的
@@ -349,12 +360,23 @@ const PAINT_VERSION: u32 = 4;
 /// 引入位图侧表的版本。
 const BITMAP_VERSION: u32 = 5;
 /// `encode` 可能产出、`decode` 必须认得的最高版本。
-pub const MAX_VERSION: u32 = 6;
+pub const MAX_VERSION: u32 = 7;
 /// `decode` 接受的最低版本。
 pub const MIN_DECODABLE_VERSION: u32 = 2;
 
 /// 这一帧最低需要哪个信封版本。
 pub fn required_version(frame: &FrameOps) -> u32 {
+    if frame.ops.iter().any(|op| {
+        matches!(
+            op,
+            DrawOp::DrawEmissiveBitmap {
+                blend: AssociatedBlend::Screen,
+                ..
+            }
+        )
+    }) {
+        return 7;
+    }
     if frame
         .ops
         .iter()
@@ -589,11 +611,15 @@ pub fn encode(frame: &FrameOps) -> Vec<u8> {
                 put_mat(&mut out, tf);
             }
             DrawOp::DrawEmissiveBitmap {
+                blend,
                 bitmap,
                 opacity,
                 tf,
             } => {
-                out.push(14);
+                out.push(match blend {
+                    AssociatedBlend::SourceOver => 14,
+                    AssociatedBlend::Screen => 15,
+                });
                 put_u32(&mut out, *bitmap);
                 put_f32(&mut out, *opacity);
                 put_mat(&mut out, tf);
@@ -865,6 +891,13 @@ pub fn decode(bytes: &[u8]) -> Result<(u32, FrameOps)> {
                 tf: r.mat()?,
             },
             14 if version >= 6 => DrawOp::DrawEmissiveBitmap {
+                blend: AssociatedBlend::SourceOver,
+                bitmap: r.u32()?,
+                opacity: r.f32()?,
+                tf: r.mat()?,
+            },
+            15 if version >= 7 => DrawOp::DrawEmissiveBitmap {
+                blend: AssociatedBlend::Screen,
                 bitmap: r.u32()?,
                 opacity: r.f32()?,
                 tf: r.mat()?,

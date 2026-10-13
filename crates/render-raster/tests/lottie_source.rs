@@ -218,10 +218,20 @@ fn disassemble(frame: &FrameOps) -> Vec<String> {
                 tf,
             } => format!("DrawBitmap #{bitmap} o={} {}", f(*opacity), mat(tf)),
             DrawOp::DrawEmissiveBitmap {
+                blend,
                 bitmap,
                 opacity,
                 tf,
-            } => format!("DrawEmissiveBitmap #{bitmap} o={} {}", f(*opacity), mat(tf)),
+            } => match blend {
+                render_raster::drawop::AssociatedBlend::SourceOver => {
+                    format!("DrawEmissiveBitmap #{bitmap} o={} {}", f(*opacity), mat(tf))
+                }
+                render_raster::drawop::AssociatedBlend::Screen => format!(
+                    "DrawEmissiveBitmap #{bitmap} blend=Screen o={} {}",
+                    f(*opacity),
+                    mat(tf)
+                ),
+            },
         })
         .collect()
 }

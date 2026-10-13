@@ -2,8 +2,12 @@
 //! + 混合模式），裁剪栈实现 ClipPath/PopClip，DrawMedia 经 MediaStore 取像素
 //! （image 直引 / video 顺序解码），DrawBitmap 直接取帧内的位图侧表。
 
-use crate::drawop::{DrawOp, FrameOps, MatteMode, PaintData, PathData, StaticPrefix};
-use crate::emissive::{composite_associated, has_emissive_components};
+use crate::drawop::{
+    AssociatedBlend, DrawOp, FrameOps, MatteMode, PaintData, PathData, StaticPrefix,
+};
+use crate::emissive::{
+    composite_associated, composite_associated_with_blend, has_emissive_components,
+};
 #[cfg(feature = "media")]
 use crate::media::MediaStore;
 use crate::plan::blend_to_skia;
@@ -621,17 +625,23 @@ pub fn rasterize_with_media(
                 }
             }
             DrawOp::DrawEmissiveBitmap {
+                blend,
                 bitmap,
                 opacity,
                 tf,
             } => {
+                // Screen depends on the final backdrop. Flattening into an
+                // offscreen group and subsequently applying source-over changes it.
+                if *blend == AssociatedBlend::Screen && (!layers.is_empty() || !mattes.is_empty()) {
+                    return Err(anyhow!("ASSOCIATED_SCREEN_OFFSCREEN_UNSUPPORTED"));
+                }
                 let data = frame
                     .bitmaps
                     .get(*bitmap as usize)
                     .ok_or_else(|| anyhow!("EMISSIVE_BITMAP_MISSING: {bitmap}"))?;
                 let pixels = PixmapRef::from_bytes(&data.rgba, data.width, data.height)
                     .ok_or_else(|| anyhow!("EMISSIVE_BITMAP_SIZE_INVALID: {bitmap}"))?;
-                composite_associated(target!(), pixels, *opacity, *tf, clip)?;
+                composite_associated_with_blend(target!(), pixels, *opacity, *tf, clip, *blend)?;
             }
             DrawOp::DrawBitmap {
                 bitmap,

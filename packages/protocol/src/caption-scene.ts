@@ -62,12 +62,42 @@ export interface CaptionSceneNode {
   /** Label-only fontSize is a length; its pose sees bound-unit geometry and post-size label metrics. */
   properties?: Record<string, CaptionDynamicValue>;
 }
+/** Explicit local texture rectangle, in canvas length units. */
+export interface CaptionMaterialDomain {
+  x: CaptionDynamicValue; y: CaptionDynamicValue;
+  width: CaptionDynamicValue; height: CaptionDynamicValue;
+}
+export interface CaptionImageResource {
+  id: string;
+  assetRef: { id: string; revision: string };
+  contentHash: string;
+}
+/** Every frame is a frozen dependency, even when the current sample selects another frame. */
+export interface CaptionImageSequenceResource {
+  id: string;
+  frames: CaptionImageResource[];
+  premultiply: 'rounded' | 'shifted-byte';
+}
+export type CaptionLayerSource =
+  | { kind: 'nodes'; nodeIds: string[] }
+  | { kind: 'image-sequence'; contextNodeId: string; sequenceId: string;
+      frame: CaptionDynamicValue; domain: CaptionMaterialDomain;
+      uvScale: [number, number]; uvOffset: [number, number] };
+/** Ordered isolated surfaces composite directly into the actual scene target. */
+export interface CaptionRenderLayer {
+  id: string;
+  source: CaptionLayerSource;
+  materials?: CaptionMaterial[];
+  blend: 'source-over' | 'screen';
+}
 export interface CaptionScene {
   schema: 'baocut.caption-scene/1';
   materials?: CaptionMaterial[];
   evaluationVersion: 1;
   requiredCapabilities?: string[];
-  resources?: { id: string; assetRef: { id: string; revision: string }; contentHash: string }[];
+  resources?: CaptionImageResource[];
+  sequences?: CaptionImageSequenceResource[];
+  renderLayers?: CaptionRenderLayer[];
   parameters?: { id: string; type: CaptionValueType; default: CaptionValue; min?: number | null; max?: number | null }[];
   layout: {
     width: CaptionLength; x: CaptionLength; y: CaptionLength; maxLines?: number;
@@ -119,6 +149,7 @@ export type CaptionMaterial =
   | { kind: 'soft-band'; id: string; contextNodeId: string; axis: 'x' | 'y'; center: CaptionDynamicValue; halfWidth: CaptionDynamicValue; feather: CaptionDynamicValue; amount: CaptionDynamicValue; opacity: CaptionDynamicValue }
   | { kind: 'noise-palette-mix'; id: string; contextNodeId: string; paletteResourceId: string; palettePosition: CaptionDynamicValue; phase: CaptionDynamicValue; domain: { x: CaptionDynamicValue; y: CaptionDynamicValue; width: CaptionDynamicValue; height: CaptionDynamicValue } }
   | { kind: 'angular-sample-blend'; id: string; contextNodeId: string; domain: { x: CaptionDynamicValue; y: CaptionDynamicValue; width: CaptionDynamicValue; height: CaptionDynamicValue }; aspect: CaptionDynamicValue; angle: CaptionDynamicValue }
+  | { kind: 'noisy-sweep'; id: string; contextNodeId: string; domain: CaptionMaterialDomain; position: CaptionDynamicValue; maskScale: [number, number]; reveal: boolean; uvY: 'up' | 'down' }
   | { kind: 'gradient-smear'; id: string; contextNodeId: string; domain: { x: CaptionDynamicValue; y: CaptionDynamicValue; width: CaptionDynamicValue; height: CaptionDynamicValue }; rectScale: [CaptionDynamicValue, CaptionDynamicValue]; evolution: CaptionDynamicValue; seed: CaptionDynamicValue; stretch: CaptionDynamicValue; progress: CaptionDynamicValue; strength: [CaptionDynamicValue, CaptionDynamicValue]; uvY: 'up' | 'down'; noise: { complexity: number; cycle: number; brightness: number; range: number; scale1: [number, number]; scale2: [number, number]; offset: [number, number]; rotation: number; subImpact: number; subScale: number; subRotation: number; subOffset: [number, number] } }
   | { kind: 'gaussian-axis'; id: string; contextNodeId: string; axis: 'x' | 'y'; samples: CaptionDynamicValue; stepUv: CaptionDynamicValue; sigmaUv: CaptionDynamicValue; gamma: number; boundary: 'normalize' | 'replicate' | 'transparent' }
   | { kind: 'glow-cascade'; id: string; contextNodeId: string; levels: { horizontal: CaptionGaussianStage; vertical: CaptionGaussianStage }[]; gamma: number; intensity: CaptionDynamicValue; originalOpacity: CaptionDynamicValue; glowTint?: CaptionDynamicValue; glowColorMatrix?: [number, number, number, number, number, number, number, number, number]; composite: 'screen' | 'source-over-glow' }

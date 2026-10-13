@@ -13,7 +13,7 @@
 use std::{collections::HashMap, sync::Arc};
 
 use anyhow::Result;
-use render_raster::TextEngine;
+use render_raster::{TextEngine, drawop::AssociatedBlend};
 use serde::Serialize;
 use serde_json::{Value, json};
 use subtitle_render::{CaptionCompositeMode, OverlayIncludes, OverlayRenderPlan, TemplateScene};
@@ -329,7 +329,7 @@ pub struct CaptionHit {
     pub rotation: f64,
 }
 
-/// 一帧字幕层：预乘 RGBA（与内核帧缓存共用）、非零像素的外包矩形与混合方式。
+/// 一帧字幕层：共享 RGBA、非零像素框，以及普通预乘或显式关联分量混合方式。
 pub struct CaptionLayer {
     pub rgba: Arc<Vec<u8>>,
     pub width: u32,
@@ -337,6 +337,8 @@ pub struct CaptionLayer {
     /// `(left, top, right, bottom)`，像素、右下开区间；盖住全部非零像素。
     pub rect: (usize, usize, usize, usize),
     pub blend: BlendMode,
+    /// None preserves legacy premultiplied blend semantics, including ordinary Screen.
+    pub associated_blend: Option<AssociatedBlend>,
 }
 
 /// 一组字幕编好的内核计划。
@@ -484,6 +486,7 @@ impl LegacyCaptionPlan {
             height,
             rect: (bounds.cols.start, bounds.rows.start, bounds.cols.end, bounds.rows.end),
             blend,
+            associated_blend: None,
         }))
     }
 
@@ -658,24 +661,34 @@ impl CaptionPlan {
             _ => unreachable!(),
         }
     }
-    pub fn render(&mut self, seconds: f64) -> Result<Option<CaptionLayer>> {
+    /// Ordered outputs must be composed against the actual video backdrop.
+    /// Instance opacity applies independently to each output plane.
+    pub fn render_layers(&mut self, seconds: f64) -> Result<Vec<CaptionLayer>> {
         if let Some(l) = &mut self.legacy {
-            return l.render(seconds);
+            return Ok(l.render(seconds)?.into_iter().collect());
         }
         let s = self.scene.as_mut().unwrap();
-        let frame = s.render(seconds)?;
-        self.scene_hits = frame.hits;
+        let (outputs, hits) = s.render_outputs(seconds)?;
+        self.scene_hits = hits;
         self.scene_time = Some(seconds.to_bits());
-        if !frame.rgba.iter().any(|component| *component != 0) {
-            return Ok(None);
-        }
-        Ok(Some(CaptionLayer {
-            rgba: frame.rgba,
-            width: s.width,
-            height: s.height,
-            rect: (0, 0, s.width as usize, s.height as usize),
-            blend: BlendMode::SourceOver,
-        }))
+        Ok(outputs
+            .into_iter()
+            .filter(|output| output.rgba.iter().any(|c| *c != 0))
+            .map(|output| CaptionLayer {
+                rgba: output.rgba,
+                width: s.width,
+                height: s.height,
+                rect: (0, 0, s.width as usize, s.height as usize),
+                blend: BlendMode::SourceOver,
+                associated_blend: Some(output.blend),
+            })
+            .collect())
+    }
+
+    /// Compatibility entry point for callers requiring one transparent image.
+    /// Screen needs a real backdrop and is never silently flattened here.
+    pub fn render(&mut self, seconds: f64) -> Result<Option<CaptionLayer>> {
+        flatten_caption_layers(self.render_layers(seconds)?)
     }
     pub fn hits(&mut self, seconds: f64) -> Result<Vec<CaptionHit>> {
         if let Some(l) = &mut self.legacy {
@@ -717,12 +730,72 @@ impl CaptionPlan {
     }
 }
 
+fn flatten_caption_layers(mut layers: Vec<CaptionLayer>) -> Result<Option<CaptionLayer>> {
+    if layers.iter().any(|layer| layer.associated_blend == Some(AssociatedBlend::Screen)) {
+        anyhow::bail!("CAPTION_BACKDROP_REQUIRED: associated Screen requires ordered output composition");
+    }
+    if layers.len() <= 1 {
+        return Ok(layers.pop());
+    }
+    let (width, height) = (layers[0].width, layers[0].height);
+    let mut out = tiny_skia::Pixmap::new(width, height).ok_or_else(|| anyhow::anyhow!("CAPTION_OUTPUT_SIZE_INVALID"))?;
+    for layer in layers {
+        if layer.width != width || layer.height != height || layer.blend != BlendMode::SourceOver {
+            anyhow::bail!("CAPTION_OUTPUT_FLATTEN_UNSUPPORTED");
+        }
+        let source =
+            tiny_skia::PixmapRef::from_bytes(&layer.rgba, width, height).ok_or_else(|| anyhow::anyhow!("CAPTION_OUTPUT_SIZE_INVALID"))?;
+        render_raster::emissive::composite_associated(&mut out, source, 1.0, [1., 0., 0., 1., 0., 0.], None)?;
+    }
+    Ok(Some(CaptionLayer {
+        rgba: Arc::new(out.data().to_vec()),
+        width,
+        height,
+        rect: (0, 0, width as usize, height as usize),
+        blend: BlendMode::SourceOver,
+        associated_blend: Some(AssociatedBlend::SourceOver),
+    }))
+}
+
 // 显示时机（前后留白、短间隔对半分）与标点的交付写法由内核按样式算，在 `subtitle-render` 的
 // `short_gaps_are_split_exactly_between_tail_and_lead_in` 与
 // `video_plan_projects_punctuation_in_every_language_and_honors_the_style_switch` 里核对。
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn compatibility_render_cannot_flatten_screen_but_keeps_single_legacy_layer() {
+        let layer = |associated_blend| CaptionLayer {
+            rgba: Arc::new(vec![120, 20, 0, 30]),
+            width: 1,
+            height: 1,
+            rect: (0, 0, 1, 1),
+            blend: BlendMode::SourceOver,
+            associated_blend,
+        };
+        assert!(
+            flatten_caption_layers(vec![layer(Some(AssociatedBlend::Screen))])
+                .err()
+                .unwrap()
+                .to_string()
+                .contains("CAPTION_BACKDROP_REQUIRED")
+        );
+        let legacy = layer(None);
+        let bytes = legacy.rgba.clone();
+        let single = flatten_caption_layers(vec![legacy]).unwrap().unwrap();
+        assert!(Arc::ptr_eq(&single.rgba, &bytes));
+        assert_eq!(single.associated_blend, None);
+        assert!(flatten_caption_layers(vec![]).unwrap().is_none());
+        let over = flatten_caption_layers(vec![
+            layer(Some(AssociatedBlend::SourceOver)),
+            layer(Some(AssociatedBlend::SourceOver)),
+        ])
+        .unwrap()
+        .unwrap();
+        assert_eq!(over.associated_blend, Some(AssociatedBlend::SourceOver));
+        assert_eq!(*over.rgba, vec![226, 38, 0, 56]);
+    }
 
     fn caption(cues: &[(f64, f64, &str)], clock: &str) -> Value {
         json!({

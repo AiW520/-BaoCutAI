@@ -171,16 +171,22 @@ pub fn presentation_problems(value: &caption_scene::Presentation) -> Vec<Text> {
         .collect()
 }
 
+/// Declaration-order image dependencies, including frames not selected by the
+/// current sample. A frozen document must remain usable after any later seek.
+fn scene_images(scene: &caption_scene::Scene) -> impl Iterator<Item = &caption_scene::ImageResource> {
+    scene
+        .resources
+        .iter()
+        .chain(scene.sequences.iter().flat_map(|sequence| &sequence.frames))
+}
+
 /// Frozen resources referenced by a supported scene style; other documents have no scene refs.
 pub fn scene_asset_refs(body: &Value) -> Result<Vec<crate::VersionRef>, String> {
     if body.get("schema").and_then(Value::as_str) != Some(caption_scene::STYLE_SCHEMA) {
         return Ok(vec![]);
     }
     let style = caption_scene::parse_style(body).map_err(|e| e.to_string())?;
-    Ok(style
-        .scene()
-        .resources
-        .iter()
+    Ok(scene_images(style.scene())
         .map(|r| crate::VersionRef {
             id: r.asset_ref.id.clone(),
             revision: r.asset_ref.revision.clone(),
@@ -194,10 +200,7 @@ pub fn scene_resource_problems(body: &Value, assets: &std::collections::BTreeMap
     let Ok(style) = caption_scene::parse_style(body) else {
         return caption_style_body_problems(body);
     };
-    style
-        .scene()
-        .resources
-        .iter()
+    scene_images(style.scene())
         .filter_map(|r| {
             let found = assets.get(&r.asset_ref.id).and_then(|a| a.revisions.get(&r.asset_ref.revision));
             if found.is_some_and(|a| a.content_hash == r.content_hash && a.media_type == "image/png") {
@@ -211,4 +214,86 @@ pub fn scene_resource_problems(body: &Value, assets: &std::collections::BTreeMap
             }
         })
         .collect()
+}
+
+#[cfg(test)]
+mod scene_resource_tests {
+    use super::*;
+    use serde_json::json;
+    use std::collections::BTreeMap;
+
+    fn image(id: &str, asset: &str) -> Value {
+        json!({"id":id,"assetRef":{"id":asset,"revision":"frozen"},
+               "contentHash":format!("sha256:{}", "a".repeat(64))})
+    }
+
+    fn style(frames: Vec<Value>) -> Value {
+        json!({"schema":caption_scene::STYLE_SCHEMA,"scene":{"kind":"inline","value":{
+            "schema":caption_scene::SCENE_SCHEMA,"evaluationVersion":1,
+            "requiredCapabilities":["caption-image-sequence/1"],
+            "layout":{"width":{"value":100,"basis":"absolute"},"x":{"value":50,"basis":"absolute"},"y":{"value":50,"basis":"absolute"}},
+            "nodes":[{"id":"text","type":"text"}],
+            "resources":[image("still","still-asset")],
+            "sequences":[{"id":"sequence","premultiply":"shifted-byte","frames":frames}]
+        }}})
+    }
+
+    fn asset(id: &str) -> crate::AssetRecord {
+        let revision = |name: &str, hash: char| {
+            json!({
+                "revision":name,"contentHash":format!("sha256:{}",hash.to_string().repeat(64)),
+                "byteLength":100,"mediaType":"image/png","storage":{"mode":"managed"},"provenance":{"origin":"test"}
+            })
+        };
+        serde_json::from_value(json!({"id":id,"kind":"image","name":id,"currentRevision":"newer",
+            "revisions":{"frozen":revision("frozen",'a'),"newer":revision("newer",'b')}}))
+        .unwrap()
+    }
+
+    #[test]
+    fn references_include_every_sequence_frame_in_declaration_order() {
+        let frames: Vec<_> = (0..213).map(|i| image(&format!("frame{i}"), &format!("asset{i}"))).collect();
+        let references = scene_asset_refs(&style(frames)).unwrap();
+        assert_eq!(references.len(), 214);
+        assert_eq!(references[0].id, "still-asset");
+        assert_eq!(references[1].id, "asset0");
+        assert_eq!(references[213].id, "asset212");
+        assert!(references.iter().all(|r| r.revision == "frozen"));
+    }
+
+    #[test]
+    fn resource_checks_cover_unselected_frames_and_frozen_revisions() {
+        let body = style(vec![image("frame0", "first"), image("frame1", "last")]);
+        let mut assets = BTreeMap::from([("still-asset".into(), asset("still-asset")), ("first".into(), asset("first"))]);
+        assert_eq!(scene_resource_problems(&body, &assets).len(), 1);
+        assets.insert("last".into(), asset("last"));
+        assert!(scene_resource_problems(&body, &assets).is_empty());
+        assets.get_mut("last").unwrap().revisions.get_mut("frozen").unwrap().media_type = "image/jpeg".into();
+        assert_eq!(scene_resource_problems(&body, &assets).len(), 1);
+        let revision = assets.get_mut("last").unwrap().revisions.get_mut("frozen").unwrap();
+        revision.media_type = "image/png".into();
+        revision.content_hash = format!("sha256:{}", "c".repeat(64));
+        assert_eq!(scene_resource_problems(&body, &assets).len(), 1);
+    }
+
+    #[test]
+    fn repeated_asset_dependencies_keep_existing_order_semantics() {
+        let body = style(vec![image("frame0", "still-asset"), image("frame1", "other")]);
+        let references = scene_asset_refs(&body).unwrap();
+        assert_eq!(
+            references.iter().map(|r| r.id.as_str()).collect::<Vec<_>>(),
+            ["still-asset", "still-asset", "other"]
+        );
+        let old = json!({"schema":STUDIO_STYLE_SCHEMA,"style":{}});
+        assert!(scene_asset_refs(&old).unwrap().is_empty());
+        assert!(scene_resource_problems(&old, &BTreeMap::new()).is_empty());
+    }
+
+    #[test]
+    fn malformed_sequence_resources_are_rejected_before_census() {
+        let mut body = style(vec![image("frame0", "first")]);
+        body["scene"]["value"]["sequences"][0]["frames"][0]["contentHash"] = json!("sha256:bad");
+        assert!(scene_asset_refs(&body).is_err());
+        assert!(!scene_resource_problems(&body, &BTreeMap::new()).is_empty());
+    }
 }

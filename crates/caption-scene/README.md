@@ -69,3 +69,5 @@ cargo run --locked -p subtitle-render --no-default-features --features wasm-safe
 `caption-bound-label/1` 提供 Repeat 直接子节点 `label`：静态单行内容用自己的字体整形，继承绑定单元时钟/布局；字号先求值，own advance/font/ink 度量只供后置 pose，直接或函数间接的字号循环均拒绝。复用字体缓存、缺字体登记、彩色字形与 paint 路径，不创建独立页或命中框，见 [bound-label.json](tests/fixtures/bound-label.json)。
 
 `caption-unit-font-style/1` 通过 `layout.fontStyleBindings` 对固定page/line/word成员应用静态字体族、字重、斜体patch，与字号runs合并后整体rich shaping，真实更新行宽/基线。未活跃face也进入字体依赖清点，不推断关键词。示例见 [unit-font-style.json](tests/fixtures/unit-font-style.json)。
+
+`caption-render-layers/1` 将根节点子树或 `caption-image-sequence/1` 的有界PNG序列拆成独立处理链，按数组顺序合成。`ScenePlan.render_outputs` 保留关联 source-over / screen；screen 必须直接合到真实背景，单图 render 明确拒绝。`caption-noisy-sweep/1` 提供固定f32噪声扫过遮罩。详见视频格式 §5.6；层间共享采样/表面预算，序列缓存与普通图片共享解码预算。
