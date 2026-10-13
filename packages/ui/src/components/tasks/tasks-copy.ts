@@ -16,6 +16,8 @@ import { vi } from './tasks-copy.vi.ts';
 
 /** 后台任务详情（含从链接导入）的文案。英文写在这里，译文在 `tasks-copy.zh-Hans.ts`。 */
 const en = {
+  detailUnavailable: "Task details can’t be displayed right now",
+  detailUnavailableBody: "Return to Background tasks, then open the details again.",
   progress: (title: string, label: string) => `“${title}” ${label}`,
   imageRunning: 'Drawing',
   imageLoading: 'Loading image',

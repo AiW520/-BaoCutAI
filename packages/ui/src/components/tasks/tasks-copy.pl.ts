@@ -1,6 +1,8 @@
 import type { TasksMessages } from './tasks-copy.ts';
 
 export const pl: TasksMessages = {
+  detailUnavailable: "Nie można teraz wyświetlić szczegółów zadania",
+  detailUnavailableBody: "Wróć do zadań w tle, a następnie ponownie otwórz szczegóły.",
   progress: (title, label) => `„${title}” ${label}`,
   imageRunning: "W toku",
   imageLoading: "Wczytywanie obrazu",

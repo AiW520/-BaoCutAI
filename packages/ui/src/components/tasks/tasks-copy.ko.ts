@@ -1,6 +1,8 @@
 import type { TasksMessages } from './tasks-copy.ts';
 
 export const ko: TasksMessages = {
+  detailUnavailable: "지금은 작업 세부 정보를 표시할 수 없습니다",
+  detailUnavailableBody: "백그라운드 작업으로 돌아간 후 세부 정보를 다시 열어 주세요.",
   progress: (title, label) => `“${title}” ${label}`,
   imageRunning: '그리는 중',
   imageLoading: '이미지 불러오는 중',

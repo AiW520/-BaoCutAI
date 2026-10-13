@@ -1,4 +1,4 @@
-import { setLocale } from '@baocut/protocol';
+import { LOCALES, setLocale } from '@baocut/protocol';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { S } from './components/shell-copy.ts';
 import { ST } from './components/start/start-copy.ts';
@@ -21,6 +21,21 @@ const english = () => {
 };
 
 describe('界面文案跟随界面语言', () => {
+  it('任务详情异常文案随语言切换，所有出货语言都有翻译', () => {
+    english();
+    expect(TK.detailUnavailable).toBe('Task details can’t be displayed right now');
+    for (const locale of LOCALES) {
+      vi.stubEnv('BAOCUT_LOCALE', locale);
+      setLocale(locale);
+      expect(TK.detailUnavailable.length).toBeGreaterThan(0);
+      expect(TK.detailUnavailableBody.length).toBeGreaterThan(0);
+      if (locale !== 'en') expect(TK.detailUnavailable).not.toBe('Task details can’t be displayed right now');
+    }
+    vi.stubEnv('BAOCUT_LOCALE', 'zh-Hans');
+    setLocale('zh-Hans');
+    expect(TK.detailUnavailable).toBe('任务详情暂时无法显示');
+    expect(TK.detailUnavailableBody).toBe('返回后台任务后，可以重新打开详情。');
+  });
   it('英文界面读到英文文案，读取时才取值', () => {
     english();
     expect(ACCESS_MODE_LABEL.plan).toBe('Plan first');

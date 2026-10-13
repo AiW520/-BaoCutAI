@@ -1,6 +1,8 @@
 import type { TasksMessages } from './tasks-copy.ts';
 
 export const fr: TasksMessages = {
+  detailUnavailable: "Les détails de la tâche ne peuvent pas être affichés pour le moment",
+  detailUnavailableBody: "Revenez aux tâches en arrière-plan, puis ouvrez à nouveau les détails.",
   progress: (title, label) => `« ${title} » ${label}`, imageRunning: 'Dessin', imageLoading: 'Chargement de l’image',
   link: {
     stage: { pending: 'Non démarré', current: 'En cours', done: 'Terminé', failed: 'Un problème est survenu', skipped: 'Non nécessaire' },

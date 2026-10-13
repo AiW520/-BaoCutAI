@@ -1,6 +1,8 @@
 import type { TasksMessages } from './tasks-copy.ts';
 
 export const ptBR: TasksMessages = {
+  detailUnavailable: "Não é possível exibir os detalhes da tarefa no momento",
+  detailUnavailableBody: "Volte para Tarefas em segundo plano e abra os detalhes novamente.",
   progress: (title: string, label: string) => `“${title}” ${label}`,
   imageRunning: "Gerando",
   imageLoading: "Carregando imagem",

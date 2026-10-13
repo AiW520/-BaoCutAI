@@ -1,6 +1,8 @@
 import type { TasksMessages } from './tasks-copy.ts';
 
 export const tr: TasksMessages = {
+  detailUnavailable: "Görev ayrıntıları şu anda görüntülenemiyor",
+  detailUnavailableBody: "Arka plan görevlerine dönüp ayrıntıları yeniden açın.",
   progress: (title: string, label: string) => `“${title}” ${label}`,
   imageRunning: "Çizim",
   imageLoading: "Görsel yükleniyor",

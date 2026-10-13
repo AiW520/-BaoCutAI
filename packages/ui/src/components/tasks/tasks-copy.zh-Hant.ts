@@ -1,6 +1,8 @@
 import type { TasksMessages } from './tasks-copy.ts';
 
 export const zhHant: TasksMessages = {
+  detailUnavailable: "任務詳情暫時無法顯示",
+  detailUnavailableBody: "返回背景任務後，可以重新開啟詳情。",
   progress: (title, label) => `「${title}」${label}`,
   imageRunning: '正在繪製',
   imageLoading: '正在載入圖片',

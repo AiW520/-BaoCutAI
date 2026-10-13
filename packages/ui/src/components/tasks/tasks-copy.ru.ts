@@ -1,6 +1,8 @@
 import type { TasksMessages } from './tasks-copy.ts';
 
 export const ru: TasksMessages = {
+  detailUnavailable: "Сейчас не удаётся показать сведения о задаче",
+  detailUnavailableBody: "Вернитесь к фоновым задачам и откройте сведения ещё раз.",
   progress: (title, label) => `«${title}» ${label}`,
   imageRunning: "Рисуется",
   imageLoading: "Загрузка изображения",

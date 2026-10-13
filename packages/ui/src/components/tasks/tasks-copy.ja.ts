@@ -1,6 +1,8 @@
 import type { TasksMessages } from './tasks-copy.ts';
 
 export const ja: TasksMessages = {
+  detailUnavailable: "タスクの詳細を現在表示できません",
+  detailUnavailableBody: "バックグラウンドタスクに戻ってから、詳細をもう一度開いてください。",
   progress: (title, label) => `「${title}」${label}`,
   imageRunning: '生成中',
   imageLoading: '画像を読み込み中',

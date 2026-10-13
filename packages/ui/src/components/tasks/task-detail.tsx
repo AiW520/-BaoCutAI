@@ -1,6 +1,6 @@
 import { useState, type ReactNode } from 'react';
 import type { Id, JobReconcileDecision, JobRecord, TaskSummary } from '@baocut/protocol';
-import { ActionButton, Button, Heading, IllustratedMessage, ProgressBar, Text, ToastQueue } from '@react-spectrum/s2';
+import { ActionButton, Button, Content, Heading, IllustratedMessage, ProgressBar, Text, ToastQueue } from '@react-spectrum/s2';
 import AlertTriangle from '@react-spectrum/s2/icons/AlertTriangle';
 import ChevronLeft from '@react-spectrum/s2/icons/ChevronLeft';
 import InfoCircle from '@react-spectrum/s2/icons/InfoCircle';
@@ -25,6 +25,7 @@ import { useNow } from '../use-now.ts';
 import { UtilityPage } from '../utility-page.tsx';
 import { LinkImportDetail } from './link-import-detail.tsx';
 import { useOpenConversation } from './task-card.tsx';
+import { TaskDetailBoundary } from './task-detail-boundary.tsx';
 import { TaskFacts, TaskImages, TaskOutputs, TaskSource } from './task-sections.tsx';
 import { TK } from './tasks-copy.ts';
 import { ToolRunPanel } from './tool-run-panel.tsx';
@@ -56,18 +57,41 @@ const noteActions = style({ display: 'flex', gap: 8, marginTop: 12 });
 
 /** 任务详情（原型 page-tasks.jsx `TaskDetailPage`）：Agent 任务与 Job 共用一页，按 ID 先找任务再找 Job。 */
 export function TaskDetail({ taskId }: { taskId: Id }) {
-  const { rows, ready } = useTaskRows({ fold: false });
-  const row = rows.find((r) => r.id === taskId);
-  const job = useJobs((s) => s.jobs.find((j) => j.jobId === taskId));
-  const task = useTasks((s) => s.tasks.find((t) => t.taskId === taskId));
-  const legacyRun = useLegacyImport((s) => s.run);
+  return (
+    <TaskDetailBoundary key={taskId} fallback={<TaskDetailError />}>
+      <TaskDetailPage taskId={taskId} />
+    </TaskDetailBoundary>
+  );
+}
+
+function TaskBackButton() {
   const go = useShell((s) => s.go);
-  const backButton = (
+  return (
     <ActionButton isQuiet size="S" styles={back} onPress={() => go({ tab: 'tasks' })}>
       <ChevronLeft />
       <Text>{TASK_VIEW_COPY.back}</Text>
     </ActionButton>
   );
+}
+
+function TaskDetailError() {
+  return (
+    <UtilityPage kind="tasks" before={<TaskBackButton />}>
+      <IllustratedMessage size="S">
+        <Heading>{TK.detailUnavailable}</Heading>
+        <Content>{TK.detailUnavailableBody}</Content>
+      </IllustratedMessage>
+    </UtilityPage>
+  );
+}
+
+function TaskDetailPage({ taskId }: { taskId: Id }) {
+  const { rows, ready } = useTaskRows({ fold: false });
+  const row = rows.find((r) => r.id === taskId);
+  const job = useJobs((s) => s.jobs.find((j) => j.jobId === taskId));
+  const task = useTasks((s) => s.tasks.find((t) => t.taskId === taskId));
+  const legacyRun = useLegacyImport((s) => s.run);
+  const backButton = <TaskBackButton />;
   if (!row) {
     return (
       <UtilityPage kind="tasks" before={backButton} title={ready ? TASK_VIEW_COPY.notFound : undefined}>
