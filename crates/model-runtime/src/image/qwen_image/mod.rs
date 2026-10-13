@@ -18,6 +18,7 @@ macro_rules! trace {
 
 #[cfg(feature = "backend-candle")]
 pub mod candle;
+pub mod inputs;
 pub mod prompt;
 pub mod rope;
 pub mod scheduler;
@@ -30,6 +31,8 @@ mod engine;
 mod text_encoder;
 #[cfg(all(feature = "backend-mlx", target_os = "macos", target_arch = "aarch64"))]
 mod vae;
+#[cfg(all(feature = "backend-mlx", target_os = "macos", target_arch = "aarch64"))]
+mod vision;
 #[cfg(all(feature = "backend-mlx", target_os = "macos", target_arch = "aarch64"))]
 mod weights;
 

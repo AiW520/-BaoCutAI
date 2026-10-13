@@ -2373,6 +2373,7 @@ dependencies = [
  "half",
  "hound",
  "icu_segmenter",
+ "image",
  "libc",
  "memmap2",
  "objc2 0.6.4",

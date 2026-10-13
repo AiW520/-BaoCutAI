@@ -431,6 +431,15 @@ export class ModelCatalog {
   }
 
   /**
+   * 指令改图（`imageMode: 'ref'`）的 `images` 张输入图在 `imagePeak` 之外多要的字节：每张 `image.inputs.peakBytesEach`。
+   * 以图为底重画不另加（源图的 VAE 编码在峰值之内）；不收输入图的模型包是 0。
+   */
+  imageEditBytes(bundleId: string, images: number): number {
+    const each = this.#bundles.get(bundleId)?.image?.inputs?.peakBytesEach ?? 0;
+    return each * images;
+  }
+
+  /**
    * 音乐生成模型包的引擎进程峰值、在哪个池里（架构设计 §6.5）：按模型包登记的估计峰值（`music.peakBytes`）。Apple Silicon 的
    * 统一内存计在 GPU 内存（与 MLX 相同）；别的平台不知道引擎的构建用 CUDA、Vulkan 还是 CPU，保守地计在内存。不是音乐模型包时 null。
    */

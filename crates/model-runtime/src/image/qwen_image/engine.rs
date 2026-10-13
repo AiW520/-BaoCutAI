@@ -10,13 +10,14 @@ use std::time::Instant;
 use anyhow::{Result, anyhow};
 use mlx_rs::{Array, Dtype, memory, ops, random};
 
-use super::dit::{Dit, Overflow, Precision};
-use super::prompt::Prompter;
+use super::dit::{CondImage, Dit, Overflow, Precision};
+use super::prompt::{IMAGE_PAD, Prompter};
 use super::scheduler::Schedule;
-use super::{text_encoder, vae};
+use super::vision::VisionTower;
+use super::{inputs, text_encoder, vae};
 use crate::backend::mlx::runtime::{clear_memory_cache, ensure_metal_device, memory_snapshot};
 use crate::bundle::{FAMILY_QWEN_IMAGE, VerifiedFiles};
-use crate::image::{Cancelled, ImageEngine, ImageProgress, ImageRequest, RawImage};
+use crate::image::{Cancelled, ImageEngine, ImageInputs, ImageProgress, ImageRequest, RawImage};
 use crate::protocol::{ErrorBody, codes};
 
 /// DiT 阶段（含文本编码）的 MLX 空闲缓冲上限。footprint = 活跃 + 缓存，运行时缺省（物理内存 / 8，16 GB 机器上 2 GB）
@@ -170,6 +171,17 @@ struct Files {
     vae_config: PathBuf,
 }
 
+/// 改图的一张条件图：归一化 latent `[1, h·w, 64]` 与它那段视觉 token 在条件编码里的起始行。
+struct Cond {
+    latents: Array,
+    h: usize,
+    w: usize,
+    at: usize,
+}
+
+/// 改图一次最多几张条件图（实测见 `packages/models/src/image-bundles.ts` 的 `inputs.max`，宿主先按那里拦）。
+const MAX_EDIT_IMAGES: usize = 3;
+
 /// Qwen-Image-2.1 引擎。加载时不读权重：三段权重在每次生成里按阶段打开、用完即丢。
 pub struct QwenImage {
     options: Options,
@@ -246,22 +258,42 @@ impl QwenImage {
         check(cancel)?;
         let compute = self.compute_dtype()?;
 
-        // 1. 文本编码
+        // 1. 条件编码（改图时还有视觉塔与条件图的 VAE 编码）
         progress(ImageProgress::EncodingPrompt);
         let t0 = Instant::now();
         phase_start();
-        let ids = self.prompter.t2i_ids(&request.prompt);
-        let cond = text_encoder::encode_streaming(&self.files.text_encoder, &ids, self.prompter.drop_idx())?;
+        let (cond, conds) = match &request.inputs {
+            ImageInputs::Edit(images) => self.encode_edit(&request.prompt, images, cancel)?,
+            _ => {
+                let ids = self.prompter.t2i_ids(&request.prompt);
+                let cond = text_encoder::encode_streaming(&self.files.text_encoder, &ids, self.prompter.drop_idx())?;
+                trace!("[text] {} tokens（丢弃系统前缀 {}）", ids.len(), self.prompter.drop_idx());
+                (cond, Vec::new())
+            }
+        };
         clear_memory_cache()?;
-        trace!(
-            "[text] {} tokens（丢弃系统前缀 {}）→ {:?}，{:.1}s",
-            ids.len(),
-            self.prompter.drop_idx(),
-            cond.shape(),
-            t0.elapsed().as_secs_f64()
-        );
+        trace!("[text] 条件 {:?}，{:.1}s", cond.shape(), t0.elapsed().as_secs_f64());
         mem("after text");
         check(cancel)?;
+
+        // 以图为底重画：源图盖满输出尺寸后 VAE 编码，去噪从 `start` 步、按该步的 σ 混入噪声开始。
+        let init = match &request.inputs {
+            ImageInputs::Img2img { image, strength } => {
+                let t = Instant::now();
+                phase_start();
+                let source = inputs::cover(image, request.width, request.height);
+                let latents = self.encode_image(&source)?;
+                let start = inputs::img2img_start(steps, *strength);
+                trace!(
+                    "[vae] 编码源图 {w}x{h} {:.1}s，strength {strength} → 从第 {start} 步开始",
+                    t.elapsed().as_secs_f64()
+                );
+                mem("after vae encode");
+                check(cancel)?;
+                Some((latents, start))
+            }
+            _ => None,
+        };
 
         // 2. DiT 去噪
         phase_start();
@@ -270,7 +302,17 @@ impl QwenImage {
             compute,
             dequant: self.options.dit_dequant,
         };
-        let latents = match self.denoise(&cond, &sigmas, prec, request, progress, cancel) {
+        let init = init.as_ref().map(|(l, s)| (l, *s));
+        let images: Vec<CondImage<'_>> = conds
+            .iter()
+            .map(|c| CondImage {
+                latents: &c.latents,
+                h: c.h,
+                w: c.w,
+                at: c.at,
+            })
+            .collect();
+        let latents = match self.denoise(&cond, &images, &sigmas, init, prec, request, progress, cancel) {
             // f16 只有 5 位指数；万一溢出就用与参考管线相同的 bf16 从头重跑（同一 seed）。
             Err(e) if e.downcast_ref::<Overflow>().is_some() => {
                 trace!("[dit] {e}，改用 bf16 重跑");
@@ -279,10 +321,12 @@ impl QwenImage {
                     compute: Dtype::Bfloat16,
                     ..prec
                 };
-                self.denoise(&cond, &sigmas, prec, request, progress, cancel)?
+                self.denoise(&cond, &images, &sigmas, init, prec, request, progress, cancel)?
             }
             r => r?,
         };
+        drop(images);
+        drop(conds);
         drop(cond);
         check(cancel)?;
         guard.phase(VAE_CACHE_LIMIT)?;
@@ -320,10 +364,107 @@ impl QwenImage {
         Ok(image)
     }
 
+    /// 一张图（已缩放到目标尺寸）→ 归一化 latent `[1, h/16·w/16, 64]`。f16 上溢时改 bf16 重编。
+    fn encode_image(&self, image: &inputs::Planes) -> Result<Array> {
+        let (h, w) = (image.height as i32, image.width as i32);
+        let pixels = Array::from_slice(&image.vae_rgba(), &[1, h, w, 4]);
+        let encode =
+            |dtype| -> Result<Array> { vae::Encoder::load(&self.files.vae, &self.files.vae_config, dtype)?.encode_normalized(&pixels) };
+        let vae_dtype = self.options.vae_dtype;
+        let z = match encode(vae_dtype) {
+            Err(e) if vae_dtype == Dtype::Float16 => {
+                trace!("[vae] {e:#}，改用 bf16 重编");
+                clear_memory_cache()?;
+                encode(Dtype::Bfloat16)?
+            }
+            r => r?,
+        };
+        let z = z.reshape(&[1, (h / 16) * (w / 16), vae::Z_DIM])?;
+        z.eval()?;
+        clear_memory_cache()?;
+        Ok(z)
+    }
+
+    /// 改图的条件：每张图按 `calculate_dimensions(1024², 宽高比)` 缩放一次，同一份像素给视觉塔（alpha 合成到白底）与 VAE
+    /// （保留 alpha）。视觉塔逐张跑完即释放，再流式跑语言模型，最后逐张 VAE 编码。返回条件编码与各条件图在其中的位置。
+    fn encode_edit(&self, prompt: &str, images: &[RawImage], cancel: &dyn Fn() -> bool) -> Result<(Array, Vec<Cond>)> {
+        let planes: Vec<inputs::Planes> = images
+            .iter()
+            .map(|image| {
+                let (w, h) = inputs::condition_size(image);
+                inputs::resize(image, w, h)
+            })
+            .collect();
+        let t = Instant::now();
+        let tower = VisionTower::load(&self.files.text_encoder)?;
+        let mut features = Vec::with_capacity(planes.len());
+        for p in &planes {
+            check(cancel)?;
+            features.push(tower.forward(p)?);
+        }
+        drop(tower);
+        clear_memory_cache()?;
+        trace!(
+            "[vision] {} 张（{}）{:.1}s",
+            planes.len(),
+            planes
+                .iter()
+                .map(|p| format!("{}x{}", p.width, p.height))
+                .collect::<Vec<_>>()
+                .join("、"),
+            t.elapsed().as_secs_f64()
+        );
+        mem("after vision");
+        check(cancel)?;
+        let pads: Vec<usize> = planes.iter().map(|p| inputs::vision_tokens(p.width, p.height)).collect();
+        let grids: Vec<(usize, usize)> = planes
+            .iter()
+            .map(|p| {
+                let (gh, gw) = inputs::vision_grid(p.width, p.height);
+                (gh / inputs::MERGE, gw / inputs::MERGE)
+            })
+            .collect();
+        let ids = self.prompter.ti2i_ids(prompt, &pads)?;
+        let pad = self
+            .prompter
+            .added_id(IMAGE_PAD)
+            .ok_or_else(|| anyhow!("分词表里没有 {IMAGE_PAD}"))?;
+        let drop_idx = self.prompter.drop_idx();
+        let runs = text_encoder::pad_runs(&ids, pad);
+        if runs.iter().any(|&(start, _)| start < drop_idx) {
+            return Err(anyhow!("图像 token 落在系统前缀里"));
+        }
+        let cond = text_encoder::encode_edit(&self.files.text_encoder, &ids, drop_idx, pad, &features, &grids)?;
+        drop(features);
+        clear_memory_cache()?;
+        trace!(
+            "[text] {} tokens（其中视觉 {}，丢弃系统前缀 {drop_idx}）",
+            ids.len(),
+            pads.iter().sum::<usize>()
+        );
+        mem("after text");
+        let mut conds = Vec::with_capacity(planes.len());
+        for (p, &(start, _)) in planes.iter().zip(&runs) {
+            check(cancel)?;
+            conds.push(Cond {
+                latents: self.encode_image(p)?,
+                h: p.height as usize / 16,
+                w: p.width as usize / 16,
+                at: start - drop_idx,
+            });
+        }
+        mem("after vae encode");
+        Ok((cond, conds))
+    }
+
+    /// `init` 是以图为底重画的起点：源图 latent 与从第几步开始。进度的总数是实际要跑的步数。
+    #[allow(clippy::too_many_arguments)]
     fn denoise(
         &self,
         cond: &Array,
+        images: &[CondImage<'_>],
         sigmas: &[f64],
+        init: Option<(&Array, usize)>,
         prec: Precision,
         request: &ImageRequest,
         progress: &mut dyn FnMut(ImageProgress),
@@ -339,12 +480,25 @@ impl QwenImage {
             if prec.dequant { "，整层解量化" } else { "" }
         );
         mem("dit loaded");
-        let mut cache = dit.prepare(cond, &sigmas[..request.steps as usize], gh, gw)?;
+        let mut cache = dit.prepare(cond, images, &sigmas[..request.steps as usize], gh, gw)?;
         let key = random::key(request.seed)?;
-        let mut x = random::normal::<f32>(&[1, (gh * gw) as i32, vae::Z_DIM], None, None, &key)?;
-        let total = request.steps;
+        let noise = random::normal::<f32>(&[1, (gh * gw) as i32, vae::Z_DIM], None, None, &key)?;
+        let (mut x, start) = match init {
+            // 流匹配的前向过程：x_σ = (1 − σ)·x₀ + σ·ε。
+            Some((source, start)) => {
+                let sigma = sigmas[start] as f32;
+                let x = source
+                    .multiply(&Array::from_f32(1.0 - sigma))?
+                    .add(&noise.multiply(&Array::from_f32(sigma))?)?;
+                (x, start)
+            }
+            None => (noise, 0),
+        };
+        x.eval()?;
+        let steps = request.steps as usize;
+        let total = (steps - start) as u32;
         progress(ImageProgress::Denoising { done: 0, total });
-        for i in 0..total as usize {
+        for i in start..steps {
             check(cancel)?;
             let ts = Instant::now();
             let v = dit.step(&mut cache, &x, i, gh, gw, self.options.dit_chunk)?;
@@ -352,12 +506,15 @@ impl QwenImage {
             x = x.add(&v.multiply(&Array::from_f32(dt))?)?;
             x.eval()?;
             trace!(
-                "[dit] step {}/{total} sigma {:.4} {:.2}s",
+                "[dit] step {}/{steps} sigma {:.4} {:.2}s",
                 i + 1,
                 sigmas[i],
                 ts.elapsed().as_secs_f64()
             );
-            progress(ImageProgress::Denoising { done: i as u32 + 1, total });
+            progress(ImageProgress::Denoising {
+                done: (i + 1 - start) as u32,
+                total,
+            });
         }
         mem("dit done");
         Ok(x)
@@ -375,6 +532,14 @@ impl ImageEngine for QwenImage {
 
     fn check_size(&self, width: u32, height: u32) -> Result<(), ErrorBody> {
         super::check_size(width, height)
+    }
+
+    fn supports_img2img(&self) -> bool {
+        true
+    }
+
+    fn max_edit_images(&self) -> usize {
+        MAX_EDIT_IMAGES
     }
 
     fn generate(&mut self, request: &ImageRequest, progress: &mut dyn FnMut(ImageProgress), cancel: &dyn Fn() -> bool) -> Result<RawImage> {
@@ -510,6 +675,7 @@ mod tests {
             height: edge,
             steps: 2,
             seed: 7,
+            inputs: crate::image::ImageInputs::None,
         };
         let mut phases = Vec::new();
         let image = engine.generate(&request, &mut |p| phases.push(p), &|| false).unwrap();
@@ -566,6 +732,23 @@ mod tests {
     #[test]
     #[ignore = "需要 BAOCUT_BENCH_MODEL_DIR 下的 Qwen-Image 权重包与 Metal"]
     fn bench_samples() {
+        // 每条可带 `images`（路径）、`mode`（`ref` | `img2img`）与 `strength`。
+        fn bench_inputs(item: &serde_json::Value) -> crate::image::ImageInputs {
+            let Some(paths) = item["images"].as_array() else {
+                return crate::image::ImageInputs::None;
+            };
+            let mut images: Vec<RawImage> = paths
+                .iter()
+                .map(|p| crate::image::job::decode_image(std::path::Path::new(p.as_str().unwrap())).unwrap())
+                .collect();
+            match item["mode"].as_str() {
+                Some("img2img") => crate::image::ImageInputs::Img2img {
+                    image: images.remove(0),
+                    strength: item["strength"].as_f64().unwrap(),
+                },
+                _ => crate::image::ImageInputs::Edit(images),
+            }
+        }
         let _lock = lock();
         let env = |name: &str| std::env::var(name).unwrap_or_else(|_| panic!("{name}"));
         let files = directory(std::path::Path::new(&env("BAOCUT_BENCH_MODEL_DIR")));
@@ -585,6 +768,7 @@ mod tests {
                 height: item["height"].as_u64().unwrap() as u32,
                 steps,
                 seed: item["seed"].as_u64().unwrap(),
+                inputs: bench_inputs(&item),
             };
             let start = Instant::now();
             let mut marks: Vec<(ImageProgress, f64)> = Vec::new();
@@ -594,17 +778,25 @@ mod tests {
             let total = start.elapsed().as_secs_f64();
             std::fs::write(out.join(format!("{id}.png")), crate::image::png::encode_rgba(&image).unwrap()).unwrap();
             let at = |want: ImageProgress| marks.iter().find(|(p, _)| *p == want).map(|(_, t)| *t).unwrap();
-            let denoise_start = at(ImageProgress::Denoising { done: 0, total: steps });
+            // 以图为底重画只跑后面几步：进度的总数是实际步数。
+            let run = marks
+                .iter()
+                .find_map(|(p, _)| match p {
+                    ImageProgress::Denoising { total, .. } => Some(*total),
+                    _ => None,
+                })
+                .unwrap();
+            let denoise_start = at(ImageProgress::Denoising { done: 0, total: run });
             let decode_start = at(ImageProgress::Decoding);
             let mut step_times = Vec::new();
             let mut last = denoise_start;
-            for done in 1..=steps {
-                let t = at(ImageProgress::Denoising { done, total: steps });
+            for done in 1..=run {
+                let t = at(ImageProgress::Denoising { done, total: run });
                 step_times.push(((t - last) * 100.0).round() / 100.0);
                 last = t;
             }
             let line = serde_json::json!({
-                "id": id, "width": request.width, "height": request.height, "steps": steps, "seed": request.seed,
+                "id": id, "width": request.width, "height": request.height, "steps": steps, "ran": run, "seed": request.seed,
                 "text": denoise_start, "denoise": decode_start - denoise_start, "decode": total - decode_start,
                 "total": total, "stepSeconds": step_times,
             });

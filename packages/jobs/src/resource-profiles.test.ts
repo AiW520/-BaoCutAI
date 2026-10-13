@@ -151,6 +151,44 @@ describe('Model Worker 的需求', () => {
     }
   });
 
+  it('指令改图的输入图按张数计在任务上、与 Worker 同一个池，holder 的需求不变', () => {
+    const def = IMAGE_BUNDLES.find((b) => b.bundleId === 'qwen-image-2.1@mlx-4bit')!;
+    const catalog = new ModelCatalog({ root: noModels, platform: 'darwin', arch: 'arm64' });
+    const each = def.image!.inputs!.peakBytesEach;
+    expect(catalog.imageEditBytes(def.bundleId, 2)).toBe(2 * each);
+    expect(catalog.imageEditBytes(def.bundleId, 0)).toBe(0);
+    expect(catalog.imageEditBytes('no-such-bundle', 2)).toBe(0);
+    const plain = localImageResources(def.bundleId, catalog.imagePeak(def.bundleId));
+    const edit = localImageResources(def.bundleId, catalog.imagePeak(def.bundleId), catalog.imageEditBytes(def.bundleId, 2));
+    expect(edit.holder).toEqual(plain.holder);
+    expect(edit.demand).toEqual({ scratchDisk: 64 * 1024 * 1024, gpuMemory: 2 * each });
+    // 不收输入图的 candle 模型包不加；池跟着 Worker（CPU 上计内存）。
+    const candle = IMAGE_BUNDLES.find((b) => b.backend === 'candle')!;
+    expect(catalog.imageEditBytes(candle.bundleId, 2)).toBe(0);
+    expect(localImageResources('x', { bytes: 6 * GiB, pool: 'memory' }, GiB).demand).toEqual({ scratchDisk: 64 * 1024 * 1024, memory: GiB });
+    // 16 GiB 的 Mac 在后台放得下上限张数的改图（Worker 与输入图合计 9.5 GiB）；8 GiB 的放得下文生图（上一条），改图一张也放不下。
+    const mac = (total: number) => {
+      const capacity: ResourceCapacity = {
+        memory: total,
+        gpuMemory: unifiedGpuEstimate(total),
+        cpuThreads: 8,
+        scratchDisk: null,
+        unifiedMemory: true,
+        sources: { memory: 'system', gpuMemory: 'unified-estimate', cpuThreads: 'system', scratchDisk: 'unknown' },
+      };
+      return new ResourceScheduler({ capacity: { current: () => capacity }, reserves: defaultReserves });
+    };
+    const request = (images: number) => ({
+      owner: 'job',
+      label: 'image',
+      priority: 'background' as const,
+      ...localImageResources(def.bundleId, catalog.imagePeak(def.bundleId), catalog.imageEditBytes(def.bundleId, images)),
+    });
+    expect(mac(16 * GiB).check(request(def.image!.inputs!.max))).toBeNull();
+    expect(mac(8 * GiB).check(request(0))).toBeNull();
+    expect(mac(8 * GiB).check(request(1))).not.toBeNull();
+  });
+
   it('candle 的文生图在 CPU 上按峰值计内存、不占 GPU 内存，在 CUDA 上计 GPU 内存；16 GiB 的机器放得下，8 GiB 的后台放不下', () => {
     const candle = IMAGE_BUNDLES.find((b) => b.backend === 'candle')!;
     const catalog = new ModelCatalog({ root: noModels, platform: 'win32', arch: 'x64' });

@@ -642,7 +642,7 @@ pub const IMAGE_OUTPUT_CONTRACT: &str = "baocut.image-png/v1";
 /// 文生图结果在 staging 里的文件名。
 pub const IMAGE_OUTPUT_FILE: &str = "image.png";
 
-/// `job.run`（`capability: "image"`）的参数。没有输入文件：提示词就是全部输入。
+/// `job.run`（`capability: "image"`）的参数。输入图（可选）在 `options.images` 里，按绝对路径给出。
 #[derive(Debug, Clone, PartialEq, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct ImageRunParams {
@@ -665,11 +665,36 @@ pub struct ImageOptions {
     #[serde(default)]
     pub steps: Option<u32>,
     pub seed: u64,
+    /// 输入图，按请求的顺序；空是文生图。`ref` 时第一张是底图、其余是参考图，`img2img` 时恰好一张底图。
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub images: Vec<ImageInput>,
+    /// 输入图的用法；有输入图时必须给，没有时不给。
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub image_mode: Option<ImageMode>,
+    /// `img2img` 的改动幅度（0–1，越小越像原图）；只在 `img2img` 时给。
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub strength: Option<f64>,
+}
+
+/// 一张输入图：本机绝对路径（PNG、JPEG 或 WebP，按文件头认）。
+#[derive(Debug, Clone, PartialEq, Eq, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct ImageInput {
+    pub file: String,
+}
+
+/// 输入图的用法：`ref` 按提示词改图（底图加参考图），`img2img` 以底图为起点按 `strength` 重画。
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize, Serialize)]
+pub enum ImageMode {
+    #[serde(rename = "ref")]
+    Ref,
+    #[serde(rename = "img2img")]
+    Img2img,
 }
 
 impl ImageRunParams {
-    /// 形状之外的检查（都是 `INVALID_PARAMS`）：能力与合同、绝对路径、非空提示词、正的宽高与步数。模型自己的尺寸规则
-    /// （Qwen-Image 要 32 的倍数）由引擎在开跑前检查。
+    /// 形状之外的检查（都是 `INVALID_PARAMS`）：能力与合同、绝对路径、非空提示词、正的宽高与步数，输入图与用法、强度
+    /// 的搭配。模型自己的尺寸规则（Qwen-Image 要 32 的倍数）与输入图张数由引擎在开跑前检查。
     pub fn validate(&self) -> Result<(), ErrorBody> {
         if self.capability != Capability::Image {
             return Err(ErrorBody::invalid_params("capability must be image"));
@@ -688,6 +713,30 @@ impl ImageRunParams {
         }
         if self.options.steps == Some(0) {
             return Err(ErrorBody::invalid_params("options.steps must be positive"));
+        }
+        let options = &self.options;
+        if options.images.iter().any(|input| !std::path::Path::new(&input.file).is_absolute()) {
+            return Err(ErrorBody::invalid_params("options.images[].file must be absolute paths"));
+        }
+        match (options.images.is_empty(), options.image_mode) {
+            (true, Some(_)) => return Err(ErrorBody::invalid_params("options.imageMode needs options.images")),
+            (false, None) => return Err(ErrorBody::invalid_params("options.images needs options.imageMode")),
+            _ => {}
+        }
+        match (options.image_mode, options.strength) {
+            (Some(ImageMode::Img2img), Some(strength)) => {
+                if !(0.0..=1.0).contains(&strength) {
+                    return Err(ErrorBody::invalid_params("options.strength must be within 0..1"));
+                }
+                if options.images.len() != 1 {
+                    return Err(ErrorBody::invalid_params("img2img takes exactly one image per run"));
+                }
+            }
+            (Some(ImageMode::Img2img), None) => {
+                return Err(ErrorBody::invalid_params("img2img needs options.strength"));
+            }
+            (_, Some(_)) => return Err(ErrorBody::invalid_params("options.strength is only for img2img")),
+            (_, None) => {}
         }
         Ok(())
     }
@@ -995,8 +1044,46 @@ mod tests {
         let mut missing_seed = value.clone();
         missing_seed["options"].as_object_mut().unwrap().remove("seed");
         assert!(serde_json::from_value::<ImageRunParams>(missing_seed).is_err());
-        let mut extra = value;
+        let mut extra = value.clone();
         extra["options"]["negativePrompt"] = json!("blurry");
         assert!(serde_json::from_value::<ImageRunParams>(extra).is_err());
+
+        // 输入图：改图与以图为底重画。
+        let mut edit = value.clone();
+        edit["options"]["images"] = json!([{ "file": "/tmp/staging/a.png" }, { "file": "/tmp/b.jpg" }]);
+        edit["options"]["imageMode"] = json!("ref");
+        let parsed: ImageRunParams = serde_json::from_value(edit.clone()).unwrap();
+        assert_eq!(parsed.options.image_mode, Some(ImageMode::Ref));
+        assert_eq!(parsed.options.images.len(), 2);
+        parsed.validate().unwrap();
+        assert_eq!(serde_json::to_value(&parsed).unwrap(), edit);
+        let mut img2img = value;
+        img2img["options"]["images"] = json!([{ "file": "/tmp/a.webp" }]);
+        img2img["options"]["imageMode"] = json!("img2img");
+        img2img["options"]["strength"] = json!(0.6);
+        let parsed: ImageRunParams = serde_json::from_value(img2img.clone()).unwrap();
+        parsed.validate().unwrap();
+        assert_eq!(serde_json::to_value(&parsed).unwrap(), img2img);
+        let invalid = |edit: &dyn Fn(&mut ImageOptions)| {
+            let mut params = parsed.clone();
+            edit(&mut params.options);
+            params.validate().unwrap_err().code
+        };
+        assert_eq!(invalid(&|o| o.strength = None), codes::INVALID_PARAMS);
+        assert_eq!(invalid(&|o| o.strength = Some(1.5)), codes::INVALID_PARAMS);
+        assert_eq!(invalid(&|o| o.image_mode = None), codes::INVALID_PARAMS);
+        assert_eq!(invalid(&|o| o.image_mode = Some(ImageMode::Ref)), codes::INVALID_PARAMS);
+        assert_eq!(invalid(&|o| o.images[0].file = "a.png".into()), codes::INVALID_PARAMS);
+        assert_eq!(invalid(&|o| o.images.push(o.images[0].clone())), codes::INVALID_PARAMS);
+        assert_eq!(
+            invalid(&|o| {
+                o.images.clear();
+                o.strength = None;
+            }),
+            codes::INVALID_PARAMS
+        );
+        let mut unknown_mode = img2img;
+        unknown_mode["options"]["imageMode"] = json!("inpaint");
+        assert!(serde_json::from_value::<ImageRunParams>(unknown_mode).is_err());
     }
 }

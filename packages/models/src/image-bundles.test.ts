@@ -38,14 +38,16 @@ describe('本地文生图模型包的登记', () => {
     expect(QWEN.license).toMatchObject({ commercialUse: false });
   });
 
-  it('candle 的变体读同一个仓库版本（加载时反量化），名字、许可与步数都相同，只换后端、峰值与尺寸（只有 1K 档）', () => {
+  it('candle 的变体读同一个仓库版本（加载时反量化），名字、许可与步数都相同，只换后端、峰值与尺寸（只有 1K 档）；不收输入图', () => {
     expect(QWEN_CANDLE).toMatchObject({ capability: 'image', backend: 'candle', device: 'cpu', label: QWEN.label });
     expect(QWEN_CANDLE.components).toEqual(QWEN.components);
     expect(QWEN_CANDLE.license).toBe(QWEN.license);
-    const { peakBytes, devicePeakBytes, aspects, ...profile } = QWEN_CANDLE.image!;
-    const { peakBytes: mlxPeak, aspects: _tiered, ...mlxProfile } = QWEN.image!;
+    const { peakBytes, devicePeakBytes, aspects, inputs, ...profile } = QWEN_CANDLE.image!;
+    const { peakBytes: mlxPeak, aspects: _tiered, inputs: mlxInputs, ...mlxProfile } = QWEN.image!;
     expect(profile).toEqual(mlxProfile);
     expect(aspects).toBe(QWEN_IMAGE_ASPECTS);
+    expect(inputs).toBeUndefined();
+    expect(mlxInputs).toEqual({ max: 3, img2img: true, peakBytesEach: 2.5 * GiB });
     expect(mlxPeak).toBe(2.5 * GiB);
     expect(peakBytes).toBe(6 * GiB);
     expect(devicePeakBytes).toEqual({ cuda: 4 * GiB });
@@ -69,14 +71,16 @@ describe('本地文生图模型包的登记', () => {
     expect(peakBytes).toBe(2.5 * GiB);
   });
 
-  it('Turbo 的 candle 变体读同一个 8-bit 仓库版本，名字、许可与固定 8 步都相同，只换后端、峰值与尺寸（只有 1K 档）', () => {
+  it('Turbo 的 candle 变体读同一个 8-bit 仓库版本，名字、许可与固定 8 步都相同，只换后端、峰值与尺寸（只有 1K 档）；不收输入图', () => {
     expect(QWEN_TURBO_CANDLE).toMatchObject({ capability: 'image', backend: 'candle', device: 'cpu', label: QWEN_TURBO.label });
     expect(QWEN_TURBO_CANDLE.components).toEqual(QWEN_TURBO.components);
     expect(QWEN_TURBO_CANDLE.license).toBe(QWEN_TURBO.license);
-    const { peakBytes, devicePeakBytes, aspects, ...profile } = QWEN_TURBO_CANDLE.image!;
-    const { peakBytes: _peak, aspects: _tiered, ...mlxProfile } = QWEN_TURBO.image!;
+    const { peakBytes, devicePeakBytes, aspects, inputs, ...profile } = QWEN_TURBO_CANDLE.image!;
+    const { peakBytes: _peak, aspects: _tiered, inputs: mlxInputs, ...mlxProfile } = QWEN_TURBO.image!;
     expect(profile).toEqual(mlxProfile);
     expect(aspects).toBe(QWEN_IMAGE_ASPECTS);
+    expect(inputs).toBeUndefined();
+    expect(mlxInputs).toEqual(QWEN.image!.inputs);
     expect(profile.steps).toEqual({ min: 8, max: 8, step: 8, default: 8 });
     expect(peakBytes).toBe(6 * GiB);
     expect(devicePeakBytes).toEqual({ cuda: 4 * GiB });
@@ -266,7 +270,7 @@ describe('本地文生图模型包的登记', () => {
 describe('模型描述与冻结参数', () => {
   const status = { detail: undefined } as unknown as ModelBundleStatus;
 
-  it('一次一张、只出 PNG、暂时不收输入图、接受 seed、免费；尺寸与宽高比来自模型包，提示耗时', () => {
+  it('一次一张、只出 PNG、接受 seed、免费；MLX 收改图（至多 3 张）与以图为底重画，candle 不收；尺寸与宽高比来自模型包，提示耗时', () => {
     const info = localImageModelInfo(QWEN, status, true);
     expect(info).toMatchObject({
       modelId: QWEN.bundleId,
@@ -278,12 +282,13 @@ describe('模型描述与冻结参数', () => {
       maxPromptChars: 1024,
       formats: ['png'],
       defaultFormat: 'png',
-      referenceImages: null,
-      img2img: null,
+      referenceImages: { max: 3, edit: true, maxBytesEach: null, maxBytesTotal: null },
+      img2img: { max: 1, strength: { min: 0.1, max: 1, step: 0.05, default: 0.6 } },
       acceptsSeed: true,
       cost: 'free-local',
       available: true,
     });
+    expect(localImageModelInfo(QWEN_CANDLE, status, true)).toMatchObject({ referenceImages: null, img2img: null });
     expect(info.notes).toContain('20 步');
     // 试画的 512² 另外接受，不进宽高比；步数的范围随模型描述给出。
     expect(info.sizes).toContain('512x512');

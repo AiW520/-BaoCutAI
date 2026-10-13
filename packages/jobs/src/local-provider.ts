@@ -1,5 +1,7 @@
+import fs from 'node:fs/promises';
 import path from 'node:path';
 import { JobsLocalProvider as L } from '@baocut/protocol/messages/jobs/local-provider.ts';
+import { ModelsGenerationOptions as GO } from '@baocut/protocol/messages/models/generation-options.ts';
 import { errorText, jobWarning, type JobText } from './job-text.ts';
 
 import {
@@ -21,6 +23,7 @@ import {
   WORKER_CONTRACT_VERSION,
   ASR_RESULT_SCHEMA,
   imageRunOf,
+  readFrozenImage,
   sha256File,
   synthesizeRunOf,
   type DroppedReading,
@@ -29,6 +32,7 @@ import {
   type GenerationRun,
   type GenerationSink,
   type DiarizeRunResult,
+  type GenerationOutputFile,
   type ImageRunResult,
   type JobOutput,
   type JobRunParams,
@@ -54,7 +58,7 @@ import {
   type WorkerEvent,
   type WorkerExit,
 } from '@baocut/process-host';
-import type { JobWarning } from '@baocut/protocol';
+import type { FrozenImageInput, JobWarning } from '@baocut/protocol';
 import { silentLog, type JobsLogger } from './jobs-logger.ts';
 import { modelWorkerHolder } from './resource-profiles.ts';
 
@@ -156,8 +160,8 @@ interface RunSpec {
   loading(): void;
   expectedWorkerVersion?: string | undefined;
   params: JobRunParams;
-  /** `INPUT_UNREADABLE` 时的说明（识别的素材、合成的参考录音）。 */
-  inputLabel: JobText;
+  /** `INPUT_UNREADABLE` 时的说明（识别的素材、合成的参考录音）；函数时按 Worker 的 `details` 定（生图的第几张输入图）。 */
+  inputLabel: JobText | ((details: unknown) => JobText);
   /** `INPUT_UNREADABLE` 时并进 `details` 的内容（内置音色的录音读不出来时带 `code: 'APP_FILE_MISSING'`）。 */
   inputDetails?: Record<string, unknown>;
 }
@@ -424,8 +428,12 @@ export class LocalTranscribeProvider implements TranscribeProvider {
   }
 
   /**
-   * 本地文生图的一次尝试（架构设计 §6.1、§6.5）：冻结的参数（尺寸与 seed 都在提交时决定）换成 `job.run`（`image`），输出是
+   * 本地生图的一次尝试（架构设计 §6.1、§6.5）：冻结的参数（尺寸与 seed 都在提交时决定）换成 `job.run`（`image`），输出是
    * staging 里的 `image.png`，由 JobManager 按生成任务的规则校验与发布。`steps` 只有模型包自检会给。
+   *
+   * 输入图先按冻结的摘要核对（读不出或变了就失败，不换图），核对过的那份字节写进 staging 的 `inputs/` 交给 Worker，Worker
+   * 读到的就是核对过的内容。改图（`ref`）所有输入图进同一次运行；以图为底重画（`img2img`）每张底图各跑一次（模型一次吃一张），
+   * 第 i 次的输出在 `<i>/image.png`，进度按总步数累计。
    */
   async generateImage(
     run: GenerationRun,
@@ -438,35 +446,45 @@ export class LocalTranscribeProvider implements TranscribeProvider {
       throw new ProviderFailure('protocol', L.notHandled({ capability: parameters.capability }));
     }
     if (signal.aborted) return { outcome: 'cancelled' };
-    const outcome = await this.#run<ImageRunResult>(
-      {
-        bundleId: run.modelId,
-        jobId: run.jobId,
-        loading: () => {},
-        route: (event) => routeImage(sink, event),
-        params: {
+    const images = parameters.images ?? [];
+    const files = await stageImageInputs(run.staging, images);
+    const groups = parameters.imageMode === 'img2img' ? files.map((file) => [file]) : [files];
+    const outputs: GenerationOutputFile[] = [];
+    let workerVersion = '';
+    for (const [index, group] of groups.entries()) {
+      const single = groups.length === 1;
+      const staging = single ? run.staging : path.join(run.staging, String(index + 1));
+      if (!single) await fs.mkdir(staging, { recursive: true });
+      const names = (single ? images : [images[index]!]).map((image) => image.name);
+      const outcome = await this.#run<ImageRunResult>(
+        {
+          bundleId: run.modelId,
           jobId: run.jobId,
-          runGeneration: run.attempt,
-          capability: 'image',
-          options: imageRunOf(parameters, options.steps ?? null),
-          staging: run.staging,
-          outputContract: IMAGE_PNG_CONTRACT,
+          loading: () => {},
+          route: (event) => routeImage(sink, event, (done, total) => [index * total + done, groups.length * total]),
+          params: {
+            jobId: run.jobId,
+            runGeneration: run.attempt,
+            capability: 'image',
+            options: imageRunOf(parameters, options.steps ?? null, group),
+            staging,
+            outputContract: IMAGE_PNG_CONTRACT,
+          },
+          // Worker 解不开输入图时 `details.index` 是这次运行里的序号。
+          inputLabel: names.length ? (details) => GO.imageUnreadable({ name: names[imageIndexOf(details)] ?? names[0]! }) : L.imageNoInput(),
         },
-        inputLabel: L.imageNoInput(),
-      },
-      signal,
-    );
-    if (outcome.outcome === 'cancelled') return { outcome: 'cancelled' };
-    const output = outcome.output;
-    const relative = path.relative(run.staging, path.resolve(run.staging, output.path));
-    if (relative !== IMAGE_OUTPUT_FILE) {
-      throw new ProviderFailure('protocol', L.imageOutputWrong({ file: IMAGE_OUTPUT_FILE }), { path: output.path });
+        signal,
+      );
+      if (outcome.outcome === 'cancelled') return { outcome: 'cancelled' };
+      const output = outcome.output;
+      const relative = path.relative(run.staging, path.resolve(staging, output.path));
+      if (path.relative(staging, path.resolve(staging, output.path)) !== IMAGE_OUTPUT_FILE) {
+        throw new ProviderFailure('protocol', L.imageOutputWrong({ file: IMAGE_OUTPUT_FILE }), { path: output.path });
+      }
+      outputs.push({ path: relative, sha256: output.sha256.replace(/^sha256:/, ''), byteLength: output.byteLength, mediaType: 'image/png' });
+      workerVersion = outcome.workerVersion;
     }
-    return {
-      outcome: 'completed',
-      outputs: [{ path: relative, sha256: output.sha256.replace(/^sha256:/, ''), byteLength: output.byteLength, mediaType: 'image/png' }],
-      workerVersion: outcome.workerVersion,
-    };
+    return { outcome: 'completed', outputs, workerVersion };
   }
 
   /** 生成类能力的门面：`local` Provider 的 `generateImage`。进程由识别的 Provider 一起关闭。 */
@@ -572,7 +590,8 @@ export class LocalTranscribeProvider implements TranscribeProvider {
           throw new ProviderFailure('crashed', L.inferenceFailed({ code: error.code }), { ...details, stderrTail: worker.stderrTail() });
         }
         if (error.code === 'INPUT_UNREADABLE') {
-          throw new ProviderFailure('input-unreadable', spec.inputLabel, { ...details, ...spec.inputDetails });
+          const label = typeof spec.inputLabel === 'function' ? spec.inputLabel(error.body.details) : spec.inputLabel;
+          throw new ProviderFailure('input-unreadable', label, { ...details, ...spec.inputDetails });
         }
         if (error.code === OUTPUT_WRITE_FAILED) {
           const file = (error.body.details as { file?: unknown } | undefined)?.file;
@@ -951,7 +970,8 @@ function routeSynthesize(sink: GenerationSink, event: WorkerEventParams): void {
   }
 }
 
-function routeImage(sink: GenerationSink, event: WorkerEventParams): void {
+/** `overall` 把这次运行的步数换成整个任务的（以图为底重画逐张各跑一次，进度累计）。 */
+function routeImage(sink: GenerationSink, event: WorkerEventParams, overall: (done: number, total: number) => [number, number]): void {
   if (event.event === 'job.phase' && event.params.phase === 'encoding-prompt') sink.generating();
   else if (
     event.event === 'job.progress' &&
@@ -959,8 +979,36 @@ function routeImage(sink: GenerationSink, event: WorkerEventParams): void {
     event.params.unit === 'steps' &&
     event.params.total !== null
   ) {
-    sink.progress(event.params.done, event.params.total, 'steps');
+    const [done, total] = overall(event.params.done, event.params.total);
+    sink.progress(done, total, 'steps');
   }
+}
+
+/**
+ * 输入图按冻结的摘要核对后写进 staging 的 `inputs/`（`1.png`、`2.jpg`……），返回这些文件的绝对路径。核对不过由
+ * `readFrozenImage` 报 `input-unreadable`。
+ */
+async function stageImageInputs(staging: string, images: readonly FrozenImageInput[]): Promise<string[]> {
+  if (!images.length) return [];
+  const dir = path.join(staging, 'inputs');
+  await fs.mkdir(dir, { recursive: true });
+  const files: string[] = [];
+  for (const [index, image] of images.entries()) {
+    const bytes = await readFrozenImage(image);
+    const file = path.join(dir, `${index + 1}.${IMAGE_INPUT_EXTENSION[image.mediaType]}`);
+    await fs.writeFile(file, bytes).catch((error: unknown) => {
+      throw new ProviderFailure('output-unwritable', L.stagingUnwritable(), { file, error: String(error) });
+    });
+    files.push(file);
+  }
+  return files;
+}
+
+const IMAGE_INPUT_EXTENSION: Record<FrozenImageInput['mediaType'], string> = { 'image/png': 'png', 'image/jpeg': 'jpg', 'image/webp': 'webp' };
+
+function imageIndexOf(details: unknown): number {
+  const index = (details as { index?: unknown } | undefined)?.index;
+  return typeof index === 'number' ? index : 0;
 }
 
 const ABORTED = Symbol('aborted');

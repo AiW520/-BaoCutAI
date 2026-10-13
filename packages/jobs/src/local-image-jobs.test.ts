@@ -184,8 +184,8 @@ describe('本地文生图（假 Model Worker）', () => {
       maxCount: 1,
       formats: ['png'],
       acceptsSeed: true,
-      referenceImages: null,
-      img2img: null,
+      referenceImages: { max: REAL.image!.inputs!.max, edit: true, maxBytesEach: null, maxBytesTotal: null },
+      img2img: { max: 1, strength: { min: 0.1, max: 1, step: 0.05, default: 0.6 } },
       cost: 'free-local',
       local: { steps: { min: 8, max: 40, step: 4, default: 20 } },
     });
@@ -237,6 +237,83 @@ describe('本地文生图（假 Model Worker）', () => {
     });
     expect((await recorded())[0]).toMatchObject({ options: { width: 512, height: 512, steps: 8 } });
     expect((await draw()).generation).not.toHaveProperty('steps');
+  });
+
+  /** 一张能过文件头检查的 PNG（假 Worker 不解码）。 */
+  async function inputImage(name: string, content = name): Promise<string> {
+    const file = path.join(dir, name);
+    await fs.writeFile(file, Buffer.concat([Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]), Buffer.from(content)]));
+    return file;
+  }
+
+  it('改图：所有输入图进同一次运行，核对过的字节按顺序写进 staging 交给 Worker', async () => {
+    const base = await inputImage('base.png');
+    const reference = await inputImage('style.png');
+    const job = await draw({ size: '512x512', steps: 8, images: [base, reference] });
+    expect(job).toMatchObject({ state: 'completed', generation: { imageMode: 'ref', count: 1 } });
+    const runs = await recorded();
+    expect(runs).toHaveLength(1);
+    const options = runs[0]!.options as { images: { file: string }[]; imageMode: string; strength?: number };
+    expect(options.imageMode).toBe('ref');
+    expect(options).not.toHaveProperty('strength');
+    expect(options.images.map((i) => path.basename(i.file))).toEqual(['1.png', '2.png']);
+    for (const image of options.images) expect(path.dirname(image.file)).toBe(path.join(String(runs[0]!.staging), 'inputs'));
+    expect(job.result!.outputs).toHaveLength(1);
+  });
+
+  it('以图为底重画：每张底图各跑一次（只跑后面几步），输出按底图的顺序，进度按总步数累计', async () => {
+    const first = await inputImage('a.png');
+    const second = await inputImage('b.png');
+    const seen: Array<JobRecord['progress']> = [];
+    const off = manager.onChange((job) => {
+      if (job.kind === 'generateImage' && job.progress?.unit === 'steps') seen.push(job.progress);
+    });
+    const job = await draw({ size: '512x512', steps: 8, images: [first, second], imageMode: 'img2img', strength: 0.5 });
+    off();
+    expect(job).toMatchObject({
+      state: 'completed',
+      generation: { imageMode: 'img2img', strength: 0.5, count: 2 },
+      progress: { unit: 'steps', done: 8, total: 8 },
+    });
+    const runs = await recorded();
+    expect(runs.map((r) => (r.options as { strength: number }).strength)).toEqual([0.5, 0.5]);
+    expect(runs.map((r) => (r.options as { images: { file: string }[] }).images.map((i) => path.basename(i.file)))).toEqual([['1.png'], ['2.png']]);
+    expect(runs.map((r) => path.basename(String(r.staging)))).toEqual(['1', '2']);
+    expect(seen.at(-1)).toMatchObject({ done: 8, total: 8 });
+    expect(seen.some((p) => p!.done === 4 && p!.total === 8)).toBe(true);
+    expect(job.result!.outputs).toHaveLength(2);
+  });
+
+  it('改图的输入图按张数加在任务自己的需求上（与 Worker 同一个池），以图为底重画不加', async () => {
+    const base = await inputImage('base.png');
+    const reference = await inputImage('style.png');
+    const demands = new Map<string, unknown>();
+    const off = manager.onChange((job) => {
+      if (job.state !== 'running') return;
+      for (const lease of scheduler.snapshot().leases) if (lease.owner === job.jobId) demands.set(job.jobId, lease.demand);
+    });
+    const edit = await draw({ size: '512x512', steps: 8, images: [base, reference] });
+    const redraw = await draw({ size: '512x512', steps: 8, images: [base], imageMode: 'img2img', strength: 0.5 });
+    off();
+    // 测试的模型包是 candle 在 CPU 上：Worker 计在内存，改图多要的也计在内存。
+    expect(demands.get(edit.jobId)).toEqual({ scratchDisk: 64 * 1024 * 1024, memory: 2 * REAL.image!.inputs!.peakBytesEach });
+    expect(demands.get(redraw.jobId)).toEqual({ scratchDisk: 64 * 1024 * 1024 });
+    expect(scheduler.snapshot().holders).toMatchObject([{ holder: modelWorkerHolder(IMAGE), demand: { memory: REAL.image!.peakBytes } }]);
+  });
+
+  it('输入图在提交后变了：任务以 ASSET_MISSING 失败，不交给 Worker', async () => {
+    const base = await inputImage('base.png');
+    await control({ capabilities: ['transcribe', 'image'], faults: ['slow'] });
+    const blocker = await manager.submitGenerateImage({ prompt: 'x', provider: 'local', model: IMAGE, size: '512x512', steps: 8 }, submitter);
+    const { jobId } = await manager.submitGenerateImage(
+      { prompt: 'x', provider: 'local', model: IMAGE, size: '512x512', steps: 8, images: [base] },
+      submitter,
+    );
+    await inputImage('base.png', 'changed');
+    await manager.settled(blocker.jobId);
+    await manager.settled(jobId);
+    expect(manager.inspect(jobId)).toMatchObject({ state: 'failed', error: { code: 'ASSET_MISSING' } });
+    expect((await recorded()).map((r) => r.jobId)).toEqual([blocker.jobId]);
   });
 
   it('资源调度按模型包登记的峰值计 Model Worker：candle 在 CPU 上计内存、不占 GPU 内存', async () => {

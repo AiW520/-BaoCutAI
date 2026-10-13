@@ -236,6 +236,12 @@ export interface ImageRunOptions {
   /** 去噪步数；null 为模型的默认步数。 */
   steps: number | null;
   seed: number;
+  /** 输入图（绝对路径，PNG / JPEG / WebP）；不给即文生图。 */
+  images?: { file: string }[];
+  /** 有 `images` 时必给：`ref` 是指令改图（第一张是要改的图），`img2img` 是以图为底重画（一张）。 */
+  imageMode?: 'ref' | 'img2img';
+  /** 0..1，只在 `img2img` 时给且必给。 */
+  strength?: number;
 }
 
 export interface ImageRunParams {

@@ -146,6 +146,23 @@ impl TextDecoderConfig {
     }
 }
 
+/// 预先算好的 rotate-half 旋转表，替代按顺序位置的 `fast::rope`：Qwen3-VL 的 M-RoPE 给图像 token 三轴不同的位置，
+/// 不是单一偏移能表达的。`cos`/`sin` 是 `[S, head_dim]`（两半相同），dtype 与 hidden 相同（transformers 也是把表转成
+/// q/k 的 dtype 再乘）。
+pub struct RopeTable {
+    pub cos: Array,
+    pub sin: Array,
+}
+
+impl RopeTable {
+    /// `x` 是 `[B, H, S, D]`。
+    fn apply(&self, x: &Array) -> Result<Array> {
+        let half = x.dim(-1) / 2;
+        let rotated = ops::concatenate_axis(&[x.index((.., .., .., half..)).negative()?, x.index((.., .., .., ..half))], -1)?;
+        Ok(x.multiply(&self.cos)?.add(&rotated.multiply(&self.sin)?)?)
+    }
+}
+
 struct TextAttention {
     q_proj: Projection,
     k_proj: Projection,
@@ -175,7 +192,14 @@ impl TextAttention {
         })
     }
 
-    fn forward(&self, input: &Array, mask: Option<&Array>, causal: bool, cache: Option<&mut KvCache>) -> Result<Array> {
+    fn forward(
+        &self,
+        input: &Array,
+        mask: Option<&Array>,
+        causal: bool,
+        cache: Option<&mut KvCache>,
+        rope: Option<&RopeTable>,
+    ) -> Result<Array> {
         let batch = input.dim(0);
         let sequence = input.dim(1);
         let mut query = self
@@ -199,17 +223,22 @@ impl TextAttention {
         query = query.transpose_axes(&[0, 2, 1, 3])?;
         key = key.transpose_axes(&[0, 2, 1, 3])?;
         value = value.transpose_axes(&[0, 2, 1, 3])?;
-        let offset = cache.as_ref().map(|cache| cache.offset()).unwrap_or(0);
-        query = fast::rope(
-            &query,
-            self.config.head_dim as i32,
-            false,
-            self.config.rope_theta,
-            1.0,
-            offset,
-            None,
-        )?;
-        key = fast::rope(&key, self.config.head_dim as i32, false, self.config.rope_theta, 1.0, offset, None)?;
+        if let Some(table) = rope {
+            query = table.apply(&query)?;
+            key = table.apply(&key)?;
+        } else {
+            let offset = cache.as_ref().map(|cache| cache.offset()).unwrap_or(0);
+            query = fast::rope(
+                &query,
+                self.config.head_dim as i32,
+                false,
+                self.config.rope_theta,
+                1.0,
+                offset,
+                None,
+            )?;
+            key = fast::rope(&key, self.config.head_dim as i32, false, self.config.rope_theta, 1.0, offset, None)?;
+        }
         let (cached_key, cached_value) = if let Some(cache) = cache {
             cache.update(key, value)?
         } else {
@@ -282,9 +311,16 @@ impl TextLayer {
         })
     }
 
-    fn forward(&self, input: &Array, mask: Option<&Array>, causal: bool, cache: Option<&mut KvCache>) -> Result<Array> {
+    fn forward(
+        &self,
+        input: &Array,
+        mask: Option<&Array>,
+        causal: bool,
+        cache: Option<&mut KvCache>,
+        rope: Option<&RopeTable>,
+    ) -> Result<Array> {
         let normalized = self.input_norm.forward(input)?;
-        let attention = self.attention.forward(&normalized, mask, causal, cache)?;
+        let attention = self.attention.forward(&normalized, mask, causal, cache, rope)?;
         let mut hidden = input + &attention;
         let residual = hidden.clone();
         hidden = self.post_attention_norm.forward(&hidden)?;
@@ -357,7 +393,7 @@ impl TextDecoder {
         let causal = attention_mask.is_none() && sequence > 1;
         let mut hidden = input_embeddings.clone();
         for (layer, layer_cache) in self.layers.iter().zip(cache.iter_mut()) {
-            hidden = layer.forward(&hidden, attention_mask, causal, Some(layer_cache))?;
+            hidden = layer.forward(&hidden, attention_mask, causal, Some(layer_cache), None)?;
         }
         Ok((self.norm.forward(&hidden)?, cache))
     }
@@ -373,7 +409,7 @@ impl TextDecoder {
         let causal = attention_mask.is_none() && sequence > 1;
         let mut hidden = input_embeddings.clone();
         for layer in &self.layers {
-            hidden = layer.forward(&hidden, attention_mask, causal, None)?;
+            hidden = layer.forward(&hidden, attention_mask, causal, None, None)?;
         }
         self.norm.forward(&hidden)
     }
@@ -384,7 +420,7 @@ impl TextDecoder {
         let causal = input_embeddings.dim(1) > 1;
         let mut hidden = input_embeddings.clone();
         for layer in &self.layers {
-            hidden = layer.forward(&hidden, None, causal, None)?;
+            hidden = layer.forward(&hidden, None, causal, None, None)?;
         }
         Ok(hidden)
     }
@@ -410,7 +446,33 @@ impl TextDecoder {
             if let Some(next) = layers.peek() {
                 next.prefetch()?;
             }
-            hidden = layer.forward(&hidden, None, causal, None)?;
+            hidden = layer.forward(&hidden, None, causal, None, None)?;
+            hidden.eval()?;
+        }
+        Ok(hidden)
+    }
+
+    /// 多模态版 [`Self::into_hidden_prenorm`]（Qwen3-VL）：输入已是嵌入（图像 token 已换成视觉特征，见 [`Self::embed`]），
+    /// 位置用 `rope` 表；第 i 层之后的 hidden 交给 `after(i, hidden)` 改写（DeepStack 往图像 token 上加特征）。
+    /// 注意力仍是因果的。同样消耗 decoder、逐层求值后丢掉该层。
+    pub fn into_hidden_prenorm_with(
+        self,
+        embeddings: Array,
+        rope: &RopeTable,
+        mut after: impl FnMut(usize, Array) -> Result<Array>,
+    ) -> Result<Array> {
+        let Self { layers, .. } = self;
+        let causal = embeddings.dim(1) > 1;
+        let mut hidden = embeddings;
+        let mut layers = layers.into_iter().enumerate().peekable();
+        if let Some((_, first)) = layers.peek() {
+            first.prefetch()?;
+        }
+        while let Some((index, layer)) = layers.next() {
+            if let Some((_, next)) = layers.peek() {
+                next.prefetch()?;
+            }
+            hidden = after(index, layer.forward(&hidden, None, causal, None, Some(rope))?)?;
             hidden.eval()?;
         }
         Ok(hidden)
@@ -432,7 +494,7 @@ impl TextDecoder {
         let mut hidden = input_embeddings.clone();
         let mut fused: Option<Array> = None;
         for (index, layer) in self.layers.iter().enumerate() {
-            hidden = layer.forward(&hidden, None, sequence > 1, None)?;
+            hidden = layer.forward(&hidden, None, sequence > 1, None, None)?;
             let state = if index + 1 == self.layers.len() {
                 self.norm.forward(&hidden)?
             } else {

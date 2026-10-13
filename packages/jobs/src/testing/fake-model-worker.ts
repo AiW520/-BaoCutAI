@@ -635,11 +635,26 @@ async function diarize(id: number, params: Record<string, unknown>): Promise<voi
   });
 }
 
-/** 生图：编码提示词 → 去噪（`job.progress` 的 `steps`，从 0 开始）→ 解码，写 staging 里的 `image.png`。 */
+/**
+ * 生图：编码提示词 → 去噪（`job.progress` 的 `steps`，从 0 开始）→ 解码，写 staging 里的 `image.png`。输入图读不出时
+ * `INPUT_UNREADABLE`（`details.index`）；以图为底重画只跑后面 `round(steps·strength)` 步（至少一步），与真的 Worker 一样。
+ */
 async function image(id: number, params: Record<string, unknown>): Promise<void> {
   const jobId = String(params.jobId);
   const staging = String(params.staging);
-  const options = params.options as { width: number; height: number; steps: number | null; seed: number };
+  const options = params.options as {
+    width: number;
+    height: number;
+    steps: number | null;
+    seed: number;
+    images?: { file: string }[];
+    imageMode?: 'ref' | 'img2img';
+    strength?: number;
+  };
+  const unreadable = (options.images ?? []).findIndex((image) => !fs.existsSync(image.file));
+  if (unreadable >= 0) {
+    return fail(id, 'INPUT_UNREADABLE', `input image ${unreadable + 1} could not be read`, false, { input: 'image', index: unreadable });
+  }
   const current: RunningJob = { jobId, phase: 'encoding-prompt', startedAt: new Date().toISOString(), cancelled: false };
   job = current;
   state = 'busy';
@@ -661,14 +676,15 @@ async function image(id: number, params: Record<string, unknown>): Promise<void>
   phase('encoding-prompt');
   phase('denoising');
   const steps = options.steps ?? 20;
-  emit('job.progress', { jobId, phase: 'denoising', done: 0, total: steps, unit: 'steps' });
-  for (let step = 1; step <= steps; step++) {
+  const run = options.imageMode === 'img2img' ? Math.max(1, Math.round(steps * options.strength!)) : steps;
+  emit('job.progress', { jobId, phase: 'denoising', done: 0, total: run, unit: 'steps' });
+  for (let step = 1; step <= run; step++) {
     await sleep(fault('slow') ? 200 : 1);
     if (current.cancelled) {
       if (fault('hang-on-cancel')) return;
       return finish({ outcome: 'cancelled', output: null, image: null, stats: { generationMs: 0, encodeMs: 0 } });
     }
-    emit('job.progress', { jobId, phase: 'denoising', done: step, total: steps, unit: 'steps' });
+    emit('job.progress', { jobId, phase: 'denoising', done: step, total: run, unit: 'steps' });
   }
   phase('decoding');
   const bytes = fakePng(options.width, options.height, fault('flat-output'));

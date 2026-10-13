@@ -1460,8 +1460,12 @@ export class JobManager {
     const base: ResourceRequest = { owner: record.jobId, label: record.kind, queue: executor.queue };
     if (executor.resources) return { ...base, ...executor.resources };
     if (executor.generator && record.kind === 'generateImage' && record.providerId === 'local' && record.bundleId) {
-      // 本地生图按模型包登记的实测峰值（candle 按 Worker 报告的设备取值与池）。
-      return { ...base, ...localImageResources(record.bundleId, this.#catalog.imagePeak(record.bundleId)) };
+      // 本地生图按模型包登记的实测峰值（candle 按 Worker 报告的设备取值与池）；指令改图另按输入图的张数加在任务上。
+      const generation = record.generation;
+      const edit =
+        generation?.capability === 'generateImage' && generation.imageMode !== 'img2img' ? (generation.images?.length ?? 0) : 0;
+      const editBytes = this.#catalog.imageEditBytes(record.bundleId, edit);
+      return { ...base, ...localImageResources(record.bundleId, this.#catalog.imagePeak(record.bundleId), editBytes) };
     }
     if (executor.generator && record.kind === 'generateMusic' && record.providerId === 'local' && record.bundleId) {
       // 本地音乐按模型包登记的估计峰值（引擎每个任务一个进程，不共用 holder）。

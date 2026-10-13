@@ -22,14 +22,36 @@ use serde_json::json;
 use crate::bundle::{FAMILY_QWEN_IMAGE, VerifiedFiles};
 use crate::protocol::{ErrorBody, codes};
 
-/// 一次生成：提示词、像素宽高、去噪步数与随机种子（同一 seed、同一机器得到同一张图）。
-#[derive(Debug, Clone, PartialEq, Eq)]
+/// 一次生成：提示词、像素宽高、去噪步数、随机种子（同一 seed、同一机器得到同一张图）与输入图。
+#[derive(Debug, Clone, PartialEq)]
 pub struct ImageRequest {
     pub prompt: String,
     pub width: u32,
     pub height: u32,
     pub steps: u32,
     pub seed: u64,
+    pub inputs: ImageInputs,
+}
+
+/// 输入图（已解码）与用法。
+#[derive(Debug, Clone, PartialEq)]
+pub enum ImageInputs {
+    /// 文生图。
+    None,
+    /// 按提示词改图：第一张是底图，其余是参考图，按请求的顺序。
+    Edit(Vec<RawImage>),
+    /// 以底图为起点重画；`strength` 0–1，越小越像原图。
+    Img2img { image: RawImage, strength: f64 },
+}
+
+impl ImageInputs {
+    pub fn count(&self) -> usize {
+        match self {
+            Self::None => 0,
+            Self::Edit(images) => images.len(),
+            Self::Img2img { .. } => 1,
+        }
+    }
 }
 
 /// 生成的进度：编码提示词 → 去噪（`done/total` 步，开始时报 `0/total`）→ 解码。
@@ -71,7 +93,18 @@ pub trait ImageEngine {
     /// 这只模型能不能出这个尺寸；不能是 `MODEL_UNSUPPORTED`（`details.reason: 'unsupported-size'`）。不碰设备。
     fn check_size(&self, width: u32, height: u32) -> Result<(), ErrorBody>;
 
-    /// 生成一张。`cancel` 在步间查看，返回真时实现返回 [`Cancelled`]。
+    /// 一次改图（`ref`）最多收几张输入图（底图加参考图）；0 是不能改图。
+    fn max_edit_images(&self) -> usize {
+        0
+    }
+
+    /// 能不能以底图为起点重画（`img2img`）。
+    fn supports_img2img(&self) -> bool {
+        false
+    }
+
+    /// 生成一张。`cancel` 在步间查看，返回真时实现返回 [`Cancelled`]。`img2img` 时去噪只跑后段，
+    /// [`ImageProgress::Denoising`] 的 `total` 是实际跑的步数。
     fn generate(&mut self, request: &ImageRequest, progress: &mut dyn FnMut(ImageProgress), cancel: &dyn Fn() -> bool) -> Result<RawImage>;
 }
 

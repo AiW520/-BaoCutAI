@@ -56,11 +56,13 @@ export const LOCAL_SEPARATE_DEMAND: ResourceDemand = { memory: 2 * GiB, scratchD
  * - 计在 GPU 内存（MLX、candle 的 CUDA）：GPU 内存是峰值，至少 `MODEL_WORKER_DEMAND`；进程自己的内存仍是 1 GiB。
  * - 计在内存（candle 在 CPU 上）：内存是峰值，至少 1 GiB；不占 GPU 内存。
  *
- * `peak` 为 null（不是登记过的文生图模型包）时用固定值。
+ * `peak` 为 null（不是登记过的文生图模型包）时用固定值。指令改图的输入图让 Worker 在峰值之外再多要 `editBytes`
+ * （`ModelCatalog.imageEditBytes`）：Worker 常驻、holder 的需求在建起时定下，所以这部分计在任务自己的需求里，与 Worker 同一个池。
  */
 export function localImageResources(
   bundleId: string,
   peak: WorkerFootprint | null,
+  editBytes = 0,
 ): { demand: ResourceDemand; holder: { id: string; demand: ResourceDemand } } {
   let worker: ResourceDemand = MODEL_WORKER_DEMAND;
   if (peak?.pool === 'memory') {
@@ -68,7 +70,9 @@ export function localImageResources(
   } else if (peak) {
     worker = { ...MODEL_WORKER_DEMAND, gpuMemory: Math.max(MODEL_WORKER_DEMAND.gpuMemory ?? 0, peak.bytes) };
   }
-  return { demand: LOCAL_IMAGE_DEMAND, holder: { id: modelWorkerHolder(bundleId), demand: worker } };
+  const pool = peak?.pool === 'memory' ? 'memory' : 'gpuMemory';
+  const demand = editBytes > 0 ? { ...LOCAL_IMAGE_DEMAND, [pool]: editBytes } : LOCAL_IMAGE_DEMAND;
+  return { demand, holder: { id: modelWorkerHolder(bundleId), demand: worker } };
 }
 
 /** 一次本地生图自己的 staging：一张 PNG（1536² RGBA 不压缩也不到 10 MiB）加余量。 */

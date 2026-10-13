@@ -102,7 +102,7 @@ export interface BundleDefinition {
   diarization?: string;
 }
 
-/** 一个本地文生图模型包能做什么（架构设计 §6.1、§6.3）。一次一张、只出 PNG、接受 seed；输入图等 Model Worker 接上（§6.1）。 */
+/** 一个本地生图模型包能做什么（架构设计 §6.1、§6.3）。一次一张、只出 PNG、接受 seed。 */
 export interface ImageBundleProfile {
   family: string;
   /** 宽高比与它的像素尺寸；第一个是默认尺寸。`tiers` 是界面可选的几档（含 `size` 那一档），原样进模型描述的 `aspectRatios`。 */
@@ -123,6 +123,12 @@ export interface ImageBundleProfile {
   devicePeakBytes?: Readonly<Record<string, number>>;
   /** 在这台机器上一张要几分钟到十几分钟：界面提示耗时。 */
   slow: boolean;
+  /**
+   * 输入图（架构设计 §6.1「生图的输入图」）：指令改图一次至多 `max` 张（第一张是要改的图，其余是参考图；上限按实测的峰值内存定），
+   * `img2img` 时也能以一张底图重画（逐张各跑一次）。不给时不收输入图。改图时每张输入图在 `peakBytes` 之外再要
+   * `peakBytesEach`（DiT 为条件图缓存的键值，实测），计在任务自己的需求里、与 Worker 同一个池（`ModelCatalog.imageEditBytes`）。
+   */
+  inputs?: { max: number; img2img: boolean; peakBytesEach: number };
 }
 
 /**

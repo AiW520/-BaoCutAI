@@ -44,6 +44,8 @@ libc = "0.2.189"
 memmap2 = "0.9.11"
 # 本地文生图的输出（`baocut.image-png/v1`）。
 png = "0.18.1"
+# 生图的输入图（PNG、JPEG、WebP）解码与缩放。
+image = { version = "0.25", default-features = false, features = ["png", "jpeg", "webp"] }
 # candle 文生图的初始噪声：主机上按 seed 抽（candle 的 CPU 设备不能设种子）。
 rand_chacha = { version = "0.9", optional = true }
 rand_distr = { version = "0.5", optional = true }

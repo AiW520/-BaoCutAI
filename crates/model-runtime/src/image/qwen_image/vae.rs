@@ -1,4 +1,4 @@
-//! AutoencoderKLQwenImage21 的单帧（图像）特化，NHWC。
+//! AutoencoderKLQwenImage21 的单帧（图像）特化，NHWC：解码器（[`Decoder`]）与改图、以图为底重画用的编码器（[`Encoder`]）。
 //!
 //! 参考实现是 Wan 系的 3D 因果 VAE，但 2.1 已把 CausalConv3d 特化成 2D 卷积；单帧解码时所有
 //! `time_conv` 都走 "Rep"/首块分支而被跳过，所以这里只剩 2D 卷积、通道 RMSNorm、单头注意力，
@@ -15,6 +15,7 @@ use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 
 const DECODER_BASE_DIM: i32 = 144;
+const ENCODER_BASE_DIM: i32 = 96;
 const DIM_MULT: [i32; 5] = [1, 2, 4, 8, 8];
 const TEMPORAL_DOWN: [bool; 4] = [false, true, true, true];
 const NUM_RES: usize = 2;
@@ -364,6 +365,154 @@ fn auto_tail_rows(width: i32) -> i32 {
 /// up_block 4 的首个残差块），与 DiT 阶段相当，所以不为省 halo 重算放大条带。
 const TAIL_ELEMS: i64 = 64 << 20;
 
+/// AvgDown3D 的首帧分支（编码器残差下采样块的捷径）：空间 `fs × fs` 个子像素与时间 `ft` 帧展开进通道
+/// （通道 `c·ft·fs² + t·fs² + s`），再每 `group` 个相邻通道取平均。单帧时时间维前面补的是一帧零，所以 `ft = 2`
+/// 时一半的成员是 0（输出通道 `2c` 全是 0，`2c+1` 是第 `c` 通道的 2×2 平均）。
+fn avg_down(x: &Array, out_dim: i32, ft: i32, fs: i32) -> Result<Array> {
+    let (h, w, c) = (x.dim(1), x.dim(2), x.dim(3));
+    let (ho, wo) = (h / fs, w / fs);
+    // [1,h,w,C] → [1,ho,wo,C,fs·fs]
+    let y = x
+        .reshape(&[1, ho, fs, wo, fs, c])?
+        .transpose_axes(&[0, 1, 3, 5, 2, 4])?
+        .reshape(&[1, ho, wo, c, 1, fs * fs])?;
+    let y = if ft == 2 {
+        ops::concatenate_axis(&[ops::zeros_like(&y)?, y], 4)?
+    } else {
+        y
+    };
+    let group = c * ft * fs * fs / out_dim;
+    Ok(y.reshape(&[1, ho, wo, out_dim, group])?.mean_axis(4, None)?)
+}
+
+/// 编码器的残差下采样块：两个残差块，前四块末尾 `ZeroPad(右 1、下 1)` 加步长 2 的 3×3 卷积，加上 AvgDown3D 捷径。
+struct DownBlock {
+    resnets: Vec<ResBlock>,
+    downsampler: Option<Conv>,
+    out_dim: i32,
+    ft: i32,
+}
+
+impl DownBlock {
+    fn materialize(&self) -> Result<()> {
+        for r in &self.resnets {
+            r.materialize()?;
+        }
+        self.downsampler.as_ref().map_or(Ok(()), Conv::materialize)
+    }
+    fn forward(&self, x: &Array) -> Result<Array> {
+        let mut y = x.clone();
+        for r in &self.resnets {
+            y = r.forward(&y)?;
+            y.eval()?;
+        }
+        let Some(down) = &self.downsampler else {
+            // 最后一块不下采样：捷径是恒等（输入输出通道相同）。
+            return Ok(y.add(x)?);
+        };
+        let padded = ops::pad(&y, &[(0, 0), (0, 1), (0, 1), (0, 0)][..], None, None)?;
+        let y = down.conv(&padded, 2, 0)?.add(&down.b)?;
+        let y = y.add(&avg_down(x, self.out_dim, self.ft, 2)?)?;
+        y.eval()?;
+        Ok(y)
+    }
+}
+
+/// VAE 编码器：图像（`[1,H,W,4]`，[-1,1]）→ DiT 空间的 latent（`[1,H/16,W/16,64]`，取分布的均值、按 mean/std 归一化）。
+pub struct Encoder {
+    conv_in: Conv,
+    downs: Vec<DownBlock>,
+    mid: MidBlock,
+    norm_out: RmsNorm,
+    conv_out: Conv,
+    quant_conv: Conv,
+    mean: Array,
+    std: Array,
+    dtype: Dtype,
+}
+
+impl Encoder {
+    /// `files` 是 `vae/` 下的 safetensors 分片，`config` 是 `vae/config.json`。
+    pub fn load(files: &[PathBuf], config: &Path, dtype: Dtype) -> Result<Self> {
+        let cfg: VaeConfig = serde_json::from_str(&std::fs::read_to_string(config).context("读取 vae/config.json")?)?;
+        if cfg.latents_mean.len() != Z_DIM as usize || cfg.latents_std.len() != Z_DIM as usize {
+            bail!("vae config 的 latents_mean/std 长度不是 {Z_DIM}");
+        }
+        let s = &mut load_store(files, "encoder", dtype)?;
+        // dims = base · [1] + mult = [96, 96, 192, 384, 768, 768]
+        let mut dims = vec![ENCODER_BASE_DIM];
+        dims.extend(DIM_MULT.iter().map(|m| ENCODER_BASE_DIM * m));
+        let mut downs = Vec::new();
+        for i in 0..DIM_MULT.len() {
+            let (in_dim, out_dim) = (dims[i], dims[i + 1]);
+            let p = format!("encoder.down_blocks.{i}");
+            let mut resnets = Vec::new();
+            let mut cur = in_dim;
+            for j in 0..NUM_RES {
+                resnets.push(ResBlock::load(s, &format!("{p}.resnets.{j}"), cur, out_dim)?);
+                cur = out_dim;
+            }
+            let last = i == DIM_MULT.len() - 1;
+            downs.push(DownBlock {
+                resnets,
+                downsampler: if last {
+                    None
+                } else {
+                    Some(Conv::load(s, &format!("{p}.downsampler.resample.1"), 0, 2)?)
+                },
+                out_dim,
+                ft: if !last && TEMPORAL_DOWN[i] { 2 } else { 1 },
+            });
+        }
+        let top = *dims.last().unwrap();
+        let me = Self {
+            conv_in: Conv::load(s, "encoder.conv_in", 1, 1)?,
+            downs,
+            mid: MidBlock::load(s, "encoder.mid_block", top)?,
+            norm_out: RmsNorm::load(s, "encoder.norm_out")?,
+            conv_out: Conv::load(s, "encoder.conv_out", 1, 1)?,
+            quant_conv: Conv::load(s, "quant_conv", 0, 1)?,
+            mean: Array::from_slice(&cfg.latents_mean, &[1, 1, 1, Z_DIM]),
+            std: Array::from_slice(&cfg.latents_std, &[1, 1, 1, Z_DIM]),
+            dtype,
+        };
+        let left = s.remaining();
+        if !left.is_empty() {
+            bail!("VAE 编码器有未使用的权重：{:?}", &left[..left.len().min(5)]);
+        }
+        Ok(me)
+    }
+
+    /// 编码一张图（`[1,H,W,4]`，[-1,1]，H、W 是 16 的倍数）。返回 f32 的归一化均值 `[1,H/16,W/16,64]`；
+    /// 计算精度上溢（出现非有限值）时报错，由调用方换精度重来。各块权重用到前才读入。
+    pub fn encode_normalized(&self, image: &Array) -> Result<Array> {
+        self.conv_in.materialize()?;
+        let mut x = self.conv_in.forward(&image.as_dtype(self.dtype)?)?;
+        x.eval()?;
+        for (i, b) in self.downs.iter().enumerate() {
+            b.materialize()?;
+            x = b.forward(&x)?;
+            trace!("[vae] down_block {i} -> {:?}", x.shape());
+        }
+        self.mid.materialize()?;
+        self.norm_out.materialize()?;
+        self.conv_out.materialize()?;
+        self.quant_conv.materialize()?;
+        let x = self.mid.forward(&x)?;
+        let x = self.conv_out.forward(&nn::silu(self.norm_out.forward(&x)?)?)?;
+        let moments = self.quant_conv.forward(&x)?;
+        let mu = moments.index((.., .., .., ..Z_DIM)).as_dtype(Dtype::Float32)?;
+        let z = mu.subtract(&self.mean)?.divide(&self.std)?;
+        let finite = z.is_finite()?.all(None)?;
+        finite.eval()?;
+        if !finite.item::<bool>() {
+            bail!("VAE 编码在 {:?} 下出现非有限值", self.dtype);
+        }
+        z.eval()?;
+        Ok(z)
+    }
+}
+
 pub struct Decoder {
     post_quant_conv: Conv,
     conv_in: Conv,
@@ -549,5 +698,46 @@ impl Decoder {
         let out = ops::concatenate_axis(&outs, 1)?;
         out.eval()?;
         Ok(out)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// 编码再解码应还原源图。实测 512²（Turbo 4-bit 包的 VAE，f16）：平滑的插画 36.5 dB、细节多的照片 26.9 dB；
+    /// 把 AvgDown3D 的零帧放错一侧就掉到 9–13 dB，所以编码器结构错时远低于门槛。
+    #[test]
+    #[ignore = "需要 BAOCUT_VAE_DIR（含 config.json 与 safetensors）、BAOCUT_VAE_IMAGE 与 Metal"]
+    fn encode_then_decode_restores_the_image() {
+        let dir = PathBuf::from(std::env::var("BAOCUT_VAE_DIR").unwrap());
+        let files: Vec<PathBuf> = std::fs::read_dir(&dir)
+            .unwrap()
+            .map(|e| e.unwrap().path())
+            .filter(|p| p.extension().is_some_and(|e| e == "safetensors"))
+            .collect();
+        let config = dir.join("config.json");
+        let source = crate::image::job::decode_image(std::path::Path::new(&std::env::var("BAOCUT_VAE_IMAGE").unwrap())).unwrap();
+        let side = 512;
+        let planes = super::super::inputs::cover(&source, side, side);
+        let pixels = Array::from_slice(&planes.vae_rgba(), &[1, side as i32, side as i32, 4]);
+        let t = std::time::Instant::now();
+        let z = Encoder::load(&files, &config, Dtype::Float16)
+            .unwrap()
+            .encode_normalized(&pixels)
+            .unwrap();
+        eprintln!("encode {:?} {:.1}s", z.shape(), t.elapsed().as_secs_f64());
+        assert_eq!(z.shape(), &[1, side as i32 / 16, side as i32 / 16, Z_DIM]);
+        let out = Decoder::load(&files, &config, Dtype::Float16)
+            .unwrap()
+            .decode_normalized(&z, None)
+            .unwrap();
+        let diff = out.as_dtype(Dtype::Float32).unwrap().subtract(&pixels).unwrap();
+        // [-1,1] 上的 MSE → 8 位 PSNR（峰值 2）。只比 RGB。
+        let rgb = diff.index((.., .., .., ..3));
+        let mse = rgb.square().unwrap().mean(None).unwrap().item::<f32>();
+        let psnr = 10.0 * (4.0 / mse).log10();
+        eprintln!("round-trip PSNR {psnr:.2} dB");
+        assert!(psnr > 25.0, "PSNR {psnr:.2}");
     }
 }

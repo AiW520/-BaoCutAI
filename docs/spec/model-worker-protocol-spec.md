@@ -201,7 +201,7 @@ result: {
 
 #### 2.5.3 文生图
 
-本地文生图（架构设计 §6.1、§6.5）。没有输入文件，提示词就是全部输入；参数是 Runtime 在提交时冻结的（`JobRecord.generation`），Worker 照做，不改尺寸、不换 seed。
+本地生图（架构设计 §6.1、§6.5）：文生图，以及带输入图的两种用法——指令改图（`imageMode: 'ref'`，第一张是要改的图，其余是参考图，按顺序作为条件）与以图为底重画（`imageMode: 'img2img'`，一张源图，`strength` 定重画的程度）。参数是 Runtime 在提交时冻结的（`JobRecord.generation`），Worker 照做，不改尺寸、不换 seed；输入图是 Runtime 冻结并核对过的文件，Worker 只读。
 
 ```ts
 params: {
@@ -214,6 +214,9 @@ params: {
     height: number;
     steps: number | null;             // 去噪步数；null 用模型的默认值（Qwen-Image 为 20；固定 sigma 表的权重包是表长，见下）。请求给了 `steps` 或模型包检查（§4.3）时给出
     seed: number;                     // 0..2^32-1；请求没给时 Runtime 在提交时抽一个并冻结，重试与重新执行用同一个
+    images?: { file: string }[];      // 输入图，绝对路径；PNG、JPEG、WebP，按文件头认。不给即文生图
+    imageMode?: 'ref' | 'img2img';    // 有 images 时必给
+    strength?: number;                // 0..1，只在 img2img 时给且必给：越大离源图越远
   };
   staging: string;
   outputContract: 'baocut.image-png/v1';
@@ -227,9 +230,11 @@ result: {
 }
 ```
 
-阶段依次是 `encoding-prompt`（文本编码）、`denoising`（去噪；`job.progress` 的 `unit: 'steps'`，开始时报 `0/n`，每完成一步报一次）、`decoding`（VAE 解码与写 PNG）。取消在步间生效，之后 `outcome: 'cancelled'`，不写输出。同一台机器、同一个后端上同一组参数（含 seed）逐字节得到同一张图；初始噪声由 seed 决定，但 MLX 与 candle 各用自己的随机数生成器（candle 是主机上的 ChaCha20，同 v2），同一个 seed 在两个后端上得到不同的图。
+阶段依次是 `encoding-prompt`（文本编码；有输入图时也含输入图的视觉编码与 VAE 编码）、`denoising`（去噪；`job.progress` 的 `unit: 'steps'`，开始时报 `0/n`，每完成一步报一次）、`decoding`（VAE 解码与写 PNG）。
 
-形状之外的检查都是 `INVALID_PARAMS`：`outputContract` 必须是 `baocut.image-png/v1`，`staging` 是绝对路径，`prompt` 去掉空白后非空，宽高为正，`steps` 不为 0；权重包的 `model_index.json` 带 `sample_sigmas`（蒸馏的 Qwen-Image-2.1-Turbo，8 步）时按这张表采样、不按调度器配置现算，`steps` 必须等于表长（diffusers 同样以表为准），否则 `INVALID_PARAMS`；`options` 多出字段或缺 `seed` 是形状错误。模型出不了的尺寸在开跑前返回 `MODEL_UNSUPPORTED`（`details: { family, reason: 'unsupported-size', width, height, rule }`）；Qwen-Image 要求宽高都是 32 的倍数、长边不超过 3072（2K 档里最长的 2.35:1 是 3072×1312）、长短边之比不超过 3。Runtime 在提交时已按模型描述列出的尺寸拒绝过，这里是兜底。加载的不是文生图模型包时返回 `MODEL_UNSUPPORTED`（`details: { capability: 'image', reason: 'capability-not-loaded' }`），反之亦然。引擎在推理中失败是 `INFERENCE_FAILED`（`details.reason: 'generation-failed'`，消息不带路径），出图的尺寸与请求不符是 `reason: 'size-mismatch'`，写不出文件是 `reason: 'write-failed'`。
+改图时每张输入图各自等比缩放到约 1024² 像素（宽高取 32 的倍数），同一份像素分别给视觉编码（透明处合成到白底）与 VAE 编码（保留 alpha）；输出尺寸仍是请求的宽高。Qwen-Image 的 MLX 后端改图至多收 3 张（底图加参考图；模型本身收 1 + 9 张，每张的条件 token 让 DiT 多缓存约 2.2 GB 的键值，上限按实测的内存定），candle 后端不收输入图（两种用法都是 `MODEL_UNSUPPORTED`）。以图为底重画用文生图的提示词，源图等比缩放到盖满输出尺寸后居中裁切、VAE 编码，从第 `steps − round(steps·strength)` 步开始去噪（至少跑一步），起点是源图 latent 与 seed 噪声按该步的 σ 混合；`denoising` 的 `n` 是实际要跑的步数，`result.image.steps` 仍是冻结的步数。取消在步间生效，之后 `outcome: 'cancelled'`，不写输出。同一台机器、同一个后端上同一组参数（含 seed）逐字节得到同一张图；初始噪声由 seed 决定，但 MLX 与 candle 各用自己的随机数生成器（candle 是主机上的 ChaCha20，同 v2），同一个 seed 在两个后端上得到不同的图。
+
+形状之外的检查都是 `INVALID_PARAMS`：`outputContract` 必须是 `baocut.image-png/v1`，`staging` 是绝对路径，`prompt` 去掉空白后非空，宽高为正，`steps` 不为 0；权重包的 `model_index.json` 带 `sample_sigmas`（蒸馏的 Qwen-Image-2.1-Turbo，8 步）时按这张表采样、不按调度器配置现算，`steps` 必须等于表长（diffusers 同样以表为准），否则 `INVALID_PARAMS`；`options` 多出字段或缺 `seed` 是形状错误；`images[].file` 是绝对路径，`images` 与 `imageMode` 同给同不给，`img2img` 必须给 `strength`（0..1）且只有一张图，非 `img2img` 不给 `strength`。模型出不了的尺寸在开跑前返回 `MODEL_UNSUPPORTED`（`details: { family, reason: 'unsupported-size', width, height, rule }`）；Qwen-Image 要求宽高都是 32 的倍数、长边不超过 3072（2K 档里最长的 2.35:1 是 3072×1312）、长短边之比不超过 3。Runtime 在提交时已按模型描述列出的尺寸拒绝过，这里是兜底。输入图同理：模型不收这种用法或张数超过上限时开跑前返回 `MODEL_UNSUPPORTED`（`details: { family, reason: 'images-unsupported' | 'img2img-unsupported' | 'too-many-images', count, max }`），读不出或解不开是 `INPUT_UNREADABLE`（`details: { input: 'image', index }`，消息不带路径）。加载的不是文生图模型包时返回 `MODEL_UNSUPPORTED`（`details: { capability: 'image', reason: 'capability-not-loaded' }`），反之亦然。引擎在推理中失败是 `INFERENCE_FAILED`（`details.reason: 'generation-failed'`，消息不带路径），出图的尺寸与请求不符是 `reason: 'size-mismatch'`，写不出文件是 `reason: 'write-failed'`。
 
 #### 2.5.4 分离
 

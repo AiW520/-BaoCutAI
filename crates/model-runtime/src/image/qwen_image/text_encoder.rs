@@ -1,19 +1,21 @@
-//! 文本编码器：Qwen3-VL 的语言模型部分（只喂文本，M-RoPE 三轴位置相同 = 普通 1D RoPE）。
+//! 文本编码器：Qwen3-VL 的语言模型部分。文生图只喂文本（M-RoPE 三轴位置相同 = 普通 1D RoPE）；改图另把视觉塔的
+//! token 拼进去（[`encode_edit`]）。
 //! 条件取末层 decoder 的输出（不过最终 RMSNorm），并丢掉系统提示那段前缀。
 //! decoder 本体直接复用 [`crate::backend::mlx::qwen3::TextDecoder`]。
 //! 提示词模板与分词在 [`super::prompt`]。v2 只给开发自检用的常驻编码器（`--check-lm` 的贪心续写）没有移植。
 
-use super::weights;
+use super::vision::VisionFeatures;
+use super::{inputs, weights};
 use anyhow::{Context, Result, bail};
-use mlx_rs::Array;
 use mlx_rs::ops::indexing::IndexOp;
+use mlx_rs::{Array, ops};
 use std::collections::HashMap;
 use std::fs::File;
 use std::io::Read;
 use std::os::unix::fs::FileExt;
 use std::path::PathBuf;
 
-use crate::backend::mlx::qwen3::{TextDecoder, TextDecoderConfig, WeightStore};
+use crate::backend::mlx::qwen3::{RopeTable, TextDecoder, TextDecoderConfig, WeightStore};
 
 /// 语言模型权重的键前缀：mlx-community 4-bit 包是 `language_model.model`，ddalcu 8-bit 包
 /// 保留 transformers 原名 `model.language_model`。
@@ -90,6 +92,112 @@ pub fn encode_streaming(files: &[PathBuf], ids: &[u32], drop_idx: usize) -> Resu
     let out = hidden.index((.., drop_idx as i32.., ..));
     out.eval()?;
     Ok(out)
+}
+
+/// 改图的条件编码（Qwen3-VL ti2i）。`ids` 是展开后的提示词（[`super::prompt::Prompter::ti2i_ids`]），`features` 与 `grids`
+/// 是每张图过视觉塔的结果与合并后的网格，按占位段出现的次序。嵌入里的占位 token 整段换成视觉 token；位置是 M-RoPE
+/// （[`inputs::mrope_positions`]）；第 0、1、2 层之后在图像 token 上加对应的 DeepStack 特征；注意力仍是因果的。
+/// 与 [`encode_streaming`] 一样取末层输出（不过最终 RMSNorm）、丢掉系统前缀，返回 `[1, L - drop_idx, 4096]`。
+pub fn encode_edit(
+    files: &[PathBuf],
+    ids: &[u32],
+    drop_idx: usize,
+    image_pad: u32,
+    features: &[VisionFeatures],
+    grids: &[(usize, usize)],
+) -> Result<Array> {
+    let runs = pad_runs(ids, image_pad);
+    if runs.len() != features.len() || runs.len() != grids.len() {
+        bail!("提示词里有 {} 段图像 token，视觉特征 {} 组", runs.len(), features.len());
+    }
+    for ((&(start, end), f), &(gh, gw)) in runs.iter().zip(features).zip(grids) {
+        if f.merged.dim(0) as usize != end - start || gh * gw != end - start {
+            bail!(
+                "一段图像 token {} 个，视觉 token {} 个（网格 {gh}×{gw}）",
+                end - start,
+                f.merged.dim(0)
+            );
+        }
+    }
+    let mut raw = weights::lazy(files, is_lm_key).context("打开文本编码器权重")?;
+    let (prefix, config) = layout(&raw)?;
+    let mut table_ids = ids.to_vec();
+    if !raw.contains_key(&format!("{prefix}.embed_tokens.scales")) {
+        let key = format!("{prefix}.embed_tokens.weight");
+        let rows = embedding_rows(files, &key, ids, config.hidden_size)?;
+        raw.insert(key, rows);
+        table_ids = (0..ids.len() as u32).collect();
+    }
+    let mut store = WeightStore::from_arrays(raw)?;
+    let decoder = TextDecoder::load_with_prefix(&mut store, config, prefix)?;
+    let left = store.remaining();
+    if !left.is_empty() {
+        bail!("文本编码器有未使用的权重：{:?}", &left[..left.len().min(3)]);
+    }
+    let embedded = decoder.embed(&id_array(&table_ids))?;
+    let dtype = embedded.dtype();
+    // 文本段取嵌入，图像段换成视觉 token；DeepStack 的三层增量在文本位置上是 0。
+    let hidden = config.hidden_size as i32;
+    let splice = |image: &dyn Fn(usize) -> Result<Array>, text: &dyn Fn(i32, i32) -> Result<Array>| -> Result<Array> {
+        let mut parts = Vec::with_capacity(2 * runs.len() + 1);
+        let mut cursor = 0usize;
+        for (k, &(start, end)) in runs.iter().enumerate() {
+            if start > cursor {
+                parts.push(text(cursor as i32, start as i32)?);
+            }
+            parts.push(image(k)?.as_dtype(dtype)?.reshape(&[1, -1, hidden])?);
+            cursor = end;
+        }
+        if cursor < ids.len() {
+            parts.push(text(cursor as i32, ids.len() as i32)?);
+        }
+        Ok(ops::concatenate_axis(&parts, 1)?)
+    };
+    let input = splice(&|k| Ok(features[k].merged.clone()), &|a, b| Ok(embedded.index((.., a..b, ..))))?;
+    input.eval()?;
+    drop(embedded);
+    let deepstack = (0..3)
+        .map(|j| {
+            splice(&|k| Ok(features[k].deepstack[j].clone()), &|a, b| {
+                Ok(ops::zeros_dtype(&[1, b - a, hidden], dtype)?)
+            })
+        })
+        .collect::<Result<Vec<_>>>()?;
+    let positions = inputs::mrope_positions(ids, image_pad, grids)?;
+    let (cos, sin) = inputs::mrope_table(&positions, config.head_dim, f64::from(config.rope_theta), MROPE_SECTION);
+    let shape = [ids.len() as i32, config.head_dim as i32];
+    let rope = RopeTable {
+        cos: Array::from_slice(&cos, &shape).as_dtype(dtype)?,
+        sin: Array::from_slice(&sin, &shape).as_dtype(dtype)?,
+    };
+    let hidden = decoder.into_hidden_prenorm_with(input, &rope, |i, h| match deepstack.get(i) {
+        Some(d) => Ok(h.add(d)?),
+        None => Ok(h),
+    })?;
+    let out = hidden.index((.., drop_idx as i32.., ..));
+    out.eval()?;
+    Ok(out)
+}
+
+/// Qwen3-VL 语言模型的交错 M-RoPE 分段（`rope_scaling.mrope_section`）。
+const MROPE_SECTION: [usize; 3] = [24, 20, 20];
+
+/// 连续的占位 token 段 `[start, end)`。
+pub(super) fn pad_runs(ids: &[u32], pad: u32) -> Vec<(usize, usize)> {
+    let mut runs = Vec::new();
+    let mut i = 0;
+    while i < ids.len() {
+        if ids[i] == pad {
+            let start = i;
+            while i < ids.len() && ids[i] == pad {
+                i += 1;
+            }
+            runs.push((start, i));
+        } else {
+            i += 1;
+        }
+    }
+    runs
 }
 
 /// 从 safetensors 分片里按 `ids` 的顺序读出 bf16 嵌入表 `key` 的这些行（可重复），拼成 `[L, hidden]`。
@@ -190,6 +298,46 @@ mod tests {
         assert!(embedding_rows(&files, "emb.weight", &[40], hidden).is_err());
         assert!(embedding_rows(&files, "emb.weight", &[1], 64).is_err());
         assert!(embedding_rows(&files, "missing.weight", &[1], hidden).is_err());
+        Ok(())
+    }
+
+    #[test]
+    fn pad_runs_are_maximal_and_in_order() {
+        assert_eq!(pad_runs(&[1, 9, 9, 2, 9, 3, 9], 9), [(1, 3), (4, 5), (6, 7)]);
+        assert!(pad_runs(&[1, 2], 9).is_empty());
+    }
+
+    /// 改图的编码路径（M-RoPE 表 + 逐层回调）在没有图时与文生图路径（`fast::rope`）给出同一条件，只差舍入。表按参考实现
+    /// 取 bf16（`fast::rope` 在 f32 里转），36 层传下来余弦约 0.9987（改成 f32 表也一样）；旋转的排布错了（交错式）是 0.90。
+    ///
+    /// ```sh
+    /// BAOCUT_QWEN_IMAGE_DIR=/path/to/pack cargo test -p model-runtime --release --lib -- --ignored \
+    ///   edit_path_without_images_matches_the_text_path --nocapture
+    /// ```
+    #[test]
+    #[ignore = "需要 BAOCUT_QWEN_IMAGE_DIR 下的 Qwen-Image-2.1 权重包与 Metal"]
+    fn edit_path_without_images_matches_the_text_path() -> Result<()> {
+        let _lock = MLX_TEST_LOCK.lock().unwrap_or_else(|poison| poison.into_inner());
+        let dir = std::path::PathBuf::from(std::env::var("BAOCUT_QWEN_IMAGE_DIR").expect("BAOCUT_QWEN_IMAGE_DIR"));
+        let mut files: Vec<PathBuf> = std::fs::read_dir(dir.join("text_encoder"))?
+            .map(|e| e.unwrap().path())
+            .filter(|p| p.extension().is_some_and(|e| e == "safetensors"))
+            .collect();
+        files.sort();
+        let prompter = super::super::prompt::Prompter::load(&dir.join("processor/tokenizer.json"))?;
+        let ids = prompter.t2i_ids("a red apple on a wooden table, studio light");
+        let pad = prompter.added_id(super::super::prompt::IMAGE_PAD).unwrap();
+        let text = encode_streaming(&files, &ids, prompter.drop_idx())?.as_dtype(Dtype::Float32)?;
+        let edit = encode_edit(&files, &ids, prompter.drop_idx(), pad, &[], &[])?.as_dtype(Dtype::Float32)?;
+        assert_eq!(text.shape(), edit.shape());
+        let diff = text.subtract(&edit)?.abs()?;
+        let rel = diff.sum(None)?.divide(&text.abs()?.sum(None)?)?;
+        let cos = text
+            .multiply(&edit)?
+            .sum(None)?
+            .divide(&text.square()?.sum(None)?.sqrt()?.multiply(&edit.square()?.sum(None)?.sqrt()?)?)?;
+        eprintln!("相对 L1 差 {}，余弦 {}", rel.item::<f32>(), cos.item::<f32>());
+        assert!(cos.item::<f32>() > 0.995, "余弦 {}", cos.item::<f32>());
         Ok(())
     }
 }

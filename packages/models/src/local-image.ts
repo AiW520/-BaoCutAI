@@ -11,7 +11,7 @@ import type { ImageRunOptions } from './worker-contract.ts';
 
 type ImageParameters = Extract<GenerationParameters, { capability: 'generateImage' }>;
 
-/** `generateImage` 的模型描述：一次一张、只出 PNG、接受 seed 与步数（输入图等 Model Worker 接上，暂时不收）；尺寸是模型包登记的几档（各宽高比的 1K、2K 与「试画」的小图）。 */
+/** `generateImage` 的模型描述：一次一张、只出 PNG、接受 seed 与步数，按模型包登记的能力收输入图；尺寸是模型包登记的几档（各宽高比的 1K、2K 与「试画」的小图）。 */
 export function localImageModelInfo(def: BundleDefinition, status: ModelBundleStatus, usable: boolean): ImageModelInfo {
   const profile = def.image!;
   return {
@@ -25,10 +25,9 @@ export function localImageModelInfo(def: BundleDefinition, status: ModelBundleSt
     maxPromptChars: profile.maxPromptChars,
     formats: ['png'],
     defaultFormat: 'png',
-    // Qwen-Image-2.1 能按一张底图加至多 9 张参考图改图、也能以一张底图重画（架构设计 §6.1），但 Worker 还不收输入图：
-    // 等 `job.run` 带上输入图再声明，在那之前收到输入图在提交时拒绝。
-    referenceImages: null,
-    img2img: null,
+    // 输入图只在本机读，没有字节上限（Worker 按像素缩放）；以图为底重画一次吃一张底图（架构设计 §6.1）。
+    referenceImages: profile.inputs ? { max: profile.inputs.max, edit: true, maxBytesEach: null, maxBytesTotal: null } : null,
+    img2img: profile.inputs?.img2img ? { max: 1, strength: { ...IMG2IMG_STRENGTH } } : null,
     acceptsSeed: true,
     cost: 'free-local',
     available: usable,
@@ -37,6 +36,9 @@ export function localImageModelInfo(def: BundleDefinition, status: ModelBundleSt
     ...(!usable && status.detail ? { detail: status.detail, ...(status.detailRef ? { detailRef: status.detailRef } : {}) } : {}),
   };
 }
+
+/** 以图为底重画的改动幅度（diffusers 的 strength）：重画 `round(步数 × strength)` 步（至少一步），太小时与底图几乎一样，下限取 0.1。 */
+const IMG2IMG_STRENGTH = { min: 0.1, max: 1, step: 0.05, default: 0.6 } as const;
 
 /**
  * 耗时的提示。candle 在 CPU 上（没有 CUDA 时）比 GPU 慢一到两个数量级：每一步都要把整个 DiT 重新反量化，1024² 二十步要
@@ -62,8 +64,9 @@ export function localImageSeed(seed: number | null): number {
 /**
  * 冻结的参数 → Worker 的 `job.run`（`image`）选项。尺寸与 seed 都已在提交时决定；缺了是调用方的错。步数取冻结的 `steps`，
  * 没有时取调用方给的（模型包自检用少步数出一张小图，不经提交时的范围检查；固定步数的模型包用它固定的步数），都没有时 null（用模型的默认步数）。
+ * `files` 是这一次运行的输入图（已按冻结的摘要核对过的本机文件，按顺序）；用法与 `strength` 取冻结的参数。
  */
-export function imageRunOf(parameters: ImageParameters, steps: number | null = null): ImageRunOptions {
+export function imageRunOf(parameters: ImageParameters, steps: number | null = null, files: readonly string[] = []): ImageRunOptions {
   const match = /^(\d+)x(\d+)$/.exec(parameters.size ?? '');
   if (!match) throw new Error(`Local image size was not frozen: ${String(parameters.size)}`);
   if (parameters.seed === null) throw new Error('Local image seed was not frozen');
@@ -73,5 +76,13 @@ export function imageRunOf(parameters: ImageParameters, steps: number | null = n
     height: Number(match[2]),
     steps: parameters.steps ?? steps,
     seed: parameters.seed,
+    ...(files.length ? imageInputsOf(parameters, files) : {}),
   };
+}
+
+function imageInputsOf(parameters: ImageParameters, files: readonly string[]): Pick<ImageRunOptions, 'images' | 'imageMode' | 'strength'> {
+  const images = files.map((file) => ({ file }));
+  if (parameters.imageMode !== 'img2img') return { images, imageMode: 'ref' };
+  if (parameters.strength === undefined) throw new Error('Local image strength was not frozen');
+  return { images, imageMode: 'img2img', strength: parameters.strength };
 }

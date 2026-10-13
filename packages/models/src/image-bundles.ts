@@ -81,6 +81,12 @@ const QWEN_IMAGE_MLX: BundleDefinition = {
     // 按 Turbo 的 2K 实测（1.72 GB）同样留到 2.5 GiB。
     peakBytes: 2.5 * GiB,
     slow: true,
+    // 改图：底图加参考图至多 3 张；以图为底重画逐张各跑一次。每张输入图缩放到约 1024²、约 4096 个条件 token，DiT 为它缓存
+    // 约 2.15 GB 的键值：实测出 1024² 的进程峰值 Turbo 8-bit 1 张 3.2 GB、2 张 5.7 GB、3 张 7.8 GB，基础版 4-bit 1 张 3.1 GB、
+    // 2 张 5.5 GB，每张多 2.1–2.5 GB，按 2.5 GiB 计在任务上（`peakBytesEach`）。模型本身收 1 + 9 张，4 张约 10 GB，16 GB 的
+    // 机器上放不下（资源调度在 16 GiB 的 Mac 上至多给约 10 GiB 统一内存），所以只开到 3 张。以图为底重画 1024² 的峰值
+    // 1.4–1.5 GB（源图的 VAE 编码），在 `peakBytes` 之内。
+    inputs: { max: 3, img2img: true, peakBytesEach: 2.5 * GiB },
   },
 };
 
@@ -103,6 +109,8 @@ const QWEN_IMAGE_CANDLE: BundleDefinition = {
     peakBytes: 6 * GiB,
     // CUDA 上算 bf16，计在显存：本机没有 CUDA；旧版同一管线实测 1024×576 整卡峰值 3.57 GiB（含桌面约 1.2 GB），1024² 未测。
     devicePeakBytes: { cuda: 4 * GiB },
+    // 改图与以图为底重画只在 MLX 上实现；candle 的 Worker 不收输入图。
+    inputs: undefined,
   },
 };
 
@@ -155,6 +163,7 @@ const QWEN_IMAGE_TURBO_CANDLE: BundleDefinition = {
     peakBytes: 6 * GiB,
     // CUDA 上算 bf16，计在显存：没有实测（本机没有 CUDA），沿用基础版的估计（旧版同一管线 1024×576 整卡峰值 3.57 GiB）。
     devicePeakBytes: { cuda: 4 * GiB },
+    inputs: undefined,
   },
 };
 

@@ -127,7 +127,7 @@ impl std::error::Error for Overflow {}
 /// （打包列数 × 32 = 输入维 × bits，分组数 × group = 输入维），所以 4-bit 包与 8-bit 包共用；
 /// 没有 `.scales` 的按原精度直接乘，不在加载时再量化。scales / biases / dense 权重加载时转成
 /// 计算精度，输入在乘之前转过去。
-enum Lin {
+pub(super) enum Lin {
     Quant {
         w: Array,
         scales: Array,
@@ -140,7 +140,7 @@ enum Lin {
 
 impl Lin {
     /// `dequant` 为真时把量化层解量化成 dense（只对流式读入的 32 层用；层外权重常驻，不值得）。
-    fn load(s: &mut WeightStore, p: &str, input: i32, dtype: Dtype, dequant: bool) -> Result<Self> {
+    pub(super) fn load(s: &mut WeightStore, p: &str, input: i32, dtype: Dtype, dequant: bool) -> Result<Self> {
         let w = s.take(&format!("{p}.weight"))?;
         if !s.contains(&format!("{p}.scales")) {
             if w.dim(1) != input {
@@ -172,7 +172,7 @@ impl Lin {
         })
     }
 
-    fn forward(&self, x: &Array) -> Result<Array> {
+    pub(super) fn forward(&self, x: &Array) -> Result<Array> {
         Ok(match self {
             Self::Quant {
                 w,
@@ -276,13 +276,15 @@ pub struct Dit {
     embed: Option<Embedders>,
 }
 
-/// 文本前缀的逐层 K/V（`[1,H,L,D]`，已过 norm 与 RoPE）与每一步的调制。第一步之前 `kv` 为空、
-/// `pending` 装着过完 `txt_in` 的文本 hidden；第一步逐层填满 `kv` 后 `pending` 清空。
+/// 前缀（文本，改图时还有条件图）的逐层 K/V（`[1,H,P,D]`，已过 norm 与 RoPE）、每一步的调制与目标图的 RoPE 表。
+/// 第一步之前 `kv` 为空、`pending` 装着前缀的输入；第一步逐层填满 `kv` 后 `pending` 清空。
 pub struct TextCache {
     kv: Vec<(Array, Array)>,
-    text_len: usize,
     pending: Option<TextPending>,
     steps: Vec<StepMod>,
+    /// 目标图 token 的 RoPE 表（`[N, D/2]`）：它的 frame 位置排在整个前缀之后。
+    cos: Array,
+    sin: Array,
 }
 
 struct TextPending {
@@ -290,6 +292,27 @@ struct TextPending {
     m: Mod,
     cos: Array,
     sin: Array,
+    /// 前缀各段 `[start, end)` 与是否文本：文本段因果，条件图块内全看见、对前面的段因果（`causal_condition`）。
+    segments: Vec<(i32, i32, bool)>,
+}
+
+/// 改图时前缀里的一张条件图：VAE latent `[1, h·w, 64]`，与它那段视觉 token 在条件编码（丢掉系统前缀之后）里的起始行。
+/// 一个视觉 token 覆盖 32×32 像素，正好是 2×2 个 latent token，所以那段有 `h·w/4` 行。
+pub struct CondImage<'a> {
+    pub latents: &'a Array,
+    pub h: usize,
+    pub w: usize,
+    pub at: usize,
+}
+
+/// 注意力的一块 query `[s, e)`：看见前 `keys` 个 key（`None` 是全部），`causal` 时对其中最后 `e - s` 个按下三角
+/// （MLX 的因果掩码按 key 末尾对齐）。
+#[derive(Clone, Copy)]
+struct Span {
+    s: i32,
+    e: i32,
+    keys: Option<i32>,
+    causal: bool,
 }
 
 /// 一步里按层取权重：惰性表只有文件头，`take` 拿出第 i 层的张量并发起异步读取。
@@ -504,30 +527,32 @@ impl Dit {
         )
     }
 
-    /// 图像 token 过一层的前半：逐块算 q/k/v，每块求值后才进下一块；K/V 先按整张（文本前缀 + 图像）
-    /// 分配好，逐块就地写进去（MLX 在旧缓冲只剩这一处引用时原地更新），不另拼一份。每个 token 的
-    /// 算子与不分块时完全相同。
+    /// 一组 token 过一层的前半：逐块算 q/k/v，每块求值后才进下一块；K/V 先按整张（`prefix` 的缓存 + 这组 token）分配好，
+    /// 逐块就地写进去（MLX 在旧缓冲只剩这一处引用时原地更新），不另拼一份。每个 token 的算子与不分块时完全相同。
     #[allow(clippy::too_many_arguments)]
-    fn image_qkv(
+    fn qkv_chunks(
         a: &Attn,
-        tk: &Array,
-        tv: &Array,
+        prefix: Option<&(Array, Array)>,
         x: &Array,
         m: &Mod,
         cos: &Array,
         sin: &Array,
-        ranges: &[(i32, i32)],
+        spans: &[Span],
     ) -> Result<(Vec<Array>, Array, Array)> {
-        let tl = tk.dim(2);
-        let n = ranges.last().map_or(0, |r| r.1);
-        let full = |t: &Array| -> Result<Array> {
-            let mut a = ops::zeros_dtype(&[1, HEADS, tl + n, HEAD_DIM], t.dtype())?;
-            a.try_index_mut((.., .., 0..tl, ..), t)?;
+        let tl = prefix.map_or(0, |(k, _)| k.dim(2));
+        let n = spans.last().map_or(0, |r| r.e);
+        let dtype = a.norm_k.dtype();
+        let full = |t: Option<&Array>| -> Result<Array> {
+            let mut a = ops::zeros_dtype(&[1, HEADS, tl + n, HEAD_DIM], t.map_or(dtype, |t| t.dtype()))?;
+            if let Some(t) = t {
+                a.try_index_mut((.., .., 0..tl, ..), t)?;
+            }
             Ok(a)
         };
-        let (mut k, mut v) = (full(tk)?, full(tv)?);
-        let mut qs = Vec::with_capacity(ranges.len());
-        for &(s, e) in ranges {
+        let (mut k, mut v) = (full(prefix.map(|p| &p.0))?, full(prefix.map(|p| &p.1))?);
+        let mut qs = Vec::with_capacity(spans.len());
+        for sp in spans {
+            let (s, e) = (sp.s, sp.e);
             let xm = modulate(&x.index((.., s..e, ..)), &m.scale1)?;
             let (q, kc, vc) = a.qkv(&xm, &cos.index((s..e, ..)), &sin.index((s..e, ..)))?;
             k.try_index_mut((.., .., tl + s..tl + e, ..), &kc)?;
@@ -538,17 +563,23 @@ impl Dit {
         Ok((qs, k, v))
     }
 
-    /// 图像 token 过一层的后半：逐块做注意力、to_out 与 MLP，每块求值后写回 `x` 的这几行再进下一块。
+    /// 一组 token 过一层的后半：逐块做注意力、to_out 与 MLP，每块求值后写回 `x` 的这几行再进下一块。
     /// 一块只读自己那几行的残差（其余 token 只经 K/V 进来），所以就地写回不影响后面的块；`x` 只
     /// 被这里持有，MLX 原地更新，不再另有整张的分块输出与拼接结果。
-    fn image_finish(f: &Ffn, mut x: Array, m: &Mod, qs: Vec<Array>, k: &Array, v: &Array, ranges: &[(i32, i32)]) -> Result<Array> {
+    fn finish_chunks(f: &Ffn, mut x: Array, m: &Mod, qs: Vec<Array>, k: &Array, v: &Array, spans: &[Span]) -> Result<Array> {
         let scale = (HEAD_DIM as f32).sqrt().recip();
-        for (&(s, e), q) in ranges.iter().zip(qs) {
-            let attn = fast::scaled_dot_product_attention(&q, k, v, scale, None::<ScaledDotProductAttentionMask<'_>>, None)?;
+        for (sp, q) in spans.iter().zip(qs) {
+            let (s, e) = (sp.s, sp.e);
+            let (k, v) = match sp.keys {
+                Some(n) if n < k.dim(2) => (k.index((.., .., ..n, ..)), v.index((.., .., ..n, ..))),
+                _ => (k.clone(), v.clone()),
+            };
+            let mask = sp.causal.then_some(ScaledDotProductAttentionMask::Causal);
+            let attn = fast::scaled_dot_product_attention(&q, &k, &v, scale, mask, None)?;
             let y = f.finish(&x.index((.., s..e, ..)), &attn, m)?;
             // 先求值：y 的图还引用着 x 的切片，带着它写回 x 就不能原地更新。
             y.eval()?;
-            if ranges.len() == 1 {
+            if spans.len() == 1 {
                 return Ok(y);
             }
             x.try_index_mut((.., s..e, ..), &y)?;
@@ -557,20 +588,60 @@ impl Dit {
         Ok(x)
     }
 
-    /// 文本前缀与每一步的调制：`enc` 是文本编码器输出 `[1,L,4096]`，`sigmas` 是要走的每一步的 sigma。
-    /// 文本这里只过 `txt_in`，逐层部分并进第一步。算完即丢掉时间嵌入、调制与 `txt_in` 的权重，
+    /// 前缀与每一步的调制：`enc` 是条件编码 `[1,L,4096]`，`images` 是改图的条件图（文生图为空，按在 `enc` 里的位置排序），
+    /// `sigmas` 是要走的每一步的 sigma。前缀这里只过 `txt_in` / `img_in`：文本行过 `txt_in`，每张条件图那段视觉 token
+    /// 换成它的 `h·w` 个 latent token 过 `img_in`；逐层部分并进第一步。算完即丢掉时间嵌入、调制与 `txt_in` 的权重，
     /// 所以一个 `Dit` 只能 prepare 一次。
-    pub fn prepare(&mut self, enc: &Array, sigmas: &[f64], grid_h: usize, grid_w: usize) -> Result<TextCache> {
+    pub fn prepare(&mut self, enc: &Array, images: &[CondImage<'_>], sigmas: &[f64], grid_h: usize, grid_w: usize) -> Result<TextCache> {
         let e = self.embed.take().context("DiT 的时间嵌入与调制权重已经用过")?;
-        let text_len = enc.dim(1) as usize;
-        let (cos_all, sin_all) = rope::dit_rope_tables(text_len, grid_h, grid_w);
-        let (cos, sin) = Self::tables(&cos_all, &sin_all, 0, text_len);
+        let rows = enc.dim(1) as usize;
         // ZeroCenterRMSNorm：fp32 下 `x * rsqrt(mean(x²)+eps) * (w+1)`。
         let dtype = enc.dtype();
         let w1 = e.txt_norm.as_dtype(Dtype::Float32)?.add(&Array::from_f32(1.0))?;
         let normed = fast::rms_norm(&enc.as_dtype(Dtype::Float32)?, &w1, EPS)?.as_dtype(dtype)?;
         let h = gelu_tanh_f32(&e.txt_in1.forward(&normed)?)?.as_dtype(dtype)?;
-        let x = e.txt_in2.forward(&h)?.as_dtype(self.prec.resid())?;
+        let text = e.txt_in2.forward(&h)?.as_dtype(self.prec.resid())?;
+        let mut layout = Vec::with_capacity(2 * images.len() + 1);
+        let mut parts = Vec::with_capacity(2 * images.len() + 1);
+        let mut cursor = 0usize;
+        for img in images {
+            let tokens = img.h * img.w;
+            if tokens == 0 || tokens % 4 != 0 || img.latents.dim(1) as usize != tokens {
+                bail!("条件图 latent {:?} 与 {}×{} 对不上", img.latents.shape(), img.h, img.w);
+            }
+            let end = img.at + tokens / 4;
+            if img.at < cursor || end > rows {
+                bail!("条件图那段视觉 token [{}, {end}) 不在条件编码 [{cursor}, {rows}) 里", img.at);
+            }
+            if img.at > cursor {
+                layout.push(rope::Segment::Text(img.at - cursor));
+                parts.push(text.index((.., cursor as i32..img.at as i32, ..)));
+            }
+            layout.push(rope::Segment::Image { h: img.h, w: img.w });
+            parts.push(
+                self.img_in
+                    .forward(&img.latents.as_dtype(Dtype::Bfloat16)?)?
+                    .as_dtype(self.prec.resid())?,
+            );
+            cursor = end;
+        }
+        if cursor < rows {
+            layout.push(rope::Segment::Text(rows - cursor));
+            parts.push(text.index((.., cursor as i32.., ..)));
+        }
+        let x = ops::concatenate_axis(&parts, 1)?;
+        drop(parts);
+        let len: usize = layout.iter().map(|s| s.len()).sum();
+        let (cos_all, sin_all) = rope::joint_rope_tables(&layout, grid_h, grid_w);
+        let (cos, sin) = Self::tables(&cos_all, &sin_all, 0, len);
+        let (tcos, tsin) = Self::tables(&cos_all, &sin_all, len, len + grid_h * grid_w);
+        let mut segments = Vec::with_capacity(layout.len());
+        let mut at = 0i32;
+        for seg in &layout {
+            let n = seg.len() as i32;
+            segments.push((at, at + n, matches!(seg, rope::Segment::Text(_))));
+            at += n;
+        }
         let m = e.mods(&e.temb(0.0)?)?;
         let steps = sigmas
             .iter()
@@ -590,33 +661,39 @@ impl Dit {
         drop(e);
         Ok(TextCache {
             kv: Vec::with_capacity(LAYERS),
-            text_len,
-            pending: Some(TextPending { x, m, cos, sin }),
+            pending: Some(TextPending { x, m, cos, sin, segments }),
             steps,
+            cos: tcos,
+            sin: tsin,
         })
     }
 
-    /// 文本 token 过一层的前半（因果注意力、t=0 调制）：返回注意力输出与这一层的文本 K/V。
-    /// 后半（[`Ffn::finish`]）放到图像 q/k/v 之后，让这一层后半的权重有图像那段时间读入。
-    fn text_attn(a: &Attn, p: &TextPending) -> Result<(Array, Array, Array)> {
-        let xm = modulate(&p.x, &p.m.scale1)?;
-        let (q, k, v) = a.qkv(&xm, &p.cos, &p.sin)?;
-        let scale = (HEAD_DIM as f32).sqrt().recip();
-        let attn = fast::scaled_dot_product_attention(&q, &k, &v, scale, Some(ScaledDotProductAttentionMask::Causal), None)?;
-        mlx_rs::transforms::eval([&attn, &k, &v])?;
-        Ok((attn, k, v))
+    /// 前缀的分块：文本段因果（每块看见到自己末尾为止的 key），条件图块的每块看见到块尾为止的 key；都按 `chunk` 切。
+    fn prefix_spans(segments: &[(i32, i32, bool)], chunk: i32) -> Vec<Span> {
+        let mut spans = Vec::new();
+        for &(start, end, text) in segments {
+            for s in (start..end).step_by(chunk as usize) {
+                let e = (s + chunk).min(end);
+                spans.push(Span {
+                    s,
+                    e,
+                    keys: Some(if text { e } else { end }),
+                    causal: text,
+                });
+            }
+        }
+        spans
     }
 
     /// 第 `index` 步去噪（sigma 是 [`Self::prepare`] 收到的第 `index` 个）：`latents` 是 `[1, N, 64]`
-    /// （任意浮点 dtype），返回速度场 `[1, N, 64]`（f32）。每层按 `chunk` 个图像 token 分块算（K/V 仍是
-    /// 整张），把层内临时张量压到 1/⌈N/chunk⌉。层权重按半层流式读入；第一步顺带把文本前缀的 K/V 填进 `cache`。
+    /// （任意浮点 dtype），返回速度场 `[1, N, 64]`（f32）。每层按 `chunk` 个 token 分块算（K/V 仍是
+    /// 整张），把层内临时张量压到 1/⌈N/chunk⌉。层权重按半层流式读入；第一步顺带把前缀的 K/V 填进 `cache`
+    /// （前缀 token 用 t=0 的调制，与采样步无关）。
     pub fn step(&self, cache: &mut TextCache, latents: &Array, index: usize, grid_h: usize, grid_w: usize, chunk: usize) -> Result<Array> {
         let n = grid_h * grid_w;
-        if latents.dim(1) as usize != n {
+        if latents.dim(1) as usize != n || cache.cos.dim(0) as usize != n {
             bail!("latent token 数 {} ≠ {grid_h}×{grid_w}", latents.dim(1));
         }
-        let (cos_all, sin_all) = rope::dit_rope_tables(cache.text_len, grid_h, grid_w);
-        let (cos, sin) = Self::tables(&cos_all, &sin_all, cache.text_len, cache.text_len + n);
         let sm = cache.steps.get(index).with_context(|| format!("没有第 {index} 步的调制"))?;
         let m = &sm.m;
         let mut x = self
@@ -625,31 +702,40 @@ impl Dit {
             .as_dtype(self.prec.resid())?;
         let n = n as i32;
         let chunk = chunk.max(1) as i32;
-        let ranges: Vec<(i32, i32)> = (0..n).step_by(chunk as usize).map(|s| (s, (s + chunk).min(n))).collect();
+        let spans: Vec<Span> = (0..n)
+            .step_by(chunk as usize)
+            .map(|s| Span {
+                s,
+                e: (s + chunk).min(n),
+                keys: None,
+                causal: false,
+            })
+            .collect();
+        let prefix_spans = cache.pending.as_ref().map(|p| Self::prefix_spans(&p.segments, chunk));
         let mut stream = BlockStream::open(&self.files, self.prec)?;
         let mut next = Some(stream.attn(0, true)?);
         for i in 0..LAYERS {
             let a = next.take().context("DiT 层权重缺失")?;
             let f = stream.ffn(i, true)?;
-            let text = match cache.pending.as_ref() {
-                Some(p) => {
-                    let (attn, k, v) = Self::text_attn(&a, p)?;
+            let pending = match (cache.pending.as_ref(), prefix_spans.as_deref()) {
+                (Some(p), Some(ps)) => {
+                    let (qs, k, v) = Self::qkv_chunks(&a, None, &p.x, &p.m, &p.cos, &p.sin, ps)?;
                     cache.kv.push((k, v));
-                    Some(attn)
+                    Some(qs)
                 }
-                None => None,
+                _ => None,
             };
-            let (tk, tv) = &cache.kv[i];
-            let (qs, k, v) = Self::image_qkv(&a, tk, tv, &x, m, &cos, &sin, &ranges)?;
+            let (qs, k, v) = Self::qkv_chunks(&a, Some(&cache.kv[i]), &x, m, &cache.cos, &cache.sin, &spans)?;
             drop(a);
             if i + 1 < LAYERS {
                 next = Some(stream.attn(i + 1, true)?);
             }
-            if let (Some(p), Some(attn)) = (cache.pending.as_mut(), text) {
-                p.x = f.finish(&p.x, &attn, &p.m)?;
-                p.x.eval()?;
+            if let (Some(p), Some(pqs), Some(ps)) = (cache.pending.as_mut(), pending, prefix_spans.as_deref()) {
+                let (pk, pv) = &cache.kv[i];
+                let px = std::mem::replace(&mut p.x, Array::from_f32(0.0));
+                p.x = Self::finish_chunks(&f, px, &p.m, pqs, pk, pv, ps)?;
             }
-            x = Self::image_finish(&f, x, m, qs, &k, &v, &ranges)?;
+            x = Self::finish_chunks(&f, x, m, qs, &k, &v, &spans)?;
         }
         cache.pending = None;
         let x = modulate(&x, &sm.out_scale)?;

@@ -609,6 +609,7 @@ mod tests {
             height: edge,
             steps,
             seed: 7,
+            inputs: crate::image::ImageInputs::None,
         };
         let mut phases = Vec::new();
         let started = Instant::now();
