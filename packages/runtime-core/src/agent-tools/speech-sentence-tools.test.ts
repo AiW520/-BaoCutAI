@@ -117,6 +117,54 @@ describe.skipIf(!ready)('按句编号读讲话与带出处的交付（真实引�
     return session;
   }
 
+  it('重录与术语候选：没装模型时按字面找说了两遍的同一句；没有术语表时只有发现', async () => {
+    expect(TOOL_RISK.speech_retakes).toBe('read');
+    expect(TOOL_RISK.speech_glossary_candidates).toBe('read');
+    const session = await send();
+    // 换成说了两遍的同一句（同一份素材上的新转写）。
+    const video = runtime.videos.mirror(videoId)!.video;
+    await client.request('edits.apply', {
+      videoId,
+      commandId: newId('cmd'),
+      expectedRevision: video.revision,
+      operations: [
+        {
+          type: 'putDocument',
+          documentId: speechId,
+          kind: 'speech',
+          language: 'en',
+          sourceAsset: { assetId: Object.keys(video.assets)[0]! },
+          body: {
+            schema: 'baocut.speech/1',
+            clock: 'source-asset',
+            timescale: 1000,
+            speakers: [],
+            words: [
+              { id: 'r1', start: 0, end: 400, text: 'We' },
+              { id: 'r2', start: 400, end: 800, text: 'ship' },
+              { id: 'r3', start: 800, end: 1200, text: 'today.' },
+              { id: 'r4', start: 1600, end: 2000, text: 'We' },
+              { id: 'r5', start: 2000, end: 2400, text: 'ship' },
+              { id: 'r6', start: 2400, end: 2800, text: 'today.' },
+            ],
+            sentences: null,
+            chapters: [],
+          },
+        },
+      ],
+    });
+    const retakes = await tool(session, 'speech_retakes', { video: videoPath });
+    expect(retakes.isError).toBe(false);
+    expect(retakes.body).toMatchObject({ videoId, documentId: speechId, effectiveMode: 'lexical' });
+    expect(retakes.body.groups).toHaveLength(1);
+    expect(retakes.body.groups[0].takes.map((t: { text: string; wordIds: string[] }) => [t.text, t.wordIds])).toEqual([
+      ['We ship today.', ['r1', 'r2', 'r3']],
+      ['We ship today.', ['r4', 'r5', 'r6']],
+    ]);
+    const terms = await tool(session, 'speech_glossary_candidates', { video: videoPath });
+    expect(terms.body).toMatchObject({ videoId, glossaries: 0, candidates: [] });
+  });
+
   it('句子按时间线编号、再取时编号不变；带编号的 Markdown 交出时去掉编号，出处随 Space 条目保存', async () => {
     expect(TOOL_RISK.speech_sentences).toBe('read');
     const session = await send();

@@ -13,6 +13,7 @@
 1. 用 `baocut videos inspect` 看视频：名字、画幅（宽高）、章节、文档。没有转写（kind 为 speech 的文档）时先转写，告诉用户转写在进行。
 2. 读文稿：`baocut export`（kind `transcript`、format `md`、timestamps `true`），`baocut jobs inspect` 等到 completed，读 outputs 里的文件。
 3. 用户这次的要求：几组、封面字数上限、风格、语言、发布平台、已经挑定的标题，都在这段对话里找。没说语言时用文稿的语言。
+4. 系列里的其他期：用户要和前作的标题、封面区分开或保持一致时，用 `baocut space related-videos` 看讲相近内容的几部叫什么。
 
 ## 2. 出标题与封面文案
 

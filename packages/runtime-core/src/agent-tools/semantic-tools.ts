@@ -1,8 +1,20 @@
 // i18n-ignore-file: 给模型的工具说明与错误
 import { z } from 'zod';
-import { SEMANTIC_QUERY_MAX_CHARS, videoTimeHref, type JobRecord, type SemanticResolveResult, type SpaceSearchV2Hit } from '@baocut/protocol';
+import {
+  SEMANTIC_QUERY_MAX_CHARS,
+  SPACE_RELATED_VIDEOS_MAX_LIMIT,
+  videoTimeHref,
+  type Id,
+  type JobRecord,
+  type SemanticResolveResult,
+  type SpaceSearchV2Hit,
+} from '@baocut/protocol';
 import { citationKeyOf, type CitationRegistry } from '../ai-tools/citation-registry.ts';
+import type { SpaceCatalog } from '../space-catalog.ts';
+import { relatedVideos } from '../space/related-videos.ts';
 import { resolveSearchHit } from '../space/search-hit-resolver.ts';
+import type { ScopedVideoState } from '../space/search-service.ts';
+import type { SpaceViewer } from '../space/space-queries.ts';
 import type { RelevantChunk } from '../space/semantic/context.ts';
 import type { SemanticServices } from '../space/semantic/services.ts';
 import { spaceViewerOf } from './space-tools.ts';
@@ -16,6 +28,9 @@ import type { ToolPrincipal, ToolScope } from './tool-scope.ts';
  * - `space_resolve_search_hit`：按视频当前版本重新定位一条命中。
  * - `speech_relevant`：按意图取材（SemanticContext 的 `findRelevantChunks`），讲话的每一句带写作出处编号（`CitationRegistry`，与
  *   `speech_sentences` 同一份），写作时回引、`downloads_save` 校验。
+ * - `space_index_status` / `space_index_build`：按视频看语义索引建好没有、等它建好（用户刚给的素材先建好再取材），失败的重试。
+ *   建索引本来就在后台自动进行（最近动过的视频排在前面），这两个只是看与催；没装模型、设置里没纳入的项目时什么也不做。
+ * - `space_related_videos`：讲相近内容的视频，与 Space 查看框的 `space.relatedVideos` 同一个实现。
  *
  * 前两个的结果里，按当前版本还在时间线上的位置带 `href`（`/videos/<videoId>?t=<秒>`，产品设计 §3.2.2）：回答里引用时照抄成链接，界面
  * 渲染成点了跳到那一刻的时间码；源时间、要重新定位与定位不到的不给，智能体只写文字。
@@ -27,6 +42,8 @@ import type { ToolPrincipal, ToolScope } from './tool-scope.ts';
 export interface SemanticToolsDeps {
   /** 语义服务在工具目录之后才建好：调用时再取。 */
   semantic: () => SemanticServices | null;
+  /** Space 目录（相关视频与建索引要条目与视频目录）。 */
+  space: () => SpaceCatalog;
   scope: ToolScope;
   jobs: { list(): JobRecord[] };
   registry: CitationRegistry;
@@ -41,6 +58,18 @@ const kindsArg = z
   .describe('可选。只找这些文档：speech（转写）、caption（字幕）、translation（译文）、chapter（章节）');
 const videoIdsArg = z.array(z.string().min(1).max(200)).min(1).max(200).optional().describe('可选。只在这些视频里找（仍不超过你能访问的范围）');
 const projectArg = z.string().min(1).max(200).nullable().optional().describe('可选。只在这个项目的视频里找；null 是不属于任何项目的视频');
+/** 等索引的上限与 `jobs_wait` 相同：避开常见 MCP 客户端 60 秒的请求超时。 */
+const WAIT_MAX_SEC = 50;
+const WAIT_POLL_MS = 500;
+const waitArg = z
+  .number()
+  .int()
+  .min(0)
+  .max(WAIT_MAX_SEC)
+  .optional()
+  .describe(`可选。最多等几秒（0–${WAIT_MAX_SEC}），等范围里排队与正在建的视频都建好再返回；缺省不等`);
+/** 按视频列状态的上限；范围更大时只给计数。 */
+const STATUS_VIDEOS_MAX = 50;
 
 const schemas = {
   space_search_v2: z.strictObject({
@@ -65,6 +94,21 @@ const schemas = {
     limit: z.number().int().min(1).max(30).optional().describe('可选。最多几段，默认 10'),
     neighbors: z.number().int().min(0).max(5).optional().describe('可选。每段命中向前后各扩几句，默认 1'),
     order: z.enum(['relevance', 'time']).optional().describe('可选。relevance（默认）按相关度；time 按视频与时间顺序'),
+  }),
+  space_index_status: z.strictObject({
+    videoIds: videoIdsArg,
+    projectId: projectArg,
+    waitSec: waitArg,
+  }),
+  space_index_build: z.strictObject({
+    videoIds: videoIdsArg,
+    projectId: projectArg,
+    rebuild: z.boolean().optional().describe('可选。丢掉已有向量按当前模型全部重算；缺省只建没建好的、重试失败的'),
+    waitSec: waitArg,
+  }),
+  space_related_videos: z.strictObject({
+    videoId: z.string().min(1).max(200).describe('视频的 videoId'),
+    limit: z.number().int().min(1).max(SPACE_RELATED_VIDEOS_MAX_LIMIT).optional().describe('可选。最多几部，默认 5'),
   }),
 };
 
@@ -122,6 +166,49 @@ const DEFINITIONS: Record<ToolName, ToolInfo> = {
     surfaces: ['agent', 'cli'],
     positional: 'intent',
   },
+  space_index_status: {
+    title: '查看语义索引',
+    description: [
+      '看你能访问的视频（或给出的视频、项目）的本机语义索引建好没有。',
+      'available 为 false 时没有可用的语义索引（reason 给原因，例如 MODEL_NOT_INSTALLED）：按意思检索与取材会退回字面，不要等。',
+      'videos 按视频给 state：indexed 已建好；stale 能用但落后于最近的修改；pending 排队或正在建；failed 建失败（space_index_build 重试）；missingInput 没有文稿（先 transcribe，转写完会自动建）；excluded 是设置里没纳入语义索引的项目（只能按字面找，要纳入请用户在设置 › 语义索引里开，你改不了）。范围超过 50 部时只给 coverage 计数。',
+      '给 waitSec 时等到范围里没有 pending 与 stale 或超时，settled 写明等到没有（没有可用的索引时为 false）。建索引在后台自动进行，用户刚给的素材要按意思取材时，先转写、再用它等一下。paused 为 true 时用户暂停了建索引，等也不会动。只读。',
+    ].join('\n'),
+    annotations: { readOnlyHint: true },
+    effect: 'query',
+    examples: [
+      { title: '看全部', args: {} },
+      { title: '等刚转写的素材建好', args: { videoIds: ['vid_1', 'vid_2'], waitSec: 30 } },
+    ],
+    surfaces: ['agent', 'cli'],
+  },
+  space_index_build: {
+    title: '催建语义索引',
+    description: [
+      '让给出的视频（缺省是你能访问的全部）先建本机语义索引：排到队首，失败过的重试；rebuild 时丢掉已有向量全部重算。',
+      '建索引平时在后台自动进行，一般不需要调用：只在 space_index_status 报 failed、或用户要求重建时用。没装模型、用户暂停了、项目没纳入语义索引时什么也不做（planned 为 0，reason 写明）。',
+      '占用本机算力，结果只在 BaoCut 的缓存里，不改视频。给 waitSec 时等到这些视频建好或超时，返回与 space_index_status 相同的状况。',
+    ].join('\n'),
+    effect: 'mutation',
+    examples: [
+      { title: '重试失败的', args: { videoIds: ['vid_1'] } },
+      { title: '重建一个项目并等一下', args: { projectId: 'prj_1', rebuild: true, waitSec: 30 } },
+    ],
+    surfaces: ['agent', 'cli'],
+  },
+  space_related_videos: {
+    title: '讲相近内容的视频',
+    description: [
+      '列出与这部视频讲话内容相近的其他视频（不含它自己、它切出的短视频、它的来源视频与同一来源切出的其他短视频），最近的在前，每部带那部视频里最接近的一段讲话与时间。',
+      '用于找系列里的前作、避免重复选题、在简介或文章里推荐相关视频。basis 为 name 时语义一路用不了（reason 给原因），只是按名字里共同的词找的，相关性弱。',
+      '有 href 的段落引用时照抄成链接 [视频名 · 12:05](href)。不给分数。只读。',
+    ].join('\n'),
+    annotations: { readOnlyHint: true },
+    effect: 'query',
+    examples: [{ title: '找相关视频', args: { videoId: 'vid_1' } }],
+    surfaces: ['agent', 'cli'],
+    positional: 'videoId',
+  },
 };
 
 export class SemanticTools implements ToolSet {
@@ -135,7 +222,10 @@ export class SemanticTools implements ToolSet {
 
   async dispatch(name: string, args: unknown, principal: ToolPrincipal): Promise<unknown> {
     const semantic = this.#deps.semantic();
-    if (!semantic) throw new ToolError('SEMANTIC_UNAVAILABLE', '本机语义检索还没有就绪，稍后再试');
+    if (!semantic) {
+      if (name === 'space_index_status' || name === 'space_index_build') return { available: false, reason: 'INDEX_NOT_READY', planned: 0 };
+      throw new ToolError('SEMANTIC_UNAVAILABLE', '本机语义检索还没有就绪，稍后再试');
+    }
     const viewer = spaceViewerOf(this.#deps.scope, this.#deps.jobs, principal, { retrieval: true });
     switch (name as ToolName) {
       case 'space_search_v2': {
@@ -193,8 +283,85 @@ export class SemanticTools implements ToolSet {
               : '写作时在段落末尾回引 [sN]；没有 ref 的句子（字幕、译文、不在时间线上的）不能作为出处。weak 的段落与意图只是勉强相关，用之前先看内容。',
         };
       }
+      case 'space_index_status': {
+        const p = args as z.infer<(typeof schemas)['space_index_status']>;
+        return this.#status(semantic, viewer, p, p.waitSec ?? 0);
+      }
+      case 'space_index_build': {
+        const p = args as z.infer<(typeof schemas)['space_index_build']>;
+        // 建索引不是检索：只按会话自己的范围，不用「回答这个问题」放宽的只读范围。
+        const own = spaceViewerOf(this.#deps.scope, this.#deps.jobs, principal);
+        const scope = { ...(p.videoIds ? { videoIds: p.videoIds } : {}), ...(p.projectId !== undefined ? { projectId: p.projectId } : {}) };
+        const profiled = await semantic.search.profile();
+        let planned = 0;
+        if (!('reason' in profiled) && semantic.store() && semantic.scheduler()) {
+          const dirs = new Set(semantic.search.resolveScope(own, scope, null).videos.map((v) => v.video.dir));
+          const space = this.#deps.space();
+          planned = semantic.coordinator.build(
+            space.videos().filter((video) => dirs.has(video.dir)),
+            p.rebuild ? { rebuild: true } : {},
+          );
+        }
+        return { planned, ...(await this.#status(semantic, own, scope, p.waitSec ?? 0)) };
+      }
+      case 'space_related_videos': {
+        const p = args as z.infer<(typeof schemas)['space_related_videos']>;
+        const found = semantic.search.resolveScope(viewer, { videoIds: [p.videoId] }, null).videos[0];
+        if (!found?.video.entryId) throw new ToolError('VIDEO_NOT_FOUND', `找不到视频 ${p.videoId}，或它还没进 Space`);
+        const result = await relatedVideos(this.#deps.space(), semantic, viewer, { entryId: found.video.entryId, ...(p.limit ? { limit: p.limit } : {}) });
+        return {
+          basis: result.basis,
+          reason: result.reason,
+          videos: result.videos.map((video) => ({
+            videoId: video.videoId,
+            name: video.name,
+            ...(video.passage
+              ? {
+                  passage: {
+                    clock: video.passage.clock,
+                    start: round(video.passage.start),
+                    end: round(video.passage.end),
+                    text: video.passage.text,
+                    ...(video.passage.clock === 'sequence' && video.videoId ? { href: videoTimeHref(video.videoId, video.passage.start) } : {}),
+                  },
+                }
+              : {}),
+            ...(video.sharedName ? { sharedName: video.sharedName } : {}),
+          })),
+        };
+      }
       default:
         throw new ToolError('UNKNOWN_TOOL', `没有这个工具：${name}`);
+    }
+  }
+
+  /** 索引状况；`waitSec` 大于 0 时等到范围里没有排队与落后的视频、模型不可用、用户暂停或超时。 */
+  async #status(semantic: SemanticServices, viewer: SpaceViewer, scope: { videoIds?: Id[]; projectId?: Id | null }, waitSec: number) {
+    const deadline = Date.now() + waitSec * 1000;
+    const started = Date.now();
+    for (;;) {
+      const profiled = await semantic.search.profile();
+      const profile = 'profile' in profiled ? profiled.profile : null;
+      const resolved = semantic.search.resolveScope(viewer, scope, profile);
+      const coordinator = semantic.coordinator;
+      const reason = 'reason' in profiled ? profiled.reason : !semantic.store() ? 'INDEX_NOT_READY' : coordinator.blockedReason;
+      const available = profile !== null && semantic.store() !== null;
+      const busy = resolved.coverage.pending > 0 || resolved.coverage.stale > 0;
+      const waiting = available && !coordinator.paused && reason === null && busy;
+      if (!waiting || Date.now() >= deadline) {
+        const { channel: _, ...coverage } = resolved.coverage;
+        return {
+          available,
+          reason,
+          paused: coordinator.paused,
+          coverage,
+          ...(resolved.videos.length <= STATUS_VIDEOS_MAX
+            ? { videos: resolved.videos.map((v) => ({ videoId: v.video.videoId, name: v.video.videoName, state: v.state satisfies ScopedVideoState })) }
+            : {}),
+          ...(waitSec > 0 ? { settled: available && !busy, waitedSec: Math.round((Date.now() - started) / 100) / 10 } : {}),
+        };
+      }
+      await new Promise((resolve) => setTimeout(resolve, Math.min(WAIT_POLL_MS, Math.max(0, deadline - Date.now()))));
     }
   }
 

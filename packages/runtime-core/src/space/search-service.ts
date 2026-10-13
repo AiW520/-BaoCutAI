@@ -64,7 +64,12 @@ export interface ScopedVideo {
   generation: GenerationRow | null;
   /** 当前 profile 能用的世代（同一个 embeddingSpaceId、有 chunk）。 */
   usable: boolean;
+  /** 计进 `coverage` 的哪一项（智能体按视频看索引状况用）。 */
+  state: ScopedVideoState;
 }
+
+/** `indexed` 跟上当前版本；`stale` 能用但落后于当前版本；其余同 `SemanticCoverage` 的同名项。 */
+export type ScopedVideoState = 'indexed' | 'stale' | 'pending' | 'failed' | 'missingInput' | 'excluded';
 
 export interface ResolvedScope {
   scope: SearchScope;
@@ -125,16 +130,19 @@ export class SearchService {
       const generation = generations.get(video.videoId) ?? null;
       const compatible = generation !== null && (profile === null || generation.embeddingSpaceId === profile.embeddingSpaceId);
       const usable = compatible && generation.chunkCount > 0;
-      videos.push({ video, generation, usable });
       const source = store?.source(video.videoId) ?? null;
       const wanted = settings.indexedProjects === 'all' || (video.projectId !== null && settings.indexedProjects.includes(video.projectId));
-      if (compatible && generation.chunkCount === 0 && generation.revision === video.revision) coverage.missingInput++;
-      else if (usable) {
+      let state: ScopedVideoState;
+      if (compatible && generation.chunkCount === 0 && generation.revision === video.revision) state = 'missingInput';
+      else if (usable) state = generation.revision === video.revision ? 'indexed' : 'stale';
+      else if (!wanted) state = 'excluded';
+      else if (source?.state === 'failed' && source.wantedRevision === video.revision) state = 'failed';
+      else state = 'pending';
+      videos.push({ video, generation, usable, state });
+      if (state === 'stale') {
         coverage.indexed++;
-        if (generation.revision !== video.revision) coverage.stale++;
-      } else if (!wanted) coverage.excluded++;
-      else if (source?.state === 'failed' && source.wantedRevision === video.revision) coverage.failed++;
-      else coverage.pending++;
+        coverage.stale++;
+      } else coverage[state]++;
     }
     coverage.eligible = coverage.indexed + coverage.pending + coverage.failed;
     coverage.knownScopeComplete =

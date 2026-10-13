@@ -724,7 +724,17 @@ describe('语义检索的智能体工具', () => {
     const scope = {
       authorize: (principal: ToolPrincipal) => (principal.kind === 'agent' ? { principal, conversation } : { principal }),
     } as unknown as ToolScope;
-    return { registry, tools: new SemanticTools({ semantic: () => services, scope, jobs: { list: () => [] }, registry }) };
+    return { registry, tools: new SemanticTools({ semantic: () => services, space: spaceOf, scope, jobs: { list: () => [] }, registry }) };
+  }
+  /** 带条目的 Space 目录（相关视频要按条目找）。 */
+  function spaceOf(): SpaceCatalog {
+    const entries = new Map(
+      videos.map((v) => [
+        v.entryId,
+        { id: v.entryId, kind: 'video', name: reader.videos.get(v.dir)!.name, source: { projectId: v.projectId, conversationId: v.conversationId }, user: { trashedAt: null }, ref: { videoId: v.videoId } } as unknown as SpaceEntry,
+      ]),
+    );
+    return { videos: () => videos, index, scanning: false, get: (id: Id) => entries.get(id)! } as unknown as SpaceCatalog;
   }
   const agent = { kind: 'agent', conversationId: 'c-x' } as unknown as ToolPrincipal;
 
@@ -768,6 +778,67 @@ describe('语义检索的智能体工具', () => {
     expect(resolved.href).toBe(videoTimeHref('v1', span.startSec));
     services = null;
     await expect(t.dispatch('space_search_v2', { query: 'x' }, agent)).rejects.toMatchObject({ code: 'SEMANTIC_UNAVAILABLE' });
+  });
+
+  it('space_index_status 按视频给状态，能等到建好；没有转写的、没纳入的分开写', async () => {
+    const v4 = await addVideo({ videoId: 'v4', name: 'Silent', revision: 'r1', sentences: [] }, 'p1', 'c-x');
+    await syncIndex();
+    services = open({ indexedProjects: ['p1'] });
+    const { tools: wide } = tools(undefined, { id: 'c-x', projectId: null, spaceReadScope: 'all' });
+    // 还没开始建：都在排队（v2、v3 不在纳入的项目里）。
+    const before = (await wide.dispatch('space_index_status', {}, agent)) as { available: boolean; videos: { videoId: string; state: string }[] };
+    expect(before.available).toBe(true);
+    expect(Object.fromEntries(before.videos.map((v) => [v.videoId, v.state]))).toEqual({ v1: 'pending', v2: 'excluded', v3: 'excluded', v4: 'pending' });
+    services.coordinator.start();
+    const waited = (await wide.dispatch('space_index_status', { videoIds: ['v1', 'v4'], waitSec: 10 }, agent)) as {
+      settled: boolean;
+      videos: { videoId: string; state: string; name: string }[];
+      coverage: { indexed: number; missingInput: number; pending: number };
+    };
+    expect(waited.settled).toBe(true);
+    expect(waited.videos).toEqual([
+      { videoId: 'v1', name: 'Interview', state: 'indexed' },
+      { videoId: 'v4', name: 'Silent', state: 'missingInput' },
+    ]);
+    expect(waited.coverage).toMatchObject({ indexed: 1, missingInput: 1, pending: 0 });
+    expect(v4.videoId).toBe('v4');
+  });
+
+  it('space_index_build 只按会话自己的范围催建；没装模型或没有语义服务时什么也不做', async () => {
+    services = open();
+    const { tools: t } = tools(undefined, { id: 'c-x', projectId: null, spaceReadScope: 'all' });
+    // 放宽的只读范围不用于建索引：无项目会话 c-x 自己的目录里没有视频。
+    const own = (await t.dispatch('space_index_build', {}, agent)) as { planned: number; videos: unknown[] };
+    expect(own).toMatchObject({ planned: 0, videos: [] });
+    const { tools: p1 } = tools();
+    const built = (await p1.dispatch('space_index_build', { waitSec: 10 }, agent)) as { planned: number; settled: boolean; videos: { videoId: string; state: string }[] };
+    expect(built).toMatchObject({ planned: 1, settled: true, videos: [{ videoId: 'v1', state: 'indexed' }] });
+    services = open({ provider: null });
+    expect(await p1.dispatch('space_index_build', { waitSec: 5 }, agent)).toMatchObject({ planned: 0, available: false, reason: 'MODEL_NOT_INSTALLED', settled: false });
+    services = null;
+    expect(await p1.dispatch('space_index_status', {}, agent)).toMatchObject({ available: false });
+  });
+
+  it('space_related_videos 按 videoId 找讲相近内容的视频，在时间线上的段落带链接', async () => {
+    services = open();
+    await build(services);
+    const saved = SEMANTIC_THRESHOLDS.thresholds.related.value;
+    SEMANTIC_THRESHOLDS.thresholds.related.value = -1;
+    try {
+      const { tools: wide } = tools(undefined, { id: 'c-x', projectId: null, spaceReadScope: 'all' });
+      const result = (await wide.dispatch('space_related_videos', { videoId: 'v1' }, agent)) as {
+        basis: string;
+        videos: { videoId: string; passage?: { href?: string; text: string } }[];
+      };
+      expect(result.basis).toBe('semantic');
+      expect(result.videos.map((v) => v.videoId).sort()).toEqual(['v2', 'v3']);
+      expect(result.videos.every((v) => v.passage?.href?.startsWith(`/videos/${v.videoId}?t=`))).toBe(true);
+      // 看不到的视频与不存在的一样。
+      const { tools: narrow } = tools(undefined, { id: 'c-y', projectId: null });
+      await expect(narrow.dispatch('space_related_videos', { videoId: 'v1' }, agent)).rejects.toMatchObject({ code: 'VIDEO_NOT_FOUND' });
+    } finally {
+      SEMANTIC_THRESHOLDS.thresholds.related.value = saved;
+    }
   });
 
   it('用户给会话放宽的只读检索范围：all 看得到全部视频，unfiled 只多看不属于项目的；别的用途不放宽', async () => {

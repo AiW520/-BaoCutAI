@@ -85,6 +85,7 @@ import { resolveExportWorkerCommand } from './exports/video-export.ts';
 import { ExportTools } from './agent-tools/export-tools.ts';
 import { SpaceTools } from './agent-tools/space-tools.ts';
 import { SemanticTools } from './agent-tools/semantic-tools.ts';
+import { EditAidTools } from './agent-tools/edit-aid-tools.ts';
 import { openSemanticServices, type SemanticServices } from './space/semantic/services.ts';
 import type { EmbeddingProvider } from '@baocut/models';
 import { VideoDeleteTools } from './agent-tools/video-delete-tools.ts';
@@ -763,7 +764,7 @@ export async function startRuntime(options: StartRuntimeOptions = {}): Promise<R
         // Space 目录在后面才建好：工具调用时再取。
         new SpaceTools({ space: () => space, scope: toolScope, jobs: models.jobs }),
         // 本机语义检索与按意图取材（只读）；取材的句子编号与 speech_sentences 共用一份登记。
-        new SemanticTools({ semantic: () => semanticRef, scope: toolScope, jobs: models.jobs, registry: citationRegistry }),
+        new SemanticTools({ semantic: () => semanticRef, space: () => space, scope: toolScope, jobs: models.jobs, registry: citationRegistry }),
         new SkillTools({ skills, scope: toolScope }),
         new GrantTools({ models, scope: toolScope }),
         new TaskTools({ harness, scope: toolScope }),
@@ -782,6 +783,8 @@ export async function startRuntime(options: StartRuntimeOptions = {}): Promise<R
           },
         }),
         new SpeechSentenceTools({ videos, scope: toolScope, registry: citationRegistry }),
+        // 重录与术语候选（只读，与编辑器 AI 工具页同一份实现）；语义服务在后面才建好，调用时再取。
+        new EditAidTools({ videos, library, semantic: () => semanticRef, scope: toolScope }),
         new VideoDeleteTools({
           space: () => space,
           trash: () => videoTrash,
