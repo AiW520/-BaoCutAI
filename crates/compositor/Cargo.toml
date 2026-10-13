@@ -1,0 +1,62 @@
+[package]
+name = "compositor"
+version.workspace = true
+edition.workspace = true
+license-file.workspace = true
+publish.workspace = true
+
+# 统一渲染设计 §6：默认构建只带场景/调度契约，不把 wgpu 拉进纯 CPU 或
+# wasm-cpu 依赖图。实时宿主与 R5 CLI/App 离屏导出通过 `gpu` 显式选择执行层。
+[features]
+default = []
+gpu = [
+    "render-raster/gpu",
+    "dep:lyon_path",
+    "dep:lyon_tessellation",
+    "dep:wgpu",
+    "wgpu/metal",
+    "wgpu/vulkan",
+    "wgpu/dx12",
+]
+# 只用于 R1 的可复现 API trace 诊断。常规 native/生产构建继续只开 `gpu`，
+# 不携带 wgpu 的 serde/trace 依赖与磁盘写入能力。
+gpu-trace = ["gpu", "wgpu/trace"]
+# 浏览器两条后端各自一个 feature，`bcut-wasm-gpu` 按它编出 WebGPU / WebGL2
+# 两份产物；`gpu-web` 是两者合开的旧名。
+gpu-web = ["gpu-webgpu", "gpu-webgl"]
+gpu-webgpu = [
+    "render-raster/gpu-webgpu",
+    "dep:lyon_path",
+    "dep:lyon_tessellation",
+    "dep:wgpu",
+    "wgpu/webgpu",
+]
+gpu-webgl = [
+    "render-raster/gpu-webgl",
+    "dep:lyon_path",
+    "dep:lyon_tessellation",
+    "dep:wgpu",
+    "wgpu/webgl",
+]
+
+[dependencies]
+anyhow = "1"
+render-raster = { path = "../render-raster", default-features = false }
+timeline-render = { path = "../timeline-render", features = ["external-media-scene"] }
+lyon_path = { version = "1", optional = true }
+lyon_tessellation = { version = "1", optional = true }
+wgpu = { version = "30", default-features = false, features = [
+    "std",
+    "parking_lot",
+    "wgsl",
+], optional = true }
+
+[dev-dependencies]
+naga = { version = "30", default-features = false, features = ["wgsl-in", "glsl-out"] }
+motion = { path = "../motion" }
+subtitle-render = { path = "../subtitle-render" }
+timeline = { path = "../timeline" }
+pollster = "1"
+serde_json = "1"
+tiny-skia = "0.11"
+tempfile = "3"

@@ -23,8 +23,8 @@ publish.workspace = true
 # `svg`：只要 resvg 的 SVG 光栅（`src/svg.rs`，不带 `text`），浏览器预览的 wasm 也开它——
 # SVG 素材与贴纸换色在内核里光栅化，预览与导出走同一份实现（架构设计 §9.1）。`media` 是它的超集。
 #
-# `gpu-runtime` / `wgsl-validate` / `gpu` / `gpu-web*`：源码带来，依赖（wgpu 30、naga 30、
-# pollster 1）等「GPU 合成与预览 WASM」批再解析进 Cargo.lock，这一批只是占位。
+# GPU executors are optional. Native uses Metal / Vulkan / DX12; browser builds
+# select WebGPU or WebGL2 explicitly, without affecting the CPU WASM artifact.
 [features]
 default = ["media"]
 # App 发布档改读签名包里的共享字体（Electron 用 `Resources/web/assets`，旧 native App 用 `Resources/fonts`）。
@@ -47,17 +47,17 @@ svg = ["dep:resvg", "resvg/raster-images"]
 program = ["media"]
 wasm-safe = []
 # v2：`gpu-runtime = ["dep:wgpu"]`
-gpu-runtime = []
+gpu-runtime = ["dep:wgpu"]
 # v2：`wgsl-validate = ["dep:naga"]`。建管线前先用 naga 解析 + 校验 WGSL。
-wgsl-validate = []
+wgsl-validate = ["dep:naga"]
 # v2：`gpu = ["gpu-runtime", "wgsl-validate", "dep:pollster", "wgpu/metal", "wgpu/vulkan", "wgpu/dx12"]`
-gpu = ["gpu-runtime", "wgsl-validate"]
+gpu = ["gpu-runtime", "wgsl-validate", "dep:pollster", "wgpu/metal", "wgpu/vulkan", "wgpu/dx12"]
 # 浏览器的两份 GPU wasm（WebGPU / WebGL2）；`gpu-web` 是两者合开的旧名。
 gpu-web = ["gpu-webgpu", "gpu-webgl"]
 # v2：`gpu-webgpu = ["gpu-runtime", "wgpu/webgpu"]`
-gpu-webgpu = ["gpu-runtime"]
+gpu-webgpu = ["gpu-runtime", "wgpu/webgpu"]
 # v2：`gpu-webgl = ["gpu-runtime", "wgsl-validate", "wgpu/webgl"]`
-gpu-webgl = ["gpu-runtime", "wgsl-validate"]
+gpu-webgl = ["gpu-runtime", "wgsl-validate", "wgpu/webgl"]
 
 [dependencies]
 scene-primitives = { workspace = true }
@@ -105,10 +105,10 @@ tempfile = { version = "3", optional = true }
 # bcut-exec = { path = "../bcut-exec", optional = true }        → `src/exec.rs`
 # bcut-compile = { path = "../bcut-compile", optional = true }  → `program` feature 占位
 #
-# ── `gpu` 专属（v2 原文，待「GPU 合成与预览 WASM」批）。
-# wgpu = { version = "30", default-features = false, features = ["std", "parking_lot", "wgsl"], optional = true }
-# naga = { version = "30", default-features = false, features = ["wgsl-in", "glsl-out"], optional = true }
-# pollster = { version = "1", optional = true }
+# Optional GPU dependencies, shared by native and browser executors.
+wgpu = { version = "30", default-features = false, features = ["std", "parking_lot", "wgsl"], optional = true }
+naga = { version = "30", default-features = false, features = ["wgsl-in", "glsl-out"], optional = true }
+pollster = { version = "1", optional = true }
 
 [dev-dependencies]
 tempfile = "3"

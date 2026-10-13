@@ -1,7 +1,6 @@
 //! Declarative caption scenes. Layout, animation and recording are shared by native and WASM.
 mod angular_samples;
 mod bound_label;
-mod component_filters;
 mod cue_unit_context;
 mod glyph_envelope;
 mod gradient_smear;

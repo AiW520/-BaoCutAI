@@ -6,6 +6,7 @@
 //! [`kernel_is_implemented`] 保证每个 strict manifest 都有 CPU reference——
 //! 这条不变量由 `tests/effects_conformance.rs` 逐条守。
 
+pub mod component_filters;
 pub mod composite;
 pub mod filters;
 pub mod pixel_format;

@@ -11,7 +11,7 @@ const MAX_GAUSSIAN_SAMPLES: usize = 1024;
 const MAX_GLOW_LEVELS: usize = 7;
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
-pub(super) struct Size {
+pub struct Size {
     pub width: u32,
     pub height: u32,
 }
@@ -36,7 +36,7 @@ impl Size {
 
 /// Inclusive lower and exclusive upper bounds of nonzero component pixels.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
-pub(super) struct Support {
+pub struct Support {
     pub left: u32,
     pub top: u32,
     pub right: u32,
@@ -60,7 +60,7 @@ impl Support {
 }
 
 #[derive(Clone, Debug)]
-pub(super) struct ComponentImage {
+pub struct ComponentImage {
     size: Size,
     data: Vec<u8>,
     support: Option<Support>,
@@ -151,12 +151,12 @@ fn quantize(value: f64) -> u8 {
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
-pub(super) enum Axis {
+pub enum Axis {
     X,
     Y,
 }
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
-pub(super) enum Boundary {
+pub enum Boundary {
     /// Discard both color and weight for samples outside normalized [0, 1].
     Normalize,
     /// Clamp the sample coordinate to the edge before interpolation.
@@ -165,7 +165,7 @@ pub(super) enum Boundary {
     Transparent,
 }
 #[derive(Clone, Copy, Debug)]
-pub(super) struct GaussianPass {
+pub struct GaussianPass {
     pub axis: Axis,
     pub sample_count: f64,
     /// Distance and sigma are in INPUT image pixels, including resized passes.
@@ -176,7 +176,7 @@ pub(super) struct GaussianPass {
     pub output: Size,
 }
 impl GaussianPass {
-    fn validate(self) -> Result<usize> {
+    pub fn validate(self) -> Result<usize> {
         self.output.pixels()?;
         ensure!(
             self.sample_count.is_finite()
@@ -212,7 +212,7 @@ fn validate_gamma(gamma: Option<f64>) -> Result<()> {
 /// Imported image scans are charged once at the entry point. Output pixels are
 /// separate allocation/clear/write work, so the caller can use its own budget.
 #[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
-pub(super) struct WorkEstimate {
+pub struct WorkEstimate {
     pub texel_reads: u64,
     pub support_scan_pixels: u64,
     pub output_pixels: u64,
@@ -369,6 +369,18 @@ fn encoded_sample(image: &ComponentImage, x: f64, y: f64, gamma: Option<f64>) ->
     }
     value
 }
+/// Validated coefficients shared by CPU and GPU executors. The shader does not
+/// independently approximate exp(), so backend differences are limited to f32
+/// accumulation/sampling and final UNORM rounding.
+pub fn gaussian_weights(pass: GaussianPass) -> Result<Vec<f64>> {
+    let count = pass.validate()?;
+    Ok(if count == 0 {
+        Vec::new()
+    } else {
+        weights(pass, count)
+    })
+}
+
 fn weights(pass: GaussianPass, count: usize) -> Vec<f64> {
     let ratio = pass.step_pixels / pass.sigma_pixels;
     (1..=count)
@@ -420,7 +432,7 @@ fn gaussian_pixel(
     result
 }
 
-pub(super) fn gaussian(image: &ComponentImage, pass: GaussianPass) -> Result<ComponentImage> {
+pub fn gaussian(image: &ComponentImage, pass: GaussianPass) -> Result<ComponentImage> {
     let count = pass.validate()?;
     if count == 0 {
         return resize(image, pass.output);
@@ -436,7 +448,7 @@ pub(super) fn gaussian(image: &ComponentImage, pass: GaussianPass) -> Result<Com
     }
     Ok(output)
 }
-pub(super) fn resize(image: &ComponentImage, output: Size) -> Result<ComponentImage> {
+pub fn resize(image: &ComponentImage, output: Size) -> Result<ComponentImage> {
     output.pixels()?;
     if image.size == output {
         return Ok(image.copied());
@@ -578,33 +590,30 @@ fn estimate_gaussian_geometry(
     }
     Ok(work)
 }
-pub(super) fn estimate_gaussian_reads(
-    image: &ComponentImage,
-    pass: GaussianPass,
-) -> Result<WorkEstimate> {
+pub fn estimate_gaussian_reads(image: &ComponentImage, pass: GaussianPass) -> Result<WorkEstimate> {
     let mut work = estimate_gaussian_geometry(image.size, image.support, pass)?;
     work.support_scan_pixels = image.support_scan_pixels;
     Ok(work)
 }
 #[cfg(test)]
-pub(super) fn estimate_resize_reads(image: &ComponentImage, output: Size) -> Result<WorkEstimate> {
+pub fn estimate_resize_reads(image: &ComponentImage, output: Size) -> Result<WorkEstimate> {
     let mut work = estimate_resize_geometry(image.size, image.support, output)?;
     work.support_scan_pixels = image.support_scan_pixels;
     Ok(work)
 }
 
 #[derive(Clone, Copy, Debug)]
-pub(super) struct GlowLevel {
+pub struct GlowLevel {
     pub x: GaussianPass,
     pub y: GaussianPass,
 }
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
-pub(super) enum GlowComposite {
+pub enum GlowComposite {
     Screen,
     SourceOverGlow,
 }
 #[derive(Clone, Debug)]
-pub(super) struct GlowConfig {
+pub struct GlowConfig {
     pub levels: Vec<GlowLevel>,
     pub intensity: f64,
     /// Exponent denominator for intensity shaping; per-pass gamma is separate.
@@ -617,9 +626,9 @@ pub(super) struct GlowConfig {
     pub composite: GlowComposite,
     pub output: Size,
 }
-pub(super) const IDENTITY_GLOW_MATRIX: [f64; 9] = [1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0];
+pub const IDENTITY_GLOW_MATRIX: [f64; 9] = [1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0];
 impl GlowConfig {
-    fn validate(&self) -> Result<f64> {
+    pub fn validate(&self) -> Result<f64> {
         ensure!(
             (1..=MAX_GLOW_LEVELS).contains(&self.levels.len()),
             "CAPTION_MATERIAL_INVALID: glow levels"
@@ -658,7 +667,7 @@ impl GlowConfig {
     }
 }
 #[derive(Debug)]
-pub(super) struct GlowResult {
+pub struct GlowResult {
     pub image: ComponentImage,
     #[cfg(test)]
     pub levels: Vec<ComponentImage>,
@@ -741,7 +750,7 @@ fn composite_pixel(
         GlowComposite::SourceOverGlow => original[channel] + glow[channel] * (1.0 - original[3]),
     }))
 }
-pub(super) fn cascade_glow(input: &ComponentImage, cfg: &GlowConfig) -> Result<GlowResult> {
+pub fn cascade_glow(input: &ComponentImage, cfg: &GlowConfig) -> Result<GlowResult> {
     let gain = cfg.validate()?;
     let mut levels: Vec<ComponentImage> = Vec::with_capacity(cfg.levels.len());
     for level in &cfg.levels {
@@ -814,10 +823,7 @@ fn estimate_composite(
 }
 /// Conservative preflight: intermediate UNORM rounding may shrink support, but
 /// the propagated boxes never trim a possible nonzero color or coverage value.
-pub(super) fn estimate_glow_reads(
-    input: &ComponentImage,
-    cfg: &GlowConfig,
-) -> Result<WorkEstimate> {
+pub fn estimate_glow_reads(input: &ComponentImage, cfg: &GlowConfig) -> Result<WorkEstimate> {
     let gain = cfg.validate()?;
     let mut work = WorkEstimate {
         support_scan_pixels: input.support_scan_pixels,
@@ -846,7 +852,7 @@ pub(super) fn estimate_glow_reads(
 }
 /// Includes the caller-owned input, all retained Y levels, the temporary X
 /// surface and final output. Does not include unrelated caller allocations.
-pub(super) fn estimate_glow_peak_bytes(input: Size, cfg: &GlowConfig) -> Result<u64> {
+pub fn estimate_glow_peak_bytes(input: Size, cfg: &GlowConfig) -> Result<u64> {
     cfg.validate()?;
     let original = input.pixels()? * 4;
     let mut retained = 0_u64;

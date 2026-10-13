@@ -28,16 +28,11 @@ compile_error!(
      `gpu-webgpu` / `gpu-webgl`（两者合开即 `gpu-web`）"
 );
 
-// v3：`program` 与 GPU 的依赖没有声明（见 Cargo.toml 文件头），feature 只是占位。
-// 打开它们时在这里给出可读的原因，而不是一串「找不到 crate」。
+// The legacy program compiler is intentionally not part of this workspace.
 #[cfg(feature = "program")]
 compile_error!(
     "render-raster 的 `program` 不可用：它要的 bcut-compile（BCF 编译，oxc + rquickjs）\
      不移植（架构设计 §13.6），v3 的代码画面走代码包（§8）"
-);
-#[cfg(any(feature = "gpu-runtime", feature = "wgsl-validate"))]
-compile_error!(
-    "render-raster 的 GPU feature 尚不可用：wgpu / naga / pollster 待 GPU 合成那一批引入"
 );
 
 #[cfg(feature = "media")]

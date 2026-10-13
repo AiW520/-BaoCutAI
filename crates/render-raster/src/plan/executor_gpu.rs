@@ -185,26 +185,25 @@ impl GpuExecutor {
         }))
         .map_err(|error| anyhow!("request_adapter 失败：{error}"))?;
         let info = adapter.get_info();
-        // On Windows, WARP would add texture uploads/readbacks around a CPU
-        // rasterizer. Let auto callers use the native CPU reference instead.
-        // Explicit host devices (from_device) remain usable for conformance.
-        #[cfg(target_os = "windows")]
+        // Software adapters still execute pixels on the CPU. Auto selection must
+        // not report them as hardware acceleration; explicit host devices remain
+        // usable for conformance and diagnostics.
         if info.device_type == wgpu::DeviceType::Cpu {
             bail!("gpu-backend-unavailable: software adapter {}", info.name);
         }
-        // **取 adapter 的实际限值**而不是 `downlevel_defaults()`：后者的
-        // `max_texture_dimension_2d` 只有 2048，连 1080p 的横条元素（1920 宽）
-        // 都刚好卡在门槛上，超采样更是直接越界。本执行器的资源就是"一张
-        // 目标纹理 + 一张 w×2 的音频纹理 + 十来个小 uniform buffer"，用不着
-        // 靠限值来约束自己；真正要挡住的是"目标比设备能画的还大"，那一条在
-        // [`Self::render_quad_at`] 里显式检查并回退，见那里的注释。
-        //
-        // P6 的 WebGL2 路径限值更严（那条线上要重新评估这里的取值），不在 P5a。
-        let (device, queue) = pollster::block_on(adapter.request_device(&wgpu::DeviceDescriptor {
-            label: Some("bcut-render.gpu"),
-            required_limits: adapter.limits(),
-            ..Default::default()
-        }))
+        // Ask for the portable baseline, retaining actual resolution/alignment
+        // limits. Requiring every advertised limit needlessly excludes devices
+        // and makes behavior depend on optional capabilities we never use.
+        let (device, queue) = pollster::block_on(
+            adapter.request_device(&wgpu::DeviceDescriptor {
+                label: Some("bcut-render.gpu"),
+                required_features: wgpu::Features::empty(),
+                required_limits: wgpu::Limits::downlevel_webgl2_defaults()
+                    .using_resolution(adapter.limits())
+                    .using_alignment(adapter.limits()),
+                ..Default::default()
+            }),
+        )
         .map_err(|error| anyhow!("request_device 失败：{error}"))?;
         // 自建 device 的校验失败不该 panic 掉整个进程——回退 CPU 是既定策略。
         // 注入的宿主 device 则保留宿主自己的 uncaptured-error handler。

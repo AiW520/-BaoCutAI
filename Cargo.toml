@@ -11,6 +11,7 @@ license-file = "LICENSE"
 publish = false
 
 [workspace.dependencies]
+compositor = { path = "crates/compositor", default-features = false }
 caption-scene = { path = "crates/caption-scene" }
 editor-semantics = { path = "crates/editor-semantics" }
 message-ref = { path = "crates/message-ref" }

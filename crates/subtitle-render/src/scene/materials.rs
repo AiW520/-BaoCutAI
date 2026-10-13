@@ -1,6 +1,6 @@
 //! Cue-isolated, bounded prefix evaluation. Feedback never reads a prior rendered frame.
-use super::component_filters as filters;
 use super::*;
+use render_raster::effects::component_filters as filters;
 use render_raster::effects::filters::blur::box_blur_premul_u8;
 
 const MAX_WORK_PIXELS: u64 = 256 * 1024 * 1024;
