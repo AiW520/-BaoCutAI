@@ -119,9 +119,11 @@ The publisher independently downloads the six public assets and performs native
 signature, staple, Gatekeeper and Runtime checks before advancing the feed.
 UI/export, real model inference and paid Agent calls are not automated; preserve
 those skips in the report. Credential setup alone does not authorize publication.
-After all selected publishers finish, merge and read back the prepared changelog
-following [release notes](release-notes.md). For platform continuation, preserve
-the existing version's changelog and verify it survives the platform note updates.
+After the Mac publisher finishes, merge and read back the complete prepared
+changelog following [release notes](release-notes.md), verify its download links,
+and report Mac delivery with any pending Windows variants. Later platform
+continuation preserves that version's changelog and verifies it survives the
+platform note updates. Complete Latest only after all selected platforms pass.
 
 ## Report the result
 

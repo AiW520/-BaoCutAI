@@ -13,7 +13,7 @@ outside the App's craft `skills/`; do not invoke legacy GPUI/npm/Homebrew releas
 
 | User intent | Read and follow |
 | --- | --- |
-| Ordinary release/publish request; no method specified | [Tag release](references/tag-release.md) — **default**. Prepare the version and frozen source, then push its release tag; Actions builds/releases Mac arm64 and Windows CPU/CUDA/Vulkan. |
+| Ordinary release/publish request; no method specified | [Tag release](references/tag-release.md) — **default**. Push the frozen source tag; publish verified Mac arm64 first, then append Windows CPU/CUDA/Vulkan to the same Release. |
 | Explicit local package/candidate, traditional or manual release, single-platform recovery/continuation | [Traditional release](references/traditional-release.md). Honor the requested platforms and local-only/public scope. |
 | Signing identity, portable backups or GitHub credentials only | [Signing/backups](references/signing-backups.md). Do not create a tag or publish. |
 
@@ -35,6 +35,11 @@ scope; follow the user's explicit method and limits.
   already published tags/files are immutable.
 - Keep the tag and all platform artifacts tied to one full source SHA. Never ship
   dirty-source binaries, private signing materials or intermediate notary submissions.
+- Publish the Mac Release, its reconciled changelog and verified download links as
+  soon as the Mac candidate passes; Windows/CUDA builds do not block this stage.
+  Later platform completion updates that Release's assets, notes and feeds, never
+  the Git tag or its source SHA. Report pending platforms separately; advance Latest
+  at the completion step below.
 - For every new published version/build, follow [release notes](references/release-notes.md):
   inventory the full commit/PR range, summarize large ranges in batches, reconcile
   coverage and publish the consolidated changelog. A local candidate keeps the

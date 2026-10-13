@@ -60,7 +60,7 @@ jobs:
       download_base_url: ${{ needs.plan.outputs.download_base_url }}
 
   publish-macos:
-    needs: [plan, macos, windows]
+    needs: [plan, macos]
     runs-on: macos-15
     timeout-minutes: 30
     permissions:
@@ -86,7 +86,7 @@ jobs:
         run: node apps/desktop/tools/macos-release.mjs publish "$RUNNER_TEMP/mac-candidate"
 
   publish-windows:
-    needs: [plan, publish-macos]
+    needs: [plan, publish-macos, windows]
     runs-on: ubuntu-latest
     timeout-minutes: 30
     permissions:

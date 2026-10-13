@@ -41,22 +41,39 @@ create a release tag or trigger a release.
 ## Follow Actions to completion
 
 Find the `desktop-release.yml` push run whose tag and full source SHA match this
-release. Mac arm64 and Windows x64 CPU/CUDA/Vulkan build in parallel. All native
-jobs must pass before publishing. Mac publishes first, then all three Windows
-variants append to that same release, with public read-back before each feed update.
-The workflow preserves the previous Latest during publication, existing assets
-and unrelated feeds.
+release. Mac arm64 and Windows x64 CPU/CUDA/Vulkan build in parallel. The Mac
+publisher depends only on the plan and Mac native job: publish its verified files
+immediately, without waiting for Windows or CUDA. The Windows publisher waits for
+its selected native jobs and the public Mac Release, then appends to that same
+Release with public read-back before updating only its feeds. Preserve the previous
+Latest until final completion, existing assets and unrelated feeds.
 
-Wait for the native jobs and both publishers, then merge the prepared changelog
-into the actual Release body and verify it by read-back as described in
-[release notes](release-notes.md). Then check that baocut.com serves the new
-release as described in [download links](download-links.md). No README or site
-change is needed. Merely pushing the tag is not a successful publication. Report
-the run/release URLs, full source SHA, published platforms, the baocut.com check
-and actual verification/skips. Complete the shared [Latest step](../SKILL.md#complete-public-release)
-after all publication and download checks pass.
+After the Mac publisher succeeds, merge the prepared full changelog into its Release
+body and read it back following [release notes](release-notes.md). Verify the two
+Mac links at baocut.com following [download links](download-links.md); Windows links
+may still serve the prior release. Report Mac publication now, with the Release/run
+URLs, full source SHA, actual checks and explicitly pending Windows variants. Do
+not hold the Mac delivery until CUDA finishes or call the all-platform release
+complete. When the user requests later completion, use an authorized follow-up
+monitor to check remaining publishers and notify on completion, failure or required
+action; stay quiet while their state is unchanged.
+
+After remaining publishers finish, read back the existing Release, preserve its
+changelog while incorporating platform notes, and verify each new asset/feed and
+download link. Complete the shared [Latest step](../SKILL.md#complete-public-release)
+only after all selected platforms pass. No README or site deployment is needed.
 UI/export, real model/GPU inference and paid Agent calls are not automated and
 must not be described as passed.
+
+Already-running workflows keep the dependency graph from their frozen commit.
+If the user requests Mac-first publication for such a run, reuse its successful
+Mac job's six-file artifact on a native Apple Silicon publisher with the exact
+candidate run, source SHA and signer. Use an isolated checkout and runner directory;
+`macos-release.mjs publish` checks provenance, immutable bytes, public native
+read-back and the feed. Do not rebuild the package, move the tag or run competing
+publishers; the original publisher can later reuse identical assets. Keep the same
+Release and continue its Windows publisher. This is staged publication of the
+validated Actions candidate, not a new build or local packaging fallback.
 
 If a job fails, diagnose it and fix within authorized scope, then rerun failed jobs
 with their validated candidates where possible. Never silently switch to the

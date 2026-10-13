@@ -31,6 +31,28 @@ test('publication allows main or the exact release tag, never another branch or 
   }
 });
 
+test('Mac publication can start before Windows while Windows publication still waits for native validation', () => {
+  const workflow = readFileSync('.github/workflows/desktop-release.yml', 'utf8');
+  const dependencies = new Map();
+  for (const section of workflow.split(/(?=^  [a-z][a-z-]*:\n)/m)) {
+    const job = /^  ([a-z][a-z-]*):\n/.exec(section)?.[1];
+    const needs = /^    needs: \[([^\]]+)\]/m.exec(section)?.[1];
+    if (job && needs) dependencies.set(job, needs.split(',').map((value) => value.trim()));
+  }
+  const ready = (job, passed) => {
+    assert.ok(dependencies.has(job), `Missing dependency gate: ${job}`);
+    return dependencies.get(job).every((dependency) => passed.has(dependency));
+  };
+  const macPassed = new Set(['plan', 'macos']);
+  assert.equal(ready('publish-macos', macPassed), true);
+  macPassed.add('publish-macos');
+  assert.equal(ready('publish-windows', macPassed), false);
+  macPassed.add('windows');
+  assert.equal(ready('publish-windows', macPassed), true);
+  macPassed.delete('publish-macos');
+  assert.equal(ready('publish-windows', macPassed), false);
+});
+
 test('tag planning checks actual git ancestry before allowing the signing jobs', () => {
   const root = mkdtempSync(path.join(tmpdir(), 'baocut-tag-plan-test-'));
   const source = path.join(root, 'source');

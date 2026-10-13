@@ -33,13 +33,13 @@ commit 的 type 与统一 scope 按[开发流程 §1.1](../../../../docs/develop
 ## 发布与读回验证
 
 1. 发布前保存汇总正文（如临时目录里的 `release-notes.md`）及覆盖台账，记录基线 tag、目标 SHA、commit／PR 数、批次数与核对结果。冻结源码前，同时把应用内纯文本说明写入 `apps/desktop/releases/release-notes.json` 并提交：`version`、`build` 对应本次发布，`notes` 是非空英文、每条一行，`notesLocalized` 可提供按语言码组织的译文；保留用户可见变更与重要限制，不写 Markdown 标记。Mac 与 Windows 的打包器会把它写进各平台 appcast，缺失、空白或版本不匹配会停止打包，发布校验也拒绝空说明。GitHub Release 正文与 appcast 是两份载体，必须分别核对；编辑 Release body 不会补写清单。候选构建只交付本地日志。冻结 SHA 若改变，重新收集范围并核对新增来源，不能沿用旧日志直接发布。
-2. 手动创建 Release 时，通过正文文件写入日志并保留平台、签名、公证、依赖与验证边界。Actions 当前主要生成平台说明；它不代替本流程的变更整理。等本次所有发布任务和平台正文追加都完成后，重新读取实际 Release body，把准备好的更新日志与已有平台说明整合，保存到新的正文文件，然后更新：
+2. 手动创建 Release 时，通过正文文件写入日志并保留平台、签名、公证、依赖与验证边界。Actions 当前主要生成平台说明；它不代替本流程的变更整理。Mac 发布并验收通过后立即读取实际 Release body，把完整更新日志与 Mac 说明整合、保存并写入，不等待 CUDA 或其他 Windows 构建。明确列出尚未发布的平台；Windows 后续发布完成时再次读回，保留日志并补充平台信息：
 
    ```bash
    gh release edit "$release_tag" --repo "$release_repo" --notes-file "$notes_file"
    gh release view "$release_tag" --repo "$release_repo" --json body,url,tagName
    ```
 
-   变量指向核实过的仓库、tag 和已整合的正文文件。不要在平台发布任务仍写正文时抢先覆盖；正文编辑不改变 Latest、tag、assets 或 feeds。全部发布与验证完成后，按 [skill 的完成步骤](../SKILL.md#complete-public-release)标记并读回 Latest。正文中已有本版本更新日志时更新该部分，保留其他段落，避免重试追加重复内容。
+   变量指向核实过的仓库、tag 和已整合的正文文件。正文编辑避开正在写该正文的平台 publisher；仍在构建的 native job 不阻止 Mac 阶段写入。正文编辑不改变 Latest、tag、assets 或 feeds。全部发布与验证完成后，按 [skill 的完成步骤](../SKILL.md#complete-public-release)标记并读回 Latest。正文中已有本版本更新日志时更新该部分，保留其他段落，避免重试追加重复内容。
 3. 读回核对版本与范围、各类变更、来源链接、平台说明均保留且无重复。若发布任务重跑又修改正文，再核对并按需补回；未写入或读回不一致时，发布任务尚未完整完成。
 4. 最终报告提供 Release 链接、比较范围、覆盖数量与批次核对结果，并说明实际来源缺失或跳过项。不要把自动平台说明或 GitHub 自动生成的 PR 列表当作已整理完成的更新日志。

@@ -49,7 +49,7 @@ Electron-builder 先装成 `BaoCut.app`；签名脚本用完整证书指纹选�
 
 发布通过 GitHub Releases，归档文件名与内容不可变。`--download-base-url` 生成 App 自己的解析器验证过的 ZIP 更新清单；公开归档读回通过后才更新 `apps/desktop/releases/` 的版本钉。新版使用独立 ID，不将旧版官网的更新源直接换成新包；全部选定平台发布与验证完成后，将最新稳定桌面版本标记为 GitHub Latest，步骤见[发布 skill](../../.agents/skills/bcut-release/SKILL.md#complete-public-release)。
 
-**GitHub Actions**：推送 `baocut-v<VERSION>-build.<BUILD>` release tag 自动触发 `desktop-release`，从 tag 的同一提交构建 Mac Apple Silicon 与 Windows x64 CPU、CUDA、Vulkan；全部原生检查通过后发布到同一个 Release，并更新各平台 appcast。tag 版本必须与 package.json / lockfile 一致、build 递增、提交已在 `main` 上；不能复用 Build 60。签名材料放在允许 `main` 和 release tag 的 `macos-release` Environment。`desktop-macos` 保留默认 `mode=validate` 的手动凭据验证入口。Secrets、命令和完整规则见[签名说明 §5](../../docs/macos-signing.md#5-github-actions-配置)；UI/导出与真实模型推理未由流水线验证，报告会明确标注。
+**GitHub Actions**：推送 `baocut-v<VERSION>-build.<BUILD>` release tag 自动触发 `desktop-release`，从 tag 的同一提交并行构建 Mac Apple Silicon 与 Windows x64 CPU、CUDA、Vulkan。Mac 原生检查通过后立即发布并更新 Mac appcast，不等待 CUDA；Windows 原生检查通过且 Mac Release 已公开后，追加到同一个 Release 并更新 Windows appcast。Mac 发布后先写入完整日志、交付已验证的下载；全部选定平台完成后再更新 Latest。Git tag 与源码 SHA 保持不变。tag 版本必须与 package.json / lockfile 一致、build 递增、提交已在 `main` 上；不能复用 Build 60。签名材料放在允许 `main` 和 release tag 的 `macos-release` Environment。`desktop-macos` 保留默认 `mode=validate` 的手动凭据验证入口。Secrets、命令和完整规则见[签名说明 §5](../../docs/macos-signing.md#5-github-actions-配置)；UI/导出与真实模型推理未由流水线验证，报告会明确标注。
 
 ## Windows 打包
 

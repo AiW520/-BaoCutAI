@@ -212,9 +212,9 @@ git push origin baocut-v3.0.1-build.61
 
 这里的版本与 build 是格式示例，不能给版本仍为 3.0.0 的提交打 3.0.1 tag。只配置流水线时不创建或推送 release tag。
 
-同一 tag 的 Mac Apple Silicon 和 Windows x64 CPU、CUDA、Vulkan 并行构建，全部原生 job 通过后才开始发布。Mac 使用可复用的 `desktop-macos-build.yml` 与 `macos-release` Environment，临时导入签名和公证凭据；Windows 使用可复用的 `desktop-windows.yml`，不接收 Mac Secrets。Mac 候选只上传 ZIP、DMG、两份摘要、公共报告和 appcast 共六个文件，排除钥匙串、私钥与中间公证 ZIP。
+同一 tag 的 Mac Apple Silicon 和 Windows x64 CPU、CUDA、Vulkan 并行构建。Mac publisher 只依赖 plan 与 Mac 原生 job，验收通过后立即公开 Mac Release，不等待 Windows 或 CUDA。Windows publisher 依赖其原生 job 与 Mac publisher，在选定 Windows 变体均验收通过后追加到该 Release。Mac 使用可复用的 `desktop-macos-build.yml` 与 `macos-release` Environment，临时导入签名和公证凭据；Windows 使用可复用的 `desktop-windows.yml`，不接收 Mac Secrets。Mac 候选只上传 ZIP、DMG、两份摘要、公共报告和 appcast 共六个文件，排除钥匙串、私钥与中间公证 ZIP。
 
-发布按 Mac、Windows 顺序执行，避免同时推送更新源。公开下载读回后，Mac 再次验证 App 与 DMG 的签名、票据、Gatekeeper 和 App Runtime；Windows 核对三种候选的来源、原生 job、摘要与 App 自己的清单解析结果。最后分别提交和推送各平台 appcast，其他平台和旧发布资产保持原状。报告明确标注 UI/导出、真实模型或 GPU 推理、付费 Agent 调用未运行；工作流存在不代表完整发布已实跑。
+发布按 Mac、Windows 顺序执行，避免同时推送更新源。公开下载读回后，Mac 再次验证 App 与 DMG 的签名、票据、Gatekeeper 和 App Runtime；Windows 核对三种候选的来源、原生 job、摘要与 App 自己的清单解析结果。最后分别提交和推送各平台 appcast，其他平台和旧发布资产保持原状。Mac 完成后立即整合完整更新日志、核对官网 Mac 下载并交付；Windows 未完成的列为待发布，其旧下载仍可用。后续平台完成时补充同一个 Release 的资产与说明，全部选定平台验收通过后才按 skill 更新 Latest，不移动 Git tag。报告明确标注 UI/导出、真实模型或 GPU 推理、付费 Agent 调用未运行；工作流存在不代表完整发布已实跑。
 
 App、解压复验的 App 和 DMG 的 `stapler staple` / `stapler validate`（含公开下载读回）遇到退出码 68，且诊断明确包含 `NSURLErrorDomain Code=-1005`（连接中断）或 `-1001`（超时）时，原地等待 2、5、10、20 秒后重试同一命令，总计最多 5 次；只记录操作、次数和等待时间。普通退出码 68、无效票据、签名或 Gatekeeper 拒绝、TLS 信任错误不走这条重试，`notarytool submit` 也不重复提交。重试耗尽仍阻止发布，并保留最后一次诊断；持续的 Apple 服务或网络问题不能保证由重试消除。
 
