@@ -624,8 +624,8 @@ test('shotElements：没有镜头时与逐件 framePlace（居中）一样；不
 test('shotsOf / frameText / shotBadge：结果卡的取景行与画布小牌', () => {
   assert.equal(M.shotsOf({shots: SHOTS}).length, 3);
   assert.equal(M.shotsOf({shots: SHOTS, ratio: 'source'}).length, 0, '保留原画幅不取景');
-  assert.equal(M.frameText({shots: SHOTS}), '按 3 个镜头分别取景 · 打开后在画布上拖某一段改');
-  assert.equal(M.frameText({}, 0.3), '偏左 20% · 打开后在画布上拖那段视频改');
+  assert.equal(M.frameText({shots: SHOTS}), '按 3 个镜头分别取景 · 打开后选中某一段可以放大，要挪位置先改成自由摆放');
+  assert.equal(M.frameText({}, 0.3), '偏左 20% · 打开后选中这段视频可以放大，要挪位置先改成自由摆放');
   const fold = (t) => Math.max(0, t - 13.3);
   assert.equal(M.shotBadge({start: 28, end: 39.9}, fold), '这一段 · 第 15–27 秒');
   assert.equal(M.shotBadge({start: 0, end: 28}, fold), '这一段 · 第 0–15 秒', '片段外的头折到 0');

@@ -348,10 +348,12 @@
   }
   const SHOT_COPY = {applyAll: '套到整支', applyAllTip: '把这一段现在的摆位用到这支视频的每一段',
     appliedAll: (n) => `已把这一段的摆位用到全部 ${n} 段`};
-  /** 结果页卡上「取景」那一行：多镜头时说分了几个镜头；否则沿用一个 focusX 的说法。 */
+  /** 结果页卡上「取景」那一行：多镜头时说分了几个镜头；否则沿用一个 focusX 的说法。后半句说打开后能怎么改：
+     带取景点的原片只能围着取景点放大，挪位置要先改成自由摆放（model-framing.js），不说「拖」。 */
   function frameText(cut, focusX) {
     const n = shotsOf(cut).length;
-    return n > 1 ? `按 ${n} 个镜头分别取景 · 打开后在画布上拖某一段改` : `${focusText(focusX)} · 打开后在画布上拖那段视频改`;
+    return n > 1 ? `按 ${n} 个镜头分别取景 · 打开后选中某一段可以放大，要挪位置先改成自由摆放`
+      : `${focusText(focusX)} · 打开后选中这段视频可以放大，要挪位置先改成自由摆放`;
   }
   /** 取景念成一句（结果页卡上那一行）。 */
   function focusText(x) {
