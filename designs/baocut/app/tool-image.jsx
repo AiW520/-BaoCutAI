@@ -28,6 +28,8 @@
       setTried(true);
       if (status.bad) { app.toast(status.text); return; }
       J.enqueue(app, f, engines, null, save.dir);
+      set({prompt: '', refs: []});
+      setTried(false);
     };
     const again = (r) => { setF(Object.assign(IM.blank(), r.form, {model: IM.engineOf(engines, r.form.model) ? r.form.model : IM.preferred(engines), seed: ''})); app.toast('已带回这一版的提示词与设置 · 种子留空重新随机'); window.scrollTo({top: 0, behavior: 'smooth'}); };
     /* 生成好的图在 Space 里的条目（BC_HOME_TOOLS.output 的 id），挂产物行 */
