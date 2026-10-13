@@ -278,3 +278,21 @@ test('交给 Agent 的提示带模型、画幅、张数与提示词', () => {
   assert.match(p, /Google Gemini gemini-3-pro-image（云端）/);
   assert.match(p, /2 张/); assert.match(p, /参考图 1 张/); assert.match(p, /纸鹤/);
 });
+
+test('本机按步进度：加载时没有剩余；走完一步起按平均步速推剩余；解码不编造剩余', () => {
+  const t0 = 1000;
+  const loading = I.stepProgress([], 8, t0, t0 + 3000);
+  assert.equal(loading.stage, 'loading'); assert.equal(loading.leftMs, null); assert.equal(I.timeLine(loading), '已用 0:03');
+  const zero = I.stepProgress([{t: t0 + 4000, done: 0}], 8, t0, t0 + 5000);
+  assert.equal(zero.phase, '第 1/8 步'); assert.equal(zero.leftMs, null, '一步都没走完，推不出步速');
+  const s = [{t: t0 + 4000, done: 0}, {t: t0 + 6000, done: 1}, {t: t0 + 8000, done: 2}];
+  const p = I.stepProgress(s, 8, t0, t0 + 8500);
+  assert.equal(p.phase, '第 3/8 步'); assert.equal(p.pct, 25);
+  assert.equal(p.leftMs, 2000 * 6 - 500, '每步 2 秒，还剩 6 步，最后一步之后已过 0.5 秒');
+  assert.equal(I.timeLine(p), '已用 0:08 · 剩余 0:12');
+  assert.equal(I.stepProgress(s, 8, t0, t0 + 60000).leftMs, 0, '比推算慢时停在 0，不倒数成负数');
+  const dec = I.stepProgress(s.concat({t: t0 + 20000, done: 8}), 8, t0, t0 + 21000);
+  assert.equal(dec.stage, 'decoding'); assert.equal(dec.phase, '解码'); assert.equal(dec.leftMs, null);
+  assert.equal(I.clock(3723000), '1:02:03');
+  assert.equal(I.timeLine(I.stepProgress([], 8, null, null)), null);
+});

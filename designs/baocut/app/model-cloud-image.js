@@ -438,6 +438,40 @@
     return pct < 15 ? `连接 ${r.provider}` : pct < 85 ? `生成中${r.n > 1 ? ` ${Math.min(r.n, 1 + Math.floor(((pct - 15) / 70) * r.n))}/${r.n}` : ''}` : '下载';
   }
 
+  /** 时长 `0:45`、`12:03`，超过一小时 `1:02:03`（与导出的剩余时间同一个写法，product-design §8.3）。
+      剩余按整秒向上取；已用传 `down` 向下取，不提前跳秒。 */
+  function clock(ms, down) {
+    const s = Math.max(0, (down ? Math.floor : Math.ceil)((ms || 0) / 1000));
+    const h = Math.floor(s / 3600);
+    const m = Math.floor((s % 3600) / 60);
+    const ss = String(s % 60).padStart(2, '0');
+    return h ? `${h}:${String(m).padStart(2, '0')}:${ss}` : `${m}:${ss}`;
+  }
+  /**
+   * 本机生图的按步进度（worker 去噪时按步报 `done/total`，开始报一次 0/N，之后每走完一步一次）。
+   * `samples`：[{t, done}] 按时间先后，t 是收到这次进度的毫秒时刻；`startedAt`：任务开始的毫秒时刻；`now`：现在。
+   * 剩余 = 已走完各步的平均耗时 × 剩下的步数 − 最后一步之后已过去的时间（不小于 0），从收到的第一次进度量起。
+   * 还没走完一步（加载模型、编码提示词）或步数已走完（解码）时 `leftMs` 为 null：那两段的耗时报不上来，不编造。
+   */
+  function stepProgress(samples, total, startedAt, now) {
+    const list = (samples || []).filter((x) => x && Number.isFinite(x.t) && Number.isFinite(x.done));
+    const elapsedMs = Number.isFinite(startedAt) && Number.isFinite(now) ? Math.max(0, now - startedAt) : null;
+    const last = list[list.length - 1];
+    if (!last || !total) return {stage: 'loading', done: 0, total: total || null, pct: null, elapsedMs, leftMs: null, phase: '加载模型'};
+    const done = Math.min(total, Math.max(0, last.done));
+    if (done >= total) return {stage: 'decoding', done, total, pct: 100, elapsedMs, leftMs: null, phase: '解码'};
+    const first = list[0];
+    const per = done > first.done ? (last.t - first.t) / (done - first.done) : null;
+    const leftMs = per != null && Number.isFinite(now) ? Math.max(0, per * (total - done) - Math.max(0, now - last.t)) : null;
+    return {stage: 'denoising', done, total, pct: Math.round((done / total) * 100), elapsedMs, leftMs,
+      phase: `第 ${Math.max(1, Math.min(total, done + 1))}/${total} 步`};
+  }
+  /** 运行中那一行的时间：「已用 0:12 · 剩余 0:20」；没有剩余只写已用，什么都没有返回 null。 */
+  function timeLine(p) {
+    if (!p || p.elapsedMs == null) return null;
+    return [`已用 ${clock(p.elapsedMs, true)}`, p.leftMs != null ? `剩余 ${clock(p.leftMs)}` : null].filter(Boolean).join(' · ');
+  }
+
   /* ---------- 交给 Agent（§2.6）---------- */
   function agentPrompt(f, list) {
     const e = engineOf(list, f.model);
@@ -466,7 +500,7 @@
     localEta, stepsOf, fixedSteps, codexReady, codexCanEnable, compareVer,
     engines, engineOf, modelIn, preferred, anyReady,
     resolveSize, checkSize, blank, switchModel, validate, costOf, statusLine, headerChip,
-    makeRecord, recordMeta, provenance, toSource, phase, demoArt, agentPrompt, toolStatus,
+    makeRecord, recordMeta, provenance, toSource, phase, clock, stepProgress, timeLine, demoArt, agentPrompt, toolStatus,
     addFileRefs, refInfo, usedRefs, refsNote, artColors, FILE_REFS,
   };
   if (typeof module !== 'undefined') module.exports = BC_CLOUD_IMAGE;

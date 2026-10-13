@@ -29,7 +29,8 @@
   const jobs = {list: [], seq: 0, subs: new Set(), timers: {}, drafts: {}};
   const emit = () => jobs.subs.forEach((fn) => fn(jobs.list));
   const patchRec = (id, p) => { jobs.list = jobs.list.map((r) => (r.id === id ? Object.assign({}, r, p) : r)); emit(); };
-  const removeRec = (id) => { clearInterval(jobs.timers[id]); jobs.list = jobs.list.filter((r) => r.id !== id); emit(); };
+  const stopTimer = (id) => { const t = jobs.timers[id]; if (t && t.stop) t.stop(); else clearInterval(t); };
+  const removeRec = (id) => { stopTimer(id); jobs.list = jobs.list.filter((r) => r.id !== id); emit(); };
   /** scope：项目 id 或 null（工具页）。 */
   function useImageRecords(scope) {
     const [list, setList] = useState(jobs.list);
@@ -52,39 +53,77 @@
       start(app, r);
     });
   }
+  /* 本机演示：加载模型 → 逐步去噪（每步耗时上下浮动，剩余时间跟着变）→ 解码；真实的步速是 §6.2 的分钟级。
+     每拍回调 `{samples, startedAt, now}`，samples 与 worker 的 job.progress 同形（开始 0/N，之后每步一次）；跑完回调 done。 */
+  function simLocalRun(total, onTick, onDone) {
+    const startedAt = Date.now();
+    const per = Math.max(250, Math.round(6000 / (total || 8)));
+    const plan = [];
+    let t = startedAt + 1500;
+    plan.push({t, done: 0});
+    for (let i = 1; i <= total; i++) { t += Math.round(per * (0.8 + Math.random() * 0.4)); plan.push({t, done: i}); }
+    const end = t + 900;
+    const samples = [];
+    const iv = setInterval(() => {
+      const now = Date.now();
+      while (plan.length && plan[0].t <= now) samples.push(plan.shift());
+      if (now >= end) { clearInterval(iv); onDone((now - startedAt) / 1000); return; }
+      onTick({samples: samples.slice(), startedAt, now});
+    }, 200);
+    return () => clearInterval(iv);
+  }
+  /** 运行中那条记录的进度：本机按步（`IM.stepProgress`），别的按演示的百分比，只有已用 */
+  function runProgress(r, now) {
+    if (r.family === 'local') return IM.stepProgress(r.samples, r.steps, r.startedAt, now);
+    return {phase: IM.phase(r, r.pct), pct: r.pct, elapsedMs: r.startedAt ? Math.max(0, now - r.startedAt) : null, leftMs: null};
+  }
+  const taskPhase = (p) => p.phase + (p.leftMs != null ? ` · 剩余 ${IM.clock(p.leftMs)}` : '');
+  function finish(app, r, tid, t0) {
+    const fail = jobs.failNext;
+    jobs.failNext = false;
+    if (fail) {
+      patchRec(r.id, {status: 'error', error: fail, ago: '刚刚'});
+      app.patchTask(tid, {status: 'error', outcome: 'error', phase: null, error: fail});
+      app.toast(`生成失败 · ${fail}`, 'negative');
+    } else {
+      patchRec(r.id, {status: 'done', ago: '刚刚', createdAt: new Date().toISOString(), elapsed: (Date.now() - t0) / 1000});
+      /* 工具页（无项目）生成的图：保存位置里的 PNG、Space 里的图片条目；任务记录带 outputs 与 saveDir（product-design §2.7、model-tool-runs.js） */
+      const outs = !r.scope && app.registerToolOutput ? r.images.map(img => app.registerToolOutput('image', {...img, res: r.size?.join('×'), model: r.model, prompt: r.form?.prompt,
+        file: r.saveDir ? `${r.saveDir}/${img.name}` : undefined, toolId: 'image', task: tid, params: r.form || null})).filter(Boolean) : [];
+      app.patchTask(tid, Object.assign({status: 'done', outcome: 'done', pct: 100, phase: null}, r.scope ? {} : window.BC_TOOL_RUNS.outputsPatch(outs, r.saveDir)));
+      app.toast(`已生成 ${r.n > 1 ? `${r.n} 张` : r.images[0].name}${!r.scope ? ' · 已保存到 Space' : ''}`, 'positive');
+    }
+    pump(app);
+  }
   function start(app, r) {
     const tid = app.addTask({kind: 'image', flow: 'image', toolId: r.scope ? undefined : 'image', params: r.scope ? undefined : r.form || null, project: r.scope || null, title: `生成图片 · ${r.n > 1 ? `${r.n} 张` : r.images[0].name}`,
       sub: `${r.engineName}${r.size ? ` · ${r.size.join('×')}` : ''}${r.family === 'cloud' ? ' · 联网' : r.family === 'local' ? ' · 本机' : ' · Codex'}`,
       phase: IM.phase(r, 0), cancellable: true});
-    patchRec(r.id, {status: 'running', pct: 0, taskId: tid});
-    // 演示速度：云端约 2 秒、本机约 8 秒、Codex 约 5 秒（真实是 §6.2 / §5.2 的分钟级）
-    const step = r.family === 'cloud' ? 4 : r.family === 'local' ? 1 : 1.6;
     const t0 = Date.now();
+    patchRec(r.id, {status: 'running', pct: 0, taskId: tid, startedAt: t0, samples: []});
+    stopTimer(r.id);
+    const alive = () => { const cur = jobs.list.find((x) => x.id === r.id); return cur && cur.status === 'running'; };
+    if (r.family === 'local') {
+      const stop = simLocalRun(r.steps || 20, ({samples, now}) => {
+        if (!alive()) { stop(); return; }
+        const p = IM.stepProgress(samples, r.steps || 20, t0, now);
+        patchRec(r.id, {samples, pct: p.pct || 0});
+        app.patchTask(tid, {pct: p.pct || 0, phase: taskPhase(p)});
+      }, () => { if (alive()) finish(app, r, tid, t0); });
+      jobs.timers[r.id] = {stop};
+      return;
+    }
+    // 演示速度：云端约 2 秒、Codex 约 5 秒（真实是 §6.2 / §5.2 的分钟级）
+    const step = r.family === 'cloud' ? 4 : 1.6;
     let p = 0;
-    clearInterval(jobs.timers[r.id]);
     jobs.timers[r.id] = setInterval(() => {
-      const cur = jobs.list.find((x) => x.id === r.id);
-      if (!cur || cur.status !== 'running') { clearInterval(jobs.timers[r.id]); return; }
+      if (!alive()) { clearInterval(jobs.timers[r.id]); return; }
       p = Math.min(100, p + step);
       patchRec(r.id, {pct: Math.round(p)});
       app.patchTask(tid, {pct: Math.round(p), phase: IM.phase(r, p)});
       if (p < 100) return;
       clearInterval(jobs.timers[r.id]);
-      const fail = jobs.failNext;
-      jobs.failNext = false;
-      if (fail) {
-        patchRec(r.id, {status: 'error', error: fail, ago: '刚刚'});
-        app.patchTask(tid, {status: 'error', outcome: 'error', phase: null, error: fail});
-        app.toast(`生成失败 · ${fail}`, 'negative');
-      } else {
-        patchRec(r.id, {status: 'done', ago: '刚刚', createdAt: new Date().toISOString(), elapsed: (Date.now() - t0) / 1000});
-        /* 工具页（无项目）生成的图：保存位置里的 PNG、Space 里的图片条目；任务记录带 outputs 与 saveDir（product-design §2.7、model-tool-runs.js） */
-        const outs = !r.scope && app.registerToolOutput ? r.images.map(img => app.registerToolOutput('image', {...img, res: r.size?.join('×'), model: r.model, prompt: r.form?.prompt,
-          file: r.saveDir ? `${r.saveDir}/${img.name}` : undefined, toolId: 'image', task: tid, params: r.form || null})).filter(Boolean) : [];
-        app.patchTask(tid, Object.assign({status: 'done', outcome: 'done', pct: 100, phase: null}, r.scope ? {} : window.BC_TOOL_RUNS.outputsPatch(outs, r.saveDir)));
-        app.toast(`已生成 ${r.n > 1 ? `${r.n} 张` : r.images[0].name}${!r.scope ? ' · 已保存到 Space' : ''}`, 'positive');
-      }
-      pump(app);
+      finish(app, r, tid, t0);
     }, 80);
   }
   /** `saveDir`：工具页这次的保存位置（BC_SAVE_DIR.current）；图片 Tab 里生成的进视频素材，不给 */
@@ -101,12 +140,12 @@
   function cancelRec(app, r) {
     if (r.status === 'queued') { patchRec(r.id, {status: 'canceled'}); return; }
     app.cancelTask(r.taskId, {after: () => {
-      clearInterval(jobs.timers[r.id]);
+      stopTimer(r.id);
       patchRec(r.id, {status: 'canceled', pct: 0});
       pump(app);
     }});
   }
-  const requeue = (app, r) => { patchRec(r.id, {status: 'queued', pct: 0, error: null}); pump(app); };
+  const requeue = (app, r) => { patchRec(r.id, {status: 'queued', pct: 0, error: null, samples: [], startedAt: null}); pump(app); };
   /** 演示：让下一条失败（工具页与面板的演示开关共用） */
   const setFailNext = (why) => { jobs.failNext = why || null; };
 
@@ -408,14 +447,18 @@
   function RunningCard({r, list}) {
     const app = useApp();
     const ahead = list.filter((x) => x.id !== r.id && (x.status === 'running' || x.status === 'queued') && x.seq < r.seq && lane(x) === lane(r) && lane(r)).length;
+    const p = runProgress(r, Date.now());
+    const time = IM.timeLine(p);
     return (
       <div className="imgen__running">
         <div className="row gap8">
           <Ic n="image" className="ic--16" />
-          <span className="t-detail grow t-truncate">{r.status === 'queued' ? (ahead ? `排队中 · 前面还有 ${ahead} 条` : '排队中') : `${IM.phase(r, r.pct)} · ${r.pct}%`} · {r.engineName}</span>
+          <span className="t-detail grow t-truncate">{r.status === 'queued' ? (ahead ? `排队中 · 前面还有 ${ahead} 条` : '排队中') : `${p.phase}${p.pct != null ? ` · ${p.pct}%` : ''}`} · {r.engineName}</span>
           <Btn variant="quiet" size="s" onClick={() => cancelRec(app, r)}>取消</Btn>
         </div>
-        {r.status === 'running' ? <Progress value={r.pct} thin /> : null}
+        {/* 本机加载模型、解码时没有步数可算，进度条不定；去噪按步走 */}
+        {r.status === 'running' ? <Progress value={p.pct || 0} indeterminate={p.pct == null || p.stage === 'decoding'} thin /> : null}
+        {r.status === 'running' && time ? <span className="t-detail-xs t-mono">{time}</span> : null}
         <span className="t-detail-xs t-truncate">{r.prompt}</span>
       </div>
     );
@@ -521,23 +564,34 @@
     const [state, setState] = useState('ready');
     const [scenario, setScenario] = useState('ok');
     const [res, setRes] = useState(null);
+    const [prog, setProg] = useState(null);
     const timer = React.useRef(null);
-    useEffect(() => () => clearTimeout(timer.current), []);
+    const sim = React.useRef(null);
+    const halt = () => { clearTimeout(timer.current); if (sim.current) sim.current(); sim.current = null; };
+    useEffect(() => halt, []);
     const prompt = String(f.prompt || '').trim();
     const used = IM.usedRefs(f, cap);
-    const stop = () => { clearTimeout(timer.current); onClose(); };
+    const steps = engine.steps || 8;
+    const stop = () => { halt(); onClose(); };
     const run = () => {
       if (!prompt) return;
-      setState('running'); setRes(null);
-      timer.current = setTimeout(() => {
-        const time = cloud ? '8.4 s' : '46 s';
+      setState('running'); setRes(null); setProg(null);
+      const settle = (secs) => {
+        const time = cloud ? '8.4 s' : `${secs.toFixed(1)} s`;
         const r = scenario === 'ok'
           ? {state: 'ok', time, art: IM.demoArt(prompt.length + used.length), name: `图片-${cloud ? '测试' : '试画'}-${engine.modelId.replace(/[^\w.-]+/g, '-')}.png`, prompt, refs: used.length}
           : {state: 'error', text: FAIL_TEXT[scenario] || '失败', kind: scenario === 'oom' ? 'noMemory' : 'modelError'};
-        setRes(r); setState(r.state);
+        setRes(r); setState(r.state); setProg(null);
         if (onDone) onDone(r);
-      }, cloud ? 1200 : 1800);
+      };
+      halt();
+      /* 本机按 worker 报的步数走（加载模型 → 第 i/N 步 → 解码），剩余时间从走完第一步起按平均步速推（product-design §7.6）；云端没有步数 */
+      if (cloud) timer.current = setTimeout(() => settle(1.2), 1200);
+      else sim.current = simLocalRun(steps, (t) => setProg(IM.stepProgress(t.samples, steps, t.startedAt, t.now)), (secs) => { sim.current = null; settle(secs); });
     };
+    const runningHead = cloud ? '正在发送提示词并等待图片…'
+      : !prog || prog.stage === 'loading' ? '正在加载模型…' : prog.stage === 'decoding' ? `正在解码 · ${steps}/${steps} 步已画完` : `正在画 512² · ${prog.phase}`;
+    const time = !cloud && state === 'running' ? IM.timeLine(prog) : null;
     const priceLine = cloud ? (engine.price || '价格以服务商为准') : '不联网 · 占本机的重活槽';
     return (
       <Dialog open={open} title={cloud ? '测试图像生成' : `试画 · ${engine.title}`} onClose={stop} width={560}
@@ -562,8 +616,9 @@
           <p className="t-detail">{cloud ? `把这句提示词${used.length ? '和参考图' : ''}发给所选模型生图，检查能否返回一张 PNG。按张计费，这次 ${priceLine}。提供方可能按用量计费。停止等待不会撤回已经发送的请求。`
             : '在这台电脑上画一张小图看看效果，不联网。会占重活槽，别的本地模型任务要等它跑完。'}</p>
           <Card className="cloud-result" role="status" aria-live="polite">
-            <b className={cx('t-title-sm', state === 'error' && 't-negative')}>{({ready: '等待开始', running: cloud ? '正在发送提示词并等待图片…' : `正在画 512² · ${engine.steps || 8} 步…`, ok: `${cloud ? '测试通过' : '画好了'} · ${res && res.time} · 演示结果`, error: `${cloud ? '测试失败' : '没画出来'} · 演示结果`})[state]}</b>
-            {state === 'running' ? <Progress value={cloud ? 60 : 35} thin /> : null}
+            <b className={cx('t-title-sm', state === 'error' && 't-negative')}>{({ready: '等待开始', running: runningHead, ok: `${cloud ? '测试通过' : '画好了'} · ${res && res.time} · 演示结果`, error: `${cloud ? '测试失败' : '没画出来'} · 演示结果`})[state]}</b>
+            {state === 'running' ? <Progress value={cloud ? 0 : (prog && prog.pct) || 0} indeterminate={cloud || !prog || prog.pct == null || prog.stage === 'decoding'} thin /> : null}
+            {time ? <span className="t-detail t-mono">{time}</span> : null}
             {res && res.state === 'error' && cloud ? <p className="t-body-sm">{res.text}</p> : null}
             {res && res.state === 'error' && !cloud ? <window.ModelTryNote view={window.BC_LOCALCHECK.tryFailure(res.kind, 'image')}
               onAction={(k) => (k === 'retry' ? run() : onCheck && onCheck(k))} /> : null}
