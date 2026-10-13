@@ -270,7 +270,29 @@
     );
   }
 
+  /* 详情渲染异常只替换这一页，外壳与返回入口保留；换任务后重新尝试渲染。 */
+  class TaskDetailBoundary extends React.Component {
+    state = {failed: false};
+    static getDerivedStateFromError() { return {failed: true}; }
+    componentDidCatch(error) { console.error('Task detail rendering failed', error); }
+    render() { return this.state.failed ? this.props.fallback : this.props.children; }
+  }
+
   function TaskDetailPage({id}) {
+    const app = useApp();
+    return (
+      <TaskDetailBoundary key={id} fallback={
+        <Page>
+          <Btn variant="quiet" size="s" icon="back" onClick={() => app.go({r: 'tasks'})}>后台任务</Btn>
+          <Empty title="任务详情暂时无法显示">返回后台任务后，可以重新打开详情。</Empty>
+        </Page>
+      }>
+        <TaskDetailContent id={id} />
+      </TaskDetailBoundary>
+    );
+  }
+
+  function TaskDetailContent({id}) {
     const app = useApp();
     const [open, setOpen] = useState(null);
     const t = app.tasks.find((x) => x.id === id);

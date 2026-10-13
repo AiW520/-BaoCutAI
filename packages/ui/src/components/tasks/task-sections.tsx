@@ -32,7 +32,7 @@ const layer = style({
 const rows = style({ display: 'flex', flexDirection: 'column', paddingX: 16 });
 const row = style({
   display: 'flex',
-  alignItems: { default: 'center', top: 'start' },
+  alignItems: { default: 'center', isTop: 'start' },
   gap: 12,
   paddingY: 12,
   borderTopWidth: { default: 1, ':first-child': 0 },
@@ -262,7 +262,7 @@ export function TaskImages({ job, now }: { job: JobRecord; now: number }) {
   return (
     <Section title={TASK_VIEW_COPY.imagesSection}>
       <div className={rows}>
-        <div className={row({ top: true })}>
+        <div className={row({ isTop: true })}>
           <ImageThumb job={job} now={now} />
           <div className={rowBody}>
             <Badge variant={status.variant} fillStyle="subtle" size="S">

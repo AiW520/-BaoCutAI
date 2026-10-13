@@ -2,11 +2,16 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { defineConfig } from 'vitest/config';
+import macros from 'unplugin-parcel-macros';
 
 export default defineConfig({
+  // Component regressions must exercise the same S2 style macro as both clients.
+  plugins: [macros.vite()],
   // 与两个客户端相同：PDF 资源按静态字节导入，不作为 JS 或原生 WASM 执行。
   assetsInclude: ['**/*.bcmap', '**/*.pfb', '**/*.wasm'],
   test: {
+    // S2 components import CSS, which Node cannot load as an external module.
+    server: { deps: { inline: ['@react-spectrum/s2'] } },
     // designs/ 下是原型自己的测试，不在这里跑。
     include: ['packages/*/src/**/*.test.ts', 'apps/*/src/**/*.test.ts', 'tools/*.test.ts'],
     environment: 'node',
