@@ -1,4 +1,4 @@
-import { useLayoutEffect, useState, type RefObject } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState, type RefObject } from 'react';
 import { flushSync } from 'react-dom';
 
 /** 看得见的范围按这个粒度取整，滚动时少重画几次。 */
@@ -84,17 +84,30 @@ export function useVisibleLane(scrollRef: RefObject<HTMLDivElement | null>, head
     const viewport = scrollRef.current ? viewports.get(scrollRef.current) : undefined;
     return viewport ? rangeOf(viewport, head, margin) : { left: 0, right: 4096 };
   });
-  // 在画上去之前算：第一帧就按真实的范围画，不先按缺省范围露白一帧。
-  useLayoutEffect(() => {
+  const connection = useRef<{ element: HTMLElement; head: number; margin: number; listener: () => void } | null>(null);
+  const connect = () => {
     const element = scrollRef.current;
+    const current = connection.current;
+    if (current?.element === element && current.head === head && current.margin === margin) return;
+    if (current) detach(current.element, current.listener);
+    connection.current = null;
     if (!element) return;
     const update = () => {
       const next = rangeOf(viewport, head, margin);
       setRange((current) => (current.left === next.left && current.right === next.right ? current : next));
     };
     const viewport = attach(element, update);
+    connection.current = { element, head, margin, listener: update };
     update();
-    return () => detach(element, update);
-  }, [scrollRef, head, margin]);
+  };
+  // 已有容器时在画上去之前量。每次提交核对一次，容器换了才重接，滚动不会反复拆监听。
+  useLayoutEffect(connect);
+  // 子层的 layout effect 可能先于祖先 DOM ref 赋值；提交完再补接，不能永远留在缺省的 0–4096px。
+  useEffect(connect);
+  useLayoutEffect(() => () => {
+    const current = connection.current;
+    if (current) detach(current.element, current.listener);
+    connection.current = null;
+  }, []);
   return range;
 }
