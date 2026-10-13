@@ -240,6 +240,8 @@ export const tr: SpaceMessages = {
   byLexical: 'Sözcükler eşleşiyor',
   bySemantic: 'Anlamı benzer; bu sözcükler geçmiyor',
   byWeak: 'Zayıf ilgili; bu sözcükler geçmiyor',
+  hitsWeakShow: (n: number) => `Zayıf ilgilileri göster (${n})`,
+  hitsWeakHide: 'Zayıf ilgilileri gizle',
   hitNotInTimeline: 'Bu cümle zaman çizelgesinden kesildi: video, oynatma kafası taşınmadan açılır',
   hitGone: 'Bu cümle artık videoda yok',
   hitWrite: 'Yazmak için kullan',

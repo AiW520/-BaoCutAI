@@ -27,6 +27,7 @@
 .ssr__by { font-size: 11px; color: var(--gray-600); }
 .ssr__acts { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; padding: 0 4px; }
 .ssr__empty { padding: 8px 0; color: var(--gray-600); }
+.ssr__fold { align-self: flex-start; }
 .ssr__pv { display: flex; flex-direction: column; gap: 12px; }
 .ssr__pvimg { width: 100%; aspect-ratio: 16 / 9; border-radius: 8px; overflow: hidden; }
 .ssr__pvctx { display: flex; flex-direction: column; gap: 4px; }

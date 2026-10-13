@@ -251,6 +251,8 @@ export const ja: SpaceMessages = {
   byLexical: '文字が一致',
   bySemantic: '意味が近い（この語句は含まれていません）',
   byWeak: '関連は薄く、この語句は含まれていません',
+  hitsWeakShow: (n: number) => `関連の薄い結果を表示（${n}）`,
+  hitsWeakHide: '関連の薄い結果を隠す',
   hitNotInTimeline: 'この文はタイムラインからカットされています。動画だけを開き、再生ヘッドは動かしません',
   hitGone: 'この文はもう動画にありません',
   hitWrite: '執筆に使う',

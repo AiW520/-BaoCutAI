@@ -233,6 +233,8 @@ export const pl: SpaceMessages = {
   byLexical: 'Pasują słowa',
   bySemantic: 'Podobne znaczenie; tych słów w nim nie ma',
   byWeak: 'Luźno powiązane; tych słów tu nie ma',
+  hitsWeakShow: (n: number) => `Pokaż luźno powiązane (${n})`,
+  hitsWeakHide: 'Ukryj luźno powiązane',
   hitNotInTimeline: 'To zdanie wycięto z osi czasu: film otworzy się bez przesuwania głowicy odtwarzania',
   hitGone: 'Tego zdania nie ma już w filmie',
   hitWrite: 'Użyj do pisania',

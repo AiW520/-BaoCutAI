@@ -251,6 +251,8 @@ export const de: SpaceMessages = {
   byLexical: 'Wörter passen',
   bySemantic: 'Ähnliche Bedeutung; diese Wörter kommen nicht vor',
   byWeak: 'Nur lose verwandt; diese Wörter kommen nicht vor',
+  hitsWeakShow: (n: number) => `Lose verwandte einblenden (${n})`,
+  hitsWeakHide: 'Lose verwandte ausblenden',
   hitNotInTimeline: 'Dieser Satz wurde aus der Timeline geschnitten. Das Video wird geöffnet, ohne den Abspielkopf zu bewegen',
   hitGone: 'Dieser Satz ist nicht mehr im Video',
   hitWrite: 'Zum Schreiben verwenden',

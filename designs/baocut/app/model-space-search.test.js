@@ -128,3 +128,16 @@ test('编辑器查找片段：只列这部视频里意思相近、原句里没�
   assert.equal(Q.inVideo('隐', o).rows.length, 0);
   assert.equal(Q.inVideo('隐私', Object.assign({}, o, {regex: true})).rows.length, 0);
 });
+
+test('弱命中折起来：有明显相关的才折，全是弱命中时照常全给', () => {
+  const r = (id, weak) => ({id, weak});
+  assert.deepEqual(Q.fold([r('a', false), r('b', true), r('c', false), r('d', true)]), {
+    shown: [r('a', false), r('c', false)],
+    folded: [r('b', true), r('d', true)],
+  });
+  assert.deepEqual(Q.fold([r('a', true), r('b', true)]), {shown: [r('a', true), r('b', true)], folded: []});
+  assert.deepEqual(Q.fold([]), {shown: [], folded: []});
+  const res = Q.search('预算', Object.assign({}, base, {mode: 'mix', limit: 20}));
+  const f = Q.fold(res.results);
+  assert.equal(f.shown.length + f.folded.length, res.results.length);
+});

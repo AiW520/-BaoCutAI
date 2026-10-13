@@ -2,6 +2,7 @@
    Space 页的搜索框有字时，名称匹配的列表上面多一块「讲话内容里」：
    · 方式：综合（按意思 + 字面）/ 精确文字；通道：讲话内容 / 画面 / 声音（后两个这一版没有，写明原因）；范围：这个项目 / 全部项目；
    · 结果卡：原句（纯语义命中不画高亮）、时间、命中通道、视频名、怎么找到的；不给相似度百分比；
+   · 有明显相关的结果时，只是勉强相关的（弱命中）折在后面，「显示勉强相关的结果（N）」点开；全是弱命中时照常全给；
    · 点卡片预览；卡片上「在时间线打开」（这一句还在时间线上才有）、「交给 Agent」、「用于写作」；
    · 顶上一行完整性（按通道分别写）；没装模型退回精确文字时说一句，索引在更新时提醒；
    · 输入像个问题时给「回答这个问题」（§2.4 跨视频问答，P1）：每句带可点的出处，索引不全时写明。
@@ -95,6 +96,7 @@
     const [scopeSel, setScope] = useState(null);
     const [pv, setPv] = useState(null);
     const [ans, setAns] = useState(null);
+    const [weakOpen, setWeakOpen] = useState(false);
     const scope = dir && dir !== 'none' ? (scopeSel || 'project') : 'all';
     const query = q.trim();
     const res = useMemo(() => Q.search(query, {corpus: SEM.corpus, concepts: SEM.concepts, cutOut: SEM.cutOut, dirOf,
@@ -102,7 +104,8 @@
     const cov = Q.coverage(scope, dir, SEM.projects, S);
     const notes = Q.notices(res, sem, S);
     const dirName = (app.dirs.find((d) => d.id === dir) || {}).name || '这个项目';
-    React.useEffect(() => { setAns(null); }, [query, mode, scope]);
+    React.useEffect(() => { setAns(null); setWeakOpen(false); }, [query, mode, scope]);
+    const folded = Q.fold(res.results);
 
     if (!query) {
       return (
@@ -153,8 +156,12 @@
           <span className="t-detail-xs">用下面这些片段回答，每句带出处</span></div> : null}
         {ans && showAsk ? <Answer a={ans} onSeek={(c) => app.openMovie(c.video, {via: 'space', t: c.t})} /> : null}
         {res.results.length
-          ? <div className="ssr__grid">{res.results.map((r) => <ResultCard key={r.id} r={r} onPreview={setPv} onAct={act} />)}</div>
+          ? <div className="ssr__grid">{(weakOpen ? res.results : folded.shown).map((r) => <ResultCard key={r.id} r={r} onPreview={setPv} onAct={act} />)}</div>
           : <div className="ssr__empty t-detail">{res.mode === 'lexical' ? '原句里没有这些字。' : '没找到讲这件事的片段。'}换个说法，或换到全部项目。</div>}
+        {folded.folded.length
+          ? <BCAction className="tsetup__lnk ssr__fold" aria-expanded={weakOpen} onClick={() => setWeakOpen((o) => !o)}>
+              {weakOpen ? '收起勉强相关的结果' : `显示勉强相关的结果（${folded.folded.length}）`}</BCAction>
+          : null}
         {pv ? <Preview r={pv} onClose={() => setPv(null)} onAct={act} /> : null}
       </section>
     );

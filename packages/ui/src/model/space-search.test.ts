@@ -16,6 +16,7 @@ import {
   meaningInVideoRows,
   meaningQueryReady,
   planGroupRows,
+  foldWeakHits,
   SEARCH_LIMIT,
   searchNote,
   searchRequest,
@@ -236,5 +237,14 @@ describe('文稿查找条下的意思相近', () => {
     const rows = meaningInVideoRows(hits);
     expect(rows.map((r) => r.hitId)).toEqual(['s4', 's3', 's2', 's1', 's0']);
     expect(rows.map((r) => r.time.start)).toEqual([60, 70, 80, 90, 100]);
+  });
+});
+
+describe('弱命中折起来', () => {
+  it('有明显相关的才折，全是弱命中或字面模式时不折', () => {
+    const row = (id: string, weak?: boolean) => ({ id, ...(weak === undefined ? {} : { weak }) });
+    expect(foldWeakHits([row('a', false), row('b', true), row('c', false)])).toEqual({ shown: [row('a', false), row('c', false)], folded: [row('b', true)] });
+    expect(foldWeakHits([row('a', true), row('b', true)])).toEqual({ shown: [row('a', true), row('b', true)], folded: [] });
+    expect(foldWeakHits([row('a'), row('b')])).toEqual({ shown: [row('a'), row('b')], folded: [] });
   });
 });

@@ -23,6 +23,7 @@ import {
   hitWhere,
   matchedByKind,
   planGroupRows,
+  foldWeakHits,
   SEARCH_DEBOUNCE_MS,
   searchNote,
   searchRequest,
@@ -158,6 +159,8 @@ export function SpaceSearchHits({ query, projectId, entries }: { query: string; 
   const [speakers, setSpeakers] = useState<{ key: string; names: string[] }>({ key: '', names: [] });
   // 每组放到第几条；换词、换筛选时重来。
   const [shown, setShown] = useState<{ key: string; counts: Record<string, number> }>({ key: '', counts: {} });
+  // 勉强相关的点开了没有；换词、换筛选时收回去。
+  const [weakOpen, setWeakOpen] = useState('');
   const seq = useRef(0);
   const q = query.trim();
   const scopeKey = `${q}\n${projectId ?? ''}`;
@@ -197,7 +200,9 @@ export function SpaceSearchHits({ query, projectId, entries }: { query: string; 
 
   if (!state) return null;
   const found: readonly Hit[] = state.status !== 'done' ? [] : state.mode === 'lexical' ? state.result.hits : state.rows;
-  const hits = exactSpeaker(found, filter.speaker);
+  const matched = exactSpeaker(found, filter.speaker);
+  const fold = foldWeakHits(matched);
+  const hits = weakOpen === resultKey ? matched : fold.shown;
   const groups = groupHits<Hit>(hits);
   const extra =
     state.status !== 'done'
@@ -338,6 +343,14 @@ export function SpaceSearchHits({ query, projectId, entries }: { query: string; 
             );
           })}
         </div>
+      ) : null}
+      {fold.folded.length ? (
+        <RACButton
+          className={(s) => more(s)}
+          aria-expanded={weakOpen === resultKey}
+          onPress={() => setWeakOpen((open) => (open === resultKey ? '' : resultKey))}>
+          {weakOpen === resultKey ? COPY.hitsWeakHide : COPY.hitsWeakShow(fold.folded.length)}
+        </RACButton>
       ) : null}
     </section>
   );

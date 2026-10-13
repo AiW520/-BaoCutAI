@@ -37,6 +37,8 @@ export const nl: SpaceMessages = {
   byLexical: 'Woorden komen overeen',
   bySemantic: 'Vergelijkbare betekenis; deze woorden komen er niet in voor',
   byWeak: 'Slechts losjes verwant; deze woorden komen er niet in voor',
+  hitsWeakShow: (n: number) => `Losjes verwante tonen (${n})`,
+  hitsWeakHide: 'Losjes verwante verbergen',
   hitNotInTimeline: 'Deze zin is uit de tijdlijn geknipt. De video wordt geopend zonder de afspeelkop te verplaatsen',
   hitGone: 'Deze zin staat niet meer in de video',
   hitWrite: 'Gebruiken om te schrijven',

@@ -97,6 +97,14 @@
     return out;
   }
 
+  /** 弱命中折起来（retrieval-spec §11.3）：有明显相关的结果时，勉强相关的收在后面，点开才显示；全是弱命中时照常全给，
+      卡片上写「只是勉强相关」。返回 {shown, folded}，顺序不变。 */
+  function fold(results) {
+    const list = results || [];
+    const strong = list.filter((r) => !r.weak);
+    return strong.length ? {shown: strong, folded: list.filter((r) => r.weak)} : {shown: list, folded: []};
+  }
+
   /** 卡片右下那一小行「怎么找到的」：不写分数 */
   const BY = {both: '字面与意思都对上', exact: '字面命中', semantic: '意思相近，原句里没有这些字', weak: '只是勉强相关，原句里没有这些字'};
 
@@ -225,7 +233,7 @@
     return out;
   }
 
-  const api = {MODES, SCOPES, terms, spans, pieces, conceptHits, search, BY, notices, coverage, answer, looksLikeQuestion,
+  const api = {MODES, SCOPES, terms, spans, pieces, conceptHits, search, fold, BY, notices, coverage, answer, looksLikeQuestion,
     RELATED_SHOWN, nameTokens, sharedName, related, relatedNote, IN_VIDEO_SHOWN, inVideo};
   if (typeof window !== 'undefined') window.BC_SPACE_SEARCH = api;
 })();

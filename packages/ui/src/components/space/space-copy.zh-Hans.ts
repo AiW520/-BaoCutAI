@@ -244,6 +244,8 @@ export const zhHans: SpaceMessages = {
   byLexical: '字面命中',
   bySemantic: '意思相近，原句里没有这些字',
   byWeak: '只是勉强相关，原句里没有这些字',
+  hitsWeakShow: (n: number) => `显示勉强相关的结果（${n}）`,
+  hitsWeakHide: '收起勉强相关的结果',
   hitNotInTimeline: '这一句已从时间线剪掉，只打开视频，不挪播放头',
   hitGone: '这一句已经不在视频里了',
   hitWrite: '用于写作',

@@ -98,6 +98,8 @@ export const vi: SpaceMessages = {
   byLexical: 'Khớp chữ',
   bySemantic: 'Ý gần giống; không có các chữ này',
   byWeak: 'Chỉ hơi liên quan; không có các từ này',
+  hitsWeakShow: (n: number) => `Hiện kết quả chỉ hơi liên quan (${n})`,
+  hitsWeakHide: 'Ẩn kết quả chỉ hơi liên quan',
   hitNotInTimeline: 'Câu này đã bị cắt khỏi dòng thời gian: chỉ mở video, không di chuyển đầu phát',
   hitGone: 'Câu này không còn trong video',
   hitWrite: 'Dùng để viết',

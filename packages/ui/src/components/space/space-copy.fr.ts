@@ -48,6 +48,8 @@ export const fr: SpaceMessages = {
   byLexical: 'Les mots correspondent',
   bySemantic: 'Sens proche ; ces mots n’y figurent pas',
   byWeak: 'Lien ténu ; ces mots n’y figurent pas',
+  hitsWeakShow: (n: number) => `Afficher les liens ténus (${n})`,
+  hitsWeakHide: 'Masquer les liens ténus',
   hitNotInTimeline: 'Cette phrase a été coupée de la timeline : la vidéo s’ouvre sans déplacer la tête de lecture',
   hitGone: 'Cette phrase n’est plus dans la vidéo',
   hitWrite: 'Utiliser pour écrire',

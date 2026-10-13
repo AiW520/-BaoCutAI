@@ -10,6 +10,7 @@ import type { SpaceCatalog, SpaceVideo } from '../../space-catalog.ts';
 import { ContentIndex, type ContentReader } from '../content-index.ts';
 import type { ContentSegment, ReadContentDocument, ReadContentResult } from '../content-extract.ts';
 import { resolveSearchHit } from '../search-hit-resolver.ts';
+import { scalesOf } from '../search-service.ts';
 import { readCitations } from '../space-citations.ts';
 import { spaceMethods } from '../space-methods.ts';
 import type { TrustedPrincipal } from '../../gateway.ts';
@@ -764,13 +765,20 @@ describe('画面检索', () => {
     expect((await resolveSearchHit(resolver, USER_VIEWER, top.hitId)).status).toBe('gone');
   });
 
-  it('文字与画面一起请求：两路按名次合在一起，各给覆盖；画面不可用时文字照常并写明原因', async () => {
+  it('文字与画面一起请求：两路按 z 分数排在一起，各给覆盖；画面不可用时文字照常并写明原因', async () => {
     services = await visualServices();
     const both = await services.search.searchV2(USER_VIEWER, { query: { kind: 'text', text: 'battery' }, mode: 'hybrid', channels: ['text', 'visual'] });
     expect(new Set(both.hits.map((h) => h.matchChannels[0]))).toEqual(new Set(['text', 'visual']));
     expect(both.coverage.map((c) => c.channel)).toEqual(['text', 'visual']);
     const ranks = both.hits.map((h) => h.rank);
     expect(ranks).toEqual([...ranks].sort((a, b) => b - a));
+    // 问画面的：第一名是画面，不因为两路名次并列被讲话挤到第二。
+    const scene = await services.search.searchV2(USER_VIEWER, {
+      query: { kind: 'text', text: 'red car crossing the old bridge' },
+      mode: 'hybrid',
+      channels: ['text', 'visual'],
+    });
+    expect(scene.hits[0]).toMatchObject({ matchChannels: ['visual'], weak: false });
 
     provider.noVision = true;
     const textOnly = await services.search.searchV2(USER_VIEWER, { query: { kind: 'text', text: 'battery' }, mode: 'hybrid', channels: ['text', 'visual'] });
@@ -919,7 +927,7 @@ describe('space.searchV2', () => {
     expect(hybrid.degraded).toBeNull();
     const both = hybrid.hits.filter((h) => h.matchedBy.length === 2);
     expect(both.length).toBeGreaterThan(0);
-    // 两路都命中的排在只有一路的前面（RRF）。
+    // 两路都命中的排在只有一路的前面（字面命中加分）。
     const firstSingle = hybrid.hits.findIndex((h) => h.matchedBy.length === 1);
     if (firstSingle >= 0) expect(hybrid.hits.findIndex((h) => h.matchedBy.length === 2)).toBeLessThan(firstSingle);
     for (let i = 1; i < hybrid.hits.length; i++) expect(hybrid.hits[i - 1]!.rank).toBeGreaterThanOrEqual(hybrid.hits[i]!.rank);
@@ -1365,5 +1373,32 @@ describe('放宽的只读检索范围只多看视频条目', () => {
     expect(visibleTo({ ...viewer, readScope: 'unfiled' }, entry('video', 'p1'))).toBe(false);
     expect(visibleTo({ ...viewer, readScope: 'unfiled' }, entry('video', null))).toBe(true);
     expect(visibleTo({ ...viewer, readScope: 'unfiled' }, entry('document', null))).toBe(false);
+  });
+});
+
+describe('每次查询的分数刻度（§10.2）', () => {
+  const statsOf = (values: number[]) => ({
+    count: values.length,
+    sum: values.reduce((a, b) => a + b, 0),
+    sumSq: values.reduce((a, b) => a + b * b, 0),
+  });
+
+  it('扫得多时贴近本次的分布，扫得少时向先验收缩；标准差两路合算、有下限', () => {
+    const f = SEMANTIC_THRESHOLDS.fusion;
+    const many = Array.from({ length: 2000 }, (_, i) => 0.3 + (i % 2 === 0 ? 0.1 : -0.1));
+    const wide = scalesOf({ text: statsOf(many) }).text!;
+    expect(wide.mean).toBeCloseTo(0.3, 1);
+    expect(wide.dev).toBeGreaterThan(0.09);
+
+    const one = scalesOf({ text: statsOf([0.9]) }).text!;
+    expect(Math.abs(one.mean - f.priorTextMean.value)).toBeLessThan(0.02);
+    expect(one.dev).toBeGreaterThanOrEqual(f.devFloor.value);
+
+    const flat = scalesOf({ text: statsOf(Array(5000).fill(0.5)), visual: statsOf(Array(5000).fill(0.4)) });
+    expect(flat.text!.dev).toBe(flat.visual!.dev);
+    expect(flat.text!.dev).toBe(f.devFloor.value);
+    expect(flat.text!.mean).toBeCloseTo(0.5, 2);
+    expect(flat.visual!.mean).toBeCloseTo(0.4, 2);
+    expect(scalesOf({})).toEqual({});
   });
 });

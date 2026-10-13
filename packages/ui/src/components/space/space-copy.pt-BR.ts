@@ -252,6 +252,8 @@ export const ptBR: SpaceMessages = {
   byLexical: 'Palavras correspondem',
   bySemantic: 'Sentido parecido; estas palavras não aparecem',
   byWeak: 'Pouco relacionado; essas palavras não aparecem',
+  hitsWeakShow: (n: number) => `Mostrar os pouco relacionados (${n})`,
+  hitsWeakHide: 'Ocultar os pouco relacionados',
   hitNotInTimeline: 'Esta frase foi cortada da linha do tempo: o vídeo abre sem mover o cursor de reprodução',
   hitGone: 'Esta frase não está mais no vídeo',
   hitWrite: 'Usar para escrever',

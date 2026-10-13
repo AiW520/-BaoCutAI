@@ -185,6 +185,16 @@ export function groupHits<T extends SpaceSearchHit>(hits: readonly T[]): HitGrou
   return [...groups.values()];
 }
 
+/**
+ * 弱命中折起来（检索规范 §11.3，设计稿 model-space-search.js `fold`）：有明显相关的结果时，只是勉强相关的收在后面，点开才显示；
+ * 全是弱命中时照常全给（每行写「只是勉强相关」）。字面模式的命中没有 `weak`，不折。顺序不变。
+ */
+export function foldWeakHits<T extends object>(hits: readonly T[]): { shown: T[]; folded: T[] } {
+  const weak = (hit: T) => 'weak' in hit && hit.weak === true;
+  const strong = hits.filter((hit) => !weak(hit));
+  return strong.length ? { shown: strong, folded: hits.filter(weak) } : { shown: [...hits], folded: [] };
+}
+
 /** 每组先给几条，「再显示 N 条」一次再放这么多（设计稿 PAGE）。 */
 export const GROUP_PAGE = 10;
 

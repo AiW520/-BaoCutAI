@@ -21,11 +21,28 @@ export interface FrameScanHit {
   score: number;
 }
 
+/**
+ * 一次扫描算过的全部余弦的累计（个数、和、平方和）：检索按这次查询在允许范围内的分数分布把余弦换成标准分（§10.2）。扫描本来
+ * 就算了范围内每一个向量，顺手累计不多花时间。
+ */
+export interface ScanStats {
+  count: number;
+  sum: number;
+  sumSq: number;
+}
+
+export function emptyScanStats(): ScanStats {
+  return { count: 0, sum: 0, sumSq: 0 };
+}
+
 export interface VectorScanner {
-  /** 在这些世代（分区）里取与查询最近的 `k` 个；`filter` 再按 chunk 的元数据（文档种类）筛。 */
-  exactSearch(query: Float32Array, generationIds: readonly number[], k: number, filter?: (chunk: StoredChunk) => boolean): ScanHit[];
+  /**
+   * 在这些世代（分区）里取与查询最近的 `k` 个；`filter` 再按 chunk 的元数据（文档种类）筛。给 `stats` 时把扫过（筛过）的每个
+   * 余弦累计进去。
+   */
+  exactSearch(query: Float32Array, generationIds: readonly number[], k: number, filter?: (chunk: StoredChunk) => boolean, stats?: ScanStats): ScanHit[];
   /** 同上，在画面世代（关键帧）里找。 */
-  exactFrameSearch(query: Float32Array, generationIds: readonly number[], k: number): FrameScanHit[];
+  exactFrameSearch(query: Float32Array, generationIds: readonly number[], k: number, stats?: ScanStats): FrameScanHit[];
   /** 世代换了或被撤下：丢掉缓存的分区。不给时全部丢掉。 */
   invalidate(generationIds?: readonly number[]): void;
 }
@@ -45,24 +62,24 @@ export class InThreadVectorScanner implements VectorScanner {
     this.#store = store;
   }
 
-  exactSearch(query: Float32Array, generationIds: readonly number[], k: number, filter?: (chunk: StoredChunk) => boolean): ScanHit[] {
+  exactSearch(query: Float32Array, generationIds: readonly number[], k: number, filter?: (chunk: StoredChunk) => boolean, stats?: ScanStats): ScanHit[] {
     const top = new TopK<StoredChunk>(k);
     for (const id of generationIds) {
       const partition = this.#partition(id, 'text');
       if (!partition || !('chunks' in partition)) continue;
       this.touched.add(id);
-      scan(query, partition.vectors, partition.generation.dims, partition.chunks, top, filter);
+      scan(query, partition.vectors, partition.generation.dims, partition.chunks, top, filter, stats);
     }
     return top.items.map(({ item, score }) => ({ chunk: item, score })).sort((a, b) => b.score - a.score || a.chunk.chunkId.localeCompare(b.chunk.chunkId));
   }
 
-  exactFrameSearch(query: Float32Array, generationIds: readonly number[], k: number): FrameScanHit[] {
+  exactFrameSearch(query: Float32Array, generationIds: readonly number[], k: number, stats?: ScanStats): FrameScanHit[] {
     const top = new TopK<StoredFrame>(k);
     for (const id of generationIds) {
       const partition = this.#partition(id, 'visual');
       if (!partition || !('frames' in partition)) continue;
       this.touched.add(id);
-      scan(query, partition.vectors, partition.generation.dims, partition.frames, top);
+      scan(query, partition.vectors, partition.generation.dims, partition.frames, top, undefined, stats);
     }
     return top.items
       .map(({ item, score }) => ({ frame: item, score }))
@@ -117,7 +134,15 @@ class TopK<T> {
   }
 }
 
-function scan<T>(query: Float32Array, vectors: Float32Array, dims: number, items: readonly T[], top: TopK<T>, filter?: (item: T) => boolean): void {
+function scan<T>(
+  query: Float32Array,
+  vectors: Float32Array,
+  dims: number,
+  items: readonly T[],
+  top: TopK<T>,
+  filter?: (item: T) => boolean,
+  stats?: ScanStats,
+): void {
   if (dims !== query.length) return;
   for (let i = 0; i < items.length; i++) {
     const item = items[i]!;
@@ -126,6 +151,11 @@ function scan<T>(query: Float32Array, vectors: Float32Array, dims: number, items
     const base = i * dims;
     for (let d = 0; d < dims; d++) dot += vectors[base + d]! * query[d]!;
     top.push(item, dot);
+    if (stats) {
+      stats.count++;
+      stats.sum += dot;
+      stats.sumSq += dot * dot;
+    }
   }
 }
 

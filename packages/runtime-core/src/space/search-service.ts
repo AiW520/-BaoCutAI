@@ -25,7 +25,7 @@ import { encodeHitId } from './semantic/hit-id.ts';
 import type { EmbeddingScheduler } from './semantic/scheduler.ts';
 import type { GenerationRow, SemanticStore, StoredChunk, StoredFrame } from './semantic/store.ts';
 import { RANKING_VERSION, SEMANTIC_THRESHOLDS } from './semantic/thresholds.ts';
-import type { ScanHit, VectorScanner } from './semantic/vector-index.ts';
+import { emptyScanStats, type ScanHit, type ScanStats, type VectorScanner } from './semantic/vector-index.ts';
 import { FRAME_INTERVAL_SEC } from './semantic/visual-lane.ts';
 
 /**
@@ -33,7 +33,7 @@ import { FRAME_INTERVAL_SEC } from './semantic/visual-lane.ts';
  *
  * 顺序（§10.1）：校验输入 → 按主体与筛选确定范围（`searchScope`，与 `space.search` 同一套规则）→ 只取范围内视频当前发布的世代 →
  * 在这些世代里精确扫描（范围先于计算：没有「先全库取再删」）→ 字面一路走内容索引（旧 `space.search` 的同一个检索）→
- * 按名次融合（RRF，§10.2）→ 去重 → 分页。
+ * 两路按本次查询的 z 分数排（§10.2）→ 去重 → 标弱命中（§11.3）→ 分页。
  *
  * 模式：
  * - `lexical`：就是旧 `space.search` 的命中（同样的顺序与片段），换成 V2 的形状。
@@ -46,7 +46,7 @@ import { FRAME_INTERVAL_SEC } from './semantic/visual-lane.ts';
  * 画面通道（`channels` 含 `visual`，§6.2、§6.4）：查询文字用 `text-to-visual` 的 profile 编码，在范围内视频当前发布的画面世代里
  * 精确扫描关键帧；同一素材相邻的帧并成一条（§10.2：采样密不该多拿分）。锚点是候选窗口（`boundary: 'window'`）：世代就是视频
  * 当前版本时用建索引时存下的时间线位置，否则给源时间、`needsResolve`，由 `space.resolveSearchHit` 重新投影。只有 `semantic` 与
- * `hybrid`（画面没有字面一路）；文字与画面都请求时两路的名次按 RRF 合在一起（不请求就不融合），一路不可用时另一路照常、写明原因。
+ * `hybrid`（画面没有字面一路）；文字与画面都请求时两路按各自的 z 分数排在一起（不请求就不合），一路不可用时另一路照常、写明原因。
  */
 
 export interface SearchServiceOptions {
@@ -116,8 +116,10 @@ interface Candidate {
   sentenceIds: string[];
   lexicalRank: number | null;
   semanticRank: number | null;
-  /** 向量一路的余弦（只有向量命中时才有），用于标弱命中。 */
+  /** 向量一路的余弦（只有向量命中时才有）。 */
   cosine: number | null;
+  /** 余弦按这次查询的分数分布换成的标准分（`scoreText` 填）；没有余弦时 null。 */
+  z: number | null;
   score: number;
 }
 
@@ -237,7 +239,7 @@ export class SearchService {
     profile: EmbeddingProfile,
     text: string,
     k: number,
-    options: { signal?: AbortSignal } = {},
+    options: { signal?: AbortSignal; stats?: ScanStats } = {},
   ): Promise<FrameGroup[]> {
     const scheduler = this.#options.scheduler();
     if (!scheduler) throw semanticError('MODEL_NOT_INSTALLED', { channel: 'visual' });
@@ -256,7 +258,7 @@ export class SearchService {
     }
     if (vector.length !== profile.dims) throw semanticError('PROFILE_INCOMPATIBLE', { channel: 'visual' });
     const byGeneration = new Map(usable.map((v) => [v.generation!.id, v]));
-    const hits = this.#options.scanner.exactFrameSearch(vector, [...byGeneration.keys()], k);
+    const hits = this.#options.scanner.exactFrameSearch(vector, [...byGeneration.keys()], k, options.stats);
     return groupFrames(hits, byGeneration);
   }
 
@@ -279,7 +281,7 @@ export class SearchService {
     profile: EmbeddingProfile,
     text: string,
     k: number,
-    options: { kinds?: readonly SpaceSearchDocumentKind[] | null; signal?: AbortSignal } = {},
+    options: { kinds?: readonly SpaceSearchDocumentKind[] | null; signal?: AbortSignal; stats?: ScanStats } = {},
   ): Promise<ScanHit[]> {
     const scheduler = this.#options.scheduler();
     if (!scheduler) throw semanticError('MODEL_NOT_INSTALLED');
@@ -303,6 +305,7 @@ export class SearchService {
       usable.map((v) => v.generation!.id),
       k,
       kinds ? (chunk) => kinds.has(chunk.documentKind) : undefined,
+      options.stats,
     );
   }
 
@@ -333,28 +336,59 @@ export class SearchService {
 
     if (params.mode === 'lexical') return this.#lexical(resolved, text, kinds, offset, limit, queryDigest, scopeHash);
 
-    // 向量一路。
-    let semantic: ScanHit[] | null = null;
-    let failure: SemanticReason | null = profiled && 'reason' in profiled ? profiled.reason : null;
-    if (profile) {
-      try {
-        semantic = await this.semanticCandidates(resolved, profile, text, SEMANTIC_THRESHOLDS.fusion.perRouteCandidates.value, {
-          kinds,
-          ...(signal ? { signal } : {}),
-        });
-      } catch (error) {
-        const reason = reasonOf(error);
-        // 输入问题与取消不退回：调用方要知道。
-        if (reason === 'INPUT_TOO_LONG' || reason === 'SEARCH_CANCELLED' || params.mode === 'semantic') throw error;
-        failure = reason;
-      }
-    }
-    if (!semantic) {
-      if (params.mode === 'semantic') throw semanticError(failure ?? 'MODEL_NOT_INSTALLED');
+    const route = await this.#textRoute(resolved, profiled!, params.mode, text, kinds, signal);
+    if ('failure' in route) {
+      if (params.mode === 'semantic') throw semanticError(route.failure);
       const lexical = this.#lexical(resolved, text, kinds, offset, limit, queryDigest, scopeHash);
-      return { ...lexical, degraded: { reason: failure ?? 'MODEL_NOT_INSTALLED' } };
+      return { ...lexical, degraded: { reason: route.failure } };
     }
+    const scale = scalesOf({ text: route.stats }).text!;
+    const cap = SEMANTIC_THRESHOLDS.fusion.mergedCandidates.value;
+    const merged = dedupe(scoreText(route.candidates, scale));
+    const kept = flagWeak(
+      merged.slice(0, cap).map((c) => ({ score: c.score, z: c.z, lexical: c.lexicalRank !== null, item: c })),
+    );
+    const page = kept.slice(offset, offset + limit);
+    const next = offset + page.length;
+    const partial = !resolved.coverage.knownScopeComplete;
+    return {
+      hits: page.map((s) => hitOf(s.item, s.weak)),
+      effectiveMode: params.mode,
+      degraded: partial ? { reason: 'INDEX_PARTIAL' } : null,
+      coverage: [resolved.coverage],
+      rankingVersion: RANKING_VERSION,
+      nextCursor: next < kept.length ? writeCursor(queryDigest, scopeHash, next) : null,
+      truncated: merged.length > cap,
+    };
+  }
 
+  /**
+   * 文字一路的候选：向量一路扫出的 chunk（带余弦），`hybrid` 时再并上字面一路（同一个 chunk 合成一条）；附带向量一路这次扫过的
+   * 全部余弦的分布（换标准分用）。向量一路不可用时给原因；输入问题、取消与 `semantic` 模式下的失败直接抛出。
+   */
+  async #textRoute(
+    resolved: ResolvedScope,
+    profiled: { profile: EmbeddingProfile } | { reason: SemanticReason },
+    mode: SpaceSearchV2Params['mode'],
+    text: string,
+    kinds: readonly SpaceSearchDocumentKind[] | null,
+    signal?: AbortSignal,
+  ): Promise<{ candidates: Candidate[]; stats: ScanStats } | { failure: SemanticReason }> {
+    if (!('profile' in profiled)) return { failure: profiled.reason };
+    const stats = emptyScanStats();
+    let semantic: ScanHit[];
+    try {
+      semantic = await this.semanticCandidates(resolved, profiled.profile, text, SEMANTIC_THRESHOLDS.fusion.perRouteCandidates.value, {
+        kinds,
+        stats,
+        ...(signal ? { signal } : {}),
+      });
+    } catch (error) {
+      const reason = reasonOf(error);
+      // 输入问题与取消不退回：调用方要知道。
+      if (reason === 'INPUT_TOO_LONG' || reason === 'SEARCH_CANCELLED' || mode === 'semantic') throw error;
+      return { failure: reason };
+    }
     const candidates = new Map<string, Candidate>();
     const byVideo = new Map(resolved.videos.map((v) => [v.video.videoId, v]));
     semantic.forEach((hit, index) => {
@@ -370,75 +404,94 @@ export class SearchService {
         lexicalRank: null,
         semanticRank: index + 1,
         cosine: hit.score,
+        z: null,
         score: 0,
       });
     });
-    if (params.mode === 'hybrid') {
-      const lexical = this.#options.catalog.index?.search(resolved.scope.videos, {
-        query: text,
-        ...(kinds ? { kinds } : {}),
-        limit: SEMANTIC_THRESHOLDS.fusion.perRouteCandidates.value,
-      }) ?? { hits: [], truncated: false };
-      const mapper = new LexicalMapper(this.#options.store(), byVideo);
-      lexical.hits.forEach((hit, index) => {
-        const mapped = mapper.map(hit);
-        const key = mapped.chunk ? `chunk:${mapped.chunk.chunkId}` : `lex:${hit.videoId}:${hit.documentKind}:${hit.documentId ?? ''}:${hit.time.clock}:${hit.time.start}`;
-        const existing = candidates.get(key);
+    if (mode === 'hybrid') {
+      for (const candidate of this.#lexicalCandidates(resolved, text, kinds)) {
+        const existing = candidates.get(candidate.key);
         if (existing) {
-          existing.lexicalRank ??= index + 1;
-          existing.lexical ??= hit;
-          return;
+          existing.lexicalRank ??= candidate.lexicalRank;
+          existing.lexical ??= candidate.lexical;
+          continue;
         }
-        const scoped = byVideo.get(hit.videoId);
-        if (!scoped) return;
-        candidates.set(key, {
-          key,
-          video: scoped.video,
-          generation: scoped.generation,
-          chunk: mapped.chunk,
-          lexical: hit,
-          sentenceIds: mapped.sentenceIds,
-          lexicalRank: index + 1,
-          semanticRank: null,
-          cosine: null,
-          score: 0,
-        });
-      });
+        candidates.set(candidate.key, candidate);
+      }
     }
-    const merged = fuse([...candidates.values()]);
-    const cap = SEMANTIC_THRESHOLDS.fusion.mergedCandidates.value;
-    const kept = dedupe(merged).slice(0, cap);
-    const page = kept.slice(offset, offset + limit);
-    const next = offset + page.length;
-    const partial = !resolved.coverage.knownScopeComplete;
-    return {
-      hits: page.map((c) => hitOf(c)),
-      effectiveMode: params.mode,
-      degraded: partial ? { reason: 'INDEX_PARTIAL' } : null,
-      coverage: [resolved.coverage],
-      rankingVersion: RANKING_VERSION,
-      nextCursor: next < kept.length ? writeCursor(queryDigest, scopeHash, next) : null,
-      truncated: merged.length > cap,
-    };
+    return { candidates: [...candidates.values()], stats };
   }
 
-  /** 请求了画面：画面一路，加上请求了的文字一路（按名次合并）。 */
+  /** 字面一路的候选（内容索引的命中，对回语义库的 chunk 与句子）。 */
+  #lexicalCandidates(resolved: ResolvedScope, text: string, kinds: readonly SpaceSearchDocumentKind[] | null): Candidate[] {
+    const byVideo = new Map(resolved.videos.map((v) => [v.video.videoId, v]));
+    const lexical = this.#options.catalog.index?.search(resolved.scope.videos, {
+      query: text,
+      ...(kinds ? { kinds } : {}),
+      limit: SEMANTIC_THRESHOLDS.fusion.perRouteCandidates.value,
+    }) ?? { hits: [], truncated: false };
+    const mapper = new LexicalMapper(this.#options.store(), byVideo);
+    const out: Candidate[] = [];
+    const seen = new Set<string>();
+    lexical.hits.forEach((hit, index) => {
+      const scoped = byVideo.get(hit.videoId);
+      if (!scoped) return;
+      const mapped = mapper.map(hit);
+      const key = mapped.chunk ? `chunk:${mapped.chunk.chunkId}` : `lex:${hit.videoId}:${hit.documentKind}:${hit.documentId ?? ''}:${hit.time.clock}:${hit.time.start}`;
+      if (seen.has(key)) return;
+      seen.add(key);
+      out.push({
+        key,
+        video: scoped.video,
+        generation: scoped.generation,
+        chunk: mapped.chunk,
+        lexical: hit,
+        sentenceIds: mapped.sentenceIds,
+        lexicalRank: index + 1,
+        semanticRank: null,
+        cosine: null,
+        z: null,
+        score: 0,
+      });
+    });
+    return out;
+  }
+
+  /**
+   * 请求了画面：画面一路，加上请求了的文字一路。两路的余弦各自按这次查询的分布换成标准分（§10.2）再放在一起排：哪一路真的
+   * 相关，哪一路排前面；不按名次交错。
+   */
   async #withVisual(viewer: SpaceViewer, params: SpaceSearchV2Params & { channels: SpaceSearchV2Params['channels'] & {} }, text: string, signal?: AbortSignal): Promise<SpaceSearchV2Result> {
     const limit = Math.max(1, Math.min(params.limit ?? DEFAULT_LIMIT, SPACE_SEARCH_V2_MAX_LIMIT));
     const fusion = SEMANTIC_THRESHOLDS.fusion;
+    const kinds = params.kinds && params.kinds.length > 0 ? params.kinds : null;
     const passThrough = (error: unknown): SemanticReason => {
       const reason = reasonOf(error);
       if (reason === 'INPUT_TOO_LONG' || reason === 'SEARCH_CANCELLED') throw error;
       return reason;
     };
 
-    // 文字一路：同一个检索，取合并要的候选量，自己的游标不用。
-    let textPart: SpaceSearchV2Result | null = null;
+    // 文字一路：向量不可用时（`hybrid`）退回字面，`semantic` 时这一路算失败。
+    const wantsText = params.channels.includes('text');
+    const textProfiled = wantsText ? await this.profile() : null;
+    const textProfile = textProfiled && 'profile' in textProfiled ? textProfiled.profile : null;
+    const resolved = this.resolveScope(viewer, params, textProfile);
+    let textCandidates: Candidate[] | null = null;
+    let textStats: ScanStats | null = null;
     let textFailure: SemanticReason | null = null;
-    if (params.channels.includes('text')) {
-      const { cursor: _cursor, ...rest } = params;
+    let textDegraded: SemanticReason | null = null;
+    if (textProfiled) {
       try {
-        textPart = await this.searchV2(viewer, { ...rest, channels: ['text'], limit: SPACE_SEARCH_V2_MAX_LIMIT }, signal);
+        const route = await this.#textRoute(resolved, textProfiled, params.mode, text, kinds, signal);
+        if ('failure' in route && params.mode === 'semantic') textFailure = route.failure;
+        else if ('failure' in route) {
+          textCandidates = this.#lexicalCandidates(resolved, text, kinds);
+          textDegraded = route.failure;
+        } else {
+          textCandidates = route.candidates;
+          textStats = route.stats;
+          if (!resolved.coverage.knownScopeComplete) textDegraded = 'INDEX_PARTIAL';
+        }
       } catch (error) {
         textFailure = passThrough(error);
       }
@@ -447,34 +500,38 @@ export class SearchService {
     // 画面一路。
     const profiled = await this.visualProfile();
     const profile = 'profile' in profiled ? profiled.profile : null;
-    const resolved = this.resolveScope(viewer, params, null);
     const visualScope = this.resolveVisualScope(resolved, profile);
     let groups: FrameGroup[] | null = null;
+    const visualStats = emptyScanStats();
     let visualFailure: SemanticReason | null = 'reason' in profiled ? profiled.reason : null;
     if (profile) {
       try {
-        groups = await this.frameCandidates(visualScope.videos, profile, text, fusion.perRouteCandidates.value, signal ? { signal } : {});
+        groups = await this.frameCandidates(visualScope.videos, profile, text, fusion.perRouteCandidates.value, { stats: visualStats, ...(signal ? { signal } : {}) });
       } catch (error) {
         visualFailure = passThrough(error);
       }
     }
     // 请求的通道一路都不可用：报画面的原因（不把空结果当成功，§11.5）；有一路可用时照常返回，`degraded` 写另一路的原因。
-    if (!groups && !textPart) throw semanticError(visualFailure ?? 'MODEL_NOT_INSTALLED', { channel: 'visual' });
+    if (!groups && !textCandidates) throw semanticError(visualFailure ?? 'MODEL_NOT_INSTALLED', { channel: 'visual' });
 
-    const scored: { score: number; key: string; hit: (rank: number) => SpaceSearchV2Hit }[] = [];
-    textPart?.hits.forEach((hit, index) => {
-      // 文字一路的 `rank` 已是它自己的 RRF 分数；换成在这次合并里的名次。
-      const score = fusion.weights.semantic.value / (fusion.k.value + index + 1);
-      scored.push({ score, key: `t:${hit.hitId}`, hit: (rank) => ({ ...hit, rank }) });
-    });
-    groups?.forEach((group, index) => {
-      const score = fusion.weights.visual.value / (fusion.k.value + index + 1);
-      scored.push({ score, key: `v:${group.generation.id}:${group.frames[0]!.ord}`, hit: (rank) => frameHitOf(group, rank) });
-    });
+    const scales = scalesOf({ ...(textStats ? { text: textStats } : {}), ...(groups ? { visual: visualStats } : {}) });
+    const scored: (Scored<(rank: number, weak: boolean) => SpaceSearchV2Hit> & { key: string })[] = [];
+    if (textCandidates) {
+      for (const c of dedupe(scoreText(textCandidates, scales.text ?? null))) {
+        scored.push({ score: c.score, z: c.z, lexical: c.lexicalRank !== null, key: `t:${c.key}`, item: (_rank, weak) => hitOf(c, weak) });
+      }
+    }
+    if (groups && scales.visual) {
+      const visual = scales.visual;
+      for (const group of groups) {
+        const z = (group.cosine - visual.mean) / visual.dev;
+        scored.push({ score: fusion.weights.visual.value * z, z, lexical: false, key: `v:${group.generation.id}:${group.frames[0]!.ord}`, item: (rank, weak) => frameHitOf(group, rank, weak) });
+      }
+    }
     scored.sort((a, b) => b.score - a.score || a.key.localeCompare(b.key));
     const cap = fusion.mergedCandidates.value;
-    const kept = scored.slice(0, cap);
-    const queryDigest = digest([text, params.mode, params.channels, params.kinds ?? null, params.projectId ?? '*', params.videoIds ?? null, params.view ?? 'sequence', RANKING_VERSION]);
+    const kept = flagWeak(scored.slice(0, cap));
+    const queryDigest = digest([text, params.mode, params.channels, kinds, params.projectId ?? '*', params.videoIds ?? null, params.view ?? 'sequence', RANKING_VERSION]);
     const scopeHash = digest([
       ...resolved.videos.map((v) => `${v.video.videoId}:${v.video.revision}:${v.generation?.id ?? '-'}`),
       ...visualScope.videos.map((v) => `v:${v.video.videoId}:${v.generation?.id ?? '-'}`),
@@ -482,20 +539,20 @@ export class SearchService {
     const offset = params.cursor ? readCursor(params.cursor, queryDigest, scopeHash) : 0;
     const page = kept.slice(offset, offset + limit);
     const next = offset + page.length;
-    const coverage = [...(textPart?.coverage ?? []), visualScope.coverage];
+    const coverage = [...(textCandidates ? [resolved.coverage] : []), visualScope.coverage];
     const reason =
       textFailure ??
       (groups ? null : visualFailure) ??
-      textPart?.degraded?.reason ??
+      textDegraded ??
       (groups && !visualScope.coverage.knownScopeComplete ? 'INDEX_PARTIAL' : null);
     return {
-      hits: page.map((s) => s.hit(s.score)),
-      effectiveMode: groups ? params.mode : textPart!.effectiveMode,
+      hits: page.map((s) => ({ ...s.item(s.score, s.weak), rank: s.score })),
+      effectiveMode: groups ? params.mode : textDegraded && textDegraded !== 'INDEX_PARTIAL' ? 'lexical' : params.mode,
       degraded: reason ? { reason } : null,
       coverage,
       rankingVersion: RANKING_VERSION,
       nextCursor: next < kept.length ? writeCursor(queryDigest, scopeHash, next) : null,
-      truncated: scored.length > cap || (textPart?.truncated ?? false),
+      truncated: scored.length > cap,
     };
   }
 
@@ -533,8 +590,9 @@ export class SearchService {
             lexicalRank: offset + index + 1,
             semanticRank: null,
             cosine: null,
+            z: null,
             score: 1 / (k + offset + index + 1),
-          }),
+          }, false),
         ];
       }),
       effectiveMode: 'lexical',
@@ -638,15 +696,78 @@ function overlaps(aStart: number, aEnd: number, bStart: number, bEnd: number): b
 
 // ---- 融合、去重 ----
 
-/** RRF（§10.2）：Σ w / (k + rank)；同分按 key 排，结果稳定。 */
-function fuse(candidates: Candidate[]): Candidate[] {
+/** 一路向量的分数刻度：这次查询的平均余弦与标准差。 */
+export interface ScoreScale {
+  mean: number;
+  dev: number;
+}
+
+/**
+ * 每一路的刻度（§10.2）：均值各路分开算（两路的查询编码不同，分数的水平不同），标准差几路合在一起算（各路按自己的标准差缩放会
+ * 把分布窄的一路放大）。扫过的向量少（单部视频、刚建好的库）时，均值与方差按先验（`fusion.prior*`，在评测库上量的）收缩，
+ * 先验相当于 `priorCount` 个样本；标准差不低于 `devFloor`。
+ */
+export function scalesOf(stats: { text?: ScanStats; visual?: ScanStats }): { text?: ScoreScale; visual?: ScoreScale } {
+  const f = SEMANTIC_THRESHOLDS.fusion;
+  const n0 = f.priorCount.value;
+  const priors = {
+    text: { mean: f.priorTextMean.value, dev: f.priorTextDev.value },
+    visual: { mean: f.priorVisualMean.value, dev: f.priorVisualDev.value },
+  };
+  const means: { text?: number; visual?: number } = {};
+  let squares = 0;
+  let count = 0;
+  for (const channel of ['text', 'visual'] as const) {
+    const s = stats[channel];
+    if (!s) continue;
+    const prior = priors[channel];
+    const mean = (s.sum + n0 * prior.mean) / (s.count + n0);
+    means[channel] = mean;
+    // Σ (x - mean)² = Σx² - 2·mean·Σx + n·mean²，加上先验的 n0·σ0²。
+    squares += s.sumSq - 2 * mean * s.sum + s.count * mean * mean + n0 * prior.dev * prior.dev;
+    count += s.count + n0;
+  }
+  const dev = Math.max(count > 0 ? Math.sqrt(Math.max(squares, 0) / count) : 0, f.devFloor.value);
+  return {
+    ...(means.text !== undefined ? { text: { mean: means.text, dev } } : {}),
+    ...(means.visual !== undefined ? { visual: { mean: means.visual, dev } } : {}),
+  };
+}
+
+/**
+ * 文字一路的分数（§10.2）：向量命中的标准分 × 权重，字面命中再加 `lexicalBonus`（只有字面命中、不在向量候选里的算标准分 0）。
+ * 同分时先看哪一路的名次靠前，再按 key 排，结果稳定。`scale` 为 null（向量一路不可用）时只有字面分。
+ */
+function scoreText(candidates: Candidate[], scale: ScoreScale | null): Candidate[] {
   const f = SEMANTIC_THRESHOLDS.fusion;
   for (const c of candidates) {
-    c.score =
-      (c.lexicalRank !== null ? f.weights.lexical.value / (f.k.value + c.lexicalRank) : 0) +
-      (c.semanticRank !== null ? f.weights.semantic.value / (f.k.value + c.semanticRank) : 0);
+    c.z = scale && c.cosine !== null ? (c.cosine - scale.mean) / scale.dev : null;
+    c.score = f.weights.semantic.value * (c.z ?? 0) + (c.lexicalRank !== null ? f.weights.lexical.value * f.lexicalBonus.value : 0);
   }
-  return candidates.sort((a, b) => b.score - a.score || a.key.localeCompare(b.key));
+  const order = (c: Candidate) => Math.min(c.semanticRank ?? Infinity, c.lexicalRank ?? Infinity);
+  return candidates.sort((a, b) => b.score - a.score || order(a) - order(b) || a.key.localeCompare(b.key));
+}
+
+interface Scored<T> {
+  score: number;
+  z: number | null;
+  /** 字面命中：从不标弱。 */
+  lexical: boolean;
+  key?: string;
+  item: T;
+}
+
+/**
+ * 标弱命中（P2 的折叠依据）：不是字面命中，并且标准分低于 `strongZ`，或分数不到第一名的 `strongRatio`。只标出、不删；
+ * 输入已按分数排好。
+ */
+function flagWeak<T>(sorted: Scored<T>[]): (Scored<T> & { weak: boolean })[] {
+  const t = SEMANTIC_THRESHOLDS.thresholds;
+  const top = sorted[0]?.score ?? 0;
+  return sorted.map((s) => ({
+    ...s,
+    weak: !s.lexical && (s.z === null || s.z < t.strongZ.value || (top > 0 && s.score < t.strongRatio.value * top)),
+  }));
 }
 
 /**
@@ -712,7 +833,7 @@ const EVIDENCE: Record<SpaceSearchDocumentKind, SemanticEvidenceType> = {
   chapter: 'summary',
 };
 
-function hitOf(c: Candidate): SpaceSearchV2Hit {
+function hitOf(c: Candidate, weak: boolean): SpaceSearchV2Hit {
   const chunk = c.chunk;
   const lexical = c.lexical;
   const documentKind = (chunk?.documentKind ?? lexical?.documentKind)!;
@@ -756,7 +877,7 @@ function hitOf(c: Candidate): SpaceSearchV2Hit {
     needsResolve: revision !== c.video.revision,
     chapter: chunk?.chapter ?? null,
     rank: c.score,
-    weak: c.lexicalRank === null && c.cosine !== null && c.cosine < SEMANTIC_THRESHOLDS.thresholds.weakHit.value,
+    weak,
     actions,
   };
 }
@@ -821,7 +942,7 @@ export function frameWindowOf(group: FrameGroup): { clock: 'sequence' | 'source'
   return { clock: 'source', start: sourceStart, end: sourceEnd, sourceStart, sourceEnd };
 }
 
-function frameHitOf(group: FrameGroup, rank: number): SpaceSearchV2Hit {
+function frameHitOf(group: FrameGroup, rank: number, weak: boolean): SpaceSearchV2Hit {
   const window = frameWindowOf(group);
   const revision = group.generation.revision;
   const actions: SemanticHitAction[] = ['preview', 'cite'];
@@ -856,7 +977,7 @@ function frameHitOf(group: FrameGroup, rank: number): SpaceSearchV2Hit {
     needsResolve: revision !== group.video.revision,
     chapter: null,
     rank,
-    weak: group.cosine < SEMANTIC_THRESHOLDS.thresholds.visualWeakHit.value,
+    weak,
     actions,
   };
 }

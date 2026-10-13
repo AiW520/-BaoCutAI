@@ -151,11 +151,11 @@ export interface SpaceSearchV2Hit {
   needsResolve: boolean;
   /** 章节标题（有章节时）。 */
   chapter: { id: string; title: string } | null;
-  /** 只用于排序的融合分数（§10.2），不是置信度，界面不显示为百分比。 */
+  /** 只用于排序的分数（§10.2：本次查询内的 z 分数加字面加分），不是置信度，界面不显示为百分比。 */
   rank: number;
   /**
-   * 弱命中：只有向量一路命中、且余弦低于该通道的弱命中阈值（`semantic-thresholds.json`，未校准）。只标出、不藏起来；
-   * 调用方据此判断「可能沾边」，不当作答案的依据。字面命中从不标弱。
+   * 弱命中：只有向量一路命中，且 z 低于 `strongZ` 或分数不到第一名的 `strongRatio` 倍（`semantic-thresholds.json`，未校准）。
+   * 服务端只标出、不藏起来；调用方据此判断「可能沾边」，不当作答案的依据，界面可以折在后面。字面命中从不标弱。
    */
   weak: boolean;
   actions: SemanticHitAction[];
