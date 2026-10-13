@@ -108,7 +108,8 @@
         if (!alive()) { stop(); return; }
         const p = IM.stepProgress(samples, r.steps || 20, t0, now);
         patchRec(r.id, {samples, pct: p.pct || 0});
-        app.patchTask(tid, {pct: p.pct || 0, phase: taskPhase(p)});
+        /* 任务卡的阶段带剩余；详情的「预计剩余」「用时」读 leftMs 与 startedAt（model-task-facts.js） */
+        app.patchTask(tid, {pct: p.pct || 0, phase: taskPhase(p), leftMs: p.leftMs, startedAt: t0});
       }, () => { if (alive()) finish(app, r, tid, t0); });
       jobs.timers[r.id] = {stop};
       return;
