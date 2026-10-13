@@ -474,6 +474,10 @@
     {id: 'o16', kind: 'doc', name: '科浪 42 期 · 文稿.md', dir: 'd1', movie: 'p1', status: 'published',
      lines: 6, bytes: 2252, mtime: 32, file: '导出/kelang-ep42.transcript.md',
      text: '# 科浪访谈 第 42 期\n\n林澈：欢迎回到科浪，我是林澈。\n\n嘉宾：今天聊聊本机视频工具。\n\n林澈：先从渲染说起。'},
+    /* 存下来的跨视频问答（integration §2.9）：出处是视频某一刻的链接，在 Space 里打开文档也能点 */
+    {id: 'o30', kind: 'doc', name: '问答 · 为什么不上传素材.md', dir: 'd1', status: 'published',
+     lines: 5, bytes: 412, mtime: 40, file: '问答/why-local.md',
+     text: '# 为什么不上传素材\n\n访谈、内部会议和没发布的产品演示本来就不该往外传 [01:03](/videos/p8?t=63)；语音识别放在本机，量大时成本也低得多 [02:21](/videos/p8?t=141)。\n\n- 断网的现场也要能转写 [02:32](/videos/p8?t=152)'},
     {id: 'o3', kind: 'final', name: '第 7 条切片 · 竖版.mp4', dir: 'd1', movie: 'p5', status: 'published',
      dur: 41, res: '1080×1920', bytes: 19293798, mtime: 10080, file: '导出/shorts-07.mp4'},
     {id: 'o4', kind: 'image', name: '第 42 期封面 · 候选 A.png', dir: 'd1', movie: 'p10', session: 's6', messageId: 'm3', status: 'candidate',
