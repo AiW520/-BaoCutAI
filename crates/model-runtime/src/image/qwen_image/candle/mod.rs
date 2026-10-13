@@ -1,6 +1,6 @@
 //! Qwen-Image-2.1 的 candle 引擎（CPU，`cuda` feature 时 NVIDIA CUDA），移植自 v2 `bcut-image-local::candle`。
 //!
-//! 直接读装好的 MLX 4-bit safetensors（与 MLX 路径同一个模型包仓库），不要第二份 checkpoint：三段顺序运行、绝不同时
+//! 直接读装好的 MLX 仿射量化 safetensors（4-bit 或 8-bit，与 MLX 路径同一个模型包仓库），不要第二份 checkpoint：三段顺序运行、绝不同时
 //! 驻留，文本编码器逐层、DiT 逐层（每一步都重新反量化这一层的矩阵）、VAE 逐个卷积从映射的文件里读，用完即丢。计算精度
 //! 按设备：CPU 上 f32，CUDA 上 bf16（v2 同）。初始噪声在主机上用 ChaCha20 按 seed 抽（candle 的 CPU 设备不能设种子，
 //! 也不该动进程级的 CUDA 随机数），所以同一 seed 在 candle 与 MLX 上出的不是同一张图，同一后端、同一设备上逐字节复现。
@@ -89,7 +89,21 @@ fn to_rgba(image: &Tensor) -> Result<RawImage> {
     })
 }
 
-/// 核对三份配置是 Qwen-Image-2.1 的 MLX affine 4-bit 包（v2 同一组检查）：candle 的实现按这些形状写死。
+/// 量化声明（有就核对）：MLX affine、每组 64、4 或 8 位。mlx-serve 的包把量化写在仓库根的 `config.json`（不下载），组件配置里
+/// 没有这一段；那时位宽与分组由 [`weights::ShardedWeights::linear`] 按打包形状推出。
+fn verify_quantization(config: &Value, what: &str) -> Result<()> {
+    let quant = &config["quantization"];
+    if quant.is_null() {
+        return Ok(());
+    }
+    if !matches!(quant["bits"].as_u64(), Some(4 | 8)) || quant["group_size"] != 64 || quant["mode"] != "affine" {
+        bail!("需要 MLX affine 4-bit 或 8-bit {what} 权重");
+    }
+    Ok(())
+}
+
+/// 核对三份配置是 Qwen-Image-2.1 的 MLX affine 量化包（4-bit 或 8-bit；v2 只认 4-bit）：candle 的实现按这些形状写死。
+/// mlx-community 的包在组件配置里写 `mlx_format` 与量化，mlx-serve 的包不写；两种都收。
 fn verify_model_config(model_index: &Value, transformer: &Value, text: &Value) -> Result<()> {
     let expected = [
         ("_class_name", json!("QwenImage21Transformer2DModel")),
@@ -100,7 +114,6 @@ fn verify_model_config(model_index: &Value, transformer: &Value, text: &Value) -
         ("num_layers", json!(32)),
         ("out_channels", json!(64)),
         ("patch_size", json!(1)),
-        ("mlx_format", json!(true)),
     ];
     if model_index["_class_name"] != "QwenImage21Pipeline" {
         bail!("需要 QwenImage21Pipeline 模型包");
@@ -110,9 +123,11 @@ fn verify_model_config(model_index: &Value, transformer: &Value, text: &Value) -
             bail!("transformer/config.json 的 {key} 与 Qwen-Image-2.1 MLX 权重不符");
         }
     }
-    let quant = &transformer["quantization"];
-    if quant["bits"] != 4 || quant["group_size"] != 64 || quant["mode"] != "affine" {
-        bail!("需要 MLX affine 4-bit transformer 权重");
+    for (config, what) in [(transformer, "transformer"), (text, "Qwen3-VL 文本")] {
+        if !matches!(config.get("mlx_format"), None | Some(Value::Bool(true))) {
+            bail!("需要 MLX 格式的 {what} 权重");
+        }
+        verify_quantization(config, what)?;
     }
     let text_config = &text["text_config"];
     let text_expected = [
@@ -129,10 +144,6 @@ fn verify_model_config(model_index: &Value, transformer: &Value, text: &Value) -
             bail!("text_encoder/config.json 的 {key} 与 Qwen3-VL 文本模型不符");
         }
     }
-    let text_quant = &text["quantization"];
-    if text["mlx_format"] != true || text_quant["bits"] != 4 || text_quant["group_size"] != 64 || text_quant["mode"] != "affine" {
-        bail!("需要 MLX affine 4-bit Qwen3-VL 文本权重");
-    }
     Ok(())
 }
 
@@ -144,7 +155,7 @@ fn check(cancel: &dyn Fn() -> bool) -> Result<()> {
 }
 
 impl QwenImage {
-    /// 先核对清单（缺文件是 `MODEL_NOT_INSTALLED`），再核对配置（不是这只模型的 MLX 4-bit 包是 `MODEL_UNSUPPORTED`），
+    /// 先核对清单（缺文件是 `MODEL_NOT_INSTALLED`），再核对配置（不是这只模型的 MLX 量化包是 `MODEL_UNSUPPORTED`），
     /// 最后读分词表与调度器配置。`device` 由后端按模型包的 `device` 定好。
     pub fn load(files: &VerifiedFiles, device: Device) -> Result<Self> {
         let tokenizer = files.require("processor/tokenizer.json")?.to_path_buf();
@@ -424,7 +435,7 @@ mod tests {
     }
 
     #[test]
-    fn load_rejects_a_bundle_that_is_not_the_mlx_four_bit_layout() {
+    fn load_rejects_a_bundle_that_is_not_the_mlx_layout() {
         let dir = tempfile::tempdir().unwrap();
         let files = component(
             dir.path(),
@@ -476,7 +487,72 @@ mod tests {
         verify_model_config(&model_index, &transformer, &text).unwrap();
         let mut eight_bit = transformer.clone();
         eight_bit["quantization"]["bits"] = json!(8);
-        assert!(verify_model_config(&model_index, &eight_bit, &text).is_err());
+        verify_model_config(&model_index, &eight_bit, &text).unwrap();
+        let mut three_bit = transformer.clone();
+        three_bit["quantization"]["bits"] = json!(3);
+        assert!(verify_model_config(&model_index, &three_bit, &text).is_err());
+        let mut not_mlx = text.clone();
+        not_mlx["mlx_format"] = json!(false);
+        assert!(verify_model_config(&model_index, &transformer, &not_mlx).is_err());
+    }
+
+    /// mlx-serve 的包（Turbo）：组件配置里没有 `mlx_format` 与量化，量化写在不下载的根 `config.json` 里。
+    #[test]
+    fn config_check_accepts_a_pack_without_component_quantization() {
+        let model_index = json!({ "_class_name": "QwenImage21Pipeline", "sample_sigmas": [1.0, 0.5] });
+        let transformer = json!({
+            "_class_name": "QwenImage21Transformer2DModel",
+            "attention_head_dim": 128,
+            "context_in_dim": 4096,
+            "in_channels": 64,
+            "num_attention_heads": 32,
+            "num_layers": 32,
+            "out_channels": 64,
+            "patch_size": 1,
+        });
+        let text = json!({
+            "text_config": {
+                "hidden_size": 4096,
+                "intermediate_size": 12288,
+                "num_hidden_layers": 36,
+                "num_attention_heads": 32,
+                "num_key_value_heads": 8,
+                "head_dim": 128,
+                "rope_theta": 5_000_000,
+            },
+        });
+        verify_model_config(&model_index, &transformer, &text).unwrap();
+        let mut wrong = transformer.clone();
+        wrong["num_layers"] = json!(60);
+        assert!(verify_model_config(&model_index, &wrong, &text).is_err());
+    }
+
+    /// 任意目录（不要求 `.bcut-manifest.json`）下的全部文件拼成 `image` 组件，供跑别的权重包（如 Turbo）。
+    fn directory(dir: &Path) -> VerifiedFiles {
+        fn walk(root: &Path, dir: &Path, out: &mut Vec<FileEntry>) {
+            for entry in std::fs::read_dir(dir).unwrap() {
+                let path = entry.unwrap().path();
+                if path.is_dir() {
+                    walk(root, &path, out);
+                } else if !path.file_name().unwrap().to_string_lossy().starts_with('.') {
+                    out.push(FileEntry {
+                        path: path.strip_prefix(root).unwrap().to_string_lossy().into_owned(),
+                        sha256: String::new(),
+                        byte_length: path.metadata().unwrap().len(),
+                    });
+                }
+            }
+        }
+        let mut files = Vec::new();
+        walk(dir, dir, &mut files);
+        ModelFiles {
+            family: FAMILY_QWEN_IMAGE.into(),
+            revision: "local".into(),
+            dir: dir.to_string_lossy().into_owned(),
+            files,
+        }
+        .verify("image")
+        .unwrap()
     }
 
     /// 按 `.bcut-manifest.json` 拼 `image` 组件（只读；不写安装记录）。
@@ -505,23 +581,28 @@ mod tests {
     }
 
     /// 真跑（要装好的权重；CPU 上几分钟）：在 candle 的默认设备上生成一张，核对尺寸、阶段与同一 seed 的复现。
-    /// 量峰值时可以换尺寸与步数：`BAOCUT_TEST_IMAGE_EDGE=512`、`BAOCUT_TEST_IMAGE_STEPS=1`（峰值与步数无关）；
-    /// `BAOCUT_TEST_IMAGE_REPEAT=0` 时不跑第二张。`BCUT_IMAGE_TIMING=1` 打出各段耗时与内存。
+    /// 量峰值时可以换尺寸与步数：`BAOCUT_TEST_IMAGE_EDGE=512`、`BAOCUT_TEST_IMAGE_STEPS=1`（峰值与步数无关；固定步数的包
+    /// 只收它的步数，不给时 4-bit 包跑 2 步、固定步数的包跑它的步数）；`BAOCUT_TEST_IMAGE_REPEAT=0` 时不跑第二张。
+    /// `BAOCUT_TEST_IMAGE_PACK=/path/to/pack` 换成任意目录下的权重包（如 Turbo），不读 `BAOCUT_TEST_MODELS_DIR`。
+    /// `BCUT_IMAGE_TIMING=1` 打出各段耗时与内存。
     ///
     /// ```sh
     /// BAOCUT_TEST_MODELS_DIR=/path/to/models BCUT_IMAGE_TIMING=1 cargo test -p model-runtime --release \
     ///   --features backend-candle --lib -- --ignored candle_engine_generates --test-threads=1 --nocapture
     /// ```
     #[test]
-    #[ignore = "需要 BAOCUT_TEST_MODELS_DIR 下装好的 Qwen-Image-2.1"]
+    #[ignore = "需要 BAOCUT_TEST_MODELS_DIR 下装好的 Qwen-Image-2.1（或 BAOCUT_TEST_IMAGE_PACK 指向的权重包）"]
     fn candle_engine_generates_and_reproduces_a_seed() {
-        let root = std::env::var("BAOCUT_TEST_MODELS_DIR").expect("BAOCUT_TEST_MODELS_DIR");
-        let files = installed(Path::new(&root));
+        let files = match std::env::var_os("BAOCUT_TEST_IMAGE_PACK") {
+            Some(pack) => directory(Path::new(&pack)),
+            None => installed(Path::new(&std::env::var("BAOCUT_TEST_MODELS_DIR").expect("BAOCUT_TEST_MODELS_DIR"))),
+        };
         let env = |name: &str, default: u32| std::env::var(name).ok().and_then(|v| v.parse().ok()).unwrap_or(default);
         let edge = env("BAOCUT_TEST_IMAGE_EDGE", 256);
-        let steps = env("BAOCUT_TEST_IMAGE_STEPS", 2);
         let device = crate::backend::candle::default_device();
         let mut engine = QwenImage::load(&files, device).unwrap();
+        let fixed = engine.scheduler.check_steps(2).is_err();
+        let steps = env("BAOCUT_TEST_IMAGE_STEPS", if fixed { engine.default_steps() } else { 2 });
         let request = ImageRequest {
             prompt: "a red apple on a wooden table".into(),
             width: edge,
@@ -545,7 +626,7 @@ mod tests {
         assert!(phases.contains(&ImageProgress::Denoising { done: steps, total: steps }));
         if let Some(dir) = std::env::var_os("BAOCUT_TEST_OUTPUT_DIR") {
             let png = crate::image::png::encode_rgba(&image).unwrap();
-            std::fs::write(Path::new(&dir).join(format!("qwen-image-candle-{edge}-seed7.png")), png).unwrap();
+            std::fs::write(Path::new(&dir).join(format!("qwen-image-candle-{edge}-{steps}-seed7.png")), png).unwrap();
         }
         if env("BAOCUT_TEST_IMAGE_REPEAT", 1) != 0 {
             let again = engine.generate(&request, &mut |_| {}, &|| false).unwrap();

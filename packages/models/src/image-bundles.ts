@@ -84,7 +84,7 @@ const QWEN_IMAGE_CANDLE: BundleDefinition = {
 /**
  * Qwen-Image-2.1-Turbo（蒸馏版）：固定 8 步、不做无分类器引导，sigma 表写在 `model_index.json` 的 `sample_sigmas` 里（Model Worker
  * 协议规范 §4.3），所以步数只收 8。用 mlx-serve 的 8-bit 包：本机实测与它的 4-bit 包每步一样快，4-bit 的小字偶尔丢笔画（同一
- * seed 下「玉」少一点），8-bit 写对。只登记 MLX：candle 没有用这个包（分片的 DiT、不量化的词嵌入）的真实权重跑过。
+ * seed 下「玉」少一点），8-bit 写对。Apple Silicon 以外的平台列下面的 candle 变体。
  */
 const QWEN_IMAGE_TURBO_MLX: BundleDefinition = {
   bundleId: 'qwen-image-2.1-turbo@mlx-8bit',
@@ -109,4 +109,24 @@ const QWEN_IMAGE_TURBO_MLX: BundleDefinition = {
   },
 };
 
-export const IMAGE_BUNDLES: readonly BundleDefinition[] = [QWEN_IMAGE_MLX, QWEN_IMAGE_CANDLE, QWEN_IMAGE_TURBO_MLX];
+/**
+ * candle 后端的 Turbo（架构设计 §6.5）：同一个 8-bit 仓库，与 `qwen-image-2.1@candle` 同一条流式管线（加载时逐个矩阵反量化，
+ * PyTorch 布局的 VAE 在加载时认出来），只在 Apple Silicon 以外的平台列出。8 步比基础版的 20 步省一半多的去噪时间。
+ */
+const QWEN_IMAGE_TURBO_CANDLE: BundleDefinition = {
+  ...QWEN_IMAGE_TURBO_MLX,
+  bundleId: 'qwen-image-2.1-turbo@candle',
+  backend: 'candle',
+  device: 'cpu',
+  image: {
+    ...QWEN_IMAGE_TURBO_MLX.image!,
+    // CPU 上算 f32，计在进程内存。本机实测 256² 八步的进程峰值（phys_footprint）2.5 GB（出在 VAE 解码；DiT 那段 2.0 GB，文本
+    // 编码 0.7 GB：词嵌入只读提示词用到的行），与基础版 256² 的 2.4 GB 相当；DiT 与 VAE 反量化后的形状与基础版相同，1024² 没有
+    // 实测，按基础版的 4.7 GB 同样留到 6 GiB。
+    peakBytes: 6 * GiB,
+    // CUDA 上算 bf16，计在显存：没有实测（本机没有 CUDA），沿用基础版的估计（旧版同一管线 1024×576 整卡峰值 3.57 GiB）。
+    devicePeakBytes: { cuda: 4 * GiB },
+  },
+};
+
+export const IMAGE_BUNDLES: readonly BundleDefinition[] = [QWEN_IMAGE_MLX, QWEN_IMAGE_CANDLE, QWEN_IMAGE_TURBO_MLX, QWEN_IMAGE_TURBO_CANDLE];

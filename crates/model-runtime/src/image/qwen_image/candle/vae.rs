@@ -1,6 +1,7 @@
-//! Qwen-Image-2.1 VAE 的单帧解码器（移植自 v2 `bcut-image-local::candle::vae`）。发布的 MLX checkpoint 把卷积核存成
-//! `[out, kh, kw, in]`，candle 要 NCHW 与 `[out, in, kh, kw]`。解码器按需读每个卷积，高分辨率的尾段按行条带处理，
-//! 条带上下各留 12 行重叠（与 Metal 实现相同）。
+//! Qwen-Image-2.1 VAE 的单帧解码器（移植自 v2 `bcut-image-local::candle::vae`）。mlx-community 的包把卷积核存成 MLX 的
+//! `[out, kh, kw, in]`、gamma 存成 `[C]`，candle 要 NCHW 与 `[out, in, kh, kw]`；mlx-serve 的包（Turbo）保留 PyTorch 布局
+//! （`[out, in, kh, kw]`、gamma `[C,1,1]`），按 `post_quant_conv` 的形状整体判定（与 MLX 路径同一做法）。解码器按需读每个
+//! 卷积，高分辨率的尾段按行条带处理，条带上下各留 12 行重叠（与 Metal 实现相同）。
 
 use anyhow::{Result, bail};
 use candle_core::{DType, Device, Tensor};
@@ -29,15 +30,24 @@ fn attend(q: &Tensor, k: &Tensor, v: &Tensor, channels: usize) -> Result<Tensor>
     )
 }
 
+/// 卷积核换成 candle 的 `[out, in, kh, kw]`：MLX 布局 `[out, kh, kw, in]` 要转置，PyTorch 布局原样用。
+fn candle_kernel(w: Tensor, torch_layout: bool) -> Result<Tensor> {
+    if torch_layout {
+        Ok(w)
+    } else {
+        Ok(w.permute((0, 3, 1, 2))?.contiguous()?)
+    }
+}
+
+/// `w` 已是 candle 的 `[out, in, kh, kw]`（[`candle_kernel`]）。
 fn conv_nhwc(x: &Tensor, w: &Tensor, pad: usize, stride: usize) -> Result<Tensor> {
     let (_, _, _, input) = x.dims4()?;
-    let (_, _, _, kernel_input) = w.dims4()?;
+    let (_, kernel_input, _, _) = w.dims4()?;
     if input != kernel_input {
         bail!("VAE 卷积输入通道数不匹配");
     }
-    let w = w.permute((0, 3, 1, 2))?.contiguous()?;
     let nchw = x.permute((0, 3, 1, 2))?.contiguous()?;
-    Ok(nchw.conv2d(&w, pad, stride, 1, 1)?.permute((0, 2, 3, 1))?.contiguous()?)
+    Ok(nchw.conv2d(w, pad, stride, 1, 1)?.permute((0, 2, 3, 1))?.contiguous()?)
 }
 
 #[derive(Deserialize)]
@@ -49,13 +59,17 @@ struct VaeConfig {
     out_channels: usize,
     scale_factor_spatial: usize,
     z_dim: usize,
-    mlx_format: bool,
+    /// mlx-community 的包写 `true`；mlx-serve 的包不写（PyTorch 布局）。
+    #[serde(default)]
+    mlx_format: Option<bool>,
     latents_mean: Vec<f32>,
     latents_std: Vec<f32>,
 }
 
 pub struct Decoder {
     weights: ShardedWeights,
+    /// 卷积核与 gamma 是 PyTorch 布局（不用转置卷积核，gamma 要摊平）。
+    torch_layout: bool,
     mean: Tensor,
     std: Tensor,
     device: Device,
@@ -72,7 +86,7 @@ impl Decoder {
             || config.out_channels != 4
             || config.scale_factor_spatial != 16
             || config.z_dim != Z_DIM
-            || !config.mlx_format
+            || config.mlx_format == Some(false)
         {
             bail!("vae/config.json 与 Qwen-Image-2.1 MLX 解码器不符");
         }
@@ -81,11 +95,19 @@ impl Decoder {
         }
         let weights = ShardedWeights::open(files)?;
         let shape = weights.metadata("post_quant_conv.weight")?.0;
-        if shape.as_slice() != [Z_DIM, 1, 1, Z_DIM].as_slice() {
-            bail!("VAE 权重需要 MLX NHWC 卷积布局，实际 {shape:?}");
+        let torch_layout = if shape.as_slice() == [Z_DIM, 1, 1, Z_DIM].as_slice() {
+            false
+        } else if shape.as_slice() == [Z_DIM, Z_DIM, 1, 1].as_slice() {
+            true
+        } else {
+            bail!("post_quant_conv.weight 的形状认不出布局：{shape:?}");
+        };
+        if torch_layout && config.mlx_format == Some(true) {
+            bail!("vae/config.json 声明 MLX 布局，权重却是 PyTorch 布局");
         }
         Ok(Self {
             weights,
+            torch_layout,
             mean: Tensor::from_vec(config.latents_mean, (1, 1, 1, Z_DIM), device)?,
             std: Tensor::from_vec(config.latents_std, (1, 1, 1, Z_DIM), device)?,
             device: device.clone(),
@@ -95,6 +117,7 @@ impl Decoder {
 
     fn conv(&self, p: &str, x: &Tensor, pad: usize, stride: usize) -> Result<Tensor> {
         let w = self.weights.load(&format!("{p}.weight"), &self.device)?.to_dtype(self.dtype)?;
+        let w = candle_kernel(w, self.torch_layout)?;
         let y = conv_nhwc(&x.to_dtype(self.dtype)?, &w, pad, stride)?;
         let bias = self.weights.load(&format!("{p}.bias"), &self.device)?.to_dtype(self.dtype)?;
         Ok(y.broadcast_add(&bias)?)
@@ -102,6 +125,7 @@ impl Decoder {
 
     fn rms(&self, p: &str, x: &Tensor) -> Result<Tensor> {
         let gamma = self.weights.load(&format!("{p}.gamma"), &self.device)?.to_dtype(self.dtype)?;
+        let gamma = if self.torch_layout { gamma.flatten_all()? } else { gamma };
         Ok(candle_nn::ops::rms_norm(
             &x.to_dtype(self.dtype)?.contiguous()?,
             &gamma.contiguous()?,
@@ -297,8 +321,23 @@ mod tests {
     fn mlx_nhwc_kernel_matches_small_convolution() {
         let x = Tensor::from_vec(vec![1.0_f32, 2.0, 3.0, 4.0], (1, 2, 2, 1), &Device::Cpu).unwrap();
         let w = Tensor::from_vec(vec![1.0_f32, 2.0, 3.0, 4.0], (1, 2, 2, 1), &Device::Cpu).unwrap();
-        let y = conv_nhwc(&x, &w, 0, 1).unwrap();
+        let y = conv_nhwc(&x, &candle_kernel(w, false).unwrap(), 0, 1).unwrap();
         assert_eq!(y.dims(), &[1, 1, 1, 1]);
         assert_eq!(y.flatten_all().unwrap().to_vec1::<f32>().unwrap(), vec![30.0]);
+    }
+
+    /// 两个输入通道时两种布局的核排列不同：MLX `[O,kh,kw,C]` 转置后与同一个 PyTorch `[O,C,kh,kw]` 核算出同一个结果。
+    #[test]
+    fn torch_and_mlx_kernels_give_the_same_convolution() {
+        // x: 1×1×2×2（NHWC），两个通道。
+        let x = Tensor::from_vec(vec![1.0_f32, 10.0, 2.0, 20.0], (1, 1, 2, 2), &Device::Cpu).unwrap();
+        // 1×2 的核，输出 1 通道：w[c][kw] = c*2 + kw + 1。
+        let torch = Tensor::from_vec(vec![1.0_f32, 2.0, 3.0, 4.0], (1, 2, 1, 2), &Device::Cpu).unwrap();
+        let mlx = torch.permute((0, 2, 3, 1)).unwrap().contiguous().unwrap();
+        let a = conv_nhwc(&x, &candle_kernel(torch, true).unwrap(), 0, 1).unwrap();
+        let b = conv_nhwc(&x, &candle_kernel(mlx, false).unwrap(), 0, 1).unwrap();
+        // 1*1 + 2*2 + 10*3 + 20*4 = 115
+        assert_eq!(a.flatten_all().unwrap().to_vec1::<f32>().unwrap(), vec![115.0]);
+        assert_eq!(b.flatten_all().unwrap().to_vec1::<f32>().unwrap(), vec![115.0]);
     }
 }

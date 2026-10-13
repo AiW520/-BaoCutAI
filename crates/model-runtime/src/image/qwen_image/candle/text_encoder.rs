@@ -19,7 +19,8 @@ const HEAD_DIM: usize = 128;
 const LAYERS: usize = 36;
 const ROPE_THETA: f32 = 5_000_000.0;
 const EPS: f32 = 1e-6;
-/// 语言模型权重的键前缀：mlx-community 4-bit 包是 `language_model.model`，保留 transformers 原名的包是 `model.language_model`。
+/// 语言模型权重的键前缀：mlx-community 4-bit 包是 `language_model.model`，保留 transformers 原名的包（mlx-serve 的 Turbo）是
+/// `model.language_model`。
 const PREFIXES: [&str; 2] = ["language_model.model", "model.language_model"];
 /// 提示词（含模板）的 token 上限。
 const MAX_TOKENS: usize = 1024;

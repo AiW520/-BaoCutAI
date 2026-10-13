@@ -80,6 +80,36 @@ impl ShardedWeights {
             .with_context(|| format!("读取权重 {key} ({})", shard.path.display()))
     }
 
+    /// 二维张量只按 `ids` 读出那几行（行在文件里连续）：不把整张表搬进内存。
+    fn rows(&self, key: &str, ids: &[u32]) -> Result<Tensor> {
+        let shard = self.shard(key)?;
+        let tensors = SafeTensors::deserialize(&shard.data).with_context(|| format!("解析 {}", shard.path.display()))?;
+        let view = tensors.tensor(key)?;
+        let &[count, width] = view.shape() else {
+            bail!("{key} 不是二维张量");
+        };
+        let row_bits = width * view.dtype().bitsize();
+        if !row_bits.is_multiple_of(8) {
+            bail!("{key} 的一行不是整字节");
+        }
+        let row_bytes = row_bits / 8;
+        let data = view.data();
+        if data.len() != count * row_bytes {
+            bail!("{key} 的数据长度与形状不符");
+        }
+        let mut selected = Vec::with_capacity(ids.len() * row_bytes);
+        for &id in ids {
+            let id = id as usize;
+            if id >= count {
+                bail!("{key} 的行号 {id} 越过行数 {count}");
+            }
+            selected.extend_from_slice(&data[id * row_bytes..(id + 1) * row_bytes]);
+        }
+        safetensors::tensor::TensorView::new(view.dtype(), vec![ids.len(), width], &selected)?
+            .load(&Device::Cpu)
+            .with_context(|| format!("读取权重 {key} 的行"))
+    }
+
     /// MLX 仿射量化的矩阵是打包的 u32 加每组的 scales 与 biases。只在主机内存里反量化这一个矩阵，再把结果按 `dtype`
     /// 搬到设备上；临时分配在返回时就放掉。
     pub fn linear(&self, prefix: &str, input: usize, device: &Device, dtype: DType) -> Result<Tensor> {
@@ -108,25 +138,22 @@ impl ShardedWeights {
         Ok(dense.to_dtype(dtype)?.to_device(device)?)
     }
 
-    /// 词嵌入先按提示词的 token 挑行、再反量化：Qwen3-VL 的整张词表展开会在主机内存里占好几 GB，而一句提示词只用到
-    /// 几十行。
+    /// 词嵌入先按提示词的 token 从映射的文件里只读那几行、再反量化：Qwen3-VL 的整张词表展开会在主机内存里占好几 GB，
+    /// 不量化的 bf16 词表（mlx-serve 的包）整张读入也要 1.2 GB，而一句提示词只用到几十行。
     pub fn embedding_rows(&self, prefix: &str, ids: &[u32], width: usize, device: &Device, dtype: DType) -> Result<Tensor> {
-        let weight = self.load(&format!("{prefix}.weight"), &Device::Cpu)?;
-        let rows = weight.dim(0)?;
+        let rows = self.metadata(&format!("{prefix}.weight"))?.0.first().copied().unwrap_or(0);
         if ids.iter().any(|&id| id as usize >= rows) {
             bail!("{prefix} 的 token ID 越过词表大小 {rows}");
         }
-        let indices = Tensor::from_slice(ids, ids.len(), &Device::Cpu)?;
-        let selected = weight.index_select(&indices, 0)?;
-        drop(weight);
+        let selected = self.rows(&format!("{prefix}.weight"), ids)?;
         if !self.contains(&format!("{prefix}.scales")) {
             if selected.dim(1)? != width {
                 bail!("{prefix} 的词向量维度不符");
             }
             return Ok(selected.to_dtype(dtype)?.to_device(device)?);
         }
-        let scales = self.load(&format!("{prefix}.scales"), &Device::Cpu)?.index_select(&indices, 0)?;
-        let biases = self.load(&format!("{prefix}.biases"), &Device::Cpu)?.index_select(&indices, 0)?;
+        let scales = self.rows(&format!("{prefix}.scales"), ids)?;
+        let biases = self.rows(&format!("{prefix}.biases"), ids)?;
         let packed_bits = selected.dim(1)?.checked_mul(32).context("词嵌入维度溢出")?;
         if !packed_bits.is_multiple_of(width) {
             bail!("{prefix} 的打包词向量维度不符");
@@ -247,6 +274,27 @@ mod tests {
         assert_eq!(selected[1], (0..8).map(|n| 1.0 + n as f32 * 0.5).collect::<Vec<_>>());
         assert_eq!(selected[2], selected[0]);
         assert!(weights.embedding_rows("embed", &[2], 8, &Device::Cpu, DType::F32).is_err());
+    }
+
+    /// 不量化的词表（mlx-serve 的 bf16）：只读挑中的行，换成计算精度。
+    #[test]
+    fn selects_unquantized_bf16_embedding_rows() {
+        let dir = tempfile::tempdir().unwrap();
+        // 三行两列的 bf16：第 r 行是 [r+1, -(r+1)]（bf16 是 f32 的高 16 位）。
+        let body = (1..=3)
+            .flat_map(|r| [r as f32, -(r as f32)])
+            .flat_map(|v| ((v.to_bits() >> 16) as u16).to_le_bytes())
+            .collect::<Vec<_>>();
+        write_tensor(&dir.path().join("a.safetensors"), "embed.weight", "BF16", &[3, 2], &body);
+        let weights = open(dir.path(), &["a.safetensors"]).unwrap();
+        let selected = weights
+            .embedding_rows("embed", &[2, 0, 2], 2, &Device::Cpu, DType::F32)
+            .unwrap()
+            .to_vec2::<f32>()
+            .unwrap();
+        assert_eq!(selected, vec![vec![3.0, -3.0], vec![1.0, -1.0], vec![3.0, -3.0]]);
+        assert!(weights.embedding_rows("embed", &[3], 2, &Device::Cpu, DType::F32).is_err());
+        assert!(weights.embedding_rows("embed", &[0], 4, &Device::Cpu, DType::F32).is_err());
     }
 
     #[test]

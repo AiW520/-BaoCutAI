@@ -285,6 +285,7 @@ describe('ModelCatalog', () => {
         'voxcpm2@candle',
         'omnivoice@candle',
         'qwen-image-2.1@candle',
+        'qwen-image-2.1-turbo@candle',
         'yue2-3b@audio-cpp-q8',
         'htdemucs-ft@candle',
       ]);
@@ -316,6 +317,7 @@ describe('ModelCatalog', () => {
       'VoxCPM2',
       'OmniVoice',
       'Qwen-Image-2.1',
+      'Qwen-Image-2.1 Turbo',
       'YuE2 3B',
       'HTDemucs-FT',
     ]);
@@ -360,6 +362,7 @@ describe('ModelCatalog', () => {
         'htdemucs-ft@candle',
         'moss-transcribe-diarize@candle',
         'qwen-image-2.1@candle',
+        'qwen-image-2.1-turbo@candle',
         'qwen3-asr-0.6b@candle',
         'qwen3-asr-1.7b@candle',
         'qwen3-tts-0.6b-base@candle',

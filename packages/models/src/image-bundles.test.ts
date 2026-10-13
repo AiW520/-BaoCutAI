@@ -17,14 +17,18 @@ type ImageParameters = Extract<GenerationParameters, { capability: 'generateImag
 const QWEN = IMAGE_BUNDLES[0]!;
 const QWEN_CANDLE = IMAGE_BUNDLES[1]!;
 const QWEN_TURBO = IMAGE_BUNDLES[2]!;
+const QWEN_TURBO_CANDLE = IMAGE_BUNDLES[3]!;
 const GiB = 1024 * 1024 * 1024;
 
 describe('本地文生图模型包的登记', () => {
-  it('MLX、candle 与 Turbo 三个模型包，在总登记里，是 image；仓库整个是一个 image 组件，有许可与名字', () => {
-    expect(IMAGE_BUNDLES.map((b) => b.bundleId)).toEqual(['qwen-image-2.1@mlx-4bit', 'qwen-image-2.1@candle', 'qwen-image-2.1-turbo@mlx-8bit']);
-    expect(BUNDLES).toContain(QWEN);
-    expect(BUNDLES).toContain(QWEN_CANDLE);
-    expect(BUNDLES).toContain(QWEN_TURBO);
+  it('基础版与 Turbo 各有 MLX 与 candle 两个模型包，在总登记里，是 image；仓库整个是一个 image 组件，有许可与名字', () => {
+    expect(IMAGE_BUNDLES.map((b) => b.bundleId)).toEqual([
+      'qwen-image-2.1@mlx-4bit',
+      'qwen-image-2.1@candle',
+      'qwen-image-2.1-turbo@mlx-8bit',
+      'qwen-image-2.1-turbo@candle',
+    ]);
+    for (const bundle of IMAGE_BUNDLES) expect(BUNDLES).toContain(bundle);
     expect(QWEN).toMatchObject({ capability: 'image', backend: 'mlx', device: 'metal', label: 'Qwen-Image-2.1' });
     expect(Object.keys(QWEN.components)).toEqual(['image']);
     expect(QWEN.components.image!.family).toBe(QWEN.image!.family);
@@ -59,6 +63,18 @@ describe('本地文生图模型包的登记', () => {
     expect(profile).toEqual(mlxProfile);
     expect(steps).toEqual({ min: 8, max: 8, step: 8, default: 8 });
     expect(peakBytes).toBe(2 * GiB);
+  });
+
+  it('Turbo 的 candle 变体读同一个 8-bit 仓库版本，名字、许可、尺寸与固定 8 步都相同，只换后端与峰值', () => {
+    expect(QWEN_TURBO_CANDLE).toMatchObject({ capability: 'image', backend: 'candle', device: 'cpu', label: QWEN_TURBO.label });
+    expect(QWEN_TURBO_CANDLE.components).toEqual(QWEN_TURBO.components);
+    expect(QWEN_TURBO_CANDLE.license).toBe(QWEN_TURBO.license);
+    const { peakBytes, devicePeakBytes, ...profile } = QWEN_TURBO_CANDLE.image!;
+    const { peakBytes: _peak, ...mlxProfile } = QWEN_TURBO.image!;
+    expect(profile).toEqual(mlxProfile);
+    expect(profile.steps).toEqual({ min: 8, max: 8, step: 8, default: 8 });
+    expect(peakBytes).toBe(6 * GiB);
+    expect(devicePeakBytes).toEqual({ cuda: 4 * GiB });
   });
 
   it('Turbo 的内置清单：11 个文件都有 sha256 与大小，估计字节等于大小之和；分片的 DiT、分词表与 model_index.json 都在', () => {
@@ -142,6 +158,7 @@ describe('本地文生图模型包的登记', () => {
           .filter((d) => d.capability === 'image')
           .map((d) => d.bundleId),
       ).toEqual([QWEN.bundleId, QWEN_TURBO.bundleId]);
+      expect(await mac.status(QWEN_TURBO_CANDLE.bundleId)).toBeNull();
       expect(await mac.status(QWEN.bundleId)).toMatchObject({ capability: 'image', state: 'not-installed', label: 'Qwen-Image-2.1' });
       expect(await mac.status(QWEN_TURBO.bundleId)).toMatchObject({ capability: 'image', state: 'not-installed', label: 'Qwen-Image-2.1 Turbo' });
       expect(await mac.status(QWEN_CANDLE.bundleId)).toBeNull();
@@ -158,15 +175,18 @@ describe('本地文生图模型包的登记', () => {
             .filter((d) => d.capability === 'image')
             .map((d) => d.bundleId),
           `${platform}/${arch}`,
-        ).toEqual([QWEN_CANDLE.bundleId]);
+        ).toEqual([QWEN_CANDLE.bundleId, QWEN_TURBO_CANDLE.bundleId]);
         expect(await other.status(QWEN.bundleId), `${platform}/${arch}`).toBeNull();
         expect(await other.status(QWEN_TURBO.bundleId), `${platform}/${arch}`).toBeNull();
-        expect(await other.status(QWEN_CANDLE.bundleId), `${platform}/${arch}`).toMatchObject({
-          capability: 'image',
-          state: 'not-installed',
-          backend: 'candle',
-          device: 'cpu',
-        });
+        for (const bundle of [QWEN_CANDLE, QWEN_TURBO_CANDLE]) {
+          expect(await other.status(bundle.bundleId), `${platform}/${arch}`).toMatchObject({
+            capability: 'image',
+            state: 'not-installed',
+            backend: 'candle',
+            device: 'cpu',
+            label: bundle.label,
+          });
+        }
       }
       const forced = new ModelCatalog({ root: dir, platform: 'win32', arch: 'x64', workerAvailable: () => true, bundles: IMAGE_BUNDLES });
       expect(await forced.status(QWEN.bundleId)).toMatchObject({ state: 'error', reason: 'unsupported' });
@@ -189,8 +209,10 @@ describe('本地文生图模型包的登记', () => {
       win.setWorkerDevice('candle', 'cuda');
       expect(win.imagePeak(QWEN_CANDLE.bundleId)).toEqual({ bytes: QWEN_CANDLE.image!.devicePeakBytes!.cuda, pool: 'gpuMemory' });
       expect((await win.status(QWEN_CANDLE.bundleId))!.device).toBe('cuda');
+      expect(win.imagePeak(QWEN_TURBO_CANDLE.bundleId)).toEqual({ bytes: QWEN_TURBO_CANDLE.image!.devicePeakBytes!.cuda, pool: 'gpuMemory' });
       win.setWorkerDevice('candle', null);
       expect(win.imagePeak(QWEN_CANDLE.bundleId)!.pool).toBe('memory');
+      expect(win.imagePeak(QWEN_TURBO_CANDLE.bundleId)).toEqual({ bytes: QWEN_TURBO_CANDLE.image!.peakBytes, pool: 'memory' });
     });
   });
 });
@@ -262,6 +284,7 @@ describe('模型描述与冻结参数', () => {
     // 固定步数的模型包（Turbo）自检用它固定的步数，Worker 不收别的。
     expect(imageSelfTestSteps(QWEN_CANDLE.image!.steps)).toBe(IMAGE_SELF_TEST.steps);
     expect(imageSelfTestSteps(QWEN_TURBO.image!.steps)).toBe(8);
+    expect(imageSelfTestSteps(QWEN_TURBO_CANDLE.image!.steps)).toBe(8);
     // 冻结了步数时用冻结的。
     expect(imageRunOf({ ...parameters, steps: 12 })).toMatchObject({ steps: 12 });
     expect(() => imageRunOf({ ...parameters, size: null })).toThrow();
