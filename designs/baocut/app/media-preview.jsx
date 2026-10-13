@@ -423,7 +423,7 @@
                 </div>
               )}
             </div>
-            {immersive && view === 'focused' && files.length > 1 && <window.MediaImageDock files={files} file={file} onSelect={onSelect} />}
+            {immersive && mode !== 'comment' && view === 'focused' && files.length > 1 && <window.MediaImageDock files={files} file={file} onSelect={onSelect} />}
             </div>
             {mode === 'comment' && (
               <Comments

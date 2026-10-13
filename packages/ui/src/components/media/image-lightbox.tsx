@@ -90,7 +90,7 @@ function ResolvedImage({
     setError(false);
     if (candidate.temporary && !candidate.handle) return;
     let cancelled = false;
-    void (candidate.temporary || candidate.handle ? Promise.resolve(candidate.handle!) : runtime.resolveMedia(candidate.target))
+    void (candidate.temporary ? Promise.resolve(candidate.handle!) : runtime.resolveMedia(candidate.target))
       .then((h) =>
         loadPreviewImage(h.url).then(
           () => h,

@@ -305,14 +305,9 @@
   background: transparent;
   padding-bottom: 0;
 }
-/* macOS 的红绿灯压在全屏查看器左上角：各表头（查看、标注、全景）左边让出与标题栏相同的 84px，表头也能拖动窗口。 */
+/* macOS 的红绿灯压在全屏查看器左上角：各表头（查看、标注、全景）左边让出与标题栏相同的 84px。 */
 .bc-image-lightbox--mac .bc-image-header {
   padding-inline-start: 84px;
-  -webkit-app-region: drag;
-}
-.bc-image-lightbox--mac .bc-image-header button,
-.bc-image-lightbox--mac .bc-image-header [role='button'] {
-  -webkit-app-region: no-drag;
 }
 .bc-image-lightbox--mac > .bc-media-error {
   padding-top: 48px;

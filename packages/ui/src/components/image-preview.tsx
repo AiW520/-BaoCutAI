@@ -240,7 +240,10 @@ export function ImagePreview({
   // 换图时缓存里的图会同步解码完，绘制前就换上新尺寸，免得先按上一张的尺寸画一帧。
   useLayoutEffect(() => {
     const img = image.current;
-    if (img?.complete && img.naturalWidth) setNatural({ width: img.naturalWidth, height: img.naturalHeight });
+    if (img?.complete && img.naturalWidth)
+      setNatural((old) =>
+        old.width === img.naturalWidth && old.height === img.naturalHeight ? old : { width: img.naturalWidth, height: img.naturalHeight },
+      );
   }, [displayUrl]);
   // 全屏查看器里焦点多半落在表头按钮上，左右键在整个窗口里切换图片；输入框、菜单与已处理的按键不抢。
   const keys = useRef<(key: string) => boolean>(() => false);
@@ -516,7 +519,7 @@ export function ImagePreview({
               </div>
             )}
           </div>
-          {immersive && view.view === 'focused' && files.length > 1 && (
+          {immersive && !commenting && view.view === 'focused' && files.length > 1 && (
             <ImageDock files={files} selected={currentKey} onSelect={(f) => onSelect?.(f)} />
           )}
         </div>
