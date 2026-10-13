@@ -7,6 +7,7 @@ import { BUNDLE_ID, feedFileName, parseManifest } from '../src/main/app-update-r
 import { fileHash } from './windows-release.mjs';
 import { runMac, verifyMacIdentity } from './macos-distribution.mjs';
 import { validateReleaseRef } from './desktop-release-rules.mjs';
+import { validateReleaseNotes } from './release-notes.mjs';
 
 const TARGET = 'aarch64-apple-darwin';
 const FEED = feedFileName(TARGET, null);
@@ -86,6 +87,7 @@ export async function validateMacPackage(directory, expected) {
   }
   const feedText = readFileSync(path.join(directory, FEED), 'utf8');
   const feed = JSON.parse(feedText);
+  validateReleaseNotes(feed, report);
   ensure(parseManifest(feedText, TARGET, false).ok, 'Mac feed rejected by the App parser');
   ensure(feed.version === report.version && feed.build === report.build && feed.app.format === 'zip' &&
     feed.app.size === report.portable.size && feed.app.sha256 === report.portable.sha256 &&

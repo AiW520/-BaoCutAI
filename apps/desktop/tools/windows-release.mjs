@@ -7,6 +7,7 @@ import path from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { BUNDLE_ID, feedFileName, parseManifest } from '../src/main/app-update-rules.ts';
 import { parseReleaseTag } from './desktop-release-rules.mjs';
+import { validateReleaseNotes } from './release-notes.mjs';
 
 const TARGET = 'x86_64-pc-windows-msvc';
 const VARIANTS = ['cpu', 'cuda', 'vulkan'];
@@ -62,6 +63,7 @@ export async function validatePackage(directory, mac, tag, variant, repo, run) {
   const parsed = parseManifest(text, TARGET, false, variant);
   invariant(parsed.ok, 'Windows appcast rejected by the App parser');
   const feed = JSON.parse(text);
+  validateReleaseNotes(feed, mac);
   const url = new URL(feed.app.url);
   const parts = url.pathname.split('/').filter(Boolean);
   invariant(url.protocol === 'https:' && url.hostname === 'github.com' && !url.search && !url.hash && parts.length === 6 &&

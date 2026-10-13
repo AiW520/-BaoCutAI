@@ -170,6 +170,8 @@ describe('清单', () => {
       version: '0.2.0',
       build: 7,
       date: '2026-10-05',
+      notes: 'Export fixes.',
+      notesLocalized: { 'zh-Hans': '导出修复。' },
       format: 'exe',
       url,
       size: 168090225,
@@ -182,8 +184,8 @@ describe('清单', () => {
         build: 7,
         date: '2026-10-05',
         minimumSystemVersion: null,
-        notes: '',
-        notesLocalized: {},
+        notes: 'Export fixes.',
+        notesLocalized: { 'zh-Hans': '导出修复。' },
         format: 'exe',
         url,
         size: 168090225,
@@ -238,6 +240,7 @@ describe('清单', () => {
       size: 1024,
       sha256: SHA,
       rolloutHours: 72,
+      notes: 'Export fixes.',
       releasedAt,
     });
     expect(doc).toMatchObject({ rolloutHours: 72, releasedAt });

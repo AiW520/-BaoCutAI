@@ -56,6 +56,7 @@ import { distributeMac, runMac, signingPreflight } from './macos-distribution.mj
 import { macElectronLanguages, shareMacFonts } from './macos-package-resources.mjs';
 import { macPackagePlan } from './macos-package-plan.mjs';
 import { LOCALES } from '../../../packages/protocol/src/i18n.ts';
+import { readReleaseNotes } from './release-notes.mjs';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const DESKTOP = path.resolve(HERE, '..');
@@ -127,6 +128,7 @@ const { values: options } = parseArgs({
     'keep-staging': { type: 'boolean', default: false },
     build: { type: 'string' },
     'download-base-url': { type: 'string' },
+    'release-notes': { type: 'string' },
     'rollout-hours': { type: 'string' },
   },
 });
@@ -210,6 +212,14 @@ if (rolloutHours !== null) {
   if (!Number.isFinite(rolloutHours) || rolloutHours < 0) fail(`--rollout-hours 要不小于 0 的数，收到 ${options['rollout-hours']}`);
   if (!downloadBase) fail('--rollout-hours 要同时给 --download-base-url');
 }
+
+let releaseNotes = null;
+try {
+  if (downloadBase) releaseNotes = readReleaseNotes(
+    options['release-notes'] || path.join(DESKTOP, 'releases/release-notes.json'),
+    { version: JSON.parse(readFileSync(path.join(DESKTOP, 'package.json'), 'utf8')).version, build },
+  );
+} catch (error) { fail(error.message); }
 
 let sourceCommit = null;
 if (isMac) {
@@ -444,6 +454,7 @@ try {
     writeFileSync(path.join(outDir, 'app-release.json'), `${JSON.stringify(report, null, 2)}\n`);
     if (downloadBase) {
       const manifest = releaseManifest({ target: FEED_TARGET, variant: 'cpu', version: desktop.version, build, date: new Date().toISOString().slice(0, 10),
+        ...releaseNotes,
         format: 'zip', url: `${downloadBase.replace(/\/+$/, '')}/${distribution.portable.file}`, size: distribution.portable.size, sha256: distribution.portable.sha256 });
       const text = `${JSON.stringify(manifest, null, 2)}\n`;
       if (!parseManifest(text, FEED_TARGET, false).ok) fail('Mac appcast validation failed');
@@ -502,6 +513,7 @@ function writeReleaseFiles(stem, version) {
   if (!downloadBase) return;
   const generatedAt = new Date();
   const manifest = releaseManifest({
+    ...releaseNotes,
     target: FEED_TARGET,
     variant: options.variant,
     version,

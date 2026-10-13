@@ -101,6 +101,8 @@ npm run package:win:vulkan   # Vulkan 版：Whisper 用 Vulkan GPU（candle 仍�
 
 常规全平台发布由 `desktop-release` 在 release tag push 后自动调用原生构建和候选发布；规则见[签名说明 §5.4](../../docs/macos-signing.md#54-release-tag-自动发布)。`desktop-windows` 和 `desktop-windows-publish` 仍提供以下两次手动触发入口，用于单平台补发或重试；普通分支 push 不发布。运行结果与硬件验证状态分别报告，不能把工作流存在当作已验证。
 
+冻结发布源码前，把本版本的应用内更新说明写入 `releases/release-notes.json` 并提交：`version`、`build` 必须与包一致，`notes` 是非空的英文纯文本（每条一行），`notesLocalized` 是可选的语言码到纯文本映射。说明依据[发布日志流程](../../.agents/skills/bcut-release/references/release-notes.md)整理，包含重要限制。Mac 和 Windows 打包生成更新源时共用此文件；本地打包可用 `--release-notes <JSON 文件>` 指定另一份。缺文件、说明为空或版本/build 不匹配会在出包前失败，发布校验也拒绝空说明的候选。应用按界面语言选择说明，缺译文回退英文；GitHub Release 的 Markdown 正文另外发布，不会自动写入应用更新源。
+
 ```sh
 gh workflow run desktop-windows.yml --ref baocut-v3.0.0-build.60 \
   -f include_cuda=true -f include_vulkan=true -f build=60 \

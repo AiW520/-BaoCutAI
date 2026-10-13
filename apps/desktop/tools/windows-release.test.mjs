@@ -42,7 +42,7 @@ async function fixture() {
   }
   const feed = 'appcast-x86_64-pc-windows-msvc.json';
   const report = { schema: 1, version: '3.0.0', build: 60, appId: 'com.baocut.app', target: 'x86_64-pc-windows-msvc', variant: 'cpu', unsigned: true, installer, portable, feed };
-  const manifest = { schema: 1, version: '3.0.0', build: 60, target: report.target, variant: 'cpu', app: { url: `https://github.com/jimliu/baocut/releases/download/baocut-v3.0.0-build.60/${installer.file}`, format: 'exe', size: installer.size, sha256: installer.sha256 } };
+  const manifest = { schema: 1, version: '3.0.0', build: 60, target: report.target, variant: 'cpu', notes: 'Caption fixes.', app: { url: `https://github.com/jimliu/baocut/releases/download/baocut-v3.0.0-build.60/${installer.file}`, format: 'exe', size: installer.size, sha256: installer.sha256 } };
   writeFileSync(path.join(directory, `${stem}-release.json`), JSON.stringify(report));
   writeFileSync(path.join(directory, feed), JSON.stringify(manifest));
   return { directory, report, manifest, stem };
@@ -55,6 +55,15 @@ test('checks actual candidate bytes and rejects a modified installer', async () 
     await assert.rejects(validatePackage(f.directory, mac, 'baocut-v3.0.0-build.60', 'cpu', 'JimLiu/baocut', { ...run, head_sha: 'b'.repeat(40) }), /source differs/);
     writeFileSync(path.join(f.directory, f.report.installer.file), 'different-bytes');
     await assert.rejects(validatePackage(f.directory, mac, 'baocut-v3.0.0-build.60', 'cpu', 'JimLiu/baocut'), /checksum differs/);
+  } finally { rmSync(f.directory, { recursive: true, force: true }); }
+});
+
+test('Windows publication rejects a candidate with missing update notes', async () => {
+  const f = await fixture();
+  try {
+    delete f.manifest.notes;
+    writeFileSync(path.join(f.directory, f.report.feed), JSON.stringify(f.manifest));
+    await assert.rejects(validatePackage(f.directory, mac, 'baocut-v3.0.0-build.60', 'cpu', 'JimLiu/baocut', run), /non-empty English notes/);
   } finally { rmSync(f.directory, { recursive: true, force: true }); }
 });
 

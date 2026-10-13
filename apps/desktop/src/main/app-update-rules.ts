@@ -214,6 +214,9 @@ export interface ReleaseFacts {
   build: number;
   /** `YYYY-MM-DD`。 */
   date: string;
+  /** 英文更新说明；发布时必须非空。 */
+  notes: string;
+  notesLocalized?: Record<string, string>;
   format: AppUpdateFormat;
   /** 安装包的 https 地址。 */
   url: string;
@@ -227,9 +230,10 @@ export interface ReleaseFacts {
 
 /**
  * 一份 schema-1 清单（`parseManifest` 读的就是它）：Windows 的打包脚本拿安装器的大小与摘要生成
- * `appcast-<target>[-<变体>].json`。说明（`notes`）留空，发布时再填。分批的两个键只在给了时写。
+ * `appcast-<target>[-<变体>].json`。更新说明与产物一起写入。分批的两个键只在给了时写。
  */
 export function releaseManifest(facts: ReleaseFacts): Record<string, unknown> {
+  if (!facts.notes.trim()) throw new Error('Release notes must not be empty');
   return {
     schema: 1,
     target: facts.target,
@@ -237,8 +241,8 @@ export function releaseManifest(facts: ReleaseFacts): Record<string, unknown> {
     version: facts.version,
     build: facts.build,
     date: facts.date,
-    notes: '',
-    notesLocalized: {},
+    notes: facts.notes.trim(),
+    notesLocalized: facts.notesLocalized ?? {},
     app: { format: facts.format, url: facts.url, size: facts.size, sha256: facts.sha256.toLowerCase() },
     ...(facts.rolloutHours !== undefined ? { rolloutHours: facts.rolloutHours } : {}),
     ...(facts.releasedAt !== undefined ? { releasedAt: facts.releasedAt } : {}),

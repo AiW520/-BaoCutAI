@@ -32,7 +32,7 @@ commit 的 type 与统一 scope 按[开发流程 §1.1](../../../../docs/develop
 
 ## 发布与读回验证
 
-1. 发布前保存汇总正文（如临时目录里的 `release-notes.md`）及覆盖台账，记录基线 tag、目标 SHA、commit／PR 数、批次数与核对结果。候选构建只交付本地日志。冻结 SHA 若改变，重新收集范围并核对新增来源，不能沿用旧日志直接发布。
+1. 发布前保存汇总正文（如临时目录里的 `release-notes.md`）及覆盖台账，记录基线 tag、目标 SHA、commit／PR 数、批次数与核对结果。冻结源码前，同时把应用内纯文本说明写入 `apps/desktop/releases/release-notes.json` 并提交：`version`、`build` 对应本次发布，`notes` 是非空英文、每条一行，`notesLocalized` 可提供按语言码组织的译文；保留用户可见变更与重要限制，不写 Markdown 标记。Mac 与 Windows 的打包器会把它写进各平台 appcast，缺失、空白或版本不匹配会停止打包，发布校验也拒绝空说明。GitHub Release 正文与 appcast 是两份载体，必须分别核对；编辑 Release body 不会补写清单。候选构建只交付本地日志。冻结 SHA 若改变，重新收集范围并核对新增来源，不能沿用旧日志直接发布。
 2. 手动创建 Release 时，通过正文文件写入日志并保留平台、签名、公证、依赖与验证边界。Actions 当前主要生成平台说明；它不代替本流程的变更整理。等本次所有发布任务和平台正文追加都完成后，重新读取实际 Release body，把准备好的更新日志与已有平台说明整合，保存到新的正文文件，然后更新：
 
    ```bash

@@ -1,4 +1,6 @@
 import { describe, expect, it } from 'vitest';
+import { readFileSync, readdirSync } from 'node:fs';
+import { parseManifest } from '../../../../apps/desktop/src/main/app-update-rules.ts';
 import type { JobRecord, TaskSummary } from '@baocut/protocol';
 import type { AppUpdateInfo, AppUpdateState } from '../host.ts';
 import {
@@ -44,6 +46,22 @@ const info: AppUpdateInfo = {
 const ctx = { lang: 'zh-Hans', lastCheck: null, now: 0 };
 
 describe('版本说明', () => {
+  it('各平台实际更新清单的说明经主进程解析进入更新窗，并回退到英文', () => {
+    const directory = new URL('../../../../apps/desktop/releases/', import.meta.url);
+    for (const file of readdirSync(directory).filter(name => /^appcast-.*\.json$/.test(name))) {
+      const text = readFileSync(new URL(file, directory), 'utf8');
+      const wire = JSON.parse(text);
+      const parsed = parseManifest(text, wire.target, false, wire.variant);
+      expect(parsed.ok, file).toBe(true);
+      if (!parsed.ok) continue;
+      const st: AppUpdateState = { k: 'ready', info: parsed.info, path: '/cached-update' };
+      const english = dialog(st, { lang: 'en', current: null });
+      expect(english?.notes.length, file).toBeGreaterThan(0);
+      expect(english?.notes.join('\n'), file).toBe(notesText(parsed.info, 'en').trim());
+      expect(dialog(st, { lang: 'und', current: null })?.notes, file).toEqual(english?.notes);
+    }
+  });
+
   it('取当前语言，缺了按主语言、英文、notes 回落；关于页最多 6 行', () => {
     const zh = notesFor(info, 'zh-Hans');
     expect(zh.lines).toHaveLength(6);

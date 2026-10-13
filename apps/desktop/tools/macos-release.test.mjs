@@ -7,6 +7,17 @@ import { fileHash } from './windows-release.mjs';
 import { createMacDraft, downloadMacAsset, findMacRelease, publicReport, publishMacDraft, uploadMacAsset, validateMacPackage } from './macos-release.mjs';
 
 const expected = { sourceCommit: 'a'.repeat(40), signingSha1: 'C'.repeat(40) };
+test('Mac publication rejects a candidate with empty update notes', async () => {
+  const { directory } = await fixture();
+  try {
+    const file = path.join(directory, 'appcast-aarch64-apple-darwin.json');
+    const feed = JSON.parse(readFileSync(file, 'utf8'));
+    feed.notes = ' \n ';
+    writeFileSync(file, JSON.stringify(feed));
+    await assert.rejects(validateMacPackage(directory, expected), /non-empty English notes/);
+  } finally { rmSync(directory, { recursive: true, force: true }); }
+});
+
 async function fixture() {
   const directory = mkdtempSync(path.join(tmpdir(), 'baocut-mac-release-test-'));
   const report = { schema: 1, product: 'BaoCut', appId: 'com.baocut.app', version: '3.0.0', build: 61,
@@ -20,7 +31,7 @@ async function fixture() {
     report[kind] = { format, file, size: bytes.length, sha256 };
     writeFileSync(path.join(directory, `${file}.sha256`), `${sha256}  ${file}\n`);
   }
-  const feed = { schema: 1, target: report.target, version: report.version, build: report.build, date: '2026-10-08', notes: '', notesLocalized: {},
+  const feed = { schema: 1, target: report.target, version: report.version, build: report.build, date: '2026-10-08', notes: 'Caption fixes.', notesLocalized: {},
     app: { format: 'zip', url: `https://github.com/jimliu/baocut/releases/download/baocut-v3.0.0-build.61/${report.portable.file}`,
       size: report.portable.size, sha256: report.portable.sha256 } };
   writeFileSync(path.join(directory, 'app-release.json'), JSON.stringify(report));
