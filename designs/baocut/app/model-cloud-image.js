@@ -2,7 +2,7 @@
    三族引擎共一张能力表：云端 API 提供方 `cloud:<provider>/<model>`（OpenAI / Gemini / 百炼 / 火山引擎 / MiniMax / 智谱 /
    OpenRouter + OpenAI-compatible 自建；提供方 id 与 model-vendors.js 的目录一致，product-design §7.6）、Codex CLI 画图 `agent:codex/image-gen`（不走密钥，用装好并登录的
    Codex）、本地模型 `qwen-image-2.1`（4-bit，Apple Silicon / Windows / Linux）与蒸馏的 `qwen-image-2.1-turbo`
-   （8-bit，只在 Apple Silicon，固定 8 步）。这里放：三族 id 的判别与拆拼、API 提供方种子表、
+   （8-bit，固定 8 步，平台同基础版）。这里放：三族 id 的判别与拆拼、API 提供方种子表、
    按 (provider, model) 的能力表（§4）、画幅 → 尺寸（§4.5）、参数门（§10.2）、费用 / 状态一句、Codex 就绪判定（§2.2）、
    工具页与图片 Tab 共用的表单 / 记录 / 出处侧车（§7.5）、交给 Agent 的提示。真相将来在 `bcut_image::capabilities`
    与 `bcut-kernel/services/image_gen.rs`，这里照设计稿抄。只算，不画。 */
@@ -141,9 +141,10 @@
     {id: LOCAL_ID, name: 'Qwen-Image-2.1', size: 9.8 * 1024, platform: 'macos-arm64,windows-x64,linux-x64',
       desc: '文生图 · 4-bit · Apple Silicon / Windows / Linux · CPU 较慢',
       pace: QWEN_PACE, caps: LOCAL_CAPS({min: 8, max: 40, step: 4, default: 20})},
-    /* 蒸馏版：sigma 表写死在权重包里，只收 8 步；本机实测每步与基础版一样快，所以整张约快 2 倍多。没有 candle 变体，只在 Apple Silicon 列出 */
-    {id: LOCAL_TURBO_ID, name: 'Qwen-Image-2.1 Turbo', size: 17.7 * 1024, platform: 'macos-arm64',
-      desc: '文生图 · 蒸馏版 · 8-bit · 固定 8 步 · 比基础版快 2 倍多 · 只在 Apple Silicon',
+    /* 蒸馏版：sigma 表写死在权重包里，只收 8 步；本机实测每步与基础版一样快，所以整张约快 2 倍多。
+       Apple Silicon 用 MLX，Windows / Linux 用同一个 8-bit 仓库的 candle 变体（2026-10-12） */
+    {id: LOCAL_TURBO_ID, name: 'Qwen-Image-2.1 Turbo', size: 17.7 * 1024, platform: 'macos-arm64,windows-x64,linux-x64',
+      desc: '文生图 · 蒸馏版 · 8-bit · 固定 8 步 · 比基础版快 2 倍多 · Apple Silicon / Windows / Linux · CPU 较慢',
       pace: QWEN_PACE, caps: LOCAL_CAPS({min: 8, max: 8, step: 8, default: 8})},
   ];
   const LOCAL = Object.fromEntries(LOCAL_MODELS.map((m) => [m.id, m]));

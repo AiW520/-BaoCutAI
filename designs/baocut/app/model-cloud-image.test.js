@@ -202,16 +202,15 @@ test('费用 / 状态一句：云端算钱、本机估时、Codex 说慢', () =>
   assert.equal(I.localEta(I.LOCAL_ID, 512, 512, 20), 208);
 });
 
-test('本地生图两只：Turbo 只在 Apple Silicon、固定 8 步，步数跟着模型走（2026-10-12）', () => {
+test('本地生图两只：Turbo 与基础版同平台、固定 8 步，步数跟着模型走（2026-10-12）', () => {
   const ids = I.LOCAL_MODELS.map((m) => m.id);
   assert.deepEqual(ids, [I.LOCAL_ID, I.LOCAL_TURBO_ID]);
   const mac = I.engines({installed: () => true, platform: 'macos-arm64'}).filter((e) => e.family === 'local');
   assert.deepEqual(mac.map((e) => [e.id, e.ready]), [[I.LOCAL_ID, true], [I.LOCAL_TURBO_ID, true]], '菜单里两只都列');
   for (const platform of ['windows-x64', 'linux-x64']) {
-    const t = I.engines({installed: () => true, platform}).find((e) => e.id === I.LOCAL_TURBO_ID);
-    assert.equal(t.ready, false, platform);
-    assert.equal(t.why, '此平台或构建暂不可用', platform);
+    assert.equal(I.engines({installed: () => true, platform}).find((e) => e.id === I.LOCAL_TURBO_ID).ready, true, platform);
   }
+  assert.equal(I.engines({installed: () => true, platform: 'macos-x64'}).find((e) => e.id === I.LOCAL_TURBO_ID).why, '此平台或构建暂不可用');
   assert.deepEqual(I.stepsOf(I.LOCAL_ID), {min: 8, max: 40, step: 4, default: 20});
   assert.deepEqual(I.stepsOf(I.LOCAL_TURBO_ID), {min: 8, max: 8, step: 8, default: 8});
   assert.equal(I.stepsOf('cloud:openai/gpt-image-2'), null);

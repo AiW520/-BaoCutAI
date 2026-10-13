@@ -2704,9 +2704,9 @@
      note: '文生图 · 4-bit · Apple Silicon / Windows / Linux · CPU 较慢', repo: 'mlx-community/Qwen-Image-2.1-MLX-4bit', uses: [],
      license: {name: 'Qwen RESEARCH LICENSE AGREEMENT', url: 'https://huggingface.co/Qwen/Qwen-Image-2.1/blob/main/LICENSE', commercialUse: false,
        summary: '只许非商业用途（研究 / 评估），商用要向 Qwen 另行申请；MLX 包是它的派生物，受同一许可'}},
-    /* 蒸馏的 Turbo 版（2026-10-12）：mlx-serve 的 8-bit 转换，固定 8 步、每步与基础版一样快；只登记 MLX，所以只在 Apple Silicon 列出 */
-    {id: 'qwen-image-2.1-turbo', name: 'Qwen-Image-2.1 Turbo', cat: 'image', size: 18125, installed: false, platform: 'macos-arm64',
-     note: '文生图 · 蒸馏版 · 8-bit · 固定 8 步 · 比基础版快 2 倍多 · 只在 Apple Silicon', repo: 'ddalcu/Qwen-Image-2.1-Turbo-MLX-Serve-8bit', uses: [],
+    /* 蒸馏的 Turbo 版（2026-10-12）：mlx-serve 的 8-bit 转换，固定 8 步、每步与基础版一样快；Windows / Linux 用同一仓库的 candle 变体 */
+    {id: 'qwen-image-2.1-turbo', name: 'Qwen-Image-2.1 Turbo', cat: 'image', size: 18125, installed: false, platform: 'macos-arm64,windows-x64,linux-x64',
+     note: '文生图 · 蒸馏版 · 8-bit · 固定 8 步 · 比基础版快 2 倍多 · Apple Silicon / Windows / Linux · CPU 较慢', repo: 'ddalcu/Qwen-Image-2.1-Turbo-MLX-Serve-8bit', uses: [],
      license: {name: 'Qwen RESEARCH LICENSE AGREEMENT', url: 'https://huggingface.co/Qwen/Qwen-Image-2.1-Turbo/blob/main/LICENSE', commercialUse: false,
        summary: '只许非商业用途（研究 / 评估），商用要向 Qwen 另行申请；MLX 包是它的派生物，受同一许可'}},
     /* 音乐生成（2026-10-11）：YuE2 3B 的 GGUF 包（Q8 语言模型 + VAE），由 audio.cpp 引擎跑。引擎是这只模型的组件
