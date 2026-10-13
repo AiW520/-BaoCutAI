@@ -38,7 +38,7 @@
 
 ## 4. 怎么分
 
-先用 `baocut speech topic-boundaries`（`video`；有几份转写时给 `documentId`）找话题转折。它按意思比较前后几段讲话，给出话题明显变了的地方：
+先用 `baocut speech topic-boundaries`（`video`；有几份转写时给 `documentId`）找话题转折。它按意思比较前后几段讲话，给出话题明显变了的地方。它默认最多给 24 章的候选；超过一小时的录音按第 3 步的上限传 `maxChapters`（比目标章数多留几章的余地，最多 200），用户要的章节很短时把 `minChapterSec` 调小：
 
 - `mode` 为 `topic`：章节只落在 `first`（第一段的起点）与 `candidates[].at` 上，不在别处新开；`before` / `after` 是转折前后的原文，对照文稿确认这里确实换了话题。候选比目标章数多时按第 3 步的粗细合并：先合掉 `depth` 明显小的（多半是小插曲或举例），属于同一个更大话题的相邻几处合成一章。候选的时间已经落在段落或句子的开头，直接用。
 - `mode` 为 `model`：没有候选（`reason` 给原因：没装语义模型、文稿太短，或为 null 时没找到明显的转折），照下面的做法读文稿自己找。
