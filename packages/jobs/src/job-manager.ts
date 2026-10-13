@@ -319,6 +319,8 @@ export interface TaskSubmission {
    * 超过这台机器的容量时提交即被拒绝（`RESOURCE_ADMISSION_UNSATISFIABLE`）。
    */
   resources?: TaskResources;
+  /** 导出在目标磁盘暂存；不给时仍用 Runtime Home。由账本记录，以便重启清理。 */
+  stagingParent?: string;
   run(run: TaskRun): Promise<NonNullable<JobRecord['result']>>;
 }
 
@@ -560,6 +562,11 @@ export class JobManager {
       const entry = this.#entry(job, input, null, { kind: 'video' }, null);
       // 等恢复的任务还没有终结：`settled` 要等它真正结束。
       this.#entries.set(job.record.jobId, entry);
+      if (entry.stagingParent && isTerminal(entry.record.state)) {
+        await fs.rm(this.#stagingOf(entry.record.jobId), { recursive: true, force: true }).catch((error) => {
+          this.#log.warn('Failed to remove export staging folder', { jobId: entry.record.jobId, error: String(error) });
+        });
+      }
     }
     const jobsStaging = path.join(this.#options.paths.stagingDir, 'jobs');
     await fs.mkdir(jobsStaging, { recursive: true });
@@ -1222,6 +1229,7 @@ export class JobManager {
   /** 不经模型的任务（导出）：调用方已经冻结输入、做完预检。同一个 `commandId` 返回原来的任务。 */
   submitTask(submission: TaskSubmission, submitter: JobSubmitter): { jobId: Id } {
     if (this.#closing) throw new RpcError('busy', J.runtimeStopping());
+    if (submission.stagingParent && !path.isAbsolute(submission.stagingParent)) throw new RpcError('invalid-request', J.pathNotAbsolute());
     if (submission.commandId) {
       const existing = this.#byCommand(submission.commandId);
       if (existing) return { jobId: existing };
@@ -1259,7 +1267,7 @@ export class JobManager {
       ...submission.extra,
     };
     const entry = this.#entry(
-      { record, spec: submission.spec, workerVersion: null },
+      { record, spec: submission.spec, workerVersion: null, ...(submission.stagingParent ? { stagingParent: submission.stagingParent } : {}) },
       NO_INPUT,
       submission.commandId ?? null,
       { kind: 'video' },
@@ -1927,8 +1935,10 @@ export class JobManager {
     const staging = this.#stagingOf(record.jobId);
     Object.assign(record, { state: 'running', phase: 'starting', progress: null, error: null, startedAt: record.startedAt ?? nowIso() });
     this.#changed(entry, true);
+    // 外置盘上的目录在创建前先落账：强杀后仍知道哪个目录属于这次导出。
+    if (entry.stagingParent) await this.#save(true);
     await fs.rm(staging, { recursive: true, force: true });
-    await fs.mkdir(staging, { recursive: true });
+    await fs.mkdir(staging, { recursive: !entry.stagingParent });
     const controller = new AbortController();
     entry.controller = controller;
     if (entry.cancelRequested || this.#closing) controller.abort();
@@ -2599,7 +2609,9 @@ export class JobManager {
     entry.ticket = null;
     delete record.wait;
     delete entry.publishing;
-    await fs.rm(this.#stagingOf(record.jobId), { recursive: true, force: true }).catch(() => {});
+    await fs.rm(this.#stagingOf(record.jobId), { recursive: true, force: true }).catch((error) => {
+      this.#log.warn('Failed to remove task staging folder; cleanup will retry on restart', { jobId: record.jobId, error: String(error) });
+    });
     if (entry.leased) {
       entry.leased = false;
       if (record.videoId) this.#videos.release(record.videoId);
@@ -2690,17 +2702,21 @@ export class JobManager {
     if (persist) void this.#save();
   }
 
-  #save(): Promise<void> {
+  #save(strict = false): Promise<void> {
     if (this.#crashed) return Promise.resolve();
-    const jobs = [...this.#entries.values()].map(({ record, spec, workerVersion, videoPlace, remoteTaskId, publishing }) => ({
+    const jobs = [...this.#entries.values()].map(({ record, spec, workerVersion, videoPlace, remoteTaskId, publishing, stagingParent }) => ({
       record,
       spec,
       workerVersion,
+      ...(stagingParent ? { stagingParent } : {}),
       ...(videoPlace ? { videoPlace } : {}),
       ...(remoteTaskId ? { remoteTaskId } : {}),
       ...(publishing ? { publishing } : {}),
     }));
-    return this.#ledger.save(jobs).catch((error: unknown) => this.#log.error('Writing the task ledger failed', { error: String(error) }));
+    return this.#ledger.save(jobs).catch((error: unknown) => {
+      this.#log.error('Writing the task ledger failed', { error: String(error) });
+      if (strict) throw error;
+    });
   }
 
   /**
@@ -2740,6 +2756,8 @@ export class JobManager {
   }
 
   #stagingOf(jobId: Id): string {
+    const parent = this.#entries.get(jobId)?.stagingParent;
+    if (parent) return path.join(parent, `.baocut-export-${jobId}`);
     return path.join(this.#options.paths.stagingDir, 'jobs', jobId);
   }
 

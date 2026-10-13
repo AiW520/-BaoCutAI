@@ -3,6 +3,11 @@ const s = (n: number, one: string, many: string) => pluralForm('de', n, { one, o
 import type { RcExportMessages } from './rc-export.ts';
 
 export const de: RcExportMessages = {
+  temporarySpaceInsufficient: (p) => `Nicht genug Platz für temporäre Exportdateien auf dem Datenträger mit ${p.dir}. Benötigt werden etwa ${p.required} einschließlich 1 GiB Reserve; verfügbar sind ${p.available}.`,
+  artifactSpaceInsufficient: (p) => `Nicht genug Platz für die gespeicherte Exportkopie auf dem Datenträger mit ${p.dir}. Benötigt werden etwa ${p.required} einschließlich 1 GiB Reserve; verfügbar sind ${p.available}.`,
+  temporarySpaceRecovery: `Gib Speicherplatz auf diesem Datenträger frei, wähle einen Exportordner auf einem anderen Datenträger oder exportiere einen kürzeren Bereich oder mit niedrigerer Auflösung.`,
+  artifactSpaceRecovery: `Gib Speicherplatz auf dem Datenträger des Runtime-Artefaktspeichers frei. Ein anderer Exportordner verschiebt diese gespeicherte Kopie nicht.`,
+
 
   listSeparator: ", ",
   clauseSeparator: "; ",

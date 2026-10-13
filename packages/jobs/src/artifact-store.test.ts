@@ -1,4 +1,5 @@
 import { createHash } from 'node:crypto';
+import { constants } from 'node:fs';
 import fs from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
@@ -45,6 +46,48 @@ describe('ArtifactStore 写入 fsync', () => {
   });
 
   const store = () => new ArtifactStore(path.join(dir, 'artifacts'));
+
+  it('putFile：只有克隆不可用、实际要复制时才检查额外空间；拒绝后不留临时文件', async () => {
+    const source = path.join(dir, 'source.mp4');
+    await fs.writeFile(source, Buffer.alloc(4096, 8));
+    const copy = fs.copyFile.bind(fs);
+    const calls: string[] = [];
+    vi.spyOn(fs, 'copyFile').mockImplementation(async (from, to, flags) => {
+      if (flags === constants.COPYFILE_FICLONE_FORCE) {
+        calls.push('clone');
+        throw Object.assign(new Error('different disks'), { code: 'EXDEV' });
+      }
+      calls.push('copy');
+      return copy(from, to, flags);
+    });
+    const artifacts = store();
+    await expect(artifacts.putFile(source, 'mp4', { beforeCopy: async (bytes) => {
+      expect(bytes).toBe(4096);
+      calls.push('check');
+      throw new Error('no space');
+    } })).rejects.toThrow('no space');
+    expect(calls).toEqual(['clone', 'check']);
+    expect(await fs.readdir(artifacts.dir)).toEqual([]);
+    calls.length = 0;
+    const check = vi.fn(async () => { calls.push('check'); });
+    const result = await artifacts.putFile(source, 'mp4', { beforeCopy: check });
+    expect(calls).toEqual(['clone', 'check', 'copy']);
+    expect(await fs.readFile(result.path)).toEqual(await fs.readFile(source));
+    calls.length = 0;
+    await artifacts.putFile(source, 'mp4', { beforeCopy: async () => { throw new Error('cached content must not need space'); } });
+    expect(calls).toEqual([]);
+  });
+
+  it('putFile：克隆成功时无需按整份文件检查空闲空间', async () => {
+    const source = path.join(dir, 'source.mp4');
+    await fs.writeFile(source, 'video');
+    const copy = fs.copyFile.bind(fs);
+    vi.spyOn(fs, 'copyFile').mockImplementation(async (from, to) => copy(from, to));
+    const check = vi.fn(async () => { throw new Error('should not check'); });
+    const result = await store().putFile(source, 'mp4', { beforeCopy: check });
+    expect(check).not.toHaveBeenCalled();
+    expect(await fs.readFile(result.path, 'utf8')).toBe('video');
+  });
   /** 路径的类别：产物目录、临时文件、产物文件。 */
   function label(file: string | undefined): string {
     if (!file) return '?';

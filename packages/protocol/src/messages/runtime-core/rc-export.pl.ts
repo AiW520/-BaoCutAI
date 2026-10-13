@@ -2,6 +2,11 @@ import { pluralForm } from '../../i18n.ts';
 import type { RcExportMessages } from './rc-export.ts';
 
 export const pl: RcExportMessages = {
+  temporarySpaceInsufficient: (p) => `Za mało miejsca na pliki tymczasowe eksportu na dysku zawierającym ${p.dir}. Potrzeba około ${p.required}, w tym 1 GiB rezerwy; dostępne: ${p.available}.`,
+  artifactSpaceInsufficient: (p) => `Za mało miejsca na zachowaną kopię eksportu na dysku zawierającym ${p.dir}. Potrzeba około ${p.required}, w tym 1 GiB rezerwy; dostępne: ${p.available}.`,
+  temporarySpaceRecovery: `Zwolnij miejsce na tym dysku, wybierz folder eksportu na innym dysku lub wyeksportuj krótszy zakres albo w niższej rozdzielczości.`,
+  artifactSpaceRecovery: `Zwolnij miejsce na dysku magazynu wyników Runtime. Zmiana folderu eksportu nie przenosi tej zachowanej kopii.`,
+
   listSeparator: ", ",
   clauseSeparator: "; ",
 

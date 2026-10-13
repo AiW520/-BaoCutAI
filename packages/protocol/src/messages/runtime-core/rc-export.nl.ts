@@ -3,6 +3,11 @@ const s = (n: number, one: string, many: string) => pluralForm('nl', n, { one, o
 import type { RcExportMessages } from './rc-export.ts';
 
 export const nl: RcExportMessages = {
+  temporarySpaceInsufficient: (p) => `Onvoldoende ruimte voor tijdelijke exportbestanden op de schijf met ${p.dir}. Ongeveer ${p.required} nodig, inclusief 1 GiB reserve; ${p.available} beschikbaar.`,
+  artifactSpaceInsufficient: (p) => `Onvoldoende ruimte voor de bewaarde exportkopie op de schijf met ${p.dir}. Ongeveer ${p.required} nodig, inclusief 1 GiB reserve; ${p.available} beschikbaar.`,
+  temporarySpaceRecovery: `Maak ruimte vrij op deze schijf, kies een exportmap op een andere schijf of exporteer een korter bereik of met een lagere resolutie.`,
+  artifactSpaceRecovery: `Maak ruimte vrij op de schijf met de Runtime-resultatenopslag. Een andere exportmap verplaatst deze bewaarde kopie niet.`,
+
 
   listSeparator: ", ",
   clauseSeparator: "; ",

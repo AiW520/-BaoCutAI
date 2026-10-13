@@ -74,6 +74,57 @@ describe('不经模型的任务（JobManager.submitTask）', () => {
 
   const submitter = { kind: 'connection', id: 'conn_1' } as const;
 
+  it.each(['completed', 'failed', 'cancelled', 'interrupted'] as const)('目标磁盘 staging 在 %s 后删除，只清理本任务目录', async (state) => {
+    const destination = path.join(dir, '目标 外置盘');
+    await fs.mkdir(destination);
+    const userFile = path.join(destination, 'keep.mp4');
+    await fs.writeFile(userFile, 'user output');
+    let staging = '';
+    let started!: () => void;
+    const running = new Promise<void>((resolve) => { started = resolve; });
+    const { jobId } = manager.submitTask(submission(async (run) => {
+      staging = run.staging;
+      expect(path.dirname(staging)).toBe(destination);
+      await fs.writeFile(path.join(staging, 'out.wav'), 'temporary bytes');
+      started();
+      if (state === 'completed') return { documentId: null, artifactId: 'sha256:x', outputs: [] };
+      if (state === 'failed') throw new TaskFailure('EXPORT_RENDER_FAILED', 'failed');
+      await new Promise((_, reject) => run.signal.addEventListener('abort', () => reject(new Error('aborted')), { once: true }));
+      throw new Error('unreachable');
+    }, { stagingParent: destination }), submitter);
+    await running;
+    expect(staging).toBe(path.join(destination, `.baocut-export-${jobId}`));
+    if (state === 'cancelled') await manager.cancel(jobId);
+    if (state === 'interrupted') await manager.shutdown();
+    expect(await manager.settled(jobId)).toBe(state);
+    expect(await fs.readdir(destination)).toEqual(['keep.mp4']);
+    expect(await fs.readFile(userFile, 'utf8')).toBe('user output');
+    // 模拟终态落账后被强杀留下的目录，重启靠账本精确清理，不遍历用户目录。
+    await manager.shutdown();
+    await fs.mkdir(staging);
+    await fs.writeFile(path.join(staging, 'leftover.wav'), 'leftover');
+    if (state === 'interrupted') {
+      // 模拟异常退出：账本只留下 running，尚未来得及记 interrupted 或清理。
+      const lines = (await fs.readFile(paths.jobsFile, 'utf8')).trim().split('\n').map((line) => JSON.parse(line));
+      const latest = lines.findLast((line) => line.op === 'put' && line.record.jobId === jobId);
+      latest.record.state = 'running';
+      latest.record.endedAt = null;
+      await fs.appendFile(paths.jobsFile, `${JSON.stringify(latest)}\n`);
+    }
+    manager = await open();
+    expect(await fs.readdir(destination)).toEqual(['keep.mp4']);
+    if (state === 'interrupted') expect(manager.inspect(jobId).state).toBe('interrupted');
+  });
+
+  it('目标盘失联时失败，不递归重建目标目录到系统盘', async () => {
+    const destination = path.join(dir, 'disconnected');
+    const { jobId } = manager.submitTask(submission(async () => {
+      throw new Error('should not run');
+    }, { stagingParent: destination }), submitter);
+    expect(await manager.settled(jobId)).toBe('failed');
+    await expect(fs.stat(destination)).rejects.toThrow();
+  });
+
   it('正常返回即完成：结果、阶段与警告进记录，staging 删除，重启后还查得到', async () => {
     let staging = '';
     const { jobId } = manager.submitTask(

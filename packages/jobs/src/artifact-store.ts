@@ -165,7 +165,11 @@ export class ArtifactStore {
   }
 
   /** 把一个文件存为产物（边读边算摘要，不整个读进内存；导出的音频与成片用它）。文件系统支持时克隆而不复制（APFS）。 */
-  async putFile(source: string, extension: ArtifactExtension): Promise<{ artifactId: string; path: string; byteLength: number }> {
+  async putFile(
+    source: string,
+    extension: ArtifactExtension,
+    options: { beforeCopy?: (byteLength: number) => Promise<void> } = {},
+  ): Promise<{ artifactId: string; path: string; byteLength: number }> {
     const hash = createHash('sha256');
     let byteLength = 0;
     for await (const chunk of createReadStream(source)) {
@@ -183,7 +187,17 @@ export class ArtifactStore {
       await fs.mkdir(this.dir, { recursive: true });
       const tmp = `${file}.${randomUUID()}.tmp`;
       await publish(tmp, file, async () => {
-        await fs.copyFile(source, tmp, constants.COPYFILE_FICLONE);
+        if (options.beforeCopy) {
+          // 已有内容不用复制；同卷可克隆时也不要求整份文件的额外空间。只有实际需要复制时才检查。
+          try {
+            await fs.copyFile(source, tmp, constants.COPYFILE_FICLONE_FORCE);
+          } catch (error) {
+            const code = (error as NodeJS.ErrnoException).code;
+            if (!['EXDEV', 'ENOTSUP', 'EOPNOTSUPP', 'ENOSYS', 'EINVAL', 'ENOTTY', 'EPERM', 'ENOSPC'].includes(code ?? '')) throw error;
+            await options.beforeCopy(byteLength);
+            await fs.copyFile(source, tmp);
+          }
+        } else await fs.copyFile(source, tmp, constants.COPYFILE_FICLONE);
         await fs.chmod(tmp, 0o644);
         // 克隆（或复制）出来的文件同样要 fsync。用 r+ 打开：Windows 上只读句柄不能 fsync。
         const handle = await fs.open(tmp, 'r+');

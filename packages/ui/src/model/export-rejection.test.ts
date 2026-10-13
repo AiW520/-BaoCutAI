@@ -85,7 +85,14 @@ describe('导出被拒', () => {
         kind: 'portable',
         stage: 'rejected',
       }),
-    ).toMatchObject({ items: ['需要约 3.0 GB，只剩 512 MB'], remedy: { kind: 'pick-dir' } });
+    ).toMatchObject({ items: ['/d', '需要约 3.0 GB，只剩 512 MB'], remedy: { kind: 'pick-dir' } });
+  });
+
+  it('持久副本空间不足时给出产物库路径，不建议换导出目录', () => {
+    const problem = explainExportError(new RpcError('conflict', '持久副本磁盘空间不足', {
+      code: 'EXPORT_INSUFFICIENT_SPACE', dir: '/runtime/artifacts', storage: 'artifact', required: 3 * 1024 ** 3, available: 1024 ** 3,
+    }), { kind: 'video', stage: 'failed' });
+    expect(problem).toMatchObject({ title: '导出失败', items: ['/runtime/artifacts'], remedy: null });
   });
 
   it('范围里没东西：写出那一段', () => {

@@ -1,6 +1,11 @@
 import type { RcExportMessages } from './rc-export.ts';
 
 export const ja: RcExportMessages = {
+  temporarySpaceInsufficient: (p) => `書き出しの一時ファイル用の空き容量が不足しています：${p.dir} のあるディスク。1 GiB の予約分を含め約 ${p.required} が必要ですが、空きは ${p.available} です。`,
+  artifactSpaceInsufficient: (p) => `書き出しの保存用コピーの空き容量が不足しています：${p.dir} のあるディスク。1 GiB の予約分を含め約 ${p.required} が必要ですが、空きは ${p.available} です。`,
+  temporarySpaceRecovery: `このディスクの空き容量を増やすか、別のディスクの書き出し先を選ぶか、範囲を短くするか解像度を下げてください。`,
+  artifactSpaceRecovery: `Runtime の成果物ストアがあるディスクの空き容量を増やしてください。書き出し先を変更しても保存用コピーは移動しません。`,
+
   listSeparator: '、',
   clauseSeparator: '。',
 

@@ -1,6 +1,11 @@
 import type { RcExportMessages } from './rc-export.ts';
 import { pluralForm } from '../../i18n.ts';
 export const es: RcExportMessages = {
+  temporarySpaceInsufficient: (p) => `No hay espacio suficiente para los archivos temporales de exportación en el disco que contiene ${p.dir}. Se necesitan unos ${p.required}, incluida una reserva de 1 GiB; hay ${p.available} disponibles.`,
+  artifactSpaceInsufficient: (p) => `No hay espacio suficiente para la copia guardada de la exportación en el disco que contiene ${p.dir}. Se necesitan unos ${p.required}, incluida una reserva de 1 GiB; hay ${p.available} disponibles.`,
+  temporarySpaceRecovery: `Libera espacio en este disco, elige una carpeta de exportación en otro disco o exporta un intervalo más corto o a menor resolución.`,
+  artifactSpaceRecovery: `Libera espacio en el disco del almacén de resultados de Runtime. Cambiar la carpeta de exportación no mueve esta copia guardada.`,
+
  listSeparator: ', ', clauseSeparator: '; ',
  destinationNotAbsolute: 'La carpeta de exportación debe ser una ruta absoluta', destinationCreateFailed: (p) => `No se puede crear la carpeta de exportación: ${p.reason}`, destinationNotDirectory: 'La carpeta de exportación no existe o no es una carpeta', destinationNotWritable: 'No se puede escribir en la carpeta de exportación', destinationFileExists: (p) => `El archivo ya existe: ${p.fileName}`, destinationWriteFailed: (p) => `No se puede escribir en la carpeta de exportación: ${p.reason}`, destinationTooManyDuplicates: 'Demasiados archivos con el mismo nombre', destinationExistsRecovery: 'Elige otro nombre de archivo o pide explícitamente sobrescribir (overwrite)', destinationUnwritableRecovery: 'Elige una carpeta con permiso de escritura o pide al usuario que cambie sus permisos',
  exportTaskNotFound: 'Tarea de exportación no encontrada', exportKindUnsupported: (p) => `Esta versión aún no puede exportar ${p.kind}`, videoNotOpen: 'El vídeo no está abierto; ábrelo primero', fileNameWithMultipleRanges: 'Cada intervalo produce su propio archivo, por lo que no pueden compartir un fileName', documentNotExportable: (p) => `Los documentos de tipo ${p.kind} no se pueden exportar como subtítulos o transcripción`, nothingInRange: 'No hay texto en el intervalo de exportación (puede que se haya cortado todo o que el documento esté vacío)',

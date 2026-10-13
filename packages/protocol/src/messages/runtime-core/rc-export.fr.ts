@@ -2,6 +2,11 @@ import type { RcExportMessages } from './rc-export.ts';
 import { pluralForm } from '../../i18n.ts';
 
 export const fr: RcExportMessages = {
+  temporarySpaceInsufficient: (p) => `Espace insuffisant pour les fichiers temporaires d’export sur le disque contenant ${p.dir}. Environ ${p.required} sont nécessaires, dont une réserve de 1 GiB ; ${p.available} sont disponibles.`,
+  artifactSpaceInsufficient: (p) => `Espace insuffisant pour la copie conservée de l’export sur le disque contenant ${p.dir}. Environ ${p.required} sont nécessaires, dont une réserve de 1 GiB ; ${p.available} sont disponibles.`,
+  temporarySpaceRecovery: `Libérez de l’espace sur ce disque, choisissez un dossier d’export sur un autre disque ou exportez une plage plus courte ou à une résolution inférieure.`,
+  artifactSpaceRecovery: `Libérez de l’espace sur le disque du stockage des résultats de Runtime. Changer le dossier d’export ne déplace pas cette copie conservée.`,
+
   listSeparator: ', ', clauseSeparator: ' ; ', destinationNotAbsolute: 'Le dossier d’export doit être un chemin absolu', destinationCreateFailed: (p) => `Impossible de créer le dossier d’export : ${p.reason}`,
   destinationNotDirectory: 'Le dossier d’export n’existe pas ou n’est pas un dossier', destinationNotWritable: 'Le dossier d’export n’est pas accessible en écriture', destinationFileExists: (p) => `Le fichier existe déjà : ${p.fileName}`, destinationWriteFailed: (p) => `Impossible d’écrire dans le dossier d’export : ${p.reason}`,
   destinationTooManyDuplicates: 'Trop de fichiers portant le même nom', destinationExistsRecovery: 'Choisissez un autre nom de fichier ou demandez explicitement l’écrasement (overwrite)', destinationUnwritableRecovery: 'Choisissez un dossier accessible en écriture ou demandez à l’utilisateur de modifier ses autorisations',

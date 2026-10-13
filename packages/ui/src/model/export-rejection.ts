@@ -202,12 +202,17 @@ export function explainExportError(error: ErrorLike | unknown, ctx: ExplainConte
       return { ...base, items: list(details.items).map((i) => [text(i.path), text(i.reason)].filter(Boolean).join(' · ')) };
     case 'EXPORT_INSUFFICIENT_SPACE': {
       const items =
-        typeof details.required === 'number' && typeof details.available === 'number'
+        !details.storage && typeof details.required === 'number' && typeof details.available === 'number'
           ? [M.space(fmtSize(details.required), fmtSize(details.available))]
-          : text(details.dir)
-            ? [details.dir as string]
-            : [];
-      return { ...base, items, remedy: { kind: 'pick-dir' } };
+          : [];
+      if (text(details.dir)) items.unshift(details.dir as string);
+      const artifact = details.storage === 'artifact';
+      return {
+        ...base,
+        title: artifact ? (ctx.stage === 'rejected' ? M.notStarted : M.failed) : base.title,
+        items,
+        remedy: artifact ? null : { kind: 'pick-dir' },
+      };
     }
     case 'EXPORT_DESTINATION_EXISTS':
     case 'EXPORT_DESTINATION_UNWRITABLE':

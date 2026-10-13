@@ -1,6 +1,11 @@
 import type { RcExportMessages } from './rc-export.ts';
 
 export const zhHant: RcExportMessages = {
+  temporarySpaceInsufficient: (p) => `匯出暫存檔案所在磁碟空間不足：${p.dir}。需要約 ${p.required}（含 1 GiB 預留），目前可用 ${p.available}。`,
+  artifactSpaceInsufficient: (p) => `匯出持久副本所在磁碟空間不足：${p.dir}。需要約 ${p.required}（含 1 GiB 預留），目前可用 ${p.available}。`,
+  temporarySpaceRecovery: `釋放該磁碟空間、選擇另一顆磁碟上的匯出資料夾，或縮短匯出範圍、降低解析度。`,
+  artifactSpaceRecovery: `釋放 Runtime 產物庫所在磁碟的空間。更換匯出資料夾不會移動這份持久副本。`,
+
   listSeparator: '、',
   clauseSeparator: '；',
 

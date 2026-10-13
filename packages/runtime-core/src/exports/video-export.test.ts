@@ -596,7 +596,7 @@ describe.skipIf(!engine || !worker || !ffmpeg)('成片导出（真实引擎 + Re
       const job = await client.request('exports.get', { jobId });
       return job.progress?.unit === 'frames' && job.progress.done > 0;
     });
-    const staging = path.join(resolveRuntimeHome({ BAOCUT_HOME: dir }).stagingDir, 'jobs', jobId);
+    const staging = path.join(project.path, 'exports', `.baocut-export-${jobId}`);
     await client.request('jobs.cancel', { jobId });
     const cancelled = await finish(jobId);
     expect(cancelled.state).toBe('cancelled');
@@ -641,7 +641,7 @@ describe.skipIf(!engine || !worker || !ffmpeg)('成片导出（真实引擎 + Re
       const children = processes().filter((p) => p.pgid === renderer!.pid && p.pid !== renderer!.pid);
       expect(children.some((p) => p.command.includes('ffmpeg'))).toBe(true);
 
-      const staging = path.join(resolveRuntimeHome({ BAOCUT_HOME: dir }).stagingDir, 'jobs', jobId);
+      const staging = path.join(project.path, 'exports', `.baocut-export-${jobId}`);
       // 先把 ffmpeg 停住：停住的进程不会因为管道断了自己退出，只有 Runtime 杀掉进程组才收得掉（否则就是孤儿）。
       for (const child of children) process.kill(child.pid, 'SIGSTOP');
       process.kill(renderer!.pid, 'SIGKILL');

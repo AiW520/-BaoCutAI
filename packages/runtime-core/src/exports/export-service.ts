@@ -65,12 +65,12 @@ import {
   checkFixedName,
   hiddenTemp,
   prepareDirectory,
-  publishFile,
   publishInPlace,
   safeFileStem,
   sourceRoot,
   withExtension,
 } from './export-publish.ts';
+import { checkExportSpace } from './export-space.ts';
 import { checkText, renderText, type FrontMatter, type TextChapter, type TextExportOutput } from './text-export.ts';
 import { sourceChapters, sourcePlan } from './text-source.ts';
 import {
@@ -1302,8 +1302,14 @@ export class ExportService {
     run: (task: TaskRun) => Promise<NonNullable<JobRecord['result']>>,
     resources?: TaskResources,
   ): Promise<{ jobId: Id }> {
+    // 临时文件在目标盘；机器调度只计内存/GPU/CPU。磁盘在提交与实际开始时探测目标目录，
+    // 同一设备上的导出串行执行，避免两条导出同时消耗同一份可用空间。
+    const scratchBytes = resources?.demand?.scratchDisk ?? 0;
+    await checkExportSpace(dir, scratchBytes);
+    const device = (await fs.stat(dir)).dev;
+    const machineResources = resources ? { ...resources, demand: { ...resources.demand, scratchDisk: 0 } } : undefined;
     // 这台机器永远放不下的导出不建任务（`RESOURCE_ADMISSION_UNSATISFIABLE`），也不留下快照。
-    const exceeded = resources ? this.#jobs.resources.check({ owner: '', label: `export:${settings.kind}`, ...resources }) : null;
+    const exceeded = machineResources ? this.#jobs.resources.check({ owner: '', label: `export:${settings.kind}`, ...machineResources }) : null;
     if (exceeded) {
       const { messageRef } = exceeded as { messageRef?: MessageRef };
       throw new RpcError('conflict', exceeded.message, { code: exceeded.code, dimensions: exceeded.dimensions }, messageRef);
@@ -1329,9 +1335,20 @@ export class ExportService {
           },
         },
         ...(request.commandId ? { commandId: request.commandId } : {}),
-        queue: { key: 'export', concurrency: 2 },
-        ...(resources ? { resources } : {}),
-        run,
+        queue: { key: `export:${device}`, concurrency: 1 },
+        stagingParent: dir,
+        ...(machineResources ? { resources: machineResources } : {}),
+        run: async (task) => {
+          try {
+            await checkExportSpace(dir, scratchBytes);
+            return await run(task);
+          } catch (error) {
+            if (error instanceof RpcError) {
+              throw taskFailureOf((error.details as { code?: string })?.code ?? 'EXPORT_RENDER_FAILED', error, error.details);
+            }
+            throw error;
+          }
+        },
       },
       submitter,
     );
@@ -1358,11 +1375,14 @@ export class ExportService {
     const outputs: GeneratedOutput[] = [];
     for (const item of staged) {
       try {
-        const final = await publishFile(item.file, dir, item.fileName, {
+        const artifact = await this.#jobs.artifacts.putFile(item.file, item.format as ArtifactExtension, {
+          beforeCopy: (bytes) => checkExportSpace(this.#jobs.artifacts.dir, bytes, 'artifact'),
+        });
+        // staging 与目标同卷，直接挂到最终名字；不在目标盘再复制一次成片。
+        const final = await publishInPlace(item.file, dir, item.fileName, {
           overwrite: request.destination?.overwrite === true,
           fixed: request.destination?.fileName !== undefined,
         });
-        const artifact = await this.#jobs.artifacts.putFile(item.file, item.format as ArtifactExtension);
         outputs.push({
           artifactId: artifact.artifactId,
           mediaType: MEDIA_TYPES[item.format] ?? 'application/octet-stream',
@@ -1374,6 +1394,10 @@ export class ExportService {
           validation: item.validation,
         });
       } catch (error) {
+        if (error instanceof RpcError) {
+          const result = outputs.length ? { documentId: null, artifactId: outputs[0]!.artifactId, outputs } : null;
+          throw taskFailureOf((error.details as { code?: string })?.code ?? 'EXPORT_PUBLISH_FAILED', error, error.details, result);
+        }
         const code = error instanceof DestinationError ? error.code : 'EXPORT_PUBLISH_FAILED';
         failed.push({ fileName: item.fileName, code, problems: [error instanceof Error ? error.message : String(error)] });
       }

@@ -4,6 +4,11 @@ import { pluralForm } from '../../i18n.ts';
 const s = (n: number, one: string, many: string) => pluralForm('pt-BR', n, { one, other: many });
 
 export const ptBR: RcExportMessages = {
+  temporarySpaceInsufficient: (p) => `Não há espaço para os arquivos temporários de exportação no disco que contém ${p.dir}. São necessários cerca de ${p.required}, incluindo 1 GiB de reserva; há ${p.available} disponíveis.`,
+  artifactSpaceInsufficient: (p) => `Não há espaço para a cópia salva da exportação no disco que contém ${p.dir}. São necessários cerca de ${p.required}, incluindo 1 GiB de reserva; há ${p.available} disponíveis.`,
+  temporarySpaceRecovery: `Libere espaço neste disco, escolha uma pasta de exportação em outro disco ou exporte um trecho mais curto ou em resolução menor.`,
+  artifactSpaceRecovery: `Libere espaço no disco do armazenamento de resultados do Runtime. Mudar a pasta de exportação não move esta cópia salva.`,
+
 
   listSeparator: ", ",
   clauseSeparator: "; ",

@@ -1,6 +1,11 @@
 import type { RcExportMessages } from './rc-export.ts';
 
 export const zhHans: RcExportMessages = {
+  temporarySpaceInsufficient: (p) => `导出临时文件所在磁盘空间不足：${p.dir}。需要约 ${p.required}（含 1 GiB 预留），当前可用 ${p.available}。`,
+  artifactSpaceInsufficient: (p) => `导出持久副本所在磁盘空间不足：${p.dir}。需要约 ${p.required}（含 1 GiB 预留），当前可用 ${p.available}。`,
+  temporarySpaceRecovery: `释放该磁盘空间、选择另一块磁盘上的导出目录，或缩短导出范围、降低分辨率。`,
+  artifactSpaceRecovery: `释放 Runtime 产物库所在磁盘的空间。更换导出目录不会移动这份持久副本。`,
+
   listSeparator: '、',
   clauseSeparator: '；',
 

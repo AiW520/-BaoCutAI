@@ -18,6 +18,8 @@ export interface StoredJob {
   spec: TranscribeInputSpec | GenerationInputSpec | TaskInputSpec | HostedJobSpec;
   /** 第一次尝试的 Worker 版本：重试必须相同（架构设计 §6.5）。 */
   workerVersion: string | null;
+  /** 导出的目标目录；临时目录是该目录下仅属于此任务的隐藏子目录。 */
+  stagingParent?: string;
   /** 提交时视频的位置：重启后重新排队要先按它打开视频（§7.5）。没有视频时没有。 */
   videoPlace?: VideoPlace | null;
   /** 远端任务 ID（可查询的在线 Provider 提交之后给出，重启后据此查询，§7.5）。现有的 Provider 都没有。 */

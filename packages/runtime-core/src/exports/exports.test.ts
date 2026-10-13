@@ -1,8 +1,9 @@
 import { execFileSync } from 'node:child_process';
+import { constants } from 'node:fs';
 import fs from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
-import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest';
+import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { BaoCutClient } from '@baocut/client';
 import {
   RpcError,
@@ -162,6 +163,7 @@ describe.skipIf(!engine || !ffmpeg)('导出（真实引擎 + ffmpeg）', () => {
   let client: BaoCutClient;
   let project: Project;
   let home: ReturnType<typeof resolveRuntimeHome>;
+  let exportTestDirectory: string | null = null;
 
   beforeAll(async () => {
     fixtures = await fs.mkdtemp(path.join(os.tmpdir(), 'baocut-export-fixtures-'));
@@ -196,8 +198,11 @@ describe.skipIf(!engine || !ffmpeg)('导出（真实引擎 + ffmpeg）', () => {
   });
 
   afterEach(async () => {
+    vi.restoreAllMocks();
     client?.close();
     await runtime?.close();
+    if (exportTestDirectory) await fs.rm(exportTestDirectory, { recursive: true, force: true });
+    exportTestDirectory = null;
     await fs.rm(dir, { recursive: true, force: true });
   });
 
@@ -266,6 +271,83 @@ describe.skipIf(!engine || !ffmpeg)('导出（真实引擎 + ffmpeg）', () => {
     ]);
     return { videoId, documentId };
   }
+
+  it('系统盘临时容量很低、目标盘充足时仍能导出音频；临时目录位于目标盘并被清理', async () => {
+    const { videoId } = await speechVideo();
+    const destination = await fs.mkdtemp(path.join(process.env.BAOCUT_EXPORT_TEST_DISK ?? project.path, 'baocut-export-test-'));
+    exportTestDirectory = destination;
+    if (process.env.BAOCUT_EXPORT_TEST_DISK) expect((await fs.stat(destination)).dev).not.toBe((await fs.stat(home.root)).dev);
+    const stats = await fs.statfs(destination);
+    const systemFree = 1024 ** 3 + 32 * 1024 ** 2;
+    vi.spyOn(fs, 'statfs').mockImplementation(async (file) => ({
+      ...stats,
+      bavail: Math.floor((String(file).startsWith(home.stagingDir) || String(file).startsWith(home.artifactsDir) ? systemFree : 441 * 1024 ** 3) / stats.bsize),
+    }));
+    runtime.models.jobs.resources.recheck();
+    await until(() => runtime.models.jobs.resources.snapshot().capacity.scratchDisk === Math.floor(systemFree / stats.bsize) * stats.bsize);
+    const directories: string[] = [];
+    const mkdir = fs.mkdir.bind(fs);
+    vi.spyOn(fs, 'mkdir').mockImplementation(async (file, options) => {
+      if (String(file).includes('.baocut-export-job_')) directories.push(String(file));
+      return mkdir(file, options);
+    });
+    const job = await exportOnce({ videoId, destination: { dir: destination }, settings: { kind: 'audio', format: 'wav' } });
+    const staging = path.join(destination, `.baocut-export-${job.jobId}`);
+    expect(directories).toContain(staging);
+    expect(await fs.readdir(destination)).toEqual([path.basename(job.result!.outputs![0]!.path!)]);
+    await expect(fs.stat(path.join(home.stagingDir, 'jobs', job.jobId))).rejects.toThrow();
+    expect(await runtime.models.jobs.artifacts.locate(job.result!.outputs![0]!.artifactId)).toBeTruthy();
+  });
+
+  it('目标盘空间不足时拒绝建任务，说明目标路径和容量，不留临时文件', async () => {
+    const { videoId } = await speechVideo();
+    const destination = await fs.mkdtemp(path.join(project.path, 'baocut-export-space-'));
+    exportTestDirectory = destination;
+    const stats = await fs.statfs(destination);
+    vi.spyOn(fs, 'statfs').mockResolvedValue({ ...stats, bavail: Math.floor(1024 ** 3 / stats.bsize) });
+    const error = await rejection(client.request('exports.create', { videoId, destination: { dir: destination }, settings: { kind: 'audio', format: 'wav' } }));
+    expect(error.details).toMatchObject({ code: 'EXPORT_INSUFFICIENT_SPACE', storage: 'temporary', dir: destination, required: expect.any(Number), available: expect.any(Number) });
+    expect(error.message).toContain(destination);
+    expect((await client.request('exports.list', { videoId })).jobs).toEqual([]);
+    expect(await fs.readdir(destination)).toEqual([]);
+  });
+
+  it('提交后目标盘空间变少：任务明确失败，目标盘 staging 被清理', async () => {
+    const { videoId } = await speechVideo();
+    const destination = await fs.mkdtemp(path.join(project.path, 'baocut-export-space-'));
+    exportTestDirectory = destination;
+    const stats = await fs.statfs(destination);
+    const original = fs.statfs.bind(fs);
+    let probes = 0;
+    vi.spyOn(fs, 'statfs').mockImplementation(async (file) => {
+      if (String(file) !== destination) return original(file);
+      return { ...stats, bavail: Math.floor((++probes === 1 ? 441 * 1024 ** 3 : 1024 ** 3) / stats.bsize) };
+    });
+    const { jobId } = await client.request('exports.create', { videoId, destination: { dir: destination }, settings: { kind: 'audio', format: 'wav' } });
+    const job = await finish(jobId);
+    expect(job).toMatchObject({ state: 'failed', error: { code: 'EXPORT_INSUFFICIENT_SPACE', details: { storage: 'temporary', dir: destination } }, result: null });
+    await until(async () => (await fs.readdir(destination)).length === 0);
+  });
+
+  it('持久副本需要复制但产物库磁盘不足：明确报告产物库位置，不发布成片且清理 staging', async () => {
+    const { videoId } = await speechVideo();
+    const destination = await fs.mkdtemp(path.join(project.path, 'baocut-export-space-'));
+    exportTestDirectory = destination;
+    const stats = await fs.statfs(destination);
+    vi.spyOn(fs, 'statfs').mockImplementation(async (file) => ({
+      ...stats, bavail: Math.floor((String(file) === home.artifactsDir ? 1024 ** 3 : 441 * 1024 ** 3) / stats.bsize),
+    }));
+    const copy = fs.copyFile.bind(fs);
+    vi.spyOn(fs, 'copyFile').mockImplementation(async (from, to, flags) => {
+      if (flags === constants.COPYFILE_FICLONE_FORCE) throw Object.assign(new Error('clone unsupported'), { code: 'ENOTSUP' });
+      return copy(from, to, flags);
+    });
+    const { jobId } = await client.request('exports.create', { videoId, destination: { dir: destination }, settings: { kind: 'audio', format: 'wav' } });
+    const job = await finish(jobId);
+    expect(job).toMatchObject({ state: 'failed', error: { code: 'EXPORT_INSUFFICIENT_SPACE', details: { storage: 'artifact', dir: home.artifactsDir } }, result: null });
+    expect(job.error!.message).toContain('持久副本');
+    await until(async () => (await fs.readdir(destination)).length === 0);
+  });
 
   it('字幕与文稿：时间是时间线时间，剪掉的词不出现，变速后的词时间跟着变（AT-30）', async () => {
     const { videoId, documentId } = await speechVideo();
@@ -869,7 +951,7 @@ describe.skipIf(!engine || !ffmpeg)('导出（真实引擎 + ffmpeg）', () => {
       settings: { kind: 'audio', format: 'mp3', loudness: { integratedLufs: -16, truePeakDb: -1.5 } },
     });
     await until(async () => (await client.request('exports.get', { jobId })).state === 'running');
-    const staging = path.join(home.stagingDir, 'jobs', jobId);
+    const staging = path.join(project.path, 'exports', `.baocut-export-${jobId}`);
     await client.request('jobs.cancel', { jobId });
     const cancelled = await finish(jobId);
     expect(cancelled.state).toBe('cancelled');

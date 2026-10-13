@@ -1,6 +1,11 @@
 import type { RcExportMessages } from './rc-export.ts';
 
 export const ko: RcExportMessages = {
+  temporarySpaceInsufficient: (p) => `내보내기 임시 파일을 저장할 디스크 공간이 부족합니다: ${p.dir}이(가) 있는 디스크. 1 GiB 예약 공간을 포함해 약 ${p.required}이(가) 필요하며, ${p.available}을(를) 사용할 수 있습니다.`,
+  artifactSpaceInsufficient: (p) => `내보내기 보관용 사본을 저장할 디스크 공간이 부족합니다: ${p.dir}이(가) 있는 디스크. 1 GiB 예약 공간을 포함해 약 ${p.required}이(가) 필요하며, ${p.available}을(를) 사용할 수 있습니다.`,
+  temporarySpaceRecovery: `이 디스크의 공간을 확보하거나, 다른 디스크의 내보내기 폴더를 선택하거나, 범위를 줄이거나 해상도를 낮추세요.`,
+  artifactSpaceRecovery: `Runtime 결과물 저장소가 있는 디스크의 공간을 확보하세요. 내보내기 폴더를 변경해도 보관용 사본은 이동하지 않습니다.`,
+
   listSeparator: ', ',
   clauseSeparator: '; ',
 

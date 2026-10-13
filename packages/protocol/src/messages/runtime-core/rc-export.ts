@@ -18,6 +18,11 @@ const s = (n: number, one: string, many: string) => (n === 1 ? one : many);
 
 /** 导出（exports/）：导出任务的错误、警告与说明。英文是键与类型的来源，译文在 `rc-export.<语言>.ts`。 */
 const en = {
+  temporarySpaceInsufficient: (p: { dir: string; required: string; available: string }) => `Not enough space for temporary export files on the disk containing ${p.dir}. Needs about ${p.required} including a 1 GiB reserve; ${p.available} is available.`,
+  artifactSpaceInsufficient: (p: { dir: string; required: string; available: string }) => `Not enough space for the saved export copy on the disk containing ${p.dir}. Needs about ${p.required} including a 1 GiB reserve; ${p.available} is available.`,
+  temporarySpaceRecovery: `Free up space on this disk, choose an export folder on another disk, or export a shorter range or lower resolution.`,
+  artifactSpaceRecovery: `Free up space on the disk containing the Runtime artifact store. Changing the export folder does not move this saved copy.`,
+
   // 列表分隔：顿号式（`、`）与分句式（`；`）。
   listSeparator: ', ',
   clauseSeparator: '; ',

@@ -2,6 +2,11 @@ import { pluralForm } from '../../i18n.ts';
 import type { RcExportMessages } from './rc-export.ts';
 
 export const ru: RcExportMessages = {
+  temporarySpaceInsufficient: (p) => `Недостаточно места для временных файлов экспорта на диске, содержащем ${p.dir}. Нужно около ${p.required}, включая резерв 1 GiB; доступно ${p.available}.`,
+  artifactSpaceInsufficient: (p) => `Недостаточно места для сохранённой копии экспорта на диске, содержащем ${p.dir}. Нужно около ${p.required}, включая резерв 1 GiB; доступно ${p.available}.`,
+  temporarySpaceRecovery: `Освободите место на этом диске, выберите папку экспорта на другом диске или экспортируйте более короткий диапазон либо с меньшим разрешением.`,
+  artifactSpaceRecovery: `Освободите место на диске хранилища результатов Runtime. Смена папки экспорта не перемещает эту сохранённую копию.`,
+
   listSeparator: ", ",
   clauseSeparator: "; ",
 
