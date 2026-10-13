@@ -40,11 +40,11 @@ description: 文稿与字幕的机制：转录、润色写回、自己翻译并�
 
 1. {{tool:documents_read}} 读转写（{{arg:documentId}} 给 speech 文档）。
 2. 按 {{skill:polish-transcript}} 改正文，词的时间不动。
-3. {{tool:documents_put}} 写回**同一份**：{{arg:document}} 给它的 documentId，{{arg:body}} 是改好的完整正文。要防并发改动时带 {{arg:revision}}：这里是**视频**的版本（{{tool:videos_inspect}} 或上一次写命令回执里的 `revision`），不是 {{tool:documents_read}} 结果里同名的文档版本；给错了以 `PROJECT_REVISION_CONFLICT` 拒绝。
+3. {{tool:edits_apply}} 用 `updateWords` 写回**同一份**：操作里给 documentId 与 words 的 [{id,text}]，只传改过的词。必须带 expectedRevision：这里是**视频**的版本（{{tool:videos_inspect}} 或上一次写命令回执里的 `revision`），不是 {{tool:documents_read}} 的文档版本；冲突后重新核对，用新 commandId 提交，不拿旧正文覆盖。
 
 ### 说话人实名
 
-转写的正文有 `speakers[]`（每位 `id` 与 `name`），词的说话人指向它的 `id`。区分说话人后自动起的名字是占位名：「说话人 n」及它在别的界面语言里的对应（`Speaker 1`、`Sprecher 1` …）、识别服务的编号标签（`SPEAKER_00`、`S1`、`spk-1`）、空、等于 id。多位说话人还有占位名时，润色末尾按 {{skill:polish-transcript}} 找证据实名，拿不准就留着占位名。写回仍用 {{tool:documents_put}} 写同一份转写，只改 `speakers[].name`，`words` 与其他字段照读到的原样；只覆盖占位名，用户起的名字不动；同一个人被拆成几个 id 时给同一个名字，不合并 id。
+转写的正文有 `speakers[]`（每位 `id` 与 `name`），词的说话人指向它的 `id`。区分说话人后自动起的名字是占位名：「说话人 n」及它在别的界面语言里的对应（`Speaker 1`、`Sprecher 1` …）、识别服务的编号标签（`SPEAKER_00`、`S1`、`spk-1`）、空、等于 id。多位说话人还有占位名时，润色末尾按 {{skill:polish-transcript}} 找证据实名，拿不准就留着占位名。写回用 {{tool:edits_apply}} 的 `renameSpeakers`，给 documentId 与 speakers 的 [{id,name}]，只传改过的姓名，不上传词或整份正文；只覆盖占位名，用户起的名字不动；同一个人被拆成几个 id 时给同一个名字，不合并 id。
 
 ### 自己翻译（默认路径）
 
@@ -52,7 +52,7 @@ description: 文稿与字幕的机制：转录、润色写回、自己翻译并�
 
 1. **润色写回之后再读一次转写。** {{tool:documents_read}} 读 speech 文档，结果里的 `translationBasis` 给出 `sourceBasis` 与切好的句子（每句 `id`、`fingerprint`、`text`、`wordIds`，以及素材时钟上的起止 `start`、`end`，单位秒）。润色会改分句与指纹，所以润色之后必须重新读。
 2. **逐句翻译**，按 {{skill:translate-subtitles}}：一句对一句，不合并、不拆分、不漏。
-3. **写成译文。** {{tool:documents_put}} 新建：{{arg:kind}} `translation`，{{arg:language}} 为目标语言（BCP 47），{{arg:sourceDocument}} 为转写的 documentId，{{arg:body}} 照 {{tool:documents_read}} 说明里的形状（`baocut.translation/2`），`sourceBasis` 用这次读到的。每句的 `alignment` 照说明填，或写 null 让 Runtime 按句补上句级对齐。已有同一语言的译文时给 {{arg:document}} 更新它，不新建第二份。
+3. **写成译文。** {{tool:documents_put}} 新建：{{arg:kind}} `translation`，{{arg:language}} 为目标语言（BCP 47），{{arg:sourceDocument}} 为转写的 documentId，{{arg:body}} 照 {{tool:documents_read}} 说明里的形状（`baocut.translation/2`），`sourceBasis` 用这次读到的。每句的 `alignment` 照说明填，或写 null 让 Runtime 按句补上句级对齐。整体重译已有同一语言的译文时给 {{arg:document}}，不新建第二份；只校订几句时用 {{tool:edits_apply}} 的 `patchDocument`，按 units 的稳定 ID 提交变化的文本、指纹、对齐与状态，必要时局部更新 sourceBasis，用 {{tool:edits_ops}} 查参数格式。
 4. **建字幕层。** {{tool:captions_create}}，{{arg:documentId}} 给译文；双语加 {{arg:bilingual}}（译文为主、原文为辅，转写还没有原文字幕层时同一笔里一起建）。
 5. **要文件再导出。** {{tool:export}}，{{arg:kind}} `subtitles`，{{arg:format}} `srt` 等；双语加 {{arg:bilingual}}（见 [export](export.md)）。
 
@@ -60,7 +60,7 @@ description: 文稿与字幕的机制：转录、润色写回、自己翻译并�
 正文大，写进文件再用 `--body @zh.json` 传，不塞进命令行（见 [conventions](../conventions.md) 的「参数怎么写」）。
 <!-- /surface -->
 <!-- surface: agent -->
-一次 {{tool:documents_put}} 写完整份译文，不分几次写。
+新建或整体重译时一次 {{tool:documents_put}} 写完整份译文；已有译文的局部校订用 `patchDocument`，不重复上传全部单元。
 <!-- /surface -->
 
 原文改过（润色、剪辑）之后译文会过期：重新读转写，句子 `id` 与 `fingerprint` 都对得上的单元原样保留，其余重译，再写回同一份译文。从这份译文建过的字幕层不用重建：写回时 Runtime 在同一笔里只换改过的句子的字幕条，时间照旧（回执的 `syncedCaptions`）。

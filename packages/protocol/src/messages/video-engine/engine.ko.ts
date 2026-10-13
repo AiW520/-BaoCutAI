@@ -1,6 +1,7 @@
 import type { EngineMessages } from './engine.ts';
 
 export const ko: EngineMessages = {
+  documentPatchInvalid: '문서 변경이 잘못되었습니다',
   // anchors.rs
   anchorUnresolved: (p) => `클립 ${p.item}의 의미 앵커를 확정할 수 없습니다: ${p.reason}`,
 

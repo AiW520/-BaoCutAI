@@ -47,7 +47,7 @@
 ## 4. 先确认，再写回
 
 1. 写回之前，把方案给用户看：每位说话人起的名字、凭的证据（一句话），以及他第一次开口的时刻和那一句，方便用户在编辑器里跳过去听。
-2. 用户确认或改过名字后，用 `baocut documents put` 写回同一份转写，只改 `speakers[].name`，words 与其他字段照读到的原样；几位一次写完。版本冲突说明用户刚改过：重新读，在新的正文上重做。
+2. 用户确认或改过名字后，用 `baocut edits apply` 的 renameSpeakers，给 documentId 与 speakers 的 [{id,name}]，几位放在同一笔事务；expectedRevision 用 `baocut videos inspect` 的视频版本，重试沿用 commandId。不上传 words 或整份正文。版本冲突说明用户刚改过：重新读，核对 ID 与名字后用新 commandId 重做。
 3. 只改名字时译文不用重译，字幕里的说话人跟着文稿变。
 
 ## 5. 要避免的

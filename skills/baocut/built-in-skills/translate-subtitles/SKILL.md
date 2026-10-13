@@ -1,7 +1,7 @@
 ---
 name: translate-subtitles
 description: 用户要把视频的转写或字幕翻译成另一种语言、做双语字幕，或更新原文改动后过期的译文时用：逐句翻译写成视频里的译文文档，再放到画面上、按需导出。有媒体时「翻译」默认指字幕翻译。不用于翻译与视频无关的文章、文档或一段纯文本；对话里没有视频或字幕、又看不出指的是什么时先问一次。
-version: 2.0.0
+version: 2.1.0
 ---
 
 # 翻译字幕
@@ -62,7 +62,7 @@ version: 2.0.0
 
 ## 4. 写回视频
 
-- 照 documents_read 说明里的写法，用 documents_put 写入完整的译文：新建时给 kind `translation`、language 为目标语言、sourceDocument 为转写的 documentId；更新已有的译文时给 document。每句一个单元，sourceBasis 用这次读到的 translationBasis，每个单元的对齐信息（对应原文哪一句、哪些词）也照说明填，不省略、不自己发明字段。一次 documents_put 写完整份。
+- 照 documents_read 说明里的写法，用 documents_put 写入完整的译文：新建时给 kind `translation`、language 为目标语言、sourceDocument 为转写的 documentId；整体重译已有的译文时给 document。只修订已有译文的几句时，用 edits_apply 的 patchDocument，按 units 的稳定 id 只提交改过的 naturalText、sourceFingerprint、alignment 与 status 等字段（edits_ops 查格式）；更新依据的 sourceBasis 时也只传变化的字段，不上传全部 units。每句一个单元，sourceBasis 用这次读到的 translationBasis，每个单元的对齐信息（对应原文哪一句、哪些词）也照说明填，不省略、不自己发明字段。一次 documents_put 写完整份。
 - **只重译变了的句子**（转写改过、剪过之后，或用户说译文过期了）：重新 documents_read 转写（同样给 translateTo）拿最新的 translationBasis，再读已有的译文。句子 id 与 fingerprint 都和已有单元对得上的，原样保留那一单元；对不上的和新出现的重新翻译；转写里已经没有的句子不再写。sourceBasis 换成新的。写回之后从这份译文建过的字幕层由 Runtime 跟着换掉改过的句子，不要再建一层。用户要求整份重译时才全部重来：没变的句子重译一遍，只会让用户已经看过、改过的译文又变样。
 - 写之前转写又被改过（版本冲突或读到的已不是当前版本）时，重新读，按新的句子来。
 

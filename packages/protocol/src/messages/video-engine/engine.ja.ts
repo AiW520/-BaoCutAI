@@ -1,6 +1,7 @@
 import type { EngineMessages } from './engine.ts';
 
 export const ja: EngineMessages = {
+  documentPatchInvalid: 'ドキュメントの変更が無効です',
   // anchors.rs
   anchorUnresolved: (p) => `クリップ ${p.item} のセマンティックアンカーを解決できません：${p.reason}`,
 

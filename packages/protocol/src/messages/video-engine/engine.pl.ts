@@ -1,6 +1,7 @@
 import type { EngineMessages } from './engine.ts';
 
 export const pl: EngineMessages = {
+  documentPatchInvalid: 'Zmiana dokumentu jest nieprawidłowa',
   // anchors.rs
   anchorUnresolved: (p) => `Kotwica semantyczna klipu ${p.item} nie może zostać rozwiązana: ${p.reason}`,
 

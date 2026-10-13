@@ -1,6 +1,7 @@
 import type { EngineMessages } from './engine.ts';
 
 export const ru: EngineMessages = {
+  documentPatchInvalid: 'Изменение документа недопустимо',
   // anchors.rs
   anchorUnresolved: (p) => `Семантическая привязка клипа ${p.item} не разрешается: ${p.reason}`,
 

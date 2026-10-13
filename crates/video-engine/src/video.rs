@@ -267,7 +267,10 @@ fn operation_label(op: &EditOperation) -> Text {
         EditOperation::RemoveAssets { .. } => msg!("engine.labelCleanUpAssets", "Clean up assets"),
         EditOperation::RelinkAsset { .. } => msg!("engine.labelRelinkAsset", "Relink asset"),
         EditOperation::InsertItems { .. } | EditOperation::AddItem { .. } => msg!("engine.labelAddClip", "Add clip"),
-        EditOperation::PutDocument { .. } => msg!("engine.labelWriteDocument", "Write document"),
+        EditOperation::PutDocument { .. }
+        | EditOperation::PatchDocument { .. }
+        | EditOperation::RenameSpeakers { .. }
+        | EditOperation::UpdateWords { .. } => msg!("engine.labelWriteDocument", "Write document"),
         EditOperation::MoveItem { .. } | EditOperation::MoveItems { .. } => msg!("engine.labelMoveClips", "Move clips"),
         EditOperation::TrimItem { .. } => msg!("engine.labelTrimClip", "Trim clip"),
         EditOperation::SplitItem { .. } => msg!("engine.labelSplitClip", "Split clip"),
@@ -827,6 +830,12 @@ impl Video {
             let mut read: Vec<Id> = Vec::new();
             match op {
                 EditOperation::PutDocument { document_id: Some(id), .. } => written.push(id.clone()),
+                EditOperation::PatchDocument { document_id, .. }
+                | EditOperation::RenameSpeakers { document_id, .. }
+                | EditOperation::UpdateWords { document_id, .. } => {
+                    read.push(document_id.clone());
+                    written.push(document_id.clone());
+                }
                 EditOperation::AddCuts { asset_id, .. } | EditOperation::RestoreCut { asset_id, .. } => {
                     written.extend(read_cut_set(asset_id)?);
                 }

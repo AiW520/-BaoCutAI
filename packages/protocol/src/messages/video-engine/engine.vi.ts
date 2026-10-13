@@ -1,6 +1,7 @@
 import type { EngineMessages } from './engine.ts';
 
 export const vi: EngineMessages = {
+  documentPatchInvalid: 'Thay đổi tài liệu không hợp lệ',
   // anchors.rs
   anchorUnresolved: (p) => `Không phân giải được neo ngữ nghĩa clip ${p.item}: ${p.reason}`,
 

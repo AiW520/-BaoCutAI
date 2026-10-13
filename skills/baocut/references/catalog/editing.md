@@ -9,7 +9,7 @@ description: 时间线修改的机制：一笔修改的事务与版本、预检�
 - 剪辑：放素材、裁切、拆分、挪动、删除、波纹删除、变速、转场。
 - 剪口播：去口癖与长停顿、删掉录废的部分（剪口）。
 - 章节、文字与元素、画面摆法与外观、效果、声音与闪避、画布尺寸。
-- 写文档（转写、译文）也是一笔修改，但通常用 {{tool:documents_put}}（见 [subtitles](subtitles.md)）；作者的章节用 {{tool:chapters_adopt}} 写进视频（见下面的「章节」）。
+- 写文档（转写、译文）也是一笔修改：已有文档的局部修改用 {{tool:edits_apply}} 的文档操作，新建或整体替换用 {{tool:documents_put}}（见 [subtitles](subtitles.md)）；作者的章节用 {{tool:chapters_adopt}} 写进视频（见下面的「章节」）。
 
 剪哪里、留哪句、停顿多长是 craft 的事：{{skill:talking-head-cut}}、{{skill:video-chapters}}、{{skill:shorts-segments}}。这一页只讲怎么提交、怎么读回执。
 
@@ -28,6 +28,8 @@ description: 时间线修改的机制：一笔修改的事务与版本、预检�
 - {{arg:label}} 写一句简短说明，显示在历史与撤销里（例如「删掉开头的寒暄」）。
 - 相关的几步放进同一笔：用户说「不要那一批」时一次撤销就退回去。同一笔里后面的操作可以用 `ref` 引用前面 `importAsset` 导入的素材。
 - 时间写秒数（`1.5`），也可以写 `{"unit":"frames","value":30}`。
+
+已有文档只修改局部时用 `renameSpeakers`（姓名）、`updateWords`（词文本）或 `patchDocument`（字幕、译文、章节、换行、样式等）。先用 {{tool:edits_ops}} 查询操作格式，按稳定 ID 提交变化，保持 `expectedRevision` 与编辑依据一致。不要为改几个名字或校订几个词上传整份文稿；`putDocument` 留给新建或整体替换。
 
 ### 先预检
 
@@ -54,7 +56,7 @@ description: 时间线修改的机制：一笔修改的事务与版本、预检�
 | 章节 | `setChapters`、`upsertChapter`、`removeChapter` | 整个替换或逐章修改章节 |
 | 剪口 | `proposeCuts`、`acceptCutSuggestions`、`addCuts`、`restoreCut` | 生成口癖与停顿的剪辑提案、接受建议、直接剪、恢复 |
 | 轨道与画布 | `addTrack`、`updateTrack`、`updateSequence` | 加轨道、锁定与隐藏、画布尺寸与底色 |
-| 文档与历史 | `putDocument`、`createCheckpoint`、`renameVideo` | 写文档、留检查点、改视频名 |
+| 文档与历史 | `patchDocument`、`renameSpeakers`、`updateWords`、`putDocument`、`createCheckpoint`、`renameVideo` | 写文档、留检查点、改视频名 |
 
 常用操作（由目录生成）：
 

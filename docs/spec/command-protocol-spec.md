@@ -328,6 +328,14 @@ type EditOperation = { type: string; [field: string]: JsonValue };
 
 智能体采用素材来源自带的章节用 `chapters_adopt { video, asset?, document?, outline?, label?, revision?, dryRun? }`（`agent`、`mcp` 与 `cli` 三个面，风险等级 `edit`）。章节来自 `asset` 的来源（`provenance.source`，视频格式规范 §4.5）：先取结构化的 `chapters[]`，没有时解析 `description` 里的时间戳大纲（至少两行）；给了 `outline`（`[{ at, title }]`，源时间秒，或一段带时间戳的原文）时用它。不给 `asset` 时取视频里唯一带来源章节或简介的素材（几个都带时取其中唯一在时间线上的；给了 `outline` 时也可以是时间线上唯一的音视频素材），选不出一个时 `INVALID_ARGUMENTS`。吸附用的转写是 `document`（须是这个素材的 `speech`），不给时取这个素材唯一的那份（有几份时 `INVALID_ARGUMENTS`），没有转写时不吸附。规则（吸附、清洗与投影）见架构设计 §7.9「采用来源章节」。结果编译成一个 `setChapters`（每章 `at` 为时间线秒与 `title`，不写摘要），整个替换现有的章节；`label` 缺省是本地化的「采用来源章节」。提交前向用户确认，返回与 `edits_apply` 相同的回执，另带 `assetId`、`documentId`（用了转写时）、`notes` 与 `sourceChapters { entries, matched, ambiguous, snapped, unanchored, rows, dropped? }`：`entries` 是来源章节的条数，四个计数是采用的各章的状态，`rows` 每项 `{ title, at, sourceAt, status, anchor?: { tier, snippet }, offTimeline? }`（`at` 时间线秒、`sourceAt` 吸附后的源时间秒），`dropped` 是投影后与前一章落在同一帧而没有采用的。`dryRun: true` 时不确认、不提交，返回 `{ videoId, revision, committed: false, assetId, documentId?, chapters, sourceChapters, notes?, next }`。拒绝：素材的来源没有章节、简介里也没有大纲，或 `outline` 里没有可用的章节时 `NO_SOURCE_CHAPTERS`；素材不在根序列上（没有线性时间映射的启用片段）时 `ASSET_NOT_PLACED`；不认识的素材是 `ENTITY_NOT_FOUND`，不认识的文档是 `DOCUMENT_NOT_FOUND`；字幕与翻译核心没有构建时 `TOOL_UNAVAILABLE`。
 
+文档局部修改共用编辑事务，不需要上传整份正文：
+
+- `renameSpeakers { documentId, speakers: [{ id, name }] }` 只修改 `speech`（`baocut.speech/1`）指定说话人的姓名，姓名去首尾空白后非空且输入至多 200 个字符；词的 ID、顺序、时间与 speaker 归属保持不变，未列出的说话人保持原样。
+- `updateWords { documentId, words: [{ id, text }] }` 只修改同格式转写里的词文本；时间与归属原样保留。
+- `patchDocument { documentId, changes, summary? }` 适用于已有文档的词、字幕 `cues`、译文 `units`、章节、换行与样式等局部修改。`changes` 每项为 `{ path, value }`、`{ path, remove: true }` 或 `{ path, moveBefore: Id | null }`。`path` 是非空数组：字符串表示对象字段，`{ id }` 表示数组中的稳定条目 ID，不接受位置下标。更新字段只传变化的值（`null` 是值，删除必须用 `remove`）。路径以 `{ id }` 结尾时可以删除、替换条目或挪位；新增条目给 `value`（含相同 `id`）与 `beforeId`（某条目之前，`null` 表示追加），已有条目可用 `moveBefore` 挪位（`null` 表示末尾）。父路径必须存在，ID 不存在（显式新增除外）或不唯一、重复路径、改变条目 ID、空修改列表、不合格式时整笔以 `INVALID_OPERATION` 拒绝。`renameSpeakers` / `updateWords` 的重复或未知 ID 同样整笔拒绝。
+- 引擎在事务当前状态上读取正文、应用差异，再按 `putDocument` 的格式检查保存新版本；同一笔事务里后面的局部操作读取前面写过的正文。未指定的正文与文档元信息保留，未给 `summary` 时沿用当前摘要，正文无变化不产生新版本。局部改译文的 `naturalText` 时，非过期单元的句级对齐 `textHash` 按新自然译句同步；块级已有摘要保留用于失效判断，与全文写入相同。视频 `expectedRevision`、`commandId`、任务保护与撤销规则不变；撤销后的新修改不得复用已存过的正文版本号。
+- 仅改姓名不改变句子文本指纹、字幕时间或译文过期状态；正文版本变化后，依赖姓名的读取与导出取最新正文。客户端编辑已有正文时在发送端生成字段差异，文稿查找替换、隐藏、分段、字幕／译文与样式编辑均走局部提交；版本必须取编辑依据的快照，不把旧正文的差异自动套到排队期间的新视频版本。新建或明确整体替换仍用 `putDocument`。
+
 ### 4.3 需要授权的操作
 
 普通的、可撤销的编辑，在用户直接要求时可以按授权策略直接执行。以下操作需要相应的提案或授权（产品设计 §7）：

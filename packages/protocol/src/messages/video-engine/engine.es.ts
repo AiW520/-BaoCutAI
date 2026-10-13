@@ -1,5 +1,6 @@
 import type { EngineMessages } from './engine.ts';
 export const es: EngineMessages = {
+  documentPatchInvalid: 'El cambio de documento no es válido',
   // anchors.rs
  anchorUnresolved: (p) => `No se puede resolver el anclaje semántico del clip ${p.item}: ${p.reason}`,
   // chapters.rs

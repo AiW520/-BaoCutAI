@@ -10,6 +10,7 @@ pub mod anchors;
 pub mod asset_usage;
 pub mod chapters;
 pub mod cuts;
+pub mod document_edits;
 pub mod ducking;
 pub mod effects;
 mod elements;

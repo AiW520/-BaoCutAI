@@ -1,6 +1,7 @@
 import type { EngineMessages } from './engine.ts';
 
 export const ptBR: EngineMessages = {
+  documentPatchInvalid: 'A alteração do documento é inválida',
   // anchors.rs
   anchorUnresolved: (p) => `A âncora semântica do clipe ${p.item} não pode ser resolvida: ${p.reason}`,
 

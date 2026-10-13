@@ -87,6 +87,20 @@ pub enum EditOperation {
         #[serde(default)]
         extensions: BTreeMap<String, Value>,
     },
+    PatchDocument {
+        document_id: Id,
+        changes: Vec<crate::document_edits::DocumentChange>,
+        #[serde(default)]
+        summary: Option<Value>,
+    },
+    RenameSpeakers {
+        document_id: Id,
+        speakers: Vec<crate::document_edits::SpeakerName>,
+    },
+    UpdateWords {
+        document_id: Id,
+        words: Vec<crate::document_edits::WordText>,
+    },
     /// 把素材放到时间线上。不给 `at` 时接在轨道末尾。
     AddItem {
         #[serde(default)]
@@ -784,6 +798,12 @@ pub fn apply_operation(state: &mut VideoState, index: usize, op: &EditOperation,
             },
             ctx,
         ),
+        EditOperation::PatchDocument { document_id, changes, summary } =>
+            crate::document_edits::patch_document(state, document_id, changes, summary.as_ref(), ctx),
+        EditOperation::RenameSpeakers { document_id, speakers } =>
+            crate::document_edits::rename_speakers(state, document_id, speakers, ctx),
+        EditOperation::UpdateWords { document_id, words } =>
+            crate::document_edits::update_words(state, document_id, words, ctx),
         EditOperation::AddItem {
             sequence_id,
             asset,

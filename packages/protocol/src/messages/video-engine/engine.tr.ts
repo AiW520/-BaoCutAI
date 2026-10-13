@@ -1,6 +1,7 @@
 import type { EngineMessages } from './engine.ts';
 
 export const tr: EngineMessages = {
+  documentPatchInvalid: 'Belge değişikliği geçersiz',
   // anchors.rs
   anchorUnresolved: (p) => `${p.item} klipinin anlamsal çapası çözümlenemiyor: ${p.reason}`,
 

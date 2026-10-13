@@ -1,6 +1,7 @@
 import { applyVideoTopicEvent, type BaoCutClient, type ConnectionState } from '@baocut/client';
 import {
   RpcError,
+  localDocumentOperation,
   isEngineErrorBody,
   newId,
   refOf,
@@ -116,15 +117,33 @@ export class VideoController {
    * （命令与协议规范 §3.1），历史与撤销提示按读者的语言显示；不给时由引擎起名。
    */
   apply(operations: EditOperation[], label?: Localized): Promise<TransactionReceipt | null> {
-    return this.#enqueue((videoId, revision) =>
-      this.#client.request('edits.apply', {
+    // 差异必须基于编辑时的正文与视频版本；排队期间变化时让引擎拒绝，不能把旧正文重基到新版本。
+    const base = useVideo.getState().video?.state?.video;
+    const commandId = newId('cmd');
+    const hasDocumentEdit = operations.some((op) => op.type === 'patchDocument' || op.type === 'renameSpeakers' || op.type === 'updateWords' || (op.type === 'putDocument' && !!op.documentId));
+    return this.#enqueue(async (videoId, revision) => {
+      const bodies = new Map<Id, unknown>();
+      const local: EditOperation[] = [];
+      for (const operation of operations) {
+        if (operation.type !== 'putDocument' || !operation.documentId) {
+          local.push(operation);
+          continue;
+        }
+        const record = base?.documents?.[operation.documentId];
+        if (!record) { local.push(operation); continue; }
+        let body = bodies.get(record.id) ?? this.documents.peek(record.id, record.currentRevision);
+        if (body === undefined) body = (await this.#client.request('documents.read', { videoId, documentId: record.id, revision: record.currentRevision })).body;
+        local.push(localDocumentOperation(operation, body));
+        bodies.set(record.id, operation.body);
+      }
+      return this.#client.request('edits.apply', {
         videoId,
-        commandId: newId('cmd'),
-        expectedRevision: revision,
-        operations,
+        commandId,
+        expectedRevision: hasDocumentEdit && base ? base.revision : revision,
+        operations: local,
         ...(label ? transactionLabel(label) : {}),
-      }),
-    );
+      });
+    });
   }
 
   undo(target: UndoTarget): Promise<TransactionReceipt | null> {

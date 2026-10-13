@@ -22,6 +22,7 @@ type P<K extends string> = Record<K, string | number>;
  * 英文条目与 Rust `msg!` 的模板一字不差（`tools/rust-messages.test.ts` 核对）；改英文要两边一起改，键发布后不改名、不复用。
  */
 const en = {
+  documentPatchInvalid: 'The document change is invalid',
   // anchors.rs
   anchorUnresolved: (p: P<'item' | 'reason'>) => `The semantic anchor of clip ${p.item} cannot be resolved: ${p.reason}`,
 

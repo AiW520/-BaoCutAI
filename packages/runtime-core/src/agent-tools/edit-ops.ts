@@ -683,10 +683,36 @@ export const EDIT_OPERATIONS: readonly EditOperationSpec[] = [
     example: { type: 'updateSequence', canvas: { width: 1080, height: 1920 } },
   },
   {
+    type: 'renameSpeakers', family: 'speech',
+    doc: ['- {"type":"renameSpeakers","documentId","speakers":[{"id","name"}]}：只改已有转写里的指定说话人姓名，不要读出、上传整份正文；ID 不存在或重复时整笔拒绝，词、时间、归属保持不变。'],
+    schema: op('renameSpeakers', { documentId: idOf('转写文档 ID'), speakers: z.array(z.object({ id: idOf('说话人 ID'), name: z.string().trim().min(1).max(200) })).min(1) }),
+    example: { type: 'renameSpeakers', documentId: 'doc_1', speakers: [{ id: 'spk-1', name: 'Mark Zuckerberg' }] },
+  },
+  {
+    type: 'updateWords', family: 'speech',
+    doc: ['- {"type":"updateWords","documentId","words":[{"id","text"}]}：按 word ID 只校订词文本，不改 ID、顺序、时间或 speaker；未知或重复 ID 整笔拒绝。'],
+    schema: op('updateWords', { documentId: idOf('转写文档 ID'), words: z.array(z.object({ id: idOf('词 ID'), text: z.string() })).min(1) }),
+    example: { type: 'updateWords', documentId: 'doc_1', words: [{ id: 'w1', text: 'Hello' }] },
+  },
+  {
+    type: 'patchDocument', family: 'documents-and-versions',
+    doc: ['- {"type":"patchDocument","documentId","changes":[{"path":["字段",{"id":"条目 ID"},"字段"],"value":新值} 或 {"path":[…],"remove":true}],"summary"?}：已有文档的局部字段更新（词、字幕 cues、译文 units、章节与样式等）；数组用稳定 ID 定位，不用下标。路径非空，父路径与条目须存在；重复路径、未知或不唯一 ID、修改 id 整笔拒绝。条目路径以 {id} 结尾时可 remove；新建给 value（含相同 id）与 beforeId（null 追加），挪位给 moveBefore（null 挪到末尾）。结构变化也只传受影响的条目。未给出的字段与文档元信息原样保留；最终正文仍经 putDocument 的格式校验，版本校验、撤销、幂等与 edits_apply 相同。'],
+    schema: op('patchDocument', {
+      documentId: idOf('文档 ID'),
+      changes: z.array(z.union([
+        z.object({ path: z.array(z.union([z.string(), z.object({ id: idOf('数组条目的稳定 ID') })])).min(1), value: z.unknown(), beforeId: z.string().nullable().optional() }),
+        z.object({ path: z.array(z.union([z.string(), z.object({ id: idOf('数组条目的稳定 ID') })])).min(1), remove: z.literal(true) }),
+        z.object({ path: z.array(z.union([z.string(), z.object({ id: idOf('数组条目的稳定 ID') })])).min(1), moveBefore: z.string().nullable() }),
+      ])).min(1),
+      summary: z.unknown().optional(),
+    }),
+    example: { type: 'patchDocument', documentId: 'doc_1', changes: [{ path: ['units', { id: 'u1' }, 'naturalText'], value: 'Hello' }] },
+  },
+  {
     type: 'putDocument',
     family: 'documents-and-versions',
     doc: [
-      '- {"type":"putDocument","documentId"?,"kind","name"?,"language"?,"sourceAsset"?:{"assetId"},"sourceDocument"?:{"documentId"},"body":{…},"summary"?}：写入一份文档（转写、译文等）的新版本，body 是完整的正文对象（先用 documents_read 读出当前正文再改）；给 documentId 时改那份文档（kind 不能变），不给时新建。译文用 kind "translation"，sourceDocument 指向它译自的文档。正文与原来相同时不产生新版本。',
+      '- {"type":"putDocument","documentId"?,"kind","name"?,"language"?,"sourceAsset"?:{"assetId"},"sourceDocument"?:{"documentId"},"body":{…},"summary"?}：写入一份文档（转写、译文等）的新版本，body 是完整的正文对象（先用 documents_read 读出当前正文再改）；局部修改用 renameSpeakers、updateWords 或 patchDocument；只有新建或整体替换才传完整 body。给 documentId 时改那份文档（kind 不能变），不给时新建。译文用 kind "translation"，sourceDocument 指向它译自的文档。正文与原来相同时不产生新版本。',
     ],
     schema: op('putDocument', {
       documentId: idOf('要改的文档；不给时新建').optional(),

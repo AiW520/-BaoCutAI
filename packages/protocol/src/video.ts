@@ -1019,6 +1019,13 @@ export interface CutDetectOptions {
   trimChapterStarts?: boolean;
 }
 
+export type DocumentPath = (string | { id: Id })[];
+export type DocumentChange = { path: DocumentPath } & (
+  | { value: unknown; beforeId?: Id | null; remove?: never; moveBefore?: never }
+  | { remove: true; value?: never; moveBefore?: never }
+  | { moveBefore: Id | null; value?: never; remove?: never }
+);
+
 export type EditOperation =
   /** 导入一个文件或目录为素材（文件默认链接、留在原处）；目录成为代码包素材。`ref` 供同一事务里后面的操作引用。 */
   | {
@@ -1064,6 +1071,10 @@ export type EditOperation =
       summary?: unknown;
       extensions?: Record<string, unknown>;
     }
+  /** 在引擎内按字段或稳定条目 ID 局部修改正文；与其他编辑共享版本校验、幂等与撤销。 */
+  | { type: 'patchDocument'; documentId: Id; changes: DocumentChange[]; summary?: unknown }
+  | { type: 'renameSpeakers'; documentId: Id; speakers: { id: Id; name: string }[] }
+  | { type: 'updateWords'; documentId: Id; words: { id: Id; text: string }[] }
   | {
       type: 'addItem';
       sequenceId: Id;

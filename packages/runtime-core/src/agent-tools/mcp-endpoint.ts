@@ -32,7 +32,7 @@ export interface McpEndpointOptions {
 }
 
 const PATH = '/mcp';
-const MAX_BODY_BYTES = 1024 * 1024;
+// Authenticated local submissions have no artificial body-size ceiling.
 const PROTOCOL_VERSIONS = ['2025-06-18', '2025-03-26', '2024-11-05'];
 
 interface JsonRpcRequest {
@@ -99,10 +99,6 @@ export class McpEndpoint {
 
   async #post(request: IncomingMessage, response: ServerResponse, principal: ToolPrincipal): Promise<void> {
     const body = await readBody(request);
-    if (body === null) {
-      response.writeHead(413).end();
-      return;
-    }
     let message: unknown;
     try {
       message = JSON.parse(body);
@@ -190,13 +186,10 @@ function reply(response: ServerResponse, payload: unknown): void {
   response.writeHead(200, { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(text) }).end(text);
 }
 
-/** 读完请求体；超过上限时返回 null。 */
-async function readBody(request: IncomingMessage): Promise<string | null> {
+/** 本机已认证的提交不按固定大小截断。 */
+async function readBody(request: IncomingMessage): Promise<string> {
   const chunks: Buffer[] = [];
-  let size = 0;
   for await (const chunk of request as AsyncIterable<Buffer>) {
-    size += chunk.length;
-    if (size > MAX_BODY_BYTES) return null;
     chunks.push(chunk);
   }
   return Buffer.concat(chunks).toString('utf8');

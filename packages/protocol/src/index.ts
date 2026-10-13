@@ -36,3 +36,5 @@ export * from './limits.ts';
 export * from './code-bundle.ts';
 
 export * from './caption-scene.ts';
+
+export * from './document-changes.ts';

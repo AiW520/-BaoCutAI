@@ -227,6 +227,49 @@ describe.skipIf(!engine || !ffmpeg)('对象的读写工具（终端目录，真�
     expect(await code('videos_frames', { video: videoId, at: Array.from({ length: 25 }, (_, i) => String(i)) })).toBe('INVALID_ARGUMENTS');
   });
 
+  it('长文稿经 MCP 改名和局部校订：保留翻译指纹、导出姓名、拒绝并发与未知 ID，可撤销', async () => {
+    const { videoId, assetId } = await placedVideo('长文稿');
+    const body = {
+      schema: 'baocut.speech/1', clock: 'source-asset', timescale: 1000,
+      speakers: Array.from({ length: 5 }, (_, i) => ({ id: `spk-${i + 1}`, name: `Speaker ${i + 1}` })),
+      words: Array.from({ length: 26711 }, (_, i) => ({ id: `w${i}`, text: 'Original', start: i * 100, end: i * 100 + 90, speaker: `spk-${i < 100 ? 1 : i < 200 ? 2 : 3}`, extension: 'preserved unknown word fields' })),
+      sentences: null,
+    };
+    expect(Buffer.byteLength(JSON.stringify(body))).toBeGreaterThan(2770000);
+    const created = await ok('documents_put', { video: videoId, kind: 'speech', sourceAsset: assetId, body });
+    const documentId = created.documentId as string;
+    const initial = await ok('documents_read', { video: videoId, documentId });
+    await client.request('services.configure', { serviceId: 'mcp', port: 0, level: 'auto' });
+    const { service } = await client.request('services.start', { serviceId: 'mcp' });
+    const { token } = await client.request('services.mcp.createClient', { name: 'local-edit-test' });
+    const invoke = async (args: unknown) => {
+      const response = await fetch(service.endpoint!, { method: 'POST', headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' }, body: JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'tools/call', params: { name: 'edits_apply', arguments: args } }) });
+      expect(response.status).toBe(200);
+      const payload = await response.json() as Loose;
+      return JSON.parse(payload.result.content[0].text) as Loose;
+    };
+    const rename = { video: videoId, expectedRevision: video(videoId).revision, commandId: 'cmd_names', label: '姓名', operations: [{ type: 'renameSpeakers', documentId, speakers: [{ id: 'spk-1', name: 'Mark Zuckerberg' }, { id: 'spk-2', name: 'John Collison' }, { id: 'spk-3', name: 'Alexandr Wang' }] }] };
+    const renamed = await invoke(rename);
+    expect(renamed.status).toBe('committed');
+    const read = await ok('documents_read', { video: videoId, documentId });
+    expect(read.body.words).toEqual(body.words);
+    expect(read.translationBasis.sentences.map((entry: Loose) => entry.fingerprint)).toEqual(initial.translationBasis.sentences.map((entry: Loose) => entry.fingerprint));
+    expect(read.body.speakers.slice(0, 3).map((entry: Loose) => entry.name)).toEqual(['Mark Zuckerberg', 'John Collison', 'Alexandr Wang']);
+    expect(read.body.speakers.slice(3)).toEqual(body.speakers.slice(3));
+    const rendered = await client.request('exports.renderText', { videoId, settings: { kind: 'transcript', format: 'txt', documentId, skipCut: false, speakers: true } });
+    for (const name of ['Mark Zuckerberg', 'John Collison', 'Alexandr Wang']) expect(rendered.outputs[0]!.content).toContain(name);
+    expect((await invoke({ ...rename, commandId: 'cmd_stale' })).error.code).toBe('PROJECT_REVISION_CONFLICT');
+    const beforeBad = video(videoId).revision;
+    expect((await invoke({ ...rename, expectedRevision: beforeBad, commandId: 'cmd_bad', operations: [{ type: 'updateWords', documentId, words: [{ id: 'w0', text: 'bad' }, { id: 'missing', text: 'bad' }] }] })).error.code).toBe('INVALID_OPERATION');
+    expect(video(videoId).revision).toBe(beforeBad);
+    await client.request('edits.undo', { videoId, commandId: 'cmd_undo_names', target: { transaction: renamed.transactionId } });
+    expect((await client.request('documents.read', { videoId, documentId })).body).toEqual(body);
+    await ok('edits_apply', { video: videoId, expectedRevision: video(videoId).revision, commandId: 'cmd_local_words', label: '校订', operations: [{ type: 'updateWords', documentId, words: [{ id: 'w13000', text: 'Corrected' }] }] });
+    const final = await client.request('documents.read', { videoId, documentId });
+    const expected = structuredClone(body); expected.words[13000]!.text = 'Corrected';
+    expect(final.body).toEqual(expected);
+  }, 60_000);
+
   it('documents_put 编译成 putDocument：新建、替换（kind 不变）、相同正文不产生新版本；参数不全时拒绝', async () => {
     const { videoId, assetId } = await placedVideo('文档');
     const created = await ok('documents_put', {

@@ -1,7 +1,7 @@
 ---
 name: speaker-labeling
 description: 视频里有几个人说话、要区分是谁在说或给说话人标名字时用：没区分说话人的文稿按声纹重新转录并区分，再从文稿与来源信息里找证据给每位起真名，写回转写的 speakers。只改说话人，不改正文的字。只有一个人说话、或用户只要校对错字时不用。
-version: 2.0.0
+version: 2.1.0
 ---
 
 # 说话人标注
@@ -49,7 +49,7 @@ version: 2.0.0
 ## 4. 先确认，再写回
 
 1. 写回之前，把方案给用户看：每位说话人起的名字、凭的证据（一句话），以及他第一次开口的时刻和那一句，方便用户在编辑器里跳过去听。
-2. 用户确认或改过名字后，用 documents_put 写回同一份转写，只改 `speakers[].name`，words 与其他字段照读到的原样；几位一次写完。版本冲突说明用户刚改过：重新读，在新的正文上重做。
+2. 用户确认或改过名字后，用 edits_apply 的 renameSpeakers，给 documentId 与 speakers 的 [{id,name}]，几位放在同一笔事务；expectedRevision 用 videos_inspect 的视频版本，重试沿用 commandId。不上传 words 或整份正文。版本冲突说明用户刚改过：重新读，核对 ID 与名字后用新 commandId 重做。
 3. 只改名字时译文不用重译，字幕里的说话人跟着文稿变。
 
 ## 5. 要避免的

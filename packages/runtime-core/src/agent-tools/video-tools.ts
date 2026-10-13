@@ -217,7 +217,7 @@ const schemas = {
     body: z
       .record(z.string(), z.unknown())
       .describe(
-        '完整的正文对象，整份替换、不是增量：转写照 documents_read 读出的正文改；译文的形状（baocut.translation/2）见 documents_read 的说明',
+        '完整的正文对象，用于新建或整体替换；局部修改用 edits_apply 的 renameSpeakers、updateWords 或 patchDocument，不要上传整份正文；译文的形状（baocut.translation/2）见 documents_read 的说明',
       ),
     revision: revisionArg
       .optional()
@@ -453,7 +453,7 @@ const DEFINITIONS: Record<ToolName, ToolInfo> = {
     description: [
       '读取视频里一份文档（转写、译文、字幕等）的正文。',
       '返回文档头（kind、名字、语言、来源素材与来源文档、各版本）、读到的版本与正文。',
-      '改文档时先读当前版本，再用 documents_put 写入新的完整正文（document 给这个 documentId）。',
+      '改已有文档的几个字段时用 edits_apply 的 renameSpeakers、updateWords 或 patchDocument（用 edits_ops 查格式）；只传变化的字段与稳定 ID。新建或整体替换才用 documents_put 写完整正文。',
       '转写（kind speech）另带 translationBasis：写译文要用的 sourceBasis 与按规则切好的句子（id、fingerprint、text、wordIds，以及 start、end：素材时钟上的秒，首个可见词的起点到末个可见词的终点；父视频从 0 秒原速播放这个素材、没有剪口时就是 videos_derive 的 start、end，否则先按时间线换算）。找句子边界读这里就够，不用读整份正文。要自己翻译时读转写给 translateTo（目标语言）：BaoCut 在视频卡与字幕面板显示「正在翻译」，用 documents_put 写入这门语言的译文时结束（结果的 translationJob 是这条进度记录的 jobId）。自己翻译后用 documents_put 新建译文：kind "translation"、language 为目标语言、sourceDocument 为这份转写的 documentId，body 为 {"schema":"baocut.translation/2","language":目标语言,"sourceBasis":translationBasis.sourceBasis,"units":[每句一个 {"id":"t-<句子 id>","sourceSentenceId":句子 id,"sourceFingerprint":句子 fingerprint,"naturalText":译文,"alignment":{"basis":"natural","correspondence":"sentence","blocks":[],"sourceWordIds":句子 wordIds},"status":"draft"}]}，字段不多不少。',
       'alignment 是这句译文对应的原文词（句级对齐）：导出双语字幕与建字幕层都按它取时间。textHash（"sha256:" 加 naturalText 的 SHA-256）不用自己算，Runtime 写入时补上；写成 null 的，句子与指纹核对得上时 Runtime 同样补成句级对齐（回执的 filledAlignments 是补了几句）。',
       '要把转写或译文显示在画面上，用 captions_create 建字幕层，不要自己写字幕文档。',
@@ -536,7 +536,7 @@ const DEFINITIONS: Record<ToolName, ToolInfo> = {
     title: '写入文档',
     description: [
       '写入视频里一份文档（转写、译文等）的新版本，或新建一份文档。',
-      '编译成一个 putDocument 操作，一笔修改、可以撤销。body 是完整的正文对象：替换时先用 documents_read 读出当前正文再改，给 document；新建时不给 document，给 kind。',
+      '编译成一个 putDocument 操作，一笔修改、可以撤销。局部改名、校订或编辑字段用 edits_apply 的 renameSpeakers、updateWords 或 patchDocument；本工具的 body 是完整的正文对象，只用于新建或整体替换。替换时给 document，新建时不给 document、给 kind。',
       '新建译文：kind "translation"、language 为目标语言、sourceDocument 为它译自的转写，body 照 documents_read 返回的 translationBasis 填（形状见 documents_read 的说明）；alignment 写成 null 时 Runtime 按句子补上句级对齐（结果的 filledAlignments 是补了几句）。写完用 captions_create 把译文做成字幕。',
       '改已有的译文（给 document）：从它生成的字幕层由 Runtime 在同一笔里只换改过的几句的字幕条，时间照旧（结果的 syncedCaptions 是跟着换了几份字幕文档）；不要再建一层字幕。',
       '正文与原来相同时不产生新版本。不给 revision 时用最新的版本。',
@@ -1887,7 +1887,7 @@ function referencedIds(value: unknown, at = ''): { path: string; id: string }[] 
   const found: { path: string; id: string }[] = [];
   for (const [key, entry] of Object.entries(value)) {
     // 文档正文里的 ID 是正文自己的（词、句、单元），不是视频里的对象。
-    if (key === 'body') continue;
+    if (key === 'body' || key === 'changes') continue;
     const here = at ? `${at}.${key}` : key;
     if (ID_FIELD.test(key) && typeof entry === 'string') found.push({ path: here, id: entry });
     else if (ID_LIST_FIELD.test(key) && Array.isArray(entry)) {

@@ -1,6 +1,7 @@
 import type { EngineMessages } from './engine.ts';
 
 export const zhHant: EngineMessages = {
+  documentPatchInvalid: '文件修改無效',
   // anchors.rs
   anchorUnresolved: (p) => `無法解析片段 ${p.item} 的語意錨點：${p.reason}`,
 

@@ -65,7 +65,7 @@
 
 ## 6. 写回
 
-- 在读到的正文上代入改好的 text，用 `baocut documents put` 写回同一份转写（document 给它的 documentId，kind 不变），一次写完整份。
+- 把改过的词收成 [{id,text}]，用 `baocut edits apply` 的 updateWords 写回同一份转写（documentId），一笔事务提交。只上传改过的词，不传 words 全数组或完整正文。expectedRevision 用 `baocut videos inspect` 的视频版本；同一笔重试沿用 commandId。
 - 版本冲突说明用户刚改过：重新读，在新的正文上重做，不要用旧正文覆盖用户的修改。
 - 写好后再 `baocut documents read` 一次，看 translationBasis 里切出的句子：没有整段连成一句，也没有在半句话处断开；不对就再改标点。
 
@@ -80,7 +80,7 @@
 - **名字怎么写**：写材料里实际用的形式，通常是全名，没有全名时用出现的那种（比如只有名）；保留原来的文字与拼写，不翻译、不音译；不加头衔、敬称、机构、括号、引号或说明；不超过 40 个字符。材料里没有名字、但明确说了角色（某个节目的主持人、采访者、旁白）时，可以用简短的角色标签；不能只凭对话的样子编一个角色。
 - **不猜**：拿不准就保留占位名。猜错比留着更糟：错名会出现在每一条字幕和每个导出的文件里。
 - **一人几个 id**：自动区分可能把同一个人拆成几个 id。每个 id 各有证据时给它们同一个名字；不合并 id。
-- **写回**：用 `baocut documents put` 写回同一份转写，只改 `speakers[].name`，words 与其他字段照读到的原样；几位一次写完。版本冲突时照第 6 节重新读。
+- **写回**：用 `baocut edits apply` 的 renameSpeakers，给同一份转写的 documentId 与 speakers 的 [{id,name}]；几位一次写完，不上传词或正文。expectedRevision 用当前核对过的视频版本。版本冲突时照第 6 节重新读。
 
 ## 8. 要避免的
 

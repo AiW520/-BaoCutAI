@@ -1,6 +1,7 @@
 import type { EngineMessages } from './engine.ts';
 
 export const zhHans: EngineMessages = {
+  documentPatchInvalid: '文档修改无效',
   // anchors.rs
   anchorUnresolved: (p) => `实例 ${p.item} 的语义锚求不出来：${p.reason}`,
 

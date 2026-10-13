@@ -38,3 +38,27 @@ describe('VideoController.apply', () => {
     expect(params).not.toHaveProperty('labelRef');
   });
 });
+
+it('all existing document editor writes become local changes, even when the old body is not cached', async () => {
+  const { request, videos } = open();
+  const body = { schema: 'baocut.speech/1', speakers: [{ id: 's1', name: 'Speaker 1' }], words: Array.from({ length: 26711 }, (_, i) => ({ id: `w${i}`, text: 'unchanged' })) };
+  const store = useVideo.getState().video!;
+  useVideo.setState({ video: { ...store, state: { ...store.state!, video: { ...store.state!.video, documents: { doc: { id: 'doc', kind: 'speech', currentRevision: '1' } } } } } as unknown as OpenVideo });
+  request.mockImplementation(async (method: string) => method === 'documents.read' ? { body } as never : { receipt: { transactionId: 'tx1' }, replayed: false });
+  const next = structuredClone(body);
+  next.speakers[0]!.name = 'Mark Zuckerberg';
+  await videos.apply([{ type: 'putDocument', documentId: 'doc', kind: 'speech', body: next }]);
+  expect(request).toHaveBeenCalledWith('documents.read', { videoId: 'vid', documentId: 'doc', revision: '1' });
+  const sent = request.mock.calls.find(([method]) => method === 'edits.apply')![1];
+  expect(sent.operations).toEqual([{ type: 'patchDocument', documentId: 'doc', changes: [{ path: ['speakers', { id: 's1' }, 'name'], value: 'Mark Zuckerberg' }] }]);
+  expect(JSON.stringify(sent).length).toBeLessThan(500);
+});
+
+it('keeps the editing revision when a concurrent change arrives before a queued document write', async () => {
+  const { request, videos } = open();
+  const pending = videos.apply([{ type: 'renameSpeakers', documentId: 'doc', speakers: [{ id: 's1', name: 'new' }] }]);
+  const store = useVideo.getState().video!;
+  useVideo.setState({ video: { ...store, state: { ...store.state!, video: { ...store.state!.video, revision: '8' } } } as OpenVideo });
+  await pending;
+  expect(request).toHaveBeenCalledWith('edits.apply', expect.objectContaining({ expectedRevision: '7' }));
+});

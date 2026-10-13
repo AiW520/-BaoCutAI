@@ -70,7 +70,8 @@ const HELLO_TIMEOUT_MS = 5_000;
 const HEARTBEAT_MS = 30_000;
 /** 发送缓冲超过这个量就断开，让客户端重连后按序号补发或取快照，而不是在内存里无限堆积。 */
 const MAX_BUFFERED_BYTES = 16 * 1024 * 1024;
-const MAX_FRAME_BYTES = 4 * 1024 * 1024;
+// The local command gateway accepts large document submissions (ws: 0 = unlimited).
+const MAX_FRAME_BYTES = 0;
 
 /**
  * 本机网关（架构设计 §4）。只监听回环地址：同一个端口上，WebSocket 走协议，第一帧必须是带令牌的 hello；

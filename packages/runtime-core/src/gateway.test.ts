@@ -80,6 +80,29 @@ describe('网关', () => {
     }
   });
 
+  it('authenticated command frames above 4 MiB reach dispatch without closing the socket', async () => {
+    const gateway = newGateway();
+    const endpoint = await gateway.listen();
+    const socket = new WebSocket(endpoint);
+    const receive = () => within(new Promise<Record<string, unknown>>((resolve, reject) => {
+      socket.once('message', (data) => resolve(JSON.parse(data.toString())));
+      socket.once('error', reject);
+      socket.once('close', () => reject(new Error('socket closed before the reply')));
+    }), 5000);
+    try {
+      const welcome = receive();
+      socket.once('open', () => socket.send(JSON.stringify({ type: 'hello', token: 'token', protocolVersion: PROTOCOL_VERSION, client: { kind: 'cli', name: 'large-write', version: '0' } })));
+      expect(await welcome).toMatchObject({ type: 'welcome' });
+      const result = receive();
+      socket.send(JSON.stringify({ type: 'request', id: 'large', method: 'fixture.large', params: { body: 'x'.repeat(9 * 1024 * 1024) } }));
+      expect(await result).toMatchObject({ id: 'large', error: { code: 'unknown-method' } });
+      expect(socket.readyState).toBe(WebSocket.OPEN);
+    } finally {
+      socket.terminate();
+      await gateway.close();
+    }
+  });
+
   it('端口被占用：listen 带着原始错误拒绝，不留下监听或心跳定时器', async () => {
     const blocker = net.createServer();
     await new Promise<void>((resolve) => blocker.listen(0, '127.0.0.1', resolve));

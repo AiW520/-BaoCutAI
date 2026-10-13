@@ -2,6 +2,7 @@ type P<K extends string> = Record<K, string | number>;
 import type { EngineMessages } from './engine.ts';
 
 export const de: EngineMessages = {
+  documentPatchInvalid: 'Die Dokumentänderung ist ungültig',
 
   anchorUnresolved: (p: P<'item' | 'reason'>) => `Der semantische Anker des Clips ${p.item} kann nicht aufgelöst werden: ${p.reason}`,
 
