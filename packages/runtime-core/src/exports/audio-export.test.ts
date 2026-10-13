@@ -28,10 +28,10 @@ vi.mock('node:child_process', async (importOriginal) => {
 
 describe('滤镜图文件参数的能力探测', () => {
   const actualSpawn = vi.importActual<typeof import('node:child_process')>('node:child_process');
-  let attempts: Array<{ command: string; args: string[]; graph: string; kill: (signal?: NodeJS.Signals) => boolean }>;
+  let attempts: Array<{ command: string; args: string[]; graph: string; kill: (signal?: NodeJS.Signals) => boolean; complete: (code: number) => void }>;
   let supported: Set<string>;
   let missing: boolean;
-  let hungOption: string | null;
+  let deferredOption: string | null;
   let command: string;
   let serial = 0;
 
@@ -39,7 +39,7 @@ describe('滤镜图文件参数的能力探测', () => {
     attempts = [];
     supported = new Set();
     missing = false;
-    hungOption = null;
+    deferredOption = null;
     command = `ffmpeg-probe-test-${serial++}`;
     vi.mocked(spawn).mockImplementation((executable, args) => {
       const argv = args as string[];
@@ -51,9 +51,9 @@ describe('滤镜图文件参数的能力探测', () => {
         return true;
       });
       Object.assign(child, { kill });
-      attempts.push({ command: executable, args: [...argv], graph: readFileSync(graph, 'utf8'), kill });
+      attempts.push({ command: executable, args: [...argv], graph: readFileSync(graph, 'utf8'), kill, complete: (code) => child.emit('close', code) });
       queueMicrotask(() => {
-        if (option === hungOption) return;
+        if (option === deferredOption) return;
         if (missing) child.emit('error', Object.assign(new Error('not found'), { code: 'ENOENT' }));
         else {
           if (!supported.has(option)) child.stderr.write(`Unrecognized option '${option.slice(1)}'.`);
@@ -125,30 +125,29 @@ describe('滤镜图文件参数的能力探测', () => {
     expect(attempts).toHaveLength(2);
   });
 
-  it.each(['-/filter_complex', '-filter_complex_script'])('%s 探测超时终止进程，不再回退，清理后可以重试', async (option) => {
-    // 缩短真实计时以避免测试等待五秒，同时校验生产调用确实设置了五秒上限。
-    const timeout = AbortSignal.timeout.bind(AbortSignal);
-    const timeoutSpy = vi.spyOn(AbortSignal, 'timeout').mockImplementation((milliseconds) => {
-      expect(milliseconds).toBe(5_000);
-      return timeout(20);
-    });
+  it.each(['-/filter_complex', '-filter_complex_script'])('%s 探测等待进程结果，并发共用，完成后清理并缓存', async (option) => {
+    deferredOption = option;
+    const pending = detectFilterScriptOption({ command });
+    expect(detectFilterScriptOption({ command })).toBe(pending);
     try {
-      hungOption = option;
-      const pending = detectFilterScriptOption({ command });
+      const count = option === '-/filter_complex' ? 1 : 2;
+      await vi.waitFor(() => expect(attempts).toHaveLength(count));
+      const attempt = attempts.at(-1)!;
+      expect(attempt.args[3]).toBe(option);
+      await expect(fs.access(path.dirname(attempt.args[4]!))).resolves.toBeUndefined();
+      expect(attempt.kill).not.toHaveBeenCalled();
       expect(detectFilterScriptOption({ command })).toBe(pending);
-      await expect(pending).rejects.toMatchObject({ kind: 'aborted' });
-      expect(attempts).toHaveLength(option === '-/filter_complex' ? 1 : 2);
-      expect(attempts.at(-1)!.kill).toHaveBeenCalledExactlyOnceWith('SIGKILL');
-      for (const attempt of attempts) {
-        await expect(fs.access(path.dirname(attempt.args[4]!))).rejects.toMatchObject({ code: 'ENOENT' });
-      }
-      // 失败的共享 Promise 必须从缓存移除，下一次可正常探测。
-      hungOption = null;
-      supported.add('-/filter_complex');
-      expect(await detectFilterScriptOption({ command })).toBe('-/filter_complex');
-      expect(attempts).toHaveLength(option === '-/filter_complex' ? 2 : 3);
+
+      attempt.complete(0);
+      expect(await pending).toBe(option);
+      await expect(fs.access(path.dirname(attempt.args[4]!))).rejects.toMatchObject({ code: 'ENOENT' });
+      expect(await detectFilterScriptOption({ command })).toBe(option);
+      expect(attempts).toHaveLength(count);
     } finally {
-      timeoutSpy.mockRestore();
+      // 即使断言失败也结束替身进程，让探测收束并清理临时目录。
+      deferredOption = null;
+      for (const attempt of attempts) attempt.complete(0);
+      await pending.catch(() => {});
     }
   });
 });

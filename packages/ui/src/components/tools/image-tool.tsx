@@ -151,7 +151,11 @@ export function ImageTool() {
     runtime
       .generateImage(withSaveDir(imageRequest(draft, option), saveTarget(saveDirectory, saveOverride)))
       .then(
-        () => ToastQueue.positive(IMAGE_COPY.submitted, { timeout: 3000 }),
+        () => {
+          patch({ prompt: '', refs: [] });
+          setTried(false);
+          ToastQueue.positive(IMAGE_COPY.submitted, { timeout: 3000 });
+        },
         submitFailed,
       )
       .finally(() => setSubmitting(false));
