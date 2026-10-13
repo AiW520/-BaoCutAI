@@ -284,8 +284,8 @@ describe('ModelCatalog', () => {
         'gpt-sovits-v2@candle',
         'voxcpm2@candle',
         'omnivoice@candle',
-        'qwen-image-2.1@candle',
         'qwen-image-2.1-turbo@candle',
+        'qwen-image-2.1@candle',
         'yue2-3b@audio-cpp-q8',
         'htdemucs-ft@candle',
       ]);
@@ -316,8 +316,8 @@ describe('ModelCatalog', () => {
       'GPT-SoVITS v2',
       'VoxCPM2',
       'OmniVoice',
-      'Qwen-Image-2.1',
       'Qwen-Image-2.1 Turbo',
+      'Qwen-Image-2.1',
       'YuE2 3B',
       'HTDemucs-FT',
     ]);
