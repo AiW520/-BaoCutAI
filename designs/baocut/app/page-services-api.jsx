@@ -160,13 +160,13 @@
           <span className="oai-cap__mark"><Ic n={c.icon} className="ic--16" /></span>
           <span className="grow oai-cap__txt">
             <b className="t-title-sm">{c.name}</b>
-            <span className="t-detail">{capOn ? sub : '已关闭 · 这一类的端点返回 404，/v1/models 里也不列'}</span>
+            <span className="t-detail">{capOn ? sub : '已关闭 · 这一类的端点返回 503，/v1/models 里也不列'}</span>
           </span>
           <Switch on={capOn} onChange={(v) => setApi(app, {caps: {...(api.caps || {}), [cap]: v}})} ariaLabel={`提供${c.name}`} />
         </div>
         {capOn && !ready.length ? (
           <div className="svc__fix oai-cap__fix">
-            <span className="t-detail grow">下载一只{c.name}模型后才能用；现在请求会得到 404。</span>
+            <span className="t-detail grow">下载一只{c.name}模型后才能用；现在请求会得到 503。</span>
             <Btn size="s" variant="secondary" onClick={() => app.go({r: 'settings', sec: 'local', tab: c.cat})}>去下载</Btn>
           </div>
         ) : null}
@@ -245,8 +245,8 @@
   }
 
   const RETURNS = {
-    models: '{object:"list", data:[{id, object:"model", created, owned_by:"local", baocut}]}。baocut 是 {capability, providerId, modelId, alias}：capability 为 transcribe、synthesizeSpeech 或 generateImage；映射名的 alias 为 true，modelId 写着它落到哪只，落到几类就列几项。',
-    model: '一个 Model 对象，形状同上。',
+    models: '{object:"list", data:[{id, object:"model", created, owned_by:"local", baocut}]}。映射名在前，然后是本机模型（id 写成 local/<id>）。baocut 是 {capability, providerId, modelId, alias}：capability 为 transcribe、synthesizeSpeech 或 generateImage；映射名的 alias 为 true，modelId 写着它落到哪只，落到几类就列几项。',
+    model: '一个 Model 对象，形状同上；id 是请求里写的。',
     text: 'json 返回 {text, baocut}；verbose_json 返回 task、language、duration、text、segments，要了 word 时再带 words，另有 baocut；text / srt / vtt 是纯文本。baocut 是 {jobId, providerId, modelId}。',
     audio: '音频字节，Content-Type 随 response_format（audio/mpeg、audio/wav…）。',
     image: '{created, data:[{b64_json}], output_format:"png", size, baocut:{jobId, providerId, modelId, seed, steps}}。seed 是这次冻结的种子（没写时抽的那个）；steps 只在请求写了时带回。',
@@ -348,7 +348,7 @@
           </div>
         ) : c && !ctx.ready[ep.cap].length ? (
           <div className="svc__fix oai-block">
-            <span className="t-detail grow">还没有下载{c.name}模型，发出去会得到 404。</span>
+            <span className="t-detail grow">还没有下载{c.name}模型，发出去会得到 503。</span>
             <Btn size="s" variant="secondary" onClick={() => app.go({r: 'settings', sec: 'local', tab: c.cat})}>去下载</Btn>
           </div>
         ) : null}
@@ -471,7 +471,7 @@
     return <div className={cx('oai-f', off && 'is-off')}>{label}{ctl}</div>;
   }
 
-  const STATUS = {400: 'Bad Request', 401: 'Unauthorized', 403: 'Forbidden', 404: 'Not Found', 413: 'Too Large', 500: 'Error', 503: 'Busy'};
+  const STATUS = {400: 'Bad Request', 401: 'Unauthorized', 403: 'Forbidden', 404: 'Not Found', 409: 'Conflict', 413: 'Payload Too Large', 429: 'Too Many Requests', 500: 'Internal Server Error', 503: 'Service Unavailable'};
   function Response({resp, copy}) {
     const app = useApp();
     const ok = resp.status < 400;

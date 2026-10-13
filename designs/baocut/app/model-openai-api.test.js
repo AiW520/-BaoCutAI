@@ -31,9 +31,9 @@ test('三类能力，路径与 OpenAI 相同，只有主机和端口不同', () 
   assert.ok(A.epBy('tts.speech').params.find((p) => p.name === 'model').req);
   assert.ok(A.epBy('image.generations').params.find((p) => p.name === 'model').optionalModel);
   A.ENDPOINTS.forEach((e) => e.errors.forEach((code) => assert.equal(A.ERRORS[code].length, 3, `${e.id} ${code}`)));
-  // 能力端点带 capability_disabled，/models 两条不带
-  assert.ok(A.epBy('tts.speech').errors.indexOf('capability_disabled') >= 0);
-  assert.ok(A.epBy('models.list').errors.indexOf('capability_disabled') < 0);
+  // 能力端点带 CAPABILITY_NOT_CONFIGURED，/models 两条不带
+  assert.ok(A.epBy('tts.speech').errors.indexOf('CAPABILITY_NOT_CONFIGURED') >= 0);
+  assert.ok(A.epBy('models.list').errors.indexOf('CAPABILITY_NOT_CONFIGURED') < 0);
 });
 
 test('模型现场：只取三类、已下载、不是依赖包的；默认按本地模型页，缺了取第一只', () => {
@@ -46,17 +46,21 @@ test('模型现场：只取三类、已下载、不是依赖包的；默认按�
   assert.ok(!ctx.byId['speaker-diarization']);
 });
 
-test('解析：本机 id 直接用；未下载、认不出都是 404；另一类是 400；缺 model 是 400，出图可省', () => {
+test('解析：本机 id 直接用，可带 local/；未下载、认不出、另一类都是 404；这一类一只都没有是 503；缺 model 是 400，出图可省', () => {
   const ctx = ctxWith(['moss-transcribe', 'qwen3-tts-0.6b-customvoice']);
   assert.equal(A.resolveModel('moss-transcribe', 'asr', ctx).via, 'exact');
-  assert.equal(A.resolveModel('whisper-large-v3', 'asr', ctx).error, 'model_not_found'); // 目录里有、没下载
-  assert.equal(A.resolveModel('whisper-2', 'asr', ctx).error, 'model_not_found');
-  assert.equal(A.resolveModel('Whisper-1', 'asr', ctx).error, 'model_not_found', '大小写敏感');
+  assert.equal(A.resolveModel('whisper-large-v3', 'asr', ctx).error, 'MODEL_NOT_FOUND'); // 目录里有、没下载
+  assert.equal(A.resolveModel('whisper-2', 'asr', ctx).error, 'MODEL_NOT_FOUND');
+  assert.equal(A.resolveModel('Whisper-1', 'asr', ctx).error, 'MODEL_NOT_FOUND', '大小写敏感');
   const wrong = A.resolveModel('qwen3-tts-0.6b-customvoice', 'asr', ctx);
-  assert.equal(wrong.error, 'model_wrong_capability');
-  assert.equal(A.ERRORS[wrong.error][0], 400);
-  assert.equal(A.resolveModel('', 'asr', ctx).error, 'invalid_request');
-  assert.equal(A.resolveModel('', 'image', ctx, true).error, 'model_not_found');
+  assert.equal(wrong.error, 'MODEL_NOT_FOUND');
+  assert.deepEqual(A.ERRORS[wrong.error].slice(0, 2), [404, 'not_found_error']);
+  assert.equal(A.resolveModel('local/moss-transcribe', 'asr', ctx).model.id, 'moss-transcribe', '列表里的 local/<id> 也认');
+  assert.equal(A.resolveModel('', 'asr', ctx).error, 'INVALID_REQUEST');
+  // 这一类一只都没下载：先报 503，不管写的是什么
+  assert.equal(A.resolveModel('', 'image', ctx, true).error, 'CAPABILITY_NOT_CONFIGURED');
+  assert.equal(A.resolveModel('qwen-image-2.1', 'image', ctx).error, 'CAPABILITY_NOT_CONFIGURED');
+  assert.deepEqual(A.ERRORS.CAPABILITY_NOT_CONFIGURED.slice(0, 2), [503, 'service_unavailable_error']);
   const withImg = ctxWith(['qwen-image-2.1']);
   assert.equal(A.resolveModel('', 'image', withImg, true).model.id, 'qwen-image-2.1');
   assert.equal(A.resolveModel('', 'image', withImg, true).via, 'default');
@@ -68,19 +72,20 @@ test('映射：预置名落到默认；多对多；按顺序取第一只已下�
   assert.equal(w.via, 'map');
   assert.equal(w.alias, 'whisper-1');
   assert.equal(w.model.id, 'whisper-large-v3');
-  assert.equal(A.resolveModel('whisper-1', 'tts', ctx).error, 'model_not_found');
+  assert.equal(A.resolveModel('whisper-1', 'tts', ctx).error, 'MODEL_NOT_FOUND');
   // 一个名字指向两类；列表里先写没下载的，跳过它
   const api = {modelMap: [{name: 'local', to: ['qwen-image-2.1', 'moss-transcribe', 'default:tts']}, {name: 'x-tts', to: ['qwen3-tts-0.6b-base']}]};
   const c2 = ctxWith(ALL, api);
   assert.equal(A.resolveModel('local', 'asr', c2).model.id, 'moss-transcribe');
   assert.equal(A.resolveModel('local', 'tts', c2).model.id, 'qwen3-tts-0.6b-customvoice');
-  assert.equal(A.resolveModel('local', 'image', c2).error, 'model_not_found');
+  assert.equal(A.resolveModel('local', 'image', c2).error, 'CAPABILITY_NOT_CONFIGURED', '图像一只都没下载');
+  assert.equal(A.resolveModel('x-tts', 'asr', c2).error, 'MODEL_NOT_FOUND', '没指向这一类');
   // 一只模型挂两个名字
   assert.equal(A.resolveModel('x-tts', 'tts', c2).model.id, 'qwen3-tts-0.6b-base');
   // 用户改过映射后预置不再生效
-  assert.equal(A.resolveModel('whisper-1', 'asr', c2).error, 'model_not_found');
+  assert.equal(A.resolveModel('whisper-1', 'asr', c2).error, 'MODEL_NOT_FOUND');
   // 空表：只剩本机 id
-  assert.equal(A.resolveModel('tts-1', 'tts', ctxWith(ALL, {modelMap: []})).error, 'model_not_found');
+  assert.equal(A.resolveModel('tts-1', 'tts', ctxWith(ALL, {modelMap: []})).error, 'MODEL_NOT_FOUND');
 });
 
 test('映射校验：空名、空格、重名、与本机 id 同名、没有目标；有问题的行不生效', () => {
@@ -90,7 +95,7 @@ test('映射校验：空名、空格、重名、与本机 id 同名、没有目�
   const issues = A.mapIssues(rows, ctx);
   assert.deepEqual(issues.map((x) => x && x.field), ['name', 'name', null, 'name', 'name', 'to', null]);
   assert.deepEqual(ctx.map.map((r) => r.name), ['dup', 'ok']);
-  assert.equal(A.resolveModel('dup', 'tts', ctx).error, 'model_not_found', '重名的第二行不生效');
+  assert.equal(A.resolveModel('dup', 'tts', ctx).error, 'MODEL_NOT_FOUND', '重名的第二行不生效');
 });
 
 test('映射摘要与目标：每一类落到哪只；默认目标跟着本地模型页走；目录里没了的目标', () => {
@@ -108,24 +113,32 @@ test('映射摘要与目标：每一类落到哪只；默认目标跟着本地�
   assert.notStrictEqual(A.mapRows({})[0].to, A.MAP_SEED[0].to, '拷贝，不共享数组');
 });
 
-test('/models：已下载模型 + 能落地的映射名；独立端口只列那一类', () => {
+test('/models：先映射名再 local/<id>；只列能落地的；独立端口只列那一类', () => {
   const ctx = ctxWith(['moss-transcribe', 'qwen3-tts-0.6b-customvoice']);
   const ids = A.listModels(ctx).map((m) => m.id);
-  assert.ok(ids.indexOf('moss-transcribe') >= 0 && ids.indexOf('whisper-1') >= 0 && ids.indexOf('tts-1') >= 0);
+  assert.deepEqual(ids, ['whisper-1', 'gpt-4o-transcribe', 'gpt-4o-mini-transcribe', 'tts-1', 'tts-1-hd', 'gpt-4o-mini-tts',
+    'local/moss-transcribe', 'local/qwen3-tts-0.6b-customvoice']);
   assert.ok(ids.indexOf('gpt-image-1') < 0, '图像没下载，映射名不列');
   // 形状同内核：owned_by 是 Provider；baocut 写能力、Provider、落到的模型与是不是映射名
   assert.deepEqual(A.listModels(ctx).find((m) => m.id === 'whisper-1'),
     {id: 'whisper-1', object: 'model', created: 0, owned_by: 'local', baocut: {capability: 'transcribe', providerId: 'local', modelId: 'moss-transcribe', alias: true}});
-  assert.deepEqual(A.listModels(ctx).find((m) => m.id === 'moss-transcribe').baocut, {capability: 'transcribe', providerId: 'local', modelId: 'moss-transcribe', alias: false});
+  assert.deepEqual(A.listModels(ctx).find((m) => m.id === 'local/moss-transcribe').baocut, {capability: 'transcribe', providerId: 'local', modelId: 'moss-transcribe', alias: false});
   assert.ok(A.listModels(ctx).every((m) => !('x_baocut' in m)));
   const asrOnly = A.listModels(ctx, 'asr').map((m) => m.id);
-  assert.ok(asrOnly.indexOf('tts-1') < 0 && asrOnly.indexOf('qwen3-tts-0.6b-customvoice') < 0);
+  assert.deepEqual(asrOnly, ['whisper-1', 'gpt-4o-transcribe', 'gpt-4o-mini-transcribe', 'local/moss-transcribe']);
   // 一只都没下载时是空列表
   assert.deepEqual(A.demoResponse(A.epBy('models.list'), {}, ctxWith([])).body.json, {object: 'list', data: []});
-  // 查一只：映射名 200、未下载 404
-  const got = A.demoResponse(A.epBy('models.retrieve'), {model: 'whisper-1'}, ctx);
-  assert.equal(got.status, 200);
-  assert.equal(A.demoResponse(A.epBy('models.retrieve'), {model: 'whisper-large-v3'}, ctx).status, 404);
+  // 查一只：映射名、local/<id>、裸 id 都是 200，id 回写请求里的；未下载 404
+  const retrieve = (model) => A.demoResponse(A.epBy('models.retrieve'), {model}, ctx);
+  assert.equal(retrieve('whisper-1').status, 200);
+  assert.equal(retrieve('local/moss-transcribe').body.json.id, 'local/moss-transcribe');
+  const bare = retrieve('moss-transcribe');
+  assert.equal(bare.status, 200);
+  assert.equal(bare.body.json.id, 'moss-transcribe');
+  assert.equal(bare.body.json.baocut.alias, false);
+  const miss = retrieve('whisper-large-v3');
+  assert.equal(miss.status, 404);
+  assert.equal(miss.body.json.error.code, 'MODEL_NOT_FOUND');
 });
 
 test('独立端口：建议值、范围、与 Web / 远端算力 / MCP / 其他类冲突', () => {
@@ -210,14 +223,14 @@ test('演示响应：状态码与错误体照 OpenAI 的形状', () => {
   const json = A.demoResponse(asr, {...A.initialValues(asr, ctx), response_format: 'json'}, ctx).body.json;
   assert.deepEqual(json.baocut, {jobId: json.baocut.jobId, providerId: 'local', modelId: 'moss-transcribe'});
   assert.ok(/^job_/.test(json.baocut.jobId));
-  assert.equal(nf.body.json.error.code, 'model_not_found');
-  assert.equal(nf.body.json.error.type, 'invalid_request_error');
+  assert.equal(nf.body.json.error.code, 'MODEL_NOT_FOUND');
+  assert.equal(nf.body.json.error.type, 'not_found_error', 'type 跟着状态走');
   assert.equal(A.demoResponse(asr, {...A.initialValues(asr, ctx), model: ''}, ctx).status, 400);
   assert.equal(A.demoResponse(asr, {...A.initialValues(asr, ctx), response_format: 'diarized_json'}, ctx).status, 400);
   // 合成：CustomVoice 收参考音频 → 400；不收的指令忽略并说明
   const tts = A.epBy('tts.speech');
   const tv = A.initialValues(tts, ctx);
-  assert.equal(A.demoResponse(tts, {...tv, reference_audio: {name: 'ref.wav'}}, ctx).body.json.error.code, 'unsupported_param');
+  assert.equal(A.demoResponse(tts, {...tv, reference_audio: {name: 'ref.wav'}}, ctx).body.json.error.code, 'UNSUPPORTED_PARAMETER');
   const said = A.demoResponse(tts, {...tv, voice: 'alloy'}, ctx);
   assert.equal(said.status, 200);
   assert.ok(/默认音色/.test(said.meta));
@@ -232,18 +245,22 @@ test('演示响应：状态码与错误体照 OpenAI 的形状', () => {
   assert.equal(good.body.json.baocut.modelId, 'qwen-image-2.1');
   assert.equal(good.body.json.size, '1024x576', 'auto = 模型缺省尺寸（与内核 resolve_size 一致）');
   const bad = A.demoResponse(img, {...iv, size: '1000x1000'}, ctx);
-  assert.equal(bad.body.json.error.code, 'invalid_size');
+  assert.equal(bad.body.json.error.code, 'INVALID_REQUEST');
   assert.ok(/`992x992`/.test(bad.body.json.error.message));
   assert.ok(/`auto` \(1024x576\)/.test(bad.body.json.error.message));
-  ['response_format:url', 'background:transparent', 'output_format:webp', 'n:2'].forEach((kv) => {
+  // 张数超出模型上限是取值不对（同内核 imageParameters 的 maxCount），不是不支持
+  const many = A.demoResponse(img, {...iv, n: 2}, ctx).body.json.error;
+  assert.equal(many.code, 'INVALID_REQUEST');
+  assert.ok(/at most 1 image/.test(many.message), many.message);
+  ['response_format:url', 'background:transparent', 'output_format:webp'].forEach((kv) => {
     const [k, val] = kv.split(':');
-    assert.equal(A.demoResponse(img, {...iv, [k]: val}, ctx).body.json.error.code, 'unsupported_param', kv);
+    assert.equal(A.demoResponse(img, {...iv, [k]: val}, ctx).body.json.error.code, 'UNSUPPORTED_PARAMETER', kv);
   });
   assert.equal(A.fmtMs(640), '640 ms');
   assert.equal(A.fmtMs(2400), '2.4 s');
 });
 
-test('出图的步数按模型：不写用默认，Turbo 固定 8 步，超出范围 400 invalid_request', () => {
+test('出图的步数按模型：不写用默认，Turbo 固定 8 步，超出范围 400 INVALID_REQUEST', () => {
   const I = require('./model-cloud-image.js');
   Object.entries(A.IMAGE_STEPS).forEach(([id, r]) => {
     const s = I.stepsOf(id);
@@ -262,9 +279,9 @@ test('出图的步数按模型：不写用默认，Turbo 固定 8 步，超出�
   assert.equal(A.demoResponse(img, {...turbo, steps: 8}, ctx).body.json.baocut.steps, 8);
   const off = A.demoResponse(img, {...turbo, steps: 20}, ctx);
   assert.equal(off.status, 400);
-  assert.equal(off.body.json.error.code, 'invalid_request');
+  assert.equal(off.body.json.error.code, 'INVALID_REQUEST');
   assert.equal(off.body.json.error.param, null);
   assert.ok(/only runs at 8 steps/.test(off.body.json.error.message));
-  assert.equal(A.demoResponse(img, {...iv, steps: 44}, ctx).body.json.error.code, 'invalid_request');
+  assert.equal(A.demoResponse(img, {...iv, steps: 44}, ctx).body.json.error.code, 'INVALID_REQUEST');
   assert.equal(A.demoResponse(img, {...iv, steps: 40}, ctx).status, 200);
 });

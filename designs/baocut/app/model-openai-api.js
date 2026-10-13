@@ -1,7 +1,7 @@
 /* Web 服务 › OpenAI 兼容 API 的纯模型 —— §17.6（2026-09-27 第二版，设计稿 docs/design/cli/bcut-serve-openai-api-design.md）。
    路径与 OpenAI 一字不差：Base URL 是 `http://127.0.0.1:<端口>/v1`，只有主机和端口不同。
    `model` 与 OpenAI 一样必填（出图可不写，用默认）；本机模型的 id 直接能用，别的名字要在「模型映射」里登记，
-   都不是就 404 model_not_found（设计稿 §3）。映射是多对多：一个名字可以指向几只模型（每一类按顺序取第一只已下载的），
+   都不是就 404 MODEL_NOT_FOUND（设计稿 §3）。映射是多对多：一个名字可以指向几只模型（每一类按顺序取第一只已下载的），
    一只模型也可以挂几个名字；目标写 `default:<能力>` 时跟着 设置 › 模型 › 本地模型 里那一类的默认走。
    参数表按内核实际收的字段手写（设计稿 §4），不做单一来源、不出 openapi.json。
    这里只算：能力与端点目录、地址、模型现场（ctxOf）、模型解析、映射校验、端口校验、试用区、代码片段、演示响应。 */
@@ -48,16 +48,16 @@
              req, dflt, values, doc, ext（OpenAI 没有、BaoCut 加的字段）, more（折进「更多参数」）, by（只有部分模型收，键见 TTS_SUPPORT）,
              ignored（接受但忽略）, reject（只认 values 里的值，其余 400）}
      resp: 'models' | 'model' | 'text'（随 response_format）| 'audio' | 'image' */
-  const MODEL_DOC = '本机模型的 id，或「模型映射」里登记的名字；都不是返回 404 model_not_found。';
+  const MODEL_DOC = '本机模型的 id（可带 local/ 前缀，/v1/models 列的就是带前缀的写法），或「模型映射」里登记的名字；都不是返回 404 MODEL_NOT_FOUND。';
   const ENDPOINTS = [
     {id: 'models.list', group: 'models', method: 'GET', path: '/models', title: '列出模型', resp: 'models',
-      summary: '这台电脑上已下载、能用的模型，加上映射里能落到已下载模型的名字。在某一类的独立端口上只列那一类。', params: [],
+      summary: '映射里能落到已下载模型的名字在前，然后是这台电脑上已下载、能用的模型（写成 local/<id>）。在某一类的独立端口上只列那一类。', params: [],
       errors: []},
     {id: 'models.retrieve', group: 'models', method: 'GET', path: '/models/{model}', title: '查一只模型', resp: 'model',
-      summary: '按 id 或映射名查一只模型：本机模型返回它自己，映射名返回它在每一类实际落到哪只。', params: [
+      summary: '按 /v1/models 里的 id（映射名或 local/<id>）查一只模型，也认不带前缀的本机 id；返回的 id 就是请求里写的。', params: [
         {name: 'model', loc: 'path', kind: 'model', req: true, doc: MODEL_DOC},
       ],
-      errors: ['model_not_found']},
+      errors: ['MODEL_NOT_FOUND']},
 
     {id: 'asr.transcriptions', group: 'asr', method: 'POST', path: '/audio/transcriptions', title: '转录音频', resp: 'text',
       body: 'multipart/form-data',
@@ -79,7 +79,7 @@
         {name: 'include[]', loc: 'form', ignored: true},
         {name: 'chunking_strategy', loc: 'form', ignored: true},
       ],
-      errors: ['invalid_request', 'file_too_large', 'model_not_found', 'model_wrong_capability', 'queue_full', 'transcription_failed']},
+      errors: ['INVALID_REQUEST', 'UNSUPPORTED_PARAMETER', 'PAYLOAD_TOO_LARGE', 'MODEL_NOT_FOUND', 'TOO_MANY_REQUESTS', 'JOB_CANCELLED', 'INTERNAL']},
 
     {id: 'tts.speech', group: 'tts', method: 'POST', path: '/audio/speech', title: '合成语音', resp: 'audio',
       body: 'application/json',
@@ -91,19 +91,19 @@
         {name: 'voice', loc: 'json', kind: 'voice', by: 'voice',
           doc: 'OpenAI 里必填，这里可不写。只有 CustomVoice 模型看它，填模型自带的说话人名（Vivian、Eric…）；alloy 这类 OpenAI 音色名、不写，都用默认音色。其余模型不看 voice，换声音用 reference_audio。'},
         {name: 'response_format', loc: 'json', kind: 'enum', dflt: 'mp3', values: ['mp3', 'opus', 'aac', 'flac', 'wav', 'pcm'], reject: true,
-          doc: 'wav 是模型原生采样率；pcm 是 24 kHz 16 位单声道裸流；mp3 / opus / aac / flac 要这台电脑上有 ffmpeg，没有时返回 400 audio_encoding_failed。'},
+          doc: 'wav 是模型原生采样率；pcm 是 24 kHz 16 位单声道裸流；mp3 / opus / aac / flac 要这台电脑上有 ffmpeg，没有时任务失败，返回 500（code 是任务的错误码）。'},
         {name: 'instructions', loc: 'json', kind: 'text', more: true, by: 'instructions', placeholder: '比如：放慢一点，语气温和',
           doc: '风格指令。不收指令的模型忽略。'},
         {name: 'language', loc: 'json', kind: 'text', more: true, ext: true, placeholder: '按文字判断',
           doc: '文字的语言，如 zh、en。不写按文字判断。'},
         {name: 'reference_audio', loc: 'json', kind: 'file', more: true, ext: true, by: 'reference_audio',
-          doc: '参考音频的 base64（可带 data: 前缀），按它克隆声音，最大 32 MB。给不收参考音频的模型返回 400 unsupported_param。'},
+          doc: '参考音频的 base64（可带 data: 前缀），按它克隆声音，最大 32 MB。给不收参考音频的模型返回 400 UNSUPPORTED_PARAMETER。'},
         {name: 'reference_text', loc: 'json', kind: 'text', more: true, ext: true, by: 'reference_text',
           doc: '参考音频里说的话，帮模型对齐。不收的模型忽略。'},
         {name: 'speed', loc: 'json', ignored: true},
         {name: 'stream_format', loc: 'json', ignored: true, note: '写 sse 也拿到一次性返回的音频'},
       ],
-      errors: ['invalid_request', 'unsupported_param', 'model_not_found', 'model_wrong_capability', 'queue_full', 'speech_failed', 'audio_encoding_failed']},
+      errors: ['INVALID_REQUEST', 'UNSUPPORTED_PARAMETER', 'PAYLOAD_TOO_LARGE', 'MODEL_NOT_FOUND', 'TOO_MANY_REQUESTS', 'JOB_CANCELLED', 'INTERNAL']},
 
     {id: 'image.generations', group: 'image', method: 'POST', path: '/images/generations', title: '生成图片', resp: 'image',
       body: 'application/json',
@@ -112,52 +112,52 @@
         {name: 'prompt', loc: 'json', kind: 'longtext', req: true, dflt: '清晨的海边小镇，水彩风格，柔和的光',
           doc: '要画的画面。有中文字时，Qwen-Image-2.1 建议把 steps 调到 40；Turbo 固定 8 步，不用调。'},
         {name: 'model', loc: 'json', kind: 'model', optionalModel: true,
-          doc: '与 OpenAI 一样可以不写，不写用 设置 › 模型 › 本地模型 里的默认图像模型；写了就按本机 id 或映射名找，都不是返回 404。'},
+          doc: '与 OpenAI 一样可以不写，不写用 设置 › 模型 › 本地模型 里的默认图像模型；写了就按本机 id 或映射名找，都不是返回 404 MODEL_NOT_FOUND。一只图像模型都没下载时返回 503 CAPABILITY_NOT_CONFIGURED。'},
         {name: 'size', loc: 'json', kind: 'enum', dflt: 'auto', values: ['auto', '1024x1024', '1344x768', '768x1344'], tryValues: ['auto', '1024x1024', '1344x768', '768x1344', '1000x1000'],
-          doc: '宽x高，或 auto（模型的缺省尺寸，Qwen-Image 是 1024x576）。宽高都要是 32 的倍数、最长边不超过 1536、宽高比不超过 3，不合规时返回 400 invalid_size 并给建议尺寸。'},
-        {name: 'n', loc: 'json', kind: 'int', dflt: 1, more: true, doc: '一次几张。本机模型只能 1，大于 1 返回 400 unsupported_param。'},
+          doc: '宽x高，或 auto（模型的缺省尺寸，Qwen-Image 是 1024x576）。宽高都要是 32 的倍数、最长边不超过 1536、宽高比不超过 3，不合规时返回 400 INVALID_REQUEST，说明里给建议尺寸。'},
+        {name: 'n', loc: 'json', kind: 'int', dflt: 1, more: true, doc: '一次几张。本机模型只能 1，大于 1 返回 400 INVALID_REQUEST。'},
         {name: 'response_format', loc: 'json', kind: 'enum', dflt: 'b64_json', values: ['b64_json'], more: true, reject: true,
-          doc: '只有 b64_json。url 返回 400 unsupported_param。'},
+          doc: '只有 b64_json。url 返回 400 UNSUPPORTED_PARAMETER。'},
         {name: 'output_format', loc: 'json', kind: 'enum', dflt: 'png', values: ['png'], more: true, reject: true,
-          doc: '只有 png。jpeg / webp 返回 400 unsupported_param。'},
+          doc: '只有 png。jpeg / webp 返回 400 UNSUPPORTED_PARAMETER。'},
         {name: 'background', loc: 'json', kind: 'enum', dflt: 'auto', values: ['auto', 'opaque'], more: true, reject: true,
-          doc: 'transparent 返回 400 unsupported_param：本机模型画不了透明底。'},
+          doc: 'transparent 返回 400 UNSUPPORTED_PARAMETER：本机模型画不了透明底。'},
         {name: 'seed', loc: 'json', kind: 'int', more: true, ext: true, doc: '种子，0 到 4294967295。同一模型、同一描述、同一种子画出同一张。不写时抽一个，响应里带回。'},
         {name: 'steps', loc: 'json', kind: 'int', more: true, ext: true, placeholder: '按模型',
-          doc: '采样步数，越多越细也越慢。不写用模型的默认值：Qwen-Image-2.1 是 20，可写 8–40；Turbo 是蒸馏版，固定 8 步。超出模型的范围返回 400 invalid_request。'},
+          doc: '采样步数，越多越细也越慢。不写用模型的默认值：Qwen-Image-2.1 是 20，可写 8–40；Turbo 是蒸馏版，固定 8 步。超出模型的范围返回 400 INVALID_REQUEST。'},
         {name: 'quality', loc: 'json', ignored: true},
         {name: 'style', loc: 'json', ignored: true},
         {name: 'moderation', loc: 'json', ignored: true},
         {name: 'output_compression', loc: 'json', ignored: true},
         {name: 'user', loc: 'json', ignored: true},
       ],
-      errors: ['invalid_request', 'prompt_too_long', 'invalid_size', 'unsupported_param', 'model_not_found', 'model_wrong_capability', 'queue_full', 'image_failed']},
+      errors: ['INVALID_REQUEST', 'UNSUPPORTED_PARAMETER', 'PAYLOAD_TOO_LARGE', 'MODEL_NOT_FOUND', 'TOO_MANY_REQUESTS', 'JOB_CANCELLED', 'INTERNAL']},
   ];
   ENDPOINTS.forEach((e) => {
     e.cap = capBy(e.group) ? e.group : null;
-    e.errors = ['local_requests_only', 'invalid_api_key'].concat(e.cap ? ['capability_disabled'] : [], e.errors);
+    e.errors = ['ORIGIN_NOT_ALLOWED', 'HOST_NOT_ALLOWED', 'AUTHENTICATION_REQUIRED'].concat(e.cap ? ['CAPABILITY_NOT_CONFIGURED'] : [], e.errors);
   });
   const epBy = (id) => ENDPOINTS.find((e) => e.id === id) || null;
   const epsOf = (group) => ENDPOINTS.filter((e) => e.group === group);
 
-  /** 错误码 → [状态, OpenAI 的 error.type, 一句人话]（详情页「错误码」、试用区的失败说明共用）。 */
-  const ERRORS = {
-    local_requests_only: [403, 'permission_error', '请求不是从这台电脑发出的，或来自网页'],
-    invalid_api_key: [401, 'authentication_error', '开了「需要 API key」，而请求没带 key 或 key 不对'],
-    capability_disabled: [404, 'invalid_request_error', '这一类能力在 API 页被关掉了'],
-    invalid_request: [400, 'invalid_request_error', '缺必填字段，或字段值不合法'],
-    model_not_found: [404, 'invalid_request_error', 'model 不是已下载的本机模型，也不是映射里能落到已下载模型的名字'],
-    model_wrong_capability: [400, 'invalid_request_error', 'model 是另一类的模型，这个端点用不了'],
-    unsupported_param: [400, 'invalid_request_error', '这只模型不支持这个参数或取值'],
-    file_too_large: [413, 'invalid_request_error', '上传超过 512 MB'],
-    prompt_too_long: [400, 'invalid_request_error', '描述超过这只模型的上限'],
-    invalid_size: [400, 'invalid_request_error', '尺寸不合这只模型的规则，错误信息里有建议尺寸'],
-    queue_full: [503, 'server_error', '排队的请求太多，稍后再试（带 Retry-After）'],
-    transcription_failed: [500, 'server_error', '模型识别失败'],
-    speech_failed: [500, 'server_error', '模型合成失败'],
-    audio_encoding_failed: [400, 'invalid_request_error', '合成成功，但转不成要的格式（多半是缺 ffmpeg，改用 wav / pcm）'],
-    image_failed: [500, 'server_error', '模型出图失败'],
-  };
+  /** OpenAI 的 error.type 按 HTTP 状态取（同内核 errorType）。 */
+  const errType = (status) => ({401: 'authentication_error', 403: 'permission_error', 404: 'not_found_error', 429: 'rate_limit_error', 503: 'service_unavailable_error'})[status]
+    || (status >= 500 ? 'server_error' : 'invalid_request_error');
+  /** 错误码 → [状态, OpenAI 的 error.type, 一句人话]（详情页「错误码」、试用区的失败说明共用）。
+      码取自命令与协议规范 §11.3 的封闭列表，只列本机路由会遇到的；在线 Provider 的授权、预算与供应商错误不在这里。 */
+  const ERRORS = Object.fromEntries([
+    ['ORIGIN_NOT_ALLOWED', 403, '请求带了 Origin：来自网页'],
+    ['HOST_NOT_ALLOWED', 403, 'Host 不是回环地址：不是从这台电脑发出的'],
+    ['AUTHENTICATION_REQUIRED', 401, '开了「需要 API key」，而请求没带 key、key 不对或已作废（带 WWW-Authenticate: Bearer）'],
+    ['CAPABILITY_NOT_CONFIGURED', 503, '这一类此刻没有能用的模型：还没下载，或在 API 页被关掉了；说明里写着怎么开启'],
+    ['INVALID_REQUEST', 400, '请求体不是合法的 JSON 或 multipart、缺字段、取值不对（含尺寸、步数、张数、描述过长）'],
+    ['UNSUPPORTED_PARAMETER', 400, '认识但不支持的参数或取值：url 形式的图片、不支持的格式、模型不收的字段'],
+    ['PAYLOAD_TOO_LARGE', 413, '上传超过 256 MB，或 JSON 请求体超过 8 MB'],
+    ['MODEL_NOT_FOUND', 404, 'model 不认识、没下载，或是另一类的模型（映射名指向的类不对也算）'],
+    ['TOO_MANY_REQUESTS', 429, '这个客户端同时在途的请求到了上限，稍后再试（Retry-After: 1）'],
+    ['JOB_CANCELLED', 409, '任务在 BaoCut 里被取消了'],
+    ['INTERNAL', 500, '其余的失败；本机模型跑失败时 code 是任务的错误码（如 MODEL_WORKER_FAILED、MODEL_OUT_OF_MEMORY）'],
+  ].map(([code, status, text]) => [code, [status, errType(status), text]]));
 
   /* ---------- 地址 ---------- */
   const apiBase = (port) => `${HOST}:${port || WEB_PORT}/v1`;
@@ -254,23 +254,26 @@
 
   /* ---------- 模型解析（设计稿 §3） ---------- */
   /** 请求里的 model → {model, via: 'exact'|'map'|'default', alias?} 或 {error, message, hint}。
-      message 是返回体里的英文（与内核同），hint 是界面上的一句中文。 */
+      顺序同内核 resolveModel：这一类一只能用的都没有 → 503；映射名；local/<id>；本机 id。另一类的模型与映射名都是 404。
+      message 是返回体里的英文，hint 是界面上的一句中文。 */
   function resolveModel(requested, cap, ctx, optional) {
     const w = String(requested == null ? '' : requested).trim();
     const c = capBy(cap);
-    const notFound = (hint) => ({error: 'model_not_found', message: `The model \`${w}\` does not exist or is not mapped to a downloaded model.`, hint});
-    if (!w) {
-      if (!optional) return {error: 'invalid_request', message: 'Missing required field `model`.', hint: '没写 model。'};
-      const d = ctx.dflt[cap];
-      return d ? {model: d, via: 'default'} : {error: 'model_not_found', message: `No ${cap} model is downloaded.`, hint: `还没有下载${c.name}模型。`};
+    const notFound = (hint) => ({error: 'MODEL_NOT_FOUND', message: `No ${CAPABILITY[cap]} model named \`${w}\` is available.`, hint});
+    if (!w && !optional) return {error: 'INVALID_REQUEST', message: 'Missing required field `model`.', hint: '没写 model。'};
+    if (!ctx.ready[cap].length) {
+      return {error: 'CAPABILITY_NOT_CONFIGURED', message: `No ${CAPABILITY[cap]} model is available. Download one in Settings › Models › Local models.`,
+        hint: `还没有下载${c.name}模型，去 设置 › 模型 › 本地模型 下载。`};
     }
-    const hit = ctx.byId[w];
+    if (!w) return {model: ctx.dflt[cap], via: 'default'};
+    const row = ctx.map.find((r) => r.name === w);
+    const id = !row && w.indexOf('local/') === 0 ? w.slice('local/'.length) : w;
+    const hit = row ? null : ctx.byId[id];
     if (hit) {
-      if (hit.cap !== cap) return {error: 'model_wrong_capability', message: `The model \`${w}\` is a ${hit.cap} model and cannot serve this endpoint.`, hint: `${w} 是${capBy(hit.cap).name}模型。`};
-      if (!isReady(ctx, cap, w)) return notFound(`${hit.m.name} 还没有下载，去 设置 › 模型 › 本地模型 下载。`);
+      if (hit.cap !== cap) return notFound(`${id} 是${capBy(hit.cap).name}模型，这个端点用不了。`);
+      if (!isReady(ctx, cap, id)) return notFound(`${hit.m.name} 还没有下载，去 设置 › 模型 › 本地模型 下载。`);
       return {model: hit.m, via: 'exact'};
     }
-    const row = ctx.map.find((r) => r.name === w);
     if (row) {
       const mine = row.to.filter((t) => capOfTarget(t, ctx) === cap);
       const m = mine.map((t) => landOf(t, ctx)).find(Boolean);
@@ -285,15 +288,16 @@
   /** GET /models 的一项，形状同内核：`owned_by` 是 Provider，`baocut` 写能力、Provider、落到的模型与是不是映射名。 */
   const modelEntry = (id, cap, modelId, alias) => ({id, object: 'model', created: 0, owned_by: 'local',
     baocut: {capability: CAPABILITY[cap], providerId: 'local', modelId, alias}});
-  /** GET /models 的 data：已下载的本机模型 + 能落到已下载模型的映射名（落到几类就列几项）。`onlyCap` = 某一类的独立端口。 */
+  /** GET /models 的 data，顺序同内核：能落到已下载模型的映射名在前（落到几类就列几项），然后是已下载的本机模型，
+      id 写成 local/<id>。`onlyCap` = 某一类的独立端口。 */
   function listModels(ctx, onlyCap) {
     const caps = CAPS.filter((c) => !onlyCap || c.k === onlyCap).map((c) => c.k);
     const out = [];
-    caps.forEach((cap) => ctx.ready[cap].forEach((m) => out.push(modelEntry(m.id, cap, m.id, false))));
     ctx.map.forEach((r) => caps.forEach((cap) => {
       const hit = resolveModel(r.name, cap, ctx);
       if (hit.model) out.push(modelEntry(r.name, cap, hit.model.id, true));
     }));
+    caps.forEach((cap) => ctx.ready[cap].forEach((m) => out.push(modelEntry('local/' + m.id, cap, m.id, false))));
     return out;
   }
 
@@ -312,7 +316,7 @@
   }
 
   /* ---------- 试用区 ---------- */
-  /** 按先后顺序只报第一条挡住的原因，并给对应的按钮。null = 可以发（没下载模型不挡：那正好演示 404）。 */
+  /** 按先后顺序只报第一条挡住的原因，并给对应的按钮。null = 可以发（没下载模型不挡：那正好演示 503）。 */
   function blocker(ctx) {
     if (!ctx.apiOn) return {text: 'OpenAI 兼容 API 还没打开。', action: 'api', label: '打开 API'};
     if (ctx.cap && !ctx.capOn) return {text: `「${capBy(ctx.cap).name}」这一类在 API 页被关掉了。`, action: 'cap', label: '打开这一类'};
@@ -482,13 +486,16 @@
     const v = values || {};
     if (ep.id === 'models.list') return {status: 200, ms: 18, body: {type: 'application/json', json: {object: 'list', data: listModels(ctx, ctx.onlyCap)}}};
     if (ep.id === 'models.retrieve') {
-      const hit = listModels(ctx, ctx.onlyCap).find((m) => m.id === String(v.model || '').trim());
+      // 同内核：先按列表里的 id 找，再按不是映射名的那些项的 modelId 找；返回的 id 是请求里写的。
+      const w = String(v.model || '').trim();
+      const listed = listModels(ctx, ctx.onlyCap);
+      const hit = listed.find((m) => m.id === w) || listed.find((m) => !m.baocut.alias && m.baocut.modelId === w);
       if (!hit) {
-        const known = ctx.byId[String(v.model || '').trim()];
-        return fail('model_not_found', `The model \`${v.model || ''}\` does not exist.`,
-          known ? `${known.m.name} 还没有下载。` : `${v.model || '（空）'} 不是已下载的本机模型，也不是能落到已下载模型的映射名。`);
+        const known = ctx.byId[w];
+        return fail('MODEL_NOT_FOUND', `The model \`${w}\` does not exist.`,
+          known ? `${known.m.name} 还没有下载。` : `${w || '（空）'} 不是已下载的本机模型，也不是能落到已下载模型的映射名。`);
       }
-      return {status: 200, ms: 9, body: {type: 'application/json', json: hit}};
+      return {status: 200, ms: 9, body: {type: 'application/json', json: {...hit, id: w}}};
     }
     const mp = ep.params.find((p) => p.kind === 'model');
     const r = resolveModel(v.model, ep.cap, ctx, !!mp.optionalModel);
@@ -496,9 +503,9 @@
     const model = r.model.id;
     const ok = (ms, body, meta) => ({status: 200, ms, model, alias: r.alias || null, body, meta});
     const missing = ep.params.find((p) => p.req && p.kind !== 'model' && (v[p.name] == null || String(p.kind === 'file' ? (v[p.name] || {}).name || '' : v[p.name]).trim() === ''));
-    if (missing) return fail('invalid_request', `Missing required field \`${missing.name}\`.`, `没写 ${missing.name}。`);
+    if (missing) return fail('INVALID_REQUEST', `Missing required field \`${missing.name}\`.`, `没写 ${missing.name}。`);
     const bad = ep.params.find((p) => p.reject && v[p.name] != null && v[p.name] !== '' && p.values.indexOf(v[p.name]) < 0);
-    if (bad) return fail(ep.cap === 'image' ? 'unsupported_param' : 'invalid_request', `\`${v[bad.name]}\` is not a supported ${bad.name}.`, `${bad.name} 不收 ${v[bad.name]}。`);
+    if (bad) return fail('UNSUPPORTED_PARAMETER', `\`${v[bad.name]}\` is not a supported ${bad.name}.`, `${bad.name} 不收 ${v[bad.name]}。`);
 
     if (ep.id === 'asr.transcriptions') {
       return ok(2400, transcriptBody(v.response_format || 'json', (v['timestamp_granularities[]'] || []).indexOf('word') >= 0, trace(model)));
@@ -506,7 +513,7 @@
     if (ep.id === 'tts.speech') {
       const sup = ttsSupport(model);
       if (v.reference_audio && !sup.reference_audio) {
-        return fail('unsupported_param', `${model} does not accept \`reference_audio\`.`, `${r.model.name} 不收参考音频，换一只能克隆的模型。`);
+        return fail('UNSUPPORTED_PARAMETER', `${model} does not accept \`reference_audio\`.`, `${r.model.name} 不收参考音频，换一只能克隆的模型。`);
       }
       const dropped = ep.params.filter((p) => p.by && p.by !== 'reference_audio' && v[p.name] && !supports(p, model)).map((p) => p.name);
       const voice = sup.voice === 'preset'
@@ -518,18 +525,18 @@
         `${fmt.toUpperCase()} · ${voice}${dropped.length ? ` · 这只模型不看 ${dropped.join('、')}，已忽略` : ''}`);
     }
     if (ep.id === 'image.generations') {
-      if (Number(v.n) > 1) return fail('unsupported_param', `${model} can only generate 1 image per request.`, `${r.model.name} 一次只能画 1 张。`);
+      if (Number(v.n) > 1) return fail('INVALID_REQUEST', `Model ${model} generates at most 1 image at a time`, `${r.model.name} 一次只能画 1 张。`);
       const size = v.size && v.size !== 'auto' ? v.size : '1024x576';
       const [w, h] = size.split('x').map(Number);
       if (w % 32 || h % 32) {
         const fix = (n) => Math.round(n / 32) * 32;
-        return fail('invalid_size', `\`${size}\` is not a valid size for \`${model}\`: width and height must be multiples of 32, the longer edge at most 1536 and the aspect ratio at most 3:1. Try \`${fix(w)}x${fix(h)}\`, or \`auto\` (1024x576).`, `宽高要是 32 的倍数，建议 ${fix(w)}x${fix(h)}，或者用 auto（1024x576）。`);
+        return fail('INVALID_REQUEST', `\`${size}\` is not a valid size for \`${model}\`: width and height must be multiples of 32, the longer edge at most 1536 and the aspect ratio at most 3:1. Try \`${fix(w)}x${fix(h)}\`, or \`auto\` (1024x576).`, `宽高要是 32 的倍数，建议 ${fix(w)}x${fix(h)}，或者用 auto（1024x576）。`);
       }
       const range = imageSteps(model);
       const steps = v.steps !== '' && v.steps != null ? Number(v.steps) : range.dflt;
       if (!Number.isInteger(steps) || steps < range.min || steps > range.max) {
         const span = range.min === range.max ? `only runs at ${range.min} steps` : `takes ${range.min}–${range.max} steps`;
-        return fail('invalid_request', `\`${v.steps}\` is not a valid steps for \`${model}\`: this model ${span}.`,
+        return fail('INVALID_REQUEST', `\`${v.steps}\` is not a valid steps for \`${model}\`: this model ${span}.`,
           range.min === range.max ? `${r.model.name} 固定 ${range.min} 步，不写或写 ${range.min}。` : `步数要在 ${range.min}–${range.max} 之间。`);
       }
       const seed = v.seed !== '' && v.seed != null ? Number(v.seed) : (ctx.seed || 20250927);

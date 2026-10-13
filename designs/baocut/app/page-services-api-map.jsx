@@ -1,5 +1,5 @@
 /* Web 服务 › OpenAI 兼容 API › 模型映射 —— §17.6（2026-09-27 第二版，设计稿 docs/design/cli/bcut-serve-openai-api-design.md §3）。
-   请求里的 model 要么是本机模型 id，要么是这张表里的名字；都不是就 404 model_not_found。
+   请求里的 model 要么是本机模型 id，要么是这张表里的名字；都不是就 404 MODEL_NOT_FOUND。
    多对多：一个名字可以指向几只模型（每一类按顺序取第一只已下载的），一只模型也可以挂几个名字。
    目标写 `default:<能力>` 时跟着 设置 › 本地模型 里那一类的默认走。纯逻辑在 BC_OPENAI_API（mapRows / mapIssues / mapSummary）。 */
 (function () {
@@ -24,7 +24,7 @@
       <>
         <div className="t-section svc__sec">模型映射</div>
         <p className="t-detail oai-lede">
-          请求里的 <code>model</code> 要么是本机模型的 id，要么是下面的名字；都不是就返回 404。一个名字可以指向几只模型，每一类按顺序用第一只已下载的；同一只模型也可以挂好几个名字。
+          请求里的 <code>model</code> 要么是本机模型的 id，要么是下面的名字；都不是就返回 404 MODEL_NOT_FOUND。一个名字可以指向几只模型，每一类按顺序用第一只已下载的；同一只模型也可以挂好几个名字。
         </p>
         <Card layer className="oai-map">
           {rows.length ? rows.map((r, i) => (
