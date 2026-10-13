@@ -25,6 +25,7 @@ export const it: SettingDescriptionMessages = {
   'diagnostics.enabled': 'Invia statistiche d’utilizzo e riepiloghi delle prestazioni anonimi (senza media, testo o percorsi)', 'offline.strict': 'Rigorosamente offline: non inviare nulla a nessun servizio online',
   'semantic.channels': 'Canali dell’indice semantico da creare: text (parlato: trascrizioni, sottotitoli, traduzioni, capitoli); visual (un fotogramma chiave ogni 8 secondi; richiede un modello multimodale e più tempo); audio non è ancora disponibile',
   'semantic.indexedProjects': 'Progetti i cui video hanno un indice semantico: all, oppure un elenco di id di progetto (i video fuori dai progetti solo con all)',
+  'semantic.pauseOnBattery': 'Sospendi la creazione dell’indice semantico quando si usa la batteria e riprendi con l’alimentazione collegata (si sospende sempre se il sistema rallenta per il calore)',
   'semantic.translationMemory': 'Suggerisci traduzioni precedenti di frasi quasi identiche durante la traduzione (richiede il modello di ricerca testuale)',
   'semantic.glossaryCandidates': 'Suggerisci termini di glossario da grafie quasi identiche tra le trascrizioni (richiede il modello di ricerca testuale)',
 };

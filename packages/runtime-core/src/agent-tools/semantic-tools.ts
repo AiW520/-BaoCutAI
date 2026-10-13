@@ -196,7 +196,7 @@ const DEFINITIONS: Record<ToolName, ToolInfo> = {
       '看你能访问的视频（或给出的视频、项目）的本机语义索引建好没有。',
       'available 为 false 时没有可用的语义索引（reason 给原因，例如 MODEL_NOT_INSTALLED）：按意思检索与取材会退回字面，不要等。',
       'videos 按视频给 state：indexed 已建好；stale 能用但落后于最近的修改；pending 排队或正在建；failed 建失败（space_index_build 重试）；missingInput 没有文稿（先 transcribe，转写完会自动建）；excluded 是设置里没纳入语义索引的项目（只能按字面找，要纳入请用户在设置 › 语义索引里开，你改不了）。范围超过 50 部时只给 coverage 计数。',
-      '给 waitSec 时等到范围里没有 pending 与 stale 或超时，settled 写明等到没有（没有可用的索引时为 false）。建索引在后台自动进行，用户刚给的素材要按意思取材时，先转写、再用它等一下。paused 为 true 时用户暂停了建索引，等也不会动。',
+      '给 waitSec 时等到范围里没有 pending 与 stale 或超时，settled 写明等到没有（没有可用的索引时为 false）。建索引在后台自动进行，用户刚给的素材要按意思取材时，先转写、再用它等一下。paused 为 true 时建索引停着，等也不会动：pauseReason 为 user 是用户暂停了；battery 是在用电池、thermal 是系统过热降频，接上电源或温度回落后会自动接着建。',
       'channel 为 visual 时看画面（关键帧）索引：没装能读图的模型包时 available 为 false；设置里没开画面索引的视频是 excluded，可以用 space_index_build 的 channel visual 只给这几部建。只读。',
     ].join('\n'),
     annotations: { readOnlyHint: true },
@@ -456,6 +456,7 @@ export class SemanticTools implements ToolSet {
           available,
           reason,
           paused: coordinator.paused,
+          pauseReason: coordinator.pauseReason,
           coverage,
           ...(resolved.videos.length <= STATUS_VIDEOS_MAX
             ? { videos: resolved.videos.map((v) => ({ videoId: v.video.videoId, name: v.video.videoName, state: v.state satisfies ScopedVideoState })) }

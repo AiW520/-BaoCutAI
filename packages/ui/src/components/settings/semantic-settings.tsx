@@ -19,7 +19,7 @@ import { style } from '@react-spectrum/s2/style' with { type: 'macro' };
 import { downloadView, inlineInstallMode, problemText, removedToast, rpcProblem } from '../../model/models-install.ts';
 import { bundleName, isBundleInstalled } from '../../model/models-local.ts';
 import { M as COPY } from '../../model/semantic-copy.ts';
-import { coverageLine, indexState } from '../../model/semantic-status.ts';
+import { coverageLine, etaLine, indexState, pausedNote } from '../../model/semantic-status.ts';
 import { fmtSize } from '../../model/task-facts.ts';
 import { useRuntime } from '../../runtime/context.tsx';
 import { useDirectory } from '../../state/directory-store.ts';
@@ -40,7 +40,9 @@ import { useSaveSettings, useSettingsReady } from './save-settings.ts';
  * - 模型：「文字搜索」「多模态搜索」两个本机模型包（`capability: 'embed'`，不在模型页里列）；多模态包含文字，装了它不必再装文字包。
  *   安装走模型页同一个安装对话框（先看大小与许可）。
  * - 安装不等于扫描：装好后只给已有文稿建文字索引。画面与声音这一版没有索引：每个项目照样列出，开关置灰并写明原因。
- * - 索引：状态、暂停 / 恢复、缓存大小与清理（`space.indexControl`）、实际运行的设备。
+ * - 索引：状态、暂停 / 恢复、缓存大小与清理（`space.indexControl`）、实际运行的设备。在更新时写还要多久（`estimates`，
+ *   检索规格 §13.2）；用电池、过热降频时 Runtime 自动停下，状态写原因（`pauseReason`，§16.1），「用电池时暂停」
+ *   （`semantic.pauseOnBattery`）可关。恢复只撤掉用户的暂停。
  * - 用到它的两项开关：翻译记忆（`semantic.translationMemory`，Runtime 执行）、术语候选（`semantic.glossaryCandidates`，润色面板读它）。
  *
  * 浏览器里（Web）只看不改：能取状态（`space.indexStatus` 在白名单里），装模型、控制索引与改设置都不开放。
@@ -203,6 +205,9 @@ function IndexGroup({ web }: { web: boolean }) {
   const { status, refresh } = useSemanticStatus();
   const [clearing, setClearing] = useState(false);
   const [busy, setBusy] = useState(false);
+  const save = useSaveSettings();
+  const ready = useSettingsReady();
+  const pauseOnBattery = useSetting('semantic.pauseOnBattery') ?? true;
   if (!status?.model) return null;
   const state = indexState(status);
   const control = async (action: 'pause' | 'resume' | 'clear', done: string) => {
@@ -218,18 +223,24 @@ function IndexGroup({ web }: { web: boolean }) {
       void refresh();
     }
   };
+  // 用户自己按的暂停：按钮是「恢复」；自动停下时按钮仍是「暂停」（恢复撤不掉供电的停下）。旧的 Runtime 没给原因时按 `paused`。
+  const userPaused = status.pauseReason ? status.pauseReason === 'user' : status.paused;
   const desc =
     state === 'paused'
-      ? COPY.settings.pausedDesc
+      ? userPaused
+        ? COPY.settings.pausedDesc
+        : pausedNote(status)
       : state === 'updating'
         ? COPY.note.stale
         : state === 'unavailable'
           ? COPY.reason.INDEX_NOT_READY
           : COPY.settings.readyDesc;
+  // 还要多久：讲话内容一路（画面一路随画面开关一起给）。
+  const eta = state === 'updating' ? etaLine(status.estimates?.find((e) => e.channel === 'text' && !e.ifEnabled)) : null;
   const tone = state === 'ready' ? 'positive' : state === 'paused' ? 'notice' : state === 'updating' ? 'informative' : 'neutral';
   return (
     <Group title={COPY.settings.indexGroup}>
-      <Row label={COPY.settings.status} desc={desc}>
+      <Row label={COPY.settings.status} desc={desc} {...(eta ? { note: eta } : {})}>
         <Badge variant={tone} size="S" fillStyle="subtle">
           {COPY.settings.state[state]}
         </Badge>
@@ -238,12 +249,18 @@ function IndexGroup({ web }: { web: boolean }) {
             size="S"
             variant="secondary"
             isDisabled={busy || state === 'unavailable'}
-            onPress={() =>
-              void (status.paused ? control('resume', COPY.settings.resumed) : control('pause', COPY.settings.paused))
-            }>
-            {status.paused ? COPY.settings.resumeIndex : COPY.settings.pause}
+            onPress={() => void (userPaused ? control('resume', COPY.settings.resumed) : control('pause', COPY.settings.paused))}>
+            {userPaused ? COPY.settings.resumeIndex : COPY.settings.pause}
           </Button>
         )}
+      </Row>
+      <Row label={COPY.settings.pauseOnBattery} desc={COPY.settings.pauseOnBatteryDesc}>
+        <Switch
+          aria-label={COPY.settings.pauseOnBattery}
+          isDisabled={web || !ready}
+          isSelected={pauseOnBattery}
+          onChange={(on) => void save({ 'semantic.pauseOnBattery': on }).then(() => refresh())}
+        />
       </Row>
       <Row label={COPY.settings.cache} desc={COPY.settings.cacheDesc}>
         <span className={value}>{fmtSize(status.cacheBytes)}</span>

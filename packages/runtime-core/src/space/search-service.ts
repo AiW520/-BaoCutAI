@@ -5,6 +5,7 @@ import {
   type Id,
   type SearchHitAnchor,
   type SemanticCoverage,
+  type SemanticEstimate,
   type SemanticEvidenceType,
   type SemanticHitAction,
   type SemanticIndexStatus,
@@ -21,6 +22,7 @@ import type { SearchableVideo } from './content-search.ts';
 import { searchScope, type SearchScope, type SpaceSearchSource, type SpaceViewer } from './space-queries.ts';
 import type { SemanticCoordinator, SemanticSettings } from './semantic/coordinator.ts';
 import { reasonOf, semanticError } from './semantic/errors.ts';
+import { estimateOf } from './semantic/estimate.ts';
 import { encodeHitId } from './semantic/hit-id.ts';
 import type { EmbeddingScheduler } from './semantic/scheduler.ts';
 import type { GenerationRow, SemanticStore, StoredChunk, StoredFrame } from './semantic/store.ts';
@@ -617,6 +619,7 @@ export class SearchService {
     // 画面：有取帧来源、能拿到 `text-to-visual` 的 profile（装了能读图的模型包）时可用。
     const visualProfiled = this.#options.coordinator?.visual ? await this.visualProfile() : null;
     const visualProfile = visualProfiled && 'profile' in visualProfiled ? visualProfiled.profile : null;
+    const visualScope = this.#options.coordinator?.visual ? this.resolveVisualScope(resolved, visualProfile) : null;
     return {
       model: profile
         ? {
@@ -633,12 +636,46 @@ export class SearchService {
         visual: { enabled: settings.channels.includes('visual'), available: visualProfile !== null && store !== null },
         audio: { enabled: settings.channels.includes('audio'), available: false },
       },
-      coverage: this.#options.coordinator?.visual ? [resolved.coverage, this.resolveVisualScope(resolved, visualProfile).coverage] : [resolved.coverage],
+      coverage: visualScope ? [resolved.coverage, visualScope.coverage] : [resolved.coverage],
       // 磁盘占用是全局的（不分主体）：只给用户本人。
       cacheBytes: viewer.kind === 'user' ? (store?.sizeBytes() ?? 0) : 0,
       paused: this.#options.coordinator?.paused ?? false,
+      pauseReason: this.#options.coordinator?.pauseReason ?? null,
+      estimates: this.#estimates(resolved, visualScope, profile, visualProfile),
       jobId: null,
     };
+  }
+
+  /**
+   * 各路还要建多久（§13.2）：开着的通道估待建与落后的视频；画面没开时估打开之后要建的（纳入的项目里还没有可用画面世代的）。
+   * 内容索引还没读到的视频时长未知。
+   */
+  #estimates(
+    resolved: ResolvedScope,
+    visualScope: ResolvedVisualScope | null,
+    profile: EmbeddingProfile | null,
+    visualProfile: EmbeddingProfile | null,
+  ): SemanticEstimate[] {
+    const settings = this.#options.settings();
+    const store = this.#options.store();
+    const index = this.#options.catalog.index;
+    const durationOf = (video: SearchableVideo) => index?.at(video.dir)?.facts.timeline?.durationSec ?? null;
+    const unread = Array.from({ length: resolved.scope.pending }, () => null);
+    const out: SemanticEstimate[] = [];
+    if (settings.channels.includes('text')) {
+      const durations = resolved.videos.filter((v) => v.state === 'pending' || v.state === 'stale').map((v) => durationOf(v.video));
+      out.push(estimateOf({ channel: 'text', durations: [...durations, ...unread], profile, store, ifEnabled: false }));
+    }
+    if (visualScope) {
+      const enabled = settings.channels.includes('visual');
+      const wantedProject = (projectId: Id | null) =>
+        settings.indexedProjects === 'all' || (projectId !== null && settings.indexedProjects.includes(projectId));
+      const durations = visualScope.videos
+        .filter((v) => v.state === 'pending' || v.state === 'stale' || (!enabled && v.state === 'excluded' && wantedProject(v.video.projectId)))
+        .map((v) => durationOf(v.video));
+      out.push(estimateOf({ channel: 'visual', durations: [...durations, ...unread], profile: visualProfile, store, ifEnabled: !enabled }));
+    }
+    return out;
   }
 }
 

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import type { SemanticCoverage, SemanticIndexStatus } from '@baocut/protocol';
+import type { SemanticCoverage, SemanticEstimate, SemanticIndexStatus } from '@baocut/protocol';
 import { M } from './semantic-copy.ts';
-import { coverageLine, entryNote, indexState, reasonText } from './semantic-status.ts';
+import { coverageLine, entryNote, etaLine, indexState, pausedNote, reasonText } from './semantic-status.ts';
 
 const text = (patch: Partial<SemanticCoverage> = {}): SemanticCoverage => ({
   channel: 'text',
@@ -23,6 +23,8 @@ const status = (patch: Partial<SemanticIndexStatus> = {}): SemanticIndexStatus =
   coverage: [text()],
   cacheBytes: 0,
   paused: false,
+  pauseReason: null,
+  estimates: [],
   jobId: null,
   ...patch,
 });
@@ -98,5 +100,36 @@ describe('设置页的状态格', () => {
     expect(indexState(status({ paused: true }))).toBe('paused');
     expect(indexState(status({ coverage: [text({ pending: 1, indexed: 2 })] }))).toBe('updating');
     expect(indexState(status())).toBe('ready');
+  });
+});
+
+describe('自动停下与还要多久', () => {
+  const estimate = (patch: Partial<SemanticEstimate> = {}): SemanticEstimate => ({
+    channel: 'text',
+    ifEnabled: false,
+    videos: 3,
+    unknownDuration: 0,
+    sourceSeconds: 4260,
+    frames: null,
+    seconds: 95,
+    basis: 'measured',
+    vectorBytes: null,
+    ...patch,
+  });
+
+  it('用电池、过热降频写原因；过热不给设置入口（关不掉）', () => {
+    expect(entryNote('search', status({ paused: true, pauseReason: 'battery' }))).toMatchObject({ text: M.note.battery, settingsLink: true });
+    expect(entryNote('search', status({ paused: true, pauseReason: 'thermal' }))).toMatchObject({ text: M.note.thermal, settingsLink: false });
+    expect(entryNote('search', status({ paused: true, pauseReason: 'user' }))).toMatchObject({ text: M.note.paused, settingsLink: true });
+    expect(pausedNote({ pauseReason: null })).toBe(M.note.paused);
+  });
+
+  it('量过的速度、参考速度、还没有速度；时长未知的另写；没有待建的不写', () => {
+    expect(etaLine(estimate())).toBe(M.settings.eta.measured(3, M.settings.eta.minutes(2)));
+    expect(etaLine(estimate({ basis: 'default', seconds: 30 }))).toBe(M.settings.eta.reference(3, M.settings.eta.lessThanMinute));
+    expect(etaLine(estimate({ seconds: null, basis: null, unknownDuration: 1 }))).toBe(M.settings.eta.noRate(3));
+    expect(etaLine(estimate({ seconds: 5400, unknownDuration: 2 }))).toBe(M.settings.eta.withUnknown(M.settings.eta.measured(3, M.settings.eta.hours('1.5')), 2));
+    expect(etaLine(estimate({ videos: 0, seconds: 0 }))).toBeNull();
+    expect(etaLine(null)).toBeNull();
   });
 });

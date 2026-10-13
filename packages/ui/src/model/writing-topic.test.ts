@@ -20,6 +20,8 @@ const status = (patch: Partial<SemanticIndexStatus> = {}): SemanticIndexStatus =
   coverage: [{ channel: 'text', eligible: 3, indexed: 3, pending: 0, failed: 0, missingInput: 0, excluded: 0, stale: 0, knownScopeComplete: true }],
   cacheBytes: 0,
   paused: false,
+  pauseReason: null,
+  estimates: [],
   jobId: null,
   ...patch,
 });

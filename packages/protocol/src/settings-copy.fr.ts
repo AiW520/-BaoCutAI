@@ -37,6 +37,7 @@ export const fr: SettingDescriptionMessages = {
   'offline.strict': "Hors ligne strict : ne rien envoyer à un service en ligne",
   'semantic.channels': 'Canaux de l’index sémantique à créer : text (le parlé : transcriptions, sous-titres, traductions, chapitres) ; visual (une image clé toutes les 8 secondes ; demande un modèle multimodal et prend plus de temps) ; audio n’est pas encore disponible',
   'semantic.indexedProjects': 'Projets dont les vidéos ont un index sémantique : all, ou une liste d’ids de projet (les vidéos hors projet seulement avec all)',
+  'semantic.pauseOnBattery': 'Mettre en pause la création de l’index sémantique sur batterie et reprendre sur secteur (toujours en pause quand le système bride ses performances à cause de la chaleur)',
   'semantic.translationMemory': 'Proposer d’anciennes traductions de phrases presque identiques lors de la traduction (nécessite le modèle de recherche de texte)',
   'semantic.glossaryCandidates': 'Proposer des termes de glossaire à partir de graphies presque identiques entre transcriptions (nécessite le modèle de recherche de texte)',
 } satisfies Record<SettingKey, string>;

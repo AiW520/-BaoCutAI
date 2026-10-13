@@ -21,6 +21,8 @@ import { SemanticTools } from '../../agent-tools/semantic-tools.ts';
 import type { ToolPrincipal, ToolScope } from '../../agent-tools/tool-scope.ts';
 import { chunkVideo, estimateTokens } from './chunks.ts';
 import { embeddingKeyOf } from './coordinator.ts';
+import { DEFAULT_VISUAL_SECONDS_PER_FRAME, readRate, recordRate } from './estimate.ts';
+import type { PowerState } from './power.ts';
 import { frameTimes, type KeyframeSource, type VisualAsset } from './visual-lane.ts';
 import { openSemanticServices, type SemanticServices } from './services.ts';
 import { SEMANTIC_STORE_FILE, SemanticStore, SemanticStoreTooNew } from './store.ts';
@@ -46,6 +48,8 @@ interface FakeVideo {
   clip?: { contentHash: string; seconds: number };
   /** 素材 a1 放在时间线开头：从源时间 `sourceIn` 起放 `seconds` 秒（30 fps）。 */
   placed?: { sourceIn: number; seconds: number };
+  /** 快照带轨道与画布：内容索引能算出时间线时长（`facts.timeline`，估时用）。 */
+  canvas?: boolean;
 }
 
 function captionDoc(video: FakeVideo): ReadContentDocument {
@@ -110,6 +114,7 @@ function contentOf(video: FakeVideo): ReadContentResult {
       seq: {
         id: 'seq',
         fps: { num: 30, den: 1 },
+        ...(video.canvas ? { tracks: [], canvas: { width: 1920, height: 1080 } } : {}),
         items: video.placed
           ? [
               {
@@ -252,7 +257,14 @@ class FakeFrames implements KeyframeSource {
 }
 
 function open(
-  options: { provider?: EmbeddingProvider | null; indexedProjects?: 'all' | Id[]; channels?: string[]; frames?: KeyframeSource } = {},
+  options: {
+    provider?: EmbeddingProvider | null;
+    indexedProjects?: 'all' | Id[];
+    channels?: string[];
+    frames?: KeyframeSource;
+    power?: () => Promise<PowerState>;
+    pauseOnBattery?: boolean;
+  } = {},
 ): SemanticServices {
   const catalog = { videos: () => videos, index, scanning: false };
   const s = openSemanticServices({
@@ -260,9 +272,14 @@ function open(
     catalog,
     reader,
     provider: options.provider === undefined ? provider : options.provider,
-    settings: () => ({ channels: options.channels ?? ['text'], indexedProjects: options.indexedProjects ?? 'all' }),
+    settings: () => ({
+      channels: options.channels ?? ['text'],
+      indexedProjects: options.indexedProjects ?? 'all',
+      ...(options.pauseOnBattery !== undefined ? { pauseOnBattery: options.pauseOnBattery } : {}),
+    }),
     log: silentLogger,
     ...(options.frames ? { frames: options.frames } : {}),
+    ...(options.power ? { power: options.power } : {}),
     debounceMs: 0,
   });
   opened.push(s);
@@ -1027,6 +1044,97 @@ describe('space.searchV2', () => {
     const partial = await services.search.searchV2(USER_VIEWER, { query: { kind: 'text', text: 'battery' }, mode: 'semantic', projectId: 'p1' });
     expect(partial.degraded).toEqual({ reason: 'INDEX_PARTIAL' });
     expect(partial.coverage[0]).toMatchObject({ indexed: 1, pending: 1, knownScopeComplete: false });
+  });
+});
+
+// ---- 供电与估时 ----
+
+describe('供电与估时', () => {
+  it('用电池时不开工、正在建的停下；接上电源接着建；用户的暂停与自动停下分开记', async () => {
+    let power: PowerState = 'battery';
+    services = open({ power: async () => power });
+    await build(services);
+    expect(services.store()!.activeGenerations(['v1', 'v2', 'v3']).size).toBe(0);
+    expect(provider.documents).toBe(0);
+    expect(services.coordinator.pauseReason).toBe('battery');
+    const status = await services.search.indexStatus(USER_VIEWER);
+    expect(status).toMatchObject({ paused: true, pauseReason: 'battery' });
+
+    // 用户在用电池时又按了暂停：原因写用户；恢复只撤掉用户的暂停，仍因电池停着。
+    services.coordinator.pause();
+    expect(services.coordinator.pauseReason).toBe('user');
+    services.coordinator.resume();
+    expect(services.coordinator.pauseReason).toBe('battery');
+    expect(services.store()!.getMeta('paused')).toBeNull();
+
+    power = 'ac';
+    await services.coordinator.checkPower();
+    await services.coordinator.idle();
+    expect(services.coordinator.pauseReason).toBeNull();
+    expect(services.store()!.activeGenerations(['v1', 'v2', 'v3']).size).toBe(3);
+  });
+
+  it('关掉「用电池时暂停」照常建；过热降频总是停下；查不出供电当作接着电', async () => {
+    services = open({ power: async () => 'battery', pauseOnBattery: false });
+    await build(services);
+    expect(services.coordinator.pauseReason).toBeNull();
+    expect(services.store()!.activeGenerations(['v1', 'v2', 'v3']).size).toBe(3);
+    await services.close();
+
+    reader.videos.set(videos[0]!.dir, { ...V1, revision: 'r2' });
+    await syncIndex(2);
+    const hot = open({ power: async () => 'thermal', pauseOnBattery: false });
+    await build(hot);
+    expect(hot.coordinator.pauseReason).toBe('thermal');
+    expect(hot.store()!.activeGenerations(['v1']).get('v1')!.revision).toBe('r1');
+    await hot.close();
+
+    const broken = open({ power: () => Promise.reject(new Error('pmset missing')) });
+    await build(broken);
+    expect(broken.coordinator.pauseReason).toBeNull();
+    expect(broken.store()!.activeGenerations(['v1']).get('v1')!.revision).toBe('r2');
+  });
+
+  it('速度按编码实现与设备记，滑动平均；换了就不用', () => {
+    const store = new SemanticStore(path.join(tmp, 'rates'));
+    const cpu = { encoderProfileId: 'p1', device: 'cpu' };
+    expect(readRate(store, 'visual', cpu)).toBeNull();
+    recordRate(store, 'visual', cpu, 1);
+    recordRate(store, 'visual', cpu, 2);
+    expect(readRate(store, 'visual', cpu)).toBeCloseTo(1.2);
+    expect(readRate(store, 'visual', { encoderProfileId: 'p1', device: 'gpu' })).toBeNull();
+    expect(readRate(store, 'visual', { encoderProfileId: 'p2', device: 'cpu' })).toBeNull();
+    recordRate(store, 'visual', cpu, Number.NaN);
+    expect(readRate(store, 'visual', cpu)).toBeCloseTo(1.2);
+    store.close();
+  });
+
+  it('indexStatus 估还要多久：文字量过才估；画面没开时估打开之后的帧数、时间与向量大小；时长未知的单独计数', async () => {
+    const placed = { canvas: true, clip: { contentHash: 'h-long', seconds: 80 }, placed: { sourceIn: 0, seconds: 80 } };
+    reader.videos.set(videos[0]!.dir, { ...V1, revision: 'r2', ...placed });
+    reader.videos.set(videos[1]!.dir, { ...V2, revision: 'r2', ...placed });
+    await syncIndex(2);
+    services = open({ frames: new FakeFrames() });
+    services.coordinator.pause();
+    await build(services);
+    let status = await services.search.indexStatus(USER_VIEWER);
+    const text = status.estimates.find((e) => e.channel === 'text')!;
+    expect(text).toMatchObject({ ifEnabled: false, videos: 3, unknownDuration: 1, sourceSeconds: 160, frames: null, seconds: null, basis: null });
+    const visual = status.estimates.find((e) => e.channel === 'visual')!;
+    expect(visual).toMatchObject({ ifEnabled: true, videos: 3, unknownDuration: 1, sourceSeconds: 160, frames: 20, basis: 'default', vectorBytes: 20 * 64 * 4 });
+    expect(visual.seconds).toBe(Math.round(20 * DEFAULT_VISUAL_SECONDS_PER_FRAME));
+
+    // 建完之后文字没有待建的；速度记下来了（换成新版本时按量过的速度估）。
+    services.coordinator.resume();
+    await services.coordinator.idle();
+    status = await services.search.indexStatus(USER_VIEWER);
+    expect(status.estimates.find((e) => e.channel === 'text')).toMatchObject({ videos: 0, seconds: 0 });
+    services.coordinator.pause();
+    reader.videos.set(videos[0]!.dir, { ...V1, revision: 'r3', ...placed });
+    await syncIndex(3);
+    await services.coordinator.idle();
+    status = await services.search.indexStatus(USER_VIEWER);
+    expect(status.estimates.find((e) => e.channel === 'text')).toMatchObject({ videos: 1, sourceSeconds: 80, basis: 'measured' });
   });
 });
 

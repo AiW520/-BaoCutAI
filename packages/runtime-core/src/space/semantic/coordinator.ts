@@ -8,6 +8,8 @@ import { extractContent } from '../content-extract.ts';
 import { chunkVideo, type ChunkDraft } from './chunks.ts';
 import type { EmbeddingScheduler } from './scheduler.ts';
 import { TEXT_BATCH_MAX } from './scheduler.ts';
+import { recordRate, TEXT_RATE_MIN_FRESH } from './estimate.ts';
+import type { PowerState } from './power.ts';
 import type { SemanticStore } from './store.ts';
 import type { VectorScanner } from './vector-index.ts';
 import { VisualLane, type KeyframeSource } from './visual-lane.ts';
@@ -21,6 +23,9 @@ import { VisualLane, type KeyframeSource } from './visual-lane.ts';
  *
  * - 没有可用的 Provider（没装模型）时什么都不做：不读视频、不排队。
  * - 暂停记在库里（重启后仍暂停）；暂停时手上那一批编码完就停，不发布半成品。
+ * - 供电与散热（规范 §16.1）：有活要干时每隔 `powerPollMs` 查一次；用电池（设置 `pauseOnBattery`）或过热降频时像暂停一样
+ *   停下，只记在内存里（不改用户的暂停），恢复供电、温度回落后接着建。
+ * - 每个视频编码花的时间记成这一路的速度（`estimate.ts`），`space.indexStatus` 用它估还要多久。
  * - 文字通道跟着设置走：关掉文字通道等同暂停文字构建（已建的索引仍可检索）。
  * - 画面通道（`visual-lane.ts`）在文字那一路空下来时才建，与文字共用暂停与清理；没给取帧来源时不建画面。
  * - Space 目录里已经没有的视频（扫描完成、内容索引不再有它）撤下索引，立即不可检索。
@@ -32,6 +37,8 @@ export interface SemanticSettings {
   channels: readonly string[];
   /** 建索引的项目：全部，或这些项目 ID（不属于项目的视频只在「全部」时建）。 */
   indexedProjects: 'all' | readonly Id[];
+  /** 用电池时暂停（设置 `semantic.pauseOnBattery`，默认是）。 */
+  pauseOnBattery?: boolean;
 }
 
 export interface SemanticCatalogSource {
@@ -52,10 +59,15 @@ export interface SemanticCoordinatorOptions {
   frames?: KeyframeSource;
   /** 内容索引变化后等多久再规划（合并连续的变化）。 */
   debounceMs?: number;
+  /** 查供电与散热（`power.ts` 的 `probePower`）；不给时不因供电暂停。 */
+  power?: () => Promise<PowerState>;
+  /** 有活要干时多久查一次供电。 */
+  powerPollMs?: number;
 }
 
 const PAUSED_KEY = 'paused';
 const DEFAULT_DEBOUNCE_MS = 500;
+const DEFAULT_POWER_POLL_MS = 60_000;
 
 interface Planned {
   dir: string;
@@ -83,6 +95,11 @@ export class SemanticCoordinator {
   /** 最近一次因为模型不可用而停下的原因（`SemanticReason`）；成功编码后清掉。 */
   #blocked: string | null = null;
   readonly #visual: VisualLane | null;
+  /** 最近一次查到的供电状态与时间；还没查过时当作接着电。 */
+  #power: PowerState = 'ac';
+  #powerAt = 0;
+  #probing: Promise<void> | null = null;
+  #powerTimer: NodeJS.Timeout | null = null;
 
   constructor(options: SemanticCoordinatorOptions) {
     this.#options = options;
@@ -97,6 +114,10 @@ export class SemanticCoordinator {
           frames: options.frames,
           log: options.log,
           paused: () => this.paused,
+          rate: (profile, perUnit) => {
+            const store = options.store();
+            if (store) recordRate(store, 'visual', profile, perUnit);
+          },
           textBusy: () => this.#textBusy,
           changed: () => this.#changed(),
           replan: () => this.schedule(),
@@ -122,6 +143,12 @@ export class SemanticCoordinator {
   start(): void {
     if (this.#unlisten || this.#closed) return;
     this.#unlisten = this.#options.catalog.index?.listen(() => this.schedule()) ?? null;
+    if (this.#options.power) {
+      this.#powerTimer = setInterval(() => {
+        if (this.#hasWork) void this.#probePower();
+      }, this.#pollMs);
+      this.#powerTimer.unref?.();
+    }
     this.schedule();
   }
 
@@ -131,8 +158,83 @@ export class SemanticCoordinator {
     return () => this.#listeners.delete(listener);
   }
 
+  /** 构建停着：用户暂停，或因为供电、温度自动停下。 */
   get paused(): boolean {
+    return this.pauseReason !== null;
+  }
+
+  /** 为什么停着（`SemanticPauseReason`）：用户暂停优先；没停时 null。 */
+  get pauseReason(): 'user' | 'battery' | 'thermal' | null {
+    if (this.#userPaused) return 'user';
+    this.#refreshPower();
+    return this.#powerPause;
+  }
+
+  get #userPaused(): boolean {
     return this.#options.store()?.getMeta(PAUSED_KEY) === '1';
+  }
+
+  get #powerPause(): 'battery' | 'thermal' | null {
+    if (this.#power === 'thermal') return 'thermal';
+    if (this.#power === 'battery' && this.#options.settings().pauseOnBattery !== false) return 'battery';
+    return null;
+  }
+
+  get #pollMs(): number {
+    return this.#options.powerPollMs ?? DEFAULT_POWER_POLL_MS;
+  }
+
+  /** 有活要干：文字或画面在建、排着队。 */
+  get #hasWork(): boolean {
+    return this.#worker !== null || this.#queue.size > 0 || (this.#visual !== null && (this.#visual.running || this.#visual.queued > 0));
+  }
+
+  /** 上次查供电已经过了一个周期、又有活要干：在后台再查一次（结果变了会停下或接着建）。 */
+  #refreshPower(): void {
+    if (!this.#options.power || this.#probing || this.#closed) return;
+    if (Date.now() - this.#powerAt < this.#pollMs || !this.#hasWork) return;
+    void this.#probePower();
+  }
+
+  #probePower(): Promise<void> {
+    if (!this.#options.power || this.#closed) return Promise.resolve();
+    this.#probing ??= this.#options
+      .power()
+      .catch((): PowerState => 'ac')
+      .then((state) => {
+        this.#powerAt = Date.now();
+        if (state === this.#power) return;
+        const before = this.#powerPause;
+        this.#power = state;
+        const after = this.#powerPause;
+        if (before === after) return;
+        this.#options.log.info(after ? 'semantic index paused' : 'semantic index resumed', { power: state });
+        if (after) {
+          this.#abort?.abort();
+          this.#visual?.abort();
+        } else this.schedule(0);
+        this.#changed();
+      })
+      .finally(() => {
+        this.#probing = null;
+      });
+    return this.#probing;
+  }
+
+  /** 设置 `pauseOnBattery` 变了：按手上的供电状态停下或接着建。 */
+  powerSettingChanged(): void {
+    if (this.#powerPause) {
+      this.#abort?.abort();
+      this.#visual?.abort();
+    } else this.schedule(0);
+    this.#changed();
+  }
+
+  /** 立刻查一次供电（测试用）。 */
+  async checkPower(): Promise<void> {
+    await this.#probing;
+    this.#powerAt = 0;
+    await this.#probePower();
   }
 
   get running(): boolean {
@@ -228,6 +330,8 @@ export class SemanticCoordinator {
 
   async close(): Promise<void> {
     this.#closed = true;
+    if (this.#powerTimer) clearInterval(this.#powerTimer);
+    this.#powerTimer = null;
     this.#unlisten?.();
     this.#unlisten = null;
     if (this.#timer) clearTimeout(this.#timer);
@@ -328,6 +432,11 @@ export class SemanticCoordinator {
 
   #kick(): void {
     if (this.#worker || this.#closed) return;
+    // 第一次开工前先查一次供电：用电池时不先跑一批再停。
+    if (this.#options.power && this.#powerAt === 0 && this.#queue.size > 0) {
+      void this.#probePower().then(() => this.#kick());
+      return;
+    }
     if (this.#queue.size === 0 || this.paused || !this.#textEnabled) {
       this.#visual?.kick();
       return;
@@ -411,20 +520,28 @@ export class SemanticCoordinator {
     const have = item.rebuild ? new Map<string, Float32Array>() : store.embeddings(keys, profile.encoderProfileId, profile.dims);
     const textOf = new Map(keyed.map((c) => [c.embeddingKey, c.text]));
     const missing = keys.filter((key) => !have.has(key));
+    let encodeMs = 0;
     for (let i = 0; i < missing.length; i += TEXT_BATCH_MAX) {
       signal.throwIfAborted();
       const batch = missing.slice(i, i + TEXT_BATCH_MAX);
+      const started = performance.now();
       const result = await scheduler.embed(
         'retrieval',
         { role: 'document', inputs: batch.map((key) => ({ text: textOf.get(key)!, title: null })) },
         { priority: 'background', signal },
       );
+      encodeMs += performance.now() - started;
       if (result.vectors.length !== batch.length) throw new EmbeddingError('MODEL_UNAVAILABLE', 'embedding count mismatch');
       store.putEmbeddings(
         batch.map((key, n) => ({ key, encoderProfileId: profile.encoderProfileId, vector: validVector(result.vectors[n]!, profile.dims) })),
       );
     }
     signal.throwIfAborted();
+    // 速度按时间线时长记（估时间时也按它）；大部分句群命中缓存的视频不记。
+    const duration = this.#options.catalog.index?.at(item.dir)?.facts.timeline?.durationSec ?? null;
+    if (duration && duration > 0 && keys.length > 0 && missing.length >= keys.length * TEXT_RATE_MIN_FRESH) {
+      recordRate(store, 'text', profile, encodeMs / 1000 / duration);
+    }
     const published = store.publish({
       videoId: content.videoId,
       revision: content.revision,

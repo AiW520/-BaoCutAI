@@ -20,7 +20,7 @@ import type { VectorScanner } from './vector-index.ts';
  * - 向量按 `encoderProfileId + 内容哈希 + 毫秒` 寻址：同一份素材在几个视频里只编码一次，素材换了版本才重算；已有向量的帧
  *   不取帧。取不出的帧（解码失败、时间超出）跳过，不让整个视频失败。
  * - 没有能读图的模型包（只装了文字包）时停下，记下原因，不把视频记失败。
- * - 暂停与文字共用（库里的 `paused`）；暂停时手上那一批编码完就停，不发布半成品。
+ * - 暂停与文字共用（用户的暂停与供电、散热的自动停下）；暂停时手上那一批编码完就停，不发布半成品。
  */
 
 /** 每隔几秒（来源时间）取一帧：G0 多模态评测按 8 秒取帧，CPU 每小时视频约 7.5–9 分钟。 */
@@ -52,6 +52,8 @@ export interface VisualLaneOptions {
   frames: KeyframeSource;
   log: Logger;
   paused: () => boolean;
+  /** 记一次实测速度（秒 / 帧，取帧加编码）：`estimate.ts`。 */
+  rate?: (profile: EmbeddingProfile, secondsPerFrame: number) => void;
   /** 文字那一路还在建或排着队。 */
   textBusy: () => boolean;
   changed: () => void;
@@ -298,6 +300,7 @@ export class VisualLane {
     const skipped = new Set<string>();
     for (let i = 0; i < missing.length; i += frames.maxBatch) {
       signal.throwIfAborted();
+      const started = performance.now();
       const batch: { key: string; file: string }[] = [];
       for (const frame of missing.slice(i, i + frames.maxBatch)) {
         try {
@@ -327,6 +330,7 @@ export class VisualLane {
       }
       if (result.vectors.length !== batch.length) throw new EmbeddingError('MODEL_UNAVAILABLE', 'embedding count mismatch');
       store.putEmbeddings(batch.map((b, n) => ({ key: b.key, encoderProfileId: profile.encoderProfileId, vector: validVector(result.vectors[n]!, profile.dims) })));
+      this.#options.rate?.(profile, (performance.now() - started) / 1000 / batch.length);
     }
     signal.throwIfAborted();
     const published = store.publishVisual({

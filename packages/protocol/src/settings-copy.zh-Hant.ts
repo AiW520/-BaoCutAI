@@ -36,6 +36,7 @@ export const zhHant: SettingDescriptionMessages = {
   'offline.strict': '嚴格離線：不傳送任何內容到任何線上服務',
   'semantic.channels': '要建立語意索引的通道：text（講話內容：文稿、字幕、譯文、章節）；畫面（visual，每 8 秒一張關鍵影格，要裝多模態模型包，建得較慢）；聲音（audio）還不可用',
   'semantic.indexedProjects': '建立語意索引的專案：all 是全部，或專案 ID 清單（不屬於專案的影片只在 all 時建立）',
+  'semantic.pauseOnBattery': '使用電池時暫停建立語意索引，接上電源後繼續（系統因過熱降頻時一律暫停）',
   'semantic.translationMemory': '翻譯時提示以前譯過的幾乎相同的句子（需要文字搜尋模型）',
   'semantic.glossaryCandidates': '從各份文稿裡幾乎相同的寫法提示術語候選（需要文字搜尋模型）',
 };

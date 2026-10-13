@@ -33,6 +33,7 @@ export const zhHans: SettingDescriptionMessages = {
   'offline.strict': '严格离线：不向任何在线服务发送内容',
   'semantic.channels': '要建语义索引的通道：text（讲话内容：文稿、字幕、译文、章节）；画面（visual，每 8 秒一张关键帧，要装多模态模型包，建得较慢）；声音（audio）还不可用',
   'semantic.indexedProjects': '建语义索引的项目：all 是全部，或项目 ID 列表（不属于项目的视频只在 all 时建）',
+  'semantic.pauseOnBattery': '用电池时暂停建语义索引，接上电源后接着建（系统因过热降频时总会暂停）',
   'semantic.translationMemory': '翻译时提示以前译过的几乎相同的句子（需要文字搜索模型）',
   'semantic.glossaryCandidates': '从各份文稿里几乎相同的写法提示术语候选（需要文字搜索模型）',
 };

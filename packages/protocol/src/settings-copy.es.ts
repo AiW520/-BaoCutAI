@@ -21,6 +21,7 @@ export const es: SettingDescriptionMessages = {
  'updates.autoCheck': 'Comprobar actualizaciones de la aplicación automáticamente', 'updates.autoDownload': 'Descargar versiones nuevas en segundo plano (sin instalarlas automáticamente)', 'diagnostics.enabled': 'Enviar estadísticas anónimas de uso y resúmenes de rendimiento (sin medios, texto ni rutas)', 'offline.strict': 'Sin conexión estricto: no enviar nada a ningún servicio en línea',
   'semantic.channels': 'Canales del índice semántico que se crean: text (lo hablado: transcripciones, subtítulos, traducciones, capítulos); visual (un fotograma clave cada 8 segundos; requiere un modelo multimodal y tarda más); audio aún no está disponible',
   'semantic.indexedProjects': 'Proyectos cuyos vídeos tienen índice semántico: all, o una lista de ids de proyecto (los vídeos fuera de proyectos solo con all)',
+  'semantic.pauseOnBattery': 'Pausar la creación del índice semántico al usar la batería y continuar al conectar la corriente (siempre se pausa si el sistema se limita por calor)',
   'semantic.translationMemory': 'Sugerir traducciones anteriores de frases casi idénticas al traducir (requiere el modelo de búsqueda de texto)',
   'semantic.glossaryCandidates': 'Sugerir términos del glosario a partir de grafías casi idénticas entre transcripciones (requiere el modelo de búsqueda de texto)',
 };

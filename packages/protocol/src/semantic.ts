@@ -215,9 +215,38 @@ export interface SemanticIndexStatus {
   coverage: SemanticCoverage[];
   /** 派生库在磁盘上的大小（字节）。 */
   cacheBytes: number;
+  /** 构建停着（用户暂停，或因为供电、温度自动停下）。 */
   paused: boolean;
+  /** 为什么停着；没停时 null（规范 §16.1）。用户暂停优先于自动停下。 */
+  pauseReason: SemanticPauseReason | null;
+  /** 范围内各路还要建多久（规范 §13.2）：开着的通道估待建的；画面没开时估打开之后要建的（`ifEnabled`）。 */
+  estimates: SemanticEstimate[];
   /** 正在建索引的任务。 */
   jobId: Id | null;
+}
+
+/** `user`：用户暂停（记在库里，重启后仍停着）；`battery`：在用电池（设置 `semantic.pauseOnBattery`）；`thermal`：系统因过热降频。 */
+export type SemanticPauseReason = 'user' | 'battery' | 'thermal';
+
+/** 一路索引还要建的量与时间（规范 §13.2）。 */
+export interface SemanticEstimate {
+  channel: SemanticChannel;
+  /** 这一路没开：估的是打开之后要建的量。 */
+  ifEnabled: boolean;
+  /** 要建（含落后于当前版本、要重建）的视频数。 */
+  videos: number;
+  /** 其中时长未知的视频数：没算进时长、帧数与时间。 */
+  unknownDuration: number;
+  /** 这些视频的时间线总时长（秒）。 */
+  sourceSeconds: number;
+  /** 画面：要取的帧数（按时间线时长估）；文字 null。 */
+  frames: number | null;
+  /** 估计用时（秒）；还没有可用的速度（文字没量过、没装能用的模型包）时 null。 */
+  seconds: number | null;
+  /** `measured`：这台机器上量过的速度；`default`：内置的参考速度（只有画面有）。 */
+  basis: 'measured' | 'default' | null;
+  /** 画面：新增向量约多少字节（不含可以清掉的关键帧缓存）；文字 null。 */
+  vectorBytes: number | null;
 }
 
 export interface SemanticIndexBuildParams {

@@ -3,12 +3,15 @@
    · 状态：装了哪个包（none / text / full）、这台电脑支不支持、索引是否跟上（ready / stale）、是否暂停；
    · 每个入口自己说明状态（§2.11「每个入口自己说明状态」）：置灰或退回时一句原因 + 去设置的入口，不弹全局警告；
    · 完整性按通道分别写（「文字已就绪；画面 18/30 个素材完成」），不是一根 60% 的进度条（v0.1 §13.2）；
-   · 翻译记忆的「沿用」与术语不一致（§2.6）。
+   · 翻译记忆的「沿用」与术语不一致（§2.6）；
+   · 自动停下（v0.1 §16.1）：用电池（设置「用电池时暂停」）、电脑过热降频时停下，与用户的暂停分开写原因；
+   · 还要多久（v0.1 §13.2）：按这台电脑量过的速度估，没量过时不写时间（2026-10-13）。
    无 React、无 DOM，`node --test` 直接跑。 */
 (function () {
   /* ---------- 状态 ---------- */
   /* half：上次安装没下完（2026-10-13 下载确认框）——{pkg, have: [已下好的部分 id], note: 失败那一句}；这时这个包仍算没装 */
-  const DEFAULT = {install: 'text', platform: 'ok', index: 'ready', paused: false, tm: true, terms: true, half: null};
+  /* power：这台电脑此刻的供电（ac / battery / thermal，演示挡位）；pauseOnBattery：设置「用电池时暂停」 */
+  const DEFAULT = {install: 'text', platform: 'ok', index: 'ready', paused: false, power: 'ac', pauseOnBattery: true, tm: true, terms: true, half: null};
   /* 原型演示用的 URL 开关：`?semantic=none|stale|unsupported|ready|full`（写在 hash 前面） */
   const DEMO = {
     none: {install: 'none'},
@@ -22,18 +25,33 @@
     return m && DEMO[m[1]] ? Object.assign({}, DEFAULT, DEMO[m[1]]) : null;
   }
 
+  /** 为什么停着（v0.1 §16.1）：user 用户暂停（优先）；thermal 过热降频；battery 用电池且设置开着；没停时 null。 */
+  function pauseReasonOf(st) {
+    const s = Object.assign({}, DEFAULT, st || {});
+    if (s.paused) return 'user';
+    if (s.power === 'thermal') return 'thermal';
+    if (s.power === 'battery' && s.pauseOnBattery) return 'battery';
+    return null;
+  }
+
   /** 语义能力此刻能不能用；reason 是 v0.1 §11.5 的标准错误码，界面用它挑文案。 */
   function status(st) {
     const s = Object.assign({}, DEFAULT, st || {});
     if (s.platform === 'unsupported') return {usable: false, reason: 'UNSUPPORTED', stale: false, mode: 'lexical'};
     if (s.install === 'none') return {usable: false, reason: 'MODEL_NOT_INSTALLED', stale: false, mode: 'lexical'};
-    if (s.paused) return {usable: true, reason: 'INDEX_PARTIAL', stale: true, mode: 'hybrid', paused: true};
+    const why = pauseReasonOf(s);
+    if (why) return {usable: true, reason: 'INDEX_PARTIAL', stale: true, mode: 'hybrid', paused: true, pauseReason: why};
     if (s.index === 'stale') return {usable: true, reason: 'INDEX_PARTIAL', stale: true, mode: 'hybrid'};
     return {usable: true, reason: null, stale: false, mode: 'hybrid'};
   }
 
   const STALE_NOTE = '索引更新中，结果可能不含最近的修改';
   const PAUSED_NOTE = '索引已暂停，结果可能不含最近的修改';
+  /* 自动停下的那一句（入口提醒与设置的状态说明共用） */
+  const POWER_NOTE = {
+    battery: '正在用电池，索引先停下；接上电源后接着建',
+    thermal: '电脑过热降频，索引先停下；温度回落后接着建',
+  };
   const UNSUPPORTED_NOTE = '这台电脑暂不支持本机语义模型，精确文字搜索照常可用';
 
   /* 每个入口各写一句（§2.11）：not = 没装 / 不支持时；fallback = 退回的那条路。 */
@@ -56,8 +74,24 @@
       return {tone: 'info', text: s.reason === 'UNSUPPORTED' && entry === 'search' ? UNSUPPORTED_NOTE : e.not,
         link: s.reason === 'UNSUPPORTED' ? null : '去设置', blocking: entry === 'topic' || entry === 'chapters'};
     }
-    if (s.stale) return {tone: 'notice', text: s.paused ? PAUSED_NOTE : STALE_NOTE, link: null, blocking: false};
+    if (s.stale) return {tone: 'notice', text: s.paused ? POWER_NOTE[s.pauseReason] || PAUSED_NOTE : STALE_NOTE, link: null, blocking: false};
     return null;
+  }
+
+  /** 一段时长给人看（估时用，不写秒）：不到 1 分钟 / 约 N 分钟 / 约 N 小时（一位小数）。 */
+  function fmtDuration(sec) {
+    if (sec < 60) return '不到 1 分钟';
+    if (sec < 3600) return `约 ${Math.round(sec / 60)} 分钟`;
+    const h = Math.round(sec / 360) / 10;
+    return `约 ${h} 小时`;
+  }
+  /** 还要多久那一句（v0.1 §13.2，indexStatus.estimates 的一项）：没有可用的速度时只写还剩几部；时长未知的单独写。 */
+  function etaLine(e) {
+    if (!e || !e.videos) return null;
+    const unknown = e.unknownDuration ? `，${e.unknownDuration} 部时长未知未计入` : '';
+    if (e.seconds === null || e.seconds === undefined) return `还剩 ${e.videos} 部视频；建完第一部后能估出时间`;
+    const basis = e.basis === 'default' ? '按参考速度估' : '按这台电脑的速度';
+    return `还剩 ${e.videos} 部视频，${fmtDuration(e.seconds)}（${basis}${unknown}）`;
   }
 
   /* ---------- 通道与完整性 ---------- */
@@ -128,7 +162,7 @@
     return n ? `参考了 ${n} 句已有译文（同一语言方向、你已有的视频）` : '没有找到可参考的已有译文';
   }
 
-  const api = {DEFAULT, DEMO, fromSearch, status, entryNote, ENTRY, STALE_NOTE, PAUSED_NOTE, UNSUPPORTED_NOTE,
+  const api = {DEFAULT, DEMO, fromSearch, status, pauseReasonOf, entryNote, ENTRY, STALE_NOTE, PAUSED_NOTE, POWER_NOTE, UNSUPPORTED_NOTE, fmtDuration, etaLine,
     CHANNELS, channelsOf, coverageLine, sumText, fmtBytes, reusedFrom, conflicts, tmLine};
   if (typeof window !== 'undefined') window.BC_SEMANTIC = api;
 })();

@@ -33,6 +33,7 @@ export const pl: SettingDescriptionMessages = {
   'offline.strict': "Ścisły offline: nie wysyłaj nic do usług online",
   'semantic.channels': 'Kanały indeksu semantycznego: text (wypowiedzi: transkrypcje, napisy, tłumaczenia, rozdziały); visual (klatka kluczowa co 8 sekund; wymaga multimodalnego pakietu modelu i trwa dłużej); audio nie jest jeszcze dostępne',
   'semantic.indexedProjects': 'Projekty, których wideo dostają indeks semantyczny: all albo lista id projektów (wideo spoza projektów tylko przy all)',
+  'semantic.pauseOnBattery': 'Wstrzymuj budowanie indeksu semantycznego na baterii i wznawiaj po podłączeniu zasilania (zawsze wstrzymuje, gdy system zwalnia z powodu temperatury)',
   'semantic.translationMemory': 'Podczas tłumaczenia proponuj wcześniejsze tłumaczenia niemal identycznych zdań (wymaga modelu wyszukiwania tekstu)',
   'semantic.glossaryCandidates': 'Proponuj terminy słowniczka na podstawie niemal identycznych zapisów w transkrypcjach (wymaga modelu wyszukiwania tekstu)',
 };

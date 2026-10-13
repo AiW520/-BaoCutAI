@@ -37,6 +37,7 @@ export const de: SettingDescriptionMessages = {
   'offline.strict': "Strikter Offlinemodus: nichts an Onlinedienste senden",
   'semantic.channels': 'Kanäle des semantischen Index: text (Gesprochenes: Transkripte, Untertitel, Übersetzungen, Kapitel); visual (alle 8 Sekunden ein Schlüsselbild; braucht ein multimodales Modellpaket und dauert länger); audio ist noch nicht verfügbar',
   'semantic.indexedProjects': 'Projekte, deren Videos einen semantischen Index bekommen: all oder eine Liste von Projekt-IDs (Videos außerhalb von Projekten nur bei all)',
+  'semantic.pauseOnBattery': 'Aufbau des semantischen Index im Akkubetrieb pausieren und am Netzteil fortsetzen (bei Drosselung wegen Hitze wird immer pausiert)',
   'semantic.translationMemory': 'Beim Übersetzen frühere Übersetzungen nahezu gleicher Sätze vorschlagen (benötigt das Textsuchmodell)',
   'semantic.glossaryCandidates': 'Glossarbegriffe aus nahezu gleichen Schreibweisen in Transkripten vorschlagen (benötigt das Textsuchmodell)',
 } satisfies Record<SettingKey, string>;

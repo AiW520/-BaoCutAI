@@ -483,6 +483,7 @@ export const settingValueSchemas = {
   'runtime.idleExitMinutes': z.number().int().min(1).max(1440),
   'semantic.channels': z.array(z.enum(['text', 'visual', 'audio'])).max(3),
   'semantic.indexedProjects': z.union([z.literal('all'), z.array(z.string().min(1).max(200)).max(1000)]),
+  'semantic.pauseOnBattery': z.boolean(),
   'semantic.translationMemory': z.boolean(),
   'semantic.glossaryCandidates': z.boolean(),
   'resources.capacity': z

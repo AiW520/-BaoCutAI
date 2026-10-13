@@ -106,6 +106,11 @@ export interface SettingValues {
   'semantic.channels': SemanticChannel[];
   /** 建语义索引的项目：`all`，或项目 ID 列表（不属于项目的视频只在 `all` 时建）。不影响检索的范围，只影响哪些视频排进构建。 */
   'semantic.indexedProjects': 'all' | Id[];
+  /**
+   * 用电池时暂停建语义索引（检索规格 §16.1），接上电源后接着建。Runtime 自己查供电（macOS、Windows、Linux），查不出时当作
+   * 接着电。系统因过热降频时总是暂停，不受它影响。
+   */
+  'semantic.pauseOnBattery': boolean;
   /** 翻译记忆（§2.6）：翻译时提示以前译过的几乎相同的句子。 */
   'semantic.translationMemory': boolean;
   /** 术语候选（§2.5）：从文稿里几乎相同的写法提示术语。 */
@@ -141,6 +146,7 @@ export const SETTING_KEYS = [
   'runtime.idleExitMinutes',
   'semantic.channels',
   'semantic.indexedProjects',
+  'semantic.pauseOnBattery',
   'semantic.translationMemory',
   'semantic.glossaryCandidates',
   'updates.autoCheck',
@@ -171,6 +177,7 @@ export const SETTING_DEFAULTS: Readonly<SettingValues> = Object.freeze({
   'runtime.idleExitMinutes': 10,
   'semantic.channels': Object.freeze(['text']) as unknown as SemanticChannel[],
   'semantic.indexedProjects': 'all',
+  'semantic.pauseOnBattery': true,
   'semantic.translationMemory': true,
   'semantic.glossaryCandidates': true,
   'updates.autoCheck': true,

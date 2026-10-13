@@ -4,6 +4,7 @@
      一部分没下成时下好的留着（st.half），卡片写哪一部分、连的哪里，「补齐」只下缺的（2026-10-13）；
    · 安装不等于扫描：装完只对已有文稿建轻量文字索引；画面与声音按项目开启，开启前写明范围与开销；
    · 索引：状态、缓存大小、暂停 / 恢复 / 清理、实际后端（自检后选的那一个）；
+     在更新时写还要多久（按这台电脑量过的速度）；用电池、过热降频时自动停下，状态写原因，「用电池时暂停」可关（2026-10-13）；
    · 已索引的项目：每个项目按通道写完整性（「文字 2/3 部视频（1 部还在转录）」），画面 / 声音这一版不可开，写明原因；
    · 用到它的两项开关：翻译记忆、术语候选，缺省都开；
    · 这台电脑不支持时整页说明原因，精确文字搜索照常可用。
@@ -102,6 +103,8 @@
             <option value="ok">没出错</option><option value="half">多模态搜索缺运行库</option></BCSelect></label>
           <label>索引<BCSelect aria-label="索引演示挡位" value={st.index} onChange={(e) => set({index: e.target.value})}>
             <option value="ready">已跟上</option><option value="stale">正在更新</option></BCSelect></label>
+          <label>供电<BCSelect aria-label="供电演示挡位" value={st.power || 'ac'} onChange={(e) => set({power: e.target.value})}>
+            <option value="ac">接着电源</option><option value="battery">用电池</option><option value="thermal">过热降频</option></BCSelect></label>
         </div>
       </BCDisclosure>
     );
@@ -141,7 +144,12 @@
       confirmLabel: '清理', tone: 'negative',
       run: () => { set({index: 'stale'}); app.toast('已清理，正在后台重建（演示）', 'positive'); },
     });
-    const indexState = st.paused ? '已暂停' : st.index === 'stale' ? '正在更新' : '已就绪';
+    const why = S.pauseReasonOf(st);
+    const indexState = why ? '已暂停' : st.index === 'stale' ? '正在更新' : '已就绪';
+    const eta = S.etaLine(SEM.estimate.text);
+    const stateDesc = why === 'user' ? '暂停时不建新索引；已有的照常能搜，结果可能不含最近的修改。'
+      : why ? S.POWER_NOTE[why] + '。'
+        : st.index === 'stale' ? `${S.STALE_NOTE}。${eta ? eta + '。' : ''}` : '所有已有文稿都建好了文字索引。';
     return (
       <>
         <h1 className="setpage__title">语义索引</h1>
@@ -163,9 +171,12 @@
           <section className="setpage__group" aria-label="索引">
             <h2>索引</h2>
             <div className="setpage__card">
-              <Row label="状态" desc={st.paused ? '暂停时不建新索引；已有的照常能搜，结果可能不含最近的修改。' : st.index === 'stale' ? S.STALE_NOTE : '所有已有文稿都建好了文字索引。'}>
-                <Chip tone={st.paused ? 'notice' : st.index === 'stale' ? 'accent' : 'positive'}>{indexState}</Chip>
+              <Row label="状态" desc={stateDesc}>
+                <Chip tone={why ? 'notice' : st.index === 'stale' ? 'accent' : 'positive'}>{indexState}</Chip>
                 <Btn size="s" variant="secondary" onClick={() => set({paused: !st.paused})}>{st.paused ? '恢复' : '暂停'}</Btn>
+              </Row>
+              <Row label="用电池时暂停" desc="笔记本用电池时先不建，接上电源后接着建。电脑过热降频时总会暂停。">
+                <Switch on={st.pauseOnBattery !== false} onChange={(v) => set({pauseOnBattery: v})} ariaLabel="用电池时暂停" />
               </Row>
               <Row label="缓存" desc="向量与索引，存在应用数据里，不进项目目录。">
                 <span className="t-body-sm">{S.fmtBytes(SEM.cacheBytes)}</span>

@@ -3558,6 +3558,8 @@
     /* 实际后端：自检后选的那一个（v0.1 §4.4），不是「检测到显卡就用 GPU」 */
     backend: {k: 'gpu', label: 'GPU · Metal', note: '自检通过；失败会自动退回 CPU'},
     cacheBytes: 327155712,
+    /* 索引在更新时还要多久（indexStatus.estimates 的文字一项，v0.1 §13.2）：按这台电脑量过的速度 */
+    estimate: {text: {channel: 'text', videos: 3, unknownDuration: 0, sourceSeconds: 4260, seconds: 95, basis: 'measured'}},
     /* 已索引的项目与通道（§2.11）。text：有文稿的视频里建好了几部；pending = 还在转录、没有文稿的 */
     projects: [
       {dir: 'd1', text: {done: 4, total: 4}, visual: {assets: 30, minutes: 25, size: '约 140 MB'}, audio: {assets: 6, minutes: 8, size: '约 30 MB'}},
