@@ -8,25 +8,28 @@ import { BUNDLES } from './bundle-registry.ts';
 import { IMAGE_BUNDLES, QWEN_IMAGE_ASPECTS } from './image-bundles.ts';
 import { IMAGE_SELF_TEST, imageSelfTestParameters, imageSelfTestSteps, imageSelfTestVerdict, inspectPng } from './image-self-test.ts';
 import { imageRunOf, localImageModelInfo, localImageSeed } from './local-image.ts';
+import { LocalProviderSource } from './local-source.ts';
 import { ModelCatalog } from './model-catalog.ts';
 import { repoManifestFor } from './repo-manifests.ts';
 
 /** 本地文生图的模型包登记、模型描述、冻结参数的换算与自检判定（架构设计 §6.1、§6.3；Model Worker 协议规范 §2.5.3、§4.3）。 */
 
 type ImageParameters = Extract<GenerationParameters, { capability: 'generateImage' }>;
-const QWEN = IMAGE_BUNDLES[0]!;
-const QWEN_CANDLE = IMAGE_BUNDLES[1]!;
-const QWEN_TURBO = IMAGE_BUNDLES[2]!;
-const QWEN_TURBO_CANDLE = IMAGE_BUNDLES[3]!;
+const bundle = (bundleId: string) => IMAGE_BUNDLES.find((b) => b.bundleId === bundleId)!;
+const QWEN = bundle('qwen-image-2.1@mlx-4bit');
+const QWEN_CANDLE = bundle('qwen-image-2.1@candle');
+const QWEN_TURBO = bundle('qwen-image-2.1-turbo@mlx-8bit');
+const QWEN_TURBO_CANDLE = bundle('qwen-image-2.1-turbo@candle');
 const GiB = 1024 * 1024 * 1024;
 
 describe('本地文生图模型包的登记', () => {
   it('基础版与 Turbo 各有 MLX 与 candle 两个模型包，在总登记里，是 image；仓库整个是一个 image 组件，有许可与名字', () => {
+    // Turbo 排在基础版前面：本地模型的列表与默认都按这个顺序。
     expect(IMAGE_BUNDLES.map((b) => b.bundleId)).toEqual([
-      'qwen-image-2.1@mlx-4bit',
-      'qwen-image-2.1@candle',
       'qwen-image-2.1-turbo@mlx-8bit',
+      'qwen-image-2.1@mlx-4bit',
       'qwen-image-2.1-turbo@candle',
+      'qwen-image-2.1@candle',
     ]);
     for (const bundle of IMAGE_BUNDLES) expect(BUNDLES).toContain(bundle);
     expect(QWEN).toMatchObject({ capability: 'image', backend: 'mlx', device: 'metal', label: 'Qwen-Image-2.1' });
@@ -157,7 +160,7 @@ describe('本地文生图模型包的登记', () => {
           .definitions()
           .filter((d) => d.capability === 'image')
           .map((d) => d.bundleId),
-      ).toEqual([QWEN.bundleId, QWEN_TURBO.bundleId]);
+      ).toEqual([QWEN_TURBO.bundleId, QWEN.bundleId]);
       expect(await mac.status(QWEN_TURBO_CANDLE.bundleId)).toBeNull();
       expect(await mac.status(QWEN.bundleId)).toMatchObject({ capability: 'image', state: 'not-installed', label: 'Qwen-Image-2.1' });
       expect(await mac.status(QWEN_TURBO.bundleId)).toMatchObject({ capability: 'image', state: 'not-installed', label: 'Qwen-Image-2.1 Turbo' });
@@ -175,7 +178,7 @@ describe('本地文生图模型包的登记', () => {
             .filter((d) => d.capability === 'image')
             .map((d) => d.bundleId),
           `${platform}/${arch}`,
-        ).toEqual([QWEN_CANDLE.bundleId, QWEN_TURBO_CANDLE.bundleId]);
+        ).toEqual([QWEN_TURBO_CANDLE.bundleId, QWEN_CANDLE.bundleId]);
         expect(await other.status(QWEN.bundleId), `${platform}/${arch}`).toBeNull();
         expect(await other.status(QWEN_TURBO.bundleId), `${platform}/${arch}`).toBeNull();
         for (const bundle of [QWEN_CANDLE, QWEN_TURBO_CANDLE]) {
@@ -190,6 +193,22 @@ describe('本地文生图模型包的登记', () => {
       }
       const forced = new ModelCatalog({ root: dir, platform: 'win32', arch: 'x64', workerAvailable: () => true, bundles: IMAGE_BUNDLES });
       expect(await forced.status(QWEN.bundleId)).toMatchObject({ state: 'error', reason: 'unsupported' });
+    });
+
+    it('本地 Provider 的生图模型 Turbo 在前、是默认（都没装时也是它；装好能用的排在前面的优先）', async () => {
+      for (const [platform, arch, first, second] of [
+        ['darwin', 'arm64', QWEN_TURBO, QWEN],
+        ['win32', 'x64', QWEN_TURBO_CANDLE, QWEN_CANDLE],
+      ] as const) {
+        const catalog = new ModelCatalog({ root: dir, platform, arch, workerAvailable: () => true });
+        const view = await new LocalProviderSource({ catalog, transcriber: null }).describe('local', 'view');
+        const models = view!.capabilities.generateImage!.models;
+        expect(
+          models.map((m) => m.modelId),
+          platform,
+        ).toEqual([first.bundleId, second.bundleId]);
+        expect(models.filter((m) => m.default).map((m) => m.modelId), platform).toEqual([first.bundleId]);
+      }
     });
 
     it('Worker 的峰值按登记的 peakBytes 与设备取池：MLX 计 GPU 内存，candle 的 CPU 计内存、CUDA 计 GPU 内存', async () => {

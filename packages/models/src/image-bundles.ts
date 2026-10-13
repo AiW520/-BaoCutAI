@@ -130,4 +130,8 @@ const QWEN_IMAGE_TURBO_CANDLE: BundleDefinition = {
   },
 };
 
-export const IMAGE_BUNDLES: readonly BundleDefinition[] = [QWEN_IMAGE_MLX, QWEN_IMAGE_CANDLE, QWEN_IMAGE_TURBO_MLX, QWEN_IMAGE_TURBO_CANDLE];
+/**
+ * 登记的顺序就是本地模型的顺序：模型列表与菜单里 Turbo 排在基础版前面，本地 Provider 的默认模型取第一个能用的
+ * （`LocalProviderSource`），所以两个都装了时不指定模型就用 Turbo，只装了基础版时用基础版。生图仍没有出厂默认。
+ */
+export const IMAGE_BUNDLES: readonly BundleDefinition[] = [QWEN_IMAGE_TURBO_MLX, QWEN_IMAGE_MLX, QWEN_IMAGE_TURBO_CANDLE, QWEN_IMAGE_CANDLE];

@@ -30,7 +30,7 @@ import { FAKE_MODEL_WORKER } from './index.ts';
  */
 
 const GiB = 1024 * 1024 * 1024;
-const REAL = IMAGE_BUNDLES[0]!;
+const REAL = IMAGE_BUNDLES.find((b) => b.bundleId === 'qwen-image-2.1@mlx-4bit')!;
 const imageBundle = (bundleId: string, peakBytes = REAL.image!.peakBytes): BundleDefinition => ({
   bundleId,
   label: bundleId,

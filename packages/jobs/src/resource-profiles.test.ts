@@ -125,7 +125,7 @@ describe('Model Worker 的需求', () => {
   });
 
   it('文生图按登记的峰值计 Model Worker（至少固定需求），不按约 10 GB 的权重；8 GiB 的 Mac 也放得下', () => {
-    const def = IMAGE_BUNDLES[0]!;
+    const def = IMAGE_BUNDLES.find((b) => b.bundleId === 'qwen-image-2.1@mlx-4bit')!;
     const catalog = new ModelCatalog({ root: noModels, platform: 'darwin', arch: 'arm64' });
     const resources = localImageResources(def.bundleId, catalog.imagePeak(def.bundleId));
     expect(resources.holder).toEqual({
