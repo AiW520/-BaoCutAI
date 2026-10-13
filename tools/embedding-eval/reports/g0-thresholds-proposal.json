@@ -1,0 +1,170 @@
+{
+  "status": "UNCALIBRATED-PROPOSAL",
+  "warning": "Derived from a tiny hand-written synthetic fixture set (34 queries, 54 symmetric pairs, 36 glossary pairs). Starting points for the labeled calibration in spec v0.1 §18.1, not calibrated values.",
+  "basedOnRun": "litert-cpu",
+  "recommendedProfiles": {
+    "retrievalPromptPairId": "modelcard-v1",
+    "retrievalQueryTemplate": "task: search result | query: {text}",
+    "retrievalDocumentTemplate": "title: {title} | text: {text}",
+    "symmetricProfile": "sym-modelcard",
+    "symmetricTemplate": "task: sentence similarity | query: {text}",
+    "experimentalProfiles": [
+      "litert-docs-v1",
+      "sym-litert"
+    ],
+    "rejectedForSymmetric": [
+      "sym-clustering",
+      "sym-document"
+    ]
+  },
+  "byDim": {
+    "768": {
+      "retrievalWeakHit[modelcard-v1]": {
+        "noAnswerMaxScore": 0.6982,
+        "answerableBestRelevantMin": 0.6637,
+        "answerableBestRelevantP25": 0.7583,
+        "proposed": 0.728,
+        "separable": false,
+        "answerableBelowProposed": 1,
+        "answerableTotal": 27,
+        "noAnswerAboveProposed": 0,
+        "noAnswerTotal": 7,
+        "note": "weak-hit marks results as low confidence; it must not hide them"
+      },
+      "retrievalWeakHit[litert-docs-v1]": {
+        "noAnswerMaxScore": 0.7518,
+        "answerableBestRelevantMin": 0.7227,
+        "answerableBestRelevantP25": 0.7996,
+        "proposed": 0.776,
+        "separable": false,
+        "answerableBelowProposed": 1,
+        "answerableTotal": 27,
+        "noAnswerAboveProposed": 0,
+        "noAnswerTotal": 7,
+        "note": "weak-hit marks results as low confidence; it must not hide them"
+      },
+      "retake[sym-modelcard]": {
+        "retakeMin": 0.9495,
+        "relatedTopicMax": 0.8748,
+        "numberNegationProperNounMax": 0.9809,
+        "proposed": 0.929,
+        "note": "pairs above threshold still need the literal number/negation/proper-noun diff check (design §3.8)"
+      },
+      "translationMemoryReuse[sym-modelcard]": {
+        "tmPunctuationMin": 0.9833,
+        "tmWordingMax": 0.9488,
+        "numberNegationProperNounMax": 0.9809,
+        "separationGap": 0.0024,
+        "embeddingAloneSeparates": true,
+        "proposed": 0.9821,
+        "note": "gap is too thin to trust; reuse should require equality after punctuation/whitespace normalization, embedding score only ranks reference suggestions"
+      },
+      "glossaryCandidate[sym-modelcard]": {
+        "misheardMin": 0.8499,
+        "misheardMedian": 0.923,
+        "relatedTermMax": 0.9046,
+        "unrelatedMax": 0.8432,
+        "proposed": 0.862,
+        "note": "must be followed by character/phonetic similarity re-check (design §3.7)"
+      },
+      "retake[sym-litert]": {
+        "retakeMin": 0.9467,
+        "relatedTopicMax": 0.8803,
+        "numberNegationProperNounMax": 0.9807,
+        "proposed": 0.927,
+        "note": "pairs above threshold still need the literal number/negation/proper-noun diff check (design §3.8)"
+      },
+      "translationMemoryReuse[sym-litert]": {
+        "tmPunctuationMin": 0.981,
+        "tmWordingMax": 0.9534,
+        "numberNegationProperNounMax": 0.9807,
+        "separationGap": 0.0003,
+        "embeddingAloneSeparates": true,
+        "proposed": 0.9808,
+        "note": "gap is too thin to trust; reuse should require equality after punctuation/whitespace normalization, embedding score only ranks reference suggestions"
+      },
+      "glossaryCandidate[sym-litert]": {
+        "misheardMin": 0.8542,
+        "misheardMedian": 0.9305,
+        "relatedTermMax": 0.9225,
+        "unrelatedMax": 0.8652,
+        "proposed": 0.88,
+        "note": "must be followed by character/phonetic similarity re-check (design §3.7)"
+      }
+    },
+    "512": {
+      "retrievalWeakHit[modelcard-v1]": {
+        "noAnswerMaxScore": 0.7029,
+        "answerableBestRelevantMin": 0.6671,
+        "answerableBestRelevantP25": 0.7586,
+        "proposed": 0.731,
+        "separable": false,
+        "answerableBelowProposed": 1,
+        "answerableTotal": 27,
+        "noAnswerAboveProposed": 0,
+        "noAnswerTotal": 7,
+        "note": "weak-hit marks results as low confidence; it must not hide them"
+      },
+      "retrievalWeakHit[litert-docs-v1]": {
+        "noAnswerMaxScore": 0.7591,
+        "answerableBestRelevantMin": 0.7277,
+        "answerableBestRelevantP25": 0.801,
+        "proposed": 0.78,
+        "separable": false,
+        "answerableBelowProposed": 1,
+        "answerableTotal": 27,
+        "noAnswerAboveProposed": 0,
+        "noAnswerTotal": 7,
+        "note": "weak-hit marks results as low confidence; it must not hide them"
+      },
+      "retake[sym-modelcard]": {
+        "retakeMin": 0.9504,
+        "relatedTopicMax": 0.8788,
+        "numberNegationProperNounMax": 0.9817,
+        "proposed": 0.93,
+        "note": "pairs above threshold still need the literal number/negation/proper-noun diff check (design §3.8)"
+      },
+      "translationMemoryReuse[sym-modelcard]": {
+        "tmPunctuationMin": 0.9833,
+        "tmWordingMax": 0.9496,
+        "numberNegationProperNounMax": 0.9817,
+        "separationGap": 0.0016,
+        "embeddingAloneSeparates": true,
+        "proposed": 0.9825,
+        "note": "gap is too thin to trust; reuse should require equality after punctuation/whitespace normalization, embedding score only ranks reference suggestions"
+      },
+      "glossaryCandidate[sym-modelcard]": {
+        "misheardMin": 0.8527,
+        "misheardMedian": 0.9211,
+        "relatedTermMax": 0.8977,
+        "unrelatedMax": 0.8412,
+        "proposed": 0.86,
+        "note": "must be followed by character/phonetic similarity re-check (design §3.7)"
+      },
+      "retake[sym-litert]": {
+        "retakeMin": 0.9469,
+        "relatedTopicMax": 0.8848,
+        "numberNegationProperNounMax": 0.9813,
+        "proposed": 0.927,
+        "note": "pairs above threshold still need the literal number/negation/proper-noun diff check (design §3.8)"
+      },
+      "translationMemoryReuse[sym-litert]": {
+        "tmPunctuationMin": 0.9813,
+        "tmWordingMax": 0.9536,
+        "numberNegationProperNounMax": 0.9813,
+        "separationGap": 0.0,
+        "embeddingAloneSeparates": false,
+        "proposed": null,
+        "note": "gap is too thin to trust; reuse should require equality after punctuation/whitespace normalization, embedding score only ranks reference suggestions"
+      },
+      "glossaryCandidate[sym-litert]": {
+        "misheardMin": 0.8548,
+        "misheardMedian": 0.9279,
+        "relatedTermMax": 0.9167,
+        "unrelatedMax": 0.863,
+        "proposed": 0.878,
+        "note": "must be followed by character/phonetic similarity re-check (design §3.7)"
+      }
+    }
+  }
+}

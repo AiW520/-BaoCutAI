@@ -1,0 +1,42 @@
+{
+  "version": 1,
+  "note": "Glossary mishearing candidates. term = canonical spelling from the glossary; variant = span (scope term) or sentence (scope sentence) from a transcript. label: misheard (should become a candidate) | related-term (semantically close but a different entity; must not) | unrelated.",
+  "pairs": [
+    { "id": "gl-01", "scope": "term", "label": "misheard", "term": "Claude", "variant": "克劳德" },
+    { "id": "gl-02", "scope": "term", "label": "misheard", "term": "Claude", "variant": "Cloud" },
+    { "id": "gl-03", "scope": "term", "label": "misheard", "term": "Claude", "variant": "Claud" },
+    { "id": "gl-04", "scope": "term", "label": "misheard", "term": "BaoCut", "variant": "包剪" },
+    { "id": "gl-05", "scope": "term", "label": "misheard", "term": "BaoCut", "variant": "宝卡特" },
+    { "id": "gl-06", "scope": "term", "label": "misheard", "term": "BaoCut", "variant": "Bao Cut" },
+    { "id": "gl-07", "scope": "term", "label": "misheard", "term": "Gemma", "variant": "杰玛" },
+    { "id": "gl-08", "scope": "term", "label": "misheard", "term": "Gemma", "variant": "Jemma" },
+    { "id": "gl-09", "scope": "term", "label": "misheard", "term": "LiteRT", "variant": "Light RT" },
+    { "id": "gl-10", "scope": "term", "label": "misheard", "term": "DaVinci Resolve", "variant": "达芬奇" },
+    { "id": "gl-11", "scope": "term", "label": "misheard", "term": "DaVinci Resolve", "variant": "Da Vinci resolve" },
+    { "id": "gl-12", "scope": "term", "label": "misheard", "term": "Whisper", "variant": "维斯珀" },
+    { "id": "gl-13", "scope": "term", "label": "misheard", "term": "宝玉", "variant": "宝宇" },
+    { "id": "gl-14", "scope": "term", "label": "misheard", "term": "embedding", "variant": "in bedding" },
+
+    { "id": "gl-20", "scope": "term", "label": "related-term", "term": "Claude", "variant": "ChatGPT" },
+    { "id": "gl-21", "scope": "term", "label": "related-term", "term": "Claude", "variant": "Gemini" },
+    { "id": "gl-22", "scope": "term", "label": "related-term", "term": "BaoCut", "variant": "Premiere" },
+    { "id": "gl-23", "scope": "term", "label": "related-term", "term": "BaoCut", "variant": "剪映" },
+    { "id": "gl-24", "scope": "term", "label": "related-term", "term": "Gemma", "variant": "Llama" },
+    { "id": "gl-25", "scope": "term", "label": "related-term", "term": "DaVinci Resolve", "variant": "Final Cut Pro" },
+    { "id": "gl-26", "scope": "term", "label": "related-term", "term": "Whisper", "variant": "语音识别" },
+    { "id": "gl-27", "scope": "term", "label": "related-term", "term": "embedding", "variant": "向量数据库" },
+
+    { "id": "gl-30", "scope": "term", "label": "unrelated", "term": "Claude", "variant": "红烧肉" },
+    { "id": "gl-31", "scope": "term", "label": "unrelated", "term": "BaoCut", "variant": "夜车" },
+    { "id": "gl-32", "scope": "term", "label": "unrelated", "term": "Gemma", "variant": "frame rate" },
+    { "id": "gl-33", "scope": "term", "label": "unrelated", "term": "LiteRT", "variant": "京都" },
+    { "id": "gl-34", "scope": "term", "label": "unrelated", "term": "宝玉", "variant": "退款" },
+
+    { "id": "gs-01", "scope": "sentence", "label": "misheard", "term": "Claude", "variant": "我们最后选了克劳德来写脚本。" },
+    { "id": "gs-02", "scope": "sentence", "label": "misheard", "term": "BaoCut", "variant": "用包剪导出的时候记得选原始帧率。" },
+    { "id": "gs-03", "scope": "sentence", "label": "misheard", "term": "Gemma", "variant": "本地跑的是杰玛四，速度还行。" },
+    { "id": "gs-10", "scope": "sentence", "label": "related-term", "term": "Claude", "variant": "我们最后选了 ChatGPT 来写脚本。" },
+    { "id": "gs-11", "scope": "sentence", "label": "related-term", "term": "BaoCut", "variant": "用剪映导出的时候记得选原始帧率。" },
+    { "id": "gs-20", "scope": "sentence", "label": "unrelated", "term": "Claude", "variant": "红烧肉要先炒糖色。" }
+  ]
+}

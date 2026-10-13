@@ -1,0 +1,43 @@
+{
+  "version": 1,
+  "note": "Labeled queries against corpus.json. category: exact-word | paraphrase | cross-lingual | no-answer. relevant lists every relevant group id; empty for no-answer.",
+  "queries": [
+    { "id": "q-ex-01", "lang": "zh", "category": "exact-word", "text": "Gemma 4 每秒多少 token", "relevant": ["ms-02"] },
+    { "id": "q-ex-02", "lang": "en", "category": "exact-word", "text": "Whisper running locally", "relevant": ["ms-03"] },
+    { "id": "q-ex-03", "lang": "zh", "category": "exact-word", "text": "学生证 半价", "relevant": ["pr-07"] },
+    { "id": "q-ex-04", "lang": "en", "category": "exact-word", "text": "J-cuts", "relevant": ["ve-02"] },
+    { "id": "q-ex-05", "lang": "zh", "category": "exact-word", "text": "清水寺", "relevant": ["tr-01"] },
+    { "id": "q-ex-06", "lang": "en", "category": "exact-word", "text": "tram 28 Lisbon", "relevant": ["tr-04"] },
+    { "id": "q-ex-07", "lang": "zh", "category": "exact-word", "text": "红烧肉 糖色", "relevant": ["ck-01"] },
+    { "id": "q-ex-08", "lang": "en", "category": "exact-word", "text": "take-home task three hours", "relevant": ["hr-02"] },
+
+    { "id": "q-pa-01", "lang": "zh", "category": "paraphrase", "text": "为什么不提供一次性付费永久使用", "relevant": ["pr-03"] },
+    { "id": "q-pa-02", "lang": "zh", "category": "paraphrase", "text": "配乐的音量应该比说话声小多少", "relevant": ["ve-07"] },
+    { "id": "q-pa-03", "lang": "en", "category": "paraphrase", "text": "at what point in the editing process should you do color correction", "relevant": ["ve-04"] },
+    { "id": "q-pa-04", "lang": "zh", "category": "paraphrase", "text": "面试怎么判断一个工程师是不是真的有实战经验", "relevant": ["hr-03"] },
+    { "id": "q-pa-05", "lang": "en", "category": "paraphrase", "text": "how to keep a homemade pizza base crunchy", "relevant": ["ck-02", "ck-09"] },
+    { "id": "q-pa-06", "lang": "zh", "category": "paraphrase", "text": "给模型的资料太长会不会丢信息", "relevant": ["ms-05"] },
+    { "id": "q-pa-07", "lang": "en", "category": "paraphrase", "text": "did customers cancel after the price increase", "relevant": ["pr-06"] },
+    { "id": "q-pa-08", "lang": "zh", "category": "paraphrase", "text": "冰岛租车有哪些路是禁止开的", "relevant": ["tr-03"] },
+    { "id": "q-pa-09", "lang": "en", "category": "paraphrase", "text": "stop fried aubergine from getting greasy", "relevant": ["ck-04"] },
+
+    { "id": "q-cl-01", "lang": "en", "category": "cross-lingual", "text": "how much does the pro plan cost per month", "relevant": ["pr-01"] },
+    { "id": "q-cl-02", "lang": "en", "category": "cross-lingual", "text": "how long should I steam a sea bass", "relevant": ["ck-03"] },
+    { "id": "q-cl-03", "lang": "en", "category": "cross-lingual", "text": "maximum number of characters per subtitle line", "relevant": ["ve-03"] },
+    { "id": "q-cl-04", "lang": "en", "category": "cross-lingual", "text": "how long is the probation period for new hires", "relevant": ["hr-05"] },
+    { "id": "q-cl-05", "lang": "zh", "category": "cross-lingual", "text": "远程办公需要和北京时间重叠几个小时", "relevant": ["hr-04"] },
+    { "id": "q-cl-06", "lang": "zh", "category": "cross-lingual", "text": "从维也纳坐夜车去威尼斯", "relevant": ["tr-02"] },
+    { "id": "q-cl-07", "lang": "zh", "category": "cross-lingual", "text": "酸面种多久喂一次", "relevant": ["ck-06"] },
+    { "id": "q-cl-08", "lang": "zh", "category": "cross-lingual", "text": "嵌入模型要同时支持中英文检索", "relevant": ["ms-04"] },
+    { "id": "q-cl-09", "lang": "en", "category": "cross-lingual", "text": "when is the rainy season in Yunnan", "relevant": ["tr-07"] },
+    { "id": "q-cl-10", "lang": "zh", "category": "cross-lingual", "text": "退款需要几天才能处理", "relevant": ["pr-04"] },
+
+    { "id": "q-na-01", "lang": "zh", "category": "no-answer", "text": "公司的股票期权怎么分配", "relevant": [] },
+    { "id": "q-na-02", "lang": "en", "category": "no-answer", "text": "how to fix audio drift between the camera and the external recorder", "relevant": [] },
+    { "id": "q-na-03", "lang": "zh", "category": "no-answer", "text": "巴黎有哪些适合拍视频的咖啡馆", "relevant": [] },
+    { "id": "q-na-04", "lang": "en", "category": "no-answer", "text": "best wine to pair with steak", "relevant": [] },
+    { "id": "q-na-05", "lang": "zh", "category": "no-answer", "text": "苹果手机怎么录 ProRes 格式", "relevant": [] },
+    { "id": "q-na-06", "lang": "en", "category": "no-answer", "text": "does the enterprise plan include on-premise deployment", "relevant": [] },
+    { "id": "q-na-07", "lang": "zh", "category": "no-answer", "text": "提拉米苏怎么做", "relevant": [] }
+  ]
+}

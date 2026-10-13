@@ -1,0 +1,66 @@
+{
+  "version": 1,
+  "note": "Symmetric pairs for retake / translation-memory / difference checks. category: retake | tm-punctuation | tm-wording | number-diff | negation-diff | proper-noun-diff | related-topic | unrelated. expect: same = should be treated as the same sentence; differ = must not be auto-merged or reused.",
+  "pairs": [
+    { "id": "rt-01", "lang": "zh", "category": "retake", "expect": "same", "a": "这个功能我们下周就会上线。", "b": "呃，这个功能，我们下周就会，就会上线。" },
+    { "id": "rt-02", "lang": "zh", "category": "retake", "expect": "same", "a": "剪辑的核心其实是节奏感。", "b": "嗯剪辑的核心，其实，其实就是节奏感。" },
+    { "id": "rt-03", "lang": "zh", "category": "retake", "expect": "same", "a": "我们用的是本地模型，不上传任何数据。", "b": "就是说我们用的是本地的模型，嗯，不会上传任何数据。" },
+    { "id": "rt-04", "lang": "zh", "category": "retake", "expect": "same", "a": "大家可以在评论区告诉我你的想法。", "b": "然后大家可以，呃，在评论区告诉我你们的想法。" },
+    { "id": "rt-05", "lang": "en", "category": "retake", "expect": "same", "a": "So the main reason we built this was privacy.", "b": "So, um, the main reason we built this was, uh, privacy." },
+    { "id": "rt-06", "lang": "en", "category": "retake", "expect": "same", "a": "Let me show you how the export settings work.", "b": "Okay let me, let me show you how the export settings work." },
+    { "id": "rt-07", "lang": "en", "category": "retake", "expect": "same", "a": "This model runs entirely on your laptop.", "b": "This model, you know, runs entirely on your laptop." },
+    { "id": "rt-08", "lang": "en", "category": "retake", "expect": "same", "a": "We tested it on about two hundred videos.", "b": "We tested it on, um, about two hundred videos." },
+
+    { "id": "tp-01", "lang": "zh", "category": "tm-punctuation", "expect": "same", "a": "这个功能，我们下周上线。", "b": "这个功能我们下周上线" },
+    { "id": "tp-02", "lang": "zh", "category": "tm-punctuation", "expect": "same", "a": "大家好，欢迎回到频道！", "b": "大家好 欢迎回到频道。" },
+    { "id": "tp-03", "lang": "en", "category": "tm-punctuation", "expect": "same", "a": "Hi everyone, welcome back to the channel!", "b": "Hi everyone welcome back to the channel." },
+    { "id": "tp-04", "lang": "en", "category": "tm-punctuation", "expect": "same", "a": "Let's get started.", "b": "Let's get started!" },
+    { "id": "tp-05", "lang": "zh", "category": "tm-punctuation", "expect": "same", "a": "好的，那我们开始吧。", "b": "好的那我们开始吧" },
+    { "id": "tp-06", "lang": "en", "category": "tm-punctuation", "expect": "same", "a": "So, what does this mean for creators?", "b": "So what does this mean for creators" },
+    { "id": "tp-07", "lang": "zh", "category": "tm-punctuation", "expect": "same", "a": "“本地优先”是我们的原则。", "b": "本地优先是我们的原则。" },
+    { "id": "tp-08", "lang": "zh", "category": "tm-punctuation", "expect": "same", "a": "Claude、Gemini 和 GPT 都试过了。", "b": "Claude, Gemini 和 GPT 都试过了。" },
+
+    { "id": "tw-01", "lang": "zh", "category": "tm-wording", "expect": "differ", "a": "这个功能我们下周上线。", "b": "这个功能我们下周测试。" },
+    { "id": "tw-02", "lang": "en", "category": "tm-wording", "expect": "differ", "a": "Welcome back to the channel.", "b": "Welcome to the channel." },
+    { "id": "tw-03", "lang": "en", "category": "tm-wording", "expect": "differ", "a": "Let's get started.", "b": "Let's get started with the setup." },
+    { "id": "tw-04", "lang": "zh", "category": "tm-wording", "expect": "differ", "a": "好的那我们开始吧。", "b": "好的那我们结束吧。" },
+    { "id": "tw-05", "lang": "en", "category": "tm-wording", "expect": "differ", "a": "Click the export button.", "b": "Click the import button." },
+
+    { "id": "nd-01", "lang": "zh", "category": "number-diff", "expect": "differ", "a": "专业版每月三十九元。", "b": "专业版每月四十九元。" },
+    { "id": "nd-02", "lang": "zh", "category": "number-diff", "expect": "differ", "a": "我们测试了两百个视频。", "b": "我们测试了两千个视频。" },
+    { "id": "nd-03", "lang": "zh", "category": "number-diff", "expect": "differ", "a": "试用期是三个月。", "b": "试用期是六个月。" },
+    { "id": "nd-04", "lang": "en", "category": "number-diff", "expect": "differ", "a": "The flight was delayed six hours.", "b": "The flight was delayed two hours." },
+    { "id": "nd-05", "lang": "en", "category": "number-diff", "expect": "differ", "a": "Export at 25 frames per second.", "b": "Export at 30 frames per second." },
+    { "id": "nd-06", "lang": "en", "category": "number-diff", "expect": "differ", "a": "We hired three engineers this quarter.", "b": "We hired thirteen engineers this quarter." },
+    { "id": "nd-07", "lang": "zh", "category": "number-diff", "expect": "differ", "a": "大火蒸八分钟就够了。", "b": "大火蒸十八分钟就够了。" },
+
+    { "id": "ng-01", "lang": "zh", "category": "negation-diff", "expect": "differ", "a": "这个版本支持离线使用。", "b": "这个版本不支持离线使用。" },
+    { "id": "ng-02", "lang": "zh", "category": "negation-diff", "expect": "differ", "a": "我们会做买断。", "b": "我们不会做买断。" },
+    { "id": "ng-03", "lang": "zh", "category": "negation-diff", "expect": "differ", "a": "这段可以删掉。", "b": "这段不能删掉。" },
+    { "id": "ng-04", "lang": "en", "category": "negation-diff", "expect": "differ", "a": "The free plan includes a watermark.", "b": "The free plan doesn't include a watermark." },
+    { "id": "ng-05", "lang": "en", "category": "negation-diff", "expect": "differ", "a": "I would recommend this camera for beginners.", "b": "I would not recommend this camera for beginners." },
+    { "id": "ng-06", "lang": "en", "category": "negation-diff", "expect": "differ", "a": "The update fixed the audio sync issue.", "b": "The update did not fix the audio sync issue." },
+    { "id": "ng-07", "lang": "zh", "category": "negation-diff", "expect": "differ", "a": "上传之前需要登录。", "b": "上传之前不需要登录。" },
+
+    { "id": "pn-01", "lang": "zh", "category": "proper-noun-diff", "expect": "differ", "a": "我们最后选了 Claude 来写脚本。", "b": "我们最后选了 Gemini 来写脚本。" },
+    { "id": "pn-02", "lang": "zh", "category": "proper-noun-diff", "expect": "differ", "a": "下个月我们去京都拍。", "b": "下个月我们去大阪拍。" },
+    { "id": "pn-03", "lang": "en", "category": "proper-noun-diff", "expect": "differ", "a": "We moved the servers to Frankfurt.", "b": "We moved the servers to Singapore." },
+    { "id": "pn-04", "lang": "en", "category": "proper-noun-diff", "expect": "differ", "a": "The keynote was given by Sundar.", "b": "The keynote was given by Satya." },
+    { "id": "pn-05", "lang": "zh", "category": "proper-noun-diff", "expect": "differ", "a": "这期节目在成都录的。", "b": "这期节目在重庆录的。" },
+    { "id": "pn-06", "lang": "en", "category": "proper-noun-diff", "expect": "differ", "a": "Export the project to Premiere first.", "b": "Export the project to DaVinci first." },
+
+    { "id": "rl-01", "lang": "zh", "category": "related-topic", "expect": "differ", "a": "字幕每行不超过十六个字。", "b": "字幕颜色要和画面有足够的对比度。" },
+    { "id": "rl-02", "lang": "en", "category": "related-topic", "expect": "differ", "a": "Color grading comes last.", "b": "Sound mixing needs a quiet room." },
+    { "id": "rl-03", "lang": "zh", "category": "related-topic", "expect": "differ", "a": "面试会问线上事故怎么排查。", "b": "面试结束后一周内给结果。" },
+    { "id": "rl-04", "lang": "en", "category": "related-topic", "expect": "differ", "a": "Preheat the pizza stone for forty-five minutes.", "b": "Use bread flour for a chewier pizza crust." },
+    { "id": "rl-05", "lang": "zh", "category": "related-topic", "expect": "differ", "a": "冰岛自驾要看路况。", "b": "冰岛的物价非常高。" },
+    { "id": "rl-06", "lang": "en", "category": "related-topic", "expect": "differ", "a": "The pro plan removes the watermark.", "b": "The team plan is billed per seat." },
+
+    { "id": "un-01", "lang": "zh", "category": "unrelated", "expect": "differ", "a": "红烧肉要先炒糖色。", "b": "试用期是三个月。" },
+    { "id": "un-02", "lang": "en", "category": "unrelated", "expect": "differ", "a": "We took the night train to Venice.", "b": "The embedding model handles Chinese and English." },
+    { "id": "un-03", "lang": "zh", "category": "unrelated", "expect": "differ", "a": "背景音乐要压低一点。", "b": "学生认证可以半价。" },
+    { "id": "un-04", "lang": "en", "category": "unrelated", "expect": "differ", "a": "Refunds take seven days.", "b": "Salt the eggplant before frying." },
+    { "id": "un-05", "lang": "mixed", "category": "unrelated", "expect": "differ", "a": "这个功能下周上线。", "b": "The flight was delayed six hours." },
+    { "id": "un-06", "lang": "zh", "category": "unrelated", "expect": "differ", "a": "云南雨季山路容易塌方。", "b": "我们用 Claude 写脚本。" }
+  ]
+}
