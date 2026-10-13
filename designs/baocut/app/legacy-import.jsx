@@ -75,6 +75,50 @@
     );
   }
 
+  /** product-design §8.5：接续说明独立于项目导入；没有旧项目、或项目已跳过时也能看到。 */
+  function LegacySettingsReport({app}) {
+    const report = LI.settingsReport(app.legacyHost);
+    const close = () => {
+      app.setPref('legacySettingsRead', true);
+      app.setLegacySettingsOpen(false);
+    };
+    const settings = () => { close(); app.go({r: 'settings', sec: 'asr'}); };
+    return <S.DialogContainer onDismiss={close}>
+      <S.Dialog size="M" aria-label="旧版设置接续说明">
+        <S.Heading slot="title">旧版设置接续说明</S.Heading>
+        <S.Content>
+          <p className="lgi__lead">升级时已接续旧模型目录。安装前会按新版清单校验已有文件，只下载缺失或损坏的部分。</p>
+          <div className="lgi__dest">
+            <span className="lgi__lb">升级时接续的模型目录</span>
+            <div className="lgi__path"><S.Icons.Folder /><span className="lgi__dir t-mono" title={report.directory}>{report.directory}</span></div>
+          </div>
+          <div className="lgi__dest">
+            <span className="lgi__lb">需要重新选择的偏好</span>
+            <p className="lgi__lead">旧默认转录模型没有接续。请先补齐所需组件，再在语音识别设置里选择默认模型。</p>
+            <p className="lgi__note">旧识别语言没有接续。新版在每次转录时选择识别语言。</p>
+          </div>
+          <p className="lgi__note lgi__hint">可以随时在设置 › 语音识别里查看这份说明。确认说明不会安装模型或更改偏好。</p>
+        </S.Content>
+        <S.ButtonGroup>
+          <Btn variant="secondary" onClick={close}>知道了</Btn>
+          <Btn variant="accent" onClick={settings}>查看语音识别设置</Btn>
+        </S.ButtonGroup>
+      </S.Dialog>
+    </S.DialogContainer>;
+  }
+
+  function LegacySettingsNotice() {
+    const app = useApp();
+    if (!app.legacySettingsAvailable) return null;
+    return <section className="setpage__group" aria-label="旧版设置接续说明">
+      <div className="setpage__card">
+        <p className="lgi__lead">旧版转录偏好需要重新选择。</p>
+        <p className="lgi__note">已有模型文件可以校验复用；查看接续说明和下一步。</p>
+        <Btn size="s" variant="secondary" onClick={() => app.setLegacySettingsOpen(true)}>查看接续说明</Btn>
+      </div>
+    </section>;
+  }
+
   /* 每次弹出都从默认值开始：关着的时候整个卸载，目录与勾选不跨次保留。
      演示的导入进程也挂在这里——它在外壳根上常驻，换页不打断导入。 */
   function LegacyImportDialog() {
@@ -83,6 +127,7 @@
       <>
         {window.LegacyImportRunner ? <window.LegacyImportRunner /> : null}
         {app.legacyAsk ? <LegacyImportAsk app={app} /> : null}
+        {!app.legacyAsk && app.legacySettingsOpen ? <LegacySettingsReport app={app} /> : null}
       </>
     );
   }
@@ -131,5 +176,5 @@
     );
   }
 
-  Object.assign(window, {LegacyImportDialog, LegacyImportTweaks});
+  Object.assign(window, {LegacyImportDialog, LegacyImportTweaks, LegacySettingsNotice});
 })();

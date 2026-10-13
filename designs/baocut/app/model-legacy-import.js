@@ -61,6 +61,16 @@
     return (found || 0) > 0 && !decided(record);
   }
   const demoLaunch = (search) => new URLSearchParams(search || '').get('legacy') === '1';
+  const demoSettings = (search) => new URLSearchParams(search || '').get('legacy-settings') === '1';
+
+  /** 设置接续说明只报告没有等价语义的转录偏好；确认说明不会安装模型或改默认值（product-design §8.5）。 */
+  function settingsReport(host) {
+    return {
+      directory: host === 'win32' ? 'C:\\Users\\me\\AppData\\Roaming\\BaoCut\\models'
+        : host === 'linux' ? '~/.config/bcut/models' : '~/Library/Application Support/BaoCut/models',
+      fields: ['transcribe.model', 'transcribe.sourceLang', 'vk-default-model'],
+    };
+  }
 
   /**
    * 回答 → 要记下的偏好（`record: null` 表示不记、下次启动再问）与给人看的一句话。
@@ -81,7 +91,7 @@
     return record.state === 'never' ? '不再提醒' : `已导入到 ${label(record.dest, host)}`;
   }
 
-  const api = {HOSTS, DEFAULT_DEST, DEMO_DIRS, DEMO_FOUND, hostFrom, defaultDest, nextDemoDir, label, decided, shouldAsk, demoLaunch, decide, recordText};
+  const api = {HOSTS, DEFAULT_DEST, DEMO_DIRS, DEMO_FOUND, hostFrom, defaultDest, nextDemoDir, label, decided, shouldAsk, demoLaunch, demoSettings, settingsReport, decide, recordText};
   if (typeof window !== 'undefined') window.BC_LEGACY_IMPORT = api;
   if (typeof module !== 'undefined') module.exports = api;
 })();

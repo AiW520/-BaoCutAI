@@ -191,6 +191,8 @@
     const [legacyAsk, setLegacyAsk] = useState(() => LI.demoLaunch(window.location.search) && LI.shouldAsk(LI.DEMO_FOUND.length, base.prefs.legacyImport));
     const [legacyHost, setLegacyHost] = useState(() => LI.hostFrom(window.location.search));
     const [legacyDrive, setLegacyDrive] = useState(false);   // 演示：素材所在的外接硬盘接上没有（legacy-import-task.jsx）
+    const legacySettingsAvailable = LI.demoSettings(window.location.search);
+    const [legacySettingsOpen, setLegacySettingsOpen] = useState(() => legacySettingsAvailable && !base.prefs.legacySettingsRead);
 
     /* 任务详情的「在 Space 中查看」：跳到 Space 并打开这个条目的查看框。和 toolPreset 一样只活到 Space 页读走，不进路由。 */
     const [spaceFocus, setSpaceFocus] = useState(null);
@@ -206,6 +208,7 @@
 
     return {
       handoverToAgent, spaceFocus, openSpaceEntry, takeSpaceFocus, legacyAsk, setLegacyAsk, legacyHost, setLegacyHost, legacyDrive, setLegacyDrive,
+      legacySettingsAvailable, legacySettingsOpen, setLegacySettingsOpen,
       dirs, dirById, toggleDirPin, toggleSessionPin, dirOfSession, moviesOf, createDir, openDir,
       openMovie, openTool, closeMovie, railGo, markRead, newProject, createProject,
       spaceItems, toggleFav, setTrashed, saveVersion, importAssets, createHtmlPage, registerToolOutput, createMovieFromOutput,

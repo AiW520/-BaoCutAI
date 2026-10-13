@@ -199,6 +199,7 @@
     const n = NV().byKey(sec);
     const cap = n.cap || null, cat = n.local || null;
     return <div className="capage" data-screen-label={`${n.label}设置`}>
+      {cap === 'transcribe' && window.LegacySettingsNotice ? <window.LegacySettingsNotice /> : null}
       {cap ? <section className="setpage__group" aria-label="默认与参数">
         <div className="setpage__card"><DefaultPicker cap={cap} cat={cat} /><Params cap={cap} /></div>
       </section> : null}

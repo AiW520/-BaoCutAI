@@ -4,6 +4,15 @@ global.window = {};
 require('./model-legacy-import.js');
 const LI = global.window.BC_LEGACY_IMPORT;
 
+test('settings recovery can be shown without a project import and reports host-specific paths', () => {
+  assert.equal(LI.demoSettings('?legacy-settings=1'), true);
+  assert.equal(LI.demoSettings('?legacy=1'), false);
+  assert.equal(LI.settingsReport('darwin').directory, '~/Library/Application Support/BaoCut/models');
+  assert.equal(LI.settingsReport('linux').directory, '~/.config/bcut/models');
+  assert.match(LI.settingsReport('win32').directory, /^C:\\Users\\me\\AppData\\Roaming\\BaoCut/);
+  assert.deepEqual(LI.settingsReport('darwin').fields, ['transcribe.model', 'transcribe.sourceLang', 'vk-default-model']);
+});
+
 test('默认目录：macOS 与 Linux 在文稿下，Windows 在 Documents 已知文件夹下', () => {
   assert.equal(LI.defaultDest('darwin'), '~/Documents/BaoCut');
   assert.equal(LI.defaultDest('linux'), '~/Documents/BaoCut');
