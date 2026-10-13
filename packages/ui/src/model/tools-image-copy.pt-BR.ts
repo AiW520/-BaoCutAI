@@ -19,6 +19,8 @@ export const ptBR: ToolsImageMessages = {
   takesSeed: 'Aceita semente',
   localChip: 'Gerado neste computador · off-line',
   cloudChip: (provider) => `Online · ${provider} · cobrado pelo uso`,
+  agentChip: (provider) => `Online · ${provider} · usa sua assinatura`,
+  agentPaidChip: (provider) => `Online · ${provider} · sem assinatura · pode não funcionar`,
   imageName: (n) => `Imagem ${n}`,
   seed: (seed) => `Semente ${seed}`,
   loadingModel: 'Carregando o modelo',

@@ -161,6 +161,27 @@ export const vi: ModelsMessages = {
     saved: "Đã lưu",
     failed: (message) => `Không thể lưu: ${message}`,
   },
+  capDefault: {
+    label: 'Mô hình mặc định',
+    desc: {
+      transcribe:
+        'Dùng khi bản chép lời, dòng lệnh hoặc Agent không chỉ định mô hình. Mô hình trên máy, trên đám mây và trên máy khác trong mạng đều ở đây; mô hình chưa dùng được sẽ mờ đi kèm lý do. Chọn mô hình trên trang công cụ chỉ đổi lần chạy đó.',
+      synthesizeSpeech:
+        'Dùng khi tạo giọng nói, lồng tiếng, dòng lệnh hoặc Agent không chỉ định mô hình. Không có mặc định thì mỗi lần tự chọn. Chọn mô hình trên trang công cụ chỉ đổi lần chạy đó.',
+      generateImage:
+        'Dùng khi tạo ảnh, dòng lệnh hoặc Agent không chỉ định mô hình. Tự động lấy cái đầu tiên dùng được: Codex đăng nhập bằng ChatGPT › mô hình trên máy › OpenAI › Google Gemini › nhà cung cấp khác đã kết nối. Chọn mô hình trên trang công cụ chỉ đổi lần chạy đó.',
+    },
+    auto: 'Tự động',
+    autoUses: (name: string) => `Tự động · đang dùng ${name}`,
+    autoNothing: 'Tự động · chưa có mô hình dùng được',
+    autoDesc: { transcribe: 'Chọn mô hình trên máy phù hợp với máy này', generateImage: 'Codex › trên máy › OpenAI › Gemini › khác' },
+    unset: 'Chưa đặt',
+    unsetDesc: 'Mỗi lần tự chọn mô hình',
+    localGroup: 'Máy này',
+    localWhy: (why: string) => `${why} · tải trong Mô hình trên máy`,
+    cloudWhy: (why: string) => `${why} · kết nối trong Mô hình đám mây`,
+    unavailable: (label: string) => `${label} (không dùng được)`,
+  },
   codexCard: {
     title: 'Codex CLI',
     on: "Đã bật · dùng gói đăng ký Codex, không cần khóa · mỗi lần một ảnh · bỏ qua kích thước · chậm hơn 5–10 lần",

@@ -9,6 +9,6 @@ export const fr: ToolsImageMessages = {
   steps: (n) => `${n} ${pluralForm('fr', n, { one: 'étape', other: 'étapes' })}`, deviceTime: 'La durée dépend de votre appareil', offline: 'Fonctionne hors ligne',
   images: (n) => `${n} ${pluralForm('fr', n, { one: 'image', other: 'images' })}`, aspects: (n) => `${n} ${pluralForm('fr', n, { one: 'format', other: 'formats' })}`,
   providerSize: 'Taille définie par le fournisseur', takesSeed: 'Accepte une graine', localChip: 'Généré sur cet ordinateur · hors ligne',
-  cloudChip: (provider) => `En ligne · ${provider} · facturation à l’utilisation`, imageName: (n) => `Image ${n}`, seed: (seed) => `Graine ${seed}`,
+  cloudChip: (provider) => `En ligne · ${provider} · facturation à l’utilisation`, agentChip: (provider) => `En ligne · ${provider} · utilise votre abonnement`, agentPaidChip: (provider) => `En ligne · ${provider} · hors abonnement · peut ne pas fonctionner`, imageName: (n) => `Image ${n}`, seed: (seed) => `Graine ${seed}`,
   loadingModel: 'Chargement du modèle', elapsed: (clock: string) => `${clock} écoulées`, timeLeft: (clock: string) => `Temps restant : ${clock}`, decoding: 'Décodage', stepOf: (done, total) => `Étape ${done}/${total}`,
 };

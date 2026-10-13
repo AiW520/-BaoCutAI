@@ -350,7 +350,7 @@ export interface TranscribeRouter {
   transcriber(providerId: string): TranscribeProvider | null;
   /** 所有执行者：停止时关闭，重新启用模型包时通知。 */
   executors(): TranscribeProvider[];
-  /** 提交时选择生成能力的 Provider 与模型；没有出厂默认，什么都没配置时抛 `CAPABILITY_NOT_CONFIGURED`。 */
+  /** 提交时选择生成能力的 Provider 与模型；除生图的出厂顺序外没有出厂默认，什么都没配置时抛 `CAPABILITY_NOT_CONFIGURED`。 */
   selectGeneration?<C extends GenerationCapability>(capability: C, target: GenerationTarget): Promise<GenerationSelection<C>>;
   /** 所有生成执行者：停止时关闭。 */
   generators?(): GenerationProvider[];

@@ -18,6 +18,8 @@ export const tr: ToolsImageMessages = {
   takesSeed: 'Tohum kabul eder',
   localChip: 'Bu bilgisayarda oluşturulur · çevrimdışı',
   cloudChip: (provider) => `Çevrimiçi · ${provider} · kullanıma göre ücretlendirilir`,
+  agentChip: (provider) => `Çevrimiçi · ${provider} · aboneliğinizi kullanır`,
+  agentPaidChip: (provider) => `Çevrimiçi · ${provider} · abonelik girişi değil · çalışmayabilir`,
   imageName: (n) => `Görsel ${n}`,
   seed: (seed) => `Tohum ${seed}`,
   loadingModel: 'Model yükleniyor',

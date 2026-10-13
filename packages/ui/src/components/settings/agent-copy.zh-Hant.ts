@@ -123,7 +123,7 @@ export const zhHant: AgentMessages = {
 
   codexImage: {
     title: '用 Codex 繪圖',
-    body: '不需要金鑰，使用你的 Codex 訂閱。一次一張，會忽略尺寸與品質，速度比 API 慢 5–10 倍。開啟後，bcut image 和對話中的 Agent 都能選擇它（名稱為「Codex」）。它不會被自動選用；若要預設使用，請在「模型 › 影像生成 › 雲端模型」中將它設為預設。',
+    body: '不需要金鑰，使用你的 Codex 訂閱；一次一張、忽略尺寸與品質；比 API 慢 5–10 倍。開啟後它排在圖片生成自動選擇的第一位：工具頁、bcut image 與 Agent 都會使用它，除非你在模型 › 圖像生成中另外設定了預設模型。Codex 以 API key 而不是 ChatGPT 登入時可能無法生成，也不會被自動選中。',
     checking: '正在檢查這台電腦上的 Codex 能否繪圖…',
     on: '已開啟',
     period: '。',

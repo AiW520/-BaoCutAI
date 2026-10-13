@@ -149,12 +149,12 @@ const NO_CHECK: CheckAbilities = { repair: false, recheck: false };
 
 /**
  * 模型 › 本地模型（设计稿 settings-local.jsx:200-308）：`models` 主题里的模型包按「已安装 / 可下载」分组（权重在、缺公共组件的
- * 也在「已安装」，行上「补齐」），顶上是默认模型，下面是折叠的「公共组件」（这一类两只及以上模型共用的组件；缺的借一只用到它的
+ * 也在「已安装」，行上「补齐」），顶上是默认模型（只有音源分离与音乐生成在这里设，其余在能力页顶上统一设），下面是折叠的「公共组件」（这一类两只及以上模型共用的组件；缺的借一只用到它的
  * 模型补齐）。
  * 下载与修复先看计划再确认（install-dialog.tsx）；进度、检查结论与模型包状态都从 `models` / `jobs` 主题读，
  * 这里不轮询、不在本地改状态。现在语音识别、语音合成、图像生成与音源分离有本机模型包，其余类给空态。
  * 音源分离的默认模型与语音识别一样有「自动选择」（配音的分离一步用它）；行与语音识别一样在行上露「检查」。
- * 语音合成（设计稿 settings-tts.jsx）与图像生成的默认模型没有「自动选择」；合成的每一行装好后有「试听」（tts-quick-test.tsx）。
+ * 语音合成（设计稿 settings-tts.jsx）的每一行装好后有「试听」（tts-quick-test.tsx）。
  * 图像生成的「试画」还没做（设计稿 model-local-check.js 的 `TRY.image`），所以它的行像语音识别一样在行上露「检查」。
  * 「检查」与「试听」是两件事（设计稿 model-local-check.js）：试听是行上的主操作，检查在 ⋯ 里紧挨「修复…」；
  * 没有试用的语音识别在行上另有一个安静的「检查」。模型能不能用只写在行上那一条状态里（model-check-line.tsx）。
@@ -206,6 +206,7 @@ function LocalPage({ category, kind }: { category: ModelCategory; kind: LocalDef
   if (!ready) return <PageStatus>{MODELS_PAGE_COPY.loading}</PageStatus>;
 
   const synth = kind === 'synthesize';
+  const ownDefault = kind === 'separate' || kind === 'music';
   const picker = localDefaultPicker(view, bundles, kind);
   const shared = sharedComponents(bundles, category);
   const repair = sharedRepair(shared).length;
@@ -293,27 +294,30 @@ function LocalPage({ category, kind }: { category: ModelCategory; kind: LocalDef
   return (
     <>
       {web ? <p className={webNote}>{INSTALL.webNote}</p> : null}
-      <Card label={LOCAL_COPY.defaultLabel}>
-        <SettingRow label={LOCAL_COPY.defaultLabel} desc={desc}>
-          <Picker
-            aria-label={LOCAL_COPY.defaultLabel}
-            size="S"
-            align="end"
-            menuWidth={280}
-            selectedKey={picker.selectedKey}
-            placeholder={picker.other ?? (picker.hasAuto ? LOCAL_COPY.auto : TTS.unset)}
-            isDisabled={web || busy === 'default'}
-            onSelectionChange={(key) => {
-              if (key !== null && key !== picker.selectedKey) void choose(String(key));
-            }}>
-            {picker.items.map((item) => (
-              <PickerItem key={item.key} id={item.key} textValue={item.label}>
-                <Text slot="label">{item.label}</Text>
-              </PickerItem>
-            ))}
-          </Picker>
-        </SettingRow>
-      </Card>
+      {/* 语音识别、语音合成、图像生成的默认模型在能力页顶上统一设（capability-default.tsx）；音源分离、音乐生成只有本机，在这里设。 */}
+      {ownDefault ? (
+        <Card label={LOCAL_COPY.defaultLabel}>
+          <SettingRow label={LOCAL_COPY.defaultLabel} desc={desc}>
+            <Picker
+              aria-label={LOCAL_COPY.defaultLabel}
+              size="S"
+              align="end"
+              menuWidth={280}
+              selectedKey={picker.selectedKey}
+              placeholder={picker.other ?? (picker.hasAuto ? LOCAL_COPY.auto : TTS.unset)}
+              isDisabled={web || busy === 'default'}
+              onSelectionChange={(key) => {
+                if (key !== null && key !== picker.selectedKey) void choose(String(key));
+              }}>
+              {picker.items.map((item) => (
+                <PickerItem key={item.key} id={item.key} textValue={item.label}>
+                  <Text slot="label">{item.label}</Text>
+                </PickerItem>
+              ))}
+            </Picker>
+          </SettingRow>
+        </Card>
+      ) : null}
 
       <section className={group} aria-label={LOCAL_COPY.installed}>
         <div className={groupHead}>

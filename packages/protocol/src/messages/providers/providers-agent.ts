@@ -20,6 +20,8 @@ const en = {
   codexImageModel: 'Codex image generation (model chosen by Codex and your account)',
   codexImageNotes:
     "Generates with the Codex account signed in on this computer: one PNG each time, one task at a time, usually in a minute or two. Size and seed can't be set (requests that include them are rejected), and the pixel size depends on the result. It uses your subscription quota; the remaining quota is unknown. Turning it on means agreeing to send prompts to your Codex account.",
+  codexImageNotesApiKey:
+    "Codex is signed in with an API key or another non-ChatGPT method, so image generation may not work and any cost goes to that account, not a subscription. BaoCut won't pick it automatically; choose it yourself to try. One PNG at a time; size and seed can't be set.",
   imagesOnly: (p: { label: string }) => `${p.label} can only generate images`,
   onePngOnly: (p: { label: string }) => `${p.label} generates one PNG at a time and doesn't accept size or seed`,
   unavailable: (p: { label: string; message: string }) => `${p.label} isn't available: ${p.message}`,

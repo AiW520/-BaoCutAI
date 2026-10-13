@@ -3,7 +3,7 @@ import type { ImageModelInfo, ProviderView, SpeechModelInfo } from '@baocut/prot
 import { codePointLength, imageParameters, speechParameters } from './generation-options.ts';
 import { selectModel, type ModelChoice } from './model-selection.ts';
 
-/** 生成请求的提交时检查与选择（架构设计 §6.2、§6.6）：不合的拒绝，不悄悄改参数；这两种能力没有出厂默认。 */
+/** 生成请求的提交时检查与选择（架构设计 §6.2、§6.6）：不合的拒绝，不悄悄改参数；合成没有出厂默认，生图按 §6.2 的顺序取第一个可用的。 */
 
 const speechModel = (extra: Partial<SpeechModelInfo> = {}): SpeechModelInfo => ({
   modelId: 'tts',

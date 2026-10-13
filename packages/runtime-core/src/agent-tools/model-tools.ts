@@ -193,6 +193,7 @@ const DEFINITIONS: Record<ToolName, ToolInfo> = {
     description: [
       '按提示词生成图片。',
       '这个版本不接受参考图。尺寸、张数、格式要在模型声明的范围内，提示词不能超过 maxPromptChars。',
+      '用户没点名模型时不给 provider 与 model：用用户设的默认，没设时按出厂顺序取第一个能用的（ChatGPT 订阅登录的 Codex › 本机模型 › OpenAI › Google Gemini › 其余已连接的服务）。用户点名了服务或模型才照着给。',
       '给了 video 时，完成后每张图片导入为那个视频的候选素材（jobs_inspect 给出 assetId），不会放上时间线；要用时再 edits_apply 的 addItem。',
       ARTIFACT_RULES,
       SUBMIT_RULES,

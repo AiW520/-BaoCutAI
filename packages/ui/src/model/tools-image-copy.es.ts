@@ -14,6 +14,8 @@ export const es: ToolsImageMessages = {
   providerSize: 'Tamaño establecido por el proveedor', takesSeed: 'Admite una semilla',
   localChip: 'Generado en este ordenador · sin conexión',
   cloudChip: (provider: string) => `En línea · ${provider} · facturado por uso`,
+  agentChip: (provider: string) => `En línea · ${provider} · usa tu suscripción`,
+  agentPaidChip: (provider: string) => `En línea · ${provider} · sin suscripción · puede no funcionar`,
   imageName: (n: number) => `Imagen ${n}`, seed: (seed: number) => `Semilla ${seed}`,
   loadingModel: 'Cargando el modelo', elapsed: (clock: string) => `${clock} transcurridos`, timeLeft: (clock: string) => `Quedan ${clock}`, decoding: 'Decodificando', stepOf: (done: number, total: number) => `Paso ${done}/${total}`,
 };

@@ -37,7 +37,7 @@ const body = style({ marginTop: 2, marginBottom: 0, font: 'ui-sm', color: 'gray-
  * 「用 Codex 画图」（设计稿 settings-agent-provider.jsx:103-119）：挂在 Codex 卡头下面，只在 Codex 已找到时出现。
  * 开关是图片生成的智能体 Provider `agent:codex`（`models.configure`）；能不能打开看模型服务的视图——
  * 这一行出现时探测一次（Codex 重新检测、升级、登录之后再探测一次），没探测过之前开关先不让拨。
- * 打开后它不会被自动选中（图片生成没有出厂默认），想默认用它要在模型 › 图像生成里设。浏览器里开关置灰（`models.configure` 不在 Web 白名单里）。
+ * 打开后它排在生图出厂顺序的第一位（架构设计 §6.2）；用 API key 而不是 ChatGPT 登录时 Runtime 不自动选它，行上照 Provider 给的说明写。浏览器里开关置灰（`models.configure` 不在 Web 白名单里）。
  */
 export function CodexImageRow({ driver, connected }: { driver: DriverInfo; connected: boolean }) {
   const runtime = useRuntime();
@@ -89,7 +89,7 @@ export function CodexImageRow({ driver, connected }: { driver: DriverInfo; conne
             </Badge>
           ) : null}
         </div>
-        <p className={body}>{state.checking ? CODEX_IMAGE_COPY.checking : (state.why ?? CODEX_IMAGE_COPY.body)}</p>
+        <p className={body}>{state.checking ? CODEX_IMAGE_COPY.checking : (state.why ?? state.caution ?? CODEX_IMAGE_COPY.body)}</p>
       </div>
       <Switch
         aria-label={CODEX_IMAGE_COPY.title}

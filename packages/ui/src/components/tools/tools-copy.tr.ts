@@ -185,7 +185,7 @@ export const tr: ToolsMessages = {
     modelPicker: "Görsel modeli",
     noModel: "Henüz kullanılabilir görsel modeli yok",
     noModelBody: "Ayarlar › Modeller › Görsel oluşturma › Bulut modelleri bölümünde anahtarını girerek sağlayıcı bağlayın; ardından modellerini burada seçin.",
-    localNote: "Bu sürüm yerel ağınızdaki diğer bilgisayarları desteklemiyor; Codex görsel oluşturma oturumlarda çalışır.",
+    localNote: "Bu sürüm yerel ağınızdaki diğer bilgisayarları desteklemiyor.",
     aspect: "En boy oranı",
     aspectAuto: "Bu model boyut seçtirmez; sağlayıcı belirler",
     count: "Sayı",

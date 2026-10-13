@@ -390,6 +390,8 @@
     {k: 'outdated', label: '版本过旧', patch: {claude: {ver: '1.0.88'}}},
     {k: 'error', label: '无法运行', patch: {claude: {runError: '启动时报错「env: node: No such file or directory」。'}}},
     {k: 'both', label: '两家都可用', patch: {claude: {ver: '2.2.0'}, codex: {found: true, enabled: true}}},
+    /* 2026-10-12：Codex 用 API key 登录——画图可能不行、费用不在订阅里；自动顺序跳过它，菜单里能选、写提醒。 */
+    {k: 'codexApiKey', label: 'Codex 用 API key 登录', patch: {codex: {found: true, enabled: true, auth: 'api-key'}}},
     /* 「装了好几家」顺带演示四种来源：bun 装的 Codex、Homebrew 的 Gemini、npm 装的 OpenCode、nvm 下 npm 装的 Pi。 */
     /* 2026-09-29 事故重现：本机 codex 停在 0.153.0（模型表里还没有 gpt-6-sol），共用配置却写着 gpt-6-sol。 */
     {k: 'modelGate', label: '默认模型需升级', patch: {codex: {found: true, enabled: true, ver: '0.153.0', latest: '0.158.0',

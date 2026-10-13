@@ -18,6 +18,8 @@ export const ja: ToolsImageMessages = {
   takesSeed: 'シード指定可',
   localChip: 'このコンピュータで生成 · オフライン',
   cloudChip: (provider) => `オンライン · ${provider} · 使用量に応じて課金`,
+  agentChip: (provider) => `オンライン · ${provider} · ご利用中のサブスクリプション`,
+  agentPaidChip: (provider) => `オンライン · ${provider} · サブスクリプション以外でサインイン · 生成できない場合あり`,
   imageName: (n) => `画像 ${n}`,
   seed: (seed) => `シード ${seed}`,
   loadingModel: 'モデルを読み込み中',

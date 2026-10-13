@@ -218,7 +218,7 @@ export const de: ToolsMessages = {
     modelPicker: "Bildmodell",
     noModel: "Noch kein Bildmodell verfügbar",
     noModelBody: "Unter Einstellungen › Modelle › Bilderzeugung › Cloud-Modelle Anbieter verbinden (Schlüssel eingeben); dann hier Modelle wählen.",
-    localNote: "Andere Netzwerkcomputer werden in dieser Version nicht unterstützt; Codex-Bilderzeugung funktioniert innerhalb von Sitzungen.",
+    localNote: "Andere Netzwerkcomputer werden in dieser Version nicht unterstützt.",
     aspect: "Seitenverhältnis",
     aspectAuto: "Größe nicht wählbar; Anbieter entscheidet",
     count: "Anzahl",

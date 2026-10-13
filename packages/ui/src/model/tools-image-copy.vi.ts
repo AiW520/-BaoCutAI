@@ -18,6 +18,8 @@ export const vi: ToolsImageMessages = {
   takesSeed: 'Nhận seed',
   localChip: 'Tạo trên máy tính này · ngoại tuyến',
   cloudChip: (provider) => `Trực tuyến · ${provider} · tính phí theo mức sử dụng`,
+  agentChip: (provider) => `Trực tuyến · ${provider} · dùng gói đăng ký của bạn`,
+  agentPaidChip: (provider) => `Trực tuyến · ${provider} · không phải gói đăng ký · có thể không chạy`,
   imageName: (n) => `Hình ảnh ${n}`,
   seed: (seed) => `Seed ${seed}`,
   loadingModel: 'Đang tải mô hình',

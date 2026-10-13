@@ -218,7 +218,7 @@ export const ptBR: ToolsMessages = {
     modelPicker: "Modelo de imagem",
     noModel: "Nenhum modelo de imagem pronto ainda",
     noModelBody: "Conecte provedor e chave em Configurações › Modelos › Geração de imagens › Modelos de nuvem; escolha aqui.",
-    localNote: "Outros computadores locais não aceitos nesta versão; Codex gera imagens em sessões.",
+    localNote: "Outros computadores locais não aceitos nesta versão.",
     aspect: "Proporção",
     aspectAuto: "Não pode escolher tamanho; provedor decide",
     count: "Quantidade",

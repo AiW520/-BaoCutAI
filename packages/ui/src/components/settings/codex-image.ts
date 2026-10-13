@@ -31,6 +31,8 @@ export interface CodexImageRowState {
   checking: boolean;
   /** 不能打开（或开着却画不了）时的一句原因；能用时为 null。 */
   why: string | null;
+  /** 能画但不是以 ChatGPT 订阅登录（模型的 `cost` 不是 `subscription`）：Provider 给的说明（可能画不了、出厂顺序跳过它）。 */
+  caution?: string;
 }
 
 /** Codex 已找到、Runtime 也带着这个 Provider 时才有这一行；否则 null。 */
@@ -41,7 +43,11 @@ export function codexImageRow(
 ): CodexImageRowState | null {
   if (driver.id !== 'codex' || driver.state === 'not-installed' || !provider) return null;
   const enabled = provider.config?.enabled ?? false;
-  if (provider.available) return { enabled, ready: enabled, canEnable: true, checking: false, why: null };
+  if (provider.available) {
+    const model = provider.models[0] as (ProviderCapabilityView['models'][number] & { cost?: string; notes?: string }) | undefined;
+    const caution = enabled && model && model.cost !== 'subscription' ? model.notes : undefined;
+    return { enabled, ready: enabled, canEnable: true, checking: false, why: null, ...(caution ? { caution } : {}) };
+  }
   const reason = provider.unavailableReason ?? 'unsupported';
   // 开着的时候 Runtime 每次都会问 Driver，原因是准的；没开时只有探测过才准。
   const known = enabled || probe === 'done';

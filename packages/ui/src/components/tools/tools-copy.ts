@@ -242,7 +242,7 @@ const en = {
     modelPicker: 'Image model',
     noModel: 'No image model available yet',
     noModelBody: 'Connect a provider (enter its key) in Settings › Models › Image generation › Cloud models, then pick its models here.',
-    localNote: 'Other computers on your local network aren’t supported in this version; Codex image generation works inside sessions.',
+    localNote: 'Other computers on your local network aren’t supported in this version.',
     aspect: 'Aspect ratio',
     aspectAuto: 'This model doesn’t let you pick a size; the provider decides',
     count: 'Count',

@@ -20,6 +20,7 @@ import {
   type ModelPage,
 } from '../model/settings-nav.ts';
 import { useShell } from '../state/shell-store.ts';
+import { CapabilityDefault } from './models/capability-default.tsx';
 import { CloudModels } from './models/cloud-models.tsx';
 import { LocalModels } from './models/local-models.tsx';
 import { ModelsDirCard } from './models/models-dir-card.tsx';
@@ -46,7 +47,7 @@ export const CATEGORY_ICON: Record<ModelCategory, ComponentType> = {
 /** 页签的图标（page-settings.jsx:250）。 */
 const PAGE_ICON: Record<ModelPage, ComponentType> = { local: DeviceLaptop, cloud: Cloud, voices: Microphone };
 
-/** 设置中的模型配置（产品设计 §2.1、§7.6），共用设置导航与滚动容器。
+/** 设置中的模型配置（产品设计 §2.1、§7.6），共用设置导航与滚动容器。语音识别、语音合成、图像生成的默认模型在页签之上。
  * 模型类记住本地 / 云端 / 我的声音的最后一页；切换页签不增加历史记录。
  */
 export function ModelSettings({ category, page: requested }: { category: ModelCategory; page?: ModelPage }) {
@@ -79,6 +80,8 @@ export function ModelSettings({ category, page: requested }: { category: ModelCa
         <h1 className={title}>{info.label}</h1>
         <p className={lede}>{info.description}</p>
       </header>
+      {/* 同时有本机与云端模型的能力：一个默认模型放在页签之上，本地、云端页里不再各设一个（产品设计 §7.6）。 */}
+      <CapabilityDefault category={category} />
       {info.pages.length > 1 ? (
         <Tabs
           aria-label={MODELS_PAGE_COPY.tabs(info.label)}

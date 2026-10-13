@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { ProviderUnavailableReason, ProviderView, SeparateModelInfo, TranscribeModelInfo } from '@baocut/protocol';
+import type { ImageModelInfo, ProviderUnavailableReason, ProviderView, SeparateModelInfo, TranscribeModelInfo } from '@baocut/protocol';
 import { checkTranscribeOptions, effectiveChoice, selectModel, type SelectionInput } from './model-selection.ts';
 
 /** 选择的顺序（架构设计 §6.2）：显式 → 用户默认值 → 出厂默认 → `CAPABILITY_NOT_CONFIGURED`。 */
@@ -212,6 +212,68 @@ describe('selectModel', () => {
     // 没有一个分离模型包登记（其他平台）：同样指向安装，不指向配置在线服务。
     expect(() => selectModel({ capability: 'separateAudio', userDefault: null, providers: [local(), openai()] })).toThrow(
       expect.objectContaining({ details: expect.objectContaining({ remedy: expect.objectContaining({ action: 'install-model' }) }) }),
+    );
+  });
+
+  it('生图的出厂默认按顺序取第一个可用的：订阅登录的 Codex → 本机（Turbo 在前）→ OpenAI → Google → 其余在线', () => {
+    const img = (modelId: string, extra: Partial<ImageModelInfo> = {}): ImageModelInfo => ({
+      modelId,
+      label: modelId,
+      sizes: [],
+      aspectRatios: [],
+      defaultSize: null,
+      maxCount: 1,
+      maxPromptChars: 1000,
+      formats: ['png'],
+      defaultFormat: 'png',
+      referenceImages: null,
+      acceptsSeed: false,
+      cost: 'unknown',
+      ...extra,
+    });
+    const imgProvider = (providerId: string, kind: ProviderView['kind'], models: ImageModelInfo[], available = true): ProviderView => ({
+      providerId,
+      kind,
+      label: providerId,
+      config: null,
+      capabilities: { generateImage: { models, available, ...(available ? {} : { unavailableReason: 'not-configured' as const }) } },
+    });
+    const codex = (cost: ImageModelInfo['cost'] = 'subscription', available = true) =>
+      imgProvider('agent:codex', 'agent', [img('image-gen', { default: true, cost })], available);
+    const localImg = (installed = true) =>
+      imgProvider(
+        'local',
+        'local',
+        [
+          img('qwen-image-2.1-turbo@mlx-8bit', installed ? { default: true, cost: 'free-local' } : { available: false, unavailableReason: 'not-installed' }),
+          img('qwen-image-2.1@mlx-4bit', { cost: 'free-local', ...(installed ? {} : { available: false, unavailableReason: 'not-installed' as const }) }),
+        ],
+        installed,
+      );
+    const oa = (available = true) => imgProvider('openai', 'online', [img('gpt-image-2', { default: true })], available);
+    const google = () => imgProvider('google', 'online', [img('gemini-3.1-flash-image', { default: true })]);
+    const other = () => imgProvider('minimax', 'online', [img('image-01', { default: true })]);
+    const auto = (providers: ProviderView[]) => effectiveChoice({ capability: 'generateImage', userDefault: null, providers });
+
+    // 视图顺序不影响结果：顺序由种类与 Provider 决定。
+    expect(auto([other(), google(), oa(), localImg(), codex()])).toEqual({ providerId: 'agent:codex', modelId: 'image-gen', source: 'factory-default' });
+    expect(auto([other(), google(), oa(), localImg(), codex('subscription', false)])).toMatchObject({
+      providerId: 'local',
+      modelId: 'qwen-image-2.1-turbo@mlx-8bit',
+    });
+    // API key 登录的 Codex（cost 不是 subscription）不被自动选中，但可以显式选。
+    expect(auto([oa(), localImg(false), codex('unknown')])).toMatchObject({ providerId: 'openai' });
+    expect(selectModel({ capability: 'generateImage', provider: 'agent:codex', userDefault: null, providers: [codex('unknown')] }).providerId).toBe(
+      'agent:codex',
+    );
+    expect(auto([other(), google(), oa(false), localImg(false)])).toMatchObject({ providerId: 'google' });
+    expect(auto([other(), oa(false), localImg(false)])).toMatchObject({ providerId: 'minimax' });
+    // 用户默认值优先；都不可用时 no-default。
+    expect(effectiveChoice({ capability: 'generateImage', userDefault: { providerId: 'openai', modelId: 'gpt-image-2' }, providers: [codex(), oa()] })).toEqual(
+      { providerId: 'openai', modelId: 'gpt-image-2', source: 'user-default' },
+    );
+    expect(() => selectModel({ capability: 'generateImage', userDefault: null, providers: [localImg(false), oa(false), codex('unknown')] })).toThrow(
+      expect.objectContaining({ details: expect.objectContaining({ capability: 'generateImage', reason: 'no-default' }) }),
     );
   });
 

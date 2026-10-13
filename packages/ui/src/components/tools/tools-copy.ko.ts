@@ -198,7 +198,7 @@ export const ko: ToolsMessages = {
     modelPicker: '이미지 모델',
     noModel: '아직 사용할 수 있는 이미지 모델이 없습니다',
     noModelBody: '설정 › 모델 › 이미지 생성 › 클라우드 모델에서 공급자를 연결(키 입력)한 뒤 여기서 모델을 선택하세요.',
-    localNote: '이 버전은 로컬 네트워크의 다른 컴퓨터를 지원하지 않습니다. Codex 이미지 생성은 세션 안에서 사용할 수 있습니다.',
+    localNote: '이 버전은 로컬 네트워크의 다른 컴퓨터를 지원하지 않습니다.',
     aspect: '화면 비율',
     aspectAuto: '이 모델은 크기를 고를 수 없으며 공급자가 정합니다',
     count: '개수',

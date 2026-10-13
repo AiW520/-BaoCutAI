@@ -118,7 +118,7 @@ export const tr: AgentMessages = {
 
   codexImage: {
     title: "Codex ile görsel oluştur",
-    body: "Anahtar gerekmez; Codex aboneliğinizi kullanır. Her seferinde bir görsel oluşturur, boyut ve kaliteyi yok sayar, API üzerinden oluşturmaya göre 5–10 kat yavaştır. Açılınca hem bcut image hem oturumlardaki ajanlar seçebilir (“Codex” adıyla). Sizin yerinize seçilmez; varsayılan kullanmak için Modeller › Görsel oluşturma › Bulut modelleri bölümünde varsayılan yapın.",
+    body: 'Anahtar gerekmez; Codex aboneliğinizi kullanır. Tek seferde bir görsel, boyut ve kaliteyi yok sayar, API’den 5–10 kat yavaştır. Açıldığında görsel oluşturmanın otomatik seçiminde ilk sıradadır: Modeller › Görsel oluşturma altında başka bir varsayılan model ayarlamadıkça araç sayfası, bcut image ve Agent’lar bunu kullanır. Codex’e ChatGPT yerine API anahtarıyla giriş yapıldıysa çizim çalışmayabilir ve otomatik seçilmez.',
     checking: "Bu bilgisayardaki Codex ile görsel oluşturulabildiği denetleniyor…",
     on: "Açık",
     period: '.',

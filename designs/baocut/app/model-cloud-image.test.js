@@ -3,7 +3,8 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const I = require('./model-cloud-image.js');
 
-const codexOk = {found: true, ver: '0.136.0', loggedIn: true, runError: null};
+const codexOk = {found: true, ver: '0.136.0', loggedIn: true, auth: 'chatgpt', runError: null};
+const codexApiKey = Object.assign({}, codexOk, {auth: 'api-key'});
 const list = (o) => I.engines(Object.assign({saved: ['openai', 'google'], codex: {h: codexOk, on: true}, installed: (id) => id === I.LOCAL_ID}, o));
 
 test('三族 id：cloud / agent / local 互斥，parse 只认 cloud:<p>/<m>', () => {
@@ -83,27 +84,32 @@ test('Codex 就绪门：未装 / 版本过旧 / 未登录 / 开关关着各给�
   assert.equal(I.codexReady({found: true, ver: '0.136.0', loggedIn: false}, true).problem, 'login');
   assert.equal(I.codexReady(codexOk, false).problem, 'off');
   assert.equal(I.codexReady(codexOk, true).ready, true);
+  assert.equal(I.codexReady(codexOk, true).caution, null);
+  // API key 登录（2026-10-12）：能选，但带提醒；开关照样能开
+  assert.deepEqual(I.codexReady(codexApiKey, true), {ready: true, why: null, problem: null, caution: I.CODEX_API_KEY_CAUTION});
+  assert.equal(I.codexCanEnable(codexApiKey), true);
   assert.equal(I.codexCanEnable({found: true, ver: '0.129.9', loggedIn: true}), false);
   assert.equal(I.codexCanEnable(codexOk), true);
 });
 
-test('engines：三族一张表；已连的云端在前；Codex 不被隐式选中；本地按平台', () => {
+test('engines：三族一张表，顺序即自动顺序：能画的 Codex › 本地（Turbo 在前）› 已连的云端 › 没连的云端 › 画不了的 Codex', () => {
   const l = list();
-  assert.ok(l.some((e) => e.id === I.CODEX_ID && e.ready));
+  const fam = (xs) => xs.map((e) => (e.family === 'cloud' ? `cloud:${e.ready ? 'on' : 'off'}` : e.family === 'local' ? e.id : e.family));
+  assert.deepEqual(fam(l).slice(0, 5), ['agent', I.LOCAL_TURBO_ID, I.LOCAL_ID, 'cloud:on', 'cloud:on']);
+  assert.deepEqual(l.filter((e) => e.family === 'cloud' && e.ready).map((e) => e.provider), ['openai', 'google']);
+  assert.equal(fam(list({codex: {h: codexOk, on: false}})).at(-1), 'agent', 'Codex 画不了时排最后');
   assert.ok(l.some((e) => e.id === I.LOCAL_ID && e.ready));
   assert.ok(l.find((e) => e.provider === 'openai').ready);
   assert.equal(l.find((e) => e.provider === 'zhipu').ready, false);
-  assert.equal(I.preferred(l, I.CODEX_ID), I.CODEX_ID, '用户显式把默认设成 Codex 且就绪 → 用 Codex');
-  assert.notEqual(I.preferred(l, null), I.CODEX_ID, '没有默认时回落不落到 Codex');
   assert.equal(I.preferred(l, 'cloud:google/gemini-3-pro-image'), 'cloud:google/gemini-3-pro-image');
-  assert.equal(I.preferred(l, 'cloud:zhipu/glm-image'), 'cloud:openai/gpt-image-2.5-flare', '默认那家没连就落第一只就绪的');
+  assert.equal(I.preferred(l, 'cloud:zhipu/glm-image'), I.CODEX_ID, '默认那家没连就按自动顺序取');
   const none = I.engines({saved: [], codex: {h: null, on: false}, installed: () => false});
   assert.equal(I.anyReady(none), false);
   assert.equal(I.preferred(none, null), null);
   const local = I.engines({saved: [], codex: {h: null, on: false}, installed: () => true, platform: 'macos-arm64'});
   assert.equal(I.preferred(local, I.LOCAL_ID), I.LOCAL_ID, '已安装的本地默认值用于新表单');
-  assert.equal(I.preferred(local, null), null, '没有偏好时不擅自选择本地模型');
-  assert.equal(I.preferred(local, I.CODEX_ID), null, '默认是 Codex 但没装：回落到第一只就绪的云端，没有云端就是 null');
+  assert.equal(I.preferred(local, null), I.LOCAL_TURBO_ID, '没有默认时自动取本地，Turbo 在前');
+  assert.equal(I.preferred(local, I.CODEX_ID), I.LOCAL_TURBO_ID, '默认是 Codex 但没装：按自动顺序回落');
   const win = I.engines({saved: [], codex: {h: null, on: false}, installed: () => true, platform: 'windows-x64'});
   assert.equal(win.find((e) => e.id === I.LOCAL_ID).ready, true);
   for (const platform of ['windows-x64', 'linux-x64', 'macos-arm64']) {
@@ -118,22 +124,25 @@ test('engines：三族一张表；已连的云端在前；Codex 不被隐式选�
   }
 });
 
-test('默认生图模型是 Codex（2026-09-27 裁决）：显式默认照用，隐式回落永不落到 Codex', () => {
-  const first = 'cloud:openai/gpt-image-2.5-flare';
-  // 显式：默认 = Codex 且就绪 → Codex
-  assert.equal(I.preferred(list(), I.CODEX_ID), I.CODEX_ID);
-  // 默认 = Codex 但没就绪（开关关着 / 没装 / 没登录 / 太旧）→ 第一只就绪的云端，不清存着的默认（preferred 只读）
-  assert.equal(I.preferred(list({codex: {h: codexOk, on: false}}), I.CODEX_ID), first);
-  assert.equal(I.preferred(list({codex: {h: null, on: true}}), I.CODEX_ID), first);
-  assert.equal(I.preferred(list({codex: {h: Object.assign({}, codexOk, {loggedIn: false}), on: true}}), I.CODEX_ID), first);
-  assert.equal(I.preferred(list({codex: {h: Object.assign({}, codexOk, {ver: '0.120.0'}), on: true}}), I.CODEX_ID), first);
-  // 没有默认（每次选择）→ 就算 Codex 是唯一就绪的也不选它
-  assert.equal(I.preferred(list(), null), first);
+test('自动选择（2026-10-12 裁决，取代 2026-09-27）：Codex › 本地 › OpenAI › Gemini › 其他；API key 登录的 Codex 不自动选', () => {
+  // 没有默认 → Codex（以 ChatGPT 订阅登录、开关开着）
+  assert.equal(I.preferred(list(), null), I.CODEX_ID);
+  // Codex 画不了（开关关着 / 没装 / 没登录 / 太旧）→ 本地 Turbo（装了的话）→ 第一只已连的云端
+  assert.equal(I.preferred(list({codex: {h: codexOk, on: false}}), null), I.LOCAL_ID, '只装了基础版时用基础版');
+  assert.equal(I.preferred(list({codex: {h: null, on: true}, installed: () => true, platform: 'macos-arm64'}), null), I.LOCAL_TURBO_ID);
+  assert.equal(I.preferred(list({codex: {h: Object.assign({}, codexOk, {loggedIn: false}), on: true}, installed: () => false}), null), 'cloud:openai/gpt-image-2.5-flare');
+  assert.equal(I.preferred(list({codex: {h: codexOk, on: false}, installed: () => false, saved: ['google', 'minimax']}), null), 'cloud:google/gemini-3-pro-image');
+  // API key 登录：自动跳过，设成默认或手动选照用
+  const paid = list({codex: {h: codexApiKey, on: true}});
+  assert.equal(I.engineOf(paid, I.CODEX_ID).caution, I.CODEX_API_KEY_CAUTION);
+  assert.equal(I.preferred(paid, null), I.LOCAL_ID);
+  assert.equal(I.preferred(paid, I.CODEX_ID), I.CODEX_ID);
+  // 默认是 Codex 但没就绪 → 按自动顺序回落，不清存着的默认（preferred 只读）
+  assert.equal(I.preferred(list({codex: {h: codexOk, on: false}}), I.CODEX_ID), I.LOCAL_ID);
   const onlyCodex = I.engines({saved: [], codex: {h: codexOk, on: true}, installed: () => false});
-  assert.equal(I.anyReady(onlyCodex), true);
-  assert.equal(I.preferred(onlyCodex, null), null);
-  assert.equal(I.preferred(onlyCodex, ''), null);
-  assert.equal(I.preferred(onlyCodex, I.CODEX_ID), I.CODEX_ID);
+  assert.equal(I.preferred(onlyCodex, null), I.CODEX_ID);
+  const onlyPaid = I.engines({saved: [], codex: {h: codexApiKey, on: true}, installed: () => false});
+  assert.equal(I.preferred(onlyPaid, null), null, '只剩 API key 登录的 Codex：自动不选，等用户自己选');
 });
 
 test('自建 API 提供方：保守默认，勾了才开参考图 / 种子', () => {

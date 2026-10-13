@@ -27,7 +27,7 @@ import type { TranscribeProvider } from './transcribe-provider.ts';
  *
  * `transcribe` 来自识别的模型包，`synthesizeSpeech` 来自语音合成的模型包（`capability: 'synthesize'`），`generateImage` 来自
  * 文生图的模型包（`capability: 'image'`），`separateAudio` 来自分离的模型包（`capability: 'separate'`，翻译配音用，由 Runtime
- * 直接交给 Model Worker，不经这里的执行者）。合成与生图没有出厂默认（§6.2）：模型的 `default` 只决定显式指定
+ * 直接交给 Model Worker，不经这里的执行者）。合成没有出厂默认，生图的出厂顺序里本地排在订阅 Codex 之后、在线服务之前（§6.2）：模型的 `default` 决定显式指定
  * `provider: 'local'` 而不给模型时用哪个；分离与识别有出厂默认，`default` 就是它。模型包按平台筛过（`platformBundles`），
  * 这台机器上不列出的模型包不会成为默认。
  */

@@ -90,7 +90,9 @@ description: 媒体的机制：从链接下载、转码与合并、取帧看画�
 
 **先看能力**：{{tool:models_capabilities}}，{{arg:capability}} 给 `generateImage`。`effective` 是不指定服务时用谁（null 时不指定服务的调用会被拒），`usableProviders` 是能用的服务；再看要用的模型的 `sizes`、`aspectRatios`、`maxCount`、`maxPromptChars`、`acceptsSeed`、`cost` 与 `notes`。各服务差别很大：
 
-- 本机（`local`）不会自动成为默认：`effective` 不是它时，提交带 {{arg:provider}} `local` 与 {{arg:model}}。本机模型的提示词上限可能只有一千字左右，一次一张，一张要几分钟到十几分钟。
+- **用哪个服务**：用户没点名模型时不给 {{arg:provider}} 与 {{arg:model}}，用 `effective`——用户在设置里设的默认，没设时按出厂顺序取第一个能用的：以 ChatGPT 订阅登录的 Codex（`agent:codex`）› 本机模型（Turbo 在前）› OpenAI › Google Gemini › 其余已连接的服务。用户点名了服务或模型（「用 OpenAI 画」「用本机的 Turbo」）才照着给 {{arg:provider}} 与 {{arg:model}}；别为了快或省自己换服务。
+- 本机（`local`）模型的提示词上限可能只有一千字左右，一次一张，一张要几分钟到十几分钟。
+- Codex 用 API key 而不是 ChatGPT 订阅登录时，它的 `cost` 为 `unknown`、`notes` 写明可能画不了，出厂顺序会跳过它；用户点名要它时照样可以给。
 - 智能体服务（如 `agent:codex`）可能不收尺寸与种子：`sizes` 与 `aspectRatios` 都为空的模型不给 {{arg:size}} 和 {{arg:seed}}，在提示词里写明横竖与构图，用的时候再裁。
 - `maxCount` 为 1 的模型要几张就分几次提交；一次只跑一个任务的服务会排队。张数多或模型慢时，先告诉用户大约要等多久。
 

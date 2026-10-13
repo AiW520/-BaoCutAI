@@ -190,6 +190,27 @@ export const fr: ModelsMessages = {
     saved: "Enregistré",
     failed: (message: string) => `Impossible d’enregistrer : ${message}`,
   },
+  capDefault: {
+    label: 'Modèle par défaut',
+    desc: {
+      transcribe:
+        'Utilisé quand une transcription, la ligne de commande ou l’Agent n’indiquent pas de modèle. Les modèles locaux, cloud et des autres ordinateurs du réseau sont tous listés ; ceux que vous ne pouvez pas encore utiliser sont grisés avec la raison. Choisir un modèle dans un outil ne change que cette exécution.',
+      synthesizeSpeech:
+        'Utilisé quand la génération vocale, les doublages, la ligne de commande ou l’Agent n’indiquent pas de modèle. Sans modèle par défaut, vous choisissez à chaque fois. Choisir un modèle dans un outil ne change que cette exécution.',
+      generateImage:
+        'Utilisé quand la génération d’images, la ligne de commande ou l’Agent n’indiquent pas de modèle. Automatique prend le premier disponible : Codex connecté avec ChatGPT › modèle local › OpenAI › Google Gemini › autres fournisseurs connectés. Choisir un modèle dans un outil ne change que cette exécution.',
+    },
+    auto: 'Automatique',
+    autoUses: (name: string) => `Automatique · utilise ${name}`,
+    autoNothing: 'Automatique · rien de disponible pour l’instant',
+    autoDesc: { transcribe: 'Choisit le modèle local adapté à cet ordinateur', generateImage: 'Codex › local › OpenAI › Gemini › autres' },
+    unset: 'Non défini',
+    unsetDesc: 'Choisir un modèle à chaque fois',
+    localGroup: 'Cet ordinateur',
+    localWhy: (why: string) => `${why} · téléchargez-le dans Modèles locaux`,
+    cloudWhy: (why: string) => `${why} · connectez-le dans Modèles cloud`,
+    unavailable: (label: string) => `${label} (indisponible)`,
+  },
   codexCard: {
     title: "Codex CLI",
     on: "Activé · abonnement Codex, sans clé · une image à la fois · taille ignorée · 5–10× plus lent",

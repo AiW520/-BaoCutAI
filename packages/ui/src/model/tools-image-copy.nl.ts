@@ -19,6 +19,8 @@ export const nl: ToolsImageMessages = {
   takesSeed: "Accepteert een seed",
   localChip: "Gegenereerd op deze computer · offline",
   cloudChip: (provider: string) => `Online · ${provider} · gefactureerd op basis van gebruik`,
+  agentChip: (provider: string) => `Online · ${provider} · gebruikt je abonnement`,
+  agentPaidChip: (provider: string) => `Online · ${provider} · geen abonnement · werkt mogelijk niet`,
   imageName: (n: number) => `Afbeelding ${n}`,
   seed: (seed: number) => `Seed ${seed}`,
   loadingModel: 'Model laden',

@@ -1,5 +1,7 @@
 /* 能力页（product-design §7.6）：每种能力一页，本机模型与 API 提供方的模型在同一页，不分本地 / 云端两个 Tab。从上到下：
-   ① 默认模型——一个选择器，按本机、各 API 提供方、智能体分组，不可用的项置灰并写明原因；
+   ① 默认模型——一个选择器，放在页顶，本机、API 提供方与智能体的模型都在里面，按这种能力的自动顺序分组（图像生成：能画的
+      Codex › 本机 › API 提供方；2026-10-12 用户裁决，之后新增的同时有本机与云端模型的能力照此办理），不可用的项置灰并写明原因；
+      工具页、编辑器、命令行与 Agent 不指定模型时都用它。第一项清掉默认：转录与图像生成是「自动」（写明此刻用谁），合成是「未设置」；
    ② 这种能力的参数（并发；文本生成另有推理强度）；
    ③ 本机模型（settings-local.jsx 的目录、安装、检查与试用，默认行交给 ①）；
    ④ API 提供方：目录里有这种能力的全部提供方（BC_VENDORS.capCatalog，含没添加的与自建端点），一家一组，带图标；
@@ -21,7 +23,7 @@
     text: {max: 16, desc: '润色、翻译时同时发出的请求上限（1–16）。遇到限速就调低。'},
     image: {max: 4, desc: '批量生图时同一家同时发出的请求上限（1–4）。遇到限速就调低。'},
   };
-  const AUTO_LABEL = {transcribe: '自动选择', text: '自动选择'};
+  const AUTO_LABEL = {transcribe: '自动选择', text: '自动选择', image: '自动'};
 
   /* 当前默认：API 提供方的优先（四种能力各一个存法），否则本机 */
   function readDefault(app, cap, cat) {
@@ -55,8 +57,16 @@
     const groups = V().choices(cap, app.providerSettings, app.providerAccounts, now);
     const codexH = (app.harnessList || []).find((h) => h.id === 'codex') || null;
     const codex = cap === 'image' ? IM().codexReady(codexH, app.codexImageGen) : null;
+    /* 图像生成的「自动」此刻落到谁：与工具页开页同一个顺序（model-cloud-image.js `preferred`） */
+    const engines = window.useImageEngines(app);
+    const autoUses = (() => {
+      if (cap !== 'image') return null;
+      const e = IM().engineOf(engines, IM().preferred(engines, null));
+      return e ? (e.family === 'cloud' ? `${e.name} · ${IM().modelIn(engines, IM().preferred(engines, null)).model}` : e.name) : null;
+    })();
+    const autoText = cap === 'image' ? (autoUses ? `自动 · 现在用 ${autoUses}` : '自动 · 现在还没有能用的') : null;
     const label = (() => {
-      if (!cur) return AUTO_LABEL[cap] || (cat && LM().hasAuto(cat) ? '自动选择' : '未设置');
+      if (!cur) return autoText || AUTO_LABEL[cap] || (cat && LM().hasAuto(cat) ? '自动选择' : '未设置');
       if (cur.indexOf('local:') === 0) { const m = local.find((x) => x.id === cur.slice(6)); return m ? m.name : cur.slice(6); }
       if (cur.indexOf('agent:') === 0) return `Codex 画图${codex && codex.ready ? '' : '（不可用）'}`;
       const [pid, ...rest] = cur.slice(6).split('/');
@@ -64,12 +74,17 @@
       return `${g ? g.vendor.name : pid} · ${rest.join('/')}${g && g.ready ? '' : '（不可用）'}`;
     })();
     const pick = (v) => { writeDefault(app, cap, cat, v); setOpen(false); };
+    /* 智能体一组：能画时排在最前（自动顺序的第一位），画不了时排最后、置灰写原因；API key 登录时能选，写提醒 */
+    const codexGroup = codex ? <><MenuRule /><MenuHead>智能体</MenuHead>
+      <MenuItem label="Codex 画图" sub={codex.ready ? (codex.caution || '用你的 Codex 订阅 · 一次一张 · 慢 5–10 倍') : codex.why} disabled={!codex.ready && cur !== IM().CODEX_ID}
+        check={cur === IM().CODEX_ID} onClick={() => pick(IM().CODEX_ID)} /></> : null;
     const autoOk = AUTO_LABEL[cap] || (cat && LM().hasAuto(cat));
     const desc = cap === 'text' ? '润色、翻译、生成章节时用它。' : cat ? LM().DEFAULT_DESC[cat] : '';
     return <window.ShellRow label="默认模型" desc={`${desc} 不可用的项置灰并写明原因。`}>
       <Picker size="s" value={label} open={open} popAlign="right" popWidth={320} onClick={() => setOpen(!open)} onClose={() => setOpen(false)}>
         <Menu>
-          {autoOk ? <MenuItem label={AUTO_LABEL[cap] || '自动选择'} sub={cap === 'text' ? '按任务挑一个能用的模型' : '按这台电脑与任务挑'} check={!cur} onClick={() => pick('')} /> : null}
+          {autoOk ? <MenuItem label={autoText || AUTO_LABEL[cap] || '自动选择'} sub={cap === 'image' ? '按顺序取第一个能用的：Codex › 本机 › OpenAI › Gemini › 其他' : cap === 'text' ? '按任务挑一个能用的模型' : '按这台电脑与任务挑'} check={!cur} onClick={() => pick('')} /> : null}
+          {codex && codex.ready ? codexGroup : null}
           {local.length ? <><MenuRule /><MenuHead>本机</MenuHead></> : null}
           {local.map((m) => <MenuItem key={m.id} label={m.name} disabled={!ready(m)} sub={ready(m) ? '在这台电脑上运行 · 不联网' : '未安装 · 在下面的本机模型里下载'}
             check={cur === 'local:' + m.id} onClick={() => pick('local:' + m.id)} />)}
@@ -79,9 +94,7 @@
               return <MenuItem key={m.id} label={m.id} sub={[m.desc, g.state.k === 'warn' ? `首选账号 ${g.state.label}` : ''].filter(Boolean).join(' · ') || undefined} check={cur === v} onClick={() => pick(v)} />; })
               : <MenuItem label={g.why} sub="在 API 提供方页添加账号或启用后可选" disabled />}
           </React.Fragment>)}
-          {codex ? <><MenuRule /><MenuHead>智能体</MenuHead>
-            <MenuItem label="Codex 画图" sub={codex.ready ? '用你的 Codex 订阅 · 一次一张 · 慢 5–10 倍' : codex.why} disabled={!codex.ready && cur !== IM().CODEX_ID}
-              check={cur === IM().CODEX_ID} onClick={() => pick(IM().CODEX_ID)} /></> : null}
+          {codex && !codex.ready ? codexGroup : null}
           {!groups.length && !local.length && !codex ? <><MenuRule /><MenuItem label="还没有能用的模型" sub="先在 API 提供方页添加一家" disabled /></> : null}
         </Menu>
       </Picker>

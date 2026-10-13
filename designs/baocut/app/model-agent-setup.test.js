@@ -156,7 +156,7 @@ test('装着却用不了的不参与挑选；可用性分出 attention，不再�
 });
 
 test('每个演示场景都落在预期状态上', () => {
-  const want = {default: 'ready', fresh: 'missing', login: 'login', outdated: 'outdated', error: 'error', both: 'ready', many: 'ready', modelGate: 'ready', opencode1: 'ready'};
+  const want = {default: 'ready', fresh: 'missing', login: 'login', outdated: 'outdated', error: 'error', both: 'ready', many: 'ready', modelGate: 'ready', opencode1: 'ready', codexApiKey: 'ready'};
   for (const sc of S.SCENARIOS) assert.equal(S.health({...claude, ...(S.scenarioPatch(sc.k).claude || {})}), want[sc.k], sc.k);
 });
 

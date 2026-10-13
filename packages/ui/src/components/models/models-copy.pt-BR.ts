@@ -190,6 +190,27 @@ export const ptBR: ModelsMessages = {
     saved: "Salvo",
     failed: (message: string) => `Não foi possível salvar: ${message}`,
   },
+  capDefault: {
+    label: 'Modelo padrão',
+    desc: {
+      transcribe:
+        'Usado quando uma transcrição, a linha de comando ou o Agent não indicam modelo. Modelos locais, na nuvem e de outros computadores da rede ficam todos aqui; os que ainda não podem ser usados aparecem esmaecidos com o motivo. Escolher um modelo numa ferramenta só muda aquela execução.',
+      synthesizeSpeech:
+        'Usado quando a geração de voz, as dublagens, a linha de comando ou o Agent não indicam modelo. Sem padrão, você escolhe um modelo a cada vez. Escolher um modelo numa ferramenta só muda aquela execução.',
+      generateImage:
+        'Usado quando a geração de imagens, a linha de comando ou o Agent não indicam modelo. Automático pega o primeiro disponível: Codex conectado com ChatGPT › modelo local › OpenAI › Google Gemini › outros provedores conectados. Escolher um modelo numa ferramenta só muda aquela execução.',
+    },
+    auto: 'Automático',
+    autoUses: (name: string) => `Automático · agora usa ${name}`,
+    autoNothing: 'Automático · nada disponível ainda',
+    autoDesc: { transcribe: 'Escolhe o modelo local adequado a este computador', generateImage: 'Codex › local › OpenAI › Gemini › outros' },
+    unset: 'Não definido',
+    unsetDesc: 'Escolher um modelo a cada vez',
+    localGroup: 'Este computador',
+    localWhy: (why: string) => `${why} · baixe em Modelos locais`,
+    cloudWhy: (why: string) => `${why} · conecte em Modelos na nuvem`,
+    unavailable: (label: string) => `${label} (indisponível)`,
+  },
   codexCard: {
     title: "Codex CLI",
     on: "Ativado · assinatura Codex, sem chave · uma imagem por vez · tamanho ignorado · 5–10× mais lento",

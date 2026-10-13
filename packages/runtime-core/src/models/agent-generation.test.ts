@@ -157,8 +157,22 @@ describe('智能体图片 Provider：列出、可用性与配置（不需要 ffp
     expect(model!.notes).toMatch(/一张/);
     expect(model!.notes).toMatch(/同一时间只跑一个/);
     expect(model!.notes).toMatch(/额度未知/);
-    // 不是出厂默认。
-    expect(capabilities.generateImage).toMatchObject({ default: null, effective: null });
+    // 没有用户默认值时，ChatGPT 登录的 Codex 排在出厂默认顺序的第一位（架构设计 §6.2）。
+    expect(capabilities.generateImage).toMatchObject({
+      default: null,
+      effective: { providerId: PROVIDER, modelId: 'image-gen', source: 'factory-default' },
+    });
+  });
+
+  it('API key 登录：照样可用、可以显式选，但费用不在订阅里、出厂默认跳过它', async () => {
+    side = await startSide({ auth: 'api-key' });
+    const { capabilities } = await side.client.request('models.capabilities', {});
+    const entry = capabilities.generateImage.providers.find((p) => p.providerId === PROVIDER)!;
+    expect(entry).toMatchObject({ available: true });
+    const [model] = entry.models as ImageModelInfo[];
+    expect(model).toMatchObject({ cost: 'unknown' });
+    expect(model!.notes).toMatch(/API key/);
+    expect(capabilities.generateImage.effective).toBeNull();
   });
 
   it('不可用的原因与补救：没有安装、没有登录、版本太旧、没有启用', async () => {
@@ -222,12 +236,17 @@ describe('智能体图片 Provider：列出、可用性与配置（不需要 ffp
       enabledAt: expect.any(String),
     });
 
-    // 启用了也不是出厂默认：不指定 provider 时提示设默认值。
-    const error = await rejection(side.client.request('models.generateImage', { prompt: 'a cat' }));
-    expect(error.details).toMatchObject({ reason: 'no-default', remedy: { action: 'set-default', providerId: PROVIDER } });
+    // 启用又能用：没有用户默认值时它是出厂默认（§6.2）。
+    expect((await side.client.request('models.capabilities', {})).capabilities.generateImage.effective).toMatchObject({
+      providerId: PROVIDER,
+      source: 'factory-default',
+    });
 
     await side.client.request('models.configure', { providerId: PROVIDER, enabled: false });
     expect(await agentEntry(side)).toMatchObject({ available: false, unavailableReason: 'not-configured' });
+    // 停用之后出厂默认里没有它，别的也都不可用：不指定 provider 时拒绝。
+    const error = await rejection(side.client.request('models.generateImage', { prompt: 'a cat' }));
+    expect(error.details).toMatchObject({ reason: 'no-default' });
   });
 
   it('默认开启；手动关闭后重启仍关闭，重新开启后可用', async () => {

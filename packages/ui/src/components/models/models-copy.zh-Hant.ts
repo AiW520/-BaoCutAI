@@ -172,6 +172,27 @@ export const zhHant: ModelsMessages = {
     saved: '已儲存',
     failed: (message: string) => `無法儲存：${message}`,
   },
+  capDefault: {
+    label: '預設模型',
+    desc: {
+      transcribe:
+        '轉寫、命令列與 Agent 沒指定模型時使用它。本機、雲端與區域網路中其他電腦的模型都在這裡；暫時不能用的會變灰並寫明原因。在工具頁手動更換只影響那一次。',
+      synthesizeSpeech:
+        '生成語音、配音、命令列與 Agent 沒指定模型時使用它。不設預設就每次自己選。在工具頁手動更換只影響那一次。',
+      generateImage:
+        '生成圖片、命令列與 Agent 沒指定模型時使用它。自動依順序取第一個能用的：以 ChatGPT 登入的 Codex › 本機模型 › OpenAI › Google Gemini › 其餘已連接的服務。在工具頁手動更換只影響那一次。',
+    },
+    auto: '自動',
+    autoUses: (name: string) => `自動 · 目前使用 ${name}`,
+    autoNothing: '自動 · 目前還沒有能用的',
+    autoDesc: { transcribe: '依這台電腦挑選合適的本機模型', generateImage: 'Codex › 本機 › OpenAI › Gemini › 其他' },
+    unset: '未設定',
+    unsetDesc: '每次自己選',
+    localGroup: '這台電腦',
+    localWhy: (why: string) => `${why} · 在「本機模型」中下載`,
+    cloudWhy: (why: string) => `${why} · 在「雲端模型」中連接`,
+    unavailable: (label: string) => `${label}（無法使用）`,
+  },
   codexCard: {
     title: 'Codex CLI',
     on: '已開啟 · 使用你的 Codex 訂閱，不需要金鑰 · 一次一張 · 忽略尺寸 · 慢 5–10 倍',

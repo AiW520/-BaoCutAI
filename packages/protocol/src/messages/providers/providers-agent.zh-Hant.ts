@@ -6,6 +6,8 @@ export const zhHant: ProvidersAgentMessages = {
   codexImageNotes:
     '使用這台電腦上已登入的 Codex 帳號生成：每次一張 PNG，一次只執行一個任務，通常需要一兩分鐘。無法指定尺寸和 seed（包含這些參數的請求會被拒絕），' +
     '像素尺寸以生成結果為準。會使用你的訂閱額度，剩餘額度不明。開啟即表示同意將提示詞傳送到你的 Codex 帳號。',
+  codexImageNotesApiKey:
+    "Codex 以 API key 等非 ChatGPT 訂閱方式登入：畫圖可能無法使用，費用記在該帳號上、不在訂閱內。BaoCut 不會自動選它，想試請手動選擇。每次一張 PNG，尺寸與 seed 不能指定。",
   imagesOnly: (p) => `${p.label} 只能生成圖片`,
   onePngOnly: (p) => `${p.label} 一次只生成一張 PNG，且不接受尺寸或 seed`,
   unavailable: (p) => `${p.label} 無法使用：${p.message}`,

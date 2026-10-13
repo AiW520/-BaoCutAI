@@ -139,7 +139,7 @@ export const ptBR: AgentMessages = {
 
   codexImage: {
     title: "Desenhar com Codex",
-    body: "Sem chave; usa assinatura Codex. Uma imagem por vez, ignora tamanho e qualidade, 5–10× mais lento que API. Ativado, bcut image e agentes podem escolher “Codex”. Nunca escolhido sozinho; defina padrão em Modelos › Geração de imagens › Modelos de nuvem.",
+    body: 'Não precisa de chave; usa sua assinatura do Codex. Uma imagem por vez, ignora tamanho e qualidade e é 5–10× mais lento que a API. Ativado, ele vem primeiro na escolha automática para gerar imagens: a página da ferramenta, o bcut image e os Agents o usam, a menos que você defina outro modelo padrão em Modelos › Geração de imagens. Se o Codex estiver conectado com uma chave de API em vez do ChatGPT, pode não gerar imagens e não é escolhido automaticamente.',
     checking: "Verificando se Codex local desenha…",
     on: "Ativado",
 

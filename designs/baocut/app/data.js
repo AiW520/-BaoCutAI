@@ -2063,7 +2063,7 @@
          新版目录含 GPT-6.1 Sol，按 CLI 自己的次序取第一个 `-sol` 推荐（见 model-agent-setup.js::recommended）。 */
       {id: 'codex', name: 'Codex CLI', cmd: 'codex', found: false, ver: '0.159.0', minVer: '0.120.0', latest: '0.159.0',
        runtimeModel: 'gpt-6.1-sol', configModel: 'gpt-6.1-sol', configModelKnown: true,
-       bin: '/opt/homebrew/bin/codex', realBin: '/opt/homebrew/lib/node_modules/@openai/codex/bin/codex.js', loggedIn: true, runError: null,
+       bin: '/opt/homebrew/bin/codex', realBin: '/opt/homebrew/lib/node_modules/@openai/codex/bin/codex.js', loggedIn: true, auth: 'chatgpt', runError: null,
        install: 'npm install -g @openai/codex',
        installs: [
          {k: 'brew', label: 'Homebrew', needs: 'Homebrew', cmd: 'brew install codex', upgrade: 'brew upgrade codex'},

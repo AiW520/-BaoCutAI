@@ -50,9 +50,10 @@ function groups<M>(options: readonly ToolModelOption<M>[], localGroup: string): 
 
 /**
  * 菜单里一项的两行：云端写模型 ID，下面是不能用的原因或模型的名字；本机写模型的名字，没装好时下面是原因与去哪儿装
- * （设计稿 image-gen.jsx `ModelLine` 的本机一组）。
+ * （设计稿 image-gen.jsx `ModelLine` 的本机一组）；智能体（Codex 画图）写模型的名字，下面是不能用的原因或要提醒的一句。
  */
 function itemText<M>(o: ToolModelOption<M>): { label: string; description: string | null } {
+  if (o.agent) return { label: o.label, description: o.why ?? o.caution ?? null };
   if (o.local) return { label: o.label, description: o.why ? GATE_COPY.localWhere(o.why) : null };
   return { label: o.modelId, description: o.why || o.label !== o.modelId ? (o.why ?? o.label) : null };
 }

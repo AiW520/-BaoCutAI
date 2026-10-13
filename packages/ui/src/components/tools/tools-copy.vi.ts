@@ -185,7 +185,7 @@ export const vi: ToolsMessages = {
     modelPicker: "Mô hình ảnh",
     noModel: "Chưa có mô hình ảnh dùng được",
     noModelBody: "Kết nối nhà cung cấp (nhập khóa) trong Cài đặt › Mô hình › Tạo hình ảnh › Mô hình đám mây, rồi chọn mô hình tại đây.",
-    localNote: "Phiên bản này chưa hỗ trợ máy tính khác trong mạng cục bộ; tạo ảnh Codex hoạt động trong phiên.",
+    localNote: "Phiên bản này chưa hỗ trợ máy tính khác trong mạng cục bộ.",
     aspect: "Tỷ lệ khung hình",
     aspectAuto: "Mô hình này không cho chọn kích thước; nhà cung cấp quyết định",
     count: "Số lượng",

@@ -1299,7 +1299,7 @@ Models 模块把模型服务组织成两条互相独立的轴：**能力**说明
 - **`analyzeVision`** 按用途分别选择模型：每种用途（人物定位、发言人判断、内容区域）有自己的默认模型，互不替代。
 - **`synthesizeSpeech` 的音色**有三种给法，由 Provider 描述声明支持哪几种：预设音色的 ID；参考录音加原文（克隆，来自用户库的音色或视频里的一段，§5.9）；一段文字描述。不支持某种给法的模型在提交时拒绝，不换成别的声音。模型描述的 `voiceModes` 声明接受 `preset`（模型自带、`voices` 里列出的音色）还是 `custom`（供应商账号里的音色 ID，原样交给供应商核对）；`defaultVoice` 为 null 的模型必须给出音色。读音标注（多音字）是输入文本的一部分（`<字|读音>`，读音写声调数字或带调拼音，解析时规范成声调数字，写法见 Model Worker 协议规范 §2.5.2），由适配器转成各模型自己的写法；模型不支持时如实报告，不静默丢弃。
 - **本地合成**（`provider: 'local'`）的模型是 `synthesize` 的本地模型包（§6.3），模型描述另带 `local`：模型族、原生采样率、慢不慢、内置音色是录音还是描述、参考录音的建议时长与读不读原文、描述是自由文本还是封闭词表、接不接受语气说明与情绪、旋钮（`speed`、`cfg`、`steps`）的范围、时长上限、读音标注的写法（同音字、行内拼音、标注或不支持）与许可；念不了的读音标注不让任务失败，按表面文字合成，结果带 `reading-dropped` 警告。三种给法对应请求的 `voice`（模型的说话人或内置音色）、`reference`（参考录音文件加可选的原文；`library:<id>` 直接用音色库条目的录音，不需要在线克隆）与 `voiceDescription`，至多给一个。声音在提交时决定并冻结：不指定时克隆模型用内置音色（随应用分发的一段录音，按请求的语言挑，没有那种语言时取第一只），说话人模型用默认说话人；参考录音（含内置音色的）在提交时读出摘要与长度冻结进 `generation.reference`，执行前按摘要再核对一次，变了或读不出时任务以 `ASSET_MISSING` 失败，不换声音。输出是 WAV。不可商用的模型（OmniVoice 的权重是 CC-BY-NC）在 `license.commercialUse: false` 里说明，由界面在选用前提示。
-- **本地生图**（`provider: 'local'`）的模型是 `image` 的本地模型包（§6.3）。模型描述：一次一张、只出 PNG、不收参考图、接受 `seed`、免费；尺寸只取模型包列出的几档（Qwen-Image-2.1 是长边 1024 的 1:1、16:9、9:16、4:3、3:4、2.35:1，默认 1:1；另收不进画幅菜单的 512×512，供设置页「试画」），请求可以给 `size` 或宽高比，别的在提交时拒绝；提示词至多 1024 个码点；`notes` 提示它在本机生成、要几分钟（candle 在 CPU 上时照实提示要几个小时，§6.5）。`seed` 在提交时冻结：请求没给就抽一个（0..2^32-1）写进 `generation`，重试与重新执行得到同一张图。去噪步数是请求的 `steps`，范围由模型描述的 `local.steps` 给出（Qwen-Image-2.1 为 8–40，界面一次加减 4），不给时用模型的默认值（20）；Qwen-Image-2.1 Turbo 是蒸馏版，sigma 表写死在权重包里，范围是 8–8，只收 8 步；本地的几只生图模型按登记顺序列出，Turbo 在基础版前面；只点名 `local` 不点名模型时用第一个能用的（两只都装了用 Turbo），生图仍没有出厂默认；给了就冻结进 `generation`，在线模型收到 `steps` 在提交时拒绝。界面上，范围上下限相同的模型不给步数输入框，只写「固定 N 步」并说明蒸馏模型不能调；换模型时草稿里的步数保留，提交前按所选模型的范围夹紧。不可商用的模型（Qwen-Image 的许可只许研究与评估）同样在 `license` 里说明。
+- **本地生图**（`provider: 'local'`）的模型是 `image` 的本地模型包（§6.3）。模型描述：一次一张、只出 PNG、不收参考图、接受 `seed`、免费；尺寸只取模型包列出的几档（Qwen-Image-2.1 是长边 1024 的 1:1、16:9、9:16、4:3、3:4、2.35:1，默认 1:1；另收不进画幅菜单的 512×512，供设置页「试画」），请求可以给 `size` 或宽高比，别的在提交时拒绝；提示词至多 1024 个码点；`notes` 提示它在本机生成、要几分钟（candle 在 CPU 上时照实提示要几个小时，§6.5）。`seed` 在提交时冻结：请求没给就抽一个（0..2^32-1）写进 `generation`，重试与重新执行得到同一张图。去噪步数是请求的 `steps`，范围由模型描述的 `local.steps` 给出（Qwen-Image-2.1 为 8–40，界面一次加减 4），不给时用模型的默认值（20）；Qwen-Image-2.1 Turbo 是蒸馏版，sigma 表写死在权重包里，范围是 8–8，只收 8 步；本地的几只生图模型按登记顺序列出，Turbo 在基础版前面；只点名 `local` 不点名模型时用第一个能用的（两只都装了用 Turbo），生图的出厂默认按 §6.2 的顺序，本机模型排在 Codex 之后、在线 Provider 之前；给了就冻结进 `generation`，在线模型收到 `steps` 在提交时拒绝。界面上，范围上下限相同的模型不给步数输入框，只写「固定 N 步」并说明蒸馏模型不能调；换模型时草稿里的步数保留，提交前按所选模型的范围夹紧。不可商用的模型（Qwen-Image 的许可只许研究与评估）同样在 `license` 里说明。
 - **本地音乐生成**（`generateMusic`，`provider: 'local'`）的模型是 `music` 的本地模型包（§6.3），由 audio.cpp 引擎（`audiocpp_cli`）执行，不经 Model Worker：每个任务起一个引擎进程，读模型包目录里的 GGUF，把 WAV 写进 staging，退出即结束（引擎的查找、命令行与输出合同见 Model Worker 协议规范 §4.4）。模型描述：`song`（按风格与歌词，带人声）或 `instrumental`（按风格，无人声）两种方式、只出 WAV、接受 `seed` 与扩散步数 `steps`、免费；`maxStyleChars` 与 `maxLyricsChars` 是风格与歌词的码点上限，`maxDurationSec` 是一次能生成的时长上限（YuE2 3B 为 300 秒），`defaultDurationSec` 是不给预算时的时长（120 秒）；`local` 另带模型族、引擎与它此刻找到的可执行文件、采样率、歌词语言（上游没核实过时 `unverified`）、编排选项（`planning`：`off` 直接生成、`melody` 先规划旋律、`full` 完整规划；YuE2 默认 `melody`）、步数范围（1–50，默认 8）、`slow` 与许可（YuE2 是 CC-BY-NC-4.0，不可商用，`license.commercialUse: false`）。请求的 `maxDurationSec` 是计算预算（换成引擎的语义 token 上限），不是承诺的时长：不给时取 `targetDurationSec`、再没有时用默认预算，`targetDurationSec` 只是创作意图；到了预算的结果带 `output-truncated` 警告。`seed` 在提交时冻结（没给就抽一个），同一台机器上重试得到同一段。没有在线 Provider，也没有出厂默认（§6.2）；引擎是模型包的共享组件（`audiocpp-engine`，§6.3），随模型包下载：没装模型包与权重在而缺引擎组件都报 `not-installed` 并给出安装补救，`detail` 不同（后者点名这个组件）；当前主机平台没有引擎包又没有 `BAOCUT_AUDIOCPP_CLI` 时报 `unsupported`。
 
 **Provider**。来源分三类，实现同一个按能力划分的接口，输出同一份合同；JobManager 之后的校验、发布与应用不分来源（§7.1）。
@@ -1323,10 +1323,10 @@ Models 模块把模型服务组织成两条互相独立的轴：**能力**说明
 
 1. 调用参数里显式给出的 `provider` 与 `model`；
 2. 用户为这种能力设的默认 Provider 与默认模型（§6.8）；
-3. 出厂默认：只有 `transcribe` 与 `separateAudio` 有，本机已安装可用的本地模型包时用 `local`（`separateAudio` 取按 ID 的第一个）。`synthesizeSpeech`、`generateImage`、`generateMusic` 与 `generateText` 没有出厂默认，本地 Provider 提供它们之后也没有；
+3. 出厂默认：`transcribe` 与 `separateAudio` 在本机已安装可用的本地模型包时用 `local`（`separateAudio` 取按 ID 的第一个）。`generateImage`（2026-10-12 用户裁决）按固定顺序取第一个此刻可用的：已启用、并以 ChatGPT 订阅登录的 `agent:codex`（§6.9），本机的生图模型包（`local` 的默认模型，即列在最前、可用的那一个：Turbo 在基础版之前），OpenAI，Google Gemini，其余已连接的在线 Provider（按能力视图的顺序）；都不可用时没有。`synthesizeSpeech`、`generateMusic` 与 `generateText` 没有出厂默认，本地 Provider 提供它们之后也没有；
 4. 都没有：调用以 `CAPABILITY_NOT_CONFIGURED` 拒绝。
 
-没有自动的本地优先、云端兜底或故障转移。出厂默认不指向任何在线 Provider：素材离开本机必须出自用户的配置或显式选择。
+没有自动的本地优先、云端兜底或故障转移：出厂默认在提交时选定，选中的不可用就拒绝，不在执行中途换别的。出厂默认只落到用户自己接入的服务上：`generateImage` 的顺序里只有用户已连接的在线 Provider 与本机已登录的 Codex，交出去的只有提示词；别的能力的出厂默认不指向任何在线 Provider，素材离开本机必须出自用户的配置或显式选择。
 
 细则：只给 `provider` 时，用户默认值指向它就用默认值的模型，否则用它的默认模型；只给 `model` 时，先看默认的 Provider（用户默认值或出厂默认）有没有它，再看 `local`，再看唯一列出它的 Provider，多个 Provider 都有时要求同时给出 `provider`。选中的 Provider 或模型不可用时直接拒绝，不往下一条落，也不换 Provider；显式给出而不存在的 Provider 或模型是 `not-found`。节点写作 `node:<nodeId>`，也接受 `node:<别名>`，选中后换成 `nodeId` 冻结；节点没有列出的模型包照样放行，交给节点的预检（§6.7）。
 
@@ -1587,7 +1587,7 @@ Worker 内部用 f32 秒计算，输出一律换算为声明 `timescale` 的整�
 
 `models.capabilities` 是这份状态的只读视图：每种能力下各 Provider 的模型、限制、默认值、此刻是否可用与不可用的原因（`generateImage` 的本地 Provider 排在在线与智能体之后，与界面的模型菜单同序）。界面的设置页、CLI 与智能体的工具读同一个视图；它也是能力快照里模型能力条目的来源（§3.6）。配置变化经 `models` 主题送达（`capabilities.updated`，带完整的新视图），进行中的任务不受影响（它们已经冻结了选择，§6.2）。CLI 的 `baocut models`、`models configure`（密钥只从标准输入读）与 `models default` 用的是同一组方法；`baocut speak`、`baocut image` 与 `baocut music` 提交生成任务、等它结束，并经 `artifacts.openHandle` 把产物另存到 `--out`。`baocut text` 同样提交 `models.generateText`：没有 `--out` 时正文写到标准输出、Provider 与用量写到标准错误，`--json-schema <文件>` 要求结构化输出；`baocut models refresh <providerId>` 与 `baocut models parameters generateText [--effort] [--concurrency]` 对应上面两个方法。
 
-本地的 `synthesizeSpeech` 由 `local` Provider 提供（§6.1），模型是合成的本地模型包（§6.3），与在线 Provider 一样要显式选择或设为默认值；本地的 `generateImage` 同样由 `local` Provider 提供，模型是文生图的本地模型包，没有出厂默认、也没有「自动选择」；本地的 `generateMusic` 只有 `local` Provider（音乐模型包，含 audio.cpp 引擎组件），同样没有出厂默认，`provider: 'local'` 不给 `model` 时用第一个可用的音乐模型包。节点共享这几种能力属于 P2（§6.7）。
+本地的 `synthesizeSpeech` 由 `local` Provider 提供（§6.1），模型是合成的本地模型包（§6.3），与在线 Provider 一样要显式选择或设为默认值；本地的 `generateImage` 同样由 `local` Provider 提供，模型是文生图的本地模型包，在生图的出厂默认顺序里排在 Codex 之后、在线 Provider 之前（§6.2）；本地的 `generateMusic` 只有 `local` Provider（音乐模型包，含 audio.cpp 引擎组件），同样没有出厂默认，`provider: 'local'` 不给 `model` 时用第一个可用的音乐模型包。节点共享这几种能力属于 P2（§6.7）。
 
 ### 6.9 智能体作为 Provider
 
@@ -1600,7 +1600,7 @@ Worker 内部用 f32 秒计算，输出一律换算为声明 `timescale` 的整�
 - **描述如实声明限制**：一个模型（`image-gen`，实际的图片模型由智能体运行时与账号决定），`maxCount` 为 1，只有 `png`，`sizes` 与 `aspectRatios` 为空、`defaultSize` 为 null，`acceptsSeed` 为 false，费用状态是 `subscription`（「订阅内，额度未知」），`notes` 一句话说明串行、耗时与额度。不支持的参数在提交时拒绝，不标为被忽略：给了尺寸或宽高比、seed、多于一张、别的格式都是 `invalid-request`，不创建任务。队列按 Provider 划分，同一时间只运行 1 个任务。
 - **可用性来自 Driver 的状态**（§3.11），按顺序：没有安装（`not-installed`）、没有登录（`signed-out`）、Driver 别的不可用（`unsupported`）、版本低于这个 Provider 要求的最低版本（`outdated`；`agent:codex` 要求 0.158.0，即协议对照的版本）、用户没有启用（`not-configured`）。前四种的补救是 `setup-agent`：在智能体运行时自己的界面里安装、登录或升级，`hint` 给出做法；最后一种是 `enable-provider`。`models.capabilities` 只探测这个 Provider 对应的 Driver：Driver 注册表（§3.11）里 10 秒之内的结果直接用，否则只重新探测这一个 Driver 并等它，结果写回注册表的缓存（也经 `agents` 主题推送），不等别的 Driver 的探测；选择与视图只在用户启用了它时探测，没启用时用最近一次的结果，不为没启用的 Provider 启动外部命令。执行前再确认一次：排队期间被停用、退出登录或卸载的，不再开会话，Job 以 `MODEL_LOAD_FAILED` 失败。
 - **启用是唯一的配置**（§6.8）：`agent:codex` 未保存过配置时默认启用，视图的 `enabledAt` 为 null；已保存的开关优先，用户手动停用后重启仍保持停用。不为出厂开关写入配置或伪造启用时间；用户显式启用时按 §6.8 记录启用时间。没有密钥、端点与模型声明，用的是智能体运行时自己的登录。启用允许把提示词与参考图交给该智能体运行时登录的账号与服务方，用的是用户自己的订阅额度。
-- **选择规则不变**（§6.2）：它可以被显式指定，也可以被设为 `generateImage` 的默认；出厂默认不指向它。
+- **选择规则**（§6.2）：它可以被显式指定，也可以被设为 `generateImage` 的默认；没有用户默认值时它排在出厂默认顺序的第一位。Codex 以 API key 等非 ChatGPT 订阅的方式登录时（Driver 探测的 `account`），画图不一定能用、费用也不在订阅里：Provider 照样可用、可以显式选择或设为默认，但模型描述的 `cost` 为 `unknown`（ChatGPT 登录时为 `subscription`），`notes` 写明这一点，出厂默认跳过它。
 - 其他能力与其他 Driver 按同一模式加入，各自经过验证后开放。
 
 ### 6.10 用量账本

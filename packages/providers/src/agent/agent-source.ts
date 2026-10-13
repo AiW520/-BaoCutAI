@@ -64,6 +64,12 @@ interface AgentProviderDefinition {
   label: string;
   /** 低于它的版本不可用（`outdated`）：协议按这个版本对照（`codex-protocol.ts`）。 */
   minVersion: string;
+  /**
+   * 探测到的账号是不是订阅（Codex 是 ChatGPT 登录）。不是时 Provider 照样可用，但模型描述的 `cost` 为 `unknown`、`notes` 换成
+   * `paidNotes`，出厂默认跳过它（§6.2、§6.9）。
+   */
+  subscribed: (info: DriverProbe) => boolean;
+  paidNotes: () => string;
   upgradeHint: Localized;
   model: ImageModelInfo;
   instructions: string;
@@ -77,6 +83,9 @@ const CODEX: AgentProviderDefinition = {
   driverId: 'codex',
   label: 'Codex',
   minVersion: '0.158.0',
+  // Driver 的账号描述带着引用：`driversCodex.chatgptAccount` 是 ChatGPT 登录（codex-binary.ts `codexAccount`）。
+  subscribed: (info) => info.accountRef?.key === 'driversCodex.chatgptAccount',
+  paidNotes: () => PA.codexImageNotesApiKey().text,
   get upgradeHint() {
     return PA.codexUpgradeHint();
   },
@@ -133,6 +142,7 @@ function unavailable(reason: ProviderUnavailableReason, detail: Localized): Avai
  * - 可用性按顺序：Driver 没有安装（`not-installed`）、没有登录（`signed-out`）、别的不可用（`unsupported`）、版本低于
  *   最低版本（`outdated`）、用户没有启用（`not-configured`）。前三样的说明来自 Driver 的探测。
  * - 配置只有开关：Codex 生图默认启用，已保存的开关优先；没有密钥、端点与模型声明（用的是智能体运行时自己的登录）。
+ * - 账号不是订阅（Codex 用 API key 等登录）时照样可用，模型描述的 `cost` 为 `unknown` 并说明可能画不了；出厂默认跳过它（§6.2）。
  * - 探测：`probe` 总是问 Driver（Driver 注册表短时缓存）；`select` 与 `view` 在用户启用了它时问 Driver，没启用时用
  *   最近一次的结果，一次也没探测过就只报告没有启用——不为没启用的 Provider 去启动外部命令。
  * - 每个 Provider 一个队列，同时只运行 1 个任务。
@@ -169,9 +179,11 @@ export class AgentProviderSource implements ProviderSource {
   async describe(providerId: string, mode: DescribeMode): Promise<ProviderView | null> {
     const definition = DEFINITIONS[providerId];
     if (!definition || !this.#driver(definition)) return null;
-    const availability = await this.#availability(providerId, definition, mode);
+    const { availability, info } = await this.#availability(providerId, definition, mode);
+    const model: ImageModelInfo = { ...definition.model };
+    if (availability.available && info && !definition.subscribed(info)) Object.assign(model, { cost: 'unknown', notes: definition.paidNotes() });
     const capability: ProviderCapability<ImageModelInfo> = {
-      models: [{ ...definition.model }],
+      models: [model],
       available: availability.available,
       ...(availability.available
         ? {}
@@ -275,11 +287,15 @@ export class AgentProviderSource implements ProviderSource {
     return info;
   }
 
-  async #availability(providerId: string, definition: AgentProviderDefinition, mode: DescribeMode): Promise<Availability> {
+  async #availability(
+    providerId: string,
+    definition: AgentProviderDefinition,
+    mode: DescribeMode,
+  ): Promise<{ availability: Availability; info: DriverProbe | null }> {
     const { enabled } = this.#options.store.configView(providerId);
     const info = mode === 'probe' || enabled ? await this.#info(definition) : (this.#lastInfo.get(definition.driverId) ?? null);
-    if (!info && !enabled) return unavailable('not-configured', PC.notEnabled());
-    return evaluate(definition, info, enabled);
+    if (!info && !enabled) return { availability: unavailable('not-configured', PC.notEnabled()), info };
+    return { availability: evaluate(definition, info, enabled), info };
   }
 
   async #readiness(providerId: string, definition: AgentProviderDefinition): Promise<AgentReadiness> {

@@ -179,6 +179,27 @@ export const ko: ModelsMessages = {
     saved: '저장됨',
     failed: (message: string) => `저장하지 못했습니다: ${message}`,
   },
+  capDefault: {
+    label: '기본 모델',
+    desc: {
+      transcribe:
+        '전사, 명령줄, Agent에서 모델을 지정하지 않을 때 사용합니다. 이 컴퓨터, 클라우드, 로컬 네트워크의 다른 컴퓨터 모델이 모두 표시되며, 아직 쓸 수 없는 모델은 이유와 함께 흐리게 표시됩니다. 도구 페이지에서 바꾸면 그 실행에만 적용됩니다.',
+      synthesizeSpeech:
+        '음성 생성, 더빙, 명령줄, Agent에서 모델을 지정하지 않을 때 사용합니다. 기본값이 없으면 매번 직접 고릅니다. 도구 페이지에서 바꾸면 그 실행에만 적용됩니다.',
+      generateImage:
+        '이미지 생성, 명령줄, Agent에서 모델을 지정하지 않을 때 사용합니다. 자동은 다음 순서로 처음 쓸 수 있는 것을 고릅니다: ChatGPT로 로그인한 Codex › 로컬 모델 › OpenAI › Google Gemini › 연결된 기타 서비스. 도구 페이지에서 바꾸면 그 실행에만 적용됩니다.',
+    },
+    auto: '자동',
+    autoUses: (name: string) => `자동 · 지금은 ${name}`,
+    autoNothing: '자동 · 아직 쓸 수 있는 모델 없음',
+    autoDesc: { transcribe: '이 컴퓨터에 맞는 로컬 모델을 고릅니다', generateImage: 'Codex › 로컬 › OpenAI › Gemini › 기타' },
+    unset: '설정 안 함',
+    unsetDesc: '매번 직접 선택',
+    localGroup: '이 컴퓨터',
+    localWhy: (why: string) => `${why} · 로컬 모델에서 다운로드`,
+    cloudWhy: (why: string) => `${why} · 클라우드 모델에서 연결`,
+    unavailable: (label: string) => `${label} (사용 불가)`,
+  },
   codexCard: {
     title: 'Codex CLI',
     on: '켜짐 · Codex 구독 사용, 키 필요 없음 · 한 번에 1장 · 크기 무시 · 5–10배 느림',

@@ -5,6 +5,8 @@ export const pl: ProvidersAgentMessages = {
   codexImageModel: "Generowanie obrazów Codex (model wybierany przez Codex i Twoje konto)",
   codexImageNotes:
     "Generowanie przez konto Codex zalogowane na tym komputerze: jeden PNG i jedno zadanie naraz, zwykle w minutę lub dwie. Nie można ustawić rozmiaru ani ziarna (takie żądania są odrzucane), a rozmiar w pikselach zależy od wyniku. Zużywa limit subskrypcji; pozostały limit jest nieznany. Włączenie oznacza zgodę na wysyłanie promptów do konta Codex.",
+  codexImageNotesApiKey:
+    "Codex jest zalogowany kluczem API lub inną metodą niż ChatGPT, więc generowanie obrazów może nie działać, a koszt trafia na to konto, a nie do subskrypcji. BaoCut nie wybierze go automatycznie; wybierz go sam, aby spróbować. Jeden PNG naraz; nie można ustawić rozmiaru ani seeda.",
   imagesOnly: (p) => `${p.label} może tylko generować obrazy`,
   onePngOnly: (p) => `${p.label} generuje jeden PNG naraz i nie przyjmuje rozmiaru ani ziarna`,
   unavailable: (p) => `${p.label} jest niedostępny: ${p.message}`,

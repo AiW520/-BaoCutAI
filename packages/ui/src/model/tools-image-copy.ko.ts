@@ -18,6 +18,8 @@ export const ko: ToolsImageMessages = {
   takesSeed: '시드 지원',
   localChip: '이 컴퓨터에서 생성 · 오프라인',
   cloudChip: (provider) => `온라인 · ${provider} · 사용량 과금`,
+  agentChip: (provider) => `온라인 · ${provider} · 내 구독 사용`,
+  agentPaidChip: (provider) => `온라인 · ${provider} · 구독 로그인 아님 · 생성되지 않을 수 있음`,
   imageName: (n) => `이미지 ${n}`,
   seed: (seed) => `시드 ${seed}`,
   loadingModel: '모델 불러오는 중',

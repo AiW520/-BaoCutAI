@@ -174,51 +174,55 @@
     }
     return 0;
   }
-  /** Codex 画图就绪与否：探测到 ∧ 登录 ∧ 版本 ≥ 0.130 ∧ 用户开了开关。`why` 是没就绪时的一句。 */
+  /** 不是以 ChatGPT 订阅登录（`codex login status` 说用的是 API key）时的提醒（2026-10-12 用户裁决）。 */
+  const CODEX_API_KEY_CAUTION = '用 API key 登录 · 可能画不了，费用不在订阅里';
+  /** Codex 画图就绪与否：探测到 ∧ 登录 ∧ 版本 ≥ 0.130 ∧ 用户开了开关。`why` 是没就绪时的一句。
+      能画但不是 ChatGPT 订阅登录（`h.auth` 不是 'chatgpt'）时仍算就绪，另带 `caution`：可以手动选，自动顺序跳过它。 */
   function codexReady(h, on) {
     if (!h || !h.found) return {ready: false, why: '未安装 Codex', problem: 'missing'};
     if (h.runError) return {ready: false, why: 'Codex 无法运行', problem: 'error'};
     if (compareVer(h.ver, CODEX_MIN_VER) < 0) return {ready: false, why: `Codex ${h.ver} 太旧 · 画图至少要 ${CODEX_MIN_VER}`, problem: 'outdated'};
     if (h.loggedIn === false) return {ready: false, why: 'Codex 需要登录', problem: 'login'};
     if (!on) return {ready: false, why: '「用 Codex 画图」还没打开', problem: 'off'};
-    return {ready: true, why: null, problem: null};
+    if (h.auth && h.auth !== 'chatgpt') return {ready: true, why: null, problem: null, caution: CODEX_API_KEY_CAUTION};
+    return {ready: true, why: null, problem: null, caution: null};
   }
   /** 开关本身能不能打开（不看开关值） */
   const codexCanEnable = (h) => codexReady(h, true).ready;
 
   /* ---------- 引擎清单（三族折成一张表）----------
      `saved`：已连密钥的提供方 id；`extra`：自建；`codex`：{h, on}；`installed(id)`：本地权重装没装。
-     每条 {id, family, name, ready, why, models:[{id: 完整 id, model, desc, prev, price, caps}]}。
-     Codex 不被隐式选中（§1.1 第 3 条，2026-09-27 用户裁决拆成两半）：用户在设置里把默认生图模型显式设成 Codex 且它就绪时
-     `preferred` 照用；「每次选择 / 第一只能用的」这条回落永远跳过它。 */
+     每条 {id, family, name, ready, why, caution, models:[{id: 完整 id, model, desc, prev, price, caps}]}。
+     顺序就是自动选择的顺序（§1.1 第 3 条，2026-10-12 用户裁决，取代 2026-09-27「Codex 不被隐式选中」）：
+     能画的 Codex › 本地（Turbo 在前）› 云端（已连接的在前，OpenAI、Gemini 打头）› 画不了的 Codex。 */
   function engines(o) {
     const saved = (o && o.saved) || [];
-    const out = providers(o && o.extra).map((p) => ({
+    const cloud = providers(o && o.extra).map((p) => ({
       id: PREFIX + p.id, family: 'cloud', provider: p.id, name: p.name, desc: p.desc, custom: !!p.custom,
-      ready: saved.indexOf(p.id) >= 0, why: saved.indexOf(p.id) >= 0 ? null : '未连接',
+      ready: saved.indexOf(p.id) >= 0, why: saved.indexOf(p.id) >= 0 ? null : '未连接', caution: null,
       models: p.models.map((m) => ({id: modelId(p.id, m.id), model: m.id, desc: m.desc, prev: !!m.prev, price: m.price, caps: m.caps})),
     }));
     const cr = codexReady(o && o.codex && o.codex.h, o && o.codex && o.codex.on);
-    out.push({id: CODEX_ID, family: 'agent', name: 'Codex 画图', desc: '不用密钥 · 一次一张 · 忽略尺寸 · 慢 5–10 倍', ready: cr.ready, why: cr.why, problem: cr.problem,
-      models: [{id: CODEX_ID, model: 'image-gen', desc: '用 Codex 自带的图像生成工具', price: null, caps: CODEX_CAPS}]});
-    LOCAL_MODELS.forEach((m) => {
+    const codex = {id: CODEX_ID, family: 'agent', name: 'Codex 画图', desc: '不用密钥 · 一次一张 · 忽略尺寸 · 慢 5–10 倍', ready: cr.ready, why: cr.why, problem: cr.problem,
+      caution: cr.caution || null, models: [{id: CODEX_ID, model: 'image-gen', desc: '用 Codex 自带的图像生成工具', price: null, caps: CODEX_CAPS}]};
+    const local = LOCAL_MODELS.map((m) => {
       const id = m.id;
       const on = !!(o && o.installed && o.installed(id));
       const platform = !o || o.platform == null || m.platform.split(',').includes(o.platform);
-      out.push({id, family: 'local', name: m.name, desc: m.desc, size: m.size, ready: on && platform,
-        measuredPace: !!(o && o.platform === 'macos-arm64'),
+      return {id, family: 'local', name: m.name, desc: m.desc, size: m.size, ready: on && platform,
+        measuredPace: !!(o && o.platform === 'macos-arm64'), caution: null,
         why: !platform ? '此平台或构建暂不可用' : on ? null : '未下载',
-        models: [{id, model: id, desc: m.desc, price: null, caps: m.caps}]});
+        models: [{id, model: id, desc: m.desc, price: null, caps: m.caps}]};
     });
-    return out;
+    return [].concat(codex.ready ? [codex] : [], local, cloud.filter((e) => e.ready), cloud.filter((e) => !e.ready), codex.ready ? [] : [codex]);
   }
   const engineOf = (list, id) => list.find((e) => e.models.some((m) => m.id === id)) || null;
   const modelIn = (list, id) => { const e = engineOf(list, id); return e ? e.models.find((m) => m.id === id) : null; };
-  /** 开页先取已配置且就绪的默认值（云端、本地，或用户显式设成默认的 Codex），再取第一只就绪的云端。
-      回落永远不落到 Codex；默认是 Codex 但没就绪（开关关着 / 没装 / 没登录 / 太旧）时同样回落到第一只就绪的云端，存着的默认不清。 */
+  /** 开页先取就绪的默认值（用户在设置里设的，什么都行），再按 `engines` 的顺序取第一只就绪、不带提醒的（即自动选择）：
+      API key 登录的 Codex 不自动选，但设成默认或手动选时照用。默认没就绪时同样回落，存着的默认不清。 */
   function preferred(list, dflt) {
     if (dflt && modelIn(list, dflt) && engineOf(list, dflt).ready) return dflt;
-    const e = list.find((x) => x.ready && x.family === 'cloud');
+    const e = list.find((x) => x.ready && !x.caution);
     return e ? e.models[0].id : null;
   }
   /** 有没有任何一只能用（图片 Tab 决定画表单还是引路卡） */
@@ -369,7 +373,7 @@
   function headerChip(f, list) {
     const e = engineOf(list, f.model);
     if (!e) return {icon: 'image', tone: undefined, text: '还没选模型'};
-    if (e.family === 'agent') return {icon: 'agent', tone: 'notice', text: 'Codex · 用订阅额度 · 慢 5–10 倍'};
+    if (e.family === 'agent') return {icon: 'agent', tone: 'notice', text: e.caution ? `Codex · ${e.caution}` : 'Codex · 用订阅额度 · 慢 5–10 倍'};
     if (e.family === 'local') return {icon: 'lock', tone: undefined, text: '在这台电脑上出图 · 不联网'};
     return {icon: 'remote', tone: 'notice', text: `联网 · ${e.name} · 按张计费`};
   }
@@ -494,7 +498,7 @@
   }
 
   const BC_CLOUD_IMAGE = {
-    PREFIX, AGENT_PREFIX, CODEX_ID, CODEX_MIN_VER, LOCAL_ID, LOCAL_TURBO_ID, ASPECTS, PROVIDERS, LOCAL, LOCAL_MODELS, SEED_SAVED, EMPTY_PROMPT, DEMO_ART, LICENSE_LABEL,
+    PREFIX, AGENT_PREFIX, CODEX_ID, CODEX_MIN_VER, CODEX_API_KEY_CAUTION, LOCAL_ID, LOCAL_TURBO_ID, ASPECTS, PROVIDERS, LOCAL, LOCAL_MODELS, SEED_SAVED, EMPTY_PROMPT, DEMO_ART, LICENSE_LABEL,
     ratioOf, fitAspect, isCloud, isAgent, isLocal, family, modelId, parse, providerOf,
     customProvider, providers, providerById, modelOf, capabilities, CUSTOM_CAPS,
     localEta, stepsOf, fixedSteps, codexReady, codexCanEnable, compareVer,

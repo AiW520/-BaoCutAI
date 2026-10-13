@@ -97,7 +97,7 @@
       setScenario(k); setExpanded(null); setCatalogs({});
       app.patchHarness(null, S.scenarioPatch(k));
       app.setHarnessOn('claude', true);
-      app.setHarnessOn('codex', k === 'both' || k === 'many' || k === 'modelGate');
+      app.setHarnessOn('codex', k === 'both' || k === 'many' || k === 'modelGate' || k === 'codexApiKey');
     };
     /* 移除只对用户添加的生效；撤销把它连同移除前的探测结果一起放回来。 */
     const remove = (h) => {

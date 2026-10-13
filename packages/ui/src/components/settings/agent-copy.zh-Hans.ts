@@ -123,7 +123,7 @@ export const zhHans: AgentMessages = {
 
   codexImage: {
     title: '用 Codex 画图',
-    body: '不用密钥，用你的 Codex 订阅；一次一张、忽略尺寸与质量；比 API 慢 5–10 倍。打开后 bcut image 与会话里的 Agent 都能选它（名字是「Codex」）；不会被替你挑中，想默认用它就去模型 › 图像生成 › 云端模型把它设成默认。',
+    body: '不用密钥，用你的 Codex 订阅；一次一张、忽略尺寸与质量；比 API 慢 5–10 倍。打开后它排在图片生成自动选择的第一位：工具页、bcut image 与 Agent 都会用它，除非你在模型 › 图像生成里另设了默认模型。Codex 用 API key 而不是 ChatGPT 登录时可能画不了，也不会被自动选中。',
     checking: '正在检查这台电脑上的 Codex 能不能画图…',
     on: '已打开',
     period: '。',

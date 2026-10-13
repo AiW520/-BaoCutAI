@@ -28,7 +28,7 @@ if (args[0] === '--version') {
 if (args[0] === 'login' && args[1] === 'status') {
   log({ kind: 'login-status' });
   if (scenario.loggedIn) {
-    process.stdout.write('Logged in using ChatGPT\n');
+    process.stdout.write(scenario.auth === 'api-key' ? 'Logged in using an API key - sk-proj-***abcd\n' : 'Logged in using ChatGPT\n');
     process.exit(0);
   }
   process.stderr.write('Not logged in\n');

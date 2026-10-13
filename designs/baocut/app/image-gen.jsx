@@ -201,11 +201,15 @@
     const e = IM.engineOf(engines, f.model);
     const m = IM.modelIn(engines, f.model);
     const label = !e ? '选一只模型' : e.family === 'cloud' ? `${e.name} · ${m.model}` : e.name;
+    /* 分组照自动顺序（2026-10-12）：能画的 Codex › 本机 › 云端；Codex 画不了时它那一组排到最后 */
+    const agent = {k: 'agent', label: 'Codex 画图 · 用订阅额度', items: engines.filter((x) => x.family === 'agent')};
+    const agentReady = agent.items.some((x) => x.ready);
     const groups = [
-      {k: 'cloud', label: '云端 · 联网计费', items: engines.filter((x) => x.family === 'cloud' && (x.ready || !x.custom))},
-      {k: 'agent', label: 'Codex 画图 · 用订阅额度', items: engines.filter((x) => x.family === 'agent')},
+      agentReady ? agent : null,
       {k: 'local', label: '本机 · 不联网', items: engines.filter((x) => x.family === 'local')},
-    ];
+      {k: 'cloud', label: '云端 · 联网计费', items: engines.filter((x) => x.family === 'cloud' && (x.ready || !x.custom))},
+      agentReady ? null : agent,
+    ].filter(Boolean);
     return (
       <div className="ttsmodel imgen__model">
         <Picker size="s" value={label} open={open} popWidth={340} onClick={() => setOpen((x) => !x)} onClose={() => setOpen(false)}>
@@ -217,7 +221,7 @@
                   ? (x.ready ? x.models : x.models.slice(0, 1)).map((mm) => (
                     <MenuItem key={mm.id} label={x.ready ? mm.model : `${x.name} · 未连接`} sub={x.ready ? `${x.name} · ${mm.desc}` : '添加账号后可用 · 设置 › 模型 › API 提供方'} wrap on={mm.id === f.model}
                       suffix={mm.prev ? '上一代' : undefined} disabled={!x.ready} onClick={() => { setOpen(false); set(IM.switchModel(f, mm.id)); }} />))
-                  : <MenuItem key={x.id} label={x.name} sub={x.ready ? x.desc : `${x.why} · ${x.family === 'agent' ? '设置 › Agent' : '设置 › 模型 › 图像生成'}`} wrap on={x.id === f.model}
+                  : <MenuItem key={x.id} label={x.name} sub={x.ready ? (x.caution || x.desc) : `${x.why} · ${x.family === 'agent' ? '设置 › Agent' : '设置 › 模型 › 图像生成'}`} wrap on={x.id === f.model}
                       onClick={() => { setOpen(false); set(IM.switchModel(f, x.id)); }} />)}
               </React.Fragment>
             ))}
@@ -227,7 +231,7 @@
           </Menu>
         </Picker>
         {e ? <span className={cx('ttseng__inst', e.ready && 'is-ok')}>{e.ready ? <><Ic n="ok" className="ic--12" />{e.family === 'cloud' ? '已连接' : e.family === 'agent' ? '已打开' : '已安装'}</> : e.why}</span> : null}
-        {m ? <span className="ttsmodel__line t-detail grow">{e.family === 'cloud' ? m.desc : e.desc}</span> : null}
+        {m ? <span className="ttsmodel__line t-detail grow">{e.family === 'cloud' ? m.desc : (e.caution || e.desc)}</span> : null}
       </div>
     );
   }

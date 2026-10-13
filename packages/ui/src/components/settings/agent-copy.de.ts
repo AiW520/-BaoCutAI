@@ -139,7 +139,7 @@ export const de: AgentMessages = {
 
   codexImage: {
     title: "Mit Codex zeichnen",
-    body: "Ohne Schlüssel; verwendet Ihr Codex-Abonnement. Ein Bild gleichzeitig, Größe und Qualität ignoriert, 5–10× langsamer als die API. Nach Aktivierung können bcut image und Sitzungsagenten es als „Codex“ auswählen. Keine automatische Wahl; zum Standard unter Modelle › Bilderzeugung › Cloud-Modelle festlegen.",
+    body: 'Kein Schlüssel nötig; nutzt Ihr Codex-Abo. Ein Bild pro Durchgang, Größe und Qualität werden ignoriert, 5–10× langsamer als die API. Eingeschaltet steht es bei der automatischen Auswahl für Bilderzeugung an erster Stelle: Werkzeugseite, bcut image und Agents nutzen es, sofern Sie unter Modelle › Bilderzeugung kein anderes Standardmodell festlegen. Ist Codex mit einem API-Schlüssel statt mit ChatGPT angemeldet, klappt das Zeichnen evtl. nicht und es wird nicht automatisch gewählt.',
     checking: "Codex-Zeichenfähigkeit dieses Computers wird geprüft…",
     on: "An",
 

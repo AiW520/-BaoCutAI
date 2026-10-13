@@ -150,7 +150,7 @@ describe('生成能力：选择与提交时的检查（不需要 ffprobe）', ()
     side = openai = undefined;
   });
 
-  it('什么都没配置：两种能力都没有出厂默认，以 CAPABILITY_NOT_CONFIGURED 拒绝，不创建任务', async () => {
+  it('什么都没配置：合成没有出厂默认、生图的出厂顺序里没有可用的，以 CAPABILITY_NOT_CONFIGURED 拒绝，不创建任务', async () => {
     side = await startSide({});
     const { capabilities } = await side.client.request('models.capabilities', {});
     expect(capabilities.synthesizeSpeech).toMatchObject({ default: null, effective: null });
@@ -160,8 +160,9 @@ describe('生成能力：选择与提交时的检查（不需要 ffprobe）', ()
       ['openai', false],
       ['elevenlabs', false],
     ]);
-    // 图片生成同样列出本地 Provider（文生图模型包还没装），排在在线服务之后。
-    expect(capabilities.generateImage.providers.map((p) => p.providerId)).toEqual(['openai', 'google', 'local']);
+    // 图片生成同样列出本地 Provider（文生图模型包还没装），按出厂顺序排在在线服务之前（§6.2）。
+    expect(capabilities.generateImage.providers.map((p) => p.providerId)).toEqual(['local', 'openai', 'google']);
+    expect(capabilities.generateImage).toMatchObject({ default: null, effective: null });
     expect(capabilities.generateImage.providers.every((p) => !p.available)).toBe(true);
 
     // 语音合成有可以安装的本地模型包，补救是安装模型；图片生成的本机模型包不作补救（界面只回落到云端），补救是配置在线服务。

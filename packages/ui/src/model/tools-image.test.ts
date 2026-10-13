@@ -87,6 +87,39 @@ function withLocal(patch: Partial<ImageModelInfo> = {}, available = true): Model
   };
 }
 
+const codexModel = imageModel('image-gen', {
+  label: 'Codex 画图',
+  sizes: [],
+  aspectRatios: [],
+  defaultSize: null,
+  maxCount: 1,
+  cost: 'subscription',
+  notes: '用你的 Codex 订阅',
+});
+
+/** 换掉夹具里没启用的 Codex（`agent:codex`）：能不能画、是不是订阅登录由参数给。 */
+function withCodex(view: ModelCapabilitiesView, available = true, cost: ImageModelInfo['cost'] = 'subscription'): ModelCapabilitiesView {
+  const notes = cost === 'subscription' ? '用你的 Codex 订阅' : '用 API key 登录 · 可能画不了';
+  return {
+    ...view,
+    generateImage: {
+      ...view.generateImage,
+      providers: [
+        ...view.generateImage.providers.filter((p) => p.providerId !== 'agent:codex'),
+        {
+          providerId: 'agent:codex',
+          kind: 'agent',
+          label: 'Codex',
+          config: { enabled: available } as never,
+          models: [{ ...codexModel, cost, notes }],
+          available,
+          ...(available ? {} : { unavailableReason: 'disabled' as never, detail: '没有打开「用 Codex 画图」' }),
+        },
+      ],
+    },
+  };
+}
+
 const draft = (patch: Partial<ImageDraft> = {}): ImageDraft => ({ ...BLANK_IMAGE, model: 'openai/gpt-image-1', ...patch });
 
 describe('画幅', () => {
@@ -156,13 +189,24 @@ describe('校验与请求', () => {
 });
 
 describe('本机模型', () => {
-  it('云端在前、本机在后；本机名字用模型名，没下载的也列出', () => {
+  it('出厂顺序：能画的 Codex › 本机 › 云端；本机名字用模型名，没下载的也列出；Codex 画不了时排最后', () => {
     const view = withLocal({ available: false, unavailableReason: 'not-installed' }, false);
+    // 夹具里的 Codex 没启用：照样列出，排在最后。
     expect(imageModelOptions(view).map((o) => [o.key, o.local ?? false])).toEqual([
+      ['local/qwen-image-2.1@mlx-4bit', true],
       ['openai/gpt-image-1', false],
       ['google/imagen-4', false],
-      ['local/qwen-image-2.1@mlx-4bit', true],
+      ['agent:codex/image-gen', false],
     ]);
+    expect(imageModelOptions(withCodex(view)).map((o) => o.key)).toEqual([
+      'agent:codex/image-gen',
+      'local/qwen-image-2.1@mlx-4bit',
+      'openai/gpt-image-1',
+      'google/imagen-4',
+    ]);
+    const off = imageModelOptions(withCodex(view, false));
+    expect(off.map((o) => o.key).at(-1)).toBe('agent:codex/image-gen');
+    expect(off.at(-1)).toMatchObject({ agent: true, usable: false, why: '没有打开「用 Codex 画图」' });
     const [local] = localImageOptions(view);
     expect([local!.label, local!.usable, local!.why]).toEqual(['Qwen-Image-2.1', false, '未下载']);
     expect(localImageOptions(withLocal({ available: false, unavailableReason: 'unsupported' }, false))[0]!.why).toBe(
@@ -171,14 +215,23 @@ describe('本机模型', () => {
     expect(localImageOptions(withLocal())[0]!.usable).toBe(true);
   });
 
-  it('开页回落只落到云端：没默认、没保存时不选本机，哪怕本机能用', () => {
+  it('开页：保存的 › 生效默认值（含 Runtime 的出厂顺序）› 第一只能用的，跳过不是订阅登录的 Codex', () => {
     const options = imageModelOptions(withLocal());
-    expect(initialModelKey(options, null, null, imageFallback)).toBe('openai/gpt-image-1');
-    const localOnly = options.filter((o) => o.local);
-    expect(initialModelKey(localOnly, null, null, imageFallback)).toBe('local/qwen-image-2.1@mlx-4bit');
-    expect(initialModelKey(options, null, { providerId: 'local', modelId: 'qwen-image-2.1@mlx-4bit' }, imageFallback)).toBe(
-      'local/qwen-image-2.1@mlx-4bit',
-    );
+    expect(initialModelKey(options, null, null, imageFallback)).toBe('local/qwen-image-2.1@mlx-4bit');
+    const codex = imageModelOptions(withCodex(withLocal()));
+    expect(initialModelKey(codex, null, null, imageFallback)).toBe('agent:codex/image-gen');
+    expect(initialModelKey(codex, null, { providerId: 'openai', modelId: 'gpt-image-1' }, imageFallback)).toBe('openai/gpt-image-1');
+    const paid = imageModelOptions(withCodex(withLocal(), true, 'unknown'));
+    expect(paid[0]).toMatchObject({ key: 'agent:codex/image-gen', usable: true, caution: '用 API key 登录 · 可能画不了' });
+    expect(initialModelKey(paid, null, null, imageFallback)).toBe('local/qwen-image-2.1@mlx-4bit');
+    expect(initialModelKey(paid, 'agent:codex/image-gen', null, imageFallback)).toBe('agent:codex/image-gen');
+  });
+
+  it('页头标签：Codex 用订阅；不是订阅登录时如实说可能画不了', () => {
+    const [sub] = imageModelOptions(withCodex(fixtureView()));
+    expect(imageHeaderChip(sub!)).toBe('联网 · Codex · 用你的订阅');
+    const [paid] = imageModelOptions(withCodex(fixtureView(), true, 'unknown'));
+    expect(imageHeaderChip(paid!)).toBe('联网 · Codex · 不是订阅登录 · 可能画不了');
   });
 
   it('步数：没给用默认，夹进范围；请求只给本机模型带步数', () => {

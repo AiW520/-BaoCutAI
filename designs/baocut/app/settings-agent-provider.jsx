@@ -130,7 +130,8 @@
       <Ic n="image" className="ic--16 agp-imagegen__ic" />
       <div className="grow">
         <div className="row gap8"><b>用 Codex 画图</b>{on ? <Chip tone="positive">已打开</Chip> : null}</div>
-        <p>{can ? '不用密钥，用你的 Codex 订阅；一次一张、忽略尺寸与质量；比 API 慢 5–10 倍。打开后图片 Tab、工具页与 bcut image 里多一只「Codex 画图」；不会被替你挑中，想默认用它就去设置 › 模型 › 图像生成 › 云端模型把它设成默认。'
+        <p>{can ? (on && st.caution ? `${st.caution}。想默认用别的，去设置 › 模型 › 图像生成选默认模型。`
+          : '不用密钥，用你的 Codex 订阅；一次一张、忽略尺寸与质量；比 API 慢 5–10 倍。打开后它排在图像生成自动顺序的第一位（图片 Tab、工具页、bcut image 与 Agent 没指定模型时先用它）；想默认用别的，去设置 › 模型 › 图像生成选默认模型。')
           : `${st.why} · 画图至少要 Codex ${IM.CODEX_MIN_VER} 并登录。`}</p>
       </div>
       <Switch on={on} disabled={!can} ariaLabel="用 Codex 画图"
@@ -231,8 +232,9 @@
         {h.added && onRemove ? <Btn size="s" variant="quiet" onClick={onRemove}>移除</Btn> : null}
       </div>
       {/* Codex 画图（2026-09-25 图像生成设计稿 §2.2）：不用密钥、用它的图像生成工具；只在找到 + 登录 + 版本 ≥ 0.130 时能打开。
-          打开后图片 Tab / 工具页 / bcut image 的模型菜单里多一只「Codex 画图」。2026-09-27 用户裁决：隐式回落永远不落到它，
-          用户在设置 › 模型 › 图像生成 › 云端模型把默认显式设成它时照用；那一页的 Codex CLI 卡读写的是同一个开关（codexImageGen）。 */}
+          打开后图片 Tab / 工具页 / bcut image 的模型菜单里多一只「Codex 画图」。2026-10-12 用户裁决（推翻 09-27「隐式回落不落到它」）：
+          默认打开，用 ChatGPT 订阅登录时它排在图像生成自动顺序第一位（Codex › 本机 › OpenAI › Gemini › 其他）；用 API key 登录时
+          可能画不了、费用不在订阅里，自动跳过它、写提醒，用户点名时照用。云端页的 Codex CLI 卡读写的是同一个开关（codexImageGen）。 */}
       {h.id === 'codex' && h.found ? <CodexImageRow h={h} /> : null}
 
       {problem ? <div className={cx('agp-problem', problem.kind === 'login' ? 'is-notice' : 'is-negative')} role="alert">

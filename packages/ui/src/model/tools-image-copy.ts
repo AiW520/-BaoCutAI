@@ -33,6 +33,8 @@ const en = {
   takesSeed: 'Takes a seed',
   localChip: 'Generated on this computer · offline',
   cloudChip: (provider: string) => `Online · ${provider} · billed by usage`,
+  agentChip: (provider: string) => `Online · ${provider} · uses your subscription`,
+  agentPaidChip: (provider: string) => `Online · ${provider} · not a subscription sign-in · may not work`,
   imageName: (n: number) => `Image ${n}`,
   seed: (seed: number) => `Seed ${seed}`,
   loadingModel: 'Loading model',

@@ -48,7 +48,7 @@ description: 模型能力的机制：各能力可用的服务、模型与限制�
 
 {{tool:models_list}} 的每个模型包：`bundleId`、能力、状态（`not-installed`、`downloading`、`installed`、`ready` 等）与原因、下载大小的估计、最近一次检查（`selfTest`）。
 
-{{tool:models_install}}：返回 `jobId` 与大小（`downloadBytes`；未知时看 `estimatedBytes`），等到 `completed` 才算装好。之后再提交转写；本机合成、生图与音乐生成没有出厂默认，提交 {{tool:speak}}、{{tool:image}} 或 {{tool:music}} 时带上 {{arg:provider}} `local` 与 {{arg:model}}（这个模型包）。
+{{tool:models_install}}：返回 `jobId` 与大小（`downloadBytes`；未知时看 `estimatedBytes`），等到 `completed` 才算装好。之后再提交转写；本机合成与音乐生成没有出厂默认，生图不指定服务时可能先用 Codex（出厂顺序见 {{tool:image}}），所以要用这个模型包，提交 {{tool:speak}}、{{tool:image}} 或 {{tool:music}} 时带上 {{arg:provider}} `local` 与 {{arg:model}}（这个模型包）。
 
 {{tool:models_test}}：`completed` 是通过；`failed` 时 `error.details.check` 是原因。
 

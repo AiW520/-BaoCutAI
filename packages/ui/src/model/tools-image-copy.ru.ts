@@ -19,6 +19,8 @@ export const ru: ToolsImageMessages = {
   takesSeed: "Поддерживает сид",
   localChip: "Создаётся на этом компьютере · офлайн",
   cloudChip: (provider) => `Онлайн · ${provider} · оплата по использованию`,
+  agentChip: (provider) => `Онлайн · ${provider} · по вашей подписке`,
+  agentPaidChip: (provider) => `Онлайн · ${provider} · не по подписке · может не сработать`,
   imageName: (n) => `Изображение ${n}`,
   seed: (seed) => `Сид ${seed}`,
   loadingModel: 'Загрузка модели',

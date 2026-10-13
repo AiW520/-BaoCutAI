@@ -143,7 +143,7 @@ export const vi: AgentMessages = {
    */
   codexImage: {
     title: "Vẽ bằng Codex",
-    body: "Không cần khóa; dùng gói đăng ký Codex của bạn. Mỗi lần một ảnh, bỏ qua kích thước và chất lượng, chậm hơn API 5–10 lần. Khi bật, bcut image và Agent trong phiên đều có thể chọn (tên “Codex”). Không được tự chọn cho bạn; để dùng mặc định, đặt làm mặc định trong Mô hình › Tạo hình ảnh › Mô hình đám mây.",
+    body: 'Không cần khóa; dùng gói đăng ký Codex của bạn. Mỗi lần một ảnh, bỏ qua kích thước và chất lượng, chậm hơn API 5–10 lần. Khi bật, nó đứng đầu trong lựa chọn tự động để tạo ảnh: trang công cụ, bcut image và Agent sẽ dùng nó, trừ khi bạn đặt mô hình mặc định khác trong Mô hình › Tạo ảnh. Nếu Codex đăng nhập bằng khóa API thay vì ChatGPT, có thể không vẽ được và sẽ không được chọn tự động.',
     checking: "Đang kiểm tra Codex trên máy tính này có thể vẽ không…",
     on: "Bật",
     /** 补在 Provider 给的原因后面的句号（原因已经以句号结尾就不补）。 */

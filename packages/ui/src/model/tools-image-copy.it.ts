@@ -19,6 +19,8 @@ export const it: ToolsImageMessages = {
   takesSeed: 'Accetta un seme',
   localChip: 'Generato su questo computer · offline',
   cloudChip: (provider) => `Online · ${provider} · addebito in base all’utilizzo`,
+  agentChip: (provider) => `Online · ${provider} · usa il tuo abbonamento`,
+  agentPaidChip: (provider) => `Online · ${provider} · senza abbonamento · potrebbe non funzionare`,
   imageName: (n) => `Immagine ${n}`,
   seed: (seed) => `Seme ${seed}`,
   loadingModel: 'Caricamento del modello',

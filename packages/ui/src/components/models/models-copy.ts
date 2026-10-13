@@ -210,6 +210,28 @@ const en = {
     saved: 'Saved',
     failed: (message: string) => `Couldn't save: ${message}`,
   },
+  /** 能力页顶上的统一默认模型（产品设计 §7.6「每种能力一个默认模型」）：语音识别、语音合成、图像生成。 */
+  capDefault: {
+    label: 'Default model',
+    desc: {
+      transcribe:
+        'Used when a transcription, the command line or the Agent doesn’t name a model. Local, cloud and other-computer models are all listed; ones you can’t use yet are greyed out with the reason. Choosing a model on a tool page only changes that run.',
+      synthesizeSpeech:
+        'Used when speech generation, voice-overs, the command line or the Agent don’t name a model. Without a default you pick a model each time. Choosing a model on a tool page only changes that run.',
+      generateImage:
+        'Used when image generation, the command line or the Agent don’t name a model. Auto takes the first one available: Codex signed in with ChatGPT › local model › OpenAI › Google Gemini › other connected providers. Choosing a model on a tool page only changes that run.',
+    },
+    auto: 'Auto',
+    autoUses: (name: string) => `Auto · now uses ${name}`,
+    autoNothing: 'Auto · nothing available yet',
+    autoDesc: { transcribe: 'Picks the local model that suits this computer', generateImage: 'Codex › local › OpenAI › Gemini › others' },
+    unset: 'Not set',
+    unsetDesc: 'Pick a model each time',
+    localGroup: 'This computer',
+    localWhy: (why: string) => `${why} · download it under Local models`,
+    cloudWhy: (why: string) => `${why} · connect it under Cloud models`,
+    unavailable: (label: string) => `${label} (unavailable)`,
+  },
   codexCard: {
     title: 'Codex CLI',
     on: 'On · uses your Codex subscription, no key needed · one image at a time · ignores size · 5–10× slower',
@@ -341,6 +363,7 @@ export const LOCAL_COPY = live(() => M.local);
 export const IMAGE_LOCAL_COPY = live(() => M.imageLocal);
 export const CLOUD_COPY = live(() => M.cloud);
 export const TEXT_PARAMS_COPY = live(() => M.textParams);
+export const CAP_DEFAULT_COPY = live(() => M.capDefault);
 export const CODEX_CARD_COPY = live(() => M.codexCard);
 export const KEY_COPY = live(() => M.key);
 export const CUSTOM_COPY = live(() => M.custom);

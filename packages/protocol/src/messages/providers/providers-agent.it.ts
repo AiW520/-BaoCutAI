@@ -4,6 +4,8 @@ export const it: ProvidersAgentMessages = {
   codexUpgradeHint: 'Aggiorna Codex CLI (ad esempio, npm install -g @openai/codex@latest), poi verifica di nuovo',
   codexImageModel: 'Generazione di immagini Codex (modello scelto da Codex e dal tuo account)',
   codexImageNotes: 'Genera con l’account Codex connesso su questo computer: un PNG alla volta, un’attività alla volta, di solito in uno o due minuti. Dimensione e seed non possono essere impostati (le richieste che li includono vengono rifiutate) e la dimensione in pixel dipende dal risultato. Usa la quota del tuo abbonamento; la quota rimanente è sconosciuta. Attivarlo significa accettare l’invio dei prompt al tuo account Codex.',
+  codexImageNotesApiKey:
+    "Codex ha effettuato l’accesso con una chiave API o un altro metodo diverso da ChatGPT: la generazione di immagini potrebbe non funzionare e il costo va a quell’account, non a un abbonamento. BaoCut non lo sceglierà automaticamente; sceglilo tu per provare. Un PNG alla volta; dimensioni e seed non si possono impostare.",
   imagesOnly: (p) => `${p.label} può generare solo immagini`,
   onePngOnly: (p) => `${p.label} genera un PNG alla volta e non accetta dimensione o seed`,
   unavailable: (p) => `${p.label} non è disponibile: ${p.message}`,

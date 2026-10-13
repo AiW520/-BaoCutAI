@@ -10,6 +10,7 @@ import {
   type ModelRef,
   type ModelServiceCapability,
   type ProviderCapabilityView,
+  type ProviderKind,
   type ProviderRefreshStatus,
   type ProviderView,
   type SetCapabilityParametersRequest,
@@ -79,6 +80,9 @@ export interface GenerationSelection<C extends GenerationCapability = Generation
   /** `generateText`：提交时用的参数默认值（推理强度）。 */
   textDefaults?: TextCapabilityParameters;
 }
+
+/** 能力视图里生图 Provider 的排列（§6.2 出厂默认的顺序）。 */
+const IMAGE_KIND_ORDER: readonly ProviderKind[] = ['agent', 'local', 'online', 'node'];
 
 export class ModelServices {
   readonly store: ModelServiceStore;
@@ -315,8 +319,8 @@ export class ModelServices {
   }
 
   /**
-   * 提交时选择生成能力的 Provider 与模型（§6.2）。这两种能力没有出厂默认：不显式指定、也没有用户默认值时
-   * 抛 `CAPABILITY_NOT_CONFIGURED`（`reason: 'no-default'`）。
+   * 提交时选择生成能力的 Provider 与模型（§6.2）。生图有固定的出厂顺序，其余生成能力没有出厂默认：不显式指定、没有
+   * 用户默认值、出厂顺序里也没有可用的时抛 `CAPABILITY_NOT_CONFIGURED`（`reason: 'no-default'`）。
    */
   async selectGeneration<C extends GenerationCapability>(capability: C, target: GenerationTarget): Promise<GenerationSelection<C>> {
     const provider = target.provider !== undefined ? this.#resolve(target.provider).id : undefined;
@@ -443,8 +447,8 @@ export class ModelServices {
         if (!cap) continue;
         entries.push({ providerId: p.providerId, kind: p.kind, label: p.label, config: p.config, ...structuredClone(cap) });
       }
-      // 生图的本地 Provider 排在在线与智能体之后（设计稿的模型菜单：云端、Codex、本机）。
-      if (capability === 'generateImage') entries.sort((a, b) => Number(a.kind === 'local') - Number(b.kind === 'local'));
+      // 生图按出厂默认的顺序列（§6.2，2026-10-12）：智能体、本机、在线，节点最后；同类保持原来的顺序。
+      if (capability === 'generateImage') entries.sort((a, b) => IMAGE_KIND_ORDER.indexOf(a.kind) - IMAGE_KIND_ORDER.indexOf(b.kind));
       view[capability] = { default: userDefault, effective: effectiveChoice({ capability, userDefault, providers }), providers: entries };
       if (capability === 'generateText') view[capability].parameters = this.store.textParameters();
     }

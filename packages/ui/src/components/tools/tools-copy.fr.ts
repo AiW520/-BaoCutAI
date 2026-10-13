@@ -218,7 +218,7 @@ export const fr: ToolsMessages = {
     modelPicker: "Modèle d’image",
     noModel: "Aucun modèle d’image disponible",
     noModelBody: "Connectez un fournisseur (clé) dans Réglages › Modèles › Génération d’images › Modèles cloud, puis choisissez ici.",
-    localNote: "Autres ordinateurs locaux non pris en charge ; images Codex générées dans les sessions.",
+    localNote: "Autres ordinateurs locaux non pris en charge dans cette version.",
     aspect: "Rapport hauteur/largeur",
     aspectAuto: "Ce modèle ne permet pas de choisir la taille ; le fournisseur décide",
     count: "Nombre",

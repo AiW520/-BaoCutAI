@@ -188,7 +188,7 @@ export const zhHant: ToolsMessages = {
     modelPicker: '影像模型',
     noModel: '還沒有可用的影像模型',
     noModelBody: '在「設定 › 模型 › 影像生成 › 雲端模型」中連接一家供應商（輸入金鑰），就能在這裡選擇它的模型。',
-    localNote: '這個版本還不支援區域網路中的其他電腦；Codex 生成圖片可以在對話中使用。',
+    localNote: '這個版本還不支援區域網路中的其他電腦。',
     aspect: '長寬比',
     aspectAuto: '這個模型無法選擇尺寸，由供應商決定',
     count: '數量',

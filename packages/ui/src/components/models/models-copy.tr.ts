@@ -161,6 +161,27 @@ export const tr: ModelsMessages = {
     saved: "Kaydedildi",
     failed: (message) => `Kaydedilemedi: ${message}`,
   },
+  capDefault: {
+    label: 'Varsayılan model',
+    desc: {
+      transcribe:
+        'Bir döküm, komut satırı veya Agent model belirtmediğinde kullanılır. Yerel, bulut ve ağdaki diğer bilgisayarların modelleri burada; henüz kullanılamayanlar nedeniyle birlikte soluk görünür. Bir araç sayfasında model seçmek yalnızca o çalıştırmayı değiştirir.',
+      synthesizeSpeech:
+        'Ses üretimi, seslendirme, komut satırı veya Agent model belirtmediğinde kullanılır. Varsayılan yoksa her seferinde model seçersiniz. Bir araç sayfasında model seçmek yalnızca o çalıştırmayı değiştirir.',
+      generateImage:
+        'Görsel oluşturma, komut satırı veya Agent model belirtmediğinde kullanılır. Otomatik, kullanılabilen ilkini seçer: ChatGPT ile giriş yapılmış Codex › yerel model › OpenAI › Google Gemini › diğer bağlı sağlayıcılar. Bir araç sayfasında model seçmek yalnızca o çalıştırmayı değiştirir.',
+    },
+    auto: 'Otomatik',
+    autoUses: (name: string) => `Otomatik · şu an ${name}`,
+    autoNothing: 'Otomatik · henüz kullanılabilir yok',
+    autoDesc: { transcribe: 'Bu bilgisayara uygun yerel modeli seçer', generateImage: 'Codex › yerel › OpenAI › Gemini › diğerleri' },
+    unset: 'Ayarlanmadı',
+    unsetDesc: 'Her seferinde model seç',
+    localGroup: 'Bu bilgisayar',
+    localWhy: (why: string) => `${why} · Yerel modeller bölümünden indirin`,
+    cloudWhy: (why: string) => `${why} · Bulut modelleri bölümünden bağlayın`,
+    unavailable: (label: string) => `${label} (kullanılamıyor)`,
+  },
   codexCard: {
     title: 'Codex CLI',
     on: "Açık · Codex aboneliğinizi kullanır, anahtar gerekmez · her seferinde bir görsel · boyutu yok sayar · 5–10 kat yavaş",

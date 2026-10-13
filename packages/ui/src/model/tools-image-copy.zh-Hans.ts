@@ -18,6 +18,8 @@ export const zhHans: ToolsImageMessages = {
   takesSeed: '收种子',
   localChip: '在这台电脑上出图 · 不联网',
   cloudChip: (provider) => `联网 · ${provider} · 按用量计费`,
+  agentChip: (provider) => `联网 · ${provider} · 用你的订阅`,
+  agentPaidChip: (provider) => `联网 · ${provider} · 不是订阅登录 · 可能画不了`,
   imageName: (n) => `图片 ${n}`,
   seed: (seed) => `种子 ${seed}`,
   loadingModel: '加载模型',

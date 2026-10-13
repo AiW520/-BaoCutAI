@@ -18,6 +18,8 @@ export const zhHant: ToolsImageMessages = {
   takesSeed: '可指定種子',
   localChip: '在這台電腦上生成 · 離線',
   cloudChip: (provider) => `線上 · ${provider} · 依用量計費`,
+  agentChip: (provider) => `線上 · ${provider} · 使用你的訂閱`,
+  agentPaidChip: (provider) => `線上 · ${provider} · 不是訂閱登入 · 可能無法生成`,
   imageName: (n) => `圖片 ${n}`,
   seed: (seed) => `種子 ${seed}`,
   loadingModel: '載入模型',

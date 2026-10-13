@@ -59,7 +59,7 @@ const DEFINITIONS: Record<ToolName, ToolInfo> = {
       '装好之后才能用本机转写、语音合成、生图或音乐生成。只在本机模型没有安装（CAPABILITY_NOT_CONFIGURED 的 remedy.action 为 install-model）时用。',
       '音乐生成的模型包含 audio.cpp 引擎（组件 audiocpp-engine），随模型包一起下载，大小已算在内；音乐能力因为引擎没装而不可用时，也用本工具带上那个模型包补装。',
       '提交前会把大小告诉用户并按访问模式确认；已经装好时不下载（jobId 为 null）。只下载缺的部分，之前没下完的会续传。',
-      '立即返回 jobId 与大小（downloadBytes；大小未知时为 null，estimatedBytes 是估计值）。用 jobs_wait 等它结束（要看进度用 jobs_inspect，progress.unit 为 bytes），state 为 completed 才算装好；之后再提交转写，或带上 provider: local 与这个模型包提交合成或生图（它们没有出厂默认）。不要重复提交同一件事。',
+      '立即返回 jobId 与大小（downloadBytes；大小未知时为 null，estimatedBytes 是估计值）。用 jobs_wait 等它结束（要看进度用 jobs_inspect，progress.unit 为 bytes），state 为 completed 才算装好；之后再提交转写，或带上 provider: local 与这个模型包提交合成或生图（合成没有出厂默认；生图不指定时可能先用 Codex）。不要重复提交同一件事。',
     ].join('\n'),
     annotations: { destructiveHint: false, idempotentHint: true },
     effect: 'job',

@@ -177,6 +177,27 @@ export const ja: ModelsMessages = {
     saved: '保存しました',
     failed: (message: string) => `保存できませんでした：${message}`,
   },
+  capDefault: {
+    label: 'デフォルトのモデル',
+    desc: {
+      transcribe:
+        '文字起こし、コマンドライン、Agent でモデルを指定しないときに使います。このコンピュータ、クラウド、ローカルネットワーク上のほかのコンピュータのモデルがすべて並び、まだ使えないものは理由付きでグレー表示されます。ツールページで選び直しても、その回だけに適用されます。',
+      synthesizeSpeech:
+        '音声生成、吹き替え、コマンドライン、Agent でモデルを指定しないときに使います。デフォルトがなければ毎回選びます。ツールページで選び直しても、その回だけに適用されます。',
+      generateImage:
+        '画像生成、コマンドライン、Agent でモデルを指定しないときに使います。自動では次の順で最初に使えるものを選びます：ChatGPT でサインインした Codex › このコンピュータのモデル › OpenAI › Google Gemini › 接続済みのほかのサービス。ツールページで選び直しても、その回だけに適用されます。',
+    },
+    auto: '自動',
+    autoUses: (name: string) => `自動 · 現在は ${name}`,
+    autoNothing: '自動 · まだ使えるものがありません',
+    autoDesc: { transcribe: 'このコンピュータに合うローカルモデルを選びます', generateImage: 'Codex › ローカル › OpenAI › Gemini › その他' },
+    unset: '未設定',
+    unsetDesc: '毎回選ぶ',
+    localGroup: 'このコンピュータ',
+    localWhy: (why: string) => `${why} · 「ローカルモデル」でダウンロード`,
+    cloudWhy: (why: string) => `${why} · 「クラウドモデル」で接続`,
+    unavailable: (label: string) => `${label}（使用不可）`,
+  },
   codexCard: {
     title: 'Codex CLI',
     on: 'オン · お使いの Codex のサブスクリプションを使用、キー不要 · 一度に 1 枚 · サイズは無視 · 5–10 倍遅い',

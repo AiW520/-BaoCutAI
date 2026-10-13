@@ -539,10 +539,10 @@ describe('模型安装（假模型来源 + 假 Model Worker）', () => {
       const imageOf = () => side!.models()?.bundles.find((b) => b.bundleId === IMAGE_BUNDLE);
       await until(() => imageOf()?.state === 'installed');
       expect(imageOf()).toMatchObject({ capability: 'image', label: 'Qwen-Image-2.1', license: { commercialUse: false } });
-      // 装好之后 local 提供 generateImage；没有出厂默认，不指定就不会用它。
+      // 装好之后 local 提供 generateImage；没有 Codex 时它就是生图的出厂默认（§6.2，本地排在在线服务之前）。
       const capabilities = (await side.client.request('models.capabilities', {})).capabilities;
       expect(capabilities.generateImage.providers.find((p) => p.providerId === 'local')).toMatchObject({ available: true });
-      expect(capabilities.generateImage.effective).toBeNull();
+      expect(capabilities.generateImage.effective).toMatchObject({ providerId: 'local', source: 'factory-default' });
 
       const { jobId: testJob } = await side.client.request('models.test', { bundleId: IMAGE_BUNDLE });
       const tested = await until(() => terminal(jobOf(side!, testJob)), 15_000);

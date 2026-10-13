@@ -58,8 +58,12 @@ export interface ToolModelOption<M> {
   /** 不能用的原因（未连接、没有声明模型……）；能用时 null。 */
   why: string | null;
   info: M;
-  /** 本机模型（设计稿 image-gen.jsx 的「本机 · 不联网」一组）：没装好也能选，选中时页面给下载卡；开页的回落不落到它。 */
+  /** 本机模型（设计稿 image-gen.jsx 的「本机 · 不联网」一组）：没装好也能选，选中时页面给下载卡。 */
   local?: boolean;
+  /** 智能体 Provider 的模型（Codex 画图，设计稿 image-gen.jsx 的「智能体」一组）。 */
+  agent?: boolean;
+  /** 能用但要提醒的一句（Codex 不是以 ChatGPT 订阅登录：可能画不了、费用不在订阅里）；出厂顺序与开页的回落都跳过它。 */
+  caution?: string;
 }
 
 /**
@@ -95,6 +99,41 @@ export function cloudModelOptions<C extends OnlineCapability>(
       };
     });
   });
+}
+
+/**
+ * 智能体 Provider（`kind: 'agent'`，如 Codex 画图）的模型：Runtime 注册了才有（架构设计 §6.9）。没打开、没装、没登录时照样列出，
+ * 写 Runtime 给的原因；能用但不是订阅（`cost` 不是 `subscription`）时带 `caution`（模型的 `notes`）。
+ */
+export function agentModelOptions<C extends ModelServiceCapability>(
+  view: ModelCapabilitiesView,
+  capability: C,
+): ToolModelOption<ModelInfoByCapability[C]>[] {
+  return view[capability].providers
+    .filter((p) => p.kind === 'agent')
+    .flatMap((p) =>
+      (p.models as ModelInfoByCapability[C][]).map((info) => {
+        const why = !p.available
+          ? (localizeText(p.detail, p.detailRef) ?? M.unavailable)
+          : info.available === false
+            ? (localizeText(info.detail, info.detailRef) ?? M.unavailable)
+            : null;
+        const caution = why === null && info.cost !== 'subscription' ? (info.notes ?? M.unavailable) : null;
+        return {
+          key: defaultKey({ providerId: p.providerId, modelId: info.modelId }),
+          providerId: p.providerId,
+          provider: p.label,
+          modelId: info.modelId,
+          label: info.label || info.modelId,
+          connected: true,
+          usable: why === null,
+          why,
+          info,
+          agent: true,
+          ...(caution ? { caution } : {}),
+        };
+      }),
+    );
 }
 
 /** 本机模型没下载时的原因（页面据此给下载卡、主按钮说「还没安装」）：按当前界面语言，拿 `why` 比对时也调它。 */
@@ -154,9 +193,9 @@ export function modelOptions<C extends OnlineCapability>(view: ModelCapabilities
 }
 
 /**
- * 进页时选哪只：上次选的（还在清单里就留着，哪怕现在不能用——页面给门卡），再是这种能力的生效默认值，
- * 再是第一只能用的，最后是第一只。清单为空时 null。后两步只在 `fallback` 认的里面挑（生图不回落到本机模型，
- * 设计稿 model-cloud-image.js `preferred`）。
+ * 进页时选哪只：上次选的（还在清单里就留着，哪怕现在不能用——页面给门卡），再是这种能力的生效默认值（用户设的，或
+ * Runtime 按出厂顺序挑的），再是第一只能用的，最后是第一只。清单为空时 null。后两步只在 `fallback` 认的里面挑（生图跳过要提醒的
+ * Codex，设计稿 model-cloud-image.js `preferred`）。
  */
 export function initialModelKey<M>(
   options: readonly ToolModelOption<M>[],

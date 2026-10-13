@@ -161,6 +161,27 @@ export const zhHans: ModelsMessages = {
     saved: '已保存',
     failed: (message: string) => `没能保存：${message}`,
   },
+  capDefault: {
+    label: '默认模型',
+    desc: {
+      transcribe:
+        '转写、命令行与 Agent 没指定模型时用它。本机、云端与局域网里其他电脑的模型都在这里；暂时不能用的置灰并写明原因。在工具页手动换只影响那一次。',
+      synthesizeSpeech:
+        '生成语音、配音、命令行与 Agent 没指定模型时用它。不设默认就每次自己选。在工具页手动换只影响那一次。',
+      generateImage:
+        '生成图片、命令行与 Agent 没指定模型时用它。自动按顺序取第一个能用的：用 ChatGPT 登录的 Codex › 本机模型 › OpenAI › Google Gemini › 其余已连接的服务。在工具页手动换只影响那一次。',
+    },
+    auto: '自动',
+    autoUses: (name: string) => `自动 · 现在用 ${name}`,
+    autoNothing: '自动 · 现在还没有能用的',
+    autoDesc: { transcribe: '按这台电脑挑合适的本机模型', generateImage: 'Codex › 本机 › OpenAI › Gemini › 其他' },
+    unset: '未设置',
+    unsetDesc: '每次自己选',
+    localGroup: '这台电脑',
+    localWhy: (why: string) => `${why} · 在「本地模型」里下载`,
+    cloudWhy: (why: string) => `${why} · 在「云端模型」里连接`,
+    unavailable: (label: string) => `${label}（不可用）`,
+  },
   codexCard: {
     title: 'Codex CLI',
     on: '已开启 · 用你的 Codex 订阅，不用密钥 · 一次一张 · 忽略尺寸 · 慢 5–10 倍',

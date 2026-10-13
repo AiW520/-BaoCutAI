@@ -19,6 +19,8 @@ export const pl: ToolsImageMessages = {
   takesSeed: "Obsługuje ziarno",
   localChip: "Generowane na tym komputerze · offline",
   cloudChip: (provider) => `Online · ${provider} · opłata za użycie`,
+  agentChip: (provider) => `Online · ${provider} · korzysta z Twojej subskrypcji`,
+  agentPaidChip: (provider) => `Online · ${provider} · bez subskrypcji · może nie działać`,
   imageName: (n) => `Obraz ${n}`,
   seed: (seed) => `Ziarno ${seed}`,
   loadingModel: 'Wczytywanie modelu',

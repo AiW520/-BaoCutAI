@@ -91,7 +91,7 @@ export function CodexImageCard({ codex, isDefault }: { codex: ReturnType<typeof 
   const desc = !state
     ? CODEX_CARD_COPY.missing
     : state.ready
-      ? CODEX_CARD_COPY.on
+      ? (state.caution ?? CODEX_CARD_COPY.on)
       : state.checking
         ? CODEX_IMAGE_COPY.checking
         : (state.why ?? CODEX_CARD_COPY.off);

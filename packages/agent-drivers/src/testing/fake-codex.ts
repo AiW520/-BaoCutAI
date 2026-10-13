@@ -41,6 +41,8 @@ export interface FakeCodexScenario {
   installed: boolean;
   version: string;
   loggedIn: boolean;
+  /** 登录方式：`login status` 回「Logged in using ChatGPT」或「Logged in using an API key - sk-…」。默认 ChatGPT。 */
+  auth?: 'chatgpt' | 'api-key';
   turn: FakeCodexTurn;
   /** `model/list` 的模型表（每页 2 个，带游标分页）；`error`：回 -32603；`hang`：一直不应答。 */
   models: CodexModel[] | 'error' | 'hang';

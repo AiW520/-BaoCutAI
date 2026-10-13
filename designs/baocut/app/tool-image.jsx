@@ -8,7 +8,7 @@
 
   function ImageToolPage() {
     const app = useApp();
-    const engines = useImageEngines(app).filter(e => e.family !== 'agent');
+    const engines = useImageEngines(app);
     const [f, setF] = useState(() => (J.drafts.tool && IM.engineOf(engines, J.drafts.tool.model) ? J.drafts.tool : null) || Object.assign(IM.blank(IM.preferred(engines, app.cloudImageDefault || (app.prefs.localModelDefaults || {}).image)), {fit: false}));
     const set = (p) => setF((s) => Object.assign({}, s, p));
     const save = window.BC_TOOL_FRAME.useSaveDir();

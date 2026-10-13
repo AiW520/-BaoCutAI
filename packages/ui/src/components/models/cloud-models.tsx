@@ -22,7 +22,8 @@ import { AddModelDialog, CustomProviderDialog, KeyDialog } from './provider-dial
 import { TextParamRows } from './text-params.tsx';
 
 /**
- * 模型 › 云端模型（设计稿 settings-cloud.jsx:220-342）：标题与说明、默认模型（文本生成多两行：推理强度、并发请求数）、
+ * 模型 › 云端模型（设计稿 settings-cloud.jsx:220-342）：标题与说明、文本生成的默认模型与两行参数（推理强度、并发请求数；
+ * 其余能力的默认模型在能力页顶上统一设，capability-default.tsx）、
  * 服务商列表（图像档第一张是 Codex CLI），以及密钥、自建服务商、添加模型、测试四个对话框。用途档由左栏的能力分类决定；
  * 音源分离、画面理解只有本地页，深链到云端页时如实说没有。浏览器里只能看与测试：Web 白名单不含 `models.configure`、
  * `models.setDefault` 等，默认模型、参数、密钥、刷新与添加都置灰，页头下写一句。
@@ -149,42 +150,45 @@ function CloudCapability({ capability }: { capability: OnlineCapability }) {
     <>
       <Lede first title={CLOUD_COPY.heading[capability]} desc={CLOUD_COPY.lede[capability]} />
       {web ? <p className={webNote}>{CLOUD_COPY.webNote}</p> : null}
-      <Card label={CLOUD_COPY.defaultLabel[capability]}>
-        <SettingRow label={CLOUD_COPY.defaultLabel[capability]} desc={CLOUD_COPY.defaultDesc[capability]}>
-          <Picker
-            aria-label={CLOUD_COPY.defaultLabel[capability]}
-            size="S"
-            align="end"
-            menuWidth={300}
-            selectedKey={picker.selectedKey}
-            disabledKeys={[EMPTY_KEY]}
-            isDisabled={web || busy || !connected}
-            onSelectionChange={(key) => {
-              if (key !== null && key !== picker.selectedKey && key !== EMPTY_KEY) void choose(String(key));
-            }}>
-            {picker.sections.map((section) =>
-              section.title ? (
-                <PickerSection key={section.key} id={sectionId(section.key)}>
-                  <Header>
-                    <Heading>{section.title}</Heading>
-                  </Header>
-                  {section.items.map(pickerOption)}
+      {/* 语音识别、语音合成、图像生成的默认模型在能力页顶上统一设（capability-default.tsx），只有文本生成在这里设。 */}
+      {capability === 'generateText' ? (
+        <Card label={CLOUD_COPY.defaultLabel[capability]}>
+          <SettingRow label={CLOUD_COPY.defaultLabel[capability]} desc={CLOUD_COPY.defaultDesc[capability]}>
+            <Picker
+              aria-label={CLOUD_COPY.defaultLabel[capability]}
+              size="S"
+              align="end"
+              menuWidth={300}
+              selectedKey={picker.selectedKey}
+              disabledKeys={[EMPTY_KEY]}
+              isDisabled={web || busy || !connected}
+              onSelectionChange={(key) => {
+                if (key !== null && key !== picker.selectedKey && key !== EMPTY_KEY) void choose(String(key));
+              }}>
+              {picker.sections.map((section) =>
+                section.title ? (
+                  <PickerSection key={section.key} id={sectionId(section.key)}>
+                    <Header>
+                      <Heading>{section.title}</Heading>
+                    </Header>
+                    {section.items.map(pickerOption)}
+                  </PickerSection>
+                ) : (
+                  <PickerSection key={section.key} id={sectionId(section.key)} aria-label={section.items[0]?.label}>
+                    {section.items.map(pickerOption)}
+                  </PickerSection>
+                ),
+              )}
+              {picker.empty ? (
+                <PickerSection id={sectionId('empty')} aria-label={CLOUD_COPY.pickerEmpty.other}>
+                  {pickerOption({ key: EMPTY_KEY, label: CLOUD_COPY.pickerEmpty.other })}
                 </PickerSection>
-              ) : (
-                <PickerSection key={section.key} id={sectionId(section.key)} aria-label={section.items[0]?.label}>
-                  {section.items.map(pickerOption)}
-                </PickerSection>
-              ),
-            )}
-            {picker.empty ? (
-              <PickerSection id={sectionId('empty')} aria-label={CLOUD_COPY.pickerEmpty.other}>
-                {pickerOption({ key: EMPTY_KEY, label: capability === 'generateImage' ? CLOUD_COPY.pickerEmpty.image : CLOUD_COPY.pickerEmpty.other })}
-              </PickerSection>
-            ) : null}
-          </Picker>
-        </SettingRow>
-        {capability === 'generateText' ? <TextParamRows view={view} connected={connected} /> : null}
-      </Card>
+              ) : null}
+            </Picker>
+          </SettingRow>
+          <TextParamRows view={view} connected={connected} />
+        </Card>
+      ) : null}
 
       <Lede
         title={CLOUD_COPY.providers}

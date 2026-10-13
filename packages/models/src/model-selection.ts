@@ -27,8 +27,9 @@ import type { ModelText } from './model-text.ts';
  *    只给模型时：用户默认值（或出厂默认）的 Provider 有这个模型就用它，否则 `local` 有就用 `local`，
  *    否则唯一列出它的 Provider；没有 Provider 列出它是 `not-found`，多个是 `invalid-request`。
  * 2. 用户为这种能力设的默认值；
- * 3. 出厂默认：只有 `transcribe` 有——本机有可用的模型包时用 `local` 的默认模型包。`synthesizeSpeech`、
- *    `generateImage` 与 `generateText` 没有出厂默认（即使将来 `local` 提供这些能力），要用户显式指定或设默认值；
+ * 3. 出厂默认：`transcribe` 与 `separateAudio` 在本机有可用的模型包时用 `local` 的默认模型包；`generateImage` 按
+ *    `imageFactoryDefault` 的顺序取第一个可用的（ChatGPT 订阅登录的 Codex、本机、OpenAI、Google、其余在线）。`synthesizeSpeech`、
+ *    `generateMusic` 与 `generateText` 没有出厂默认（即使将来 `local` 提供这些能力），要用户显式指定或设默认值；
  * 4. 都没有：`CAPABILITY_NOT_CONFIGURED`，`reason: 'no-default'`。
  *
  * 选中的 Provider 或模型不可用时直接以 `CAPABILITY_NOT_CONFIGURED` 拒绝，不往下一条落，也不换 Provider。
@@ -86,9 +87,42 @@ const FACTORY_PROVIDER = 'local';
 /** 有出厂默认的能力：都是本机的模型包。 */
 const FACTORY_CAPABILITIES: ReadonlySet<ModelServiceCapability> = new Set(['transcribe', 'separateAudio']);
 
-/** 这种能力有没有出厂默认（§6.2 的第 3 条）：`transcribe` 与 `separateAudio` 有。 */
+/**
+ * 这种能力有没有指向本机模型包的出厂默认（§6.2 的第 3 条）：`transcribe` 与 `separateAudio` 有，删掉模型包时指向它的默认值保留。
+ * `generateImage` 的出厂默认是一个顺序（`imageFactoryDefault`），不算在这里：删掉默认的模型包时默认值清掉，回到那个顺序。
+ */
 export function hasFactoryDefault(capability: ModelServiceCapability): boolean {
   return FACTORY_CAPABILITIES.has(capability);
+}
+
+/** 生图出厂默认里排在本机之后的在线 Provider（2026-10-12 用户裁决）；其余已连接的按视图顺序排在它们后面。 */
+const IMAGE_ONLINE_ORDER = ['openai', 'google'];
+
+/**
+ * 生图出厂默认的排序（§6.2）：智能体（只收订阅登录的，`cost: 'subscription'`；API key 登录的 Codex 不自动选）→ 本机 →
+ * `IMAGE_ONLINE_ORDER` → 其余在线 Provider。节点不参与。不在顺序里的为 null。
+ */
+function imageFactoryRank(view: ProviderView, model: ModelInfoBase): number | null {
+  if (view.kind === 'agent') return 'cost' in model && model.cost === 'subscription' ? 0 : null;
+  if (view.kind === 'local') return 1;
+  if (view.kind !== 'online') return null;
+  const i = IMAGE_ONLINE_ORDER.indexOf(view.providerId);
+  return 2 + (i < 0 ? IMAGE_ONLINE_ORDER.length : i);
+}
+
+/** 生图的出厂默认：按 `imageFactoryRank` 取第一个可用的 Provider 与它可用的默认模型；同档按视图顺序。都不可用时 null。 */
+function imageFactoryDefault(providers: readonly ProviderView[]): { view: ProviderView; modelId: string } | null {
+  let best: { view: ProviderView; modelId: string; rank: number } | null = null;
+  for (const view of providers) {
+    const cap = capabilityOf(view, 'generateImage');
+    if (!cap?.available) continue;
+    const usable = cap.models.filter((m) => m.available !== false);
+    const model = usable.find((m) => m.default) ?? usable[0];
+    if (!model) continue;
+    const rank = imageFactoryRank(view, model);
+    if (rank !== null && (!best || rank < best.rank)) best = { view, modelId: model.modelId, rank };
+  }
+  return best && { view: best.view, modelId: best.modelId };
 }
 
 export function selectModel<C extends ModelServiceCapability>(input: SelectionInput<C>): ModelChoice<C> {
@@ -128,6 +162,11 @@ export function selectModel<C extends ModelServiceCapability>(input: SelectionIn
     return check(input, view, input.userDefault.modelId, 'user-default');
   }
 
+  if (capability === 'generateImage') {
+    const auto = imageFactoryDefault(input.providers);
+    if (auto) return check(input, auto.view, auto.modelId, 'factory-default');
+    throw noDefault(input);
+  }
   const local = FACTORY_CAPABILITIES.has(capability) ? byId.get(FACTORY_PROVIDER) : undefined;
   const localCapability = local ? capabilityOf(local, capability) : undefined;
   const localModel = localCapability?.available ? defaultModelOf(localCapability) : undefined;
@@ -181,6 +220,7 @@ function defaultModelOf<M extends ModelInfoBase>(capability: ProviderCapability<
 /** 不显式指定时的 Provider：用户默认值的，或出厂默认（`local` 可用时）。 */
 function effectiveProviderId(input: SelectionInput<ModelServiceCapability>): string | null {
   if (input.userDefault) return input.userDefault.providerId;
+  if (input.capability === 'generateImage') return imageFactoryDefault(input.providers)?.view.providerId ?? null;
   if (!FACTORY_CAPABILITIES.has(input.capability)) return null;
   const local = input.providers.find((p) => p.providerId === FACTORY_PROVIDER);
   return local && capabilityOf(local, input.capability)?.available ? FACTORY_PROVIDER : null;
@@ -366,8 +406,7 @@ function noDefault(input: SelectionInput<ModelServiceCapability>): RpcError {
       usable.providerId,
     );
   }
-  // 生图的本地模型包不作为没有默认值时的补救：界面开页只回落到已连接的云端模型（设计稿 model-cloud-image.js `preferred`），
-  // 本机生图要用户自己选或设为默认。
+  // 生图走到这里是出厂默认的顺序里一个能用的都没有：本机模型包没装时不把下载作为补救（要下好几 GB），给配置提供方。
   const local = capability === 'generateImage' ? undefined : input.providers.find((p) => p.providerId === FACTORY_PROVIDER);
   const localNotInstalled = local && capabilityOf(local, capability)?.models.some((m) => m.unavailableReason === 'not-installed');
   if (localNotInstalled) {

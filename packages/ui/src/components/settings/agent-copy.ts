@@ -154,12 +154,12 @@ const en = {
   },
 
   /**
-   * 「用 Codex 画图」那一行（settings-agent-provider.jsx:103-119）。设计稿说打开后「图片 Tab、工具页与 bcut image 里多一只
-   * 「Codex 画图」」；现在出现它的地方是 `bcut image` 与会话里 Agent 的生图工具，菜单里的名字是 Provider 自己的「Codex」，照实写。
+   * 「用 Codex 画图」那一行（settings-agent-provider.jsx:103-119）。打开后它排在生图出厂顺序的第一位（架构设计 §6.2，2026-10-12
+   * 用户裁决）：工具页、`bcut image` 与会话里 Agent 不指定模型时用它；菜单里的名字是 Provider 自己的「Codex」。
    */
   codexImage: {
     title: 'Draw with Codex',
-    body: "No key needed; uses your Codex subscription. One image at a time, ignores size and quality, and 5–10× slower than the API. Once on, both bcut image and Agents in sessions can choose it (named “Codex”). It's never picked for you; to use it by default, set it as the default under Models › Image generation › Cloud models.",
+    body: "No key needed; uses your Codex subscription. One image at a time, ignores size and quality, and 5–10× slower than the API. Once on, it comes first in the automatic choice for image generation: the tool page, bcut image and Agents use it unless you set another default model under Models › Image generation. If Codex is signed in with an API key instead of ChatGPT, drawing may not work and it isn't picked automatically.",
     checking: 'Checking whether Codex on this computer can draw…',
     on: 'On',
     /** 补在 Provider 给的原因后面的句号（原因已经以句号结尾就不补）。 */

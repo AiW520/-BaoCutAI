@@ -2,11 +2,20 @@ import type { GenerateImageRequest, ImageModelInfo, JobProgress, JobRecord, Mode
 import type { ImageCandidate } from './image-preview.ts';
 import { formatClock } from './format.ts';
 import { M } from './tools-image-copy.ts';
-import { cloudModelOptions, codePoints, localModelOptions, localNotDownloaded, modelKeyOf, parseSeed, type ToolModelOption } from './tools-models.ts';
+import {
+  agentModelOptions,
+  cloudModelOptions,
+  codePoints,
+  localModelOptions,
+  localNotDownloaded,
+  modelKeyOf,
+  parseSeed,
+  type ToolModelOption,
+} from './tools-models.ts';
 
 /**
  * 生成图片工作台（设计稿 tool-image.jsx、image-gen.jsx `ImageGenForm`、model-cloud-image.js 的云端与本机部分）：
- * 提示词、模型、画幅、数量、种子，本机模型另有步数。参考图、局域网节点这一版没有后端，页面上置灰写原因；Codex 画图在会话里用。
+ * 提示词、模型、画幅、数量、种子，本机模型另有步数。参考图、局域网节点这一版没有后端，页面上置灰写原因。
  */
 
 export type ImageOption = ToolModelOption<ImageModelInfo>;
@@ -18,13 +27,22 @@ export function localImageOptions(view: ModelCapabilitiesView): ImageOption[] {
   return localModelOptions(view, 'generateImage');
 }
 
-/** 生图的模型菜单：云端在前、本机在后（设计稿的三组里 Codex 这一版不在工具页）。 */
+/**
+ * 生图的模型菜单，按出厂顺序（架构设计 §6.2，2026-10-12 用户裁决）：能画的 Codex › 本机（Turbo 在前）› 云端（已连接的在前，
+ * OpenAI、Google Gemini 在前）；Codex 不能画时排到最后，照样列出、写原因。
+ */
 export function imageModelOptions(view: ModelCapabilitiesView): ImageOption[] {
-  return [...cloudModelOptions(view, 'generateImage'), ...localImageOptions(view)];
+  const agents = agentModelOptions(view, 'generateImage');
+  return [
+    ...agents.filter((o) => o.usable),
+    ...localImageOptions(view),
+    ...cloudModelOptions(view, 'generateImage'),
+    ...agents.filter((o) => !o.usable),
+  ];
 }
 
-/** 开页的回落只落到云端（设计稿 `preferred`）：本机模型要用户自己选或设为默认。 */
-export const imageFallback = (option: ImageOption): boolean => !option.local;
+/** 开页的回落（设计稿 `preferred`）：跳过要提醒的 Codex（不是订阅登录），与 Runtime 的出厂顺序一致。 */
+export const imageFallback = (option: ImageOption): boolean => !option.caution;
 
 /** 没写提示词时那一句（设计稿 model-cloud-image.js `EMPTY_PROMPT`）。 */
 export function emptyPrompt(): string {
@@ -205,10 +223,15 @@ export function imageModelLine(info: ImageModelInfo): string {
     .join(' · ');
 }
 
-/** 页头那枚标签（设计稿 model-cloud-image.js `headerChip`）：走谁的服务。计费口径各家不同，只说「按用量计费」。 */
-export function imageHeaderChip(option: Pick<ImageOption, 'provider' | 'local'> | null): string | null {
+/**
+ * 页头那枚标签（设计稿 model-cloud-image.js `headerChip`）：走谁的服务。云端计费口径各家不同，只说「按用量计费」；
+ * Codex 用订阅，不是订阅登录时如实说可能画不了。
+ */
+export function imageHeaderChip(option: Pick<ImageOption, 'provider' | 'local' | 'agent' | 'caution'> | null): string | null {
   if (!option) return null;
-  return option.local ? M.localChip : M.cloudChip(option.provider);
+  if (option.local) return M.localChip;
+  if (option.agent) return option.caution ? M.agentPaidChip(option.provider) : M.agentChip(option.provider);
+  return M.cloudChip(option.provider);
 }
 
 // ---- 记录 ----

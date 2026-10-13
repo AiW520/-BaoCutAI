@@ -173,7 +173,8 @@ describe('本地文生图（假 Model Worker）', () => {
   it('能力视图：local 提供 generateImage，模型描述来自模型包（一次一张、PNG、接受 seed、免费）', async () => {
     const view = await services.refresh();
     expect(view.generateImage.default).toBeNull();
-    expect(view.generateImage.effective).toBeNull();
+    // 出厂顺序里没有能画的 Codex 时，装好的本机模型就是「自动」用的那只（架构设计 §6.2）
+    expect(view.generateImage.effective).toMatchObject({ providerId: 'local', source: 'factory-default' });
     const capability = view.generateImage.providers.find((p) => p.providerId === 'local')!;
     expect(capability).toMatchObject({ kind: 'local', available: true });
     expect(capability.models.map((m) => m.modelId)).toEqual([IMAGE, BIG]);

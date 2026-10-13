@@ -187,7 +187,7 @@ export const zhHans: ToolsMessages = {
     modelPicker: '生图模型',
     noModel: '还没有可用的生图模型',
     noModelBody: '在设置 › 模型 › 图像生成 › 云端模型里连接一家服务商（填密钥），这里就能选它的模型。',
-    localNote: '局域网里的其他电脑还没有接进这一版；Codex 画图在会话里用。',
+    localNote: '局域网里的其他电脑还没有接进这一版。',
     aspect: '画幅',
     aspectAuto: '这只模型不让选尺寸，由服务商定',
     count: '数量',

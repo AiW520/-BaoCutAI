@@ -189,6 +189,27 @@ export const de: ModelsMessages = {
     saved: "Gespeichert",
     failed: (message: string) => `Speichern fehlgeschlagen: ${message}`,
   },
+  capDefault: {
+    label: 'Standardmodell',
+    desc: {
+      transcribe:
+        'Wird verwendet, wenn eine Transkription, die Befehlszeile oder der Agent kein Modell angeben. Lokale, Cloud- und Modelle anderer Computer im Netzwerk stehen hier; noch nicht nutzbare sind ausgegraut, mit Grund. Eine Auswahl auf einer Werkzeugseite gilt nur für diesen Lauf.',
+      synthesizeSpeech:
+        'Wird verwendet, wenn Sprachausgabe, Vertonungen, die Befehlszeile oder der Agent kein Modell angeben. Ohne Standard wählen Sie jedes Mal selbst. Eine Auswahl auf einer Werkzeugseite gilt nur für diesen Lauf.',
+      generateImage:
+        'Wird verwendet, wenn Bilderzeugung, die Befehlszeile oder der Agent kein Modell angeben. Automatisch nimmt das erste verfügbare: Codex mit ChatGPT-Anmeldung › lokales Modell › OpenAI › Google Gemini › andere verbundene Anbieter. Eine Auswahl auf einer Werkzeugseite gilt nur für diesen Lauf.',
+    },
+    auto: 'Automatisch',
+    autoUses: (name: string) => `Automatisch · nutzt jetzt ${name}`,
+    autoNothing: 'Automatisch · noch nichts verfügbar',
+    autoDesc: { transcribe: 'Wählt das passende lokale Modell für diesen Computer', generateImage: 'Codex › lokal › OpenAI › Gemini › andere' },
+    unset: 'Nicht festgelegt',
+    unsetDesc: 'Jedes Mal ein Modell wählen',
+    localGroup: 'Dieser Computer',
+    localWhy: (why: string) => `${why} · unter Lokale Modelle herunterladen`,
+    cloudWhy: (why: string) => `${why} · unter Cloud-Modelle verbinden`,
+    unavailable: (label: string) => `${label} (nicht verfügbar)`,
+  },
   codexCard: {
     title: "Codex CLI",
     on: "Ein · verwendet Ihr Codex-Abonnement, ohne Schlüssel · ein Bild gleichzeitig · ignoriert Größe · 5–10× langsamer",

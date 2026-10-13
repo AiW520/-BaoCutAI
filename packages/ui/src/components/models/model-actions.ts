@@ -16,7 +16,8 @@ import {
   parseDefaultKey,
   type CustomProviderDraft,
 } from '../../model/models-cloud.ts';
-import { canReenable, localDefaultChoice, VIEW_CAPABILITY, type LocalDefaultCapability } from '../../model/models-local.ts';
+import { AUTO_KEY, type DefaultCapability } from '../../model/models-default.ts';
+import { canReenable, localDefaultChoice, LOCAL_PROVIDER, VIEW_CAPABILITY, type LocalDefaultCapability } from '../../model/models-local.ts';
 import { imageProbeRequest, speechProbeRequest, textProbeRequest } from '../../model/models-probe.ts';
 import { concurrencyRequest, effortRequest } from '../../model/models-text.ts';
 import type { RuntimeSession } from '../../runtime/session.ts';
@@ -71,6 +72,22 @@ export async function chooseLocalDefault(
   const target = bundles.find((b) => b.bundleId === choice.modelId);
   if (target && canReenable(target)) await session.enableModelBundle(target.bundleId);
   await session.setModelDefault(VIEW_CAPABILITY[kind], choice.providerId, choice.modelId);
+}
+
+/**
+ * 能力页顶上的统一默认模型选了一项（`AUTO_KEY` = 清掉默认，回到自动或未设置）。选中的本机模型包停用或加载失败过时先重新启用，
+ * 同 `chooseLocalDefault`。
+ */
+export async function chooseCapabilityDefault(
+  session: Session,
+  capability: DefaultCapability,
+  key: string,
+  bundles: readonly ModelBundleStatus[],
+): Promise<void> {
+  const ref = key === AUTO_KEY ? null : parseDefaultKey(key);
+  const target = ref?.providerId === LOCAL_PROVIDER ? bundles.find((b) => b.bundleId === ref.modelId) : undefined;
+  if (target && canReenable(target)) await session.enableModelBundle(target.bundleId);
+  await session.setModelDefault(capability, ref?.providerId ?? null, ref?.modelId);
 }
 
 /** 密钥对话框的「保存」：启用并验证，不过时 Runtime 拒绝、不保存。 */
