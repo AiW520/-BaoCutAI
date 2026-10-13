@@ -263,12 +263,12 @@ async function probeFilterScriptOption(ffmpeg: ToolCommand): Promise<FilterScrip
     await writeFile(graph, 'anullsrc=r=8000:cl=mono,atrim=end_sample=1[out]');
     const probe = (option: FilterScriptOption) => runTool(ffmpeg, [
       '-hide_banner', '-loglevel', 'error', option, graph, '-map', '[out]', '-frames:a', '1', '-f', 'null', '-',
-    ], AbortSignal.timeout(5_000));
+    ]);
     try {
       await probe('-/filter_complex');
       return '-/filter_complex';
     } catch (error) {
-      if (!(error instanceof ToolFailure) || error.kind !== 'failed') throw error;
+      if (error instanceof ToolFailure && error.kind === 'missing') throw error;
     }
     // 旧参数也必须实际通过；失败时保留工具错误，不猜一个选项继续导出。
     await probe('-filter_complex_script');
