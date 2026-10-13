@@ -44,6 +44,7 @@ export const it: RcModelApiMessages = {
   fieldEmpty: (p: { key: string }) => `${p.key} non può essere vuoto`,
   fieldNotNumber: (p: { key: string }) => `${p.key} deve essere un numero`,
   fieldNotInteger: (p: { key: string; min: number }) => `${p.key} deve essere un intero maggiore o uguale a ${p.min}`,
+  fieldIntegerRange: (p: { key: string; min: number; max: number }) => `${p.key} deve essere un intero compreso tra ${p.min} e ${p.max}`,
   bodyNotObject: 'Il corpo della richiesta deve essere un oggetto JSON',
   onlySupports: (p: { field: string; values: string }) => `${p.field} supporta solo ${p.values}`,
   listSeparator: ', ',

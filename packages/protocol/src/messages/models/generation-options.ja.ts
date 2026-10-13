@@ -23,6 +23,7 @@ export const ja: ModelsGenerationOptionsMessages = {
   maxCount: (p: { modelId: string; max: number }) => `モデル ${p.modelId} が一度に生成できる画像は ${p.max} 枚までです`,
   noSteps: (p: { modelId: string }) => `モデル ${p.modelId} は steps を受け付けません（受け付けるのはローカルモデルのみです）`,
   stepsRange: (p: { min: number; max: number }) => `steps は ${p.min} から ${p.max} までの整数である必要があります`,
+  stepsFixed: (p: { modelId: string; steps: number }) => `モデル ${p.modelId} は ${p.steps} ステップ固定です。steps を省略するか ${p.steps} を指定してください`,
   noSeed: (p: { modelId: string }) => `モデル ${p.modelId} は seed を受け付けません`,
   styleEmpty: 'スタイルは空にできません',
   styleTooLong: (p: { length: number; modelId: string; limit: number }) => `スタイルは ${p.length} 文字で、モデル ${p.modelId} の上限 ${p.limit} 文字を超えています`,

@@ -23,6 +23,7 @@ export const ko: ModelsGenerationOptionsMessages = {
   maxCount: (p: { modelId: string; max: number }) => `${p.modelId} 모델은 한 번에 이미지를 최대 ${p.max}개까지 생성합니다`,
   noSteps: (p: { modelId: string }) => `${p.modelId} 모델은 steps를 받지 않습니다(로컬 모델만 받음)`,
   stepsRange: (p: { min: number; max: number }) => `steps는 ${p.min}~${p.max} 사이의 정수여야 합니다`,
+  stepsFixed: (p: { modelId: string; steps: number }) => `${p.modelId} 모델은 ${p.steps}단계로 고정되어 있습니다. steps를 생략하거나 ${p.steps}로 지정하세요`,
   noSeed: (p: { modelId: string }) => `${p.modelId} 모델은 seed를 받지 않습니다`,
   styleEmpty: '스타일은 비워 둘 수 없습니다',
   styleTooLong: (p: { length: number; modelId: string; limit: number }) => `스타일이 ${p.length}자로 모델 ${p.modelId}의 상한 ${p.limit}자를 넘습니다`,

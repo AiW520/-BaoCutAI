@@ -21,6 +21,7 @@ export const ptBR: ModelsGenerationOptionsMessages = {
   maxCount: (p: { modelId: string; max: number }) => `Modelo ${p.modelId} gera no máximo ${p.max} imagens por vez`,
   noSteps: (p: { modelId: string }) => `Modelo ${p.modelId} não aceita steps (somente modelos locais)`,
   stepsRange: (p: { min: number; max: number }) => `steps deve ser um inteiro entre ${p.min} e ${p.max}`,
+  stepsFixed: (p: { modelId: string; steps: number }) => `O modelo ${p.modelId} só funciona com ${p.steps} steps; omita steps ou use ${p.steps}`,
   noSeed: (p: { modelId: string }) => `Modelo ${p.modelId} não aceita seed`,
   styleEmpty: 'O estilo não pode estar vazio',
   styleTooLong: (p: { length: number; modelId: string; limit: number }) => `O estilo tem ${p.length} caracteres, acima do limite de ${p.limit} do modelo ${p.modelId}`,

@@ -12,6 +12,7 @@ import { chatCompletionReply, fakeOpenAiHandler, startFakeProviderServer, type F
 import { MODEL_API_INTERFACE_VERSION, type ServicesSnapshot } from '@baocut/protocol';
 import { resolveRuntimeHome, type RuntimeHome } from '@baocut/runtime-storage';
 import { startRuntime, type RunningRuntime } from '../runtime.ts';
+import { imageRequest } from './model-api-openai.ts';
 
 /**
  * 模型接口服务（架构设计 §4.8、§12.8）：OpenAI 形状的本机端点。临时的 Runtime Home、系统挑的端口、假的 OpenAI
@@ -156,6 +157,20 @@ function multipart(fields: Record<string, string | string[]>, file: { name: stri
   parts.push(Buffer.from(`--${boundary}--\r\n`));
   return { body: Buffer.concat(parts), contentType: `multipart/form-data; boundary=${boundary}` };
 }
+
+describe('imageRequest', () => {
+  it('seed 与 steps 照原样带进请求；不给就不写，形状不对是 400 INVALID_REQUEST', () => {
+    expect(imageRequest({ prompt: 'a cat', seed: 7, steps: 8 })).toEqual({ prompt: 'a cat', seed: 7, steps: 8 });
+    expect(imageRequest({ prompt: 'a cat', seed: 4_294_967_295 })).toMatchObject({ seed: 4_294_967_295 });
+    expect(imageRequest({ prompt: 'a cat' })).not.toHaveProperty('seed');
+    expect(imageRequest({ prompt: 'a cat' })).not.toHaveProperty('steps');
+    for (const body of [{ seed: -1 }, { seed: 1.5 }, { seed: '7' }, { seed: 2 ** 32 }, { steps: 0 }, { steps: 8.5 }, { steps: '8' }]) {
+      expect(() => imageRequest({ prompt: 'a cat', ...body }), JSON.stringify(body)).toThrow(
+        expect.objectContaining({ status: 400, code: 'INVALID_REQUEST' }),
+      );
+    }
+  });
+});
 
 describe('模型接口服务', () => {
   let dir: string;
@@ -422,6 +437,21 @@ describe('模型接口服务', () => {
     });
     expect(url.status).toBe(400);
     expect(url.json.error).toMatchObject({ code: 'UNSUPPORTED_PARAMETER', type: 'invalid_request_error' });
+    // 扩展字段 seed / steps：形状在解析时检查，范围按所选模型在提交时检查；在线模型不收步数。都不创建任务。
+    const imageJobs = (await client.request('jobs.list', {})).jobs.length;
+    const bigSeed = await send(base, '/v1/images/generations', {
+      token,
+      json: { model: 'openai/gpt-image-1', prompt: 'a cat', seed: 2 ** 32 },
+    });
+    expect(bigSeed.status).toBe(400);
+    expect(bigSeed.json.error).toMatchObject({ code: 'INVALID_REQUEST', message: expect.stringContaining('seed') });
+    const onlineSteps = await send(base, '/v1/images/generations', {
+      token,
+      json: { model: 'openai/gpt-image-1', prompt: 'a cat', steps: 20 },
+    });
+    expect(onlineSteps.status).toBe(400);
+    expect(onlineSteps.json.error).toMatchObject({ code: 'INVALID_REQUEST', message: expect.stringContaining('steps') });
+    expect((await client.request('jobs.list', {})).jobs).toHaveLength(imageJobs);
 
     const model = await textModel(token);
     const messages = [

@@ -21,6 +21,7 @@ export const de: ModelsGenerationOptionsMessages = {
   maxCount: (p: { modelId: string; max: number }) => `Modell ${p.modelId} erzeugt höchstens ${p.max} Bilder gleichzeitig`,
   noSteps: (p: { modelId: string }) => `Modell ${p.modelId} unterstützt keine steps (nur lokale Modelle unterstützen dies)`,
   stepsRange: (p: { min: number; max: number }) => `steps muss eine ganze Zahl sein zwischen ${p.min} und ${p.max}`,
+  stepsFixed: (p: { modelId: string; steps: number }) => `Modell ${p.modelId} läuft nur mit ${p.steps} steps; steps weglassen oder ${p.steps} angeben`,
   noSeed: (p: { modelId: string }) => `Modell ${p.modelId} unterstützt keinen seed`,
   styleEmpty: 'Der Stil darf nicht leer sein',
   styleTooLong: (p: { length: number; modelId: string; limit: number }) => `Der Stil hat ${p.length} Zeichen und überschreitet das Limit von ${p.limit} des Modells ${p.modelId}`,

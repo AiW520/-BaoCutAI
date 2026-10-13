@@ -108,6 +108,9 @@ export function speechRequest(body: Json): SynthesizeSpeechRequest {
 
 // ---- 图片：POST /v1/images/generations ----
 
+/** 出图的种子与命令里的一样是 32 位无符号整数（命令协议的 `seed` 模式）。 */
+const MAX_IMAGE_SEED = 4_294_967_295;
+
 export function imageRequest(body: Json): GenerateImageRequest {
   const prompt = string(body, 'prompt', true);
   const count = integer(body, 'n', 1);
@@ -121,11 +124,17 @@ export function imageRequest(body: Json): GenerateImageRequest {
     throw onlySupports('output_format', IMAGE_FORMATS);
   }
   if (body.stream === true) throw unsupported(RcModelApi.imageStreamUnsupported());
+  // BaoCut 的扩展字段：种子与去噪步数。范围按所选模型在提交时检查（`imageParameters`），不给时用模型的默认值。
+  const seed = integer(body, 'seed', 0);
+  if (seed !== undefined && seed > MAX_IMAGE_SEED) throw invalid(RcModelApi.fieldIntegerRange({ key: 'seed', min: 0, max: MAX_IMAGE_SEED }));
+  const steps = integer(body, 'steps', 1);
   return {
     prompt,
     ...(count !== undefined ? { count } : {}),
     ...(size !== undefined && size !== 'auto' ? { size } : {}),
     ...(format !== undefined ? { format: format as ImageFormat } : {}),
+    ...(seed !== undefined ? { seed } : {}),
+    ...(steps !== undefined ? { steps } : {}),
   };
 }
 

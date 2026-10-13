@@ -51,6 +51,7 @@ export const nl: RcModelApiMessages = {
   fieldEmpty: (p: { key: string }) => `${p.key} mag niet leeg zijn`,
   fieldNotNumber: (p: { key: string }) => `${p.key} moet een getal zijn`,
   fieldNotInteger: (p: { key: string; min: number }) => `${p.key} moet een geheel getal zijn van minstens ${p.min}`,
+  fieldIntegerRange: (p: { key: string; min: number; max: number }) => `${p.key} moet een geheel getal van ${p.min} tot en met ${p.max} zijn`,
   bodyNotObject: "De verzoekinhoud moet een JSON-object zijn",
   onlySupports: (p: { field: string; values: string }) => `${p.field} ondersteunt alleen ${p.values}`,
   listSeparator: ", ",

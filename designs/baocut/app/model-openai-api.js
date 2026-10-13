@@ -122,7 +122,7 @@
           doc: '只有 png。jpeg / webp 返回 400 unsupported_param。'},
         {name: 'background', loc: 'json', kind: 'enum', dflt: 'auto', values: ['auto', 'opaque'], more: true, reject: true,
           doc: 'transparent 返回 400 unsupported_param：本机模型画不了透明底。'},
-        {name: 'seed', loc: 'json', kind: 'int', more: true, ext: true, doc: '种子。同一模型、同一描述、同一种子画出同一张。'},
+        {name: 'seed', loc: 'json', kind: 'int', more: true, ext: true, doc: '种子，0 到 4294967295。同一模型、同一描述、同一种子画出同一张。不写时抽一个，响应里带回。'},
         {name: 'steps', loc: 'json', kind: 'int', more: true, ext: true, placeholder: '按模型',
           doc: '采样步数，越多越细也越慢。不写用模型的默认值：Qwen-Image-2.1 是 20，可写 8–40；Turbo 是蒸馏版，固定 8 步。超出模型的范围返回 400 invalid_request。'},
         {name: 'quality', loc: 'json', ignored: true},

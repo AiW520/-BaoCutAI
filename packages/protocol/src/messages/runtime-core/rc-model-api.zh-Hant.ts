@@ -46,6 +46,7 @@ export const zhHant: RcModelApiMessages = {
   fieldEmpty: (p: { key: string }) => `${p.key} 不能為空`,
   fieldNotNumber: (p: { key: string }) => `${p.key} 必須是數字`,
   fieldNotInteger: (p: { key: string; min: number }) => `${p.key} 必須是不小於 ${p.min} 的整數`,
+  fieldIntegerRange: (p: { key: string; min: number; max: number }) => `${p.key} 必須是 ${p.min} 到 ${p.max} 之間的整數`,
   bodyNotObject: '請求內容必須是 JSON 物件',
   onlySupports: (p: { field: string; values: string }) => `${p.field} 只支援 ${p.values}`,
   listSeparator: '、',

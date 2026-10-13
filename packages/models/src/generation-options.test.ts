@@ -140,6 +140,20 @@ describe('imageParameters', () => {
     expect(imageParameters(local, { prompt: 'a fox' })).not.toHaveProperty('steps');
     for (const steps of [4, 41, 8.5]) expect(() => imageParameters(local, { prompt: 'a fox', steps })).toThrow(invalid());
   });
+
+  it('固定步数的蒸馏模型只收那一个值，说明直接点出固定的步数', () => {
+    const turbo = choice('generateImage', { ...imageModel(), local: { steps: { min: 8, max: 8, step: 8, default: 8 } } });
+    expect(imageParameters(turbo, { prompt: 'a fox', steps: 8 })).toMatchObject({ steps: 8 });
+    let message = '';
+    try {
+      imageParameters(turbo, { prompt: 'a fox', steps: 20 });
+    } catch (error) {
+      expect(error).toEqual(invalid({ steps: { min: 8, max: 8, step: 8, default: 8 } }));
+      message = String((error as Error).message);
+    }
+    expect(message).toMatch(/\b8\b/);
+    expect(message).not.toMatch(/8 (and|到) 8/);
+  });
 });
 
 describe('生成能力的选择', () => {

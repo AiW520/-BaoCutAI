@@ -68,6 +68,7 @@ const en = {
   fieldEmpty: (p: { key: string }) => `${p.key} can't be empty`,
   fieldNotNumber: (p: { key: string }) => `${p.key} must be a number`,
   fieldNotInteger: (p: { key: string; min: number }) => `${p.key} must be an integer no less than ${p.min}`,
+  fieldIntegerRange: (p: { key: string; min: number; max: number }) => `${p.key} must be an integer from ${p.min} to ${p.max}`,
   bodyNotObject: 'The request body must be a JSON object',
   onlySupports: (p: { field: string; values: string }) => `${p.field} only supports ${p.values}`,
   listSeparator: ', ',

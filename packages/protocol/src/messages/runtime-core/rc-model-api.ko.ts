@@ -48,6 +48,7 @@ export const ko: RcModelApiMessages = {
   fieldEmpty: (p: { key: string }) => `${p.key} 값은 비워 둘 수 없습니다`,
   fieldNotNumber: (p: { key: string }) => `${p.key} 값은 숫자여야 합니다`,
   fieldNotInteger: (p: { key: string; min: number }) => `${p.key} 값은 ${p.min} 이상의 정수여야 합니다`,
+  fieldIntegerRange: (p: { key: string; min: number; max: number }) => `${p.key} 값은 ${p.min} 이상 ${p.max} 이하의 정수여야 합니다`,
   bodyNotObject: '요청 본문은 JSON 객체여야 합니다',
   onlySupports: (p: { field: string; values: string }) => `${p.field} 값은 ${p.values}만 지원합니다`,
   listSeparator: ', ',

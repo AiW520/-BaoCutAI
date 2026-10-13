@@ -848,7 +848,7 @@ interface ContextBarrierResult {
 | `GET /v1/models`、`GET /v1/models/{model}` | 服务此刻能路由到的模型：别名在前，然后是 `<providerId>/<modelId>`；只列可用的，`baocut` 字段带能力与 Provider |
 | `POST /v1/audio/transcriptions` | multipart：`file`、`model`、`language`（按断言处理）、`prompt`（术语提示）、`response_format` 为 `json`、`text`、`srt`、`vtt` 或 `verbose_json`，`timestamp_granularities[]` 为 `word`、`segment` |
 | `POST /v1/audio/speech` | `input`、`voice`、`instructions`、`speed`、`response_format` 为 `mp3`、`wav` 或 `flac`；响应是音频字节 |
-| `POST /v1/images/generations` | `prompt`、`n`、`size`、`output_format`；`response_format` 只有 `b64_json`：这个服务不托管图片，要 `url` 时回答 400 `UNSUPPORTED_PARAMETER` |
+| `POST /v1/images/generations` | `prompt`、`n`、`size`、`output_format`；`response_format` 只有 `b64_json`：这个服务不托管图片，要 `url` 时回答 400 `UNSUPPORTED_PARAMETER`。BaoCut 的扩展字段 `seed`（0..2^32-1）与 `steps` 同 `models.generateImage`（§6.1「本地生图」）：不给时用模型的默认值，模型不收或超出模型的范围（Turbo 只收 8）在提交时回答 400 `INVALID_REQUEST`；回答的 `baocut` 带冻结的 `seed` 与给了的 `steps` |
 | `POST /v1/chat/completions` | `messages`（`system`、`developer`、`user`、`assistant`，纯文本）、`temperature`、`max_tokens` / `max_completion_tokens`（后者优先）、`seed`、`reasoning_effort`、`response_format` 为 `json_object` 或 `json_schema`；工具调用、`n > 1` 与 `logprobs` 回答 400 `UNSUPPORTED_PARAMETER`。`stream: true` 不做真正的增量：整段结果作为一个内容块的 SSE 返回，随后是结束块（`stream_options.include_usage` 时再加用量块）与 `[DONE]` |
 | `GET /v1/baocut/info` | 接口版本、端点、路由开关、等级与上限 |
 

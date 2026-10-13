@@ -51,6 +51,7 @@ export const ja: RcModelApiMessages = {
   fieldEmpty: (p: { key: string }) => `${p.key} は空にできません`,
   fieldNotNumber: (p: { key: string }) => `${p.key} は数値にしてください`,
   fieldNotInteger: (p: { key: string; min: number }) => `${p.key} は ${p.min} 以上の整数にしてください`,
+  fieldIntegerRange: (p: { key: string; min: number; max: number }) => `${p.key} は ${p.min} 以上 ${p.max} 以下の整数にしてください`,
   bodyNotObject: 'リクエスト本文は JSON オブジェクトにしてください',
   onlySupports: (p: { field: string; values: string }) => `${p.field} が対応しているのは ${p.values} のみです`,
   listSeparator: '、',

@@ -254,11 +254,16 @@ export function imageParameters(choice: ModelChoice<'generateImage'>, request: G
     const range = model.local?.steps;
     if (!range) throw new RpcError('invalid-request', M.noSteps({ modelId: choice.modelId }), where);
     if (!(Number.isInteger(request.steps) && request.steps >= range.min && request.steps <= range.max)) {
-      throw new RpcError('invalid-request', M.stepsRange({ min: range.min, max: range.max }), { ...where, steps: range });
+      throw new RpcError('invalid-request', stepsMessage(choice.modelId, range), { ...where, steps: range });
     }
     steps = request.steps;
   }
   return { capability: 'generateImage', prompt, size, aspectRatio, count, format, seed, ...(steps !== null ? { steps } : {}) };
+}
+
+/** 步数超出范围的说明：上下限相同（蒸馏模型的固定步数）时直接说只收这一个值。 */
+function stepsMessage(modelId: string, range: { min: number; max: number }) {
+  return range.min === range.max ? M.stepsFixed({ modelId, steps: range.min }) : M.stepsRange({ min: range.min, max: range.max });
 }
 
 function checkSeed(seed: number | undefined, accepts: boolean, modelId: string, where: Record<string, string>): number | null {
@@ -340,7 +345,7 @@ export function musicParameters(choice: ModelChoice<'generateMusic'>, request: G
     const range = model.local?.steps;
     if (!range) throw new RpcError('invalid-request', M.noSteps({ modelId: choice.modelId }), where);
     if (!(Number.isInteger(request.steps) && request.steps >= range.min && request.steps <= range.max)) {
-      throw new RpcError('invalid-request', M.stepsRange({ min: range.min, max: range.max }), { ...where, steps: range });
+      throw new RpcError('invalid-request', stepsMessage(choice.modelId, range), { ...where, steps: range });
     }
     steps = request.steps;
   }

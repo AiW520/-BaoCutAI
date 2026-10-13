@@ -566,12 +566,18 @@ export class ModelApiService implements ManagedService {
       data.push({ b64_json: bytes.toString('base64') });
     }
     const first = record.result?.outputs?.[0];
+    // 冻结的种子（请求没给时本地 Provider 抽的那个）与给了的步数带回去，调用方照着就能画出同一张。
+    const frozen = record.generation?.capability === 'generateImage' ? record.generation : null;
     this.#sendJson(response, 200, {
       created: Math.floor(Date.parse(record.createdAt) / 1000),
       data,
       ...(first ? { output_format: first.mediaType.replace(/^image\//, '') } : {}),
       ...(first?.media.kind === 'image' ? { size: `${first.media.width}x${first.media.height}` } : {}),
-      baocut: this.#trace(record),
+      baocut: {
+        ...this.#trace(record),
+        ...(frozen?.seed != null ? { seed: frozen.seed } : {}),
+        ...(frozen?.steps !== undefined ? { steps: frozen.steps } : {}),
+      },
     });
   }
 

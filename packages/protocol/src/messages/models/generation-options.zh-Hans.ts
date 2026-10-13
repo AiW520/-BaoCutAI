@@ -21,6 +21,7 @@ export const zhHans: ModelsGenerationOptionsMessages = {
   maxCount: (p: { modelId: string; max: number }) => `模型 ${p.modelId} 一次最多生成 ${p.max} 张`,
   noSteps: (p: { modelId: string }) => `模型 ${p.modelId} 不接受 steps（只有本地模型接受）`,
   stepsRange: (p: { min: number; max: number }) => `steps 应是 ${p.min} 到 ${p.max} 之间的整数`,
+  stepsFixed: (p: { modelId: string; steps: number }) => `模型 ${p.modelId} 固定 ${p.steps} 步；不写 steps 或写 ${p.steps}`,
   noSeed: (p: { modelId: string }) => `模型 ${p.modelId} 不接受 seed`,
   styleEmpty: '风格描述不能为空',
   styleTooLong: (p: { length: number; modelId: string; limit: number }) => `风格描述有 ${p.length} 个字符，超过模型 ${p.modelId} 的上限 ${p.limit}`,

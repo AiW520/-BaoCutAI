@@ -44,6 +44,7 @@ export const ru: RcModelApiMessages = {
   fieldEmpty: (p: { key: string }) => `${p.key} не может быть пустым`,
   fieldNotNumber: (p: { key: string }) => `${p.key} должен быть числом`,
   fieldNotInteger: (p: { key: string; min: number }) => `${p.key} должен быть целым числом не меньше ${p.min}`,
+  fieldIntegerRange: (p: { key: string; min: number; max: number }) => `${p.key} должен быть целым числом от ${p.min} до ${p.max}`,
   bodyNotObject: "Тело запроса должно быть объектом JSON",
   onlySupports: (p: { field: string; values: string }) => `${p.field} поддерживает только ${p.values}`,
   listSeparator: ", ",

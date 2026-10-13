@@ -36,6 +36,7 @@ const en = {
   maxCount: (p: { modelId: string; max: number }) => `Model ${p.modelId} generates at most ${p.max} images at a time`,
   noSteps: (p: { modelId: string }) => `Model ${p.modelId} doesn't accept steps (only local models do)`,
   stepsRange: (p: { min: number; max: number }) => `steps must be a whole number between ${p.min} and ${p.max}`,
+  stepsFixed: (p: { modelId: string; steps: number }) => `Model ${p.modelId} only runs at ${p.steps} steps; leave steps out or pass ${p.steps}`,
   noSeed: (p: { modelId: string }) => `Model ${p.modelId} doesn't accept seed`,
   styleEmpty: 'Style can\'t be empty',
   styleTooLong: (p: { length: number; modelId: string; limit: number }) => `The style has ${p.length} characters, over the ${p.limit}-character limit of model ${p.modelId}`,

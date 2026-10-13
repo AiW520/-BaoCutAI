@@ -51,6 +51,7 @@ export const ptBR: RcModelApiMessages = {
   fieldEmpty: (p: { key: string }) => `${p.key} não pode estar vazio`,
   fieldNotNumber: (p: { key: string }) => `${p.key} deve ser um número`,
   fieldNotInteger: (p: { key: string; min: number }) => `${p.key} deve ser um inteiro maior ou igual a ${p.min}`,
+  fieldIntegerRange: (p: { key: string; min: number; max: number }) => `${p.key} deve ser um inteiro entre ${p.min} e ${p.max}`,
   bodyNotObject: "O corpo deve ser um objeto JSON",
   onlySupports: (p: { field: string; values: string }) => `${p.field} aceita apenas ${p.values}`,
   listSeparator: ", ",
