@@ -513,7 +513,7 @@ audiocpp_cli --task gen --family yue2 --model <模型包目录> --threads <n>
 | `embeddinggemma2-text@litert-lm`（文字搜索） | `litert-community/embeddinggemma-2-text-270m-litert-lm` | `embeddinggemma-2-text-270m.litertlm`，约 157 MiB |
 | `embeddinggemma2-multimodal@litert-lm`（多模态搜索；图像编码器在加载时带 `vision` 才打开） | `litert-community/embeddinggemma-2-740m-litert-lm` | `embeddinggemma-2-740m.litertlm`，约 462 MiB |
 
-两个包的文字编码器在 LiteRT-LM 0.18.0 的 CPU 上出的向量逐位相同（实测），所以属于同一个嵌入空间（变体 `text-270m`、同一个量化兼容组）；`encoderProfileId` 仍随模型文件的 sha256 不同。许可都是 Apache-2.0。
+两个包的文字编码器在 LiteRT-LM 0.18.0 的 CPU 上出的向量逐位相同（实测），所以属于同一个嵌入空间（变体 `text-270m`、同一个量化兼容组）；`encoderProfileId` 仍随模型文件的 sha256 不同，但不带 LiteRT-LM 的版本号：升级 C 库后由参考向量回归（检索规格 §5.3）判断旧向量还能不能比较。许可都是 Apache-2.0。
 
 **C 库**。LiteRT-LM 的 C API 不随应用分发，是两个模型包共用的发布页组件 `litertlm-runtime`（`google-ai-edge/LiteRT-LM` 的 v0.18.0 Releases，许可 Apache-2.0）。下载、核对、暂存、清单、引用计数与回收照 §4.4 的引擎组件，区别是：它是交给 Worker 的动态库（`workerLibrary`），不是 Runtime 执行的程序——不做 `--version` 探测，`BAOCUT_AUDIOCPP_CLI` 之类的覆盖变量不替它，不认 `PATH`，没有清单的旧装法不算装好；装好后它和权重一样作为 `components['litertlm-runtime']` 交给 Worker（文件列表取组件目录的清单）。上游只为 macOS 发布了 C 库：`CLiteRTLM_mac.xcframework.zip` 里 `CLiteRTLM_mac.xcframework/macos-arm64_x86_64/` 下的通用 `libCLiteRTLM_mac.dylib`（arm64 + x86_64），解开到 `<runtime-home>/tools/litertlm-runtime/0.18.0/`，同目录的 `Headers/` 不解开。Windows 与 Linux 没有库包，两个模型包在那里是 `error` / `unsupported`，说明点名 LiteRT-LM 没有这个平台的版本。
 

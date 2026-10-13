@@ -174,6 +174,8 @@ Google 模型卡的检索示例使用 `SearchQuery` 与 `Document`，查询模�
 
 `encoderProfileId` 标识实际编码实现：空间 ID、输入模态、SDK/实现版本、模型文件校验和、图签名、视觉预处理、音频预处理、视频采样方式。CPU/GPU、270M/740M 模块化结果能否共用空间必须经过测试；名称相同不充分。
 
+**实现（2026-10-13）：** 「SDK/实现版本」一项不写 LiteRT-LM 的版本号，写向量兼容标签（`EMBEDDING_VECTOR_COMPAT`，现为 `vec-v1`）：引擎小版本升级常常出逐位相同的向量，按版本号区分会让每次升级都白白重建全部索引。升级引擎、改 Worker 的嵌入实现时跑参考向量回归（`tools/embedding-eval/reference-vectors.ts`：固定文字与一张合成帧，按平台 / 设备 / 模型包存参考），任何一条余弦低于 0.9999 才把标签加一。
+
 ```text
 embeddingKey = SHA256(
   encoderProfileId

@@ -21,8 +21,15 @@ const MiB = 1024 * 1024;
 /** 组件目录与镜像路径里 C 库的名字：`<toolsDir>/litertlm-runtime/<版本>/`。 */
 export const LITERTLM_RUNTIME_TOOL = 'litertlm-runtime';
 
-/** LiteRT-LM 的版本：进 `encoderProfileId`（SDK 版本）。 */
+/** LiteRT-LM 的版本（C 库组件的版本与下载地址）。不进 `encoderProfileId`：那里只放 `EMBEDDING_VECTOR_COMPAT`。 */
 export const LITERTLM_VERSION = '0.18.0';
+
+/**
+ * 向量兼容标签，进 `encoderProfileId`（检索规格 v0.1 §5.3 的「SDK/实现版本」）。升级 LiteRT-LM、换编译选项或换 Worker 时
+ * 不跟着变；用 `tools/embedding-eval/reference-vectors.ts` 把固定的文字与合成帧重新编码，与仓库里存的参考向量比，任何一条
+ * 余弦低于 0.9999 才把它加一（旧向量随之不再比较、索引重建），再重新生成参考。
+ */
+export const EMBEDDING_VECTOR_COMPAT = 'vec-v1';
 
 const MAC_ASSET = {
   fileName: 'CLiteRTLM_mac.xcframework.zip',

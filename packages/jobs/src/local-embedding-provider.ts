@@ -7,7 +7,7 @@ import {
   EMBED_MAX_IMAGE_BATCH,
   EmbeddingError,
   INPUT_TOO_LONG,
-  LITERTLM_VERSION,
+  EMBEDDING_VECTOR_COMPAT,
   ProviderFailure,
   bundleUsable,
   digestText,
@@ -34,7 +34,8 @@ import type { LocalTranscribeProvider } from './local-provider.ts';
  *   一个都没装好时 `MODEL_NOT_INSTALLED`；装了但用不了（平台不支持、停用、Worker 不认识）时 `MODEL_UNAVAILABLE`。
  * - 向量：向 Worker 要 `outputSize`（768）维（引擎已归一化），截到 `dims`（512）维再归一化。前缀只在 `formatEmbeddingInput` 加一次。
  * - 身份（§5.3）：`embeddingSpaceId = embeddinggemma2/<变体>/<promptPairId>/<维度>/l2/<量化兼容组>`；`encoderProfileId` 在它后面加
- *   输入模态、LiteRT-LM 版本、模型文件的 sha256 与登记的设备。
+ *   输入模态、向量兼容标签（`EMBEDDING_VECTOR_COMPAT`：不是 LiteRT-LM 的版本号，升级引擎后由参考向量回归判断要不要变）、
+ *   模型文件的 sha256 与登记的设备。
  * - 一批至多 `EMBED_MAX_BATCH`（16）条；超长不截断，以 `INPUT_TOO_LONG` 报出是第几条（从 1 数）。
  * - 画面（`text-to-visual`，检索规格 §6.2）：只用有图像编码器的模型包（`modalities` 含 `image`），文字查询与关键帧都由它编码；
  *   没装时 `MODEL_NOT_INSTALLED`（与「设置里关了画面检索」的 `CHANNEL_UNAVAILABLE` 是两回事）。`encoderProfileId` 另带模态
@@ -149,13 +150,13 @@ export class LocalEmbeddingProvider implements EmbeddingProvider {
       ? [
           embeddingSpaceId,
           'image',
-          `litertlm-${LITERTLM_VERSION}`,
+          EMBEDDING_VECTOR_COMPAT,
           spec.modelSha256,
           def.device,
           `vt${vision.tokensPerImage}`,
           `keyframe-${vision.frameEdge}-${vision.frameFormat}`,
         ].join('/')
-      : [embeddingSpaceId, 'text', `litertlm-${LITERTLM_VERSION}`, spec.modelSha256, def.device].join('/');
+      : [embeddingSpaceId, 'text', EMBEDDING_VECTOR_COMPAT, spec.modelSha256, def.device].join('/');
     return {
       embeddingSpaceId,
       encoderProfileId,

@@ -202,7 +202,7 @@ describe('本机 embedding（假 Model Worker）', () => {
       const profile = await provider.profile('retrieval');
       expect(profile).toEqual({
         embeddingSpaceId: 'embeddinggemma2/text-270m/model-card-v1/512/l2/q-test',
-        encoderProfileId: `embeddinggemma2/text-270m/model-card-v1/512/l2/q-test/text/litertlm-0.18.0/${'a'.repeat(64)}/cpu`,
+        encoderProfileId: `embeddinggemma2/text-270m/model-card-v1/512/l2/q-test/text/vec-v1/${'a'.repeat(64)}/cpu`,
         promptPairId: 'model-card-v1',
         dims: 512,
         maxInputTokens: 2048,
@@ -228,7 +228,7 @@ describe('本机 embedding（假 Model Worker）', () => {
       const visual = await provider.profile('text-to-visual');
       expect(visual.embeddingSpaceId).toBe(text.embeddingSpaceId);
       expect(visual.encoderProfileId).toBe(
-        `embeddinggemma2/text-270m/model-card-v1/512/l2/q-test/image/litertlm-0.18.0/${'b'.repeat(64)}/cpu/vt140/keyframe-512-jpeg`,
+        `embeddinggemma2/text-270m/model-card-v1/512/l2/q-test/image/vec-v1/${'b'.repeat(64)}/cpu/vt140/keyframe-512-jpeg`,
       );
       expect(visual.frames).toEqual({ edge: 512, format: 'jpeg', maxBatch: 4 });
       expect(text.frames).toBeUndefined();
