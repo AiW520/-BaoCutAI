@@ -5,7 +5,7 @@ import { pickExportDestination } from '../../model/export-destination.ts';
 import { explainExportError } from '../../model/export-rejection.ts';
 import { DEFAULT_LOUDNESS_FORM, DEFAULT_VIDEO_FORM, safeFileStem, videoSettings } from '../../model/export-settings.ts';
 import { openingSentence } from '../../model/shorts-fold.ts';
-import { entryVideoId, readDerivation, type ShortsDerivation } from '../../model/shorts-result.ts';
+import { entryVideoId, readDerivation, shortFactsKey, type ShortsDerivation } from '../../model/shorts-result.ts';
 import { videoTargetOf } from '../../model/space.ts';
 import { readSpeechWords } from '../../model/speech-cues.ts';
 import { transcriptParagraphs, transcriptWords } from '../../model/transcript-cut.ts';
@@ -77,7 +77,7 @@ const facts = new Map<string, Promise<ShortFacts>>();
 
 /**
  * 读一支子视频的派生来源与眼下的时长；`withOpening` 时另读开头那一句（没有 `hook` 时要读转写正文）。
- * 按 `key`（条目 id 加最近活动时间）缓存：子视频改过之后最近活动变了，再读一次。
+ * 按 `key`（条目定位与内容版本）缓存：子视频改过之后版本变了，再读一次。
  */
 export function peekShort(runtime: RuntimeSession, target: FileTarget, key: string, withOpening = true): Promise<ShortFacts> {
   const slot = `${key}|${withOpening ? 'opening' : 'plain'}`;
@@ -134,7 +134,7 @@ export function useShortFacts(entry: SpaceEntry, withOpening = true): ShortFacts
   const [peeked, setPeeked] = useState<ShortFacts | null>(null);
   const [opening, setOpening] = useState<{ revision: string; text: string | null } | null>(null);
   // `entry` 换了对象但 `key` 没变时不用再读：目标按 `key` 记下来。
-  const key = `${entry.id}@${entry.lastActivityAt}`;
+  const key = shortFactsKey(entry);
   const target = useMemo(() => videoTargetOf(entry), [key]); // eslint-disable-line react-hooks/exhaustive-deps
   const isLive = !!live;
   useEffect(() => {

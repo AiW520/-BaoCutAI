@@ -85,6 +85,12 @@ export interface ShortsBatchKey {
 }
 
 const videoIdOf = (entry: Pick<SpaceEntry, 'ref'>): Id | null => (entry.ref && 'videoId' in entry.ref ? entry.ref.videoId : null);
+
+/** 后台打开会更新数据库的写锁代与 mtime；只按内容版本重读，旧 Runtime 没有版本时退回最近活动时间。 */
+export function shortFactsKey(entry: SpaceEntry): string {
+  return JSON.stringify([entry.id, videoIdOf(entry), entry.source.projectId, entry.source.conversationId, entry.relPath, entry.statusDetail?.currentRevision ?? entry.lastActivityAt]);
+}
+
 const createdAt = (entry: Pick<SpaceEntry, 'createdAt' | 'lastActivityAt'>) => entry.createdAt ?? entry.lastActivityAt;
 
 /**

@@ -83,6 +83,36 @@ describe.skipIf(!engine)('Space（真实引擎）', () => {
     await runtime.space.idle();
   }
 
+  it('后台打开关闭改变数据库时间时内容版本不变，实际编辑后版本更新', async () => {
+    const video = await videoWithCaption('短片', 'Opening sentence');
+    await client.request('videos.close', { videoId: video.videoId });
+    await settle();
+    const listed = async () => (await client.request('space.list', { videoId: video.videoId, kind: 'video' })).entries[0]!;
+    const before = await listed();
+    expect(before.statusDetail?.currentRevision).toBeDefined();
+
+    const target = { projectId: project.id, path: video.relPath };
+    for (let i = 0; i < 3; i++) {
+      await client.request('videos.open', target);
+      await client.request('videos.close', { videoId: video.videoId });
+      await settle();
+      const after = await listed();
+      expect(after.statusDetail?.currentRevision).toBe(before.statusDetail!.currentRevision);
+    }
+    expect((await listed()).lastActivityAt).not.toBe(before.lastActivityAt);
+
+    const opened = await client.request('videos.open', target);
+    const { receipt } = await client.request('edits.apply', {
+      videoId: video.videoId,
+      commandId: newId('cmd'),
+      expectedRevision: opened.snapshot.video.revision,
+      operations: [{ type: 'renameVideo', name: 'Edited short' }],
+    });
+    await runtime.space.idle();
+    expect((await listed()).statusDetail?.currentRevision).toBe(receipt.videoRevision);
+    expect(receipt.videoRevision).not.toBe(before.statusDetail!.currentRevision);
+  });
+
   it('视频内部标题不同于迁移目录名时，列表、改名和重建使用真实标题', async () => {
     const legacyName = 'legacy-title-fixture';
     const video = await videoWithCaption(legacyName, 'Interview transcript');

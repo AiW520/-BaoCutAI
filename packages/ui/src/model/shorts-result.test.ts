@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { DocumentRecord, SpaceEntry, TimelineItem } from '@baocut/protocol';
 import { SHORTS_COPY } from '../components/editor/shorts-copy.ts';
-import { MADE_SHOWN, createdVideoIds, framingShots, madeShorts, pagerIndex, readDerivation, shortsBatch } from './shorts-result.ts';
+import { MADE_SHOWN, createdVideoIds, framingShots, madeShorts, pagerIndex, readDerivation, shortFactsKey, shortsBatch } from './shorts-result.ts';
 
 function video(id: string, over: Partial<SpaceEntry> = {}): SpaceEntry {
   return {
@@ -22,6 +22,23 @@ function video(id: string, over: Partial<SpaceEntry> = {}): SpaceEntry {
 }
 const child = (id: string, createdAt: string, over: Partial<SpaceEntry> = {}) =>
   video(id, { createdAt, origin: { source: 'derived', projectId: 'p1', videoId: 'parent', capability: 'videos-derive' }, ...over });
+
+describe('shortFactsKey', () => {
+  it('ignores database activity from background opens, but refreshes after an edit or target change', () => {
+    const entry = video('child', { statusDetail: { currentRevision: '7' } });
+    const key = shortFactsKey(entry);
+    expect(shortFactsKey({ ...entry, lastActivityAt: '2026-10-10T12:00:00.000Z', size: 4096 })).toBe(key);
+    expect(shortFactsKey({ ...entry, statusDetail: { currentRevision: '8' } })).not.toBe(key);
+    expect(shortFactsKey({ ...entry, ref: { videoId: 'copy' } })).not.toBe(key);
+    expect(shortFactsKey({ ...entry, relPath: 'moved/child' })).not.toBe(key);
+    expect(shortFactsKey({ ...entry, source: { projectId: 'p2', conversationId: null } })).not.toBe(key);
+  });
+
+  it('falls back to activity time when the runtime has not supplied a content revision', () => {
+    const entry = video('child');
+    expect(shortFactsKey({ ...entry, lastActivityAt: '2026-10-10T12:00:00.000Z' })).not.toBe(shortFactsKey(entry));
+  });
+});
 
 describe('shortsBatch', () => {
   const key = { parentVideoId: 'parent', conversationId: 'c1', handedAt: '2026-10-10T12:00:00.000Z', created: null };

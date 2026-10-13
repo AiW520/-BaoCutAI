@@ -1037,6 +1037,7 @@ interface SpaceEntry {
   };
   status: 'generating' | 'candidate' | 'applied' | 'published'
         | 'source-changed' | 'missing' | 'failed';
+  statusDetail?: { currentRevision?: Revision }; // 视频条目：内容索引读到的当前版本；成片：来源视频的当前版本
   media?: { duration?: MediaTime; width?: number; height?: number };
   deck?: { slideCount: number };           // 幻灯片条目（含合法 deck.json 的目录）的页数；name 是 deck 的标题
   canvas?: { boardCount: number };         // 设计稿条目（含合法 canvas.json 的目录）的画板数；name 是设计稿的标题
@@ -1049,6 +1050,8 @@ interface SpaceEntry {
 ```
 
 创建与更新时间由 Runtime 派生，客户端各自按所选时间倒序展示。创建时间不可用时返回 null，不使用文件状态变更时间（ctime）或修改时间代替；旧 Runtime 可省略两个字段，客户端把未知时间放在末尾。来源目录之外的结果在文件不可用时用任务完成时间；缺失的导入文件保留登记时间作为创建时间，更新时间未知；回收站视频记录尚未保存这两项时间，均返回 null。
+
+视频条目的 `statusDetail.currentRevision` 取自内容索引；尚未索引时省略。短视频卡片的内容缓存按定位与此版本失效，不能把数据库的 mtime 当作内容版本：仅取得写锁也会改变数据库时间。旧 Runtime 没有提供版本时可退回最近活动时间。
 
 **数据来源**
 

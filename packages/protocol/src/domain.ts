@@ -901,7 +901,7 @@ export interface SpaceEntry {
   /** 指向的对象：视频（视频条目）、产物（生成与导出的结果）或任务（占位）。普通文件没有。 */
   ref?: { videoId: Id } | { artifactId: string } | { jobId: Id };
   origin?: SpaceEntryOrigin;
-  /** 状态的说明：失败与缺失的原因、进度、成片冻结的版本与视频当前的版本。 */
+  /** 状态的说明：失败与缺失的原因、进度、成片冻结的版本与视频当前的版本。视频条目也提供内容索引读到的当前版本。 */
   statusDetail?: {
     reason?: string;
     code?: string;
