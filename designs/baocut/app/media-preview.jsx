@@ -250,6 +250,25 @@
     useEffect(() => {
       if (!active) drag.current = null;
     }, [active]);
+    // 全屏查看器里左右键、Home / End 在整个窗口切换图片；输入框、菜单与已处理的按键不抢。
+    const keys = useRef(() => false);
+    keys.current = (key) => {
+      if (panorama || mode === 'markup' || mode === 'remove' || view !== 'focused' || files.length < 2) return false;
+      const next = M.galleryKey(index, files.length, key);
+      if (next === null || key === 'ArrowUp' || key === 'ArrowDown') return false;
+      if (next !== index) onSelect(files[next]);
+      return true;
+    };
+    useEffect(() => {
+      if (!immersive || !active) return;
+      const onKey = (e) => {
+        if (e.defaultPrevented || e.altKey || e.ctrlKey || e.metaKey || e.shiftKey) return;
+        if (e.target?.closest?.('input, textarea, select, [contenteditable]:not([contenteditable="false"]), [role="menu"], [role="listbox"], [role="slider"]')) return;
+        if (keys.current(e.key)) e.preventDefault();
+      };
+      document.addEventListener('keydown', onKey);
+      return () => document.removeEventListener('keydown', onKey);
+    }, [immersive, active]);
     const setTool = (value) => {
       setMode(value);
       if (gif.isGif && value === 'comment') gif.update({ playing: false, view: 'single' });
@@ -292,7 +311,7 @@
         />
       );
     return (
-      <section className={cx("media-preview media-preview--image", immersive && "media-preview--immersive")} aria-label={`图片预览：${file.name}`}>
+      <section className={cx("media-preview media-preview--image", immersive && "media-preview--immersive", immersive && window.BC_SURFACE.windowChrome && "media-preview--window-inset")} aria-label={`图片预览：${file.name}`}>
         <window.MediaImageHeader file={file} view={view} setView={view => update({view})} zoom={zoom} scale={scale}
           setZoom={key => key === 'fit' ? update({zoom: 'fit'}) : around(Number(key))} onClose={onClose} onOpenTab={onOpenTab}
           gif={gif.isGif} onPanorama={() => setPanorama(true)}
@@ -339,7 +358,9 @@
           <window.MediaGifSheet gif={gif} />
         ) : (
           <div className="media-preview__layout">
-            {view === 'focused' && files.length > 1 && <window.MediaImageRail files={files} file={file} onSelect={onSelect} />}
+            {!immersive && view === 'focused' && files.length > 1 && <window.MediaImageRail files={files} file={file} onSelect={onSelect} />}
+            {/* 全屏查看器把缩略图条浮在查看区底部，包一层定位；面板里这层不参与布局。 */}
+            <div className={immersive ? 'media-preview__stage-wrap' : 'media-preview__stage-contents'}>
             <div ref={stage} className={cx('media-preview__stage bc-scroll', mode === 'comment' && 'is-commenting')}>
               {view === 'canvas' && !gif.isGif ? (
                 <div ref={canvas} className="media-gallery">
@@ -401,6 +422,8 @@
                   />
                 </div>
               )}
+            </div>
+            {immersive && view === 'focused' && files.length > 1 && <window.MediaImageDock files={files} file={file} onSelect={onSelect} />}
             </div>
             {mode === 'comment' && (
               <Comments

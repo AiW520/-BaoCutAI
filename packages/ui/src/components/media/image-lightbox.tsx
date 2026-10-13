@@ -11,6 +11,7 @@ import { useShell } from '../../state/shell-store.ts';
 import { useImagePreview } from '../../state/image-preview-store.ts';
 import { mediaTheme } from './theme.tsx';
 import { ImageRail } from './image-chrome.tsx';
+import { loadPreviewImage } from './gif.ts';
 const EMPTY: ImageCandidate[] = [];
 export function ImageLightbox({
   files,
@@ -26,6 +27,8 @@ export function ImageLightbox({
   conversationId?: string | null;
 }) {
   const groups = useImagePreview((s) => s.groups);
+  // macOS 的红绿灯浮在全屏查看器上面，表头左边留出和标题栏一样的位置。
+  const mac = useRuntime().host.platform === 'darwin';
   const [selected, setSelected] = useState(initial);
   const current = files.find((f) => targetKey(f.target) === targetKey(selected.target)) ?? selected;
   useEffect(() => {
@@ -38,7 +41,12 @@ export function ImageLightbox({
   }, []);
   return (
     <DialogContainer onDismiss={onClose}>
-      <CustomDialog size="fullscreenTakeover" padding="none" aria-label={current.name} UNSAFE_className={`${mediaTheme} bc-image-lightbox`}>
+      <CustomDialog
+        size="fullscreenTakeover"
+        padding="none"
+        aria-label={current.name}
+        UNSAFE_className={`${mediaTheme} bc-image-lightbox ${mac ? 'bc-image-lightbox--mac' : ''}`}
+      >
         <ResolvedImage
           candidate={current}
           files={
@@ -71,21 +79,26 @@ function ResolvedImage({
   onClose: () => void;
 }) {
   const runtime = useRuntime(),
-    key = targetKey(candidate.target),
-    [resolved, setResolved] = useState<{ key: string; handle: MediaHandle | null }>({ key, handle: candidate.handle ?? null }),
+    key = targetKey(candidate.target);
+  // 切换图片时先解析并预载下一张，到手再换；中途继续显示上一张，不退回加载圈，查看器也不重挂。
+  const [shown, setShown] = useState<{
+      candidate: ImageCandidate;
+      handle: MediaHandle;
+    } | null>(candidate.handle ? { candidate, handle: candidate.handle } : null),
     [error, setError] = useState(false);
-  const handle = resolved.key === key ? resolved.handle : (candidate.handle ?? null);
   useEffect(() => {
     setError(false);
-    if (candidate.temporary) {
-      setResolved({ key, handle: candidate.handle ?? null });
-      return;
-    }
+    if (candidate.temporary && !candidate.handle) return;
     let cancelled = false;
-    void runtime
-      .resolveMedia(candidate.target)
+    void (candidate.temporary || candidate.handle ? Promise.resolve(candidate.handle!) : runtime.resolveMedia(candidate.target))
+      .then((h) =>
+        loadPreviewImage(h.url).then(
+          () => h,
+          () => h,
+        ),
+      )
       .then((h) => {
-        if (!cancelled) setResolved({ key, handle: h });
+        if (!cancelled) setShown({ candidate, handle: h });
       })
       .catch(() => {
         if (!cancelled) setError(true);
@@ -94,18 +107,20 @@ function ResolvedImage({
       cancelled = true;
     };
   }, [runtime, key, candidate.handle]);
-  if (error || !handle)
+  if (error || !shown)
     return (
       <div className="bc-media-error">
         {error ? M.unavailable : <ProgressCircle isIndeterminate aria-label={M.image} />}
         <ActionButton onPress={onClose}>{M.cancel}</ActionButton>
       </div>
     );
+  const displayed = shown.candidate;
   return (
     <ImagePreview
-      target={candidate.target}
-      handle={handle}
-      fileName={candidate.name}
+      target={displayed.target}
+      handle={shown.handle}
+      fileName={displayed.name}
+      current={candidate}
       gallery={files}
       onSelect={onSelect}
       conversationId={conversationId}
@@ -113,10 +128,14 @@ function ResolvedImage({
       onClose={onClose}
       onQueued={onClose}
       onOpenTab={
-        candidate.temporary
+        displayed.temporary
           ? undefined
           : () => {
-              useShell.getState().openPane({ kind: 'file', target: candidate.target, name: candidate.name });
+              useShell.getState().openPane({
+                kind: 'file',
+                target: displayed.target,
+                name: displayed.name,
+              });
               onClose();
             }
       }

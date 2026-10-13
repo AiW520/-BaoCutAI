@@ -2,7 +2,7 @@ import { useSpace } from '../state/space-store.ts';
 import { entryOfTarget } from '../model/workspace.ts';
 import { entryPath } from '../model/space.ts';
 import { markdownAbsolutePath } from '../model/markdown-file-link.ts';
-import { useEffect, useRef, useState, type PointerEvent } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState, type PointerEvent } from 'react';
 import type { MediaTarget, MediaHandle } from '@baocut/protocol';
 import { ActionButton, Button, TextArea, ToastQueue, ToggleButton } from '@react-spectrum/s2';
 import { style } from '@react-spectrum/s2/style' with { type: 'macro' };
@@ -26,7 +26,7 @@ import { useDirectory } from '../state/directory-store.ts';
 import { COMPOSER_MENU, AGENT_PICKER } from '../copy.ts';
 import { addImageRequest, addImageBatch } from '../state/image-request.ts';
 
-import { ImageChrome, ImageTools, ImageRail } from './media/image-chrome.tsx';
+import { ImageChrome, ImageTools, ImageRail, ImageDock } from './media/image-chrome.tsx';
 import { ImageMarkup } from './media/image-markup.tsx';
 import { ImagePanorama } from './media/image-panorama.tsx';
 import { useImageZoom } from './media/use-image-zoom.ts';
@@ -98,6 +98,7 @@ export function ImagePreview({
   target,
   handle,
   fileName,
+  current,
   gallery,
   onSelect,
   conversationId,
@@ -110,6 +111,8 @@ export function ImagePreview({
   target: MediaTarget;
   handle: MediaHandle;
   fileName: string;
+  /** 已选中、可能还在加载的图片；缺省是正在显示的这张。切换、缩略图高亮都以它为准。 */
+  current?: ImageCandidate;
   gallery?: ImageCandidate[];
   onSelect?: (image: ImageCandidate) => void;
   conversationId?: string | null;
@@ -193,7 +196,8 @@ export function ImagePreview({
   const selectionKey = conversationId ? 'canvas:' + conversationId : resourceKey;
   const canvasSelection = useImagePreview((s) => s.views[selectionKey]?.selected ?? EMPTY_IMAGE_VIEW.selected);
   const setSelection = (selected: string[]) => useImagePreview.getState().view(selectionKey, { selected });
-  const index = files.findIndex((f) => targetKey(f.target) === resourceKey);
+  const currentKey = current ? targetKey(current.target) : resourceKey;
+  const index = files.findIndex((f) => targetKey(f.target) === currentKey);
   const scale = zoom === 'fit' ? imageFit(natural, viewport) : Number(zoom) / 100;
   const { around, isPinching } = useImageZoom(
     stage,
@@ -233,6 +237,32 @@ export function ImagePreview({
     const next = files[index + delta];
     if (next) onSelect?.(next);
   };
+  // 换图时缓存里的图会同步解码完，绘制前就换上新尺寸，免得先按上一张的尺寸画一帧。
+  useLayoutEffect(() => {
+    const img = image.current;
+    if (img?.complete && img.naturalWidth) setNatural({ width: img.naturalWidth, height: img.naturalHeight });
+  }, [displayUrl]);
+  // 全屏查看器里焦点多半落在表头按钮上，左右键在整个窗口里切换图片；输入框、菜单与已处理的按键不抢。
+  const keys = useRef<(key: string) => boolean>(() => false);
+  keys.current = (key) => {
+    if (tool || panorama || view.view !== 'focused' || files.length < 2) return false;
+    if (key === 'ArrowLeft' || key === 'ArrowRight') select(key === 'ArrowLeft' ? -1 : 1);
+    else if (key === 'Home' || key === 'End') onSelect?.(files[key === 'Home' ? 0 : files.length - 1]!);
+    else return false;
+    return true;
+  };
+  useEffect(() => {
+    if (!immersive || !active) return;
+    const onKey = (event: KeyboardEvent) => {
+      if (event.defaultPrevented || event.altKey || event.ctrlKey || event.metaKey || event.shiftKey) return;
+      const field = (event.target as Element | null)?.closest(
+        'input, textarea, select, [contenteditable]:not([contenteditable="false"]), [role="menu"], [role="listbox"], [role="slider"]',
+      );
+      if (!field && keys.current(event.key)) event.preventDefault();
+    };
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+  }, [immersive, active]);
   const locate = (event: PointerEvent) =>
     canvas.current && imagePoint({ x: event.clientX, y: event.clientY }, canvas.current.getBoundingClientRect());
   const down = (event: PointerEvent<HTMLDivElement>) => {
@@ -377,107 +407,117 @@ export function ImagePreview({
         </div>
       )}
       <div className={`${layout} bc-image-layout`}>
-        {view.view === 'focused' && files.length > 1 && (
-          <ImageRail files={files} selected={targetKey(target)} onSelect={(f) => onSelect?.(f)} />
+        {!immersive && view.view === 'focused' && files.length > 1 && (
+          <ImageRail files={files} selected={currentKey} onSelect={(f) => onSelect?.(f)} />
         )}
-        <div ref={stage} className={`${stageStyle} bc-scroll bc-image-stage`} style={{ cursor: commenting ? 'crosshair' : 'grab' }}>
-          {view.view === 'canvas' ? (
-            <div className="bc-image-grid">
-              {canvasFiles.map((f) => (
-                <div key={targetKey(f.target)}>
-                  <ImageRail
-                    files={[f]}
-                    selected=""
-                    onSelect={(c) => {
-                      onSelect?.(c);
-                      useImagePreview.getState().view(targetKey(c.target), { view: 'focused' });
-                    }}
-                  />
-                  <ToggleButton
-                    isSelected={canvasSelection.includes(targetKey(f.target))}
-                    onChange={(on) =>
-                      setSelection(
-                        on ? [...canvasSelection, targetKey(f.target)] : canvasSelection.filter((k) => k !== targetKey(f.target)),
-                      )
-                    }
-                  >
-                    {f.name}
-                  </ToggleButton>
-                </div>
-              ))}
-            </div>
-          ) : view.sheet && gif.data ? (
-            <div className="bc-gif-grid">
-              {gif.data.frames.map((f, i) => (
-                <ActionButton key={i} aria-label={`${M.frame} ${i + 1}`} onPress={() => update({ frame: i, sheet: false, playing: false })}>
-                  <img src={f.url} alt={`${M.frame} ${i + 1}`} />
-                </ActionButton>
-              ))}
-            </div>
-          ) : error ? (
-            <div className={notice} role="status">
-              {P.mediaError.decode}
-              <ActionButton onPress={() => setError(false)}>{M.retry}</ActionButton>
-            </div>
-          ) : (
-            <div
-              ref={canvas}
-              className={canvasStyle}
-              style={{ width: natural.width * scale }}
-              tabIndex={0}
-              role="group"
-              aria-label={M.canvas}
-              onPointerDown={down}
-              onPointerMove={move}
-              onPointerUp={(event) => {
-                drag.current = null;
-                if (event.currentTarget.hasPointerCapture(event.pointerId)) event.currentTarget.releasePointerCapture(event.pointerId);
-              }}
-              onLostPointerCapture={() => {
-                drag.current = null;
-              }}
-              onPointerCancel={() => {
-                drag.current = null;
-              }}
-              onKeyDown={(event) => {
-                if (event.target !== event.currentTarget) return;
-                if (commenting && event.key === 'Enter') {
-                  event.preventDefault();
-                  patch({ region: { x: 0.5, y: 0.5, width: 0, height: 0 }, text: '', editing: null });
-                } else if (event.key === 'ArrowLeft' || event.key === 'ArrowRight') {
-                  event.preventDefault();
-                  select(event.key === 'ArrowLeft' ? -1 : 1);
-                }
-              }}
-            >
-              <img
-                ref={image}
-                className={imgStyle}
-                src={displayUrl}
-                crossOrigin="anonymous"
-                alt={fileName}
-                draggable={false}
-                onLoad={(event) => {
-                  setNatural({ width: event.currentTarget.naturalWidth, height: event.currentTarget.naturalHeight });
-                  setImageReady(true);
-                }}
-                onError={() => setError(true)}
-              />
-              {commenting && comments.map((c) => overlay(c.region, c.id))}
-              {commenting && draft.region && overlay(draft.region, 'pending')}
-              {commenting &&
-                comments.map((c, i) => (
-                  <div key={c.id} className={pinStyle} style={{ left: `${c.region.x * 100}%`, top: `${c.region.y * 100}%` }}>
-                    <ActionButton
-                      size="XS"
-                      aria-label={`${M.edit} ${i + 1}`}
-                      onPress={() => patch({ region: c.region, text: c.text, editing: c.id })}
+        {/* 全屏查看器把缩略图条浮在查看区底部，包一层定位；面板里这层不参与布局。 */}
+        <div className={immersive ? 'bc-image-stage-wrap' : 'bc-image-stage-contents'}>
+          <div ref={stage} className={`${stageStyle} bc-scroll bc-image-stage`} style={{ cursor: commenting ? 'crosshair' : 'grab' }}>
+            {view.view === 'canvas' ? (
+              <div className="bc-image-grid">
+                {canvasFiles.map((f) => (
+                  <div key={targetKey(f.target)}>
+                    <ImageRail
+                      files={[f]}
+                      selected=""
+                      onSelect={(c) => {
+                        onSelect?.(c);
+                        useImagePreview.getState().view(targetKey(c.target), { view: 'focused' });
+                      }}
+                    />
+                    <ToggleButton
+                      isSelected={canvasSelection.includes(targetKey(f.target))}
+                      onChange={(on) =>
+                        setSelection(
+                          on ? [...canvasSelection, targetKey(f.target)] : canvasSelection.filter((k) => k !== targetKey(f.target)),
+                        )
+                      }
                     >
-                      {i + 1}
-                    </ActionButton>
+                      {f.name}
+                    </ToggleButton>
                   </div>
                 ))}
-            </div>
+              </div>
+            ) : view.sheet && gif.data ? (
+              <div className="bc-gif-grid">
+                {gif.data.frames.map((f, i) => (
+                  <ActionButton
+                    key={i}
+                    aria-label={`${M.frame} ${i + 1}`}
+                    onPress={() => update({ frame: i, sheet: false, playing: false })}
+                  >
+                    <img src={f.url} alt={`${M.frame} ${i + 1}`} />
+                  </ActionButton>
+                ))}
+              </div>
+            ) : error ? (
+              <div className={notice} role="status">
+                {P.mediaError.decode}
+                <ActionButton onPress={() => setError(false)}>{M.retry}</ActionButton>
+              </div>
+            ) : (
+              <div
+                ref={canvas}
+                className={canvasStyle}
+                style={{ width: natural.width * scale }}
+                tabIndex={0}
+                role="group"
+                aria-label={M.canvas}
+                onPointerDown={down}
+                onPointerMove={move}
+                onPointerUp={(event) => {
+                  drag.current = null;
+                  if (event.currentTarget.hasPointerCapture(event.pointerId)) event.currentTarget.releasePointerCapture(event.pointerId);
+                }}
+                onLostPointerCapture={() => {
+                  drag.current = null;
+                }}
+                onPointerCancel={() => {
+                  drag.current = null;
+                }}
+                onKeyDown={(event) => {
+                  if (event.target !== event.currentTarget) return;
+                  if (commenting && event.key === 'Enter') {
+                    event.preventDefault();
+                    patch({ region: { x: 0.5, y: 0.5, width: 0, height: 0 }, text: '', editing: null });
+                  } else if (event.key === 'ArrowLeft' || event.key === 'ArrowRight') {
+                    event.preventDefault();
+                    select(event.key === 'ArrowLeft' ? -1 : 1);
+                  }
+                }}
+              >
+                <img
+                  ref={image}
+                  className={imgStyle}
+                  src={displayUrl}
+                  crossOrigin="anonymous"
+                  alt={fileName}
+                  draggable={false}
+                  onLoad={(event) => {
+                    setNatural({ width: event.currentTarget.naturalWidth, height: event.currentTarget.naturalHeight });
+                    setImageReady(true);
+                  }}
+                  onError={() => setError(true)}
+                />
+                {commenting && comments.map((c) => overlay(c.region, c.id))}
+                {commenting && draft.region && overlay(draft.region, 'pending')}
+                {commenting &&
+                  comments.map((c, i) => (
+                    <div key={c.id} className={pinStyle} style={{ left: `${c.region.x * 100}%`, top: `${c.region.y * 100}%` }}>
+                      <ActionButton
+                        size="XS"
+                        aria-label={`${M.edit} ${i + 1}`}
+                        onPress={() => patch({ region: c.region, text: c.text, editing: c.id })}
+                      >
+                        {i + 1}
+                      </ActionButton>
+                    </div>
+                  ))}
+              </div>
+            )}
+          </div>
+          {immersive && view.view === 'focused' && files.length > 1 && (
+            <ImageDock files={files} selected={currentKey} onSelect={(f) => onSelect?.(f)} />
           )}
         </div>
         {commenting && (

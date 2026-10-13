@@ -197,9 +197,14 @@ export function ImageRail({
     const e = ref.current,
       item = e?.querySelector<HTMLElement>('[aria-current="true"]');
     if (e && item) {
-      const top = item.getBoundingClientRect().top - e.getBoundingClientRect().top + e.scrollTop;
+      const box = e.getBoundingClientRect(),
+        rect = item.getBoundingClientRect();
+      const top = rect.top - box.top + e.scrollTop,
+        left = rect.left - box.left + e.scrollLeft;
       if (top < e.scrollTop || top + item.offsetHeight > e.scrollTop + e.clientHeight)
         e.scrollTop = top - (e.clientHeight - item.offsetHeight) / 2;
+      if (left < e.scrollLeft || left + item.offsetWidth > e.scrollLeft + e.clientWidth)
+        e.scrollLeft = left - (e.clientWidth - item.offsetWidth) / 2;
     }
   }, [selected]);
   return (
@@ -229,6 +234,28 @@ export function ImageRail({
         />
       ))}
     </span>
+  );
+}
+/** 全屏查看器底部的缩略图条：平时隐藏，指针移到底边、键盘焦点进入或刚换图时显示；没有悬停的设备一直显示。 */
+export function ImageDock({
+  files,
+  selected,
+  onSelect,
+}: {
+  files: ImageCandidate[];
+  selected: string;
+  onSelect: (c: ImageCandidate) => void;
+}) {
+  const [peek, setPeek] = useState(true);
+  useEffect(() => {
+    setPeek(true);
+    const timer = setTimeout(() => setPeek(false), 1500);
+    return () => clearTimeout(timer);
+  }, [selected]);
+  return (
+    <div className={`bc-image-dock ${peek ? 'is-peek' : ''}`}>
+      <ImageRail files={files} selected={selected} onSelect={onSelect} />
+    </div>
   );
 }
 export function ImageThumbnail({

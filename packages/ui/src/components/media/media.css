@@ -305,6 +305,64 @@
   background: transparent;
   padding-bottom: 0;
 }
+/* macOS 的红绿灯压在全屏查看器左上角：各表头（查看、标注、全景）左边让出与标题栏相同的 84px，表头也能拖动窗口。 */
+.bc-image-lightbox--mac .bc-image-header {
+  padding-inline-start: 84px;
+  -webkit-app-region: drag;
+}
+.bc-image-lightbox--mac .bc-image-header button,
+.bc-image-lightbox--mac .bc-image-header [role='button'] {
+  -webkit-app-region: no-drag;
+}
+.bc-image-lightbox--mac > .bc-media-error {
+  padding-top: 48px;
+}
+/* 查看区与浮在底部的缩略图条；缩略图条盖在图上，不占布局，显隐不会让「适合窗口」重新计算。 */
+.bc-image-stage-contents {
+  display: contents;
+}
+.bc-image-stage-wrap {
+  position: relative;
+  display: flex;
+  flex: 1 1 240px;
+  min-width: 0;
+  min-height: 0;
+}
+.bc-image-dock {
+  position: absolute;
+  inset-inline: 0;
+  bottom: 0;
+  display: flex;
+  justify-content: center;
+  padding: 32px 16px 12px;
+}
+.bc-image-dock > .bc-image-rail {
+  flex-direction: row;
+  width: auto;
+  max-width: 100%;
+  padding: 6px;
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--media-bg) 88%, transparent);
+  box-shadow: 0 2px 8px rgb(0 0 0 / 0.16);
+  backdrop-filter: blur(8px);
+  opacity: 0;
+  transform: translateY(8px);
+  transition:
+    opacity 150ms cubic-bezier(0.45, 0, 0.4, 1),
+    transform 150ms cubic-bezier(0.45, 0, 0.4, 1);
+}
+.bc-image-dock:hover > .bc-image-rail,
+.bc-image-dock:focus-within > .bc-image-rail,
+.bc-image-dock.is-peek > .bc-image-rail {
+  opacity: 1;
+  transform: none;
+}
+@media (hover: none) {
+  .bc-image-dock > .bc-image-rail {
+    opacity: 1;
+    transform: none;
+  }
+}
 .bc-image-immersive .bc-image-stage {
   background: transparent;
 }

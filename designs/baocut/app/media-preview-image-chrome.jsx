@@ -6,9 +6,12 @@
     React.useEffect(() => {
       const element = rail.current, item = element?.querySelector('[aria-current="true"]');
       if (!element || !item) return;
-      const top = item.getBoundingClientRect().top - element.getBoundingClientRect().top + element.scrollTop;
+      const box = element.getBoundingClientRect(), rect = item.getBoundingClientRect();
+      const top = rect.top - box.top + element.scrollTop, left = rect.left - box.left + element.scrollLeft;
       if (top < element.scrollTop || top + item.offsetHeight > element.scrollTop + element.clientHeight)
         element.scrollTop = top - (element.clientHeight - item.offsetHeight) / 2;
+      if (left < element.scrollLeft || left + item.offsetWidth > element.scrollLeft + element.clientWidth)
+        element.scrollLeft = left - (element.clientWidth - item.offsetWidth) / 2;
     }, [file.id]);
     return <span ref={rail} className={`media-image-rail ${className}`} role="group" aria-label="图片列表">
       {files.map((image, index) => <BCAction key={image.id} className="media-image-rail__item"
@@ -22,6 +25,16 @@
         <img src={image.previewSrc} alt="" loading="lazy" />
       </BCAction>)}
     </span>;
+  }
+  /* 全屏查看器底部的缩略图条：平时隐藏，指针移到底边、键盘焦点进入或刚换图时显示；没有悬停的设备一直显示。 */
+  function MediaImageDock({files, file, onSelect}) {
+    const [peek, setPeek] = React.useState(true);
+    React.useEffect(() => {
+      setPeek(true);
+      const timer = setTimeout(() => setPeek(false), 1500);
+      return () => clearTimeout(timer);
+    }, [file.id]);
+    return <div className={`media-image-dock${peek ? ' is-peek' : ''}`}><MediaImageRail files={files} file={file} onSelect={onSelect} /></div>;
   }
   function MediaImageHeader({file, view, setView, zoom, scale, setZoom, onClose, onOpenTab, onCopy, gif, onPanorama}) {
     const app = useApp();
@@ -70,5 +83,5 @@
       {!gif && <R.ActionButton size="S" isQuiet aria-label="多选图片" onPress={() => {setView('canvas'); setTool('select');}}><R.Icons.Images /></R.ActionButton>}
     </div>;
   }
-  Object.assign(window, {MediaImageRail, MediaImageHeader, MediaImageTools});
+  Object.assign(window, {MediaImageRail, MediaImageDock, MediaImageHeader, MediaImageTools});
 })();
