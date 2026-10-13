@@ -93,7 +93,8 @@ const FOLLOW: Partial<Record<SpaceEntryKind, readonly FollowId[]>> = {
   document: ['translate-subtitles', 'synthesize-speech', 'new-movie'],
   subtitle: ['translate-subtitles', 'synthesize-speech', 'new-movie'],
   audio: ['new-movie'],
-  image: ['new-movie'],
+  // 生成的图片不接「以此新建视频」：放大查看、下载、交给 Agent 就够了（产品设计 §2.7）。
+  image: [],
   'video-file': ['new-movie'],
   export: ['new-movie'],
 };
@@ -121,7 +122,7 @@ export function followUps(entry: Pick<SpaceEntry, 'kind'>, fromTool?: ToolId | n
 }
 
 /**
- * 「以此新建视频」为什么做不了；能做时 null。音频、图片与视频文件直接成为新视频的素材（素材留在原处，只做链接）；
+ * 「以此新建视频」为什么做不了；能做时 null。音频与视频文件直接成为新视频的素材（素材留在原处，只做链接）；
  * 文稿与字幕要先配一份视频或音频，Runtime 还没有这样新建的方法。
  */
 export function newMovieBlock(entry: Pick<SpaceEntry, 'kind' | 'status' | 'user'>, path: string | null): string | null {

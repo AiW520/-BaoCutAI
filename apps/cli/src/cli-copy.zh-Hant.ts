@@ -105,6 +105,7 @@ export const zhHant: CliMessages = {
   jobEnded: (state) => `作業已結束：${state}。`,
   statusFullNext:
     'baocut status --full 會列出每項能力的所有供應商與模型；查看單一能力請執行 baocut models capabilities --capability <capability>，查看模型套件詳情請執行 baocut models list。',
+  jobRemaining: (clock: string) => `剩餘 ${clock}`,
   waitTimeout: (seconds, jobId) => `等待 ${seconds} 秒後已停止等待；作業 ${jobId} 會繼續執行。`,
 
   noRuntimeClient: '這個指令不會連線到 Runtime',

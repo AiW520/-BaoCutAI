@@ -109,6 +109,7 @@ export const fr: CliMessages = {
   jobEnded: (state: string) => `Le traitement s’est terminé : ${state}.`,
   statusFullNext:
     "baocut status --full liste tous les fournisseurs et modèles de chaque capacité ; pour une seule capacité, exécutez baocut models capabilities --capability <capability> ; pour les détails des paquets, baocut models list.",
+  jobRemaining: (clock: string) => `reste ${clock}`,
   waitTimeout: (seconds: number, jobId: string) => `Attente arrêtée après ${seconds} s ; le traitement ${jobId} continue.`,
 
   noRuntimeClient: "Cette commande ne se connecte pas au Runtime",

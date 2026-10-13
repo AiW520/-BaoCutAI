@@ -25,6 +25,7 @@ BaoCut 是一个源码可用（source-available）的 AI 视频智能体：用�
 | [`design/agent-surface/`](design/agent-surface/README.md) | **面向外部 Agent 的能力面（方案稿）**：CLI、MCP 服务与 BaoCut skill 共用工具目录的设计，Agent 面的命令目录、CLI 与 MCP 约定、skill 的结构与实施顺序 |
 | [`design/slides/`](design/slides/README.md) | **会话里的幻灯片（实施中）**：智能体在会话里做 deck、功能区的 Slides 编辑器、标注作为附件发回会话；宿主能力的重新实现、Runtime 路由、标注协议与分阶段实施 |
 | [`design/canvas/`](design/canvas/README.md) | **会话里的设计稿**：智能体在会话里做设计稿（画板）与设计系统、功能区的编辑器、标注作为附件发回会话；目录页指向这些行为在产品、架构、协议文档与运行时包里的位置 |
+| [`design/embedding/`](design/embedding/README.md) | **本地语义能力（方案稿）**：EmbeddingGemma 2 的检索集成方案，以及用同一套本地索引改善写作选材与出处、章节、术语、翻译记忆、重录候选与智能体取材的产品与技术设计 |
 | [`glossary.md`](glossary.md) | **术语表**：同一概念只用一个词 |
 | [`repo-conventions.md`](repo-conventions.md) | **仓库约定**：顶层目录、代码放置与文件命名 |
 | [`development-workflow.md`](development-workflow.md) | **开发流程**：规范与实现同步、验证入口、多端同步、语言与平台、工作区与产物；按任务读取相关章节 |
@@ -45,6 +46,7 @@ BaoCut 是一个源码可用（source-available）的 AI 视频智能体：用�
 | 实现对外服务（MCP 服务、模型接口、Web） | 架构设计 §4.8、§12.8 |
 | 实现 CLI、MCP 工具或 BaoCut skill（给外部 Agent 的能力面） | [`design/agent-surface/`](design/agent-surface/README.md)；架构设计 §3.5、§4.8 |
 | 实现用户库、偏好设置与跨视频检索 | 架构设计 §5.9–§5.11 |
+| 接入本机语义模型、语义检索与写作选材 | [`design/embedding/`](design/embedding/README.md)；架构设计 §5.11、§6.3 |
 | 实现工具页任务、固定流程与各种导出 | 架构设计 §7.9、§9.13 |
 | 管理外部工具、安装动作与应用更新 | 架构设计 §12.9、§2.6 |
 | 实现 Home 模板库、新增内置模板 | 模板包规范；产品设计 §3.2.1 |

@@ -4,6 +4,7 @@ import { exportPhaseLabel, exportTitle } from './export-job.ts';
 import { shortenPath } from './format.ts';
 import { isLinkImport, linkKindLabel, linkPhaseText, linkTitle } from './link-import.ts';
 import { jobErrorText, jobWaitText } from './localized-text.ts';
+import { imageStepPhase } from './tools-image.ts';
 import { langName } from './tools-models.ts';
 
 /**
@@ -218,7 +219,9 @@ export function jobRow(job: JobRecord, ctx: TaskContext): TaskRow {
           ? linkPhaseText(job)
           : job.kind === 'agentTranslate'
             ? VIDEO_CARD_COPY.agentTranslating
-            : JOB_PHASE_LABEL[job.phase]
+            : job.kind === 'generateImage'
+              ? (imageStepPhase(job) ?? JOB_PHASE_LABEL[job.phase])
+              : JOB_PHASE_LABEL[job.phase]
       : queued
         ? jobWaitText(job.wait)
         : null;

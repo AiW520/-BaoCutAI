@@ -219,6 +219,7 @@ export const zhHant: ToolsMessages = {
     submitted: '已開始生成',
     submitFailed: (message: string) => `無法開始：${message}`,
     chars: (n: number, max: number | null) => (max ? `${n.toLocaleString()} / ${max.toLocaleString()} 字` : `${n.toLocaleString()} 字`),
+    zoom: (name: string) => `放大檢視圖片：${name}`,
     alt: (name: string, prompt: string) => `${name}：${prompt}`,
   },
   text: {

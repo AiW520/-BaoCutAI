@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import type { Id, JobRecord, ModelCapabilitiesView } from '@baocut/protocol';
+import type { Id, JobRecord, ModelCapabilitiesView, SpaceEntry } from '@baocut/protocol';
+import { Button as RACButton } from 'react-aria-components';
 import { ActionButton, ActionMenu, Button, MenuItem, ProgressBar, Text, ToastQueue, Tooltip, TooltipTrigger } from '@react-spectrum/s2';
 import Copy from '@react-spectrum/s2/icons/Copy';
 import Delete from '@react-spectrum/s2/icons/Delete';
@@ -12,10 +13,12 @@ import { cancellationCost } from '../../model/task-facts.ts';
 import { jobPercent } from '../../model/task-list.ts';
 import {
   imageBatchMeta,
+  imageDecoding,
   imageFileName,
   imagePrompt,
   imageResults,
   imageStepPhase,
+  imageTimeLine,
   retryRequest,
   type ImageResult,
 } from '../../model/tools-image.ts';
@@ -25,6 +28,7 @@ import { useRuntime } from '../../runtime/context.tsx';
 import { useShell } from '../../state/shell-store.ts';
 import { useSpace } from '../../state/space-store.ts';
 import { useTools } from '../../state/tools-store.ts';
+import { useNow } from '../use-now.ts';
 import { detail, detailGrow, RecordCard, recordHead, recordIcon, recordRow, recordText } from './tool-parts.tsx';
 import { ToolOutputRow } from './tool-outputs.tsx';
 import { IMAGE_COPY, RECORD_COPY } from './tools-copy.ts';
@@ -33,6 +37,7 @@ import { copyText, useArtifactUrl, useCancelJob, useDownloadArtifact, useRecordR
 /*
  * 设计稿 image-gen.jsx `ImageResults`（425-442）、`ImageCard`（376-395）、`RunningCard`（396-409）、`ErrorCard`（411-423）：
  * 做完的一批是小标题 + 图格，在跑的一张进度卡，没做成的一张警示卡。取消了的不列（可能已经计费的照实留一张）。
+ * 本机生图的进度卡按步走：加载模型 → 第 i/N 步（已用与剩余）→ 解码；云端只写已用。点图放大，用会话里的图片查看器（`onOpen`）。
  */
 
 const batch = style({ display: 'flex', flexDirection: 'column', gap: 8, minWidth: 0 });
@@ -55,6 +60,20 @@ const truncate = style({ font: 'ui-xs', color: 'gray-600', overflow: 'hidden', t
 const errorTitle = style({ margin: 0, font: 'ui-sm', fontWeight: 'bold', color: 'orange-1000', overflowWrap: 'anywhere' });
 const progress = style({ width: 'full' });
 const caption = style({ display: 'flex', flexDirection: 'column', minWidth: 0 });
+const timeLine = style({ font: 'code-xs', color: 'gray-700' });
+const open = style({
+  display: 'block',
+  width: 'full',
+  height: 'full',
+  padding: 0,
+  borderWidth: 0,
+  backgroundColor: 'transparent',
+  cursor: 'zoom-in',
+  outlineStyle: { default: 'none', isFocusVisible: 'solid' },
+  outlineWidth: 2,
+  outlineOffset: -2,
+  outlineColor: 'focus-ring',
+});
 
 /** 「再试一次」：中断的就地重跑，其余照冻结的参数原样再提交（见 `useRecordRetry`）；编辑器里的带回 `videoId`，仍收进那个视频。 */
 function useImageRetry(job: JobRecord, videoId?: Id) {
@@ -77,12 +96,15 @@ export function ImageRecord({
   view,
   now,
   onAgain,
+  onOpen,
 }: {
   job: JobRecord;
   all: readonly JobRecord[];
   view: ModelCapabilitiesView | null;
   now: number;
   onAgain: (job: JobRecord) => void;
+  /** 点一张已经收进 Space 的图：放大查看。 */
+  onOpen: (entry: SpaceEntry) => void;
 }) {
   const provider = providerName(view, 'generateImage', job.providerId);
   // 取消了的不列；可能已经计费的照实留一张（服务商不支持取消时请求可能照样做完）。
@@ -93,16 +115,20 @@ export function ImageRecord({
   const status = recordStatus(job);
   if (status === 'queued' || status === 'running') return <RunningCard job={job} all={all} provider={provider} />;
   if (didNotFinish(job)) return <ErrorCard job={job} />;
-  return <DoneBatch job={job} provider={provider} now={now} onAgain={onAgain} />;
+  return <DoneBatch job={job} provider={provider} now={now} onAgain={onAgain} onOpen={onOpen} />;
 }
 
 export function RunningCard({ job, all, provider }: { job: JobRecord; all: readonly JobRecord[]; provider: string }) {
   const cancel = useCancelJob();
+  const running = job.state !== 'queued';
+  // 已用与剩余每秒往前走（页上的 `now` 半分钟才走一次）。
+  const now = useNow(1000, running);
   const pct = jobPercent(job);
-  const phase = job.state === 'queued' ? (queuedDetail(job) ?? RECORD_COPY.ahead(aheadOf(all, job))) : (imageStepPhase(job) ?? phaseLabel(job));
-  const line = `${phase} · ${provider}`;
+  const phase = running ? (imageStepPhase(job) ?? phaseLabel(job)) : (queuedDetail(job) ?? RECORD_COPY.ahead(aheadOf(all, job)));
+  const line = `${phase}${running && pct !== null ? ` · ${pct}%` : ''} · ${provider}`;
+  const time = running ? imageTimeLine(job, now) : null;
   return (
-    <RecordCard running={job.state !== 'queued'} label={imagePrompt(job)}>
+    <RecordCard running={running} label={imagePrompt(job)}>
       <div className={recordHead}>
         <span className={recordIcon} aria-hidden>
           <ImageIcon />
@@ -114,9 +140,17 @@ export function RunningCard({ job, all, provider }: { job: JobRecord; all: reado
           <Text>{RECORD_COPY.cancel}</Text>
         </ActionButton>
       </div>
-      {job.state !== 'queued' ? (
-        <ProgressBar size="S" styles={progress} aria-label={line} isIndeterminate={pct === null} value={pct ?? undefined} />
+      {running ? (
+        // 加载模型与解码时没有步数可算，进度条不定。
+        <ProgressBar
+          size="S"
+          styles={progress}
+          aria-label={line}
+          isIndeterminate={pct === null || imageDecoding(job)}
+          value={pct === null || imageDecoding(job) ? undefined : pct}
+        />
       ) : null}
+      {time ? <span className={timeLine}>{time}</span> : null}
       <span className={truncate} title={imagePrompt(job)}>
         {imagePrompt(job)}
       </span>
@@ -183,7 +217,19 @@ export function CancelledCard({ job, cost }: { job: JobRecord; cost: string }) {
   );
 }
 
-function DoneBatch({ job, provider, now, onAgain }: { job: JobRecord; provider: string; now: number; onAgain: (job: JobRecord) => void }) {
+function DoneBatch({
+  job,
+  provider,
+  now,
+  onAgain,
+  onOpen,
+}: {
+  job: JobRecord;
+  provider: string;
+  now: number;
+  onAgain: (job: JobRecord) => void;
+  onOpen: (entry: SpaceEntry) => void;
+}) {
   const go = useShell((s) => s.go);
   const hide = useTools((s) => s.hide);
   const results = imageResults(job);
@@ -223,7 +269,7 @@ function DoneBatch({ job, provider, now, onAgain }: { job: JobRecord; provider: 
       {results.length ? (
         <div className={grid({ isOne: results.length === 1 })}>
           {results.map((r) => (
-            <ImageCard key={r.artifactId} job={job} result={r} onAgain={onAgain} />
+            <ImageCard key={r.artifactId} job={job} result={r} onAgain={onAgain} onOpen={onOpen} />
           ))}
         </div>
       ) : (
@@ -233,7 +279,17 @@ function DoneBatch({ job, provider, now, onAgain }: { job: JobRecord; provider: 
   );
 }
 
-function ImageCard({ job, result, onAgain }: { job: JobRecord; result: ImageResult; onAgain: (job: JobRecord) => void }) {
+function ImageCard({
+  job,
+  result,
+  onAgain,
+  onOpen,
+}: {
+  job: JobRecord;
+  result: ImageResult;
+  onAgain: (job: JobRecord) => void;
+  onOpen: (entry: SpaceEntry) => void;
+}) {
   const media = useArtifactUrl(result.artifactId);
   const download = useDownloadArtifact();
   const [busy, setBusy] = useState(false);
@@ -244,7 +300,12 @@ function ImageCard({ job, result, onAgain }: { job: JobRecord; result: ImageResu
   return (
     <figure className={card}>
       <div className={thumb} style={{ aspectRatio: `${result.width || 1} / ${result.height || 1}` }}>
-        {media?.status === 'ready' ? (
+        {media?.status === 'ready' && entry ? (
+          // 收进 Space 的图点开放大（与会话里的图片查看器同一个）；还没收进的只看缩略图。
+          <RACButton className={open} aria-label={IMAGE_COPY.zoom(result.name)} onPress={() => onOpen(entry)}>
+            <img className={img} src={media.url} alt={IMAGE_COPY.alt(result.name, prompt)} loading="lazy" />
+          </RACButton>
+        ) : media?.status === 'ready' ? (
           <img className={img} src={media.url} alt={IMAGE_COPY.alt(result.name, prompt)} loading="lazy" />
         ) : (
           <span className={detail}>{media?.status === 'failed' ? RECORD_COPY.openFailed(media.message) : RECORD_COPY.loadingMedia}</span>

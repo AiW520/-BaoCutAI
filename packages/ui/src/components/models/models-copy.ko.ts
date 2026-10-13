@@ -52,7 +52,9 @@ export const ko: ModelsMessages = {
     tryNote:
       '온라인에 연결하지 않고 이 컴퓨터에서 작은 이미지를 그려 결과를 확인합니다. 무거운 작업 슬롯을 차지하므로 다른 로컬 모델 작업은 이 작업이 끝날 때까지 기다립니다. 대화상자를 닫아도 멈추지 않으며, 이번 실행은 백그라운드 작업에도 표시됩니다.',
     tryReady: '시작 대기 중',
-    tryRunning: (steps: number) => `512² 그리는 중 · ${steps}단계…`,
+    tryRunning: (step: string) => `512² 그리는 중 · ${step}`,
+    tryLoading: '모델 불러오는 중…',
+    tryDecoding: (steps: number) => `디코딩 중 · ${steps}/${steps}단계 완료`,
     tryDone: (seconds: number | null) => (seconds !== null ? `완료 · ${seconds}초` : '완료'),
     tryFailed: '이미지를 그리지 못했습니다',
     tryResult: '테스트 결과',

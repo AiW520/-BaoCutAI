@@ -51,7 +51,9 @@ export const ja: ModelsMessages = {
     tryNote:
       'このコンピュータで小さな画像を描いて仕上がりを確認します。オンラインには接続しません。重い処理の枠を使うため、ほかのローカルモデルのタスクは完了まで待機します。ダイアログを閉じても止まりません。この実行はバックグラウンドタスクにも表示されます。',
     tryReady: '開始できます',
-    tryRunning: (steps: number) => `512² を描画中 · ${steps} ステップ…`,
+    tryRunning: (step: string) => `512² を描画中 · ${step}`,
+    tryLoading: 'モデルを読み込み中…',
+    tryDecoding: (steps: number) => `デコード中 · ${steps}/${steps} ステップ描画済み`,
     tryDone: (seconds: number | null) => (seconds !== null ? `完了 · ${seconds} 秒` : '完了'),
     tryFailed: '画像を描けませんでした',
     tryResult: 'テスト結果',

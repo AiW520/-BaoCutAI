@@ -20,6 +20,9 @@ export const vi: ToolsImageMessages = {
   cloudChip: (provider) => `Trực tuyến · ${provider} · tính phí theo mức sử dụng`,
   imageName: (n) => `Hình ảnh ${n}`,
   seed: (seed) => `Seed ${seed}`,
+  loadingModel: 'Đang tải mô hình',
+  elapsed: (clock: string) => `Đã qua ${clock}`,
+  timeLeft: (clock: string) => `Còn ${clock}`,
   decoding: 'Đang giải mã',
   stepOf: (done, total) => `Bước ${done}/${total}`,
 };

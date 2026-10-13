@@ -5,8 +5,9 @@ import { M } from '../cli-copy.ts';
  * 等任务时的进度（Agent 面设计 §5.1、§5.4），一律写 stderr，不碰 stdout 的 JSON：
  *
  * - `--progress jsonl`：每行一个事件 `{ type: 'progress' | 'artifact' | 'warning' | 'done', jobId, … }`；`progress` 带
- *   `state`、`stage`（任务的阶段）与 `pct`（没有总量时 null）。
- * - 默认：stderr 是 TTY 时一行原地刷新，否则状态变化时写一行。
+ *   `state`、`stage`（任务的阶段）与 `pct`（没有总量时 null），有进度时再带 `done`、`total`、`unit`，
+ *   本机生图按步报进度时带 `remainingSec`（预计剩余秒数，算不出时 null；命令协议 §4.1）。
+ * - 默认：stderr 是 TTY 时一行原地刷新，否则状态变化时写一行；按步的进度写 `3/8`，有预计剩余时接一句剩余时间。
  */
 export type ProgressMode = 'jsonl' | 'text';
 
@@ -31,7 +32,8 @@ export class ProgressReporter {
   update(job: JobRecord): void {
     const pct = percent(job);
     if (this.#mode === 'jsonl') {
-      const key = `${job.state}|${job.phase}|${pct === null ? '' : Math.floor(pct)}`;
+      const p = job.progress;
+      const key = `${job.state}|${job.phase}|${pct === null ? '' : Math.floor(pct)}|${p?.remainingSec ?? ''}`;
       if (key !== this.#last) {
         this.#last = key;
         this.#event({
@@ -40,10 +42,15 @@ export class ProgressReporter {
           state: job.state,
           stage: job.phase,
           pct: pct === null ? null : Math.round(pct * 10) / 10,
+          ...(p ? { done: p.done, total: p.total, unit: p.unit } : {}),
+          ...(p && p.remainingSec !== undefined ? { remainingSec: p.remainingSec } : {}),
         });
       }
     } else {
-      const line = `${job.jobId} · ${job.state} · ${job.phase}${pct === null ? '' : ` ${pct.toFixed(0)}%`}${job.attempt > 1 ? ` (#${job.attempt})` : ''}`;
+      const p = job.progress;
+      const steps = p?.unit === 'steps' && p.total !== null ? ` ${p.done}/${p.total}` : '';
+      const left = typeof p?.remainingSec === 'number' ? ` · ${M.jobRemaining(clock(p.remainingSec))}` : '';
+      const line = `${job.jobId} · ${job.state} · ${job.phase}${pct === null ? '' : ` ${pct.toFixed(0)}%`}${steps}${left}${job.attempt > 1 ? ` (#${job.attempt})` : ''}`;
       if (line !== this.#last) {
         this.#last = line;
         this.#line(line);
@@ -103,6 +110,15 @@ export class ProgressReporter {
     this.#stream.write('\n');
     this.#open = false;
   }
+}
+
+/** 剩余时间 `0:45`、`12:03`，超过一小时 `1:02:03`（与界面的剩余时间同一个写法）。 */
+function clock(seconds: number): string {
+  const s = Math.max(0, Math.round(seconds));
+  const h = Math.floor(s / 3600);
+  const m = Math.floor((s % 3600) / 60);
+  const ss = String(s % 60).padStart(2, '0');
+  return h ? `${h}:${String(m).padStart(2, '0')}:${ss}` : `${m}:${ss}`;
 }
 
 function percent(job: JobRecord): number | null {

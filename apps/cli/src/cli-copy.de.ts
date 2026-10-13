@@ -116,6 +116,7 @@ export const de: CliMessages = {
   jobEnded: (state: string) => `Der Auftrag wurde beendet: ${state}.`,
   statusFullNext:
     "baocut status --full listet alle Anbieter und Modelle für jede Funktion auf; für eine einzelne Funktion führen Sie baocut models capabilities --capability <capability> aus, für Paketdetails baocut models list.",
+  jobRemaining: (clock: string) => `noch ${clock}`,
   waitTimeout: (seconds: number, jobId: string) => `Warten beendet nach ${seconds} s; Auftrag ${jobId} läuft weiter.`,
 
   // 管理桶（admin/context.ts）

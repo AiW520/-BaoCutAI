@@ -12,6 +12,7 @@ export const ru: TaskFactsMessages = {
     phase: "Этап",
     images: "Изображения",
     took: "Затраченное время",
+    left: "Осталось",
     cost: "Стоимость",
   },
   imageCount: (count: number) => pluralForm('ru', count, { one: `${count} изображение`, few: `${count} изображения`, many: `${count} изображений`, other: `${count} изображения` }),

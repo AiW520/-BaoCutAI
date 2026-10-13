@@ -12,6 +12,7 @@ export const nl: TaskFactsMessages = {
     phase: "Fase",
     images: "Afbeeldingen",
     took: "Tijdsduur",
+    left: "Resterende tijd",
     cost: "Kosten",
   },
   imageCount: (count: number) => `${count} ${pluralForm('nl', count, { one: "afbeelding", other: "afbeeldingen" })}`,

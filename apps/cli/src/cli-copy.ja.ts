@@ -109,6 +109,7 @@ export const ja: CliMessages = {
   jobEnded: (state) => `ジョブが終了しました：${state}。`,
   statusFullNext:
     'baocut status --full では各機能のすべてのプロバイダとモデルを表示します。機能を個別に確認するには baocut models capabilities --capability <capability>、モデルパッケージの詳細には baocut models list を実行してください。',
+  jobRemaining: (clock: string) => `残り ${clock}`,
   waitTimeout: (seconds, jobId) => `${seconds} 秒で待機をやめました。ジョブ ${jobId} は実行を続けています。`,
 
   noRuntimeClient: 'このコマンドは Runtime に接続しません',

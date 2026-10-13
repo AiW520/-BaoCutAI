@@ -35,6 +35,9 @@ const en = {
   cloudChip: (provider: string) => `Online · ${provider} · billed by usage`,
   imageName: (n: number) => `Image ${n}`,
   seed: (seed: number) => `Seed ${seed}`,
+  loadingModel: 'Loading model',
+  elapsed: (clock: string) => `${clock} elapsed`,
+  timeLeft: (clock: string) => `${clock} left`,
   decoding: 'Decoding',
   stepOf: (done: number, total: number) => `Step ${done}/${total}`,
 };

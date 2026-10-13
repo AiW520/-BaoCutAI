@@ -21,6 +21,9 @@ export const de: ToolsImageMessages = {
   cloudChip: (provider: string) => `Online · ${provider} · nach Nutzung abgerechnet`,
   imageName: (n: number) => `Bild ${n}`,
   seed: (seed: number) => `Seed ${seed}`,
+  loadingModel: 'Modell wird geladen',
+  elapsed: (clock: string) => `${clock} vergangen`,
+  timeLeft: (clock: string) => `Noch ${clock}`,
   decoding: "Wird decodiert",
   stepOf: (done: number, total: number) => `Schritt ${done}/${total}`,
 };

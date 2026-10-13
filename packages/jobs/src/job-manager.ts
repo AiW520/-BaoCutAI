@@ -127,6 +127,7 @@ import {
 } from './resource-scheduler.ts';
 import { unavailableProbe, type MediaFacts, type MediaProbe } from './media-probe.ts';
 import { speechDocumentOperation } from './speech-document.ts';
+import { StepPace } from './step-pace.ts';
 import { contentFingerprint, nextRevision, planTranscriptSwitch } from './transcript-switch.ts';
 import { JobsTranscribe } from '@baocut/protocol/messages/jobs/transcribe.ts';
 import { EditorWasmError } from '@baocut/editor-wasm';
@@ -2015,9 +2016,18 @@ export class JobManager {
       Object.assign(record, patch);
       this.#changed(entry, false);
     };
+    // 本机生图按去噪步报进度时带预计剩余（命令协议 §4.1）；每次尝试各量各的。
+    const pace = record.kind === 'generateImage' ? new StepPace() : null;
     return {
       generating: () => update({ phase: 'generating' }),
-      progress: (done, total, unit = 'outputs') => update({ phase: 'generating', progress: { done, total, unit } }),
+      progress: (done, total, unit = 'outputs') =>
+        update({
+          phase: 'generating',
+          progress:
+            pace && unit === 'steps'
+              ? { done, total, unit, remainingSec: pace.observe(done, total, Date.now()) }
+              : { done, total, unit },
+        }),
       warning: (warning) => update({ warnings: [...record.warnings, warning] }),
     };
   }

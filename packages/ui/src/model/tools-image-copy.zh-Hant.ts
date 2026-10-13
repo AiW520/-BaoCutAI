@@ -20,6 +20,9 @@ export const zhHant: ToolsImageMessages = {
   cloudChip: (provider) => `線上 · ${provider} · 依用量計費`,
   imageName: (n) => `圖片 ${n}`,
   seed: (seed) => `種子 ${seed}`,
+  loadingModel: '載入模型',
+  elapsed: (clock: string) => `已用 ${clock}`,
+  timeLeft: (clock: string) => `剩餘 ${clock}`,
   decoding: '解碼',
   stepOf: (done, total) => `第 ${done}/${total} 步`,
 };

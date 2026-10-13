@@ -106,6 +106,7 @@ export const ko: CliMessages = {
   jobEnded: (state) => `처리가 끝났습니다: ${state}.`,
   statusFullNext:
     'baocut status --full은 각 기능의 모든 공급자와 모델을 표시합니다. 기능 하나를 보려면 baocut models capabilities --capability <capability>를, 모델 번들 상세 정보를 보려면 baocut models list를 실행하세요.',
+  jobRemaining: (clock: string) => `${clock} 남음`,
   waitTimeout: (seconds, jobId) => `${seconds}초가 지나 기다림을 멈췄습니다. 처리 ${jobId}은(는) 계속 실행됩니다.`,
 
   noRuntimeClient: '이 명령은 Runtime에 연결하지 않습니다',

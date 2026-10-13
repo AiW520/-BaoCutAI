@@ -215,6 +215,7 @@ export const vi: ToolsMessages = {
     submitted: "Đã bắt đầu tạo",
     submitFailed: (message) => `Chưa bắt đầu: ${message}`,
     chars: (n,max) => { const count=n.toLocaleString(intlLocale()); return max ? `${count} / ${max.toLocaleString(intlLocale())} ký tự` : `${count} ký tự`; },
+    zoom: (name: string) => `Xem lớn ${name}`,
     alt: (name: string, prompt: string) => `${name}: ${prompt}`,
   },
   text: {

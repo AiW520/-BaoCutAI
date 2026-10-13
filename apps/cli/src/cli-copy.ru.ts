@@ -98,6 +98,7 @@ export const ru: CliMessages = {
   jobEnded: (state) => `Задание завершено: ${state}.`,
   statusFullNext:
     "baocut status --full показывает всех поставщиков и модели по возможностям; для одной выполните baocut models capabilities --capability <capability>, для пакетов baocut models list.",
+  jobRemaining: (clock: string) => `осталось ${clock}`,
   waitTimeout: (seconds, jobId) => `Ожидание остановлено спустя ${seconds} с; задание ${jobId} продолжает работу.`,
 
   noRuntimeClient: "Команда не подключается к Runtime",

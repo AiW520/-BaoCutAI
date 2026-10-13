@@ -11,6 +11,7 @@ export const tr: TaskFactsMessages = {
     phase: 'Aşama',
     images: 'Görseller',
     took: 'Geçen süre',
+    left: 'Kalan süre',
     cost: 'Maliyet',
   },
   imageCount: (count: number) => `${count} görsel`,

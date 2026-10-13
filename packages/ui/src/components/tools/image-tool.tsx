@@ -1,5 +1,5 @@
 import { useMemo, useRef, useState } from 'react';
-import type { JobRecord } from '@baocut/protocol';
+import type { JobRecord, SpaceEntry } from '@baocut/protocol';
 import { ActionButton, Button, NumberField, Text, TextField, ToastQueue } from '@react-spectrum/s2';
 import Add from '@react-spectrum/s2/icons/Add';
 import ImageIcon from '@react-spectrum/s2/icons/Image';
@@ -15,6 +15,7 @@ import {
   imageProblems,
   imageRequest,
   imageFallback,
+  imageGallery,
   imageModelOptions,
   imageStatus,
   sizeKeyFor,
@@ -29,7 +30,9 @@ import { codePoints, findOption, initialModelKey } from '../../model/tools-model
 import { useRuntime } from '../../runtime/context.tsx';
 import { useModels } from '../../state/models-store.ts';
 import { useShell } from '../../state/shell-store.ts';
+import { useSpace } from '../../state/space-store.ts';
 import { useTools } from '../../state/tools-store.ts';
+import { ImageLightbox } from '../media/image-lightbox.tsx';
 import { EmptyCard, PageStatus } from '../models/model-parts.tsx';
 import { useNow } from '../use-now.ts';
 import { ImageRecord } from './image-record.tsx';
@@ -125,6 +128,11 @@ export function ImageTool() {
   const status = reason ? { text: reason, bad: true } : imageStatus(draft, option, tried);
   const toSettings = () => go({ tab: 'models', category: 'image', page: option?.local ? 'local' : 'cloud' });
   const shown = records.list.filter((job) => job.state !== 'cancelled');
+  // 点图放大：页上做完的图收进 Space 的那些一起进查看器，可以左右切换（设计稿 image-gen.jsx `ImageViewer`）。
+  const entries = useSpace((s) => s.entries);
+  const [viewing, setViewing] = useState<SpaceEntry | null>(null);
+  const gallery = useMemo(() => (viewing ? imageGallery(shown, entries) : []), [viewing, shown, entries]);
+  const initial = viewing ? (gallery.find((c) => 'entryId' in c.target && c.target.entryId === viewing.id) ?? null) : null;
 
   const generate = () => {
     setTried(true);
@@ -243,7 +251,9 @@ export function ImageTool() {
       {!records.ready ? (
         <PageStatus>{GALLERY_COPY.loading}</PageStatus>
       ) : shown.length ? (
-        shown.map((job) => <ImageRecord key={job.jobId} job={job} all={records.all} view={view} now={now} onAgain={again} />)
+        shown.map((job) => (
+          <ImageRecord key={job.jobId} job={job} all={records.all} view={view} now={now} onAgain={again} onOpen={setViewing} />
+        ))
       ) : (
         <EmptyCard icon={<ImageIcon />} title={IMAGE_COPY.empty} body={IMAGE_COPY.emptyBody} />
       )}
@@ -256,6 +266,7 @@ export function ImageTool() {
   return (
     <ToolPage title={IMAGE_COPY.title} bar={bar} chip={chip ? <HeaderChip text={chip} /> : null}>
       <Workbench main={main} side={side} sideLabel={IMAGE_COPY.side} onKeyDown={submitOnModEnter(generate)} />
+      {initial ? <ImageLightbox files={gallery} initial={initial} onClose={() => setViewing(null)} /> : null}
     </ToolPage>
   );
 }

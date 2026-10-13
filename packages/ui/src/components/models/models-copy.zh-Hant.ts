@@ -49,7 +49,9 @@ export const zhHant: ModelsMessages = {
     tryNote:
       '在這台電腦上畫一張小圖看看效果，不會連上網路。它會佔用重活槽，其他本機模型任務要等它完成。關閉對話框不會停止它；這次執行也會列在背景任務中。',
     tryReady: '準備開始',
-    tryRunning: (steps: number) => `正在繪製 512² · ${steps} 步…`,
+    tryRunning: (step: string) => `正在繪製 512² · ${step}`,
+    tryLoading: '正在載入模型…',
+    tryDecoding: (steps: number) => `正在解碼 · ${steps}/${steps} 步已畫完`,
     tryDone: (seconds: number | null) => (seconds !== null ? `完成 · ${seconds} 秒` : '完成'),
     tryFailed: '無法畫出圖片',
     tryResult: '測試結果',

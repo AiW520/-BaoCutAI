@@ -75,7 +75,9 @@ const en = {
     tryNote:
       'Draws a small image on this computer to see how it looks, without going online. It takes the heavy-task slot, so other local model tasks wait until it finishes. Closing the dialog doesn’t stop it; this run is also listed in Background tasks.',
     tryReady: 'Ready to start',
-    tryRunning: (steps: number) => `Drawing 512² · ${steps} steps…`,
+    tryRunning: (step: string) => `Drawing 512² · ${step}`,
+    tryLoading: 'Loading the model…',
+    tryDecoding: (steps: number) => `Decoding · ${steps}/${steps} steps drawn`,
     tryDone: (seconds: number | null) => (seconds !== null ? `Done · ${seconds}s` : 'Done'),
     tryFailed: 'Couldn’t draw the image',
     tryResult: 'Test result',

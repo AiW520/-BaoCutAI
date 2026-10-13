@@ -217,6 +217,7 @@ export const zhHans: ToolsMessages = {
     submitted: '已开始生成',
     submitFailed: (message: string) => `没有开始：${message}`,
     chars: (n: number, max: number | null) => (max ? `${n} / ${max} 字` : `${n} 字`),
+    zoom: (name: string) => `放大查看图片：${name}`,
     alt: (name: string, prompt: string) => `${name}：${prompt}`,
   },
   text: {

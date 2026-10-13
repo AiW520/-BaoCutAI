@@ -79,7 +79,8 @@ test('结果页每个产物接着做什么（product-design §2.7「结果与下
   const ids = (kind, tool) => R.followUps({id: 'x', kind}, tool).map((n) => [n.id, n.kind]);
   assert.deepEqual(ids('subtitle'), [['translate', 'tool'], ['tts', 'tool'], ['new-movie', 'action']]);
   assert.deepEqual(ids('doc'), [['tts', 'tool'], ['new-movie', 'action']], '翻译字幕不收文档，不列');
-  ['audio', 'image', 'final'].forEach((k) => assert.deepEqual(ids(k), [['new-movie', 'action'], ['add-to-movie', 'action']], k));
+  ['audio', 'final'].forEach((k) => assert.deepEqual(ids(k), [['new-movie', 'action'], ['add-to-movie', 'action']], k));
+  assert.deepEqual(ids('image'), [], '生成的图不接以此新建视频、加到视频');
   assert.deepEqual(ids('movie', 'transcribe'), [['open-movie', 'action'], ['translate', 'tool'], ['dub', 'tool']]);
   assert.deepEqual(ids('movie', 'translate'), [['open-movie', 'action'], ['dub', 'tool']], '译文之后是翻译配音');
   assert.deepEqual(ids('movie', 'dub'), [['open-movie', 'action']]);

@@ -20,6 +20,9 @@ export const tr: ToolsImageMessages = {
   cloudChip: (provider) => `Çevrimiçi · ${provider} · kullanıma göre ücretlendirilir`,
   imageName: (n) => `Görsel ${n}`,
   seed: (seed) => `Tohum ${seed}`,
+  loadingModel: 'Model yükleniyor',
+  elapsed: (clock: string) => `${clock} geçti`,
+  timeLeft: (clock: string) => `${clock} kaldı`,
   decoding: 'Çözülüyor',
   stepOf: (done, total) => `Adım ${done}/${total}`,
 };

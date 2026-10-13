@@ -9,6 +9,7 @@ import {
   Dialog,
   DialogContainer,
   Heading,
+  ProgressBar,
   Text,
   TextArea,
   ToastQueue,
@@ -26,10 +27,12 @@ import {
 } from '../../model/model-check.ts';
 import { TRY_SUBJECT_IMAGE } from '../../model/model-check-copy.ts';
 import { IMAGE_TRY_STEPS, imageTryRequest, outputFacts, probeFromJob } from '../../model/models-probe.ts';
-import { IMAGE_SAMPLES, imageFileName } from '../../model/tools-image.ts';
+import { jobPercent } from '../../model/task-list.ts';
+import { IMAGE_SAMPLES, imageDecoding, imageFileName, imageStepPhase, imageTimeLine } from '../../model/tools-image.ts';
 import { codePoints } from '../../model/tools-models.ts';
 import { useRuntime } from '../../runtime/context.tsx';
 import { useJobs } from '../../state/jobs-store.ts';
+import { useNow } from '../use-now.ts';
 import { RECORD_COPY } from '../tools/tools-copy.ts';
 import { copyText, useArtifactUrl, useDownloadArtifact } from '../tools/use-tool-records.ts';
 import { ModelTryNote } from './model-check-line.tsx';
@@ -71,11 +74,14 @@ const picture = style({ display: 'block', width: 160, height: 160, flexShrink: 0
 const resultMeta = style({ display: 'flex', flexDirection: 'column', gap: 4, minWidth: 0 });
 const resultText = style({ margin: 0, font: 'ui-sm', color: 'gray-800', overflowWrap: 'anywhere', userSelect: 'text' });
 const resultPrompt = style({ font: 'ui-xs', color: 'gray-700', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' });
+const bar = style({ width: 'full' });
+const timeLine = style({ font: 'code-xs', color: 'gray-700' });
 const resultActions = style({ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 4 });
 
 /**
  * 本地图像生成模型那一行的「试画」（设计稿 image-gen.jsx `ImageProbeDialog` 的本机分支、settings-local.jsx 的 `imgProbe`）：
- * 能改提示词，提交一次真的 `models.generateImage`（`provider: 'local'`、512 × 512、8 步、一张），进度与结果从 `jobs` 主题读，
+ * 能改提示词，提交一次真的 `models.generateImage`（`provider: 'local'`、512 × 512、8 步、一张），进度与结果从 `jobs` 主题读：
+ * 加载模型 → 第 i/N 步（进度条、已用与剩余）→ 解码（进度条不定，只写已用），
  * 结果能看、能下载、能复制提示词。试画不算检查：模型上次检查没通过时开头先说（`notice`，那次检查之后画成了就不再说），自己的失败用检查那一套说法
  * （哪里不对 · 怎么办 · 按钮），「检查模型 / 修复… / 重新检查」交回那一行（`onCheck`）。关掉对话框不撤回任务。
  */
@@ -118,6 +124,12 @@ export function ImageTryDialog({
     issue ??
     (state?.status === 'failed' ? { kind: tryFailureKind(job?.error?.code ?? null, job?.error?.details), message: state.message } : null);
   const failureView = failure && !running ? tryFailureView({ ...failure, canCheck, subject: TRY_SUBJECT_IMAGE }) : null;
+  // 在跑时按 worker 报的步数走；还没有按步的进度（加载模型、编码提示词）与解码时进度条不定，剩余时间只在去噪时有。
+  const now = useNow(1000, running);
+  const live = running && job ? job : null;
+  const steps = live?.progress?.unit === 'steps' && live.progress.total ? live.progress.total : null;
+  const decoding = live ? imageDecoding(live) : false;
+  const time = live ? imageTimeLine(live, now) : null;
   const trimmed = prompt.trim();
   const count = codePoints(trimmed);
   const over = count > model.maxPromptChars;
@@ -156,7 +168,11 @@ export function ImageTryDialog({
     state === null && !issue
       ? COPY.tryReady
       : running
-        ? COPY.tryRunning(IMAGE_TRY_STEPS)
+        ? !live || steps === null
+          ? COPY.tryLoading
+          : decoding
+            ? COPY.tryDecoding(steps)
+            : COPY.tryRunning(imageStepPhase(live)!)
         : state?.status === 'done'
           ? COPY.tryDone(state.seconds)
           : COPY.tryFailed;
@@ -204,6 +220,16 @@ export function ImageTryDialog({
                 <p className={note}>{COPY.tryNote}</p>
                 <div className={result} role="status" aria-live="polite" aria-label={COPY.tryResult}>
                   <span className={resultTitle({ isFailed: !!failureView })}>{heading}</span>
+                  {running ? (
+                    <ProgressBar
+                      size="S"
+                      styles={bar}
+                      aria-label={heading}
+                      isIndeterminate={steps === null || decoding}
+                      value={steps === null || decoding || !live ? undefined : (jobPercent(live) ?? 0)}
+                    />
+                  ) : null}
+                  {time ? <span className={timeLine}>{time}</span> : null}
                   {failureView ? <ModelTryNote view={failureView} onAction={onNote} /> : null}
                   {output && run ? (
                     <div className={resultRow}>

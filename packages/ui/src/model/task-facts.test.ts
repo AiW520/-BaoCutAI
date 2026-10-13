@@ -59,6 +59,24 @@ describe('taskFacts', () => {
     expect(imageFacts).toContainEqual(['状态', '已完成']);
     expect(imageFacts).toContainEqual(['用时', '41s']);
 
+    // 本机生图去噪时：阶段写正在画的那一步，另有预计剩余（从 updatedAt 起往下数）。
+    const local = job({
+      jobId: 'l',
+      kind: 'generateImage',
+      state: 'running',
+      phase: 'generating',
+      providerId: 'local',
+      startedAt: '2026-10-01T09:12:30Z',
+      updatedAt: '2026-10-01T09:12:38Z',
+      progress: { done: 3, total: 8, unit: 'steps', remainingSec: 14 },
+      generation: { capability: 'generateImage', prompt: 'p', size: '512x512', aspectRatio: null, count: 1, format: 'png', seed: 1, steps: 8 },
+    });
+    const localFacts = taskFacts(jobRow(local, ctx), { job: local }, NOW);
+    expect(localFacts).toContainEqual(['阶段', '第 4/8 步']);
+    expect(localFacts).toContainEqual(['预计剩余', '12s']);
+    expect(localFacts).toContainEqual(['用时', '10s']);
+    expect(imageFacts.find(([k]) => k === '预计剩余')).toBeUndefined();
+
     const speech = job({
       jobId: 's',
       kind: 'synthesizeSpeech',

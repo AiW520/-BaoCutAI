@@ -11,6 +11,7 @@ export const ko: TaskFactsMessages = {
     phase: '단계',
     images: '이미지',
     took: '소요 시간',
+    left: '남은 시간',
     cost: '비용',
   },
   imageCount: (count: number) => `${count}장`,
