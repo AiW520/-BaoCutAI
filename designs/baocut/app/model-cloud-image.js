@@ -133,19 +133,20 @@
 
   /* ---------- 本地模型 ----------
      一张表列出全部本地生图模型，菜单、能力查表、记录元数据都从它来。`caps.steps` 是去噪步数的范围，形状同模型描述的
-     `local.steps`（{min, max, step, default}）；min === max 是步数固定的模型（蒸馏版），界面只写「固定 N 步」，不给步进器。 */
+     `local.steps`（{min, max, step, default}）；min === max 是步数固定的模型（蒸馏版），界面只写「固定 N 步」，不给步进器。
+     Turbo 排在基础版前面（2026-10-12）：本地模型的列表与菜单都先列它，本地的默认模型取第一个装好能用的。 */
   const LOCAL_CAPS = (steps) => caps({sizes: {multiple: 32, maxEdge: 1536, maxRatio: 3}, quality: ['normal'], maxN: 1, seed: true, promptMax: 1024, steps});
   /* POC 实测（§6.2）：512² 20 步 ≈ 214 s、1024² ≈ 881 s、VAE 解码 10.4 s——每步秒数按像素线性插值 */
   const QWEN_PACE = {512: 9.9, 1024: 43.5, decode: 10.4};
   const LOCAL_MODELS = [
-    {id: LOCAL_ID, name: 'Qwen-Image-2.1', size: 9.8 * 1024, platform: 'macos-arm64,windows-x64,linux-x64',
-      desc: '文生图 · 4-bit · Apple Silicon / Windows / Linux · CPU 较慢',
-      pace: QWEN_PACE, caps: LOCAL_CAPS({min: 8, max: 40, step: 4, default: 20})},
     /* 蒸馏版：sigma 表写死在权重包里，只收 8 步；本机实测每步与基础版一样快，所以整张约快 2 倍多。
        Apple Silicon 用 MLX，Windows / Linux 用同一个 8-bit 仓库的 candle 变体（2026-10-12） */
     {id: LOCAL_TURBO_ID, name: 'Qwen-Image-2.1 Turbo', size: 17.7 * 1024, platform: 'macos-arm64,windows-x64,linux-x64',
       desc: '文生图 · 蒸馏版 · 8-bit · 固定 8 步 · 比基础版快 2 倍多 · Apple Silicon / Windows / Linux · CPU 较慢',
       pace: QWEN_PACE, caps: LOCAL_CAPS({min: 8, max: 8, step: 8, default: 8})},
+    {id: LOCAL_ID, name: 'Qwen-Image-2.1', size: 9.8 * 1024, platform: 'macos-arm64,windows-x64,linux-x64',
+      desc: '文生图 · 4-bit · Apple Silicon / Windows / Linux · CPU 较慢',
+      pace: QWEN_PACE, caps: LOCAL_CAPS({min: 8, max: 40, step: 4, default: 20})},
   ];
   const LOCAL = Object.fromEntries(LOCAL_MODELS.map((m) => [m.id, m]));
   /** 这只模型的步数范围；不是本地模型给 null */

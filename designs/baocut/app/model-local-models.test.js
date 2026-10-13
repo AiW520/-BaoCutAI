@@ -162,7 +162,7 @@ test('语音合成：引擎表里的每只模型都有设置行；只有 OmniVoi
   assert.equal(byId('voxcpm2').size, 2870);
   assert.equal(byId('omnivoice').size, 1049);
   const nc = M.filter((m) => m.license && m.license.commercialUse === false).map((m) => m.id);
-  assert.deepEqual(nc, ['omnivoice', 'qwen-image-2.1', 'qwen-image-2.1-turbo', 'yue2-3b']);
+  assert.deepEqual(nc, ['omnivoice', 'qwen-image-2.1-turbo', 'qwen-image-2.1', 'yue2-3b']);
   assert.equal(byId('omnivoice').license.name, 'CC-BY-NC-4.0');
   // 新行各自一个仓库：公共组件照旧只有 12Hz 编解码器
   const tts = L.layout(M, C, 'tts');

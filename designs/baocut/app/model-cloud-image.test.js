@@ -204,9 +204,9 @@ test('费用 / 状态一句：云端算钱、本机估时、Codex 说慢', () =>
 
 test('本地生图两只：Turbo 与基础版同平台、固定 8 步，步数跟着模型走（2026-10-12）', () => {
   const ids = I.LOCAL_MODELS.map((m) => m.id);
-  assert.deepEqual(ids, [I.LOCAL_ID, I.LOCAL_TURBO_ID]);
+  assert.deepEqual(ids, [I.LOCAL_TURBO_ID, I.LOCAL_ID], 'Turbo 排在基础版前面');
   const mac = I.engines({installed: () => true, platform: 'macos-arm64'}).filter((e) => e.family === 'local');
-  assert.deepEqual(mac.map((e) => [e.id, e.ready]), [[I.LOCAL_ID, true], [I.LOCAL_TURBO_ID, true]], '菜单里两只都列');
+  assert.deepEqual(mac.map((e) => [e.id, e.ready]), [[I.LOCAL_TURBO_ID, true], [I.LOCAL_ID, true]], '菜单里两只都列，Turbo 在前');
   for (const platform of ['windows-x64', 'linux-x64']) {
     assert.equal(I.engines({installed: () => true, platform}).find((e) => e.id === I.LOCAL_TURBO_ID).ready, true, platform);
   }
