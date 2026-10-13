@@ -2570,6 +2570,7 @@ const BUILTIN_DRIVER_NAME: Record<BuiltinDriverId, string> = {
   copilot: 'GitHub Copilot CLI',
   pi: 'Pi',
   opencode: 'OpenCode',
+  antigravity: 'Antigravity CLI',
   gemini: 'Gemini CLI',
   cursor: 'Cursor Agent',
   grok: 'Grok',

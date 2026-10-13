@@ -26,7 +26,7 @@ export interface AgentDriver {
   readonly verified?: boolean;
   /**
    * 这一家在 BaoCut 里真机跑通过完整会话（Claude、Codex、OpenCode 为 true）。同一协议的共享实现在一家验证通过即算 `verified`，
-   * 其余预设与用户添加的智能体 `tested` 为 false：能开会话，界面提示「未在 BaoCut 实测」（§3.11 的 D08）。
+   * 其余预设与用户添加的智能体 `tested` 为 false：能开会话，详情说明实测情况（§3.11 的 D08）。
    * 不给按 `verified` 处理。探测结果的 `tested` 与它一致。
    */
   readonly tested?: boolean;

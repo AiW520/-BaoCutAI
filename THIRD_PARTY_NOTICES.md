@@ -42,6 +42,11 @@ BaoCut 的部分代码与资源移植、改写或复制自下列开源项目。�
 
 移植或改写了其中部分机制的 BaoCut 文件（相对原作有修改，修改内容见各文件开头的注释）：
 
+- `packages/agent-drivers/src/antigravity/antigravity-driver.ts`
+- `packages/agent-drivers/src/antigravity/antigravity-items.ts`
+- `packages/agent-drivers/src/antigravity/antigravity-process.ts`
+- `packages/agent-drivers/src/antigravity/antigravity-session.ts`
+- `packages/agent-drivers/src/antigravity/antigravity-wire.ts`
 - `packages/agent-drivers/src/acp/acp-connection.ts`
 - `packages/agent-drivers/src/acp/acp-driver.ts`
 - `packages/agent-drivers/src/acp/acp-items.ts`
