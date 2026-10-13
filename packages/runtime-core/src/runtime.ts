@@ -883,6 +883,11 @@ export async function startRuntime(options: StartRuntimeOptions = {}): Promise<R
       }),
       log,
       model: options.semantic?.model ?? (() => models.embedding.current()),
+      // 画面索引的关键帧：媒体分析按素材版本取帧，缓存在 `<home>/cache/media`（Provider 只读这里的图片）。
+      frames: {
+        keyframe: (dir, asset, at, frames) =>
+          analysis.keyframeFile(asset, at, frames.edge, () => videos.assetFileAt(dir, asset.assetId, asset.revision)),
+      },
       ...(options.semantic?.debounceMs !== undefined ? { debounceMs: options.semantic.debounceMs } : {}),
     });
     semanticRef = semantic;

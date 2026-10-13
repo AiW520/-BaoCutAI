@@ -7,6 +7,7 @@ import { SearchService } from '../search-service.ts';
 import type { SpaceSearchSource } from '../space-queries.ts';
 import { semanticContextFactory, type SemanticContextFactory } from './context.ts';
 import { SemanticCoordinator, type SemanticCatalogSource, type SemanticSettings } from './coordinator.ts';
+import type { KeyframeSource } from './visual-lane.ts';
 import { EmbeddingScheduler } from './scheduler.ts';
 import { SEMANTIC_STORE_DIR, SemanticStore, SemanticStoreTooNew } from './store.ts';
 import { InThreadVectorScanner } from './vector-index.ts';
@@ -37,6 +38,8 @@ export interface OpenSemanticOptions {
   settings: () => SemanticSettings;
   log: Logger;
   model?: () => { bundleId: string; label: string } | null;
+  /** 画面索引取关键帧；不给时不建画面索引。 */
+  frames?: KeyframeSource;
   debounceMs?: number;
   /**
    * 弱命中阈值（`findRelevantChunks` 低于它的命中标 `weak`）。不给时用 `semantic-thresholds.json` 的 `weakHit`：它是在
@@ -66,6 +69,7 @@ export function openSemanticServices(options: OpenSemanticOptions): SemanticServ
     scanner,
     settings: options.settings,
     log,
+    ...(options.frames ? { frames: options.frames } : {}),
     ...(options.debounceMs !== undefined ? { debounceMs: options.debounceMs } : {}),
   });
   const search = new SearchService({

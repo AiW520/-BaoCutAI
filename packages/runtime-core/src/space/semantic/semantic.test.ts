@@ -20,6 +20,7 @@ import { SemanticTools } from '../../agent-tools/semantic-tools.ts';
 import type { ToolPrincipal, ToolScope } from '../../agent-tools/tool-scope.ts';
 import { chunkVideo, estimateTokens } from './chunks.ts';
 import { embeddingKeyOf } from './coordinator.ts';
+import { frameTimes, type KeyframeSource, type VisualAsset } from './visual-lane.ts';
 import { openSemanticServices, type SemanticServices } from './services.ts';
 import { SEMANTIC_STORE_FILE, SemanticStore, SemanticStoreTooNew } from './store.ts';
 import { RANKING_VERSION, SEMANTIC_THRESHOLDS } from './thresholds.ts';
@@ -40,6 +41,8 @@ interface FakeVideo {
   onTimeline?: number[];
   /** 另有一份同样内容、同样（源）时间的字幕。 */
   captions?: boolean;
+  /** 素材 a1 是有画面的视频（画面索引取帧用）：内容哈希与时长（秒）。 */
+  clip?: { contentHash: string; seconds: number };
 }
 
 function captionDoc(video: FakeVideo): ReadContentDocument {
@@ -101,7 +104,24 @@ function contentOf(video: FakeVideo): ReadContentResult {
   const snapshot = {
     rootSequenceId: 'seq',
     sequences: { seq: { id: 'seq', fps: { num: 30, den: 1 }, items: [], markers: [] } },
-    assets: { a1: { id: 'a1', name: 'clip.mp4', revisions: { r1: { storage: { mode: 'managed' } } } } },
+    assets: {
+      a1: {
+        id: 'a1',
+        name: 'clip.mp4',
+        currentRevision: 'r1',
+        revisions: {
+          r1: video.clip
+            ? {
+                storage: { mode: 'managed' },
+                contentHash: video.clip.contentHash,
+                mediaType: 'video/mp4',
+                duration: { ticks: video.clip.seconds * 1000, timescale: 1000 },
+                video: { width: 1920, height: 1080 },
+              }
+            : { storage: { mode: 'managed' } },
+        },
+      },
+    },
   } as unknown as VideoSnapshot;
   const documents = [speechDoc(video), ...(video.captions ? [captionDoc(video)] : [])];
   return { videoId: video.videoId, name: video.name, revision: video.revision, snapshot, documents };
@@ -133,10 +153,19 @@ class CountingProvider implements EmbeddingProvider {
   }
   documents = 0;
   queries = 0;
+  images = 0;
   failing: string | null = null;
+  /** 只装了文字模型包：画面的 profile 报没装。 */
+  noVision = false;
   async profile(purpose: Parameters<EmbeddingProvider['profile']>[0]) {
     if (this.failing) throw new EmbeddingError(this.failing, 'unavailable');
+    if (this.noVision && purpose === 'text-to-visual') throw new EmbeddingError('MODEL_NOT_INSTALLED', 'no image-capable bundle');
     return this.inner.profile(purpose);
+  }
+  async embedImages(...args: Parameters<NonNullable<EmbeddingProvider['embedImages']>>) {
+    if (this.failing) throw new EmbeddingError(this.failing, 'unavailable');
+    this.images += args[0].images.length;
+    return this.inner.embedImages(...args);
   }
   async embed(...args: Parameters<EmbeddingProvider['embed']>) {
     if (this.failing) throw new EmbeddingError(this.failing, 'unavailable');
@@ -182,15 +211,32 @@ async function syncIndex(mtime = 1): Promise<void> {
   await index.idle();
 }
 
-function open(options: { provider?: EmbeddingProvider | null; indexedProjects?: 'all' | Id[] } = {}): SemanticServices {
+/** 假的关键帧：写着「素材内容哈希 + 秒」的文本文件（散列 Provider 把文件内容当文字编码）；`broken` 里的秒取不出来。 */
+class FakeFrames implements KeyframeSource {
+  calls = 0;
+  readonly broken = new Set<number>();
+  async keyframe(_dir: string, asset: VisualAsset, at: number): Promise<string> {
+    this.calls++;
+    if (this.broken.has(at)) throw new Error('decode failed');
+    const file = path.join(tmp, 'frames', `${asset.contentHash}-${Math.round(at * 1000)}.jpg`);
+    await fs.mkdir(path.dirname(file), { recursive: true });
+    await fs.writeFile(file, `frame ${asset.contentHash} at ${at}`);
+    return file;
+  }
+}
+
+function open(
+  options: { provider?: EmbeddingProvider | null; indexedProjects?: 'all' | Id[]; channels?: string[]; frames?: KeyframeSource } = {},
+): SemanticServices {
   const catalog = { videos: () => videos, index, scanning: false };
   const s = openSemanticServices({
     cacheDir: path.join(tmp, 'cache'),
     catalog,
     reader,
     provider: options.provider === undefined ? provider : options.provider,
-    settings: () => ({ channels: ['text'], indexedProjects: options.indexedProjects ?? 'all' }),
+    settings: () => ({ channels: options.channels ?? ['text'], indexedProjects: options.indexedProjects ?? 'all' }),
     log: silentLogger,
+    ...(options.frames ? { frames: options.frames } : {}),
     debounceMs: 0,
   });
   opened.push(s);
@@ -509,6 +555,116 @@ describe('增量构建', () => {
     services = open({ indexedProjects: ['p1'] });
     await build(services);
     expect([...services.store()!.activeGenerations(['v1', 'v2', 'v3']).keys()]).toEqual(['v1']);
+  });
+});
+
+describe('画面索引', () => {
+  const CLIP = { contentHash: 'h-clip', seconds: 40 };
+
+  async function withClips(): Promise<void> {
+    // v1、v2 用同一份素材，v3 没有画面。
+    reader.videos.set(videos[0]!.dir, { ...V1, revision: 'r2', clip: CLIP });
+    reader.videos.set(videos[1]!.dir, { ...V2, revision: 'r2', clip: CLIP });
+    await syncIndex(2);
+  }
+
+  it('设置开了画面：文字建完再按每 8 秒取帧建画面；同一份素材只编码一次，重启不再编码', async () => {
+    await withClips();
+    const frames = new FakeFrames();
+    services = open({ channels: ['text', 'visual'], frames });
+    await build(services);
+    const store = services.store()!;
+    expect(store.activeGenerations(['v1', 'v2', 'v3']).size).toBe(3);
+    const generations = store.activeVisualGenerations(['v1', 'v2', 'v3']);
+    expect([...generations.keys()].sort()).toEqual(['v1', 'v2', 'v3']);
+    expect(frameTimes(40)).toEqual([4, 12, 20, 28, 36]);
+    const partition = store.visualPartition(generations.get('v1')!.id)!;
+    expect(partition.frames.map((f) => f.sourceSec)).toEqual([4, 12, 20, 28, 36]);
+    expect(partition.frames.every((f) => f.assetId === 'a1' && f.contentHash === 'h-clip')).toBe(true);
+    expect(provider.images).toBe(5);
+    expect(frames.calls).toBe(5);
+    // v3 没有画面素材：发布一个空的画面世代，不算失败。
+    expect(store.visualSource('v3')?.state).toBe('empty');
+    expect(store.visualPartition(generations.get('v3')!.id)!.frames).toEqual([]);
+    await services.close();
+
+    const again = open({ channels: ['text', 'visual'], frames });
+    await build(again);
+    expect(provider.images).toBe(5);
+    expect(frames.calls).toBe(5);
+  });
+
+  it('设置没开时只建要过的视频（space.indexBuild 带 visual），之后跟着内容变化保持更新', async () => {
+    await withClips();
+    const frames = new FakeFrames();
+    services = open({ frames });
+    await build(services);
+    expect(services.store()!.visualSources()).toEqual([]);
+    expect(services.coordinator.build([videos[0]!], { channels: ['visual'] })).toBe(1);
+    await services.coordinator.idle();
+    const store = services.store()!;
+    expect([...store.activeVisualGenerations(['v1', 'v2', 'v3']).keys()]).toEqual(['v1']);
+
+    reader.videos.set(videos[0]!.dir, { ...V1, revision: 'r3', clip: { contentHash: 'h-new', seconds: 10 } });
+    await syncIndex(3);
+    await services.coordinator.idle();
+    const after = store.activeVisualGenerations(['v1']).get('v1')!;
+    expect(after.revision).toBe('r3');
+    expect(store.visualPartition(after.id)!.frames.map((f) => [f.contentHash, f.sourceSec])).toEqual([['h-new', 4]]);
+    expect(store.visualSource('v2')).toBeNull();
+  });
+
+  it('取不出的帧跳过；只装了文字模型包时画面停下、文字照建；暂停也停画面', async () => {
+    await withClips();
+    const frames = new FakeFrames();
+    frames.broken.add(12);
+    provider.noVision = true;
+    services = open({ channels: ['text', 'visual'], frames });
+    await build(services);
+    const store = services.store()!;
+    expect(store.activeGenerations(['v1', 'v2', 'v3']).size).toBe(3);
+    expect(store.activeVisualGenerations(['v1', 'v2']).size).toBe(0);
+    expect(services.coordinator.visual?.blockedReason).toBe('MODEL_NOT_INSTALLED');
+    expect(store.visualSources().filter((s) => s.state === 'failed')).toEqual([]);
+
+    provider.noVision = false;
+    services.coordinator.pause();
+    services.coordinator.schedule(0);
+    await services.coordinator.idle();
+    expect(store.activeVisualGenerations(['v1', 'v2']).size).toBe(0);
+    services.coordinator.resume();
+    await services.coordinator.idle();
+    const generation = store.activeVisualGenerations(['v1']).get('v1')!;
+    expect(store.visualPartition(generation.id)!.frames.map((f) => f.sourceSec)).toEqual([4, 20, 28, 36]);
+    expect(services.coordinator.visual?.blockedReason).toBeNull();
+
+    // Space 里没有的视频：画面也撤下。
+    videos.splice(0, 1);
+    await syncIndex(3);
+    services.coordinator.schedule(0);
+    await services.coordinator.idle();
+    expect(store.visualSource('v1')).toBeNull();
+  });
+
+  it('space.indexBuild：画面要有取帧来源与能读图的模型包，声音通道还没有', async () => {
+    await withClips();
+    const catalog = { videos: () => videos, index, scanning: false } as unknown as SpaceCatalog;
+    const methods = (s: SemanticServices) =>
+      spaceMethods(catalog, { harness: {} as never, trash: {} as never, thumbnails: {} as never, semantic: s, artifacts: null });
+    const plain = open();
+    await build(plain);
+    const principal = { kind: 'local' } as unknown as TrustedPrincipal;
+    const call = (s: SemanticServices, channels: string[]) =>
+      Promise.resolve(methods(s)['space.indexBuild']({ channels } as never, principal));
+    expect(reasonOf(await rejection(call(plain, ['visual'])))).toBe('CHANNEL_UNAVAILABLE');
+    await plain.close();
+
+    provider.noVision = true;
+    const visual = open({ frames: new FakeFrames() });
+    await build(visual);
+    expect(reasonOf(await rejection(call(visual, ['audio'])))).toBe('CHANNEL_UNAVAILABLE');
+    const missing = await rejection(call(visual, ['visual']));
+    expect(missing.details).toMatchObject({ reason: 'MODEL_NOT_INSTALLED', channel: 'visual' });
   });
 });
 
