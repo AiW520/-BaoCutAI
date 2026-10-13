@@ -458,15 +458,15 @@ const bannerDetail = style({ font: 'ui-sm', color: 'gray-600', marginTop: 2, tru
 const bannerReason = style({ font: 'ui-sm', color: 'gray-800', marginTop: 2 });
 const bannerProgress = style({ marginTop: 8, maxWidth: 360 });
 
-/** Home 顶上那一条：在跑报进度，跑完留了没导入的报结果与原因（可以关掉，新的结果会再出来）。 */
+/** Home 顶上那一条：在跑报进度，跑完留了没导入的报结果与原因（关闭后不再显示）。 */
 export function LegacyImportBanner() {
   const platform = useRuntime().host.platform;
   const run = useLegacyImport((s) => s.run);
-  const closed = useLegacyImport((s) => s.bannerClosed);
+  const dismissed = useLegacyImport((s) => s.bannerDismissed);
   const closeBanner = useLegacyImport((s) => s.closeBanner);
   const go = useShell((s) => s.go);
-  const b = runBanner(run, platform);
-  if (!run || !b || (b.state === 'result' && closed === b.key)) return null;
+  const b = runBanner(run, platform, dismissed);
+  if (!run || !b) return null;
   const isResult = b.state === 'result';
   return (
     <div className={banner({ isResult })} data-testid="legacy-import-banner">
@@ -488,7 +488,7 @@ export function LegacyImportBanner() {
         {isResult ? LR.viewReasons : LR.viewProgress}
       </Button>
       {isResult ? (
-        <ActionButton isQuiet size="S" aria-label={LR.close} onPress={() => closeBanner(b.key)}>
+        <ActionButton isQuiet size="S" aria-label={LR.close} onPress={closeBanner}>
           <Close />
         </ActionButton>
       ) : null}

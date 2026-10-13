@@ -141,3 +141,12 @@ test('Home 顶上那一条：在跑报进度，跑完有没导入的报结果，
   assert.equal(b.detail, R.cardNote(done));
   assert.equal(R.banner(R.skip(done)), null);
 });
+
+test('关闭结果提示后不再显示，重试进度仍可见', () => {
+  const live = R.start(LI.DEMO_FOUND, '~/Documents/BaoCut', 'darwin');
+  const done = R.settle(live);
+  assert.equal(R.banner(done, true), null);
+  assert.equal(R.banner(R.settle(R.retry(done)), true), null);
+  assert.equal(R.banner(live, true).state, 'running');
+  assert.equal(R.banner(R.retry(done), true).state, 'running');
+});

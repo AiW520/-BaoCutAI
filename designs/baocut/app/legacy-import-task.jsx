@@ -60,15 +60,11 @@
     return {retry, skip};
   }
 
-  /** 关掉过结果的那几条任务（这次打开原型内有效）：再有新的结果（重试跑完）会再出来 */
-  const closed = new Map();
-
   function LegacyImportBanner() {
     const app = useApp();
-    const [, redraw] = useState(0);
     const t = app.tasks.filter((x) => x.kind === 'legacy-import' && x.legacy).slice(-1)[0];
-    const b = t ? R.banner(t.legacy) : null;
-    if (!b || (b.state === 'result' && closed.get(t.id) === t.legacy)) return null;
+    const b = t ? R.banner(t.legacy, app.prefs.legacyImportBannerDismissed === true) : null;
+    if (!b) return null;
     const open = () => app.go({r: 'task', id: t.id});
     return (
       <div className={cx('lgt-banner', `lgt-banner--${b.state}`)} data-testid="legacy-import-banner">
@@ -82,7 +78,7 @@
         </div>
         <Btn variant="secondary" size="s" onClick={open}>{b.state === 'running' ? '查看进度' : '查看原因'}</Btn>
         {b.state === 'result'
-          ? <IconBtn icon="close" size="s" tip="关闭" onClick={() => { closed.set(t.id, t.legacy); redraw((n) => n + 1); }} />
+          ? <IconBtn icon="close" size="s" tip="关闭" onClick={() => { app.setPref('legacyImportBannerDismissed', true); }} />
           : null}
       </div>
     );

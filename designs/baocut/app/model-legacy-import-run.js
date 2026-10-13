@@ -223,7 +223,7 @@
 
   /** Home 顶上那一条（导入是全局的事，不属于哪部视频，视频顶栏的任务胶囊不报它）：
       在跑时报进度与正在导入哪个；跑完留了没导入的，报结果与原因；都导入了就不出（toast 已经说过）。 */
-  function banner(legacy) {
+  function banner(legacy, dismissed = false) {
     const c = counts(legacy);
     if (c.live) {
       const now = current(legacy);
@@ -235,7 +235,7 @@
         pct: c.total ? Math.round((c.total - c.live) / c.total * 100) : 0,
       };
     }
-    if (!c.pending) return null;
+    if (dismissed || !c.pending) return null;
     return {state: 'result', title: `旧版项目导入结束：${c.done} 个已导入，${c.pending} 个没导入`, detail: cardNote(legacy), pct: null};
   }
 

@@ -1,11 +1,12 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import type { LegacySettingsReport } from '@baocut/protocol';
+import type { LegacyImportRun, LegacySettingsReport } from '@baocut/protocol';
 import { useLegacyImport } from './legacy-import-store.ts';
 
 const report: LegacySettingsReport = { reportId: 'report-a', fields: ['transcribe.model'], modelsDirectory: '/legacy/models' };
 beforeEach(() => {
   localStorage.removeItem('baocut.legacySettingsRead');
-  useLegacyImport.setState({ prompt: null, run: null, settingsReport: null, settingsReportOpen: false, readSettingsReports: [], settingsReadLoaded: false, bannerClosed: null });
+  localStorage.removeItem('baocut.legacyImportBannerDismissed');
+  useLegacyImport.setState({ prompt: null, run: null, settingsReport: null, settingsReportOpen: false, readSettingsReports: [], settingsReadLoaded: false, bannerDismissed: false, bannerDismissalLoaded: false });
   vi.restoreAllMocks();
 });
 
@@ -59,5 +60,45 @@ describe('legacy settings report', () => {
     expect(useLegacyImport.getState()).toMatchObject({ readSettingsReports: ['report-a'], settingsReportOpen: false });
     useLegacyImport.getState().set({ prompt: null, run: null, settingsReport: report });
     expect(useLegacyImport.getState().settingsReportOpen).toBe(false);
+  });
+});
+
+describe('legacy import banner dismissal', () => {
+  const run: LegacyImportRun = {
+    runId: 'run-a', directory: '/projects', state: 'finished',
+    startedAt: '2026-10-13T10:00:00Z', finishedAt: '2026-10-13T10:01:00Z', items: [],
+  };
+  const snapshot = { prompt: null, run };
+
+  it('remains dismissed across updates, retries, and a fresh client with a new run', () => {
+    useLegacyImport.getState().set(snapshot);
+    expect(useLegacyImport.getState().bannerDismissed).toBe(false);
+    useLegacyImport.getState().closeBanner();
+    useLegacyImport.getState().set({ ...snapshot, run: { ...run, state: 'importing', finishedAt: null } });
+    useLegacyImport.getState().set(snapshot);
+    expect(useLegacyImport.getState().bannerDismissed).toBe(true);
+    expect(localStorage.getItem('baocut.legacyImportBannerDismissed')).toBe('true');
+    useLegacyImport.setState({ bannerDismissed: false, bannerDismissalLoaded: false });
+    useLegacyImport.getState().set({ prompt: null, run: null });
+    useLegacyImport.getState().set({ ...snapshot, run: { ...run, runId: 'run-b' } });
+    expect(useLegacyImport.getState()).toMatchObject({ bannerDismissed: true, run: { runId: 'run-b' } });
+  });
+
+  it('only accepts an explicit saved dismissal', () => {
+    for (const value of ['false', 'null', '{bad json', '{"bannerDismissed":true}']) {
+      localStorage.setItem('baocut.legacyImportBannerDismissed', value);
+      useLegacyImport.setState({ bannerDismissed: false, bannerDismissalLoaded: false });
+      useLegacyImport.getState().set(snapshot);
+      expect(useLegacyImport.getState().bannerDismissed).toBe(false);
+    }
+  });
+
+  it('still closes in memory when storage cannot be read or written', () => {
+    vi.spyOn(localStorage, 'getItem').mockImplementation(() => { throw new Error('unavailable'); });
+    vi.spyOn(localStorage, 'setItem').mockImplementation(() => { throw new Error('unavailable'); });
+    useLegacyImport.getState().set(snapshot);
+    useLegacyImport.getState().closeBanner();
+    useLegacyImport.getState().set(snapshot);
+    expect(useLegacyImport.getState().bannerDismissed).toBe(true);
   });
 });

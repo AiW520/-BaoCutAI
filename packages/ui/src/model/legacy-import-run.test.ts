@@ -122,6 +122,14 @@ describe('legacy-import-run', () => {
     expect(runBanner(null, 'darwin')).toBeNull();
   });
 
+  it('关闭结果提示后，重试和新一轮结果也隐藏，导入进度仍显示', () => {
+    expect(runBanner(finished, 'darwin', true)).toBeNull();
+    expect(runBanner({ ...finished, runId: 'r2', finishedAt: '2026-10-09T10:00:00.000Z' }, 'win32', true)).toBeNull();
+    const live = run([item('a', 'queued')], 'importing');
+    expect(runBanner(live, 'darwin', true)?.state).toBe('running');
+    expect(runBanner({ ...live, state: 'waiting' }, 'win32', true)?.state).toBe('running');
+  });
+
   it('跑完的 toast：整次导入报整体；重试只报重试的那几个', () => {
     const all = new Set(finished.items.filter((it) => it.state !== 'skipped').map((it) => it.path));
     expect(finishToast(finished, all)).toEqual({ text: '导入结束：2 个已导入，5 个没导入', tone: 'neutral', action: 'result' });

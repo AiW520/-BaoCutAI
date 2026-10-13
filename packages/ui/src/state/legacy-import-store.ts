@@ -12,12 +12,20 @@ export interface LegacyImportStore {
   settingsReportOpen: boolean;
   readSettingsReports: string[];
   settingsReadLoaded: boolean;
-  /** Home 顶上那一条关掉的是哪一次结果（`runId:finishedAt`）：再有新的结果（重试跑完）会再出来。 */
-  bannerClosed: string | null;
+  /** Home 的导入结果提示已永久关闭；重启、重连或重试不再显示，导入进度仍可见。 */
+  bannerDismissed: boolean;
+  bannerDismissalLoaded: boolean;
   set(state: LegacyImportSnapshot): void;
-  closeBanner(key: string): void;
+  closeBanner(): void;
   openSettingsReport(): void;
   closeSettingsReport(): void;
+}
+
+const BANNER_DISMISSED_KEY = 'baocut.legacyImportBannerDismissed';
+
+function readBannerDismissed(): boolean {
+  try { return localStorage.getItem(BANNER_DISMISSED_KEY) === 'true'; }
+  catch { return false; }
 }
 
 const SETTINGS_READ_KEY = 'baocut.legacySettingsRead';
@@ -38,12 +46,15 @@ export const useLegacyImport = create<LegacyImportStore>()((set) => ({
   settingsReportOpen: false,
   readSettingsReports: [],
   settingsReadLoaded: false,
-  bannerClosed: null,
+  bannerDismissed: false,
+  bannerDismissalLoaded: false,
   set: ({ prompt, run, settingsReport }) => set((current) => {
     const report = settingsReport ?? null;
     const read = report && !current.settingsReadLoaded ? readSettingsReports() : current.readSettingsReports;
     return {
       prompt, run, settingsReport: report,
+      bannerDismissed: run && !current.bannerDismissalLoaded ? readBannerDismissed() : current.bannerDismissed,
+      bannerDismissalLoaded: current.bannerDismissalLoaded || run !== null,
       readSettingsReports: read,
       settingsReadLoaded: current.settingsReadLoaded || report !== null,
       settingsReportOpen: !!report && (
@@ -52,7 +63,11 @@ export const useLegacyImport = create<LegacyImportStore>()((set) => ({
       ),
     };
   }),
-  closeBanner: (key) => set({ bannerClosed: key }),
+  closeBanner: () => {
+    try { localStorage.setItem(BANNER_DISMISSED_KEY, 'true'); }
+    catch { /* Keep dismissal for this window when local storage is unavailable. */ }
+    set({ bannerDismissed: true, bannerDismissalLoaded: true });
+  },
   openSettingsReport: () => set((current) => ({ settingsReportOpen: current.settingsReport !== null })),
   closeSettingsReport: () => set((current) => {
     if (!current.settingsReport) return { settingsReportOpen: false };

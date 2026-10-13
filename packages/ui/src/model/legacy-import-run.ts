@@ -312,7 +312,7 @@ export interface RunBanner {
  * Home 顶上那一条（导入是全局的事，不属于哪部视频）：在跑时报进度与正在导入哪个；跑完留了没导入的报结果与原因；
  * 都导入了不出（toast 已经说过）。
  */
-export function runBanner(run: LegacyImportRun | null, platform: string): RunBanner | null {
+export function runBanner(run: LegacyImportRun | null, platform: string, dismissed = false): RunBanner | null {
   if (!run) return null;
   const c = runCounts(run);
   if (runLive(run)) {
@@ -326,7 +326,7 @@ export function runBanner(run: LegacyImportRun | null, platform: string): RunBan
       key: `${run.runId}:live`,
     };
   }
-  if (!c.pending) return null;
+  if (dismissed || !c.pending) return null;
   return {
     state: 'result',
     title: LR.bannerResult(c.imported, c.pending),
