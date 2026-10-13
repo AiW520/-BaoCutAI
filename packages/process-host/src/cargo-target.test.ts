@@ -42,4 +42,45 @@ describe('findCargoBinary', () => {
     expect(findCargoBinary(root, 'tool', { CARGO_TARGET_DIR: env })).toBe(path.join(env, 'debug/tool'));
     expect(findCargoBinary(root, 'nope', {})).toBeNull();
   });
+
+  it.each(['debug', 'release'])('uses the newer %s build when both profiles exist', (profile) => {
+    const root = tmp();
+    const release = path.join(root, 'target/release/model-worker');
+    const debug = path.join(root, 'target/debug/model-worker');
+    touch(release);
+    touch(debug);
+    fs.utimesSync(release, 1000, profile === 'release' ? 2000 : 1000);
+    fs.utimesSync(debug, 1000, profile === 'debug' ? 2000 : 1000);
+    expect(findCargoBinary(root, 'model-worker', {})).toBe(profile === 'debug' ? debug : release);
+  });
+
+  it('prefers release when both builds have the same timestamp', () => {
+    const root = tmp();
+    const release = path.join(root, 'target/release/tool');
+    const debug = path.join(root, 'target/debug/tool');
+    touch(release);
+    touch(debug);
+    fs.utimesSync(release, 1000, 1000);
+    fs.utimesSync(debug, 1000, 1000);
+    expect(findCargoBinary(root, 'tool', {})).toBe(release);
+  });
+
+  it('preserves target directory priority even if another directory has a newer build', () => {
+    const root = tmp();
+    const external = tmp();
+    const selected = path.join(external, 'release/tool');
+    const fallback = path.join(root, 'target/debug/tool');
+    touch(selected);
+    touch(fallback);
+    fs.utimesSync(selected, 1000, 1000);
+    fs.utimesSync(fallback, 2000, 2000);
+    expect(findCargoBinary(root, 'tool', { CARGO_TARGET_DIR: external })).toBe(selected);
+  });
+
+  it('skips directories named like a binary', () => {
+    const root = tmp();
+    fs.mkdirSync(path.join(root, 'target/release/tool'), { recursive: true });
+    touch(path.join(root, 'target/debug/tool'));
+    expect(findCargoBinary(root, 'tool', {})).toBe(path.join(root, 'target/debug/tool'));
+  });
 });

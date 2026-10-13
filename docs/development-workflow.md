@@ -124,6 +124,7 @@ summary 写清动作、对象及关键结果，不使用 `update`、`fix some is
 
 - 依赖变化使用对应包管理器更新并提交 lockfile，不手工编辑。根 npm workspace 对应 `package-lock.json`，Cargo workspace 对应 `Cargo.lock`；独立目录（如原型）维护自己的 lockfile。
 - 构建产物按[仓库约定](repo-conventions.md#2-放置规则)处理；原型中需要入库的生成物按[局部协议](../designs/baocut/AGENTS.md#验证)重建并提交，不手改。已有历史生成物不在无关任务中顺手暂存。
+- 开发态自动定位原生程序时，保持 Cargo 产物目录的查找优先级，在第一个有该程序的目录中选 `release` / `debug` 修改时间较新的文件；时间相同取 `release`，避免旧 release 遮住刚构建的 debug。显式程序路径、`BAOCUT_BIN_DIR` 与打包资源仍优先；已驻留的 Worker 要卸载或重启应用后才会换程序。
 - 临时答案、截图、渲染帧、测试项目与媒体放仓库外的临时目录；有意维护的测试夹具放所属测试目录，不把用户素材、模型权重或临时输出当作夹具提交。
 
 ### 5.2 worktree 与预览

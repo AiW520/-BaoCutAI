@@ -18,7 +18,8 @@ export function executableName(name: string, platform: NodeJS.Platform = process
  * 各工具自己的环境变量（`BAOCUT_ENGINE_HOST` 等）由调用方先看；这里按次序找：
  * 1. `BAOCUT_BIN_DIR`：给了就只在那里找，没有就是没有，不换别的来源；
  * 2. 打包后的 `<resources>/bin`（`process.resourcesPath`；Runtime 以 Node 方式运行时不一定有，所以主进程经 1 告诉它）；
- * 3. 从 `startDir` 往上找 cargo 产物目录里的 `{release,debug}/<name>`（开发时由 `npm run build:engine` 构建）。
+ * 3. 从 `startDir` 往上找 cargo 产物目录里的 `{release,debug}/<name>`，同目录取修改时间较新的文件，时间相同取 release
+ *    （开发时由 `npm run build:engine` 构建，避免旧 release 遮住新 debug）。
  */
 export function findBundledBinary(
   name: string,

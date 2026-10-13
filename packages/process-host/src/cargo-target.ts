@@ -41,13 +41,22 @@ export function* cargoTargetDirs(startDir: string, env: NodeJS.ProcessEnv = proc
   }
 }
 
-/** 在 cargo 产物目录里找 `{release,debug}/<exe>`。 */
+/** 在第一个有产物的 cargo 目录里取较新的 `{release,debug}/<exe>`；时间相同优先 release。 */
 export function findCargoBinary(startDir: string, exe: string, env: NodeJS.ProcessEnv = process.env): string | null {
   for (const targetDir of cargoTargetDirs(startDir, env)) {
+    let newest: { file: string; mtimeMs: number } | null = null;
     for (const profile of ['release', 'debug']) {
       const candidate = path.join(targetDir, profile, exe);
-      if (fs.existsSync(candidate)) return candidate;
+      try {
+        const stat = fs.statSync(candidate);
+        if (stat.isFile() && (!newest || stat.mtimeMs > newest.mtimeMs)) {
+          newest = { file: candidate, mtimeMs: stat.mtimeMs };
+        }
+      } catch {
+        // 产物不存在或构建时正在替换，继续找其他候选。
+      }
     }
+    if (newest) return newest.file;
   }
   return null;
 }

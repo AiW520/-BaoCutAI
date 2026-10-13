@@ -49,4 +49,16 @@ describe('findBundledBinary', () => {
     );
     expect(findBundledBinary('model-worker', repo, {}, 'darwin')).toBeNull();
   });
+
+  it.each(['darwin', 'win32', 'linux'] as const)('selects the latest development worker on %s', (platform) => {
+    const repo = tmp();
+    const exe = executableName('model-worker', platform);
+    const release = path.join(repo, 'target/release', exe);
+    const debug = path.join(repo, 'target/debug', exe);
+    touch(release);
+    touch(debug);
+    fs.utimesSync(release, 1000, 1000);
+    fs.utimesSync(debug, 2000, 2000);
+    expect(findBundledBinary('model-worker', repo, {}, platform)).toBe(debug);
+  });
 });
