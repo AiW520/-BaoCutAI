@@ -299,7 +299,7 @@ interface RelevantChunkSet {
 | 消费者 | 现有位置 | 用到的能力 | 改动 |
 | --- | --- | --- | --- |
 | 写总结 / 写博客 / 起标题 / 写简介 | `ai-tool` 流程（命令协议 `pipelines`）；AI 工具参数页 | `findRelevantChunks`、`status` | 范围新增 `topic`；提示词组装改为带编号句子；结果带 citation（§3.4） |
-| 关键帧插图 | 写博客的 `insertKeyframes` 选项；现只在智能体路径 | `matchFrames` | 直接调模型路径也可用；退路按出处取帧（§3.5） |
+| 关键帧插图 | 写博客的「添加关键帧插图」选项（拟议键 `insertKeyframes`）；现只在智能体路径 | `matchFrames` | 直接调模型路径也可用；退路按出处取帧（§3.5） |
 | 生成章节 | `ai-tool` 的 `chapters` | `embedTexts` | 先算边界候选再交模型（§3.6） |
 | 润色 | `ai-tool` 的 `polish`；术语表 `library/` | `pairSimilar` | 术语候选表，用户勾选后作为一笔编辑（§3.7） |
 | 翻译字幕 | `translate` 流程 | `pairSimilar`、`findRelevantChunks` | 参考译文附入提示；沿用标记（§3.7） |
@@ -326,6 +326,7 @@ interface RelevantChunkSet {
 ```
 
 - **句子编号而不是时间码回引**。要求模型回引句子编号比回引时间更可靠，也与出处锚点一一对应；时间码仍随文稿发出供模型理解顺序。
+- **结果成为文档条目（有意的行为变化）**。现在直接调模型的写作结果"给你读、拷走，不写进视频、没有收据"（产品设计 §5.10）；本文把它改为保存成 Space 的文档条目（与工具页的文本生成一致），否则出处无处存放、「重写这一段」也无从接续。不写进视频这一点不变。
 - **引用表的持久化**。结果文档条目带一份 `citations` 旁文件（拟议 `baocut.citations/1`）：段落索引 → `{ videoId, documentId, sentenceIds, anchor }`。拷走 Markdown 时按用户选择内联为时间码链接或去掉。
 - **局部改写**。「重写这一段」提交同一流程的 `section` 模式：输入是该段原文、它的 cites 对应的句群（再做一次 `findRelevantChunks` 以该段文字为 intent，允许用户改勾）与全文大纲（各段首句），输出替换该段并更新 citations；其余段落不变。
 - **智能体路径**。交给智能体时不改提示词的拼法，而是把"按主题选材"作为工具提供（§3.9），并要求写作 skill 在产出里保留 `[sN]` 引用；收尾时由 Runtime 做同样的 cites 校验。
@@ -365,9 +366,9 @@ interface RelevantChunkSet {
 ### 3.9 智能体工具与上下文投影
 
 - **新工具**（进入工具目录与 Agent 面，MCP/CLI 同名）：
-  - `speech_find_relevant { intent, scope?, limit?, neighbors? }`：返回 `RelevantChunkSet` 的只读投影（原文、sentenceId、锚点、章节、effectiveMode）。不写视频；范围不超过会话范围。
+  - `speech_relevant { intent, scope?, limit?, neighbors? }`（命名沿用名词组 + 一个动词的模式，如 `speech_activity`、`videos_shots`）：返回 `RelevantChunkSet` 的只读投影（原文、sentenceId、锚点、章节、effectiveMode）。不写视频；范围不超过会话范围。
   - `space_search_v2`、`space_resolve_search_hit`：按 v0.1 §11.4。
-- **记忆按需召回**。视频记忆条目（产品设计 §6.4）逐条编码进语义索引（对象类型 `memory`，只在该视频范围内可见）。任务开始时 Runtime 用任务合同的意图句召回相关条目附入上下文，其余由智能体用 `memory_find { intent }` 取；记忆的查看与删除界面不变。
+- **记忆按需召回**。视频记忆条目（产品设计 §6.4）逐条编码进语义索引（对象类型 `memory`，只在该视频范围内可见）。任务开始时 Runtime 用任务合同的意图句召回相关条目附入上下文，其余由智能体用 `memory_search { intent }` 取；记忆的查看与删除界面不变。
 - **提示注入**〔G〕。检索回来的文稿与画面是不可信材料（产品设计 §7.5）：工具结果以数据块返回，不含任何可被当作指令的包装；RAG 不授予编辑权限（v0.1 §15.2）。
 - **跨视频问答**是一个内置 skill 的流程：`space_search_v2` → 按来源去重 → `space_resolve_search_hit` → 文本模型 → 带引用的回答；回答格式要求每条论断附 `videoId + anchor`，Runtime 校验引用存在后再渲染为可点链接。
 
@@ -403,7 +404,7 @@ interface RelevantChunkSet {
 | 批次 | 内容 | 前置 |
 | --- | --- | --- |
 | A | 写作出处：句子编号、cites 校验、citations 旁文件、结果页点击回跳 | 无（不依赖模型） |
-| B | `SemanticContext` 文字层；写作「按主题」；`speech_find_relevant`；记忆召回；设置分组与降级文案 | v0.1 PR 3–4 |
+| B | `SemanticContext` 文字层；写作「按主题」；`speech_relevant`；记忆召回；设置分组与降级文案 | v0.1 PR 3–4 |
 | C | 局部改写与系列文章；章节边界候选；短视频主题圈定 | B |
 | D | 对称 profile 校准；术语候选与发现；翻译记忆与术语一致；重录候选 | B、G0 对称评测 |
 | E | `matchFrames` 与插图；按描述找素材 | v0.1 PR 6 |
