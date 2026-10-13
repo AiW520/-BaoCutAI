@@ -288,8 +288,8 @@ pub(crate) struct AvWriter {
     /// 写入器已经收束（`finish` 走完）。
     closed: bool,
     /// AVFoundation 的影子文件目录。`shouldOptimizeForNetworkUse` 为把 moov 前置
-    /// 会写一份接近成片大小的 `.sb-*` 临时文件，不指定目录时 macOS 可能把它放在
-    /// 用户的输出目录旁边。字段顺序即析构顺序：它排在 writer **之后**，writer
+    /// 会写一份接近成片大小的 `.sb-*` 临时文件，目录必须与输出同盘，不能用系统
+    /// 临时目录绕过目标盘的空间预检。字段顺序即析构顺序：它排在 writer **之后**，writer
     /// 先释放、AVFoundation 先收束自身文件，TempDir 再兜底清理。
     _temporary: tempfile::TempDir,
 }
@@ -322,9 +322,15 @@ fn open_inner(out: &Path, setup: WriterSetup) -> Result<AvWriter> {
     let exact_fps = f64::from(fps_num) / f64::from(fps_den);
     // guard 先于 writer 创建，局部变量逆序析构时 writer 先释放：AVFoundation
     // 收束完自己的影子文件，TempDir 再兜底清理。
+    // 相对文件名的 parent 是空路径，按当前目录处理；父目录失联时直接失败，
+    // 不创建父目录，也不回落到系统临时目录（外置盘导出不能占满系统盘）。
+    let parent = out
+        .parent()
+        .filter(|path| !path.as_os_str().is_empty())
+        .unwrap_or(Path::new("."));
     let temporary = tempfile::Builder::new()
         .prefix("bcut-mp4-writer-")
-        .tempdir()
+        .tempdir_in(parent)
         .context("创建 AVFoundation 临时目录")?;
     let url = NSURL::fileURLWithPath(&ns_path(out));
     let writer = unsafe {

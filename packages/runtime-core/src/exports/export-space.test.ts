@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it } from 'vitest';
 import { LOCALES, formatRef, localizeText, setLocale, RpcError } from '@baocut/protocol';
+import { videoExportDemand } from '@baocut/jobs';
 import { checkExportSpace, EXPORT_DISK_RESERVE } from './export-space.ts';
 
 const GiB = 1024 ** 3;
@@ -32,6 +33,23 @@ describe('导出磁盘空间检查', () => {
   it('目标盘有空间时通过；预留也算在需求内', async () => {
     await expect(checkExportSpace('D:\\导出', 10 * GiB, 'temporary', async () => ({ bavail: 441 * GiB, bsize: 1 }))).resolves.toBeUndefined();
     await expect(checkExportSpace('D:\\导出', 10 * GiB, 'temporary', async () => ({ bavail: 10 * GiB + EXPORT_DISK_RESERVE, bsize: 1 }))).resolves.toBeUndefined();
+  });
+
+  it('长视频目标盘只够编码与混音时提前拒绝，计入 MP4 收尾副本', async () => {
+    const durationSec = 8_058;
+    const bitrateKbps = 12_000;
+    const audioBitrateKbps = 192;
+    const demand = videoExportDemand({ width: 1920, height: 1080, fps: 30, durationSec, bitrateKbps, audioBitrateKbps, sampleRate: 48_000, channels: 2 });
+    const encoded = durationSec * (bitrateKbps + audioBitrateKbps) * 1_000 / 8;
+    const wav = durationSec * 48_000 * 2 * 2;
+    // 旧预检（1.5 份输出）会通过，但收尾时两份输出并存放不下。
+    const available = Math.ceil(encoded * 1.75 + wav + EXPORT_DISK_RESERVE);
+    const statfs = async () => ({ bavail: available, bsize: 1 });
+    const dir = '/Volumes/External/exports';
+    await expect(checkExportSpace(dir, demand.scratchDisk!, 'temporary', statfs)).rejects.toMatchObject({
+      details: { code: 'EXPORT_INSUFFICIENT_SPACE', storage: 'temporary', dir, available },
+    });
+    await expect(checkExportSpace(dir, demand.scratchDisk!, 'temporary', async () => ({ bavail: demand.scratchDisk! + EXPORT_DISK_RESERVE, bsize: 1 }))).resolves.toBeUndefined();
   });
 
   it('持久副本的磁盘不足时说明释放产物库磁盘空间，更换导出目录无效', async () => {

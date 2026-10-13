@@ -19,7 +19,7 @@ objc2 = "0.6"
 # `finishWritingWithCompletionHandler:` 要一个 Objective-C block。
 block2 = "0.6"
 # MP4 写入期的影子文件目录：`shouldOptimizeForNetworkUse` 为把 moov 前置会写一份
-# 接近成片大小的临时文件，不指定目录时它可能落在用户的输出目录旁边。只有这条
+# 接近成片大小的临时文件，放在输出旁的专用目录里，与输出同盘。只有这条
 # 平台路径需要，因此不进跨平台的 `[dependencies]`。
 tempfile = "3"
 objc2-av-foundation = { version = "0.3", default-features = false, features = [

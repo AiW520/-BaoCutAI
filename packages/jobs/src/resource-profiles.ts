@@ -130,7 +130,8 @@ export function localSeparateResources(
 
 /**
  * 成片导出（Render Worker 加 ffmpeg 编码）：基础 1.5 GiB 加帧窗口的 RGBA 帧；4 个线程；staging 是编码输出（码率不知道时
- * 按每像素 0.1 bit 估）的 1.5 倍，加上混音的 wav；开了响度标准化时再加母带的三份 32 位中间文件。
+ * 按每像素 0.1 bit 估）的 2.5 倍（输出、MP4 收尾的整份临时副本和 50% 余量），加上混音的 wav；
+ * 开了响度标准化时再加母带的三份 32 位中间文件。
  */
 export function videoExportDemand(input: {
   width: number;
@@ -150,7 +151,7 @@ export function videoExportDemand(input: {
   return {
     memory: Math.round(1.5 * GiB + frameBytes * VIDEO_FRAME_WINDOW),
     cpuThreads: 4,
-    scratchDisk: Math.round(encoded * 1.5 + wav + STAGING_SLACK),
+    scratchDisk: Math.round(encoded * 2.5 + wav + STAGING_SLACK),
   };
 }
 

@@ -28,6 +28,55 @@ const TOTAL_SECONDS: f64 = SEGMENT_SECONDS * SEGMENTS as f64;
 const TONE_HZ: f64 = 440.0;
 const TONE_AMPLITUDE: f32 = 0.5;
 
+/// 外置盘导出的影子文件不能落到系统盘；正常收尾与半途放弃都清理自己的目录。
+#[cfg(target_os = "macos")]
+#[test]
+fn writer_temporary_files_stay_with_output_and_are_cleaned_up() {
+    let staging = tempfile::tempdir().expect("创建目标 staging");
+    for finish in [true, false] {
+        let out = staging.path().join(if finish {
+            "finished.mp4"
+        } else {
+            "aborted.mp4"
+        });
+        let mut writer = media_native::open_mp4_writer(&out, WIDTH, HEIGHT, FPS, None)
+            .expect("打开 AVFoundation 写入器");
+        let temporary: Vec<_> = std::fs::read_dir(staging.path())
+            .unwrap()
+            .map(|entry| entry.unwrap().path())
+            .filter(|path| path.is_dir())
+            .collect();
+        assert_eq!(
+            temporary.len(),
+            1,
+            "临时目录必须在输出旁，而不是系统临时目录"
+        );
+        assert!(
+            temporary[0]
+                .file_name()
+                .unwrap()
+                .to_string_lossy()
+                .starts_with("bcut-mp4-writer-")
+        );
+        writer.write_frame(&frame_rgba(0)).expect("写帧");
+        if finish {
+            writer.finish().expect("收尾");
+            assert_eq!(
+                media_probe::probe(&out).unwrap().dimensions(),
+                Some((WIDTH, HEIGHT))
+            );
+        } else {
+            drop(writer);
+        }
+        assert!(!temporary[0].exists(), "收尾或放弃后不得留下影子文件目录");
+    }
+    let missing = staging.path().join("disconnected");
+    assert!(
+        media_native::open_mp4_writer(&missing.join("out.mp4"), WIDTH, HEIGHT, FPS, None).is_err()
+    );
+    assert!(!missing.exists(), "目标不存在时不得重建父目录或回落系统盘");
+}
+
 /// 第 `index` 帧的 RGBA：按段取主导色，横向压一条 0.2 → 1.0 的线性亮度斜坡。
 ///
 /// 斜坡的作用与解码侧夹具（`common::fixture`）一致：纯色画面是压缩与相似度
