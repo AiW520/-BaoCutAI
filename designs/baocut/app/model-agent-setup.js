@@ -367,7 +367,7 @@
   }
 
   /* ---------- 完整 provider 表的分组（product-design §7.6） ----------
-     main = 检测到的（在前）+ 常驻五家里没装的 + 用户添加、还没检测到的；more = 「更多」四家里没检测到的，折叠。
+     main = 检测到的（在前）+ 常驻六家里没装的 + 用户添加、还没检测到的；more = 「更多」四家里没检测到的，折叠。
      装上任何一家它就自己挪进 main。用户自己添加的不折进 more。added = 用户添加的家数（total 里含它们）。 */
   function groups(list) {
     const hs = list || [];
@@ -390,6 +390,7 @@
     {k: 'outdated', label: '版本过旧', patch: {claude: {ver: '1.0.88'}}},
     {k: 'error', label: '无法运行', patch: {claude: {runError: '启动时报错「env: node: No such file or directory」。'}}},
     {k: 'both', label: '两家都可用', patch: {claude: {ver: '2.2.0'}, codex: {found: true, enabled: true}}},
+    {k: 'antigravity', label: 'Antigravity 已登录', patch: {antigravity: {found: true, enabled: true}}},
     /* 2026-10-12：Codex 用 API key 登录——画图可能不行、费用不在订阅里；自动顺序跳过它，菜单里能选、写提醒。 */
     {k: 'codexApiKey', label: 'Codex 用 API key 登录', patch: {codex: {found: true, enabled: true, auth: 'api-key'}}},
     /* 「装了好几家」顺带演示四种来源：bun 装的 Codex、Homebrew 的 Gemini、npm 装的 OpenCode、nvm 下 npm 装的 Pi。 */

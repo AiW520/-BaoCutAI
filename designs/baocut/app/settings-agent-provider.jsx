@@ -110,6 +110,8 @@
           {S.runnable(plan) ? null
             : <p className="agp-hint">这条命令会从官方网站下载并运行脚本。BaoCut 不替你运行来自网络的脚本：请复制后在终端里自己运行。</p>}
         </li>}
+        {plan && h.docs ? <li><b>其他系统的安装方法</b><p>Windows 请按官方说明安装。</p>
+          <Btn size="s" icon="link" onClick={() => app.toast('原型演示：在浏览器中打开 ' + h.docs)}>打开官方说明</Btn></li> : null}
         <li><b>登录你的账号</b><p>{h.loginHint || <>装好后在终端里运行 <code>{h.cmd}</code>，按它的提示在浏览器里登录。</>}登录在它自己的窗口里完成，BaoCut 不经手你的账号和密码。</p></li>
         <li><b>回到这里</b><p>检测到安装并登录后，它会自动启用。</p>
           <Btn size="s" disabled={busy} onClick={onRecheck}>{busy ? '正在检测…' : '我已装好，重新检测'}</Btn></li>

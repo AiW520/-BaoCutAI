@@ -350,7 +350,7 @@
      `AGENT_ICON_FILES` 是同一张表；用户添加的（`added`）与表里没有的返回 null，画首字母头像。 */
   const AGENT_ICONS = {
     claude: {file: 'anthropic', mono: true}, codex: {file: 'codex', mono: false}, copilot: {file: 'githubcopilot', mono: true},
-    pi: {file: 'pi', mono: true}, opencode: {file: 'opencode', mono: true}, gemini: {file: 'google', mono: false},
+    pi: {file: 'pi', mono: true}, opencode: {file: 'opencode', mono: true}, gemini: {file: 'google', mono: false}, antigravity: {file: 'google', mono: false},
     cursor: {file: 'cursor', mono: true}, grok: {file: 'xai', mono: true}, kimi: {file: 'moonshot', mono: true},
   };
   function agentIcon(h) {

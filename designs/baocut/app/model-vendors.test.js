@@ -214,10 +214,10 @@ test('自建端点卡：openai / 兼容 / 自建 / custom 命中，空查询总�
   assert.ok(V.catalog('openai', settings).custom);
 });
 
-test('编码 Agent 图标：九家内置的都指向 assets/vendors 里存在的文件；添加的与没有的用首字母', () => {
+test('编码 Agent 图标：十家内置的都指向 assets/vendors 里存在的文件；添加的与没有的用首字母', () => {
   const fs = require('node:fs');
   const path = require('node:path');
-  const ids = ['claude', 'codex', 'copilot', 'pi', 'opencode', 'gemini', 'cursor', 'grok', 'kimi'];
+  const ids = ['claude', 'codex', 'copilot', 'pi', 'opencode', 'antigravity', 'gemini', 'cursor', 'grok', 'kimi'];
   assert.deepEqual(Object.keys(V.AGENT_ICONS).sort(), ids.slice().sort());
   for (const id of ids) {
     const icon = V.agentIcon({id});

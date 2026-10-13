@@ -1944,10 +1944,10 @@
      status：running（agent 在干活）/ waiting（等你放行或回答）/ idle（轮到你说）/ done。
      消息角色：user / assistant / tool（一次 CLI 或读文件）/ permission（放行卡）/
      receipt（写进项目后的收据，撤销位与后台任务同源）。 */
-  /* 内置的 provider 表（product-design §7.6）：BaoCut 自带启动方式、安装与登录说明的九家。
-     Claude Code、Codex CLI、GitHub Copilot CLI、Pi、OpenCode 五家常驻主列表；Gemini CLI、Cursor Agent、Grok、Kimi Code
+  /* 内置的 provider 表（product-design §7.6）：BaoCut 自带启动方式、安装与登录说明的十家。
+     Claude Code、Codex CLI、GitHub Copilot CLI、Pi、OpenCode、Antigravity CLI 六家常驻主列表；Gemini CLI、Cursor Agent、Grok、Kimi Code
      四家 `extra: true`——没检测到时只出现在 设置 › Agent 的「更多」折叠段里，不进会话选择器和工具页的「用」；
-     一旦检测到就和前五家同等对待。其余说 ACP 的命令行智能体不内置，由用户从 ACP_CATALOG 或自定义命令添加。
+     一旦检测到就和前六家同等对待。其余说 ACP 的命令行智能体不内置，由用户从 ACP_CATALOG 或自定义命令添加。
      安装命令与 `bcut-editor-core::agent_setup::install_methods` 同源；新装只列官方脚本 / Homebrew / npm；升级时按已装那一份的
      真实位置（`realBin`，链接解析到底；没给就等于 `bin`）认出它归谁管，推出同一种方式的升级命令（bun / pnpm / yarn / volta
      只在这时出现），见 model-agent-setup.js 的 installSource。
@@ -1960,7 +1960,7 @@
     account: plan, plan, install: installs.length ? installs[0].cmd : null, installs, models, ...(rest || {}),
   });
   const FULL_ONLY = '它没有逐次询问的通道，BaoCut 只能让它在「完全访问」模式下运行：执行命令和修改文件之前不会先问你。';
-  /* 主列表里 Claude Code 与 Codex CLI 之后的三家（`extra: false`）。 */
+  /* 主列表里 Claude Code 与 Codex CLI 之后的四家（`extra: false`）。 */
   const MAIN_PRESETS = [
     /* Copilot 的模型表是演示值：真机由 ACP 的 session/new 应答给出，跟着 Copilot 订阅里开放的模型走。 */
     harnessPreset('copilot', 'GitHub Copilot CLI', 'copilot', 'GitHub', 'GitHub Copilot 订阅', '1.0.12',
@@ -1979,6 +1979,15 @@
        [{id: 'anthropic/claude-sonnet-5', name: 'Claude Sonnet 5', dflt: true, tier: 'balanced'}, {id: 'openai/gpt-5.6-sol', name: 'GPT-5.6 Sol'}],
        {extra: false, minVer: '2.0.10', reinstall: {below: '2.0.0', from: '官方脚本或 opencode-ai 包', pkg: '@opencode/cli'},
         bin: '/opt/homebrew/bin/opencode', realBin: '/opt/homebrew/lib/node_modules/@opencode/cli/bin/opencode.js'}),
+    /* Antigravity 原生 stream-json 接入（issue #56）；版本与模型是 Paseo agy 1.2.13 夹具里的演示值。
+       没有逐次审批通道，只能使用完全访问；模型列表由 agy models 发现，不与 Gemini API 提供方混用。 */
+    harnessPreset('antigravity', 'Antigravity CLI', 'agy', 'Google', 'Google 账号', '1.2.13',
+      [{k: 'script', label: '官方脚本（macOS / Linux）', cmd: 'curl -fsSL https://antigravity.google/cli/install.sh | bash', upgrade: 'agy update'}],
+      [{id: 'gemini-3.8-flash-high', name: 'Gemini 3.8 Flash (High)', dflt: true, tier: 'balanced'},
+       {id: 'gemini-3.1-pro-high', name: 'Gemini 3.1 Pro (High)', tier: 'max'}],
+      {extra: false, minVer: '1.1.15', caveat: FULL_ONLY, bin: '~/.local/bin/agy', realBin: '~/.local/opt/agy/1.2.13/agy',
+       docs: 'https://antigravity.google/docs/cli/install/',
+       loginHint: '装好后在终端里运行 agy，按提示用 Google 账号登录。Windows 请按官方说明在 PowerShell 中安装。'}),
   ];
   /* 「更多」折叠段的四家 ACP 智能体。 */
   const MORE_HARNESSES = [
@@ -1996,7 +2005,7 @@
     harnessPreset('kimi', 'Kimi Code', 'kimi', 'Moonshot AI', 'Kimi 账号', '1.12.0', [],
       [{id: 'kimi-k3', name: 'Kimi K3', dflt: true, tier: 'balanced'}], {docs: 'https://github.com/MoonshotAI/kimi-code'}),
   ];
-  /* 可添加的 ACP 智能体目录（product-design §7.6）：设置 › Agent「添加更多 Agent」里一键添加的条目，不含上面内置的九家。
+  /* 可添加的 ACP 智能体目录（product-design §7.6）：设置 › Agent「添加更多 Agent」里一键添加的条目，不含上面内置的十家。
      command = BaoCut 启动它用的命令数组（`npx -y 包@版本` 钉住版本，升级跟着 BaoCut 的目录走）；env = 启动时附加的环境变量；
      ver = 目录记的版本（null = 由它自己的安装方式决定）；docs = 它的官方说明。介绍是 BaoCut 自己写的一句话。
      这些智能体 BaoCut 没有逐家验证过：能不能用以它自己的说明与探测结果为准。 */
