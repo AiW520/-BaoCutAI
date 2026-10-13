@@ -336,7 +336,7 @@ test('侧栏按钮显示表：每一行', () => {
   assert.deepEqual(shown({k: 'downloading', info, pct: 42}),
     {visible: true, glyph: 'ring', pct: 42, dot: null, tip: '正在下载更新 · 42%'}, '下载中：进度环、无点');
   assert.deepEqual(shown({k: 'ready', info, path: '/x.zip'}),
-    {visible: true, glyph: 'check', dot: 'positive', tip: '更新已下载 · 退出时自动安装'}, '已下载：对勾 + 绿点');
+    {visible: true, glyph: 'download', dot: 'positive', tip: '更新已下载 · 退出时自动安装'}, '已下载：下载图标 + 绿点');
   assert.deepEqual(shown({k: 'error', msg: 'y', info}),
     {visible: true, glyph: 'download', dot: 'negative', tip: '更新出错 · 点击查看'}, '出错且带版本信息：下载 + 红点');
   assert.deepEqual(shown({k: 'error', msg: 'x', info: null}), {visible: false}, '检查失败（不带版本信息）');

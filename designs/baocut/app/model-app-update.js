@@ -224,7 +224,7 @@
   /* ---------- 侧栏更新按钮（§17.7「侧栏更新按钮与更新窗」，2026-10-01） ----------
      侧栏页脚「设置」行右侧的 accent 方钮。只在有事可做时出现：有新版本（系统版本够）、下载中、
      已下载、带着版本信息的出错；系统版本不够、检查失败（没有版本信息）与其余各态都不显示。
-     glyph：download | ring（进度环，带 pct）| check；dot：white | positive | negative | null。 */
+     glyph：download | ring（进度环，带 pct）；dot：white | positive | negative | null。 */
   const HIDDEN = {visible: false};
   function sideButton(st) {
     const s = st || IDLE;
@@ -236,7 +236,7 @@
         return {visible: true, glyph: 'ring', pct: s.pct, dot: null,
           tip: verifying(s) ? '正在校验更新…' : `正在下载更新 · ${s.pct}%`};
       case 'ready':
-        return {visible: true, glyph: 'check', dot: 'positive', tip: '更新已下载 · 退出时自动安装'};
+        return {visible: true, glyph: 'download', dot: 'positive', tip: '更新已下载 · 退出时自动安装'};
       case 'error':
         return s.info ? {visible: true, glyph: 'download', dot: 'negative', tip: '更新出错 · 点击查看'} : HIDDEN;
       default:

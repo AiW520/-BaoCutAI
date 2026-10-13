@@ -205,7 +205,7 @@
       <Tip label={b.tip}>
         <BCAction type="button" className="sideupd" aria-label={b.tip} aria-haspopup="dialog"
           onClick={(e) => u.openWin(e.currentTarget)}>
-          {b.glyph === 'ring' ? <UpdateRing pct={b.pct} /> : <Ic n={b.glyph} className="ic--16" />}
+          {b.glyph === 'ring' ? <UpdateRing pct={b.pct} /> : <window.RSP.Icons.Download UNSAFE_className="ic ic--16" />}
           {b.dot ? <span className={'sideupd__dot sideupd__dot--' + b.dot} /> : null}
         </BCAction>
       </Tip>
