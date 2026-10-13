@@ -43,8 +43,8 @@ use crate::protocol::ErrorBody;
 pub const DEFAULT_STEPS: u32 = 20;
 /// 宽高都必须是它的整数倍（VAE 下采样 8 × DiT patch 2，再留一档给 2×2 打包）。
 pub const SIZE_MULTIPLE: u32 = 32;
-/// 长边上限（v2 能力表 `max_edge`）。
-pub const MAX_EDGE: u32 = 1536;
+/// 长边上限：容下 2K 档里最长的 2.35:1（3072×1312）。v2 能力表 `max_edge` 是 1536。
+pub const MAX_EDGE: u32 = 3072;
 /// 长短边之比的上限（v2 能力表 `max_ratio`）。
 pub const MAX_RATIO: u32 = 3;
 
@@ -61,7 +61,7 @@ pub fn check_size(width: u32, height: u32) -> Result<(), ErrorBody> {
         return fail("multiple-of-32");
     }
     if width.max(height) > MAX_EDGE {
-        return fail("max-edge-1536");
+        return fail("max-edge-3072");
     }
     if width.max(height) > width.min(height) * MAX_RATIO {
         return fail("max-ratio-3");
@@ -85,13 +85,19 @@ mod tests {
             (1024, 448),
             (256, 256),
             (1536, 512),
+            (2048, 2048),
+            (2752, 1536),
+            (1536, 2752),
+            (2400, 1792),
+            (1792, 2400),
+            (3072, 1312),
         ] {
             assert!(check_size(w, h).is_ok(), "{w}x{h}");
         }
         for (w, h, rule) in [
             (500, 512, "multiple-of-32"),
             (0, 512, "multiple-of-32"),
-            (1568, 1024, "max-edge-1536"),
+            (3104, 1312, "max-edge-3072"),
             (1536, 480, "max-ratio-3"),
         ] {
             let error = check_size(w, h).unwrap_err();

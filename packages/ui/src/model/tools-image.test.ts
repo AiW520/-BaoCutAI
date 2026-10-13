@@ -36,7 +36,10 @@ import {
   localImageOptions,
   ratioOfSize,
   retryRequest,
+  requestSize,
   sizeKeyFor,
+  sizeTierOptions,
+  tierFor,
   fixedSteps,
   stepsFor,
   switchImageModel,
@@ -165,6 +168,76 @@ describe('画幅', () => {
   });
 });
 
+/** 分档的模型：1:1 有 1K、2K 两档，16:9 只有一档且没声明档名（像 gpt-image-2 的 1:1）。 */
+const tiered = imageModel('qwen-image-2.1-turbo@mlx-8bit', {
+  aspectRatios: [
+    {
+      ratio: '1:1',
+      size: '1024x1024',
+      tiers: [
+        { tier: '1K', size: '1024x1024' },
+        { tier: '2K', size: '2048x2048' },
+      ],
+    },
+    {
+      ratio: '16:9',
+      size: '1024x576',
+      tiers: [
+        { tier: '1K', size: '1024x576' },
+        { tier: '2K', size: '2752x1536' },
+      ],
+    },
+    { ratio: '3:2', size: '1536x1024' },
+  ],
+  sizes: ['1024x1024', '1024x576', '1536x1024', '2048x2048', '2752x1536', '512x512'],
+  defaultSize: '1024x1024',
+  maxCount: 1,
+  acceptsSeed: true,
+  cost: 'free-local',
+});
+
+describe('尺寸档', () => {
+  it('每个画幅列模型声明的几档（带像素尺寸）；没声明时只有画幅的默认尺寸一档；没有画幅时为空', () => {
+    expect(sizeTierOptions(tiered, '16:9')).toEqual([
+      { key: '1K', label: '1K', size: '1024x576', sub: '1024×576' },
+      { key: '2K', label: '2K', size: '2752x1536', sub: '2752×1536' },
+    ]);
+    expect(sizeTierOptions(tiered, '3:2')).toEqual([{ key: '1536x1024', label: null, size: '1536x1024', sub: '1536×1024' }]);
+    expect(sizeTierOptions(tiered, null)).toEqual([]);
+    // 只列尺寸的模型（OpenAI 兼容端点）：画幅的键就是尺寸，一档。
+    const plain = imageModel('sdxl', { sizes: ['512x512', '768x768'] });
+    expect(sizeTierOptions(plain, '768x768').map((t) => t.size)).toEqual(['768x768']);
+    expect(sizeTierOptions(codexModel, sizeKeyFor(draft(), codexModel))).toEqual([]);
+  });
+
+  it('默认是画幅默认尺寸那一档；选了 2K 换画幅时跟着走，换到没有 2K 的画幅回到它唯一那一档，换回来仍是 2K', () => {
+    expect(tierFor(draft({ size: '16:9' }), tiered, '16:9')!.key).toBe('1K');
+    const two = draft({ size: '16:9', tier: '2K' });
+    expect(tierFor(two, tiered, '16:9')!.size).toBe('2752x1536');
+    expect(tierFor({ ...two, size: '1:1' }, tiered, '1:1')!.size).toBe('2048x2048');
+    expect(tierFor({ ...two, size: '3:2' }, tiered, '3:2')!.size).toBe('1536x1024');
+    // 存下来的旧草稿没有 tier 字段
+    expect(tierFor({ size: '16:9' } as ImageDraft, tiered, '16:9')!.key).toBe('1K');
+  });
+
+  it('请求：默认那一档照旧交宽高比，别的档交像素尺寸（在模型的 sizes 里）', () => {
+    const local = option(tiered, { providerId: 'local', key: `local/${tiered.modelId}`, local: true });
+    expect(imageRequest(draft({ prompt: '纸鹤', size: '16:9' }), local).size).toBe('16:9');
+    expect(imageRequest(draft({ prompt: '纸鹤', size: '16:9', tier: '2K' }), local).size).toBe('2752x1536');
+    expect(requestSize(draft({ size: '3:2', tier: '2K' }), tiered)).toBe('3:2');
+    expect(tiered.sizes).toContain(requestSize(draft({ size: '1:1', tier: '2K' }), tiered));
+    // 状态行写实际会出的像素尺寸
+    expect(imageStatus(draft({ prompt: '纸鹤', size: '16:9', tier: '2K' }), local, false).text).toContain('2752×1536');
+  });
+
+  it('「再来一版」带回的像素尺寸落回它的画幅与档', () => {
+    const back = draft({ size: '2752x1536', tier: null });
+    expect(sizeKeyFor(back, tiered)).toBe('16:9');
+    expect(tierFor(back, tiered, '16:9')!.key).toBe('2K');
+    expect(requestSize(back, tiered)).toBe('2752x1536');
+  });
+});
+
 describe('校验与请求', () => {
   it('没写提示词、超长、张数超出、种子不是整数', () => {
     expect(imageProblems(draft(), option(ratios))).toEqual([emptyPrompt()]);
@@ -277,7 +350,7 @@ describe('本机模型', () => {
     expect(imageStatus(draft(), missing, false)).toEqual({ text: '先下载 Qwen-Image-2.1', bad: true });
     const ready = localImageOptions(withLocal())[0]!;
     expect(imageStatus(draft({ prompt: 'cat' }), ready, false)).toEqual({
-      text: '本机 · 1:1 · 20 步 · 耗时取决于设备 · 不联网',
+      text: '本机 · 1024×1024 · 20 步 · 耗时取决于设备 · 不联网',
       bad: false,
     });
     expect(imageHeaderChip(ready)).toBe('在这台电脑上出图 · 不联网');
@@ -334,6 +407,7 @@ describe('记录', () => {
       prompt: '山间小路',
       model: 'openai/gpt-image-1',
       size: '3:2',
+      tier: null,
       count: 2,
       seed: '',
       steps: null,

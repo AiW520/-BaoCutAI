@@ -20,7 +20,7 @@ export {
   type SpeechBundleProfile,
 } from './bundle-registry.ts';
 export { SPEECH_BUNDLES } from './speech-bundles.ts';
-export { IMAGE_BUNDLES, QWEN_IMAGE_ASPECTS } from './image-bundles.ts';
+export { IMAGE_BUNDLES, QWEN_IMAGE_2K, QWEN_IMAGE_ASPECTS, QWEN_IMAGE_TIERED_ASPECTS } from './image-bundles.ts';
 export { imageRunOf, localImageModelInfo, localImageSeed } from './local-image.ts';
 export { AUDIO_CPP_ENGINE, MUSIC_BUNDLES, YUE2_SEMANTIC_TOKENS_PER_SEC } from './music-bundles.ts';
 export {

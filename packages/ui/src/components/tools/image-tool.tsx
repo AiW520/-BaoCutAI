@@ -19,6 +19,8 @@ import {
   imageModelOptions,
   imageStatus,
   sizeKeyFor,
+  sizeTierOptions,
+  tierFor,
   fixedSteps,
   stepsFor,
   switchImageModel,
@@ -273,11 +275,13 @@ export function ImageTool() {
   );
 }
 
-/** 画幅、数量、高级（设计稿 `AspectRow` 222-240 与 `ImageGenForm` 的后三节）。 */
+/** 画幅、尺寸、数量、高级（设计稿 `AspectRow`、`SizeRow` 与 `ImageGenForm` 的后几节）。 */
 function ImageOptions({ draft, option, patch }: { draft: ImageDraft; option: ImageOption; patch: (patch: Partial<ImageDraft>) => void }) {
   const info = option.info;
   const sizes = aspectOptions(info);
   const size = sizeKeyFor(draft, info);
+  const tiers = sizeTierOptions(info, size);
+  const tier = tierFor(draft, info, size);
   const stepRange = info.local?.steps ?? null;
   const fixed = fixedSteps(info);
   return (
@@ -294,18 +298,47 @@ function ImageOptions({ draft, option, patch }: { draft: ImageDraft; option: Ima
               const next = [...keys][0];
               if (next !== undefined) patch({ size: String(next) });
             }}>
-            {sizes.map((a) => (
-              <ToggleButton key={a.key} id={a.key} className={(rp) => aspect(rp)}>
-                <span className={aspectBox} style={boxSize(a.ratio)} aria-hidden />
-                <span className={aspectName}>{a.label}</span>
-                {a.sub ? <span className={aspectSub}>{a.sub}</span> : null}
-              </ToggleButton>
-            ))}
+            {sizes.map((a) => {
+              // 画幅下面写所选那一档在这个画幅下的像素尺寸（设计稿 `sizeOf`）。
+              const sub = tierFor(draft, info, a.key)?.sub ?? a.sub;
+              return (
+                <ToggleButton key={a.key} id={a.key} className={(rp) => aspect(rp)}>
+                  <span className={aspectBox} style={boxSize(a.ratio)} aria-hidden />
+                  <span className={aspectName}>{a.label}</span>
+                  {sub ? <span className={aspectSub}>{sub}</span> : null}
+                </ToggleButton>
+              );
+            })}
           </ToggleButtonGroup>
         ) : (
           <span className={detail}>{IMAGE_COPY.aspectAuto}</span>
         )}
       </Section>
+
+      {tiers.length ? (
+        <Section title={IMAGE_COPY.size}>
+          <Row>
+            <ToggleButtonGroup
+              aria-label={IMAGE_COPY.size}
+              className={aspects}
+              selectionMode="single"
+              disallowEmptySelection
+              selectedKeys={tier ? [tier.key] : []}
+              onSelectionChange={(keys) => {
+                const next = [...keys][0];
+                if (next !== undefined) patch({ tier: String(next) });
+              }}>
+              {tiers.map((t) => (
+                <ToggleButton key={t.key} id={t.key} className={(rp) => aspect(rp)}>
+                  {t.label ? <span className={aspectName}>{t.label}</span> : null}
+                  <span className={t.label ? aspectSub : aspectName}>{t.sub}</span>
+                </ToggleButton>
+              ))}
+            </ToggleButtonGroup>
+            <span className={detailGrow}>{tiers.length < 2 ? IMAGE_COPY.sizeSingle : option.local ? IMAGE_COPY.sizeNoteLocal : IMAGE_COPY.sizeNote}</span>
+          </Row>
+        </Section>
+      ) : null}
 
       {info.maxCount > 1 && imageRefMode(draft, info) !== 'img2img' ? (
         <Section title={IMAGE_COPY.count}>

@@ -11,14 +11,15 @@ import type { ImageRunOptions } from './worker-contract.ts';
 
 type ImageParameters = Extract<GenerationParameters, { capability: 'generateImage' }>;
 
-/** `generateImage` 的模型描述：一次一张、只出 PNG、接受 seed 与步数（输入图等 Model Worker 接上，暂时不收）；尺寸是模型包登记的几档。 */
+/** `generateImage` 的模型描述：一次一张、只出 PNG、接受 seed 与步数（输入图等 Model Worker 接上，暂时不收）；尺寸是模型包登记的几档（各宽高比的 1K、2K 与「试画」的小图）。 */
 export function localImageModelInfo(def: BundleDefinition, status: ModelBundleStatus, usable: boolean): ImageModelInfo {
   const profile = def.image!;
   return {
     modelId: def.bundleId,
     label: def.label,
-    sizes: [...profile.aspects.map((a) => a.size), ...profile.extraSizes],
-    aspectRatios: profile.aspects.map((a) => ({ ratio: a.ratio, size: a.size })),
+    // 先列各宽高比的默认尺寸，再列别的档，最后是「试画」的小图。
+    sizes: [...new Set([...profile.aspects.map((a) => a.size), ...profile.aspects.flatMap((a) => (a.tiers ?? []).map((t) => t.size)), ...profile.extraSizes])],
+    aspectRatios: profile.aspects.map((a) => ({ ratio: a.ratio, size: a.size, ...(a.tiers ? { tiers: a.tiers.map((t) => ({ ...t })) } : {}) })),
     defaultSize: profile.aspects[0]?.size ?? null,
     maxCount: 1,
     maxPromptChars: profile.maxPromptChars,

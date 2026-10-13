@@ -25,8 +25,8 @@ const qwenImageLicense = (model: string): ModelLicense => ({
 });
 
 /**
- * 宽高比与默认像素尺寸：长边 1024，短边按比例取 32 的倍数（与旧版的尺寸规则相同）。第一个是默认尺寸。
- * Worker 认的是更宽的规则（32 的倍数、长边 ≤ 1536、长短边之比 ≤ 3），这里只列界面与请求能选的几档。
+ * 宽高比与默认像素尺寸（1K 档）：长边 1024，短边按比例取 32 的倍数（与旧版的尺寸规则相同）。第一个是默认尺寸。
+ * Worker 认的是更宽的规则（32 的倍数、长边 ≤ 3072、长短边之比 ≤ 3），这里只列界面与请求能选的几档。
  */
 export const QWEN_IMAGE_ASPECTS: ReadonlyArray<{ ratio: string; size: string }> = [
   { ratio: '1:1', size: '1024x1024' },
@@ -36,6 +36,28 @@ export const QWEN_IMAGE_ASPECTS: ReadonlyArray<{ ratio: string; size: string }> 
   { ratio: '3:4', size: '768x1024' },
   { ratio: '2.35:1', size: '1024x448' },
 ];
+
+/**
+ * 2K 档：Qwen-Image-2.1 原生的约 4 MP 预设（1:1 2048²、16:9 2752×1536），别的宽高比取 32 的倍数，2.35:1 落在 3072×1312
+ * （设计稿 model-cloud-image.js `LOCAL_2K`，2026-10-13 用户确认）。
+ */
+export const QWEN_IMAGE_2K: Readonly<Record<string, string>> = {
+  '1:1': '2048x2048',
+  '16:9': '2752x1536',
+  '9:16': '1536x2752',
+  '4:3': '2400x1792',
+  '3:4': '1792x2400',
+  '2.35:1': '3072x1312',
+};
+
+/** MLX 的模型包在每个宽高比下有 1K、2K 两档（界面「尺寸」一行）；默认仍是 1K。 */
+export const QWEN_IMAGE_TIERED_ASPECTS = QWEN_IMAGE_ASPECTS.map((a) => ({
+  ...a,
+  tiers: [
+    { tier: '1K', size: a.size },
+    { tier: '2K', size: QWEN_IMAGE_2K[a.ratio]! },
+  ],
+}));
 
 const QWEN_IMAGE_MLX: BundleDefinition = {
   bundleId: 'qwen-image-2.1@mlx-4bit',
@@ -49,14 +71,15 @@ const QWEN_IMAGE_MLX: BundleDefinition = {
   license: qwenImageLicense('Qwen-Image-2.1'),
   image: {
     family: 'qwen-image',
-    aspects: QWEN_IMAGE_ASPECTS,
+    aspects: QWEN_IMAGE_TIERED_ASPECTS,
     extraSizes: ['512x512'],
     maxPromptChars: 1024,
     // 设计稿 image-gen.jsx 的「步数」：8–40，一次加减 4，默认 20。
     steps: { min: 8, max: 40, step: 4, default: 20 },
     // 实测 Model Worker 的进程峰值（phys_footprint）：512² 约 0.55 GB、1024² 约 0.8 GB（出在 VAE 解码，MLX 峰值
-    // 0.73 GB；DiT 那段 0.63 GB）；旧版同一管线 512² 约 0.8 GB。留到 2 GiB 容更大的尺寸（长边至多 1536）与抖动。
-    peakBytes: 2 * GiB,
+    // 0.73 GB；DiT 那段 0.63 GB）；旧版同一管线 512² 约 0.8 GB。2K 档没有单测这个包：激活与 Turbo 相同、层只有它的一半大，
+    // 按 Turbo 的 2K 实测（1.72 GB）同样留到 2.5 GiB。
+    peakBytes: 2.5 * GiB,
     slow: true,
   },
 };
@@ -72,6 +95,8 @@ const QWEN_IMAGE_CANDLE: BundleDefinition = {
   device: 'cpu',
   image: {
     ...QWEN_IMAGE_MLX.image!,
+    // 只有 1K 档：CPU 上 1024² 已要几个小时，2K 约四倍的 token、注意力更多，没有实测、也不实用；CUDA 本机测不了。
+    aspects: QWEN_IMAGE_ASPECTS,
     // CPU 上算 f32，计在进程内存。本机实测进程峰值（phys_footprint）：256² 2.4 GB、1024² 4.7 GB（出在 VAE 解码；DiT 那段
     // 3.3 GB，逐层反量化的矩阵约 0.9 GB 加注意力的分块）。常驻集还算上映射的权重页（1024² 4.9 GB），那部分是文件缓存、可回收，
     // 不计。留到 6 GiB 容长边 1536 的尺寸与抖动。
@@ -105,8 +130,9 @@ const QWEN_IMAGE_TURBO_MLX: BundleDefinition = {
     steps: { min: 8, max: 8, step: 8, default: 8 },
     // 实测 Model Worker 的进程峰值（phys_footprint）：1024² 约 0.8 GB（出在 VAE 解码；DiT 那段 0.64 GB）、1536² 约 1.0 GB（出在 DiT 那段）：8-bit
     // 的层是 4-bit 的两倍大，按半层流式读入；不量化的 bf16 层外权重（调制等）算完每一步的调制就丢。文本编码器不量化的 bf16 词嵌入
-    // （[151936, 4096]）只读提示词用到的行，那段约 0.5 GB。留到 2 GiB 容更大的尺寸与抖动。
-    peakBytes: 2 * GiB,
+    // （[151936, 4096]）只读提示词用到的行，那段约 0.5 GB。2K 档：2752×1536 约 1.72 GB（DiT 那段 MLX 峰值 1.58 GB，VAE 1.53 GB）、
+    // 2048² 约 1.69 GB（DiT 1.58 GB，VAE 1.36 GB）。3072×1312 的 VAE 条带最宽，没有实测，留到 2.5 GiB 容它与抖动。
+    peakBytes: 2.5 * GiB,
   },
 };
 
@@ -121,6 +147,8 @@ const QWEN_IMAGE_TURBO_CANDLE: BundleDefinition = {
   device: 'cpu',
   image: {
     ...QWEN_IMAGE_TURBO_MLX.image!,
+    // 与基础版的 candle 变体一样只有 1K 档。
+    aspects: QWEN_IMAGE_ASPECTS,
     // CPU 上算 f32，计在进程内存。本机实测 256² 八步的进程峰值（phys_footprint）2.5 GB（出在 VAE 解码；DiT 那段 2.0 GB，文本
     // 编码 0.7 GB：词嵌入只读提示词用到的行），与基础版 256² 的 2.4 GB 相当；DiT 与 VAE 反量化后的形状与基础版相同，1024² 没有
     // 实测，按基础版的 4.7 GB 同样留到 6 GiB。

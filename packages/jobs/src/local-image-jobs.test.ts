@@ -179,7 +179,7 @@ describe('本地文生图（假 Model Worker）', () => {
     expect(capability).toMatchObject({ kind: 'local', available: true });
     expect(capability.models.map((m) => m.modelId)).toEqual([IMAGE, BIG]);
     expect(capability.models[0]).toMatchObject({
-      sizes: [...REAL.image!.aspects.map((a) => a.size), '512x512'],
+      sizes: [...REAL.image!.aspects.map((a) => a.size), ...REAL.image!.aspects.map((a) => a.tiers![1]!.size), '512x512'],
       defaultSize: '1024x1024',
       maxCount: 1,
       formats: ['png'],
@@ -189,7 +189,7 @@ describe('本地文生图（假 Model Worker）', () => {
       cost: 'free-local',
       local: { steps: { min: 8, max: 40, step: 4, default: 20 } },
     });
-    // 试画的 512² 能提交，但不进画幅（宽高比只有长边 1024 的几档）。
+    // 试画的 512² 能提交，但不进画幅（宽高比的默认是长边 1024 的几档，2K 是各宽高比的另一档）。
     expect(capability.models[0]!.aspectRatios.map((a) => a.size)).not.toContain('512x512');
   });
 

@@ -5,7 +5,7 @@ import { deflateSync, crc32 } from 'node:zlib';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import type { GenerationParameters, ModelBundleStatus } from '@baocut/protocol';
 import { BUNDLES } from './bundle-registry.ts';
-import { IMAGE_BUNDLES, QWEN_IMAGE_ASPECTS } from './image-bundles.ts';
+import { IMAGE_BUNDLES, QWEN_IMAGE_2K, QWEN_IMAGE_ASPECTS, QWEN_IMAGE_TIERED_ASPECTS } from './image-bundles.ts';
 import { IMAGE_SELF_TEST, imageSelfTestParameters, imageSelfTestSteps, imageSelfTestVerdict, inspectPng } from './image-self-test.ts';
 import { imageRunOf, localImageModelInfo, localImageSeed } from './local-image.ts';
 import { LocalProviderSource } from './local-source.ts';
@@ -38,14 +38,15 @@ describe('本地文生图模型包的登记', () => {
     expect(QWEN.license).toMatchObject({ commercialUse: false });
   });
 
-  it('candle 的变体读同一个仓库版本（加载时反量化），名字、许可、尺寸与步数都相同，只换后端与峰值', () => {
+  it('candle 的变体读同一个仓库版本（加载时反量化），名字、许可与步数都相同，只换后端、峰值与尺寸（只有 1K 档）', () => {
     expect(QWEN_CANDLE).toMatchObject({ capability: 'image', backend: 'candle', device: 'cpu', label: QWEN.label });
     expect(QWEN_CANDLE.components).toEqual(QWEN.components);
     expect(QWEN_CANDLE.license).toBe(QWEN.license);
-    const { peakBytes, devicePeakBytes, ...profile } = QWEN_CANDLE.image!;
-    const { peakBytes: mlxPeak, ...mlxProfile } = QWEN.image!;
+    const { peakBytes, devicePeakBytes, aspects, ...profile } = QWEN_CANDLE.image!;
+    const { peakBytes: mlxPeak, aspects: _tiered, ...mlxProfile } = QWEN.image!;
     expect(profile).toEqual(mlxProfile);
-    expect(mlxPeak).toBe(2 * GiB);
+    expect(aspects).toBe(QWEN_IMAGE_ASPECTS);
+    expect(mlxPeak).toBe(2.5 * GiB);
     expect(peakBytes).toBe(6 * GiB);
     expect(devicePeakBytes).toEqual({ cuda: 4 * GiB });
   });
@@ -65,16 +66,17 @@ describe('本地文生图模型包的登记', () => {
     const { steps: _steps, peakBytes: _peak, ...mlxProfile } = QWEN.image!;
     expect(profile).toEqual(mlxProfile);
     expect(steps).toEqual({ min: 8, max: 8, step: 8, default: 8 });
-    expect(peakBytes).toBe(2 * GiB);
+    expect(peakBytes).toBe(2.5 * GiB);
   });
 
-  it('Turbo 的 candle 变体读同一个 8-bit 仓库版本，名字、许可、尺寸与固定 8 步都相同，只换后端与峰值', () => {
+  it('Turbo 的 candle 变体读同一个 8-bit 仓库版本，名字、许可与固定 8 步都相同，只换后端、峰值与尺寸（只有 1K 档）', () => {
     expect(QWEN_TURBO_CANDLE).toMatchObject({ capability: 'image', backend: 'candle', device: 'cpu', label: QWEN_TURBO.label });
     expect(QWEN_TURBO_CANDLE.components).toEqual(QWEN_TURBO.components);
     expect(QWEN_TURBO_CANDLE.license).toBe(QWEN_TURBO.license);
-    const { peakBytes, devicePeakBytes, ...profile } = QWEN_TURBO_CANDLE.image!;
-    const { peakBytes: _peak, ...mlxProfile } = QWEN_TURBO.image!;
+    const { peakBytes, devicePeakBytes, aspects, ...profile } = QWEN_TURBO_CANDLE.image!;
+    const { peakBytes: _peak, aspects: _tiered, ...mlxProfile } = QWEN_TURBO.image!;
     expect(profile).toEqual(mlxProfile);
+    expect(aspects).toBe(QWEN_IMAGE_ASPECTS);
     expect(profile.steps).toEqual({ min: 8, max: 8, step: 8, default: 8 });
     expect(peakBytes).toBe(6 * GiB);
     expect(devicePeakBytes).toEqual({ cuda: 4 * GiB });
@@ -132,16 +134,41 @@ describe('本地文生图模型包的登记', () => {
     }
   });
 
-  it('列出的尺寸都合 Worker 的规则：32 的倍数、长边不超过 1536、长短边之比不超过 3；第一个是 1:1', () => {
-    expect(QWEN.image!.aspects).toBe(QWEN_IMAGE_ASPECTS);
+  it('列出的尺寸都合 Worker 的规则：32 的倍数、长边不超过 3072、长短边之比不超过 3；第一个是 1:1', () => {
+    expect(QWEN.image!.aspects).toBe(QWEN_IMAGE_TIERED_ASPECTS);
+    expect(QWEN_TURBO.image!.aspects).toBe(QWEN_IMAGE_TIERED_ASPECTS);
     expect(QWEN_IMAGE_ASPECTS[0]).toEqual({ ratio: '1:1', size: '1024x1024' });
-    for (const { size } of [...QWEN_IMAGE_ASPECTS, { size: `${IMAGE_SELF_TEST.width}x${IMAGE_SELF_TEST.height}` }]) {
+    const sizes = [...QWEN_IMAGE_ASPECTS.map((a) => a.size), ...Object.values(QWEN_IMAGE_2K), `${IMAGE_SELF_TEST.width}x${IMAGE_SELF_TEST.height}`];
+    for (const size of sizes) {
       const [w, h] = size.split('x').map(Number) as [number, number];
       expect(w % 32, size).toBe(0);
       expect(h % 32, size).toBe(0);
-      expect(Math.max(w, h), size).toBeLessThanOrEqual(1536);
+      expect(Math.max(w, h), size).toBeLessThanOrEqual(3072);
       expect(Math.max(w, h) / Math.min(w, h), size).toBeLessThanOrEqual(3);
     }
+  });
+
+  it('MLX 的模型包每个宽高比有 1K 与 2K 两档，2K 的比例与 1K 相同（差不到 3%）；candle 的只有 1K', () => {
+    expect(QWEN_IMAGE_TIERED_ASPECTS.map((a) => a.ratio)).toEqual(QWEN_IMAGE_ASPECTS.map((a) => a.ratio));
+    expect(QWEN_IMAGE_TIERED_ASPECTS[1]).toEqual({
+      ratio: '16:9',
+      size: '1024x576',
+      tiers: [
+        { tier: '1K', size: '1024x576' },
+        { tier: '2K', size: '2752x1536' },
+      ],
+    });
+    const ratio = (size: string) => {
+      const [w, h] = size.split('x').map(Number) as [number, number];
+      return w / h;
+    };
+    for (const a of QWEN_IMAGE_TIERED_ASPECTS) {
+      expect(a.tiers.map((t) => t.tier)).toEqual(['1K', '2K']);
+      expect(a.tiers[0]!.size).toBe(a.size);
+      expect(Math.abs(ratio(a.tiers[1]!.size) / ratio(a.size) - 1), a.ratio).toBeLessThan(0.03);
+    }
+    expect(QWEN_CANDLE.image!.aspects).toBe(QWEN_IMAGE_ASPECTS);
+    expect(QWEN_TURBO_CANDLE.image!.aspects).toBe(QWEN_IMAGE_ASPECTS);
   });
 
   describe('目录里的状态', () => {
@@ -217,8 +244,8 @@ describe('本地文生图模型包的登记', () => {
       // 识别用的常驻量估计（含 candle 的按设备换算）不算文生图模型包。
       expect(await mac.workerFootprint(QWEN.bundleId)).toBeNull();
       expect(await mac.workerWeightBytes(QWEN.bundleId)).toBeNull();
-      expect(mac.definition(QWEN.bundleId)!.image!.peakBytes).toBe(2 * GiB);
-      expect(mac.imagePeak(QWEN.bundleId)).toEqual({ bytes: 2 * GiB, pool: 'gpuMemory' });
+      expect(mac.definition(QWEN.bundleId)!.image!.peakBytes).toBe(2.5 * GiB);
+      expect(mac.imagePeak(QWEN.bundleId)).toEqual({ bytes: 2.5 * GiB, pool: 'gpuMemory' });
       expect(mac.imagePeak('qwen3-asr-0.6b@mlx-4bit')).toBeNull();
       expect(mac.imagePeak('no-such-bundle')).toBeNull();
 
@@ -244,8 +271,8 @@ describe('模型描述与冻结参数', () => {
     expect(info).toMatchObject({
       modelId: QWEN.bundleId,
       label: 'Qwen-Image-2.1',
-      sizes: [...QWEN_IMAGE_ASPECTS.map((a) => a.size), '512x512'],
-      aspectRatios: QWEN_IMAGE_ASPECTS,
+      sizes: [...QWEN_IMAGE_ASPECTS.map((a) => a.size), ...Object.values(QWEN_IMAGE_2K), '512x512'],
+      aspectRatios: QWEN_IMAGE_TIERED_ASPECTS,
       defaultSize: '1024x1024',
       maxCount: 1,
       maxPromptChars: 1024,

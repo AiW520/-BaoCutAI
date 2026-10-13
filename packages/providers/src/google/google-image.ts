@@ -92,12 +92,19 @@ function model(
   referenceImages: number,
   extra: Partial<ImageModelInfo> = {},
 ): GoogleImageModel {
-  // 宽高比的写法取 1K（2.5 是唯一的尺寸）。
+  // 宽高比的写法取 1K（2.5 是唯一的尺寸）。3.x 的每个宽高比另列界面可选的几档（1K、2K、4K，按模型有的）：512 档请求
+  // 照样能点名尺寸，但不进界面（文档表里 21:9 的 512 是 792×168，与别的档不同比例）。
   const aspectRatios: ImageAspectRatio[] = [];
   for (const [size, spec] of sizes) {
     if ((spec.imageSize === '1K' || spec.imageSize === null) && !aspectRatios.some((a) => a.ratio === spec.aspectRatio)) {
       aspectRatios.push({ ratio: spec.aspectRatio, size });
     }
+  }
+  for (const aspect of aspectRatios) {
+    const tiers = [...sizes]
+      .filter(([, spec]) => spec.aspectRatio === aspect.ratio && spec.imageSize !== null && spec.imageSize !== '512')
+      .map(([size, spec]) => ({ tier: spec.imageSize!, size }));
+    if (tiers.length) aspect.tiers = tiers;
   }
   return {
     info: {

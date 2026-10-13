@@ -91,6 +91,20 @@ describe('请求带上视频', () => {
     });
   });
 
+  it('图片：「跟视频画布」时尺寸档按画布那一档画幅换算', () => {
+    const tiered = imageModel('qwen', {
+      aspectRatios: [
+        { ratio: '1:1', size: '1024x1024', tiers: [{ tier: '1K', size: '1024x1024' }, { tier: '2K', size: '2048x2048' }] },
+        { ratio: '16:9', size: '1024x576', tiers: [{ tier: '1K', size: '1024x576' }, { tier: '2K', size: '2752x1536' }] },
+      ],
+      sizes: ['1024x1024', '1024x576', '2048x2048', '2752x1536'],
+    });
+    const draft: EditorImageDraft = { ...BLANK_IMAGE, prompt: '纸鹤', size: '1:1', tier: '2K', fit: true };
+    expect(editorImageRequest(draft, imageOption(tiered), 'v1', LANDSCAPE).size).toBe('2752x1536');
+    expect(editorImageRequest({ ...draft, tier: '1K' }, imageOption(tiered), 'v1', LANDSCAPE).size).toBe('16:9');
+    expect(editorImageRequest({ ...draft, fit: false }, imageOption(tiered), 'v1', LANDSCAPE).size).toBe('2048x2048');
+  });
+
   it('重试补回 videoId；参数不全时照旧 null', () => {
     expect(withVideo(retryRequest(imageJob()), 'v1')).toMatchObject({ prompt: '水墨风格的山间小路', videoId: 'v1' });
     expect(withVideo(null, 'v1')).toBeNull();

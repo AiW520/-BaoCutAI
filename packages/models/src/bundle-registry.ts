@@ -1,4 +1,5 @@
 import type {
+  ImageSizeTier,
   ModelBackend,
   ModelCapability,
   ModelLicense,
@@ -104,8 +105,8 @@ export interface BundleDefinition {
 /** 一个本地文生图模型包能做什么（架构设计 §6.1、§6.3）。一次一张、只出 PNG、接受 seed；输入图等 Model Worker 接上（§6.1）。 */
 export interface ImageBundleProfile {
   family: string;
-  /** 宽高比与它的像素尺寸；第一个是默认尺寸。 */
-  aspects: ReadonlyArray<{ ratio: string; size: string }>;
+  /** 宽高比与它的像素尺寸；第一个是默认尺寸。`tiers` 是界面可选的几档（含 `size` 那一档），原样进模型描述的 `aspectRatios`。 */
+  aspects: ReadonlyArray<{ ratio: string; size: string; tiers?: readonly ImageSizeTier[] }>;
   /** 另外接受、不进画幅菜单的尺寸（`WIDTHxHEIGHT`）：设置页「试画」的小图。 */
   extraSizes: readonly string[];
   /** 提示词上限（Unicode 码点）。 */

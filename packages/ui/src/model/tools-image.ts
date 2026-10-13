@@ -76,6 +76,8 @@ export interface ImageDraft {
   model: string | null;
   /** 画幅：宽高比 `W:H` 或尺寸 `WIDTHxHEIGHT`；null 为模型的默认。 */
   size: string | null;
+  /** 「尺寸」那一行选的档（`1K`、`2K`…）；null 或这只模型在这个画幅下没有这一档时用画幅的默认尺寸那一档。 */
+  tier: string | null;
   count: number;
   seed: string;
   /** 「高级」展开了没有。 */
@@ -100,6 +102,7 @@ export const BLANK_IMAGE: ImageDraft = {
   prompt: '',
   model: null,
   size: null,
+  tier: null,
   count: 1,
   seed: '',
   advanced: false,
@@ -154,14 +157,68 @@ export function aspectOptions(info: Pick<ImageModelInfo, 'aspectRatios' | 'sizes
   return info.sizes.map((size) => ({ key: size, label: ratioOfSize(size), sub: times(size), ratio: ratioNumber(ratioOfSize(size)) }));
 }
 
-/** 草稿的画幅在这只模型下成不成立；不成立时用模型的默认（默认尺寸对应的宽高比，或默认尺寸本身），再不行取第一项。 */
+/** 草稿的画幅在这只模型下成不成立；不成立时用模型的默认（默认尺寸对应的宽高比，或默认尺寸本身），再不行取第一项。
+ *  草稿的 `size` 是某个宽高比下某一档的像素尺寸时（「再来一版」带回来的），落到那个宽高比。 */
 export function sizeKeyFor(draft: Pick<ImageDraft, 'size'>, info: ImageModelInfo): string | null {
   const options = aspectOptions(info);
   if (!options.length) return null;
   if (draft.size && options.some((o) => o.key === draft.size)) return draft.size;
+  const tiered = draft.size ? info.aspectRatios.find((a) => a.tiers?.some((t) => t.size === draft.size)) : undefined;
+  if (tiered) return tiered.ratio;
   const def = info.defaultSize;
   const byDefault = def ? (info.aspectRatios.find((a) => a.size === def)?.ratio ?? (info.sizes.includes(def) ? def : null)) : null;
   return byDefault && options.some((o) => o.key === byDefault) ? byDefault : options[0]!.key;
+}
+
+// ---- 尺寸 ----
+
+export interface SizeTierOption {
+  /** 档名（`1K`、`2K`），模型没分档时是那个尺寸本身。 */
+  key: string;
+  /** 档名；模型没分档时 null（只写像素尺寸）。 */
+  label: string | null;
+  /** `WIDTHxHEIGHT`。 */
+  size: string;
+  /** 像素尺寸（`2752×1536`）。 */
+  sub: string;
+}
+
+/**
+ * 「尺寸」那一行（设计稿 image-gen.jsx `SizeRow`）：这只模型在这个画幅下的几档，从小到大。模型给了 `tiers` 就列它们，
+ * 否则只有画幅的默认尺寸一档；没有可选画幅（Codex、由服务商定尺寸的）时为空，整行不画。
+ */
+export function sizeTierOptions(info: Pick<ImageModelInfo, 'aspectRatios' | 'sizes'>, aspectKey: string | null): SizeTierOption[] {
+  if (!aspectKey) return [];
+  const aspect = info.aspectRatios.find((a) => a.ratio === aspectKey);
+  if (aspect?.tiers?.length) return aspect.tiers.map((t) => ({ key: t.tier, label: t.tier, size: t.size, sub: times(t.size) }));
+  const size = aspect?.size ?? (info.sizes.includes(aspectKey) ? aspectKey : null);
+  return size ? [{ key: size, label: null, size, sub: times(size) }] : [];
+}
+
+/** 草稿在这个画幅下落在哪一档：选过且这一档还在就用它，否则画幅默认尺寸那一档（再不行第一档）；没有可选的档时 null。 */
+export function tierFor(draft: Pick<ImageDraft, 'size' | 'tier'>, info: ImageModelInfo, aspectKey: string | null): SizeTierOption | null {
+  const tiers = sizeTierOptions(info, aspectKey);
+  if (!tiers.length) return null;
+  const picked =
+    // 存下来的旧草稿没有 `tier`（undefined），与 null 同样处理。
+    tiers.find((t) => draft.tier != null && t.key === draft.tier) ?? (draft.tier == null ? tiers.find((t) => t.size === draft.size) : undefined);
+  if (picked) return picked;
+  const def = info.aspectRatios.find((a) => a.ratio === aspectKey)?.size;
+  return tiers.find((t) => t.size === def) ?? tiers[0]!;
+}
+
+/** 交给 Runtime 的 `size`：画幅默认那一档仍交宽高比（与以前相同），选了别的档时交那一档的像素尺寸。 */
+export function requestSize(draft: Pick<ImageDraft, 'size' | 'tier'>, info: ImageModelInfo): string | null {
+  const key = sizeKeyFor(draft, info);
+  const tier = tierFor(draft, info, key);
+  const def = info.aspectRatios.find((a) => a.ratio === key)?.size;
+  return tier && def && tier.size !== def ? tier.size : key;
+}
+
+/** 状态行与记录里写的像素尺寸：草稿实际会出的那一档；不知道时 null。 */
+function pixelSize(draft: Pick<ImageDraft, 'size' | 'tier'>, info: ImageModelInfo): string | null {
+  const key = sizeKeyFor(draft, info);
+  return tierFor(draft, info, key)?.size ?? key;
 }
 
 export function countFor(draft: Pick<ImageDraft, 'count'>, info: Pick<ImageModelInfo, 'maxCount'>): number {
@@ -324,7 +381,7 @@ export function imageProblems(draft: ImageDraft, option: ImageOption | null): st
 /** `models.generateImage` 的参数：不导入任何视频。 */
 export function imageRequest(draft: ImageDraft, option: ImageOption): Omit<GenerateImageRequest, 'commandId'> {
   const info = option.info;
-  const size = sizeKeyFor(draft, info);
+  const size = requestSize(draft, info);
   const seed = parseSeed(draft.seed);
   const steps = stepsFor(draft, info);
   const refs = usedRefs(draft, info);
@@ -354,7 +411,7 @@ export function imageStatus(draft: ImageDraft, option: ImageOption | null, tried
   const empty = M.emptyPrompt;
   const problem = imageProblems(draft, option).find((p) => tried || p !== empty);
   if (problem) return { text: problem, bad: true };
-  const size = sizeKeyFor(draft, option.info);
+  const size = pixelSize(draft, option.info);
   if (option.local) {
     // 耗时随机器差很多，这一版没有实测的每步耗时可查（设计稿 `statusLine` 没有实测时的那一句）。
     const steps = stepsFor(draft, option.info);
@@ -518,6 +575,7 @@ export function againDraft(job: JobRecord, withAssets = false): (Partial<ImageDr
     prompt: g.prompt,
     model: modelKeyOf(job.providerId, job.modelId),
     size: g.aspectRatio ?? g.size,
+    tier: null,
     ...(img2img ? {} : { count: g.count }),
     seed: '',
     steps: g.steps ?? null,

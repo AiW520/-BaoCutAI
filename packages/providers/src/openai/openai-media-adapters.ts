@@ -97,7 +97,14 @@ const IMAGE_MODELS: ImageModelInfo[] = [
     label: 'GPT Image 2',
     default: true,
     sizes: [...WIDE_RATIOS.map((r) => r.size), '2560x1440', '1440x2560'],
-    aspectRatios: WIDE_RATIOS,
+    // 16:9 与 9:16 另有 2K 一档（界面的「尺寸」一行）；别的宽高比只有一档。
+    aspectRatios: WIDE_RATIOS.map((r) =>
+      r.ratio === '16:9'
+        ? { ...r, tiers: [{ tier: '1K', size: r.size }, { tier: '2K', size: '2560x1440' }] }
+        : r.ratio === '9:16'
+          ? { ...r, tiers: [{ tier: '1K', size: r.size }, { tier: '2K', size: '1440x2560' }] }
+          : r,
+    ),
   },
   { ...IMAGE_BASE, modelId: 'gpt-image-1.5', label: 'GPT Image 1.5', sizes: STANDARD_SIZES, aspectRatios: STANDARD_RATIOS },
   { ...IMAGE_BASE, modelId: 'gpt-image-1', label: 'GPT Image 1', sizes: STANDARD_SIZES, aspectRatios: STANDARD_RATIOS },

@@ -218,11 +218,21 @@ describe('OpenAI 图片', () => {
     expect((await failure(generate(new OpenAiImageAdapter(), cfg, 'gpt-image-1', image()))).kind).toBe('protocol');
   });
 
-  it('模型表：gpt-image-2 是默认，宽高比 16:9 对应 1536x864；参考图与 seed 按声明', () => {
+  it('模型表：gpt-image-2 是默认，宽高比 16:9 对应 1536x864、另有 2K 一档；参考图与 seed 按声明', () => {
     const models = new OpenAiImageAdapter().models(config('x', null));
     const def = models.find((m) => m.default)!;
     expect(def.modelId).toBe('gpt-image-2');
-    expect(def.aspectRatios).toContainEqual({ ratio: '16:9', size: '1536x864' });
+    expect(def.aspectRatios).toContainEqual({
+      ratio: '16:9',
+      size: '1536x864',
+      tiers: [
+        { tier: '1K', size: '1536x864' },
+        { tier: '2K', size: '2560x1440' },
+      ],
+    });
+    // 每一档的尺寸都在 sizes 里，按尺寸提交能过提交时的检查。
+    for (const a of def.aspectRatios) for (const t of a.tiers ?? []) expect(def.sizes).toContain(t.size);
+    expect(def.aspectRatios.find((a) => a.ratio === '1:1')!.tiers).toBeUndefined();
     expect(models.every((m) => m.maxCount === 10 && m.maxPromptChars === 32_000 && !m.acceptsSeed)).toBe(true);
     expect(def.referenceImages).toEqual({ max: 16, edit: true, maxBytesEach: 50_000_000, maxBytesTotal: null });
     expect(models.every((m) => m.img2img === null)).toBe(true);
@@ -350,6 +360,26 @@ describe('Google 图片', () => {
     expect(flash.modelId).toBe('gemini-3.1-flash-image');
     expect(flash.aspectRatios).toHaveLength(14);
     expect(flash.sizes).toHaveLength(56);
+  });
+
+  it('尺寸档：3.x 每个宽高比列 1K/2K/4K 里模型有的几档（512 不进界面），每档的尺寸都在 sizes 里；2.5 不分档', () => {
+    const models = new GoogleImageAdapter().models(config('x', null));
+    const byId = (id: string) => models.find((m) => m.modelId === id)!;
+    const tiersOf = (id: string, ratio: string) => byId(id).aspectRatios.find((a) => a.ratio === ratio)!.tiers;
+    expect(tiersOf('gemini-3.1-flash-image', '16:9')).toEqual([
+      { tier: '1K', size: '1376x768' },
+      { tier: '2K', size: '2752x1536' },
+      { tier: '4K', size: '5504x3072' },
+    ]);
+    expect(tiersOf('gemini-3-pro-image', '1:1')!.map((t) => t.tier)).toEqual(['1K', '2K', '4K']);
+    expect(tiersOf('gemini-3.1-flash-lite-image', '1:1')).toEqual([{ tier: '1K', size: '1024x1024' }]);
+    expect(tiersOf('gemini-2.5-flash-image', '1:1')).toBeUndefined();
+    for (const model of models) {
+      for (const a of model.aspectRatios) {
+        if (a.tiers) expect(a.tiers.map((t) => t.size)).toContain(a.size);
+        for (const t of a.tiers ?? []) expect(model.sizes).toContain(t.size);
+      }
+    }
   });
 });
 

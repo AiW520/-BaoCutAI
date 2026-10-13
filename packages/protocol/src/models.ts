@@ -558,6 +558,18 @@ export interface ImageAspectRatio {
   ratio: string;
   /** 只给宽高比时用的尺寸 `WIDTHxHEIGHT`。 */
   size: string;
+  /**
+   * 这个宽高比下界面可选的几档尺寸，从小到大，其中一档就是 `size`；每档的尺寸都在模型的 `sizes` 里，请求以那个尺寸提交。
+   * 不给时只有 `size` 一档。
+   */
+  tiers?: ImageSizeTier[];
+}
+
+/** 一档尺寸：档名（`1K`、`2K`、`4K`，供应商的叫法，不翻译）与它在这个宽高比下的像素尺寸。 */
+export interface ImageSizeTier {
+  tier: string;
+  /** `WIDTHxHEIGHT`。 */
+  size: string;
 }
 
 /** `generateImage` 的模型描述。 */
