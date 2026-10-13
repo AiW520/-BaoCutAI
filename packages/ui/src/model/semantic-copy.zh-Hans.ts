@@ -38,6 +38,7 @@ export const zhHans: SemanticMessages = {
     none: '没有文字索引',
     empty: '没有视频',
     noTranscripts: '还没有文稿，所以没有文字索引',
+    notIncluded: '这些视频没纳入语义索引，只能按字面找到',
     ready: '文字已就绪',
     readyWith: (detail) => `文字已就绪（${detail}）`,
     partial: (done, total, detail) => `文字 ${done}/${total} 部视频${detail ? `（${detail}）` : ''}`,
@@ -45,6 +46,7 @@ export const zhHans: SemanticMessages = {
     failed: (n) => `${n} 部失败`,
     outdated: (n) => `${n} 部已过期`,
     missing: (n) => `${n} 部没有文稿`,
+    excluded: (n) => `${n} 部没纳入语义索引`,
     separator: '、',
   },
   settings: {

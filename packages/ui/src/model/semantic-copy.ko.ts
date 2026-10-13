@@ -38,6 +38,7 @@ export const ko: SemanticMessages = {
     none: '텍스트 색인 없음',
     empty: '동영상 없음',
     noTranscripts: '아직 전사본이 없어 텍스트 색인도 없습니다',
+    notIncluded: '이 범위의 동영상은 의미 색인에 포함되지 않아 정확히 일치하는 텍스트만 찾습니다',
     ready: '텍스트 준비됨',
     readyWith: (detail) => `텍스트 준비됨(${detail})`,
     partial: (done, total, detail) => `텍스트: 동영상 ${done}/${total}개${detail ? `(${detail})` : ''}`,
@@ -45,6 +46,7 @@ export const ko: SemanticMessages = {
     failed: (n) => `실패 ${n}개`,
     outdated: (n) => `오래됨 ${n}개`,
     missing: (n) => `전사본 없음 ${n}개`,
+    excluded: (n) => `의미 색인 제외 ${n}개`,
     separator: ', ',
   },
   settings: {

@@ -34,6 +34,7 @@ export const es: SpaceMessages = {
   byBoth: 'Coinciden palabras y significado',
   byLexical: 'Coinciden las palabras',
   bySemantic: 'Significado parecido; estas palabras no aparecen',
+  byWeak: 'Relación débil; estas palabras no aparecen',
   hitNotInTimeline: 'Esta frase se recortó de la línea de tiempo: el vídeo se abre sin mover el cabezal',
   hitGone: 'Esta frase ya no está en el vídeo',
   hitWrite: 'Usar para escribir',

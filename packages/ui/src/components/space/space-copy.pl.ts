@@ -232,6 +232,7 @@ export const pl: SpaceMessages = {
   byBoth: 'Pasują słowa i znaczenie',
   byLexical: 'Pasują słowa',
   bySemantic: 'Podobne znaczenie; tych słów w nim nie ma',
+  byWeak: 'Luźno powiązane; tych słów tu nie ma',
   hitNotInTimeline: 'To zdanie wycięto z osi czasu: film otworzy się bez przesuwania głowicy odtwarzania',
   hitGone: 'Tego zdania nie ma już w filmie',
   hitWrite: 'Użyj do pisania',

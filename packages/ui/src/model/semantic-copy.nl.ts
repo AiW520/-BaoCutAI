@@ -38,6 +38,7 @@ export const nl: SemanticMessages = {
     none: 'Geen tekstindex',
     empty: 'Geen video’s',
     noTranscripts: 'Nog geen transcripten, dus geen tekstindex',
+    notIncluded: 'Deze video’s staan niet in de semantische index, dus alleen exacte tekst wordt gevonden',
     ready: 'Tekst is klaar',
     readyWith: (detail) => `Tekst is klaar (${detail})`,
     partial: (done, total, detail) => `Tekst: ${done}/${total} video’s${detail ? ` (${detail})` : ''}`,
@@ -45,6 +46,7 @@ export const nl: SemanticMessages = {
     failed: (n) => `${n} mislukt`,
     outdated: (n) => `${n} verouderd`,
     missing: (n) => `${n} zonder transcript`,
+    excluded: (n) => `${n} niet in de semantische index`,
     separator: ', ',
   },
   settings: {

@@ -235,6 +235,8 @@ export interface SemanticHitRow extends SpaceSearchHit {
   matchedBy: SpaceSearchV2Hit['matchedBy'];
   inTimeline: boolean;
   needsResolve: boolean;
+  /** 弱命中：只是按意思勉强沾边（`SpaceSearchV2Hit.weak`）。 */
+  weak: boolean;
 }
 
 export function semanticHitRows(hits: readonly SpaceSearchV2Hit[]): SemanticHitRow[] {
@@ -258,6 +260,7 @@ export function semanticHitRows(hits: readonly SpaceSearchV2Hit[]): SemanticHitR
       matchedBy: hit.matchedBy,
       inTimeline: hit.actions.includes('open-in-timeline'),
       needsResolve: hit.needsResolve,
+      weak: hit.weak ?? false,
     });
   }
   return rows;

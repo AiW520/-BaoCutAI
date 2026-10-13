@@ -32,7 +32,7 @@
             <span className="ssr__v">{vname(r.video)}</span>
           </span>
           <Snippet r={r} />
-          <span className="ssr__by">{`讲话内容 · ${Q.BY[r.by]}`}</span>
+          <span className="ssr__by">{`讲话内容 · ${Q.BY[r.weak ? 'weak' : r.by]}`}</span>
         </BCAction>
         <div className="ssr__acts">
           {r.inTimeline ? <BCAction className="tsetup__lnk" onClick={() => onAct('timeline', r)}>在时间线打开</BCAction>

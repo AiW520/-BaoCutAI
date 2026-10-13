@@ -153,6 +153,11 @@ export interface SpaceSearchV2Hit {
   chapter: { id: string; title: string } | null;
   /** 只用于排序的融合分数（§10.2），不是置信度，界面不显示为百分比。 */
   rank: number;
+  /**
+   * 弱命中：只有向量一路命中、且余弦低于该通道的弱命中阈值（`semantic-thresholds.json`，未校准）。只标出、不藏起来；
+   * 调用方据此判断「可能沾边」，不当作答案的依据。字面命中从不标弱。
+   */
+  weak: boolean;
   actions: SemanticHitAction[];
 }
 
@@ -166,6 +171,8 @@ export interface SemanticCoverage {
   failed: number;
   /** 没有输入（例如没有文稿的视频）。 */
   missingInput: number;
+  /** 不在设置「语义索引 › 项目」里的视频：不建这路索引，只能字面检索。不计入 `eligible`，也不让结果不完整。 */
+  excluded: number;
   /** 已建索引里有落后于当前版本的。 */
   stale: number;
   knownScopeComplete: boolean;

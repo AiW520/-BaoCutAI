@@ -38,6 +38,7 @@ export const vi: SemanticMessages = {
     none: 'Chưa có chỉ mục văn bản',
     empty: 'Không có video',
     noTranscripts: 'Chưa có bản chép lời nào, nên chưa có chỉ mục văn bản',
+    notIncluded: 'Các video này không nằm trong chỉ mục ngữ nghĩa, nên chỉ tìm đúng chữ',
     ready: 'Văn bản đã sẵn sàng',
     readyWith: (detail) => `Văn bản đã sẵn sàng (${detail})`,
     partial: (done, total, detail) => `Văn bản: ${done}/${total} video${detail ? ` (${detail})` : ''}`,
@@ -45,6 +46,7 @@ export const vi: SemanticMessages = {
     failed: (n) => `${n} thất bại`,
     outdated: (n) => `${n} đã cũ`,
     missing: (n) => `${n} chưa có bản chép lời`,
+    excluded: (n) => `${n} không nằm trong chỉ mục ngữ nghĩa`,
     separator: ', ',
   },
   settings: {

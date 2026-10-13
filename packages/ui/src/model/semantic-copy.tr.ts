@@ -38,6 +38,7 @@ export const tr: SemanticMessages = {
     none: 'Metin dizini yok',
     empty: 'Video yok',
     noTranscripts: 'Henüz döküm yok, bu yüzden metin dizini de yok',
+    notIncluded: 'Bu videolar anlamsal dizinde değil, bu yüzden yalnızca birebir metin aranır',
     ready: 'Metin hazır',
     readyWith: (detail) => `Metin hazır (${detail})`,
     partial: (done, total, detail) => `Metin: ${done}/${total} video${detail ? ` (${detail})` : ''}`,
@@ -45,6 +46,7 @@ export const tr: SemanticMessages = {
     failed: (n) => `${n} başarısız`,
     outdated: (n) => `${n} güncel değil`,
     missing: (n) => `${n} videonun dökümü yok`,
+    excluded: (n) => `${n} video anlamsal dizinde değil`,
     separator: ', ',
   },
   settings: {

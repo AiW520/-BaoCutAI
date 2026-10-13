@@ -38,6 +38,7 @@ export const ja: SemanticMessages = {
     none: 'テキストインデックスなし',
     empty: '動画なし',
     noTranscripts: '文字起こしがまだないため、テキストインデックスはありません',
+    notIncluded: 'この範囲の動画はセマンティックインデックスの対象外のため、文字どおりの一致だけを探します',
     ready: 'テキストの準備完了',
     readyWith: (detail) => `テキストの準備完了（${detail}）`,
     partial: (done, total, detail) => `テキスト：${done}/${total} 本の動画${detail ? `（${detail}）` : ''}`,
@@ -45,6 +46,7 @@ export const ja: SemanticMessages = {
     failed: (n) => `${n} 本が失敗`,
     outdated: (n) => `${n} 本が古い状態`,
     missing: (n) => `${n} 本は文字起こしなし`,
+    excluded: (n) => `${n} 本はセマンティックインデックスの対象外`,
     separator: '、',
   },
   settings: {

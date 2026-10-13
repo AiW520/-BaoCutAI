@@ -222,6 +222,7 @@ const en = {
   byBoth: 'Words and meaning match',
   byLexical: 'Words match',
   bySemantic: 'Similar meaning; these words aren’t in it',
+  byWeak: 'Loosely related; these words aren’t in it',
   hitNotInTimeline: 'This line was cut from the timeline, so the video opens without moving the playhead',
   hitGone: 'This line is no longer in the video',
   hitWrite: 'Use for writing',

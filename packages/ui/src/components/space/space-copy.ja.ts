@@ -250,6 +250,7 @@ export const ja: SpaceMessages = {
   byBoth: '文字と意味の両方が一致',
   byLexical: '文字が一致',
   bySemantic: '意味が近い（この語句は含まれていません）',
+  byWeak: '関連は薄く、この語句は含まれていません',
   hitNotInTimeline: 'この文はタイムラインからカットされています。動画だけを開き、再生ヘッドは動かしません',
   hitGone: 'この文はもう動画にありません',
   hitWrite: '執筆に使う',

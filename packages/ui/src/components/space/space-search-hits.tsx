@@ -407,7 +407,7 @@ function writeFromHit(hit: Hit, entry: SpaceEntry, query: string): void {
  */
 function rowWhere(hit: Hit): string {
   if (!isSemantic(hit)) return hitWhere(hit);
-  const by = { both: COPY.byBoth, lexical: COPY.byLexical, semantic: COPY.bySemantic }[matchedByKind(hit.matchedBy)];
+  const by = hit.weak ? COPY.byWeak : { both: COPY.byBoth, lexical: COPY.byLexical, semantic: COPY.bySemantic }[matchedByKind(hit.matchedBy)];
   return [hitWhere(hit), by].join(' · ');
 }
 

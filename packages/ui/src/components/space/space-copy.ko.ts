@@ -252,6 +252,7 @@ export const ko: SpaceMessages = {
   byBoth: '문자와 의미가 모두 일치',
   byLexical: '문자 일치',
   bySemantic: '의미가 비슷함(이 단어는 없음)',
+  byWeak: '관련성이 약하며 이 단어는 없습니다',
   hitNotInTimeline: '이 문장은 타임라인에서 잘렸습니다. 동영상만 열고 재생 헤드는 옮기지 않습니다',
   hitGone: '이 문장은 이제 동영상에 없습니다',
   hitWrite: '글쓰기에 사용',

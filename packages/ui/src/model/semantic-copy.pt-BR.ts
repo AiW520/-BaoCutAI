@@ -38,6 +38,7 @@ export const ptBR: SemanticMessages = {
     none: 'Sem índice de texto',
     empty: 'Nenhum vídeo',
     noTranscripts: 'Ainda não há transcrições, então não há índice de texto',
+    notIncluded: 'Estes vídeos não estão no índice semântico, então só o texto exato é buscado',
     ready: 'O texto está pronto',
     readyWith: (detail) => `O texto está pronto (${detail})`,
     partial: (done, total, detail) => `Texto: vídeos ${done}/${total}${detail ? ` (${detail})` : ''}`,
@@ -45,6 +46,7 @@ export const ptBR: SemanticMessages = {
     failed: (n) => `${n} com falha`,
     outdated: (n) => `${n} sem atualização`,
     missing: (n) => `${n} sem transcrição`,
+    excluded: (n) => `${n} fora do índice semântico`,
     separator: ', ',
   },
   settings: {

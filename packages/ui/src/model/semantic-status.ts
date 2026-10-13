@@ -65,19 +65,26 @@ export function entryNote(entry: SemanticEntry, status: SemanticIndexStatus | nu
   return null;
 }
 
-/** 一个范围的文字完整性（§2.11）：「文字已就绪」「文字 2/3 部视频（1 部在排队、1 部没有文稿）」。 */
+/**
+ * 一个范围的文字完整性（§2.11）：「文字已就绪」「文字 2/3 部视频（1 部在排队、1 部没有文稿）」。没有文稿与没纳入语义索引（设置里
+ * 只建部分项目）分开写：前者要先转写，后者要去设置。
+ */
 export function coverageLine(coverage: readonly SemanticCoverage[]): string {
   const text = coverage.find((c) => c.channel === 'text');
   if (!text) return M.coverage.none;
-  if (text.eligible === 0) return text.missingInput > 0 ? M.coverage.noTranscripts : M.coverage.empty;
+  const excluded = text.excluded ?? 0;
+  if (text.eligible === 0) return excluded > 0 ? M.coverage.notIncluded : text.missingInput > 0 ? M.coverage.noTranscripts : M.coverage.empty;
+  const absent = [text.missingInput ? M.coverage.missing(text.missingInput) : null, excluded ? M.coverage.excluded(excluded) : null].filter(
+    (d): d is string => d !== null,
+  );
   const details = [
     text.pending ? M.coverage.queued(text.pending) : null,
     text.failed ? M.coverage.failed(text.failed) : null,
     text.stale ? M.coverage.outdated(text.stale) : null,
-    text.missingInput ? M.coverage.missing(text.missingInput) : null,
+    ...absent,
   ].filter((d): d is string => d !== null);
   if (text.indexed >= text.eligible && text.pending === 0 && text.failed === 0 && text.stale === 0) {
-    return text.missingInput ? M.coverage.readyWith(M.coverage.missing(text.missingInput)) : M.coverage.ready;
+    return absent.length > 0 ? M.coverage.readyWith(absent.join(M.coverage.separator)) : M.coverage.ready;
   }
   return M.coverage.partial(text.indexed, text.eligible, details.join(M.coverage.separator));
 }

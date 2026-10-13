@@ -250,6 +250,7 @@ export const de: SpaceMessages = {
   byBoth: 'Wörter und Bedeutung passen',
   byLexical: 'Wörter passen',
   bySemantic: 'Ähnliche Bedeutung; diese Wörter kommen nicht vor',
+  byWeak: 'Nur lose verwandt; diese Wörter kommen nicht vor',
   hitNotInTimeline: 'Dieser Satz wurde aus der Timeline geschnitten. Das Video wird geöffnet, ohne den Abspielkopf zu bewegen',
   hitGone: 'Dieser Satz ist nicht mehr im Video',
   hitWrite: 'Zum Schreiben verwenden',

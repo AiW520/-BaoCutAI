@@ -10,6 +10,7 @@ const text = (patch: Partial<SemanticCoverage> = {}): SemanticCoverage => ({
   pending: 0,
   failed: 0,
   missingInput: 0,
+  excluded: 0,
   stale: 0,
   knownScopeComplete: true,
   ...patch,
@@ -75,6 +76,14 @@ describe('完整性按通道写', () => {
     expect(coverageLine([text({ eligible: 0, indexed: 0, missingInput: 4 })])).toBe(M.coverage.noTranscripts);
     expect(coverageLine([text({ eligible: 0, indexed: 0 })])).toBe(M.coverage.empty);
     expect(coverageLine([])).toBe(M.coverage.none);
+  });
+
+  it('没纳入语义索引的项目与没有文稿分开写', () => {
+    expect(coverageLine([text({ excluded: 2 })])).toBe(M.coverage.readyWith(M.coverage.excluded(2)));
+    expect(coverageLine([text({ missingInput: 1, excluded: 2 })])).toBe(
+      M.coverage.readyWith([M.coverage.missing(1), M.coverage.excluded(2)].join(M.coverage.separator)),
+    );
+    expect(coverageLine([text({ eligible: 0, indexed: 0, excluded: 3 })])).toBe(M.coverage.notIncluded);
   });
 
   it('已建的落后于当前版本时不算就绪', () => {

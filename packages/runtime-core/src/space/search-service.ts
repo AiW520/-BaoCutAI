@@ -82,6 +82,8 @@ interface Candidate {
   sentenceIds: string[];
   lexicalRank: number | null;
   semanticRank: number | null;
+  /** 向量一路的余弦（只有向量命中时才有），用于标弱命中。 */
+  cosine: number | null;
   score: number;
 }
 
@@ -114,6 +116,7 @@ export class SearchService {
       pending: scope.pending,
       failed: 0,
       missingInput: 0,
+      excluded: 0,
       stale: 0,
       knownScopeComplete: false,
     };
@@ -129,7 +132,7 @@ export class SearchService {
       else if (usable) {
         coverage.indexed++;
         if (generation.revision !== video.revision) coverage.stale++;
-      } else if (!wanted) coverage.missingInput++;
+      } else if (!wanted) coverage.excluded++;
       else if (source?.state === 'failed' && source.wantedRevision === video.revision) coverage.failed++;
       else coverage.pending++;
     }
@@ -243,6 +246,7 @@ export class SearchService {
         sentenceIds: hit.chunk.sentenceIds,
         lexicalRank: null,
         semanticRank: index + 1,
+        cosine: hit.score,
         score: 0,
       });
     });
@@ -273,6 +277,7 @@ export class SearchService {
           sentenceIds: mapped.sentenceIds,
           lexicalRank: index + 1,
           semanticRank: null,
+          cosine: null,
           score: 0,
         });
       });
@@ -327,6 +332,7 @@ export class SearchService {
             sentenceIds: mapped.sentenceIds,
             lexicalRank: offset + index + 1,
             semanticRank: null,
+            cosine: null,
             score: 1 / (k + offset + index + 1),
           }),
         ];
@@ -440,28 +446,58 @@ function fuse(candidates: Candidate[]): Candidate[] {
   return candidates.sort((a, b) => b.score - a.score || a.key.localeCompare(b.key));
 }
 
-/** 同一个视频、同一份文档里句子身份大半重叠的（相邻 chunk 的重叠句、同一句的字面与语义命中）只留排名靠前的。 */
+/**
+ * 去重，只留排名靠前的：
+ * - 同一个视频、同一份文档里句子身份大半重叠的（相邻 chunk 的重叠句、同一句的字面与语义命中）；
+ * - 同一个视频、同一时钟上时间大半重叠的讲话类命中（同一段话的文稿、字幕与译文），否则一段话会占掉好几条。章节不参与。
+ */
 function dedupe(sorted: readonly Candidate[]): Candidate[] {
   const kept: Candidate[] = [];
   for (const c of sorted) {
     const ids = c.chunk?.sentenceIds ?? c.sentenceIds;
+    const span = spanOf(c);
+    const sameSpan = span !== null && kept.some((other) => other.video.videoId === c.video.videoId && sameSpeechSpan(span, spanOf(other)));
     const duplicate =
-      ids.length > 0 &&
-      kept.some((other) => {
-        if (other.video.videoId !== c.video.videoId) return false;
-        const otherChunk = other.chunk;
-        const otherKind = otherChunk?.documentKind ?? other.lexical?.documentKind;
-        const otherDoc = otherChunk ? otherChunk.documentId : (other.lexical?.documentId ?? null);
-        const kind = c.chunk?.documentKind ?? c.lexical?.documentKind;
-        const doc = c.chunk ? c.chunk.documentId : (c.lexical?.documentId ?? null);
-        if (otherKind !== kind || otherDoc !== doc) return false;
-        const otherIds = new Set(otherChunk?.sentenceIds ?? other.sentenceIds);
-        const shared = ids.filter((id) => otherIds.has(id)).length;
-        return shared * 2 > ids.length;
-      });
+      sameSpan ||
+      (ids.length > 0 &&
+        kept.some((other) => {
+          if (other.video.videoId !== c.video.videoId) return false;
+          const otherChunk = other.chunk;
+          const otherKind = otherChunk?.documentKind ?? other.lexical?.documentKind;
+          const otherDoc = otherChunk ? otherChunk.documentId : (other.lexical?.documentId ?? null);
+          const kind = c.chunk?.documentKind ?? c.lexical?.documentKind;
+          const doc = c.chunk ? c.chunk.documentId : (c.lexical?.documentId ?? null);
+          if (otherKind !== kind || otherDoc !== doc) return false;
+          const otherIds = new Set(otherChunk?.sentenceIds ?? other.sentenceIds);
+          const shared = ids.filter((id) => otherIds.has(id)).length;
+          return shared * 2 > ids.length;
+        }));
     if (!duplicate) kept.push(c);
   }
   return kept;
+}
+
+interface Span {
+  clock: string;
+  start: number;
+  end: number;
+}
+
+/** 讲话类命中（文稿、字幕、译文）的时间范围；章节为 null。 */
+function spanOf(c: Candidate): Span | null {
+  const kind = c.chunk?.documentKind ?? c.lexical?.documentKind;
+  if (!kind || kind === 'chapter') return null;
+  if (c.lexical) return { clock: c.lexical.time.clock, start: c.lexical.time.start, end: c.lexical.time.end };
+  return c.chunk ? { clock: c.chunk.clock, start: c.chunk.start, end: c.chunk.end } : null;
+}
+
+/** 同一时钟上、重叠超过较短一段的一半（零长的一段落在另一段里也算）。 */
+function sameSpeechSpan(a: Span, b: Span | null): boolean {
+  if (!b || a.clock !== b.clock) return false;
+  const overlap = Math.min(a.end, b.end) - Math.max(a.start, b.start);
+  const shorter = Math.min(a.end - a.start, b.end - b.start);
+  if (shorter <= 0) return overlap >= 0;
+  return overlap * 2 > shorter;
 }
 
 // ---- 命中 ----
@@ -517,6 +553,7 @@ function hitOf(c: Candidate): SpaceSearchV2Hit {
     needsResolve: revision !== c.video.revision,
     chapter: chunk?.chapter ?? null,
     rank: c.score,
+    weak: c.lexicalRank === null && c.cosine !== null && c.cosine < SEMANTIC_THRESHOLDS.thresholds.weakHit.value,
     actions,
   };
 }

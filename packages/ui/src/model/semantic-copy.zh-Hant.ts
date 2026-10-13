@@ -38,6 +38,7 @@ export const zhHant: SemanticMessages = {
     none: '沒有文字索引',
     empty: '沒有影片',
     noTranscripts: '還沒有逐字稿，所以沒有文字索引',
+    notIncluded: '這些影片沒有納入語意索引，只能按字面找到',
     ready: '文字已就緒',
     readyWith: (detail) => `文字已就緒（${detail}）`,
     partial: (done, total, detail) => `文字 ${done}/${total} 部影片${detail ? `（${detail}）` : ''}`,
@@ -45,6 +46,7 @@ export const zhHant: SemanticMessages = {
     failed: (n) => `${n} 部失敗`,
     outdated: (n) => `${n} 部已過期`,
     missing: (n) => `${n} 部沒有逐字稿`,
+    excluded: (n) => `${n} 部沒有納入語意索引`,
     separator: '、',
   },
   settings: {

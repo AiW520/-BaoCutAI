@@ -250,6 +250,7 @@ export const zhHant: SpaceMessages = {
   byBoth: '字面與意思都對上',
   byLexical: '字面命中',
   bySemantic: '意思相近，原句裡沒有這些字',
+  byWeak: '只是勉強相關，原句裡沒有這些字',
   hitNotInTimeline: '這一句已從時間軸剪掉，只開啟影片，不移動播放頭',
   hitGone: '這一句已經不在影片裡了',
   hitWrite: '用於寫作',

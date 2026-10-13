@@ -36,6 +36,7 @@ export const nl: SpaceMessages = {
   byBoth: 'Woorden en betekenis komen overeen',
   byLexical: 'Woorden komen overeen',
   bySemantic: 'Vergelijkbare betekenis; deze woorden komen er niet in voor',
+  byWeak: 'Slechts losjes verwant; deze woorden komen er niet in voor',
   hitNotInTimeline: 'Deze zin is uit de tijdlijn geknipt. De video wordt geopend zonder de afspeelkop te verplaatsen',
   hitGone: 'Deze zin staat niet meer in de video',
   hitWrite: 'Gebruiken om te schrijven',

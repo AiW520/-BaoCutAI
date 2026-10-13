@@ -97,6 +97,7 @@ export const vi: SpaceMessages = {
   byBoth: 'Khớp cả chữ lẫn ý',
   byLexical: 'Khớp chữ',
   bySemantic: 'Ý gần giống; không có các chữ này',
+  byWeak: 'Chỉ hơi liên quan; không có các từ này',
   hitNotInTimeline: 'Câu này đã bị cắt khỏi dòng thời gian: chỉ mở video, không di chuyển đầu phát',
   hitGone: 'Câu này không còn trong video',
   hitWrite: 'Dùng để viết',

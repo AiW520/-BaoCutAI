@@ -165,6 +165,7 @@ const v2 = (patch: Partial<SpaceSearchV2Hit> = {}): SpaceSearchV2Hit => ({
   needsResolve: false,
   chapter: null,
   rank: 1,
+  weak: false,
   actions: ['preview', 'open-in-timeline', 'cite'],
   ...patch,
 });

@@ -415,7 +415,9 @@ API 只接受已有授权素材引用，不接受让智能体随意传任意磁�
 
 检索返回的是“命中候选”，不承诺可直接编辑：模型命中窗口与可执行剪辑区间分开表示。纯视觉命中不编造字幕；纯语义命中没有字面匹配时 highlights 为空，而不是假高亮。
 
-覆盖信息按 requested channel 给出 indexed/eligible、pending/failed/missingInput，以及 knownScopeComplete。`complete` 只指范围内所请求索引的就绪程度，不表示搜尽所有相关内容或 ANN 完全召回。
+向量一路总会给出最近的一批，不代表都相关：只有向量一路命中、余弦低于该通道弱命中阈值（`semantic-thresholds.json`，未校准）的标 `weak`，只标出、不藏起来；字面命中从不标弱。同一视频、同一时钟上时间大半重叠的讲话类命中（同一段话的文稿、字幕与译文）在综合与语义模式下只留排名靠前的一条；字面模式保持旧 `space.search` 的结果。
+
+覆盖信息按 requested channel 给出 indexed/eligible、pending/failed/missingInput、excluded（设置里没纳入该路索引的项目的视频，不计入 eligible、也不让结果不完整），以及 knownScopeComplete。`complete` 只指范围内所请求索引的就绪程度，不表示搜尽所有相关内容或 ANN 完全召回。
 
 ### 11.4 其他新增接口
 

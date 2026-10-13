@@ -85,6 +85,8 @@
       const ranges = r.e != null ? spans(r.c.text, ts) : null;
       return Object.assign({}, r.c, {
         by: both ? 'both' : r.e != null ? 'exact' : 'semantic',
+        /* 弱命中：只有意思一路、分数低于弱命中线（演示：概念表里排第 4 名之后的）。只标出，不藏起来 */
+        weak: r.e == null && r.s >= 3,
         channel: 'text',
         hl: ranges,                        // 纯语义命中：null，不画高亮
         inTimeline: !cut.has(r.c.id),
@@ -96,7 +98,7 @@
   }
 
   /** 卡片右下那一小行「怎么找到的」：不写分数 */
-  const BY = {both: '字面与意思都对上', exact: '字面命中', semantic: '意思相近，原句里没有这些字'};
+  const BY = {both: '字面与意思都对上', exact: '字面命中', semantic: '意思相近，原句里没有这些字', weak: '只是勉强相关，原句里没有这些字'};
 
   /** 结果顶上的提示（各自一句，可同时出现）：退回字面 / 索引在更新 */
   function notices(res, st, S) {

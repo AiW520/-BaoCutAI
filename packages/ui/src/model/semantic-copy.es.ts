@@ -38,6 +38,7 @@ export const es: SemanticMessages = {
     none: 'Sin índice de texto',
     empty: 'Sin vídeos',
     noTranscripts: 'Aún no hay transcripciones, así que no hay índice de texto',
+    notIncluded: 'Estos vídeos no están en el índice semántico, así que solo se busca el texto exacto',
     ready: 'El texto está listo',
     readyWith: (detail) => `El texto está listo (${detail})`,
     partial: (done, total, detail) => `Texto: vídeos ${done}/${total}${detail ? ` (${detail})` : ''}`,
@@ -45,6 +46,7 @@ export const es: SemanticMessages = {
     failed: (n) => `${n} con error`,
     outdated: (n) => `${n} sin actualizar`,
     missing: (n) => `${n} sin transcripción`,
+    excluded: (n) => `${n} fuera del índice semántico`,
     separator: ', ',
   },
   settings: {

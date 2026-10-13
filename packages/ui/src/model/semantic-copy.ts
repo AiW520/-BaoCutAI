@@ -58,6 +58,7 @@ const en = {
     none: 'No text index',
     empty: 'No videos',
     noTranscripts: 'No transcripts yet, so there’s no text index',
+    notIncluded: 'No videos in this scope are in the semantic index, so only exact text is matched',
     ready: 'Text is ready',
     readyWith: (detail: string) => `Text is ready (${detail})`,
     partial: (done: number, total: number, detail: string) => `Text: ${done}/${total} videos${detail ? ` (${detail})` : ''}`,
@@ -65,6 +66,7 @@ const en = {
     failed: (n: number) => `${n} failed`,
     outdated: (n: number) => `${n} out of date`,
     missing: (n: number) => `${n} without a transcript`,
+    excluded: (n: number) => `${n} not in the semantic index`,
     separator: ', ',
   },
   settings: {

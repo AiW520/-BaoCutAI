@@ -72,16 +72,17 @@
   }
 
   /** 一个范围的完整性（§2.11 / v0.1 §13.2）：按通道分别写。
-      c.text = {done, total, pending?, none?}；c.visual / c.audio = {done, total} 或省略（没开 / 这一版没有）。 */
+      c.text = {done, total, pending?, none?, excluded?}（excluded：设置里没纳入语义索引的项目的视频，不计入 total）；c.visual / c.audio = {done, total} 或省略（没开 / 这一版没有）。 */
   function coverageLine(c) {
     const o = c || {};
     const parts = [];
     const t = o.text;
     if (t) {
-      if (!t.total) parts.push('没有文稿，未建立文字索引');
-      else if (t.done >= t.total) parts.push('文字已就绪');
+      const out = t.excluded ? `${t.excluded} 部没纳入语义索引` : null;
+      if (!t.total) parts.push(t.excluded ? '这些视频没纳入语义索引，只能按字面找到' : '没有文稿，未建立文字索引');
+      else if (t.done >= t.total) parts.push(out ? `文字已就绪（${out}）` : '文字已就绪');
       else {
-        const why = [t.pending ? `${t.pending} 部还在转录` : null, t.none ? `${t.none} 部没有文稿` : null].filter(Boolean).join('、');
+        const why = [t.pending ? `${t.pending} 部还在转录` : null, t.none ? `${t.none} 部没有文稿` : null, out].filter(Boolean).join('、');
         parts.push(`文字 ${t.done}/${t.total} 部视频${why ? `（${why}）` : ''}`);
       }
     }

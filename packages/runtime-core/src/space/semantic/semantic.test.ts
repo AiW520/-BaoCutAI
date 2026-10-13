@@ -37,6 +37,24 @@ interface FakeVideo {
   sentences: string[];
   /** 在时间线上的句子（下标）；默认全部。 */
   onTimeline?: number[];
+  /** 另有一份同样内容、同样（源）时间的字幕。 */
+  captions?: boolean;
+}
+
+function captionDoc(video: FakeVideo): ReadContentDocument {
+  const cues = video.sentences.map((text, i) => ({ id: `c${i}`, start: i * 5000, end: i * 5000 + text.split(' ').length * 300, text }));
+  return {
+    documentId: `c-${video.videoId}`,
+    kind: 'caption',
+    name: 'Subtitles',
+    language: 'en',
+    revision: '1',
+    schema: 'baocut.caption/1',
+    sourceAssetId: 'a1',
+    sourceDocumentId: null,
+    body: { timescale: 1000, cues },
+    plan: null,
+  } as unknown as ReadContentDocument;
 }
 
 function speechDoc(video: FakeVideo): ReadContentDocument {
@@ -84,7 +102,8 @@ function contentOf(video: FakeVideo): ReadContentResult {
     sequences: { seq: { id: 'seq', fps: { num: 30, den: 1 }, items: [], markers: [] } },
     assets: { a1: { id: 'a1', name: 'clip.mp4', revisions: { r1: { storage: { mode: 'managed' } } } } },
   } as unknown as VideoSnapshot;
-  return { videoId: video.videoId, name: video.name, revision: video.revision, snapshot, documents: [speechDoc(video)] };
+  const documents = [speechDoc(video), ...(video.captions ? [captionDoc(video)] : [])];
+  return { videoId: video.videoId, name: video.name, revision: video.revision, snapshot, documents };
 }
 
 class FakeReader implements ContentReader {
@@ -437,6 +456,10 @@ describe('space.searchV2', () => {
     expect(semantic.hits.length).toBeGreaterThan(0);
     expect(semantic.hits[0]!.snippet).toContain('battery');
     expect(semantic.hits.every((h) => h.highlights.length === 0 && h.matchedBy.join() === 'semantic')).toBe(true);
+    // 结果总给出最近的一批：分数低于弱命中线的标 weak，几乎原样的那条不是。
+    const exact = await services.search.searchV2(USER_VIEWER, { query: { kind: 'text', text: V3.sentences[0]! }, mode: 'semantic' });
+    expect(exact.hits[0]).toMatchObject({ weak: false, target: { videoId: 'v3' } });
+    expect(exact.hits.slice(1).every((h) => h.weak)).toBe(true);
 
     const hybrid = await services.search.searchV2(USER_VIEWER, { query: { kind: 'text', text: 'battery' }, mode: 'hybrid' });
     expect(hybrid.effectiveMode).toBe('hybrid');
@@ -447,6 +470,8 @@ describe('space.searchV2', () => {
     const firstSingle = hybrid.hits.findIndex((h) => h.matchedBy.length === 1);
     if (firstSingle >= 0) expect(hybrid.hits.findIndex((h) => h.matchedBy.length === 2)).toBeLessThan(firstSingle);
     for (let i = 1; i < hybrid.hits.length; i++) expect(hybrid.hits[i - 1]!.rank).toBeGreaterThanOrEqual(hybrid.hits[i]!.rank);
+    // 字面命中从不标弱。
+    expect(hybrid.hits.filter((h) => h.matchedBy.includes('lexical')).every((h) => !h.weak)).toBe(true);
     expect(SEMANTIC_THRESHOLDS.fusion.k).toEqual({ value: 60, calibrated: false });
   });
 
@@ -511,11 +536,24 @@ describe('space.searchV2', () => {
     expect(reasonOf(await rejection(services.search.searchV2(USER_VIEWER, { ...params, cursor: first.nextCursor! })))).toBe('CURSOR_STALE');
   });
 
-  it('范围里还有没建好的视频时标 INDEX_PARTIAL', async () => {
+  it('同一段话的文稿与字幕只留一条', async () => {
+    await addVideo({ videoId: 'v5', name: 'Subtitled', revision: 'r1', sentences: ['The tripod head was loose.', 'We bought a new tripod.'], onTimeline: [], captions: true }, 'p5', 'c5');
+    await syncIndex();
+    services = open();
+    await build(services);
+    const result = await services.search.searchV2(USER_VIEWER, { query: { kind: 'text', text: 'tripod head loose' }, mode: 'hybrid', videoIds: ['v5'] });
+    const first = result.hits.filter((h) => h.snippet.includes('loose'));
+    expect(first).toHaveLength(1);
+    const lexical = await services.search.searchV2(USER_VIEWER, { query: { kind: 'text', text: 'loose' }, mode: 'lexical', videoIds: ['v5'] });
+    // 字面模式与旧的 space.search 一致，不去重。
+    expect(lexical.hits.map((h) => h.target.kind === 'document-span' && h.target.documentKind).sort()).toEqual(['caption', 'speech']);
+  });
+
+  it('范围里还有没建好的视频时标 INDEX_PARTIAL；没纳入设置的项目单独计数', async () => {
     services = open({ indexedProjects: ['p1'] });
     await build(services);
     const result = await services.search.searchV2(USER_VIEWER, { query: { kind: 'text', text: 'battery' }, mode: 'semantic' });
-    expect(result.coverage[0]).toMatchObject({ indexed: 1, missingInput: 2 });
+    expect(result.coverage[0]).toMatchObject({ indexed: 1, missingInput: 0, excluded: 2 });
     const scoped = await services.search.searchV2(USER_VIEWER, { query: { kind: 'text', text: 'battery' }, mode: 'semantic', projectId: 'p1' });
     expect(scoped.degraded).toBeNull();
     expect(scoped.coverage[0]!.knownScopeComplete).toBe(true);

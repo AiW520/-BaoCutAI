@@ -40,6 +40,7 @@ export const it: SpaceMessages = {
   byBoth: 'Corrispondono parole e significato',
   byLexical: 'Corrispondono le parole',
   bySemantic: 'Significato simile; queste parole non compaiono',
+  byWeak: 'Attinenza debole; queste parole non compaiono',
   hitNotInTimeline: 'Questa frase è stata tagliata dalla timeline: il video si apre senza spostare la testina',
   hitGone: 'Questa frase non è più nel video',
   hitWrite: 'Usa per scrivere',

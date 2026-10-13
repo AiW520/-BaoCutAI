@@ -38,6 +38,7 @@ export const ru: SemanticMessages = {
     none: 'Нет текстового индекса',
     empty: 'Нет видео',
     noTranscripts: 'Расшифровок пока нет, поэтому нет и текстового индекса',
+    notIncluded: 'Эти видео не входят в семантический индекс, поэтому ищется только точный текст',
     ready: 'Текст готов',
     readyWith: (detail) => `Текст готов (${detail})`,
     partial: (done, total, detail) => `Текст: ${done} из ${total} видео${detail ? ` (${detail})` : ''}`,
@@ -45,6 +46,7 @@ export const ru: SemanticMessages = {
     failed: (n) => `с ошибкой: ${n}`,
     outdated: (n) => `устарело: ${n}`,
     missing: (n) => `без расшифровки: ${n}`,
+    excluded: (n) => `вне семантического индекса: ${n}`,
     separator: ', ',
   },
   settings: {
