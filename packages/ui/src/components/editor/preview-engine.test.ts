@@ -162,67 +162,73 @@ test('转写：按文稿触发的闪避、写了 speaker 的声波与字幕要�
 });
 
 test('声波要的素材频谱：在算时不报占位提示，算好了送进计划器再画一次；太大的素材不分析，报出来', async () => {
-  const layers = [
-    { kind: 'generator', itemId: 'viz', matrix: [1, 0, 0, 1, 0, 0], opacity: 1, content: { generator: 'baocut.audio-visualizer' } },
-  ];
-  const plan = { canvas: { width: 1920, height: 1080, background: '#000000', backgroundAlpha: 1 }, layers, voices: [] };
-  const music = { id: 'asset_music', revision: 'r1' };
-  const huge = { id: 'asset_huge', revision: 'r1' };
-  const heard = new Map<string, Uint8Array>();
-  let renders = 0;
-  const planner = {
-    ...fakePlanner(),
-    planAt: () => plan,
-    setDocuments: () => {},
-    clearPictures: () => {},
-    analyzeAudio: async () => new Uint8Array(0),
-    setAudioSpectrum: (asset: { id: string }, bytes: Uint8Array) => {
-      if (heard.get(asset.id) === bytes) return false;
-      heard.set(asset.id, bytes);
-      return true;
-    },
-    render: () => {
-      renders++;
-      const spectra = [music, huge].filter((asset) => !heard.has(asset.id)).map((asset) => ({ itemId: 'viz', asset }));
-      const warnings = spectra.length ? [{ code: 'EXPORT_RENDER_NOTE', detail: 'viz：元素 viz 没有注入频谱轨，已画占位块' }] : [];
-      return { plan, warnings, skipped: [], spectra };
-    },
-    frame: () => new Uint8ClampedArray(960 * 540 * 4),
-  } as unknown as RenderPlanner;
-  const spectrum = new Uint8Array([1, 2, 3]);
-  let ready = false;
-  const requested: { asset: string; decoder: string }[] = [];
-  let notify = () => {};
-  const assets = {
-    get: (asset: { id: string }, decoder: { name: string }) => {
-      requested.push({ asset: asset.id, decoder: decoder.name });
-      return ready ? { state: 'ready', value: spectrum } : { state: 'loading' };
-    },
-    subscribe: (listener: () => void) => ((notify = listener), () => {}),
-  };
-  const engine = new PreviewEngine({ onTime: () => {}, onEnded: () => {} }, () => Promise.resolve(planner), null, assets as never);
-  const canvas = { width: 0, height: 0, getContext: () => context };
-  const context = { canvas, putImageData: () => {} };
-  engine.attachCanvas(canvas as unknown as HTMLCanvasElement, 0.5);
-  const seen: PreviewStatus[] = [];
-  engine.onStatus((status) => seen.push(status));
-  const record = (id: string, byteLength: number) => ({ id, revisions: { r1: { revision: 'r1', byteLength } } });
-  engine.setVideo(sequence, { asset_music: record('asset_music', 1000), asset_huge: record('asset_huge', 2 ** 30) } as never);
-  await new Promise((resolve) => setTimeout(resolve, 10));
+  vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
+  let engine: PreviewEngine | undefined;
+  try {
+    const layers = [
+      { kind: 'generator', itemId: 'viz', matrix: [1, 0, 0, 1, 0, 0], opacity: 1, content: { generator: 'baocut.audio-visualizer' } },
+    ];
+    const plan = { canvas: { width: 1920, height: 1080, background: '#000000', backgroundAlpha: 1 }, layers, voices: [] };
+    const music = { id: 'asset_music', revision: 'r1' };
+    const huge = { id: 'asset_huge', revision: 'r1' };
+    const heard = new Map<string, Uint8Array>();
+    let renders = 0;
+    const planner = {
+      ...fakePlanner(),
+      planAt: () => plan,
+      setDocuments: () => {},
+      clearPictures: () => {},
+      analyzeAudio: async () => new Uint8Array(0),
+      setAudioSpectrum: (asset: { id: string }, bytes: Uint8Array) => {
+        if (heard.get(asset.id) === bytes) return false;
+        heard.set(asset.id, bytes);
+        return true;
+      },
+      render: () => {
+        renders++;
+        const spectra = [music, huge].filter((asset) => !heard.has(asset.id)).map((asset) => ({ itemId: 'viz', asset }));
+        const warnings = spectra.length ? [{ code: 'EXPORT_RENDER_NOTE', detail: 'viz：元素 viz 没有注入频谱轨，已画占位块' }] : [];
+        return { plan, warnings, skipped: [], spectra };
+      },
+      frame: () => new Uint8ClampedArray(960 * 540 * 4),
+    } as unknown as RenderPlanner;
+    const spectrum = new Uint8Array([1, 2, 3]);
+    let ready = false;
+    const requested: { asset: string; decoder: string }[] = [];
+    let notify = () => {};
+    const assets = {
+      get: (asset: { id: string }, decoder: { name: string }) => {
+        requested.push({ asset: asset.id, decoder: decoder.name });
+        return ready ? { state: 'ready', value: spectrum } : { state: 'loading' };
+      },
+      subscribe: (listener: () => void) => ((notify = listener), () => {}),
+    };
+    engine = new PreviewEngine({ onTime: () => {}, onEnded: () => {} }, () => Promise.resolve(planner), null, assets as never);
+    const canvas = { width: 0, height: 0, getContext: () => context };
+    const context = { canvas, putImageData: () => {} };
+    engine.attachCanvas(canvas as unknown as HTMLCanvasElement, 0.5);
+    const seen: PreviewStatus[] = [];
+    engine.onStatus((status) => seen.push(status));
+    const record = (id: string, byteLength: number) => ({ id, revisions: { r1: { revision: 'r1', byteLength } } });
+    engine.setVideo(sequence, { asset_music: record('asset_music', 1000), asset_huge: record('asset_huge', 2 ** 30) } as never);
+    await vi.advanceTimersByTimeAsync(10);
 
-  // 太大的那份不去取；在算的那份不报占位提示。
-  expect(requested).toEqual([{ asset: 'asset_music', decoder: 'spectrum' }]);
-  const tooLarge = '声波 viz 听的素材 asset_huge 超过 512 MB，预览不分析它的声音；导出照常';
-  expect(seen.at(-1)).toEqual({ kind: 'ready', problems: [tooLarge] });
+    // 太大的那份不去取；在算的那份不报占位提示。
+    expect(requested).toEqual([{ asset: 'asset_music', decoder: 'spectrum' }]);
+    const tooLarge = '声波 viz 听的素材 asset_huge 超过 512 MB，预览不分析它的声音；导出照常';
+    expect(seen.at(-1)).toEqual({ kind: 'ready', problems: [tooLarge] });
 
-  // 算好了：送进计划器，再画一次。
-  ready = true;
-  const before = renders;
-  notify();
-  await new Promise((resolve) => setTimeout(resolve, 10));
-  expect(heard.get('asset_music')).toBe(spectrum);
-  expect(renders).toBeGreaterThanOrEqual(before + 2);
-  engine.dispose();
+    // 算好了：送进计划器，再画一次。
+    ready = true;
+    const before = renders;
+    notify();
+    await vi.advanceTimersByTimeAsync(10);
+    expect(heard.get('asset_music')).toBe(spectrum);
+    expect(renders).toBeGreaterThanOrEqual(before + 2);
+  } finally {
+    engine?.dispose();
+    vi.useRealTimers();
+  }
 });
 
 test('写了 speaker 的声波：转写还在取时不报「没有转写」，取到了（暂停中）这一帧就送上并按转写报', async () => {
