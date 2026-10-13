@@ -1,5 +1,16 @@
-import { FOCAL_MAX_ZOOM, focalZoom, videoDisplaySize, type Crop, type EditOperation, type FocalPoint, type Id, type SequenceItem, type VideoItem } from '@baocut/protocol';
-import { placeFields, poseOf, type Assets, type CanvasSize, type Point, type Pose } from './stage-pose.ts';
+import {
+  FOCAL_MAX_ZOOM,
+  focalZoom,
+  videoDisplaySize,
+  type Crop,
+  type EditOperation,
+  type FocalPoint,
+  type Id,
+  type SequenceItem,
+  type VideoItem,
+  type VisualMode,
+} from '@baocut/protocol';
+import { placeFields, poseOf, type Assets, type CanvasSize, type PlaceFields, type PlacedItem, type Point, type Pose } from './stage-pose.ts';
 
 /**
  * 按原片取景（产品设计 §5.10「画面怎么取景」，原型 model-framing.js 与 stage-framing.jsx）：铺满画面、`cover`、带取景点的视频。
@@ -34,7 +45,7 @@ export type FramingHit = 'locked' | 'min' | 'max';
 /**
  * 铺满画布的盒随 `rot` 与镜像绕画布中心转、翻（帧计划里铺满的视频就是画布那么大的框）：画布上的点 → 画面上看到的位置。
  */
-function onScreen(item: FramedVideo, canvas: CanvasSize, p: Point): Point {
+function onScreen(item: PlacedItem, canvas: CanvasSize, p: Point): Point {
   const cx = canvas.width / 2;
   const cy = canvas.height / 2;
   const x = item.place.flipX ? 2 * cx - p.x : p.x;
@@ -53,20 +64,39 @@ export function framingAnchor(item: FramedVideo, canvas: CanvasSize): Point {
 }
 
 /**
- * 画布上的盒：整幅原片（裁剪留下的那块）按 `cover` 铺满再乘放大倍数，多出来的按取景点分到两边（与 `render-graph` 的
- * `media_layer` 同口径）。选中框和四角落在原片的边上，可以超出画面。不知道源尺寸时 null。
+ * 画布上的盒：整幅原片（裁剪留下的那块）按 `cover` 铺满再乘放大倍数，多出来的按取景点分到两边（`picturePose`）。
+ * 选中框和四角落在原片的边上，可以超出画面。不知道源尺寸时 null。
  */
 export function framedPose(item: FramedVideo, canvas: CanvasSize, assets: Assets | undefined): Pose | null {
-  const source = sourceSize(item, assets);
-  const c = item.crop ?? { left: 0, top: 0, right: 0, bottom: 0 };
-  const sw = (1 - c.left - c.right) * (source?.width ?? 0);
-  const sh = (1 - c.top - c.bottom) * (source?.height ?? 0);
-  if (!(sw > 0) || !(sh > 0) || !(canvas.width > 0) || !(canvas.height > 0)) return null;
-  const scale = Math.max(canvas.width / sw, canvas.height / sh) * focalZoom(item.focalPoint);
-  const w = sw * scale;
-  const h = sh * scale;
-  const fx = item.focalPoint?.x ?? 0.5;
-  const fy = item.focalPoint?.y ?? 0.5;
+  return sourceSize(item, assets) ? picturePose(item, canvas, assets) : null;
+}
+
+/**
+ * 铺满画布、可以在画布上直接拖成自由摆放的：铺满模式的视觉媒体（视频、图片、素材贴纸、白板），按原片取景的除外（只能放大）。
+ * 占位框的框高不跟源走，合成没有 `mode`（不写位置与宽才铺满），都不在这里换。
+ */
+export function fillsCanvas(item: SequenceItem): item is PlacedItem {
+  const media = item.type === 'video' || item.type === 'image' || item.type === 'sticker' || item.type === 'whiteboard';
+  return media && item.mode === 'fullscreen' && !isFramed(item);
+}
+
+/**
+ * 铺满画布的媒体此刻在画面上的那一幅：整幅源（裁剪留下的那块）按 `fit` 铺满（`cover`，乘上取景点的放大倍数，多出来的
+ * 按取景点分到两边）或放进（`contain`，居中）画布，与 `render-graph` 的 `media_layer` 同口径。源的宽高比按画中画摆出来的框量
+ * （同一份帧计划推法；不知道源尺寸时按画布的，于是就是整块画布）。
+ */
+function picturePose(item: PlacedItem, canvas: CanvasSize, assets: Assets | undefined): Pose | null {
+  if (!(canvas.width > 0) || !(canvas.height > 0) || !('fit' in item)) return null;
+  const natural = poseOf({ ...item, mode: 'pip', place: { x: 50, y: 50, w: 100 } } as PlacedItem, canvas, assets);
+  const ratio = natural.h / natural.w;
+  if (!(ratio > 0) || !Number.isFinite(ratio)) return null;
+  const cover = (item.fit ?? 'cover') === 'cover';
+  const focal = cover && (item.type === 'video' || item.type === 'image') ? item.focalPoint : undefined;
+  const fill = cover ? Math.max(canvas.width, canvas.height / ratio) : Math.min(canvas.width, canvas.height / ratio);
+  const w = fill * focalZoom(focal);
+  const h = w * ratio;
+  const fx = focal?.x ?? 0.5;
+  const fy = focal?.y ?? 0.5;
   const center = onScreen(item, canvas, { x: (canvas.width - w) * fx + w / 2, y: (canvas.height - h) * fy + h / 2 });
   return { cx: center.x, cy: center.y, w, h, rotation: item.place.rot ?? 0 };
 }
@@ -130,7 +160,40 @@ export function freeFramingOperations(sequenceId: Id, item: FramedVideo, canvas:
   ];
 }
 
-/** 选中框用的盒：按原片取景的视频是整幅原片，其余照帧计划的框。 */
-export function stagePose(item: Parameters<typeof poseOf>[0], canvas: CanvasSize, assets: Assets | undefined): Pose {
-  return (isFramed(item) ? framedPose(item, canvas, assets) : null) ?? poseOf(item, canvas, assets);
+/** 选中框用的盒：按原片取景的视频是整幅原片，铺满画布的媒体是画面上那一幅，其余照帧计划的框。 */
+export function stagePose(item: PlacedItem, canvas: CanvasSize, assets: Assets | undefined): Pose {
+  const picture = isFramed(item) ? framedPose(item, canvas, assets) : fillsCanvas(item) ? picturePose(item, canvas, assets) : null;
+  return picture ?? poseOf(item, canvas, assets);
+}
+
+/** 盒写回时的改动：`mode` 是要不要先换成画中画，`place` 是要写的字段（与此刻相同的不写）。 */
+export interface PlaceChange {
+  mode?: VisualMode;
+  place: PlaceFields;
+}
+
+const BOX_FIELDS = ['x', 'y', 'w', 'scaleY'] as const;
+
+/**
+ * 盒 → 写回的改动（舞台手势、方向键、属性页几何、对齐与工具条共用）。铺满画布的媒体（`fillsCanvas`）挪了位置或改了大小，
+ * 就像其它素材一样自由摆放（产品设计 §5.10）：换成画中画，框就是给的盒，起手的盒是画面上那一幅，所以切换那一下画面不动；
+ * 只转了角度的照旧铺满。其余照 `placeFields`。
+ */
+export function placeChange(item: PlacedItem, pose: Pose, canvas: CanvasSize, assets: Assets | undefined): PlaceChange {
+  if (fillsCanvas(item)) {
+    const pip = { ...item, mode: 'pip' } as PlacedItem;
+    const place = placeFields(pip, pose, canvas, assets);
+    const still = placeFields(pip, stagePose(item, canvas, assets), canvas, assets);
+    if (BOX_FIELDS.some((key) => place[key] !== still[key])) return { mode: 'pip', place };
+  }
+  return { place: placeFields(item, pose, canvas, assets) };
+}
+
+/** `placeChange` 的操作：先换模式、再写 `place`，一笔事务；什么都没变是空表。 */
+export function placeOperations(sequenceId: Id, item: PlacedItem, pose: Pose, canvas: CanvasSize, assets: Assets | undefined): EditOperation[] {
+  const { mode, place } = placeChange(item, pose, canvas, assets);
+  return [
+    ...(mode ? [{ type: 'setStyle' as const, sequenceId, itemId: item.id, mode }] : []),
+    ...(Object.keys(place).length ? [{ type: 'setTransform' as const, sequenceId, itemId: item.id, ...place }] : []),
+  ];
 }

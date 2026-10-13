@@ -24,7 +24,8 @@ import {
   type PanelValues,
   type QuickAction,
 } from '../../model/geometry-panel.ts';
-import { placeFields, posable, poseOf, type Assets, type PlaceFields, type PlacedItem } from '../../model/stage-pose.ts';
+import { fillsCanvas, placeOperations, stagePose } from '../../model/stage-framing.ts';
+import { posable, type Assets, type PlaceFields, type PlacedItem } from '../../model/stage-pose.ts';
 import { PRow, Sec, SecHead, ValueRow } from './inspector-controls.tsx';
 import type { ItemEdit } from './use-item-edit.ts';
 import { INSPECTOR_COPY as IC } from './inspector-copy.ts';
@@ -70,7 +71,8 @@ const LOCKS = new Map<string, boolean>();
 
 /**
  * 几何段：九宫钉点、X / Y / W / H（画布百分比）、锁定比例、快捷动作（贴齐钉点 · 整宽 · 整高 · 适应画布 · 填满画布），
- * 下面是旋转与翻转。只在提交时换算回 `place`；铺满画布的片段框不看位置，只能转与翻转。
+ * 下面是旋转与翻转。只在提交时换算回 `place`；铺满画布的媒体改位置或大小时换成画中画（与在画布上拖一样），
+ * 没写位置的合成框不看位置，只能转与翻转。
  */
 export function GeometrySection({
   item,
@@ -88,8 +90,9 @@ export function GeometrySection({
   const [, bump] = useState(0);
   const canvas = sequence.canvas;
   const place = item.place;
-  const pose = poseOf(item, canvas, assets);
-  const fixed = isDisabled || !posable(item, canvas, assets);
+  // 铺满画布的媒体量的是画面上那一幅（与舞台的选中框一致）。
+  const pose = stagePose(item, canvas, assets);
+  const fixed = isDisabled || !(posable(item, canvas, assets) || fillsCanvas(item));
   const box = boxOf(pose, canvas);
   if (!PINS.has(item.id)) PINS.set(item.id, defaultPin(box));
   const pin = PINS.get(item.id)!;
@@ -100,8 +103,8 @@ export function GeometrySection({
   const write = (fields: PlaceFields & { flipX?: boolean; flipY?: boolean }) =>
     edit.commit([{ type: 'setTransform', ...target, ...fields }]);
   const writePose = (next: BoxFields) => {
-    const fieldsNext = placeFields(item, { ...pose, ...next }, canvas, assets);
-    if (Object.keys(fieldsNext).length) write(fieldsNext);
+    const operations = placeOperations(sequence.id, item, { ...pose, ...next }, canvas, assets);
+    if (operations.length) edit.commit(operations);
   };
   const commitValues = (p: Pin, next: PanelValues) => writePose(applyPanel(pose, canvas, p, next, lock));
   const setPin = (p: Pin) => {

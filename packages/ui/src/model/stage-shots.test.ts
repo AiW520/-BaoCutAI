@@ -2,19 +2,22 @@ import { describe, expect, it } from 'vitest';
 import type { AssetRecord, Crop, EditOperation, Sequence, SequenceItem } from '@baocut/protocol';
 import {
   fillFramingOperations,
+  fillsCanvas,
   framedPose,
   framingAnchor,
   framingOf,
   framingOperations,
   freeFramingOperations,
   isFramed,
+  placeOperations,
   sourceSize,
   stagePose,
   withZoom,
   type FramedVideo,
 } from './stage-framing.ts';
 import { gestureOperations, gesturePatch, memberOf, stepGesture, zoomGesture } from './stage-gesture.ts';
-import { poseOf } from './stage-pose.ts';
+import { alignOperations } from './stage-align.ts';
+import { poseOf, type PlacedItem } from './stage-pose.ts';
 import { applyFramingToAll, framingPieces, shotSeconds, showsShotChip } from './stage-shots.ts';
 import { patchItem } from './item-draft.ts';
 
@@ -177,5 +180,83 @@ describe('按镜头分段取景的小牌', () => {
       { type: 'setStyle', sequenceId: 's1', itemId: 'z', focalPoint: { x: 0.2, y: 0.5 } },
       { type: 'setStyle', sequenceId: 's1', itemId: 'g', focalPoint: { x: 0.1, y: 0.5 } },
     ]);
+  });
+});
+
+describe('铺满画布、没有取景点的媒体', () => {
+  const plain = (over: Record<string, unknown> = {}) => piece('m', 0, 30, undefined, over) as PlacedItem;
+  /** 把操作叠回片段（`setStyle` 的 `mode`、`setTransform` 的字段），看帧计划推出的框。 */
+  const applied = (item: PlacedItem, ops: EditOperation[]) =>
+    ops.reduce((next, op) => {
+      if (op.type === 'setStyle') return patchItem(next, { mode: op.mode! }) as PlacedItem;
+      if (op.type !== 'setTransform') return next;
+      const { type: _type, sequenceId: _seq, itemId: _id, ...fields } = op;
+      return patchItem(next, { place: fields as Record<string, number> }) as PlacedItem;
+    }, item);
+
+  it('只认铺满模式的视频、图片、贴纸与白板，按原片取景的、画中画、占位框不算', () => {
+    expect(fillsCanvas(plain())).toBe(true);
+    expect(fillsCanvas(plain({ type: 'image' }))).toBe(true);
+    expect(fillsCanvas(plain({ fit: 'contain' }))).toBe(true);
+    expect(fillsCanvas(plain({ focalPoint: { x: 0.3, y: 0.5 } }))).toBe(false);
+    expect(fillsCanvas(plain({ mode: 'pip' }))).toBe(false);
+    expect(fillsCanvas(plain({ type: 'placeholder' }))).toBe(false);
+  });
+
+  it('选中框是画面上那一幅：cover 超出画面，contain 放进画面居中', () => {
+    const cover = stagePose(plain(), canvas, assets);
+    expect(cover.w).toBeCloseTo(3413.33, 1);
+    expect(cover.h).toBeCloseTo(1920, 6);
+    expect(cover.cx).toBeCloseTo(540, 6);
+    expect(cover.cy).toBeCloseTo(960, 6);
+    const contain = stagePose(plain({ fit: 'contain' }), canvas, assets);
+    expect(contain.w).toBeCloseTo(1080, 6);
+    expect(contain.h).toBeCloseTo(607.5, 6);
+    expect(contain.cy).toBeCloseTo(960, 6);
+  });
+
+  it('挪动或改大小换成画中画（一笔里先换模式再写位置），画面从原地跟着走；只转角度照旧铺满', () => {
+    const item = plain();
+    const start = stagePose(item, canvas, assets);
+    const moved = { ...start, cx: start.cx + 200, cy: start.cy - 100 };
+    const ops = placeOperations('s1', item, moved, canvas, assets);
+    expect(ops.map((op) => op.type)).toEqual(['setStyle', 'setTransform']);
+    expect(ops[0]).toEqual({ type: 'setStyle', sequenceId: 's1', itemId: 'm', mode: 'pip' });
+    // `place` 存一位小数的百分比，差不到一个像素。
+    const after = poseOf(applied(item, ops), canvas, assets);
+    for (const key of ['cx', 'cy', 'w', 'h'] as const) expect(Math.abs(after[key] - moved[key])).toBeLessThan(1);
+    // 缩到比画面小、露出背景也一样。
+    const small = { ...start, w: 540, h: 303.75 };
+    const shrunk = poseOf(applied(item, placeOperations('s1', item, small, canvas, assets)), canvas, assets);
+    expect(Math.abs(shrunk.w - 540)).toBeLessThan(1);
+    expect(Math.abs(shrunk.h - 303.75)).toBeLessThan(1);
+    // 只转角度：不换模式，只写 rot；什么都没变是空表。
+    expect(placeOperations('s1', item, { ...start, rotation: 10 }, canvas, assets)).toEqual([
+      { type: 'setTransform', sequenceId: 's1', itemId: 'm', rot: 10 },
+    ]);
+    expect(placeOperations('s1', item, start, canvas, assets)).toEqual([]);
+  });
+
+  it('舞台拖动：草稿叠成画中画，松手的操作与属性页、工具条一样；按原片取景的视频拖不动', () => {
+    const item = plain();
+    const member = memberOf(item, canvas, assets);
+    expect(member.start).toEqual(stagePose(item, canvas, assets));
+    const moved = { ...member.start, cx: member.start.cx - 300 };
+    const patch = gesturePatch(item, moved, 1, canvas, assets);
+    expect(patch.mode).toBe('pip');
+    expect(patchItem(item, patch)).toMatchObject({ mode: 'pip' });
+    expect(gestureOperations('s1', [member], [moved], 1, canvas)).toEqual(placeOperations('s1', item, moved, canvas, assets));
+    const framed = piece('f', 0, 30, undefined, { focalPoint: { x: 0.3, y: 0.5 } }) as PlacedItem;
+    const start = stagePose(framed, canvas, assets);
+    expect(placeOperations('s1', framed, { ...start, cx: start.cx + 200 }, canvas, assets)).toEqual([]);
+  });
+
+  it('对齐按画面上那一幅量，挪动了就换成画中画', () => {
+    const item = plain({ fit: 'contain' });
+    const ops = alignOperations('s1', [item], 'top', 'canvas', canvas, assets);
+    expect(ops.map((op) => op.type)).toEqual(['setStyle', 'setTransform']);
+    const after = poseOf(applied(item, ops), canvas, assets);
+    expect(Math.abs(after.cy - after.h / 2)).toBeLessThan(1);
+    expect(Math.abs(after.w - 1080)).toBeLessThan(1);
   });
 });

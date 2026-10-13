@@ -1,11 +1,17 @@
 import type { EditOperation, Id } from '@baocut/protocol';
-import { aabbOf, boundsOf, placeFields, poseOf, type Assets, type CanvasSize, type PlacedItem, type Rect } from './stage-pose.ts';
+import { fillsCanvas, placeChange, placeOperations, stagePose } from './stage-framing.ts';
+import { aabbOf, boundsOf, poseOf, type Assets, type CanvasSize, type PlacedItem, type Pose, type Rect } from './stage-pose.ts';
 
 /**
  * 多选的对齐与分布（属性页多选那一页）：按每件旋转后的外包盒量，参照选区的总外包盒或整块画布。
  * 平移外包盒等于平移框中心，所以只改动到的那一轴（`place` 的 `x` 或 `y`），其余字段一概不写；没动的件不出操作。
+ * 铺满画布的媒体按画面上那一幅量，挪动了就换成画中画（`placeChange`，位置与大小一起写）；按原片取景的视频不挪。
  * 全部操作放进一笔事务提交（一步撤销）。
  */
+
+/** 量的盒：铺满画布的媒体是画面上那一幅（与舞台的选中框一致），其余照帧计划的框。 */
+const poseFor = (item: PlacedItem, canvas: CanvasSize, assets: Assets | undefined): Pose =>
+  fillsCanvas(item) ? stagePose(item, canvas, assets) : poseOf(item, canvas, assets);
 
 export type AlignEdge = 'left' | 'hcenter' | 'right' | 'top' | 'vcenter' | 'bottom';
 export type AlignTarget = 'selection' | 'canvas';
@@ -46,9 +52,11 @@ function shiftOperations(
   items.forEach((item, i) => {
     const d = deltas[i] ?? 0;
     if (Math.abs(d) < STILL) return;
-    const pose = poseOf(item, canvas, assets);
+    const pose = poseFor(item, canvas, assets);
     const moved = axis === 'x' ? { ...pose, cx: pose.cx + d } : { ...pose, cy: pose.cy + d };
-    const next = placeFields(item, moved, canvas, assets)[axis];
+    const change = placeChange(item, moved, canvas, assets);
+    if (change.mode) return void operations.push(...placeOperations(sequenceId, item, moved, canvas, assets));
+    const next = change.place[axis];
     if (next === undefined) return;
     operations.push({ type: 'setTransform', sequenceId, itemId: item.id, [axis]: next });
   });
@@ -64,7 +72,7 @@ export function alignOperations(
   canvas: CanvasSize,
   assets?: Assets,
 ): EditOperation[] {
-  const rects = items.map((item) => aabbOf(poseOf(item, canvas, assets)));
+  const rects = items.map((item) => aabbOf(poseFor(item, canvas, assets)));
   const reference = referenceOf(rects, target, canvas);
   if (!reference) return [];
   const goal = edgeAt(reference, edge);
@@ -91,7 +99,7 @@ export function distributeOperations(
   assets?: Assets,
 ): EditOperation[] {
   if (items.length < 3) return [];
-  const rects = items.map((item) => aabbOf(poseOf(item, canvas, assets)));
+  const rects = items.map((item) => aabbOf(poseFor(item, canvas, assets)));
   const mid = (i: number) => startOf(rects[i]!, axis) + sizeOf(rects[i]!, axis) / 2;
   const order = rects.map((_, i) => i).sort((a, b) => mid(a) - mid(b) || a - b);
   const first = rects[order[0]!]!;

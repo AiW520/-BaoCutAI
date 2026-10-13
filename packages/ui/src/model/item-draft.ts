@@ -15,6 +15,7 @@ import type {
   ShapeProps,
   StickerProps,
   VisualizerProps,
+  VisualMode,
 } from '@baocut/protocol';
 import type { Json } from '../render/text-style.ts';
 
@@ -45,8 +46,10 @@ export interface ItemPatch {
   embeddedAudio?: Partial<EmbeddedAudio>;
   /** 画面效果（整体替换；`null` 是去掉）。 */
   fx?: Fx | null;
-  /** 视频与图片的取景（裁剪与取景点整体替换，null 是去掉）：画布上平移铺满画面的视频时跟手。 */
+  /** 视频与图片的取景（裁剪与取景点整体替换，null 是去掉）：画布上放大按原片取景的视频时跟手。 */
   framing?: { crop: Crop | null; focalPoint: FocalPoint | null };
+  /** 视觉媒体的铺满 / 画中画：画布上拖动铺满画布的媒体时它换成画中画（`stage-framing.ts` 的 `placeChange`）。 */
+  mode?: VisualMode;
 }
 
 /** 同一个片段、同一个版本上的草稿叠在一起（拖完一根滑杆、提交还没回来时又拖另一根，前一根不弹回）。 */
@@ -80,7 +83,9 @@ export function applyDraft(sequence: Sequence, draft: ItemDraft | null): Sequenc
 export function patchItem(item: SequenceItem, patch: ItemPatch): SequenceItem {
   if (item.type === 'audio') return patch.mix ? { ...item, mix: { ...item.mix, ...patch.mix } } : item;
   if (item.type === 'caption') return item;
-  const moved = patch.place ? { ...item, place: { ...item.place, ...patch.place } } : item;
+  const media = item.type === 'video' || item.type === 'image' || item.type === 'sticker' || item.type === 'placeholder' || item.type === 'whiteboard';
+  const moded = patch.mode && media ? { ...item, mode: patch.mode } : item;
+  const moved = patch.place ? { ...moded, place: { ...moded.place, ...patch.place } } : moded;
   const placed = patch.framing && (moved.type === 'video' || moved.type === 'image') ? withFraming(moved, patch.framing) : moved;
   const props = patch.props;
   switch (placed.type) {

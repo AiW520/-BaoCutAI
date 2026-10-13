@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState, type KeyboardEvent, type MouseEvent, type PointerEvent, type ReactNode } from 'react';
-import type { CaptionItem, DocumentRecord, Id, Localized, Place, Revision, Sequence, SequenceItem } from '@baocut/protocol';
+import type { CaptionItem, DocumentRecord, Id, Localized, Place, Revision, Sequence, SequenceItem, VisualMode } from '@baocut/protocol';
 import { EditLabel } from '@baocut/protocol/messages/ui';
 import { ToastQueue } from '@react-spectrum/s2';
 import { style } from '@react-spectrum/s2/style' with { type: 'macro' };
@@ -195,7 +195,7 @@ export function StageObjects({ sequence, frame }: { sequence: Sequence; frame: F
   const press = useRef<Press | null>(null);
   const latest = useRef(sequence);
   latest.current = sequence;
-  const nudges = useRef({ inflight: 0, at: new Map<Id, Place>() });
+  const nudges = useRef({ inflight: 0, at: new Map<Id, { place: Place; mode?: VisualMode }>() });
   const [active, setActive] = useState<Gesture['kind'] | 'marquee' | null>(null);
   const [guides, setGuides] = useState<Guide[]>([]);
   const [marquee, setMarquee] = useState<Rect | null>(null);
@@ -699,18 +699,28 @@ export function StageObjects({ sequence, frame }: { sequence: Sequence; frame: F
     event.preventDefault();
     const targets = candidates.filter((item) => !isFramed(item));
     if (!targets.length) return void ToastQueue.info(STAGE_COPY.framingLocked, { timeout: 5000 });
-    // 连按时上一笔还没回来：从上一笔的落点接着推，不从旧位置重算。
+    // 连按时上一笔还没回来：从上一笔的落点接着推，不从旧位置重算（铺满画布的媒体第一下换成了画中画，也接着那一份）。
     const pending = nudges.current;
     const base = targets.map((item) => {
-      const place = pending.at.get(item.id);
-      return place ? ({ ...item, place } as PlacedItem) : item;
+      const at = pending.at.get(item.id);
+      return at ? ({ ...item, ...at } as PlacedItem) : item;
     });
     const operations = nudgeOperations(seq.id, base, delta, seq.canvas, assets);
     if (!operations.length) return;
     for (const operation of operations) {
-      if (operation.type !== 'setTransform') continue;
-      const from = base.find((item) => item.id === operation.itemId)!.place;
-      pending.at.set(operation.itemId, { ...from, x: operation.x ?? from.x, y: operation.y ?? from.y });
+      if (operation.type !== 'setStyle' && operation.type !== 'setTransform') continue;
+      const from = base.find((item) => item.id === operation.itemId)!;
+      const at = pending.at.get(operation.itemId) ?? { place: from.place, ...('mode' in from && from.mode ? { mode: from.mode } : {}) };
+      if (operation.type === 'setStyle') {
+        if (operation.mode) pending.at.set(operation.itemId, { ...at, mode: operation.mode });
+        continue;
+      }
+      const place = { ...at.place };
+      for (const key of ['x', 'y', 'w', 'scaleY'] as const) {
+        const value = operation[key];
+        if (typeof value === 'number') place[key] = value;
+      }
+      pending.at.set(operation.itemId, { ...at, place });
     }
     pending.inflight += 1;
     void apply(operations, EditLabel.nudgePosition()).finally(() => {

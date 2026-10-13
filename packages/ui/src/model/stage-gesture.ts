@@ -3,7 +3,7 @@ import { asObject, num } from '../render/text-style.ts';
 import type { ItemPatch } from './item-draft.ts';
 import { editableTextStyle, patchTextStyle } from './property-values.ts';
 import { round1 } from './geometry-panel.ts';
-import { framingAnchor, zoomFraming, type FramedVideo, type FramingHit, type ItemFraming } from './stage-framing.ts';
+import { framingAnchor, placeChange, stagePose, zoomFraming, type FramedVideo, type FramingHit, type ItemFraming } from './stage-framing.ts';
 import {
   GUIDE_TOL,
   SNAP_PX,
@@ -16,8 +16,6 @@ import {
   groupShift,
   guidesFor,
   moveLimits,
-  placeFields,
-  poseOf,
   sizeRange,
   type Assets,
   type CanvasSize,
@@ -80,8 +78,9 @@ export interface GestureFrame {
   hit?: FramingHit | null;
 }
 
+/** 起手的盒是选中框那一个（`stagePose`）：铺满画布的媒体从画面上那一幅起手，换成画中画时画面不动。 */
 export function memberOf(item: PlacedItem, canvas: CanvasSize, assets?: Assets): Member {
-  const start = poseOf(item, canvas, assets);
+  const start = stagePose(item, canvas, assets);
   return { item, start, limits: moveLimits(item, start, canvas), ...(assets ? { assets } : {}) };
 }
 
@@ -161,7 +160,7 @@ export function scaledFontSize(item: PlacedItem, factor: number): number | null 
   return Math.min(400, Math.max(1, round1(size * factor)));
 }
 
-/** 拖动中叠给预览与属性页的草稿；按原片取景只叠取景。 */
+/** 拖动中叠给预览与属性页的草稿；按原片取景只叠取景，铺满画布的媒体挪动了就叠成画中画（`placeChange`）。 */
 export function gesturePatch(
   item: PlacedItem,
   pose: Pose,
@@ -172,13 +171,18 @@ export function gesturePatch(
 ): ItemPatch {
   if (framing) return { framing };
   const fontSize = scaledFontSize(item, factor);
+  const { mode, place } = placeChange(item, pose, canvas, assets);
   return {
-    place: placeFields(item, pose, canvas, assets),
+    ...(mode ? { mode } : {}),
+    place,
     ...(fontSize !== null && item.type === 'text' ? { style: patchTextStyle(item.style, { fontSize }) } : {}),
   };
 }
 
-/** 松手：每件只写变了的 `place` 字段，文字等比缩放时再改字号；什么都没变就是空表（不提交）。 */
+/**
+ * 松手：每件只写变了的 `place` 字段，文字等比缩放时再改字号；铺满画布的媒体挪动了先换成画中画（同一笔）。
+ * 什么都没变就是空表（不提交）。
+ */
 export function gestureOperations(
   sequenceId: Id,
   members: readonly Member[],
@@ -190,8 +194,9 @@ export function gestureOperations(
   members.forEach(({ item, assets }, i) => {
     const pose = poses[i];
     if (!pose) return;
-    const changed = placeFields(item, pose, canvas, assets);
-    if (Object.keys(changed).length) operations.push({ type: 'setTransform', sequenceId, itemId: item.id, ...changed });
+    const { mode, place } = placeChange(item, pose, canvas, assets);
+    if (mode) operations.push({ type: 'setStyle', sequenceId, itemId: item.id, mode });
+    if (Object.keys(place).length) operations.push({ type: 'setTransform', sequenceId, itemId: item.id, ...place });
     const fontSize = scaledFontSize(item, factor);
     if (fontSize !== null && item.type === 'text') {
       operations.push({ type: 'setStyle', sequenceId, itemId: item.id, style: patchTextStyle(item.style, { fontSize }) });

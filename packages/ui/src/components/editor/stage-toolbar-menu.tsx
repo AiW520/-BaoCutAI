@@ -63,8 +63,8 @@ import { STAGE_COPY, STAGE_TOOLBAR_COPY as COPY } from '../../copy.ts';
 import { canArrange } from '../../model/editor-ops.ts';
 import { fitCanvas } from '../../model/geometry-panel.ts';
 import { patchTextStyle } from '../../model/property-values.ts';
-import { fillFramingOperations, isFramed } from '../../model/stage-framing.ts';
-import { placeFields, poseOf, type PlacedItem } from '../../model/stage-pose.ts';
+import { fillFramingOperations, isFramed, placeOperations, stagePose } from '../../model/stage-framing.ts';
+import type { PlacedItem } from '../../model/stage-pose.ts';
 import { M as TOOLBAR_COPY } from '../../model/stage-toolbar-copy.ts';
 import { ARRANGE_COPY, ARRANGE_ROWS, brandTarget, itemAsset, type InspectorSection, type MenuGroup, type Tool, type ToolId } from '../../model/stage-toolbar.ts';
 import { asObject, num } from '../../render/text-style.ts';
@@ -264,16 +264,13 @@ export function runTool(tool: Tool, { item, sequence, assets, edit }: ToolProps,
           });
         });
       }
+      // 铺满画布的媒体从画面上那一幅算，适应 / 填满之后换成画中画（`placeOperations`），与在画布上拖一样。
       if (tool.id === 'fit-canvas' || tool.id === 'fill-canvas') {
-        const pose = poseOf(item, sequence.canvas, assets);
-        const fields = placeFields(
-          item,
-          { ...pose, ...fitCanvas(pose, sequence.canvas, tool.id === 'fill-canvas') },
-          sequence.canvas,
-          assets,
-        );
-        if (!Object.keys(fields).length) return;
-        return edit.commit([{ type: 'setTransform', ...target, ...fields }], tool.id === 'fill-canvas' ? EditLabel.fillCanvas() : EditLabel.fitCanvas());
+        const pose = stagePose(item, sequence.canvas, assets);
+        const next = { ...pose, ...fitCanvas(pose, sequence.canvas, tool.id === 'fill-canvas') };
+        const operations = placeOperations(sequence.id, item, next, sequence.canvas, assets);
+        if (!operations.length) return;
+        return edit.commit(operations, tool.id === 'fill-canvas' ? EditLabel.fillCanvas() : EditLabel.fitCanvas());
       }
       return;
     case 'toggle': {
