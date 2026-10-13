@@ -122,6 +122,13 @@ export function stepsFor(draft: Pick<ImageDraft, 'steps'>, info: Pick<ImageModel
   return Math.min(range.max, Math.max(range.min, Math.round(draft.steps)));
 }
 
+/** 步数固定的本机模型（蒸馏版，如 Qwen-Image-2.1 Turbo：`local.steps` 的 min === max）给那个步数，否则 null。
+ *  界面对它不给步数输入框，只写「固定 N 步」（设计稿 image-gen.jsx 的「高级」）。 */
+export function fixedSteps(info: Pick<ImageModelInfo, 'local'>): number | null {
+  const range = info.local?.steps;
+  return range && range.min === range.max ? range.min : null;
+}
+
 /** 换一只模型：画幅与张数回到这只认的范围，提示词与种子留着。 */
 export function switchImageModel(draft: ImageDraft, option: ImageOption): Partial<ImageDraft> {
   return { model: option.key, size: sizeKeyFor({ size: draft.size }, option.info), count: countFor(draft, option.info) };

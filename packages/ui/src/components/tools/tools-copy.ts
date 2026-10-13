@@ -256,6 +256,8 @@ const en = {
     seedNoteLocal: 'Same seed and weights reproduce the result',
     steps: 'Steps',
     stepsNote: (def: number) => `Default ${def} · more is slower`,
+    stepsFixed: (n: number) => `Fixed at ${n} ${n === 1 ? 'step' : 'steps'}`,
+    stepsFixedNote: 'This distilled model only runs at this step count',
     side: 'History',
     empty: 'Nothing generated yet',
     emptyBody: 'Describe the picture, pick a model, then press “Generate image”.',

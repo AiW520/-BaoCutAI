@@ -232,6 +232,8 @@ export const fr: ToolsMessages = {
     seedNoteLocal: "Même graine et poids reproduisent le résultat",
     steps: "Étapes",
     stepsNote: (def: number) => `Défaut ${def} · plus = plus lent`,
+    stepsFixed: (n: number) => `Nombre d’étapes fixe : ${n}`,
+    stepsFixedNote: 'Ce modèle distillé ne fonctionne qu’avec ce nombre d’étapes',
     side: "Historique",
     empty: "Rien de généré pour l'instant",
     emptyBody: "Décrivez l’image, choisissez un modèle et cliquez « Générer une image ».",

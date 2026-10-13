@@ -36,6 +36,7 @@ import {
   imageResults,
   imageStatus,
   sizeKeyFor,
+  fixedSteps,
   stepsFor,
   switchImageModel,
   type ImageOption,
@@ -108,6 +109,9 @@ const aspectName = style({ font: 'ui-xs', fontWeight: 'bold', textAlign: 'center
 const aspectSub = style({ font: 'ui-xs', color: 'gray-600', textAlign: 'center' });
 const countRow = style({ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0 });
 const countField = style({ width: 112 });
+const stepsFixedRow = style({ display: 'flex', alignItems: 'baseline', gap: 8, marginTop: 12, minWidth: 0 });
+const stepsFixedLabel = style({ font: 'ui-sm', color: 'gray-700' });
+const stepsFixedValue = style({ font: 'ui-sm', color: 'gray-800' });
 const goRow = style({
   display: 'flex',
   alignItems: 'center',
@@ -360,6 +364,7 @@ function ImageOptions({
   const fitted = fittedAspect(info, canvas);
   const selected = draft.fit && fitted ? FIT : sizeKeyFor(draft, info);
   const stepRange = info.local?.steps ?? null;
+  const fixed = fixedSteps(info);
   return (
     <>
       <SubHead title={IMAGE_COPY.aspect} />
@@ -436,7 +441,15 @@ function ImageOptions({
                   <p className={hint}>{option.local ? IMAGE_COPY.seedNoteLocal : IMAGE_COPY.seedNote}</p>
                 </>
               ) : null}
-              {stepRange ? (
+              {fixed !== null ? (
+                <>
+                  <div className={stepsFixedRow}>
+                    <span className={stepsFixedLabel}>{IMAGE_COPY.steps}</span>
+                    <span className={stepsFixedValue}>{IMAGE_COPY.stepsFixed(fixed)}</span>
+                  </div>
+                  <p className={hint}>{IMAGE_COPY.stepsFixedNote}</p>
+                </>
+              ) : stepRange ? (
                 <>
                   <NumberField
                     label={IMAGE_COPY.steps}
@@ -454,7 +467,9 @@ function ImageOptions({
             </>
           ) : (
             <p className={hint}>
-              {[info.acceptsSeed ? IMAGE_COPY.seed : null, stepRange ? IMAGE_COPY.steps : null].filter(Boolean).join(' · ')}
+              {[info.acceptsSeed ? IMAGE_COPY.seed : null, fixed !== null ? IMAGE_COPY.stepsFixed(fixed) : stepRange ? IMAGE_COPY.steps : null]
+                .filter(Boolean)
+                .join(' · ')}
             </p>
           )}
         </>

@@ -199,6 +199,8 @@ export const tr: ToolsMessages = {
     seedNoteLocal: "Aynı seed ve ağırlıklar aynı sonucu üretir",
     steps: "Adımlar",
     stepsNote: (def) => `Varsayılan ${def} · daha fazlası daha yavaştır`,
+    stepsFixed: (n) => `Sabit adım sayısı: ${n}`,
+    stepsFixedNote: 'Bu damıtılmış model yalnızca bu adım sayısıyla çalışır',
     side: "Geçmiş",
     empty: "Henüz bir şey oluşturulmadı",
     emptyBody: "Görseli açıklayın, model seçin ve “Görsel oluştur” düğmesine basın.",

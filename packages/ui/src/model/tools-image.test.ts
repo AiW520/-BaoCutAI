@@ -24,6 +24,7 @@ import {
   ratioOfSize,
   retryRequest,
   sizeKeyFor,
+  fixedSteps,
   stepsFor,
   switchImageModel,
   type ImageDraft,
@@ -191,6 +192,18 @@ describe('本机模型', () => {
       steps: 12,
     });
     expect(imageRequest(draft({ prompt: 'cat', steps: 12 }), option(ratios))).not.toHaveProperty('steps');
+  });
+
+  it('步数固定的蒸馏模型（Turbo）：界面写固定步数，请求总带它，草稿里调过的步数留给别的模型', () => {
+    const turbo = { ...qwen, modelId: 'qwen-image-2.1-turbo@mlx-8bit', label: 'Qwen-Image-2.1 Turbo', local: { steps: { min: 8, max: 8, step: 8, default: 8 } } };
+    expect(fixedSteps(turbo)).toBe(8);
+    expect(fixedSteps(qwen)).toBeNull();
+    expect(fixedSteps(ratios)).toBeNull();
+    expect(stepsFor({ steps: null }, turbo)).toBe(8);
+    expect(stepsFor({ steps: 32 }, turbo)).toBe(8);
+    expect(stepsFor({ steps: 32 }, qwen)).toBe(32);
+    const local = localImageOptions(withLocal(turbo))[0]!;
+    expect(imageRequest(draft({ prompt: 'cat', steps: 32 }), local)).toMatchObject({ provider: 'local', model: 'qwen-image-2.1-turbo@mlx-8bit', steps: 8 });
   });
 
   it('现状一句与页头标签', () => {

@@ -199,6 +199,8 @@ export const vi: ToolsMessages = {
     seedNoteLocal: "Cùng seed và trọng số sẽ tái tạo kết quả",
     steps: "Các bước",
     stepsNote: (def) => `Mặc định ${def} · nhiều hơn sẽ chậm hơn`,
+    stepsFixed: (n) => `Cố định ${n} bước`,
+    stepsFixedNote: 'Mô hình chưng cất này chỉ chạy với số bước này',
     side: "Lịch sử",
     empty: "Chưa tạo lần nào",
     emptyBody: "Mô tả ảnh, chọn mô hình rồi nhấn “Tạo hình ảnh”.",

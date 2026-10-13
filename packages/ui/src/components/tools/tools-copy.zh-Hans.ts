@@ -201,6 +201,8 @@ export const zhHans: ToolsMessages = {
     seedNoteLocal: '同种子同权重可复现',
     steps: '步数',
     stepsNote: (def: number) => `默认 ${def} · 越多越慢`,
+    stepsFixed: (n: number) => `固定 ${n} 步`,
+    stepsFixedNote: '蒸馏模型只按这个步数出图，不能调',
     side: '生成记录',
     empty: '还没有生成过',
     emptyBody: '写好画面、选好模型，按「生成图片」。',

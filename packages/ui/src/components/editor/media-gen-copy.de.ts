@@ -45,7 +45,7 @@ export const deImageGen: ImageGenMessages = {
   gen: "KI-generiert",
   noModelTitle: "Noch kein Bildmodell",
   noModelBody:
-    "Einen Cloud-Anbieter verbinden (Modelle › Bilderzeugung › Cloud-Modelle) oder Qwen-Image-2.1 herunterladen (Modelle › Bilderzeugung › Lokale Modelle) – beides funktioniert.",
+    "Einen Cloud-Anbieter verbinden (Modelle › Bilderzeugung › Cloud-Modelle) oder Qwen-Image-2.1 oder Turbo herunterladen (Modelle › Bilderzeugung › Lokale Modelle) – beides funktioniert.",
   connect: "Cloud-Anbieter verbinden",
   downloadLocal: "Lokales Modell herunterladen",
   fit: "Wie die Video-Arbeitsfläche",

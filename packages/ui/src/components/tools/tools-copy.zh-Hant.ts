@@ -202,6 +202,8 @@ export const zhHant: ToolsMessages = {
     seedNoteLocal: '相同的種子與權重可重現結果',
     steps: '步數',
     stepsNote: (def: number) => `預設 ${def} · 越多越慢`,
+    stepsFixed: (n: number) => `固定 ${n} 步`,
+    stepsFixedNote: '蒸餾模型只按這個步數出圖，無法調整',
     side: '生成記錄',
     empty: '還沒有生成過',
     emptyBody: '描述畫面、選好模型，再按「生成圖片」。',

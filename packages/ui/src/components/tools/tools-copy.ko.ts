@@ -212,6 +212,8 @@ export const ko: ToolsMessages = {
     seedNoteLocal: '시드와 가중치가 같으면 같은 결과가 나옵니다',
     steps: '단계 수',
     stepsNote: (def: number) => `기본값 ${def} · 많을수록 느립니다`,
+    stepsFixed: (n: number) => `${n}단계 고정`,
+    stepsFixedNote: '증류 모델은 이 단계 수로만 생성합니다',
     side: '생성 기록',
     empty: '아직 생성한 것이 없습니다',
     emptyBody: '그림을 설명하고 모델을 고른 뒤 “이미지 생성”을 누르세요.',

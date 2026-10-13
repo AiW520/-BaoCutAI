@@ -206,6 +206,8 @@ export const ja: ToolsMessages = {
     seedNoteLocal: '同じシードと重みで結果を再現できます',
     steps: 'ステップ数',
     stepsNote: (def: number) => `既定 ${def} · 多いほど遅くなります`,
+    stepsFixed: (n: number) => `${n} ステップ固定`,
+    stepsFixedNote: '蒸留モデルはこのステップ数でのみ生成します',
     side: '履歴',
     empty: 'まだ生成していません',
     emptyBody: '画像を説明してモデルを選び、「画像を生成」を押してください。',

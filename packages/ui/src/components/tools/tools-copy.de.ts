@@ -232,6 +232,8 @@ export const de: ToolsMessages = {
     seedNoteLocal: "Gleicher Seed und gleiche Gewichte reproduzieren das Ergebnis",
     steps: "Schritte",
     stepsNote: (def: number) => `Standard ${def} · mehr ist langsamer`,
+    stepsFixed: (n: number) => `Feste Schrittzahl: ${n}`,
+    stepsFixedNote: 'Dieses destillierte Modell läuft nur mit dieser Schrittzahl',
     side: "Verlauf",
     empty: "Noch nichts erzeugt",
     emptyBody: "Bild beschreiben, Modell wählen und „Bild erzeugen“ anklicken.",

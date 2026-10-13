@@ -45,7 +45,7 @@ export const ptBRImageGen: ImageGenMessages = {
   gen: "Gerada por IA",
   noModelTitle: "Ainda não há modelo de imagem",
   noModelBody:
-    "Conecte nuvem em Modelos › Geração de imagens › Modelos de nuvem ou baixe Qwen-Image-2.1 em Modelos locais; ambos funcionam.",
+    "Conecte nuvem em Modelos › Geração de imagens › Modelos de nuvem ou baixe Qwen-Image-2.1 ou Turbo em Modelos locais; ambos funcionam.",
   connect: "Conectar provedor de nuvem",
   downloadLocal: "Baixar modelo local",
   fit: "Igual ao canvas do vídeo",

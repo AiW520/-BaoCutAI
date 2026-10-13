@@ -18,6 +18,7 @@ import {
   imageModelOptions,
   imageStatus,
   sizeKeyFor,
+  fixedSteps,
   stepsFor,
   switchImageModel,
   type ImageDraft,
@@ -92,6 +93,7 @@ const aspectSub = style({ font: 'ui-xs', color: 'gray-600' });
 const countField = style({ width: 112 });
 const seedField = style({ width: 140 });
 const stepsField = style({ width: 112 });
+const stepsFixed = style({ font: 'ui-sm', color: 'gray-800', flexShrink: 0 });
 
 /** 画幅示意框：长边 18px（设计稿 `AspectRow` 的 `box`）。 */
 function boxSize(ratio: number): { width: number; height: number } {
@@ -264,6 +266,7 @@ function ImageOptions({ draft, option, patch }: { draft: ImageDraft; option: Ima
   const sizes = aspectOptions(info);
   const size = sizeKeyFor(draft, info);
   const stepRange = info.local?.steps ?? null;
+  const fixed = fixedSteps(info);
   return (
     <>
       <Section title={IMAGE_COPY.aspect}>
@@ -329,7 +332,12 @@ function ImageOptions({ draft, option, patch }: { draft: ImageDraft; option: Ima
                   <span className={detailGrow}>{option.local ? IMAGE_COPY.seedNoteLocal : IMAGE_COPY.seedNote}</span>
                 </Row>
               ) : null}
-              {stepRange ? (
+              {fixed !== null ? (
+                <Row label={IMAGE_COPY.steps}>
+                  <span className={stepsFixed}>{IMAGE_COPY.stepsFixed(fixed)}</span>
+                  <span className={detailGrow}>{IMAGE_COPY.stepsFixedNote}</span>
+                </Row>
+              ) : stepRange ? (
                 <Row label={IMAGE_COPY.steps}>
                   <NumberField
                     aria-label={IMAGE_COPY.steps}
@@ -347,7 +355,9 @@ function ImageOptions({ draft, option, patch }: { draft: ImageDraft; option: Ima
             </>
           ) : (
             <span className={detail}>
-              {[info.acceptsSeed ? IMAGE_COPY.seed : null, stepRange ? IMAGE_COPY.steps : null].filter(Boolean).join(' · ')}
+              {[info.acceptsSeed ? IMAGE_COPY.seed : null, fixed !== null ? IMAGE_COPY.stepsFixed(fixed) : stepRange ? IMAGE_COPY.steps : null]
+                .filter(Boolean)
+                .join(' · ')}
             </span>
           )}
         </Section>

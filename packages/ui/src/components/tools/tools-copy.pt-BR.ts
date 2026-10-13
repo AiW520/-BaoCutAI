@@ -232,6 +232,8 @@ export const ptBR: ToolsMessages = {
     seedNoteLocal: "Mesma seed e pesos reproduzem o resultado",
     steps: "Passos",
     stepsNote: (def: number) => `Padrão ${def} · mais é mais lento`,
+    stepsFixed: (n: number) => `Passos fixos: ${n}`,
+    stepsFixedNote: 'Este modelo destilado só funciona com este número de passos',
     side: "Histórico",
     empty: "Nada gerado ainda",
     emptyBody: "Descreva a imagem, escolha um modelo e clique em “Gerar imagem”.",
