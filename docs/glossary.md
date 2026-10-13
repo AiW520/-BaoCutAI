@@ -59,6 +59,7 @@
 | 设置 / 帮助 / 诊断 / 日志 | Settings / Help / Diagnostics / Logs | |
 | 术语表 / 品牌库 | Glossary / Brand kit | |
 | 在文件夹中显示 | Show in Folder | 所有平台同一个说法，不写 Finder、Explorer |
+| 用默认应用打开 | Open in default app | 交给系统里这类文件的默认应用；卡里已有播放器时不写「播放」，免得与卡里播放混淆 |
 | 侧栏 | Sidebar | |
 | 标签页 / 打开新标签页 | Tab / New tab | |
 | 分屏 / 完整视图 | Split view / Full view | Home 工作区的视图，见产品设计 §3.3 |

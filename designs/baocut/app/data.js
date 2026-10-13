@@ -1057,7 +1057,8 @@
        覆盖转录、翻译、导出、合成语音、生成图片五种活的运行 / 完成 / 失败。视频卡只摊开进行中的或最后结束的那件、其余收起，只读这些记录：
        阶段键（转录与导出是 Job 阶段 `jobPhase`，翻译是流程步骤 `step`）、计数、用时与剩余、结果事实。
        合成语音与生成图片不进视频卡：运行中与失败留在步骤行，完成后是候选卡。
-       ag21d / ag22d 是下载（视频还没建，单独一张下载卡）：链接、站点与文件名是虚构的。
+       ag21d / ag22d / ag29d / ag30d 是下载（单独一张下载卡，写保存到哪；下完留在原处、列出文件，能播的在卡里播）：
+       链接、站点与文件名是虚构的，卡里播的是原型自带的样片。
        排在 ag1 前面：侧栏迷你条读第一条 running（仍是 j1），胶囊头取索引最大的 running（仍是 ag1）。
        API 提供方与模型名是虚构的（星河云、lumen-tts-2、pixa-image-1）。 */
     {id: 'ag18t', kind: 'transcribe', project: 'p10', title: '转录 · 综合制作 · 播客精剪 · 第二段访谈',
@@ -1153,13 +1154,30 @@
      url: 'https://lanshan.example/v/spring-launch-replay', site: 'lanshan.example',
      sub: 'Claude Code · Sonnet · 会话「把发布会回放下载下来转录」', status: 'running', pct: 27, phase: null,
      source: 'agent', session: 's21', started: '刚刚', cancellable: true, drive: 'on-view', scenario: 'success',
-     sizeMB: 320, mediaSec: 1480, hue: 204, elapsedMs: 12960, leftMs: 35040},
-    /* 下载断了：连接中断，可重试；重试从 34% 接着下，下完同样建视频 */
+     sizeMB: 320, mediaSec: 1480, hue: 204, elapsedMs: 12960, leftMs: 35040, saveDir: '~/Downloads',
+     previewSrc: 'assets/media-preview/geometric-demo.webm', poster: 'assets/media-preview/video-poster.svg'},
+    /* 只下载（`only`）断了：连接中断，可重试；重试从 34% 接着下，下完不建视频，下载卡列出文件 */
     {id: 'ag22d', kind: 'download', project: null, title: '创始人访谈 · 完整版', name: 'founder-interview-full.mp4',
      url: 'https://qingtai.example/watch/founder-interview-full', site: 'qingtai.example',
      sub: 'Claude Code · Sonnet · 会话「下载这条访谈」', status: 'error', outcome: 'error', pct: 34, phase: null,
-     source: 'agent', session: 's22', started: '20 分钟前', cancellable: true, scenario: 'network',
-     sizeMB: 214, mediaSec: 2210, hue: 32, elapsedMs: 16300, issue: 'network', error: '连接中断了'},
+     source: 'agent', session: 's22', started: '20 分钟前', cancellable: true, scenario: 'network', only: true,
+     sizeMB: 214, mediaSec: 2210, hue: 32, elapsedMs: 16300, issue: 'network', error: '连接中断了', saveDir: '~/Downloads',
+     previewSrc: 'assets/media-preview/geometric-demo.webm', poster: 'assets/media-preview/video-poster.svg'},
+    /* 只下载，已完成：存进项目的 downloads 文件夹（智能体指定了项目）；下载卡里直接播（正文视频播放器），
+       下面一行文件名、所在文件夹与大小，可用默认应用打开、在文件夹中显示 */
+    {id: 'ag29d', kind: 'download', project: null, title: '产品演示 · 第二版', name: 'product-demo-v2.mp4',
+     url: 'https://lanshan.example/v/product-demo-v2', site: 'lanshan.example',
+     sub: 'Claude Code · Sonnet · 会话「把产品演示下载到项目里」', status: 'done', outcome: 'done', pct: 100, phase: null,
+     source: 'agent', session: 's29', started: '5 分钟前', cancellable: false, scenario: 'success', only: true,
+     sizeMB: 156, mediaSec: 312, hue: 268, elapsedMs: 21000, leftMs: 0, saveDir: '~/BaoCut/素材实验/downloads',
+     previewSrc: 'assets/media-preview/geometric-demo.webm', poster: 'assets/media-preview/video-poster.svg'},
+    /* 只下载一期播客的音频，已完成：下载卡里是音频正文卡（文件名与格式、播放、进度），下面一行所在文件夹与大小 */
+    {id: 'ag30d', kind: 'download', project: null, title: '创业者对谈 · 第 42 期', name: 'founders-talk-ep42.m4a',
+     url: 'https://boke.example/episodes/founders-talk-ep42.m4a', site: 'boke.example',
+     sub: 'Claude Code · Sonnet · 会话「把这期播客的音频下载下来」', status: 'done', outcome: 'done', pct: 100, phase: null,
+     source: 'agent', session: 's30', started: '3 分钟前', cancellable: false, scenario: 'success', only: true,
+     sizeMB: 38, mediaSec: 2580, hue: 150, elapsedMs: 6000, leftMs: 0, saveDir: '~/Downloads',
+     previewSrc: 'assets/media-preview/audio-preview-demo.wav'},
     /* 边转边问（product-design §3.2.2 视频卡）：s23 的转录还在跑，Agent 先问了一句就收掉了这一轮。打开会话才开始走，
        走得慢（paceStep），留出回话的时间：回话后这一轮调 jobs_wait 等它，视频卡跟到这一轮；卡上那一行只读地写出用的模型。 */
     {id: 'ag23t', kind: 'transcribe', project: 'p11', title: '转录 · Sintel · 预告片剪辑',
@@ -2281,8 +2299,9 @@
           error: 'CAPABILITY_NOT_CONFIGURED：还没有可用的图片生成模型'},
          {id: 'm8', role: 'assistant', text: '这一轮一件都没成，视频卡里写了每一件的原因，旁白和封面的去处在步骤里：\n\n- 重新转录：语音模型内存不足退出了，原来的文稿没动；关掉占内存的程序后点「重试」。\n- 翻译：写入前你又改了 2 句原文，按当前版本重试就行。\n- 导出：你取消了。\n- 旁白：星河云的登录过期了，重新登录后再来。\n- 封面：还没启用图片生成模型。'},
        ]},
-      /* 下载（product-design §4.2）：链接里的视频还没建，步骤行后面是一张下载卡；下完同一个位置换成视频卡。
-         s21 正在下（打开这条会话才开始走，演示里几秒就下完，接着转录），s22 在 34% 断了（点「重试」从断点接着下）。 */
+      /* 下载（product-design §3.2.2、§4.2）：步骤行后面是一张下载卡，写保存到哪；下完留在原处、列出落地的文件。
+         s21 正在下（打开这条会话才开始走，演示里几秒就下完，建视频、视频卡另挂，接着转录）；
+         s22 只下载，在 34% 断了（点「重试」从断点接着下，下完不建视频）；s29 只下载，已完成，存在项目的 downloads 里。 */
       {id: 's21', title: '把发布会回放下载下来转录', project: null, dir: 'd6', harness: 'claude', model: 'sonnet', effort: 'mid',
        status: 'running', ago: 1, taskId: 'ag21d',
        messages: [
@@ -2294,10 +2313,26 @@
        status: 'idle', ago: 20,
        messages: [
          {id: 'm1', role: 'user', text: '下载这条访谈：https://qingtai.example/watch/founder-interview-full', ...turnDone(20, 22)},
-         {id: 'm2', role: 'assistant', text: '这条链接里的视频还不在项目里。我先把它下载下来；下载完会在项目里建一部视频，接着用本机语音模型转录。'},
+         {id: 'm2', role: 'assistant', text: '我把这条访谈下载下来，存到 ~/Downloads。只下载，不建视频；下完你可以直接播放，要转录或剪辑再告诉我。'},
          {id: 'm3', role: 'tool', tool: 'downloads_fetch', args: {site: 'qingtai.example', name: 'founder-interview-full.mp4'}, status: 'failed', took: '16s', taskId: 'ag22d',
           error: '连接中断了（已下 34%）'},
          {id: 'm4', role: 'assistant', text: '下载在 34% 断了：连接中断了。检查网络后点下载卡上的「重试」，会从断点接着下。'},
+       ]},
+      {id: 's29', title: '把产品演示下载到项目里', project: null, dir: 'd6', harness: 'claude', model: 'sonnet', effort: 'mid',
+       status: 'done', ago: 5,
+       messages: [
+         {id: 'm1', role: 'user', text: '把这个产品演示下载到素材实验里，先别动它：https://lanshan.example/v/product-demo-v2', ...turnDone(5, 24)},
+         {id: 'm2', role: 'assistant', text: '我把它下载到素材实验项目的 downloads 文件夹。只下载，不建视频。'},
+         {id: 'm3', role: 'tool', tool: 'downloads_fetch', args: {site: 'lanshan.example', name: 'product-demo-v2.mp4'}, status: 'done', took: '21s', taskId: 'ag29d'},
+         {id: 'm4', role: 'assistant', text: '下载好了：「产品演示 · 第二版」，156 MB，存在 ~/BaoCut/素材实验/downloads/product-demo-v2.mp4。在下载卡上可以直接播放或在文件夹中显示，要转录或剪辑告诉我一声。'},
+       ]},
+      {id: 's30', title: '把这期播客的音频下载下来', project: null, dir: 'd4', harness: 'claude', model: 'sonnet', effort: 'mid',
+       status: 'done', ago: 3,
+       messages: [
+         {id: 'm1', role: 'user', text: '把这期播客的音频下载下来，我路上听：https://boke.example/episodes/founders-talk-ep42.m4a', ...turnDone(3, 8)},
+         {id: 'm2', role: 'assistant', text: '我把这期音频下载下来，存到 ~/Downloads。只下载，不建视频；下完可以直接在卡上播放。'},
+         {id: 'm3', role: 'tool', tool: 'downloads_fetch', args: {site: 'boke.example', name: 'founders-talk-ep42.m4a'}, status: 'done', took: '6s', taskId: 'ag30d'},
+         {id: 'm4', role: 'assistant', text: '下载好了：「创业者对谈 · 第 42 期」，38 MB，存在 ~/Downloads/founders-talk-ep42.m4a。在下载卡上可以直接播放或在文件夹中显示。'},
        ]},
       /* 边转边问：转录在后台跑，Agent 问了一句就收掉这一轮；用户回话时转录还没完，视频卡跟到新的一轮（ag23t） */
       {id: 's23', title: '转录这支预告片', project: 'p11', harness: 'claude', model: 'sonnet', effort: 'mid',

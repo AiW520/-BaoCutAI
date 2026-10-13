@@ -10,8 +10,10 @@
      完成后那一行换成结果事实，失败写原因与去处，取消写已取消。§4.2：进行中的生成以占位出现，完成后原位变成结果。
      卡上只摊开正在进行的活（可能几件同时在跑），都结束了就只摊开最后结束的那一件；别的收进一行「之前的 N 项」，
      展开才看到；收起的里有失败待处理的（`needsAction`），那一行写「N 项待处理」（`foldRows`，product-design §3.2.2 视频卡）。
-   - 下载卡（`download`）：Agent 调下载工具时视频还没创建，单独一张；下载完成、视频记录建好后，
-     那个位置换成视频卡（`rowCards`），之后跟着新的引用往下挪。
+   - 下载卡（`download`）：Agent 调下载工具时单独一张，写来源、保存到哪与进度；下载完成后留在原处，
+     列出落地的文件，视频与音频在卡里直接播（用默认应用打开、在文件夹中显示）。下载后建了视频的，视频卡另挂在它的锚点
+     （`rowCards`），下载卡不换掉，也不在下载卡上播（视频卡原地播同一个文件）；
+     只下载、不建视频的也是这一张。
    - 候选卡（`candidate`）：合成语音 / 生成图片完成后的候选。运行中只在步骤行上带百分比，失败留在步骤行。
    卡片内容只从视频记录与任务记录算（`app.projects`、`app.tasks`，与步骤行、后台任务页同源），不从回复正文推断。
 
@@ -20,7 +22,7 @@
      elapsedMs、leftMs、model、runsOn、error、errorCode、cancellable、queuePos
    - 阶段：转录与导出是 Job 阶段 `jobPhase`，翻译是流程步骤 `step`；智能体自己翻译（`byAgent`）没有步骤与百分比
    - 计数：转录 `mediaSec`（按 pct 折算已识别的时长）、翻译 `linesDone / linesTotal`、导出 `framesDone / framesTotal`、
-     下载 `sizeMB`（按 pct 折算已下）
+     下载 `sizeMB`（按 pct 折算已下）、`saveDir`（保存目录）
    - 结果：转录 `result`（句数、说话人数、警告）、翻译 `lang` 与 `result`（条数、过期、未对齐）、导出 `files` 与 `checks`、
      候选 `outputs` 与 `picked`；下载 `url`、`site`、`name`、`issue`（BC_IMPORT 的失败种类）
 
@@ -276,25 +278,50 @@
 
   /* ---------- 下载卡 ---------- */
 
-  /** 下载卡：来源、进度与已下多少、已用与剩余、取消；失败写原因（BC_IMPORT 的失败种类）与重试。 */
+  /** 目录的显示名：只把家目录缩成 `~`，不省中间几级（卡上要看得出存在哪；太长时由样式在末尾截断，完整路径放在 title 里）。 */
+  const AUDIO_FILE = /\.(mp3|m4a|wav|aac|flac|ogg|opus)$/i;
+  const dirLabel = (dir) => String(dir).replace(/^\/Users\/[^/]+/, '~').replace(/^\/home\/[^/]+/, '~').replace(/\/+$/, '');
+
+  /** 下载卡：来源、保存到哪、进度与已下多少、已用与剩余、取消；失败写原因（BC_IMPORT 的失败种类）与重试。
+      完成后卡留在原处（建了视频也不换掉，视频卡另挂），列出落地的文件：文件名、所在文件夹与大小，
+      可以用默认应用打开、在文件夹中显示。`saveDir` 是任务冻结的保存目录，`name` 是落地的文件名。
+      有播放地址（`previewSrc`，视频另有 `poster`）的在卡里直接播：视频是正文视频播放器，音频是音频正文卡
+      （product-design §3.3）；下载的视频建成了视频的不在这里播，紧跟着的视频卡在卡里原地播同一个文件
+      （音频建成的视频没有画面，视频卡播不了，仍在这里播）。 */
   function download(task) {
     const s = state(task);
     const running = s === 'running';
+    const done = s === 'done';
     const issue = task.issue && root.BC_IMPORT ? root.BC_IMPORT.issues[task.issue] : null;
     const retryable = s === 'failed' ? !issue || issue.retryable : s === 'canceled';
+    const dir = has(task.saveDir) ? String(task.saveDir).replace(/\/+$/, '') : null;
+    const audio = AUDIO_FILE.test(task.name || '');
+    const files = done && has(task.name) ? [{
+      name: task.name, path: dir ? `${dir}/${task.name}` : task.name, dir: dir ? dirLabel(dir) : null,
+      meta: [dir ? dirLabel(dir) : null, has(task.sizeMB) ? `${num(task.sizeMB)} MB` : null].filter(Boolean).join(' · '),
+      playable: PLAYABLE.test(task.name), icon: audio ? 'audio' : 'video',
+      player: has(task.previewSrc) && !(has(task.project) && !audio) && PLAYABLE.test(task.name)
+        ? {kind: audio ? 'audio' : 'video', src: task.previewSrc, poster: audio ? null : task.poster || null} : null,
+    }] : [];
     const actions = [];
     if ((running || s === 'queued') && task.cancellable !== false) actions.push({k: 'cancel', label: '取消'});
     if (retryable) actions.push({k: 'retry', label: '重试'});
+    /* 卡里能播时「播放」会和播放器混淆，交给系统的那一项一律叫「用默认应用打开」 */
+    if (files.length && files[0].playable) actions.push({k: 'play', label: '用默认应用打开'});
+    if (files.length) actions.push({k: 'reveal', label: '在文件夹中显示'});
     return {
       id: task.id, state: s,
-      title: s === 'done' ? '下载完成' : s === 'failed' ? '下载没有完成' : s === 'canceled' ? '下载已取消' : s === 'queued' ? '等待下载' : '正在下载视频',
+      title: done ? '下载完成' : s === 'failed' ? '下载没有完成' : s === 'canceled' ? '下载已取消' : s === 'queued' ? '等待下载' : '正在下载视频',
       name: task.title || task.name || '视频',
       source: task.url || [task.site, task.name].filter(has).join(' · '),
+      /* 保存到哪：排队、下载中与失败时写目录（完成后写在文件那一行）；取消后临时文件已删，不写 */
+      dest: dir && (running || s === 'queued' || s === 'failed') ? {label: dirLabel(dir), path: dir} : null,
       pct: running ? pctOf(task) : null,
       line: running ? [phaseLabel(task), countLabel(task)].filter(Boolean).join(' · ') : null,
       time: running ? timeLabel(task) : null,
       error: s === 'failed' ? (issue ? issue.title : task.error || '下载没有完成') : null,
       hint: s === 'failed' && issue ? issue.body : null,
+      files,
       actions,
     };
   }
@@ -330,34 +357,33 @@
   }
 
   /** 线程里每一行后面挂的卡：会话产物（视频卡等，`artifacts` 来自 BC_AGENT_PROJECTS.sessionArtifacts）、
-      还没建出视频的下载、完成的候选。视频卡一条会话一部视频一张，挂在 sessionArtifacts 算出的锚点；
-      下载卡挂在最后一条引用它的工具行，候选卡挂在第一次引用它的那一行；下载建出视频后，
-      视频卡挂在同一条工具消息上（sessionArtifacts 的锚点），下载卡就不再出。
+      下载、完成的候选。视频卡一条会话一部视频一张，挂在 sessionArtifacts 算出的锚点；
+      下载卡挂在最后一条引用它的工具行，候选卡挂在第一次引用它的那一行。下载建出视频后下载卡仍在原处，
+      视频卡挂在它自己的锚点；两张挂在同一行时下载卡在前（先有下载，后有视频）。
       返回 Map(行 id → [{k: 'artifact', item} | {k: 'download', taskId} | {k: 'candidate', taskId}])，行内按消息先后。 */
   function rowCards(rows, messages, artifacts, tasks) {
     const idx = rowIndex(rows);
     const order = new Map((messages || []).map((m, i) => [m.id, i]));
     const byId = new Map((tasks || []).map((t) => [t.id, t]));
-    const shown = new Set((artifacts || []).map((a) => a.id));
     const list = [];
-    (artifacts || []).forEach((a) => { if (idx.has(a.messageId)) list.push({at: order.get(a.messageId), row: idx.get(a.messageId), card: {k: 'artifact', item: a}}); });
+    (artifacts || []).forEach((a) => { if (idx.has(a.messageId)) list.push({at: order.get(a.messageId), rank: 1, row: idx.get(a.messageId), card: {k: 'artifact', item: a}}); });
     const seen = new Map();
     (messages || []).forEach((m, i) => {
       if (m.role !== 'tool' || !m.taskId || !idx.has(m.id)) return;
       const t = byId.get(m.taskId);
       if (!t) return;
-      /* 下载卡是视频卡的占位，跟视频卡一样挪到最新一条引用；候选卡留在第一次引用处 */
-      if (t.kind === 'download' && !(t.project && shown.has(t.project))) {
-        const at = {at: i, row: idx.get(m.id), card: {k: 'download', taskId: t.id}};
+      /* 下载卡挪到最新一条引用它的工具行（重试回到同一行）；候选卡留在第一次引用处 */
+      if (t.kind === 'download') {
+        const at = {at: i, rank: 0, row: idx.get(m.id), card: {k: 'download', taskId: t.id}};
         if (seen.has(t.id)) Object.assign(seen.get(t.id), at);
         else { seen.set(t.id, at); list.push(at); }
       } else if (!seen.has(t.id) && candidate(t)) {
         seen.set(t.id, true);
-        list.push({at: i, row: idx.get(m.id), card: {k: 'candidate', taskId: t.id}});
+        list.push({at: i, rank: 1, row: idx.get(m.id), card: {k: 'candidate', taskId: t.id}});
       }
     });
     const out = new Map();
-    list.sort((a, b) => (a.at == null ? Infinity : a.at) - (b.at == null ? Infinity : b.at)).forEach((x) => {
+    list.sort((a, b) => ((a.at == null ? Infinity : a.at) - (b.at == null ? Infinity : b.at)) || (a.rank - b.rank)).forEach((x) => {
       if (!out.has(x.row)) out.set(x.row, []);
       out.get(x.row).push(x.card);
     });

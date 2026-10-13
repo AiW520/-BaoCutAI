@@ -3,7 +3,8 @@
 
    在 BC_AGENT.planFor 的脚本之上补三件事：
    1. 「下载」脚本：话里有链接（且说了下载，或会话还没有视频）时，Agent 调 `downloads_fetch`。这时视频还没创建，
-      会话可以没有视频；下载完成后建出视频记录（BC_IMPORT.movieRecord），接着用本机模型转录。
+      会话可以没有视频；文件存进设置里的默认保存位置（`ctx.saveDir`）。下载完成后建出视频记录（BC_IMPORT.movieRecord），
+      接着用本机模型转录；只说了下载、没说要转录或编辑的（`only`），下完就停，不建视频，下载卡上列出落地的文件。
    2. 「转录」脚本：说「转录 / 转写 / 加字幕」且这条会话有视频时，Agent 调 `models_transcribe`。
       「重新转录」仍走原来那份 retranscribe 脚本。
    3. 视频卡上一件活一行的几种（转录、重新转录、翻译、导出）与下载在计划上带 `sim`：写入那一步的工具调用
@@ -51,12 +52,21 @@
      在开头就停下，Agent 用设置链接请用户去设置 › 视频下载的网站登录（loginReply） */
   const URL_RE = /https?:\/\/[^\s，。、）)」]+/i;
   const DOWNLOAD_RE = /下载|拉下来|保存这个视频/;
+  /* 说了下载、又要拿它做事（转录、字幕、翻译、剪、配音、导出）的，下完建视频；否则只下载 */
+  const USE_RE = /转录|转写|字幕|翻译|剪|编辑|配音|旁白|导出|做成/;
+  const DEFAULT_SAVE_DIR = '~/Downloads';
+  /* 演示的播放地址：下下来的文件在卡里播的是原型自带的样片（真机是 Runtime 签发的播放地址） */
+  const AUDIO_NAME = /\.(mp3|m4a|wav|aac|flac|ogg|opus)$/i;
+  const DEMO_MEDIA = {
+    video: {previewSrc: 'assets/media-preview/geometric-demo.webm', poster: 'assets/media-preview/video-poster.svg'},
+    audio: {previewSrc: 'assets/media-preview/audio-preview-demo.wav'},
+  };
   const FAIL_AT = 34;
   const LOGIN_FAIL_AT = 3;
   const LOGIN_RE = /login|signin|members|private/i;
   const hostOf = (u) => { const m = /^https?:\/\/([^/?#]+)/i.exec(u); return m ? m[1].replace(/^www\./i, '').toLowerCase() : ''; };
   function fileOf(u) {
-    const m = /\/([^/?#]+\.(mp4|mov|mkv|webm|m4v))(?:[?#]|$)/i.exec(u);
+    const m = /\/([^/?#]+\.(mp4|mov|mkv|webm|m4v|mp3|m4a|wav|aac|flac|ogg|opus))(?:[?#]|$)/i.exec(u);
     if (m) return decodeURIComponent(m[1]);
     /* 没有文件名就取路径最后一段（watch?v= 这类取参数值），都没有才退回站点名 */
     const path = u.replace(/^https?:\/\/[^/?#]+/i, '');
@@ -74,20 +84,29 @@
       sizeMB: 180 + (h % 360), durationSec: 300 + (h % 1500), hue: h % 360};
   }
 
-  function downloadPlan(u) {
+  /** `opts.only`：只下载、不建视频；`opts.saveDir`：保存目录（设置里的默认保存位置，缺省是系统下载文件夹）。 */
+  function downloadPlan(u, opts) {
+    const o = opts || {};
     const p = probe(u);
+    const dir = o.saveDir || DEFAULT_SAVE_DIR;
+    const audio = AUDIO_NAME.test(p.name);
+    const what = audio ? '音频' : '视频';
     return {
       kind: 'download', re: URL_RE,
-      summary: '这条链接里的视频还没下载。我先把它下载下来；下载完建一部视频，接着用本机语音模型转录。视频一建好你就能打开编辑器，不用等转录。',
+      summary: o.only
+        ? `我把这条链接里的${what}下载下来，存到 ${dir}。只下载，不建视频；下完可以直接在卡上播放，要转录或剪辑再告诉我。`
+        : `这条链接里的${what}还没下载。我先把它下载下来；下载完建一部视频，接着用本机语音模型转录。视频一建好你就能打开编辑器，不用等转录。`,
       reads: [],
-      write: {cmd: `bcut download ${u}`, why: '会把视频下载到会话所在的项目，不用项目时放在会话自己的文件夹；建一部新视频并开始转录。原有的视频与文件不动。'},
+      write: {cmd: `bcut download ${u}`, why: o.only
+        ? `会把${what}下载到 ${dir}。不建视频，项目里的视频与文件不动。`
+        : `会把${what}下载到 ${dir}，再建一部新视频并开始转录。原有的视频与文件不动。`},
       step: {verb: '下载', count: p.sizeMB, unit: 'MB', llm: false, engine: '本机下载工具'},
       task: {kind: 'download', title: '下载视频'},
       receipt: null,
       close: null,
       sim: {kind: 'download', tool: 'downloads_fetch', args: {site: p.site, name: p.name},
-        task: {url: u, site: p.site, name: p.name, title: p.title, sizeMB: p.sizeMB, mediaSec: p.durationSec, hue: p.hue,
-          scenario: /fail|broken/i.test(u) ? 'network' : LOGIN_RE.test(u) ? 'login' : 'success'},
+        task: {url: u, site: p.site, name: p.name, title: p.title, sizeMB: p.sizeMB, mediaSec: p.durationSec, hue: p.hue, saveDir: dir,
+          ...DEMO_MEDIA[audio ? 'audio' : 'video'], only: !!o.only, scenario: /fail|broken/i.test(u) ? 'network' : LOGIN_RE.test(u) ? 'login' : 'success'},
         result: {}},
     };
   }
@@ -205,7 +224,8 @@
       close: `转完了${facts ? '：' + facts.replace(' · ', '、') : ''}。文稿已经写进视频，接下来按你刚才说的做。`};
   }
 
-  /** 会话里的计划：BC_AGENT 的脚本，加上下载、转录脚本与 `sim` 字段。`ctx` = {title: 视频名, agent: 「Claude Code · Sonnet」}。
+  /** 会话里的计划：BC_AGENT 的脚本，加上下载、转录脚本与 `sim` 字段。`ctx` = {title: 视频名, agent: 「Claude Code · Sonnet」,
+      saveDir: 下载的保存目录}。
       下载在会话还没有视频时也能写（BC_AGENT.planFor 在没视频时会把写入拿掉，所以先于它判断）。 */
   function planFor(text, hasProject, ctx) {
     const AG = window.BC_AGENT;
@@ -215,7 +235,9 @@
     const ask = AG.askFor && AG.askFor(t);
     if (ask) return ask;
     const url = URL_RE.exec(t);
-    if (url && !/^\s*\//.test(t) && (DOWNLOAD_RE.test(t) || !hasProject)) return downloadPlan(url[0]);
+    if (url && !/^\s*\//.test(t) && (DOWNLOAD_RE.test(t) || !hasProject)) {
+      return downloadPlan(url[0], {only: DOWNLOAD_RE.test(t) && !USE_RE.test(t), saveDir: ctx && ctx.saveDir});
+    }
     let plan = AG.planFor(t, hasProject);
     if (!hasProject || plan.kind === 'brief') return plan;
     const slash = /^\s*\//.test(t);
@@ -283,10 +305,17 @@
       + `先在浏览器里登录 ${site}，再到[${L.parse(href).trail}](${href})确认网站登录勾选了那个浏览器。弄好后告诉我，我重新下载。`;
   }
 
-  /** 下载完成后 Agent 的收尾话与接着起的转录。 */
+  /** 下载完成后 Agent 的收尾话与接着起的转录；只下载的（`only`）不起转录，话里写文件存在哪。 */
   function afterDownload(task) {
+    const where = `${String(task.saveDir || DEFAULT_SAVE_DIR).replace(/\/+$/, '')}/${task.name}`;
+    if (task.only) {
+      return {
+        close: `下载好了：「${task.title || task.name}」，${task.sizeMB} MB，存在 ${where}。只下载，没有建视频；在下载卡上可以直接播放或在文件夹中显示，要转录或剪辑告诉我一声。`,
+        transcribe: null,
+      };
+    }
     return {
-      close: `下载好了：「${task.title || task.name}」，${task.sizeMB} MB。视频已经建好，正在用本机语音模型转录——现在就可以打开编辑器，转录在后台接着跑。`,
+      close: `下载好了：「${task.title || task.name}」，${task.sizeMB} MB，存在 ${where}。视频已经建好，正在用本机语音模型转录——现在就可以打开编辑器，转录在后台接着跑。`,
       transcribe: simFor({kind: 'transcribe'}, {mediaSec: task.mediaSec}),
     };
   }

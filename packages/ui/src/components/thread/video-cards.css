@@ -284,11 +284,74 @@
 .bc-dlcard__hint {
   color: var(--bc-vc-muted);
 }
+/* 保存到哪：一枚文件夹图标 + 路径，太长在末尾截断，完整路径在 title 里 */
+.bc-dlcard__dest {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  color: var(--bc-vc-muted);
+}
+.bc-dlcard__dest-ic,
+.bc-dlcard__fic {
+  display: flex;
+  flex: none;
+  color: var(--bc-vc-faint);
+}
+.bc-dlcard__fic {
+  color: var(--bc-vc-muted);
+}
+.bc-dlcard__dest-ic svg,
+.bc-dlcard__fic svg {
+  --iconPrimary: currentColor;
+  fill: currentColor;
+}
+.bc-dlcard__dest-t {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+/* 落地的文件：一块浅底，图标 + 文件名 / 所在文件夹与大小 */
 .bc-dlcard__file {
   display: flex;
   align-items: center;
   gap: 8px;
   min-width: 0;
+  padding: 8px 12px;
+  border-radius: 8px;
+  background: var(--bc-vc-ic-idle-bg);
+}
+.bc-dlcard__ftext {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+.bc-dlcard__fname,
+.bc-dlcard__fmeta {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.bc-dlcard__fname {
+  font-weight: 600;
+  color: var(--bc-vc-text);
+}
+.bc-dlcard__fmeta {
+  color: var(--bc-vc-faint);
+  font-variant-numeric: tabular-nums;
+}
+/* 卡里的播放器（与视频卡同一个 CompactPlayer）：占满卡宽，保留播放器自己的边框与圆角；画面按 16:9 留位 */
+.bc-dlcard__player {
+  min-width: 0;
+}
+.bc-dlcard__player .bc-media-player > video:not([hidden]) {
+  aspect-ratio: 16 / 9;
+  max-height: none;
+}
+.bc-dlcard__player .bc-media-audio {
+  max-width: none;
 }
 
 /* ---------- 视频卡的画面区（产品设计 §3.2.2；原型 apprail.css `.chat-movie__open` / `.chat-movie__player`） ---------- */

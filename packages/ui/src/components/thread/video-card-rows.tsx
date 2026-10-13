@@ -1,11 +1,12 @@
-import { useMemo, useState, type ReactNode } from 'react';
-import type { Id, JobRecord } from '@baocut/protocol';
+import { useEffect, useMemo, useState, type ReactNode } from 'react';
+import type { Id, JobRecord, MediaHandle, MediaTarget } from '@baocut/protocol';
 import { ActionButton, Badge, Button, ProgressBar, ToastQueue } from '@react-spectrum/s2';
 import AlertTriangle from '@react-spectrum/s2/icons/AlertTriangle';
 import ChevronDown from '@react-spectrum/s2/icons/ChevronDown';
 import ChevronRight from '@react-spectrum/s2/icons/ChevronRight';
 import Download from '@react-spectrum/s2/icons/Download';
 import Export from '@react-spectrum/s2/icons/Export';
+import Folder from '@react-spectrum/s2/icons/Folder';
 import Transcript from '@react-spectrum/s2/icons/Transcript';
 import Translate from '@react-spectrum/s2/icons/Translate';
 import Video from '@react-spectrum/s2/icons/Video';
@@ -19,15 +20,21 @@ import {
   asrModelName,
   cardRows,
   downloadCardView,
+  downloadEntry,
   foldRows,
   jobRowView,
+  type DownloadFile,
   type JobRowView,
   type VideoStatus,
 } from '../../model/video-cards.ts';
 import { useRuntime } from '../../runtime/context.tsx';
 import { useExportSpeed, useJobs } from '../../state/jobs-store.ts';
 import { useModels } from '../../state/models-store.ts';
-import { useShell } from '../../state/shell-store.ts';
+import { conversationVisible, useShell } from '../../state/shell-store.ts';
+import { useSpace } from '../../state/space-store.ts';
+import { CompactPlayer } from '../media/compact-player.tsx';
+import { PANEL } from '../panel-copy.ts';
+import { KIND_ICON } from '../space/space-list.tsx';
 import { useTaskAction } from '../tasks/use-task-actions.ts';
 import { TRANSCRIBE_TOOL_COPY } from '../tools/tools-copy.ts';
 import { useNow } from '../use-now.ts';
@@ -67,7 +74,6 @@ const ROW_ICON: Record<JobRowView['kind'], ReactNode> = {
   transcribe: <Transcript />,
   translate: <Translate />,
   export: <Export />,
-  'link-import': <Download />,
   other: <Video />,
 };
 
@@ -148,6 +154,15 @@ function useRowActions() {
         .reconcileJob(jobId, 'retry')
         .catch((e: Error) => ToastQueue.negative(VIDEO_CARD_COPY.retryFailed(e.message), { timeout: 5000 })),
     reveal: (path: string) => void runtime.host.revealPath(path),
+    // 桌面端的系统默认应用（与文件标签同一套）：不支持这种文件时改为在文件夹中显示，打不开时提示。
+    openDefault: (path: string) =>
+      void runtime.host.openFile?.(path).then(
+        async (error) => {
+          if (error === null) await runtime.host.revealPath(path);
+          else if (error) ToastQueue.negative(VIDEO_CARD_COPY.openFailed(error), { timeout: 5000 });
+        },
+        (e: Error) => ToastQueue.negative(VIDEO_CARD_COPY.openFailed(e.message), { timeout: 5000 }),
+      ),
     play: (artifactId: string) =>
       void runtime.openArtifact(artifactId).then(
         (handle) => void window.open(handle.url, '_blank', 'noopener'),
@@ -309,15 +324,22 @@ function JobRow({
   );
 }
 
-/** 下载卡（原型 agent-cards.jsx `DownloadCard`）：智能体从链接导入、视频还没建出来时的一张。 */
-export function DownloadCard({ jobId }: { jobId: Id }) {
+/**
+ * 下载卡（原型 agent-cards.jsx `DownloadCard`）：智能体从链接下载一张。下载中写保存到哪；完成后留在原处（建了视频也不换掉），
+ * 列出落地的文件（`DownloadFileRow`），底部是用默认应用打开（桌面端）与在文件夹中显示（Web 没有，浏览器打不开本机文件夹）。
+ */
+export function DownloadCard({ jobId, conversationId }: { jobId: Id; conversationId: Id }) {
   const jobs = useJobs((s) => s.jobs);
   const job = jobs.find((j) => j.jobId === jobId);
   const now = useNow(1000, !!job && jobLive(job));
   const actions = useRowActions();
+  const host = useRuntime().host;
   if (!job) return null;
   const c = downloadCardView(job, jobs, now);
-  const hasFoot = !!c.elapsed || c.canCancel || c.canRetry;
+  const file = c.files[0] ?? null;
+  const canOpen = !!file && !!host.openFile;
+  const canReveal = !!file && host.platform !== 'web';
+  const hasFoot = !!c.elapsed || c.canCancel || c.canRetry || canOpen || canReveal;
   return (
     <section className={`bc-dlcard is-${c.state} ${cardVars}`} aria-label={`${c.title} · ${c.name}`}>
       <header className="bc-dlcard__head">
@@ -345,17 +367,11 @@ export function DownloadCard({ jobId }: { jobId: Id }) {
         />
       ) : null}
       {c.line ? <span className="bc-dlcard__line">{c.line}</span> : null}
+      {c.dest ? <DownloadDest path={c.dest.path} text={VIDEO_CARD_COPY.download.saveTo(c.dest.label)} /> : null}
       {c.error ? <span className="bc-dlcard__err">{c.error}</span> : null}
       {c.hint ? <span className="bc-dlcard__hint">{c.hint}</span> : null}
-      {c.files.map((file) => (
-        <div key={file.path} className="bc-dlcard__file">
-          <span className="bc-vjob__fname" title={file.path}>
-            {file.name}
-          </span>
-          <ActionButton size="XS" isQuiet onPress={() => actions.reveal(file.path)}>
-            {VIDEO_CARD_COPY.reveal}
-          </ActionButton>
-        </div>
+      {c.files.map((f) => (
+        <DownloadFileRow key={f.path} jobId={c.jobId} file={f} conversationId={conversationId} />
       ))}
       {hasFoot ? (
         <div className="bc-vjob__foot">
@@ -370,8 +386,115 @@ export function DownloadCard({ jobId }: { jobId: Id }) {
               {VIDEO_CARD_COPY.cancel}
             </ActionButton>
           ) : null}
+          {/* 卡里能播时「播放」会和播放器混淆：交给系统的那一项叫「用默认应用打开」（与文件标签同一个说法）。 */}
+          {canOpen ? (
+            <ActionButton size="S" isQuiet onPress={() => actions.openDefault(file.path)}>
+              {PANEL.openDefault}
+            </ActionButton>
+          ) : null}
+          {canReveal ? (
+            <ActionButton size="S" isQuiet onPress={() => actions.reveal(file.path)}>
+              {VIDEO_CARD_COPY.reveal}
+            </ActionButton>
+          ) : null}
         </div>
       ) : null}
     </section>
   );
+}
+
+/** 一枚文件夹图标 + 路径：太长在末尾截断，完整路径在 title 里。 */
+function DownloadDest({ path, text }: { path: string; text: string }) {
+  return (
+    <span className="bc-dlcard__dest" title={path}>
+      <span className="bc-dlcard__dest-ic">
+        <Folder />
+      </span>
+      <span className="bc-dlcard__dest-t">{text}</span>
+    </span>
+  );
+}
+
+/**
+ * 下载卡落地的一个文件（原型 agent-cards.jsx `DownloadFile`）。视频：正文视频播放器，下面一行文件名、所在文件夹与大小；
+ * 音频：音频正文卡（自带文件名与格式），下面一行所在文件夹与大小；不能在卡里播的（或播放句柄还没拿到、拿不到）只有文件那一行。
+ * 播放器与视频卡里的同一个（`CompactPlayer`），不自动播放，没有展开预览与在标签页打开；会话不在前台时暂停。
+ */
+function DownloadFileRow({ jobId, file, conversationId }: { jobId: Id; file: DownloadFile; conversationId: Id }) {
+  const visible = useShell((s) => conversationVisible(s, conversationId));
+  const handle = useDownloadHandle(jobId, file, visible);
+  const Icon = KIND_ICON[file.kind ?? 'document'];
+  const player =
+    handle && file.player ? (
+      <CompactPlayer
+        handle={handle}
+        fileName={file.name}
+        kind={file.player}
+        memoryKey={`download:${jobId}:${file.path}`}
+        active={visible}
+        path={file.path}
+        expandable={false}
+      />
+    ) : null;
+  if (player && file.player === 'audio')
+    return (
+      <>
+        <div className="bc-dlcard__player">{player}</div>
+        <DownloadDest path={file.path} text={file.meta} />
+      </>
+    );
+  return (
+    <>
+      {player ? <div className="bc-dlcard__player">{player}</div> : null}
+      <div className="bc-dlcard__file" title={file.path}>
+        <span className="bc-dlcard__fic">
+          <Icon />
+        </span>
+        <span className="bc-dlcard__ftext">
+          <span className="bc-dlcard__fname">{file.name}</span>
+          {file.meta ? <span className="bc-dlcard__fmeta">{file.meta}</span> : null}
+        </span>
+      </div>
+    </>
+  );
+}
+
+/** 句柄离过期不到这么久就当它已经过期，重新要（与已发送图片的句柄同一个余量）。 */
+const HANDLE_MARGIN_MS = 60_000;
+
+/**
+ * 能在卡里播的文件的播放句柄：按它在 Space 里的条目取（桌面端与浏览器都行）；条目还没派生出来时桌面端先按本机路径取。
+ * 会话在前台时才取，不为看不见的卡读文件。取到的一直用（换来源会让播放器重挂）；会话回到前台时它离过期不到一分钟
+ * （Runtime 一段时间没人放就收回）才重新要，播放位置按 `memoryKey` 接上。取不到时不画播放器，文件那一行照常。
+ */
+function useDownloadHandle(jobId: Id, file: DownloadFile, visible: boolean): MediaHandle | null {
+  const runtime = useRuntime();
+  const entryId = useSpace((s) => (file.player ? (downloadEntry(s.entries, jobId, file)?.id ?? null) : null));
+  const target: MediaTarget | null = !file.player
+    ? null
+    : entryId
+      ? { entryId }
+      : runtime.host.openFile
+        ? { localPath: file.path }
+        : null;
+  const key = target ? JSON.stringify(target) : null;
+  const [handle, setHandle] = useState<MediaHandle | null>(null);
+  useEffect(() => {
+    if (!target || !visible) return;
+    if (handle && Date.parse(handle.expiresAt) - Date.now() > HANDLE_MARGIN_MS) return;
+    let cancelled = false;
+    runtime.resolveMedia(target).then(
+      (h) => {
+        if (!cancelled) setHandle(h);
+      },
+      () => {
+        if (!cancelled) setHandle(null);
+      },
+    );
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- 定位按 key 比较
+  }, [key, visible, handle, runtime]);
+  return handle;
 }

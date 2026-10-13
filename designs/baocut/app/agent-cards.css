@@ -63,6 +63,20 @@
 .dlcard__pct { flex: none; font-size: 14px; color: var(--gray-800); font-variant-numeric: tabular-nums; }
 .dlcard__src { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--gray-600); }
 .dlcard__line { color: var(--gray-800); font-variant-numeric: tabular-nums; }
+/* 保存到哪：一枚文件夹图标 + 路径，太长在末尾截断，完整路径在 title 里 */
+.dlcard__dest { display: flex; align-items: center; gap: 6px; min-width: 0; color: var(--gray-700); }
+.dlcard__dest-ic { flex: none; color: var(--gray-600); }
+.dlcard__dest-t { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+/* 落地的文件：一块浅底，图标 + 文件名 / 所在文件夹与大小 */
+.dlcard__file { display: flex; align-items: center; gap: 8px; min-width: 0; padding: 8px 12px; border-radius: 8px; background: var(--gray-75); }
+.dlcard__fic { flex: none; color: var(--gray-700); }
+.dlcard__ftext { display: flex; flex-direction: column; gap: 2px; flex: 1; min-width: 0; }
+.dlcard__fname { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--gray-900); font-weight: 600; }
+.dlcard__fmeta { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--gray-600); font-variant-numeric: tabular-nums; }
+/* 卡里的播放器（§3.3 正文视频播放器 / 音频正文卡）：占满卡宽，保留播放器自己的边框与圆角；画面按 16:9 留位 */
+.dlcard__player { min-width: 0; }
+.dlcard__player .media-video video { aspect-ratio: 16 / 9; max-height: none; background: var(--gray-75); }
+.dlcard .amd-media.media-audio-inline { display: flex; max-width: none; }
 .dlcard__err { color: var(--red-900); font-weight: 600; }
 .dlcard__hint { color: var(--gray-700); line-height: 1.5; }
 .dlcard__foot { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; min-height: 24px; }

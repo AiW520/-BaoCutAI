@@ -5,6 +5,7 @@ import {
   type ModelBundleStatus,
   type ModelCapabilitiesView,
   type SpaceEntry,
+  type SpaceEntryKind,
   type TimelineItem,
   type VideoChange,
 } from '@baocut/protocol';
@@ -20,9 +21,10 @@ import {
   isPreviewExport,
   type ExportOutputFact,
 } from './export-job.ts';
-import { formatClock } from './format.ts';
+import { formatClock, shortenPath } from './format.ts';
 import { downloadProgress, isLinkImport, linkFrozen, linkIssue, linkMeta, linkPhaseText, linkSummary } from './link-import.ts';
-import { isPlayable, videoTargetOf } from './space.ts';
+import { formatBytes, isPlayable, kindOfFileName, videoTargetOf } from './space.ts';
+import { entryJobId } from './space-actions.ts';
 import { jobRemedy, type Remedy } from './task-facts.ts';
 import { jobLive, jobPercent, jobRetrying, kindLabel, runsOnLabel } from './task-list.ts';
 import { bundleName } from './models-local.ts';
@@ -42,8 +44,9 @@ import { jobErrorText, jobWaitText } from './localized-text.ts';
  *   (a) 最后一个引用它的块后面；(b) 卡上的活在后面的回合开始时还没结束（在跑或排队）：这件活结束之前开始的最后一轮
  *   （还在跑时就是最新一轮）的最后一个块后面。先后只比活的 `endedAt` 与那一轮用户消息的 `createdAt`；活结束后卡不再挪，
  *   也不挪回去。卡挪走后前面的回合不再有它。卡上列这条会话在这部视频上的全部活，与「产物」弹层的那张一样。
- * - **下载卡**：智能体发起的从链接导入，父任务还没有 `videoId` 时一张；视频一建出来（父任务带上 `videoId`），
- *   同一个位置换成视频卡，下载那一件活并进卡上（流程提交的转录是一行）。只下载、不建视频的，完成后仍是下载卡，写落地的文件。
+ * - **下载卡**：智能体发起的从链接导入一张，挂在提交它的那一轮，完成后留在原处，写落地的文件（只下载、不建视频的也是它）。
+ *   视频建出来（父任务带上 `videoId`）后，这部视频另出一张视频卡，同一个位置时排在下载卡后面；下载本身不进视频卡的行，
+ *   流程提交的转录是视频卡上的一行。
  * - 合成语音、生成图片这类生成任务不进视频卡（原型的候选卡在正式应用里还没有）。
  *
  * Job 归回合：`submitter` 是这条会话的智能体（`kind: 'agent'`、`id` 为会话），`taskId` 是那一轮的任务；固定流程提交的
@@ -56,9 +59,13 @@ export type ThreadCard =
   /** `jobIds`：这条会话归这部视频的活（行），按提交先后（与 `conversationVideoJobs` 同一份）。 */
   { kind: 'video'; key: string; video: ConversationOutput; jobIds: Id[] } | { kind: 'download'; key: string; jobId: Id };
 
-/** 进视频卡做一行的 Job：转录、导出、固定流程（翻译、从链接导入到这部视频……）、智能体自己翻译。 */
+/** 进视频卡做一行的 Job：转录、导出、固定流程（翻译、转录……）、智能体自己翻译。从链接导入在下载卡上，不进视频卡。 */
 function isRowJob(job: JobRecord): boolean {
-  return !isPreviewExport(job) && (job.kind === 'transcribe' || job.kind === 'export' || job.kind === 'pipeline' || isAgentTranslate(job));
+  return (
+    !isPreviewExport(job) &&
+    !isLinkImport(job) &&
+    (job.kind === 'transcribe' || job.kind === 'export' || job.kind === 'pipeline' || isAgentTranslate(job))
+  );
 }
 
 /** 这条 Job 归会话里哪个智能体任务：智能体直接提交的就是它自己；固定流程提交的归父任务（至多上溯几层）。 */
@@ -247,11 +254,13 @@ export function threadCards(input: {
     if (!owner || !taskId) continue;
     const at = jobAnchor(taskId);
     if (at === null) continue;
-    if (job.videoId && isRowJob(job)) refer(job.videoId, at, job.jobId);
-    else if (!job.videoId && isLinkImport(job) && owner === job) {
+    if (isLinkImport(job)) {
+      // 下载卡一直在；建出的视频只是被引用（下载不做视频卡的行，也不带着视频卡跟到后面的回合）。
+      if (owner !== job) continue;
       const key = `download:${job.jobId}`;
       refs.set(key, { first: at, last: at, seq: seq++, card: { kind: 'download', key, jobId: job.jobId }, jobTurns: new Map() });
-    }
+      if (job.videoId) refer(job.videoId, at);
+    } else if (job.videoId && isRowJob(job)) refer(job.videoId, at, job.jobId);
   }
 
   /**
@@ -298,7 +307,7 @@ export function conversationJobVideos(jobs: readonly JobRecord[], conversationId
   const byId = new Map(jobs.map((j) => [j.jobId, j]));
   const ids: Id[] = [];
   for (const j of jobs) {
-    if (j.parentJobId || !j.videoId || !isRowJob(j) || ids.includes(j.videoId)) continue;
+    if (j.parentJobId || !j.videoId || !(isRowJob(j) || isLinkImport(j)) || ids.includes(j.videoId)) continue;
     if (agentOwner(j, byId, conversationId)) ids.push(j.videoId);
   }
   return ids;
@@ -350,7 +359,7 @@ export type RowState = 'queued' | 'running' | 'done' | 'failed' | 'cancelled' | 
 
 export interface JobRowView {
   jobId: Id;
-  kind: 'transcribe' | 'translate' | 'export' | 'link-import' | 'other';
+  kind: 'transcribe' | 'translate' | 'export' | 'other';
   name: string;
   state: RowState;
   /** 头上右侧：运行中是百分比（没有总量时 null），其余是一个状态词。 */
@@ -388,7 +397,6 @@ function rowState(job: JobRecord): RowState {
 function rowKind(job: JobRecord): JobRowView['kind'] {
   if (job.kind === 'transcribe') return 'transcribe';
   if (job.kind === 'export') return 'export';
-  if (isLinkImport(job)) return 'link-import';
   if (isAgentTranslate(job)) return 'translate';
   if (job.kind === 'pipeline' && job.pipeline?.name === TRANSLATE_PIPELINE) return 'translate';
   if (job.kind === 'pipeline' && job.pipeline?.name === 'transcribe') return 'transcribe';
@@ -417,8 +425,6 @@ function rowName(job: JobRecord, kind: JobRowView['kind'], jobs: readonly JobRec
       const lang = targetOf(job);
       return lang ? `${VIDEO_CARD_COPY.translate} · ${lang}` : VIDEO_CARD_COPY.translate;
     }
-    case 'link-import':
-      return VIDEO_CARD_COPY.linkImport;
     default:
       return kindLabel(job.kind);
   }
@@ -449,10 +455,6 @@ function progressOf(job: JobRecord, kind: JobRowView['kind'], jobs: readonly Job
       }
       const count = p.units ? VIDEO_CARD_COPY.translated(p.units.done, p.units.total) : null;
       return { line: [p.step ?? phase, count].filter(Boolean).join(' · '), pct: p.percent };
-    }
-    case 'link-import': {
-      const d = downloadProgress(job, jobs);
-      return { line: [linkPhaseText(job), d ? downloaded(d) : null].filter(Boolean).join(' · '), pct: d?.pct ?? null };
     }
     case 'transcribe':
       return { line: [phase, transcribeCount(job)].filter(Boolean).join(' · '), pct: jobPercent(job) };
@@ -490,11 +492,7 @@ export function jobRowView(job: JobRecord, jobs: readonly JobRecord[], now: numb
   }
   const warnings = done ? (kind === 'export' ? exportWarnings(job) : [...new Set(job.warnings.map(warningText))]) : [];
   const failed = state === 'failed' || state === 'interrupted';
-  const error = failed
-    ? kind === 'link-import'
-      ? (linkIssue(job.error, job.state)?.title ?? jobErrorText(job.error) ?? VIDEO_CARD_COPY.notFinished)
-      : (jobErrorText(job.error) ?? VIDEO_CARD_COPY.notFinished)
-    : null;
+  const error = failed ? (jobErrorText(job.error) ?? VIDEO_CARD_COPY.notFinished) : null;
   const tail =
     state === 'running'
       ? progress?.pct != null
@@ -632,10 +630,8 @@ export function foldRows<R extends FoldRow>(rows: readonly R[]): { shown: R[]; e
 }
 
 /**
- * 卡上要列的行（按提交先后）。从链接导入到这部视频的父任务：下载、导入还在做时是一行；流程提交的转录一出现，
- * 进度由转录那一行念，父任务不再另占一行；完成后也不再列（原型：下载完成后卡上只剩转录）。失败、取消时留着写原因。
- * 转录流程的父任务同理：它提交的转录 Job 出现后由那一行念（一次转录一行）；只有转录做完而流程还在做后面的步骤
- * （建字幕层）或在那之后失败、取消时，父任务那一行留着。
+ * 卡上要列的行（按提交先后）。转录流程的父任务：它提交的转录 Job 出现后由那一行念（一次转录一行）；只有转录做完而
+ * 流程还在做后面的步骤（建字幕层）或在那之后失败、取消时，父任务那一行留着。从链接导入不进视频卡（在下载卡上）。
  */
 export function cardRows(jobIds: readonly Id[], jobs: readonly JobRecord[]): JobRecord[] {
   const byId = new Map(jobs.map((j) => [j.jobId, j]));
@@ -648,13 +644,28 @@ export function cardRows(jobIds: readonly Id[], jobs: readonly JobRecord[]): Job
         const child = pipelineTranscribes(j, jobs).at(-1);
         return !child || (child.state === 'completed' && j.state !== 'completed');
       }
-      if (!isLinkImport(j)) return true;
-      if (j.state === 'completed') return false;
-      return !jobs.some((t) => t.kind === 'transcribe' && t.submitter.kind === 'pipeline' && t.submitter.id === j.jobId);
+      return !isLinkImport(j);
     });
 }
 
 // ---- 下载卡 ----
+
+/** 下载落地的一个文件（原型 `download` 的 `files`）。 */
+export interface DownloadFile {
+  name: string;
+  path: string;
+  /** 「~/Downloads · 48 MB」：所在文件夹（家目录缩成 ~）与大小；大小不知道时只有文件夹。 */
+  meta: string;
+  /** Space 的分类（认不出时 null）：文件那一行的图标。 */
+  kind: SpaceEntryKind | null;
+  /**
+   * 在卡里怎么播：视频是正文视频播放器，音频是音频正文卡。不能播的（字幕、AVI……）null；下载的视频建成了视频的也是 null，
+   * 紧跟着的视频卡原地播同一个文件（音频建成的视频没有画面，仍在这里播）。
+   */
+  player: 'video' | 'audio' | null;
+  /** 发布这个文件的产物（找它的 Space 条目取播放句柄）；字幕没有。 */
+  artifactId: string | null;
+}
 
 export interface DownloadCardView {
   jobId: Id;
@@ -664,30 +675,55 @@ export interface DownloadCardView {
   name: string;
   /** 脱敏后的链接。 */
   source: string | null;
+  /** 保存到哪：排队、下载中与失败时写冻结的下载目录（完成后写在文件那一行；取消后临时文件已删，不写）。 */
+  dest: { label: string; path: string } | null;
   pct: number | null;
   line: string | null;
   elapsed: string | null;
   error: string | null;
   hint: string | null;
-  /** 只下载、不建视频时落地的文件（媒体与字幕），可以在文件夹中显示。 */
-  files: { name: string; path: string }[];
+  /** 完成后落地的文件：第一项是媒体，其余是字幕。 */
+  files: DownloadFile[];
   canCancel: boolean;
   canRetry: boolean;
 }
 
 const basename = (file: string) => file.split(/[\\/]/).pop() || file;
+const dirname = (file: string) => {
+  const i = Math.max(file.lastIndexOf('/'), file.lastIndexOf('\\'));
+  return i > 0 ? file.slice(0, i) : file.slice(0, i + 1);
+};
 
-/** 下载卡（原型 `download`）：来源、已下载多少、已用时长、取消；失败写原因与说明；完成写落地的文件。 */
+/**
+ * 下载卡（原型 `download`）：来源、保存到哪、已下载多少、已用时长、取消；失败写原因与说明；完成后留在原处，
+ * 列出落地的文件（文件名、所在文件夹与大小），能播的在卡里播。
+ */
 export function downloadCardView(job: JobRecord, jobs: readonly JobRecord[], now: number): DownloadCardView {
   const state = rowState(job);
   const running = state === 'running';
   const frozen = linkFrozen(job);
   const meta = linkMeta(job);
   const d = running ? downloadProgress(job, jobs) : null;
-  const issue = state === 'failed' || state === 'interrupted' ? linkIssue(job.error, job.state) : null;
+  const failed = state === 'failed' || state === 'interrupted';
+  const issue = failed ? linkIssue(job.error, job.state) : null;
   const summary = state === 'done' ? linkSummary(job) : null;
   const started = job.startedAt ? Date.parse(job.startedAt) : NaN;
   const T = VIDEO_CARD_COPY.download;
+  const video = !!(job.videoId ?? summary?.videoId);
+  const file = (path: string, media: boolean): DownloadFile => {
+    const name = basename(path);
+    const output = media ? (job.result?.outputs ?? []).find((o) => o.path === path) : undefined;
+    const kind = kindOfFileName(name);
+    const playable = media && isPlayable(name);
+    return {
+      name,
+      path,
+      meta: [shortenPath(dirname(path)), output ? formatBytes(output.byteLength) : null].filter(Boolean).join(' · '),
+      kind,
+      player: !playable ? null : kind === 'audio' ? 'audio' : video ? null : 'video',
+      artifactId: output?.artifactId ?? null,
+    };
+  };
   return {
     jobId: job.jobId,
     state,
@@ -696,13 +732,32 @@ export function downloadCardView(job: JobRecord, jobs: readonly JobRecord[], now
     ],
     name: meta.title ?? (frozen.host || T.fallbackName),
     source: frozen.url || null,
+    dest: frozen.outDir && (running || state === 'queued' || failed) ? { label: shortenPath(frozen.outDir), path: frozen.outDir } : null,
     pct: d?.pct ?? null,
     line: running ? [linkPhaseText(job), d ? downloaded(d) : null].filter(Boolean).join(' · ') : null,
     elapsed: running && Number.isFinite(started) ? VIDEO_CARD_COPY.elapsed(formatClock(Math.max(0, now - started) / 1000)) : null,
     error: issue ? issue.title : state === 'failed' ? (jobErrorText(job.error) ?? T.failed) : null,
     hint: issue ? issue.body : null,
-    files: summary ? [summary.files.media, ...summary.files.subtitles].map((path) => ({ name: basename(path), path })) : [],
+    files: summary ? [file(summary.files.media, true), ...summary.files.subtitles.map((path) => file(path, false))] : [],
     canCancel: jobLive(job) && !jobRetrying(job),
     canRetry: reconcileOptions(job).includes('retry'),
   };
+}
+
+/**
+ * 下载落地的文件在 Space 里的条目：流程发布的文件派生成条目（`origin.jobId` 是父任务，`ref` 是发布的产物），
+ * 桌面端与浏览器都按它取播放句柄。有产物时只按产物找：产物按内容寻址，同一份内容下载两次只有一个条目、归后一次，
+ * 前一张卡播它也是同样的内容；没有产物时按父任务与路径找。还没派生出来、文件不在了（没有 `file`）、进了回收站时 null。
+ */
+export function downloadEntry(entries: readonly SpaceEntry[], jobId: Id, file: Pick<DownloadFile, 'path' | 'artifactId'>): SpaceEntry | null {
+  return (
+    entries.find(
+      (e) =>
+        !!e.file &&
+        !e.user.trashedAt &&
+        (file.artifactId && e.ref && 'artifactId' in e.ref
+          ? e.ref.artifactId === file.artifactId
+          : entryJobId(e) === jobId && e.file.path === file.path),
+    ) ?? null
+  );
 }

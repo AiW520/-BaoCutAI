@@ -139,20 +139,53 @@ test('remedy：去设置启用、去登录、重试', () => {
   assert.equal(C.remedy({kind: 'export', errorCode: 'DISK_FULL'}), null);
 });
 
-test('download：下载中 pct、已下多少、已用与剩余、取消；失败写原因与重试', () => {
+test('download：下载中 pct、已下多少、保存到哪、已用与剩余、取消；失败写原因与重试', () => {
   const run = C.download({id: 'd', kind: 'download', status: 'running', pct: 27, sizeMB: 320, elapsedMs: 13000, leftMs: 35000,
-    site: 'lanshan.example', url: 'https://lanshan.example/v/12', title: '城市夜跑'});
+    site: 'lanshan.example', url: 'https://lanshan.example/v/12', title: '城市夜跑', name: 'night-run.mp4', saveDir: '/Users/me/Downloads/'});
   assert.deepEqual([run.title, run.name, run.source], ['正在下载视频', '城市夜跑', 'https://lanshan.example/v/12']);
   assert.equal(run.line, '下载中 · 已下 86 / 320 MB');
+  assert.deepEqual(run.dest, {label: '~/Downloads', path: '/Users/me/Downloads'}, '显示名缩成 ~，完整路径留给 title');
+  assert.deepEqual(run.files, [], '没下完不列文件');
   assert.equal(run.time, '已用 0:13 · 剩余 0:35');
   assert.deepEqual(run.actions.map((a) => a.label), ['取消']);
-  const failed = C.download({id: 'd', kind: 'download', status: 'error', issue: 'network', pct: 34});
+  const failed = C.download({id: 'd', kind: 'download', status: 'error', issue: 'network', pct: 34, saveDir: '~/Downloads'});
   assert.equal(failed.error, '连接中断了');
   assert.match(failed.hint, /续传/);
+  assert.equal(failed.dest.label, '~/Downloads', '失败时仍写要存到哪');
   assert.deepEqual(failed.actions.map((a) => a.label), ['重试']);
   assert.deepEqual(C.download({id: 'd', kind: 'download', status: 'error', issue: 'login'}).actions, []);
-  assert.deepEqual(C.download({id: 'd', kind: 'download', status: 'error', canceled: true}).actions.map((a) => a.k), ['retry']);
-  assert.equal(C.download({id: 'd', kind: 'download', status: 'done'}).title, '下载完成');
+  const canceled = C.download({id: 'd', kind: 'download', status: 'error', canceled: true, saveDir: '~/Downloads'});
+  assert.deepEqual(canceled.actions.map((a) => a.k), ['retry']);
+  assert.equal(canceled.dest, null, '取消后临时文件已删，不写保存到哪');
+  assert.equal(C.download({id: 'd', kind: 'download', status: 'running'}).dest, null, '没有保存目录时不写');
+});
+
+test('download：完成后列出落地的文件（名字、所在文件夹与大小），可用默认应用打开、在文件夹中显示', () => {
+  const done = C.download({id: 'd', kind: 'download', status: 'done', pct: 100, sizeMB: 740, title: '春季发布会回放',
+    name: 'spring-launch-replay.mp4', saveDir: '~/Downloads', project: 'v9'});
+  assert.equal(done.title, '下载完成');
+  assert.equal(done.dest, null, '完成后目录写在文件那一行');
+  assert.deepEqual(done.files, [{name: 'spring-launch-replay.mp4', path: '~/Downloads/spring-launch-replay.mp4', dir: '~/Downloads',
+    meta: '~/Downloads · 740 MB', playable: true, icon: 'video', player: null}]);
+  assert.deepEqual(done.actions.map((a) => [a.k, a.label]), [['play', '用默认应用打开'], ['reveal', '在文件夹中显示']]);
+  const audio = C.download({id: 'd', kind: 'download', status: 'done', name: 'talk.opus', saveDir: '~/BaoCut/访谈/downloads'});
+  assert.deepEqual(audio.actions.map((a) => a.k), ['reveal'], '默认应用放不了的格式只给在文件夹中显示');
+  assert.equal(audio.files[0].path, '~/BaoCut/访谈/downloads/talk.opus');
+  assert.equal(audio.files[0].icon, 'audio');
+  assert.equal(audio.files[0].meta, '~/BaoCut/访谈/downloads', '不省中间几级');
+  assert.deepEqual(C.download({id: 'd', kind: 'download', status: 'done'}).files, [], '没有文件名时不编文件');
+});
+
+test('download：有播放地址的在卡里播，视频带封面、音频不带；视频建成了视频的交给视频卡播', () => {
+  const base = {id: 'd', kind: 'download', status: 'done', saveDir: '~/Downloads', previewSrc: 'media/demo.webm', poster: 'media/poster.svg'};
+  assert.deepEqual(C.download({...base, name: 'demo.mp4'}).files[0].player, {kind: 'video', src: 'media/demo.webm', poster: 'media/poster.svg'});
+  assert.deepEqual(C.download({...base, name: 'ep42.m4a', previewSrc: 'media/ep42.wav'}).files[0].player,
+    {kind: 'audio', src: 'media/ep42.wav', poster: null});
+  assert.equal(C.download({...base, name: 'demo.mp4', project: 'v9'}).files[0].player, null, '视频卡原地播同一个文件');
+  assert.equal(C.download({...base, name: 'ep42.m4a', project: 'v9'}).files[0].player.kind, 'audio', '音频建成的视频没有画面，仍在下载卡上播');
+  assert.equal(C.download({...base, name: 'demo.mp4', previewSrc: null}).files[0].player, null, '没有播放地址只列文件');
+  assert.equal(C.download({...base, name: 'talk.opus'}).files[0].player, null, '放不了的格式不出播放器');
+  assert.deepEqual(C.download({...base, name: 'demo.mp4', status: 'running', pct: 40}).files, [], '下完才出文件与播放器');
 });
 
 test('candidate：只有完成且有候选的合成语音 / 生成图片', () => {
@@ -166,7 +199,7 @@ test('candidate：只有完成且有候选的合成语音 / 生成图片', () =>
   assert.equal(C.candidate({id: 'x', kind: 'export', status: 'done', outputs: [{}]}), null);
 });
 
-test('rowCards：工具消息折在回复或工作组里也找得到行；下载卡挪到最新一条引用，建出视频后原位换成视频卡', () => {
+test('rowCards：工具消息折在回复或工作组里也找得到行；下载卡挪到最新一条引用，建出视频后仍在，视频卡另挂', () => {
   const A = global.window.BC_AGENT;
   const messages = [
     {id: 'u', role: 'user'}, {id: 'a1', role: 'assistant'},
@@ -180,7 +213,13 @@ test('rowCards：工具消息折在回复或工作组里也找得到行；下载
   assert.deepEqual([...running.entries()], [['a1', [{k: 'candidate', taskId: 'img'}]], ['a2', [{k: 'download', taskId: 'dl'}]]]);
   const movie = {id: 'v9', kind: 'movie', messageId: 'w1'};
   const done = C.rowCards(rows, messages, [movie], [{id: 'dl', kind: 'download', status: 'done', project: 'v9'}, img]);
-  assert.deepEqual([...done.entries()], [['a1', [{k: 'artifact', item: movie}, {k: 'candidate', taskId: 'img'}]]]);
+  assert.deepEqual([...done.entries()], [['a1', [{k: 'artifact', item: movie}, {k: 'candidate', taskId: 'img'}]], ['a2', [{k: 'download', taskId: 'dl'}]]]);
+  const same = {id: 'v9', kind: 'movie', messageId: 'w3'};
+  assert.deepEqual(C.rowCards(rows, messages, [same], [{id: 'dl', kind: 'download', status: 'done', project: 'v9'}]).get('a2'),
+    [{k: 'download', taskId: 'dl'}, {k: 'artifact', item: same}], '挂在同一行时下载卡在前');
+  const withImg = {id: 'v9', kind: 'movie', messageId: 'w2'};
+  assert.deepEqual(C.rowCards(rows, messages, [withImg], [img]).get('a1'),
+    [{k: 'artifact', item: withImg}, {k: 'candidate', taskId: 'img'}], '视频卡与候选卡挂在同一条消息时视频卡在前');
   const groupRows = A.conversationRows([{id: 'u', role: 'user'}, {id: 'w1', role: 'tool', taskId: 'dl'}]);
   assert.deepEqual([...C.rowCards(groupRows, [{id: 'u', role: 'user'}, {id: 'w1', role: 'tool', taskId: 'dl'}], [], [{id: 'dl', kind: 'download', status: 'error'}]).keys()], ['work-w1']);
   assert.equal(C.rowCards(rows, messages, [{id: 'p', kind: 'movie', messageId: null}], []).size, 0, '没有消息锚点的产物只在汇总里');

@@ -8,8 +8,9 @@
    - 每一拍把阶段键、计数、用时与剩余写进任务记录，视频卡上那一行与下载卡据此画；
    - 每一拍先看任务还在不在跑：卡上点了「取消」（app.cancelTask 把记录改成已取消），
      计时就停，工具行记成失败，Agent 回一句已取消，这一轮收掉。
-   下载（product-design §4.2）：视频还没创建时是一张下载卡；下完用 BC_IMPORT.movieRecord 建视频、
-   会话挂上它、接着起转录——同一个锚点换成视频卡，转录在卡上那一行跑，随时能打开编辑器。
+   下载（product-design §3.2.2、§4.2）：一张下载卡，文件存进设置里的默认保存位置（BC_SAVE_DIR）；下完下载卡留在原处、
+   列出落地的文件。要拿它做事的，用 BC_IMPORT.movieRecord 建视频（源文件就是下载下来的那个）、会话挂上它、
+   接着起转录——视频卡另挂，转录在卡上那一行跑，随时能打开编辑器；只说了下载的（任务的 `only`）不建视频，下完就收尾。
    演示的失败链接在 34% 断一次（连接中断，可重试）；重试从断点接着下。
    预置的下载会话（`drive: 'on-view'`）打开那条会话时才开始走。
    边转边问（预置会话 s23）：转录还在跑时用户回话、又不是新的写入，这一轮调 `jobs_wait` 等它（runWait），跑完写收据、收尾。
@@ -39,12 +40,12 @@
       const answer = missing.length && said && said.length <= 32 && !/^\s*\//.test(said) && !AG.missingSlots(said).length;
       text = answer ? String(prev.text).replace(`[${missing[0]}]`, said) : text;
       const plan = SIM.planFor(text, hasProject, {title: proj ? proj.title : null, agent: h ? AG.harnessLabel(h, sess.model, sess.activeModel) : null,
-        noTranscriber: !!prefs.demoNoTranscriber});
+        noTranscriber: !!prefs.demoNoTranscriber, saveDir: window.BC_SAVE_DIR ? window.BC_SAVE_DIR.setting(prefs) : null});
       /* 边转边问：这条会话的转录还在跑，用户这句话又不是新的写入（回答 Agent 的问题），这一轮就等那件转录 */
       const live = sess && !plan.write && !/^\s*\//.test(String(text || '')) && tasksRef.current.find((t) => t.session === sess.id
         && (t.kind === 'transcribe' || t.kind === 'retranscribe') && (t.status === 'running' || t.status === 'queued'));
       return live ? SIM.waitPlan(live) : plan;
-    }, [projects, prefs.demoNoTranscriber]);
+    }, [projects, prefs.demoNoTranscriber, prefs.saveDir]);
 
     const agentLabel = (sess) => {
       const h = D.agent.harnesses.find((x) => x.id === sess.harness) || D.agent.harnesses[0];
@@ -114,23 +115,36 @@
       driveQuiet(sid, tid, sim, 0);
     };
 
-    /** 下载完成：建视频（与链接导入同一个 movieRecord）、会话挂上它、接着转录、Agent 说一句。 */
+    /** 下载完成：只下载的收尾、下载卡上列出文件；否则建视频（与链接导入同一个 movieRecord）、会话挂上它、接着转录、Agent 说一句。 */
     const finishDownload = (sid, tid, sim) => {
       const t = tasksRef.current.find((x) => x.id === tid) || {};
       const sess = sessionsRef.current.find((x) => x.id === sid) || {};
+      const after = SIM.afterDownload(t);
+      if (t.only) {
+        patchTask(tid, {status: 'done', outcome: 'done', ...SIM.done(sim)});
+        markTool(sid, tid, {status: 'done', took: '48s', error: null});
+        patchSession(sid, {taskId: null});
+        const end = streamReply(sid, after.close, 500);
+        later(sid, end, () => {
+          endTurn(sid);
+          patchSession(sid, {status: 'done'});
+        });
+        return;
+      }
       /* 视频落在会话的项目里（会话的 `dir` 也可能是刚在起始页新建的项目，演示数据里查不到它，存放路径就留空）；
          会话不属于任何项目时视频也不属于项目，放在会话自己的文件夹里（§2.3），不另建项目。 */
       const dirRec = (D.agentProjects || []).find((d) => d.id === sess.dir) || null;
       const title = t.title || t.name || '下载的视频';
       const id = 'pd-' + tid + '-' + Date.now().toString(36);
       const movie = {...window.BC_IMPORT.movieRecord({id, title, name: t.name || `${title}.mp4`,
-        saveDir: dirRec ? dirRec.path + title : null, duration: t.mediaSec, hue: t.hue,
-        dir: sess.dir || null}), ctime: 0, mtime: 0, otime: 0};
+        saveDir: t.saveDir || (dirRec ? dirRec.path + title : null), duration: t.mediaSec, hue: t.hue,
+        dir: sess.dir || null}), ctime: 0, mtime: 0, otime: 0,
+        /* 下下来的视频带着播放地址与封面：视频卡在卡里原地播它，下载卡上就不再放一个播放器 */
+        ...(t.previewSrc && t.poster ? {preview: {url: t.previewSrc, poster: t.poster}} : {})};
       setProjects((ps) => [movie].concat(ps));
       patchTask(tid, {status: 'done', outcome: 'done', ...SIM.done(sim), project: id});
       markTool(sid, tid, {status: 'done', took: '48s', error: null});
       patchSession(sid, {project: id, taskId: null});
-      const after = SIM.afterDownload(t);
       later(sid, 300, () => startTranscribe(sid, {...sess, project: id}, movie, after.transcribe));
       const end = streamReply(sid, after.close, 700, {movieId: id});
       later(sid, end, () => {

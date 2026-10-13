@@ -342,7 +342,7 @@ function ThreadCards({ cards, conversationId }: { cards: readonly ThreadCard[]; 
         card.kind === 'video' ? (
           <OutputCard key={card.key} output={card.video} conversationId={conversationId} jobIds={card.jobIds} />
         ) : (
-          <DownloadCard key={card.key} jobId={card.jobId} />
+          <DownloadCard key={card.key} jobId={card.jobId} conversationId={conversationId} />
         ),
       )}
     </div>

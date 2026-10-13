@@ -88,6 +88,29 @@ test('planFor：话里有链接就下载——会话还没有视频也能写；�
   assert.equal(S.planFor('https://x.example/fail.mp4 下载', true).sim.task.scenario, 'network');
 });
 
+test('planFor：只说了下载的只下载、不建视频；要转录或编辑的下完建视频；文件存进保存目录', () => {
+  const only = S.planFor('下载这个视频 https://lanshan.example/v/42', true, {saveDir: '~/Movies/下载'});
+  assert.equal(only.sim.task.only, true);
+  assert.equal(only.sim.task.saveDir, '~/Movies/下载');
+  assert.match(only.write.why, /~\/Movies\/下载.*不建视频/);
+  const use = S.planFor('下载下来转录 https://lanshan.example/v/42', true);
+  assert.equal(use.sim.task.only, false);
+  assert.equal(use.sim.task.saveDir, '~/Downloads', '没给保存目录时是系统下载文件夹');
+  assert.equal(S.planFor('https://lanshan.example/v/42', false).sim.task.only, false, '没说下载：照旧下完建视频');
+  assert.equal(S.planFor('Download and translate https://lanshan.example/v/42 下载后翻译', true).sim.task.only, false);
+});
+
+test('planFor：音频链接落成音频文件；下载任务带演示播放地址（视频另带封面）', () => {
+  const audio = S.planFor('下载这期播客 https://boke.example/episodes/ep42.m4a', true).sim.task;
+  assert.equal(audio.name, 'ep42.m4a');
+  assert.match(audio.previewSrc, /\.wav$/);
+  assert.equal(audio.poster, undefined, '音频没有封面');
+  assert.match(S.planFor('下载这期播客 https://boke.example/episodes/ep42.m4a', true).summary, /音频/);
+  const video = S.planFor('下载这个视频 https://lanshan.example/v/42', true).sim.task;
+  assert.equal(video.name, '42.mp4');
+  assert.ok(video.previewSrc && video.poster, '视频带播放地址与封面');
+});
+
 test('下载：进度只有百分比与用时，演示的失败链接在 34% 断一次，重试过不再断', () => {
   const sim = S.planFor('下载 https://lanshan.example/a.mp4', false).sim;
   assert.deepEqual(S.progress(sim, 50), {pct: 50, elapsedMs: 24000, leftMs: 24000});
@@ -95,11 +118,14 @@ test('下载：进度只有百分比与用时，演示的失败链接在 34% 断
   assert.equal(S.downloadFails({scenario: 'network'}, 34), true);
   assert.equal(S.downloadFails({scenario: 'network', retried: true}, 60), false);
   assert.equal(S.downloadFails({scenario: 'success'}, 60), false);
-  const after = S.afterDownload({title: '城市夜跑', sizeMB: 320, mediaSec: 1560});
-  assert.match(after.close, /320 MB/);
+  const after = S.afterDownload({title: '城市夜跑', name: 'city-run.mp4', sizeMB: 320, mediaSec: 1560});
+  assert.match(after.close, /320 MB，存在 ~\/Downloads\/city-run\.mp4/);
   assert.equal(after.transcribe.task.mediaSec, 1560);
   assert.equal(after.transcribe.result.result.sentences, 473);
   assert.match(S.stoppedText({kind: 'download'}), /没有建视频/);
+  const only = S.afterDownload({title: '城市夜跑', name: 'city-run.mp4', sizeMB: 320, saveDir: '~/BaoCut/素材实验/downloads/', only: true});
+  assert.equal(only.transcribe, null, '只下载不起转录');
+  assert.match(only.close, /存在 ~\/BaoCut\/素材实验\/downloads\/city-run\.mp4。只下载，没有建视频/);
 });
 
 test('retrySim：按任务记录重建，计数的总数沿用记录', () => {

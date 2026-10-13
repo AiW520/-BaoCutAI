@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { JobRecord, ModelCapabilitiesView, PipelineStepState, SpaceEntry, TimelineItem } from '@baocut/protocol';
 import { conversationOutputs } from './conversation-outputs.ts';
+import { formatBytes } from './space.ts';
 import { buildThread } from './thread.ts';
 import {
   asrFacts,
@@ -10,6 +11,7 @@ import {
   conversationJobVideos,
   conversationVideoJobs,
   downloadCardView,
+  downloadEntry,
   foldRows,
   jobRowView,
   needsAction,
@@ -233,7 +235,7 @@ describe('threadCards：放置', () => {
     expect(cards(items, [other, mine])).toEqual({});
   });
 
-  it('下载卡：父任务还没有视频时一张；视频建出来后同一位置换成视频卡，流程提交的转录成为一行', () => {
+  it('下载卡：一直在原处；视频建出来后另出一张视频卡排在它后面，下载不做视频卡的行，流程提交的转录成为一行', () => {
     const items = [user('u1', 't1'), tool('c1', 't1', 'baocut.download'), reply('a1', 't1')];
     const parent = linkJob();
     const dl = job({
@@ -246,7 +248,12 @@ describe('threadCards：放置', () => {
 
     const withVideo = { ...parent, videoId: 'mov_9', phase: 'transcribing' as const };
     const tr = job({ videoId: 'mov_9', submitter: { kind: 'pipeline', id: parent.jobId } });
-    expect(cards(items, [withVideo, dl, tr])).toEqual({ 'steps/c1': [`video:mov_9[${parent.jobId},${tr.jobId}]`] });
+    expect(cards(items, [withVideo, dl, tr])).toEqual({ 'steps/c1': [`download:${parent.jobId}`, `video:mov_9[${tr.jobId}]`] });
+    // 转录还没提交（导入中、或不转录）：视频卡也在，没有行。
+    expect(cards(items, [withVideo, dl])).toEqual({ 'steps/c1': [`download:${parent.jobId}`, 'video:mov_9[]'] });
+    // 下载完成后照样留着。
+    const done = { ...withVideo, state: 'completed' as const, endedAt: at(9) };
+    expect(cards(items, [done, dl, tr])).toEqual({ 'steps/c1': [`download:${parent.jobId}`, `video:mov_9[${tr.jobId}]`] });
   });
 
   it('同一个位置的几张卡按第一次引用的先后', () => {
@@ -647,14 +654,13 @@ describe('foldRows / needsAction（产品设计 §3.2.2「之前的 N 项」）'
 });
 
 describe('cardRows', () => {
-  it('从链接导入的父任务：流程的转录出来后不再占一行，完成后不列，失败时留着', () => {
+  it('从链接导入不进视频卡（在下载卡上）：在跑、完成、失败都不列，流程的转录照常一行', () => {
     const parent = linkJob({ videoId: 'mov_9' });
     const tr = job({ videoId: 'mov_9', submitter: { kind: 'pipeline', id: parent.jobId } });
-    expect(cardRows([parent.jobId], [parent]).map((j) => j.jobId)).toEqual([parent.jobId]);
+    expect(cardRows([parent.jobId], [parent])).toEqual([]);
     expect(cardRows([parent.jobId, tr.jobId], [parent, tr]).map((j) => j.jobId)).toEqual([tr.jobId]);
     expect(cardRows([parent.jobId], [{ ...parent, state: 'completed' }])).toEqual([]);
-    const failed = { ...parent, state: 'failed' as const };
-    expect(cardRows([failed.jobId], [failed]).map((j) => j.jobId)).toEqual([parent.jobId]);
+    expect(cardRows([parent.jobId], [{ ...parent, state: 'failed' }])).toEqual([]);
   });
 });
 
@@ -766,9 +772,48 @@ describe('转录用的模型与参数（产品设计 §3.2.2「转录与重新�
 
 describe('downloadCardView', () => {
   const now = Date.parse(at(0)) + 10_000;
+  const HOME_DL = '/Users/me/Downloads';
 
-  it('下载中：站点、链接、字节与百分比、能取消', () => {
+  /** 完成了的下载：落地的媒体（与发布它的产物）和字幕。 */
+  function doneLink(media: string, patch: Partial<JobRecord> = {}, opts: { subtitles?: string[]; videoId?: string | null } = {}): JobRecord {
+    const parent = linkJob({ state: 'completed', endedAt: at(9), ...patch });
+    parent.pipeline = {
+      ...parent.pipeline!,
+      params: { ...parent.pipeline!.params, outDir: HOME_DL },
+      summary: {
+        url: 'https://www.youtube.com/watch?v=abc',
+        title: '访谈第一集',
+        platform: 'youtube',
+        uploader: null,
+        durationSec: 120,
+        files: { media, subtitles: opts.subtitles ?? [] },
+        tool: { name: 'yt-dlp', version: '1', source: 'managed' },
+        downloadedAt: at(9),
+        videoId: opts.videoId ?? null,
+        assetId: null,
+        transcribeJobId: null,
+      },
+    };
+    parent.result = {
+      documentId: null,
+      artifactId: 'sha256:aa',
+      outputs: [
+        {
+          artifactId: 'sha256:aa',
+          mediaType: 'video/mp4',
+          byteLength: 48_000_000,
+          assetId: null,
+          media: { kind: 'video', durationSec: 120, width: 1920, height: 1080, videoCodec: 'h264', audioCodec: 'aac' },
+          path: media,
+        },
+      ],
+    } as JobRecord['result'];
+    return parent;
+  }
+
+  it('下载中：站点、链接、保存到哪、字节与百分比、能取消', () => {
     const parent = linkJob({ startedAt: at(0) });
+    parent.pipeline = { ...parent.pipeline!, params: { ...parent.pipeline!.params, outDir: HOME_DL } };
     const dl = job({
       jobId: 'job_dl',
       kind: 'pipeline',
@@ -781,15 +826,18 @@ describe('downloadCardView', () => {
       title: '正在下载视频',
       name: 'youtube.com',
       source: 'https://www.youtube.com/watch?v=abc',
+      dest: { label: '~/Downloads', path: HOME_DL },
       pct: 25,
       canCancel: true,
       canRetry: false,
+      files: [],
     });
     expect(view.line).toContain('MB');
     expect(view.elapsed).toBe('已用 0:10');
+    expect(downloadCardView({ ...parent, state: 'queued', startedAt: null }, [parent], now).dest?.label).toBe('~/Downloads');
   });
 
-  it('失败写原因，固定流程不给重试', () => {
+  it('失败写原因与保存到哪，固定流程不给重试；取消后不写保存到哪', () => {
     const parent = linkJob({
       state: 'failed',
       endedAt: at(9),
@@ -798,31 +846,59 @@ describe('downloadCardView', () => {
     const view = downloadCardView(parent, [parent], now);
     expect(view.state).toBe('failed');
     expect(view.error).toBeTruthy();
-    expect(view).toMatchObject({ canRetry: false, canCancel: false, pct: null });
+    expect(view).toMatchObject({ canRetry: false, canCancel: false, pct: null, dest: { label: '/d', path: '/d' } });
+    expect(downloadCardView({ ...parent, state: 'cancelled', error: null }, [parent], now).dest).toBeNull();
   });
 
-  it('只下载不建视频：完成写落地的文件', () => {
-    const parent = linkJob({ state: 'completed', endedAt: at(9) });
-    parent.pipeline = {
-      ...parent.pipeline!,
-      summary: {
-        url: 'https://www.youtube.com/watch?v=abc',
-        title: '访谈第一集',
-        platform: 'youtube',
-        files: { media: '/d/访谈第一集.mp4', subtitles: ['/d/访谈第一集.en.vtt'] },
-        tool: { name: 'yt-dlp', version: '1', source: 'managed' },
-        downloadedAt: at(9),
-        videoId: null,
-        assetId: null,
-        transcribeJobId: null,
-      },
-    };
+  it('只下载不建视频：完成写落地的文件（文件名、所在文件夹与大小），视频在卡里播，字幕只列出', () => {
+    const media = `${HOME_DL}/访谈第一集.mp4`;
+    const parent = doneLink(media, {}, { subtitles: [`${HOME_DL}/访谈第一集.en.vtt`] });
     const view = downloadCardView(parent, [parent], now);
-    expect(view).toMatchObject({ state: 'done', title: '下载完成', name: '访谈第一集' });
+    expect(view).toMatchObject({ state: 'done', title: '下载完成', name: '访谈第一集', dest: null });
     expect(view.files).toEqual([
-      { name: '访谈第一集.mp4', path: '/d/访谈第一集.mp4' },
-      { name: '访谈第一集.en.vtt', path: '/d/访谈第一集.en.vtt' },
+      { name: '访谈第一集.mp4', path: media, meta: `~/Downloads · ${formatBytes(48_000_000)}`, kind: 'video-file', player: 'video', artifactId: 'sha256:aa' },
+      { name: '访谈第一集.en.vtt', path: `${HOME_DL}/访谈第一集.en.vtt`, meta: '~/Downloads', kind: 'subtitle', player: null, artifactId: null },
     ]);
+  });
+
+  it('建成了视频：下载的视频不在下载卡上播（视频卡原地播），音频仍在这里播；放不了的格式不播', () => {
+    expect(downloadCardView(doneLink(`${HOME_DL}/a.mp4`, { videoId: 'mov_9' }), [], now).files[0]?.player).toBeNull();
+    expect(downloadCardView(doneLink(`${HOME_DL}/a.mp4`, {}, { videoId: 'mov_9' }), [], now).files[0]?.player).toBeNull();
+    expect(downloadCardView(doneLink(`${HOME_DL}/a.m4a`, { videoId: 'mov_9' }), [], now).files[0]?.player).toBe('audio');
+    expect(downloadCardView(doneLink(`${HOME_DL}/a.avi`), [], now).files[0]?.player).toBeNull();
+  });
+
+  it('Windows 路径：按两种分隔符取文件名与所在文件夹，家目录缩成 ~', () => {
+    const view = downloadCardView(doneLink('C:\\Users\\me\\Downloads\\a.mp4'), [], now);
+    expect(view.files[0]).toMatchObject({ name: 'a.mp4', meta: `~\\Downloads · ${formatBytes(48_000_000)}` });
+  });
+});
+
+describe('downloadEntry', () => {
+  const entry = (patch: Partial<SpaceEntry>) =>
+    ({
+      id: 'sp_1',
+      kind: 'video-file',
+      ref: { artifactId: 'sha256:aa' },
+      origin: { source: 'imported', jobId: 'job_link' },
+      file: { path: '/d/a.mp4' },
+      user: { favorite: false, displayName: null, trashedAt: null },
+      ...patch,
+    }) as unknown as SpaceEntry;
+  const file = { path: '/d/a.mp4', artifactId: 'sha256:aa' };
+
+  it('有产物时按产物找（同一份内容下载两次，条目归后一次，前一张卡也找得到）；没有产物时按父任务与路径', () => {
+    expect(downloadEntry([entry({})], 'job_link', file)?.id).toBe('sp_1');
+    expect(downloadEntry([entry({ ref: { artifactId: 'sha256:bb' } })], 'job_link', file)).toBeNull();
+    const later = entry({ origin: { source: 'imported', jobId: 'job_other' }, file: { path: '/d/a-2.mp4' } } as Partial<SpaceEntry>);
+    expect(downloadEntry([later], 'job_link', file)?.id).toBe('sp_1');
+    expect(downloadEntry([entry({})], 'job_link', { path: '/d/a.mp4', artifactId: null })?.id).toBe('sp_1');
+    expect(downloadEntry([later], 'job_link', { path: '/d/a-2.mp4', artifactId: null })).toBeNull();
+  });
+
+  it('文件不在了（没有 file）、进了回收站的不算', () => {
+    expect(downloadEntry([entry({ file: undefined })], 'job_link', file)).toBeNull();
+    expect(downloadEntry([entry({ user: { favorite: false, displayName: null, trashedAt: at(1) } })], 'job_link', file)).toBeNull();
   });
 });
 
@@ -833,7 +909,13 @@ describe('会话里的视频活（产物弹层）', () => {
     const ex = job({ kind: 'export', videoId: 'mov_9', submitter: { kind: 'agent', id: CONV, taskId: 't2' } });
     const other = job({ videoId: 'mov_9', submitter: { kind: 'agent', id: 'conv_2', taskId: 't1' } });
     const jobs = [parent, tr, ex, other];
-    expect(conversationVideoJobs('mov_9', jobs, CONV)).toEqual([parent.jobId, tr.jobId, ex.jobId]);
+    expect(conversationVideoJobs('mov_9', jobs, CONV)).toEqual([tr.jobId, ex.jobId]);
     expect(conversationJobVideos(jobs, CONV)).toEqual(['mov_9']);
+  });
+
+  it('从链接新建的视频还没有别的活：也进产物弹层，卡上没有行', () => {
+    const parent = linkJob({ videoId: 'mov_9', submitter: { kind: 'agent', id: CONV, taskId: 't1' } });
+    expect(conversationVideoJobs('mov_9', [parent], CONV)).toEqual([]);
+    expect(conversationJobVideos([parent], CONV)).toEqual(['mov_9']);
   });
 });

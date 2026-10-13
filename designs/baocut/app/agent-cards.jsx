@@ -4,7 +4,9 @@
      一条会话一部视频一张，挂在最后一条引用它的消息后面（有新引用就挪过去，还在跑的活跟到最新一轮；BC_AGENT_PROJECTS.sessionArtifacts），
      列这条会话在它上面的全部活。
      只摊开正在进行的活，都结束了只摊开最后一件；其余收进「之前的 N 项」，默认收起，里面有待处理的就写「N 项待处理」（BC_AGENT_CARDS.foldRows，§3.2.2）。
-   - 下载卡（DownloadCard）：Agent 调下载工具时视频还没创建，单独一张；下载完成、视频建好后同一个锚点换成视频卡。
+   - 下载卡（DownloadCard）：Agent 调下载工具时单独一张，写来源、保存到哪与进度；下载完成后留在原处，列出落地的文件，
+     视频与音频在卡里直接播（§3.3 的正文视频播放器 / 音频正文卡），可用默认应用打开、在文件夹中显示。
+     下载后建了视频的，视频卡另挂，下载卡不换掉，也不在下载卡上播。
    - 候选卡（CandidateCard）：合成语音 / 生成图片完成后的候选，可试听 / 预览、选用。运行中与失败只在步骤行上。
    内容一律从任务记录与视频记录算（BC_AGENT_CARDS），不读回复正文；任务记录改了，卡跟着变。 */
 (function () {
@@ -82,10 +84,37 @@
     </ul>;
   }
 
-  /** 下载卡：视频还没创建时的占位（§4.2）。 */
+  /** 下载卡落地的文件（§3.2.2、§3.3）。视频：正文视频播放器（与视频卡同一个 MediaVideoSurface，不自动播），
+      下面一行文件名、所在文件夹与大小；音频：音频正文卡（自带文件名与格式），下面一行所在文件夹与大小；
+      不能在卡里播的只有文件那一行。播放器在 App 入口里晚于本文件加载，渲染时再取。 */
+  function DownloadFile({id, f}) {
+    const p = f.player;
+    const VideoPlayer = window.MediaVideoSurface, AudioPlayer = window.MediaAudioPreview;
+    const media = p ? {id: `download:${id}`, name: f.name, file: f.path, previewSrc: p.src, poster: p.poster} : null;
+    if (p && p.kind === 'audio' && AudioPlayer) return <>
+      <AudioPlayer file={media} inline />
+      <span className="dlcard__dest" title={f.path}>
+        <Ic n="folder" className="ic--14 dlcard__dest-ic" /><span className="dlcard__dest-t">{f.meta}</span>
+      </span>
+    </>;
+    return <>
+      {p && p.kind === 'video' && VideoPlayer ? <div className="dlcard__player"><VideoPlayer file={media} /></div> : null}
+      <div className="dlcard__file" title={f.path}>
+        <Ic n={f.icon} className="ic--16 dlcard__fic" />
+        <span className="dlcard__ftext">
+          <span className="dlcard__fname">{f.name}</span>
+          {f.meta ? <span className="dlcard__fmeta">{f.meta}</span> : null}
+        </span>
+      </div>
+    </>;
+  }
+
+  /** 下载卡（§3.2.2、§4.2）：下载中写保存到哪；完成后留在原处，列出落地的文件（DownloadFile），
+      底部是用默认应用打开与在文件夹中显示。 */
   function DownloadCard({task}) {
     const run = useCardAction(task);
     const c = CARDS.download(task);
+    const file = c.files[0] || null;
     return <section className={cx('dlcard', `is-${c.state}`)} aria-label={`${c.title} · ${c.name}`}>
       <header className="dlcard__head">
         <span className="dlcard__ic"><Ic n={c.state === 'failed' ? 'alert' : 'download'} className="ic--16" /></span>
@@ -98,11 +127,16 @@
       {c.source ? <span className="dlcard__src" title={c.source}>{c.source}</span> : null}
       {c.pct != null ? <Progress value={c.pct} thin label={`${c.title} · ${c.name}`} /> : null}
       {c.line ? <span className="dlcard__line">{c.line}</span> : null}
+      {c.dest ? <span className="dlcard__dest" title={c.dest.path}>
+        <Ic n="folder" className="ic--14 dlcard__dest-ic" /><span className="dlcard__dest-t">{`保存到 ${c.dest.label}`}</span>
+      </span> : null}
       {c.error ? <span className="dlcard__err">{c.error}</span> : null}
       {c.hint ? <span className="dlcard__hint">{c.hint}</span> : null}
+      {c.files.map((f) => <DownloadFile key={f.path} id={c.id} f={f} />)}
       {c.time || c.actions.length ? <div className="dlcard__foot">
         <span className="dlcard__time">{c.time}</span>
-        {c.actions.map((a) => <Btn key={a.k} variant={a.k === 'cancel' ? 'quiet' : 'secondary'} size="s" onClick={() => run(a)}>{a.label}</Btn>)}
+        {c.actions.map((a) => <Btn key={a.k} variant={a.k === 'cancel' || a.k === 'play' || a.k === 'reveal' ? 'quiet' : 'secondary'} size="s"
+          onClick={() => run(a, file)}>{a.label}</Btn>)}
       </div> : null}
     </section>;
   }

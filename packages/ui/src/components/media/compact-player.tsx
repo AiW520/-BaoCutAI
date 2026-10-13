@@ -66,6 +66,7 @@ export function CompactPlayer({
   path,
   subtitles,
   autoPlay = false,
+  expandable = true,
 }: {
   handle: MediaHandle;
   fileName: string;
@@ -77,6 +78,8 @@ export function CompactPlayer({
   subtitles?: React.ReactNode;
   /** 用户点了播放才挂上播放器（如对话里的视频卡片）：元数据就绪后开播一次。 */
   autoPlay?: boolean;
+  /** 更多菜单里有没有「展开预览」；下载卡里的播放器没有（产品设计 §3.2.2）。 */
+  expandable?: boolean;
 }) {
   const [expanded, setExpanded] = useState(false),
     [showSubtitles, setShowSubtitles] = useState(false);
@@ -91,7 +94,7 @@ export function CompactPlayer({
         {...{ handle, fileName, kind, memoryKey, path, onOpenTab, autoPlay }}
         active={active && !expanded && !showSubtitles}
         restoreKey={expanded || showSubtitles}
-        onExpand={() => setExpanded(true)}
+        onExpand={expandable ? () => setExpanded(true) : undefined}
         onSubtitles={subtitles ? () => setShowSubtitles(true) : undefined}
       />
       {(expanded || showSubtitles) && (
