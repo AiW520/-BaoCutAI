@@ -5,9 +5,12 @@
 //! 只算图像 token，拼上缓存的文本 K/V 做无掩码注意力。这正是参考管线 `kv_cache` 的做法。
 //! 文本段不单独跑一遍：第一步逐层先算文本、存 K/V，再算图像。
 //!
-//! 32 层权重（~4 GB）不常驻：每步重开惰性表，算第 i 层时预读第 i+1 层，用完即丢，常驻的只有
-//! 输入输出投影与调制（~0.1 GB）和相邻两层（~0.25 GB）。权重文件在 OS 文件缓存里，内存紧时
-//! 可被回收，代价是那一步改从磁盘读。
+//! 32 层权重（4-bit ~4 GB、8-bit ~7.4 GB）不常驻：每步重开惰性表，每层分两半流式读入、用完即丢——
+//! 算第 i 层的 q/k/v 时预读它的后半（to_out 与 MLP），算后半时预读第 i+1 层的 q/k/v，同时驻留的
+//! 约是一层（4-bit ~0.12 GB、8-bit ~0.23 GB）。时间嵌入、调制与 `txt_in` 只在 [`Dit::prepare`] 里
+//! 用一次：每一步的调制在那里先算好，这些权重随即丢掉（8-bit 包里它们是不量化的 bf16，约 0.27 GB），
+//! 之后常驻的只有 `img_in` 与 `proj_out`。权重文件在 OS 文件缓存里，内存紧时可被回收，代价是那一步
+//! 改从磁盘读。
 //!
 //! 计算精度见 [`Precision`]：缺省按本机实测在 f16 / bf16 里选（[`Precision::probe`]）；
 //! 没有原生 bf16 运算的 GPU（M2 上慢约 1.8×）用 f16、残差流存 f32 防溢出，其余用 bf16。
@@ -206,16 +209,37 @@ pub fn bf16_round(v: f32) -> f32 {
     f32::from_bits(rounded)
 }
 
-struct Block {
+/// 一层的前半：q/k/v 投影与 per-head RMSNorm。
+struct Attn {
     to_q: Lin,
     to_k: Lin,
     to_v: Lin,
-    to_out: Lin,
     norm_q: Array,
     norm_k: Array,
+}
+
+/// 一层的后半：注意力输出投影与 MLP。
+struct Ffn {
+    to_out: Lin,
     gate: Lin,
     proj: Lin,
     out: Lin,
+}
+
+/// 流式读入的单位：一层的哪一半，按 `transformer_blocks.{i}.` 之后的键名分。
+#[derive(Clone, Copy)]
+enum Half {
+    Attn,
+    Ffn,
+}
+
+impl Half {
+    fn keys(self) -> &'static [&'static str] {
+        match self {
+            Self::Attn => &["attn.to_q.", "attn.to_k.", "attn.to_v.", "attn.norm_q.", "attn.norm_k."],
+            Self::Ffn => &["attn.to_out.", "img_mlp."],
+        }
+    }
 }
 
 /// 一组调制参数，已 reshape 成 `[1,1,DIM]` 以便按 token 广播。
@@ -226,10 +250,14 @@ struct Mod {
     gate2: Array,
 }
 
-pub struct Dit {
-    files: Vec<PathBuf>,
-    prec: Precision,
-    img_in: Lin,
+/// 一步的调制：各层共用的 [`Mod`]，加上 `norm_out` 的缩放（`[1,1,DIM]`）。
+struct StepMod {
+    m: Mod,
+    out_scale: Array,
+}
+
+/// 只在 [`Dit::prepare`] 里用一次的层外权重。
+struct Embedders {
     t_lin1: Lin,
     t_lin2: Lin,
     modulation: Lin,
@@ -237,15 +265,24 @@ pub struct Dit {
     txt_in1: Lin,
     txt_in2: Lin,
     norm_out: Lin,
-    proj_out: Lin,
 }
 
-/// 文本前缀的逐层 K/V（`[1,H,L,D]`，已过 norm 与 RoPE）。第一步之前 `kv` 为空、`pending`
-/// 装着过完 `txt_in` 的文本 hidden；第一步逐层填满 `kv` 后 `pending` 清空。
+pub struct Dit {
+    files: Vec<PathBuf>,
+    prec: Precision,
+    img_in: Lin,
+    proj_out: Lin,
+    /// [`Self::prepare`] 取走后为空。
+    embed: Option<Embedders>,
+}
+
+/// 文本前缀的逐层 K/V（`[1,H,L,D]`，已过 norm 与 RoPE）与每一步的调制。第一步之前 `kv` 为空、
+/// `pending` 装着过完 `txt_in` 的文本 hidden；第一步逐层填满 `kv` 后 `pending` 清空。
 pub struct TextCache {
     kv: Vec<(Array, Array)>,
     text_len: usize,
     pending: Option<TextPending>,
+    steps: Vec<StepMod>,
 }
 
 struct TextPending {
@@ -267,22 +304,46 @@ impl BlockStream {
         Ok(Self { lazy, prec })
     }
 
-    /// `prefetch` 为真时立刻在 CPU stream 上开始读这一层（与 GPU 上正在算的上一层重叠）。
-    fn take(&mut self, i: usize, prefetch: bool) -> Result<Block> {
+    /// 取出第 i 层的一半。`prefetch` 为真时立刻在 CPU stream 上开始读（与 GPU 上正在算的部分重叠）。
+    fn part(&mut self, i: usize, half: Half, prefetch: bool) -> Result<WeightStore> {
         let prefix = format!("transformer_blocks.{i}.");
-        let keys: Vec<String> = self.lazy.keys().filter(|k| k.starts_with(&prefix)).cloned().collect();
+        let keys: Vec<String> = self
+            .lazy
+            .keys()
+            .filter(|k| {
+                k.strip_prefix(&prefix)
+                    .is_some_and(|rest| half.keys().iter().any(|h| rest.starts_with(h)))
+            })
+            .cloned()
+            .collect();
         let part: HashMap<String, Array> = keys.into_iter().filter_map(|k| self.lazy.remove_entry(&k)).collect();
         if prefetch {
             mlx_rs::transforms::async_eval(part.values())?;
         }
-        let mut s = WeightStore::from_arrays(part)?;
-        let b = Block::load(&mut s, i, self.prec)?;
-        let left = s.remaining();
-        if !left.is_empty() {
-            bail!("DiT 第 {i} 层有未使用的权重：{:?}", &left[..left.len().min(5)]);
-        }
-        Ok(b)
+        WeightStore::from_arrays(part)
     }
+
+    fn attn(&mut self, i: usize, prefetch: bool) -> Result<Attn> {
+        let mut s = self.part(i, Half::Attn, prefetch)?;
+        let a = Attn::load(&mut s, i, self.prec)?;
+        all_used(&s, i)?;
+        Ok(a)
+    }
+
+    fn ffn(&mut self, i: usize, prefetch: bool) -> Result<Ffn> {
+        let mut s = self.part(i, Half::Ffn, prefetch)?;
+        let f = Ffn::load(&mut s, i, self.prec)?;
+        all_used(&s, i)?;
+        Ok(f)
+    }
+}
+
+fn all_used(s: &WeightStore, i: usize) -> Result<()> {
+    let left = s.remaining();
+    if !left.is_empty() {
+        bail!("DiT 第 {i} 层有未使用的权重：{:?}", &left[..left.len().min(5)]);
+    }
+    Ok(())
 }
 
 /// 把 `[1,S,H,D]` 的相邻两维当复数，乘以 `cos + i·sin`（`[S, D/2]`）。f32 计算后回到原 dtype。
@@ -308,7 +369,12 @@ fn gelu_tanh_f32(x: &Array) -> Result<Array> {
     Ok(x.multiply(&Array::from_f32(0.5))?.multiply(&t.add(&Array::from_f32(1.0))?)?)
 }
 
-impl Block {
+fn modulate(x: &Array, scale: &Array) -> Result<Array> {
+    let n = fast::layer_norm(x, None, None, EPS)?;
+    Ok(n.multiply(&scale.add(&scalar(1.0, scale)?)?)?)
+}
+
+impl Attn {
     fn load(s: &mut WeightStore, i: usize, prec: Precision) -> Result<Self> {
         let p = format!("transformer_blocks.{i}");
         let (dt, dq) = (prec.compute, prec.dequant);
@@ -317,18 +383,9 @@ impl Block {
             to_q: Lin::load(s, &format!("{p}.attn.to_q"), DIM, dt, dq)?,
             to_k: Lin::load(s, &format!("{p}.attn.to_k"), DIM, dt, dq)?,
             to_v: Lin::load(s, &format!("{p}.attn.to_v"), DIM, dt, dq)?,
-            to_out: Lin::load(s, &format!("{p}.attn.to_out.0"), DIM, dt, dq)?,
             norm_q: s.take(&format!("{p}.attn.norm_q.weight"))?.as_dtype(dt)?,
             norm_k: s.take(&format!("{p}.attn.norm_k.weight"))?.as_dtype(dt)?,
-            gate: Lin::load(s, &format!("{p}.img_mlp.gate_layer"), DIM, dt, dq)?,
-            proj: Lin::load(s, &format!("{p}.img_mlp.proj"), DIM, dt, dq)?,
-            out: Lin::load(s, &format!("{p}.img_mlp.out"), INTER, dt, dq)?,
         })
-    }
-
-    fn modulate(x: &Array, scale: &Array) -> Result<Array> {
-        let n = fast::layer_norm(x, None, None, EPS)?;
-        Ok(n.multiply(&scale.add(&scalar(1.0, scale)?)?)?)
     }
 
     /// 返回 (q, k, v)，都是 `[1,H,S,D]`，q/k 已过 per-head RMSNorm 与 RoPE。
@@ -343,56 +400,33 @@ impl Block {
         let t = [0, 2, 1, 3];
         Ok((q.transpose_axes(&t)?, k.transpose_axes(&t)?, v.transpose_axes(&t)?))
     }
+}
+
+impl Ffn {
+    fn load(s: &mut WeightStore, i: usize, prec: Precision) -> Result<Self> {
+        let p = format!("transformer_blocks.{i}");
+        let (dt, dq) = (prec.compute, prec.dequant);
+        Ok(Self {
+            to_out: Lin::load(s, &format!("{p}.attn.to_out.0"), DIM, dt, dq)?,
+            gate: Lin::load(s, &format!("{p}.img_mlp.gate_layer"), DIM, dt, dq)?,
+            proj: Lin::load(s, &format!("{p}.img_mlp.proj"), DIM, dt, dq)?,
+            out: Lin::load(s, &format!("{p}.img_mlp.out"), INTER, dt, dq)?,
+        })
+    }
 
     fn finish(&self, x: &Array, attn: &Array, m: &Mod) -> Result<Array> {
         let s = attn.dim(2);
         let attn = attn.transpose_axes(&[0, 2, 1, 3])?.reshape(&[1, s, DIM])?;
         let attn = self.to_out.forward(&attn)?;
         let x = x.add(&ops::tanh(&m.gate1)?.multiply(&attn)?)?;
-        let xm = Self::modulate(&x, &m.scale2)?;
+        let xm = modulate(&x, &m.scale2)?;
         let h = nn::silu(self.gate.forward(&xm)?)?.multiply(&self.proj.forward(&xm)?)?;
         let h = self.out.forward(&h)?;
         Ok(x.add(&ops::tanh(&m.gate2)?.multiply(&h)?)?)
     }
 }
 
-impl Dit {
-    /// 只常驻层外的权重；32 层在这里按键核对一遍（惰性，不读文件），真正读取在每步里。
-    /// `files` 是 `transformer/` 下的 safetensors 分片：32 层与层外权重都从这里取。
-    pub fn load(files: &[PathBuf], prec: Precision) -> Result<Self> {
-        let mut stream = BlockStream::open(files, prec)?;
-        for i in 0..LAYERS {
-            stream.take(i, false)?;
-        }
-        if let Some(k) = stream.lazy.keys().next() {
-            bail!("DiT 有多余的层权重：{k}");
-        }
-        let files = files.to_vec();
-        let s = &mut weights::resident(&files, |k| !k.starts_with("transformer_blocks.")).context("加载 DiT 层外权重")?;
-        let t1 = pick(s, &["time_text_embed.linear_1", "time_text_embed.timestep_embedder.linear_1"])?;
-        let t2 = pick(s, &["time_text_embed.linear_2", "time_text_embed.timestep_embedder.linear_2"])?;
-        let modulation = pick(s, &["modulation.0", "modulation.1"])?;
-        let dt = prec.compute;
-        let me = Self {
-            files,
-            prec,
-            img_in: Lin::load(s, "img_in", 64, dt, false)?,
-            t_lin1: Lin::load(s, t1, 256, dt, false)?,
-            t_lin2: Lin::load(s, t2, DIM, dt, false)?,
-            modulation: Lin::load(s, modulation, DIM, dt, false)?,
-            txt_norm: s.take("txt_in.text_norm.weight")?,
-            txt_in1: Lin::load(s, "txt_in.in_layer", DIM, dt, false)?,
-            txt_in2: Lin::load(s, "txt_in.out_layer", DIM, dt, false)?,
-            norm_out: Lin::load(s, "norm_out.linear", DIM, dt, false)?,
-            proj_out: Lin::load(s, "proj_out", DIM, dt, false)?,
-        };
-        let left = s.remaining();
-        if !left.is_empty() {
-            bail!("DiT 有未使用的权重：{:?}", &left[..left.len().min(5)]);
-        }
-        Ok(me)
-    }
-
+impl Embedders {
     /// 正弦时间嵌入 → MLP，返回 `[1, DIM]`（bf16）。`sigma` 按管线两次转 bf16 的舍入复刻。
     fn temb(&self, sigma: f64) -> Result<Array> {
         let t = bf16_round(bf16_round((sigma * 1000.0) as f32) / 1000.0);
@@ -419,6 +453,47 @@ impl Dit {
             gate2: part(3)?,
         })
     }
+}
+
+impl Dit {
+    /// 只常驻层外的权重；32 层在这里按键核对一遍（惰性，不读文件），真正读取在每步里。
+    /// `files` 是 `transformer/` 下的 safetensors 分片：32 层与层外权重都从这里取。
+    pub fn load(files: &[PathBuf], prec: Precision) -> Result<Self> {
+        let mut stream = BlockStream::open(files, prec)?;
+        for i in 0..LAYERS {
+            stream.attn(i, false)?;
+            stream.ffn(i, false)?;
+        }
+        if let Some(k) = stream.lazy.keys().next() {
+            bail!("DiT 有多余的层权重：{k}");
+        }
+        let files = files.to_vec();
+        let s = &mut weights::resident(&files, |k| !k.starts_with("transformer_blocks.")).context("加载 DiT 层外权重")?;
+        let t1 = pick(s, &["time_text_embed.linear_1", "time_text_embed.timestep_embedder.linear_1"])?;
+        let t2 = pick(s, &["time_text_embed.linear_2", "time_text_embed.timestep_embedder.linear_2"])?;
+        let modulation = pick(s, &["modulation.0", "modulation.1"])?;
+        let dt = prec.compute;
+        let me = Self {
+            files,
+            prec,
+            img_in: Lin::load(s, "img_in", 64, dt, false)?,
+            proj_out: Lin::load(s, "proj_out", DIM, dt, false)?,
+            embed: Some(Embedders {
+                t_lin1: Lin::load(s, t1, 256, dt, false)?,
+                t_lin2: Lin::load(s, t2, DIM, dt, false)?,
+                modulation: Lin::load(s, modulation, DIM, dt, false)?,
+                txt_norm: s.take("txt_in.text_norm.weight")?,
+                txt_in1: Lin::load(s, "txt_in.in_layer", DIM, dt, false)?,
+                txt_in2: Lin::load(s, "txt_in.out_layer", DIM, dt, false)?,
+                norm_out: Lin::load(s, "norm_out.linear", DIM, dt, false)?,
+            }),
+        };
+        let left = s.remaining();
+        if !left.is_empty() {
+            bail!("DiT 有未使用的权重：{:?}", &left[..left.len().min(5)]);
+        }
+        Ok(me)
+    }
 
     fn tables(cos: &[f32], sin: &[f32], from: usize, to: usize) -> (Array, Array) {
         let half = (HEAD_DIM / 2) as usize;
@@ -429,11 +504,11 @@ impl Dit {
         )
     }
 
-    /// 图像 token 过一层：先逐块算 q/k/v（K/V 拼在文本前缀后面凑成整张），再逐块做注意力、
-    /// to_out 与 MLP，每块求值后才进下一块。每个 token 的算子与不分块时完全相同。
+    /// 图像 token 过一层的前半：逐块算 q/k/v，每块求值后才进下一块；K/V 拼在文本前缀后面凑成整张。
+    /// 每个 token 的算子与不分块时完全相同。
     #[allow(clippy::too_many_arguments)]
-    fn image_layer(
-        b: &Block,
+    fn image_qkv(
+        a: &Attn,
         tk: &Array,
         tv: &Array,
         x: &Array,
@@ -441,13 +516,13 @@ impl Dit {
         cos: &Array,
         sin: &Array,
         ranges: &[(i32, i32)],
-    ) -> Result<Array> {
+    ) -> Result<(Vec<Array>, Array, Array)> {
         let mut qs = Vec::with_capacity(ranges.len());
         let mut ks = vec![tk.clone()];
         let mut vs = vec![tv.clone()];
         for &(s, e) in ranges {
-            let xm = Block::modulate(&x.index((.., s..e, ..)), &m.scale1)?;
-            let (q, k, v) = b.qkv(&xm, &cos.index((s..e, ..)), &sin.index((s..e, ..)))?;
+            let xm = modulate(&x.index((.., s..e, ..)), &m.scale1)?;
+            let (q, k, v) = a.qkv(&xm, &cos.index((s..e, ..)), &sin.index((s..e, ..)))?;
             mlx_rs::transforms::eval([&q, &k, &v])?;
             qs.push(q);
             ks.push(k);
@@ -455,12 +530,16 @@ impl Dit {
         }
         let k = ops::concatenate_axis(&ks, 2)?;
         let v = ops::concatenate_axis(&vs, 2)?;
-        drop((ks, vs));
+        Ok((qs, k, v))
+    }
+
+    /// 图像 token 过一层的后半：逐块做注意力、to_out 与 MLP，每块求值后才进下一块。
+    fn image_finish(f: &Ffn, x: &Array, m: &Mod, qs: Vec<Array>, k: &Array, v: &Array, ranges: &[(i32, i32)]) -> Result<Array> {
         let scale = (HEAD_DIM as f32).sqrt().recip();
         let mut outs = Vec::with_capacity(ranges.len());
         for (&(s, e), q) in ranges.iter().zip(qs) {
-            let attn = fast::scaled_dot_product_attention(&q, &k, &v, scale, None::<ScaledDotProductAttentionMask<'_>>, None)?;
-            let y = b.finish(&x.index((.., s..e, ..)), &attn, m)?;
+            let attn = fast::scaled_dot_product_attention(&q, k, v, scale, None::<ScaledDotProductAttentionMask<'_>>, None)?;
+            let y = f.finish(&x.index((.., s..e, ..)), &attn, m)?;
             y.eval()?;
             outs.push(y);
         }
@@ -472,48 +551,68 @@ impl Dit {
         Ok(y)
     }
 
-    /// 文本前缀：`enc` 是文本编码器输出 `[1,L,4096]`。这里只过 `txt_in`，逐层部分并进第一步。
-    pub fn prepare_text(&self, enc: &Array, grid_h: usize, grid_w: usize) -> Result<TextCache> {
+    /// 文本前缀与每一步的调制：`enc` 是文本编码器输出 `[1,L,4096]`，`sigmas` 是要走的每一步的 sigma。
+    /// 文本这里只过 `txt_in`，逐层部分并进第一步。算完即丢掉时间嵌入、调制与 `txt_in` 的权重，
+    /// 所以一个 `Dit` 只能 prepare 一次。
+    pub fn prepare(&mut self, enc: &Array, sigmas: &[f64], grid_h: usize, grid_w: usize) -> Result<TextCache> {
+        let e = self.embed.take().context("DiT 的时间嵌入与调制权重已经用过")?;
         let text_len = enc.dim(1) as usize;
         let (cos_all, sin_all) = rope::dit_rope_tables(text_len, grid_h, grid_w);
         let (cos, sin) = Self::tables(&cos_all, &sin_all, 0, text_len);
         // ZeroCenterRMSNorm：fp32 下 `x * rsqrt(mean(x²)+eps) * (w+1)`。
         let dtype = enc.dtype();
-        let w1 = self.txt_norm.as_dtype(Dtype::Float32)?.add(&Array::from_f32(1.0))?;
+        let w1 = e.txt_norm.as_dtype(Dtype::Float32)?.add(&Array::from_f32(1.0))?;
         let normed = fast::rms_norm(&enc.as_dtype(Dtype::Float32)?, &w1, EPS)?.as_dtype(dtype)?;
-        let h = gelu_tanh_f32(&self.txt_in1.forward(&normed)?)?.as_dtype(dtype)?;
-        let x = self.txt_in2.forward(&h)?.as_dtype(self.prec.resid())?;
-        let m = self.mods(&self.temb(0.0)?)?;
+        let h = gelu_tanh_f32(&e.txt_in1.forward(&normed)?)?.as_dtype(dtype)?;
+        let x = e.txt_in2.forward(&h)?.as_dtype(self.prec.resid())?;
+        let m = e.mods(&e.temb(0.0)?)?;
+        let steps = sigmas
+            .iter()
+            .map(|&sigma| {
+                let temb = e.temb(sigma)?;
+                Ok(StepMod {
+                    m: e.mods(&temb)?,
+                    out_scale: e.norm_out.forward(&nn::silu(&temb)?)?.reshape(&[1, 1, DIM])?,
+                })
+            })
+            .collect::<Result<Vec<_>>>()?;
+        let mut done = vec![&x, &m.scale1, &m.gate1, &m.scale2, &m.gate2];
+        for s in &steps {
+            done.extend([&s.m.scale1, &s.m.gate1, &s.m.scale2, &s.m.gate2, &s.out_scale]);
+        }
+        mlx_rs::transforms::eval(done)?;
+        drop(e);
         Ok(TextCache {
             kv: Vec::with_capacity(LAYERS),
             text_len,
             pending: Some(TextPending { x, m, cos, sin }),
+            steps,
         })
     }
 
-    /// 文本 token 过一层（因果注意力、t=0 调制），返回这一层的文本 K/V。
-    fn text_layer(b: &Block, p: &mut TextPending) -> Result<(Array, Array)> {
-        let xm = Block::modulate(&p.x, &p.m.scale1)?;
-        let (q, k, v) = b.qkv(&xm, &p.cos, &p.sin)?;
+    /// 文本 token 过一层的前半（因果注意力、t=0 调制）：返回注意力输出与这一层的文本 K/V。
+    /// 后半（[`Ffn::finish`]）放到图像 q/k/v 之后，让这一层后半的权重有图像那段时间读入。
+    fn text_attn(a: &Attn, p: &TextPending) -> Result<(Array, Array, Array)> {
+        let xm = modulate(&p.x, &p.m.scale1)?;
+        let (q, k, v) = a.qkv(&xm, &p.cos, &p.sin)?;
         let scale = (HEAD_DIM as f32).sqrt().recip();
         let attn = fast::scaled_dot_product_attention(&q, &k, &v, scale, Some(ScaledDotProductAttentionMask::Causal), None)?;
-        p.x = b.finish(&p.x, &attn, &p.m)?;
-        mlx_rs::transforms::eval([&p.x, &k, &v])?;
-        Ok((k, v))
+        mlx_rs::transforms::eval([&attn, &k, &v])?;
+        Ok((attn, k, v))
     }
 
-    /// 一步去噪：`latents` 是 `[1, N, 64]`（任意浮点 dtype），返回速度场 `[1, N, 64]`（f32）。
-    /// 每层按 `chunk` 个图像 token 分块算（K/V 仍是整张），把层内临时张量压到 1/⌈N/chunk⌉。
-    /// 层权重逐层流式读入；第一步顺带把文本前缀的 K/V 填进 `cache`。
-    pub fn step(&self, cache: &mut TextCache, latents: &Array, sigma: f64, grid_h: usize, grid_w: usize, chunk: usize) -> Result<Array> {
+    /// 第 `index` 步去噪（sigma 是 [`Self::prepare`] 收到的第 `index` 个）：`latents` 是 `[1, N, 64]`
+    /// （任意浮点 dtype），返回速度场 `[1, N, 64]`（f32）。每层按 `chunk` 个图像 token 分块算（K/V 仍是
+    /// 整张），把层内临时张量压到 1/⌈N/chunk⌉。层权重按半层流式读入；第一步顺带把文本前缀的 K/V 填进 `cache`。
+    pub fn step(&self, cache: &mut TextCache, latents: &Array, index: usize, grid_h: usize, grid_w: usize, chunk: usize) -> Result<Array> {
         let n = grid_h * grid_w;
         if latents.dim(1) as usize != n {
             bail!("latent token 数 {} ≠ {grid_h}×{grid_w}", latents.dim(1));
         }
         let (cos_all, sin_all) = rope::dit_rope_tables(cache.text_len, grid_h, grid_w);
         let (cos, sin) = Self::tables(&cos_all, &sin_all, cache.text_len, cache.text_len + n);
-        let temb = self.temb(sigma)?;
-        let m = self.mods(&temb)?;
+        let sm = cache.steps.get(index).with_context(|| format!("没有第 {index} 步的调制"))?;
+        let m = &sm.m;
         let mut x = self
             .img_in
             .forward(&latents.as_dtype(Dtype::Bfloat16)?)?
@@ -522,22 +621,32 @@ impl Dit {
         let chunk = chunk.max(1) as i32;
         let ranges: Vec<(i32, i32)> = (0..n).step_by(chunk as usize).map(|s| (s, (s + chunk).min(n))).collect();
         let mut stream = BlockStream::open(&self.files, self.prec)?;
-        let mut next = Some(stream.take(0, true)?);
+        let mut next = Some(stream.attn(0, true)?);
         for i in 0..LAYERS {
-            let b = next.take().context("DiT 层权重缺失")?;
-            if i + 1 < LAYERS {
-                next = Some(stream.take(i + 1, true)?);
-            }
-            if let Some(p) = cache.pending.as_mut() {
-                let kv = Self::text_layer(&b, p)?;
-                cache.kv.push(kv);
-            }
+            let a = next.take().context("DiT 层权重缺失")?;
+            let f = stream.ffn(i, true)?;
+            let text = match cache.pending.as_ref() {
+                Some(p) => {
+                    let (attn, k, v) = Self::text_attn(&a, p)?;
+                    cache.kv.push((k, v));
+                    Some(attn)
+                }
+                None => None,
+            };
             let (tk, tv) = &cache.kv[i];
-            x = Self::image_layer(&b, tk, tv, &x, &m, &cos, &sin, &ranges)?;
+            let (qs, k, v) = Self::image_qkv(&a, tk, tv, &x, m, &cos, &sin, &ranges)?;
+            drop(a);
+            if i + 1 < LAYERS {
+                next = Some(stream.attn(i + 1, true)?);
+            }
+            if let (Some(p), Some(attn)) = (cache.pending.as_mut(), text) {
+                p.x = f.finish(&p.x, &attn, &p.m)?;
+                p.x.eval()?;
+            }
+            x = Self::image_finish(&f, &x, m, qs, &k, &v, &ranges)?;
         }
         cache.pending = None;
-        let s = self.norm_out.forward(&nn::silu(&temb)?)?.reshape(&[1, 1, DIM])?;
-        let x = Block::modulate(&x, &s)?;
+        let x = modulate(&x, &sm.out_scale)?;
         let out = self.proj_out.forward(&x)?.as_dtype(Dtype::Float32)?;
         out.eval()?;
         if self.prec.compute == Dtype::Float16 {

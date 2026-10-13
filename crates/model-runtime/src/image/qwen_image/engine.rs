@@ -329,7 +329,7 @@ impl QwenImage {
     ) -> Result<Array> {
         let (gh, gw) = (request.height as usize / 16, request.width as usize / 16);
         let t1 = Instant::now();
-        let dit = Dit::load(&self.files.transformer, prec)?;
+        let mut dit = Dit::load(&self.files.transformer, prec)?;
         trace!(
             "[dit] 加载 {:.1}s（{:?}{}）",
             t1.elapsed().as_secs_f64(),
@@ -337,7 +337,7 @@ impl QwenImage {
             if prec.dequant { "，整层解量化" } else { "" }
         );
         mem("dit loaded");
-        let mut cache = dit.prepare_text(cond, gh, gw)?;
+        let mut cache = dit.prepare(cond, &sigmas[..request.steps as usize], gh, gw)?;
         let key = random::key(request.seed)?;
         let mut x = random::normal::<f32>(&[1, (gh * gw) as i32, vae::Z_DIM], None, None, &key)?;
         let total = request.steps;
@@ -345,7 +345,7 @@ impl QwenImage {
         for i in 0..total as usize {
             check(cancel)?;
             let ts = Instant::now();
-            let v = dit.step(&mut cache, &x, sigmas[i], gh, gw, self.options.dit_chunk)?;
+            let v = dit.step(&mut cache, &x, i, gh, gw, self.options.dit_chunk)?;
             let dt = (sigmas[i + 1] - sigmas[i]) as f32;
             x = x.add(&v.multiply(&Array::from_f32(dt))?)?;
             x.eval()?;

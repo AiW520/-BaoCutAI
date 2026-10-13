@@ -54,8 +54,8 @@ const QWEN_IMAGE_MLX: BundleDefinition = {
     maxPromptChars: 1024,
     // 设计稿 image-gen.jsx 的「步数」：8–40，一次加减 4，默认 20。
     steps: { min: 8, max: 40, step: 4, default: 20 },
-    // 实测 Model Worker 的进程峰值（phys_footprint）：256² 约 0.7 GB、1024² 约 1.0 GB（MLX 峰值 0.94 GB）；旧版同一管线
-    // 512² 约 0.8 GB。留到 2 GiB 容更大的尺寸（长边至多 1536）与抖动。
+    // 实测 Model Worker 的进程峰值（phys_footprint）：256² 约 0.7 GB、1024² 约 1.0 GB（出在 VAE 解码，MLX 峰值 0.87 GB；DiT
+    // 那段 0.8 GB）；旧版同一管线 512² 约 0.8 GB。留到 2 GiB 容更大的尺寸（长边至多 1536）与抖动。
     peakBytes: 2 * GiB,
     slow: true,
   },
@@ -103,8 +103,9 @@ const QWEN_IMAGE_TURBO_MLX: BundleDefinition = {
   image: {
     ...QWEN_IMAGE_MLX.image!,
     steps: { min: 8, max: 8, step: 8, default: 8 },
-    // 实测 Model Worker 的进程峰值（phys_footprint）：1024² 约 1.5 GB、1536² 约 1.8 GB，都出在 DiT 那段（8-bit 的层是 4-bit 的两倍大）。
-    // 文本编码器不量化的 bf16 词嵌入（[151936, 4096]）只读提示词用到的行，那段约 0.5 GB。留到 2 GiB 容抖动。
+    // 实测 Model Worker 的进程峰值（phys_footprint）：1024² 约 1.0 GB，与上面的 4-bit 包一样出在 VAE 解码。DiT 那段 0.9 GB：8-bit
+    // 的层是 4-bit 的两倍大，按半层流式读入；不量化的 bf16 层外权重（调制等）算完每一步的调制就丢。文本编码器不量化的 bf16 词嵌入
+    // （[151936, 4096]）只读提示词用到的行，那段约 0.5 GB。留到 2 GiB 容更大的尺寸与抖动。
     peakBytes: 2 * GiB,
   },
 };
