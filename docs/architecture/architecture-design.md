@@ -2579,7 +2579,7 @@ outputFrame → outputTime → sequenceTime → composition / sourceTime → act
 
 分别记录 queue / setup / decode / seek / draw / capture / transfer / compose / audio / encode / mux 的耗时、缓存命中、峰值 RSS、可获得的显存信息和回退原因。用数据定位瓶颈，不把所有的慢都归因于浏览器。
 
-成片导出（§9.11）现在报的：Worker 的 `done` 事件给合成时间（`renderSeconds`）、解码重开次数（`decoderRestarts`）、字幕层真正光栅了几张（`captionRasters`，缓存命中不算）与编解码后端和回落原因，Runtime 记进日志。字幕只在画面变了时才该重画：字幕并不逐帧动而 `captionRasters` 接近帧数，说明缓存键过细，每帧都在重画描边、阴影与模糊（逐词变色曾把帧号放进缓存键，1080p 双语字幕的导出因此慢了数倍，像素测试一个都没有失败）。`subtitle-render` 的测试 `caption_layers_are_redrawn_only_when_the_picture_changes` 对每个目录逐词动画与三种转场核对重画次数不超过画面变化次数加每词两次的余量（块胀缩连续插值的 `boxHighlight` 只卡一帧最多画一次）；导出性能的基准见[开发流程 §2](../development-workflow.md#2-验证)。
+成片导出（§9.11）现在报的：Worker 的 `done` 事件给合成时间（`renderSeconds`）、解码重开次数（`decoderRestarts`）、字幕层真正光栅了几张（`captionRasters`，缓存命中不算）与编解码后端和回落原因，Runtime 记进日志。字幕只在画面变了时才该重画：字幕并不逐帧动而 `captionRasters` 接近帧数，说明缓存键过细，每帧都在重画描边、阴影与模糊（逐词变色曾把帧号放进缓存键，1080p 双语字幕的导出因此慢了数倍，像素测试一个都没有失败）。`subtitle-render` 的测试 `caption_layers_are_redrawn_only_when_the_picture_changes` 对每个目录逐词动画与三种转场核对重画次数不超过画面变化次数加每词两次的余量（块胀缩连续插值的 `boxHighlight` 只卡一帧最多画一次）。字幕层要重画时，每行的效果层（阴影或发光：逐字描边后整体模糊）按每个字的字形、描边宽度、效果色、不透明度与变换，连同模糊半径和画布尺寸建键，命中就复用上次模糊好的像素；它与逐词的填充色无关，逐词变色换词时只重画文字层。带裁剪遮罩的行不复用。文字层的描边与填充不能这样拆开缓存：两者逐字交错，宽描边压住前一个字的填充，拆开会改像素。复用与重画逐字节相同，由 `reused_line_effects_match_effects_drawn_afresh` 对每个目录逐词动画核对。导出性能的基准见[开发流程 §2](../development-workflow.md#2-验证)。
 
 在冻结的环境中检验：帧时间、独立的随机 seek 与顺序渲染、单 Worker 与多 Worker、透明边缘、音画时长。跨环境只能给出定义过的容差等级，不默认逐 byte 相同。
 

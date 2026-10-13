@@ -2298,10 +2298,130 @@ pub fn draw_line_effect(
     opacity: f64,
     group_transform: Transform,
 ) -> DrawBounds {
-    if layout.style.text_motion.is_some() || layout.style.word_background.is_some() {
-        return DrawBounds::default();
+    let effect = line_effect(
+        pixmap,
+        text_engine,
+        layout,
+        animation,
+        center_x,
+        top,
+        opacity,
+        group_transform,
+    );
+    draw_effect(pixmap, &effect)
+}
+
+/// 效果层的一笔：一个字形先描边（开了描边时）再填充（[`line_effect`] 记下，[`draw_effect`] 照画）。
+pub struct EffectStroke {
+    glyph: render_raster::GlyphKey,
+    path: tiny_skia::Path,
+    /// 描边宽；`None` 是只填充。
+    outline: Option<f32>,
+    color: SubtitleColor,
+    opacity: f64,
+    transform: Transform,
+    /// 剪裁蒙版在 [`LineEffect::masks`] 里的下标。
+    mask: Option<usize>,
+}
+
+/// 一行效果层（阴影 / 发光）按顺序要画的全部笔划。
+///
+/// 字形轮廓由排版引擎按键给出，同一台引擎里同一个键的轮廓不变（计划存活期间不增删字体），所以两份笔划逐项相同
+/// （字形键、描边宽、颜色、不透明度与变换，浮点按位比）时画出来的效果层逐字节相同：渲染计划据此复用模糊好的效果层
+/// （[`LineEffect::same_strokes`]）。
+#[derive(Default)]
+pub struct LineEffect {
+    strokes: Vec<EffectStroke>,
+    masks: Vec<PixmapMask>,
+}
+
+impl LineEffect {
+    /// 能不能按笔划复用：带剪裁蒙版（配方逐词裁切）的不复用，蒙版是整幅的位图，不值得比。
+    pub fn reusable(&self) -> bool {
+        self.masks.is_empty()
     }
+
+    /// 两份笔划逐项相同（见 [`LineEffect`]）。
+    pub fn same_strokes(&self, other: &[EffectKey]) -> bool {
+        self.strokes.len() == other.len()
+            && self
+                .strokes
+                .iter()
+                .zip(other)
+                .all(|(stroke, key)| stroke.key() == *key)
+    }
+
+    /// 比对用的笔划（不含轮廓）。
+    pub fn keys(&self) -> Vec<EffectKey> {
+        self.strokes.iter().map(EffectStroke::key).collect()
+    }
+}
+
+/// [`EffectStroke`] 去掉轮廓与蒙版后的比对键，浮点按位存。
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct EffectKey {
+    glyph: render_raster::GlyphKey,
+    outline: Option<u32>,
+    color: SubtitleColor,
+    opacity: u64,
+    transform: [u32; 6],
+}
+
+impl EffectStroke {
+    fn key(&self) -> EffectKey {
+        let t = self.transform;
+        EffectKey {
+            glyph: self.glyph,
+            outline: self.outline.map(f32::to_bits),
+            color: self.color,
+            opacity: self.opacity.to_bits(),
+            transform: [t.sx, t.kx, t.ky, t.sy, t.tx, t.ty].map(f32::to_bits),
+        }
+    }
+}
+
+/// 按顺序画 [`line_effect`] 记下的笔划，返回落笔的包围盒。
+pub fn draw_effect(pixmap: &mut Pixmap, effect: &LineEffect) -> DrawBounds {
     let mut bounds = DrawBounds::default();
+    for stroke in &effect.strokes {
+        let paint = paint(stroke.color, stroke.opacity);
+        let mask = stroke.mask.map(|index| &effect.masks[index]);
+        if let Some(width) = stroke.outline {
+            let line = Stroke {
+                width,
+                ..Stroke::default()
+            };
+            pixmap.stroke_path(&stroke.path, &paint, &line, stroke.transform, mask);
+            bounds.add_stroked(&stroke.path, stroke.transform, line.width);
+        }
+        pixmap.fill_path(
+            &stroke.path,
+            &paint,
+            FillRule::Winding,
+            stroke.transform,
+            mask,
+        );
+        bounds.add_filled(&stroke.path, stroke.transform);
+    }
+    bounds
+}
+
+/// 记下一行效果层要画的笔划（不落笔）。`pixmap` 只用来定剪裁蒙版的尺寸。
+#[allow(clippy::too_many_arguments)]
+pub fn line_effect(
+    pixmap: &Pixmap,
+    text_engine: &mut TextEngine,
+    layout: &LineLayout,
+    animation: &WordAnimation,
+    center_x: f64,
+    top: f64,
+    opacity: f64,
+    group_transform: Transform,
+) -> LineEffect {
+    let mut effect = LineEffect::default();
+    if layout.style.text_motion.is_some() || layout.style.word_background.is_some() {
+        return effect;
+    }
     let motion = layout_motion(layout, animation);
     let height = layout.height;
     let (opacity, group_transform) = motion.as_ref().map_or((opacity, group_transform), |frame| {
@@ -2373,7 +2493,11 @@ pub fn draw_line_effect(
                 line_height,
                 visual.recipe.as_ref(),
                 recipe_transform.post_concat(group_transform),
-            );
+            )
+            .map(|mask| {
+                effect.masks.push(mask);
+                effect.masks.len() - 1
+            });
             let replacement = visual
                 .recipe
                 .as_ref()
@@ -2411,34 +2535,23 @@ pub fn draw_line_effect(
                 // （AppKit 语义＝描边＋填充一起画），所以发光同样是从描边后的轮廓
                 // 糊出来的。两种效果在 `resolve_line_style` 里本来也共用一个
                 // effect 槽位（那里有对应的缺口说明）。
-                if layout.style.outline_on && layout.style.outline_width > 0.0 {
-                    let stroke = Stroke {
-                        width: layout.style.outline_width as f32,
-                        ..Stroke::default()
-                    };
-                    pixmap.stroke_path(
-                        &path,
-                        &paint(layout.style.effect_color, chunk_opacity),
-                        &stroke,
-                        effect_transform,
-                        clip_mask.as_ref(),
-                    );
-                    bounds.add_stroked(&path, effect_transform, stroke.width);
-                }
-                pixmap.fill_path(
-                    &path,
-                    &paint(layout.style.effect_color, chunk_opacity),
-                    FillRule::Winding,
-                    effect_transform,
-                    clip_mask.as_ref(),
-                );
-                bounds.add_filled(&path, effect_transform);
+                let outline = (layout.style.outline_on && layout.style.outline_width > 0.0)
+                    .then_some(layout.style.outline_width as f32);
+                effect.strokes.push(EffectStroke {
+                    glyph: glyph.cache_key,
+                    path,
+                    outline,
+                    color: layout.style.effect_color,
+                    opacity: chunk_opacity,
+                    transform: effect_transform,
+                    mask: clip_mask,
+                });
             }
             cursor += chunk.width;
         }
         line_top += line_height + line.gap_after;
     }
-    bounds
+    effect
 }
 
 pub fn caption_recipe_word_rects(
@@ -3097,6 +3210,14 @@ pub fn composite_premultiplied_rgba(
     bounds: &ContentBox,
 ) {
     render_raster::effects::composite_premultiplied_rgba(destination, source, width, bounds);
+}
+
+/// 一段等长像素的预乘 source-over，逐像素与 [`composite_premultiplied_rgba`] 相同；两段缓冲步长不同时按行调用。
+pub fn composite_premultiplied_row(destination: &mut [u8], source: &[u8]) {
+    render_raster::effects::filters::composite_premul::composite_premultiplied_row(
+        destination,
+        source,
+    );
 }
 
 /// 把 `bounds` 覆盖的像素清零（缓冲复用）。

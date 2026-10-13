@@ -1442,6 +1442,9 @@ impl OverlayRenderPlan {
             blank_frame: None,
             subtitle_rasters: 0,
             effect_scratch: None,
+            effect_cache: VecDeque::new(),
+            effect_spare: Vec::new(),
+            effect_rasters: 0,
             suppress_transition: false,
             executor: render_raster::CpuExecutor::new(caps.clone()),
             capability: caps.fingerprint(),
@@ -4547,6 +4550,54 @@ impl OverlayRenderPlan {
         })
     }
 
+    /// 把一行效果层画进 scratch、模糊（`radius` 为 0 不模糊），取出非零区域与区域里的像素（按区域宽紧排，装进
+    /// [`Self::effect_spare`] 留下的缓冲），scratch 清零归还。`None` 是一笔也没落。
+    fn blur_line_effect(
+        &mut self,
+        effect: &LineEffect,
+        radius: usize,
+    ) -> Result<Option<(ContentBox, Vec<u8>)>> {
+        let (width, height) = (self.width as usize, self.height as usize);
+        // 缓冲取自 scratch（归还前已按包围盒清零，等价于新建的全零 Pixmap）。
+        let mut scratch = match self.effect_scratch.take() {
+            Some(scratch) => scratch,
+            None => Pixmap::new(self.width, self.height)
+                .ok_or_else(|| anyhow!("无法创建字幕效果透明层 {}x{}", self.width, self.height))?,
+        };
+        self.effect_rasters += 1;
+        let drawn = draw_effect(&mut scratch, effect);
+        // 效果层只被 `draw_effect` 写过，它的落笔窗口就是非零像素的
+        // 超集：不必为了找包围盒把整幅 8.3MB 再读一遍。
+        let region = drawn
+            .window(width, height)
+            .and_then(|window| alpha_bbox_within(scratch.data(), width, height, &window))
+            .map(|bounds| {
+                let bounds = if radius > 0 {
+                    box_blur_rgba_bounded(
+                        scratch.data_mut(),
+                        self.width,
+                        self.height,
+                        radius,
+                        &bounds,
+                    )
+                } else {
+                    bounds
+                };
+                let mut rgba = std::mem::take(&mut self.effect_spare);
+                rgba.clear();
+                for y in bounds.rows.clone() {
+                    rgba.extend_from_slice(
+                        &scratch.data()[(y * width + bounds.cols.start) * 4
+                            ..(y * width + bounds.cols.end) * 4],
+                    );
+                }
+                clear_content_box(scratch.data_mut(), width, &bounds);
+                (bounds, rgba)
+            });
+        self.effect_scratch = Some(scratch);
+        Ok(region)
+    }
+
     fn render_subtitle_frame_classic(&mut self, time: f64) -> Result<RenderedSubtitleFrame> {
         if !(0.0..self.duration).contains(&time) {
             return Ok(RenderedSubtitleFrame {
@@ -4704,15 +4755,8 @@ impl OverlayRenderPlan {
             }
             // Konva blurs only the text shadow/glow. Keep that effect isolated so
             // the glyph fill, outline, highlight plates, and backgrounds stay crisp.
-            // 缓冲取自 scratch（归还前已按包围盒清零，等价于新建的全零 Pixmap）。
-            let mut effect = match self.effect_scratch.take() {
-                Some(scratch) => scratch,
-                None => Pixmap::new(self.width, self.height).ok_or_else(|| {
-                    anyhow!("无法创建字幕效果透明层 {}x{}", self.width, self.height)
-                })?,
-            };
-            let effect_drawn = draw_line_effect(
-                &mut effect,
+            let effect = line_effect(
+                &pixmap,
                 &mut self.text,
                 line,
                 &animation,
@@ -4721,37 +4765,65 @@ impl OverlayRenderPlan {
                 pose.opacity,
                 group_tf,
             );
-            // 效果层只被 `draw_line_effect` 写过，它的落笔窗口就是非零像素的
-            // 超集：不必为了找包围盒把整幅 8.3MB 再读一遍。
-            let effect_bounds = effect_drawn
-                .window(width, height)
-                .and_then(|window| alpha_bbox_within(effect.data(), width, height, &window))
-                .map(|bounds| {
-                    if line.style.effect_blur > 0.5 {
-                        box_blur_rgba_bounded(
-                            effect.data_mut(),
-                            self.width,
-                            self.height,
-                            line.style.effect_blur.round() as usize,
-                            &bounds,
-                        )
-                    } else {
-                        bounds
-                    }
-                });
-            if let Some(effect_bounds) = effect_bounds {
+            let radius = if line.style.effect_blur > 0.5 {
+                line.style.effect_blur.round() as usize
+            } else {
+                0
+            };
+            let size = (self.width, self.height);
+            let hit = effect
+                .reusable()
+                .then(|| {
+                    self.effect_cache.iter().position(|cached| {
+                        cached.radius == radius
+                            && cached.size == size
+                            && effect.same_strokes(&cached.strokes)
+                    })
+                })
+                .flatten();
+            let cached = match hit {
+                Some(index) => self.effect_cache.remove(index).expect("刚找到"),
+                None => CachedEffect {
+                    strokes: effect.keys(),
+                    radius,
+                    size,
+                    region: self.blur_line_effect(&effect, radius)?,
+                },
+            };
+            if let Some((effect_bounds, rgba)) = &cached.region {
                 // 并进整帧窗口的是**模糊后**的盒子（`box_blur_rgba_bounded` 已经
                 // 把扩散半径算进返回值），所以整帧窗口不必再为 glow 留额外边距。
-                drawn.merge_content_box(&effect_bounds);
-                composite_premultiplied_rgba(
-                    pixmap.data_mut(),
-                    effect.data(),
-                    width,
-                    &effect_bounds,
-                );
-                clear_content_box(effect.data_mut(), width, &effect_bounds);
+                drawn.merge_content_box(effect_bounds);
+                let row = (effect_bounds.cols.end - effect_bounds.cols.start) * 4;
+                for (y, source) in effect_bounds.rows.clone().zip(rgba.chunks_exact(row)) {
+                    let start = (y * width + effect_bounds.cols.start) * 4;
+                    composite_premultiplied_row(&mut pixmap.data_mut()[start..start + row], source);
+                }
             }
-            self.effect_scratch = Some(effect);
+            let mut spare = Vec::new();
+            if effect.reusable() {
+                self.effect_cache.push_front(cached);
+                let mut bytes = 0;
+                let keep = self
+                    .effect_cache
+                    .iter()
+                    .take(EFFECT_CACHE_ENTRIES)
+                    .take_while(|cached| {
+                        bytes += cached.region.as_ref().map_or(0, |(_, rgba)| rgba.len());
+                        bytes <= EFFECT_CACHE_BYTES
+                    })
+                    .count()
+                    .max(1);
+                spare.extend(self.effect_cache.drain(keep..).filter_map(|old| old.region));
+            } else {
+                spare.extend(cached.region);
+            }
+            // 用过或挤出去的像素缓冲留给下一次未命中：逐帧都在变的效果层不再逐帧分配。
+            if let Some((_, rgba)) = spare.into_iter().max_by_key(|(_, rgba)| rgba.capacity())
+                && rgba.capacity() > self.effect_spare.capacity()
+            {
+                self.effect_spare = rgba;
+            }
         }
         for (line, center_x, top) in &positioned {
             drawn.merge(draw_line_layout(

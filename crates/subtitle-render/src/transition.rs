@@ -93,6 +93,23 @@ pub struct CachedFrame {
     pub composite: CaptionCompositeMode,
 }
 
+/// 一行模糊好的效果层（[`OverlayRenderPlan::effect_cache`]）。
+pub struct CachedEffect {
+    /// 画它的笔划（[`LineEffect::keys`]）。
+    pub strokes: Vec<EffectKey>,
+    /// 模糊半径（不模糊为 0）与画布尺寸：笔划相同、这两样也相同才算同一层。
+    pub radius: usize,
+    pub size: (u32, u32),
+    /// 模糊后的非零区域与区域里的预乘 RGBA（按区域宽紧排）；`None` 是一笔也没落。
+    pub region: Option<(ContentBox, Vec<u8>)>,
+}
+
+/// [`OverlayRenderPlan::effect_cache`] 的字节上限：1080p 双语字幕两行的效果层各约 1–2 MB，够装几句；
+/// 预览的 WASM 里同一份代码，不放大。
+pub const EFFECT_CACHE_BYTES: usize = 24 << 20;
+/// [`OverlayRenderPlan::effect_cache`] 的条数上限。
+pub const EFFECT_CACHE_ENTRIES: usize = 8;
+
 pub struct OverlayFrame {
     /// 本帧**字幕层**的内容键（`RenderedSubtitleFrame::key`）。几何侧车
     /// [`OverlayRenderPlan::subtitle_layout`] 在同一时刻算出逐字相同的值，
@@ -884,6 +901,13 @@ pub struct OverlayRenderPlan {
     /// 字幕效果层的可复用整幅缓冲。用完按包围盒清零后归还，保证下次取出时
     /// 仍是全零——省掉 4K 下每行效果 33MB 的分配。
     pub effect_scratch: Option<Pixmap>,
+    /// 字幕行模糊好的效果层（阴影 / 发光），按画它的笔划复用：逐词变色只换正文的填充色，效果层的笔划不变，
+    /// 词边界上不必重画、重模糊（[`LineEffect`]）。最近用的在前，按条数与字节限容（[`EFFECT_CACHE_BYTES`]）。
+    pub effect_cache: VecDeque<CachedEffect>,
+    /// 效果层的空闲像素缓冲：挤出 [`Self::effect_cache`] 的、或不复用的那一层用完的，下一次未命中接着装。
+    pub effect_spare: Vec<u8>,
+    /// 效果层真正画了几次（[`Self::effect_cache`] 未命中）。
+    pub effect_rasters: u64,
     /// S14：把字幕入场转场压成单位姿态。渲染计划本身与压制无关（同一份排版、
     /// 同一批字形），所以它是**逐次渲染**的开关而不是编译期属性——切一次选中态
     /// 不该重编译整份计划。默认 `false`：导出与老客户端一律保持原行为。

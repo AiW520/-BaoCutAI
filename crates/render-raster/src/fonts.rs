@@ -457,6 +457,9 @@ const COLR_TAG: swash::Tag = u32::from_be_bytes(*b"COLR");
 /// 可变字体的字重轴 tag。
 const WGHT_TAG: swash::Tag = u32::from_be_bytes(*b"wght");
 
+/// 字形的键（[`ShapedGlyph::cache_key`]）：同一台排版引擎里，同一个键的轮廓（[`TextEngine::glyph_render`]）不变。
+pub type GlyphKey = CacheKey;
+
 #[derive(Debug, Clone)]
 pub struct ShapedGlyph {
     pub cache_key: CacheKey,

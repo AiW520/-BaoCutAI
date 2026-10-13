@@ -2360,6 +2360,64 @@ mod tests {
         }
     }
 
+    /// 效果层（阴影 / 发光）按笔划复用（[`LineEffect`]）：每个目录逐词动画，不带转场的单语阴影与弹出转场的双语发光，
+    /// 按帧顺序画（效果层缓存一路带着）与每帧先清空效果层缓存再画的逐帧逐字节相同。两边每帧都清掉整帧缓存，保证真画。
+    /// 只在词边界换色的 `colourHighlight` 要真的复用上，不然这条测试什么也没测到。
+    #[test]
+    fn reused_line_effects_match_effects_drawn_afresh() {
+        let shadow = json!({"on": true, "color": "#000000", "blur": 0.12, "distance": 0.08, "opacity": 0.9, "rotation": 45});
+        let glow = json!({"on": true, "color": "#18E1D6", "intensity": 60, "range": 40});
+        for entry in crate::word_animation_catalog::WORD_ANIMATIONS {
+            for (transition, effect, value, mode) in [
+                ("none", "dropShadow", &shadow, None),
+                ("magic-pop", "glow", &glow, Some("bi")),
+            ] {
+                let mut doc = five_word_document(entry.catalog_id, transition);
+                doc["style"][effect] = value.clone();
+                doc["style"]["textOutline"] = json!({"on": true, "color": "#000000", "width": 14});
+                doc["transCues"] = json!([{"id": "s1#0", "sid": "s1", "kind": "piece",
+                    "text": "uno dos tres cuatro cinco", "start": 0.5, "end": 2.5}]);
+                let compile = || {
+                    OverlayRenderPlan::compile_with(
+                        &doc,
+                        320,
+                        180,
+                        3.0,
+                        30.0,
+                        mode,
+                        OverlayIncludes::ALL,
+                    )
+                    .unwrap()
+                };
+                let (mut reused, mut fresh) = (compile(), compile());
+                for frame in 0..90 {
+                    let time = f64::from(frame) / 30.0;
+                    reused.cache.clear();
+                    fresh.cache.clear();
+                    fresh.effect_cache.clear();
+                    let (a, b) = (
+                        reused.render_subtitle_frame(time).unwrap(),
+                        fresh.render_subtitle_frame(time).unwrap(),
+                    );
+                    let case = format!(
+                        "{} + {transition} + {effect}：第 {frame} 帧",
+                        entry.catalog_id
+                    );
+                    assert!(*a.rgba == *b.rgba, "{case} 像素不同");
+                    assert_eq!(a.bounds, b.bounds, "{case}");
+                }
+                if entry.catalog_id == "colourHighlight" && transition == "none" {
+                    assert!(
+                        reused.effect_rasters * 4 < fresh.effect_rasters,
+                        "复用后仍画了 {} 次效果层（不复用 {} 次）",
+                        reused.effect_rasters,
+                        fresh.effect_rasters
+                    );
+                }
+            }
+        }
+    }
+
     fn emphasis_document(look: Option<Value>, emphasis: Option<Value>) -> Value {
         let mut doc = document("None", "none");
         doc["cues"][0]["words"][0]["id"] = json!("w1");
