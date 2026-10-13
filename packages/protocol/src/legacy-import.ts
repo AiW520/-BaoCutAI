@@ -81,6 +81,19 @@ export interface LegacyImportRun {
 export interface LegacyImportSnapshot {
   prompt: LegacyImportPrompt | null;
   run: LegacyImportRun | null;
+  /** Local upgrade information, independent of project discovery; omitted when there is nothing to explain. */
+  settingsReport?: LegacySettingsReport;
+}
+
+export type LegacySettingsField = 'transcribe.model' | 'transcribe.sourceLang' | 'vk-default-model';
+
+export interface LegacySettingsReport {
+  /** Stable across restarts; a desktop client can remember which report the user has read. */
+  reportId: string;
+  /** Only field names, never old preference values or credentials. */
+  fields: LegacySettingsField[];
+  /** Historical adoption, not necessarily the currently selected directory. */
+  modelsDirectory: string | null;
 }
 
 /** 询问出现或消失（被回答，或 Runtime 不再等）、导入有了进展：都带完整的新状态，客户端整体替换那一项。 */

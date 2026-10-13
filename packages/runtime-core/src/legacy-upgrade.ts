@@ -15,6 +15,8 @@ import {
   type LegacyImportRun,
   type LegacyImportSnapshot,
   type LegacyProjectSummary,
+  type LegacySettingsField,
+  type LegacySettingsReport,
 } from '@baocut/protocol';
 import { RcRuntime } from '@baocut/protocol/messages/runtime-core';
 import type { ModelServiceStore } from '@baocut/models';
@@ -40,6 +42,8 @@ interface SourceState {
   absent?: true;
   settings?: true;
   modelDirectoryChecked?: true;
+  settingsReportChecked?: true;
+  adoptedModelsDirectory?: string;
   cloud?: true;
   services?: true;
   nodes?: true;
@@ -97,6 +101,12 @@ interface ImportReport {
 /** 没导入的原因里列出的缺失文件个数（总数另给）。 */
 const MISSING_SHOWN = 5;
 const key = (value: string) => createHash('sha256').update(value).digest('hex').slice(0, 16);
+
+/** v3 input language is selected per run; old model identifiers are not silently chosen as a ready default. */
+function recordTranscriptionPreferences(state: SourceState, config: LegacyObject, v1: LegacyObject): void {
+  for (const field of ['transcribe.model', 'transcribe.sourceLang']) if (config[field] !== undefined) state.unsupported.push(`setting:${field}`);
+  if (v1['vk-default-model'] !== undefined) state.unsupported.push('preference:vk-default-model');
+}
 
 /**
  * 导入询问的默认目录：系统「文稿 / 文档」文件夹下的 `BaoCut`。桌面端经 `BAOCUT_DOCUMENTS_DIR` 给出主机的已知文件夹
@@ -167,7 +177,7 @@ export class LegacyUpgrade {
   #draining = false;
   #drained: Promise<void> = Promise.resolve();
   /** 事件带完整的导入状态，缓冲不用留太多：落后太多的订阅者改收快照。 */
-  readonly topic = new TopicLog<LegacyImportSnapshot, LegacyImportEvent>(() => ({ prompt: this.#prompt, run: this.run() }), '0', 64);
+  readonly topic = new TopicLog<LegacyImportSnapshot, LegacyImportEvent>(() => this.snapshot(), '0', 64);
   constructor(options: LegacyUpgradeOptions) {
     this.#options = options;
     this.#file = path.join(options.home.root, 'store', 'legacy-upgrade.json');
@@ -186,6 +196,30 @@ export class LegacyUpgrade {
   /** 这次启动里的项目导入（`legacyImport.get`）；没有要导入的时为 null。 */
   run(): LegacyImportRun | null {
     return this.#importRun && structuredClone(this.#importRun);
+  }
+
+  /** Settings recovery stays available even when no project import runs, or all projects have been skipped. */
+  snapshot(): LegacyImportSnapshot {
+    const report = this.settingsReport();
+    return { prompt: this.#prompt, run: this.run(), ...(report ? { settingsReport: report } : {}) };
+  }
+
+  settingsReport(): LegacySettingsReport | null {
+    const fields = new Set<LegacySettingsField>();
+    const sources: string[] = [];
+    let modelsDirectory: string | null = null;
+    for (const [root, state] of Object.entries(this.#state.sources)) {
+      for (const field of ['transcribe.model', 'transcribe.sourceLang', 'vk-default-model'] as const) {
+        if (state.unsupported.includes(`${field === 'vk-default-model' ? 'preference' : 'setting'}:${field}`)) {
+          fields.add(field);
+          sources.push(root);
+        }
+      }
+      modelsDirectory ??= state.adoptedModelsDirectory ?? null;
+    }
+    if (!fields.size) return null;
+    const report = { fields: [...fields].sort(), modelsDirectory };
+    return { reportId: key(JSON.stringify({ sources: [...new Set(sources)].sort(), ...report })), ...report };
   }
 
   /** `legacyImport.answer`：先校验并记下回答，再让等着的这一轮继续。 */
@@ -283,27 +317,46 @@ export class LegacyUpgrade {
     const loaded = await readJson<UpgradeState>(this.#file);
     if (loaded && (loaded.schemaVersion !== 1 || !loaded.sources)) throw new Error('Unsupported legacy upgrade marker');
     this.#state = loaded ?? this.#state;
+    const prefFile =
+      this.#options.v1Preferences !== undefined
+        ? this.#options.v1Preferences
+        : platform === 'darwin' &&
+            !process.env.BAOCUT_LEGACY_ROOT &&
+            (process.env.BAOCUT_LEGACY_AUTO_DETECT === '1' ||
+              !process.env.BAOCUT_HOME ||
+              path.resolve(process.env.BAOCUT_HOME) === path.join(os.homedir(), '.baocut'))
+          ? path.join(os.homedir(), 'Library', 'Preferences', 'com.jimliu.baocut.plist')
+          : null;
+    this.#v1PreferenceFile = prefFile;
+    this.#primaryRoot = path.resolve(roots[0]!);
     // Early releases marked settings complete even when no settings file was written.
     // Backfill only that case; an existing settings file may contain later user choices.
     let modelDirectoryCheckpointChanged = false;
     for (const root of roots) {
       const state = this.#state.sources[path.resolve(root)];
-      if (!state?.settings || state.modelDirectoryChecked) continue;
+      if (!state?.settings || (state.modelDirectoryChecked && state.settingsReportChecked)) continue;
       try {
-        if (!(await isFile(this.#options.home.settingsFile))) {
-          const oldConfig = await readJson<{ values?: LegacyObject }>(path.join(root, 'config.json'));
-          for (const key of ['transcribe.model', 'transcribe.sourceLang']) {
-            if (oldConfig?.values?.[key] !== undefined) state.unsupported.push(`setting:${key}`);
-          }
+        if (!state.modelDirectoryChecked && !(await isFile(this.#options.home.settingsFile))) {
           const modelsDir = await legacyDefaultModelsDirectory(root, platform, this.#options.home.modelsDir);
           if (modelsDir) {
             const store = new SettingsStore(this.#options.home.settingsFile);
             await store.load();
             await store.set({ 'models.dir': modelsDir });
+            state.adoptedModelsDirectory = modelsDir;
           }
         }
         state.modelDirectoryChecked = true;
         modelDirectoryCheckpointChanged = true;
+        if (!state.settingsReportChecked) {
+          const source = await readLegacySource(root, platform, { discoverProjects: false });
+          const v1: LegacyObject = {};
+          if (prefFile && path.resolve(root) === this.#primaryRoot) {
+            for (const file of [path.join(path.dirname(prefFile), 'VoiceInk.plist'), prefFile]) Object.assign(v1, await readV1Preferences(file));
+          }
+          recordTranscriptionPreferences(state, source?.config ?? {}, v1);
+          state.settingsReportChecked = true;
+          this.#options.log.info('Legacy transcription settings recovery recorded', { source: root, unsupported: state.unsupported });
+        }
       } catch (error) {
         this.#options.log.warn('Legacy model directory recovery deferred', { error: String(error) });
       }
@@ -323,18 +376,6 @@ export class LegacyUpgrade {
       return;
     }
     let settings: SettingsStore | null = null;
-    const prefFile =
-      this.#options.v1Preferences !== undefined
-        ? this.#options.v1Preferences
-        : platform === 'darwin' &&
-            !process.env.BAOCUT_LEGACY_ROOT &&
-            (process.env.BAOCUT_LEGACY_AUTO_DETECT === '1' ||
-              !process.env.BAOCUT_HOME ||
-              path.resolve(process.env.BAOCUT_HOME) === path.join(os.homedir(), '.baocut'))
-          ? path.join(os.homedir(), 'Library', 'Preferences', 'com.jimliu.baocut.plist')
-          : null;
-    this.#v1PreferenceFile = prefFile;
-    this.#primaryRoot = path.resolve(roots[0]!);
     for (const root of roots) {
       const id = path.resolve(root);
       if (this.#state.sources[id]?.complete && this.#state.sources[id]?.services && this.#state.sources[id]?.nodes) continue;
@@ -374,7 +415,8 @@ export class LegacyUpgrade {
             settings = new SettingsStore(this.#options.home.settingsFile);
             await settings.load();
           }
-          await importLegacySettings(settings, source, v1, platform, undefined, this.#options.home.modelsDir);
+          const imported = await importLegacySettings(settings, source, v1, platform, undefined, this.#options.home.modelsDir);
+          if (imported.includes('models.dir')) state.adoptedModelsDirectory = settings.get('models.dir')!;
           const mapped = new Set(['language', 'vk-url-savedir', 'appAutoUpdate', 'agentChatDefaults', 'agentLastMode', 'serveEnabled', 'servePort']);
           state.unsupported.push(
             ...Object.keys(source.preferences)
@@ -382,11 +424,10 @@ export class LegacyUpgrade {
               .map((key) => `preference:${key}`),
           );
           if ((source.config['models.endpoint'] ?? v1['vk-download-source']) === 'cdn') state.unsupported.push('setting:models.endpoint');
-          // v3 has no equivalent persistent input-language setting; local model defaults require a ready bundle.
-          for (const key of ['transcribe.model', 'transcribe.sourceLang']) if (source.config[key] !== undefined) state.unsupported.push(`setting:${key}`);
-          if (v1['vk-default-model'] !== undefined) state.unsupported.push('preference:vk-default-model');
+          recordTranscriptionPreferences(state, source.config, v1);
           state.settings = true;
           state.modelDirectoryChecked = true;
+          state.settingsReportChecked = true;
           await this.#save();
         }
         if (!state.services) {

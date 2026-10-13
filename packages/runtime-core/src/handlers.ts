@@ -291,7 +291,7 @@ export function createHandlers({
         setTimeout(requestStop, 50);
         return { stopping: true as const };
       },
-      'legacyImport.get': () => ({ prompt: legacyUpgrade.prompt(), run: legacyUpgrade.run() }),
+      'legacyImport.get': () => legacyUpgrade.snapshot(),
       // 导入到哪、要不要导入、重试还是跳过，是本机用户的决定：Agent 与对外服务的连接不能替用户做。
       'legacyImport.answer': async (p, principal) => {
         if (principal.kind !== 'cli' && principal.kind !== 'desktop') throw new RpcError('forbidden', RcRuntime.legacyImportLocalOnly());

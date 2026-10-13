@@ -2,14 +2,15 @@ import fs from 'node:fs/promises';
 import { existsSync } from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
+import { createHash } from 'node:crypto';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { silentLogger } from '@baocut/harness';
 import { ModelServiceStore } from '@baocut/models';
 import { FileCredentialStore, SettingsStore, readJson, resolveRuntimeHome, writeJsonAtomic } from '@baocut/runtime-storage';
 import { LegacyUpgrade, defaultLegacyImportDirectory, legacyVolumeOf } from './legacy-upgrade.ts';
-import { legacyRoots, readLegacySource } from './legacy-upgrade-sources.ts';
+import { legacyRoots, readLegacySource, readV1Preferences } from './legacy-upgrade-sources.ts';
 import { importLegacyCloud } from './legacy-upgrade-cloud.ts';
-import { importLegacySettings } from './legacy-upgrade-settings.ts';
+import { importLegacySettings, legacyDefaultModelsDirectory } from './legacy-upgrade-settings.ts';
 
 let dir: string;
 beforeEach(async () => {
@@ -55,25 +56,132 @@ async function prompted(upgrade: LegacyUpgrade) {
   return upgrade.prompt()!;
 }
 
+async function modelCache(root: string, repo = 'acme/model') {
+  const directory = path.join(root, ...repo.split('/'));
+  const weights = path.join(directory, 'model.safetensors');
+  const content = 'old bytes';
+  const manifest = path.join(directory, '.bcut-manifest.json');
+  await writeJsonAtomic(manifest, { format_version: 1, repo, revision: 'master', files: [
+    { path: 'model.safetensors', size: content.length, sha256: createHash('sha256').update(content).digest('hex') },
+  ] });
+  await fs.writeFile(weights, content);
+  return { manifest, weights };
+}
+
 describe('legacy startup upgrade', () => {
+  it('ignores Finder metadata and empty trees, but retains current weights and paused downloads', async () => {
+    const s = await setup();
+    const old = path.join(s.root, 'models');
+    await modelCache(old);
+    await fs.mkdir(path.join(s.home.modelsDir, 'empty-owner', 'empty-repo'), { recursive: true });
+    await fs.mkdir(path.join(s.home.modelsDir, '.bcut-staging', 'empty'), { recursive: true });
+    await fs.writeFile(path.join(s.home.modelsDir, '.DS_Store'), 'Finder metadata');
+    expect(await legacyDefaultModelsDirectory(s.root, process.platform, s.home.modelsDir)).toBe(old);
+    const part = path.join(s.home.modelsDir, '.bcut-staging', 'acme', 'model@revision', 'model.safetensors.part');
+    await fs.mkdir(path.dirname(part), { recursive: true });
+    await fs.writeFile(part, 'downloaded bytes');
+    expect(await legacyDefaultModelsDirectory(s.root, process.platform, s.home.modelsDir)).toBeNull();
+    await fs.rm(part);
+    const current = await modelCache(s.home.modelsDir, 'acme/current');
+    await fs.rm(current.manifest);
+    const nested = path.join(path.dirname(current.weights), 'weights', 'model.safetensors');
+    await fs.mkdir(path.dirname(nested), { recursive: true });
+    await fs.rename(current.weights, nested);
+    expect(await legacyDefaultModelsDirectory(s.root, process.platform, s.home.modelsDir)).toBeNull();
+  });
+
+  it('does not adopt metadata, an empty manifest, or a manifest with no remaining model files', async () => {
+    const s = await setup();
+    const old = path.join(s.root, 'models');
+    await fs.mkdir(path.join(old, 'acme', 'empty'), { recursive: true });
+    await fs.writeFile(path.join(old, '.DS_Store'), 'metadata');
+    expect(await legacyDefaultModelsDirectory(s.root, process.platform, s.home.modelsDir)).toBeNull();
+    await writeJsonAtomic(path.join(old, 'acme', 'empty', '.bcut-manifest.json'), { format_version: 1, repo: 'acme/empty', revision: 'master', files: [] });
+    expect(await legacyDefaultModelsDirectory(s.root, process.platform, s.home.modelsDir)).toBeNull();
+    const cache = await modelCache(old);
+    await fs.rm(cache.weights);
+    expect(await legacyDefaultModelsDirectory(s.root, process.platform, s.home.modelsDir)).toBeNull();
+  });
+
+  it.skipIf(process.platform !== 'darwin')('reads the real v1 default-model plist and reports it without adopting its value', async () => {
+    const s = await setup();
+    const plist = path.join(dir, 'com.jimliu.baocut.plist');
+    await fs.writeFile(plist, '<?xml version="1.0"?><plist version="1.0"><dict><key>vk-default-model</key><string>moss-transcribe-diarize</string></dict></plist>');
+    expect(await readV1Preferences(plist)).toHaveProperty('vk-default-model', 'moss-transcribe-diarize');
+    const upgrade = new LegacyUpgrade({ ...s, roots: [s.root], v1Preferences: plist, platform: 'darwin' });
+    await upgrade.prepare();
+    expect(upgrade.snapshot().settingsReport?.fields).toEqual(['vk-default-model']);
+    expect(JSON.stringify(upgrade.snapshot())).not.toContain('moss-transcribe-diarize');
+  });
+
+  it('backfills the settings report even when current settings already exist, then only reads the marker', async () => {
+    const s = await setup();
+    const settings = new SettingsStore(s.home.settingsFile);
+    await settings.load();
+    await settings.set({ 'models.dir': path.join(dir, 'current-models'), 'ui.language': 'ja' });
+    await writeJsonAtomic(path.join(s.root, 'config.json'), { values: { 'transcribe.model': 'moss-transcribe-diarize', 'transcribe.sourceLang': 'en' } });
+    await writeJsonAtomic(path.join(s.home.root, 'store', 'legacy-upgrade.json'), { schemaVersion: 1, complete: true, sources: { [s.root]: {
+      settings: true, modelDirectoryChecked: true, cloud: true, services: true, nodes: true, complete: true, credentials: [], projects: {}, pending: [], unsupported: [],
+    } } });
+    const options = { ...s, roots: [s.root], v1Preferences: null };
+    const first = new LegacyUpgrade(options);
+    await first.prepare();
+    const report = first.settingsReport();
+    expect(report?.fields).toEqual(['transcribe.model', 'transcribe.sourceLang']);
+    expect(report?.modelsDirectory).toBeNull();
+    await settings.load();
+    expect(settings.get('models.dir')).toBe(path.join(dir, 'current-models'));
+    expect(settings.get('ui.language')).toBe('ja');
+    await fs.writeFile(path.join(s.root, 'config.json'), 'no longer readable JSON');
+    const read = vi.spyOn(fs, 'readFile');
+    const again = new LegacyUpgrade(options);
+    await again.prepare();
+    expect(again.settingsReport()).toEqual(report);
+    expect(read.mock.calls.map(([file]) => String(file))).toEqual([path.join(s.home.root, 'store', 'legacy-upgrade.json')]);
+  });
+
+  it('serves completed settings recovery in both gateway queries and subscription snapshots without projects', async () => {
+    const { startRuntime } = await import('./runtime.ts');
+    const { BaoCutClient } = await import('@baocut/client');
+    const s = await setup();
+    await writeJsonAtomic(path.join(s.root, 'config.json'), { values: { 'transcribe.model': 'moss-transcribe-diarize' } });
+    await writeJsonAtomic(path.join(s.home.root, 'store', 'legacy-upgrade.json'), { schemaVersion: 1, complete: true, sources: { [s.root]: {
+      settings: true, cloud: true, services: true, nodes: true, complete: true, credentials: [], projects: {}, pending: [], unsupported: [],
+    } } });
+    vi.stubEnv('BAOCUT_LEGACY_ROOT', s.root);
+    vi.stubEnv('BAOCUT_HOME', s.home.root);
+    const runtime = await startRuntime({ home: s.home, drivers: () => [], modelWorker: null, engineHost: null, watchSpace: false });
+    const client = new BaoCutClient({ resolve: async () => runtime.discovery, client: { kind: 'desktop', name: 'test', version: '0' }, reconnect: false });
+    try {
+      await client.connect();
+      const snapshot = await client.request('legacyImport.get', {});
+      expect(snapshot).toMatchObject({ prompt: null, run: null, settingsReport: { fields: ['transcribe.model'], modelsDirectory: null } });
+      let subscribed: unknown;
+      const stop = client.subscribeLegacyImport({ snapshot: (value) => { subscribed = value; }, event: () => {} });
+      await vi.waitFor(() => expect(subscribed).toEqual(snapshot));
+      stop();
+    } finally {
+      await client.close();
+      await runtime.close();
+    }
+  });
+
   it('adopts a populated old default model directory without changing its files, preserving current caches and choices', async () => {
     const s = await setup();
     const oldModels = path.join(s.root, 'models');
-    await fs.mkdir(path.join(oldModels, 'acme'), { recursive: true });
-    const manifest = path.join(oldModels, 'acme', 'manifest.json');
-    await fs.writeFile(manifest, '{"revision":"master"}');
+    const { manifest } = await modelCache(oldModels);
+    const original = await fs.readFile(manifest, 'utf8');
     const source = (await readLegacySource(s.root, process.platform, { discoverProjects: false }))!;
     source.config = {}; source.preferences = {};
     const settings = new SettingsStore(s.home.settingsFile); await settings.load();
     await importLegacySettings(settings, source, {}, process.platform, undefined, s.home.modelsDir);
     expect(settings.get('models.dir')).toBe(oldModels);
-    expect(await fs.readFile(manifest, 'utf8')).toBe('{"revision":"master"}');
+    expect(await fs.readFile(manifest, 'utf8')).toBe(original);
     await settings.set({ 'models.dir': '/current/models' });
     await importLegacySettings(settings, source, {}, process.platform, undefined, s.home.modelsDir);
     expect(settings.get('models.dir')).toBe('/current/models');
     await settings.set({ 'models.dir': null });
-    await fs.mkdir(s.home.modelsDir, { recursive: true });
-    await fs.writeFile(path.join(s.home.modelsDir, 'new-cache'), 'current');
+    await modelCache(s.home.modelsDir, 'acme/current');
     await importLegacySettings(settings, source, {}, process.platform, undefined, s.home.modelsDir);
     expect(settings.get('models.dir')).toBeNull();
   });
@@ -81,7 +189,7 @@ describe('legacy startup upgrade', () => {
   it('backfills an old completed settings marker with no settings file once, without resurrecting a later reset', async () => {
     const s = await setup();
     const oldModels = path.join(s.root, 'models');
-    await fs.mkdir(oldModels, { recursive: true }); await fs.writeFile(path.join(oldModels, 'weights'), 'old bytes');
+    const { weights } = await modelCache(oldModels);
     await writeJsonAtomic(path.join(s.root, 'config.json'), { values: { 'transcribe.model': 'moss-transcribe-diarize', 'transcribe.sourceLang': 'en' } });
     await writeJsonAtomic(path.join(s.home.root, 'store', 'legacy-upgrade.json'), {
       schemaVersion: 1, complete: true, sources: { [s.root]: {
@@ -90,16 +198,21 @@ describe('legacy startup upgrade', () => {
       } },
     });
     const options = { ...s, roots: [s.root], v1Preferences: null, platform: process.platform };
-    await new LegacyUpgrade(options).prepare();
+    const recovered = new LegacyUpgrade(options);
+    await recovered.prepare();
+    const report = recovered.snapshot().settingsReport!;
+    expect(report).toMatchObject({ modelsDirectory: oldModels, fields: ['transcribe.model', 'transcribe.sourceLang'] });
     const settings = new SettingsStore(s.home.settingsFile); await settings.load();
     expect(settings.get('models.dir')).toBe(oldModels);
     const marker = await readJson<any>(path.join(s.home.root, 'store', 'legacy-upgrade.json'));
     expect(marker.sources[s.root]).toMatchObject({ modelDirectoryChecked: true });
     expect(marker.sources[s.root].unsupported).toEqual(expect.arrayContaining(['setting:transcribe.model', 'setting:transcribe.sourceLang']));
     await settings.set({ 'models.dir': null });
-    await new LegacyUpgrade(options).prepare(); await settings.load();
+    const again = new LegacyUpgrade(options);
+    await again.prepare(); await settings.load();
+    expect(again.snapshot().settingsReport).toEqual(report);
     expect(settings.get('models.dir')).toBeNull();
-    expect(await fs.readFile(path.join(oldModels, 'weights'), 'utf8')).toBe('old bytes');
+    expect(await fs.readFile(weights, 'utf8')).toBe('old bytes');
   });
 
   it('does not backfill a completed source over an existing settings file or an empty old cache', async () => {

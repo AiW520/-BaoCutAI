@@ -184,6 +184,7 @@ export async function readV1Preferences(file: string): Promise<LegacyObject> {
       'vk-custom-mirror',
       'vk-ai-last-provider',
       'vk-ai-last-model',
+      'vk-default-model',
     ]) {
       try {
         const { stdout } = await execute('/usr/bin/plutil', ['-extract', key, 'raw', '-o', '-', file], { timeout: 5000 });
