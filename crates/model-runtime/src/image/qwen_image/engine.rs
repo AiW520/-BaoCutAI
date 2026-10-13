@@ -140,7 +140,9 @@ struct Options {
     dit_dtype: Option<Dtype>,
     /// 量化层整层解量化后按 dense 乘。缺省关。
     dit_dequant: bool,
-    /// DiT 每层按多少个图像 token 分块算。
+    /// DiT 每层按多少个图像 token 分块算。块内的临时张量（调制、RoPE 的 f32 中间量、MLP 的
+    /// 12288 维激活）随块大小线性涨：1024² 实测 1024 → 256 让 DiT 那段 MLX 峰值从约 0.66 降到
+    /// 0.49 GB，每步耗时不变。
     dit_chunk: usize,
     /// 往返 PSNR 与 f32 一致，比 bf16 快（M2 没有原生 bf16 运算）；f16 解码出现非有限值时自动改 bf16 重解。
     vae_dtype: Dtype,
@@ -153,7 +155,7 @@ impl Default for Options {
         Self {
             dit_dtype: None,
             dit_dequant: false,
-            dit_chunk: 1024,
+            dit_chunk: 256,
             vae_dtype: Dtype::Float16,
             vae_tail_rows: None,
         }

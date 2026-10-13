@@ -19,7 +19,7 @@ use super::{rope, weights};
 use crate::backend::mlx::qwen3::WeightStore;
 use anyhow::{Context, Result, bail};
 use mlx_rs::fast::ScaledDotProductAttentionMask;
-use mlx_rs::ops::indexing::IndexOp;
+use mlx_rs::ops::indexing::{IndexOp, TryIndexMutOp};
 use mlx_rs::{Array, Dtype, fast, nn, ops};
 use std::collections::HashMap;
 use std::path::PathBuf;
@@ -504,8 +504,9 @@ impl Dit {
         )
     }
 
-    /// 图像 token 过一层的前半：逐块算 q/k/v，每块求值后才进下一块；K/V 拼在文本前缀后面凑成整张。
-    /// 每个 token 的算子与不分块时完全相同。
+    /// 图像 token 过一层的前半：逐块算 q/k/v，每块求值后才进下一块；K/V 先按整张（文本前缀 + 图像）
+    /// 分配好，逐块就地写进去（MLX 在旧缓冲只剩这一处引用时原地更新），不另拼一份。每个 token 的
+    /// 算子与不分块时完全相同。
     #[allow(clippy::too_many_arguments)]
     fn image_qkv(
         a: &Attn,
@@ -517,38 +518,43 @@ impl Dit {
         sin: &Array,
         ranges: &[(i32, i32)],
     ) -> Result<(Vec<Array>, Array, Array)> {
+        let tl = tk.dim(2);
+        let n = ranges.last().map_or(0, |r| r.1);
+        let full = |t: &Array| -> Result<Array> {
+            let mut a = ops::zeros_dtype(&[1, HEADS, tl + n, HEAD_DIM], t.dtype())?;
+            a.try_index_mut((.., .., 0..tl, ..), t)?;
+            Ok(a)
+        };
+        let (mut k, mut v) = (full(tk)?, full(tv)?);
         let mut qs = Vec::with_capacity(ranges.len());
-        let mut ks = vec![tk.clone()];
-        let mut vs = vec![tv.clone()];
         for &(s, e) in ranges {
             let xm = modulate(&x.index((.., s..e, ..)), &m.scale1)?;
-            let (q, k, v) = a.qkv(&xm, &cos.index((s..e, ..)), &sin.index((s..e, ..)))?;
+            let (q, kc, vc) = a.qkv(&xm, &cos.index((s..e, ..)), &sin.index((s..e, ..)))?;
+            k.try_index_mut((.., .., tl + s..tl + e, ..), &kc)?;
+            v.try_index_mut((.., .., tl + s..tl + e, ..), &vc)?;
             mlx_rs::transforms::eval([&q, &k, &v])?;
             qs.push(q);
-            ks.push(k);
-            vs.push(v);
         }
-        let k = ops::concatenate_axis(&ks, 2)?;
-        let v = ops::concatenate_axis(&vs, 2)?;
         Ok((qs, k, v))
     }
 
-    /// 图像 token 过一层的后半：逐块做注意力、to_out 与 MLP，每块求值后才进下一块。
-    fn image_finish(f: &Ffn, x: &Array, m: &Mod, qs: Vec<Array>, k: &Array, v: &Array, ranges: &[(i32, i32)]) -> Result<Array> {
+    /// 图像 token 过一层的后半：逐块做注意力、to_out 与 MLP，每块求值后写回 `x` 的这几行再进下一块。
+    /// 一块只读自己那几行的残差（其余 token 只经 K/V 进来），所以就地写回不影响后面的块；`x` 只
+    /// 被这里持有，MLX 原地更新，不再另有整张的分块输出与拼接结果。
+    fn image_finish(f: &Ffn, mut x: Array, m: &Mod, qs: Vec<Array>, k: &Array, v: &Array, ranges: &[(i32, i32)]) -> Result<Array> {
         let scale = (HEAD_DIM as f32).sqrt().recip();
-        let mut outs = Vec::with_capacity(ranges.len());
         for (&(s, e), q) in ranges.iter().zip(qs) {
             let attn = fast::scaled_dot_product_attention(&q, k, v, scale, None::<ScaledDotProductAttentionMask<'_>>, None)?;
             let y = f.finish(&x.index((.., s..e, ..)), &attn, m)?;
+            // 先求值：y 的图还引用着 x 的切片，带着它写回 x 就不能原地更新。
             y.eval()?;
-            outs.push(y);
+            if ranges.len() == 1 {
+                return Ok(y);
+            }
+            x.try_index_mut((.., s..e, ..), &y)?;
+            x.eval()?;
         }
-        if outs.len() == 1 {
-            return Ok(outs.pop().unwrap());
-        }
-        let y = ops::concatenate_axis(&outs, 1)?;
-        y.eval()?;
-        Ok(y)
+        Ok(x)
     }
 
     /// 文本前缀与每一步的调制：`enc` 是文本编码器输出 `[1,L,4096]`，`sigmas` 是要走的每一步的 sigma。
@@ -643,7 +649,7 @@ impl Dit {
                 p.x = f.finish(&p.x, &attn, &p.m)?;
                 p.x.eval()?;
             }
-            x = Self::image_finish(&f, &x, m, qs, &k, &v, &ranges)?;
+            x = Self::image_finish(&f, x, m, qs, &k, &v, &ranges)?;
         }
         cache.pending = None;
         let x = modulate(&x, &sm.out_scale)?;
