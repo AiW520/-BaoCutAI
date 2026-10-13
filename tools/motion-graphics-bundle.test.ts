@@ -4,6 +4,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { afterAll, describe, expect, it } from 'vitest';
+import { SKILL_LIMITS, SKILL_META_FILE, parseSkillLabels } from '@baocut/protocol';
 import { buildBundle, lintHtml, sampleTimes } from '../skills/baocut/built-in-skills/motion-graphics/scripts/build-bundle.mjs';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -128,12 +129,19 @@ describe('motion-graphics 范例', () => {
     expect(html).not.toMatch(/\brgba?\(|\bhsla?\(/);
   });
 
-  it('skill 目录里没有符号链接与点开头的文件', () => {
+  it('skill 目录拒绝符号链接与隐藏文件，根目录只允许有效的界面元数据', () => {
     const walk = (dir: string): string[] =>
       fs.readdirSync(dir, { withFileTypes: true }).flatMap((e) => {
         const p = path.join(dir, e.name);
-        expect(e.name.startsWith('.'), p).toBe(false);
         expect(e.isSymbolicLink(), p).toBe(false);
+        if (dir === skill && e.name === SKILL_META_FILE) {
+          expect(e.isFile(), p).toBe(true);
+          const bytes = fs.readFileSync(p);
+          expect(bytes.length).toBeLessThanOrEqual(SKILL_LIMITS.metaFileBytes);
+          expect(parseSkillLabels(JSON.parse(bytes.toString('utf8'))), p).not.toBeNull();
+          return [];
+        }
+        expect(e.name.startsWith('.'), p).toBe(false);
         return e.isDirectory() ? walk(p) : [p];
       });
     expect(walk(skill).length).toBeGreaterThan(10);

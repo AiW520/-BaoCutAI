@@ -225,7 +225,8 @@ describe.skipIf(!engine || !ffmpeg)('对象的读写工具（终端目录，真�
     expect(await code('videos_frames', { video: videoId, range: '2:1' })).toBe('INVALID_ARGUMENTS');
     expect(await code('videos_frames', { video: videoId, at: ['1'], count: 2 })).toBe('INVALID_ARGUMENTS');
     expect(await code('videos_frames', { video: videoId, at: Array.from({ length: 25 }, (_, i) => String(i)) })).toBe('INVALID_ARGUMENTS');
-  });
+  // 多轮真实解码、缩放与可选的人脸检测；不沿用纯单元测试的 15 秒上限。
+  }, 60_000);
 
   it('长文稿经 MCP 改名和局部校订：保留翻译指纹、导出姓名、拒绝并发与未知 ID，可撤销', async () => {
     const { videoId, assetId } = await placedVideo('长文稿');
