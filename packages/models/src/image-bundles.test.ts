@@ -43,7 +43,7 @@ describe('本地文生图模型包的登记', () => {
     expect(devicePeakBytes).toEqual({ cuda: 4 * GiB });
   });
 
-  it('Turbo 是另一个仓库的 MLX 8-bit 包：步数固定 8，峰值 3 GiB，许可指向 Turbo 的；尺寸与提示词上限同 Qwen-Image-2.1', () => {
+  it('Turbo 是另一个仓库的 MLX 8-bit 包：步数固定 8，峰值 2 GiB，许可指向 Turbo 的；尺寸与提示词上限同 Qwen-Image-2.1', () => {
     expect(QWEN_TURBO).toMatchObject({ capability: 'image', backend: 'mlx', device: 'metal', label: 'Qwen-Image-2.1 Turbo' });
     expect(QWEN_TURBO.components).toEqual({
       image: { family: 'qwen-image', repo: 'ddalcu/Qwen-Image-2.1-Turbo-MLX-Serve-8bit', revision: '214ca346520a59597b89bd77408afa49d526bde5' },
@@ -58,7 +58,7 @@ describe('本地文生图模型包的登记', () => {
     const { steps: _steps, peakBytes: _peak, ...mlxProfile } = QWEN.image!;
     expect(profile).toEqual(mlxProfile);
     expect(steps).toEqual({ min: 8, max: 8, step: 8, default: 8 });
-    expect(peakBytes).toBe(3 * GiB);
+    expect(peakBytes).toBe(2 * GiB);
   });
 
   it('Turbo 的内置清单：11 个文件都有 sha256 与大小，估计字节等于大小之和；分片的 DiT、分词表与 model_index.json 都在', () => {

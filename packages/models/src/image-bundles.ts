@@ -103,9 +103,9 @@ const QWEN_IMAGE_TURBO_MLX: BundleDefinition = {
   image: {
     ...QWEN_IMAGE_MLX.image!,
     steps: { min: 8, max: 8, step: 8, default: 8 },
-    // 实测 Model Worker 的进程峰值（phys_footprint）：1024² 约 2.2 GB，比上面的 4-bit 包多出的约 1.2 GB 是文本编码器不量化的 bf16
-    // 词嵌入（[151936, 4096]），整张读入再在加载时量化；DiT 与 VAE 两段与 4-bit 包相当。留到 3 GiB 容更大的尺寸与抖动。
-    peakBytes: 3 * GiB,
+    // 实测 Model Worker 的进程峰值（phys_footprint）：1024² 约 1.5 GB、1536² 约 1.8 GB，都出在 DiT 那段（8-bit 的层是 4-bit 的两倍大）。
+    // 文本编码器不量化的 bf16 词嵌入（[151936, 4096]）只读提示词用到的行，那段约 0.5 GB。留到 2 GiB 容抖动。
+    peakBytes: 2 * GiB,
   },
 };
 
