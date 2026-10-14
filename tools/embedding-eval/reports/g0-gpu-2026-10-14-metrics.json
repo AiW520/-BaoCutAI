@@ -1,0 +1,54 @@
+[
+  {
+    "bundleId": "embeddinggemma2-text@litert-lm",
+    "devices": [
+      "cpu",
+      "metal"
+    ],
+    "imageDevices": [
+      null,
+      null
+    ],
+    "sameEncoderProfileId": true,
+    "vectors": 91,
+    "minCosine": 0.99857,
+    "p10Cosine": 0.99942,
+    "medianCosine": 0.99964,
+    "top1Agreement": "34/34",
+    "frameCosine": null,
+    "firstBatchMs": [
+      3288,
+      2030
+    ],
+    "medianBatchMs": [
+      1278,
+      511
+    ]
+  },
+  {
+    "bundleId": "embeddinggemma2-multimodal@litert-lm",
+    "devices": [
+      "cpu",
+      "metal"
+    ],
+    "imageDevices": [
+      "cpu",
+      "cpu"
+    ],
+    "sameEncoderProfileId": true,
+    "vectors": 91,
+    "minCosine": 0.99857,
+    "p10Cosine": 0.99942,
+    "medianCosine": 0.99964,
+    "top1Agreement": "34/34",
+    "frameCosine": 1,
+    "firstBatchMs": [
+      4064,
+      3179
+    ],
+    "medianBatchMs": [
+      1261,
+      511
+    ]
+  }
+]

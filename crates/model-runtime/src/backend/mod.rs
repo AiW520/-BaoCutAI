@@ -779,8 +779,18 @@ impl Backend for GgmlUnavailable {
     }
 }
 
-/// LiteRT-LM（文本嵌入）。C 库随模型包而来，加载时才打开：编译进来就报可用，设备是 CPU。
+/// LiteRT-LM（文本嵌入）。C 库随模型包而来，加载时才打开：编译进来就报可用。设备：macOS 上首选 GPU（`metal`，C 库在加载时
+/// 才知道 GPU 能不能用，起不来就在加载里退回 CPU），`BAOCUT_GPU` 关掉 GPU 或别的平台只有 `cpu`。
 struct LiteRtBackend;
+
+/// LiteRT-LM 的设备表（§2.1，首选的在前）。
+fn litert_devices(gpu_disabled: bool) -> Vec<String> {
+    if cfg!(target_os = "macos") && !gpu_disabled {
+        vec![crate::embed::GPU_DEVICE.into(), "cpu".into()]
+    } else {
+        vec!["cpu".into()]
+    }
+}
 
 impl Backend for LiteRtBackend {
     fn id(&self) -> &'static str {
@@ -793,7 +803,7 @@ impl Backend for LiteRtBackend {
                 id: crate::embed::BACKEND_ID,
                 available: true,
                 reason: None,
-                devices: vec!["cpu".into()],
+                devices: litert_devices(crate::gpu_env::gpu_disabled_by_env()),
             }
         } else {
             BackendStatus {
@@ -859,6 +869,13 @@ mod tests {
         } else {
             assert_eq!(coreml.reason.as_deref(), Some(REASON_NOT_COMPILED));
         }
+    }
+
+    #[test]
+    fn litert_prefers_the_gpu_on_macos_unless_turned_off() {
+        let expected: &[&str] = if cfg!(target_os = "macos") { &["metal", "cpu"] } else { &["cpu"] };
+        assert_eq!(litert_devices(false), expected);
+        assert_eq!(litert_devices(true), ["cpu"]);
     }
 
     /// 按组件名与 family 拼一个识别模型包，每个组件一个 1 字节的文件。

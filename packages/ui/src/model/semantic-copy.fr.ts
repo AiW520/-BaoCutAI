@@ -132,7 +132,8 @@ export const fr: SemanticMessages = {
     cleared: 'Effacé. Reconstruction en arrière-plan.',
     controlFailed: (text) => `Impossible de modifier l’index : ${text}`,
     runsOn: 'S’exécute sur',
-    runsOnDesc: 'Utilise le modèle multimodal s’il est installé, sinon le modèle de texte.',
+    runsOnDesc:
+      'Utilise le modèle multimodal s’il est installé, sinon le modèle de texte. La recherche tourne sur le GPU quand c’est possible, sinon sur le CPU.',
     notLoaded: 'Pas encore chargé',
     featuresGroup: 'Fonctions qui l’utilisent',
     tm: 'Mémoire de traduction',

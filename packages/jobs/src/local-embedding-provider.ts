@@ -63,9 +63,10 @@ export class LocalEmbeddingProvider implements EmbeddingProvider {
   readonly #worker: LocalEmbeddingProviderOptions['worker'];
   readonly #selected: () => string | null;
   readonly #imageRoots: readonly string[];
-  /** 最近一次用到的模型包与 Worker 报告的设备（状态显示用）。 */
+  /** 最近一次用到的模型包与 Worker 报告的设备（状态显示用）。文字与画面的编码器可以在不同设备上（文字在 GPU、画面总在 CPU）。 */
   #current: { bundleId: string; label: string } | null = null;
   #device: string | null = null;
+  #imageDevice: string | null = null;
 
   constructor(options: LocalEmbeddingProviderOptions) {
     this.#catalog = options.catalog;
@@ -106,7 +107,7 @@ export class LocalEmbeddingProvider implements EmbeddingProvider {
       } catch (error) {
         throw embeddingErrorOf(error, start, spec.maxInputTokens);
       }
-      this.#device = result.device;
+      this.#imageDevice = result.device;
       for (const vector of result.vectors) vectors.push(truncateAndNormalize(vector, spec.dims));
       for (const image of batch) payloadDigests.push(await digestFile(image));
     }
@@ -163,7 +164,7 @@ export class LocalEmbeddingProvider implements EmbeddingProvider {
       promptPairId: PROMPT_PAIR_MODEL_CARD,
       dims: spec.dims,
       maxInputTokens: spec.maxInputTokens,
-      device: this.#device,
+      device: vision ? this.#imageDevice : this.#device,
       ...(vision ? { frames: { edge: vision.frameEdge, format: vision.frameFormat, maxBatch: EMBED_MAX_IMAGE_BATCH } } : {}),
     };
   }

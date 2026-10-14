@@ -132,7 +132,8 @@ export const it: SemanticMessages = {
     cleared: 'Cancellato. Ricostruzione in background.',
     controlFailed: (text) => `Non è stato possibile modificare l’indice: ${text}`,
     runsOn: 'Eseguito su',
-    runsOnDesc: 'Usa il modello multimodale se è installato, altrimenti il modello di testo.',
+    runsOnDesc:
+      'Usa il modello multimodale se è installato, altrimenti il modello di testo. La ricerca usa la GPU quando può, altrimenti la CPU.',
     notLoaded: 'Non ancora caricato',
     featuresGroup: 'Funzioni che lo usano',
     tm: 'Memoria di traduzione',

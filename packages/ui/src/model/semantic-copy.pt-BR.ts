@@ -132,7 +132,7 @@ export const ptBR: SemanticMessages = {
     cleared: 'Apagado. Reconstruindo em segundo plano.',
     controlFailed: (text) => `Não foi possível alterar o índice: ${text}`,
     runsOn: 'Executa em',
-    runsOnDesc: 'Usa o modelo multimodal quando instalado; senão, o modelo de texto.',
+    runsOnDesc: 'Usa o modelo multimodal quando instalado; senão, o modelo de texto. A busca roda na GPU quando possível; senão, na CPU.',
     notLoaded: 'Ainda não carregado',
     featuresGroup: 'Recursos que o usam',
     tm: 'Memória de tradução',

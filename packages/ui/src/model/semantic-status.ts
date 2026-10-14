@@ -157,3 +157,8 @@ export function visualCostLine(estimate: SemanticEstimate | null | undefined): s
   ].filter((p): p is string => p !== null);
   return c.cacheNote(parts.join(c.separator));
 }
+
+/** 「运行在」的设备：Worker 报的 GPU 名（`metal`，以及 `cuda`、`vulkan`）都写 GPU（检索规格 §4.4），别的照原样大写。 */
+export function deviceName(device: string): string {
+  return device === 'metal' || device === 'cuda' || device === 'vulkan' ? 'GPU' : device.toUpperCase();
+}

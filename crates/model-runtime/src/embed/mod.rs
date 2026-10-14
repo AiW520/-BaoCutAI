@@ -25,6 +25,10 @@ use crate::protocol::{ErrorBody, codes};
 
 /// 后端 id（`model.load` 的 `bundle.backend`）。
 pub const BACKEND_ID: &str = "litert-lm";
+
+/// 协议里 LiteRT-LM 的 GPU 设备名（§2.1 的 `devices`、`model.load` 的 `device`）；C API 的后端字符串是 `gpu`。
+pub const GPU_DEVICE: &str = "metal";
+
 /// 本构建认识的嵌入模型 family（`components.embedding.family`）。
 pub const EMBEDDING_FAMILIES: [&str; 1] = [FAMILY_EMBEDDINGGEMMA2_LITERT];
 /// 一次 `embed.run` 至多这么多条文本。
@@ -122,8 +126,13 @@ pub trait EmbeddingEngine {
         Err(vision_not_loaded())
     }
 
-    /// 实际跑在哪个设备上（`cpu` / `gpu`）。
+    /// 文字编码器实际跑在哪个设备上（`cpu` / `metal`）。
     fn device(&self) -> &str;
+
+    /// 图像编码器实际跑在哪个设备上；缺省同文字。
+    fn image_device(&self) -> &str {
+        self.device()
+    }
 }
 
 /// 这个构建能加载的嵌入 family：`worker.hello` 的 `embeddingCapabilities.families`。
@@ -255,7 +264,12 @@ pub fn run(engine: &mut dyn EmbeddingEngine, params: &EmbedRunParams) -> Result<
     Ok(EmbedRunResult {
         vectors: vectors.iter().map(|vector| encode_f32_le(vector)).collect(),
         dims: params.output_size,
-        device: engine.device().to_owned(),
+        device: if params.images.is_empty() {
+            engine.device()
+        } else {
+            engine.image_device()
+        }
+        .to_owned(),
         elapsed_ms: started.elapsed().as_millis() as u64,
     })
 }
@@ -441,6 +455,41 @@ mod tests {
         assert_eq!(error.code, codes::INPUT_UNREADABLE);
         assert_eq!(error.details.as_ref().unwrap()["index"], 1);
         assert!(!error.message.contains("missing"));
+    }
+
+    /// 文字在 GPU、图像在 CPU 的引擎（LiteRT-LM 的多模态包）。
+    struct SplitDevices;
+
+    impl EmbeddingEngine for SplitDevices {
+        fn embed(&mut self, texts: &[String], options: EmbedOptions) -> Result<Vec<Vec<f32>>, ErrorBody> {
+            Ok(texts.iter().map(|_| vec![0.5; options.output_size as usize]).collect())
+        }
+
+        fn embed_images(&mut self, images: &[Vec<u8>], options: EmbedOptions) -> Result<Vec<Vec<f32>>, ErrorBody> {
+            Ok(images.iter().map(|_| vec![0.5; options.output_size as usize]).collect())
+        }
+
+        fn device(&self) -> &str {
+            "metal"
+        }
+
+        fn image_device(&self) -> &str {
+            "cpu"
+        }
+    }
+
+    #[test]
+    fn results_report_the_device_of_the_encoder_that_ran() {
+        let dir = tempfile::tempdir().unwrap();
+        let file = dir.path().join("f.jpg");
+        std::fs::write(&file, b"jpeg").unwrap();
+        let mut engine = SplitDevices;
+        assert_eq!(run(&mut engine, &params(&["a"], 768)).unwrap().device, "metal");
+        let images = EmbedRunParams {
+            images: vec![file.to_string_lossy().into_owned()],
+            ..params(&[], 768)
+        };
+        assert_eq!(run(&mut engine, &images).unwrap().device, "cpu");
     }
 
     #[test]

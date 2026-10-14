@@ -170,8 +170,8 @@ describe('本机 embedding（假 Model Worker）', () => {
     expect(result.vectors).toHaveLength(1);
     await worker.embed(FULL.bundleId, ['text after'], options);
     expect(await loads()).toEqual([
-      { bundleId: FULL.bundleId, vision: null },
-      { bundleId: FULL.bundleId, vision: { tokensPerImage: 140 } },
+      { bundleId: FULL.bundleId, device: 'cpu', vision: null },
+      { bundleId: FULL.bundleId, device: 'cpu', vision: { tokensPerImage: 140 } },
     ]);
     expect((await recorded()).map((r) => r.images ?? r.texts)).toEqual([['text first'], [path.join(frames, 'a.jpg')], ['text after']]);
     const missing = await worker.embed(FULL.bundleId, { images: [path.join(frames, 'gone.jpg')] }, options).catch((e: unknown) => e);
@@ -179,6 +179,42 @@ describe('本机 embedding（假 Model Worker）', () => {
     await expect(worker.embed(FULL.bundleId, { images: Array.from({ length: 5 }, () => path.join(frames, 'a.jpg')) }, options)).rejects.toBeInstanceOf(
       ProviderFailure,
     );
+  });
+
+  it('GPU：Worker 报了 metal 就交 metal 加载；文字在 GPU、画面在 CPU，向量身份与 CPU 相同；GPU 起不来时照常在 CPU 上算', async () => {
+    await control({ capabilities: ['embed'], litertDevices: ['metal', 'cpu'] });
+    await writeRepo(models, 'test/full');
+    catalog.changed(FULL.bundleId);
+    const frame = path.join(dir, 'a.jpg');
+    await fs.writeFile(frame, 'a red car on a bridge');
+    const onCpu = await new LocalEmbeddingProvider({ catalog, worker, selected: () => FULL.bundleId }).profile('retrieval');
+    const provider = new LocalEmbeddingProvider({ catalog, worker, selected: () => FULL.bundleId, imageRoots: [dir] });
+    await provider.embed('retrieval', { role: 'query', inputs: [{ text: 'text first' }] });
+    expect((await provider.profile('retrieval')).device).toBe('metal');
+    await provider.embedImages({ images: [frame] });
+    // 画面的设备单独记：不把「运行在」的文字设备改成 CPU。
+    expect((await provider.profile('text-to-visual')).device).toBe('cpu');
+    expect((await provider.profile('retrieval')).device).toBe('metal');
+    expect(await loads()).toEqual([
+      { bundleId: FULL.bundleId, device: 'metal', vision: null },
+      { bundleId: FULL.bundleId, device: 'metal', vision: { tokensPerImage: 140 } },
+    ]);
+    // 身份里的设备是登记的数值类别（FP32），不随实际设备变：换设备不重算索引。模型目录的状态也仍是登记的 cpu。
+    expect((await provider.profile('retrieval')).encoderProfileId).toBe(onCpu.encoderProfileId);
+    expect(await catalog.status(FULL.bundleId)).toMatchObject({ device: 'cpu' });
+
+    await worker.close();
+    await control({ capabilities: ['embed'], litertDevices: ['metal', 'cpu'], faults: ['gpu-fallback'] });
+    worker = new LocalTranscribeProvider({
+      catalog,
+      command: () => ({ command: process.execPath, args: [FAKE_MODEL_WORKER, '--control', controlFile] }),
+      env: async () => process.env,
+      idleMs: 60_000,
+    });
+    const fallback = new LocalEmbeddingProvider({ catalog, worker, selected: () => FULL.bundleId });
+    await fallback.embed('retrieval', { role: 'query', inputs: [{ text: 'text again' }] });
+    expect((await fallback.profile('retrieval')).device).toBe('cpu');
+    expect(await catalog.status(FULL.bundleId)).toMatchObject({ state: 'ready' });
   });
 
   it('图片：模型包没有图像编码器时 load-failed（no-image-encoder），不反复重载', async () => {

@@ -897,6 +897,8 @@ export class LocalTranscribeProvider implements TranscribeProvider {
 
     // 后端与设备以握手为准（架构设计 §6.5）：Worker 没编进或用不了这个后端时不去加载（也不停用模型包，换了 Worker 就能用）；
     // candle 与 GGML 用 Worker 报告的首选设备（有 CUDA 时是 `cuda`；GGML 另可能是 `vulkan`），并记进模型目录给状态显示。
+    // LiteRT-LM 也交首选设备（macOS 上是 `metal`），但不记进模型目录：GPU 起不来时 Worker 在加载里退回 CPU，实际设备看
+    // `embed.run` 的结果；登记的 `cpu` 是向量身份里的数值类别（GPU 用 FP32 激活，与 CPU 同一空间，协议规范 §4.5）。
     const def = this.#catalog.definition(slot.bundleId);
     const backend = def ? hello.backends?.find((b) => b.id === def.backend) : undefined;
     if (def && backend) this.#catalog.setWorkerDevice(def.backend, backend.available ? (backend.devices[0] ?? null) : null);
@@ -916,7 +918,7 @@ export class LocalTranscribeProvider implements TranscribeProvider {
     let visionLoaded = false;
     try {
       const bundle = await this.#catalog.bundleFor(slot.bundleId, {
-        ...(device && (def?.backend === 'candle' || def?.backend === 'ggml') ? { device } : {}),
+        ...(device && (def?.backend === 'candle' || def?.backend === 'ggml' || def?.backend === 'litert-lm') ? { device } : {}),
         ...(vision ? { vision: true } : {}),
       });
       // 合成的模型包要 Worker 声明 `synthesize` 且列出这个 family，分离的要声明 `separate` 且列出 `separator` 的 family，文生图的

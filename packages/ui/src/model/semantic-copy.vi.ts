@@ -132,7 +132,8 @@ export const vi: SemanticMessages = {
     cleared: 'Đã xóa. Đang xây dựng lại ở nền.',
     controlFailed: (text) => `Không thể thay đổi chỉ mục: ${text}`,
     runsOn: 'Chạy trên',
-    runsOnDesc: 'Dùng mô hình đa phương thức nếu đã cài, nếu không thì dùng mô hình văn bản.',
+    runsOnDesc:
+      'Dùng mô hình đa phương thức nếu đã cài, nếu không thì dùng mô hình văn bản. Tìm kiếm chạy trên GPU khi có thể, nếu không thì trên CPU.',
     notLoaded: 'Chưa được tải',
     featuresGroup: 'Tính năng dùng nó',
     tm: 'Bộ nhớ dịch',

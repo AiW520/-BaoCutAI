@@ -14,7 +14,7 @@ use std::time::Instant;
 use libloading::Library;
 use serde_json::json;
 
-use super::{EmbedOptions, EmbeddingEngine, MAX_INPUT_TOKENS, input_too_long};
+use super::{EmbedOptions, EmbeddingEngine, GPU_DEVICE, MAX_INPUT_TOKENS, input_too_long};
 use crate::backend::{LoadedEmbedding, ModelPhase, PhaseCallback};
 use crate::bundle::VerifiedBundle;
 use crate::protocol::{ErrorBody, codes};
@@ -28,6 +28,8 @@ const LOG_SEVERITY_WARNING: c_int = 3;
 const STATUS_INVALID_ARGUMENT: c_int = 3;
 const STATUS_RESOURCE_EXHAUSTED: c_int = 8;
 const STATUS_OUT_OF_RANGE: c_int = 11;
+/// `LiteRtLmActivationDataType` 的 `kLiteRtLmActivationDataTypeFloat32`（`engine.h`）。
+const ACTIVATION_FLOAT32: c_int = 0;
 
 type Handle = *mut c_void;
 
@@ -46,6 +48,8 @@ struct Api {
     settings_set_cache_dir: unsafe extern "C" fn(Handle, *const c_char),
     settings_set_max_input_length: unsafe extern "C" fn(Handle, c_int),
     settings_set_vision_tokens_per_image: unsafe extern "C" fn(Handle, c_int),
+    /// 没有这个符号的库不用 GPU：GPU 默认激活不是 FP32，向量与 CPU 不在同一空间（G0 §4）。
+    settings_set_activation_data_type: Option<unsafe extern "C" fn(Handle, c_int)>,
     options_create: unsafe extern "C" fn() -> Handle,
     options_delete: unsafe extern "C" fn(Handle),
     options_set_normalize: unsafe extern "C" fn(Handle, bool),
@@ -107,6 +111,7 @@ fn open_api(path: &Path) -> Result<&'static Api, ErrorBody> {
         settings_set_cache_dir: symbol!(b"litert_lm_embedding_engine_settings_set_cache_dir\0"),
         settings_set_max_input_length: symbol!(b"litert_lm_embedding_engine_settings_set_max_input_length\0"),
         settings_set_vision_tokens_per_image: symbol!(b"litert_lm_embedding_engine_settings_set_vision_tokens_per_image\0"),
+        settings_set_activation_data_type: lookup(&library, b"litert_lm_embedding_engine_settings_set_activation_data_type\0"),
         options_create: symbol!(b"litert_lm_embedding_options_create\0"),
         options_delete: symbol!(b"litert_lm_embedding_options_delete\0"),
         options_set_normalize: symbol!(b"litert_lm_embedding_options_set_normalize\0"),
@@ -216,8 +221,6 @@ pub fn load(bundle: &VerifiedBundle, phase: &mut PhaseCallback<'_>) -> Result<Lo
         .ok_or_else(|| ErrorBody::new(codes::MODEL_NOT_INSTALLED, "the litertlm-runtime component has no library"))?;
     phase(ModelPhase::LoadingWeights, Some("embedding"));
     let api = open_api(&library)?;
-    // 只认 cpu 与 gpu；GPU 只在 Runtime 显式要求时用（自检的开关），默认 CPU。
-    let device = if bundle.device == "gpu" { "gpu" } else { "cpu" };
     let cache_dir = bundle
         .cache_dir
         .clone()
@@ -228,10 +231,89 @@ pub fn load(bundle: &VerifiedBundle, phase: &mut PhaseCallback<'_>) -> Result<Lo
         library.parent().map(|dir| dir.to_string_lossy().into_owned()).unwrap_or_default(),
         cache_dir.to_string_lossy().into_owned(),
     ];
+    let paths = EnginePaths {
+        model: &model,
+        cache_dir: &cache_dir,
+        private_paths: &private_paths,
+    };
+    // 文字编码器只认 cpu 与 GPU（协议名 `metal`）。GPU 只在 Runtime 要求、库能设 FP32 激活、没打开图像编码器时试：图像编码器
+    // 本身只跑 CPU，但图像向量还要经过主干，主干在 GPU 上时帧向量就变了（GPU 报告 §3），画面索引只用 CPU 建。设置、创建或预热
+    // 任何一步失败都在这里退回 CPU（stderr 说明一次），不把模型包报成不支持——GPU 起不来不该让语义检索整个用不了。GPU 的
+    // FP32 文字向量与 CPU 在同一空间（G0 §4、GPU 报告 §2），所以退回不改向量身份。
+    let gpu = bundle.device == GPU_DEVICE && bundle.vision.is_none();
+    if gpu && api.settings_set_activation_data_type.is_none() {
+        eprintln!("[model-worker] litert-lm: the runtime library cannot set FP32 activations; using the CPU");
+    }
+    let loaded = with_cpu_fallback(gpu && api.settings_set_activation_data_type.is_some(), |device| {
+        create(api, bundle, &paths, device, phase)
+    })?;
+    log_default_options(api);
+    Ok(LoadedEmbedding {
+        engine: Box::new(loaded),
+        load_ms: started.elapsed().as_millis() as u64,
+        resident_bytes: None,
+        memory: || None,
+    })
+}
+
+/// 文字编码器跑在哪里。打开了图像编码器的引擎整个在 CPU（GPU 的帧向量与 CPU 不同空间，多模态 G0 §5、GPU 报告 §3）。
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum Device {
+    Cpu,
+    Gpu,
+}
+
+impl Device {
+    /// 协议里的名字（结果的 `device`）。
+    fn name(self) -> &'static str {
+        match self {
+            Device::Cpu => "cpu",
+            Device::Gpu => GPU_DEVICE,
+        }
+    }
+
+    /// C API 的后端字符串。
+    fn backend(self) -> &'static str {
+        match self {
+            Device::Cpu => "cpu",
+            Device::Gpu => "gpu",
+        }
+    }
+}
+
+/// 要 GPU 时先在 GPU 上建，失败（任何错误码）就在 CPU 上再建一次；CPU 的失败照原样报。
+fn with_cpu_fallback<T>(gpu: bool, mut create: impl FnMut(Device) -> Result<T, ErrorBody>) -> Result<T, ErrorBody> {
+    if gpu {
+        match create(Device::Gpu) {
+            Ok(engine) => return Ok(engine),
+            Err(error) => eprintln!(
+                "[model-worker] litert-lm: the GPU engine failed ({}: {}); falling back to the CPU",
+                error.code, error.message
+            ),
+        }
+    }
+    create(Device::Cpu)
+}
+
+struct EnginePaths<'a> {
+    model: &'a Path,
+    cache_dir: &'a Path,
+    private_paths: &'a [String],
+}
+
+/// 在一个设备上建引擎并预热（第一次计算才编译 GPU 程序，所以预热也算创建的一部分）。
+fn create(
+    api: &'static Api,
+    bundle: &VerifiedBundle,
+    paths: &EnginePaths<'_>,
+    device: Device,
+    phase: &mut PhaseCallback<'_>,
+) -> Result<LiteRtEmbedding, ErrorBody> {
+    let private_paths = paths.private_paths.to_vec();
     let c_string = |value: &str| CString::new(value).map_err(|_| ErrorBody::invalid_params("paths must not contain NUL bytes"));
-    let model_c = c_string(&model.to_string_lossy())?;
-    let device_c = c_string(device)?;
-    let cache_c = c_string(&cache_dir.to_string_lossy())?;
+    let model_c = c_string(&paths.model.to_string_lossy())?;
+    let device_c = c_string(device.backend())?;
+    let cache_c = c_string(&paths.cache_dir.to_string_lossy())?;
     // 图像编码器只在要求时打开（多占约 1 GB），且只跑 CPU：与 G0 评测同一条路径。音频后端不用。
     let vision_c = c_string("cpu")?;
     let vision = if bundle.vision.is_some() {
@@ -257,6 +339,12 @@ pub fn load(bundle: &VerifiedBundle, phase: &mut PhaseCallback<'_>) -> Result<Lo
         if let Some(tokens) = bundle.vision.and_then(|vision| vision.tokens_per_image) {
             (api.settings_set_vision_tokens_per_image)(settings.handle, tokens as c_int);
         }
+        // GPU 默认激活约等于 FP16，与 CPU 不同空间；FP32 激活与 CPU 余弦 ≥ 0.997（G0 §4）。CPU 默认就是 FP32，不设。
+        if device == Device::Gpu
+            && let Some(set_activation) = api.settings_set_activation_data_type
+        {
+            set_activation(settings.handle, ACTIVATION_FLOAT32);
+        }
     }
     phase(ModelPhase::Compiling, Some("embedding"));
     // SAFETY: `settings` 非空且活过引擎的创建。
@@ -272,11 +360,10 @@ pub fn load(bundle: &VerifiedBundle, phase: &mut PhaseCallback<'_>) -> Result<Lo
         api,
         engine,
         _settings: settings,
-        device: device.to_owned(),
+        device: device.name().to_owned(),
         vision: bundle.vision.is_some(),
         private_paths,
     };
-    log_default_options(api);
     // 预热：第一次计算会编译与分配，顺带核对引擎真能给出 768 维。
     phase(ModelPhase::WarmingUp, Some("embedding"));
     let warm = loaded.embed(
@@ -292,12 +379,7 @@ pub fn load(bundle: &VerifiedBundle, phase: &mut PhaseCallback<'_>) -> Result<Lo
                 .with_details(json!({ "component": "embedding", "reason": "unexpected-output-size" })),
         );
     }
-    Ok(LoadedEmbedding {
-        engine: Box::new(loaded),
-        load_ms: started.elapsed().as_millis() as u64,
-        resident_bytes: None,
-        memory: || None,
-    })
+    Ok(loaded)
 }
 
 #[cfg(target_os = "macos")]
@@ -549,6 +631,10 @@ impl EmbeddingEngine for LiteRtEmbedding {
     fn device(&self) -> &str {
         &self.device
     }
+
+    fn image_device(&self) -> &str {
+        Device::Cpu.name()
+    }
 }
 
 #[cfg(test)]
@@ -575,6 +661,44 @@ mod tests {
         assert!(is_overflow(STATUS_OUT_OF_RANGE));
         assert!(!is_overflow(STATUS_RESOURCE_EXHAUSTED));
         assert!(!is_overflow(0));
+    }
+
+    #[test]
+    fn a_failed_gpu_engine_falls_back_to_the_cpu() {
+        let tried = std::cell::RefCell::new(Vec::new());
+        let gpu_fails = |device: Device| {
+            tried.borrow_mut().push(device);
+            match device {
+                Device::Gpu => Err(ErrorBody::new(codes::MODEL_UNSUPPORTED, "no GPU")),
+                Device::Cpu => Ok(device.name()),
+            }
+        };
+        assert_eq!(with_cpu_fallback(true, gpu_fails).unwrap(), "cpu");
+        assert_eq!(*tried.borrow(), [Device::Gpu, Device::Cpu]);
+
+        tried.borrow_mut().clear();
+        let works = |device: Device| {
+            tried.borrow_mut().push(device);
+            Ok::<_, ErrorBody>(device.name())
+        };
+        assert_eq!(with_cpu_fallback(true, works).unwrap(), "metal");
+        assert_eq!(*tried.borrow(), [Device::Gpu]);
+        tried.borrow_mut().clear();
+        assert_eq!(with_cpu_fallback(false, works).unwrap(), "cpu");
+        assert_eq!(*tried.borrow(), [Device::Cpu]);
+
+        // CPU 也失败时报 CPU 的错误（例如资源不足），不吞掉。
+        let both_fail = |device: Device| -> Result<&str, ErrorBody> {
+            Err(ErrorBody::new(
+                if device == Device::Gpu {
+                    codes::MODEL_UNSUPPORTED
+                } else {
+                    codes::MODEL_RESOURCE
+                },
+                "failed",
+            ))
+        };
+        assert_eq!(with_cpu_fallback(true, both_fail).unwrap_err().code, codes::MODEL_RESOURCE);
     }
 
     #[test]

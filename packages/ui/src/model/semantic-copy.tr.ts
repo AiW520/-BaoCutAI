@@ -132,7 +132,7 @@ export const tr: SemanticMessages = {
     cleared: 'Temizlendi. Arka planda yeniden oluşturuluyor.',
     controlFailed: (text) => `Dizin değiştirilemedi: ${text}`,
     runsOn: 'Çalıştığı yer',
-    runsOnDesc: 'Çok kipli model kuruluysa onu, değilse metin modelini kullanır.',
+    runsOnDesc: 'Çok kipli model kuruluysa onu, değilse metin modelini kullanır. Arama mümkünse GPU’da, değilse CPU’da çalışır.',
     notLoaded: 'Henüz yüklenmedi',
     featuresGroup: 'Bunu kullanan özellikler',
     tm: 'Çeviri belleği',

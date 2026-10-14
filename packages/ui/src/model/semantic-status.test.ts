@@ -1,7 +1,17 @@
 import { describe, expect, it } from 'vitest';
 import type { SemanticCoverage, SemanticEstimate, SemanticIndexStatus } from '@baocut/protocol';
 import { M } from './semantic-copy.ts';
-import { coverageLine, entryNote, etaLine, indexState, pausedNote, reasonText, visualCostLine, visualCoverageLine } from './semantic-status.ts';
+import {
+  coverageLine,
+  deviceName,
+  entryNote,
+  etaLine,
+  indexState,
+  pausedNote,
+  reasonText,
+  visualCostLine,
+  visualCoverageLine,
+} from './semantic-status.ts';
 
 const text = (patch: Partial<SemanticCoverage> = {}): SemanticCoverage => ({
   channel: 'text',
@@ -175,5 +185,13 @@ describe('画面一路', () => {
     );
     expect(visualCostLine(cost({ frames: 0, sourceSeconds: 0, unknownDuration: 2, videos: 2 }))).toBe(c.noLength(2));
     expect(visualCostLine(cost({ videos: 0 }))).toBeNull();
+  });
+});
+
+describe('运行在的设备', () => {
+  it('GPU 设备名写 GPU，CPU 写 CPU', () => {
+    expect(deviceName('metal')).toBe('GPU');
+    expect(deviceName('cuda')).toBe('GPU');
+    expect(deviceName('cpu')).toBe('CPU');
   });
 });

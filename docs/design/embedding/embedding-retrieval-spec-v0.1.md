@@ -129,20 +129,31 @@ WorkerHello     += embeddingCapabilities（按协商版本可选）
 
 | 平台 | 首版要求 | 加速策略 | 未通过时 |
 |---|---|---|---|
-| macOS Apple Silicon | CPU 必须通过；GPU 独立验收 | LiteRT GPU 经自检后启用 | 保持 CPU 与关键词可用 |
+| macOS Apple Silicon | CPU 必须通过；GPU 独立验收 | LiteRT GPU（FP32 激活）经构建的离线复核后启用，加载失败退回 CPU（§4.4） | 保持 CPU 与关键词可用 |
 | macOS Intel | 独立构建和最小指令集测试 | 不承诺 GPU | 不兼容则禁用语义模块，保留精确搜索 |
 | Windows x64：NVIDIA | CPU 必须；GPU 独立验收 | 以发布二进制实际 backend 探测为准 | 不因检测到 NVIDIA 就强行选 GPU |
 | Windows x64：Intel/AMD | CPU 基线；每类 GPU 单测 | 不宣传所有显卡通用加速 | CPU 回退 |
 | Linux x64/ARM64 | 分构建目标验收 | CPU 基线、GPU 按目标矩阵 | 不与 Windows/macOS 共用兼容性结论 |
 | BaoCut Web 客户端 | 复用连接的 Runtime | 不在浏览器重复建立整库索引 | 显示 Runtime 能力状态 |
 
-**首版实际（2026-10-13）：** 只有 macOS Apple Silicon 登记了 `litertlm-runtime` 库包（CPU）。上游 0.18.0 没有 Windows、Linux 的 C 库；macOS Intel 的 Model Worker 构建暂不带 `backend-litert`，所以这些平台的文本嵌入模型包显示 `unsupported`，语义检索退回字面。GPU 等 §4.4 的自检之后再开。发布构建启用 hardened runtime 时，`dlopen` 别家签名的库要给 Model Worker 关掉库验证（`com.apple.security.cs.disable-library-validation`），这是发布前待定的签名事项。
+**首版实际（2026-10-13）：** 只有 macOS Apple Silicon 登记了 `litertlm-runtime` 库包（CPU）。上游 0.18.0 没有 Windows、Linux 的 C 库；macOS Intel 的 Model Worker 构建暂不带 `backend-litert`，所以这些平台的文本嵌入模型包显示 `unsupported`，语义检索退回字面。GPU 见 §4.4（2026-10-14 起 macOS 上文字编码默认用 GPU）。发布构建启用 hardened runtime 时，`dlopen` 别家签名的库要给 Model Worker 关掉库验证（`com.apple.security.cs.disable-library-validation`），这是发布前待定的签名事项。
 
 官方提供跨平台 LiteRT 能力不等于 BaoCut 的这些构建已验证。[S4] 发布前固定 SDK tag/commit、模型 revision、每个文件的 SHA-256、许可证、目标架构、系统最低要求和 GPU delegate 文件。不把开发机上的自动选择行为当作发布合同。
 
 ### 4.4 GPU 回退与兼容性
 
 失败可回退 CPU，但必须确认 CPU 与 GPU 路径属于已通过一致性门槛的 embedding space。更换模型、量化包、预处理或未验证后端时，禁止把新查询向量直接比对旧索引。若只能通过切换不兼容模型恢复，则降级精确搜索，并排队重建对应索引。
+
+**实现（2026-10-14）：** macOS 上文字编码默认在 GPU 上，画面编码只在 CPU 上（[Model Worker 协议 §4.5](../../spec/model-worker-protocol-spec.md)）。
+
+- **一致性门槛：** 不靠每台机器的运行期自检，而是按构建做离线复核。[GPU 复核](../../../tools/embedding-eval/reports/g0-gpu-2026-10-14.md)经产品的 Worker 测得：GPU（FP32 激活）与 CPU 的文字向量逐条余弦 ≥ 0.998，查询第一名全部一致；`reference-vectors.ts` 按设备存参考，升级引擎时两种设备都比。
+- **身份：** 文字的 `encoderProfileId` 不随设备变，登记的 `cpu` 一段表示 FP32 这个数值类别。所以 GPU 起不来、退回 CPU 时查询与索引照常比较，不重算。如果设备进身份，每次退回都会让协调器把已发布的世代当作过期，全部重建。
+- **不用 GPU 的情况：**
+  - GPU 默认激活（约等于 FP16）的向量不在同一空间；C 库不能设 FP32 激活时不用 GPU。
+  - 帧向量在 GPU 上不同空间（多模态 G0 §5）；即使图像编码器设成 CPU，只要主干在 GPU 上，帧向量也会变。所以 Worker 带图像编码器加载时整个引擎在 CPU，画面一路在建时文字也在 CPU 上算。
+- **回退在 Worker 的加载里：** GPU 上设置、创建或预热任何一步失败都在 CPU 上重建，不停用模型包。
+- **强制 CPU：** `BAOCUT_GPU=off`。
+- **设置显示：** 设置里「运行在」写文字实际用的设备。
 
 ## 5. 向量配置、前缀和兼容性身份
 

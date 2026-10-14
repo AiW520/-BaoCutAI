@@ -44,7 +44,15 @@ import { M as LOCAL } from '../../model/models-local-copy.ts';
 import { M as COPY } from '../../model/semantic-copy.ts';
 import { folderRowView } from '../../model/semantic-folders.ts';
 import { packageView, scopeView, type PackagePartKind, type ScopeProject } from '../../model/semantic-package.ts';
-import { coverageLine, etaLine, indexState, pausedNote, visualCostLine, visualCoverageLine } from '../../model/semantic-status.ts';
+import {
+  coverageLine,
+  deviceName,
+  etaLine,
+  indexState,
+  pausedNote,
+  visualCostLine,
+  visualCoverageLine,
+} from '../../model/semantic-status.ts';
 import { fmtSize } from '../../model/task-facts.ts';
 import { useRuntime } from '../../runtime/context.tsx';
 import { useDirectory } from '../../state/directory-store.ts';
@@ -397,7 +405,7 @@ function IndexGroup({ web, multimodal }: { web: boolean; multimodal: boolean }) 
       <Row label={COPY.settings.runsOn} desc={COPY.settings.runsOnDesc}>
         <span className={value}>
           {status.model.device
-            ? `${status.model.label} · ${status.model.device.toUpperCase()}`
+            ? `${status.model.label} · ${deviceName(status.model.device)}`
             : `${status.model.label} · ${COPY.settings.notLoaded}`}
         </span>
       </Row>

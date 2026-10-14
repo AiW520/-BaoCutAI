@@ -133,7 +133,8 @@ export const pl: SemanticMessages = {
     cleared: 'Wyczyszczono. Trwa odbudowa w tle.',
     controlFailed: (text) => `Nie udało się zmienić indeksu: ${text}`,
     runsOn: 'Działa na',
-    runsOnDesc: 'Używa modelu multimodalnego, jeśli jest zainstalowany, a w przeciwnym razie modelu tekstowego.',
+    runsOnDesc:
+      'Używa modelu multimodalnego, jeśli jest zainstalowany, a w przeciwnym razie modelu tekstowego. Wyszukiwanie działa na GPU, gdy to możliwe, a w przeciwnym razie na CPU.',
     notLoaded: 'Jeszcze nie wczytano',
     featuresGroup: 'Funkcje, które z niego korzystają',
     tm: 'Pamięć tłumaczeń',

@@ -132,7 +132,8 @@ export const de: SemanticMessages = {
     cleared: 'Gelöscht. Wird im Hintergrund neu aufgebaut.',
     controlFailed: (text) => `Der Index konnte nicht geändert werden: ${text}`,
     runsOn: 'Läuft auf',
-    runsOnDesc: 'Verwendet das multimodale Modell, wenn es installiert ist, sonst das Textmodell.',
+    runsOnDesc:
+      'Verwendet das multimodale Modell, wenn es installiert ist, sonst das Textmodell. Die Suche läuft auf der GPU, wenn möglich, sonst auf der CPU.',
     notLoaded: 'Noch nicht geladen',
     featuresGroup: 'Funktionen, die ihn nutzen',
     tm: 'Übersetzungsgedächtnis',

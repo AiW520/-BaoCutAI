@@ -132,7 +132,8 @@ export const nl: SemanticMessages = {
     cleared: 'Gewist. Wordt op de achtergrond opnieuw opgebouwd.',
     controlFailed: (text) => `Kon de index niet wijzigen: ${text}`,
     runsOn: 'Draait op',
-    runsOnDesc: 'Gebruikt het multimodale model als het geïnstalleerd is, anders het tekstmodel.',
+    runsOnDesc:
+      'Gebruikt het multimodale model als het geïnstalleerd is, anders het tekstmodel. Zoeken draait op de GPU als dat kan, anders op de CPU.',
     notLoaded: 'Nog niet geladen',
     featuresGroup: 'Functies die het gebruiken',
     tm: 'Vertaalgeheugen',
