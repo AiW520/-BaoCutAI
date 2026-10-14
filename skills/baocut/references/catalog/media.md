@@ -150,6 +150,7 @@ css、js、json 这类支持文件不导入，直接写进设计稿目录，用�
 
 - {{tool:download}} / {{tool:transcribe}}：`pipeline.summary.videoId` 是新视频，`assetId` 是素材；`outputs` 里有下载的文件与文稿的 `path`。给链接时 summary 另有 `description`（截断的简介）与 `sourceChapters`（作者章节的条数）。
 - 链接导入的素材：{{tool:videos_inspect}} 的 `assets[].source` 是来源元数据：`platform`、`webpageUrl`、`uploader`（发布者）、`uploadDate`、`title`、`description`（最多 1200 字符，被截断时 `descriptionTruncated` 为 true）、`chapters`（作者的章节 `[{ at, title }]`，平台给的或从简介的时间戳大纲解析出的，没有时 `[]`）。它是背景参考，不是文稿内容：润色时人名与术语的写法只在说话人明显在说它时照改，说话人实名时只在它唯一指明某一位时算证据（见 [subtitles](subtitles.md)）；作者章节用 {{tool:chapters_adopt}} 写进视频（见 [editing](editing.md)）。
+- {{tool:videos_inspect}} 的 `brief`：写过视频速览时有，`markdown` 是正文（时间链接已换成完整的 `/videos/<videoId>?t=<秒>`），`language` 是正文的语言；没写过时没有这一项。章节（`chapters`）每章带 `href`，写速览的要点时照抄。
 - {{tool:transcode}}：`outputs` 的 `path`（`pipeline.summary.files`）是输出文件，把位置告诉用户。
 - {{tool:videos_frames}}：`frames` 每帧有 `at`、`file`、`width`、`height`、`faces` 与取自哪个片段（`item`）、哪个素材（`asset`）。读 `file` 这张图片。`faces` 是 `[{x, y, w, h, score}]`：框的左上角与宽高，按帧的宽高归一化到 0–1，`score` 0–1，按 score 从高到低；顶层 `detector` 是 `yunet`，检测器不可用时为 null（`faces` 都是空数组）。`file` 为 null 的帧没有 `faces`。
 - {{tool:videos_shots}}：`cuts` 每处有 `at`（新镜头第一帧的秒）、`score`（`edit` 为 null）与 `kind`；`shots` 每个有 `start`、`end` 与 `sampleAt`。

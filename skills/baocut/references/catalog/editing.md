@@ -56,7 +56,7 @@ description: 时间线修改的机制：一笔修改的事务与版本、预检�
 | 章节 | `setChapters`、`upsertChapter`、`removeChapter` | 整个替换或逐章修改章节 |
 | 剪口 | `proposeCuts`、`acceptCutSuggestions`、`addCuts`、`restoreCut` | 生成口癖与停顿的剪辑提案、接受建议、直接剪、恢复 |
 | 轨道与画布 | `addTrack`、`updateTrack`、`updateSequence` | 加轨道、锁定与隐藏、画布尺寸与底色 |
-| 文档与历史 | `patchDocument`、`renameSpeakers`、`updateWords`、`putDocument`、`createCheckpoint`、`renameVideo` | 写文档、留检查点、改视频名 |
+| 文档与历史 | `patchDocument`、`renameSpeakers`、`updateWords`、`putDocument`、`createCheckpoint`、`renameVideo`、`setVideoBrief` | 写文档、留检查点、改视频名、写视频速览 |
 
 常用操作（由目录生成）：
 

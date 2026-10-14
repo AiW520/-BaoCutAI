@@ -48,6 +48,7 @@
 | 语音合成 | Speech synthesis | |
 | 说话人 | Speaker | |
 | 章节 | Chapter | |
+| 视频速览 | Video brief | 不写 Summary、Overview：总结是写作工具的产物 |
 | 幻灯片 / 幻灯片标注 | Slides / Slide annotation | 一份幻灯片也叫 Slides，不写 Deck、Presentation |
 | 设计稿 / 画板 / 设计稿标注 | Design / Artboard / Design annotation | 一份设计稿也叫 Design，不写 Canvas、Mockup；画板不写 Frame、Board |
 | 设计系统 / 设计系统标注 | Design system / Design system annotation | 不写 Style guide、UI kit |
@@ -90,6 +91,7 @@
 | handles | 实例用到的源区间之外还可以取的素材。两侧转场在剪切点两侧要用它 |
 | 效果（Effect，`fx`） | 画面实例上的一组固定效果字段：滤镜与特效预设、调色、模糊、描边、投影。作用顺序固定，不是可以任意排序的栈。见视频格式规范 §3.9 |
 | 章节（Chapter） | 序列上 `kind: 'chapter'` 的标记，固定在时间线的时刻上。见视频格式规范 §3.13 |
+| 视频速览（Video brief） | 站在观众角度对一部视频的说明：出处、讲什么、出场的人与要点。智能体转录之后写，存在视频上（`brief`），不参与渲染。见视频格式规范 §3.1、产品设计 §3.2.2 |
 | 闪避（Ducking） | 一组声音响起时自动压低另一组声音，例如人声压低配乐。按时间线上的区间展开成增益包络。见视频格式规范 §3.9 |
 | 变体（Variant） | 明确的衍生输出配置，例如语言版本或画幅版本 |
 | ChangeSet | 待提交的一组修改及其影响说明。可预览，不能独立演进 |

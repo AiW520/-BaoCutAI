@@ -756,6 +756,23 @@ export const EDIT_OPERATIONS: readonly EditOperationSpec[] = [
     }),
     example: { type: 'renameVideo', name: '发布会精剪' },
   },
+  {
+    type: 'setVideoBrief',
+    family: 'documents-and-versions',
+    doc: [
+      '- {"type":"setVideoBrief","brief":{"markdown","language"?}|null}：整份写入视频速览（站在观众角度的说明：出处、讲什么、出场的人、要点），存在视频上，videos_inspect 的 brief 读回；null 清掉。正文是 Markdown，不带「视频速览」标题，最多 20000 字；要点的时间链接照抄工具结果里的 href（`/videos/<videoId>?t=<秒>`），存进去后跟着视频走。language 是正文的语言（BCP 47）。',
+    ],
+    schema: op('setVideoBrief', {
+      brief: z
+        .object({
+          markdown: z.string().min(1).describe('速览正文，Markdown，不带标题'),
+          language: z.string().optional().describe('正文的语言，BCP 47'),
+        })
+        .nullable()
+        .describe('整份速览；null 清掉'),
+    }),
+    example: { type: 'setVideoBrief', brief: { markdown: '**Episode 42** · 3:26 · 英语\n\n三位开发者聊……', language: 'zh-Hans' } },
+  },
 ];
 
 /** `edits_apply` 认得的操作种类，按上表的顺序。 */

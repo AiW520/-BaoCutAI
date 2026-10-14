@@ -308,8 +308,8 @@ describe('digestVideo', () => {
       },
     ]);
     expect(digest.chapters).toEqual([
-      { id: 'chap_1', title: '开场', atSeconds: 0, atFrame: 0 },
-      { id: 'chap_2', title: '正题', atSeconds: 1.5, atFrame: 45, summary: '讲重点', thumbnailAssetId: 'asset_v' },
+      { id: 'chap_1', title: '开场', atSeconds: 0, atFrame: 0, href: '/videos/video_1?t=0' },
+      { id: 'chap_2', title: '正题', atSeconds: 1.5, atFrame: 45, href: '/videos/video_1?t=1.5', summary: '讲重点', thumbnailAssetId: 'asset_v' },
     ]);
     expect(digest.ducking).toEqual([
       {
@@ -386,6 +386,12 @@ describe('digestVideo', () => {
       orphanedAnchors: ['item_t'],
       removedWithTarget: ['item_f'],
     });
+  });
+
+  it('视频速览原样给出，时间链接换回这部视频的完整地址；没写过时不出这个字段', () => {
+    const snapshot = { ...video([]), brief: { markdown: '**访谈**\n\n- [0:26](?t=26) 开场', language: 'zh-Hans' } };
+    expect(digestVideo(snapshot, '片子', []).brief).toEqual({ markdown: '**访谈**\n\n- [0:26](/videos/video_1?t=26) 开场', language: 'zh-Hans' });
+    expect('brief' in digestVideo(video([]), '片子', [])).toBe(false);
   });
 
   it('文档只列文档头：当前版本与概要，不含正文', () => {
@@ -621,6 +627,14 @@ describe('normalizeOperations', () => {
     expect(ducking).toMatchObject({ sequenceId: 'seq_root', attack: '0.05', release: '0.5' });
     expect(ducking).not.toHaveProperty('alignment');
     expect(removal).toEqual({ type: 'removeTransition', transitionId: 'tr_1' });
+  });
+
+  it('速览里指向这部视频的时间链接收成 ?t=，别的视频原样；不知道视频 ID 时不动', () => {
+    const brief = { markdown: '[0:26](/videos/vid_1?t=26) [别的](/videos/vid_2?t=3)', language: 'zh-Hans' };
+    const [own] = normalizeOperations([{ type: 'setVideoBrief', brief }], 's', cwd, 'vid_1');
+    expect(own).toEqual({ type: 'setVideoBrief', brief: { markdown: '[0:26](?t=26) [别的](/videos/vid_2?t=3)', language: 'zh-Hans' } });
+    expect(normalizeOperations([{ type: 'setVideoBrief', brief }], 's', cwd)[0]).toEqual({ type: 'setVideoBrief', brief });
+    expect(normalizeOperations([{ type: 'setVideoBrief', brief: null }], 's', cwd, 'vid_1')[0]).toEqual({ type: 'setVideoBrief', brief: null });
   });
 
   it('看不懂的时间与形态指出是第几个操作', () => {

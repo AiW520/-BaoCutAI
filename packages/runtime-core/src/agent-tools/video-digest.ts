@@ -2,6 +2,8 @@
 import os from 'node:os';
 import path from 'node:path';
 import {
+  compactBriefLinks,
+  expandBriefLinks,
   framesToSeconds,
   itemAssetRef,
   itemAssetRefs,
@@ -22,6 +24,7 @@ import {
   type TransactionReceipt,
   type VisualItem,
   type AssetRevision,
+  videoTimeHref,
 } from '@baocut/protocol';
 import { sourceChapters } from '@baocut/editor-wasm';
 
@@ -61,6 +64,10 @@ export function digestVideo(snapshot: VideoSnapshot, videoPath: string, history:
     videoId: snapshot.id,
     video: videoPath,
     name: snapshot.name,
+    // 视频速览：链接换回完整地址，智能体读到的与回复里写的同一种写法。
+    ...(snapshot.brief
+      ? { brief: { markdown: expandBriefLinks(snapshot.brief.markdown, snapshot.id), ...(snapshot.brief.language ? { language: snapshot.brief.language } : {}) } }
+      : {}),
     revision: snapshot.revision,
     sequence: {
       id: sequence.id,
@@ -107,6 +114,7 @@ export function digestVideo(snapshot: VideoSnapshot, videoPath: string, history:
         title: m.label,
         atSeconds: round(framesToSeconds(m.frame, fps)),
         atFrame: m.frame,
+        href: videoTimeHref(snapshot.id, framesToSeconds(m.frame, fps)),
         ...(m.summary !== undefined ? { summary: m.summary } : {}),
         ...(m.thumbnail ? { thumbnailAssetId: m.thumbnail.id } : {}),
       })),
@@ -431,8 +439,9 @@ export class OperationShapeError extends Error {
  * - `setTransition.duration`、`setChapters` 每一章的 `at`、`upsertChapter.at` 与 `removeRange` 的 `from` / `to` 同上换成时间输入。
  * - `addItem.asset` 与章节的 `thumbnail` 可以直接写素材 ID。
  * - `importAsset.path` 相对会话的工作目录；`~/` 展开为主目录。
+ * - `setVideoBrief` 正文里指向这部视频某一刻的链接收成 `?t=<秒>`（视频格式规范 §3.1）。
  */
-export function normalizeOperations(operations: unknown[], rootSequenceId: Id, cwd: string): Record<string, unknown>[] {
+export function normalizeOperations(operations: unknown[], rootSequenceId: Id, cwd: string, videoId?: Id): Record<string, unknown>[] {
   return operations.map((raw, index) => {
     if (typeof raw !== 'object' || raw === null || Array.isArray(raw)) throw new OperationShapeError(index, '要是一个对象');
     const op: Record<string, unknown> = { ...(raw as Record<string, unknown>) };
@@ -495,8 +504,13 @@ export function normalizeOperations(operations: unknown[], rootSequenceId: Id, c
     }
     if (type === 'addItem' && typeof op.asset === 'string') op.asset = { assetId: op.asset };
     if (type === 'importAsset' && typeof op.path === 'string') op.path = resolveUserPath(op.path, cwd);
+    if (type === 'setVideoBrief' && videoId && isBrief(op.brief)) op.brief = { ...op.brief, markdown: compactBriefLinks(op.brief.markdown, videoId) };
     return op;
   });
+}
+
+function isBrief(value: unknown): value is { markdown: string } {
+  return typeof value === 'object' && value !== null && typeof (value as { markdown?: unknown }).markdown === 'string';
 }
 
 function timeInput(value: unknown, index: number): unknown {

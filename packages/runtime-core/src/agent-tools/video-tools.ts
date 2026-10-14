@@ -982,7 +982,7 @@ export class VideoTools implements ToolSet {
     if (issues.length > 0) throw preflightError(issues);
     const resolved = await this.#resolveArtifacts(args.operations, access);
     const base = this.#scope.importBase(access, opened);
-    const operations = normalizeOperations(resolved, video.rootSequenceId, base.cwd);
+    const operations = normalizeOperations(resolved, video.rootSequenceId, base.cwd, video.id);
     if (base.confine) await confineImports(operations, base.confine);
     const known = knownIds(video);
     const touched = new Set<string>();
@@ -1040,7 +1040,7 @@ export class VideoTools implements ToolSet {
   ) {
     const resolved = await this.#resolveArtifacts(edit.operations, access);
     const base = this.#scope.importBase(access, opened);
-    const operations = normalizeOperations(resolved, opened.snapshot.video.rootSequenceId, base.cwd);
+    const operations = normalizeOperations(resolved, opened.snapshot.video.rootSequenceId, base.cwd, opened.snapshot.video.id);
     if (base.confine) await confineImports(operations, base.confine);
     // 智能体写的译文：alignment 为 null 或缺字段的单元按句子补上句级对齐（视频格式规范 §5.3）。
     const documents = (this.#videos.mirror(opened.ref.videoId)?.video ?? opened.snapshot.video).documents;
