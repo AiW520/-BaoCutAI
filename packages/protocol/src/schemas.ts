@@ -1228,6 +1228,12 @@ export const methodParamSchemas = {
     })
     .strict(),
   'models.enable': z.object({ bundleId }).strict(),
+  'models.installBatch': z.object({
+    bundleIds: z.array(bundleId).min(1).max(16).refine((ids) => new Set(ids).size === ids.length),
+    sources: z.record(z.string().min(1).max(512), z.string().max(2048).refine(isDownloadEndpoint, { error: () => V.downloadEndpoint().text }).nullable())
+      .refine((sources) => Object.keys(sources).length <= 128).optional(),
+    confirmBytes: z.number().int().min(0).optional(), commandId: id.optional(),
+  }).strict(),
   'models.install': z.object({ bundleId, confirmBytes: z.number().int().min(0).optional(), commandId: id.optional() }).strict(),
   'models.cancelInstall': z.object({ bundleId, discard: z.boolean().optional() }).strict(),
   'models.remove': z.object({ bundleId }).strict(),

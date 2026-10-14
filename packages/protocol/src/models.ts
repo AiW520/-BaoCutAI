@@ -217,6 +217,28 @@ export interface ModelInstallPlan {
   upToDate: boolean;
 }
 
+/** 一次确认多个模型包；来源键为 `<repo>@<revision>`，null 表示该种类的官方来源。 */
+export interface ModelInstallBatchParams {
+  bundleIds: string[];
+  sources?: Record<string, string | null>;
+  confirmBytes?: number;
+  commandId?: Id;
+}
+
+/** 共享组件只列一次、只计一次；每项保留使用它的模型包，供界面命名。 */
+export interface ModelInstallBatchPlan extends Omit<ModelInstallPlan, 'bundleId' | 'components'> {
+  components: Array<ModelInstallPlan['components'][number] & {
+    bundleIds: string[];
+    endpoint: string | null;
+    sourceLocked: boolean;
+  }>;
+}
+
+export interface ModelInstallBatchResult {
+  plan: ModelInstallBatchPlan;
+  jobs: Array<{ bundleId: string; jobId: Id }>;
+}
+
 export interface ModelInstallResult {
   plan: ModelInstallPlan;
   /** 开始的安装任务；还没确认、或没有要下载的东西时 null。同一个模型包已经在安装时是那个任务。 */

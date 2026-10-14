@@ -49,5 +49,6 @@ export const ja: DownloadSourceMessages = {
   groupDone: "ダウンロード済み",
   partFrom: (source: string) => `${source} から`,
   sequenceNote: "各部分は順番にダウンロードされ、終わったものから保存されます。失敗した部分があっても、補完するときはその部分だけをダウンロードします。",
+  perDownloadNote: "項目ごとにダウンロード元を選べます。この選択は今回のダウンロードにのみ適用されます。",
   switchNote: "ここでダウンロード元を変えると、以降のダウンロードにも適用されます。",
 };

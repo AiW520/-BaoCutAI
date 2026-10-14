@@ -52,5 +52,6 @@ export const fr: DownloadSourceMessages = {
   partFrom: (source: string) => `depuis ${source}`,
   sequenceNote:
     "Les parties sont téléchargées l’une après l’autre, et chacune est conservée dès qu’elle est terminée. Si l’une échoue, compléter ne télécharge que cette partie.",
+  perDownloadNote: "Choisissez une source pour chaque élément. Ces choix ne concernent que ce téléchargement.",
   switchNote: "Changer la source ici s’applique aussi aux téléchargements suivants.",
 };

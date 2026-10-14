@@ -49,5 +49,6 @@ export const ko: DownloadSourceMessages = {
   groupDone: "이미 다운로드됨",
   partFrom: (source: string) => `${source}에서`,
   sequenceNote: "각 부분은 차례로 다운로드되며, 끝나는 즉시 보존됩니다. 하나가 실패하면 보완할 때 그 부분만 다운로드합니다.",
+  perDownloadNote: "각 항목의 다운로드 소스를 선택하세요. 선택은 이번 다운로드에만 적용됩니다.",
   switchNote: "여기서 소스를 바꾸면 이후 다운로드에도 적용됩니다.",
 };

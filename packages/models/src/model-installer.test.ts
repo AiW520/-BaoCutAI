@@ -78,6 +78,21 @@ describe('ModelInstaller', () => {
       .plan(bundleId, { repair })
       .then((detail) => installer.install(detail, { signal: new AbortController().signal, ...(onProgress ? { onProgress } : {}) }));
 
+  it('同一包的组件分别选源，计划、下载与清单都使用冻结的来源', async () => {
+    const mirror = await startFakeModelSource();
+    try {
+      serveRepo(mirror, vad);
+      const { installer } = setup();
+      const detail = await installer.plan('test-a@mlx', { endpoints: { [`${vad.repo}@${vad.revision}`]: mirror.endpoint } });
+      expect(detail.plan.components.map((c) => c.source)).toEqual([source.endpoint, mirror.endpoint]);
+      await installer.install(detail, { signal: new AbortController().signal });
+      expect(source.requests.filter((r) => r.method === 'GET').every((r) => r.repo === asrA.repo)).toBe(true);
+      expect(mirror.requests.filter((r) => r.method === 'GET').every((r) => r.repo === vad.repo)).toBe(true);
+      const manifest = JSON.parse(await fs.readFile(path.join(root, vad.repo, '.bcut-manifest.json'), 'utf8'));
+      expect(manifest.source).toBe(mirror.endpoint);
+    } finally { await mirror.close(); }
+  });
+
   it('计划给出大小与来源；安装后已装好、记进安装记录，进度只增不减且以字节计', async () => {
     const { catalog, installer } = setup();
     const detail = await installer.plan('test-a@mlx');
@@ -592,6 +607,22 @@ describe('ModelInstaller 发布页组件', () => {
     await installer.install(detail, { signal: new AbortController().signal });
     expect(requests).toEqual(['/mirror/audiocpp/0.9.1/audio-test-bin.tar.gz']);
     expect(await fs.stat(path.join(engineDir, 'audiocpp_cli'))).toBeTruthy();
+  });
+
+  it('发布页组件本次选源优先于默认，null 明确使用官方且不改变默认', async () => {
+    const body = packRelease('#!/bin/sh\nexit 0\n');
+    const rel = release(body);
+    assets.set('/selected/audiocpp/0.9.1/audio-test-bin.tar.gz', body);
+    const { installer } = setup(rel, { toolsEndpoint: `${base}/default` });
+    const key = '0xShug0/audio.cpp@v0.9.1';
+    const official = await installer.plan('music-a@audio-cpp', { endpoints: { [key]: null } });
+    expect(official.plan.components.find((c) => c.origin)?.source).not.toContain('/default');
+    const chosen = await installer.plan('music-a@audio-cpp', { endpoints: { [key]: `${base}/selected` } });
+    expect(chosen.plan.components.find((c) => c.origin)?.source).toBe(`${base}/selected`);
+    const defaultPlan = await installer.plan('music-a@audio-cpp');
+    expect(defaultPlan.plan.components.find((c) => c.origin)?.source).toBe(`${base}/default`);
+    await installer.install(chosen, { signal: new AbortController().signal });
+    expect(requests).toEqual(['/selected/audiocpp/0.9.1/audio-test-bin.tar.gz']);
   });
 
   it('一部分没下成：失败带上那一部分与它连的基址；下好的权重留着，再计划只下缺的那一部分', async () => {

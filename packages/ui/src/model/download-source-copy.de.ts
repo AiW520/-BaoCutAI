@@ -52,5 +52,6 @@ export const de: DownloadSourceMessages = {
   partFrom: (source: string) => `von ${source}`,
   sequenceNote:
     "Die Teile werden nacheinander heruntergeladen, und jeder wird behalten, sobald er fertig ist. Schlägt einer fehl, lädt das Vervollständigen nur diesen Teil herunter.",
+  perDownloadNote: "Wähle für jeden Eintrag eine Quelle. Die Auswahl gilt nur für diesen Download.",
   switchNote: "Eine hier geänderte Quelle gilt auch für spätere Downloads.",
 };

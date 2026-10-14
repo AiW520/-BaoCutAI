@@ -51,5 +51,6 @@ export const vi: DownloadSourceMessages = {
   groupDone: "Đã tải xong",
   partFrom: (source: string) => `từ ${source}`,
   sequenceNote: "Các phần được tải lần lượt, phần nào xong được giữ ngay. Nếu một phần lỗi, khi tải bổ sung chỉ tải lại phần đó.",
+  perDownloadNote: "Chọn nguồn cho từng mục. Các lựa chọn chỉ áp dụng cho lần tải này.",
   switchNote: "Đổi nguồn ở đây cũng áp dụng cho các lần tải sau.",
 };

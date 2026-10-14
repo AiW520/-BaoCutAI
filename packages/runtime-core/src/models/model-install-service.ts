@@ -71,10 +71,14 @@ import {
   type ModelBundleStatus,
   type ModelCheckCode,
   type ModelInstallResult,
+  type ModelInstallBatchParams,
+  type ModelInstallBatchResult,
   type ModelRemoveResult,
   type ModelSelfTestResult,
 } from '@baocut/protocol';
 import { RcModels } from '@baocut/protocol/messages/runtime-core';
+import { mergeInstallPlans } from './model-install-batch.ts';
+import { ModelsModelInstaller } from '@baocut/protocol/messages/models/model-installer.ts';
 import { ModelsEmbedding } from '@baocut/protocol/messages/models/embedding.ts';
 import { localizedOf, taskFailure } from '../localized.ts';
 
@@ -171,7 +175,57 @@ export class ModelInstallService {
     if (params.confirmBytes !== detail.plan.confirmBytes) {
       throw new RpcError('conflict', RcModels.sizeChanged(), { code: 'MODEL_INSTALL_SIZE_CHANGED', plan: detail.plan });
     }
-    const spec = { task: 'modelInstall' as const, bundleId: params.bundleId, repair, confirmBytes: detail.plan.confirmBytes };
+    return { plan: detail.plan, jobId: this.#submitInstall(detail, submitter, params.commandId) };
+  }
+
+  /** 全部计划确认后同步入队，不在两个模型之间再次询问；共享文件由串行安装队列复用。 */
+  async installBatch(params: ModelInstallBatchParams, submitter: JobSubmitter): Promise<ModelInstallBatchResult> {
+    const defs = params.bundleIds.map((id) => this.#definition(id));
+    if (this.#options.settings().offlineStrict) {
+      throw new RpcError('conflict', RcModels.offlineStrict(), { code: 'OFFLINE_STRICT' });
+    }
+    await this.#guardDir(true);
+    const env = this.#options.env ?? process.env;
+    const locked = { models: !!env.BAOCUT_MODELS_ENDPOINT?.trim(), tools: !!env.BAOCUT_TOOLS_ENDPOINT?.trim() };
+    const endpoints: Record<string, string | null> = {};
+    for (const def of defs) {
+      for (const source of Object.values(def.components)) {
+        if (!source) continue;
+        const key = `${source.repo}@${source.revision}`;
+        if (!params.sources || !Object.hasOwn(params.sources, key)) continue;
+        if (source.release) {
+          if (!locked.tools) endpoints[key] = params.sources[key]!;
+        } else endpoints[key] = resolveModelsEndpoint(env, params.sources[key]).endpoint;
+      }
+    }
+    const details = await Promise.all(params.bundleIds.map((id) => this.#plan(id, false, endpoints)));
+    const plan = mergeInstallPlans(details, locked);
+    if (params.confirmBytes === undefined || plan.upToDate) return { plan, jobs: [] };
+    if (params.commandId) {
+      const existing = details.map((d) => ({ bundleId: d.plan.bundleId, jobId: this.#jobs.jobForCommand(`${params.commandId}:${d.plan.bundleId}`) }));
+      if (details.every((d, i) => d.plan.upToDate || existing[i]!.jobId)) {
+        return { plan, jobs: existing.filter((j): j is { bundleId: string; jobId: Id } => !!j.jobId) };
+      }
+    }
+    if (params.confirmBytes !== plan.confirmBytes) {
+      throw new RpcError('conflict', RcModels.sizeChanged(), { code: 'MODEL_INSTALL_SIZE_CHANGED', plan });
+    }
+    if (plan.availableBytes !== null && plan.availableBytes < plan.confirmBytes) {
+      throw new RpcError('conflict', ModelsModelInstaller.noSpace(), {
+        code: 'MODEL_DOWNLOAD_NO_SPACE', requiredBytes: plan.confirmBytes, availableBytes: plan.availableBytes,
+      });
+    }
+    const jobs = details.filter((d) => !d.plan.upToDate).map((detail) => {
+      const commandId = params.commandId ? `${params.commandId}:${detail.plan.bundleId}` : undefined;
+      const jobId = (commandId ? this.#jobs.jobForCommand(commandId) : null)
+        ?? this.#activeInstall(detail.plan.bundleId)?.jobId ?? this.#submitInstall(detail, submitter, commandId);
+      return { bundleId: detail.plan.bundleId, jobId };
+    });
+    return { plan, jobs };
+  }
+
+  #submitInstall(detail: InstallPlanDetail, submitter: JobSubmitter, commandId?: Id): Id {
+    const spec = { task: 'modelInstall' as const, bundleId: detail.plan.bundleId, repair: detail.repair, confirmBytes: detail.plan.confirmBytes };
     const hash = `sha256:${sha256Hex(canonicalJson({ ...spec, components: detail.plan.components }))}`;
     let jobId = '';
     ({ jobId } = this.#jobs.submitTask(
@@ -182,9 +236,9 @@ export class ModelInstallService {
         contentHash: hash,
         inputHash: hash,
         providerId: 'local',
-        modelId: params.bundleId,
-        bundleId: params.bundleId,
-        ...(params.commandId ? { commandId: params.commandId } : {}),
+        modelId: detail.plan.bundleId,
+        bundleId: detail.plan.bundleId,
+        ...(commandId ? { commandId } : {}),
         queue: INSTALL_QUEUE,
         // 峰值需求（§7.7）：还要下载的字节数进 staging。
         resources: { demand: modelDownloadDemand(detail.plan.confirmBytes) },
@@ -192,16 +246,16 @@ export class ModelInstallService {
       },
       submitter,
     ));
-    if (this.#activeInstall(params.bundleId)?.jobId === jobId) {
-      this.#catalog.setInstallState(params.bundleId, {
+    if (this.#activeInstall(detail.plan.bundleId)?.jobId === jobId) {
+      this.#catalog.setInstallState(detail.plan.bundleId, {
         jobId,
         state: 'queued',
         receivedBytes: detail.plan.resumedBytes,
         totalBytes: detail.totalBytes,
       });
     }
-    this.#log.info('Model install submitted', { bundleId: params.bundleId, jobId, repair, confirmBytes: detail.plan.confirmBytes });
-    return { plan: detail.plan, jobId };
+    this.#log.info('Model install submitted', { bundleId: detail.plan.bundleId, jobId, repair: detail.repair, confirmBytes: detail.plan.confirmBytes });
+    return jobId;
   }
 
   /** 停下安装（取消它的任务）；`discard` 时删掉暂存区。 */
@@ -761,16 +815,21 @@ export class ModelInstallService {
   async #narrowPlan(detail: InstallPlanDetail): Promise<InstallPlanDetail> {
     // 修复要重新核对哈希，开跑时不再算一遍。
     if (detail.repair) return detail;
-    const fresh = await this.#plan(detail.plan.bundleId, false).catch(() => null);
-    if (!fresh || fresh.endpoint !== detail.endpoint || fresh.toolsEndpoint !== detail.toolsEndpoint) return detail;
-    const before = new Map(detail.components.map((c) => [c.component, c.action]));
-    const subset = fresh.components.every((c) => c.action !== 'download' || before.get(c.component) === 'download');
+    const fresh = await this.#plan(detail.plan.bundleId, false, detail.endpoints).catch(() => null);
+    if (!fresh) return detail;
+    const before = new Map(detail.components.map((c) => [c.component, c]));
+    const subset = fresh.plan.confirmBytes <= detail.plan.confirmBytes && fresh.components.every((c) => {
+      if (c.action !== 'download') return true;
+      const previous = before.get(c.component);
+      return previous?.action === 'download' && previous.endpoint === c.endpoint
+        && c.fetch.every((file) => previous.fetch.some((f) => f.path === file.path && f.sha256 === file.sha256));
+    });
     return subset ? fresh : detail;
   }
 
-  async #plan(bundleId: string, repair: boolean): Promise<InstallPlanDetail> {
+  async #plan(bundleId: string, repair: boolean, endpoints?: Record<string, string | null>): Promise<InstallPlanDetail> {
     try {
-      return await this.installer.plan(bundleId, { repair });
+      return await this.installer.plan(bundleId, { repair, ...(endpoints ? { endpoints } : {}) });
     } catch (error) {
       if (error instanceof DownloadError) {
         throw new RpcError('conflict', error.message, { code: error.code, remedy: error.remedy, ...error.details });

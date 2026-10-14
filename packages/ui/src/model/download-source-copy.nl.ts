@@ -51,5 +51,6 @@ export const nl: DownloadSourceMessages = {
   groupDone: "Al gedownload",
   partFrom: (source: string) => `van ${source}`,
   sequenceNote: "De onderdelen worden na elkaar gedownload en elk wordt bewaard zodra het klaar is. Mislukt er één, dan downloadt aanvullen alleen dat onderdeel.",
+  perDownloadNote: "Kies voor elk onderdeel een bron. Deze keuzes gelden alleen voor deze download.",
   switchNote: "Een bron die je hier wijzigt, geldt ook voor latere downloads.",
 };

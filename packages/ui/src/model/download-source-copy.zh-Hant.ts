@@ -48,5 +48,6 @@ export const zhHant: DownloadSourceMessages = {
   groupDone: "這一組已下載完成",
   partFrom: (source: string) => `從 ${source}`,
   sequenceNote: "幾個部分依序下載，下載好一個就保存一個；哪一部分沒有下載成功，補齊時只下載那一部分。",
+  perDownloadNote: "每項可分別選擇來源，僅用於本次下載。",
   switchNote: "在這裡切換來源，之後的下載也會使用它。",
 };

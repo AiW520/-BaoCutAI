@@ -63,7 +63,7 @@ export interface InstallPlanView {
 }
 
 /** 计划 → 确认对话框里的几行话。 */
-export function installPlanView(plan: ModelInstallPlan): InstallPlanView {
+export function installPlanView(plan: Omit<ModelInstallPlan, 'bundleId'>): InstallPlanView {
   const lines: PlanLine[] = plan.components.map((c) => ({
     key: `${c.component}:${c.repo}`,
     label: `${partLabel(c.component)} · ${c.repo}`,

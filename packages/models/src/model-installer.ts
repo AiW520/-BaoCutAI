@@ -71,6 +71,8 @@ export interface ModelInstallerOptions {
 /** 计划里的一个组件（内部形态，安装时照着做）。 */
 export interface PlannedComponent {
   component: string;
+  /** 已冻结的本次来源（发布页 null 为官方）。 */
+  endpoint?: string | null;
   source: BundleComponentSource;
   action: 'keep' | 'download';
   /** 要下载的文件。 */
@@ -92,6 +94,7 @@ export interface InstallPlanDetail {
   plan: ModelInstallPlan;
   components: PlannedComponent[];
   endpoint: string;
+  endpoints: Record<string, string | null>;
   /** 发布页组件的下载镜像；没有时 null（官方地址）。 */
   toolsEndpoint: string | null;
   repair: boolean;
@@ -131,19 +134,25 @@ export class ModelInstaller {
     return this.#catalog.root;
   }
 
-  async plan(bundleId: string, options: { repair?: boolean } = {}): Promise<InstallPlanDetail> {
+  async plan(bundleId: string, options: { repair?: boolean; endpoints?: Record<string, string | null> } = {}): Promise<InstallPlanDetail> {
     const def = this.#definition(bundleId);
     const repair = options.repair ?? false;
     const endpoint = this.#options.endpoint();
     const toolsOption = this.#options.toolsEndpoint;
     const toolsEndpoint = (typeof toolsOption === 'function' ? toolsOption() : toolsOption) || null;
     const components: PlannedComponent[] = [];
+    const endpoints: Record<string, string | null> = {};
     for (const [component, source] of componentsOf(def)) {
-      components.push(
-        source.release
-          ? await this.#planRelease(component, source, repair, toolsEndpoint)
-          : await this.#planComponent(component, source, repair, endpoint),
-      );
+      const key = `${source.repo}@${source.revision}`;
+      const selected = options.endpoints && Object.hasOwn(options.endpoints, key)
+        ? options.endpoints[key]! : source.release ? toolsEndpoint : endpoint;
+      endpoints[key] = selected;
+      components.push({
+        ...(source.release
+          ? await this.#planRelease(component, source, repair, selected)
+          : await this.#planComponent(component, source, repair, selected ?? endpoint)),
+        endpoint: selected,
+      });
     }
     const downloading = components.filter((c) => c.action === 'download');
     const downloadBytes = downloading.some((c) => c.bytes === null) ? null : downloading.reduce((sum, c) => sum + (c.bytes ?? 0), 0);
@@ -169,7 +178,7 @@ export class ModelInstaller {
       source: this.#sourceOf(endpoint, toolsEndpoint, downloading),
       upToDate: downloading.length === 0,
     };
-    return { plan, components, endpoint, toolsEndpoint, repair, totalBytes: downloadBytes === null ? null : downloadBytes + resumedBytes };
+    return { plan, components, endpoint, endpoints, toolsEndpoint, repair, totalBytes: downloadBytes === null ? null : downloadBytes + resumedBytes };
   }
 
   /** 照计划下载、核对、发布。信号中止时停下（暂存区保留，下次续传），抛出中止的原因。 */
@@ -188,14 +197,6 @@ export class ModelInstaller {
         availableBytes: available,
       });
     }
-    const downloader = new ModelDownloader({
-      root: this.root,
-      endpoint: detail.endpoint,
-      fetch: this.#fetch,
-      ...(this.#options.retries !== undefined ? { retries: this.#options.retries } : {}),
-      ...(this.#options.backoffMs ? { backoffMs: this.#options.backoffMs } : {}),
-      ...(this.#options.stallMs !== undefined ? { stallMs: this.#options.stallMs } : {}),
-    });
     let received = detail.plan.resumedBytes;
     let downloaded = 0;
     const report = (phase: InstallProgress['phase']) =>
@@ -203,6 +204,14 @@ export class ModelInstaller {
     report('downloading');
     const published: BcutManifest[] = [];
     for (const component of downloading) {
+      const downloader = new ModelDownloader({
+        root: this.root,
+        endpoint: component.endpoint ?? detail.endpoint,
+        fetch: this.#fetch,
+        ...(this.#options.retries !== undefined ? { retries: this.#options.retries } : {}),
+        ...(this.#options.backoffMs ? { backoffMs: this.#options.backoffMs } : {}),
+        ...(this.#options.stallMs !== undefined ? { stallMs: this.#options.stallMs } : {}),
+      });
       try {
         if (component.release) {
           const onBytes = (delta: number) => {
@@ -530,7 +539,9 @@ export class ModelInstaller {
 
   /** 一个组件实际从哪个基址下载：模型仓库的组件按模型下载来源（ModelScope 上没有的回到公共模型仓库），发布页组件按工具下载镜像。 */
   #componentSource(c: PlannedComponent, endpoint: string, toolsEndpoint: string | null): string {
-    return c.source.release ? releaseSource(c.source.release, toolsEndpoint) : repoEndpoint(endpoint, this.#sourceRepo(c.source));
+    return c.source.release
+      ? releaseSource(c.source.release, c.endpoint === undefined ? toolsEndpoint : c.endpoint)
+      : repoEndpoint(c.endpoint ?? endpoint, this.#sourceRepo(c.source));
   }
 
   /**

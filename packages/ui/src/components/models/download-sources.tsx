@@ -70,12 +70,20 @@ export function useDownloadSource(kind: SourceKind) {
 const pickerItemHint = (s: DownloadSource) => (s.builtin ? s.hint : s.base);
 
 /** 一种来源的选择器：选了就改在用的那个（以后的下载也用它）。 */
-export function SourcePicker({ kind, label = M.pickerLabel(kindTitle(kind)), isDisabled }: { kind: SourceKind; label?: string; isDisabled?: boolean }) {
+export function SourcePicker({ kind, label = M.pickerLabel(kindTitle(kind)), isDisabled, selection, onSelect }: {
+  kind: SourceKind; label?: string; isDisabled?: boolean;
+  /** 本次下载的受控选择；存在时不写全局设置。 */
+  selection?: string | null;
+  onSelect?: (endpoint: string | null) => void;
+}) {
   const { state, ready, off, save } = useDownloadSource(kind);
+  const controlled = onSelect !== undefined;
+  const current = controlled ? sourceState(kind, selection, state.list.filter((s) => !s.builtin).map((s) => ({ name: s.name, base: s.base }))) : state;
   const [busy, setBusy] = useState(false);
   const choose = async (id: string) => {
-    const next = state.list.find((s) => s.id === id);
-    if (!next || next.id === state.active.id) return;
+    const next = current.list.find((s) => s.id === id);
+    if (!next || next.id === current.active.id) return;
+    if (onSelect) { onSelect(next.endpoint); return; }
     setBusy(true);
     await save(choosePatch(kind, next), M.changed(kindTitle(kind), next.name));
     setBusy(false);
@@ -86,12 +94,12 @@ export function SourcePicker({ kind, label = M.pickerLabel(kindTitle(kind)), isD
       size="S"
       align="end"
       menuWidth={300}
-      selectedKey={ready ? state.active.id : null}
+      selectedKey={ready ? current.active.id : null}
       isDisabled={off || busy || isDisabled}
       onSelectionChange={(key) => {
         if (key !== null) void choose(String(key));
       }}>
-      {state.list.map((s) => (
+      {current.list.map((s) => (
         <PickerItem key={s.id} id={s.id} textValue={s.name}>
           <Text slot="label">{s.name}</Text>
           <Text slot="description">{pickerItemHint(s)}</Text>

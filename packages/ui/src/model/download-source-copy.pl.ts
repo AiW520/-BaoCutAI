@@ -52,5 +52,6 @@ export const pl: DownloadSourceMessages = {
   partFrom: (source: string) => `z ${source}`,
   sequenceNote:
     "Części są pobierane po kolei, a każda zostaje zachowana zaraz po ukończeniu. Jeśli któraś się nie powiedzie, uzupełnianie pobierze tylko tę część.",
+  perDownloadNote: "Wybierz źródło dla każdego elementu. Wybór dotyczy tylko tego pobierania.",
   switchNote: "Zmiana źródła tutaj dotyczy też kolejnych pobrań.",
 };

@@ -139,7 +139,7 @@ interface Side {
   modelEvents: ModelsEvent[];
 }
 
-async function startSide(source: FakeModelSource, free: { bytes: number | null }): Promise<Side> {
+async function startSide(source: FakeModelSource, free: { bytes: number | null }, env: NodeJS.ProcessEnv = { [MODELS_ENDPOINT_ENV]: source.endpoint }): Promise<Side> {
   const dir = await fs.mkdtemp(path.join(os.tmpdir(), 'baocut-model-install-'));
   const home = resolveRuntimeHome({ BAOCUT_HOME: dir });
   const control = path.join(dir, 'fake-worker-control.json');
@@ -153,7 +153,7 @@ async function startSide(source: FakeModelSource, free: { bytes: number | null }
     modelWorker: { command: process.execPath, args: [FAKE_MODEL_WORKER, '--control', control] },
     jobIdleMs: 60_000,
     modelInstall: {
-      env: { [MODELS_ENDPOINT_ENV]: source.endpoint },
+      env,
       installer: {
         manifests: [...repos, ...diarizationRepos, defaultAsrRepo, speechRepo, imageRepo, turboRepo, separateRepo].map((r) => syntheticManifest(r)),
         freeBytes: async () => free.bytes,
@@ -213,6 +213,68 @@ describe('模型安装（假模型来源 + 假 Model Worker）', () => {
     await stopSide(side);
     side = undefined;
     await source.close();
+  });
+
+  it('批量安装：一次确认、共享组件只计一次，每项选源冻结且不修改默认', async () => {
+    if (DEFAULT_TRANSCRIBE_BUNDLE === TRANSCRIBE_BUNDLE) return;
+    const mirror = await startFakeModelSource();
+    try {
+      for (const repo of [...repos, ...diarizationRepos, defaultAsrRepo]) serveRepo(mirror, repo);
+      side = await startSide(source, free, {});
+      await side.client.request('settings.set', { values: { 'models.downloadEndpoint': source.endpoint } });
+      const bundleIds = [TRANSCRIBE_BUNDLE, DEFAULT_TRANSCRIBE_BUNDLE];
+      const preview = await side.client.request('models.installBatch', { bundleIds });
+      expect(preview.jobs).toEqual([]);
+      const components = preview.plan.components;
+      expect(new Set(components.map((c) => `${c.repo}@${c.revision}`)).size).toBe(components.length);
+      expect(components.some((c) => c.bundleIds.length === 2)).toBe(true);
+      expect(preview.plan.confirmBytes).toBe(components.reduce((n, c) => n + c.bytes!, 0));
+      expect(source.requests.filter((r) => r.method === 'GET')).toHaveLength(0);
+      const selected = components.find((c) => c.repo === defaultAsrRepo.repo)!;
+      const sources = Object.fromEntries(components.map((c) => [`${c.repo}@${c.revision}`, c === selected ? mirror.endpoint : source.endpoint]));
+      const { plan } = await side.client.request('models.installBatch', { bundleIds, sources });
+      expect(plan.components.find((c) => c.repo === selected.repo)?.source).toBe(mirror.endpoint);
+      source.throttle(8 * 1024, 20);
+      const commandId = newId('cmd');
+      const submitted = await side.client.request('models.installBatch', { bundleIds, sources, confirmBytes: plan.confirmBytes, commandId });
+      expect(submitted.jobs).toHaveLength(2);
+      const repeated = await side.client.request('models.installBatch', { bundleIds, sources, confirmBytes: plan.confirmBytes, commandId });
+      expect(repeated.jobs).toEqual(submitted.jobs);
+      expect((await side.client.request('settings.get', { keys: ['models.downloadEndpoint'] })).settings['models.downloadEndpoint'])
+        .toBe(source.endpoint);
+      // 改全局默认不会改掉尚在排队的本次来源。
+      await side.client.request('settings.set', { values: { 'models.downloadEndpoint': mirror.endpoint } });
+      for (const { jobId } of submitted.jobs) {
+        await until(() => terminal(jobOf(side!, jobId)), 10_000);
+        expect(jobOf(side, jobId)?.state).toBe('completed');
+      }
+      expect(mirror.requests.some((r) => r.method === 'GET' && r.repo === defaultAsrRepo.repo)).toBe(true);
+      for (const shared of components.filter((c) => c.bundleIds.length === 2)) {
+        for (const file of shared.files) {
+          expect(source.requests.filter((r) => r.method === 'GET' && r.repo === shared.repo && r.file === file)).toHaveLength(1);
+          expect(mirror.requests.filter((r) => r.method === 'GET' && r.repo === shared.repo && r.file === file)).toHaveLength(0);
+        }
+      }
+      expect((await side.client.request('models.installBatch', { bundleIds })).plan.upToDate).toBe(true);
+    } finally { await mirror.close(); }
+  });
+
+  it('批量安装先核对总量、磁盘与离线，失败时不启动任何模型；环境变量优先', async () => {
+    side = await startSide(source, free);
+    const bundleIds = [TRANSCRIBE_BUNDLE];
+    const key = `${repos[0]!.repo}@${repos[0]!.revision}`;
+    const { plan } = await side.client.request('models.installBatch', { bundleIds, sources: { [key]: 'https://ignored.example' } });
+    expect(plan.components.every((c) => c.sourceLocked && c.endpoint === source.endpoint)).toBe(true);
+    await expect(side.client.request('models.installBatch', { bundleIds, confirmBytes: plan.confirmBytes + 1 }))
+      .rejects.toMatchObject({ details: { code: 'MODEL_INSTALL_SIZE_CHANGED' } });
+    free.bytes = 1;
+    await expect(side.client.request('models.installBatch', { bundleIds, confirmBytes: plan.confirmBytes }))
+      .rejects.toMatchObject({ details: { code: 'MODEL_DOWNLOAD_NO_SPACE' } });
+    await side.client.request('settings.set', { values: { 'offline.strict': true } });
+    await expect(side.client.request('models.installBatch', { bundleIds }))
+      .rejects.toMatchObject({ details: { code: 'OFFLINE_STRICT' } });
+    expect(source.requests.filter((r) => r.method === 'GET')).toHaveLength(0);
+    expect(side.jobs()?.jobs.filter((j) => j.kind === 'modelInstall')).toHaveLength(0);
   });
 
   it('两步安装：先给大小，确认后是普通任务；进度在 jobs 主题（字节），状态在 models 主题；取消即暂停，再装续传；自检通过', async () => {

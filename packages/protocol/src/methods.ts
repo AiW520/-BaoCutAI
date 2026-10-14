@@ -73,6 +73,8 @@ import type {
   ModelBundleStatus,
   ModelCapabilitiesView,
   ModelInstallResult,
+  ModelInstallBatchParams,
+  ModelInstallBatchResult,
   ModelRemoveResult,
   ModelRef,
   ModelsDirChangeResult,
@@ -830,6 +832,8 @@ export interface RpcMethods {
    * 安装时返回那个任务。严格离线（`offline.strict`）时 `conflict`（`OFFLINE_STRICT`）。
    */
   'models.install': { params: { bundleId: string; confirmBytes?: number; commandId?: Id }; result: ModelInstallResult };
+  /** 多个模型包一次确认；共享组件去重，各项可指定本次来源，不写设置。 */
+  'models.installBatch': { params: ModelInstallBatchParams; result: ModelInstallBatchResult };
   /**
    * 停下一个模型包的安装（取消它的任务）。默认保留暂存区里已经收到的部分（再次 `models.install` 续传）；`discard: true` 时
    * 一并删掉。没有在安装时只按 `discard` 处理暂存区。

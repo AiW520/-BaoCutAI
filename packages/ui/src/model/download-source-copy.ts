@@ -73,6 +73,7 @@ const en = {
   groupDone: 'Already downloaded',
   partFrom: (source: string) => `from ${source}`,
   sequenceNote: 'The parts download one after another, and each is kept as soon as it finishes. If one fails, completing downloads only that part.',
+  perDownloadNote: "Choose a source for each item. These choices apply only to this download.",
   switchNote: 'Changing the source here also applies to later downloads.',
 };
 export type DownloadSourceMessages = typeof en;

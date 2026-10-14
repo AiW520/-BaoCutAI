@@ -51,5 +51,6 @@ export const tr: DownloadSourceMessages = {
   groupDone: "Zaten indirildi",
   partFrom: (source: string) => `kaynak: ${source}`,
   sequenceNote: "Parçalar sırayla indirilir ve her biri biter bitmez saklanır. Biri başarısız olursa tamamlama yalnızca o parçayı indirir.",
+  perDownloadNote: "Her öğe için bir kaynak seçin. Seçimler yalnızca bu indirme için geçerlidir.",
   switchNote: "Kaynağı burada değiştirmek sonraki indirmelere de uygulanır.",
 };

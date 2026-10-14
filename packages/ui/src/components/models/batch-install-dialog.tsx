@@ -1,0 +1,125 @@
+import { useEffect, useState } from 'react';
+import { newId, type ModelBundleStatus, type ModelInstallBatchPlan } from '@baocut/protocol';
+import { Button, ButtonGroup, Content, Dialog, DialogContainer, Heading, ProgressCircle } from '@react-spectrum/s2';
+import { style } from '@react-spectrum/s2/style' with { type: 'macro' };
+import { DOWNLOAD_SOURCE_COPY as SRC, envName, kindOfComponent } from '../../model/download-source.ts';
+import { installPlanView, problemText, rpcProblem } from '../../model/models-install.ts';
+import { partLabel } from '../../model/models-local.ts';
+import { M as SEM } from '../../model/semantic-copy.ts';
+import { TEXT_BUNDLE } from '../../model/semantic-package.ts';
+import { useRuntime } from '../../runtime/context.tsx';
+import { useShell } from '../../state/shell-store.ts';
+import { SectionLink } from '../tools/tool-parts.tsx';
+import { SourcePicker } from './download-sources.tsx';
+import { LOCAL_INSTALL_COPY as COPY } from './local-models-copy.ts';
+
+const stack = style({ display: 'flex', flexDirection: 'column', gap: 12, minWidth: 0 });
+const lead = style({ margin: 0, font: 'body', fontWeight: 'bold', color: 'gray-900' });
+const fine = style({ margin: 0, font: 'ui-xs', color: 'gray-600', overflowWrap: 'anywhere' });
+const problem = style({ margin: 0, font: 'ui-sm', color: 'negative-900', overflowWrap: 'anywhere' });
+const list = style({ margin: 0, padding: 0, listStyleType: 'none', borderWidth: 1, borderStyle: 'solid', borderColor: 'gray-200', borderRadius: 'lg' });
+const row = style({ display: 'flex', flexDirection: 'column', gap: 8, padding: 12,
+  borderXWidth: 0, borderBottomWidth: 0, borderTopWidth: { default: 1, ':first-child': 0 }, borderStyle: 'solid', borderColor: 'gray-100' });
+const rowHead = style({ display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap', gap: 8, alignItems: 'center' });
+const labelStyle = style({ font: 'ui-sm', fontWeight: 'bold', color: 'gray-900' });
+const sourceStyle = style({ font: 'code-xs', color: 'gray-600', overflowWrap: 'anywhere', userSelect: 'text' });
+
+/** Semantic search installs both models through one confirmation. Sizes and shared components come from Runtime. */
+export function BatchInstallDialog({ bundles, name, onStarted, onClose }: {
+  bundles: readonly ModelBundleStatus[]; name: string; onStarted: () => void; onClose: () => void;
+}) {
+  const runtime = useRuntime();
+  const go = useShell((s) => s.go);
+  const [sources, setSources] = useState<Record<string, string | null>>({});
+  const [planned, setPlanned] = useState<{ plan: ModelInstallBatchPlan; sources: typeof sources } | null>(null);
+  const [failure, setFailure] = useState<string | null>(null);
+  const [replanned, setReplanned] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [commandId] = useState(() => newId('cmd'));
+  useEffect(() => {
+    let live = true;
+    setFailure(null);
+    runtime.client.request('models.installBatch', { bundleIds: bundles.map((b) => b.bundleId), sources }).then(
+      ({ plan }) => { if (live) setPlanned({ plan, sources }); },
+      (error: unknown) => { if (live) setFailure(problemText(rpcProblem(error))); },
+    );
+    return () => { live = false; };
+  }, [runtime, bundles, sources]);
+  const plan = planned?.plan;
+  const view = plan ? installPlanView(plan) : null;
+  const refreshing = planned?.sources !== sources;
+  const canConfirm = !!plan && !!view && !view.upToDate && !view.noSpace && !refreshing && !busy;
+  const submit = async (close: () => void) => {
+    if (!plan || !canConfirm) return;
+    setBusy(true);
+    setFailure(null);
+    try {
+      // Freeze every effective choice, including defaults, so a settings change cannot redirect queued downloads.
+      const selected = Object.fromEntries(plan.components.map((c) => [`${c.repo}@${c.revision}`, c.endpoint]));
+      const result = await runtime.client.request('models.installBatch', {
+        bundleIds: bundles.map((b) => b.bundleId), sources: selected, confirmBytes: plan.confirmBytes, commandId,
+      });
+      if (result.jobs.length) { onStarted(); close(); }
+      else setPlanned({ plan: result.plan, sources });
+    } catch (error) {
+      const detail = (error as { details?: { code?: string; plan?: ModelInstallBatchPlan } })?.details;
+      if (detail?.code === 'MODEL_INSTALL_SIZE_CHANGED' && detail.plan) {
+        setPlanned({ plan: detail.plan, sources });
+        setReplanned(true);
+      } else setFailure(problemText(rpcProblem(error)));
+    } finally { setBusy(false); }
+  };
+  const completing = plan?.components.some((c) => c.action === 'keep');
+  return (
+    <DialogContainer onDismiss={() => { if (!busy) onClose(); }}>
+      <Dialog size="M" isKeyboardDismissDisabled={busy}>
+        {({ close }) => <>
+          <Heading slot="title">{completing ? COPY.completeTitle(name) : COPY.installTitle(name)}</Heading>
+          <Content>
+            <div className={stack}>
+              {refreshing && !failure ? <div className={rowHead}><ProgressCircle size="S" isIndeterminate aria-label={COPY.planning} /><span className={fine}>{COPY.planning}</span></div> : null}
+              {replanned ? <p className={problem}>{COPY.replanned}</p> : null}
+              {view?.upToDate ? <p className={fine}>{COPY.upToDate}</p> : view && plan ? <>
+                <p className={lead}>{view.size}</p>
+                {view.space ? <p className={fine}>{view.space}</p> : null}
+                {view.resumed ? <p className={fine}>{view.resumed}</p> : null}
+                {completing ? <p className={fine}>{COPY.completeNote}</p> : null}
+                {view.noSpace ? <p className={problem}>{view.noSpace}</p> : null}
+                <ul className={list} aria-label={COPY.details}>
+                  {plan.components.map((c, i) => {
+                    const key = `${c.repo}@${c.revision}`;
+                    const kind = kindOfComponent(c);
+                    const label = c.component === 'embedding'
+                      ? c.bundleIds.includes(TEXT_BUNDLE) ? SEM.settings.partText : SEM.settings.partMultimodal
+                      : partLabel(c.component);
+                    return <li key={key} className={row}>
+                      <div className={rowHead}><span className={labelStyle}>{label}</span><span className={fine}>{view.lines[i]!.value}</span></div>
+                      {c.action === 'keep' ? null : <>
+                        <div className={rowHead}>
+                          <span className={fine}>{SRC.label}</span>
+                          <SourcePicker kind={kind} label={SRC.pickerLabel(label)} isDisabled={busy || c.sourceLocked}
+                            selection={Object.hasOwn(sources, key) ? sources[key]! : c.endpoint}
+                            onSelect={(endpoint) => setSources((prev) => ({ ...prev, [key]: endpoint }))} />
+                        </div>
+                        {c.source ? <span className={sourceStyle}>{SRC.partFrom(c.source)}</span> : null}
+                        {c.sourceLocked ? <p className={fine}>{SRC.envNote(envName(kind))}</p> : null}
+                      </>}
+                    </li>;
+                  })}
+                </ul>
+                <p className={fine}>{SRC.perDownloadNote}{' '}
+                  <SectionLink onPress={() => { if (!busy) { close(); go({ tab: 'settings', section: 'general' }); } }}>{SRC.manage}</SectionLink>
+                </p>
+              </> : null}
+              {failure ? <p className={problem}>{failure}</p> : null}
+            </div>
+          </Content>
+          <ButtonGroup>
+            <Button variant="secondary" isDisabled={busy} onPress={close}>{view?.upToDate ? COPY.close : COPY.cancel}</Button>
+            {view && !view.upToDate ? <Button variant="accent" isDisabled={!canConfirm} isPending={busy} onPress={() => void submit(close)}>{COPY.confirmInstall(view.amount)}</Button> : null}
+          </ButtonGroup>
+        </>}
+      </Dialog>
+    </DialogContainer>
+  );
+}

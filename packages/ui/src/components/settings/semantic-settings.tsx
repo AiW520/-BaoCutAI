@@ -31,7 +31,6 @@ import { style } from '@react-spectrum/s2/style' with { type: 'macro' };
 import { revealLabel } from '../../copy.ts';
 import {
   downloadView,
-  inlineInstallMode,
   installFailure,
   installFailureText,
   problemText,
@@ -62,7 +61,7 @@ import { useModels } from '../../state/models-store.ts';
 import { useSemanticStatus, useSemanticState } from '../../state/semantic-store.ts';
 import { useSetting } from '../../state/settings-store.ts';
 import { useSpace } from '../../state/space-store.ts';
-import { InstallDialog } from '../models/install-dialog.tsx';
+import { BatchInstallDialog } from '../models/batch-install-dialog.tsx';
 import { removeBundle } from '../models/local-model-actions.ts';
 import { LOCAL_INSTALL_COPY as INSTALL } from '../models/local-models-copy.ts';
 import { GATE_COPY } from '../tools/tools-copy.ts';
@@ -75,7 +74,7 @@ import { useSaveSettings, useSettingsReady } from './save-settings.ts';
  * settings-semantic-scope.jsx）。偏好设置一组。
  *
  * - 模型：「语义搜索」一个包（文字模型与多模态模型两个 `capability: 'embed'` 模型包，不在模型页里列；model/semantic-package.ts）。
- *   一起装：先文字后多模态，接连两个安装对话框（先看大小与许可）；缺一个时是「补齐」；删除两个一起删。
+ *   一起装：一个对话框列出文字、多模态与共享运行时，分别选本次来源；缺一个时是「补齐」；删除两个一起删。
  * - 装好后按索引范围给视频建：讲话内容，再是画面（`semantic.channels` 默认含 `visual`）。画面在「索引」里一个开关：没开时写
  *   打开后要建多少（`estimates` 里 `ifEnabled` 的画面一项），打开先确认。缺多模态模型、或画面这一路用不了时开关置灰并写原因。
  *   声音这一版没有。
@@ -156,11 +155,9 @@ const partName = (kind: PackagePartKind) => (kind === 'text' ? COPY.settings.par
 
 function PackageGroup({ bundles, web }: { bundles: ModelBundleStatus[]; web: boolean }) {
   const runtime = useRuntime();
-  const all = useModels((s) => s.bundles);
   const jobs = useJobs((s) => s.jobs);
   const status = useSemanticState((s) => s.status);
-  // 接连装：先文字后多模态；一个对话框提交了才开下一个，取消就停。
-  const [chain, setChain] = useState<{ queue: ModelBundleStatus[]; index: number; started: boolean } | null>(null);
+  const [installing, setInstalling] = useState<ModelBundleStatus[] | null>(null);
   const [removing, setRemoving] = useState(false);
   const view = packageView(bundles);
   if (view.parts.length === 0) return null;
@@ -179,7 +176,6 @@ function PackageGroup({ bundles, web }: { bundles: ModelBundleStatus[]; web: boo
   const running = view.running ? downloadView(view.running) : null;
   const runningKind = view.parts.find((p) => p.bundle === view.running)?.kind ?? 'text';
   const cost = visualCostLine(status?.estimates?.find((e) => e.channel === 'visual' && e.ifEnabled));
-  const current = chain ? chain.queue[chain.index] : null;
   const remove = async () => {
     try {
       for (const part of view.parts.filter((p) => p.installed)) {
@@ -223,7 +219,7 @@ function PackageGroup({ bundles, web }: { bundles: ModelBundleStatus[]; web: boo
         ) : web ? null : (
           <div className={pkgActions}>
             {view.queue.length > 0 && view.state !== 'unsupported' ? (
-              <Button size="S" variant="accent" onPress={() => setChain({ queue: view.queue, index: 0, started: false })}>
+              <Button size="S" variant="accent" onPress={() => setInstalling(view.parts.map((p) => p.bundle))}>
                 <Download />
                 <Text>
                   {view.paused
@@ -245,23 +241,10 @@ function PackageGroup({ bundles, web }: { bundles: ModelBundleStatus[]; web: boo
         )}
       </div>
       {view.state === 'installed' ? null : <div className={note}>{S.packageNote(cost)}</div>}
-      {current ? (
-        <InstallDialog
-          key={current.bundleId}
-          bundleId={current.bundleId}
-          name={bundleName(current)}
-          license={current.license ?? null}
-          mode={inlineInstallMode(current, all)}
-          onStarted={() => {
-            if (chain?.index === 0) ToastQueue.neutral(INSTALL.started(S.packageName), { timeout: 4000 });
-            setChain((c) => (c ? { ...c, started: true } : c));
-          }}
-          onClose={() =>
-            setChain((c) =>
-              c && c.started && c.index + 1 < c.queue.length ? { queue: c.queue, index: c.index + 1, started: false } : null,
-            )
-          }
-        />
+      {installing ? (
+        <BatchInstallDialog bundles={installing} name={S.packageName}
+          onStarted={() => ToastQueue.neutral(INSTALL.started(S.packageName), { timeout: 4000 })}
+          onClose={() => setInstalling(null)} />
       ) : null}
       <DialogContainer onDismiss={() => setRemoving(false)}>
         {removing ? (

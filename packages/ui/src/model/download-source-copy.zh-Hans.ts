@@ -48,5 +48,6 @@ export const zhHans: DownloadSourceMessages = {
   groupDone: '这一组已下好',
   partFrom: (source: string) => `从 ${source}`,
   sequenceNote: '几个部分依次下载，下好一个存一个；哪一部分没下成，补齐时只下那一部分。',
+  perDownloadNote: "每项可分别选择来源，仅用于本次下载。",
   switchNote: '在这里换来源，以后的下载也用它。',
 };

@@ -52,5 +52,6 @@ export const it: DownloadSourceMessages = {
   partFrom: (source: string) => `da ${source}`,
   sequenceNote:
     "Le parti vengono scaricate una dopo l’altra e ognuna viene conservata appena è completa. Se una non riesce, il completamento scarica solo quella parte.",
+  perDownloadNote: "Scegli una fonte per ogni elemento. Le scelte valgono solo per questo download.",
   switchNote: "Cambiare l’origine qui vale anche per i download successivi.",
 };

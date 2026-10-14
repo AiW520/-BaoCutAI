@@ -533,6 +533,7 @@ export function createHandlers({
         return { bundle: (await catalog.status(p.bundleId))! };
       },
       // 本地模型包的安装管理（§6.3）：安装与自检是不属于任何智能体任务的普通 Job。
+      'models.installBatch': (p, principal) => models.installs.installBatch(p, { kind: 'connection', id: principal.connectionId }),
       'models.install': (p, principal) => models.installs.install(p, { kind: 'connection', id: principal.connectionId }),
       'models.repair': (p, principal) => models.installs.install(p, { kind: 'connection', id: principal.connectionId }, { repair: true }),
       'models.cancelInstall': (p) => models.installs.cancelInstall(p),

@@ -51,5 +51,6 @@ export const ptBR: DownloadSourceMessages = {
   groupDone: "Já baixado",
   partFrom: (source: string) => `de ${source}`,
   sequenceNote: "As partes são baixadas uma após a outra, e cada uma é mantida assim que termina. Se uma falhar, completar baixa só essa parte.",
+  perDownloadNote: "Escolha uma fonte para cada item. As escolhas valem apenas para este download.",
   switchNote: "Trocar a fonte aqui também vale para os próximos downloads.",
 };
