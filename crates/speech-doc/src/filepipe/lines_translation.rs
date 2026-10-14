@@ -538,6 +538,38 @@ fn source_tokens(sentence: &TranslateSentence) -> Vec<(String, bool)> {
         .collect()
 }
 
+/// Labels of the read-only context lines around a page.
+const CONTEXT_BEFORE: &str = "# before";
+const CONTEXT_AFTER: &str = "# after";
+
+/// `reference` with a context line's label taken off the front of its quote:
+/// the model quoted the whole `# after …` line, label included (ko→zh
+/// 2026-10-14, `|# after 본 직 장 인 … 나|`). `None` when it carries no label.
+fn without_context_label(reference: &Reference) -> Option<Reference> {
+    let Reference::Quote { left, right } = reference else {
+        return None;
+    };
+    let strip = |text: &str| {
+        [CONTEXT_BEFORE, CONTEXT_AFTER].iter().find_map(|label| {
+            text.strip_prefix(label)
+                .filter(|rest| rest.starts_with(char::is_whitespace))
+                .map(|rest| rest.trim_start().to_owned())
+                .filter(|rest| !rest.is_empty())
+        })
+    };
+    let stripped = strip(left)?;
+    // A whole-phrase quote carries the label at both ends.
+    let right = if left == right {
+        stripped.clone()
+    } else {
+        right.clone()
+    };
+    Some(Reference::Quote {
+        left: stripped,
+        right,
+    })
+}
+
 /// Render under the target language's default row thresholds.
 pub fn render(page: &TranslatePage) -> String {
     render_with_params(page, &TransParams::for_lang(&page.target_lang))
@@ -552,7 +584,10 @@ pub fn render_with_params(page: &TranslatePage, params: &TransParams) -> String 
         params.fit, page.target_lang
     );
     if let Some(context) = &page.context_before {
-        out.push_str(&format!("# before {}\n", lines::escape(context, false)));
+        out.push_str(&format!(
+            "{CONTEXT_BEFORE} {}\n",
+            lines::escape(context, false)
+        ));
     }
     let mut n = 0;
     let mut hinted = 0;
@@ -607,7 +642,10 @@ pub fn render_with_params(page: &TranslatePage, params: &TransParams) -> String 
         }
     }
     if let Some(context) = &page.context_after {
-        out.push_str(&format!("# after {}\n", lines::escape(context, false)));
+        out.push_str(&format!(
+            "{CONTEXT_AFTER} {}\n",
+            lines::escape(context, false)
+        ));
     }
     // Long pages dilute the contract; restate the rules that fail most (line
     // drift, chunk collapse, and answering in the source language) where the
@@ -1334,7 +1372,9 @@ pub fn parse_with_params(
     // A chunk quoting the read-only context line (`# before` / `# after`)
     // translates the neighbour, not this sentence: the last line of a page
     // sometimes runs on into the context that follows it. The chunk goes,
-    // the rest of the line stands; a line with nothing else is missing.
+    // the rest of the line stands; a line with nothing else is missing. A
+    // quote that copied the line's label too is judged without it; left in,
+    // it locates nowhere and the unlocated chunk vetoes every cut.
     let context_words: Vec<Vec<String>> = [&page.context_before, &page.context_after]
         .into_iter()
         .flatten()
@@ -1347,14 +1387,16 @@ pub fn parse_with_params(
             .iter()
             .enumerate()
             .filter(|(_, chunk)| {
+                let unlabeled = without_context_label(&chunk.reference);
+                let reference = unlabeled.as_ref().unwrap_or(&chunk.reference);
                 !chunk.text.is_empty()
-                    && lines::quotes_occur(&words[n - 1], &chunk.reference) == Some(false)
+                    && lines::quotes_occur(&words[n - 1], reference) == Some(false)
                     && words
                         .iter()
-                        .all(|other| lines::quotes_occur(other, &chunk.reference) != Some(true))
+                        .all(|other| lines::quotes_occur(other, reference) != Some(true))
                     && context_words
                         .iter()
-                        .any(|context| lines::quotes_occur(context, &chunk.reference) == Some(true))
+                        .any(|context| lines::quotes_occur(context, reference) == Some(true))
             })
             .map(|(index, _)| index)
             .collect();
@@ -1779,6 +1821,166 @@ mod tests {
             result.translation.translations
         );
         assert_eq!(result.translation.retry_ids, vec!["a".to_owned()]);
+    }
+
+    fn ko_zh_page(source: &str) -> TranslatePage {
+        TranslatePage {
+            source_lang: "ko".into(),
+            target_lang: "zh-Hans".into(),
+            ..zh_page(source)
+        }
+    }
+
+    /// The evidence the align engine computes from sentence `a`'s accepted draft.
+    fn ko_zh_evidence(result: &Parsed) -> lines::Evidence {
+        let draft = &result.translation.lines["a"];
+        let words: Vec<(String, bool)> = draft
+            .source_words
+            .iter()
+            .map(|word| (word.clone(), false))
+            .collect();
+        let ctx = crate::align_block::AlignCtx {
+            source_lang: "ko".into(),
+            lang: "zh-Hans".into(),
+            protected_terms: Vec::new(),
+        };
+        lines::evidence_with_pieces(&draft.record, &words, &ctx, &draft.pieces)
+    }
+
+    /// 韩文转写一个音节一个词（ko→zh-Hans 2026-10-14 第一次运行，`s-g68.0`）。
+    /// 行尾只有引用、没有译文的块（`|공원이..있어요|`）照 §3 并进前一块，粘连的
+    /// 引用按 Glued 级定位：两块都定位、末块的源区间到句尾、证据切点在
+    /// 「而且旁边就是|能…」。这句在实跑里仍进了改写轮，原因在目标侧：唯一的
+    /// 模型切点被缝 lint 拒掉（放行的证据切点为 0），只靠提示进的块内拆分梯子
+    /// 按 §8.8 / §8.9 不用被拒的提示缝和逐字缝。解析器这边没有可改的。
+    #[test]
+    fn a_text_less_trailing_quote_joins_the_last_chunk_on_syllable_words() {
+        let p = ko_zh_page(
+            "또 바 로 옆 에 는 번 화 한 도 심 속 에 서 잠 깐 쉬 어 갈 수 있 는 우 에 노 공 원 이 있 어 요.",
+        );
+        let input = render(&p);
+        let result = parse(
+            &p,
+            &input,
+            "1 |또..번화한|而且旁边就是|도심속에서..우에노|能在繁华都市中稍作休息的上野公园。|공원이..있어요|",
+        );
+        assert_eq!(
+            result.translation.translations.get("a").map(String::as_str),
+            Some("而且旁边就是能在繁华都市中稍作休息的上野公园。"),
+            "{:?} {:?}",
+            result.translation.diagnostics,
+            result.issues
+        );
+        let record = &result.translation.lines["a"].record;
+        assert_eq!(record.chunks.len(), 3);
+        assert!(record.chunks[2].text.is_empty());
+        let evidence = ko_zh_evidence(&result);
+        assert_eq!((evidence.chunks, evidence.located), (2, 2));
+        // The text-less quote resolved too: an unresolved one would be listed.
+        assert!(evidence.issues.is_empty(), "{:?}", evidence.issues);
+        assert_eq!(evidence.cuts, vec![6]);
+        let params = TransParams::for_lang("zh-Hans");
+        let target = record.text();
+        let hinted =
+            crate::align_block::hinted_cut_candidates(&target, "zh-Hans", &params, &[], &[6]);
+        assert!(hinted.admitted.is_empty());
+        assert_eq!(
+            hinted
+                .refused
+                .iter()
+                .map(|candidate| candidate.pos)
+                .collect::<Vec<_>>(),
+            [6]
+        );
+    }
+
+    /// 同一次运行的 `s-g36.0`：模型把音节粘成词来引用，11 个引用 10 个定位，
+    /// 只有 `류해..하고` 不中——原文是 `류 해 주 고,`，是引错了词，不是分词。这块
+    /// 的译文「再去年轻」里的「年轻」是下一块源区间开头的 `젊고`：拿两邻之间的
+    /// 空当给它补源区间，就会让切点左边带着右边的源词。不放行，整句没有切点。
+    #[test]
+    fn a_misquoted_endpoint_on_syllable_words_stays_unlocated() {
+        let p = ko_zh_page(
+            "그 래 서 저 희 는 둘 째 날 시 부 야 와 신 주 쿠 에 서 하 루 를 보 냈 는 데 시 부 야 에 서 시 부 야 스 크 램 블 교 차 로 에 한 번 합 류 해 주 고, 젊 고 개 성 있 는 분 위 기 의 하 라 주 쿠 와 안 도 다 다 오 라 는 일 본 의 유 명 건 축 가 가 설",
+        );
+        let input = render(&p);
+        let result = parse(
+            &p,
+            &input,
+            "1 |그래서..둘째|所以我们第二天|날..신주|在涩谷和新宿|쿠에서..보|玩了一天，|냈는데..에서|在涩谷先到|시부야..스크램블|涩谷十字|교차로에..합|路口汇合，|류해..하고|再去年轻|젊고..하|有个性的原宿|라주쿠와..다|和安藤忠雄|다오라는..일본의|这位日本|유명..설|著名建筑师设计的|건축가가..설|",
+        );
+        let draft = &result.translation.lines["a"];
+        assert_eq!(draft.record.chunks[6].text, "再去年轻");
+        let evidence = ko_zh_evidence(&result);
+        assert_eq!((evidence.chunks, evidence.located), (11, 10));
+        assert_eq!(evidence.issues, vec![Issue::AnchorUnresolved]);
+        assert!(evidence.cuts.is_empty(), "{:?}", evidence.cuts);
+        assert_eq!(draft.source_words[48], "젊");
+        let next = draft.record.text().chars().count()
+            - draft.record.text()[draft.record.text().find("有个性的原宿").unwrap()..]
+                .chars()
+                .count();
+        assert!(
+            evidence
+                .edges
+                .iter()
+                .any(|edge| edge.src == 48 && edge.tgt.start == next),
+            "{:?}",
+            evidence.edges
+        );
+    }
+
+    /// 同一次运行的 `s-g19.0`：页尾那句的最后一块把 `# after` 上下文行连标签一起
+    /// 抄进引用。带着标签它哪儿都定位不到，这块不被当成上下文丢掉，留下来成了
+    /// 没有源区间的块，整句一个切点都不给（实跑里报成 104 单位的超 hard 块）。
+    /// 去掉标签再判：这块照上下文回显丢掉，其余 10 块都定位、切点回来。
+    #[test]
+    fn a_context_quote_with_its_label_is_dropped_like_the_context_line() {
+        let mut p = ko_zh_page(
+            "그 리 고 이 쪽 지 역 이 도 쿄 관 광 지 의 중 심 지 같 은 곳 이 어 서 어 디 든 쉽 게 갈 수 있 고 숙 소 비 가 생 각 보 다 부 담 스 럽 지 않 다 는 장 점 때 문 에 저 희 는 긴 자 바 로 옆 에 있 는 신 바 시 에 숙 소 를 잡 았 는 데, 신 바 시 는 일",
+        );
+        p.context_after = Some("본 직 장 인 들 이 퇴 근 하 고 한 잔 하 러 많 이 오 는 곳 이 라 그 런 지 관 광 객 들 도 별 로 없 고 일 본 인 들 의 일 상 적 인 모 습 을 들 여 다 볼 수 있 는 곳 인 것 같 아 서 저 희 처 럼 이 런 분 위 기 좋 아 한 다 면 신 바 시 이 자 카 야 나".into());
+        let input = render(&p);
+        let result = parse(
+            &p,
+            &input,
+            "1 |그 리 고 이 쪽 지 역|而且这一带|이 도 쿄 관 광 지 의|像是东京景点的|중 심 지 같 은 곳|中心，|이 어 서 어 디 든 쉽|去哪儿都方便，|게 갈 수 있 고 숙 소|住宿费也比想象中|비 가 생 각 보 다|没那么有负担，|부 담 스 럽 지 않 다| |는 장 점 때 문 에 저|所以我们把住宿|희 는 긴 자 바 로|定在了紧挨银座的|옆 에 있 는 신 바 시|新桥，|에 숙 소 를 잡 았 는 데,| |신 바 시 는 일|新桥是很多上班族下班后|# after 본 직 장 인 들 이 퇴 근 하 고 한 잔 하 러 많 이 오 는 곳 이 라 그 런 지 관 광 객 들 도 별 로 없 고 일 본 인 들 의 일 상 적 인 모 습 을 들 여 다 볼 수 있 는 곳 인 것 같 아 서 저 희 처 럼 이 런 분 위 기 좋 아 한 다 면 신 바 시 이 자 카 야 나|来喝一杯的地方，所以游客也不多，能窥见日本人日常的样子，如果你也喜欢这种氛围，新桥的居酒屋和",
+        );
+        let text = &result.translation.translations["a"];
+        assert!(text.ends_with("新桥是很多上班族下班后"), "{text}");
+        assert!(
+            result
+                .translation
+                .diagnostics
+                .warnings
+                .iter()
+                .any(|warning| warning.code == WarningCode::ContentIgnored),
+            "{:?}",
+            result.translation.diagnostics
+        );
+        let evidence = ko_zh_evidence(&result);
+        assert_eq!((evidence.chunks, evidence.located), (10, 10));
+        assert!(evidence.issues.is_empty(), "{:?}", evidence.issues);
+        assert!(!evidence.cuts.is_empty());
+        // An endpoint quote carries the label on its left end only; a label
+        // glued to the word is not one.
+        assert_eq!(
+            without_context_label(&Reference::Quote {
+                left: "# after 본".into(),
+                right: "나".into(),
+            }),
+            Some(Reference::Quote {
+                left: "본".into(),
+                right: "나".into(),
+            })
+        );
+        assert_eq!(
+            without_context_label(&Reference::Quote {
+                left: "# after본".into(),
+                right: "나".into(),
+            }),
+            None
+        );
     }
 
     /// 空格文字的目标语里，模型把 `|` 两侧的空格全省掉时要补回来（标点后一律补，
