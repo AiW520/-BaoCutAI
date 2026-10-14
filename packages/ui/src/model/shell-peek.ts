@@ -1,6 +1,6 @@
 import type { FileTarget, MediaTarget, SpaceEntry } from '@baocut/protocol';
 import type { Route, Tab } from '../state/shell-store.ts';
-import { entryOfTarget, type WorkspaceItem } from './workspace.ts';
+import { entryOfTarget, targetKey, type WorkspaceItem } from './workspace.ts';
 
 /**
  * 侧栏浮出与页签缩略卡的纯逻辑（产品设计 §2.5「侧栏浮出」、§3.3「页签条」；原型 home-shell-chrome.jsx
@@ -97,4 +97,25 @@ function targetPath(target: FileTarget | MediaTarget, entries: readonly SpaceEnt
   if ('path' in target) return target.path;
   if ('entryId' in target) return entryOfTarget(entries, target)?.relPath ?? '';
   return '';
+}
+
+/**
+ * 编辑器那一格接管的标签：视频编辑器只有一个，跟着打开着的视频（`openKey`，它的 `targetKey`）走，
+ * 不是当前标签时也带着这个标签的面板 id（`workspace-panes.tsx`），缩略卡才克隆得到编辑器。
+ */
+export function editorHoldsTab(item: WorkspaceItem, openKey: string | null): boolean {
+  return item.kind === 'video' && openKey !== null && targetKey(item.target) === openKey;
+}
+
+/**
+ * 缩略卡改画封面的条目（产品设计 §3.3「页签条」）：视频标签的视频不是编辑器里开着的那部时面板是空的，
+ * 改用它在 Space 的封面（§4.3）。undefined 是照常克隆面板；null 是该画封面但找不到条目，留白。
+ */
+export function tabPreviewCover(
+  item: WorkspaceItem | 'conversation',
+  openKey: string | null,
+  entries: readonly SpaceEntry[],
+): SpaceEntry | null | undefined {
+  if (item === 'conversation' || item.kind !== 'video' || editorHoldsTab(item, openKey)) return undefined;
+  return entryOfTarget(entries, item.target) ?? null;
 }

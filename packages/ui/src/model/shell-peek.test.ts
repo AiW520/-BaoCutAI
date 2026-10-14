@@ -6,14 +6,17 @@ import {
   TAB_PREVIEW_DELAY_MS,
   closesPeekOnPointerDown,
   closingFirst,
+  editorHoldsTab,
   isCurrentPeek,
   peekBox,
   peekKindOf,
   peekRoute,
   peekStaysOpen,
+  tabPreviewCover,
   tabPreviewPosition,
   tabPreviewSubtitle,
 } from './shell-peek.ts';
+import { targetKey } from './workspace.ts';
 
 const home: Route = { tab: 'home', conversationId: null, projectId: null };
 const space: Route = { tab: 'space', category: 'video', projectId: 'p1' };
@@ -100,5 +103,27 @@ describe('页签悬停缩略卡', () => {
     expect(tabPreviewSubtitle({ kind: 'video', target: { entryId: 'e1' } }, { ...words, entries })).toBe('media/clip.mp4');
     expect(tabPreviewSubtitle({ kind: 'video', target: { entryId: 'missing' } }, words)).toBe('标题');
     expect(tabPreviewSubtitle({ kind: 'files' }, words)).toBe('标题');
+  });
+
+  it('编辑器接管打开着的那部视频的标签，不管它是不是当前标签', () => {
+    const video = { kind: 'video', target: { projectId: 'p', path: 'A' } } as const;
+    const openKey = targetKey(video.target);
+    expect(editorHoldsTab(video, openKey)).toBe(true);
+    expect(editorHoldsTab({ kind: 'video', target: { projectId: 'p', path: 'B' } }, openKey)).toBe(false);
+    expect(editorHoldsTab(video, null)).toBe(false);
+    expect(editorHoldsTab({ kind: 'file', target: { projectId: 'p', path: 'A' } }, targetKey({ projectId: 'p', path: 'A' }))).toBe(false);
+  });
+
+  it('封面：只给编辑器没开着的视频标签，找不到条目为 null', () => {
+    const entries = [{ id: 'e1', source: { projectId: 'p' }, relPath: 'B' } as SpaceEntry];
+    const open = { kind: 'video', target: { projectId: 'p', path: 'A' } } as const;
+    const other = { kind: 'video', target: { projectId: 'p', path: 'B' } } as const;
+    const openKey = targetKey(open.target);
+    expect(tabPreviewCover(open, openKey, entries)).toBeUndefined();
+    expect(tabPreviewCover(other, openKey, entries)).toBe(entries[0]);
+    expect(tabPreviewCover(other, null, entries)).toBe(entries[0]);
+    expect(tabPreviewCover({ kind: 'video', target: { projectId: 'p', path: 'C' } }, openKey, entries)).toBeNull();
+    expect(tabPreviewCover('conversation', openKey, entries)).toBeUndefined();
+    expect(tabPreviewCover({ kind: 'files' }, openKey, entries)).toBeUndefined();
   });
 });

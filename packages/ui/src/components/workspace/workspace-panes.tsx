@@ -3,6 +3,7 @@ import type { FileTarget, Id } from '@baocut/protocol';
 import { ProgressCircle } from '@react-spectrum/s2';
 import { style } from '@react-spectrum/s2/style' with { type: 'macro' };
 import { WORKSPACE_COPY } from '../../copy.ts';
+import { editorHoldsTab } from '../../model/shell-peek.ts';
 import { itemKey, targetKey, type WorkspaceItem } from '../../model/workspace.ts';
 import { useDirectory } from '../../state/directory-store.ts';
 import { useEditor } from '../../state/editor-store.ts';
@@ -82,7 +83,7 @@ export function WorkspacePanes({
   const park = !visible && parkedWidth.current !== undefined && tabs.some(isEditorTab);
   const openKey = useVideo((s) => (s.video ? targetKey(s.video.target) : null));
   // 打开着的视频的标签：编辑器那一格接管它的面板 id，不是当前标签时也一样，页签缩略卡才克隆得到编辑器。
-  const editorTab = openKey ? tabs.find((t) => t.kind === 'video' && targetKey(t.target) === openKey) : undefined;
+  const editorTab = tabs.find((t) => editorHoldsTab(t, openKey));
   const editorKey = editorTab ? itemKey(editorTab) : null;
 
   return (

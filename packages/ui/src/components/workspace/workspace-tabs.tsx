@@ -15,7 +15,7 @@ import Shapes from '@react-spectrum/s2/icons/Shapes';
 import { iconStyle, style } from '@react-spectrum/s2/style' with { type: 'macro' };
 import { Focusable, VisuallyHidden } from 'react-aria-components';
 import { WORKSPACE_COPY } from '../../copy.ts';
-import { TAB_PREVIEW_DELAY_MS, tabPreviewSubtitle } from '../../model/shell-peek.ts';
+import { TAB_PREVIEW_DELAY_MS, tabPreviewCover, tabPreviewSubtitle } from '../../model/shell-peek.ts';
 import {
   CONVERSATION_TAB,
   closeTab,
@@ -287,6 +287,7 @@ export function WorkspaceTabs({
   useWorkspaceOverlay(!!preview);
   const [announcement, announce] = useState('');
   const entries = useSpace((s) => s.entries);
+  const openVideo = useVideo((s) => (s.video ? targetKey(s.video.target) : null));
   // 悬停缩略卡（产品设计 §3.3）：指针停留 500 ms 显示；离开、按下或拖动时取消。
   const [hoverTab, setHoverTab] = useState<HoverTab | null>(null);
   const hoverTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
@@ -569,6 +570,7 @@ export function WorkspaceTabs({
         <WorkspaceTabPreview
           key={hoverTab.key}
           panelId={workspacePanelId(hoverTab.key)}
+          cover={tabPreviewCover(hoverTab.item, openVideo, entries)}
           rect={hoverTab.rect}
           title={hoverTab.title}
           subtitle={tabPreviewSubtitle(hoverTab.item, {
