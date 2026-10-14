@@ -176,7 +176,7 @@ describe('rail 上的更新按钮', () => {
     });
     expect(sideButton({ k: 'ready', info, path: '/x.zip' })).toEqual({
       visible: true,
-      glyph: 'check',
+      glyph: 'download',
       dot: 'positive',
       tip: '更新已下载 · 退出时自动安装',
     });

@@ -1,5 +1,4 @@
 import { Tooltip, TooltipTrigger } from '@react-spectrum/s2';
-import Checkmark from '@react-spectrum/s2/icons/Checkmark';
 import Download from '@react-spectrum/s2/icons/Download';
 import { iconStyle, lightDark, style } from '@react-spectrum/s2/style' with { type: 'macro' };
 import { Button as RACButton } from 'react-aria-components';
@@ -88,7 +87,7 @@ export function UpdateRailButton() {
         <RACButton className={(rp) => button(rp)} aria-label={b.tip} aria-haspopup="dialog" onPress={(event) => openWindow(event.target as Element)}>
           {({ isHovered }) => (
             <>
-              {b.glyph === 'ring' ? <Ring pct={b.pct ?? 0} /> : b.glyph === 'check' ? <Checkmark styles={glyph} /> : <Download styles={glyph} />}
+              {b.glyph === 'ring' ? <Ring pct={b.pct ?? 0} /> : <Download styles={glyph} />}
               {b.dot ? <span className={dot({ tone: b.dot, isHovered })} /> : null}
             </>
           )}

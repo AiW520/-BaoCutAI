@@ -248,7 +248,7 @@ export function retryAction(st: AppUpdateState): 'download' | 'check' {
 
 export type SideButton =
   | { visible: false }
-  | { visible: true; glyph: 'download' | 'ring' | 'check'; pct?: number; dot: 'white' | 'positive' | 'negative' | null; tip: string };
+  | { visible: true; glyph: 'download' | 'ring'; pct?: number; dot: 'white' | 'positive' | 'negative' | null; tip: string };
 
 const HIDDEN: SideButton = { visible: false };
 
@@ -263,7 +263,7 @@ export function sideButton(st: AppUpdateState): SideButton {
     case 'downloading':
       return { visible: true, glyph: 'ring', pct: st.pct, dot: null, tip: verifying(st) ? M.tipVerifying : M.tipDownloading(st.pct) };
     case 'ready':
-      return { visible: true, glyph: 'check', dot: 'positive', tip: M.tipReady };
+      return { visible: true, glyph: 'download', dot: 'positive', tip: M.tipReady };
     case 'error':
       return st.info ? { visible: true, glyph: 'download', dot: 'negative', tip: M.tipError } : HIDDEN;
     default:
