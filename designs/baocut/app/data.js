@@ -1205,6 +1205,31 @@
      source: 'agent', session: 's24', started: '1 分钟前', cancellable: false, target: 'en',
      from: '中文', lang: '英语', model: 'Claude Code · Sonnet', linesTotal: 62, elapsedMs: 48000,
      undoBody: '这一门语言的译文会被移除。原文一个字不动。'},
+    /* 转录之后的「视频速览」与回合末尾的「任务总结」（2026-10-14，待确认）：s32 从链接下载一期英语访谈、转录、
+       智能体逐句译成简体中文、建双语字幕，全部完成；下载建出了视频（`project`），线程里挂这部视频的视频卡。
+       s33 只转录一条本机口播：没有来源页面，速览里的来源几项省略。 */
+    {id: 'ag32d', kind: 'download', project: 'p7', title: 'Code & Wander · Episode 42', name: 'code-wander-ep42-en.mp4',
+     url: 'https://codeandwander.example/42', site: 'codeandwander.example',
+     sub: 'Claude Code · Sonnet · 会话「转录这期访谈，翻成简体中文字幕」', status: 'done', outcome: 'done', pct: 100, phase: null,
+     source: 'agent', session: 's32', started: '8 分钟前', cancellable: false, scenario: 'success',
+     sizeMB: 86, mediaSec: 206, hue: 96, elapsedMs: 18000, leftMs: 0, saveDir: '~/Movies/播客'},
+    {id: 'ag32t', kind: 'transcribe', project: 'p7', title: '转录 · EN → 中 · Code & Wander 双语版',
+     sub: 'Claude Code · Sonnet · 会话「转录这期访谈，翻成简体中文字幕」', status: 'done', outcome: 'done', pct: 100,
+     source: 'agent', session: 's32', started: '8 分钟前', undoable: true, undone: false,
+     jobPhase: 'done', model: 'whisper-large-v3', runsOn: '本机', lang: '英语', langCode: 'en', diarize: true, mediaSec: 206, elapsedMs: 68000,
+     result: {language: '英语', durationSec: 206, sentences: 62, words: 1210, speakers: 3},
+     undoBody: '这一份文稿会被移除，视频回到没有文稿的状态。原片与时间轴不动。'},
+    {id: 'ag32l', kind: 'translate', project: 'p7', title: '翻译 · EN → 中 · Code & Wander 双语版 · 英 → 简体中文',
+     sub: 'Claude Code · Sonnet · 会话「转录这期访谈，翻成简体中文字幕」', status: 'done', outcome: 'done', pct: 100, byAgent: true,
+     source: 'agent', session: 's32', started: '6 分钟前', undoable: true, undone: false, target: 'zh-Hans',
+     from: '英语', lang: '简体中文', model: 'Claude Code · Sonnet', linesDone: 62, linesTotal: 62, elapsedMs: 214000,
+     result: {units: 62, stale: 0, unaligned: 0}, undoBody: '这一门语言的译文会被移除。原文一个字不动。'},
+    {id: 'ag33t', kind: 'transcribe', project: 'p8', title: '转录 · 口播剪辑 · 实验',
+     sub: 'Claude Code · Sonnet · 会话「转录这条口播」', status: 'done', outcome: 'done', pct: 100,
+     source: 'agent', session: 's33', started: '7 分钟前', undoable: true, undone: false,
+     jobPhase: 'done', model: 'moss-transcribe', runsOn: '本机', lang: '中文', langCode: 'zh', diarize: true, mediaSec: 206, elapsedMs: 64000,
+     result: {language: '中文', durationSec: 206, sentences: 62, words: 1180, speakers: 1},
+     undoBody: '这一份文稿会被移除，视频回到没有文稿的状态。原片与时间轴不动。'},
     /* Agent 会话里放行后跑的活也是**任务**（第 109 轮）：同一条记录，会话里的
        工具行、后台任务页、侧栏迷你条读的都是它；撤销位也在这里，收据与任务页同源。
        source: 'agent' ＋ session 指回那条会话。 */
@@ -2382,6 +2407,49 @@
          {id: 'm1', role: 'user', text: '把这条口播翻成英语字幕。', ...turnLive(52)},
          {id: 'm2', role: 'assistant', text: '好。文稿 62 句，我直接逐句翻，译完一次写成英语译文，再按译文出字幕。'},
          {id: 'm3', role: 'tool', tool: 'documents_read', args: {document: '文稿', sentences: 62, translateTo: 'en'}, status: 'done', took: '0.1s', taskId: 'ag24l'},
+       ]},
+      /* 转录之后先写「视频速览」，回合末尾写「任务总结」（2026-10-14，待确认）：
+         - 视频速览站在观众的角度：来源几项（标题、作者、发布日期、时长、语言、链接）只取 videos_inspect 的 `source`
+           与视频事实，缺的就不写；页面简介是作者的话，单独引出来；正文说讲什么、适合谁看，出场的人只按文稿里的证据，
+           要点带视频时间链接（时间取自 documents_read 的按句文稿），点了打开视频、播放头放到那一秒。
+         - 任务总结先一句话对上「你要的是什么 → 结果」，再按步骤列做了什么（回执里的事实与真实路径）、要用户看的地方，
+           最后是三栏的没验证项（SKILL.md §6）。
+         s32：从链接下载、转录、翻译、建字幕，速览在转录回执之后、翻译之前；s33：本机文件只转录，速览与总结在同一条回复里。 */
+      {id: 's32', title: '转录这期访谈，翻成简体中文字幕', project: 'p7', harness: 'claude', model: 'sonnet', effort: 'mid',
+       status: 'done', ago: 2, unread: true,
+       messages: [
+         {id: 'm1', role: 'user', text: '转录这期访谈，翻成简体中文字幕：https://codeandwander.example/42', ...turnDone(2, 352)},
+         {id: 'm2', role: 'assistant', text: '这条链接里的视频还不在项目里。我先下载下来建一部视频，用本机语音模型转录；转完先说说这期讲了什么，再逐句译成简体中文、建双语字幕。'},
+         {id: 'm3', role: 'tool', tool: 'downloads_fetch', args: {site: 'codeandwander.example', name: 'code-wander-ep42-en.mp4'}, status: 'done', took: '18s', taskId: 'ag32d'},
+         {id: 'm4', role: 'tool', tool: 'videos_inspect', args: {video: 'EN → 中 · Code & Wander 双语版'}, status: 'done', took: '0.2s',
+          out: '3 分 26 秒 · 1920×1080 · 英语对白 · 来源：Code & Wander · Episode 42 · 作者给了 4 个章节 · 还没有文稿'},
+         {id: 'm5', role: 'tool', tool: 'models_transcribe', args: {model: 'whisper-large-v3', duration: 206}, status: 'done', took: '68s', taskId: 'ag32t'},
+         {id: 'm6', role: 'receipt', text: '已写入文稿 · 62 句 · 3 位说话人', taskId: 'ag32t', movieId: 'p7'},
+         {id: 'm7', role: 'tool', tool: 'edits_apply', args: {label: '沿用作者章节 · 说话人实名'}, status: 'done', took: '0.3s'},
+         {id: 'm8', role: 'receipt', text: '已应用 · 4 个章节 · 3 位说话人实名', taskId: null, movieId: 'p7'},
+         {id: 'm9', role: 'tool', tool: 'documents_read', args: {document: '文稿', sentences: 62}, status: 'done', took: '0.1s'},
+         {id: 'm10', role: 'assistant', text: "转完了：62 句、3 位说话人，章节沿用作者给的 4 章。翻译之前，先说说这期讲了什么。\n\n### 视频速览\n\n**Code & Wander · Episode 42**\nCode & Wander · 3:26 · 英语 · [codeandwander.example/42](https://codeandwander.example/42)\n\n> 页面简介：Local-first speech recognition and deterministic rendering.（本地优先的语音识别与确定性渲染）\n\n一期三人对谈，讲视频工具为什么该做成本地优先。主持人从「语音识别默认放在云上」说起，三个人从速度、隐私、成本和离线几个角度拆这个默认值，中间有一分钟左右的产品演示。页面简介里的确定性渲染，这一期只在结尾预告，没有展开。\n\n适合手上常有访谈、会议这类不便外传的素材，又嫌上传排队和云端账单的人看。\n\n**出场的人**\n\n- Lin：主持人，开场、串场和最后的总结\n- Zhou：嘉宾，追问成本\n- Su：嘉宾，补充本机可以随便重跑\n\n**要点**\n\n- [0:26](/videos/p7?t=26) 语音识别过去默认放在云上：模型大，机器带不动\n- [0:41](/videos/p7?t=41) 小模型这两年进步很快，笔记本跑一小时的识别，比上传加排队还快\n- [1:03](/videos/p7?t=63) 语音不出本机，比快不快更要紧：访谈、内部会议、没发布的演示本来就不该外传\n- [1:44](/videos/p7?t=104) 演示：拖进文件、选语言、点开始，就地得到带时间的文稿；改一个词，字幕、翻译和导出一起跟着变\n- [2:21](/videos/p7?t=141) 成本：本机是电费，云上是账单，量一大就差一个量级\n- [2:46](/videos/p7?t=166) 结论：本地优先不是反对云，是把默认值调回来，能在本机做完的就别上传"},
+         {id: 'm11', role: 'tool', tool: 'documents_read', args: {document: '文稿', sentences: 62, translateTo: 'zh-Hans'}, status: 'done', took: '0.1s', taskId: 'ag32l'},
+         {id: 'm12', role: 'tool', tool: 'edits_apply', args: {putDocument: {schema: 'baocut.translation/2', language: '简体中文', units: 62}}, status: 'done', took: '3.1s', taskId: 'ag32l'},
+         {id: 'm13', role: 'receipt', text: '已写入译文 · 简体中文 62 句', taskId: 'ag32l', movieId: 'p7'},
+         {id: 'm14', role: 'tool', tool: 'captions_create', args: {bilingual: true, pair: '英中'}, status: 'done', took: '0.6s'},
+         {id: 'm15', role: 'receipt', text: '已应用 · 英中双语字幕层 · 62 条', taskId: null, movieId: 'p7'},
+         {id: 'm16', role: 'tool', tool: 'previews_capture', args: {at: 5}, status: 'done', took: '0.4s'},
+         {id: 'm17', role: 'tool', tool: 'previews_capture', args: {at: 104}, status: 'done', took: '0.4s'},
+         {id: 'm18', role: 'assistant', text: "### 任务总结\n\n你要的是把这期英语访谈转录、配上简体中文字幕。都做完了：视频「EN → 中 · Code & Wander 双语版」里有英语文稿、简体中文译文和一层英中双语字幕，打开编辑器就能接着改。\n\n- **下载**：86 MB，存在 `~/Movies/播客/code-wander-ep42-en.mp4`\n- **转录**：本机 whisper-large-v3，62 句、3 位说话人；说话人按文稿里的称呼标成 Lin、Zhou、Su，章节沿用作者的 4 章\n- **翻译**：我逐句译成简体中文，62 句；local-first 统一译作「本地优先」，on-device 译作「本机」\n- **字幕**：新建英中双语字幕层，62 条，译文在上\n\n**要你看一下的**\n\n- [2:21](/videos/p7?t=141) Zhou 那句 a different order of magnitude at scale，我译成「量一大就不是一个量级」，偏口语\n- [1:28](/videos/p7?t=88) Su 接话时和主持人的声音叠在一起，这一句的说话人可能标反了\n\n| 量出来的 | 看过的 | 要人听的 |\n| --- | --- | --- |\n| 时长 3:26 · 62 句 · 字幕 62 条 | 0:05、1:44 两帧：人脸在画面上半部，下方放得下两行字幕；帧里没有字幕，实际位置要在编辑器里看 | 字幕和语音对不对得上、英语断句的节奏 |"},
+       ]},
+      {id: 's33', title: '转录这条口播', project: 'p8', harness: 'claude', model: 'sonnet', effort: 'mid',
+       status: 'done', ago: 6,
+       messages: [
+         {id: 'm1', role: 'user', text: '转录这条口播。', ...turnDone(6, 74)},
+         {id: 'm2', role: 'assistant', text: '好。先看一眼音轨，再用本机的 MOSS Transcribe 转录；转完说说这条口播讲了什么。'},
+         {id: 'm3', role: 'tool', tool: 'videos_inspect', args: {video: '口播剪辑 · 实验'}, status: 'done', took: '0.2s', out: '3 分 26 秒 · 1920×1080 · 1 条音轨 · 本机文件 · 还没有文稿'},
+         {id: 'm4', role: 'tool', tool: 'models_transcribe', args: {model: 'moss-transcribe', duration: 206}, status: 'done', took: '64s', taskId: 'ag33t'},
+         {id: 'm5', role: 'receipt', text: '已写入文稿 · 62 句 · 1 位说话人', taskId: 'ag33t', movieId: 'p8'},
+         {id: 'm6', role: 'tool', tool: 'edits_apply', args: {label: '按话题分章'}, status: 'done', took: '0.2s'},
+         {id: 'm7', role: 'receipt', text: '已应用 · 3 个章节', taskId: null, movieId: 'p8'},
+         {id: 'm8', role: 'tool', tool: 'documents_read', args: {document: '文稿', sentences: 62}, status: 'done', took: '0.1s'},
+         {id: 'm9', role: 'assistant', text: "### 视频速览\n\n**口播剪辑 · 实验**\n`~/Movies/口播/talk-take2.mp4` · 3:26 · 中文 · 本机文件，没有来源页面\n\n一段单人口播，讲视频工具为什么该做成本地优先：语音识别不必上云，小模型在笔记本上已经够快，素材不出本机，重跑也不用付钱。后半段有一分钟左右的操作演示，最后落在一句话：能在本机做完的就别上传。\n\n适合想知道本机转录值不值得用的人，三分多钟能听完。\n\n**出场的人**\n\n- 一位讲者：开场说「欢迎回到科浪」，应该是这档节目的主持人；文稿里没报名字，说话人先留作「说话人 1」，告诉我名字我再改\n\n**要点**\n\n- [0:26](/videos/p8?t=26) 语音识别过去默认放在云上，因为模型大、机器带不动\n- [0:41](/videos/p8?t=41) 现在笔记本跑一小时的识别，比上传加排队还快\n- [1:03](/videos/p8?t=63) 访谈、内部会议、没发布的演示，本来就不该往外传\n- [1:44](/videos/p8?t=104) 演示：拖进文件、选中文、点开始，就地得到带时间的文稿\n- [2:46](/videos/p8?t=166) 本地优先不是反对云，是把默认值调回来\n\n### 任务总结\n\n你要的是把这条口播转成文字。做完了：文稿写进了「口播剪辑 · 实验」，62 句、1 位说话人，按话题分了 3 章（开场、正文、收尾）。这次只转录，没有建字幕层；要在画面上看到字幕，告诉我一声。\n\n**要你看一下的**\n\n- [1:44](/videos/p8?t=104) 演示里念的几个界面上的词识别成了同音字，我没改；要我顺一遍文稿吗\n\n| 量出来的 | 看过的 | 要人听的 |\n| --- | --- | --- |\n| 时长 3:26 · 62 句 · 3 章 | 没取帧，没看画面 | 识别错的词要对着声音核对 |"},
        ]},
       /* 未绑定项目的会话再补 7 条：侧栏这一段首屏只露 5 条、每次再加载 5 条，少于 6 条演示不出来 */
       /* 会话里的幻灯片（docs/design/slides）：读讲稿、读 slides skill、用 Driver 自带的文件工具写 deck，`slides_check` 通过后

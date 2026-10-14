@@ -103,6 +103,8 @@
       case 'td_open': return <td key={key} style={align(t)}>{kids()}</td>;
       case 'link_open': {
         const href = t.attrGet('href');
+        const vt = href ? TURN.parseVideoTime(href) : null;
+        if (vt) return <VideoTimeLink key={key} vt={vt}>{kids()}</VideoTimeLink>;
         if (href && /^\/settings(?:\/|$)/.test(href)) return <SettingsLink key={key} href={href}>{kids()}</SettingsLink>;
         if (href && !/^(?:[a-z][a-z\d+.-]*:|\/\/|#)/i.test(href)) return <FileLink key={key} href={href}>{kids()}</FileLink>;
         if (href && /^https?:\/\//i.test(href)) return <WebLink key={key} href={href}>{kids()}</WebLink>;
@@ -163,6 +165,20 @@
   function WebLink({href, children}) {
     const app = useApp();
     return <R.Link onPress={() => app.go(window.BC_HOME_WORKSPACE.route(app.route.id, {kind: 'web', id: crypto.randomUUID(), url: href}))}>{children}</R.Link>;
+  }
+
+  /* 视频时间链接（product-design §3.2.2；正式版 packages/ui 的 video-time-link.tsx）：地址由工具结果给，
+     画成与写作结果出处相同的蓝底时间码（`.wrtime`），点了打开那部视频、播放头放到那一秒；从会话里点时会话留在左侧。
+     视频不在 Space 里或在回收站里时只显示文字。 */
+  function VideoTimeLink({vt, children}) {
+    const app = useApp();
+    const item = (app.spaceItems || []).find((it) => it.kind === 'movie' && it.id === vt.videoId && !it.trashed);
+    if (!item) return <span className="amd-linktext">{children}</span>;
+    const sid = app.route.r === 'agent' ? app.route.id : undefined;
+    const sec = Math.floor(vt.seconds);
+    const at = `${Math.floor(sec / 60)}:${String(sec % 60).padStart(2, '0')}`;
+    return <BCAction className="wrtime" title={`在「${item.name}」里从 ${at} 开始播放`}
+      onClick={() => app.openMovie(vt.videoId, {sid, t: vt.seconds})}>{children}</BCAction>;
   }
 
   /* 设置链接（product-design §3.2.2）：应用内的设置路径，点了在当前窗口打开设置的那一页，提示里是位置。

@@ -144,3 +144,11 @@ test('toolStep：BaoCut 工具用自己的类别名与图标，未知工具退�
   assert.deepEqual(T.toolStep({tool: 'speech_search', args: {query: '口癖'}, cmd: 'x'}), {kind: 'speech-search', label: '检索文稿', summary: '口癖', icon: 'search'});
   assert.equal(T.toolStep({tool: 'mystery_tool', cmd: 'bcut x'}).kind, 'command');
 });
+
+test('parseVideoTime：视频时间链接取出视频与秒，认不出的返回 null', () => {
+  assert.deepEqual(T.parseVideoTime('/videos/p7?t=63'), {videoId: 'p7', seconds: 63});
+  assert.deepEqual(T.parseVideoTime('/videos/p7?t=41.5'), {videoId: 'p7', seconds: 41.5});
+  assert.deepEqual(T.parseVideoTime('/videos/a%20b?x=1&t=0'), {videoId: 'a b', seconds: 0});
+  ['/videos/p7', '/videos/p7?t=', '/videos/p7?t=-3', '/videos/p7?t=abc', '/videos/p7/x?t=3', '/videos/?t=3',
+    'https://x.example/videos/p7?t=3', '/settings/models'].forEach((s) => assert.equal(T.parseVideoTime(s), null, s));
+});

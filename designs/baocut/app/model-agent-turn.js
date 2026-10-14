@@ -4,6 +4,7 @@
    - 工具步骤行：固定的类别名 + 次级摘要（命令本身 / 相对路径 / 查询词），状态一旦失败不再被改回；
      BaoCut 自己的工具另有类别（model-agent-tools.js）
    - `parsePathToken`：正文行内代码像不像项目里的文件路径，带不带行号
+   - `parseVideoTime`：正文里的视频时间链接（`/videos/<videoId>?t=<秒>`）
    - `gapBetween`：相邻两行按种类定间距
    - 回合：从一句用户消息到下一句之前；页脚的计时、结束时刻与「复制这一轮」的正文 */
 (function () {
@@ -99,6 +100,19 @@
     return `${p.path} · 第 ${p.line} 行`;
   }
 
+  /* ---------- 视频时间链接 ---------- */
+  /** 回复里的「视频某一刻」（product-design §3.2.2）：`/videos/<videoId>?t=<秒>`，秒是时间线上的。
+      是就返回 {videoId, seconds}；认不出（没有 t、秒不是非负数、多一段路径）返回 null，按普通链接处理。 */
+  function parseVideoTime(href) {
+    const m = /^\/videos\/([^/?#]+)\?(?:[^#]*&)?t=([^&#]*)(?:[&#].*)?$/.exec(String(href || '').trim());
+    if (!m || m[2] === '') return null;
+    const seconds = Number(m[2]);
+    if (!Number.isFinite(seconds) || seconds < 0) return null;
+    let videoId;
+    try { videoId = decodeURIComponent(m[1]); } catch { return null; }
+    return videoId ? {videoId, seconds} : null;
+  }
+
   /* ---------- 间距 ---------- */
   /* 行与行之间按相邻种类定间距。`block` 是同一条回复里的 Markdown 块，`footer` 是回合页脚。 */
   const GAPS = {
@@ -175,6 +189,6 @@
   window.BC_AGENT_TURN = {
     endTurn,
     TOOL_LABELS, FILE_EXT, toolStep, toolStatus, nextToolStatus, stepMeta, diffLines, looksLikeDiff,
-    parsePathToken, pathTip, gapBetween, rowKind, turns, formatElapsed, clockLabel, footerLabel,
+    parsePathToken, pathTip, parseVideoTime, gapBetween, rowKind, turns, formatElapsed, clockLabel, footerLabel,
   };
 })();
