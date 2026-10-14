@@ -70,6 +70,10 @@ const en = {
     missing: (n: number) => `${n} without a transcript`,
     excluded: (n: number) => `${n} not in the semantic index`,
     separator: ', ',
+    /** 文字与画面两路之间。 */
+    channelSeparator: '; ',
+    visualReady: 'Visuals are ready',
+    visualPartial: (done: number, total: number, detail: string) => `Visuals: ${done}/${total} videos${detail ? ` (${detail})` : ''}`,
   },
   settings: {
     lead: 'Finds what was said by meaning. Space search, picking material by topic, glossary candidates, translation memory and retake candidates use it. The model and the index stay on this computer and are never uploaded.',
@@ -77,7 +81,7 @@ const en = {
     textName: 'Text search',
     textDesc: 'Searches what was said: transcripts, subtitles, translations and chapters.',
     multimodalName: 'Multimodal search',
-    multimodalDesc: 'Includes text search, so you don’t need both. Searching visuals and sounds comes in a later version.',
+    multimodalDesc: 'Includes text search, so you don’t need both. It can also index visuals once you turn them on; sounds come in a later version.',
     installed: 'Installed',
     inUse: 'In use',
     coveredBy: 'Included in multimodal search',
@@ -89,7 +93,7 @@ const en = {
     removeBody:
       'Removes the model files. Space search falls back to exact text and picking material by topic is unavailable. The semantic index stays until you clear it; after you reinstall, it’s reused or rebuilt from your transcripts.',
     installNote:
-      'Installing doesn’t scan your files. Once it’s installed, only existing transcripts get a lightweight text index. Visuals and sounds will be turned on per project in a later version.',
+      'Installing doesn’t scan your files. Once it’s installed, only existing transcripts get a lightweight text index. Visuals are indexed only after you turn them on, and you see the cost first.',
     unsupportedTitle: 'This computer can’t run the local semantic model',
     unsupportedBody: 'Exact text search, the whole-text and chapter scopes for writing, and exact glossary matching work as usual.',
     indexGroup: 'Index',
@@ -112,6 +116,32 @@ const en = {
       minutes: (n: number) => `about ${n} min`,
       hours: (h: string) => `about ${h} hr`,
     },
+    visualIndex: {
+      label: 'Visuals',
+      desc: 'Finds shots by what’s on screen and matches visuals to sentences.',
+      needsMultimodal: 'Finds shots by what’s on screen. Needs multimodal search.',
+      unavailable: 'Finds shots by what’s on screen. Not available right now.',
+      offCost: (cost: string) => `Finds shots by what’s on screen and matches visuals to sentences. Turning it on indexes ${cost}.`,
+      onDesc: 'Videos in the indexed projects are indexed by what’s on screen. Turning it off stops indexing new visuals.',
+      confirmTitle: 'Turn on the visual index?',
+      confirmBody: (cost: string) =>
+        `Indexes the videos in your indexed projects by what’s on screen: ${cost}. It runs in the background on the CPU, and you can pause it anytime.`,
+      confirmBodyNoCost: 'Indexes the videos in your indexed projects by what’s on screen. It runs in the background on the CPU, and you can pause it anytime.',
+      turnOn: 'Turn on',
+      turnedOn: 'Visual index turned on. Building in the background.',
+      turnedOff: 'Visual index turned off. No new visuals are indexed.',
+    },
+    /** 打开画面之前那一句的各段（检索规格 §13.2，`estimates` 里 `ifEnabled` 的画面一项）。 */
+    cost: {
+      head: (videos: number, length: string, frames: number) => `${videos} videos, ${length} → about ${frames} frames`,
+      unknown: (n: number) => `${n} with unknown length not counted`,
+      firstRun: (time: string, measured: boolean) => `first run ${time} (${measured ? 'based on this computer’s speed' : 'CPU reference speed'})`,
+      /** `null`：不到 1 MB。 */
+      vectors: (size: string | null) => (size ? `vectors ${size}` : 'vectors under 1 MB'),
+      noLength: (videos: number) => `${videos} videos of unknown length, so the time can’t be estimated`,
+      separator: ', ',
+      cacheNote: (line: string) => `${line}; the keyframe cache isn’t counted and can be cleared`,
+    },
     cache: 'Cache',
     cacheDesc: 'Vectors and the index, kept in the app’s data, not in your project folders.',
     clear: 'Clear',
@@ -124,12 +154,13 @@ const en = {
     runsOnDesc: 'Chosen after the model’s self-check.',
     notLoaded: 'Not loaded yet',
     projectsGroup: 'Indexed projects',
-    projectsLead: 'Text: videos with a transcript are indexed automatically. Visuals and sounds: turned on per project, not available in this version.',
+    projectsLead:
+      'Text: videos with a transcript are indexed automatically. Visuals: once turned on under Index, videos in these projects are indexed. Sounds: not available in this version.',
     noProject: 'Videos outside projects',
-    visual: 'Visuals',
-    audio: 'Sounds',
-    channelLater: 'Comes in a later version',
-    channelNeedsMultimodal: 'Needs multimodal search; comes in a later version',
+    projectVisualOff: (scope: string | null) => (scope ? `Visuals: off · ${scope}` : 'Visuals: off'),
+    projectScope: (videos: number, length: string) => `${videos} videos, ${length}`,
+    projectVisualNeedsMultimodal: 'Visuals: needs multimodal search',
+    projectAudioLater: 'Sounds: comes in a later version',
     featuresGroup: 'Features that use it',
     tm: 'Translation memory',
     tmDesc:

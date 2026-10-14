@@ -148,10 +148,11 @@
     const full = st.install === 'full';
     const visualOn = full && st.visual;
     const eta = S.etaLine(SEM.estimate.text);
+    // 还要多久：讲话内容写在状态里，画面写在画面那一行（同 Electron / Web）
     const visualEta = visualOn ? S.etaLine(SEM.estimate.visualLeft) : null;
     const stateDesc = why === 'user' ? '暂停时不建新索引；已有的照常能搜，结果可能不含最近的修改。'
       : why ? S.POWER_NOTE[why] + '。'
-        : st.index === 'stale' ? `${S.STALE_NOTE}。${eta ? `讲话内容：${eta}。` : ''}${visualEta ? `画面：${visualEta}。` : ''}`
+        : st.index === 'stale' ? `${S.STALE_NOTE}。${eta ? eta + '。' : ''}`
           : visualOn ? '已有文稿的文字索引与画面索引都建好了。' : '所有已有文稿都建好了文字索引。';
     const cost = S.visualCostLine(SEM.estimate.visual);
     // 打开画面：先确认范围与开销（v0.1 §9.1），在后台建；关掉只是不再建新的
@@ -165,7 +166,7 @@
       });
     };
     const visualDesc = !full ? '按画面内容找镜头、给句子配画面。需要多模态搜索。'
-      : visualOn ? '按画面内容找镜头、给句子配画面。关掉后不再建新的画面索引。'
+      : visualOn ? `已索引的项目里的视频会按画面内容建立索引。关掉后不再建新的画面索引。${st.index === 'stale' && visualEta ? visualEta + '。' : ''}`
         : `按画面内容找镜头、给句子配画面。打开后要建：${cost}。`;
     return (
       <>

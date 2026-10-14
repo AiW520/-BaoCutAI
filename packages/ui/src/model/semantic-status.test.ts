@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { SemanticCoverage, SemanticEstimate, SemanticIndexStatus } from '@baocut/protocol';
 import { M } from './semantic-copy.ts';
-import { coverageLine, entryNote, etaLine, indexState, pausedNote, reasonText } from './semantic-status.ts';
+import { coverageLine, entryNote, etaLine, indexState, pausedNote, reasonText, visualCostLine, visualCoverageLine } from './semantic-status.ts';
 
 const text = (patch: Partial<SemanticCoverage> = {}): SemanticCoverage => ({
   channel: 'text',
@@ -131,5 +131,49 @@ describe('自动停下与还要多久', () => {
     expect(etaLine(estimate({ seconds: 5400, unknownDuration: 2 }))).toBe(M.settings.eta.withUnknown(M.settings.eta.measured(3, M.settings.eta.hours('1.5')), 2));
     expect(etaLine(estimate({ videos: 0, seconds: 0 }))).toBeNull();
     expect(etaLine(null)).toBeNull();
+  });
+});
+
+describe('画面一路', () => {
+  const visual = (patch: Partial<SemanticCoverage> = {}): SemanticCoverage => text({ channel: 'visual', ...patch });
+  const cost = (patch: Partial<SemanticEstimate> = {}): SemanticEstimate => ({
+    channel: 'visual',
+    ifEnabled: true,
+    videos: 12,
+    unknownDuration: 0,
+    sourceSeconds: 6600,
+    frames: 825,
+    seconds: 908,
+    basis: 'default',
+    vectorBytes: 1689600,
+    ...patch,
+  });
+
+  it('画面在建时设置页的状态是更新中，各入口不受影响', () => {
+    const building = status({ coverage: [text(), visual({ indexed: 1, pending: 2 })] });
+    expect(indexState(building)).toBe('updating');
+    expect(entryNote('search', building)).toBeNull();
+    expect(indexState(status({ coverage: [text(), visual({ eligible: 0, indexed: 0 })] }))).toBe('ready');
+  });
+
+  it('画面完整性：就绪、部分；没有要建画面的视频时不写', () => {
+    expect(visualCoverageLine([text(), visual()])).toBe(M.coverage.visualReady);
+    expect(visualCoverageLine([text(), visual({ indexed: 1, pending: 2 })])).toBe(M.coverage.visualPartial(1, 3, M.coverage.queued(2)));
+    expect(visualCoverageLine([text(), visual({ eligible: 0, indexed: 0 })])).toBeNull();
+    expect(visualCoverageLine([text()])).toBeNull();
+  });
+
+  it('打开之前写视频、帧数、首次要多久与向量大小；时长都不知道时只写估不出', () => {
+    const c = M.settings.cost;
+    expect(visualCostLine(cost())).toBe(
+      c.cacheNote([c.head(12, M.settings.eta.hours('1.8'), 825), c.firstRun(M.settings.eta.minutes(15), false), c.vectors('2 MB')].join(c.separator)),
+    );
+    expect(visualCostLine(cost({ unknownDuration: 1, basis: 'measured', vectorBytes: 1000 }))).toBe(
+      c.cacheNote(
+        [c.head(12, M.settings.eta.hours('1.8'), 825), c.unknown(1), c.firstRun(M.settings.eta.minutes(15), true), c.vectors(null)].join(c.separator),
+      ),
+    );
+    expect(visualCostLine(cost({ frames: 0, sourceSeconds: 0, unknownDuration: 2, videos: 2 }))).toBe(c.noLength(2));
+    expect(visualCostLine(cost({ videos: 0 }))).toBeNull();
   });
 });

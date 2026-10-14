@@ -1,5 +1,6 @@
 import type { SemanticCoverage, SemanticEstimate, SemanticIndexStatus } from '@baocut/protocol';
 import { M } from './semantic-copy.ts';
+import { fmtSize } from './task-facts.ts';
 
 /*
  * 本机语义索引的状态与每个入口的那一句（创作辅助集成设计 §2.11、§3.11；设计稿 model-semantic.js）。
@@ -41,10 +42,16 @@ function textCoverage(status: Pick<SemanticIndexStatus, 'coverage'>): SemanticCo
   return status.coverage.find((c) => c.channel === 'text') ?? null;
 }
 
-/** 索引还没跟上：有在排队的，或已建的落后于当前版本。 */
+/** 索引还没跟上：有在排队的，或已建的落后于当前版本。只看文字一路（各入口用的都是它）。 */
 export function indexUpdating(status: Pick<SemanticIndexStatus, 'coverage'> | null): boolean {
   const text = status ? textCoverage(status) : null;
   return !!text && (text.pending > 0 || text.stale > 0);
+}
+
+/** 画面一路还没跟上（打开了画面，或要过某些视频的画面）：设置页的状态与轮询看它，各入口不看。 */
+export function visualUpdating(status: Pick<SemanticIndexStatus, 'coverage'> | null): boolean {
+  const visual = status?.coverage.find((c) => c.channel === 'visual') ?? null;
+  return !!visual && visual.eligible > 0 && (visual.pending > 0 || visual.stale > 0);
 }
 
 /**
@@ -114,11 +121,39 @@ export function coverageLine(coverage: readonly SemanticCoverage[]): string {
   return M.coverage.partial(text.indexed, text.eligible, details.join(M.coverage.separator));
 }
 
+/** 一个范围的画面完整性：「画面已就绪」「画面 2/5 部视频（3 部在排队）」；这个范围里没有要建画面的视频时 null。 */
+export function visualCoverageLine(coverage: readonly SemanticCoverage[]): string | null {
+  const visual = coverage.find((c) => c.channel === 'visual');
+  if (!visual || visual.eligible === 0) return null;
+  const details = [
+    visual.pending ? M.coverage.queued(visual.pending) : null,
+    visual.failed ? M.coverage.failed(visual.failed) : null,
+    visual.stale ? M.coverage.outdated(visual.stale) : null,
+  ].filter((d): d is string => d !== null);
+  if (details.length === 0) return M.coverage.visualReady;
+  return M.coverage.visualPartial(visual.indexed, visual.eligible, details.join(M.coverage.separator));
+}
+
 export type IndexState = 'unavailable' | 'paused' | 'updating' | 'ready';
 
 /** 设置页「状态」那一格。 */
 export function indexState(status: SemanticIndexStatus): IndexState {
   if (status.model === null || status.reason === 'INDEX_NOT_READY') return 'unavailable';
   if (status.paused) return 'paused';
-  return indexUpdating(status) ? 'updating' : 'ready';
+  return indexUpdating(status) || visualUpdating(status) ? 'updating' : 'ready';
+}
+
+/** 打开画面之前那一句（§13.2，`estimates` 里 `ifEnabled` 的画面一项）：多少视频、多少帧、首次要多久、向量多大；没有要建的时 null。 */
+export function visualCostLine(estimate: SemanticEstimate | null | undefined): string | null {
+  if (!estimate || estimate.videos === 0) return null;
+  const c = M.settings.cost;
+  if (!estimate.frames) return c.noLength(estimate.videos);
+  const vectors = estimate.vectorBytes === null ? null : c.vectors(estimate.vectorBytes < 1024 * 1024 ? null : fmtSize(estimate.vectorBytes));
+  const parts = [
+    c.head(estimate.videos, etaTime(estimate.sourceSeconds), estimate.frames),
+    estimate.unknownDuration > 0 ? c.unknown(estimate.unknownDuration) : null,
+    estimate.seconds === null ? null : c.firstRun(etaTime(estimate.seconds), estimate.basis === 'measured'),
+    vectors,
+  ].filter((p): p is string => p !== null);
+  return c.cacheNote(parts.join(c.separator));
 }
