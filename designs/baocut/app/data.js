@@ -3651,7 +3651,7 @@
          visual：讲话内容建好了，画面建到 312/825 帧，速度已经量过 */
       progress: {
         text: {
-          text: {done: 9, total: 12, doneSeconds: 270, estimate: {channel: 'text', videos: 3, unknownDuration: 0, sourceSeconds: 4260, seconds: 95, basis: 'measured'}},
+          text: {done: 8, total: 12, doneSeconds: 240, estimate: {channel: 'text', videos: 3, unknownDuration: 0, sourceSeconds: 4260, seconds: 95, basis: 'measured'}},
           visual: {done: 0, total: 825, doneSeconds: 0, estimate: {channel: 'visual', videos: 12, unknownDuration: 0, sourceSeconds: 6600, frames: 825, seconds: 908, basis: 'default'}},
         },
         visual: {
