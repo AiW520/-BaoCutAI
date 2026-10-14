@@ -3,9 +3,11 @@ import {
   MAX_HOME_MATERIALS,
   addMaterials,
   canStartHome,
+  EMPTY_HOME_BRIEF,
   gateGuide,
   homeBrief,
   homeGate,
+  homeReadScope,
   lengthLabel,
   materialOf,
   projectNameError,
@@ -126,5 +128,14 @@ describe('新建项目的名称', () => {
     expect(projectNameError('新片')).toBeNull();
     expect(projectNameError('  ')).toBe('请输入项目名称');
     for (const name of ['..', '.', 'a/b', 'a\\b', 'a\u0007b']) expect(projectNameError(name)).toBe('项目名称不能包含斜杠或控制字符');
+  });
+});
+
+describe('新会话的只读检索范围', () => {
+  it('不用项目时缺省可检索全部视频；用了项目、摘掉了的不挂；挂着的为准', () => {
+    expect(homeReadScope(EMPTY_HOME_BRIEF, null)).toBe('all');
+    expect(homeReadScope(EMPTY_HOME_BRIEF, 'p1')).toBeNull();
+    expect(homeReadScope({ ...EMPTY_HOME_BRIEF, dropDefaultReadScope: true }, null)).toBeNull();
+    expect(homeReadScope({ ...EMPTY_HOME_BRIEF, readScope: 'unfiled' }, null)).toBe('unfiled');
   });
 });

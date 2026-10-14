@@ -13,6 +13,7 @@ import {
   gateGuide,
   homeBrief,
   homeGate,
+  homeReadScope,
   MAX_HOME_MATERIALS,
   pickTemplate,
   type HomeBriefState,
@@ -114,6 +115,8 @@ export function StartPage({ projectId: routeProjectId }: { projectId: string | n
   const { model, effort } = draftSelection(driver, choice);
   const editor = useEditorReference({ conversationId: null, projectId });
   const brief = useStartBriefOf(draftKey);
+  // 不用项目时新会话缺省可检索全部视频（只读），输入框上方一个标记，摘掉这一次不挂。
+  const readScope = homeReadScope(brief, projectId);
   // 输入框里还没填的待填项（模板包规范 §5.5）：框下面的提示行列出它们。
   const slots = slotLabels(useShell((s) => s.drafts[draftKey] ?? ''));
   // 每加一，输入框选中下一处待填项（Composer `start.selectSlot`）。
@@ -306,8 +309,8 @@ export function StartPage({ projectId: routeProjectId }: { projectId: string | n
                 materials={brief.materials}
                 onRemoveTemplate={() => pickScene(null)}
                 onRemoveMaterial={(path) => patch({ materials: brief.materials.filter((m) => m.path !== path) })}
-                readScope={brief.readScope}
-                onRemoveReadScope={() => patch({ readScope: null })}
+                readScope={readScope}
+                onRemoveReadScope={() => patch({ readScope: null, dropDefaultReadScope: true })}
               />
             ),
             ready: gate === null || gate.ok,
@@ -347,7 +350,7 @@ export function StartPage({ projectId: routeProjectId }: { projectId: string | n
                 ...(choice?.driverId ? { driverId: choice.driverId } : {}),
                 ...(choice && 'model' in choice ? { model: choice.model ?? null } : {}),
                 ...(choice && 'effort' in choice ? { effort: choice.effort ?? null } : {}),
-                ...(brief.readScope ? { spaceReadScope: brief.readScope } : {}),
+                ...(readScope ? { spaceReadScope: readScope } : {}),
               });
               conversationId = conversation.id;
               if (draftMode && draftMode !== defaultMode) void setDefaultAccessMode(runtime, draftMode).catch(() => {});
