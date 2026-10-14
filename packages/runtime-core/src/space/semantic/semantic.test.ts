@@ -189,10 +189,19 @@ class CountingProvider implements EmbeddingProvider {
     if (this.noVision && purpose === 'text-to-visual') throw new EmbeddingError('MODEL_NOT_INSTALLED', 'no image-capable bundle');
     return this.inner.profile(purpose);
   }
+  /** 文件名含这些字样的帧读不出（Worker 报 `INPUT_UNREADABLE`，Provider 转成 `SOURCE_MISSING`，整批失败）。 */
+  readonly unreadable = new Set<string>();
+  /** 记下每一批编码的开始与结束（看取帧与编码的先后）。 */
+  log: string[] | null = null;
   async embedImages(...args: Parameters<NonNullable<EmbeddingProvider['embedImages']>>) {
     if (this.failing) throw new EmbeddingError(this.failing, 'unavailable');
-    this.images += args[0].images.length;
-    return this.inner.embedImages(...args);
+    const { images } = args[0];
+    if (images.some((image) => [...this.unreadable].some((name) => image.includes(name)))) throw new EmbeddingError('SOURCE_MISSING', 'unreadable');
+    this.images += images.length;
+    this.log?.push(`embed ${images.length}`);
+    const result = await this.inner.embedImages(...args);
+    this.log?.push(`embed done ${images.length}`);
+    return result;
   }
   async embed(...args: Parameters<EmbeddingProvider['embed']>) {
     if (this.failing) throw new EmbeddingError(this.failing, 'unavailable');
@@ -250,8 +259,11 @@ class FakeFrames implements KeyframeSource {
   constructor(scenes: Record<string, (at: number) => string> = {}) {
     this.scenes = scenes;
   }
+  /** 记下每一次取帧（看取帧与编码的先后）。 */
+  log: string[] | null = null;
   async keyframe(_dir: string, asset: VisualAsset, at: number): Promise<string> {
     this.calls++;
+    this.log?.push(`grab ${at}`);
     if (this.broken.has(at)) throw new Error('decode failed');
     const file = path.join(tmp, 'frames', `${asset.contentHash}-${Math.round(at * 1000)}.jpg`);
     await fs.mkdir(path.dirname(file), { recursive: true });
@@ -1120,6 +1132,34 @@ describe('画面检索', () => {
       [18, 64],
     ]);
     expect(await context.timelineFrames({ videoId: 'v3' })).toBeNull();
+  });
+
+  it('取帧与编码错开：编这一批时已在取下一批', async () => {
+    reader.videos.set(videos[0]!.dir, { ...V1, revision: 'r2', clip: STREET });
+    await syncIndex(2);
+    const frames = new FakeFrames(scenes);
+    const log: string[] = [];
+    frames.log = log;
+    provider.log = log;
+    services = open({ channels: ['text', 'visual'], frames });
+    await build(services);
+    // 5 帧分两批（4 + 1）：第二批的帧（36 秒）在第一批编完之前就开始取。
+    expect(log.filter((e) => e.startsWith('embed '))).toEqual(['embed 4', 'embed done 4', 'embed 1', 'embed done 1']);
+    expect(log.indexOf('grab 36')).toBeLessThan(log.indexOf('embed done 4'));
+    expect(services.store()!.visualSource('v1')?.state).toBe('indexed');
+  });
+
+  it('一批里有一张读不出：逐张重编，只跳过那一张', async () => {
+    reader.videos.set(videos[0]!.dir, { ...V1, revision: 'r2', clip: STREET });
+    await syncIndex(2);
+    provider.unreadable.add('h-street-12000');
+    services = open({ channels: ['text', 'visual'], frames: new FakeFrames(scenes) });
+    await build(services);
+    const store = services.store()!;
+    const generation = store.activeVisualGenerations(['v1']).get('v1')!;
+    expect(store.visualPartition(generation.id)!.frames.map((f) => f.sourceSec)).toEqual([4, 20, 28, 36]);
+    expect(provider.images).toBe(4);
+    expect(services.coordinator.visual!.blockedReason).toBeNull();
   });
 
   it('文字找画面：素材片段命中、候选窗口；在时间线上的给时间线位置，不在的给源时间；解析按当前时间线重新投影', async () => {

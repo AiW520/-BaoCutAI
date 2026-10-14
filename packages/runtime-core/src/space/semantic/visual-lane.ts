@@ -384,6 +384,38 @@ export class VisualLane {
     return { videoId: file.entryId, revision: file.revision, expectedGeneration, planned };
   }
 
+  /**
+   * 编一批帧，返回编好的（键 → 向量）。有一张读不出（`SOURCE_MISSING`：帧文件在取出与编码之间被清掉、引擎解不开这张图）时
+   * Worker 整批报错，这里逐张重编，只跳过读不出的那几张，下次重建再取；别的错误照原样抛（模型不可用时整路停下）。
+   */
+  async #encode(scheduler: EmbeddingScheduler, batch: readonly { key: string; file: string }[], maxBatch: number, signal: AbortSignal) {
+    const encoded = new Map<string, Float32Array>();
+    const run = async (part: readonly { key: string; file: string }[]) => {
+      const result = await scheduler.embedImages(
+        part.map((b) => b.file),
+        maxBatch,
+        { priority: 'background', signal },
+      );
+      if (result.vectors.length !== part.length) throw new EmbeddingError('MODEL_UNAVAILABLE', 'embedding count mismatch');
+      part.forEach((b, n) => encoded.set(b.key, result.vectors[n]!));
+    };
+    try {
+      await run(batch);
+    } catch (error) {
+      if (!(error instanceof EmbeddingError && error.reason === 'SOURCE_MISSING')) throw error;
+      if (batch.length === 1) return encoded;
+      for (const one of batch) {
+        signal.throwIfAborted();
+        try {
+          await run([one]);
+        } catch (error) {
+          if (!(error instanceof EmbeddingError && error.reason === 'SOURCE_MISSING')) throw error;
+        }
+      }
+    }
+    return encoded;
+  }
+
   async #indexOne(store: SemanticStore, scheduler: EmbeddingScheduler, profile: EmbeddingProfile, item: Planned, signal: AbortSignal): Promise<void> {
     const frames = profile.frames!;
     const { videoId, revision, expectedGeneration, planned } = item.file
@@ -398,39 +430,35 @@ export class VisualLane {
       if (this.#current?.videoId === item.videoId) this.#current = { videoId: item.videoId, done, total: keys.length };
     };
     progress(keys.length - missing.length);
-    for (let i = 0; i < missing.length; i += frames.maxBatch) {
-      signal.throwIfAborted();
-      const started = performance.now();
+    // 取帧（ffmpeg 每帧约 0.2–0.3 秒）与编码错开：编这一批时逐帧取下一批，取帧不再排在编码前面。只提前一批、一次一帧，
+    // 不多占媒体分析给界面缩略图的并发名额。取不出的帧（素材文件不在、解码失败）跳过这一帧，从不让这个 Promise 失败。
+    const grab = async (slice: readonly PlannedFrame[]) => {
       const batch: { key: string; file: string }[] = [];
-      for (const frame of missing.slice(i, i + frames.maxBatch)) {
+      for (const frame of slice) {
+        if (signal.aborted) break;
         try {
           batch.push({ key: frame.embeddingKey, file: await frame.grab() });
         } catch (error) {
-          // 这一帧取不出来（素材文件不在、解码失败）：跳过这一帧。
           skipped.add(frame.embeddingKey);
           this.#options.log.debug?.('keyframe skipped', { dir: item.dir, at: frame.sourceSec, error: error instanceof Error ? error.message : String(error) });
         }
       }
+      return batch;
+    };
+    let next = missing.length > 0 ? grab(missing.slice(0, frames.maxBatch)) : null;
+    for (let i = 0; i < missing.length; i += frames.maxBatch) {
+      signal.throwIfAborted();
+      const started = performance.now();
+      const batch = await next!;
+      next = i + frames.maxBatch < missing.length ? grab(missing.slice(i + frames.maxBatch, i + 2 * frames.maxBatch)) : null;
       if (batch.length === 0) continue;
       signal.throwIfAborted();
-      let result;
-      try {
-        result = await scheduler.embedImages(
-          batch.map((b) => b.file),
-          frames.maxBatch,
-          { priority: 'background', signal },
-        );
-      } catch (error) {
-        // 帧文件在取出与编码之间被清掉：跳过这一批，下次重建再取。
-        if (error instanceof EmbeddingError && error.reason === 'SOURCE_MISSING') {
-          for (const b of batch) skipped.add(b.key);
-          continue;
-        }
-        throw error;
-      }
-      if (result.vectors.length !== batch.length) throw new EmbeddingError('MODEL_UNAVAILABLE', 'embedding count mismatch');
-      store.putEmbeddings(batch.map((b, n) => ({ key: b.key, encoderProfileId: profile.encoderProfileId, vector: validVector(result.vectors[n]!, profile.dims) })));
-      this.#options.rate?.(profile, (performance.now() - started) / 1000 / batch.length);
+      const encoded = await this.#encode(scheduler, batch, frames.maxBatch, signal);
+      for (const b of batch) if (!encoded.has(b.key)) skipped.add(b.key);
+      store.putEmbeddings(
+        [...encoded].map(([key, vector]) => ({ key, encoderProfileId: profile.encoderProfileId, vector: validVector(vector, profile.dims) })),
+      );
+      if (encoded.size > 0) this.#options.rate?.(profile, (performance.now() - started) / 1000 / batch.length);
       progress(keys.length - missing.length + Math.min(missing.length, i + frames.maxBatch));
     }
     signal.throwIfAborted();
