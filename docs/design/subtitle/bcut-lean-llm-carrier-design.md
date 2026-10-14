@@ -841,16 +841,16 @@ r22 剩下的 34 处日文：
 - 测试：speech-worker 协议测试用按 `lines/1` 作答的假模型跑整条翻译，断言请求是 `translate-lines`、6 句 30 词长句都由草稿直落（`llm-lines+…`，一次调用，不另发对齐）；不给参数仍走 `rows`；未知取值拒绝。jobs 的流程测试断言参数冻结、请求是 `lines/1` 页、译文照常组装写入。
 - 没接的：Agent 路径（智能体用 `documents_read` 的 `translationBasis` 自己翻译、`documents_put` 写回，不经这份载体）；工具目录与 CLI 的 `translate` 不暴露这个参数，只有 `pipelines.start` 能给；§5 的部分提交与状态机。
 
-**实测对照与默认值。** 真实模型的 rows / `lines` 质量对照没做成：开发态 Runtime 与本机其他 v3 home 都没配默认文本模型（`text` 返回 `CAPABILITY_NOT_CONFIGURED`），v2 项目的 `logs/llm` 里也没有 `translate-lines` 的录制答案可回放。`crates/speech-doc/bench/fixtures/lean-carrier-*` 里有 DeepSeek V4.1 Flash 的真实 `lines/1` 回答，但没有同批的 rows 回答，不能拿来比两种载体。所以默认仍是 `rows`，切默认的条件不变：同一份文稿 rows 与 `lines` 各跑一次，`lines` 的对齐成功句数不少于 rows、整句兜底与改写不多于 rows，并记下调用次数与 token。对照脚本在 [`scripts/translate-carrier-compare`](../../../scripts/translate-carrier-compare/README.md)，配好模型后用 `--generator runtime` 跑。
+**实测对照与默认值。** 真实模型的 rows / `lines` 质量对照没做成：开发态 Runtime（`.dev/baocut-home`）没配默认文本模型（`text` 返回 `CAPABILITY_NOT_CONFIGURED`），本轮也不替用户配置，v2 项目的 `logs/llm` 里也没有 `translate-lines` 的录制答案可回放。`crates/speech-doc/bench/fixtures/lean-carrier-*` 里有 DeepSeek V4.1 Flash 的真实 `lines/1` 回答，但没有同批的 rows 回答，不能拿来比两种载体。所以默认仍是 `rows`，切默认的条件不变：同一份文稿 rows 与 `lines` 各跑一次，`lines` 的对齐成功句数不少于 rows、整句兜底与改写不多于 rows，并记下调用次数与 token。对照脚本在 [`scripts/translate-carrier-compare`](../../../scripts/translate-carrier-compare/README.md)，配好模型后用 `--generator runtime` 跑。
 
 本轮能做的是结构验证：同一脚本走生产的 `runSpeechTranslate` 与 debug 版 speech-worker，模型换成确定性的回声答案（每块按源词数写等比长度的填充文本，后续的改写 / 修复请求不作答），在本机全部 54 个项目（41 个英文、10 个中文、2 个韩文、1 个日文，共 20,646 句，最长一份 111,594 词）上两种载体各跑一次。它只说明两种载体能把真实文稿完整走完、草稿能被定位，不说明对齐质量；这里的「兜底」是需要改写 / 修复轮而回声不作答的句数。
 
-| 载体 | 失败 | 草稿直落 | 其中块内拆分 | 兜底 | 整句 | 改写 | 调用 | 字幕条 | 黏结修复拒收 |
-| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| rows | 0 | 9,961 | 0 | 106 | 0 | 0 | 600 | 35,812 | 192 |
-| `lines` | 0 | 10,024 | 101 | 64 | 0 | 0 | 606 | 35,620 | 195 |
+| 载体 | 失败 | 跳过 | 草稿直落 | 其中块内拆分 | 兜底 | 整句 | 改写 | 调用 | 字幕条 | 黏结修复拒收 |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| rows | 0 | 10,579 | 9,961 | 0 | 106 | 0 | 0 | 600 | 35,812 | 192 |
+| `lines` | 0 | 10,558 | 10,024 | 101 | 64 | 0 | 0 | 606 | 35,620 | 195 |
 
-译文单元数两边相同。按源语言（直落 / 兜底）：英文 rows 5,326 / 41 对 `lines` 5,307 / 60，中文 4,187 / 65 对 4,264 / 4，韩文 274 / 0 对 279 / 0，日文两边都是 174 / 0。差得最多的四个视频：中文两个 rows 兜底 41、24 对 `lines` 2、2，英文两个 0 对 5、2 对 11；英文那几句是草稿块超过 hard 20 单位、要靠改写轮拆开的长块，回声不作答才落到兜底，真实模型下要看改写轮。
+「跳过」是一条字幕装得下、不经对齐的句子，跳过 + 直落 + 兜底 = 20,646。按源语言（直落 / 兜底）：英文 rows 5,326 / 41 对 `lines` 5,307 / 60，中文 4,187 / 65 对 4,264 / 4，韩文 274 / 0 对 279 / 0，日文两边都是 174 / 0。差得最多的四个视频：中文两个 rows 兜底 41、24 对 `lines` 2、2，英文两个 0 对 5、2 对 11；英文那几句是草稿块超过 hard 20 单位、要靠改写轮拆开的长块，回声不作答才落到兜底，真实模型下要看改写轮。
 
 另在两个视频（英文一个、韩文一个）上只扰动 `lines` 整页的头一次回答：去掉块标记、引用写错都降级到 `deterministic/1` 或 `llm-lines+split/1`，任务照常完成；包代码块照常解析；两行并一行、漏末行由补做页救回（调用 15 对 10、11 对 7）。没有崩溃或卡死。
 
