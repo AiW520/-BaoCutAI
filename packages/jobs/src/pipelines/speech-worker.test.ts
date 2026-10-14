@@ -62,7 +62,8 @@ function speechInput(sentences: number, words: number): SpeechTranslateInput {
     targetLanguage: 'zh-Hans',
     glossary: [{ source: 'word1', target: '词一' }],
     glossaryRef: null,
-    params: { instructions: '口语化', backoffScale: 0 },
+    // 断言按 rows 翻译页的句子 ID 来（`requestedSentences`），这里明说载体。
+    params: { instructions: '口语化', backoffScale: 0, alignFusion: 'rows' },
   };
 }
 
@@ -240,7 +241,8 @@ describe.skipIf(!command)('runSpeechTranslate with the Speech Worker', () => {
       },
       speech: sample.speech,
       glossary: [],
-      params: { backoffScale: 0 },
+      // 界面评审样本是 rows 载体的产物。
+      params: { backoffScale: 0, alignFusion: 'rows' },
     };
     const result = await run(await tmp('speech-worker-sample-'), input, fakeText());
     if (process.env.BAOCUT_WRITE_FIXTURES === '1') {

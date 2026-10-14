@@ -72,6 +72,9 @@ const ENGLISH: Record<string, string> = {
   's-w7': 'This is the fourth one.',
 };
 
+/** `lines/1` 的翻译页没有句子 ID，按原文（去掉句末标点）认回句子。 */
+const SENTENCE_OF: Record<string, string> = { 大家好: 's-w1', 今天讲剪辑: 's-w3', 今天讲调色: 's-w3', 第三句: 's-w5', 第四句: 's-w7' };
+
 /** 假 OpenAI：按 Speech Worker 的请求答（`fakeSpeechAnswer`），每句回 `ENGLISH` 里的那句。 */
 const translator: FakeHandler = (request) => {
   if (request.method === 'GET' && request.path.endsWith('/models')) return { status: 200, json: { object: 'list', data: [] } };
@@ -81,7 +84,10 @@ const translator: FakeHandler = (request) => {
   const user = messages.find((m) => m.role === 'user')!.content;
   return chatCompletionReply(
     request,
-    fakeSpeechAnswer(user, (id) => ENGLISH[id] ?? `Line ${id}.`),
+    fakeSpeechAnswer(user, (id, _group, source) => {
+      const sentence = id ?? SENTENCE_OF[source.replace(/[。\s]/g, '')] ?? source;
+      return ENGLISH[sentence] ?? `Line ${sentence}.`;
+    }),
   );
 };
 

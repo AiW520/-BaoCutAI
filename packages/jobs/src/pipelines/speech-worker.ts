@@ -72,7 +72,7 @@ export interface SpeechTranslateInput {
   targetLanguage: string;
   glossary: Array<{ source: string; target: string; note?: string }>;
   glossaryRef: GlossaryRef | null;
-  /** `alignFusion`：融合草稿的载体，不给时 `rows`（`TranslateParams.alignFusion`）。 */
+  /** `alignFusion`：融合草稿的载体，不给时 `lines`（`TranslateParams.alignFusion`）。 */
   params?: { instructions?: string; backoffScale?: number; alignFusion?: TranslateAlignFusion };
   /**
    * 就地刷新：这门语言已有的译文作底稿，只重译 `sentences` 里的句子，别的单元原样写回（命令协议规范 §4.5）。两项同给同不给；

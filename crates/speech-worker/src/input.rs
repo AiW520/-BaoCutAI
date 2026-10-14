@@ -98,7 +98,7 @@ pub struct Params {
     /// 退避时长的倍数（默认 1）；测试给 0。
     #[serde(default = "one")]
     pub backoff_scale: f64,
-    /// 翻译页顺带交回对齐草稿的载体（默认 `rows`）。
+    /// 翻译页顺带交回对齐草稿的载体（默认 `lines`）。
     #[serde(default)]
     pub align_fusion: AlignFusion,
 }
@@ -118,8 +118,8 @@ impl Default for Params {
 #[derive(Debug, Default, Clone, Copy, PartialEq, Eq, Deserialize)]
 #[serde(rename_all = "lowercase")]
 pub enum AlignFusion {
-    #[default]
     Rows,
+    #[default]
     Lines,
 }
 

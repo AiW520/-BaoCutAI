@@ -43,16 +43,21 @@ export function requestedSentences(user: string): string[] {
 }
 
 /**
- * 假答案。`line(sentenceId, group)` 给出一句（带对齐分组时是第 `group` 组）的译文；不给时按目标语言写一句各不相同的话
- * （核心的质量门会退回整页都一样的短译文与语言不对的译文）。
+ * 一句（带对齐分组时是第 `group` 组，`lines/1` 的页是第 `group` 片）的译文。`lines/1` 的页没有句子 ID，`sentenceId`
+ * 是 null，按 `source`（这一句的原文，去掉了转义、提示与片标）认句子。
  */
-export function fakeSpeechAnswer(user: string, line?: (sentenceId: string, group: number) => string): string {
-  if (speechRequestKind(user) === 'translate-lines') return fakeLinesAnswer(user);
+export type FakeSpeechLine = (sentenceId: string | null, group: number, source: string) => string;
+
+/**
+ * 假答案。`line` 给出每句的译文；不给时按目标语言写一句各不相同的话（核心的质量门会退回整页都一样的短译文与语言不对的译文）。
+ */
+export function fakeSpeechAnswer(user: string, line?: FakeSpeechLine): string {
+  if (speechRequestKind(user) === 'translate-lines') return fakeLinesAnswer(user, line);
   if (speechRequestKind(user) !== 'translate') return '<article></article>';
   const chinese = /data-target="(zh|ja)/.test(user);
   let ordinal = 0;
-  const text = (id: string, group: number) => {
-    if (line) return line(id, group);
+  const text = (id: string, group: number, source: string) => {
+    if (line) return line(id, group, source);
     ordinal++;
     return chinese ? `好的，第${ordinal}句。` : `This is line ${ordinal}.`;
   };
@@ -62,16 +67,17 @@ export function fakeSpeechAnswer(user: string, line?: (sentenceId: string, group
     for (const p of tags(section.inner, 'p')) {
       if (attr(p.open, 'data-editable') === 'false') continue;
       const id = attr(p.open, 'id')!;
+      const source = p.inner.replace(/<[^>]*>/g, '').trim();
       out += `<p id="${id}">`;
       const groups = attr(p.open, 'data-align-groups');
       const words = attr(p.open, 'data-align-words');
       if (groups)
         out += groups
           .split(';')
-          .map((group, i) => `<span data-src="${group.split('@')[0]}">${text(id, i)}</span>`)
+          .map((group, i) => `<span data-src="${group.split('@')[0]}">${text(id, i, source)}</span>`)
           .join('');
-      else if (words) out += `<span data-src="1-${words.split('[').length - 1}">${text(id, 0)}</span>`;
-      else out += text(id, 0);
+      else if (words) out += `<span data-src="1-${words.split('[').length - 1}">${text(id, 0, source)}</span>`;
+      else out += text(id, 0, source);
       out += '</p>';
     }
     out += '</section>';
@@ -85,25 +91,27 @@ function quoted(word: string): string {
 }
 
 /** `lines/1` 的页：每个编号行一行答案，按 `¦` 分片，每片一块 `|首词..尾词|译文`（一个词的片是 `|词|`）。 */
-function fakeLinesAnswer(user: string): string {
+function fakeLinesAnswer(user: string, line?: FakeSpeechLine): string {
   const chinese = /^! format=lines\/1 .*target=(zh|ja)/m.test(user);
   const out: string[] = [];
-  for (const line of user.split('\n')) {
-    const match = /^(\d+) (.*)$/.exec(line);
+  for (const row of user.split('\n')) {
+    const match = /^(\d+) (.*)$/.exec(row);
     if (!match) continue;
     const n = Number(match[1]);
     const source = match[2]!
       .split(/\s+/)
       .filter((token) => token && !token.startsWith('≤') && !token.startsWith('≥') && token !== '⏸')
       .join(' ');
+    const plain = source.replace(/ ?¦ ?/g, ' ').replace(/\\(.)/g, '$1').trim();
     const chunks = source.split('¦').flatMap((piece, i) => {
       const words = piece.trim().split(/\s+/).filter(Boolean);
       if (words.length === 0) return [];
-      const text = i === 0 ? (chinese ? `好的，第${n}句` : `This is line ${n}`) : chinese ? `第${i + 1}段` : `part ${i + 1}`;
+      const fallback = i === 0 ? (chinese ? `好的，第${n}句` : `This is line ${n}`) : chinese ? `第${i + 1}段` : `part ${i + 1}`;
+      const text = line ? line(null, i, plain) : fallback;
       const quote = words.length === 1 ? quoted(words[0]!) : `${quoted(words[0]!)}..${quoted(words.at(-1)!)}`;
       return [`|${quote}|${text}`];
     });
-    out.push(`${n} ${chunks.join('')}${chinese ? '。' : '.'}`);
+    out.push(`${n} ${chunks.join('')}${line ? '' : chinese ? '。' : '.'}`);
   }
   return out.join('\n');
 }

@@ -67,7 +67,8 @@ function translator(state: { broken: number; calls: number }): FakeHandler {
     state.calls++;
     const messages = (request.json as { messages: Array<{ role: string; content: string }> }).messages;
     const user = messages.find((m) => m.role === 'user')!.content;
-    if (state.broken > 0 && speechRequestKind(user) === 'translate') {
+    const kind = speechRequestKind(user);
+    if (state.broken > 0 && (kind === 'translate' || kind === 'translate-lines')) {
       state.broken--;
       return chatCompletionReply(request, '<article></article>');
     }

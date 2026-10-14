@@ -151,6 +151,7 @@ export interface FrozenTranslateParams extends TranslateParams {
 
 const DEFAULT_BATCH = 20;
 const ALIGN_FUSIONS: readonly TranslateAlignFusion[] = ['rows', 'lines'];
+const DEFAULT_ALIGN_FUSION: TranslateAlignFusion = 'lines';
 const APPLY_ATTEMPTS = 3;
 
 const PARAMS_SCHEMA = {
@@ -200,8 +201,8 @@ const PARAMS_SCHEMA = {
     alignFusion: {
       type: 'string',
       enum: ['rows', 'lines'],
-      default: 'rows',
-      description: '翻译页顺带交回对齐草稿的载体：rows（默认，HTML 页、按源词序号写显示行）或 lines（行文本 lines/1、首尾源词引用）',
+      default: 'lines',
+      description: '翻译页顺带交回对齐草稿的载体：lines（默认，行文本 lines/1、首尾源词引用）或 rows（HTML 页、按源词序号写显示行）',
     },
     memory: {
       type: 'boolean',
@@ -294,6 +295,8 @@ export function translatePipeline(deps: TranslateDeps): PipelineDefinition<Froze
         provider: selection.providerId,
         model: selection.modelId,
         batchSize: params.batchSize ?? DEFAULT_BATCH,
+        // 载体照样冻结：缺省值以后再变，进行中的流程重试也不换载体。
+        alignFusion: params.alignFusion ?? DEFAULT_ALIGN_FUSION,
         ...(glossaryUse ? { glossaryUse } : {}),
       };
       const revision = state.documents[documentId]!.currentRevision;
@@ -750,7 +753,8 @@ async function translateWithWorker(deps: TranslateDeps, context: PipelineStepCon
       params: {
         ...(params.style !== undefined ? { instructions: params.style } : {}),
         ...(deps.backoffScale !== undefined ? { backoffScale: deps.backoffScale } : {}),
-        ...(params.alignFusion !== undefined ? { alignFusion: params.alignFusion } : {}),
+        // 冻结参数里没有载体的是缺省值改成 lines 之前启动的流程，当时走 rows。
+        alignFusion: params.alignFusion ?? 'rows',
       },
       ...(base && frozen.plan ? { translation: base, sentences: frozen.plan.sentences } : {}),
       ...(memoryInput ? { memory: memoryInput } : {}),

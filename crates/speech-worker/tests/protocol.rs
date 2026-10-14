@@ -258,7 +258,8 @@ fn job(sentences: usize, words: usize) -> Job {
         "targetLanguage": "zh-Hans",
         "glossary": [{ "source": "word1", "target": "词一" }],
         "glossaryRef": { "entries": [], "inline": { "contentHash": "sha256:11", "count": 1 }, "terms": [] },
-        "params": { "instructions": "口语化", "backoffScale": 0 },
+        // 假模型按 rows 契约答（`fake_answer`），这里明说载体；走缺省载体 lines 的测试另写。
+        "params": { "instructions": "口语化", "backoffScale": 0, "alignFusion": "rows" },
     });
     std::fs::write(&input, serde_json::to_vec(&value).unwrap()).unwrap();
     Job {
@@ -668,19 +669,62 @@ fn the_lines_carrier_aligns_long_sentences_from_the_translate_page() {
     assert!(cues["cues"].as_array().unwrap().len() > body.units.len(), "长句切成多行");
 }
 
+/// 从冻结的输入里拿掉载体，走缺省值。
+fn without_align_fusion(job: &Job) {
+    let mut value = read(&job.input);
+    value["params"].as_object_mut().unwrap().remove("alignFusion");
+    std::fs::write(&job.input, serde_json::to_vec(&value).unwrap()).unwrap();
+}
+
+fn fake_any_answer(params: &Value) -> String {
+    if params["kind"] == "translate-lines" {
+        fake_lines_answer(params)
+    } else {
+        fake_answer(params)
+    }
+}
+
 #[test]
-fn an_input_without_align_fusion_keeps_the_rows_carrier() {
+fn an_input_without_align_fusion_takes_the_lines_carrier() {
     let job = job(2, 6);
+    without_align_fusion(&job);
     let mut worker = Worker::start();
     let mut events = Vec::new();
-    let reply = worker.translate(&job, &mut events, &mut |params, _| Answer::Text(fake_answer(params)));
+    let reply = worker.translate(&job, &mut events, &mut |params, _| Answer::Text(fake_any_answer(params)));
     assert!(reply.get("error").is_none(), "{reply}");
-    assert!(
-        events_named(&events, "llm.request")
-            .iter()
-            .any(|request| request["params"]["kind"] == "translate")
-    );
-    assert_eq!(read(&job.staging.join("report.json"))["alignFusion"], "rows");
+    let requests = events_named(&events, "llm.request");
+    assert!(requests.iter().any(|request| request["params"]["kind"] == "translate-lines"));
+    assert!(requests.iter().all(|request| request["params"]["kind"] != "translate"));
+    assert_eq!(read(&job.staging.join("report.json"))["alignFusion"], "lines");
+}
+
+#[test]
+fn a_rows_checkpoint_is_not_resumed_under_the_default_carrier() {
+    // rows 写下的检查点（指纹里没有载体，与加这个参数之前的一样）；缺省载体 lines 对不上，从头来。
+    let job = job(100, 12);
+    let mut worker = Worker::start();
+    let mut events = Vec::new();
+    let mut pages_answered = 0;
+    let reply = worker.translate(&job, &mut events, &mut |params, _| {
+        if params["kind"] == "translate" {
+            if pages_answered == 1 {
+                return Answer::Error(json!({ "code": "BUDGET_EXCEEDED", "message": "任务预算用完了", "class": "terminal" }));
+            }
+            pages_answered += 1;
+        }
+        Answer::Text(fake_answer(params))
+    });
+    assert_eq!(reply["error"]["code"], "BUDGET_EXCEEDED", "{reply}");
+    assert!(job.staging.join("checkpoint.json").exists());
+    drop(worker);
+
+    without_align_fusion(&job);
+    let mut worker = Worker::start();
+    let mut events = Vec::new();
+    let reply = worker.translate(&job, &mut events, &mut |params, _| Answer::Text(fake_any_answer(params)));
+    assert!(reply.get("error").is_none(), "{reply}");
+    assert!(events_named(&events, "resumed").is_empty());
+    assert_eq!(read(&job.staging.join("report.json"))["alignFusion"], "lines");
 }
 
 #[test]

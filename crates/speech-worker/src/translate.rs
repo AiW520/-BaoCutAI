@@ -1,7 +1,7 @@
 //! 一份转写的翻译（架构设计 §7.9）：简报 → 分页翻译 → 质检与修复 → 对齐 → 黏结收尾 → 目标语字幕的时间投影 → 写出。
 //!
 //! 编排照 v2 `bcut-engine/src/flows/translate.rs` 的 `translate_cmd_core` 移植，取它的缺省档：不跑全文 analysis、
-//! 译向简报单页且无术语时跳过、融合草稿 `rows`（`params.alignFusion` 可选 `lines`）、对齐 `manyToOne` + 块对齐边、
+//! 译向简报单页且无术语时跳过、融合草稿 `lines`（`params.alignFusion` 可选 `rows`）、对齐 `manyToOne` + 块对齐边、
 //! 密度 `auto`、主对齐一轮修复、黏结收尾轮、中文标点自动校正。缺省每次执行都是新的一份译文（§7.9），所以目标语言那一格从空开始（检查点除外）。
 //!
 //! 就地刷新（输入带 `translation` 与 `sentences`）：底稿读进目标语言那一格，只重译点名的句子，对齐与黏结收尾也只碰
@@ -462,7 +462,8 @@ fn stopped(error: LlmError, llm: &StdioLlm, control: &Rc<RefCell<Control>>, chec
 }
 
 /// 检查点的指纹：词流、目标语言与影响译文的冻结参数（风格提示、术语、融合草稿的载体；刷新时还有底稿与要重译的句子）。
-/// 任何一个变了，旧检查点作废。载体是缺省的 `rows` 时不进指纹，加这个参数之前的检查点照样认。
+/// 任何一个变了，旧检查点作废。载体是 `rows` 时不进指纹：加这个参数之前的检查点都是 `rows` 写的，明说 `rows` 照样认；
+/// 缺省改成 `lines` 之后，不给载体的输入与这些旧检查点对不上，从头来。
 fn checkpoint_key(doc: &TranscriptDoc, input: &TranslateInput, instructions: Option<&str>) -> String {
     let mut settings = vec![format!("instructions={}", instructions.unwrap_or_default())];
     if input.params.align_fusion != AlignFusion::Rows {

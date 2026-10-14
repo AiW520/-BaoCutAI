@@ -2,7 +2,7 @@
 
 # 字幕 AI 管线 LLM 交换格式精简设计（行文本载体 + 首尾锚词）
 
-> 状态：**M0 基础已实施；M1 第二轮（分片提示 + 联合定位 + 行归属门 + 再问式补做轮）在同一 508 句上达到 491 / 0 / 17（对齐 / 整句 / 改写，旧载体 378 / 97 / 33），两轮合计公价折算约 0.4×；M2 的 provider 直连路径已作为 opt-in 接入生产 `bcut translate --align-fusion lines`（默认仍是 `rows`，Agent 路径未接、§5 的部分提交 / 状态机未做）**（2026-09-30，§8.2–§8.3）。**v3：引擎与编解码是 v2 最终版的移植，Runtime 翻译流程以 `alignFusion: 'lines'` opt-in 接入，默认仍是 `rows`；54 个项目的结构验证通过，真实模型的质量对照待配置文本模型后进行**（2026-10-14，§8.16）。已落地逐次 provider 原始响应/用量账本、首尾压缩、`lines/1` 实验编解码和共享翻译验收适配器。4 个项目、10 页、508 句的 DeepSeek V4.1 Flash 对照发现跨句内容错位及规划退化，详见 §8.1。部分提交、会话恢复、LCS 冻结切点恢复与 M2–M4 尚未接入；实验冻结回显不完全相同时保留原文并撤销切点。§7 的旧起点回放不作为首尾锚词格式验收。
+> 状态：**M0 基础已实施；M1 第二轮（分片提示 + 联合定位 + 行归属门 + 再问式补做轮）在同一 508 句上达到 491 / 0 / 17（对齐 / 整句 / 改写，旧载体 378 / 97 / 33），两轮合计公价折算约 0.4×；M2 的 provider 直连路径已作为 opt-in 接入生产 `bcut translate --align-fusion lines`（默认仍是 `rows`，Agent 路径未接、§5 的部分提交 / 状态机未做）**（2026-09-30，§8.2–§8.3）。**v3：引擎与编解码是 v2 最终版的移植，Runtime 翻译流程以 `alignFusion` 接入，默认改为 `lines`（`rows` 仍可明选）；54 个项目的结构验证通过，DeepSeek V4 Flash 在 7 个项目上的对照合计对齐 1,205 / 兜底 8 / 改写 17 对 rows 1,129 / 60 / 21，输入、输出 token 约 0.46×、0.54×**（2026-10-14，§8.16）。已落地逐次 provider 原始响应/用量账本、首尾压缩、`lines/1` 实验编解码和共享翻译验收适配器。4 个项目、10 页、508 句的 DeepSeek V4.1 Flash 对照发现跨句内容错位及规划退化，详见 §8.1。部分提交、会话恢复、LCS 冻结切点恢复与 M2–M4 尚未接入；实验冻结回显不完全相同时保留原文并撤销切点。§7 的旧起点回放不作为首尾锚词格式验收。
 > 范围：翻译、翻译对齐（`align-edges/1`、`align-rewrite/1`、`align-table/1`）的 LLM 交换格式、会话形态与容错；翻译前的润色不并进页会话（§6.6），它自己的补丁式输出见 §10.1；说话人页排在最后。
 > 不动的东西：`words[]` / `trans` / `transDisplay` / `transAlign` 数据模型、「先定译文、再映射连续源词区间」的纪律（[transcript-v03 §5.2](bcut-transcript-v03-design.md)）、对齐块与切行 DP（[alignment-block](bcut-alignment-block-subtitle-split-design.md)）、三级 Problem 与有界重试原则（[ai-pipeline §10.2](bcut-ai-pipeline-design/10.md)）。新任务载体的补交计数与终态在 §5 定义，不追溯改变旧任务。
 > 本文访谈样例取自一个英文 → 简体中文的项目，另用英文 → 西班牙文的短句说明交叉；都是示意。规则按 `words[]` 原子与显示单位写，不预设产出语言。
@@ -625,7 +625,7 @@ brockman 是最强的一组：改写轮从 3 次 13.2k / 14.0k token 降到 2 �
 
 **形状：** 模型把输入里的 `¦` 当成下一块标记的开口——`N |a..b|译文 ¦ c..d|译文 ¦ e..f|译文`。解析器把未转义的 `¦` 当回显去掉，`c..d` 落进上一块的译文，下一块的译文被当成找不到原文词的标记。不是韩文特有：旧数据里 en→zh 的一轮（altman，446 行里 40 行）同样的形状，423 句里 17 句带残片；同一项目的另一轮一行都没有，是整页的随机偏移。
 
-**改动（解析侧，协议与 `specVersion` 不动）：** `reopen_markers` 在逐行解析前把这种 `¦` 改读成 `|`。判据三条都要满足：在译文段里（前面的 `|` 成对）；后面直接跟一个能在**本句**原文里找到的首尾引文；再后面是 `|`。正文里的切点提示、引文里回显的 `¦` 不动。改读个数记进 `MarkerResidue` 警告。
+**改动（解析侧，协议与 `specVersion` 不动）：** `reopen_markers` 在逐行解析前把这种 `¦` 改读成 `|`。判据三条都要满足：在译文段里（前面的 `|` 成对）；后面直接跟一个能在**本句**原文里找到的首尾引文；再后面是 `|`。正文里的切点提示、引文里回显的 `¦` 不动。改读个数记进 `MarkerResidue` 警告。同样的形状写成整片引用（`|甲|译文 ¦ 乙|译文`）时的改读见 §8.16。
 
 **结果（DeepSeek Flash，同一批项目的新副本重跑）：**
 
@@ -830,18 +830,51 @@ r22 剩下的 34 处日文：
 
 详见 [`docs/changelog/core/2026-10-01-115443.md`](../../changelog/core/2026-10-01-115443.md)。
 
-### 8.16 2026-10-14 v3 Runtime 接入（opt-in）
+### 8.16 2026-10-14 v3 Runtime 接入与默认载体
 
 **v3 里已有的。** `speech-doc` 的 `filepipe::{lines, lines_translation}` 与 v2 第十五轮（§8.15）的 `bcut-flow-core` 逐行相同，只有词典分词的路径从 `bcut_speech_core::word_breaks` 改成 `crate::word_breaks`；`engines/{translate,align}.rs` 与 `align_block.rs` 也是 v2 最终版的整份移植。M1 第二轮起的几项都在：分片提示（`piece_boundaries` / `with_pieces`，中日文按词典分词落片标）、联合定位（`lines::resolve_jointly`）、行归属门（`lines_translation::Verdict`）、块缝整理与复述拒收、翻译的逐句补做波次、`FusionDraft.lines` 直落 `llm-lines+anchor/1`、超 hard 的块内拆分 `llm-lines+split/1` 与成对修复。缺的只是接线：speech-worker 写死 `align_rows: true, align_lines: false`，Runtime 的翻译流程没有参数能打开它。
 
 **本轮接上的。**
 
-- 流程参数 `alignFusion: 'rows' | 'lines'`（`TranslateParams`，默认 `rows`），启动时随别的参数冻结，重试与就地刷新沿用；不认识的值 `invalid-request`。
-- Worker 输入 `params.alignFusion`（[命令协议规范 §4.5](../../spec/command-protocol-spec.md#45-speech-worker)），不给时 `rows`，不认识的值 `INPUT_UNREADABLE`。`lines` 时 `align_lines` 为真、`align_rows` 为假，翻译页仍是 800 词档（与 v2 相同）。检查点指纹在 `lines` 时带上载体，`rows` 不进指纹，加参数之前的检查点照认。`report.json` 多一项 `alignFusion`。
-- 测试：speech-worker 协议测试用按 `lines/1` 作答的假模型跑整条翻译，断言请求是 `translate-lines`、6 句 30 词长句都由草稿直落（`llm-lines+…`，一次调用，不另发对齐）；不给参数仍走 `rows`；未知取值拒绝。jobs 的流程测试断言参数冻结、请求是 `lines/1` 页、译文照常组装写入。
+- 流程参数 `alignFusion: 'rows' | 'lines'`（`TranslateParams`），先以默认 `rows` 接入，按下文的对照改为默认 `lines`。启动时随别的参数冻结，不给时冻结缺省值，重试与就地刷新沿用；冻结参数里没有这一项的是改默认之前启动的流程，Worker 输入照旧给 `rows`。不认识的值 `invalid-request`。
+- Worker 输入 `params.alignFusion`（[命令协议规范 §4.5](../../spec/command-protocol-spec.md#45-speech-worker)），不给时 `lines`，不认识的值 `INPUT_UNREADABLE`。`lines` 时 `align_lines` 为真、`align_rows` 为假，翻译页仍是 800 词档（与 v2 相同）。检查点指纹在 `lines` 时带上载体，`rows` 不进指纹：加参数之前的检查点都是 rows 写的，明给 `rows` 照认；不给载体的输入走 `lines`，与它们对不上，从头来（Runtime 总是明给载体）。`report.json` 多一项 `alignFusion`。
+- 测试：speech-worker 协议测试用按 `lines/1` 作答的假模型跑整条翻译，断言请求是 `translate-lines`、6 句 30 词长句都由草稿直落（`llm-lines+…`，一次调用，不另发对齐）；不给参数走 `lines`；rows 写下的检查点在缺省载体下不续跑；未知取值拒绝。jobs 的流程测试断言不给参数时冻结 `lines`、请求是 `lines/1` 页、译文照常组装写入，冻结参数里没有载体的旧流程重试照旧走 rows 并从检查点续跑。其余按 rows 页句子 ID 断言的用例明给 `rows`。
 - 没接的：Agent 路径（智能体用 `documents_read` 的 `translationBasis` 自己翻译、`documents_put` 写回，不经这份载体）；工具目录与 CLI 的 `translate` 不暴露这个参数，只有 `pipelines.start` 能给；§5 的部分提交与状态机。
 
-**实测对照与默认值。** 真实模型的 rows / `lines` 质量对照没做成：开发态 Runtime（`.dev/baocut-home`）没配默认文本模型（`text` 返回 `CAPABILITY_NOT_CONFIGURED`），本轮也不替用户配置，v2 项目的 `logs/llm` 里也没有 `translate-lines` 的录制答案可回放。`crates/speech-doc/bench/fixtures/lean-carrier-*` 里有 DeepSeek V4.1 Flash 的真实 `lines/1` 回答，但没有同批的 rows 回答，不能拿来比两种载体。所以默认仍是 `rows`，切默认的条件不变：同一份文稿 rows 与 `lines` 各跑一次，`lines` 的对齐成功句数不少于 rows、整句兜底与改写不多于 rows，并记下调用次数与 token。对照脚本在 [`scripts/translate-carrier-compare`](../../../scripts/translate-carrier-compare/README.md)，配好模型后用 `--generator runtime` 跑。
+**实测对照与默认值。** 2026-10-14 用 DeepSeek V4 Flash（Runtime 内置的 DeepSeek 服务商，`deepseek-flash`，输出上限 8192，两边都关思考，见下）在 7 个真实项目上 rows 与 `lines` 各跑一次：英文 3 个、中文 2 个、日文 1 个、韩文 1 个，走生产的 `runSpeechTranslate` 与 debug 版 speech-worker，脚本是 [`scripts/translate-carrier-compare`](../../../scripts/translate-carrier-compare/README.md) 的 `--generator runtime`。「对齐」是草稿直落或对齐轮定下切点的句数，「兜底」是对齐不可用、按句时长摊开的句数，「改写」是经改写轮拆开的句数；token 是这次运行全部调用（翻译、简报、对齐、补做）的合计。
+
+| 视频 | 语言 | 词 | 载体 | 跳过 | 对齐 | 兜底 | 改写 | 调用 | 输入 token | 输出 token | 字幕条 |
+| --- | --- | ---: | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| `6bfff722` | en | 8,901 | rows | 302 | 370 | 16 | 6 | 17 | 138,062 | 46,822 | 1,162 |
+|  |  |  | `lines` | 294 | 390 | 4 | 11 | 16 | 57,164 | 23,263 | 1,217 |
+| `ac68d5ce` | en | 8,658 | rows | 224 | 330 | 3 | 4 | 15 | 126,898 | 44,820 | 1,031 |
+|  |  |  | `lines` | 214 | 342 | 1 | 4 | 16 | 56,272 | 27,684 | 1,104 |
+| `eb935384` | en | 3,819 | rows | 71 | 148 | 1 | 6 | 8 | 66,140 | 24,819 | 495 |
+|  |  |  | `lines` | 68 | 152 | 0 | 2 | 9 | 30,697 | 13,879 | 496 |
+| `b8fa938f` | zh | 1,895 | rows | 0 | 5 | 20 | 0 | 7 | 44,103 | 18,652 | 176 |
+|  |  |  | `lines` | 0 | 25 | 0 | 0 | 4 | 13,189 | 5,016 | 209 |
+| `c9d1d997` | zh | 2,461 | rows | 13 | 53 | 18 | 0 | 5 | 37,514 | 14,176 | 225 |
+|  |  |  | `lines` | 12 | 69 | 3 | 0 | 6 | 24,046 | 8,586 | 247 |
+| `f7252403` | ja | 6,580 | rows | 22 | 166 | 1 | 3 | 11 | 83,222 | 24,926 | 407 |
+|  |  |  | `lines` | 21 | 168 | 0 | 0 | 11 | 39,763 | 12,768 | 373 |
+| `0f89c378` | ko | 3,436 | rows | 15 | 57 | 1 | 2 | 6 | 45,275 | 10,025 | 221 |
+|  |  |  | `lines` | 14 | 59 | 0 | 0 | 7 | 25,725 | 9,117 | 217 |
+| **合计** |  |  | rows |  | 1,129 | 60 | 21 | 69 | 541,214 | 184,240 |  |
+|  |  |  | `lines` |  | 1,205 | 8 | 17 | 69 | 246,856 | 100,313 |  |
+
+切默认的条件（`lines` 的对齐不少于 rows、兜底与改写不多于 rows）原本是按单份文稿写的；这里事后按合计读，合计三项都满足，逐个视频是 7 个里 6 个满足。例外与噪声如实记下：
+
+- `6bfff722` 的改写 11 对 6，换来兜底 16 → 4。
+- 韩文 `0f89c378` 表里是第二次运行。第一次 `lines` 反过来输了（对齐 55 对 58、兜底 3 对 1、调用 10 对 7）；第二次 rows 57 / 1 / 2、`lines` 59 / 0 / 0。73 句里约 3 句的差在两次运行之间来回，是这个量级的噪声。第一次 `lines` 的 3 句兜底是：一块只有引用、没有译文的尾块（`…|上野公园。|공원이..있어요|`）；转写按音节分词、一个音节一个词；一块 104 单位超过 hard 20。没修，留作后续。
+- 日文 `f7252403` 的 `lines` 第一次以 `MODEL_OUTPUT_INVALID` 失败（缺 8 句），修掉下面第二条之后重跑才是表里的数字。
+- 中文两个视频 rows 的兜底多（要对齐的 25 句里 20 句、71 句里 18 句），`lines` 是 0 与 3，与下面结构验证里中文的差别方向一致。
+
+局限：只有一个模型、每臂一次运行（韩文两次）；两边都关思考；英文上 `lines` 的字幕条多约 5%（2,817 对 2,688），日文少（373 对 407），没有按读速另做验收。据此把默认改为 `lines`。「rows 留作后备」的意思是仍可明给 `alignFusion: 'rows'`，不是运行中自动退回 rows：`lines` 的坏草稿走它自己的降级（`deterministic/1`、`llm-lines+split/1`、补做页）。
+
+对照中修掉的两处：
+
+- **DeepSeek V4 缺省开思考。** 首轮 rows 页全部以 `MODEL_OUTPUT_INVALID`（「还没写出正文就到了输出上限」）失败：DeepSeek V4 的 API 缺省开思考，`max_tokens` 把推理也算在内，8192 被思考用完、正文为空。同一请求关思考后输出 642 token、正常结束。providers 改为没指定推理强度时给 DeepSeek 请求带 `thinking: { type: 'disabled' }`（v2 文件任务的自动档同样关思考，[AI 管线 §10.2](bcut-ai-pipeline-design/10.md)；[架构设计](../../architecture/architecture-design.md) 的服务商一节记了原因）。表里两臂都在这之后跑。
+- **整片引用前的分片符。** §8.10 的形状换成整片引用：模型写 `|甲|译文 ¦ 乙|译文`，31 行整行 `LinesSyntax`。`reopen_markers` 原来只认首尾引文；现在一行按原样（含首尾引文的改读）读不通——解析失败，或有引用在本句原文里找不到——时，再试把整片引用前的 `¦` 也改读成 `|`，改读后能读通才采用。只看「解析成功」不够：偶数个 `|` 时把译文读成引用也能解析。用第一次运行录下的答案混合回放（`--replay`，11 次调用里 10 次取录制答案、1 次新的对齐调用）：165 句对齐、0 兜底、0 改写。旧新解析器在 `crates/speech-doc/bench/fixtures/lean-carrier-*` 的 50 页回答上逐页判定，0 处不同；仓库里的 `replay-lean-carrier-multilingual.py` 在改动之前就因 `zh-real` 的修复合计变了而不过，没拿它作这次的依据。
 
 本轮能做的是结构验证：同一脚本走生产的 `runSpeechTranslate` 与 debug 版 speech-worker，模型换成确定性的回声答案（每块按源词数写等比长度的填充文本，后续的改写 / 修复请求不作答），在本机全部 54 个项目（41 个英文、10 个中文、2 个韩文、1 个日文，共 20,646 句，最长一份 111,594 词）上两种载体各跑一次。它只说明两种载体能把真实文稿完整走完、草稿能被定位，不说明对齐质量；这里的「兜底」是需要改写 / 修复轮而回声不作答的句数。
 

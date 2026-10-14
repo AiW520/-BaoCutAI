@@ -461,7 +461,7 @@ interface SpeechTranslateInput {
   glossary: { source: string; target: string; note?: string }[];   // 冻结、去重之后的术语
   glossaryRef: GlossaryRef | null;    // 原样写进译文
   params?: { instructions?: string; backoffScale?: number; alignFusion?: 'rows' | 'lines' };
-                                      // 风格提示；退避时长的倍数，默认 1；融合草稿的载体，默认 rows（流程参数 alignFusion）
+                                      // 风格提示；退避时长的倍数，默认 1；融合草稿的载体，默认 lines（流程参数 alignFusion）
   translation?: TranslationBody;      // 就地刷新：这门语言已有的译文（baocut.translation/2），作底稿
   sentences?: Id[];                   // 就地刷新：要重译的句子（s-<首词 ID>），至少一句；与 translation 同给同不给
 }

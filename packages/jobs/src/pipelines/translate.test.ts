@@ -446,9 +446,10 @@ describe.skipIf(!command || !wasm)('翻译流程（真的 Speech Worker，假的
     return opened;
   }
 
+  /** 翻译页的断言（`text.translated()`、按句的钩子）按 rows 页的句子 ID 来，所以这里明说 rows；缺省载体 lines 另测。 */
   async function translate(params: Record<string, unknown> = {}): Promise<JobRecord> {
     const { jobId } = await runner.start(
-      { pipeline: 'translate', params: { videoId: 'vid_1', targetLanguage: 'zh-CN', ...params } },
+      { pipeline: 'translate', params: { videoId: 'vid_1', targetLanguage: 'zh-CN', alignFusion: 'rows', ...params } },
       { kind: 'connection', id: 'conn_1' },
     );
     return settle(jobId);
@@ -549,6 +550,15 @@ describe.skipIf(!command || !wasm)('翻译流程（真的 Speech Worker，假的
     expect(videos.applied).toHaveLength(2);
     expect((videos.applied[1]!.operations[0] as { documentId?: string }).documentId).toBeUndefined();
     expect(again.result!.documentId).toBe('doc_tr2');
+  }, 60_000);
+
+  it('不给 alignFusion：缺省载体 lines/1 冻结进流程参数，翻译页走行文本', async () => {
+    const record = await translate({ alignFusion: undefined });
+    expect(record.state, JSON.stringify(record.error)).toBe('completed');
+    expect(record.pipeline!.params).toMatchObject({ alignFusion: 'lines' });
+    const kinds = text.users().map(speechRequestKind);
+    expect(kinds).toContain('translate-lines');
+    expect(kinds).not.toContain('translate');
   }, 60_000);
 
   it('alignFusion: lines：翻译页走行文本载体 lines/1，载体冻结在流程参数里，译文照常组装写入', async () => {
@@ -939,7 +949,7 @@ describe.skipIf(!command || !wasm)('翻译流程（真的 Speech Worker，假的
     expect((written().body as { units: unknown[] }).units).toHaveLength(400);
   }, 120_000);
 
-  it('停止（Runtime 关闭）：流程中断，staging 里的检查点保留；重启之后重试从检查点续跑，已经译好的句子不再请求', async () => {
+  it('停止（Runtime 关闭）：流程中断，staging 里的检查点保留；重启之后重试从检查点续跑，已经译好的句子不再请求（冻结参数里没有载体的旧流程照旧走 rows）', async () => {
     videos.putSpeech('doc_speech', sentencesBody(400));
     let pages = 0;
     let stopping: Promise<void> | null = null;
@@ -954,7 +964,7 @@ describe.skipIf(!command || !wasm)('翻译流程（真的 Speech Worker，假的
       return null;
     };
     const { jobId } = await runner.start(
-      { pipeline: 'translate', params: { videoId: 'vid_1', targetLanguage: 'zh-CN' } },
+      { pipeline: 'translate', params: { videoId: 'vid_1', targetLanguage: 'zh-CN', alignFusion: 'rows' } },
       { kind: 'connection', id: 'conn_1' },
     );
     await new Promise<void>((resolve) => {
@@ -969,17 +979,33 @@ describe.skipIf(!command || !wasm)('翻译流程（真的 Speech Worker，假的
     expect(firstPage.length).toBeGreaterThan(0);
     expect(firstPage.length).toBeLessThan(400);
 
-    // 重启：同一份账本与 staging。
+    // 重启：同一份账本与 staging。账本里去掉载体，当它是缺省值改成 lines 之前启动的流程：重试要照旧走 rows，才认得检查点。
     text.hook = null;
+    const ledger = path.join(dir, 'store', 'jobs.jsonl');
+    const lines = (await fs.readFile(ledger, 'utf8')).split('\n').filter(Boolean);
+    expect(lines.some((line) => line.includes('"alignFusion":"rows"'))).toBe(true);
+    const withoutFusion = (value: unknown): unknown =>
+      Array.isArray(value)
+        ? value.map(withoutFusion)
+        : value && typeof value === 'object'
+          ? Object.fromEntries(
+              Object.entries(value)
+                .filter(([key]) => key !== 'alignFusion')
+                .map(([key, v]) => [key, withoutFusion(v)]),
+            )
+          : value;
+    await fs.writeFile(ledger, lines.map((line) => JSON.stringify(withoutFusion(JSON.parse(line)))).join('\n') + '\n');
     jobs = testJobManager(dir);
     await jobs.open();
     runner = await openRunner(jobs);
     expect(jobs.inspect(jobId)).toMatchObject({ state: 'interrupted', pipeline: { stoppedAt: 'translate' } });
     const from = text.runs.length;
+    expect(jobs.inspect(jobId).pipeline!.params).not.toHaveProperty('alignFusion');
     const retried = await retry(jobId);
     expect(retried.state, JSON.stringify(retried.error)).toBe('completed');
     expect(retried.pipeline!.steps.find((s) => s.name === 'freeze-source')!.attempts).toBe(1);
     const again = text.translated(from);
+    expect(again.length).toBeGreaterThan(0);
     expect(again.filter((id) => firstPage.includes(id))).toEqual([]);
     expect((written().body as { units: unknown[] }).units).toHaveLength(400);
   }, 120_000);

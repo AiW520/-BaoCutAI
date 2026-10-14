@@ -1,6 +1,6 @@
 # translate-carrier-compare
 
-翻译流程的两种融合载体（`alignFusion: 'rows' | 'lines'`）在真实项目上的对照：用生产的 `runSpeechTranslate`（`packages/jobs` 源码）和编好的 `speech-worker`，把每份转写各按两种载体翻一遍，记下 `report.json` 的对齐计数、译文单元的对齐器分布、调用次数，以及每次调用的输入与回答。背景、判据与 2026-10-14 的结果见[精简载体设计 §8.16](../../docs/design/subtitle/bcut-lean-llm-carrier-design.md#816-2026-10-14-v3-runtime-接入opt-in)。
+翻译流程的两种融合载体（`alignFusion: 'rows' | 'lines'`）在真实项目上的对照：用生产的 `runSpeechTranslate`（`packages/jobs` 源码）和编好的 `speech-worker`，把每份转写各按两种载体翻一遍，记下 `report.json` 的对齐计数、译文单元的对齐器分布、调用次数，以及每次调用的输入与回答。背景、判据与 2026-10-14 的结果见[精简载体设计 §8.16](../../docs/design/subtitle/bcut-lean-llm-carrier-design.md#816-2026-10-14-v3-runtime-接入与默认载体)。
 
 只读视频：转写从各项目的 `video.db` 以只读方式导出，翻译产出只写进 `--out`，不回写视频。
 
