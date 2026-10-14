@@ -441,6 +441,8 @@ export const ptBR: EngineMessages = {
   labelDeleteDucking: "Excluir redução de volume",
   labelSaveCheckpoint: "Salvar ponto de controle",
   labelRenameVideo: "Renomear vídeo",
+  labelSetVideoBrief: "Escrever resumo do vídeo",
+  briefLength: (p) => `O resumo do vídeo deve ter de 1 a ${p.max} caracteres`,
   labelEdit: "Editar",
   labelMoreChanges: (p) => `${p.main} e mais (${p.count} edições)`,
   labelUndo: (p) => `Desfazer: ${p.label}`,

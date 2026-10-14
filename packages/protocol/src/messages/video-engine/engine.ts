@@ -463,6 +463,8 @@ const en = {
   labelDeleteDucking: 'Delete ducking',
   labelSaveCheckpoint: 'Save checkpoint',
   labelRenameVideo: 'Rename video',
+  labelSetVideoBrief: 'Write video brief',
+  briefLength: (p: P<'max'>) => `The video brief must be 1–${p.max} characters`,
   labelEdit: 'Edit',
   labelMoreChanges: (p: P<'main' | 'count'>) => `${p.main} and more (${p.count} changes)`,
   labelUndo: (p: P<'label'>) => `Undo: ${p.label}`,

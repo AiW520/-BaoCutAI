@@ -21,3 +21,25 @@ export function parseVideoTimeHref(href: string): { videoId: string; seconds: nu
   const seconds = Number(match[2]);
   return videoId && Number.isFinite(seconds) ? { videoId, seconds } : null;
 }
+
+/*
+ * 视频速览（视频格式规范 §3.1）里指向这部视频某一刻的链接存成 `?t=<秒>`，不带视频 ID：视频复制、导入便携包时换了 ID，
+ * 链接仍指向它自己。写入前收短，给人看、给智能体读时换回完整地址。只认行内链接 `[文字](地址)`，带标题或尖括号的原样。
+ */
+const BRIEF_LINK = /\]\(([^()\s<>]+)\)/g;
+
+/** 写入速览前：指向 `videoId` 某一刻的完整地址换成 `?t=<秒>`；别的链接原样。 */
+export function compactBriefLinks(markdown: string, videoId: string): string {
+  return markdown.replace(BRIEF_LINK, (whole, href: string) => {
+    const hit = parseVideoTimeHref(href);
+    return hit && hit.videoId === videoId ? `](?t=${hit.seconds})` : whole;
+  });
+}
+
+/** 给人看、给智能体读时：`?t=<秒>` 换回 `videoId` 的完整地址。 */
+export function expandBriefLinks(markdown: string, videoId: string): string {
+  return markdown.replace(BRIEF_LINK, (whole, href: string) => {
+    const match = /^\?t=(\d+(?:\.\d+)?)$/.exec(href);
+    return match ? `](${videoTimeHref(videoId, Number(match[1]))})` : whole;
+  });
+}

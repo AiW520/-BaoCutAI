@@ -27,6 +27,8 @@ pub struct Placed<T> {
 pub struct VideoState {
     pub id: Id,
     pub name: String,
+    /// 视频速览（视频格式规范 §3.1）；存在视频实体里，与名字一起撤销。
+    pub brief: Option<VideoBrief>,
     pub root_sequence_id: Id,
     pub revision: i64,
     pub event_seq: i64,
@@ -130,15 +132,19 @@ fn from_value<T: for<'de> Deserialize<'de>>(kind: EntityKind, id: &str, value: V
 }
 
 impl VideoState {
-    /// 所有实体的存储形式。视频自身也是一个实体（名字、根序列）。
+    /// 所有实体的存储形式。视频自身也是一个实体（名字、根序列、速览）。
     pub fn entities(&self) -> BTreeMap<Id, EntityRow> {
         let mut rows = BTreeMap::new();
+        let mut video = json!({ "name": self.name, "rootSequenceId": self.root_sequence_id });
+        if let Some(brief) = &self.brief {
+            video["brief"] = to_value(brief);
+        }
         rows.insert(
             self.id.clone(),
             EntityRow {
                 kind: EntityKind::Video,
                 parent: None,
-                body: json!({ "name": self.name, "rootSequenceId": self.root_sequence_id }),
+                body: video,
             },
         );
         for (id, seq) in &self.sequences {
@@ -249,10 +255,13 @@ impl VideoState {
                 struct Meta {
                     name: String,
                     root_sequence_id: Id,
+                    #[serde(default)]
+                    brief: Option<VideoBrief>,
                 }
                 let meta: Meta = from_value(kind, id, body)?;
                 self.id = id.to_string();
                 self.name = meta.name;
+                self.brief = meta.brief;
                 self.root_sequence_id = meta.root_sequence_id;
             }
             (EntityKind::Video, None) => return Err(ErrorBody::invalid_operation(msg!("engine.videoNotDeletable", "The video itself cannot be deleted"))),
@@ -478,6 +487,7 @@ impl VideoState {
             time_contract_version: TIME_CONTRACT_VERSION,
             id: self.id.clone(),
             name: self.name.clone(),
+            brief: self.brief.clone(),
             revision: self.revision.to_string(),
             root_sequence_id: self.root_sequence_id.clone(),
             sequences,

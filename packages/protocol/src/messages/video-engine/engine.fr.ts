@@ -442,6 +442,8 @@ export const fr: EngineMessages = {
   labelDeleteDucking: "Supprimer l’atténuation",
   labelSaveCheckpoint: "Enregistrer un point de contrôle",
   labelRenameVideo: "Renommer la vidéo",
+  labelSetVideoBrief: "Écrire l’aperçu de la vidéo",
+  briefLength: (p) => `L’aperçu de la vidéo doit contenir de 1 à ${p.max} caractères`,
   labelEdit: "Modifier",
   labelMoreChanges: (p) => `${p.main} et plus (${p.count} modifications)`,
   labelUndo: (p) => `Annuler : ${p.label}`,

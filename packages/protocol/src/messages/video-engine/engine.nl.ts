@@ -426,6 +426,8 @@ export const nl: EngineMessages = {
   labelDeleteDucking: "Verlaging verwijderen",
   labelSaveCheckpoint: "Controlepunt opslaan",
   labelRenameVideo: "Video hernoemen",
+  labelSetVideoBrief: "Video-overzicht schrijven",
+  briefLength: (p: P<'max'>) => `Het video-overzicht moet 1–${p.max} tekens lang zijn`,
   labelEdit: "Bewerken",
   labelMoreChanges: (p: P<'main' | 'count'>) => `${p.main} en meer (${p.count} wijzigingen)`,
   labelUndo: (p: P<'label'>) => `Ongedaan maken: ${p.label}`,

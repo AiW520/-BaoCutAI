@@ -441,6 +441,8 @@ export const zhHant: EngineMessages = {
   labelDeleteDucking: '刪除壓低',
   labelSaveCheckpoint: '儲存檢查點',
   labelRenameVideo: '重新命名影片',
+  labelSetVideoBrief: '寫入影片速覽',
+  briefLength: (p) => `影片速覽必須是 1–${p.max} 字`,
   labelEdit: '編輯',
   labelMoreChanges: (p) => `${p.main}等 ${p.count} 項修改`,
   labelUndo: (p) => `還原：${p.label}`,

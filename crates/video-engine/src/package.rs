@@ -211,6 +211,7 @@ fn state_from_snapshot(snapshot: VideoSnapshot) -> EngineResult<VideoState> {
     let mut state = VideoState {
         id: new_id("video"),
         name: snapshot.name,
+        brief: snapshot.brief,
         root_sequence_id: snapshot.root_sequence_id,
         revision,
         event_seq: 0,

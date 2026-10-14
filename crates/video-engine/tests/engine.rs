@@ -197,6 +197,77 @@ fn created_video_reopens_with_the_same_snapshot() {
 }
 
 #[test]
+fn video_brief_is_stored_on_the_video_survives_reopen_and_undoes() {
+    let dir = tempfile::tempdir().unwrap();
+    let mut video = new_video(dir.path());
+    assert_eq!(video.snapshot().brief, None);
+    assert!(
+        !serde_json::to_value(video.snapshot())
+            .unwrap()
+            .as_object()
+            .unwrap()
+            .contains_key("brief")
+    );
+
+    let written = video
+        .apply(&tx(
+            &video,
+            "cmd_brief",
+            vec![
+                json!({ "type": "setVideoBrief", "brief": { "markdown": "  **一期访谈**\n\n- [要点](?t=26)  ", "language": " zh-Hans " } }),
+            ],
+        ))
+        .unwrap();
+    assert_eq!(ref_json(&written.receipt.label_ref), json!({ "key": "engine.labelSetVideoBrief" }));
+    let brief = video.snapshot().brief.expect("写进了速览");
+    assert_eq!(brief.markdown, "**一期访谈**\n\n- [要点](?t=26)");
+    assert_eq!(brief.language.as_deref(), Some("zh-Hans"));
+    assert_eq!(
+        serde_json::to_value(video.snapshot()).unwrap()["brief"],
+        json!({ "markdown": "**一期访谈**\n\n- [要点](?t=26)", "language": "zh-Hans" })
+    );
+
+    // 空的、过长的与多余的字段整笔拒绝，速览不变。
+    for bad in [
+        json!({ "type": "setVideoBrief", "brief": { "markdown": "   " } }),
+        json!({ "type": "setVideoBrief", "brief": { "markdown": "字".repeat(20_001) } }),
+        json!({ "type": "setVideoBrief", "brief": { "markdown": "x", "title": "y" } }),
+    ] {
+        assert!(video.apply(&tx(&video, "cmd_bad_brief", vec![bad])).is_err());
+    }
+    assert!(
+        video
+            .apply(&tx(
+                &video,
+                "cmd_long_brief",
+                vec![json!({ "type": "setVideoBrief", "brief": { "markdown": "字".repeat(20_000) } })]
+            ))
+            .is_ok()
+    );
+
+    let before = video.snapshot();
+    drop(video);
+    let mut reopened = Video::open(dir.path(), OpenMode::Write, &ffprobe()).unwrap();
+    assert_eq!(reopened.snapshot(), before);
+
+    // 清掉，再撤销清掉：回到上一份。
+    let cleared = reopened
+        .apply(&tx(&reopened, "cmd_clear", vec![json!({ "type": "setVideoBrief", "brief": null })]))
+        .unwrap();
+    assert_eq!(reopened.snapshot().brief, None);
+    reopened
+        .undo(&UndoRequest {
+            command_id: "cmd_undo_clear".into(),
+            target: UndoTarget::Transaction(cleared.receipt.transaction_id.clone()),
+            expected_revision: None,
+            actor: user(),
+        })
+        .unwrap();
+    assert_eq!(reopened.snapshot().brief, before.brief);
+    assert_eq!(reopened.snapshot().name, before.name);
+}
+
+#[test]
 fn default_root_sequence_name_carries_a_message_ref_until_renamed() {
     let dir = tempfile::tempdir().unwrap();
     let mut video = new_video(dir.path());

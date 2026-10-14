@@ -441,6 +441,8 @@ export const pl: EngineMessages = {
   labelDeleteDucking: "Usuń przyciszanie",
   labelSaveCheckpoint: "Zapisz punkt kontrolny",
   labelRenameVideo: "Zmień nazwę wideo",
+  labelSetVideoBrief: "Zapisz przegląd wideo",
+  briefLength: (p) => `Przegląd wideo musi mieć 1–${p.max} znaków`,
   labelEdit: "Edytuj",
   labelMoreChanges: (p) => `${p.main} i więcej (zmiany: ${p.count})`,
   labelUndo: (p) => `Cofnij: ${p.label}`,

@@ -76,6 +76,9 @@ pub struct VideoSnapshot {
     pub time_contract_version: u32,
     pub id: Id,
     pub name: String,
+    /// 视频速览（§3.1）：站在观众角度对这部视频的说明。没写过时省略。
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub brief: Option<VideoBrief>,
     pub revision: Revision,
     pub root_sequence_id: Id,
     pub sequences: BTreeMap<Id, Sequence>,
@@ -89,6 +92,15 @@ pub struct VideoSnapshot {
     pub protections: BTreeMap<Id, ProtectionRecord>,
     pub checkpoints: BTreeMap<Id, Checkpoint>,
     pub links: Vec<Value>,
+}
+
+/// 视频速览（§3.1）：Markdown 正文与它的语言。正文里指向这部视频某一刻的链接写成 `?t=<秒>`（序列时间），不带视频 ID。
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct VideoBrief {
+    pub markdown: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub language: Option<String>,
 }
 
 /// 序列（§3.2）。`tracks` 与 `items` 在存储里是各自的实体，快照时按顺序组装；`animationBindings` 在 [`SequenceHeader`] 里。

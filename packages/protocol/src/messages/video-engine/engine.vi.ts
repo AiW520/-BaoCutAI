@@ -441,6 +441,8 @@ export const vi: EngineMessages = {
   labelDeleteDucking: "Xóa giảm âm",
   labelSaveCheckpoint: "Lưu điểm lưu",
   labelRenameVideo: "Đổi tên video",
+  labelSetVideoBrief: "Ghi tóm tắt video",
+  briefLength: (p) => `Tóm tắt video phải có 1–${p.max} ký tự`,
   labelEdit: "Chỉnh sửa",
   labelMoreChanges: (p) => `${p.main} và thêm (${p.count} thay đổi)`,
   labelUndo: (p) => `Hoàn tác: ${p.label}`,

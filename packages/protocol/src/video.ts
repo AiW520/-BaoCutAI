@@ -898,6 +898,8 @@ export interface VideoSnapshot {
   timeContractVersion: number;
   id: Id;
   name: string;
+  /** 视频速览（视频格式规范 §3.1）；没写过时省略。 */
+  brief?: VideoBrief;
   revision: Revision;
   rootSequenceId: Id;
   sequences: Record<Id, Sequence>;
@@ -910,6 +912,17 @@ export interface VideoSnapshot {
   protections: Record<Id, unknown>;
   checkpoints: Record<Id, Checkpoint>;
   links: unknown[];
+}
+
+/**
+ * 视频速览（视频格式规范 §3.1）：站在观众角度对这部视频的说明，Markdown。指向这部视频某一刻的链接存成 `?t=<秒>`
+ * （序列时间，不带视频 ID：视频复制、导入便携包换了 ID 仍指向自己）；给人看与给智能体读时用 `expandBriefLinks` 换回完整地址。
+ */
+export interface VideoBrief {
+  /** 去掉首尾空白后 1–20000 个 Unicode 标量值。 */
+  markdown: string;
+  /** 正文的语言，BCP 47。 */
+  language?: string;
 }
 
 // ---- 编辑操作（命令与协议规范 §4.2）----
@@ -1305,7 +1318,9 @@ export type EditOperation =
     }
   | { type: 'removeDucking'; sequenceId?: Id; ruleId: Id }
   | { type: 'createCheckpoint'; name: string; note?: string }
-  | { type: 'renameVideo'; name: string };
+  | { type: 'renameVideo'; name: string }
+  /** 整份替换视频速览；null 清掉。 */
+  | { type: 'setVideoBrief'; brief: VideoBrief | null };
 
 /** 引用素材：已有素材的 ID，或同一事务里 `importAsset` 的 `ref`。 */
 export type AssetRefInput = { assetId: Id } | { ref: string };

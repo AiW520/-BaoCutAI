@@ -441,6 +441,8 @@ export const ja: EngineMessages = {
   labelDeleteDucking: 'ダッキングを削除',
   labelSaveCheckpoint: 'チェックポイントを保存',
   labelRenameVideo: '動画の名前を変更',
+  labelSetVideoBrief: '動画の概要を書き込む',
+  briefLength: (p) => `動画の概要は 1〜${p.max} 文字にしてください`,
   labelEdit: '編集',
   labelMoreChanges: (p) => `${p.main} ほか（${p.count} 件の変更）`,
   labelUndo: (p) => `取り消し：${p.label}`,

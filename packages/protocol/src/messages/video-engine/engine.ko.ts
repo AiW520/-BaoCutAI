@@ -441,6 +441,8 @@ export const ko: EngineMessages = {
   labelDeleteDucking: '더킹 삭제',
   labelSaveCheckpoint: '체크포인트 저장',
   labelRenameVideo: '영상 이름 변경',
+  labelSetVideoBrief: '영상 개요 작성',
+  briefLength: (p) => `영상 개요는 1–${p.max}자여야 합니다`,
   labelEdit: '편집',
   labelMoreChanges: (p) => `${p.main} 외 (변경 ${p.count}개)`,
   labelUndo: (p) => `실행 취소: ${p.label}`,

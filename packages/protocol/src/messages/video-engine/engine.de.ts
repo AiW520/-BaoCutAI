@@ -426,6 +426,8 @@ export const de: EngineMessages = {
   labelDeleteDucking: "Absenkung löschen",
   labelSaveCheckpoint: "Sicherungspunkt speichern",
   labelRenameVideo: "Video umbenennen",
+  labelSetVideoBrief: "Videoüberblick schreiben",
+  briefLength: (p: P<'max'>) => `Der Videoüberblick muss 1–${p.max} Zeichen lang sein`,
   labelEdit: "Bearbeiten",
   labelMoreChanges: (p: P<'main' | 'count'>) => `${p.main} und mehr (${p.count} Änderungen)`,
   labelUndo: (p: P<'label'>) => `Rückgängig: ${p.label}`,

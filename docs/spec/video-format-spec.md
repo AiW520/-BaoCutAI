@@ -385,6 +385,7 @@ interface VideoSnapshot {
   timeContractVersion: number;
   id: Id;
   name: string;
+  brief?: VideoBrief;                 // 视频速览；没写过时省略
   revision: Revision;
   rootSequenceId: Id;
 
@@ -404,6 +405,19 @@ interface VideoSnapshot {
 ```
 
 `VideoSnapshot` 是权威状态的可交换快照。工作态由 VideoStore 持有；快照不是第二个写入端。视频名称 `name` 去掉首尾空白后必须为 1–200 个 Unicode 标量值（不按 UTF-8 字节数或 UTF-16 编码单元计数）；创建、改名和便携包导入使用同一限制。
+
+**视频速览** `brief` 是站在观众角度对这部视频的说明：出处（标题、作者、时长、语言、链接，平台简介按作者原话引用）、讲什么、出场的人与要点。智能体转录之后写（产品设计 §3.2.2），给人看，也给之后的会话读，不参与渲染：
+
+```ts
+interface VideoBrief {
+  markdown: string;                   // Markdown，去掉首尾空白后 1–20000 个 Unicode 标量值；不带「视频速览」标题
+  language?: string;                  // 正文的语言，BCP 47
+}
+```
+
+- 存在视频实体里，与名字一样随视频撤销与重做，打包时一起带走；只经 `setVideoBrief` 整份替换或清掉（命令与协议规范 §4.2）。新建的视频没有它；派生子视频不继承父视频的速览。
+- 正文里指向这部视频某一刻的链接写成 `?t=<秒>`（序列时间，十进制秒），不带视频 ID：视频被复制或从便携包导入时换了 ID，链接仍指向它自己。给人看、给智能体读时换回 `/videos/<videoId>?t=<秒>`（`@baocut/protocol` 的 `expandBriefLinks`）；指向别的视频的链接原样保存。
+- 它是写下那一刻的说明，之后重新转录、剪辑不会自动更新它；时间链接按序列时间解释，剪辑之后可能偏移。只增加可以忽略的字段，不加格式版本（§1.4）。
 
 视频的内容只有两张表：
 

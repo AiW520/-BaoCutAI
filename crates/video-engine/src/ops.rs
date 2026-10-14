@@ -527,6 +527,10 @@ pub enum EditOperation {
     RenameVideo {
         name: String,
     },
+    /// 写入或清掉视频速览（视频格式规范 §3.1）：整份替换，`brief` 为 null 时清掉。
+    SetVideoBrief {
+        brief: Option<VideoBrief>,
+    },
 }
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -1300,7 +1304,36 @@ pub fn apply_operation(state: &mut VideoState, index: usize, op: &EditOperation,
             state.name = clean_name(name, kinds::video())?;
             Ok(())
         }
+        EditOperation::SetVideoBrief { brief } => {
+            state.brief = brief.as_ref().map(clean_brief).transpose()?;
+            Ok(())
+        }
     }
+}
+
+/// 视频速览正文的上限（Unicode 标量值）。
+pub const VIDEO_BRIEF_MAX_CHARS: usize = 20_000;
+
+/// 速览去掉首尾空白后须为 1–20000 个 Unicode 标量值；语言去掉空白，空的不写。
+fn clean_brief(brief: &VideoBrief) -> EngineResult<VideoBrief> {
+    let markdown = brief.markdown.trim();
+    if markdown.is_empty() || markdown.chars().count() > VIDEO_BRIEF_MAX_CHARS {
+        return Err(ErrorBody::invalid_operation(msg!(
+            "engine.briefLength",
+            "The video brief must be 1–{max} characters",
+            max = VIDEO_BRIEF_MAX_CHARS
+        )));
+    }
+    let language = brief
+        .language
+        .as_deref()
+        .map(str::trim)
+        .filter(|l| !l.is_empty())
+        .map(str::to_string);
+    Ok(VideoBrief {
+        markdown: markdown.to_string(),
+        language,
+    })
 }
 
 fn clean_name(name: &str, what: Text) -> EngineResult<String> {

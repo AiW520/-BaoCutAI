@@ -376,6 +376,7 @@ impl Store {
         let mut state = VideoState {
             id: id.clone(),
             name: String::new(),
+            brief: None,
             root_sequence_id: String::new(),
             revision,
             event_seq,

@@ -441,6 +441,8 @@ export const ru: EngineMessages = {
   labelDeleteDucking: "Удалить приглушение",
   labelSaveCheckpoint: "Сохранить контрольную точку",
   labelRenameVideo: "Переименовать видео",
+  labelSetVideoBrief: "Записать обзор видео",
+  briefLength: (p) => `Обзор видео должен содержать 1–${p.max} символов`,
   labelEdit: "Изменить",
   labelMoreChanges: (p) => `${p.main} и другое (изменений: ${p.count})`,
   labelUndo: (p) => `Отмена: ${p.label}`,

@@ -309,6 +309,7 @@ fn operation_label(op: &EditOperation) -> Text {
         EditOperation::RemoveDucking { .. } => msg!("engine.labelDeleteDucking", "Delete ducking"),
         EditOperation::CreateCheckpoint { .. } => msg!("engine.labelSaveCheckpoint", "Save checkpoint"),
         EditOperation::RenameVideo { .. } => msg!("engine.labelRenameVideo", "Rename video"),
+        EditOperation::SetVideoBrief { .. } => msg!("engine.labelSetVideoBrief", "Write video brief"),
     }
 }
 
@@ -357,6 +358,7 @@ impl Video {
         let mut state = VideoState {
             id: video_id.clone(),
             name: name.to_string(),
+            brief: None,
             root_sequence_id: sequence_id.clone(),
             revision: 0,
             event_seq: 0,

@@ -286,6 +286,7 @@ type EditOperation = { type: string; [field: string]: JsonValue };
 | 版本 | `forkSequence` `applyLocalizationOverride` | 来源关系、冲突 |
 | 轨道与序列 | `addTrack` `deleteTrack` `updateTrack` `moveTrack` `updateSequence` `changeSequenceFrameRate` `setTemplate` | 量化偏差、受影响的范围、被拒绝的原因（视频格式规范 §2.12）、删掉的轨道 |
 | 保护 | `setProtection` `clearProtection` `createCheckpoint` | 保护的范围与检查点的版本 |
+| 视频 | `renameVideo` `setVideoBrief` | 新的名字；写入或清掉了速览 |
 
 智能体的 `edits_ops` 按已开放的操作返回目录；分组及操作条目的 `family` 使用稳定英文标识：`assets`、`items`、`styles`、`transitions-and-effects`、`chapters-and-ducking`、`speech`、`code`、`tracks-and-sequences`、`documents-and-versions`。这些值用于程序引用，与中文领域名称或操作说明分开。
 
@@ -307,6 +308,7 @@ type EditOperation = { type: string; [field: string]: JsonValue };
 - `setTransition` 给出 `sequenceId`、`leftItemId` 与 `rightItemId`（至少一个）、`kind`、`params`，可选 `duration`（§6 的时间输入；给了就要写明 `alignment`）、`easing`、`placement`、`audioCrossfade`。种类是 `dissolve`、`wipe`、`slide`、`zoom`、`iris`、`dip-to-color`、`push`，后两种只用于两侧。同一条边上已有的转场被替换。两侧转场必须给 `duration`，handles 不够时拒绝，不自动缩短；单侧转场不给 `duration` 时是 0.5 秒，生效的长度随实例变短（视频格式规范 §3.9），变短的列在回执的 `impact.shortenedTransitions` 里。
 - `setEffects` 给 `fx`，整个替换视觉媒体或合成实例的效果（视频格式规范 §3.9），`null` 去掉。
 - `updateSequence` 改序列的 `name`、`canvas`（`{ width, height }`，像素）与 `background`（`#RRGGBB`）。给了 `name` 时序列头去掉缺省名的 `nameRef`（视频格式规范 §3.2）。位置按画幅的百分比保存，改尺寸时实例跟着画布走。
+- `renameVideo` 给 `name`，改视频名（去掉首尾空白后 1–200 个 Unicode 标量值，视频格式规范 §3.1），不改目录名。`setVideoBrief` 给 `brief`（`{ markdown, language? }` 或 `null`），整份替换视频速览（视频格式规范 §3.1），`null` 清掉：正文去掉首尾空白后须为 1–20000 个 Unicode 标量值，`language` 去掉空白、空的不写，多余的字段拒绝。正文原样保存；智能体工具在提交前把正文里指向这部视频某一刻的 `/videos/<videoId>?t=<秒>` 收成 `?t=<秒>`，读视频时（`videos_inspect` 的 `brief`）换回完整地址。
 - `setChapters` 整个替换序列的章节，其他标记不动；`chapterId` 沿用已有的章节。`upsertChapter` 不给 `chapterId` 时新建，须给 `at` 与 `title`；`summary`、`thumbnail` 给 `null` 去掉；给 `at` 时须写明 `alignment`。缩略图用 `{ assetId }` 或同一事务里 `importAsset` 的 `{ ref }`。
 - `setDucking` 不给 `ruleId` 时新建，须给 `trigger` 与 `target`；给了只改给出的字段。`trigger` 是 `{ kind: 'speech' }`（有人说话时）或 `{ kind: 'items', … }`（这些轨道与实例发声时）；`depth` 是压低的分贝数（0–60）；`attack`、`release` 是十进制秒字符串。按实例触发的 `trigger` 与 `target` 除了 `trackIds`、`itemIds`，还可以用 `trackRefs` 引用同一事务里 `addTrack` 的 `ref`。
 - `removeRange` 给出 `sequenceId`、`from`、`to`（§6 的时间输入）、`trackIds` 与 `alignment`，在列出的轨道上删掉 `[from, to)` 并让之后的内容前移（波纹删除，视频格式规范 §6.4）：盖住区间的视频、音频、合成实例拆开删掉中间，经它投影的字幕跟着右段走；图片、文字、形状、字幕实例缩短；整个落在区间里的删掉。没列出的轨道不动；列出的轨道或要动的实例锁着时整笔拒绝（`TARGET_LOCKED`），不跳过。口播剪辑接受建议时编译成它。

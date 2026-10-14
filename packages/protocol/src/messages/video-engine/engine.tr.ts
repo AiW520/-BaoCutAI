@@ -441,6 +441,8 @@ export const tr: EngineMessages = {
   labelDeleteDucking: "Ses kısmayı sil",
   labelSaveCheckpoint: "Kontrol noktası kaydet",
   labelRenameVideo: "Videoyu yeniden adlandır",
+  labelSetVideoBrief: "Video özetini yaz",
+  briefLength: (p) => `Video özeti 1–${p.max} karakter olmalı`,
   labelEdit: "Düzenle",
   labelMoreChanges: (p) => `${p.main} ve diğerleri (${p.count} değişiklik)`,
   labelUndo: (p) => `Geri al: ${p.label}`,

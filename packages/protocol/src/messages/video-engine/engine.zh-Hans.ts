@@ -441,6 +441,8 @@ export const zhHans: EngineMessages = {
   labelDeleteDucking: '删除闪避',
   labelSaveCheckpoint: '保存检查点',
   labelRenameVideo: '重命名视频',
+  labelSetVideoBrief: '写入视频速览',
+  briefLength: (p) => `视频速览须为 1–${p.max} 个字符`,
   labelEdit: '编辑',
   labelMoreChanges: (p) => `${p.main}等 ${p.count} 项修改`,
   labelUndo: (p) => `撤销：${p.label}`,
