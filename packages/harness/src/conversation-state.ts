@@ -26,11 +26,13 @@ interface PendingAppend {
 
 /**
  * 在会话之外留下作用的条目（产品设计 §6.1）：新建或改过视频、幻灯片、设计稿、设计系统，改过文件，或请求过审批。
- * 任务有过这样的条目才进后台任务表；只检索、问答（命令、MCP 读取、联网搜索）不算。
+ * 任务有过这样的条目才进后台任务表；只检索、问答（命令、MCP 读取、联网搜索）不算。审批只算要问的（等用户、用户或
+ * 「总是允许」规则答的）：按访问模式自动答的连读取也会留卡片，自动放行的写入另有修改条目算上；来时已取消的也不算。
  */
 export function isSideEffect(item: TimelineItem): boolean {
   switch (item.kind) {
     case 'approval':
+      return item.decidedBy !== 'auto' && item.status !== 'cancelled';
     case 'video-change':
     case 'video-created':
     case 'slides-created':

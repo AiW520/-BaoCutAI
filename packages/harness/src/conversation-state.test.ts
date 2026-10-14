@@ -212,6 +212,8 @@ describe('ConversationState 任务的会话外作用', () => {
     state.upsert(item('s1', 't1', { kind: 'tool-call', tool: 'web-search' }));
     state.upsert(item('s2', 't1', { kind: 'tool-call', tool: 'mcp' }));
     state.upsert(item('s3', 't1', { kind: 'tool-call', tool: 'command' }));
+    state.upsert(item('s4', 't1', { kind: 'approval', status: 'accepted', decidedBy: 'auto' }));
+    state.upsert(item('s5', 't1', { kind: 'approval', status: 'cancelled' }));
     expect(state.hasSideEffects('t1')).toBe(false);
     expect(changed).toEqual(['t1']);
     state.upsert(item('e1', 't1', { kind: 'video-change' }));
@@ -221,7 +223,7 @@ describe('ConversationState 任务的会话外作用', () => {
   });
 
   it('读入的记录里已有作用的任务直接算上', () => {
-    const { state } = make([taskItem('t1'), item('a1', 't1', { kind: 'approval' }), taskItem('t2')]);
+    const { state } = make([taskItem('t1'), item('a1', 't1', { kind: 'approval', status: 'pending' }), taskItem('t2')]);
     expect(state.hasSideEffects('t1')).toBe(true);
     expect(state.hasSideEffects('t2')).toBe(false);
   });

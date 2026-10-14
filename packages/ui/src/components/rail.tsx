@@ -1,4 +1,4 @@
-import type { ComponentType } from 'react';
+import { useMemo, type ComponentType } from 'react';
 import { ActionButton, NotificationBadge, Tooltip, TooltipTrigger } from '@react-spectrum/s2';
 import Clock from '@react-spectrum/s2/icons/Clock';
 import Asset from '@react-spectrum/s2/icons/Asset';
@@ -12,6 +12,7 @@ import { useShell, railTabOf, type Tab } from '../state/shell-store.ts';
 import { isJobLive, useJobs } from '../state/jobs-store.ts';
 import { useLegacyImport } from '../state/legacy-import-store.ts';
 import { isLive, useTasks } from '../state/tasks-store.ts';
+import { listedTasks } from '../model/task-list.ts';
 import { UpdateRailButton } from './app-update/update-rail-button.tsx';
 import { useShellPeekControls } from './shell-peek.tsx';
 import { useServicesAlert } from './services/use-share-status.ts';
@@ -75,11 +76,14 @@ const alertDot = style({
 export function Rail() {
   const route = useShell((s) => s.route);
   const goTab = useShell((s) => s.goTab);
-  // 在跑的后台任务：Agent 任务、Job，和正在导入旧版项目的那一轮。
-  const running =
-    useTasks((s) => s.tasks.filter(isLive).length) +
-    useJobs((s) => s.jobs.filter(isJobLive).length) +
-    useLegacyImport((s) => (s.run && s.run.state !== 'finished' ? 1 : 0));
+  // 在跑的后台任务：进任务表的 Agent 任务（只检索、问答的不算，产品设计 §6.1）、Job，和正在导入旧版项目的那一轮。
+  const tasks = useTasks((s) => s.tasks);
+  const jobs = useJobs((s) => s.jobs);
+  const legacy = useLegacyImport((s) => (s.run && s.run.state !== 'finished' ? 1 : 0));
+  const running = useMemo(
+    () => listedTasks(tasks, jobs).filter(isLive).length + jobs.filter(isJobLive).length + legacy,
+    [tasks, jobs, legacy],
+  );
   // 只有服务出错才亮（原型：每项服务各自的灯在服务页里）；顺带在连上 Runtime 时读一次共享状态。
   const servicesAlert = useServicesAlert();
   // 侧栏隐藏时悬停入口浮出该区域的侧栏（产品设计 §2.5；设置没有侧栏，在 shell-peek 里跳过）。

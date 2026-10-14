@@ -334,6 +334,15 @@ export interface TaskRowsOptions {
  * `fold` 时流程在转录期间沿用自己的 ID、标题、来源与取消，种类、阶段、进度与「在哪」换成那次转录的——流程按步骤数报的
  * 进度（转录流程转写那一步就是 2/4）不当转写的进度念，转写也不另成一行。
  */
+/**
+ * 进后台任务的 Agent 任务（产品设计 §6.1）：会话外有作用，或提交过 Job。只检索、问答的留在会话里；
+ * 没有 `sideEffects` 标记的按有作用对待。
+ */
+export function listedTasks(tasks: readonly TaskSummary[], jobs: readonly JobRecord[]): TaskSummary[] {
+  const submitted = new Set(jobs.flatMap((j) => (j.submitter.kind === 'agent' ? [j.submitter.taskId] : [])));
+  return tasks.filter((t) => t.sideEffects !== false || submitted.has(t.taskId));
+}
+
 export function taskRows(
   tasks: readonly TaskSummary[],
   jobs: readonly JobRecord[],
@@ -352,10 +361,7 @@ export function taskRows(
       const { kind, kindText, where, queued, label, tone, phase, pct, progress } = jobRow(child, ctx);
       return { ...row, kind, kindText, where, queued, label, tone, phase, pct, progress };
     });
-  // 只检索、问答的 Agent 任务留在会话里（产品设计 §6.1）：会话外有作用，或提交过 Job，才进这张表。
-  const submitted = new Set(jobs.flatMap((j) => (j.submitter.kind === 'agent' ? [j.submitter.taskId] : [])));
-  const listed = tasks.filter((t) => t.sideEffects !== false || submitted.has(t.taskId));
-  const rows = [...listed.map((t) => agentRow(t, ctx)), ...jobRows.filter((r) => !folded.has(r.id))];
+  const rows = [...listedTasks(tasks, jobs).map((t) => agentRow(t, ctx)), ...jobRows.filter((r) => !folded.has(r.id))];
   return rows.sort((a, b) => Date.parse(b.startedAt) - Date.parse(a.startedAt));
 }
 
