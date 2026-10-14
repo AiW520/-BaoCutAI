@@ -66,4 +66,9 @@ export const zhHans: RcSpaceMessages = {
   materialTooLarge: (p) => `${p.fileName} 有 ${p.bytes} 字节，超过素材的上限 ${p.limit}`,
   afterMaterial: (p) => `加上素材之后：${p.reason}`,
   invalidParams: '参数不合',
+  indexDirNested: '新位置与当前的索引文件夹互相包含。请选一个既不在它里面、也不包含它的文件夹',
+  indexDirNoSpace: '新位置所在的磁盘放不下索引。请换一个文件夹，或改为在那里重新建',
+  indexDirOccupied: '这个文件夹里已经有语义索引。请选一个空文件夹，或改为在那里重新建以沿用它',
+  indexDirMoving: '索引正在移动，请等移完',
+  indexDirMoveFailed: (p: { reason: string }) => `索引没能移过去，仍在原来的位置：${p.reason}`,
 };

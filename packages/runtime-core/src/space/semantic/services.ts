@@ -1,5 +1,9 @@
+import fs from 'node:fs';
+import fsp from 'node:fs/promises';
 import path from 'node:path';
 import type { EmbeddingProvider } from '@baocut/models';
+import { RpcError, type SemanticIndexDir, type SemanticIndexDirMode } from '@baocut/protocol';
+import { RcSpace } from '@baocut/protocol/messages/runtime-core';
 import type { Logger } from '@baocut/harness';
 import type { ContentReader } from '../content-index.ts';
 import type { HitResolverOptions } from '../search-hit-resolver.ts';
@@ -10,6 +14,7 @@ import { SemanticCoordinator, type SemanticCatalogSource, type SemanticSettings 
 import type { KeyframeSource } from './visual-lane.ts';
 import type { PowerState } from './power.ts';
 import { EmbeddingScheduler } from './scheduler.ts';
+import { checkIndexTarget, copyDir, INDEX_LEAF } from './index-location.ts';
 import { SEMANTIC_STORE_DIR, SemanticStore, SemanticStoreTooNew } from './store.ts';
 import { InThreadVectorScanner } from './vector-index.ts';
 
@@ -27,12 +32,27 @@ export interface SemanticServices {
   readonly resolver: HitResolverOptions;
   /** 按主体取 SemanticContext（写作任务、智能体工具）。 */
   readonly context: SemanticContextFactory;
+  /** 索引放在哪（`space.indexStatus` 的 `indexDir`）。 */
+  location(): SemanticIndexDir;
+  /**
+   * 换位置（`space.indexSetDir`，检索规格 §8.1）。`rebuild` 当场换好；`move` 查过之后在后台移，移的时候 `location().moving`
+   * 有进度，失败时留在原处、`moveError` 写明原因。
+   */
+  relocate(target: string | null, mode: SemanticIndexDirMode): Promise<SemanticIndexDir>;
   close(): Promise<void>;
 }
 
+/** 设置 `semantic.indexDir`（null 是缺省位置）；不给时只用缺省位置。 */
+export interface IndexDirSetting {
+  get(): string | null;
+  set(value: string | null): Promise<void>;
+}
+
 export interface OpenSemanticOptions {
-  /** `<home>/cache`：库在 `<cache>/semantic-index/v1/index.db`。 */
+  /** `<home>/cache`：缺省时库在 `<cache>/semantic-index/v1/index.db`。 */
   cacheDir: string;
+  /** 索引换了位置时库在 `<indexDir>/v1/`。 */
+  indexDir?: IndexDirSetting;
   catalog: SpaceSearchSource & SemanticCatalogSource;
   reader: Pick<ContentReader, 'readContent'> | null;
   provider: EmbeddingProvider | null;
@@ -53,15 +73,31 @@ export interface OpenSemanticOptions {
 
 export function openSemanticServices(options: OpenSemanticOptions): SemanticServices {
   const log = options.log.child('semantic-index');
+  const defaultRoot = path.join(options.cacheDir, path.dirname(SEMANTIC_STORE_DIR));
+  const custom = (): string | null => options.indexDir?.get() ?? null;
+  const root = (): string => custom() ?? defaultRoot;
   let store: SemanticStore | null = null;
-  try {
-    store = new SemanticStore(path.join(options.cacheDir, SEMANTIC_STORE_DIR));
-  } catch (error) {
-    // 更新版本写的库不动；打不开时语义检索在这个进程里不可用，字面检索照常。
-    log.warn(error instanceof SemanticStoreTooNew ? 'Semantic index was written by a newer version' : "Couldn't open the semantic index", {
-      error: error instanceof Error ? error.message : String(error),
-    });
-  }
+  let moving: SemanticIndexDir['moving'] = null;
+  let moveError: string | null = null;
+  const open = (): void => {
+    // 换过的位置不在（外接盘没接上）时不建：语义检索退回字面，接上后重开 Runtime 接着用。
+    if (custom() !== null && !fs.existsSync(root())) {
+      log.warn('Semantic index folder is missing', { path: root() });
+      return;
+    }
+    try {
+      store = new SemanticStore(path.join(root(), INDEX_LEAF));
+    } catch (error) {
+      // 更新版本写的库不动；打不开时语义检索在这个进程里不可用，字面检索照常。
+      log.warn(
+        error instanceof SemanticStoreTooNew ? 'Semantic index was written by a newer version' : "Couldn't open the semantic index",
+        {
+          error: error instanceof Error ? error.message : String(error),
+        },
+      );
+    }
+  };
+  open();
   const scheduler = options.provider ? new EmbeddingScheduler(options.provider) : null;
   const scanner = new InThreadVectorScanner(() => store);
   const coordinator = new SemanticCoordinator({
@@ -84,7 +120,63 @@ export function openSemanticServices(options: OpenSemanticOptions): SemanticServ
     coordinator,
     settings: options.settings,
     ...(options.model ? { model: options.model } : {}),
+    location: () => location(),
   });
+  const location = (): SemanticIndexDir => ({
+    path: root(),
+    defaultPath: defaultRoot,
+    source: custom() === null ? 'default' : 'custom',
+    exists: fs.existsSync(root()),
+    moving,
+    moveError,
+  });
+  /** 关掉当前的库（停下构建、丢掉向量缓存）。 */
+  const detach = async (): Promise<void> => {
+    await coordinator.detach();
+    scanner.invalidate();
+    store?.close();
+    store = null;
+  };
+  const reattach = (): void => {
+    open();
+    coordinator.attach();
+  };
+  const move = async (from: string, to: string, target: string | null, sameDisk: boolean): Promise<void> => {
+    const src = path.join(from, INDEX_LEAF);
+    const dst = path.join(to, INDEX_LEAF);
+    let copied = false;
+    let renamed = false;
+    try {
+      await detach();
+      if (fs.existsSync(src)) {
+        if (sameDisk) {
+          await fsp.rm(dst, { recursive: true, force: true });
+          renamed = await fsp.rename(src, dst).then(
+            () => true,
+            () => false,
+          );
+        }
+        if (!renamed) {
+          copied = true;
+          await copyDir(src, dst, (n) => {
+            if (moving) moving = { ...moving, doneBytes: moving.doneBytes + n };
+          });
+        }
+      }
+      await options.indexDir?.set(target);
+      if (copied) await fsp.rm(src, { recursive: true, force: true }).catch(() => {});
+      log.info('Moved the semantic index', { from, to, copied });
+    } catch (error) {
+      const reason = error instanceof Error ? error.message : String(error);
+      log.warn("Couldn't move the semantic index", { from, to, error: reason });
+      if (copied) await fsp.rm(dst, { recursive: true, force: true }).catch(() => {});
+      if (renamed) await fsp.rename(dst, src).catch(() => {});
+      moveError = RcSpace.indexDirMoveFailed({ reason }).text;
+    } finally {
+      moving = null;
+      reattach();
+    }
+  };
   return {
     store: () => store,
     scheduler: () => scheduler,
@@ -99,6 +191,34 @@ export function openSemanticServices(options: OpenSemanticOptions): SemanticServ
       reader: options.reader,
       ...(options.weakHit !== undefined ? { weakHit: options.weakHit } : {}),
     }),
+    location,
+    async relocate(target, mode) {
+      if (moving) throw new RpcError('conflict', RcSpace.indexDirMoving(), { code: 'SEMANTIC_INDEX_DIR_MOVING' });
+      const from = root();
+      const to = target ?? defaultRoot;
+      const next = target !== null && path.resolve(target) === path.resolve(defaultRoot) ? null : target;
+      if (path.resolve(from) === path.resolve(to)) {
+        if (next !== custom()) await options.indexDir?.set(next);
+        return location();
+      }
+      const { bytes, sameDisk } = await checkIndexTarget(from, to, mode, { isDefault: next === null });
+      moveError = null;
+      if (mode === 'move') {
+        moving = { to, doneBytes: 0, totalBytes: sameDisk ? 0 : bytes };
+        void move(from, to, next, sameDisk);
+        return location();
+      }
+      // 重新建：原来的库删掉，新位置已经有库时沿用（检索按世代对上当前内容，对不上的重建）。
+      await detach();
+      try {
+        await options.indexDir?.set(next);
+      } finally {
+        reattach();
+      }
+      await fsp.rm(path.join(from, INDEX_LEAF), { recursive: true, force: true }).catch(() => {});
+      log.info('Rebuilding the semantic index at a new location', { from, to });
+      return location();
+    },
     async close() {
       await coordinator.close();
       scanner.invalidate();

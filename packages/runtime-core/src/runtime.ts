@@ -879,6 +879,13 @@ export async function startRuntime(options: StartRuntimeOptions = {}): Promise<R
     // 本机语义检索（v0.1 PR 3–5）：派生库在 `<cache>/semantic-index/v1/`，跟着内容索引增量构建；没有 Provider 时只有字面一路。
     const semantic = openSemanticServices({
       cacheDir: home.cacheDir,
+      // 换过的位置（`space.indexSetDir` 写，设置里不能直接改）。
+      indexDir: {
+        get: () => settings.store.get('semantic.indexDir'),
+        set: async (value) => {
+          await settings.store.set({ 'semantic.indexDir': value });
+        },
+      },
       catalog: space,
       reader: { readContent: (dir) => videos.readContent(dir) },
       // 不给时用本机的 EmbeddingGemma 2 模型包（Model Worker 经 LiteRT-LM 编码）；没装时 `profile` 报没装，检索只有字面一路。

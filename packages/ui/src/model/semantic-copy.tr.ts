@@ -214,4 +214,36 @@ export const tr: SemanticMessages = {
     toastRestored: (n) => `${n} proje dizin sırasına geri döndü.`,
     toastSeparator: ' ',
   },
+  location: {
+    label: 'Konum',
+    defaultDesc: 'Uygulama verilerinde. Daha fazla yeri olan bir diske taşıyabilirsiniz; dizin, dizinlenen video sayısı arttıkça büyür.',
+    customDesc: 'Seçtiğiniz bir klasörde.',
+    missingDesc:
+      'Bu klasör bulunamıyor (harici bir disk çıkarılmış olabilir). Geri gelene kadar Space araması yalnızca tam metinle eşleşir.',
+    moving: (size, to) =>
+      `${size}, ${to} konumuna taşınıyor. Bitene kadar dizinleme duraklatıldı ve Space araması yalnızca tam metinle eşleşir.`,
+    movingLabel: 'Anlamsal dizin taşınıyor',
+    change: 'Değiştir…',
+    restore: 'Varsayılana döndür',
+    changeTitle: 'Dizin konumunu değiştir',
+    restoreTitle: 'Dizini varsayılan konuma geri taşı',
+    same: 'Dizin zaten burada.',
+    howTo: 'Mevcut dizinle ne yapılsın',
+    moveOption: 'Mevcut dizini oraya taşı',
+    moveDesc: (size) =>
+      `${size} taşınır. Taşınırken dizinleme duraklatılır ve Space araması yalnızca tam metinle eşleşir. Eski konumda hiçbir şey kalmaz.`,
+    rebuildOption: 'Orada yeniden oluştur',
+    rebuildDesc:
+      'Mevcut dizini siler ve mevcut transkriptlerle karelerden arka planda orada yeniden oluşturur. Bitene kadar anlama göre arama eksik kalır.',
+    keyframesNote:
+      'Anahtar kare önbelleği taşınmaz: uygulama önbelleğinde kalır, temizlenebilir ve gerektiğinde yeniden alınır. Dizinin bulunduğu disk bağlı değilse Space araması yalnızca tam metinle eşleşir ve disk bağlanınca devam eder.',
+    confirmMove: 'Taşı ve değiştir',
+    confirmRebuild: 'Değiştir ve yeniden oluştur',
+    confirmChange: 'Konumu değiştir',
+    movingToast: (to) => `Dizin ${to} konumuna taşınıyor`,
+    movedToast: (to) => `Dizin ${to} konumuna taşındı`,
+    rebuiltToast: (to) => `Dizin konumu ${to} olarak değiştirildi. Arka planda yeniden oluşturuluyor.`,
+    changedToast: (to) => `Dizin konumu ${to} olarak değiştirildi`,
+    pickFailed: (message) => `Klasör seçilemedi: ${message}`,
+  },
 };

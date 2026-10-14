@@ -214,4 +214,35 @@ export const ko: SemanticMessages = {
     toastRestored: (n) => `프로젝트 ${n}개를 색인 대기열로 돌렸습니다`,
     toastSeparator: '. ',
   },
+  location: {
+    label: '위치',
+    defaultDesc: '앱 데이터 안에 있습니다. 공간이 더 큰 디스크로 옮길 수 있습니다. 색인한 동영상이 많을수록 공간을 더 차지합니다.',
+    customDesc: '선택한 폴더에 있습니다.',
+    missingDesc:
+      '이 폴더를 찾을 수 없습니다(외장 디스크가 분리되었을 수 있습니다). 다시 연결될 때까지 Space 검색은 정확한 텍스트로 돌아갑니다.',
+    moving: (size, to) => `${size}를 ${to}(으)로 옮기는 중입니다. 끝날 때까지 색인이 멈추고 Space 검색은 정확한 텍스트로 돌아갑니다.`,
+    movingLabel: '시맨틱 색인 옮기는 중',
+    change: '변경…',
+    restore: '기본값으로 복원',
+    changeTitle: '색인 위치 변경',
+    restoreTitle: '색인을 기본 위치로 되돌리기',
+    same: '색인이 이미 여기에 있습니다.',
+    howTo: '지금 색인을 어떻게 할까요',
+    moveOption: '지금 색인을 그곳으로 옮기기',
+    moveDesc: (size) =>
+      `${size}를 옮깁니다. 옮기는 동안 색인이 멈추고 Space 검색은 잠시 정확한 텍스트로 돌아갑니다. 원래 위치에는 남지 않습니다.`,
+    rebuildOption: '그곳에서 다시 만들기',
+    rebuildDesc:
+      '지금 색인을 지우고 새 위치에서 기존 대본과 화면으로 백그라운드에서 다시 만듭니다. 끝날 때까지 의미로 찾은 결과가 완전하지 않습니다.',
+    keyframesNote:
+      '키프레임 캐시는 옮기지 않습니다. 앱 캐시에 있으며 지워도 필요할 때 다시 가져옵니다. 색인이 있는 디스크가 연결되지 않으면 Space 검색은 정확한 텍스트로 돌아가고, 연결되면 다시 이어서 씁니다.',
+    confirmMove: '옮기고 변경',
+    confirmRebuild: '변경하고 다시 만들기',
+    confirmChange: '위치 변경',
+    movingToast: (to) => `색인을 ${to}(으)로 옮기는 중`,
+    movedToast: (to) => `색인을 ${to}(으)로 옮겼습니다`,
+    rebuiltToast: (to) => `색인 위치를 ${to}(으)로 바꿨습니다. 백그라운드에서 다시 만드는 중입니다.`,
+    changedToast: (to) => `색인 위치를 ${to}(으)로 바꿨습니다`,
+    pickFailed: (message) => `폴더를 선택하지 못했습니다: ${message}`,
+  },
 };

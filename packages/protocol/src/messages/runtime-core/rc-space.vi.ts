@@ -7,4 +7,9 @@ dirUnreadable: (p) => `Không đọc được thư mục (${p.code})`, tooManyDi
   labelTitles: 'Tiêu đề',
   labelDescription: 'Mô tả', labelExport: 'Bản xuất', engineUnavailable: 'Bộ máy video không khả dụng', continueFromTrash: 'Không thể tiếp tục mục trong Thùng rác. Khôi phục trước', conversationCantSee: 'Phiên này không thấy mục này. Mục thuộc dự án phải vào phiên cùng dự án', serviceUsesMcp: 'Dịch vụ ngoài truy cập Space qua công cụ MCP', materialTextOnly: (p) => `Chỉ đọc được văn bản từ tài liệu .txt, .md và phụ đề .srt, .vtt: ${p.fileName}`, materialTooLarge: (p) => `${p.fileName} có ${p.bytes} byte, vượt giới hạn tư liệu ${p.limit}`, afterMaterial: (p) => `Sau khi thêm tư liệu: ${p.reason}`, invalidParams: 'Tham số không hợp lệ',
   relatedNotVideo: 'Chỉ video mới có danh sách video liên quan',
+  indexDirNested: 'Vị trí mới và thư mục chỉ mục hiện tại chứa lẫn nhau. Hãy chọn một thư mục không nằm trong nó và cũng không chứa nó',
+  indexDirNoSpace: 'Ổ đĩa ở vị trí mới không đủ chỗ cho chỉ mục. Hãy chọn thư mục khác, hoặc tạo lại chỉ mục ở đó thay vì di chuyển',
+  indexDirOccupied: 'Thư mục này đã có chỉ mục ngữ nghĩa. Hãy chọn một thư mục trống, hoặc tạo lại chỉ mục ở đó để dùng chỉ mục sẵn có',
+  indexDirMoving: 'Chỉ mục đang được di chuyển. Hãy chờ di chuyển xong',
+  indexDirMoveFailed: (p: { reason: string }) => `Không di chuyển được chỉ mục; nó vẫn ở chỗ cũ: ${p.reason}`,
 };

@@ -214,4 +214,37 @@ export const de: SemanticMessages = {
     toastRestored: (n) => (n === 1 ? '1 Projekt ist wieder in der Index-Warteschlange.' : `${n} Projekte sind wieder in der Index-Warteschlange.`),
     toastSeparator: ' ',
   },
+  location: {
+    label: 'Speicherort',
+    defaultDesc:
+      'In den App-Daten. Du kannst ihn auf ein Laufwerk mit mehr Platz verschieben; der Index wächst mit jedem indexierten Video.',
+    customDesc: 'In einem Ordner, den du gewählt hast.',
+    missingDesc:
+      'Dieser Ordner wurde nicht gefunden (vielleicht ist ein externes Laufwerk getrennt). Bis er wieder da ist, sucht Space nur nach exaktem Text.',
+    moving: (size, to) =>
+      `${size} werden nach ${to} verschoben. Bis dahin ist die Indexierung pausiert und Space sucht nur nach exaktem Text.`,
+    movingLabel: 'Semantischer Index wird verschoben',
+    change: 'Ändern…',
+    restore: 'Standard wiederherstellen',
+    changeTitle: 'Speicherort des Index ändern',
+    restoreTitle: 'Index an den Standardort zurücklegen',
+    same: 'Der Index liegt bereits hier.',
+    howTo: 'Was mit dem aktuellen Index passieren soll',
+    moveOption: 'Aktuellen Index dorthin verschieben',
+    moveDesc: (size) =>
+      `Verschiebt ${size}. Währenddessen ist die Indexierung pausiert und Space sucht nur nach exaktem Text. Am alten Ort bleibt nichts zurück.`,
+    rebuildOption: 'Dort neu aufbauen',
+    rebuildDesc:
+      'Löscht den aktuellen Index und baut ihn dort im Hintergrund aus vorhandenen Transkripten und Bildern neu auf. Bis dahin ist die Suche nach Bedeutung unvollständig.',
+    keyframesNote:
+      'Der Schlüsselbild-Cache wird nicht verschoben: Er bleibt im App-Cache, kann geleert werden und wird bei Bedarf neu geholt. Ist das Laufwerk mit dem Index nicht verbunden, sucht Space nur nach exaktem Text und macht weiter, sobald es wieder da ist.',
+    confirmMove: 'Verschieben und ändern',
+    confirmRebuild: 'Ändern und neu aufbauen',
+    confirmChange: 'Speicherort ändern',
+    movingToast: (to) => `Index wird nach ${to} verschoben`,
+    movedToast: (to) => `Index nach ${to} verschoben`,
+    rebuiltToast: (to) => `Speicherort des Index auf ${to} geändert. Er wird im Hintergrund neu aufgebaut.`,
+    changedToast: (to) => `Speicherort des Index auf ${to} geändert`,
+    pickFailed: (message) => `Ordner konnte nicht ausgewählt werden: ${message}`,
+  },
 };

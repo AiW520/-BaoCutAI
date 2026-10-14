@@ -7,4 +7,10 @@ dirUnreadable: (p) => `Klasör okunamadı (${p.code})`, tooManyDirEntries: (p) =
   labelTitles: 'Başlıklar',
   labelDescription: 'Açıklama', labelExport: 'Dışa aktarma', engineUnavailable: 'Video motoru kullanılamıyor', continueFromTrash: 'Çöp sepetindeki öğelerden devam edilemez. Önce geri yükleyin', conversationCantSee: 'Bu oturum öğeyi göremiyor. Projeye ait öğeler aynı projedeki oturuma gitmeli', serviceUsesMcp: 'Dış hizmetler Space erişimini MCP araçlarıyla yapar', materialTextOnly: (p) => `Yalnızca .txt ve .md belgeleri ile .srt ve .vtt altyazılarındaki metin okunabilir: ${p.fileName}`, materialTooLarge: (p) => `${p.fileName} ${p.bytes} bayt; ${p.limit} malzeme sınırını aşıyor`, afterMaterial: (p) => `Malzeme eklendikten sonra: ${p.reason}`, invalidParams: 'Geçersiz parametreler',
   relatedNotVideo: 'İlgili videolar yalnızca videolar için listelenir',
+  indexDirNested: 'Yeni konum ile geçerli dizin klasörü birbirini içeriyor. Ne onun içinde olan ne de onu içeren bir klasör seçin',
+  indexDirNoSpace: 'Yeni konumdaki diskte dizin için yer yok. Başka bir klasör seçin ya da taşımak yerine dizini orada yeniden oluşturun',
+  indexDirOccupied:
+    'Bu klasörde zaten bir anlamsal dizin var. Boş bir klasör seçin ya da mevcut olanı kullanmak için dizini orada yeniden oluşturun',
+  indexDirMoving: 'Dizin taşınıyor. Taşıma bitene kadar bekleyin',
+  indexDirMoveFailed: (p: { reason: string }) => `Dizin taşınamadı; eski yerinde duruyor: ${p.reason}`,
 };

@@ -8,6 +8,7 @@ import {
   type SemanticEstimate,
   type SemanticEvidenceType,
   type SemanticHitAction,
+  type SemanticIndexDir,
   type SemanticIndexStatus,
   type SemanticIndexStatusParams,
   type SemanticReason,
@@ -62,6 +63,8 @@ export interface SearchServiceOptions {
   settings: () => SemanticSettings;
   /** 模型包的显示信息（设置页）；没有时用 profile 的 ID。 */
   model?: () => { bundleId: string; label: string } | null;
+  /** 索引放在哪（只给用户本人）；不给时 `indexStatus` 没有 `indexDir`。 */
+  location?: () => SemanticIndexDir;
 }
 
 const DEFAULT_LIMIT = 20;
@@ -652,6 +655,7 @@ export class SearchService {
       estimates,
       jobId: null,
       ...(visualProgress ? { visualProgress } : {}),
+      ...(viewer.kind === 'user' && this.#options.location ? { indexDir: this.#options.location() } : {}),
       ...(params.videoIds ? { videos: this.#videoStates(params.videoIds, resolved, visualScope) } : {}),
     };
   }

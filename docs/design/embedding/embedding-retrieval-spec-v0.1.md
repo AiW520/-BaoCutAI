@@ -269,6 +269,13 @@ RuntimeHome/
 
 现有文字索引可以快速重建，新库要做显式 schema migration、局部重建和兼容性检查。未知较新版本应关闭语义检索并保留文件，不能自动删除。损坏时先隔离坏库、提示重建；普通迁移保留有效向量。
 
+**索引位置（2026-10-13）：** 库可以放到别的文件夹（设置 `semantic.indexDir`，null 是缺省的 `<home>/cache/semantic-index`；库在 `<文件夹>/v1/`）。设置不能直接改，只经 `space.indexSetDir { path, mode }`（`path` 为 null 是放回缺省位置），Web 白名单里没有，桌面端设置页用系统的文件夹面板选。换之前查：新旧位置不能互相包含（`SEMANTIC_INDEX_DIR_NESTED`）、要在（`SEMANTIC_INDEX_DIR_MISSING`）、要能写（`SEMANTIC_INDEX_DIR_NOT_WRITABLE`）；正在移时再换报 `SEMANTIC_INDEX_DIR_MOVING`。两种换法：
+
+- `move`：把现有的库移过去。那里不能已经有库（`SEMANTIC_INDEX_DIR_OCCUPIED`）；跨盘时目标盘至少要空出库大小的 1.1 倍（`SEMANTIC_INDEX_DIR_NO_SPACE`，带 `requiredBytes` / `availableBytes`）。查过后立即返回，在后台移：先关库、停下构建（检索只有字面一路），同盘改名、跨盘逐个文件复制（`indexStatus.indexDir.moving` 写已复制的字节），复制完才写设置、删原处；失败时删掉复制了一半的、留在原处，`moveError` 写原因。移完重新打开，按新库接着建。
+- `rebuild`：关库、写设置、在新位置打开（那里已经有库时沿用，世代对不上当前内容的照常重建），再删掉原来的库。当场返回。
+
+关键帧缓存（`semantic-media/`）与 staging 不搬，留在应用缓存里。换过的位置不在时（外接盘没接上）不新建库：语义检索退回字面（`INDEX_NOT_READY`），`indexDir.exists` 为 false，接上后重开 Runtime 接着用。
+
 ### 8.2 核心实体
 
 | 实体 | 作用 | 可否重建 |
@@ -316,6 +323,8 @@ JobManager 管任务运行；数据库只保存内容世代、游标和可复用
 索引的有效范围必须来自用户已登记项目/素材及已授权索引策略。首次安装模型不等于授权扫描整块磁盘：范围只有 BaoCut 已登记的视频，不碰其他目录。
 
 **范围（2026-10-13 修订）：** 全部 BaoCut 项目与不属于项目的视频，减去用户排除的（设置 `semantic.excludedProjects` 的项目、`semantic.excludedVideos` 的单个视频——Space 条目上的「不索引」）。不再按项目逐个纳入（旧设置 `semantic.indexedProjects` 不再读取，没有界面写过它）。排除的视频不建、已建的世代撤下（`removeVideos`），覆盖计为 `excluded`，检索时只有字面一路；恢复后按当前版本重建，缓存里还在的向量照用。同一个视频导出的成片不另建索引：它的内容就是这个视频的时间线（§7.3 的成片呈现索引是后续阶段）。
+
+**索引文件夹（尚未实现）：** 设计稿里项目之外再加的只读扫描目录（BaoCut 视频按讲话内容与画面，其他视频文件与图片只按画面，成片跳过）这一版还没有实现：范围仍只有 BaoCut 已登记的视频。
 
 **通道默认：** 讲话内容与画面都开（`semantic.channels` 默认 `['text', 'visual']`），画面跟着讲话建完再建（§16.1）；打开之前与设置里写明要建多少帧、多久、多大（§13.2）。声音这一版没有。
 
@@ -435,6 +444,7 @@ API 只接受已有授权素材引用，不接受让智能体随意传任意磁�
 |---|---|---|
 | `space.indexStatus` | 范围内各模态覆盖、失败原因、profile；给了 `videoIds`（每次至多 200 部）时另给按视频的状态 `videos`（§13.2） | 只读查询 |
 | `space.indexBuild` | 用户明确启用/重建指定范围与通道 | 返回现有 Job ID |
+| `space.indexSetDir` | 换索引位置：`move` 移过去或 `rebuild` 在那里重新建（§8.1）；只给桌面端 | 返回 `SemanticIndexDir`；`move` 在后台移，不建 Job |
 | `space.resolveSearchHit` | 当前版本重新解析锚点 | 异步只读 |
 | `space.createSearchSelection` | 固定已选择候选与版本，供编辑/问答 | 使用现有 Artifact 机制 |
 | `space_search_v2` | 智能体检索；在当前时间线上的命中带 `href`（`/videos/<videoId>?t=<秒>`，回答里照抄成链接，产品设计 §3.2.2） | 不写工程 |
@@ -502,6 +512,8 @@ resolve 之后仍可能发生编辑，apply 时必须再次检查版本。发生
 Space 条目上的索引标志（2026-10-13）：列表与卡片只为列出来的视频取 `space.indexStatus { videoIds }`，每部视频给讲话内容与画面各一路的状态——`indexed`、`stale`、`queued`、`indexing`（正在建的那一部；画面另给 `visualFrames` 已建 / 共几帧）、`failed`、`missingInput`（没有文稿）、`excluded`（没开的那一路，或整部被排除）；被排除时 `excludedBy` 写是项目（`project`）还是单个视频（`video`）。不在主体可见范围里的 videoId 不返回。标志取最需要注意的那一路：失败 > 过期 > 在建 > 排队 > 已建；成片不另建索引，标「不需要索引」（§9.1）。条目菜单与右键菜单里有「重新索引」（`space.indexBuild { videoIds, rebuild: true }`，画面开着时两路一起，排到队首）、「不索引」（写 `semantic.excludedVideos`，可撤销）与「恢复索引」；Web 只看标志，改索引在桌面端，同设置页。
 
 画面建到第几帧（2026-10-13）：画面开着时 `indexStatus` 带 `visualProgress { done, total }`——`done` 是已建好的画面视频的帧数加上正在建那一部已建的帧，`total` 是已建好的帧加上还要建的帧（`estimates` 里画面一项的帧数，含正在建的那一部，按时长估，时长未知的不算）；画面没开时不给。设置页在画面那一行用它画进度条，停着时写“已暂停”，在建时写还要多久。
+
+索引位置（2026-10-13）：`indexStatus.indexDir`（只给用户本人）写现在的路径、缺省路径、`source`（`default` / `custom`）、文件夹在不在、移动进度 `moving { to, doneBytes, totalBytes }`（同盘改名时 `totalBytes` 为 0）与上一回没移成的原因 `moveError`。设置页「索引」里的「位置」一行写路径，桌面端有在文件夹中显示、更改…、恢复默认；更改时在「把现有索引移过去」与「在新位置重新建」之间选，没有只切换位置（留在原处的索引没人用）。Web 只写路径。
 
 没有转录时，对讲话内容显示“未建立文字索引”，提供转录入口；不把视觉 embedding 失败伪装为没有相关画面。模型未安装时精确搜索立即可用。
 

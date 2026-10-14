@@ -214,4 +214,37 @@ export const vi: SemanticMessages = {
     toastRestored: (n) => `${n} dự án đã trở lại hàng đợi chỉ mục.`,
     toastSeparator: ' ',
   },
+  location: {
+    label: 'Vị trí',
+    defaultDesc:
+      'Trong dữ liệu ứng dụng. Bạn có thể chuyển sang ổ đĩa còn nhiều chỗ hơn; chỉ mục lớn dần khi có thêm video được lập chỉ mục.',
+    customDesc: 'Trong thư mục bạn đã chọn.',
+    missingDesc:
+      'Không tìm thấy thư mục này (có thể ổ đĩa ngoài đã bị rút). Cho đến khi có lại, tìm kiếm Space chỉ khớp văn bản chính xác.',
+    moving: (size, to) =>
+      `Đang chuyển ${size} sang ${to}. Cho đến khi xong, việc lập chỉ mục tạm dừng và tìm kiếm Space chỉ khớp văn bản chính xác.`,
+    movingLabel: 'Đang chuyển chỉ mục ngữ nghĩa',
+    change: 'Đổi…',
+    restore: 'Khôi phục mặc định',
+    changeTitle: 'Đổi vị trí chỉ mục',
+    restoreTitle: 'Đưa chỉ mục về vị trí mặc định',
+    same: 'Chỉ mục đã ở đây.',
+    howTo: 'Xử lý chỉ mục hiện tại thế nào',
+    moveOption: 'Chuyển chỉ mục hiện tại sang đó',
+    moveDesc: (size) =>
+      `Chuyển ${size}. Trong lúc chuyển, việc lập chỉ mục tạm dừng và tìm kiếm Space chỉ khớp văn bản chính xác. Vị trí cũ không giữ lại gì.`,
+    rebuildOption: 'Tạo lại ở đó',
+    rebuildDesc:
+      'Xóa chỉ mục hiện tại và tạo lại ở đó trong nền từ các bản chép lời và khung hình sẵn có. Cho đến khi xong, kết quả tìm theo ý nghĩa chưa đầy đủ.',
+    keyframesNote:
+      'Bộ nhớ đệm khung hình chính không được chuyển: nó nằm trong bộ nhớ đệm của ứng dụng, có thể xóa và sẽ được lấy lại khi cần. Khi ổ đĩa chứa chỉ mục chưa kết nối, tìm kiếm Space chỉ khớp văn bản chính xác và dùng tiếp khi kết nối lại.',
+    confirmMove: 'Chuyển và đổi',
+    confirmRebuild: 'Đổi và tạo lại',
+    confirmChange: 'Đổi vị trí',
+    movingToast: (to) => `Đang chuyển chỉ mục sang ${to}`,
+    movedToast: (to) => `Đã chuyển chỉ mục sang ${to}`,
+    rebuiltToast: (to) => `Đã đổi vị trí chỉ mục thành ${to}. Đang tạo lại trong nền.`,
+    changedToast: (to) => `Đã đổi vị trí chỉ mục thành ${to}`,
+    pickFailed: (message) => `Không chọn được thư mục: ${message}`,
+  },
 };

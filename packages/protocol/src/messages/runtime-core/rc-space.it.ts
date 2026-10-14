@@ -15,4 +15,11 @@ export const it: RcSpaceMessages = {
   labelDescription: 'Descrizione', labelExport: 'Esportazione',
   engineUnavailable: 'Il motore video non è disponibile', continueFromTrash: 'Non è possibile continuare dalle voci del Cestino. Ripristina prima questa voce', conversationCantSee: 'Questa sessione non può vedere questa voce. Le voci di un progetto devono essere portate in una sessione dello stesso progetto', serviceUsesMcp: 'I servizi esterni accedono allo Space tramite strumenti MCP', materialTextOnly: (p) => `Si può leggere solo testo da documenti .txt e .md e sottotitoli .srt e .vtt: ${p.fileName}`, materialTooLarge: (p) => `${p.fileName} ha ${p.bytes} B, oltre il limite del materiale di ${p.limit}`, afterMaterial: (p) => `Dopo l’aggiunta del materiale: ${p.reason}`, invalidParams: 'Parametri non validi',
   relatedNotVideo: 'Solo i video mostrano video correlati',
+  indexDirNested:
+    'La nuova posizione e la cartella attuale dell’indice si contengono a vicenda. Scegli una cartella che non sia al suo interno né la contenga',
+  indexDirNoSpace:
+    'Il disco della nuova posizione non ha spazio per l’indice. Scegli un’altra cartella o ricrea l’indice lì invece di spostarlo',
+  indexDirOccupied: 'Questa cartella ha già un indice semantico. Scegli una cartella vuota o ricrea l’indice lì per usare quello presente',
+  indexDirMoving: 'L’indice è in fase di spostamento. Attendi che finisca',
+  indexDirMoveFailed: (p: { reason: string }) => `Impossibile spostare l’indice; resta dov’era: ${p.reason}`,
 };

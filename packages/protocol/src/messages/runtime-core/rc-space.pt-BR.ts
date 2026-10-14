@@ -75,4 +75,9 @@ export const ptBR: RcSpaceMessages = {
   afterMaterial: (p: { reason: string }) => `Após adicionar o material: ${p.reason}`,
   invalidParams: "Parâmetros inválidos",
   relatedNotVideo: 'Só vídeos mostram vídeos relacionados',
+  indexDirNested: 'O novo local e a pasta atual do índice contêm um ao outro. Escolha uma pasta que não esteja dentro dela nem a contenha',
+  indexDirNoSpace: 'O disco do novo local não tem espaço para o índice. Escolha outra pasta ou recrie o índice lá em vez de movê-lo',
+  indexDirOccupied: 'Esta pasta já tem um índice semântico. Escolha uma pasta vazia ou recrie o índice lá para usar o que ela tem',
+  indexDirMoving: 'O índice está sendo movido. Aguarde terminar',
+  indexDirMoveFailed: (p: { reason: string }) => `Não foi possível mover o índice; ele continua onde estava: ${p.reason}`,
 };

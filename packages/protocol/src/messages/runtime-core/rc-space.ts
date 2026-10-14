@@ -95,6 +95,13 @@ const en = {
     `${p.fileName} is ${p.bytes} bytes, over the material limit of ${p.limit}`,
   afterMaterial: (p: { reason: string }) => `After adding the material: ${p.reason}`,
   invalidParams: 'Invalid parameters',
+  indexDirNested:
+    'The new location and the current index folder contain each other. Choose a folder that is neither inside it nor contains it',
+  indexDirNoSpace:
+    "The disk at the new location doesn't have room for the index. Choose another folder, or rebuild the index there instead of moving it",
+  indexDirOccupied: 'This folder already has a semantic index. Choose an empty folder, or rebuild the index there to use the one it has',
+  indexDirMoving: 'The index is being moved. Wait for the move to finish',
+  indexDirMoveFailed: (p: { reason: string }) => `Couldn't move the index; it stays where it was: ${p.reason}`,
 };
 
 export type RcSpaceMessages = typeof en;

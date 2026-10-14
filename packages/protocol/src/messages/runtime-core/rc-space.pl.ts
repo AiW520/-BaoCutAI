@@ -65,4 +65,10 @@ export const pl: RcSpaceMessages = {
   afterMaterial: (p) => `Po dodaniu materiału: ${p.reason}`,
   invalidParams: "Nieprawidłowe parametry",
   relatedNotVideo: 'Powiązane filmy są dostępne tylko dla filmów',
+  indexDirNested: 'Nowa lokalizacja i obecny folder indeksu zawierają się nawzajem. Wybierz folder, który nie jest w nim i go nie zawiera',
+  indexDirNoSpace:
+    'Na dysku w nowej lokalizacji nie ma miejsca na indeks. Wybierz inny folder albo zbuduj tam indeks od nowa zamiast go przenosić',
+  indexDirOccupied: 'Ten folder ma już indeks semantyczny. Wybierz pusty folder albo zbuduj tam indeks od nowa, aby użyć istniejącego',
+  indexDirMoving: 'Indeks jest przenoszony. Poczekaj na koniec przenoszenia',
+  indexDirMoveFailed: (p: { reason: string }) => `Nie udało się przenieść indeksu; został w poprzednim miejscu: ${p.reason}`,
 };

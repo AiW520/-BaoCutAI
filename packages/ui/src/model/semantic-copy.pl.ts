@@ -214,4 +214,37 @@ export const pl: SemanticMessages = {
     toastRestored: (n) => `Projekty z powrotem w kolejce indeksu: ${n}.`,
     toastSeparator: ' ',
   },
+  location: {
+    label: 'Lokalizacja',
+    defaultDesc:
+      'W danych aplikacji. Możesz przenieść go na dysk z większą ilością miejsca; indeks rośnie wraz z liczbą zindeksowanych filmów.',
+    customDesc: 'W wybranym przez Ciebie folderze.',
+    missingDesc:
+      'Nie można znaleźć tego folderu (może dysk zewnętrzny jest odłączony). Do czasu jego powrotu wyszukiwanie w Space używa tylko dokładnego tekstu.',
+    moving: (size, to) =>
+      `Przenoszenie ${size} do ${to}. Do końca indeksowanie jest wstrzymane, a wyszukiwanie w Space używa tylko dokładnego tekstu.`,
+    movingLabel: 'Przenoszenie indeksu semantycznego',
+    change: 'Zmień…',
+    restore: 'Przywróć domyślną',
+    changeTitle: 'Zmień lokalizację indeksu',
+    restoreTitle: 'Przywróć indeks do domyślnej lokalizacji',
+    same: 'Indeks już tu jest.',
+    howTo: 'Co zrobić z obecnym indeksem',
+    moveOption: 'Przenieś tam obecny indeks',
+    moveDesc: (size) =>
+      `Przenosi ${size}. Podczas przenoszenia indeksowanie jest wstrzymane, a wyszukiwanie w Space używa tylko dokładnego tekstu. W starej lokalizacji nic nie zostaje.`,
+    rebuildOption: 'Zbuduj go tam od nowa',
+    rebuildDesc:
+      'Usuwa obecny indeks i buduje go tam od nowa w tle z istniejących transkrypcji i klatek. Do końca wyszukiwanie po znaczeniu jest niepełne.',
+    keyframesNote:
+      'Pamięć podręczna klatek kluczowych nie jest przenoszona: zostaje w pamięci podręcznej aplikacji, można ją wyczyścić, a w razie potrzeby zostanie pobrana ponownie. Gdy dysk z indeksem nie jest podłączony, wyszukiwanie w Space używa tylko dokładnego tekstu i wraca do normy po podłączeniu.',
+    confirmMove: 'Przenieś i zmień',
+    confirmRebuild: 'Zmień i zbuduj od nowa',
+    confirmChange: 'Zmień lokalizację',
+    movingToast: (to) => `Przenoszenie indeksu do ${to}`,
+    movedToast: (to) => `Przeniesiono indeks do ${to}`,
+    rebuiltToast: (to) => `Zmieniono lokalizację indeksu na ${to}. Trwa budowanie od nowa w tle.`,
+    changedToast: (to) => `Zmieniono lokalizację indeksu na ${to}`,
+    pickFailed: (message) => `Nie udało się wybrać folderu: ${message}`,
+  },
 };

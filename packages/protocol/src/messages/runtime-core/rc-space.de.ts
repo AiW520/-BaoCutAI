@@ -75,4 +75,12 @@ export const de: RcSpaceMessages = {
   afterMaterial: (p: { reason: string }) => `Nach Hinzufügen des Materials: ${p.reason}`,
   invalidParams: "Ungültige Parameter",
   relatedNotVideo: 'Nur Videos zeigen ähnliche Videos an',
+  indexDirNested:
+    'Der neue Ort und der aktuelle Indexordner enthalten einander. Wähle einen Ordner, der weder darin liegt noch ihn enthält',
+  indexDirNoSpace:
+    'Auf dem Datenträger am neuen Ort ist kein Platz für den Index. Wähle einen anderen Ordner oder baue den Index dort neu auf, statt ihn zu verschieben',
+  indexDirOccupied:
+    'Dieser Ordner enthält bereits einen semantischen Index. Wähle einen leeren Ordner oder baue den Index dort neu auf, um den vorhandenen zu verwenden',
+  indexDirMoving: 'Der Index wird gerade verschoben. Warte, bis das Verschieben abgeschlossen ist',
+  indexDirMoveFailed: (p: { reason: string }) => `Der Index konnte nicht verschoben werden und bleibt am alten Ort: ${p.reason}`,
 };

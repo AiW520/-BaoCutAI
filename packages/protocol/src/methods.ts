@@ -130,6 +130,8 @@ import type {
   SemanticIndexBuildResult,
   SemanticIndexControlParams,
   SemanticIndexControlResult,
+  SemanticIndexDir,
+  SemanticIndexSetDirParams,
   SemanticIndexStatus,
   SemanticIndexStatusParams,
   SemanticResolveParams,
@@ -546,6 +548,7 @@ export interface RpcMethods {
   'space.indexBuild': { params: SemanticIndexBuildParams; result: SemanticIndexBuildResult };
   /** 暂停、继续或清理语义索引（只给用户本人）。 */
   'space.indexControl': { params: SemanticIndexControlParams; result: SemanticIndexControlResult };
+  'space.indexSetDir': { params: SemanticIndexSetDirParams; result: SemanticIndexDir };
   /** 按视频当前版本重新定位一条 `space.searchV2` 命中（§12.2）：`resolved` / `not-in-timeline` / `gone` / `unsupported`。 */
   'space.resolveSearchHit': { params: SemanticResolveParams; result: SemanticResolveResult };
   /** 写作结果文档条目的出处（创作辅助集成设计 §3.4，`baocut.citations/1`）；可见性同 `space.get`。 */

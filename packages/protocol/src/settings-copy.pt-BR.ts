@@ -30,6 +30,8 @@ export const ptBR: SettingDescriptionMessages = {
   'semantic.channels': 'Canais do índice semântico a criar: text (fala: transcrições, legendas, traduções, capítulos); visual (um quadro-chave a cada 8 segundos; requer um pacote de modelo multimodal e leva mais tempo); audio ainda não está disponível',
   'semantic.excludedProjects': 'Projetos fora do índice semântico (lista de ids de projeto): todos os projetos do BaoCut e os vídeos fora de projetos são indexados, exceto estes; os vídeos deles ainda podem ser encontrados pelas palavras exatas',
   'semantic.excludedVideos': 'Vídeos avulsos fora do índice semântico (lista de ids de vídeo), além dos projetos excluídos; o índice que já tinham é removido',
+  'semantic.indexDir':
+    'Pasta do índice semântico (caminho absoluto); null o mantém no cache do app. Altere com space.indexSetDir, que move ou recria o índice',
   'semantic.pauseOnBattery': 'Pausar a criação do índice semântico na bateria e continuar ao ligar na tomada (sempre pausa quando o sistema reduz o desempenho por calor)',
   'semantic.translationMemory': 'Sugerir traduções anteriores de frases quase idênticas ao traduzir (requer o modelo de busca de texto)',
   'semantic.glossaryCandidates': 'Sugerir termos de glossário a partir de grafias quase idênticas entre transcrições (requer o modelo de busca de texto)',

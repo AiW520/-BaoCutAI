@@ -214,4 +214,37 @@ export const fr: SemanticMessages = {
     toastRestored: (n) => (n === 1 ? '1 projet est de retour dans la file d’indexation.' : `${n} projets sont de retour dans la file d’indexation.`),
     toastSeparator: ' ',
   },
+  location: {
+    label: 'Emplacement',
+    defaultDesc:
+      'Dans les données de l’app. Vous pouvez le déplacer vers un disque plus spacieux ; l’index grossit à mesure que des vidéos sont indexées.',
+    customDesc: 'Dans un dossier que vous avez choisi.',
+    missingDesc:
+      'Ce dossier est introuvable (un disque externe est peut-être débranché). En attendant, la recherche Space se limite au texte exact.',
+    moving: (size, to) =>
+      `Déplacement de ${size} vers ${to}. Jusqu’à la fin, l’indexation est en pause et la recherche Space se limite au texte exact.`,
+    movingLabel: 'Déplacement de l’index sémantique',
+    change: 'Modifier…',
+    restore: 'Rétablir par défaut',
+    changeTitle: 'Modifier l’emplacement de l’index',
+    restoreTitle: 'Remettre l’index à l’emplacement par défaut',
+    same: 'L’index est déjà ici.',
+    howTo: 'Que faire de l’index actuel',
+    moveOption: 'Y déplacer l’index actuel',
+    moveDesc: (size) =>
+      `Déplace ${size}. Pendant le déplacement, l’indexation est en pause et la recherche Space se limite au texte exact. Rien n’est conservé à l’ancien emplacement.`,
+    rebuildOption: 'Le reconstruire là-bas',
+    rebuildDesc:
+      'Supprime l’index actuel et le reconstruit là-bas en arrière-plan à partir des transcriptions et des images existantes. La recherche par le sens reste incomplète jusqu’à la fin.',
+    keyframesNote:
+      'Le cache des images clés n’est pas déplacé : il reste dans le cache de l’app, peut être vidé et est récupéré au besoin. Si le disque de l’index n’est pas branché, la recherche Space se limite au texte exact et reprend une fois qu’il l’est.',
+    confirmMove: 'Déplacer et modifier',
+    confirmRebuild: 'Modifier et reconstruire',
+    confirmChange: 'Modifier l’emplacement',
+    movingToast: (to) => `Déplacement de l’index vers ${to}`,
+    movedToast: (to) => `Index déplacé vers ${to}`,
+    rebuiltToast: (to) => `Emplacement de l’index changé pour ${to}. Reconstruction en arrière-plan.`,
+    changedToast: (to) => `Emplacement de l’index changé pour ${to}`,
+    pickFailed: (message) => `Impossible de choisir le dossier : ${message}`,
+  },
 };

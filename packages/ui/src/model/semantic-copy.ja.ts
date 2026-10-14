@@ -214,4 +214,36 @@ export const ja: SemanticMessages = {
     toastRestored: (n) => `${n} 件のプロジェクトを待機列に戻しました`,
     toastSeparator: '。',
   },
+  location: {
+    label: '場所',
+    defaultDesc: 'アプリのデータ内にあります。空き容量の多いディスクへ移せます。インデックスを作る動画が増えるほど容量を使います。',
+    customDesc: '選んだフォルダーにあります。',
+    missingDesc:
+      'このフォルダーが見つかりません（外付けディスクが外れている可能性があります）。戻るまで Space の検索は完全一致のテキストになります。',
+    moving: (size, to) =>
+      `${size} を ${to} へ移動しています。終わるまでインデックス作成は止まり、Space の検索は完全一致のテキストになります。`,
+    movingLabel: 'セマンティックインデックスを移動中',
+    change: '変更…',
+    restore: 'デフォルトに戻す',
+    changeTitle: 'インデックスの場所を変更',
+    restoreTitle: 'インデックスをデフォルトの場所に戻す',
+    same: 'インデックスはすでにここにあります。',
+    howTo: '今のインデックスをどうするか',
+    moveOption: '今のインデックスを移動する',
+    moveDesc: (size) =>
+      `${size} を移動します。移動中はインデックス作成が止まり、Space の検索は一時的に完全一致のテキストになります。元の場所には残りません。`,
+    rebuildOption: '新しい場所で作り直す',
+    rebuildDesc:
+      '今のインデックスを削除し、新しい場所で既存の文字起こしと画面からバックグラウンドで作り直します。終わるまで意味での検索結果は不完全です。',
+    keyframesNote:
+      'キーフレームのキャッシュは移動しません。アプリのキャッシュにあり、消去しても必要なときに取り直します。インデックスのあるディスクがつながっていないときは Space の検索が完全一致のテキストになり、つながると元に戻ります。',
+    confirmMove: '移動して変更',
+    confirmRebuild: '変更して作り直す',
+    confirmChange: '場所を変更',
+    movingToast: (to) => `インデックスを ${to} へ移動しています`,
+    movedToast: (to) => `インデックスを ${to} へ移動しました`,
+    rebuiltToast: (to) => `インデックスの場所を ${to} に変更しました。バックグラウンドで作り直しています。`,
+    changedToast: (to) => `インデックスの場所を ${to} に変更しました`,
+    pickFailed: (message) => `フォルダーを選べませんでした：${message}`,
+  },
 };

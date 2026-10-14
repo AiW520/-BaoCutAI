@@ -20,6 +20,7 @@ import { MemoryCitationRegistry } from '../../ai-tools/citation-registry.ts';
 import { SemanticTools } from '../../agent-tools/semantic-tools.ts';
 import type { ToolPrincipal, ToolScope } from '../../agent-tools/tool-scope.ts';
 import { chunkVideo, estimateTokens } from './chunks.ts';
+import { checkIndexTarget, copyDir, dirBytes } from './index-location.ts';
 import { embeddingKeyOf } from './coordinator.ts';
 import { DEFAULT_VISUAL_SECONDS_PER_FRAME, readRate, recordRate } from './estimate.ts';
 import type { PowerState } from './power.ts';
@@ -649,6 +650,138 @@ describe('增量构建', () => {
     services.coordinator.schedule(0);
     await services.coordinator.idle();
     expect(services.store()!.activeGenerations(['v1']).has('v1')).toBe(true);
+  });
+});
+
+describe('索引位置', () => {
+  /** 设置 `semantic.indexDir` 的替身。 */
+  function openAt(dir: { value: string | null }): SemanticServices {
+    const s = openSemanticServices({
+      cacheDir: path.join(tmp, 'cache'),
+      indexDir: {
+        get: () => dir.value,
+        set: async (value) => {
+          dir.value = value;
+        },
+      },
+      catalog: { videos: () => videos, index, scanning: false },
+      reader,
+      provider,
+      settings: () => ({ channels: ['text'], excludedProjects: [], excludedVideos: [] }),
+      log: silentLogger,
+      debounceMs: 0,
+    });
+    opened.push(s);
+    return s;
+  }
+
+  async function moved(s: SemanticServices): Promise<void> {
+    for (let i = 0; i < 200 && s.location().moving; i++) await new Promise((r) => setTimeout(r, 5));
+    expect(s.location().moving).toBeNull();
+  }
+
+  const exists = (file: string) =>
+    fs.stat(file).then(
+      () => true,
+      () => false,
+    );
+
+  it('移过去：库连同向量搬走、原处不留，设置跟着改；之后不再编码；放回缺省位置同样', async () => {
+    const dir = { value: null as string | null };
+    const s = openAt(dir);
+    await build(s);
+    const encoded = provider.documents;
+    const defaultRoot = path.join(tmp, 'cache', 'semantic-index');
+    expect(s.location()).toMatchObject({ path: defaultRoot, defaultPath: defaultRoot, source: 'default', exists: true, moving: null });
+
+    const target = path.join(tmp, 'elsewhere');
+    await fs.mkdir(target);
+    const started = await s.relocate(target, 'move');
+    expect(started.moving?.to).toBe(target);
+    await expect(rejection(s.relocate(null, 'move'))).resolves.toMatchObject({ details: { code: 'SEMANTIC_INDEX_DIR_MOVING' } });
+    await moved(s);
+    expect(dir.value).toBe(target);
+    expect(s.location()).toMatchObject({ path: target, source: 'custom', exists: true, moveError: null });
+    expect(await exists(path.join(target, 'v1', SEMANTIC_STORE_FILE))).toBe(true);
+    expect(await exists(path.join(defaultRoot, 'v1'))).toBe(false);
+    await s.coordinator.idle();
+    expect(s.store()!.activeGenerations(['v1', 'v2', 'v3']).size).toBe(3);
+    expect(provider.documents).toBe(encoded);
+    const status = await s.search.indexStatus(USER_VIEWER);
+    expect(status.indexDir?.path).toBe(target);
+    expect((await s.search.indexStatus(SOURCE_P1)).indexDir).toBeUndefined();
+
+    await s.relocate(null, 'move');
+    await moved(s);
+    expect(dir.value).toBeNull();
+    expect(await exists(path.join(defaultRoot, 'v1', SEMANTIC_STORE_FILE))).toBe(true);
+    expect(await exists(path.join(target, 'v1'))).toBe(false);
+  });
+
+  it('重新建：原来的库删掉，在新位置从头建', async () => {
+    const dir = { value: null as string | null };
+    const s = openAt(dir);
+    await build(s);
+    const encoded = provider.documents;
+    const target = path.join(tmp, 'fresh');
+    await fs.mkdir(target);
+    const done = await s.relocate(target, 'rebuild');
+    expect(done).toMatchObject({ path: target, moving: null });
+    expect(dir.value).toBe(target);
+    expect(await exists(path.join(tmp, 'cache', 'semantic-index', 'v1'))).toBe(false);
+    await s.coordinator.idle();
+    expect(s.store()!.activeGenerations(['v1', 'v2', 'v3']).size).toBe(3);
+    expect(provider.documents).toBeGreaterThan(encoded);
+  });
+
+  it('不能换到：互相包含、不在、已经有库的文件夹；查不过时什么都不动', async () => {
+    const dir = { value: null as string | null };
+    const s = openAt(dir);
+    await build(s);
+    const codeOf = async (target: string) => ((await rejection(s.relocate(target, 'move'))).details as { code?: string }).code;
+    expect(await codeOf(path.join(tmp, 'cache', 'semantic-index', 'inner'))).toBe('SEMANTIC_INDEX_DIR_NESTED');
+    expect(await codeOf(path.join(tmp, 'cache'))).toBe('SEMANTIC_INDEX_DIR_NESTED');
+    expect(await codeOf(path.join(tmp, 'nowhere'))).toBe('SEMANTIC_INDEX_DIR_MISSING');
+    const taken = path.join(tmp, 'taken');
+    await fs.mkdir(path.join(taken, 'v1'), { recursive: true });
+    await fs.writeFile(path.join(taken, 'v1', SEMANTIC_STORE_FILE), '');
+    expect(await codeOf(taken)).toBe('SEMANTIC_INDEX_DIR_OCCUPIED');
+    // 已经有库的地方可以重新建（沿用那里的库）。
+    expect(dir.value).toBeNull();
+    expect(s.store()).not.toBeNull();
+  });
+
+  it('跨盘：放不下时报差多少；复制逐个文件报进度', async () => {
+    const from = path.join(tmp, 'from');
+    await fs.mkdir(path.join(from, 'v1', 'sub'), { recursive: true });
+    await fs.writeFile(path.join(from, 'v1', 'a.db'), Buffer.alloc(1000));
+    await fs.writeFile(path.join(from, 'v1', 'sub', 'b'), Buffer.alloc(24));
+    expect(await dirBytes(path.join(from, 'v1'))).toBe(1024);
+    const to = path.join(tmp, 'to');
+    await fs.mkdir(to);
+    const error = await rejection(
+      checkIndexTarget(from, to, 'move', { isDefault: false, freeBytes: async () => 100, sameDisk: async () => false }),
+    );
+    expect(error.details).toMatchObject({ code: 'SEMANTIC_INDEX_DIR_NO_SPACE', availableBytes: 100 });
+    await expect(
+      checkIndexTarget(from, to, 'rebuild', { isDefault: false, freeBytes: async () => 100, sameDisk: async () => false }),
+    ).resolves.toMatchObject({
+      bytes: 0,
+    });
+    const steps: number[] = [];
+    await copyDir(path.join(from, 'v1'), path.join(to, 'v1'), (n) => steps.push(n));
+    expect(steps.sort((a, b) => a - b)).toEqual([24, 1000]);
+    expect(await dirBytes(path.join(to, 'v1'))).toBe(1024);
+  });
+
+  it('换过的位置不在（外接盘没接上）：不建库，语义检索报没准备好，位置写明不在', async () => {
+    const dir = { value: path.join(tmp, 'unplugged') as string | null };
+    const s = openAt(dir);
+    expect(s.store()).toBeNull();
+    expect(s.location()).toMatchObject({ source: 'custom', exists: false });
+    const status = await s.search.indexStatus(USER_VIEWER);
+    expect(status.reason).toBe('INDEX_NOT_READY');
+    expect(await exists(path.join(tmp, 'unplugged'))).toBe(false);
   });
 });
 

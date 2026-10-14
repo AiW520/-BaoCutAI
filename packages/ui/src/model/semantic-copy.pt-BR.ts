@@ -214,4 +214,35 @@ export const ptBR: SemanticMessages = {
     toastRestored: (n) => (n === 1 ? '1 projeto voltou para a fila do índice.' : `${n} projetos voltaram para a fila do índice.`),
     toastSeparator: ' ',
   },
+  location: {
+    label: 'Local',
+    defaultDesc: 'Nos dados do app. Você pode movê-lo para um disco com mais espaço; o índice cresce conforme mais vídeos são indexados.',
+    customDesc: 'Em uma pasta que você escolheu.',
+    missingDesc:
+      'Esta pasta não foi encontrada (talvez um disco externo esteja desconectado). Até ela voltar, a busca do Space usa só texto exato.',
+    moving: (size, to) => `Movendo ${size} para ${to}. Até terminar, a indexação fica pausada e a busca do Space usa só texto exato.`,
+    movingLabel: 'Movendo o índice semântico',
+    change: 'Alterar…',
+    restore: 'Restaurar padrão',
+    changeTitle: 'Alterar local do índice',
+    restoreTitle: 'Voltar o índice para o local padrão',
+    same: 'O índice já está aqui.',
+    howTo: 'O que fazer com o índice atual',
+    moveOption: 'Mover o índice atual para lá',
+    moveDesc: (size) =>
+      `Move ${size}. Enquanto move, a indexação fica pausada e a busca do Space usa só texto exato. Nada fica no local antigo.`,
+    rebuildOption: 'Reconstruí-lo lá',
+    rebuildDesc:
+      'Exclui o índice atual e o reconstrói lá em segundo plano a partir das transcrições e quadros existentes. A busca por significado fica incompleta até terminar.',
+    keyframesNote:
+      'O cache de quadros-chave não é movido: fica no cache do app, pode ser limpo e é obtido de novo quando necessário. Se o disco do índice não estiver conectado, a busca do Space usa só texto exato e volta ao normal quando ele estiver.',
+    confirmMove: 'Mover e alterar',
+    confirmRebuild: 'Alterar e reconstruir',
+    confirmChange: 'Alterar local',
+    movingToast: (to) => `Movendo o índice para ${to}`,
+    movedToast: (to) => `Índice movido para ${to}`,
+    rebuiltToast: (to) => `Local do índice alterado para ${to}. Reconstruindo em segundo plano.`,
+    changedToast: (to) => `Local do índice alterado para ${to}`,
+    pickFailed: (message) => `Não foi possível escolher a pasta: ${message}`,
+  },
 };

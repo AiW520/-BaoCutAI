@@ -33,6 +33,7 @@ type SpaceMethod =
   | 'space.indexStatus'
   | 'space.indexBuild'
   | 'space.indexControl'
+  | 'space.indexSetDir'
   | 'space.resolveSearchHit'
   | 'space.citations'
   | 'space.relevantChunks'
@@ -157,6 +158,12 @@ export function spaceMethods(space: SpaceCatalog, deps: SpaceMethodDeps): Pick<R
       else if (p.action === 'resume') semantic.coordinator.resume();
       else await semantic.coordinator.clear();
       return { paused: semantic.coordinator.paused };
+    },
+    // 索引换位置（检索规格 §8.1）：只在桌面端（Web 白名单里没有）。
+    'space.indexSetDir': async (p, principal) => {
+      viewerOf(principal);
+      if (!semantic) throw semanticError('INDEX_NOT_READY');
+      return semantic.relocate(p.path, p.mode);
     },
     'space.resolveSearchHit': (p, principal) =>
       resolveSearchHit(semantic?.resolver ?? { catalog: space, reader: null }, viewerOf(principal), p.hitId),

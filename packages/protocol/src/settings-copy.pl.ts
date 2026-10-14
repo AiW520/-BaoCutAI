@@ -38,6 +38,8 @@ export const pl: SettingDescriptionMessages = {
   'semantic.channels': 'Kanały indeksu semantycznego: text (wypowiedzi: transkrypcje, napisy, tłumaczenia, rozdziały); visual (klatka kluczowa co 8 sekund; wymaga multimodalnego pakietu modelu i trwa dłużej); audio nie jest jeszcze dostępne',
   'semantic.excludedProjects': 'Projekty wyłączone z indeksu semantycznego (lista id projektów): indeksowane są wszystkie projekty BaoCut i wideo spoza projektów oprócz tych; ich wideo nadal można znaleźć po dokładnych słowach',
   'semantic.excludedVideos': 'Pojedyncze wideo wyłączone z indeksu semantycznego (lista id wideo), oprócz wyłączonych projektów; ich istniejący indeks jest usuwany',
+  'semantic.indexDir':
+    'Folder indeksu semantycznego (ścieżka bezwzględna); null zostawia go w pamięci podręcznej aplikacji. Zmienia się przez space.indexSetDir, które przenosi indeks albo buduje go od nowa',
   'semantic.pauseOnBattery': 'Wstrzymuj budowanie indeksu semantycznego na baterii i wznawiaj po podłączeniu zasilania (zawsze wstrzymuje, gdy system zwalnia z powodu temperatury)',
   'semantic.translationMemory': 'Podczas tłumaczenia proponuj wcześniejsze tłumaczenia niemal identycznych zdań (wymaga modelu wyszukiwania tekstu)',
   'semantic.glossaryCandidates': 'Proponuj terminy słowniczka na podstawie niemal identycznych zapisów w transkrypcjach (wymaga modelu wyszukiwania tekstu)',

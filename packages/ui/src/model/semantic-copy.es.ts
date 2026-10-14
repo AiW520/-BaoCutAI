@@ -214,4 +214,36 @@ export const es: SemanticMessages = {
     toastRestored: (n) => (n === 1 ? '1 proyecto ha vuelto a la cola del índice.' : `${n} proyectos han vuelto a la cola del índice.`),
     toastSeparator: ' ',
   },
+  location: {
+    label: 'Ubicación',
+    defaultDesc: 'En los datos de la app. Puedes moverlo a un disco con más espacio; el índice crece a medida que se indexan más vídeos.',
+    customDesc: 'En una carpeta que elegiste.',
+    missingDesc:
+      'No se encuentra esta carpeta (puede que un disco externo esté desconectado). Hasta que vuelva, la búsqueda de Space usa solo texto exacto.',
+    moving: (size, to) =>
+      `Moviendo ${size} a ${to}. Hasta que termine, la indexación está en pausa y la búsqueda de Space usa solo texto exacto.`,
+    movingLabel: 'Moviendo el índice semántico',
+    change: 'Cambiar…',
+    restore: 'Restaurar predeterminada',
+    changeTitle: 'Cambiar ubicación del índice',
+    restoreTitle: 'Devolver el índice a la ubicación predeterminada',
+    same: 'El índice ya está aquí.',
+    howTo: 'Qué hacer con el índice actual',
+    moveOption: 'Mover allí el índice actual',
+    moveDesc: (size) =>
+      `Mueve ${size}. Mientras se mueve, la indexación está en pausa y la búsqueda de Space usa solo texto exacto. No se conserva nada en la ubicación anterior.`,
+    rebuildOption: 'Reconstruirlo allí',
+    rebuildDesc:
+      'Elimina el índice actual y lo reconstruye allí en segundo plano a partir de las transcripciones y los fotogramas existentes. La búsqueda por significado estará incompleta hasta que termine.',
+    keyframesNote:
+      'La caché de fotogramas clave no se mueve: queda en la caché de la app, se puede borrar y se vuelve a obtener cuando hace falta. Si el disco del índice no está conectado, la búsqueda de Space usa solo texto exacto y se reanuda cuando se conecte.',
+    confirmMove: 'Mover y cambiar',
+    confirmRebuild: 'Cambiar y reconstruir',
+    confirmChange: 'Cambiar ubicación',
+    movingToast: (to) => `Moviendo el índice a ${to}`,
+    movedToast: (to) => `Índice movido a ${to}`,
+    rebuiltToast: (to) => `Ubicación del índice cambiada a ${to}. Reconstruyendo en segundo plano.`,
+    changedToast: (to) => `Ubicación del índice cambiada a ${to}`,
+    pickFailed: (message) => `No se pudo elegir la carpeta: ${message}`,
+  },
 };

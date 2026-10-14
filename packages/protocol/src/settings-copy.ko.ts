@@ -41,6 +41,8 @@ export const ko: SettingDescriptionMessages = {
   'semantic.channels': '의미 색인을 만들 채널: text(말한 내용: 대본, 자막, 번역, 챕터). 화면(visual)은 8초마다 키프레임 하나로, 멀티모달 모델 패키지가 필요하고 더 오래 걸립니다. 소리(audio)는 아직 사용할 수 없습니다',
   'semantic.excludedProjects': '의미 색인에서 제외할 프로젝트(프로젝트 ID 목록): BaoCut의 모든 프로젝트와 프로젝트 밖의 동영상을 색인하고 이것만 뺍니다. 제외한 동영상도 정확한 단어로는 찾을 수 있습니다',
   'semantic.excludedVideos': '의미 색인에서 따로 제외할 동영상(동영상 ID 목록). 제외한 프로젝트에 더해 적용되며 이미 만든 색인은 지웁니다',
+  'semantic.indexDir':
+    '의미 색인을 둘 폴더(절대 경로). null이면 앱 캐시에 둡니다. space.indexSetDir로 바꾸면 색인을 옮기거나 다시 만듭니다',
   'semantic.pauseOnBattery': '배터리 사용 중에는 의미 색인 생성을 일시 정지하고 전원에 연결하면 이어서 진행합니다(발열로 성능이 제한될 때는 항상 일시 정지)',
   'semantic.translationMemory': '번역할 때 이전에 번역한 거의 같은 문장을 제안(텍스트 검색 모델 필요)',
   'semantic.glossaryCandidates': '대본들 사이의 거의 같은 표기에서 용어 후보를 제안(텍스트 검색 모델 필요)',

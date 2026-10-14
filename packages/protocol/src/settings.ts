@@ -136,6 +136,11 @@ export interface SettingValues {
    * 用电池时暂停建语义索引（检索规格 §16.1），接上电源后接着建。Runtime 自己查供电（macOS、Windows、Linux），查不出时当作
    * 接着电。系统因过热降频时总是暂停，不受它影响。
    */
+  /**
+   * 语义索引所在的文件夹（检索规格 §8.1）：库在 `<它>/v1/`；null 时在 `<home>/cache/semantic-index`。只经 `space.indexSetDir`
+   * 改（移动或在那里重新建），不经 `settings.set`。
+   */
+  'semantic.indexDir': string | null;
   'semantic.pauseOnBattery': boolean;
   /** 翻译记忆（§2.6）：翻译时提示以前译过的几乎相同的句子。 */
   'semantic.translationMemory': boolean;
@@ -175,6 +180,7 @@ export const SETTING_KEYS = [
   'semantic.channels',
   'semantic.excludedProjects',
   'semantic.excludedVideos',
+  'semantic.indexDir',
   'semantic.pauseOnBattery',
   'semantic.translationMemory',
   'semantic.glossaryCandidates',
@@ -209,6 +215,7 @@ export const SETTING_DEFAULTS: Readonly<SettingValues> = Object.freeze({
   'semantic.channels': Object.freeze(['text', 'visual']) as unknown as SemanticChannel[],
   'semantic.excludedProjects': Object.freeze([]) as unknown as Id[],
   'semantic.excludedVideos': Object.freeze([]) as unknown as Id[],
+  'semantic.indexDir': null,
   'semantic.pauseOnBattery': true,
   'semantic.translationMemory': true,
   'semantic.glossaryCandidates': true,
@@ -227,7 +234,10 @@ export function settingDescription(key: SettingKey): string {
 }
 
 /** 不能经 `settings.set` 改的键：各有专门的方法（`models.dir` 用 `models.setDir`）。 */
-export const SETTING_MANAGED_BY: Readonly<Partial<Record<SettingKey, string>>> = { 'models.dir': 'models.setDir' };
+export const SETTING_MANAGED_BY: Readonly<Partial<Record<SettingKey, string>>> = {
+  'models.dir': 'models.setDir',
+  'semantic.indexDir': 'space.indexSetDir',
+};
 
 export function isSettingKey(key: string): key is SettingKey {
   return (SETTING_KEYS as readonly string[]).includes(key);

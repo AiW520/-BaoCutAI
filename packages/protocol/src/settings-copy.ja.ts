@@ -41,6 +41,8 @@ export const ja: SettingDescriptionMessages = {
   'semantic.channels': '意味インデックスを作るチャンネル：text（発話内容：書き起こし、字幕、翻訳、チャプター）。映像（visual）は 8 秒ごとのキーフレームで、マルチモーダルのモデルパッケージが必要で時間もかかります。音（audio）はまだ使えません',
   'semantic.excludedProjects': '意味インデックスから除外するプロジェクト（プロジェクト ID の一覧）：BaoCut のすべてのプロジェクトとプロジェクト外の動画をインデックスし、これらだけを除きます。除外した動画も文字どおりの検索では見つかります',
   'semantic.excludedVideos': '意味インデックスから個別に除外する動画（動画 ID の一覧）。除外したプロジェクトに加えて適用され、作成済みのインデックスは取り除かれます',
+  'semantic.indexDir':
+    '意味インデックスを置くフォルダー（絶対パス）。null ならアプリのキャッシュに置きます。space.indexSetDir で変更すると、インデックスを移動するか作り直します',
   'semantic.pauseOnBattery': 'バッテリー駆動中はセマンティックインデックスの作成を一時停止し、電源につなぐと再開します（発熱で性能が制限されているときは常に一時停止）',
   'semantic.translationMemory': '翻訳時に、以前訳したほぼ同じ文を提案（テキスト検索モデルが必要）',
   'semantic.glossaryCandidates': '書き起こし間のほぼ同じ表記から用語の候補を提案（テキスト検索モデルが必要）',

@@ -247,6 +247,39 @@ const en = {
     toastRestored: (n: number) => (n === 1 ? '1 project is back in the index queue.' : `${n} projects are back in the index queue.`),
     toastSeparator: ' ',
   },
+  /** 设置页「索引」里的「位置」一行与更改对话框（检索规格 §8.1；只在桌面端）。 */
+  location: {
+    label: 'Location',
+    defaultDesc: 'In the app data. You can move it to a disk with more room; the index grows as more videos are indexed.',
+    customDesc: 'In a folder you chose.',
+    missingDesc:
+      'This folder can’t be found (an external drive may be disconnected). Space search falls back to exact text until it’s back.',
+    moving: (size: string, to: string) =>
+      `Moving ${size} to ${to}. Indexing is paused and Space search falls back to exact text until it’s done.`,
+    movingLabel: 'Moving the semantic index',
+    change: 'Change…',
+    restore: 'Restore default',
+    changeTitle: 'Change index location',
+    restoreTitle: 'Move the index back to the default location',
+    same: 'The index is already here.',
+    howTo: 'What to do with the current index',
+    moveOption: 'Move the current index there',
+    moveDesc: (size: string) =>
+      `Moves ${size}. While it moves, indexing is paused and Space search falls back to exact text. Nothing is kept in the old location.`,
+    rebuildOption: 'Rebuild it there',
+    rebuildDesc:
+      'Deletes the current index and rebuilds it there in the background from existing transcripts and frames. Search by meaning is incomplete until it finishes.',
+    keyframesNote:
+      'The keyframe cache isn’t moved: it stays in the app cache, can be cleared and is fetched again when needed. If the disk with the index isn’t connected, Space search falls back to exact text and picks up again once it is.',
+    confirmMove: 'Move and change',
+    confirmRebuild: 'Change and rebuild',
+    confirmChange: 'Change location',
+    movingToast: (to: string) => `Moving the index to ${to}`,
+    movedToast: (to: string) => `Moved the index to ${to}`,
+    rebuiltToast: (to: string) => `Index location changed to ${to}. Rebuilding in the background.`,
+    changedToast: (to: string) => `Index location changed to ${to}`,
+    pickFailed: (message: string) => `Couldn't choose the folder: ${message}`,
+  },
 };
 
 export type SemanticMessages = typeof en;

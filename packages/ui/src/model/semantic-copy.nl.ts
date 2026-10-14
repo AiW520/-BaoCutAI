@@ -214,4 +214,37 @@ export const nl: SemanticMessages = {
     toastRestored: (n) => (n === 1 ? '1 project staat weer in de indexwachtrij.' : `${n} projecten staan weer in de indexwachtrij.`),
     toastSeparator: ' ',
   },
+  location: {
+    label: 'Locatie',
+    defaultDesc:
+      'In de app-gegevens. Je kunt hem naar een schijf met meer ruimte verplaatsen; de index groeit naarmate meer video’s worden geïndexeerd.',
+    customDesc: 'In een map die je hebt gekozen.',
+    missingDesc:
+      'Deze map is niet te vinden (misschien is een externe schijf losgekoppeld). Tot hij terug is, zoekt Space alleen op exacte tekst.',
+    moving: (size, to) =>
+      `${size} wordt naar ${to} verplaatst. Tot het klaar is, is indexeren gepauzeerd en zoekt Space alleen op exacte tekst.`,
+    movingLabel: 'Semantische index verplaatsen',
+    change: 'Wijzigen…',
+    restore: 'Standaard herstellen',
+    changeTitle: 'Locatie van de index wijzigen',
+    restoreTitle: 'Index terugzetten op de standaardlocatie',
+    same: 'De index staat hier al.',
+    howTo: 'Wat er met de huidige index moet gebeuren',
+    moveOption: 'Huidige index daarheen verplaatsen',
+    moveDesc: (size) =>
+      `Verplaatst ${size}. Tijdens het verplaatsen is indexeren gepauzeerd en zoekt Space alleen op exacte tekst. Op de oude locatie blijft niets achter.`,
+    rebuildOption: 'Daar opnieuw opbouwen',
+    rebuildDesc:
+      'Verwijdert de huidige index en bouwt hem daar op de achtergrond opnieuw op uit bestaande transcripten en beelden. Tot het klaar is, is zoeken op betekenis onvolledig.',
+    keyframesNote:
+      'De cache met keyframes wordt niet verplaatst: die blijft in de app-cache, kan worden gewist en wordt zo nodig opnieuw opgehaald. Is de schijf met de index niet aangesloten, dan zoekt Space alleen op exacte tekst en gaat verder zodra hij er weer is.',
+    confirmMove: 'Verplaatsen en wijzigen',
+    confirmRebuild: 'Wijzigen en opnieuw opbouwen',
+    confirmChange: 'Locatie wijzigen',
+    movingToast: (to) => `Index wordt naar ${to} verplaatst`,
+    movedToast: (to) => `Index verplaatst naar ${to}`,
+    rebuiltToast: (to) => `Locatie van de index gewijzigd naar ${to}. Wordt op de achtergrond opnieuw opgebouwd.`,
+    changedToast: (to) => `Locatie van de index gewijzigd naar ${to}`,
+    pickFailed: (message) => `Kan de map niet kiezen: ${message}`,
+  },
 };

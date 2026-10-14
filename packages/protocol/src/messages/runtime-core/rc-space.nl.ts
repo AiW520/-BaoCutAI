@@ -75,4 +75,11 @@ export const nl: RcSpaceMessages = {
   afterMaterial: (p: { reason: string }) => `Na het toevoegen van de media: ${p.reason}`,
   invalidParams: "Ongeldige parameters",
   relatedNotVideo: 'Alleen video’s tonen verwante video’s',
+  indexDirNested: 'De nieuwe locatie en de huidige indexmap bevatten elkaar. Kies een map die er niet in ligt en hem ook niet bevat',
+  indexDirNoSpace:
+    'Op de schijf van de nieuwe locatie is geen ruimte voor de index. Kies een andere map, of bouw de index daar opnieuw op in plaats van hem te verplaatsen',
+  indexDirOccupied:
+    'Deze map heeft al een semantische index. Kies een lege map, of bouw de index daar opnieuw op om de bestaande te gebruiken',
+  indexDirMoving: 'De index wordt verplaatst. Wacht tot het verplaatsen klaar is',
+  indexDirMoveFailed: (p: { reason: string }) => `De index kon niet worden verplaatst en blijft waar hij was: ${p.reason}`,
 };

@@ -57,6 +57,8 @@ const en = {
   'semantic.channels': 'Semantic index channels to build: text (speech, captions, translations, chapters); visual (a keyframe every 8 seconds; needs a multimodal model package and takes longer); audio is not available yet',
   'semantic.excludedProjects': 'Projects left out of the semantic index (list of project ids): every BaoCut project and every video outside projects is indexed except these, whose videos can still be found by exact words',
   'semantic.excludedVideos': 'Single videos left out of the semantic index (list of video ids), on top of excluded projects; their existing index is removed',
+  'semantic.indexDir':
+    'Folder for the semantic index (absolute path); null keeps it in the app cache. Change it with space.indexSetDir, which moves or rebuilds the index',
   'semantic.pauseOnBattery': 'Pause building the semantic index while running on battery and continue when plugged in (indexing always pauses while the system is throttling for heat)',
   'semantic.translationMemory': 'Suggest earlier translations of near-identical sentences when translating (needs the text search model)',
   'semantic.glossaryCandidates': 'Suggest glossary terms from near-identical spellings across transcripts (needs the text search model)',

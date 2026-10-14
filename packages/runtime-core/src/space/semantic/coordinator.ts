@@ -292,6 +292,25 @@ export class SemanticCoordinator {
   }
 
   /**
+   * 换库之前（索引换位置，`space.indexSetDir`）：停下两路手上的活、清空队列、丢掉向量缓存。之后 `store()` 换成别的库（或暂时
+   * 为 null），再 `attach()`。
+   */
+  async detach(): Promise<void> {
+    this.#abort?.abort();
+    this.#queue.clear();
+    await this.#worker?.catch(() => {});
+    await this.#visual?.clear();
+    this.#options.scanner.invalidate();
+  }
+
+  /** 换好库：通知检索（游标、状态），按新库重新规划。 */
+  attach(): void {
+    this.#options.scanner.invalidate();
+    this.#changed();
+    this.schedule(0);
+  }
+
+  /**
    * 手动建索引（`space.indexBuild`）：给出的视频（调用方已按主体筛好）排到队首；`rebuild` 时不用已有向量、失败过的也重试。
    * `channels` 含 `visual` 时也建这些视频的画面（不看设置；之后跟着内容变化保持更新）。返回计划处理的视频数（两路取大）。
    */

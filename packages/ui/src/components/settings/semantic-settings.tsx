@@ -1,5 +1,5 @@
-import { useState, type ReactNode } from 'react';
-import type { Id, ModelBundleStatus, SemanticChannel } from '@baocut/protocol';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
+import type { Id, ModelBundleStatus, SemanticChannel, SemanticIndexDir, SemanticIndexDirMode } from '@baocut/protocol';
 import {
   ActionButton,
   AlertDialog,
@@ -14,12 +14,16 @@ import {
   Heading,
   InlineAlert,
   ProgressBar,
+  Radio,
+  RadioGroup,
   Switch,
   Text,
   ToastQueue,
 } from '@react-spectrum/s2';
 import Download from '@react-spectrum/s2/icons/Download';
+import Folder from '@react-spectrum/s2/icons/Folder';
 import { style } from '@react-spectrum/s2/style' with { type: 'macro' };
+import { revealLabel } from '../../copy.ts';
 import {
   downloadView,
   inlineInstallMode,
@@ -29,6 +33,7 @@ import {
   removedToast,
   rpcProblem,
 } from '../../model/models-install.ts';
+import { shortenDir } from '../../model/models-dir.ts';
 import { bundleName } from '../../model/models-local.ts';
 import { M as LOCAL } from '../../model/models-local-copy.ts';
 import { M as COPY } from '../../model/semantic-copy.ts';
@@ -59,14 +64,16 @@ import { useSaveSettings, useSettingsReady } from './save-settings.ts';
  * - 装好后按索引范围给视频建：讲话内容，再是画面（`semantic.channels` 默认含 `visual`）。画面在「索引」里一个开关：开着时写
  *   画面建到第几帧（`visualProgress`，检索规格 §13.2）；没开时写打开后要建多少（`estimates` 里 `ifEnabled` 的画面一项），
  *   打开先确认。缺多模态模型、或画面这一路用不了时开关置灰并写原因。声音这一版没有。
- * - 索引：状态、暂停 / 恢复、缓存大小与清理（`space.indexControl`）、实际运行的设备。在更新时写还要多久（`estimates`）；用电池、
+ * - 索引：状态、暂停 / 恢复、缓存大小与清理（`space.indexControl`）、位置（`space.indexSetDir`：换到别的文件夹时把现有的
+ *   索引移过去或在那里重新建，移的时候写进度；检索规格 §8.1）、实际运行的设备。在更新时写还要多久（`estimates`）；用电池、
  *   过热降频时 Runtime 自动停下，状态写原因（`pauseReason`，§16.1），「用电池时暂停」（`semantic.pauseOnBattery`）可关。
  *   恢复只撤掉用户的暂停。
  * - 索引范围：所有 BaoCut 项目（新建的自动加入）与项目之外的视频，减去排除的项目（`semantic.excludedProjects`）与 Space 里
  *   单独设了不索引的视频（`semantic.excludedVideos`）；两者都能在这里恢复，排除项目走一个勾选对话框。成片不另建。
  * - 用到它的两项开关：翻译记忆（`semantic.translationMemory`，Runtime 执行）、术语候选（`semantic.glossaryCandidates`，润色面板读它）。
  *
- * 浏览器里（Web）只看不改：能取状态（`space.indexStatus` 在白名单里），装模型、控制索引与改设置都不开放。
+ * 浏览器里（Web）只看不改：能取状态（`space.indexStatus` 在白名单里），装模型、控制索引与改设置都不开放；索引位置只写路径
+ * （选不了 Runtime 那台电脑上的文件夹）。
  */
 
 const lead = style({ marginTop: -8, marginBottom: 24, font: 'ui-sm', color: 'gray-600' });
@@ -87,6 +94,8 @@ const visualBarTrack = style({ width: 'full', maxWidth: 320 });
 const value = style({ font: 'ui-sm', color: 'gray-800' });
 const note = style({ paddingY: 12, font: 'ui-xs', color: 'gray-600', overflowWrap: 'anywhere' });
 const dialogStack = style({ display: 'flex', flexDirection: 'column', gap: 16 });
+const pathText = style({ font: 'code-xs', color: 'gray-800', minWidth: 0, overflowWrap: 'anywhere', userSelect: 'text' });
+const dialogPath = style({ font: 'code-sm', overflowWrap: 'anywhere', userSelect: 'text' });
 
 export function SemanticSettings() {
   const web = useRuntime().host.platform === 'web';
@@ -366,11 +375,16 @@ function IndexGroup({ web, multimodal }: { web: boolean; multimodal: boolean }) 
       <Row label={COPY.settings.cache} desc={COPY.settings.cacheDesc}>
         <span className={value}>{fmtSize(status.cacheBytes)}</span>
         {web ? null : (
-          <ActionButton size="S" isQuiet isDisabled={busy || status.cacheBytes === 0} onPress={() => setClearing(true)}>
+          <ActionButton
+            size="S"
+            isQuiet
+            isDisabled={busy || status.cacheBytes === 0 || !!status.indexDir?.moving}
+            onPress={() => setClearing(true)}>
             {COPY.settings.clear}
           </ActionButton>
         )}
       </Row>
+      {status.indexDir ? <LocationRow web={web} dir={status.indexDir} bytes={status.cacheBytes} /> : null}
       <Row label={COPY.settings.runsOn} desc={COPY.settings.runsOnDesc}>
         <span className={value}>
           {status.model.device
@@ -403,6 +417,174 @@ function IndexGroup({ web, multimodal }: { web: boolean; multimodal: boolean }) 
         ) : null}
       </DialogContainer>
     </Group>
+  );
+}
+
+// ---- 索引位置 ----
+
+/** 「索引」里的「位置」一行：路径、在文件夹中显示、更改…、恢复默认；移动时写进度，移不成时写原因。Web 只写路径。 */
+function LocationRow({ web, dir, bytes }: { web: boolean; dir: SemanticIndexDir; bytes: number }) {
+  const runtime = useRuntime();
+  const L = COPY.location;
+  const [dialog, setDialog] = useState<{ target: string | null } | null>(null);
+  const [picking, setPicking] = useState(false);
+  // 移完（`moving` 从有到无、没有失败）时提示一次。
+  const movingTo = useRef<string | null>(null);
+  useEffect(() => {
+    const to = dir.moving?.to ?? null;
+    if (movingTo.current && !to && !dir.moveError) {
+      ToastQueue.positive(COPY.location.movedToast(shortenDir(movingTo.current, 40)), { timeout: 4000 });
+    }
+    movingTo.current = to;
+  }, [dir.moving?.to, dir.moveError]);
+  const moving = dir.moving;
+  const pct = moving && moving.totalBytes > 0 ? Math.min(100, Math.floor((moving.doneBytes / moving.totalBytes) * 100)) : null;
+  const text = moving
+    ? L.moving(fmtSize(moving.totalBytes || bytes), shortenDir(moving.to, 36))
+    : !dir.exists
+      ? L.missingDesc
+      : dir.source === 'default'
+        ? L.defaultDesc
+        : L.customDesc;
+  const desc = (
+    <>
+      {text}
+      {moving ? (
+        <span className={visualBar} role="status">
+          <ProgressBar
+            size="S"
+            aria-label={L.movingLabel}
+            isIndeterminate={pct === null}
+            value={pct ?? undefined}
+            styles={visualBarTrack}
+          />
+        </span>
+      ) : null}
+      {dir.moveError ? <span className={failed}>{dir.moveError}</span> : null}
+    </>
+  );
+  const pick = async () => {
+    setPicking(true);
+    try {
+      const next = await runtime.host.pickDirectory();
+      if (next) setDialog({ target: next });
+    } catch (error) {
+      ToastQueue.negative(L.pickFailed(error instanceof Error ? error.message : String(error)), { timeout: 5000 });
+    } finally {
+      setPicking(false);
+    }
+  };
+  return (
+    <>
+      <Row label={L.label} desc={desc}>
+        <span className={pathText} title={dir.path}>
+          {shortenDir(dir.path, 36)}
+        </span>
+        {web ? null : (
+          <>
+            <ActionButton size="S" isQuiet isDisabled={!!moving || !dir.exists} onPress={() => void runtime.host.revealPath(dir.path)}>
+              <Folder />
+              <Text>{revealLabel()}</Text>
+            </ActionButton>
+            <Button size="S" variant="secondary" isDisabled={!!moving || picking} isPending={picking} onPress={() => void pick()}>
+              {L.change}
+            </Button>
+            {dir.source === 'custom' ? (
+              <ActionButton size="S" isQuiet isDisabled={!!moving} onPress={() => setDialog({ target: null })}>
+                {L.restore}
+              </ActionButton>
+            ) : null}
+          </>
+        )}
+      </Row>
+      {dialog ? <LocationDialog target={dialog.target} dir={dir} bytes={bytes} onClose={() => setDialog(null)} /> : null}
+    </>
+  );
+}
+
+/**
+ * 更改索引位置：选好的文件夹（`target` 为 null 时是放回缺省位置）；有索引时在「移过去」与「重新建」之间选（没有「只切换」：
+ * 留在原处的索引没人用）。Runtime 拒绝时原因留在框里。
+ */
+function LocationDialog({
+  target,
+  dir,
+  bytes,
+  onClose,
+}: {
+  target: string | null;
+  dir: SemanticIndexDir;
+  bytes: number;
+  onClose: () => void;
+}) {
+  const runtime = useRuntime();
+  const { refresh } = useSemanticStatus();
+  const L = COPY.location;
+  const [mode, setMode] = useState<SemanticIndexDirMode>('move');
+  const [busy, setBusy] = useState(false);
+  const [failure, setFailure] = useState<string | null>(null);
+  const shown = target ?? dir.defaultPath;
+  const same = shown === dir.path;
+  const hasIndex = bytes > 0;
+  // 还没有索引时没什么可移：直接换（那里已经有库时沿用它）。
+  const picked: SemanticIndexDirMode = hasIndex ? mode : 'rebuild';
+  const submit = async (close: () => void) => {
+    setBusy(true);
+    setFailure(null);
+    try {
+      const next = await runtime.client.request('space.indexSetDir', { path: target, mode: picked });
+      useSemanticState.setState((s) => (s.status ? { status: { ...s.status, indexDir: next } } : {}));
+      const where = shortenDir(shown, 40);
+      const toast = next.moving ? L.movingToast(where) : hasIndex && picked === 'rebuild' ? L.rebuiltToast(where) : L.changedToast(where);
+      ToastQueue.positive(toast, { timeout: 4000 });
+      close();
+      void refresh();
+    } catch (error) {
+      setFailure(problemText(rpcProblem(error)));
+    } finally {
+      setBusy(false);
+    }
+  };
+  return (
+    <DialogContainer onDismiss={onClose}>
+      <Dialog size="M">
+        {({ close }) => (
+          <>
+            <Heading slot="title">{target === null ? L.restoreTitle : L.changeTitle}</Heading>
+            <Content>
+              <div className={dialogStack}>
+                <p className={body}>
+                  <span className={dialogPath} title={shown}>
+                    {shortenDir(shown, 60)}
+                  </span>
+                </p>
+                {same ? <p className={body}>{L.same}</p> : null}
+                {!same && hasIndex ? (
+                  <RadioGroup label={L.howTo} value={picked} onChange={(v) => setMode(v as SemanticIndexDirMode)}>
+                    <Radio value="move" description={L.moveDesc(fmtSize(bytes))}>
+                      {L.moveOption}
+                    </Radio>
+                    <Radio value="rebuild" description={L.rebuildDesc}>
+                      {L.rebuildOption}
+                    </Radio>
+                  </RadioGroup>
+                ) : null}
+                {!same ? <p className={muted}>{L.keyframesNote}</p> : null}
+                {failure ? <p className={failed}>{failure}</p> : null}
+              </div>
+            </Content>
+            <ButtonGroup>
+              <Button variant="secondary" onPress={close}>
+                {INSTALL.cancel}
+              </Button>
+              <Button variant="accent" isPending={busy} isDisabled={same || busy} onPress={() => void submit(close)}>
+                {!hasIndex ? L.confirmChange : picked === 'move' ? L.confirmMove : L.confirmRebuild}
+              </Button>
+            </ButtonGroup>
+          </>
+        )}
+      </Dialog>
+    </DialogContainer>
   );
 }
 

@@ -54,7 +54,9 @@ export function useSemanticStatus(options: { poll?: boolean } = {}): SemanticSta
   useEffect(() => {
     if (useSemanticState.getState().at > 0) void refresh();
   }, [models, refresh]);
-  const updating = (indexUpdating(state.status) || visualUpdating(state.status)) && !state.status?.paused;
+  // 索引正在换位置时也接着取（移动进度与移完之后的位置）。
+  const updating =
+    ((indexUpdating(state.status) || visualUpdating(state.status)) && !state.status?.paused) || !!state.status?.indexDir?.moving;
   useEffect(() => {
     if (!options.poll || !updating) return;
     const timer = setInterval(() => void refresh(), POLL_MS);

@@ -7,6 +7,8 @@ export const vi: SettingDescriptionMessages = {
   'semantic.channels': 'Các kênh của chỉ mục ngữ nghĩa: text (lời nói: bản chép lời, phụ đề, bản dịch, chương); visual (8 giây một khung hình chính; cần gói mô hình đa phương thức và lâu hơn); audio chưa dùng được',
   'semantic.excludedProjects': 'Các dự án không lập chỉ mục ngữ nghĩa (danh sách id dự án): mọi dự án BaoCut và video ngoài dự án đều được lập chỉ mục trừ các dự án này; video của chúng vẫn tìm được theo đúng từ ngữ',
   'semantic.excludedVideos': 'Từng video không lập chỉ mục ngữ nghĩa (danh sách id video), cộng thêm các dự án đã loại trừ; chỉ mục đã có của chúng bị gỡ bỏ',
+  'semantic.indexDir':
+    'Thư mục chứa chỉ mục ngữ nghĩa (đường dẫn tuyệt đối); null để trong bộ nhớ đệm của ứng dụng. Đổi bằng space.indexSetDir, lệnh này di chuyển hoặc tạo lại chỉ mục',
   'semantic.pauseOnBattery': 'Tạm dừng xây chỉ mục ngữ nghĩa khi dùng pin và tiếp tục khi cắm sạc (luôn tạm dừng khi hệ thống bị giảm hiệu năng vì quá nhiệt)',
   'semantic.translationMemory': 'Khi dịch, gợi ý bản dịch trước đây của các câu gần như giống hệt (cần mô hình tìm kiếm văn bản)',
   'semantic.glossaryCandidates': 'Gợi ý thuật ngữ từ các cách viết gần như giống hệt giữa các bản chép lời (cần mô hình tìm kiếm văn bản)',

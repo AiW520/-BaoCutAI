@@ -231,6 +231,8 @@ export interface SemanticIndexStatus {
    * 编好的帧，`total` 再加上还要建的（按时长估，时长未知的不算）。画面没开、这个 Runtime 不建画面时没有；旧 Runtime 没有这一项。
    */
   visualProgress?: { done: number; total: number };
+  /** 索引所在的文件夹与移动进度（设置里「位置」一行，检索规格 §8.1）。只给用户本人；旧 Runtime 没有这一项。 */
+  indexDir?: SemanticIndexDir;
   /**
    * 按视频的状态（Space 条目上的索引标志，检索规格 §13.2）：只在请求给了 `videoIds` 时有，顺序同请求、看不到的视频不列。
    * 旧 Runtime 没有这一项。
@@ -301,6 +303,33 @@ export interface SemanticIndexControlParams {
 /** 控制之后的状态：是否暂停（清理不改变暂停状态）。 */
 export interface SemanticIndexControlResult {
   paused: boolean;
+}
+
+/**
+ * 语义索引所在的文件夹（`semantic.indexDir`，检索规格 §8.1）。库在 `<path>/v1/`；关键帧缓存不在这里（在应用缓存里，可以清掉）。
+ */
+export interface SemanticIndexDir {
+  path: string;
+  /** 缺省位置：`<home>/cache/semantic-index`。 */
+  defaultPath: string;
+  source: 'default' | 'custom';
+  /** 文件夹在不在（外接盘没接上时不在：语义检索退回字面，接上后接着用）。 */
+  exists: boolean;
+  /** 正在移过去：移完之前索引停着，检索只有字面一路。没在移时 null。 */
+  moving: { to: string; doneBytes: number; totalBytes: number } | null;
+  /** 这次运行里上一回移没移成的原因（已经是给人看的话）；之后换成功或再换时清掉。 */
+  moveError: string | null;
+}
+
+/**
+ * 更改索引位置（`space.indexSetDir`）：`move` 把现有的库移过去（移完才换，失败时留在原处）；`rebuild` 删掉原来的库，在新位置
+ * 重新建（那里已经有库时沿用它）。`path` 为 null 是放回缺省位置。
+ */
+export type SemanticIndexDirMode = 'move' | 'rebuild';
+
+export interface SemanticIndexSetDirParams {
+  path: string | null;
+  mode: SemanticIndexDirMode;
 }
 
 /** `space.citations`：写作结果文档条目的出处旁文件；条目没有出处或旁文件读不出时为 null。 */

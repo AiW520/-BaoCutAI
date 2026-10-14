@@ -72,4 +72,10 @@ export const ja: RcSpaceMessages = {
   materialTooLarge: (p) => `${p.fileName} は ${p.bytes} バイトで、資料の上限 ${p.limit} を超えています`,
   afterMaterial: (p) => `資料を追加した後：${p.reason}`,
   invalidParams: 'パラメータが不正です',
+  indexDirNested: '新しい場所と現在のインデックスフォルダーが互いを含んでいます。どちらにも含まれないフォルダーを選んでください',
+  indexDirNoSpace: '新しい場所のディスクにインデックスを置く空きがありません。別のフォルダーを選ぶか、移動せずにそこで作り直してください',
+  indexDirOccupied:
+    'このフォルダーにはすでに意味インデックスがあります。空のフォルダーを選ぶか、そこで作り直して既存のものを使ってください',
+  indexDirMoving: 'インデックスを移動中です。移動が終わるまでお待ちください',
+  indexDirMoveFailed: (p: { reason: string }) => `インデックスを移動できませんでした。元の場所に残っています：${p.reason}`,
 };

@@ -67,4 +67,9 @@ export const ko: RcSpaceMessages = {
   materialTooLarge: (p) => `${p.fileName} 파일은 ${p.bytes}바이트로 자료 한도 ${p.limit}바이트를 초과합니다`,
   afterMaterial: (p) => `자료를 추가한 뒤: ${p.reason}`,
   invalidParams: '매개변수가 올바르지 않습니다',
+  indexDirNested: '새 위치와 현재 색인 폴더가 서로를 포함합니다. 어느 쪽에도 포함되지 않는 폴더를 고르세요',
+  indexDirNoSpace: '새 위치의 디스크에 색인을 둘 공간이 없습니다. 다른 폴더를 고르거나, 옮기지 말고 그곳에서 다시 만드세요',
+  indexDirOccupied: '이 폴더에는 이미 의미 색인이 있습니다. 빈 폴더를 고르거나, 그곳에서 다시 만들어 기존 색인을 쓰세요',
+  indexDirMoving: '색인을 옮기는 중입니다. 다 옮길 때까지 기다리세요',
+  indexDirMoveFailed: (p: { reason: string }) => `색인을 옮기지 못해 원래 위치에 그대로 있습니다: ${p.reason}`,
 };

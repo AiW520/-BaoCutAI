@@ -7,6 +7,8 @@ export const tr: SettingDescriptionMessages = {
   'semantic.channels': 'Oluşturulacak anlamsal dizin kanalları: text (konuşma: dökümler, altyazılar, çeviriler, bölümler); visual (8 saniyede bir anahtar kare; çok kipli bir model paketi gerekir ve daha uzun sürer); audio henüz kullanılamıyor',
   'semantic.excludedProjects': 'Anlamsal dizinin dışında bırakılan projeler (proje id listesi): bunlar dışındaki tüm BaoCut projeleri ve proje dışı videolar dizinlenir; bu projelerin videoları tam sözcüklerle yine bulunabilir',
   'semantic.excludedVideos': 'Anlamsal dizinin dışında bırakılan tek tek videolar (video id listesi), dışarıda bırakılan projelere ek olarak; mevcut dizinleri kaldırılır',
+  'semantic.indexDir':
+    'Anlamsal dizinin klasörü (mutlak yol); null ise uygulama önbelleğinde kalır. space.indexSetDir ile değiştirilir; dizini taşır ya da yeniden oluşturur',
   'semantic.pauseOnBattery': 'Pil ile çalışırken anlamsal dizin oluşturmayı duraklat, güce bağlanınca devam et (sistem ısı nedeniyle yavaşladığında her zaman duraklar)',
   'semantic.translationMemory': 'Çeviri yaparken neredeyse aynı cümlelerin önceki çevirilerini öner (metin arama modeli gerekir)',
   'semantic.glossaryCandidates': 'Dökümlerdeki neredeyse aynı yazımlardan sözlük terimi öner (metin arama modeli gerekir)',

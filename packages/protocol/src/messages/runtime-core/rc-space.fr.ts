@@ -13,4 +13,12 @@ export const fr: RcSpaceMessages = {
   labelDescription: 'Description', labelExport: 'Export', engineUnavailable: 'Le moteur vidéo est indisponible',
   continueFromTrash: 'Les éléments dans la corbeille ne peuvent pas être poursuivis. Restaurez l’élément d’abord', conversationCantSee: 'Cette session ne peut pas voir cet élément. Les éléments appartenant à un projet doivent être placés dans une session du même projet', serviceUsesMcp: 'Les services externes accèdent à Space via les outils MCP', materialTextOnly: (p) => `Seul le texte des documents .txt et .md et des sous-titres .srt et .vtt peut être lu : ${p.fileName}`, materialTooLarge: (p) => `${p.fileName} fait ${p.bytes} octets, au-delà de la limite de source de ${p.limit}`, afterMaterial: (p) => `Après l’ajout de la source : ${p.reason}`, invalidParams: 'Paramètres invalides',
   relatedNotVideo: 'Seules les vidéos affichent des vidéos associées',
+  indexDirNested:
+    'Le nouvel emplacement et le dossier actuel de l’index se contiennent l’un l’autre. Choisissez un dossier qui n’est ni dedans ni ne le contient',
+  indexDirNoSpace:
+    'Le disque du nouvel emplacement n’a pas la place pour l’index. Choisissez un autre dossier, ou reconstruisez l’index là-bas au lieu de le déplacer',
+  indexDirOccupied:
+    'Ce dossier contient déjà un index sémantique. Choisissez un dossier vide, ou reconstruisez l’index là-bas pour utiliser celui qui s’y trouve',
+  indexDirMoving: 'L’index est en cours de déplacement. Attendez la fin du déplacement',
+  indexDirMoveFailed: (p: { reason: string }) => `Impossible de déplacer l’index ; il reste à son emplacement : ${p.reason}`,
 };

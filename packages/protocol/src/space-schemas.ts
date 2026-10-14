@@ -7,6 +7,11 @@ import { AI_TOOL_SERIES_MAX, AI_TOOL_TOPIC_MAX_CHUNKS } from './pipelines.ts';
 /** `space.*` 的入站校验（架构设计 §5.7、§5.11），由 `schemas.ts` 并进方法表。 */
 
 const id = z.string().min(1).max(200);
+/** 本机的绝对路径（同 schemas.ts）：POSIX 路径、Windows 盘符或 UNC 共享路径。不含 NUL。 */
+const absolutePath = z
+  .string()
+  .max(4096)
+  .regex(/^(?:\/|[A-Za-z]:[\\/]|\\\\[^\\/\0]+[\\/][^\\/\0]+(?:[\\/]|$))[^\0]*$/, { error: () => V.absolutePath().text });
 const filePath = z.string().min(1).max(4096);
 const entry = z.object({ entryId: id }).strict();
 const kind = z.enum(['video', 'export', 'video-file', 'image', 'audio', 'subtitle', 'document', 'package', 'template', 'slides', 'design', 'design-system']);
@@ -73,6 +78,12 @@ export const SPACE_PARAM_SCHEMAS = {
     })
     .strict(),
   'space.indexControl': z.object({ action: z.enum(['pause', 'resume', 'clear']) }).strict(),
+  'space.indexSetDir': z
+    .object({
+      path: absolutePath.nullable(),
+      mode: z.enum(['move', 'rebuild']),
+    })
+    .strict(),
   'space.resolveSearchHit': z.object({ hitId: z.string().min(1).max(8000) }).strict(),
   'space.citations': entry,
   'space.relevantChunks': z

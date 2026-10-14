@@ -12,4 +12,12 @@ export const es: RcSpaceMessages = {
   labelDescription: 'Descripción', labelExport: 'Exportación',
  engineUnavailable: 'El motor de vídeo no está disponible', continueFromTrash: 'No se puede continuar con elementos de la Papelera. Restáuralo primero', conversationCantSee: 'Esta sesión no puede ver este elemento. Los elementos que pertenecen a un proyecto deben ir a una sesión del mismo proyecto', serviceUsesMcp: 'Los servicios externos acceden a Space mediante herramientas MCP', materialTextOnly: (p) => `Solo se puede leer texto de documentos .txt y .md y subtítulos .srt y .vtt: ${p.fileName}`, materialTooLarge: (p) => `${p.fileName} tiene ${p.bytes} bytes, por encima del límite de material de ${p.limit}`, afterMaterial: (p) => `Después de añadir el material: ${p.reason}`, invalidParams: 'Parámetros no válidos',
   relatedNotVideo: 'Solo los videos muestran videos relacionados',
+  indexDirNested:
+    'La nueva ubicación y la carpeta actual del índice se contienen entre sí. Elige una carpeta que no esté dentro de ella ni la contenga',
+  indexDirNoSpace:
+    'El disco de la nueva ubicación no tiene espacio para el índice. Elige otra carpeta o vuelve a crear el índice allí en lugar de moverlo',
+  indexDirOccupied:
+    'Esta carpeta ya tiene un índice semántico. Elige una carpeta vacía o vuelve a crear el índice allí para usar el que tiene',
+  indexDirMoving: 'El índice se está moviendo. Espera a que termine',
+  indexDirMoveFailed: (p: { reason: string }) => `No se pudo mover el índice; sigue donde estaba: ${p.reason}`,
 };
