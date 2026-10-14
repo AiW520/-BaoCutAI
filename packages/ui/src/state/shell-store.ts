@@ -153,7 +153,7 @@ export interface ShellStore {
   openPane(item: WorkspaceItem, from?: { conversationId?: Id | null; projectId?: Id | null }): void;
   /**
    * 视频卡第一次出现时在功能区打开那部视频（产品设计 §3.3）：只在这条会话正开在 Home 时。分屏里在右侧打开、成为当前标签
-   * （功能区收起时也展开；不进历史，后退不撤销它）；单条标签条（窄窗口、完整视图）里只加一个标签，仍显示会话。
+   * （功能区收起时也展开；不进历史，后退不撤销它）；单条标签条（窄窗口、完整视图）里只加一个标签，不切走当前那一格。
    */
   openVideoBeside(video: FileTarget, conversationId: Id): void;
   selectPane(key: string): void;
