@@ -3559,7 +3559,12 @@
     backend: {k: 'gpu', label: 'GPU · Metal', note: '自检通过；失败会自动退回 CPU'},
     cacheBytes: 327155712,
     /* 索引在更新时还要多久（indexStatus.estimates 的文字一项，v0.1 §13.2）：按这台电脑量过的速度 */
-    estimate: {text: {channel: 'text', videos: 3, unknownDuration: 0, sourceSeconds: 4260, seconds: 95, basis: 'measured'}},
+    estimate: {text: {channel: 'text', videos: 3, unknownDuration: 0, sourceSeconds: 4260, seconds: 95, basis: 'measured'},
+      /* 画面没开时：打开之后要建的量（ifEnabled）。下面六个项目的画面时长加起来 110 分钟，每 8 秒一帧，CPU 参考速度 1.1 秒 / 帧，
+         多模态包画面向量 512 维 FP32 */
+      visual: {channel: 'visual', ifEnabled: true, videos: 12, unknownDuration: 0, sourceSeconds: 6600, frames: 825, seconds: 908, basis: 'default', vectorBytes: 1689600},
+      /* 打开之后在建：还剩的量 */
+      visualLeft: {channel: 'visual', ifEnabled: false, videos: 12, unknownDuration: 0, sourceSeconds: 6600, frames: 825, seconds: 908, basis: 'default', vectorBytes: 1689600}},
     /* 已索引的项目与通道（§2.11）。text：有文稿的视频里建好了几部；pending = 还在转录、没有文稿的 */
     projects: [
       {dir: 'd1', text: {done: 4, total: 4}, visual: {assets: 30, minutes: 25, size: '约 140 MB'}, audio: {assets: 6, minutes: 8, size: '约 30 MB'}},

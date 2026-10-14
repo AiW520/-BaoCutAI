@@ -79,3 +79,17 @@ test('还要多久（v0.1 §13.2）：量过的速度、参考速度、没有速
   assert.equal(S.etaLine({videos: 4, seconds: 600, basis: 'measured', unknownDuration: 1}), '还剩 4 部视频，约 10 分钟（按这台电脑的速度，1 部时长未知未计入）');
   assert.equal(S.fmtDuration(5400), '约 1.5 小时');
 });
+
+test('打开画面之前写开销（v0.1 §13.2）：帧数、首次要多久、向量多大；关键帧缓存另算', () => {
+  assert.equal(S.visualCostLine(null), null);
+  assert.equal(
+    S.visualCostLine({videos: 12, unknownDuration: 0, sourceSeconds: 6600, frames: 825, seconds: 908, basis: 'default', vectorBytes: 1689600}),
+    '12 部视频共约 1.8 小时 → 约 825 帧，首次约 15 分钟（CPU 参考速度），向量约 2 MB；关键帧缓存另算，可清理',
+  );
+  assert.equal(
+    S.visualCostLine({videos: 2, unknownDuration: 1, sourceSeconds: 600, frames: 75, seconds: 60, basis: 'measured', vectorBytes: 153600}),
+    '2 部视频共约 10 分钟 → 约 75 帧，1 部时长未知未计入，首次约 1 分钟（按这台电脑的速度），向量不到 1 MB；关键帧缓存另算，可清理',
+  );
+  assert.equal(S.visualCostLine({videos: 1, unknownDuration: 1, sourceSeconds: 0, frames: 0, seconds: 0, basis: 'default', vectorBytes: 0}),
+    '1 部视频，时长未知，估不出要多久');
+});

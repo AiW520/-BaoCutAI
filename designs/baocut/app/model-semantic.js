@@ -11,7 +11,7 @@
   /* ---------- 状态 ---------- */
   /* half：上次安装没下完（2026-10-13 下载确认框）——{pkg, have: [已下好的部分 id], note: 失败那一句}；这时这个包仍算没装 */
   /* power：这台电脑此刻的供电（ac / battery / thermal，演示挡位）；pauseOnBattery：设置「用电池时暂停」 */
-  const DEFAULT = {install: 'text', platform: 'ok', index: 'ready', paused: false, power: 'ac', pauseOnBattery: true, tm: true, terms: true, half: null};
+  const DEFAULT = {install: 'text', platform: 'ok', index: 'ready', paused: false, power: 'ac', pauseOnBattery: true, visual: false, tm: true, terms: true, half: null};
   /* 原型演示用的 URL 开关：`?semantic=none|stale|unsupported|ready|full`（写在 hash 前面） */
   const DEMO = {
     none: {install: 'none'},
@@ -94,10 +94,24 @@
     return `还剩 ${e.videos} 部视频，${fmtDuration(e.seconds)}（${basis}${unknown}）`;
   }
 
+  /** 打开画面之前那一句（v0.1 §13.2，indexStatus.estimates 里 ifEnabled 的画面一项）：多少视频、多少帧、首次要多久、向量多大。
+      关键帧缓存不算在内（可以清掉）。 */
+  function visualCostLine(e) {
+    if (!e || !e.videos) return null;
+    if (!e.frames) return `${e.videos} 部视频，时长未知，估不出要多久`;
+    const size = e.vectorBytes === null || e.vectorBytes === undefined ? null
+      : e.vectorBytes < 1048576 ? '不到 1 MB' : `约 ${fmtBytes(e.vectorBytes)}`;
+    const time = e.seconds === null || e.seconds === undefined ? null
+      : `首次${fmtDuration(e.seconds)}（${e.basis === 'measured' ? '按这台电脑的速度' : 'CPU 参考速度'}）`;
+    const unknown = e.unknownDuration ? `，${e.unknownDuration} 部时长未知未计入` : '';
+    const head = `${e.videos} 部视频共${fmtDuration(e.sourceSeconds)} → 约 ${e.frames} 帧${unknown}`;
+    return [head, time, size ? `向量${size}` : null].filter(Boolean).join('，') + '；关键帧缓存另算，可清理';
+  }
+
   /* ---------- 通道与完整性 ---------- */
   const CHANNELS = [
     {k: 'text', label: '讲话内容', short: '文字'},
-    {k: 'visual', label: '画面', short: '画面', later: '这一版还没有画面索引；之后装好多模态搜索、按项目开启'},
+    {k: 'visual', label: '画面', short: '画面', later: '画面索引没开；装好多模态搜索后在设置里打开'},
     {k: 'audio', label: '声音', short: '声音', later: '这一版还没有声音索引；之后装好多模态搜索、按项目开启'},
   ];
   /** 包装了哪些通道：多模态包含文字（v0.1 §4.2：已装完整包时不再强制装文字包）。 */
@@ -162,7 +176,7 @@
     return n ? `参考了 ${n} 句已有译文（同一语言方向、你已有的视频）` : '没有找到可参考的已有译文';
   }
 
-  const api = {DEFAULT, DEMO, fromSearch, status, pauseReasonOf, entryNote, ENTRY, STALE_NOTE, PAUSED_NOTE, POWER_NOTE, UNSUPPORTED_NOTE, fmtDuration, etaLine,
+  const api = {DEFAULT, DEMO, fromSearch, status, pauseReasonOf, entryNote, ENTRY, STALE_NOTE, PAUSED_NOTE, POWER_NOTE, UNSUPPORTED_NOTE, fmtDuration, etaLine, visualCostLine,
     CHANNELS, channelsOf, coverageLine, sumText, fmtBytes, reusedFrom, conflicts, tmLine};
   if (typeof window !== 'undefined') window.BC_SEMANTIC = api;
 })();
