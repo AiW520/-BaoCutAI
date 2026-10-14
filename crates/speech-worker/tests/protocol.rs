@@ -592,11 +592,31 @@ fn fake_lines_answer(params: &Value) -> String {
             let (Some(first), Some(last)) = (words.first(), words.last()) else {
                 continue;
             };
-            chunks.push_str(&format!("|{first}..{last}|第{}块", index + 1));
+            let quote = if words.len() == 1 {
+                quoted(first)
+            } else {
+                format!("{}..{}", quoted(first), quoted(last))
+            };
+            chunks.push_str(&format!("|{quote}|第{}块", index + 1));
         }
         out.push(format!("{n} {chunks}"));
     }
     out.join("\n")
+}
+
+/// 引用里的一个原词：去掉页里的转义，再按引用的规矩转义（`Yes.` 写成 `Yes\.`，
+/// 不然 `|Yes...Yes.|` 读成省略号）。
+fn quoted(word: &str) -> String {
+    let mut out = String::new();
+    let mut chars = word.chars();
+    while let Some(ch) = chars.next() {
+        let ch = if ch == '\\' { chars.next().unwrap_or(ch) } else { ch };
+        if matches!(ch, '\\' | '|' | '⏸' | '¦' | '.' | '∅' | '?') {
+            out.push('\\');
+        }
+        out.push(ch);
+    }
+    out
 }
 
 /// 把融合草稿的载体写进冻结的输入。

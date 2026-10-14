@@ -79,7 +79,12 @@ export function fakeSpeechAnswer(user: string, line?: (sentenceId: string, group
   return `${out}</article>`;
 }
 
-/** `lines/1` 的页：每个编号行一行答案，按 `¦` 分片，每片一块 `|首词..尾词|译文`。 */
+/** 引用里的一个原词：页里的转义先去掉，再按引用的规矩转义（`Yes.` 写成 `Yes\.`，不然 `|Yes...Yes.|` 读成省略号）。 */
+function quoted(word: string): string {
+  return word.replace(/\\(.)/g, '$1').replace(/[\\|⏸¦.∅?]/g, '\\$&');
+}
+
+/** `lines/1` 的页：每个编号行一行答案，按 `¦` 分片，每片一块 `|首词..尾词|译文`（一个词的片是 `|词|`）。 */
 function fakeLinesAnswer(user: string): string {
   const chinese = /^! format=lines\/1 .*target=(zh|ja)/m.test(user);
   const out: string[] = [];
@@ -95,7 +100,8 @@ function fakeLinesAnswer(user: string): string {
       const words = piece.trim().split(/\s+/).filter(Boolean);
       if (words.length === 0) return [];
       const text = i === 0 ? (chinese ? `好的，第${n}句` : `This is line ${n}`) : chinese ? `第${i + 1}段` : `part ${i + 1}`;
-      return [`|${words[0]}..${words.at(-1)}|${text}`];
+      const quote = words.length === 1 ? quoted(words[0]!) : `${quoted(words[0]!)}..${quoted(words.at(-1)!)}`;
+      return [`|${quote}|${text}`];
     });
     out.push(`${n} ${chunks.join('')}${chinese ? '。' : '.'}`);
   }
