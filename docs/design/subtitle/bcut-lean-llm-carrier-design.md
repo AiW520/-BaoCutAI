@@ -839,7 +839,7 @@ r22 剩下的 34 处日文：
 - 流程参数 `alignFusion: 'rows' | 'lines'`（`TranslateParams`），先以默认 `rows` 接入，按下文的对照改为默认 `lines`。启动时随别的参数冻结，不给时冻结缺省值，重试与就地刷新沿用；冻结参数里没有这一项的是改默认之前启动的流程，Worker 输入照旧给 `rows`。不认识的值 `invalid-request`。
 - Worker 输入 `params.alignFusion`（[命令协议规范 §4.5](../../spec/command-protocol-spec.md#45-speech-worker)），不给时 `lines`，不认识的值 `INPUT_UNREADABLE`。`lines` 时 `align_lines` 为真、`align_rows` 为假，翻译页仍是 800 词档（与 v2 相同）。检查点指纹在 `lines` 时带上载体，`rows` 不进指纹：加参数之前的检查点都是 rows 写的，明给 `rows` 照认；不给载体的输入走 `lines`，与它们对不上，从头来（Runtime 总是明给载体）。`report.json` 多一项 `alignFusion`。
 - 测试：speech-worker 协议测试用按 `lines/1` 作答的假模型跑整条翻译，断言请求是 `translate-lines`、6 句 30 词长句都由草稿直落（`llm-lines+…`，一次调用，不另发对齐）；不给参数走 `lines`；rows 写下的检查点在缺省载体下不续跑；未知取值拒绝。jobs 的流程测试断言不给参数时冻结 `lines`、请求是 `lines/1` 页、译文照常组装写入，冻结参数里没有载体的旧流程重试照旧走 rows 并从检查点续跑。其余按 rows 页句子 ID 断言的用例明给 `rows`。
-- 没接的：Agent 路径（智能体用 `documents_read` 的 `translationBasis` 自己翻译、`documents_put` 写回，不经这份载体）；工具目录与 CLI 的 `translate` 不暴露这个参数，只有 `pipelines.start` 能给；§5 的部分提交与状态机。
+- 没接的：Agent 路径（智能体用 `documents_read` 的 `translationBasis` 自己翻译、`documents_put` 写回，不经这份载体）；工具目录与 CLI 的 `translate` 不暴露这个参数，只有 `pipelines.start` 的 `translate` 能给；配音流程（`dub`）转给翻译的参数里没有它，配音里的翻译总是走缺省载体（改默认之前是 rows，现在是 `lines`）；§5 的部分提交与状态机。
 
 **实测对照与默认值。** 2026-10-14 用 DeepSeek V4 Flash（Runtime 内置的 DeepSeek 服务商，`deepseek-flash`，输出上限 8192，两边都关思考，见下）在 7 个真实项目上 rows 与 `lines` 各跑一次：英文 3 个、中文 2 个、日文 1 个、韩文 1 个，走生产的 `runSpeechTranslate` 与 debug 版 speech-worker，脚本是 [`scripts/translate-carrier-compare`](../../../scripts/translate-carrier-compare/README.md) 的 `--generator runtime`。「对齐」是草稿直落或对齐轮定下切点的句数，「兜底」是对齐不可用、按句时长摊开的句数，「改写」是经改写轮拆开的句数；token 是这次运行全部调用（翻译、简报、对齐、补做）的合计。
 
