@@ -1,4 +1,4 @@
-"""Tally a lines_vs_rows.ts summary: per carrier and per source language.
+"""Tally a compare.ts summary: per carrier and per source language.
 
 usage: python3 -I tally.py <out>/summary.<perturb>.json
 """
