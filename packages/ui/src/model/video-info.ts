@@ -1,4 +1,4 @@
-import { live, type AssetRecord, type DocumentRecord, type Id, type Provenance, type Sequence, type SpaceEntry } from '@baocut/protocol';
+import { live, parseVideoTimeHref, type AssetRecord, type DocumentRecord, type Id, type Provenance, type Sequence, type SpaceEntry } from '@baocut/protocol';
 import { durationSeconds, formatFps } from './editor.ts';
 import { assetFilePath } from './editor-ops.ts';
 import { formatClock } from './format.ts';
@@ -50,7 +50,7 @@ export interface InfoSection {
 export const HERO_NAME_MAX = 56;
 
 /** 两个分区的标题：「来源与媒体」「来源信息」。 */
-export const VIDEO_INFO_SECTION: { media: string; source: string } = live(() => M.section);
+export const VIDEO_INFO_SECTION: { media: string; source: string; brief: string } = live(() => M.section);
 
 const row = (label: string, value: string, mono = false, extra: Pick<InfoRow, 'reveal' | 'long'> = {}): InfoRow => ({ label, value, mono, ...extra });
 
@@ -272,8 +272,11 @@ export function sections(facts: VideoInfoFacts, extras: readonly InfoRow[] = [])
   ].filter((s) => s.rows.length > 0);
 }
 
-/** 一段可直接粘贴的纯文本：标题、hero 各一行，分区之间空一行，值内换行缩进两格。 */
-export function copyText(title: string, hero: string | null, list: readonly InfoSection[]): string {
+/**
+ * 一段可直接粘贴的纯文本：标题、hero 各一行，分区之间空一行，值内换行缩进两格。有视频速览时最后接上它的 Markdown 正文；
+ * 指向视频某一刻的链接在应用外点不开，只留链接文字（时间）。
+ */
+export function copyText(title: string, hero: string | null, list: readonly InfoSection[], brief: string | null = null): string {
   const lines: string[] = [];
   if (title.trim()) lines.push(title.trim());
   if (hero?.trim()) lines.push(hero.trim());
@@ -281,5 +284,10 @@ export function copyText(title: string, hero: string | null, list: readonly Info
     lines.push('', section.title);
     for (const r of section.rows) lines.push(`${r.label}: ${r.value.replace(/\n/g, '\n  ')}`);
   }
+  if (brief?.trim()) lines.push('', VIDEO_INFO_SECTION.brief, unlinkMoments(brief.trim()));
   return `${lines.join('\n')}\n`;
+}
+
+function unlinkMoments(markdown: string): string {
+  return markdown.replace(/\[([^\]]*)\]\(([^()\s<>]+)\)/g, (whole, text: string, href: string) => (parseVideoTimeHref(href) ? text : whole));
 }

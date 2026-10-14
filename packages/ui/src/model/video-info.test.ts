@@ -227,6 +227,12 @@ describe('视频详情的行', () => {
     );
   });
 
+  it('复制全部：视频速览接在最后，视频时间链接只留文字，别的链接原样', () => {
+    const brief = '  一期访谈。\n\n- [0:26](/videos/v1?t=26) 云上识别\n- 见 [原页面](https://example.com/42)  ';
+    expect(copyText('标题', null, [], brief)).toBe('标题\n\n视频速览\n一期访谈。\n\n- 0:26 云上识别\n- 见 [原页面](https://example.com/42)\n');
+    expect(copyText('标题', null, [], '   ')).toBe('标题\n');
+  });
+
   it('转写模型：在线写模型 ID，本机写模型包，旧形状认得出的才写', () => {
     expect(speechModel(speechBody)).toBe('qwen3-asr-0.6b@mlx-4bit');
     expect(

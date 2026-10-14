@@ -1,5 +1,6 @@
 import { useRef, useState } from 'react';
-import { live, type SpaceEntry } from '@baocut/protocol';
+import Markdown, { type Components } from 'react-markdown';
+import { live, parseVideoTimeHref, type SpaceEntry } from '@baocut/protocol';
 import {
   ActionButton,
   Button,
@@ -20,7 +21,20 @@ import { revealLabel } from '../copy.ts';
 import { useRuntime } from '../runtime/context.tsx';
 import { S } from './shell-copy.ts';
 import { entryPath } from '../model/space.ts';
-import { copyText, elideMiddle, entryFacts, HERO_NAME_MAX, heroLine, sections, type InfoRow, type VideoInfoFacts } from '../model/video-info.ts';
+import {
+  copyText,
+  elideMiddle,
+  entryFacts,
+  HERO_NAME_MAX,
+  heroLine,
+  sections,
+  VIDEO_INFO_SECTION,
+  type InfoRow,
+  type VideoInfoFacts,
+} from '../model/video-info.ts';
+import { remarkPlugins } from './thread/remark-plugins.ts';
+import { VideoTimeLink } from './thread/video-time-link.tsx';
+import './thread/markdown.css';
 
 /**
  * 视频详情框（设计稿 project-info.jsx）：hero、只读的分区行、可编辑项，页脚「复制全部」与「完成」。行的装配在
@@ -28,6 +42,8 @@ import { copyText, elideMiddle, entryFacts, HERO_NAME_MAX, heroLine, sections, t
  *
  * 只有名字能改（编辑器那条路，`renameVideo`）：失焦、回车或点「完成」时提交一次，不是每敲一个字一笔修改；空的或没改的
  * 还原。按 Esc 关掉时丢掉没提交的草稿。简介、备注没有地方存，置灰写明原因。
+ * 有视频速览（编辑器那条路，视频格式规范 §3.1）时在分区后面多一个「视频速览」：按 Markdown 画，视频时间链接点了跳到那一刻并关掉
+ * 对话框，别的链接只显示文字（同文件预览）；「复制全部」带上它。
  * 「位置」「源文件」行尾有「在文件夹中显示」（行的 `reveal`），交给主机的文件管理器；Web 的主机做不到，不画。原简介限高滚动。
  * 不放「重新关联媒体」：那是缺媒体时的事。
  */
@@ -59,6 +75,24 @@ const value = style({
 const rowAction = style({ flexShrink: 0, alignSelf: 'center', marginY: -4 });
 const form = style({ marginTop: 20, display: 'flex', flexDirection: 'column', gap: 12 });
 const full = style({ width: 'full' });
+const briefBody = style({ font: 'ui-sm', color: 'gray-900', minWidth: 0, paddingTop: 4 });
+
+/** 速览正文里的链接：视频时间链接点了跳过去并关掉对话框；别的只显示文字。 */
+function briefComponents(close: () => void): Components {
+  return {
+    a: ({ href, children }) => {
+      const moment = href ? parseVideoTimeHref(href) : null;
+      return moment ? (
+        <VideoTimeLink videoId={moment.videoId} seconds={moment.seconds} onOpen={close}>
+          {children}
+        </VideoTimeLink>
+      ) : (
+        <span>{children}</span>
+      );
+    },
+    img: () => null,
+  };
+}
 
 export interface VideoInfoDialogProps {
   facts: VideoInfoFacts;
@@ -68,10 +102,12 @@ export interface VideoInfoDialogProps {
   onRename?: (name: string) => Promise<boolean>;
   /** 名称不能改的原因（置灰时写在下面）。 */
   renameNote?: string | null;
+  /** 视频速览的 Markdown（时间链接已换回完整地址）；没有时不画这一节。 */
+  brief?: string | null;
   onClose(): void;
 }
 
-export function VideoInfoDialog({ facts, extras = [], onRename, renameNote = null, onClose }: VideoInfoDialogProps) {
+export function VideoInfoDialog({ facts, extras = [], onRename, renameNote = null, brief = null, onClose }: VideoInfoDialogProps) {
   // 状态放在对话框外层：S2 的 Dialog 会把 children 在几个 slot 里各渲染一遍。
   const [draft, setDraft] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -111,7 +147,7 @@ export function VideoInfoDialog({ facts, extras = [], onRename, renameNote = nul
   };
 
   const copyAll = () => {
-    navigator.clipboard.writeText(copyText(facts.title, heroText, list)).then(
+    navigator.clipboard.writeText(copyText(facts.title, heroText, list, brief)).then(
       () => ToastQueue.positive(C.copied, { timeout: 3000 }),
       () => ToastQueue.negative(C.copyFailed, { timeout: 4000 }),
     );
@@ -163,6 +199,16 @@ export function VideoInfoDialog({ facts, extras = [], onRename, renameNote = nul
                     </dl>
                   </section>
                 ))}
+                {brief?.trim() ? (
+                  <section className={section} aria-label={VIDEO_INFO_SECTION.brief}>
+                    <h3 className={sectionTitle}>{VIDEO_INFO_SECTION.brief}</h3>
+                    <div className={`${briefBody} bc-md bc-md--breaks`}>
+                      <Markdown remarkPlugins={remarkPlugins} components={briefComponents(close)}>
+                        {brief}
+                      </Markdown>
+                    </div>
+                  </section>
+                ) : null}
                 <div className={form}>
                   <TextField
                     label={C.name}

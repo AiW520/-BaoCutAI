@@ -1,7 +1,7 @@
 import type { VideoInfoMessages } from './video-info-copy.ts';
 
 export const zhHant: VideoInfoMessages = {
-  section: { media: '來源與媒體', source: '來源資訊' },
+  section: { media: '來源與媒體', source: '來源資訊', brief: '影片速覽' },
   speakers: (count: number) => `${count} 位說話者`,
   chapters: (count: number) => `${count} 個章節`,
   paragraphs: (count: number) => `${count} 段`,

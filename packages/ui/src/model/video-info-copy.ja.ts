@@ -1,7 +1,7 @@
 import type { VideoInfoMessages } from './video-info-copy.ts';
 
 export const ja: VideoInfoMessages = {
-  section: { media: 'ソースとメディア', source: 'ソース情報' },
+  section: { media: 'ソースとメディア', source: 'ソース情報', brief: '動画の概要' },
   speakers: (count: number) => `話者 ${count} 人`,
   chapters: (count: number) => `チャプター ${count} 個`,
   paragraphs: (count: number) => `段落 ${count} 個`,

@@ -2,7 +2,7 @@ import { pluralForm } from '@baocut/protocol';
 import type { VideoInfoMessages } from './video-info-copy.ts';
 
 export const pl: VideoInfoMessages = {
-  section: { media: "Źródło i multimedia", source: "Informacje o źródle" },
+  section: { media: "Źródło i multimedia", source: "Informacje o źródle", brief: "Przegląd wideo" },
   speakers: (count: number) => pluralForm('pl', count, { one: `${count} mówca`, few: `${count} mówców`, many: `${count} mówców`, other: `${count} mówcy` }),
   chapters: (count: number) => pluralForm('pl', count, { one: `${count} rozdział`, few: `${count} rozdziały`, many: `${count} rozdziałów`, other: `${count} rozdziału` }),
   paragraphs: (count: number) => pluralForm('pl', count, { one: `${count} akapit`, few: `${count} akapity`, many: `${count} akapitów`, other: `${count} akapitu` }),

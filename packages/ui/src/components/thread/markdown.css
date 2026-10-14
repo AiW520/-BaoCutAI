@@ -59,4 +59,7 @@
 .bc-md table { border-collapse: collapse; display: block; overflow-x: auto; }
 .bc-md th, .bc-md td { padding: 4px 10px; border: 1px solid light-dark(rgb(0 0 0 / 12%), rgb(255 255 255 / 15%)); }
 .bc-md hr { border: 0; border-top: 1px solid light-dark(rgb(0 0 0 / 12%), rgb(255 255 255 / 15%)); margin: 14px 0; }
+/* 智能体写的正文（视频详情里的视频速览）：段落里的单个换行同会话里的回复一样保留成换行。 */
+.bc-md--breaks p { white-space: pre-line; }
+.bc-md--breaks li > p { white-space: normal; }
 .bc-mono { font-family: ui-monospace, 'SF Mono', Menlo, monospace; font-size: 12px; }

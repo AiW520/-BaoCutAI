@@ -1,7 +1,7 @@
 import type { VideoInfoMessages } from './video-info-copy.ts';
 
 export const vi: VideoInfoMessages = {
-  section: { media: 'Nguồn và tư liệu', source: 'Thông tin nguồn' },
+  section: { media: 'Nguồn và tư liệu', source: 'Thông tin nguồn', brief: 'Tóm tắt video' },
   speakers: (count: number) => `${count} người nói`,
   chapters: (count: number) => `${count} chương`,
   paragraphs: (count: number) => `${count} đoạn`,

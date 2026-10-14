@@ -16,7 +16,7 @@ import { vi } from './video-info-copy.vi.ts';
 
 /** 视频详情框的文案（model/video-info.ts；译文在 `video-info-copy.<语言>.ts`）。 */
 const en = {
-  section: { media: 'Source and media', source: 'Source info' },
+  section: { media: 'Source and media', source: 'Source info', brief: 'Video brief' },
   speakers: (count: number) => `${count} ${count === 1 ? 'speaker' : 'speakers'}`,
   chapters: (count: number) => `${count} ${count === 1 ? 'chapter' : 'chapters'}`,
   paragraphs: (count: number) => `${count} ${count === 1 ? 'paragraph' : 'paragraphs'}`,

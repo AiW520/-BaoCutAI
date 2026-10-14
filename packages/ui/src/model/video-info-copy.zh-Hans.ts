@@ -1,7 +1,7 @@
 import type { VideoInfoMessages } from './video-info-copy.ts';
 
 export const zhHans: VideoInfoMessages = {
-  section: { media: '来源与媒体', source: '来源信息' },
+  section: { media: '来源与媒体', source: '来源信息', brief: '视频速览' },
   speakers: (count: number) => `${count} 位说话人`,
   chapters: (count: number) => `${count} 章`,
   paragraphs: (count: number) => `${count} 段`,

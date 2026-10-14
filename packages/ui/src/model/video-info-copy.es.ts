@@ -1,7 +1,7 @@
 import type { VideoInfoMessages } from './video-info-copy.ts';
 import { pluralForm } from '@baocut/protocol';
 export const es: VideoInfoMessages = {
-  section: { media: 'Origen y medios', source: 'Información de origen' },
+  section: { media: 'Origen y medios', source: 'Información de origen', brief: 'Resumen del vídeo' },
   speakers: (count: number) => `${count} ${pluralForm('es', count, { one: 'hablante', other: 'hablantes' })}`,
   chapters: (count: number) => `${count} ${pluralForm('es', count, { one: 'capítulo', other: 'capítulos' })}`,
   paragraphs: (count: number) => `${count} ${pluralForm('es', count, { one: 'párrafo', other: 'párrafos' })}`,

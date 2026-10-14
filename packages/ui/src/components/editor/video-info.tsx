@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useSyncExternalStore } from 'react';
-import type { AssetRecord, DocumentRecord, Id, Sequence } from '@baocut/protocol';
+import { expandBriefLinks, type AssetRecord, type DocumentRecord, type Id, type Sequence } from '@baocut/protocol';
 import { EditLabel } from '@baocut/protocol/messages/ui';
 import { langName } from '../../model/tools-models.ts';
 import { contentCounts, editorExtras, snapshotFacts, translationTargets } from '../../model/video-info.ts';
@@ -16,6 +16,7 @@ const NO_DOCUMENTS: Record<Id, DocumentRecord> = {};
 /**
  * 编辑器顶栏 ⓘ 打开的视频详情：事实都从打开的视频快照与转写正文里来。正文与文稿面板同一份缓存，面板没取过时按同样方式取。
  * 名字经 `renameVideo` 改，与点标题改名是同一笔修改；视频暂时不能修改时名称置灰。
+ * 视频速览只读，从快照里取，时间链接换回指向这部视频的完整地址。
  */
 export function EditorVideoInfo({ video, sequence, onClose }: { video: OpenVideo; sequence: Sequence | null; onClose(): void }) {
   const { apply } = useEditorActions();
@@ -50,6 +51,7 @@ export function EditorVideoInfo({ video, sequence, onClose }: { video: OpenVideo
       facts={facts}
       extras={extras}
       onRename={canEdit(video) ? async (name) => (await apply([{ type: 'renameVideo', name }], EditLabel.renameVideo())) !== null : undefined}
+      brief={snapshot?.brief ? expandBriefLinks(snapshot.brief.markdown, snapshot.id) : null}
       onClose={onClose}
     />
   );

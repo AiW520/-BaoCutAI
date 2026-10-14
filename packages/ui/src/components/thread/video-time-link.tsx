@@ -28,13 +28,16 @@ export function openVideoAt(videoId: string, seconds: number, entries: readonly 
   return true;
 }
 
-/** Space 已经读到、却找不到能打开的这部视频时只显示文字（同认不出的设置链接）；还没读到时先画成时间码，点的时候再找。 */
-export function VideoTimeLink({ videoId, seconds, children }: { videoId: string; seconds: number; children?: ReactNode }) {
+/**
+ * Space 已经读到、却找不到能打开的这部视频时只显示文字（同认不出的设置链接）；还没读到时先画成时间码，点的时候再找。
+ * `onOpen` 在打开之后调用（例如关掉盖在编辑器上的对话框）。
+ */
+export function VideoTimeLink({ videoId, seconds, onOpen, children }: { videoId: string; seconds: number; onOpen?: () => void; children?: ReactNode }) {
   const openable = useSpace((s) => !s.ready || hitTarget({ entryId: null, videoId }, s.entries) !== null);
   if (!openable) return <span>{children}</span>;
   const label = typeof children === 'string' ? children : Array.isArray(children) ? children.filter((c) => typeof c === 'string').join('') : '';
   return (
-    <ActionButton isQuiet size="XS" UNSAFE_className="bc-amd-time" aria-label={label ? WC.citeAria(label) : undefined} onPress={() => openVideoAt(videoId, seconds)}>
+    <ActionButton isQuiet size="XS" UNSAFE_className="bc-amd-time" aria-label={label ? WC.citeAria(label) : undefined} onPress={() => openVideoAt(videoId, seconds) && onOpen?.()}>
       <Text>{children}</Text>
     </ActionButton>
   );

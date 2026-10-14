@@ -1,7 +1,7 @@
 import type { VideoInfoMessages } from './video-info-copy.ts';
 
 export const tr: VideoInfoMessages = {
-  section: { media: 'Kaynak ve medya', source: 'Kaynak bilgisi' },
+  section: { media: 'Kaynak ve medya', source: 'Kaynak bilgisi', brief: 'Video özeti' },
   speakers: (count: number) => `${count} konuşmacı`,
   chapters: (count: number) => `${count} bölüm`,
   paragraphs: (count: number) => `${count} paragraf`,
