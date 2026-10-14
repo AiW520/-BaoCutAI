@@ -101,7 +101,7 @@
        30 只内置音色都是多语言、官方只给一个风格词（没标性别，这里不编）；「刷新音色」问 `GET /v1beta/voices` 拿扩展音色库与
        你在 AI Studio 建的自定义音色。语言自动识别（官方模型页：3.8 Flash 130 种、Flash-Lite 101 种）。 */
     {id: 'google', name: 'Google Gemini', api: 'gemini', rate: 24000, region: false,
-     desc: '30 只内置音色，风格指令写成一句话，会念 130 种语言；不能克隆',
+     desc: '30 只内置音色，风格指令写成一句话，会念 130 种语言；本人念一段授权声明后可复刻',
      docs: 'ai.google.dev/gemini-api/docs/speech-generation',
      price: '按 token 计费 · 3.8 Flash 约 $0.00225 / 10 秒、Flash-Lite 约 $0.0015 / 10 秒 · 2027-01-01 起翻倍',
      bill: '按 token 计费', langsTag: '130 种语言（Flash-Lite 101）', ownVoices: '它的音色目录（含你在 AI Studio 建的）',
@@ -109,7 +109,12 @@
        {id: 'gemini-3.8-flash-tts', desc: '旗舰 · 收风格指令 · 130 种语言', instruct: true, maxChars: 4096, langs: '*', langCount: 130, langExact: true},
        {id: 'gemini-3.8-flash-lite-tts', desc: '更快更便宜 · 收风格指令 · 101 种语言', instruct: true, maxChars: 4096, langs: '*', langCount: 101, langExact: true},
      ],
-     clone: null, sliders: [], emotions: null,
+     /* 复刻音色（2026-10-14，`POST /v1beta/voices`，type: replicated）：两段录音——样本 10–30 秒 + 同一人念的授权声明
+        （`consent_audio`，接口会核对两段是不是同一个人；声明原文按 `language_code` 给，实测中文常验不过、英文稳），
+        `store: true` 回一只永久的 `voice_…`（每个项目最多 200 只、最后一次使用后保留 1 年）；不存的 `voicekey_…` 只活 7 天。
+        `consent: true` 是本表唯一要第二段录音的，`expiresDays` 不写：那是「存着的克隆会过期」（MiniMax），Gemini 存着的不过期。 */
+     clone: {min: 10, max: 30, recommend: 30, consent: true, how: '复刻音色（replicated voice）', tempDays: 7, keep: '每个项目最多 200 只 · 最后一次使用后保留 1 年'},
+     sliders: [], emotions: null,
      voices: [
        {id: 'Zephyr', name: 'Zephyr', sub: '明亮 · 多语言'}, {id: 'Puck', name: 'Puck', sub: '欢快 · 多语言'}, {id: 'Charon', name: 'Charon', sub: '知性 · 多语言'},
        {id: 'Kore', name: 'Kore', sub: '坚定 · 多语言'}, {id: 'Fenrir', name: 'Fenrir', sub: '激昂 · 多语言'}, {id: 'Leda', name: 'Leda', sub: '年轻 · 多语言'},
@@ -236,7 +241,7 @@
     if (!p) return null;
     const cap = capabilities(p, p.models[0].id);
     const tags = [{label: '预设音色'}];
-    if (cap.clone) tags.push({label: '克隆'});
+    if (cap.clone) tags.push({label: p.clone.consent ? '克隆 · 要本人授权录音' : '克隆'});
     /* 只有部分模型收风格指令才点名是哪几只；全都收（自建、Gemini）就只写「风格指令」 */
     const styled = p.models.filter((m) => m.instruct);
     if (styled.length) tags.push({label: p.custom || styled.length === p.models.length ? '风格指令' : `风格指令（${styled.map((m) => m.id).join(' / ')}）`});
@@ -291,8 +296,12 @@
 
   /* ---------- 「我的声音」在某家的克隆状态（§6） ----------
      音色档多一段 `cloud: {<provider>: {voiceId, referenceSha256, at, region?}}`。
-     返回 {k, ok, line, chip}：k ∈ uploaded / first / stale / short / consent / unsupported / orphan。 */
+     返回 {k, ok, line, chip}：k ∈ uploaded / first / stale / short / consent / authorize / unsupported / orphan。
+     `consent` 是「许可未说明」（音色档上那一行勾选）；`authorize` 是这家要第二段录音（本人念的授权声明，Gemini）而音色档没有 `consentClip`。 */
   const consentBlocks = (v) => (v.consent || 'unspecified') === 'unspecified';
+  /** 这家要不要本人念授权声明 */
+  const needsConsentClip = (p) => !!(p && p.clone && p.clone.consent);
+  const hasConsentClip = (v) => !!(v && v.consentClip && v.consentClip.dur > 0);
   function cloneStatus(v, provider, opt) {
     const p = typeof provider === 'string' ? providerById(provider, opt && opt.extra) : provider;
     const o = opt || {};
@@ -305,6 +314,10 @@
     const b = v && v.cloud && v.cloud[p.id];
     if (b && b.orphan) return {k: 'orphan', ok: true, chip: `${p.name} ⚠`, line: `密钥已移除 · ${p.name} 上的克隆副本清理不了 · 重新连接后第一次用时重建`};
     if (consentBlocks(v)) return {k: 'consent', ok: false, chip: `${p.name} —`, line: '许可未说明 · 不上传到第三方 · 去设置里补一行'};
+    if (needsConsentClip(p) && !hasConsentClip(v)) {
+      return {k: 'authorize', ok: false, chip: `${p.name} — 缺授权录音`,
+        line: `${p.name} 要本人念一段授权声明（英文最稳）· 在音色的 ⋯ 里补录`};
+    }
     const usable = Math.max(+(v.sourceDur || 0), +(v.dur || 0));
     if (p.clone.min && usable < p.clone.min) {
       return {k: 'short', ok: false, chip: `${p.name} — 参考不足 ${p.clone.min} 秒`,
@@ -317,8 +330,16 @@
       return {k: 'uploaded', ok: true, chip: `${p.name} ↑ 已上传`, line: `已上传到 ${p.name} · ${b.at || ''}`.replace(/ · $/, '')};
     }
     const secs = usable.toFixed(1);
+    if (needsConsentClip(p)) {
+      return {k: 'first', ok: true, chip: `${p.name} · 首次用时建音色`,
+        line: `第一次用时把样本（${secs} 秒）与授权录音（${v.consentClip.dur.toFixed(1)} 秒）上传到 ${p.name} 建复刻音色 · 记下 voice id 反复用`};
+    }
     return {k: 'first', ok: true, chip: `${p.name} · 首次用时上传`,
       line: `第一次用时上传参考段（${secs} 秒）到 ${p.name} 建克隆${p.clone.expiresDays ? ` · ${p.clone.expiresDays} 天不用会过期，用时自动重建` : ''}`};
+  }
+  /** 已连接的、要本人念授权声明的提供方（采集页「授权」那一步点名谁要它） */
+  function consentProviders(saved, extra) {
+    return providers(extra).filter((p) => needsConsentClip(p) && (!saved || saved.indexOf(p.id) >= 0));
   }
   /** 行卡上的云端 chip：只列已连接的 API 提供方 */
   function cloudChips(v, saved, opt) {
@@ -328,7 +349,8 @@
   /** 音色档的状态变换：上传 / 删远端 / 换参考段（标陈旧） / 移除密钥（标 orphan）。都回新的 `cloud` 段。 */
   function bindAfter(v, provider, action, o) {
     const cloud = Object.assign({}, v.cloud || {});
-    if (action === 'upload') cloud[provider] = {voiceId: (o && o.voiceId) || `bc_${provider}_${String(v.id).slice(-4)}`, referenceSha256: v.referenceSha256 || null, at: (o && o.at) || '刚刚', region: o && o.region};
+    /* 对方给的 id 原样记下：Gemini 回 `voice_…`（永久），其余家回它们自己的 voice id；演示里按家编一个 */
+    if (action === 'upload') cloud[provider] = {voiceId: (o && o.voiceId) || (provider === 'google' ? `voice_${String(v.id).replace(/[^a-z0-9]/gi, '').slice(-6).toLowerCase()}demo` : `bc_${provider}_${String(v.id).slice(-4)}`), referenceSha256: v.referenceSha256 || null, at: (o && o.at) || '刚刚', region: o && o.region};
     else if (action === 'delete') delete cloud[provider];
     else if (action === 'retake') Object.keys(cloud).forEach((k) => { cloud[k] = Object.assign({}, cloud[k], {stale: true}); });
     else if (action === 'orphan') { if (cloud[provider]) cloud[provider] = Object.assign({}, cloud[provider], {orphan: true}); }
@@ -338,6 +360,10 @@
   function uploadNotice(v, provider) {
     const p = typeof provider === 'string' ? providerById(provider) : provider;
     const secs = Math.max(+(v.sourceDur || 0), +(v.dur || 0)).toFixed(1);
+    if (needsConsentClip(p)) {
+      const c = v.consentClip || {dur: 0};
+      return `要把「${v.name}」的样本（${secs} 秒）和授权录音（${(+c.dur).toFixed(1)} 秒）上传到 ${p.name} 建复刻音色；对方会核对两段是不是同一个人。建好的 voice id 记在这只音色上反复用（${p.clone.keep}）；删音色时会一并删除。`;
+    }
     return `要把「${v.name}」的参考段（${secs} 秒）上传到 ${p.name} 建克隆。之后用这只音色会直接用对方的 voice id；删音色时会一并删除。`;
   }
 
@@ -359,7 +385,8 @@
     const list = voicesOf(p, o.discovered);
     const items = searchVoices(list, o.query, 30).map((v) => ({kind: 'voice', id: v.id, label: v.name, sub: v.sub || v.id}));
     groups.push({k: 'voices', label: `${p.name} 的音色`, search: list.length > SEARCH_AT, total: list.length, items: items.length ? items : [{kind: 'none', label: list.length ? '没有匹配的音色' : '刷新音色目录', sub: list.length ? '换个关键字' : '设置 › 模型 › 云端模型 › 刷新音色', disabled: true}]});
-    if (p.clone && o.file !== false) {
+    /* 要授权录音的（Gemini）没有「临时用一段」：一段录音建不了，得先在我的声音里录样本 + 授权 */
+    if (p.clone && !p.clone.consent && o.file !== false) {
       groups.push({k: 'file', label: '临时', items: [{kind: 'file', label: '临时用一段录音…',
         sub: p.clone.expiresDays ? `只这一次 · ${p.name} 建临时克隆，${p.clone.expiresDays} 天后自动过期` : `只这一次 · ${p.name} 建临时克隆，用完即删`}]});
     }
@@ -435,7 +462,7 @@
     capabilities, langOptions, speaks, langsShort, minimaxBoost,
     engineFor, engines, allEngines, card, billing, headerChip,
     voicesOf, defaultVoice, voiceById, searchVoices,
-    cloneStatus, cloudChips, bindAfter, uploadNotice,
+    cloneStatus, cloudChips, bindAfter, uploadNotice, needsConsentClip, hasConsentClip, consentProviders,
     pickerGroups, valueLabel, valueLine, voiceLabel, validate, costLine, charsLabel, chars,
   };
   if (typeof window !== 'undefined') Object.assign(window, {BC_CLOUD_TTS});

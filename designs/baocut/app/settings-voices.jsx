@@ -1,20 +1,22 @@
 /* 设置 › 我的声音（voice-library 设计稿 §2 / §9，2026-09-24 原型先行）。
    克隆音色以前不是一个功能，是四个地方各自的一枚「我的音频」芯片。这一页把它变成**用户级资产**：
    ① 列表：一只音色一行（名字 · 语言 · 时长 · 来源 · 原文 · 试听 · 试听克隆 · ⋯）；
-   ② 用麦克风录一段：照着台词念，5 秒起、目标 8 秒、12 秒自动停，听一遍再存；
+   ② 克隆新音色（2026-10-14 重做，settings-voice-capture.jsx）：录样本（目标 30 秒，麦克风或上传）→ 授权声明（Gemini 要，可跳过）→ 保存；
    ③ 从音频或视频里取：分离人声（可选）→ 识别说话人 → 每人一张卡、各给最多三段候选（带原文与质量），
       勾一人或几人一起存；
    ④ 回程：从面板的「克隆新音色…」过来时，存好后一键回去用它。
    麦克风、分离、分人在原型里都是计时器模拟，听到的是随包的内置录音；判词与候选算法在 model-voices.js。
    云端（2026-09-24 云端语音合成设计稿 §2.4 / §6）：行卡上多一组云端 chip（已上传 / 首次用时上传 / 参考不足 / 许可未说明 / 不能克隆），
-   ⋯ 里多「上传到 X」「从 X 删除克隆」，试听克隆的模型 Picker 多一组云端；换参考段把已上传的绑定标成陈旧。 */
+   ⋯ 里多「上传到 X」「从 X 删除克隆」，试听克隆的模型 Picker 多一组云端；换参考段把已上传的绑定标成陈旧。
+   2026-10-14：行上第三行写「凭什么认人」——种子（本地引擎）、各家的 voice id、授权声明；要授权录音的提供方（Gemini）
+   连着而音色没有那段时亮一枚「缺授权录音」chip，⋯ 里「补录授权声明」走 ConsentCapture。 */
 (function () {
   const {useState, useEffect, useRef} = React;
   const D = window.BC_DATA;
   const TTS = window.BC_TTS;
   const V = window.BC_VOICES;
   const C = window.BC_CLOUD_TTS;
-  const CLOUD_TONE = {uploaded: 'positive', first: 'neutral', stale: 'notice', orphan: 'notice', short: 'notice', consent: 'notice', unsupported: 'neutral'};
+  const CLOUD_TONE = {uploaded: 'positive', first: 'neutral', stale: 'notice', orphan: 'notice', short: 'notice', consent: 'notice', authorize: 'notice', unsupported: 'neutral'};
 
   /* 演示用：分人页每位说话人试听放哪段随包录音 */
   const LETTER_FILES = ['tts-voice-zh-female.wav', 'tts-voice-zh-male.wav', 'tts-voice-en-female.wav', 'tts-voice-en-male.wav'];
@@ -142,7 +144,7 @@
     );
   }
 
-  function VoiceRow({v, onPatch, onDelete, onRetake}) {
+  function VoiceRow({v, onPatch, onDelete, onRetake, onConsent}) {
     const app = useApp();
     const [menu, setMenu] = useState(false);
     const [renaming, setRenaming] = useState(false);
@@ -152,6 +154,8 @@
     const exportIt = () => copyToClipboard(V.exportBundle(v))
       .then(() => app.toast(`已复制 voice.json · 真机导出的是 ${V.bundleName(v)}（连参考录音一起）`, 'positive'));
     const uploaded = Object.keys(v.cloud || {}).filter((k) => v.cloud[k] && v.cloud[k].voiceId);
+    /* 要授权录音的提供方（Gemini）连着、而这只音色没录那段：行上亮一枚 chip，不等到选它时才发现 */
+    const missingConsent = C.consentProviders(app.cloudSaved, app.cloudCustom).filter((p) => !C.hasConsentClip(v));
     const del = () => app.confirm({
       title: `删除「${v.name}」？`,
       body: `用了它的视频下次生成时会退回默认音色；已经生成的配音不受影响。${uploaded.length ? `会一并删除 ${uploaded.map((k) => (C.providerById(k, app.cloudCustom) || {name: k}).name).join(' / ')} 上的克隆。` : ''}`,
@@ -184,10 +188,12 @@
                 {v.consent === 'unspecified' ? <Chip tone="neutral">未说明是否本人</Chip> : null}
                 {(v.signal || []).map((k) => <Chip key={k} tone="notice">{V.issueLabel(k)}</Chip>)}
                 {uploaded.map((k) => { const st = C.cloneStatus(v, k, {saved: app.cloudSaved, extra: app.cloudCustom}); return <Chip key={k} tone={CLOUD_TONE[st.k]} icon="remote" title={st.line}>{st.chip}</Chip>; })}
+                {missingConsent.map((p) => { const st = C.cloneStatus(v, p, {saved: app.cloudSaved, extra: app.cloudCustom}); return <Chip key={p.id} tone={CLOUD_TONE[st.k]} icon="remote" title={st.line}>{st.chip}</Chip>; })}
               </span>
             )}
             <span className="t-detail-xs vlib-row__meta">{V.metaLine(v)}</span>
             {v.text ? <span className="t-detail-xs vlib-row__text">「{v.text}」</span> : null}
+            <span className="t-detail-xs vlib-row__ids">{V.idLine(v, C.providers(app.cloudCustom))}</span>
           </div>
           <Btn variant={audition ? 'primary' : 'secondary'} size="s" icon="wave" aria-expanded={audition} onClick={() => setAudition((x) => !x)}>试听克隆</Btn>
           <div className="vlib-row__more">
@@ -197,6 +203,10 @@
               <MenuItem icon="edit" label="重命名" onClick={() => { setMenu(false); setRenaming(true); }} />
               <MenuItem icon="wave" label="换参考段" sub={v.source.kind === 'media' ? '回到分人页重挑一段' : '重新录一段'}
                 onClick={() => { setMenu(false); onRetake(); }} />
+              <MenuItem icon="mic" label={v.consentClip ? '重录授权声明' : '补录授权声明'} sub={v.consentClip ? `${V.consentPhrase(v.consentClip.lang).label} · ${v.consentClip.dur.toFixed(1)} 秒 · Google Gemini 用` : 'Google Gemini 复刻要本人念一句，英文最稳'}
+                onClick={() => { setMenu(false); onConsent(); }} />
+              <MenuItem icon="refresh" label="换一颗种子" sub={`现在是 ${v.seed} · 本地引擎下次生成会变一点`}
+                onClick={() => { setMenu(false); onPatch({seed: V.randomSeed()}); app.toast('已换种子 · 用了它的视频下次生成会略有不同'); }} />
               <MenuItem icon="plus" label={v.emotion ? '换情绪片段' : '补一段情绪片段'} sub="IndexTTS 两代用；其他引擎不看"
                 onClick={() => { setMenu(false); onPatch({emotion: v.emotion ? null : {dur: 4.2, file: v.file}}); app.toast(v.emotion ? '已去掉情绪片段' : '交互演示 · 已补一段 4.2 秒的情绪片段'); }} />
               {cloudItems.length ? <><MenuRule />{cloudItems}</> : null}
@@ -208,117 +218,6 @@
           </div>
         </div>
         {audition ? <Audition v={v} onPatch={onPatch} /> : null}
-      </div>
-    );
-  }
-
-  /* ---------- 用麦克风录一段 ---------- */
-
-  function Meter({level, on}) {
-    const bars = Array.from({length: 14}, (_, i) => i);
-    return (
-      <span className={cx('vlib-meter', on && 'is-on')} aria-hidden="true">
-        {bars.map((i) => <i key={i} className={cx(level * 14 > i && 'is-lit')} />)}
-      </span>
-    );
-  }
-
-  function MicCapture({onDone, onCancel}) {
-    const app = useApp();
-    const langs = TTS.sampleLangs('indextts2');
-    const [lang, setLang] = useState(langs[0].code);
-    const [kind, setKind] = useState('intro');
-    const [phase, setPhase] = useState('idle');     // idle | rec | done
-    const [secs, setSecs] = useState(0);
-    const [level, setLevel] = useState(0);
-    const [name, setName] = useState('我自己');
-    const [consent, setConsent] = useState(false);
-    const [dev, setDev] = useState(false);
-    const timer = useRef(null);
-    const line = TTS.sampleLine(lang, kind);
-    const kinds = TTS.sampleKinds(lang);
-    useEffect(() => () => clearInterval(timer.current), []);
-    const stop = () => { clearInterval(timer.current); timer.current = null; setPhase('done'); setLevel(0); };
-    const start = () => {
-      setSecs(0); setPhase('rec');
-      timer.current = setInterval(() => setSecs((s) => {
-        const n = +(s + 0.1).toFixed(1);
-        setLevel(0.3 + 0.5 * Math.abs(Math.sin(n * 5.3)) * (n % 3 < 2.4 ? 1 : 0.3));
-        if (n >= V.REC.max) { clearInterval(timer.current); timer.current = null; setPhase('done'); setLevel(0); }
-        return n;
-      }), 100);
-    };
-    const problem = phase === 'done' ? V.takeProblem(secs) : null;
-    const preview = {file: TTS.defaultBuiltin(lang, '').file};
-    const save = () => {
-      onDone(V.makeVoice({name, lang, dur: secs, text: line.text, textSource: 'script',
-        source: {kind: 'mic', at: '刚刚'}, file: preview.file, consent: consent ? 'self' : 'unspecified'}));
-    };
-    return (
-      <div className="vlib-cap" data-screen-label="我的声音 · 用麦克风录一段">
-        <div className="vlib-cap__hd">
-          <Btn variant="quiet" size="s" icon="back" onClick={onCancel}>我的声音</Btn>
-        </div>
-        <h2 className="t-title-sm">用麦克风录一段</h2>
-        <p className="vlib-cap__lede">照着下面这句念，一个人说话、周围安静。{V.REC.min} 秒起，念到 {V.REC.target} 秒左右最好，{V.REC.max} 秒自动停。</p>
-
-        <div className="vlib-cap__row">
-          <span className="vlib-cap__lab">麦克风</span>
-          <Picker size="s" icon="mic" value="MacBook Pro 麦克风" open={dev} popWidth={240}
-            onClick={() => setDev((x) => !x)} onClose={() => setDev(false)}>
-            <Menu>
-              <MenuItem label="MacBook Pro 麦克风" on onClick={() => setDev(false)} />
-              <MenuItem label="AirPods Pro" sub="蓝牙耳机会压低音质，能用内置就用内置" onClick={() => { setDev(false); app.toast('交互演示 · 已换到 AirPods Pro'); }} />
-            </Menu>
-          </Picker>
-          <Meter level={level} on={phase === 'rec'} />
-        </div>
-        <div className="vlib-cap__row">
-          <span className="vlib-cap__lab">念哪句</span>
-          <div className="vlib-cap__chips">
-            {langs.map((l) => <Chip key={l.code} pill on={lang === l.code} onClick={() => { if (phase !== 'rec') { setLang(l.code); setKind(TTS.sampleLine(l.code, kind).kind); } }}>{l.label}</Chip>)}
-            {kinds.length > 1 ? <span className="vlib-cap__sep" /> : null}
-            {kinds.length > 1 ? kinds.map((k) => <Chip key={k.k} pill on={kind === k.k} onClick={() => { if (phase !== 'rec') setKind(k.k); }}>{k.label}</Chip>) : null}
-          </div>
-        </div>
-        <blockquote className={cx('vlib-script', phase === 'rec' && 'is-live')}>{line.text}</blockquote>
-
-        <div className="vlib-rec">
-          {phase === 'idle' ? (
-            <Btn variant="accent" size="m" icon="mic" onClick={start}>开始录音</Btn>
-          ) : phase === 'rec' ? (
-            <>
-              <Btn variant="negative" size="m" icon="stop" onClick={stop}>停止</Btn>
-              <span className="vlib-rec__time t-mono">{secs.toFixed(1)} s</span>
-              <Progress value={Math.min(100, (secs / V.REC.max) * 100)} thin className="grow" />
-              <span className="t-detail-xs">{secs < V.REC.min ? `还差 ${(V.REC.min - secs).toFixed(1)} 秒` : secs < V.REC.target ? '够了，念完这句就停' : '可以停了'}</span>
-            </>
-          ) : (
-            <>
-              <window.VoicePlay v={preview} tip="听一遍刚录的" />
-              <span className="vlib-rec__time t-mono">{secs.toFixed(1)} s</span>
-              <span className="t-detail-xs grow">{problem || '听一遍：有没有噪音、有没有念错。不满意就重录。'}</span>
-              <Btn variant="secondary" size="s" icon="refresh" onClick={start}>重录</Btn>
-            </>
-          )}
-        </div>
-        {problem ? <div className="hint hint--warn">{problem}</div> : null}
-
-        {phase === 'done' && !problem ? (
-          <div className="vlib-save">
-            <div className="vlib-cap__row">
-              <span className="vlib-cap__lab">叫什么</span>
-              <Field size="s" value={name} aria-label="音色名字" onChange={(e) => setName(e.target.value)} placeholder="我的声音" />
-            </div>
-            <Checkbox on={consent} onChange={setConsent} label="这是我自己的声音，或已获本人许可" />
-            <div className="vlib-save__acts">
-              <Btn variant="accent" size="s" disabled={!consent || !name.trim()} onClick={save}>存为音色</Btn>
-              <Btn variant="secondary" size="s" onClick={onCancel}>取消</Btn>
-              <span className="t-detail-xs grow">存的是这 {secs.toFixed(1)} 秒和这句台词，之后每部视频、每只能克隆的引擎都能选它。</span>
-            </div>
-          </div>
-        ) : null}
-        <p className="t-detail-xs vlib-foot">交互演示 · 没有真的开麦克风，试听放的是随包录音。</p>
       </div>
     );
   }
@@ -479,7 +378,7 @@
 
   function VoicesSection() {
     const app = useApp();
-    const [mode, setMode] = useState('list');   // list | mic | media
+    const [mode, setMode] = useState('list');   // list | mic | media | consent:<voiceId>
     const [addMenu, setAddMenu] = useState(false);
     const voices = app.voices;
     const patch = (id, p) => app.setVoices((list) => list.map((v) => (v.id === id ? {...v, ...p} : v)));
@@ -496,14 +395,21 @@
         app.toast(list.length > 1 ? `已存 ${list.length} 只音色 · 生成语音、配音、试听里都能选` : `已存「${list[0].name}」 · 生成语音、配音、试听里都能选`, 'positive');
       }
     };
-    if (mode === 'mic') return <div className="vlib"><MicCapture onDone={finish} onCancel={() => setMode('list')} /></div>;
+    if (mode === 'mic') return <div className="vlib"><window.VoiceCapture onDone={finish} onCancel={() => setMode('list')} /></div>;
     if (mode === 'media') return <div className="vlib"><MediaCapture onDone={finish} onCancel={() => setMode('list')} /></div>;
+    if (String(mode).indexOf('consent:') === 0) {
+      const target = voices.find((v) => v.id === mode.slice(8));
+      if (target) {
+        return <div className="vlib"><window.ConsentCapture v={target} onCancel={() => setMode('list')}
+          onDone={(clip) => { patch(target.id, {consentClip: clip}); setMode('list'); app.toast(`已存「${target.name}」的授权声明 · Google Gemini 第一次用时会连样本一起上传`, 'positive'); }} /></div>;
+      }
+    }
 
     const addBtn = (
       <Picker size="s" icon="plus" value="克隆新音色" open={addMenu} popWidth={280}
         onClick={() => setAddMenu((x) => !x)} onClose={() => setAddMenu(false)}>
         <Menu>
-          <MenuItem icon="mic" label="用麦克风录一段" sub="照着一句台词念 5–12 秒" onClick={() => { setAddMenu(false); setMode('mic'); }} />
+          <MenuItem icon="mic" label="录或上传一段样本" sub="30 秒左右；要给 Google Gemini 用再念一句授权声明" onClick={() => { setAddMenu(false); setMode('mic'); }} />
           <MenuItem icon="upload" label="从音频或视频里取…" sub="多人说话会分开，每人挑一段" onClick={() => { setAddMenu(false); setMode('media'); }} />
           <MenuRule />
           <MenuItem icon="download" label="导入音色包…" sub="别人导出的 .bcvoice" onClick={() => { setAddMenu(false); app.toast('交互演示 · 选一个 .bcvoice 文件夹'); }} />
@@ -515,8 +421,9 @@
       <div className="vlib" data-screen-label="我的声音">
         <h1 className="t-heading-sm">我的声音</h1>
         <p className="vlib-lede">
-          录一段自己的声音，或从视频里取一个人的声音，存成音色。之后生成语音、克隆声音、翻译配音、试听里按名字选，
-          每只能克隆的引擎都能用；参考录音留在这台电脑上。选云端引擎（ElevenLabs / MiniMax）时第一次用会先问一次，把参考段上传给它建克隆，随时可删。
+          录或上传一段 30 秒左右的样本，或从视频里取一个人的声音，存成音色。之后生成语音、克隆声音、翻译配音、试听里按名字选，
+          每只能克隆的引擎都能用；录音留在这台电脑上。选云端引擎（ElevenLabs / MiniMax / Google Gemini）时第一次用会先问一次，把样本上传给它建克隆并记下 voice id，随时可删；
+          Google Gemini 还要本人念一句授权声明。
         </p>
         <HandoffBar />
         {voices.length ? (
@@ -525,24 +432,27 @@
               {voices.map((v) => (
                 <VoiceRow key={v.id} v={v} onPatch={(p) => patch(v.id, p)}
                   onDelete={() => { app.setVoices((list) => list.filter((x) => x.id !== v.id)); app.toast(`已删除「${v.name}」`); }}
-                  onRetake={() => { if (Object.keys(v.cloud || {}).length) patch(v.id, {cloud: C.bindAfter(v, null, 'retake')}); setMode(v.source.kind === 'media' ? 'media' : 'mic'); }} />
+                  onRetake={() => { if (Object.keys(v.cloud || {}).length) patch(v.id, {cloud: C.bindAfter(v, null, 'retake')}); setMode(v.source.kind === 'media' ? 'media' : 'mic'); }}
+                  onConsent={() => setMode('consent:' + v.id)} />
               ))}
             </div>
             <div className="vlib-actions">{addBtn}</div>
           </>
         ) : (
           <div className="vlib-empty">
-            <Empty icon="mic" title="还没有音色">录一段 5–12 秒，或从一段视频里取；存好后到处都能选。</Empty>
+            <Empty icon="mic" title="还没有音色">录或上传一段 30 秒左右的样本，或从一段视频里取；存好后到处都能选。</Empty>
             <div className="vlib-empty__acts">
-              <Btn variant="accent" size="s" icon="mic" onClick={() => setMode('mic')}>用麦克风录一段</Btn>
+              <Btn variant="accent" size="s" icon="mic" onClick={() => setMode('mic')}>录或上传一段样本</Btn>
               <Btn variant="secondary" size="s" icon="upload" onClick={() => setMode('media')}>从音频或视频里取…</Btn>
             </div>
           </div>
         )}
         <div className="t-detail-xs vlib-foot vlib-foot--rule">
-          一只音色 = 一段规整到 5–10 秒的参考录音 + 这段的原文 + 来源。导出的音色包（<span className="t-mono">名字.bcvoice</span>）
-          带着录音与 <span className="t-mono">voice.json</span>，可以直接发给别人导入；CLI 用 <span className="t-mono">--voice my:名字</span> 选它。
-          Qwen3-TTS CustomVoice 接不了参考音频，OpenAI 与 Google Gemini 的云端模型也不能克隆，选了会明说，不会偷偷换成别的声音。
+          一只音色 = 一段 30 秒左右的样本 + 从它截出的 5–10 秒参考段（带原文）+ 来源 + 一颗种子；给 Google Gemini 用的还带一段本人念的授权声明。
+          本地引擎靠同一段参考 + 同一颗种子认人，云端靠对方给的 voice id（记在这只音色上，删音色时一并删）。
+          导出的音色包（<span className="t-mono">名字.bcvoice</span>）带着录音、授权声明、种子与 <span className="t-mono">voice.json</span>，可以直接发给别人导入，voice id 不随包走；
+          CLI 用 <span className="t-mono">--voice my:名字</span> 选它。
+          Qwen3-TTS CustomVoice 接不了参考音频，OpenAI 的云端模型不能克隆，选了会明说，不会偷偷换成别的声音。
           「未说明是否本人」的音色不会上传到任何第三方。
         </div>
       </div>

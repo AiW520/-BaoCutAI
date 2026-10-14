@@ -43,7 +43,7 @@
 .vlib-save .field { width: 240px; }
 .vlib-save__acts { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
 .vlib-save__acts--sticky { position: sticky; bottom: 0; margin: 0 -12px; padding: 12px; background: var(--gray-25); box-shadow: inset 0 1px 0 var(--gray-200); }
-.vlib-demo { align-self: flex-start; }
+.vlib-demo { align-self: flex-start; margin-left: 0; }
 
 /* 麦克风 */
 .vlib-meter { display: inline-flex; align-items: flex-end; gap: 2px; height: 16px; margin-left: 8px; }
@@ -90,3 +90,17 @@
 .vlib-cloud { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 4px; margin-left: 8px; }
 .vlib-cloudtry { display: flex; flex-direction: column; gap: 8px; margin-top: 8px; }
 .vlib-cloudtry p { margin: 0; }
+
+/* ---------- 克隆新音色（2026-10-14，settings-voice-capture.jsx）：样本 → 授权声明 → 保存 ---------- */
+.vlib-cap .steps { margin: 4px 0 8px; }
+.vlib-clip { display: flex; flex-direction: column; gap: 8px; }
+.vlib-rec__big { flex: none; min-width: 120px; font-size: 20px; line-height: 1; color: var(--gray-800); font-variant-numeric: tabular-nums; }
+.vlib-rec__big.is-live { color: var(--red-900); }
+.vlib-rec__left { flex: none; min-width: 120px; text-align: right; }
+.vlib-script--long { display: flex; flex-direction: column; gap: 8px; font-size: 16px; }
+.vlib-script__tail { color: var(--gray-600); font-style: italic; }
+.vlib-drop--tight { padding: 20px 24px; }
+.vlib-land { display: flex; flex-direction: column; gap: 6px; padding-top: 8px; border-top: 1px solid var(--gray-200); }
+.vlib-land__row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; min-height: 24px; }
+.vlib-land__row > .vlib-cap__lab { width: 96px; }
+.vlib-row__ids { color: var(--gray-600); font-variant-numeric: tabular-nums; }

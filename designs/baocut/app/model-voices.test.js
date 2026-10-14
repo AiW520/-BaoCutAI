@@ -28,6 +28,58 @@ test('麦克风门槛：短于 5 秒不给存，够了回 null', () => {
   assert.equal(V.takeProblem(11.9), null);
 });
 
+test('样本（2026-10-14）：目标 30 秒自动停；5 秒以下不给存，10 秒以下只提醒云端嫌短；授权声明 3 秒起、英文是推荐值', () => {
+  assert.deepEqual(V.SAMPLE, {min: 5, good: 10, target: 30, max: 30});
+  const providers = [{name: 'MiniMax', clone: {min: 10}}, {name: 'Google Gemini', clone: {min: 10, consent: true}}, {name: 'ElevenLabs', clone: {min: 1}}];
+  assert.match(V.sampleVerdict(3.1, providers).problem, /只录到 3\.1 秒/);
+  const mid = V.sampleVerdict(7.4, providers);
+  assert.equal(mid.problem, null);
+  assert.deepEqual(mid.short, ['MiniMax 要 10 秒以上', 'Google Gemini 要 10 秒以上']);
+  assert.deepEqual(V.sampleVerdict(29.1, providers).short, []);
+  assert.equal(V.sampleVerdict(30, providers).line, '够了');
+  assert.match(V.consentProblem(1.2), /把整句念完/);
+  assert.equal(V.consentProblem(7.9), null);
+  assert.equal(V.consentPhrase('en').recommended, true);
+  assert.match(V.consentPhrase('en').text, /^I am the owner of this voice/);
+  assert.equal(V.consentPhrase('zh').verified, false, '中文实测常验不过');
+  assert.equal(V.consentPhrase('xx').code, 'en', '没有的语言退到英文');
+  // 台词：这门语言的三句示例连起来，第一句就是参考段原文
+  const script = V.sampleScript('zh');
+  assert.equal(script.lines.length, 3);
+  assert.match(script.first, /^欢迎使用 BaoCut/);
+  assert.deepEqual(V.referenceFromSample(29.1, script.first), {dur: 10, text: script.first, textSource: 'script'});
+  assert.deepEqual(V.referenceFromSample(7.4, ''), {dur: 7.4, text: '', textSource: 'none'});
+  // 步骤：样本 → 授权（可跳过，点名谁要）→ 保存
+  const steps = V.cloneSteps([{name: 'Google Gemini'}]);
+  assert.deepEqual(steps.map((s) => s.k), ['sample', 'consent', 'save']);
+  assert.equal(steps[1].optional, true);
+  assert.deepEqual(steps[1].needed, ['Google Gemini']);
+  assert.deepEqual(V.cloneSteps([])[1].needed, []);
+});
+
+test('音色档记什么认人：有 voice id 记 id，没有留种子；授权录音另存一段', () => {
+  const me = V.DEMO.find((v) => v.id === 'v-me');
+  assert.equal(me.seed, 48213);
+  assert.equal(me.consentClip.lang, 'en');
+  assert.equal(me.cloud.google.voiceId, 'voice_demo7q2mx');
+  assert.equal(V.idLine(me, [{id: 'google', name: 'Google Gemini'}]), '种子 48213 · Google Gemini voice_demo7q2mx · 授权声明 English 7.9 秒');
+  const host = V.DEMO.find((v) => v.id === 'v-host');
+  assert.equal(host.consentClip, null);
+  assert.equal(V.idLine(host, [{id: 'elevenlabs', name: 'ElevenLabs'}]), `种子 ${host.seed} · ElevenLabs bc_ele_host`);
+  const fresh = V.makeVoice({name: 'x', consentClip: {dur: 6.94}});
+  assert.ok(fresh.seed >= 1 && Number.isInteger(fresh.seed));
+  assert.equal(fresh.consentClip.dur, 6.9);
+  assert.equal(fresh.consentClip.lang, 'en');
+  assert.match(V.metaLine(me), /^简体中文 · 样本 29\.1 秒 · 麦克风 · 2 天前$/);
+  const up = V.makeVoice({lang: 'en', dur: 10, sourceDur: 29.1, source: {kind: 'upload', name: 'reference_speaker.wav'}});
+  assert.equal(V.metaLine(up), 'English · 样本 29.1 秒 · 上传 · reference_speaker.wav · 刚刚');
+  const j = JSON.parse(V.exportBundle(me));
+  assert.equal(j.seed, 48213);
+  assert.deepEqual(j.consentClip, {file: 'consent.wav', seconds: 7.9, language: 'en'});
+  assert.equal(JSON.parse(V.exportBundle(host)).consentClip, null);
+  assert.equal(j.cloud, undefined, 'voice id 不进导出包');
+});
+
 test('音色档：makeVoice 补默认值，元数据一行按来源分两种写法', () => {
   const mic = V.makeVoice({name: ' 我 ', lang: 'zh', dur: 7.83, text: 'x', source: {kind: 'mic'}});
   assert.equal(mic.name, '我');

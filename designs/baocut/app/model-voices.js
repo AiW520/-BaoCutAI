@@ -19,12 +19,60 @@
   const REC = {min: 5, target: 8, max: 12};
   const WINDOW = {min: 5, max: 10};
 
-  /** 录音停下后能不能存；不能就回一句原因，能就回 null */
+  /* ---------- 采集流程（2026-10-14 重做）：一段样本 + 一段授权 ----------
+     以前只录 5–12 秒照念一句；现在录的是**样本**：目标 30 秒（计时器到 30 自动停），麦克风或上传都行。
+     本地引擎的 5–10 秒参考段从样本里截（前面那句台词，原文已知）；云端要长样本的（MiniMax ≥ 10、Gemini 10–30、
+     ElevenLabs 建议 60）直接用整段。要**第二段录音**的只有 Gemini：同一个人念一句固定的授权声明
+     （接口核对两段是不是同一个人），声明有语言之分——实测中文常验不过，英文稳，所以语言是一个选项、英文是推荐值。 */
+  const SAMPLE = {min: 5, good: 10, target: 30, max: 30};
+  const CONSENT_REC = {min: 3, target: 8, max: 15};
+  /** 授权声明原文（Google 官方给 30 种语言，这里只放核对过的两种；其余语言去官方文档查原文）。`verified` 是实测能过 */
+  const CONSENT_PHRASES = [
+    {code: 'en', label: 'English', text: 'I am the owner of this voice and I consent to Google using this voice to create a synthetic voice model.', verified: true, recommended: true},
+    {code: 'zh', label: '简体中文', text: '我是此声音的拥有者并授权谷歌使用此声音创建语音合成模型', verified: false, note: '实测常验不过 · 不急就念英文'},
+  ];
+  const consentPhrase = (code) => CONSENT_PHRASES.find((c) => c.code === code) || CONSENT_PHRASES[0];
+  /** 样本停下后：`problem` 不为 null 就不给存；`short` 列出嫌它短的云端提供方（只提醒，不拦）。`providers` 是 [{name, clone}] */
+  function sampleVerdict(seconds, providers) {
+    const s = +seconds || 0;
+    if (s < SAMPLE.min) return {problem: `只录到 ${s.toFixed(1)} 秒，至少要 ${SAMPLE.min} 秒——再来一遍`, short: []};
+    const short = (providers || []).filter((p) => p.clone && p.clone.min && s < p.clone.min).map((p) => `${p.name} 要 ${p.clone.min} 秒以上`);
+    return {problem: null, short, line: s < SAMPLE.good ? '够本地引擎用了 · 再长一点云端也能用' : s < SAMPLE.target ? '够了 · 念到 30 秒最好' : '够了'};
+  }
+  /** 授权录音停下后能不能用 */
+  function consentProblem(seconds) {
+    const s = +seconds || 0;
+    if (s < CONSENT_REC.min) return `只录到 ${s.toFixed(1)} 秒 · 把整句念完`;
+    return null;
+  }
+  /** 录音停下后能不能存；不能就回一句原因，能就回 null（旧门槛，分人页的候选窗仍按它） */
   function takeProblem(seconds) {
     const s = +seconds || 0;
     if (s < REC.min) return `只录到 ${s.toFixed(1)} 秒，至少要 ${REC.min} 秒——照着台词再念一遍`;
     return null;
   }
+  /** 30 秒样本照着念的台词：这门语言的三句示例连起来；念完可以接着随便说。第一句就是本地引擎的参考段原文 */
+  function sampleScript(lang) {
+    if (!TTS) return {lines: [], first: ''};
+    const lines = TTS.sampleKinds(lang).map((k) => TTS.sampleLine(lang, k.k).text);
+    return {lines, first: lines[0] || ''};
+  }
+  /** 从样本截本地引擎的参考段：前 5–10 秒，原文是第一句台词（上传的没有台词就空着，`textSource: 'none'`） */
+  function referenceFromSample(seconds, firstLine) {
+    const s = +seconds || 0;
+    return {dur: +Math.min(WINDOW.max, Math.max(WINDOW.min, s)).toFixed(1), text: firstLine || '', textSource: firstLine ? 'script' : 'none'};
+  }
+  /** 采集页的步骤：样本 → 授权（可跳过；`needed` 点名已连接的、要它的提供方）→ 保存 */
+  function cloneSteps(consentProviders) {
+    const needed = (consentProviders || []).map((p) => p.name);
+    return [
+      {k: 'sample', label: '录样本'},
+      {k: 'consent', label: '授权声明', optional: true, needed},
+      {k: 'save', label: '保存'},
+    ];
+  }
+  /** 种子：本地引擎没有 voice id，靠「同一段参考 + 同一颗种子」让每次生成都是同一个人 */
+  const randomSeed = () => 1 + Math.floor(Math.random() * 2147483646);
 
   /* ---------- 音色档 ---------- */
 
@@ -52,6 +100,10 @@
       sourceDur: o.sourceDur ? +(+o.sourceDur).toFixed(1) : 0,
       referenceSha256: o.referenceSha256 || null,
       cloud: o.cloud || {},
+      /* 2026-10-14：`consentClip` 是本人念授权声明的那段（`consent.wav`，{lang, dur, file, at}），只有要它的提供方（Gemini）看；
+         `seed` 是本地引擎的种子——有 voice id 的记 id（`cloud.<provider>.voiceId`），没有的就靠这颗种子复现 */
+      consentClip: o.consentClip ? Object.assign({lang: 'en', at: '刚刚'}, o.consentClip, {dur: +(+o.consentClip.dur).toFixed(1)}) : null,
+      seed: o.seed || randomSeed(),
     };
   }
 
@@ -59,7 +111,10 @@
   const DEMO = [
     makeVoice({id: 'v-me', name: '我自己', lang: 'zh', dur: 7.8,
       text: '欢迎使用 BaoCut！转录、翻译、配音，全都在你自己的电脑上完成。', textSource: 'script',
-      source: {kind: 'mic', at: '2026-09-22'}, file: 'tts-voice-zh-male.wav', consent: 'self', createdAt: '2 天前'}),
+      source: {kind: 'mic', at: '2026-09-22'}, file: 'tts-voice-zh-male.wav', consent: 'self', createdAt: '2 天前',
+      sourceDur: 29.1, referenceSha256: '9f2a7c10', seed: 48213,
+      consentClip: {lang: 'en', dur: 7.9, file: 'tts-voice-en-male.wav', at: '2026-10-07'},
+      cloud: {google: {voiceId: 'voice_demo7q2mx', referenceSha256: '9f2a7c10', at: '2026-10-07'}}}),
     makeVoice({id: 'v-host', name: '主持人', lang: 'zh', dur: 7.4,
       text: '欢迎回到《码与远方》，我是林澈。这一期我们请到了两位做本地视频工具的朋友。', textSource: 'transcript',
       source: {kind: 'media', name: '第 12 期访谈.mp4', speaker: 'A', start: 0, end: 11.2, separated: true},
@@ -73,18 +128,33 @@
     return `${String(Math.floor(s / 60)).padStart(2, '0')}:${String(s % 60).padStart(2, '0')}`;
   };
 
-  /** 来源一句：`麦克风 · 2 天前` / `第 12 期访谈.mp4 · 说话人 A · 00:00–00:11` */
+  /** 来源一句：`麦克风 · 2 天前` / `上传 · reference_speaker.wav · 刚刚` / `第 12 期访谈.mp4 · 说话人 A · 00:00–00:11` */
   function sourceLine(v) {
     const s = v.source || {};
     if (s.kind === 'media') {
       return `${s.name || '媒体文件'}${s.speaker ? ' · 说话人 ' + s.speaker : ''} · ${fmtTime(s.start)}–${fmtTime(s.end)}`;
     }
     if (s.kind === 'import') return `导入 · ${s.name || '音色包'}`;
+    if (s.kind === 'upload') return `上传 · ${s.name || '音频文件'} · ${v.createdAt || '刚刚'}`;
     return `麦克风 · ${v.createdAt || '刚刚'}`;
   }
-  /** 行上的元数据：`中文 · 7.8 秒 · 麦克风 · 2 天前` */
+  /** 行上的元数据：`中文 · 样本 29.1 秒 · 麦克风 · 2 天前`；没有长样本的旧音色写参考段 `中文 · 7.8 秒 · …` */
   function metaLine(v) {
-    return `${TTS ? TTS.langLabel(v.lang) : v.lang} · ${(+v.dur).toFixed(1)} 秒 · ${sourceLine(v)}`;
+    const secs = v.sourceDur > 0 ? `样本 ${(+v.sourceDur).toFixed(1)} 秒` : `${(+v.dur).toFixed(1)} 秒`;
+    return `${TTS ? TTS.langLabel(v.lang) : v.lang} · ${secs} · ${sourceLine(v)}`;
+  }
+  /** 行上第三行：这只音色在各处凭什么认人——`种子 48213 · Google Gemini voice_demo7q2mx · 授权声明 English 7.9 秒`。
+   *  `providers` 是 BC_CLOUD_TTS.providers()，用来把 provider id 换成名字 */
+  function idLine(v, providers) {
+    const parts = [`种子 ${v.seed}`];
+    Object.keys(v.cloud || {}).forEach((k) => {
+      const b = v.cloud[k];
+      if (!b || !b.voiceId) return;
+      const p = (providers || []).find((x) => x.id === k);
+      parts.push(`${p ? p.name : k} ${b.voiceId}${b.stale ? '（参考已换）' : ''}`);
+    });
+    if (v.consentClip && v.consentClip.dur > 0) parts.push(`授权声明 ${consentPhrase(v.consentClip.lang).label} ${(+v.consentClip.dur).toFixed(1)} 秒`);
+    return parts.join(' · ');
   }
   const CONSENT = [
     {k: 'self', label: '我自己的'},
@@ -294,13 +364,17 @@
       signal: {issues: v.signal || []}, consent: v.consent,
       qwen3: {mode: v.qwen3 || 'icl'},
       source: v.sourceDur ? {file: 'source.wav', seconds: v.sourceDur} : null,
-      /* 远端绑定不进导出包：voice id 是这台电脑这把密钥下的，别人导入后第一次用时再建 */
+      /* 种子随包走：导入的人用同一段参考 + 同一颗种子，本地引擎出的还是同一个人 */
+      seed: v.seed,
+      /* 授权录音随包走（它是本人对这段声音的授权，跟着声音），远端绑定不进导出包：voice id 是这台电脑这把密钥下的，别人导入后第一次用时再建 */
+      consentClip: v.consentClip && v.consentClip.dur > 0 ? {file: 'consent.wav', seconds: v.consentClip.dur, language: v.consentClip.lang} : null,
     }, null, 2);
   }
   const bundleName = (v) => `${v.name}.bcvoice`;
 
   const BC_VOICES = {
-    REC, WINDOW, takeProblem, makeVoice, DEMO, fmtTime, sourceLine, metaLine, CONSENT, consentLabel,
+    REC, WINDOW, takeProblem, makeVoice, DEMO, fmtTime, sourceLine, metaLine, idLine, CONSENT, consentLabel,
+    SAMPLE, CONSENT_REC, CONSENT_PHRASES, consentPhrase, sampleVerdict, consentProblem, sampleScript, referenceFromSample, cloneSteps, randomSeed,
     profileFor, engineChips, cloudChips, CLONE_MODELS, auditionModel, RUN_LINE,
     ISSUES, issueLabel, windowIssues, analyze, speakerLine, candidateLine, voicesFromPicks, saveLabel, STEPS,
     pickerGroups, valueLabel, valueOfForm, applyToForm, exportBundle, bundleName,

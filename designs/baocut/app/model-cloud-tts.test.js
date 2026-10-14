@@ -192,7 +192,7 @@ test('校验与费用：字数上限按模型；我的声音在这家不可用�
   assert.equal(C.chars('  ab c '), 4);
 });
 
-test('Google Gemini（§5.6 / §12.9）：两只模型都收风格指令、没有数值语速、不能克隆、30 只内置音色、默认 Kore、一次 4096 字、24 kHz、按 token 计费', () => {
+test('Google Gemini（§5.6 / §12.9）：两只模型都收风格指令、没有数值语速、要授权录音才能克隆、30 只内置音色、默认 Kore、一次 4096 字、24 kHz、按 token 计费', () => {
   assert.deepEqual(C.parse('cloud:google/gemini-3.8-flash-lite-tts'), {provider: 'google', model: 'gemini-3.8-flash-lite-tts'});
   assert.equal(C.modelId('google', 'gemini-3.8-flash-tts'), 'cloud:google/gemini-3.8-flash-tts');
   for (const id of ['gemini-3.8-flash-tts', 'gemini-3.8-flash-lite-tts']) {
@@ -200,8 +200,8 @@ test('Google Gemini（§5.6 / §12.9）：两只模型都收风格指令、没�
     assert.equal(cap.model, id);
     assert.equal(cap.speed, null, '没有 speed 键：语速一行整行不出现');
     assert.equal(cap.instruct, true);
-    assert.equal(cap.clone, false);
-    assert.equal(cap.profile, 'none');
+    assert.equal(cap.clone, true);
+    assert.equal(cap.profile, 'remote');
     assert.equal(cap.maxChars, 4096);
     assert.equal(cap.rate, 24000);
     assert.equal(cap.api, 'gemini');
@@ -213,7 +213,8 @@ test('Google Gemini（§5.6 / §12.9）：两只模型都收风格指令、没�
   assert.equal(C.langsShort('google', 'gemini-3.8-flash-lite-tts'), '101 种语言');
   const labels = C.card('google').tags.map((t) => t.label);
   assert.ok(labels.includes('风格指令') && labels.includes('130 种语言（Flash-Lite 101）') && labels.includes('联网计费'), labels.join(' / '));
-  assert.ok(!labels.some((l) => /语速|克隆/.test(l)), '不做假标签：没有语速、没有克隆');
+  assert.ok(!labels.some((l) => /语速/.test(l)), '不做假标签：没有语速');
+  assert.ok(labels.includes('克隆 · 要本人授权录音'), '克隆标签点明要第二段录音');
   assert.equal(C.headerChip('google'), '联网 · Google Gemini · 按 token 计费');
   assert.match(C.costLine('欢迎使用 BaoCut', 'google'), /^按 token 计费 · 这次约 11 字/);
   assert.equal(C.billing('openai'), '按字符计费');
@@ -221,7 +222,7 @@ test('Google Gemini（§5.6 / §12.9）：两只模型都收风格指令、没�
   assert.equal(TTS.engineOf('cloud:google').name, 'Google Gemini');
 });
 
-test('Gemini 音色：30 只内置、默认 Kore（任何语言都是它）、多于 12 只带搜索；我的声音整组置灰写原因、没有临时那一组', () => {
+test('Gemini 音色：30 只内置、默认 Kore（任何语言都是它）、多于 12 只带搜索；没授权录音的音色置灰写原因、没有临时那一组', () => {
   const list = C.voicesOf('google');
   assert.equal(list.length, 30);
   assert.equal(new Set(list.map((v) => v.id)).size, 30);
@@ -231,29 +232,44 @@ test('Gemini 音色：30 只内置、默认 Kore（任何语言都是它）、�
   assert.equal(C.defaultVoice('google', '').id, 'Kore');
   const v = voice({id: 'a'});
   const st = C.cloneStatus(v, 'google', {saved: ['google', 'elevenlabs']});
-  assert.equal(st.k, 'unsupported');
+  assert.equal(st.k, 'authorize', '没有授权录音：缺的是第二段录音，不是不能克隆');
   assert.equal(st.ok, false);
-  assert.equal(st.chip, 'Google Gemini 不能克隆');
-  assert.match(st.line, /^Google Gemini 不能克隆 · 用它的音色目录（含你在 AI Studio 建的）/);
-  assert.match(st.line, /换 ElevenLabs$/);
+  assert.equal(st.chip, 'Google Gemini — 缺授权录音');
+  assert.match(st.line, /本人念一段授权声明（英文最稳）/);
   const g = C.pickerGroups('google', [v, voice({id: 'b', name: '路人'})], {lang: 'zh'});
-  assert.deepEqual(g.map((x) => x.k), ['default', 'my', 'voices']);
+  assert.deepEqual(g.map((x) => x.k), ['default', 'my', 'voices'], '要授权录音的没有「临时用一段」');
   assert.match(g[0].items[0].sub, /Kore/);
-  assert.ok(g[1].items.every((it) => it.kind === 'new' || it.disabled), '我的声音整组置灰');
-  assert.ok(g[1].items.filter((it) => it.disabled).every((it) => /不能克隆/.test(it.why || '')), '置灰写原因');
+  assert.ok(g[1].items.every((it) => it.kind === 'new' || it.disabled), '没授权录音的整组置灰');
+  assert.ok(g[1].items.filter((it) => it.disabled).every((it) => /授权声明|许可未说明/.test(it.why || '')), '置灰写原因');
   assert.equal(g[2].search, true);
   assert.equal(g[2].total, 30);
   assert.equal(g[2].items.length, 30);
   assert.equal(C.pickerGroups('google', [], {query: 'kore'})[2].items[0].id, 'Kore');
-  // 上传类入口不认 Gemini：行卡 chip 写「不能克隆」
-  assert.deepEqual(C.cloudChips(v, ['google']).map((c) => c.k), ['unsupported']);
+  // 行卡 chip：缺授权录音
+  assert.deepEqual(C.cloudChips(v, ['google']).map((c) => c.k), ['authorize']);
+  // 录了授权声明：样本太短先拦，10 秒以上首次用时建音色（样本 + 授权两段一起传），建好记 voice_…
+  const ok = voice({id: 'c', consentClip: {lang: 'en', dur: 7.9}});
+  assert.equal(C.cloneStatus(ok, 'google').k, 'short');
+  const long = voice({id: 'd', sourceDur: 29.1, consentClip: {lang: 'en', dur: 7.9}});
+  const first = C.cloneStatus(long, 'google');
+  assert.equal(first.k, 'first');
+  assert.equal(first.chip, 'Google Gemini · 首次用时建音色');
+  assert.match(first.line, /样本（29\.1 秒）与授权录音（7\.9 秒）/);
+  assert.doesNotMatch(first.line, /过期/, 'Gemini 存着的音色不过期，不借 MiniMax 的那句');
+  assert.match(C.uploadNotice(long, 'google'), /同一个人.*最多 200 只/);
+  const up = Object.assign({}, long, {cloud: C.bindAfter(long, 'google', 'upload', {at: '2026-10-07'})});
+  assert.match(up.cloud.google.voiceId, /^voice_/);
+  assert.equal(C.cloneStatus(up, 'google').k, 'uploaded');
+  assert.deepEqual(C.consentProviders(['google', 'elevenlabs']).map((p) => p.id), ['google']);
+  assert.deepEqual(C.consentProviders(['elevenlabs']), []);
+  assert.equal(C.needsConsentClip(C.providerById('elevenlabs')), false);
 });
 
-test('Gemini 校验：一次上限 4096 字（8,192 输入 token 的保守折算），超出就提示切段；我的声音被拦', () => {
+test('Gemini 校验：一次上限 4096 字（8,192 输入 token 的保守折算），超出就提示切段；没授权录音的我的声音被拦', () => {
   const f = {engine: 'cloud:google', cloudModel: 'cloud:google/gemini-3.8-flash-tts', text: 'x'.repeat(4097), cloudVoice: {kind: 'default'}};
   assert.match(C.validate(f, [])[0], /gemini-3\.8-flash-tts 一次最多 4,096 字/);
   assert.equal(C.validate(Object.assign({}, f, {text: 'x'.repeat(4096)}), []).length, 0);
   const v = voice({id: 'a'});
-  assert.match(C.validate(Object.assign({}, f, {text: 'hi', cloudVoice: {kind: 'my', id: 'a'}}), [v])[0], /Google Gemini 不能克隆/);
+  assert.match(C.validate(Object.assign({}, f, {text: 'hi', cloudVoice: {kind: 'my', id: 'a'}}), [v])[0], /Google Gemini 要本人念一段授权声明/);
   assert.match(C.validate(Object.assign({}, f, {text: 'hi'}), [], {saved: ['openai']})[0], /先连接 Google Gemini/);
 });
