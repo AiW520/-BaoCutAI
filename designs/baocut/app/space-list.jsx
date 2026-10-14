@@ -29,7 +29,9 @@
     const paused = !!window.BC_SEMANTIC.pauseReasonOf(st);
     return (it) => {
       const mv = it && it.movie ? app.projById(it.movie) : null;
-      return X.entryState(it, {sem, visual, paused, demo: SEM.entries, requeued: st.requeued, movieName: mv ? mv.title : null});
+      const d = it && it.dir ? (app.dirs || []).find((x) => x.id === it.dir) : null;
+      return X.entryState(it, {sem, visual, paused, demo: SEM.entries, requeued: st.requeued, movieName: mv ? mv.title : null,
+        noIndex: st.noIndex, excluded: st.excluded, dirName: d ? d.name : null});
     };
   }
 
@@ -146,6 +148,12 @@
       idx && idx.canReindex
         ? <R.MenuItem key="reindex" id="reindex" textValue="重新索引"><R.Icons.Refresh /><R.Text>重新索引</R.Text>
           <R.Text slot="description">{idx.k === 'failed' ? '再试一次，排到最前' : '丢掉这一条的索引，排到最前重建'}</R.Text></R.MenuItem> : null,
+      idx && idx.canExclude
+        ? <R.MenuItem key="noindex" id="noindex" textValue="不索引"><R.Icons.StopProcessing /><R.Text>不索引</R.Text>
+          <R.Text slot="description">删掉这一条的索引，以后也不建；只能按字面找到</R.Text></R.MenuItem> : null,
+      idx && idx.canInclude
+        ? <R.MenuItem key="include" id="include" textValue="恢复索引"><R.Icons.Refresh /><R.Text>恢复索引</R.Text>
+          <R.Text slot="description">排回索引队列，按讲话内容与画面建</R.Text></R.MenuItem> : null,
       <R.MenuItem key="fav" id="fav" textValue={it.fav ? '取消收藏' : '收藏'}>{it.fav ? <R.Icons.StarFilled /> : <R.Icons.Star />}<R.Text>{it.fav ? '取消收藏' : '收藏'}</R.Text></R.MenuItem>,
       <R.MenuItem key="reveal" id="reveal" textValue="在文件夹中显示"><R.Icons.Folder /><R.Text>在文件夹中显示</R.Text></R.MenuItem>,
       it.trashed

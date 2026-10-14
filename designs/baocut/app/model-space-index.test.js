@@ -78,3 +78,23 @@ test('索引位置：不存在、不可写、同一处不能选；放不下时�
   assert.equal(X.locationPlan({path: '/c', exists: true, writable: true, freeMB: 900}, 64 * mb, '/a').move.disabled, false);
   assert.equal(X.effectiveDir(null).source, 'default');
 });
+
+test('不索引：单条设了的能恢复，盖过失败；所在项目整个排除时写项目名、不给单条开关；成片仍是不需要', () => {
+  const demo = {p1: {text: 'failed'}};
+  const s = X.entryState(movie, {sem: usable, visual: true, demo, noIndex: {p1: true}});
+  assert.equal(s.k, 'excluded');
+  assert.ok(s.canInclude);
+  assert.equal(s.canReindex, false);
+  assert.equal(s.canExclude, false);
+  const inProj = X.entryState({id: 'p2', kind: 'movie', dir: 'd1'}, {sem: usable, visual: true, excluded: ['d1'], dirName: '产品发布'});
+  assert.equal(inProj.k, 'excluded');
+  assert.match(inProj.why, /「产品发布」已排除/);
+  assert.equal(inProj.canInclude, false);
+  const exp = X.entryState({id: 'o1', kind: 'final', movie: 'p1'}, {sem: usable, visual: true, noIndex: {o1: true}});
+  assert.equal(exp.k, 'notNeeded');
+  assert.equal(exp.canExclude, false);
+  // 平常的视频：能重新索引，也能设不索引
+  const n = X.entryState(movie, {sem: usable, visual: true});
+  assert.ok(n.canReindex && n.canExclude);
+  assert.deepEqual(n.lines, ['讲话内容：已索引', '画面：已索引']);
+});

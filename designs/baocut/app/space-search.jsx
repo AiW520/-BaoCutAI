@@ -173,7 +173,7 @@
         </div>
         <div className="ssr__cov">
           <span className="t-detail-xs">{cov.line}</span>
-          <span className="t-detail-xs">画面与声音：这一版还没有索引，之后装好多模态搜索、按项目开启</span>
+          <span className="t-detail-xs">画面与声音：这一版还没有索引</span>
         </div>
         {notes.map((n) => (
           <div key={n.text} className={cx('semnote', n.tone === 'notice' && 'semnote--notice')}>

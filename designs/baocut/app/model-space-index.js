@@ -5,8 +5,10 @@
    · 成片不另建索引：导出它的视频已经按讲话内容与画面建过，标「不需要索引」并说是哪部视频；
      索引文件夹里认得出的成片（BaoCut 导出过的文件）同样跳过；认不出来的文件（没有导出记录）照普通视频素材建。
    · 重新索引：丢掉这一条已有的向量，排到队首重建（space.indexBuild {videoIds, rebuild: true}）；成片、文档不给。
+   · 不索引：单个条目可以排除（删掉已有的向量、以后不建，只能按字面找到），再点「恢复索引」排回队里；
+     所在项目在设置里整个排除了的，条目上写是哪个项目，不再单独设（恢复要去设置）。视频缺省按讲话内容与画面都建。
    · 索引文件夹：项目之外再加的只读扫描目录。里面的 BaoCut 视频按讲话内容与画面建；其他视频文件与图片没有文稿，只按画面建，
-     所以只装了文字搜索、或者画面关着时，加进来的文件夹只有 BaoCut 视频会建索引——添加时就说清楚。BaoCut 不改这些文件夹里的文件。
+     所以画面关着时，加进来的文件夹只有 BaoCut 视频会建索引——添加时就说清楚。BaoCut 不改这些文件夹里的文件。
    · 索引位置：默认在应用数据里；可以改到别的磁盘。改的时候二选一：把现有索引移过去，或在新位置重新建（旧的删掉）。
      不提供「只切换位置」：留在原处的索引没人用，只占空间。关键帧缓存不搬，可以清掉、会重新取。
    无 React、无 DOM，`node --test` 直接跑。 */
@@ -35,6 +37,7 @@
     indexed:   {k: 'indexed',   label: '已索引',           tone: 'positive',    icon: 'CheckmarkCircle'},
     empty:     {k: 'empty',     label: '没有可索引的内容', tone: 'neutral',     icon: 'InfoCircle'},
     notNeeded: {k: 'notNeeded', label: '不需要索引',       tone: 'neutral',     icon: 'Link'},
+    excluded:  {k: 'excluded',  label: '不索引',           tone: 'neutral',     icon: 'StopProcessing'},
   };
   const ORDER = ['failed', 'stale', 'indexing', 'queued', 'indexed'];
 
@@ -54,13 +57,26 @@
    * @param o.requeued  id → true：刚点了「重新索引」，各通道排到队首
    * @param o.paused    索引停着（用户暂停、用电池、过热）：在建的显示成排队中
    * @param o.movieName 成片：导出它的视频的名字
+   * @param o.noIndex   id → true：单独设了「不索引」的条目
+   * @param o.excluded  设置里排除的项目（目录 id）
+   * @param o.dirName   条目所在项目的名字（所在项目被排除时写进说明）
    */
   function entryState(it, o) {
     const opt = o || {};
     if (!indexable(it) || !opt.sem || !opt.sem.usable) return null;
+    const off = {canReindex: false, canExclude: false, canInclude: false};
+    // 整个项目排除了：条目上只说是哪个项目，恢复去设置（不做「项目排除了、单条又纳入」）
+    if (it.dir && (opt.excluded || []).indexOf(it.dir) >= 0) {
+      return Object.assign({}, STATE.excluded, off, {channels: [], lines: [],
+        why: `所在项目${opt.dirName ? `「${opt.dirName}」` : ''}已排除，只能按字面找到；在设置 › 语义索引里恢复`});
+    }
     if (isExport(it)) {
-      return Object.assign({}, STATE.notNeeded, {channels: [],
-        why: `成片：和导出它的视频${opt.movieName ? `「${opt.movieName}」` : ''}内容相同，搜那部视频就能找到`, canReindex: false});
+      return Object.assign({}, STATE.notNeeded, off, {channels: [],
+        why: `成片：和导出它的视频${opt.movieName ? `「${opt.movieName}」` : ''}内容相同，搜那部视频就能找到`});
+    }
+    if ((opt.noIndex || {})[it.id]) {
+      return Object.assign({}, STATE.excluded, off, {channels: [], lines: [], canInclude: true,
+        why: '设了不索引：已有的索引删掉了，只能按字面找到'});
     }
     const d = (opt.demo || {})[it.id] || {};
     const again = !!(opt.requeued || {})[it.id];
@@ -80,10 +96,11 @@
       const why = it.kind === 'movie'
         ? (channels[0].state === 'waiting' ? '还在转录，转完按讲话内容建' : '没有文稿，画面索引也没开')
         : '只能按画面建，画面索引没开';
-      return Object.assign({}, STATE.empty, {channels, lines, why, canReindex: false});
+      return Object.assign({}, STATE.empty, off, {channels, lines, why, canExclude: true});
     }
     const top = ORDER.find((k) => live.some((c) => c.state === k));
-    return Object.assign({}, STATE[top], {channels, lines, why: null, canReindex: true, pct: top === 'indexing' ? d.pct : null});
+    return Object.assign({}, STATE[top], {channels, lines, why: null, canReindex: true, canExclude: true, canInclude: false,
+      pct: top === 'indexing' ? d.pct : null});
   }
   /** 标志的悬停说明 / 无障碍名：「语义索引：排队中 · 讲话内容：已索引；画面：排队中」。 */
   function stateTitle(s) {

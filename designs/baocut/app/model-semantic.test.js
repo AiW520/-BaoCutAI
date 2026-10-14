@@ -33,6 +33,15 @@ test('URL 演示开关只认已知值', () => {
   assert.equal(S.fromSearch(''), null);
 });
 
+test('一个包：缺省就装好、画面开着；老版本存的文字包按整包算，旧包的半截下载丢掉', () => {
+  assert.equal(S.DEFAULT.install, 'full');
+  assert.equal(S.DEFAULT.visual, true);
+  assert.equal(S.fromSearch('?semantic=ready').install, 'full');
+  assert.equal(S.normalize({install: 'text'}).install, 'full');
+  assert.equal(S.normalize({install: 'none', half: {pkg: 'sem-full', have: ['embedding']}}).half, null);
+  assert.deepEqual(S.normalize({}).excluded, []);
+});
+
 test('完整性按通道分别写，不是一个百分比（v0.1 §13.2）', () => {
   assert.equal(S.coverageLine({text: {done: 4, total: 4}, visual: {done: 18, total: 30}}), '文字已就绪；画面 18/30 个素材完成');
   assert.equal(S.coverageLine({text: {done: 2, total: 3, pending: 1}}), '文字 2/3 部视频（1 部还在转录）');
@@ -41,7 +50,7 @@ test('完整性按通道分别写，不是一个百分比（v0.1 §13.2）', () 
   assert.deepEqual(S.sumText([{text: {done: 1, total: 2, pending: 1}}, {text: {done: 3, total: 3}}]), {done: 4, total: 5, pending: 1, none: 0});
 });
 
-test('多模态包包含文字通道', () => {
+test('整包有文字与画面通道', () => {
   assert.deepEqual(S.channelsOf('full'), ['text', 'visual', 'audio']);
   assert.deepEqual(S.channelsOf('text'), ['text']);
   assert.deepEqual(S.channelsOf('none'), []);

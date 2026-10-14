@@ -39,7 +39,7 @@
   };
   /* 只有语音合成一项有两页（Tab）；其余页名只用于搜索 */
   const PAGE_LABEL = {tts: '模型', voices: '我的声音', providers: 'API 提供方 服务商 账号 密钥', usage: '用量 花费 余额', agent: 'Agent 提供方', skills: 'Skills',
-    downloader: 'yt-dlp 下载工具 网站登录 浏览器 Cookie', semantic: '语义索引 本机语义模型 文字搜索 多模态搜索 翻译记忆 术语候选 Space 搜索'};
+    downloader: 'yt-dlp 下载工具 网站登录 浏览器 Cookie', semantic: '语义索引 本机语义模型 语义搜索 多模态 画面索引 排除项目 翻译记忆 术语候选 Space 搜索'};
   const LOCAL_TABS = NAV.filter((n) => n.local).map((n) => n.local);
   /* 旧「云端模型」页的 tab → 能力页 */
   const CLOUD_TAB = {stt: 'asr', llm: 'llm', tts: 'tts', image: 'image'};   // 音乐生成没有云端页，不在这张表

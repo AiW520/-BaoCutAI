@@ -247,6 +247,8 @@
                     <window.SpaceIndexMark s={idx} withText />
                     <span className="sp-muted">{idx.why || idx.lines.join('；')}</span>
                     {idx.canReindex ? <R.ActionButton size="S" isQuiet onPress={() => onAct('reindex', it)}><R.Icons.Refresh /><R.Text>重新索引</R.Text></R.ActionButton> : null}
+                    {idx.canInclude ? <R.ActionButton size="S" isQuiet onPress={() => onAct('include', it)}><R.Icons.Refresh /><R.Text>恢复索引</R.Text></R.ActionButton> : null}
+                    {idx.canExclude ? <R.ActionButton size="S" isQuiet onPress={() => onAct('noindex', it)}><R.Icons.StopProcessing /><R.Text>不索引</R.Text></R.ActionButton> : null}
                   </span>
                 </Fact>
               ) : null}

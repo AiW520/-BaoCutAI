@@ -1,6 +1,6 @@
 /* 本机语义索引的状态与文案（embedding-integration-design §2.11、§2.12、§3.11；retrieval-spec v0.1 §11.5、§13.2）。
    App 与 Web 都加载：Web 不建索引，只显示 Runtime 的能力状态（§2.12），字幕面板的翻译记忆标记与术语不一致统计也读这里。
-   · 状态：装了哪个包（none / text / full）、这台电脑支不支持、索引是否跟上（ready / stale）、是否暂停；
+   · 状态：装没装（none / full；2026-10-13 起文字模型与多模态模型合成一个包一起装，老的 text 读进来按 full 算）、这台电脑支不支持、索引是否跟上（ready / stale）、是否暂停；
    · 每个入口自己说明状态（§2.11「每个入口自己说明状态」）：置灰或退回时一句原因 + 去设置的入口，不弹全局警告；
    · 完整性按通道分别写（「文字已就绪；画面 18/30 个素材完成」），不是一根 60% 的进度条（v0.1 §13.2）；
    · 翻译记忆的「沿用」与术语不一致（§2.6）；
@@ -11,11 +11,12 @@
   /* ---------- 状态 ---------- */
   /* half：上次安装没下完（2026-10-13 下载确认框）——{pkg, have: [已下好的部分 id], note: 失败那一句}；这时这个包仍算没装 */
   /* power：这台电脑此刻的供电（ac / battery / thermal，演示挡位）；pauseOnBattery：设置「用电池时暂停」 */
-  /* visual：画面索引，缺省开（2026-10-13 待确认）——只在装了多模态搜索时起作用；装多模态之前写明要建多少、多久，用电池与过热时照样停。
+  /* visual：画面索引，缺省开（2026-10-13 待确认）——装好就建，安装前写明要建多少、多久，用电池与过热时照样停。
      folders：项目之外加进来的索引文件夹（null = 演示数据里的那几个）；requeued：刚点了「重新索引」的条目；
-     indexDir：设置里选过的索引位置（null = 默认，在应用数据里） */
-  const DEFAULT = {install: 'text', platform: 'ok', index: 'ready', paused: false, power: 'ac', pauseOnBattery: true, visual: true, tm: true, terms: true, half: null,
-    folders: null, requeued: {}, indexDir: null};
+     indexDir：设置里选过的索引位置（null = 默认，在应用数据里）；
+     excluded：排除的项目（目录 id；缺省是所有 BaoCut 项目都建）；noIndex：单独设了「不索引」的条目 id → true（2026-10-13 待确认） */
+  const DEFAULT = {install: 'full', platform: 'ok', index: 'ready', paused: false, power: 'ac', pauseOnBattery: true, visual: true, tm: true, terms: true, half: null,
+    folders: null, requeued: {}, indexDir: null, excluded: [], noIndex: {}};
   /* 原型演示用的 URL 开关：`?semantic=none|stale|unsupported|ready|full`（写在 hash 前面） */
   const DEMO = {
     none: {install: 'none'},
@@ -27,6 +28,13 @@
   function fromSearch(search) {
     const m = /[?&]semantic=([a-z]+)/.exec(String(search || ''));
     return m && DEMO[m[1]] ? Object.assign({}, DEFAULT, DEMO[m[1]]) : null;
+  }
+  /** 本机存的那份读进来：补齐缺省；老版本分开装的文字包（install: 'text'）现在算整包装好（2026-10-13）。 */
+  function normalize(v) {
+    const s = Object.assign({}, DEFAULT, v || {});
+    if (s.install === 'text') s.install = 'full';
+    if (s.half && s.half.pkg !== 'sem') s.half = null;
+    return s;
   }
 
   /** 为什么停着（v0.1 §16.1）：user 用户暂停（优先）；thermal 过热降频；battery 用电池且设置开着；没停时 null。 */
@@ -115,10 +123,10 @@
   /* ---------- 通道与完整性 ---------- */
   const CHANNELS = [
     {k: 'text', label: '讲话内容', short: '文字'},
-    {k: 'visual', label: '画面', short: '画面', later: '画面索引没开；装好多模态搜索后在设置里打开'},
-    {k: 'audio', label: '声音', short: '声音', later: '这一版还没有声音索引；之后装好多模态搜索、按项目开启'},
+    {k: 'visual', label: '画面', short: '画面', later: '画面索引没开；在设置 › 语义索引里打开'},
+    {k: 'audio', label: '声音', short: '声音', later: '这一版还没有声音索引'},
   ];
-  /** 包装了哪些通道：多模态包含文字（v0.1 §4.2：已装完整包时不再强制装文字包）。 */
+  /** 包装了哪些通道：只有一个包，装好就有文字与画面（声音后续版本）；'text' 是老版本存下的值。 */
   function channelsOf(install) {
     return install === 'full' ? ['text', 'visual', 'audio'] : install === 'text' ? ['text'] : [];
   }
@@ -180,7 +188,7 @@
     return n ? `参考了 ${n} 句已有译文（同一语言方向、你已有的视频）` : '没有找到可参考的已有译文';
   }
 
-  const api = {DEFAULT, DEMO, fromSearch, status, pauseReasonOf, entryNote, ENTRY, STALE_NOTE, PAUSED_NOTE, POWER_NOTE, UNSUPPORTED_NOTE, fmtDuration, etaLine, visualCostLine,
+  const api = {DEFAULT, DEMO, fromSearch, normalize, status, pauseReasonOf, entryNote, ENTRY, STALE_NOTE, PAUSED_NOTE, POWER_NOTE, UNSUPPORTED_NOTE, fmtDuration, etaLine, visualCostLine,
     CHANNELS, channelsOf, coverageLine, sumText, fmtBytes, reusedFrom, conflicts, tmLine};
   if (typeof window !== 'undefined') window.BC_SEMANTIC = api;
 })();

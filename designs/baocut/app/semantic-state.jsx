@@ -1,5 +1,5 @@
 /* 本机语义索引的演示状态（embedding-integration-design §2.11、§2.12）。App 与 Web 都加载。
-   一份模块级的状态：装了哪个包、这台电脑支不支持、索引是否跟上、是否暂停、翻译记忆与术语候选开关。
+   一份模块级的状态：装没装、这台电脑支不支持、索引是否跟上、是否暂停、翻译记忆与术语候选开关。
    设置 › 语义索引改它，各入口读它（每个入口自己说明状态，不弹全局警告）。
    演示开关：URL 上 `?semantic=none|stale|unsupported|ready|full`（写在 # 前面）优先；否则读本机存的那份。
    规则与文案在 model-semantic.js。 */
@@ -12,7 +12,7 @@
     if (url) return url;
     try {
       const v = JSON.parse(localStorage.getItem(KEY) || 'null');
-      if (v && typeof v === 'object') return Object.assign({}, S.DEFAULT, v);
+      if (v && typeof v === 'object') return S.normalize(v);
     } catch (e) { /* 无痕窗口等：用缺省 */ }
     return Object.assign({}, S.DEFAULT);
   }

@@ -283,7 +283,7 @@
             {topical ? <window.BC_WRTOPIC.TopicRows t={tp} ctx={ctx} scope={tsc} /> : null}
             {id === 'desc' ? <PlatformRow s={s} /> : null}
             {id === 'blog' ? <window.ToolOption on={framesOn} onChange={setFrames} label="添加关键帧插图"
-              sub={semSt.install === 'full' ? '按段落内容从画面里挑，插在段落后面；默认不加' : '没装多模态搜索：按每段出处的时间取帧，未按内容挑选；默认不加'} /> : null}
+              sub={semSt.install === 'full' ? '按段落内容从画面里挑，插在段落后面；默认不加' : '没装语义搜索：按每段出处的时间取帧，未按内容挑选；默认不加'} /> : null}
             {runner.agent ? <window.ToolSessionRow ctx={ctx} value={session && session.k} onChange={setSession} /> : null}
           </window.ToolSetup>
         </div>

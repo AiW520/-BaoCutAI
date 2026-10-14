@@ -118,6 +118,20 @@
         const paused = window.BC_SEMANTIC.pauseReasonOf(S.get());
         app.toast(paused ? `「${it.name}」排到了最前；索引停着，恢复后先建它` : `「${it.name}」排到了最前，马上重建索引（演示）`, 'positive');
       }
+      else if (k === 'noindex' || k === 'include') {
+        /* 不索引 / 恢复索引（2026-10-13 待确认）：单条排除，删掉已有的向量、以后不建；恢复后排回队里重建 */
+        const S = window.BC_SEMSTATE;
+        const on = k === 'include';
+        // 撤销：删向量在后台慢一步做，撤销时还没删的照旧，原型里直接回到之前的标志
+        const put = (v, requeue) => S.set((cur) => {
+          const next = {...(cur.noIndex || {})};
+          if (v) next[it.id] = true; else delete next[it.id];
+          return {noIndex: next, requeued: requeue ? {...(cur.requeued || {}), [it.id]: true} : cur.requeued};
+        });
+        put(!on, on);
+        app.toast(on ? `「${it.name}」恢复索引，排回队里重建（演示）` : `「${it.name}」不再索引，已有的索引随后删掉（演示）`, on ? 'positive' : null,
+          on ? null : {label: '撤销', run: () => put(false, false)});
+      }
       else if (k === 'transcribe' && window.BC_SURFACE.ai) {
         /* product-design §4.4：转录… / 重新转录… / 重试转录… 都打开转录工具页并预选这部视频（§2.7、§5.11），不进编辑器的面板。
            重试带上失败那次的任务：模型、语言、识别说话人预填，页面顶部说明上次为什么失败 */

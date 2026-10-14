@@ -3548,18 +3548,14 @@
   const fromCue = (video, id) => ({id: `${video}:${id}`, video, cue: id, t: C(id).start, end: C(id).end, sp: C(id).sp, text: C(id).text});
   const semantic = {
     packages: [
-      /* parts：一次下载的几个部分（packages/models embedding-bundles.ts）。模型文件从模型仓库下，LiteRT-LM 运行时从 GitHub 发布页下，
+      /* 一个包（2026-10-13 待确认）：文字模型与多模态模型一起装，装好就能按讲话内容与画面找，不再分文字 / 多模态两个包。
+         parts：一次下载的几个部分（packages/models embedding-bundles.ts）。模型文件从模型仓库下，LiteRT-LM 运行时从 GitHub 发布页下，
          两种来源各自可换（BC_DLSRC）；按顺序下，下好的先存下，没下成的那一部分补齐时单独下 */
-      {id: 'sem-text', name: '文字搜索', size: '200 MB', channels: ['text'], model: 'EmbeddingGemma 2 Text 270M',
-       desc: '讲话内容与文档：Space 搜索、写作按主题选材、术语候选、翻译记忆、重录候选都用它。',
+      {id: 'sem', name: '语义搜索', size: '662 MB', channels: ['text', 'visual', 'audio'], model: 'EmbeddingGemma 2 Text 270M + EmbeddingGemma 2 740M',
+       desc: '按意思找讲话内容与画面：Space 搜索、写作按主题选材、配画面、术语候选、翻译记忆、重录候选都用它。声音的检索在后续版本开放。',
        parts: [
-         {id: 'embedding', name: '模型文件', size: 157, repo: 'litert-community/embeddinggemma-2-text-270m-litert-lm'},
-         {id: 'litertlm-runtime', name: 'LiteRT-LM 运行时', size: 43, release: 'google-ai-edge/LiteRT-LM v0.18.0'},
-       ]},
-      {id: 'sem-full', name: '多模态搜索', size: '505 MB', channels: ['text', 'visual', 'audio'], model: 'EmbeddingGemma 2 740M',
-       desc: '在文字之外再认画面与声音。装了它不必再装文字搜索。画面与声音的检索在后续版本开放。',
-       parts: [
-         {id: 'embedding', name: '模型文件', size: 462, repo: 'litert-community/embeddinggemma-2-740m-litert-lm'},
+         {id: 'embedding-text', name: '文字模型', size: 157, repo: 'litert-community/embeddinggemma-2-text-270m-litert-lm'},
+         {id: 'embedding', name: '多模态模型', size: 462, repo: 'litert-community/embeddinggemma-2-740m-litert-lm'},
          {id: 'litertlm-runtime', name: 'LiteRT-LM 运行时', size: 43, release: 'google-ai-edge/LiteRT-LM v0.18.0'},
        ]},
     ],
@@ -3572,8 +3568,10 @@
          多模态包画面向量 512 维 FP32 */
       visual: {channel: 'visual', ifEnabled: true, videos: 12, unknownDuration: 0, sourceSeconds: 6600, frames: 825, seconds: 908, basis: 'default', vectorBytes: 1689600},
       /* 打开之后在建：还剩的量 */
-      visualLeft: {channel: 'visual', ifEnabled: false, videos: 12, unknownDuration: 0, sourceSeconds: 6600, frames: 825, seconds: 908, basis: 'default', vectorBytes: 1689600}},
-    /* 已索引的项目与通道（§2.11）。text：有文稿的视频里建好了几部；pending = 还在转录、没有文稿的 */
+      visualLeft: {channel: 'visual', ifEnabled: false, videos: 12, unknownDuration: 0, sourceSeconds: 6600, frames: 825, seconds: 908, basis: 'default', vectorBytes: 1689600},
+      /* 画面在建时的进度条（2026-10-13 待确认）：整个索引范围里已建 / 一共多少帧 */
+      visualProgress: {done: 312, total: 825}},
+    /* 索引范围里各项目的通道（§2.11）：缺省是所有 BaoCut 项目，设置里排除的不算（2026-10-13 待确认）。text：有文稿的视频里建好了几部；pending = 还在转录、没有文稿的 */
     projects: [
       {dir: 'd1', text: {done: 4, total: 4}, visual: {assets: 30, minutes: 25, size: '约 140 MB'}, audio: {assets: 6, minutes: 8, size: '约 30 MB'}},
       {dir: 'd2', text: {done: 1, total: 1}, visual: {assets: 12, minutes: 10, size: '约 60 MB'}, audio: {assets: 2, minutes: 3, size: '约 10 MB'}},

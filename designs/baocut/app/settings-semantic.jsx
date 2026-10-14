@@ -1,14 +1,14 @@
 /* 设置 › 语义索引（embedding-integration-design §2.11；retrieval-spec v0.1 §4.2、§4.4、§9.1、§13.2）。偏好设置一组。
-   · 模型：「文字搜索」「多模态搜索」两个包与安装状态；多模态包含文字，装了它不必再装文字包；
+   · 模型：一个包「语义搜索」，文字模型与多模态模型一起装（2026-10-13 待确认，原来分文字 / 多模态两个包）；
      安装先过下载确认框（download-dialog.jsx）：模型文件（模型仓库）与 LiteRT-LM 运行时（GitHub 发布页）合成一次下载，各自可换来源；
      一部分没下成时下好的留着（st.half），卡片写哪一部分、连的哪里，「补齐」只下缺的（2026-10-13）；
-   · 安装不等于扫描整块磁盘：文字搜索只给已有文稿建轻量文字索引；画面（「索引」里一个开关，跟着索引范围走）缺省开
-     （2026-10-13 待确认）——装多模态搜索之前就写明要建多少帧、首次要多久、向量多大（indexStatus.estimates 的画面一项），
-     装好后在后台建，可以随时关；关掉后再打开仍先确认开销；
+   · 安装不等于扫描整块磁盘：只给索引范围里的视频建；视频缺省按讲话内容与画面都建（画面是「索引」里一个开关，缺省开，
+     2026-10-13 待确认）——安装前就写明画面要建多少帧、首次要多久、向量多大（indexStatus.estimates 的画面一项），
+     装好后在后台建，画面那一行有进度条，可以随时关；关掉后再打开仍先确认开销；
    · 索引：状态、缓存大小、暂停 / 恢复 / 清理、位置（可以改到别的磁盘，settings-semantic-scope.jsx）、实际后端（自检后选的那一个）；
      在更新时写还要多久（按这台电脑量过的速度）；用电池、过热降频时自动停下，状态写原因，「用电池时暂停」可关（2026-10-13）；
-   · 索引范围：每个项目按通道写完整性（「文字 2/3 部视频（1 部还在转录）」「画面 0/30 个素材完成」），画面没开时写范围，
-     声音这一版没有；项目下面是项目之外加进来的索引文件夹（添加 / 在文件夹中显示 / 重新索引 / 移除，settings-semantic-scope.jsx）；
+   · 索引范围：缺省是所有 BaoCut 项目（一行合起来的完整性，不逐个列），可以排除项目；Space 里单独设了不索引的条目也列在这里；
+     下面是项目之外加进来的索引文件夹（添加 / 在文件夹中显示 / 重新索引 / 移除）。都在 settings-semantic-scope.jsx；
    · 用到它的两项开关：翻译记忆、术语候选，缺省都开；
    · 这台电脑不支持时整页说明原因，精确文字搜索照常可用。
    状态在 semantic-state.jsx，规则与文案在 model-semantic.js。只在 App。 */
@@ -30,11 +30,10 @@
 
   function PackageCard({p, st, set, busy, onInstall}) {
     const app = useApp();
-    const has = st.install === 'full' ? true : st.install === 'text' && p.id === 'sem-text';
+    const has = st.install !== 'none';
     const half = st.half && st.half.pkg === p.id && !has ? st.half : null;
     const plan = window.BC_DLSRC.plan(p.parts, haveOf(p, st));
     const lack = half ? plan.groups.flatMap((g) => g.parts).filter((x) => !x.keep) : [];
-    const covered = st.install === 'full' && p.id === 'sem-text';
     const unsupported = st.platform === 'unsupported';
     const remove = () => app.confirm({
       title: `移除「${p.name}」？`,
@@ -48,42 +47,19 @@
           <b className="grow">{p.name}</b>
           <span className="t-detail-xs">{p.size}</span>
           {busy === p.id ? <Chip tone="accent">正在安装</Chip>
-            : covered ? <Chip>已含在多模态搜索里</Chip>
-              : has ? <Chip tone="positive">已安装</Chip>
+            : has ? <Chip tone="positive">已安装</Chip>
                 : half && plan.kept ? <Chip tone="notice">缺 {lack.map((x) => x.name).join('、')}</Chip> : <Chip>未安装</Chip>}
         </div>
         <span className="t-detail-xs">{p.desc} · {p.model}</span>
         {half && busy !== p.id ? <p className="semset__fail" role="status"><Ic n="alert" className="ic--14" /><span>{half.note}</span></p> : null}
         {busy === p.id ? <Progress indeterminate thin label={`正在安装${p.name}`} /> : null}
         <div className="row gap8">
-          {!has && !covered && busy !== p.id ? (
+          {!has && busy !== p.id ? (
             half && plan.kept
               ? <Btn size="s" variant="accent" disabled={unsupported || !!busy} onClick={() => onInstall(p)}>{`补齐 · ${mbOf(plan.need)}`}</Btn>
-              : <Btn size="s" variant={p.id === 'sem-text' ? 'accent' : 'secondary'} icon="download" disabled={unsupported || !!busy} onClick={() => onInstall(p)}>{`安装 · ${p.size}`}</Btn>
+              : <Btn size="s" variant="accent" icon="download" disabled={unsupported || !!busy} onClick={() => onInstall(p)}>{`安装 · ${p.size}`}</Btn>
           ) : null}
-          {has && !covered ? <Btn size="s" variant="quiet" onClick={remove}>移除</Btn> : null}
-        </div>
-      </div>
-    );
-  }
-
-  /* 一个项目：文字与画面的完整性（画面开着时）；画面没开时写这个项目的范围；声音这一版没有。
-     画面开关只有一个（在「索引」里，设置 semantic.channels，跟着「建索引的项目」走），项目里不另设开关。 */
-  function ProjectRow({p, st}) {
-    const app = useApp();
-    const d = (app.dirs || []).find((x) => x.id === p.dir) || {name: p.dir};
-    const visualOn = st.install === 'full' && st.visual;
-    const scope = (k) => `${p[k].assets} 个素材 · ${p[k].minutes} 分钟`;
-    const visual = visualOn ? {done: st.index === 'stale' ? 0 : p.visual.assets, total: p.visual.assets} : null;
-    return (
-      <div className="semset__proj">
-        <div className="semset__projh">
-          <b className="grow">{d.name}</b>
-          <span className="t-detail-xs">{S.coverageLine(visual ? {text: p.text, visual} : {text: p.text})}</span>
-        </div>
-        <div className="semset__chs">
-          {visualOn ? null : <span className="t-detail-xs">{`画面：${scope('visual')} · 没开`}</span>}
-          <span className="t-detail-xs">{`声音：${scope('audio')} · 后续版本开放`}</span>
+          {has ? <Btn size="s" variant="quiet" onClick={remove}>移除</Btn> : null}
         </div>
       </div>
     );
@@ -93,14 +69,14 @@
     return (
       <BCDisclosure className="import-demo" title={<> 语义索引演示场景 </>}>
         <div className="vdemo">
-          <label>安装的包<BCSelect aria-label="安装的包演示挡位" value={st.install} onChange={(e) => set({install: e.target.value})}>
-            <option value="none">没装</option><option value="text">文字搜索</option><option value="full">多模态搜索</option></BCSelect></label>
+          <label>模型<BCSelect aria-label="模型演示挡位" value={st.install} onChange={(e) => set({install: e.target.value})}>
+            <option value="none">没装</option><option value="full">已安装</option></BCSelect></label>
           <label>这台电脑<BCSelect aria-label="平台演示挡位" value={st.platform} onChange={(e) => set({platform: e.target.value})}>
             <option value="ok">支持</option><option value="unsupported">不支持</option></BCSelect></label>
           <label>上次下载<BCSelect aria-label="上次下载演示挡位" value={st.half ? 'half' : 'ok'}
-            onChange={(e) => set(e.target.value === 'half' ? {install: 'none', half: {pkg: 'sem-full', have: ['embedding'],
-              note: window.BC_DLSRC.failLine({name: 'LiteRT-LM 运行时', host: 'github.com'}, ['模型文件'])}} : {half: null})}>
-            <option value="ok">没出错</option><option value="half">多模态搜索缺运行库</option></BCSelect></label>
+            onChange={(e) => set(e.target.value === 'half' ? {install: 'none', half: {pkg: 'sem', have: ['embedding-text', 'embedding'],
+              note: window.BC_DLSRC.failLine({name: 'LiteRT-LM 运行时', host: 'github.com'}, ['文字模型', '多模态模型'])}} : {half: null})}>
+            <option value="ok">没出错</option><option value="half">缺运行库</option></BCSelect></label>
           <label>索引<BCSelect aria-label="索引演示挡位" value={st.index} onChange={(e) => set({index: e.target.value})}>
             <option value="ready">已跟上</option><option value="stale">正在更新</option></BCSelect></label>
           <label>供电<BCSelect aria-label="供电演示挡位" value={st.power || 'ac'} onChange={(e) => set({power: e.target.value})}>
@@ -131,8 +107,8 @@
             app.toast(`「${p.name}」没装完：${outcome.failed.name}没下成`, 'negative');
             return;
           }
-          set((cur) => ({install: p.id === 'sem-full' ? 'full' : 'text', index: 'stale', half: cur.half && cur.half.pkg !== p.id ? cur.half : null}));
-          app.toast(p.id === 'sem-full' && st.visual ? `已安装「${p.name}」：正在建文字索引与画面索引（演示）` : `已安装「${p.name}」：正在给已有文稿建文字索引（演示）`, 'positive');
+          set((cur) => ({install: 'full', index: 'stale', half: cur.half && cur.half.pkg !== p.id ? cur.half : null}));
+          app.toast(st.visual ? `已安装「${p.name}」：正在建文字索引与画面索引（演示）` : `已安装「${p.name}」：正在给已有文稿建文字索引（演示）`, 'positive');
         }, 1400);
       },
     });
@@ -161,14 +137,19 @@
       if (!on) { set({visual: false}); app.toast('已关闭画面索引：不再建新的画面索引（演示）', 'positive'); return; }
       app.confirm({
         title: '打开画面索引？',
-        body: `给「已索引的项目」里的视频按内容找画面：${cost}。在后台用 CPU 建，随时可以暂停。`,
+        body: `给索引范围里的视频与图片按内容找画面：${cost}。在后台用 CPU 建，随时可以暂停。`,
         confirmLabel: '打开',
         run: () => { set({visual: true, index: 'stale'}); app.toast('已打开画面索引，正在后台建（演示）', 'positive'); },
       });
     };
-    const visualDesc = !full ? '按画面内容找镜头、给句子配画面。需要多模态搜索。'
-      : visualOn ? `索引范围里的视频与图片会按画面内容建立索引。关掉后不再建新的画面索引。${st.index === 'stale' && visualEta ? visualEta + '。' : ''}`
-        : `按画面内容找镜头、给句子配画面。打开后要建：${cost}。`;
+    const visualDesc = visualOn ? '索引范围里的视频与图片会按画面内容建立索引。关掉后不再建新的画面索引。'
+      : `按画面内容找镜头、给句子配画面。打开后要建：${cost}。`;
+    // 画面在建时的进度条（2026-10-13 待确认）：按帧数；停着时写原因，不画动
+    const vp = SEM.estimate.visualProgress;
+    const vBuilding = visualOn && st.index === 'stale';
+    const vPct = vBuilding ? Math.round((vp.done / vp.total) * 100) : 100;
+    const vLine = !vBuilding ? null
+      : `${vp.done}/${vp.total} 帧 · ${vPct}%${why ? ` · 已暂停（${why === 'user' ? '你暂停的' : why === 'battery' ? '用电池' : '过热降频'}）` : visualEta ? ` · ${visualEta}` : ''}`;
     return (
       <>
         <h1 className="setpage__title">语义索引</h1>
@@ -183,7 +164,7 @@
           <h2>模型</h2>
           <div className="setpage__card semset__card">
             {SEM.packages.map((p) => <PackageCard key={p.id} p={p} st={st} set={set} busy={busy} onInstall={install} />)}
-            <div className="semnote"><Ic n="info" className="ic--14" /><span className="semnote__x">{`文字搜索装好后只给已有文稿建轻量的文字索引。多模态搜索装好后还会按画面建：${cost}；用电池时先停下，不想要可以在下面关掉。`}</span></div>
+            <div className="semnote"><Ic n="info" className="ic--14" /><span className="semnote__x">{`文字模型与多模态模型一起装。装好后给索引范围里的视频按讲话内容建索引，再按画面建：${cost}；用电池时先停下，不想要画面可以在下面关掉。`}</span></div>
           </div>
         </section>
         {installed ? (
@@ -197,6 +178,12 @@
               <Row label="画面" desc={visualDesc}>
                 <Switch on={visualOn} disabled={!full} onChange={setVisual} ariaLabel="画面索引" />
               </Row>
+              {vBuilding ? (
+                <div className="semset__vbar">
+                  <Progress value={vPct} thin className="semset__vbarp" label={`画面索引进度 ${vPct}%`} />
+                  <span className="t-detail-xs" role="status">{vLine}</span>
+                </div>
+              ) : null}
               <Row label="用电池时暂停" desc="笔记本用电池时先不建，接上电源后接着建。电脑过热降频时总会暂停。">
                 <Switch on={st.pauseOnBattery !== false} onChange={(v) => set({pauseOnBattery: v})} ariaLabel="用电池时暂停" />
               </Row>
@@ -214,10 +201,9 @@
         {installed ? (
           <section className="setpage__group" aria-label="索引范围">
             <h2>索引范围</h2>
-            <p className="t-detail-xs semset__sub">项目里的视频自动建：文字按文稿，画面开着时按画面；声音这一版还没有。项目之外的素材可以加文件夹；成片不另建，搜导出它的视频就能找到。</p>
+            <p className="t-detail-xs semset__sub">所有 BaoCut 项目里的视频都建：讲话内容与画面；声音这一版还没有。不想建的项目可以排除；项目之外的素材可以加文件夹；成片不另建，搜导出它的视频就能找到。</p>
             <div className="setpage__card semset__card">
-              {SEM.projects.map((p) => <ProjectRow key={p.dir} p={p} st={st} />)}
-              <window.SemanticIndexFolders st={st} set={set} />
+              <window.SemanticIndexScope st={st} set={set} />
             </div>
           </section>
         ) : null}

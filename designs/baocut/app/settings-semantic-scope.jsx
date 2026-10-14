@@ -5,7 +5,9 @@
      产品里选文件夹走系统面板；原型借用模型目录那几个演示文件夹（BC_MODELSDIR.FOLDERS）。Web 不能选 Runtime 那台电脑上的文件夹，只显示路径。
    · 索引文件夹（「索引范围」里项目下面）：项目之外再加的只读扫描目录。添加前写清会建什么：BaoCut 视频按讲话内容与画面，
      其他视频文件与图片只按画面，成片跳过；画面关着时只有 BaoCut 视频会建。每个文件夹可以在文件夹中显示、重新索引、移除
-     （移除只删它的索引，不动文件）。 */
+     （移除只删它的索引，不动文件）。
+   · 范围（2026-10-13 待确认）：缺省就是所有 BaoCut 项目，新建的自动加入，不再逐个列出；只列排除的项目（「排除项目…」勾选，
+     排除后删掉它们的索引、Space 里只能按字面找到，「恢复」排回队里重建），以及在 Space 里单独设了「不索引」的条目。 */
 (function () {
   const {useState, useRef, useEffect} = React;
   const X = window.BC_SPACE_INDEX;
@@ -142,7 +144,7 @@
           {ok && !visual && (f.counts.clips || f.counts.images) ? (
             <R.InlineAlert variant="informative">
               <R.Heading>视频素材与图片要按画面建</R.Heading>
-              <R.Content>它们没有文稿，只能按画面找。装好多模态搜索、打开画面索引之后才会建；现在加进来，只有里面的 BaoCut 视频会建索引。</R.Content>
+              <R.Content>它们没有文稿，只能按画面找。打开画面索引之后才会建；现在加进来，只有里面的 BaoCut 视频会建索引。</R.Content>
             </R.InlineAlert>
           ) : null}
         </div>
@@ -214,5 +216,125 @@
     );
   }
 
-  Object.assign(window, {SemanticIndexLocationRow: IndexLocationRow, SemanticIndexFolders: IndexFolders});
+  /* ---------- 范围：所有项目，减去排除的 ---------- */
+  function ExcludeDialog({dirs, excluded, onClose, onApply}) {
+    const [sel, setSel] = useState(excluded);
+    const flip = (id, v) => setSel((cur) => (v ? cur.concat([id]) : cur.filter((x) => x !== id)));
+    const added = sel.filter((id) => excluded.indexOf(id) < 0).length;
+    return (
+      <Dialog open title="排除项目" width={480} onClose={onClose}
+        footer={<>
+          <Btn variant="secondary" onClick={onClose}>取消</Btn>
+          <Btn variant="accent" onClick={() => onApply(sel)}>完成</Btn>
+        </>}>
+        <div className="mdir-dlg">
+          <p className="t-detail">勾选的项目不建语义索引：已有的索引删掉，Space 与写作里只能按字面找到它们。取消勾选会排回队里重建。</p>
+          <div className="semset__pick" role="group" aria-label="要排除的项目">
+            {dirs.map((d) => <Checkbox key={d.id} on={sel.indexOf(d.id) >= 0} onChange={(v) => flip(d.id, v)} label={d.name} />)}
+          </div>
+          {added ? <p className="t-detail-xs" role="status">{`新排除 ${added} 个项目，完成后删掉它们的索引。`}</p> : null}
+        </div>
+      </Dialog>
+    );
+  }
+
+  /** 「索引范围」整块：所有项目一行（合起来的完整性）、排除的项目与条目、索引文件夹。 */
+  function IndexScope({st, set}) {
+    const app = useApp();
+    const SEM = window.BC_DATA.semantic;
+    const [picking, setPicking] = useState(false);
+    const excluded = st.excluded || [];
+    const dirOf = (id) => (app.dirs || []).find((x) => x.id === id) || {id, name: id};
+    const dirs = SEM.projects.map((p) => dirOf(p.dir));
+    const inc = SEM.projects.filter((p) => excluded.indexOf(p.dir) < 0);
+    const out = SEM.projects.filter((p) => excluded.indexOf(p.dir) >= 0);
+    const visualOn = st.install === 'full' && st.visual;
+    const vTotal = inc.reduce((n, p) => n + p.visual.assets, 0);
+    const text = Object.assign(S.sumText(inc), {excluded: S.sumText(out).total});
+    // 画面在建时按进度条那个比例算（同「索引」里画面那一行）
+    const vp = SEM.estimate.visualProgress;
+    const vDone = st.index === 'stale' ? Math.round((vTotal * vp.done) / vp.total) : vTotal;
+    const cov = S.coverageLine(visualOn ? {text, visual: {done: vDone, total: vTotal}} : {text});
+    // 单独设了「不索引」的条目：名字从视频或 Space 的文件里找
+    const outputs = window.BC_DATA.spaceOutputs || [];
+    const items = Object.keys(st.noIndex || {}).map((id) => {
+      const mv = app.projById ? app.projById(id) : null;
+      const o = outputs.find((x) => x.id === id);
+      return {id, name: mv ? mv.title : o ? o.name : id};
+    });
+    const restore = (d) => {
+      set((cur) => ({excluded: (cur.excluded || []).filter((x) => x !== d.id), index: 'stale'}));
+      app.toast(`「${d.name}」恢复索引，正在后台建（演示）`, 'positive');
+    };
+    const include = (it) => {
+      set((cur) => {
+        const next = {...(cur.noIndex || {})};
+        delete next[it.id];
+        return {noIndex: next, requeued: {...(cur.requeued || {}), [it.id]: true}};
+      });
+      app.toast(`「${it.name}」恢复索引，排回队里重建（演示）`, 'positive');
+    };
+    const apply = (sel) => {
+      setPicking(false);
+      const added = sel.filter((id) => excluded.indexOf(id) < 0);
+      const back = excluded.filter((id) => sel.indexOf(id) < 0);
+      set({excluded: sel, index: back.length ? 'stale' : st.index});
+      if (added.length || back.length) {
+        app.toast([added.length ? `排除了 ${added.length} 个项目，它们的索引随后删掉` : null, back.length ? `${back.length} 个项目恢复索引` : null]
+          .filter(Boolean).join('；') + '（演示）', 'positive');
+      }
+    };
+    return (
+      <>
+        <div className="semset__proj">
+          <div className="semset__projh">
+            <Ic n="folder" className="ic--16" />
+            <b className="grow">所有 BaoCut 项目</b>
+            <span className="t-detail-xs">{cov}</span>
+          </div>
+          <div className="semset__chs">
+            <span className="t-detail-xs">{`${inc.length} 个项目${out.length ? `，排除了 ${out.length} 个` : ''} · 新建的项目自动加入`}</span>
+            <span className="t-detail-xs">声音：后续版本开放</span>
+          </div>
+        </div>
+        <div className="semset__proj">
+          <div className="semset__projh">
+            <b className="grow">排除的项目</b>
+            <Btn size="s" variant="secondary" onClick={() => setPicking(true)}>排除项目…</Btn>
+          </div>
+          {out.length ? (
+            <ul className="semset__outs" aria-label="排除的项目">
+              {out.map((p) => {
+                const d = dirOf(p.dir);
+                return (
+                  <li key={p.dir} className="semset__out">
+                    <span className="grow">{d.name}</span>
+                    <span className="t-detail-xs">只能按字面找到</span>
+                    <Btn size="s" variant="quiet" onClick={() => restore(d)}>恢复</Btn>
+                  </li>
+                );
+              })}
+            </ul>
+          ) : <span className="t-detail-xs">没有。不想建索引的项目可以排除，已有的索引会删掉。</span>}
+          {items.length ? (
+            <>
+              <span className="t-detail-xs">在 Space 里单独设了不索引的：</span>
+              <ul className="semset__outs" aria-label="单独设了不索引的条目">
+                {items.map((it) => (
+                  <li key={it.id} className="semset__out">
+                    <span className="grow">{it.name}</span>
+                    <Btn size="s" variant="quiet" onClick={() => include(it)}>恢复</Btn>
+                  </li>
+                ))}
+              </ul>
+            </>
+          ) : null}
+        </div>
+        <IndexFolders st={st} set={set} />
+        {picking ? <ExcludeDialog dirs={dirs} excluded={excluded} onClose={() => setPicking(false)} onApply={apply} /> : null}
+      </>
+    );
+  }
+
+  Object.assign(window, {SemanticIndexLocationRow: IndexLocationRow, SemanticIndexScope: IndexScope});
 })();
