@@ -2,6 +2,7 @@
    所有模型下载都过这一个框：设置 › 本地模型的「下载 / 补齐」、公共组件、语义索引、面板与工具页的「下载模型」、我的声音。
    · 这次要下的部分按来源种类分组（模型仓库 / 工具与运行库），每组一个来源选择器，就地换来源；换的是 设置 › 通用 › 下载来源 里的「在用」，
      以后的下载也用它。每个部分写出按当前来源拼的地址。
+   · 语义搜索用一个列表，每项单独选本次下载来源；文字、多模态与共享运行时只确认一次，不改默认来源。
    · 几个部分合成一次下载，按顺序下，下好一个存一个；哪一部分没下成，前面的留着，补齐时只下缺的那一部分（可以先换来源）。
    · 已在盘上的部分写「已下好 · 不动」，不计入大小；全都下好了只说一句、不给下载。
    · 不许商用的模型把许可写在框里，确认按钮写「我知道了，下载 …」（替掉原来单独弹的许可确认）。
@@ -28,6 +29,7 @@
   /**
    * 打开确认框。spec：
    *   name      标题里的名字；parts [{id, name, size(MB), repo | release}]；on：id → 已在盘上
+   *   perPart   用列表按部分选本次下载来源，不改全局设置
    *   licenses  [{name, lic}] 不许商用的；licenseUse 许可末尾那一句
    *   run(outcome, plan)  确认后调用；outcome = {done: [id], failed: {id, name, host} | null}
    */
@@ -97,10 +99,14 @@
   function ModelDownloadDialog() {
     const app = useApp();
     const ask = useAsk();
-    const [, , activeOf] = window.useDlSources();
+    const [sources, , activeOf] = window.useDlSources();
+    const [selection, setSelection] = useState({ask: null, choices: {}});
     if (!ask) return null;
     const plan = DS.plan(ask.parts, ask.on);
-    const srcOf = (k) => activeOf(k).src;
+    const choices = selection.ask === ask ? selection.choices : {};
+    const sourceFor = (p) => DS.partSource(sources, p, choices[p.id], activeOf(DS.kindOfPart(p)));
+    const srcOf = (k, p) => ask.perPart && p ? sourceFor(p).src : activeOf(k).src;
+    const choose = (p, id) => setSelection({ask, choices: {...choices, [p.id]: id}});
     const completing = plan.kept > 0;
     const lic = ask.licenses && ask.licenses.length ? ask.licenses : null;
     const confirm = () => {
@@ -119,10 +125,33 @@
           <div className="dldlg">
             <p className="dldlg__lead"><b>共 {mb(plan.need)}</b><span className="t-detail"> · 磁盘还剩 {FREE}</span></p>
             {completing ? <p className="t-detail">已下好的部分不动，只下缺的。</p> : null}
-            {plan.groups.map((g) => <Group key={g.k} g={g} srcOf={srcOf} />)}
+            {ask.perPart ? (
+              <ul className="dldlg__items" aria-label="下载内容与来源">
+                {plan.groups.flatMap((g) => g.parts).map((p) => {
+                  const current = sourceFor(p);
+                  return (
+                    <li key={p.id} className={cx('dldlg__part', 'dldlg__item', p.keep && 'is-keep')}>
+                      <div className="dldlg__pl">
+                        <b className="dldlg__pn">{p.name}</b>
+                        <span className="dldlg__ps">{p.keep ? '已安装 · 保留' : mb(p.size)}</span>
+                      </div>
+                      {p.keep ? null : <>
+                        <div className="dldlg__source">
+                          <span className="t-detail-xs">下载来源</span>
+                          <window.DownloadSourcePicker k={DS.kindOfPart(p)} label={`${p.name}的下载来源`}
+                            selection={current} onSelect={(id) => choose(p, id)} />
+                        </div>
+                        <span className="dldlg__url t-mono">{DS.partUrl(current.src, p)}</span>
+                        {current.locked ? <span className="t-detail-xs">由环境变量 {DS.kindOf(DS.kindOfPart(p)).env} 指定</span> : null}
+                      </>}
+                    </li>
+                  );
+                })}
+              </ul>
+            ) : plan.groups.map((g) => <Group key={g.k} g={g} srcOf={srcOf} />)}
             <p className="t-detail-xs dldlg__note">
               {plan.groups.filter((g) => g.need).length > 1 ? '几个部分依次下载，下好一个存一个；哪一部分没下成，补齐时只下那一部分。' : ''}
-              在这里换来源，以后的下载也用它。每个文件都按内置的校验值核对。
+              {ask.perPart ? '每项可分别选择来源，仅用于本次下载。' : '在这里换来源，以后的下载也用它。'}每个文件都按内置的校验值核对。
               <BCAction className="tsetup__lnk dldlg__lnk" onClick={manage}>管理下载来源…</BCAction>
             </p>
             {lic ? (

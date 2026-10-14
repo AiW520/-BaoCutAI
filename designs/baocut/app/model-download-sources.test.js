@@ -99,3 +99,31 @@ test('一部分失败：前面下好的留着，失败那一句说清哪一部�
   // 补齐：只剩失败那一部分
   assert.equal(S.plan(PARTS, {embedding: true}).need, 43);
 });
+
+test('语义搜索：同一列表的两个模型独立选源，不修改默认，运行时使用发布页来源', () => {
+  const st = S.blank();
+  const before = JSON.stringify(st);
+  const text = {id: 'text', name: '文字模型', size: 157, repo: 'litert-community/text'};
+  const selected = {text: 'ms', embedding: 'hf'};
+  const sourceFor = (k, part) => S.partSource(st, part, selected[part.id], S.active(st, k)).src;
+  assert.equal(sourceFor('models', text).id, 'ms');
+  assert.equal(sourceFor('models', PARTS[0]).id, 'hf');
+  assert.equal(sourceFor('releases', PARTS[1]).id, 'gh');
+  assert.equal(JSON.stringify(st), before);
+  const p = S.plan([text, ...PARTS], {});
+  assert.equal(p.need, 662);
+  assert.equal(p.groups.flatMap((g) => g.parts).filter((part) => part.id === 'litertlm-runtime').length, 1);
+  assert.equal(S.simulate(p, sourceFor, 'models').failed.host, 'www.modelscope.cn');
+  const retry = S.plan([text, ...PARTS], {text: true, embedding: true});
+  assert.equal(retry.need, 43);
+  assert.deepEqual(S.simulate(retry, sourceFor, null).done, ['litertlm-runtime']);
+});
+
+test('单项选源遵守环境变量，失效的选择退回当前默认', () => {
+  const st = S.blank();
+  const locked = S.active(st, 'models', 'https://locked.example');
+  assert.equal(S.partSource(st, PARTS[0], 'ms', locked), locked);
+  const current = S.active(st, 'models');
+  assert.equal(S.partSource(st, PARTS[0], 'removed-mirror', current), current);
+  assert.equal(S.partSource(st, PARTS[1], 'ms', S.active(st, 'releases')).src.id, 'gh');
+});

@@ -19,13 +19,14 @@
 
   const envNote = (k) => `由环境变量 ${DS.kindOf(k).env} 指定，要改请改环境变量并重启 BaoCut。`;
 
-  /** 一种来源的紧凑选择器（下载确认框、本地模型页）。`onChanged` 在换了之后回调（确认框用它重算地址） */
-  function DownloadSourcePicker({k, label, onChanged}) {
+  /** 一种来源的紧凑选择器（下载确认框、本地模型页）。`onChanged` 在换了之后回调；selection / onSelect 用于本次下载的独立选择，不写全局设置 */
+  function DownloadSourcePicker({k, label, onChanged, selection, onSelect}) {
     const app = useApp();
     const [st, save, activeOf] = useDlSources();
-    const cur = activeOf(k);
+    const cur = selection || activeOf(k);
     const choose = (id) => {
-      if (!id || id === cur.src.id) return;
+      if (!id || id === cur.src.id || cur.locked) return;
+      if (onSelect) { onSelect(id); return; }
       const next = DS.setActive(st, k, id);
       save(next);
       app.toast(`${DS.kindOf(k).title}改为 ${DS.active(next, k).src.name}`, 'positive');
@@ -149,7 +150,7 @@
     return (
       <section className="setpage__group" aria-label="下载来源与离线">
         <h2>下载来源与离线</h2>
-        <p className="t-detail-xs dlsrc__lead">可以存多个来源，每种选一个在用。下载模型时也能在确认框里直接换，换的就是这里。每个文件都按内置的校验值核对，不论从哪里下。</p>
+        <p className="t-detail-xs dlsrc__lead">可以存多个来源，每种选一个在用。普通模型的确认框可直接改默认来源；语义搜索可给每项单独选本次下载的来源。每个文件都按内置的校验值核对，不论从哪里下。</p>
         <div className="setpage__card">
           <SourceKind k="models" />
           <SourceKind k="releases" />

@@ -1,6 +1,6 @@
 /* 设置 › 语义索引（embedding-integration-design §2.11；retrieval-spec v0.1 §4.2、§4.4、§9.1、§13.2）。偏好设置一组。
    · 模型：一个包「语义搜索」，文字模型与多模态模型一起装（2026-10-13 待确认，原来分文字 / 多模态两个包）；
-     安装先过下载确认框（download-dialog.jsx）：模型文件（模型仓库）与 LiteRT-LM 运行时（GitHub 发布页）合成一次下载，各自可换来源；
+     安装先过下载确认框（download-dialog.jsx）：文字模型、多模态模型与共享 LiteRT-LM 运行时列在一个对话框，各项单独选本次下载来源；
      一部分没下成时下好的留着（st.half），卡片写哪一部分、连的哪里，「补齐」只下缺的（2026-10-13）；
    · 安装不等于扫描整块磁盘：只给索引范围里的视频建；视频缺省按讲话内容与画面都建（画面是「索引」里一个开关，缺省开，
      2026-10-13 待确认）——安装前就写明画面要建多少帧、首次要多久、向量多大（indexStatus.estimates 的画面一项），
@@ -96,7 +96,7 @@
     useEffect(() => () => clearTimeout(timer.current), []);
     // 安装 / 补齐都先过下载确认框；确认后按顺序下，outcome 说哪一部分没下成（原型开关「下次下载的结果」）
     const install = (p) => window.BC_DLASK.open({
-      name: `${p.name} · ${p.model}`, parts: p.parts, on: haveOf(p, st),
+      name: p.name, parts: p.parts, on: haveOf(p, st), perPart: true,
       run: (outcome) => {
         setBusy(p.id);
         timer.current = setTimeout(() => {

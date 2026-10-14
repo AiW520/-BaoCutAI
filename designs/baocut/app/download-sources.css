@@ -37,3 +37,8 @@
 .dldlg__lic { padding: 12px; border-radius: 10px; background: var(--orange-100); }
 .dldlg__lic b, .dldlg__lic span { font-size: 12px; line-height: 16px; }
 .dldlg__lic .t-detail-xs { font-size: 11px; overflow-wrap: anywhere; }
+
+/* 语义搜索：一次确认的组件列表，每项独立选择来源。 */
+.dldlg__items { display: flex; flex-direction: column; list-style: none; margin: 0; padding: 0; border: 1px solid var(--gray-200); border-radius: 10px; overflow: hidden; }
+.dldlg__item { gap: 8px; padding: 12px; }
+.dldlg__source { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px; }

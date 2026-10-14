@@ -127,6 +127,13 @@
     return `${trimSlash(src.base)}/${p.repo}`;
   }
 
+  /** 本次下载按部分选源；未选择时沿用默认，环境变量仍优先。不会改动全局来源。 */
+  function partSource(st, part, selected, current) {
+    if (current.locked) return current;
+    const src = list(st, kindOfPart(part)).find((s) => s.id === selected);
+    return src ? {src, locked: false} : current;
+  }
+
   /**
    * 这次下载的计划：按种类分组（顺序同 KINDS，没有的种类不出组），盘上已有的部分标 keep、不计入大小。
    * parts：[{id, name, size(MB), repo | release}]；on：id → 已在盘上。
@@ -151,7 +158,7 @@
     for (const g of p.groups) {
       for (const part of g.parts) {
         if (part.keep) continue;
-        if (failKind && g.k === failKind) return {done, failed: {id: part.id, name: part.name, kind: g.k, host: srcOf(g.k).host}};
+        if (failKind && g.k === failKind) return {done, failed: {id: part.id, name: part.name, kind: g.k, host: srcOf(g.k, part).host}};
         done.push(part.id);
       }
     }
@@ -165,7 +172,7 @@
   }
 
   const BC_DLSRC = {KINDS, kindOf, hostOf, blank, normalize, list, active, setActive, mirrorError, addMirror, updateMirror, removeMirror,
-    kindOfPart, partUrl, plan, simulate, failLine};
+    kindOfPart, partUrl, partSource, plan, simulate, failLine};
   if (typeof module !== 'undefined') module.exports = BC_DLSRC;
   if (typeof window !== 'undefined') Object.assign(window, {BC_DLSRC});
 })();
