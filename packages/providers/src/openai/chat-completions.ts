@@ -31,6 +31,8 @@ export interface ChatCompletionsStyle {
   jsonMode?: 'json_schema' | 'json_object';
   /** 服务商的推理档位；未指定的值按标准 Chat Completions 原样发送。 */
   effortMap?: Partial<Record<NonNullable<TextParameters['effort']>, string>>;
+  /** 没指定推理强度时并进请求体的字段（服务商的缺省推理行为不适合时）。 */
+  bodyWithoutEffort?: Record<string, unknown>;
 }
 
 export function chatCompletionsBody(modelId: string, parameters: TextParameters, style: ChatCompletionsStyle): Record<string, unknown> {
@@ -47,7 +49,9 @@ export function chatCompletionsBody(modelId: string, parameters: TextParameters,
     model: modelId,
     messages,
     [style.maxTokensField]: parameters.maxOutputTokens,
-    ...(parameters.effort !== null ? { reasoning_effort: style.effortMap?.[parameters.effort] ?? parameters.effort } : {}),
+    ...(parameters.effort !== null
+      ? { reasoning_effort: style.effortMap?.[parameters.effort] ?? parameters.effort }
+      : style.bodyWithoutEffort),
     ...(parameters.temperature !== null ? { temperature: parameters.temperature } : {}),
     ...(parameters.seed !== null ? { seed: parameters.seed } : {}),
     ...(jsonObject ? { response_format: { type: 'json_object' } } : {}),

@@ -34,6 +34,8 @@ export interface CompatVendor {
   jsonMode: 'json_schema' | 'json_object';
   /** 产品的推理强度 → 服务商的参数值；未指定时原样发送。 */
   effortMap?: Partial<Record<TextModelInfo['efforts'][number], string>>;
+  /** 没指定推理强度时并进请求体的字段。 */
+  bodyWithoutEffort?: Record<string, unknown>;
   models: TextModelInfo[];
 }
 
@@ -62,6 +64,9 @@ export const COMPAT_VENDORS: Record<CompatVendorId, CompatVendor> = {
     vendor: { kind: 'vendor', website: 'https://platform.deepseek.com', icon: 'deepseek' },
     regions: { global: 'https://api.deepseek.com/v1' },
     jsonMode: 'json_object',
+    // V4 thinks by default and max_tokens covers reasoning and answer together, so a whole-page rewrite can spend the
+    // limit on reasoning and come back as HTTP 200 with empty content. No effort is declared, so thinking is always off.
+    bodyWithoutEffort: { thinking: { type: 'disabled' } },
     // V4.1 is the model version; the API id remains deepseek-flash.
     // https://api-docs.deepseek.com/quick_start/pricing/
     models: [text('deepseek-v4-pro', 'DeepSeek V4 Pro', true), text('deepseek-flash', 'DeepSeek V4.1 Flash')],

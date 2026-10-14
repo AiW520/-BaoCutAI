@@ -13,6 +13,7 @@ export interface VendorTextOptions {
   models: readonly TextModelInfo[];
   jsonMode: 'json_schema' | 'json_object';
   effortMap?: Partial<Record<TextModelInfo['efforts'][number], string>>;
+  bodyWithoutEffort?: Record<string, unknown>;
 }
 
 export class VendorTextAdapter implements TextAdapter, ModelLister {
@@ -34,6 +35,7 @@ export class VendorTextAdapter implements TextAdapter, ModelLister {
       maxTokensField: 'max_tokens',
       jsonMode: this.#options.jsonMode,
       effortMap: this.#options.effortMap,
+      bodyWithoutEffort: this.#options.bodyWithoutEffort,
     });
   }
 

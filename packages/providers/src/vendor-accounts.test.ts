@@ -230,14 +230,14 @@ describe('OpenAI 兼容服务商（目录）', () => {
     }
   });
 
-  it('只支持 JSON 模式的：json_object，schema 写进系统消息；max_tokens；读出缓存命中', async () => {
+  it('只支持 JSON 模式的：json_object，schema 写进系统消息；max_tokens；读出缓存命中；DeepSeek 关掉缺省的思考', async () => {
     server = await startFakeProviderServer((request) => {
       const reply = chatCompletionReply(request, '{"title":"x"}') as { status: number; json: Record<string, unknown> };
       reply.json.usage = { prompt_tokens: 50, completion_tokens: 5, prompt_cache_hit_tokens: 30 };
       return reply;
     });
     const deepseek = COMPAT_VENDORS.deepseek;
-    const adapter = new VendorTextAdapter({ label: deepseek.label, models: deepseek.models, jsonMode: deepseek.jsonMode });
+    const adapter = new VendorTextAdapter(deepseek);
     const modelId = deepseek.models.find((m) => m.default)!.modelId;
     const reply = await call(
       adapter,
@@ -250,11 +250,13 @@ describe('OpenAI 兼容服务商（目录）', () => {
       messages: Array<{ role: string; content: string }>;
       response_format: unknown;
       max_tokens: number;
+      thinking: unknown;
     };
     expect(server.requests[0]).toMatchObject({ path: '/v1/chat/completions' });
     expect(server.requests[0]!.headers.authorization).toBe(`Bearer ${VENDOR_KEY}`);
     expect(body.response_format).toEqual({ type: 'json_object' });
     expect(body.max_tokens).toBe(256);
+    expect(body.thinking).toEqual({ type: 'disabled' });
     expect(
       body.messages
         .filter((m) => m.role === 'system')
