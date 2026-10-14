@@ -199,6 +199,9 @@ export const ja: SpaceMessages = {
   emptyAll: '項目はまだありません',
   emptyCategory: (label: string) => `${label} はまだありません`,
   emptyFilteredBody: '別のキーワードを試すか、プロジェクトと状態の絞り込みを解除してください。',
+  namesTitle: '名前とファイル',
+  emptyNames: (query: string, filters: boolean) =>
+    `${filters ? '現在のプロジェクトと状態の絞り込みでは、' : ''}「${query}」を含む名前やファイルはありません。`,
   emptyTrashBody: 'ゴミ箱に入れた項目はここに表示されます。復元することも、完全に削除することもできます。',
   emptyBody: 'セッションで Agent に頼むと、生成物がここに表示されます。「新規」から素材を読み込むことも、Home で既存のフォルダを開くこともできます。',
   projectPicker: 'プロジェクト',

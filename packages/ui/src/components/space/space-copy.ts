@@ -252,6 +252,9 @@ const en = {
   /** 某个类型分类（`label` 是分类名）下还没有条目。 */
   emptyCategory: (label: string) => `Nothing in ${label} yet`,
   emptyFilteredBody: 'Try other keywords, or clear the project and status filters.',
+  namesTitle: 'Names and files',
+  emptyNames: (query: string, filters: boolean) =>
+    `No names or files contain “${query}”${filters ? ' with the current project and status filters' : ''}.`,
   emptyTrashBody: 'Items you move to Trash show up here. You can restore them or delete them permanently.',
   emptyBody: 'Ask the agent in a session and its outputs show up here. You can also import assets from "New", or open an existing folder in Home.',
   projectPicker: 'Project',

@@ -188,6 +188,9 @@ export const tr: SpaceMessages = {
   emptyAll: "Henüz öğe yok",
   emptyCategory: (label) => `${label} içinde henüz öğe yok`,
   emptyFilteredBody: "Başka anahtar sözcükler deneyin veya proje ve durum filtrelerini temizleyin.",
+  namesTitle: "Adlar ve dosyalar",
+  emptyNames: (query: string, filters: boolean) =>
+    `${filters ? 'Geçerli proje ve durum filtreleriyle ' : ''}“${query}” içeren ad veya dosya yok.`,
   emptyTrashBody: "Çöp sepetine taşıdığınız öğeler burada görünür. Geri yükleyebilir veya kalıcı silebilirsiniz.",
   emptyBody: "Oturumda ajana isteğinizi yazın; çıktıları burada görünür. “Yeni” üzerinden medya içe aktarabilir veya Home’da mevcut klasör açabilirsiniz.",
   projectPicker: "Proje",

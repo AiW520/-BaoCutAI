@@ -193,6 +193,9 @@ export const de: SpaceMessages = {
 
   emptyCategory: (label: string) => `Keine Einträge in ${label} noch`,
   emptyFilteredBody: "Andere Suchbegriffe versuchen oder Projekt- und Statusfilter leeren.",
+  namesTitle: "Namen und Dateien",
+  emptyNames: (query: string, filters: boolean) =>
+    `Kein Name und keine Datei enthält „${query}“${filters ? ' mit den aktuellen Projekt- und Statusfiltern' : ''}.`,
   emptyTrashBody: "Hier erscheinen Papierkorbeinträge. Wiederherstellen oder dauerhaft löschen.",
   emptyBody: "Den Agenten in einer Sitzung beauftragen; seine Ergebnisse erscheinen hier. Materialien auch über „Neu“ importierbar oder einen vorhandenen Ordner in Home öffnen.",
   projectPicker: "Projekt",

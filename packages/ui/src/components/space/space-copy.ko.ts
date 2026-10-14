@@ -201,6 +201,9 @@ export const ko: SpaceMessages = {
   emptyAll: '아직 항목이 없습니다',
   emptyCategory: (label: string) => `아직 ${label} 항목이 없습니다`,
   emptyFilteredBody: '다른 키워드를 시도하거나 프로젝트 및 상태 필터를 지우세요.',
+  namesTitle: '이름과 파일',
+  emptyNames: (query: string, filters: boolean) =>
+    `${filters ? '현재 프로젝트 및 상태 필터에서는 ' : ''}‘${query}’이(가) 포함된 이름이나 파일이 없습니다.`,
   emptyTrashBody: '휴지통으로 이동한 항목이 여기에 표시됩니다. 복원하거나 영구 삭제할 수 있습니다.',
   emptyBody: '세션에서 Agent에게 요청하면 결과물이 여기에 표시됩니다. “새로 만들기”에서 소재를 가져오거나 Home에서 기존 폴더를 열 수도 있습니다.',
   projectPicker: '프로젝트',

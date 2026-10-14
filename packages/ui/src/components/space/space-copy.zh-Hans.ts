@@ -192,6 +192,9 @@ export const zhHans: SpaceMessages = {
   emptyAll: '还没有条目',
   emptyCategory: (label: string) => `还没有${label}`,
   emptyFilteredBody: '换个关键词，或清除项目与状态筛选。',
+  namesTitle: '名称与文件',
+  emptyNames: (query: string, filters: boolean) =>
+    `${filters ? '在当前项目与状态筛选下，' : ''}名称和文件里没有「${query}」。`,
   emptyTrashBody: '移入回收站的条目会在这里：可以恢复，也可以彻底删除。',
   emptyBody: '在会话里让智能体做，产物会出现在这里；也可以从「新建」导入素材，或在 Home 里打开一个已有目录。',
   projectPicker: '项目',

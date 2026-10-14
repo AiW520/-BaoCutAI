@@ -194,6 +194,9 @@ export const ptBR: SpaceMessages = {
 
   emptyCategory: (label: string) => `Nada em ${label} ainda`,
   emptyFilteredBody: "Tente outras palavras ou limpe filtros de projeto e estado.",
+  namesTitle: "Nomes e arquivos",
+  emptyNames: (query: string, filters: boolean) =>
+    `Nenhum nome ou arquivo contém “${query}”${filters ? ' com os filtros de projeto e estado atuais' : ''}.`,
   emptyTrashBody: "Itens na Lixeira aparecem aqui; restaure ou exclua permanentemente.",
   emptyBody: "Peça ao agente; resultados aparecem aqui. Importe mídias em “Novo” ou abra pasta no Home.",
   projectPicker: "Projetos",

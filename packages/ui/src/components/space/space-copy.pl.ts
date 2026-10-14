@@ -181,6 +181,9 @@ export const pl: SpaceMessages = {
   emptyAll: "Brak elementów",
   emptyCategory: (label: string) => `Nic w ${label} jeszcze`,
   emptyFilteredBody: "Spróbuj innych słów lub wyczyść filtry projektu i stanu.",
+  namesTitle: "Nazwy i pliki",
+  emptyNames: (query: string, filters: boolean) =>
+    `Żadna nazwa ani plik nie zawiera „${query}”${filters ? ' przy obecnych filtrach projektu i stanu' : ''}.`,
   emptyTrashBody: "Tutaj elementy kosza. Możesz przywrócić lub usunąć trwale.",
   emptyBody: "Poproś agenta w sesji, wyniki pojawią się tutaj. Możesz importować materiały z „Nowe” lub otworzyć folder w Home.",
   projectPicker: "Projekt",

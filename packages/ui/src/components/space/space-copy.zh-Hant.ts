@@ -199,6 +199,9 @@ export const zhHant: SpaceMessages = {
   emptyAll: '還沒有項目',
   emptyCategory: (label: string) => `還沒有${label}`,
   emptyFilteredBody: '試試其他關鍵字，或清除專案與狀態篩選。',
+  namesTitle: '名稱與檔案',
+  emptyNames: (query: string, filters: boolean) =>
+    `${filters ? '在目前的專案與狀態篩選下，' : ''}名稱和檔案裡沒有「${query}」。`,
   emptyTrashBody: '你丟到垃圾桶的項目會顯示在這裡。可以回復，也可以永久刪除。',
   emptyBody: '在對話中請 Agent 處理，產出就會顯示在這裡。你也可以從「新增」匯入素材，或在 Home 中開啟現有的資料夾。',
   projectPicker: '專案',
