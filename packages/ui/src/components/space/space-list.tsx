@@ -250,17 +250,7 @@ const indexMark = style({
   gap: 4,
   color: { default: 'gray-600', tone: { notice: 'orange-900', negative: 'red-900', informative: 'blue-900' } },
 });
-/** 卡片上的那个压在预览左上角，垫一块底色（原型 sp-idx--card）。 */
-const indexMarkCard = style({
-  position: 'absolute',
-  insetStart: 8,
-  top: 8,
-  padding: 4,
-  borderRadius: 'default',
-  backgroundColor: 'gray-25',
-});
 const indexMarkText = style({ font: 'ui-sm', color: 'gray-800' });
-const previewWrap = style({ position: 'relative', width: 'full' });
 /** 右键菜单的锚点：指针那一点，0 尺寸，不挡点击（同时间轴的右键菜单）。 */
 const contextAnchor = style({ position: 'fixed', width: 0, height: 0, pointerEvents: 'none', outlineStyle: 'none' });
 const contextScope = style({ display: 'contents' });
@@ -276,16 +266,15 @@ const INDEX_ICON: Record<Exclude<EntryIndexKey, 'indexing'>, ComponentType> = {
 };
 
 /**
- * 条目的语义索引标志：图标 + 悬停说明（「语义索引：排队中 · 讲话内容：已索引；画面：排队中」）；`withText` 时后面跟状态字
- * （查看框里）。「没有可索引的内容」只在查看框里说，卡片与列表里标出来只是噪音。
+ * 查看框里的语义索引状态：图标 + 悬停说明；`withText` 时后面跟状态文字。
  */
-export function IndexMark({ state, card, withText }: { state: EntryIndexState | null; card?: boolean; withText?: boolean }) {
+export function IndexMark({ state, withText }: { state: EntryIndexState | null; withText?: boolean }) {
   if (!state || (!withText && state.key === 'empty')) return null;
   const title = entryIndexTitle(state);
   const Icon = state.key === 'indexing' ? null : INDEX_ICON[state.key];
   const label = state.pct !== null ? SEMANTIC.spaceIndex.withPct(state.label, state.pct) : state.label;
   return (
-    <span className={`${indexMark({ tone: state.tone })}${card ? ` ${indexMarkCard}` : ''}`} title={title} role="img" aria-label={title}>
+    <span className={indexMark({ tone: state.tone })} title={title} role="img" aria-label={title}>
       {Icon ? <Icon /> : <ProgressCircle size="S" isIndeterminate aria-label={state.label} />}
       {withText ? (
         <span className={indexMarkText} aria-hidden>
@@ -712,7 +701,7 @@ function EntryContextMenu({
 }
 
 export function SpaceGrid(props: ListProps) {
-  const { entries, now, onAction, empty, shorts, indexOf } = props;
+  const { entries, now, onAction, empty, shorts } = props;
   const { act, ctxOf, dependencies } = useListDeps(props);
   const { scopeProps, menu } = useEntryContextMenu(entries, ctxOf, act);
   return (
@@ -733,10 +722,7 @@ export function SpaceGrid(props: ListProps) {
         {(entry) => (
           <Card id={entry.id} textValue={entry.name}>
             <CardPreview>
-              <div className={previewWrap}>
-                <EntryThumb entry={entry} />
-                <IndexMark state={indexOf?.(entry) ?? null} card />
-              </div>
+              <EntryThumb entry={entry} />
             </CardPreview>
             <Content>
               <Text slot="title">{entry.name}</Text>
@@ -789,7 +775,7 @@ function columnName(id: ColumnId): string {
 }
 
 export function SpaceTable(props: ListProps) {
-  const { entries, now, sourceOf, onAction, empty, shorts, indexOf } = props;
+  const { entries, now, sourceOf, onAction, empty, shorts } = props;
   const { act, ctxOf, dependencies } = useListDeps(props, sourceOf);
   const { scopeProps, menu } = useEntryContextMenu(entries, ctxOf, act);
   const cell = (entry: SpaceRow, column: ColumnId): ReactNode => {
@@ -806,7 +792,6 @@ export function SpaceTable(props: ListProps) {
             <span className={nameText}>{entry.name}</span>
             {sub ? <span className={nameSub}>{sub}</span> : null}
           </span>
-          <IndexMark state={indexOf?.(entry) ?? null} />
           {entry.user.favorite ? (
             <span className={favMark} aria-label={COPY.favorited}>
               <StarFilled />

@@ -35,8 +35,7 @@
     };
   }
 
-  /** 语义索引的标志：图标（在建时转圈）+ 悬停说明；`withText` 时后面跟一个字（查看框里）。
-      「没有可索引的内容」只在查看框里说：画面索引关着时，全部里的图片与视频素材张张都是它，卡片上标出来只是噪音。 */
+  /** 查看框里的语义索引状态：图标（在建时转圈）+ 悬停说明；`withText` 时后面跟状态文字。 */
   function IndexMark({s, className, withText}) {
     const R = window.RSP;
     if (!s || (!withText && s.k === 'empty')) return null;
@@ -236,7 +235,6 @@
               <R.CardPreview>
                 <div className="sp-prev__wrap">
                   <ItemPreview it={it} movie={movies[it.id]} />
-                  <IndexMark s={idxOf(it)} className="sp-idx--card" />
                   {SP.durationClock(it) ? <span className="sp-prev__dur" title={`时长 ${SP.durationText(it)}`}>{SP.durationClock(it)}</span> : null}
                 </div>
               </R.CardPreview>
@@ -282,7 +280,6 @@
             <span className="sp-name__t">{it.name}</span>
             {SP.hitsText(it) || n ? <span className="sp-name__sub" title={n ? SP.filesSummary(it) : undefined}>{SP.hitsText(it) || `${n} 个文件 · ${SP.filesSummary(it)}`}</span> : null}
           </span>
-          <IndexMark s={idxOf(it)} />
           {it.ver ? <span className="sp-muted">v{it.ver}</span> : null}{it.fav ? <R.Icons.StarFilled UNSAFE_className="sp-fav" aria-label="已收藏" /> : null}</span>;
       }
       if (c === 'kind') return SP.KINDS[it.kind].label;

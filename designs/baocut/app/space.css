@@ -135,15 +135,13 @@
 .sp-prev__paper pre { margin: 0; white-space: pre-wrap; overflow-wrap: anywhere; font-family: inherit; font-size: 12px; line-height: 1.5; color: var(--gray-700); }
 .sp-prev__doctype { position: absolute; inset-inline-end: 8px; bottom: 8px; padding: 4px 8px; border-radius: 4px; background: var(--gray-25); color: var(--gray-700); font-size: 12px; }
 
-/* 语义索引的标志（2026-10-13 待确认，space-list.jsx 的 IndexMark）：卡片缩略图左上角一枚圆片，列表名称后面一枚 16px 图标，
-   查看框里图标后跟一个字。已索引、不需要索引、没有可建的用灰；排队灰；在建转圈；过期橙；失败红。 */
+/* 查看框里的语义索引状态：图标后跟状态文字。已索引、不需要索引、没有可建的用灰；排队灰；在建转圈；过期橙；失败红。 */
 .sp-idx { display: inline-flex; flex: none; align-items: center; gap: 4px; color: var(--gray-600); }
 .sp-idx > svg { flex: none; width: 16px; height: 16px; --iconPrimary: currentColor; fill: currentColor; }
 .sp-idx--notice { color: var(--orange-900); }
 .sp-idx--negative { color: var(--red-900); }
 .sp-idx--informative { color: var(--blue-900); }
 .sp-idx__t { font-size: 12px; line-height: 16px; color: var(--gray-800); }
-.sp-idx--card { position: absolute; inset-inline-start: 8px; top: 8px; padding: 4px; border-radius: 8px; background: var(--gray-25); pointer-events: auto; }
 .spv__idx { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 8px; }
 /* 右键菜单的锚点：指针那一点，0 尺寸，不挡点击 */
 .sp-ctx { position: fixed; width: 0; height: 0; pointer-events: none; }
