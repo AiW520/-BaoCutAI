@@ -2,7 +2,7 @@ import fs from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
-import { ModelServiceStore, ProviderFailure, UsageLedger, type TextParameters } from '@baocut/models';
+import { ModelServiceStore, ProviderFailure, UsageLedger, textParameters, type TextParameters } from '@baocut/models';
 import { FileCredentialStore } from '@baocut/runtime-storage';
 import type { AdapterConfig, TextAdapter } from './adapter.ts';
 import { AnthropicTextAdapter } from './anthropic/anthropic-text.ts';
@@ -197,6 +197,39 @@ describe('Anthropic 文本（Messages）', () => {
 });
 
 describe('OpenAI 兼容服务商（目录）', () => {
+  it.each(['glm-5.3', 'glm-5.3-flash'])('%s maps product effort to the official GLM levels', async (modelId) => {
+    const vendor = COMPAT_VENDORS.zhipu;
+    const adapter = new VendorTextAdapter(vendor);
+    const model = adapter.models(config('x', null)).find((m) => m.modelId === modelId)!;
+    expect(model).toMatchObject({ contextTokens: 1_048_576, maxOutputTokens: 131_072, defaultEffort: 'high' });
+    server = await startFakeProviderServer((request) => {
+      const body = request.json as { reasoning_effort?: string; thinking?: { type: string }; max_tokens: number };
+      if (body.reasoning_effort && !['low', 'high', 'max'].includes(body.reasoning_effort)) {
+        return { status: 400, json: { error: { message: 'unsupported effort' } } };
+      }
+      if (body.thinking?.type === 'disabled' || body.max_tokens > 131_072) {
+        return { status: 400, json: { error: { message: 'unsupported parameters' } } };
+      }
+      return chatCompletionReply(request, 'translated');
+    });
+    for (const [requested, applied, wire] of [
+      ['minimal', 'low', 'low'], ['low', 'low', 'low'], ['medium', 'medium', 'high'], ['high', 'high', 'max'],
+      [undefined, null, undefined],
+    ] as const) {
+      const parameters = textParameters(
+        { capability: 'generateText', providerId: 'zhipu', modelId, model, kind: 'online', label: vendor.label, source: 'explicit' },
+        { messages: [{ role: 'user', content: 'translate' }], ...(requested ? { effort: requested } : {}) },
+        { effort: null, concurrency: 4 },
+      );
+      expect(parameters.effort).toBe(applied);
+      expect((await call(adapter, config(`${server.origin}/v1`, VENDOR_KEY), modelId, parameters)).text).toBe('translated');
+      const body = server.requests.at(-1)!.json as Record<string, unknown>;
+      expect(body.reasoning_effort).toBe(wire);
+      expect(body.max_tokens).toBe(131_072);
+      expect(body.thinking).toBeUndefined();
+    }
+  });
+
   it('只支持 JSON 模式的：json_object，schema 写进系统消息；max_tokens；读出缓存命中', async () => {
     server = await startFakeProviderServer((request) => {
       const reply = chatCompletionReply(request, '{"title":"x"}') as { status: number; json: Record<string, unknown> };
@@ -289,10 +322,10 @@ describe('账号：地区、基址、调用结果与用量', () => {
     }
   }
 
-  async function generate(source: OnlineProviderSource, providerId: string, modelId: string) {
+  async function generate(source: OnlineProviderSource, providerId: string, modelId: string, parameters = params()) {
     return source
       .textProvider(providerId)!
-      .generateText({ providerId, modelId, parameters: params(), source: 'job', ref: { jobId: 'job_1' } }, new AbortController().signal, {
+      .generateText({ providerId, modelId, parameters, source: 'job', ref: { jobId: 'job_1' } }, new AbortController().signal, {
         retry: () => {},
       });
   }
@@ -346,6 +379,8 @@ describe('账号：地区、基址、调用结果与用量', () => {
     { providerId: 'deepseek', modelId: 'deepseek-flash' },
     { providerId: 'volcengine', modelId: 'doubao-seed-2-1-pro-260915' },
     { providerId: 'volcengine', modelId: 'doubao-seed-2-1-lite-260915' },
+    { providerId: 'zhipu', modelId: 'glm-5.3' },
+    { providerId: 'zhipu', modelId: 'glm-5.3-flash' },
   ])('discovered $providerId model $modelId stays available and uses its API id', async ({ providerId, modelId }) => {
     server = await startFakeProviderServer((request) => {
       if (request.method === 'GET') {
@@ -364,11 +399,13 @@ describe('账号：地区、基址、调用结果与用量', () => {
       const model = view.capabilities.generateText!.models.find((m) => m.modelId === modelId);
       expect(model).toBeDefined();
       expect(model!.available).not.toBe(false);
-      expect((await generate(source, providerId, modelId)).text).toBe('translated');
+      const glm = providerId === 'zhipu';
+      expect((await generate(source, providerId, modelId, params(glm ? { effort: 'medium', maxOutputTokens: 16_384 } : {}))).text).toBe('translated');
       expect(server!.requests).toHaveLength(2);
       expect(server!.requests[0]).toMatchObject({ method: 'GET', path: '/v1/models' });
       expect(server!.requests[1]).toMatchObject({
-        method: 'POST', path: '/v1/chat/completions', json: { model: modelId },
+        method: 'POST', path: '/v1/chat/completions',
+        json: { model: modelId, ...(glm ? { reasoning_effort: 'high', max_tokens: 16_384 } : {}) },
       });
     });
   });

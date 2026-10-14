@@ -9,6 +9,12 @@ const V = require('./model-vendors.js');
 const NOW = Date.parse('2026-10-06T10:00:00Z');
 const acc = (id, o) => Object.assign({accountId: id, label: null, masked: 'sk-…' + id.padStart(4, '0'), enabled: true, status: {state: 'ok'}}, o);
 
+test('文本目录使用 DeepSeek、豆包与 GLM 的官方 API 名称', () => {
+  assert.deepEqual(V.modelsOf('deepseek', 'text').map((m) => m.id), ['deepseek-flash', 'deepseek-v4-pro']);
+  assert.deepEqual(V.modelsOf('volcengine', 'text').map((m) => m.id), ['doubao-seed-2-1-pro-260915', 'doubao-seed-2-1-lite-260915']);
+  assert.deepEqual(V.modelsOf('zhipu', 'text').map((m) => m.id), ['glm-5.3', 'glm-5.3-flash']);
+});
+
 test('目录 id 固定：共享简报 §3 的 15 家 + Codex，没有 Replicate', () => {
   const ids = V.VENDORS.map((v) => v.id);
   assert.deepEqual(ids, ['openai', 'anthropic', 'google', 'elevenlabs', 'deepseek', 'moonshot', 'qwen', 'zhipu', 'minimax',

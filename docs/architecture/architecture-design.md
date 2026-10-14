@@ -1477,6 +1477,8 @@ Node 管理模型目录、版本、下载计划、校验与资源准入；Rust W
 | 兼容的文本提供方（`deepseek`、`moonshot`、`qwen`、`zhipu`、`minimax`、`volcengine`、`xai`、`mistral`、`groq`、`openrouter`、`siliconflow`） | 与 `custom:<名字>` 相同的端点，基址取目录 | 目录的内置模型表 | 限制按内置模型表；结构化输出、`temperature`、`seed` 与推理强度只在模型描述声明支持时发出 |
 | `custom:<名字>` | 与 `openai` 相同的端点，输出上限用 `max_tokens` | 用户声明 `capability` 为 `generateText` 的模型 | 限制按声明，没声明的取保守值：上下文 32768、单次输出 4096 token |
 
+智谱的 `glm-5.3` 与 `glm-5.3-flash` 按[官方模型说明](https://docs.z.ai/guides/llm/glm-5.3)和 [Flash 说明](https://docs.z.ai/guides/vlm/glm-5.3-flash)声明 1M 上下文、128K（131072 token）单次输出；二者强制思考，不能发送 `thinking.type: disabled`。产品的低／中／高三档分别发送 `reasoning_effort: low`／`high`／`max`，最低档按最近档位换成低；自动仍省略参数，使用供应商的默认 `max`。翻译也使用模型页设置的推理强度；需要减少思考消耗时选低。输出上限包含思考占用，不能把保守的 8192 token 当成这两个模型的能力上限。
+
 **文本的输出合同**。执行者把全文写进 staging（`output-1.txt` 或 `output-1.json`），声明长度与 sha256；结束原因归一为 `stop`、`length`、`content-filter`。内容过滤是 `PROVIDER_REJECTED`（`content-filter`），不发布。`length` 不是完整的成功：文本仍然发布，带 `output-truncated` 警告；结构化输出到了上限一律失败。结构化输出在发布之前按 schema 校验：不是 JSON 或不符合 schema 是 `MODEL_OUTPUT_INVALID`（`details.reason` 为 `schema`、`length` 或 `empty`，`details.problems` 列出前几处），不重试。发布前 JobManager 再核对摘要与长度、按 UTF-8 严格解码，结构化输出再校验一次 schema。产物是 `.txt`（`text/plain`）或 `.json`（`application/json`）；结果里另有前 2000 个码点的预览、用量、模型与版本、结束原因与 `notes`。
 
 基址都可以改写（代理、网关）；测试用本机的假服务，从不连真实的供应商。

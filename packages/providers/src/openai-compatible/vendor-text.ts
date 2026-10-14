@@ -1,7 +1,7 @@
 // 目录里的 OpenAI 兼容文本服务商（`generateText`，架构设计 §6.4）：与 `custom:<名字>` 同一个 Chat Completions 端点
 // （`POST {base}/chat/completions`，Bearer，输出上限用 `max_tokens`），只差基址与内置模型表（`vendor-catalog.ts`）。
 // 结构化输出按服务商的写法：支持 JSON Schema 的发 `json_schema`，只支持 JSON 模式的发 `json_object` 并把 schema 写进系统
-// 消息；输出都在本地按 schema 校验。推理强度、`seed` 只在模型表声明支持时发出（目前都不声明）。
+// 消息；输出都在本地按 schema 校验。推理强度、`seed` 只在模型表声明支持时发出，推理档位按目录的映射换算。
 import type { TextReply } from '@baocut/models';
 import type { TextModelInfo } from '@baocut/protocol';
 import type { AdapterConfig, AdapterHttp, ModelLister, ProviderListing, TextAdapter, TextRequest } from '../adapter.ts';
@@ -12,6 +12,7 @@ export interface VendorTextOptions {
   label: string;
   models: readonly TextModelInfo[];
   jsonMode: 'json_schema' | 'json_object';
+  effortMap?: Partial<Record<TextModelInfo['efforts'][number], string>>;
 }
 
 export class VendorTextAdapter implements TextAdapter, ModelLister {
@@ -32,6 +33,7 @@ export class VendorTextAdapter implements TextAdapter, ModelLister {
       version: this.version,
       maxTokensField: 'max_tokens',
       jsonMode: this.#options.jsonMode,
+      effortMap: this.#options.effortMap,
     });
   }
 

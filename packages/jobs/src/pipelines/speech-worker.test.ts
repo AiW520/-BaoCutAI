@@ -176,6 +176,15 @@ describe.skipIf(!command)('runSpeechTranslate with the Speech Worker', () => {
     expect(result.calls.failures).toBe(1);
   }, 60_000);
 
+  it('stops after bounded retries when thinking consumes every output budget', async () => {
+    const staging = await tmp('speech-worker-truncated-');
+    const text = fakeText(() => '\u0000length');
+    await expect(run(staging, speechInput(3, 5), text)).rejects.toMatchObject({ code: 'MODEL_OUTPUT_INVALID' });
+    // Page retries and smaller repair requests remain bounded for this input.
+    expect(text.calls).toHaveLength(6);
+    await expect(fs.stat(path.join(staging, 'translation.json'))).rejects.toThrow();
+  }, 60_000);
+
   it('rethrows a terminal error as is, keeps the checkpoint and does not redo finished pages on the next run', async () => {
     const staging = await tmp('speech-worker-');
     const input = speechInput(100, 12);

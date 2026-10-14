@@ -5,9 +5,9 @@ import { ProvidersConfig as PC } from '@baocut/protocol/messages/providers';
  * 服务商目录里的 OpenAI 兼容文本服务商（架构设计 §6.4 的目录表）：显示名、`kind`、官网、图标、基址（有国际与中国两个基址的
  * 按账号的 `region` 取）与内置模型表。只列已经实现的能力（`generateText`）；目录里标 P1 的语音、转写与生图不在这里声明。
  *
- * 模型表取自各家 2026-10 的模型列表，每家 2–4 个当前主力模型，第一个是默认。限制没有逐个核对，取保守值：上下文
- * 128K token、单次输出 8192 token（请求的上限超过时在提交时拒绝，不会被供应商截断）；推理强度不声明（不发
- * `reasoning_effort`）；`temperature` 照发，`seed` 不发。费用按 `unknown`。`models.refreshProvider` 取到的列表里没有的
+ * 模型表取自各家 2026-10 的模型列表，每家 2–4 个当前主力模型，第一个是默认。未逐个核对的限制取保守值：上下文
+ * 128K token、单次输出 8192 token；已核对的按模型覆盖。推理强度只声明已核对的档位，适配器按服务商换算；
+ * `temperature` 照发，`seed` 不发。费用按 `unknown`。`models.refreshProvider` 取到的列表里没有的
  * 模型会标为不可用，不需要猜错的 ID 继续占着默认值。
  */
 
@@ -32,10 +32,12 @@ export interface CompatVendor {
   /** 地区 → 基址；第一个是缺省的地区。 */
   regions: Record<string, string>;
   jsonMode: 'json_schema' | 'json_object';
+  /** 产品的推理强度 → 服务商的参数值；未指定时原样发送。 */
+  effortMap?: Partial<Record<TextModelInfo['efforts'][number], string>>;
   models: TextModelInfo[];
 }
 
-function text(modelId: string, label: string, isDefault = false): TextModelInfo {
+function text(modelId: string, label: string, isDefault = false, extra: Partial<TextModelInfo> = {}): TextModelInfo {
   return {
     modelId,
     label,
@@ -48,6 +50,7 @@ function text(modelId: string, label: string, isDefault = false): TextModelInfo 
     acceptsTemperature: true,
     acceptsSeed: false,
     cost: 'unknown',
+    ...extra,
   };
 }
 
@@ -91,7 +94,19 @@ export const COMPAT_VENDORS: Record<CompatVendorId, CompatVendor> = {
     vendor: { kind: 'vendor', regions: GLOBAL_CN, website: 'https://z.ai', icon: 'zhipu' },
     regions: { global: 'https://api.z.ai/api/paas/v4', cn: 'https://open.bigmodel.cn/api/paas/v4' },
     jsonMode: 'json_object',
-    models: [text('glm-5.3', 'GLM-5.3', true), text('glm-5.3-flash', 'GLM-5.3 Flash')],
+    // GLM-5.3 / Flash always think. Our low / medium / high map to low / high / max.
+    // https://docs.z.ai/guides/llm/glm-5.3
+    // https://docs.z.ai/guides/vlm/glm-5.3-flash
+    // https://docs.bigmodel.cn/cn/guide/capabilities/thinking
+    effortMap: { low: 'low', medium: 'high', high: 'max' },
+    models: ['glm-5.3', 'glm-5.3-flash'].map((id, index) =>
+      text(id, index === 0 ? 'GLM-5.3' : 'GLM-5.3 Flash', index === 0, {
+        contextTokens: 1_048_576,
+        maxOutputTokens: 131_072,
+        efforts: ['low', 'medium', 'high'],
+        defaultEffort: 'high',
+      }),
+    ),
   },
   minimax: {
     label: 'MiniMax',
