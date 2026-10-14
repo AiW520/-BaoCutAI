@@ -82,4 +82,10 @@ export const zhHant: RuntimeStorageLibraryMessages = {
   referenceDigestMismatch: '參考錄音的摘要與內容不符',
   referenceAudioType: '參考錄音必須是 wav、mp3 或 flac',
   referenceTypeMismatch: (p) => `參考錄音的檔頭是 ${p.sniffed}，但音色包宣告的是 ${p.declared}`,
+  fieldNotSeed: (p) => `${p.field} 必須是 0 到 ${p.max} 之間的整數`,
+  consentClipNeedsSource: '新的授權聲明錄音需要檔案（consentSource）',
+  consentSourceWithoutClip: '提供 consentSource 時也要提供 content.consentClip（念的語言與文字）',
+  consentRecording: '授權聲明錄音',
+  voiceConsentClipRequired: (p) => `${p.provider} 複製音色「${p.name}」前需要說話者本人念授權聲明的錄音。請先在音色庫裡錄授權聲明`,
+  voicePackageConsentClip: '音色包裡的授權聲明錄音（consentClip）無效',
 };

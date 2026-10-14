@@ -1,11 +1,15 @@
 import type { LibraryEntrySummary, LibraryExportResult, MediaHandle, VoiceCloneRemoveResult } from '@baocut/protocol';
 import type { RuntimeSession } from '../../runtime/session.ts';
 import {
+  captureVoiceRequest,
   clonesToRemove,
+  consentClipRequest,
   createVoiceRequest,
   editVoiceRequest,
   errorCode,
+  reseedRequest,
   rpcErrorText,
+  type CapturedVoice,
   type VoiceEntry,
   type VoiceForm,
 } from '../../model/voices-library.ts';
@@ -35,6 +39,24 @@ export async function loadVoice(session: Session, id: string): Promise<VoiceEntr
 export async function createVoice(session: Session, form: VoiceForm, path: string): Promise<VoiceEntry> {
   const { entry } = await session.putLibraryEntry(createVoiceRequest(form, path));
   return entry as VoiceEntry;
+}
+
+/** 克隆新音色：样本（与授权声明录音）已经写成本机的 WAV。 */
+export async function createCapturedVoice(session: Session, voice: CapturedVoice): Promise<VoiceEntry> {
+  const { entry } = await session.putLibraryEntry(captureVoiceRequest(voice));
+  return entry as VoiceEntry;
+}
+
+/** 给已有音色补录 / 重录授权声明。别处先改了时以 `LIBRARY_VERSION_CONFLICT` 失败，由调用方说清楚。 */
+export async function saveConsentClip(session: Session, entry: VoiceEntry, clip: { language: string; text: string | null; path: string }): Promise<VoiceEntry> {
+  const { entry: next } = await session.putLibraryEntry(consentClipRequest(entry, clip));
+  return next as VoiceEntry;
+}
+
+/** 换一颗种子（`modelId` 为 `*` 时换兜底的）。 */
+export async function reseedVoice(session: Session, entry: VoiceEntry, modelId: string, seed: number): Promise<VoiceEntry> {
+  const { entry: next } = await session.putLibraryEntry(reseedRequest(entry, modelId, seed));
+  return next as VoiceEntry;
 }
 
 export type SaveOutcome = { kind: 'saved'; entry: VoiceEntry; changed: boolean } | { kind: 'conflict'; entry: VoiceEntry; message: string };

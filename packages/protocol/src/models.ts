@@ -752,6 +752,11 @@ export interface ProviderCapability<M extends ModelInfoBase = ModelInfoBase> {
   detail?: string;
   /** `detail` 的消息引用（message-ref.ts）。 */
   detailRef?: MessageRef;
+  /**
+   * 只在 `synthesizeSpeech` 下：这个 Provider 能克隆音色（`library.createVoiceClone`，架构设计 §5.9）。
+   * `requiresConsentClip` 为 true 时克隆要附上说话人本人念授权声明的录音（音色的 `consentClip`）。
+   */
+  voiceClone?: { requiresConsentClip: boolean };
 }
 
 export type ProviderCapabilities = { [C in ModelServiceCapability]?: ProviderCapability<ModelInfoByCapability[C]> };

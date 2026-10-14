@@ -26,4 +26,6 @@ export const ko: VoicesLibraryMessages = {
   remedyConfigure: '“클라우드 모델”에서 이 공급자를 켜고 키를 설정하세요.',
   remedyConflict: '이 목소리가 방금 다른 곳에서 변경되었습니다. 최신 버전이 아래에 표시되어 있으니 확인한 뒤 저장하세요.',
   remedyGrant: '참조 녹음을 공급자에게 보내려면 외부 전송 허가가 필요합니다. 설정에서 허가를 발급한 뒤 다시 시도하세요.',
+  noConsentClip: (label) => `${label}에는 화자 본인이 동의 진술을 읽은 녹음이 필요합니다. 먼저 이 음성의 ⋯ 메뉴에서 동의 진술을 녹음하세요.`,
+  remedyConsentClip: '음성의 ⋯ 메뉴에서 동의 진술을 녹음한 뒤(샘플과 같은 사람) 다시 시도하세요.',
 };

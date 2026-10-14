@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState, type Key } from 'react';
-import type { JobRecord, LibraryEntrySummary, MediaHandle } from '@baocut/protocol';
+import { intlLocale, type JobRecord, type LibraryEntrySummary, type MediaHandle } from '@baocut/protocol';
 import {
   ActionButton,
   AlertDialog,
@@ -45,14 +45,28 @@ import { useShell } from '../../state/shell-store.ts';
 import { useVoiceHandoff } from '../../state/voice-handoff-store.ts';
 import { useVoices } from '../../state/voices-store.ts';
 import { localSpeechModels } from '../../model/models-tts-local.ts';
+import {
+  cloneTargets,
+  consentLanguageName,
+  consentProviders,
+  FALLBACK_SEED,
+  randomSeed,
+  reseedTargets,
+  seedGroups,
+  voiceIdBindings,
+  VOICE_CONSENT_CUSTOM,
+  type CloneTarget,
+} from '../../model/voice-capture.ts';
 import { auditionBundle } from '../../model/tts-quick-test.ts';
 import { M } from '../settings/general-settings-copy.ts';
 import { TTS_LOCAL_COPY as TTS } from './tts-local-copy.ts';
-import { auditionHandle, cloneVoice, deleteVoice, exportVoice, importVoicePackage, loadVoice, removeClone } from './voice-actions.ts';
+import { useVoiceEntries } from './use-voice-entries.ts';
+import { auditionHandle, cloneVoice, deleteVoice, exportVoice, importVoicePackage, removeClone, reseedVoice } from './voice-actions.ts';
+import { ConsentCapture, VoiceCapture } from './voice-capture.tsx';
 import { VoiceDialog, type VoiceDialogMode } from './voice-dialog.tsx';
 import { Card, Chips, EmptyCard, Lede, PageStatus } from './model-parts.tsx';
 import { quoted, VOICES_COPY } from './models-copy.ts';
-import { MY_VOICES_COPY as COPY } from './voices-copy.ts';
+import { CAPTURE_COPY as CC, MY_VOICES_COPY as COPY } from './voices-copy.ts';
 
 const bigIcon = iconStyle({ size: 'XL' });
 const row = style({
@@ -113,8 +127,8 @@ type Confirm =
 
 /**
  * 模型 › 语音合成 › 我的声音（设计稿 settings-voices.jsx:480-541）：用户库里的音色（`library` 主题经 voices-store）。
- * 从音频文件新建、导入导出音色包、编辑、删除、试听参考录音，以及在能克隆的云端引擎上建 / 删克隆。
- * 应用里录音与「从视频里分人取一段」还没有接上：入口置灰，原因写在旁边。
+ * 从音频文件新建、克隆新音色（录一段或上传一段样本，voice-capture.tsx）、导入导出音色包、编辑、删除、试听参考录音，
+ * 补录授权声明、换种子，以及在能克隆的云端引擎上建 / 删克隆。宿主没有 `writeRecording` 时克隆新音色置灰。
  * 浏览器里没有这一页的数据：Web 白名单不含 `library.*`，订阅不了 `library` 主题，那里不写「加载中」，直接说浏览器里没有。
  */
 export function MyVoices() {
@@ -135,6 +149,31 @@ export function MyVoices() {
   const goTo = useShell((s) => s.go);
   const setFocus = useVoiceHandoff((s) => s.setFocus);
   const saved = useVoiceHandoff((s) => s.saved);
+  const handoff = useVoiceHandoff((s) => s.handoff);
+  const setHandoff = useVoiceHandoff((s) => s.setHandoff);
+  const targets = useMemo(() => cloneTargets(capabilities), [capabilities]);
+  const canCapture = !!host.writeRecording;
+  const [view, setView] = useState<{ kind: 'capture'; preselect: string | null } | { kind: 'consent'; voice: LibraryEntrySummary } | null>(null);
+
+  // 从模型页那一行的「克隆新音色」过来：直接打开采集、预选那只模型；打开一次就把 `open` 摘掉，回来不再自动开。
+  useEffect(() => {
+    if (!handoff?.open || handoff.voiceId) return;
+    setHandoff({ ...handoff, open: undefined });
+    if (canCapture) setView({ kind: 'capture', preselect: handoff.target?.id ?? null });
+  }, [handoff, canCapture, setHandoff]);
+
+  const reseed = async (voice: LibraryEntrySummary, modelId: string) => {
+    const entry = entryOf(voice);
+    if (!entry) return;
+    const seed = randomSeed();
+    const engine = modelId === FALLBACK_SEED ? CC.allEngines : (targets.find((t) => t.id === modelId)?.name ?? modelId);
+    try {
+      await reseedVoice(runtime, entry, modelId, seed);
+      ToastQueue.positive(CC.reseeded(engine, seed), { timeout: 4000 });
+    } catch (error) {
+      ToastQueue.negative(CC.reseedFailed(rpcErrorText(error)), { timeout: 8000 });
+    }
+  };
 
   /** 试听克隆：到本地模型页能克隆的那一行，展开试听、选上这只音色；一只都没装时说去下载。 */
   const auditionClone = (voice: LibraryEntrySummary) => {
@@ -247,10 +286,10 @@ export function MyVoices() {
   };
 
   const recordItem = (
-    <MenuItem id="record" textValue={COPY.record}>
+    <MenuItem id="record" textValue={CC.newVoice}>
       <MicrophoneIcon />
-      <Text slot="label">{COPY.record}</Text>
-      <Text slot="description">{COPY.recordWhy}</Text>
+      <Text slot="label">{CC.newVoice}</Text>
+      <Text slot="description">{CC.newVoiceHint}</Text>
     </MenuItem>
   );
   const addMenu = (
@@ -261,9 +300,10 @@ export function MyVoices() {
       </Button>
       <Menu
         aria-label={COPY.add}
-        disabledKeys={['record', ...(host.pickFiles ? [] : ['import'])]}
+        disabledKeys={[...(canCapture ? [] : ['record']), ...(host.pickFiles ? [] : ['import'])]}
         onAction={(key) => {
-          if (key === 'file') void pickAudio();
+          if (key === 'record') setView({ kind: 'capture', preselect: null });
+          else if (key === 'file') void pickAudio();
           else if (key === 'import') void importPackage();
         }}>
         <MenuItem id="file" textValue={COPY.fromFile}>
@@ -301,13 +341,13 @@ export function MyVoices() {
               <ImportIcon />
               <Text>{COPY.importPackage}</Text>
             </Button>
-            <Button variant="secondary" size="S" isDisabled>
+            <Button variant="secondary" size="S" isDisabled={!canCapture} onPress={() => setView({ kind: 'capture', preselect: null })}>
               <MicrophoneIcon />
-              <Text>{COPY.record}</Text>
+              <Text>{CC.newVoice}</Text>
             </Button>
           </>
         }
-        note={host.pickFiles ? COPY.recordWhy : COPY.recordWhyNoPicker}
+        note={host.pickFiles ? null : COPY.noPicker}
       />
     );
   } else {
@@ -319,7 +359,9 @@ export function MyVoices() {
             voice={voice}
             entry={entryOf(voice)}
             providers={providers}
+            targets={targets}
             jobs={jobs}
+            canCapture={canCapture}
             playing={audition.playing === voice.id}
             canExport={!!host.pickSavePath}
             onPlay={() => void audition.toggle(voice)}
@@ -327,9 +369,39 @@ export function MyVoices() {
             onEdit={() => setDialog({ kind: 'edit', voice })}
             onExport={() => void exportIt(voice)}
             onConfirm={setConfirm}
+            onReseed={(modelId) => void reseed(voice, modelId)}
+            onConsent={() => setView({ kind: 'consent', voice })}
           />
         ))}
       </Card>
+    );
+  }
+
+  if (view?.kind === 'capture' && connected) {
+    return (
+      <>
+        <HandoffBar />
+        <VoiceCapture
+          targets={targets}
+          preselect={view.preselect}
+          onCancel={() => setView(null)}
+          onSaved={(id) => {
+            saved(id);
+            setView(null);
+          }}
+        />
+      </>
+    );
+  }
+  const consentEntry = view?.kind === 'consent' ? entryOf(view.voice) : null;
+  if (consentEntry && connected) {
+    return (
+      <ConsentCapture
+        entry={consentEntry}
+        needed={consentProviders(targets).map((t) => t.name)}
+        onCancel={() => setView(null)}
+        onSaved={() => setView(null)}
+      />
     );
   }
 
@@ -355,11 +427,24 @@ function HandoffBar() {
   const setHandoff = useVoiceHandoff((s) => s.setHandoff);
   const goTo = useShell((s) => s.go);
   if (!handoff) return null;
-  const back = () => goTo(handoff.route);
+  const quick = handoff.key.startsWith('quick:');
+  const back = () => {
+    // 模型页那一行的回程没人认领：回去时清掉；试听那一行（`quick:`）回去后自己认领再清。
+    if (!quick) setHandoff(null);
+    goTo(handoff.route);
+  };
   return (
     <div className={handoffBar} role="status">
       <InfoIcon />
-      <span className={handoffText}>{handoff.voiceId ? TTS.handoffSaved(handoff.from) : TTS.handoffFrom(handoff.from)}</span>
+      <span className={handoffText}>
+        {quick
+          ? handoff.voiceId
+            ? TTS.handoffSaved(handoff.from)
+            : TTS.handoffFrom(handoff.from)
+          : handoff.voiceId
+            ? CC.handoffSavedModel(handoff.from)
+            : CC.handoffFromModel(handoff.from)}
+      </span>
       {handoff.voiceId ? (
         <Button variant="accent" size="S" onPress={back}>
           {TTS.handoffBack}
@@ -438,12 +523,40 @@ function ConfirmDialog({
   }
 }
 
-/** 一行音色：试听、名字与标签、语言 / 录音 / 来源、逐字稿；⋯ 里是编辑、克隆、导出与删除；下面是克隆在跑或失败的一句。 */
+/** 行上「种子与 voice ID」那一行：种子按值合并写引擎名，云端写 voice ID，再写授权声明录音。没有时 null。 */
+function idsLine(entry: VoiceEntry, targets: readonly CloneTarget[], providers: readonly CloneProvider[]): string | null {
+  const engineName = (id: string) => targets.find((t) => t.id === id)?.name ?? id;
+  const groups = seedGroups(entry.content);
+  const seeds = groups.map((g) => {
+    const names = g.ids.map((id) => (id === FALLBACK_SEED ? (groups.length === 1 && g.ids.length === 1 ? CC.allEngines : CC.otherEngines) : engineName(id)));
+    return CC.seedGroup(g.value, names.join(' / '));
+  });
+  const ids = voiceIdBindings(entry.clones).map((b) => {
+    const label = providers.find((p) => p.providerId === b.providerId)?.label ?? b.providerId;
+    return `${label} ${b.voiceId}${b.stale ? ` (${CC.voiceIdStale})` : ''}`;
+  });
+  const clip = entry.content.consentClip;
+  const clipText = clip
+    ? (() => {
+        const language = clip.language === VOICE_CONSENT_CUSTOM ? CC.customLanguage : consentLanguageName(clip.language, intlLocale());
+        return clip.durationSec === null ? CC.consentClipNoLength(language) : CC.consentClip(language, clip.durationSec.toFixed(1));
+      })()
+    : null;
+  const parts = [...seeds, ...ids, ...(clipText ? [clipText] : [])];
+  return parts.length ? parts.join(' · ') : null;
+}
+
+/**
+ * 一行音色：试听、名字与标签、语言 / 录音 / 来源、逐字稿、种子与 voice ID；⋯ 里是编辑、换种子、授权声明、克隆、导出与删除；
+ * 下面是克隆在跑或失败的一句。
+ */
 function VoiceRow({
   voice,
   entry,
   providers,
+  targets,
   jobs,
+  canCapture,
   playing,
   canExport,
   onPlay,
@@ -451,11 +564,15 @@ function VoiceRow({
   onEdit,
   onExport,
   onConfirm,
+  onReseed,
+  onConsent,
 }: {
   voice: LibraryEntrySummary;
   entry: VoiceEntry | null;
   providers: readonly CloneProvider[];
+  targets: readonly CloneTarget[];
   jobs: readonly JobRecord[];
+  canCapture: boolean;
   playing: boolean;
   canExport: boolean;
   onPlay: () => void;
@@ -463,9 +580,26 @@ function VoiceRow({
   onEdit: () => void;
   onExport: () => void;
   onConfirm: (confirm: Confirm) => void;
+  onReseed: (modelId: string) => void;
+  onConsent: () => void;
 }) {
   const clones = cloneRows(voice, providers, jobs);
   const disabled: string[] = canExport ? [] : ['export'];
+  if (!entry || !canCapture) disabled.push('consent');
+  const reseedItems = entry
+    ? reseedTargets(entry.content, targets).map((modelId) => {
+        const id = `reseed:${modelId}`;
+        const engine = targets.find((t) => t.id === modelId)?.name ?? modelId;
+        const now = entry.content.seeds?.[modelId] ?? entry.content.seed;
+        return (
+          <MenuItem key={id} id={id} textValue={CC.reseed(engine)}>
+            <Text slot="label">{CC.reseed(engine)}</Text>
+            {now !== undefined ? <Text slot="description">{CC.reseedNow(now)}</Text> : null}
+          </MenuItem>
+        );
+      })
+    : [];
+  const ids = entry ? idsLine(entry, targets, providers) : null;
   const cloneItems = clones.flatMap((c) => {
     const items = [];
     if (c.create) {
@@ -497,6 +631,8 @@ function VoiceRow({
     if (k === 'edit') return onEdit();
     if (k === 'export') return onExport();
     if (k === 'delete') return onConfirm({ kind: 'delete', voice });
+    if (k === 'consent') return onConsent();
+    if (k.startsWith('reseed:')) return onReseed(k.slice('reseed:'.length));
     const [action, providerId] = k.split(':') as [string, string];
     const label = clones.find((c) => c.providerId === providerId)?.label ?? providerId;
     if (action === 'clone' || action === 'reclone') onConfirm({ kind: 'upload', voice, providerId, label });
@@ -516,6 +652,11 @@ function VoiceRow({
           </div>
           <div className={meta}>{entry ? voiceMeta(entry) : COPY.loadingMeta}</div>
           {entry?.content.transcript ? <div className={transcript}>{quoted(entry.content.transcript)}</div> : null}
+          {ids ? (
+            <div className={meta} aria-label={CC.ids}>
+              {ids}
+            </div>
+          ) : null}
         </div>
         <Button variant="secondary" size="S" aria-label={TTS.auditionCloneLabel(voice.name)} onPress={onAudition}>
           {TTS.auditionClone}
@@ -528,6 +669,11 @@ function VoiceRow({
             <MenuSection>
               <MenuItem id="edit" textValue={COPY.edit}>
                 <Text slot="label">{COPY.edit}</Text>
+              </MenuItem>
+              {reseedItems}
+              <MenuItem id="consent" textValue={entry?.content.consentClip ? CC.redoConsent : CC.recordConsent}>
+                <Text slot="label">{entry?.content.consentClip ? CC.redoConsent : CC.recordConsent}</Text>
+                <Text slot="description">{CC.consentMenuHint}</Text>
               </MenuItem>
             </MenuSection>
             {cloneItems.length ? <MenuSection>{cloneItems}</MenuSection> : null}
@@ -559,29 +705,6 @@ function VoiceRow({
         ))}
     </div>
   );
-}
-
-/**
- * 每只音色的完整条目（语言、逐字稿、录音大小不在摘要里）：按 `id@version` 记着，版本变了才重读；
- * 列表与标签不等它，读到之前那一行写「正在读取…」。
- */
-function useVoiceEntries(runtime: RuntimeSession, voices: readonly LibraryEntrySummary[]): (voice: LibraryEntrySummary) => VoiceEntry | null {
-  const [entries, setEntries] = useState<Record<string, VoiceEntry>>({});
-  const asked = useRef(new Set<string>());
-  useEffect(() => {
-    for (const voice of voices) {
-      const key = `${voice.id}@${voice.version}`;
-      if (asked.current.has(key)) continue;
-      asked.current.add(key);
-      loadVoice(runtime, voice.id).then(
-        (entry) => setEntries((prev) => ({ ...prev, [key]: entry, [`${entry.id}@${entry.version}`]: entry })),
-        () => {
-          // 读不到（例如刚被删掉）：那一行就不显示细节，不反复重读。
-        },
-      );
-    }
-  }, [runtime, voices]);
-  return (voice) => entries[`${voice.id}@${voice.version}`] ?? null;
 }
 
 /** 试听参考录音：同一时间只放一只；受限地址按录音摘要记着，到期了再要。 */

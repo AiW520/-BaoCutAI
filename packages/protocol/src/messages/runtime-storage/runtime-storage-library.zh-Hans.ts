@@ -79,4 +79,10 @@ export const zhHans: RuntimeStorageLibraryMessages = {
   referenceDigestMismatch: '参考录音的摘要与内容不符',
   referenceAudioType: '参考录音应是 wav、mp3 或 flac',
   referenceTypeMismatch: (p) => `参考录音的文件头是 ${p.sniffed}，包里声明的是 ${p.declared}`,
+  fieldNotSeed: (p) => `${p.field} 应是 0 到 ${p.max} 之间的整数`,
+  consentClipNeedsSource: '新的授权声明录音需要文件（consentSource）',
+  consentSourceWithoutClip: '给了 consentSource 时还要给 content.consentClip（念的语言与文本）',
+  consentRecording: '授权声明录音',
+  voiceConsentClipRequired: (p) => `${p.provider} 克隆音色「${p.name}」前需要说话人本人念授权声明的录音。请先在音色库里录授权声明`,
+  voicePackageConsentClip: '音色包里的授权声明录音（consentClip）无效',
 };

@@ -20,6 +20,7 @@ import {
   type LibraryFile,
   type LibraryName,
   type VoiceClone,
+  type VoiceConsentClip,
   type VoiceContent,
 } from '@baocut/protocol';
 import { readJson, writeJsonAtomic } from '../json-file.ts';
@@ -38,7 +39,7 @@ import {
   SNIFF_HEAD_BYTES,
   VOICE_AUDIO_TYPES,
 } from './media-sniff.ts';
-import { safeFileName, VOICE_REFERENCE_MAX_BYTES } from './voice-package.ts';
+import { safeFileName, VOICE_CONSENT_CLIP_MAX_BYTES, VOICE_REFERENCE_MAX_BYTES } from './voice-package.ts';
 import { assertVoiceUploadAllowed } from './voice-access.ts';
 import { RuntimeStorageLibrary as SL } from '@baocut/protocol/messages/runtime-storage';
 
@@ -64,12 +65,15 @@ const HEADER_SCHEMA = 1;
 const LIBRARIES: readonly LibraryName[] = ['glossaries', 'voices', 'brand'];
 const ID_PREFIX: Record<LibraryName, string> = { glossaries: 'gls', voices: 'voc', brand: 'brd' };
 const MiB = 1024 * 1024;
-const MAX_BYTES: Record<BrandMediaKind | 'voice', number> = {
+/** 收进来的文件的种类：品牌库媒体、音色的参考录音（`voice`）与授权声明录音（`consent`）。 */
+type IngestKind = BrandMediaKind | 'voice' | 'consent';
+const MAX_BYTES: Record<IngestKind, number> = {
   image: 50 * MiB,
   sticker: 50 * MiB,
   font: 50 * MiB,
   video: 4096 * MiB,
   voice: VOICE_REFERENCE_MAX_BYTES,
+  consent: VOICE_CONSENT_CLIP_MAX_BYTES,
 };
 /** Lottie 贴纸的 JSON 要整个解析，上限小一些。 */
 const LOTTIE_MAX_BYTES = 10 * MiB;
@@ -107,6 +111,8 @@ export interface LibraryPutInput {
   expectedVersion?: number;
   content: LibraryContentInput;
   file?: LibraryFileInput;
+  /** 音色的授权声明录音（与 `content.consentClip` 对象同给）。 */
+  consentFile?: LibraryFileInput;
   /** 导入音色包时沿用包里的授权时间。 */
   consentDeclaredAt?: string | null;
 }
@@ -119,8 +125,11 @@ export interface LibraryPutOutcome<L extends LibraryName = LibraryName> {
 
 export interface LibraryStoreOptions {
   dir: string;
-  /** 参考录音能不能解码（Runtime 用 ffprobe）；不能时抛 `LIBRARY_FORMAT_INVALID`。没有给时音色存不进来。 */
-  validateAudio?: (file: string, mediaType: string) => Promise<void>;
+  /**
+   * 参考录音与授权声明录音能不能解码（Runtime 用 ffprobe）；不能时抛 `LIBRARY_FORMAT_INVALID`。没有给时音色存不进来。
+   * 能给出时长时返回 `durationSec`，记进授权声明录音。
+   */
+  validateAudio?: (file: string, mediaType: string) => Promise<void | { durationSec: number | null }>;
   onEvent?: (event: LibraryEvent) => void;
   now?: () => Date;
 }
@@ -358,8 +367,10 @@ export class LibraryStore {
       if (input.file) throw formatInvalid(SL.glossaryNoFile());
       content = normalizeGlossary(input.content);
     } else if (library === 'voices') {
-      const fields = normalizeVoiceFields(input.content);
+      const { consentClip: clipFields, seed: seedField, seeds: seedsField, ...fields } = normalizeVoiceFields(input.content);
       const prev = previous as VoiceContent | null;
+      if (input.consentFile && !clipFields) throw formatInvalid(SL.consentSourceWithoutClip(), { field: 'consentClip' });
+      if (clipFields && !input.consentFile) throw formatInvalid(SL.consentClipNeedsSource(), { field: 'consentClip' });
       const reference = input.file
         ? await this.#ingest(dir, input.file, 'voice')
         : prev
@@ -367,6 +378,17 @@ export class LibraryStore {
           : (() => {
               throw formatInvalid(SL.voiceNeedsReference());
             })();
+      // 授权声明录音：给了新录音时收进来；`null` 去掉；没给时沿用。种子同样没给时沿用。
+      let consentClip: VoiceConsentClip | undefined;
+      if (clipFields && input.consentFile) {
+        const probe = { durationSec: null as number | null };
+        const file = await this.#ingest(dir, input.consentFile, 'consent', probe);
+        consentClip = { language: clipFields.language, text: clipFields.text, durationSec: probe.durationSec, file };
+      } else if (clipFields === undefined) {
+        consentClip = prev?.consentClip;
+      }
+      const seed = seedField ?? prev?.seed;
+      const seeds = seedsField ?? prev?.seeds;
       const keepDeclaredAt = prev?.consent.declared && prev.consent.statement === fields.consent.statement ? prev.consent.declaredAt : null;
       content = {
         ...fields,
@@ -376,6 +398,10 @@ export class LibraryStore {
           statement: fields.consent.statement,
         },
         reference,
+        // 没有时不写这些键：老条目的内容摘要不变。
+        ...(consentClip ? { consentClip } : {}),
+        ...(seed !== undefined ? { seed } : {}),
+        ...(seeds && Object.keys(seeds).length > 0 ? { seeds } : {}),
       };
     } else {
       const fields = normalizeBrandFields(input.content);
@@ -440,8 +466,8 @@ export class LibraryStore {
   }
 
   /** 把文件收进条目目录：认类型、查种类与大小、边复制边算摘要，按 `<hex>.<ext>` 存放。 */
-  async #ingest(dir: string, input: LibraryFileInput, kind: BrandMediaKind | 'voice'): Promise<LibraryFile> {
-    const label = kind === 'voice' ? SL.referenceRecording().text : kind;
+  async #ingest(dir: string, input: LibraryFileInput, kind: IngestKind, probe?: { durationSec: number | null }): Promise<LibraryFile> {
+    const label = kind === 'voice' ? SL.referenceRecording().text : kind === 'consent' ? SL.consentRecording().text : kind;
     const max = MAX_BYTES[kind];
     let head: Buffer;
     let size: number;
@@ -499,9 +525,10 @@ export class LibraryStore {
       };
       const final = path.join(filesDir, storedFileName(file));
       await fs.rename(tmp, final);
-      if (kind === 'voice') {
+      if (kind === 'voice' || kind === 'consent') {
         if (!this.#options.validateAudio) throw formatInvalid(SL.cannotValidateAudio());
-        await this.#options.validateAudio(final, mediaType);
+        const probed = await this.#options.validateAudio(final, mediaType);
+        if (probe) probe.durationSec = probed?.durationSec ?? null;
       }
       return file;
     } finally {
@@ -554,10 +581,7 @@ export class LibraryStore {
     }
     await removeExcept(path.join(dir, 'versions'), new Set(retained.map((v) => `${v}.json`)));
     const files = new Set<string>();
-    for (const v of held.versions.values()) {
-      const file = fileOfContent(v.content);
-      if (file) files.add(storedFileName(file));
-    }
+    for (const v of held.versions.values()) for (const file of filesOfContent(v.content)) files.add(storedFileName(file));
     await removeExcept(path.join(dir, 'files'), files);
   }
 
@@ -624,6 +648,7 @@ export class LibraryStore {
     }
     if (library === 'voices') {
       summary.consentDeclared = (content as VoiceContent).consent.declared;
+      if ((content as VoiceContent).consentClip) summary.consentClip = true;
       summary.clones = Object.entries(held.header.clones).map(([providerId, c]) => ({ providerId, state: c.state }));
     }
     return summary;
@@ -640,13 +665,21 @@ export function fileOfContent(content: LibraryContent): LibraryFile | null {
   return null;
 }
 
+/** 内容引用的全部文件：主文件，加上音色的授权声明录音。 */
+export function filesOfContent(content: LibraryContent): LibraryFile[] {
+  const main = fileOfContent(content);
+  const clip = 'reference' in content ? content.consentClip?.file : undefined;
+  return [...(main ? [main] : []), ...(clip ? [clip] : [])];
+}
+
 function storedFileName(file: LibraryFile): string {
   return `${file.sha256.replace(/^sha256:/, '')}.${extensionOf(file.mediaType)}`;
 }
 
-function accepts(kind: BrandMediaKind | 'voice', mediaType: string): boolean {
+function accepts(kind: IngestKind, mediaType: string): boolean {
   switch (kind) {
     case 'voice':
+    case 'consent':
       return VOICE_AUDIO_TYPES.includes(mediaType);
     case 'image':
       return mediaType.startsWith('image/');

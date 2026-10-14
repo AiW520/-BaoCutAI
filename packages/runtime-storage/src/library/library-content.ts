@@ -1,4 +1,4 @@
-import type { BrandMediaKind, CaptionStyleBody, GlossaryContent, LibraryContentInput, LibraryName } from '@baocut/protocol';
+import { VOICE_CONSENT_CUSTOM, type BrandMediaKind, type CaptionStyleBody, type GlossaryContent, type LibraryContentInput, type LibraryName } from '@baocut/protocol';
 import { formatInvalid, libraryError } from './library-errors.ts';
 import { RuntimeStorageLibrary as SL } from '@baocut/protocol/messages/runtime-storage';
 
@@ -13,6 +13,11 @@ export const MAX_MISHEARD_PER_TERM = 50;
 export const MAX_NOTE_CHARS = 1000;
 export const MAX_TRANSCRIPT_CHARS = 10_000;
 export const MAX_STATEMENT_CHARS = 2000;
+/** 自定义授权声明（`consentClip.language: 'custom'`）的那句话。 */
+export const MAX_CONSENT_TEXT_CHARS = 500;
+/** 音色的种子（与合成请求的 `seed` 同一范围）与每个音色最多记几个本机模型的种子。 */
+export const MAX_SEED = 4_294_967_295;
+export const MAX_VOICE_SEEDS = 50;
 /** 字幕样式的上限，与 `setStyle` 的样式对象相同。 */
 export const MAX_CAPTION_STYLE_BYTES = 64 * 1024;
 
@@ -117,6 +122,43 @@ export interface VoiceFields {
   transcript: string;
   origin: 'recorded' | 'imported';
   consent: { declared: boolean; statement: string | null };
+  /** 授权声明录音念的是什么：`undefined` 没给（沿用当前的），`null` 去掉。录音文件由库处理。 */
+  consentClip?: { language: string; text: string | null } | null;
+  /** 没给时沿用当前的。 */
+  seed?: number;
+  seeds?: Record<string, number>;
+}
+
+function seedValue(value: unknown, field: string): number {
+  if (typeof value !== 'number' || !Number.isInteger(value) || value < 0 || value > MAX_SEED) {
+    throw formatInvalid(SL.fieldNotSeed({ field, max: MAX_SEED }), { field });
+  }
+  return value;
+}
+
+/** 授权声明录音的语言与文本：官方文本只记语言（BCP 47），`custom` 时记那句话。 */
+function consentClipFields(value: unknown): { language: string; text: string | null } | null | undefined {
+  if (value === undefined) return undefined;
+  if (value === null) return null;
+  const clip = object(value, 'consentClip');
+  if (clip.language === VOICE_CONSENT_CUSTOM) {
+    return { language: VOICE_CONSENT_CUSTOM, text: text(clip.text, 'consentClip.text', MAX_CONSENT_TEXT_CHARS) };
+  }
+  return { language: language(clip.language, 'consentClip.language'), text: null };
+}
+
+function seedMap(value: unknown): Record<string, number> | undefined {
+  if (value === undefined) return undefined;
+  const map = object(value, 'seeds');
+  const keys = Object.keys(map);
+  if (keys.length > MAX_VOICE_SEEDS) throw formatInvalid(SL.fieldTooMany({ field: 'seeds', max: MAX_VOICE_SEEDS }), { field: 'seeds' });
+  const out: Record<string, number> = {};
+  for (const k of keys.sort()) {
+    const modelId = k.trim();
+    if (!modelId || [...modelId].length > MAX_NAME_CHARS) throw formatInvalid(SL.fieldEmpty({ field: 'seeds' }), { field: 'seeds' });
+    out[modelId] = seedValue(map[k], `seeds.${modelId}`);
+  }
+  return out;
 }
 
 export function normalizeVoiceFields(value: unknown): VoiceFields {
@@ -127,13 +169,20 @@ export function normalizeVoiceFields(value: unknown): VoiceFields {
     consent.statement === null || consent.statement === undefined
       ? null
       : text(consent.statement, 'consent.statement', MAX_STATEMENT_CHARS, { allowEmpty: true }) || null;
-  return {
+  const fields: VoiceFields = {
     name: text(v.name, 'name', MAX_NAME_CHARS),
     language: languageOrNull(v.language, 'language'),
     transcript: text(v.transcript, 'transcript', MAX_TRANSCRIPT_CHARS, { allowEmpty: true }),
     origin: v.origin,
     consent: { declared: bool(consent.declared, 'consent.declared'), statement },
   };
+  // 新字段没给时不出现在结果里：老条目的内容与摘要不变。
+  const consentClip = consentClipFields(v.consentClip);
+  if (consentClip !== undefined) fields.consentClip = consentClip;
+  if (v.seed !== undefined) fields.seed = seedValue(v.seed, 'seed');
+  const seeds = seedMap(v.seeds);
+  if (seeds !== undefined) fields.seeds = seeds;
+  return fields;
 }
 
 /** 品牌库不带文件的部分。带文件的种类只有名字；`overlayTemplate` 拒绝。 */

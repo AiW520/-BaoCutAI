@@ -92,6 +92,7 @@ import { Card, Chips, EmptyCard, PageStatus, SettingRow } from './model-parts.ts
 import { DownloadSourcesFold } from './download-sources.tsx';
 import { IMAGE_LOCAL_COPY as IMAGE, LOCAL_COPY, MODELS_PAGE_COPY } from './models-copy.ts';
 import { TTS_LOCAL_COPY as TTS } from './tts-local-copy.ts';
+import { ModelVoicesLine } from './model-voices-line.tsx';
 import { TtsQuickTest } from './tts-quick-test.tsx';
 import { MusicQuickTest } from './music-quick-test.tsx';
 import { MUSIC_LOCAL_COPY as MUSIC } from './music-local-copy.ts';
@@ -774,6 +775,7 @@ function BundleRow({
         />
       ) : null}
       {failure ? <p className={rowNote({ tone: 'failed' })}>{INSTALL.installFailed(installFailureText(failure, half))}</p> : null}
+      {canAudition && model && canClone(model) ? <ModelVoicesLine target={{ kind: 'local', id: model.modelId }} name={name} /> : null}
       {quickOpen && canAudition && model ? (
         <TtsQuickTest
           bundleId={id}

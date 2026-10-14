@@ -44,6 +44,9 @@ const en = {
   remedyConfigure: 'Enable this provider and set its key in “Cloud models”.',
   remedyConflict: 'This voice was just changed elsewhere. The latest version is shown below; take a look before saving.',
   remedyGrant: 'Sending the reference recording to a provider needs an outbound grant: issue one in Settings, then try again.',
+  /** 这家克隆要附上本人念授权声明的录音，这只音色还没有。 */
+  noConsentClip: (label: string) => `${label} needs a recording of the speaker reading the consent statement. Record it from this voice’s ⋯ menu first.`,
+  remedyConsentClip: 'Record the consent statement from the voice’s ⋯ menu (the same person as in the sample), then try again.',
 };
 export type VoicesLibraryMessages = typeof en;
 export const M = defineMessages(en, { 'zh-Hans': zhHans, 'zh-Hant': zhHant, ja, ko, es, fr, de, nl, 'pt-BR': ptBR, it, ru, pl, tr, vi });

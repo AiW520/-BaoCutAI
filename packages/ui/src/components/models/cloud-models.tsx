@@ -5,6 +5,7 @@ import AddIcon from '@react-spectrum/s2/icons/Add';
 import { style } from '@react-spectrum/s2/style' with { type: 'macro' };
 import { capabilityCategory, categoryCapability, cloudDefaultPicker, cloudProviders, refreshAfterKey, type DefaultOption } from '../../model/models-cloud.ts';
 import { probeFromJob, type ProbeState } from '../../model/models-probe.ts';
+import { providerCanClone } from '../../model/voice-capture.ts';
 import type { ModelCategory } from '../../model/settings-nav.ts';
 import { useRuntime } from '../../runtime/context.tsx';
 import { useConnection } from '../../state/connection-store.ts';
@@ -17,6 +18,7 @@ import { chooseCloudDefault, refreshProvider, startProbe } from './model-actions
 import { Card, Lede, PageStatus, SettingRow } from './model-parts.tsx';
 import { CLOUD_COPY, MODELS_PAGE_COPY } from './models-copy.ts';
 import { ProbeDialog } from './probe-dialog.tsx';
+import { ModelVoicesLine } from './model-voices-line.tsx';
 import { ProviderCard } from './provider-card.tsx';
 import { AddModelDialog, CustomProviderDialog, KeyDialog } from './provider-dialogs.tsx';
 import { TextParamRows } from './text-params.tsx';
@@ -222,6 +224,12 @@ function CloudCapability({ capability }: { capability: OnlineCapability }) {
             refreshing={refreshing === card.providerId}
             refreshBusy={refreshing !== null}
             onRefresh={() => void refresh(card.providerId)}
+            footer={
+              capability === 'synthesizeSpeech' &&
+              view?.synthesizeSpeech.providers.some((p) => p.providerId === card.providerId && providerCanClone(p)) ? (
+                <ModelVoicesLine target={{ kind: 'cloud', id: card.providerId }} name={card.label} />
+              ) : null
+            }
           />
         ))
       ) : (

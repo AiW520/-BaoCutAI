@@ -41,6 +41,7 @@ import type {
   TextAdapter,
   TranscribeAdapter,
   VoiceCloneAdapter,
+  VoiceCloneConsentClip,
 } from './adapter.ts';
 import { ANTHROPIC_DEFAULT_BASE_URL, AnthropicTextAdapter } from './anthropic/anthropic-text.ts';
 import type { FfmpegResolver } from './audio/audio-prep.ts';
@@ -105,12 +106,15 @@ export interface VoiceCloner {
   version: string;
   /** 此刻启用着且有密钥。 */
   available(): boolean;
+  /** 克隆要附上授权声明录音（适配器的 `requiresConsentClip`）。 */
+  requiresConsentClip: boolean;
   create(input: {
     name: string;
     file: string;
     fileName: string;
     mediaType: string;
     description: string | null;
+    consentClip?: VoiceCloneConsentClip;
     signal: AbortSignal;
   }): Promise<{ voiceId: string }>;
   remove(voiceId: string, signal: AbortSignal): Promise<'deleted' | 'not-found'>;
@@ -347,6 +351,7 @@ export class OnlineProviderSource implements ProviderSource {
       label: this.#label(providerId),
       version: adapter.version,
       available: () => this.#availability(providerId).available,
+      requiresConsentClip: adapter.requiresConsentClip === true,
       create: async (input) => adapter.createVoiceClone({ ...input, config: await config(), http }),
       remove: async (voiceId, signal) => adapter.deleteVoiceClone({ voiceId, signal, config: await config(), http }),
     };
@@ -554,6 +559,7 @@ export class OnlineProviderSource implements ProviderSource {
     if (adapters.transcribe && declares('transcribe')) capabilities.transcribe = offer('transcribe', adapters.transcribe.models(config));
     if (adapters.speech && declares('synthesizeSpeech')) {
       capabilities.synthesizeSpeech = offer('synthesizeSpeech', adapters.speech.models(config));
+      if (adapters.clone) capabilities.synthesizeSpeech.voiceClone = { requiresConsentClip: adapters.clone.requiresConsentClip === true };
     }
     if (adapters.image && declares('generateImage')) capabilities.generateImage = offer('generateImage', adapters.image.models(config));
     if (adapters.text && declares('generateText')) capabilities.generateText = offer('generateText', adapters.text.models(config));

@@ -18,4 +18,6 @@ export const es: VoicesLibraryMessages = {
   remedyConfigure: 'Activa este proveedor y configura su clave en «Modelos en la nube».',
   remedyConflict: 'Esta voz acaba de cambiar en otro lugar. La versión más reciente se muestra abajo; revísala antes de guardar.',
   remedyGrant: 'Enviar la grabación de referencia a un proveedor requiere una autorización de envío: crea una en Ajustes y vuelve a intentarlo.',
+  noConsentClip: (label) => `${label} necesita una grabación de la persona leyendo la declaración de consentimiento. Grábala primero desde el menú ⋯ de esta voz.`,
+  remedyConsentClip: 'Graba la declaración de consentimiento desde el menú ⋯ de la voz (la misma persona que en la muestra) y vuelve a intentarlo.',
 };

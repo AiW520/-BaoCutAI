@@ -14,6 +14,9 @@ import { fmtSize } from './task-facts.ts';
 import { langName, languageOptions, type LanguageOption } from './tools-models.ts';
 import { M } from './voices-library-copy.ts';
 import { jobErrorText, remedyHintText, remedyText } from './localized-text.ts';
+import { providerCanClone, reseeded } from './voice-capture.ts';
+
+export { VOICE_CLONE_PROVIDERS } from './voice-capture.ts';
 
 /**
  * 模型 › 语音合成 › 我的声音的纯逻辑（架构设计 §5.9，设计稿 settings-voices.jsx）：一行音色怎么显示、各 Provider 上的克隆、
@@ -22,8 +25,6 @@ import { jobErrorText, remedyHintText, remedyText } from './localized-text.ts';
 
 export type VoiceEntry = LibraryEntry<'voices'>;
 
-/** 能建克隆的 Provider：Runtime 现在只有 ElevenLabs 有克隆接口，别的以 `VOICE_CLONE_UNSUPPORTED` 拒绝。 */
-export const VOICE_CLONE_PROVIDERS: readonly string[] = ['elevenlabs'];
 /** 勾上「本人声明」时写进 `consent.statement` 的话（按当前界面语言；存下后原话不变）。 */
 export function voiceConsentStatement(): string {
   return M.consentStatement;
@@ -44,16 +45,19 @@ export interface CloneProvider {
   available: boolean;
   /** 不可用时 Runtime 给的说明（没有启用、没有设置密钥……）。 */
   detail: string | null;
+  /** 克隆要附上说话人本人念授权声明的录音（`voiceClone.requiresConsentClip`）。 */
+  requiresConsentClip: boolean;
 }
 
-/** 这个 Runtime 里能克隆、且在语音合成能力下登记了的 Provider。 */
+/** 这个 Runtime 里能克隆（语音合成能力下报了 `voiceClone`）的 Provider。 */
 export function cloneProviders(view: ModelCapabilitiesView | null): CloneProvider[] {
-  const providers = view?.synthesizeSpeech.providers ?? [];
-  return VOICE_CLONE_PROVIDERS.flatMap((providerId) => {
-    const p = providers.find((x) => x.providerId === providerId);
-    if (!p) return [];
-    return [{ providerId, label: p.label, available: p.available, detail: p.available ? null : (localizeText(p.detail, p.detailRef) ?? null) }];
-  });
+  return (view?.synthesizeSpeech.providers ?? []).filter(providerCanClone).map((p) => ({
+    providerId: p.providerId,
+    label: p.label,
+    available: p.available,
+    detail: p.available ? null : (localizeText(p.detail, p.detailRef) ?? null),
+    requiresConsentClip: !!p.voiceClone?.requiresConsentClip,
+  }));
 }
 
 const LIVE: readonly JobRecord['state'][] = ['queued', 'running'];
@@ -99,7 +103,9 @@ export function cloneRows(voice: LibraryEntrySummary, providers: readonly CloneP
         ? M.uploading(label)
         : !voice.consentDeclared
           ? M.noConsent
-          : !provider
+          : provider?.requiresConsentClip && !voice.consentClip
+            ? M.noConsentClip(label)
+            : !provider
             ? M.cannotClone(label)
             : !provider.available
               ? M.providerOff(label, provider.detail)
@@ -218,6 +224,57 @@ export function editVoiceRequest(form: VoiceForm, entry: VoiceEntry): Omit<Libra
   };
 }
 
+/** 克隆新音色存下时的一份（我的声音 › 克隆新音色）：样本与授权声明录音都已经写成本机的 WAV。 */
+export interface CapturedVoice {
+  name: string;
+  /** 样本的语言（照着念的台词的语言，或上传时选的）；BCP 47。 */
+  language: string | null;
+  /** 麦克风录的：照着念的台词；上传的：空。 */
+  transcript: string;
+  origin: VoiceContent['origin'];
+  consent: boolean;
+  /** 每只本机引擎一颗种子；空时不写。 */
+  seeds: Record<string, number>;
+  samplePath: string;
+  /** 授权声明录音；跳过时 null。 */
+  consentClip: { language: string; text: string | null; path: string } | null;
+}
+
+/** 克隆新音色 → `library.put`：样本是参考录音，授权声明录音经 `consentSource` 一起交上去。 */
+export function captureVoiceRequest(v: CapturedVoice): Omit<LibraryPutParams, 'commandId'> {
+  const form: VoiceForm = { name: v.name, language: v.language ?? '', transcript: v.transcript, consent: v.consent };
+  const content = voiceContentInput(form, v.origin, null);
+  return {
+    library: 'voices',
+    content: {
+      ...content,
+      ...(Object.keys(v.seeds).length ? { seeds: { ...v.seeds } } : {}),
+      ...(v.consentClip ? { consentClip: { language: v.consentClip.language, text: v.consentClip.text } } : {}),
+    } as LibraryPutParams['content'],
+    source: { path: v.samplePath },
+    ...(v.consentClip ? { consentSource: { path: v.consentClip.path } } : {}),
+  };
+}
+
+/** 给已有音色补录 / 重录授权声明：别的不动，带上版本号。 */
+export function consentClipRequest(
+  entry: VoiceEntry,
+  clip: { language: string; text: string | null; path: string },
+): Omit<LibraryPutParams, 'commandId'> {
+  const base = editVoiceRequest(formFromEntry(entry), entry);
+  return {
+    ...base,
+    content: { ...base.content, consentClip: { language: clip.language, text: clip.text } } as LibraryPutParams['content'],
+    consentSource: { path: clip.path },
+  };
+}
+
+/** 换一颗种子：`modelId` 为 `*` 时换兜底的 `seed`，否则换这只引擎的；别的种子照旧。 */
+export function reseedRequest(entry: VoiceEntry, modelId: string, seed: number): Omit<LibraryPutParams, 'commandId'> {
+  const base = editVoiceRequest(formFromEntry(entry), entry);
+  return { ...base, content: { ...base.content, ...reseeded(entry.content, modelId, seed) } as LibraryPutParams['content'] };
+}
+
 /** 选音频文件时的粗筛（按扩展名）；真正的判断在 Runtime。 */
 export function isVoiceAudioPath(path: string): boolean {
   const ext = path.split('.').pop()?.toLowerCase() ?? '';
@@ -268,6 +325,8 @@ export function errorText(code: string | null, message: string, details: unknown
   switch (code) {
     case 'VOICE_CONSENT_REQUIRED':
       return add(M.remedyConsent);
+    case 'VOICE_CONSENT_CLIP_REQUIRED':
+      return add(M.remedyConsentClip);
     case 'CAPABILITY_NOT_CONFIGURED':
       return add(M.remedyConfigure);
     case 'LIBRARY_VERSION_CONFLICT':

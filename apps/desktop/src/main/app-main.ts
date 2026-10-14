@@ -16,6 +16,7 @@ import { openLocalFile } from './open-local-file.ts';
 import { showInFolder } from './reveal-path.ts';
 import { installStdioErrorGuards } from './stdio-errors.ts';
 import { saveDialogPath, saveFileData } from './save-dialog-path.ts';
+import { writeRecording } from './recording-file.ts';
 import { desktopRuntimeHeaders, desktopRuntimeResponseHeaders, isDesktopRuntimeRequest } from './runtime-origin.ts';
 
 /**
@@ -220,6 +221,13 @@ export function startDesktopApp(): void {
     const file = await showSaveDialog(event, raw);
     if (file) await fs.writeFile(file, data);
     return file;
+  });
+
+  // 我的声音 › 克隆新音色：界面录好的 WAV 写进系统临时目录，返回路径给 Runtime 拷进用户库。只收应用窗口主框架发来的，
+  // 文件名由主进程起，内容只收 WAV 且有上限。
+  ipcMain.handle('baocut:write-recording', async (event, raw: unknown) => {
+    if (!BrowserWindow.fromWebContents(event.sender) || event.senderFrame !== event.sender.mainFrame) throw new Error('not allowed');
+    return writeRecording(raw);
   });
 
   ipcMain.handle('baocut:reveal', (_event, target: unknown) => {

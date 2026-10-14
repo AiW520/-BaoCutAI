@@ -22,6 +22,7 @@ export {
   type TextRequest,
   voiceCloneTimeoutMs,
   type VoiceCloneAdapter,
+  type VoiceCloneConsentClip,
   type VoiceCloneDeleteRequest,
   type VoiceCloneRequest,
 } from './adapter.ts';

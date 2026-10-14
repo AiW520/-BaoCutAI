@@ -16,4 +16,6 @@ export const fr: VoicesLibraryMessages = {
   remedyConfigure: 'Activez ce fournisseur et saisissez sa clé dans « Modèles cloud ».',
   remedyConflict: 'Cette voix vient d’être modifiée ailleurs. La dernière version est affichée ci-dessous ; vérifiez-la avant d’enregistrer.',
   remedyGrant: 'Envoyer l’enregistrement de référence à un fournisseur nécessite une autorisation d’envoi : accordez-en une dans les Réglages, puis réessayez.',
+  noConsentClip: (label) => `${label} a besoin d’un enregistrement de la personne lisant la déclaration de consentement. Enregistrez-la d’abord depuis le menu ⋯ de cette voix.`,
+  remedyConsentClip: 'Enregistrez la déclaration de consentement depuis le menu ⋯ de la voix (la même personne que dans l’échantillon), puis réessayez.',
 };

@@ -87,6 +87,7 @@ export class LibraryService {
             formatInvalid('', { problems: result.problems }),
             RcLibrary.referenceUndecodable({ problems: result.problems.join(RcLibrary.problemSeparator().text) }),
           );
+        return { durationSec: result.media.kind === 'audio' ? result.media.durationSec : null };
       },
     });
     return new LibraryService(options, store, topic);
@@ -114,12 +115,14 @@ export class LibraryService {
   put(p: LibraryPutParams): Promise<LibraryPutOutcome> {
     return this.#once(p.commandId, async () => {
       const file = p.source ? await this.#source(p.source) : undefined;
+      const consentFile = p.consentSource ? await this.#source(p.consentSource) : undefined;
       return this.store.put({
         library: p.library,
         content: p.content,
         ...(p.id !== undefined ? { id: p.id } : {}),
         ...(p.expectedVersion !== undefined ? { expectedVersion: p.expectedVersion } : {}),
         ...(file ? { file } : {}),
+        ...(consentFile ? { consentFile } : {}),
       });
     });
   }
@@ -136,6 +139,7 @@ export class LibraryService {
         library: candidate.library,
         content: candidate.content,
         ...(candidate.file ? { file: candidate.file } : {}),
+        ...(candidate.consentFile ? { consentFile: candidate.consentFile } : {}),
         ...(candidate.consentDeclaredAt !== undefined ? { consentDeclaredAt: candidate.consentDeclaredAt } : {}),
       });
       return { entry };

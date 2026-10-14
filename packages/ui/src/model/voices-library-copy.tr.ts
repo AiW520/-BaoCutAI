@@ -25,4 +25,6 @@ remedyConsent: 'İzin beyanı olmayan sesler üçüncü taraflara yüklenmez: ö
 remedyConfigure: '“Bulut modelleri” kısmında bu sağlayıcıyı etkinleştirin ve anahtarını ayarlayın.',
 remedyConflict: 'Bu ses az önce başka yerde değiştirildi. En güncel sürüm aşağıda; kaydetmeden önce gözden geçirin.',
 remedyGrant: 'Referans kaydı sağlayıcıya göndermek için veri paylaşım izni gerekir: Ayarlar kısmında izin verin, sonra yeniden deneyin.',
+  noConsentClip: (label) => `${label}, konuşmacının izin beyanını kendisinin okuduğu bir kayıt ister. Önce bu sesin ⋯ menüsünden izin beyanını kaydedin.`,
+  remedyConsentClip: 'Sesin ⋯ menüsünden izin beyanını kaydedin (örnekteki kişiyle aynı kişi) ve yeniden deneyin.',
 };

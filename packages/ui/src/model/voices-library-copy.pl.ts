@@ -25,4 +25,6 @@ export const pl: VoicesLibraryMessages = {
   remedyConfigure: "Włącz tego dostawcę i ustaw klucz w „Modele w chmurze”.",
   remedyConflict: "Ten głos został właśnie zmieniony w innym miejscu. Poniżej jest najnowsza wersja; sprawdź przed zapisaniem.",
   remedyGrant: "Wysłanie nagrania referencyjnego dostawcy wymaga uprawnienia do wysyłania danych: przyznaj w ustawieniach i spróbuj ponownie.",
+  noConsentClip: (label) => `${label} wymaga nagrania, w którym mówca sam czyta oświadczenie o zgodzie. Najpierw nagraj je z menu ⋯ tego głosu.`,
+  remedyConsentClip: 'Nagraj oświadczenie o zgodzie z menu ⋯ głosu (ta sama osoba co w próbce) i spróbuj ponownie.',
 };

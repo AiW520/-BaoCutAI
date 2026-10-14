@@ -25,6 +25,20 @@ export function assertVoiceUploadAllowed(voice: LibraryEntry<'voices'>, provider
 }
 
 /**
+ * 要求说话人本人念授权声明的 Provider（`ProviderCapability.voiceClone.requiresConsentClip`）：克隆前音色必须带授权声明录音，
+ * 没有时 `conflict` + `VOICE_CONSENT_CLIP_REQUIRED`：先在音色库里录授权声明再试。
+ */
+export function assertVoiceConsentClip(voice: LibraryEntry<'voices'>, providerId: string): void {
+  if (voice.content.consentClip) return;
+  throw libraryError(
+    'VOICE_CONSENT_CLIP_REQUIRED',
+    'conflict',
+    SL.voiceConsentClipRequired({ name: voice.content.name, provider: providerId }),
+    { library: 'voices', id: voice.id, providerId },
+  );
+}
+
+/**
  * `library:<id>` 在一个 Provider 上的音色：用它的有效克隆。没有克隆、或克隆已过期（参考录音变了、条目删了）时拒绝，
  * `conflict` + `VOICE_CLONE_REQUIRED`（`details.reason`：`missing`、`stale`）：先创建克隆再合成。
  */

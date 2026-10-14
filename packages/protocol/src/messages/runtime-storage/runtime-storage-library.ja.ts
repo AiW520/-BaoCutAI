@@ -84,4 +84,10 @@ export const ja: RuntimeStorageLibraryMessages = {
   referenceDigestMismatch: '参照録音のダイジェストが内容と一致しません',
   referenceAudioType: '参照録音は wav、mp3、flac のいずれかである必要があります',
   referenceTypeMismatch: (p) => `参照録音のファイルヘッダは ${p.sniffed} ですが、パッケージでは ${p.declared} と宣言されています`,
+  fieldNotSeed: (p) => `${p.field} は 0 から ${p.max} までの整数である必要があります`,
+  consentClipNeedsSource: '新しい同意宣言の録音にはファイル（consentSource）が必要です',
+  consentSourceWithoutClip: 'consentSource を指定する場合は content.consentClip（読み上げた言語とテキスト）も必要です',
+  consentRecording: '同意宣言の録音',
+  voiceConsentClipRequired: (p) => `${p.provider} で音声「${p.name}」をクローンするには、話者本人が同意宣言を読み上げた録音が必要です。先に音声ライブラリで同意宣言を録音してください`,
+  voicePackageConsentClip: '音声パッケージの同意宣言の録音（consentClip）が無効です',
 };

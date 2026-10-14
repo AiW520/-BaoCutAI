@@ -82,4 +82,10 @@ export const ko: RuntimeStorageLibraryMessages = {
   referenceDigestMismatch: '참조 녹음의 다이제스트가 내용과 일치하지 않습니다',
   referenceAudioType: '참조 녹음은 wav, mp3 또는 flac이어야 합니다',
   referenceTypeMismatch: (p) => `참조 녹음의 파일 헤더는 ${p.sniffed}이지만 패키지에는 ${p.declared}(으)로 선언되어 있습니다`,
+  fieldNotSeed: (p) => `${p.field}은(는) 0부터 ${p.max}까지의 정수여야 합니다`,
+  consentClipNeedsSource: '새 동의 진술 녹음에는 파일(consentSource)이 필요합니다',
+  consentSourceWithoutClip: 'consentSource를 지정하면 content.consentClip(읽은 언어와 문장)도 필요합니다',
+  consentRecording: '동의 진술 녹음',
+  voiceConsentClipRequired: (p) => `${p.provider}에서 음성 "${p.name}"을(를) 복제하려면 화자 본인이 동의 진술을 읽은 녹음이 필요합니다. 먼저 음성 라이브러리에서 동의 진술을 녹음하세요`,
+  voicePackageConsentClip: '음성 패키지의 동의 진술 녹음(consentClip)이 올바르지 않습니다',
 };

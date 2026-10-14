@@ -15,7 +15,7 @@ import {
   type VoiceCloneRemoveResult,
 } from '@baocut/protocol';
 import type { VoiceCloner } from '@baocut/providers';
-import { assertVoiceUploadAllowed, libraryError, type LibraryStore } from '@baocut/runtime-storage/library';
+import { assertVoiceConsentClip, assertVoiceUploadAllowed, libraryError, type LibraryStore } from '@baocut/runtime-storage/library';
 import { outboundPurpose, type GrantService } from '../grants/grant-service.ts';
 import { RcLibrary } from '@baocut/protocol/messages/runtime-core';
 import { localizedOf, taskFailure, withLocalized, withMessageRef } from '../localized.ts';
@@ -42,8 +42,9 @@ export interface VoiceCloneServiceOptions {
  * 音色克隆（架构设计 §5.9）：`library.createVoiceClone` 与 `library.removeVoiceClone`。
  *
  * - 创建是一个普通任务（`kind: 'voiceClone'`），进度、取消与失败都在任务里。提交时依次检查：授权声明
- *   （`VOICE_CONSENT_REQUIRED`）、Provider 有没有克隆接口（`VOICE_CLONE_UNSUPPORTED`）、是否启用、已有的有效克隆
- *   （`VOICE_CLONE_EXISTS`）、数据外发的授权与额度（数据种类 `audio`，§12.5）。不通过时不建任务。
+ *   （`VOICE_CONSENT_REQUIRED`）、Provider 有没有克隆接口（`VOICE_CLONE_UNSUPPORTED`）、要求本人念授权声明的 Provider
+ *   有没有授权声明录音（`VOICE_CONSENT_CLIP_REQUIRED`）、是否启用、已有的有效克隆（`VOICE_CLONE_EXISTS`）、
+ *   数据外发的授权与额度（数据种类 `audio`，§12.5）。不通过时不建任务。授权声明录音只交给要求它的 Provider。
  * - 执行时固定提交时的版本，再查一次授权声明，按授权预留、上传、结算；建好之后记进条目的 `clones[providerId]`，
  *   记的是上传的那份参考录音的摘要，上传期间参考录音改了时直接是 `stale`。替换下来的过期克隆随后请求远端删除，
  *   删不掉时留一条告警（带它的 `voiceId`），不让任务失败。
@@ -67,6 +68,7 @@ export class VoiceCloneService {
     const entry = store.get({ library: 'voices', id: params.id });
     assertVoiceUploadAllowed(entry, params.providerId);
     const cloner = this.#cloner(params.providerId);
+    if (cloner.requiresConsentClip) assertVoiceConsentClip(entry, params.providerId);
     if (!cloner.available()) {
       throw new RpcError('conflict', RcLibrary.clonerNotConfigured({ label: cloner.label }), {
         code: 'CAPABILITY_NOT_CONFIGURED',
@@ -181,6 +183,15 @@ export class VoiceCloneService {
       throw error;
     }
     const cloner = this.#cloner(providerId);
+    // 提交之后适配器才要求授权声明录音（换了版本）：同样不上传。
+    if (cloner.requiresConsentClip) {
+      try {
+        assertVoiceConsentClip(entry, providerId);
+      } catch (error) {
+        if (error instanceof RpcError) throw withMessageRef(new TaskFailure('VOICE_CONSENT_CLIP_REQUIRED', error.message, error.details), error);
+        throw error;
+      }
+    }
     let settle: Awaited<ReturnType<GrantService['begin']>>;
     try {
       grants.ensureDefault(providerId, cloner.label, 'synthesizeSpeech');
@@ -201,6 +212,7 @@ export class VoiceCloneService {
       throw error;
     }
     const reference = entry.content.reference;
+    const clip = cloner.requiresConsentClip ? entry.content.consentClip : undefined;
     const previous = store.cloneOf(frozen.id, providerId).clone;
     run.phase('generating');
     let voiceId: string;
@@ -211,6 +223,17 @@ export class VoiceCloneService {
         fileName: reference.fileName,
         mediaType: reference.mediaType,
         description: entry.content.language ? `BaoCut voice (${entry.content.language})` : null,
+        ...(clip
+          ? {
+              consentClip: {
+                file: store.filePath(entry, clip.file),
+                fileName: clip.file.fileName,
+                mediaType: clip.file.mediaType,
+                language: clip.language,
+                text: clip.text,
+              },
+            }
+          : {}),
         signal: run.signal,
       }));
       settle({ state: 'completed' });

@@ -90,4 +90,10 @@ export const ptBR: RuntimeStorageLibraryMessages = {
   referenceAudioType: "A referência deve ser wav, mp3 ou flac",
   referenceTypeMismatch: (p: { sniffed: string; declared: string }) =>
     `O cabeçalho da referência é ${p.sniffed}, mas o pacote declara ${p.declared}`,
+  fieldNotSeed: (p) => `${p.field} deve ser um número inteiro de 0 a ${p.max}`,
+  consentClipNeedsSource: 'Uma nova gravação de consentimento precisa do arquivo (consentSource)',
+  consentSourceWithoutClip: 'consentSource exige content.consentClip (o idioma e o texto lidos)',
+  consentRecording: 'gravação de consentimento',
+  voiceConsentClipRequired: (p) => `${p.provider} precisa de uma gravação da pessoa lendo a declaração de consentimento para clonar a voz “${p.name}”. Grave a declaração na biblioteca de vozes primeiro`,
+  voicePackageConsentClip: 'A gravação de consentimento do pacote de voz (consentClip) é inválida',
 };

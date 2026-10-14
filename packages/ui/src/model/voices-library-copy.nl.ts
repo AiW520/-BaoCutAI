@@ -29,4 +29,6 @@ export const nl: VoicesLibraryMessages = {
   remedyConfigure: "Schakel deze aanbieder in en stel de sleutel in bij ‘Cloudmodellen’.",
   remedyConflict: "Deze stem is zojuist elders gewijzigd. De nieuwste versie staat hieronder; bekijk die voordat je opslaat.",
   remedyGrant: "De referentieopname naar een aanbieder sturen vereist toestemming voor uitgaand verkeer: geef die bij Instellingen en probeer het opnieuw.",
+  noConsentClip: (label) => `${label} heeft een opname nodig waarin de spreker de toestemmingsverklaring voorleest. Neem die eerst op via het ⋯-menu van deze stem.`,
+  remedyConsentClip: 'Neem de toestemmingsverklaring op via het ⋯-menu van de stem (dezelfde persoon als in het voorbeeld) en probeer het opnieuw.',
 };

@@ -35,6 +35,11 @@ export interface HostBridge {
    * 桌面端才有；Web 没有它，界面改为交给浏览器下载（设计稿的导出，docs/design/canvas §8.3）。
    */
   saveFile?(options: SaveFileOptions): Promise<string | null>;
+  /**
+   * 把界面里录好（或解码好）的一段 WAV 写进本机的临时目录，返回它的绝对路径，交给 Runtime 的 `library.put` 拷进用户库。
+   * 桌面端才有（我的声音 › 克隆新音色）；Web 没有它，那一页本来也不在浏览器里。
+   */
+  writeRecording?(data: Uint8Array): Promise<string>;
   /** 应用自动更新（架构设计 §2.6，桌面端才有）。没有它的宿主里，更新相关的界面一概不出现。 */
   updates?: UpdatesHost;
   /** 界面语言变了（启动时也调一次）：宿主据此换原生菜单与对话框的语言。没有它的宿主不管。 */

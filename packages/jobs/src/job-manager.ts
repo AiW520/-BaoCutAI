@@ -1052,6 +1052,8 @@ export class JobManager {
   /**
    * 本地合成的声音在提交时决定并冻结（§6.1、§6.6）：音色库条目直接用它的参考录音（固定版本），请求给出的文件与内置音色的录音
    * 在这里读出摘要；读不出时拒绝。模型不读原文时不带原文。
+   * 音色库条目的种子（§5.9）：模型接受 seed、请求没给时，冻结这个音色给这个模型记的种子，其次兜底的种子，都没有时抽一个，
+   * 同一个音色每次念出来是同一个声音，重试也一样。
    */
   async #freezeLocalSpeech(
     choice: GenerationSelection<'synthesizeSpeech'>,
@@ -1062,10 +1064,12 @@ export class JobManager {
     const withTranscript = choice.model.local?.reference?.acceptsTranscript ?? false;
     let reference: FrozenSpeechReference | null = null;
     let library: JobLibraryUse | undefined;
+    let seed = request.seed;
     if (plan.mode === 'clone' && plan.source === 'library') {
-      const voice = localLibraryVoice(this.#options.library, plan.libraryId, withTranscript, submitter);
+      const voice = localLibraryVoice(this.#options.library, plan.libraryId, withTranscript, submitter, choice.modelId);
       reference = voice.reference;
       library = voice.use;
+      if (seed === undefined && choice.model.acceptsSeed) seed = voice.seed ?? crypto.randomInt(0, 2 ** 32);
     } else if (plan.mode === 'clone') {
       reference = await freezeReferenceFile({ source: 'file', path: plan.path, transcript: plan.transcript });
     } else {
@@ -1073,7 +1077,8 @@ export class JobManager {
       if (builtin) reference = await freezeReferenceFile({ ...builtin, transcript: withTranscript ? builtin.transcript : null });
     }
     checkReferenceTranscript(choice.model, reference?.transcript);
-    return { parameters: speechParameters(choice, request, { plan, reference }), ...(library ? { library } : {}) };
+    const frozen = seed === undefined ? request : { ...request, seed };
+    return { parameters: speechParameters(choice, frozen, { plan, reference }), ...(library ? { library } : {}) };
   }
 
   /**

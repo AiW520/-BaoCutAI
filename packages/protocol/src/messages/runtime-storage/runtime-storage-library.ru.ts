@@ -79,4 +79,10 @@ export const ru: RuntimeStorageLibraryMessages = {
   referenceDigestMismatch: "digest эталонной записи не совпадает с содержимым",
   referenceAudioType: "Эталонная запись должна быть wav, mp3 или flac",
   referenceTypeMismatch: (p) => `Заголовок эталонной записи — ${p.sniffed}, в пакете заявлено ${p.declared}`,
+  fieldNotSeed: (p) => `${p.field} должно быть целым числом от 0 до ${p.max}`,
+  consentClipNeedsSource: 'Для новой записи согласия нужен файл (consentSource)',
+  consentSourceWithoutClip: 'Вместе с consentSource нужен content.consentClip (язык и прочитанный текст)',
+  consentRecording: 'запись согласия',
+  voiceConsentClipRequired: (p) => `Чтобы клонировать голос «${p.name}», ${p.provider} нужна запись, где сам говорящий читает заявление о согласии. Сначала запишите его в библиотеке голосов`,
+  voicePackageConsentClip: 'Запись согласия в пакете голоса (consentClip) недействительна',
 };

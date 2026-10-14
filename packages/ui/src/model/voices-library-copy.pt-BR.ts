@@ -18,4 +18,6 @@ export const ptBR: VoicesLibraryMessages = {
   remedyConfigure: 'Ative este provedor e defina sua chave em “Modelos de nuvem”.',
   remedyConflict: 'Esta voz acabou de mudar em outro lugar. A versão mais recente está abaixo; confira antes de salvar.',
   remedyGrant: 'Enviar a gravação de referência a um provedor exige uma autorização de envio de dados: emita uma nas Configurações e tente novamente.',
+  noConsentClip: (label) => `${label} precisa de uma gravação da pessoa lendo a declaração de consentimento. Grave-a primeiro pelo menu ⋯ desta voz.`,
+  remedyConsentClip: 'Grave a declaração de consentimento pelo menu ⋯ da voz (a mesma pessoa da amostra) e tente de novo.',
 };

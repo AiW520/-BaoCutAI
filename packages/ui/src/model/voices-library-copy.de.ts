@@ -29,4 +29,6 @@ export const de: VoicesLibraryMessages = {
   remedyConfigure: "Diesen Anbieter unter „Cloud-Modelle“ aktivieren und seinen Schlüssel festlegen.",
   remedyConflict: "Diese Stimme wurde gerade an anderer Stelle geändert. Unten steht die aktuelle Version; vor dem Speichern prüfen.",
   remedyGrant: "Das Senden der Referenzaufnahme an einen Anbieter benötigt eine Berechtigung zur Datenübertragung: in den Einstellungen erteilen und erneut versuchen.",
+  noConsentClip: (label) => `${label} braucht eine Aufnahme, in der die sprechende Person die Einwilligungserklärung vorliest. Nimm sie zuerst über das ⋯-Menü dieser Stimme auf.`,
+  remedyConsentClip: 'Nimm die Einwilligungserklärung über das ⋯-Menü der Stimme auf (dieselbe Person wie in der Probe) und versuche es erneut.',
 };

@@ -314,6 +314,13 @@ const voiceContentInput = z
     transcript: z.string().max(10_000),
     origin: z.enum(['recorded', 'imported']),
     consent: z.object({ declared: z.boolean(), statement: z.string().max(2000).nullable().optional() }).strict(),
+    consentClip: z
+      .object({ language: z.union([z.literal('custom'), languageTag]), text: z.string().max(500).nullable().optional() })
+      .strict()
+      .nullable()
+      .optional(),
+    seed: seed.optional(),
+    seeds: z.record(modelId, seed).optional(),
   })
   .strict();
 const brandContentInput = z.union([
@@ -1295,7 +1302,7 @@ export const methodParamSchemas = {
   'library.get': libraryRef,
   'library.put': z.discriminatedUnion('library', [
     z.object({ library: z.literal('glossaries'), content: glossaryContent, ...libraryPutCommon }).strict(),
-    z.object({ library: z.literal('voices'), content: voiceContentInput, ...libraryPutCommon }).strict(),
+    z.object({ library: z.literal('voices'), content: voiceContentInput, consentSource: librarySource.optional(), ...libraryPutCommon }).strict(),
     z.object({ library: z.literal('brand'), content: brandContentInput, ...libraryPutCommon }).strict(),
   ]),
   'library.remove': z.object({ library: libraryName, id: libraryId }).strict(),

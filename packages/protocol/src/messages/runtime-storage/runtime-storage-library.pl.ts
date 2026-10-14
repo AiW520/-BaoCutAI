@@ -79,4 +79,10 @@ export const pl: RuntimeStorageLibraryMessages = {
   referenceDigestMismatch: "digest nagrania referencyjnego nie odpowiada zawartości",
   referenceAudioType: "Nagranie referencyjne musi być wav, mp3 lub flac",
   referenceTypeMismatch: (p) => `Nagłówek nagrania referencyjnego to ${p.sniffed}, pakiet deklaruje ${p.declared}`,
+  fieldNotSeed: (p) => `${p.field} musi być liczbą całkowitą od 0 do ${p.max}`,
+  consentClipNeedsSource: 'Nowe nagranie zgody wymaga pliku (consentSource)',
+  consentSourceWithoutClip: 'consentSource wymaga content.consentClip (przeczytany język i tekst)',
+  consentRecording: 'nagranie zgody',
+  voiceConsentClipRequired: (p) => `${p.provider} wymaga nagrania, w którym mówca sam czyta oświadczenie o zgodzie, zanim sklonuje głos „${p.name}”. Najpierw nagraj oświadczenie w bibliotece głosów`,
+  voicePackageConsentClip: 'Nagranie zgody w pakiecie głosu (consentClip) jest nieprawidłowe',
 };

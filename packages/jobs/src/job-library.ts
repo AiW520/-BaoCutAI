@@ -87,13 +87,15 @@ export function libraryVoice(
 /**
  * 本地合成直接用音色库条目的参考录音（不上传，不需要克隆，也不需要出站授权）：冻结条目的版本与录音的摘要，
  * 执行时由本地 Provider 按摘要再核对一次。`withTranscript` 为 false（模型不读原文）时不带原文。
+ * `seed` 是这个音色给 `modelId` 记的种子（`seeds[modelId]`），其次是兜底的 `seed`；都没有时 null（由调用方抽一个）。
  */
 export function localLibraryVoice(
   library: JobLibrary | undefined,
   id: string,
   withTranscript: boolean,
   submitter: JobSubmitter,
-): { reference: FrozenSpeechReference; use: JobLibraryUse } {
+  modelId?: string,
+): { reference: FrozenSpeechReference; use: JobLibraryUse; seed: number | null } {
   assertLibraryOpenTo(submitter, J.serviceNoVoices);
   if (!library) throw new RpcError('invalid-request', J.noLibraryForVoices());
   const voice = library.get({ library: 'voices', id });
@@ -102,5 +104,6 @@ export function localLibraryVoice(
   return {
     reference: { source: 'library', path: library.filePath(voice, file), sha256: file.sha256, byteLength: file.byteLength, transcript },
     use: { entries: [{ library: 'voices', id: voice.id, version: voice.version, contentHash: voice.contentHash }] },
+    seed: (modelId !== undefined ? voice.content.seeds?.[modelId] : undefined) ?? voice.content.seed ?? null,
   };
 }

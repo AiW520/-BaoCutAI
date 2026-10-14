@@ -26,4 +26,6 @@ export const zhHans: VoicesLibraryMessages = {
   remedyConfigure: '到「云端模型」里启用这家服务商并设置密钥。',
   remedyConflict: '这只音色刚在别处改过，下面已经换成最新的内容，看一眼再保存。',
   remedyGrant: '把参考录音交给服务商要先有外发授权：在设置里发放授权之后再试。',
+  noConsentClip: (label) => `${label} 要说话人本人念一句授权声明的录音：先在这只音色的 ⋯ 里录授权声明。`,
+  remedyConsentClip: '在这只音色的 ⋯ 里录授权声明（要与样本是同一个人），再试一次。',
 };

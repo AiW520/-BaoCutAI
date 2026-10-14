@@ -25,4 +25,6 @@ remedyConsent: 'Giọng chưa có tuyên bố cho phép sẽ không tải lên b
 remedyConfigure: 'Bật nhà cung cấp này và đặt khóa trong “Mô hình đám mây”.',
 remedyConflict: 'Giọng này vừa được thay đổi ở nơi khác. Bản mới nhất được hiển thị bên dưới; xem lại trước khi lưu.',
 remedyGrant: 'Gửi bản ghi tham chiếu cho nhà cung cấp cần ủy quyền gửi ra ngoài: cấp ủy quyền trong Cài đặt rồi thử lại.',
+  noConsentClip: (label) => `${label} cần bản ghi người nói tự đọc lời tuyên bố đồng ý. Hãy ghi trước từ menu ⋯ của giọng này.`,
+  remedyConsentClip: 'Ghi lời tuyên bố đồng ý từ menu ⋯ của giọng (cùng người với mẫu) rồi thử lại.',
 };

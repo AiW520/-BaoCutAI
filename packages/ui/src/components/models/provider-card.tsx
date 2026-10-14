@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react';
 import {
   localizeText,
   type ImageModelInfo,
@@ -160,6 +161,7 @@ export function ProviderCard({
   refreshing,
   refreshBusy,
   onRefresh,
+  footer = null,
 }: {
   card: CloudProviderCard;
   capability: OnlineCapability;
@@ -175,6 +177,8 @@ export function ProviderCard({
   /** 有哪一家正在刷新。 */
   refreshBusy: boolean;
   onRefresh: () => void;
+  /** 展开后模型列表下多一行（语音合成档能克隆的提供方：克隆的音色，model-voices-line.tsx）。 */
+  footer?: ReactNode;
 }) {
   const web = useRuntime().host.platform === 'web';
   const canOpen = provider.connected && provider.models.length > 0;
@@ -275,6 +279,7 @@ export function ProviderCard({
               </ActionButton>
             </div>
           ) : null}
+          {footer}
         </div>
       ) : null}
     </section>

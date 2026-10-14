@@ -516,6 +516,11 @@ describe('OnlineProviderSource 的生成能力', () => {
       expect(Object.keys(views.google!.capabilities).sort()).toEqual(['generateImage', 'generateText', 'transcribe']);
       expect(Object.keys(views.elevenlabs!.capabilities)).toEqual(['synthesizeSpeech']);
       expect(views.elevenlabs!.capabilities.synthesizeSpeech!.available).toBe(true);
+      // 能克隆的 Provider 在合成能力上带 voiceClone；ElevenLabs 不要求授权声明录音，没有克隆接口的不带。
+      expect(views.elevenlabs!.capabilities.synthesizeSpeech!.voiceClone).toEqual({ requiresConsentClip: false });
+      expect(views.openai!.capabilities.synthesizeSpeech!.voiceClone).toBeUndefined();
+      expect(source.voiceCloner('elevenlabs')!.requiresConsentClip).toBe(false);
+      expect(source.voiceCloner('google')).toBeNull();
       expect(views.openai!.capabilities.synthesizeSpeech).toMatchObject({ available: false, unavailableReason: 'not-configured' });
       expect(Object.keys(views['custom:studio']!.capabilities)).toEqual(['synthesizeSpeech']);
       expect(views['custom:studio']!.capabilities.synthesizeSpeech).toMatchObject({ available: true });

@@ -22,7 +22,7 @@ import {
   type VoiceEntry,
 } from './voices-library.ts';
 
-const ELEVEN: CloneProvider = { providerId: 'elevenlabs', label: 'ElevenLabs', available: true, detail: null };
+const ELEVEN: CloneProvider = { providerId: 'elevenlabs', label: 'ElevenLabs', available: true, detail: null, requiresConsentClip: false };
 
 function summary(patch: Partial<LibraryEntrySummary> = {}): LibraryEntrySummary {
   return {
@@ -74,7 +74,9 @@ function cloneJob(patch: Partial<JobRecord>): JobRecord {
 
 describe('能克隆的 Provider', () => {
   it('只列登记了的、能克隆的；不可用时带 Runtime 的说明', () => {
-    expect(cloneProviders(fixtureView())).toEqual([{ providerId: 'elevenlabs', label: 'ElevenLabs', available: false, detail: '没有启用' }]);
+    expect(cloneProviders(fixtureView())).toEqual([
+      { providerId: 'elevenlabs', label: 'ElevenLabs', available: false, detail: '没有启用', requiresConsentClip: false },
+    ]);
     expect(cloneProviders(null)).toEqual([]);
   });
 });
@@ -89,6 +91,16 @@ describe('一只音色在各 Provider 上的克隆', () => {
     const [row] = cloneRows(summary({ consentDeclared: false }), [ELEVEN], []);
     expect(row!.create).toMatchObject({ enabled: false });
     expect(row!.create!.why).toContain('不上传到第三方');
+  });
+
+  it('要授权声明录音的 Provider：音色没有录音时不能上传，说去 ⋯ 里录', () => {
+    const strict = { ...ELEVEN, providerId: 'strict', label: 'Strict', requiresConsentClip: true };
+    const [row] = cloneRows(summary(), [strict], []);
+    expect(row!.create).toMatchObject({ enabled: false });
+    expect(row!.create!.why).toContain('授权声明');
+    const [ok] = cloneRows(summary({ consentClip: true }), [strict], []);
+    expect(ok!.create).toMatchObject({ enabled: true, why: null });
+    expect(errorText('VOICE_CONSENT_CLIP_REQUIRED', '要录音', null)).toContain('⋯');
   });
 
   it('Provider 没启用：不能上传，带上 Runtime 的说明', () => {

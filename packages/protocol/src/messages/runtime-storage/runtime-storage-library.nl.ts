@@ -90,4 +90,10 @@ export const nl: RuntimeStorageLibraryMessages = {
   referenceAudioType: "De referentieopname moet wav, mp3 of flac zijn",
   referenceTypeMismatch: (p: { sniffed: string; declared: string }) =>
     `De bestandsheader van de referentieopname is ${p.sniffed}, maar het pakket vermeldt ${p.declared}`,
+  fieldNotSeed: (p) => `${p.field} moet een geheel getal van 0 tot ${p.max} zijn`,
+  consentClipNeedsSource: 'Een nieuwe toestemmingsopname heeft een bestand nodig (consentSource)',
+  consentSourceWithoutClip: 'consentSource vereist content.consentClip (de voorgelezen taal en tekst)',
+  consentRecording: 'toestemmingsopname',
+  voiceConsentClipRequired: (p) => `${p.provider} heeft een opname nodig waarin de spreker de toestemmingsverklaring voorleest voordat de stem ‘${p.name}’ gekloond kan worden. Neem de verklaring eerst op in de stemmenbibliotheek`,
+  voicePackageConsentClip: 'De toestemmingsopname in het stempakket (consentClip) is ongeldig',
 };

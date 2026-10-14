@@ -62,7 +62,33 @@ export interface VoiceContent {
   origin: 'recorded' | 'imported';
   consent: VoiceConsent;
   reference: LibraryFile;
+  /**
+   * 说话人本人念的授权声明录音：有的 Provider 克隆时要求附上（`ProviderCapability.voiceClone.requiresConsentClip`），
+   * 没有时 `library.createVoiceClone` 以 `VOICE_CONSENT_CLIP_REQUIRED` 拒绝。不需要的 Provider 不上传它。没有时省略。
+   */
+  consentClip?: VoiceConsentClip;
+  /** 本机克隆模型的兜底种子：`seeds` 里没有这个模型时用。没有时省略。 */
+  seed?: number;
+  /**
+   * 每个本机克隆模型的种子，键是本机模型 ID（与 `models.list` 的 `id` 相同）。用 `library:<id>` 合成时，
+   * 请求没给 `seed` 就冻结这里的值，其次 `seed`，都没有时抽一个（架构设计 §5.9）。没有时省略。
+   */
+  seeds?: Record<string, number>;
 }
+
+/** 授权声明录音：念的是哪种语言的官方文本，或自定义的一句（`language: 'custom'`，此时 `text` 是那句话）。 */
+export interface VoiceConsentClip {
+  /** BCP 47（例如 `en-US`），或 `custom`。 */
+  language: string;
+  /** 自定义时念的那句话；用官方文本时 null。 */
+  text: string | null;
+  /** 录音时长（秒），由 Runtime 探测；探测不到时 null。 */
+  durationSec: number | null;
+  file: LibraryFile;
+}
+
+/** 授权声明录音的语言：`custom` 表示念的是自己写的一句。 */
+export const VOICE_CONSENT_CUSTOM = 'custom';
 
 /**
  * 一个供应商上的克隆音色。不属于版本化的内容：参考录音变了、条目删了，克隆转为 `stale`，不再用于合成。
@@ -156,6 +182,8 @@ export interface LibraryEntrySummary {
   defaultEnabled?: boolean;
   /** 音色：是否有授权声明，各 Provider 上克隆的状态。 */
   consentDeclared?: boolean;
+  /** 音色：是否带授权声明录音。 */
+  consentClip?: boolean;
   clones?: { providerId: string; state: VoiceClone['state'] }[];
 }
 
@@ -180,7 +208,11 @@ export interface FrozenLibraryEntry {
  */
 export type LibraryContentInput =
   | GlossaryContent
-  | (Omit<VoiceContent, 'reference' | 'consent'> & { consent: { declared: boolean; statement?: string | null } })
+  | (Omit<VoiceContent, 'reference' | 'consent' | 'consentClip'> & {
+      consent: { declared: boolean; statement?: string | null };
+      /** 不给时沿用当前的录音；`null` 时去掉；给了对象时必须同时给 `consentSource`（新录音）。 */
+      consentClip?: { language: string; text?: string | null } | null;
+    })
   | Exclude<BrandContent, { file: LibraryFile }>
   | { name: string; kind: BrandMediaKind }
   | { name: string; kind: 'overlayTemplate'; [key: string]: unknown };
@@ -196,6 +228,8 @@ export interface LibraryPutParams {
   expectedVersion?: number;
   content: LibraryContentInput;
   source?: LibrarySource;
+  /** 音色：授权声明录音的文件，只与 `content.consentClip` 对象同给。 */
+  consentSource?: LibrarySource;
   commandId?: Id;
 }
 

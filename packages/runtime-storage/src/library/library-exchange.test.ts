@@ -142,6 +142,7 @@ describe('交换文件的导入与导出', () => {
         library: candidate.library,
         content: candidate.content,
         ...(candidate.file ? { file: candidate.file } : {}),
+        ...(candidate.consentFile ? { consentFile: candidate.consentFile } : {}),
         ...(candidate.consentDeclaredAt !== undefined ? { consentDeclaredAt: candidate.consentDeclaredAt } : {}),
       })
     ).entry;
@@ -218,7 +219,9 @@ describe('交换文件的导入与导出', () => {
     const packageFile = path.join(dir, 'me.bcvoice');
     expect((await writeLibraryExport(store, voice, packageFile)).format).toBe('voice-package');
     const json = JSON.parse(await fs.readFile(packageFile, 'utf8'));
-    expect(json).toMatchObject({ format: 'baocut.voice-package', version: 1, reference: { mediaType: 'audio/wav', fileName: 'ref.wav' } });
+    expect(json).toMatchObject({ format: 'baocut.voice-package', version: 2, reference: { mediaType: 'audio/wav', fileName: 'ref.wav' } });
+    // 没有授权声明录音与种子时，包里也没有这些键。
+    expect('consentClip' in json || 'seeds' in json || 'seed' in json).toBe(false);
     // 克隆不导出。
     expect(JSON.stringify(json)).not.toContain('v-1');
 
@@ -238,10 +241,59 @@ describe('交换文件的导入与导出', () => {
       tamper((v) => (v.reference.byteLength = 3)),
       tamper((v) => (v.reference.mediaType = 'audio/mpeg')),
       tamper((v) => (v.reference.data = Buffer.from('not audio at all').toString('base64'))),
-      tamper((v) => (v.version = 2)),
+      tamper((v) => (v.version = 3)),
       tamper((v) => delete v.consent),
       tamper((v) => (v.origin = 'stolen')),
     ];
     for (const value of bad) expect(codeOf(await rejection(() => decodeVoicePackage(value)))).toBe('LIBRARY_FORMAT_INVALID');
+
+    // 版本 1 的包照样导入；版本 1 里即使写了授权声明录音与种子也不认。
+    const v1 = tamper((v) => {
+      v.version = 1;
+      v.seeds = { 'qwen3-tts': 5 };
+    });
+    expect(decodeVoicePackage(v1).fields).not.toHaveProperty('seeds');
+    const fromV1 = await importFile('old.bcvoice', JSON.stringify(v1));
+    expect(fromV1.contentHash).toBe(voice.contentHash);
+  });
+
+  it('音色包版本 2：授权声明录音与种子往返不变，录音被改时拒绝', async () => {
+    const ref = path.join(dir, 'ref');
+    await fs.writeFile(ref, WAV);
+    const clip = path.join(dir, 'consent');
+    await fs.writeFile(clip, Buffer.concat([WAV, Buffer.from('consent')]));
+    const voice = (
+      await store.put({
+        library: 'voices',
+        content: {
+          name: '声音',
+          language: 'zh',
+          transcript: '你好',
+          origin: 'recorded',
+          consent: { declared: true, statement: '本人' },
+          consentClip: { language: 'custom', text: 'I am the owner of this voice.' },
+          seed: 11,
+          seeds: { 'qwen3-tts': 12 },
+        },
+        file: { path: ref, fileName: 'ref.wav' },
+        consentFile: { path: clip, fileName: 'consent.wav' },
+      })
+    ).entry as LibraryEntry<'voices'>;
+    const packageFile = path.join(dir, 'clip.bcvoice');
+    await writeLibraryExport(store, voice, packageFile);
+    const json = JSON.parse(await fs.readFile(packageFile, 'utf8'));
+    expect(json).toMatchObject({
+      version: 2,
+      seed: 11,
+      seeds: { 'qwen3-tts': 12 },
+      consentClip: { language: 'custom', text: 'I am the owner of this voice.', fileName: 'consent.wav', mediaType: 'audio/wav' },
+    });
+    const back = (await importFile('clip-copy.bcvoice', await fs.readFile(packageFile))) as LibraryEntry<'voices'>;
+    expect(back.contentHash).toBe(voice.contentHash);
+    expect(await fs.readFile(store.filePath(back, back.content.consentClip!.file))).toEqual(await fs.readFile(clip));
+
+    const tampered = structuredClone(json);
+    tampered.consentClip.sha256 = `sha256:${'0'.repeat(64)}`;
+    expect(codeOf(await rejection(() => decodeVoicePackage(tampered)))).toBe('LIBRARY_FORMAT_INVALID');
   });
 });

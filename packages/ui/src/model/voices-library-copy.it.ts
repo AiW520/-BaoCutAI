@@ -18,4 +18,6 @@ export const it: VoicesLibraryMessages = {
   remedyConfigure: 'Attiva questo provider e imposta la sua chiave in «Modelli cloud».',
   remedyConflict: 'Questa voce è appena stata modificata altrove. La versione più recente è mostrata sotto; controllala prima di salvare.',
   remedyGrant: 'Inviare la registrazione di riferimento a un provider richiede un’autorizzazione all’invio dei dati: concedine una nelle Impostazioni, poi riprova.',
+  noConsentClip: (label) => `${label} richiede una registrazione della persona che legge la dichiarazione di consenso. Registrala prima dal menu ⋯ di questa voce.`,
+  remedyConsentClip: 'Registra la dichiarazione di consenso dal menu ⋯ della voce (la stessa persona del campione) e riprova.',
 };

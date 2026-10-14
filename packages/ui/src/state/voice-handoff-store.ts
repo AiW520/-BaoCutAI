@@ -5,15 +5,22 @@ import type { Route } from './shell-store.ts';
  * 去「我的声音」克隆一只新音色、存好再带回来（设计稿 store 的 `voiceHandoff`）：试听面板点「克隆新音色…」时记下从哪儿来、
  * 回哪儿去；我的声音存好后补上 `voiceId`，回到原处的那一块认领它（选上这只音色）后清掉。
  *
+ * 模型页（本机能克隆的模型、能克隆的云端提供方）那一行的「克隆新音色」也走这里：带上 `target` 与 `open`，我的声音直接打开采集、
+ * 预选那只模型。
+ *
  * 另一个方向是「我的声音」的「试听克隆」：记下要在本地模型页展开哪一行的试听、选上哪只音色，那一行认领后清掉。
  * 都只在这次运行里有效，不落盘。
  */
 export interface VoiceHandoff {
-  /** 谁在等：`quick:<bundleId>` 是本地模型页那一行的试听。 */
+  /** 谁在等：`quick:<bundleId>` 是本地模型页那一行的试听；`model:<id>` 是模型页那一行的「克隆新音色」（存好后只带回去，不认领）。 */
   key: string;
   /** 回程条上的「从哪儿过来」：试听那一行的模型名（「Qwen3-TTS 0.6B Base」），句子由回程条的文案拼。 */
   from: string;
   route: Route;
+  /** 从模型页过来：克隆新音色时预选这只模型（本机模型 ID 或云端的 `providerId`）。 */
+  target?: { kind: 'local' | 'cloud'; id: string };
+  /** 到了我的声音直接打开克隆新音色（先选模型，样本默认用麦克风）。 */
+  open?: 'mic';
   /** 存好的音色；还没存时没有。 */
   voiceId?: string;
 }

@@ -217,8 +217,19 @@ export interface VoiceCloneRequest {
   mediaType: string;
   /** 附在克隆上的说明（供应商接受时）；没有时 null。 */
   description: string | null;
+  /** 说话人本人念授权声明的录音：音色带着、且适配器要求（`requiresConsentClip`）时才给。 */
+  consentClip?: VoiceCloneConsentClip;
   signal: AbortSignal;
   http: AdapterHttp;
+}
+
+/** 授权声明录音：念的是 `language`（BCP 47）的官方文本，或自定义的一句（`language: 'custom'`，`text` 是那句话）。 */
+export interface VoiceCloneConsentClip {
+  file: string;
+  fileName: string;
+  mediaType: string;
+  language: string;
+  text: string | null;
 }
 
 export interface VoiceCloneDeleteRequest {
@@ -234,6 +245,8 @@ export interface VoiceCloneDeleteRequest {
  */
 export interface VoiceCloneAdapter {
   readonly version: string;
+  /** 克隆要附上说话人本人念授权声明的录音；没有时由 Runtime 在提交前拒绝（`VOICE_CONSENT_CLIP_REQUIRED`）。 */
+  readonly requiresConsentClip?: boolean;
   createVoiceClone(request: VoiceCloneRequest): Promise<{ voiceId: string }>;
   deleteVoiceClone(request: VoiceCloneDeleteRequest): Promise<'deleted' | 'not-found'>;
 }

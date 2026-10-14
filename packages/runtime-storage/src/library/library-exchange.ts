@@ -44,6 +44,8 @@ export interface ImportCandidate {
   library: LibraryName;
   content: LibraryContentInput;
   file?: LibraryFileInput;
+  /** 音色包（版本 2）里的授权声明录音。 */
+  consentFile?: LibraryFileInput;
   consentDeclaredAt?: string | null;
 }
 
@@ -79,6 +81,7 @@ export async function readLibraryImport(file: string): Promise<ImportCandidate> 
         library: 'voices',
         content: { ...decoded.fields, consent: decoded.fields.consent },
         file: { bytes: decoded.reference.bytes, fileName: decoded.reference.fileName },
+        ...(decoded.consentClip ? { consentFile: { bytes: decoded.consentClip.bytes, fileName: decoded.consentClip.fileName } } : {}),
         consentDeclaredAt: decoded.declaredAt,
       };
     }
@@ -122,7 +125,8 @@ export async function writeLibraryExport(store: LibraryStore, entry: LibraryEntr
     format = 'glossary-markdown';
   } else if (entry.library === 'voices') {
     const content = entry.content as VoiceContent;
-    data = encodeVoicePackage(content, await fs.readFile(store.filePath(entry, content.reference)));
+    const clip = content.consentClip ? await fs.readFile(store.filePath(entry, content.consentClip.file)) : undefined;
+    data = encodeVoicePackage(content, await fs.readFile(store.filePath(entry, content.reference)), clip);
     format = 'voice-package';
   } else {
     const content = entry.content as BrandContent;

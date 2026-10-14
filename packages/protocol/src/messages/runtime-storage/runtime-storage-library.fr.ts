@@ -90,4 +90,10 @@ export const fr: RuntimeStorageLibraryMessages = {
   referenceAudioType: "L’enregistrement de référence doit être wav, mp3 ou flac",
   referenceTypeMismatch: (p: { sniffed: string; declared: string }) =>
     `L’en-tête du fichier de référence est ${p.sniffed}, mais le pack déclare ${p.declared}`,
+  fieldNotSeed: (p) => `${p.field} doit être un entier de 0 à ${p.max}`,
+  consentClipNeedsSource: 'Un nouvel enregistrement de consentement a besoin de son fichier (consentSource)',
+  consentSourceWithoutClip: 'consentSource exige content.consentClip (la langue et le texte lus)',
+  consentRecording: 'enregistrement de consentement',
+  voiceConsentClipRequired: (p) => `${p.provider} a besoin d’un enregistrement de la personne lisant la déclaration de consentement pour cloner la voix « ${p.name} ». Enregistrez d’abord la déclaration dans la bibliothèque de voix`,
+  voicePackageConsentClip: 'L’enregistrement de consentement du pack de voix (consentClip) n’est pas valide',
 };

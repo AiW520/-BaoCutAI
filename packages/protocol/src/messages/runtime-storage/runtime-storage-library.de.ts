@@ -90,4 +90,10 @@ export const de: RuntimeStorageLibraryMessages = {
   referenceAudioType: "Die Referenzaufnahme muss wav, mp3 oder flac sein",
   referenceTypeMismatch: (p: { sniffed: string; declared: string }) =>
     `Der Dateikopf der Referenzaufnahme ist ${p.sniffed}, das Paket deklariert jedoch ${p.declared}`,
+  fieldNotSeed: (p) => `${p.field} muss eine ganze Zahl von 0 bis ${p.max} sein`,
+  consentClipNeedsSource: 'Eine neue Einwilligungsaufnahme braucht ihre Datei (consentSource)',
+  consentSourceWithoutClip: 'consentSource erfordert content.consentClip (gelesene Sprache und gelesener Text)',
+  consentRecording: 'Einwilligungsaufnahme',
+  voiceConsentClipRequired: (p) => `${p.provider} braucht eine Aufnahme, in der die sprechende Person die Einwilligungserklärung vorliest, bevor die Stimme „${p.name}“ geklont werden kann. Nimm die Erklärung zuerst in der Stimmenbibliothek auf`,
+  voicePackageConsentClip: 'Die Einwilligungsaufnahme des Stimmpakets (consentClip) ist ungültig',
 };

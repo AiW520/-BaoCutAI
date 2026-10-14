@@ -341,6 +341,29 @@ describe('本地语音合成（假 Model Worker）', () => {
     expect((await recorded())[0]).toMatchObject({ options: { voice: { mode: 'clone', transcript: '你好' } } });
   });
 
+  it('音色库条目的种子：请求的 seed 优先，其次这个模型的种子、兜底种子，都没有时抽一个并冻结', async () => {
+    const ref = path.join(dir, 'seeded.wav');
+    await fs.copyFile(builtinVoiceFile(builtinVoice('zh-male')!)!, ref);
+    const content = { name: '种子', language: null, transcript: '你好', origin: 'recorded' as const, consent: { declared: true, statement: '本人' } };
+    const voice = (
+      await library.put({ library: 'voices', content: { ...content, seed: 99, seeds: { [CLONE]: 123, 'other@cpu': 5 } }, file: { path: ref } })
+    ).entry;
+    const perModel = await speak({ voice: `library:${voice.id}` });
+    expect(perModel.generation).toMatchObject({ seed: 123 });
+    expect((await recorded()).at(-1)).toMatchObject({ options: { seed: 123 } });
+    expect((await speak({ voice: `library:${voice.id}`, seed: 7 })).generation).toMatchObject({ seed: 7 });
+
+    await library.put({ library: 'voices', id: voice.id, content: { ...content, seeds: { 'other@cpu': 5 } } });
+    expect((await speak({ voice: `library:${voice.id}` })).generation).toMatchObject({ seed: 99 });
+
+    const plain = (await library.put({ library: 'voices', content, file: { path: ref } })).entry;
+    const drawn = await speak({ voice: `library:${plain.id}` });
+    const seed = (drawn.generation as { seed: number | null }).seed;
+    expect(Number.isInteger(seed)).toBe(true);
+    expect(seed).toBeGreaterThanOrEqual(0);
+    expect(seed).toBeLessThan(2 ** 32);
+  });
+
   it('模型做不到的方式在提交时拒绝，不创建任务', async () => {
     for (const request of [
       { model: SPEAKERS, reference: { file: path.join(dir, 'x.wav') } },

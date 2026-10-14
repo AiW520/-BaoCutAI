@@ -8,7 +8,7 @@ import { formatInvalid } from './library-errors.ts';
 import { LibraryStore } from './library-store.ts';
 import { storedZip } from '../testing/index.ts';
 import { extensionOf, isDotLottie, sniffBytes } from './media-sniff.ts';
-import { assertVoiceUploadAllowed, resolveVoiceClone } from './voice-access.ts';
+import { assertVoiceConsentClip, assertVoiceUploadAllowed, resolveVoiceClone } from './voice-access.ts';
 
 /** 最小的 PNG 文件头：库只按文件头认类型，品牌图片不做解码校验。 */
 const PNG = Buffer.concat([Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]), Buffer.alloc(32, 1)]);
@@ -47,6 +47,7 @@ describe('用户库的存储', () => {
       onEvent: (event) => events.push(event),
       validateAudio: async (_file, mediaType) => {
         if (mediaType !== 'audio/wav') throw formatInvalid('假的解码校验只认 wav');
+        return { durationSec: 4.5 };
       },
     });
 
@@ -255,6 +256,87 @@ describe('用户库的存储', () => {
     store = await open();
     expect(store.list('voices')).toEqual([]);
     expect((await rejection(() => store.get({ library: 'voices', id }))).code).toBe('not-found');
+  });
+
+  it('音色：授权声明录音与每个模型的种子；没给时沿用，老条目的内容不变', async () => {
+    const ref = path.join(fixtures, 'ref.wav');
+    await fs.writeFile(ref, wav(1));
+    const clipA = path.join(fixtures, 'consent-a.wav');
+    await fs.writeFile(clipA, wav(3));
+    const clipB = path.join(fixtures, 'consent-b.wav');
+    await fs.writeFile(clipB, wav(4));
+    const content = { name: '我的声音', language: 'zh-CN', transcript: '你好', origin: 'recorded' as const, consent: { declared: true, statement: '本人' } };
+
+    // 没给新字段：内容里没有这些键，同样的内容再存不出新版本（摘要不变）。
+    const v1 = (await store.put({ library: 'voices', content, file: { path: ref } })).entry;
+    expect(Object.keys(v1.content).sort()).toEqual(['consent', 'language', 'name', 'origin', 'reference', 'transcript']);
+    expect((await store.put({ library: 'voices', id: v1.id, content })).changed).toBe(false);
+    expect(store.list('voices')[0]!.consentClip).toBeUndefined();
+    const noClip = await rejection(() => assertVoiceConsentClip(store.get({ library: 'voices', id: v1.id }), 'google'));
+    expect(noClip.code).toBe('conflict');
+    expect(codeOf(noClip)).toBe('VOICE_CONSENT_CLIP_REQUIRED');
+
+    // 录音与语言要一起给；自定义要有那句话；种子是 32 位无符号整数。
+    const id = v1.id;
+    const clip = { language: 'en-US' };
+    expect(codeOf(await rejection(store.put({ library: 'voices', id, content: { ...content, consentClip: clip } })))).toBe('LIBRARY_FORMAT_INVALID');
+    expect(codeOf(await rejection(store.put({ library: 'voices', id, content, consentFile: { path: clipA } })))).toBe('LIBRARY_FORMAT_INVALID');
+    const custom = { ...content, consentClip: { language: 'custom', text: ' ' } };
+    expect(codeOf(await rejection(store.put({ library: 'voices', id, content: custom, consentFile: { path: clipA } })))).toBe(
+      'LIBRARY_FORMAT_INVALID',
+    );
+    expect(codeOf(await rejection(store.put({ library: 'voices', id, content: { ...content, seeds: { 'qwen3-tts': -1 } } })))).toBe(
+      'LIBRARY_FORMAT_INVALID',
+    );
+
+    const withClip = (
+      await store.put({
+        library: 'voices',
+        id,
+        content: { ...content, consentClip: { language: 'en-us', text: '忽略' }, seed: 42, seeds: { 'qwen3-tts': 7, 'index-tts': 9 } },
+        consentFile: { path: clipA },
+      })
+    ).entry;
+    expect(withClip.content).toMatchObject({
+      consentClip: { language: 'en-US', text: null, durationSec: 4.5, file: { mediaType: 'audio/wav' } },
+      seed: 42,
+      seeds: { 'index-tts': 9, 'qwen3-tts': 7 },
+      reference: v1.content.reference,
+    });
+    expect(store.list('voices')[0]!.consentClip).toBe(true);
+    expect(() => assertVoiceConsentClip(store.get({ library: 'voices', id }), 'google')).not.toThrow();
+    const clipAFile = store.filePath(withClip, withClip.content.consentClip!.file);
+    await expect(fs.stat(clipAFile)).resolves.toBeTruthy();
+
+    // 只改名字：录音与种子沿用。固定着旧版本时换录音，旧录音留到解除固定。
+    const renamed = (await store.put({ library: 'voices', id, content: { ...content, name: '改名' } })).entry;
+    expect(renamed.content.consentClip).toEqual(withClip.content.consentClip);
+    expect(renamed.content.seeds).toEqual({ 'index-tts': 9, 'qwen3-tts': 7 });
+    store.pin('job-clip', [{ library: 'voices', id }]);
+    const custom2 = (
+      await store.put({
+        library: 'voices',
+        id,
+        content: { ...content, consentClip: { language: 'custom', text: 'I agree.' }, seeds: { 'qwen3-tts': 8 } },
+        consentFile: { path: clipB },
+      })
+    ).entry;
+    expect(custom2.content.consentClip).toMatchObject({ language: 'custom', text: 'I agree.' });
+    expect(custom2.content.seeds).toEqual({ 'qwen3-tts': 8 });
+    expect(custom2.content.seed).toBe(42);
+    await expect(fs.stat(clipAFile)).resolves.toBeTruthy();
+    await store.unpin('job-clip');
+    await expect(fs.stat(clipAFile)).rejects.toThrow();
+    const clipBFile = store.filePath(custom2, custom2.content.consentClip!.file);
+    await expect(fs.stat(clipBFile)).resolves.toBeTruthy();
+    await expect(fs.stat(store.filePath(custom2, custom2.content.reference))).resolves.toBeTruthy();
+
+    // `null` 去掉录音，文件随之清掉；参考录音不受影响。
+    const removed = (await store.put({ library: 'voices', id, content: { ...content, consentClip: null } })).entry;
+    expect(removed.content.consentClip).toBeUndefined();
+    expect('consentClip' in removed.content).toBe(false);
+    await expect(fs.stat(clipBFile)).rejects.toThrow();
+    await expect(fs.stat(store.filePath(removed, removed.content.reference))).resolves.toBeTruthy();
   });
 
   it('固定的旧版本保留，解除固定后清掉；删除了的条目等固定解除再删', async () => {

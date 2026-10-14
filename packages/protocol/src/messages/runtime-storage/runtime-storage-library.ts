@@ -108,6 +108,13 @@ const en = {
   referenceAudioType: 'The reference recording must be wav, mp3, or flac',
   referenceTypeMismatch: (p: { sniffed: string; declared: string }) =>
     `The reference recording's file header is ${p.sniffed}, but the package declares ${p.declared}`,
+  fieldNotSeed: (p: { field: string; max: number }) => `${p.field} must be a whole number from 0 to ${p.max}`,
+  consentClipNeedsSource: 'A new consent recording needs its file (consentSource)',
+  consentSourceWithoutClip: 'consentSource needs content.consentClip (the language and text that were read)',
+  consentRecording: 'consent recording',
+  voiceConsentClipRequired: (p: { name: string; provider: string }) =>
+    `${p.provider} needs a recording of the speaker reading the consent statement before it can clone the voice "${p.name}". Record the consent statement in the voice library first`,
+  voicePackageConsentClip: "The voice package's consent recording (consentClip) is invalid",
 };
 
 export type RuntimeStorageLibraryMessages = typeof en;
