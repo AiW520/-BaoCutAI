@@ -18,6 +18,10 @@ export const ru: SettingDescriptionMessages = {
     "Папка локальных моделей (абсолютный путь); null использует models в папке данных. BAOCUT_MODELS_DIR имеет приоритет. Менять через models.setDir, не settings set",
   'tools.downloadEndpoint':
     "Источник управляемых внешних инструментов (yt-dlp) (базовый URL зеркала, http(s)://, файлы в <base>/<tool>/<version>/<file>); null использует официальный URL выпуска. BAOCUT_TOOLS_ENDPOINT имеет приоритет",
+  'models.downloadMirrors':
+    "Добавленные зеркала репозитория моделей (список { name, base }; base — URL http(s):// без повторов). Только список для выбора: скачивание идёт по models.downloadEndpoint",
+  'tools.downloadMirrors':
+    "Добавленные зеркала страниц выпусков (список { name, base }; base — URL http(s):// без повторов). Только список для выбора: скачивание идёт по tools.downloadEndpoint",
   'fonts.autoDownload': "Автоматически скачивать нужные для вёрстки шрифты, отсутствующие на компьютере и доступные в каталоге (предпросмотр и экспорт); при отключении использует резервный шрифт и уведомляет",
   'fonts.cssEndpoint': "Базовый URL CSS API шрифтов (зеркало, https://); null использует https://fonts.googleapis.com",
   'fonts.fileEndpoint': "Базовый URL файлов шрифтов (зеркало, https://; файлы только из-под него); null использует https://fonts.gstatic.com",

@@ -35,6 +35,10 @@ const en = {
     "Folder for local models (absolute path); null uses models in the data folder. The BAOCUT_MODELS_DIR environment variable takes precedence. Change it with models.setDir, not settings set",
   'tools.downloadEndpoint':
     'Download source for managed external tools (yt-dlp) (mirror base URL, http(s)://, files at <base>/<tool>/<version>/<file>); null uses the official release URL. The BAOCUT_TOOLS_ENDPOINT environment variable takes precedence',
+  'models.downloadMirrors':
+    "Model hub mirrors you added (a list of { name, base }; base is an http(s):// URL, no duplicates). Only a list to choose from: downloads use models.downloadEndpoint",
+  'tools.downloadMirrors':
+    "Release-page mirrors you added (a list of { name, base }; base is an http(s):// URL, no duplicates). Only a list to choose from: downloads use tools.downloadEndpoint",
   'fonts.autoDownload':
     "Automatically download fonts that layout needs, that aren't on this computer, and that are in the font catalog (preview and export); when off, draws with a fallback font and shows a notice",
   'fonts.cssEndpoint': 'Base URL of the font CSS API (mirror, https://); null uses https://fonts.googleapis.com',

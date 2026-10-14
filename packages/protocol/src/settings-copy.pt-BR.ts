@@ -14,6 +14,10 @@ export const ptBR: SettingDescriptionMessages = {
   'models.downloadEndpoint': 'Fonte de download de modelos locais (URL base de espelho, http(s)://); null usa o hub público de modelos; https://www.modelscope.cn baixa do ModelScope. A variável de ambiente BAOCUT_MODELS_ENDPOINT tem prioridade',
   'models.dir': 'Pasta dos modelos locais (caminho absoluto); null usa models na pasta de dados. A variável de ambiente BAOCUT_MODELS_DIR tem prioridade. Altere com models.setDir, não com settings set',
   'tools.downloadEndpoint': 'Fonte de download de ferramentas externas gerenciadas (yt-dlp) (URL base de espelho, http(s)://, arquivos em <base>/<tool>/<version>/<file>); null usa a URL do lançamento oficial. A variável de ambiente BAOCUT_TOOLS_ENDPOINT tem prioridade',
+  'models.downloadMirrors':
+    "Espelhos do repositório de modelos que você adicionou (lista de { name, base }; base é uma URL http(s):// sem duplicatas). Só uma lista para escolher: os downloads usam models.downloadEndpoint",
+  'tools.downloadMirrors':
+    "Espelhos de páginas de lançamento que você adicionou (lista de { name, base }; base é uma URL http(s):// sem duplicatas). Só uma lista para escolher: os downloads usam tools.downloadEndpoint",
   'fonts.autoDownload': 'Baixar automaticamente fontes exigidas pelo layout, ausentes neste computador e presentes no catálogo de fontes (prévia e exportação); quando desativado, usa uma fonte alternativa e mostra um aviso',
   'fonts.cssEndpoint': 'URL base da API CSS de fontes (espelho, https://); null usa https://fonts.googleapis.com',
   'fonts.fileEndpoint': 'URL base dos arquivos de fonte (espelho, https://; arquivos só são obtidos sob esta URL); null usa https://fonts.gstatic.com',

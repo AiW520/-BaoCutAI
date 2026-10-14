@@ -19,6 +19,10 @@ export const zhHant: SettingDescriptionMessages = {
     '本機模型的資料夾（絕對路徑）；null 使用資料資料夾中的 models。環境變數 BAOCUT_MODELS_DIR 優先。請用 models.setDir 變更，而不是 settings set',
   'tools.downloadEndpoint':
     '受管外部工具（yt-dlp）的下載來源（鏡像站的基礎 URL，http(s)://，檔案位於 <base>/<tool>/<version>/<file>）；null 使用官方發布網址。環境變數 BAOCUT_TOOLS_ENDPOINT 優先',
+  'models.downloadMirrors':
+    "新增的模型倉庫鏡像站（{ name, base } 的清單；base 是 http(s):// 基礎 URL，不重複）。只是備選清單，下載依 models.downloadEndpoint",
+  'tools.downloadMirrors':
+    "新增的發布頁鏡像站（{ name, base } 的清單；base 是 http(s):// 基礎 URL，不重複）。只是備選清單，下載依 tools.downloadEndpoint",
   'fonts.autoDownload':
     '自動下載排版需要、這台電腦上沒有，且在字型目錄中的字型（預覽與匯出）；關閉時會以備用字型繪製並顯示提示',
   'fonts.cssEndpoint': '字型 CSS API 的基礎 URL（鏡像站，https://）；null 使用 https://fonts.googleapis.com',

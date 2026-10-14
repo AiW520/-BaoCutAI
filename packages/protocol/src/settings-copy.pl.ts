@@ -18,6 +18,10 @@ export const pl: SettingDescriptionMessages = {
     "Folder modeli lokalnych (ścieżka bezwzględna); null używa models w folderze danych. BAOCUT_MODELS_DIR ma pierwszeństwo. Zmieniaj przez models.setDir, nie settings set",
   'tools.downloadEndpoint':
     "Źródło zarządzanych narzędzi zewnętrznych (yt-dlp) (bazowy URL serwera lustrzanego, http(s)://, pliki w <base>/<tool>/<version>/<file>); null używa oficjalnego URL wydania. BAOCUT_TOOLS_ENDPOINT ma pierwszeństwo",
+  'models.downloadMirrors':
+    "Dodane serwery lustrzane repozytorium modeli (lista { name, base }; base to URL http(s):// bez powtórzeń). Tylko lista do wyboru: pobieranie używa models.downloadEndpoint",
+  'tools.downloadMirrors':
+    "Dodane serwery lustrzane stron wydań (lista { name, base }; base to URL http(s):// bez powtórzeń). Tylko lista do wyboru: pobieranie używa tools.downloadEndpoint",
   'fonts.autoDownload': "Automatycznie pobieraj czcionki wymagane do układu, nieobecne na komputerze i dostępne w katalogu (podgląd i eksport); po wyłączeniu używa zastępczej czcionki i powiadamia",
   'fonts.cssEndpoint': "Bazowy URL CSS API czcionek (serwer lustrzany, https://); null używa https://fonts.googleapis.com",
   'fonts.fileEndpoint': "Bazowy URL plików czcionek (serwer lustrzany, https://; pliki tylko spod niego); null używa https://fonts.gstatic.com",

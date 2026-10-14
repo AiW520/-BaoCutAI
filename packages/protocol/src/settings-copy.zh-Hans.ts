@@ -18,6 +18,10 @@ export const zhHans: SettingDescriptionMessages = {
     '本地模型放在哪个文件夹（绝对路径）；null 为数据目录下的 models。环境变量 BAOCUT_MODELS_DIR 优先。用 models.setDir 更改，不能用 settings set',
   'tools.downloadEndpoint':
     '受管外部工具（yt-dlp）的下载来源（镜像的基址，http(s)://，文件在 <基址>/<工具>/<版本>/<文件名>）；null 为官方发布地址。环境变量 BAOCUT_TOOLS_ENDPOINT 优先',
+  'models.downloadMirrors':
+    "添加的模型仓库镜像（{ name, base } 的列表；base 是 http(s):// 基址，不重复）。只是备选清单，下载按 models.downloadEndpoint",
+  'tools.downloadMirrors':
+    "添加的发布页镜像（{ name, base } 的列表；base 是 http(s):// 基址，不重复）。只是备选清单，下载按 tools.downloadEndpoint",
   'fonts.autoDownload': '排字用到、本机没有、字体目录里有的字体自动下载（预览与成片导出）；关掉时照回退字体画并提示',
   'fonts.cssEndpoint': '字体 CSS 接口的基址（镜像，https://）；null 为 https://fonts.googleapis.com',
   'fonts.fileEndpoint': '字体文件的基址（镜像，https://，只从它下面取文件）；null 为 https://fonts.gstatic.com',

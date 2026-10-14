@@ -20,6 +20,10 @@ export const de: SettingDescriptionMessages = {
     "Ordner für lokale Modelle (absoluter Pfad); null verwendet models im Datenordner. BAOCUT_MODELS_DIR hat Vorrang. Mit models.setDir ändern, nicht mit settings set",
   'tools.downloadEndpoint':
     "Downloadquelle für verwaltete externe Werkzeuge (yt-dlp) (Spiegelserver-Basis-URL, http(s)://, Dateien unter <base>/<tool>/<version>/<file>); null verwendet die offizielle Release-URL. BAOCUT_TOOLS_ENDPOINT hat Vorrang",
+  'models.downloadMirrors':
+    "Hinzugefügte Spiegelserver des Modell-Repositorys (Liste aus { name, base }; base ist eine http(s)://-URL ohne Duplikate). Nur eine Auswahlliste: Downloads verwenden models.downloadEndpoint",
+  'tools.downloadMirrors':
+    "Hinzugefügte Spiegelserver für Release-Seiten (Liste aus { name, base }; base ist eine http(s)://-URL ohne Duplikate). Nur eine Auswahlliste: Downloads verwenden tools.downloadEndpoint",
   'fonts.autoDownload':
     "Für Layout benötigte Schriften automatisch herunterladen, wenn sie auf diesem Computer fehlen und im Schriftkatalog stehen (Vorschau und Export); ausgeschaltet wird eine Ersatzschrift mit Hinweis verwendet",
   'fonts.cssEndpoint': "Basis-URL der Schrift-CSS-API (Spiegelserver, https://); null verwendet https://fonts.googleapis.com",

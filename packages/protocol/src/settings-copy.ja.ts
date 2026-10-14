@@ -19,6 +19,10 @@ export const ja: SettingDescriptionMessages = {
     'ローカルモデルを置くフォルダ（絶対パス）。null はデータフォルダ内の models。環境変数 BAOCUT_MODELS_DIR が優先されます。変更には settings set ではなく models.setDir を使います',
   'tools.downloadEndpoint':
     '管理対象の外部ツール（yt-dlp）のダウンロード元（ミラーのベース URL、http(s)://、ファイルは <ベース>/<ツール>/<バージョン>/<ファイル名>）。null は公式のリリース URL。環境変数 BAOCUT_TOOLS_ENDPOINT が優先されます',
+  'models.downloadMirrors':
+    "追加したモデルリポジトリのミラー（{ name, base } のリスト。base は http(s):// のベース URL で重複不可）。選択肢の一覧で、ダウンロードは models.downloadEndpoint に従います",
+  'tools.downloadMirrors':
+    "追加したリリースページのミラー（{ name, base } のリスト。base は http(s):// のベース URL で重複不可）。選択肢の一覧で、ダウンロードは tools.downloadEndpoint に従います",
   'fonts.autoDownload':
     '組版に必要で、このコンピュータになく、フォントカタログにあるフォントを自動でダウンロードします（プレビューと書き出し）。オフの場合は代替フォントで描画し、通知を表示します',
   'fonts.cssEndpoint': 'フォント CSS API のベース URL（ミラー、https://）。null は https://fonts.googleapis.com',

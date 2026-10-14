@@ -14,6 +14,10 @@ export const it: SettingDescriptionMessages = {
   'models.downloadEndpoint': 'Origine del download dei modelli locali (URL di base del mirror, http(s)://); null usa l’hub pubblico dei modelli; https://www.modelscope.cn scarica da ModelScope. La variabile d’ambiente BAOCUT_MODELS_ENDPOINT ha la precedenza',
   'models.dir': 'Cartella dei modelli locali (percorso assoluto); null usa models nella cartella dei dati. La variabile d’ambiente BAOCUT_MODELS_DIR ha la precedenza. Cambiala con models.setDir, non con settings set',
   'tools.downloadEndpoint': 'Origine del download degli strumenti esterni gestiti (yt-dlp) (URL di base del mirror, http(s)://, file in <base>/<tool>/<version>/<file>); null usa l’URL della versione ufficiale. La variabile d’ambiente BAOCUT_TOOLS_ENDPOINT ha la precedenza',
+  'models.downloadMirrors':
+    "Mirror del repository di modelli aggiunti (elenco di { name, base }; base è un URL http(s):// senza duplicati). Solo un elenco da cui scegliere: i download usano models.downloadEndpoint",
+  'tools.downloadMirrors':
+    "Mirror delle pagine di rilascio aggiunti (elenco di { name, base }; base è un URL http(s):// senza duplicati). Solo un elenco da cui scegliere: i download usano tools.downloadEndpoint",
   'fonts.autoDownload': 'Scarica automaticamente i font richiesti dal layout, assenti su questo computer e presenti nel catalogo dei font (anteprima ed esportazione); quando disattivato, usa un font alternativo e mostra un avviso',
   'fonts.cssEndpoint': 'URL di base dell’API CSS dei font (mirror, https://); null usa https://fonts.googleapis.com',
   'fonts.fileEndpoint': 'URL di base per i file dei font (mirror, https://; i file vengono recuperati solo da questo URL); null usa https://fonts.gstatic.com',

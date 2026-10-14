@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import { ProtocolValidation as V } from './messages/protocol/protocol-validation.ts';
 import type { RpcMethod } from './methods.ts';
-import { SETTING_KEYS, type SettingKey, type SettingValues } from './settings.ts';
+import { DOWNLOAD_MIRROR_NAME_MAX, DOWNLOAD_MIRRORS_MAX, SETTING_KEYS, type SettingKey, type SettingValues } from './settings.ts';
 import { MODEL_API_MAX_CONCURRENT_LIMIT, SERVICE_IDS, SERVICE_LEVELS } from './services.ts';
 import { AGENT_MODES, LEGACY_AGENT_MODES, normalizeAgentMode } from './access.ts';
 import { GRANT_DATA_KINDS } from './grants.ts';
@@ -429,6 +429,27 @@ const absolutePath = z
   .regex(/^(?:\/|[A-Za-z]:[\\/]|\\\\[^\\/\0]+[\\/][^\\/\0]+(?:[\\/]|$))[^\0]*$/, { error: () => V.absolutePath().text });
 
 /**
+ * 下载镜像列表（`models.downloadMirrors` / `tools.downloadMirrors`）：基址规则同下载来源，存的时候去掉结尾的 `/`、名字去掉首尾空白；
+ * 基址重复的（不分大小写）只留第一个。
+ */
+const downloadMirrors = z
+  .array(
+    z
+      .object({
+        name: z.string().trim().max(DOWNLOAD_MIRROR_NAME_MAX),
+        base: z
+          .string()
+          .trim()
+          .max(500)
+          .refine(isDownloadEndpoint, { error: () => V.downloadEndpoint().text })
+          .transform((base) => base.replace(/\/+$/, '')),
+      })
+      .strict(),
+  )
+  .max(DOWNLOAD_MIRRORS_MAX)
+  .transform((list) => list.filter((m, i) => list.findIndex((o) => o.base.toLowerCase() === m.base.toLowerCase()) === i));
+
+/**
  * 偏好设置每个键的取值（架构设计 §5.10）。键、类型、默认值与说明见 `settings.ts`；这里只管校验。
  * 写入与读取（文件里的旧值）都过这一份：不合的值不保存，读到时按默认值处理。
  */
@@ -467,6 +488,8 @@ export const settingValueSchemas = {
     .max(500)
     .refine(isDownloadEndpoint, { error: () => V.downloadEndpoint().text })
     .nullable(),
+  'models.downloadMirrors': downloadMirrors,
+  'tools.downloadMirrors': downloadMirrors,
   'fonts.autoDownload': z.boolean(),
   'fonts.cssEndpoint': z
     .string()

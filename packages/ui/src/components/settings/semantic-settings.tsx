@@ -16,13 +16,15 @@ import {
 } from '@react-spectrum/s2';
 import Download from '@react-spectrum/s2/icons/Download';
 import { style } from '@react-spectrum/s2/style' with { type: 'macro' };
-import { downloadView, inlineInstallMode, problemText, removedToast, rpcProblem } from '../../model/models-install.ts';
-import { bundleName, isBundleInstalled } from '../../model/models-local.ts';
+import { downloadView, inlineInstallMode, installFailure, installFailureText, problemText, removedToast, rpcProblem } from '../../model/models-install.ts';
+import { bundleName, isBundleInstalled, partLabel } from '../../model/models-local.ts';
+import { M as LOCAL } from '../../model/models-local-copy.ts';
 import { M as COPY } from '../../model/semantic-copy.ts';
 import { coverageLine, etaLine, etaTime, indexState, pausedNote, visualCostLine, visualCoverageLine } from '../../model/semantic-status.ts';
 import { fmtSize } from '../../model/task-facts.ts';
 import { useRuntime } from '../../runtime/context.tsx';
 import { useDirectory } from '../../state/directory-store.ts';
+import { useJobs } from '../../state/jobs-store.ts';
 import { useModels } from '../../state/models-store.ts';
 import { useSemanticStatus, useSemanticState } from '../../state/semantic-store.ts';
 import { useSetting } from '../../state/settings-store.ts';
@@ -57,6 +59,7 @@ const pkgHead = style({ display: 'flex', alignItems: 'center', flexWrap: 'wrap',
 const pkgName = style({ flexGrow: 1, font: 'ui', fontWeight: 'medium', color: 'gray-900', minWidth: 0 });
 const pkgActions = style({ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 8 });
 const muted = style({ margin: 0, font: 'ui-xs', color: 'gray-600', overflowWrap: 'anywhere' });
+const failed = style({ margin: 0, font: 'ui-xs', color: 'negative-900', overflowWrap: 'anywhere' });
 const body = style({ margin: 0, font: 'ui-sm', color: 'gray-700', overflowWrap: 'anywhere' });
 const strong = style({ margin: 0, marginBottom: 24, font: 'ui-sm', color: 'gray-800', overflowWrap: 'anywhere' });
 const alert = style({ marginBottom: 24 });
@@ -106,6 +109,7 @@ export function SemanticSettings() {
 function ModelGroup({ bundles, inUse, web }: { bundles: ModelBundleStatus[]; inUse: string | null; web: boolean }) {
   const runtime = useRuntime();
   const all = useModels((s) => s.bundles);
+  const jobs = useJobs((s) => s.jobs);
   const [installing, setInstalling] = useState<{ bundle: ModelBundleStatus; mode: 'install' | 'complete' } | null>(null);
   const [removing, setRemoving] = useState<ModelBundleStatus | null>(null);
   const multimodal = bundles.find((b) => b.bundleId !== TEXT_BUNDLE && isBundleInstalled(b));
@@ -124,10 +128,16 @@ function ModelGroup({ bundles, inUse, web }: { bundles: ModelBundleStatus[]; inU
         const own = isBundleInstalled(bundle);
         const covered = text && !own && !!multimodal;
         const view = downloadView(bundle);
+        // 下到一半（设计稿 settings-semantic.jsx 的 `half`）：权重已在、缺运行库这类，或反过来——补齐只下缺的那一部分。
+        const mode = own ? 'install' : inlineInstallMode(bundle, all);
+        const missing = mode === 'complete' ? (bundle.components ?? []).filter((c) => c.state === 'missing') : [];
+        const failure = own ? null : installFailure(bundle, jobs);
         const chip: [string, 'positive' | 'neutral' | 'notice'] =
           bundle.reason === 'unsupported'
             ? [COPY.settings.unsupported, 'notice']
-            : covered
+            : missing.length
+              ? [LOCAL.chipMissing(missing.map((c) => partLabel(c.component))), 'notice']
+              : covered
               ? [COPY.settings.coveredBy, 'neutral']
               : bundle.bundleId === inUse
                 ? [COPY.settings.inUse, 'positive']
@@ -144,6 +154,7 @@ function ModelGroup({ bundles, inUse, web }: { bundles: ModelBundleStatus[]; inU
               </Badge>
             </div>
             <p className={muted}>{`${text ? COPY.settings.textDesc : COPY.settings.multimodalDesc} · ${bundleName(bundle)}`}</p>
+            {failure && view.state !== 'running' ? <p className={failed}>{installFailureText(failure, missing.length > 0)}</p> : null}
             {view.state === 'running' ? (
               <span className={progressRow} role="status">
                 <ProgressBar
@@ -161,9 +172,17 @@ function ModelGroup({ bundles, inUse, web }: { bundles: ModelBundleStatus[]; inU
                   <Button
                     size="S"
                     variant={text ? 'accent' : 'secondary'}
-                    onPress={() => setInstalling({ bundle, mode: inlineInstallMode(bundle, all) })}>
+                    onPress={() => setInstalling({ bundle, mode })}>
                     <Download />
-                    <Text>{view.state === 'paused' ? COPY.settings.resume : COPY.settings.install(view.size)}</Text>
+                    <Text>
+                      {view.state === 'paused'
+                        ? COPY.settings.resume
+                        : mode === 'complete'
+                          ? view.size
+                            ? INSTALL.completeSize(view.size)
+                            : INSTALL.complete
+                          : COPY.settings.install(view.size)}
+                    </Text>
                   </Button>
                 ) : null}
                 {own ? (

@@ -20,6 +20,10 @@ export const fr: SettingDescriptionMessages = {
     "Dossier des modèles locaux (chemin absolu) ; null utilise models dans le dossier de données. BAOCUT_MODELS_DIR a priorité. Changez avec models.setDir, pas settings set",
   'tools.downloadEndpoint':
     "Source des outils externes gérés (yt-dlp) (URL de base de miroir, http(s)://, fichiers à <base>/<tool>/<version>/<file>) ; null utilise la publication officielle. BAOCUT_TOOLS_ENDPOINT a priorité",
+  'models.downloadMirrors':
+    "Miroirs du dépôt de modèles que vous avez ajoutés (liste de { name, base } ; base est une URL http(s):// sans doublon). Simple liste de choix : les téléchargements utilisent models.downloadEndpoint",
+  'tools.downloadMirrors':
+    "Miroirs des pages de publication que vous avez ajoutés (liste de { name, base } ; base est une URL http(s):// sans doublon). Simple liste de choix : les téléchargements utilisent tools.downloadEndpoint",
   'fonts.autoDownload':
     "Télécharger automatiquement les polices nécessaires à la mise en page, absentes de cet ordinateur et présentes au catalogue (aperçu et export) ; sinon police de remplacement et notification",
   'fonts.cssEndpoint': "URL de base de l’API CSS des polices (miroir, https://) ; null utilise https://fonts.googleapis.com",

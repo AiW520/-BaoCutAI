@@ -11,6 +11,10 @@ export const es: SettingDescriptionMessages = {
  'models.downloadEndpoint': 'Origen de descarga de modelos locales (URL base de servidor espejo, http(s)://); null usa el repositorio público de modelos; https://www.modelscope.cn descarga desde ModelScope. La variable de entorno BAOCUT_MODELS_ENDPOINT tiene prioridad',
  'models.dir': 'Carpeta de modelos locales (ruta absoluta); null usa models de la carpeta de datos. La variable de entorno BAOCUT_MODELS_DIR tiene prioridad. Cámbiala con models.setDir, no con settings set',
  'tools.downloadEndpoint': 'Origen de descarga de herramientas externas gestionadas (yt-dlp) (URL base de servidor espejo, http(s)://, archivos en <base>/<tool>/<version>/<file>); null usa la URL de distribución oficial. La variable de entorno BAOCUT_TOOLS_ENDPOINT tiene prioridad',
+ 'models.downloadMirrors':
+   "Servidores espejo del repositorio de modelos que añadiste (lista de { name, base }; base es una URL http(s):// sin duplicados). Solo es una lista para elegir: las descargas usan models.downloadEndpoint",
+ 'tools.downloadMirrors':
+   "Servidores espejo de páginas de versiones que añadiste (lista de { name, base }; base es una URL http(s):// sin duplicados). Solo es una lista para elegir: las descargas usan tools.downloadEndpoint",
  'fonts.autoDownload': 'Descargar automáticamente fuentes necesarias para la composición, ausentes de este ordenador y presentes en el catálogo de fuentes (vista previa y exportación); al desactivar, se dibuja con una fuente alternativa y se muestra un aviso',
  'fonts.cssEndpoint': 'URL base de la API CSS de fuentes (servidor espejo, https://); null usa https://fonts.googleapis.com',
  'fonts.fileEndpoint': 'URL base de archivos de fuentes (servidor espejo, https://; solo se obtienen archivos dentro de ella); null usa https://fonts.gstatic.com',

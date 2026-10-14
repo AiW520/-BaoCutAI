@@ -20,6 +20,10 @@ export const nl: SettingDescriptionMessages = {
     "Map voor lokale modellen (absoluut pad); null gebruikt models in de gegevensmap. De omgevingsvariabele BAOCUT_MODELS_DIR heeft voorrang. Wijzig die met models.setDir, niet settings set",
   'tools.downloadEndpoint':
     "Downloadbron voor beheerde externe tools (yt-dlp) (basis-URL van spiegelserver, http(s)://, bestanden op <base>/<tool>/<version>/<file>); null gebruikt de officiële release-URL. De omgevingsvariabele BAOCUT_TOOLS_ENDPOINT heeft voorrang",
+  'models.downloadMirrors':
+    "Toegevoegde spiegelservers van de modelrepository (lijst van { name, base }; base is een http(s)://-URL zonder dubbelingen). Alleen een keuzelijst: downloads gebruiken models.downloadEndpoint",
+  'tools.downloadMirrors':
+    "Toegevoegde spiegelservers voor releasepagina’s (lijst van { name, base }; base is een http(s)://-URL zonder dubbelingen). Alleen een keuzelijst: downloads gebruiken tools.downloadEndpoint",
   'fonts.autoDownload':
     "Download automatisch lettertypen die nodig zijn voor de lay-out, niet op deze computer staan en in de lettertypecatalogus staan (voorbeeld en export); als dit uitstaat wordt een vervangend lettertype gebruikt met een melding",
   'fonts.cssEndpoint': "Basis-URL van de lettertype-CSS-API (spiegelserver, https://); null gebruikt https://fonts.googleapis.com",

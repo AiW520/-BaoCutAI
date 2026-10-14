@@ -19,6 +19,10 @@ export const ko: SettingDescriptionMessages = {
     '로컬 모델을 둘 폴더(절대 경로). null이면 데이터 폴더의 models를 사용합니다. BAOCUT_MODELS_DIR 환경 변수가 우선합니다. settings set이 아니라 models.setDir로 변경하세요',
   'tools.downloadEndpoint':
     '관리되는 외부 도구(yt-dlp)의 다운로드 소스(미러 기본 URL, http(s)://, 파일 위치는 <base>/<tool>/<version>/<file>). null이면 공식 배포 URL을 사용합니다. BAOCUT_TOOLS_ENDPOINT 환경 변수가 우선합니다',
+  'models.downloadMirrors':
+    "추가한 모델 저장소 미러({ name, base } 목록, base는 중복 없는 http(s):// 기본 URL). 선택지 목록일 뿐이며 다운로드는 models.downloadEndpoint를 따릅니다",
+  'tools.downloadMirrors':
+    "추가한 릴리스 페이지 미러({ name, base } 목록, base는 중복 없는 http(s):// 기본 URL). 선택지 목록일 뿐이며 다운로드는 tools.downloadEndpoint를 따릅니다",
   'fonts.autoDownload':
     '레이아웃에 필요하지만 이 컴퓨터에 없고 글꼴 카탈로그에 있는 글꼴을 자동으로 다운로드합니다(미리보기와 내보내기). 끄면 대체 글꼴로 그리고 안내를 표시합니다',
   'fonts.cssEndpoint': '글꼴 CSS API의 기본 URL(미러, https://). null이면 https://fonts.googleapis.com을 사용합니다',
