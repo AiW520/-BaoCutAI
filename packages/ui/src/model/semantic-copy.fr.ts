@@ -132,7 +132,7 @@ export const fr: SemanticMessages = {
     cleared: 'Effacé. Reconstruction en arrière-plan.',
     controlFailed: (text) => `Impossible de modifier l’index : ${text}`,
     runsOn: 'S’exécute sur',
-    runsOnDesc: 'Choisi après l’autotest du modèle.',
+    runsOnDesc: 'Utilise le modèle multimodal s’il est installé, sinon le modèle de texte.',
     notLoaded: 'Pas encore chargé',
     featuresGroup: 'Fonctions qui l’utilisent',
     tm: 'Mémoire de traduction',

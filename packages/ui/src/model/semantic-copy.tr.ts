@@ -132,7 +132,7 @@ export const tr: SemanticMessages = {
     cleared: 'Temizlendi. Arka planda yeniden oluşturuluyor.',
     controlFailed: (text) => `Dizin değiştirilemedi: ${text}`,
     runsOn: 'Çalıştığı yer',
-    runsOnDesc: 'Modelin kendi kendini sınamasından sonra seçilir.',
+    runsOnDesc: 'Çok kipli model kuruluysa onu, değilse metin modelini kullanır.',
     notLoaded: 'Henüz yüklenmedi',
     featuresGroup: 'Bunu kullanan özellikler',
     tm: 'Çeviri belleği',

@@ -30,12 +30,12 @@ import type { LocalTranscribeProvider } from './local-provider.ts';
  * 本机 embedding Provider（EmbeddingGemma 2 检索集成方案 v0.1 §3.1、§4、§5）：检索库只经 `EmbeddingProvider` 要向量，这里把它接到
  * Model Worker 的 `embed.run`（经 `LocalTranscribeProvider.embed`，共用进程管理与资源 holder）。
  *
- * - 选模型包：用户选的（`selected`）可用时用它，否则按登记次序（文字包在前）用第一个装好的；多模态包也满足文字检索。
+ * - 选模型包：优先的（`selected`，产品里是多模态包）可用时用它，否则按登记次序（文字包在前）用第一个装好的；多模态包也满足文字检索。
  *   一个都没装好时 `MODEL_NOT_INSTALLED`；装了但用不了（平台不支持、停用、Worker 不认识）时 `MODEL_UNAVAILABLE`。
  * - 向量：向 Worker 要 `outputSize`（768）维（引擎已归一化），截到 `dims`（512）维再归一化。前缀只在 `formatEmbeddingInput` 加一次。
  * - 身份（§5.3）：`embeddingSpaceId = embeddinggemma2/<变体>/<promptPairId>/<维度>/l2/<量化兼容组>`；`encoderProfileId` 在它后面加
  *   输入模态、向量兼容标签（`EMBEDDING_VECTOR_COMPAT`：不是 LiteRT-LM 的版本号，升级引擎后由参考向量回归判断要不要变）、
- *   模型文件的 sha256 与登记的设备。
+ *   编码器的 sha256（文字是 `textEncoderSha256`，几个包逐位相同时共用，换包不重算；画面是模型文件的）与登记的设备。
  * - 一批至多 `EMBED_MAX_BATCH`（16）条；超长不截断，以 `INPUT_TOO_LONG` 报出是第几条（从 1 数）。
  * - 画面（`text-to-visual`，检索规格 §6.2）：只用有图像编码器的模型包（`modalities` 含 `image`），文字查询与关键帧都由它编码；
  *   没装时 `MODEL_NOT_INSTALLED`（与「设置里关了画面检索」的 `CHANNEL_UNAVAILABLE` 是两回事）。`encoderProfileId` 另带模态
@@ -48,7 +48,7 @@ const MAX_TEXT_BYTES = 256 * 1024;
 export interface LocalEmbeddingProviderOptions {
   catalog: Pick<ModelCatalog, 'definitions' | 'status'>;
   worker: Pick<LocalTranscribeProvider, 'embed'>;
-  /** 用户选的 embedding 模型包；没选时 null。 */
+  /** 优先用的 embedding 模型包（可用时用它，否则按登记次序）；没有时 null。 */
   selected?: () => string | null;
   /** 关键帧所在的目录（媒体分析缓存）：`embedImages` 只收这些目录里的文件。没给时不收图片。 */
   imageRoots?: readonly string[];
@@ -156,7 +156,7 @@ export class LocalEmbeddingProvider implements EmbeddingProvider {
           `vt${vision.tokensPerImage}`,
           `keyframe-${vision.frameEdge}-${vision.frameFormat}`,
         ].join('/')
-      : [embeddingSpaceId, 'text', EMBEDDING_VECTOR_COMPAT, spec.modelSha256, def.device].join('/');
+      : [embeddingSpaceId, 'text', EMBEDDING_VECTOR_COMPAT, spec.textEncoderSha256 ?? spec.modelSha256, def.device].join('/');
     return {
       embeddingSpaceId,
       encoderProfileId,

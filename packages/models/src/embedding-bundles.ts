@@ -70,9 +70,15 @@ export const LITERTLM_RUNTIME_COMPONENT: BundleComponentSource = {
 
 /**
  * 量化兼容组。两个包的文字编码器在 LiteRT-LM 0.18.0 的 CPU 上出的向量逐位相同（2026-10-12 实测同一组句子，768 维最大差 0），
- * 所以同组、同空间：先装文字包、后装多模态包时旧索引仍可比较。`encoderProfileId` 仍随模型文件的 sha256 变。
+ * 所以同组、同空间：先装文字包、后装多模态包时旧索引仍可比较。
  */
 const QUANT_GROUP = 'litertlm-2d079ee2';
+
+/**
+ * 文字编码器的身份：取文字包模型文件的 sha256，两个包都写它（逐位相同，见上）。文字检索换到多模态包时文字索引的
+ * `encoderProfileId` 不变，不重算；画面的 `encoderProfileId` 仍随多模态包自己的 sha256。
+ */
+const TEXT_ENCODER_SHA256 = '2d079ee2f6f066b1f368e8d7c819f55214eaef1d0513b312321901f30ab286fb';
 
 /** 两个包共用的文字编码器变体（进 `embeddingSpaceId`）。 */
 const TEXT_ENCODER = 'text-270m';
@@ -85,6 +91,7 @@ const PROFILE = {
   maxInputTokens: 2048,
   // 与 SentenceTransformers 参考实现一致（逐条余弦 ≥ 0.98；不插入时只有 0.81–0.88）。
   insertSpecialTokens: true,
+  textEncoderSha256: TEXT_ENCODER_SHA256,
 };
 
 export const EMBEDDINGGEMMA2_TEXT_BUNDLE = 'embeddinggemma2-text@litert-lm';
@@ -110,7 +117,7 @@ const TEXT: BundleDefinition = {
     ...PROFILE,
     modalities: ['text'],
     modelFile: 'embeddinggemma-2-text-270m.litertlm',
-    modelSha256: '2d079ee2f6f066b1f368e8d7c819f55214eaef1d0513b312321901f30ab286fb',
+    modelSha256: TEXT_ENCODER_SHA256,
   },
 };
 
@@ -140,8 +147,14 @@ const MULTIMODAL: BundleDefinition = {
   },
 };
 
-/** 文字包在前：没有选过时按这个次序挑已装好的（多模态包也满足文字检索）。 */
+/** 文字包在前（安装与列出的次序）。文字检索装了多模态包时用它（`EMBEDDING_TEXT_PREFERRED`），没装时用文字包。 */
 export const EMBEDDING_BUNDLES: readonly BundleDefinition[] = [TEXT, MULTIMODAL];
+
+/**
+ * 文字检索优先用的包（检索规格 §4.2，2026-10-13）：多模态包也编码文字，向量与文字包逐位相同；画面开着时它本来就在内存里，
+ * 文字跟着用它，不再另载一个文字包。没装或用不了时退回文字包。
+ */
+export const EMBEDDING_TEXT_PREFERRED = EMBEDDINGGEMMA2_MULTIMODAL_BUNDLE;
 
 /**
  * Worker 加载 embedding 模型包后，在模型文件与 C 库压缩包大小之外还要的内存（字节，资源调度计 `memory`）。2026-10-12 在 Apple M 系列的

@@ -132,7 +132,7 @@ export const it: SemanticMessages = {
     cleared: 'Cancellato. Ricostruzione in background.',
     controlFailed: (text) => `Non è stato possibile modificare l’indice: ${text}`,
     runsOn: 'Eseguito su',
-    runsOnDesc: 'Scelto dopo l’autoverifica del modello.',
+    runsOnDesc: 'Usa il modello multimodale se è installato, altrimenti il modello di testo.',
     notLoaded: 'Non ancora caricato',
     featuresGroup: 'Funzioni che lo usano',
     tm: 'Memoria di traduzione',

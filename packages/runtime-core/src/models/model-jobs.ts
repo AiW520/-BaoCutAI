@@ -39,6 +39,7 @@ import {
   AUDIO_CPP_BACKEND_ENV,
   AUDIO_CPP_CLI_ENV,
   AUDIO_CPP_ENGINE,
+  EMBEDDING_TEXT_PREFERRED,
   LocalProviderSource,
   ModelCatalog,
   ModelServiceStore,
@@ -252,8 +253,13 @@ export async function openModelJobs(options: ModelJobsOptions): Promise<ModelJob
     idleMs: options.idleMs,
     resources,
   });
-  // 画面检索的关键帧只从媒体分析缓存读（`MediaAnalysis` 的 `cacheDir`）。
-  const embedding = new LocalEmbeddingProvider({ catalog, worker: provider, imageRoots: [path.join(home.cacheDir, 'media')] });
+  // 画面检索的关键帧只从媒体分析缓存读（`MediaAnalysis` 的 `cacheDir`）。文字检索装了多模态包时用它（检索规格 §4.2）。
+  const embedding = new LocalEmbeddingProvider({
+    catalog,
+    worker: provider,
+    selected: () => EMBEDDING_TEXT_PREFERRED,
+    imageRoots: [path.join(home.cacheDir, 'media')],
+  });
   // 本地音乐生成（§6.1）：audio.cpp 引擎每个任务一个进程，不经 Model Worker。
   const music = new LocalMusicProvider({
     catalog,

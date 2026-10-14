@@ -6,6 +6,7 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { BUNDLES } from './bundle-registry.ts';
 import {
   EMBEDDING_BUNDLES,
+  EMBEDDING_TEXT_PREFERRED,
   EMBEDDING_WORKER_OVERHEAD_BYTES,
   EMBEDDINGGEMMA2_MULTIMODAL_BUNDLE,
   EMBEDDINGGEMMA2_TEXT_BUNDLE,
@@ -46,6 +47,10 @@ describe('embedding 模型包的登记', () => {
     expect(MULTIMODAL.embedding!.variant).toBe(TEXT.embedding!.variant);
     expect(MULTIMODAL.embedding!.quantGroup).toBe(TEXT.embedding!.quantGroup);
     expect(MULTIMODAL.embedding!.modelSha256).not.toBe(TEXT.embedding!.modelSha256);
+    // 文字编码器的身份共用文字包的 sha256：文字检索换到多模态包（EMBEDDING_TEXT_PREFERRED）不重算文字索引。
+    expect(TEXT.embedding!.textEncoderSha256).toBe(TEXT.embedding!.modelSha256);
+    expect(MULTIMODAL.embedding!.textEncoderSha256).toBe(TEXT.embedding!.modelSha256);
+    expect(EMBEDDING_TEXT_PREFERRED).toBe(MULTIMODAL.bundleId);
   });
 
   it('LiteRT-LM 只有 macOS 的通用 dylib：在 xcframework 的子目录里，是交给 Worker 的动态库', () => {

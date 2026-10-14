@@ -262,6 +262,27 @@ describe('本机 embedding（假 Model Worker）', () => {
       expect(empty.current()).toBeNull();
     });
 
+    it('文字编码器逐位相同的包共用 textEncoderSha256：文字检索换包时文字的身份不变，画面仍随模型文件', async () => {
+      const shared = { textEncoderSha256: 'a'.repeat(64) };
+      const text = bundle('emb-text2@litert-lm', 'test/text2', 'a'.repeat(64), shared);
+      const full = bundle('emb-full2@litert-lm', 'test/full2', 'b'.repeat(64), {
+        ...shared,
+        modalities: ['text', 'image'],
+        vision: { tokensPerImage: 140, frameEdge: 512, frameFormat: 'jpeg' },
+      });
+      const root = path.join(dir, 'shared');
+      await writeRepo(root, 'test/text2');
+      await writeRepo(root, 'test/full2');
+      const both = new ModelCatalog({ root, bundles: [text, full] });
+      const byText = await new LocalEmbeddingProvider({ catalog: both, worker }).profile('retrieval');
+      const preferred = new LocalEmbeddingProvider({ catalog: both, worker, selected: () => full.bundleId });
+      const byFull = await preferred.profile('retrieval');
+      expect(preferred.current()).toEqual({ bundleId: full.bundleId, label: full.label });
+      expect(byFull.encoderProfileId).toBe(byText.encoderProfileId);
+      expect(byFull.encoderProfileId).toContain('a'.repeat(64));
+      expect((await preferred.profile('text-to-visual')).encoderProfileId).toContain('b'.repeat(64));
+    });
+
     it('embed：前缀只加一次、按 16 条分批、截到 512 维并归一化、payload 摘要一一对应；相近的文字余弦高', async () => {
       const provider = new LocalEmbeddingProvider({ catalog, worker });
       const inputs = Array.from({ length: 20 }, (_, i) => ({ text: `第 ${i} 句：我们最后选了这个模型` }));

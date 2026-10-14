@@ -155,6 +155,11 @@ export interface EmbeddingBundleProfile {
   /** 组件里的模型文件与它的 sha256（与清单一致）。 */
   modelFile: string;
   modelSha256: string;
+  /**
+   * 文字编码器的身份（进文字的 `encoderProfileId`）；不给时用 `modelSha256`。几个包的文字编码器出的向量逐位相同时写同一个值，
+   * 换着用不重算文字索引。
+   */
+  textEncoderSha256?: string;
   /** 向 Worker 要的维度（`outputSize`）。 */
   outputSize: number;
   /** 存储与比较的维度（Matryoshka 截断后重新归一化）。 */

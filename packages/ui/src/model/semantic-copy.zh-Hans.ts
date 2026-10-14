@@ -131,7 +131,7 @@ export const zhHans: SemanticMessages = {
     cleared: '已清除，正在后台重建。',
     controlFailed: (text) => `无法更改索引：${text}`,
     runsOn: '运行于',
-    runsOnDesc: '在模型自检后选定。',
+    runsOnDesc: '装了多模态模型就用它，否则用文字模型。',
     notLoaded: '尚未加载',
     featuresGroup: '用到它的功能',
     tm: '翻译记忆',

@@ -132,7 +132,7 @@ export const nl: SemanticMessages = {
     cleared: 'Gewist. Wordt op de achtergrond opnieuw opgebouwd.',
     controlFailed: (text) => `Kon de index niet wijzigen: ${text}`,
     runsOn: 'Draait op',
-    runsOnDesc: 'Gekozen na de zelftest van het model.',
+    runsOnDesc: 'Gebruikt het multimodale model als het geïnstalleerd is, anders het tekstmodel.',
     notLoaded: 'Nog niet geladen',
     featuresGroup: 'Functies die het gebruiken',
     tm: 'Vertaalgeheugen',

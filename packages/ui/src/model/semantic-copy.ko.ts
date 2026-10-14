@@ -132,7 +132,7 @@ export const ko: SemanticMessages = {
     cleared: '지웠습니다. 백그라운드에서 다시 만드는 중입니다.',
     controlFailed: (text) => `색인을 변경할 수 없었습니다: ${text}`,
     runsOn: '실행 환경',
-    runsOnDesc: '모델 자체 점검 후에 정해집니다.',
+    runsOnDesc: '멀티모달 모델이 설치되어 있으면 그것을, 없으면 텍스트 모델을 씁니다.',
     notLoaded: '아직 로드되지 않음',
     featuresGroup: '이 기능을 쓰는 곳',
     tm: '번역 메모리',

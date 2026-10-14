@@ -132,7 +132,7 @@ export const de: SemanticMessages = {
     cleared: 'Gelöscht. Wird im Hintergrund neu aufgebaut.',
     controlFailed: (text) => `Der Index konnte nicht geändert werden: ${text}`,
     runsOn: 'Läuft auf',
-    runsOnDesc: 'Wird nach dem Selbsttest des Modells gewählt.',
+    runsOnDesc: 'Verwendet das multimodale Modell, wenn es installiert ist, sonst das Textmodell.',
     notLoaded: 'Noch nicht geladen',
     featuresGroup: 'Funktionen, die ihn nutzen',
     tm: 'Übersetzungsgedächtnis',

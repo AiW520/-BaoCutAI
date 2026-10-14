@@ -132,7 +132,7 @@ export const vi: SemanticMessages = {
     cleared: 'Đã xóa. Đang xây dựng lại ở nền.',
     controlFailed: (text) => `Không thể thay đổi chỉ mục: ${text}`,
     runsOn: 'Chạy trên',
-    runsOnDesc: 'Được chọn sau khi mô hình tự kiểm tra.',
+    runsOnDesc: 'Dùng mô hình đa phương thức nếu đã cài, nếu không thì dùng mô hình văn bản.',
     notLoaded: 'Chưa được tải',
     featuresGroup: 'Tính năng dùng nó',
     tm: 'Bộ nhớ dịch',

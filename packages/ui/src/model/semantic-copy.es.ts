@@ -132,7 +132,7 @@ export const es: SemanticMessages = {
     cleared: 'Borrado. Reconstruyendo en segundo plano.',
     controlFailed: (text) => `No se pudo cambiar el índice: ${text}`,
     runsOn: 'Se ejecuta en',
-    runsOnDesc: 'Se elige tras la autocomprobación del modelo.',
+    runsOnDesc: 'Usa el modelo multimodal si está instalado; si no, el modelo de texto.',
     notLoaded: 'Aún no cargado',
     featuresGroup: 'Funciones que lo usan',
     tm: 'Memoria de traducción',

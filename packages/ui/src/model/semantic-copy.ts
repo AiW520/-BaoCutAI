@@ -157,7 +157,7 @@ const en = {
     cleared: 'Cleared. Rebuilding in the background.',
     controlFailed: (text: string) => `Couldn’t change the index: ${text}`,
     runsOn: 'Runs on',
-    runsOnDesc: 'Chosen after the model’s self-check.',
+    runsOnDesc: 'Uses the multimodal model when it’s installed, otherwise the text model.',
     notLoaded: 'Not loaded yet',
     featuresGroup: 'Features that use it',
     tm: 'Translation memory',

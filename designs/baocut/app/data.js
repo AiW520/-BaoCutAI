@@ -3559,8 +3559,8 @@
          {id: 'litertlm-runtime', name: 'LiteRT-LM 运行时', size: 43, release: 'google-ai-edge/LiteRT-LM v0.18.0'},
        ]},
     ],
-    /* 实际后端：自检后选的那一个（v0.1 §4.4），不是「检测到显卡就用 GPU」 */
-    backend: {k: 'gpu', label: 'GPU · Metal', note: '自检通过；失败会自动退回 CPU'},
+    /* 实际在用的模型与设备：装了多模态模型时讲话内容也用它（检索规格 §4.2），目前只在 CPU 上跑 */
+    backend: {k: 'cpu', label: 'EmbeddingGemma 2 740M · CPU', note: '装了多模态模型就用它，否则用文字模型。'},
     cacheBytes: 327155712,
     /* 索引在更新时还要多久（indexStatus.estimates 的文字一项，v0.1 §13.2）：按这台电脑量过的速度 */
     estimate: {text: {channel: 'text', videos: 3, unknownDuration: 0, sourceSeconds: 4260, seconds: 95, basis: 'measured'},

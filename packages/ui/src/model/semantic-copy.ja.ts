@@ -132,7 +132,7 @@ export const ja: SemanticMessages = {
     cleared: '消去しました。バックグラウンドで再構築しています。',
     controlFailed: (text) => `インデックスを変更できませんでした：${text}`,
     runsOn: '実行環境',
-    runsOnDesc: 'モデルのセルフチェック後に選ばれます。',
+    runsOnDesc: 'マルチモーダルモデルが入っていればそれを、なければテキストモデルを使います。',
     notLoaded: 'まだ読み込まれていません',
     featuresGroup: '利用する機能',
     tm: '翻訳メモリ',
