@@ -925,8 +925,14 @@ fn unescaped_count(line: &str, needle: char) -> usize {
 /// line with those marks turned into bars, and how many: only a mark in chunk
 /// text that is directly followed by an endpoint quote of this sentence and
 /// then a `|` qualifies, so a mark echoed inside chunk text (a cut hint) or
-/// inside a quote is left alone.
-fn reopen_markers<W: JoinWord>(line: &str, words: &[W]) -> Option<(String, usize)> {
+/// inside a quote is left alone. With `phrases`, a whole-phrase quote of this
+/// sentence qualifies too; the caller only asks for that on a line that does
+/// not read cleanly otherwise.
+fn reopen_markers<W: JoinWord>(
+    line: &str,
+    words: &[W],
+    phrases: bool,
+) -> Option<(String, usize)> {
     let mut delimiters: Vec<(usize, char)> = Vec::new();
     let mut chars = line.char_indices();
     while let Some((at, ch)) = chars.next() {
@@ -953,7 +959,12 @@ fn reopen_markers<W: JoinWord>(line: &str, words: &[W]) -> Option<(String, usize
             continue;
         }
         let quote = &line[at + PIECE_MARK.len_utf8()..next];
-        if lines::endpoint_quote(quote)
+        let reference = if phrases {
+            lines::any_quote(quote)
+        } else {
+            lines::endpoint_quote(quote)
+        };
+        if reference
             .is_some_and(|reference| lines::quotes_occur(words, &reference) == Some(true))
         {
             reopened.push(at);
@@ -1184,7 +1195,22 @@ pub fn parse_with_params(
             result.issues.push((n, Issue::LinesSyntax));
             continue;
         }
-        let reopened = reopen_markers(line, &words[n - 1]);
+        let mut reopened = reopen_markers(line, &words[n - 1], false);
+        // The same shape with whole-phrase quotes (`|a|译 ¦ b|译`, ja→zh 2026-10-14:
+        // a whole retry page, twice). Ordinary chunk text is a phrase too, so
+        // this reading is only tried on a line that, as read, is a syntax error
+        // or quotes something its sentence does not have (an even bar count
+        // turns text into a quote), and kept only when every quote then hits.
+        let reads_cleanly = |line: &str| {
+            lines::parse(line).is_ok_and(|record| quotes_all_hit(&record, &words[n - 1]))
+        };
+        let as_read = reopened.as_ref().map_or(line, |(line, _)| line.as_str());
+        if !reads_cleanly(as_read)
+            && let Some(phrased) = reopen_markers(line, &words[n - 1], true)
+                .filter(|(phrased, _)| reads_cleanly(phrased))
+        {
+            reopened = Some(phrased);
+        }
         let line = match &reopened {
             Some((line, count)) => {
                 reopened_marks += count;
@@ -2065,6 +2091,65 @@ mod tests {
             "하지만 AI는 소프트웨어 개발의 전통적인 여러 역할을 뒤섞고 있습니다."
         );
         assert_eq!(result.translation.lines["a"].record.chunks.len(), 2);
+    }
+
+    /// 同一形状用整片引用写（ja→zh 2026-10-14，整页补做两次都这样）：原样读不通时才按整片引用改读。
+    #[test]
+    fn piece_mark_before_a_whole_phrase_quote_is_read_as_a_bar_only_when_the_line_does_not_read() {
+        let mut p = zh_page(
+            "But AI is causing many of the traditional roles in software development to blur together.",
+        );
+        p.target_lang = "es".into();
+        let input = render(&p);
+        // 竖线成双：原样读语法通过，但第二个引文是译文，本句里没有。
+        let result = parse(
+            &p,
+            &input,
+            "1 |But AI is causing many|Pero la IA está haciendo que muchos ¦ of the traditional roles|de los roles tradicionales ¦ in software development to blur together.|del desarrollo de software se mezclen.",
+        );
+        assert_eq!(
+            result.translation.translations["a"],
+            "Pero la IA está haciendo que muchos de los roles tradicionales del desarrollo de software se mezclen.",
+            "{:?}",
+            result.translation.diagnostics
+        );
+        let record = &result.translation.lines["a"].record;
+        assert_eq!(record.chunks.len(), 3);
+        assert!(quotes_all_hit(
+            record,
+            &source_tokens(&p.sections[0].sentences[0])
+        ));
+        assert!(
+            result
+                .translation
+                .diagnostics
+                .warnings
+                .iter()
+                .any(|warning| warning.code == WarningCode::MarkerResidue),
+            "{:?}",
+            result.translation.diagnostics
+        );
+        // 竖线成单：原样读是语法错。
+        let result = parse(
+            &p,
+            &input,
+            "1 |But AI is causing many|Pero la IA está haciendo que muchos ¦ of the traditional roles in software development to blur together.|de los roles tradicionales del desarrollo de software se mezclen.",
+        );
+        assert_eq!(
+            result.translation.translations["a"],
+            "Pero la IA está haciendo que muchos de los roles tradicionales del desarrollo de software se mezclen."
+        );
+        // 原样读得通的行不改读：分片符后面的源文短语 `AI` 仍是正文里的切点提示。
+        let result = parse(
+            &p,
+            &input,
+            "1 |But..many|Pero la ¦ AI |of..together|de los roles tradicionales se mezclan.",
+        );
+        assert_eq!(result.translation.lines["a"].record.chunks.len(), 2);
+        assert_eq!(
+            result.translation.translations["a"],
+            "Pero la AI de los roles tradicionales se mezclan."
+        );
     }
 
     /// 回答里出现的未转义分片符是回显，去掉并记诊断；`\¦` 是正文，保留。

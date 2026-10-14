@@ -290,6 +290,15 @@ pub fn endpoint_quote(text: &str) -> Option<Reference> {
     }
 }
 
+/// `text` read as a marker body of either quote shape, a whole-phrase quote
+/// included. `None` for `∅`, `?` and anything that is not a quote.
+pub fn any_quote(text: &str) -> Option<Reference> {
+    match parse_reference(text.trim()) {
+        Ok(reference @ Reference::Quote { .. }) => Some(reference),
+        _ => None,
+    }
+}
+
 pub fn render(record: &Record) -> String {
     let mut out = format!("{}{} ", record.n, if record.rewrite { "~" } else { "" });
     for chunk in &record.chunks {
