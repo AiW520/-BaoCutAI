@@ -35,6 +35,8 @@ test('页面侧栏：入口及其子页保留对应目录；视频保留入口�
   assert.equal(IA.sideOf({r: 'home'}), 'home');
   assert.equal(IA.sideOf({r: 'agent', id: 's1'}), 'home');
   assert.equal(IA.sideOf({r: 'agent', dir: 'd1'}), 'home');
+  assert.equal(IA.sideOf({r: 'archived'}), 'home');
+  assert.equal(IA.tabOf({r: 'archived'}), 'home');
   assert.equal(IA.sideOf({r: 'projects'}), 'space');
   assert.equal(IA.sideOf({r: 'projects', sec: 'final'}), 'space');
   assert.equal(IA.sideOf({r: 'editor', id: 'p1', via: 'space'}), 'space');

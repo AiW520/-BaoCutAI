@@ -263,6 +263,7 @@
       "app/page-agent.jsx",
       "app/apprail.jsx",
       "app/home-sidebar.jsx",
+      "app/page-archived.jsx",
       "app/home-session.jsx",
       "app/space-list.jsx",
       "app/space-viewer.jsx",
@@ -433,6 +434,7 @@
       "app/import-flow.css",
       "app/new-project.css",
       "app/home-templates.css",
+      "app/page-archived.css",
       "app/services.css",
       "app/tools.css",
       "app/image-gen.css",
@@ -461,9 +463,9 @@
       "app/subtitle-motion.css",
       "app/subtitle-active.css"
     ],
-    "js": "generated/app.js?v=fd803c388985",
-    "css": "generated/app.css?v=5a05557ef4f3",
-    "bytes": 4306811
+    "js": "generated/app.js?v=4ec5adb25975",
+    "css": "generated/app.css?v=894559578401",
+    "bytes": 4315743
   },
   "web": {
     "file": "BaoCutWeb.html",
@@ -706,9 +708,9 @@
       "app/subtitle-motion.css",
       "app/subtitle-active.css"
     ],
-    "js": "generated/web.js?v=3c2f9e6f6000",
+    "js": "generated/web.js?v=9abae2c0fd7e",
     "css": "generated/web.css?v=2f0462bf0870",
-    "bytes": 2548757
+    "bytes": 2550574
   },
   "components": {
     "file": "Components.html",

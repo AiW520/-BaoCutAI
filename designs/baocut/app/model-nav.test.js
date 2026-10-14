@@ -133,3 +133,9 @@ test('旧模型 URL 迁入设置，保留能力与子页并兼容已有设置链
   assert.deepEqual(N.routeFromHref('#/models'), {r: 'settings', sec: 'local'});
   assert.deepEqual(N.routeFromHref('#/settings?sec=agent'), {r: 'settings', sec: 'agent'});
 });
+
+test('已归档会话页经地址往返，带 id 时高亮刚归档的那条', () => {
+  assert.deepEqual(N.routeFromHref(N.hrefFor({r: 'archived'})), {r: 'archived'});
+  assert.equal(N.hrefFor({r: 'archived', id: 's7'}), '#/archived/s7');
+  assert.deepEqual(N.routeFromHref('#/archived/s7'), {r: 'archived', id: 's7'});
+});

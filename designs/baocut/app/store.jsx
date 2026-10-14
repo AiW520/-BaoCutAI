@@ -371,6 +371,14 @@
         ? {...x, messages: x.messages.map((m) => (m.id === mid ? {...m, ...patch} : m))}
         : x))), []);
     const sessionById = useCallback((id) => sessions.find((x) => x.id === id) || null, [sessions]);
+    /** 归档 / 恢复只改列表显示（product-design §3.1）；archivedAgo 记归档时间，已归档会话页按它排。 */
+    const archiveSession = useCallback((id, archived) =>
+      patchSession(id, archived ? {archived: true, archivedAgo: 0} : {archived: false, archivedAgo: undefined}), [patchSession]);
+    /** 删除会话只删会话记录，不删项目、视频、产物或已发生的修改（§3.1）；调用方先确认。 */
+    const deleteSessions = useCallback((ids) => {
+      const drop = new Set(ids);
+      setSessions((ss) => ss.filter((x) => !drop.has(x.id)));
+    }, []);
 
     /** 新会话：还没说话就不落标题；harness / 模型取当前偏好。 */
     const newSession = useCallback((opts) => {
@@ -796,7 +804,7 @@
       cloudImageDefault, setCloudImageDefault, codexImageGen, setCodexImageGen,
       ttsPace, bumpPace,
       mediaStage, setMediaStage, stageMediaDemo, setStageMediaDemo, stageLoadDemo, setStageLoadDemo, coreMarks, setCoreMarks, proxyDemo, patchProxyDemo,
-      sessions, sessionById, newSession, patchSession, sendAgent, stopAgent, answerPermission,
+      sessions, sessionById, newSession, patchSession, archiveSession, deleteSessions, sendAgent, stopAgent, answerPermission,
       autoAllow, dropAutoAllow, harness, harnessPref, setHarnessPref, harnessOn, setHarnessOn, harnessList, patchHarness, addedHarnesses, addHarness, removeHarness, agentAvail, enableAgent, runner, setRunner, runnerBy, setRunnerFor, setAgentDefault,
       policy: policyMap, setPolicy, setSessionMode,
       dock, movieChats, setMovieChat, videoNotes, setVideoNotes, toolReq, requestTool, clearToolReq, openAgent, openSession, createProject, closeDock, toggleDock, setDock, dockW, setDockW,

@@ -321,9 +321,36 @@
   }
 
   const root = typeof window !== 'undefined' ? window : globalThis;
+  /**
+   * 已归档会话页（product-design §3.1：归档只影响列表显示）。按项目分组，不属于任何项目的单独一组放最后；
+   * 组内按归档时间从近到远（archivedAgo，分钟），组按其中最近一次归档排。
+   * @param {{dirs, movies, sessions}} d
+   * @param {{query?: string, dir?: string}} opt  dir：'all'（默认）| 项目 id | 'none'（不属于任何项目）
+   * @returns {{total, count, groups: [{key, dir|null, sessions}], dirs: [dir]}}  dirs：有归档会话的项目，给筛选菜单用
+   */
+  function archivedView(d, opt = {}) {
+    const dirs = d.dirs || [];
+    const mv = byId(d.movies || []);
+    const all = (d.sessions || []).filter((s) => s.archived);
+    const dirKey = (s) => { const k = dirOf(s, mv); return k && dirs.some((x) => x.id === k) ? k : 'none'; };
+    const q = String(opt.query || '').trim().toLowerCase();
+    const scope = opt.dir || 'all';
+    const hit = all.filter((s) => (scope === 'all' || dirKey(s) === scope)
+      && (!q || String(s.title || '').toLowerCase().includes(q)));
+    const at = (s) => (s.archivedAgo == null ? Infinity : s.archivedAgo);
+    const groups = {};
+    hit.forEach((s) => { (groups[dirKey(s)] = groups[dirKey(s)] || []).push(s); });
+    const list = Object.keys(groups).map((key) => ({
+      key, dir: key === 'none' ? null : dirs.find((x) => x.id === key),
+      sessions: groups[key].map((s, i) => ({s, i})).sort((a, b) => (at(a.s) - at(b.s)) || (a.i - b.i)).map((x) => x.s),
+    })).sort((a, b) => ((a.key === 'none') - (b.key === 'none')) || (at(a.sessions[0]) - at(b.sessions[0])));
+    const used = new Set(all.map(dirKey));
+    return {total: all.length, count: hit.length, groups: list, dirs: dirs.filter((x) => used.has(x.id)), hasLoose: used.has('none')};
+  }
+
   root.BC_AGENT_PROJECTS = {
     sessionArtifacts, artifactList, STATUS, ORDER, sessionStatus, statusInfo, dirOf, moviePath, summarize, summaryText, byRecent, activity,
-    tree, sidebarView, attention, search, sessionForMovie, fitsMovie, sessionsOfMovieProject,
+    tree, sidebarView, archivedView, attention, search, sessionForMovie, fitsMovie, sessionsOfMovieProject,
     DIR_ROOT, NEW_DIR_NAME, DEMO_OPEN_DIR, dirCreationError, dirPath, uniqueDirName, newDir, openDir,
   };
 })();

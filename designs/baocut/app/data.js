@@ -2598,6 +2598,21 @@
       {id: 's13', title: '把一期播客切成 5 条短视频的思路', project: null, harness: 'claude', model: 'sonnet', effort: 'mid',
        status: 'done', ago: 14400,
        messages: [{id: 'm1', role: 'user', text: '把一期播客切成 5 条短视频的思路'}]},
+      /* 已归档的会话（product-design §3.1：归档只影响列表显示）：不进侧栏，在 Home ›「已归档会话」页里恢复或删除。
+         archivedAgo：多少分钟前归档的 */
+      {id: 's40', title: '片头动画的三个方案先各做一版', project: 'p1', harness: 'claude', model: 'sonnet', effort: 'mid',
+       status: 'done', ago: 60 * 24 * 6, archived: true, archivedAgo: 300,
+       messages: [{id: 'm1', role: 'user', text: '片头动画的三个方案先各做一版，我挑一个。'},
+         {id: 'm2', role: 'assistant', text: '做好了三版，都放在 Space 的「片头/」里：A 是逐字弹出，B 是横向擦除，C 是 logo 缩放后接标题。'}]},
+      {id: 's41', title: '嘉宾介绍字幕条换成左下角', project: 'p1', harness: 'claude', model: 'sonnet', effort: 'mid',
+       status: 'done', ago: 60 * 24 * 9, archived: true, archivedAgo: 60 * 24 * 4,
+       messages: [{id: 'm1', role: 'user', text: '嘉宾介绍的字幕条换到左下角。'}]},
+      {id: 's42', title: '试一下 4K 导出要多久', project: null, harness: 'claude', model: 'sonnet', effort: 'mid',
+       status: 'done', ago: 60 * 24 * 12, archived: true, archivedAgo: 60 * 24 * 2,
+       messages: [{id: 'm1', role: 'user', text: '试一下 4K 导出要多久'}]},
+      {id: 's43', title: '演讲稿翻译成日语再对一遍口型', project: null, harness: 'claude', model: 'sonnet', effort: 'mid',
+       status: 'idle', ago: 60 * 24 * 30, archived: true, archivedAgo: 60 * 24 * 20,
+       messages: [{id: 'm1', role: 'user', text: '演讲稿翻译成日语再对一遍口型'}]},
     ],
   };
 

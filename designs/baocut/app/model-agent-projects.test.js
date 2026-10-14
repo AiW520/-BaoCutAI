@@ -344,3 +344,23 @@ test('视频卡跟着还在跑的活：新一轮也引用了这部视频时仍�
     [['p1','a2',1,['tx','tl']], ['p2','w2',0,['ex']]]);
   assert.deepEqual(P.artifactList(sess, items, tasks).map(it => [it.id, it.messageId]), [['p1','a2'],['p2','w2']]);
 });
+
+test('已归档会话页：按项目分组、不属于项目的放最后，组内按归档时间排，搜索与项目筛选', () => {
+  const ss = sessions.concat([
+    S('x1', {title: '旧的译法讨论', project: 'm1', archived: true, archivedAgo: 300}),
+    S('x2', {title: '封面配色', dir: 'd2', archived: true, archivedAgo: 5}),
+    S('x3', {title: '码率问题', archived: true, archivedAgo: 1}),
+    S('x4', {title: '译法二稿', project: 'm2', archived: true, archivedAgo: 30}),
+  ]);
+  const v = P.archivedView({dirs, movies, sessions: ss});
+  assert.strictEqual(v.total, 4);
+  assert.deepStrictEqual(v.groups.map((g) => g.key), ['d2', 'd1', 'none']);
+  assert.deepStrictEqual(v.groups[1].sessions.map((s) => s.id), ['x4', 'x1']);
+  assert.deepStrictEqual(v.dirs.map((d) => d.id), ['d1', 'd2']);
+  assert.ok(v.hasLoose);
+  assert.ok(!P.tree({dirs, movies, sessions: ss}).loose.some((s) => s.archived), '归档的不进侧栏');
+  const q = P.archivedView({dirs, movies, sessions: ss}, {query: '译法'});
+  assert.deepStrictEqual([q.count, q.groups.map((g) => g.key)], [2, ['d1']]);
+  assert.deepStrictEqual(P.archivedView({dirs, movies, sessions: ss}, {dir: 'none'}).groups.map((g) => g.key), ['none']);
+  assert.strictEqual(P.archivedView({dirs, movies, sessions}).total, 0);
+});

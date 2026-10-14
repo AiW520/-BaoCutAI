@@ -37,7 +37,7 @@
   /** 每个主入口有自己的侧栏；视频继承入口，设置内置导航。 */
   function sideOf(route) {
     const r = route && route.r;
-    if (r === 'home' || r === 'agent') return 'home';
+    if (r === 'home' || r === 'agent' || r === 'archived') return 'home';   // 已归档会话页挂在 Home 下（§3.1）
     if (r === 'projects' || r === 'sessions') return 'space';
     if (r === 'editor') return tabOf(route);
     if (r === 'settings' || r === 'models' || r === 'skill') return null;

@@ -39,10 +39,12 @@
     const status = AP.statusInfo(AP.sessionStatus(s));
     const dir = app.dirById(AP.dirOf(s, app.projects));
     const detail = `${title} · ${dir ? dir.name : '不属于任何项目'} · ${status ? status.label + ' · ' : ''}${AG.agoLabel(s.ago)}`;
+    /* 归档后 toast 的按钮去已归档会话页并高亮这一条（page-archived.jsx），那里一键恢复；
+       S2 toast 只有一个按钮，与归档视频的「查看归档」同一种做法（page-projects.jsx）。 */
     const archive = () => {
-      app.patchSession(s.id, {archived: true});
+      app.archiveSession(s.id, true);
       if (app.route.r === 'agent' && app.route.id === s.id) app.go({r: 'home'});
-      app.toast(`已归档「${title}」`, null, {label: '撤销', run: () => app.patchSession(s.id, {archived: false})});
+      app.toast(`已归档「${title}」`, null, {label: '查看归档', run: () => app.go({r: 'archived', id: s.id})});
     };
     return (
       <R.SideNavItem key={key} id={key} textValue={title} href={href} data-session-row="">
@@ -119,6 +121,7 @@
     const app = useApp();
     const R = window.RSP;
     const [creating, setCreating] = React.useState(false);
+    const archivedCount = app.sessions.filter((s) => s.archived).length;
     const onAction = (k) => {
       if (k === 'new') {
         setCreating(true);
@@ -137,7 +140,7 @@
         <span className="hs-head__actions">
           <R.MenuTrigger>
             <R.ActionButton isQuiet size="S" aria-label="整理项目与会话"><R.Icons.More /></R.ActionButton>
-            <R.Menu aria-label="侧栏设置">
+            <R.Menu aria-label="侧栏设置" onAction={(k) => { if (k === 'archived') app.go({r: 'archived'}); }}>
               <R.SubmenuTrigger>
                 <R.MenuItem id="organize" textValue="整理侧栏"><R.Text>整理侧栏</R.Text></R.MenuItem>
                 <R.Menu aria-label="整理侧栏" selectionMode="single" selectedKeys={[grouping]} onSelectionChange={(keys) => app.setPref('sidebarGrouping', [...keys][0])}>
@@ -152,6 +155,8 @@
                   <R.MenuItem id="name" textValue="名称"><R.Text>名称</R.Text></R.MenuItem>
                 </R.Menu>
               </R.SubmenuTrigger>
+              <R.MenuItem id="archived" textValue="已归档会话"><R.Icons.Archive /><R.Text>已归档会话</R.Text>
+                {archivedCount ? <R.Text slot="description">{archivedCount} 个会话</R.Text> : null}</R.MenuItem>
             </R.Menu>
           </R.MenuTrigger>
           <R.MenuTrigger>

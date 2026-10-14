@@ -26,6 +26,7 @@
       : r.r === 'tasks'  ? <window.TasksPage />
       : r.r === 'task'   ? <window.TaskDetailPage id={r.id} />
       : r.r === 'agent'  ? <window.AgentPage id={r.id} dir={r.dir} />
+      : r.r === 'archived' ? <window.ArchivedSessionsPage key={r.id || 'all'} focus={r.id} />
       /* 2026-09-17：远端算力从「工具」搬到「服务」（§17.6）；`remote` 与 `tools/remote` 两种旧链接都落到服务页 */
       : window.BC_SERVICES.resolve(r) ? <window.ServicesPage key={window.BC_SERVICES.resolve(r)} id={window.BC_SERVICES.resolve(r)} tab={r.tab} />
       : r.r === 'tools'  ? <window.ToolsPage key={r.id || 'gallery'} id={r.id} />

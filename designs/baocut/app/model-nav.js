@@ -72,7 +72,7 @@
 
   // Hash URLs work on a plain static server, including direct links and refresh.
   const names = {projects: 'space', editor: 'movie', task: 'task'};
-  const routes = new Set(['home', 'agent', 'projects', 'tasks', 'task', 'tools', 'services', 'models', 'settings', 'editor', 'none']);
+  const routes = new Set(['home', 'agent', 'projects', 'tasks', 'task', 'tools', 'services', 'models', 'settings', 'editor', 'archived', 'none']);
   // product-design §7.6：模型配置归入设置；旧模型链接保留能力与子页。
   function canonicalRoute(route) {
     return route.r === 'models'

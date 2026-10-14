@@ -22,6 +22,7 @@
     }
     return (
       <div className="agpage">
+        {sess && sess.archived ? <window.ArchivedBanner sess={sess} /> : null}
         <window.AgentThread key={sess ? sess.id : 'new:' + (dir || '')} sid={sess ? sess.id : null}
           project={null} dir={sess ? null : dir} onCreated={created} autoFocus />
       </div>

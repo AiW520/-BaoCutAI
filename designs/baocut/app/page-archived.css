@@ -1,0 +1,25 @@
+/* Home ›「已归档会话」（page-archived.jsx，product-design §3.1）。卡片里一行一个会话，按项目分组。 */
+.arc-intro { margin: 0 0 20px; font-size: 14px; line-height: 1.5; color: var(--gray-700); }
+.arc-bar { display: flex; align-items: center; gap: 8px; margin-bottom: 24px; }
+.arc-bar__search { flex: 1; min-width: 0; }
+.arc-bar__picker { flex: none; width: 200px; }
+
+.arc-group + .arc-group { margin-top: 32px; }
+.arc-group__hd { display: flex; align-items: center; gap: 8px; min-height: 32px; margin-bottom: 8px; color: var(--gray-800); }
+.arc-group__t { margin: 0; font-size: 14px; font-weight: 700; color: var(--gray-900); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.arc-group__path { min-width: 0; font-size: 12px; color: var(--gray-600); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.arc-group__n { flex: none; margin-inline-start: auto; font-size: 12px; color: var(--gray-600); }
+
+.arc-list { margin: 0; padding: 4px 16px; list-style: none; border: 2px solid var(--gray-100); border-radius: 10px; background: var(--gray-25); }
+.arc-row { display: flex; align-items: center; gap: 12px; min-height: 48px; padding: 8px 0; }
+.arc-row + .arc-row { border-top: 2px solid var(--gray-100); }
+.arc-row.is-focus { margin: 0 -12px; padding-inline: 12px; border-radius: 8px; background: var(--blue-100); }
+.arc-row.is-focus + .arc-row { border-top-color: transparent; }
+.arc-row__b { display: flex; flex-direction: column; gap: 2px; flex: 1; min-width: 0; }
+.arc-row__t { font-size: 14px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.arc-row__meta { font-size: 12px; color: var(--gray-600); }
+.arc-row__actions { display: flex; align-items: center; gap: 4px; flex: none; }
+
+/* 打开已归档会话时的横幅（ArchivedBanner）：会话线程上方一条，不另画边框之外的线 */
+.arc-banner { display: flex; align-items: center; gap: 8px; margin: 12px 16px 0; padding: 8px 8px 8px 12px; border-radius: 10px; background: var(--gray-75); color: var(--gray-800); font-size: 14px; }
+.arc-banner__t { flex: 1; min-width: 0; }
