@@ -30,11 +30,13 @@ const { values } = parseArgs({
     provider: { type: 'string' },
     model: { type: 'string' },
     'max-output-tokens': { type: 'string', default: '32000' },
+    replay: { type: 'string' },
   },
 });
 if (!values.corpus || !values.out) throw new Error('--corpus <dir> and --out <dir> are required');
 if (values.generator === 'runtime' && (!values.provider || !values.model))
   throw new Error('--generator runtime needs --provider and --model');
+if (values.generator === 'replay' && !values.replay) throw new Error('--generator replay needs --replay <earlier --out>');
 const worker = values.worker ?? resolveSpeechWorkerCommand(null);
 if (!worker) throw new Error('speech-worker not found: cargo build -p speech-worker, or pass --worker');
 const out = values.out;
@@ -177,7 +179,23 @@ interface Message {
 
 const attemptOf = new Map<string, number>();
 
-function makeText(log: fs.WriteStream, cjkSource: boolean) {
+type Recorded = Map<string, Array<{ text: string; usage: unknown }>>;
+
+/** 先前一次运行记下的回答，按提示词排队（同一页重发时依次取）；失败的调用没有回答，不收。 */
+function loadRecorded(file: string): Recorded {
+  const recorded: Recorded = new Map();
+  for (const line of fs.readFileSync(file, 'utf8').split('\n')) {
+    if (!line.trim()) continue;
+    const call = JSON.parse(line);
+    if (typeof call.text !== 'string') continue;
+    const queue = recorded.get(call.user) ?? [];
+    queue.push({ text: call.text, usage: call.usage });
+    recorded.set(call.user, queue);
+  }
+  return recorded;
+}
+
+function makeText(log: fs.WriteStream, cjkSource: boolean, recorded: Recorded | null) {
   let seq = 0;
   return {
     async generate(
@@ -193,14 +211,28 @@ function makeText(log: fs.WriteStream, cjkSource: boolean) {
       let usage: unknown = null;
       let modelVersion = values.generator!;
       let finishReason = 'stop';
-      if (values.generator === 'runtime') {
+      // 有录制就原样回放；录制里没有的提示词（这次的输入与录制时不同）交给 --generator，纯回放直接失败。
+      const answer = recorded?.get(user)?.shift();
+      if (answer) {
+        text = answer.text;
+        usage = answer.usage;
+        modelVersion = 'replay';
+      } else if (values.generator === 'replay') {
+        throw new Error(`no recorded answer for this ${kind} prompt`);
+      } else if (values.generator === 'runtime') {
         // 生产的 models.generateText（授权、预算、账本都在 Runtime 那边）。
         const args = ['text', '--json', '--system', system, '--provider', values.provider!, '--model', values.model!];
         if (request.maxOutputTokens) args.push('--max-output-tokens', String(request.maxOutputTokens));
         if (request.temperature !== undefined) args.push('--temperature', String(request.temperature));
         args.push('-');
         const envelope = JSON.parse(await runCli(args, user, signal ?? new AbortController().signal));
-        if (!envelope.ok) throw new Error(`${envelope.error?.code}: ${envelope.error?.message}`);
+        if (!envelope.ok) {
+          const error = { code: envelope.error?.code, message: envelope.error?.message };
+          log.write(
+            `${JSON.stringify({ n, kind, maxOutputTokens: request.maxOutputTokens, error, ms: Date.now() - started, system, user })}\n`,
+          );
+          throw new Error(`${error.code}: ${error.message}`);
+        }
         text = envelope.result.text;
         usage = envelope.result.usage ?? null;
         modelVersion = envelope.result.modelVersion ?? envelope.result.modelId;
@@ -212,7 +244,7 @@ function makeText(log: fs.WriteStream, cjkSource: boolean) {
       }
       const ms = Date.now() - started;
       log.write(
-        `${JSON.stringify({ n, kind, systemChars: system.length, userChars: user.length, answerChars: text.length, usage, ms, user, text })}\n`,
+        `${JSON.stringify({ n, kind, replayed: Boolean(answer), systemChars: system.length, userChars: user.length, answerChars: text.length, usage, ms, user, text })}\n`,
       );
       return { text, finishReason, modelVersion, usage } as never;
     },
@@ -268,7 +300,11 @@ for (const file of fs
           glossaryRef: null,
           params: { alignFusion: fusion },
         },
-        text: makeText(log, /^(zh|ja|ko)/.test(language)),
+        text: makeText(
+          log,
+          /^(zh|ja|ko)/.test(language),
+          values.replay ? loadRecorded(path.join(values.replay!, `${doc.videoId}.${fusion}.${values.perturb}`, 'calls.jsonl')) : null,
+        ),
         provider: values.provider ?? values.generator!,
         model: values.model ?? values.generator!,
         modelInfo: { maxOutputTokens: Number(values['max-output-tokens']), acceptsTemperature: true },

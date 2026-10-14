@@ -1,12 +1,30 @@
 """Tally a compare.ts summary: per carrier and per source language.
 
-usage: python3 -I tally.py <out>/summary.<perturb>.json
+usage: python3 -I tally.py <out>/summary.<perturb>.json [more summaries...]
 """
-import json, sys
+import json, os, sys
 from collections import defaultdict
 
-rows = json.load(open(sys.argv[1]))
-keys = ['videos', 'errors', 'units', 'skipped', 'aligned', 'split', 'fallback', 'sentenceLevel', 'rewritten', 'calls', 'cues', 'rowRepairRejected']
+rows = []
+for summary in sys.argv[1:]:
+    for r in json.load(open(summary)):
+        r['_base'] = os.path.dirname(os.path.abspath(summary))
+        rows.append(r)
+
+
+def tokens(r):
+    """Sum usage from the run's calls.jsonl (zero for echo / fake runs, which report none)."""
+    total = defaultdict(int)
+    path = os.path.join(r['_base'], f"{r['videoId']}.{r['fusion']}.{r['perturb']}", 'calls.jsonl')
+    if os.path.exists(path):
+        for line in open(path):
+            usage = json.loads(line).get('usage') or {}
+            for key in ('inputTokens', 'outputTokens', 'cachedTokens'):
+                total[key] += usage.get(key) or 0
+    return total
+
+
+keys = ['videos', 'errors', 'units', 'skipped', 'aligned', 'split', 'fallback', 'sentenceLevel', 'rewritten', 'calls', 'inputTokens', 'outputTokens', 'cues', 'rowRepairRejected']
 agg = defaultdict(lambda: defaultdict(int))
 for r in rows:
     for group in (('all', r['fusion']), (r['language'], r['fusion'])):
@@ -24,6 +42,9 @@ for r in rows:
         a['sentenceLevel'] += al['sentenceLevelSentences']
         a['rewritten'] += al['rewrittenSentences']
         a['calls'] += r['calls']['calls']
+        t = tokens(r)
+        a['inputTokens'] += t['inputTokens']
+        a['outputTokens'] += t['outputTokens']
         a['cues'] += r['cues']
         a['rowRepairRejected'] += (r['report'].get('rowRepair') or {}).get('rejected', 0)
 print('| group | carrier | ' + ' | '.join(keys) + ' |')
