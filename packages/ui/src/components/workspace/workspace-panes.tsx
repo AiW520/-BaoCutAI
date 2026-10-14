@@ -81,9 +81,9 @@ export function WorkspacePanes({
   // 改为按收起前的宽度叠在会话列下面、看不见；其他标签各自仍是 display none。一开始就是收起的（没量过宽度）照旧。
   const park = !visible && parkedWidth.current !== undefined && tabs.some(isEditorTab);
   const openKey = useVideo((s) => (s.video ? targetKey(s.video.target) : null));
-  const current = visible ? tabs.find((t) => itemKey(t) === active) : undefined;
-  // 当前标签就是打开着的视频：编辑器那一格接管这个标签的面板 id。
-  const editorKey = current?.kind === 'video' && targetKey(current.target) === openKey ? itemKey(current) : null;
+  // 打开着的视频的标签：编辑器那一格接管它的面板 id，不是当前标签时也一样，页签缩略卡才克隆得到编辑器。
+  const editorTab = openKey ? tabs.find((t) => t.kind === 'video' && targetKey(t.target) === openKey) : undefined;
+  const editorKey = editorTab ? itemKey(editorTab) : null;
 
   return (
     <div ref={rootRef} className={panes({ isHidden: !visible && !park })} style={park ? { ...PARKED_AREA, width: parkedWidth.current } : undefined}>
@@ -97,7 +97,7 @@ export function WorkspacePanes({
           </Pane>
         );
       })}
-      {openKey ? <EditorPane paneKey={editorKey} /> : null}
+      {openKey ? <EditorPane paneKey={editorKey} shown={visible && editorKey !== null && editorKey === active} /> : null}
     </div>
   );
 }
@@ -152,9 +152,11 @@ function Pane({ paneKey, shown, keepLayout, children }: { paneKey: string; shown
   );
 }
 
-/** 编辑器那一格：打开着视频就一直挂着；不是当前标签时 Activity 收起，并把播放状态归位。 */
-function EditorPane({ paneKey }: { paneKey: string | null }) {
-  const shown = paneKey !== null;
+/**
+ * 编辑器那一格：打开着视频就一直挂着；不是当前标签时 Activity 收起，并把播放状态归位。
+ * `paneKey` 是打开着的视频的标签（不在这组标签里时为 null）：隐藏时也带着它的面板 id。
+ */
+function EditorPane({ paneKey, shown }: { paneKey: string | null; shown: boolean }) {
   useEffect(() => {
     // 收起时引擎的效果清理会停下播放（dispose → pause）；store 里的播放状态跟着归位，回来时不显示成在播。
     if (!shown) useEditor.getState().setPlaying(false);
