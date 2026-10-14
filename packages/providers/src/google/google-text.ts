@@ -81,6 +81,9 @@ export class GoogleTextAdapter implements TextAdapter, ModelLister {
     const { config, parameters } = request;
     const system = parameters.messages.filter((m) => m.role === 'system');
     const format = parameters.responseFormat;
+    // 没指定推理强度时不下发 `thinkingConfig` 等于按模型默认档思考，而思考计入 `maxOutputTokens`：整页回写会被思考
+    // 吃光输出上限、正文截断（AI 管线 §10.2）。所以落到模型最低的一档。
+    const thinkingLevel = parameters.effort ?? request.model.efforts[0] ?? null;
     const body = JSON.stringify({
       contents: parameters.messages
         .filter((m) => m.role !== 'system')
@@ -91,7 +94,7 @@ export class GoogleTextAdapter implements TextAdapter, ModelLister {
         ...(parameters.temperature !== null ? { temperature: parameters.temperature } : {}),
         ...(parameters.seed !== null ? { seed: parameters.seed } : {}),
         ...(format.type === 'json' ? { responseMimeType: 'application/json', responseJsonSchema: format.schema } : {}),
-        ...(parameters.effort !== null ? { thinkingConfig: { thinkingLevel: parameters.effort } } : {}),
+        ...(thinkingLevel !== null ? { thinkingConfig: { thinkingLevel } } : {}),
       },
     });
     const response = await providerFetch(googleHttpOptions(config, request.http), {

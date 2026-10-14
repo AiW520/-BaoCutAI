@@ -1480,7 +1480,7 @@ Node 管理模型目录、版本、下载计划、校验与资源准入；Rust W
 
 智谱的 `glm-5.3` 与 `glm-5.3-flash` 按[官方模型说明](https://docs.z.ai/guides/llm/glm-5.3)和 [Flash 说明](https://docs.z.ai/guides/vlm/glm-5.3-flash)声明 1M 上下文、128K（131072 token）单次输出；二者强制思考，不能发送 `thinking.type: disabled`。产品的低／中／高三档分别发送 `reasoning_effort: low`／`high`／`max`，最低档按最近档位换成低；自动仍省略参数，使用供应商的默认 `max`。翻译也使用模型页设置的推理强度；需要减少思考消耗时选低。输出上限包含思考占用，不能把保守的 8192 token 当成这两个模型的能力上限。
 
-DeepSeek 的 `deepseek-v4-pro` 与 `deepseek-flash` 缺省开启思考，`max_tokens` 同时计算思考与正文；翻译、对齐这类整页回写可能先被思考吃完上限，得到 HTTP 200 加空正文（结束原因 `length`）。模型表不声明推理强度，请求一律带 `thinking: { type: 'disabled' }`（与 v2 文件任务的自动档相同，见 [AI 管线 §10.2](../design/subtitle/bcut-ai-pipeline-design/10.md)）。
+DeepSeek 的 `deepseek-v4-pro` 与 `deepseek-flash` 缺省开启思考，`max_tokens` 同时计算思考与正文；翻译、对齐这类整页回写可能先被思考吃完上限，得到 HTTP 200 加空正文（结束原因 `length`）。模型表不声明推理强度，请求一律带 `thinking: { type: 'disabled' }`（与 v2 文件任务的自动档相同，见 [AI 管线 §10.2](../design/subtitle/bcut-ai-pipeline-design/10.md)）。Google Gemini 同理：`maxOutputTokens` 也算上思考，不下发 `thinkingConfig` 时按模型默认档思考，实测 Gemini 3.8 Flash 的翻译页把 16,384 的上限几乎全用在思考上、正文截断；所以没指定推理强度时下发模型最低的一档（3.8 / 3.7 是 `low`，其余 `minimal`），明确指定时照用。
 
 **文本的输出合同**。执行者把全文写进 staging（`output-1.txt` 或 `output-1.json`），声明长度与 sha256；结束原因归一为 `stop`、`length`、`content-filter`。内容过滤是 `PROVIDER_REJECTED`（`content-filter`），不发布。`length` 不是完整的成功：文本仍然发布，带 `output-truncated` 警告；结构化输出到了上限一律失败。结构化输出在发布之前按 schema 校验：不是 JSON 或不符合 schema 是 `MODEL_OUTPUT_INVALID`（`details.reason` 为 `schema`、`length` 或 `empty`，`details.problems` 列出前几处），不重试。发布前 JobManager 再核对摘要与长度、按 UTF-8 严格解码，结构化输出再校验一次 schema。产物是 `.txt`（`text/plain`）或 `.json`（`application/json`）；结果里另有前 2000 个码点的预览、用量、模型与版本、结束原因与 `notes`。
 

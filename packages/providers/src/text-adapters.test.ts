@@ -302,6 +302,17 @@ describe('Google 文本（generateContent）', () => {
     expect(request!.body.toString('utf8')).not.toContain(GOOGLE_KEY);
   });
 
+  it('没指定推理强度：思考落到模型最低的一档，不按模型默认档不封顶地思考', async () => {
+    server = await startFakeProviderServer(fakeGoogleHandler('Bonjour.'));
+    const cfg = config(`${server.origin}/v1beta`, GOOGLE_KEY);
+    await call(new GoogleTextAdapter(), cfg, 'gemini-3.8-flash', params());
+    await call(new GoogleTextAdapter(), cfg, 'gemini-3.5-flash-lite', params());
+    const levels = server.requests.map(
+      (r) => (r.json as { generationConfig: { thinkingConfig?: unknown } }).generationConfig.thinkingConfig,
+    );
+    expect(levels).toEqual([{ thinkingLevel: 'low' }, { thinkingLevel: 'minimal' }]);
+  });
+
   it('结束原因：MAX_TOKENS 是 length，SAFETY 与输入被拦下是 content-filter，其余是被拒绝', async () => {
     let finish: string | null = 'MAX_TOKENS';
     let blocked = false;
