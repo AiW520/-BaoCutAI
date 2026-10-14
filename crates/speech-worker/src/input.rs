@@ -98,6 +98,9 @@ pub struct Params {
     /// 退避时长的倍数（默认 1）；测试给 0。
     #[serde(default = "one")]
     pub backoff_scale: f64,
+    /// 翻译页顺带交回对齐草稿的载体（默认 `rows`）。
+    #[serde(default)]
+    pub align_fusion: AlignFusion,
 }
 
 impl Default for Params {
@@ -105,6 +108,26 @@ impl Default for Params {
         Params {
             instructions: None,
             backoff_scale: 1.0,
+            align_fusion: AlignFusion::default(),
+        }
+    }
+}
+
+/// 融合草稿的载体（行文本载体设计 §8.16）：`rows` 是 HTML 页、模型按源词序号写显示行；`lines` 是 `lines/1` 行文本、
+/// 每块用首尾源词引用标出对应，由核心定位。
+#[derive(Debug, Default, Clone, Copy, PartialEq, Eq, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum AlignFusion {
+    #[default]
+    Rows,
+    Lines,
+}
+
+impl AlignFusion {
+    pub fn as_str(self) -> &'static str {
+        match self {
+            AlignFusion::Rows => "rows",
+            AlignFusion::Lines => "lines",
         }
     }
 }

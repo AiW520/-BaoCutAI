@@ -460,7 +460,8 @@ interface SpeechTranslateInput {
   targetLanguage: string;             // BCP 47
   glossary: { source: string; target: string; note?: string }[];   // 冻结、去重之后的术语
   glossaryRef: GlossaryRef | null;    // 原样写进译文
-  params?: { instructions?: string; backoffScale?: number };       // 风格提示；退避时长的倍数，默认 1
+  params?: { instructions?: string; backoffScale?: number; alignFusion?: 'rows' | 'lines' };
+                                      // 风格提示；退避时长的倍数，默认 1；融合草稿的载体，默认 rows（流程参数 alignFusion）
   translation?: TranslationBody;      // 就地刷新：这门语言已有的译文（baocut.translation/2），作底稿
   sentences?: Id[];                   // 就地刷新：要重译的句子（s-<首词 ID>），至少一句；与 translation 同给同不给
 }
@@ -472,7 +473,7 @@ interface SpeechTranslateInput {
 
 - `translation.json`：`baocut.translation/2` 正文（视频格式规范 §5.3）。没有底稿时是一份新的译文，不读已有的；就地刷新时是底稿连同重译的那几句：单元 ID 与顺序照旧，底稿里没有单元的句子按首词的位置插进去，`sourceBasis` 换成这次的原文。调用方只取点名句子的单元，别的单元以底稿为准。句子按字幕与翻译核心的规则派生，`sourceFingerprint` 是核心的指纹，`sourceBasis.editViewHash` 是 `{ derivation: 'speech-doc/sentences', sentences: [[id, fingerprint], …] }` 的摘要。
 - `cues.json`：`{ schema: 'baocut.speech-worker.cues/1', language, timescale, cues: { unitId, sentenceId, text, start, end, fallback }[] }`。时间是转写时钟（`timescale` 与转写相同）的整数刻度，夹在媒体时长之内，按时间排好、不重叠；空的与零长的不写。`fallback` 是对齐不可用、按句时长摊开的那几条。
-- `report.json`：模式（`mode`：`full` 或 `refresh`）与送翻的句数（`targetSentences`）、简报（`skipped`、`generated`、`degraded`、`resumed`）、分页、对齐、收尾轮、调用数与提示，供摘要与诊断。
+- `report.json`：模式（`mode`：`full` 或 `refresh`）与送翻的句数（`targetSentences`）、融合草稿的载体（`alignFusion`）、简报（`skipped`、`generated`、`degraded`、`resumed`）、分页、对齐、收尾轮、调用数与提示，供摘要与诊断。
 - `checkpoint.json`：见架构设计 §7.9 的「断点」。
 
 Runtime 读回之后核对：译文按视频格式规范 §5.3 的形状与冻结的 `speechRef`，字幕条按上面的规则（就地刷新时逐个单元与字幕条的核对只做点名的句子）；不合时这一步以 `WORKER_OUTPUT_INVALID` 失败，Worker 意外退出时以 `WORKER_FAILED` 失败。Worker 自己的错误照它的 `code` 成为这一步的错误，`terminal` 应答引起的失败改抛 Runtime 一侧原样的错误。

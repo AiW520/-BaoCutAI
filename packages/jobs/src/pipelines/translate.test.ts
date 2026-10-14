@@ -190,7 +190,9 @@ describe('拼接、提示词与批的核对（字幕文件的翻译用）', () =
       glossary: [{ source: 'a', target: 'b' }],
     });
     expect(parseTranslateParams({ videoId: 'v', targetLanguage: 'en', memory: false })).toMatchObject({ memory: false });
+    expect(parseTranslateParams({ videoId: 'v', targetLanguage: 'en', alignFusion: 'lines' })).toMatchObject({ alignFusion: 'lines' });
     for (const bad of [
+      { videoId: 'v', targetLanguage: 'en', alignFusion: 'table' },
       { videoId: 'v', targetLanguage: 'english!' },
       { videoId: 'v', targetLanguage: 'en', glossary: [{ source: 'a' }] },
       { targetLanguage: 'en' },
@@ -547,6 +549,20 @@ describe.skipIf(!command || !wasm)('翻译流程（真的 Speech Worker，假的
     expect(videos.applied).toHaveLength(2);
     expect((videos.applied[1]!.operations[0] as { documentId?: string }).documentId).toBeUndefined();
     expect(again.result!.documentId).toBe('doc_tr2');
+  }, 60_000);
+
+  it('alignFusion: lines：翻译页走行文本载体 lines/1，载体冻结在流程参数里，译文照常组装写入', async () => {
+    const record = await translate({ alignFusion: 'lines' });
+    expect(record.state, JSON.stringify(record.error)).toBe('completed');
+    expect(record.pipeline!.params).toMatchObject({ alignFusion: 'lines' });
+    const kinds = text.users().map(speechRequestKind);
+    expect(kinds).toContain('translate-lines');
+    expect(kinds).not.toContain('translate');
+    expect(text.users().find((user) => speechRequestKind(user) === 'translate-lines')).toContain('format=lines/1');
+    const body = written().body as { units: Array<{ naturalText: string }> };
+    expect(translationProblems(body, frozen(sentencesBody(45)))).toEqual([]);
+    expect(body.units).toHaveLength(45);
+    expect(body.units[0]!.naturalText).toMatch(/^好的，第 ?\d+ ?句。$/);
   }, 60_000);
 
   it('翻译记忆：沿用的句子不送翻、单元标 reuse；参考附进提示；摘要记下用了多少；memory: false 时不查', async () => {

@@ -135,7 +135,15 @@ export interface TranslateParams {
    * 已有译法（不送翻，单元标 `reuse`），语义相近的作为参考附在提示里。`false` 关掉。就地刷新时不用（重译就是要换译法）。
    */
   memory?: boolean;
+  /**
+   * 翻译页顺带交回对齐草稿的载体，默认 `rows`：HTML 页，模型按源词序号把译文切成显示行。`lines` 是行文本载体 `lines/1`
+   * （行文本载体设计 §8.16）：一句一行，每块译文用首尾源词引用标出对应，由核心定位，输入输出都更短。启动时冻结，重试沿用。
+   */
+  alignFusion?: TranslateAlignFusion;
 }
+
+/** 融合草稿的载体（`TranslateParams.alignFusion`）。 */
+export type TranslateAlignFusion = 'rows' | 'lines';
 
 /** 翻译记忆用了多少（`TranslateSummary.memory`）。 */
 export interface TranslateMemoryUse {

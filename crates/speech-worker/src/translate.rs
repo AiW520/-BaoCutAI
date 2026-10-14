@@ -1,8 +1,8 @@
 //! 一份转写的翻译（架构设计 §7.9）：简报 → 分页翻译 → 质检与修复 → 对齐 → 黏结收尾 → 目标语字幕的时间投影 → 写出。
 //!
 //! 编排照 v2 `bcut-engine/src/flows/translate.rs` 的 `translate_cmd_core` 移植，取它的缺省档：不跑全文 analysis、
-//! 译向简报单页且无术语时跳过、融合草稿 `rows`、对齐 `manyToOne` + 块对齐边、密度 `auto`、主对齐一轮修复、黏结收尾轮、
-//! 中文标点自动校正。缺省每次执行都是新的一份译文（§7.9），所以目标语言那一格从空开始（检查点除外）。
+//! 译向简报单页且无术语时跳过、融合草稿 `rows`（`params.alignFusion` 可选 `lines`）、对齐 `manyToOne` + 块对齐边、
+//! 密度 `auto`、主对齐一轮修复、黏结收尾轮、中文标点自动校正。缺省每次执行都是新的一份译文（§7.9），所以目标语言那一格从空开始（检查点除外）。
 //!
 //! 就地刷新（输入带 `translation` 与 `sentences`）：底稿读进目标语言那一格，只重译点名的句子，对齐与黏结收尾也只碰
 //! 这些句子，不跑译向简报；写回时以底稿为准（单元 ID、顺序、审阅状态与扩展字段照旧），`sourceBasis` 换成这次的原文。
@@ -38,7 +38,7 @@ use video_model::translation::{SourceBasis, TranslationBody};
 
 use crate::Failure;
 use crate::checkpoint::{Checkpoints, Phase, TranslateCheckpoint};
-use crate::input::{Memory, TranslateInput};
+use crate::input::{AlignFusion, Memory, TranslateInput};
 use crate::llm::StdioLlm;
 use crate::protocol::{Control, event};
 
@@ -128,6 +128,8 @@ pub fn run(input_path: &Path, staging: &Path, control: Rc<RefCell<Control>>) -> 
     let mut sleep = move |seconds: f64| sleep_control.borrow_mut().sleep(seconds * backoff);
     let mut llm = StdioLlm::new(control.clone());
     let params = TransParams::for_delivery(&lang, None);
+    let fusion = input.params.align_fusion;
+    // `rows` 与 `lines` 共用 800 词的翻译页档（v2 同样如此）。
     let translate_budget = budgets::TRANSLATE_ROWS_WORDS;
     let mut report = Report::default();
 
@@ -186,8 +188,8 @@ pub fn run(input_path: &Path, staging: &Path, control: Rc<RefCell<Control>>) -> 
             tone: None,
             autocorrect: true,
             align: Some(params),
-            align_rows: true,
-            align_lines: false,
+            align_rows: fusion == AlignFusion::Rows,
+            align_lines: fusion == AlignFusion::Lines,
             worker_slots: None,
             provenance_stale: BTreeSet::new(),
         };
@@ -395,6 +397,7 @@ pub fn run(input_path: &Path, staging: &Path, control: Rc<RefCell<Control>>) -> 
         "brief": report.brief,
         "glossaryTerms": brief.as_ref().map_or(0, |brief| brief.glossary.len()),
         "pages": checkpoint.pages,
+        "alignFusion": fusion.as_str(),
         "rowsPageRetries": report.rows_page_retries,
         "align": report.align,
         "rowRepair": report.row_repair,
@@ -458,10 +461,13 @@ fn stopped(error: LlmError, llm: &StdioLlm, control: &Rc<RefCell<Control>>, chec
     }
 }
 
-/// 检查点的指纹：词流、目标语言与影响译文的冻结参数（风格提示、术语；刷新时还有底稿与要重译的句子）。任何一个变了，
-/// 旧检查点作废。
+/// 检查点的指纹：词流、目标语言与影响译文的冻结参数（风格提示、术语、融合草稿的载体；刷新时还有底稿与要重译的句子）。
+/// 任何一个变了，旧检查点作废。载体是缺省的 `rows` 时不进指纹，加这个参数之前的检查点照样认。
 fn checkpoint_key(doc: &TranscriptDoc, input: &TranslateInput, instructions: Option<&str>) -> String {
     let mut settings = vec![format!("instructions={}", instructions.unwrap_or_default())];
+    if input.params.align_fusion != AlignFusion::Rows {
+        settings.push(format!("alignFusion={}", input.params.align_fusion.as_str()));
+    }
     if let (Some(base), Some(sentences)) = (&input.translation, &input.sentences) {
         settings.push(format!("base={}", serde_json::to_string(base).expect("译文正文可以序列化")));
         settings.push(format!("sentences={}", sentences.join("\u{1f}")));

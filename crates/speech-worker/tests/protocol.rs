@@ -573,6 +573,106 @@ fn long_sentences_come_back_as_aligned_rows() {
     }
 }
 
+/// 假的模型答 `lines/1` 页：每个编号行按 `¦` 分片，每片一块 `|首词..尾词|第i块`（与 `lines/1` 协议相符）。
+fn fake_lines_answer(params: &Value) -> String {
+    let user = params["user"].as_str().unwrap();
+    let mut out = Vec::new();
+    for line in user.lines() {
+        let Some((n, rest)) = line.split_once(' ') else { continue };
+        if n.is_empty() || !n.chars().all(|ch| ch.is_ascii_digit()) {
+            continue;
+        }
+        let source: Vec<&str> = rest
+            .split_whitespace()
+            .filter(|token| !token.starts_with('≤') && !token.starts_with('≥') && *token != "⏸")
+            .collect();
+        let mut chunks = String::new();
+        for (index, piece) in source.join(" ").split('¦').enumerate() {
+            let words: Vec<&str> = piece.split_whitespace().collect();
+            let (Some(first), Some(last)) = (words.first(), words.last()) else {
+                continue;
+            };
+            chunks.push_str(&format!("|{first}..{last}|第{}块", index + 1));
+        }
+        out.push(format!("{n} {chunks}"));
+    }
+    out.join("\n")
+}
+
+/// 把融合草稿的载体写进冻结的输入。
+fn with_align_fusion(job: &Job, fusion: &str) {
+    let mut value = read(&job.input);
+    value["params"]["alignFusion"] = json!(fusion);
+    std::fs::write(&job.input, serde_json::to_vec(&value).unwrap()).unwrap();
+}
+
+#[test]
+fn the_lines_carrier_aligns_long_sentences_from_the_translate_page() {
+    let job = job(6, 30);
+    with_align_fusion(&job, "lines");
+    let mut worker = Worker::start();
+    let mut events = Vec::new();
+    let reply = worker.translate(&job, &mut events, &mut |params, _| {
+        Answer::Text(if params["kind"] == "translate-lines" {
+            fake_lines_answer(params)
+        } else {
+            fake_answer(params)
+        })
+    });
+    assert!(reply.get("error").is_none(), "{reply}");
+    let requests = events_named(&events, "llm.request");
+    // 翻译页走行文本载体：没有 HTML 的 translate 页，契约里是 `lines/1` 的协议。
+    assert!(requests.iter().all(|request| request["params"]["kind"] != "translate"));
+    let pages: Vec<_> = requests
+        .iter()
+        .filter(|request| request["params"]["kind"] == "translate-lines")
+        .collect();
+    assert_eq!(pages.len(), 1);
+    assert!(pages[0]["params"]["user"].as_str().unwrap().contains("format=lines/1"));
+    let report = read(&job.staging.join("report.json"));
+    assert_eq!(report["alignFusion"], "lines");
+    // 草稿直接验收，不另发对齐请求。
+    assert_eq!(report["align"]["prealignedSentences"], 6);
+    assert_eq!(report["llmCalls"], 1);
+    let body: TranslationBody = serde_json::from_value(read(&job.staging.join("translation.json"))).unwrap();
+    assert_eq!(body.units.len(), 6);
+    for unit in &body.units {
+        let split = unit.alignment.as_ref().and_then(|a| a.split.as_ref()).expect("每句都有切分");
+        assert!(
+            split.aligner.as_deref().is_some_and(|tag| tag.starts_with("llm-lines+")),
+            "{:?}",
+            split.aligner
+        );
+    }
+    let cues = read(&job.staging.join("cues.json"));
+    assert!(cues["cues"].as_array().unwrap().len() > body.units.len(), "长句切成多行");
+}
+
+#[test]
+fn an_input_without_align_fusion_keeps_the_rows_carrier() {
+    let job = job(2, 6);
+    let mut worker = Worker::start();
+    let mut events = Vec::new();
+    let reply = worker.translate(&job, &mut events, &mut |params, _| Answer::Text(fake_answer(params)));
+    assert!(reply.get("error").is_none(), "{reply}");
+    assert!(
+        events_named(&events, "llm.request")
+            .iter()
+            .any(|request| request["params"]["kind"] == "translate")
+    );
+    assert_eq!(read(&job.staging.join("report.json"))["alignFusion"], "rows");
+}
+
+#[test]
+fn an_unknown_align_fusion_is_unreadable_input() {
+    let job = job(2, 6);
+    with_align_fusion(&job, "table");
+    let mut worker = Worker::start();
+    let mut events = Vec::new();
+    let reply = worker.translate(&job, &mut events, &mut |params, _| Answer::Text(fake_answer(params)));
+    assert_eq!(reply["error"]["code"], "INPUT_UNREADABLE", "{reply}");
+}
+
 #[test]
 fn retryable_errors_are_retried_by_the_core() {
     let job = job(4, 5);

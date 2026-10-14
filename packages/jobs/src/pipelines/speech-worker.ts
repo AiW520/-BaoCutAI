@@ -2,7 +2,7 @@ import fs from 'node:fs/promises';
 import { existsSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { RpcError, type Id, type JobCallCounts, type TextModelInfo } from '@baocut/protocol';
+import { RpcError, type Id, type JobCallCounts, type TextModelInfo, type TranslateAlignFusion } from '@baocut/protocol';
 import { TextCallCancelled, TextGenerationError, type TextGenerateRequest, type TextGenerator } from '@baocut/models';
 import {
   JsonLineWorker,
@@ -72,7 +72,8 @@ export interface SpeechTranslateInput {
   targetLanguage: string;
   glossary: Array<{ source: string; target: string; note?: string }>;
   glossaryRef: GlossaryRef | null;
-  params?: { instructions?: string; backoffScale?: number };
+  /** `alignFusion`：融合草稿的载体，不给时 `rows`（`TranslateParams.alignFusion`）。 */
+  params?: { instructions?: string; backoffScale?: number; alignFusion?: TranslateAlignFusion };
   /**
    * 就地刷新：这门语言已有的译文作底稿，只重译 `sentences` 里的句子，别的单元原样写回（命令协议规范 §4.5）。两项同给同不给；
    * 这时 `glossaryRef` 沿用底稿的，不做译向简报。

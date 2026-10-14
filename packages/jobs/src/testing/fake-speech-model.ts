@@ -1,7 +1,8 @@
 /**
  * 测试用：Speech Worker（字幕与翻译核心）发给文本模型的请求的假答案。请求走文件契约：要改写的载体包在
  * `<BEGIN INPUT name="<kind>.src.<ext>">` 里，翻译页是 `<section>` 里一句一个 `<p id="<句子 ID>">`。
- * 翻译页按句回一个答案（带对齐分组的按组写行），别的请求（译向简报等）回一个不合格的答案，让核心走自己的降级。
+ * 翻译页按句回一个答案（带对齐分组的按组写行；行文本载体 `lines/1` 的页按 `¦` 分片、每片一块首尾源词引用），别的请求
+ * （译向简报等）回一个不合格的答案，让核心走自己的降级。
  */
 
 interface Tag {
@@ -33,7 +34,7 @@ export function speechRequestKind(user: string): string | null {
   return /<BEGIN INPUT name="([a-z-]+)\.src\./.exec(user)?.[1] ?? null;
 }
 
-/** 翻译页里要翻译的句子 ID（可编辑的 `<p>`）。 */
+/** 翻译页里要翻译的句子 ID（可编辑的 `<p>`）；`lines/1` 的页没有句子 ID，是空的。 */
 export function requestedSentences(user: string): string[] {
   return tags(user, 'section')
     .flatMap((section) => tags(section.inner, 'p'))
@@ -46,6 +47,7 @@ export function requestedSentences(user: string): string[] {
  * （核心的质量门会退回整页都一样的短译文与语言不对的译文）。
  */
 export function fakeSpeechAnswer(user: string, line?: (sentenceId: string, group: number) => string): string {
+  if (speechRequestKind(user) === 'translate-lines') return fakeLinesAnswer(user);
   if (speechRequestKind(user) !== 'translate') return '<article></article>';
   const chinese = /data-target="(zh|ja)/.test(user);
   let ordinal = 0;
@@ -75,4 +77,27 @@ export function fakeSpeechAnswer(user: string, line?: (sentenceId: string, group
     out += '</section>';
   }
   return `${out}</article>`;
+}
+
+/** `lines/1` 的页：每个编号行一行答案，按 `¦` 分片，每片一块 `|首词..尾词|译文`。 */
+function fakeLinesAnswer(user: string): string {
+  const chinese = /^! format=lines\/1 .*target=(zh|ja)/m.test(user);
+  const out: string[] = [];
+  for (const line of user.split('\n')) {
+    const match = /^(\d+) (.*)$/.exec(line);
+    if (!match) continue;
+    const n = Number(match[1]);
+    const source = match[2]!
+      .split(/\s+/)
+      .filter((token) => token && !token.startsWith('≤') && !token.startsWith('≥') && token !== '⏸')
+      .join(' ');
+    const chunks = source.split('¦').flatMap((piece, i) => {
+      const words = piece.trim().split(/\s+/).filter(Boolean);
+      if (words.length === 0) return [];
+      const text = i === 0 ? (chinese ? `好的，第${n}句` : `This is line ${n}`) : chinese ? `第${i + 1}段` : `part ${i + 1}`;
+      return [`|${words[0]}..${words.at(-1)}|${text}`];
+    });
+    out.push(`${n} ${chunks.join('')}${chinese ? '。' : '.'}`);
+  }
+  return out.join('\n');
 }

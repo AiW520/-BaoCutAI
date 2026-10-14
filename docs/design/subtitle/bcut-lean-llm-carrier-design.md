@@ -2,7 +2,7 @@
 
 # 字幕 AI 管线 LLM 交换格式精简设计（行文本载体 + 首尾锚词）
 
-> 状态：**M0 基础已实施；M1 第二轮（分片提示 + 联合定位 + 行归属门 + 再问式补做轮）在同一 508 句上达到 491 / 0 / 17（对齐 / 整句 / 改写，旧载体 378 / 97 / 33），两轮合计公价折算约 0.4×；M2 的 provider 直连路径已作为 opt-in 接入生产 `bcut translate --align-fusion lines`（默认仍是 `rows`，Agent 路径未接、§5 的部分提交 / 状态机未做）**（2026-09-30，§8.2–§8.3）。已落地逐次 provider 原始响应/用量账本、首尾压缩、`lines/1` 实验编解码和共享翻译验收适配器。4 个项目、10 页、508 句的 DeepSeek V4.1 Flash 对照发现跨句内容错位及规划退化，详见 §8.1。部分提交、会话恢复、LCS 冻结切点恢复与 M2–M4 尚未接入；实验冻结回显不完全相同时保留原文并撤销切点。§7 的旧起点回放不作为首尾锚词格式验收。
+> 状态：**M0 基础已实施；M1 第二轮（分片提示 + 联合定位 + 行归属门 + 再问式补做轮）在同一 508 句上达到 491 / 0 / 17（对齐 / 整句 / 改写，旧载体 378 / 97 / 33），两轮合计公价折算约 0.4×；M2 的 provider 直连路径已作为 opt-in 接入生产 `bcut translate --align-fusion lines`（默认仍是 `rows`，Agent 路径未接、§5 的部分提交 / 状态机未做）**（2026-09-30，§8.2–§8.3）。**v3：引擎与编解码是 v2 最终版的移植，Runtime 翻译流程以 `alignFusion: 'lines'` opt-in 接入，默认仍是 `rows`，rows / `lines` 的 v3 实测对照待做**（2026-10-14，§8.16）。已落地逐次 provider 原始响应/用量账本、首尾压缩、`lines/1` 实验编解码和共享翻译验收适配器。4 个项目、10 页、508 句的 DeepSeek V4.1 Flash 对照发现跨句内容错位及规划退化，详见 §8.1。部分提交、会话恢复、LCS 冻结切点恢复与 M2–M4 尚未接入；实验冻结回显不完全相同时保留原文并撤销切点。§7 的旧起点回放不作为首尾锚词格式验收。
 > 范围：翻译、翻译对齐（`align-edges/1`、`align-rewrite/1`、`align-table/1`）的 LLM 交换格式、会话形态与容错；翻译前的润色不并进页会话（§6.6），它自己的补丁式输出见 §10.1；说话人页排在最后。
 > 不动的东西：`words[]` / `trans` / `transDisplay` / `transAlign` 数据模型、「先定译文、再映射连续源词区间」的纪律（[transcript-v03 §5.2](bcut-transcript-v03-design.md)）、对齐块与切行 DP（[alignment-block](bcut-alignment-block-subtitle-split-design.md)）、三级 Problem 与有界重试原则（[ai-pipeline §10.2](bcut-ai-pipeline-design/10.md)）。新任务载体的补交计数与终态在 §5 定义，不追溯改变旧任务。
 > 本文访谈样例取自一个英文 → 简体中文的项目，另用英文 → 西班牙文的短句说明交叉；都是示意。规则按 `words[]` 原子与显示单位写，不预设产出语言。
@@ -829,6 +829,19 @@ r22 剩下的 34 处日文：
 - 同一份报告里首轮未接收的两句（目标语语序与源文不同、一片源文没有单独译文）、hi-07 把人名 `सारा` 读成「全部」、de-07，都只做记录。
 
 详见 [`docs/changelog/core/2026-10-01-115443.md`](../../changelog/core/2026-10-01-115443.md)。
+
+### 8.16 2026-10-14 v3 Runtime 接入（opt-in）
+
+**v3 里已有的。** `speech-doc` 的 `filepipe::{lines, lines_translation}` 与 v2 第十五轮（§8.15）的 `bcut-flow-core` 逐行相同，只有词典分词的路径从 `bcut_speech_core::word_breaks` 改成 `crate::word_breaks`；`engines/{translate,align}.rs` 与 `align_block.rs` 也是 v2 最终版的整份移植。M1 第二轮起的几项都在：分片提示（`piece_boundaries` / `with_pieces`，中日文按词典分词落片标）、联合定位（`lines::resolve_jointly`）、行归属门（`lines_translation::Verdict`）、块缝整理与复述拒收、翻译的逐句补做波次、`FusionDraft.lines` 直落 `llm-lines+anchor/1`、超 hard 的块内拆分 `llm-lines+split/1` 与成对修复。缺的只是接线：speech-worker 写死 `align_rows: true, align_lines: false`，Runtime 的翻译流程没有参数能打开它。
+
+**本轮接上的。**
+
+- 流程参数 `alignFusion: 'rows' | 'lines'`（`TranslateParams`，默认 `rows`），启动时随别的参数冻结，重试与就地刷新沿用；不认识的值 `invalid-request`。
+- Worker 输入 `params.alignFusion`（[命令协议规范 §4.5](../../spec/command-protocol-spec.md#45-speech-worker)），不给时 `rows`，不认识的值 `INPUT_UNREADABLE`。`lines` 时 `align_lines` 为真、`align_rows` 为假，翻译页仍是 800 词档（与 v2 相同）。检查点指纹在 `lines` 时带上载体，`rows` 不进指纹，加参数之前的检查点照认。`report.json` 多一项 `alignFusion`。
+- 测试：speech-worker 协议测试用按 `lines/1` 作答的假模型跑整条翻译，断言请求是 `translate-lines`、6 句 30 词长句都由草稿直落（`llm-lines+…`，一次调用，不另发对齐）；不给参数仍走 `rows`；未知取值拒绝。jobs 的流程测试断言参数冻结、请求是 `lines/1` 页、译文照常组装写入。
+- 没接的：Agent 路径（智能体用 `documents_read` 的 `translationBasis` 自己翻译、`documents_put` 写回，不经这份载体）；工具目录与 CLI 的 `translate` 不暴露这个参数，只有 `pipelines.start` 能给；§5 的部分提交与状态机。
+
+**实测对照与默认值。** v3 Runtime 路径还没有 rows / `lines` 的真实对照：本轮没有可用的模型额度，v2 项目的 `logs/llm` 里也没有 `translate-lines` 的录制答案可回放。引擎与 v2 最终版相同，§8.4 六个项目的数据可以说明载体本身可用，但不能代替 v3 路径（译向简报、翻译记忆、黏结收尾轮都与 v2 不同）的验收，所以默认仍是 `rows`。切默认的条件：同一份文稿 rows 与 `lines` 各跑一次，`lines` 的对齐成功句数不少于 rows、整句兜底与改写不多于 rows，并记下调用次数与 token。
 
 ## 9. 提示词与固定成本
 

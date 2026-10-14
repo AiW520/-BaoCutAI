@@ -9,6 +9,7 @@ import {
   type Id,
   type MediaTime,
   type TextModelInfo,
+  type TranslateAlignFusion,
   type TranslateParams,
   type TranslateRefreshSummary,
   type TranslateSummary,
@@ -149,6 +150,7 @@ export interface FrozenTranslateParams extends TranslateParams {
 }
 
 const DEFAULT_BATCH = 20;
+const ALIGN_FUSIONS: readonly TranslateAlignFusion[] = ['rows', 'lines'];
 const APPLY_ATTEMPTS = 3;
 
 const PARAMS_SCHEMA = {
@@ -194,6 +196,12 @@ const PARAMS_SCHEMA = {
       minItems: 1,
       maxItems: 500,
       description: '就地刷新时重译的句子 ID（s-<首词 ID>），译文新鲜的也重译；只能与 translationId 一起给',
+    },
+    alignFusion: {
+      type: 'string',
+      enum: ['rows', 'lines'],
+      default: 'rows',
+      description: '翻译页顺带交回对齐草稿的载体：rows（默认，HTML 页、按源词序号写显示行）或 lines（行文本 lines/1、首尾源词引用）',
     },
     memory: {
       type: 'boolean',
@@ -470,6 +478,7 @@ export function parseTranslateParams(raw: Record<string, unknown>): TranslatePar
     'translationId',
     'sentences',
     'memory',
+    'alignFusion',
   ]);
   const targetLanguage = reader.string('targetLanguage', { max: 35 });
   if (!/^[A-Za-z]{2,8}(-[A-Za-z0-9]{1,8})*$/.test(targetLanguage)) throw new RpcError('invalid-request', J.targetLanguageInvalid());
@@ -491,6 +500,7 @@ export function parseTranslateParams(raw: Record<string, unknown>): TranslatePar
   if (captionStyle && captions !== true) throw invalid('captionStyle', JobsParams.onlyOneOf({ other: 'captions: false' }));
   const bilingual = flag('bilingual');
   const memory = flag('memory');
+  const alignFusion = reader.oneOf('alignFusion', ALIGN_FUSIONS);
   if (bilingual === true && captions !== true) throw new RpcError('invalid-request', J.bilingualNeedsCaptions());
   const translationId = optional('translationId', 128);
   const sentences = reader.array('sentences', { min: 1, max: 500, optional: true })?.map((id) => {
@@ -517,6 +527,7 @@ export function parseTranslateParams(raw: Record<string, unknown>): TranslatePar
     ...(translationId !== undefined ? { translationId } : {}),
     ...(sentences !== undefined ? { sentences: [...new Set(sentences)] } : {}),
     ...(memory !== undefined ? { memory } : {}),
+    ...(alignFusion !== undefined ? { alignFusion } : {}),
   };
 }
 
@@ -739,6 +750,7 @@ async function translateWithWorker(deps: TranslateDeps, context: PipelineStepCon
       params: {
         ...(params.style !== undefined ? { instructions: params.style } : {}),
         ...(deps.backoffScale !== undefined ? { backoffScale: deps.backoffScale } : {}),
+        ...(params.alignFusion !== undefined ? { alignFusion: params.alignFusion } : {}),
       },
       ...(base && frozen.plan ? { translation: base, sentences: frozen.plan.sentences } : {}),
       ...(memoryInput ? { memory: memoryInput } : {}),
