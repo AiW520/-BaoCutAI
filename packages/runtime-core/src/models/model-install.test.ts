@@ -439,6 +439,30 @@ describe('模型安装（假模型来源 + 假 Model Worker）', () => {
     ]);
   });
 
+  it('排队的安装开跑前重算：前一个已经发布了共用的组件时不再下载', async () => {
+    if (DEFAULT_TRANSCRIBE_BUNDLE === TRANSCRIBE_BUNDLE) return;
+    side = await startSide(source, free);
+    source.throttle(8 * 1024, 20);
+    const a = await side.client.request('models.install', { bundleId: TRANSCRIBE_BUNDLE });
+    const b = await side.client.request('models.install', { bundleId: DEFAULT_TRANSCRIBE_BUNDLE });
+    const shared = b.plan.components
+      .filter((c) => c.action === 'download' && a.plan.components.some((x) => x.repo === c.repo))
+      .map((c) => c.repo);
+    expect(shared.length).toBeGreaterThan(0);
+    const before = source.requests.length;
+    const first = await side.client.request('models.install', { bundleId: TRANSCRIBE_BUNDLE, confirmBytes: a.plan.confirmBytes });
+    // 第二个在第一个下载时提交：提交时的计划还含共用的组件。
+    const second = await side.client.request('models.install', { bundleId: DEFAULT_TRANSCRIBE_BUNDLE, confirmBytes: b.plan.confirmBytes });
+    expect((await until(() => terminal(jobOf(side!, first.jobId!)))).state).toBe('completed');
+    expect((await until(() => terminal(jobOf(side!, second.jobId!)), 15_000)).state).toBe('completed');
+    const gets = source.requests
+      .slice(before)
+      .filter((r) => r.method === 'GET' && r.repo !== null && shared.includes(r.repo))
+      .map((r) => `${r.repo}/${r.file}`);
+    expect(gets.length).toBeGreaterThan(0);
+    expect(gets.length).toBe(new Set(gets).size);
+  });
+
   it('「说话人区分」模型包：装好后识别模型包报告能区分说话人；没有单独的检查；识别模型包在用时不能删', async () => {
     side = await startSide(source, free);
     const install = async (bundleId: string) => {

@@ -344,6 +344,8 @@ export class ModelInstallService {
         totalBytes: total,
       });
     };
+    // 排队期间前一个安装可能已经发布了共用的组件（语义搜索的两个模型包共用运行库）：开跑前重算一次，只下还缺的。
+    detail = await this.#narrowPlan(detail);
     try {
       report('downloading', detail.plan.resumedBytes, detail.totalBytes, true);
       const outcome = await this.installer.install(detail, {
@@ -750,6 +752,20 @@ export class ModelInstallService {
     const withTranscript = model.local?.reference?.acceptsTranscript ?? false;
     const reference = builtin ? await freezeReferenceFile({ ...builtin, transcript: withTranscript ? builtin.transcript : null }) : null;
     return { choice, request, plan, reference };
+  }
+
+  /**
+   * 开跑时重算的计划只在它是提交时那份的子集（同一来源，要下的组件提交时也要下）时采用；算不出或多出要下的照原计划，
+   * 不超出用户确认过的字节数。
+   */
+  async #narrowPlan(detail: InstallPlanDetail): Promise<InstallPlanDetail> {
+    // 修复要重新核对哈希，开跑时不再算一遍。
+    if (detail.repair) return detail;
+    const fresh = await this.#plan(detail.plan.bundleId, false).catch(() => null);
+    if (!fresh || fresh.endpoint !== detail.endpoint || fresh.toolsEndpoint !== detail.toolsEndpoint) return detail;
+    const before = new Map(detail.components.map((c) => [c.component, c.action]));
+    const subset = fresh.components.every((c) => c.action !== 'download' || before.get(c.component) === 'download');
+    return subset ? fresh : detail;
   }
 
   async #plan(bundleId: string, repair: boolean): Promise<InstallPlanDetail> {
