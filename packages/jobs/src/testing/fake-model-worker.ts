@@ -47,7 +47,8 @@
  * 运行期间状态是 `busy`。`record` 给出时参数同样追加到那个文件。图片（`images`）读出文件内容当文字哈希；加载时没带 `vision` 报
  * `MODEL_UNSUPPORTED`，文件读不了报 `INPUT_UNREADABLE`。`loads` 给出时每次 `model.load` 的 `{ bundleId, device, vision }` 追加到那个文件。
  * `litert-lm` 后端的设备默认 `['cpu']`，控制文件的 `litertDevices` 可以改（`['metal', 'cpu']` 模拟 macOS 的 GPU）：像真的 Worker 一样，
- * 文字在加载时给的 `metal` 上算、带 `vision` 加载时整个在 CPU，图片总报 `cpu`；故障标记 `gpu-fallback` 模拟 GPU 起不来、退回 CPU。
+ * 文字与图片都在加载时给的 `metal` 上算（真的 Worker 图像编码器在 CPU、主干在 GPU，报主干的设备）；故障标记 `gpu-fallback`
+ * 模拟 GPU 起不来、退回 CPU。
  *
  * 本文件不引用仓库里的任何包：它作为独立脚本运行。
  */
@@ -808,7 +809,7 @@ async function embed(id: number, params: Record<string, unknown>): Promise<void>
       for (let i = 0; i < size; i++) v[i]! /= norm;
       return Buffer.from(v.buffer).toString('base64');
     });
-    const gpu = !images && !bundle?.vision && bundle?.device === 'metal' && !fault('gpu-fallback');
+    const gpu = bundle?.device === 'metal' && !fault('gpu-fallback');
     return respond(id, { vectors, dims: size, device: gpu ? 'metal' : 'cpu', elapsedMs: Date.now() - started });
   } finally {
     state = 'ready';

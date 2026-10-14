@@ -128,7 +128,8 @@ function rounded(vector: Float32Array): number[] {
 }
 
 /** 本机装好的 embedding 模型包，各建一个只用它的 Provider（模型目录只读）。 */
-export async function openProviders(models: string, tools: string, work: string) {
+/** `imageRoots`：除参考帧所在的目录外，还能编码哪些目录里的图片。 */
+export async function openProviders(models: string, tools: string, work: string, imageRoots: readonly string[] = []) {
   const { ModelCatalog, LITERTLM_VERSION } = await import('@baocut/models');
   const { LocalEmbeddingProvider, LocalTranscribeProvider } = await import('@baocut/jobs');
   const { resolveModelWorkerCommand } = await import('../../packages/runtime-core/src/models/model-worker.ts');
@@ -151,7 +152,7 @@ export async function openProviders(models: string, tools: string, work: string)
         catalog,
         worker: transcribe,
         selected: () => def.bundleId,
-        imageRoots: [path.dirname(REFERENCE_FRAME)],
+        imageRoots: [path.dirname(REFERENCE_FRAME), ...imageRoots.map((root) => path.resolve(root))],
       }),
     }));
   return { bundles, litertlmVersion: LITERTLM_VERSION, close: () => transcribe.close() };

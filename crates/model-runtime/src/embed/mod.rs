@@ -126,13 +126,8 @@ pub trait EmbeddingEngine {
         Err(vision_not_loaded())
     }
 
-    /// 文字编码器实际跑在哪个设备上（`cpu` / `metal`）。
+    /// 主干实际跑在哪个设备上（`cpu` / `metal`）：文字与图像向量都由它出（LiteRT-LM 的图像编码器总在 CPU，不单报）。
     fn device(&self) -> &str;
-
-    /// 图像编码器实际跑在哪个设备上；缺省同文字。
-    fn image_device(&self) -> &str {
-        self.device()
-    }
 }
 
 /// 这个构建能加载的嵌入 family：`worker.hello` 的 `embeddingCapabilities.families`。
@@ -264,12 +259,7 @@ pub fn run(engine: &mut dyn EmbeddingEngine, params: &EmbedRunParams) -> Result<
     Ok(EmbedRunResult {
         vectors: vectors.iter().map(|vector| encode_f32_le(vector)).collect(),
         dims: params.output_size,
-        device: if params.images.is_empty() {
-            engine.device()
-        } else {
-            engine.image_device()
-        }
-        .to_owned(),
+        device: engine.device().to_owned(),
         elapsed_ms: started.elapsed().as_millis() as u64,
     })
 }
@@ -457,10 +447,10 @@ mod tests {
         assert!(!error.message.contains("missing"));
     }
 
-    /// 文字在 GPU、图像在 CPU 的引擎（LiteRT-LM 的多模态包）。
-    struct SplitDevices;
+    /// 主干在 GPU、图像编码器在 CPU 的引擎（LiteRT-LM 的多模态包）：图片也报主干的设备。
+    struct Vision;
 
-    impl EmbeddingEngine for SplitDevices {
+    impl EmbeddingEngine for Vision {
         fn embed(&mut self, texts: &[String], options: EmbedOptions) -> Result<Vec<Vec<f32>>, ErrorBody> {
             Ok(texts.iter().map(|_| vec![0.5; options.output_size as usize]).collect())
         }
@@ -472,24 +462,19 @@ mod tests {
         fn device(&self) -> &str {
             "metal"
         }
-
-        fn image_device(&self) -> &str {
-            "cpu"
-        }
     }
 
     #[test]
-    fn results_report_the_device_of_the_encoder_that_ran() {
+    fn text_and_image_results_report_the_backbone_device() {
         let dir = tempfile::tempdir().unwrap();
         let file = dir.path().join("f.jpg");
         std::fs::write(&file, b"jpeg").unwrap();
-        let mut engine = SplitDevices;
-        assert_eq!(run(&mut engine, &params(&["a"], 768)).unwrap().device, "metal");
+        assert_eq!(run(&mut Vision, &params(&["a"], 768)).unwrap().device, "metal");
         let images = EmbedRunParams {
             images: vec![file.to_string_lossy().into_owned()],
             ..params(&[], 768)
         };
-        assert_eq!(run(&mut engine, &images).unwrap().device, "cpu");
+        assert_eq!(run(&mut Vision, &images).unwrap().device, "metal");
     }
 
     #[test]

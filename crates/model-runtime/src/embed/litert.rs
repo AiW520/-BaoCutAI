@@ -236,11 +236,12 @@ pub fn load(bundle: &VerifiedBundle, phase: &mut PhaseCallback<'_>) -> Result<Lo
         cache_dir: &cache_dir,
         private_paths: &private_paths,
     };
-    // 文字编码器只认 cpu 与 GPU（协议名 `metal`）。GPU 只在 Runtime 要求、库能设 FP32 激活、没打开图像编码器时试：图像编码器
-    // 本身只跑 CPU，但图像向量还要经过主干，主干在 GPU 上时帧向量就变了（GPU 报告 §3），画面索引只用 CPU 建。设置、创建或预热
-    // 任何一步失败都在这里退回 CPU（stderr 说明一次），不把模型包报成不支持——GPU 起不来不该让语义检索整个用不了。GPU 的
-    // FP32 文字向量与 CPU 在同一空间（G0 §4、GPU 报告 §2），所以退回不改向量身份。
-    let gpu = bundle.device == GPU_DEVICE && bundle.vision.is_none();
+    // 主干（文字编码器）只认 cpu 与 GPU（协议名 `metal`）。GPU 在 Runtime 要求、库能设 FP32 激活时试，打开了图像编码器也一样：
+    // 图像编码器总在 CPU（在 GPU 上的帧向量与 CPU 不同空间，多模态 G0 §5），图像 token 再经主干出向量。FP32 激活下主干在 GPU
+    // 时文字向量与 CPU 逐条余弦 ≥ 0.998（G0 §4、GPU 报告 §2），帧向量 ≥ 0.9996（GPU 报告 §7），都与 CPU 同一空间，所以设备不进
+    // 向量身份，退回 CPU 也不重算索引。设置、创建或预热任何一步失败都在这里退回 CPU（stderr 说明一次），不把模型包报成不支持——
+    // GPU 起不来不该让语义检索整个用不了。
+    let gpu = bundle.device == GPU_DEVICE;
     if gpu && api.settings_set_activation_data_type.is_none() {
         eprintln!("[model-worker] litert-lm: the runtime library cannot set FP32 activations; using the CPU");
     }
@@ -256,7 +257,7 @@ pub fn load(bundle: &VerifiedBundle, phase: &mut PhaseCallback<'_>) -> Result<Lo
     })
 }
 
-/// 文字编码器跑在哪里。打开了图像编码器的引擎整个在 CPU（GPU 的帧向量与 CPU 不同空间，多模态 G0 §5、GPU 报告 §3）。
+/// 主干（文字编码器，也给图像 token 出向量）跑在哪里。图像编码器不随它，总在 CPU。
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 enum Device {
     Cpu,
@@ -314,7 +315,7 @@ fn create(
     let model_c = c_string(&paths.model.to_string_lossy())?;
     let device_c = c_string(device.backend())?;
     let cache_c = c_string(&paths.cache_dir.to_string_lossy())?;
-    // 图像编码器只在要求时打开（多占约 1 GB），且只跑 CPU：与 G0 评测同一条路径。音频后端不用。
+    // 图像编码器只在要求时打开（多占约 1 GB），且只跑 CPU：主干在 GPU 时也一样（GPU 报告 §7）。音频后端不用。
     let vision_c = c_string("cpu")?;
     let vision = if bundle.vision.is_some() {
         vision_c.as_ptr()
@@ -630,10 +631,6 @@ impl EmbeddingEngine for LiteRtEmbedding {
 
     fn device(&self) -> &str {
         &self.device
-    }
-
-    fn image_device(&self) -> &str {
-        Device::Cpu.name()
     }
 }
 

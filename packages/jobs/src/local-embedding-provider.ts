@@ -63,7 +63,7 @@ export class LocalEmbeddingProvider implements EmbeddingProvider {
   readonly #worker: LocalEmbeddingProviderOptions['worker'];
   readonly #selected: () => string | null;
   readonly #imageRoots: readonly string[];
-  /** 最近一次用到的模型包与 Worker 报告的设备（状态显示用）。文字与画面的编码器可以在不同设备上（文字在 GPU、画面总在 CPU）。 */
+  /** 最近一次用到的模型包与 Worker 报告的设备（状态显示用）。文字与画面各记各的：两次加载可以一个起了 GPU、一个退回 CPU。 */
   #current: { bundleId: string; label: string } | null = null;
   #device: string | null = null;
   #imageDevice: string | null = null;
