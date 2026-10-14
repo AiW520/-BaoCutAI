@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react';
-import type { FileTarget } from '@baocut/protocol';
+import type { FileTarget, Id } from '@baocut/protocol';
 import { ActionButton, Popover, Text } from '@react-spectrum/s2';
 import Close from '@react-spectrum/s2/icons/Close';
 import Comment from '@react-spectrum/s2/icons/Comment';
@@ -8,9 +8,11 @@ import { Button as RACButton } from 'react-aria-components';
 import { DESIGN } from '../model/design-copy.ts';
 import { DESIGN_SYSTEM } from '../model/design-system-copy.ts';
 import { SLIDES } from '../model/slides-copy.ts';
+import { VIDEO_NOTES } from '../model/video-annotations-copy.ts';
 import { itemKey, type AnnotatedEditorKind } from '../model/workspace.ts';
 import { useShell } from '../state/shell-store.ts';
 import { useEditorReveal } from '../state/editor-bridge.ts';
+import { revealVideoAnnotation } from './editor/stage-notes.tsx';
 
 /** composer 上方与 Space 条目的引用标签同一个样子（composer.tsx `tag`）；已发送消息里只是一行淡色的标记。 */
 const token = style({
@@ -64,7 +66,8 @@ const closeIcon = iconStyle({ size: 'XS' });
 
 /**
  * 列表里的一条：草稿里的带自己的 id；已发送的用 `sentAnnotationId` 拼的 id，跳转时临时交给编辑器。
- * `target` 是 deck、设计稿或设计系统目录；`section` 是设计系统里它所在的章节。
+ * `target` 是 deck、设计稿、设计系统目录或视频；`section` 是设计系统里它所在的章节。视频标注没有锚点，带的是标注那一刻
+ * `timeMs`，草稿里另带视频 id。
  */
 export interface AnnotationTokenItem {
   id: string;
@@ -73,15 +76,21 @@ export interface AnnotationTokenItem {
   section?: string;
   label: string;
   text: string;
+  timeMs?: number;
+  videoId?: Id;
 }
 
-const COPY = { slides: SLIDES, design: DESIGN, 'design-system': DESIGN_SYSTEM } satisfies Record<AnnotatedEditorKind, unknown>;
+/** 视频标注（产品设计 §3.2.3「视频标注」）也用这个标签，点一条跳到那部视频的那一刻，而不是打开文档标签。 */
+type AnnotationTokenKind = AnnotatedEditorKind | 'video';
+
+const COPY = { slides: SLIDES, design: DESIGN, 'design-system': DESIGN_SYSTEM, video: VIDEO_NOTES } satisfies Record<AnnotationTokenKind, unknown>;
 
 /**
  * 标注的引用标签（幻灯片 docs/design/slides §8.2 第 5、6 步、设计稿 docs/design/canvas §8.2、设计系统 §10.6；
  * 移植自原型 home-slides-notes.jsx `SlideNotesToken`、home-design-notes.jsx `DesignNotesToken`、
- * home-design-system-notes.jsx `DesignSystemNotesToken`）：composer 上方与已发送的消息里都是「幻灯片标注 · N 条」
- * 「设计稿标注 · N 条」「设计系统标注 · N 条」。点开列出各条：位置、批注，点一条打开（或切到）那份文档并跳到那个位置。
+ * home-design-system-notes.jsx `DesignSystemNotesToken`、视频标注 stage-notes.jsx `VideoNotesToken`）：composer 上方与已发送的消息里
+ * 都是「幻灯片标注 · N 条」「设计稿标注 · N 条」「设计系统标注 · N 条」「视频标注 · N 条」。点开列出各条：位置、批注，
+ * 点一条打开（或切到）那份文档并跳到那个位置；视频标注打开那部视频、播放头放到标注的那一刻。
  * 给了 `onRemove` 是草稿，可以逐条移除或全部移除；不给是已发送的消息，只读。
  */
 export function AnnotationsToken({
@@ -90,7 +99,7 @@ export function AnnotationsToken({
   onRemove,
   onClear,
 }: {
-  kind: AnnotatedEditorKind;
+  kind: AnnotationTokenKind;
   items: readonly AnnotationTokenItem[];
   onRemove?: (id: string) => void;
   onClear?: () => void;
@@ -103,6 +112,10 @@ export function AnnotationsToken({
   const label = copy.token(items.length);
   const reveal = (n: AnnotationTokenItem) => {
     setOpen(false);
+    if (kind === 'video') {
+      revealVideoAnnotation(n.target, n.timeMs ?? 0, n.videoId);
+      return;
+    }
     const pane = { kind, target: n.target };
     useShell.getState().openPane(pane);
     useEditorReveal.getState().request(itemKey(pane), n.id, n.anchor, n.section);

@@ -170,6 +170,15 @@ export function VideoEditor() {
     engine.seek(useEditor.getState().playhead);
   }, [videoId, engine]);
 
+  // 编辑器之外要求跳到某一秒（点 composer 里的一条视频标注）：同一部视频开着时让引擎跟过去。
+  useEffect(
+    () =>
+      useEditor.subscribe((state, previous) => {
+        if (state.seekRequests !== previous.seekRequests && state.videoId === videoId) engine.seek(state.playhead);
+      }),
+    [engine, videoId],
+  );
+
   // 剪成短视频跑完、切出了子视频：开着父视频时右侧翻到结果页（网页没有 AI 工具 Tab）。
   useShortsLanding(videoId, runtime.host.platform !== 'web');
 
@@ -491,7 +500,13 @@ function useEditorKeys(
           void (event.shiftKey ? removeSelectionSpan(actions) : deleteSelection(actions));
           return;
         case 'Escape':
-          // 菜单、对话框、拖动各自先接 Esc（belongsToEditor、时间线的捕获监听）；到这里只剩取消选中。
+          // 菜单、对话框、拖动各自先接 Esc（belongsToEditor、时间线的捕获监听）；批注框开着时它先关（它是对话框）。
+          // 到这里先退出视频标注模式，再取消选中。
+          if (editor.annotating) {
+            handled();
+            editor.setAnnotating(false);
+            return;
+          }
           if (!editor.selection.length) return;
           handled();
           editor.select([]);

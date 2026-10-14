@@ -205,6 +205,22 @@ export const UserMessage = memo(function UserMessage({ item, conversationId }: {
           />
         </div>
       ) : null}
+      {item.videoAnnotations?.length ? (
+        // 随这条消息交出去的视频标注（产品设计 §3.2.3「视频标注」）：点一条打开那部视频，播放头放到标注的那一刻。
+        <div className={contextLine}>
+          <AnnotationsToken
+            kind="video"
+            items={item.videoAnnotations.map((a, i) => ({
+              id: sentAnnotationId(item.id, i),
+              target: a.video,
+              anchor: '',
+              timeMs: a.timeMs,
+              label: a.label,
+              text: a.text,
+            }))}
+          />
+        </div>
+      ) : null}
       <div className={actions}>
         <CopyButton text={item.text} />
       </div>

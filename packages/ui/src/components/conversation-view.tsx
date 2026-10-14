@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { DEFAULT_AGENT_MODE, RpcError, newId, nowIso, type AttachmentRef, type DesignAnnotation, type DesignSystemAnnotation, type Id, type SkillSendRef, type SlideAnnotation } from '@baocut/protocol';
+import { DEFAULT_AGENT_MODE, RpcError, newId, nowIso, type AttachmentRef, type DesignAnnotation, type DesignSystemAnnotation, type Id, type SkillSendRef, type SlideAnnotation, type VideoAnnotation } from '@baocut/protocol';
 import { Button, ProgressCircle, ToastQueue } from '@react-spectrum/s2';
 import { style } from '@react-spectrum/s2/style' with { type: 'macro' };
 import { S } from './shell-copy.ts';
@@ -12,6 +12,8 @@ import { sentDesignSystemAnnotations } from '../model/design-system-annotations.
 import { DESIGN_SYSTEM } from '../model/design-system-copy.ts';
 import { sentSlideAnnotations } from '../model/slide-annotations.ts';
 import { SLIDES } from '../model/slides-copy.ts';
+import { sentVideoAnnotations } from '../model/video-annotations.ts';
+import { VIDEO_NOTES } from '../model/video-annotations-copy.ts';
 import { itemKey } from '../model/workspace.ts';
 import { referenceDescription } from '../model/space-actions.ts';
 import { useRuntime } from '../runtime/context.tsx';
@@ -20,6 +22,8 @@ import { useConversationMeta, useDirectory } from '../state/directory-store.ts';
 import { useDraftDesignAnnotationList, useDraftDesignAnnotations } from '../state/draft-design-annotations-store.ts';
 import { useDraftDesignSystemAnnotationList, useDraftDesignSystemAnnotations } from '../state/draft-design-system-annotations-store.ts';
 import { useDraftSlideAnnotationList, useDraftSlideAnnotations } from '../state/draft-slide-annotations-store.ts';
+import { useDraftVideoAnnotationList, useDraftVideoAnnotations } from '../state/draft-video-annotations-store.ts';
+import { useContextTag } from '../state/agent-context.ts';
 import { flushEditors } from '../state/editor-bridge.ts';
 import { useTimelineItems, useTimelineLoaded } from '../state/timeline-store.ts';
 import { useSetting } from '../state/settings-store.ts';
@@ -53,7 +57,11 @@ export function ConversationView({ conversationId, autoFocus = true }: { convers
   const loaded = useTimelineLoaded(conversationId);
   const go = useShell((s) => s.go);
   // 与另一条会话共用工作目录的，来源按那条会话认（架构设计 §3.10）。
-  const editor = useEditorReference({ conversationId: meta?.folderOf ?? conversationId, projectId: meta?.projectId ?? null });
+  const scope = { conversationId: meta?.folderOf ?? conversationId, projectId: meta?.projectId ?? null };
+  const editor = useEditorReference(scope);
+  // 视频标注的草稿挂在视频上（产品设计 §3.2.3「视频标注」）：这个会话能交给智能体的那部打开着的视频，它的标注显示在输入框上方。
+  const noteVideoId = useContextTag(scope)?.videoId ?? null;
+  const videoAnnotations = useDraftVideoAnnotationList(noteVideoId);
   const slideAnnotations = useDraftSlideAnnotationList(conversationId);
   const designAnnotations = useDraftDesignAnnotationList(conversationId);
   const systemAnnotations = useDraftDesignSystemAnnotationList(conversationId);
@@ -85,7 +93,7 @@ export function ConversationView({ conversationId, autoFocus = true }: { convers
   // 有过任务的会话不能再换 Agent（原生会话不能跨 Agent 续，架构设计 §3.11）。
   const lockedTo = items.some((i) => i.kind === 'task') ? meta.driverId : null;
 
-  /** 忙的时候发的话先排队，带上此刻的编辑器状态、点选的 skill 与幻灯片、设计稿、设计系统标注；任务结束后按顺序发出。 */
+  /** 忙的时候发的话先排队，带上此刻的编辑器状态、点选的 skill 与幻灯片、设计稿、设计系统、视频标注；任务结束后按顺序发出。 */
   const enqueue = async (
     text: string,
     attachments: AttachmentRef[],
@@ -93,6 +101,7 @@ export function ConversationView({ conversationId, autoFocus = true }: { convers
     notes: SlideAnnotation[],
     designNotes: DesignAnnotation[],
     systemNotes: DesignSystemAnnotation[],
+    videoNotes: VideoAnnotation[],
   ) => {
     const context = await editor.capture();
     useShell.getState().setQueue(conversationId, (queue) =>
@@ -105,6 +114,7 @@ export function ConversationView({ conversationId, autoFocus = true }: { convers
         ...(notes.length ? { slideAnnotations: notes } : {}),
         ...(designNotes.length ? { designAnnotations: designNotes } : {}),
         ...(systemNotes.length ? { designSystemAnnotations: systemNotes } : {}),
+        ...(videoNotes.length ? { videoAnnotations: videoNotes } : {}),
         queuedAt: nowIso(),
       }),
     );
@@ -201,6 +211,23 @@ export function ConversationView({ conversationId, autoFocus = true }: { convers
           onRemove: (id) => useDraftDesignSystemAnnotations.getState().remove(conversationId, id),
           onClear: () => useDraftDesignSystemAnnotations.getState().clear(conversationId),
         }}
+        videoAnnotations={
+          noteVideoId
+            ? {
+                items: videoAnnotations.map((n) => ({
+                  id: n.id,
+                  target: n.video,
+                  anchor: '',
+                  timeMs: n.timeMs,
+                  videoId: n.videoId,
+                  label: n.label,
+                  text: n.text,
+                })),
+                onRemove: (id) => useDraftVideoAnnotations.getState().remove(noteVideoId, id),
+                onClear: () => useDraftVideoAnnotations.getState().clear(noteVideoId),
+              }
+            : null
+        }
         mentionScope={{ projectId: meta.projectId, conversationId }}
         queue={<QueuedMessages conversationId={conversationId} sending={sendingNow} onSendNow={(id) => void sendNow(id)} />}
         beforeSend={async () => {
@@ -221,26 +248,34 @@ export function ConversationView({ conversationId, autoFocus = true }: { convers
           return !failedSlides.length && !failedDesigns.length && !failedSystems.length;
         }}
         onSend={async (input, attachments, skills) => {
-          // 幻灯片、设计稿与设计系统标注（§8.2、§10.6）：只带标注、没写话时补一句；发出去（或排进队列）后从草稿里摘掉。
+          // 幻灯片、设计稿、设计系统与视频标注（§8.2、§10.6；产品设计 §3.2.3）：只带标注、没写话时补一句；发出去（或排进队列）后从草稿里摘掉。
           const drafted = useDraftSlideAnnotations.getState().annotations[conversationId] ?? [];
           const draftedDesigns = useDraftDesignAnnotations.getState().annotations[conversationId] ?? [];
           const draftedSystems = useDraftDesignSystemAnnotations.getState().annotations[conversationId] ?? [];
           const notes = sentSlideAnnotations(drafted);
           const designNotes = sentDesignAnnotations(draftedDesigns);
           const systemNotes = sentDesignSystemAnnotations(draftedSystems);
+          const draftedVideos = noteVideoId ? (useDraftVideoAnnotations.getState().annotations[noteVideoId] ?? []) : [];
+          const videoNotes = sentVideoAnnotations(draftedVideos);
           const text =
             input ||
-            [notes.length ? SLIDES.message : '', designNotes.length ? DESIGN.message : '', systemNotes.length ? DESIGN_SYSTEM.message : '']
+            [
+              notes.length ? SLIDES.message : '',
+              designNotes.length ? DESIGN.message : '',
+              systemNotes.length ? DESIGN_SYSTEM.message : '',
+              videoNotes.length ? VIDEO_NOTES.message : '',
+            ]
               .filter(Boolean)
               .join('\n');
           const sentNotes = () => {
             useDraftSlideAnnotations.getState().sent(conversationId, drafted.map((n) => n.id));
             useDraftDesignAnnotations.getState().sent(conversationId, draftedDesigns.map((n) => n.id));
             useDraftDesignSystemAnnotations.getState().sent(conversationId, draftedSystems.map((n) => n.id));
+            if (noteVideoId) useDraftVideoAnnotations.getState().sent(noteVideoId, draftedVideos.map((n) => n.id));
           };
           // 前面还有排队的：排到最后，保持先后；会话空着就先发队首那一条。
           if (busy || useShell.getState().queues[conversationId]?.length) {
-            await enqueue(text, attachments, skills, notes, designNotes, systemNotes);
+            await enqueue(text, attachments, skills, notes, designNotes, systemNotes, videoNotes);
             sentNotes();
             if (!busy)
               void drainQueue(runtime, conversationId).then((result) => {
@@ -259,6 +294,7 @@ export function ConversationView({ conversationId, autoFocus = true }: { convers
               notes,
               designNotes,
               systemNotes,
+              videoNotes,
             );
             editor.reset();
             sentNotes();
@@ -266,7 +302,7 @@ export function ConversationView({ conversationId, autoFocus = true }: { convers
           } catch (error) {
             // 刚好有任务开跑（别的窗口、别的入口）：这句话排队，不丢。
             if (error instanceof RpcError && error.code === 'busy') {
-              await enqueue(text, attachments, skills, notes, designNotes, systemNotes);
+              await enqueue(text, attachments, skills, notes, designNotes, systemNotes, videoNotes);
               sentNotes();
               return true;
             }

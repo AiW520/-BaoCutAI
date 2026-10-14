@@ -1,7 +1,7 @@
 import path from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { RpcError, type DesignSystemAnnotation, type FileTarget, type SlideAnnotation } from '@baocut/protocol';
-import { resolveDesignSystemAnnotations, resolveSlideAnnotations } from './slides.ts';
+import { RpcError, type DesignSystemAnnotation, type FileTarget, type SlideAnnotation, type VideoAnnotation } from '@baocut/protocol';
+import { resolveDesignSystemAnnotations, resolveSlideAnnotations, resolveVideoAnnotations } from './slides.ts';
 
 /** 消息带的幻灯片标注：deck 换成相对会话工作目录的路径（docs/design/slides §9）。 */
 
@@ -49,5 +49,27 @@ describe('resolveDesignSystemAnnotations（docs/design/canvas §10.6）', () => 
     expect(resolved?.map((r) => r.systemPath)).toEqual(['spectrum-2/', `${path.join(other, 'decks', 'far')}/`]);
     expect(resolved?.[0]?.annotation).toEqual(system({ conversationId: 'c', path: 'spectrum-2' }));
     expect(() => resolveDesignSystemAnnotations([system({ entryId: 'gone' })], cwd, locate)).toThrow(RpcError);
+  });
+});
+
+describe('resolveVideoAnnotations（产品设计 §3.2.3「视频标注」）', () => {
+  const video = (target: FileTarget, revision = '3'): VideoAnnotation => ({
+    video: target,
+    revision,
+    timeMs: 42300,
+    kind: 'pin',
+    region: { x: 0.8, y: 0.2, w: 0, h: 0 },
+    label: '00:42.3 · 编号 · 画面右上',
+    text: '这里的字太小',
+  });
+
+  it('与另外三种标注同一种写法：没有时为 undefined，视频目录写相对会话工作目录的路径，外面写绝对路径，找不到整条拒绝', () => {
+    expect(resolveVideoAnnotations(undefined, cwd, locate)).toBeUndefined();
+    expect(resolveVideoAnnotations([], cwd, locate)).toBeUndefined();
+    const resolved = resolveVideoAnnotations([video({ projectId: 'p', path: 'talk' }), video({ entryId: 'far' }, '1')], cwd, locate);
+    expect(resolved?.map((r) => r.videoPath)).toEqual(['talk/', `${path.join(other, 'decks', 'far')}/`]);
+    // 标注原样交下去：落后的版本也不拒绝，由智能体按当前版本核对。
+    expect(resolved?.[1]?.annotation).toEqual(video({ entryId: 'far' }, '1'));
+    expect(() => resolveVideoAnnotations([video({ projectId: 'p', path: 'talk' }), video({ entryId: 'gone' })], cwd, locate)).toThrow(RpcError);
   });
 });

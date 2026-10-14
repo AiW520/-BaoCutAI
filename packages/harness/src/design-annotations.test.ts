@@ -2,7 +2,7 @@ import fs from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { newId, type DesignAnnotation, type DesignSystemAnnotation, type DriverProbe, type Id } from '@baocut/protocol';
+import { newId, type DesignAnnotation, type DesignSystemAnnotation, type DriverProbe, type Id, type VideoAnnotation } from '@baocut/protocol';
 import { ConversationStore, ProjectStore, resolveRuntimeHome, type RuntimeHome } from '@baocut/runtime-storage';
 import { DriverRegistry } from './agent-manager.ts';
 import type { AgentDriver, AgentEvent, AgentSession } from './driver.ts';
@@ -10,9 +10,11 @@ import {
   Harness,
   withDesignAnnotations,
   withDesignSystemAnnotations,
+  withVideoAnnotations,
   type ResolvedDesignAnnotation,
   type ResolvedDesignSystemAnnotation,
   type ResolvedSlideAnnotation,
+  type ResolvedVideoAnnotation,
 } from './harness.ts';
 import { silentLogger } from './logger.ts';
 
@@ -101,6 +103,63 @@ describe('withDesignSystemAnnotations', () => {
         '</baocut-design-system-annotations>',
       ].join('\n'),
     );
+  });
+});
+
+const videoNote = (over: Partial<VideoAnnotation> = {}): VideoAnnotation => ({
+  video: { conversationId: 'c', path: 'talk' },
+  revision: '3',
+  timeMs: 42300,
+  kind: 'pin',
+  region: { x: 0.8, y: 0.2, w: 0, h: 0 },
+  label: '00:42.3 · 编号 · 画面右上',
+  text: '这里的字太小',
+  ...over,
+});
+
+describe('withVideoAnnotations（产品设计 §3.2.3「视频标注」）', () => {
+  it('没有标注时原样返回', () => {
+    expect(withVideoAnnotations('改一下', [])).toBe('改一下');
+  });
+
+  // 与原型 designs/baocut/app/model-stage-notes.test.js 的 promptText 用例逐字一致。
+  it('一部视频一段，带 revision、时刻、kind 与区域；编号每部视频各自从 1 起；两条以上附 candidateBoundsMs', () => {
+    const text = withVideoAnnotations('请按这些视频标注修改。', [
+      { annotation: videoNote({ timeMs: 10000, kind: 'box', region: { x: 0.25, y: 0.2, w: 0.5, h: 0.4 }, text: '这块字幕挡住了脸' }), videoPath: 'talk/' },
+      { annotation: videoNote({ video: { conversationId: 'c', path: 'intro' }, timeMs: 5000, text: '这里加个标题' }), videoPath: 'intro/' },
+      {
+        annotation: videoNote({ timeMs: 42300, kind: 'arrow', region: { x: 0.1, y: 0.1, w: 0, h: 0 }, to: { x: 0.6, y: 0.5 }, text: '把 logo 挪到这里' }),
+        videoPath: 'talk/',
+      },
+    ]);
+    expect(text).toBe(
+      [
+        '请按这些视频标注修改。',
+        '',
+        '<baocut-video-annotations video="talk/" revision="3">',
+        '1. 00:10.0 (10000 ms) · box · x=0.25 y=0.2 w=0.5 h=0.4 (25%, 20%, 50% × 40%)',
+        '   批注：这块字幕挡住了脸',
+        '2. 00:42.3 (42300 ms) · arrow · from (0.1, 0.1) to (0.6, 0.5)',
+        '   批注：把 logo 挪到这里',
+        'candidateBoundsMs: 10000–42300（候选范围，不是要改的区间）',
+        '</baocut-video-annotations>',
+        '<baocut-video-annotations video="intro/" revision="3">',
+        '1. 00:05.0 (5000 ms) · pin · at (0.8, 0.2)',
+        '   批注：这里加个标题',
+        '</baocut-video-annotations>',
+      ].join('\n'),
+    );
+  });
+
+  it('revision 取这组里最大的（按数值）；时码先取整再进位，满一小时带小时；文字标注与多行批注', () => {
+    const text = withVideoAnnotations('x', [
+      { annotation: videoNote({ revision: '9', timeMs: 59_960, kind: 'text', text: '第一行\n第二行' }), videoPath: './' },
+      { annotation: videoNote({ revision: '12', timeMs: 3_723_450 }), videoPath: './' },
+    ]);
+    expect(text).toContain('<baocut-video-annotations video="./" revision="12">');
+    expect(text).toContain('1. 01:00.0 (59960 ms) · text · at (0.8, 0.2)\n   批注：第一行\n        第二行');
+    expect(text).toContain('2. 1:02:03.5 (3723450 ms) · pin · at (0.8, 0.2)');
+    expect(text).toContain('candidateBoundsMs: 59960–3723450（候选范围，不是要改的区间）');
   });
 });
 
@@ -306,6 +365,46 @@ describe('send 与 steer 带设计系统标注', () => {
     expect(session.inputs[1]).toContain('<baocut-design-system-annotations system="spectrum-2/">');
     expect(session.inputs[1]).toContain('   批注：主色再亮一点');
     expect(userMessages(conversation.id)[1]).toMatchObject({ text: '顺便改这里', designSystemAnnotations: [annotation] });
+  });
+});
+
+describe('send 与 steer 带视频标注', () => {
+  it('视频标注段排在设计系统标注段之后，用户消息上原样记一份（不带解析出的路径）', async () => {
+    const conversation = await harness.createConversation({ title: '改视频' });
+    const designSystemAnnotations: ResolvedDesignSystemAnnotation[] = [
+      { annotation: systemNote({ system: { conversationId: conversation.id, path: 'spectrum-2' } }), systemPath: 'spectrum-2/' },
+    ];
+    const videoAnnotations: ResolvedVideoAnnotation[] = [{ annotation: videoNote({ video: { conversationId: conversation.id, path: 'talk' } }), videoPath: 'talk/' }];
+    await harness.send({ conversationId: conversation.id, text: '按标注改', commandId: newId('cmd'), designSystemAnnotations, videoAnnotations });
+    const session = await until(() => driver.sessions.at(-1));
+    const input = await until(() => session.inputs[0]);
+    const systemAt = input.indexOf('<baocut-design-system-annotations system="spectrum-2/">');
+    const videoAt = input.indexOf('<baocut-video-annotations video="talk/" revision="3">\n1. 00:42.3 (42300 ms) · pin');
+    expect(systemAt).toBeGreaterThan(0);
+    expect(videoAt).toBeGreaterThan(systemAt);
+    expect(input.trimEnd().endsWith('</baocut-video-annotations>')).toBe(true);
+    const [message] = userMessages(conversation.id);
+    expect(message).toMatchObject({ text: '按标注改', videoAnnotations: [videoAnnotations[0]!.annotation] });
+  });
+
+  it('没带标注的消息不写这个字段；插话带的标注同样附上、记下', async () => {
+    const conversation = await harness.createConversation({ title: '插话' });
+    await harness.send({ conversationId: conversation.id, text: '剪一下', commandId: newId('cmd') });
+    const session = await until(() => driver.sessions.at(-1));
+    await until(() => harness.agentRun(conversation.id).taskId && session.turnId);
+    expect(userMessages(conversation.id)[0]).not.toHaveProperty('videoAnnotations');
+
+    const annotation = videoNote({ video: { conversationId: conversation.id, path: 'talk' }, text: '这里删掉' });
+    const result = await harness.steer({
+      conversationId: conversation.id,
+      text: '顺便改这里',
+      commandId: newId('cmd'),
+      videoAnnotations: [{ annotation, videoPath: 'talk/' }],
+    });
+    expect(result).toEqual({ status: 'steered' });
+    expect(session.inputs[1]).toContain('<baocut-video-annotations video="talk/" revision="3">');
+    expect(session.inputs[1]).toContain('   批注：这里删掉');
+    expect(userMessages(conversation.id)[1]).toMatchObject({ text: '顺便改这里', videoAnnotations: [annotation] });
   });
 });
 

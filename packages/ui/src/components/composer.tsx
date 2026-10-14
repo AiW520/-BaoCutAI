@@ -249,6 +249,11 @@ export interface ComposerProps {
   designAnnotations?: ComposerAnnotations | null;
   /** 输入框上方：设计系统标签里加进对话、还没发出的标注（docs/design/canvas §10.6），「设计系统标注 · N 条」；其余同 `slideAnnotations`。 */
   designSystemAnnotations?: ComposerAnnotations | null;
+  /**
+   * 输入框上方：编辑器预览画面上加进对话、还没发出的视频标注（产品设计 §3.2.3「视频标注」），「视频标注 · N 条」；点一条跳到那一刻。
+   * 其余同 `slideAnnotations`。
+   */
+  videoAnnotations?: ComposerAnnotations | null;
   /** 输入框上方：排队等发送的消息。 */
   queue?: ReactNode;
   /** 新会话起始页（原型 new-agent.jsx `AgentHero`）才传；会话里不传，输入区保持原样。 */
@@ -321,6 +326,7 @@ export function Composer(props: ComposerProps) {
   const slideAnnotations = props.slideAnnotations?.items.length ? props.slideAnnotations : null;
   const designAnnotations = props.designAnnotations?.items.length ? props.designAnnotations : null;
   const designSystemAnnotations = props.designSystemAnnotations?.items.length ? props.designSystemAnnotations : null;
+  const videoAnnotations = props.videoAnnotations?.items.length ? props.videoAnnotations : null;
   const runtime = useRuntime();
   const shellDraft = useShell((s) => s.drafts[draftKey] ?? '');
   const setShellDraft = useShell((s) => s.setDraft);
@@ -393,6 +399,7 @@ export function Composer(props: ComposerProps) {
     !!slideAnnotations ||
     !!designAnnotations ||
     !!designSystemAnnotations ||
+    !!videoAnnotations ||
     (!!start && start.canSendEmpty(images.length));
   const canSend = (!busy || !!queueWhileBusy) && !sending && !picking && !uploading && !blocked && hasContent && !tool?.isDisabled;
   const [over, setOver] = useState(false);
@@ -905,7 +912,7 @@ export function Composer(props: ComposerProps) {
               ))}
             </div>
           ) : null}
-          {reference || spaceReferences || readScope || slideAnnotations || designAnnotations || designSystemAnnotations ? (
+          {reference || spaceReferences || readScope || slideAnnotations || designAnnotations || designSystemAnnotations || videoAnnotations ? (
             <div className={tags}>
               {readScope ? (
                 <span className={tag} title={S.composer.readScopeHint}>
@@ -952,6 +959,9 @@ export function Composer(props: ComposerProps) {
                   onRemove={designSystemAnnotations.onRemove}
                   onClear={designSystemAnnotations.onClear}
                 />
+              ) : null}
+              {videoAnnotations ? (
+                <AnnotationsToken kind="video" items={videoAnnotations.items} onRemove={videoAnnotations.onRemove} onClear={videoAnnotations.onClear} />
               ) : null}
             </div>
           ) : null}

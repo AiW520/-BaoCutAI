@@ -25,6 +25,7 @@ import {
   type SlideAnnotation,
   type DesignAnnotation,
   type DesignSystemAnnotation,
+  type VideoAnnotation,
   type TemplateSendRef,
 } from '@baocut/protocol';
 import { EditLabel } from '@baocut/protocol/messages/ui';
@@ -181,6 +182,7 @@ export class RuntimeSession {
    * `slideAnnotations`：幻灯片标签里加进对话的标注（docs/design/slides §8.2、§9），Runtime 按 deck 拼成给智能体的段落。空的不传。
    * `designAnnotations`：设计稿标签里加进对话的标注（docs/design/canvas §8.2、§9），同上，按设计稿拼段。空的不传。
    * `designSystemAnnotations`：设计系统标签里加进对话的标注（docs/design/canvas §10.6），同上，按设计系统拼段。空的不传。
+   * `videoAnnotations`：编辑器预览画面上加进对话的视频标注（产品设计 §3.2.3「视频标注」），同上，按视频拼段。空的不传。
    */
   async send(
     conversationId: Id,
@@ -192,6 +194,7 @@ export class RuntimeSession {
     slideAnnotations?: readonly SlideAnnotation[],
     designAnnotations?: readonly DesignAnnotation[],
     designSystemAnnotations?: readonly DesignSystemAnnotation[],
+    videoAnnotations?: readonly VideoAnnotation[],
   ): Promise<Id> {
     const { taskId } = await this.client.request('conversations.send', {
       conversationId,
@@ -204,6 +207,7 @@ export class RuntimeSession {
       ...(slideAnnotations?.length ? { slideAnnotations: [...slideAnnotations] } : {}),
       ...(designAnnotations?.length ? { designAnnotations: [...designAnnotations] } : {}),
       ...(designSystemAnnotations?.length ? { designSystemAnnotations: [...designSystemAnnotations] } : {}),
+      ...(videoAnnotations?.length ? { videoAnnotations: [...videoAnnotations] } : {}),
     });
     return taskId;
   }
@@ -216,6 +220,7 @@ export class RuntimeSession {
     slideAnnotations?: readonly SlideAnnotation[],
     designAnnotations?: readonly DesignAnnotation[],
     designSystemAnnotations?: readonly DesignSystemAnnotation[],
+    videoAnnotations?: readonly VideoAnnotation[],
   ): Promise<'steered' | 'unsupported' | 'no-active-turn'> {
     const { status } = await this.client.request('conversations.steer', {
       conversationId,
@@ -225,6 +230,7 @@ export class RuntimeSession {
       ...(slideAnnotations?.length ? { slideAnnotations: [...slideAnnotations] } : {}),
       ...(designAnnotations?.length ? { designAnnotations: [...designAnnotations] } : {}),
       ...(designSystemAnnotations?.length ? { designSystemAnnotations: [...designSystemAnnotations] } : {}),
+      ...(videoAnnotations?.length ? { videoAnnotations: [...videoAnnotations] } : {}),
     });
     return status;
   }

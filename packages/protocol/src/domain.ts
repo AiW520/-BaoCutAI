@@ -6,6 +6,7 @@ import type { MessageRef } from './message-ref.ts';
 import type { SlideAnnotation } from './slides.ts';
 import type { DesignAnnotation } from './design.ts';
 import type { DesignSystemAnnotation } from './design-system.ts';
+import type { VideoAnnotation } from './video.ts';
 
 /**
  * 会话侧的领域对象（架构设计 §1.5、§3.10）。
@@ -231,6 +232,8 @@ export type TimelineItem =
       designAnnotations?: DesignAnnotation[];
       /** 随消息发出的设计系统标注（docs/design/canvas §10.6），按添加的顺序；与 `designAnnotations` 同一个写法。旧记录没有。 */
       designSystemAnnotations?: DesignSystemAnnotation[];
+      /** 随消息发出的视频标注（产品设计 §3.2.3「视频标注」），按添加的顺序；与 `designSystemAnnotations` 同一个写法。旧记录没有。 */
+      videoAnnotations?: VideoAnnotation[];
     })
   | (TimelineBase & { kind: 'agent-message'; text: string; streaming: boolean })
   | (TimelineBase & { kind: 'reasoning'; text: string; streaming: boolean })

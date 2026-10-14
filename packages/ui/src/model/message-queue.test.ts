@@ -73,6 +73,22 @@ describe('排队的增删改', () => {
     expect(isQueuedMessage({ ...msg('a'), designSystemAnnotations: [{ ...system, section: 1 }] })).toBe(false);
     expect(isQueuedMessage({ ...msg('a'), designSystemAnnotations: [{ ...system, system: 'spectrum-2' }] })).toBe(false);
     expect(isQueuedMessage({ ...msg('a'), designSystemAnnotations: system })).toBe(false);
+    // 视频标注同样。
+    const video = {
+      video: { conversationId: 'c1', path: 'videos/demo' },
+      revision: '3',
+      timeMs: 42_300,
+      kind: 'arrow',
+      region: { x: 0.1, y: 0.2, w: 0, h: 0 },
+      to: { x: 0.5, y: 0.6 },
+      label: '00:42.3 · Arrow · top left of the frame',
+      text: '指这里',
+    };
+    expect(isQueuedMessage({ ...msg('a'), videoAnnotations: [video, { ...video, kind: 'pin', to: undefined }] })).toBe(true);
+    expect(isQueuedMessage({ ...msg('a'), videoAnnotations: [{ ...video, revision: 3 }] })).toBe(false);
+    expect(isQueuedMessage({ ...msg('a'), videoAnnotations: [{ ...video, kind: 'circle' }] })).toBe(false);
+    expect(isQueuedMessage({ ...msg('a'), videoAnnotations: [{ ...video, region: { x: 2, y: 0, w: 0, h: 0 } }] })).toBe(false);
+    expect(isQueuedMessage({ ...msg('a'), videoAnnotations: video })).toBe(false);
   });
 
   it('读回时把只能点一个 skill 时存的 skill 换成 skills', () => {

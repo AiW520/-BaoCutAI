@@ -58,6 +58,7 @@ import {
   type SequencedEvent,
   type SettingsReader,
   type SlideAnnotation,
+  type VideoAnnotation,
   type SpaceEntryReference,
   type SpaceReadScope,
   type TaskContract,
@@ -1176,6 +1177,8 @@ export class Harness {
     designAnnotations?: ResolvedDesignAnnotation[];
     /** 设计系统标注（docs/design/canvas §10.6），由 Runtime 按添加的顺序解析好设计系统相对会话工作目录的路径。 */
     designSystemAnnotations?: ResolvedDesignSystemAnnotation[];
+    /** 视频标注（产品设计 §3.2.3「视频标注」），由 Runtime 按添加的顺序解析好视频相对会话工作目录的路径。 */
+    videoAnnotations?: ResolvedVideoAnnotation[];
   }): Promise<{ taskId: Id }> {
     const key = `send:${params.commandId}`;
     const done = this.#commands.get(key);
@@ -1248,6 +1251,7 @@ export class Harness {
       ...(params.designSystemAnnotations?.length
         ? { designSystemAnnotations: params.designSystemAnnotations.map((a) => a.annotation) }
         : {}),
+      ...(params.videoAnnotations?.length ? { videoAnnotations: params.videoAnnotations.map((a) => a.annotation) } : {}),
     });
     state.upsert({
       kind: 'task',
@@ -1285,12 +1289,15 @@ export class Harness {
     this.#runs.set(state.id, run);
     const agentText = [params.text, params.template?.instructions, params.skills?.instructions, fileAttachmentsText(attached)].filter(Boolean).join('\n\n');
     void this.#startRun(state, run, {
-      text: withDesignSystemAnnotations(
-        withDesignAnnotations(
-          withSlideAnnotations(withSpaceReferences(withEditorContext(agentText, params.context), references), params.slideAnnotations ?? []),
-          params.designAnnotations ?? [],
+      text: withVideoAnnotations(
+        withDesignSystemAnnotations(
+          withDesignAnnotations(
+            withSlideAnnotations(withSpaceReferences(withEditorContext(agentText, params.context), references), params.slideAnnotations ?? []),
+            params.designAnnotations ?? [],
+          ),
+          params.designSystemAnnotations ?? [],
         ),
-        params.designSystemAnnotations ?? [],
+        params.videoAnnotations ?? [],
       ),
       ...imagesOf(attached),
     });
@@ -1387,6 +1394,7 @@ export class Harness {
     slideAnnotations?: ResolvedSlideAnnotation[];
     designAnnotations?: ResolvedDesignAnnotation[];
     designSystemAnnotations?: ResolvedDesignSystemAnnotation[];
+    videoAnnotations?: ResolvedVideoAnnotation[];
   }): Promise<{ status: 'steered' | 'unsupported' | 'no-active-turn' }> {
     const key = `steer:${params.commandId}`;
     if (this.#commands.has(key)) return { status: 'steered' };
@@ -1404,12 +1412,16 @@ export class Harness {
     const annotations = params.slideAnnotations ?? [];
     const designAnnotations = params.designAnnotations ?? [];
     const designSystemAnnotations = params.designSystemAnnotations ?? [];
-    const text = withDesignSystemAnnotations(
-      withDesignAnnotations(
-        withSlideAnnotations([params.text, fileAttachmentsText(attached)].filter(Boolean).join('\n\n'), annotations),
-        designAnnotations,
+    const videoAnnotations = params.videoAnnotations ?? [];
+    const text = withVideoAnnotations(
+      withDesignSystemAnnotations(
+        withDesignAnnotations(
+          withSlideAnnotations([params.text, fileAttachmentsText(attached)].filter(Boolean).join('\n\n'), annotations),
+          designAnnotations,
+        ),
+        designSystemAnnotations,
       ),
-      designSystemAnnotations,
+      videoAnnotations,
     );
     const result = await session.steer(run.turnId, { text, ...imagesOf(attached) });
     if (result !== 'accepted') return { status: 'unsupported' };
@@ -1425,6 +1437,7 @@ export class Harness {
       ...(annotations.length ? { slideAnnotations: annotations.map((a) => a.annotation) } : {}),
       ...(designAnnotations.length ? { designAnnotations: designAnnotations.map((a) => a.annotation) } : {}),
       ...(designSystemAnnotations.length ? { designSystemAnnotations: designSystemAnnotations.map((a) => a.annotation) } : {}),
+      ...(videoAnnotations.length ? { videoAnnotations: videoAnnotations.map((a) => a.annotation) } : {}),
     });
     return { status: 'steered' };
   }
@@ -2810,6 +2823,65 @@ export function withDesignSystemAnnotations(text: string, annotations: readonly 
   const blocks = [...groups].map(([systemPath, items]) =>
     [`<baocut-design-system-annotations system=${JSON.stringify(systemPath)}>`, ...items, '</baocut-design-system-annotations>'].join('\n'),
   );
+  return [text, '', ...blocks].join('\n');
+}
+
+/** 一条视频标注与它的视频相对会话工作目录的路径（写法与 `ResolvedSlideAnnotation.deckPath` 相同）。 */
+export interface ResolvedVideoAnnotation {
+  annotation: VideoAnnotation;
+  videoPath: string;
+}
+
+/**
+ * 视频标注里的时码：`MM:SS.s`，满一小时时 `H:MM:SS.s`。先按十分之一秒取整再拆时、分、秒（59.99 秒写成 `01:00.0`）。
+ * 与原型 model-time.js 的 `timecode` 同一种写法；精确的毫秒另在 `(N ms)` 里给。
+ */
+function annotationTimecode(ms: number): string {
+  let s = Math.round(Math.max(0, ms) / 100) / 10;
+  const h = Math.floor(s / 3600);
+  s -= h * 3600;
+  const m = Math.floor(s / 60);
+  s -= m * 60;
+  const pad = (n: number) => String(n).padStart(2, '0');
+  const sec = `${s < 10 ? '0' : ''}${s.toFixed(1)}`;
+  return h > 0 ? `${h}:${pad(m)}:${sec}` : `${pad(m)}:${sec}`;
+}
+
+/** 给模型看的区域：归一化坐标原样给，框另说一句百分比方便读。 */
+function annotationRegion(a: VideoAnnotation): string {
+  const r = a.region;
+  const pct = (v: number) => `${Math.round(v * 100)}%`;
+  if (a.kind === 'arrow' && a.to) return `from (${r.x}, ${r.y}) to (${a.to.x}, ${a.to.y})`;
+  if (a.kind === 'box') return `x=${r.x} y=${r.y} w=${r.w} h=${r.h} (${pct(r.x)}, ${pct(r.y)}, ${pct(r.w)} × ${pct(r.h)})`;
+  return `at (${r.x}, ${r.y})`;
+}
+
+/**
+ * 把视频标注附在发给智能体的文字后面（产品设计 §3.2.3「视频标注」；协议规范 `conversations`），排在设计系统标注段之后：
+ * 每部视频一段，按第一次出现的顺序；编号在每部视频里各自从 1 起；段上的 `revision` 取这组标注里最大的。每条一行时码（含毫秒）、
+ * 种类与区域，下一行批注；同一部视频两条以上时段末另给 `candidateBoundsMs`——只是候选范围，不是要改的区间。
+ * 写法与原型 designs/baocut/app/model-stage-notes.js 的 `promptText` 逐字一致。
+ */
+export function withVideoAnnotations(text: string, annotations: readonly ResolvedVideoAnnotation[]): string {
+  if (annotations.length === 0) return text;
+  const groups = new Map<string, VideoAnnotation[]>();
+  for (const { annotation, videoPath } of annotations) groups.set(videoPath, [...(groups.get(videoPath) ?? []), annotation]);
+  const blocks = [...groups].map(([videoPath, notes]) => {
+    // 版本是十进制数字串：先比位数再比字面，取最大的（都是同一版本时就是那一个）。
+    const revision = notes.reduce((max, n) => (n.revision.length > max.length || (n.revision.length === max.length && n.revision > max) ? n.revision : max), notes[0]!.revision);
+    // i18n-ignore-start: 发给智能体的标注（给模型的提示词），不随界面语言变化
+    const lines = notes.map((a, i) =>
+      [`${i + 1}. ${annotationTimecode(a.timeMs)} (${a.timeMs} ms) · ${a.kind} · ${annotationRegion(a)}`, `   批注：${a.text.split('\n').join('\n        ')}`].join(
+        '\n',
+      ),
+    );
+    const times = notes.map((a) => a.timeMs);
+    const tail = notes.length >= 2 ? [`candidateBoundsMs: ${Math.min(...times)}–${Math.max(...times)}（候选范围，不是要改的区间）`] : [];
+    // i18n-ignore-end
+    return [`<baocut-video-annotations video=${JSON.stringify(videoPath)} revision=${JSON.stringify(revision)}>`, ...lines, ...tail, '</baocut-video-annotations>'].join(
+      '\n',
+    );
+  });
   return [text, '', ...blocks].join('\n');
 }
 

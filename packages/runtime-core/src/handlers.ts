@@ -9,6 +9,7 @@ import {
   type SlideAnnotation,
   type DesignAnnotation,
   type DesignSystemAnnotation,
+  type VideoAnnotation,
   type RpcMethod,
   type RpcParams,
   type RpcResult,
@@ -29,6 +30,7 @@ import type { MediaAnalysis } from './media-analysis.ts';
 import {
   resolveDesignAnnotations,
   resolveDesignSystemAnnotations,
+  resolveVideoAnnotations,
   resolveSlideAnnotations,
   type DesignOpener,
   type DesignSystemOpener,
@@ -229,6 +231,9 @@ export function createHandlers({
   /** 设计系统标注同上（docs/design/canvas §10.6）。 */
   const designSystemAnnotationsOf = (conversationId: Id, annotations: readonly DesignSystemAnnotation[] | undefined) =>
     resolveDesignSystemAnnotations(annotations, harness.getConversation(conversationId).conversation.cwd, locateMedia);
+  /** 视频标注同上（产品设计 §3.2.3「视频标注」）：视频目录换成相对会话工作目录的路径。 */
+  const videoAnnotationsOf = (conversationId: Id, annotations: readonly VideoAnnotation[] | undefined) =>
+    resolveVideoAnnotations(annotations, harness.getConversation(conversationId).conversation.cwd, locateMedia);
 
   /**
    * 新建视频的位置：项目目录。给的是会话时用它的来源：所属项目，不属于项目时是会话的工作目录（架构设计 §3.10，不为视频建项目）。
@@ -357,15 +362,17 @@ export function createHandlers({
         return { deleted: true as const };
       },
       // 带模板或 skill 的发送在 `templateMethods` 里：先解析模板与 skill，再交给 Harness。
-      'conversations.steer': ({ slideAnnotations, designAnnotations, designSystemAnnotations, ...p }) => {
+      'conversations.steer': ({ slideAnnotations, designAnnotations, designSystemAnnotations, videoAnnotations, ...p }) => {
         const resolved = slideAnnotationsOf(p.conversationId, slideAnnotations);
         const resolvedDesign = designAnnotationsOf(p.conversationId, designAnnotations);
         const resolvedSystem = designSystemAnnotationsOf(p.conversationId, designSystemAnnotations);
+        const resolvedVideo = videoAnnotationsOf(p.conversationId, videoAnnotations);
         return harness.steer({
           ...p,
           ...(resolved ? { slideAnnotations: resolved } : {}),
           ...(resolvedDesign ? { designAnnotations: resolvedDesign } : {}),
           ...(resolvedSystem ? { designSystemAnnotations: resolvedSystem } : {}),
+          ...(resolvedVideo ? { videoAnnotations: resolvedVideo } : {}),
         });
       },
       'attachments.prepare': (p) => attachments.prepare(p),
@@ -572,7 +579,16 @@ export function createHandlers({
         ),
       'pipelines.retry': (p) => pipelines.retry(p.jobId),
       ...externalToolMethods(() => externalTools),
-      ...templateMethods({ templates, media, harness, skills, slideAnnotationsOf, designAnnotationsOf, designSystemAnnotationsOf }),
+      ...templateMethods({
+        templates,
+        media,
+        harness,
+        skills,
+        slideAnnotationsOf,
+        designAnnotationsOf,
+        designSystemAnnotationsOf,
+        videoAnnotationsOf,
+      }),
       ...skillMethods({ skills, installer: skillInstaller }),
       ...catalogMethods(toolCatalog, agentSkillsDir === undefined ? {} : { agentSkillsDir: () => agentSkillsDir }),
       ...toolCatalogueMethods({

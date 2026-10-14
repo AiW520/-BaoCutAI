@@ -9,6 +9,8 @@ import { applyAgentChange, draftSelection } from '../../model/agent-choice.ts';
 import { sendFailureMessage } from '../../model/agent-skills.ts';
 import { gateGuide, homeGate } from '../../model/home-brief.ts';
 import { sessionStatus } from '../../model/sidebar.ts';
+import { sentVideoAnnotations } from '../../model/video-annotations.ts';
+import { VIDEO_NOTES } from '../../model/video-annotations-copy.ts';
 import { targetKey } from '../../model/workspace.ts';
 import { setDefaultAccessMode } from '../../runtime/agent-commands.ts';
 import { useRuntime } from '../../runtime/context.tsx';
@@ -16,6 +18,7 @@ import { defaultDriver, useConnection } from '../../state/connection-store.ts';
 import { useConversationMeta } from '../../state/directory-store.ts';
 import { useDraftImages } from '../../state/draft-images-store.ts';
 import { useDraftSkills } from '../../state/draft-skills-store.ts';
+import { useDraftVideoAnnotationList, useDraftVideoAnnotations } from '../../state/draft-video-annotations-store.ts';
 import { hostPanelTab, useEditor } from '../../state/editor-store.ts';
 import { useSetting } from '../../state/settings-store.ts';
 import { routeVideo, useShell } from '../../state/shell-store.ts';
@@ -96,6 +99,9 @@ function draftKeyOf(videoKey: string | null): string {
 export function VideoQuickChat() {
   const runtime = useRuntime();
   const source = useVideo((s) => s.video?.ref?.source ?? null);
+  // 视频标注的草稿挂在视频上（产品设计 §3.2.3「视频标注」）：快聊的会话还没建，输入框上方显示这部视频的标注。
+  const videoId = useVideo((s) => s.video?.videoId ?? null);
+  const videoAnnotations = useDraftVideoAnnotationList(videoId);
   const projectId = source?.projectId ?? null;
   const owner = projectId ? null : (source?.conversationId ?? null);
   // 视频所在的那条会话还在目录里才共用它的工作目录；不在了（被删）就建一条普通的无项目会话。
@@ -148,6 +154,11 @@ export function VideoQuickChat() {
   const startConversation = async (text: string, attachments: AttachmentRef[], skills: SkillSendRef[], videoKey: string) => {
     // 编辑器此刻的状态在离开 Space 之前取：引用标签只认眼前显示的视频。
     const context = await editor.capture();
+    // 视频标注随第一句话发出去；只带标注、没写话时补一句（同会话里的输入框）。发出去之后从草稿里摘掉。
+    const noteVideoId = videoId;
+    const drafted = noteVideoId ? (useDraftVideoAnnotations.getState().annotations[noteVideoId] ?? []) : [];
+    const videoNotes = sentVideoAnnotations(drafted);
+    const message = text || (videoNotes.length ? VIDEO_NOTES.message : '');
     let conversationId: Id | null = null;
     try {
       // 只传草稿上选过的；没选的由 Runtime 按偏好给。选过的访问模式同时记成新会话的默认。
@@ -168,13 +179,18 @@ export function VideoQuickChat() {
       shell.go({ tab: 'home', conversationId: conversation.id, projectId: null });
       await runtime.send(
         conversation.id,
-        text,
+        message,
         context,
         attachments.map((a) => a.id),
         undefined,
         skills,
+        undefined,
+        undefined,
+        undefined,
+        videoNotes,
       );
       editor.reset();
+      if (noteVideoId) useDraftVideoAnnotations.getState().sent(noteVideoId, drafted.map((n) => n.id));
       return true;
     } catch (error) {
       ToastQueue.negative(sendFailureMessage(error), { timeout: 5000 });
@@ -247,6 +263,23 @@ export function VideoQuickChat() {
           placeholder={COPY.placeholder}
           autoFocus={opened}
           reference={editor.reference}
+          videoAnnotations={
+            videoId
+              ? {
+                  items: videoAnnotations.map((n) => ({
+                    id: n.id,
+                    target: n.video,
+                    anchor: '',
+                    timeMs: n.timeMs,
+                    videoId: n.videoId,
+                    label: n.label,
+                    text: n.text,
+                  })),
+                  onRemove: (id) => useDraftVideoAnnotations.getState().remove(videoId, id),
+                  onClear: () => useDraftVideoAnnotations.getState().clear(videoId),
+                }
+              : null
+          }
           mentionScope={{ projectId, conversationId: null }}
           onSend={async (text, attachments, skills) => {
             // 视频还没载入（不知道它在哪个项目）时先不发，话留在输入框里。

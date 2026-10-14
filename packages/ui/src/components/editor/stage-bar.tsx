@@ -25,6 +25,7 @@ import {
 } from '@react-spectrum/s2';
 import AspectRatio from '@react-spectrum/s2/icons/AspectRatio';
 import CloseCaptions from '@react-spectrum/s2/icons/CloseCaptions';
+import Comment from '@react-spectrum/s2/icons/Comment';
 import FullScreen from '@react-spectrum/s2/icons/FullScreen';
 import SpeedFast from '@react-spectrum/s2/icons/SpeedFast';
 import VolumeOff from '@react-spectrum/s2/icons/VolumeOff';
@@ -34,6 +35,7 @@ import { style } from '@react-spectrum/s2/style' with { type: 'macro' };
 import { useLocale } from 'react-aria/I18nProvider';
 import { Slider, SliderThumb, SliderTrack } from 'react-aria-components/Slider';
 import { TooltipContext, TooltipTriggerStateContext } from 'react-aria-components/Tooltip';
+import { VIDEO_NOTES } from '../../model/video-annotations-copy.ts';
 import { monitorGain, monitorLevel, toggleMute, type MonitorLevel } from '../../model/preview-volume.ts';
 import {
   CANVAS_SIDE_MAX,
@@ -48,6 +50,7 @@ import {
   stageRatioCanvas,
   stageRatioOf,
 } from '../../model/stage-bar.ts';
+import { useRuntime } from '../../runtime/context.tsx';
 import { useEditor } from '../../state/editor-store.ts';
 import { PLAYBACK_RATES } from '../../state/player-store.ts';
 import { canEdit, useVideo } from '../../state/video-store.ts';
@@ -61,7 +64,7 @@ import './editor.css';
 
 /**
  * 舞台下沿的工具条（原型 stage.jsx 的 `StageBar`、ui.css 的 `.stagebar`）：42px 高、上边一道线，紧贴舞台、在走带之上。
- * 左边是带字的两件：画幅、倍速（图标加当前值）；右边是纯图标的三件：字幕显隐、音量、全屏。与原型不同（用户定的）：
+ * 左边是带字的两件：画幅、倍速（图标加当前值）；右边是纯图标的几件：标注（Web 没有）、字幕显隐、音量、全屏。与原型不同（用户定的）：
  * 原型的倍速在右边、只有字，画幅只有字加箭头。
  *
  * - 画幅：换的是视频的画布（`updateSequence`，短边不变，一步撤销，与检查器的画幅同一种换法）；只读视频灰着。表下面是「自定义…」
@@ -86,6 +89,7 @@ export function StageBar({
       <RatePicker />
       <div className={spacer} />
       <div className={icons}>
+        <AnnotateToggle />
         <CaptionsToggle />
         <VolumeControl />
         <Tip label={F.enterTip}>
@@ -306,6 +310,35 @@ function CustomRatioDialog({
         )}
       </Dialog>
     </DialogContainer>
+  );
+}
+
+// ---- 标注 ----
+
+/**
+ * 标注（产品设计 §3.2.3「视频标注」、§5.3；原型 stage.jsx）：在画面上框、画箭头、写字或打编号，加进输入框的「视频标注」。
+ * 是交给智能体的入口，Web 没有会话，不出这枚钮。进标注模式先停播——标注绑的是此刻的播放头。
+ */
+function AnnotateToggle() {
+  const web = useRuntime().host.platform === 'web';
+  const { pause } = useEditorActions();
+  const on = useEditor((s) => s.annotating);
+  const setAnnotating = useEditor((s) => s.setAnnotating);
+  if (web) return null;
+  return (
+    <Tip label={on ? VIDEO_NOTES.exitAnnotate : VIDEO_NOTES.annotate}>
+      <ToggleButton
+        size="S"
+        isQuiet
+        aria-label={VIDEO_NOTES.annotate}
+        isSelected={on}
+        onChange={(next) => {
+          if (next) pause();
+          setAnnotating(next);
+        }}>
+        <Comment />
+      </ToggleButton>
+    </Tip>
   );
 }
 

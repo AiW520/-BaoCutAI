@@ -13,6 +13,7 @@ import { audioKey, imageKey, videoKey, type MediaKey, type PreviewStatus } from 
 import { StageLoadNotice } from './stage-load-notice.tsx';
 import { StageMediaNotice } from './stage-media-notice.tsx';
 import { StageBar, SafeAreaOverlay } from './stage-bar.tsx';
+import { StageNotesLayer, StageNotesToolbar } from './stage-notes.tsx';
 import { StageObjects } from './stage-objects.tsx';
 import { useAssetUrl } from './use-asset-url.ts';
 import { useStageMedia } from './use-stage-media.ts';
@@ -108,6 +109,7 @@ export function Preview({
   const fullscreen = useEditor((s) => s.fullscreen);
   const rate = useEditor((s) => s.rate);
   const captionsHidden = useEditor((s) => s.captionsHidden);
+  const annotating = useEditor((s) => s.annotating);
   const safeArea = useEditor((s) => s.safeArea);
   const [status, setStatus] = useState<PreviewStatus>({ kind: 'loading' });
   const stageRef = useRef<HTMLDivElement>(null);
@@ -259,7 +261,11 @@ export function Preview({
           ) : null}
           {safeArea && !fullscreen && isPortrait(sequence.canvas) ? <SafeAreaOverlay /> : null}
         </div>
-        {fw > 0 && fh > 0 && !fullscreen ? <StageObjects sequence={sequence} frame={frameRect} /> : null}
+        {/* 标注模式下画面里的元素不能选、不能拖：舞台点选层让位给标注层。 */}
+        {fw > 0 && fh > 0 && !fullscreen && !annotating ? <StageObjects sequence={sequence} frame={frameRect} /> : null}
+        {/* 视频标注层（产品设计 §3.2.3「视频标注」）：盖在画面与舞台点选层之上；全屏播放器不画。 */}
+        {fw > 0 && fh > 0 && !fullscreen && videoId ? <StageNotesLayer videoId={videoId} frame={frameRect} /> : null}
+        {!fullscreen && videoId ? <StageNotesToolbar videoId={videoId} /> : null}
         {fullscreen ? (
           <FullscreenPlayer stage={stageRef} sequence={sequence} assets={assets} documents={documents}>
             {notices}

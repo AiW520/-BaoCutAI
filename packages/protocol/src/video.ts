@@ -1,6 +1,7 @@
 import type { CaptionPresentation } from './caption-scene.ts';
 import type { Id, Seq } from './domain.ts';
 import { localizeText, type MessageRef } from './message-ref.ts';
+import type { FileTarget } from './methods.ts';
 
 /**
  * 视频领域的线上 DTO（视频格式规范 §2–§4；命令与协议规范 §4–§6、§10）。
@@ -1780,4 +1781,39 @@ export function posterFrame(video: VideoSnapshot): { asset: VersionRef; at: numb
     best = { from: item.span.fromFrame, asset: item.assetRef, at };
   }
   return best ? { asset: best.asset, at: best.at } : null;
+}
+
+/**
+ * 视频标注的上限（产品设计 §3.2.3「视频标注」；命令与协议规范 `conversations`）：与幻灯片、设计稿、设计系统标注同一组，
+ * 每条消息至多 20 条，单条批注去掉首尾空白后至多 2000 字。
+ */
+export const VIDEO_ANNOTATION_LIMITS = { perMessage: 20, text: 2000 } as const;
+
+/** 视频标注的种类：框、箭头、文字、编号。 */
+export const VIDEO_ANNOTATION_KINDS = ['box', 'arrow', 'text', 'pin'] as const;
+export type VideoAnnotationKind = (typeof VIDEO_ANNOTATION_KINDS)[number];
+
+/**
+ * 一条视频标注（产品设计 §3.2.3「视频标注」、§5.3「标注」）：用户在编辑器预览画面上框、画箭头、写文字或打编号，写的批注。
+ * 随 `conversations.send` / `steer` 挂在消息上，Runtime 发送时按视频拼成 `<baocut-video-annotations>` 段交给智能体；
+ * 会话里的用户消息上另带一份。默认语义是「改源视频 `timeMs` 附近」，`region` 只用来定位，不裁剪、不作为生成的输入。
+ */
+export interface VideoAnnotation {
+  /** 视频目录，与 `videos.open` 的 target 相同。 */
+  video: FileTarget;
+  /** 标注时视频的版本；落后于当前版本时不拒绝，智能体改之前按当前版本核对。 */
+  revision: Revision;
+  /** 标注时的播放头：时间线时间，非负整数毫秒。 */
+  timeMs: number;
+  kind: VideoAnnotationKind;
+  /**
+   * 相对那个版本的画布归一化（0–1，左上为原点）。`box` 的 `w`、`h` 大于 0；`arrow` 是起点、`text` 与 `pin` 是那个点，`w`、`h` 为 0。
+   */
+  region: { x: number; y: number; w: number; h: number };
+  /** 箭头的终点（归一化）：只有 `arrow` 有，也必须有。 */
+  to?: { x: number; y: number };
+  /** 给人看的位置（时码、种类与画面九宫位置），客户端生成。 */
+  label: string;
+  /** 用户写的批注，去掉首尾空白。 */
+  text: string;
 }

@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
-import type { Id, Revision } from '@baocut/protocol';
+import type { Id, Revision, VideoAnnotationKind } from '@baocut/protocol';
 import { mergeDraft, type ItemDraft } from '../model/item-draft.ts';
 import { ZOOM_DEFAULT, ZOOM_MIN, clampZoom } from '../model/timeline-zoom.ts';
 
@@ -114,6 +114,20 @@ export interface EditorStore {
   setCaptionsHidden(hidden: boolean): void;
   safeArea: boolean;
   setSafeArea(on: boolean): void;
+  /**
+   * 视频标注模式（产品设计 §3.2.3「视频标注」；原型 stage.jsx 的「标注」钮；不持久化，换视频时退出）：开着时预览画面上盖一层
+   * 标注层，拖框、拖箭头或点一下记一条批注；画面里的元素这时不能选、不能拖。`noteKind` 是小工具条上选中的种类。
+   */
+  annotating: boolean;
+  setAnnotating(on: boolean): void;
+  noteKind: VideoAnnotationKind;
+  setNoteKind(kind: VideoAnnotationKind): void;
+  /**
+   * 编辑器之外要把播放头挪到某一秒（例如点 composer 里的一条视频标注）：写播放头并加一次计数，编辑器看到计数变了就让引擎跳过去。
+   * 同一部视频开着时 `setPlayhead` 只改显示，不会让引擎跳；换视频时打开的那一刻会按播放头跳，不需要它。
+   */
+  seekRequests: number;
+  requestSeek(seconds: number): void;
 }
 
 /** 还没提交（或正在提交）的时间微调：哪几件、累计挪了多少帧、按哪个视频版本算的。 */
@@ -157,6 +171,7 @@ export const useEditor = create<EditorStore>()(
                 rate: 1,
                 captionsHidden: false,
                 safeArea: false,
+                annotating: false,
                 ...(landing ? { panelTab: landing } : {}),
               },
         ),
@@ -201,6 +216,12 @@ export const useEditor = create<EditorStore>()(
       setCaptionsHidden: (captionsHidden) => set({ captionsHidden }),
       safeArea: false,
       setSafeArea: (safeArea) => set({ safeArea }),
+      annotating: false,
+      setAnnotating: (annotating) => set({ annotating }),
+      noteKind: 'box',
+      setNoteKind: (noteKind) => set({ noteKind }),
+      seekRequests: 0,
+      requestSeek: (seconds) => set((s) => ({ playhead: Math.max(0, seconds), seekRequests: s.seekRequests + 1 })),
     }),
     {
       name: 'baocut.editor',

@@ -180,6 +180,7 @@ import type {
   TransactionReceipt,
   UndoState,
   UndoTarget,
+  VideoAnnotation,
 } from './video.ts';
 
 /**
@@ -406,6 +407,9 @@ export interface RpcMethods {
    * 每份设计稿一段 `<baocut-design-annotations>`，附在幻灯片标注段之后；编号各自从 1 起；设计稿找不到时同样整条 `not-found`。
    * `designSystemAnnotations`：设计系统标签里加进草稿的标注（docs/design/canvas §10.6），限制相同（`DESIGN_SYSTEM_ANNOTATION_LIMITS`）。
    * 每套设计系统一段 `<baocut-design-system-annotations>`，附在设计稿标注段之后；编号各自从 1 起；设计系统找不到时同样整条 `not-found`。
+   * `videoAnnotations`：编辑器预览画面上加进草稿的标注（产品设计 §3.2.3「视频标注」），限制相同（`VIDEO_ANNOTATION_LIMITS`）。
+   * 每部视频一段 `<baocut-video-annotations video="…" revision="…">`，附在设计系统标注段之后；编号各自从 1 起，同一部视频两条以上时
+   * 段末另给 `candidateBoundsMs`；视频找不到时同样整条 `not-found`，`revision` 落后于当前版本时不拒绝。
    */
   'conversations.send': {
     params: {
@@ -423,12 +427,13 @@ export interface RpcMethods {
       slideAnnotations?: SlideAnnotation[];
       designAnnotations?: DesignAnnotation[];
       designSystemAnnotations?: DesignSystemAnnotation[];
+      videoAnnotations?: VideoAnnotation[];
     };
     result: { taskId: Id };
   };
   /**
    * 把一条消息插进正在运行的回合（Agent 支持时）。不支持或没有运行中的回合时如实返回，由界面决定排队还是先停再发。
-   * `slideAnnotations`、`designAnnotations`、`designSystemAnnotations` 与 `conversations.send` 的相同。
+   * `slideAnnotations`、`designAnnotations`、`designSystemAnnotations`、`videoAnnotations` 与 `conversations.send` 的相同。
    */
   'conversations.steer': {
     params: {
@@ -439,6 +444,7 @@ export interface RpcMethods {
       slideAnnotations?: SlideAnnotation[];
       designAnnotations?: DesignAnnotation[];
       designSystemAnnotations?: DesignSystemAnnotation[];
+      videoAnnotations?: VideoAnnotation[];
     };
     result: { status: 'steered' | 'unsupported' | 'no-active-turn' };
   };

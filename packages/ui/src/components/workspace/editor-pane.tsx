@@ -590,16 +590,16 @@ export function EditorPane({ spec, target, conversationId, active }: { spec: Edi
 
 /**
  * 批注框（§8.2 第 3 步，移植自原型 home-slides.jsx `SlideNoteForm`、home-design.jsx `DesignNoteForm`）：
- * 上面是位置，一个输入框，「取消」与「添加到对话」；⌘/Ctrl+Enter 添加。
+ * 上面是位置，一个输入框，「取消」与「添加到对话」；⌘/Ctrl+Enter 添加。视频标注（editor/stage-notes.tsx）也用它。
  */
-function NoteForm({
+export function NoteForm({
   copy,
   limit,
   label,
   onAdd,
   onCancel,
 }: {
-  copy: EditorAnnotationCopy;
+  copy: Pick<EditorAnnotationCopy, 'noteLabel' | 'notePlaceholder' | 'addToChat' | 'cancel' | 'tooLong'>;
   limit: number;
   label: string;
   onAdd: (text: string) => void;
