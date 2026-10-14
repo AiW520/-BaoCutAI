@@ -8,8 +8,9 @@
    麦克风、分离、分人在原型里都是计时器模拟，听到的是随包的内置录音；判词与候选算法在 model-voices.js。
    云端（2026-09-24 云端语音合成设计稿 §2.4 / §6）：行卡上多一组云端 chip（已上传 / 首次用时上传 / 参考不足 / 许可未说明 / 不能克隆），
    ⋯ 里多「上传到 X」「从 X 删除克隆」，试听克隆的模型 Picker 多一组云端；换参考段把已上传的绑定标成陈旧。
-   2026-10-14：行上第三行写「凭什么认人」——种子（本地引擎）、各家的 voice id、授权声明；要授权录音的提供方（Gemini）
-   连着而音色没有那段时亮一枚「缺授权录音」chip，⋯ 里「补录授权声明」走 ConsentCapture。 */
+   2026-10-14：行上第三行写「凭什么认人」——每只本机引擎一颗种子、各家的 voice id、授权声明（可试听）；要授权录音的提供方（Gemini）
+   连着而音色没有那段时亮一枚「缺授权录音」chip，⋯ 里「补录授权声明」走 ConsentCapture、「换种子」按引擎各一条。
+   模型页（语音合成 › 模型）每只能克隆的模型下有一行 ModelVoicesLine：绑着的音色 + 「克隆新音色」，带着 voiceHandoff.target 过来直接进采集页。 */
 (function () {
   const {useState, useEffect, useRef} = React;
   const D = window.BC_DATA;
@@ -193,7 +194,10 @@
             )}
             <span className="t-detail-xs vlib-row__meta">{V.metaLine(v)}</span>
             {v.text ? <span className="t-detail-xs vlib-row__text">「{v.text}」</span> : null}
-            <span className="t-detail-xs vlib-row__ids">{V.idLine(v, C.providers(app.cloudCustom))}</span>
+            <span className="t-detail-xs vlib-row__ids">
+              {V.idLine(v, C.providers(app.cloudCustom))}
+              {v.consentClip && v.consentClip.dur > 0 ? <window.VoicePlay v={{file: v.consentClip.file}} size="xs" tip="听授权声明" /> : null}
+            </span>
           </div>
           <Btn variant={audition ? 'primary' : 'secondary'} size="s" icon="wave" aria-expanded={audition} onClick={() => setAudition((x) => !x)}>试听克隆</Btn>
           <div className="vlib-row__more">
@@ -203,10 +207,12 @@
               <MenuItem icon="edit" label="重命名" onClick={() => { setMenu(false); setRenaming(true); }} />
               <MenuItem icon="wave" label="换参考段" sub={v.source.kind === 'media' ? '回到分人页重挑一段' : '重新录一段'}
                 onClick={() => { setMenu(false); onRetake(); }} />
-              <MenuItem icon="mic" label={v.consentClip ? '重录授权声明' : '补录授权声明'} sub={v.consentClip ? `${V.consentPhrase(v.consentClip.lang).label} · ${v.consentClip.dur.toFixed(1)} 秒 · Google Gemini 用` : 'Google Gemini 复刻要本人念一句，英文最稳'}
+              <MenuItem icon="mic" label={v.consentClip ? '重录授权声明' : '补录授权声明'} sub={v.consentClip ? `${V.phraseLabel(V.consentPhrase(v.consentClip.lang, v.consentClip.text))} · ${v.consentClip.dur.toFixed(1)} 秒 · Google Gemini 用` : 'Google Gemini 复刻要本人念一句，英文最稳'}
                 onClick={() => { setMenu(false); onConsent(); }} />
-              <MenuItem icon="refresh" label="换一颗种子" sub={`现在是 ${v.seed} · 本地引擎下次生成会变一点`}
-                onClick={() => { setMenu(false); onPatch({seed: V.randomSeed()}); app.toast('已换种子 · 用了它的视频下次生成会略有不同'); }} />
+              {V.bindings(v, C.providers(app.cloudCustom)).filter((b) => b.kind === 'seed').map((b) => (
+                <MenuItem key={b.id} icon="refresh" label={`换种子 · ${b.name}`} sub={`现在是 ${b.value} · 这只引擎下次生成会变一点`}
+                  onClick={() => { setMenu(false); onPatch(b.id === '*' ? {seed: V.randomSeed()} : {seeds: Object.assign({}, v.seeds, {[b.id]: V.randomSeed()})}); app.toast(`已换 ${b.name} 的种子 · 用了它的视频下次生成会略有不同`); }} />
+              ))}
               <MenuItem icon="plus" label={v.emotion ? '换情绪片段' : '补一段情绪片段'} sub="IndexTTS 两代用；其他引擎不看"
                 onClick={() => { setMenu(false); onPatch({emotion: v.emotion ? null : {dur: 4.2, file: v.file}}); app.toast(v.emotion ? '已去掉情绪片段' : '交互演示 · 已补一段 4.2 秒的情绪片段'); }} />
               {cloudItems.length ? <><MenuRule />{cloudItems}</> : null}
@@ -380,6 +386,9 @@
     const app = useApp();
     const [mode, setMode] = useState('list');   // list | mic | media | consent:<voiceId>
     const [addMenu, setAddMenu] = useState(false);
+    /* 从模型页的「克隆新音色」过来：直接进采集页（预选那只模型） */
+    const openAs = app.voiceHandoff && !app.voiceHandoff.voiceId ? app.voiceHandoff.open : null;
+    useEffect(() => { if (openAs) setMode(openAs); }, [openAs]);
     const voices = app.voices;
     const patch = (id, p) => app.setVoices((list) => list.map((v) => (v.id === id ? {...v, ...p} : v)));
     const finish = (made) => {
@@ -409,7 +418,7 @@
       <Picker size="s" icon="plus" value="克隆新音色" open={addMenu} popWidth={280}
         onClick={() => setAddMenu((x) => !x)} onClose={() => setAddMenu(false)}>
         <Menu>
-          <MenuItem icon="mic" label="录或上传一段样本" sub="30 秒左右；要给 Google Gemini 用再念一句授权声明" onClick={() => { setAddMenu(false); setMode('mic'); }} />
+          <MenuItem icon="mic" label="录或上传一段样本" sub="先选给哪些模型用；30 秒样本；选了 Google Gemini 再念一句授权声明" onClick={() => { setAddMenu(false); setMode('mic'); }} />
           <MenuItem icon="upload" label="从音频或视频里取…" sub="多人说话会分开，每人挑一段" onClick={() => { setAddMenu(false); setMode('media'); }} />
           <MenuRule />
           <MenuItem icon="download" label="导入音色包…" sub="别人导出的 .bcvoice" onClick={() => { setAddMenu(false); app.toast('交互演示 · 选一个 .bcvoice 文件夹'); }} />
@@ -448,8 +457,8 @@
           </div>
         )}
         <div className="t-detail-xs vlib-foot vlib-foot--rule">
-          一只音色 = 一段 30 秒左右的样本 + 从它截出的 5–10 秒参考段（带原文）+ 来源 + 一颗种子；给 Google Gemini 用的还带一段本人念的授权声明。
-          本地引擎靠同一段参考 + 同一颗种子认人，云端靠对方给的 voice id（记在这只音色上，删音色时一并删）。
+          一只音色 = 一段 30 秒左右的样本 + 从它截出的 5–10 秒参考段（带原文）+ 来源 + 每只本机引擎一颗种子；给 Google Gemini 用的还带一段本人念的授权声明。
+          本地引擎靠同一段参考 + 那只引擎的种子认人，云端靠对方给的 voice id（一家一只，记在这只音色上，删音色时一并删）。
           导出的音色包（<span className="t-mono">名字.bcvoice</span>）带着录音、授权声明、种子与 <span className="t-mono">voice.json</span>，可以直接发给别人导入，voice id 不随包走；
           CLI 用 <span className="t-mono">--voice my:名字</span> 选它。
           Qwen3-TTS CustomVoice 接不了参考音频，OpenAI 的云端模型不能克隆，选了会明说，不会偷偷换成别的声音。

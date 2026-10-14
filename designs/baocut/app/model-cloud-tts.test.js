@@ -248,9 +248,9 @@ test('Gemini 音色：30 只内置、默认 Kore（任何语言都是它）、�
   // 行卡 chip：缺授权录音
   assert.deepEqual(C.cloudChips(v, ['google']).map((c) => c.k), ['authorize']);
   // 录了授权声明：样本太短先拦，10 秒以上首次用时建音色（样本 + 授权两段一起传），建好记 voice_…
-  const ok = voice({id: 'c', consentClip: {lang: 'en', dur: 7.9}});
+  const ok = voice({id: 'c', consentClip: {lang: 'en-US', dur: 7.9}});
   assert.equal(C.cloneStatus(ok, 'google').k, 'short');
-  const long = voice({id: 'd', sourceDur: 29.1, consentClip: {lang: 'en', dur: 7.9}});
+  const long = voice({id: 'd', sourceDur: 29.1, consentClip: {lang: 'en-US', dur: 7.9}});
   const first = C.cloneStatus(long, 'google');
   assert.equal(first.k, 'first');
   assert.equal(first.chip, 'Google Gemini · 首次用时建音色');

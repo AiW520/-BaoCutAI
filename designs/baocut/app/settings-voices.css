@@ -104,3 +104,13 @@
 .vlib-land__row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; min-height: 24px; }
 .vlib-land__row > .vlib-cap__lab { width: 96px; }
 .vlib-row__ids { color: var(--gray-600); font-variant-numeric: tabular-nums; }
+
+/* 模型页（语音合成 › 模型）每只能克隆的模型下一行：克隆音色 · 名字 id · 克隆新音色（settings-voice-capture.jsx ModelVoicesLine） */
+.mvl { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; min-height: 24px; padding: 2px 0 2px 36px; color: var(--gray-600); }
+.lmrow .mvl { padding-left: 32px; }
+.mvl__lab { flex: none; }
+.mvl__item { display: inline-flex; align-items: center; gap: 4px; padding: 0 8px; border-radius: 999px; background: var(--gray-100); color: var(--gray-800); line-height: 20px; }
+.mvl__item b { font-weight: 500; }
+.mvl__none { color: var(--gray-500); }
+.mvl .mvl__go { gap: 2px; margin-left: 0; }
+.vlib-row__ids { display: inline-flex; align-items: center; gap: 6px; flex-wrap: wrap; }

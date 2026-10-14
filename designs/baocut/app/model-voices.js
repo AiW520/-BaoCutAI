@@ -26,12 +26,54 @@
      （接口核对两段是不是同一个人），声明有语言之分——实测中文常验不过，英文稳，所以语言是一个选项、英文是推荐值。 */
   const SAMPLE = {min: 5, good: 10, target: 30, max: 30};
   const CONSENT_REC = {min: 3, target: 8, max: 15};
-  /** 授权声明原文（Google 官方给 30 种语言，这里只放核对过的两种；其余语言去官方文档查原文）。`verified` 是实测能过 */
+  /** 授权声明原文：Google 官方表里的 30 个地区语言（`code` 是接口收的 `language_code`，同一语言的几个地区原文相同）。
+   *  `verified` 是实测能过：只有英文稳；简体中文实测常验不过，其余没测过。除了表里的还能自定义一句（`custom`）——
+   *  Google 只认表里的原文，自定义的留给别家或将来的提供方。 */
   const CONSENT_PHRASES = [
-    {code: 'en', label: 'English', text: 'I am the owner of this voice and I consent to Google using this voice to create a synthetic voice model.', verified: true, recommended: true},
-    {code: 'zh', label: '简体中文', text: '我是此声音的拥有者并授权谷歌使用此声音创建语音合成模型', verified: false, note: '实测常验不过 · 不急就念英文'},
+    {code: 'en-US', label: 'English', region: '美国', text: 'I am the owner of this voice and I consent to Google using this voice to create a synthetic voice model.', verified: true, recommended: true},
+    {code: 'zh-CN', label: '简体中文', text: '我是此声音的拥有者并授权谷歌使用此声音创建语音合成模型', verified: false, note: '实测常验不过 · 不急就念英文'},
+    {code: 'en-GB', label: 'English', region: '英国', text: 'I am the owner of this voice and I consent to Google using this voice to create a synthetic voice model.'},
+    {code: 'en-IN', label: 'English', region: '印度', text: 'I am the owner of this voice and I consent to Google using this voice to create a synthetic voice model.'},
+    {code: 'en-AU', label: 'English', region: '澳大利亚', text: 'I am the owner of this voice and I consent to Google using this voice to create a synthetic voice model.'},
+    {code: 'ja-JP', label: '日本語', text: '私はこの音声の所有者であり、Googleがこの音声を使用して音声合成モデルを作成することを承認します。'},
+    {code: 'ko-KR', label: '한국어', text: '나는 이 음성의 소유자이며 구글이 이 음성을 사용하여 음성 합성 모델을 생성할 것을 허용합니다.'},
+    {code: 'fr-FR', label: 'Français', region: '法国', text: "Je suis le propriétaire de cette voix et j'autorise Google à utiliser cette voix pour créer un modèle de voix synthétique."},
+    {code: 'fr-CA', label: 'Français', region: '加拿大', text: "Je suis le propriétaire de cette voix et j'autorise Google à utiliser cette voix pour créer un modèle de voix synthétique."},
+    {code: 'de-DE', label: 'Deutsch', text: 'Ich bin der Eigentümer dieser Stimme und bin damit einverstanden, dass Google diese Stimme zur Erstellung eines synthetischen Stimmmodells verwendet.'},
+    {code: 'es-ES', label: 'Español', region: '西班牙', text: 'Soy el propietario de esta voz y doy mi consentimiento para que Google la utilice para crear un modelo de voz sintética.'},
+    {code: 'es-US', label: 'Español', region: '美国', text: 'Soy el propietario de esta voz y doy mi consentimiento para que Google la utilice para crear un modelo de voz sintética.'},
+    {code: 'it-IT', label: 'Italiano', text: 'Sono il proprietario di questa voce e acconsento che Google la utilizzi per creare un modello di voce sintetica.'},
+    {code: 'pt-BR', label: 'Português', region: '巴西', text: 'Eu sou o proprietário desta voz e autorizo o Google a usá-la para criar um modelo de voz sintética.'},
+    {code: 'ru-RU', label: 'Русский', text: 'Я являюсь владельцем этого голоса и даю согласие Google на использование этого голоса для создания модели синтетического голоса.'},
+    {code: 'nl-NL', label: 'Nederlands', text: 'Ik ben de eigenaar van deze stem en ik geef Google toestemming om deze stem te gebruiken om een synthetisch stemmodel te maken.'},
+    {code: 'pl-PL', label: 'Polski', text: 'Jestem właścicielem tego głosu i wyrażam zgodę na wykorzystanie go przez Google w celu utworzenia syntetycznego modelu głosu.'},
+    {code: 'tr-TR', label: 'Türkçe', text: "Bu sesin sahibi benim ve Google'ın bu sesi kullanarak sentetik bir ses modeli oluşturmasına izin veriyorum."},
+    {code: 'id-ID', label: 'Indonesia', text: 'Saya pemilik suara ini dan saya menyetujui Google menggunakan suara ini untuk membuat model suara sintetis.'},
+    {code: 'vi-VN', label: 'Tiếng Việt', text: 'Tôi là chủ sở hữu giọng nói này và tôi đồng ý cho Google sử dụng giọng nói này để tạo mô hình giọng nói tổng hợp.'},
+    {code: 'th-TH', label: 'ไทย', text: 'ฉันเป็นเจ้าของเสียงนี้ และฉันยินยอมให้ Google ใช้เสียงนี้เพื่อสร้างแบบจำลองเสียงสังเคราะห์'},
+    {code: 'ar-XA', label: 'العربية', text: 'أنا مالك هذا الصوت وأوافق على أن تستخدم Google هذا الصوت لإنشاء نموذج صوتي اصطناعي.'},
+    {code: 'hi-IN', label: 'हिन्दी', text: 'मैं इस आवाज का मालिक हूं और मैं सिंथेटिक आवाज मॉडल बनाने के लिए Google को इस आवाज का उपयोग करने की सहमति देता हूं'},
+    {code: 'bn-IN', label: 'বাংলা', text: 'আমি এই ভয়েসের মালিক এবং আমি একটি সিন্থেটিক ভয়েস মডেল তৈরি করতে এই ভয়েস ব্যবহার করে Google-এর সাথে সম্মতি দিচ্ছি।'},
+    {code: 'gu-IN', label: 'ગુજરાતી', text: 'હું આ વોઈસનો માલિક છું અને સિન્થેટિક વોઈસ મોડલ બનાવવા માટે આ વોઈસનો ઉપયોગ કરીને google ને હું સંમતિ આપું છું'},
+    {code: 'kn-IN', label: 'ಕನ್ನಡ', text: 'ನಾನು ಈ ಧ್ವನಿಯ ಮಾಲಿಕ ಮತ್ತು ಸಂಶ್ಲೇಷಿತ ಧ್ವನಿ ಮಾದರಿಯನ್ನು ರಚಿಸಲು ಈ ಧ್ವನಿಯನ್ನು ಬಳಸಿಕೊಂಡುಗೂಗಲ್ ಗೆ ನಾನು ಸಮ್ಮತಿಸುತ್ತೇನೆ.'},
+    {code: 'ml-IN', label: 'മലയാളം', text: 'ഈ ശബ്ദത്തിന്റെ ഉടമ ഞാനാണ്, ഒരു സിന്തറ്റിക് വോയ്സ് മോഡൽ സൃഷ്ടിക്കാൻ ഈ ശബ്ദം ഉപയോഗിക്കുന്നതിന് ഞാൻ Google-ന് സമ്മതം നൽകുന്നു.'},
+    {code: 'mr-IN', label: 'मराठी', text: 'मी या आवाजाचा मालक आहे आणि सिंथेटिक व्हॉइस मॉडेल तयार करण्यासाठी हा आवाज वापरण्यासाठी मी Google ला संमती देतो'},
+    {code: 'ta-IN', label: 'தமிழ்', text: 'நான் இந்த குரலின் உரிமையாளர் மற்றும் செயற்கை குரல் மாதிரியை உருவாக்க இந்த குரலை பயன்படுத்த குகல்க்கு நான் ஒப்புக்கொள்கிறேன்.'},
+    {code: 'te-IN', label: 'తెలుగు', text: 'నేను ఈ వాయిస్ యజమానిని మరియు సింతటిక్ వాయిస్ మోడల్ ని రూపొందించడానికి ఈ వాయిస్ ని ఉపయోగించడానికి googleకి నేను సమ్మతిస్తున్నాను.'},
   ];
-  const consentPhrase = (code) => CONSENT_PHRASES.find((c) => c.code === code) || CONSENT_PHRASES[0];
+  /** 采集页上直接给芯片的两种；其余在「更多语言」里 */
+  const CONSENT_COMMON = ['en-US', 'zh-CN'];
+  const CONSENT_ALIAS = {en: 'en-US', zh: 'zh-CN'};
+  /** 一种声明：表里的按 `code` 找（旧档里的 `en` / `zh` 也认）；`custom` 回自定义的那句（`customText`），没有就回英文 */
+  function consentPhrase(code, customText) {
+    if (code === 'custom') return {code: 'custom', label: '自定义', text: String(customText || '').trim(), custom: true};
+    const c = CONSENT_ALIAS[code] || code;
+    return CONSENT_PHRASES.find((x) => x.code === c) || CONSENT_PHRASES[0];
+  }
+  /** 声明的显示名：`English（美国）` / `简体中文` / `自定义` */
+  const phraseLabel = (ph) => (ph.region ? `${ph.label}（${ph.region}）` : ph.label);
+  /** 「更多语言」菜单的项：表里除常用两种之外的，按原表次序；`sub` 是地区码 */
+  const consentMore = () => CONSENT_PHRASES.filter((c) => CONSENT_COMMON.indexOf(c.code) < 0).map((c) => ({code: c.code, label: phraseLabel(c), sub: c.code}));
   /** 样本停下后：`problem` 不为 null 就不给存；`short` 列出嫌它短的云端提供方（只提醒，不拦）。`providers` 是 [{name, clone}] */
   function sampleVerdict(seconds, providers) {
     const s = +seconds || 0;
@@ -62,14 +104,21 @@
     const s = +seconds || 0;
     return {dur: +Math.min(WINDOW.max, Math.max(WINDOW.min, s)).toFixed(1), text: firstLine || '', textSource: firstLine ? 'script' : 'none'};
   }
-  /** 采集页的步骤：样本 → 授权（可跳过；`needed` 点名已连接的、要它的提供方）→ 保存 */
-  function cloneSteps(consentProviders) {
-    const needed = (consentProviders || []).map((p) => p.name);
-    return [
-      {k: 'sample', label: '录样本'},
-      {k: 'consent', label: '授权声明', optional: true, needed},
-      {k: 'save', label: '保存'},
-    ];
+  /* ---------- 克隆去哪些模型（2026-10-14 二轮：先选模型，再录） ----------
+     `target` = {kind: 'local', id: <engine id>, name} 或 {kind: 'cloud', id: <provider id>, name, consent, connected}。
+     本机引擎总能用（种子就在本机）；云端列能克隆的提供方，没连密钥的也能先选——先把样本与授权声明录好，连上后第一次用时再建。 */
+  function cloneTargets(engineChips, providers, saved) {
+    const local = (engineChips || []).filter((c) => c.ok).map((c) => ({kind: 'local', id: c.id, name: c.name}));
+    const cloud = (providers || []).filter((p) => p.clone).map((p) => ({kind: 'cloud', id: p.id, name: p.name, consent: !!p.clone.consent, connected: !saved || saved.indexOf(p.id) >= 0}));
+    return local.concat(cloud);
+  }
+  /** 采集页的步骤：选模型 → 样本 →（选中的目标里有要授权声明的才有）授权 → 保存；`needed` 点名谁要它 */
+  function cloneSteps(targets) {
+    const needed = (targets || []).filter((t) => t.consent).map((t) => t.name);
+    const steps = [{k: 'models', label: '选模型'}, {k: 'sample', label: '录样本'}];
+    if (needed.length) steps.push({k: 'consent', label: '授权声明', needed});
+    steps.push({k: 'save', label: '保存'});
+    return steps;
   }
   /** 种子：本地引擎没有 voice id，靠「同一段参考 + 同一颗种子」让每次生成都是同一个人 */
   const randomSeed = () => 1 + Math.floor(Math.random() * 2147483646);
@@ -102,8 +151,10 @@
       cloud: o.cloud || {},
       /* 2026-10-14：`consentClip` 是本人念授权声明的那段（`consent.wav`，{lang, dur, file, at}），只有要它的提供方（Gemini）看；
          `seed` 是本地引擎的种子——有 voice id 的记 id（`cloud.<provider>.voiceId`），没有的就靠这颗种子复现 */
-      consentClip: o.consentClip ? Object.assign({lang: 'en', at: '刚刚'}, o.consentClip, {dur: +(+o.consentClip.dur).toFixed(1)}) : null,
+      consentClip: o.consentClip ? Object.assign({lang: 'en-US', at: '刚刚'}, o.consentClip, {dur: +(+o.consentClip.dur).toFixed(1)}) : null,
       seed: o.seed || randomSeed(),
+      /* 二轮：一只音色在几只本机引擎上各一颗种子（`seeds: {<engine>: n}`，没写的引擎用 `seed`），云端各家各一只 voice id（`cloud`） */
+      seeds: Object.assign({}, o.seeds || {}),
     };
   }
 
@@ -112,8 +163,8 @@
     makeVoice({id: 'v-me', name: '我自己', lang: 'zh', dur: 7.8,
       text: '欢迎使用 BaoCut！转录、翻译、配音，全都在你自己的电脑上完成。', textSource: 'script',
       source: {kind: 'mic', at: '2026-09-22'}, file: 'tts-voice-zh-male.wav', consent: 'self', createdAt: '2 天前',
-      sourceDur: 29.1, referenceSha256: '9f2a7c10', seed: 48213,
-      consentClip: {lang: 'en', dur: 7.9, file: 'tts-voice-en-male.wav', at: '2026-10-07'},
+      sourceDur: 29.1, referenceSha256: '9f2a7c10', seed: 48213, seeds: {indextts2: 48213, gptsovits: 90117},
+      consentClip: {lang: 'en-US', dur: 7.9, file: 'tts-voice-en-male.wav', at: '2026-10-07'},
       cloud: {google: {voiceId: 'voice_demo7q2mx', referenceSha256: '9f2a7c10', at: '2026-10-07'}}}),
     makeVoice({id: 'v-host', name: '主持人', lang: 'zh', dur: 7.4,
       text: '欢迎回到《码与远方》，我是林澈。这一期我们请到了两位做本地视频工具的朋友。', textSource: 'transcript',
@@ -143,18 +194,48 @@
     const secs = v.sourceDur > 0 ? `样本 ${(+v.sourceDur).toFixed(1)} 秒` : `${(+v.dur).toFixed(1)} 秒`;
     return `${TTS ? TTS.langLabel(v.lang) : v.lang} · ${secs} · ${sourceLine(v)}`;
   }
-  /** 行上第三行：这只音色在各处凭什么认人——`种子 48213 · Google Gemini voice_demo7q2mx · 授权声明 English 7.9 秒`。
-   *  `providers` 是 BC_CLOUD_TTS.providers()，用来把 provider id 换成名字 */
-  function idLine(v, providers) {
-    const parts = [`种子 ${v.seed}`];
-    Object.keys(v.cloud || {}).forEach((k) => {
+  /** 这只引擎上用的种子：单独给过的用那颗，否则用音色的底种子 */
+  const seedFor = (v, engine) => (v && v.seeds && v.seeds[engine]) || (v ? v.seed : 0);
+  /** 这只音色在各处凭什么认人：`[{kind: 'seed', id, name, value} | {kind: 'voice', id, name, value, stale}]`——
+   *  本机按引擎（没单独给种子的引擎合成一条「其余引擎」），云端按已有 voice id 的提供方。`providers` 是 BC_CLOUD_TTS.providers() */
+  function bindings(v, providers) {
+    const out = [];
+    const seeds = (v && v.seeds) || {};
+    Object.keys(seeds).forEach((k) => {
+      const e = TTS ? TTS.engineOf(k) : null;
+      out.push({kind: 'seed', id: k, name: e && e.name ? e.name : k, value: seeds[k]});
+    });
+    out.push({kind: 'seed', id: '*', name: Object.keys(seeds).length ? '其余本机引擎' : '本机引擎', value: v ? v.seed : 0});
+    Object.keys((v && v.cloud) || {}).forEach((k) => {
       const b = v.cloud[k];
       if (!b || !b.voiceId) return;
       const p = (providers || []).find((x) => x.id === k);
-      parts.push(`${p ? p.name : k} ${b.voiceId}${b.stale ? '（参考已换）' : ''}`);
+      out.push({kind: 'voice', id: k, name: p ? p.name : k, value: b.voiceId, stale: !!b.stale});
     });
-    if (v.consentClip && v.consentClip.dur > 0) parts.push(`授权声明 ${consentPhrase(v.consentClip.lang).label} ${(+v.consentClip.dur).toFixed(1)} 秒`);
+    return out;
+  }
+  /** 行上第三行：`种子 48213（IndexTTS2 / 其余本机引擎）· 种子 90117（GPT-SoVITS）· Google Gemini voice_demo7q2mx · 授权声明 English 7.9 秒` */
+  function idLine(v, providers) {
+    const all = bindings(v, providers);
+    const byValue = [];
+    all.filter((b) => b.kind === 'seed').forEach((b) => {
+      const hit = byValue.find((x) => x.value === b.value);
+      if (hit) hit.names.push(b.name); else byValue.push({value: b.value, names: [b.name]});
+    });
+    const parts = byValue.map((x) => `种子 ${x.value}（${x.names.join(' / ')}）`);
+    all.filter((b) => b.kind === 'voice').forEach((b) => parts.push(`${b.name} ${b.value}${b.stale ? '（参考已换）' : ''}`));
+    if (v.consentClip && v.consentClip.dur > 0) parts.push(`授权声明 ${phraseLabel(consentPhrase(v.consentClip.lang, v.consentClip.text))} ${(+v.consentClip.dur).toFixed(1)} 秒`);
     return parts.join(' · ');
+  }
+  /** 模型页那一行：绑在这只模型上的音色——本机引擎列每只音色与它的种子，云端提供方只列已经建了 voice id 的。
+   *  `target` 是 {kind: 'local', id: engine} 或 {kind: 'cloud', id: provider}；回 `[{v, value}]` */
+  function voicesBoundTo(voices, target) {
+    if (!target) return [];
+    if (target.kind === 'cloud') {
+      return (voices || []).filter((v) => v.cloud && v.cloud[target.id] && v.cloud[target.id].voiceId)
+        .map((v) => ({v, value: v.cloud[target.id].voiceId}));
+    }
+    return (voices || []).map((v) => ({v, value: `种子 ${seedFor(v, target.id)}`}));
   }
   const CONSENT = [
     {k: 'self', label: '我自己的'},
@@ -365,16 +446,16 @@
       qwen3: {mode: v.qwen3 || 'icl'},
       source: v.sourceDur ? {file: 'source.wav', seconds: v.sourceDur} : null,
       /* 种子随包走：导入的人用同一段参考 + 同一颗种子，本地引擎出的还是同一个人 */
-      seed: v.seed,
+      seed: v.seed, seeds: v.seeds && Object.keys(v.seeds).length ? v.seeds : null,
       /* 授权录音随包走（它是本人对这段声音的授权，跟着声音），远端绑定不进导出包：voice id 是这台电脑这把密钥下的，别人导入后第一次用时再建 */
-      consentClip: v.consentClip && v.consentClip.dur > 0 ? {file: 'consent.wav', seconds: v.consentClip.dur, language: v.consentClip.lang} : null,
+      consentClip: v.consentClip && v.consentClip.dur > 0 ? Object.assign({file: 'consent.wav', seconds: v.consentClip.dur, language: v.consentClip.lang}, v.consentClip.lang === 'custom' ? {text: v.consentClip.text || ''} : {}) : null,
     }, null, 2);
   }
   const bundleName = (v) => `${v.name}.bcvoice`;
 
   const BC_VOICES = {
-    REC, WINDOW, takeProblem, makeVoice, DEMO, fmtTime, sourceLine, metaLine, idLine, CONSENT, consentLabel,
-    SAMPLE, CONSENT_REC, CONSENT_PHRASES, consentPhrase, sampleVerdict, consentProblem, sampleScript, referenceFromSample, cloneSteps, randomSeed,
+    REC, WINDOW, takeProblem, makeVoice, DEMO, fmtTime, sourceLine, metaLine, idLine, bindings, seedFor, voicesBoundTo, CONSENT, consentLabel,
+    SAMPLE, CONSENT_REC, CONSENT_PHRASES, CONSENT_COMMON, consentPhrase, phraseLabel, consentMore, sampleVerdict, consentProblem, sampleScript, referenceFromSample, cloneTargets, cloneSteps, randomSeed,
     profileFor, engineChips, cloudChips, CLONE_MODELS, auditionModel, RUN_LINE,
     ISSUES, issueLabel, windowIssues, analyze, speakerLine, candidateLine, voicesFromPicks, saveLabel, STEPS,
     pickerGroups, valueLabel, valueOfForm, applyToForm, exportBundle, bundleName,

@@ -173,6 +173,9 @@
             </div>
             {open ? <div className="capm__models" id={body}>
               {r.models.length ? r.models.map((m) => model(r, m)) : <p className="t-detail-xs capm__none">还没有模型。在详情里添加模型 id。</p>}
+              {/* 语音合成：能克隆的提供方一行「克隆音色」——这家建过的 voice id + 「克隆新音色」（settings-voice-capture.jsx） */}
+              {cap === 'tts' && window.ModelVoicesLine && window.BC_CLOUD_TTS.capabilities(window.BC_CLOUD_TTS.providerById(r.id, app.cloudCustom) || r.id).clone
+                ? <window.ModelVoicesLine target={{kind: 'cloud', id: r.id}} from={`「${r.vendor.name}」`} /> : null}
             </div> : null}
           </div>; })}
         <div className="capm__grp">

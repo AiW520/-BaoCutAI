@@ -39,43 +39,76 @@ test('样本（2026-10-14）：目标 30 秒自动停；5 秒以下不给存，1
   assert.equal(V.sampleVerdict(30, providers).line, '够了');
   assert.match(V.consentProblem(1.2), /把整句念完/);
   assert.equal(V.consentProblem(7.9), null);
-  assert.equal(V.consentPhrase('en').recommended, true);
+  // 授权声明：官方 30 个地区语言，旧码 en / zh 也认；常用两种给芯片，其余 28 种在「更多语言」；表外可自定义
+  assert.equal(V.CONSENT_PHRASES.length, 30);
+  assert.equal(V.consentPhrase('en').code, 'en-US');
+  assert.equal(V.consentPhrase('en-US').recommended, true);
   assert.match(V.consentPhrase('en').text, /^I am the owner of this voice/);
-  assert.equal(V.consentPhrase('zh').verified, false, '中文实测常验不过');
-  assert.equal(V.consentPhrase('xx').code, 'en', '没有的语言退到英文');
+  assert.equal(V.consentPhrase('zh').code, 'zh-CN');
+  assert.equal(V.consentPhrase('zh-CN').verified, false, '中文实测常验不过');
+  assert.equal(V.consentPhrase('xx').code, 'en-US', '没有的语言退到英文');
+  assert.equal(V.consentPhrase('fr-CA').text, V.consentPhrase('fr-FR').text, '同一语言几个地区原文相同');
+  assert.equal(V.phraseLabel(V.consentPhrase('fr-CA')), 'Français（加拿大）');
+  assert.equal(V.phraseLabel(V.consentPhrase('ja-JP')), '日本語');
+  assert.deepEqual(V.CONSENT_COMMON, ['en-US', 'zh-CN']);
+  assert.equal(V.consentMore().length, 28);
+  assert.ok(V.consentMore().every((o) => V.CONSENT_COMMON.indexOf(o.code) < 0));
+  assert.deepEqual(V.consentPhrase('custom', ' 我同意 '), {code: 'custom', label: '自定义', text: '我同意', custom: true});
+  assert.equal(V.consentPhrase('custom').text, '');
   // 台词：这门语言的三句示例连起来，第一句就是参考段原文
   const script = V.sampleScript('zh');
   assert.equal(script.lines.length, 3);
   assert.match(script.first, /^欢迎使用 BaoCut/);
   assert.deepEqual(V.referenceFromSample(29.1, script.first), {dur: 10, text: script.first, textSource: 'script'});
   assert.deepEqual(V.referenceFromSample(7.4, ''), {dur: 7.4, text: '', textSource: 'none'});
-  // 步骤：样本 → 授权（可跳过，点名谁要）→ 保存
-  const steps = V.cloneSteps([{name: 'Google Gemini'}]);
-  assert.deepEqual(steps.map((s) => s.k), ['sample', 'consent', 'save']);
-  assert.equal(steps[1].optional, true);
-  assert.deepEqual(steps[1].needed, ['Google Gemini']);
-  assert.deepEqual(V.cloneSteps([])[1].needed, []);
+  // 先选模型：本机引擎总在，云端列能克隆的（没连密钥的也能选）；选中的里有要授权声明的才有那一步
+  const CT = global.window.BC_CLOUD_TTS || require('./model-cloud-tts.js');
+  const targets = V.cloneTargets(V.engineChips(), CT.providers(), ['elevenlabs']);
+  assert.ok(targets.some((t) => t.kind === 'local' && t.id === 'indextts2'));
+  assert.ok(!targets.some((t) => t.kind === 'cloud' && t.id === 'openai'), 'OpenAI 不能克隆');
+  const g = targets.find((t) => t.id === 'google');
+  assert.deepEqual([g.kind, g.consent, g.connected], ['cloud', true, false]);
+  assert.equal(targets.find((t) => t.id === 'elevenlabs').connected, true);
+  assert.deepEqual(V.cloneSteps([g]).map((s) => s.k), ['models', 'sample', 'consent', 'save']);
+  assert.deepEqual(V.cloneSteps([g])[2].needed, ['Google Gemini']);
+  assert.deepEqual(V.cloneSteps(targets.filter((t) => t.id !== 'google')).map((s) => s.k), ['models', 'sample', 'save'], '没选 Gemini 就没有授权那一步');
+  assert.deepEqual(V.cloneSteps([]).map((s) => s.k), ['models', 'sample', 'save']);
 });
 
-test('音色档记什么认人：有 voice id 记 id，没有留种子；授权录音另存一段', () => {
+test('音色档记什么认人：每只本机引擎一颗种子，云端各家一只 voice id；授权录音另存一段', () => {
   const me = V.DEMO.find((v) => v.id === 'v-me');
   assert.equal(me.seed, 48213);
-  assert.equal(me.consentClip.lang, 'en');
+  assert.deepEqual(me.seeds, {indextts2: 48213, gptsovits: 90117});
+  assert.equal(V.seedFor(me, 'gptsovits'), 90117);
+  assert.equal(V.seedFor(me, 'qwen3'), 48213, '没单独给种子的引擎用底种子');
+  assert.equal(me.consentClip.lang, 'en-US');
   assert.equal(me.cloud.google.voiceId, 'voice_demo7q2mx');
-  assert.equal(V.idLine(me, [{id: 'google', name: 'Google Gemini'}]), '种子 48213 · Google Gemini voice_demo7q2mx · 授权声明 English 7.9 秒');
+  const b = V.bindings(me, [{id: 'google', name: 'Google Gemini'}]);
+  assert.deepEqual(b.map((x) => x.kind + ':' + x.id), ['seed:indextts2', 'seed:gptsovits', 'seed:*', 'voice:google']);
+  assert.equal(V.idLine(me, [{id: 'google', name: 'Google Gemini'}]), '种子 48213（IndexTTS2 / 其余本机引擎） · 种子 90117（GPT-SoVITS） · Google Gemini voice_demo7q2mx · 授权声明 English（美国） 7.9 秒');
   const host = V.DEMO.find((v) => v.id === 'v-host');
   assert.equal(host.consentClip, null);
-  assert.equal(V.idLine(host, [{id: 'elevenlabs', name: 'ElevenLabs'}]), `种子 ${host.seed} · ElevenLabs bc_ele_host`);
+  assert.deepEqual(host.seeds, {});
+  assert.equal(V.idLine(host, [{id: 'elevenlabs', name: 'ElevenLabs'}]), `种子 ${host.seed}（本机引擎） · ElevenLabs bc_ele_host`);
+  // 模型页那一行：云端只列建过 voice id 的，本机列每只音色与它在这只引擎上的种子
+  assert.deepEqual(V.voicesBoundTo(V.DEMO, {kind: 'cloud', id: 'google'}).map((x) => x.v.id + ' ' + x.value), ['v-me voice_demo7q2mx']);
+  assert.deepEqual(V.voicesBoundTo(V.DEMO, {kind: 'cloud', id: 'minimax'}), []);
+  assert.deepEqual(V.voicesBoundTo(V.DEMO, {kind: 'local', id: 'gptsovits'}).map((x) => x.value), ['种子 90117', `种子 ${host.seed}`]);
   const fresh = V.makeVoice({name: 'x', consentClip: {dur: 6.94}});
   assert.ok(fresh.seed >= 1 && Number.isInteger(fresh.seed));
   assert.equal(fresh.consentClip.dur, 6.9);
-  assert.equal(fresh.consentClip.lang, 'en');
+  assert.equal(fresh.consentClip.lang, 'en-US');
+  const custom = V.makeVoice({name: 'y', consentClip: {lang: 'custom', text: '我同意', dur: 5}});
+  assert.equal(V.idLine(custom, []).split(' · ').pop(), '授权声明 自定义 5.0 秒');
+  assert.deepEqual(JSON.parse(V.exportBundle(custom)).consentClip, {file: 'consent.wav', seconds: 5, language: 'custom', text: '我同意'});
   assert.match(V.metaLine(me), /^简体中文 · 样本 29\.1 秒 · 麦克风 · 2 天前$/);
   const up = V.makeVoice({lang: 'en', dur: 10, sourceDur: 29.1, source: {kind: 'upload', name: 'reference_speaker.wav'}});
   assert.equal(V.metaLine(up), 'English · 样本 29.1 秒 · 上传 · reference_speaker.wav · 刚刚');
   const j = JSON.parse(V.exportBundle(me));
   assert.equal(j.seed, 48213);
-  assert.deepEqual(j.consentClip, {file: 'consent.wav', seconds: 7.9, language: 'en'});
+  assert.deepEqual(j.seeds, {indextts2: 48213, gptsovits: 90117});
+  assert.equal(JSON.parse(V.exportBundle(host)).seeds, null);
+  assert.deepEqual(j.consentClip, {file: 'consent.wav', seconds: 7.9, language: 'en-US'});
   assert.equal(JSON.parse(V.exportBundle(host)).consentClip, null);
   assert.equal(j.cloud, undefined, 'voice id 不进导出包');
 });

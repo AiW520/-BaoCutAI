@@ -205,6 +205,9 @@
         {/* 上次下载没下完：哪一部分、连的哪里；下好的留着，「补齐」只下缺的（可以先在确认框里换来源） */}
         {fail && pct < 0 ? <p className="lmrow__fail" role="status"><Ic n="alert" className="ic--14" /><span>{fail}</span></p> : null}
         {ready ? <window.ModelCheckLine st={check} cat={cat} m={m} onAction={onCheck} /> : null}
+        {/* 能克隆的 TTS 模型：绑着的音色（每只一颗种子）+ 「克隆新音色」（settings-voice-capture.jsx） */}
+        {ready && cat === 'tts' && TTS.MODELS[m.id] && TTS.MODELS[m.id].mode === 'clone' && window.ModelVoicesLine
+          ? <window.ModelVoicesLine target={{kind: 'local', id: TTS.MODELS[m.id].engine}} from={`「${m.name}」`} /> : null}
         {test && ready && cat === 'tts' ? <window.TtsQuickTest m={m} check={check} onCheck={onCheck} /> : null}
         {/* 音乐生成行的「试听」（settings-music.jsx）：固定几秒纯音乐，只挑风格；慢，面板里写清预计耗时 */}
         {test && ready && cat === 'music' ? <window.MusicQuickTest m={m} check={check} onCheck={onCheck} /> : null}
