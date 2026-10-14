@@ -53,7 +53,6 @@ export const ko: ShellMessages = {
   sidebar: {
     openFolderFailed: (message) => `폴더를 열지 못했습니다: ${message}`,
     archived: (title) => `“${title}” 세션을 보관했습니다`,
-    undo: '실행 취소',
     sessions: '세션',
     projectsAndSessions: '프로젝트 및 세션',
     pinned: '고정됨',

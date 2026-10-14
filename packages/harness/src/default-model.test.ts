@@ -227,4 +227,16 @@ describe('新会话的默认模型', () => {
     await h.updateConversation({ conversationId: scoped.id, spaceReadScope: null });
     expect(h.getConversation(scoped.id).conversation.spaceReadScope).toBeUndefined();
   });
+
+  it('归档时记下归档时间、不改最近活动，恢复时去掉（产品设计 §3.1 已归档会话）', async () => {
+    const h = await open([claude()]);
+    const conversation = await h.createConversation({ driverId: 'claude' });
+    const archived = await h.updateConversation({ conversationId: conversation.id, archived: true });
+    expect(archived.archived).toBe(true);
+    expect(archived.archivedAt).toEqual(expect.any(String));
+    expect(archived.updatedAt).toBe(conversation.updatedAt);
+    expect((await h.updateConversation({ conversationId: conversation.id, archived: true })).archivedAt).toBe(archived.archivedAt);
+    const restored = await h.updateConversation({ conversationId: conversation.id, archived: false });
+    expect([restored.archived, restored.archivedAt]).toEqual([false, undefined]);
+  });
 });

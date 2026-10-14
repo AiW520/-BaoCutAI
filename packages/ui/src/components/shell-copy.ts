@@ -77,7 +77,6 @@ const en = {
   sidebar: {
     openFolderFailed: (message: string) => `Couldn’t open the folder: ${message}`,
     archived: (title: string) => `Archived “${title}”`,
-    undo: 'Undo',
     sessions: 'Sessions',
     projectsAndSessions: 'Projects and sessions',
     pinned: 'Pinned',

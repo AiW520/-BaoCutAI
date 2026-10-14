@@ -56,7 +56,6 @@ export const de: ShellMessages = {
   sidebar: {
     openFolderFailed: (message: string) => `Ordner konnte nicht geöffnet werden: ${message}`,
     archived: (title: string) => `Archiviert: „${title}“`,
-    undo: "Rückgängig machen",
     sessions: "Sitzungen",
     projectsAndSessions: "Projekte und Sitzungen",
     pinned: "Angeheftet",

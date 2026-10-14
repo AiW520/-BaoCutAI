@@ -1,4 +1,4 @@
-import { defineMessages, intlLocale, type Conversation, type Project } from '@baocut/protocol';
+import { defineMessages, intlLocale, type Conversation, type Id, type Project } from '@baocut/protocol';
 import { zhHans } from './sidebar.zh-Hans.ts';
 import { zhHant } from './sidebar.zh-Hant.ts';
 import { ja } from './sidebar.ja.ts';
@@ -141,4 +141,54 @@ function summarize(conversations: readonly Conversation[]): string | null {
     return n ? [M.count[status](n)] : [];
   });
   return parts.length ? parts.join(' · ') : null;
+}
+
+/** 「已归档会话」页的一组：一个项目，或不属于任何项目（`project` 为 null）。 */
+export interface ArchivedGroup {
+  key: string;
+  project: Project | null;
+  conversations: Conversation[];
+}
+
+export interface ArchivedView {
+  /** 全部已归档会话的条数（不看筛选）。 */
+  total: number;
+  /** 筛选后的条数。 */
+  count: number;
+  groups: ArchivedGroup[];
+  /** 有已归档会话的项目，给项目筛选用。 */
+  projects: Project[];
+  /** 有没有不属于任何项目的已归档会话。 */
+  hasLoose: boolean;
+}
+
+/** 项目筛选：全部、某个项目的 id，或不属于任何项目。 */
+export type ArchivedScope = 'all' | 'none' | Id;
+
+/** 归档时间；早先归档、没记下时间的退回最近活动。 */
+export const archivedTime = (c: Conversation): string => c.archivedAt ?? c.updatedAt;
+
+/**
+ * Home ›「已归档会话」（产品设计 §3.1）：按项目分组，不属于任何项目的一组放最后；组内按归档时间从近到远，
+ * 组按其中最近一次归档排。项目不在列表里的会话算不属于任何项目。
+ */
+export function buildArchived(
+  projects: readonly Project[],
+  conversations: readonly Conversation[],
+  { query = '', scope = 'all' }: { query?: string; scope?: ArchivedScope } = {},
+): ArchivedView {
+  const known = new Map(projects.map((p) => [p.id, p]));
+  const keyOf = (c: Conversation) => (c.projectId && known.has(c.projectId) ? c.projectId : 'none');
+  const all = conversations.filter((c) => c.archived);
+  const needle = query.trim().toLocaleLowerCase(intlLocale());
+  const hits = all.filter(
+    (c) => (scope === 'all' || keyOf(c) === scope) && (!needle || c.title.toLocaleLowerCase(intlLocale()).includes(needle)),
+  );
+  const byArchived = (a: Conversation, b: Conversation) => archivedTime(b).localeCompare(archivedTime(a));
+  const buckets = new Map<string, Conversation[]>();
+  for (const c of hits) buckets.set(keyOf(c), [...(buckets.get(keyOf(c)) ?? []), c]);
+  const groups = [...buckets].map(([key, list]) => ({ key, project: known.get(key) ?? null, conversations: list.sort(byArchived) }));
+  groups.sort((a, b) => Number(a.key === 'none') - Number(b.key === 'none') || byArchived(a.conversations[0]!, b.conversations[0]!));
+  const used = new Set(all.map(keyOf));
+  return { total: all.length, count: hits.length, groups, projects: projects.filter((p) => used.has(p.id)), hasLoose: used.has('none') };
 }

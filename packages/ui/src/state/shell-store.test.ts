@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { webVideoHref, type FileTarget } from '@baocut/protocol';
-import { HOME, hasSidebar, hrefFor, migrateShell, parseHref, useShell, type Route } from './shell-store.ts';
+import { HOME, hasSidebar, hrefFor, migrateShell, parseHref, railTabOf, useShell, type Route } from './shell-store.ts';
 import { itemKey } from '../model/workspace.ts';
 
 // Node 里没有可用的 localStorage：给持久化一个内存版本，先于 store 模块加载。
@@ -46,6 +46,8 @@ const routes: Route[] = [
   { tab: 'tools', tool: 'translate-subtitles' },
   { tab: 'services' },
   { tab: 'services', service: 'runtime' },
+  { tab: 'archived' },
+  { tab: 'archived', focus: 'c/1' },
 ];
 
 describe('界面内链接', () => {
@@ -154,6 +156,17 @@ describe('前进后退与入口', () => {
     expect(useShell.getState().route).toEqual({ tab: 'space', category: 'image', projectId: 'p1' });
     goTab('space');
     expect(useShell.getState().route).toEqual({ tab: 'space', category: 'all', projectId: null });
+  });
+
+  it('已归档会话页属于 Home：亮 Home 一格、有 Home 侧栏；在这页上点 Home 回到新会话', () => {
+    const { go, goTab } = useShell.getState();
+    go({ tab: 'archived', focus: 'c1' });
+    expect([railTabOf(useShell.getState().route), hasSidebar(useShell.getState().route)]).toEqual(['home', true]);
+    goTab('space');
+    goTab('home');
+    expect(useShell.getState().route).toEqual({ tab: 'archived', focus: 'c1' });
+    goTab('home');
+    expect(useShell.getState().route).toEqual(HOME);
   });
 });
 

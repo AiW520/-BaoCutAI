@@ -61,6 +61,8 @@ export interface Conversation {
   createdAt: string;
   updatedAt: string;
   archived: boolean;
+  /** 什么时候归档的（RFC 3339）：Home 的「已归档会话」按它排（产品设计 §3.1）。归档时写上、恢复时去掉；早先归档的记录没有。 */
+  archivedAt?: string;
   pinned: boolean;
   /** 任务结束后还没被看过：侧栏的「已完成未读」（产品设计 §3.1）。 */
   unread: boolean;

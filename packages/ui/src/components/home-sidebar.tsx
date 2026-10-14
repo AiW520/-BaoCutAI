@@ -13,6 +13,7 @@ import {
   ToastQueue,
 } from '@react-spectrum/s2';
 import Add from '@react-spectrum/s2/icons/Add';
+import Archive from '@react-spectrum/s2/icons/Archive';
 import ChevronDown from '@react-spectrum/s2/icons/ChevronDown';
 import ChevronRight from '@react-spectrum/s2/icons/ChevronRight';
 import AddCircle from '@react-spectrum/s2/icons/AddCircle';
@@ -20,6 +21,7 @@ import Folder from '@react-spectrum/s2/icons/Folder';
 import FolderOpen from '@react-spectrum/s2/icons/FolderOpen';
 import More from '@react-spectrum/s2/icons/More';
 import { style } from '@react-spectrum/s2/style' with { type: 'macro' };
+import { ARCHIVED } from './archived-copy.ts';
 import { S } from './shell-copy.ts';
 import { untitled } from '../copy.ts';
 import { shortenPath } from '../model/format.ts';
@@ -120,10 +122,11 @@ export function HomeSidebar() {
         .then(() => {
           const current = useShell.getState().route;
           if (current.tab === 'home' && current.conversationId === conversation.id) go(HOME);
+          // S2 的提示条只有一个按钮：去已归档会话页并高亮这一条，恢复在那里（产品设计 §3.1）。
           ToastQueue.neutral(S.sidebar.archived(title), {
             timeout: 5000,
-            actionLabel: S.sidebar.undo,
-            onAction: () => void runtime.updateConversation(conversation.id, { archived: false }).catch(fail),
+            actionLabel: ARCHIVED.viewArchived,
+            onAction: () => useShell.getState().go({ tab: 'archived', focus: conversation.id }),
             shouldCloseOnAction: true,
           });
         })
@@ -290,17 +293,19 @@ function SectionHead({ label, collapsed, onToggle, children }: { label: string; 
   );
 }
 
-/** 项目段头的「⋯」：整理侧栏（按项目分组 / 在一个列表中）与会话排序。 */
+/** 项目段头的「⋯」：整理侧栏（按项目分组 / 在一个列表中）、会话排序，与 Home ›「已归档会话」。 */
 function OrganizeMenu() {
+  const go = useSidebarGo();
   const grouping = useShell((s) => s.sidebarGrouping);
   const sort = useShell((s) => s.sidebarSort);
+  const archivedCount = useDirectory((s) => s.conversations.filter((c) => c.archived).length);
   const { setSidebarGrouping, setSidebarSort } = useShell.getState();
   return (
     <MenuTrigger>
       <ActionButton isQuiet size="S" aria-label={S.sidebar.organizeLabel}>
         <More />
       </ActionButton>
-      <Menu aria-label={S.sidebar.sidebarSettings}>
+      <Menu aria-label={S.sidebar.sidebarSettings} onAction={(key) => key === 'archived' && go({ tab: 'archived' })}>
         <SubmenuTrigger>
           <MenuItem id="organize" textValue={S.sidebar.organize}>
             <Text slot="label">{S.sidebar.organize}</Text>
@@ -337,6 +342,11 @@ function OrganizeMenu() {
             </MenuItem>
           </Menu>
         </SubmenuTrigger>
+        <MenuItem id="archived" textValue={ARCHIVED.title}>
+          <Archive />
+          <Text slot="label">{ARCHIVED.title}</Text>
+          {archivedCount ? <Text slot="description">{ARCHIVED.sessionCount(archivedCount)}</Text> : null}
+        </MenuItem>
       </Menu>
     </MenuTrigger>
   );

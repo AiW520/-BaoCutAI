@@ -971,7 +971,10 @@ export class Harness {
     const patch: Partial<Conversation> = {};
     if (params.title !== undefined) patch.title = params.title.trim();
     if (params.pinned !== undefined) patch.pinned = params.pinned;
-    if (params.archived !== undefined) patch.archived = params.archived;
+    if (params.archived !== undefined && params.archived !== conv.archived) {
+      patch.archived = params.archived;
+      patch.archivedAt = params.archived ? nowIso() : undefined;
+    }
     if (params.pendingReferences === null && state.conversation.pendingReferences) patch.pendingReferences = undefined;
     if (params.spaceReadScope === null && state.conversation.spaceReadScope) patch.spaceReadScope = undefined;
     if (params.driverId !== undefined && params.driverId !== conv.driverId) {

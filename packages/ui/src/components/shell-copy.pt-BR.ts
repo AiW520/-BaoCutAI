@@ -56,7 +56,6 @@ export const ptBR: ShellMessages = {
   sidebar: {
     openFolderFailed: (message: string) => `Não foi possível abrir pasta: ${message}`,
     archived: (title: string) => `Arquivada “${title}”`,
-    undo: "Desfazer",
     sessions: "Sessões",
     projectsAndSessions: "Projetos e sessões",
     pinned: "Âncora",

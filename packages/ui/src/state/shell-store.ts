@@ -62,6 +62,8 @@ export type Tab = 'home' | 'space' | 'tasks' | 'models' | 'services' | 'tools' |
  */
 export type Route =
   | { tab: 'home'; conversationId: Id | null; projectId: Id | null; pane?: WorkspaceItem }
+  /** Home 的「已归档会话」（产品设计 §3.1）：属于 Home 入口，不是 rail 上的一格。`focus`：归档提示条的「查看」带来的那条，高亮它。 */
+  | { tab: 'archived'; focus?: Id }
   /** `from`：只看从这部视频派生的视频（剪成短视频结果页的「在 Space 里看这几支」、查看框的「查看切出的短视频」）。 */
   | { tab: 'space'; category: SpaceCategory; projectId: Id | null; video?: FileTarget; from?: Id }
   | { tab: 'settings'; section: SettingsSection }
@@ -638,6 +640,7 @@ function cleanQueues(value: unknown): Record<Id, QueuedMessage[]> {
 
 /** `models` 是设置内部的内容路由，保留它以兼容已有调用方；不对应独立 Rail 入口。 */
 export function railTabOf(route: Route): Exclude<Tab, 'models'> {
+  if (route.tab === 'archived') return 'home';
   return route.tab === 'models' ? 'settings' : route.tab;
 }
 
@@ -688,7 +691,7 @@ export function hasSidebar(route: Route): boolean {
  * 界面内链接：`/home`、`/c/<会话>`、`/p/<项目>`（在这个项目里新建会话），Home 的功能区标签放在查询串里
  * （`?video=` / `?file=` 为 JSON 的 FileTarget，`?files=1`，`?web=<id>&url=<地址>`）；
  * `/space/<分类>[/<项目>][?video=]`、`/settings/<节>`、`/settings/models/<类>[/<页>]`、`/tasks[/<任务>]`、
- * `/services[/<服务>]`、`/tools[/<工具>]`。
+ * `/services[/<服务>]`、`/tools[/<工具>]`、`/archived[/<高亮的会话>]`。
  */
 export function hrefFor(route: Route): string {
   switch (route.tab) {
@@ -715,6 +718,8 @@ export function hrefFor(route: Route): string {
       return route.service ? `/services/${encodeURIComponent(route.service)}` : '/services';
     case 'tools':
       return route.tool ? `/tools/${route.tool}` : '/tools';
+    case 'archived':
+      return route.focus ? `/archived/${encodeURIComponent(route.focus)}` : '/archived';
   }
 }
 
@@ -765,6 +770,7 @@ export function parseHref(href: string): Route {
     return isModelPage(b) ? { tab: 'models', category, page: b } : { tab: 'models', category };
   }
   if (head === 'tasks') return a ? { tab: 'tasks', taskId: decodeURIComponent(a) } : { tab: 'tasks' };
+  if (head === 'archived') return a ? { tab: 'archived', focus: decodeURIComponent(a) } : { tab: 'archived' };
   // 远端算力的旧链接在服务页。
   if (head === 'tools' && a === 'remote') return { tab: 'services', service: 'remote' };
   if (head === 'services') return a ? { tab: 'services', service: decodeURIComponent(a) } : { tab: 'services' };

@@ -1,0 +1,32 @@
+import type { ArchivedMessages } from './archived-copy.ts';
+
+export const ja: ArchivedMessages = {
+  title: 'アーカイブ済みのセッション',
+  intro: 'アーカイブしたセッションはサイドバーに表示されません。動画、ファイル、変更内容はすべて残っています。復元すると元のプロジェクトの下に戻ります。',
+  search: 'アーカイブ済みのセッションを検索',
+  filterLabel: 'プロジェクトで絞り込む',
+  allProjects: 'すべてのプロジェクト',
+  noProject: 'プロジェクトに属していません',
+  sessionCount: (n) => `セッション ${n} 件`,
+  meta: (archived, active) => `アーカイブ：${archived} · 最終アクティビティ：${active}`,
+  restore: '復元',
+  restoreNamed: (title) => `「${title}」を復元`,
+  deleteNamed: (title) => `「${title}」を削除`,
+  deleteAll: 'すべて削除',
+  deleteAllTitle: (n) => (n === 1 ? 'アーカイブ済みのセッション 1 件を削除しますか？' : `アーカイブ済みのセッション ${n} 件をすべて削除しますか？`),
+  deleteAllBody:
+    'これらのセッションの履歴は BaoCut から削除され、実行中のタスクは先に停止されます。この操作は取り消せません。プロジェクトフォルダ内のファイルには影響しません。',
+  restored: (title) => `「${title}」を復元しました`,
+  open: '開く',
+  restoreFailed: (message) => `復元できませんでした：${message}`,
+  deleted: (title) => `「${title}」を削除しました`,
+  deletedAll: (n) => `アーカイブ済みのセッション ${n} 件を削除しました`,
+  deletedSome: (done, total) => `アーカイブ済みのセッション ${total} 件のうち ${done} 件を削除しました。残りは削除できませんでした。`,
+  emptyTitle: 'アーカイブ済みのセッションはありません',
+  emptyBody: 'サイドバーのセッション行からアーカイブすると、ここに移動します。あとで復元できます。',
+  noMatchTitle: '一致するセッションはありません',
+  noMatchBody: '別のキーワードで検索するか、プロジェクトの絞り込みを「すべてのプロジェクト」に戻してください。',
+  banner: 'このセッションはアーカイブ済みで、サイドバーには表示されません。',
+  viewAll: 'アーカイブをすべて表示',
+  viewArchived: 'アーカイブを表示',
+};

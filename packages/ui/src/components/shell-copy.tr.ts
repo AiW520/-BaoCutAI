@@ -53,7 +53,6 @@ export const tr: ShellMessages = {
   sidebar: {
     openFolderFailed: (message) => `Klasör açılamadı: ${message}`,
     archived: (title) => `${title} adlı oturum arşivlendi`,
-    undo: "Geri al",
     sessions: "Oturumlar",
     projectsAndSessions: "Projeler ve oturumlar",
     pinned: "Sabitlenenler",

@@ -10,6 +10,7 @@ import { useHelp } from '../state/help-store.ts';
 import { HOME, hasSidebar, routeVideo, useShell } from '../state/shell-store.ts';
 import { useVideo } from '../state/video-store.ts';
 import { AppUpdateHost } from './app-update/app-update-host.tsx';
+import { ArchivedPage } from './archived-page.tsx';
 import { LegacyImportHost } from './legacy-import/legacy-import-host.tsx';
 import { ConnectionBanner } from './connection-banner.tsx';
 import { HelpCenter } from './help/help-center.tsx';
@@ -122,6 +123,8 @@ export function AppShell({ platform }: { platform: string }) {
               <ServicesPage service={route.service} />
             ) : route.tab === 'settings' ? (
               <SettingsPage section={route.section} platform={platform} />
+            ) : route.tab === 'archived' ? (
+              <ArchivedPage focus={route.focus} />
             ) : route.tab === 'models' ? (
               <SettingsPage model={route} platform={platform} />
             ) : (

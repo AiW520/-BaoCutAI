@@ -18,6 +18,7 @@ import {
 } from '../model/workspace.ts';
 import { useConversationMeta } from '../state/directory-store.ts';
 import { useShell } from '../state/shell-store.ts';
+import { ArchivedBanner } from './archived-banner.tsx';
 import { ConversationHeader } from './conversation-header.tsx';
 import { ConversationView } from './conversation-view.tsx';
 import { HomeSidebar } from './home-sidebar.tsx';
@@ -187,6 +188,7 @@ export function HomePage({ conversationId, projectId, pane }: { conversationId: 
               <ConversationHeader conversation={meta} />
             </div>
           ) : null}
+          {meta?.archived ? <ArchivedBanner conversation={meta} /> : null}
           {conversation}
         </section>
         <DockSeam key={book} column={columnRef} width={dockWidth} contentWidth={contentWidth} enabled={docked} />

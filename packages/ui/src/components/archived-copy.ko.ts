@@ -1,0 +1,32 @@
+import type { ArchivedMessages } from './archived-copy.ts';
+
+export const ko: ArchivedMessages = {
+  title: '보관된 세션',
+  intro: '보관된 세션은 사이드바에 표시되지 않습니다. 영상, 파일, 변경 사항은 모두 그대로 남아 있습니다. 복원하면 원래 프로젝트 아래로 돌아갑니다.',
+  search: '보관된 세션 검색',
+  filterLabel: '프로젝트별 필터',
+  allProjects: '모든 프로젝트',
+  noProject: '프로젝트에 속하지 않음',
+  sessionCount: (n) => `세션 ${n}개`,
+  meta: (archived, active) => `보관: ${archived} · 마지막 활동: ${active}`,
+  restore: '복원',
+  restoreNamed: (title) => `“${title}” 복원`,
+  deleteNamed: (title) => `“${title}” 삭제`,
+  deleteAll: '모두 삭제',
+  deleteAllTitle: (n) => (n === 1 ? '보관된 세션 1개를 삭제할까요?' : `보관된 세션 ${n}개를 모두 삭제할까요?`),
+  deleteAllBody:
+    '세션 기록이 BaoCut에서 삭제되며, 실행 중인 작업은 먼저 중지됩니다. 이 작업은 되돌릴 수 없습니다. 프로젝트 폴더의 파일은 영향을 받지 않습니다.',
+  restored: (title) => `“${title}” 세션을 복원했습니다`,
+  open: '열기',
+  restoreFailed: (message) => `복원하지 못했습니다: ${message}`,
+  deleted: (title) => `“${title}” 세션을 삭제했습니다`,
+  deletedAll: (n) => `보관된 세션 ${n}개를 삭제했습니다`,
+  deletedSome: (done, total) => `보관된 세션 ${total}개 중 ${done}개를 삭제했습니다. 나머지는 삭제하지 못했습니다.`,
+  emptyTitle: '보관된 세션이 없습니다',
+  emptyBody: '사이드바의 세션 행에서 보관하면 여기로 옮겨집니다. 나중에 복원할 수 있습니다.',
+  noMatchTitle: '일치하는 세션이 없습니다',
+  noMatchBody: '다른 검색어를 사용하거나 프로젝트 필터를 “모든 프로젝트”로 되돌려 보세요.',
+  banner: '이 세션은 보관되어 사이드바에 표시되지 않습니다.',
+  viewAll: '보관된 항목 모두 보기',
+  viewArchived: '보관된 항목 보기',
+};

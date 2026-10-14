@@ -54,7 +54,6 @@ export const ru: ShellMessages = {
   sidebar: {
     openFolderFailed: (message) => `Не удалось открыть папку: ${message}`,
     archived: (title) => `Архивировано «${title}»`,
-    undo: "Отменить",
     sessions: "Сессии",
     projectsAndSessions: "Проекты и сессии",
     pinned: "Закреплённые",

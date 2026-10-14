@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { Conversation, Project } from '@baocut/protocol';
-import { buildSidebar, conversationStatus, sessionStatus } from './sidebar.ts';
+import { buildArchived, buildSidebar, conversationStatus, sessionStatus } from './sidebar.ts';
 
 const project = (id: string, patch: Partial<Project> = {}): Project => ({
   id,
@@ -101,5 +101,36 @@ describe('buildSidebar', () => {
     expect(tree.flat.map((c) => c.id)).toEqual(['c2', 'c3', 'c1']);
     const recent = buildSidebar([project('p1')], [conversation('a', { projectId: 'p1', updatedAt: '2026-10-01T09:00:00.000Z' }), conversation('b')]);
     expect(recent.flat.map((c) => c.id)).toEqual(['a', 'b']);
+  });
+});
+
+describe('已归档会话页', () => {
+  const at = (h: number) => `2026-10-02T${String(h).padStart(2, '0')}:00:00.000Z`;
+  const projects = [project('p1', { name: '访谈' }), project('p2', { name: '发布' })];
+  const list = [
+    conversation('live', { projectId: 'p1' }),
+    conversation('a', { title: '旧的译法讨论', projectId: 'p1', archived: true, archivedAt: at(1) }),
+    conversation('b', { title: '封面配色', projectId: 'p2', archived: true, archivedAt: at(9) }),
+    conversation('c', { title: '码率问题', archived: true, archivedAt: at(10) }),
+    conversation('d', { title: '译法二稿', projectId: 'p1', archived: true, archivedAt: at(5) }),
+    conversation('e', { title: '早先归档', projectId: 'gone', archived: true }),
+  ];
+
+  it('按项目分组，不属于任何项目的放最后；组内按归档时间从近到远，没记时间的退回最近活动', () => {
+    const view = buildArchived(projects, list);
+    expect(view.total).toBe(5);
+    expect(view.groups.map((g) => g.key)).toEqual(['p2', 'p1', 'none']);
+    expect(view.groups[1]!.conversations.map((c) => c.id)).toEqual(['d', 'a']);
+    expect(view.groups[2]!.conversations.map((c) => c.id)).toEqual(['c', 'e']);
+    expect(view.projects.map((p) => p.id)).toEqual(['p1', 'p2']);
+    expect(view.hasLoose).toBe(true);
+    expect(buildSidebar(projects, list).projects[0]!.conversations.map((c) => c.id)).toEqual(['live']);
+  });
+
+  it('按标题搜索、按项目筛选；没有归档时为空', () => {
+    const q = buildArchived(projects, list, { query: '译法' });
+    expect([q.count, q.groups.map((g) => g.key)]).toEqual([2, ['p1']]);
+    expect(buildArchived(projects, list, { scope: 'none' }).groups.map((g) => g.key)).toEqual(['none']);
+    expect(buildArchived(projects, [conversation('x')]).total).toBe(0);
   });
 });

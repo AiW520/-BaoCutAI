@@ -53,7 +53,6 @@ export const zhHans: ShellMessages = {
   sidebar: {
     openFolderFailed: (message) => `没能打开目录：${message}`,
     archived: (title) => `已归档「${title}」`,
-    undo: '撤销',
     sessions: '会话',
     projectsAndSessions: '项目与会话',
     pinned: '置顶',

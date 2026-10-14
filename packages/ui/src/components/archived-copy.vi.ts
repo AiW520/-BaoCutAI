@@ -1,0 +1,32 @@
+import type { ArchivedMessages } from './archived-copy.ts';
+
+export const vi: ArchivedMessages = {
+  title: 'Phiên đã lưu trữ',
+  intro: 'Phiên đã lưu trữ không hiện trên thanh bên. Video, tệp và các thay đổi trong đó vẫn còn nguyên. Phiên được khôi phục sẽ trở lại dưới dự án của nó.',
+  search: 'Tìm phiên đã lưu trữ',
+  filterLabel: 'Lọc theo dự án',
+  allProjects: 'Tất cả dự án',
+  noProject: 'Không thuộc dự án',
+  sessionCount: (n) => `${n} phiên`,
+  meta: (archived, active) => `Lưu trữ: ${archived} · Hoạt động gần nhất: ${active}`,
+  restore: 'Khôi phục',
+  restoreNamed: (title) => `Khôi phục “${title}”`,
+  deleteNamed: (title) => `Xóa “${title}”`,
+  deleteAll: 'Xóa tất cả',
+  deleteAllTitle: (n) => (n === 1 ? 'Xóa 1 phiên đã lưu trữ?' : `Xóa tất cả ${n} phiên đã lưu trữ?`),
+  deleteAllBody:
+    'Lịch sử của các phiên này sẽ bị xóa khỏi BaoCut, tác vụ đang chạy sẽ được dừng trước. Không thể hoàn tác. Tệp trong thư mục dự án không bị ảnh hưởng.',
+  restored: (title) => `Đã khôi phục “${title}”`,
+  open: 'Mở',
+  restoreFailed: (message) => `Không khôi phục được: ${message}`,
+  deleted: (title) => `Đã xóa “${title}”`,
+  deletedAll: (n) => `Đã xóa ${n} phiên đã lưu trữ`,
+  deletedSome: (done, total) => `Đã xóa ${done}/${total} phiên đã lưu trữ. Không xóa được các phiên còn lại.`,
+  emptyTitle: 'Không có phiên đã lưu trữ',
+  emptyBody: 'Lưu trữ một phiên từ hàng của nó trên thanh bên để chuyển phiên đó vào đây. Bạn có thể khôi phục sau.',
+  noMatchTitle: 'Không có phiên phù hợp',
+  noMatchBody: 'Hãy thử từ khóa khác hoặc đặt lại bộ lọc dự án về “Tất cả dự án”.',
+  banner: 'Phiên này đã được lưu trữ và không hiện trên thanh bên.',
+  viewAll: 'Xem tất cả mục lưu trữ',
+  viewArchived: 'Xem mục lưu trữ',
+};

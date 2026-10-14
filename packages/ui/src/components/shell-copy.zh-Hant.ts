@@ -53,7 +53,6 @@ export const zhHant: ShellMessages = {
   sidebar: {
     openFolderFailed: (message) => `無法開啟資料夾：${message}`,
     archived: (title) => `已封存「${title}」`,
-    undo: '還原',
     sessions: '對話',
     projectsAndSessions: '專案與對話',
     pinned: '已釘選',

@@ -1,0 +1,32 @@
+import type { ArchivedMessages } from './archived-copy.ts';
+
+export const tr: ArchivedMessages = {
+  title: 'Arşivlenmiş oturumlar',
+  intro: 'Arşivlenmiş oturumlar kenar çubuğunda gösterilmez. Videoları, dosyaları ve değişiklikleri olduğu gibi durur. Geri yüklenen oturum kendi projesinin altına döner.',
+  search: 'Arşivlenmiş oturumlarda ara',
+  filterLabel: 'Projeye göre filtrele',
+  allProjects: 'Tüm projeler',
+  noProject: 'Projede değil',
+  sessionCount: (n) => `${n} oturum`,
+  meta: (archived, active) => `Arşivlendi: ${archived} · Son etkinlik: ${active}`,
+  restore: 'Geri yükle',
+  restoreNamed: (title) => `${title} adlı oturumu geri yükle`,
+  deleteNamed: (title) => `${title} adlı oturumu sil`,
+  deleteAll: 'Tümünü sil',
+  deleteAllTitle: (n) => (n === 1 ? '1 arşivlenmiş oturum silinsin mi?' : `${n} arşivlenmiş oturumun tümü silinsin mi?`),
+  deleteAllBody:
+    'Bu oturumların geçmişi BaoCut içinden kaldırılır; çalışan görevler önce durdurulur. Bu işlem geri alınamaz. Proje klasörlerindeki dosyalar etkilenmez.',
+  restored: (title) => `${title} adlı oturum geri yüklendi`,
+  open: 'Aç',
+  restoreFailed: (message) => `Geri yüklenemedi: ${message}`,
+  deleted: (title) => `${title} adlı oturum silindi`,
+  deletedAll: (n) => `${n} arşivlenmiş oturum silindi`,
+  deletedSome: (done, total) => `${total} arşivlenmiş oturumdan ${done} tanesi silindi. Geri kalanlar silinemedi.`,
+  emptyTitle: 'Arşivlenmiş oturum yok',
+  emptyBody: 'Bir oturumu buraya taşımak için kenar çubuğundaki satırından arşivleyin. Daha sonra geri yükleyebilirsiniz.',
+  noMatchTitle: 'Eşleşen oturum yok',
+  noMatchBody: 'Farklı bir arama deneyin veya proje filtresini yeniden “Tüm projeler” olarak ayarlayın.',
+  banner: 'Bu oturum arşivlendi ve kenar çubuğunda gösterilmiyor.',
+  viewAll: 'Tüm arşivi görüntüle',
+  viewArchived: 'Arşivi görüntüle',
+};

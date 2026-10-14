@@ -53,7 +53,6 @@ export const ja: ShellMessages = {
   sidebar: {
     openFolderFailed: (message) => `フォルダを開けませんでした：${message}`,
     archived: (title) => `「${title}」をアーカイブしました`,
-    undo: '取り消す',
     sessions: 'セッション',
     projectsAndSessions: 'プロジェクトとセッション',
     pinned: 'ピン留め',
