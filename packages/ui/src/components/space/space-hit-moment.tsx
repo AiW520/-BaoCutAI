@@ -353,7 +353,7 @@ function MomentPlayer({
           <Text>{state === 'playing' ? COPY.momentPause : COPY.momentPlay}</Text>
         </ActionButton>
         <div className={track} aria-hidden>
-          <span className={hitSpan} style={{ left: pct(clip.hitFrom), width: `calc(${pct(clip.hitTo)} - ${pct(clip.hitFrom)})` }} />
+          <span className={hitSpan} style={{ left: pct(clip.hitFrom), width: `max(4px, ${pct(clip.hitTo)} - ${pct(clip.hitFrom)})` }} />
           {url ? <span className={head} style={{ left: pct(time) }} /> : null}
         </div>
       </div>
