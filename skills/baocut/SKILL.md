@@ -39,6 +39,7 @@ BaoCut 是以**可编辑视频**为中心的剪辑工具：素材在时间线上
 | 总结、提炼要点 | 读带时间的文稿，写总结与可跳转的要点 | [subtitles](references/catalog/subtitles.md) | {{skill:video-summary}} |
 | 写成博客、公众号文章 | 读文稿写成完整文章 | [subtitles](references/catalog/subtitles.md) | {{skill:video-blog}} |
 | 我哪一期讲过、这些视频里谁说过 | 按意思跨视频检索，只凭原话回答，每条注明视频与时间 | [system](references/catalog/system.md) | {{skill:cross-video-qa}} |
+| 有哪些……的视频、播客，哪个视频讲了……，找一下…… | 先在用户的视频库里找，列出库里有的；库里没有、不够或用户要库外的才上网搜，网上的另列 | [system](references/catalog/system.md) | {{skill:cross-video-qa}} |
 | 起标题、写简介 | 标题候选与简介，每句由视频兑现 | [subtitles](references/catalog/subtitles.md) | {{skill:titles-and-description}} |
 | 做封面、封面大字 | 标题与封面文案候选，挑定后按画幅生成封面图，导入为候选素材 | [media](references/catalog/media.md) | {{skill:cover-and-title}} |
 | 下载这个链接 | 新建视频并导入；用户明说只要文件才只下载 | [media](references/catalog/media.md) | — |
@@ -156,6 +157,7 @@ BaoCut 自带的 craft（做法）。第 1 节的表按用户的话指到其中�
 - 多步的任务你是导演：先写出计划（交付物、步骤、每步用哪个工具或 craft），按步骤做，每步读完结果再走下一步。
 - 写操作与占 GPU 的任务（转写、合成、音乐生成、导出成片）都由你自己下，一台机器上一次一个；子代理只交文件与结论，不让它们改视频或提交任务。
 - 跨回合接着做时，先读视频的当前状态（{{tool:videos_inspect}}），从已经做到的那一步接着做，不重复已完成的步骤。
+- 用户在找视频或内容（「有哪些……的视频、播客」「哪个视频讲了……」「找一下……」）时，没说「我的」「本地」也先在用户的视频库里找，不先上网：讲的内容用 {{tool:space_search_v2}}，人物外观、场景这类画面特征再给 {{arg:channels}} `["visual"]` 检一次，视频名用 {{tool:videos_list}} 对；回答先列库里找到的（视频名与时间）。库里没找到、不够，或用户要的明显在库外（外面的节目推荐、最新消息）时再上网搜，网上的结果另列一段并注明来自网络，不和库里的混在一起；用户明说要网上的就直接搜。
 - 要在视频里找内容（某句话、某个话题讲在哪、哪一期讲过、写作要用的段落）时先检索，不先通读全文：{{tool:space_search_v2}} 跨视频按意思与字面找，{{tool:speech_relevant}} 按意图取写作材料（带出处编号），{{tool:space_related_videos}} 找讲相近内容的视频。结果的 `effectiveMode` 是 lexical 或工具报 `SEMANTIC_UNAVAILABLE` 时这台机器没有可用的语义索引：改用两三个关键词与 {{tool:space_search}}，或用 {{tool:documents_read}} 读文稿。`weak` 的命中先读原文再用。
 - 要找画面（某个镜头、能配图或补画面的片段、封面候选）时也先检索：{{tool:space_search_v2}} 给 {{arg:channels}} `["visual"]` 按画面描述跨视频找，{{tool:videos_match_frames}} 在一部视频里为一段文字找最像的画面（写作时 {{arg:near}} 给这段回引的出处编号）。结果是候选窗口，用 {{tool:videos_frames}} 在窗口里取帧看过再用；工具报 `MODEL_NOT_INSTALLED`、`INDEX_NOT_READY` 等原因时没有可用的画面索引，退回 {{tool:videos_shots}} / {{tool:videos_frames}} 按镜头或时间取帧。
 - 用户给了素材（口播、采访、录音、参考视频）要从里面挑内容时：先 {{tool:transcribe}}，再用 {{tool:space_index_status}}（这些视频的 {{arg:videoIds}} 加 {{arg:waitSec}}）等语义索引建好再取材。`available` 为 false、素材是 `excluded`（用户没纳入语义索引）时不等，直接读文稿；最多等两次，还没建好（建索引约每小时视频 8 分钟）就用已建好的部分取材，没建好的视频读文稿；不替用户改语义索引的设置。
