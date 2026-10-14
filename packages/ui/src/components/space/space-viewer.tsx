@@ -19,8 +19,10 @@ import Clock from '@react-spectrum/s2/icons/Clock';
 import Edit from '@react-spectrum/s2/icons/Edit';
 import Filmstrip from '@react-spectrum/s2/icons/Filmstrip';
 import Folder from '@react-spectrum/s2/icons/Folder';
+import Refresh from '@react-spectrum/s2/icons/Refresh';
 import Star from '@react-spectrum/s2/icons/Star';
 import StarFilled from '@react-spectrum/s2/icons/StarFilled';
+import StopProcessing from '@react-spectrum/s2/icons/StopProcessing';
 import { style } from '@react-spectrum/s2/style' with { type: 'macro' };
 import { Button as RACButton } from 'react-aria-components';
 import { agoLabel, formatClock } from '../../model/format.ts';
@@ -37,14 +39,16 @@ import {
 } from '../../model/space-actions.ts';
 import { DESIGN } from '../../model/design-copy.ts';
 import { DESIGN_SYSTEM } from '../../model/design-system-copy.ts';
+import { M as SEMANTIC } from '../../model/semantic-copy.ts';
 import { SLIDES } from '../../model/slides-copy.ts';
+import type { EntryIndexState } from '../../model/space-index.ts';
 import { MADE_SHOWN } from '../../model/shorts-result.ts';
 import { formatBytes, isPlayable, KIND_LABEL, measureText, SPACE_STATUS, statusText } from '../../model/space.ts';
 import { FilePreview } from '../file-preview.tsx';
 import { SemanticNote } from '../semantic-note.tsx';
 import type { EntryTools } from '../tools/use-entry-tools.ts';
 import { SPACE_COPY as COPY } from './space-copy.ts';
-import { EntryThumb } from './space-list.tsx';
+import { EntryThumb, IndexMark, type EntryAction } from './space-list.tsx';
 import { ToolActions, ToolFacts } from './space-viewer-tools.tsx';
 import type { RelatedVideos } from './use-related-videos.ts';
 
@@ -58,6 +62,9 @@ const facts = style({
   font: 'ui-sm',
 });
 const term = style({ color: 'gray-600' });
+/** 语义索引那一行：标志、说明与按钮排一行，放不下换行（原型 spv__idx）。 */
+const indexFact = style({ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 8 });
+const indexWhy = style({ color: 'gray-600' });
 const value = style({ margin: 0, overflowWrap: 'anywhere', userSelect: 'text' });
 const footerRow = style({ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 4 });
 const headerRow = style({ display: 'flex', alignItems: 'center', gap: 8 });
@@ -114,6 +121,8 @@ export interface ViewerActions {
   onSwitch(entryId: Id): void;
   /** 按来源把 Space 筛成从这部视频切出的短视频（产品设计 §4.3、§5.10）。 */
   onShorts?(entry: SpaceEntry): void;
+  /** 语义索引：重新索引、不索引、恢复索引（同条目菜单）。 */
+  onIndex?(action: Extract<EntryAction, 'reindex' | 'noindex' | 'include'>, entry: SpaceEntry): void;
   onClose(): void;
 }
 
@@ -140,6 +149,7 @@ export function SpaceViewer({
   shorts = [],
   parent = null,
   related = null,
+  index = null,
 }: {
   entry: SpaceEntry | null;
   source: string;
@@ -161,6 +171,8 @@ export function SpaceViewer({
   parent?: SpaceEntry | null;
   /** 讲相近内容的视频（`useRelatedVideos`）；还没算出来或不是视频时 null。 */
   related?: RelatedVideos | null;
+  /** 这一条的语义索引状态（`useEntryIndex`）；不标时 null。动作只在给了 `actions.onIndex` 时有（Web 没有）。 */
+  index?: EntryIndexState | null;
 }) {
   return (
     <DialogContainer onDismiss={actions.onClose}>
@@ -179,6 +191,7 @@ export function SpaceViewer({
             shorts={shorts}
             parent={parent}
             related={related}
+            index={index}
           />
         </Dialog>
       ) : null}
@@ -199,6 +212,7 @@ function ViewerBody({
   shorts,
   parent,
   related,
+  index,
 }: {
   entry: SpaceEntry;
   source: string;
@@ -212,6 +226,7 @@ function ViewerBody({
   shorts: readonly SpaceEntry[];
   parent: SpaceEntry | null;
   related: RelatedVideos | null;
+  index: EntryIndexState | null;
 }) {
   const trashed = entry.user.trashedAt !== null;
   const failed = isFailedPlaceholder(entry);
@@ -276,6 +291,14 @@ function ViewerBody({
             <>
               <dt className={term}>{COPY.factSize}</dt>
               <dd className={value}>{formatBytes(entry.size)}</dd>
+            </>
+          ) : null}
+          {index ? (
+            <>
+              <dt className={term}>{SEMANTIC.spaceIndex.fact}</dt>
+              <dd className={value}>
+                <IndexFact index={index} onIndex={actions.onIndex ? (action) => actions.onIndex?.(action, entry) : null} />
+              </dd>
             </>
           ) : null}
           <dt className={term}>{COPY.factActivity}</dt>
@@ -567,5 +590,41 @@ function VideoFiles({ files, onSwitch }: { files: readonly SpaceEntry[]; onSwitc
         })}
       </ul>
     </section>
+  );
+}
+
+/** 查看框里的「语义索引」（原型 space-viewer.jsx）：标志与状态字、为什么或各路的状态，能做的动作。 */
+function IndexFact({
+  index,
+  onIndex,
+}: {
+  index: EntryIndexState;
+  onIndex: ((action: Extract<EntryAction, 'reindex' | 'noindex' | 'include'>) => void) | null;
+}) {
+  const S = SEMANTIC.spaceIndex;
+  const detail = index.why ?? index.lines.join(S.lineSeparator);
+  return (
+    <span className={indexFact}>
+      <IndexMark state={index} withText />
+      {detail ? <span className={indexWhy}>{detail}</span> : null}
+      {onIndex && index.canReindex ? (
+        <ActionButton size="S" isQuiet onPress={() => onIndex('reindex')}>
+          <Refresh />
+          <Text>{S.reindex}</Text>
+        </ActionButton>
+      ) : null}
+      {onIndex && index.canInclude ? (
+        <ActionButton size="S" isQuiet onPress={() => onIndex('include')}>
+          <Refresh />
+          <Text>{S.include}</Text>
+        </ActionButton>
+      ) : null}
+      {onIndex && index.canExclude ? (
+        <ActionButton size="S" isQuiet onPress={() => onIndex('noindex')}>
+          <StopProcessing />
+          <Text>{S.noIndex}</Text>
+        </ActionButton>
+      ) : null}
+    </span>
   );
 }

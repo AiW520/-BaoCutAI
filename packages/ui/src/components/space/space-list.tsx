@@ -1,4 +1,13 @@
-import { useCallback, useLayoutEffect, useRef, type ComponentType, type ReactNode } from 'react';
+import {
+  useCallback,
+  useLayoutEffect,
+  useRef,
+  useState,
+  type ComponentType,
+  type KeyboardEvent,
+  type MouseEvent,
+  type ReactNode,
+} from 'react';
 import type { SpaceEntry, SpaceEntryKind } from '@baocut/protocol';
 import {
   ActionButton,
@@ -10,8 +19,11 @@ import {
   Column,
   Content,
   Footer,
+  Menu,
   MenuItem,
   MenuSection,
+  MenuTrigger,
+  ProgressCircle,
   Row,
   StatusLight,
   TableBody,
@@ -19,9 +31,13 @@ import {
   TableView,
   Text,
 } from '@react-spectrum/s2';
+import { Pressable } from 'react-aria-components';
+import AlertTriangle from '@react-spectrum/s2/icons/AlertTriangle';
 import Archive from '@react-spectrum/s2/icons/Archive';
 import Chat from '@react-spectrum/s2/icons/Chat';
+import CheckmarkCircle from '@react-spectrum/s2/icons/CheckmarkCircle';
 import Clock from '@react-spectrum/s2/icons/Clock';
+import ClockPending from '@react-spectrum/s2/icons/ClockPending';
 import CloseCaptions from '@react-spectrum/s2/icons/CloseCaptions';
 import ColorHarmony from '@react-spectrum/s2/icons/ColorHarmony';
 import Delete from '@react-spectrum/s2/icons/Delete';
@@ -35,20 +51,24 @@ import Image from '@react-spectrum/s2/icons/Image';
 import InfoCircle from '@react-spectrum/s2/icons/InfoCircle';
 import Layers from '@react-spectrum/s2/icons/Layers';
 import Layout from '@react-spectrum/s2/icons/Layout';
+import LinkIcon from '@react-spectrum/s2/icons/Link';
 import MusicNote from '@react-spectrum/s2/icons/MusicNote';
 import OpenIn from '@react-spectrum/s2/icons/OpenIn';
 import Preview from '@react-spectrum/s2/icons/Preview';
 import Redo from '@react-spectrum/s2/icons/Redo';
+import Refresh from '@react-spectrum/s2/icons/Refresh';
 import Revert from '@react-spectrum/s2/icons/Revert';
 import Shapes from '@react-spectrum/s2/icons/Shapes';
 import Star from '@react-spectrum/s2/icons/Star';
 import StarFilled from '@react-spectrum/s2/icons/StarFilled';
+import StopProcessing from '@react-spectrum/s2/icons/StopProcessing';
 import Template from '@react-spectrum/s2/icons/Template';
 import Video from '@react-spectrum/s2/icons/Video';
 import { style } from '@react-spectrum/s2/style' with { type: 'macro' };
 import { agoLabel } from '../../model/format.ts';
 import { DESIGN } from '../../model/design-copy.ts';
 import { DESIGN_SYSTEM } from '../../model/design-system-copy.ts';
+import { M as SEMANTIC } from '../../model/semantic-copy.ts';
 import { SLIDES } from '../../model/slides-copy.ts';
 import { continueBlock, entryJobId, entryMenuKey, isFailedPlaceholder, purgeBlock } from '../../model/space-actions.ts';
 import {
@@ -62,6 +82,7 @@ import {
   statusText,
   type SpaceRow,
 } from '../../model/space.ts';
+import { entryIndexTitle, type EntryIndexKey, type EntryIndexState } from '../../model/space-index.ts';
 import type { SpaceTranscribeAction } from '../../model/tool-targets.ts';
 import { useEntryThumbnail } from '../use-entry-thumbnail.ts';
 import { SPACE_COPY as COPY } from './space-copy.ts';
@@ -89,7 +110,11 @@ export type EntryAction =
   | 'purge'
   | 'clear'
   /** 按来源筛出从这部视频切出的短视频（卡片与行上的「N 支短视频」）。 */
-  | 'shorts';
+  | 'shorts'
+  /** 语义索引（检索规格 §9.1）：丢掉这一条的索引排到最前重建；设为不索引；把设了不索引的恢复。 */
+  | 'reindex'
+  | 'noindex'
+  | 'include';
 
 export const KIND_ICON: Record<SpaceEntryKind, ComponentType> = {
   video: Filmstrip,
@@ -217,6 +242,60 @@ const visuallyHidden = style({
 });
 const favMark = style({ display: 'flex', color: 'yellow-800', flexShrink: 0 });
 
+/** 语义索引的标志（原型 space-list.jsx `IndexMark`、space.css `.sp-idx`）：图标按状态着色，在建时转圈。 */
+const indexMark = style({
+  display: 'inline-flex',
+  flexShrink: 0,
+  alignItems: 'center',
+  gap: 4,
+  color: { default: 'gray-600', tone: { notice: 'orange-900', negative: 'red-900', informative: 'blue-900' } },
+});
+/** 卡片上的那个压在预览左上角，垫一块底色（原型 sp-idx--card）。 */
+const indexMarkCard = style({
+  position: 'absolute',
+  insetStart: 8,
+  top: 8,
+  padding: 4,
+  borderRadius: 'default',
+  backgroundColor: 'gray-25',
+});
+const indexMarkText = style({ font: 'ui-sm', color: 'gray-800' });
+const previewWrap = style({ position: 'relative', width: 'full' });
+/** 右键菜单的锚点：指针那一点，0 尺寸，不挡点击（同时间轴的右键菜单）。 */
+const contextAnchor = style({ position: 'fixed', width: 0, height: 0, pointerEvents: 'none', outlineStyle: 'none' });
+const contextScope = style({ display: 'contents' });
+
+const INDEX_ICON: Record<Exclude<EntryIndexKey, 'indexing'>, ComponentType> = {
+  failed: AlertTriangle,
+  stale: Refresh,
+  queued: ClockPending,
+  indexed: CheckmarkCircle,
+  empty: InfoCircle,
+  notNeeded: LinkIcon,
+  excluded: StopProcessing,
+};
+
+/**
+ * 条目的语义索引标志：图标 + 悬停说明（「语义索引：排队中 · 讲话内容：已索引；画面：排队中」）；`withText` 时后面跟状态字
+ * （查看框里）。「没有可索引的内容」只在查看框里说，卡片与列表里标出来只是噪音。
+ */
+export function IndexMark({ state, card, withText }: { state: EntryIndexState | null; card?: boolean; withText?: boolean }) {
+  if (!state || (!withText && state.key === 'empty')) return null;
+  const title = entryIndexTitle(state);
+  const Icon = state.key === 'indexing' ? null : INDEX_ICON[state.key];
+  const label = state.pct !== null ? SEMANTIC.spaceIndex.withPct(state.label, state.pct) : state.label;
+  return (
+    <span className={`${indexMark({ tone: state.tone })}${card ? ` ${indexMarkCard}` : ''}`} title={title} role="img" aria-label={title}>
+      {Icon ? <Icon /> : <ProgressCircle size="S" isIndeterminate aria-label={state.label} />}
+      {withText ? (
+        <span className={indexMarkText} aria-hidden>
+          {label}
+        </span>
+      ) : null}
+    </span>
+  );
+}
+
 /**
  * 预览块（原型 ItemPreview）：画面铺满；文档与字幕是纸上的正文摘要；没有的画类型图标，缺失的加「找不到文件」。
  * `small` 是列表名称列里的那一档：名字就在旁边，整块对读屏隐藏；文档只留纸面和类型图标；缺失只靠灰底，文字由 aria-label 说。
@@ -333,12 +412,53 @@ function transcribeItem(action: SpaceTranscribeAction) {
   );
 }
 
-function entryMenu(
-  entry: SpaceRow,
-  canReveal: boolean,
-  onAction: (action: EntryAction, entry: SpaceEntry) => void,
-  transcribe: SpaceTranscribeAction | null,
-) {
+/** 菜单要的、不在条目上的东西（卡片、行与右键菜单共用）。 */
+interface MenuContext {
+  canReveal: boolean;
+  transcribe: SpaceTranscribeAction | null;
+  /** 这一条的语义索引状态；不标时 null。 */
+  index: EntryIndexState | null;
+  /** 能不能在这里改索引（Electron；Web 只看标志，同设置页）。 */
+  indexActions: boolean;
+}
+
+/** 语义索引的几项（原型 menuItems 的 reindex / noindex / include）：能做哪项给哪项。 */
+function indexItems(index: EntryIndexState | null) {
+  const S = SEMANTIC.spaceIndex;
+  if (!index) return [];
+  const items: ReactNode[] = [];
+  if (index.canReindex) {
+    items.push(
+      <MenuItem key="reindex" id="reindex" textValue={S.reindex}>
+        <Refresh />
+        <Text slot="label">{S.reindex}</Text>
+        <Text slot="description">{index.key === 'failed' ? S.retryDesc : S.reindexDesc}</Text>
+      </MenuItem>,
+    );
+  }
+  if (index.canExclude) {
+    items.push(
+      <MenuItem key="noindex" id="noindex" textValue={S.noIndex}>
+        <StopProcessing />
+        <Text slot="label">{S.noIndex}</Text>
+        <Text slot="description">{S.noIndexDesc}</Text>
+      </MenuItem>,
+    );
+  }
+  if (index.canInclude) {
+    items.push(
+      <MenuItem key="include" id="include" textValue={S.include}>
+        <Refresh />
+        <Text slot="label">{S.include}</Text>
+        <Text slot="description">{S.includeDesc}</Text>
+      </MenuItem>,
+    );
+  }
+  return items;
+}
+
+/** 菜单的各节与置灰的项（⋯ 与右键共用一份）。 */
+function entryMenuParts(entry: SpaceRow, ctx: MenuContext): { disabled: EntryAction[]; sections: ReactNode } {
   const trashed = entry.user.trashedAt !== null;
   const failed = isFailedPlaceholder(entry);
   const jobId = entryJobId(entry);
@@ -348,17 +468,14 @@ function entryMenu(
   const isDesignSystem = entry.kind === 'design-system' && !trashed;
   const openLabel = isVideo ? COPY.openVideo : isDesign ? DESIGN.open : isDesignSystem ? DESIGN_SYSTEM.open : SLIDES.open;
   const viewLabel = isVideo ? (entry.files?.length ? COPY.viewInfoFiles : COPY.viewInfo) : COPY.view;
+  const transcribe = ctx.transcribe;
   const disabled: EntryAction[] = [];
-  if (!canReveal) disabled.push('reveal');
+  if (!ctx.canReveal) disabled.push('reveal');
   if (continueBlock(entry)) disabled.push('continue');
   if (trashed && purgeBlock(entry)) disabled.push('purge');
-  return (
-    <ActionMenu
-      aria-label={COPY.entryActions(entry.name)}
-      isQuiet
-      size="S"
-      disabledKeys={disabled}
-      onAction={(key) => onAction(key as EntryAction, entry)}>
+  const index = ctx.indexActions && !trashed ? indexItems(ctx.index) : [];
+  const sections = (
+    <>
       <MenuSection>
         {isVideo && transcribe === 'retry' ? transcribeItem(transcribe) : null}
         {isVideo || isSlides || isDesign || isDesignSystem ? (
@@ -385,6 +502,7 @@ function entryMenu(
           </MenuItem>
         )}
       </MenuSection>
+      {index.length ? <MenuSection>{index}</MenuSection> : null}
       <MenuSection>
         <MenuItem id="favorite" textValue={entry.user.favorite ? COPY.unfavorite : COPY.favorite}>
           {entry.user.favorite ? <StarFilled /> : <Star />}
@@ -431,6 +549,21 @@ function entryMenu(
           </MenuItem>
         )}
       </MenuSection>
+    </>
+  );
+  return { disabled, sections };
+}
+
+function entryMenu(entry: SpaceRow, ctx: MenuContext, onAction: (action: EntryAction, entry: SpaceEntry) => void) {
+  const { disabled, sections } = entryMenuParts(entry, ctx);
+  return (
+    <ActionMenu
+      aria-label={COPY.entryActions(entry.name)}
+      isQuiet
+      size="S"
+      disabledKeys={disabled}
+      onAction={(key) => onAction(key as EntryAction, entry)}>
+      {sections}
     </ActionMenu>
   );
 }
@@ -458,6 +591,12 @@ interface ListProps {
   empty: () => ReactNode;
   /** 父视频派生出的子视频数（`derivedCount`，按 videoId）；不给时不显示。 */
   shorts?: ReadonlyMap<string, number>;
+  /** 条目的语义索引标志（`useEntryIndex`）；不给时不标。 */
+  indexOf?: (entry: SpaceEntry) => EntryIndexState | null;
+  /** 索引状态变了就变（缓存的依赖键）。 */
+  indexKey?: string;
+  /** 菜单里给不给改索引的几项（Electron；Web 只看标志）。 */
+  indexActions?: boolean;
 }
 
 const listStyles = style({ flexGrow: 1, minHeight: 0 });
@@ -467,55 +606,154 @@ const listStyles = style({ flexGrow: 1, minHeight: 0 });
  * 来源列和 `now` 不经 `entries` 传进来，得靠依赖键让缓存失效（`entryMenuKey`，内容变了才变）。缓存住的菜单回调也会过时，
  * 所以菜单拿一个身份不变、调用时转给最新 `onAction` 的函数。
  */
-function useListDeps({ entries, now, canReveal, onAction, transcribeAction, shorts }: ListProps, sourceOf?: ListProps['sourceOf']) {
+function useListDeps(props: ListProps, sourceOf?: ListProps['sourceOf']) {
+  const { entries, now, canReveal, onAction, transcribeAction, shorts, indexOf, indexKey, indexActions } = props;
   const latest = useRef(onAction);
   useLayoutEffect(() => {
     latest.current = onAction;
   });
   const act = useCallback((action: EntryAction, entry: SpaceEntry) => latest.current(action, entry), []);
-  return { act, dependencies: [entryMenuKey(entries, canReveal, transcribeAction, sourceOf), now, shorts] };
+  const ctxOf = (entry: SpaceEntry): MenuContext => ({
+    canReveal: canReveal(entry),
+    transcribe: transcribeAction(entry),
+    index: indexOf?.(entry) ?? null,
+    indexActions: !!indexActions,
+  });
+  return { act, ctxOf, dependencies: [entryMenuKey(entries, canReveal, transcribeAction, sourceOf), now, shorts, indexKey, indexActions] };
+}
+
+interface ContextTarget {
+  entry: SpaceRow;
+  x: number;
+  y: number;
+}
+
+/**
+ * 列表区上的右键与菜单键（原型 `contextHandlers` / `SpaceContextMenu`）：找到指针或焦点所在的条目（React Aria 在行与卡片上
+ * 写 data-key），在指针那一点（菜单键与 ⇧F10 在条目左上角）弹出和 ⋯ 同一份菜单。弹出层里的右键（菜单项也有 data-key）
+ * 经 React 冒泡上来时不在列表区的 DOM 里，不理。
+ */
+function useEntryContextMenu(
+  entries: SpaceRow[],
+  ctxOf: (entry: SpaceEntry) => MenuContext,
+  act: (action: EntryAction, entry: SpaceEntry) => void,
+) {
+  const [target, setTarget] = useState<ContextTarget | null>(null);
+  const find = (scope: Element, el: Element | null) => {
+    const row = el?.closest('[data-key]');
+    if (!row || !scope.contains(row)) return null;
+    const entry = entries.find((e) => e.id === row.getAttribute('data-key'));
+    return entry ? { entry, row } : null;
+  };
+  const scopeProps = {
+    className: contextScope,
+    onContextMenu: (event: MouseEvent<HTMLDivElement>) => {
+      const hit = find(event.currentTarget, event.target as Element);
+      if (!hit) return;
+      event.preventDefault();
+      setTarget({ entry: hit.entry, x: event.clientX, y: event.clientY });
+    },
+    onKeyDown: (event: KeyboardEvent<HTMLDivElement>) => {
+      if (!(event.key === 'ContextMenu' || (event.key === 'F10' && event.shiftKey))) return;
+      const hit = find(event.currentTarget, document.activeElement);
+      if (!hit) return;
+      event.preventDefault();
+      const rect = hit.row.getBoundingClientRect();
+      setTarget({ entry: hit.entry, x: rect.left + 16, y: rect.top + 16 });
+    },
+  };
+  const menu = <EntryContextMenu target={target} ctxOf={ctxOf} onAction={act} onClose={() => setTarget(null)} />;
+  return { scopeProps, menu };
+}
+
+function EntryContextMenu({
+  target,
+  ctxOf,
+  onAction,
+  onClose,
+}: {
+  target: ContextTarget | null;
+  ctxOf: (entry: SpaceEntry) => MenuContext;
+  onAction: (action: EntryAction, entry: SpaceEntry) => void;
+  onClose: () => void;
+}) {
+  // 关上时的淡出还要画上一次的内容。
+  const last = useRef<ContextTarget | null>(null);
+  if (target) last.current = target;
+  const at = last.current;
+  if (!at) return null;
+  const { disabled, sections } = entryMenuParts(at.entry, ctxOf(at.entry));
+  const label = COPY.entryActions(at.entry.name);
+  return (
+    <MenuTrigger
+      trigger="contextMenu"
+      isOpen={!!target}
+      onOpenChange={(open) => {
+        if (!open) onClose();
+      }}>
+      <Pressable>
+        <span role="button" tabIndex={-1} aria-label={label} className={contextAnchor} style={{ left: at.x, top: at.y }} />
+      </Pressable>
+      <Menu
+        aria-label={label}
+        disabledKeys={disabled}
+        onAction={(key) => {
+          onClose();
+          onAction(key as EntryAction, at.entry);
+        }}>
+        {sections}
+      </Menu>
+    </MenuTrigger>
+  );
 }
 
 export function SpaceGrid(props: ListProps) {
-  const { entries, now, canReveal, onAction, transcribeAction, empty, shorts } = props;
-  const { act, dependencies } = useListDeps(props);
+  const { entries, now, onAction, empty, shorts, indexOf } = props;
+  const { act, ctxOf, dependencies } = useListDeps(props);
+  const { scopeProps, menu } = useEntryContextMenu(entries, ctxOf, act);
   return (
-    <CardView
-      aria-label={COPY.entriesLabel}
-      layout="grid"
-      size="M"
-      variant="tertiary"
-      items={entries}
-      dependencies={dependencies}
-      styles={listStyles}
-      renderEmptyState={empty}
-      onAction={(key) => {
-        const entry = entries.find((e) => e.id === key);
-        if (entry) onAction(primaryAction(entry), entry);
-      }}>
-      {(entry) => (
-        <Card id={entry.id} textValue={entry.name}>
-          <CardPreview>
-            <EntryThumb entry={entry} />
-          </CardPreview>
-          <Content>
-            <Text slot="title">{entry.name}</Text>
-            {entryMenu(entry, canReveal(entry), act, transcribeAction(entry))}
-            <Text slot="description">{hitsText(entry) ?? [KIND_LABEL[entry.kind], measureOf(entry)].filter(Boolean).join(' · ')}</Text>
-          </Content>
-          <Footer>
-            <EntryStatus entry={entry} now={now} quiet />
-            {entry.user.favorite ? (
-              <span className={favMark} aria-label={COPY.favorited}>
-                <StarFilled />
-              </span>
-            ) : null}
-            <ShortsButton row={entry} count={shortsOf(shorts, entry)} onAction={act} />
-            <FilesButton row={entry} onAction={act} />
-          </Footer>
-        </Card>
-      )}
-    </CardView>
+    <div {...scopeProps}>
+      <CardView
+        aria-label={COPY.entriesLabel}
+        layout="grid"
+        size="M"
+        variant="tertiary"
+        items={entries}
+        dependencies={dependencies}
+        styles={listStyles}
+        renderEmptyState={empty}
+        onAction={(key) => {
+          const entry = entries.find((e) => e.id === key);
+          if (entry) onAction(primaryAction(entry), entry);
+        }}>
+        {(entry) => (
+          <Card id={entry.id} textValue={entry.name}>
+            <CardPreview>
+              <div className={previewWrap}>
+                <EntryThumb entry={entry} />
+                <IndexMark state={indexOf?.(entry) ?? null} card />
+              </div>
+            </CardPreview>
+            <Content>
+              <Text slot="title">{entry.name}</Text>
+              {entryMenu(entry, ctxOf(entry), act)}
+              <Text slot="description">{hitsText(entry) ?? [KIND_LABEL[entry.kind], measureOf(entry)].filter(Boolean).join(' · ')}</Text>
+            </Content>
+            <Footer>
+              <EntryStatus entry={entry} now={now} quiet />
+              {entry.user.favorite ? (
+                <span className={favMark} aria-label={COPY.favorited}>
+                  <StarFilled />
+                </span>
+              ) : null}
+              <ShortsButton row={entry} count={shortsOf(shorts, entry)} onAction={act} />
+              <FilesButton row={entry} onAction={act} />
+            </Footer>
+          </Card>
+        )}
+      </CardView>
+      {menu}
+    </div>
   );
 }
 
@@ -547,8 +785,9 @@ function columnName(id: ColumnId): string {
 }
 
 export function SpaceTable(props: ListProps) {
-  const { entries, now, sourceOf, canReveal, onAction, transcribeAction, empty, shorts } = props;
-  const { act, dependencies } = useListDeps(props, sourceOf);
+  const { entries, now, sourceOf, onAction, empty, shorts, indexOf } = props;
+  const { act, ctxOf, dependencies } = useListDeps(props, sourceOf);
+  const { scopeProps, menu } = useEntryContextMenu(entries, ctxOf, act);
   const cell = (entry: SpaceRow, column: ColumnId): ReactNode => {
     if (column === 'name') {
       // 收了文件的视频：名字下面一行写「N 个文件 · 成片 2 · 字幕 1」，只靠文件对上搜索时写找到的是哪个
@@ -563,6 +802,7 @@ export function SpaceTable(props: ListProps) {
             <span className={nameText}>{entry.name}</span>
             {sub ? <span className={nameSub}>{sub}</span> : null}
           </span>
+          <IndexMark state={indexOf?.(entry) ?? null} />
           {entry.user.favorite ? (
             <span className={favMark} aria-label={COPY.favorited}>
               <StarFilled />
@@ -576,36 +816,39 @@ export function SpaceTable(props: ListProps) {
     if (column === 'size') return measureOf(entry) || <span className={muted}>{COPY.noValue}</span>;
     if (column === 'status') return <EntryStatus entry={entry} now={now} />;
     if (column === 'activity') return agoLabel(activityOf(entry), now);
-    return entryMenu(entry, canReveal(entry), act, transcribeAction(entry));
+    return entryMenu(entry, ctxOf(entry), act);
   };
   return (
-    <TableView
-      aria-label={COPY.entriesLabel}
-      overflowMode="truncate"
-      density="spacious"
-      styles={listStyles}
-      onAction={(key) => {
-        const entry = entries.find((e) => e.id === key);
-        if (entry) onAction(primaryAction(entry), entry);
-      }}>
-      <TableHeader columns={COLUMNS}>
-        {(column) => (
-          <Column
-            id={column.id}
-            isRowHeader={'isRowHeader' in column}
-            width={'width' in column ? column.width : undefined}
-            minWidth={'minWidth' in column ? column.minWidth : undefined}>
-            {'hideHeader' in column ? <span className={visuallyHidden}>{columnName(column.id)}</span> : columnName(column.id)}
-          </Column>
-        )}
-      </TableHeader>
-      <TableBody items={entries} dependencies={dependencies} renderEmptyState={empty}>
-        {(entry) => (
-          <Row id={entry.id} columns={COLUMNS}>
-            {(column) => <Cell>{cell(entry, column.id)}</Cell>}
-          </Row>
-        )}
-      </TableBody>
-    </TableView>
+    <div {...scopeProps}>
+      <TableView
+        aria-label={COPY.entriesLabel}
+        overflowMode="truncate"
+        density="spacious"
+        styles={listStyles}
+        onAction={(key) => {
+          const entry = entries.find((e) => e.id === key);
+          if (entry) onAction(primaryAction(entry), entry);
+        }}>
+        <TableHeader columns={COLUMNS}>
+          {(column) => (
+            <Column
+              id={column.id}
+              isRowHeader={'isRowHeader' in column}
+              width={'width' in column ? column.width : undefined}
+              minWidth={'minWidth' in column ? column.minWidth : undefined}>
+              {'hideHeader' in column ? <span className={visuallyHidden}>{columnName(column.id)}</span> : columnName(column.id)}
+            </Column>
+          )}
+        </TableHeader>
+        <TableBody items={entries} dependencies={dependencies} renderEmptyState={empty}>
+          {(entry) => (
+            <Row id={entry.id} columns={COLUMNS}>
+              {(column) => <Cell>{cell(entry, column.id)}</Cell>}
+            </Row>
+          )}
+        </TableBody>
+      </TableView>
+      {menu}
+    </div>
   );
 }

@@ -121,12 +121,17 @@ export interface SettingValues {
    */
   'runtime.idleExitMinutes': number;
   /**
-   * 本机语义检索（创作辅助集成设计 §3.10，设置分组 `semantic`）：要建索引的通道。首版只有 `text`（讲话内容）；`visual`、`audio`
-   * 可以写进来，但在对应通道实现之前不建索引（`space.indexStatus` 标为不可用）。
+   * 本机语义检索（创作辅助集成设计 §3.10，设置分组 `semantic`）：要建索引的通道，默认讲话内容与画面（`text`、`visual`）。
+   * `audio` 可以写进来，但在实现之前不建索引（`space.indexStatus` 标为不可用）。
    */
   'semantic.channels': SemanticChannel[];
-  /** 建语义索引的项目：`all`，或项目 ID 列表（不属于项目的视频只在 `all` 时建）。不影响检索的范围，只影响哪些视频排进构建。 */
-  'semantic.indexedProjects': 'all' | Id[];
+  /**
+   * 不建语义索引的项目（检索规格 §9.1）：索引范围是全部 BaoCut 项目与不属于项目的视频，减去这里的项目。不影响检索的范围，
+   * 只影响哪些视频排进构建；排除的视频只能按字面找到。
+   */
+  'semantic.excludedProjects': Id[];
+  /** 不建语义索引的单个视频（Space 条目「不索引」）：与项目的排除叠加，已建的索引撤下。 */
+  'semantic.excludedVideos': Id[];
   /**
    * 用电池时暂停建语义索引（检索规格 §16.1），接上电源后接着建。Runtime 自己查供电（macOS、Windows、Linux），查不出时当作
    * 接着电。系统因过热降频时总是暂停，不受它影响。
@@ -168,7 +173,8 @@ export const SETTING_KEYS = [
   'resources.capacity',
   'runtime.idleExitMinutes',
   'semantic.channels',
-  'semantic.indexedProjects',
+  'semantic.excludedProjects',
+  'semantic.excludedVideos',
   'semantic.pauseOnBattery',
   'semantic.translationMemory',
   'semantic.glossaryCandidates',
@@ -200,8 +206,9 @@ export const SETTING_DEFAULTS: Readonly<SettingValues> = Object.freeze({
   'cache.maxSizeMiB': 2048,
   'resources.capacity': null,
   'runtime.idleExitMinutes': 10,
-  'semantic.channels': Object.freeze(['text']) as unknown as SemanticChannel[],
-  'semantic.indexedProjects': 'all',
+  'semantic.channels': Object.freeze(['text', 'visual']) as unknown as SemanticChannel[],
+  'semantic.excludedProjects': Object.freeze([]) as unknown as Id[],
+  'semantic.excludedVideos': Object.freeze([]) as unknown as Id[],
   'semantic.pauseOnBattery': true,
   'semantic.translationMemory': true,
   'semantic.glossaryCandidates': true,

@@ -5,7 +5,7 @@ import type { Logger } from '@baocut/harness';
 import type { SpaceVideo } from '../../space-catalog.ts';
 import { assetSegments, projectSourceTime, type AssetSegment } from '../../agent-tools/source-chapters.ts';
 import type { ContentReader } from '../content-index.ts';
-import { validVector, type SemanticCatalogSource, type SemanticSettings } from './coordinator.ts';
+import { semanticWanted, validVector, type SemanticCatalogSource, type SemanticSettings } from './coordinator.ts';
 import type { EmbeddingScheduler } from './scheduler.ts';
 import type { PublishVisualInput, SemanticStore } from './store.ts';
 import type { VectorScanner } from './vector-index.ts';
@@ -14,7 +14,7 @@ import type { VectorScanner } from './vector-index.ts';
  * 画面索引的增量构建（检索规格 §6.2、§9；创作辅助集成设计 §3.5）：每个视频里每个视频素材的当前版本，按来源时间每隔
  * `FRAME_INTERVAL_SEC` 秒取一帧关键帧，用多模态模型包的图像编码器编码，作为这个视频的画面世代发布。
  *
- * - 建哪些视频：设置里开了画面通道（`semantic.channels` 含 `visual`）时，按「建索引的项目」全部；没开时只建明确要过的
+ * - 建哪些视频：设置里开了画面通道（`semantic.channels` 含 `visual`）时，按索引范围（全部项目减去排除的）全部；没开时只建明确要过的
  *   （`space.indexBuild` 带 `channels: ['visual']`，例如用户在会话里交了素材），要过一次之后跟着内容变化保持更新。
  * - 让文字先建：文字那一路还有活时不开始下一个视频（`textBusy`），文字建完会叫醒这里。
  * - 向量按 `encoderProfileId + 内容哈希 + 毫秒` 寻址：同一份素材在几个视频里只编码一次，素材换了版本才重算；已有向量的帧
@@ -108,6 +108,7 @@ export class VisualLane {
   #closed = false;
   #blocked: string | null = null;
   #profileId: string | null = null;
+  #current: { videoId: Id; done: number; total: number } | null = null;
 
   constructor(options: VisualLaneOptions) {
     this.#options = options;
@@ -119,6 +120,11 @@ export class VisualLane {
 
   get queued(): number {
     return this.#queue.size;
+  }
+
+  /** 正在建的视频与它的帧（已有的与编好的 / 要编的）；没在建时 null。 */
+  get current(): { videoId: Id; done: number; total: number } | null {
+    return this.#current ? { ...this.#current } : null;
   }
 
   /** 最近一次因为模型不可用而停下的原因；成功编码后清掉。 */
@@ -162,7 +168,7 @@ export class VisualLane {
     this.kick();
   }
 
-  /** 明确要建这些视频的画面（`space.indexBuild`）：排到队首，不看设置里开没开画面（项目的纳入照看）。返回计划处理的视频数。 */
+  /** 明确要建这些视频的画面（`space.indexBuild`）：排到队首，不看设置里开没开画面（排除的项目与视频照样不建）。返回计划处理的视频数。 */
   build(videos: readonly SpaceVideo[], options: { rebuild?: boolean } = {}): number {
     const store = this.#options.store();
     if (!store) return 0;
@@ -184,8 +190,8 @@ export class VisualLane {
     const indexed = index.at(video.dir);
     if (!indexed || index.pendingCount([video.dir]) > 0) return null;
     const source = store.visualSource(indexed.videoId);
-    // 设置里没纳入语义索引的项目不建（明确要也不建，与讲话一路一样）；没开画面时只跟着要过的视频走。
-    if (!this.#wantedProject(video.projectId)) return null;
+    // 排除在语义索引范围外的不建（明确要也不建，与讲话一路一样）；没开画面时只跟着要过的视频走。
+    if (!semanticWanted(this.#options.settings(), { videoId: indexed.videoId, projectId: video.projectId })) return null;
     if (!options.explicit && !source && !options.all) return null;
     const item: Planned = { dir: video.dir, videoId: indexed.videoId, rebuild: options.rebuild };
     if (options.rebuild) return item;
@@ -194,12 +200,6 @@ export class VisualLane {
     const profileId = this.#profileId;
     const current = generation !== null && generation.revision === indexed.revision && (profileId === null || generation.encoderProfileId === profileId);
     return current ? null : item;
-  }
-
-  #wantedProject(projectId: Id | null): boolean {
-    const settings = this.#options.settings();
-    if (settings.indexedProjects === 'all') return true;
-    return projectId !== null && settings.indexedProjects.includes(projectId);
   }
 
   kick(): void {
@@ -237,6 +237,7 @@ export class VisualLane {
       const item = this.#queue.values().next().value!;
       this.#queue.delete(item.dir);
       this.#abort = new AbortController();
+      this.#current = { videoId: item.videoId, done: 0, total: 0 };
       try {
         await this.#indexOne(store, scheduler, profile, item, this.#abort.signal);
         this.#blocked = null;
@@ -257,6 +258,8 @@ export class VisualLane {
         }
         this.#options.log.warn('visual index failed', { dir: item.dir, error: error instanceof Error ? error.message : String(error) });
         this.#options.changed();
+      } finally {
+        this.#current = null;
       }
     }
   }
@@ -298,6 +301,10 @@ export class VisualLane {
     const have = item.rebuild ? new Set<string>() : new Set(store.embeddings(keys, profile.encoderProfileId, profile.dims).keys());
     const missing = [...new Map(planned.filter((f) => !have.has(f.embeddingKey)).map((f) => [f.embeddingKey, f])).values()];
     const skipped = new Set<string>();
+    const progress = (done: number) => {
+      if (this.#current?.videoId === item.videoId) this.#current = { videoId: item.videoId, done, total: keys.length };
+    };
+    progress(keys.length - missing.length);
     for (let i = 0; i < missing.length; i += frames.maxBatch) {
       signal.throwIfAborted();
       const started = performance.now();
@@ -331,6 +338,7 @@ export class VisualLane {
       if (result.vectors.length !== batch.length) throw new EmbeddingError('MODEL_UNAVAILABLE', 'embedding count mismatch');
       store.putEmbeddings(batch.map((b, n) => ({ key: b.key, encoderProfileId: profile.encoderProfileId, vector: validVector(result.vectors[n]!, profile.dims) })));
       this.#options.rate?.(profile, (performance.now() - started) / 1000 / batch.length);
+      progress(keys.length - missing.length + Math.min(missing.length, i + frames.maxBatch));
     }
     signal.throwIfAborted();
     const published = store.publishVisual({

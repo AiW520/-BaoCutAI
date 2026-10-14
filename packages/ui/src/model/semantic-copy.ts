@@ -78,13 +78,17 @@ const en = {
   settings: {
     lead: 'Finds what was said by meaning. Space search, picking material by topic, glossary candidates, translation memory and retake candidates use it. The model and the index stay on this computer and are never uploaded.',
     modelGroup: 'Model',
-    textName: 'Text search',
-    textDesc: 'Searches what was said: transcripts, subtitles, translations and chapters.',
-    multimodalName: 'Multimodal search',
-    multimodalDesc: 'Includes text search, so you don’t need both. It can also index visuals once you turn them on; sounds come in a later version.',
+    packageName: 'Semantic search',
+    packageDesc:
+      'Finds what was said and what’s on screen by meaning: Space search, picking material by topic, matching visuals, glossary candidates, translation memory and retake candidates. Sounds come in a later version.',
+    partText: 'Text model',
+    partMultimodal: 'Multimodal model',
+    installing: 'Installing',
+    packageNote: (cost: string | null) =>
+      cost
+        ? `Installs the text model and the multimodal model together. Then videos in the index scope are indexed by what was said, then by what’s on screen: ${cost}. Indexing pauses on battery, and you can turn visuals off below.`
+        : 'Installs the text model and the multimodal model together. Then videos in the index scope are indexed by what was said, then by what’s on screen. Indexing pauses on battery, and you can turn visuals off below.',
     installed: 'Installed',
-    inUse: 'In use',
-    coveredBy: 'Included in multimodal search',
     notInstalled: 'Not installed',
     unsupported: 'Can’t run on this computer',
     install: (size: string | null) => (size ? `Install · ${size}` : 'Install'),
@@ -92,8 +96,6 @@ const en = {
     remove: 'Remove',
     removeBody:
       'Removes the model files. Space search falls back to exact text and picking material by topic is unavailable. The semantic index stays until you clear it; after you reinstall, it’s reused or rebuilt from your transcripts.',
-    installNote:
-      'Installing doesn’t scan your files. Once it’s installed, only existing transcripts get a lightweight text index. Visuals are indexed only after you turn them on, and you see the cost first.',
     unsupportedTitle: 'This computer can’t run the local semantic model',
     unsupportedBody: 'Exact text search, the whole-text and chapter scopes for writing, and exact glossary matching work as usual.',
     indexGroup: 'Index',
@@ -119,14 +121,18 @@ const en = {
     visualIndex: {
       label: 'Visuals',
       desc: 'Finds shots by what’s on screen and matches visuals to sentences.',
-      needsMultimodal: 'Finds shots by what’s on screen. Needs multimodal search.',
+      needsPackage: 'Finds shots by what’s on screen. Needs the multimodal model: complete Semantic search above.',
+      scopeOnDesc: 'Videos in the index scope are indexed by what’s on screen. Turning it off stops indexing new visuals.',
+      scopeConfirmBody: (cost: string) =>
+        `Indexes the videos in the index scope by what’s on screen: ${cost}. It runs in the background on the CPU, and you can pause it anytime.`,
+      scopeConfirmBodyNoCost: 'Indexes the videos in the index scope by what’s on screen. It runs in the background on the CPU, and you can pause it anytime.',
+      progress: (done: number, total: number, pct: number) => `${done}/${total} frames · ${pct}%`,
+      progressLabel: (pct: number) => `Visual index progress: ${pct}%`,
+      progressPaused: (line: string) => `${line} · paused`,
+      progressEta: (line: string, eta: string) => `${line} · ${eta}`,
       unavailable: 'Finds shots by what’s on screen. Not available right now.',
       offCost: (cost: string) => `Finds shots by what’s on screen and matches visuals to sentences. Turning it on indexes ${cost}.`,
-      onDesc: 'Videos in the indexed projects are indexed by what’s on screen. Turning it off stops indexing new visuals.',
       confirmTitle: 'Turn on the visual index?',
-      confirmBody: (cost: string) =>
-        `Indexes the videos in your indexed projects by what’s on screen: ${cost}. It runs in the background on the CPU, and you can pause it anytime.`,
-      confirmBodyNoCost: 'Indexes the videos in your indexed projects by what’s on screen. It runs in the background on the CPU, and you can pause it anytime.',
       turnOn: 'Turn on',
       turnedOn: 'Visual index turned on. Building in the background.',
       turnedOff: 'Visual index turned off. No new visuals are indexed.',
@@ -153,14 +159,6 @@ const en = {
     runsOn: 'Runs on',
     runsOnDesc: 'Chosen after the model’s self-check.',
     notLoaded: 'Not loaded yet',
-    projectsGroup: 'Indexed projects',
-    projectsLead:
-      'Text: videos with a transcript are indexed automatically. Visuals: once turned on under Index, videos in these projects are indexed. Sounds: not available in this version.',
-    noProject: 'Videos outside projects',
-    projectVisualOff: (scope: string | null) => (scope ? `Visuals: off · ${scope}` : 'Visuals: off'),
-    projectScope: (videos: number, length: string) => `${videos} videos, ${length}`,
-    projectVisualNeedsMultimodal: 'Visuals: needs multimodal search',
-    projectAudioLater: 'Sounds: comes in a later version',
     featuresGroup: 'Features that use it',
     tm: 'Translation memory',
     tmDesc:
@@ -171,6 +169,83 @@ const en = {
     termsDescLexical: 'Without the model, only the misheard spellings saved in your glossary are matched.',
     loading: 'Reading the index status…',
     loadFailed: (text: string) => `Couldn’t read the index status: ${text}`,
+  },
+  /** Space 条目上的索引标志、查看框里那一行与条目菜单的三项（model/space-index.ts）。 */
+  spaceIndex: {
+    state: {
+      failed: 'Index failed',
+      stale: 'Index outdated',
+      indexing: 'Indexing',
+      queued: 'Queued',
+      indexed: 'Indexed',
+      empty: 'Nothing to index',
+      notNeeded: 'No index needed',
+      excluded: 'Not indexed',
+    },
+    channel: { text: 'Speech', visual: 'Visuals' },
+    channelState: {
+      indexed: 'indexed',
+      stale: 'outdated',
+      queued: 'queued',
+      indexing: 'indexing',
+      failed: 'failed',
+      missingInput: 'no transcript',
+      excluded: 'not indexed',
+      off: 'visual index is off',
+    },
+    line: (channel: string, state: string) => `${channel}: ${state}`,
+    lineSeparator: '; ',
+    withPct: (label: string, pct: number) => `${label} ${pct}%`,
+    title: (label: string, tail: string | null) => (tail ? `Semantic index: ${label} · ${tail}` : `Semantic index: ${label}`),
+    whyExport: (name: string | null) =>
+      name ? `Exported from “${name}”, which is already indexed. Searching finds it there.` : 'Exported from a video that is already indexed. Searching finds it there.',
+    whyProject: (name: string | null) =>
+      name
+        ? `The project “${name}” is excluded, so only exact text matches. Restore it in Settings › Semantic index.`
+        : 'Its project is excluded, so only exact text matches. Restore it in Settings › Semantic index.',
+    whyVideo: 'Set not to index: its index was removed, so only exact text matches.',
+    whyNoTranscript: 'No transcript and no visuals to index.',
+    whyNoTranscriptVisualOff: 'No transcript, and the visual index is off.',
+    fact: 'Semantic index',
+    reindex: 'Re-index',
+    reindexDesc: 'Drop its index and rebuild it first',
+    retryDesc: 'Try again, first in line',
+    noIndex: 'Don’t index',
+    noIndexDesc: 'Remove its index and stop indexing it; only exact text matches',
+    include: 'Index again',
+    includeDesc: 'Back in the queue, indexed by speech and visuals',
+    reindexed: (name: string) => `“${name}” is first in line to be re-indexed.`,
+    reindexedPaused: (name: string) => `“${name}” is first in line. Indexing is paused and starts with it when resumed.`,
+    excludedToast: (name: string) => `“${name}” won’t be indexed. Its index will be removed.`,
+    includedToast: (name: string) => `“${name}” is back in the index queue.`,
+    undo: 'Undo',
+    actionFailed: (text: string) => `Couldn’t change indexing: ${text}`,
+  },
+  /** 设置页「索引范围」一组（检索规格 §11.3）。 */
+  scope: {
+    group: 'Index scope',
+    lead: 'Videos in every BaoCut project are indexed by what was said and what’s on screen; sounds come in a later version. You can exclude projects you don’t want indexed. Exported videos aren’t indexed separately: searching finds the video they were exported from.',
+    all: 'All BaoCut projects',
+    allLine: (projects: number, excluded: number) =>
+      `${projects === 1 ? '1 project' : `${projects} projects`}${excluded ? `, ${excluded} excluded` : ''} · new projects are added automatically`,
+    outside: 'Videos outside projects are indexed too.',
+    excludedGroup: 'Excluded projects',
+    exclude: 'Exclude projects…',
+    none: 'None. Excluding a project removes its index.',
+    onlyExact: 'Only exact text matches',
+    restore: 'Restore',
+    videosHead: 'Set not to index in Space:',
+    dialogTitle: 'Exclude projects',
+    dialogBody: 'Checked projects aren’t indexed: their index is removed, and Space and writing find them only by exact text. Unchecking one puts it back in the queue.',
+    dialogPick: 'Projects to exclude',
+    dialogAdded: (n: number) =>
+      n === 1 ? 'Excluding 1 more project. Its index is removed when you’re done.' : `Excluding ${n} more projects. Their index is removed when you’re done.`,
+    noProjects: 'No projects yet.',
+    done: 'Done',
+    cancel: 'Cancel',
+    toastExcluded: (n: number) => (n === 1 ? 'Excluded 1 project. Its index will be removed.' : `Excluded ${n} projects. Their index will be removed.`),
+    toastRestored: (n: number) => (n === 1 ? '1 project is back in the index queue.' : `${n} projects are back in the index queue.`),
+    toastSeparator: ' ',
   },
 };
 

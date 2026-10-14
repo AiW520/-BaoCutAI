@@ -116,6 +116,6 @@ export function lexicalOnlySearch(catalog: SpaceSearchSource): SearchService {
     scanner: new InThreadVectorScanner(() => null),
     scheduler: () => null,
     coordinator: null,
-    settings: () => ({ channels: ['text'], indexedProjects: 'all' }),
+    settings: () => ({ channels: ['text'], excludedProjects: [], excludedVideos: [] }),
   });
 }

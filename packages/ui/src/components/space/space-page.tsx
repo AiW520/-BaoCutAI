@@ -80,6 +80,10 @@ import {
 } from '../../model/space.ts';
 import type { EditorKind } from '../../model/workspace.ts';
 import { useRuntime } from '../../runtime/context.tsx';
+import { useEntryIndex } from '../../state/space-index-store.ts';
+import { useSettings } from '../../state/settings-store.ts';
+import { useSaveSettings } from '../settings/save-settings.ts';
+import { M as SEMANTIC } from '../../model/semantic-copy.ts';
 import type { RuntimeSession } from '../../runtime/session.ts';
 import { useConnection } from '../../state/connection-store.ts';
 import { useDirectory, useProject } from '../../state/directory-store.ts';
@@ -318,6 +322,10 @@ function SpaceMain({ category, projectId, from }: { category: SpaceCategory; pro
   const importable = useMemo(() => projects.filter((p) => !p.archived), [projects]);
   const label = SPACE_CATEGORIES.find((c) => c.key === category)?.label ?? COPY.all;
   const viewing = viewingId ? (entries.find((e) => e.id === viewingId) ?? null) : null;
+  // 语义索引的标志与动作（检索规格 §9.1）：Web 只看标志，改索引在桌面端（同设置 › 语义索引）。
+  const index = useEntryIndex(rows, entries, viewing);
+  const indexActions = runtime.host.platform !== 'web';
+  const saveSettings = useSaveSettings();
   const info = infoId ? (entries.find((e) => e.id === infoId) ?? null) : null;
   // 视频的查看框列出名下的文件，文件的查看框能回到所属的视频（§4.3）：从哪个分类、哪里打开都一样，所以按全部条目算。
   const viewingFiles = useMemo(() => (viewing?.kind === 'video' ? filesOf(entries, viewing.id) : []), [entries, viewing]);
@@ -513,6 +521,39 @@ function SpaceMain({ category, projectId, from }: { category: SpaceCategory; pro
   const openDesign = (entry: SpaceEntry) => openEditorTab('design', entry);
   const openDesignSystem = (entry: SpaceEntry) => openEditorTab('design-system', entry);
 
+  /** 重新索引：丢掉这部视频的索引，排到队首重建；画面开着就两路一起（检索规格 §9.1、§13.2）。 */
+  const reindex = (entry: SpaceEntry) => {
+    const videoId = videoIdOf(entry);
+    if (!videoId) return;
+    const status = index.status;
+    const visual = status?.channels.visual.enabled === true && status.channels.visual.available;
+    runtime.client
+      .request('space.indexBuild', { videoIds: [videoId], rebuild: true, channels: visual ? ['text', 'visual'] : ['text'] })
+      .then(() => {
+        ToastQueue.neutral(status?.paused ? SEMANTIC.spaceIndex.reindexedPaused(entry.name) : SEMANTIC.spaceIndex.reindexed(entry.name), {
+          timeout: 5000,
+        });
+        index.refresh();
+      })
+      .catch((error: Error) => ToastQueue.negative(SEMANTIC.spaceIndex.actionFailed(error.message), { timeout: 6000 }));
+  };
+  /** 单个视频设为不索引或恢复（`semantic.excludedVideos`）：不索引带撤销；在写时读最新的设置，免得盖掉别处的改动。 */
+  const setExcluded = async (entry: SpaceEntry, excluded: boolean): Promise<void> => {
+    const videoId = videoIdOf(entry);
+    if (!videoId) return;
+    const current = useSettings.getState().snapshot?.settings['semantic.excludedVideos'] ?? [];
+    const next = excluded ? [...new Set([...current, videoId])] : current.filter((id) => id !== videoId);
+    if (!(await saveSettings({ 'semantic.excludedVideos': next }))) return;
+    index.refresh();
+    if (!excluded) return void ToastQueue.positive(SEMANTIC.spaceIndex.includedToast(entry.name), { timeout: 4000 });
+    ToastQueue.neutral(SEMANTIC.spaceIndex.excludedToast(entry.name), {
+      timeout: 6000,
+      actionLabel: SEMANTIC.spaceIndex.undo,
+      onAction: () => void setExcluded(entry, false),
+      shouldCloseOnAction: true,
+    });
+  };
+
   const onAction = (action: EntryAction, entry: SpaceEntry) => {
     if (action === 'open') {
       if (entry.kind === 'slides') openSlides(entry);
@@ -534,6 +575,9 @@ function SpaceMain({ category, projectId, from }: { category: SpaceCategory; pro
     else if (action === 'purge') setDialog({ kind: 'purge', entry });
     else if (action === 'clear') purgeNow(entry);
     else if (action === 'shorts') showShorts(entry);
+    else if (action === 'reindex') reindex(entry);
+    else if (action === 'noindex') void setExcluded(entry, true);
+    else if (action === 'include') void setExcluded(entry, false);
   };
 
   const viewerActions: ViewerActions = {
@@ -568,6 +612,7 @@ function SpaceMain({ category, projectId, from }: { category: SpaceCategory; pro
     onConversation: (conversationId) => go({ tab: 'home', conversationId, projectId: null }),
     onSwitch: (entryId) => setViewingId(entryId),
     onShorts: showShorts,
+    ...(indexActions ? { onIndex: (action: 'reindex' | 'noindex' | 'include', entry: SpaceEntry) => onAction(action, entry) } : {}),
     onClose: () => setViewingId(null),
   };
 
@@ -753,6 +798,9 @@ function SpaceMain({ category, projectId, from }: { category: SpaceCategory; pro
             transcribeAction={transcribeAction}
             empty={empty}
             shorts={shorts}
+            indexOf={index.of}
+            indexKey={index.key}
+            indexActions={indexActions}
           />
         ) : (
           <SpaceGrid
@@ -764,6 +812,9 @@ function SpaceMain({ category, projectId, from }: { category: SpaceCategory; pro
             transcribeAction={transcribeAction}
             empty={empty}
             shorts={shorts}
+            indexOf={index.of}
+            indexKey={index.key}
+            indexActions={indexActions}
           />
         )}
       </div>
@@ -781,6 +832,7 @@ function SpaceMain({ category, projectId, from }: { category: SpaceCategory; pro
         shorts={viewingShorts}
         parent={viewingParent}
         related={viewingRelated}
+        index={viewing ? index.of(viewing) : null}
       />
       <SpaceDialogs
         dialog={dialog}

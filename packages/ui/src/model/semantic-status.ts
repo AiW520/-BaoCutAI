@@ -98,8 +98,8 @@ export function etaLine(estimate: SemanticEstimate | null | undefined): string |
 }
 
 /**
- * 一个范围的文字完整性（§2.11）：「文字已就绪」「文字 2/3 部视频（1 部在排队、1 部没有文稿）」。没有文稿与没纳入语义索引（设置里
- * 只建部分项目）分开写：前者要先转写，后者要去设置。
+ * 一个范围的文字完整性（§2.11）：「文字已就绪」「文字 2/3 部视频（1 部在排队、1 部没有文稿）」。没有文稿与排除在语义索引外
+ * （设置里排除的项目、Space 里设了不索引的视频）分开写：前者要先转写，后者要去恢复。
  */
 export function coverageLine(coverage: readonly SemanticCoverage[]): string {
   const text = coverage.find((c) => c.channel === 'text');

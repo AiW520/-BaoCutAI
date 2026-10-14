@@ -171,7 +171,10 @@ export interface SemanticCoverage {
   failed: number;
   /** 没有输入（例如没有文稿的视频）。 */
   missingInput: number;
-  /** 不在设置「语义索引 › 项目」里的视频：不建这路索引，只能字面检索。不计入 `eligible`，也不让结果不完整。 */
+  /**
+   * 排除在语义索引外的视频（设置 `semantic.excludedProjects` 的项目、`semantic.excludedVideos` 的单个视频；画面一路还含没开画面、
+   * 也没要过的视频）：不建这路索引，只能字面检索。不计入 `eligible`，也不让结果不完整。
+   */
   excluded: number;
   /** 已建索引里有落后于当前版本的。 */
   stale: number;
@@ -223,6 +226,33 @@ export interface SemanticIndexStatus {
   estimates: SemanticEstimate[];
   /** 正在建索引的任务。 */
   jobId: Id | null;
+  /**
+   * 画面开着时整个范围里的画面进度（帧，设置里画面那一行的进度条，检索规格 §13.2）：`done` 是已跟上的视频的帧数加上正在建的那部
+   * 编好的帧，`total` 再加上还要建的（按时长估，时长未知的不算）。画面没开、这个 Runtime 不建画面时没有；旧 Runtime 没有这一项。
+   */
+  visualProgress?: { done: number; total: number };
+  /**
+   * 按视频的状态（Space 条目上的索引标志，检索规格 §13.2）：只在请求给了 `videoIds` 时有，顺序同请求、看不到的视频不列。
+   * 旧 Runtime 没有这一项。
+   */
+  videos?: SemanticVideoIndex[];
+}
+
+/**
+ * 一个视频一路索引的状态。`queued` 排队（含内容索引还没读到当前版本）；`indexing` 正在建；`stale` 能用但落后于当前版本；
+ * `missingInput` 没有输入（讲话内容：没有文稿）；`excluded` 不建（排除在范围外；画面一路还有没开画面、也没要过的）。
+ */
+export type SemanticVideoChannelState = 'indexed' | 'stale' | 'queued' | 'indexing' | 'failed' | 'missingInput' | 'excluded';
+
+export interface SemanticVideoIndex {
+  videoId: Id;
+  text: SemanticVideoChannelState;
+  /** 画面一路；这个 Runtime 不建画面（没有取帧来源）时 null。 */
+  visual: SemanticVideoChannelState | null;
+  /** 画面正在建时的帧数（已有的与编好的 / 要编的）。 */
+  visualFrames?: { done: number; total: number };
+  /** 排除在范围外的原因：所在项目（设置 `semantic.excludedProjects`）、单个视频（`semantic.excludedVideos`）；没排除时 null。 */
+  excludedBy: 'project' | 'video' | null;
 }
 
 /** `user`：用户暂停（记在库里，重启后仍停着）；`battery`：在用电池（设置 `semantic.pauseOnBattery`）；`thermal`：系统因过热降频。 */

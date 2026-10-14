@@ -273,7 +273,7 @@ export async function openEvalSpace(
     catalog: { videos: () => videos, index, scanning: false },
     reader,
     provider,
-    settings: () => ({ channels: ['text', 'visual'], indexedProjects: 'all' }),
+    settings: () => ({ channels: ['text', 'visual'], excludedProjects: [], excludedVideos: [] }),
     log: silentLogger,
     frames: new EvalFrames(dataset.videos, imageRoot),
     debounceMs: 0,

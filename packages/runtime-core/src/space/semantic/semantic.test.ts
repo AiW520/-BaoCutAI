@@ -259,7 +259,8 @@ class FakeFrames implements KeyframeSource {
 function open(
   options: {
     provider?: EmbeddingProvider | null;
-    indexedProjects?: 'all' | Id[];
+    excludedProjects?: Id[];
+    excludedVideos?: Id[];
     channels?: string[];
     frames?: KeyframeSource;
     power?: () => Promise<PowerState>;
@@ -274,7 +275,8 @@ function open(
     provider: options.provider === undefined ? provider : options.provider,
     settings: () => ({
       channels: options.channels ?? ['text'],
-      indexedProjects: options.indexedProjects ?? 'all',
+      excludedProjects: options.excludedProjects ?? [],
+      excludedVideos: options.excludedVideos ?? [],
       ...(options.pauseOnBattery !== undefined ? { pauseOnBattery: options.pauseOnBattery } : {}),
     }),
     log: silentLogger,
@@ -594,10 +596,59 @@ describe('增量构建', () => {
     expect(result.hits.length).toBeGreaterThan(0);
   });
 
-  it('只建设置里的项目', async () => {
-    services = open({ indexedProjects: ['p1'] });
+  it('排除的项目与单个视频不建；不属于项目的视频照建', async () => {
+    services = open({ excludedProjects: ['p2'] });
+    await build(services);
+    expect([...services.store()!.activeGenerations(['v1', 'v2', 'v3']).keys()].sort()).toEqual(['v1', 'v3']);
+    await services.close();
+    services = open({ excludedProjects: ['p2'], excludedVideos: ['v3'] });
     await build(services);
     expect([...services.store()!.activeGenerations(['v1', 'v2', 'v3']).keys()]).toEqual(['v1']);
+  });
+
+  it('space.indexStatus 给了 videoIds 时按视频给状态：排队、已建、排除的原因', async () => {
+    services = open({ excludedProjects: ['p2'], excludedVideos: ['v3'] });
+    const before = await services.search.indexStatus(USER_VIEWER, { videoIds: ['v1', 'v2', 'v3', 'v-unknown'] });
+    expect(before.videos).toEqual([
+      { videoId: 'v1', text: 'queued', visual: null, excludedBy: null },
+      { videoId: 'v2', text: 'excluded', visual: null, excludedBy: 'project' },
+      { videoId: 'v3', text: 'excluded', visual: null, excludedBy: 'video' },
+    ]);
+    await build(services);
+    const after = await services.search.indexStatus(USER_VIEWER, { videoIds: ['v1'] });
+    expect(after.videos).toEqual([{ videoId: 'v1', text: 'indexed', visual: null, excludedBy: null }]);
+    expect((await services.search.indexStatus(USER_VIEWER, {})).videos).toBeUndefined();
+  });
+
+  it('建好之后再排除：撤下索引、只能按字面找到；恢复后重建', async () => {
+    const excludedVideos: Id[] = [];
+    const catalog = { videos: () => videos, index, scanning: false };
+    services = openSemanticServices({
+      cacheDir: path.join(tmp, 'cache'),
+      catalog,
+      reader,
+      provider,
+      settings: () => ({ channels: ['text'], excludedProjects: [], excludedVideos }),
+      log: silentLogger,
+      debounceMs: 0,
+    });
+    opened.push(services);
+    await build(services);
+    expect(services.store()!.activeGenerations(['v1']).has('v1')).toBe(true);
+
+    excludedVideos.push('v1');
+    const status = await services.search.indexStatus(USER_VIEWER, { videoIds: ['v1'] });
+    expect(status.coverage[0]).toMatchObject({ indexed: 0, excluded: 1 });
+    services.coordinator.schedule(0);
+    await services.coordinator.idle();
+    expect(services.store()!.activeGenerations(['v1']).has('v1')).toBe(false);
+    const semantic = await services.search.searchV2(USER_VIEWER, { query: { kind: 'text', text: 'battery' }, mode: 'hybrid', videoIds: ['v1'] });
+    expect(semantic.hits.every((h) => h.matchedBy.join() === 'lexical')).toBe(true);
+
+    excludedVideos.splice(0);
+    services.coordinator.schedule(0);
+    await services.coordinator.idle();
+    expect(services.store()!.activeGenerations(['v1']).has('v1')).toBe(true);
   });
 });
 
@@ -629,6 +680,10 @@ describe('画面索引', () => {
     // v3 没有画面素材：发布一个空的画面世代，不算失败。
     expect(store.visualSource('v3')?.state).toBe('empty');
     expect(store.visualPartition(generations.get('v3')!.id)!.frames).toEqual([]);
+    // 设置里画面那一行的进度：都建好了，已建的帧就是一共的帧（各世代的 chunk 数之和）。
+    const frameCount = [...generations.values()].reduce((n, g) => n + g.chunkCount, 0);
+    expect(frameCount).toBeGreaterThan(0);
+    expect((await services.search.indexStatus(USER_VIEWER)).visualProgress).toEqual({ done: frameCount, total: frameCount });
     await services.close();
 
     const again = open({ channels: ['text', 'visual'], frames });
@@ -900,11 +955,11 @@ describe('画面检索', () => {
     expect(await t.dispatch('space_index_build', { videoIds: ['v1'], channel: 'visual' }, agent)).toMatchObject({ planned: 0, reason: 'MODEL_NOT_INSTALLED' });
     provider.noVision = false;
 
-    // 用户没把这个项目纳入语义索引：明确要重建也不建画面（已经建好的照旧能用，与讲话一路一样）。
+    // 用户把这个项目排除在语义索引外：明确要重建也不建画面（与讲话一路一样）。
     expect(await t.dispatch('space_index_build', { videoIds: ['v1'], channel: 'visual', rebuild: true }, agent)).toMatchObject({ planned: 1 });
     await services.coordinator.idle();
     await services.close();
-    services = open({ frames: new FakeFrames(scenes), indexedProjects: ['p-other'] });
+    services = open({ frames: new FakeFrames(scenes), excludedProjects: ['p1'] });
     expect(await t.dispatch('space_index_build', { videoIds: ['v1'], channel: 'visual', rebuild: true }, agent)).toMatchObject({ planned: 0 });
   });
 });
@@ -1035,8 +1090,8 @@ describe('space.searchV2', () => {
     expect(lexical.hits.map((h) => h.target.kind === 'document-span' && h.target.documentKind).sort()).toEqual(['caption', 'speech']);
   });
 
-  it('范围里还有没建好的视频时标 INDEX_PARTIAL；没纳入设置的项目单独计数', async () => {
-    services = open({ indexedProjects: ['p1'] });
+  it('范围里还有没建好的视频时标 INDEX_PARTIAL；排除的项目与视频单独计数', async () => {
+    services = open({ excludedProjects: ['p2'], excludedVideos: ['v3'] });
     await build(services);
     const result = await services.search.searchV2(USER_VIEWER, { query: { kind: 'text', text: 'battery' }, mode: 'semantic' });
     expect(result.coverage[0]).toMatchObject({ indexed: 1, missingInput: 0, excluded: 2 });
@@ -1131,6 +1186,8 @@ describe('供电与估时', () => {
     const visual = status.estimates.find((e) => e.channel === 'visual')!;
     expect(visual).toMatchObject({ ifEnabled: true, videos: 3, unknownDuration: 1, sourceSeconds: 160, frames: 20, basis: 'default', vectorBytes: 20 * 64 * 4 });
     expect(visual.seconds).toBe(Math.round(20 * DEFAULT_VISUAL_SECONDS_PER_FRAME));
+    // 画面没开：没有进度。
+    expect(status.visualProgress).toBeUndefined();
 
     // 建完之后文字没有待建的；速度记下来了（换成新版本时按量过的速度估）。
     services.coordinator.resume();
@@ -1388,9 +1445,9 @@ describe('语义检索的智能体工具', () => {
   it('space_index_status 按视频给状态，能等到建好；没有转写的、没纳入的分开写', async () => {
     const v4 = await addVideo({ videoId: 'v4', name: 'Silent', revision: 'r1', sentences: [] }, 'p1', 'c-x');
     await syncIndex();
-    services = open({ indexedProjects: ['p1'] });
+    services = open({ excludedProjects: ['p2'], excludedVideos: ['v3'] });
     const { tools: wide } = tools(undefined, { id: 'c-x', projectId: null, spaceReadScope: 'all' });
-    // 还没开始建：都在排队（v2、v3 不在纳入的项目里）。
+    // 还没开始建：都在排队（v2 的项目排除了，v3 单独排除了）。
     const before = (await wide.dispatch('space_index_status', {}, agent)) as { available: boolean; videos: { videoId: string; state: string }[] };
     expect(before.available).toBe(true);
     expect(Object.fromEntries(before.videos.map((v) => [v.videoId, v.state]))).toEqual({ v1: 'pending', v2: 'excluded', v3: 'excluded', v4: 'pending' });

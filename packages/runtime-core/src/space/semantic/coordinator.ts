@@ -35,8 +35,10 @@ import { VisualLane, type KeyframeSource } from './visual-lane.ts';
 
 export interface SemanticSettings {
   channels: readonly string[];
-  /** 建索引的项目：全部，或这些项目 ID（不属于项目的视频只在「全部」时建）。 */
-  indexedProjects: 'all' | readonly Id[];
+  /** 不建索引的项目（设置 `semantic.excludedProjects`）：其余项目与不属于项目的视频都建。 */
+  excludedProjects: readonly Id[];
+  /** 不建索引的单个视频（设置 `semantic.excludedVideos`，Space 条目「不索引」）。 */
+  excludedVideos: readonly Id[];
   /** 用电池时暂停（设置 `semantic.pauseOnBattery`，默认是）。 */
   pauseOnBattery?: boolean;
 }
@@ -63,6 +65,15 @@ export interface SemanticCoordinatorOptions {
   power?: () => Promise<PowerState>;
   /** 有活要干时多久查一次供电。 */
   powerPollMs?: number;
+}
+
+/**
+ * 这个视频在不在语义索引的范围里（检索规格 §9.1）：全部 BaoCut 项目与不属于项目的视频，减去排除的项目与单个视频。
+ * 排除的视频不建、已建的撤下，只能按字面找到。
+ */
+export function semanticWanted(settings: Pick<SemanticSettings, 'excludedProjects' | 'excludedVideos'>, video: { videoId: Id | null; projectId: Id | null }): boolean {
+  if (video.projectId !== null && settings.excludedProjects.includes(video.projectId)) return false;
+  return video.videoId === null || !settings.excludedVideos.includes(video.videoId);
 }
 
 const PAUSED_KEY = 'paused';
@@ -126,7 +137,7 @@ export class SemanticCoordinator {
   }
 
   /** 画面那一路（没有取帧来源时 null）。 */
-  get visual(): Pick<VisualLane, 'running' | 'queued' | 'blockedReason'> | null {
+  get visual(): Pick<VisualLane, 'running' | 'queued' | 'blockedReason' | 'current'> | null {
     return this.#visual;
   }
 
@@ -240,6 +251,13 @@ export class SemanticCoordinator {
   get running(): boolean {
     return this.#worker !== null;
   }
+
+  /** 讲话内容一路正在建的视频；没在建时 null。 */
+  get current(): Id | null {
+    return this.#current;
+  }
+
+  #current: Id | null = null;
 
   /** 排队待建的视频数。 */
   get queued(): number {
@@ -369,10 +387,10 @@ export class SemanticCoordinator {
     const store = this.#options.store();
     const index = this.#options.catalog.index;
     if (!store || !index) return null;
-    if (!this.#wantedProject(video.projectId)) return null;
     const indexed = index.at(video.dir);
     // 内容索引还没读到当前版本：等它读完（`listen` 会再叫）。
     if (!indexed || index.pendingCount([video.dir]) > 0) return null;
+    if (!semanticWanted(this.#options.settings(), { videoId: indexed.videoId, projectId: video.projectId })) return null;
     const item: Planned = { dir: video.dir, videoId: indexed.videoId, projectId: video.projectId, rebuild: options.rebuild };
     if (options.rebuild) return item;
     const source = store.source(indexed.videoId);
@@ -406,19 +424,14 @@ export class SemanticCoordinator {
       });
   }
 
-  #wantedProject(projectId: Id | null): boolean {
-    const settings = this.#options.settings();
-    if (settings.indexedProjects === 'all') return true;
-    return projectId !== null && settings.indexedProjects.includes(projectId);
-  }
-
-  /** 扫描完成、内容索引也都读完之后，库里有、Space 里已经没有的视频撤下。 */
+  /** 扫描完成、内容索引也都读完之后，库里有、Space 里已经没有的视频撤下；排除在范围外的（设置）也撤下。 */
   #removeGone(store: SemanticStore, index: NonNullable<SemanticCatalogSource['index']>, videos: readonly SpaceVideo[]): void {
     if (this.#options.catalog.scanning || index.pendingCount() > 0) return;
+    const settings = this.#options.settings();
     const known = new Set<Id>();
     for (const video of videos) {
       const indexed = index.at(video.dir);
-      if (indexed) known.add(indexed.videoId);
+      if (indexed && semanticWanted(settings, { videoId: indexed.videoId, projectId: video.projectId })) known.add(indexed.videoId);
     }
     const gone = [...store.sources(), ...store.visualSources()].filter((source) => !known.has(source.videoId));
     if (gone.length === 0) return;
@@ -473,6 +486,7 @@ export class SemanticCoordinator {
       const item = this.#queue.values().next().value!;
       this.#queue.delete(item.dir);
       this.#abort = new AbortController();
+      this.#current = item.videoId;
       try {
         await this.#indexOne(store, scheduler, profile, item, this.#abort.signal);
         this.#blocked = null;
@@ -495,6 +509,8 @@ export class SemanticCoordinator {
         }
         this.#options.log.warn('semantic index failed', { dir: item.dir, error: error instanceof Error ? error.message : String(error) });
         this.#changed();
+      } finally {
+        this.#current = null;
       }
     }
   }

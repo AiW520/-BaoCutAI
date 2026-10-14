@@ -29,7 +29,7 @@ import type { ToolPrincipal, ToolScope } from './tool-scope.ts';
  * - `speech_relevant`：按意图取材（SemanticContext 的 `findRelevantChunks`），讲话的每一句带写作出处编号（`CitationRegistry`，与
  *   `speech_sentences` 同一份），写作时回引、`downloads_save` 校验。
  * - `space_index_status` / `space_index_build`：按视频看语义索引建好没有、等它建好（用户刚给的素材先建好再取材），失败的重试。
- *   建索引本来就在后台自动进行（最近动过的视频排在前面），这两个只是看与催；没装模型、设置里没纳入的项目时什么也不做。
+ *   建索引本来就在后台自动进行（最近动过的视频排在前面），这两个只是看与催；没装模型、视频被用户排除在语义索引外时什么也不做。
  * - `space_related_videos`：讲相近内容的视频，与 Space 查看框的 `space.relatedVideos` 同一个实现。
  * - `videos_match_frames`：一部视频里与一段文字最像的画面（SemanticContext 的 `matchFrames`），配图、补画面用；要画面索引（多模态
  *   模型包）。`space_search_v2` 的 `channels: ['visual']` 是跨视频找画面，`space_index_build` 的 `channels` 催建画面索引。
@@ -144,7 +144,7 @@ const DEFINITIONS: Record<ToolName, ToolInfo> = {
       '每条命中带 hitId、videoId、视频名、文档、证据类别（transcript 原话、caption、translation、summary 章节摘要只作导航）、片段原文与时间（clock 为 sequence 时是时间线上的秒，source 是素材的源时间）。',
       '结果总会给出最近的一批，不代表都相关：weak 的命中只是按意思勉强沾边（只有向量一路命中、分数低于弱命中线），当作答案之前先读原文；全是 weak 时多半没有答案。同一段话的文稿、字幕与译文只留一条。',
       'effectiveMode 写明实际走了哪条路：没有本机语义索引时 hybrid 退回字面（degraded.reason 给原因），semantic 直接报错。',
-      'coverage 说明索引覆盖了多少视频：missingInput 是没有文稿的视频（先转写才能按讲话找），excluded 是设置里没纳入语义索引的项目的视频（只能按字面找到）；knownScopeComplete 为 false 时（degraded.reason 为 INDEX_PARTIAL）结果可能不全。',
+      'coverage 说明索引覆盖了多少视频：missingInput 是没有文稿的视频（先转写才能按讲话找），excluded 是用户排除在语义索引外的项目或单个视频（只能按字面找到）；knownScopeComplete 为 false 时（degraded.reason 为 INDEX_PARTIAL）结果可能不全。',
       'needsResolve 为 true 时视频在索引之后改过：引用或打开前用 space_resolve_search_hit 按当前版本重新定位。',
       '命中在当前时间线上时带 href（例如 /videos/vid_1?t=725.4）：回答里引用这一刻时写成 Markdown 链接 [视频名 · 12:05](href)，照抄，不自己拼；没有 href 的只写文字。',
       'channels 含 visual 时也按画面找（按描述找镜头、找能配图或补画面的片段）：画面命中的 evidenceType 为 visual，带 assetId，没有 snippet，时间是一段候选窗口（不是精确时刻），要看画面用 videos_frames 在这段里取帧。只给 visual 时只找画面；画面索引没建好时这一路报 degraded（reason 写明，用 space_index_status 的 channel visual 看）。',
@@ -195,7 +195,7 @@ const DEFINITIONS: Record<ToolName, ToolInfo> = {
     description: [
       '看你能访问的视频（或给出的视频、项目）的本机语义索引建好没有。',
       'available 为 false 时没有可用的语义索引（reason 给原因，例如 MODEL_NOT_INSTALLED）：按意思检索与取材会退回字面，不要等。',
-      'videos 按视频给 state：indexed 已建好；stale 能用但落后于最近的修改；pending 排队或正在建；failed 建失败（space_index_build 重试）；missingInput 没有文稿（先 transcribe，转写完会自动建）；excluded 是设置里没纳入语义索引的项目（只能按字面找，要纳入请用户在设置 › 语义索引里开，你改不了）。范围超过 50 部时只给 coverage 计数。',
+      'videos 按视频给 state：indexed 已建好；stale 能用但落后于最近的修改；pending 排队或正在建；failed 建失败（space_index_build 重试）；missingInput 没有文稿（先 transcribe，转写完会自动建）；excluded 是用户排除在语义索引外的项目或单个视频（只能按字面找；要恢复请用户在设置 › 语义索引或 Space 条目上恢复，你改不了）。范围超过 50 部时只给 coverage 计数。',
       '给 waitSec 时等到范围里没有 pending 与 stale 或超时，settled 写明等到没有（没有可用的索引时为 false）。建索引在后台自动进行，用户刚给的素材要按意思取材时，先转写、再用它等一下。paused 为 true 时建索引停着，等也不会动：pauseReason 为 user 是用户暂停了；battery 是在用电池、thermal 是系统过热降频，接上电源或温度回落后会自动接着建。',
       'channel 为 visual 时看画面（关键帧）索引：没装能读图的模型包时 available 为 false；设置里没开画面索引的视频是 excluded，可以用 space_index_build 的 channel visual 只给这几部建。只读。',
     ].join('\n'),
@@ -212,7 +212,7 @@ const DEFINITIONS: Record<ToolName, ToolInfo> = {
     title: '催建语义索引',
     description: [
       '让给出的视频（缺省是你能访问的全部）先建本机语义索引：排到队首，失败过的重试；rebuild 时丢掉已有向量全部重算。',
-      '建索引平时在后台自动进行，一般不需要调用：只在 space_index_status 报 failed、或用户要求重建时用。没装模型、用户暂停了、项目没纳入语义索引时什么也不做（planned 为 0，reason 写明）。',
+      '建索引平时在后台自动进行，一般不需要调用：只在 space_index_status 报 failed、或用户要求重建时用。没装模型、用户暂停了、视频被排除在语义索引外时什么也不做（planned 为 0，reason 写明）。',
       'channel 为 visual 时建画面（关键帧）索引：要装能读图的多模态模型包（available 为 false、reason 写明时不要等）。设置里没开画面索引时，只给这里点名的视频建，建好之后这几部会一直跟着更新；用户给了素材、要按画面配图或补画面时，先给这些素材建，再用 videos_match_frames 或 space_search_v2 找。画面索引比讲话慢（每小时视频约几分钟），给 waitSec 也可能等不完，没建完时先用讲话检索。',
       '占用本机算力，结果只在 BaoCut 的缓存里，不改视频。给 waitSec 时等到这些视频建好或超时，返回与 space_index_status 相同的状况。',
     ].join('\n'),

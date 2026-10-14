@@ -11,6 +11,8 @@ import {
   type SemanticIndexStatus,
   type SemanticIndexStatusParams,
   type SemanticReason,
+  type SemanticVideoChannelState,
+  type SemanticVideoIndex,
   type SpaceSearchDocumentKind,
   type SpaceSearchHit,
   type SpaceSearchV2Hit,
@@ -20,7 +22,7 @@ import {
 import type { EmbeddingProfile } from '@baocut/models';
 import type { SearchableVideo } from './content-search.ts';
 import { searchScope, type SearchScope, type SpaceSearchSource, type SpaceViewer } from './space-queries.ts';
-import type { SemanticCoordinator, SemanticSettings } from './semantic/coordinator.ts';
+import { semanticWanted, type SemanticCoordinator, type SemanticSettings } from './semantic/coordinator.ts';
 import { reasonOf, semanticError } from './semantic/errors.ts';
 import { estimateOf } from './semantic/estimate.ts';
 import { encodeHitId } from './semantic/hit-id.ts';
@@ -164,14 +166,14 @@ export class SearchService {
       const compatible = generation !== null && (profile === null || generation.embeddingSpaceId === profile.embeddingSpaceId);
       const usable = compatible && generation.chunkCount > 0;
       const source = store?.source(video.videoId) ?? null;
-      const wanted = settings.indexedProjects === 'all' || (video.projectId !== null && settings.indexedProjects.includes(video.projectId));
+      const wanted = semanticWanted(settings, video);
       let state: ScopedVideoState;
-      if (compatible && generation.chunkCount === 0 && generation.revision === video.revision) state = 'missingInput';
+      if (!wanted) state = 'excluded';
+      else if (compatible && generation.chunkCount === 0 && generation.revision === video.revision) state = 'missingInput';
       else if (usable) state = generation.revision === video.revision ? 'indexed' : 'stale';
-      else if (!wanted) state = 'excluded';
       else if (source?.state === 'failed' && source.wantedRevision === video.revision) state = 'failed';
       else state = 'pending';
-      videos.push({ video, generation, usable, state });
+      videos.push({ video, generation, usable: usable && wanted, state });
       if (state === 'stale') {
         coverage.indexed++;
         coverage.stale++;
@@ -200,15 +202,16 @@ export class SearchService {
       const compatible = generation !== null && (profile === null || generation.embeddingSpaceId === profile.embeddingSpaceId);
       const usable = compatible && generation.chunkCount > 0;
       const source = store?.visualSource(video.videoId) ?? null;
-      const wantedProject = settings.indexedProjects === 'all' || (video.projectId !== null && settings.indexedProjects.includes(video.projectId));
-      const wanted = wantedProject && (source !== null || all);
+      const inScope = semanticWanted(settings, video);
+      const wanted = inScope && (source !== null || all);
       let state: ScopedVideoState;
-      if (compatible && generation.chunkCount === 0 && generation.revision === video.revision) state = 'missingInput';
+      if (!inScope) state = 'excluded';
+      else if (compatible && generation.chunkCount === 0 && generation.revision === video.revision) state = 'missingInput';
       else if (usable) state = generation.revision === video.revision ? 'indexed' : 'stale';
       else if (!wanted) state = 'excluded';
       else if (source?.state === 'failed' && source.wantedRevision === video.revision) state = 'failed';
       else state = 'pending';
-      videos.push({ video, generation, usable, state });
+      videos.push({ video, generation, usable: usable && inScope, state });
       if (state === 'stale') {
         coverage.indexed++;
         coverage.stale++;
@@ -623,6 +626,8 @@ export class SearchService {
     const visualProfiled = this.#options.coordinator?.visual ? await this.visualProfile() : null;
     const visualProfile = visualProfiled && 'profile' in visualProfiled ? visualProfiled.profile : null;
     const visualScope = this.#options.coordinator?.visual ? this.resolveVisualScope(resolved, visualProfile) : null;
+    const estimates = this.#estimates(resolved, visualScope, profile, visualProfile);
+    const visualProgress = this.#visualProgress(visualScope, estimates);
     return {
       model: profile
         ? {
@@ -644,13 +649,63 @@ export class SearchService {
       cacheBytes: viewer.kind === 'user' ? (store?.sizeBytes() ?? 0) : 0,
       paused: this.#options.coordinator?.paused ?? false,
       pauseReason: this.#options.coordinator?.pauseReason ?? null,
-      estimates: this.#estimates(resolved, visualScope, profile, visualProfile),
+      estimates,
       jobId: null,
+      ...(visualProgress ? { visualProgress } : {}),
+      ...(params.videoIds ? { videos: this.#videoStates(params.videoIds, resolved, visualScope) } : {}),
     };
   }
 
   /**
-   * 各路还要建多久（§13.2）：开着的通道估待建与落后的视频；画面没开时估打开之后要建的（纳入的项目里还没有可用画面世代的）。
+   * 画面的帧进度（§13.2）：已跟上的视频的帧（世代的 chunk 数）加上正在建的那部编好的，再加上还要建的（`estimates` 里画面一项的帧数，
+   * 正在建的那部也在里面，扣掉它编好的）。画面没开时没有。
+   */
+  #visualProgress(visualScope: ResolvedVisualScope | null, estimates: readonly SemanticEstimate[]): { done: number; total: number } | null {
+    if (!visualScope || !this.#options.settings().channels.includes('visual')) return null;
+    const current = this.#options.coordinator?.visual?.current ?? null;
+    let done = 0;
+    for (const v of visualScope.videos) if (v.state === 'indexed') done += v.generation?.chunkCount ?? 0;
+    const building = current && visualScope.videos.some((v) => v.video.videoId === current.videoId && v.state === 'pending') ? current.done : 0;
+    const left = estimates.find((e) => e.channel === 'visual' && !e.ifEnabled)?.frames ?? 0;
+    return { done: done + building, total: done + Math.max(left, building) };
+  }
+
+  /** 按视频的状态（Space 条目的标志）：排队与正在建分开，排除的写明是项目还是单个视频。 */
+  #videoStates(ids: readonly Id[], resolved: ResolvedScope, visualScope: ResolvedVisualScope | null): SemanticVideoIndex[] {
+    const settings = this.#options.settings();
+    const coordinator = this.#options.coordinator;
+    const paused = coordinator?.paused ?? false;
+    const textNow = paused ? null : (coordinator?.current ?? null);
+    const visualNow = paused ? null : (coordinator?.visual?.current ?? null);
+    const text = new Map(resolved.videos.map((v) => [v.video.videoId, v]));
+    const visual = new Map(visualScope?.videos.map((v) => [v.video.videoId, v]) ?? []);
+    const channelState = (state: ScopedVideoState, videoId: Id, now: Id | null): SemanticVideoChannelState =>
+      state === 'pending' ? (videoId === now ? 'indexing' : 'queued') : state;
+    const out: SemanticVideoIndex[] = [];
+    for (const id of ids) {
+      const scoped = text.get(id);
+      if (!scoped) continue;
+      const v = visual.get(id);
+      const excludedBy =
+        scoped.video.projectId !== null && settings.excludedProjects.includes(scoped.video.projectId)
+          ? 'project'
+          : settings.excludedVideos.includes(id)
+            ? 'video'
+            : null;
+      const visualState = v ? channelState(v.state, id, visualNow?.videoId ?? null) : null;
+      out.push({
+        videoId: id,
+        text: channelState(scoped.state, id, textNow),
+        visual: visualState,
+        ...(visualState === 'indexing' && visualNow && visualNow.total > 0 ? { visualFrames: { done: visualNow.done, total: visualNow.total } } : {}),
+        excludedBy,
+      });
+    }
+    return out;
+  }
+
+  /**
+   * 各路还要建多久（§13.2）：开着的通道估待建与落后的视频；画面没开时估打开之后要建的（索引范围里还没有可用画面世代的）。
    * 内容索引还没读到的视频时长未知。
    */
   #estimates(
@@ -671,10 +726,8 @@ export class SearchService {
     }
     if (visualScope) {
       const enabled = settings.channels.includes('visual');
-      const wantedProject = (projectId: Id | null) =>
-        settings.indexedProjects === 'all' || (projectId !== null && settings.indexedProjects.includes(projectId));
       const durations = visualScope.videos
-        .filter((v) => v.state === 'pending' || v.state === 'stale' || (!enabled && v.state === 'excluded' && wantedProject(v.video.projectId)))
+        .filter((v) => v.state === 'pending' || v.state === 'stale' || (!enabled && v.state === 'excluded' && semanticWanted(settings, v.video)))
         .map((v) => durationOf(v.video));
       out.push(estimateOf({ channel: 'visual', durations: [...durations, ...unread], profile: visualProfile, store, ifEnabled: !enabled }));
     }

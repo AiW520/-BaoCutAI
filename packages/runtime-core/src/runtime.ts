@@ -885,7 +885,8 @@ export async function startRuntime(options: StartRuntimeOptions = {}): Promise<R
       provider: options.semantic?.provider !== undefined ? options.semantic.provider : models.embedding,
       settings: () => ({
         channels: settings.store.get('semantic.channels'),
-        indexedProjects: settings.store.get('semantic.indexedProjects'),
+        excludedProjects: settings.store.get('semantic.excludedProjects'),
+        excludedVideos: settings.store.get('semantic.excludedVideos'),
         pauseOnBattery: settings.store.get('semantic.pauseOnBattery'),
       }),
       log,
@@ -902,12 +903,12 @@ export async function startRuntime(options: StartRuntimeOptions = {}): Promise<R
     semanticRef = semantic;
     stops.add('semantic-index', () => semantic.close(), 'Stopping the semantic index failed');
     semantic.coordinator.start();
-    // 模型包装好、删掉或自检之后，因为没模型停下的索引要重新规划；改了索引的通道或项目也一样。
+    // 模型包装好、删掉或自检之后，因为没模型停下的索引要重新规划；改了索引的通道或排除的项目、视频也一样。
     models.catalog.onChange((bundleId) => {
       if (models.catalog.definitions().some((d) => d.bundleId === bundleId && d.capability === 'embed')) semantic.coordinator.schedule();
     });
     settings.store.onChange((changed) => {
-      if ('semantic.channels' in changed || 'semantic.indexedProjects' in changed) semantic.coordinator.schedule();
+      if ('semantic.channels' in changed || 'semantic.excludedProjects' in changed || 'semantic.excludedVideos' in changed) semantic.coordinator.schedule();
       if ('semantic.pauseOnBattery' in changed) semantic.coordinator.powerSettingChanged();
     });
     // 上次被强杀留下的导出临时文件与打开便携包的暂存目录（§5.8）：首次扫描之后在后台清一次。
