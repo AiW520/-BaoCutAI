@@ -15,7 +15,6 @@ import {
   ToastQueue,
 } from '@react-spectrum/s2';
 import Add from '@react-spectrum/s2/icons/Add';
-import Chat from '@react-spectrum/s2/icons/Chat';
 import Close from '@react-spectrum/s2/icons/Close';
 import DeviceLaptop from '@react-spectrum/s2/icons/DeviceLaptop';
 import Folder from '@react-spectrum/s2/icons/Folder';
@@ -79,7 +78,7 @@ export function ProjectPicker({
       </span>
       <MenuTrigger>
         <ActionButton isQuiet size="S" styles={picker} aria-label={HOME_COPY.pickProjectLabel(project?.name ?? HOME_COPY.noProjectOption)}>
-          {project ? <Folder /> : <Chat />}
+          <Folder />
           <Text>{project?.name ?? HOME_COPY.noProjectOption}</Text>
         </ActionButton>
         <Menu
@@ -88,7 +87,7 @@ export function ProjectPicker({
           onAction={(key) => (key === 'new' ? setCreating(true) : onSelect(key === NONE ? null : String(key)))}>
           <MenuSection>
             <MenuItem id={NONE} textValue={HOME_COPY.noProjectOption}>
-              <Chat />
+              <Folder />
               <Text slot="label">{HOME_COPY.noProjectOption}</Text>
               {project ? null : current}
             </MenuItem>

@@ -115,9 +115,9 @@
     return <div className="home-create__project">
       <span className="home-project-dialog__device"><R.Icons.DeviceLaptop />这台电脑</span>
       <R.MenuTrigger>
-        <R.ActionButton size="S" isQuiet aria-label={'选择项目：' + (selected ? selected.name : '不用项目')}>{selected ? <R.Icons.Folder /> : <R.Icons.Chat />}<R.Text>{selected ? selected.name : '不用项目'}</R.Text></R.ActionButton>
+        <R.ActionButton size="S" isQuiet aria-label={'选择项目：' + (selected ? selected.name : '不用项目')}><R.Icons.Folder /><R.Text>{selected ? selected.name : '不用项目'}</R.Text></R.ActionButton>
         <R.Menu aria-label="选择项目" onAction={key => key === 'new' ? setCreating(true) : onDir(key === 'none' ? null : key)}>
-          <R.MenuSection><R.MenuItem id="none" textValue="不用项目"><R.Icons.Chat /><R.Text>不用项目</R.Text>{!selected && current}</R.MenuItem></R.MenuSection>
+          <R.MenuSection><R.MenuItem id="none" textValue="不用项目"><R.Icons.Folder /><R.Text>不用项目</R.Text>{!selected && current}</R.MenuItem></R.MenuSection>
           {dirs.length > 0 && <R.MenuSection aria-label="项目"><R.Header>项目</R.Header>{dirs.map(d => <R.MenuItem key={d.id} id={d.id} textValue={d.name}><R.Icons.Folder /><R.Text>{d.name}</R.Text>{d.id === dir && current}</R.MenuItem>)}</R.MenuSection>}
           <R.MenuSection><R.MenuItem id="new" textValue="新建项目…"><R.Icons.Add /><R.Text>新建项目…</R.Text></R.MenuItem></R.MenuSection>
         </R.Menu>
