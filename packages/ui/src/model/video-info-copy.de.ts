@@ -3,6 +3,7 @@ import type { VideoInfoMessages } from './video-info-copy.ts';
 
 export const de: VideoInfoMessages = {
   section: { media: "Quelle und Medien", source: "Quellinformationen", brief: "Videoüberblick" },
+  briefMore: 'Mehr anzeigen',
   speakers: (count: number) => `${count} ${pluralForm('de', count, { one: "Sprecher", other: "Sprecher" })}`,
   chapters: (count: number) => `${count} ${pluralForm('de', count, { one: "Kapitel", other: "Kapitel" })}`,
   paragraphs: (count: number) => `${count} ${pluralForm('de', count, { one: "Absatz", other: "Absätze" })}`,

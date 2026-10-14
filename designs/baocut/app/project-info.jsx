@@ -18,11 +18,11 @@
 
    「视频速览」（2026-10-14）：智能体转录之后写在视频上的观众向说明（视频格式规范 §3.1），只读，排在分区后面、
    可编辑项前面。App 入口按回复正文渲染（AgentMarkdown），时间码点了跳到那一秒并关掉详情框；Web 入口没有 Markdown
-   渲染，退成去掉记号的纯文本（`briefPlainText`）。只在编辑器那条路画：正式版里只有打开的视频手上有快照，视频卡 ⋯ 那条路读不到它。
+   渲染，退成去掉记号的纯文本（`briefPlainText`）。默认只露出五行上下、底下渐隐，点了铺开全文。只在编辑器那条路画：正式版里只有打开的视频手上有快照，视频卡 ⋯ 那条路读不到它。
 
    红线（这里也不画）：重新关联媒体…。那是项目卡 ⋯ 菜单里已有的入口，详情框不做第二个门。 */
 (function () {
-  const {useMemo} = React;
+  const {useMemo, useRef, useState, useLayoutEffect} = React;
   const T = window.BC_TIME;
   const PI = window.BC_PINFO;
 
@@ -44,6 +44,44 @@
         <div className="pinfo__st">{s.title}</div>
         {s.rows.map((r, i) => <Row key={s.title + i} r={r} onReveal={onReveal} />)}
       </div>
+    );
+  }
+
+  /* 视频速览默认只露出五行上下，底下渐隐；点正文或「展开全文」铺开全文（2026-10-14 用户要求），这次打开框里不再收回。
+     本来就不超过这个高度时不收。时间码照常能点（跳过去、关掉框），不算展开；拖选文字也不算。 */
+  function Brief({text, onTimeLink}) {
+    const ref = useRef(null);
+    const [open, setOpen] = useState(false);
+    const [over, setOver] = useState(false);
+    useLayoutEffect(() => {
+      const el = ref.current;
+      if (!el || open) return undefined;
+      const check = () => setOver(el.scrollHeight > el.clientHeight + 1);
+      check();
+      const ro = new ResizeObserver(check);
+      ro.observe(el);
+      return () => ro.disconnect();
+    }, [open, text]);
+    const folded = !open && over;
+    const expand = (e) => {
+      if (e.target.closest('.wrtime, a, button') || String(window.getSelection() || '')) return;
+      setOpen(true);
+    };
+    // 按钮铺开后就没了：焦点交给正文，不让对话框把它挪到下面的「标题」输入框
+    const expandFromButton = () => {
+      setOpen(true);
+      if (ref.current) ref.current.focus({preventScroll: true});
+    };
+    return (
+      <>
+        <div ref={ref} tabIndex={-1} className={cx('pinfo__brief', !open && 'pinfo__brief--clamp', folded && 'is-folded')}
+          onClick={folded ? expand : undefined}>
+          {window.AgentMarkdown
+            ? <window.AgentMarkdown text={text} streaming={false} onTimeLink={onTimeLink} />
+            : <div className="pinfo__v">{PI.briefPlainText(text)}</div>}
+        </div>
+        {folded ? <Btn variant="quiet" size="s" className="pinfo__more" onClick={expandFromButton}>展开全文</Btn> : null}
+      </>
     );
   }
 
@@ -94,11 +132,7 @@
           <div className="pinfo__sec">
             <div className="pinfo__st">{PI.SECTION_BRIEF}</div>
             {/* 时间码（`.wrtime`）点了跳到那一秒，同时关掉盖在编辑器上的框 */}
-            <div className="pinfo__brief">
-              {window.AgentMarkdown
-                ? <window.AgentMarkdown text={brief} streaming={false} onTimeLink={app.closeProjectInfo} />
-                : <div className="pinfo__v">{PI.briefPlainText(brief)}</div>}
-            </div>
+            <Brief text={brief} onTimeLink={app.closeProjectInfo} />
           </div>
         ) : null}
         <div className="pinfo__form">

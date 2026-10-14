@@ -3,6 +3,7 @@ import { pluralForm } from '@baocut/protocol';
 
 export const ptBR: VideoInfoMessages = {
   section: { media: 'Fonte e mídia', source: 'Informações da fonte', brief: 'Resumo do vídeo' },
+  briefMore: 'Mostrar mais',
   speakers: (count: number) => pluralForm('pt-BR', count, { one: `${count} falante`, other: `${count} falantes` }),
   chapters: (count: number) => pluralForm('pt-BR', count, { one: `${count} capítulo`, other: `${count} capítulos` }),
   paragraphs: (count: number) => pluralForm('pt-BR', count, { one: `${count} parágrafo`, other: `${count} parágrafos` }),

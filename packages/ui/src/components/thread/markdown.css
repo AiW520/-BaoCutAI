@@ -62,4 +62,11 @@
 /* 智能体写的正文（视频详情里的视频速览）：段落里的单个换行同会话里的回复一样保留成换行。 */
 .bc-md--breaks p { white-space: pre-line; }
 .bc-md--breaks li > p { white-space: normal; }
+/* 收着的长文（视频详情的速览）：五行上下（14px × 1.6），最后两行渐隐；遮罩只取不透明度 */
+.bc-md--clamp { max-height: 8em; overflow: hidden; }
+.bc-md--clamp.is-folded {
+  cursor: pointer;
+  -webkit-mask-image: linear-gradient(to bottom, #000 calc(100% - 3.2em), transparent);
+  mask-image: linear-gradient(to bottom, #000 calc(100% - 3.2em), transparent);
+}
 .bc-mono { font-family: ui-monospace, 'SF Mono', Menlo, monospace; font-size: 12px; }

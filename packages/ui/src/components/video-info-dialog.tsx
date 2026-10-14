@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useLayoutEffect, useRef, useState, type MouseEvent } from 'react';
 import Markdown, { type Components } from 'react-markdown';
 import { live, parseVideoTimeHref, type SpaceEntry } from '@baocut/protocol';
 import {
@@ -28,6 +28,7 @@ import {
   HERO_NAME_MAX,
   heroLine,
   sections,
+  VIDEO_BRIEF_MORE,
   VIDEO_INFO_SECTION,
   type InfoRow,
   type VideoInfoFacts,
@@ -42,8 +43,8 @@ import './thread/markdown.css';
  *
  * 只有名字能改（编辑器那条路，`renameVideo`）：失焦、回车或点「完成」时提交一次，不是每敲一个字一笔修改；空的或没改的
  * 还原。按 Esc 关掉时丢掉没提交的草稿。简介、备注没有地方存，置灰写明原因。
- * 有视频速览（编辑器那条路，视频格式规范 §3.1）时在分区后面多一个「视频速览」：按 Markdown 画，视频时间链接点了跳到那一刻并关掉
- * 对话框，别的链接只显示文字（同文件预览）；「复制全部」带上它。
+ * 有视频速览（编辑器那条路，视频格式规范 §3.1）时在分区后面多一个「视频速览」：按 Markdown 画，默认只露出五行上下、点了铺开；
+ * 视频时间链接点了跳到那一刻并关掉对话框，别的链接只显示文字（同文件预览）；「复制全部」带上全文。
  * 「位置」「源文件」行尾有「在文件夹中显示」（行的 `reveal`），交给主机的文件管理器；Web 的主机做不到，不画。原简介限高滚动。
  * 不放「重新关联媒体」：那是缺媒体时的事。
  */
@@ -75,7 +76,8 @@ const value = style({
 const rowAction = style({ flexShrink: 0, alignSelf: 'center', marginY: -4 });
 const form = style({ marginTop: 20, display: 'flex', flexDirection: 'column', gap: 12 });
 const full = style({ width: 'full' });
-const briefBody = style({ font: 'ui-sm', color: 'gray-900', minWidth: 0, paddingTop: 4 });
+const briefBody = style({ font: 'ui-sm', color: 'gray-900', minWidth: 0, paddingTop: 4, outlineStyle: 'none' });
+const briefMore = style({ alignSelf: 'start', marginTop: 4 });
 
 /** 速览正文里的链接：视频时间链接点了跳过去并关掉对话框；别的只显示文字。 */
 function briefComponents(close: () => void): Components {
@@ -92,6 +94,56 @@ function briefComponents(close: () => void): Components {
     },
     img: () => null,
   };
+}
+
+/**
+ * 速览正文：默认只露出五行上下、底下渐隐（markdown.css 的 `.bc-md--clamp`），点正文或「展开全文」铺开，这次打开框里不再收回；
+ * 本来就不超过这个高度时不收。点时间链接是跳过去，拖选文字也不算展开。
+ */
+function BriefBody({ brief, open, onOpen, close }: { brief: string; open: boolean; onOpen(): void; close(): void }) {
+  const ref = useRef<HTMLDivElement>(null);
+  const [over, setOver] = useState(false);
+  useLayoutEffect(() => {
+    const el = ref.current;
+    if (!el || open) return;
+    const check = () => setOver(el.scrollHeight > el.clientHeight + 1);
+    check();
+    const observer = new ResizeObserver(check);
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [open, brief]);
+  const folded = !open && over;
+  const pressBody = (event: MouseEvent<HTMLDivElement>) => {
+    const target = event.target as Element;
+    if (target.closest('a, button, [role="link"], [role="button"]') || window.getSelection()?.toString()) return;
+    onOpen();
+  };
+  return (
+    <>
+      <div
+        ref={ref}
+        tabIndex={-1}
+        className={`${briefBody} bc-md bc-md--breaks${open ? '' : ' bc-md--clamp'}${folded ? ' is-folded' : ''}`}
+        onClick={folded ? pressBody : undefined}>
+        <Markdown remarkPlugins={remarkPlugins} components={briefComponents(close)}>
+          {brief}
+        </Markdown>
+      </div>
+      {folded ? (
+        <ActionButton
+          isQuiet
+          size="S"
+          styles={briefMore}
+          onPress={() => {
+            onOpen();
+            // 按钮铺开后就没了：焦点交给正文，不让对话框把它挪到下面的名称输入框
+            ref.current?.focus({ preventScroll: true });
+          }}>
+          {VIDEO_BRIEF_MORE.text}
+        </ActionButton>
+      ) : null}
+    </>
+  );
 }
 
 export interface VideoInfoDialogProps {
@@ -111,6 +163,7 @@ export function VideoInfoDialog({ facts, extras = [], onRename, renameNote = nul
   // 状态放在对话框外层：S2 的 Dialog 会把 children 在几个 slot 里各渲染一遍。
   const [draft, setDraft] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [briefOpen, setBriefOpen] = useState(false);
   const pending = useRef<Promise<boolean> | null>(null);
   const list = sections(facts, extras);
   const heroText = heroLine(facts.source);
@@ -202,11 +255,7 @@ export function VideoInfoDialog({ facts, extras = [], onRename, renameNote = nul
                 {brief?.trim() ? (
                   <section className={section} aria-label={VIDEO_INFO_SECTION.brief}>
                     <h3 className={sectionTitle}>{VIDEO_INFO_SECTION.brief}</h3>
-                    <div className={`${briefBody} bc-md bc-md--breaks`}>
-                      <Markdown remarkPlugins={remarkPlugins} components={briefComponents(close)}>
-                        {brief}
-                      </Markdown>
-                    </div>
+                    <BriefBody brief={brief} open={briefOpen} onOpen={() => setBriefOpen(true)} close={close} />
                   </section>
                 ) : null}
                 <div className={form}>

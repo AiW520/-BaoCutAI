@@ -2,6 +2,7 @@ import type { VideoInfoMessages } from './video-info-copy.ts';
 
 export const ko: VideoInfoMessages = {
   section: { media: '출처와 미디어', source: '출처 정보', brief: '영상 개요' },
+  briefMore: '전체 보기',
   speakers: (count: number) => `화자 ${count}명`,
   chapters: (count: number) => `챕터 ${count}개`,
   paragraphs: (count: number) => `문단 ${count}개`,

@@ -3159,6 +3159,12 @@ html.is-col-resize, html.is-col-resize * { cursor: col-resize !important; }
 .pinfo__v--long { max-height: 160px; overflow-y: auto; overscroll-behavior: contain; }
 .pinfo__act { flex: none; align-self: center; margin: -4px 0; }
 .pinfo__brief { margin-top: 4px; user-select: text; }
+.pinfo__brief:focus { outline: none; }   /* 只是铺开后接住焦点，不是可操作的控件 */
+/* 速览收着时：五行上下（14px × 1.5），最后两行渐隐；遮罩只取不透明度，色值随便取一个 token */
+.pinfo__brief--clamp { max-height: 7.5em; overflow: hidden; }
+.pinfo__brief--clamp:has(> .pinfo__v) { max-height: 90px; }   /* Web 的纯文本退路是 12px × 1.5 */
+.pinfo__brief--clamp.is-folded { cursor: pointer; -webkit-mask-image: linear-gradient(to bottom, var(--gray-900) calc(100% - 3em), transparent); mask-image: linear-gradient(to bottom, var(--gray-900) calc(100% - 3em), transparent); }
+.pinfo__more { align-self: flex-start; margin-top: 4px; }
 .pinfo__form { margin-top: 18px; display: flex; flex-direction: column; gap: 12px; }
 .pinfo__fld { display: block; }
 .pinfo__fl { display: block; margin-bottom: 4px; font-size: 12px; line-height: 1.3; color: var(--gray-600); }

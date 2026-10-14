@@ -49,8 +49,10 @@ export interface InfoSection {
 /** hero 第二行（源文件名）在对话框里放得下的字符数。 */
 export const HERO_NAME_MAX = 56;
 
-/** 两个分区的标题：「来源与媒体」「来源信息」。 */
+/** 分区的标题：「来源与媒体」「来源信息」「视频速览」。 */
 export const VIDEO_INFO_SECTION: { media: string; source: string; brief: string } = live(() => M.section);
+/** 视频速览收着时铺开全文的按钮。 */
+export const VIDEO_BRIEF_MORE: { text: string } = live(() => ({ text: M.briefMore }));
 
 const row = (label: string, value: string, mono = false, extra: Pick<InfoRow, 'reveal' | 'long'> = {}): InfoRow => ({ label, value, mono, ...extra });
 
