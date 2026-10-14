@@ -117,3 +117,40 @@ test('local archives reject a mismatched bundle before making an archive', async
     }), /bundle ID, version or build differs/);
   } finally { rmSync(output, { recursive: true, force: true }); }
 });
+
+test('only the packaged model-worker can load separately signed runtime libraries', async () => {
+  const { macSigningOptions } = await import('./macos-distribution.mjs');
+  const app = '/fixture/BaoCut.app';
+  const entitlements = path.resolve(import.meta.dirname, '../build/entitlements.mac.plist');
+  const options = { app, entitlements };
+  const worker = macSigningOptions(`${app}/Contents/Resources/bin/model-worker`, options);
+  assert.equal(worker.hardenedRuntime, true);
+  assert.match(readFileSync(worker.entitlements, 'utf8'), /<key>com.apple.security.cs.disable-library-validation<\/key><true\/>/);
+  for (const file of [app, `${app}/Contents/MacOS/BaoCut`, `${app}/Contents/Resources/bin/engine-host`,
+    `${app}/Contents/Frameworks/BaoCut Helper.app`, '/another/model-worker']) {
+    const ordinary = macSigningOptions(file, options);
+    assert.equal(ordinary.entitlements, entitlements);
+    assert.equal(ordinary.hardenedRuntime, true);
+    assert.doesNotMatch(readFileSync(ordinary.entitlements, 'utf8'), /disable-library-validation/);
+  }
+  assert.deepEqual(macSigningOptions(`${app}/Contents/Resources/bin/model-worker`, { ...options, local: true }),
+    { entitlements: worker.entitlements, hardenedRuntime: false, timestamp: 'none' });
+});
+
+test('release verification rejects the observed model-worker signature even if startup works', async () => {
+  const { verifyModelWorkerSignature } = await import('./macos-distribution.mjs');
+  const current = readFileSync(path.resolve(import.meta.dirname, '../build/entitlements.model-worker.mac.plist'), 'utf8');
+  const old = readFileSync(path.resolve(import.meta.dirname, '../build/entitlements.mac.plist'), 'utf8');
+  for (const app of ['/fixture/BaoCut.app', '/fixture/verified-extraction/BaoCut.app']) {
+    const check = (plist, details = 'flags=0x10000(runtime)') => verifyModelWorkerSignature(app, (command, args) => {
+      assert.equal(command, 'codesign');
+      assert.equal(args.at(-1), `${app}/Contents/Resources/bin/model-worker`);
+      if (args.includes('--entitlements')) assert.ok(args.includes('--xml'), 'modern codesign defaults to an abstract representation');
+      return args.includes('--entitlements') ? plist : details;
+    });
+    assert.doesNotThrow(() => check(current));
+    assert.throws(() => check(old), /missing disable-library-validation/);
+    assert.throws(() => check(current.replace('<true/>', '<false/>').replace('<true/>', '<false/>')), /missing disable-library-validation/);
+    assert.throws(() => check(current, 'flags=0x0(none)'), /missing hardened runtime/);
+  }
+});

@@ -53,7 +53,33 @@ export function verifyMacIdentity(app, expected) {
   const sha1 = runMac('openssl', ['x509', '-inform', 'DER', '-in', `${prefix}0`, '-noout', '-fingerprint', '-sha1']).trim().split('=')[1].replaceAll(':', '');
   if (sha1 !== expected.signingSha1) throw new Error('App was signed with a different certificate');
   runMac('codesign', ['--verify', '--deep', '--strict', '--verbose=2', app]);
+  verifyModelWorkerSignature(app);
   return details;
+}
+
+// Only the native model process loads the separately downloaded LiteRT-LM dylib.
+// Giving this exception to Electron or other workers would widen it unnecessarily.
+export function macSigningOptions(file, { app, entitlements, local = false }) {
+  const modelWorker = path.resolve(app, 'Contents/Resources/bin/model-worker');
+  return {
+    entitlements: path.resolve(file) === modelWorker
+      ? path.join(path.dirname(entitlements), 'entitlements.model-worker.mac.plist') : entitlements,
+    hardenedRuntime: !local,
+    ...(local ? { timestamp: 'none' } : {}),
+  };
+}
+
+/** A startup handshake does not dlopen LiteRT-LM; verify the signed permission separately. */
+export function verifyModelWorkerSignature(app, run = runMac) {
+  const worker = path.join(app, 'Contents/Resources/bin/model-worker');
+  const details = run('codesign', ['-d', '--verbose=4', worker]);
+  if (!/flags=0x[\da-f]+\([^)]*runtime\)/i.test(details)) {
+    throw new Error('model-worker is missing hardened runtime');
+  }
+  const entitlements = run('codesign', ['-d', '--entitlements', '-', '--xml', worker]);
+  if (!/<key>com\.apple\.security\.cs\.disable-library-validation<\/key>\s*<true\s*\/>/.test(entitlements)) {
+    throw new Error('model-worker cannot load the separately signed LiteRT-LM runtime: missing disable-library-validation entitlement');
+  }
 }
 
 async function facts(file) {
@@ -87,7 +113,7 @@ export async function distributeMac({ app, output, stem, version, build, appId, 
           0xcafebabe, 0xbebafeca, 0xcafebabf, 0xbfbafeca].includes(magic.readUInt32BE());
       } finally { closeSync(fd); }
     }],
-    optionsForFile: () => ({ entitlements, hardenedRuntime: !local, ...(local ? { timestamp: 'none' } : {}) }),
+    optionsForFile: (file) => macSigningOptions(file, { app, entitlements, local }),
   });
   if (local) return archiveLocalMac({ app, output, stem, version, build, appId });
   const expected = { appId, version, build, signingSha1, output };

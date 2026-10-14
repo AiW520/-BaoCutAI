@@ -43,6 +43,8 @@ Mac 的 Export Worker 另开 `export-worker/external-fonts`：内置字体只保
 
 Electron-builder 先装成 `BaoCut.app`；签名脚本用完整证书指纹选择身份，从内向外签名，不用 `--deep` 签名。App 和 DMG 都需 Apple 公证为 `Accepted`，随后 staple；最终 ZIP 从已 staple 的 App 生成，重新解压复验签名、公证票据与 Gatekeeper，并用解压出的应用执行 Runtime 与 Worker 自检。产物为 `BaoCut-<版本>-build.<n>-aarch64-apple-darwin.zip`、`.dmg`、对应 `.sha256`、`app-release.json` 与公证记录。中间 `notary-submission.zip` 不分发。输出目录必须全新或为空。
 
+`model-worker` 单独使用 `build/entitlements.model-worker.mac.plist`，在保持 hardened runtime 的同时允许加载其他签名身份的动态库：LiteRT-LM 由模型安装器另行下载并核对 SHA-256，签名属于上游。此权限不授予 Electron 或其他 Worker。正式包与最终 ZIP 解压后都核对模型进程的实际签名权限；只通过启动握手不能证明运行库可加载。
+
 包内资源与 Windows 用同一布局；Mac 的 `<resources>` 是 `Contents/Resources`。`node apps/desktop/tools/check-packaged-app.mjs /路径/BaoCut.app` 对真实包检查。仍需从仓库外、用独立 `BAOCUT_HOME` 启动 `verified-extraction/BaoCut.app` 检查页面与功能，签名成功不替代预览、导出、模型与 Agent 验收。ffmpeg 与 Agent 可执行文件沿用受管外部工具发现，不假装包含在安装包内。
 
 共享字体的产物检查用 `node apps/desktop/tools/check-file-fonts.mjs --out=/路径/BaoCut.app/Contents/Resources/app.asar/out`：隐藏 Electron 窗口读取最终 ASAR 中的页面和字体 URL，核对清单中的字体全部加载并注入预览内核；不启动 Runtime，也不读取用户数据。
