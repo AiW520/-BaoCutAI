@@ -366,9 +366,9 @@
 
   /* ---------- Dialog ---------- */
 
-  function Dialog({open, title, children, footer, onClose, width}) {
+  function Dialog({open, title, children, footer, onClose, width, isDismissible = false}) {
     return <S.DialogContainer onDismiss={() => onClose?.()}>
-      {open && <S.Dialog size={width > 880 ? 'XL' : width > 720 ? 'L' : width && width < 420 ? 'S' : 'M'} aria-label={title || '详情'}>
+      {open && <S.Dialog size={width > 880 ? 'XL' : width > 720 ? 'L' : width && width < 420 ? 'S' : 'M'} isDismissible={isDismissible} aria-label={title || '详情'}>
         {title && <S.Heading slot="title">{title}</S.Heading>}
         <S.Content>{children}</S.Content>
         {footer && <S.ButtonGroup>{footer}</S.ButtonGroup>}

@@ -543,7 +543,7 @@ export function TemplateLibrary({
   return (
     <DialogContainer onDismiss={onClose}>
       {open ? (
-        <Dialog size="XL">
+        <Dialog size="XL" isDismissible>
           <Heading slot="title">{HOME_COPY.allTemplates}</Heading>
           <Content>
             <Library picked={picked} onUse={onUse} />

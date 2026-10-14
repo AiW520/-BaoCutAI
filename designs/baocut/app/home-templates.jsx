@@ -166,7 +166,7 @@
 
   /* 弹窗关掉再打开，从第一页的列表重新开始（Library 的状态跟着内容一起卸载）。 */
   function HomeTemplateLibrary({open, picked, downloaded, onUse, onClose}) {
-    return <Dialog open={open} title="全部模板" width={960} onClose={onClose}>
+    return <Dialog open={open} title="全部模板" width={960} isDismissible onClose={onClose}>
       <Library picked={picked} downloaded={downloaded} onUse={onUse} />
     </Dialog>;
   }
