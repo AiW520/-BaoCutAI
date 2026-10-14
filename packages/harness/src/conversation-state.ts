@@ -25,6 +25,26 @@ interface PendingAppend {
 }
 
 /**
+ * 在会话之外留下作用的条目（产品设计 §6.1）：新建或改过视频、幻灯片、设计稿、设计系统，改过文件，或请求过审批。
+ * 任务有过这样的条目才进后台任务表；只检索、问答（命令、MCP 读取、联网搜索）不算。
+ */
+export function isSideEffect(item: TimelineItem): boolean {
+  switch (item.kind) {
+    case 'approval':
+    case 'video-change':
+    case 'video-created':
+    case 'slides-created':
+    case 'design-created':
+    case 'design-system-created':
+      return true;
+    case 'tool-call':
+      return item.tool === 'file-change';
+    default:
+      return false;
+  }
+}
+
+/**
  * 一个会话的内存状态：持久记录 + 条目索引 + 事件流。
  * 每次修改都同步标脏，序号随记录一起落盘。
  *
@@ -41,6 +61,8 @@ export class ConversationState {
   readonly #onTaskChanged: (task: Extract<TimelineItem, { kind: 'task' }>) => void;
   readonly #appendWindowMs: number;
   readonly #appends = new Map<string, PendingAppend>();
+  /** 有过会话外作用的任务（`isSideEffect`）。 */
+  readonly #effectful = new Set<Id>();
 
   constructor(
     record: ConversationRecord,
@@ -56,7 +78,10 @@ export class ConversationState {
     this.#dirty = hooks.dirty;
     this.#onConversationChanged = hooks.conversationChanged;
     this.#onTaskChanged = hooks.taskChanged;
-    record.items.forEach((item, i) => this.#index.set(item.id, i));
+    record.items.forEach((item, i) => {
+      this.#index.set(item.id, i);
+      if (item.taskId && isSideEffect(item)) this.#effectful.add(item.taskId);
+    });
     this.log = new TopicLog(() => this.snapshot(), record.seq);
   }
 
@@ -90,7 +115,19 @@ export class ConversationState {
       this.record.items[i] = item;
     }
     this.#publishOrdered({ type: 'item.upsert', item });
-    if (item.kind === 'task') this.#onTaskChanged(item);
+    if (item.kind === 'task') {
+      this.#onTaskChanged(item);
+    } else if (item.taskId && !this.#effectful.has(item.taskId) && isSideEffect(item)) {
+      // 任务第一次在会话外留下作用：补发一次任务变化，任务表据此收进它。
+      this.#effectful.add(item.taskId);
+      const task = this.item(item.taskId);
+      if (task?.kind === 'task') this.#onTaskChanged(task);
+    }
+  }
+
+  /** 这个任务有没有在会话外留下过作用（`isSideEffect`）。 */
+  hasSideEffects(taskId: Id): boolean {
+    return this.#effectful.has(taskId);
   }
 
   tasks(): Extract<TimelineItem, { kind: 'task' }>[] {

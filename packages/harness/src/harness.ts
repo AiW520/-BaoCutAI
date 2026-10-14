@@ -323,7 +323,7 @@ export class Harness {
 
   /** 任务中心：所有会话的任务，新的在前；以及会话与对外服务的待处理审批，旧的在前。 */
   tasksSnapshot(): TasksSnapshot {
-    const tasks = [...this.#states.values()].flatMap((state) => state.tasks().map((task) => summarize(state.conversation, task)));
+    const tasks = [...this.#states.values()].flatMap((state) => state.tasks().map((task) => summarize(state, task)));
     tasks.sort((a, b) => (a.startedAt < b.startedAt ? 1 : a.startedAt > b.startedAt ? -1 : 0));
     return { tasks, approvals: this.approvals.pending() };
   }
@@ -2255,10 +2255,10 @@ export class Harness {
         this.#directory.publish({ type: 'conversation.upsert', conversation });
         // 任务中心显示会话标题与所属项目：改名、绑定项目后它的任务行一起更新。
         if (conversation.title !== previous.title || conversation.projectId !== previous.projectId) {
-          for (const task of state.tasks()) this.#tasks.publish({ type: 'task.upsert', task: summarize(conversation, task) });
+          for (const task of state.tasks()) this.#tasks.publish({ type: 'task.upsert', task: summarize(state, task) });
         }
       },
-      taskChanged: (task) => this.#tasks.publish({ type: 'task.upsert', task: summarize(state.conversation, task) }),
+      taskChanged: (task) => this.#tasks.publish({ type: 'task.upsert', task: summarize(state, task) }),
     });
     this.#states.set(state.id, state);
     return state;
@@ -2626,7 +2626,8 @@ export function driverApprovalRisk(request: ApprovalRequest, cwd: string, escala
   return outside ? 'high' : 'edit';
 }
 
-function summarize(conversation: Conversation, task: Extract<TimelineItem, { kind: 'task' }>): TaskSummary {
+function summarize(state: ConversationState, task: Extract<TimelineItem, { kind: 'task' }>): TaskSummary {
+  const conversation = state.conversation;
   return {
     taskId: task.id,
     conversationId: conversation.id,
@@ -2639,6 +2640,7 @@ function summarize(conversation: Conversation, task: Extract<TimelineItem, { kin
     error: task.error,
     ...(task.errorRef ? { errorRef: task.errorRef } : {}),
     ...(task.contract ? { contractRevision: task.contract.revision } : {}),
+    sideEffects: state.hasSideEffects(task.id),
   };
 }
 

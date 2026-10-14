@@ -835,6 +835,11 @@ export interface TaskSummary {
   errorRef?: MessageRef;
   /** 任务合同的当前修订号；没有合同的旧任务没有。 */
   contractRevision?: number;
+  /**
+   * 这个任务在会话之外留下过作用：新建或改过视频、幻灯片、设计稿、设计系统，改过文件，或请求过审批（产品设计 §6.1）。
+   * 只检索、问答的任务为 false，不进后台任务表；它提交的 Job 由界面按 `submitter.taskId` 另外认。没有这个字段的按 true 对待。
+   */
+  sideEffects?: boolean;
 }
 
 /**

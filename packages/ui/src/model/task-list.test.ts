@@ -277,6 +277,20 @@ describe('taskRows / taskGroups', () => {
     expect([active.label, history.label]).toEqual(['进行中', '历史']);
   });
 
+  it('只检索、问答的 Agent 任务不进表；会话外有作用、提交过 Job 或没有标记的照常列出', () => {
+    const rows = taskRows(
+      [
+        task({ taskId: 'search', status: 'running', sideEffects: false }),
+        task({ taskId: 'edit', status: 'completed', sideEffects: true }),
+        task({ taskId: 'export', status: 'running', sideEffects: false }),
+        task({ taskId: 'legacy', status: 'completed' }),
+      ],
+      [job({ jobId: 'j1', submitter: { kind: 'agent', id: 'c1', taskId: 'export' } })],
+      ctx,
+    );
+    expect(rows.map((r) => r.id).sort()).toEqual(['edit', 'export', 'j1', 'legacy']);
+  });
+
   it('固定流程的步骤折叠在父任务下，不单独成行；流程提交的、还在跑的转录与它合成一行', () => {
     const jobs = [
       job({ jobId: 'parent', kind: 'pipeline' }),

@@ -189,3 +189,40 @@ describe('ConversationState 流式增量合并', () => {
     expect(vi.getTimerCount()).toBe(0);
   });
 });
+
+describe('ConversationState 任务的会话外作用', () => {
+  const taskItem = (id: string) => ({ id, taskId: id, kind: 'task', goal: id, status: 'running' }) as unknown as TimelineItem;
+  const item = (id: string, taskId: string, patch: Record<string, unknown>) => ({ id, taskId, ...patch }) as unknown as TimelineItem;
+
+  it('只读的步骤不算；第一次有作用时补发一次任务变化，之后不再重复', () => {
+    const changed: string[] = [];
+    const record = {
+      schemaVersion: 1,
+      conversation: { id: 'c1', title: 'x', updatedAt: '2026-01-01T00:00:00.000Z' },
+      items: [],
+      seq: '0',
+      agent: { driverId: 'fake', persistence: null },
+    } as unknown as ConversationRecord;
+    const state = new ConversationState(record, {
+      dirty: () => {},
+      conversationChanged: () => {},
+      taskChanged: (task) => changed.push(task.id),
+    });
+    state.upsert(taskItem('t1'));
+    state.upsert(item('s1', 't1', { kind: 'tool-call', tool: 'web-search' }));
+    state.upsert(item('s2', 't1', { kind: 'tool-call', tool: 'mcp' }));
+    state.upsert(item('s3', 't1', { kind: 'tool-call', tool: 'command' }));
+    expect(state.hasSideEffects('t1')).toBe(false);
+    expect(changed).toEqual(['t1']);
+    state.upsert(item('e1', 't1', { kind: 'video-change' }));
+    state.upsert(item('e2', 't1', { kind: 'tool-call', tool: 'file-change' }));
+    expect(state.hasSideEffects('t1')).toBe(true);
+    expect(changed).toEqual(['t1', 't1']);
+  });
+
+  it('读入的记录里已有作用的任务直接算上', () => {
+    const { state } = make([taskItem('t1'), item('a1', 't1', { kind: 'approval' }), taskItem('t2')]);
+    expect(state.hasSideEffects('t1')).toBe(true);
+    expect(state.hasSideEffects('t2')).toBe(false);
+  });
+});

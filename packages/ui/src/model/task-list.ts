@@ -9,7 +9,8 @@ import { langName } from './tools-models.ts';
 
 /**
  * 后台任务的统一表（原型 page-tasks.jsx、产品设计 §2.1 用户修订）：Agent 会话里的任务（TaskSummary）与
- * 模型计算（JobRecord）合成一张表，任务页、侧栏与任务胶囊读同一份。纯函数：时间与目录作为参数传进来。
+ * 模型计算（JobRecord）合成一张表，任务页、侧栏与任务胶囊读同一份。只检索、问答的 Agent 任务不进表（§6.1）。
+ * 纯函数：时间与目录作为参数传进来。
  */
 
 /**
@@ -351,7 +352,10 @@ export function taskRows(
       const { kind, kindText, where, queued, label, tone, phase, pct, progress } = jobRow(child, ctx);
       return { ...row, kind, kindText, where, queued, label, tone, phase, pct, progress };
     });
-  const rows = [...tasks.map((t) => agentRow(t, ctx)), ...jobRows.filter((r) => !folded.has(r.id))];
+  // 只检索、问答的 Agent 任务留在会话里（产品设计 §6.1）：会话外有作用，或提交过 Job，才进这张表。
+  const submitted = new Set(jobs.flatMap((j) => (j.submitter.kind === 'agent' ? [j.submitter.taskId] : [])));
+  const listed = tasks.filter((t) => t.sideEffects !== false || submitted.has(t.taskId));
+  const rows = [...listed.map((t) => agentRow(t, ctx)), ...jobRows.filter((r) => !folded.has(r.id))];
   return rows.sort((a, b) => Date.parse(b.startedAt) - Date.parse(a.startedAt));
 }
 
