@@ -32,6 +32,7 @@ export const ja: SpaceMessages = {
   statusNone: '状態なし',
   noProject: 'プロジェクトに属していません',
   removedProject: '削除されたプロジェクト',
+  indexFolder: (name: string | null) => (name ? `インデックスフォルダー「${name}」` : 'インデックスフォルダー'),
   conversation: (title: string) => `セッション「${title}」`,
   derivedFrom: (name: string) => `「${name}」から`,
   kindCount: (kind: string, n: number) => `${kind} ${n}`,

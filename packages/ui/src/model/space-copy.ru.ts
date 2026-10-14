@@ -33,6 +33,7 @@ export const ru: SpaceMessages = {
   statusNone: "Без статуса",
   noProject: "Вне проекта",
   removedProject: "Удалённый проект",
+  indexFolder: (name: string | null) => (name ? `Папка индекса «${name}»` : 'Папка индекса'),
   conversation: (title: string) => `Сессия «${title}»`,
   derivedFrom: (name: string) => `Из «${name}»`,
   kindCount: (kind: string, n: number) => `${kind} ${n}`,

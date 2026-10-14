@@ -108,6 +108,7 @@ export const zhHant: SpaceMessages = {
   changedBody: '這個結果對應的是較早版本的影片。它仍可使用，但已不反映目前的影片。',
   reexport: '從來源影片重新匯出',
   noPreviewVideo: '影片會在編輯器中開啟。',
+  inIndexFolder: (folder: string | null) => (folder ? `在索引資料夾「${folder}」裡，唯讀：BaoCut 不改、不移動、不刪這個檔案。` : '在索引資料夾裡，唯讀：BaoCut 不改、不移動、不刪這個檔案。'),
 
   // 能力（origin.capability）
   capability: {
@@ -280,4 +281,24 @@ export const zhHant: SpaceMessages = {
         ? `在不屬於專案的影片裡找答案：${question}`
         : `在我的影片裡找答案：${question}`,
   hitsNoneSemantic: '沒找到講這件事的片段。換個說法試試。',
+  // 画面通道
+  hitsTitleBoth: '講話內容與畫面中',
+  hitsTitleVisual: '畫面中',
+  hitsNoneVisual: '沒找到相關的片段或畫面。換個說法試試。',
+  soundsLater: '聲音這一版還沒有索引',
+  visualBlocked: (block: 'model' | 'off' | 'lexical') =>
+    block === 'model'
+      ? '畫面：沒安裝本機語意模型'
+      : block === 'off'
+        ? '畫面：畫面索引沒開；請在「設定 › 語意索引」開啟'
+        : '畫面：只依意思尋找；精確文字時不查',
+  framesTitle: '畫面',
+  frameWhy: '畫面 · 意思相近',
+  frameWhyWeak: '畫面 · 只是勉強相關',
+  frameInFolder: (folder: string | null) => (folder ? `索引資料夾「${folder}」 · 唯讀` : '在索引資料夾裡 · 唯讀'),
+  frameCut: '已從時間軸剪掉',
+  frameView: '在 Space 中檢視',
+  frameNotInTimeline: '這個畫面已從時間軸剪掉，只開啟影片，不移動播放頭',
+  frameGone: '這個畫面已經不在影片裡了',
+  frameHandoverDraft: (name: string, at: string | null) => (at === null ? `看這個畫面：「${name}」` : `看「${name}」${at} 這個畫面`),
 };

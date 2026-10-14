@@ -201,13 +201,15 @@ export class SearchService {
    */
   resolveVisualScope(resolved: ResolvedScope, profile: EmbeddingProfile | null): ResolvedVisualScope {
     const store = this.#options.store();
-    const ids = resolved.scope.videos.map((v) => v.videoId);
+    // 索引文件夹里的视频文件与图片只有画面一路（检索规格 §9.1），状况与视频一样算。
+    const scoped = [...resolved.scope.videos, ...resolved.scope.files];
+    const ids = scoped.map((v) => v.videoId);
     const generations = store?.activeVisualGenerations(ids) ?? new Map<Id, GenerationRow>();
     const settings = this.#options.settings();
     const all = settings.channels.includes('visual');
     const coverage: SemanticCoverage = { ...resolved.coverage, channel: 'visual', eligible: 0, indexed: 0, pending: resolved.scope.pending, failed: 0, missingInput: 0, excluded: 0, stale: 0 };
     const videos: VisualScopedVideo[] = [];
-    for (const video of resolved.scope.videos) {
+    for (const video of scoped) {
       const generation = generations.get(video.videoId) ?? null;
       const compatible = generation !== null && (profile === null || generation.embeddingSpaceId === profile.embeddingSpaceId);
       const usable = compatible && generation.chunkCount > 0;
@@ -762,10 +764,13 @@ export class SearchService {
     }
     if (visualScope) {
       const enabled = settings.channels.includes('visual');
-      const durations = visualScope.videos
-        .filter((v) => v.state === 'pending' || v.state === 'stale' || (!enabled && v.state === 'excluded' && semanticWanted(settings, v.video)))
-        .map((v) => durationOf(v.video));
-      out.push(estimateOf({ channel: 'visual', durations: [...durations, ...unread], profile: visualProfile, store, ifEnabled: !enabled }));
+      const waiting = visualScope.videos.filter(
+        (v) => v.state === 'pending' || v.state === 'stale' || (!enabled && v.state === 'excluded' && semanticWanted(settings, v.video)),
+      );
+      // 索引文件夹里的图片各一帧；视频文件的时长要探测才知道，算时长未知。
+      const stills = waiting.filter((v) => v.video.file === 'image').length;
+      const durations = waiting.filter((v) => v.video.file !== 'image').map((v) => (v.video.file ? null : durationOf(v.video)));
+      out.push(estimateOf({ channel: 'visual', durations: [...durations, ...unread], profile: visualProfile, store, ifEnabled: !enabled, stills }));
     }
     return out;
   }
@@ -1060,6 +1065,8 @@ export function groupFrames(hits: readonly { frame: StoredFrame; score: number }
 
 /** 画面命中的时间窗口：世代是视频当前版本、几帧都在时间线上时用时间线位置，否则用源时间（要重新解析）。 */
 export function frameWindowOf(group: FrameGroup): { clock: 'sequence' | 'source'; start: number; end: number; sourceStart: number; sourceEnd: number } {
+  // 图片只有一帧，没有时间。
+  if (group.video.file === 'image') return { clock: 'source', start: 0, end: 0, sourceStart: 0, sourceEnd: 0 };
   const first = group.frames[0]!;
   const last = group.frames.at(-1)!;
   const sourceStart = Math.max(0, first.sourceSec - FRAME_HALF_WINDOW);
@@ -1076,8 +1083,11 @@ function frameHitOf(group: FrameGroup, rank: number, weak: boolean): SpaceSearch
   const revision = group.generation.revision;
   const actions: SemanticHitAction[] = ['preview', 'cite'];
   if (window.clock === 'sequence') actions.splice(1, 0, 'open-in-timeline');
+  // 索引文件夹里的文件：素材就是条目本身，不在哪部视频里（`videoId` 为 null，§11.3 不伪造视频）。
+  const file = group.video.file !== undefined;
   return {
     hitId: encodeHitId({
+      ...(file ? { target: 'file' as const } : {}),
       videoId: group.video.videoId,
       documentId: null,
       kind: 'frame',
@@ -1090,7 +1100,7 @@ function frameHitOf(group: FrameGroup, rank: number, weak: boolean): SpaceSearch
       text: '',
       frame: { assetId: group.best.assetId, contentHash: group.best.contentHash, sourceStart: window.sourceStart, sourceEnd: window.sourceEnd },
     }),
-    target: { kind: 'asset-span', assetId: group.best.assetId, videoId: group.video.videoId, representation: 'keyframe' },
+    target: { kind: 'asset-span', assetId: group.best.assetId, videoId: file ? null : group.video.videoId, representation: 'keyframe' },
     videoName: group.video.videoName,
     entryId: group.video.entryId,
     projectId: group.video.projectId,

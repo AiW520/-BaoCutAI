@@ -130,6 +130,7 @@ import type {
   SemanticIndexBuildResult,
   SemanticIndexControlParams,
   SemanticIndexControlResult,
+  SemanticFolderStatus,
   SemanticIndexDir,
   SemanticIndexSetDirParams,
   SemanticIndexStatus,
@@ -137,6 +138,8 @@ import type {
   SemanticResolveParams,
   SemanticResolveResult,
   SpaceCitationsResult,
+  SpaceFolderAddParams,
+  SpaceFolderParams,
   SpaceRelevantChunksParams,
   SpaceRelatedVideosParams,
   SpaceRelatedVideosResult,
@@ -549,6 +552,12 @@ export interface RpcMethods {
   /** 暂停、继续或清理语义索引（只给用户本人）。 */
   'space.indexControl': { params: SemanticIndexControlParams; result: SemanticIndexControlResult };
   'space.indexSetDir': { params: SemanticIndexSetDirParams; result: SemanticIndexDir };
+  /** 加一个索引文件夹（检索规格 §9.1，只在桌面端）：只读扫描，里面的视频与图片出现在 Space 里、排进语义索引。 */
+  'space.folderAdd': { params: SpaceFolderAddParams; result: SemanticFolderStatus };
+  /** 移除索引文件夹：删掉它的索引，文件不动；Space 里不再列出。 */
+  'space.folderRemove': { params: SpaceFolderParams; result: { removed: true } };
+  /** 重新扫一遍索引文件夹，丢掉它的语义索引重建。 */
+  'space.folderReindex': { params: SpaceFolderParams; result: SemanticFolderStatus };
   /** 按视频当前版本重新定位一条 `space.searchV2` 命中（§12.2）：`resolved` / `not-in-timeline` / `gone` / `unsupported`。 */
   'space.resolveSearchHit': { params: SemanticResolveParams; result: SemanticResolveResult };
   /** 写作结果文档条目的出处（创作辅助集成设计 §3.4，`baocut.citations/1`）；可见性同 `space.get`。 */

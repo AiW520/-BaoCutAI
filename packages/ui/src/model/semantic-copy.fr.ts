@@ -247,4 +247,52 @@ export const fr: SemanticMessages = {
     changedToast: (to) => `Emplacement de l’index changé pour ${to}`,
     pickFailed: (message) => `Impossible de choisir le dossier : ${message}`,
   },
+  folders: {
+    head: 'Dossiers indexés hors de vos projets :',
+    add: 'Ajouter un dossier…',
+    actions: (name) => `Actions pour le dossier indexé « ${name} »`,
+    reindex: 'Réindexer',
+    reindexDesc: 'Le parcourt à nouveau et reconstruit son index',
+    remove: 'Retirer',
+    removeDesc: 'Supprime son index ; les fichiers restent',
+    videos: (n) => (n <= 1 ? `${n} vidéo BaoCut` : `${n} vidéos BaoCut`),
+    videoFiles: (n) => (n <= 1 ? `${n} fichier vidéo` : `${n} fichiers vidéo`),
+    images: (n) => (n <= 1 ? `${n} image` : `${n} images`),
+    nothing: 'Aucune vidéo ni image trouvée pour l’instant',
+    exportsSkipped: (n) => (n <= 1 ? `${n} export ignoré` : `${n} exports ignorés`),
+    duplicates: (n) => (n <= 1 ? `${n} déjà dans un projet` : `${n} déjà dans des projets`),
+    legacy: (n) => (n <= 1 ? `${n} ancienne vidéo BaoCut non lue` : `${n} anciennes vidéos BaoCut non lues`),
+    listSeparator: ', ',
+    separator: ' · ',
+    missing: 'Dossier introuvable',
+    missingNote:
+      'Un disque externe est peut-être débranché. Son index est conservé et Space masque ces fichiers jusqu’au retour du dossier.',
+    truncatedNote: (limit) => `Trop de fichiers : seuls les ${limit} premiers ont été parcourus. Ajoutez plutôt un sous-dossier.`,
+    truncatedNoteNoLimit: 'Trop de fichiers : seuls les premiers ont été parcourus. Ajoutez plutôt un sous-dossier.',
+    unreadableNote: 'Impossible de lire ce dossier. Vérifiez ses autorisations.',
+    legacyNote:
+      'Les anciennes vidéos BaoCut doivent être mises à niveau avant de pouvoir être lues, et la mise à niveau les modifie ; elles ne sont donc pas lues ici. Déplacez-en une dans un projet et ouvrez-la une fois dans BaoCut pour la mettre à niveau.',
+    visualReady: 'Images prêtes',
+    visualProgress: (done, total) => `Images : ${done} sur ${total} terminées`,
+    textOnly: 'Ses vidéos BaoCut sont indexées d’après la parole',
+    visualOff: 'L’index visuel est désactivé : les fichiers vidéo et les images ne sont pas encore indexés',
+    addTitle: 'Ajouter un dossier indexé',
+    addBody:
+      'Les vidéos hors de vos projets pourront aussi être retrouvées par le sens. BaoCut se contente de lire ce dossier : il n’y modifie, ne déplace et ne supprime rien. Ses vidéos et images apparaissent dans Space avec ce dossier comme source.',
+    addWhat: (visual) =>
+      visual
+        ? 'Les vidéos BaoCut sont indexées d’après la parole et l’image ; les autres fichiers vidéo et les images, d’après l’image. Les exports enregistrés par BaoCut sont ignorés, et les vidéos déjà présentes dans un projet utilisent la copie du projet.'
+        : 'Les vidéos BaoCut sont indexées d’après la parole ; les autres fichiers vidéo et les images nécessitent l’index visuel. Les exports enregistrés par BaoCut sont ignorés, et les vidéos déjà présentes dans un projet utilisent la copie du projet.',
+    visualOffTitle: 'Les fichiers vidéo et les images sont indexés d’après l’image',
+    visualOffBody:
+      'Ils n’ont pas de transcription : on ne peut les retrouver que par ce qui est à l’écran. Ils sont indexés une fois l’index visuel activé ; d’ici là, seules les vidéos BaoCut de ce dossier le sont.',
+    confirmAdd: 'Ajouter',
+    addedToast: (name) => `« ${name} » ajouté. Analyse et indexation en arrière-plan.`,
+    reindexedToast: (name) => `Nouvelle analyse de « ${name} » et reconstruction de son index`,
+    removeTitle: (name) => `Retirer le dossier indexé « ${name} » ?`,
+    removeBody:
+      'Supprime l’index de ce dossier ; les fichiers restent. Space cesse de les afficher et ils ne peuvent plus être retrouvés par le sens. Vous pourrez ajouter le dossier à nouveau plus tard.',
+    removedToast: (name) => `Index de « ${name} » supprimé`,
+    failed: (message) => `Cela n’a pas fonctionné : ${message}`,
+  },
 };

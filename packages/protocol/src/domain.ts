@@ -902,7 +902,15 @@ export interface SpaceEntry {
    * bytes 所在的来源目录：项目，或不属于项目的会话的工作目录。不在任何来源目录里的（Artifact Store 里的产物、来源目录之外的导出、
    * 占位）两者都为 null，这时 `relPath` 只是显示用的文件名，不能按来源目录拼路径；所属项目见 `origin.projectId`。
    */
-  source: { projectId: Id | null; conversationId: Id | null };
+  source: {
+    projectId: Id | null;
+    conversationId: Id | null;
+    /**
+     * 索引文件夹（设置 `semantic.folders`）里的条目：那个文件夹的 id，这时两个 id 都为 null。只读：不能移入回收站、物理删除，
+     * BaoCut 视频不能打开编辑。旧 Runtime 没有这一项。
+     */
+    folderId?: Id | null;
+  };
   /** 相对来源目录的路径，用 `/` 分隔。 */
   relPath: string;
   size: number;

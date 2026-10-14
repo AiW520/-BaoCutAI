@@ -32,6 +32,7 @@ export const ptBR: SpaceMessages = {
   statusNone: "Sem status",
   noProject: "Fora de um projeto",
   removedProject: "Projeto removido",
+  indexFolder: (name: string | null) => (name ? `Pasta indexada “${name}”` : 'Pasta indexada'),
   conversation: (title: string) => `Sessão “${title}”`,
   derivedFrom: (name: string) => `De “${name}”`,
   kindCount: (kind: string, n: number) => `${kind} ${n}`,

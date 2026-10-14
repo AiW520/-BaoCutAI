@@ -246,4 +246,52 @@ export const es: SemanticMessages = {
     changedToast: (to) => `Ubicación del índice cambiada a ${to}`,
     pickFailed: (message) => `No se pudo elegir la carpeta: ${message}`,
   },
+  folders: {
+    head: 'Carpetas indexadas fuera de tus proyectos:',
+    add: 'Añadir carpeta…',
+    actions: (name) => `Acciones de la carpeta indexada «${name}»`,
+    reindex: 'Volver a indexar',
+    reindexDesc: 'La explora de nuevo y reconstruye su índice',
+    remove: 'Quitar',
+    removeDesc: 'Elimina su índice; los archivos se quedan',
+    videos: (n) => (n === 1 ? '1 vídeo de BaoCut' : `${n} vídeos de BaoCut`),
+    videoFiles: (n) => (n === 1 ? '1 archivo de vídeo' : `${n} archivos de vídeo`),
+    images: (n) => (n === 1 ? '1 imagen' : `${n} imágenes`),
+    nothing: 'Aún no se han encontrado vídeos ni imágenes',
+    exportsSkipped: (n) => (n === 1 ? '1 exportación omitida' : `${n} exportaciones omitidas`),
+    duplicates: (n) => (n === 1 ? '1 ya está en un proyecto' : `${n} ya están en proyectos`),
+    legacy: (n) => (n === 1 ? '1 vídeo antiguo de BaoCut sin leer' : `${n} vídeos antiguos de BaoCut sin leer`),
+    listSeparator: ', ',
+    separator: ' · ',
+    missing: 'No se encuentra esta carpeta',
+    missingNote:
+      'Puede que un disco externo esté desconectado. Su índice se conserva y Space oculta estos archivos hasta que la carpeta vuelva.',
+    truncatedNote: (limit) => `Hay demasiados archivos: solo se exploraron los primeros ${limit}. Añade una subcarpeta en su lugar.`,
+    truncatedNoteNoLimit: 'Hay demasiados archivos: solo se exploraron los primeros. Añade una subcarpeta en su lugar.',
+    unreadableNote: 'No se puede leer esta carpeta. Revisa sus permisos.',
+    legacyNote:
+      'Los vídeos antiguos de BaoCut hay que actualizarlos antes de poder leerlos, y al actualizarlos se modifican, así que aquí no se leen. Mueve uno a un proyecto y ábrelo una vez en BaoCut para actualizarlo.',
+    visualReady: 'Imágenes listas',
+    visualProgress: (done, total) => `Imágenes: ${done} de ${total} listas`,
+    textOnly: 'Sus vídeos de BaoCut se indexan por lo que se dice',
+    visualOff: 'El índice de imagen está desactivado, así que los archivos de vídeo y las imágenes aún no se indexan',
+    addTitle: 'Añadir carpeta indexada',
+    addBody:
+      'Los vídeos fuera de tus proyectos también se podrán encontrar por su significado. BaoCut solo lee esta carpeta: no cambia, mueve ni elimina nada de lo que hay dentro. Sus vídeos e imágenes aparecen en Space con esta carpeta como origen.',
+    addWhat: (visual) =>
+      visual
+        ? 'Los vídeos de BaoCut se indexan por lo que se dice y por la imagen; los demás archivos de vídeo y las imágenes, por la imagen. Se omiten las exportaciones que registró BaoCut, y los vídeos que también están en un proyecto usan la copia del proyecto.'
+        : 'Los vídeos de BaoCut se indexan por lo que se dice; los demás archivos de vídeo y las imágenes necesitan el índice de imagen. Se omiten las exportaciones que registró BaoCut, y los vídeos que también están en un proyecto usan la copia del proyecto.',
+    visualOffTitle: 'Los archivos de vídeo y las imágenes se indexan por la imagen',
+    visualOffBody:
+      'No tienen transcripción, así que solo se pueden encontrar por lo que aparece en pantalla. Se indexan cuando el índice de imagen esté activado; hasta entonces solo se indexan los vídeos de BaoCut de esta carpeta.',
+    confirmAdd: 'Añadir',
+    addedToast: (name) => `Se añadió «${name}». Se explora e indexa en segundo plano.`,
+    reindexedToast: (name) => `Explorando «${name}» de nuevo y reconstruyendo su índice`,
+    removeTitle: (name) => `¿Quitar la carpeta indexada «${name}»?`,
+    removeBody:
+      'Elimina el índice de esta carpeta; los archivos se quedan. Space deja de mostrarlos y no se podrán encontrar por su significado. Puedes volver a añadir la carpeta más tarde.',
+    removedToast: (name) => `Se quitó el índice de «${name}»`,
+    failed: (message) => `No se pudo completar: ${message}`,
+  },
 };

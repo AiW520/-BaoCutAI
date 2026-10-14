@@ -6,6 +6,8 @@ import type { Id, SpaceSearchDocumentKind } from '@baocut/protocol';
  */
 export interface HitIdentity {
   v: 1;
+  /** 索引文件夹里的视频文件或图片的画面命中（检索规格 §9.1）：`videoId` 是条目 id，`frame.contentHash` 是文件的版本。 */
+  target?: 'file';
   videoId: Id;
   documentId: Id | null;
   /** 文字证据的文档种类；画面命中是 `frame`（身份在 `frame` 里）。 */
@@ -48,7 +50,8 @@ export function decodeHitId(hitId: string): HitIdentity | null {
       typeof value.start !== 'number' ||
       typeof value.end !== 'number' ||
       !['speech', 'caption', 'translation', 'chapter', 'frame'].includes(value.kind) ||
-      (value.kind === 'frame' && !validFrame(value.frame))
+      (value.kind === 'frame' && !validFrame(value.frame)) ||
+      (value.target !== undefined && (value.target !== 'file' || value.kind !== 'frame'))
     ) {
       return null;
     }

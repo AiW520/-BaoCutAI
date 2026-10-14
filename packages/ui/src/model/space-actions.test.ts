@@ -42,6 +42,11 @@ describe('二次编辑的去处', () => {
     expect(editRoute(entry('e', { kind: 'export', origin: { source: 'exported', videoId: 'vid1' } }))).toBe('source-video');
     expect(editRoute(entry('e', { kind: 'export' }))).toBe('new-video');
     expect(editRoute(entry('f'))).toBe('new-video');
+    // 索引文件夹里的只读：BaoCut 视频与文件都不打开编辑，认得出来源视频的成片回到那部视频。
+    const folder = { source: { projectId: null, conversationId: null, folderId: 'fld_1' } };
+    expect(editRoute(entry('v', { kind: 'video', ...folder }))).toBeNull();
+    expect(editRoute(entry('f', folder))).toBeNull();
+    expect(editRoute(entry('e', { kind: 'export', origin: { source: 'exported', videoId: 'vid1' }, ...folder }))).toBe('source-video');
     expect(editRoute(entry('s', { kind: 'subtitle' }))).toBe('text');
     expect(editRoute(entry('i', { kind: 'image' }))).toBe('version');
     expect(editRoute(entry('p', { kind: 'package' }))).toBeNull();

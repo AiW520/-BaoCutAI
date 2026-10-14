@@ -29,6 +29,8 @@ export interface DeriveSource {
   realRoot: string;
   projectId: Id | null;
   conversationId: Id | null;
+  /** 索引文件夹（检索规格 §9.1）：只读的来源，条目的 `source.folderId`。 */
+  folderId?: Id | null;
   /**
    * 项目来源：放进这个项目的无项目会话原来的工作目录（架构设计 §3.10）。绑定前发布在那里的导出记着旧路径，东西已经按相对路径
    * 原样搬进项目，按这里换算回项目里的那个文件。
@@ -139,7 +141,7 @@ export function deriveEntries(input: DeriveInput): Map<Id, DerivedEntry> {
       kind: item.file.kind,
       name: fileName,
       fileName,
-      source: { projectId: source.projectId, conversationId: source.conversationId },
+      source: { projectId: source.projectId, conversationId: source.conversationId, ...(source.folderId ? { folderId: source.folderId } : {}) },
       relPath: item.file.relPath,
       size: item.file.size,
       lastActivityAt: new Date(item.file.mtimeMs).toISOString(),
@@ -181,7 +183,9 @@ export function deriveEntries(input: DeriveInput): Map<Id, DerivedEntry> {
             capability: 'videos-derive',
           };
         }
-        if (!videos.has(known.videoId)) videos.set(known.videoId, { entryId: id, source, known });
+        // 同一部视频在项目里也在索引文件夹里：按项目那一份（扫描顺序会变，不能靠先到先得）。
+        const seen = videos.get(known.videoId);
+        if (!seen || (seen.source.folderId && !source.folderId)) videos.set(known.videoId, { entryId: id, source, known });
       }
     }
     out.set(id, derived);
@@ -477,9 +481,7 @@ function addExport(
       ? { status: 'source-changed', statusDetail: { currentRevision: video.revision } }
       : { status: 'published' };
   // 发布到某个来源目录里：与扫描到的那个文件是同一个条目。
-  for (const source of input.sources.values()) {
-    const inside = relativeInside(source, output.path);
-    if (inside === null) continue;
+  for (const { source, inside } of sourcesOf(input, output.path)) {
     const { rel, former } = inside;
     const id = input.entryIdOf(source.key, rel);
     const scanned = out.get(id);
@@ -561,10 +563,19 @@ function relativeInside(source: DeriveSource, file: string): { rel: string; form
 /** 内部检查用的导出（`purpose: 'preview'`，架构设计 §9.13）：不成条；发布在来源目录里的文件记下来，不作普通文件列出。 */
 function hidePreview(previews: Set<Id>, input: DeriveInput, output: GeneratedOutput): void {
   if (!output.path) return;
+  for (const { source, inside } of sourcesOf(input, output.path)) previews.add(input.entryIdOf(source.key, inside.rel));
+}
+
+/**
+ * 含着这个文件的来源，最近的在前：索引文件夹可以包含项目（扫描时跳过项目那一块），项目里的文件按项目认。
+ */
+function sourcesOf(input: DeriveInput, file: string): { source: DeriveSource; inside: { rel: string; former: boolean } }[] {
+  const found: { source: DeriveSource; inside: { rel: string; former: boolean } }[] = [];
   for (const source of input.sources.values()) {
-    const inside = relativeInside(source, output.path);
-    if (inside) previews.add(input.entryIdOf(source.key, inside.rel));
+    const inside = relativeInside(source, file);
+    if (inside) found.push({ source, inside });
   }
+  return found.sort((a, b) => a.inside.rel.length - b.inside.rel.length);
 }
 
 export function exportKind(settings: ExportSettings): SpaceEntryKind {

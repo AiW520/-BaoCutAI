@@ -620,6 +620,45 @@ export class MediaAnalysis {
     return frameOf(await job);
   }
 
+  /**
+   * 索引文件夹里的视频文件或图片的画面检索关键帧（检索规格 §9.1）：取法同 `keyframeFile`（长边缩到 `edge`、JPEG `-q:v 3`），
+   * 视频取 `at` 秒，图片取第一帧。缓存键是真实路径、大小、修改时间、时间与边：文件被覆盖之后重新取。不写文件所在的目录。
+   */
+  async fileKeyframe(target: { root: string; file: string }, at: number, edge: number): Promise<string> {
+    const { realPath } = await resolveInside(target.root, target.file);
+    const spec = FILE_FRAMES[path.extname(realPath).slice(1).toLowerCase()];
+    if (!spec) throw new RpcError('forbidden', RcRuntime.noFramesForFileType());
+    const stat = await fs.stat(realPath);
+    const millis = spec.still ? null : frameMillis(at, null);
+    const key = crypto.createHash('sha256').update(JSON.stringify(['keyframe', realPath, stat.size, stat.mtimeMs, millis, edge])).digest('hex');
+    const file = path.join(this.#options.cacheDir, FILE_FRAMES_DIR, `${key}.jpg`);
+    if ((await fs.stat(file).catch(() => null))?.size) return file;
+    this.#recentFailure(file);
+    let job = this.#thumbnailJobs.get(file);
+    if (!job) {
+      const output: FrameOutput = {
+        filter: `scale=w='min(${edge},iw)':h='min(${edge},ih)':force_original_aspect_ratio=decrease:force_divisible_by=2`,
+        format: 'jpeg',
+        maxBytes: FRAME_MAX_BYTES,
+        quality: 3,
+      };
+      const input = { realPath, demuxers: spec.demuxers, ...(spec.still ? { force: true } : {}), seekMs: millis };
+      job = this.#remember(file, this.#thumbnailSlots.run(() => this.#computeFrame(input, output, file)), this.#thumbnailJobs);
+    }
+    await job;
+    return file;
+  }
+
+  /** 索引文件夹里的视频文件的时长（秒，ffprobe）；图片、认不出或探测失败时 null。 */
+  async fileDuration(target: { root: string; file: string }): Promise<number | null> {
+    const { realPath } = await resolveInside(target.root, target.file);
+    const spec = FILE_FRAMES[path.extname(realPath).slice(1).toLowerCase()];
+    if (!spec || spec.still) return null;
+    const stat = await fs.stat(realPath, { bigint: true });
+    const key = crypto.createHash('sha256').update(JSON.stringify(['file-duration', spec.demuxers, realPath, String(stat.size), String(stat.mtimeNs)])).digest('hex');
+    return (await this.#playbackSource(realPath, key, spec.demuxers))?.durationSec ?? null;
+  }
+
   /** Runtime 停止：结束还在运行的 ffmpeg。 */
   close(): void {
     this.#closed = true;

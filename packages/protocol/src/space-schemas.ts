@@ -78,6 +78,9 @@ export const SPACE_PARAM_SCHEMAS = {
     })
     .strict(),
   'space.indexControl': z.object({ action: z.enum(['pause', 'resume', 'clear']) }).strict(),
+  'space.folderAdd': z.object({ path: absolutePath }).strict(),
+  'space.folderRemove': z.object({ folderId: id }).strict(),
+  'space.folderReindex': z.object({ folderId: id }).strict(),
   'space.indexSetDir': z
     .object({
       path: absolutePath.nullable(),

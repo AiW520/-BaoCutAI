@@ -82,4 +82,8 @@ export const nl: RcSpaceMessages = {
     'Deze map heeft al een semantische index. Kies een lege map, of bouw de index daar opnieuw op om de bestaande te gebruiken',
   indexDirMoving: 'De index wordt verplaatst. Wacht tot het verplaatsen klaar is',
   indexDirMoveFailed: (p: { reason: string }) => `De index kon niet worden verplaatst en blijft waar hij was: ${p.reason}`,
+  folderReadOnly: 'Dit staat in een indexmap, die BaoCut alleen leest. Het kan niet naar de prullenbak, verwijderd of bewerkt worden',
+  folderNotFound: 'De map bestaat niet',
+  folderUnknown: 'Die indexmap staat niet in de lijst',
+  folderInside: (p: { name: string }) => `Deze map wordt al geïndexeerd als deel van ‘${p.name}’`,
 };

@@ -11,7 +11,7 @@ export const fr: SpaceMessages = {
   importAssets: 'Importer des médias', importAssetsHint: 'Enregistrer les fichiers comme médias du projet ; les fichiers hors du projet sont copiés dans imports/', whichProject: 'Quel projet', noProject: 'Ouvrez d’abord un dossier de projet dans Home', pickNotMedia: 'Ce n’est pas un fichier vidéo, audio ou image', createdFromFile: (name) => `Vidéo « ${name} » créée et média placé`, createdEmpty: (reason) => `La vidéo a été créée, mais le média n’a pas été placé : ${reason}`,
   importTitle: 'Importer des médias', importProject: 'Importer dans le projet', importHint: 'Choisissez des vidéos, fichiers audio ou images. Les fichiers du dossier de projet sont enregistrés sur place ; les fichiers extérieurs sont copiés dans imports/ du projet et les originaux restent à leur emplacement. Rien n’est ajouté à une vidéo.', importPick: 'Choisir des fichiers…', importNoProject: 'Aucun projet : ouvrez d’abord un dossier de projet dans Home.', importing: 'Import en cours',
   factSource: 'Source', factFile: 'Fichier', factMeasure: 'Durée ou dimensions', factSize: 'Taille', factStatus: 'État', factActivity: 'Dernière activité', factConversation: 'Session source', factGenerated: 'Généré', factVersion: 'Version', factNote: 'Note', viewConversation: 'Afficher la session source', close: 'Fermer', editBlocked: (reason) => `Modifier à nouveau : ${reason}`, continueBlocked: (reason) => `Continuer dans une session : ${reason}`,
-  version: (frozen, current) => current && current !== frozen ? `Version vidéo ${frozen} ; la vidéo est désormais ${current}` : `Version vidéo ${frozen}`, missingTitle: 'Impossible de trouver ce fichier', missingFile: 'Fichier introuvable', missingBody: 'L’élément est toujours ici. Son état sera rétabli lorsque le fichier sera de retour.', failedTitle: 'Échec de la génération', failedBody: 'Aucun fichier produit. Consultez la cause et réessayez sur la page Tâches, ou effacez l’élément s’il n’est plus nécessaire.', changedTitle: 'La vidéo source a changé depuis', changedBody: 'Ce résultat correspond à une version antérieure de la vidéo. Il fonctionne toujours, mais ne reflète plus la vidéo actuelle.', reexport: 'Exporter à nouveau depuis la vidéo source', noPreviewVideo: 'Les vidéos s’ouvrent dans l’éditeur.',
+  version: (frozen, current) => current && current !== frozen ? `Version vidéo ${frozen} ; la vidéo est désormais ${current}` : `Version vidéo ${frozen}`, missingTitle: 'Impossible de trouver ce fichier', missingFile: 'Fichier introuvable', missingBody: 'L’élément est toujours ici. Son état sera rétabli lorsque le fichier sera de retour.', failedTitle: 'Échec de la génération', failedBody: 'Aucun fichier produit. Consultez la cause et réessayez sur la page Tâches, ou effacez l’élément s’il n’est plus nécessaire.', changedTitle: 'La vidéo source a changé depuis', changedBody: 'Ce résultat correspond à une version antérieure de la vidéo. Il fonctionne toujours, mais ne reflète plus la vidéo actuelle.', reexport: 'Exporter à nouveau depuis la vidéo source', noPreviewVideo: 'Les vidéos s’ouvrent dans l’éditeur.', inIndexFolder: (folder: string | null) => (folder ? `Dans le dossier indexé « ${folder} », en lecture seule : BaoCut ne modifie, ne déplace ni ne supprime ce fichier.` : 'Dans un dossier indexé, en lecture seule : BaoCut ne modifie, ne déplace ni ne supprime ce fichier.'),
   capability: { synthesizeSpeech: 'Doublage', generateImage: 'Générer une image', generateMusic: 'Générer de la musique', generateText: 'Générer du texte', export: 'Export', 'videos-derive': 'Découper en vidéos courtes' }, trashed: (name) => `Déplacé dans la corbeille · ${name}`, undo: 'Annuler', restored: (name) => `Restauré · ${name}`, purged: (name) => `Supprimé définitivement · ${name}`, cleared: (name) => `Effacé · ${name}`, renamed: 'Renommé',
   continued: (created, name, title) => created ? `Nouvelle session démarrée avec « ${name} » joint : écrivez votre demande, puis envoyez` : `Retour dans « ${title} » avec « ${name} » joint : écrivez votre demande, puis envoyez`, sourceGone: 'La vidéo source ne se trouve actuellement dans aucun dossier de projet ou de session ; elle ne peut donc pas être ouverte', failed: (what, reason) => `Échec de ${what} : ${reason}`,
   trashVideoTitle: 'Supprimer cette vidéo ?', trashVideoBody: 'Le dossier entier de la vidéo est déplacé dans la corbeille du projet et peut être restauré. Les médias originaux liés restent à leur emplacement.', trashVideoRelated: (n) => `${n} ${pluralForm('fr', n, { one: 'élément exporté ou généré depuis cette vidéo restera', other: 'éléments exportés ou générés depuis cette vidéo resteront' })} dans Space et ${pluralForm('fr', n, { one: 'ne sera pas supprimé', other: 'ne seront pas supprimés' })} avec elle :`, trashVideoConfirm: 'Supprimer la vidéo',
@@ -74,4 +74,25 @@ export const fr: SpaceMessages = {
         ? `Réponds à partir de mes vidéos hors projet : ${question}`
         : `Réponds à partir de mes vidéos : ${question}`,
   hitsNoneSemantic: 'Rien de ce qui est dit dans les vidéos ne porte là-dessus. Essayez d’autres mots.',
+  // 画面通道
+  hitsTitleBoth: 'Dit ou vu dans les vidéos',
+  hitsTitleVisual: 'Vu dans les vidéos et les images',
+  hitsNoneVisual: 'Rien de ce qui est dit ou vu ne correspond. Essayez d’autres mots.',
+  soundsLater: 'Les sons ne sont pas indexés dans cette version',
+  visualBlocked: (block: 'model' | 'off' | 'lexical') =>
+    block === 'model'
+      ? 'Image : aucun modèle sémantique local n’est installé'
+      : block === 'off'
+        ? 'Image : l’index d’images est désactivé. Activez-le dans Réglages › Index sémantique'
+        : 'Image : recherche par le sens uniquement, donc Texte exact ne les cherche pas',
+  framesTitle: 'Image',
+  frameWhy: 'Image · sens proche',
+  frameWhyWeak: 'Image · lien ténu',
+  frameInFolder: (folder: string | null) => (folder ? `Dossier indexé « ${folder} » · lecture seule` : 'Dans un dossier indexé · lecture seule'),
+  frameCut: 'Coupé de la timeline',
+  frameView: 'Afficher dans Space',
+  frameNotInTimeline: 'Ce moment a été coupé de la timeline : la vidéo s’ouvre sans déplacer la tête de lecture',
+  frameGone: 'Cette image n’est plus dans la vidéo',
+  frameHandoverDraft: (name: string, at: string | null) =>
+    at === null ? `Regarde cette image : « ${name} »` : `Regarde cette image de « ${name} » à ${at}`,
 };

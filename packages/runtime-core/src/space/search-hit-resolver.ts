@@ -19,6 +19,9 @@ import type { ReadContentResult } from './content-extract.ts';
  * - 画面命中（`frame`）：身份是素材 + 内容版本 + 源时间窗口。素材还在、内容没换时，把窗口投到这个素材在时间线上的片段
  *   （几处就几段）；没放上时间线是 `not-in-timeline`；素材没了或换了内容是 `gone`。边界是 `window`（候选区间，不是精确时刻）。
  *
+ * - 索引文件夹里的视频文件或图片的画面命中（`target: 'file'`）：文件还在、版本没变时是 `not-in-timeline`（源时间窗口，
+ *   `videoId` 为 null）；文件不在、被覆盖或看不到时是 `gone`。
+ *
  * 每次解析读一次视频的当前内容（引擎的只读查询），不用索引里可能落后的副本。
  */
 
@@ -36,6 +39,17 @@ export async function resolveSearchHit(options: HitResolverOptions, viewer: Spac
   const identity = decodeHitId(hitId);
   if (!identity) throw new RpcError('invalid-request', RcSemantic.hitInvalid());
   const gone: SemanticResolveResult = { status: 'gone', videoId: null, revision: null, spans: [], boundary: 'exact' };
+  if (identity.target === 'file') {
+    const file = searchScope(options.catalog, viewer, { videoIds: [identity.videoId] }).files.find((f) => f.videoId === identity.videoId);
+    if (!file || !identity.frame || file.revision !== identity.frame.contentHash) return gone;
+    return {
+      status: 'not-in-timeline',
+      videoId: null,
+      revision: file.revision,
+      boundary: 'window',
+      spans: [{ clock: 'source', startSec: identity.frame.sourceStart, endSec: identity.frame.sourceEnd, sentenceIds: [], text: identity.text }],
+    };
+  }
   const video = searchScope(options.catalog, viewer, { videoIds: [identity.videoId] }).videos.find((v) => v.videoId === identity.videoId);
   if (!video) return gone;
   if (!options.reader) throw new RpcError('engine-unavailable', RcSpace.engineUnavailable());

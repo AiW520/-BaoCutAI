@@ -65,12 +65,14 @@ export interface EstimateInput {
   store: SemanticStore | null;
   /** 这一路没开：估的是打开之后要建的量。 */
   ifEnabled: boolean;
+  /** 画面：待建的图片（索引文件夹里的，检索规格 §9.1）个数，各取一帧。 */
+  stills?: number;
 }
 
 export function estimateOf(input: EstimateInput): SemanticEstimate {
   let sourceSeconds = 0;
   let unknownDuration = 0;
-  let frames = 0;
+  let frames = input.channel === 'visual' ? (input.stills ?? 0) : 0;
   for (const duration of input.durations) {
     if (duration === null || !(duration > 0)) {
       unknownDuration++;
@@ -85,7 +87,7 @@ export function estimateOf(input: EstimateInput): SemanticEstimate {
   return {
     channel: input.channel,
     ifEnabled: input.ifEnabled,
-    videos: input.durations.length,
+    videos: input.durations.length + (input.channel === 'visual' ? (input.stills ?? 0) : 0),
     unknownDuration,
     sourceSeconds: Math.round(sourceSeconds),
     frames: input.channel === 'visual' ? frames : null,

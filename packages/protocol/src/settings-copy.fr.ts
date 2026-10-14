@@ -41,6 +41,7 @@ export const fr: SettingDescriptionMessages = {
   'offline.strict': "Hors ligne strict : ne rien envoyer à un service en ligne",
   'semantic.channels': 'Canaux de l’index sémantique à créer : text (le parlé : transcriptions, sous-titres, traductions, chapitres) ; visual (une image clé toutes les 8 secondes ; demande un modèle multimodal et prend plus de temps) ; audio n’est pas encore disponible',
   'semantic.excludedProjects': 'Projets exclus de l’index sémantique (liste d’ids de projet) : tous les projets BaoCut et les vidéos hors projet sont indexés sauf ceux-ci, dont les vidéos restent trouvables par les mots exacts',
+  'semantic.folders': 'Dossiers indexés hors projets (liste de {id, path}) : leurs vidéos et images apparaissent dans Space et sont indexées par le sens, en lecture seule. Se changent avec space.folderAdd et space.folderRemove',
   'semantic.excludedVideos': 'Vidéos exclues individuellement de l’index sémantique (liste d’ids de vidéo), en plus des projets exclus ; leur index existant est retiré',
   'semantic.indexDir':
     'Dossier de l’index sémantique (chemin absolu) ; null le laisse dans le cache de l’app. Se change avec space.indexSetDir, qui déplace ou reconstruit l’index',

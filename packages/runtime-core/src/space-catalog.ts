@@ -21,6 +21,8 @@ import {
   type SpaceReference,
   type SpaceScanIssue,
   type SpaceSnapshot,
+  type SemanticFolder,
+  type SemanticFolderStatus,
 } from '@baocut/protocol';
 import { TopicLog, type Harness, type Logger, type TopicSubscription } from '@baocut/harness';
 import { inspectDeck } from '@baocut/slides';
@@ -106,14 +108,26 @@ export const DEFAULT_SCAN_LIMITS: ScanLimits = { maxDepth: 6, maxFiles: 2000, ma
 
 export interface ScanResult {
   files: ScannedFile[];
-  issue: { kind: SpaceScanIssue['kind']; detail: string } | null;
+  issue: { kind: SpaceScanIssue['kind']; detail: string; limit?: number } | null;
+  /** 索引文件夹：只有 `movie.db` 的旧版视频目录，没有收（打开它会就地升级，索引文件夹只读）。 */
+  legacy?: number;
+}
+
+/**
+ * 索引文件夹的扫描（检索规格 §9.1）：只收 BaoCut 视频目录（有 `video.db` 的）、视频文件与图片；只有 `movie.db` 的旧版视频
+ * 目录只计数、不收、不往里走；`skip` 里的子目录（别的来源的目录、Runtime 的目录，相对路径）跳过。
+ */
+export interface FolderScan {
+  skip: ReadonlySet<string>;
 }
 
 /** 扫一个来源目录。目录不存在算空；读不了根目录算问题；子目录读不了就跳过。不跟随符号链接。 */
-export async function scanDirectory(root: string, limits: ScanLimits = DEFAULT_SCAN_LIMITS): Promise<ScanResult> {
+export async function scanDirectory(root: string, limits: ScanLimits = DEFAULT_SCAN_LIMITS, folder?: FolderScan): Promise<ScanResult> {
   const files: ScannedFile[] = [];
   const queue: { dir: string; rel: string; depth: number }[] = [{ dir: root, rel: '', depth: 0 }];
   let visited = 0;
+  let legacy = 0;
+  const done = (issue: ScanResult['issue']): ScanResult => (folder ? { files, issue, legacy } : { files, issue });
   while (queue.length > 0) {
     const { dir, rel, depth } = queue.shift()!;
     let dirents: fs.Dirent[];
@@ -122,17 +136,29 @@ export async function scanDirectory(root: string, limits: ScanLimits = DEFAULT_S
     } catch (error) {
       if (depth > 0) continue;
       const code = (error as NodeJS.ErrnoException).code;
-      if (code === 'ENOENT') return { files, issue: null };
-      return { files, issue: { kind: 'unreadable', detail: RcSpace.dirUnreadable({ code: code ?? 'error' }).text } };
+      if (code === 'ENOENT') return done(null);
+      return done({ kind: 'unreadable', detail: RcSpace.dirUnreadable({ code: code ?? 'error' }).text });
     }
     dirents.sort((a, b) => (a.name < b.name ? -1 : a.name > b.name ? 1 : 0));
     for (const dirent of dirents) {
       if (++visited > limits.maxVisited) {
-        return { files, issue: { kind: 'truncated', detail: RcSpace.tooManyDirEntries({ max: limits.maxVisited }).text } };
+        return done({ kind: 'truncated', detail: RcSpace.tooManyDirEntries({ max: limits.maxVisited }).text });
       }
       if (isIgnoredName(dirent.name)) continue;
       const relPath = rel ? `${rel}/${dirent.name}` : dirent.name;
       const full = path.join(dir, dirent.name);
+      if (dirent.isDirectory() && folder) {
+        if (folder.skip.has(relPath)) continue;
+        const video = await inspectVideoDir(full, true);
+        if (video) {
+          if (files.length >= limits.maxFiles) {
+            return done({ kind: 'truncated', detail: RcSpace.tooManyFiles({ max: limits.maxFiles }).text, limit: limits.maxFiles });
+          }
+          files.push({ relPath, kind: 'video', ...video });
+        } else if (await isLegacyVideoDir(full)) legacy++;
+        else if (depth < limits.maxDepth) queue.push({ dir: full, rel: relPath, depth: depth + 1 });
+        continue;
+      }
       if (dirent.isDirectory()) {
         const video = await inspectVideoDir(full);
         const deck = video ? null : await inspectDeck(full);
@@ -140,7 +166,7 @@ export async function scanDirectory(root: string, limits: ScanLimits = DEFAULT_S
         const system = video || deck || canvas ? null : await inspectDesignSystem(full);
         if (video || deck || canvas || system) {
           if (files.length >= limits.maxFiles) {
-            return { files, issue: { kind: 'truncated', detail: RcSpace.tooManyFiles({ max: limits.maxFiles }).text } };
+            return done({ kind: 'truncated', detail: RcSpace.tooManyFiles({ max: limits.maxFiles }).text });
           }
           if (video) files.push({ relPath, kind: 'video', ...video });
           else if (deck) {
@@ -158,9 +184,9 @@ export async function scanDirectory(root: string, limits: ScanLimits = DEFAULT_S
       }
       if (!dirent.isFile()) continue;
       const kind = classifyFile(dirent.name);
-      if (!kind) continue;
+      if (!kind || (folder && kind !== 'video-file' && kind !== 'image')) continue;
       if (files.length >= limits.maxFiles) {
-        return { files, issue: { kind: 'truncated', detail: RcSpace.tooManyFiles({ max: limits.maxFiles }).text } };
+        return done({ kind: 'truncated', detail: RcSpace.tooManyFiles({ max: limits.maxFiles }).text, ...(folder ? { limit: limits.maxFiles } : {}) });
       }
       try {
         const stat = await fsp.stat(full);
@@ -170,16 +196,17 @@ export async function scanDirectory(root: string, limits: ScanLimits = DEFAULT_S
       }
     }
   }
-  return { files, issue: null };
+  return done(null);
 }
 
 /**
  * 视频目录的大小与最近活动：`video.db` 加上受管理的素材；WAL 里还没合并的写入也算活动。
- * 不是视频目录返回 null。不打开数据库，不碰写入锁。
+ * 不是视频目录返回 null。不打开数据库，不碰写入锁。`currentOnly`：只认 `video.db`（索引文件夹）。
  */
-async function inspectVideoDir(dir: string): Promise<{ size: number; mtimeMs: number; birthtimeMs: number } | null> {
+async function inspectVideoDir(dir: string, currentOnly = false): Promise<{ size: number; mtimeMs: number; birthtimeMs: number } | null> {
   // 改名之前的目录只有 `movie.db`：照样列出，引擎打开它时就地升级成 `video.db`。
   const current = await fsp.stat(path.join(dir, 'video.db')).catch(() => null);
+  if (!current?.isFile() && currentOnly) return null;
   const dbFile = current ? 'video.db' : 'movie.db';
   const db = current ?? (await fsp.stat(path.join(dir, dbFile)).catch(() => null));
   if (!db?.isFile()) return null;
@@ -197,6 +224,11 @@ async function inspectVideoDir(dir: string): Promise<{ size: number; mtimeMs: nu
     if (stat) size += stat.size;
   }
   return { size, mtimeMs, birthtimeMs: db.birthtimeMs };
+}
+
+/** 只有 `movie.db` 的旧版视频目录（只看文件在不在，不打开）。 */
+async function isLegacyVideoDir(dir: string): Promise<boolean> {
+  return (await fsp.stat(path.join(dir, 'movie.db')).catch(() => null))?.isFile() ?? false;
 }
 
 /** Space 目录读 Job Ledger 用到的那一部分（`JobManager`）。 */
@@ -229,6 +261,22 @@ export interface SpaceCatalogOptions {
    * `<目录>/<会话 id>/` 里的导出，按搬进项目之后的位置认（`DeriveSource.formerRoots`）。
    */
   scratchDirs?: readonly string[];
+  /** 索引文件夹（设置 `semantic.folders`）：启动时的那一份，之后由 `setFolders` 更新。 */
+  folders?: readonly SemanticFolder[];
+  /** 索引文件夹扫描时跳过的目录（Runtime 的目录）：BaoCut 自己的数据不当作用户的文件。 */
+  skipRoots?: readonly string[];
+}
+
+/** 索引文件夹最近一次扫描看到的：在不在、扫描问题、旧版视频目录的个数。 */
+interface FolderScanInfo {
+  exists: boolean;
+  issue: SemanticFolderStatus['issue'];
+  legacy: number;
+}
+
+/** 索引文件夹里的条目只读：不移入回收站、不删、不打开编辑（检索规格 §9.1）。 */
+function folderReadOnly(entryId: Id): RpcError {
+  return new RpcError('invalid-request', RcSpace.folderReadOnly(), { code: 'SPACE_FOLDER_READONLY', entryId });
 }
 
 /** 回收站目录：在来源目录里（与视频目录同一个卷，移动是改名），隐藏目录不进 Space 的扫描。 */
@@ -255,12 +303,28 @@ export interface VideoEntryInfo {
   scope: { projectId: Id } | { conversationId: Id };
 }
 
+/**
+ * 索引文件夹里只按画面建的文件（视频文件与图片，检索规格 §9.1）。`revision` 由大小、修改时间与相对路径算出：文件被覆盖、
+ * 移动之后重建。BaoCut 的导出不在里面（与导出它的视频内容相同，搜那部视频就能找到）。
+ */
+export interface SpaceVisualFile {
+  entryId: Id;
+  folderId: Id;
+  kind: 'video-file' | 'image';
+  name: string;
+  root: string;
+  file: string;
+  revision: string;
+}
+
 /** 一个视频条目与它在内容索引里的记录。 */
 export interface SpaceVideo {
   entryId: Id;
   dir: string;
   projectId: Id | null;
   conversationId: Id | null;
+  /** 索引文件夹里的视频（只读）；项目与会话的视频没有（或 null）。 */
+  folderId?: Id | null;
   lastActivityAt: string;
   videoId: Id | null;
 }
@@ -281,6 +345,9 @@ export class SpaceCatalog {
   readonly #conversationProjects = new Map<Id, Id | null>();
   /** 无项目会话工作目录的上级目录，首次扫描前换成真实路径（导出记下的发布路径是真实路径）。 */
   #scratchDirs: readonly string[];
+  #skipRoots: readonly string[];
+  /** 索引文件夹的扫描情况，键是文件夹 id。 */
+  readonly #folderScans = new Map<Id, FolderScanInfo>();
   readonly #files = new Map<Id, ScannedItem>();
   #derived = new Map<Id, DerivedEntry>();
   /** 派生时用的文件状态缓存：产物文件、来源目录之外的发布路径。 */
@@ -310,6 +377,8 @@ export class SpaceCatalog {
     this.#artifacts = options.artifacts ?? null;
     this.#index = options.index ?? null;
     this.#scratchDirs = options.scratchDirs ?? [];
+    this.#skipRoots = options.skipRoots ?? [];
+    for (const folder of options.folders ?? []) this.#addFolder(folder, false);
     this.#topic = new TopicLog(() => this.snapshot(), '0');
     this.ready = new Promise((resolve) => (this.#markReady = resolve));
     if (this.#jobs) {
@@ -341,6 +410,8 @@ export class SpaceCatalog {
     void this.#enqueue(async () => {
       const dirs = await Promise.all(this.#scratchDirs.map(async (dir) => [dir, await fsp.realpath(dir).catch(() => dir)]));
       this.#scratchDirs = [...new Set(dirs.flat())];
+      const skip = await Promise.all(this.#skipRoots.map(async (dir) => [dir, await fsp.realpath(dir).catch(() => dir)]));
+      this.#skipRoots = [...new Set(skip.flat())];
       if (this.#jobs) this.#retain(this.#jobs.list());
       await this.#reconcileTrash();
       await this.#scanAll();
@@ -401,28 +472,200 @@ export class SpaceCatalog {
     return derived.entry;
   }
 
-  /** 来源目录里的全部视频条目（内容检索的范围），按最近活动从新到旧。 */
+  /**
+   * 来源目录里的全部视频条目（内容检索的范围），按最近活动从新到旧。索引文件夹里的视频与项目或会话里的是同一部（videoId 相同）时
+   * 不列：按项目那一份（检索规格 §9.1）；文件夹里同一部有几份时只列一份。
+   */
   videos(): SpaceVideo[] {
+    return this.#videos().videos;
+  }
+
+  #videos(): { videos: SpaceVideo[]; duplicates: Set<Id> } {
     const videos: SpaceVideo[] = [];
+    const owned = new Set<Id>();
     for (const derived of this.#derived.values()) {
       if (!derived.videoDir) continue;
       const { entry } = derived;
+      const videoId = entry.ref && 'videoId' in entry.ref ? entry.ref.videoId : null;
+      if (videoId && !entry.source.folderId) owned.add(videoId);
       videos.push({
         entryId: entry.id,
         dir: derived.videoDir,
         projectId: entry.source.projectId,
         conversationId: entry.source.conversationId,
+        folderId: entry.source.folderId ?? null,
         lastActivityAt: entry.lastActivityAt,
-        videoId: entry.ref && 'videoId' in entry.ref ? entry.ref.videoId : null,
+        videoId,
       });
     }
-    videos.sort((a, b) => (a.lastActivityAt < b.lastActivityAt ? 1 : a.lastActivityAt > b.lastActivityAt ? -1 : 0));
-    return videos;
+    videos.sort((a, b) => (a.lastActivityAt < b.lastActivityAt ? 1 : a.lastActivityAt > b.lastActivityAt ? -1 : a.entryId < b.entryId ? -1 : 1));
+    const duplicates = new Set<Id>();
+    const kept = videos.filter((video) => {
+      if (!video.folderId || !video.videoId) return true;
+      if (owned.has(video.videoId)) {
+        duplicates.add(video.entryId);
+        return false;
+      }
+      owned.add(video.videoId);
+      return true;
+    });
+    return { videos: kept, duplicates };
   }
 
-  /** 全部来源目录（项目目录、没有项目的会话的工作目录）。 */
+  /** 全部来源目录（项目目录、没有项目的会话的工作目录）。索引文件夹不算：BaoCut 不往里写，也不在里面清理。 */
   sourceRoots(): string[] {
-    return [...this.#sources.values()].map((source) => source.root);
+    return [...this.#sources.values()].filter((source) => !source.folderId).map((source) => source.root);
+  }
+
+  // ---- 索引文件夹（检索规格 §9.1）----
+
+  /** 索引文件夹里只按画面建的文件（视频文件与图片，不含导出与缺失的），按最近活动从新到旧。 */
+  visualFiles(): SpaceVisualFile[] {
+    const files: SpaceVisualFile[] = [];
+    for (const [id, derived] of this.#derived) {
+      const { entry, location } = derived;
+      const folderId = entry.source.folderId;
+      if (!folderId || location.kind !== 'source' || entry.origin?.source === 'exported' || entry.status === 'missing') continue;
+      if (entry.kind !== 'video-file' && entry.kind !== 'image') continue;
+      const scanned = this.#files.get(id)?.file;
+      const source = this.#sources.get(location.sourceKey);
+      if (!scanned || !source) continue;
+      files.push({
+        entryId: id,
+        folderId,
+        kind: entry.kind,
+        name: entry.name,
+        root: source.root,
+        file: path.join(source.root, ...location.relPath.split('/')),
+        revision: crypto.createHash('sha256').update(`${scanned.size}\0${scanned.mtimeMs}\0${location.relPath}`).digest('hex').slice(0, 32),
+      });
+    }
+    return files;
+  }
+
+  /** 换成设置里的这一份文件夹：新加的登记并扫描，去掉的连同条目一起拿掉（内容与语义索引随之撤下）。 */
+  setFolders(folders: readonly SemanticFolder[]): void {
+    const wanted = new Set(folders.map((folder) => `folder:${folder.id}`));
+    for (const source of [...this.#sources.values()]) {
+      if (source.folderId && !wanted.has(source.key)) {
+        this.#folderScans.delete(source.folderId);
+        this.#removeSource(source.key);
+      }
+    }
+    for (const folder of folders) this.#addFolder(folder, true);
+  }
+
+  /** 重扫一个索引文件夹（添加之后、用户点「重新索引」）。不认得的文件夹 `not-found`。 */
+  async rescanFolder(folderId: Id): Promise<void> {
+    const key = `folder:${folderId}`;
+    if (!this.#sources.has(key)) throw new RpcError('not-found', RcSpace.folderUnknown(), { code: 'SPACE_FOLDER_UNKNOWN', folderId });
+    await this.refreshSource(key);
+  }
+
+  /**
+   * 能不能把 `dir` 加成索引文件夹：要是一个在的目录，且不是某个项目、会话工作目录或已加的文件夹，也不在它们里面（在里面的已经
+   * 在范围里）。包含它们可以：扫描时跳过它们。返回真实路径。
+   */
+  async checkFolder(dir: string): Promise<string> {
+    const real = await fsp.realpath(dir).catch(() => null);
+    const stat = real ? await fsp.stat(real).catch(() => null) : null;
+    if (!real || !stat?.isDirectory()) throw new RpcError('not-found', RcSpace.folderNotFound(), { code: 'SPACE_FOLDER_NOT_FOUND' });
+    for (const source of this.#sources.values()) {
+      for (const root of new Set([source.root, source.realRoot, await fsp.realpath(source.root).catch(() => source.root)])) {
+        if (real !== root && !real.startsWith(root + path.sep) && dir !== root && !dir.startsWith(root + path.sep)) continue;
+        throw new RpcError('conflict', RcSpace.folderInside({ name: this.#sourceName(source) }), {
+          code: 'SPACE_FOLDER_OVERLAP',
+          ...(source.folderId ? { folderId: source.folderId } : {}),
+          ...(source.projectId ? { projectId: source.projectId } : {}),
+        });
+      }
+    }
+    return real;
+  }
+
+  /** 一个索引文件夹在 Space 里的情况：在不在、扫描问题与各类条目的个数（画面进度由语义检索补上）。 */
+  folderStatus(folder: SemanticFolder): Omit<SemanticFolderStatus, 'visual'> {
+    const scan = this.#folderScans.get(folder.id);
+    const counts = { videos: 0, videoFiles: 0, images: 0, exports: 0, duplicates: 0, legacy: scan?.legacy ?? 0 };
+    const { duplicates } = this.#videos();
+    for (const derived of this.#derived.values()) {
+      const { entry } = derived;
+      if (entry.source.folderId !== folder.id) continue;
+      if (entry.origin?.source === 'exported') counts.exports++;
+      else if (derived.videoDir) {
+        if (duplicates.has(entry.id)) counts.duplicates++;
+        else counts.videos++;
+      } else if (entry.kind === 'video-file') counts.videoFiles++;
+      else if (entry.kind === 'image') counts.images++;
+    }
+    return {
+      id: folder.id,
+      path: folder.path,
+      name: path.basename(folder.path) || folder.path,
+      exists: scan?.exists ?? fs.existsSync(folder.path),
+      issue: scan?.issue ?? null,
+      counts,
+    };
+  }
+
+  /** 现在登记着的索引文件夹 id，与此刻不在的那些（外接盘没接上：它们的索引留着）。 */
+  folderIds(): { all: Id[]; missing: Id[] } {
+    const all: Id[] = [];
+    const missing: Id[] = [];
+    for (const source of this.#sources.values()) {
+      if (!source.folderId) continue;
+      all.push(source.folderId);
+      if (this.#folderScans.get(source.folderId)?.exists === false) missing.push(source.folderId);
+    }
+    return { all, missing };
+  }
+
+  #addFolder(folder: SemanticFolder, scan: boolean): void {
+    const key = `folder:${folder.id}`;
+    const existing = this.#sources.get(key);
+    if (existing && existing.root !== folder.path) this.#removeSource(key);
+    this.#addSource({ key, root: folder.path, realRoot: folder.path, projectId: null, conversationId: null, folderId: folder.id }, scan);
+  }
+
+  #sourceName(source: DeriveSource): string {
+    let name: string | undefined;
+    try {
+      if (source.projectId) name = this.#harness.listProjects().find((p) => p.id === source.projectId)?.name;
+    } catch {
+      // 项目列表读不到：用目录名。
+    }
+    return name || path.basename(source.root) || source.root;
+  }
+
+  /** 扫一个来源；索引文件夹按文件夹的规则扫，扫描问题记在文件夹的状态里，不进 Space 的问题清单。 */
+  async #scanSource(source: DeriveSource): Promise<ScanResult> {
+    if (!source.folderId) return scanDirectory(source.root, this.#limits);
+    const stat = await fsp.stat(source.root).catch(() => null);
+    const exists = stat?.isDirectory() ?? false;
+    // 文件夹本身在某个项目或会话的目录里（加文件夹之后才登记的项目）：那边已经列出这些文件。
+    const covered = [...this.#sources.values()].some((other) => !other.folderId && [other.root, other.realRoot].some((root) => isWithin(root, source.root)));
+    const result: ScanResult =
+      exists && !covered ? await scanDirectory(source.root, this.#limits, { skip: await this.#skipIn(source) }) : { files: [], issue: null, legacy: 0 };
+    this.#folderScans.set(source.folderId, {
+      exists,
+      issue: result.issue ? { kind: result.issue.kind, limit: result.issue.limit ?? null } : null,
+      legacy: result.legacy ?? 0,
+    });
+    return { files: result.files, issue: null };
+  }
+
+  /** 索引文件夹里要跳过的子目录（相对路径）：别的来源的目录与 Runtime 的目录。 */
+  async #skipIn(source: DeriveSource): Promise<Set<string>> {
+    const bases = new Set([source.root, await fsp.realpath(source.root).catch(() => source.root)]);
+    const others = [...this.#sources.values()].filter((other) => other !== source).flatMap((other) => [other.root, other.realRoot]);
+    const skip = new Set<string>();
+    for (const base of bases) {
+      for (const other of [...others, ...this.#skipRoots]) {
+        const rel = path.relative(base, other);
+        if (rel && !rel.startsWith('..') && !path.isAbsolute(rel)) skip.add(rel.split(path.sep).join('/'));
+      }
+    }
+    return skip;
   }
 
   get index(): ContentIndex | null {
@@ -460,6 +703,7 @@ export class SpaceCatalog {
   async update(params: { entryId: Id; favorite?: boolean; displayName?: string | null; trashed?: boolean }): Promise<SpaceEntry> {
     const derived = this.#derived.get(params.entryId);
     if (!derived) throw new RpcError('not-found', RcSpace.entryGone());
+    if (params.trashed === true && derived.entry.source.folderId) throw folderReadOnly(params.entryId);
     // 视频进出回收站是移动目录（`videos.delete` / `videos.restore`），方法层已经转过去了；这里只防直接调用。
     if (params.trashed === true && derived.videoDir && !derived.entry.user.trashedAt) {
       throw new RpcError('invalid-request', RcSpace.trashVideoUseDelete(), { code: 'SPACE_TRASH_VIDEO' });
@@ -477,16 +721,25 @@ export class SpaceCatalog {
     return this.get(params.entryId);
   }
 
-  /** 媒体通道与打开视频用：来源目录里的条目对应的来源目录与文件，以及来源（项目或会话）。 */
+  /**
+   * 打开视频、幻灯片、设计稿与字幕用：来源目录里的条目对应的来源目录与文件，以及来源（项目或会话）。索引文件夹里的条目只读，
+   * 不在这里给（`SPACE_FOLDER_READONLY`）；只读的 bytes 走 `locateBytes`。
+   */
   locate(entryId: Id): { root: string; file: string; scope: { projectId: Id } | { conversationId: Id } } {
+    const { root, file, source } = this.#sourceFile(entryId);
+    if (source.folderId) throw folderReadOnly(entryId);
+    const scope = source.projectId ? { projectId: source.projectId } : { conversationId: source.conversationId! };
+    return { root, file, scope };
+  }
+
+  #sourceFile(entryId: Id): { root: string; file: string; source: DeriveSource } {
     const derived = this.#derived.get(entryId);
     if (!derived) throw new RpcError('not-found', RcSpace.entryGone());
     const location = derived.location;
     if (location.kind === 'trash') throw new RpcError('conflict', RcSpace.videoDeletedRestoreFirst(), { code: 'VIDEO_TRASHED' });
     const source = location.kind === 'source' ? this.#sources.get(location.sourceKey) : undefined;
     if (location.kind !== 'source' || !source) throw new RpcError('not-found', RcSpace.notInSourceDir());
-    const scope = source.projectId ? { projectId: source.projectId } : { conversationId: source.conversationId! };
-    return { root: source.root, file: path.join(source.root, ...location.relPath.split('/')), scope };
+    return { root: source.root, file: path.join(source.root, ...location.relPath.split('/')), source };
   }
 
   /**
@@ -497,7 +750,10 @@ export class SpaceCatalog {
     const derived = this.#derived.get(entryId);
     if (!derived) throw new RpcError('not-found', RcSpace.entryGone());
     const location = derived.location;
-    if (location.kind === 'source' || location.kind === 'trash') return this.locate(entryId);
+    if (location.kind === 'source' || location.kind === 'trash') {
+      const { root, file } = this.#sourceFile(entryId);
+      return { root, file };
+    }
     if (location.kind === 'artifact' || location.kind === 'file') return { root: path.dirname(location.path), file: location.path };
     throw new RpcError('not-found', derived.entry.status === 'generating' ? RcSpace.stillGeneratingNoFile() : RcSpace.noReadableFile());
   }
@@ -610,6 +866,7 @@ export class SpaceCatalog {
     const derived = this.#derived.get(entryId);
     if (!derived) throw new RpcError('not-found', RcSpace.entryGone());
     const { entry, location } = derived;
+    if (entry.source.folderId) throw folderReadOnly(entryId);
     if (location.kind === 'trash') return this.#purgeVideo(entryId, location);
     if (entry.kind === 'video' && derived.videoDir) {
       throw new RpcError('invalid-request', RcSpace.purgeVideoDeleteFirst(), {
@@ -653,12 +910,14 @@ export class SpaceCatalog {
     if (!derived) throw new RpcError('not-found', RcSpace.entryGone());
     if (derived.location.kind === 'trash') throw new RpcError('conflict', RcSpace.videoDeletedRestoreFirst(), { code: 'VIDEO_TRASHED' });
     const { entry } = derived;
+    // 索引文件夹里的视频与文件不打开编辑；在那里的成片可以回到导出它的视频（视频在项目里时）。
+    if (entry.source.folderId && !entry.origin?.videoId) throw folderReadOnly(entryId);
     if (derived.videoDir) {
       return { mode: 'video', videoId: entry.ref && 'videoId' in entry.ref ? entry.ref.videoId : null, target: { entryId } };
     }
     const videoId = entry.origin?.videoId;
     if (videoId) {
-      const video = this.videos().find((v) => v.videoId === videoId) ?? null;
+      const video = this.videos().find((v) => v.videoId === videoId && !v.folderId) ?? null;
       const current = video && this.#index ? (this.#index.at(video.dir)?.revision ?? null) : null;
       const frozen = entry.origin?.videoRevision ?? null;
       return {
@@ -683,6 +942,7 @@ export class SpaceCatalog {
     if (!derived.videoDir || derived.location.kind !== 'source') {
       throw new RpcError('invalid-request', RcSpace.notVideo(), { code: 'SPACE_ENTRY_NOT_VIDEO' });
     }
+    if (derived.entry.source.folderId) throw folderReadOnly(entryId);
     const location = this.locate(entryId);
     return {
       entry: derived.entry,
@@ -694,19 +954,33 @@ export class SpaceCatalog {
     };
   }
 
-  /** 来源目录里、真实路径是 `dir` 的视频条目；没有时 null。刚建的视频可能还没扫到：先重扫它所在的来源再找一次。 */
+  /**
+   * 视频条目的视频目录，只读用（缩略图、命中的那一刻、主素材）：索引文件夹里的也给。不是视频或已经删除时报错，与 `videoEntry` 相同。
+   */
+  videoDir(entryId: Id): string {
+    const derived = this.#derived.get(entryId);
+    if (!derived) throw new RpcError('not-found', RcSpace.entryGone());
+    if (derived.location.kind === 'trash') throw new RpcError('conflict', RcSpace.videoDeleted(), { code: 'VIDEO_TRASHED' });
+    if (!derived.videoDir || derived.location.kind !== 'source') {
+      throw new RpcError('invalid-request', RcSpace.notVideo(), { code: 'SPACE_ENTRY_NOT_VIDEO' });
+    }
+    return derived.videoDir;
+  }
+
+  /** 来源目录里、真实路径是 `dir` 的视频条目；没有时 null（索引文件夹里的不算：它们只读）。刚建的视频可能还没扫到：先重扫它所在的来源再找一次。 */
   async videoEntryAt(dir: string): Promise<VideoEntryInfo | null> {
     const real = await fsp.realpath(dir).catch(() => null);
     if (!real) return null;
     const find = async () => {
       for (const video of this.videos()) {
+        if (video.folderId) continue;
         if (video.dir === real || (await fsp.realpath(video.dir).catch(() => null)) === real) return this.videoEntry(video.entryId);
       }
       return null;
     };
     const found = await find();
     if (found || !(await isVideoDir(real))) return found;
-    const within = [...this.#sources.values()].filter((s) => real.startsWith(s.realRoot + path.sep) || real.startsWith(s.root + path.sep));
+    const within = [...this.#sources.values()].filter((s) => !s.folderId).filter((s) => real.startsWith(s.realRoot + path.sep) || real.startsWith(s.root + path.sep));
     if (within.length === 0) return null;
     for (const source of within) await this.refreshSource(source.key);
     return find();
@@ -1059,13 +1333,29 @@ export class SpaceCatalog {
   #addSource(source: DeriveSource, scan: boolean): boolean {
     if (this.#sources.has(source.key)) return false;
     this.#sources.set(source.key, source);
-    this.#startWatch(source);
-    if (scan) this.#schedule(source.key, 0);
+    // 索引文件夹不监视（可能很大）：启动、添加与「重新索引」时重扫。
+    if (!source.folderId) this.#startWatch(source);
+    if (scan) {
+      this.#schedule(source.key, 0);
+      this.#rescanFoldersAround(source);
+    }
     return true;
   }
 
+  /** 项目或会话的目录在某个索引文件夹里（或反过来）：那个文件夹要重扫，跳过或补回这一块。 */
+  #rescanFoldersAround(changed: DeriveSource): void {
+    if (changed.folderId) return;
+    for (const source of this.#sources.values()) {
+      if (!source.folderId) continue;
+      const roots = [source.root, source.realRoot];
+      if ([changed.root, changed.realRoot].some((root) => roots.some((r) => isWithin(r, root) || isWithin(root, r)))) this.#schedule(source.key, 0);
+    }
+  }
+
   #removeSource(key: string): void {
+    const removed = this.#sources.get(key);
     if (!this.#sources.delete(key)) return;
+    if (removed) this.#rescanFoldersAround(removed);
     this.#watchers.get(key)?.close();
     this.#watchers.delete(key);
     clearTimeout(this.#timers.get(key));
@@ -1128,7 +1418,7 @@ export class SpaceCatalog {
   async #scanAll(): Promise<void> {
     const results = await Promise.all(
       [...this.#sources.values()].map(async (source) => {
-        const result = await scanDirectory(source.root, this.#limits);
+        const result = await this.#scanSource(source);
         await this.#resolveRoot(source);
         return [source, result] as const;
       }),
@@ -1150,7 +1440,7 @@ export class SpaceCatalog {
   async #rescanSource(key: string): Promise<void> {
     const source = this.#sources.get(key);
     if (!source) return;
-    const result = await scanDirectory(source.root, this.#limits);
+    const result = await this.#scanSource(source);
     await this.#resolveRoot(source);
     if (this.#sources.get(key) !== source) return;
     this.#apply(source, result);
@@ -1248,6 +1538,11 @@ export class SpaceCatalog {
       if (!next.has(id)) this.#topic.publish({ type: 'entry.removed', entryId: id });
     }
   }
+}
+
+/** `child` 是 `root` 或在它里面。 */
+function isWithin(root: string, child: string): boolean {
+  return child === root || child.startsWith(root + path.sep);
 }
 
 async function isVideoDir(dir: string): Promise<boolean> {

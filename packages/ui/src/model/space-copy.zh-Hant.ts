@@ -32,6 +32,7 @@ export const zhHant: SpaceMessages = {
   statusNone: '無狀態',
   noProject: '不屬於任何專案',
   removedProject: '已移除的專案',
+  indexFolder: (name: string | null) => (name ? `索引資料夾「${name}」` : '索引資料夾'),
   conversation: (title: string) => `對話「${title}」`,
   derivedFrom: (name: string) => `來自「${name}」`,
   kindCount: (kind: string, n: number) => `${kind} ${n}`,

@@ -40,6 +40,7 @@ export const ko: SettingDescriptionMessages = {
   'offline.strict': '엄격한 오프라인: 어떤 온라인 서비스에도 아무것도 보내지 않습니다',
   'semantic.channels': '의미 색인을 만들 채널: text(말한 내용: 대본, 자막, 번역, 챕터). 화면(visual)은 8초마다 키프레임 하나로, 멀티모달 모델 패키지가 필요하고 더 오래 걸립니다. 소리(audio)는 아직 사용할 수 없습니다',
   'semantic.excludedProjects': '의미 색인에서 제외할 프로젝트(프로젝트 ID 목록): BaoCut의 모든 프로젝트와 프로젝트 밖의 동영상을 색인하고 이것만 뺍니다. 제외한 동영상도 정확한 단어로는 찾을 수 있습니다',
+  'semantic.folders': '프로젝트 밖의 색인 폴더({id, path} 목록). 안의 동영상과 이미지가 Space에 표시되고 의미로 색인됩니다(읽기 전용). space.folderAdd와 space.folderRemove로 바꿉니다',
   'semantic.excludedVideos': '의미 색인에서 따로 제외할 동영상(동영상 ID 목록). 제외한 프로젝트에 더해 적용되며 이미 만든 색인은 지웁니다',
   'semantic.indexDir':
     '의미 색인을 둘 폴더(절대 경로). null이면 앱 캐시에 둡니다. space.indexSetDir로 바꾸면 색인을 옮기거나 다시 만듭니다',

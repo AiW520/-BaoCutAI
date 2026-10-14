@@ -3,7 +3,7 @@ import type { Autonomy, Id } from './domain.ts';
 import type { LanguagePreference } from './i18n.ts';
 import type { CookieBrowsersSetting } from './pipelines.ts';
 import type { ResourceCapacitySetting } from './resources.ts';
-import type { SemanticChannel } from './semantic.ts';
+import type { SemanticChannel, SemanticFolder } from './semantic.ts';
 import { SETTING_DESCRIPTION_MESSAGES } from './settings-copy.ts';
 
 /**
@@ -133,6 +133,11 @@ export interface SettingValues {
   /** 不建语义索引的单个视频（Space 条目「不索引」）：与项目的排除叠加，已建的索引撤下。 */
   'semantic.excludedVideos': Id[];
   /**
+   * 索引文件夹（检索规格 §9.1）：项目之外加进来的只读扫描目录，里面的视频与图片出现在 Space 里、建语义索引。只经
+   * `space.folderAdd` / `space.folderRemove` 改，不经 `settings.set`。
+   */
+  'semantic.folders': SemanticFolder[];
+  /**
    * 用电池时暂停建语义索引（检索规格 §16.1），接上电源后接着建。Runtime 自己查供电（macOS、Windows、Linux），查不出时当作
    * 接着电。系统因过热降频时总是暂停，不受它影响。
    */
@@ -180,6 +185,7 @@ export const SETTING_KEYS = [
   'semantic.channels',
   'semantic.excludedProjects',
   'semantic.excludedVideos',
+  'semantic.folders',
   'semantic.indexDir',
   'semantic.pauseOnBattery',
   'semantic.translationMemory',
@@ -215,6 +221,7 @@ export const SETTING_DEFAULTS: Readonly<SettingValues> = Object.freeze({
   'semantic.channels': Object.freeze(['text', 'visual']) as unknown as SemanticChannel[],
   'semantic.excludedProjects': Object.freeze([]) as unknown as Id[],
   'semantic.excludedVideos': Object.freeze([]) as unknown as Id[],
+  'semantic.folders': Object.freeze([]) as unknown as SemanticFolder[],
   'semantic.indexDir': null,
   'semantic.pauseOnBattery': true,
   'semantic.translationMemory': true,
@@ -237,6 +244,7 @@ export function settingDescription(key: SettingKey): string {
 export const SETTING_MANAGED_BY: Readonly<Partial<Record<SettingKey, string>>> = {
   'models.dir': 'models.setDir',
   'semantic.indexDir': 'space.indexSetDir',
+  'semantic.folders': 'space.folderAdd',
 };
 
 export function isSettingKey(key: string): key is SettingKey {

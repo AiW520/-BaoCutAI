@@ -25,12 +25,16 @@ import type { ChunkDraft, SentenceRow } from './chunks.ts';
  * 发布（§9.5）：一个事务里核对冻结时的版本仍是最新冻结的（`wanted_revision`）、世代指针没被别人换过，再写入全部关系并切换指针；
  * 核对不过就不发布（迟到的旧结果不覆盖新版本，§9.3），只留下内容寻址的向量缓存。
  *
- * 格式版本：格式 1（只有文字）原地补上画面的表升到 2，文字索引原样保留；更旧的、坏掉的库删掉重建；更新的（更新版本的 BaoCut
+ * 索引文件夹（检索规格 §9.1，格式 3 起）：`sources` 与 `visual_sources` 记着视频所在的文件夹（`folder_id`），文件夹不在时
+ * （外接盘没接上）留着它的索引；`visual_sources.target` 区分视频（`video`，键是 videoId）与只按画面建的文件（`file`，视频文件与
+ * 图片，键是 Space 条目 id）。
+ *
+ * 格式版本：格式 1（只有文字）原地补上画面的表升到 2，格式 2 原地补上索引文件夹的列升到 3，文字与画面索引原样保留；更旧的、坏掉的库删掉重建；更新的（更新版本的 BaoCut
  * 写的）不动，语义检索在这个进程里不可用（§8.1）。目录名仍是 `v1`。
  */
 
 /** 库的格式版本（`PRAGMA user_version`）。 */
-export const SEMANTIC_STORE_VERSION = 2;
+export const SEMANTIC_STORE_VERSION = 3;
 export const SEMANTIC_STORE_FILE = 'index.db';
 /** 相对缓存目录的位置。 */
 export const SEMANTIC_STORE_DIR = path.join('semantic-index', 'v1');
@@ -134,12 +138,21 @@ const VISUAL_SCHEMA = `
   CREATE INDEX IF NOT EXISTS visual_frames_key ON visual_frames(embedding_key);
 `;
 
+/** 格式 3 加的列：索引文件夹与只按画面建的文件。 */
+const FOLDER_SCHEMA = `
+  ALTER TABLE sources ADD COLUMN folder_id TEXT;
+  ALTER TABLE visual_sources ADD COLUMN folder_id TEXT;
+  ALTER TABLE visual_sources ADD COLUMN target TEXT NOT NULL DEFAULT 'video';
+`;
+
 export type SourceState = 'pending' | 'indexed' | 'empty' | 'failed';
 
 export interface SourceRow {
   videoId: Id;
   dir: string;
   projectId: Id | null;
+  /** 在索引文件夹里的视频：文件夹 id。 */
+  folderId: Id | null;
   /** 最近一次冻结（排进来）的版本。 */
   wantedRevision: string | null;
   activeGeneration: number | null;
@@ -202,12 +215,18 @@ export type PublishResult = { published: true; generationId: number } | { publis
 
 /** 一个视频的画面索引：最近一次冻结的版本（视频里各素材内容版本的摘要）与当前发布的世代。 */
 export interface VisualSourceRow {
+  /** 视频的 videoId；`target` 为 `file` 时是文件的 Space 条目 id。 */
   videoId: Id;
+  target: VisualTarget;
+  folderId: Id | null;
   wantedRevision: string | null;
   activeGeneration: number | null;
   state: SourceState;
   error: string | null;
 }
+
+/** 画面索引的对象：视频（它的视频素材），或索引文件夹里的一个视频文件、一张图片。 */
+export type VisualTarget = 'video' | 'file';
 
 /** 画面世代里的一帧：素材、它的内容版本、来源时间（秒）与向量。 */
 export interface StoredFrame {
@@ -263,11 +282,13 @@ export class SemanticStore {
       try {
         version = (db.prepare('PRAGMA user_version').get() as { user_version: number }).user_version;
         const empty = (db.prepare("SELECT count(*) AS n FROM sqlite_master WHERE type = 'table'").get() as { n: number }).n === 0;
-        if (version === SEMANTIC_STORE_VERSION || version === 1 || empty) {
+        if (version === SEMANTIC_STORE_VERSION || version === 1 || version === 2 || empty) {
           db.exec('PRAGMA journal_mode = WAL; PRAGMA synchronous = NORMAL;');
-          if (empty) db.exec(`BEGIN; ${SCHEMA} ${VISUAL_SCHEMA} PRAGMA user_version = ${SEMANTIC_STORE_VERSION}; COMMIT;`);
-          // 格式 1 → 2：只加画面的表，文字索引不动。
-          else if (version === 1) db.exec(`BEGIN; ${VISUAL_SCHEMA} PRAGMA user_version = ${SEMANTIC_STORE_VERSION}; COMMIT;`);
+          if (empty) db.exec(`BEGIN; ${SCHEMA} ${VISUAL_SCHEMA} ${FOLDER_SCHEMA} PRAGMA user_version = ${SEMANTIC_STORE_VERSION}; COMMIT;`);
+          // 格式 1 → 3：加画面的表与索引文件夹的列，文字索引不动。
+          else if (version === 1) db.exec(`BEGIN; ${VISUAL_SCHEMA} ${FOLDER_SCHEMA} PRAGMA user_version = ${SEMANTIC_STORE_VERSION}; COMMIT;`);
+          // 格式 2 → 3：只加索引文件夹的列。
+          else if (version === 2) db.exec(`BEGIN; ${FOLDER_SCHEMA} PRAGMA user_version = ${SEMANTIC_STORE_VERSION}; COMMIT;`);
           return db;
         }
       } catch {
@@ -282,7 +303,7 @@ export class SemanticStore {
     removeSemanticStore(this.file);
     const db = new DatabaseSync(this.file, { timeout: BUSY_TIMEOUT_MS });
     db.exec('PRAGMA journal_mode = WAL; PRAGMA synchronous = NORMAL;');
-    db.exec(`BEGIN; ${SCHEMA} ${VISUAL_SCHEMA} PRAGMA user_version = ${SEMANTIC_STORE_VERSION}; COMMIT;`);
+    db.exec(`BEGIN; ${SCHEMA} ${VISUAL_SCHEMA} ${FOLDER_SCHEMA} PRAGMA user_version = ${SEMANTIC_STORE_VERSION}; COMMIT;`);
     return db;
   }
 
@@ -334,20 +355,20 @@ export class SemanticStore {
    * 冻结（§9.2 freeze）：记下这次要建的版本，返回此刻的世代指针（发布时的 CAS 依据）。之后再冻结一个更新的版本，
    * 这一次的发布就会被拒绝。
    */
-  freeze(videoId: Id, dir: string, projectId: Id | null, revision: string): { expectedGeneration: number | null } {
+  freeze(videoId: Id, dir: string, projectId: Id | null, revision: string, folderId: Id | null = null): { expectedGeneration: number | null } {
     return this.#transaction(() => {
       const existing = this.source(videoId);
       if (existing) {
         this.#prepare(
-          `UPDATE sources SET dir = ?, project_id = ?, wanted_revision = ?, state = CASE WHEN state = 'failed' THEN 'pending' ELSE state END,
-             error = NULL, updated_at = ? WHERE video_id = ?`,
-        ).run(dir, projectId, revision, new Date().toISOString(), videoId);
+          `UPDATE sources SET dir = ?, project_id = ?, folder_id = ?, wanted_revision = ?,
+             state = CASE WHEN state = 'failed' THEN 'pending' ELSE state END, error = NULL, updated_at = ? WHERE video_id = ?`,
+        ).run(dir, projectId, folderId, revision, new Date().toISOString(), videoId);
         return { expectedGeneration: existing.activeGeneration };
       }
       this.#prepare(
-        `INSERT INTO sources (video_id, dir, project_id, wanted_revision, active_generation, state, error, updated_at)
-         VALUES (?, ?, ?, ?, NULL, 'pending', NULL, ?)`,
-      ).run(videoId, dir, projectId, revision, new Date().toISOString());
+        `INSERT INTO sources (video_id, dir, project_id, folder_id, wanted_revision, active_generation, state, error, updated_at)
+         VALUES (?, ?, ?, ?, ?, NULL, 'pending', NULL, ?)`,
+      ).run(videoId, dir, projectId, folderId, revision, new Date().toISOString());
       return { expectedGeneration: null };
     });
   }
@@ -388,21 +409,27 @@ export class SemanticStore {
     return row ? visualSourceOf(row) : null;
   }
 
-  /** 画面的冻结（同 `freeze`）：记下要建的版本，返回此刻的画面世代指针。 */
-  freezeVisual(videoId: Id, revision: string): { expectedGeneration: number | null } {
+  /** 画面的冻结（同 `freeze`）：记下要建的版本，返回此刻的画面世代指针。`target` 为 `file` 时 `videoId` 是文件的条目 id。 */
+  freezeVisual(
+    videoId: Id,
+    revision: string,
+    options: { folderId?: Id | null; target?: VisualTarget } = {},
+  ): { expectedGeneration: number | null } {
+    const folderId = options.folderId ?? null;
     return this.#transaction(() => {
       const existing = this.visualSource(videoId);
       const now = new Date().toISOString();
       if (existing) {
         this.#prepare(
-          `UPDATE visual_sources SET wanted_revision = ?, state = CASE WHEN state = 'failed' THEN 'pending' ELSE state END, error = NULL,
-             updated_at = ? WHERE video_id = ?`,
-        ).run(revision, now, videoId);
+          `UPDATE visual_sources SET wanted_revision = ?, folder_id = ?, state = CASE WHEN state = 'failed' THEN 'pending' ELSE state END,
+             error = NULL, updated_at = ? WHERE video_id = ?`,
+        ).run(revision, folderId, now, videoId);
         return { expectedGeneration: existing.activeGeneration };
       }
       this.#prepare(
-        `INSERT INTO visual_sources (video_id, wanted_revision, active_generation, state, error, updated_at) VALUES (?, ?, NULL, 'pending', NULL, ?)`,
-      ).run(videoId, revision, now);
+        `INSERT INTO visual_sources (video_id, target, folder_id, wanted_revision, active_generation, state, error, updated_at)
+         VALUES (?, ?, ?, ?, NULL, 'pending', NULL, ?)`,
+      ).run(videoId, options.target ?? 'video', folderId, revision, now);
       return { expectedGeneration: null };
     });
   }
@@ -708,6 +735,7 @@ interface RawSource {
   video_id: string;
   dir: string;
   project_id: string | null;
+  folder_id: string | null;
   wanted_revision: string | null;
   active_generation: number | null;
   state: SourceState;
@@ -716,6 +744,8 @@ interface RawSource {
 
 interface RawVisualSource {
   video_id: string;
+  target: VisualTarget;
+  folder_id: string | null;
   wanted_revision: string | null;
   active_generation: number | null;
   state: SourceState;
@@ -780,6 +810,7 @@ function sourceOf(row: RawSource): SourceRow {
     videoId: row.video_id,
     dir: row.dir,
     projectId: row.project_id,
+    folderId: row.folder_id ?? null,
     wantedRevision: row.wanted_revision,
     activeGeneration: row.active_generation,
     state: row.state,
@@ -790,6 +821,8 @@ function sourceOf(row: RawSource): SourceRow {
 function visualSourceOf(row: RawVisualSource): VisualSourceRow {
   return {
     videoId: row.video_id,
+    target: row.target ?? 'video',
+    folderId: row.folder_id ?? null,
     wantedRevision: row.wanted_revision,
     activeGeneration: row.active_generation,
     state: row.state,

@@ -32,6 +32,7 @@ export const it: SpaceMessages = {
   statusNone: "Nessuno stato",
   noProject: "Non in un progetto",
   removedProject: "Progetto rimosso",
+  indexFolder: (name: string | null) => (name ? `Cartella indicizzata «${name}»` : 'Cartella indicizzata'),
   conversation: (title: string) => `Sessione «${title}»`,
   derivedFrom: (name: string) => `Da «${name}»`,
   kindCount: (kind: string, n: number) => `${kind} ${n}`,

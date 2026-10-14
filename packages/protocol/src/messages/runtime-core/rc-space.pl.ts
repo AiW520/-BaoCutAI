@@ -71,4 +71,8 @@ export const pl: RcSpaceMessages = {
   indexDirOccupied: 'Ten folder ma już indeks semantyczny. Wybierz pusty folder albo zbuduj tam indeks od nowa, aby użyć istniejącego',
   indexDirMoving: 'Indeks jest przenoszony. Poczekaj na koniec przenoszenia',
   indexDirMoveFailed: (p: { reason: string }) => `Nie udało się przenieść indeksu; został w poprzednim miejscu: ${p.reason}`,
+  folderReadOnly: 'To jest w folderze indeksu, który BaoCut tylko odczytuje. Nie można tego przenieść do kosza, usunąć ani edytować',
+  folderNotFound: 'Folder nie istnieje',
+  folderUnknown: 'Tego folderu indeksu nie ma na liście',
+  folderInside: (p: { name: string }) => `Ten folder jest już indeksowany jako część „${p.name}”`,
 };

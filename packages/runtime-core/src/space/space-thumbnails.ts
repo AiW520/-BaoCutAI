@@ -115,7 +115,7 @@ export class SpaceThumbnails {
    */
   async videoSource(entryId: Id): Promise<{ root: string; file: string }> {
     const { catalog, assetFileAt } = this.#deps;
-    const dir = catalog.videoEntry(entryId).dir;
+    const dir = catalog.videoDir(entryId);
     const poster = (await catalog.index?.ensure(dir))?.facts.poster;
     if (!poster) throw new RpcError('not-found', RcSpace.noReadableFile());
     return assetFileAt(dir, poster.assetId, poster.revision);
@@ -129,7 +129,7 @@ export class SpaceThumbnails {
     const { catalog, analysis, assetFileAt, readContent } = this.#deps;
     if (entry.kind !== 'video') throw new RpcError('invalid-request', RcSpace.notVideo(), { code: 'SPACE_ENTRY_NOT_VIDEO' });
     if (!readContent) throw new RpcError('engine-unavailable', RcSpace.engineUnavailable());
-    const dir = catalog.videoEntry(entry.id).dir;
+    const dir = catalog.videoDir(entry.id);
     const content = await this.#momentSource(dir, readContent);
     const moments = await Promise.all(
       spans.map(async (span): Promise<SpaceHitMoment> => {
@@ -189,7 +189,7 @@ export class SpaceThumbnails {
    * 不打开视频。不是视频的条目 not-found。
    */
   async videoAsset(entryId: Id, assetId: Id, revision: string): Promise<{ root: string; file: string; name: string }> {
-    const dir = this.#deps.catalog.videoEntry(entryId).dir;
+    const dir = this.#deps.catalog.videoDir(entryId);
     const found = await this.#deps.assetFileAt(dir, assetId, revision);
     return { root: found.root, file: found.file, name: found.name ?? path.basename(found.file) };
   }
@@ -201,7 +201,7 @@ export class SpaceThumbnails {
     if (!index) return NONE;
     let dir: string;
     try {
-      dir = catalog.videoEntry(entry.id).dir;
+      dir = catalog.videoDir(entry.id);
     } catch {
       return NONE;
     }

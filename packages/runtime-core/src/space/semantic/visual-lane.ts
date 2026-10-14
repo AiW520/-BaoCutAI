@@ -2,7 +2,7 @@ import crypto from 'node:crypto';
 import { mediaTimeToSeconds, type Id, type VideoSnapshot } from '@baocut/protocol';
 import { EmbeddingError, type EmbeddingFrames, type EmbeddingProfile } from '@baocut/models';
 import type { Logger } from '@baocut/harness';
-import type { SpaceVideo } from '../../space-catalog.ts';
+import type { SpaceVideo, SpaceVisualFile } from '../../space-catalog.ts';
 import { assetSegments, projectSourceTime, type AssetSegment } from '../../agent-tools/source-chapters.ts';
 import type { ContentReader } from '../content-index.ts';
 import { semanticWanted, validVector, type SemanticCatalogSource, type SemanticSettings } from './coordinator.ts';
@@ -21,6 +21,8 @@ import type { VectorScanner } from './vector-index.ts';
  *   不取帧。取不出的帧（解码失败、时间超出）跳过，不让整个视频失败。
  * - 没有能读图的模型包（只装了文字包）时停下，记下原因，不把视频记失败。
  * - 暂停与文字共用（用户的暂停与供电、散热的自动停下）；暂停时手上那一批编码完就停，不发布半成品。
+ * - 索引文件夹里的视频文件与图片（检索规格 §9.1）：开了画面通道时也建，按条目 id 记（`target: 'file'`）。视频文件每隔
+ *   `FRAME_INTERVAL_SEC` 秒一帧，图片一帧；版本是文件的大小、修改时间与相对路径，向量按它寻址。
  */
 
 /** 每隔几秒（来源时间）取一帧：G0 多模态评测按 8 秒取帧，CPU 每小时视频约 7.5–9 分钟。 */
@@ -40,6 +42,10 @@ export interface VisualAsset {
 /** 关键帧的来源（Runtime 里接 `MediaAnalysis.keyframeFile` 与 `VideoService.assetFileAt`）：返回缓存里的图片文件。 */
 export interface KeyframeSource {
   keyframe(dir: string, asset: VisualAsset, at: number, frames: EmbeddingFrames): Promise<string>;
+  /** 索引文件夹里的视频文件或图片的一帧（`MediaAnalysis.fileKeyframe`）；不给时不建这些文件的画面。 */
+  fileKeyframe?(target: { root: string; file: string }, at: number, frames: EmbeddingFrames): Promise<string>;
+  /** 索引文件夹里的视频文件的时长（秒）；不知道时 null，只取开头一帧。 */
+  fileDuration?(target: { root: string; file: string }): Promise<number | null>;
 }
 
 export interface VisualLaneOptions {
@@ -62,10 +68,18 @@ export interface VisualLaneOptions {
 }
 
 interface Planned {
+  /** 队列里的键：视频是视频目录，索引文件夹里的文件是 `file:<条目 id>`。 */
+  key: string;
   dir: string;
+  /** 视频的 id；文件是条目 id。 */
   videoId: Id;
+  folderId: Id | null;
   rebuild: boolean;
+  file?: SpaceVisualFile;
 }
+
+/** 要取的一帧：取出图片文件的办法与它发布时的记录。 */
+type PlannedFrame = PublishVisualInput['frames'][number] & { grab: () => Promise<string> };
 
 /** 画面向量的 `embeddingKey`：编码实现 + 素材内容 + 帧的时间（毫秒）。 */
 export function frameKeyOf(encoderProfileId: string, contentHash: string, millis: number): string {
@@ -132,6 +146,19 @@ export class VisualLane {
     return this.#blocked;
   }
 
+  /** 画面一路自己管着的文件（索引文件夹里的视频文件与图片）的条目 id：清理不在 Space 里的视频时不算它们。 */
+  known(): Id[] {
+    const settings = this.#options.settings();
+    return this.#files()
+      .filter((file) => semanticWanted(settings, { videoId: file.entryId, projectId: null }))
+      .map((file) => file.entryId);
+  }
+
+  /** 索引文件夹里要按画面建的文件；没有按文件取帧的办法时没有。 */
+  #files(): SpaceVisualFile[] {
+    return this.#options.frames.fileKeyframe ? (this.#options.catalog.visualFiles?.() ?? []) : [];
+  }
+
   /** 暂停、清理：停下手上的一批。 */
   abort(): void {
     this.#abort?.abort();
@@ -159,13 +186,22 @@ export class VisualLane {
     if (this.#closed) return;
     const store = this.#options.store();
     if (!store || !this.#options.scheduler()) return;
+    this.#planAll(store, videos);
+    this.kick();
+  }
+
+  #planAll(store: SemanticStore, videos: readonly SpaceVideo[]): void {
     const all = this.#options.settings().channels.includes('visual');
     for (const video of videos) {
       if (this.#queue.has(video.dir)) continue;
       const item = this.#planOne(store, video, { all, rebuild: false, explicit: false });
-      if (item) this.#queue.set(item.dir, item);
+      if (item) this.#queue.set(item.key, item);
     }
-    this.kick();
+    for (const file of this.#files()) {
+      if (this.#queue.has(`file:${file.entryId}`)) continue;
+      const item = this.#planFile(store, file, all);
+      if (item) this.#queue.set(item.key, item);
+    }
   }
 
   /** 明确要建这些视频的画面（`space.indexBuild`）：排到队首，不看设置里开没开画面（排除的项目与视频照样不建）。返回计划处理的视频数。 */
@@ -177,9 +213,23 @@ export class VisualLane {
       const item = this.#planOne(store, video, { all: true, rebuild: options.rebuild === true, explicit: true });
       if (item) planned.push(item);
     }
-    const rest = [...this.#queue.values()].filter((item) => !planned.some((p) => p.dir === item.dir));
+    const rest = [...this.#queue.values()].filter((item) => !planned.some((p) => p.key === item.key));
     this.#queue.clear();
-    for (const item of [...planned, ...rest]) this.#queue.set(item.dir, item);
+    for (const item of [...planned, ...rest]) this.#queue.set(item.key, item);
+    this.kick();
+    return planned.length;
+  }
+
+  /** 索引文件夹「重新索引」：这些文件丢掉已有向量、排到队首重建（失败过的也重试）。返回计划处理的文件数。 */
+  rebuildFiles(files: readonly SpaceVisualFile[]): number {
+    if (!this.#options.store() || !this.#options.frames.fileKeyframe) return 0;
+    const settings = this.#options.settings();
+    const planned: Planned[] = files
+      .filter((file) => semanticWanted(settings, { videoId: file.entryId, projectId: null }))
+      .map((file) => ({ key: `file:${file.entryId}`, dir: file.file, videoId: file.entryId, folderId: file.folderId, rebuild: true, file }));
+    const rest = [...this.#queue.values()].filter((item) => !planned.some((p) => p.key === item.key));
+    this.#queue.clear();
+    for (const item of [...planned, ...rest]) this.#queue.set(item.key, item);
     this.kick();
     return planned.length;
   }
@@ -193,13 +243,26 @@ export class VisualLane {
     // 排除在语义索引范围外的不建（明确要也不建，与讲话一路一样）；没开画面时只跟着要过的视频走。
     if (!semanticWanted(this.#options.settings(), { videoId: indexed.videoId, projectId: video.projectId })) return null;
     if (!options.explicit && !source && !options.all) return null;
-    const item: Planned = { dir: video.dir, videoId: indexed.videoId, rebuild: options.rebuild };
+    const item: Planned = { key: video.dir, dir: video.dir, videoId: indexed.videoId, folderId: video.folderId ?? null, rebuild: options.rebuild };
     if (options.rebuild) return item;
     if (!options.explicit && source?.state === 'failed' && source.wantedRevision === indexed.revision) return null;
     const generation = store.activeVisualGenerations([indexed.videoId]).get(indexed.videoId) ?? null;
     const profileId = this.#profileId;
     const current = generation !== null && generation.revision === indexed.revision && (profileId === null || generation.encoderProfileId === profileId);
     return current ? null : item;
+  }
+
+  /** 索引文件夹里的一个文件要不要（重）建：开了画面通道时建，建过的跟着文件变化保持更新。 */
+  #planFile(store: SemanticStore, file: SpaceVisualFile, all: boolean): Planned | null {
+    if (!semanticWanted(this.#options.settings(), { videoId: file.entryId, projectId: null })) return null;
+    const source = store.visualSource(file.entryId);
+    if (!source && !all) return null;
+    if (source?.state === 'failed' && source.wantedRevision === file.revision) return null;
+    const generation = store.activeVisualGenerations([file.entryId]).get(file.entryId) ?? null;
+    const profileId = this.#profileId;
+    const current = generation !== null && generation.revision === file.revision && (profileId === null || generation.encoderProfileId === profileId);
+    if (current) return null;
+    return { key: `file:${file.entryId}`, dir: file.file, videoId: file.entryId, folderId: file.folderId, rebuild: false, file };
   }
 
   kick(): void {
@@ -227,15 +290,10 @@ export class VisualLane {
       if (this.#profileId !== profile.encoderProfileId) {
         // 换了模型包：已经建好的画面世代按新 profile 重新规划。
         this.#profileId = profile.encoderProfileId;
-        const all = this.#options.settings().channels.includes('visual');
-        for (const video of this.#options.catalog.videos()) {
-          if (this.#queue.has(video.dir)) continue;
-          const item = this.#planOne(store, video, { all, rebuild: false, explicit: false });
-          if (item) this.#queue.set(item.dir, item);
-        }
+        this.#planAll(store, this.#options.catalog.videos());
       }
       const item = this.#queue.values().next().value!;
-      this.#queue.delete(item.dir);
+      this.#queue.delete(item.key);
       this.#abort = new AbortController();
       this.#current = { videoId: item.videoId, done: 0, total: 0 };
       try {
@@ -243,17 +301,20 @@ export class VisualLane {
         this.#blocked = null;
       } catch (error) {
         if (this.#abort.signal.aborted) {
-          if (!this.#closed) this.#queue.set(item.dir, item);
+          if (!this.#closed) this.#queue.set(item.key, item);
           return;
         }
         if (error instanceof EmbeddingError && MODEL_REASONS.includes(error.reason)) {
-          this.#queue.set(item.dir, item);
+          this.#queue.set(item.key, item);
           this.#block(error);
           return;
         }
-        const indexed = this.#options.catalog.index?.at(item.dir);
-        if (indexed) {
-          store.freezeVisual(indexed.videoId, indexed.revision);
+        const indexed = item.file ? null : this.#options.catalog.index?.at(item.dir);
+        if (item.file) {
+          store.freezeVisual(item.file.entryId, item.file.revision, { folderId: item.folderId, target: 'file' });
+          store.markVisualFailed(item.file.entryId, item.file.revision, error instanceof Error ? error.message : String(error));
+        } else if (indexed) {
+          store.freezeVisual(indexed.videoId, indexed.revision, { folderId: item.folderId });
           store.markVisualFailed(indexed.videoId, indexed.revision, error instanceof Error ? error.message : String(error));
         }
         this.#options.log.warn('visual index failed', { dir: item.dir, error: error instanceof Error ? error.message : String(error) });
@@ -272,23 +333,23 @@ export class VisualLane {
     });
   }
 
-  async #indexOne(store: SemanticStore, scheduler: EmbeddingScheduler, profile: EmbeddingProfile, item: Planned, signal: AbortSignal): Promise<void> {
+  /** 一个视频：每个视频素材按来源时间取帧。 */
+  async #planVideo(store: SemanticStore, profile: EmbeddingProfile, item: Planned, signal: AbortSignal) {
     const reader = this.#options.reader;
     if (!reader) throw new Error('content reader unavailable');
     const frames = profile.frames!;
     const content = await reader.readContent(item.dir);
     signal.throwIfAborted();
-    const { expectedGeneration } = store.freezeVisual(content.videoId, content.revision);
+    const { expectedGeneration } = store.freezeVisual(content.videoId, content.revision, { folderId: item.folderId });
     const root = content.snapshot.sequences?.[content.snapshot.rootSequenceId] ?? null;
-    const planned: (PublishVisualInput['frames'][number] & { asset: VisualAsset; at: number })[] = [];
+    const planned: PlannedFrame[] = [];
     for (const asset of visualAssetsOf(content.snapshot)) {
       // 这一版时间线上的位置跟着世代存（世代就是这个版本的）：检索时不用再读视频；版本变了由 resolveSearchHit 重新投影。
       const segments = root ? assetSegments(root, asset.assetId) : [];
       for (const at of frameTimes(asset.durationSec)) {
         const millis = Math.round(at * 1000);
         planned.push({
-          asset,
-          at,
+          grab: () => this.#options.frames.keyframe(item.dir, asset, at, frames),
           assetId: asset.assetId,
           contentHash: asset.contentHash,
           sourceSec: millis / 1000,
@@ -297,6 +358,38 @@ export class VisualLane {
         });
       }
     }
+    return { videoId: content.videoId, revision: content.revision, expectedGeneration, planned };
+  }
+
+  /** 索引文件夹里的一个文件：视频文件按时长取帧，图片取一帧。帧的素材是条目本身，内容按文件的版本寻址。 */
+  async #planFileFrames(store: SemanticStore, profile: EmbeddingProfile, item: Planned & { file: SpaceVisualFile }) {
+    const source = this.#options.frames;
+    if (!source.fileKeyframe) throw new Error('file keyframes unavailable');
+    const frames = profile.frames!;
+    const { file } = item;
+    const target = { root: file.root, file: file.file };
+    const { expectedGeneration } = store.freezeVisual(file.entryId, file.revision, { folderId: file.folderId, target: 'file' });
+    const times = file.kind === 'image' ? [0] : frameTimes((await source.fileDuration?.(target)) ?? null);
+    const planned: PlannedFrame[] = times.map((at) => {
+      const millis = Math.round(at * 1000);
+      return {
+        grab: () => source.fileKeyframe!(target, at, frames),
+        assetId: file.entryId,
+        contentHash: file.revision,
+        sourceSec: millis / 1000,
+        sequenceSec: null,
+        embeddingKey: frameKeyOf(profile.encoderProfileId, file.revision, millis),
+      };
+    });
+    return { videoId: file.entryId, revision: file.revision, expectedGeneration, planned };
+  }
+
+  async #indexOne(store: SemanticStore, scheduler: EmbeddingScheduler, profile: EmbeddingProfile, item: Planned, signal: AbortSignal): Promise<void> {
+    const frames = profile.frames!;
+    const { videoId, revision, expectedGeneration, planned } = item.file
+      ? await this.#planFileFrames(store, profile, item as Planned & { file: SpaceVisualFile })
+      : await this.#planVideo(store, profile, item, signal);
+    signal.throwIfAborted();
     const keys = [...new Set(planned.map((f) => f.embeddingKey))];
     const have = item.rebuild ? new Set<string>() : new Set(store.embeddings(keys, profile.encoderProfileId, profile.dims).keys());
     const missing = [...new Map(planned.filter((f) => !have.has(f.embeddingKey)).map((f) => [f.embeddingKey, f])).values()];
@@ -311,11 +404,11 @@ export class VisualLane {
       const batch: { key: string; file: string }[] = [];
       for (const frame of missing.slice(i, i + frames.maxBatch)) {
         try {
-          batch.push({ key: frame.embeddingKey, file: await this.#options.frames.keyframe(item.dir, frame.asset, frame.at, frames) });
+          batch.push({ key: frame.embeddingKey, file: await frame.grab() });
         } catch (error) {
           // 这一帧取不出来（素材文件不在、解码失败）：跳过这一帧。
           skipped.add(frame.embeddingKey);
-          this.#options.log.debug?.('keyframe skipped', { dir: item.dir, at: frame.at, error: error instanceof Error ? error.message : String(error) });
+          this.#options.log.debug?.('keyframe skipped', { dir: item.dir, at: frame.sourceSec, error: error instanceof Error ? error.message : String(error) });
         }
       }
       if (batch.length === 0) continue;
@@ -341,9 +434,11 @@ export class VisualLane {
       progress(keys.length - missing.length + Math.min(missing.length, i + frames.maxBatch));
     }
     signal.throwIfAborted();
+    // 文件一帧也取不出来（解码失败）：记失败，不发布空世代。
+    if (item.file && planned.length > 0 && planned.every((f) => skipped.has(f.embeddingKey))) throw new Error('no keyframe could be read');
     const published = store.publishVisual({
-      videoId: content.videoId,
-      revision: content.revision,
+      videoId,
+      revision,
       expectedGeneration,
       encoderProfileId: profile.encoderProfileId,
       embeddingSpaceId: profile.embeddingSpaceId,

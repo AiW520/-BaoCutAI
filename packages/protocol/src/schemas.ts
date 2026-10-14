@@ -508,6 +508,7 @@ export const settingValueSchemas = {
   'semantic.channels': z.array(z.enum(['text', 'visual', 'audio'])).max(3),
   'semantic.excludedProjects': z.array(z.string().min(1).max(200)).max(1000),
   'semantic.excludedVideos': z.array(z.string().min(1).max(200)).max(10000),
+  'semantic.folders': z.array(z.object({ id: z.string().min(1).max(200), path: absolutePath }).strict()).max(100),
   'semantic.indexDir': absolutePath.nullable(),
   'semantic.pauseOnBattery': z.boolean(),
   'semantic.translationMemory': z.boolean(),

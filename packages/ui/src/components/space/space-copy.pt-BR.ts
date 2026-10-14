@@ -105,7 +105,7 @@ export const ptBR: SpaceMessages = {
   changedTitle: "Vídeo de origem mudou depois",
   changedBody: "Resultado corresponde a versão anterior. Ainda funciona, mas não reflete o vídeo atual.",
   reexport: "Exportar novamente da origem",
-  noPreviewVideo: "Vídeos abrem no editor.",
+  noPreviewVideo: "Vídeos abrem no editor.", inIndexFolder: (folder: string | null) => (folder ? `Na pasta indexada “${folder}”, somente leitura: o BaoCut não altera, move nem exclui este arquivo.` : 'Em uma pasta indexada, somente leitura: o BaoCut não altera, move nem exclui este arquivo.'),
 
   capability: {
     synthesizeSpeech: "Narração",
@@ -281,4 +281,25 @@ export const ptBR: SpaceMessages = {
         ? `Responda a partir dos meus vídeos sem projeto: ${question}`
         : `Responda a partir dos meus vídeos: ${question}`,
   hitsNoneSemantic: 'Nada falado nos vídeos trata disso. Tente outras palavras.',
+  // 画面通道
+  hitsTitleBoth: 'Falado ou visto nos vídeos',
+  hitsTitleVisual: 'Visto em vídeos e imagens',
+  hitsNoneVisual: 'Nada falado ou visto corresponde a isto. Tente outras palavras.',
+  soundsLater: 'O som ainda não é indexado nesta versão',
+  visualBlocked: (block: 'model' | 'off' | 'lexical') =>
+    block === 'model'
+      ? 'Imagem: nenhum modelo semântico local instalado'
+      : block === 'off'
+        ? 'Imagem: o índice de imagens está desativado. Ative em Configurações › Índice semântico'
+        : 'Imagem: busca só por sentido, então Texto exato não as pesquisa',
+  framesTitle: 'Imagem',
+  frameWhy: 'Imagem · sentido parecido',
+  frameWhyWeak: 'Imagem · pouco relacionada',
+  frameInFolder: (folder: string | null) => (folder ? `Pasta indexada “${folder}” · somente leitura` : 'Em uma pasta indexada · somente leitura'),
+  frameCut: 'Cortado da linha do tempo',
+  frameView: 'Ver no Space',
+  frameNotInTimeline: 'Este momento foi cortado da linha do tempo: o vídeo abre sem mover o cursor de reprodução',
+  frameGone: 'Esta imagem não está mais no vídeo',
+  frameHandoverDraft: (name: string, at: string | null) =>
+    at === null ? `Veja esta imagem: “${name}”` : `Veja esta imagem de “${name}” em ${at}`,
 };

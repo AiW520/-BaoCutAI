@@ -417,19 +417,23 @@ export function isPlainText(fileName: string): boolean {
 type SourceDirs = {
   projects: readonly { id: Id; name: string; path: string }[];
   conversations: readonly { id: Id; title: string; cwd: string }[];
+  /** 索引文件夹（`space.indexStatus` 的 `folders`，检索规格 §9.1）；没取到时不给。 */
+  folders?: readonly { id: string; name: string; path: string }[];
 };
 
 /**
- * 条目在磁盘上的位置：来源目录（项目目录或会话工作目录）加相对路径；不在来源目录里时是结果写到的文件（`entry.file`，
+ * 条目在磁盘上的位置：来源目录（项目目录、会话工作目录或索引文件夹）加相对路径；不在来源目录里时是结果写到的文件（`entry.file`，
  * 保存位置里的发布文件与副本）。都没有时为 null。
  */
 export function entryPath(entry: SpaceEntry, dirs: SourceDirs): string | null {
-  const { projectId, conversationId } = entry.source;
+  const { projectId, conversationId, folderId } = entry.source;
   const root = projectId
     ? dirs.projects.find((p) => p.id === projectId)?.path
     : conversationId
       ? dirs.conversations.find((c) => c.id === conversationId)?.cwd
-      : undefined;
+      : folderId
+        ? dirs.folders?.find((f) => f.id === folderId)?.path
+        : undefined;
   return root ? `${root.replace(/\/+$/, '')}/${entry.relPath}` : (entry.file?.path ?? null);
 }
 
@@ -442,6 +446,12 @@ export function sourceLabel(entry: SpaceEntry, dirs: SourceDirs, untitled: strin
   const { projectId, conversationId } = entry.source;
   const projectName = (id: Id) => dirs.projects.find((p) => p.id === id)?.name ?? M.removedProject;
   const conversationName = (id: Id | null | undefined) => M.conversation(dirs.conversations.find((c) => c.id === id)?.title || untitled);
+  const { folderId } = entry.source;
+  if (folderId) {
+    const folder = M.indexFolder(dirs.folders?.find((f) => f.id === folderId)?.name ?? null);
+    const slash = entry.relPath.lastIndexOf('/');
+    return slash > 0 ? `${folder} · ${entry.relPath.slice(0, slash)}` : folder;
+  }
   if (!projectId && !conversationId) {
     const origin = entry.origin;
     const owner = origin?.projectId

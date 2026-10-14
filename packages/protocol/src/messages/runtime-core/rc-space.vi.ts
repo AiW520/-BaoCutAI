@@ -12,4 +12,8 @@ dirUnreadable: (p) => `Không đọc được thư mục (${p.code})`, tooManyDi
   indexDirOccupied: 'Thư mục này đã có chỉ mục ngữ nghĩa. Hãy chọn một thư mục trống, hoặc tạo lại chỉ mục ở đó để dùng chỉ mục sẵn có',
   indexDirMoving: 'Chỉ mục đang được di chuyển. Hãy chờ di chuyển xong',
   indexDirMoveFailed: (p: { reason: string }) => `Không di chuyển được chỉ mục; nó vẫn ở chỗ cũ: ${p.reason}`,
+  folderReadOnly: 'Mục này nằm trong thư mục chỉ mục, BaoCut chỉ đọc. Không thể chuyển vào thùng rác, xóa hay chỉnh sửa',
+  folderNotFound: 'Thư mục không tồn tại',
+  folderUnknown: 'Thư mục chỉ mục đó không có trong danh sách',
+  folderInside: (p: { name: string }) => `Thư mục này đã được lập chỉ mục như một phần của “${p.name}”`,
 };

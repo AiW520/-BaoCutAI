@@ -245,4 +245,52 @@ export const ko: SemanticMessages = {
     changedToast: (to) => `색인 위치를 ${to}(으)로 바꿨습니다`,
     pickFailed: (message) => `폴더를 선택하지 못했습니다: ${message}`,
   },
+  folders: {
+    head: '프로젝트 밖의 색인 폴더:',
+    add: '폴더 추가…',
+    actions: (name) => `색인 폴더 “${name}”의 작업`,
+    reindex: '다시 색인',
+    reindexDesc: '다시 훑어서 색인을 새로 만듭니다',
+    remove: '제거',
+    removeDesc: '색인을 삭제하고 파일은 그대로 둡니다',
+    videos: (n) => `BaoCut 동영상 ${n}개`,
+    videoFiles: (n) => `동영상 파일 ${n}개`,
+    images: (n) => `이미지 ${n}개`,
+    nothing: '아직 동영상이나 이미지를 찾지 못했습니다',
+    exportsSkipped: (n) => `내보낸 영상 ${n}개 건너뜀`,
+    duplicates: (n) => `${n}개는 이미 프로젝트에 있음`,
+    legacy: (n) => `이전 버전 동영상 ${n}개는 읽지 않음`,
+    listSeparator: ', ',
+    separator: ' · ',
+    missing: '이 폴더를 찾을 수 없습니다',
+    missingNote:
+      '외장 디스크가 분리되었을 수 있습니다. 색인은 그대로 두며, 폴더가 다시 연결될 때까지 Space에 이 파일들이 표시되지 않습니다.',
+    truncatedNote: (limit) => `파일이 너무 많아 처음 ${limit}개만 훑었습니다. 대신 하위 폴더를 추가하세요.`,
+    truncatedNoteNoLimit: '파일이 너무 많아 앞부분만 훑었습니다. 대신 하위 폴더를 추가하세요.',
+    unreadableNote: '이 폴더를 읽을 수 없습니다. 권한을 확인하세요.',
+    legacyNote:
+      '이전 버전의 BaoCut 동영상은 읽기 전에 업그레이드해야 하는데, 업그레이드하면 파일이 바뀌므로 여기서는 읽지 않습니다. 프로젝트로 옮긴 뒤 BaoCut에서 한 번 열면 업그레이드됩니다.',
+    visualReady: '화면 준비 완료',
+    visualProgress: (done, total) => `화면: ${total}개 중 ${done}개 완료`,
+    textOnly: '이 폴더의 BaoCut 동영상은 발화 내용으로 색인됩니다',
+    visualOff: '화면 색인이 꺼져 있어 동영상 파일과 이미지는 아직 색인되지 않습니다',
+    addTitle: '색인 폴더 추가',
+    addBody:
+      '프로젝트 밖의 동영상도 의미로 찾을 수 있습니다. BaoCut은 이 폴더를 읽기만 하며, 안의 어떤 것도 바꾸거나 옮기거나 삭제하지 않습니다. 안의 동영상과 이미지는 이 폴더를 출처로 Space에 나타납니다.',
+    addWhat: (visual) =>
+      visual
+        ? 'BaoCut 동영상은 발화 내용과 화면으로, 그 밖의 동영상 파일과 이미지는 화면으로 색인합니다. BaoCut이 내보낸 영상은 건너뛰고, 프로젝트에도 있는 동영상은 프로젝트의 것을 사용합니다.'
+        : 'BaoCut 동영상은 발화 내용으로 색인하며, 그 밖의 동영상 파일과 이미지는 화면 색인이 필요합니다. BaoCut이 내보낸 영상은 건너뛰고, 프로젝트에도 있는 동영상은 프로젝트의 것을 사용합니다.',
+    visualOffTitle: '동영상 파일과 이미지는 화면으로 색인합니다',
+    visualOffBody:
+      '대본이 없어 화면에 나오는 내용으로만 찾을 수 있습니다. 화면 색인을 켜면 색인되며, 그전에는 이 폴더의 BaoCut 동영상만 색인됩니다.',
+    confirmAdd: '추가',
+    addedToast: (name) => `“${name}”을(를) 추가했습니다. 백그라운드에서 훑고 색인합니다.`,
+    reindexedToast: (name) => `“${name}”을(를) 다시 훑고 색인을 새로 만듭니다`,
+    removeTitle: (name) => `색인 폴더 “${name}”을(를) 제거할까요?`,
+    removeBody:
+      '이 폴더의 색인을 삭제하며 파일은 그대로 둡니다. Space에 더 이상 표시되지 않고 의미로도 찾을 수 없게 됩니다. 나중에 폴더를 다시 추가할 수 있습니다.',
+    removedToast: (name) => `“${name}”의 색인을 제거했습니다`,
+    failed: (message) => `작업하지 못했습니다: ${message}`,
+  },
 };

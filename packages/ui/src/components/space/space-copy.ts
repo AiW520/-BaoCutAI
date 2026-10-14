@@ -132,6 +132,8 @@ const en = {
   changedBody: 'This result matches an earlier version of the video. It still works, but no longer reflects the current video.',
   reexport: 'Export again from the source video',
   noPreviewVideo: 'Videos open in the editor.',
+  // 索引文件夹里的条目（检索规格 §9.1）
+  inIndexFolder: (folder: string | null): string => (folder ? `In the index folder “${folder}” and read-only: BaoCut doesn't change, move or delete this file.` : "In an index folder and read-only: BaoCut doesn't change, move or delete this file."),
 
   // 能力（origin.capability）
   capability: {
@@ -251,6 +253,27 @@ const en = {
         ? `Answer from my videos that aren’t in a project: ${question}`
         : `Answer from my videos: ${question}`,
   hitsNoneSemantic: 'Nothing said in videos is about this. Try other words.',
+  // 画面通道（检索规格 §9.1、§11；设计稿 space-search.jsx）：BaoCut 视频的那一刻，或索引文件夹里的视频文件与图片
+  hitsTitleBoth: 'Said or seen in videos',
+  hitsTitleVisual: 'Seen in videos and images',
+  hitsNoneVisual: 'Nothing said or seen matches this. Try other words.',
+  soundsLater: 'Sounds aren’t indexed in this version',
+  visualBlocked: (block: 'model' | 'off' | 'lexical'): string =>
+    block === 'model'
+      ? 'Visuals: no local semantic model installed'
+      : block === 'off'
+        ? 'Visuals: the visual index is off. Turn it on in Settings › Semantic index'
+        : 'Visuals: matched by meaning only, so Exact text doesn’t search them',
+  framesTitle: 'Visuals',
+  frameWhy: 'Visuals · similar meaning',
+  frameWhyWeak: 'Visuals · loosely related',
+  frameInFolder: (folder: string | null): string => (folder ? `Index folder “${folder}” · read-only` : 'In an index folder · read-only'),
+  frameCut: 'Cut from the timeline',
+  frameView: 'View in Space',
+  frameNotInTimeline: 'This moment was cut from the timeline, so the video opens without moving the playhead',
+  frameGone: 'This picture is no longer in the video',
+  frameHandoverDraft: (name: string, at: string | null): string =>
+    at === null ? `Look at this picture: “${name}”` : `Look at this picture in “${name}” at ${at}`,
 
   // 页面里的其余文字
   cancel: 'Cancel',

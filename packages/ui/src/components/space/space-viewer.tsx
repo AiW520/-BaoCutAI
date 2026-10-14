@@ -32,6 +32,7 @@ import {
   EDIT_LABEL,
   editBlock,
   editRoute,
+  inIndexFolder,
   entryJobId,
   isFailedPlaceholder,
   packageBlock,
@@ -46,6 +47,7 @@ import { MADE_SHOWN } from '../../model/shorts-result.ts';
 import { formatBytes, isPlayable, KIND_LABEL, measureText, SPACE_STATUS, statusText } from '../../model/space.ts';
 import { FilePreview } from '../file-preview.tsx';
 import { SemanticNote } from '../semantic-note.tsx';
+import { useIndexFolderName } from '../../state/semantic-store.ts';
 import type { EntryTools } from '../tools/use-entry-tools.ts';
 import { SPACE_COPY as COPY } from './space-copy.ts';
 import { EntryThumb, IndexMark, type EntryAction } from './space-list.tsx';
@@ -230,7 +232,11 @@ function ViewerBody({
 }) {
   const trashed = entry.user.trashedAt !== null;
   const failed = isFailedPlaceholder(entry);
-  const isVideo = entry.kind === 'video';
+  // 索引文件夹里的只读（检索规格 §9.1）：BaoCut 视频不打开编辑，按普通文件给「在会话中继续」。
+  const readOnly = inIndexFolder(entry);
+  const folderName = useIndexFolderName(entry.source.folderId);
+  const videoDir = entry.kind === 'video';
+  const isVideo = videoDir && !readOnly;
   const isSlides = entry.kind === 'slides';
   const isDesign = entry.kind === 'design';
   const isDesignSystem = entry.kind === 'design-system';
@@ -244,7 +250,7 @@ function ViewerBody({
   const measure = measureText(entry);
   const status = statusText(entry);
   // 幻灯片、设计稿与设计系统是一个目录，查看框里不预览，打开到各自的标签里看。
-  const hasFile = !isVideo && !isSlides && !isDesign && !isDesignSystem && entry.status !== 'generating' && entry.status !== 'failed' && entry.status !== 'missing';
+  const hasFile = !videoDir && !isSlides && !isDesign && !isDesignSystem && entry.status !== 'generating' && entry.status !== 'failed' && entry.status !== 'missing';
   const origin = entry.origin;
   const generated = origin?.capability
     ? [COPY.capability[origin.capability] ?? origin.capability, origin.provider ? `${origin.provider.providerId} · ${origin.provider.modelId}` : null]
@@ -271,15 +277,15 @@ function ViewerBody({
       <Content>
         {hasFile ? <FilePreview key={entry.id} target={{ entryId: entry.id }} fileName={entry.fileName}
           playback={{ layout: 'row', memoryKey: entry.source.projectId ? targetKey({ projectId: entry.source.projectId, path: entry.relPath }) : undefined }} /> : null}
-        {isVideo && shorts.length ? (
+        {videoDir && shorts.length ? (
           <VideoShorts shorts={shorts} onSwitch={actions.onSwitch} onList={actions.onShorts ? () => actions.onShorts?.(entry) : null} />
         ) : null}
-        {isVideo && related ? <VideoRelated related={related} onSwitch={actions.onSwitch} /> : null}
-        {isVideo && files.length ? <VideoFiles files={files} onSwitch={actions.onSwitch} /> : null}
+        {videoDir && related ? <VideoRelated related={related} onSwitch={actions.onSwitch} /> : null}
+        {videoDir && files.length ? <VideoFiles files={files} onSwitch={actions.onSwitch} /> : null}
         <dl className={facts}>
           <dt className={term}>{COPY.factSource}</dt>
           <dd className={value}>{source}</dd>
-          <dt className={term}>{isVideo ? COPY.factFolder : COPY.factFile}</dt>
+          <dt className={term}>{videoDir ? COPY.factFolder : COPY.factFile}</dt>
           <dd className={value}>{path ?? entry.relPath}</dd>
           {measure ? (
             <>
@@ -351,6 +357,7 @@ function ViewerBody({
             )}
           </div>
         ) : null}
+        {readOnly ? <p className={hint}>{COPY.inIndexFolder(folderName)}</p> : null}
         {!trashed && !failed && !isVideo && route && blockedEdit ? <p className={hint}>{COPY.editBlocked(blockedEdit)}</p> : null}
         {!trashed && !failed && blockedPackage ? <p className={hint}>{COPY.packageBlocked(blockedPackage)}</p> : null}
         {blockedPurge ? <p className={hint}>{blockedPurge}</p> : null}

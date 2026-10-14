@@ -1,4 +1,13 @@
-import { AI_TOOL_TOPIC_DEFAULT_CHUNKS, RpcError, mediaTimeToSeconds, type Id, type SpaceEntry } from '@baocut/protocol';
+import {
+  AI_TOOL_TOPIC_DEFAULT_CHUNKS,
+  RpcError,
+  mediaTimeToSeconds,
+  newId,
+  type Id,
+  type SemanticFolder,
+  type SemanticFolderStatus,
+  type SpaceEntry,
+} from '@baocut/protocol';
 import type { Harness } from '@baocut/harness';
 import type { TrustedPrincipal } from '../gateway.ts';
 import type { RpcHandlers } from '../handlers.ts';
@@ -34,6 +43,9 @@ type SpaceMethod =
   | 'space.indexBuild'
   | 'space.indexControl'
   | 'space.indexSetDir'
+  | 'space.folderAdd'
+  | 'space.folderRemove'
+  | 'space.folderReindex'
   | 'space.resolveSearchHit'
   | 'space.citations'
   | 'space.relevantChunks'
@@ -49,6 +61,15 @@ export interface SpaceMethodDeps {
   semantic?: SemanticServices | null;
   /** 任务产物库（`space.citations` 读出处旁文件）。 */
   artifacts?: CitationArtifacts | null;
+  /** 设置 `semantic.folders`（索引文件夹）；不给时没有索引文件夹，`space.folder*` 报不认得。 */
+  folders?: FolderSetting | null;
+}
+
+/** 设置 `semantic.folders` 与画面通道开没开（文件夹的画面进度只在开着时给）。 */
+export interface FolderSetting {
+  get(): readonly SemanticFolder[];
+  set(folders: readonly SemanticFolder[]): Promise<void>;
+  visualEnabled(): boolean;
 }
 
 /**
@@ -102,6 +123,21 @@ export function spaceMethods(space: SpaceCatalog, deps: SpaceMethodDeps): Pick<R
   const { harness, trash, thumbnails } = deps;
   const semantic = deps.semantic ?? null;
   const search = semantic?.search ?? lexicalOnlySearch(space);
+  const folders = deps.folders ?? null;
+  const folderOf = (folderId: Id): SemanticFolder => {
+    const folder = folders?.get().find((f) => f.id === folderId);
+    if (!folder) throw new RpcError('not-found', RcSpace.folderUnknown(), { code: 'SPACE_FOLDER_UNKNOWN', folderId });
+    return folder;
+  };
+  /** 一个索引文件夹的状态：Space 里的情况，加上画面开着时的进度（文件夹里有画面世代的视频与文件）。 */
+  const folderStatus = (folder: SemanticFolder): SemanticFolderStatus => {
+    const base = space.folderStatus(folder);
+    const total = base.counts.videos + base.counts.videoFiles + base.counts.images;
+    const store = semantic?.store() ?? null;
+    if (!store || !semantic?.coordinator.visual || !folders?.visualEnabled() || total === 0) return { ...base, visual: null };
+    const done = store.visualSources().filter((row) => row.folderId === folder.id && row.activeGeneration !== null).length;
+    return { ...base, visual: { done: Math.min(done, total), total } };
+  };
   return {
     'space.list': (p, principal) => listEntries(space, viewerOf(principal), p),
     'space.get': (p, principal) => ({ entry: visibleEntry(space, viewerOf(principal), p.entryId) }),
@@ -126,7 +162,10 @@ export function spaceMethods(space: SpaceCatalog, deps: SpaceMethodDeps): Pick<R
     },
     'space.rebuildIndex': () => space.rebuild(),
     'space.searchV2': (p, principal) => search.searchV2(viewerOf(principal), p),
-    'space.indexStatus': (p, principal) => search.indexStatus(viewerOf(principal), p),
+    'space.indexStatus': async (p, principal) => {
+      const status = await search.indexStatus(viewerOf(principal), p);
+      return folders ? { ...status, folders: folders.get().map(folderStatus) } : status;
+    },
     'space.indexBuild': async (p, principal) => {
       const viewer = viewerOf(principal);
       const channels = p.channels ?? ['text'];
@@ -164,6 +203,35 @@ export function spaceMethods(space: SpaceCatalog, deps: SpaceMethodDeps): Pick<R
       viewerOf(principal);
       if (!semantic) throw semanticError('INDEX_NOT_READY');
       return semantic.relocate(p.path, p.mode);
+    },
+    // 索引文件夹（检索规格 §9.1）：只在桌面端（Web 白名单里没有）。BaoCut 只读这些文件夹：不往里写、不移动、不删。
+    'space.folderAdd': async (p, principal) => {
+      viewerOf(principal);
+      if (!folders) throw new RpcError('not-found', RcSpace.folderUnknown(), { code: 'SPACE_FOLDER_UNKNOWN' });
+      const real = await space.checkFolder(p.path);
+      const folder: SemanticFolder = { id: newId('fld'), path: real };
+      await folders.set([...folders.get(), folder]);
+      space.setFolders(folders.get());
+      await space.rescanFolder(folder.id);
+      semantic?.coordinator.schedule();
+      return folderStatus(folder);
+    },
+    'space.folderRemove': async (p, principal) => {
+      viewerOf(principal);
+      folderOf(p.folderId);
+      await folders!.set(folders!.get().filter((f) => f.id !== p.folderId));
+      space.setFolders(folders!.get());
+      semantic?.coordinator.schedule();
+      return { removed: true };
+    },
+    'space.folderReindex': async (p, principal) => {
+      viewerOf(principal);
+      const folder = folderOf(p.folderId);
+      await space.rescanFolder(folder.id);
+      // 重新扫一遍，丢掉这个文件夹的索引重建（原型「重新索引」）；刚扫出来、内容索引还没读到的视频由之后的规划接上。
+      semantic?.coordinator.rebuildFolder(folder.id);
+      semantic?.coordinator.schedule();
+      return folderStatus(folder);
     },
     'space.resolveSearchHit': (p, principal) =>
       resolveSearchHit(semantic?.resolver ?? { catalog: space, reader: null }, viewerOf(principal), p.hitId),

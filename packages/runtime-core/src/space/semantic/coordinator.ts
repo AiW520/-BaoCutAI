@@ -2,7 +2,7 @@ import crypto from 'node:crypto';
 import type { Id } from '@baocut/protocol';
 import { EmbeddingError, digestText, formatEmbeddingInput, type EmbeddingProfile } from '@baocut/models';
 import type { Logger } from '@baocut/harness';
-import type { SpaceVideo } from '../../space-catalog.ts';
+import type { SpaceVideo, SpaceVisualFile } from '../../space-catalog.ts';
 import type { ContentIndex, ContentReader } from '../content-index.ts';
 import { extractContent } from '../content-extract.ts';
 import { chunkVideo, type ChunkDraft } from './chunks.ts';
@@ -28,7 +28,8 @@ import { VisualLane, type KeyframeSource } from './visual-lane.ts';
  * - 每个视频编码花的时间记成这一路的速度（`estimate.ts`），`space.indexStatus` 用它估还要多久。
  * - 文字通道跟着设置走：关掉文字通道等同暂停文字构建（已建的索引仍可检索）。
  * - 画面通道（`visual-lane.ts`）在文字那一路空下来时才建，与文字共用暂停与清理；没给取帧来源时不建画面。
- * - Space 目录里已经没有的视频（扫描完成、内容索引不再有它）撤下索引，立即不可检索。
+ * - Space 目录里已经没有的视频（扫描完成、内容索引不再有它）撤下索引，立即不可检索。索引文件夹此刻不在（外接盘没接上）时，
+ *   它里面的视频与文件的索引留着，接上后接着用；文件夹从设置里移除了才撤下。
  *
  * 读内容多花一次引擎只读查询：内容索引的库不存句子身份（§19：这一阶段不改旧索引的表结构），这里按变化重读一次。
  */
@@ -45,6 +46,10 @@ export interface SemanticSettings {
 
 export interface SemanticCatalogSource {
   videos(): SpaceVideo[];
+  /** 索引文件夹：登记着的与此刻不在的（不给时没有索引文件夹）。 */
+  folderIds?(): { all: Id[]; missing: Id[] };
+  /** 索引文件夹里只按画面建的文件（视频文件与图片）。 */
+  visualFiles?(): SpaceVisualFile[];
   readonly index: Pick<ContentIndex, 'at' | 'pendingCount' | 'listen'> | null;
   readonly scanning: boolean;
 }
@@ -84,6 +89,7 @@ interface Planned {
   dir: string;
   videoId: Id;
   projectId: Id | null;
+  folderId: Id | null;
   /** 重建：不用已有向量。 */
   rebuild: boolean;
 }
@@ -320,6 +326,18 @@ export class SemanticCoordinator {
     return channels.includes('text') ? Math.max(this.#buildText(videos, options.rebuild === true), visual) : visual;
   }
 
+  /**
+   * 索引文件夹「重新索引」（检索规格 §9.1）：文件夹里的视频与只按画面建的文件丢掉已有向量、排到队首重建，失败过的也重试。
+   * 设置里没开画面时只重建文字。返回计划处理的个数。
+   */
+  rebuildFolder(folderId: Id): number {
+    const visual = this.#options.settings().channels.includes('visual');
+    const videos = this.#options.catalog.videos().filter((video) => video.folderId === folderId);
+    const built = this.build(videos, { rebuild: true, channels: visual ? ['text', 'visual'] : ['text'] });
+    const files = (this.#options.catalog.visualFiles?.() ?? []).filter((file) => file.folderId === folderId);
+    return built + (visual && this.#visual ? this.#visual.rebuildFiles(files) : 0);
+  }
+
   #buildText(videos: readonly SpaceVideo[], rebuild: boolean): number {
     const planned: Planned[] = [];
     for (const video of videos) {
@@ -410,7 +428,7 @@ export class SemanticCoordinator {
     // 内容索引还没读到当前版本：等它读完（`listen` 会再叫）。
     if (!indexed || index.pendingCount([video.dir]) > 0) return null;
     if (!semanticWanted(this.#options.settings(), { videoId: indexed.videoId, projectId: video.projectId })) return null;
-    const item: Planned = { dir: video.dir, videoId: indexed.videoId, projectId: video.projectId, rebuild: options.rebuild };
+    const item: Planned = { dir: video.dir, videoId: indexed.videoId, projectId: video.projectId, folderId: video.folderId ?? null, rebuild: options.rebuild };
     if (options.rebuild) return item;
     const source = store.source(indexed.videoId);
     const generation = store.activeGenerations([indexed.videoId]).get(indexed.videoId) ?? null;
@@ -452,7 +470,12 @@ export class SemanticCoordinator {
       const indexed = index.at(video.dir);
       if (indexed && semanticWanted(settings, { videoId: indexed.videoId, projectId: video.projectId })) known.add(indexed.videoId);
     }
-    const gone = [...store.sources(), ...store.visualSources()].filter((source) => !known.has(source.videoId));
+    // 不在的索引文件夹里的留着（外接盘没接上）；画面一路自己管文件（`VisualLane.known`）。
+    const missing = new Set(this.#options.catalog.folderIds?.().missing ?? []);
+    for (const id of this.#visual?.known() ?? []) known.add(id);
+    const gone = [...store.sources(), ...store.visualSources()].filter(
+      (source) => !known.has(source.videoId) && !(source.folderId !== null && missing.has(source.folderId)),
+    );
     if (gone.length === 0) return;
     const generations = gone.map((source) => source.activeGeneration).filter((id): id is number => id !== null);
     store.removeVideos([...new Set(gone.map((source) => source.videoId))]);
@@ -523,7 +546,7 @@ export class SemanticCoordinator {
         }
         const indexed = this.#options.catalog.index?.at(item.dir);
         if (indexed) {
-          store.freeze(indexed.videoId, item.dir, item.projectId, indexed.revision);
+          store.freeze(indexed.videoId, item.dir, item.projectId, indexed.revision, item.folderId);
           store.markFailed(indexed.videoId, indexed.revision, error instanceof Error ? error.message : String(error));
         }
         this.#options.log.warn('semantic index failed', { dir: item.dir, error: error instanceof Error ? error.message : String(error) });
@@ -548,7 +571,7 @@ export class SemanticCoordinator {
     const content = await reader.readContent(item.dir);
     signal.throwIfAborted();
     const extracted = extractContent(content, item.dir);
-    const { expectedGeneration } = store.freeze(content.videoId, item.dir, item.projectId, content.revision);
+    const { expectedGeneration } = store.freeze(content.videoId, item.dir, item.projectId, content.revision, item.folderId);
     const { chunks, sentences } = chunkVideo(content.videoId, extracted.segments);
     const keyed: (ChunkDraft & { embeddingKey: string })[] = chunks.map((chunk) => ({ ...chunk, embeddingKey: embeddingKeyOf(profile, chunk.text) }));
     const keys = [...new Set(keyed.map((c) => c.embeddingKey))];

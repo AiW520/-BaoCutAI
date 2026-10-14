@@ -1,6 +1,6 @@
 import { useCallback, useEffect } from 'react';
 import { create } from 'zustand';
-import type { SemanticIndexStatus } from '@baocut/protocol';
+import type { SemanticFolderStatus, SemanticIndexStatus } from '@baocut/protocol';
 import { useRuntime } from '../runtime/context.tsx';
 import { indexUpdating, visualUpdating } from '../model/semantic-status.ts';
 import { useModels } from './models-store.ts';
@@ -63,4 +63,25 @@ export function useSemanticStatus(options: { poll?: boolean } = {}): SemanticSta
     return () => clearInterval(timer);
   }, [options.poll, updating, refresh]);
   return { ...state, refresh };
+}
+
+const NO_FOLDERS: readonly SemanticFolderStatus[] = [];
+
+/**
+ * 索引文件夹（检索规格 §9.1）：Space 给它们的条目写来源、拼路径、写只读说明。`needed`（有索引文件夹里的条目）时才去取，
+ * 状态还没取到或取不到时是空的。
+ */
+export function useIndexFolders(needed: boolean): readonly SemanticFolderStatus[] {
+  const runtime = useRuntime();
+  const folders = useSemanticState((s) => s.status?.folders ?? NO_FOLDERS);
+  const tried = useSemanticState((s) => s.at > 0);
+  useEffect(() => {
+    if (needed && !tried) void load(runtime.client);
+  }, [needed, tried, runtime]);
+  return folders;
+}
+
+/** 索引文件夹的名字（设置里那一行的名字）；状态还没取到、取不到或文件夹已移除时 null。 */
+export function useIndexFolderName(folderId: string | null | undefined): string | null {
+  return useIndexFolders(!!folderId).find((f) => f.id === folderId)?.name ?? null;
 }

@@ -11,11 +11,13 @@ import { M } from './space-actions-copy.ts';
  * 二次编辑的去处（产品设计 §4.6、原型 model-space.js 的 editRoute）：
  * 视频直接进编辑器；有来源视频的成片与产物回到来源视频；成片或视频素材没有来源视频时以它为素材新建视频；
  * 字幕、文档改文字；图片、音频、模板另存一份再改。视频包（便携包）没有二次编辑。
+ * 索引文件夹里的条目只读（检索规格 §9.1）：不打开编辑、不另存；认得出来源视频的成片可以回到那部视频。
  * 只是按条目猜的去处，真正去哪里由 `space.openForEdit` 回答。
  */
 export type EditRoute = 'video' | 'source-video' | 'new-video' | 'text' | 'version';
 
-export function editRoute(entry: Pick<SpaceEntry, 'kind' | 'origin'>): EditRoute | null {
+export function editRoute(entry: Pick<SpaceEntry, 'kind' | 'origin' | 'source'>): EditRoute | null {
+  if (inIndexFolder(entry)) return entry.origin?.videoId ? 'source-video' : null;
   if (entry.kind === 'video') return 'video';
   if (entry.origin?.videoId) return 'source-video';
   if (entry.kind === 'export' || entry.kind === 'video-file') return 'new-video';
@@ -25,6 +27,11 @@ export function editRoute(entry: Pick<SpaceEntry, 'kind' | 'origin'>): EditRoute
 }
 
 export const EDIT_LABEL: Record<EditRoute, string> = live(() => M.edit);
+
+/** 索引文件夹（设置 `semantic.folders`）里的条目：只读，不进回收站、不打开编辑；不想要了在设置里移除那个文件夹。 */
+export function inIndexFolder(entry: Pick<SpaceEntry, 'source'>): boolean {
+  return !!entry.source.folderId;
+}
 
 /** 失败的生成占位：没有文件，只能清除（`space.purge` 直接清掉）。 */
 export function isFailedPlaceholder(entry: Pick<SpaceEntry, 'status' | 'ref'>): boolean {

@@ -47,7 +47,7 @@ export const vi: SpaceMessages = {
   // 查看框
   factSource: 'Nguồn', factFile: 'Tệp', factMeasure: 'Thời lượng hoặc kích thước', factSize: 'Kích thước', factStatus: 'Trạng thái', factActivity: 'Hoạt động gần nhất', factConversation: 'Phiên nguồn', factGenerated: 'Được tạo', factVersion: 'Phiên bản', factNote: 'Ghi chú', viewConversation: 'Xem phiên nguồn', close: 'Đóng', editBlocked: (reason) => `Chỉnh sửa lại: ${reason}`, continueBlocked: (reason) => `Tiếp tục trong phiên: ${reason}`, version: (frozen, current) => current && current !== frozen ? `Phiên bản video ${frozen}; video hiện là ${current}` : `Phiên bản video ${frozen}`, missingTitle: 'Không tìm thấy tệp này',
   // 卡片角标与列表缩略图的读屏说明（原型 sp-prev__flag）
-  missingFile: 'Không tìm thấy tệp', missingBody: 'Mục vẫn ở đây. Trạng thái sẽ khôi phục khi tệp trở lại.', failedTitle: 'Tạo thất bại', failedBody: 'Không tạo được tệp. Xem nguyên nhân và thử lại ở trang Tác vụ, hoặc xóa nếu không cần.', changedTitle: 'Video nguồn đã thay đổi', changedBody: 'Kết quả này khớp với phiên bản trước của video. Vẫn dùng được nhưng không còn phản ánh video hiện tại.', reexport: 'Xuất lại từ video nguồn', noPreviewVideo: 'Video mở trong trình chỉnh sửa.',
+  missingFile: 'Không tìm thấy tệp', missingBody: 'Mục vẫn ở đây. Trạng thái sẽ khôi phục khi tệp trở lại.', failedTitle: 'Tạo thất bại', failedBody: 'Không tạo được tệp. Xem nguyên nhân và thử lại ở trang Tác vụ, hoặc xóa nếu không cần.', changedTitle: 'Video nguồn đã thay đổi', changedBody: 'Kết quả này khớp với phiên bản trước của video. Vẫn dùng được nhưng không còn phản ánh video hiện tại.', reexport: 'Xuất lại từ video nguồn', noPreviewVideo: 'Video mở trong trình chỉnh sửa.', inIndexFolder: (folder: string | null) => (folder ? `Trong thư mục chỉ mục “${folder}”, chỉ đọc: BaoCut không thay đổi, di chuyển hay xóa tệp này.` : 'Nằm trong thư mục chỉ mục, chỉ đọc: BaoCut không sửa, không di chuyển và không xoá tệp này.'),
 
   // 能力（origin.capability）
   capability: { synthesizeSpeech: 'Lồng tiếng', generateImage: 'Tạo hình ảnh', generateMusic: 'Tạo nhạc', generateText: 'Tạo văn bản', export: 'Xuất', 'videos-derive': 'Cắt thành video ngắn' },
@@ -124,4 +124,25 @@ export const vi: SpaceMessages = {
         ? `Trả lời dựa trên video không thuộc dự án của tôi: ${question}`
         : `Trả lời dựa trên video của tôi: ${question}`,
   hitsNoneSemantic: 'Không có đoạn nào nói về điều này. Hãy thử cách diễn đạt khác.',
+  // 画面通道
+  hitsTitleBoth: 'Được nói hoặc thấy trong video',
+  hitsTitleVisual: 'Thấy trong video và ảnh',
+  hitsNoneVisual: 'Không có gì được nói hoặc thấy khớp với điều này. Hãy thử cách diễn đạt khác.',
+  soundsLater: 'Âm thanh chưa được lập chỉ mục trong phiên bản này',
+  visualBlocked: (block: 'model' | 'off' | 'lexical') =>
+    block === 'model'
+      ? 'Hình ảnh: chưa cài mô hình ngữ nghĩa cục bộ'
+      : block === 'off'
+        ? 'Hình ảnh: chỉ mục hình ảnh đang tắt. Bật trong Cài đặt › Chỉ mục ngữ nghĩa'
+        : 'Hình ảnh: chỉ tìm theo ý nghĩa nên Chữ chính xác không tìm trong đó',
+  framesTitle: 'Hình ảnh',
+  frameWhy: 'Hình ảnh · ý gần giống',
+  frameWhyWeak: 'Hình ảnh · chỉ hơi liên quan',
+  frameInFolder: (folder: string | null) => (folder ? `Thư mục chỉ mục “${folder}” · chỉ đọc` : 'Trong thư mục chỉ mục · chỉ đọc'),
+  frameCut: 'Đã cắt khỏi dòng thời gian',
+  frameView: 'Xem trong Space',
+  frameNotInTimeline: 'Khoảnh khắc này đã bị cắt khỏi dòng thời gian: chỉ mở video, không di chuyển đầu phát',
+  frameGone: 'Hình ảnh này không còn trong video',
+  frameHandoverDraft: (name: string, at: string | null) =>
+    at === null ? `Xem hình ảnh này: “${name}”` : `Xem hình ảnh này trong “${name}” lúc ${at}`,
 };

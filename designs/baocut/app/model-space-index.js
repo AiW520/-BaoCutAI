@@ -152,8 +152,9 @@
   function folderProblem(path, taken) {
     if (!path) return {code: 'missing', text: '找不到这个文件夹。'};
     const inside = (a, b) => a === b || a.indexOf(b.replace(/\/?$/, '/')) === 0;
-    const hit = (taken || []).find((t) => inside(path, t.path) || inside(t.path, path));
-    if (hit) return {code: 'overlap', text: `和「${hit.name}」重叠，已经在索引范围里。`};
+    /* 在项目或已加的文件夹里面（或就是它）的已经在范围里；包含它们可以，扫描时跳过它们（同 Runtime checkFolder） */
+    const hit = (taken || []).find((t) => inside(path, t.path));
+    if (hit) return {code: 'overlap', text: `在「${hit.name}」里面，已经在索引范围里。`};
     return null;
   }
 

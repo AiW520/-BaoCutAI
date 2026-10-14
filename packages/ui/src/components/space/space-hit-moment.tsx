@@ -32,7 +32,11 @@ const spanOf = (hit: Pick<SpaceSearchHit, 'time' | 'documentId'>): SpaceHitMomen
  * 一组命中（同一个视频、这一页给出来的几条）的那一刻：分批向 Runtime 要，哪一批先回来先画哪一批；失败了只是不画，不打扰。
  * 没有视频条目时返回 null（不会去要）。
  */
-export function useGroupMoments(runtime: RuntimeSession, entryId: Id | null, hits: readonly SpaceSearchHit[]): Moments | null {
+export function useGroupMoments(
+  runtime: RuntimeSession,
+  entryId: Id | null,
+  hits: readonly Pick<SpaceSearchHit, 'time' | 'documentId'>[],
+): Moments | null {
   const unique = [...new Map(hits.map((hit) => [momentKey(hit), hit])).values()];
   const key = entryId ? `${entryId}\n${unique.map(momentKey).join('\n')}` : '';
   const [state, setState] = useState<{ key: string; moments: Moments } | null>(null);
@@ -104,7 +108,11 @@ const thumbImage = style({ display: 'block', width: 'full', height: 'full', obje
 
 /** 命中行的小图：那一刻看得见的那一帧；还在取时灰底上转一个圈，没有画面时只是灰底占位（行与行对齐）。 */
 export function MomentThumb({ moment, pending }: { moment: SpaceHitMoment | null; pending: boolean }) {
-  const url = frameUrl(moment?.frame);
+  return <ThumbBox url={frameUrl(moment?.frame)} pending={pending} />;
+}
+
+/** 同一个小框，画一张现成的图（索引文件夹里的文件用条目缩略图：图片就是它本身，视频文件是它的封面帧）。 */
+export function ThumbBox({ url, pending }: { url: string | null; pending: boolean }) {
   return (
     <span className={thumb} data-bc-icons="own" aria-hidden>
       {url ? (

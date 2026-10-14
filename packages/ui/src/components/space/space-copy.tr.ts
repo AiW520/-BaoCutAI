@@ -102,7 +102,7 @@ export const tr: SpaceMessages = {
   changedTitle: "Kaynak video sonradan değişti",
   changedBody: "Bu sonuç videonun önceki sürümüne aittir. Hâlâ çalışır, ancak geçerli videoyu yansıtmaz.",
   reexport: "Kaynak videodan yeniden dışa aktar",
-  noPreviewVideo: "Videolar düzenleyicide açılır.",
+  noPreviewVideo: "Videolar düzenleyicide açılır.", inIndexFolder: (folder: string | null) => (folder ? `“${folder}” dizin klasöründe, salt okunur: BaoCut bu dosyayı değiştirmez, taşımaz veya silmez.` : 'Dizin klasöründe, salt okunur: BaoCut bu dosyayı değiştirmez, taşımaz veya silmez.'),
 
   // 能力（origin.capability）
   capability: {
@@ -269,4 +269,25 @@ export const tr: SpaceMessages = {
         ? `Projeye ait olmayan videolarıma göre yanıtla: ${question}`
         : `Videolarıma göre yanıtla: ${question}`,
   hitsNoneSemantic: 'Videolarda bununla ilgili söylenen bir şey bulunamadı. Başka sözcükler deneyin.',
+  // 画面通道
+  hitsTitleBoth: 'Videolarda söylenen veya görülen',
+  hitsTitleVisual: 'Videolarda ve görsellerde görülen',
+  hitsNoneVisual: 'Söylenen ya da görülen hiçbir şey bununla eşleşmiyor. Başka sözcükler deneyin.',
+  soundsLater: 'Ses bu sürümde henüz dizine eklenmiyor',
+  visualBlocked: (block: 'model' | 'off' | 'lexical') =>
+    block === 'model'
+      ? 'Görüntü: yerel anlamsal model kurulu değil'
+      : block === 'off'
+        ? 'Görüntü: görüntü dizini kapalı. Ayarlar › Anlamsal dizin bölümünden açın'
+        : 'Görüntü: yalnızca anlama göre aranır, bu yüzden Tam metin bunları aramaz',
+  framesTitle: 'Görüntü',
+  frameWhy: 'Görüntü · anlamı benzer',
+  frameWhyWeak: 'Görüntü · zayıf ilgili',
+  frameInFolder: (folder: string | null) => (folder ? `“${folder}” dizin klasörü · salt okunur` : 'Dizin klasöründe · salt okunur'),
+  frameCut: 'Zaman çizelgesinden kesildi',
+  frameView: 'Space içinde görüntüle',
+  frameNotInTimeline: 'Bu an zaman çizelgesinden kesildi: video, oynatma kafası taşınmadan açılır',
+  frameGone: 'Bu görüntü artık videoda yok',
+  frameHandoverDraft: (name: string, at: string | null) =>
+    at === null ? `Bu görüntüye bak: “${name}”` : `“${name}” içinde ${at} anındaki bu görüntüye bak`,
 };

@@ -50,6 +50,7 @@ import {
   editBlock,
   entryConversationId,
   entryJobId,
+  inIndexFolder,
   isFailedPlaceholder,
   packageScope,
   placeKindOf,
@@ -107,6 +108,7 @@ import { useTranscribedEntries } from '../tools/use-candidates.ts';
 import { useVideoTools } from '../tools/use-video-tools.ts';
 import { failedTranscribeJob, spaceTranscribeAction, transcribeState, type SpaceTranscribeAction } from '../../model/tool-targets.ts';
 import { useJobs } from '../../state/jobs-store.ts';
+import { useIndexFolders } from '../../state/semantic-store.ts';
 import { SpaceViewer, type ViewerActions } from './space-viewer.tsx';
 import { useRelatedVideos } from './use-related-videos.ts';
 
@@ -297,7 +299,8 @@ function SpaceMain({ category, projectId, from }: { category: SpaceCategory; pro
   const isStacked = useNarrow(ref, 900);
   const isTight = useNarrow(ref, 440);
 
-  const dirs = { projects, conversations };
+  const folders = useIndexFolders(entries.some(inIndexFolder));
+  const dirs = { projects, conversations, folders };
   const rows = useMemo(
     () => viewEntries(entries, { category, projectId, search: query, sort, status, from }),
     [entries, category, projectId, query, sort, status, from],
@@ -777,7 +780,7 @@ function SpaceMain({ category, projectId, from }: { category: SpaceCategory; pro
 
       {searchContent && connected ? (
         <div className={notes({ isTight })}>
-          <SpaceSearchHits query={query} projectId={projectId} entries={entries} />
+          <SpaceSearchHits query={query} projectId={projectId} entries={entries} onView={setViewingId} />
         </div>
       ) : null}
       {named ? <h2 className={namesHead({ isTight })}>{COPY.namesTitle}</h2> : null}

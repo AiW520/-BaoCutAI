@@ -41,6 +41,7 @@ export const nl: SettingDescriptionMessages = {
   'offline.strict': "Strikte offlinemodus: niets naar onlinediensten sturen",
   'semantic.channels': 'Kanalen van de semantische index: text (gesproken inhoud: transcripties, ondertitels, vertalingen, hoofdstukken); visual (elke 8 seconden een sleutelbeeld; vraagt een multimodaal modelpakket en duurt langer); audio is nog niet beschikbaar',
   'semantic.excludedProjects': 'Projecten die buiten de semantische index blijven (lijst met project-id’s): alle BaoCut-projecten en video’s buiten projecten worden geïndexeerd behalve deze; hun video’s blijven vindbaar op de exacte woorden',
+  'semantic.folders': 'Indexmappen buiten projecten (lijst met {id, path}): video’s en afbeeldingen daarin verschijnen in Space en worden op betekenis geïndexeerd, alleen-lezen. Wijzig met space.folderAdd en space.folderRemove',
   'semantic.excludedVideos': 'Losse video’s die buiten de semantische index blijven (lijst met video-id’s), naast uitgesloten projecten; hun bestaande index wordt verwijderd',
   'semantic.indexDir':
     'Map voor de semantische index (absoluut pad); null houdt hem in de app-cache. Wijzig met space.indexSetDir, dat de index verplaatst of opnieuw opbouwt',

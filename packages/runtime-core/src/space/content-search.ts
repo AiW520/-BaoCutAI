@@ -19,6 +19,11 @@ export interface SearchableVideo {
   entryId: Id | null;
   projectId: Id | null;
   revision: string;
+  /**
+   * 索引文件夹里只按画面建的文件（检索规格 §9.1）：`videoId` 与 `entryId` 都是条目 id，`dir` 是文件路径，`revision` 是文件的版本。
+   * 只在画面一路里出现（`SearchScope.files`）。
+   */
+  file?: 'video-file' | 'image';
 }
 
 export interface SearchQuery {

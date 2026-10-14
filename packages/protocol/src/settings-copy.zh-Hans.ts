@@ -37,6 +37,7 @@ export const zhHans: SettingDescriptionMessages = {
   'offline.strict': '严格离线：不向任何在线服务发送内容',
   'semantic.channels': '要建语义索引的通道：text（讲话内容：文稿、字幕、译文、章节）；画面（visual，每 8 秒一张关键帧，要装多模态模型包，建得较慢）；声音（audio）还不可用',
   'semantic.excludedProjects': '不建语义索引的项目（项目 ID 列表）：所有 BaoCut 项目与不属于项目的视频都建，除了这些；它们的视频仍可按字面找到',
+  'semantic.folders': '项目之外的索引文件夹（{id, path} 列表）：里面的视频与图片出现在 Space 里、按意思建索引，只读。用 space.folderAdd 与 space.folderRemove 更改',
   'semantic.excludedVideos': '不建语义索引的单个视频（视频 ID 列表），与排除的项目叠加；已建的索引会撤下',
   'semantic.indexDir': '语义索引所在的文件夹（绝对路径）；null 时放在应用缓存里。用 space.indexSetDir 更改，会移动或重新建索引',
   'semantic.pauseOnBattery': '用电池时暂停建语义索引，接上电源后接着建（系统因过热降频时总会暂停）',

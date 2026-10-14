@@ -55,13 +55,14 @@ test('重新索引：已有的、过期的、失败的都排到队首', () => {
   assert.ok(s.canReindex);
 });
 
-test('索引文件夹：说清楚会建什么；和项目或已加的文件夹重叠时不能加', () => {
+test('索引文件夹：说清楚会建什么；在项目或已加的文件夹里面时不能加，包含它们可以', () => {
   const f = {counts: {movies: 2, clips: 40, images: 12, exports: 3}};
   assert.equal(X.folderNote(f, true), '2 部 BaoCut 视频按讲话内容与画面建；40 个视频素材、12 张图片按画面建；3 个成片跳过（导出它们的视频已经建过）。');
   assert.match(X.folderNote(f, false), /40 个视频素材、12 张图片要打开画面索引才会建/);
   const taken = [{name: '素材库', path: '~/Movies/素材库'}, {name: '新品发布', path: '~/BaoCut/新品发布/'}];
   assert.equal(X.folderProblem('~/Movies/素材库/2025', taken).code, 'overlap');
-  assert.equal(X.folderProblem('~/BaoCut', taken).code, 'overlap');
+  assert.equal(X.folderProblem('~/Movies/素材库', taken).code, 'overlap');
+  assert.equal(X.folderProblem('~/BaoCut', taken), null);
   assert.equal(X.folderProblem('~/Movies/素材库二', taken), null);
   assert.equal(X.folderProblem(null, taken).code, 'missing');
 });

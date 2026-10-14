@@ -1683,3 +1683,224 @@ describe('Space 目录', () => {
     expect(code(() => catalog.resolveFile(srt.id, ['subtitle']))).toEqual(['conflict', 'SPACE_ENTRY_TRASHED']);
   });
 });
+
+describe('索引文件夹', () => {
+  let tmp: string;
+  let projectDir: string;
+  let folderDir: string;
+  let project: Project;
+  let directory: TopicLog<DirectorySnapshot, DirectoryEvent>;
+  let jobs: FakeJobs;
+  let reader: FakeReader;
+  let marks: SpaceMarkStore;
+  let catalog: SpaceCatalog | null;
+
+  const harness = () =>
+    ({ subscribe: (_topic: string, after: string | undefined, l: never) => directory.subscribe(after, l) }) as unknown as Harness;
+
+  async function open(folders: { id: string; path: string }[]): Promise<SpaceCatalog> {
+    const index = new ContentIndex({ dir: path.join(tmp, 'cache', 'content-index'), reader, log: silentLogger });
+    await index.load();
+    catalog = new SpaceCatalog({ harness: harness(), marks, log: silentLogger, watch: false, jobs, index, folders, skipRoots: [path.join(folderDir, 'home')] });
+    catalog.start();
+    await catalog.ready;
+    await catalog.idle();
+    return catalog;
+  }
+
+  /** 文件夹里全部文件的路径与大小、修改时间：索引文件夹只读，前后要一样。 */
+  async function tree(dir: string): Promise<string[]> {
+    const out: string[] = [];
+    for (const name of await fs.readdir(dir, { recursive: true })) {
+      const stat = await fs.stat(path.join(dir, name));
+      out.push(`${name}:${stat.isDirectory() ? 'd' : stat.size}:${stat.mtimeMs}`);
+    }
+    return out.sort();
+  }
+
+  const code = (fn: () => unknown) => {
+    try {
+      fn();
+    } catch (error) {
+      return error instanceof RpcError ? (error.details as { code?: string } | undefined)?.code : String(error);
+    }
+    return null;
+  };
+  const codeOf = async (promise: Promise<unknown>) =>
+    promise.then(
+      () => null,
+      (error: unknown) => (error instanceof RpcError ? (error.details as { code?: string } | undefined)?.code : String(error)),
+    );
+
+  beforeEach(async () => {
+    tmp = await fs.realpath(await fs.mkdtemp(path.join(os.tmpdir(), 'space-folders-')));
+    folderDir = path.join(tmp, 'Documents');
+    projectDir = path.join(folderDir, 'proj');
+    await fs.mkdir(path.join(projectDir, '访谈'), { recursive: true });
+    await fs.writeFile(path.join(projectDir, '访谈', 'video.db'), 'db');
+    await fs.writeFile(path.join(projectDir, 'cover.png'), 'png');
+    // 文件夹里：一个 BaoCut 视频、一个与项目里同一部的副本、一个旧版视频、视频文件、图片、文档、Runtime 的目录。
+    await fs.mkdir(path.join(folderDir, 'clips', '会议'), { recursive: true });
+    await fs.writeFile(path.join(folderDir, 'clips', '会议', 'video.db'), 'db');
+    await fs.mkdir(path.join(folderDir, 'backup', '访谈副本'), { recursive: true });
+    await fs.writeFile(path.join(folderDir, 'backup', '访谈副本', 'video.db'), 'db');
+    await fs.mkdir(path.join(folderDir, 'old'), { recursive: true });
+    await fs.writeFile(path.join(folderDir, 'old', 'movie.db'), 'db');
+    await fs.writeFile(path.join(folderDir, 'clips', 'trip.mp4'), 'mp4');
+    await fs.writeFile(path.join(folderDir, 'beach.jpg'), 'jpg');
+    await fs.writeFile(path.join(folderDir, 'notes.md'), '# notes');
+    await fs.mkdir(path.join(folderDir, 'home'), { recursive: true });
+    await fs.writeFile(path.join(folderDir, 'home', 'inside.png'), 'png');
+    project = { id: 'p1', name: '项目', path: projectDir, createdAt: '', lastActiveAt: '', pinned: false, archived: false };
+    directory = new TopicLog<DirectorySnapshot, DirectoryEvent>(() => ({ projects: [project], conversations: [] }), '0');
+    jobs = new FakeJobs();
+    reader = new FakeReader();
+    reader.videos.set(path.join(projectDir, '访谈'), videoContent('v1', 'rev-1'));
+    reader.videos.set(path.join(folderDir, 'clips', '会议'), videoContent('v9', 'rev-9'));
+    reader.videos.set(path.join(folderDir, 'backup', '访谈副本'), videoContent('v1', 'rev-1'));
+    marks = new SpaceMarkStore(path.join(tmp, 'space.json'));
+    await marks.load();
+    catalog = null;
+  });
+
+  afterEach(async () => {
+    await catalog?.close();
+    await fs.rm(tmp, { recursive: true, force: true });
+  });
+
+  it('只收 BaoCut 视频、视频文件与图片；跳过包含的项目与 Runtime 的目录，旧版视频只计数；不改文件夹里的任何文件', async () => {
+    const before = await tree(folderDir);
+    const space = await open([{ id: 'f1', path: folderDir }]);
+    const inFolder = space.entries().filter((e) => e.source.folderId === 'f1');
+    expect(inFolder.map((e) => `${e.kind}:${e.relPath}`).sort()).toEqual([
+      'image:beach.jpg',
+      'video-file:clips/trip.mp4',
+      'video:backup/访谈副本',
+      'video:clips/会议',
+    ]);
+    expect(inFolder.every((e) => e.source.projectId === null && e.source.conversationId === null)).toBe(true);
+    // 项目里的文件只按项目列一次。
+    expect(space.entries().filter((e) => e.relPath === 'cover.png').map((e) => e.source.projectId)).toEqual(['p1']);
+    // 同一部视频按项目那一份：文件夹里的副本列出、不进内容检索的视频。
+    expect(space.videos().map((v) => [v.videoId, v.folderId ?? null]).sort()).toEqual([
+      ['v1', null],
+      ['v9', 'f1'],
+    ]);
+    expect(space.folderStatus({ id: 'f1', path: folderDir })).toMatchObject({
+      name: 'Documents',
+      exists: true,
+      issue: null,
+      counts: { videos: 1, videoFiles: 1, images: 1, exports: 0, duplicates: 1, legacy: 1 },
+    });
+    expect(space.issues()).toEqual([]);
+    expect(space.sourceRoots()).toEqual([projectDir]);
+    // 只按画面建的文件：视频文件与图片（BaoCut 视频走视频那一路）；版本跟着文件变。
+    const files = space.visualFiles();
+    expect(files.map((f) => [f.kind, path.relative(folderDir, f.file), f.folderId, f.root]).sort()).toEqual([
+      ['image', 'beach.jpg', 'f1', folderDir],
+      ['video-file', path.join('clips', 'trip.mp4'), 'f1', folderDir],
+    ]);
+    expect(await tree(folderDir)).toEqual(before);
+    await fs.writeFile(path.join(folderDir, 'beach.jpg'), 'jpeg, longer');
+    await space.rescanFolder('f1');
+    const beach = (list: ReturnType<SpaceCatalog['visualFiles']>) => list.find((f) => f.kind === 'image')!;
+    expect(beach(space.visualFiles()).entryId).toBe(beach(files).entryId);
+    expect(beach(space.visualFiles()).revision).not.toBe(beach(files).revision);
+  });
+
+  it('文件夹里的条目只读：移入回收站、物理删除、打开编辑都拒绝；收藏、显示名与读文件照常', async () => {
+    const space = await open([{ id: 'f1', path: folderDir }]);
+    const video = space.entries().find((e) => e.relPath === 'clips/会议')!;
+    const image = space.entries().find((e) => e.relPath === 'beach.jpg')!;
+    await expect(codeOf(space.update({ entryId: image.id, trashed: true }))).resolves.toBe('SPACE_FOLDER_READONLY');
+    await expect(codeOf(space.purge(image.id))).resolves.toBe('SPACE_FOLDER_READONLY');
+    expect(code(() => space.openForEdit(video.id))).toBe('SPACE_FOLDER_READONLY');
+    expect(code(() => space.openForEdit(image.id))).toBe('SPACE_FOLDER_READONLY');
+    expect(code(() => space.locate(video.id))).toBe('SPACE_FOLDER_READONLY');
+    expect(code(() => space.videoEntry(video.id))).toBe('SPACE_FOLDER_READONLY');
+    expect(await space.videoEntryAt(path.join(folderDir, 'clips', '会议'))).toBeNull();
+    expect(space.locateBytes(image.id)).toEqual({ root: folderDir, file: path.join(folderDir, 'beach.jpg') });
+    expect(space.videoDir(video.id)).toBe(path.join(folderDir, 'clips', '会议'));
+    expect(space.resolveFile(image.id, ['image']).file).toBe(path.join(folderDir, 'beach.jpg'));
+    expect((await space.update({ entryId: image.id, favorite: true, displayName: '海边' })).user).toMatchObject({ favorite: true, displayName: '海边' });
+    // 项目里的照常。
+    expect(space.openForEdit(space.entries().find((e) => e.relPath === '访谈')!.id)).toMatchObject({ mode: 'video', videoId: 'v1' });
+  });
+
+  it('导出到文件夹里的成片：记成导出、计数里单列，回到项目里导出它的视频', async () => {
+    const out = path.join(folderDir, 'clips', '访谈.mp4');
+    await fs.writeFile(out, 'mp4');
+    jobs.put(
+      job({
+        kind: 'export',
+        state: 'completed',
+        videoId: 'v1',
+        export: {
+          settings: { kind: 'video' } as never,
+          snapshotArtifactId: 'sha256:snap',
+          videoRevision: 'rev-1',
+          sequenceId: 'seq',
+          destination: { dir: path.dirname(out), files: ['访谈.mp4'], overwrite: false },
+        },
+        result: {
+          documentId: null,
+          artifactId: 'sha256:mp4',
+          outputs: [{ artifactId: 'sha256:mp4', mediaType: 'video/mp4', byteLength: 3, assetId: null, media: { kind: 'video' } as never, path: out }],
+        },
+      }),
+    );
+    const space = await open([{ id: 'f1', path: folderDir }]);
+    const exported = space.entries().find((e) => e.relPath === 'clips/访谈.mp4')!;
+    expect(exported).toMatchObject({ kind: 'export', source: { folderId: 'f1' }, origin: { source: 'exported', videoId: 'v1' } });
+    expect(space.folderStatus({ id: 'f1', path: folderDir }).counts).toMatchObject({ videoFiles: 1, exports: 1 });
+    expect(space.visualFiles().some((f) => f.entryId === exported.id)).toBe(false);
+    const back = space.openForEdit(exported.id);
+    expect(back).toMatchObject({ mode: 'source-video', videoId: 'v1', target: { entryId: space.entries().find((e) => e.relPath === '访谈')!.id } });
+    await expect(codeOf(space.update({ entryId: exported.id, trashed: true }))).resolves.toBe('SPACE_FOLDER_READONLY');
+  });
+
+  it('文件夹不在时（外接盘）不列它的条目、记为不在；移除后条目拿掉', async () => {
+    const space = await open([
+      { id: 'f1', path: folderDir },
+      { id: 'gone', path: path.join(tmp, 'Volumes', 'Disk') },
+    ]);
+    expect(space.folderStatus({ id: 'gone', path: path.join(tmp, 'Volumes', 'Disk') })).toMatchObject({ exists: false, counts: { videos: 0 } });
+    expect(space.folderIds()).toEqual({ all: ['f1', 'gone'], missing: ['gone'] });
+    space.setFolders([]);
+    await space.idle();
+    expect(space.entries().some((e) => e.source.folderId)).toBe(false);
+    expect(space.folderIds()).toEqual({ all: [], missing: [] });
+    await expect(codeOf(space.rescanFolder('f1'))).resolves.toBe('SPACE_FOLDER_UNKNOWN');
+  });
+
+  it('能不能加：不存在、在项目里或在已加的文件夹里拒绝；包含项目可以', async () => {
+    const space = await open([{ id: 'f1', path: path.join(folderDir, 'clips') }]);
+    await expect(codeOf(space.checkFolder(path.join(tmp, 'nope')))).resolves.toBe('SPACE_FOLDER_NOT_FOUND');
+    await expect(codeOf(space.checkFolder(path.join(projectDir, '访谈')))).resolves.toBe('SPACE_FOLDER_OVERLAP');
+    await expect(codeOf(space.checkFolder(path.join(folderDir, 'clips', '会议')))).resolves.toBe('SPACE_FOLDER_OVERLAP');
+    await expect(codeOf(space.checkFolder(path.join(folderDir, 'clips')))).resolves.toBe('SPACE_FOLDER_OVERLAP');
+    await expect(space.checkFolder(folderDir)).resolves.toBe(folderDir);
+    // 加上外面的那一层：里面已加的文件夹跳过，不列两遍。
+    space.setFolders([
+      { id: 'f1', path: path.join(folderDir, 'clips') },
+      { id: 'f2', path: folderDir },
+    ]);
+    await space.idle();
+    expect(space.entries().filter((e) => e.relPath.endsWith('trip.mp4')).map((e) => e.source.folderId)).toEqual(['f1']);
+  });
+
+  it('只读检索范围：all 看得到文件夹里的视频、视频文件与图片，unfiled 与对外服务看不到', async () => {
+    const space = await open([{ id: 'f1', path: folderDir }]);
+    const image = space.entries().find((e) => e.relPath === 'beach.jpg')!;
+    const video = space.entries().find((e) => e.relPath === 'clips/会议')!;
+    const seen = (viewer: SpaceViewer) => listEntries(space, viewer, {}).entries.filter((e) => e.source.folderId).map((e) => e.id).sort();
+    const source = (readScope?: 'all' | 'unfiled'): SpaceViewer => ({ kind: 'source', projectId: null, conversationId: 'c1', ...(readScope ? { readScope } : {}) });
+    expect(seen(source('all'))).toEqual(
+      [image.id, video.id, space.entries().find((e) => e.relPath === 'clips/trip.mp4')!.id, space.entries().find((e) => e.relPath === 'backup/访谈副本')!.id].sort(),
+    );
+    expect(seen(source('unfiled'))).toEqual([]);
+    expect(seen(source())).toEqual([]);
+    expect(seen({ kind: 'service', videos: 'all', owns: () => true, jobs: () => null })).toEqual([]);
+    expect(seen(USER_VIEWER)).toHaveLength(4);
+  });
+});

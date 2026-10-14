@@ -56,6 +56,7 @@ const en = {
   'offline.strict': "Strict offline: don't send anything to any online service",
   'semantic.channels': 'Semantic index channels to build: text (speech, captions, translations, chapters); visual (a keyframe every 8 seconds; needs a multimodal model package and takes longer); audio is not available yet',
   'semantic.excludedProjects': 'Projects left out of the semantic index (list of project ids): every BaoCut project and every video outside projects is indexed except these, whose videos can still be found by exact words',
+  'semantic.folders': 'Index folders outside projects ({id, path} list): videos and images in them are listed in Space and indexed by meaning, read-only. Change them with space.folderAdd and space.folderRemove',
   'semantic.excludedVideos': 'Single videos left out of the semantic index (list of video ids), on top of excluded projects; their existing index is removed',
   'semantic.indexDir':
     'Folder for the semantic index (absolute path); null keeps it in the app cache. Change it with space.indexSetDir, which moves or rebuilds the index',

@@ -102,6 +102,10 @@ const en = {
   indexDirOccupied: 'This folder already has a semantic index. Choose an empty folder, or rebuild the index there to use the one it has',
   indexDirMoving: 'The index is being moved. Wait for the move to finish',
   indexDirMoveFailed: (p: { reason: string }) => `Couldn't move the index; it stays where it was: ${p.reason}`,
+  folderReadOnly: "This is in an index folder, which BaoCut only reads. It can't be moved to the Trash, deleted or edited",
+  folderNotFound: "The folder doesn't exist",
+  folderUnknown: "That index folder isn't in the list",
+  folderInside: (p: { name: string }) => `This folder is already indexed as part of “${p.name}”`,
 };
 
 export type RcSpaceMessages = typeof en;

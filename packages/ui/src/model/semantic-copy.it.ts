@@ -247,4 +247,52 @@ export const it: SemanticMessages = {
     changedToast: (to) => `Posizione dell’indice cambiata in ${to}`,
     pickFailed: (message) => `Impossibile scegliere la cartella: ${message}`,
   },
+  folders: {
+    head: 'Cartelle indicizzate fuori dai tuoi progetti:',
+    add: 'Aggiungi cartella…',
+    actions: (name) => `Azioni per la cartella indicizzata «${name}»`,
+    reindex: 'Reindicizza',
+    reindexDesc: 'La scansiona di nuovo e ricostruisce il suo indice',
+    remove: 'Rimuovi',
+    removeDesc: 'Elimina il suo indice; i file restano',
+    videos: (n) => (n === 1 ? '1 video BaoCut' : `${n} video BaoCut`),
+    videoFiles: (n) => (n === 1 ? '1 file video' : `${n} file video`),
+    images: (n) => (n === 1 ? '1 immagine' : `${n} immagini`),
+    nothing: 'Nessun video o immagine trovato per ora',
+    exportsSkipped: (n) => (n === 1 ? '1 esportazione saltata' : `${n} esportazioni saltate`),
+    duplicates: (n) => (n === 1 ? '1 già in un progetto' : `${n} già nei progetti`),
+    legacy: (n) => (n === 1 ? '1 video BaoCut più vecchio non letto' : `${n} video BaoCut più vecchi non letti`),
+    listSeparator: ', ',
+    separator: ' · ',
+    missing: 'Cartella non trovata',
+    missingNote:
+      'Forse un disco esterno è scollegato. Il suo indice viene conservato e Space nasconde questi file finché la cartella non torna.',
+    truncatedNote: (limit) => `Troppi file: sono stati scansionati solo i primi ${limit}. Aggiungi invece una sottocartella.`,
+    truncatedNoteNoLimit: 'Troppi file: sono stati scansionati solo i primi. Aggiungi invece una sottocartella.',
+    unreadableNote: 'Impossibile leggere questa cartella. Controlla i permessi.',
+    legacyNote:
+      'I video BaoCut più vecchi vanno aggiornati prima di poter essere letti, e l’aggiornamento li modifica, quindi qui non vengono letti. Spostane uno in un progetto e aprilo una volta in BaoCut per aggiornarlo.',
+    visualReady: 'Immagini pronte',
+    visualProgress: (done, total) => `Immagini: ${done} su ${total} completate`,
+    textOnly: 'I suoi video BaoCut sono indicizzati per il parlato',
+    visualOff: 'L’indice delle immagini è disattivato, quindi file video e immagini non sono ancora indicizzati',
+    addTitle: 'Aggiungi cartella indicizzata',
+    addBody:
+      'Anche i video fuori dai tuoi progetti si potranno trovare in base al significato. BaoCut si limita a leggere questa cartella: non modifica, sposta né elimina nulla al suo interno. I suoi video e le sue immagini compaiono in Space con questa cartella come origine.',
+    addWhat: (visual) =>
+      visual
+        ? 'I video BaoCut vengono indicizzati per il parlato e per le immagini; gli altri file video e le immagini, per le immagini. Le esportazioni registrate da BaoCut vengono saltate, e i video presenti anche in un progetto usano la copia del progetto.'
+        : 'I video BaoCut vengono indicizzati per il parlato; gli altri file video e le immagini richiedono l’indice delle immagini. Le esportazioni registrate da BaoCut vengono saltate, e i video presenti anche in un progetto usano la copia del progetto.',
+    visualOffTitle: 'File video e immagini vengono indicizzati per le immagini',
+    visualOffBody:
+      'Non hanno una trascrizione, quindi si possono trovare solo in base a ciò che si vede sullo schermo. Vengono indicizzati quando l’indice delle immagini è attivo; fino ad allora si indicizzano solo i video BaoCut di questa cartella.',
+    confirmAdd: 'Aggiungi',
+    addedToast: (name) => `«${name}» aggiunta. Scansione e indicizzazione in background.`,
+    reindexedToast: (name) => `Nuova scansione di «${name}» e ricostruzione del suo indice`,
+    removeTitle: (name) => `Rimuovere la cartella indicizzata «${name}»?`,
+    removeBody:
+      'Elimina l’indice di questa cartella; i file restano. Space smette di elencarli e non si possono più trovare in base al significato. Potrai aggiungere di nuovo la cartella più tardi.',
+    removedToast: (name) => `Indice di «${name}» rimosso`,
+    failed: (message) => `Non è andata a buon fine: ${message}`,
+  },
 };

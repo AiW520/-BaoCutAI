@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react';
-import type { Id, ModelBundleStatus, SemanticChannel, SemanticIndexDir, SemanticIndexDirMode } from '@baocut/protocol';
+import type { Id, ModelBundleStatus, SemanticChannel, SemanticFolderStatus, SemanticIndexDir, SemanticIndexDirMode } from '@baocut/protocol';
 import {
   ActionButton,
+  ActionMenu,
   AlertDialog,
   Badge,
   Button,
@@ -13,6 +14,7 @@ import {
   DialogContainer,
   Heading,
   InlineAlert,
+  MenuItem,
   ProgressBar,
   Radio,
   RadioGroup,
@@ -20,8 +22,11 @@ import {
   Text,
   ToastQueue,
 } from '@react-spectrum/s2';
+import Delete from '@react-spectrum/s2/icons/Delete';
 import Download from '@react-spectrum/s2/icons/Download';
 import Folder from '@react-spectrum/s2/icons/Folder';
+import FolderAdd from '@react-spectrum/s2/icons/FolderAdd';
+import Refresh from '@react-spectrum/s2/icons/Refresh';
 import { style } from '@react-spectrum/s2/style' with { type: 'macro' };
 import { revealLabel } from '../../copy.ts';
 import {
@@ -37,6 +42,7 @@ import { shortenDir } from '../../model/models-dir.ts';
 import { bundleName } from '../../model/models-local.ts';
 import { M as LOCAL } from '../../model/models-local-copy.ts';
 import { M as COPY } from '../../model/semantic-copy.ts';
+import { folderRowView } from '../../model/semantic-folders.ts';
 import { packageView, scopeView, type PackagePartKind, type ScopeProject } from '../../model/semantic-package.ts';
 import { coverageLine, etaLine, indexState, pausedNote, visualCostLine, visualCoverageLine } from '../../model/semantic-status.ts';
 import { fmtSize } from '../../model/task-facts.ts';
@@ -70,6 +76,8 @@ import { useSaveSettings, useSettingsReady } from './save-settings.ts';
  *   恢复只撤掉用户的暂停。
  * - 索引范围：所有 BaoCut 项目（新建的自动加入）与项目之外的视频，减去排除的项目（`semantic.excludedProjects`）与 Space 里
  *   单独设了不索引的视频（`semantic.excludedVideos`）；两者都能在这里恢复，排除项目走一个勾选对话框。成片不另建。
+ * - 索引文件夹（检索规格 §9.1）：项目之外再加的只读文件夹（`space.folderAdd`，系统的文件夹面板选）。每个写建到哪了、认出了什么、
+ *   跳过了什么；⋯ 里在文件夹中显示 / 重新索引 / 移除（移除只删它的索引，不动文件）。只在桌面端改，Web 只列出。
  * - 用到它的两项开关：翻译记忆（`semantic.translationMemory`，Runtime 执行）、术语候选（`semantic.glossaryCandidates`，润色面板读它）。
  *
  * 浏览器里（Web）只看不改：能取状态（`space.indexStatus` 在白名单里），装模型、控制索引与改设置都不开放；索引位置只写路径
@@ -96,6 +104,7 @@ const note = style({ paddingY: 12, font: 'ui-xs', color: 'gray-600', overflowWra
 const dialogStack = style({ display: 'flex', flexDirection: 'column', gap: 16 });
 const pathText = style({ font: 'code-xs', color: 'gray-800', minWidth: 0, overflowWrap: 'anywhere', userSelect: 'text' });
 const dialogPath = style({ font: 'code-sm', overflowWrap: 'anywhere', userSelect: 'text' });
+const addRow = style({ display: 'flex', paddingY: 12 });
 
 export function SemanticSettings() {
   const web = useRuntime().host.platform === 'web';
@@ -657,6 +666,7 @@ function ScopeGroup({ web }: { web: boolean }) {
           {restoreButton(() => void restoreVideo(v.id, v.name))}
         </Row>
       ))}
+      <IndexFolders web={web} folders={status?.folders ?? []} refresh={refresh} />
       {picking ? (
         <ExcludeDialog
           projects={list}
@@ -666,6 +676,199 @@ function ScopeGroup({ web }: { web: boolean }) {
         />
       ) : null}
     </Group>
+  );
+}
+
+// ---- 索引文件夹 ----
+
+/** 「索引范围」里项目下面的索引文件夹与「添加文件夹…」。 */
+function IndexFolders({ web, folders, refresh }: { web: boolean; folders: readonly SemanticFolderStatus[]; refresh: () => Promise<void> }) {
+  const runtime = useRuntime();
+  const visualOn = (useSetting('semantic.channels') ?? []).includes('visual');
+  const F = COPY.folders;
+  const [adding, setAdding] = useState<string | null>(null);
+  const [removing, setRemoving] = useState<SemanticFolderStatus | null>(null);
+  const [picking, setPicking] = useState(false);
+  const failedToast = (error: unknown) => ToastQueue.negative(F.failed(problemText(rpcProblem(error))), { timeout: 5000 });
+  const pick = async () => {
+    setPicking(true);
+    try {
+      const next = await runtime.host.pickDirectory();
+      if (next) setAdding(next);
+    } catch (error) {
+      ToastQueue.negative(COPY.location.pickFailed(error instanceof Error ? error.message : String(error)), { timeout: 5000 });
+    } finally {
+      setPicking(false);
+    }
+  };
+  const act = async (key: string, folder: SemanticFolderStatus) => {
+    if (key === 'reveal') void runtime.host.revealPath(folder.path);
+    else if (key === 'remove') setRemoving(folder);
+    else if (key === 'reindex') {
+      try {
+        await runtime.client.request('space.folderReindex', { folderId: folder.id });
+        ToastQueue.positive(F.reindexedToast(folder.name), { timeout: 4000 });
+        void refresh();
+      } catch (error) {
+        failedToast(error);
+      }
+    }
+  };
+  const remove = async (folder: SemanticFolderStatus) => {
+    try {
+      await runtime.client.request('space.folderRemove', { folderId: folder.id });
+      ToastQueue.positive(F.removedToast(folder.name), { timeout: 4000 });
+      void refresh();
+    } catch (error) {
+      failedToast(error);
+    }
+  };
+  if (web && folders.length === 0) return null;
+  return (
+    <>
+      <div className={note}>{F.head}</div>
+      {folders.map((folder) => {
+        const view = folderRowView(folder, visualOn);
+        return (
+          <Row
+            key={folder.id}
+            label={folder.name}
+            desc={
+              <>
+                <span className={pathText} title={folder.path}>
+                  {shortenDir(folder.path, 48)}
+                </span>
+                <br />
+                {view.what}
+                {view.notes.map((n) => (
+                  <span key={n} className={view.tone === 'notice' ? failed : muted}>
+                    <br />
+                    {n}
+                  </span>
+                ))}
+              </>
+            }>
+            <span className={view.tone === 'notice' ? failed : value}>{view.line}</span>
+            {web ? null : (
+              <ActionMenu aria-label={F.actions(folder.name)} isQuiet size="S" onAction={(key) => void act(String(key), folder)}>
+                <MenuItem id="reveal" textValue={revealLabel()} isDisabled={!folder.exists}>
+                  <Folder />
+                  <Text>{revealLabel()}</Text>
+                </MenuItem>
+                <MenuItem id="reindex" textValue={F.reindex} isDisabled={!folder.exists}>
+                  <Refresh />
+                  <Text>{F.reindex}</Text>
+                  <Text slot="description">{F.reindexDesc}</Text>
+                </MenuItem>
+                <MenuItem id="remove" textValue={F.remove}>
+                  <Delete />
+                  <Text>{F.remove}</Text>
+                  <Text slot="description">{F.removeDesc}</Text>
+                </MenuItem>
+              </ActionMenu>
+            )}
+          </Row>
+        );
+      })}
+      {web ? null : (
+        <div className={addRow}>
+          <ActionButton size="S" isDisabled={picking} onPress={() => void pick()}>
+            <FolderAdd />
+            <Text>{F.add}</Text>
+          </ActionButton>
+        </div>
+      )}
+      {adding ? (
+        <AddFolderDialog
+          path={adding}
+          visualOn={visualOn}
+          onClose={() => setAdding(null)}
+          onAdded={(folder) => {
+            ToastQueue.positive(F.addedToast(folder.name), { timeout: 4000 });
+            void refresh();
+          }}
+        />
+      ) : null}
+      <DialogContainer onDismiss={() => setRemoving(null)}>
+        {removing ? (
+          <AlertDialog
+            variant="destructive"
+            title={F.removeTitle(removing.name)}
+            primaryActionLabel={F.remove}
+            cancelLabel={INSTALL.cancel}
+            onPrimaryAction={() => void remove(removing)}>
+            {F.removeBody}
+          </AlertDialog>
+        ) : null}
+      </DialogContainer>
+    </>
+  );
+}
+
+/** 添加索引文件夹：选好的文件夹、会建什么；画面没开时提醒视频文件与图片要画面。Runtime 拒绝（重叠、找不到）时原因留在框里。 */
+function AddFolderDialog({
+  path,
+  visualOn,
+  onClose,
+  onAdded,
+}: {
+  path: string;
+  visualOn: boolean;
+  onClose: () => void;
+  onAdded: (folder: SemanticFolderStatus) => void;
+}) {
+  const runtime = useRuntime();
+  const F = COPY.folders;
+  const [busy, setBusy] = useState(false);
+  const [failure, setFailure] = useState<string | null>(null);
+  const submit = async (close: () => void) => {
+    setBusy(true);
+    setFailure(null);
+    try {
+      onAdded(await runtime.client.request('space.folderAdd', { path }));
+      close();
+    } catch (error) {
+      setFailure(problemText(rpcProblem(error)));
+    } finally {
+      setBusy(false);
+    }
+  };
+  return (
+    <DialogContainer onDismiss={onClose}>
+      <Dialog size="M">
+        {({ close }) => (
+          <>
+            <Heading slot="title">{F.addTitle}</Heading>
+            <Content>
+              <div className={dialogStack}>
+                <p className={body}>
+                  <span className={dialogPath} title={path}>
+                    {shortenDir(path, 60)}
+                  </span>
+                </p>
+                <p className={body}>{F.addBody}</p>
+                <p className={muted}>{F.addWhat(visualOn)}</p>
+                {visualOn ? null : (
+                  <InlineAlert variant="informative">
+                    <Heading>{F.visualOffTitle}</Heading>
+                    <Content>{F.visualOffBody}</Content>
+                  </InlineAlert>
+                )}
+                {failure ? <p className={failed}>{failure}</p> : null}
+              </div>
+            </Content>
+            <ButtonGroup>
+              <Button variant="secondary" onPress={close}>
+                {INSTALL.cancel}
+              </Button>
+              <Button variant="accent" isPending={busy} isDisabled={busy} onPress={() => void submit(close)}>
+                {F.confirmAdd}
+              </Button>
+            </ButtonGroup>
+          </>
+        )}
+      </Dialog>
+    </DialogContainer>
   );
 }
 

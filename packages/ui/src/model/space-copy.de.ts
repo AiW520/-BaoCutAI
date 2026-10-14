@@ -34,6 +34,7 @@ export const de: SpaceMessages = {
   statusNone: "Kein Status",
   noProject: "Nicht in einem Projekt",
   removedProject: "Entferntes Projekt",
+  indexFolder: (name: string | null) => (name ? `Indexordner „${name}“` : 'Indexordner'),
   conversation: (title: string) => `Sitzung „${title}“`,
   derivedFrom: (name: string) => `Aus „${name}“`,
   kindCount: (kind: string, n: number) => `${kind} ${n}`,

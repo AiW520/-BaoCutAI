@@ -29,6 +29,7 @@ export const it: SettingDescriptionMessages = {
   'diagnostics.enabled': 'Invia statistiche d’utilizzo e riepiloghi delle prestazioni anonimi (senza media, testo o percorsi)', 'offline.strict': 'Rigorosamente offline: non inviare nulla a nessun servizio online',
   'semantic.channels': 'Canali dell’indice semantico da creare: text (parlato: trascrizioni, sottotitoli, traduzioni, capitoli); visual (un fotogramma chiave ogni 8 secondi; richiede un modello multimodale e più tempo); audio non è ancora disponibile',
   'semantic.excludedProjects': 'Progetti esclusi dall’indice semantico (elenco di id di progetto): tutti i progetti BaoCut e i video fuori dai progetti vengono indicizzati tranne questi, i cui video restano trovabili con le parole esatte',
+  'semantic.folders': 'Cartelle indicizzate fuori dai progetti (elenco di {id, path}): i video e le immagini al loro interno compaiono in Space e sono indicizzati per significato, in sola lettura. Si cambiano con space.folderAdd e space.folderRemove',
   'semantic.excludedVideos': 'Singoli video esclusi dall’indice semantico (elenco di id di video), oltre ai progetti esclusi; il loro indice esistente viene rimosso',
   'semantic.indexDir':
     'Cartella dell’indice semantico (percorso assoluto); null lo lascia nella cache dell’app. Si cambia con space.indexSetDir, che sposta o ricrea l’indice',

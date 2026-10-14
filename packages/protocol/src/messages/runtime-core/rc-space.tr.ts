@@ -13,4 +13,8 @@ dirUnreadable: (p) => `Klasör okunamadı (${p.code})`, tooManyDirEntries: (p) =
     'Bu klasörde zaten bir anlamsal dizin var. Boş bir klasör seçin ya da mevcut olanı kullanmak için dizini orada yeniden oluşturun',
   indexDirMoving: 'Dizin taşınıyor. Taşıma bitene kadar bekleyin',
   indexDirMoveFailed: (p: { reason: string }) => `Dizin taşınamadı; eski yerinde duruyor: ${p.reason}`,
+  folderReadOnly: 'Bu, BaoCut’ın yalnızca okuduğu bir dizin klasöründe. Çöp kutusuna taşınamaz, silinemez ya da düzenlenemez',
+  folderNotFound: 'Klasör yok',
+  folderUnknown: 'Bu dizin klasörü listede yok',
+  folderInside: (p: { name: string }) => `Bu klasör zaten “${p.name}” klasörünün parçası olarak dizinleniyor`,
 };

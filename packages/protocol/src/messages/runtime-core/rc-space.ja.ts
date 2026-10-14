@@ -78,4 +78,8 @@ export const ja: RcSpaceMessages = {
     'このフォルダーにはすでに意味インデックスがあります。空のフォルダーを選ぶか、そこで作り直して既存のものを使ってください',
   indexDirMoving: 'インデックスを移動中です。移動が終わるまでお待ちください',
   indexDirMoveFailed: (p: { reason: string }) => `インデックスを移動できませんでした。元の場所に残っています：${p.reason}`,
+  folderReadOnly: 'インデックス対象フォルダーの中にあり、BaoCut は読み取るだけです。ゴミ箱に入れる、削除する、編集することはできません',
+  folderNotFound: 'フォルダーがありません',
+  folderUnknown: 'そのインデックス対象フォルダーは一覧にありません',
+  folderInside: (p: { name: string }) => `このフォルダーは「${p.name}」の一部としてすでにインデックスされています`,
 };

@@ -148,7 +148,7 @@ describe('那一刻用的视频内容', () => {
       return { videoId: 'v', name: 'v', revision: index.revision, ...base } as ReadContentResult;
     };
     const catalog = {
-      videoEntry: () => ({ dir: '/videos/v' }),
+      videoDir: () => '/videos/v',
       index: { at: () => ({ revision: index.revision }), current: () => index.current },
     } as unknown as SpaceCatalog;
     const analysis = { assetFrame: async () => ({ mimeType: 'image/jpeg', data: 'AA==', at: 0 }) } as unknown as MediaAnalysis;

@@ -280,6 +280,54 @@ const en = {
     changedToast: (to: string) => `Index location changed to ${to}`,
     pickFailed: (message: string) => `Couldn't choose the folder: ${message}`,
   },
+  /** 设置页「索引范围」里的索引文件夹（检索规格 §9.1；添加、重新索引、移除只在桌面端）。 */
+  folders: {
+    head: 'Index folders outside your projects:',
+    add: 'Add folder…',
+    actions: (name: string) => `Actions for index folder “${name}”`,
+    reindex: 'Re-index',
+    reindexDesc: 'Scan it again and rebuild its index',
+    remove: 'Remove',
+    removeDesc: 'Delete its index; the files stay',
+    videos: (n: number) => (n === 1 ? '1 BaoCut video' : `${n} BaoCut videos`),
+    videoFiles: (n: number) => (n === 1 ? '1 video file' : `${n} video files`),
+    images: (n: number) => (n === 1 ? '1 image' : `${n} images`),
+    nothing: 'No videos or images found yet',
+    exportsSkipped: (n: number) => (n === 1 ? '1 export skipped' : `${n} exports skipped`),
+    duplicates: (n: number) => (n === 1 ? '1 already in a project' : `${n} already in projects`),
+    legacy: (n: number) => (n === 1 ? '1 older BaoCut video not read' : `${n} older BaoCut videos not read`),
+    listSeparator: ', ',
+    separator: ' · ',
+    missing: 'Can’t find this folder',
+    missingNote: 'An external drive may be disconnected. Its index is kept and Space hides these files until the folder is back.',
+    truncatedNote: (limit: number) => `Too many files: only the first ${limit} were scanned. Add a subfolder instead.`,
+    truncatedNoteNoLimit: 'Too many files: only the first ones were scanned. Add a subfolder instead.',
+    unreadableNote: 'Can’t read this folder. Check its permissions.',
+    legacyNote:
+      'Older BaoCut videos have to be upgraded before they can be read, and upgrading changes them, so they aren’t read here. Move one into a project and open it in BaoCut once to upgrade it.',
+    visualReady: 'Visuals ready',
+    visualProgress: (done: number, total: number) => `Visuals: ${done} of ${total} done`,
+    textOnly: 'Its BaoCut videos are indexed by speech',
+    visualOff: 'Visual index is off, so video files and images aren’t indexed yet',
+    addTitle: 'Add index folder',
+    addBody:
+      'Videos outside your projects can also be found by meaning. BaoCut only reads this folder: it doesn’t change, move or delete anything in it. Its videos and images appear in Space with this folder as the source.',
+    addWhat: (visual: boolean): string =>
+      visual
+        ? 'BaoCut videos are indexed by speech and visuals; other video files and images by visuals. Exports BaoCut recorded are skipped, and videos that are also in a project use the project’s copy.'
+        : 'BaoCut videos are indexed by speech; other video files and images need the visual index. Exports BaoCut recorded are skipped, and videos that are also in a project use the project’s copy.',
+    visualOffTitle: 'Video files and images are indexed by visuals',
+    visualOffBody:
+      'They have no transcript, so they can only be found by what’s on screen. They’re indexed once the visual index is on; until then only the BaoCut videos in this folder are indexed.',
+    confirmAdd: 'Add',
+    addedToast: (name: string) => `Added “${name}”. Scanning and indexing in the background.`,
+    reindexedToast: (name: string) => `Rescanning “${name}” and rebuilding its index`,
+    removeTitle: (name: string) => `Remove index folder “${name}”?`,
+    removeBody:
+      'Deletes this folder’s index; the files stay. Space stops listing them and they can’t be found by meaning. You can add the folder again later.',
+    removedToast: (name: string) => `Removed the index for “${name}”`,
+    failed: (message: string) => `That didn’t work: ${message}`,
+  },
 };
 
 export type SemanticMessages = typeof en;

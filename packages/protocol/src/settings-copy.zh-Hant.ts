@@ -40,6 +40,7 @@ export const zhHant: SettingDescriptionMessages = {
   'offline.strict': '嚴格離線：不傳送任何內容到任何線上服務',
   'semantic.channels': '要建立語意索引的通道：text（講話內容：文稿、字幕、譯文、章節）；畫面（visual，每 8 秒一張關鍵影格，要裝多模態模型包，建得較慢）；聲音（audio）還不可用',
   'semantic.excludedProjects': '不建立語意索引的專案（專案 ID 清單）：所有 BaoCut 專案與不屬於專案的影片都會建立，除了這些；它們的影片仍可按字面找到',
+  'semantic.folders': '專案以外的索引資料夾（{id, path} 清單）：裡面的影片與圖片出現在 Space 裡、按意思建立索引，唯讀。用 space.folderAdd 與 space.folderRemove 更改',
   'semantic.excludedVideos': '不建立語意索引的單一影片（影片 ID 清單），與排除的專案疊加；已建立的索引會撤下',
   'semantic.indexDir': '語意索引所在的資料夾（絕對路徑）；null 時放在應用程式快取裡。用 space.indexSetDir 更改，會移動或重新建立索引',
   'semantic.pauseOnBattery': '使用電池時暫停建立語意索引，接上電源後繼續（系統因過熱降頻時一律暫停）',

@@ -47,6 +47,8 @@ const en = {
   statusNone: 'No status',
   noProject: 'Not in a project',
   removedProject: 'Removed project',
+  /** 索引文件夹里的条目的来源（检索规格 §9.1）；名字取不到时只写「索引文件夹」。 */
+  indexFolder: (name: string | null): string => (name ? `Index folder “${name}”` : 'Index folder'),
   conversation: (title: string) => `Session “${title}”`,
   /** 「来源」一列里派生子视频的父视频。 */
   derivedFrom: (name: string) => `From “${name}”`,

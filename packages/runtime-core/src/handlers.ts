@@ -396,7 +396,20 @@ export function createHandlers({
         await space.rescan();
         return { ok: true as const };
       },
-      ...spaceMethods(space, { harness, trash: videoTrash, thumbnails: spaceThumbnails, semantic: semantic ?? null, artifacts: jobs.artifacts }),
+      ...spaceMethods(space, {
+        harness,
+        trash: videoTrash,
+        thumbnails: spaceThumbnails,
+        semantic: semantic ?? null,
+        artifacts: jobs.artifacts,
+        folders: {
+          get: () => settings.store.get('semantic.folders'),
+          set: async (next) => {
+            await settings.store.set({ 'semantic.folders': [...next] });
+          },
+          visualEnabled: () => settings.store.get('semantic.channels').includes('visual'),
+        },
+      }),
       'media.resolve': async (p, principal) => {
         if ('localPath' in p) {
           // 桌面端的本机文件（§4.5）：只对桌面客户端，以文件自己的目录为根，只给普通文件；浏览器与对外服务按原来的访问范围拒绝。

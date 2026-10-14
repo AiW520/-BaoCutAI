@@ -113,7 +113,7 @@ function world(fakes: Fake[]) {
   const semantic: RelatedSemantic = {
     search: {
       profile: async () => ({ profile: { embeddingSpaceId: 'space-a', dims: 3 } as never }),
-      resolveScope: () => ({ scope: { videos: [], pending: 0 }, videos: scoped, coverage: { knownScopeComplete: true } as never }),
+      resolveScope: () => ({ scope: { videos: [], pending: 0, files: [] }, videos: scoped, coverage: { knownScopeComplete: true } as never }),
     },
     store: () => ({ partition: (id: number) => generations.get(id) ?? null }) as never,
     scanner: {

@@ -108,6 +108,7 @@ export const ja: SpaceMessages = {
   changedBody: 'この結果は以前のバージョンの動画に対応しています。引き続き使えますが、現在の動画は反映していません。',
   reexport: '元の動画からもう一度書き出す',
   noPreviewVideo: '動画はエディタで開きます。',
+  inIndexFolder: (folder: string | null) => (folder ? `インデックスフォルダー「${folder}」内のため読み取り専用です。BaoCut はこのファイルを変更、移動、削除しません。` : 'インデックスフォルダー内のため読み取り専用です。BaoCut はこのファイルを変更、移動、削除しません。'),
 
   // 能力（origin.capability）
   capability: {
@@ -280,4 +281,25 @@ export const ja: SpaceMessages = {
         ? `プロジェクトに入っていない動画から答えを探して：${question}`
         : `自分の動画から答えを探して：${question}`,
   hitsNoneSemantic: 'このことについて話している箇所は見つかりませんでした。別の言い方を試してください。',
+  // 画面通道
+  hitsTitleBoth: '動画内の発言と映像',
+  hitsTitleVisual: '動画や画像に映っているもの',
+  hitsNoneVisual: '発言にも映像にも一致する箇所は見つかりませんでした。別の言い方を試してください。',
+  soundsLater: '音声はこのバージョンではまだインデックスされません',
+  visualBlocked: (block: 'model' | 'off' | 'lexical') =>
+    block === 'model'
+      ? '映像：ローカルのセマンティックモデルがインストールされていません'
+      : block === 'off'
+        ? '映像：映像インデックスがオフです。設定 › セマンティックインデックスでオンにしてください'
+        : '映像：意味でのみ照合するため、完全一致では検索されません',
+  framesTitle: '映像',
+  frameWhy: '映像 · 意味が近い',
+  frameWhyWeak: '映像 · 関連は薄い',
+  frameInFolder: (folder: string | null) => (folder ? `インデックスフォルダー「${folder}」 · 読み取り専用` : 'インデックスフォルダー内 · 読み取り専用'),
+  frameCut: 'タイムラインからカット済み',
+  frameView: 'Space で表示',
+  frameNotInTimeline: 'この場面はタイムラインからカットされています。動画だけを開き、再生ヘッドは動かしません',
+  frameGone: 'この映像はもう動画にありません',
+  frameHandoverDraft: (name: string, at: string | null) =>
+    at === null ? `この映像を見てください：「${name}」` : `「${name}」の ${at} のこの映像を見てください`,
 };

@@ -6,7 +6,7 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { RpcError, videoTimeHref, type Id, type SemanticResolveResult, type SpaceEntry, type VideoSnapshot } from '@baocut/protocol';
 import { silentLogger } from '@baocut/harness';
 import { EmbeddingError, HashingEmbeddingProvider, type EmbeddingProvider } from '@baocut/models';
-import type { SpaceCatalog, SpaceVideo } from '../../space-catalog.ts';
+import type { SpaceCatalog, SpaceVideo, SpaceVisualFile } from '../../space-catalog.ts';
 import { ContentIndex, type ContentReader } from '../content-index.ts';
 import type { ContentSegment, ReadContentDocument, ReadContentResult } from '../content-extract.ts';
 import { resolveSearchHit } from '../search-hit-resolver.ts';
@@ -223,6 +223,9 @@ let index: ContentIndex;
 let videos: SpaceVideo[];
 let provider: CountingProvider;
 let services: SemanticServices | null;
+/** 假的 Space 目录里的索引文件夹：登记着的与此刻不在的。 */
+let folderIds: { all: Id[]; missing: Id[] };
+let visualFiles: SpaceVisualFile[];
 const opened: SemanticServices[] = [];
 
 async function addVideo(video: FakeVideo, projectId: Id | null, conversationId: Id | null): Promise<SpaceVideo> {
@@ -255,6 +258,20 @@ class FakeFrames implements KeyframeSource {
     await fs.writeFile(file, this.scenes[asset.contentHash]?.(at) ?? `frame ${asset.contentHash} at ${at}`);
     return file;
   }
+  /** 索引文件夹里的文件：按文件名给「画面」；时长按 `durations`（没给的不知道）。 */
+  readonly durations = new Map<string, number>();
+  async fileKeyframe(target: { root: string; file: string }, at: number): Promise<string> {
+    this.calls++;
+    const name = path.basename(target.file);
+    if (this.broken.has(at)) throw new Error('decode failed');
+    const file = path.join(tmp, 'frames', `file-${name}-${Math.round(at * 1000)}.jpg`);
+    await fs.mkdir(path.dirname(file), { recursive: true });
+    await fs.writeFile(file, this.scenes[name]?.(at) ?? `file ${name} at ${at}`);
+    return file;
+  }
+  async fileDuration(target: { root: string; file: string }): Promise<number | null> {
+    return this.durations.get(path.basename(target.file)) ?? null;
+  }
 }
 
 function open(
@@ -268,7 +285,7 @@ function open(
     pauseOnBattery?: boolean;
   } = {},
 ): SemanticServices {
-  const catalog = { videos: () => videos, index, scanning: false };
+  const catalog = { videos: () => videos, index, scanning: false, folderIds: () => folderIds, visualFiles: () => visualFiles };
   const s = openSemanticServices({
     cacheDir: path.join(tmp, 'cache'),
     catalog,
@@ -316,6 +333,8 @@ beforeEach(async () => {
   videos = [];
   provider = new CountingProvider();
   services = null;
+  folderIds = { all: [], missing: [] };
+  visualFiles = [];
   index = new ContentIndex({ dir: path.join(tmp, 'cache', 'content-index'), reader, log: silentLogger });
   await index.load();
   await addVideo(V1, 'p1', 'c1');
@@ -417,7 +436,7 @@ describe('语义派生库', () => {
     store.close();
   });
 
-  it('格式 1 的库原地升到 2：文字索引原样保留，补上画面的表', () => {
+  it('格式 1 的库原地升到 3：文字索引原样保留，补上画面的表与索引文件夹的列', () => {
     const dir = path.join(tmp, 'store');
     const store = new SemanticStore(dir);
     const { chunks, sentences } = chunkVideo('v1', [
@@ -431,17 +450,41 @@ describe('语义派生库', () => {
     store.close();
     // 退回格式 1 的样子：没有画面的表。
     const v1 = new DatabaseSync(path.join(dir, SEMANTIC_STORE_FILE));
-    v1.exec('DROP TABLE visual_frames; DROP TABLE visual_sources; PRAGMA user_version = 1;');
+    v1.exec('DROP TABLE visual_frames; DROP TABLE visual_sources; ALTER TABLE sources DROP COLUMN folder_id; PRAGMA user_version = 1;');
     v1.close();
 
     const reopened = new SemanticStore(dir);
     expect(reopened.activeGenerations(['v1']).get('v1')).toMatchObject({ channel: 'text', revision: 'r1', chunkCount: 1 });
     expect(reopened.partition(reopened.activeGenerations(['v1']).get('v1')!.id)!.chunks).toHaveLength(1);
     expect(reopened.visualSources()).toEqual([]);
+    expect(reopened.source('v1')).toMatchObject({ folderId: null });
     reopened.close();
     const check = new DatabaseSync(path.join(dir, SEMANTIC_STORE_FILE));
-    expect((check.prepare('PRAGMA user_version').get() as { user_version: number }).user_version).toBe(2);
+    expect((check.prepare('PRAGMA user_version').get() as { user_version: number }).user_version).toBe(3);
     check.close();
+  });
+
+  it('格式 2 的库原地升到 3：文字与画面索引原样保留，补上索引文件夹的列；之后记得住文件夹', () => {
+    const dir = path.join(tmp, 'store');
+    const store = new SemanticStore(dir);
+    store.freeze('v1', '/v1', 'p1', 'r1');
+    store.freezeVisual('v1', 'vr1');
+    store.close();
+    // 退回格式 2 的样子：没有索引文件夹的列。
+    const v2 = new DatabaseSync(path.join(dir, SEMANTIC_STORE_FILE));
+    v2.exec(
+      'ALTER TABLE sources DROP COLUMN folder_id; ALTER TABLE visual_sources DROP COLUMN folder_id; ALTER TABLE visual_sources DROP COLUMN target; PRAGMA user_version = 2;',
+    );
+    v2.close();
+
+    const reopened = new SemanticStore(dir);
+    expect(reopened.source('v1')).toMatchObject({ dir: '/v1', wantedRevision: 'r1', folderId: null });
+    expect(reopened.visualSource('v1')).toMatchObject({ wantedRevision: 'vr1', target: 'video', folderId: null });
+    reopened.freeze('v2', '/f/v2', null, 'r1', 'f1');
+    reopened.freezeVisual('sp_file', 'size:mtime', { folderId: 'f1', target: 'file' });
+    expect(reopened.source('v2')).toMatchObject({ folderId: 'f1' });
+    expect(reopened.visualSource('sp_file')).toMatchObject({ folderId: 'f1', target: 'file' });
+    reopened.close();
   });
 
   it('画面世代：与文字各自的版本与指针，发布同样做 CAS；发布文字时回收向量不动画面的，撤下视频两边都撤', () => {
@@ -552,6 +595,39 @@ describe('增量构建', () => {
 
     videos.splice(2, 1);
     await syncIndex(2);
+    services.coordinator.schedule(0);
+    await services.coordinator.idle();
+    expect(services.store()!.source('v3')).toBeNull();
+  });
+
+  it('索引文件夹不在时（外接盘没接上）它里面的视频的索引留着；文件夹移除了才撤下', async () => {
+    videos[2] = { ...videos[2]!, folderId: 'f1' };
+    folderIds = { all: ['f1'], missing: [] };
+    services = open();
+    await build(services);
+    expect(services.store()!.source('v3')).toMatchObject({ folderId: 'f1', state: 'indexed' });
+
+    // 文件夹不在：Space 里不列它的视频，索引留着。
+    const folderVideo = videos.splice(2, 1)[0]!;
+    folderIds = { all: ['f1'], missing: ['f1'] };
+    await syncIndex(2);
+    services.coordinator.schedule(0);
+    await services.coordinator.idle();
+    expect(services.store()!.source('v3')).toMatchObject({ folderId: 'f1', state: 'indexed' });
+
+    // 接上了：不重建。
+    videos.push(folderVideo);
+    folderIds = { all: ['f1'], missing: [] };
+    const documents = provider.documents;
+    await syncIndex(3);
+    services.coordinator.schedule(0);
+    await services.coordinator.idle();
+    expect(provider.documents).toBe(documents);
+
+    // 从设置里移除：撤下。
+    videos.splice(videos.indexOf(folderVideo), 1);
+    folderIds = { all: [], missing: [] };
+    await syncIndex(4);
     services.coordinator.schedule(0);
     await services.coordinator.idle();
     expect(services.store()!.source('v3')).toBeNull();
@@ -896,6 +972,110 @@ describe('画面索引', () => {
     expect(reasonOf(await rejection(call(visual, ['audio'])))).toBe('CHANNEL_UNAVAILABLE');
     const missing = await rejection(call(visual, ['visual']));
     expect(missing.details).toMatchObject({ reason: 'MODEL_NOT_INSTALLED', channel: 'visual' });
+  });
+});
+
+describe('索引文件夹里的视频文件与图片', () => {
+  const scenes = {
+    'beach.jpg': () => 'sunset over a sandy beach with palm trees',
+    'drone.mp4': (at: number) => (at === 12 ? 'snowy mountain peak from above' : 'green valley with a river'),
+  };
+  const fileOf = (entryId: Id, kind: SpaceVisualFile['kind'], name: string, revision: string): SpaceVisualFile => ({
+    entryId,
+    folderId: 'fld_1',
+    kind,
+    name,
+    root: path.join(tmp, 'Documents'),
+    file: path.join(tmp, 'Documents', name),
+    revision,
+  });
+
+  it('开了画面时按画面建（视频文件按时长取帧、图片一帧），按条目找得到、解析成源时间；没开画面时不建', async () => {
+    visualFiles = [fileOf('ent_img', 'image', 'beach.jpg', 'rev-img'), fileOf('ent_mov', 'video-file', 'drone.mp4', 'rev-mov')];
+    const frames = new FakeFrames(scenes);
+    frames.durations.set('drone.mp4', 20);
+
+    const off = open({ frames });
+    await build(off);
+    expect(off.store()!.visualSources()).toEqual([]);
+    await off.close();
+
+    services = open({ channels: ['text', 'visual'], frames });
+    await build(services);
+    const store = services.store()!;
+    expect(store.visualSource('ent_img')).toMatchObject({ target: 'file', folderId: 'fld_1', state: 'indexed' });
+    const generations = store.activeVisualGenerations(['ent_img', 'ent_mov']);
+    expect(store.visualPartition(generations.get('ent_img')!.id)!.frames.map((f) => [f.assetId, f.sourceSec, f.sequenceSec])).toEqual([['ent_img', 0, null]]);
+    expect(store.visualPartition(generations.get('ent_mov')!.id)!.frames.map((f) => [f.contentHash, f.sourceSec])).toEqual([
+      ['rev-mov', 4],
+      ['rev-mov', 12],
+    ]);
+
+    const search = (viewer: SpaceViewer, text: string) =>
+      services!.search.searchV2(viewer, { query: { kind: 'text', text }, mode: 'semantic', channels: ['visual'] });
+    const beach = (await search(USER_VIEWER, 'sunset over the beach')).hits[0]!;
+    expect(beach.target).toEqual({ kind: 'asset-span', assetId: 'ent_img', videoId: null, representation: 'keyframe' });
+    expect(beach).toMatchObject({ entryId: 'ent_img', videoName: 'beach.jpg', projectId: null, needsResolve: false });
+    expect(beach.anchor).toMatchObject({ clock: 'source', startSec: 0, endSec: 0, boundary: 'window' });
+    expect(beach.actions).not.toContain('open-in-timeline');
+    const peak = (await search(USER_VIEWER, 'snowy mountain peak')).hits[0]!;
+    expect(peak.target).toMatchObject({ assetId: 'ent_mov', videoId: null });
+    expect(peak.anchor).toMatchObject({ clock: 'source', startSec: 8, endSec: 16 });
+    // 只看自己目录的会话看不到索引文件夹。
+    expect(services.search.resolveScope(SOURCE_P1, {}, null).scope.files).toEqual([]);
+    expect(services.search.resolveScope(USER_VIEWER, {}, null).scope.files.map((f) => f.videoId)).toEqual(['ent_img', 'ent_mov']);
+
+    const resolver = { catalog: { videos: () => videos, visualFiles: () => visualFiles, index, scanning: false } as unknown as SpaceCatalog, reader };
+    expect(await resolveSearchHit(resolver, USER_VIEWER, peak.hitId)).toEqual({
+      status: 'not-in-timeline',
+      videoId: null,
+      revision: 'rev-mov',
+      boundary: 'window',
+      spans: [{ clock: 'source', startSec: 8, endSec: 16, sentenceIds: [], text: '' }],
+    });
+    expect((await resolveSearchHit(resolver, SOURCE_P1, peak.hitId)).status).toBe('gone');
+    // 文件被覆盖：原来的画面不在了。
+    visualFiles = [visualFiles[0]!, fileOf('ent_mov', 'video-file', 'drone.mp4', 'rev-mov-2')];
+    expect((await resolveSearchHit(resolver, USER_VIEWER, peak.hitId)).status).toBe('gone');
+  });
+
+  it('文件夹暂时不在时留着它的画面索引；移出文件夹后撤下', async () => {
+    visualFiles = [fileOf('ent_img', 'image', 'beach.jpg', 'rev-img')];
+    folderIds = { all: ['fld_1'], missing: [] };
+    services = open({ channels: ['text', 'visual'], frames: new FakeFrames(scenes) });
+    await build(services);
+    const store = services.store()!;
+    expect(store.visualSource('ent_img')?.state).toBe('indexed');
+
+    // 外接盘拔了：条目不列出，索引留着。
+    visualFiles = [];
+    folderIds = { all: ['fld_1'], missing: ['fld_1'] };
+    services.coordinator.schedule(0);
+    await services.coordinator.idle();
+    expect(store.visualSource('ent_img')?.state).toBe('indexed');
+
+    folderIds = { all: [], missing: [] };
+    services.coordinator.schedule(0);
+    await services.coordinator.idle();
+    expect(store.visualSource('ent_img')).toBeNull();
+  });
+
+  it('取不出画面的文件记失败、不再自己重试；文件夹「重新索引」时重建并重试', async () => {
+    visualFiles = [fileOf('ent_img', 'image', 'beach.jpg', 'rev-img')];
+    const frames = new FakeFrames(scenes);
+    frames.broken.add(0);
+    services = open({ channels: ['text', 'visual'], frames });
+    await build(services);
+    const store = services.store()!;
+    expect(store.visualSource('ent_img')).toMatchObject({ state: 'failed', activeGeneration: null });
+
+    frames.broken.clear();
+    services.coordinator.schedule(0);
+    await services.coordinator.idle();
+    expect(store.visualSource('ent_img')?.state).toBe('failed');
+    expect(services.coordinator.rebuildFolder('fld_1')).toBe(1);
+    await services.coordinator.idle();
+    expect(store.visualSource('ent_img')?.state).toBe('indexed');
   });
 });
 

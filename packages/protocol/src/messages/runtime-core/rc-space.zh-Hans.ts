@@ -71,4 +71,8 @@ export const zhHans: RcSpaceMessages = {
   indexDirOccupied: '这个文件夹里已经有语义索引。请选一个空文件夹，或改为在那里重新建以沿用它',
   indexDirMoving: '索引正在移动，请等移完',
   indexDirMoveFailed: (p: { reason: string }) => `索引没能移过去，仍在原来的位置：${p.reason}`,
+  folderReadOnly: '它在索引文件夹里，BaoCut 只读：不能移入回收站、删除或编辑',
+  folderNotFound: '这个文件夹不存在',
+  folderUnknown: '索引文件夹里没有这一个',
+  folderInside: (p: { name: string }) => `这个文件夹已经作为「${p.name}」的一部分建索引`,
 };

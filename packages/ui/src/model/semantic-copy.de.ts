@@ -247,4 +247,52 @@ export const de: SemanticMessages = {
     changedToast: (to) => `Speicherort des Index auf ${to} geändert`,
     pickFailed: (message) => `Ordner konnte nicht ausgewählt werden: ${message}`,
   },
+  folders: {
+    head: 'Indexierte Ordner außerhalb deiner Projekte:',
+    add: 'Ordner hinzufügen…',
+    actions: (name) => `Aktionen für den indexierten Ordner „${name}“`,
+    reindex: 'Neu indexieren',
+    reindexDesc: 'Durchsucht ihn erneut und baut den Index neu auf',
+    remove: 'Entfernen',
+    removeDesc: 'Löscht den Index; die Dateien bleiben',
+    videos: (n) => (n === 1 ? '1 BaoCut-Video' : `${n} BaoCut-Videos`),
+    videoFiles: (n) => (n === 1 ? '1 Videodatei' : `${n} Videodateien`),
+    images: (n) => (n === 1 ? '1 Bild' : `${n} Bilder`),
+    nothing: 'Noch keine Videos oder Bilder gefunden',
+    exportsSkipped: (n) => (n === 1 ? '1 Export übersprungen' : `${n} Exporte übersprungen`),
+    duplicates: (n) => (n === 1 ? '1 bereits in einem Projekt' : `${n} bereits in Projekten`),
+    legacy: (n) => (n === 1 ? '1 älteres BaoCut-Video nicht gelesen' : `${n} ältere BaoCut-Videos nicht gelesen`),
+    listSeparator: ', ',
+    separator: ' · ',
+    missing: 'Dieser Ordner wurde nicht gefunden',
+    missingNote:
+      'Vielleicht ist ein externes Laufwerk getrennt. Der Index bleibt erhalten, und Space blendet diese Dateien aus, bis der Ordner wieder da ist.',
+    truncatedNote: (limit) => `Zu viele Dateien: Nur die ersten ${limit} wurden durchsucht. Füge stattdessen einen Unterordner hinzu.`,
+    truncatedNoteNoLimit: 'Zu viele Dateien: Nur die ersten wurden durchsucht. Füge stattdessen einen Unterordner hinzu.',
+    unreadableNote: 'Dieser Ordner lässt sich nicht lesen. Prüfe die Zugriffsrechte.',
+    legacyNote:
+      'Ältere BaoCut-Videos müssen erst aktualisiert werden, bevor sie gelesen werden können, und die Aktualisierung verändert sie – deshalb werden sie hier nicht gelesen. Verschiebe eines in ein Projekt und öffne es einmal in BaoCut, um es zu aktualisieren.',
+    visualReady: 'Bild ist bereit',
+    visualProgress: (done, total) => `Bild: ${done} von ${total} fertig`,
+    textOnly: 'Seine BaoCut-Videos werden nach dem Gesagten indexiert',
+    visualOff: 'Der Bildindex ist aus, daher werden Videodateien und Bilder noch nicht indexiert',
+    addTitle: 'Indexierten Ordner hinzufügen',
+    addBody:
+      'Videos außerhalb deiner Projekte lassen sich dann ebenfalls nach Bedeutung finden. BaoCut liest diesen Ordner nur: Es ändert, verschiebt oder löscht darin nichts. Seine Videos und Bilder erscheinen in Space mit diesem Ordner als Quelle.',
+    addWhat: (visual) =>
+      visual
+        ? 'BaoCut-Videos werden nach dem Gesagten und dem Bildinhalt indexiert, andere Videodateien und Bilder nach dem Bildinhalt. Von BaoCut aufgezeichnete Exporte werden übersprungen, und Videos, die auch in einem Projekt liegen, nutzen die Kopie des Projekts.'
+        : 'BaoCut-Videos werden nach dem Gesagten indexiert; andere Videodateien und Bilder brauchen den Bildindex. Von BaoCut aufgezeichnete Exporte werden übersprungen, und Videos, die auch in einem Projekt liegen, nutzen die Kopie des Projekts.',
+    visualOffTitle: 'Videodateien und Bilder werden nach dem Bildinhalt indexiert',
+    visualOffBody:
+      'Sie haben kein Transkript und lassen sich nur danach finden, was im Bild zu sehen ist. Sie werden indexiert, sobald der Bildindex an ist; bis dahin werden nur die BaoCut-Videos in diesem Ordner indexiert.',
+    confirmAdd: 'Hinzufügen',
+    addedToast: (name) => `„${name}“ hinzugefügt. Durchsuchen und Indexieren laufen im Hintergrund.`,
+    reindexedToast: (name) => `„${name}“ wird erneut durchsucht und sein Index neu aufgebaut`,
+    removeTitle: (name) => `Indexierten Ordner „${name}“ entfernen?`,
+    removeBody:
+      'Löscht den Index dieses Ordners; die Dateien bleiben. Space listet sie nicht mehr auf, und sie lassen sich nicht mehr nach Bedeutung finden. Du kannst den Ordner später wieder hinzufügen.',
+    removedToast: (name) => `Index von „${name}“ entfernt`,
+    failed: (message) => `Das hat nicht geklappt: ${message}`,
+  },
 };

@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import type { Id, SpaceEntry, SpaceSearchHit, SpaceSearchResult, SpaceSearchV2Result } from '@baocut/protocol';
 import { ActionButton, Badge, Checkbox, Picker, PickerItem, ProgressCircle, SegmentedControl, SegmentedControlItem, Text, ToastQueue } from '@react-spectrum/s2';
 import MagicWand from '@react-spectrum/s2/icons/MagicWand';
@@ -25,6 +25,8 @@ import {
   matchedByKind,
   planGroupRows,
   foldWeakHits,
+  frameHitRows,
+  pickedChannels,
   SEARCH_DEBOUNCE_MS,
   searchNote,
   searchRequest,
@@ -33,22 +35,26 @@ import {
   semanticHitRows,
   snippetParts,
   speakerOptions,
+  visualChannel,
+  type FrameHitRow,
   type HitFilter,
   type HitGroup,
   type HitKindFilter,
   type SemanticHitRow,
   type SpaceSearchMode,
 } from '../../model/space-search.ts';
-import { coverageLine } from '../../model/semantic-status.ts';
+import { coverageLine, visualCoverageLine } from '../../model/semantic-status.ts';
 import { useRuntime } from '../../runtime/context.tsx';
 import type { RuntimeSession } from '../../runtime/session.ts';
 import { useDraftSkills } from '../../state/draft-skills-store.ts';
+import { useIndexFolderName, useSemanticStatus } from '../../state/semantic-store.ts';
 import { useEditor } from '../../state/editor-store.ts';
 import { useShell } from '../../state/shell-store.ts';
 import { useVideo } from '../../state/video-store.ts';
 import { openAiTool, setPanelLanding } from '../editor/ai-tools-nav.ts';
 import { SemanticNote } from '../semantic-note.tsx';
-import { HitPreview, MomentThumb, momentOf, momentPending, useGroupMoments } from './space-hit-moment.tsx';
+import { HitPreview, MomentThumb, momentOf, momentPending, ThumbBox, useGroupMoments } from './space-hit-moment.tsx';
+import { useEntryThumbnail } from '../use-entry-thumbnail.ts';
 import { openHome, startDraftKey } from '../start/open-home.ts';
 import { useStartBrief } from '../../state/start-brief-store.ts';
 import { OUTPUT_COPY } from '../tools/tools-copy.ts';
@@ -131,7 +137,7 @@ const channelBox = style({ display: 'flex', alignItems: 'center', flexWrap: 'wra
 type SearchState =
   | { status: 'loading'; query: string }
   | { status: 'done'; query: string; mode: 'lexical'; result: SpaceSearchResult }
-  | { status: 'done'; query: string; mode: 'hybrid'; result: SpaceSearchV2Result; rows: SemanticHitRow[] }
+  | { status: 'done'; query: string; mode: 'hybrid'; result: SpaceSearchV2Result; rows: SemanticHitRow[]; frames: FrameHitRow[] }
   | { status: 'error'; query: string; error: string };
 
 type Hit = SpaceSearchHit | SemanticHitRow;
@@ -150,11 +156,28 @@ const speakerKey = (name: string) => `speaker:${name}`;
  *
  * 方式（创作辅助集成设计 §2.4、§2.11；设计稿 space-search.jsx）：「综合」（缺省）走 `space.searchV2`，按意思与字面两路找；
  * 「精确文字」是原来的 `space.search`。综合搜索的命中写明怎么找到的（不给分数）、剪掉了的写「已从时间线剪掉」；顶上一行按通道写
- * 完整性，没装模型退回字面或索引在更新时各入口那一句（`SemanticNote`）。画面与声音这一版没有索引，勾选框置灰并写明。
+ * 完整性，没装模型退回字面或索引在更新时各入口那一句（`SemanticNote`）。声音这一版没有索引，勾选框置灰并写明。
+ *
+ * 画面（检索规格 §9.1、§11；设计稿 space-search.jsx）：只按意思找，有能用的模型、画面索引开着、方式是「综合」时才能勾，不能时写明
+ * 为什么。画面命中列在讲话内容的分组下面：BaoCut 视频的那一刻「在时间线打开」（剪掉了的只打开视频），索引文件夹里的视频文件与图片
+ * 「在 Space 中查看」（只读）。「全部」才有索引文件夹里的文件（它们不属于哪个项目）。
  */
-export function SpaceSearchHits({ query, projectId, entries }: { query: string; projectId: Id | 'none' | null; entries: readonly SpaceEntry[] }) {
+export function SpaceSearchHits({
+  query,
+  projectId,
+  entries,
+  onView,
+}: {
+  query: string;
+  projectId: Id | 'none' | null;
+  entries: readonly SpaceEntry[];
+  /** 在 Space 里查看一个条目（索引文件夹里的文件命中）。 */
+  onView: (entryId: Id) => void;
+}) {
   const runtime = useRuntime();
   const web = runtime.host.platform === 'web';
+  const { status: semanticStatus } = useSemanticStatus();
+  const [picked, setPicked] = useState({ text: true, visual: true });
   const [state, setState] = useState<SearchState | null>(null);
   const [mode, setMode] = useState<SpaceSearchMode>('hybrid');
   const [filter, setFilter] = useState<HitFilter>(ANY_HIT);
@@ -166,8 +189,17 @@ export function SpaceSearchHits({ query, projectId, entries }: { query: string; 
   const [weakOpen, setWeakOpen] = useState('');
   const seq = useRef(0);
   const q = query.trim();
+  const visual = visualChannel(semanticStatus, mode);
+  const channels = pickedChannels(picked, visual.on);
+  const channelKey = channels.join(',');
   const scopeKey = `${q}\n${projectId ?? ''}`;
-  const resultKey = `${scopeKey}\n${mode}\n${filter.kind}\n${filter.speaker ?? ''}`;
+  const resultKey = `${scopeKey}\n${mode}\n${channelKey}\n${filter.kind}\n${filter.speaker ?? ''}`;
+  // 勾掉讲话内容只在画面能选时可以（总得留一路）。
+  const flip = (key: 'text' | 'visual', on: boolean) =>
+    setPicked((cur) => {
+      const next = { ...cur, [key]: on };
+      return next.text || (next.visual && visual.on) ? next : cur;
+    });
 
   useEffect(() => {
     const id = ++seq.current;
@@ -182,8 +214,15 @@ export function SpaceSearchHits({ query, projectId, entries }: { query: string; 
         mode === 'lexical'
           ? runtime.searchSpace(searchRequest(q, projectId, filter)).then((result) => ({ status: 'done', query: q, mode, result }))
           : runtime.client
-              .request('space.searchV2', searchV2Request(q, projectId, filter))
-              .then((result) => ({ status: 'done', query: q, mode: 'hybrid', result, rows: semanticHitRows(result.hits) }));
+              .request('space.searchV2', searchV2Request(q, projectId, filter, channelKey.split(',') as typeof channels))
+              .then((result) => ({
+                status: 'done',
+                query: q,
+                mode: 'hybrid',
+                result,
+                rows: semanticHitRows(result.hits),
+                frames: frameHitRows(result.hits),
+              }));
       search
         .then((done) => {
           if (id !== seq.current) return;
@@ -199,7 +238,7 @@ export function SpaceSearchHits({ query, projectId, entries }: { query: string; 
         });
     }, SEARCH_DEBOUNCE_MS);
     return () => clearTimeout(timer);
-  }, [runtime, q, projectId, filter, mode]);
+  }, [runtime, q, projectId, filter, mode, channelKey]);
 
   if (!state) return null;
   const found: readonly Hit[] = state.status !== 'done' ? [] : state.mode === 'lexical' ? state.result.hits : state.rows;
@@ -207,6 +246,13 @@ export function SpaceSearchHits({ query, projectId, entries }: { query: string; 
   const fold = foldWeakHits(matched);
   const hits = weakOpen === resultKey ? matched : fold.shown;
   const groups = groupHits<Hit>(hits);
+  const allFrames = state.status === 'done' && state.mode === 'hybrid' ? state.frames : [];
+  const frameFold = foldWeakHits(allFrames);
+  const frames = weakOpen === resultKey ? allFrames : frameFold.shown;
+  const weakCount = fold.folded.length + frameFold.folded.length;
+  // 同一部视频的讲话与画面算一部；有索引文件夹里的文件（不是视频）时只写条数。
+  const videoCount = frames.some((f) => !f.videoId) ? null : new Set([...groups.map((g) => g.videoId), ...frames.map((f) => f.videoId)]).size;
+  const titled = channels.includes('visual') ? (channels.includes('text') ? COPY.hitsTitleBoth : COPY.hitsTitleVisual) : COPY.hitsTitle;
   const extra =
     state.status !== 'done'
       ? null
@@ -225,13 +271,13 @@ export function SpaceSearchHits({ query, projectId, entries }: { query: string; 
   const kindLabel = (kind: HitKindFilter) => (kind === 'all' ? COPY.hitKindAll : DOCUMENT_KIND_LABEL[kind]);
 
   return (
-    <section className={section} aria-label={COPY.hitsTitle}>
+    <section className={section} aria-label={titled}>
       <div className={head}>
-        <span>{COPY.hitsTitle}</span>
+        <span>{titled}</span>
         {state.status === 'loading' ? (
           <ProgressCircle isIndeterminate size="S" aria-label={COPY.hitsSearching} />
         ) : state.status === 'done' ? (
-          <span className={count}>{COPY.hitsGrouped(hits.length, groups.length)}</span>
+          <span className={count}>{videoCount === null ? COPY.hitsCount(hits.length + frames.length) : COPY.hitsGrouped(hits.length + frames.length, videoCount)}</span>
         ) : null}
       </div>
       <div className={filters}>
@@ -243,10 +289,10 @@ export function SpaceSearchHits({ query, projectId, entries }: { query: string; 
           <SegmentedControlItem id="lexical">{COPY.modeLexical}</SegmentedControlItem>
         </SegmentedControl>
         <div className={channelBox} role="group" aria-label={COPY.channelsLabel}>
-          <Checkbox size="S" isDisabled isSelected>
+          <Checkbox size="S" isDisabled={!visual.on} isSelected={picked.text || !visual.on} onChange={(on) => flip('text', on)}>
             {COPY.channelSpeech}
           </Checkbox>
-          <Checkbox size="S" isDisabled isSelected={false}>
+          <Checkbox size="S" isDisabled={!visual.on} isSelected={visual.on && picked.visual} onChange={(on) => flip('visual', on)}>
             {COPY.channelVisual}
           </Checkbox>
           <Checkbox size="S" isDisabled isSelected={false}>
@@ -281,15 +327,32 @@ export function SpaceSearchHits({ query, projectId, entries }: { query: string; 
         {state.status === 'done' && hits.length && !options.length ? <span className={note}>{COPY.hitSpeakerNone}</span> : null}
       </div>
       {mode === 'hybrid' ? (
-        <p className={note}>{semantic ? `${coverageLine(semantic.coverage)} · ${COPY.channelsLater}` : COPY.channelsLater}</p>
+        <p className={note}>
+          {[
+            semantic ? coverageLine(semantic.coverage) : null,
+            semantic && channels.includes('visual') ? visualCoverageLine(semantic.coverage) : null,
+            COPY.soundsLater,
+          ]
+            .filter((x): x is string => !!x)
+            .join(' · ')}
+        </p>
       ) : null}
+      {mode === 'hybrid' && visual.block !== null ? <p className={note}>{COPY.visualBlocked(visual.block)}</p> : null}
       {mode === 'hybrid' ? <SemanticNote entry="search" reason={semantic?.degraded?.reason ?? null} /> : null}
       {state.status === 'error' ? <p className={note}>{COPY.hitsError(state.error)}</p> : null}
-      {state.status === 'done' && !hits.length ? (
-        <p className={note}>{filtered ? COPY.hitsNoneFiltered : semantic && semantic.effectiveMode !== 'lexical' ? COPY.hitsNoneSemantic : COPY.hitsNone}</p>
+      {state.status === 'done' && !hits.length && !frames.length ? (
+        <p className={note}>
+          {filtered
+            ? COPY.hitsNoneFiltered
+            : semantic && semantic.effectiveMode !== 'lexical'
+              ? channels.includes('visual')
+                ? COPY.hitsNoneVisual
+                : COPY.hitsNoneSemantic
+              : COPY.hitsNone}
+        </p>
       ) : null}
       {extra ? <p className={note}>{extra}</p> : null}
-      {state.status === 'done' && hits.length ? (
+      {state.status === 'done' && (hits.length || frames.length) ? (
         <div className={ask}>
           <ActionButton size="S" onPress={() => askAcrossVideos(q, projectId)}>
             <MagicWand />
@@ -314,12 +377,13 @@ export function SpaceSearchHits({ query, projectId, entries }: { query: string; 
           ))}
         </div>
       ) : null}
-      {fold.folded.length ? (
+      {frames.length ? <FrameHitsView frames={frames} entries={entries} runtime={runtime} onView={onView} /> : null}
+      {weakCount ? (
         <RACButton
           className={(s) => more(s)}
           aria-expanded={weakOpen === resultKey}
           onPress={() => setWeakOpen((open) => (open === resultKey ? '' : resultKey))}>
-          {weakOpen === resultKey ? COPY.hitsWeakHide : COPY.hitsWeakShow(fold.folded.length)}
+          {weakOpen === resultKey ? COPY.hitsWeakHide : COPY.hitsWeakShow(weakCount)}
         </RACButton>
       ) : null}
     </section>
@@ -410,6 +474,91 @@ function HitGroupView({
 }
 
 /**
+ * 画面命中（设计稿 space-search.jsx `ResultCard` 的画面那一种）：左边是那一帧（BaoCut 视频按时间线取那一刻，取不到时灰底；
+ * 索引文件夹里的文件用条目缩略图），写在哪、为什么命中。点一行：视频的打开到那一刻，文件在 Space 里查看。
+ */
+function FrameHitsView({
+  frames,
+  entries,
+  runtime,
+  onView,
+}: {
+  frames: readonly FrameHitRow[];
+  entries: readonly SpaceEntry[];
+  runtime: RuntimeSession;
+  onView: (entryId: Id) => void;
+}) {
+  return (
+    <section className={group} aria-label={COPY.framesTitle}>
+      <div className={groupHead({})}>
+        <span className={groupTitle}>{COPY.framesTitle}</span>
+        <span className={count}>{COPY.hitsCount(frames.length)}</span>
+      </div>
+      <ul className={rows}>
+        {frames.map((frame) => (
+          <li key={frame.hitId}>
+            <FrameHitRowView frame={frame} entries={entries} runtime={runtime} onView={onView} />
+          </li>
+        ))}
+      </ul>
+    </section>
+  );
+}
+
+function FrameHitRowView({
+  frame,
+  entries,
+  runtime,
+  onView,
+}: {
+  frame: FrameHitRow;
+  entries: readonly SpaceEntry[];
+  runtime: RuntimeSession;
+  onView: (entryId: Id) => void;
+}) {
+  const file = frame.videoId === null;
+  const entry =
+    (frame.entryId ? entries.find((e) => e.id === frame.entryId) : null) ??
+    (frame.videoId === null ? null : hitVideoEntry({ entryId: frame.entryId, videoId: frame.videoId }, entries));
+  // 时间线上的那一刻向 Runtime 要；剪掉了的（素材时间、没有文档）取不到，只是灰底。
+  const span = useMemo(() => (frame.time ? { time: frame.time, documentId: null } : null), [frame.time]);
+  const moments = useGroupMoments(runtime, !file && span?.time.clock === 'sequence' ? (entry?.id ?? null) : null, span ? [span] : []);
+  const thumbnail = useEntryThumbnail(file ? entry : null);
+  const folderName = useIndexFolderName(entry?.source.folderId);
+  const at = frame.time ? formatClock(frame.time.start) : null;
+  const open = () => (file ? frame.entryId && onView(frame.entryId) : void openFrameHit(runtime, frame, entries));
+  return (
+    <>
+      <RACButton className={(s) => row(s)} onPress={open}>
+        {file ? (
+          <ThumbBox url={thumbnail?.kind === 'image' ? thumbnail.url : null} pending={false} />
+        ) : (
+          <MomentThumb moment={span ? momentOf(moments, span) : null} pending={!!span && momentPending(moments, span)} />
+        )}
+        <span className={rowBody}>
+          <span className={rowMeta}>
+            <span className={groupTitle}>{frame.name}</span>
+            {span ? <span>{hitWhere({ time: span.time, speaker: null })}</span> : null}
+          </span>
+          <span className={rowWhy}>{frame.weak ? COPY.frameWhyWeak : COPY.frameWhy}</span>
+          {file ? <span className={rowWhy}>{COPY.frameInFolder(folderName)}</span> : frame.inTimeline ? null : <span className={rowWhy}>{COPY.frameCut}</span>}
+        </span>
+      </RACButton>
+      <div className={acts}>
+        <ActionButton isQuiet size="XS" onPress={open}>
+          {file ? COPY.frameView : COPY.momentOpen}
+        </ActionButton>
+        {entry ? (
+          <ActionButton isQuiet size="XS" onPress={() => handOverFrame(runtime, frame, entry, at)}>
+            {OUTPUT_COPY.handover}
+          </ActionButton>
+        ) : null}
+      </div>
+    </>
+  );
+}
+
+/**
  * 命中行下面的两样（创作辅助集成设计 §2.1，设计稿 space-search.jsx `ResultCard`）：「交给 Agent」把这一句作为引用带进会话
  * （`space.continueInConversation` 带上视频条目，预填一句可改写的话，不自动发送）；「用于写作」打开这部视频的写博客，范围落在
  * 「按主题」、主题就是搜的这句话（写作按主题挑材料时用同一个索引，挑出的就是这里命中的这几段及前后句）。
@@ -463,6 +612,18 @@ function handOverHit(runtime: RuntimeSession, hit: Hit, entry: SpaceEntry): void
     .then(({ conversation, created }) => {
       const shell = useShell.getState();
       shell.setDraft(conversation.id, mergeDraft(shell.drafts[conversation.id], COPY.hitHandoverDraft(hit.videoName, formatClock(hit.time.start), hit.snippet)));
+      shell.go({ tab: 'home', conversationId: conversation.id, projectId: null });
+      ToastQueue.positive(OUTPUT_COPY.handedOver(created, entry.name, conversation.title || OUTPUT_COPY.untitled), { timeout: 6000 });
+    })
+    .catch((e: Error) => ToastQueue.negative(OUTPUT_COPY.handoverFailed(e.message), { timeout: 6000 }));
+}
+
+function handOverFrame(runtime: RuntimeSession, frame: FrameHitRow, entry: SpaceEntry, at: string | null): void {
+  runtime
+    .continueSpaceEntry(entry.id)
+    .then(({ conversation, created }) => {
+      const shell = useShell.getState();
+      shell.setDraft(conversation.id, mergeDraft(shell.drafts[conversation.id], COPY.frameHandoverDraft(frame.name, at)));
       shell.go({ tab: 'home', conversationId: conversation.id, projectId: null });
       ToastQueue.positive(OUTPUT_COPY.handedOver(created, entry.name, conversation.title || OUTPUT_COPY.untitled), { timeout: 6000 });
     })
@@ -550,7 +711,12 @@ function openHit(hit: SpaceSearchHit, entries: readonly SpaceEntry[]): void {
  * 打开综合搜索的命中：还在时间线上、索引就是当前版本的直接跳到那一秒；否则先按当前版本重新解析（`space.resolveSearchHit`），
  * 解析到时间线上的那一段就跳过去，剪掉了或不在了的只打开视频并说一句。
  */
-async function openSemanticHit(runtime: RuntimeSession, hit: SemanticHitRow, entries: readonly SpaceEntry[]): Promise<void> {
+async function openSemanticHit(
+  runtime: RuntimeSession,
+  hit: Pick<SemanticHitRow, 'entryId' | 'videoId' | 'time' | 'hitId' | 'inTimeline' | 'needsResolve'>,
+  entries: readonly SpaceEntry[],
+  notices: { gone: string; cut: string } = { gone: COPY.hitGone, cut: COPY.hitNotInTimeline },
+): Promise<void> {
   const target = hitTarget(hit, entries);
   if (!target) {
     ToastQueue.neutral(COPY.hitUnopenable, { timeout: 5000 });
@@ -563,9 +729,9 @@ async function openSemanticHit(runtime: RuntimeSession, hit: SemanticHitRow, ent
       const resolved = await runtime.client.request('space.resolveSearchHit', { hitId: hit.hitId });
       const span = resolved.spans.find((s) => s.clock === 'sequence');
       if (resolved.status === 'resolved' && span) at = span.startSec;
-      else notice = resolved.status === 'gone' ? COPY.hitGone : COPY.hitNotInTimeline;
+      else notice = resolved.status === 'gone' ? notices.gone : notices.cut;
     } catch {
-      notice = hit.inTimeline ? COPY.hitStale : COPY.hitNotInTimeline;
+      notice = hit.inTimeline ? COPY.hitStale : notices.cut;
       at = hit.inTimeline ? seekSeconds(hit) : null;
     }
   }
@@ -576,4 +742,10 @@ async function openSemanticHit(runtime: RuntimeSession, hit: SemanticHitRow, ent
   }
   useShell.getState().openVideo(target);
   if (notice) ToastQueue.neutral(notice, { timeout: 5000 });
+}
+
+/** 打开 BaoCut 视频里的画面命中：同讲话内容的命中，在时间线上的跳到那一秒，否则按当前版本解析；剪掉了的只打开视频。 */
+function openFrameHit(runtime: RuntimeSession, frame: FrameHitRow, entries: readonly SpaceEntry[]): Promise<void> {
+  const time = frame.time ?? { clock: 'source' as const, start: 0, end: 0 };
+  return openSemanticHit(runtime, { ...frame, videoId: frame.videoId!, time }, entries, { gone: COPY.frameGone, cut: COPY.frameNotInTimeline });
 }

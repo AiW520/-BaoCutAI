@@ -25,6 +25,7 @@ export const es: SettingDescriptionMessages = {
  'updates.autoCheck': 'Comprobar actualizaciones de la aplicación automáticamente', 'updates.autoDownload': 'Descargar versiones nuevas en segundo plano (sin instalarlas automáticamente)', 'diagnostics.enabled': 'Enviar estadísticas anónimas de uso y resúmenes de rendimiento (sin medios, texto ni rutas)', 'offline.strict': 'Sin conexión estricto: no enviar nada a ningún servicio en línea',
   'semantic.channels': 'Canales del índice semántico que se crean: text (lo hablado: transcripciones, subtítulos, traducciones, capítulos); visual (un fotograma clave cada 8 segundos; requiere un modelo multimodal y tarda más); audio aún no está disponible',
   'semantic.excludedProjects': 'Proyectos excluidos del índice semántico (lista de ids de proyecto): se indexan todos los proyectos de BaoCut y los vídeos fuera de proyectos salvo estos; sus vídeos se pueden seguir encontrando por las palabras exactas',
+  'semantic.folders': 'Carpetas de índice fuera de los proyectos (lista de {id, path}): sus vídeos e imágenes aparecen en Space y se indexan por significado, solo en lectura. Se cambian con space.folderAdd y space.folderRemove',
   'semantic.excludedVideos': 'Vídeos sueltos excluidos del índice semántico (lista de ids de vídeo), además de los proyectos excluidos; se quita el índice que ya tenían',
   'semantic.indexDir':
     'Carpeta del índice semántico (ruta absoluta); null lo deja en la caché de la app. Se cambia con space.indexSetDir, que mueve o vuelve a crear el índice',

@@ -101,7 +101,7 @@ export const pl: SpaceMessages = {
   changedTitle: "Wideo źródłowe zmieniło się od",
   changedBody: "Wynik odpowiada starszej wersji wideo. Działa, ale nie odzwierciedla obecnego.",
   reexport: "Eksportuj ponownie z wideo źródłowego",
-  noPreviewVideo: "Wideo otwierają się w edytorze.",
+  noPreviewVideo: "Wideo otwierają się w edytorze.", inIndexFolder: (folder: string | null) => (folder ? `W folderze indeksu „${folder}”, tylko do odczytu: BaoCut nie zmienia, nie przenosi ani nie usuwa tego pliku.` : 'W folderze indeksu, tylko do odczytu: BaoCut nie zmienia, nie przenosi ani nie usuwa tego pliku.'),
 
   capability: {
     synthesizeSpeech: "Dubbing",
@@ -262,4 +262,25 @@ export const pl: SpaceMessages = {
         ? `Odpowiedz na podstawie moich filmów spoza projektów: ${question}`
         : `Odpowiedz na podstawie moich filmów: ${question}`,
   hitsNoneSemantic: 'Nic z tego, co powiedziano w filmach, nie dotyczy tego. Spróbuj innych słów.',
+  // 画面通道
+  hitsTitleBoth: 'Powiedziane lub widoczne w wideo',
+  hitsTitleVisual: 'Widoczne w wideo i obrazach',
+  hitsNoneVisual: 'Nic z tego, co powiedziano lub pokazano, nie pasuje. Spróbuj innych słów.',
+  soundsLater: 'Dźwięk nie jest jeszcze indeksowany w tej wersji',
+  visualBlocked: (block: 'model' | 'off' | 'lexical') =>
+    block === 'model'
+      ? 'Obraz: nie zainstalowano lokalnego modelu semantycznego'
+      : block === 'off'
+        ? 'Obraz: indeks obrazu jest wyłączony. Włącz go w Ustawienia › Indeks semantyczny'
+        : 'Obraz: wyszukiwany tylko według znaczenia, więc Dokładny tekst go nie przeszukuje',
+  framesTitle: 'Obraz',
+  frameWhy: 'Obraz · podobne znaczenie',
+  frameWhyWeak: 'Obraz · luźno powiązane',
+  frameInFolder: (folder: string | null) => (folder ? `Folder indeksu „${folder}” · tylko do odczytu` : 'W folderze indeksu · tylko do odczytu'),
+  frameCut: 'Wycięte z osi czasu',
+  frameView: 'Zobacz w Space',
+  frameNotInTimeline: 'Ten moment wycięto z osi czasu: film otworzy się bez przesuwania głowicy odtwarzania',
+  frameGone: 'Tego obrazu nie ma już w filmie',
+  frameHandoverDraft: (name: string, at: string | null) =>
+    at === null ? `Zobacz ten obraz: „${name}”` : `Zobacz ten obraz w „${name}” w ${at}`,
 };

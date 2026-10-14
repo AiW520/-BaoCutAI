@@ -108,6 +108,7 @@ export const ko: SpaceMessages = {
   changedBody: '이 결과물은 이전 버전의 영상에 해당합니다. 계속 사용할 수 있지만 현재 영상을 반영하지 않습니다.',
   reexport: '원본 영상에서 다시 내보내기',
   noPreviewVideo: '영상은 편집기에서 열립니다.',
+  inIndexFolder: (folder: string | null) => (folder ? `인덱스 폴더 「${folder}」에 있어 읽기 전용입니다. BaoCut은 이 파일을 변경, 이동, 삭제하지 않습니다.` : '인덱스 폴더에 있어 읽기 전용입니다. BaoCut은 이 파일을 변경, 이동, 삭제하지 않습니다.'),
 
   // 能力（origin.capability）
   capability: {
@@ -282,4 +283,25 @@ export const ko: SpaceMessages = {
         ? `프로젝트에 속하지 않은 동영상에서 답 찾기: ${question}`
         : `내 동영상에서 답 찾기: ${question}`,
   hitsNoneSemantic: '이 내용을 말한 구간을 찾지 못했습니다. 다른 표현으로 해 보세요.',
+  // 画面通道
+  hitsTitleBoth: '영상에서 말하거나 보이는 내용',
+  hitsTitleVisual: '영상과 이미지에서 보이는 내용',
+  hitsNoneVisual: '말하거나 보이는 내용 중 일치하는 것이 없습니다. 다른 표현으로 해 보세요.',
+  soundsLater: '소리는 이 버전에서 아직 색인되지 않습니다',
+  visualBlocked: (block: 'model' | 'off' | 'lexical') =>
+    block === 'model'
+      ? '영상: 로컬 의미 모델이 설치되어 있지 않습니다'
+      : block === 'off'
+        ? '영상: 영상 색인이 꺼져 있습니다. 설정 › 의미 색인에서 켜세요'
+        : '영상: 의미로만 찾기 때문에 정확한 문자 검색에서는 확인하지 않습니다',
+  framesTitle: '영상',
+  frameWhy: '영상 · 의미가 비슷함',
+  frameWhyWeak: '영상 · 관련성이 약함',
+  frameInFolder: (folder: string | null) => (folder ? `인덱스 폴더 「${folder}」 · 읽기 전용` : '인덱스 폴더 안 · 읽기 전용'),
+  frameCut: '타임라인에서 잘림',
+  frameView: 'Space에서 보기',
+  frameNotInTimeline: '이 장면은 타임라인에서 잘렸습니다. 동영상만 열고 재생 헤드는 옮기지 않습니다',
+  frameGone: '이 장면은 이제 동영상에 없습니다',
+  frameHandoverDraft: (name: string, at: string | null) =>
+    at === null ? `이 장면을 봐 주세요: 「${name}」` : `「${name}」 ${at}의 이 장면을 봐 주세요`,
 };

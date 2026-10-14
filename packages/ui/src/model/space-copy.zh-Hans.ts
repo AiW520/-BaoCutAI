@@ -32,6 +32,7 @@ export const zhHans: SpaceMessages = {
   statusNone: '无状态',
   noProject: '不属于任何项目',
   removedProject: '已移除的项目',
+  indexFolder: (name: string | null) => (name ? `索引文件夹「${name}」` : '索引文件夹'),
   conversation: (title: string) => `会话「${title}」`,
   derivedFrom: (name: string) => `来自「${name}」`,
   kindCount: (kind: string, n: number) => `${kind} ${n}`,

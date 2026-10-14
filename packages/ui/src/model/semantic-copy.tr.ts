@@ -246,4 +246,51 @@ export const tr: SemanticMessages = {
     changedToast: (to) => `Dizin konumu ${to} olarak değiştirildi`,
     pickFailed: (message) => `Klasör seçilemedi: ${message}`,
   },
+  folders: {
+    head: 'Projelerin dışındaki dizinlenen klasörler:',
+    add: 'Klasör ekle…',
+    actions: (name) => `“${name}” dizin klasörü için eylemler`,
+    reindex: 'Yeniden dizinle',
+    reindexDesc: 'Yeniden tarar ve dizinini baştan oluşturur',
+    remove: 'Kaldır',
+    removeDesc: 'Dizinini siler; dosyalar kalır',
+    videos: (n) => `${n} BaoCut videosu`,
+    videoFiles: (n) => `${n} video dosyası`,
+    images: (n) => `${n} görsel`,
+    nothing: 'Henüz video veya görsel bulunamadı',
+    exportsSkipped: (n) => `${n} dışa aktarım atlandı`,
+    duplicates: (n) => `${n} tanesi zaten projelerde`,
+    legacy: (n) => `${n} eski BaoCut videosu okunmadı`,
+    listSeparator: ', ',
+    separator: ' · ',
+    missing: 'Bu klasör bulunamıyor',
+    missingNote: 'Harici bir disk çıkarılmış olabilir. Dizini korunur ve klasör geri gelene kadar Space bu dosyaları gizler.',
+    truncatedNote: (limit) => `Çok fazla dosya var: yalnızca ilk ${limit} dosya tarandı. Bunun yerine bir alt klasör ekleyin.`,
+    truncatedNoteNoLimit: 'Çok fazla dosya var: yalnızca ilk dosyalar tarandı. Bunun yerine bir alt klasör ekleyin.',
+    unreadableNote: 'Bu klasör okunamıyor. İzinlerini kontrol edin.',
+    legacyNote:
+      'Eski BaoCut videoları okunmadan önce yükseltilmelidir ve yükseltme onları değiştirir; bu yüzden burada okunmazlar. Birini bir projeye taşıyıp yükseltmek için BaoCut’ta bir kez açın.',
+    visualReady: 'Görüntüler hazır',
+    visualProgress: (done, total) => `Görüntüler: ${total} içinden ${done} tamamlandı`,
+    textOnly: 'İçindeki BaoCut videoları söylenene göre dizinlenir',
+    visualOff: 'Görüntü dizini kapalı, bu yüzden video dosyaları ve görseller henüz dizinlenmedi',
+    addTitle: 'Dizin klasörü ekle',
+    addBody:
+      'Projelerinizin dışındaki videolar da anlamlarına göre bulunabilir. BaoCut bu klasörü yalnızca okur: içindeki hiçbir şeyi değiştirmez, taşımaz veya silmez. İçindeki videolar ve görseller, kaynak olarak bu klasörle Space’te görünür.',
+    addWhat: (visual) =>
+      visual
+        ? 'BaoCut videoları söylenene ve görüntüye göre, diğer video dosyaları ve görseller görüntüye göre dizinlenir. BaoCut’ın kaydettiği dışa aktarımlar atlanır; projede de bulunan videolar projedeki kopyayı kullanır.'
+        : 'BaoCut videoları söylenene göre dizinlenir; diğer video dosyaları ve görseller için görüntü dizini gerekir. BaoCut’ın kaydettiği dışa aktarımlar atlanır; projede de bulunan videolar projedeki kopyayı kullanır.',
+    visualOffTitle: 'Video dosyaları ve görseller görüntüye göre dizinlenir',
+    visualOffBody:
+      'Dökümleri olmadığından yalnızca ekranda görünene göre bulunabilirler. Görüntü dizini açılınca dizinlenirler; o zamana kadar yalnızca bu klasördeki BaoCut videoları dizinlenir.',
+    confirmAdd: 'Ekle',
+    addedToast: (name) => `“${name}” eklendi. Tarama ve dizinleme arka planda sürüyor.`,
+    reindexedToast: (name) => `“${name}” yeniden taranıyor ve dizini baştan oluşturuluyor`,
+    removeTitle: (name) => `“${name}” dizin klasörü kaldırılsın mı?`,
+    removeBody:
+      'Bu klasörün dizinini siler; dosyalar kalır. Space bunları artık listelemez ve anlamlarına göre bulunamazlar. Klasörü sonra yeniden ekleyebilirsiniz.',
+    removedToast: (name) => `“${name}” dizini kaldırıldı`,
+    failed: (message) => `Bu olmadı: ${message}`,
+  },
 };

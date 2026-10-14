@@ -245,4 +245,51 @@ export const ptBR: SemanticMessages = {
     changedToast: (to) => `Local do índice alterado para ${to}`,
     pickFailed: (message) => `Não foi possível escolher a pasta: ${message}`,
   },
+  folders: {
+    head: 'Pastas indexadas fora dos seus projetos:',
+    add: 'Adicionar pasta…',
+    actions: (name) => `Ações da pasta indexada “${name}”`,
+    reindex: 'Reindexar',
+    reindexDesc: 'Examina a pasta de novo e recria o índice',
+    remove: 'Remover',
+    removeDesc: 'Exclui o índice; os arquivos ficam',
+    videos: (n) => (n === 1 ? '1 vídeo do BaoCut' : `${n} vídeos do BaoCut`),
+    videoFiles: (n) => (n === 1 ? '1 arquivo de vídeo' : `${n} arquivos de vídeo`),
+    images: (n) => (n === 1 ? '1 imagem' : `${n} imagens`),
+    nothing: 'Nenhum vídeo ou imagem encontrado ainda',
+    exportsSkipped: (n) => (n === 1 ? '1 exportação ignorada' : `${n} exportações ignoradas`),
+    duplicates: (n) => (n === 1 ? '1 já está em um projeto' : `${n} já estão em projetos`),
+    legacy: (n) => (n === 1 ? '1 vídeo antigo do BaoCut não lido' : `${n} vídeos antigos do BaoCut não lidos`),
+    listSeparator: ', ',
+    separator: ' · ',
+    missing: 'Esta pasta não foi encontrada',
+    missingNote: 'Talvez um disco externo esteja desconectado. O índice é mantido e o Space oculta estes arquivos até a pasta voltar.',
+    truncatedNote: (limit) => `Arquivos demais: só os primeiros ${limit} foram examinados. Adicione uma subpasta no lugar.`,
+    truncatedNoteNoLimit: 'Arquivos demais: só os primeiros foram examinados. Adicione uma subpasta no lugar.',
+    unreadableNote: 'Não foi possível ler esta pasta. Verifique as permissões.',
+    legacyNote:
+      'Os vídeos antigos do BaoCut precisam ser atualizados antes de poderem ser lidos, e a atualização os modifica, então eles não são lidos aqui. Mova um para um projeto e abra-o uma vez no BaoCut para atualizá-lo.',
+    visualReady: 'Imagens prontas',
+    visualProgress: (done, total) => `Imagens: ${done} de ${total} concluídas`,
+    textOnly: 'Os vídeos do BaoCut dela são indexados pela fala',
+    visualOff: 'O índice de imagem está desligado, então arquivos de vídeo e imagens ainda não são indexados',
+    addTitle: 'Adicionar pasta indexada',
+    addBody:
+      'Vídeos fora dos seus projetos também poderão ser encontrados pelo sentido. O BaoCut apenas lê esta pasta: não altera, move nem exclui nada dentro dela. Os vídeos e as imagens dela aparecem no Space com esta pasta como origem.',
+    addWhat: (visual) =>
+      visual
+        ? 'Os vídeos do BaoCut são indexados pela fala e pela imagem; os outros arquivos de vídeo e as imagens, pela imagem. As exportações registradas pelo BaoCut são ignoradas, e os vídeos que também estão em um projeto usam a cópia do projeto.'
+        : 'Os vídeos do BaoCut são indexados pela fala; os outros arquivos de vídeo e as imagens precisam do índice de imagem. As exportações registradas pelo BaoCut são ignoradas, e os vídeos que também estão em um projeto usam a cópia do projeto.',
+    visualOffTitle: 'Arquivos de vídeo e imagens são indexados pela imagem',
+    visualOffBody:
+      'Eles não têm transcrição, então só podem ser encontrados pelo que aparece na tela. São indexados quando o índice de imagem for ligado; até lá, só os vídeos do BaoCut desta pasta são indexados.',
+    confirmAdd: 'Adicionar',
+    addedToast: (name) => `“${name}” adicionada. Examinando e indexando em segundo plano.`,
+    reindexedToast: (name) => `Examinando “${name}” de novo e recriando o índice`,
+    removeTitle: (name) => `Remover a pasta indexada “${name}”?`,
+    removeBody:
+      'Exclui o índice desta pasta; os arquivos ficam. O Space deixa de listá-los e eles não podem mais ser encontrados pelo sentido. Você pode adicionar a pasta de novo depois.',
+    removedToast: (name) => `Índice de “${name}” removido`,
+    failed: (message) => `Não deu certo: ${message}`,
+  },
 };

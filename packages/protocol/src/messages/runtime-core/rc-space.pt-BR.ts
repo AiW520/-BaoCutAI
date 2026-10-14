@@ -80,4 +80,8 @@ export const ptBR: RcSpaceMessages = {
   indexDirOccupied: 'Esta pasta já tem um índice semântico. Escolha uma pasta vazia ou recrie o índice lá para usar o que ela tem',
   indexDirMoving: 'O índice está sendo movido. Aguarde terminar',
   indexDirMoveFailed: (p: { reason: string }) => `Não foi possível mover o índice; ele continua onde estava: ${p.reason}`,
+  folderReadOnly: 'Isto está em uma pasta de índice, que o BaoCut só lê. Não dá para mover para a lixeira, excluir nem editar',
+  folderNotFound: 'A pasta não existe',
+  folderUnknown: 'Essa pasta de índice não está na lista',
+  folderInside: (p: { name: string }) => `Esta pasta já é indexada como parte de “${p.name}”`,
 };

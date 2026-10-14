@@ -9,7 +9,7 @@ import {
   type SpaceReadScope,
   type SpaceSearchResult,
 } from '@baocut/protocol';
-import type { SpaceCatalog, SpaceVideo } from '../space-catalog.ts';
+import type { SpaceCatalog, SpaceVideo, SpaceVisualFile } from '../space-catalog.ts';
 import type { ContentIndex } from './content-index.ts';
 import type { SearchableVideo } from './content-search.ts';
 import { RcSpace } from '@baocut/protocol/messages/runtime-core';
@@ -20,8 +20,9 @@ import { RcSpace } from '@baocut/protocol/messages/runtime-core';
  * - `user`：界面、CLI、Web（用户本人）：全部条目。
  * - `source`：会话里的智能体：会话的来源目录（所属项目，或会话自己的工作目录）里的条目，以及归属同一来源的产物。用户给会话放宽了
  *   只读检索范围（`readScope`，`Conversation.spaceReadScope`）时，另外看得到范围里的视频（只有视频条目，不含别处的文件与产物）。
+ *   索引文件夹（检索规格 §9.1）里的视频、视频文件与图片只在 `all` 里；`unfiled` 是不属于项目的视频，不含索引文件夹。
  * - `service`：对外服务的客户端：只有范围之内（已登记项目里、在 videoId 名单上）的视频，以及由这些视频生成、导出的条目；
- *   任务的产物与占位只看自己提交的。没有来源视频的文件（项目里的图片、文档）不可见。看不到的与不存在的一样回答。
+ *   任务的产物与占位只看自己提交的。没有来源视频的文件（项目里的图片、文档）不可见，索引文件夹里的都不可见。看不到的与不存在的一样回答。
  */
 export type SpaceViewer =
   | { kind: 'user' }
@@ -53,7 +54,9 @@ export function visibleTo(viewer: SpaceViewer, entry: SpaceEntry): boolean {
     case 'user':
       return true;
     case 'source':
-      if (viewer.readScope && entry.kind === 'video' && inReadScope(viewer.readScope, projectOf(entry))) return true;
+      if (viewer.readScope && readable(entry) && inReadScope(viewer.readScope, { projectId: projectOf(entry), folderId: entry.source.folderId ?? null })) {
+        return true;
+      }
       if (viewer.projectId) return projectOf(entry) === viewer.projectId;
       return (
         entry.source.conversationId === viewer.conversationId ||
@@ -61,7 +64,7 @@ export function visibleTo(viewer: SpaceViewer, entry: SpaceEntry): boolean {
       );
     case 'service': {
       const videoId = videoOf(entry);
-      if (!videoId || !projectOf(entry)) return false;
+      if (!videoId || !projectOf(entry) || entry.source.folderId) return false;
       if (viewer.videos !== 'all' && !viewer.videos.has(videoId)) return false;
       const jobId = entry.origin?.jobId;
       if (!jobId) return true;
@@ -111,6 +114,8 @@ export function listEntries(catalog: SpaceCatalog, viewer: SpaceViewer, params: 
 /** 跨视频检索用到的那一部分 Space 目录（`SpaceCatalog` 满足它；语义检索与测试也用它）。 */
 export interface SpaceSearchSource {
   videos(): SpaceVideo[];
+  /** 索引文件夹里只按画面建的文件；不给时没有。 */
+  visualFiles?(): SpaceVisualFile[];
   readonly index: Pick<ContentIndex, 'at' | 'pendingCount' | 'search'> | null;
   readonly scanning: boolean;
 }
@@ -120,6 +125,8 @@ export interface SearchScope {
   videos: SearchableVideo[];
   /** 还没有索引、正在重建、索引落后于当前版本的视频数。 */
   pending: number;
+  /** 索引文件夹里只按画面建的文件（只进画面一路）；按项目筛时没有，按 videoId 名单筛时按条目 id 对。 */
+  files: SearchableVideo[];
 }
 
 /**
@@ -148,6 +155,8 @@ export function searchScope(catalog: SpaceSearchSource, viewer: SpaceViewer, par
   let pending = 0;
   for (const video of catalog.videos()) {
     if (params.projectId !== undefined && video.projectId !== params.projectId) continue;
+    // 「未归项目」不含索引文件夹里的视频（与读的范围 `unfiled` 一致）。
+    if (params.projectId === null && video.folderId) continue;
     if (skipProjects && video.projectId !== null && skipProjects.has(video.projectId)) continue;
     if (!visibleVideo(viewer, video)) continue;
     const indexed = index?.at(video.dir) ?? null;
@@ -170,7 +179,16 @@ export function searchScope(catalog: SpaceSearchSource, viewer: SpaceViewer, par
       revision: indexed.revision,
     });
   }
-  return { videos, pending };
+  const files: SearchableVideo[] = [];
+  if (params.projectId === undefined) {
+    for (const file of catalog.visualFiles?.() ?? []) {
+      if (wanted && !wanted.has(file.entryId)) continue;
+      if (skipVideos?.has(file.entryId)) continue;
+      if (!visibleVideo(viewer, { projectId: null, conversationId: null, folderId: file.folderId })) continue;
+      files.push({ dir: file.file, videoId: file.entryId, videoName: file.name, entryId: file.entryId, projectId: null, revision: file.revision, file: file.kind });
+    }
+  }
+  return { videos, pending, files };
 }
 
 /**
@@ -194,20 +212,27 @@ export function searchContent(
 }
 
 /** 视频按主体的初筛（检索与工具的候选输入共用）；对外服务的 videoId 名单要等拿到 videoId 之后再查。 */
-export function visibleVideo(viewer: SpaceViewer, video: { projectId: Id | null; conversationId: Id | null }): boolean {
+export function visibleVideo(viewer: SpaceViewer, video: { projectId: Id | null; conversationId: Id | null; folderId?: Id | null }): boolean {
+  const folderId = video.folderId ?? null;
   switch (viewer.kind) {
     case 'user':
       return true;
     case 'source':
-      if (viewer.readScope && inReadScope(viewer.readScope, video.projectId)) return true;
+      if (viewer.readScope && inReadScope(viewer.readScope, { projectId: video.projectId, folderId })) return true;
+      if (folderId) return false;
       return viewer.projectId ? video.projectId === viewer.projectId : video.conversationId === viewer.conversationId;
     case 'service':
       // 只有已登记项目里的视频；名单在拿到 videoId 之后再查。
-      return video.projectId !== null;
+      return video.projectId !== null && folderId === null;
   }
 }
 
-/** 放宽的只读检索范围里有没有这个项目的视频：`all` 是全部，`unfiled` 是不属于项目的。 */
-function inReadScope(scope: SpaceReadScope, projectId: Id | null): boolean {
-  return scope === 'all' || projectId === null;
+/** 放宽的只读检索范围里能看到的条目种类：视频；索引文件夹里另有视频文件与图片（只按画面检索的那些）。 */
+function readable(entry: SpaceEntry): boolean {
+  return entry.kind === 'video' || (!!entry.source.folderId && (entry.kind === 'video-file' || entry.kind === 'image'));
+}
+
+/** 放宽的只读检索范围里有没有这个视频：`all` 是全部（含索引文件夹），`unfiled` 是不属于项目、也不在索引文件夹里的。 */
+function inReadScope(scope: SpaceReadScope, owner: { projectId: Id | null; folderId: Id | null }): boolean {
+  return scope === 'all' || (owner.projectId === null && owner.folderId === null);
 }

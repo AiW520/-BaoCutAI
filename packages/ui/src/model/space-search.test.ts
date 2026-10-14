@@ -18,6 +18,8 @@ import {
   meaningQueryReady,
   planGroupRows,
   foldWeakHits,
+  frameHitRows,
+  pickedChannels,
   SEARCH_LIMIT,
   searchNote,
   searchRequest,
@@ -26,6 +28,7 @@ import {
   semanticHitRows,
   snippetParts,
   speakerOptions,
+  visualChannel,
 } from './space-search.ts';
 
 const video = (id: string, videoId: string, patch: Partial<SpaceEntry> = {}): SpaceEntry => ({
@@ -219,6 +222,68 @@ describe('综合搜索', () => {
       '转场',
     ]);
     expect(hitWords({ snippet, highlights: [] })).toEqual([]);
+  });
+});
+
+describe('画面通道', () => {
+  const status = (available: boolean, enabled: boolean) => ({
+    channels: { text: { enabled: true, available: true }, visual: { enabled, available }, audio: { enabled: false, available: false } },
+  });
+
+  it('有能用的模型、画面索引开着、方式是综合时才能选；不能时写明为什么', () => {
+    expect(visualChannel(null, 'hybrid')).toEqual({ on: false, block: 'model' });
+    expect(visualChannel(status(false, true), 'hybrid')).toEqual({ on: false, block: 'model' });
+    expect(visualChannel(status(true, false), 'hybrid')).toEqual({ on: false, block: 'off' });
+    expect(visualChannel(status(true, true), 'lexical')).toEqual({ on: false, block: 'lexical' });
+    expect(visualChannel(status(true, true), 'hybrid')).toEqual({ on: true, block: null });
+  });
+
+  it('要找的通道：画面能选且勾着才带上；一路都没有时退回讲话内容', () => {
+    expect(pickedChannels({ text: true, visual: true }, true)).toEqual(['text', 'visual']);
+    expect(pickedChannels({ text: true, visual: true }, false)).toEqual(['text']);
+    expect(pickedChannels({ text: false, visual: true }, true)).toEqual(['visual']);
+    expect(pickedChannels({ text: false, visual: true }, false)).toEqual(['text']);
+    expect(searchV2Request('海边', null, ANY_HIT, ['text', 'visual'])).toMatchObject({ channels: ['text', 'visual'] });
+  });
+
+  it('画面命中：BaoCut 视频的那一刻带时间与能不能在时间线打开；索引文件夹里的文件没有视频，图片没有时间', () => {
+    const frame = (patch: Partial<SpaceSearchV2Hit>) =>
+      v2({ matchChannels: ['visual'], evidenceType: 'visual', snippet: '', speaker: null, language: null, ...patch });
+    const source = (start: number, end: number) => ({
+      clock: 'source' as const,
+      start: { ticks: String(start), timescale: 1 },
+      end: { ticks: String(end), timescale: 1 },
+      startSec: start,
+      endSec: end,
+      boundary: 'window' as const,
+    });
+    const rows = frameHitRows([
+      v2(),
+      frame({ hitId: 'f1', target: { kind: 'asset-span', assetId: 'a1', videoId: 'v1', representation: 'keyframe' }, weak: true }),
+      frame({
+        hitId: 'f2',
+        target: { kind: 'asset-span', assetId: 'ent_mov', videoId: null, representation: 'keyframe' },
+        entryId: 'ent_mov',
+        videoName: 'drone.mp4',
+        projectId: null,
+        anchor: source(8, 16),
+        actions: ['preview', 'cite'],
+      }),
+      frame({
+        hitId: 'f3',
+        target: { kind: 'asset-span', assetId: 'ent_img', videoId: null, representation: 'keyframe' },
+        entryId: 'ent_img',
+        videoName: 'beach.jpg',
+        projectId: null,
+        anchor: source(0, 0),
+        actions: ['preview', 'cite'],
+      }),
+    ]);
+    expect(rows.map((r) => r.hitId)).toEqual(['f1', 'f2', 'f3']);
+    expect(rows[0]).toMatchObject({ videoId: 'v1', name: '访谈', time: { clock: 'sequence', start: 65, end: 70 }, inTimeline: true, weak: true });
+    expect(rows[1]).toMatchObject({ videoId: null, entryId: 'ent_mov', time: { clock: 'source', start: 8, end: 16 }, inTimeline: false });
+    expect(rows[2]).toMatchObject({ videoId: null, entryId: 'ent_img', name: 'beach.jpg', time: null });
+    expect(foldWeakHits(rows).folded.map((r) => r.hitId)).toEqual(['f1']);
   });
 });
 

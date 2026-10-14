@@ -1,4 +1,5 @@
 import type { SemanticMessages } from './semantic-copy.ts';
+import { pluralForm } from '@baocut/protocol';
 
 export const pl: SemanticMessages = {
   reason: {
@@ -246,5 +247,66 @@ export const pl: SemanticMessages = {
     rebuiltToast: (to) => `Zmieniono lokalizację indeksu na ${to}. Trwa budowanie od nowa w tle.`,
     changedToast: (to) => `Zmieniono lokalizację indeksu na ${to}`,
     pickFailed: (message) => `Nie udało się wybrać folderu: ${message}`,
+  },
+  folders: {
+    head: 'Indeksowane foldery poza projektami:',
+    add: 'Dodaj folder…',
+    actions: (name) => `Działania dla indeksowanego folderu „${name}”`,
+    reindex: 'Indeksuj ponownie',
+    reindexDesc: 'Skanuje go od nowa i odbudowuje jego indeks',
+    remove: 'Usuń',
+    removeDesc: 'Usuwa jego indeks; pliki zostają',
+    videos: (n) =>
+      pluralForm('pl', n, { one: `${n} film BaoCut`, few: `${n} filmy BaoCut`, many: `${n} filmów BaoCut`, other: `${n} filmu BaoCut` }),
+    videoFiles: (n) =>
+      pluralForm('pl', n, { one: `${n} plik wideo`, few: `${n} pliki wideo`, many: `${n} plików wideo`, other: `${n} pliku wideo` }),
+    images: (n) => pluralForm('pl', n, { one: `${n} obraz`, few: `${n} obrazy`, many: `${n} obrazów`, other: `${n} obrazu` }),
+    nothing: 'Nie znaleziono jeszcze filmów ani obrazów',
+    exportsSkipped: (n) =>
+      pluralForm('pl', n, {
+        one: `${n} eksport pominięty`,
+        few: `${n} eksporty pominięte`,
+        many: `${n} eksportów pominiętych`,
+        other: `${n} eksportu pominiętego`,
+      }),
+    duplicates: (n) => pluralForm('pl', n, { one: `${n} już w projekcie`, other: `${n} już w projektach` }),
+    legacy: (n) =>
+      pluralForm('pl', n, {
+        one: `${n} starszy film BaoCut nie został wczytany`,
+        few: `${n} starsze filmy BaoCut nie zostały wczytane`,
+        many: `${n} starszych filmów BaoCut nie zostało wczytanych`,
+        other: `${n} starszego filmu BaoCut nie zostało wczytanych`,
+      }),
+    listSeparator: ', ',
+    separator: ' · ',
+    missing: 'Nie można znaleźć tego folderu',
+    missingNote: 'Może dysk zewnętrzny jest odłączony. Jego indeks zostaje zachowany, a Space ukrywa te pliki, dopóki folder nie wróci.',
+    truncatedNote: (limit) => `Za dużo plików: przeskanowano tylko pierwsze ${limit}. Dodaj zamiast tego podfolder.`,
+    truncatedNoteNoLimit: 'Za dużo plików: przeskanowano tylko pierwsze z nich. Dodaj zamiast tego podfolder.',
+    unreadableNote: 'Nie można odczytać tego folderu. Sprawdź uprawnienia.',
+    legacyNote:
+      'Starsze filmy BaoCut trzeba najpierw zaktualizować, zanim będzie można je odczytać, a aktualizacja je zmienia, więc tutaj nie są odczytywane. Przenieś film do projektu i raz otwórz go w BaoCut, aby go zaktualizować.',
+    visualReady: 'Obraz jest gotowy',
+    visualProgress: (done, total) => `Obraz: gotowe ${done} z ${total}`,
+    textOnly: 'Jego filmy BaoCut są indeksowane według mowy',
+    visualOff: 'Indeks obrazu jest wyłączony, więc pliki wideo i obrazy nie są jeszcze indeksowane',
+    addTitle: 'Dodaj indeksowany folder',
+    addBody:
+      'Filmy spoza projektów też będzie można znajdować według znaczenia. BaoCut tylko odczytuje ten folder: niczego w nim nie zmienia, nie przenosi ani nie usuwa. Jego filmy i obrazy pojawią się w Space z tym folderem jako źródłem.',
+    addWhat: (visual) =>
+      visual
+        ? 'Filmy BaoCut są indeksowane według mowy i obrazu, a pozostałe pliki wideo i obrazy według obrazu. Eksporty zapisane przez BaoCut są pomijane, a filmy, które są też w projekcie, korzystają z kopii z projektu.'
+        : 'Filmy BaoCut są indeksowane według mowy; pozostałe pliki wideo i obrazy wymagają indeksu obrazu. Eksporty zapisane przez BaoCut są pomijane, a filmy, które są też w projekcie, korzystają z kopii z projektu.',
+    visualOffTitle: 'Pliki wideo i obrazy są indeksowane według obrazu',
+    visualOffBody:
+      'Nie mają transkrypcji, więc można je znaleźć tylko po tym, co widać na ekranie. Zostaną zaindeksowane po włączeniu indeksu obrazu; do tego czasu indeksowane są tylko filmy BaoCut z tego folderu.',
+    confirmAdd: 'Dodaj',
+    addedToast: (name) => `Dodano „${name}”. Skanowanie i indeksowanie trwa w tle.`,
+    reindexedToast: (name) => `Ponowne skanowanie „${name}” i odbudowa jego indeksu`,
+    removeTitle: (name) => `Usunąć indeksowany folder „${name}”?`,
+    removeBody:
+      'Usuwa indeks tego folderu; pliki zostają. Space przestaje je wyświetlać i nie da się ich znaleźć według znaczenia. Folder można później dodać ponownie.',
+    removedToast: (name) => `Usunięto indeks folderu „${name}”`,
+    failed: (message) => `To się nie udało: ${message}`,
   },
 };

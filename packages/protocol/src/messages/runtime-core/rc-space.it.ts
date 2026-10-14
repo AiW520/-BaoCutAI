@@ -22,4 +22,8 @@ export const it: RcSpaceMessages = {
   indexDirOccupied: 'Questa cartella ha già un indice semantico. Scegli una cartella vuota o ricrea l’indice lì per usare quello presente',
   indexDirMoving: 'L’indice è in fase di spostamento. Attendi che finisca',
   indexDirMoveFailed: (p: { reason: string }) => `Impossibile spostare l’indice; resta dov’era: ${p.reason}`,
+  folderReadOnly: 'Si trova in una cartella indicizzata, che BaoCut legge soltanto. Non si può spostare nel cestino, eliminare né modificare',
+  folderNotFound: 'La cartella non esiste',
+  folderUnknown: 'Questa cartella indicizzata non è nell’elenco',
+  folderInside: (p: { name: string }) => `Questa cartella è già indicizzata come parte di «${p.name}»`,
 };

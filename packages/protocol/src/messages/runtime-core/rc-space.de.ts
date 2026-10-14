@@ -83,4 +83,8 @@ export const de: RcSpaceMessages = {
     'Dieser Ordner enthält bereits einen semantischen Index. Wähle einen leeren Ordner oder baue den Index dort neu auf, um den vorhandenen zu verwenden',
   indexDirMoving: 'Der Index wird gerade verschoben. Warte, bis das Verschieben abgeschlossen ist',
   indexDirMoveFailed: (p: { reason: string }) => `Der Index konnte nicht verschoben werden und bleibt am alten Ort: ${p.reason}`,
+  folderReadOnly: 'Das liegt in einem Indexordner, den BaoCut nur liest. Es kann nicht in den Papierkorb, gelöscht oder bearbeitet werden',
+  folderNotFound: 'Den Ordner gibt es nicht',
+  folderUnknown: 'Dieser Indexordner ist nicht in der Liste',
+  folderInside: (p: { name: string }) => `Dieser Ordner wird schon als Teil von „${p.name}“ indexiert`,
 };

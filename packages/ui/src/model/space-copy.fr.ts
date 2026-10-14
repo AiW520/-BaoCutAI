@@ -35,6 +35,7 @@ export const fr: SpaceMessages = {
   statusNone: "Aucun état",
   noProject: "Sans projet",
   removedProject: "Projet retiré",
+  indexFolder: (name: string | null) => (name ? `Dossier indexé « ${name} »` : 'Dossier indexé'),
   conversation: (title: string) => `Session « ${title} »`,
   derivedFrom: (name: string) => `Issu de « ${name} »`,
   kindCount: (kind: string, n: number) => `${kind} ${n}`,

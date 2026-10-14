@@ -32,6 +32,7 @@ export const ko: SpaceMessages = {
   statusNone: '상태 없음',
   noProject: '프로젝트에 속하지 않음',
   removedProject: '제거된 프로젝트',
+  indexFolder: (name: string | null) => (name ? `인덱스 폴더 「${name}」` : '인덱스 폴더'),
   conversation: (title: string) => `세션 “${title}”`,
   derivedFrom: (name: string) => `“${name}”에서 파생`,
   kindCount: (kind: string, n: number) => `${kind} ${n}`,

@@ -105,6 +105,7 @@ export const zhHans: SpaceMessages = {
   changedBody: '这个结果对应的是当时的视频版本，仍然可用，但不再代表当前的视频。',
   reexport: '回到来源视频重新导出',
   noPreviewVideo: '视频在编辑器里打开。',
+  inIndexFolder: (folder: string | null) => (folder ? `在索引文件夹「${folder}」里，只读：BaoCut 不改、不移动、不删这个文件。` : '在索引文件夹里，只读：BaoCut 不改、不移动、不删这个文件。'),
 
   // 能力（origin.capability）
   capability: {
@@ -273,4 +274,24 @@ export const zhHans: SpaceMessages = {
         ? `在不属于项目的视频里找答案：${question}`
         : `在我的视频里找答案：${question}`,
   hitsNoneSemantic: '没找到讲这件事的片段。换个说法试试。',
+  // 画面通道
+  hitsTitleBoth: '讲话内容与画面里',
+  hitsTitleVisual: '画面里',
+  hitsNoneVisual: '没找到相关的片段或画面。换个说法试试。',
+  soundsLater: '声音这一版还没有索引',
+  visualBlocked: (block: 'model' | 'off' | 'lexical') =>
+    block === 'model'
+      ? '画面：没装本机语义模型'
+      : block === 'off'
+        ? '画面：画面索引没开；在「设置 › 语义索引」里打开'
+        : '画面：只按意思找；精确文字时不查',
+  framesTitle: '画面',
+  frameWhy: '画面 · 意思接近',
+  frameWhyWeak: '画面 · 只是勉强相关',
+  frameInFolder: (folder: string | null) => (folder ? `索引文件夹「${folder}」 · 只读` : '在索引文件夹里 · 只读'),
+  frameCut: '已从时间线剪掉',
+  frameView: '在 Space 中查看',
+  frameNotInTimeline: '这个画面已从时间线剪掉，只打开视频，不挪播放头',
+  frameGone: '这个画面已经不在视频里了',
+  frameHandoverDraft: (name: string, at: string | null) => (at === null ? `看这个画面：「${name}」` : `看「${name}」${at} 这个画面`),
 };

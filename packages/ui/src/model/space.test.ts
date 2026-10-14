@@ -283,6 +283,16 @@ describe('位置与来源', () => {
     expect(sourceLabel(entry('c', { source: { projectId: null, conversationId: 'c1' } }), dirs, '新会话')).toBe('会话「新会话」');
   });
 
+  it('索引文件夹里的条目：在那个文件夹下，来源写索引文件夹的名字；文件夹状态还没取到时只写「索引文件夹」、没有位置', () => {
+    const folder = { projectId: null, conversationId: null, folderId: 'fld_1' };
+    const withFolders = { ...dirs, folders: [{ id: 'fld_1', name: '素材库', path: '/Users/me/Movies/素材库' }] };
+    expect(entryPath(entry('f', { source: folder, relPath: 'trips/beach.jpg' }), withFolders)).toBe('/Users/me/Movies/素材库/trips/beach.jpg');
+    expect(sourceLabel(entry('f', { source: folder, relPath: 'trips/beach.jpg' }), withFolders, '新会话')).toBe('索引文件夹「素材库」 · trips');
+    expect(sourceLabel(entry('g', { source: folder, relPath: 'g.mp4' }), withFolders, '新会话')).toBe('索引文件夹「素材库」');
+    expect(sourceLabel(entry('g', { source: folder, relPath: 'g.mp4' }), dirs, '新会话')).toBe('索引文件夹');
+    expect(entryPath(entry('g', { source: folder, relPath: 'g.mp4' }), dirs)).toBeNull();
+  });
+
   it('派生的子视频：来源写「来自 父视频」，不收进父视频的卡片，父视频知道派生了几部', () => {
     const parent = entry('parent', { kind: 'video', name: '发布会', relPath: 'talks/发布会', ref: { videoId: 'v_parent' } });
     const origin = { source: 'derived' as const, projectId: 'p1', videoId: 'v_parent', videoRevision: '7', capability: 'videos-derive' };

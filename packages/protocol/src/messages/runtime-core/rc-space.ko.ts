@@ -72,4 +72,8 @@ export const ko: RcSpaceMessages = {
   indexDirOccupied: '이 폴더에는 이미 의미 색인이 있습니다. 빈 폴더를 고르거나, 그곳에서 다시 만들어 기존 색인을 쓰세요',
   indexDirMoving: '색인을 옮기는 중입니다. 다 옮길 때까지 기다리세요',
   indexDirMoveFailed: (p: { reason: string }) => `색인을 옮기지 못해 원래 위치에 그대로 있습니다: ${p.reason}`,
+  folderReadOnly: '색인 폴더 안에 있어 BaoCut은 읽기만 합니다. 휴지통으로 옮기거나 삭제하거나 편집할 수 없습니다',
+  folderNotFound: '폴더가 없습니다',
+  folderUnknown: '그 색인 폴더는 목록에 없습니다',
+  folderInside: (p: { name: string }) => `이 폴더는 이미 「${p.name}」의 일부로 색인됩니다`,
 };

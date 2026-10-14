@@ -70,7 +70,7 @@ import { DESIGN } from '../../model/design-copy.ts';
 import { DESIGN_SYSTEM } from '../../model/design-system-copy.ts';
 import { M as SEMANTIC } from '../../model/semantic-copy.ts';
 import { SLIDES } from '../../model/slides-copy.ts';
-import { continueBlock, entryJobId, entryMenuKey, isFailedPlaceholder, purgeBlock } from '../../model/space-actions.ts';
+import { continueBlock, entryJobId, entryMenuKey, inIndexFolder, isFailedPlaceholder, purgeBlock } from '../../model/space-actions.ts';
 import {
   filesAttention,
   filesSummary,
@@ -462,7 +462,9 @@ function entryMenuParts(entry: SpaceRow, ctx: MenuContext): { disabled: EntryAct
   const trashed = entry.user.trashedAt !== null;
   const failed = isFailedPlaceholder(entry);
   const jobId = entryJobId(entry);
-  const isVideo = entry.kind === 'video' && !trashed;
+  // 索引文件夹里的只读（检索规格 §9.1）：BaoCut 视频不打开编辑，条目不进回收站。
+  const readOnly = inIndexFolder(entry);
+  const isVideo = entry.kind === 'video' && !trashed && !readOnly;
   const isSlides = entry.kind === 'slides' && !trashed;
   const isDesign = entry.kind === 'design' && !trashed;
   const isDesignSystem = entry.kind === 'design-system' && !trashed;
@@ -542,7 +544,7 @@ function entryMenuParts(entry: SpaceRow, ctx: MenuContext): { disabled: EntryAct
             <Delete />
             <Text>{COPY.clear}</Text>
           </MenuItem>
-        ) : (
+        ) : readOnly ? null : (
           <MenuItem id="trash" textValue={COPY.trash}>
             <Delete />
             <Text>{COPY.trash}</Text>
@@ -575,7 +577,9 @@ function measureOf(entry: SpaceEntry): string {
 
 /** 行与卡片的默认动作：视频打开编辑器，幻灯片、设计稿与设计系统在功能区打开，其余打开查看框（原型 onAction）。 */
 const primaryAction = (entry: SpaceEntry): EntryAction =>
-  (entry.kind === 'video' || entry.kind === 'slides' || entry.kind === 'design' || entry.kind === 'design-system') && !entry.user.trashedAt
+  (entry.kind === 'video' || entry.kind === 'slides' || entry.kind === 'design' || entry.kind === 'design-system') &&
+  !entry.user.trashedAt &&
+  !inIndexFolder(entry)
     ? 'open'
     : 'view';
 

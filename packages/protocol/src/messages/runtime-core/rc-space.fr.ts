@@ -21,4 +21,8 @@ export const fr: RcSpaceMessages = {
     'Ce dossier contient déjà un index sémantique. Choisissez un dossier vide, ou reconstruisez l’index là-bas pour utiliser celui qui s’y trouve',
   indexDirMoving: 'L’index est en cours de déplacement. Attendez la fin du déplacement',
   indexDirMoveFailed: (p: { reason: string }) => `Impossible de déplacer l’index ; il reste à son emplacement : ${p.reason}`,
+  folderReadOnly: 'C’est dans un dossier indexé, que BaoCut ne fait que lire. Impossible de le mettre à la corbeille, de le supprimer ou de le modifier',
+  folderNotFound: 'Le dossier n’existe pas',
+  folderUnknown: 'Ce dossier indexé n’est pas dans la liste',
+  folderInside: (p: { name: string }) => `Ce dossier est déjà indexé dans « ${p.name} »`,
 };

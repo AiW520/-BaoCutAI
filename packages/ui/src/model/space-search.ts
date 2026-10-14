@@ -6,6 +6,8 @@ import {
   SPACE_SEARCH_V2_MAX_LIMIT,
   type FileTarget,
   type Id,
+  type SemanticChannel,
+  type SemanticIndexStatus,
   type SpaceEntry,
   type SpaceSearchDocumentKind,
   type SpaceSearchHit,
@@ -224,12 +226,17 @@ export function hitWhere(hit: Pick<SpaceSearchHit, 'time' | 'speaker'>): string 
 /** 「综合」按意思与字面两路找、按名次融合；「精确文字」是原来的 `space.search`（全部词都出现）。 */
 export type SpaceSearchMode = 'hybrid' | 'lexical';
 
-/** `space.searchV2` 的参数：只找讲话内容；说话人由界面按整串筛（V2 没有 `speaker`）。 */
-export function searchV2Request(query: string, projectId: Id | 'none' | null, filter: HitFilter): SpaceSearchV2Params {
+/** `space.searchV2` 的参数：缺省只找讲话内容，画面能选时也找画面；说话人由界面按整串筛（V2 没有 `speaker`）。 */
+export function searchV2Request(
+  query: string,
+  projectId: Id | 'none' | null,
+  filter: HitFilter,
+  channels: readonly SemanticChannel[] = ['text'],
+): SpaceSearchV2Params {
   return {
     query: { kind: 'text', text: query.slice(0, SEMANTIC_QUERY_MAX_CHARS) },
     mode: 'hybrid',
-    channels: ['text'],
+    channels: [...channels],
     limit: SPACE_SEARCH_V2_MAX_LIMIT,
     ...(projectId === null ? {} : { projectId: projectId === 'none' ? null : projectId }),
     ...(filter.kind === 'all' ? {} : { kinds: [filter.kind] }),
@@ -268,6 +275,74 @@ export function semanticHitRows(hits: readonly SpaceSearchV2Hit[]): SemanticHitR
       indexedRevision: hit.indexedRevision,
       hitId: hit.hitId,
       matchedBy: hit.matchedBy,
+      inTimeline: hit.actions.includes('open-in-timeline'),
+      needsResolve: hit.needsResolve,
+      weak: hit.weak ?? false,
+    });
+  }
+  return rows;
+}
+
+/* ---------- 画面（检索规格 §9.1、§11；设计稿 model-space-search.js `visualChannel`、space-search.jsx） ---------- */
+
+/** 画面通道为什么不能选：没有能用的模型、画面索引没开、精确文字（画面只按意思找）。 */
+export type VisualChannelBlock = 'model' | 'off' | 'lexical';
+
+/** 画面通道此刻能不能选；不能时写明为什么（设计稿 `visualChannel`）。 */
+export function visualChannel(
+  status: Pick<SemanticIndexStatus, 'channels'> | null,
+  mode: SpaceSearchMode,
+): { on: true; block: null } | { on: false; block: VisualChannelBlock } {
+  const visual = status?.channels.visual;
+  if (!visual?.available) return { on: false, block: 'model' };
+  if (!visual.enabled) return { on: false, block: 'off' };
+  if (mode === 'lexical') return { on: false, block: 'lexical' };
+  return { on: true, block: null };
+}
+
+/** 勾了哪几路、画面能不能选 → 这次要找的通道。都没勾（只能是画面勾着但不能选）时退回讲话内容。 */
+export function pickedChannels(picked: { text: boolean; visual: boolean }, visualOn: boolean): SemanticChannel[] {
+  const channels: SemanticChannel[] = [];
+  if (picked.text) channels.push('text');
+  if (picked.visual && visualOn) channels.push('visual');
+  return channels.length ? channels : ['text'];
+}
+
+/**
+ * 画面命中（`asset-span` 关键帧）：BaoCut 视频里的那一刻（`videoId` 有值，在时间线上时能打开到那一秒），或索引文件夹里的视频文件、
+ * 图片（`videoId` 为 null，`entryId` 是那个文件的条目，只能在 Space 里查看）。图片没有时间（`time` 为 null）。
+ */
+export interface FrameHitRow {
+  hitId: string;
+  entryId: Id | null;
+  videoId: Id | null;
+  name: string;
+  projectId: Id | null;
+  time: { clock: 'sequence' | 'source'; start: number; end: number } | null;
+  /** 给 `space.hitMoments` 取那一刻的画面用（同文字命中的形状；画面命中没有文档）。 */
+  documentId: null;
+  indexedRevision: string;
+  inTimeline: boolean;
+  needsResolve: boolean;
+  weak: boolean;
+}
+
+export function frameHitRows(hits: readonly SpaceSearchV2Hit[]): FrameHitRow[] {
+  const rows: FrameHitRow[] = [];
+  for (const hit of hits) {
+    if (hit.target.kind !== 'asset-span') continue;
+    const file = hit.target.videoId === null;
+    // 图片只有一帧，窗口是 0–0：不写时间。
+    const still = file && hit.anchor.startSec === 0 && hit.anchor.endSec === 0;
+    rows.push({
+      hitId: hit.hitId,
+      entryId: hit.entryId,
+      videoId: hit.target.videoId,
+      name: hit.videoName ?? hit.entryId ?? hit.target.assetId,
+      projectId: hit.projectId,
+      time: still ? null : { clock: hit.anchor.clock, start: hit.anchor.startSec, end: hit.anchor.endSec },
+      documentId: null,
+      indexedRevision: hit.indexedRevision,
       inTimeline: hit.actions.includes('open-in-timeline'),
       needsResolve: hit.needsResolve,
       weak: hit.weak ?? false,

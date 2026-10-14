@@ -857,6 +857,9 @@ export async function startRuntime(options: StartRuntimeOptions = {}): Promise<R
       videos,
       index: contentIndex,
       scratchDirs: [home.scratchDir, ...(home.legacyScratchDir ? [home.legacyScratchDir] : [])],
+      // 索引文件夹（`space.folderAdd` 写，设置里不能直接改）：只读的来源，扫描时跳过 Runtime 自己的目录。
+      folders: settings.store.get('semantic.folders'),
+      skipRoots: [home.root],
     });
     spaceRef = space;
     // 回收站的保留期（§5.7）：首次扫描之后清一次，之后每 6 小时一次；天数每次取当时的设置。
@@ -902,6 +905,9 @@ export async function startRuntime(options: StartRuntimeOptions = {}): Promise<R
       frames: {
         keyframe: (dir, asset, at, frames) =>
           analysis.keyframeFile(asset, at, frames.edge, () => videos.assetFileAt(dir, asset.assetId, asset.revision)),
+        // 索引文件夹里的视频文件与图片（检索规格 §9.1）：按文件取帧，不写文件所在的目录。
+        fileKeyframe: (target, at, frames) => analysis.fileKeyframe(target, at, frames.edge),
+        fileDuration: (target) => analysis.fileDuration(target),
       },
       ...(options.semantic?.debounceMs !== undefined ? { debounceMs: options.semantic.debounceMs } : {}),
       // 用电池、过热降频时暂停建索引（§16.1）。测试换了 Provider 时只用它给的供电状态（不给就不查，免得笔记本用电池时测试停住）。
@@ -915,9 +921,21 @@ export async function startRuntime(options: StartRuntimeOptions = {}): Promise<R
       if (models.catalog.definitions().some((d) => d.bundleId === bundleId && d.capability === 'embed')) semantic.coordinator.schedule();
     });
     settings.store.onChange((changed) => {
+      if ('semantic.folders' in changed) space.setFolders(settings.store.get('semantic.folders'));
       if ('semantic.channels' in changed || 'semantic.excludedProjects' in changed || 'semantic.excludedVideos' in changed) semantic.coordinator.schedule();
       if ('semantic.pauseOnBattery' in changed) semantic.coordinator.powerSettingChanged();
     });
+    // 索引文件夹里的视频文件与图片不经内容索引（检索规格 §9.1）：首次扫描之后、Space 里这些文件变了（增删、被覆盖）时重新规划画面。
+    let visualFiles = '';
+    const planFiles = () => {
+      const now = space.visualFiles().map((f) => `${f.entryId}:${f.revision}`).sort().join('\n');
+      if (now === visualFiles) return;
+      visualFiles = now;
+      semantic.coordinator.schedule();
+    };
+    // 停止时不用退订：索引关了之后 `schedule` 什么也不做。
+    space.subscribe(undefined, planFiles);
+    void space.ready.then(planFiles).catch(() => {});
     // 上次被强杀留下的导出临时文件与打开便携包的暂存目录（§5.8）：首次扫描之后在后台清一次。
     void space.ready
       .then(() => sweepLeftovers({ jobs: () => models.jobs.list(), sourceRoots: () => space.sourceRoots(), log }))

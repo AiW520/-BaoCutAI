@@ -233,6 +233,8 @@ export interface SemanticIndexStatus {
   visualProgress?: { done: number; total: number };
   /** 索引所在的文件夹与移动进度（设置里「位置」一行，检索规格 §8.1）。只给用户本人；旧 Runtime 没有这一项。 */
   indexDir?: SemanticIndexDir;
+  /** 索引文件夹（设置 `semantic.folders`，检索规格 §9.1）各自的情况。只给用户本人；旧 Runtime 没有这一项。 */
+  folders?: SemanticFolderStatus[];
   /**
    * 按视频的状态（Space 条目上的索引标志，检索规格 §13.2）：只在请求给了 `videoIds` 时有，顺序同请求、看不到的视频不列。
    * 旧 Runtime 没有这一项。
@@ -330,6 +332,45 @@ export type SemanticIndexDirMode = 'move' | 'rebuild';
 export interface SemanticIndexSetDirParams {
   path: string | null;
   mode: SemanticIndexDirMode;
+}
+
+/**
+ * 索引文件夹（设置 `semantic.folders`，检索规格 §9.1）：项目之外加进来的只读扫描目录。里面的 BaoCut 视频按讲话内容与画面建索引，
+ * 视频文件与图片只按画面建；BaoCut 不改、不移动、不删里面的文件。`id` 是加进来时起的，移除后再加是新的 id。
+ */
+export interface SemanticFolder {
+  id: Id;
+  path: string;
+}
+
+/** 一个索引文件夹此刻的情况（设置里那一行）。 */
+export interface SemanticFolderStatus {
+  id: Id;
+  path: string;
+  /** 文件夹名（路径的最后一段）。 */
+  name: string;
+  /** 文件夹在不在：外接盘没接上时不在，索引留着、Space 里暂时不列这些文件，接上后接着用。 */
+  exists: boolean;
+  /**
+   * 扫描没有列全：`truncated` 停在 Space 的扫描上限（`limit` 是那个上限），`unreadable` 读不了这个文件夹。只看到前面的那些文件。
+   */
+  issue: { kind: 'truncated' | 'unreadable'; limit: number | null } | null;
+  /**
+   * 里面认出来的东西：BaoCut 视频、视频文件、图片；跳过的：BaoCut 导出记录认得出的成片（`exports`）、和某个项目里的视频是同一部的
+   * BaoCut 视频（`duplicates`，按项目那一份建）、只有 `movie.db` 的旧版视频目录（`legacy`，读它会就地升级，所以不读）。
+   */
+  counts: { videos: number; videoFiles: number; images: number; exports: number; duplicates: number; legacy: number };
+  /** 画面一路的进度（个）：建好的与要建的。画面没开、这个 Runtime 不建画面时 null。 */
+  visual: { done: number; total: number } | null;
+}
+
+export interface SpaceFolderAddParams {
+  /** 要加的文件夹（绝对路径）。不能在某个项目、会话的工作目录或已加的文件夹里面（也不能就是它们）。 */
+  path: string;
+}
+
+export interface SpaceFolderParams {
+  folderId: Id;
 }
 
 /** `space.citations`：写作结果文档条目的出处旁文件；条目没有出处或旁文件读不出时为 null。 */

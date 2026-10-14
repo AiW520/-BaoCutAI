@@ -105,6 +105,7 @@ export const de: SpaceMessages = {
   changedBody: "Dieses Ergebnis entspricht einer früheren Videoversion. Weiterhin nutzbar, aber nicht mehr dem aktuellen Video entsprechend.",
   reexport: "Aus dem Quellvideo erneut exportieren",
   noPreviewVideo: "Videos öffnen sich im Editor.",
+  inIndexFolder: (folder: string | null) => (folder ? `Im Indexordner „${folder}“ und schreibgeschützt: BaoCut ändert, verschiebt oder löscht diese Datei nicht.` : 'In einem Indexordner und schreibgeschützt: BaoCut ändert, verschiebt oder löscht diese Datei nicht.'),
 
   capability: {
     synthesizeSpeech: "Vertonung",
@@ -280,4 +281,25 @@ export const de: SpaceMessages = {
         ? `Antworte aus meinen Videos ohne Projekt: ${question}`
         : `Antworte aus meinen Videos: ${question}`,
   hitsNoneSemantic: 'Nichts Gesprochenes in den Videos handelt davon. Versuchen Sie andere Wörter.',
+  // 画面通道
+  hitsTitleBoth: 'In Videos gesagt oder gezeigt',
+  hitsTitleVisual: 'In Videos und Bildern zu sehen',
+  hitsNoneVisual: 'Nichts Gesagtes oder Gezeigtes passt dazu. Versuchen Sie andere Wörter.',
+  soundsLater: 'Ton wird in dieser Version noch nicht indexiert',
+  visualBlocked: (block: 'model' | 'off' | 'lexical') =>
+    block === 'model'
+      ? 'Bild: Kein lokales semantisches Modell installiert'
+      : block === 'off'
+        ? 'Bild: Der Bildindex ist ausgeschaltet. Einschalten unter Einstellungen › Semantischer Index'
+        : 'Bild: Nur nach Bedeutung gesucht, Exakter Text durchsucht sie nicht',
+  framesTitle: 'Bild',
+  frameWhy: 'Bild · ähnliche Bedeutung',
+  frameWhyWeak: 'Bild · nur lose verwandt',
+  frameInFolder: (folder: string | null) => (folder ? `Indexordner „${folder}“ · schreibgeschützt` : 'In einem Indexordner · schreibgeschützt'),
+  frameCut: 'Aus der Timeline geschnitten',
+  frameView: 'In Space ansehen',
+  frameNotInTimeline: 'Dieser Moment wurde aus der Timeline geschnitten. Das Video wird geöffnet, ohne den Abspielkopf zu bewegen',
+  frameGone: 'Dieses Bild ist nicht mehr im Video',
+  frameHandoverDraft: (name: string, at: string | null) =>
+    at === null ? `Sieh dir dieses Bild an: „${name}“` : `Sieh dir dieses Bild in „${name}“ bei ${at} an`,
 };

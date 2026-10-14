@@ -20,4 +20,8 @@ export const es: RcSpaceMessages = {
     'Esta carpeta ya tiene un índice semántico. Elige una carpeta vacía o vuelve a crear el índice allí para usar el que tiene',
   indexDirMoving: 'El índice se está moviendo. Espera a que termine',
   indexDirMoveFailed: (p: { reason: string }) => `No se pudo mover el índice; sigue donde estaba: ${p.reason}`,
+  folderReadOnly: 'Está en una carpeta de índice, que BaoCut solo lee. No se puede mover a la papelera, eliminar ni editar',
+  folderNotFound: 'La carpeta no existe',
+  folderUnknown: 'Esa carpeta de índice no está en la lista',
+  folderInside: (p: { name: string }) => `Esta carpeta ya se indexa como parte de «${p.name}»`,
 };
