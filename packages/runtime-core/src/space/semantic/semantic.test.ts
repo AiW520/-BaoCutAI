@@ -889,10 +889,13 @@ describe('画面索引', () => {
     // v3 没有画面素材：发布一个空的画面世代，不算失败。
     expect(store.visualSource('v3')?.state).toBe('empty');
     expect(store.visualPartition(generations.get('v3')!.id)!.frames).toEqual([]);
-    // 设置里画面那一行的进度：都建好了，已建的帧就是一共的帧（各世代的 chunk 数之和）。
+    // 设置里那根合并的进度条：都建好了，讲话内容按部、画面按帧（各世代的 chunk 数之和），已建的就是一共的。
     const frameCount = [...generations.values()].reduce((n, g) => n + g.chunkCount, 0);
     expect(frameCount).toBeGreaterThan(0);
-    expect((await services.search.indexStatus(USER_VIEWER)).visualProgress).toEqual({ done: frameCount, total: frameCount });
+    const { progress } = await services.search.indexStatus(USER_VIEWER);
+    expect(progress?.text).toMatchObject({ done: 3, total: 3 });
+    expect(progress?.visual).toEqual({ done: frameCount, total: frameCount, doneSeconds: expect.any(Number) });
+    expect(progress?.unknownDuration).toBe(0);
     await services.close();
 
     const again = open({ channels: ['text', 'visual'], frames });
@@ -1499,20 +1502,41 @@ describe('供电与估时', () => {
     const visual = status.estimates.find((e) => e.channel === 'visual')!;
     expect(visual).toMatchObject({ ifEnabled: true, videos: 3, unknownDuration: 1, sourceSeconds: 160, frames: 20, basis: 'default', vectorBytes: 20 * 64 * 4 });
     expect(visual.seconds).toBe(Math.round(20 * DEFAULT_VISUAL_SECONDS_PER_FRAME));
-    // 画面没开：没有进度。
-    expect(status.visualProgress).toBeUndefined();
+    // 画面没开：进度只有讲话内容一路；文字没量过速度，已建的折算不出时间。
+    expect(status.progress).toEqual({ text: { done: 0, total: 3, doneSeconds: null }, unknownDuration: 1 });
 
     // 建完之后文字没有待建的；速度记下来了（换成新版本时按量过的速度估）。
     services.coordinator.resume();
     await services.coordinator.idle();
     status = await services.search.indexStatus(USER_VIEWER);
     expect(status.estimates.find((e) => e.channel === 'text')).toMatchObject({ videos: 0, seconds: 0 });
+    expect(status.progress?.text).toMatchObject({ done: 3, total: 3, doneSeconds: expect.any(Number) });
     services.coordinator.pause();
     reader.videos.set(videos[0]!.dir, { ...V1, revision: 'r3', ...placed });
     await syncIndex(3);
     await services.coordinator.idle();
     status = await services.search.indexStatus(USER_VIEWER);
     expect(status.estimates.find((e) => e.channel === 'text')).toMatchObject({ videos: 1, sourceSeconds: 80, basis: 'measured' });
+    expect(status.progress?.text).toMatchObject({ done: 2, total: 3 });
+  });
+
+  it('indexStatus 的进度：两路都开时各给一路，时长未知的视频按视频去重', async () => {
+    const placed = { canvas: true, clip: { contentHash: 'h-long', seconds: 80 }, placed: { sourceIn: 0, seconds: 80 } };
+    reader.videos.set(videos[0]!.dir, { ...V1, revision: 'r2', ...placed });
+    reader.videos.set(videos[1]!.dir, { ...V2, revision: 'r2', ...placed });
+    await syncIndex(2);
+    services = open({ channels: ['text', 'visual'], frames: new FakeFrames() });
+    services.coordinator.pause();
+    await build(services);
+    const status = await services.search.indexStatus(USER_VIEWER);
+    // 两路的估时各算了一次时长未知的那一部，进度只算一次。
+    expect(status.estimates.filter((e) => !e.ifEnabled).map((e) => e.unknownDuration)).toEqual([1, 1]);
+    expect(status.progress).toEqual({
+      text: { done: 0, total: 3, doneSeconds: null },
+      // 画面按参考速度：一帧没建，折算 0 秒。
+      visual: { done: 0, total: 20, doneSeconds: 0 },
+      unknownDuration: 1,
+    });
   });
 });
 

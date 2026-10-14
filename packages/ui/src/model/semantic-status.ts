@@ -1,4 +1,4 @@
-import type { SemanticCoverage, SemanticEstimate, SemanticIndexStatus } from '@baocut/protocol';
+import { intlLocale, type SemanticCoverage, type SemanticEstimate, type SemanticIndexStatus } from '@baocut/protocol';
 import { M } from './semantic-copy.ts';
 import { fmtSize } from './task-facts.ts';
 
@@ -8,7 +8,8 @@ import { fmtSize } from './task-facts.ts';
  * - 每个入口自己说明状态：置灰或退回时写一句原因，能去设置时给入口；不弹全局警告。
  * - 索引在更新或暂停时是不阻塞的提醒；用电池、过热降频自动停下时写原因（检索规格 §16.1）。
  * - 还要多久按 `indexStatus.estimates` 写（§13.2）：量过的速度、参考速度、还没有速度三种说法。
- * - 完整性按通道分别写（「文字 2/3 部视频（1 部在排队）」），不是一根百分比进度条。
+ * - 完整性按通道分别写（「文字 2/3 部视频（1 部在排队）」），不是一根百分比进度条；设置里建索引的进度是一根按估算时间合的
+ *   条，下面也按路写计数（`indexProgressView`）。
  *
  * 原因码是 `SemanticReason`，另有翻译记忆的 `DISABLED`（设置关掉）与 `MEMORY_UNAVAILABLE`（查找失败）；认不出的原因码照写，
  * 不吞掉。
@@ -95,6 +96,61 @@ export function etaLine(estimate: SemanticEstimate | null | undefined): string |
         ? M.settings.eta.reference(estimate.videos, etaTime(estimate.seconds))
         : M.settings.eta.measured(estimate.videos, etaTime(estimate.seconds));
   return estimate.unknownDuration > 0 && estimate.seconds !== null ? M.settings.eta.withUnknown(line, estimate.unknownDuration) : line;
+}
+
+export interface IndexProgressView {
+  /** 0–100；有一路还估不出时间时 null（条不定量）。 */
+  value: number | null;
+  /** 按路的计数：「讲话内容 8/12 部视频 · 画面 0/825 帧（讲话内容建完后开始）」，不写百分比。 */
+  line: string;
+  /** 两路合起来还要多久（等讲话内容的时间也算在里面）；停着时写原因。 */
+  eta: string;
+}
+
+/**
+ * 「状态」下面那根合并的进度条（检索规格 §13.2）。讲话内容先建，画面等它建完再建，所以两路合在一根条里，不在画面那一行
+ * 另画一根（那根在讲话内容建完之前一直是 0）。
+ *
+ * - 条按估算时间合：讲话内容按部视频、画面按帧，单位不能相加；值 = 两路已建的估算秒 ÷（已建 + 还剩）。还剩的取 `estimates`
+ *   里没开 `ifEnabled` 的那一项，有一路还估不出时间时不定量。
+ * - 计数按路写；讲话内容还没建完时画面写明排在后面。
+ * - 两路都建完、或旧的 Runtime 没给 `progress` 时 null。
+ */
+export function indexProgressView(
+  status: Pick<SemanticIndexStatus, 'progress' | 'estimates' | 'paused' | 'pauseReason'>,
+): IndexProgressView | null {
+  const p = status.progress;
+  if (!p) return null;
+  const lanes = [
+    p.text ? { channel: 'text' as const, ...p.text } : null,
+    p.visual ? { channel: 'visual' as const, ...p.visual } : null,
+  ].filter((l) => l !== null);
+  const left = lanes.filter((l) => l.done < l.total);
+  if (left.length === 0) return null;
+  const P = M.settings.progress;
+  const count = new Intl.NumberFormat(intlLocale());
+  const textBusy = !!p.text && p.text.done < p.text.total;
+  const counts: string[] = [];
+  if (p.text) counts.push(p.text.done >= p.text.total ? P.textDone : P.text(count.format(p.text.done), count.format(p.text.total)));
+  if (p.visual) {
+    const v = p.visual;
+    const line = P.visual(count.format(v.done), count.format(v.total));
+    counts.push(v.done >= v.total ? P.visualDone : !textBusy ? line : v.done > 0 ? P.continuesAfter(line) : P.startsAfter(line));
+  }
+  const estimates = left.map((l) => status.estimates?.find((e) => e.channel === l.channel && !e.ifEnabled) ?? null);
+  const timed = estimates.every((e) => e !== null && e.seconds !== null);
+  const leftSeconds = timed ? estimates.reduce((sum, e) => sum + (e?.seconds ?? 0), 0) : null;
+  const doneSeconds = lanes.reduce((sum, l) => sum + (l.doneSeconds ?? 0), 0);
+  const value = leftSeconds === null || doneSeconds + leftSeconds <= 0 ? null : (doneSeconds / (doneSeconds + leftSeconds)) * 100;
+  let eta: string;
+  if (status.paused) eta = P.paused[status.pauseReason ?? 'user'];
+  else if (leftSeconds === null) eta = P.noRate;
+  else {
+    const bases = estimates.map((e) => e?.basis);
+    const basis = bases.every((b) => b === 'measured') ? P.basis.measured : bases.every((b) => b !== 'measured') ? P.basis.reference : P.basis.mixed;
+    eta = P.eta(etaTime(leftSeconds), basis, p.unknownDuration > 0 ? P.unknown(p.unknownDuration) : null);
+  }
+  return { value, line: counts.join(P.separator), eta };
 }
 
 /**

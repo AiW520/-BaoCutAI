@@ -63,6 +63,18 @@ const row = style({
   borderStyle: 'solid',
   borderColor: 'gray-100',
 });
+const rowStack = style({
+  display: 'flex',
+  flexDirection: 'column',
+  gap: 12,
+  paddingY: 16,
+  borderTopWidth: 0,
+  borderXWidth: 0,
+  borderBottomWidth: { default: 1, ':last-child': 0 },
+  borderStyle: 'solid',
+  borderColor: 'gray-100',
+});
+const rowMain = style({ display: 'flex', alignItems: 'center', gap: 12 });
 const rowText = style({ flexGrow: 1, minWidth: 0 });
 const rowLabel = style({ font: 'ui', fontWeight: 'medium', color: 'gray-900' });
 const rowDesc = style({ marginTop: 4, font: 'ui-sm', color: 'gray-600', overflowWrap: 'anywhere', userSelect: 'text' });
@@ -290,16 +302,35 @@ export function Group({ title: text, lead, children }: { title: string; lead?: s
   );
 }
 
-/** 一行：左边名字、说明与置灰的原因，右边控件。 */
-export function Row({ label, desc, note, children }: { label: string; desc?: ReactNode; note?: string; children?: ReactNode }) {
-  return (
-    <div className={row}>
+/** 一行：左边名字、说明与置灰的原因，右边控件；`footer` 是它们下面通栏的一块（语义索引「状态」下面的进度条），和这一行算一格。 */
+export function Row({
+  label,
+  desc,
+  note,
+  footer,
+  children,
+}: {
+  label: string;
+  desc?: ReactNode;
+  note?: string;
+  footer?: ReactNode;
+  children?: ReactNode;
+}) {
+  const main = (
+    <>
       <div className={rowText}>
         <div className={rowLabel}>{label}</div>
         {desc ? <div className={rowDesc}>{desc}</div> : null}
         {note ? <div className={rowNote}>{note}</div> : null}
       </div>
       {children ? <div className={rowControl}>{children}</div> : null}
+    </>
+  );
+  if (!footer) return <div className={row}>{main}</div>;
+  return (
+    <div className={rowStack}>
+      <div className={rowMain}>{main}</div>
+      {footer}
     </div>
   );
 }

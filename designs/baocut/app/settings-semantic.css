@@ -20,7 +20,7 @@
 .semset__outs { display: flex; flex-direction: column; gap: 4px; margin: 0; padding: 0; list-style: none; }
 .semset__out { display: flex; align-items: center; gap: 8px; min-height: 32px; font-size: 14px; color: var(--gray-800); }
 .semset__pick { display: flex; flex-direction: column; gap: 4px; }
-/* 在建时「状态」下面那根合并进度条与按路的计数（settings-semantic.jsx，2026-10-14 待确认） */
+/* 在建时「状态」下面那根合并进度条与按路的计数（settings-semantic.jsx，2026-10-14 已确认） */
 .semset__bar { display: flex; flex-direction: column; gap: 4px; padding: 0 0 12px; }
 .semset__barp { width: 100%; max-width: none; }
 /* 索引文件夹（settings-semantic-scope.jsx FolderRow）：不在 / 读不了 / 只扫了前面的 */

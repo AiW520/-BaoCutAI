@@ -9,6 +9,7 @@ import {
   type SemanticEvidenceType,
   type SemanticHitAction,
   type SemanticIndexDir,
+  type SemanticIndexProgress,
   type SemanticIndexStatus,
   type SemanticIndexStatusParams,
   type SemanticReason,
@@ -32,7 +33,7 @@ import {
 } from './space-queries.ts';
 import { semanticWanted, type SemanticCoordinator, type SemanticSettings } from './semantic/coordinator.ts';
 import { reasonOf, semanticError } from './semantic/errors.ts';
-import { estimateOf } from './semantic/estimate.ts';
+import { estimateOf, rateOf } from './semantic/estimate.ts';
 import { encodeHitId } from './semantic/hit-id.ts';
 import type { EmbeddingScheduler } from './semantic/scheduler.ts';
 import type { GenerationRow, SemanticStore, StoredChunk, StoredFrame } from './semantic/store.ts';
@@ -664,7 +665,7 @@ export class SearchService {
     const visualProfile = visualProfiled && 'profile' in visualProfiled ? visualProfiled.profile : null;
     const visualScope = this.#options.coordinator?.visual ? this.resolveVisualScope(resolved, visualProfile) : null;
     const estimates = this.#estimates(resolved, visualScope, profile, visualProfile);
-    const visualProgress = this.#visualProgress(visualScope, estimates);
+    const progress = this.#progress(resolved, visualScope, estimates, profile, visualProfile);
     return {
       model: profile
         ? {
@@ -688,24 +689,57 @@ export class SearchService {
       pauseReason: this.#options.coordinator?.pauseReason ?? null,
       estimates,
       jobId: null,
-      ...(visualProgress ? { visualProgress } : {}),
+      ...(progress ? { progress } : {}),
       ...(viewer.kind === 'user' && this.#options.location ? { indexDir: this.#options.location() } : {}),
       ...(params.videoIds ? { videos: this.#videoStates(params.videoIds, resolved, visualScope) } : {}),
     };
   }
 
   /**
-   * 画面的帧进度（§13.2）：已跟上的视频的帧（世代的 chunk 数）加上正在建的那部编好的，再加上还要建的（`estimates` 里画面一项的帧数，
-   * 正在建的那部也在里面，扣掉它编好的）。画面没开时没有。
+   * 建索引的进度（§13.2，设置「状态」下面那根合并的进度条）：开着的每一路已建与一共多少，已建那部分按这一路的速度折算成秒
+   * （还要建的秒数在 `estimates` 里），界面按估算时间把两路合成一根条。两路都没开时没有。
+   *
+   * - 讲话内容按部视频：跟上当前版本的算已建，还要建的同 `estimates` 里文字一项（排队、落后的与内容索引还没读到的）。
+   * - 画面按帧：已跟上的视频的帧（世代的 chunk 数）加上正在建的那部编好的，再加上还要建的（`estimates` 里画面一项的帧数，
+   *   正在建的那部也在里面，扣掉它编好的）。
+   * - 时长未知的按视频去重：同一部两路都要建只算一次，内容索引还没读到的两路都算过一次。
    */
-  #visualProgress(visualScope: ResolvedVisualScope | null, estimates: readonly SemanticEstimate[]): { done: number; total: number } | null {
-    if (!visualScope || !this.#options.settings().channels.includes('visual')) return null;
-    const current = this.#options.coordinator?.visual?.current ?? null;
-    let done = 0;
-    for (const v of visualScope.videos) if (v.state === 'indexed') done += v.generation?.chunkCount ?? 0;
-    const building = current && visualScope.videos.some((v) => v.video.videoId === current.videoId && v.state === 'pending') ? current.done : 0;
-    const left = estimates.find((e) => e.channel === 'visual' && !e.ifEnabled)?.frames ?? 0;
-    return { done: done + building, total: done + Math.max(left, building) };
+  #progress(
+    resolved: ResolvedScope,
+    visualScope: ResolvedVisualScope | null,
+    estimates: readonly SemanticEstimate[],
+    profile: EmbeddingProfile | null,
+    visualProfile: EmbeddingProfile | null,
+  ): SemanticIndexProgress | null {
+    const settings = this.#options.settings();
+    const store = this.#options.store();
+    const index = this.#options.catalog.index;
+    const durationOf = (video: SearchableVideo) => index?.at(video.dir)?.facts.timeline?.durationSec ?? null;
+    const left = (state: ScopedVideoState) => state === 'pending' || state === 'stale';
+    const unknown = new Set<Id>();
+    const out: SemanticIndexProgress = { unknownDuration: 0 };
+    const textLeft = settings.channels.includes('text') ? estimates.find((e) => e.channel === 'text' && !e.ifEnabled) : undefined;
+    if (textLeft) {
+      const indexed = resolved.videos.filter((v) => v.state === 'indexed');
+      const rate = rateOf('text', profile, store);
+      const seconds = indexed.reduce((sum, v) => sum + (durationOf(v.video) ?? 0), 0);
+      out.text = { done: indexed.length, total: indexed.length + textLeft.videos, doneSeconds: rate ? Math.round(rate.perUnit * seconds) : null };
+      for (const v of resolved.videos) if (left(v.state) && durationOf(v.video) === null) unknown.add(v.video.videoId);
+    }
+    if (visualScope && settings.channels.includes('visual')) {
+      const current = this.#options.coordinator?.visual?.current ?? null;
+      let done = 0;
+      for (const v of visualScope.videos) if (v.state === 'indexed') done += v.generation?.chunkCount ?? 0;
+      const building = current && visualScope.videos.some((v) => v.video.videoId === current.videoId && v.state === 'pending') ? current.done : 0;
+      const frames = estimates.find((e) => e.channel === 'visual' && !e.ifEnabled)?.frames ?? 0;
+      const rate = rateOf('visual', visualProfile, store);
+      const doneFrames = done + building;
+      out.visual = { done: doneFrames, total: done + Math.max(frames, building), doneSeconds: rate ? Math.round(rate.perUnit * doneFrames) : null };
+      for (const v of visualScope.videos) if (left(v.state) && durationOf(v.video) === null) unknown.add(v.video.videoId);
+    }
+    if (!out.text && !out.visual) return null;
+    out.unknownDuration = unknown.size + resolved.scope.pending;
+    return out;
   }
 
   /** 按视频的状态（Space 条目的标志）：排队与正在建分开，排除的写明是项目还是单个视频。 */

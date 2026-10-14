@@ -227,10 +227,11 @@ export interface SemanticIndexStatus {
   /** 正在建索引的任务。 */
   jobId: Id | null;
   /**
-   * 画面开着时整个范围里的画面进度（帧，设置里画面那一行的进度条，检索规格 §13.2）：`done` 是已跟上的视频的帧数加上正在建的那部
-   * 编好的帧，`total` 再加上还要建的（按时长估，时长未知的不算）。画面没开、这个 Runtime 不建画面时没有；旧 Runtime 没有这一项。
+   * 整个范围的建索引进度（设置「状态」下面那根合并的进度条，检索规格 §13.2）：开着的每一路已建多少、一共多少。讲话内容先建，
+   * 画面等它建完再建，所以两路合成一根条，按估算时间合（各路的 `doneSeconds` 加上 `estimates` 里没开 `ifEnabled` 的各路
+   * `seconds`）。旧 Runtime 没有这一项。
    */
-  visualProgress?: { done: number; total: number };
+  progress?: SemanticIndexProgress;
   /** 索引所在的文件夹与移动进度（设置里「位置」一行，检索规格 §8.1）。只给用户本人；旧 Runtime 没有这一项。 */
   indexDir?: SemanticIndexDir;
   /** 索引文件夹（设置 `semantic.folders`，检索规格 §9.1）各自的情况。只给用户本人；旧 Runtime 没有这一项。 */
@@ -240,6 +241,25 @@ export interface SemanticIndexStatus {
    * 旧 Runtime 没有这一项。
    */
   videos?: SemanticVideoIndex[];
+}
+
+export interface SemanticIndexProgress {
+  /** 讲话内容（按部视频）：`done` 是跟上当前版本的，`total` 再加上还要建的（同 `estimates` 里文字一项的视频数）。文字一路没开时没有。 */
+  text?: SemanticChannelProgress;
+  /**
+   * 画面（按帧）：`done` 是已跟上的视频的帧数加上正在建的那部编好的帧，`total` 再加上还要建的（同 `estimates` 里画面一项，
+   * 按时长估，时长未知的不算）。画面没开、这个 Runtime 不建画面时没有。
+   */
+  visual?: SemanticChannelProgress;
+  /** 两路还要建的视频里时长未知的有几部，按视频去重（同一部两路都要建只算一次）；没算进各路的时间。 */
+  unknownDuration: number;
+}
+
+export interface SemanticChannelProgress {
+  done: number;
+  total: number;
+  /** 已建那部分按这一路的速度（同 `estimates`）折算的秒数；这一路还没有速度时 null。 */
+  doneSeconds: number | null;
 }
 
 /**

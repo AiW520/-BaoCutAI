@@ -118,6 +118,27 @@ const en = {
       minutes: (n: number) => `about ${n} min`,
       hours: (h: string) => `about ${h} hr`,
     },
+    /**
+     * 「状态」下面那根合并的进度条（检索规格 §13.2）：按路写计数，画面排在讲话内容后面；下面一句是两路合起来还要多久，
+     * 停着时写原因。计数传进来的是已按语言分好位的数字。
+     */
+    progress: {
+      label: 'Indexing progress',
+      text: (done: string, total: string) => `Speech: ${done}/${total} videos`,
+      textDone: 'Speech is ready',
+      visual: (done: string, total: string) => `Visuals: ${done}/${total} frames`,
+      visualDone: 'Visuals are ready',
+      /** 画面在等讲话内容建完：一帧还没建时「开始」，建过一部分时「接着建」。 */
+      startsAfter: (line: string) => `${line} (starts after speech)`,
+      continuesAfter: (line: string) => `${line} (continues after speech)`,
+      separator: ' · ',
+      /** 还要多久按什么速度算：都量过、都没量过（参考速度）、一路量过一路没有。 */
+      basis: { measured: 'based on this computer’s speed', reference: 'a rough estimate', mixed: 'partly a rough estimate' },
+      unknown: (n: number) => `${n} with unknown length not counted`,
+      eta: (time: string, basis: string, unknown: string | null) => `Time left: ${time}, ${basis}${unknown ? ` (${unknown})` : ''}`,
+      noRate: 'The time left shows after the first video is indexed',
+      paused: { user: 'Paused', battery: 'Paused on battery', thermal: 'Paused while the computer cools down' },
+    },
     visualIndex: {
       label: 'Visuals',
       desc: 'Finds shots by what’s on screen and matches visuals to sentences.',
@@ -126,10 +147,6 @@ const en = {
       scopeConfirmBody: (cost: string) =>
         `Indexes the videos in the index scope by what’s on screen: ${cost}. It runs in the background on the CPU, and you can pause it anytime.`,
       scopeConfirmBodyNoCost: 'Indexes the videos in the index scope by what’s on screen. It runs in the background on the CPU, and you can pause it anytime.',
-      progress: (done: number, total: number, pct: number) => `${done}/${total} frames · ${pct}%`,
-      progressLabel: (pct: number) => `Visual index progress: ${pct}%`,
-      progressPaused: (line: string) => `${line} · paused`,
-      progressEta: (line: string, eta: string) => `${line} · ${eta}`,
       unavailable: 'Finds shots by what’s on screen. Not available right now.',
       offCost: (cost: string) => `Finds shots by what’s on screen and matches visuals to sentences. Turning it on indexes ${cost}.`,
       confirmTitle: 'Turn on the visual index?',

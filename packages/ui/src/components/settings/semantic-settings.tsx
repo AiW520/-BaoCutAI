@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { Id, ModelBundleStatus, SemanticChannel, SemanticFolderStatus, SemanticIndexDir, SemanticIndexDirMode } from '@baocut/protocol';
 import {
   ActionButton,
@@ -48,6 +48,7 @@ import {
   coverageLine,
   deviceName,
   etaLine,
+  indexProgressView,
   indexState,
   pausedNote,
   visualCostLine,
@@ -75,13 +76,14 @@ import { useSaveSettings, useSettingsReady } from './save-settings.ts';
  *
  * - 模型：「语义搜索」一个包（文字模型与多模态模型两个 `capability: 'embed'` 模型包，不在模型页里列；model/semantic-package.ts）。
  *   一起装：先文字后多模态，接连两个安装对话框（先看大小与许可）；缺一个时是「补齐」；删除两个一起删。
- * - 装好后按索引范围给视频建：讲话内容，再是画面（`semantic.channels` 默认含 `visual`）。画面在「索引」里一个开关：开着时写
- *   画面建到第几帧（`visualProgress`，检索规格 §13.2）；没开时写打开后要建多少（`estimates` 里 `ifEnabled` 的画面一项），
- *   打开先确认。缺多模态模型、或画面这一路用不了时开关置灰并写原因。声音这一版没有。
+ * - 装好后按索引范围给视频建：讲话内容，再是画面（`semantic.channels` 默认含 `visual`）。画面在「索引」里一个开关：没开时写
+ *   打开后要建多少（`estimates` 里 `ifEnabled` 的画面一项），打开先确认。缺多模态模型、或画面这一路用不了时开关置灰并写原因。
+ *   声音这一版没有。
  * - 索引：状态、暂停 / 恢复、缓存大小与清理（`space.indexControl`）、位置（`space.indexSetDir`：换到别的文件夹时把现有的
- *   索引移过去或在那里重新建，移的时候写进度；检索规格 §8.1）、实际运行的设备。在更新时写还要多久（`estimates`）；用电池、
- *   过热降频时 Runtime 自动停下，状态写原因（`pauseReason`，§16.1），「用电池时暂停」（`semantic.pauseOnBattery`）可关。
- *   恢复只撤掉用户的暂停。
+ *   索引移过去或在那里重新建，移的时候写进度；检索规格 §8.1）、实际运行的设备。在更新时状态下面一根进度条：画面排在讲话
+ *   内容后面建，两路按估算时间合成一根（`progress` 与 `estimates`，检索规格 §13.2），下面按路写计数与两路合起来还要多久；
+ *   用电池、过热降频时 Runtime 自动停下，状态写原因（`pauseReason`，§16.1），「用电池时暂停」（`semantic.pauseOnBattery`）
+ *   可关。恢复只撤掉用户的暂停。
  * - 索引范围：所有 BaoCut 项目（新建的自动加入）与项目之外的视频，减去排除的项目（`semantic.excludedProjects`）与 Space 里
  *   单独设了不索引的视频（`semantic.excludedVideos`）；两者都能在这里恢复，排除项目走一个勾选对话框。成片不另建。
  * - 索引文件夹（检索规格 §9.1）：项目之外再加的只读文件夹（`space.folderAdd`，系统的文件夹面板选）。每个写建到哪了、认出了什么、
@@ -105,8 +107,10 @@ const strong = style({ margin: 0, marginBottom: 24, font: 'ui-sm', color: 'gray-
 const alert = style({ marginBottom: 24 });
 const progressRow = style({ display: 'flex', alignItems: 'center', gap: 8, font: 'ui-sm', color: 'gray-800' });
 const progressBar = style({ width: 160 });
-const visualBar = style({ display: 'flex', flexDirection: 'column', gap: 4, marginTop: 8 });
-const visualBarTrack = style({ width: 'full', maxWidth: 320 });
+const moveBar = style({ display: 'flex', flexDirection: 'column', gap: 4, marginTop: 8 });
+const moveBarTrack = style({ width: 'full', maxWidth: 320 });
+const progressStack = style({ display: 'flex', flexDirection: 'column', gap: 4 });
+const progressTrack = style({ width: 'full', maxWidth: 'none' });
 const value = style({ font: 'ui-sm', color: 'gray-800' });
 const note = style({ paddingY: 12, font: 'ui-xs', color: 'gray-600', overflowWrap: 'anywhere' });
 const dialogStack = style({ display: 'flex', flexDirection: 'column', gap: 16 });
@@ -314,21 +318,34 @@ function IndexGroup({ web, multimodal }: { web: boolean; multimodal: boolean }) 
         : state === 'unavailable'
           ? COPY.reason.INDEX_NOT_READY
           : COPY.settings.readyDesc;
-  // 还要多久：讲话内容一路写在状态里，画面一路写在画面那一行。
-  const eta = state === 'updating' ? etaLine(status.estimates?.find((e) => e.channel === 'text' && !e.ifEnabled)) : null;
+  // 建索引的进度（设计稿 settings-semantic.jsx）：讲话内容与画面合在状态下面一根条里，下面按路写计数与两路合起来还要多久。
+  // 旧的 Runtime 没给 `progress` 时照旧只在状态里写讲话内容还要多久。
+  const progress = state === 'updating' || state === 'paused' ? indexProgressView(status) : null;
+  const eta =
+    state === 'updating' && !status.progress ? etaLine(status.estimates?.find((e) => e.channel === 'text' && !e.ifEnabled)) : null;
+  const P = COPY.settings.progress;
+  // 停着又估不出时间时不画条（不定量的条会一直动），只写那两行。
+  const progressFooter = progress ? (
+    <div className={progressStack}>
+      {progress.value !== null || !status.paused ? (
+        <ProgressBar
+          size="S"
+          aria-label={P.label}
+          isIndeterminate={progress.value === null}
+          value={progress.value ?? undefined}
+          styles={progressTrack}
+        />
+      ) : null}
+      <span className={muted}>{progress.line}</span>
+      <span className={muted}>{progress.eta}</span>
+    </div>
+  ) : null;
   // 画面：设置为准（刚改完、状态还没刷新时也对）；没取到设置时看状态。
   const enabled = channelSetting ?? (Object.keys(status.channels) as SemanticChannel[]).filter((c) => status.channels[c].enabled);
   const visualOn = enabled.includes('visual');
   const visualAvailable = multimodal && status.channels.visual.available;
   const cost = visualCostLine(status.estimates?.find((e) => e.channel === 'visual' && e.ifEnabled));
   const V = COPY.settings.visualIndex;
-  // 画面建到第几帧（设计稿的进度条）：开着、还没建完时显示；停着时写「已暂停」，在建时写还要多久。
-  const progress =
-    visualOn && visualAvailable && status.visualProgress && status.visualProgress.done < status.visualProgress.total
-      ? status.visualProgress
-      : null;
-  const visualEstimate = visualOn ? status.estimates?.find((e) => e.channel === 'visual' && !e.ifEnabled) : undefined;
-  const visualEta = visualOn ? etaLine(visualEstimate) : null;
   const visualText = !multimodal
     ? V.needsPackage
     : !visualAvailable
@@ -338,20 +355,6 @@ function IndexGroup({ web, multimodal }: { web: boolean; multimodal: boolean }) 
         : cost
           ? V.offCost(cost)
           : V.desc;
-  let visualDesc: ReactNode = visualText;
-  if (progress) {
-    const pct = Math.floor((progress.done / progress.total) * 100);
-    const line = V.progress(progress.done, progress.total, pct);
-    visualDesc = (
-      <>
-        {visualText}
-        <span className={visualBar}>
-          <ProgressBar size="S" aria-label={V.progressLabel(pct)} value={pct} styles={visualBarTrack} />
-          <span className={muted}>{status.paused ? V.progressPaused(line) : visualEta ? V.progressEta(line, visualEta) : line}</span>
-        </span>
-      </>
-    );
-  }
   const setVisual = async (on: boolean) => {
     const next: SemanticChannel[] = on ? [...enabled.filter((c) => c !== 'visual'), 'visual'] : enabled.filter((c) => c !== 'visual');
     if (await save({ 'semantic.channels': next }, on ? V.turnedOn : V.turnedOff)) void refresh();
@@ -359,7 +362,7 @@ function IndexGroup({ web, multimodal }: { web: boolean; multimodal: boolean }) 
   const tone = state === 'ready' ? 'positive' : state === 'paused' ? 'notice' : state === 'updating' ? 'informative' : 'neutral';
   return (
     <Group title={COPY.settings.indexGroup}>
-      <Row label={COPY.settings.status} desc={desc} {...(eta ? { note: eta } : {})}>
+      <Row label={COPY.settings.status} desc={desc} footer={progressFooter} {...(eta ? { note: eta } : {})}>
         <Badge variant={tone} size="S" fillStyle="subtle">
           {COPY.settings.state[state]}
         </Badge>
@@ -373,7 +376,7 @@ function IndexGroup({ web, multimodal }: { web: boolean; multimodal: boolean }) 
           </Button>
         )}
       </Row>
-      <Row label={V.label} desc={visualDesc} {...(visualEta && !progress ? { note: visualEta } : {})}>
+      <Row label={V.label} desc={visualText}>
         <Switch
           aria-label={V.label}
           isDisabled={web || !ready || !visualAvailable}
@@ -467,13 +470,13 @@ function LocationRow({ web, dir, bytes }: { web: boolean; dir: SemanticIndexDir;
     <>
       {text}
       {moving ? (
-        <span className={visualBar} role="status">
+        <span className={moveBar} role="status">
           <ProgressBar
             size="S"
             aria-label={L.movingLabel}
             isIndeterminate={pct === null}
             value={pct ?? undefined}
-            styles={visualBarTrack}
+            styles={moveBarTrack}
           />
         </span>
       ) : null}

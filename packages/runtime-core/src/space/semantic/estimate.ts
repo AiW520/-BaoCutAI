@@ -51,6 +51,17 @@ export function readRate(store: SemanticStore, channel: RateChannel, profile: Pi
   }
 }
 
+/** 这一路此刻用的速度（文字是秒 / 视频秒，画面是秒 / 帧）：量过的，或画面的参考速度；都没有（文字没量过、拿不到 profile）时 null。 */
+export function rateOf(
+  channel: RateChannel,
+  profile: Pick<EmbeddingProfile, 'encoderProfileId' | 'device'> | null,
+  store: SemanticStore | null,
+): { perUnit: number; basis: 'measured' | 'default' } | null {
+  const measured = profile && store ? readRate(store, channel, profile) : null;
+  if (measured !== null) return { perUnit: measured, basis: 'measured' };
+  return channel === 'visual' && profile ? { perUnit: DEFAULT_VISUAL_SECONDS_PER_FRAME, basis: 'default' } : null;
+}
+
 /** 一段时长要取几帧（与画面索引取帧的间隔、上限一致）。 */
 export function framesFor(durationSec: number): number {
   return durationSec > 0 ? frameTimes(durationSec).length : 0;
@@ -81,8 +92,7 @@ export function estimateOf(input: EstimateInput): SemanticEstimate {
     sourceSeconds += duration;
     if (input.channel === 'visual') frames += framesFor(duration);
   }
-  const measured = input.profile && input.store ? readRate(input.store, input.channel, input.profile) : null;
-  const rate = measured ?? (input.channel === 'visual' && input.profile ? DEFAULT_VISUAL_SECONDS_PER_FRAME : null);
+  const rate = rateOf(input.channel, input.profile, input.store);
   const units = input.channel === 'visual' ? frames : sourceSeconds;
   return {
     channel: input.channel,
@@ -91,8 +101,8 @@ export function estimateOf(input: EstimateInput): SemanticEstimate {
     unknownDuration,
     sourceSeconds: Math.round(sourceSeconds),
     frames: input.channel === 'visual' ? frames : null,
-    seconds: rate === null ? null : Math.round(rate * units),
-    basis: rate === null ? null : measured !== null ? 'measured' : 'default',
+    seconds: rate === null ? null : Math.round(rate.perUnit * units),
+    basis: rate?.basis ?? null,
     // 画面向量：每帧一条 FP32 向量（帧缓存另算，可以清掉）。
     vectorBytes: input.channel === 'visual' && input.profile ? frames * input.profile.dims * 4 : null,
   };

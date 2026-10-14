@@ -6,6 +6,7 @@ import {
   deviceName,
   entryNote,
   etaLine,
+  indexProgressView,
   indexState,
   pausedNote,
   reasonText,
@@ -185,6 +186,61 @@ describe('画面一路', () => {
     );
     expect(visualCostLine(cost({ frames: 0, sourceSeconds: 0, unknownDuration: 2, videos: 2 }))).toBe(c.noLength(2));
     expect(visualCostLine(cost({ videos: 0 }))).toBeNull();
+  });
+});
+
+describe('合并的索引进度', () => {
+  const P = M.settings.progress;
+  const left = (channel: 'text' | 'visual', patch: Partial<SemanticEstimate> = {}): SemanticEstimate => ({
+    channel,
+    ifEnabled: false,
+    videos: 181,
+    unknownDuration: 0,
+    sourceSeconds: 0,
+    frames: channel === 'visual' ? 39730 : null,
+    seconds: 2160,
+    basis: 'measured',
+    vectorBytes: null,
+    ...patch,
+  });
+  const fmt = (n: number) => new Intl.NumberFormat('zh-CN').format(n);
+  const text = { done: 31, total: 212, doneSeconds: 372 };
+  const queued = { done: 0, total: 39730, doneSeconds: 0 };
+  const both = status({
+    progress: { text, visual: queued, unknownDuration: 7 },
+    estimates: [left('text'), left('visual', { videos: 206, seconds: 43560, basis: 'default' })],
+  });
+
+  it('讲话内容在建、画面排在后面：条按估算时间合，不是 0；还要多久含两路', () => {
+    const view = indexProgressView(both);
+    expect(view?.line).toBe([P.text('31', '212'), P.startsAfter(P.visual('0', fmt(39730)))].join(P.separator));
+    expect(view?.eta).toBe(P.eta(M.settings.eta.hours('12.7'), P.basis.mixed, P.unknown(7)));
+    expect(view?.value).toBeCloseTo((372 / (372 + 2160 + 43560)) * 100);
+    // 画面建过一部分、又有讲话内容要更新：画面接着建
+    const resumed = indexProgressView({ ...both, progress: { text, visual: { done: 1200, total: 39730, doneSeconds: 1300 }, unknownDuration: 0 } });
+    expect(resumed?.line).toBe([P.text('31', '212'), P.continuesAfter(P.visual(fmt(1200), fmt(39730)))].join(P.separator));
+  });
+
+  it('画面在建：讲话内容已建好，那一段也在条上', () => {
+    const view = indexProgressView(
+      status({
+        progress: { text: { done: 12, total: 12, doneSeconds: 365 }, visual: { done: 312, total: 825, doneSeconds: 281 }, unknownDuration: 0 },
+        estimates: [left('visual', { videos: 8, frames: 513, seconds: 462 })],
+      }),
+    );
+    expect(view?.line).toBe([P.textDone, P.visual('312', '825')].join(P.separator));
+    expect(view?.eta).toBe(P.eta(M.settings.eta.minutes(8), P.basis.measured, null));
+    expect(Math.round(view?.value ?? 0)).toBe(58);
+  });
+
+  it('停着写原因；讲话内容还没有速度时条不定量；画面没开只有一路；建完或旧 Runtime 没有进度', () => {
+    expect(indexProgressView({ ...both, paused: true, pauseReason: 'battery' })?.eta).toBe(P.paused.battery);
+    expect(indexProgressView({ ...both, paused: true, pauseReason: null })?.eta).toBe(P.paused.user);
+    const untimed = indexProgressView({ ...both, estimates: [left('text', { seconds: null, basis: null }), left('visual', { basis: 'default' })] });
+    expect(untimed).toMatchObject({ value: null, eta: P.noRate });
+    expect(indexProgressView(status({ progress: { text, unknownDuration: 0 }, estimates: [left('text')] }))?.line).toBe(P.text('31', '212'));
+    expect(indexProgressView(status({ progress: { text: { done: 3, total: 3, doneSeconds: 90 }, unknownDuration: 0 } }))).toBeNull();
+    expect(indexProgressView(status())).toBeNull();
   });
 });
 

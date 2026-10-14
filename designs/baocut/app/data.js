@@ -3645,7 +3645,7 @@
       /* 画面没开时：打开之后要建的量（ifEnabled）。下面六个项目的画面时长加起来 110 分钟，每 8 秒一帧，CPU 参考速度 1.1 秒 / 帧，
          多模态包画面向量 512 维 FP32 */
       visual: {channel: 'visual', ifEnabled: true, videos: 12, unknownDuration: 0, sourceSeconds: 6600, frames: 825, seconds: 908, basis: 'default', vectorBytes: 1689600},
-      /* 合并的索引进度（2026-10-14 待确认，BC_SEMANTIC.indexProgress）：按建到哪一路（st.phase）各一组。
+      /* 合并的索引进度（2026-10-14 已确认，BC_SEMANTIC.indexProgress）：按建到哪一路（st.phase）各一组。
          text 按部视频、visual 按帧；doneSeconds 是已建那部分按同一速度折算的秒数，还剩的在 estimate 里。
          text：讲话内容在建（还剩 3 部，同上面 text 一项），画面一帧没建、排在后面；
          visual：讲话内容建好了，画面建到 312/825 帧，速度已经量过 */
