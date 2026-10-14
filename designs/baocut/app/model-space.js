@@ -14,6 +14,8 @@
   const KINDS = {
     movie:    {k: 'movie',    label: '视频', icon: 'Filmstrip'},
     final:    {k: 'final',    label: '成片', icon: 'Video'},
+    /* 不是 BaoCut 视频、也不是导出记录认得出的成片的视频文件（产品里是 `video-file`）。目前只来自索引文件夹（2026-10-13 待确认） */
+    clip:     {k: 'clip',     label: '视频素材', icon: 'MovieCamera'},
     image:    {k: 'image',    label: '图片', icon: 'Image'},
     audio:    {k: 'audio',    label: '音频', icon: 'AudioWave'},
     subtitle: {k: 'subtitle', label: '字幕', icon: 'CloseCaptions'},
@@ -26,7 +28,7 @@
     'design-system': {k: 'design-system', label: '设计系统', icon: 'ColorHarmony'},
     template: {k: 'template', label: '模板', icon: 'Template'},
   };
-  const KIND_ORDER = ['movie', 'final', 'image', 'audio', 'subtitle', 'doc', 'slides', 'design', 'design-system', 'template'];
+  const KIND_ORDER = ['movie', 'final', 'clip', 'image', 'audio', 'subtitle', 'doc', 'slides', 'design', 'design-system', 'template'];
 
   /* 分类侧栏（§4.3）：全部 ＋ 十类（幻灯片是 docs/design/slides、设计稿与设计系统是 docs/design/canvas 新加的）；收藏；回收站。 */
   const CATS = [{k: 'all', label: '全部', icon: 'Apps'}]
@@ -352,6 +354,8 @@
   function sourceText(it, dirsById, moviesById) {
     const d = it.dir ? (dirsById || {})[it.dir] : null;
     const m = it.kind !== 'movie' && it.movie ? (moviesById || {})[it.movie] : null;
+    // 索引文件夹里的文件（2026-10-13 待确认）：来源写文件夹，不写「不属于任何项目」
+    if (it.lib) return `索引文件夹「${it.libName || it.lib}」`;
     const head = d ? d.name : '不属于任何项目';
     if (it.kind === 'movie' && it.toolRun) return `${head} · ${it.toolRun.label || '工具'}新建`;
     // 切出的短视频写「来自「父视频名」」（product-design §4.4）

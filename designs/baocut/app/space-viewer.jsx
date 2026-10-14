@@ -127,9 +127,10 @@
     );
   }
 
-  function ViewerBody({it, movies, dirs, close, onSwitch, editing, setEditing, text, setText, source, setSource}) {
+  function ViewerBody({it, movies, dirs, close, onSwitch, onAct, editing, setEditing, text, setText, source, setSource}) {
     const app = useApp();
     const R = window.RSP;
+    const idx = window.useSpaceIndex()(it);   // 语义索引（2026-10-13 待确认）：各通道的状态与「重新索引」
     const d = it.dir ? dirs[it.dir] : null;
     const mv = it.kind === 'movie' ? movies[it.id] : it.movie ? movies[it.movie] : null;
     const sess = it.session ? app.sessionById(it.session) : null;
@@ -240,6 +241,15 @@
               ) : null}
               {SP.durationText(it) ? <Fact k="时长">{SP.durationText(it)}</Fact> : null}
               {SP.specText(it) ? <Fact k="规格">{SP.specText(it)}</Fact> : null}
+              {idx ? (
+                <Fact k="语义索引">
+                  <span className="spv__idx">
+                    <window.SpaceIndexMark s={idx} withText />
+                    <span className="sp-muted">{idx.why || idx.lines.join('；')}</span>
+                    {idx.canReindex ? <R.ActionButton size="S" isQuiet onPress={() => onAct('reindex', it)}><R.Icons.Refresh /><R.Text>重新索引</R.Text></R.ActionButton> : null}
+                  </span>
+                </Fact>
+              ) : null}
               <Fact k="最近活动">{SP.agoText(it.mtime) || '—'}</Fact>
               {sess ? <Fact k="来源会话">{sess.title || '新会话'}</Fact> : null}
               {it.note ? <Fact k="说明">{it.note}</Fact> : null}
@@ -311,7 +321,7 @@
     );
   }
 
-  function SpaceViewer({id, onClose, onSwitch, movies, dirs}) {
+  function SpaceViewer({id, onClose, onSwitch, onAct, movies, dirs}) {
     const app = useApp();
     const R = window.RSP;
     const it = id ? app.spaceItems.find((x) => x.id === id) : null;
@@ -324,7 +334,7 @@
       <R.DialogContainer onDismiss={onClose}>
         {it ? (
           <R.Dialog size={it.kind === 'doc' ? 'XL' : 'L'}>
-            {({close}) => <ViewerBody it={it} movies={movies} dirs={dirs} close={close} onSwitch={onSwitch} {...ed} />}
+            {({close}) => <ViewerBody it={it} movies={movies} dirs={dirs} close={close} onSwitch={onSwitch} onAct={onAct} {...ed} />}
           </R.Dialog>
         ) : null}
       </R.DialogContainer>

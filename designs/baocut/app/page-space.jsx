@@ -6,7 +6,8 @@
    「全部」与「视频」里一部视频只出现一次，它的成片、字幕、文稿收在卡片里（BC_SPACE.view → group）。
    左边是分类侧栏，主区是 工具条（搜索 · 项目 · 状态 · 排序 · 网格 / 列表 · 新建）+ 列表区。
    视频点开保留分类侧栏，右下角快捷聊天提交后转入 Home；编辑器与 Home 共用（openMovie via 'space'）；
-   其它条目点开是轻量的查看框（space-viewer.jsx）。 */
+   其它条目点开是轻量的查看框（space-viewer.jsx）。
+   条目上右键弹出和 ⋯ 同一份菜单；「重新索引」把这一条排到语义索引的队首重建（2026-10-13 待确认）。 */
 (function () {
   const {useState, useMemo, useEffect} = React;
   const SP = window.BC_SPACE;
@@ -88,6 +89,7 @@
     const [status, setStatus] = useState('any');
     const [viewing, setViewing] = useState(null);   // 查看框里的条目 id
     const [importing, setImporting] = useState(false);
+    const [ctxAt, setCtxAt] = useState(null);   // 右键菜单：{it, x, y}
     /* 任务详情「在 Space 中查看」带过来的条目（apprail-store 的 openSpaceEntry）：到了就打开它的查看框 */
     useEffect(() => { if (app.spaceFocus) { const id = app.takeSpaceFocus(); if (id) setViewing(id); } }, [app.spaceFocus]);
     const sort = SP.SORTS.some((s) => s.k === app.prefs.spaceSort) ? app.prefs.spaceSort : 'recent';
@@ -109,6 +111,13 @@
       else if (k === 'trash') { app.setTrashed(it, true); app.toast(`已移入回收站 · ${it.name}`, null, {label: '撤销', run: () => app.setTrashed(it, false)}); }
       else if (k === 'restore') { app.setTrashed(it, false); app.toast(`已恢复 · ${it.name}`, 'positive'); }
       else if (k === 'reveal') app.toast('已在文件夹中显示（演示）');
+      else if (k === 'reindex') {
+        /* 重新索引（2026-10-13 待确认）：丢掉这一条已有的向量，排到队首重建（space.indexBuild {videoIds, rebuild: true}） */
+        const S = window.BC_SEMSTATE;
+        S.set((cur) => ({requeued: {...(cur.requeued || {}), [it.id]: true}}));
+        const paused = window.BC_SEMANTIC.pauseReasonOf(S.get());
+        app.toast(paused ? `「${it.name}」排到了最前；索引停着，恢复后先建它` : `「${it.name}」排到了最前，马上重建索引（演示）`, 'positive');
+      }
       else if (k === 'transcribe' && window.BC_SURFACE.ai) {
         /* product-design §4.4：转录… / 重新转录… / 重试转录… 都打开转录工具页并预选这部视频（§2.7、§5.11），不进编辑器的面板。
            重试带上失败那次的任务：模型、语言、识别说话人预填，页面顶部说明上次为什么失败 */
@@ -186,12 +195,13 @@
         {/* 按内容找（embedding-integration §2.1）：搜索框有字时在名称匹配上面；空着时给几条示例。回收站里不找 */}
         {cat !== 'trash' ? <window.SpaceContentSearch q={q} setQ={setQ} dir={dir} /> : null}
         {named ? <h2 className="space__sub">名称与文件</h2> : null}
-        <div className="space__list">
+        <div className="space__list" {...window.spaceContextHandlers(rows, setCtxAt)}>
           {mode === 'list'
             ? <window.SpaceTable rows={rows} movies={movies} dirs={dirsById} onAct={onAct} empty={empty} />
             : <window.SpaceGrid rows={rows} movies={movies} onAct={onAct} empty={empty} />}
         </div>
-        <window.SpaceViewer id={viewing} onClose={() => setViewing(null)} onSwitch={setViewing} movies={movies} dirs={dirsById} />
+        <window.SpaceContextMenu at={ctxAt} onAct={onAct} onClose={() => setCtxAt(null)} />
+        <window.SpaceViewer id={viewing} onClose={() => setViewing(null)} onSwitch={setViewing} onAct={onAct} movies={movies} dirs={dirsById} />
         <window.SpaceImport open={importing} dir={dir && dir !== 'none' ? dir : null} onClose={() => setImporting(false)} />
       </div>
     );

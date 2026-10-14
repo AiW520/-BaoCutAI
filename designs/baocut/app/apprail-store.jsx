@@ -124,8 +124,11 @@
       const q = b.k === 'queued' ? tasks.find((t) => t.project === p.id && t.status === 'queued') : null;
       return {...p, status: b.k, queuePos: q ? q.queuePos || null : p.queuePos};
     }), [projects, tasks]);
-    const spaceItems = useMemo(() => SP.items({movies, outputs, dirs, marks: spaceMarks, pctOf}),
-      [movies, outputs, dirs, spaceMarks, pctOf]);
+    /* 索引文件夹里的文件只在那个文件夹还在索引范围里时出现（设置 › 语义索引，2026-10-13 待确认） */
+    const [semSt] = window.BC_SEMSTATE.useSemantic();
+    const libs = (semSt.folders || window.BC_DATA.semantic.folders).map((f) => f.id).join(',');
+    const spaceItems = useMemo(() => SP.items({movies, outputs: outputs.filter((o) => !o.lib || libs.split(',').indexOf(o.lib) >= 0), dirs, marks: spaceMarks, pctOf}),
+      [movies, outputs, dirs, spaceMarks, pctOf, libs]);
     const toggleFav = useCallback((it) => setSpaceMarks((m) => ({...m, fav: {...m.fav, [it.id]: !it.fav}})), []);
     /* 视频移入回收站 = 归档（可恢复的整理标记，model-project-library.js）；产物只记在整理层 */
     const setTrashed = useCallback((it, v) => {

@@ -58,9 +58,11 @@ test('分类与计数：回收站只收已移入的，其余分类不含它们',
   assert.equal(n.doc, 0);
   assert.equal(n.fav, 1);
   assert.equal(n.trash, 2);
-  assert.deepEqual(SP.CATS.map((c) => c.label), ['全部', '视频', '成片', '图片', '音频', '字幕', '文档', '幻灯片', '设计稿', '设计系统', '模板']);
+  assert.deepEqual(SP.CATS.map((c) => c.label), ['全部', '视频', '成片', '视频素材', '图片', '音频', '字幕', '文档', '幻灯片', '设计稿', '设计系统', '模板']);
   assert.deepEqual(SP.SPECIAL.map((c) => c.label), ['收藏', '回收站']);
   assert.ok(SP.isCat('trash') && SP.isCat('doc') && !SP.isCat('nope'));
+  // 索引文件夹里的文件：来源写文件夹（2026-10-13 待确认）
+  assert.equal(SP.sourceText({kind: 'clip', lib: 'f1', libName: '素材库'}, {}, {}), '索引文件夹「素材库」');
 });
 
 test('排序：最近活动 / 名称 / 类型', () => {

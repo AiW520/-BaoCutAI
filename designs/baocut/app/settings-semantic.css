@@ -14,3 +14,6 @@
 /* 上次安装没下完：哪一部分、连的哪里（download-dialog.jsx 的 outcome） */
 .semset__fail { display: flex; align-items: flex-start; gap: 6px; margin: 0; font-size: 12px; line-height: 16px; color: var(--red-900); }
 .semset__fail .ic { flex: none; margin-top: 1px; }
+/* 索引位置（settings-semantic-scope.jsx）：路径单行省略；移动时的进度条在那一行下面 */
+.semset__path { max-width: 240px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 12px; color: var(--gray-700); }
+.semset__moving { padding: 0 0 12px; }

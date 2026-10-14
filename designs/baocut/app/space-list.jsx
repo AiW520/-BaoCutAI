@@ -6,7 +6,9 @@
    网格按可用宽度自然降为一列；TableView 继续虚拟化。外框给定高，各自负责滚动。
    条目是 BC_SPACE.items 投影出来的；这里只画，动作回调给 page-space.jsx。
    「全部」与「视频」里一部视频只有一张卡（BC_SPACE.group）：它导出、生成的文件收在卡上的「N 个文件」里，
-   视频自己没有状态时，状态灯替这些文件里最该被看见的那个说话（生成中 / 失败 / 缺失 / 来源已变）。 */
+   视频自己没有状态时，状态灯替这些文件里最该被看见的那个说话（生成中 / 失败 / 缺失 / 来源已变）。
+   语义索引的标志（2026-10-13 待确认，BC_SPACE_INDEX）：卡片缩略图左上角、列表名称后面各一枚，悬停说明写各通道；
+   右键与 ⋯ 是同一份菜单，能重建的条目多一项「重新索引」。 */
 (function () {
   const SP = window.BC_SPACE;
 
@@ -15,6 +17,36 @@
 
   /** 最近活动：收了文件的视频取它和文件里最近的一次。 */
   const activity = (it) => (it.activity != null ? it.activity : it.mtime);
+
+  /** 条目 → 语义索引状态（BC_SPACE_INDEX.entryState）；读设置 › 语义索引的演示状态，没装模型时都是 null。
+      GridList / TableBody 按 items 缓存渲染过的条目，语义状态要放进 `dependencies` 才会重画标志。 */
+  function useSpaceIndex() {
+    const app = useApp();
+    const [st, sem] = window.BC_SEMSTATE.useSemantic();
+    const X = window.BC_SPACE_INDEX;
+    const SEM = window.BC_DATA.semantic;
+    const visual = st.install === 'full' && st.visual;
+    const paused = !!window.BC_SEMANTIC.pauseReasonOf(st);
+    return (it) => {
+      const mv = it && it.movie ? app.projById(it.movie) : null;
+      return X.entryState(it, {sem, visual, paused, demo: SEM.entries, requeued: st.requeued, movieName: mv ? mv.title : null});
+    };
+  }
+
+  /** 语义索引的标志：图标（在建时转圈）+ 悬停说明；`withText` 时后面跟一个字（查看框里）。
+      「没有可索引的内容」只在查看框里说：只装了文字搜索时，全部里的图片与视频素材张张都是它，卡片上标出来只是噪音。 */
+  function IndexMark({s, className, withText}) {
+    const R = window.RSP;
+    if (!s || (!withText && s.k === 'empty')) return null;
+    const title = window.BC_SPACE_INDEX.stateTitle(s);
+    const Icon = s.icon ? R.Icons[s.icon] : null;
+    return (
+      <span className={cx('sp-idx', `sp-idx--${s.tone}`, className)} title={title} role="img" aria-label={title}>
+        {Icon ? <Icon /> : <R.ProgressCircle size="S" isIndeterminate aria-label={s.label} UNSAFE_className="sp-idx__spin" />}
+        {withText ? <span className="sp-idx__t">{s.label}{s.pct != null ? ` ${s.pct}%` : ''}</span> : null}
+      </span>
+    );
+  }
 
   /** 状态：灯 + 字。视频自己没有状态时看名下的文件（filesAttention）；都没有时列表里写一道横线，卡片上写最近活动（`quiet`）。 */
   function ItemStatus({it, quiet}) {
@@ -96,8 +128,8 @@
     return <R.MenuItem key="transcribe" id="transcribe" textValue={label.replace('…', '')}><R.Icons.Redo /><R.Text>{label}</R.Text></R.MenuItem>;
   }
 
-  /** 条目的 ⋯ 菜单（卡片与行共用）。 */
-  function itemMenu(R, it, onAct) {
+  /** 条目菜单的各项（⋯ 与右键共用一份）。`idx`：这一条的语义索引状态，能重建时多一项「重新索引」。 */
+  function menuItems(R, it, idx) {
     const tx = transcribeItem(R, it);
     const infoLabel = (it.files || []).length ? '查看信息与文件' : '查看信息';
     const items = [
@@ -111,15 +143,72 @@
       it.transcribe === 'retry' ? null : tx,
       it.status === 'generating' && window.BC_SURFACE.pages
         ? <R.MenuItem key="task" id="task" textValue="查看任务"><R.Icons.Clock /><R.Text>查看任务</R.Text></R.MenuItem> : null,
+      idx && idx.canReindex
+        ? <R.MenuItem key="reindex" id="reindex" textValue="重新索引"><R.Icons.Refresh /><R.Text>重新索引</R.Text>
+          <R.Text slot="description">{idx.k === 'failed' ? '再试一次，排到最前' : '丢掉这一条的索引，排到最前重建'}</R.Text></R.MenuItem> : null,
       <R.MenuItem key="fav" id="fav" textValue={it.fav ? '取消收藏' : '收藏'}>{it.fav ? <R.Icons.StarFilled /> : <R.Icons.Star />}<R.Text>{it.fav ? '取消收藏' : '收藏'}</R.Text></R.MenuItem>,
       <R.MenuItem key="reveal" id="reveal" textValue="在文件夹中显示"><R.Icons.Folder /><R.Text>在文件夹中显示</R.Text></R.MenuItem>,
       it.trashed
         ? <R.MenuItem key="restore" id="restore" textValue="从回收站恢复"><R.Icons.Revert /><R.Text>从回收站恢复</R.Text></R.MenuItem>
         : <R.MenuItem key="trash" id="trash" textValue="移入回收站"><R.Icons.Delete /><R.Text>移入回收站</R.Text></R.MenuItem>,
     ].filter(Boolean);
+    return items;
+  }
+
+  /** 条目的 ⋯ 菜单（卡片与行共用）。 */
+  function itemMenu(R, it, onAct, idx) {
     return (
-      <R.ActionMenu aria-label={`「${it.name}」的操作`} isQuiet size="S" onAction={(k) => onAct(String(k), it)}>{items}</R.ActionMenu>
+      <R.ActionMenu aria-label={`「${it.name}」的操作`} isQuiet size="S" onAction={(k) => onAct(String(k), it)}>{menuItems(R, it, idx)}</R.ActionMenu>
     );
+  }
+
+  /** 右键菜单：在指针那一点（键盘的菜单键 / ⇧F10 在条目左上角）弹出，和 ⋯ 是同一份。
+      `at` = {it, x, y}；一个 0 尺寸的 fixed 锚点当触发处（同时间轴的右键菜单）。 */
+  function SpaceContextMenu({at, onAct, onClose}) {
+    const R = window.RSP;
+    const anchor = React.useRef(null);
+    const idxOf = useSpaceIndex();
+    const [ready, setReady] = React.useState(false);
+    React.useLayoutEffect(() => { setReady(!!at); }, [at]);
+    if (!at) return null;
+    return (
+      <>
+        <span ref={anchor} className="sp-ctx" style={{left: at.x, top: at.y}} aria-hidden="true" />
+        {ready ? (
+          <R.Popover isOpen triggerRef={anchor} placement="bottom start" hideArrow padding="none"
+            onOpenChange={(v) => { if (!v) onClose(); }} aria-label={`「${at.it.name}」的操作`}>
+            <R.Menu aria-label={`「${at.it.name}」的操作`} autoFocus="first" onAction={(k) => { onClose(); onAct(String(k), at.it); }}>
+              {menuItems(R, at.it, idxOf(at.it))}
+            </R.Menu>
+          </R.Popover>
+        ) : null}
+      </>
+    );
+  }
+
+  /** 列表区上的右键与菜单键：找到指针 / 焦点所在的条目（React Aria 在行上写 data-key），弹出右键菜单。 */
+  function contextHandlers(rows, open) {
+    const find = (el) => {
+      const row = el && el.closest ? el.closest('[data-key]') : null;
+      const it = row ? rows.find((x) => String(x.id) === row.getAttribute('data-key')) : null;
+      return it ? {it, row} : null;
+    };
+    return {
+      onContextMenu: (e) => {
+        const hit = find(e.target);
+        if (!hit) return;
+        e.preventDefault();
+        open({it: hit.it, x: e.clientX, y: e.clientY});
+      },
+      onKeyDown: (e) => {
+        if (!(e.key === 'ContextMenu' || (e.key === 'F10' && e.shiftKey))) return;
+        const hit = find(document.activeElement);
+        if (!hit) return;
+        e.preventDefault();
+        const r = hit.row.getBoundingClientRect();
+        open({it: hit.it, x: r.left + 16, y: r.top + 16});
+      },
+    };
   }
 
   /* CardView 1.7 shrinks cards to retain two columns. The reviewed responsive
@@ -127,8 +216,9 @@
      Use the public Aria collection for navigation, with unmodified S2 cards. */
   function SpaceGrid({rows, movies, onAct, empty}) {
     const R = window.RSP;
+    const idxOf = useSpaceIndex();
     return (
-      <R.GridList aria-label="Space 条目" layout="grid" items={rows}
+      <R.GridList aria-label="Space 条目" layout="grid" items={rows} dependencies={[window.BC_SEMSTATE.get()]}
         className="space__grid bc-scroll" renderEmptyState={empty}
         onAction={(key) => { const it = rows.find((x) => x.id === key); if (it) onAct(it.kind === 'movie' ? 'open' : 'view', it); }}>
         {(it) => (
@@ -137,12 +227,13 @@
               <R.CardPreview>
                 <div className="sp-prev__wrap">
                   <ItemPreview it={it} movie={movies[it.id]} />
+                  <IndexMark s={idxOf(it)} className="sp-idx--card" />
                   {SP.durationClock(it) ? <span className="sp-prev__dur" title={`时长 ${SP.durationText(it)}`}>{SP.durationClock(it)}</span> : null}
                 </div>
               </R.CardPreview>
               <R.Content>
                 <R.Text slot="title">{it.name}</R.Text>
-                {itemMenu(R, it, onAct)}
+                {itemMenu(R, it, onAct, idxOf(it))}
                 <R.Text slot="description">{SP.hitsText(it) || `${SP.KINDS[it.kind].label}${SP.specText(it) ? ' · ' + SP.specText(it) : ''}${it.ver ? ` · v${it.ver}` : ''}`}</R.Text>
               </R.Content>
               <R.Footer>
@@ -173,6 +264,7 @@
 
   function SpaceTable({rows, movies, dirs, onAct, empty}) {
     const R = window.RSP;
+    const idxOf = useSpaceIndex();
     const cell = (it, c) => {
       if (c === 'name') {
         const n = (it.files || []).length;
@@ -181,6 +273,7 @@
             <span className="sp-name__t">{it.name}</span>
             {SP.hitsText(it) || n ? <span className="sp-name__sub" title={n ? SP.filesSummary(it) : undefined}>{SP.hitsText(it) || `${n} 个文件 · ${SP.filesSummary(it)}`}</span> : null}
           </span>
+          <IndexMark s={idxOf(it)} />
           {it.ver ? <span className="sp-muted">v{it.ver}</span> : null}{it.fav ? <R.Icons.StarFilled UNSAFE_className="sp-fav" aria-label="已收藏" /> : null}</span>;
       }
       if (c === 'kind') return SP.KINDS[it.kind].label;
@@ -189,7 +282,7 @@
       if (c === 'spec') return <span className="sp-muted">{SP.specText(it) || '—'}</span>;
       if (c === 'status') return <ItemStatus it={it} />;
       if (c === 'ago') return SP.agoText(activity(it));
-      return itemMenu(R, it, onAct);
+      return itemMenu(R, it, onAct, idxOf(it));
     };
     return (
       <R.TableView aria-label="Space 条目" overflowMode="truncate" density="spacious" UNSAFE_className="space__view"
@@ -197,7 +290,7 @@
         <R.TableHeader columns={COLS}>
           {(c) => <R.Column id={c.id} isRowHeader={!!c.row} minWidth={c.min} width={c.w} align={c.align} hideHeader={!!c.hide}>{c.name}</R.Column>}
         </R.TableHeader>
-        <R.TableBody items={rows} renderEmptyState={empty}>
+        <R.TableBody items={rows} renderEmptyState={empty} dependencies={[window.BC_SEMSTATE.get()]}>
           {(it) => (
             <R.Row id={it.id} columns={COLS}>
               {(c) => <R.Cell align={c.align}>{cell(it, c.id)}</R.Cell>}
@@ -208,5 +301,6 @@
     );
   }
 
-  Object.assign(window, {SpaceGrid, SpaceTable, SpaceItemPreview: ItemPreview, SpaceItemStatus: ItemStatus});
+  Object.assign(window, {SpaceGrid, SpaceTable, SpaceItemPreview: ItemPreview, SpaceItemStatus: ItemStatus, SpaceIndexMark: IndexMark, useSpaceIndex,
+    SpaceContextMenu, spaceContextHandlers: contextHandlers});
 })();

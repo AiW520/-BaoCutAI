@@ -149,6 +149,7 @@
       "app/model-space.js",
       "app/model-space-tools.js",
       "app/model-space-search.js",
+      "app/model-space-index.js",
       "app/model-task-outputs.js",
       "app/model-app-ia.js",
       "app/model-agent-stream.js",
@@ -250,6 +251,7 @@
       "app/settings-update.jsx",
       "app/settings-fonts.jsx",
       "app/settings-downloader.jsx",
+      "app/settings-semantic-scope.jsx",
       "app/settings-semantic.jsx",
       "app/page-settings.jsx",
       "app/agent-markdown.jsx",
@@ -455,9 +457,9 @@
       "app/subtitle-motion.css",
       "app/subtitle-active.css"
     ],
-    "js": "generated/app.js?v=ea5cd816ebc9",
-    "css": "generated/app.css?v=f6cc4f890f21",
-    "bytes": 4189966
+    "js": "generated/app.js?v=071a5bbff48a",
+    "css": "generated/app.css?v=ac28b7f1a386",
+    "bytes": 4214077
   },
   "web": {
     "file": "BaoCutWeb.html",
@@ -700,9 +702,9 @@
       "app/subtitle-motion.css",
       "app/subtitle-active.css"
     ],
-    "js": "generated/web.js?v=4ec740550da3",
+    "js": "generated/web.js?v=e2fa4c5bf684",
     "css": "generated/web.css?v=d9812e4c34e6",
-    "bytes": 2500202
+    "bytes": 2502565
   },
   "components": {
     "file": "Components.html",

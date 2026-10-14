@@ -2,12 +2,13 @@
    · 模型：「文字搜索」「多模态搜索」两个包与安装状态；多模态包含文字，装了它不必再装文字包；
      安装先过下载确认框（download-dialog.jsx）：模型文件（模型仓库）与 LiteRT-LM 运行时（GitHub 发布页）合成一次下载，各自可换来源；
      一部分没下成时下好的留着（st.half），卡片写哪一部分、连的哪里，「补齐」只下缺的（2026-10-13）；
-   · 安装不等于扫描：装完只对已有文稿建轻量文字索引；画面在「索引」里打开（一个开关，跟着已索引的项目走），
-     打开前写明要建多少帧、首次要多久、向量多大（indexStatus.estimates 的画面一项，2026-10-13）；
-   · 索引：状态、缓存大小、暂停 / 恢复 / 清理、实际后端（自检后选的那一个）；
+   · 安装不等于扫描整块磁盘：文字搜索只给已有文稿建轻量文字索引；画面（「索引」里一个开关，跟着索引范围走）缺省开
+     （2026-10-13 待确认）——装多模态搜索之前就写明要建多少帧、首次要多久、向量多大（indexStatus.estimates 的画面一项），
+     装好后在后台建，可以随时关；关掉后再打开仍先确认开销；
+   · 索引：状态、缓存大小、暂停 / 恢复 / 清理、位置（可以改到别的磁盘，settings-semantic-scope.jsx）、实际后端（自检后选的那一个）；
      在更新时写还要多久（按这台电脑量过的速度）；用电池、过热降频时自动停下，状态写原因，「用电池时暂停」可关（2026-10-13）；
-   · 已索引的项目：每个项目按通道写完整性（「文字 2/3 部视频（1 部还在转录）」「画面 0/30 个素材完成」），画面没开时写范围，
-     声音这一版没有；
+   · 索引范围：每个项目按通道写完整性（「文字 2/3 部视频（1 部还在转录）」「画面 0/30 个素材完成」），画面没开时写范围，
+     声音这一版没有；项目下面是项目之外加进来的索引文件夹（添加 / 在文件夹中显示 / 重新索引 / 移除，settings-semantic-scope.jsx）；
    · 用到它的两项开关：翻译记忆、术语候选，缺省都开；
    · 这台电脑不支持时整页说明原因，精确文字搜索照常可用。
    状态在 semantic-state.jsx，规则与文案在 model-semantic.js。只在 App。 */
@@ -131,7 +132,7 @@
             return;
           }
           set((cur) => ({install: p.id === 'sem-full' ? 'full' : 'text', index: 'stale', half: cur.half && cur.half.pkg !== p.id ? cur.half : null}));
-          app.toast(`已安装「${p.name}」：正在给已有文稿建文字索引（演示）`, 'positive');
+          app.toast(p.id === 'sem-full' && st.visual ? `已安装「${p.name}」：正在建文字索引与画面索引（演示）` : `已安装「${p.name}」：正在给已有文稿建文字索引（演示）`, 'positive');
         }, 1400);
       },
     });
@@ -166,7 +167,7 @@
       });
     };
     const visualDesc = !full ? '按画面内容找镜头、给句子配画面。需要多模态搜索。'
-      : visualOn ? `已索引的项目里的视频会按画面内容建立索引。关掉后不再建新的画面索引。${st.index === 'stale' && visualEta ? visualEta + '。' : ''}`
+      : visualOn ? `索引范围里的视频与图片会按画面内容建立索引。关掉后不再建新的画面索引。${st.index === 'stale' && visualEta ? visualEta + '。' : ''}`
         : `按画面内容找镜头、给句子配画面。打开后要建：${cost}。`;
     return (
       <>
@@ -182,7 +183,7 @@
           <h2>模型</h2>
           <div className="setpage__card semset__card">
             {SEM.packages.map((p) => <PackageCard key={p.id} p={p} st={st} set={set} busy={busy} onInstall={install} />)}
-            <div className="semnote"><Ic n="info" className="ic--14" /><span className="semnote__x">安装不等于扫描：装好后只给已有文稿建轻量的文字索引；画面要在下面打开，打开前写明范围与开销。</span></div>
+            <div className="semnote"><Ic n="info" className="ic--14" /><span className="semnote__x">{`文字搜索装好后只给已有文稿建轻量的文字索引。多模态搜索装好后还会按画面建：${cost}；用电池时先停下，不想要可以在下面关掉。`}</span></div>
           </div>
         </section>
         {installed ? (
@@ -199,10 +200,11 @@
               <Row label="用电池时暂停" desc="笔记本用电池时先不建，接上电源后接着建。电脑过热降频时总会暂停。">
                 <Switch on={st.pauseOnBattery !== false} onChange={(v) => set({pauseOnBattery: v})} ariaLabel="用电池时暂停" />
               </Row>
-              <Row label="缓存" desc="向量与索引，存在应用数据里，不进项目目录。">
+              <Row label="缓存" desc="向量与索引，不进项目目录。">
                 <span className="t-body-sm">{S.fmtBytes(SEM.cacheBytes)}</span>
                 <Btn size="s" variant="quiet" onClick={clear}>清理</Btn>
               </Row>
+              <window.SemanticIndexLocationRow st={st} set={set} bytes={SEM.cacheBytes} />
               <Row label="运行在" desc={SEM.backend.note}>
                 <span className="t-body-sm">{SEM.backend.label}</span>
               </Row>
@@ -210,11 +212,12 @@
           </section>
         ) : null}
         {installed ? (
-          <section className="setpage__group" aria-label="已索引的项目">
-            <h2>已索引的项目</h2>
-            <p className="t-detail-xs semset__sub">文字：有文稿的视频自动建；画面：在上面打开后，这些项目里的视频都建；声音：这一版还没有。</p>
+          <section className="setpage__group" aria-label="索引范围">
+            <h2>索引范围</h2>
+            <p className="t-detail-xs semset__sub">项目里的视频自动建：文字按文稿，画面开着时按画面；声音这一版还没有。项目之外的素材可以加文件夹；成片不另建，搜导出它的视频就能找到。</p>
             <div className="setpage__card semset__card">
               {SEM.projects.map((p) => <ProjectRow key={p.dir} p={p} st={st} />)}
+              <window.SemanticIndexFolders st={st} set={set} />
             </div>
           </section>
         ) : null}

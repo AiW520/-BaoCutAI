@@ -486,6 +486,14 @@
      dur: 30, bytes: 5557452, mtime: 180, file: '素材/intro-30s.wav'},
     {id: 'o14', kind: 'final', name: '第 42 期 · 横版预告.mp4', dir: 'd1', movie: 'p10', status: 'published',
      dur: 58, res: '1920×1080', bytes: 25794969, mtime: 2880, fav: true, file: '导出/trailer-16x9.mp4'},
+    /* 索引文件夹「素材库」里的文件（2026-10-13 待确认）：不属于任何项目，来源写文件夹；lib 是文件夹 id。
+       lib-copy 是 p1 导出过的成片被拷进来的那一份（有导出记录，认得出来），不另建索引 */
+    {id: 'lib-coast', kind: 'clip', name: '航拍 · 海岸线.mov', lib: 'f1', libName: '素材库', dur: 94, res: '3840×2160', bytes: 1932735283, mtime: 2880, hue: 196, file: '~/Movies/素材库/航拍-海岸线.mov'},
+    {id: 'lib-street', kind: 'clip', name: '街景 · 夜.mp4', lib: 'f1', libName: '素材库', dur: 37, res: '1920×1080', bytes: 268435456, mtime: 4320, hue: 280, file: '~/Movies/素材库/街景-夜.mp4'},
+    {id: 'lib-cam-b', kind: 'clip', name: '采访 B 机位.mp4', lib: 'f1', libName: '素材库', dur: 1260, res: '1920×1080', bytes: 4294967296, mtime: 10080, hue: 32, file: '~/Movies/素材库/采访-B机位.mp4'},
+    {id: 'lib-poster', kind: 'image', name: '海报底图.jpg', lib: 'f1', libName: '素材库', res: '3000×2000', bytes: 3145728, mtime: 10080, hue: 340, file: '~/Movies/素材库/海报底图.jpg'},
+    {id: 'lib-copy', kind: 'final', name: '科浪 42 期 · 中英双语（拷贝）.mp4', lib: 'f1', libName: '素材库', movie: 'p1', status: 'published',
+     dur: 206, res: '1920×1080', bytes: 104857600, mtime: 1440, file: '~/Movies/素材库/kelang-ep42.zh-en.mp4'},
     {id: 'o12', kind: 'template', name: '访谈双语 · 横版', dir: 'd1', movie: 'p1', mtime: 4320, file: '模板/interview-bilingual/'},
     {id: 'o6', kind: 'doc', name: '章节表 · 播客体.md', dir: 'd2', movie: 'p7', session: 's3', messageId: 'm8', status: 'applied',
      lines: 4, mtime: 62, file: 'chapters.md',
@@ -3573,6 +3581,31 @@
       {dir: 'd4', text: {done: 1, total: 1}, visual: {assets: 4, minutes: 40, size: '约 210 MB'}, audio: {assets: 1, minutes: 12, size: '约 40 MB'}},
       {dir: 'd5', text: {done: 0, total: 1, pending: 1}, visual: {assets: 9, minutes: 8, size: '约 40 MB'}, audio: {assets: 1, minutes: 2, size: '约 8 MB'}},
       {dir: 'd6', text: {done: 0, total: 2, none: 2}, visual: {assets: 22, minutes: 12, size: '约 70 MB'}, audio: {assets: 5, minutes: 3, size: '约 12 MB'}},
+    ],
+    /* 每个条目各通道的索引状态（2026-10-13 待确认）：没写的通道算已索引。text：讲话内容；visual：画面（开着时）；pct：在建的进度 */
+    entries: {
+      p10: {text: 'indexed', visual: 'indexing', pct: 40},
+      p4: {text: 'stale', visual: 'queued'},
+      p5: {visual: 'queued'},
+      p7: {text: 'indexing', visual: 'queued', pct: 65},
+      p9: {text: 'none', visual: 'failed'},
+      p11: {text: 'none'},
+      p2: {text: 'waiting', visual: 'queued'},
+      p3: {text: 'waiting', visual: 'queued'},
+      p6: {text: 'none', visual: 'queued'},
+      'lib-coast': {visual: 'indexing', pct: 20},
+      'lib-street': {visual: 'queued'},
+    },
+    /* 项目之外的索引文件夹（2026-10-13 待确认）：只读扫描；counts 是里面认出来的东西，visual 是画面建了多少 */
+    folders: [
+      {id: 'f1', name: '素材库', path: '~/Movies/素材库', counts: {movies: 0, clips: 3, images: 1, exports: 1}, visual: {done: 2, total: 4}},
+    ],
+    /* 「添加文件夹」里的演示候选（产品里是系统的文件夹面板） */
+    folderChoices: [
+      {path: '~/Movies/2025 旅行', name: '2025 旅行', note: '本机硬盘', counts: {movies: 0, clips: 126, images: 342, exports: 0}},
+      {path: '/Volumes/ExtremeSSD/拍摄素材', name: '拍摄素材', note: '外置盘 ExtremeSSD', counts: {movies: 3, clips: 58, images: 0, exports: 6}},
+      {path: '~/Movies/素材库/航拍', name: '航拍', note: '在「素材库」里面'},
+      {path: '~/BaoCut/新品发布/', name: '新品发布', note: '是一个项目'},
     ],
     /* Space 搜索的语料（v0.1 §13.1）：几部视频里的句子；p1 / p10 是同一期节目（同一份 cues） */
     corpus: [

@@ -11,7 +11,11 @@
   /* ---------- 状态 ---------- */
   /* half：上次安装没下完（2026-10-13 下载确认框）——{pkg, have: [已下好的部分 id], note: 失败那一句}；这时这个包仍算没装 */
   /* power：这台电脑此刻的供电（ac / battery / thermal，演示挡位）；pauseOnBattery：设置「用电池时暂停」 */
-  const DEFAULT = {install: 'text', platform: 'ok', index: 'ready', paused: false, power: 'ac', pauseOnBattery: true, visual: false, tm: true, terms: true, half: null};
+  /* visual：画面索引，缺省开（2026-10-13 待确认）——只在装了多模态搜索时起作用；装多模态之前写明要建多少、多久，用电池与过热时照样停。
+     folders：项目之外加进来的索引文件夹（null = 演示数据里的那几个）；requeued：刚点了「重新索引」的条目；
+     indexDir：设置里选过的索引位置（null = 默认，在应用数据里） */
+  const DEFAULT = {install: 'text', platform: 'ok', index: 'ready', paused: false, power: 'ac', pauseOnBattery: true, visual: true, tm: true, terms: true, half: null,
+    folders: null, requeued: {}, indexDir: null};
   /* 原型演示用的 URL 开关：`?semantic=none|stale|unsupported|ready|full`（写在 hash 前面） */
   const DEMO = {
     none: {install: 'none'},
