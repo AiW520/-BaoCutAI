@@ -311,6 +311,8 @@ describe('Google 文本（generateContent）', () => {
       (r) => (r.json as { generationConfig: { thinkingConfig?: unknown } }).generationConfig.thinkingConfig,
     );
     expect(levels).toEqual([{ thinkingLevel: 'low' }, { thinkingLevel: 'minimal' }]);
+    // 模型表的默认档就是下发的那档：每个模型都是最低一档，改回 API 默认档会让整页回写重新被思考截断。
+    for (const info of new GoogleTextAdapter().models(cfg)) expect(info.defaultEffort).toBe(info.efforts[0]);
   });
 
   it('结束原因：MAX_TOKENS 是 length，SAFETY 与输入被拦下是 content-filter，其余是被拒绝', async () => {
