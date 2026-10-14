@@ -36,7 +36,7 @@
   }
 
   /** 语义索引的标志：图标（在建时转圈）+ 悬停说明；`withText` 时后面跟一个字（查看框里）。
-      「没有可索引的内容」只在查看框里说：只装了文字搜索时，全部里的图片与视频素材张张都是它，卡片上标出来只是噪音。 */
+      「没有可索引的内容」只在查看框里说：画面索引关着时，全部里的图片与视频素材张张都是它，卡片上标出来只是噪音。 */
   function IndexMark({s, className, withText}) {
     const R = window.RSP;
     if (!s || (!withText && s.k === 'empty')) return null;
