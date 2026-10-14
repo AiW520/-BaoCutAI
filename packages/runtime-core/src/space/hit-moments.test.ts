@@ -1,7 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import type { Track, VideoItem, VideoSnapshot } from '@baocut/protocol';
+import { silentLogger } from '@baocut/harness';
+import type { SpaceEntry, Track, VideoItem, VideoSnapshot } from '@baocut/protocol';
+import type { MediaAnalysis } from '../media-analysis.ts';
+import type { SpaceCatalog } from '../space-catalog.ts';
 import type { ReadContentResult } from './content-extract.ts';
 import { momentPlan } from './hit-moments.ts';
+import { SpaceThumbnails } from './space-thumbnails.ts';
 
 const track = (id: string, order: number, visible = true): Track => ({
   id,
@@ -131,5 +135,49 @@ describe('检索命中的那一刻', () => {
     expect(momentPlan(c, { clock: 'source', startSec: 10, endSec: 12, documentId: 'doc_voice' })).toBeNull();
     expect(momentPlan(c, { clock: 'source', startSec: 10, endSec: 12, documentId: 'doc_none' })).toBeNull();
     expect(momentPlan(c, { clock: 'source', startSec: 10, endSec: 12 })).toBeNull();
+  });
+});
+
+describe('那一刻用的视频内容', () => {
+  it('内容索引说还是同一个版本时不再读；同时来的只读一次；版本变了、索引还在排队时重读', async () => {
+    const index = { revision: '1', current: true };
+    let reads = 0;
+    const readContent = async (): Promise<ReadContentResult> => {
+      reads++;
+      const base = content([item('a', 'trk_v1', 'clip', 0, 10, 30)]);
+      return { videoId: 'v', name: 'v', revision: index.revision, ...base } as ReadContentResult;
+    };
+    const catalog = {
+      videoEntry: () => ({ dir: '/videos/v' }),
+      index: { at: () => ({ revision: index.revision }), current: () => index.current },
+    } as unknown as SpaceCatalog;
+    const analysis = { assetFrame: async () => ({ mimeType: 'image/jpeg', data: 'AA==', at: 0 }) } as unknown as MediaAnalysis;
+    const thumbnails = new SpaceThumbnails({
+      catalog,
+      analysis,
+      assetFileAt: async () => ({ root: '/', file: 'x' }),
+      readContent,
+      log: silentLogger,
+    });
+    const entry = { id: 'ent_v', kind: 'video' } as SpaceEntry;
+    const span = { clock: 'sequence' as const, startSec: 5, endSec: 6 };
+
+    await Promise.all([thumbnails.moments(entry, [span]), thumbnails.moments(entry, [span])]);
+    expect(reads).toBe(1);
+    const again = await thumbnails.moments(entry, [span]);
+    expect(reads).toBe(1);
+    expect(again).toMatchObject({ revision: '1', moments: [{ frame: { kind: 'image' }, clip: { from: 33, to: 38 } }] });
+
+    // 改过：索引在重读（不是当前的）时照样重读，版本跟着走。
+    index.revision = '2';
+    index.current = false;
+    expect((await thumbnails.moments(entry, [span])).revision).toBe('2');
+    expect(reads).toBe(2);
+    await thumbnails.moments(entry, [span]);
+    expect(reads).toBe(3);
+    index.current = true;
+    await thumbnails.moments(entry, [span]);
+    await thumbnails.moments(entry, [span]);
+    expect(reads).toBe(3);
   });
 });

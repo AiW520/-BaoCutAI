@@ -240,6 +240,7 @@ export const ru: SpaceMessages = {
   whySaidMeaning: (words: readonly string[]) => `Говорится ${words.map((w) => `«${w}»`).join(', ')}, и смысл совпадает`,
   momentWhy: (why: string) => `Почему найдено: ${why}`,
   momentPlay: 'Воспроизвести этот фрагмент',
+  momentLoading: 'Загружаем этот момент',
   momentPause: 'Пауза',
   momentOpen: 'Открыть на таймлайне',
   momentClose: 'Закрыть',

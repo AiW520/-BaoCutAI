@@ -15,7 +15,8 @@ import { SPACE_COPY as COPY } from './space-copy.ts';
  * 时间线上的剪辑、字幕与叠加。
  */
 
-type Moments = { revision: string; byKey: Map<string, SpaceHitMoment> };
+/** `settled`：已经有回音（拿到了或那一批失败了）的命中；不在里面的还在等。 */
+type Moments = { revision: string; byKey: Map<string, SpaceHitMoment>; settled: Set<string> };
 
 const momentKey = (hit: Pick<SpaceSearchHit, 'time' | 'documentId'>) =>
   `${hit.time.clock}:${hit.time.start}:${hit.time.end}:${hit.documentId ?? ''}`;
@@ -27,7 +28,10 @@ const spanOf = (hit: Pick<SpaceSearchHit, 'time' | 'documentId'>): SpaceHitMomen
   documentId: hit.documentId,
 });
 
-/** 一组命中（同一个视频、这一页给出来的几条）的那一刻：分批向 Runtime 要，失败了只是不画，不打扰。 */
+/**
+ * 一组命中（同一个视频、这一页给出来的几条）的那一刻：分批向 Runtime 要，哪一批先回来先画哪一批；失败了只是不画，不打扰。
+ * 没有视频条目时返回 null（不会去要）。
+ */
 export function useGroupMoments(runtime: RuntimeSession, entryId: Id | null, hits: readonly SpaceSearchHit[]): Moments | null {
   const unique = [...new Map(hits.map((hit) => [momentKey(hit), hit])).values()];
   const key = entryId ? `${entryId}\n${unique.map(momentKey).join('\n')}` : '';
@@ -39,45 +43,56 @@ export function useGroupMoments(runtime: RuntimeSession, entryId: Id | null, hit
     if (!entryId || !key) return;
     let cancelled = false;
     const list = latest.current;
-    const batches: SpaceSearchHit[][] = [];
-    for (let i = 0; i < list.length; i += SPACE_HIT_MOMENTS_MAX) batches.push(list.slice(i, i + SPACE_HIT_MOMENTS_MAX));
-    void Promise.all(
-      batches.map((batch) =>
-        runtime.client
-          .request('space.hitMoments', { entryId, spans: batch.map(spanOf) })
-          .then((result) => ({ result, batch }))
-          .catch(() => null),
-      ),
-    ).then((done) => {
-      if (cancelled) return;
-      const byKey = new Map<string, SpaceHitMoment>();
-      let revision = '';
-      for (const item of done) {
-        if (!item) continue;
-        revision = item.result.revision;
-        item.batch.forEach((hit, i) => {
-          const moment = item.result.moments[i];
-          if (moment) byKey.set(momentKey(hit), moment);
+    const empty: Moments = { revision: '', byKey: new Map(), settled: new Set() };
+    setState({ key, moments: empty });
+    for (let i = 0; i < list.length; i += SPACE_HIT_MOMENTS_MAX) {
+      const batch = list.slice(i, i + SPACE_HIT_MOMENTS_MAX);
+      void runtime.client
+        .request('space.hitMoments', { entryId, spans: batch.map(spanOf) })
+        .then(
+          (result) => result,
+          () => null,
+        )
+        .then((result) => {
+          if (cancelled) return;
+          setState((prev) => {
+            const base = prev?.key === key ? prev.moments : empty;
+            const byKey = new Map(base.byKey);
+            const settled = new Set(base.settled);
+            batch.forEach((hit, index) => {
+              const moment = result?.moments[index];
+              if (moment) byKey.set(momentKey(hit), moment);
+              settled.add(momentKey(hit));
+            });
+            return { key, moments: { revision: result?.revision ?? base.revision, byKey, settled } };
+          });
         });
-      }
-      setState({ key, moments: { revision, byKey } });
-    });
+    }
     return () => {
       cancelled = true;
     };
   }, [runtime, entryId, key]);
 
-  return state?.key === key ? state.moments : null;
+  if (!entryId) return null;
+  return state?.key === key ? state.moments : { revision: '', byKey: new Map(), settled: new Set() };
 }
 
 export function momentOf(moments: Moments | null, hit: Pick<SpaceSearchHit, 'time' | 'documentId'>): SpaceHitMoment | null {
   return moments?.byKey.get(momentKey(hit)) ?? null;
 }
 
+/** 这条命中的那一刻还在路上（已经去要、还没回音）。 */
+export function momentPending(moments: Moments | null, hit: Pick<SpaceSearchHit, 'time' | 'documentId'>): boolean {
+  return !!moments && !moments.settled.has(momentKey(hit));
+}
+
 const frameUrl = (frame: SpaceHitMoment['frame'] | undefined) =>
   frame?.kind === 'image' ? `data:${frame.mimeType};base64,${frame.data}` : null;
 
 const thumb = style({
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
   flexShrink: 0,
   width: 96,
   aspectRatio: '16/9',
@@ -87,12 +102,16 @@ const thumb = style({
 });
 const thumbImage = style({ display: 'block', width: 'full', height: 'full', objectFit: 'cover' });
 
-/** 命中行的小图：那一刻看得见的那一帧；还没到、没有画面时是灰底占位（行与行对齐）。 */
-export function MomentThumb({ moment }: { moment: SpaceHitMoment | null }) {
+/** 命中行的小图：那一刻看得见的那一帧；还在取时灰底上转一个圈，没有画面时只是灰底占位（行与行对齐）。 */
+export function MomentThumb({ moment, pending }: { moment: SpaceHitMoment | null; pending: boolean }) {
   const url = frameUrl(moment?.frame);
   return (
     <span className={thumb} data-bc-icons="own" aria-hidden>
-      {url ? <img className={thumbImage} src={url} alt="" decoding="async" /> : null}
+      {url ? (
+        <img className={thumbImage} src={url} alt="" decoding="async" />
+      ) : pending ? (
+        <ProgressCircle isIndeterminate size="S" aria-label={COPY.momentLoading} />
+      ) : null}
     </span>
   );
 }

@@ -229,6 +229,7 @@ const en = {
   /** 检索命中的预览（设计稿 space-search.jsx `Preview`）：那一刻的画面与可播的一段。 */
   momentWhy: (why: string) => `Why it matched: ${why}`,
   momentPlay: 'Play this part',
+  momentLoading: 'Loading this moment',
   momentPause: 'Pause',
   momentOpen: 'Open in timeline',
   momentClose: 'Close',

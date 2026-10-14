@@ -240,6 +240,7 @@ export const pl: SpaceMessages = {
   whySaidMeaning: (words: readonly string[]) => `Pada ${words.map((w) => `„${w}”`).join(', ')} i sens się zgadza`,
   momentWhy: (why: string) => `Dlaczego pasuje: ${why}`,
   momentPlay: 'Odtwórz ten fragment',
+  momentLoading: 'Wczytywanie tego momentu',
   momentPause: 'Wstrzymaj',
   momentOpen: 'Otwórz na osi czasu',
   momentClose: 'Zamknij',

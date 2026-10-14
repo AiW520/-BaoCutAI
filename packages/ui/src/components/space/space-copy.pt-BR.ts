@@ -259,6 +259,7 @@ export const ptBR: SpaceMessages = {
   whySaidMeaning: (words: readonly string[]) => `Diz ${words.map((w) => `“${w}”`).join(', ')}, e o sentido combina`,
   momentWhy: (why: string) => `Por que corresponde: ${why}`,
   momentPlay: 'Reproduzir este trecho',
+  momentLoading: 'Carregando este momento',
   momentPause: 'Pausar',
   momentOpen: 'Abrir na linha do tempo',
   momentClose: 'Fechar',

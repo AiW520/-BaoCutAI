@@ -39,6 +39,7 @@ export const es: SpaceMessages = {
   whySaidMeaning: (words: readonly string[]) => `Dice ${words.map((w) => `«${w}»`).join(', ')} y el sentido coincide`,
   momentWhy: (why: string) => `Por qué coincide: ${why}`,
   momentPlay: 'Reproducir este fragmento',
+  momentLoading: 'Cargando este momento',
   momentPause: 'Pausa',
   momentOpen: 'Abrir en la línea de tiempo',
   momentClose: 'Cerrar',

@@ -247,6 +247,7 @@ export const tr: SpaceMessages = {
   whySaidMeaning: (words: readonly string[]) => `${words.map((w) => `“${w}”`).join(', ')} deniyor ve anlam da uyuyor`,
   momentWhy: (why: string) => `Neden eşleşti: ${why}`,
   momentPlay: 'Bu bölümü oynat',
+  momentLoading: 'Bu an yükleniyor',
   momentPause: 'Duraklat',
   momentOpen: 'Zaman çizelgesinde aç',
   momentClose: 'Kapat',

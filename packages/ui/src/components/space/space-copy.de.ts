@@ -258,6 +258,7 @@ export const de: SpaceMessages = {
   whySaidMeaning: (words: readonly string[]) => `Sagt ${words.map((w) => `„${w}“`).join(', ')}, und die Bedeutung passt`,
   momentWhy: (why: string) => `Warum es passt: ${why}`,
   momentPlay: 'Diesen Teil abspielen',
+  momentLoading: 'Dieser Moment wird geladen',
   momentPause: 'Pause',
   momentOpen: 'In der Timeline öffnen',
   momentClose: 'Schließen',

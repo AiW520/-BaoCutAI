@@ -251,6 +251,7 @@ export const zhHans: SpaceMessages = {
   whySaidMeaning: (words: readonly string[]) => `说到了${words.map((w) => `「${w}」`).join('')}，意思也对得上`,
   momentWhy: (why: string) => `为什么命中：${why}`,
   momentPlay: '播放这一段',
+  momentLoading: '正在载入这一刻的画面',
   momentPause: '暂停',
   momentOpen: '在时间线打开',
   momentClose: '关闭',

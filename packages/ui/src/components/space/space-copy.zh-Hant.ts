@@ -258,6 +258,7 @@ export const zhHant: SpaceMessages = {
   whySaidMeaning: (words: readonly string[]) => `說到了${words.map((w) => `「${w}」`).join('')}，意思也對得上`,
   momentWhy: (why: string) => `為什麼命中：${why}`,
   momentPlay: '播放這一段',
+  momentLoading: '正在載入這一刻的畫面',
   momentPause: '暫停',
   momentOpen: '在時間軸開啟',
   momentClose: '關閉',

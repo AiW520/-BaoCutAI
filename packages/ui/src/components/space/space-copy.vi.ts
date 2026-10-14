@@ -102,6 +102,7 @@ export const vi: SpaceMessages = {
   whySaidMeaning: (words: readonly string[]) => `Có nói ${words.map((w) => `“${w}”`).join(', ')}, và ý nghĩa cũng khớp`,
   momentWhy: (why: string) => `Vì sao khớp: ${why}`,
   momentPlay: 'Phát đoạn này',
+  momentLoading: 'Đang tải khoảnh khắc này',
   momentPause: 'Tạm dừng',
   momentOpen: 'Mở trong dòng thời gian',
   momentClose: 'Đóng',

@@ -20,6 +20,10 @@ import type { SpaceCatalog } from '../space-catalog.ts';
 import type { ReadContentResult } from './content-extract.ts';
 import { momentPlan } from './hit-moments.ts';
 
+type MomentSource = Pick<ReadContentResult, 'revision' | 'snapshot' | 'documents'>;
+/** 留几部视频的内容：一次检索的结果通常落在几部视频里，翻回来、点开预览时不必重读。 */
+const MOMENT_SOURCES_KEPT = 16;
+
 /**
  * Space 条目的缩略图（`space.thumbnail`，架构设计 §5.7，产品设计 §4.2–§4.3）：网格的卡片与列表的名称列按需来取。
  *
@@ -57,6 +61,8 @@ export interface SpaceThumbnailDeps {
 export class SpaceThumbnails {
   readonly #deps: SpaceThumbnailDeps;
   readonly #log: Logger;
+  /** 检索命中那一刻用的视频内容（只留快照与文档头，不留正文），按视频目录；最近用过的在后面。 */
+  readonly #momentSources = new Map<string, { revision: string | null; content: Promise<MomentSource> }>();
 
   constructor(deps: SpaceThumbnailDeps) {
     this.#deps = deps;
@@ -124,7 +130,7 @@ export class SpaceThumbnails {
     if (entry.kind !== 'video') throw new RpcError('invalid-request', RcSpace.notVideo(), { code: 'SPACE_ENTRY_NOT_VIDEO' });
     if (!readContent) throw new RpcError('engine-unavailable', RcSpace.engineUnavailable());
     const dir = catalog.videoEntry(entry.id).dir;
-    const content = await readContent(dir);
+    const content = await this.#momentSource(dir, readContent);
     const moments = await Promise.all(
       spans.map(async (span): Promise<SpaceHitMoment> => {
         const plan = momentPlan(content, span);
@@ -139,6 +145,43 @@ export class SpaceThumbnails {
       }),
     );
     return { revision: content.revision, moments };
+  }
+
+  /**
+   * 命中那一刻要的视频内容。读一次要引擎把全部文稿正文与时间线投影都给出来，长视频很重；这里只用快照与文档头，所以留下这两样，
+   * 内容索引说这部视频还是同一个版本（读完了、不在排队）时直接用。同一部视频同时来的几次只读一次（`revision` 为 null 时还在读）；
+   * 读失败的不留。
+   */
+  async #momentSource(dir: string, readContent: (dir: string) => Promise<ReadContentResult>): Promise<MomentSource> {
+    const index = this.#deps.catalog.index;
+    const indexed = index?.at(dir);
+    const cached = this.#momentSources.get(dir);
+    const reading = cached?.revision === null;
+    const fresh = !!cached && !!indexed && !!index?.current(dir) && indexed.revision === cached.revision;
+    if (cached && (reading || fresh)) {
+      this.#momentSources.delete(dir);
+      this.#momentSources.set(dir, cached);
+      return cached.content;
+    }
+    const content = readContent(dir).then((full) => ({
+      revision: full.revision,
+      snapshot: full.snapshot,
+      documents: full.documents.map(({ documentId, kind, sourceAssetId, sourceDocumentId }) => ({
+        documentId,
+        kind,
+        sourceAssetId,
+        sourceDocumentId,
+      })),
+    }));
+    const entry: { revision: string | null; content: Promise<MomentSource> } = { revision: null, content };
+    content.then(
+      (source) => (entry.revision = source.revision),
+      () => this.#momentSources.get(dir) === entry && this.#momentSources.delete(dir),
+    );
+    this.#momentSources.delete(dir);
+    this.#momentSources.set(dir, entry);
+    while (this.#momentSources.size > MOMENT_SOURCES_KEPT) this.#momentSources.delete(this.#momentSources.keys().next().value!);
+    return content;
   }
 
   /**

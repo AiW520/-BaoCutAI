@@ -48,7 +48,7 @@ import { useShell } from '../../state/shell-store.ts';
 import { useVideo } from '../../state/video-store.ts';
 import { openAiTool, setPanelLanding } from '../editor/ai-tools-nav.ts';
 import { SemanticNote } from '../semantic-note.tsx';
-import { HitPreview, MomentThumb, momentOf, useGroupMoments } from './space-hit-moment.tsx';
+import { HitPreview, MomentThumb, momentOf, momentPending, useGroupMoments } from './space-hit-moment.tsx';
 import { openHome, startDraftKey } from '../start/open-home.ts';
 import { useStartBrief } from '../../state/start-brief-store.ts';
 import { OUTPUT_COPY } from '../tools/tools-copy.ts';
@@ -363,7 +363,7 @@ function HitGroupView({
         {plan.rows.map((hit, index) => (
           <li key={`${hit.documentId ?? 'chapter'}:${hit.time.start}:${index}`}>
             <RACButton className={(s) => row(s)} onPress={() => setPreview(hit)}>
-              <MomentThumb moment={momentOf(moments, hit)} />
+              <MomentThumb moment={momentOf(moments, hit)} pending={momentPending(moments, hit)} />
               <span className={rowBody}>
                 <span className={rowMeta}>
                   <Badge variant="neutral" fillStyle="subtle" size="S" styles={chip}>

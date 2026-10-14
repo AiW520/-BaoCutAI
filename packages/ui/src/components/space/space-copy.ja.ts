@@ -258,6 +258,7 @@ export const ja: SpaceMessages = {
   whySaidMeaning: (words: readonly string[]) => `${words.map((w) => `「${w}」`).join('')}と話していて、意味も合っています`,
   momentWhy: (why: string) => `一致した理由: ${why}`,
   momentPlay: 'この部分を再生',
+  momentLoading: 'この場面の画像を読み込み中',
   momentPause: '一時停止',
   momentOpen: 'タイムラインで開く',
   momentClose: '閉じる',

@@ -260,6 +260,7 @@ export const ko: SpaceMessages = {
   whySaidMeaning: (words: readonly string[]) => `${words.map((w) => `“${w}”`).join(', ')}라고 말하고 의미도 맞음`,
   momentWhy: (why: string) => `일치한 이유: ${why}`,
   momentPlay: '이 부분 재생',
+  momentLoading: '이 장면의 화면을 불러오는 중',
   momentPause: '일시정지',
   momentOpen: '타임라인에서 열기',
   momentClose: '닫기',

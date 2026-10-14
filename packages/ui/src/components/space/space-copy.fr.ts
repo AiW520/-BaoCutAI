@@ -52,6 +52,7 @@ export const fr: SpaceMessages = {
   whySaidMeaning: (words: readonly string[]) => `Dit ${words.map((w) => `« ${w} »`).join(', ')}, et le sens correspond`,
   momentWhy: (why: string) => `Pourquoi ce résultat : ${why}`,
   momentPlay: 'Lire ce passage',
+  momentLoading: 'Chargement de ce moment',
   momentPause: 'Pause',
   momentOpen: 'Ouvrir dans la timeline',
   momentClose: 'Fermer',

@@ -41,6 +41,7 @@ export const nl: SpaceMessages = {
   whySaidMeaning: (words: readonly string[]) => `Zegt ${words.map((w) => `‘${w}’`).join(', ')}, en de betekenis klopt`,
   momentWhy: (why: string) => `Waarom dit overeenkomt: ${why}`,
   momentPlay: 'Dit stuk afspelen',
+  momentLoading: 'Dit moment wordt geladen',
   momentPause: 'Pauzeren',
   momentOpen: 'Openen in de tijdlijn',
   momentClose: 'Sluiten',
