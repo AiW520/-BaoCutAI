@@ -1,6 +1,9 @@
 import type { LinkCookiesMessages } from './link-cookies.ts';
 
 export const zhHant: LinkCookiesMessages = {
+  chromeStoreMissing: "沒有找到 Chrome 的 Cookie 資料庫。若要使用 Chrome 的網站登入，請在 Chrome 登入目標網站，再按「重新偵測瀏覽器」。",
+  macAccessDenied: (names) => `BaoCut 沒有權限存取 ${names.join('、')} 的瀏覽器資料。在執行 BaoCut 的電腦上，開啟「系統設定 › 隱私權與安全性 › 完整磁碟取用權限」，加入並啟用 BaoCut；完全結束並重新開啟 BaoCut，再按「重新偵測瀏覽器」。`,
+  accessDenied: (names) => `BaoCut 沒有權限存取 ${names.join('、')} 的瀏覽器資料。在執行 BaoCut 的電腦上，允許 BaoCut 存取這些瀏覽器的資料目錄，再按「重新偵測瀏覽器」。`,
   noneChecked: '全部不勾選即可匿名下載。如果網站要求登入或驗證，請先在瀏覽器中登入該網站，再勾選那個瀏覽器。',
   oneChecked: (name: string) => `使用 ${name} 的 Cookie 存取網站。`,
   manyChecked: (names: readonly string[]) =>

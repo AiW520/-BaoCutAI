@@ -1,10 +1,10 @@
 /* 设置 › 视频下载的「网站登录」（product-design §2.7「下载视频」，architecture §7.9 Cookie、§12.9「本机浏览器」）——window.BC_TOOL_COOKIES。
    纯函数，无 React、无 DOM；只在 App 入口加载。
 
-   - 只列出 Runtime 检测到有 Cookie 库的浏览器（`externalTools.cookieBrowsers`），最近用过的在前。
+   - Chrome 始终保留为默认选项，其余列出 Runtime 检测到有 Cookie 库或访问被拒绝的浏览器（`externalTools.cookieBrowsers`），最近用过的在前。
    - 勾选的浏览器按列出的顺序逐个试（不是按点选的先后）：读不到 Cookie 或网站仍要求登录时换下一个，用上一个就停。
    - 「所有浏览器」在界面上是全选检测到的（只勾了一部分时半选），提交给下载的仍是浏览器列表。都不勾是匿名下载。
-   - 这是一项设置，下载视频工具、从链接转录与智能体下载都用它。默认带 Cookie：没设置过是 `ALL`（所有检测到的浏览器）；
+   - 这是一项设置，下载视频工具、从链接转录与智能体下载都用它。默认带 Cookie：没设置过是 `ALL`（Chrome 与其他检测到的浏览器）；
      勾成全选时也存回 `ALL`，之后新检测到的浏览器跟着算进去；其余存浏览器列表，空列表是匿名下载。 */
 (function () {
   const root = typeof window !== 'undefined' ? window : globalThis;
@@ -27,8 +27,11 @@
         {id: 'firefox', label: 'Firefox', lastUsedAt: '2026-09-28T14:03:00Z'},
         {id: 'edge', label: 'Edge', lastUsedAt: '2026-08-17T08:30:00Z'},
       ],
-      one: [{id: 'safari', label: 'Safari', lastUsedAt: null}],
-      none: [],
+      one: [{id: 'safari', label: 'Safari', lastUsedAt: null, accessDenied: true},
+        {id: 'chrome', label: 'Chrome', lastUsedAt: null, cookieStoreMissing: true}],
+      denied: [{id: 'safari', label: 'Safari', lastUsedAt: '2026-10-05T21:10:00Z'},
+        {id: 'chrome', label: 'Chrome', lastUsedAt: null, accessDenied: true}],
+      none: [{id: 'chrome', label: 'Chrome', lastUsedAt: null, cookieStoreMissing: true}],
     },
     win32: {
       several: [
@@ -37,8 +40,10 @@
         {id: 'edge', label: 'Edge', lastUsedAt: '2026-09-28T14:03:00Z'},
         {id: 'brave', label: 'Brave', lastUsedAt: '2026-08-17T08:30:00Z'},
       ],
-      one: [{id: 'edge', label: 'Edge', lastUsedAt: '2026-10-02T11:20:00Z'}],
-      none: [],
+      one: [{id: 'edge', label: 'Edge', lastUsedAt: '2026-10-02T11:20:00Z'},
+        {id: 'chrome', label: 'Chrome', lastUsedAt: null, cookieStoreMissing: true}],
+      denied: [{id: 'chrome', label: 'Chrome', lastUsedAt: null, accessDenied: true}],
+      none: [{id: 'chrome', label: 'Chrome', lastUsedAt: null, cookieStoreMissing: true}],
     },
   };
 
@@ -49,7 +54,8 @@
   /** 演示挡位的名字按这台主机的检测结果写。 */
   function demoScenes(platform) {
     const d = DEMO_DETECTED[hostOf(platform)];
-    return [{k: 'several', label: `检测到 ${d.several.length} 个浏览器`}, {k: 'one', label: `只检测到 ${d.one[0].label}`}, {k: 'none', label: '一个也没检测到'}];
+    return [{k: 'several', label: `检测到 ${d.several.length} 个浏览器`}, {k: 'one', label: `只检测到 ${d.one[0].label}`},
+      {k: 'denied', label: 'Chrome 访问被拒绝'}, {k: 'none', label: '没有检测到 Cookie 库（默认勾选 Chrome）'}];
   }
 
   /** 勾选的浏览器按检测到的顺序排（就是尝试的顺序）；重新检测后不在列表里的去掉。 */
@@ -81,7 +87,7 @@
    * macOS 上的钥匙串授权与 Safari 的完全磁盘访问权限；Windows 上 Chromium 内核的浏览器开着时读不到，
    * Chrome、Edge、Brave 的应用绑定加密 yt-dlp 目前可能解不开，没勾 Firefox 时建议改用它。
    */
-  function notes(list, platform) {
+  function notes(list, platform, detected = []) {
     const names = list.map(label);
     const lines = [list.length === 0 ? '都不勾就匿名下载。网站要求登录或验证时，先在浏览器里登录这个网站，再勾选那个浏览器。'
       : list.length === 1 ? `用 ${names[0]} 的 Cookie 访问目标网站。`
@@ -90,7 +96,7 @@
     if (platform === 'darwin') {
       const keychain = list.filter((id) => CHROMIUM.indexOf(id) >= 0).map(label);
       if (keychain.length) lines.push(`macOS 会为 ${keychain.join('、')}${keychain.length > 1 ? ' 各' : ' '}弹出一次钥匙串授权，选「始终允许」以后就不再问。`);
-      if (list.indexOf('safari') >= 0) lines.push('读取 Safari 的 Cookie 要先在「系统设置 › 隐私与安全性 › 完全磁盘访问权限」里允许 BaoCut。');
+      if (list.indexOf('safari') >= 0 && !detected.some((b) => b.accessDenied)) lines.push('读取 Safari 的 Cookie 要先在「系统设置 › 隐私与安全性 › 完全磁盘访问权限」里允许 BaoCut。');
     }
     if (platform === 'win32') {
       const chromium = list.filter((id) => CHROMIUM.indexOf(id) >= 0).map(label);
@@ -99,6 +105,11 @@
       if (appBound.length) lines.push(`${appBound.join('、')} 在 Windows 上通常用应用绑定加密保护 Cookie，yt-dlp 目前可能读不到，退出浏览器也不行。`);
       if (chromium.length && list.indexOf('firefox') < 0) lines[lines.length - 1] += '需要登录时，建议在 Firefox 里登录目标网站后改勾 Firefox。';
     }
+    const denied = detected.filter((b) => b.accessDenied).map((b) => label(b.id));
+    if (denied.length) lines.push(platform === 'darwin'
+      ? `BaoCut 没有权限访问 ${denied.join('、')} 的浏览器数据。在运行 BaoCut 的电脑上，打开「系统设置 › 隐私与安全性 › 完全磁盘访问权限」，添加并启用 BaoCut；完全退出并重新打开 BaoCut，再点「重新检测浏览器」。`
+      : `BaoCut 没有权限访问 ${denied.join('、')} 的浏览器数据。在运行 BaoCut 的电脑上，允许 BaoCut 访问这些浏览器的数据目录，再点「重新检测浏览器」。`);
+    if (detected.some((b) => b.id === 'chrome' && b.cookieStoreMissing)) lines.push('没有找到 Chrome 的 Cookie 库。要使用 Chrome 的网站登录，在 Chrome 里登录目标网站，再点「重新检测浏览器」。');
     return lines;
   }
 

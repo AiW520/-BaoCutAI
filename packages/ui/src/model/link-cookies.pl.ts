@@ -2,6 +2,9 @@ const andList = (items: readonly string[]) => new Intl.ListFormat('pl', { style:
 import type { LinkCookiesMessages } from './link-cookies.ts';
 
 export const pl: LinkCookiesMessages = {
+  chromeStoreMissing: "Nie znaleziono magazynu plików cookie Chrome. Aby użyć logowania z Chrome, zaloguj się do witryny w Chrome i wykryj przeglądarki ponownie.",
+  macAccessDenied: (names) => `BaoCut nie ma uprawnień do danych przeglądarek ${names.join(', ')}. Na komputerze z BaoCut otwórz Ustawienia systemowe › Prywatność i ochrona › Pełny dostęp do dysku, dodaj i włącz BaoCut. Zamknij całkowicie BaoCut, otwórz ponownie i wykryj przeglądarki ponownie.`,
+  accessDenied: (names) => `BaoCut nie ma uprawnień do danych przeglądarek ${names.join(', ')}. Na komputerze z BaoCut zezwól na dostęp do folderów danych tych przeglądarek, a następnie wykryj przeglądarki ponownie.`,
   noneChecked: "Pozostaw wszystko niezaznaczone, aby pobierać anonimowo. Jeśli strona wymaga logowania lub weryfikacji, najpierw zaloguj się w przeglądarce, a potem ją zaznacz.",
   oneChecked: (name: string) => `Używa ${name} – cookie do dostępu do strony.`,
   manyChecked: (names: readonly string[]) => `Próbuje ${names.join(" → ")} w tej kolejności: jeśli nie można odczytać cookie lub strona nadal wymaga logowania, przechodzi do następnej i zatrzymuje się na pierwszej działającej. Wynik wskazuje użytą przeglądarkę.`,

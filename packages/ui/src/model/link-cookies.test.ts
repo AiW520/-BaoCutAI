@@ -55,6 +55,25 @@ describe('网站登录', () => {
     expect(cookieNotes(['chrome', 'safari'], null)).toHaveLength(2);
   });
 
+  it('没有找到 Chrome Cookie 库时保留默认选项并提示登录，不误报权限拒绝', () => {
+    const missing = [{ id: 'chrome' as const, label: 'Chrome', lastUsedAt: null, cookieStoreMissing: true as const }];
+    expect(toggleAllBrowsers([], missing)).toEqual(['chrome']);
+    expect(cookieNotes(['chrome'], 'darwin', missing).join('')).toMatch(/没有找到 Chrome 的 Cookie 库.*在 Chrome 里登录目标网站.*重新检测浏览器/);
+    expect(cookieNotes(['chrome'], 'darwin', missing).join('')).not.toMatch(/没有权限/);
+  });
+
+  it('权限被拒的 Chrome 保留选择与提示：未勾选时也说明授权，授权后重新检测清除提示', () => {
+    const denied = [{ id: 'chrome' as const, label: 'Chrome', lastUsedAt: null, accessDenied: true as const }];
+    expect(toggleAllBrowsers([], denied)).toEqual(['chrome']);
+    expect(cookieNotes([], 'darwin', denied).join('')).toMatch(/没有权限访问 Chrome.*系统设置.*完全磁盘访问权限.*添加并启用 BaoCut.*完全退出并重新打开 BaoCut.*重新检测浏览器/);
+    expect(cookieNotes([], 'darwin', [{ id: 'chrome', label: 'Chrome', lastUsedAt: null }]).join('')).not.toMatch(/没有权限/);
+    for (const platform of ['win32', 'linux']) {
+      const notes = cookieNotes([], platform, denied).join('');
+      expect(notes).toMatch(/没有权限访问 Chrome.*运行 BaoCut 的电脑.*数据目录.*重新检测浏览器/);
+      expect(notes).not.toMatch(/完全磁盘访问权限|钥匙串/);
+    }
+  });
+
   it('Windows：Chromium 内核的开着时读不到、要先退出；Chrome、Edge、Brave 的应用绑定加密可能读不到；没勾 Firefox 时建议改用它', () => {
     const chrome = cookieNotes(['chrome'], 'win32');
     expect(chrome).toHaveLength(4);

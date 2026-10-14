@@ -26,6 +26,11 @@ const en = {
   keychain: (names: readonly string[]) =>
     `macOS will ask for Keychain access once for ${names.length > 1 ? `each of ${andList(names)}` : names[0]}. Choose “Always Allow” and it won’t ask again.`,
   safariAccess: 'To read Safari cookies, first allow BaoCut in System Settings › Privacy & Security › Full Disk Access.',
+  chromeStoreMissing: 'No Chrome cookie store was found. To use website sign-in from Chrome, sign in to the site in Chrome, then click “Detect browsers again”.',
+  macAccessDenied: (names: readonly string[]) =>
+    `BaoCut doesn’t have permission to access ${andList(names)} browser data. On the computer running BaoCut, open System Settings › Privacy & Security › Full Disk Access, add and enable BaoCut, then quit and reopen BaoCut and click “Detect browsers again”.`,
+  accessDenied: (names: readonly string[]) =>
+    `BaoCut doesn’t have permission to access ${andList(names)} browser data. On the computer running BaoCut, allow BaoCut to access these browsers’ data folders, then click “Detect browsers again”.`,
   chromiumLocked: (names: readonly string[]) =>
     names.length > 1
       ? `While ${andList(names)} are open, their cookie databases are locked and can’t be read. Quit these browsers completely before downloading, including any running in the background.`
@@ -47,10 +52,10 @@ const M = defineMessages(en, { 'zh-Hans': zhHans, 'zh-Hant': zhHant, ja, ko, es,
 /**
  * 设置 › 视频下载的「网站登录」（产品设计 §2.7「下载视频」，架构设计 §7.9 Cookie、§12.9「本机浏览器」；设计稿 model-tool-cookies.js）。
  *
- * - 只列出 Runtime 检测到有 Cookie 库的浏览器（`externalTools.cookieBrowsers`），最近用过的在前。
+ * - Chrome 始终保留为默认选项，其余列出 Runtime 检测到有 Cookie 库或访问被拒绝的浏览器（`externalTools.cookieBrowsers`），最近用过的在前。
  * - 勾选的浏览器按列出的顺序逐个试（不是按点选的先后）：读不到 Cookie 或网站仍要求登录时换下一个，用上一个就停。
  * - 「所有浏览器」在界面上是全选检测到的（只勾了一部分时半选），提交给下载的仍是浏览器列表。都不勾是匿名下载。
- * - 这是一项设置（`downloads.cookieBrowsers`），下载视频、从链接转录与智能体的下载都用它；默认 `all`（所有检测到的浏览器）。
+ * - 这是一项设置（`downloads.cookieBrowsers`），下载视频、从链接转录与智能体的下载都用它；默认 `all`（Chrome 与其他检测到的浏览器）。
  *   勾成全选时存回 `all`，之后新检测到的浏览器跟着算进去；其余存浏览器列表（`cookieBrowsersSetting`），空列表是匿名下载。
  * - 系统授权的提示看 Runtime 所在主机的平台（检测结果带的 `platform`），不看这个界面跑在哪。
  */
@@ -108,7 +113,7 @@ export function toggleBrowser(checked: readonly LinkCookieBrowser[], id: LinkCoo
  * 复选框下面的说明：先说按勾选怎么用，再说读了什么、BaoCut 记什么；再按 Runtime 所在主机与勾了哪些浏览器提示：
  * macOS 上的系统授权，Windows 上 Cookie 库被占用与应用绑定加密（没勾 Firefox 时建议改用它）。
  */
-export function cookieNotes(list: readonly LinkCookieBrowser[], platform: string | null): string[] {
+export function cookieNotes(list: readonly LinkCookieBrowser[], platform: string | null, detected: readonly CookieBrowserInfo[] = []): string[] {
   const names = list.map(cookieBrowserLabel);
   const lines = [
     list.length === 0 ? M.noneChecked : list.length === 1 ? M.oneChecked(names[0]!) : M.manyChecked(names),
@@ -117,7 +122,7 @@ export function cookieNotes(list: readonly LinkCookieBrowser[], platform: string
   if (platform === 'darwin') {
     const keychain = list.filter((id) => CHROMIUM.includes(id)).map(cookieBrowserLabel);
     if (keychain.length) lines.push(M.keychain(keychain));
-    if (list.includes('safari')) lines.push(M.safariAccess);
+    if (list.includes('safari') && !detected.some((b) => b.accessDenied)) lines.push(M.safariAccess);
   }
   if (platform === 'win32') {
     const chromium = list.filter((id) => CHROMIUM.includes(id)).map(cookieBrowserLabel);
@@ -126,6 +131,9 @@ export function cookieNotes(list: readonly LinkCookieBrowser[], platform: string
     if (appBound.length) lines.push(M.appBound(appBound));
     if (chromium.length && !list.includes('firefox')) lines[lines.length - 1] += M.firefoxTip;
   }
+  const denied = detected.filter((b) => b.accessDenied).map((b) => cookieBrowserLabel(b.id));
+  if (denied.length) lines.push(platform === 'darwin' ? M.macAccessDenied(denied) : M.accessDenied(denied));
+  if (detected.some((b) => b.id === 'chrome' && b.cookieStoreMissing)) lines.push(M.chromeStoreMissing);
   return lines;
 }
 

@@ -2,6 +2,9 @@ import type { LinkCookiesMessages } from './link-cookies.ts';
 import { pluralForm } from '@baocut/protocol';
 const andEs = (names: readonly string[]) => new Intl.ListFormat('es', { type: 'conjunction' }).format(names);
 export const es: LinkCookiesMessages = {
+  chromeStoreMissing: "No se encontró un almacén de cookies de Chrome. Para usar el inicio de sesión de Chrome, inicia sesión en el sitio en Chrome y detecta los navegadores de nuevo.",
+  macAccessDenied: (names) => `BaoCut no tiene permiso para acceder a los datos de ${names.join(', ')}. En el ordenador donde se ejecuta BaoCut, abre Ajustes del Sistema › Privacidad y seguridad › Acceso total al disco, añade y activa BaoCut. Cierra BaoCut por completo, vuelve a abrirlo y detecta los navegadores de nuevo.`,
+  accessDenied: (names) => `BaoCut no tiene permiso para acceder a los datos de ${names.join(', ')}. En el ordenador donde se ejecuta BaoCut, permite que acceda a las carpetas de datos de estos navegadores y detecta los navegadores de nuevo.`,
  noneChecked: 'Déjalos todos sin marcar para descargar de forma anónima. Si el sitio pide que inicies sesión o verifiques tu identidad, inicia sesión en él desde un navegador y después marca ese navegador.',
  oneChecked: (name) => `Usa las cookies de ${name} para acceder al sitio.`,
  manyChecked: (names) => `Prueba ${names.join(' → ')} en ese orden: si no se pueden leer las cookies de un navegador o el sitio sigue pidiendo iniciar sesión, pasa al siguiente y se detiene en el primero que funciona. El resultado indica cuál se usó.`,

@@ -4,12 +4,13 @@ import path from 'node:path';
 import type { CookieBrowserInfo, LinkCookieBrowser } from '@baocut/protocol';
 
 /**
- * 这台机器上哪些浏览器有 Cookie 库（`externalTools.cookieBrowsers`，架构设计 §7.9）：下载视频的「网站登录」只列出这些，
- * 不让用户选一个没装的浏览器。
+ * 下载视频的浏览器选项（`externalTools.cookieBrowsers`，架构设计 §7.9）：Chrome 始终保留为默认选项；
+ * 其他浏览器只有找到 Cookie 库或数据访问被拒绝时才列出。
  *
  * - 位置按 yt-dlp 读 `--cookies-from-browser` 时的查找规则：Chromium 系是数据目录下 `[<Profile>/][Network/]Cookies`，
  *   Firefox 是配置根下 `[<Profile>/|Profiles/<Profile>/]cookies.sqlite`，Safari（只有 macOS）是固定位置的
- *   `Cookies.binarycookies`。找不到库的浏览器不列出：yt-dlp 同样找不到它。
+ *   `Cookies.binarycookies`。访问被拒绝时仍列出，并标记 `accessDenied`；Chrome 始终保留为默认选项，找不到库时标记
+ *   `cookieStoreMissing`，其他浏览器的路径不存在时不列出。
  * - 只看文件在不在与修改时间（`stat` 与列出数据目录的直接子目录），不打开、不读 Cookie，不运行下载工具。
  * - 最近改过的排在前面（最近在用的浏览器最可能登录着目标网站），下载按这个顺序逐个尝试；时间相同或读不到时按固定顺序。
  */
@@ -110,47 +111,61 @@ export function cookieDatabaseRules(host: CookieHost): CookieDatabaseRule[] {
   return rules;
 }
 
-/** 这台机器上找得到 Cookie 库的浏览器，最近改过的在前。 */
+/** 本机浏览器选项，最近改过的在前；没有检测到 Cookie 库时仍保留 Chrome。 */
 export async function detectCookieBrowsers(host: CookieHost = currentCookieHost()): Promise<CookieBrowserInfo[]> {
   const rules = cookieDatabaseRules(host);
-  const found = await Promise.all(rules.map(async (rule, order) => ({ rule, order, seen: await lastChange(rule) })));
-  return found
+  const found = await Promise.all(rules.map(async (rule, order) => ({ rule, order, ...await lastChange(rule) })));
+  const browsers: CookieBrowserInfo[] = found
     .filter((f) => f.seen !== undefined)
     .sort((a, b) => (b.seen ?? -Infinity) - (a.seen ?? -Infinity) || a.order - b.order)
-    .map(({ rule, seen }) => ({
+    .map(({ rule, seen, accessDenied }) => ({
       id: rule.id,
       label: COOKIE_BROWSER_LABELS[rule.id],
       lastUsedAt: seen === null || seen === undefined ? null : new Date(seen).toISOString(),
+      ...(accessDenied ? { accessDenied: true as const } : {}),
     }));
+  if (!browsers.some((browser) => browser.id === 'chrome')) {
+    browsers.push({ id: 'chrome', label: COOKIE_BROWSER_LABELS.chrome, lastUsedAt: null, cookieStoreMissing: true });
+  }
+  return browsers;
 }
 
 /**
- * 这条规则下 Cookie 库最近的修改时间（毫秒）：找不到库时 undefined；固定位置的文件在、但没有权限看（macOS 的 Safari 要
- * 「完全磁盘访问权限」）时 null——库在，只是不知道时间。
+ * 这条规则下 Cookie 库最近的修改时间（毫秒）：找不到库时 undefined；数据目录或候选文件的访问被拒绝时仍保留浏览器，
+ * 标记 accessDenied，没有可读的库时 seen 为 null。只检查元数据，不保证下载时能解密或读取 Cookie。
  */
-async function lastChange(rule: CookieDatabaseRule): Promise<number | null | undefined> {
+async function lastChange(rule: CookieDatabaseRule): Promise<{ seen: number | null | undefined; accessDenied: boolean }> {
+  let newest: number | null | undefined;
+  let accessDenied = false;
+  const denied = (error: NodeJS.ErrnoException) => {
+    if (error.code !== 'EPERM' && error.code !== 'EACCES') return false;
+    accessDenied = true;
+    newest ??= null;
+    return true;
+  };
   const candidates: string[] = [];
   if (rule.chromium) {
-    for (const base of [rule.chromium, ...(await childDirectories(rule.chromium))]) {
+    for (const base of [rule.chromium, ...(await childDirectories(rule.chromium, denied))]) {
       candidates.push(path.join(base, 'Cookies'), path.join(base, 'Network', 'Cookies'));
     }
   }
   for (const root of rule.firefox ?? []) {
-    for (const base of [root, ...(await childDirectories(root)), ...(await childDirectories(path.join(root, 'Profiles')))]) {
+    for (const base of [root, ...(await childDirectories(root, denied)), ...(await childDirectories(path.join(root, 'Profiles'), denied))]) {
       candidates.push(path.join(base, 'cookies.sqlite'));
     }
   }
-  let newest: number | null | undefined;
   for (const file of [...candidates, ...(rule.files ?? [])]) {
-    const denied = (error: NodeJS.ErrnoException) => (error.code === 'EPERM' || error.code === 'EACCES') && !!rule.files?.includes(file);
     const stat = await fs.stat(file).catch((error: NodeJS.ErrnoException) => (denied(error) ? null : undefined));
     if (stat === null) newest ??= null;
     else if (stat?.isFile()) newest = Math.max(newest ?? -Infinity, stat.mtimeMs);
   }
-  return newest;
+  return { seen: newest, accessDenied };
 }
 
-async function childDirectories(dir: string): Promise<string[]> {
-  const entries = await fs.readdir(dir, { withFileTypes: true }).catch(() => []);
+async function childDirectories(dir: string, denied: (error: NodeJS.ErrnoException) => boolean): Promise<string[]> {
+  const entries = await fs.readdir(dir, { withFileTypes: true }).catch((error: NodeJS.ErrnoException) => {
+    denied(error);
+    return [];
+  });
   return entries.filter((e) => e.isDirectory()).map((e) => path.join(dir, e.name)).sort();
 }

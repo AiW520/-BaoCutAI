@@ -121,7 +121,7 @@ function CookieGroup({ web }: { web: boolean }) {
                 </Checkbox>
               ))}
             </div>
-            {cookieNotes(list, choice.platform).map((line) => (
+            {cookieNotes(list, choice.platform, detected).map((line) => (
               <p key={line} className={note}>
                 {line}
               </p>

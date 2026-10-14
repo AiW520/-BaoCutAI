@@ -41,7 +41,7 @@ export function useCookieBrowserChoice(enabled: boolean): CookieBrowsersView {
       runtime.cookieBrowsers().then(
         ({ platform, browsers }) => {
           useCookieBrowsers.setState({ state: 'done', platform, browsers, error: null });
-          announce?.(browsers.length);
+          announce?.(browsers.filter((b) => !b.cookieStoreMissing).length);
         },
         (error: unknown) => useCookieBrowsers.setState({ state: 'failed', browsers: [], error: error instanceof Error ? error.message : String(error) }),
       );

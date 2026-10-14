@@ -1,6 +1,9 @@
 import type { LinkCookiesMessages } from './link-cookies.ts';
 
 export const ptBR: LinkCookiesMessages = {
+  chromeStoreMissing: "Nenhum armazenamento de cookies do Chrome foi encontrado. Para usar o login do Chrome, entre no site pelo Chrome e detecte os navegadores de novo.",
+  macAccessDenied: (names) => `O BaoCut não tem permissão para acessar os dados de ${names.join(', ')}. No computador que executa o BaoCut, abra Ajustes do Sistema › Privacidade e Segurança › Acesso Total ao Disco, adicione e ative o BaoCut. Encerre o BaoCut completamente, abra-o novamente e detecte os navegadores de novo.`,
+  accessDenied: (names) => `O BaoCut não tem permissão para acessar os dados de ${names.join(', ')}. No computador que executa o BaoCut, permita o acesso às pastas de dados desses navegadores e detecte os navegadores de novo.`,
   noneChecked: 'Deixe todos desmarcados para baixar anonimamente. Se o site pedir login ou verificação, entre nele em um navegador primeiro e marque esse navegador.',
   oneChecked: (name: string) => `Usa cookies de ${name} para acessar o site.`,
   manyChecked: (names: readonly string[]) => `Tenta ${names.join(' → ')} nesta ordem: se os cookies de um navegador não puderem ser lidos ou o site ainda pedir login, passa ao próximo e para no primeiro que funcionar. O resultado indica qual foi usado.`,

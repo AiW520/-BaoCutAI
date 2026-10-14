@@ -1,6 +1,9 @@
 import type { LinkCookiesMessages } from './link-cookies.ts';
 
 export const ko: LinkCookiesMessages = {
+  chromeStoreMissing: "Chrome 쿠키 저장소를 찾지 못했습니다. Chrome의 사이트 로그인을 사용하려면 Chrome에서 해당 사이트에 로그인한 후 브라우저를 다시 감지하세요.",
+  macAccessDenied: (names) => `BaoCut에 ${names.join(', ')} 브라우저 데이터 접근 권한이 없습니다. BaoCut을 실행하는 컴퓨터에서 시스템 설정 › 개인정보 보호 및 보안 › 전체 디스크 접근 권한을 열고 BaoCut을 추가하여 활성화하세요. BaoCut을 완전히 종료한 후 다시 열고 브라우저를 다시 감지하세요.`,
+  accessDenied: (names) => `BaoCut에 ${names.join(', ')} 브라우저 데이터 접근 권한이 없습니다. BaoCut을 실행하는 컴퓨터에서 해당 브라우저의 데이터 폴더에 대한 BaoCut의 접근을 허용한 후 브라우저를 다시 감지하세요.`,
   noneChecked: '모두 체크하지 않으면 익명으로 다운로드합니다. 사이트에서 로그인이나 인증을 요구하면 먼저 브라우저에서 그 사이트에 로그인한 뒤 해당 브라우저를 체크하세요.',
   oneChecked: (name: string) => `${name} 쿠키를 사용해 사이트에 접속합니다.`,
   manyChecked: (names: readonly string[]) =>

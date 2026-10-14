@@ -1,6 +1,9 @@
 import type { LinkCookiesMessages } from './link-cookies.ts';
 
 export const zhHans: LinkCookiesMessages = {
+  chromeStoreMissing: "没有找到 Chrome 的 Cookie 库。要使用 Chrome 的网站登录，在 Chrome 里登录目标网站，再点「重新检测浏览器」。",
+  macAccessDenied: (names) => `BaoCut 没有权限访问 ${names.join('、')} 的浏览器数据。在运行 BaoCut 的电脑上，打开「系统设置 › 隐私与安全性 › 完全磁盘访问权限」，添加并启用 BaoCut；完全退出并重新打开 BaoCut，再点「重新检测浏览器」。`,
+  accessDenied: (names) => `BaoCut 没有权限访问 ${names.join('、')} 的浏览器数据。在运行 BaoCut 的电脑上，允许 BaoCut 访问这些浏览器的数据目录，再点「重新检测浏览器」。`,
   noneChecked: '都不勾就匿名下载。网站要求登录或验证时，先在浏览器里登录这个网站，再勾选那个浏览器。',
   oneChecked: (name: string) => `用 ${name} 的 Cookie 访问目标网站。`,
   manyChecked: (names: readonly string[]) =>

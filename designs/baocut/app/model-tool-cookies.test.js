@@ -9,7 +9,7 @@ test('勾选的浏览器按检测到的顺序排（就是尝试的顺序），�
   assert.deepEqual(several.map((b) => b.id), ['chrome', 'safari', 'firefox', 'edge']);
   assert.deepEqual(C.ordered(['edge', 'chrome'], several), ['chrome', 'edge']);
   assert.deepEqual(C.ordered(['brave', 'safari'], several), ['safari']);
-  assert.deepEqual(C.ordered(['chrome'], C.DEMO_DETECTED.darwin.none), []);
+  assert.deepEqual(C.ordered(['chrome'], C.DEMO_DETECTED.darwin.none), ['chrome']);
   assert.deepEqual(C.toggle(['edge'], 'chrome', true, several), ['chrome', 'edge']);
   assert.deepEqual(C.toggle(['chrome', 'edge'], 'chrome', false, several), ['edge']);
 });
@@ -111,4 +111,23 @@ test('勾选结果存回设置：全选存 ALL，部分勾选存按检测顺序�
   assert.deepEqual(C.save([], detected), []);
   assert.deepEqual(C.setting({cookieBrowsers: []}), []);
   assert.deepEqual(C.resolve(C.setting({cookieBrowsers: ['firefox', 'edge']}), detected), ['firefox']);
+});
+
+test('Chrome 访问被拒仍列出，未勾选时也提示授权；Windows 不显示 macOS 授权步骤', () => {
+  const denied = C.demoDetected('darwin', 'denied');
+  assert.deepEqual(C.resolve(C.ALL, denied), ['safari', 'chrome']);
+  assert.match(C.notes([], 'darwin', denied).join(''), /没有权限访问 Chrome.*完全磁盘访问权限.*添加并启用 BaoCut.*完全退出并重新打开 BaoCut.*重新检测浏览器/);
+  assert.doesNotMatch(C.notes([], 'win32', C.demoDetected('win32', 'denied')).join(''), /完全磁盘访问权限|钥匙串/);
+  assert.doesNotMatch(C.notes([], 'darwin', C.demoDetected('darwin', 'several')).join(''), /没有权限/);
+});
+
+
+test('无论是否检测到 Cookie 库，Chrome 都是默认勾选项；手动取消后不强制勾回', () => {
+  for (const platform of ['darwin', 'win32']) {
+    for (const detected of Object.values(C.DEMO_DETECTED[platform])) {
+      assert.ok(C.resolve(C.setting({}), detected).includes('chrome'));
+      assert.ok(!C.resolve(C.save(C.resolve(C.ALL, detected).filter((id) => id !== 'chrome'), detected), detected).includes('chrome'));
+    }
+    assert.match(C.notes(['chrome'], platform, C.demoDetected(platform, 'none')).join(''), /没有找到 Chrome 的 Cookie 库/);
+  }
 });

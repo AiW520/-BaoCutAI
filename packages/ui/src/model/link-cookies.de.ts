@@ -2,6 +2,9 @@ const andList = (names: readonly string[]) => new Intl.ListFormat('de', { type: 
 import type { LinkCookiesMessages } from './link-cookies.ts';
 
 export const de: LinkCookiesMessages = {
+  chromeStoreMissing: "Es wurde kein Cookie-Speicher von Chrome gefunden. Melde dich für die Website-Anmeldung über Chrome zuerst in Chrome bei der Website an und erkenne dann die Browser erneut.",
+  macAccessDenied: (names) => `BaoCut hat keine Berechtigung für den Zugriff auf Browserdaten von ${names.join(', ')}. Öffne auf dem Computer, auf dem BaoCut läuft, Systemeinstellungen › Datenschutz & Sicherheit › Festplattenvollzugriff, füge BaoCut hinzu und aktiviere es. Beende BaoCut vollständig, öffne es erneut und erkenne die Browser erneut.`,
+  accessDenied: (names) => `BaoCut hat keine Berechtigung für den Zugriff auf Browserdaten von ${names.join(', ')}. Erlaube auf dem Computer, auf dem BaoCut läuft, den Zugriff auf die Datenordner dieser Browser und erkenne die Browser erneut.`,
   noneChecked: "Für anonymen Download keine Browser auswählen. Bei Anmelde- oder Prüfbedarf zuerst im Browser anmelden und diesen auswählen.",
   oneChecked: (name: string) => `Verwendet ${name}-Cookies für Websitezugriff.`,
   manyChecked: (names: readonly string[]) =>

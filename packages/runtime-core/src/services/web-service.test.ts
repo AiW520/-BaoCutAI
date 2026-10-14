@@ -529,10 +529,18 @@ describe('Web 服务', () => {
       code: 'forbidden',
       details: { code: 'WEB_METHOD_NOT_ALLOWED', method: 'externalTools.list' },
     });
-    // 只开放本机浏览器的列表（设置 › 视频下载只读地列出网站登录）：只有名称与修改时间，没有路径。
+    // 只开放本机浏览器的列表（设置 › 视频下载只读地列出网站登录）：只有名称、修改时间与可选权限拒绝标记，没有路径。
     const detected = (await page.request('externalTools.cookieBrowsers', {})) as unknown as { platform: string; browsers: Record<string, unknown>[] };
     expect(detected.platform).toBe(process.platform);
-    for (const browser of detected.browsers) expect(Object.keys(browser).sort()).toEqual(['id', 'label', 'lastUsedAt']);
+    for (const browser of detected.browsers) {
+      expect(Object.keys(browser).sort()).toEqual([
+        ...(browser.accessDenied ? ['accessDenied'] : []),
+        ...(browser.cookieStoreMissing ? ['cookieStoreMissing'] : []),
+        'id', 'label', 'lastUsedAt',
+      ]);
+      if ('accessDenied' in browser) expect(browser.accessDenied).toBe(true);
+      if ('cookieStoreMissing' in browser) expect(browser.cookieStoreMissing).toBe(true);
+    }
     expect(details(await page.request('services.list', {}).catch((e: unknown) => e))).toMatchObject({
       code: 'forbidden',
       details: { code: 'WEB_METHOD_NOT_ALLOWED' },

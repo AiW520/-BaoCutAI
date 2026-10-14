@@ -139,7 +139,7 @@ export interface ExternalToolUpdateResult {
 }
 
 /**
- * `externalTools.cookieBrowsers` 的一项：这台机器上找得到 Cookie 库的浏览器。只按下载工具自己的查找规则看文件在不在、
+ * `externalTools.cookieBrowsers` 的一项：Chrome 的默认选项与这台机器上找得到 Cookie 库、或其数据访问被拒绝的其他浏览器。只按下载工具自己的查找规则看文件在不在、
  * 什么时候改过，不读 Cookie 内容；最近用过的排在前面，下载视频按这个顺序逐个尝试。
  */
 export interface CookieBrowserInfo {
@@ -149,6 +149,10 @@ export interface CookieBrowserInfo {
   label: string;
   /** Cookie 库最近一次改动的时间（ISO 8601）；读不到（例如没有权限）时 null，排在最后。 */
   lastUsedAt: string | null;
+  /** 数据目录或 Cookie 库的访问被系统拒绝；仍列出浏览器，让界面提示授权。没有遇到权限错误时省略。 */
+  accessDenied?: true;
+  /** Chrome 始终作为默认选项；没有检测到它的 Cookie 库时为 true，不表示已安装或可读取。 */
+  cookieStoreMissing?: true;
 }
 
 type DetectedBrowsers = readonly Pick<CookieBrowserInfo, 'id'>[];

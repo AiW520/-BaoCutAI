@@ -1,6 +1,9 @@
 import type { LinkCookiesMessages } from './link-cookies.ts';
 
 export const ja: LinkCookiesMessages = {
+  chromeStoreMissing: "Chrome の Cookie ストアが見つかりませんでした。Chrome のログイン情報を使うには、Chrome で対象サイトにログインしてから「ブラウザを再検出」をクリックしてください。",
+  macAccessDenied: (names) => `BaoCut には ${names.join('、')} のブラウザデータにアクセスする権限がありません。BaoCut を実行しているコンピュータで「システム設定 › プライバシーとセキュリティ › フルディスクアクセス」を開き、BaoCut を追加して有効にしてください。BaoCut を完全に終了して再起動し、「ブラウザを再検出」をクリックしてください。`,
+  accessDenied: (names) => `BaoCut には ${names.join('、')} のブラウザデータにアクセスする権限がありません。BaoCut を実行しているコンピュータで、これらのブラウザのデータフォルダへのアクセスを BaoCut に許可し、ブラウザを再検出してください。`,
   noneChecked:
     'どれにもチェックを入れなければ匿名でダウンロードします。サイトでサインインや認証を求められた場合は、先にブラウザでそのサイトにサインインしてから、そのブラウザにチェックを入れてください。',
   oneChecked: (name: string) => `${name} の Cookie を使ってサイトにアクセスします。`,

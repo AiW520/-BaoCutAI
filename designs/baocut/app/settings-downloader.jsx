@@ -141,7 +141,7 @@
             {detected.map((b) => <Checkbox key={b.id} on={list.indexOf(b.id) >= 0} onChange={(on) => change(CK.toggle(list, b.id, on, detected))} label={b.label} />)}
           </div>
           {/* 系统提示按运行下载的主机（Runtime 所在主机）的平台，原型取演示挡位 */}
-          {CK.notes(list, hostOf(app.downloader)).map((line) => <span key={line} className="t-detail-xs">{line}</span>)}
+          {CK.notes(list, hostOf(app.downloader), detected).map((line) => <span key={line} className="t-detail-xs">{line}</span>)}
         </>}
       </div>
     </section>;
