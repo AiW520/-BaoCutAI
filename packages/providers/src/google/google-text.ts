@@ -10,10 +10,10 @@
 // `candidates[].finishReason`（`STOP`、`MAX_TOKENS`、`SAFETY`、`RECITATION`、`BLOCKLIST`、`PROHIBITED_CONTENT`、`SPII`……）、
 // `content.parts[].thought`（思考摘要，不取）、`promptFeedback.blockReason`、`usageMetadata`（`promptTokenCount`、
 // `candidatesTokenCount`、`thoughtsTokenCount`）、`modelVersion`。稳定的文本模型：gemini-3.8-flash（推荐）、3.7-flash、
-// 3.6-flash、3.5-flash、3.5-flash-lite、3.1-flash-lite；3.8 与 3.7 的思考档位是 low / medium / high（默认 medium），
-// 3.6 与 3.5-flash-lite 是 minimal–high（3.5-flash-lite 默认 minimal）。`GET {base}/models` 分页列出模型（`models[].name`
-// 是 `models/<id>`，`nextPageToken`）。
-// 没能确认的：3.5-flash 与 3.1-flash-lite 的思考档位（按 minimal–high 声明，默认分别取 medium 与 minimal）；各模型的
+// 3.6-flash、3.5-flash、3.5-flash-lite、3.1-flash-lite；3.8 与 3.7 的思考档位是 low / medium / high（API 默认 medium），
+// 3.6 与 3.5-flash-lite 是 minimal–high（3.5-flash-lite 的 API 默认 minimal）。`GET {base}/models` 分页列出模型（`models[].name`
+// 是 `models/<id>`，`nextPageToken`）。BaoCut 不用 API 默认档：没指定推理强度时下发模型表的 `defaultEffort`，取最低一档。
+// 没能确认的：3.5-flash 与 3.1-flash-lite 的思考档位（按 minimal–high 声明）；各模型的
 // 输出上限（按 65,536 token 声明）与上下文（按 1,048,576 token 声明）；上下文过长时的错误形状（按 400 正文里提到 token
 // 上限的识别为 `INPUT_TOO_LONG`）。费用按 `unknown`。
 import { ProviderFailure, type TextReply } from '@baocut/models';
@@ -57,10 +57,10 @@ function model(
 }
 
 const MODELS: TextModelInfo[] = [
-  model('gemini-3.8-flash', 'Gemini 3.8 Flash', ['low', 'medium', 'high'], 'medium', { default: true }),
-  model('gemini-3.7-flash', 'Gemini 3.7 Flash', ['low', 'medium', 'high'], 'medium'),
-  model('gemini-3.6-flash', 'Gemini 3.6 Flash', ALL, 'medium'),
-  model('gemini-3.5-flash', 'Gemini 3.5 Flash', ALL, 'medium'),
+  model('gemini-3.8-flash', 'Gemini 3.8 Flash', ['low', 'medium', 'high'], 'low', { default: true }),
+  model('gemini-3.7-flash', 'Gemini 3.7 Flash', ['low', 'medium', 'high'], 'low'),
+  model('gemini-3.6-flash', 'Gemini 3.6 Flash', ALL, 'minimal'),
+  model('gemini-3.5-flash', 'Gemini 3.5 Flash', ALL, 'minimal'),
   model('gemini-3.5-flash-lite', 'Gemini 3.5 Flash-Lite', ALL, 'minimal'),
   model('gemini-3.1-flash-lite', 'Gemini 3.1 Flash-Lite', ALL, 'minimal'),
 ];
@@ -81,9 +81,9 @@ export class GoogleTextAdapter implements TextAdapter, ModelLister {
     const { config, parameters } = request;
     const system = parameters.messages.filter((m) => m.role === 'system');
     const format = parameters.responseFormat;
-    // 没指定推理强度时不下发 `thinkingConfig` 等于按模型默认档思考，而思考计入 `maxOutputTokens`：整页回写会被思考
-    // 吃光输出上限、正文截断（AI 管线 §10.2）。所以落到模型最低的一档。
-    const thinkingLevel = parameters.effort ?? request.model.efforts[0] ?? null;
+    // 没指定推理强度时不下发 `thinkingConfig` 等于按 API 的默认档思考，而思考计入 `maxOutputTokens`：整页回写会被思考
+    // 吃光输出上限、正文截断（AI 管线 §10.2）。所以下发模型表的 `defaultEffort`，都是模型最低的一档。
+    const thinkingLevel = parameters.effort ?? request.model.defaultEffort;
     const body = JSON.stringify({
       contents: parameters.messages
         .filter((m) => m.role !== 'system')
