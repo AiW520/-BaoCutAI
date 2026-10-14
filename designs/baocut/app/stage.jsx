@@ -7,6 +7,7 @@
   const L = window.BC_LAYOUT;
   const T = window.BC_TIME;
   const P = window.BC_POSE;
+  const SURF = window.BC_SURFACE;
 
   /** 演示画面：确定性的渐变底 + 网格，不假装是真帧。
    *  `player`（第 222 轮）：全屏播放器复用同一份画面——元素、模板、字幕、逐词动效、
@@ -357,7 +358,11 @@
           {player ? null : <StageChips />}
           <StageMediaNotice proj={ctx.proj} />
           <window.StageLoadNotice proj={ctx.proj} />
+          {/* 视频标注层（product-design §3.2.3「视频标注」；stage-notes.jsx，只在 App 入口）：挂在 `.frame` 最后，盖在元素与字幕之上。
+              标注模式下接手势，否则只画播放头附近那一帧的标记；全屏播放器不画。 */}
+          {!player && window.StageNotesLayer ? <window.StageNotesLayer ctx={ctx} frameRef={frameRef} /> : null}
         </div>
+        {!player && window.StageNotesToolbar ? <window.StageNotesToolbar ctx={ctx} /> : null}
       </div>
     );
   }
@@ -500,6 +505,10 @@
 
         {/* 纯图标的小号钮框只比图标宽 4px，挨着排会挤成一团：组内拉开 12px。 */}
         <div className="stagebar__icons">
+          {/* 标注（product-design §3.2.3「视频标注」、§5.3）：在画面上框、画箭头、写字或打编号，加进输入框的「视频标注」。
+              是交给智能体的入口，Web 没有会话，不出这枚钮。进标注模式先停播——标注绑的是此刻的播放头。 */}
+          {SURF.agent && ctx.setAnnotating ? <IconBtn size="s" onLayer on={!!ctx.annotating} tip={ctx.annotating ? '退出标注' : '标注'}
+            onClick={() => { if (!ctx.annotating) ctx.setPlaying(false); ctx.setAnnotating(!ctx.annotating); }}><R.Icons.Comment /></IconBtn> : null}
           <IconBtn icon="captions" size="s" onLayer on={subsOn}
             tip={subsOn ? '隐藏字幕' : '显示字幕'} onClick={() => setSubsOn(!subsOn)} />
 

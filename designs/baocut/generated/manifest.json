@@ -36,6 +36,7 @@
       "app/model-home-workspace.js",
       "app/model-home-slides.js",
       "app/model-home-design.js",
+      "app/model-stage-notes.js",
       "app/model-home-design-system.js",
       "app/model-home-design-system-notes.js",
       "app/model-file-preview.js",
@@ -381,6 +382,7 @@
       "app/home-slides-notes.jsx",
       "app/home-design.jsx",
       "app/home-design-notes.jsx",
+      "app/stage-notes.jsx",
       "app/home-design-system-notes.jsx",
       "app/home-design-system.jsx",
       "app/home-design-system-overview.jsx",
@@ -448,6 +450,7 @@
       "app/space-search.css",
       "app/home-slides.css",
       "app/home-design.css",
+      "app/stage-notes.css",
       "app/home-design-system.css",
       "app/spectrum.css",
       "app/font-library.css",
@@ -457,9 +460,9 @@
       "app/subtitle-motion.css",
       "app/subtitle-active.css"
     ],
-    "js": "generated/app.js?v=e735acf1137b",
-    "css": "generated/app.css?v=60c04b1141f9",
-    "bytes": 4256307
+    "js": "generated/app.js?v=e6b8cdc7e3ce",
+    "css": "generated/app.css?v=88749c4a3a21",
+    "bytes": 4269914
   },
   "web": {
     "file": "BaoCutWeb.html",
@@ -702,9 +705,9 @@
       "app/subtitle-motion.css",
       "app/subtitle-active.css"
     ],
-    "js": "generated/web.js?v=e75414d59394",
+    "js": "generated/web.js?v=833939fae658",
     "css": "generated/web.css?v=2f0462bf0870",
-    "bytes": 2530948
+    "bytes": 2531836
   },
   "components": {
     "file": "Components.html",

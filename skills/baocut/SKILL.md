@@ -164,6 +164,7 @@ BaoCut 自带的 craft（做法）。第 1 节的表按用户的话指到其中�
 - 要按画面用用户给的素材（配图、补画面、挑镜头，素材不一定有人说话）时：先用 {{tool:space_index_status}}（这些视频的 {{arg:videoIds}}，{{arg:channel}} `visual`）看画面索引；`available` 为 true、素材不是 `indexed` 时用 {{tool:space_index_build}}（同样的 {{arg:videoIds}}，{{arg:channel}} `visual`）给它们建，不用等用户开设置。画面索引比讲话慢，不干等：先做不靠画面的步骤，用之前再看一次，还没建好的按镜头取帧。`available` 为 false 时（没装能读图的模型包）直接按镜头取帧，不为此提议装模型，除非用户问起。
 <!-- surface: agent -->
 - 会话不属于项目时，新视频不给 project，直接建在会话自己的工作目录里，不先建项目；用户明确要建项目时才用 {{tool:projects_adopt_session}}，把这个会话连同视频收进一个以视频命名的新项目。
+- **收到视频标注时的解读。** 用户消息末尾的 `<baocut-video-annotations video="…" revision="…">` 是用户在预览画面上圈出的位置：每条有时刻（`timeMs`，时间线时间）、种类（box / arrow / text / pin）、相对画面归一化的区域（0–1）与批注。默认含义是**改源视频在这个时刻附近**——先 {{tool:videos_inspect}} 读当前版本（段上的 `revision` 落后时以当前为准），用 {{tool:videos_frames}} 看那一刻的画面，再在时间线上改那一处；区域只用来认位置（哪块字幕、哪个角标），不裁剪画面，也不拿截图去生成新片段。几条标注各是各的时刻，不自动连成一段：段末的 `candidateBoundsMs` 只是最早到最晚的候选范围，不是要改的区间。批注要改的东西需要时间边界（「这段删掉」「从这里开始加」）而标注里没有时，先问一次起止，不替用户定；用户说了的就照说的做。
 <!-- /surface -->
 
 ## 5. 硬规则

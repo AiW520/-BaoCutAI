@@ -86,6 +86,8 @@ const WEB_DENY = [
   /^app\/model-agent-projects/, /^app\/model-llm-tools/,
   /* 视频工具的目标与运行（2026-10-03）：只在 App 的工具页；/^app\/model-tool-/ 不含 Web 也加载的 model-tools.js */
   /^app\/model-tool-/,
+  /* 视频标注（product-design §3.2.3）：交给智能体的入口，只在 App */
+  /^app\/stage-notes/, /^app\/model-stage-notes/,
   /* 本机音乐生成（2026-10-11）：工具页、设置试听与编辑器「生成配乐」都只在 App */
   /^app\/model-music/,
   /* 输入框「+」菜单（使用 Skill / 最近的视频 / 本地文件）：只在 Home 与会话的 Agent 输入框 */

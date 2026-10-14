@@ -1,0 +1,25 @@
+/* 视频标注（stage-notes.jsx；product-design §3.2.3「视频标注」、§5.3）。
+   标注层铺满画面（`.frame`），标记按归一化坐标落位，所以画幅与尺寸变了标记仍在原处。
+   composer 上的「视频标注 · N 条」沿用 home-slides.css 的 .home-slides-notes 画法。 */
+.stnotes { position: absolute; inset: 0; z-index: 6; pointer-events: none; }
+.stnotes.is-annotating { pointer-events: auto; cursor: crosshair; }
+.stnotes.is-annotating[data-kind="text"], .stnotes.is-annotating[data-kind="pin"] { cursor: cell; }
+.stnotes__badge { position: absolute; left: 0; top: 0; transform: translate(-50%, -50%); pointer-events: auto; z-index: 1; }
+.stnotes__badge > button { border-radius: 999px; background: var(--blue-900); color: var(--gray-25); font-weight: 700; }
+.stnotes__badge > button:hover { background: var(--blue-1000); }
+.stnotes__box { position: absolute; border: 2px solid var(--blue-900); border-radius: 4px; box-shadow: 0 0 0 1px var(--gray-25); }
+.stnotes__box.is-ghost { border-style: dashed; box-shadow: none; pointer-events: none; }
+.stnotes__point { position: absolute; width: 0; height: 0; }
+.stnotes__text .stnotes__label { position: absolute; left: 14px; top: -10px; max-width: 240px; padding: 2px 8px; border-radius: 8px;
+  background: var(--blue-900); color: var(--gray-25); font-size: 12px; line-height: 20px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; pointer-events: none; }
+.stnotes__arrow { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; pointer-events: none; }
+.stnotes__arrow line { stroke: var(--blue-900); stroke-width: 2; stroke-linecap: round; }
+.stnotes__arrow.is-ghost line { stroke-dasharray: 6 4; }
+.stnotes__head { position: absolute; width: 12px; height: 12px; border-radius: 999px; background: var(--blue-900); box-shadow: 0 0 0 2px var(--gray-25); transform: translate(-50%, -50%); }
+.stnotes__anchor { position: absolute; width: 1px; height: 1px; }
+
+/* 舞台顶上的小工具条：种类、提示、完成 */
+.stnotes-bar { position: absolute; top: 12px; left: 50%; transform: translateX(-50%); z-index: 7; display: flex; align-items: center; gap: 12px; max-width: calc(100% - 24px);
+  padding: 4px 4px 4px 8px; border-radius: 10px; background: var(--gray-25); box-shadow: var(--sh-pop); }
+.stnotes-bar__kinds { display: flex; align-items: center; gap: 4px; }
+.stnotes-bar__hint { font-size: 12px; color: var(--gray-700); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }

@@ -34,6 +34,7 @@
       {m.slideAnnotations?.length && window.SlideNotesToken ? <div className="bc-ai-sent-attachments" style={{marginBottom: 0}} aria-label="幻灯片标注"><window.SlideNotesToken notes={m.slideAnnotations} /></div> : null}
       {m.designAnnotations?.length && window.DesignNotesToken ? <div className="bc-ai-sent-attachments" style={{marginBottom: 0}} aria-label="设计稿标注"><window.DesignNotesToken notes={m.designAnnotations} /></div> : null}
       {m.designSystemAnnotations?.length && window.DesignSystemNotesToken ? <div className="bc-ai-sent-attachments" style={{marginBottom: 0}} aria-label="设计系统标注"><window.DesignSystemNotesToken notes={m.designSystemAnnotations} /></div> : null}
+      {m.videoAnnotations?.length && window.VideoNotesToken ? <div className="bc-ai-sent-attachments" style={{marginBottom: 0}} aria-label="视频标注"><window.VideoNotesToken notes={m.videoAnnotations} /></div> : null}
       <A.UserMessage>
       {!!m.attachments?.length && <div className="bc-ai-sent-attachments" aria-label="已发送的文件">
         {m.attachments.map((a, i) => <BCAction key={a.id || i} className="bc-ai-sent-file" aria-label={`打开附件：${a.name}`} onClick={() => setPreview(a)}>
@@ -296,11 +297,14 @@
     const designNotes = sess.draftDesignAnnotations || [];
     /* 设计系统标签里加进来的标注（docs/design/canvas §10.6）：又一个标签，编号各自从 1 起 */
     const systemNotes = sess.draftDesignSystemAnnotations || [];
-    const notesCount = slideNotes.length + designNotes.length + systemNotes.length;
+    /* 编辑器预览画面上加进来的标注（product-design §3.2.3「视频标注」）：按会话的视频挂在 store 上，又一个标签，编号各自从 1 起 */
+    const videoNotes = (sess.project && app.videoNotes[sess.project]) || [];
+    const notesCount = slideNotes.length + designNotes.length + systemNotes.length + videoNotes.length;
     const send = () => {
       if (off || reading || busy || (!draft.trim() && !attachments.length && !reference && !notesCount)) return;
-      onSend(window.BC_AGENT_SKILLS.withSkill(draft.trim(), skill), attachments, reference, slideNotes, designNotes, systemNotes);
+      onSend(window.BC_AGENT_SKILLS.withSkill(draft.trim(), skill), attachments, reference, slideNotes, designNotes, systemNotes, videoNotes);
       setDraft(''); setSkillId(null);
+      if (videoNotes.length) app.setVideoNotes(sess.project, []);
       setAttachments([]); onPatch({draftAttachments: [], ...(reference ? {draftReference: null} : {}), ...(slideNotes.length ? {draftSlideAnnotations: []} : {}),
         ...(designNotes.length ? {draftDesignAnnotations: []} : {}), ...(systemNotes.length ? {draftDesignSystemAnnotations: []} : {})});
     };
@@ -368,6 +372,8 @@
               onRemove={id => onPatch({draftDesignAnnotations: window.BC_HOME_DESIGN.remove(designNotes, id)})} /> : null}
             {window.DesignSystemNotesToken ? <window.DesignSystemNotesToken notes={systemNotes} onClear={() => onPatch({draftDesignSystemAnnotations: []})}
               onRemove={id => onPatch({draftDesignSystemAnnotations: window.BC_HOME_DSYS_NOTES.remove(systemNotes, id)})} /> : null}
+            {window.VideoNotesToken ? <window.VideoNotesToken notes={videoNotes} onClear={() => app.setVideoNotes(sess.project, [])}
+              onRemove={id => app.setVideoNotes(sess.project, window.BC_STAGE_NOTES.remove(videoNotes, id))} /> : null}
             <ComposerAttachments items={attachments} onRemove={i => {
               const all = attachments.filter((_, n) => n !== i); setAttachments(all); onPatch({draftAttachments: all});
             }} /></>} inputProps={{rows: compact ? 2 : 3, value: draft, disabled: off,
@@ -457,17 +463,17 @@
       app.patchSession(sess.id, next);
       /* 2026-10-01：选了写入目标的会话仍住在 Home——视频从消息卡片打开（第 110 轮「搬进项目编辑器」退场） */
     };
-    const send = (text, attachments = [], reference = null, slideNotes = [], designNotes = [], systemNotes = []) => {
+    const send = (text, attachments = [], reference = null, slideNotes = [], designNotes = [], systemNotes = [], videoNotes = []) => {
       // product-design §5.1：Space 首条消息带当前视频卡，随后进入 Home 会话。
       const artifacts = videoCard && !cur.messages.length && cur.project ? [cur.project] : [];
       if (sess) {
-        app.sendAgent(sess.id, text, undefined, attachments, reference, artifacts, slideNotes, designNotes, systemNotes);
+        app.sendAgent(sess.id, text, undefined, attachments, reference, artifacts, slideNotes, designNotes, systemNotes, videoNotes);
         if (onSent) onSent(sess);
         return;
       }
       const s = app.newSession({project: draftSess.project, dir: draftSess.dir, harness: draftSess.harness, model: draftSess.model,
         effort: draftSess.effort, mode: draftSess.mode});
-      app.sendAgent(s.id, text, s, attachments, reference, artifacts, slideNotes, designNotes, systemNotes);
+      app.sendAgent(s.id, text, s, attachments, reference, artifacts, slideNotes, designNotes, systemNotes, videoNotes);
       if (onCreated) onCreated(s);
       if (onSent) onSent(s);
     };

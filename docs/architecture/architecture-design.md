@@ -400,7 +400,7 @@ P0 由一个用户可以理解的执行主体对结果负责。内部的分析�
 发送时的编辑器上下文（`EditorContext`：打开的视频与版本、选中的片段、播放头）另带用户的界面语言 `uiLanguage`（BCP 47 标签，可选），附在用户消息后的 `<baocut-editor-context>` 里；AI 工具的「直接调模型」经 `ai-tool` 流程的 `uiLanguage` 参数写进系统提示词。skill 据此决定输出语言：用户提问用的语言优先，其次是界面语言，最后是文稿的语言。
 
 
-消息带幻灯片标注（`slideAnnotations`，幻灯片设计 §9）时，Runtime 把每条的 deck 换成相对会话工作目录的路径，Harness 按 deck 分段，每份一段 `<baocut-slide-annotations>`，逐条列出位置、定位与批注，附在交给智能体的文字最后；锚点只给编辑器用，不交给智能体。设计稿标注（`designAnnotations`）同样处理：canvas 换成相对路径，每份设计稿一段 `<baocut-design-annotations>`，放在幻灯片标注段之后，编号各自从 1 起。设计系统标注（`designSystemAnnotations`）也一样：每套设计系统一段 `<baocut-design-system-annotations>`，放在设计稿标注段之后。格式与限制见协议规范 `conversations`。
+消息带幻灯片标注（`slideAnnotations`，幻灯片设计 §9）时，Runtime 把每条的 deck 换成相对会话工作目录的路径，Harness 按 deck 分段，每份一段 `<baocut-slide-annotations>`，逐条列出位置、定位与批注，附在交给智能体的文字最后；锚点只给编辑器用，不交给智能体。设计稿标注（`designAnnotations`）同样处理：canvas 换成相对路径，每份设计稿一段 `<baocut-design-annotations>`，放在幻灯片标注段之后，编号各自从 1 起。设计系统标注（`designSystemAnnotations`）也一样：每套设计系统一段 `<baocut-design-system-annotations>`，放在设计稿标注段之后。视频标注（`videoAnnotations`，产品设计 §3.2.3「视频标注」）同样处理：每部视频一段 `<baocut-video-annotations video="…" revision="…">`，放在设计系统标注段之后，逐条列出时刻（`timeMs`）、种类与归一化区域、批注，两条以上时另给 `candidateBoundsMs`；它与 `<baocut-editor-context>` 分开——上下文说的是编辑器此刻的状态，标注说的是用户圈出来要改的位置与时刻。格式与限制见协议规范 `conversations`。
 
 - 先摘要与检索，再按需扩展，不默认把完整视频和全文外发。
 - 只读到文件名不能声称理解了内容。`ContextEvidence` 记录实际读取的范围与方法。

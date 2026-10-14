@@ -276,6 +276,10 @@
     const [dock, setDock] = useState({open: false, sid: null});   // 编辑器左抽屉
     /* 悬浮会话（product-design §5.1）：每部视频正挂着哪条会话；最小化是偏好（prefs.movieChatMin），跨视频记住 */
     const [movieChats, setMovieChats] = useState({});
+    /* 视频标注的草稿按视频挂（product-design §3.2.3「视频标注」；model-stage-notes.js）：编辑器的快聊会话常常还没建，
+       所以不像另外三种标注那样挂在会话上。composer 按会话的 `project` 读，发送后清空。 */
+    const [videoNotes, setVideoNotesMap] = useState({});
+    const setVideoNotes = useCallback((videoId, notes) => setVideoNotesMap((m) => ({...m, [videoId]: notes || []})), []);
     const setMovieChat = useCallback((movieId, sid) => setMovieChats((m) => ({...m, [movieId]: sid || null})), []);
     /* 会话把人带到工具面板（product-design §5.10）：Agent 跑完一件要在面板里看结果的活，编辑器按这张单打开对应面板。
        跑完时这部视频正开着就直接下单；没开着不下——收尾话下面的按钮连视频一起打开（apprail-store 的 openTool）。 */
@@ -424,26 +428,29 @@
     /* `reference`：输入框里的 Space 条目引用（product-design §4.7），随这条消息发出
        `slideAnnotations`：幻灯片标签页里加进草稿的标注（docs/design/slides §8.2），随这条消息记入会话
        `designAnnotations`：设计稿标签页里加进草稿的标注（docs/design/canvas §8.2），同上
-       `designSystemAnnotations`：设计系统标签里加进草稿的标注（docs/design/canvas §10.6），同上 */
-    const sendAgent = useCallback((sid, text, fresh, attachments = [], reference = null, artifactIds = [], slideAnnotations = [], designAnnotations = [], designSystemAnnotations = []) => {
+       `designSystemAnnotations`：设计系统标签里加进草稿的标注（docs/design/canvas §10.6），同上
+       `videoAnnotations`：编辑器预览画面上加进草稿的标注（product-design §3.2.3「视频标注」），同上 */
+    const sendAgent = useCallback((sid, text, fresh, attachments = [], reference = null, artifactIds = [], slideAnnotations = [], designAnnotations = [], designSystemAnnotations = [], videoAnnotations = []) => {
       const t = String(text || '').trim();
-      if (!t && !attachments.length && !reference && !slideAnnotations.length && !designAnnotations.length && !designSystemAnnotations.length) return;
+      if (!t && !attachments.length && !reference && !slideAnnotations.length && !designAnnotations.length && !designSystemAnnotations.length && !videoAnnotations.length) return;
       const sess = sessionsRef.current.find((x) => x.id === sid) || fresh;
       if (!sess) return;
       const title = sess.title || AG.sessionTitle(t || attachments[0]?.name || (reference && reference.name) || (slideAnnotations.length ? '幻灯片标注'
-        : designAnnotations.length ? '设计稿标注' : designSystemAnnotations.length ? '设计系统标注' : '图片'));
+        : designAnnotations.length ? '设计稿标注' : designSystemAnnotations.length ? '设计系统标注' : videoAnnotations.length ? '视频标注' : '图片'));
       /* 带着幻灯片、设计稿或设计系统标注发出去：原型按标注模拟逐页、逐块画板、逐个文件修改
          （model-home-slides.js、model-home-design.js、model-home-design-system-notes.js；Web 入口没有这几个模块） */
-      const SL = window.BC_HOME_SLIDES, DG = window.BC_HOME_DESIGN, DS = window.BC_HOME_DSYS_NOTES;
+      const SL = window.BC_HOME_SLIDES, DG = window.BC_HOME_DESIGN, DS = window.BC_HOME_DSYS_NOTES, VN = window.BC_STAGE_NOTES;
       const plan = slideAnnotations.length && SL ? SL.replyPlan(slideAnnotations)
         : designAnnotations.length && DG ? DG.replyPlan(designAnnotations)
-        : designSystemAnnotations.length && DS ? DS.replyPlan(designSystemAnnotations) : agentSim.planFor(t, !!sess.project, sess);
+        : designSystemAnnotations.length && DS ? DS.replyPlan(designSystemAnnotations)
+        : videoAnnotations.length && VN ? VN.replyPlan(videoAnnotations, (id) => (projects.find((p) => p.id === id) || {}).title || id) : agentSim.planFor(t, !!sess.project, sess);
       /* 只带标注、没写话时正文是固定的一句（docs/design/slides §8.2、canvas §8.2 与 §10.6；原型只写中文） */
       const said = t || (attachments.length || reference ? '' : slideAnnotations.length ? '请按这些幻灯片标注修改。'
-        : designAnnotations.length ? '请按这些设计稿标注修改。' : designSystemAnnotations.length ? '请按这些设计系统标注修改。' : '');
+        : designAnnotations.length ? '请按这些设计稿标注修改。' : designSystemAnnotations.length ? '请按这些设计系统标注修改。' : videoAnnotations.length ? '请按这些视频标注修改。' : '');
       appendMsg(sid, {role: 'user', text: said, attachments, ...(reference ? {reference} : {}),
         ...(artifactIds.length ? {artifactIds} : {}), ...(slideAnnotations.length ? {slideAnnotations} : {}),
-        ...(designAnnotations.length ? {designAnnotations} : {}), ...(designSystemAnnotations.length ? {designSystemAnnotations} : {}), startedAt: Date.now()});
+        ...(designAnnotations.length ? {designAnnotations} : {}), ...(designSystemAnnotations.length ? {designSystemAnnotations} : {}),
+        ...(videoAnnotations.length ? {videoAnnotations} : {}), startedAt: Date.now()});
       patchSession(sid, {title, status: 'running', draft: '', activeModel: null});
       // 原型用 fixture 模拟 CLI 握手：只在回报模型后展示具体名字，目录默认不冒充运行值。
       const h = harnessList.find((item) => item.id === sess.harness);
@@ -792,7 +799,7 @@
       sessions, sessionById, newSession, patchSession, sendAgent, stopAgent, answerPermission,
       autoAllow, dropAutoAllow, harness, harnessPref, setHarnessPref, harnessOn, setHarnessOn, harnessList, patchHarness, addedHarnesses, addHarness, removeHarness, agentAvail, enableAgent, runner, setRunner, runnerBy, setRunnerFor, setAgentDefault,
       policy: policyMap, setPolicy, setSessionMode,
-      dock, movieChats, setMovieChat, toolReq, requestTool, clearToolReq, openAgent, openSession, createProject, closeDock, toggleDock, setDock, dockW, setDockW,
+      dock, movieChats, setMovieChat, videoNotes, setVideoNotes, toolReq, requestTool, clearToolReq, openAgent, openSession, createProject, closeDock, toggleDock, setDock, dockW, setDockW,
       ask, confirm, clearAsk: () => setAsk(null),
       pinfo, openProjectInfo, closeProjectInfo,
       toasts, toast, dismissToast,

@@ -214,6 +214,9 @@
     const [fs, setFs] = useState(false);
     /* 舞台的平台安全区（2026-09-27）：编辑态，不进文档；新建页按 Shorts 做的项目默认开着。 */
     const [safeArea, setSafeArea] = useState(window.BC_SHORTS.isShorts(proj));
+    /* 视频标注模式（product-design §3.2.3「视频标注」、§5.3；stage-notes.jsx）：这个窗口的观看态，不进视频、不进撤销 */
+    const [annotating, setAnnotating] = useState(false);
+    const [noteKind, setNoteKind] = useState('box');
     /* 选中真相住在 [editor-selection.jsx](editor-selection.jsx)（第 115 轮改成数组）：
        `sel` 仍是「最后一次点中的那件」，老面板照旧只读它。`stageRef` 是 ⌘A 的取数口。 */
     const stageRef = useRef({elements: [], playT: 0});
@@ -1250,7 +1253,7 @@
       score: scoreStore.score, scoreOff: scoreStore.scoreOff, scoreJob: scoreStore.scoreJob, regenScore: scoreStore.regenScore,
       dub, dubs, dubOff, bedOff, dubReadings, setDubReadings, applyDub, clearDub, restoreDubs, dubMuted, bedMuted, stretchDub, setDubSource,
       dubSel, pickDub, clearDubSel, updateDub, muteDubBlocks, deleteDubBlocks, regenDubBlocks, restoreDubTake, pruneDubArchive, clearDubArchive, openDubSentence,
-      subsOn, setSubsOn, fs, setFs, safeArea, setSafeArea, clips, setClips, split, canSplit, ripple, pop, setPop,
+      subsOn, setSubsOn, fs, setFs, safeArea, setSafeArea, annotating, setAnnotating, noteKind, setNoteKind, clips, setClips, split, canSplit, ripple, pop, setPop,
       sel, sels, pick, pickSub, clearSel, isSel, selKeys: selection.selKeys,
       pickMany: selection.pickMany, selectAll: selection.selectAll, history,
       editing: selection.editing, startEdit: selection.startEdit, stopEdit: selection.stopEdit,
