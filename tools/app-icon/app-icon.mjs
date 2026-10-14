@@ -127,8 +127,44 @@ export function sparkleD(cx, cy, r, k = 0.17) {
   ].join(' ');
 }
 
-// 1024 画布的 SVG。shadow=false 时不画 macOS 模板投影（给 favicon、ICO 等自带容器的场合）。
-export function svg(variant = VARIANTS.coral, { shadow = true, geometry = {} } = {}) {
+// 开发版标记：底砖下沿一条深色胶囊，里面「DEV」三个字母。字母用线段与圆弧画，不用 <text>，不依赖渲染机器的字体。
+// 胶囊盖住三角下沿是有意的：开发版图标只要一眼和正式版区分开，Dock 里 64 px 也要能读出字。
+export const BADGE = {
+  y: 700, // 胶囊顶
+  h: 200, // 胶囊高（两端全圆）
+  w: 560, // 胶囊宽
+  letterH: 116, // 字母高
+  letterW: 88, // 字母宽
+  letterGap: 52, // 字母间距
+  stroke: 30, // 字母线宽
+  fill: INK,
+  ink: WHITE,
+};
+
+function badgeMarkup(o = BADGE) {
+  const cx = 512;
+  const x0 = cx - o.w / 2;
+  const top = o.y + (o.h - o.letterH) / 2;
+  const bottom = top + o.letterH;
+  const mid = (top + bottom) / 2;
+  const total = 3 * o.letterW + 2 * o.letterGap;
+  let x = cx - total / 2;
+  const step = o.letterW + o.letterGap;
+  const r = o.letterH / 2;
+  const w = o.letterW;
+  const D = `M ${f(x)} ${f(top)} L ${f(x)} ${f(bottom)} L ${f(x + w - r)} ${f(bottom)} A ${f(r)} ${f(r)} 0 0 0 ${f(x + w - r)} ${f(top)} Z`;
+  x += step;
+  const E = `M ${f(x + w)} ${f(top)} L ${f(x)} ${f(top)} L ${f(x)} ${f(bottom)} L ${f(x + w)} ${f(bottom)} M ${f(x)} ${f(mid)} L ${f(x + w * 0.82)} ${f(mid)}`;
+  x += step;
+  const V = `M ${f(x)} ${f(top)} L ${f(x + w / 2)} ${f(bottom)} L ${f(x + w)} ${f(top)}`;
+  return [
+    `<rect x="${f(x0)}" y="${o.y}" width="${o.w}" height="${o.h}" rx="${f(o.h / 2)}" fill="${o.fill}"/>`,
+    `<path d="${[D, E, V].join(' ')}" stroke="${o.ink}" stroke-width="${o.stroke}" stroke-linecap="round" stroke-linejoin="round" fill="none"/>`,
+  ].join('\n');
+}
+
+// 1024 画布的 SVG。shadow=false 时不画 macOS 模板投影（给 favicon、ICO 等自带容器的场合）；badge=true 加「DEV」开发版标记。
+export function svg(variant = VARIANTS.coral, { shadow = true, badge = false, geometry = {} } = {}) {
   const o = { ...GEOMETRY, ...geometry };
   const y0 = o.yc - o.H / 2;
   const y1 = o.yc + o.H / 2;
@@ -177,6 +213,7 @@ export function svg(variant = VARIANTS.coral, { shadow = true, geometry = {} } =
     `<g clip-path="url(#tri)">${rows.join('')}</g>`,
     ...playhead,
     `<path d="${sparkleD(px, sy, o.sparkR)}" fill="${variant.mark}"/>`,
+    badge ? badgeMarkup() : '',
     '</svg>',
     '',
   ]

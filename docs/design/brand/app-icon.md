@@ -72,3 +72,4 @@ BaoCut 是「用 AI Agent 剪视频、做字幕」的工具。图标只讲两件
 - 几何在 [`tools/app-icon/app-icon.mjs`](../../../tools/app-icon/app-icon.mjs) 的 `GEOMETRY`，配色在 `VARIANTS`（`tile` / `left` / `right` / `mark`）。
 - 改完在仓库根运行 `npm run icons`，重新生成原型的 `app-icon.svg` 与 `apps/desktop/build/` 下的 `icon.png`、`icon.icns`、`icon.ico`。生成物不手改。
 - Windows 的 `.ico` 不带模板投影，其余生成物带；要改这一点在 `render.mjs` 里改 `shadow`。
+- 开发版图标 `icon-dev.png`：在定稿图上加一条深色「DEV」胶囊（`BADGE`，`svg(variant, { badge: true })`），胶囊压住三角下沿是有意的，Dock 里 64 px 也要读得出字。只在开发态由主进程加载，不参与打包，也不算入「三种颜色」的约束，深色用的是备选变体 B 的 `#1F1F1F`。

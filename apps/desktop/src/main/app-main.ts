@@ -29,9 +29,9 @@ export function startDesktopApp(): void {
   installStdioErrorGuards();
   const devServerUrl = process.env.ELECTRON_RENDERER_URL;
   const isDev = !app.isPackaged;
-  // 开发态 Electron 用它自己的默认图标；打包后 macOS / Windows 从包里的 .icns / .ico 读，不走这里。
-  // 开发时 app.getAppPath() 是 apps/desktop，图标由 `npm run icons` 生成（tools/app-icon）。
-  const devIcon = isDev ? path.join(app.getAppPath(), 'build', 'icon.png') : undefined;
+  // 开发态（`npm run dev` / 未打包运行）用带「DEV」标记的图标，和装好的正式版一眼区分；打包后 macOS / Windows
+  // 从包里的 .icns / .ico 读，不走这里。开发时 app.getAppPath() 是 apps/desktop，图标由 `npm run icons` 生成（tools/app-icon）。
+  const devIcon = isDev ? path.join(app.getAppPath(), 'build', 'icon-dev.png') : undefined;
 
   // 开发时用仓库里的 .dev/baocut-home，不碰 ~/.baocut。BAOCUT_HOME 可以覆盖。
   const home = resolveRuntimeHome({

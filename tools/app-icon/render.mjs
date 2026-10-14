@@ -24,6 +24,7 @@ const target = (rel) => (outDir ? path.join(outDir, path.basename(rel)) : path.j
 const FINAL = VARIANTS.coral;
 const PROTOTYPE_SVG = 'designs/baocut/assets/app-icon.svg';
 const PNG_1024 = 'apps/desktop/build/icon.png';
+const PNG_DEV_1024 = 'apps/desktop/build/icon-dev.png'; // 开发态（`npm run dev`）用的带 DEV 标记版本，只出 PNG
 const ICNS = 'apps/desktop/build/icon.icns';
 const ICO = 'apps/desktop/build/icon.ico';
 
@@ -92,8 +93,10 @@ async function rasterize(jobs) {
 async function main() {
   const withShadow = svg(FINAL, { shadow: true });
   const flat = svg(FINAL, { shadow: false });
+  const dev = svg(FINAL, { shadow: true, badge: true });
   const jobs = [
     { key: 'png1024', svg: withShadow, size: 1024 },
+    { key: 'pngDev1024', svg: dev, size: 1024 },
     ...ICONSET.map(([name, size]) => ({ key: `iconset:${name}`, svg: withShadow, size })),
     ...ICO_SIZES.map((size) => ({ key: `ico:${size}`, svg: flat, size })),
   ];
@@ -102,6 +105,7 @@ async function main() {
   if (outDir) fs.mkdirSync(outDir, { recursive: true });
   fs.writeFileSync(target(PROTOTYPE_SVG), withShadow);
   fs.writeFileSync(target(PNG_1024), png.get('png1024'));
+  fs.writeFileSync(target(PNG_DEV_1024), png.get('pngDev1024'));
 
   const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'baocut-icon-'));
   const iconset = path.join(tmp, 'icon.iconset');
@@ -112,7 +116,7 @@ async function main() {
 
   fs.writeFileSync(target(ICO), ico(ICO_SIZES.map((size) => ({ size, data: png.get(`ico:${size}`) }))));
 
-  for (const rel of [PROTOTYPE_SVG, PNG_1024, ICNS, ICO]) console.log(`${target(rel)}  ${fs.statSync(target(rel)).size} B`);
+  for (const rel of [PROTOTYPE_SVG, PNG_1024, PNG_DEV_1024, ICNS, ICO]) console.log(`${target(rel)}  ${fs.statSync(target(rel)).size} B`);
 }
 
 // ESM 主进程里不能顶层 await app.whenReady()：ready 事件要等模块求值结束才发，会死锁。
