@@ -3645,10 +3645,20 @@
       /* 画面没开时：打开之后要建的量（ifEnabled）。下面六个项目的画面时长加起来 110 分钟，每 8 秒一帧，CPU 参考速度 1.1 秒 / 帧，
          多模态包画面向量 512 维 FP32 */
       visual: {channel: 'visual', ifEnabled: true, videos: 12, unknownDuration: 0, sourceSeconds: 6600, frames: 825, seconds: 908, basis: 'default', vectorBytes: 1689600},
-      /* 打开之后在建：还剩的量 */
-      visualLeft: {channel: 'visual', ifEnabled: false, videos: 12, unknownDuration: 0, sourceSeconds: 6600, frames: 825, seconds: 908, basis: 'default', vectorBytes: 1689600},
-      /* 画面在建时的进度条（2026-10-13 待确认）：整个索引范围里已建 / 一共多少帧 */
-      visualProgress: {done: 312, total: 825}},
+      /* 合并的索引进度（2026-10-14 待确认，BC_SEMANTIC.indexProgress）：按建到哪一路（st.phase）各一组。
+         text 按部视频、visual 按帧；doneSeconds 是已建那部分按同一速度折算的秒数，还剩的在 estimate 里。
+         text：讲话内容在建（还剩 3 部，同上面 text 一项），画面一帧没建、排在后面；
+         visual：讲话内容建好了，画面建到 312/825 帧，速度已经量过 */
+      progress: {
+        text: {
+          text: {done: 9, total: 12, doneSeconds: 270, estimate: {channel: 'text', videos: 3, unknownDuration: 0, sourceSeconds: 4260, seconds: 95, basis: 'measured'}},
+          visual: {done: 0, total: 825, doneSeconds: 0, estimate: {channel: 'visual', videos: 12, unknownDuration: 0, sourceSeconds: 6600, frames: 825, seconds: 908, basis: 'default'}},
+        },
+        visual: {
+          text: {done: 12, total: 12, doneSeconds: 365, estimate: null},
+          visual: {done: 312, total: 825, doneSeconds: 281, estimate: {channel: 'visual', videos: 8, unknownDuration: 0, sourceSeconds: 4104, frames: 513, seconds: 462, basis: 'measured'}},
+        },
+      }},
     /* 索引范围里各项目的通道（§2.11）：缺省是所有 BaoCut 项目，设置里排除的不算（2026-10-13 待确认）。text：有文稿的视频里建好了几部；pending = 还在转录、没有文稿的 */
     projects: [
       {dir: 'd1', text: {done: 4, total: 4}, visual: {assets: 30, minutes: 25, size: '约 140 MB'}, audio: {assets: 6, minutes: 8, size: '约 30 MB'}},

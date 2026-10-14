@@ -4,9 +4,9 @@
      一部分没下成时下好的留着（st.half），卡片写哪一部分、连的哪里，「补齐」只下缺的（2026-10-13）；
    · 安装不等于扫描整块磁盘：只给索引范围里的视频建；视频缺省按讲话内容与画面都建（画面是「索引」里一个开关，缺省开，
      2026-10-13 待确认）——安装前就写明画面要建多少帧、首次要多久、向量多大（indexStatus.estimates 的画面一项），
-     装好后在后台建，画面那一行有进度条，可以随时关；关掉后再打开仍先确认开销；
+     装好后在后台建，可以随时关；关掉后再打开仍先确认开销；
    · 索引：状态、缓存大小、暂停 / 恢复 / 清理、位置（可以改到别的磁盘，settings-semantic-scope.jsx）、运行在哪个模型与设备（装了多模态模型时讲话内容也用它；文字能用 GPU 时用 GPU）；
-     在更新时写还要多久（按这台电脑量过的速度）；用电池、过热降频时自动停下，状态写原因，「用电池时暂停」可关（2026-10-13）；
+     在更新时状态下面一根进度条，讲话内容与画面合在一起（画面等讲话内容建完再建），按路写计数与两路合起来还要多久（按这台电脑量过的速度，2026-10-14 待确认）；用电池、过热降频时自动停下，状态写原因，「用电池时暂停」可关（2026-10-13）；
    · 索引范围：缺省是所有 BaoCut 项目（一行合起来的完整性，不逐个列），可以排除项目；Space 里单独设了不索引的条目也列在这里；
      下面是项目之外加进来的索引文件夹（添加 / 在文件夹中显示 / 重新索引 / 移除）。都在 settings-semantic-scope.jsx；
    · 用到它的两项开关：翻译记忆、术语候选，缺省都开；
@@ -79,6 +79,8 @@
             <option value="ok">没出错</option><option value="half">缺运行库</option></BCSelect></label>
           <label>索引<BCSelect aria-label="索引演示挡位" value={st.index} onChange={(e) => set({index: e.target.value})}>
             <option value="ready">已跟上</option><option value="stale">正在更新</option></BCSelect></label>
+          <label>建到<BCSelect aria-label="建到哪一路演示挡位" value={st.phase || 'text'} disabled={st.index !== 'stale'} onChange={(e) => set({phase: e.target.value})}>
+            <option value="text">讲话内容（画面排在后面）</option><option value="visual">画面</option></BCSelect></label>
           <label>供电<BCSelect aria-label="供电演示挡位" value={st.power || 'ac'} onChange={(e) => set({power: e.target.value})}>
             <option value="ac">接着电源</option><option value="battery">用电池</option><option value="thermal">过热降频</option></BCSelect></label>
         </div>
@@ -124,12 +126,13 @@
     const indexState = why ? '已暂停' : st.index === 'stale' ? '正在更新' : '已就绪';
     const full = st.install === 'full';
     const visualOn = full && st.visual;
-    const eta = S.etaLine(SEM.estimate.text);
-    // 还要多久：讲话内容写在状态里，画面写在画面那一行（同 Electron / Web）
-    const visualEta = visualOn ? S.etaLine(SEM.estimate.visualLeft) : null;
+    // 在建时两路合一根进度条，放在「状态」下面（2026-10-14 待确认）：讲话内容先建，画面等它建完；
+    // 计数按路写、不写百分比，还要多久是两路合起来的（同 Electron / Web 待改）。画面没开时只有讲话内容一路
+    const ph = SEM.estimate.progress[visualOn && st.phase === 'visual' ? 'visual' : 'text'];
+    const prog = st.index === 'stale' ? S.indexProgress(visualOn ? ph : {text: ph.text}, why) : null;
     const stateDesc = why === 'user' ? '暂停时不建新索引；已有的照常能搜，结果可能不含最近的修改。'
       : why ? S.POWER_NOTE[why] + '。'
-        : st.index === 'stale' ? `${S.STALE_NOTE}。${eta ? eta + '。' : ''}`
+        : st.index === 'stale' ? `${S.STALE_NOTE}。`
           : visualOn ? '已有文稿的文字索引与画面索引都建好了。' : '所有已有文稿都建好了文字索引。';
     const cost = S.visualCostLine(SEM.estimate.visual);
     // 打开画面：先确认范围与开销（v0.1 §9.1），在后台建；关掉只是不再建新的
@@ -144,12 +147,6 @@
     };
     const visualDesc = visualOn ? '索引范围里的视频与图片会按画面内容建立索引。关掉后不再建新的画面索引。'
       : `按画面内容找镜头、给句子配画面。打开后要建：${cost}。`;
-    // 画面在建时的进度条（2026-10-13 待确认）：按帧数；停着时写原因，不画动
-    const vp = SEM.estimate.visualProgress;
-    const vBuilding = visualOn && st.index === 'stale';
-    const vPct = vBuilding ? Math.round((vp.done / vp.total) * 100) : 100;
-    const vLine = !vBuilding ? null
-      : `${vp.done}/${vp.total} 帧 · ${vPct}%${why ? ` · 已暂停（${why === 'user' ? '你暂停的' : why === 'battery' ? '用电池' : '过热降频'}）` : visualEta ? ` · ${visualEta}` : ''}`;
     return (
       <>
         <h1 className="setpage__title">语义索引</h1>
@@ -175,15 +172,20 @@
                 <Chip tone={why ? 'notice' : st.index === 'stale' ? 'accent' : 'positive'}>{indexState}</Chip>
                 <Btn size="s" variant="secondary" onClick={() => set({paused: !st.paused})}>{st.paused ? '恢复' : '暂停'}</Btn>
               </Row>
+              {prog ? (
+                <div className="semset__bar">
+                  {/* 停着时不画动：估不出时间又停着，只写那两行 */}
+                  {prog.value !== null || !why ? (
+                    <Progress value={prog.value} indeterminate={prog.value === null} thin className="semset__barp"
+                      label={prog.value === null ? '索引进度' : `索引进度 ${Math.round(prog.value)}%`} />
+                  ) : null}
+                  <span className="t-detail-xs" role="status">{prog.line}</span>
+                  <span className="t-detail-xs">{prog.eta}</span>
+                </div>
+              ) : null}
               <Row label="画面" desc={visualDesc}>
                 <Switch on={visualOn} disabled={!full} onChange={setVisual} ariaLabel="画面索引" />
               </Row>
-              {vBuilding ? (
-                <div className="semset__vbar">
-                  <Progress value={vPct} thin className="semset__vbarp" label={`画面索引进度 ${vPct}%`} />
-                  <span className="t-detail-xs" role="status">{vLine}</span>
-                </div>
-              ) : null}
               <Row label="用电池时暂停" desc="笔记本用电池时先不建，接上电源后接着建。电脑过热降频时总会暂停。">
                 <Switch on={st.pauseOnBattery !== false} onChange={(v) => set({pauseOnBattery: v})} ariaLabel="用电池时暂停" />
               </Row>

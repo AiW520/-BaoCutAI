@@ -89,6 +89,33 @@ test('还要多久（v0.1 §13.2）：量过的速度、参考速度、没有速
   assert.equal(S.fmtDuration(5400), '约 1.5 小时');
 });
 
+test('合并的索引进度（2026-10-14）：一根条按估算时间合，按路写计数，画面排在讲话内容后面', () => {
+  // 讲话内容在建、画面一帧没建：条不是 0（讲话内容那一段也算），还要多久含等讲话内容的时间
+  const text = {done: 31, total: 212, doneSeconds: 372, estimate: {videos: 181, seconds: 2160, basis: 'measured', unknownDuration: 2}};
+  const queued = {done: 0, total: 39730, doneSeconds: 0, estimate: {videos: 206, seconds: 43560, basis: 'default', unknownDuration: 7}};
+  const a = S.indexProgress({text, visual: queued}, null);
+  assert.equal(a.line, '讲话内容 31/212 部视频 · 画面 0/39,730 帧（讲话内容建完后开始）');
+  assert.equal(a.eta, '还要约 12.7 小时（部分按参考速度估，7 部时长未知未计入）');
+  assert.ok(a.value > 0 && a.value < 1);
+  // 画面已经建了一部分、又有讲话内容要更新：画面接着等
+  assert.match(S.indexProgress({text, visual: {...queued, done: 1200, doneSeconds: 1300}}, null).line, /画面 1,200\/39,730 帧（讲话内容建完后接着建）$/);
+  // 画面在建：讲话内容已建好
+  const b = S.indexProgress({text: {done: 12, total: 12, doneSeconds: 365, estimate: null},
+    visual: {done: 312, total: 825, doneSeconds: 281, estimate: {videos: 8, seconds: 462, basis: 'measured'}}}, null);
+  assert.equal(b.line, '讲话内容已建好 · 画面 312/825 帧');
+  assert.equal(b.eta, '还要约 8 分钟（按这台电脑的速度）');
+  assert.equal(Math.round(b.value), 58); // 讲话内容那一段（365 秒）也在条上
+  // 停着：写原因，不写时间
+  assert.equal(S.indexProgress({text, visual: queued}, 'battery').eta, '已暂停（用电池）');
+  // 讲话内容的速度还没量过：条不定量
+  const c = S.indexProgress({text: {...text, estimate: {videos: 181, seconds: null}}, visual: queued}, null);
+  assert.equal(c.value, null);
+  assert.equal(c.eta, '建完第一部视频后能估出还要多久');
+  // 画面没开：只有讲话内容一路；都建完了没有进度
+  assert.equal(S.indexProgress({text}, null).line, '讲话内容 31/212 部视频');
+  assert.equal(S.indexProgress({text: {done: 3, total: 3, doneSeconds: 90}}, null), null);
+});
+
 test('打开画面之前写开销（v0.1 §13.2）：帧数、首次要多久、向量多大；关键帧缓存另算', () => {
   assert.equal(S.visualCostLine(null), null);
   assert.equal(

@@ -251,8 +251,8 @@
     const visualOn = st.install === 'full' && st.visual;
     const vTotal = inc.reduce((n, p) => n + p.visual.assets, 0);
     const text = Object.assign(S.sumText(inc), {excluded: S.sumText(out).total});
-    // 画面在建时按进度条那个比例算（同「索引」里画面那一行）
-    const vp = SEM.estimate.visualProgress;
+    // 在建时按「索引」里那根合并进度条的画面帧数折算（讲话内容在建时画面还没开始）
+    const vp = SEM.estimate.progress[st.phase === 'visual' ? 'visual' : 'text'].visual;
     const vDone = st.index === 'stale' ? Math.round((vTotal * vp.done) / vp.total) : vTotal;
     const cov = S.coverageLine(visualOn ? {text, visual: {done: vDone, total: vTotal}} : {text});
     // 单独设了「不索引」的条目：名字从视频或 Space 的文件里找
