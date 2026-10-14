@@ -36,8 +36,7 @@ const en = {
     n === 1
       ? `The videos this project uses are on this drive (${root}), which can’t be read right now.`
       : `The videos these ${n} projects use are on this drive (${root}), which can’t be read right now.`,
-  offlineFix:
-    'Connect the drive, then click “Retry”. If you leave it, BaoCut tries again the next time it starts. If you no longer need the footage, click “Skip” and it won’t be imported.',
+  offlineFix: "Connect the drive, then click “Retry”. If you no longer need the footage, click “Skip”.",
   offlineShort: (n: number, name: string) =>
     n === 1 ? `1 project’s footage is on “${name}”, which isn’t connected` : `${n} projects’ footage is on “${name}”, which isn’t connected`,
   missingTitle: 'Media files aren’t where they were',
@@ -60,8 +59,7 @@ const en = {
   failedNoReport: 'No import report was written',
   /** 卡片上那一句：几组的短句连起来。 */
   note: (parts: string[]) => `${parts.join('; ')}.`,
-  hintOffline: (name: string) =>
-    `Connect “${name}”, then click “Retry all”. If you leave it, BaoCut tries again the next time it starts. To handle them one by one, open the details.`,
+  hintOffline: (name: string) => `Connect “${name}”, then click “Retry all”. To handle them one by one, open the details.`,
   hintOther: 'The reason and what to do for each one are in the details. You can skip the ones you don’t need.',
   subProgress: (done: number, total: number) => `Imported ${done}/${total}`,
   subImported: (n: number) => `Imported ${n}`,
@@ -100,7 +98,7 @@ const en = {
   statSkipped: 'Skipped',
   statLive: 'Not imported yet',
   pendingSection: 'Projects not imported',
-  pendingHint: 'If you leave them, BaoCut tries again the next time it starts. Skipped ones aren’t imported.',
+  pendingHint: "Importing runs automatically once. Retry manually from task details.",
   howTo: 'What to do: ',
   groupTitle: (title: string, n: number) => `${title} · ${n}`,
   liveSection: 'Importing',

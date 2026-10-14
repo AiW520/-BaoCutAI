@@ -10,7 +10,7 @@
      现在没接上的外接硬盘上，同一块盘的归成一组——接上后重试。没有 `volume` 的是文件被移动、改名或删除了。
    - error：旧项目文件读不出来等，`error` 是原因。重试多半还是失败，所以给「在文件夹中显示」看原文件。
    - skipped：用户跳过，以后不再自动导入；随时可以「改为导入」（就是重试这一个）。
-   没导入的（missing-media / error）下次启动会自动再试；跳过的不再试。`waiting`：其他任务在跑时导入先停下，等它们结束再继续。
+   自动导入只执行一轮；没导入的（missing-media / error）保留结果，之后手动重试。`waiting`：其他任务在跑时导入先停下，等它们结束再继续。
    这里的「重试」只重跑这几个项目的导入，属于直接任务的重试，不是 §17.3 红线里的 AI flow 重试。
 
    实现对应（architecture-design §2.7，protocol legacy-import.ts `LegacyImportRun`）：Runtime 在 `legacy-import` 主题上报这次
@@ -149,7 +149,7 @@
       return {
         title: `移动硬盘「${g.volume.name}」没接上`,
         why: `${n === 1 ? '这个项目' : `这 ${n} 个项目`}用到的视频在这块硬盘上（${g.volume.root}），现在读不到。`,
-        fix: '接上硬盘后点「重试」。不处理的话，下次启动 BaoCut 会自动再试；素材不要了就点「跳过」，以后不再导入。',
+        fix: '接上硬盘后点「重试」。素材不要了就点「跳过」。',
         short: `${n} 个项目的素材在没接上的「${g.volume.name}」上`,
       };
     }
@@ -189,7 +189,7 @@
     const gs = groups(legacy);
     if (!gs.length) return '';
     const drive = gs.find((g) => g.kind === 'volume');
-    if (drive) return `接上「${drive.volume.name}」后点「全部重试」；不处理的话，下次启动会自动再试。逐个处理在详情里。`;
+    if (drive) return `接上「${drive.volume.name}」后点「全部重试」。逐个处理在详情里。`;
     return '每个的原因和处理办法在详情里；不需要的可以跳过。';
   }
 

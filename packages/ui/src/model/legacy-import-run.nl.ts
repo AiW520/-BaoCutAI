@@ -8,8 +8,7 @@ export const nl: LegacyImportRunMessages = {
       one: `De video’s die dit project gebruikt staan op deze schijf (${root}), die nu niet gelezen kan worden.`,
       other: `De video’s die deze ${n} projecten gebruiken staan op deze schijf (${root}), die nu niet gelezen kan worden.`,
     }),
-  offlineFix:
-    'Sluit de schijf aan en klik dan op ‘Opnieuw proberen’. Als je niets doet, probeert BaoCut het opnieuw bij de volgende start. Heb je de media niet meer nodig, klik dan op ‘Overslaan’; dan wordt er niets geïmporteerd.',
+  offlineFix: "Sluit de schijf aan en klik op “Opnieuw proberen”. Klik op “Overslaan” als je het materiaal niet meer nodig hebt.",
   offlineShort: (n, name) =>
     pluralForm('nl', n, {
       one: `${n} project heeft zijn media op ‘${name}’, die niet is aangesloten`,
@@ -48,8 +47,7 @@ export const nl: LegacyImportRunMessages = {
   failedReport: (report) => `Importrapport: ${report}`,
   failedNoReport: 'Er is geen importrapport geschreven',
   note: (parts) => `${parts.join('; ')}.`,
-  hintOffline: (name) =>
-    `Sluit ‘${name}’ aan en klik dan op ‘Alles opnieuw proberen’. Als je niets doet, probeert BaoCut het opnieuw bij de volgende start. Open de details om ze één voor één af te handelen.`,
+  hintOffline: (name) => `Sluit “${name}” aan en klik op “Alles opnieuw proberen”. Open de details om projecten afzonderlijk te behandelen.`,
   hintOther: 'De oorzaak en wat je kunt doen staan per project in de details. Projecten die je niet nodig hebt, kun je overslaan.',
   subProgress: (done, total) => `Geïmporteerd ${done}/${total}`,
   subImported: (n) => `Geïmporteerd ${n}`,
@@ -101,7 +99,7 @@ export const nl: LegacyImportRunMessages = {
   statSkipped: 'Overgeslagen',
   statLive: 'Nog niet geïmporteerd',
   pendingSection: 'Niet geïmporteerde projecten',
-  pendingHint: 'Als je niets doet, probeert BaoCut het opnieuw bij de volgende start. Overgeslagen projecten worden niet geïmporteerd.',
+  pendingHint: "Automatisch importeren gebeurt één keer. Daarna kun je het handmatig opnieuw proberen via de taakdetails.",
   howTo: 'Wat te doen: ',
   groupTitle: (title, n) => `${title} · ${n}`,
   liveSection: 'Bezig met importeren',

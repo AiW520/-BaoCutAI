@@ -15,8 +15,7 @@ export const pl: LegacyImportRunMessages = {
   offlineTitle: (name) => `Dysk „${name}” nie jest podłączony`,
   offlineWhy: (n, root) =>
     `Filmy używane przez ${n === 1 ? 'ten projekt' : `te projekty (${n})`} są na tym dysku (${root}), którego teraz nie da się odczytać.`,
-  offlineFix:
-    'Podłącz dysk i kliknij „Spróbuj ponownie”. Jeśli nic nie zrobisz, BaoCut spróbuje ponownie przy następnym uruchomieniu. Jeśli materiały nie są już potrzebne, kliknij „Pomiń” — wtedy nic nie zostanie zaimportowane.',
+  offlineFix: "Podłącz dysk i kliknij „Ponów”. Jeśli nie potrzebujesz już materiału, kliknij „Pomiń”.",
   offlineShort: (n, name) => `${projects(n)}: materiały na niepodłączonym dysku „${name}”`,
   missingTitle: 'Pliki multimedialne nie są tam, gdzie były',
   missingWhy:
@@ -39,8 +38,7 @@ export const pl: LegacyImportRunMessages = {
   failedReport: (report) => `Raport importu: ${report}`,
   failedNoReport: 'Nie zapisano raportu importu',
   note: (parts) => `${parts.join('; ')}.`,
-  hintOffline: (name) =>
-    `Podłącz „${name}” i kliknij „Ponów wszystkie”. Jeśli nic nie zrobisz, BaoCut spróbuje ponownie przy następnym uruchomieniu. Aby zająć się nimi pojedynczo, otwórz szczegóły.`,
+  hintOffline: (name) => `Podłącz „${name}” i kliknij „Ponów wszystkie”. Aby zająć się nimi osobno, otwórz szczegóły.`,
   hintOther: 'Przyczyna i to, co zrobić z każdym z nich, są w szczegółach. Niepotrzebne możesz pominąć.',
   subProgress: (done, total) => `Zaimportowano ${done}/${total}`,
   subImported: (n) => `Zaimportowano ${n}`,
@@ -81,7 +79,7 @@ export const pl: LegacyImportRunMessages = {
   statSkipped: 'Pominięte',
   statLive: 'Jeszcze niezaimportowane',
   pendingSection: 'Niezaimportowane projekty',
-  pendingHint: 'Jeśli nic nie zrobisz, BaoCut spróbuje ponownie przy następnym uruchomieniu. Pominięte nie są importowane.',
+  pendingHint: "Automatyczny import jest uruchamiany raz. Później można ponowić go ręcznie w szczegółach zadania.",
   howTo: 'Co zrobić: ',
   groupTitle: (title, n) => `${title} · ${n}`,
   liveSection: 'Importowane',

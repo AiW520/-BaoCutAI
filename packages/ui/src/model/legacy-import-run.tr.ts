@@ -4,8 +4,7 @@ export const tr: LegacyImportRunMessages = {
   offlineTitle: (name) => `“${name}” diski bağlı değil`,
   offlineWhy: (n, root) =>
     `${n === 1 ? 'Bu projenin' : `Bu ${n} projenin`} kullandığı videolar bu diskte (${root}) ve şu anda okunamıyor.`,
-  offlineFix:
-    'Diski bağlayın, ardından “Yeniden dene” düğmesine tıklayın. Hiçbir şey yapmazsanız BaoCut bir sonraki açılışta yeniden dener. Medyaya artık ihtiyacınız yoksa “Atla” düğmesine tıklayın; içe aktarma yapılmaz.',
+  offlineFix: "Sürücüyü bağlayın ve “Yeniden dene”ye tıklayın. Görüntülere ihtiyacınız yoksa “Atla”ya tıklayın.",
   offlineShort: (n, name) => `${n} projenin medyası bağlı olmayan “${name}” diskinde`,
   missingTitle: 'Medya dosyaları eski yerlerinde değil',
   missingWhy:
@@ -28,8 +27,7 @@ export const tr: LegacyImportRunMessages = {
   failedReport: (report) => `İçe aktarma raporu: ${report}`,
   failedNoReport: 'İçe aktarma raporu yazılmadı',
   note: (parts) => `${parts.join('; ')}.`,
-  hintOffline: (name) =>
-    `“${name}” diskini bağlayın, ardından “Tümünü yeniden dene” düğmesine tıklayın. Hiçbir şey yapmazsanız BaoCut bir sonraki açılışta yeniden dener. Tek tek ele almak için ayrıntıları açın.`,
+  hintOffline: (name) => `“${name}” sürücüsünü bağlayın ve “Tümünü yeniden dene”ye tıklayın. Tek tek işlem yapmak için ayrıntıları açın.`,
   hintOther: 'Her birinin nedeni ve ne yapılacağı ayrıntılarda. Gerekmeyenleri atlayabilirsiniz.',
   subProgress: (done, total) => `İçe aktarıldı ${done}/${total}`,
   subImported: (n) => `İçe aktarıldı ${n}`,
@@ -67,7 +65,7 @@ export const tr: LegacyImportRunMessages = {
   statSkipped: 'Atlandı',
   statLive: 'Henüz aktarılmadı',
   pendingSection: 'İçe aktarılmayan projeler',
-  pendingHint: 'Hiçbir şey yapmazsanız BaoCut bir sonraki açılışta yeniden dener. Atlananlar içe aktarılmaz.',
+  pendingHint: "Otomatik içe aktarma bir kez çalışır. Daha sonra görev ayrıntılarından elle yeniden deneyebilirsiniz.",
   howTo: 'Ne yapmalı: ',
   groupTitle: (title, n) => `${title} · ${n}`,
   liveSection: 'İçe aktarılıyor',

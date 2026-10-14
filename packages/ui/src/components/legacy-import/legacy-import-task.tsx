@@ -463,9 +463,10 @@ export function LegacyImportBanner() {
   const platform = useRuntime().host.platform;
   const run = useLegacyImport((s) => s.run);
   const dismissed = useLegacyImport((s) => s.bannerDismissed);
+  const bannerRunId = useLegacyImport((s) => s.bannerRunId);
   const closeBanner = useLegacyImport((s) => s.closeBanner);
   const go = useShell((s) => s.go);
-  const b = runBanner(run, platform, dismissed);
+  const b = runBanner(run, platform, dismissed || bannerRunId !== run?.runId);
   if (!run || !b) return null;
   const isResult = b.state === 'result';
   return (

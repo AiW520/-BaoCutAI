@@ -8,8 +8,7 @@ export const de: LegacyImportRunMessages = {
       one: `Die Videos dieses Projekts liegen auf diesem Laufwerk (${root}), das gerade nicht gelesen werden kann.`,
       other: `Die Videos dieser ${n} Projekte liegen auf diesem Laufwerk (${root}), das gerade nicht gelesen werden kann.`,
     }),
-  offlineFix:
-    'Verbinden Sie das Laufwerk und klicken Sie dann auf „Erneut versuchen“. Wenn Sie nichts tun, versucht BaoCut es beim nächsten Start erneut. Wenn Sie das Material nicht mehr brauchen, klicken Sie auf „Überspringen“; dann wird nichts importiert.',
+  offlineFix: "Verbinden Sie das Laufwerk und klicken Sie auf „Erneut versuchen“. Nicht benötigtes Material können Sie überspringen.",
   offlineShort: (n, name) =>
     pluralForm('de', n, {
       one: `${n} Projekt hat sein Material auf „${name}“, das nicht verbunden ist`,
@@ -49,8 +48,7 @@ export const de: LegacyImportRunMessages = {
   failedReport: (report) => `Importbericht: ${report}`,
   failedNoReport: 'Es wurde kein Importbericht geschrieben',
   note: (parts) => `${parts.join('; ')}.`,
-  hintOffline: (name) =>
-    `Verbinden Sie „${name}“ und klicken Sie dann auf „Alle erneut versuchen“. Wenn Sie nichts tun, versucht BaoCut es beim nächsten Start erneut. Einzeln bearbeiten können Sie sie in den Details.`,
+  hintOffline: (name) => `Verbinden Sie „${name}“ und klicken Sie auf „Alle erneut versuchen“. Einzelne Projekte finden Sie in den Details.`,
   hintOther: 'Grund und Lösung für jedes Projekt stehen in den Details. Nicht benötigte können Sie überspringen.',
   subProgress: (done, total) => `Importiert ${done}/${total}`,
   subImported: (n) => `Importiert ${n}`,
@@ -100,7 +98,7 @@ export const de: LegacyImportRunMessages = {
   statSkipped: 'Übersprungen',
   statLive: 'Noch nicht importiert',
   pendingSection: 'Nicht importierte Projekte',
-  pendingHint: 'Wenn Sie nichts tun, versucht BaoCut es beim nächsten Start erneut. Übersprungene werden nicht importiert.',
+  pendingHint: "Der automatische Import wird einmal ausgeführt. Danach können Sie ihn in den Aufgabendetails manuell erneut versuchen.",
   howTo: 'Was tun: ',
   groupTitle: (title, n) => `${title} · ${n}`,
   liveSection: 'Wird importiert',

@@ -13,8 +13,7 @@ export const it: LegacyImportRunMessages = {
       one: `I video usati da questo progetto sono su questa unità (${root}), che al momento non è leggibile.`,
       other: `I video usati da questi ${n} progetti sono su questa unità (${root}), che al momento non è leggibile.`,
     }),
-  offlineFix:
-    'Collega l’unità, poi fai clic su «Riprova». Se non fai nulla, BaoCut riprova al prossimo avvio. Se il materiale non ti serve più, fai clic su «Salta» e non verrà importato.',
+  offlineFix: "Collega il disco, poi fai clic su “Riprova”. Se il materiale non ti serve più, fai clic su “Salta”.",
   offlineShort: (n, name) =>
     pluralForm('it', n, {
       one: `${n} progetto ha il materiale sull’unità «${name}», che non è collegata`,
@@ -53,8 +52,7 @@ export const it: LegacyImportRunMessages = {
   failedReport: (report) => `Report di importazione: ${report}`,
   failedNoReport: 'Non è stato scritto alcun report di importazione',
   note: (parts) => `${parts.join('; ')}.`,
-  hintOffline: (name) =>
-    `Collega «${name}», poi fai clic su «Riprova tutti». Se non fai nulla, BaoCut riprova al prossimo avvio. Per gestirli uno alla volta, apri i dettagli.`,
+  hintOffline: (name) => `Collega “${name}”, poi fai clic su “Riprova tutti”. Per gestirli singolarmente, apri i dettagli.`,
   hintOther: 'Nei dettagli trovi il motivo e cosa fare per ciascuno. Puoi saltare quelli che non ti servono.',
   subProgress: (done, total) => `Importati ${done}/${total}`,
   subImported: (n) => `Importati ${n}`,
@@ -105,7 +103,7 @@ export const it: LegacyImportRunMessages = {
   statSkipped: 'Saltati',
   statLive: 'Non ancora importati',
   pendingSection: 'Progetti non importati',
-  pendingHint: 'Se non fai nulla, BaoCut riprova al prossimo avvio. Quelli saltati non vengono importati.',
+  pendingHint: "L’importazione automatica viene eseguita una sola volta. Puoi riprovare manualmente dai dettagli dell’attività.",
   howTo: 'Cosa fare: ',
   groupTitle: (title, n) => `${title} · ${n}`,
   liveSection: 'In importazione',

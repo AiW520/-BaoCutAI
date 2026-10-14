@@ -13,8 +13,7 @@ export const ptBR: LegacyImportRunMessages = {
       one: `Os vídeos usados por este projeto estão nesta unidade (${root}), que não pode ser lida agora.`,
       other: `Os vídeos usados por estes ${n} projetos estão nesta unidade (${root}), que não pode ser lida agora.`,
     }),
-  offlineFix:
-    'Conecte a unidade e clique em “Tentar novamente”. Se você não fizer nada, o BaoCut tenta de novo na próxima vez que iniciar. Se não precisar mais da mídia, clique em “Pular” para não importar.',
+  offlineFix: "Conecte a unidade e clique em “Tentar de novo”. Se não precisar mais do material, clique em “Pular”.",
   offlineShort: (n, name) =>
     pluralForm('pt-BR', n, {
       one: `${n} projeto tem a mídia em “${name}”, que não está conectada`,
@@ -54,8 +53,7 @@ export const ptBR: LegacyImportRunMessages = {
   failedReport: (report) => `Relatório de importação: ${report}`,
   failedNoReport: 'Nenhum relatório de importação foi gravado',
   note: (parts) => `${parts.join('; ')}.`,
-  hintOffline: (name) =>
-    `Conecte “${name}” e clique em “Tentar todos novamente”. Se você não fizer nada, o BaoCut tenta de novo na próxima vez que iniciar. Para resolver um por um, abra os detalhes.`,
+  hintOffline: (name) => `Conecte “${name}” e clique em “Tentar todos de novo”. Para tratar um por vez, abra os detalhes.`,
   hintOther: 'O motivo e o que fazer com cada um estão nos detalhes. Você pode pular os que não precisar.',
   subProgress: (done, total) => `Importados ${done}/${total}`,
   subImported: (n) => `Importados ${n}`,
@@ -107,7 +105,7 @@ export const ptBR: LegacyImportRunMessages = {
   statSkipped: 'Pulados',
   statLive: 'Ainda não importados',
   pendingSection: 'Projetos não importados',
-  pendingHint: 'Se você não fizer nada, o BaoCut tenta de novo na próxima vez que iniciar. Os pulados não são importados.',
+  pendingHint: "A importação automática é executada uma vez. Depois, tente de novo manualmente nos detalhes da tarefa.",
   howTo: 'O que fazer: ',
   groupTitle: (title, n) => `${title} · ${n}`,
   liveSection: 'Importando',

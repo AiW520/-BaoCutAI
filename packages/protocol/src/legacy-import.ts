@@ -8,7 +8,7 @@
  *
  * 回答 `import` 之后的导入是一次运行（`LegacyImportRun`）：同一个主题报每个项目导入到哪一步、导入不成的原因；
  * 没导入的可以重试（`legacyImport.retry`）或跳过（`legacyImport.setSkipped`，记下以后不再自动导入，可以撤销）。
- * 没导入、也没跳过的，下次启动自动再试。
+ * 自动导入只执行一轮；结果持久保存，重启不自动再试，任务详情仍可手动重试。
  *
  * 只给桌面界面（与 CLI）：`legacyImport.*` 与这个主题不在 Web 服务的白名单里。
  */
@@ -56,11 +56,11 @@ export interface LegacyImportItem extends LegacyProjectSummary {
 }
 
 /**
- * 这次启动里的项目导入：回答 `import` 之后（或上次有没导入的、这次启动自动再试时）出现，Runtime 停下前一直在。
- * 只列这次启动开始时还没导入的项目，更早导入完成的不列。
+ * 持久保存的项目导入：回答 `import` 后出现，重启保留运行 ID、结果与原因，不自动重新导入。
+ * 中断的排队与导入中项目恢复为 `not-imported`，等待手动重试。
  */
 export interface LegacyImportRun {
-  /** 这次运行的标识；Runtime 重启后换一个。 */
+  /** 这次运行的标识；Runtime 重启后保持不变。 */
   runId: string;
   /** 导入目录（导入后的项目，绝对路径）。 */
   directory: string;
@@ -76,7 +76,7 @@ export interface LegacyImportRun {
 
 /**
  * `legacy-import` 主题的快照：等用户回答的询问；没有（没发现、已经决定、还在发现）时为 null。
- * `run` 是这次启动里的导入；没有要导入的时为 null。
+ * `run` 是持久保存的导入；尚无导入记录时为 null。
  */
 export interface LegacyImportSnapshot {
   prompt: LegacyImportPrompt | null;

@@ -51,7 +51,7 @@ test('原因分组：每块没接上的硬盘一组，文件不在原处一组�
   assert.equal(drive.title, '移动硬盘「Extreme SSD」没接上');
   assert.match(drive.why, /这 2 个项目.*\/Volumes\/Extreme SSD/);
   assert.match(drive.fix, /接上硬盘后点「重试」/);
-  assert.match(drive.fix, /下次启动 BaoCut 会自动再试/);
+  assert.match(drive.fix, /接上硬盘后点「重试」/);
   gs.forEach((g) => { assert.ok(g.title && g.why && g.fix, g.kind); });
 });
 

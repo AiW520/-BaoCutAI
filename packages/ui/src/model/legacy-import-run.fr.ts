@@ -13,8 +13,7 @@ export const fr: LegacyImportRunMessages = {
       one: `Les vidéos utilisées par ce projet se trouvent sur ce disque (${root}), inaccessible pour le moment.`,
       other: `Les vidéos utilisées par ces ${n} projets se trouvent sur ce disque (${root}), inaccessible pour le moment.`,
     }),
-  offlineFix:
-    'Connectez le disque, puis cliquez sur « Réessayer ». Si vous ne faites rien, BaoCut réessaiera au prochain démarrage. Si vous n’avez plus besoin des médias, cliquez sur « Ignorer » : l’importation n’aura pas lieu.',
+  offlineFix: "Connectez le disque, puis cliquez sur « Réessayer ». Si vous n’avez plus besoin des vidéos, cliquez sur « Ignorer ».",
   offlineShort: (n, name) =>
     pluralForm('fr', n, {
       one: `${n} projet a ses médias sur « ${name} », qui n’est pas connecté`,
@@ -55,8 +54,7 @@ export const fr: LegacyImportRunMessages = {
   failedReport: (report) => `Rapport d’importation : ${report}`,
   failedNoReport: 'Aucun rapport d’importation n’a été écrit',
   note: (parts) => `${parts.join(' ; ')}.`,
-  hintOffline: (name) =>
-    `Connectez « ${name} », puis cliquez sur « Tout réessayer ». Si vous ne faites rien, BaoCut réessaiera au prochain démarrage. Pour les traiter un par un, ouvrez les détails.`,
+  hintOffline: (name) => `Connectez « ${name} », puis cliquez sur « Tout réessayer ». Pour les traiter un par un, ouvrez les détails.`,
   hintOther: 'Le motif et la marche à suivre pour chacun se trouvent dans les détails. Vous pouvez ignorer ceux dont vous n’avez pas besoin.',
   subProgress: (done, total) => `Importés ${done}/${total}`,
   subImported: (n) => `Importés ${n}`,
@@ -107,7 +105,7 @@ export const fr: LegacyImportRunMessages = {
   statSkipped: 'Ignorés',
   statLive: 'Pas encore importés',
   pendingSection: 'Projets non importés',
-  pendingHint: 'Si vous ne faites rien, BaoCut réessaiera au prochain démarrage. Les projets ignorés ne sont pas importés.',
+  pendingHint: "L’importation automatique ne s’exécute qu’une fois. Réessayez manuellement depuis les détails de la tâche.",
   howTo: 'Que faire : ',
   groupTitle: (title, n) => `${title} · ${n}`,
   liveSection: 'En cours d’importation',

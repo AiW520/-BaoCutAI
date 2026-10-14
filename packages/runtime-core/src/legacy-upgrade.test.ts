@@ -277,7 +277,7 @@ describe('legacy startup upgrade', () => {
     await settings.load();
     expect(settings.get('downloads.directory')).toBeNull();
   });
-  it.skipIf(process.platform === 'win32')('retries only failures and preserves existing settings and credentials', async () => {
+  it.skipIf(process.platform === 'win32')('manually retries only failures and preserves existing settings and credentials', async () => {
     const s = await setup();
     const settings = new SettingsStore(s.home.settingsFile);
     await settings.load();
@@ -300,6 +300,9 @@ describe('legacy startup upgrade', () => {
     const again = new LegacyUpgrade(options);
     await again.prepare();
     again.start(s.deps);
+    await finish(again);
+    expect(importProject).toHaveBeenCalledTimes(2);
+    expect(await again.retry()).toBe(1);
     await finish(again);
     expect(importProject).toHaveBeenCalledTimes(3);
     await settings.load();
@@ -611,7 +614,7 @@ it('a complete migration reads only its marker, even if old data is changed or c
   expect(stat).not.toHaveBeenCalled();
 });
 
-it('retries the cached inventory and does not launch importers for still-missing media', async () => {
+it('restores cached results and checks missing media only on manual retry', async () => {
   const s = await setup();
   await writeJsonAtomic(path.join(s.root, 'projects', 'old', 'project.json'), { title: 'V2 fixture' });
   const missing = path.join(dir, 'offline.wav');
@@ -627,6 +630,7 @@ it('retries the cached inventory and does not launch importers for still-missing
     await upgrade.prepare();
     upgrade.start(s.deps);
     await finish(upgrade);
+    return upgrade;
   };
   await run();
   expect(importProject).toHaveBeenCalledTimes(1);
@@ -635,8 +639,13 @@ it('retries the cached inventory and does not launch importers for still-missing
   await run();
   expect(importProject).toHaveBeenCalledTimes(1);
   expect(scan).not.toHaveBeenCalled();
+  const again = await run();
+  expect(await again.retry()).toBe(1);
+  await finish(again);
+  expect(importProject).toHaveBeenCalledTimes(1);
   await fs.writeFile(missing, 'restored');
-  await run();
+  expect(await again.retry()).toBe(1);
+  await finish(again);
   expect(importProject).toHaveBeenCalledTimes(2);
 });
 
@@ -891,7 +900,7 @@ describe('legacy project import prompt', () => {
     expect(importProject).not.toHaveBeenCalled();
   });
 
-  it('keeps importing a migration started by an earlier build into its original layout without asking', async () => {
+  it('restores an earlier failed migration and manually retries into its original layout without asking', async () => {
     const s = await setup({ decided: false });
     await writeJsonAtomic(path.join(s.root, 'projects', 'v2', 'project.json'), { title: 'Later' });
     const started = await fs.realpath(path.join(s.root, 'projects', 'old'));
@@ -914,7 +923,10 @@ describe('legacy project import prompt', () => {
     await finish(upgrade);
     expect(events.filter((event) => (event as { type: string }).type === 'prompt.updated')).toEqual([]);
     const targets = Object.fromEntries(importProject.mock.calls.map(([request]) => [path.basename(request.source), request.target]));
-    expect(targets.old).toBe(earlierTarget);
+    expect(targets.old).toBeUndefined();
+    expect(await upgrade.retry([started])).toBe(1);
+    await finish(upgrade);
+    expect(importProject).toHaveBeenCalledWith(expect.objectContaining({ source: started, target: earlierTarget }), expect.anything());
     expect(path.dirname(targets.v2!)).toBe(path.join(s.home.projectsDir, 'Imported'));
     expect((await readJson<any>(markerOf(s))).projectImport).toEqual({
       decision: 'import',
@@ -1048,10 +1060,108 @@ describe('legacy project import progress', () => {
     expect(items.broken!.problem).toEqual({ kind: 'unreadable' });
     const failedTarget = importProject.mock.calls.find(([request]) => path.basename(request.source) === 'failed')![0].target;
     expect(items.failed!.problem).toEqual({ kind: 'failed', report: path.join(failedTarget, 'import-report.json') });
-    // 没导入的记成待办，下次启动再试；这个来源还没完成。
+    // 没导入的保留待办与结果，等待手动重试；这个来源还没完成。
     const marker = await readJson<any>(markerOf(s));
     expect(marker.sources[s.root].pending.filter((todo: string) => todo.startsWith('project:'))).toHaveLength(4);
     expect(marker.sources[s.root].complete).toBeUndefined();
+  });
+
+  it('restores failed results across restarts without importing again, and still supports manual retry', async () => {
+    const s = await setup();
+    await v2(s, 'missing');
+    const media = path.join(dir, 'restored.mov');
+    const importProject = vi.fn(async (request: { source: string; target: string }) => {
+      if (path.basename(request.source) === 'missing' && !existsSync(media)) {
+        await report(request, { assets: { missing: [media] } });
+        throw new Error('missing');
+      }
+    });
+    const options = { ...s, roots: [s.root], v1Preferences: null, importProject, allowKeychain: false };
+    const first = new LegacyUpgrade(options);
+    await first.prepare();
+    first.start(s.deps);
+    await finish(first);
+    const result = first.run();
+    await first.stop();
+    const calls = importProject.mock.calls.length;
+    // Even after the missing media returns, launching the app does not retry it.
+    await fs.writeFile(media, 'restored');
+    const again = new LegacyUpgrade(options);
+    await again.prepare();
+    again.start(s.deps);
+    await finish(again);
+    expect(again.prompt()).toBeNull();
+    expect(again.run()).toEqual(result);
+    expect(importProject).toHaveBeenCalledTimes(calls);
+    expect(await again.retry()).toBe(1);
+    await finish(again);
+    expect(byTitle(again).missing!.state).toBe('imported');
+    expect(importProject).toHaveBeenCalledTimes(calls + 1);
+    await again.stop();
+    // Completed results survive the global completion fast path as well.
+    const complete = new LegacyUpgrade(options);
+    await complete.prepare();
+    complete.start(s.deps);
+    await finish(complete);
+    expect(complete.run()).toEqual(again.run());
+    expect(importProject).toHaveBeenCalledTimes(calls + 1);
+    await complete.stop();
+  });
+
+  it('upgrades an older failed checkpoint without an automatic retry', async () => {
+    const s = await setup();
+    await v2(s, 'missing');
+    const source = await fs.realpath(path.join(s.root, 'projects', 'missing'));
+    await fs.rm(path.join(s.root, 'projects', 'old'), { recursive: true });
+    const target = path.join(s.imported, 'existing-target');
+    const media = path.join(dir, 'absent.mov');
+    await report({ target }, { assets: { missing: [media] } });
+    await writeJsonAtomic(markerOf(s), {
+      schemaVersion: 1, projectImport: { decision: 'import', directory: s.imported },
+      sources: { [s.root]: {
+        settings: true, modelDirectoryChecked: true, settingsReportChecked: true,
+        services: true, nodes: true, cloud: true, credentials: [], unsupported: [],
+        projects: { [source]: { target, videoDirectory: true } }, pending: [`project:${source}`],
+      } },
+    });
+    const importProject = vi.fn(async () => {});
+    const upgrade = new LegacyUpgrade({ ...s, roots: [s.root], v1Preferences: null, importProject });
+    await upgrade.prepare();
+    upgrade.start(s.deps);
+    await finish(upgrade);
+    expect(byTitle(upgrade).missing).toMatchObject({ state: 'not-imported', problem: { kind: 'missing', missing: [media] } });
+    expect(upgrade.run()!.state).toBe('finished');
+    expect(importProject).not.toHaveBeenCalled();
+    importProject.mockClear();
+    await fs.writeFile(media, 'restored');
+    expect(await upgrade.retry([source])).toBe(1);
+    await finish(upgrade);
+    expect(importProject).toHaveBeenCalledWith(expect.objectContaining({ source, target }), expect.anything());
+    await upgrade.stop();
+  });
+
+  it('keeps interrupted imports available for manual retry instead of resuming on restart', async () => {
+    const s = await setup();
+    await v2(s, 'interrupted');
+    const importProject = vi.fn(async (_request: unknown, signal: AbortSignal) => {
+      await new Promise<void>((resolve) => signal.addEventListener('abort', () => resolve(), { once: true }));
+    });
+    const options = { ...s, roots: [s.root], v1Preferences: null, importProject };
+    const first = new LegacyUpgrade(options);
+    await first.prepare();
+    first.start(s.deps);
+    await vi.waitFor(() => expect(importProject).toHaveBeenCalledTimes(1));
+    await first.stop();
+    importProject.mockClear();
+    const again = new LegacyUpgrade(options);
+    await again.prepare();
+    again.start(s.deps);
+    await finish(again);
+    expect(importProject).not.toHaveBeenCalled();
+    expect(again.run()).toMatchObject({ runId: first.run()!.runId, state: 'finished' });
+    expect(again.run()!.items.every((item) => item.state === 'not-imported')).toBe(true);
+    expect(again.active).toBe(false);
+    await again.stop();
   });
 
   it.skipIf(process.platform === 'win32')('retries, skips and un-skips; skipped projects are never imported again', async () => {
@@ -1115,8 +1225,10 @@ describe('legacy project import progress', () => {
     await again.prepare();
     again.start(s.deps);
     await finish(again);
-    expect(again.run()).toBeNull();
+    expect(again.run()?.runId).toBe(upgrade.run()?.runId);
+    expect(byTitle(again).broken!.state).toBe('skipped');
     expect(importProject.mock.calls.length).toBe(calls);
+    await again.stop();
   });
 
   it.skipIf(process.platform === 'win32')('re-imports a project skipped on an earlier launch when asked, alongside the ones still to import', async () => {

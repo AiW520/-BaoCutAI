@@ -187,7 +187,7 @@
           <>
             <div className="row" style={{marginTop: 28}}>
               <span className="t-section grow">没导入的项目</span>
-              <span className="t-detail-xs">不处理的话，下次启动会自动再试；跳过的不再导入</span>
+              <span className="t-detail-xs">自动导入只执行一次；之后可在任务详情里手动重试</span>
             </div>
             {gs.map((g) => <ProblemGroup key={g.key} g={g} act={act} />)}
           </>

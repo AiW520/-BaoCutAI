@@ -10,8 +10,7 @@ export const es: LegacyImportRunMessages = {
       one: `Los vídeos que usa este proyecto están en esta unidad (${root}), que ahora no se puede leer.`,
       other: `Los vídeos que usan estos ${n} proyectos están en esta unidad (${root}), que ahora no se puede leer.`,
     }),
-  offlineFix:
-    'Conecta la unidad y haz clic en «Reintentar». Si no haces nada, BaoCut lo volverá a intentar la próxima vez que se inicie. Si ya no necesitas el material, haz clic en «Omitir» y no se importará.',
+  offlineFix: "Conecta la unidad y haz clic en “Reintentar”. Si ya no necesitas el material, haz clic en “Omitir”.",
   offlineShort: (n, name) =>
     pluralForm('es', n, {
       one: `${n} proyecto tiene su material en «${name}», que no está conectada`,
@@ -50,8 +49,7 @@ export const es: LegacyImportRunMessages = {
   failedReport: (report) => `Informe de importación: ${report}`,
   failedNoReport: 'No se escribió ningún informe de importación',
   note: (parts) => `${parts.join('; ')}.`,
-  hintOffline: (name) =>
-    `Conecta «${name}» y haz clic en «Reintentar todos». Si no haces nada, BaoCut lo volverá a intentar la próxima vez que se inicie. Para gestionarlos uno a uno, abre los detalles.`,
+  hintOffline: (name) => `Conecta “${name}” y haz clic en “Reintentar todos”. Para tratarlos uno a uno, abre los detalles.`,
   hintOther: 'En los detalles están el motivo y qué hacer con cada uno. Puedes omitir los que no necesites.',
   subProgress: (done, total) => `Importados ${done}/${total}`,
   subImported: (n) => `Importados ${n}`,
@@ -99,7 +97,7 @@ export const es: LegacyImportRunMessages = {
   statSkipped: 'Omitidos',
   statLive: 'Aún no importados',
   pendingSection: 'Proyectos sin importar',
-  pendingHint: 'Si no haces nada, BaoCut lo volverá a intentar la próxima vez que se inicie. Los omitidos no se importan.',
+  pendingHint: "La importación automática se ejecuta una sola vez. Puedes reintentar manualmente desde los detalles de la tarea.",
   howTo: 'Qué hacer: ',
   groupTitle: (title, n) => `${title} · ${n}`,
   liveSection: 'Importando',

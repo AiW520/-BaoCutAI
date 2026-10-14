@@ -6,7 +6,7 @@ const report: LegacySettingsReport = { reportId: 'report-a', fields: ['transcrib
 beforeEach(() => {
   localStorage.removeItem('baocut.legacySettingsRead');
   localStorage.removeItem('baocut.legacyImportBannerDismissed');
-  useLegacyImport.setState({ prompt: null, run: null, settingsReport: null, settingsReportOpen: false, readSettingsReports: [], settingsReadLoaded: false, bannerDismissed: false, bannerDismissalLoaded: false });
+  useLegacyImport.setState({ prompt: null, run: null, settingsReport: null, settingsReportOpen: false, readSettingsReports: [], settingsReadLoaded: false, bannerDismissed: false, bannerDismissalLoaded: false, bannerRunId: null });
   vi.restoreAllMocks();
 });
 
@@ -70,6 +70,16 @@ describe('legacy import banner dismissal', () => {
   };
   const snapshot = { prompt: null, run };
 
+  it('restores a finished task without showing its old Home result again', () => {
+    useLegacyImport.getState().set(snapshot);
+    expect(useLegacyImport.getState()).toMatchObject({ run, bannerRunId: null });
+    useLegacyImport.getState().set({ ...snapshot, run: { ...run, state: 'importing', finishedAt: null } });
+    useLegacyImport.getState().set(snapshot);
+    expect(useLegacyImport.getState().bannerRunId).toBe(run.runId);
+    useLegacyImport.getState().set({ ...snapshot, run: { ...run, runId: 'another-finished-run' } });
+    expect(useLegacyImport.getState().bannerRunId).toBe(run.runId);
+  });
+
   it('remains dismissed across updates, retries, and a fresh client with a new run', () => {
     useLegacyImport.getState().set(snapshot);
     expect(useLegacyImport.getState().bannerDismissed).toBe(false);
@@ -78,7 +88,7 @@ describe('legacy import banner dismissal', () => {
     useLegacyImport.getState().set(snapshot);
     expect(useLegacyImport.getState().bannerDismissed).toBe(true);
     expect(localStorage.getItem('baocut.legacyImportBannerDismissed')).toBe('true');
-    useLegacyImport.setState({ bannerDismissed: false, bannerDismissalLoaded: false });
+    useLegacyImport.setState({ bannerDismissed: false, bannerDismissalLoaded: false, bannerRunId: null });
     useLegacyImport.getState().set({ prompt: null, run: null });
     useLegacyImport.getState().set({ ...snapshot, run: { ...run, runId: 'run-b' } });
     expect(useLegacyImport.getState()).toMatchObject({ bannerDismissed: true, run: { runId: 'run-b' } });
@@ -87,7 +97,7 @@ describe('legacy import banner dismissal', () => {
   it('only accepts an explicit saved dismissal', () => {
     for (const value of ['false', 'null', '{bad json', '{"bannerDismissed":true}']) {
       localStorage.setItem('baocut.legacyImportBannerDismissed', value);
-      useLegacyImport.setState({ bannerDismissed: false, bannerDismissalLoaded: false });
+      useLegacyImport.setState({ bannerDismissed: false, bannerDismissalLoaded: false, bannerRunId: null });
       useLegacyImport.getState().set(snapshot);
       expect(useLegacyImport.getState().bannerDismissed).toBe(false);
     }

@@ -58,10 +58,15 @@ interface SourceState {
 }
 /** 用户对项目导入的回答（§2.7）：`import` 带导入后的项目目录。更早的版本写的标记没有它。 */
 type ProjectDecision = { decision: 'import'; directory: string } | { decision: 'never' };
+interface ProjectRunCheckpoint {
+  run: LegacyImportRun;
+  entries: Record<string, { root: string; found: string; entry: LegacyObject }>;
+}
 interface UpgradeState {
   schemaVersion: 1;
   complete?: true;
   projectImport?: ProjectDecision;
+  projectRun?: ProjectRunCheckpoint;
   sources: Record<string, SourceState>;
 }
 export interface ImportRequest {
@@ -166,7 +171,7 @@ export class LegacyUpgrade {
   /** 启动时的这一轮在迁移（等回答时不算）。 */
   #migrating = false;
   #deps: LegacyUpgradeDeps | null = null;
-  /** 这次启动里的项目导入（`legacy-import` 主题的 `run`）。 */
+  /** 保留到下次启动的项目导入（`legacy-import` 主题的 `run`）。 */
   #importRun: LegacyImportRun | null = null;
   /** 导入里每一项（按 `item.path`）的来历：属于哪个来源、发现时的路径（`project:<路径>` 待办用它）、旧项目条目。 */
   readonly #entries = new Map<string, { root: string; found: string; entry: LegacyObject }>();
@@ -193,7 +198,7 @@ export class LegacyUpgrade {
     return this.#prompt;
   }
 
-  /** 这次启动里的项目导入（`legacyImport.get`）；没有要导入的时为 null。 */
+  /** 保留到下次启动的项目导入（`legacyImport.get`）；尚无导入记录时为 null。 */
   run(): LegacyImportRun | null {
     return this.#importRun && structuredClone(this.#importRun);
   }
@@ -291,6 +296,7 @@ export class LegacyUpgrade {
     });
   }
   async #save(): Promise<void> {
+    if (this.#importRun) this.#state.projectRun = { run: this.run()!, entries: Object.fromEntries(this.#entries) };
     for (const state of Object.values(this.#state.sources)) {
       state.unsupported = [...new Set(state.unsupported)];
       state.pending = [...new Set(state.pending)];
@@ -317,6 +323,29 @@ export class LegacyUpgrade {
     const loaded = await readJson<UpgradeState>(this.#file);
     if (loaded && (loaded.schemaVersion !== 1 || !loaded.sources)) throw new Error('Unsupported legacy upgrade marker');
     this.#state = loaded ?? this.#state;
+    // Restore results without starting another import, including an interrupted batch.
+    const checkpoint = this.#state.projectRun;
+    if (checkpoint) {
+      this.#importRun = structuredClone(checkpoint.run);
+      for (const [id, entry] of Object.entries(checkpoint.entries)) {
+        this.#entries.set(id, entry);
+        this.#runRoots.add(entry.root);
+      }
+      for (const item of this.#importRun.items) {
+        if (item.state !== 'queued' && item.state !== 'importing') continue;
+        const entry = this.#entries.get(item.path)!;
+        const source = this.#state.sources[entry.root]!;
+        const complete = source.projects[item.path]?.complete;
+        item.state = complete ? 'imported' : 'not-imported';
+        item.problem = complete ? null : { kind: 'failed', report: null };
+        if (!complete) source.pending.push(`project:${entry.found}`);
+      }
+      if (this.#importRun.state !== 'finished') {
+        this.#importRun.state = 'finished';
+        this.#importRun.finishedAt = new Date().toISOString();
+        await this.#save();
+      }
+    }
     const prefFile =
       this.#options.v1Preferences !== undefined
         ? this.#options.v1Preferences
@@ -380,7 +409,7 @@ export class LegacyUpgrade {
       const id = path.resolve(root);
       if (this.#state.sources[id]?.complete && this.#state.sources[id]?.services && this.#state.sources[id]?.nodes) continue;
       const state = (this.#state.sources[id] ??= { credentials: [], projects: {}, pending: [], unsupported: [] });
-      state.pending = [];
+      state.pending = state.pending.filter((item) => item.startsWith('project:'));
       if (state.settings && state.services) {
         this.#sources.push({ root: id, config: {}, preferences: {}, cloud: {}, projects: [] });
         continue;
@@ -453,7 +482,7 @@ export class LegacyUpgrade {
     this.#migrating = this.#sources.length > 0;
     this.#running = this.#run(deps)
       .catch(() => {
-        this.#options.log.warn('Legacy upgrade deferred; incomplete entries will retry on the next start');
+        this.#options.log.warn('Legacy upgrade deferred; configuration migration will retry on the next start');
       })
       .finally(() => {
         this.#migrating = false;
@@ -551,6 +580,11 @@ export class LegacyUpgrade {
       // Older completed imports keep their original locations and must not be scanned again.
       if (state.complete) {
         await this.#save();
+        continue;
+      }
+      // Saved project results belong to a single automatic pass; only explicit retries queue them again.
+      if (this.#importRun) {
+        await this.#finishPass(source.root, state);
         continue;
       }
       // 说过不再提醒：不再发现、不再导入项目，其余迁完就算完成。
@@ -654,7 +688,7 @@ export class LegacyUpgrade {
   }
 
   /**
-   * 这次启动的导入：列出还没导入完成的项目（跳过的照列，不排队），没跳过的全部排队。没有要导入的返回 false。
+   * 首次导入或早期检查点的结果：已尝试的项目只恢复结果，未尝试的排队。没有项目时返回 false。
    * `directory` 是回答里的导入目录；已有记录的沿用原来的目标。
    */
   async #startRun(sources: LegacySource[], directory: string): Promise<boolean> {
@@ -663,10 +697,21 @@ export class LegacyUpgrade {
     for (const project of await this.#unsettled(sources)) {
       this.#entries.set(project.id, { root: project.root, found: project.found, entry: project.entry });
       const summary = await summarizeLegacyProject(project.id, project.entry, this.#options.platform);
-      items.push({ ...summary, state: skipped.has(project.id) ? 'skipped' : 'queued', problem: null });
+      const state = this.#state.sources[project.root]!;
+      const record = state.projects[project.id];
+      const attempted = !!record || state.pending.includes(`project:${project.found}`);
+      let problem: LegacyImportProblem | null = null;
+      if (attempted) {
+        const reportFile = record ? path.join(record.target, 'import-report.json') : null;
+        const report = reportFile ? await readJson<ImportReport>(reportFile).catch(() => null) : null;
+        const missing = await this.#stillMissing(report?.assets?.missing);
+        problem = missing.length ? await this.#missingProblem(missing) : report ? { kind: 'failed', report: reportFile } : { kind: 'unreadable' };
+      }
+      if (attempted && !skipped.has(project.id)) state.pending.push(`project:${project.found}`);
+      items.push({ ...summary, state: skipped.has(project.id) ? 'skipped' : attempted ? 'not-imported' : 'queued', problem });
     }
     for (const source of sources) this.#runRoots.add(source.root);
-    if (this.#abort.signal.aborted || !items.some((item) => item.state === 'queued')) {
+    if (this.#abort.signal.aborted || !items.some((item) => item.state !== 'skipped')) {
       this.#entries.clear();
       this.#runRoots.clear();
       return false;
@@ -674,8 +719,13 @@ export class LegacyUpgrade {
     items.sort((a, b) => (b.editedAt ?? '').localeCompare(a.editedAt ?? ''));
     this.#importRun = { runId: randomUUID(), directory, state: 'importing', startedAt: new Date().toISOString(), finishedAt: null, items };
     this.#queue.push(...items.filter((item) => item.state === 'queued').map((item) => item.path));
+    if (!this.#queue.length) {
+      this.#importRun.state = 'finished';
+      this.#importRun.finishedAt = new Date().toISOString();
+    }
+    await this.#save();
     this.#publishRun();
-    this.#options.log.info('Legacy project import started', { projects: this.#queue.length, skipped: items.length - this.#queue.length });
+    this.#options.log.info('Legacy project import started', { projects: this.#queue.length, skipped: items.filter((item) => item.state === 'skipped').length });
     return true;
   }
 
@@ -692,7 +742,7 @@ export class LegacyUpgrade {
     if (this.#draining || !this.#queue.length || !this.#deps) return;
     this.#draining = true;
     this.#drained = this.#drain(this.#deps).catch(() => {
-      this.#options.log.warn('Legacy project import stopped; incomplete projects will retry on the next start');
+      this.#options.log.warn('Legacy project import stopped; incomplete projects remain available for manual retry');
     });
   }
 
@@ -705,6 +755,7 @@ export class LegacyUpgrade {
         if (next === undefined) {
           run.state = 'finished';
           run.finishedAt = new Date().toISOString();
+          await this.#save();
           this.#publishRun();
           this.#options.log.info('Legacy project import finished', {
             imported: run.items.filter((item) => item.state === 'imported').length,
@@ -731,6 +782,7 @@ export class LegacyUpgrade {
         if (!result) return;
         item.state = result.problem ? 'not-imported' : 'imported';
         item.problem = result.problem;
+        await this.#save();
         this.#publishRun();
       }
     } finally {
@@ -738,7 +790,7 @@ export class LegacyUpgrade {
     }
   }
 
-  /** 导入一个项目：导入了 `problem` 为 null，没导入的带原因（并记成待办，下次启动再试）。Runtime 停下时返回 null。 */
+  /** 导入一个项目：导入了 `problem` 为 null，没导入的带原因（并保留待办，等待手动重试）。Runtime 停下时返回 null。 */
   async #importOne(id: string, directory: string, deps: LegacyUpgradeDeps): Promise<{ problem: LegacyImportProblem | null } | null> {
     const { root, found, entry } = this.#entries.get(id)!;
     const state = this.#state.sources[root]!;

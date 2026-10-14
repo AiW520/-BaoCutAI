@@ -2,7 +2,7 @@ import { create } from 'zustand';
 import type { LegacyImportPrompt, LegacyImportRun, LegacyImportSnapshot, LegacySettingsReport } from '@baocut/protocol';
 
 /**
- * 旧版项目导入（`legacy-import` 主题，架构设计 §2.7）：启动询问与这次启动的导入进度、结果。只有外壳根上的
+ * 旧版项目导入（`legacy-import` 主题，架构设计 §2.7）：启动询问与持久保存的导入进度、结果。只有外壳根上的
  * LegacyImportHost 订阅并写这里（一个主题只有一个处理函数）；任务页、Home 顶上那一条与 rail 读这里。Web 一直是空的。
  */
 export interface LegacyImportStore {
@@ -15,6 +15,8 @@ export interface LegacyImportStore {
   /** Home 的导入结果提示已永久关闭；重启、重连或重试不再显示，导入进度仍可见。 */
   bannerDismissed: boolean;
   bannerDismissalLoaded: boolean;
+  /** Only results of a run observed in progress can notify in this client. */
+  bannerRunId: string | null;
   set(state: LegacyImportSnapshot): void;
   closeBanner(): void;
   openSettingsReport(): void;
@@ -48,11 +50,13 @@ export const useLegacyImport = create<LegacyImportStore>()((set) => ({
   settingsReadLoaded: false,
   bannerDismissed: false,
   bannerDismissalLoaded: false,
+  bannerRunId: null,
   set: ({ prompt, run, settingsReport }) => set((current) => {
     const report = settingsReport ?? null;
     const read = report && !current.settingsReadLoaded ? readSettingsReports() : current.readSettingsReports;
     return {
       prompt, run, settingsReport: report,
+      bannerRunId: run && run.state !== 'finished' ? run.runId : current.bannerRunId,
       bannerDismissed: run && !current.bannerDismissalLoaded ? readBannerDismissed() : current.bannerDismissed,
       bannerDismissalLoaded: current.bannerDismissalLoaded || run !== null,
       readSettingsReports: read,

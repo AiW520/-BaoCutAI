@@ -59,7 +59,7 @@ describe('legacy-import-run', () => {
     ]);
     expect(groups[0]!.title).toBe('移动硬盘「Extreme SSD」没接上');
     expect(groups[0]!.why).toBe('这 2 个项目用到的视频在这块硬盘上（/Volumes/Extreme SSD），现在读不到。');
-    expect(groups[0]!.fix).toMatch(/下次启动 BaoCut 会自动再试/);
+    expect(groups[0]!.fix).toMatch(/接上硬盘后点「重试」/);
     for (const g of groups) expect(g.title && g.why && g.fix && g.short).toBeTruthy();
   });
 

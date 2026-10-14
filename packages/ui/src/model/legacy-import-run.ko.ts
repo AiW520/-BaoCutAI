@@ -4,8 +4,7 @@ export const ko: LegacyImportRunMessages = {
   offlineTitle: (name) => `“${name}” 드라이브가 연결되어 있지 않습니다`,
   offlineWhy: (n, root) =>
     `${n === 1 ? '이 프로젝트' : `이 프로젝트 ${n}개`}에서 사용하는 비디오가 이 드라이브(${root})에 있는데, 지금은 읽을 수 없습니다.`,
-  offlineFix:
-    '드라이브를 연결한 뒤 “다시 시도”를 클릭하세요. 그대로 두면 다음에 BaoCut을 시작할 때 자동으로 다시 시도합니다. 소재가 더 이상 필요 없으면 “건너뛰기”를 클릭하세요. 그러면 가져오지 않습니다.',
+  offlineFix: "드라이브를 연결한 뒤 “다시 시도”를 클릭하세요. 필요 없는 영상은 “건너뛰기”를 클릭하세요.",
   offlineShort: (n, name) => `프로젝트 ${n}개의 소재가 연결되지 않은 “${name}” 드라이브에 있습니다`,
   missingTitle: '소재 파일이 원래 위치에 없습니다',
   missingWhy: '프로젝트에서 사용하는 파일이 이동, 이름 변경 또는 삭제되어 이전 프로젝트에 저장된 경로로는 찾을 수 없습니다.',
@@ -26,8 +25,7 @@ export const ko: LegacyImportRunMessages = {
   failedReport: (report) => `가져오기 보고서: ${report}`,
   failedNoReport: '가져오기 보고서가 작성되지 않았습니다',
   note: (parts) => `${parts.join('. ')}.`,
-  hintOffline: (name) =>
-    `“${name}” 드라이브를 연결한 뒤 “모두 다시 시도”를 클릭하세요. 그대로 두면 다음에 BaoCut을 시작할 때 자동으로 다시 시도합니다. 하나씩 처리하려면 세부 정보를 여세요.`,
+  hintOffline: (name) => `“${name}”을 연결한 뒤 “모두 다시 시도”를 클릭하세요. 개별 처리는 세부 정보를 여세요.`,
   hintOther: '각 프로젝트의 이유와 해결 방법은 세부 정보에 있습니다. 필요 없는 프로젝트는 건너뛸 수 있습니다.',
   subProgress: (done, total) => `가져옴 ${done}/${total}`,
   subImported: (n) => `가져옴 ${n}`,
@@ -65,7 +63,7 @@ export const ko: LegacyImportRunMessages = {
   statSkipped: '건너뜀',
   statLive: '아직 가져오지 않음',
   pendingSection: '가져오지 못한 프로젝트',
-  pendingHint: '그대로 두면 다음에 시작할 때 자동으로 다시 시도합니다. 건너뛴 프로젝트는 가져오지 않습니다.',
+  pendingHint: "자동 가져오기는 한 번만 실행됩니다. 이후에는 작업 세부 정보에서 수동으로 다시 시도할 수 있습니다.",
   howTo: '해결 방법: ',
   groupTitle: (title, n) => `${title} · ${n}개`,
   liveSection: '가져오는 중',

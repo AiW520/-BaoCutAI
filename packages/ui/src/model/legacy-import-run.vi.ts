@@ -4,8 +4,7 @@ export const vi: LegacyImportRunMessages = {
   offlineTitle: (name) => `Ổ “${name}” chưa được kết nối`,
   offlineWhy: (n, root) =>
     `Video mà ${n === 1 ? 'dự án này' : `${n} dự án này`} dùng nằm trên ổ này (${root}), hiện không đọc được.`,
-  offlineFix:
-    'Kết nối ổ rồi nhấp “Thử lại”. Nếu để nguyên, BaoCut sẽ thử lại ở lần khởi động sau. Nếu không cần tư liệu nữa, nhấp “Bỏ qua” để không nhập.',
+  offlineFix: "Kết nối ổ đĩa rồi nhấp “Thử lại”. Nếu không cần tư liệu nữa, hãy nhấp “Bỏ qua”.",
   offlineShort: (n, name) => `${n} dự án có tư liệu trên “${name}” chưa được kết nối`,
   missingTitle: 'Tệp tư liệu không còn ở chỗ cũ',
   missingWhy: 'Các tệp mà dự án dùng đã bị chuyển, đổi tên hoặc xóa, nên đường dẫn lưu trong dự án cũ không tìm thấy chúng nữa.',
@@ -26,8 +25,7 @@ export const vi: LegacyImportRunMessages = {
   failedReport: (report) => `Báo cáo nhập: ${report}`,
   failedNoReport: 'Không có báo cáo nhập nào được ghi',
   note: (parts) => `${parts.join('; ')}.`,
-  hintOffline: (name) =>
-    `Kết nối “${name}” rồi nhấp “Thử lại tất cả”. Nếu để nguyên, BaoCut sẽ thử lại ở lần khởi động sau. Để xử lý từng dự án, hãy mở chi tiết.`,
+  hintOffline: (name) => `Kết nối “${name}” rồi nhấp “Thử lại tất cả”. Mở chi tiết để xử lý từng dự án.`,
   hintOther: 'Lý do và cách xử lý từng dự án có trong chi tiết. Có thể bỏ qua những dự án không cần.',
   subProgress: (done, total) => `Đã nhập ${done}/${total}`,
   subImported: (n) => `Đã nhập ${n}`,
@@ -65,7 +63,7 @@ export const vi: LegacyImportRunMessages = {
   statSkipped: 'Đã bỏ qua',
   statLive: 'Chưa nhập',
   pendingSection: 'Dự án không nhập được',
-  pendingHint: 'Nếu để nguyên, BaoCut sẽ thử lại ở lần khởi động sau. Dự án đã bỏ qua sẽ không được nhập.',
+  pendingHint: "Nhập tự động chỉ chạy một lần. Sau đó, bạn có thể thử lại thủ công trong chi tiết tác vụ.",
   howTo: 'Cách xử lý: ',
   groupTitle: (title, n) => `${title} · ${n}`,
   liveSection: 'Đang nhập',

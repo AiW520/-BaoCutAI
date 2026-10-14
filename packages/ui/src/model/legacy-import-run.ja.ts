@@ -4,8 +4,7 @@ export const ja: LegacyImportRunMessages = {
   offlineTitle: (name) => `ドライブ「${name}」が接続されていません`,
   offlineWhy: (n, root) =>
     `${n === 1 ? 'このプロジェクト' : `この ${n} 件のプロジェクト`}で使う動画はこのドライブ（${root}）にあり、今は読み取れません。`,
-  offlineFix:
-    'ドライブを接続してから「再試行」をクリックしてください。そのままにすると、次回 BaoCut の起動時に自動でもう一度試します。素材が不要なら「スキップ」をクリックすると、今後は読み込みません。',
+  offlineFix: "ドライブを接続してから「再試行」をクリックしてください。素材が不要なら「スキップ」をクリックしてください。",
   offlineShort: (n, name) => `${n} 件のプロジェクトの素材が、接続されていない「${name}」にあります`,
   missingTitle: '素材ファイルが元の場所にありません',
   missingWhy: 'プロジェクトで使うファイルが移動、名前変更、または削除されたため、以前のプロジェクトに保存されたパスでは見つかりません。',
@@ -27,8 +26,7 @@ export const ja: LegacyImportRunMessages = {
   failedReport: (report) => `読み込みレポート：${report}`,
   failedNoReport: '読み込みレポートは作成されませんでした',
   note: (parts) => `${parts.join('。')}。`,
-  hintOffline: (name) =>
-    `「${name}」を接続してから「すべて再試行」をクリックしてください。そのままにすると、次回の起動時に自動でもう一度試します。1 件ずつ対処するには詳細を開いてください。`,
+  hintOffline: (name) => `「${name}」を接続してから「すべて再試行」をクリックしてください。1 件ずつ対処するには詳細を開いてください。`,
   hintOther: '各プロジェクトの理由と対処方法は詳細にあります。不要なものはスキップできます。',
   subProgress: (done, total) => `読み込み済み ${done}/${total}`,
   subImported: (n) => `読み込み済み ${n}`,
@@ -67,7 +65,7 @@ export const ja: LegacyImportRunMessages = {
   statSkipped: 'スキップ済み',
   statLive: '読み込み待ち',
   pendingSection: '読み込めなかったプロジェクト',
-  pendingHint: 'そのままにすると、次回の起動時に自動でもう一度試します。スキップしたものは読み込みません',
+  pendingHint: "自動読み込みは一度だけ行います。その後はタスクの詳細から手動で再試行できます。",
   howTo: '対処方法：',
   groupTitle: (title, n) => `${title} · ${n} 件`,
   liveSection: '読み込み中',
