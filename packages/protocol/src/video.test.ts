@@ -231,6 +231,21 @@ describe('applyVideoEvent', () => {
     expect(next.video.assets.asset_1?.name).toBe('a.mp4');
   });
 
+  it('视频头的投影带上视频速览，清掉之后不留旧的', () => {
+    const brief = { markdown: '一期访谈。\n\n- [0:26](?t=26) 要点', language: 'zh-Hans' };
+    const written = applyVideoEvent(
+      base(),
+      event('2', { upserts: [{ kind: 'video', id: 'video_1', value: { name: '访谈', rootSequenceId: 'seq_1', brief } }], removals: [] }),
+    );
+    expect(written.video.brief).toEqual(brief);
+    const cleared = applyVideoEvent(
+      written,
+      event('3', { upserts: [{ kind: 'video', id: 'video_1', value: { name: '访谈', rootSequenceId: 'seq_1' } }], removals: [] }),
+    );
+    expect('brief' in cleared.video).toBe(false);
+    expect(written.video.brief).toEqual(brief);
+  });
+
   it('序列头的投影：改名之后的序列头没有 nameRef，旧的引用不留', () => {
     const state = base();
     const seq = state.video.sequences.seq_1!;

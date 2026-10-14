@@ -1629,9 +1629,12 @@ export function applyVideoEvent(state: VideoTopicSnapshot, event: VideoEvent): V
   for (const upsert of event.projection.upserts) {
     switch (upsert.kind) {
       case 'video': {
-        const value = upsert.value as { name: string; rootSequenceId: Id };
+        const value = upsert.value as { name: string; rootSequenceId: Id; brief?: VideoBrief };
         video.name = value.name;
         video.rootSequenceId = value.rootSequenceId;
+        // 速览没写过或清掉了时省略（视频格式规范 §3.1）：投影里也不能留着旧的。
+        if (value.brief) video.brief = value.brief;
+        else delete video.brief;
         break;
       }
       case 'sequence': {
