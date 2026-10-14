@@ -176,13 +176,11 @@ test('download：完成后列出落地的文件（名字、所在文件夹与大
   assert.deepEqual(C.download({id: 'd', kind: 'download', status: 'done'}).files, [], '没有文件名时不编文件');
 });
 
-test('download：有播放地址的在卡里播，视频带封面、音频不带；视频建成了视频的交给视频卡播', () => {
+test('download：有播放地址的在卡里播，视频带封面、音频不带', () => {
   const base = {id: 'd', kind: 'download', status: 'done', saveDir: '~/Downloads', previewSrc: 'media/demo.webm', poster: 'media/poster.svg'};
   assert.deepEqual(C.download({...base, name: 'demo.mp4'}).files[0].player, {kind: 'video', src: 'media/demo.webm', poster: 'media/poster.svg'});
   assert.deepEqual(C.download({...base, name: 'ep42.m4a', previewSrc: 'media/ep42.wav'}).files[0].player,
     {kind: 'audio', src: 'media/ep42.wav', poster: null});
-  assert.equal(C.download({...base, name: 'demo.mp4', project: 'v9'}).files[0].player, null, '视频卡原地播同一个文件');
-  assert.equal(C.download({...base, name: 'ep42.m4a', project: 'v9'}).files[0].player.kind, 'audio', '音频建成的视频没有画面，仍在下载卡上播');
   assert.equal(C.download({...base, name: 'demo.mp4', previewSrc: null}).files[0].player, null, '没有播放地址只列文件');
   assert.equal(C.download({...base, name: 'talk.opus'}).files[0].player, null, '放不了的格式不出播放器');
   assert.deepEqual(C.download({...base, name: 'demo.mp4', status: 'running', pct: 40}).files, [], '下完才出文件与播放器');
@@ -199,7 +197,7 @@ test('candidate：只有完成且有候选的合成语音 / 生成图片', () =>
   assert.equal(C.candidate({id: 'x', kind: 'export', status: 'done', outputs: [{}]}), null);
 });
 
-test('rowCards：工具消息折在回复或工作组里也找得到行；下载卡挪到最新一条引用，建出视频后仍在，视频卡另挂', () => {
+test('rowCards：工具消息折在回复或工作组里也找得到行；下载卡挪到最新一条引用，建出视频后换成视频卡', () => {
   const A = global.window.BC_AGENT;
   const messages = [
     {id: 'u', role: 'user'}, {id: 'a1', role: 'assistant'},
@@ -213,9 +211,11 @@ test('rowCards：工具消息折在回复或工作组里也找得到行；下载
   assert.deepEqual([...running.entries()], [['a1', [{k: 'candidate', taskId: 'img'}]], ['a2', [{k: 'download', taskId: 'dl'}]]]);
   const movie = {id: 'v9', kind: 'movie', messageId: 'w1'};
   const done = C.rowCards(rows, messages, [movie], [{id: 'dl', kind: 'download', status: 'done', project: 'v9'}, img]);
-  assert.deepEqual([...done.entries()], [['a1', [{k: 'artifact', item: movie}, {k: 'candidate', taskId: 'img'}]], ['a2', [{k: 'download', taskId: 'dl'}]]]);
-  const same = {id: 'v9', kind: 'movie', messageId: 'w3'};
-  assert.deepEqual(C.rowCards(rows, messages, [same], [{id: 'dl', kind: 'download', status: 'done', project: 'v9'}]).get('a2'),
+  assert.deepEqual([...done.entries()], [['a1', [{k: 'artifact', item: movie}, {k: 'candidate', taskId: 'img'}]]], '建出视频后不再挂下载卡');
+  const only = C.rowCards(rows, messages, [], [{id: 'dl', kind: 'download', status: 'done', name: 'a.mp4'}]);
+  assert.deepEqual(only.get('a2'), [{k: 'download', taskId: 'dl'}], '只下载的完成后留在原处');
+  const same = {id: 'v8', kind: 'movie', messageId: 'w3'};
+  assert.deepEqual(C.rowCards(rows, messages, [same], [{id: 'dl', kind: 'download', status: 'running'}]).get('a2'),
     [{k: 'download', taskId: 'dl'}, {k: 'artifact', item: same}], '挂在同一行时下载卡在前');
   const withImg = {id: 'v9', kind: 'movie', messageId: 'w2'};
   assert.deepEqual(C.rowCards(rows, messages, [withImg], [img]).get('a1'),

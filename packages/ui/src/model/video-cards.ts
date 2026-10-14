@@ -22,7 +22,7 @@ import {
   type ExportOutputFact,
 } from './export-job.ts';
 import { formatClock, shortenPath } from './format.ts';
-import { downloadProgress, isLinkImport, linkFrozen, linkIssue, linkMeta, linkPhaseText, linkSummary } from './link-import.ts';
+import { downloadProgress, isLinkImport, linkFiles, linkFrozen, linkIssue, linkLanded, linkMeta, linkPhaseText } from './link-import.ts';
 import { formatBytes, isPlayable, kindOfFileName, videoTargetOf } from './space.ts';
 import { entryJobId } from './space-actions.ts';
 import { jobRemedy, type Remedy } from './task-facts.ts';
@@ -44,9 +44,9 @@ import { jobErrorText, jobWaitText } from './localized-text.ts';
  *   (a) 最后一个引用它的块后面；(b) 卡上的活在后面的回合开始时还没结束（在跑或排队）：这件活结束之前开始的最后一轮
  *   （还在跑时就是最新一轮）的最后一个块后面。先后只比活的 `endedAt` 与那一轮用户消息的 `createdAt`；活结束后卡不再挪，
  *   也不挪回去。卡挪走后前面的回合不再有它。卡上列这条会话在这部视频上的全部活，与「产物」弹层的那张一样。
- * - **下载卡**：智能体发起的从链接导入一张，挂在提交它的那一轮，完成后留在原处，写落地的文件（只下载、不建视频的也是它）。
- *   视频建出来（父任务带上 `videoId`）后，这部视频另出一张视频卡，同一个位置时排在下载卡后面；下载本身不进视频卡的行，
- *   流程提交的转录是视频卡上的一行。
+ * - **下载卡**：智能体发起的从链接导入一张，挂在提交它的那一轮，只念下载这一段（`linkLanded` 之前）。下载完、视频也有了
+ *   （父任务带上 `videoId`，导入已有视频的从一开始就有）时，同一个位置换成这部视频的视频卡；下载不进视频卡的行，
+ *   流程提交的转录是视频卡上的一行。只下载、不建视频的一直是下载卡，完成后写落地的文件。
  * - 合成语音、生成图片这类生成任务不进视频卡（原型的候选卡在正式应用里还没有）。
  *
  * Job 归回合：`submitter` 是这条会话的智能体（`kind: 'agent'`、`id` 为会话），`taskId` 是那一轮的任务；固定流程提交的
@@ -255,11 +255,13 @@ export function threadCards(input: {
     const at = jobAnchor(taskId);
     if (at === null) continue;
     if (isLinkImport(job)) {
-      // 下载卡一直在；建出的视频只是被引用（下载不做视频卡的行，也不带着视频卡跟到后面的回合）。
       if (owner !== job) continue;
-      const key = `download:${job.jobId}`;
-      refs.set(key, { first: at, last: at, seq: seq++, card: { kind: 'download', key, jobId: job.jobId }, jobTurns: new Map() });
-      if (job.videoId) refer(job.videoId, at);
+      // 下载完、视频也有了：同一个位置换成视频卡（下载不做视频卡的行，也不带着视频卡跟到后面的回合）；之前是下载卡。
+      if (job.videoId && linkLanded(job)) refer(job.videoId, at);
+      else {
+        const key = `download:${job.jobId}`;
+        refs.set(key, { first: at, last: at, seq: seq++, card: { kind: 'download', key, jobId: job.jobId }, jobTurns: new Map() });
+      }
     } else if (job.videoId && isRowJob(job)) refer(job.videoId, at, job.jobId);
   }
 
@@ -658,10 +660,7 @@ export interface DownloadFile {
   meta: string;
   /** Space 的分类（认不出时 null）：文件那一行的图标。 */
   kind: SpaceEntryKind | null;
-  /**
-   * 在卡里怎么播：视频是正文视频播放器，音频是音频正文卡。不能播的（字幕、AVI……）null；下载的视频建成了视频的也是 null，
-   * 紧跟着的视频卡原地播同一个文件（音频建成的视频没有画面，仍在这里播）。
-   */
+  /** 在卡里怎么播：视频是正文视频播放器，音频是音频正文卡；不能播的（字幕、AVI……）null。 */
   player: 'video' | 'audio' | null;
   /** 发布这个文件的产物（找它的 Space 条目取播放句柄）；字幕没有。 */
   artifactId: string | null;
@@ -675,14 +674,14 @@ export interface DownloadCardView {
   name: string;
   /** 脱敏后的链接。 */
   source: string | null;
-  /** 保存到哪：排队、下载中与失败时写冻结的下载目录（完成后写在文件那一行；取消后临时文件已删，不写）。 */
+  /** 保存到哪：排队、下载中与失败时写冻结的下载目录（落地后写在文件那一行；取消后临时文件已删，不写）。 */
   dest: { label: string; path: string } | null;
   pct: number | null;
   line: string | null;
   elapsed: string | null;
   error: string | null;
   hint: string | null;
-  /** 完成后落地的文件：第一项是媒体，其余是字幕。 */
+  /** 落地的文件：第一项是媒体，其余是字幕。 */
   files: DownloadFile[];
   canCancel: boolean;
   canRetry: boolean;
@@ -695,21 +694,22 @@ const dirname = (file: string) => {
 };
 
 /**
- * 下载卡（原型 `download`）：来源、保存到哪、已下载多少、已用时长、取消；失败写原因与说明；完成后留在原处，
- * 列出落地的文件（文件名、所在文件夹与大小），能播的在卡里播。
+ * 下载卡（原型 `download`）：只念下载这一段。来源、保存到哪、已下载多少、已用时长、取消；失败写原因与说明。
+ * 文件落进下载目录（`linkLanded`）就是「下载完成」：列出落地的文件（文件名、所在文件夹与大小），能播的在卡里播；
+ * 流程之后的步骤（只下载时在媒体旁边转写文稿）不再念，也不再给取消与重试。
  */
 export function downloadCardView(job: JobRecord, jobs: readonly JobRecord[], now: number): DownloadCardView {
-  const state = rowState(job);
+  const landed = linkLanded(job);
+  const state: RowState = landed ? 'done' : rowState(job);
   const running = state === 'running';
   const frozen = linkFrozen(job);
   const meta = linkMeta(job);
   const d = running ? downloadProgress(job, jobs) : null;
   const failed = state === 'failed' || state === 'interrupted';
   const issue = failed ? linkIssue(job.error, job.state) : null;
-  const summary = state === 'done' ? linkSummary(job) : null;
+  const landedFiles = landed ? linkFiles(job) : null;
   const started = job.startedAt ? Date.parse(job.startedAt) : NaN;
   const T = VIDEO_CARD_COPY.download;
-  const video = !!(job.videoId ?? summary?.videoId);
   const file = (path: string, media: boolean): DownloadFile => {
     const name = basename(path);
     const output = media ? (job.result?.outputs ?? []).find((o) => o.path === path) : undefined;
@@ -720,7 +720,7 @@ export function downloadCardView(job: JobRecord, jobs: readonly JobRecord[], now
       path,
       meta: [shortenPath(dirname(path)), output ? formatBytes(output.byteLength) : null].filter(Boolean).join(' · '),
       kind,
-      player: !playable ? null : kind === 'audio' ? 'audio' : video ? null : 'video',
+      player: !playable ? null : kind === 'audio' ? 'audio' : 'video',
       artifactId: output?.artifactId ?? null,
     };
   };
@@ -738,9 +738,9 @@ export function downloadCardView(job: JobRecord, jobs: readonly JobRecord[], now
     elapsed: running && Number.isFinite(started) ? VIDEO_CARD_COPY.elapsed(formatClock(Math.max(0, now - started) / 1000)) : null,
     error: issue ? issue.title : state === 'failed' ? (jobErrorText(job.error) ?? T.failed) : null,
     hint: issue ? issue.body : null,
-    files: summary ? [file(summary.files.media, true), ...summary.files.subtitles.map((path) => file(path, false))] : [],
-    canCancel: jobLive(job) && !jobRetrying(job),
-    canRetry: reconcileOptions(job).includes('retry'),
+    files: landedFiles ? [file(landedFiles.media, true), ...landedFiles.subtitles.map((path) => file(path, false))] : [],
+    canCancel: !landed && jobLive(job) && !jobRetrying(job),
+    canRetry: !landed && reconcileOptions(job).includes('retry'),
   };
 }
 

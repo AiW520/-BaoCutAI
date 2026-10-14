@@ -13,7 +13,7 @@ import Video from '@react-spectrum/s2/icons/Video';
 import { style } from '@react-spectrum/s2/style' with { type: 'macro' };
 import { VIDEO_CARD_COPY } from '../../copy.ts';
 import { exportTimeLeft } from '../../model/export-job.ts';
-import { isLinkImport, linkMeta } from '../../model/link-import.ts';
+import { isLinkImport, linkLanded, linkMeta } from '../../model/link-import.ts';
 import { jobLive } from '../../model/task-list.ts';
 import {
   asrLine,
@@ -95,7 +95,7 @@ export function VideoStatusBadge({ status }: { status: VideoStatus }) {
 }
 
 /**
- * Job 镜像里决定卡片放在哪、是哪部视频的那几项（ID、提交者、视频、父任务、状态与结束时刻、链接标题）。进度一秒变几次，线程不必跟着重排；
+ * Job 镜像里决定卡片放在哪、是哪部视频的那几项（ID、提交者、视频、父任务、状态与结束时刻、链接标题、下载落地没有）。进度一秒变几次，线程不必跟着重排；
  * 只在这些变了时取一次镜像。每张卡自己订阅镜像画进度。
  */
 export function useJobsForPlacement(): readonly JobRecord[] {
@@ -118,6 +118,8 @@ export function useJobsForPlacement(): readonly JobRecord[] {
           j.pipeline?.name ?? '',
           j.export?.settings.purpose ?? '',
           isLinkImport(j) ? linkMeta(j).title : '',
+          // 下载落地、视频也有了时下载卡换成视频卡（导入已有视频的 `videoId` 一开始就有，只有步骤变了）。
+          isLinkImport(j) && linkLanded(j) ? 'landed' : '',
         ]
           .map((v) => v ?? '')
           .join('|');
@@ -325,8 +327,9 @@ function JobRow({
 }
 
 /**
- * 下载卡（原型 agent-cards.jsx `DownloadCard`）：智能体从链接下载一张。下载中写保存到哪；完成后留在原处（建了视频也不换掉），
- * 列出落地的文件（`DownloadFileRow`），底部是用默认应用打开（桌面端）与在文件夹中显示（Web 没有，浏览器打不开本机文件夹）。
+ * 下载卡（原型 agent-cards.jsx `DownloadCard`）：智能体从链接下载一张，只念下载这一段。下载中写保存到哪；建了视频的，
+ * 下载完就换成视频卡（video-cards.ts `threadCards`）；只下载的完成后留在原处，列出落地的文件（`DownloadFileRow`），
+ * 底部是用默认应用打开（桌面端）与在文件夹中显示（Web 没有，浏览器打不开本机文件夹）。
  */
 export function DownloadCard({ jobId, conversationId }: { jobId: Id; conversationId: Id }) {
   const jobs = useJobs((s) => s.jobs);

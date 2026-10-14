@@ -139,7 +139,7 @@
       const movie = {...window.BC_IMPORT.movieRecord({id, title, name: t.name || `${title}.mp4`,
         saveDir: t.saveDir || (dirRec ? dirRec.path + title : null), duration: t.mediaSec, hue: t.hue,
         dir: sess.dir || null}), ctime: 0, mtime: 0, otime: 0,
-        /* 下下来的视频带着播放地址与封面：视频卡在卡里原地播它，下载卡上就不再放一个播放器 */
+        /* 下下来的视频带着播放地址与封面：下载卡这时换成视频卡，视频卡在卡里原地播它 */
         ...(t.previewSrc && t.poster ? {preview: {url: t.previewSrc, poster: t.poster}} : {})};
       setProjects((ps) => [movie].concat(ps));
       patchTask(tid, {status: 'done', outcome: 'done', ...SIM.done(sim), project: id});

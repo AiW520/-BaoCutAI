@@ -71,6 +71,27 @@ export function linkSummary(job: Pick<JobRecord, 'pipeline'>): LinkImportSummary
   };
 }
 
+/** 发布那一步的产出：落进下载目录的媒体与字幕；还没发布完时 null。 */
+function publishedFiles(job: Pick<JobRecord, 'pipeline'>): LinkImportSummary['files'] | null {
+  const step = job.pipeline?.steps.find((s) => s.name === 'publish');
+  const out = step?.status === 'completed' ? step.output : null;
+  if (!out || typeof out.media !== 'string') return null;
+  return { media: out.media, subtitles: Array.isArray(out.subtitles) ? out.subtitles.filter((f): f is string => typeof f === 'string') : [] };
+}
+
+/**
+ * 下载这一段走完了：文件已经落进下载目录（发布那一步完成，或整个流程完成）。之后的建视频、导入、转写都不算下载，
+ * 下载卡不念它们。
+ */
+export function linkLanded(job: Pick<JobRecord, 'state' | 'pipeline'>): boolean {
+  return job.state === 'completed' || publishedFiles(job) !== null;
+}
+
+/** 落进下载目录的文件：完成时取结果摘要，之前取发布那一步的产出；还没落地时 null。 */
+export function linkFiles(job: Pick<JobRecord, 'pipeline'>): LinkImportSummary['files'] | null {
+  return linkSummary(job)?.files ?? publishedFiles(job);
+}
+
 /** 解析步骤留下的元数据（标题、平台）：流程没完成也能先显示。 */
 export function linkMeta(job: Pick<JobRecord, 'pipeline'>): { title: string | null; platform: string | null; durationSec: number | null } {
   const summary = linkSummary(job);

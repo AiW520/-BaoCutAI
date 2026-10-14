@@ -10,10 +10,9 @@
      完成后那一行换成结果事实，失败写原因与去处，取消写已取消。§4.2：进行中的生成以占位出现，完成后原位变成结果。
      卡上只摊开正在进行的活（可能几件同时在跑），都结束了就只摊开最后结束的那一件；别的收进一行「之前的 N 项」，
      展开才看到；收起的里有失败待处理的（`needsAction`），那一行写「N 项待处理」（`foldRows`，product-design §3.2.2 视频卡）。
-   - 下载卡（`download`）：Agent 调下载工具时单独一张，写来源、保存到哪与进度；下载完成后留在原处，
-     列出落地的文件，视频与音频在卡里直接播（用默认应用打开、在文件夹中显示）。下载后建了视频的，视频卡另挂在它的锚点
-     （`rowCards`），下载卡不换掉，也不在下载卡上播（视频卡原地播同一个文件）；
-     只下载、不建视频的也是这一张。
+   - 下载卡（`download`）：Agent 调下载工具时单独一张，只写下载：来源、保存到哪与进度。下载后建了视频的，下载一完
+     就换成这部视频的视频卡（`rowCards` 不再挂下载卡，视频卡挂在它的锚点，在卡里原地播同一个文件）；
+     只下载、不建视频的，完成后下载卡留在原处，列出落地的文件，视频与音频在卡里直接播（用默认应用打开、在文件夹中显示）。
    - 候选卡（`candidate`）：合成语音 / 生成图片完成后的候选。运行中只在步骤行上带百分比，失败留在步骤行。
    卡片内容只从视频记录与任务记录算（`app.projects`、`app.tasks`，与步骤行、后台任务页同源），不从回复正文推断。
 
@@ -282,12 +281,11 @@
   const AUDIO_FILE = /\.(mp3|m4a|wav|aac|flac|ogg|opus)$/i;
   const dirLabel = (dir) => String(dir).replace(/^\/Users\/[^/]+/, '~').replace(/^\/home\/[^/]+/, '~').replace(/\/+$/, '');
 
-  /** 下载卡：来源、保存到哪、进度与已下多少、已用与剩余、取消；失败写原因（BC_IMPORT 的失败种类）与重试。
-      完成后卡留在原处（建了视频也不换掉，视频卡另挂），列出落地的文件：文件名、所在文件夹与大小，
+  /** 下载卡：只写下载。来源、保存到哪、进度与已下多少、已用与剩余、取消；失败写原因（BC_IMPORT 的失败种类）与重试。
+      建了视频的下载一完就换成视频卡（`rowCards`），这里只剩只下载的完成态：列出落地的文件，文件名、所在文件夹与大小，
       可以用默认应用打开、在文件夹中显示。`saveDir` 是任务冻结的保存目录，`name` 是落地的文件名。
       有播放地址（`previewSrc`，视频另有 `poster`）的在卡里直接播：视频是正文视频播放器，音频是音频正文卡
-      （product-design §3.3）；下载的视频建成了视频的不在这里播，紧跟着的视频卡在卡里原地播同一个文件
-      （音频建成的视频没有画面，视频卡播不了，仍在这里播）。 */
+      （product-design §3.3）。 */
   function download(task) {
     const s = state(task);
     const running = s === 'running';
@@ -300,7 +298,7 @@
       name: task.name, path: dir ? `${dir}/${task.name}` : task.name, dir: dir ? dirLabel(dir) : null,
       meta: [dir ? dirLabel(dir) : null, has(task.sizeMB) ? `${num(task.sizeMB)} MB` : null].filter(Boolean).join(' · '),
       playable: PLAYABLE.test(task.name), icon: audio ? 'audio' : 'video',
-      player: has(task.previewSrc) && !(has(task.project) && !audio) && PLAYABLE.test(task.name)
+      player: has(task.previewSrc) && PLAYABLE.test(task.name)
         ? {kind: audio ? 'audio' : 'video', src: task.previewSrc, poster: audio ? null : task.poster || null} : null,
     }] : [];
     const actions = [];
@@ -358,8 +356,8 @@
 
   /** 线程里每一行后面挂的卡：会话产物（视频卡等，`artifacts` 来自 BC_AGENT_PROJECTS.sessionArtifacts）、
       下载、完成的候选。视频卡一条会话一部视频一张，挂在 sessionArtifacts 算出的锚点；
-      下载卡挂在最后一条引用它的工具行，候选卡挂在第一次引用它的那一行。下载建出视频后下载卡仍在原处，
-      视频卡挂在它自己的锚点；两张挂在同一行时下载卡在前（先有下载，后有视频）。
+      下载卡挂在最后一条引用它的工具行，候选卡挂在第一次引用它的那一行。下载建出视频（任务带上 `project`）后
+      不再挂下载卡，换成视频卡；两张同时挂在同一行时下载卡在前（先有下载，后有视频）。
       返回 Map(行 id → [{k: 'artifact', item} | {k: 'download', taskId} | {k: 'candidate', taskId}])，行内按消息先后。 */
   function rowCards(rows, messages, artifacts, tasks) {
     const idx = rowIndex(rows);
@@ -374,6 +372,7 @@
       if (!t) return;
       /* 下载卡挪到最新一条引用它的工具行（重试回到同一行）；候选卡留在第一次引用处 */
       if (t.kind === 'download') {
+        if (has(t.project)) return;
         const at = {at: i, rank: 0, row: idx.get(m.id), card: {k: 'download', taskId: t.id}};
         if (seen.has(t.id)) Object.assign(seen.get(t.id), at);
         else { seen.set(t.id, at); list.push(at); }

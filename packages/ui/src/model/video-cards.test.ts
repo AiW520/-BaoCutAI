@@ -138,6 +138,24 @@ function linkJob(patch: Partial<JobRecord> = {}): JobRecord {
   });
 }
 
+/** 下载这一段走完了的链接导入（发布那一步完成，流程还在往下走）。 */
+function landedLink(parent: JobRecord, patch: Partial<JobRecord> = {}, files = { media: '/d/a.mp4', subtitles: [] as string[] }): JobRecord {
+  return {
+    ...parent,
+    pipeline: {
+      ...parent.pipeline!,
+      steps: [
+        step('resolve', 'completed'),
+        step('download', 'completed', { jobId: 'job_dl' }),
+        step('publish', 'completed', { output: { ...files, output: {} } }),
+        step('create', 'running'),
+      ],
+      current: 3,
+    },
+    ...patch,
+  };
+}
+
 function translateJob(patch: Partial<JobRecord> = {}): JobRecord {
   return job({
     kind: 'pipeline',
@@ -235,7 +253,7 @@ describe('threadCards：放置', () => {
     expect(cards(items, [other, mine])).toEqual({});
   });
 
-  it('下载卡：一直在原处；视频建出来后另出一张视频卡排在它后面，下载不做视频卡的行，流程提交的转录成为一行', () => {
+  it('下载卡只念下载：下载完、视频也有了，同一个位置换成视频卡，下载不做视频卡的行，流程提交的转录成为一行', () => {
     const items = [user('u1', 't1'), tool('c1', 't1', 'baocut.download'), reply('a1', 't1')];
     const parent = linkJob();
     const dl = job({
@@ -245,15 +263,20 @@ describe('threadCards：放置', () => {
       submitter: { kind: 'pipeline', id: parent.jobId },
     } as Partial<JobRecord>);
     expect(cards(items, [parent, dl])).toEqual({ 'steps/c1': [`download:${parent.jobId}`] });
+    // 导入已有的视频：父任务从一开始就带着 `videoId`，下载这一段还是下载卡。
+    expect(cards(items, [{ ...parent, videoId: 'mov_9' }, dl])).toEqual({ 'steps/c1': [`download:${parent.jobId}`] });
 
-    const withVideo = { ...parent, videoId: 'mov_9', phase: 'transcribing' as const };
+    const landed = landedLink(parent, { videoId: 'mov_9', phase: 'transcribing' });
     const tr = job({ videoId: 'mov_9', submitter: { kind: 'pipeline', id: parent.jobId } });
-    expect(cards(items, [withVideo, dl, tr])).toEqual({ 'steps/c1': [`download:${parent.jobId}`, `video:mov_9[${tr.jobId}]`] });
+    expect(cards(items, [landed, dl, tr])).toEqual({ 'steps/c1': [`video:mov_9[${tr.jobId}]`] });
     // 转录还没提交（导入中、或不转录）：视频卡也在，没有行。
-    expect(cards(items, [withVideo, dl])).toEqual({ 'steps/c1': [`download:${parent.jobId}`, 'video:mov_9[]'] });
-    // 下载完成后照样留着。
-    const done = { ...withVideo, state: 'completed' as const, endedAt: at(9) };
-    expect(cards(items, [done, dl, tr])).toEqual({ 'steps/c1': [`download:${parent.jobId}`, `video:mov_9[${tr.jobId}]`] });
+    expect(cards(items, [landed, dl])).toEqual({ 'steps/c1': ['video:mov_9[]'] });
+    // 落地了、视频还在新建（父任务还没有 `videoId`）：仍是下载卡。
+    expect(cards(items, [landedLink(parent, { phase: 'applying' }), dl])).toEqual({ 'steps/c1': [`download:${parent.jobId}`] });
+    const done = { ...landed, state: 'completed' as const, endedAt: at(9) };
+    expect(cards(items, [done, dl, tr])).toEqual({ 'steps/c1': [`video:mov_9[${tr.jobId}]`] });
+    // 只下载、不建视频：完成后仍是下载卡。
+    expect(cards(items, [{ ...parent, state: 'completed', endedAt: at(9) }, dl])).toEqual({ 'steps/c1': [`download:${parent.jobId}`] });
   });
 
   it('同一个位置的几张卡按第一次引用的先后', () => {
@@ -861,11 +884,24 @@ describe('downloadCardView', () => {
     ]);
   });
 
-  it('建成了视频：下载的视频不在下载卡上播（视频卡原地播），音频仍在这里播；放不了的格式不播', () => {
-    expect(downloadCardView(doneLink(`${HOME_DL}/a.mp4`, { videoId: 'mov_9' }), [], now).files[0]?.player).toBeNull();
-    expect(downloadCardView(doneLink(`${HOME_DL}/a.mp4`, {}, { videoId: 'mov_9' }), [], now).files[0]?.player).toBeNull();
-    expect(downloadCardView(doneLink(`${HOME_DL}/a.m4a`, { videoId: 'mov_9' }), [], now).files[0]?.player).toBe('audio');
+  it('视频与音频在卡里播，放不了的格式不播', () => {
+    expect(downloadCardView(doneLink(`${HOME_DL}/a.mp4`), [], now).files[0]?.player).toBe('video');
+    expect(downloadCardView(doneLink(`${HOME_DL}/a.m4a`), [], now).files[0]?.player).toBe('audio');
     expect(downloadCardView(doneLink(`${HOME_DL}/a.avi`), [], now).files[0]?.player).toBeNull();
+  });
+
+  it('文件落地就是下载完成：之后的步骤（在媒体旁边转写文稿）不念，文件取发布那一步的产出，不给取消与重试', () => {
+    const media = `${HOME_DL}/访谈第一集.mp4`;
+    const parent = landedLink(linkJob({ startedAt: at(0) }), { phase: 'transcribing' }, { media, subtitles: [`${HOME_DL}/访谈第一集.en.vtt`] });
+    const view = downloadCardView(parent, [parent], now);
+    expect(view).toMatchObject({ state: 'done', title: '下载完成', dest: null, pct: null, line: null, elapsed: null, canCancel: false, canRetry: false });
+    expect(view.files.map((f) => [f.name, f.meta, f.player])).toEqual([
+      ['访谈第一集.mp4', '~/Downloads', 'video'],
+      ['访谈第一集.en.vtt', '~/Downloads', null],
+    ]);
+    // 之后的步骤失败了：下载那一段仍是完成的。
+    const failed = { ...parent, state: 'failed' as const, error: { code: 'X', message: '转写失败', details: null } as JobRecord['error'] };
+    expect(downloadCardView(failed, [failed], now)).toMatchObject({ state: 'done', error: null, canRetry: false });
   });
 
   it('Windows 路径：按两种分隔符取文件名与所在文件夹，家目录缩成 ~', () => {
