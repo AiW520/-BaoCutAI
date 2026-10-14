@@ -129,8 +129,16 @@ pub fn run(input_path: &Path, staging: &Path, control: Rc<RefCell<Control>>) -> 
     let mut llm = StdioLlm::new(control.clone());
     let params = TransParams::for_delivery(&lang, None);
     let fusion = input.params.align_fusion;
-    // `rows` 与 `lines` 共用 800 词的翻译页档（v2 同样如此）。
-    let translate_budget = budgets::TRANSLATE_ROWS_WORDS;
+    // 翻译页档按载体取：`rows` 800 词，`lines` 1200 词（理由见两个常量）。`BCUT_LLM_PAGE_WORDS` 设了就整体覆盖，
+    // 给对拍脚本换档用；Runtime 起 Worker 时只传白名单里的环境变量，不会带上它。
+    let translate_budget = std::env::var("BCUT_LLM_PAGE_WORDS")
+        .ok()
+        .and_then(|value| value.trim().parse::<usize>().ok())
+        .filter(|&words| words > 0)
+        .unwrap_or(match fusion {
+            AlignFusion::Lines => budgets::TRANSLATE_LINES_WORDS,
+            AlignFusion::Rows => budgets::TRANSLATE_ROWS_WORDS,
+        });
     let mut report = Report::default();
 
     // 译向简报：只在第一次定下，续跑沿用检查点里的。

@@ -3138,6 +3138,24 @@ mod tests {
         assert_eq!(page_count_for_total(3500, rows), 4);
     }
 
+    /// 行文本档（`lines/1`）：1200 词，在 rows 与常规档之间（实测见精简载体设计 §8.17）。
+    #[test]
+    fn lines_mode_uses_its_own_translate_page_budget() {
+        use crate::paging::{budgets, page_count_for_total};
+        let lines = budgets::TRANSLATE_LINES_WORDS;
+        assert_eq!(lines, 1200);
+        // 单页上限 1320 词。
+        assert!(fits_single_translate_page(60, 1320, lines));
+        assert!(!fits_single_translate_page(60, 1321, lines));
+        // 30 分钟谈话（约 3500 词）：rows 4 页、lines 3 页、常规档 2 页。
+        assert_eq!(page_count_for_total(3500, lines), 3);
+        assert_eq!(page_count_for_total(3500, budgets::TRANSLATE_ROWS_WORDS), 4);
+        assert_eq!(
+            page_count_for_total(3500, budgets::TRANSLATE_PROVIDER_WORDS),
+            2
+        );
+    }
+
     /// 显式 `page_budget` 永远是唯一分页依据——rows 也不例外。
     ///
     /// 这是 `BCUT_LLM_PAGE_WORDS` 覆盖语义落在引擎侧的形式：档位选择归宿主

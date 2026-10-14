@@ -31,15 +31,31 @@ const { values } = parseArgs({
     model: { type: 'string' },
     'max-output-tokens': { type: 'string', default: '32000' },
     replay: { type: 'string' },
+    'page-words': { type: 'string' },
+    'base-url': { type: 'string' },
+    'key-env': { type: 'string' },
+    thinking: { type: 'string' },
+    'reasoning-effort': { type: 'string' },
   },
 });
 if (!values.corpus || !values.out) throw new Error('--corpus <dir> and --out <dir> are required');
 if (values.generator === 'runtime' && (!values.provider || !values.model))
   throw new Error('--generator runtime needs --provider and --model');
 if (values.generator === 'replay' && !values.replay) throw new Error('--generator replay needs --replay <earlier --out>');
+if (values.generator === 'direct' && (!values['base-url'] || !values['key-env'] || !values.model))
+  throw new Error('--generator direct needs --base-url, --key-env and --model');
 const worker = values.worker ?? resolveSpeechWorkerCommand(null);
 if (!worker) throw new Error('speech-worker not found: cargo build -p speech-worker, or pass --worker');
 const out = values.out;
+// 这次运行的模型配置，写进每条调用与汇总，免得不同配置的结果混在一起。
+const arm = {
+  generator: values.generator,
+  model: values.model ?? null,
+  thinking: values.thinking ?? null,
+  reasoningEffort: values['reasoning-effort'] ?? null,
+  maxOutputTokens: Number(values['max-output-tokens']),
+  pageWords: values['page-words'] ? Number(values['page-words']) : null,
+};
 fs.mkdirSync(out, { recursive: true });
 const fusions = values.fusion!.split(',') as Array<'rows' | 'lines'>;
 const only = values.videos ? new Set(values.videos.split(',')) : null;
@@ -172,6 +188,58 @@ function runCli(args: string[], stdin: string, signal: AbortSignal): Promise<str
   });
 }
 
+/**
+ * 直连 OpenAI 兼容端点（`POST {base}/chat/completions`），请求体与 Runtime 的兼容服务商一致（model、messages、max_tokens、temperature）。
+ * 密钥只从 `--key-env` 指定的环境变量读，不写进日志；429 / 5xx / 网络错误在这里有界重试，次数单独记，不算进核心的重试。
+ */
+async function direct(request: { messages: Message[]; maxOutputTokens?: number; temperature?: number }, signal: AbortSignal) {
+  const key = process.env[values['key-env']!];
+  if (!key) throw new Error(`${values['key-env']} is not set`);
+  const body = JSON.stringify({
+    model: values.model,
+    messages: request.messages.map((m) => ({ role: m.role, content: m.content })),
+    ...(request.maxOutputTokens ? { max_tokens: request.maxOutputTokens } : {}),
+    ...(request.temperature !== undefined ? { temperature: request.temperature } : {}),
+    // DeepSeek 的思考开关与档位；不给时照服务商默认（Runtime 也不发）。
+    ...(values.thinking ? { thinking: { type: values.thinking } } : {}),
+    ...(values['reasoning-effort'] ? { reasoning_effort: values['reasoning-effort'] } : {}),
+  });
+  let transportRetries = 0;
+  for (;;) {
+    let status = 0;
+    let detail = '';
+    try {
+      const response = await fetch(`${values['base-url']}/chat/completions`, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json', authorization: `Bearer ${key}` },
+        body,
+        signal: AbortSignal.any([signal, AbortSignal.timeout(15 * 60 * 1000)]),
+      });
+      status = response.status;
+      const raw = await response.text();
+      if (response.ok) {
+        const value = JSON.parse(raw);
+        const choice = value.choices?.[0] ?? {};
+        const finish = choice.finish_reason;
+        return {
+          text: typeof choice.message?.content === 'string' ? choice.message.content : '',
+          finishReason: finish === 'length' ? 'length' : finish === 'content_filter' ? 'content-filter' : 'stop',
+          usage: value.usage ?? null,
+          modelVersion: value.model ?? values.model!,
+          transportRetries,
+        };
+      }
+      detail = raw.slice(0, 300);
+      if (status !== 429 && status < 500) throw new Error(`HTTP ${status}: ${detail}`);
+    } catch (error) {
+      if (signal.aborted || (status && status !== 429 && status < 500)) throw error;
+      detail = String((error as Error)?.message ?? error).slice(0, 300);
+    }
+    if (++transportRetries > 5) throw new Error(`transport failed after retries: ${status} ${detail}`);
+    await new Promise((resolve) => setTimeout(resolve, 2000 * 2 ** transportRetries));
+  }
+}
+
 interface Message {
   role: string;
   content: string;
@@ -211,6 +279,7 @@ function makeText(log: fs.WriteStream, cjkSource: boolean, recorded: Recorded | 
       let usage: unknown = null;
       let modelVersion = values.generator!;
       let finishReason = 'stop';
+      let transportRetries = 0;
       // 有录制就原样回放；录制里没有的提示词（这次的输入与录制时不同）交给 --generator，纯回放直接失败。
       const answer = recorded?.get(user)?.shift();
       if (answer) {
@@ -219,6 +288,9 @@ function makeText(log: fs.WriteStream, cjkSource: boolean, recorded: Recorded | 
         modelVersion = 'replay';
       } else if (values.generator === 'replay') {
         throw new Error(`no recorded answer for this ${kind} prompt`);
+      } else if (values.generator === 'direct') {
+        const reply = await direct(request, signal ?? new AbortController().signal);
+        ({ text, usage, modelVersion, finishReason, transportRetries } = reply);
       } else if (values.generator === 'runtime') {
         // 生产的 models.generateText（授权、预算、账本都在 Runtime 那边）。
         const args = ['text', '--json', '--system', system, '--provider', values.provider!, '--model', values.model!];
@@ -244,7 +316,7 @@ function makeText(log: fs.WriteStream, cjkSource: boolean, recorded: Recorded | 
       }
       const ms = Date.now() - started;
       log.write(
-        `${JSON.stringify({ n, kind, replayed: Boolean(answer), systemChars: system.length, userChars: user.length, answerChars: text.length, usage, ms, user, text })}\n`,
+        `${JSON.stringify({ n, kind, replayed: Boolean(answer), systemChars: system.length, userChars: user.length, answerChars: text.length, arm, maxOutputTokens: request.maxOutputTokens ?? null, finishReason, transportRetries, usage, ms, user, text })}\n`,
       );
       return { text, finishReason, modelVersion, usage } as never;
     },
@@ -284,10 +356,18 @@ for (const file of fs
     fs.mkdirSync(dir, { recursive: true });
     const log = fs.createWriteStream(path.join(dir, 'calls.jsonl'));
     const started = Date.now();
-    const row: Record<string, unknown> = { videoId: doc.videoId, words: doc.words, language, target, fusion, perturb: values.perturb };
+    const row: Record<string, unknown> = { videoId: doc.videoId, words: doc.words, language, target, fusion, perturb: values.perturb, arm };
     try {
       const result = await runSpeechTranslate({
-        command: worker,
+        command: values['page-words']
+          ? {
+              command: worker,
+              env: {
+                ...Object.fromEntries(['PATH', 'TMPDIR', 'LANG', 'LC_ALL', 'RUST_BACKTRACE'].map((k) => [k, process.env[k]])),
+                BCUT_LLM_PAGE_WORDS: values['page-words'],
+              },
+            }
+          : worker,
         staging: path.join(dir, 'staging'),
         input: {
           media: { assetId: doc.assetId ?? null, contentHash: '', duration: { ticks: String(lastEnd), timescale: doc.speech.timescale } },

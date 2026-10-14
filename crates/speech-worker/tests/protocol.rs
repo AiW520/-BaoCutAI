@@ -23,7 +23,14 @@ struct Worker {
 
 impl Worker {
     fn start() -> Worker {
+        Self::start_with_env(&[])
+    }
+
+    /// 起一个 Worker，带上给定的环境变量；页档覆盖 `BCUT_LLM_PAGE_WORDS` 不从测试进程漏进来。
+    fn start_with_env(vars: &[(&str, &str)]) -> Worker {
         let mut child = Command::new(env!("CARGO_BIN_EXE_speech-worker"))
+            .env_remove("BCUT_LLM_PAGE_WORDS")
+            .envs(vars.iter().copied())
             .stdin(Stdio::piped())
             .stdout(Stdio::piped())
             .stderr(Stdio::null())
@@ -682,6 +689,28 @@ fn fake_any_answer(params: &Value) -> String {
     } else {
         fake_answer(params)
     }
+}
+
+/// 1200 词的稿（100 句 × 12 词）：rows 的 800 词档切两页，`lines` 的 1200 词档一页；设了 `BCUT_LLM_PAGE_WORDS` 就整体覆盖。
+#[test]
+fn each_carrier_pages_by_its_own_budget_unless_overridden() {
+    let pages = |fusion: &str, vars: &[(&str, &str)]| {
+        let job = job(100, 12);
+        with_align_fusion(&job, fusion);
+        let mut worker = Worker::start_with_env(vars);
+        let mut events = Vec::new();
+        let reply = worker.translate(&job, &mut events, &mut |params, _| Answer::Text(fake_any_answer(params)));
+        assert!(reply.get("error").is_none(), "{reply}");
+        let kind = if fusion == "lines" { "translate-lines" } else { "translate" };
+        events_named(&events, "llm.request")
+            .iter()
+            .filter(|request| request["params"]["kind"] == kind)
+            .count()
+    };
+    assert_eq!(pages("rows", &[]), 2);
+    assert_eq!(pages("lines", &[]), 1);
+    assert_eq!(pages("rows", &[("BCUT_LLM_PAGE_WORDS", "2000")]), 1);
+    assert_eq!(pages("lines", &[("BCUT_LLM_PAGE_WORDS", "400")]), 3);
 }
 
 #[test]

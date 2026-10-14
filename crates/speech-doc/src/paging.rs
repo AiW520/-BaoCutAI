@@ -85,6 +85,21 @@ pub mod budgets {
     /// 宿主取档：[`PageExecutor::translate_words_for`]。`BCUT_LLM_PAGE_WORDS`
     /// 的覆盖语义不变——设置了就整体覆盖，rows 也不例外。
     pub const TRANSLATE_ROWS_WORDS: usize = 800;
+    /// 融合**行文本**模式（`lines/1`）的翻译页预算，只有 provider 路径
+    /// （speech-worker；Agent 路径不接这份载体）。
+    ///
+    /// rows 定 800 的理由是长页上模型中途放弃标注。2026-10-14 用 DeepSeek
+    /// V4.1 Flash（关闭 thinking、输出上限 8192）在 8 份真实转写上按 800 /
+    /// 1200 / 1600 / 2000 / 3000 各跑一遍（精简载体设计 §8.17）：`lines`
+    /// 各档首答标注覆盖都在 94%–99%，对齐 / 兜底 1358–1372 / 9–13，没有
+    /// 随页长放弃标注；能分出档位的是单页最大输出对输出上限的余量——800 词
+    /// 最多 2164 token，1200 词 3225，2000 词 p90 4130，3000 词到 7329。
+    ///
+    /// 因此取 **1200**（加 10% slack 后单页上限 1320 词）：各项指标不低于
+    /// 2000 档，最坏一页只用到 8192 上限的四成，也装得进兼容端点保守的
+    /// 4096。rows 不随之调整：它每源词输出约是 `lines` 的 1.8 倍，1600 词
+    /// 最多 7560 token，2000 词起整页碰顶重发、费用反增 35%。
+    pub const TRANSLATE_LINES_WORDS: usize = 1200;
     pub const ORGANIZE_MIN_LAST: usize = 100;
     pub const SEGMENT_MIN_LAST: usize = 200;
     pub const ANALYSIS_MIN_LAST: usize = 500;

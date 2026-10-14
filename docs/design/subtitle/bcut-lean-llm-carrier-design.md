@@ -347,7 +347,7 @@ A 的第二轮是这样一条追问，输出格式同 §3.2，只回被点到的
 
 页会话只管翻译和对齐。翻译前的润色（改源文）仍是独立的阶段，有自己的页，理由：
 
-- 分页不同：润色页的核心区 2200 词，两侧各带最多 200 词只读上下文（`PolishBudget`）；rows 翻译页 800 词。
+- 分页不同：润色页的核心区 2200 词，两侧各带最多 200 词只读上下文（`PolishBudget`）；翻译页 rows 800 词、`lines` 1200 词（§8.17）。
 - 阶段之间有整篇的步骤：润色之后还有四个跨页波次（`punct-repair`、`polish-retry`、`seam-repair`、`segment-repair`）和一次整篇写回，`translate-brief` 读的是润色后的全文节选，翻译要等这些都做完。并进来就要重排这一整段。
 - 可复用页界受限：本机 26 个项目里有 4 个项目两成以上的句末位置被润色改过。旧稿的额外节省 10%–13% 依赖未核准的缓存假设，撤回定量结论，不作为合并阶段的依据。
 
@@ -457,7 +457,7 @@ sol agent 抽查发现 Open Models 第二页连续跨句错位：第 29 句的 N
 
 **解析护栏。** `lines_translation::parse` 在语法解析之后、语义归属之前加两步：`tidy_joints` 按目标文字整理块缝空白（中日韩相邻字符间不留空、其余保留单个空格，纯空白块视作无正文标记）；`repeated_chunk` 对相邻两块（各 ≥4 个有效字符）做 LCS，≥ 80% 即以新问题码 `translation-chunk-repeat` 拒收该行重问，不猜哪一块是多余的。协议再加两句：块只切译文、不许复述或凑数，切不出 k 块就少给；`|` 两侧不写目标语言本身没有的空格。这两句与第 7 轮后加的「块先写引用」一样没有再跑 10 页对照，效果由后续真实项目跑批来看。
 
-**生产接入。** `bcut translate --align-fusion lines`（`specVersion` 1.299.0）：`engines/translate.rs` 用 `FileCarrier::{Html{rows}, Lines(TransParams)}` 切换载体，请求 kind `translate-lines`、`text/plain`、温度 0.2，system 末尾附 `lines_translation::PROTOCOL` 全文，页体由 `render_with_params` 生成、`parse_with_params` 解析，接受的句子连同片边界与源词快照进 `TranslateParsed.lines`；分页复用 `rows` 的 800 词档。提交时 `lines_translation::rebase` 把块正文重切到自动纠正后的落库译文上，`FusionDraft.lines` 进 `accept_fused_drafts`：源词与当前 transcript 逐词相同才采信，证据切点 ∩ 目标切点经 `plan_sentence_at_cuts` 成块（`TransAlign.aligner = "llm-lines+anchor/1"`），单调块超 `hard` 的句子进既有 `align-rewrite/1` 改写轮，其余回落独立 align。`--llm agent` 配 `lines` 在创建调用前以 `invalid_arg` 拒绝——Agent 路径的任务契约、worker 指引与提交 lint 尚未接入这份载体，两条路径的同步义务以「显式拒绝」而不是「静默走旧载体」的方式兑现，接入时再一起改。`rows` 专属的整页软重发与显示行合并不作用于 `lines`。默认值不变，产品 skill 不需要改。
+**生产接入。** `bcut translate --align-fusion lines`（`specVersion` 1.299.0）：`engines/translate.rs` 用 `FileCarrier::{Html{rows}, Lines(TransParams)}` 切换载体，请求 kind `translate-lines`、`text/plain`、温度 0.2，system 末尾附 `lines_translation::PROTOCOL` 全文，页体由 `render_with_params` 生成、`parse_with_params` 解析，接受的句子连同片边界与源词快照进 `TranslateParsed.lines`；分页当时复用 `rows` 的 800 词档（2026-10-14 起 `lines` 改为 1200 词，见 §8.17）。提交时 `lines_translation::rebase` 把块正文重切到自动纠正后的落库译文上，`FusionDraft.lines` 进 `accept_fused_drafts`：源词与当前 transcript 逐词相同才采信，证据切点 ∩ 目标切点经 `plan_sentence_at_cuts` 成块（`TransAlign.aligner = "llm-lines+anchor/1"`），单调块超 `hard` 的句子进既有 `align-rewrite/1` 改写轮，其余回落独立 align。`--llm agent` 配 `lines` 在创建调用前以 `invalid_arg` 拒绝——Agent 路径的任务契约、worker 指引与提交 lint 尚未接入这份载体，两条路径的同步义务以「显式拒绝」而不是「静默走旧载体」的方式兑现，接入时再一起改。`rows` 专属的整页软重发与显示行合并不作用于 `lines`。默认值不变，产品 skill 不需要改。
 
 **没做。** §5 的部分提交、幂等回执与状态机（M2 故障恢复门）、M3–M4、Agent 路径；改写轮仍是独立调用（§6.3）。
 
@@ -837,7 +837,7 @@ r22 剩下的 34 处日文：
 **本轮接上的。**
 
 - 流程参数 `alignFusion: 'rows' | 'lines'`（`TranslateParams`），先以默认 `rows` 接入，按下文的对照改为默认 `lines`。启动时随别的参数冻结，不给时冻结缺省值，重试与就地刷新沿用；冻结参数里没有这一项的是改默认之前启动的流程，Worker 输入照旧给 `rows`。不认识的值 `invalid-request`。
-- Worker 输入 `params.alignFusion`（[命令协议规范 §4.5](../../spec/command-protocol-spec.md#45-speech-worker)），不给时 `lines`，不认识的值 `INPUT_UNREADABLE`。`lines` 时 `align_lines` 为真、`align_rows` 为假，翻译页仍是 800 词档（与 v2 相同）。检查点指纹在 `lines` 时带上载体，`rows` 不进指纹：加参数之前的检查点都是 rows 写的，明给 `rows` 照认；不给载体的输入走 `lines`，与它们对不上，从头来（Runtime 总是明给载体）。`report.json` 多一项 `alignFusion`。
+- Worker 输入 `params.alignFusion`（[命令协议规范 §4.5](../../spec/command-protocol-spec.md#45-speech-worker)），不给时 `lines`，不认识的值 `INPUT_UNREADABLE`。`lines` 时 `align_lines` 为真、`align_rows` 为假，翻译页按载体取档：`lines` 1200 词、rows 800 词（§8.17）。检查点指纹在 `lines` 时带上载体，`rows` 不进指纹：加参数之前的检查点都是 rows 写的，明给 `rows` 照认；不给载体的输入走 `lines`，与它们对不上，从头来（Runtime 总是明给载体）。`report.json` 多一项 `alignFusion`。
 - 测试：speech-worker 协议测试用按 `lines/1` 作答的假模型跑整条翻译，断言请求是 `translate-lines`、6 句 30 词长句都由草稿直落（`llm-lines+…`，一次调用，不另发对齐）；不给参数走 `lines`；rows 写下的检查点在缺省载体下不续跑；未知取值拒绝。jobs 的流程测试断言不给参数时冻结 `lines`、请求是 `lines/1` 页、译文照常组装写入，冻结参数里没有载体的旧流程重试照旧走 rows 并从检查点续跑。其余按 rows 页句子 ID 断言的用例明给 `rows`。
 - 没接的：Agent 路径（智能体用 `documents_read` 的 `translationBasis` 自己翻译、`documents_put` 写回，不经这份载体）；工具目录与 CLI 的 `translate` 不暴露这个参数，只有 `pipelines.start` 的 `translate` 能给；配音流程（`dub`）转给翻译的参数里没有它，配音里的翻译总是走缺省载体（改默认之前是 rows，现在是 `lines`）；§5 的部分提交与状态机。
 
@@ -894,6 +894,51 @@ r22 剩下的 34 处日文：
 
 还有一处只在 debug 版明显的耗时：`lines` 的行归属门逐页对引用做规范化定位，debug 版每页约 1 秒（11 万词的中文 rows 18 秒、`lines` 约 4.5 分钟），release 版相对模型延迟可忽略，没改。
 
+### 8.17 2026-10-14 翻译页预算：800 / 1200 / 1600 / 2000 / 3000
+
+§9 的页预算待定项在 v3 上实测。DeepSeek V4.1 Flash（`deepseek-flash`），`compare.ts --generator direct` 直连 DeepSeek 的兼容端点（请求体与 Runtime 的兼容服务商相同），关闭 thinking，温度由核心给；输出上限取核心按页定标的上限与 8192（Runtime 目录里这个模型的上限）的较小者。语料是本机 8 份真实转写共 38,325 词：英文 6 份（3,608–8,191 词）译中文，中文 1 份（2,461 字）译英文，韩文 1 份（3,436 词）译中文。每档同一语料重新分页，`lines` 与 rows 各跑一遍，每页一次采样；页档经 debug 版 speech-worker 的 `BCUT_LLM_PAGE_WORDS` 覆盖。
+
+「首答覆盖」只看每个整页的第一次回答：rows 是带 `data-align-groups` 的句子里有 `<span data-src>` 的比例，`lines` 是 `≥k`（k ≥ 2）的行里至少有两个引用块的比例；「末三分之一」只算页里最后三分之一句子，对应 §8.6 那种「只标了前 3 句」。「碰顶」是整页回答 `finish_reason=length`。对齐 / 兜底 / 改写按整份译文计（每档都是 2,413 个译文单元）。费用按 §8.1 的空闲时段公价折算，不是账单。
+
+| 载体 | 页档 | 整页 | 句 / 页 | 首答覆盖 | 最低一页 | 末三分之一 | 碰顶 | 对齐 / 兜底 / 改写 | 调用 | 输入（缓存命中）/ 输出 token | 单页最大输出 | 单页耗时中位 | 公价折算 |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| rows | 800 | 47 | 36.5 | 99.3% | 81% | 99.1% | 0 | 1,284 / 43 / 25 | 77 | 604,700（143,616）/ 210,848 | 4,382 | 11.3 s | $0.196 |
+| rows | 1200 | 33 | 52.0 | 98.2% | 73% | 98.2% | 0 | 1,289 / 45 / 11 | 59 | 546,858（92,160）/ 204,639 | 5,945 | 15.9 s | $0.191 |
+| rows | 1600 | 26 | 66.0 | 98.2% | 84% | 98.5% | 0 | 1,295 / 42 / 26 | 57 | 535,145（84,861）/ 207,386 | 7,560 | 20.3 s | $0.192 |
+| rows | 2000 | 33 | 70.3 | 97.1% | 81% | 93.5% | 12 | 1,286 / 40 / 13 | 69 | 820,009（263,936）/ 301,518 | 8,192 | 23.2 s | $0.265 |
+| rows | 3000 | 37 | 78.4 | 93.6% | 59% | 83.4% | 20 | 1,293 / 35 / 27 | 77 | 1,104,476（449,152）/ 370,291 | 8,192 | 22.8 s | $0.322 |
+| `lines` | 800 | 48 | 28.6 | 95.6% | 0% | 93.7% | 0 | 1,358 / 10 / 23 | 86 | 312,925（166,016）/ 131,029 | 2,164 | 9.7 s | $0.101 |
+| `lines` | **1200** | 33 | 41.2 | 99.2% | 77% | 99.0% | 0 | 1,372 / 9 / 13 | 69 | 248,479（113,792）/ 124,522 | 3,225 | 13.6 s | $0.095 |
+| `lines` | 1600 | 26 | 52.3 | 94.3% | 0% | 92.5% | 0 | 1,365 / 13 / 25 | 61 | 238,930（99,840）/ 134,249 | 4,329 | 16.5 s | $0.102 |
+| `lines` | 2000 | 21 | 64.7 | 96.2% | 35% | 94.1% | 1 | 1,372 / 13 / 21 | 62 | 239,960（104,960）/ 135,600 | 8,192 | 19.3 s | $0.102 |
+| `lines` | 3000 | 17 | 79.9 | 98.9% | 91% | 99.3% | 0 | 1,370 / 10 / 21 | 54 | 212,232（77,696）/ 130,321 | 7,329 | 22.7 s | $0.099 |
+
+rows 2000 / 3000 的整页数比 1600 多，是碰顶的页被核心重发、拆小后又算作新页。`lines` 2000 那一次碰顶是复读（同一个引用块重复到上限），重发即好；除它之外这一档单页输出的 p90 是 4,130。
+
+**读法。**
+
+- §8.6 的「长页中途放弃标注」在两种载体、任何一档都没有再出现：rows 到 1600 词、`lines` 到 3000 词，首答覆盖都在 94% 以上，末三分之一与整页持平。`lines` 偶尔有整页覆盖很低的页（800、1600、2000 各一页），是每行只给一块、把 `¦` 抄进译文这类格式失误，在短页上一样出现，由逐句补做轮收回，不随页长变多。
+- 对齐质量各档持平：rows 1,284–1,295 / 35–45，`lines` 1,358–1,372 / 9–13。能分出档位的是单页最大输出对输出上限的余量。rows 每源词的输出约是 `lines` 的 1.8 倍，1600 词已用到 8192 的 92%，2000 词起碰顶重发，费用反增 35% / 64%。`lines` 1200 词最多 3,225 token，只用到上限的四成，也装得进兼容端点保守的 4096；2000 词也能跑，但余量少一半，测得的各项又不比 1200 好。
+- 总耗时各档差不多（`lines` 各档调用耗时合计 657–694 s）：jobs 侧逐个回答 Worker 的请求，页大只让每次等得更久，调用变少才省掉固定开销。
+
+**定档。** `lines` 改为 1200 词（`budgets::TRANSLATE_LINES_WORDS`，加 10% slack 单页上限 1320），speech-worker 按载体取档。相比 800：输入 token −21%、调用 −20%、费用 −6%，首答覆盖 95.6% → 99.2%，改写 23 → 13。rows 留在 800：1200 档同样过了（输入 −10%、费用 −2%），但收益小，而 800 当初也有 Agent 路径的证据（§8.6），这里没测 Agent。
+
+**thinking 开着时。** 同一模型不关 thinking、输出上限 8192（`dd340337` 之前 Runtime 的实际请求），在 3,819 词的英文那份上抽测：rows 800 / 2000、`lines` 800 / 1200 / 2000 全部失败。每次整页调用都先花掉 5,000–8,000 个 reasoning token，连约 300 词的补做页也一样，多数回答在上限处还是空的（rows 800：26 次整页调用全部碰顶，reasoning 合计 219,505 token）。页切小救不了这种情况，要在请求里关掉 thinking，`dd340337` 已改。§8.1 的 508 句对照同样是关闭 thinking 跑的。
+
+**边界。** 只有一个模型，每页一次采样，语料以英译中为主；约 10 页是探索下限（§8），这里每档 17–48 页。复现：
+
+```bash
+python3 -I scripts/translate-carrier-compare/extract.py ~/Documents/BaoCut <corpus>
+```
+
+```bash
+node scripts/translate-carrier-compare/compare.ts --generator direct --base-url https://api.deepseek.com/v1 --key-env BCUT_API_KEY_DEEPSEEK --model deepseek-flash --thinking disabled --max-output-tokens 8192 --page-words 1200 --fusion lines --corpus <corpus> --out <out> --videos video_eb935384ae574712,video_7a6fa92bbd5a4b31,video_8b7c93ce0b714393,video_57a53c97b8a44045,video_7ae58e88622e404f,video_687f3de61e114ff7,video_c9d1d997a2b744cc,video_0f89c378d6924098
+```
+
+```bash
+python3 -I scripts/translate-carrier-compare/pages.py <out> [<out> ...]
+```
+
 ## 9. 提示词与固定成本
 
 输入瘦下来以后，每次调用的固定成本占比会上升，要一起处理：
@@ -901,7 +946,7 @@ r22 剩下的 34 处日文：
 - **翻译 system**：rows 融合那一段约 3.5 KB（分组、时长、读速规则），替换为首尾引用、权限、转义与失败反馈的最小说明；新体积在 M0 测量，不预设低于 1 KB。源语术语、术语表、专名清单三份合成一张表。
 - **对齐 system**：`align-table/1` 的 13.4 KB 里大半是接缝禁令清单。这些禁令已经有代码 lint，被拒时会带着具体原因回来。块解释下切行归代码，提示词只留原则；行解释下把命中的那条禁令写进该句的 `!` 行。
 - **顺序与缓存**：system 按「固定协议 → 目标语言策略 → 本文档的摘要与术语」排，不变的部分在前；整份 system 在一次运行里逐字节不变，便于跨页复用缓存。断点、按 provider 决定的预热和用量记录见 §6.5。
-- **页预算**：rows 翻译页定在 800 词，是因为带编号后每个源词的成本涨到 1.6–2 倍，长页上模型会中途放弃标注（[ai-pipeline §8.6](bcut-ai-pipeline-design/08.md)）。新载体下这个理由减弱，但页预算是影响质量的因素，不随载体一起改，也不靠回放定：M1 里用 Sonnet 子代理实际跑至少约 10 页真实数据，比较 800 / 1200 / 2000 三档。
+- **页预算**：rows 翻译页定在 800 词，是因为带编号后每个源词的成本涨到 1.6–2 倍，长页上模型会中途放弃标注（[ai-pipeline §8.6](bcut-ai-pipeline-design/08.md)）。2026-10-14 实测 800–3000 五档（§8.17）：两种载体都不再随页长放弃标注，限制页长的是单页输出对输出上限的余量。`lines` 改为 1200 词，rows 仍是 800。
 
 ## 10. 润色、说话人与其他
 
@@ -962,4 +1007,4 @@ worker 的契约文件就是 system prompt，随 §9 一起缩。skill 里任务
 5. **页会话不跨页、不并润色。** A/C 由真实成本、质量和延迟决定，B 保留为先译后标对照。跨页 system 缓存可独立落地，不能把隐式缓存算成零。
 6. **推理档位先验证。** 目标为各修复轮同档、不自动升档；中档独立对照过门后采用，不把质量假设当作已验证事实。
 
-待验证后定：各 provider/Agent 的 A/C 配置、同等质量下的首尾格式总成本、LCS 局部阈值、归一化边界，以及 800 / 1200 / 2000 词页预算（每档至少约 10 页探索，见 §8）。§8.1 记录已实施的基础及未过门的首轮结果；不能据此视为 M0–M4 全部完成。
+待验证后定：各 provider/Agent 的 A/C 配置、同等质量下的首尾格式总成本、LCS 局部阈值、归一化边界。词页预算已按 §8.17 定档（`lines` 1200、rows 800），换模型或改输出上限时重测。§8.1 记录已实施的基础及未过门的首轮结果；不能据此视为 M0–M4 全部完成。
