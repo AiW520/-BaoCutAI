@@ -455,9 +455,9 @@
       "app/subtitle-motion.css",
       "app/subtitle-active.css"
     ],
-    "js": "generated/app.js?v=a772651ef5cb",
-    "css": "generated/app.css?v=d8c7ab560e40",
-    "bytes": 4188114
+    "js": "generated/app.js?v=790cdf012d85",
+    "css": "generated/app.css?v=cfce66c20ccd",
+    "bytes": 4188360
   },
   "web": {
     "file": "BaoCutWeb.html",

@@ -35,3 +35,6 @@
 .ssr__pvrow.is-hit { background: var(--blue-100); color: var(--gray-900); }
 /* 内容结果下面的名称匹配列表的小标题 */
 .space__sub { flex: none; margin: 0 var(--space-inset) 4px; font-size: 14px; font-weight: 700; color: var(--gray-900); }
+/* 内容结果下面，名称与文件没对上时那一行（不用大号空态） */
+.space__none { margin: 0; padding: 4px 0; color: var(--gray-600); }
+.space__grid[data-empty]:has(.space__none) { align-items: flex-start; justify-content: flex-start; }
