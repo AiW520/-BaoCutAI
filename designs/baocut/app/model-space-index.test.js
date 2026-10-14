@@ -98,3 +98,35 @@ test('不索引：单条设了的能恢复，盖过失败；所在项目整个�
   assert.ok(n.canReindex && n.canExclude);
   assert.deepEqual(n.lines, ['讲话内容：已索引', '画面：已索引']);
 });
+
+test('索引文件夹里的条目：只读，不单独设不索引或重新索引；和项目里同一部的视频按项目那一份建', () => {
+  const clip = X.entryState({id: 'lib-coast', kind: 'clip', lib: 'f1'}, {sem: usable, visual: true, demo: {'lib-coast': {visual: 'indexing', pct: 20}}});
+  assert.equal(clip.k, 'indexing');
+  assert.equal(clip.canReindex, false);
+  assert.equal(clip.canExclude, false);
+  const off = X.entryState({id: 'c9', kind: 'clip', lib: 'f1'}, {sem: usable, visual: false});
+  assert.equal(off.canExclude, false);
+  const dup = X.entryState({id: 'm9', kind: 'movie', lib: 'f2', dupOf: '科浪访谈'}, {sem: usable, visual: true});
+  assert.equal(dup.k, 'notNeeded');
+  assert.equal(dup.why, '和项目里的「科浪访谈」是同一部视频，按项目那一份建');
+  const own = X.entryState({id: 'p1', kind: 'movie'}, {sem: usable, visual: true});
+  assert.equal(own.canReindex, true);
+});
+
+test('已加的索引文件夹：状态一句、数量一句；扫描停在上限、旧版视频、文件夹不在时写明', () => {
+  const ok = X.folderStatus({counts: {movies: 0, clips: 3, images: 1, exports: 1}, visual: {done: 2, total: 4}}, true);
+  assert.deepEqual(ok, {tone: null, line: '画面 2/4 个完成', what: '3 个视频素材、1 张图片 · 1 个成片跳过', notes: []});
+  assert.equal(X.folderStatus({counts: {clips: 1}, visual: {done: 1, total: 1}}, true).line, '画面已就绪');
+  assert.equal(X.folderStatus({counts: {movies: 1, clips: 3}}, false).line, '文字按里面的 BaoCut 视频建');
+  assert.equal(X.folderStatus({counts: {clips: 3}}, false).line, '画面索引没开，视频素材与图片还没建');
+  const big = X.folderStatus({counts: {movies: 1, clips: 412, images: 1588, dupes: 1, old: 2}, issue: {kind: 'truncated', max: 2000}}, true);
+  assert.equal(big.what, '1 部视频、412 个视频素材、1588 张图片 · 1 部已在项目里 · 2 部旧版视频不读');
+  assert.equal(big.notes.length, 2);
+  assert.match(big.notes[0], /只扫了前 2000 个/);
+  const gone = X.folderStatus({counts: {clips: 58}, missing: true}, true);
+  assert.equal(gone.tone, 'notice');
+  assert.equal(gone.line, '找不到这个文件夹');
+  assert.match(gone.notes[0], /索引留着/);
+  assert.equal(X.folderNote({counts: {movies: 2, dupes: 1, old: 1}}, true),
+    '2 部 BaoCut 视频按讲话内容与画面建；1 部视频已在项目里，按项目那一份建；1 部旧版视频不读。');
+});

@@ -136,10 +136,10 @@
     const infoLabel = (it.files || []).length ? '查看信息与文件' : '查看信息';
     const items = [
       it.transcribe === 'retry' ? tx : null,
-      it.kind === 'movie'
+      it.kind === 'movie' && !it.lib
         ? <R.MenuItem key="open" id="open" textValue="打开视频"><R.Icons.OpenIn /><R.Text>打开视频</R.Text></R.MenuItem>
         : <R.MenuItem key="view" id="view" textValue="查看"><R.Icons.Preview /><R.Text>查看</R.Text></R.MenuItem>,
-      it.kind === 'movie'
+      it.kind === 'movie' && !it.lib
         ? <R.MenuItem key="view" id="view" textValue={infoLabel}><R.Icons.InfoCircle /><R.Text>{infoLabel}</R.Text></R.MenuItem>
         : null,
       it.transcribe === 'retry' ? null : tx,
@@ -156,7 +156,8 @@
           <R.Text slot="description">排回索引队列，按讲话内容与画面建</R.Text></R.MenuItem> : null,
       <R.MenuItem key="fav" id="fav" textValue={it.fav ? '取消收藏' : '收藏'}>{it.fav ? <R.Icons.StarFilled /> : <R.Icons.Star />}<R.Text>{it.fav ? '取消收藏' : '收藏'}</R.Text></R.MenuItem>,
       <R.MenuItem key="reveal" id="reveal" textValue="在文件夹中显示"><R.Icons.Folder /><R.Text>在文件夹中显示</R.Text></R.MenuItem>,
-      it.trashed
+      /* 索引文件夹里的文件只读（2026-10-14 确认）：不进回收站；不想要了就在设置里移除那个文件夹 */
+      it.lib ? null : it.trashed
         ? <R.MenuItem key="restore" id="restore" textValue="从回收站恢复"><R.Icons.Revert /><R.Text>从回收站恢复</R.Text></R.MenuItem>
         : <R.MenuItem key="trash" id="trash" textValue="移入回收站"><R.Icons.Delete /><R.Text>移入回收站</R.Text></R.MenuItem>,
     ].filter(Boolean);

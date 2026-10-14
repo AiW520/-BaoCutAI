@@ -160,3 +160,47 @@ test('预览那一段：命中那句前后各留 2 秒，不早于 0；没有结
   assert.deepEqual(Q.moment({t: 1, end: 3}), {from: 0, to: 5, hit: [1, 3]});
   assert.deepEqual(Q.moment({t: 10}), {from: 8, to: 16, hit: [10, 14]});
 });
+
+const libOf = (id) => (D.spaceOutputs.find((o) => o.id === id) || {}).lib;
+const vis = Object.assign({}, base, {channels: ['text', 'visual'], frames: SEM.frames, visualConcepts: SEM.visualConcepts, libOf, status: {usable: true}});
+
+test('画面：演示关键帧都引用得到；索引文件夹里的文件指向 Space 里的条目', () => {
+  SEM.visualConcepts.forEach((c) => c.hits.forEach((id) => assert.ok(SEM.frames.some((f) => f.id === id), id)));
+  SEM.frames.filter((f) => f.entry).forEach((f) => assert.ok(libOf(f.entry), f.entry));
+});
+
+test('画面通道：只按意思找；命中索引文件夹里的文件时没有原句、不能在时间线打开；图片没有时间', () => {
+  const r = Q.search('海边的航拍', Object.assign({}, vis, {mode: 'mix', scope: 'all'}));
+  assert.deepEqual(r.results.map((x) => x.id), ['v:lib-coast:12', 'v:lib-coast:52']);
+  r.results.forEach((x) => { assert.equal(x.channel, 'visual'); assert.equal(x.text, null); assert.equal(x.inTimeline, false); });
+  assert.equal(Q.why(r.results[0]), '意思接近');
+  assert.equal(Q.moment(Q.search('poster', Object.assign({}, vis, {mode: 'mix', scope: 'all'})).results[0]), null);
+  assert.equal(Q.search('海边的航拍', Object.assign({}, vis, {mode: 'exact', scope: 'all'})).results.length, 0);
+  assert.equal(Q.search('海边的航拍', Object.assign({}, base, {mode: 'mix', scope: 'all', status: {usable: true}})).results.length, 0);
+});
+
+test('画面通道：「这个项目」不列索引文件夹里的文件；文件夹不在时不列；BaoCut 视频的那一刻能在时间线打开', () => {
+  const talk = (o) => Q.search('采访', Object.assign({}, vis, {mode: 'mix'}, o)).results.filter((x) => x.channel === 'visual').map((x) => x.id);
+  assert.deepEqual(talk({scope: 'all'}), ['v:p1:20', 'v:lib-cam-b:300']);
+  assert.deepEqual(talk({scope: 'project', dir: dirOf('p1')}), ['v:p1:20']);
+  assert.deepEqual(talk({scope: 'all', folders: ['f2']}), ['v:p1:20']);
+  const p1 = Q.search('采访', Object.assign({}, vis, {mode: 'mix', scope: 'all'})).results.find((x) => x.id === 'v:p1:20');
+  assert.equal(p1.inTimeline, true);
+});
+
+test('画面通道能不能选：没装、画面索引关着、精确文字时不能，写明原因', () => {
+  assert.equal(Q.visualChannel({install: 'full', visual: true}, {usable: true}, 'mix').on, true);
+  assert.match(Q.visualChannel({install: 'full', visual: false}, {usable: true}, 'mix').why, /画面索引没开/);
+  assert.match(Q.visualChannel({install: 'full', visual: true}, {usable: true}, 'exact').why, /精确文字时不查/);
+  assert.equal(Q.visualChannel({install: 'none', visual: true}, {usable: false}, 'mix').on, false);
+});
+
+test('画面开着时完整性多写画面一项：项目按素材数扣掉没建好的，「全部」再加上索引文件夹；问答只用讲话内容', () => {
+  const one = Q.coverage('project', 'd1', SEM.projects, S, {pending: 2, folders: [{done: 2, total: 4}]});
+  assert.deepEqual(one.visual, {done: 28, total: 30});
+  const all = Q.coverage('all', null, SEM.projects, S, {pending: 0, folders: [{done: 2, total: 4}]});
+  assert.equal(all.visual.total, SEM.projects.reduce((a, p) => a + p.visual.assets, 0) + 4);
+  assert.match(all.line, /画面 \d+\/\d+ 个素材完成；声音这一版还没有索引$/);
+  const a = Q.answer('q', [{channel: 'visual', video: 'p1', t: 1, text: null}], {}, null);
+  assert.equal(a.lines.length, 0);
+});

@@ -428,6 +428,8 @@
       text（字幕 / 文档：直接改文字，另存为新版本）· version（图片 / 音频 / 模板：另存一份新版本再改，模型辅助交给 Agent）。 */
   function editRoute(it) {
     if (!it) return null;
+    /* 索引文件夹里的文件只读（2026-10-14 确认）：不打开编辑、不另存；能认出来源视频的成片可以回到那部视频 */
+    if (it.lib) return it.kind === 'final' && it.movie ? 'source' : null;
     if (it.kind === 'movie') return 'editor';
     if (it.kind === 'final') return it.movie ? 'source' : 'new-movie';
     if (it.kind === 'subtitle' || it.kind === 'doc') return 'text';

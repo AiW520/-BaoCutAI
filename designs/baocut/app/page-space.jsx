@@ -207,7 +207,7 @@
           </div>
         ) : null}
         {/* 按内容找（embedding-integration §2.1）：搜索框有字时在名称匹配上面；空着时给几条示例。回收站里不找 */}
-        {cat !== 'trash' ? <window.SpaceContentSearch q={q} setQ={setQ} dir={dir} /> : null}
+        {cat !== 'trash' ? <window.SpaceContentSearch q={q} setQ={setQ} dir={dir} onView={setViewing} /> : null}
         {named ? <h2 className="space__sub">名称与文件</h2> : null}
         <div className="space__list" {...window.spaceContextHandlers(rows, setCtxAt)}>
           {mode === 'list'

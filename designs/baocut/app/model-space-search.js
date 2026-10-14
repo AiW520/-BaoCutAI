@@ -2,8 +2,10 @@
    window.BC_SPACE_SEARCH。纯函数，无 React、无 DOM；node --test 直接 require。
 
    · 方式：综合（按意思 + 字面，缺省）/ 精确文字。没装模型或这台电脑不支持时「综合」退回精确文字，并在结果顶上说一句（§2.11）；
-   · 通道：讲话内容 / 画面 / 声音。画面与声音这一版没有索引，只显示为不可用并写明原因（v0.1 §1 MVP 范围）；
-   · 范围：这个项目 / 全部项目；
+   · 通道：讲话内容 / 画面 / 声音。画面（2026-10-14 确认）只按意思找：关键帧向量对查询文字，精确文字时不查；画面索引关着时
+     不可用并写明原因；声音这一版没有索引（v0.1 §1 MVP 范围）；
+   · 范围：这个项目 / 全部项目。「全部」还包括索引文件夹里的文件（它们不属于哪个项目，选「这个项目」时不列）；
+   · 画面命中有两种：BaoCut 视频的某一刻（能在时间线打开），索引文件夹里视频素材的某一刻或一张图片（在 Space 里查看，只读）；
    · 结果卡：原句（纯语义命中不画假高亮，v0.1 §11.3）、时间、命中通道、视频名；排序不给百分比（相似度不是概率）；
    · 「在时间线打开」只在那一句还在时间线上时出现（剪掉了的只能看原片位置）；
    · 跨视频问答（§2.4 P1）：答案每句带可点的出处，索引不全时写明。
@@ -61,8 +63,18 @@
     return ids;
   }
 
-  /** 搜索。o: {corpus, concepts, mode, scope, dir, dirOf(video)→dir, status: BC_SEMANTIC.status(...), cutOut: [ids], limit}
-      返回 {results, mode: 'hybrid'|'lexical', degraded, asked}。results 已排序，不带分数。 */
+  /** 画面通道此刻能不能选。st：semantic-state 的原始状态；sem：BC_SEMANTIC.status(st)。不能选时 why 是那一句原因。 */
+  function visualChannel(st, sem, mode) {
+    if (!sem.usable || (st && st.install === 'none')) return {on: false, why: '没装本机语义模型'};
+    if (!st || !st.visual) return {on: false, why: '画面索引没开；在设置 › 语义索引里打开'};
+    if (mode === 'exact') return {on: false, why: '画面只能按意思找；精确文字时不查'};
+    return {on: true, why: null};
+  }
+
+  /** 搜索。o: {corpus, concepts, mode, scope, dir, dirOf(video)→dir, status: BC_SEMANTIC.status(...), cutOut: [ids], limit,
+      channels: ['text'] | ['text', 'visual'] | ['visual']（缺省只有讲话内容）, frames, visualConcepts, folders: 现在还在的索引文件夹 id,
+      libOf(entry)→索引文件夹 id}
+      返回 {results, mode: 'hybrid'|'lexical', degraded, asked}。results 已排序，不带分数；每条带 channel。 */
   function search(q, o) {
     const x = o || {};
     const query = String(q || '').trim();
@@ -71,10 +83,17 @@
     const semantic = asked === 'mix' && st.usable;
     const out = {results: [], mode: semantic ? 'hybrid' : 'lexical', degraded: asked === 'mix' && !st.usable, asked};
     if (!query) return out;
-    const pool = (x.corpus || []).filter((c) => x.scope !== 'project' || !x.dirOf || x.dirOf(c.video) === x.dir);
+    const channels = x.channels || ['text'];
+    const inScope = (video) => x.scope !== 'project' || !x.dirOf || x.dirOf(video) === x.dir;
+    const pool = channels.indexOf('text') >= 0 ? (x.corpus || []).filter((c) => inScope(c.video)) : [];
     const ts = terms(query);
     const exact = pool.filter((c) => spans(c.text, ts).length);
     const sem = semantic ? conceptHits(query, x.concepts).map((id) => pool.find((c) => c.id === id)).filter(Boolean) : [];
+    /* 画面：只有意思一路。索引文件夹里的文件只在「全部」里，文件夹不在了（外置盘没接上）的不列 */
+    const frameOk = (f) => (f.video ? inScope(f.video)
+      : x.scope !== 'project' && (!x.folders || !x.libOf || x.folders.indexOf(x.libOf(f.entry)) >= 0));
+    const vis = semantic && channels.indexOf('visual') >= 0
+      ? conceptHits(query, x.visualConcepts).map((id) => (x.frames || []).find((f) => f.id === id)).filter((f) => f && frameOk(f)) : [];
     /* 合并：两路都有的排前（各自名次相加），其余按各自名次交错——只给顺序，不给分数（v0.1 §11.3） */
     const rank = {};
     exact.forEach((c, i) => { rank[c.id] = {c, e: i}; });
@@ -92,7 +111,10 @@
         inTimeline: !cut.has(r.c.id),
         order: both ? Math.min(r.e, r.s) - 100 : (r.e != null ? r.e : r.s) + (r.e != null ? 0 : 0.5),
       });
-    }).sort((a, b) => a.order - b.order);
+    }).concat(vis.map((f, i) => Object.assign({}, f, {
+      /* 画面命中：没有原句；BaoCut 视频的那一刻能在时间线打开，索引文件夹里的文件只在 Space 里查看 */
+      by: 'semantic', weak: i >= 3, channel: 'visual', text: null, hl: null, inTimeline: !!f.video, order: i + 0.75,
+    }))).sort((a, b) => a.order - b.order);
     out.results = list.slice(0, x.limit || 20).map((r) => { const y = Object.assign({}, r); delete y.order; return y; });
     return out;
   }
@@ -111,6 +133,7 @@
   /** 这一条为什么命中（卡片上那一句，不写分数）：字面对上的写出原句里对上的词（最多 3 个，按出现顺序去重）；只按意思找到的
       写「意思接近」。向量说不出是「因为哪个概念」才近，所以不编概念名——产品里能如实给的就是这些，再加上命中的那一帧与那一句本身。 */
   function why(r) {
+    if (r.channel === 'visual') return r.weak ? '只是勉强相关' : '意思接近';
     const words = [];
     (r.hl || []).forEach(([s, e]) => { const w = r.text.slice(s, e); if (words.indexOf(w) < 0) words.push(w); });
     const said = words.slice(0, 3).map((w) => `「${w}」`).join('');
@@ -123,6 +146,7 @@
   /** 预览里放的那一段：命中那句的起止，前后各留 2 秒，不早于 0。返回 {from, to, hit: [start, end]} */
   const MOMENT_PAD = 2;
   function moment(r) {
+    if (r.t == null) return null;       // 图片：没有时间
     const end = r.end != null && r.end > r.t ? r.end : r.t + 4;
     return {from: Math.max(0, r.t - MOMENT_PAD), to: end + MOMENT_PAD, hit: [r.t, end]};
   }
@@ -136,17 +160,24 @@
   }
 
   /** 范围的完整性：这个项目 = 那一个项目；全部 = 加起来。projects：data.js semantic.projects */
-  function coverage(scope, dir, projects, S) {
+  /** 画面那一项（visual 给了时）：项目按素材数，还没建好的条目扣掉；「全部」再加上还在的索引文件夹。没开画面时不写 */
+  function coverage(scope, dir, projects, S, visual) {
     const list = scope === 'project' ? (projects || []).filter((p) => p.dir === dir) : (projects || []);
     const text = S.sumText(list);
-    return {text, line: S.coverageLine({text, later: true}), partial: text.done < text.total};
+    if (!visual) return {text, line: S.coverageLine({text, later: true}), partial: text.done < text.total};
+    const total = list.reduce((a, p) => a + ((p.visual && p.visual.assets) || 0), 0);
+    const pending = Math.min(total, visual.pending || 0);
+    const v = (scope === 'project' ? [] : visual.folders || []).reduce((a, f) => ({done: a.done + f.done, total: a.total + f.total}),
+      {done: total - pending, total});
+    const line = [S.coverageLine({text, visual: v}), '声音这一版还没有索引'].join('；');
+    return {text, visual: v, line, partial: text.done < text.total || v.done < v.total};
   }
 
   /* ---------- 跨视频问答（§2.4 P1） ---------- */
   /** 用检索结果拼一段带出处的回答：按视频分组，每组一句，每句挂那几条结果做出处。
       names：视频 id → 名字。cov：coverage() 的结果，不全时加一句说明。 */
   function answer(q, results, names, cov) {
-    const top = (results || []).slice(0, 6);
+    const top = (results || []).filter((r) => r.channel !== 'visual').slice(0, 6);
     if (!top.length) return {lines: [], note: '没找到相关的片段，换个说法试试。', partial: !!(cov && cov.partial)};
     const groups = [];
     top.forEach((r) => {
@@ -252,7 +283,7 @@
     return out;
   }
 
-  const api = {MODES, SCOPES, terms, spans, pieces, conceptHits, search, fold, BY, why, MOMENT_PAD, moment, notices, coverage, answer, looksLikeQuestion,
+  const api = {MODES, SCOPES, terms, spans, pieces, conceptHits, visualChannel, search, fold, BY, why, MOMENT_PAD, moment, notices, coverage, answer, looksLikeQuestion,
     RELATED_SHOWN, nameTokens, sharedName, related, relatedNote, IN_VIDEO_SHOWN, inVideo};
   if (typeof window !== 'undefined') window.BC_SPACE_SEARCH = api;
 })();

@@ -486,7 +486,7 @@
      dur: 30, bytes: 5557452, mtime: 180, file: '素材/intro-30s.wav'},
     {id: 'o14', kind: 'final', name: '第 42 期 · 横版预告.mp4', dir: 'd1', movie: 'p10', status: 'published',
      dur: 58, res: '1920×1080', bytes: 25794969, mtime: 2880, fav: true, file: '导出/trailer-16x9.mp4'},
-    /* 索引文件夹「素材库」里的文件（2026-10-13 待确认）：不属于任何项目，来源写文件夹；lib 是文件夹 id。
+    /* 索引文件夹「素材库」里的文件（2026-10-14 确认）：不属于任何项目，来源写文件夹；lib 是文件夹 id。只读：不能移入回收站。
        lib-copy 是 p1 导出过的成片被拷进来的那一份（有导出记录，认得出来），不另建索引 */
     {id: 'lib-coast', kind: 'clip', name: '航拍 · 海岸线.mov', lib: 'f1', libName: '素材库', dur: 94, res: '3840×2160', bytes: 1932735283, mtime: 2880, hue: 196, file: '~/Movies/素材库/航拍-海岸线.mov'},
     {id: 'lib-street', kind: 'clip', name: '街景 · 夜.mp4', lib: 'f1', libName: '素材库', dur: 37, res: '1920×1080', bytes: 268435456, mtime: 4320, hue: 280, file: '~/Movies/素材库/街景-夜.mp4'},
@@ -3594,14 +3594,20 @@
       'lib-coast': {visual: 'indexing', pct: 20},
       'lib-street': {visual: 'queued'},
     },
-    /* 项目之外的索引文件夹（2026-10-13 待确认）：只读扫描；counts 是里面认出来的东西，visual 是画面建了多少 */
+    /* 项目之外的索引文件夹（2026-10-14 确认）：只读扫描；counts 是里面认出来的东西（exports：BaoCut 导出记录认得出的成片，跳过；
+       dupes：和某个项目里的视频是同一部，按项目那一份建；old：旧版视频目录，不读），visual 是画面建了多少。
+       issue：扫描停在上限（truncated）；missing：文件夹不在（外置盘没接上），索引留着、接上后接着用 */
     folders: [
       {id: 'f1', name: '素材库', path: '~/Movies/素材库', counts: {movies: 0, clips: 3, images: 1, exports: 1}, visual: {done: 2, total: 4}},
+      {id: 'f2', name: '文稿', path: '~/Documents', counts: {movies: 1, clips: 412, images: 1588, exports: 3, dupes: 1, old: 2}, visual: {done: 0, total: 2001},
+        issue: {kind: 'truncated', max: 2000}},
+      {id: 'f3', name: '拍摄素材', path: '/Volumes/ExtremeSSD/拍摄素材', counts: {movies: 3, clips: 58, images: 0, exports: 6}, visual: {done: 61, total: 61},
+        missing: true},
     ],
     /* 「添加文件夹」里的演示候选（产品里是系统的文件夹面板） */
     folderChoices: [
       {path: '~/Movies/2025 旅行', name: '2025 旅行', note: '本机硬盘', counts: {movies: 0, clips: 126, images: 342, exports: 0}},
-      {path: '/Volumes/ExtremeSSD/拍摄素材', name: '拍摄素材', note: '外置盘 ExtremeSSD', counts: {movies: 3, clips: 58, images: 0, exports: 6}},
+      {path: '/Volumes/ExtremeSSD/采访', name: '采访', note: '外置盘 ExtremeSSD', counts: {movies: 2, clips: 31, images: 0, exports: 4, dupes: 1}},
       {path: '~/Movies/素材库/航拍', name: '航拍', note: '在「素材库」里面'},
       {path: '~/BaoCut/新品发布/', name: '新品发布', note: '是一个项目'},
     ],
@@ -3630,12 +3636,31 @@
       {k: 'local', keys: ['本地', '本机', '为什么做本地', 'local'], hits: ['p1:g5', 'p1:g10', 'p8:t1', 'p1:g8', 'p4:c3']},
       {k: 'truth', keys: ['真相源', '文稿是真相', '时间轴不乱', '字幕层'], hits: ['p1:g17', 'p1:g18', 'p1:g20']},
     ],
+    /* 画面检索的语料（2026-10-14 确认）：按画面建过索引的关键帧。video 是 BaoCut 视频（命中在它的时间线上），entry 是索引文件夹里的
+       视频素材或图片（Space 条目，图片的 t 为 null）；scene 是演示画的场景，hue 是文件的配色 */
+    frames: [
+      {id: 'v:lib-coast:12', entry: 'lib-coast', t: 12, end: 20},
+      {id: 'v:lib-coast:52', entry: 'lib-coast', t: 52, end: 60},
+      {id: 'v:lib-street:8', entry: 'lib-street', t: 8, end: 16},
+      {id: 'v:lib-cam-b:300', entry: 'lib-cam-b', t: 300, end: 308},
+      {id: 'v:lib-poster', entry: 'lib-poster', t: null, end: null},
+      {id: 'v:p1:118', video: 'p1', t: 118, end: 126, scene: 'screen'},
+      {id: 'v:p1:20', video: 'p1', t: 20, end: 28, scene: 'duo'},
+    ],
+    /* 「按画面找」的演示概念表：同 concepts，命中的是关键帧 */
+    visualConcepts: [
+      {k: 'sea', keys: ['海', '海边', '海岸', '航拍', 'coast', 'sea', 'drone'], hits: ['v:lib-coast:12', 'v:lib-coast:52']},
+      {k: 'night', keys: ['夜', '夜景', '街', '城市', 'night', 'street'], hits: ['v:lib-street:8']},
+      {k: 'talk', keys: ['采访', '访谈', '两个人', '对谈', 'interview'], hits: ['v:p1:20', 'v:lib-cam-b:300']},
+      {k: 'screen', keys: ['屏幕', '代码', '演示', '界面', 'screen', 'code'], hits: ['v:p1:118']},
+      {k: 'poster', keys: ['海报', '封面', 'poster'], hits: ['v:lib-poster']},
+    ],
     /* 已经从时间线上剪掉的句子：搜得到，但卡片上没有「在时间线打开」 */
     cutOut: ['p10:g28', 'p4:c2'],
     /* 章节自检（integration §3.6 第 5 条）的演示分数：标题与本章内容的相似度、与上一章的相似度。
        「产品演示」这一章实际在讲渲染的确定性，标题不贴；「观点与总结」与上一章几乎重复 */
     chapterCheck: {titleFit: {c1: 0.61, c2: 0.58, c3: 0.31, c4: 0.55}, adjacent: {c2: 0.48, c3: 0.52, c4: 0.92}},
-    examples: ['为什么不上传素材', '讲成本的那段', '渲染为什么要确定', '我哪一期讲过离线？'],
+    examples: ['为什么不上传素材', '讲成本的那段', '渲染为什么要确定', '我哪一期讲过离线？', '海边的航拍'],
     /* 写作「按主题」挑出的句子（integration §2.2 第 1 条）：p1 的 cue id，按时间排；chapters = 覆盖的章 */
     topicPick: ['g5', 'g6', 'g7', 'g8', 'g9', 'g10', 'g12', 'g13', 'g14', 'g17', 'g18', 'g20'],
     /* 系列写作的候选视频（§2.2 第 4 条）：同一项目里有文稿的；切出的短视频内容已在来源视频里，不列为可选 */

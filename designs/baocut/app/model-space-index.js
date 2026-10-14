@@ -1,4 +1,4 @@
-/* 语义索引的范围、位置与每个条目的索引状态（2026-10-13 待确认的提案；embedding-integration-design §2.10、§2.11，
+/* 语义索引的范围、位置与每个条目的索引状态（2026-10-13 提案，索引文件夹 2026-10-14 确认；embedding-integration-design §2.10、§2.11，
    retrieval-spec v0.1 §8.1、§9.1、§13.2）。只在 App 入口加载：设置 › 语义索引与 Space 用它。
    · 每个条目的索引状态：Space 的卡片与列表行上一个标志，查看框里按通道写清楚（讲话内容 / 画面）；
      只给视频、成片、索引文件夹里的视频素材与图片标，文档、字幕、模板这些不标；没装模型或这台电脑不支持时都不标。
@@ -8,7 +8,9 @@
    · 不索引：单个条目可以排除（删掉已有的向量、以后不建，只能按字面找到），再点「恢复索引」排回队里；
      所在项目在设置里整个排除了的，条目上写是哪个项目，不再单独设（恢复要去设置）。视频缺省按讲话内容与画面都建。
    · 索引文件夹：项目之外再加的只读扫描目录。里面的 BaoCut 视频按讲话内容与画面建；其他视频文件与图片没有文稿，只按画面建，
-     所以画面关着时，加进来的文件夹只有 BaoCut 视频会建索引——添加时就说清楚。BaoCut 不改这些文件夹里的文件。
+     所以画面关着时，加进来的文件夹只有 BaoCut 视频会建索引——添加时就说清楚。BaoCut 不改这些文件夹里的文件：里面的条目不能移入
+     回收站，BaoCut 视频这一版不能在编辑器里打开（打开会写进它）；旧版视频目录不读（读它会就地升级）。和某个项目里的视频是同一部的
+     （同一个视频身份）按项目那一份建。条目不单独设「不索引」或「重新索引」：在设置里整个文件夹重新索引或移除。
    · 索引位置：默认在应用数据里；可以改到别的磁盘。改的时候二选一：把现有索引移过去，或在新位置重新建（旧的删掉）。
      不提供「只切换位置」：留在原处的索引没人用，只占空间。关键帧缓存不搬，可以清掉、会重新取。
    无 React、无 DOM，`node --test` 直接跑。 */
@@ -70,6 +72,10 @@
       return Object.assign({}, STATE.excluded, off, {channels: [], lines: [],
         why: `所在项目${opt.dirName ? `「${opt.dirName}」` : ''}已排除，只能按字面找到；在设置 › 语义索引里恢复`});
     }
+    if (it.dupOf) {
+      return Object.assign({}, STATE.notNeeded, off, {channels: [],
+        why: `和项目里的「${it.dupOf}」是同一部视频，按项目那一份建`});
+    }
     if (isExport(it)) {
       return Object.assign({}, STATE.notNeeded, off, {channels: [],
         why: `成片：和导出它的视频${opt.movieName ? `「${opt.movieName}」` : ''}内容相同，搜那部视频就能找到`});
@@ -96,10 +102,12 @@
       const why = it.kind === 'movie'
         ? (channels[0].state === 'waiting' ? '还在转录，转完按讲话内容建' : '没有文稿，画面索引也没开')
         : '只能按画面建，画面索引没开';
-      return Object.assign({}, STATE.empty, off, {channels, lines, why, canExclude: true});
+      return Object.assign({}, STATE.empty, off, {channels, lines, why, canExclude: !it.lib});
     }
     const top = ORDER.find((k) => live.some((c) => c.state === k));
-    return Object.assign({}, STATE[top], {channels, lines, why: null, canReindex: true, canExclude: true, canInclude: false,
+    // 索引文件夹里的条目：在设置里按文件夹重新索引或移除，不单独设
+    const own = !it.lib;
+    return Object.assign({}, STATE[top], {channels, lines, why: null, canReindex: own, canExclude: own, canInclude: false,
       pct: top === 'indexing' ? d.pct : null});
   }
   /** 标志的悬停说明 / 无障碍名：「语义索引：排队中 · 讲话内容：已索引；画面：排队中」。 */
@@ -115,8 +123,30 @@
     const n = f.counts || {};
     const parts = [n.movies ? `${n.movies} 部 BaoCut 视频按讲话内容${visual ? '与画面' : ''}建` : null,
       n.clips || n.images ? `${[n.clips ? `${n.clips} 个视频素材` : null, n.images ? `${n.images} 张图片` : null].filter(Boolean).join('、')}${visual ? '按画面建' : '要打开画面索引才会建'}` : null,
-      n.exports ? `${n.exports} 个成片跳过（导出它们的视频已经建过）` : null].filter(Boolean);
+      n.exports ? `${n.exports} 个成片跳过（导出它们的视频已经建过）` : null,
+      n.dupes ? `${n.dupes} 部视频已在项目里，按项目那一份建` : null,
+      n.old ? `${n.old} 部旧版视频不读` : null].filter(Boolean);
     return parts.length ? parts.join('；') + '。' : '这个文件夹里没有视频和图片。';
+  }
+  /** 一个已加的文件夹在设置里那一行：右边一句状态（tone 给颜色）、下面一句数量，另有提醒（扫描停在上限、旧版视频、文件夹不在）。 */
+  function folderStatus(f, visual) {
+    const n = f.counts || {};
+    const what = [n.movies ? `${n.movies} 部视频` : null, n.clips ? `${n.clips} 个视频素材` : null, n.images ? `${n.images} 张图片` : null]
+      .filter(Boolean).join('、') || '还没扫到视频和图片';
+    const skipped = [n.exports ? `${n.exports} 个成片跳过` : null, n.dupes ? `${n.dupes} 部已在项目里` : null, n.old ? `${n.old} 部旧版视频不读` : null]
+      .filter(Boolean);
+    const notes = [];
+    if (f.missing) {
+      return {tone: 'notice', line: '找不到这个文件夹', what: [what].concat(skipped).join(' · '),
+        notes: ['可能是外置盘没接上。它的索引留着，Space 里暂时不列这些文件；接上后接着用。']};
+    }
+    if (f.issue && f.issue.kind === 'truncated') notes.push(`文件太多，只扫了前 ${f.issue.max} 个视频与图片。可以改加里面的子文件夹。`);
+    if (f.issue && f.issue.kind === 'unreadable') notes.push('读不了这个文件夹，检查一下权限。');
+    if (n.old) notes.push('旧版 BaoCut 视频要先升级才能读；升级会改动它，所以这里不读。把它放进项目、在 BaoCut 里打开一次就能升级。');
+    const v = f.visual;
+    const line = visual && v && v.total ? (v.done >= v.total ? '画面已就绪' : `画面 ${v.done}/${v.total} 个完成`)
+      : n.movies ? '文字按里面的 BaoCut 视频建' : '画面索引没开，视频素材与图片还没建';
+    return {tone: null, line, what: [what].concat(skipped).join(' · '), notes};
   }
   /** 选中的文件夹能不能加：不存在、已经在范围里（是某个项目、某个已加的文件夹，或在它们里面）时不能。 */
   function folderProblem(path, taken) {
@@ -146,6 +176,6 @@
       move: {disabled: !fits, why: fits ? null : `所在磁盘只剩 ${Math.round(folder.freeMB)} MB，放不下 ${needMB} MB 的索引`}};
   }
 
-  const api = {CH_STATE, STATE, indexable, isExport, entryState, stateTitle, folderNote, folderProblem, DEFAULT_DIR, effectiveDir, locationPlan};
+  const api = {CH_STATE, STATE, indexable, isExport, entryState, stateTitle, folderNote, folderStatus, folderProblem, DEFAULT_DIR, effectiveDir, locationPlan};
   root.BC_SPACE_INDEX = api;
 })();

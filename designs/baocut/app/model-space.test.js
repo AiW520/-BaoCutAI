@@ -326,3 +326,10 @@ test('切出的短视频：父视频查看框里一起列，新切的在前；�
   const byId = Object.fromEntries(movies.map((m) => [m.id, m]));
   assert.equal(SP.sourceText(list.find((x) => x.id === 'k1'), Object.fromEntries(dirs.map((d) => [d.id, d])), byId), '来自「双语版」');
 });
+
+test('索引文件夹里的文件只读：不打开编辑、不另存；认得出来源视频的成片可以回到那部视频', () => {
+  assert.equal(SP.editRoute({kind: 'movie', lib: 'f2'}), null);
+  assert.equal(SP.editRoute({kind: 'clip', lib: 'f1'}), null);
+  assert.equal(SP.editRoute({kind: 'final', lib: 'f1', movie: 'p1'}), 'source');
+  assert.equal(SP.editRoute({kind: 'final', lib: 'f1'}), null);
+});

@@ -22,3 +22,5 @@
 .semset__pick { display: flex; flex-direction: column; gap: 4px; }
 .semset__vbar { display: flex; flex-direction: column; gap: 4px; padding: 0 0 12px; }
 .semset__vbarp { width: 100%; max-width: none; }
+/* 索引文件夹（settings-semantic-scope.jsx FolderRow）：不在 / 读不了 / 只扫了前面的 */
+.semset__warn { color: var(--orange-900); }

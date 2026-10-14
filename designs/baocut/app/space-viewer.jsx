@@ -171,7 +171,7 @@
     /* 在会话中继续（§4.7）：条目作为引用标签带进输入框，预填一句可改写的草稿，不自动发送；落到哪条会话由 handoverToAgent 决定 */
     const cont = () => {
       close();
-      if (it.kind === 'movie') { app.openMovie(it.id, {via: 'space'}); return; }
+      if (it.kind === 'movie' && !it.lib) { app.openMovie(it.id, {via: 'space'}); return; }
       app.handoverToAgent(it);
     };
     /* 用工具处理…（§4.5、§2.7「页面」第 1 条）：进工具页时输入已经选好 */
@@ -267,6 +267,9 @@
                 </Fact>
               ) : null}
             </dl>
+            {it.lib ? (
+              <p className="t-detail-xs">{`在索引文件夹「${it.libName || it.lib}」里，只读：BaoCut 不改、不移动、不删这个文件。`}</p>
+            ) : null}
             {it.status === 'missing' ? (
               <R.InlineAlert variant="negative">
                 <R.Heading>找不到这个文件</R.Heading>
@@ -312,9 +315,9 @@
             <>
               <R.Button variant="secondary" onPress={close}>关闭</R.Button>
               {!it.trashed && it.tool && window.BC_HOME_TOOLS.moviePatch(it) && <R.Button variant="secondary" onPress={() => { close(); app.createMovieFromOutput(it); }}>创建视频</R.Button>}
-              {it.trashed || route === 'editor' ? null : <R.Button variant="secondary" onPress={edit} isDisabled={it.status === 'missing' || it.status === 'generating'}>{editLabel}</R.Button>}
-              {it.kind === 'movie' || SURF.agent
-                ? <R.Button variant="accent" onPress={cont} isDisabled={it.kind !== 'movie' && !!it.trashed}>{it.kind === 'movie' ? '打开视频' : '在会话中继续'}</R.Button>
+              {it.trashed || !route || route === 'editor' ? null : <R.Button variant="secondary" onPress={edit} isDisabled={it.status === 'missing' || it.status === 'generating'}>{editLabel}</R.Button>}
+              {(it.kind === 'movie' && !it.lib) || SURF.agent
+                ? <R.Button variant="accent" onPress={cont} isDisabled={it.kind !== 'movie' && !!it.trashed}>{it.kind === 'movie' && !it.lib ? '打开视频' : '在会话中继续'}</R.Button>
                 : null}
             </>
           )}
