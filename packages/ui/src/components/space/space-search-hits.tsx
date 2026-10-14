@@ -478,7 +478,9 @@ function writeFromHit(hit: Hit, entry: SpaceEntry, query: string): void {
  * 时间线（或译文对不上时间），是不是真剪掉了要打开时按当前版本解析才知道（`openSemanticHit`）。
  */
 function whyLine(hit: Hit): string {
-  const words = hitWords(hit);
+  // 章节标题不是讲出来的话：不挂「讲话内容」，也不写「说到了」，只说对上的是字面还是意思（类型已经在徽标上）。
+  const spoken = hit.documentKind !== 'chapter';
+  const words = spoken ? hitWords(hit) : [];
   const kind = isSemantic(hit) ? matchedByKind(hit.matchedBy) : 'lexical';
   const why =
     isSemantic(hit) && hit.weak
@@ -488,7 +490,7 @@ function whyLine(hit: Hit): string {
         : kind === 'both'
           ? COPY.whySaidMeaning(words)
           : COPY.whySaid(words);
-  return [COPY.channelSpeech, why].join(' · ');
+  return spoken ? [COPY.channelSpeech, why].join(' · ') : why;
 }
 
 /** 点组头：打开视频，不挪播放头（设计稿：没有落点的不硬编一个）。 */
