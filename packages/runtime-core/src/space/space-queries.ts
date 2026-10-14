@@ -123,16 +123,32 @@ export interface SearchScope {
 }
 
 /**
+ * 检索范围的筛选：只在某个项目、某些视频里；智能体还可以去掉用户说了不要找的项目与视频（工具参数 `excludeProjectIds` /
+ * `excludeVideoIds`，架构设计 §5.7「权限」）。去掉只会缩小主体本来的范围。
+ */
+export interface ScopeParams {
+  projectId?: Id | null;
+  videoIds?: readonly Id[];
+  excludeProjectIds?: readonly Id[];
+  excludeVideoIds?: readonly Id[];
+}
+
+export type ScopeExclusion = Pick<ScopeParams, 'excludeProjectIds' | 'excludeVideoIds'>;
+
+/**
  * 检索的范围（`space.search` 与 `space.searchV2` 共用，§8.3「先确定授权范围再检索」）：来源目录里按主体、项目与 videoId 名单
  * 过滤之后的视频。对外服务的名单之外的视频既不进范围，也不进待索引的计数。
  */
-export function searchScope(catalog: SpaceSearchSource, viewer: SpaceViewer, params: { projectId?: Id | null; videoIds?: readonly Id[] }): SearchScope {
+export function searchScope(catalog: SpaceSearchSource, viewer: SpaceViewer, params: ScopeParams): SearchScope {
   const index = catalog.index;
   const wanted = params.videoIds ? new Set(params.videoIds) : null;
+  const skipProjects = params.excludeProjectIds?.length ? new Set(params.excludeProjectIds) : null;
+  const skipVideos = params.excludeVideoIds?.length ? new Set(params.excludeVideoIds) : null;
   const videos: SearchableVideo[] = [];
   let pending = 0;
   for (const video of catalog.videos()) {
     if (params.projectId !== undefined && video.projectId !== params.projectId) continue;
+    if (skipProjects && video.projectId !== null && skipProjects.has(video.projectId)) continue;
     if (!visibleVideo(viewer, video)) continue;
     const indexed = index?.at(video.dir) ?? null;
     if (!indexed) {
@@ -142,6 +158,7 @@ export function searchScope(catalog: SpaceSearchSource, viewer: SpaceViewer, par
       continue;
     }
     if (wanted && !wanted.has(indexed.videoId)) continue;
+    if (skipVideos?.has(indexed.videoId)) continue;
     if (viewer.kind === 'service' && viewer.videos !== 'all' && !viewer.videos.has(indexed.videoId)) continue;
     if (index!.pendingCount([video.dir]) > 0) pending++;
     videos.push({
@@ -160,7 +177,11 @@ export function searchScope(catalog: SpaceSearchSource, viewer: SpaceViewer, par
  * 跨视频检索（§5.11）。范围是来源目录里的视频（按主体过滤之后）；还没有索引、正在重建、索引落后于当前版本的视频
  * 计入 `pendingVideos`，有它们时 `complete` 为 false。落后的视频照样用旧的索引检索。
  */
-export function searchContent(catalog: SpaceSearchSource, viewer: SpaceViewer, params: SpaceSearchParams): SpaceSearchResult {
+export function searchContent(
+  catalog: SpaceSearchSource,
+  viewer: SpaceViewer,
+  params: SpaceSearchParams & ScopeExclusion,
+): SpaceSearchResult {
   const index = catalog.index;
   const { videos: searchable, pending } = searchScope(catalog, viewer, params);
   const { hits, truncated } = (index?.search(searchable, {

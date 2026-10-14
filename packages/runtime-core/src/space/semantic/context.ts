@@ -30,6 +30,9 @@ export interface ChunkScope {
   videoIds?: Id[];
   /** 只在这个项目里；`null` 是不属于项目的视频。 */
   projectId?: Id | null;
+  /** 去掉这些项目与视频（用户跟智能体说了不要找的）。 */
+  excludeProjectIds?: Id[];
+  excludeVideoIds?: Id[];
   /** 偏好的时钟；命中按实际时钟给。 */
   view?: 'source' | 'sequence';
 }
@@ -254,7 +257,12 @@ export function createSemanticContext(deps: SemanticContextDeps, viewer: SpaceVi
       const limit = Math.max(1, Math.floor(req.limit));
       const neighbors = Math.max(0, Math.floor(req.neighbors ?? 0));
       const kinds = req.kinds && req.kinds.length > 0 ? req.kinds : null;
-      const scopeParams = { ...(req.scope.projectId !== undefined ? { projectId: req.scope.projectId } : {}), ...(req.scope.videoIds ? { videoIds: req.scope.videoIds } : {}) };
+      const scopeParams = {
+        ...(req.scope.projectId !== undefined ? { projectId: req.scope.projectId } : {}),
+        ...(req.scope.videoIds ? { videoIds: req.scope.videoIds } : {}),
+        ...(req.scope.excludeProjectIds ? { excludeProjectIds: req.scope.excludeProjectIds } : {}),
+        ...(req.scope.excludeVideoIds ? { excludeVideoIds: req.scope.excludeVideoIds } : {}),
+      };
       const profiled = await deps.search.profile();
       const profile = 'profile' in profiled ? profiled.profile : null;
       const resolved = deps.search.resolveScope(viewer, scopeParams, profile);

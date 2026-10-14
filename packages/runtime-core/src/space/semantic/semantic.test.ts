@@ -1667,6 +1667,40 @@ describe('语义检索的智能体工具', () => {
     expect(spaceViewerOf(scope, { list: () => [] }, agent)).toEqual({ kind: 'source', projectId: null, conversationId: 'c-y' });
     expect(spaceViewerOf(scope, { list: () => [] }, agent, { retrieval: true })).toMatchObject({ readScope: 'all' });
   });
+
+  it('智能体按用户的话去掉项目与视频：检索类工具只缩小范围', async () => {
+    services = open();
+    await build(services);
+    const { tools: wide } = tools(undefined, { id: 'c-y', projectId: null, spaceReadScope: 'all' });
+    const videosOf = async (name: string, args: object) => {
+      const result = (await wide.dispatch(name, args, agent)) as { hits?: { videoId: string }[]; chunks?: { videoId: string }[] };
+      return [...new Set((result.hits ?? result.chunks ?? []).map((h) => h.videoId))].sort();
+    };
+    expect(await videosOf('space_search_v2', { query: 'battery', mode: 'lexical', excludeProjectIds: ['p1'] })).toEqual(['v2', 'v3']);
+    expect(await videosOf('space_search_v2', { query: 'battery', mode: 'lexical', excludeVideoIds: ['v3'] })).toEqual(['v1', 'v2']);
+    expect(await videosOf('speech_relevant', { intent: 'battery', excludeProjectIds: ['p1', 'p2'] })).toEqual(['v3']);
+    const scope = {
+      authorize: (principal: ToolPrincipal) => ({ principal, conversation: { id: 'c-y', projectId: null, spaceReadScope: 'all' } }),
+    } as unknown as ToolScope;
+    const space = () => ({ videos: () => videos, index, scanning: false }) as unknown as SpaceCatalog;
+    const lexical = (await new SpaceTools({ space, scope, jobs: { list: () => [] } }).dispatch(
+      'space_search',
+      { query: 'battery', excludeProjectIds: ['p2'] },
+      agent,
+    )) as {
+      hits: { videoId: string }[];
+    };
+    expect([...new Set(lexical.hits.map((h) => h.videoId))].sort()).toEqual(['v1', 'v3']);
+    // 去掉只缩小：没放宽的会话去掉别的也看不到更多。
+    const { tools: narrow } = tools(undefined, { id: 'c-y', projectId: null });
+    expect(
+      (
+        (await narrow.dispatch('space_search_v2', { query: 'battery', mode: 'lexical', excludeVideoIds: ['v1'] }, agent)) as {
+          hits: unknown[];
+        }
+      ).hits,
+    ).toEqual([]);
+  });
 });
 
 describe('放宽的只读检索范围只多看视频条目', () => {

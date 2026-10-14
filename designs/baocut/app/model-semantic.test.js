@@ -103,10 +103,10 @@ test('打开画面之前写开销（v0.1 §13.2）：帧数、首次要多久、
     '1 部视频，时长未知，估不出要多久');
 });
 
-test('首页新会话缺省可检索全部视频；属于项目、在已有视频里继续、点了 × 的不挂', () => {
+test('首页新会话缺省可检索全部视频（不显示标签）；属于项目、在已有视频里继续的不挂', () => {
   assert.equal(S.defaultReadScope({}), 'all');
   assert.equal(S.defaultReadScope({dir: 'd1'}), null);
   assert.equal(S.defaultReadScope({project: 'p1'}), null);
-  assert.equal(S.defaultReadScope({keep: false}), null);
-  assert.equal(S.READ_SCOPE.all, '可检索全部视频');
+  assert.equal(S.READ_SCOPE.all, undefined);
+  assert.equal(S.READ_SCOPE.unfiled, '可检索不属于项目的视频');
 });

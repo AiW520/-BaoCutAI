@@ -358,7 +358,7 @@
           renderCompletions={completions}
           attachments={<><window.ComposerSkillToken skill={skill} onRemove={() => setSkillId(null)} />
             <window.ComposerRefToken reference={reference} onRemove={() => onPatch({draftReference: null})} />
-            {/* 只读检索范围跟着会话走：首页开的会话之后收进了新项目（建了视频）也还在，点 × 收回（同 Electron 的输入框） */}
+            {/* 只读检索范围跟着会话走；只有「不属于项目的视频」显示标签，点 × 收回（同 Electron 的输入框） */}
             <window.ComposerReadScopeToken scope={sess.readScope} onRemove={() => {
               onPatch({readScope: null}); app.toast(window.BC_SEMANTIC.READ_SCOPE.dropped, 'positive');
             }} />

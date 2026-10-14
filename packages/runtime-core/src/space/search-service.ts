@@ -22,7 +22,14 @@ import {
 } from '@baocut/protocol';
 import type { EmbeddingProfile } from '@baocut/models';
 import type { SearchableVideo } from './content-search.ts';
-import { searchScope, type SearchScope, type SpaceSearchSource, type SpaceViewer } from './space-queries.ts';
+import {
+  searchScope,
+  type ScopeExclusion,
+  type ScopeParams,
+  type SearchScope,
+  type SpaceSearchSource,
+  type SpaceViewer,
+} from './space-queries.ts';
 import { semanticWanted, type SemanticCoordinator, type SemanticSettings } from './semantic/coordinator.ts';
 import { reasonOf, semanticError } from './semantic/errors.ts';
 import { estimateOf } from './semantic/estimate.ts';
@@ -147,7 +154,7 @@ export class SearchService {
   /**
    * 主体能看到的范围（按项目、videoId 名单筛过）与每个视频的世代、覆盖。`profile` 给时只把同一向量空间的世代算作可用。
    */
-  resolveScope(viewer: SpaceViewer, params: { projectId?: Id | null; videoIds?: readonly Id[] }, profile: EmbeddingProfile | null): ResolvedScope {
+  resolveScope(viewer: SpaceViewer, params: ScopeParams, profile: EmbeddingProfile | null): ResolvedScope {
     const scope = searchScope(this.#options.catalog, viewer, params);
     const store = this.#options.store();
     const generations = store?.activeGenerations(scope.videos.map((v) => v.videoId)) ?? new Map<Id, GenerationRow>();
@@ -322,7 +329,7 @@ export class SearchService {
 
   // ---- space.searchV2 ----
 
-  async searchV2(viewer: SpaceViewer, params: SpaceSearchV2Params, signal?: AbortSignal): Promise<SpaceSearchV2Result> {
+  async searchV2(viewer: SpaceViewer, params: SpaceSearchV2Params & ScopeExclusion, signal?: AbortSignal): Promise<SpaceSearchV2Result> {
     if (params.query.kind !== 'text') throw semanticError('CHANNEL_UNAVAILABLE');
     const text = params.query.text;
     if ([...text].length > SEMANTIC_QUERY_MAX_CHARS) throw semanticError('INPUT_TOO_LONG', { max: SEMANTIC_QUERY_MAX_CHARS });
@@ -341,7 +348,17 @@ export class SearchService {
     const profiled = wantsSemantic ? await this.profile() : null;
     const profile = profiled && 'profile' in profiled ? profiled.profile : null;
     const resolved = this.resolveScope(viewer, params, profile);
-    const queryDigest = digest([text, params.mode, channels, kinds, params.projectId ?? '*', params.videoIds ?? null, params.view ?? 'sequence', RANKING_VERSION]);
+    const queryDigest = digest([
+      text,
+      params.mode,
+      channels,
+      kinds,
+      params.projectId ?? '*',
+      params.videoIds ?? null,
+      params.view ?? 'sequence',
+      RANKING_VERSION,
+      ...excludedOf(params),
+    ]);
     const scopeHash = digest(resolved.videos.map((v) => `${v.video.videoId}:${v.video.revision}:${v.generation?.id ?? '-'}`));
     const offset = params.cursor ? readCursor(params.cursor, queryDigest, scopeHash) : 0;
 
@@ -472,7 +489,12 @@ export class SearchService {
    * 请求了画面：画面一路，加上请求了的文字一路。两路的余弦各自按这次查询的分布换成标准分（§10.2）再放在一起排：哪一路真的
    * 相关，哪一路排前面；不按名次交错。
    */
-  async #withVisual(viewer: SpaceViewer, params: SpaceSearchV2Params & { channels: SpaceSearchV2Params['channels'] & {} }, text: string, signal?: AbortSignal): Promise<SpaceSearchV2Result> {
+  async #withVisual(
+    viewer: SpaceViewer,
+    params: SpaceSearchV2Params & ScopeExclusion & { channels: SpaceSearchV2Params['channels'] & {} },
+    text: string,
+    signal?: AbortSignal,
+  ): Promise<SpaceSearchV2Result> {
     const limit = Math.max(1, Math.min(params.limit ?? DEFAULT_LIMIT, SPACE_SEARCH_V2_MAX_LIMIT));
     const fusion = SEMANTIC_THRESHOLDS.fusion;
     const kinds = params.kinds && params.kinds.length > 0 ? params.kinds : null;
@@ -542,7 +564,17 @@ export class SearchService {
     scored.sort((a, b) => b.score - a.score || a.key.localeCompare(b.key));
     const cap = fusion.mergedCandidates.value;
     const kept = flagWeak(scored.slice(0, cap));
-    const queryDigest = digest([text, params.mode, params.channels, kinds, params.projectId ?? '*', params.videoIds ?? null, params.view ?? 'sequence', RANKING_VERSION]);
+    const queryDigest = digest([
+      text,
+      params.mode,
+      params.channels,
+      kinds,
+      params.projectId ?? '*',
+      params.videoIds ?? null,
+      params.view ?? 'sequence',
+      RANKING_VERSION,
+      ...excludedOf(params),
+    ]);
     const scopeHash = digest([
       ...resolved.videos.map((v) => `${v.video.videoId}:${v.video.revision}:${v.generation?.id ?? '-'}`),
       ...visualScope.videos.map((v) => `v:${v.video.videoId}:${v.generation?.id ?? '-'}`),
@@ -1125,4 +1157,11 @@ function readCursor(cursor: string, query: string, scope: string): number {
     throw semanticError('CURSOR_STALE');
   }
   return value.o;
+}
+
+/** 智能体去掉的项目与视频进查询摘要（翻页游标不跨范围用）；没有时不占位，摘要与以前一样。 */
+function excludedOf(params: ScopeExclusion): unknown[] {
+  return params.excludeProjectIds?.length || params.excludeVideoIds?.length
+    ? [params.excludeProjectIds ?? null, params.excludeVideoIds ?? null]
+    : [];
 }

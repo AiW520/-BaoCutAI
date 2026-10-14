@@ -275,6 +275,11 @@ export const ko: SpaceMessages = {
   hitWriting: (tool: string, query: string) => `${tool}: 주제 「${query}」로 자료를 고릅니다`,
   hitAsk: '이 질문에 답하기',
   hitAskHint: 'Agent에게 맡깁니다: 내 동영상에서 찾아 요점마다 클릭할 수 있는 출처 시간을 붙입니다',
-  hitAskDraft: (question: string, inProject: boolean) => (inProject ? `이 프로젝트의 동영상에서 답 찾기: ${question}` : `내 동영상에서 답 찾기: ${question}`),
+  hitAskDraft: (question: string, where: 'project' | 'unfiled' | 'all') =>
+    where === 'project'
+      ? `이 프로젝트의 동영상에서 답 찾기: ${question}`
+      : where === 'unfiled'
+        ? `프로젝트에 속하지 않은 동영상에서 답 찾기: ${question}`
+        : `내 동영상에서 답 찾기: ${question}`,
   hitsNoneSemantic: '이 내용을 말한 구간을 찾지 못했습니다. 다른 표현으로 해 보세요.',
 };

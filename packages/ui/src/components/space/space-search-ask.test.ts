@@ -25,7 +25,8 @@ describe('回答这个问题', () => {
 
     askAcrossVideos('who said it', 'none');
     expect(useShell.getState().route).toMatchObject({ tab: 'home', conversationId: null, projectId: null });
-    expect(useShell.getState().drafts[startDraftKey(null)]).toBe('Answer from my videos: who said it');
+    // 只找不属于项目的视频：起始页不显示范围标记，话里写明。
+    expect(useShell.getState().drafts[startDraftKey(null)]).toBe('Answer from my videos that aren’t in a project: who said it');
     expect(useDraftSkills.getState().skills[startDraftKey(null)]).toEqual(['cross-video-qa']);
     expect(useStartBrief.getState().briefs[startDraftKey(null)]?.readScope).toBe('unfiled');
   });
@@ -33,5 +34,6 @@ describe('回答这个问题', () => {
   it('没筛项目时，新会话挂上可检索全部视频的只读范围', () => {
     askAcrossVideos('when did we launch', null);
     expect(useStartBrief.getState().briefs[startDraftKey(null)]?.readScope).toBe('all');
+    expect(useShell.getState().drafts[startDraftKey(null)]).toContain('Answer from my videos: when did we launch');
   });
 });

@@ -24,6 +24,20 @@ export interface SpaceToolsDeps {
 const KINDS = ['video', 'export', 'video-file', 'image', 'audio', 'subtitle', 'document', 'slides', 'design', 'design-system', 'package', 'template'] as const;
 const STATUSES = ['generating', 'candidate', 'applied', 'published', 'source-changed', 'missing', 'failed', 'none'] as const;
 
+/** 用户说了不要找的项目与视频（检索类工具共用，架构设计 §5.7「权限」）：只缩小范围，不放宽。 */
+export const excludeProjectIdsArg = z
+  .array(z.string().min(1).max(200))
+  .min(1)
+  .max(200)
+  .optional()
+  .describe('可选。不在这些项目的视频里找（用户说了不要找的项目）');
+export const excludeVideoIdsArg = z
+  .array(z.string().min(1).max(200))
+  .min(1)
+  .max(200)
+  .optional()
+  .describe('可选。不在这些视频里找（用户说了不要找的视频）');
+
 const schemas = {
   space_list: z.strictObject({
     kind: z
@@ -53,6 +67,8 @@ const schemas = {
     .strictObject({
       query: z.string().max(500).describe('检索词：空白隔开的几个词都要在同一段里出现，不区分大小写；中文按字符匹配，不分词'),
       videoIds: z.array(z.string().min(1).max(200)).min(1).max(200).optional().describe('可选。只在这些视频里找'),
+      excludeProjectIds: excludeProjectIdsArg,
+      excludeVideoIds: excludeVideoIdsArg,
       kinds: z
         .array(z.enum(['speech', 'caption', 'translation', 'chapter']))
         .min(1)
@@ -91,6 +107,7 @@ const DEFINITIONS: Record<ToolName, ToolInfo> = {
       '不用打开视频。每条命中带 videoId、视频名、文档种类与 documentId、时间位置（clock 为 sequence 时是时间线上的秒，source 时是素材的源时间）与命中的片段。',
       '时间以索引时的版本（indexedRevision）为准：要精确定位，用 videos_inspect / documents_read 读当前版本。',
       'complete 为 false 时索引还没覆盖全部视频（刚有修改、正在重建或有视频读不了），结果可能不全，pendingVideos 是个数。',
+      '用户说了不要找哪些项目或视频时，用 excludeProjectIds / excludeVideoIds 去掉。',
     ].join('\n'),
     annotations: { readOnlyHint: true },
     effect: 'query',
@@ -136,6 +153,8 @@ export class SpaceTools implements ToolSet {
         const result = searchContent(this.#deps.space(), this.#viewer(principal), {
           query: p.query,
           ...(p.videoIds ? { videoIds: p.videoIds } : {}),
+          ...(p.excludeProjectIds ? { excludeProjectIds: p.excludeProjectIds } : {}),
+          ...(p.excludeVideoIds ? { excludeVideoIds: p.excludeVideoIds } : {}),
           ...(p.kinds ? { kinds: p.kinds } : {}),
           ...(p.speaker ? { speaker: p.speaker } : {}),
           limit: p.limit ?? 30,

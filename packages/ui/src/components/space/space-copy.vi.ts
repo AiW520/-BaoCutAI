@@ -117,6 +117,11 @@ export const vi: SpaceMessages = {
   hitWriting: (tool: string, query: string) => `${tool}: chọn tư liệu theo chủ đề “${query}”`,
   hitAsk: 'Trả lời câu hỏi này',
   hitAskHint: 'Giao cho Agent: tìm trong các video của bạn và ghi nguồn mỗi ý bằng mốc thời gian bấm được',
-  hitAskDraft: (question: string, inProject: boolean) => (inProject ? `Trả lời dựa trên các video trong dự án này: ${question}` : `Trả lời dựa trên video của tôi: ${question}`),
+  hitAskDraft: (question: string, where: 'project' | 'unfiled' | 'all') =>
+    where === 'project'
+      ? `Trả lời dựa trên các video trong dự án này: ${question}`
+      : where === 'unfiled'
+        ? `Trả lời dựa trên video không thuộc dự án của tôi: ${question}`
+        : `Trả lời dựa trên video của tôi: ${question}`,
   hitsNoneSemantic: 'Không có đoạn nào nói về điều này. Hãy thử cách diễn đạt khác.',
 };

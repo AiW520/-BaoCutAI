@@ -141,7 +141,6 @@ export const ru: ShellMessages = {
     dropEditorState: "Не добавлять состояние редактора к сообщению",
     spaceEntries: "Элементы Space в сообщении",
     dropSpaceEntries: "Не добавлять эти элементы Space к сообщению",
-    readScopeAll: "Может искать по всем видео",
     readScopeUnfiled: "Может искать по видео вне проектов",
     readScopeHint: "Агент может искать по сказанному в этих видео, но не может открывать или менять их",
     dropReadScope: "Искать только по видео этой беседы",

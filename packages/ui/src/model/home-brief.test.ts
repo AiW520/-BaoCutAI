@@ -132,10 +132,9 @@ describe('新建项目的名称', () => {
 });
 
 describe('新会话的只读检索范围', () => {
-  it('不用项目时缺省可检索全部视频；用了项目、摘掉了的不挂；挂着的为准', () => {
+  it('不用项目时缺省可检索全部视频；用了项目的不挂；挂着的为准', () => {
     expect(homeReadScope(EMPTY_HOME_BRIEF, null)).toBe('all');
     expect(homeReadScope(EMPTY_HOME_BRIEF, 'p1')).toBeNull();
-    expect(homeReadScope({ ...EMPTY_HOME_BRIEF, dropDefaultReadScope: true }, null)).toBeNull();
     expect(homeReadScope({ ...EMPTY_HOME_BRIEF, readScope: 'unfiled' }, null)).toBe('unfiled');
   });
 });

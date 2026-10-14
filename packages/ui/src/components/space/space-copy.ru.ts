@@ -255,6 +255,11 @@ export const ru: SpaceMessages = {
   hitWriting: (tool: string, query: string) => `${tool}: материал подобран по теме «${query}»`,
   hitAsk: 'Ответить на этот вопрос',
   hitAskHint: 'Передаёт вопрос Agent: он ищет в ваших видео и к каждому пункту даёт время, по которому можно перейти',
-  hitAskDraft: (question: string, inProject: boolean) => (inProject ? `Ответь по видео из этого проекта: ${question}` : `Ответь по моим видео: ${question}`),
+  hitAskDraft: (question: string, where: 'project' | 'unfiled' | 'all') =>
+    where === 'project'
+      ? `Ответь по видео из этого проекта: ${question}`
+      : where === 'unfiled'
+        ? `Ответь по моим видео вне проектов: ${question}`
+        : `Ответь по моим видео: ${question}`,
   hitsNoneSemantic: 'В видео ничего не говорится об этом. Попробуйте другие слова.',
 };

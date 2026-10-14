@@ -273,6 +273,11 @@ export const zhHant: SpaceMessages = {
   hitWriting: (tool: string, query: string) => `${tool}：按主題「${query}」挑選素材`,
   hitAsk: '回答這個問題',
   hitAskHint: '交給 Agent：在你的影片裡找，每條說法附可點的出處時間',
-  hitAskDraft: (question: string, inProject: boolean) => (inProject ? `在這個專案的影片裡找答案：${question}` : `在我的影片裡找答案：${question}`),
+  hitAskDraft: (question: string, where: 'project' | 'unfiled' | 'all') =>
+    where === 'project'
+      ? `在這個專案的影片裡找答案：${question}`
+      : where === 'unfiled'
+        ? `在不屬於專案的影片裡找答案：${question}`
+        : `在我的影片裡找答案：${question}`,
   hitsNoneSemantic: '沒找到講這件事的片段。換個說法試試。',
 };

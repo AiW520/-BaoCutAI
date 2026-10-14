@@ -273,6 +273,11 @@ export const ja: SpaceMessages = {
   hitWriting: (tool: string, query: string) => `${tool}：テーマ「${query}」で素材を選びます`,
   hitAsk: 'この質問に答える',
   hitAskHint: 'Agent に任せます：あなたの動画から探し、各要点にクリックできる出典の時刻を付けます',
-  hitAskDraft: (question: string, inProject: boolean) => (inProject ? `このプロジェクトの動画から答えを探して：${question}` : `自分の動画から答えを探して：${question}`),
+  hitAskDraft: (question: string, where: 'project' | 'unfiled' | 'all') =>
+    where === 'project'
+      ? `このプロジェクトの動画から答えを探して：${question}`
+      : where === 'unfiled'
+        ? `プロジェクトに入っていない動画から答えを探して：${question}`
+        : `自分の動画から答えを探して：${question}`,
   hitsNoneSemantic: 'このことについて話している箇所は見つかりませんでした。別の言い方を試してください。',
 };

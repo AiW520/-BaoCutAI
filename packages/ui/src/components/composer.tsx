@@ -237,7 +237,7 @@ export interface ComposerProps {
   spaceReferences?: { items: { id: string; label: string; description: string }[]; onClear(): void } | null;
   /**
    * 输入框上方：用户给这条会话放宽的只读检索范围（`Conversation.spaceReadScope`，「回答这个问题」开的会话）。移除即收回，之后只检索
-   * 会话自己的视频。
+   * 会话自己的视频。「全部视频」是不用项目的会话的缺省，不显示标记（不想让 Agent 找哪些，跟它说）；只有「不属于项目的视频」显示。
    */
   readScope?: { scope: SpaceReadScope; onRemove(): void } | null;
   /**
@@ -317,7 +317,7 @@ export function Composer(props: ComposerProps) {
   const { draftKey, driverId, model, effort, lockedTo, onAgentChange, accessMode, onAccessModeChange } = props;
   const { busy, queueWhileBusy, stopping, placeholder, autoFocus, mentionScope, onSend, beforeSend, onStop, reference, queue, start, tool } = props;
   const spaceReferences = props.spaceReferences?.items.length ? props.spaceReferences : null;
-  const readScope = props.readScope ?? null;
+  const readScope = props.readScope?.scope === 'unfiled' ? props.readScope : null;
   const slideAnnotations = props.slideAnnotations?.items.length ? props.slideAnnotations : null;
   const designAnnotations = props.designAnnotations?.items.length ? props.designAnnotations : null;
   const designSystemAnnotations = props.designSystemAnnotations?.items.length ? props.designSystemAnnotations : null;
@@ -910,7 +910,7 @@ export function Composer(props: ComposerProps) {
               {readScope ? (
                 <span className={tag} title={S.composer.readScopeHint}>
                   <Search />
-                  <span className={tagText}>{readScope.scope === 'all' ? S.composer.readScopeAll : S.composer.readScopeUnfiled}</span>
+                  <span className={tagText}>{S.composer.readScopeUnfiled}</span>
                   <ActionButton isQuiet size="XS" aria-label={S.composer.dropReadScope} onPress={readScope.onRemove}>
                     <Close />
                   </ActionButton>

@@ -266,6 +266,11 @@ export const zhHans: SpaceMessages = {
   hitWriting: (tool: string, query: string) => `${tool}：按主题「${query}」挑选材料`,
   hitAsk: '回答这个问题',
   hitAskHint: '交给 Agent：在你的视频里找，每条说法带可点的出处时间',
-  hitAskDraft: (question: string, inProject: boolean) => (inProject ? `在这个项目的视频里找答案：${question}` : `在我的视频里找答案：${question}`),
+  hitAskDraft: (question: string, where: 'project' | 'unfiled' | 'all') =>
+    where === 'project'
+      ? `在这个项目的视频里找答案：${question}`
+      : where === 'unfiled'
+        ? `在不属于项目的视频里找答案：${question}`
+        : `在我的视频里找答案：${question}`,
   hitsNoneSemantic: '没找到讲这件事的片段。换个说法试试。',
 };

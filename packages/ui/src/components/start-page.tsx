@@ -115,7 +115,7 @@ export function StartPage({ projectId: routeProjectId }: { projectId: string | n
   const { model, effort } = draftSelection(driver, choice);
   const editor = useEditorReference({ conversationId: null, projectId });
   const brief = useStartBriefOf(draftKey);
-  // 不用项目时新会话缺省可检索全部视频（只读），输入框上方一个标记，摘掉这一次不挂。
+  // 不用项目时新会话缺省可检索全部视频（只读），不显示标记；「回答这个问题」只找不属于项目的视频时写在话里。
   const readScope = homeReadScope(brief, projectId);
   // 输入框里还没填的待填项（模板包规范 §5.5）：框下面的提示行列出它们。
   const slots = slotLabels(useShell((s) => s.drafts[draftKey] ?? ''));
@@ -309,8 +309,6 @@ export function StartPage({ projectId: routeProjectId }: { projectId: string | n
                 materials={brief.materials}
                 onRemoveTemplate={() => pickScene(null)}
                 onRemoveMaterial={(path) => patch({ materials: brief.materials.filter((m) => m.path !== path) })}
-                readScope={readScope}
-                onRemoveReadScope={() => patch({ readScope: null, dropDefaultReadScope: true })}
               />
             ),
             ready: gate === null || gate.ok,

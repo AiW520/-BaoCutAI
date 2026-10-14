@@ -80,8 +80,6 @@
        已有主素材时选它 = 替换，给一次撤销；它在的时候再加的视频音频只当参考材料（new-agent.jsx 的 addReal）。
        发送时不新建视频，直接在那部视频的会话里说（startAgent）。 */
     const [recentId, setRecentId] = useState(null);
-    /* 只读检索范围（2026-10-13 待确认）：不用项目时新会话缺省「可检索全部视频」，标签上点 × 这一次不挂；离开这一页再来又是缺省 */
-    const [readAll, setReadAll] = useState(true);
     const recent = recentId ? app.projById(recentId) : null;
     const pickRecent = (id) => {
       const mv = id ? app.projById(id) : null;
@@ -188,8 +186,8 @@
       /* 「转录并翻译」填的目标语言记下来，下次点这条快捷开始直接沿用（N.starterTarget 认不出就不记） */
       app.rememberNew({entry: 'agent', picked, shorts: shortsPick, targetName: N.starterTarget(text)});
       const materials = names.length ? `\n材料：${names.join('、')}` : '';
-      // 不在已有视频里继续时，新会话带上只读检索范围（选了项目的不挂，见 BC_SEMANTIC.defaultReadScope）
-      const scoped = {...run, readScope: window.BC_SEMANTIC.defaultReadScope({dir, keep: readAll}) || undefined};
+      // 不在已有视频里继续时，新会话带上只读检索范围（选了项目的不挂，不显示标签，见 BC_SEMANTIC.defaultReadScope）
+      const scoped = {...run, readScope: window.BC_SEMANTIC.defaultReadScope({dir}) || undefined};
       if (recent) {
         // 选了已有的视频：不新建，直接在它的会话里说；带着素材的那条路线照旧（含切成 Shorts 的那一行）
         const cut = shortsCut ? `\n${S.cutPromptLine(S.cutCount(said))}` : '';
@@ -236,7 +234,7 @@
           </div>
           <window.NewAgentHero text={text} onText={setText} files={files} onFiles={setFiles} media={media} mediaAttachment={mediaAttachment} onMedia={setMedia}
             recent={recent} onRecent={pickRecent} skill={skill} onSkill={setSkillId}
-            scene={scene} onScene={pickScene} downloading={dl} focusTick={focusTick} dir={dir} onDir={setDir} readAll={readAll} onReadAll={setReadAll}
+            scene={scene} onScene={pickScene} downloading={dl} focusTick={focusTick} dir={dir} onDir={setDir}
             sel={sel} onSel={setSelPatch} ready={agentReady} can={aCan} busy={busy} onSubmit={startAgent} />
           <window.NewGateCard guide={N.gateGuide(route.goal, aGate)} avail={app.agentAvail} />
           <window.HomeStarters items={N.homeStarters({targetName: seed.targetName})} onPick={applyStarter} onBlank={() => createBlank()} />

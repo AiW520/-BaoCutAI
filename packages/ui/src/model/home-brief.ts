@@ -144,26 +144,22 @@ export interface HomeBriefState {
   template: string | null;
   materials: readonly HomeMaterial[];
   /**
-   * 新会话的只读检索范围（`Conversation.spaceReadScope`）：Space 搜索「回答这个问题」没筛项目时挂上，建会话时交给 Runtime；
-   * 可以摘掉。没有时 null（不用项目时仍有缺省的「全部视频」，见 `homeReadScope`）。
+   * 新会话的只读检索范围（`Conversation.spaceReadScope`）：Space 搜索「回答这个问题」没筛项目时挂上，建会话时交给 Runtime。
+   * 没有时 null（不用项目时仍是缺省的「全部视频」，见 `homeReadScope`）。
    */
   readScope: SpaceReadScope | null;
-  /** 用户摘掉了缺省的「全部视频」：这一次不挂。发出去或离开草稿后回到缺省。 */
-  dropDefaultReadScope?: boolean;
 }
 
 export const EMPTY_HOME_BRIEF: HomeBriefState = { template: null, materials: [], readScope: null };
 
 /**
  * 起始页新会话实际带的只读检索范围（架构设计 §4.8、§5.7「权限」；原型 model-semantic.js `defaultReadScope`）：挂着的（Space
- * 「回答这个问题」给的）为准；否则不用项目时缺省「全部视频」，用户摘掉了就不挂；用了项目的会话只看项目，不挂。
+ * 「回答这个问题」给的）为准；否则不用项目时缺省「全部视频」，不显示标记——不想让它找哪些视频，跟 Agent 说，它检索时排除；
+ * 用了项目的会话只看项目，不挂。
  */
-export function homeReadScope(
-  brief: Pick<HomeBriefState, 'readScope' | 'dropDefaultReadScope'>,
-  projectId: string | null,
-): SpaceReadScope | null {
+export function homeReadScope(brief: Pick<HomeBriefState, 'readScope'>, projectId: string | null): SpaceReadScope | null {
   if (brief.readScope) return brief.readScope;
-  return projectId || brief.dropDefaultReadScope ? null : 'all';
+  return projectId ? null : 'all';
 }
 
 /** 挂上或摘掉场景模板（原型 page-new.jsx `pickScene`）；素材不动。 */

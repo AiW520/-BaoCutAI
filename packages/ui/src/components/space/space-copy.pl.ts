@@ -255,6 +255,11 @@ export const pl: SpaceMessages = {
   hitWriting: (tool: string, query: string) => `${tool}: materiał dobrany według tematu „${query}”`,
   hitAsk: 'Odpowiedz na to pytanie',
   hitAskHint: 'Przekazuje je Agentowi: przeszuka twoje filmy i przy każdej tezie poda klikalny czas',
-  hitAskDraft: (question: string, inProject: boolean) => (inProject ? `Odpowiedz na podstawie filmów z tego projektu: ${question}` : `Odpowiedz na podstawie moich filmów: ${question}`),
+  hitAskDraft: (question: string, where: 'project' | 'unfiled' | 'all') =>
+    where === 'project'
+      ? `Odpowiedz na podstawie filmów z tego projektu: ${question}`
+      : where === 'unfiled'
+        ? `Odpowiedz na podstawie moich filmów spoza projektów: ${question}`
+        : `Odpowiedz na podstawie moich filmów: ${question}`,
   hitsNoneSemantic: 'Nic z tego, co powiedziano w filmach, nie dotyczy tego. Spróbuj innych słów.',
 };

@@ -244,7 +244,12 @@ const en = {
   hitWriting: (tool: string, query: string) => `${tool}: material picked by topic “${query}”`,
   hitAsk: 'Answer this question',
   hitAskHint: 'Hands it to the Agent: it searches your videos and cites each point with a time you can click',
-  hitAskDraft: (question: string, inProject: boolean) => (inProject ? `Answer from my videos in this project: ${question}` : `Answer from my videos: ${question}`),
+  hitAskDraft: (question: string, where: 'project' | 'unfiled' | 'all') =>
+    where === 'project'
+      ? `Answer from my videos in this project: ${question}`
+      : where === 'unfiled'
+        ? `Answer from my videos that aren’t in a project: ${question}`
+        : `Answer from my videos: ${question}`,
   hitsNoneSemantic: 'Nothing said in videos is about this. Try other words.',
 
   // 页面里的其余文字

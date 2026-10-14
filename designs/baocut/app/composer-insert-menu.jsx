@@ -72,12 +72,12 @@
       {onRemove ? <IconBtn icon="close" size="xs" tip={'移除引用：' + reference.name} onClick={onRemove} /> : null}</div>;
   }
 
-  /** 只读检索范围的标签（Conversation.spaceReadScope，2026-10-13 待确认）：「可检索全部视频」，点 × 收回。 */
+  /** 只读检索范围的标签（Conversation.spaceReadScope）：「全部视频」是缺省，不显示；只有「不属于项目的视频」显示，点 × 收回。 */
   function ComposerReadScopeToken({scope, onRemove}) {
-    if (scope !== 'all') return null;
+    if (scope !== 'unfiled') return null;
     const R = window.RSP;
     const C = window.BC_SEMANTIC.READ_SCOPE;
-    return <div className="cins-token" title={C.hint}><R.Icons.Search /><span>{C.all}</span>
+    return <div className="cins-token" title={C.hint}><R.Icons.Search /><span>{C.unfiled}</span>
       {onRemove ? <IconBtn icon="close" size="xs" tip={C.drop} onClick={onRemove} /> : null}</div>;
   }
 

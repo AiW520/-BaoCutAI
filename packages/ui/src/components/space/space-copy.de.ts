@@ -273,6 +273,11 @@ export const de: SpaceMessages = {
   hitWriting: (tool: string, query: string) => `${tool}: Material nach Thema „${query}“ ausgewählt`,
   hitAsk: 'Diese Frage beantworten',
   hitAskHint: 'Übergibt sie dem Agent: Er durchsucht deine Videos und belegt jeden Punkt mit einer anklickbaren Zeit',
-  hitAskDraft: (question: string, inProject: boolean) => (inProject ? `Antworte aus den Videos in diesem Projekt: ${question}` : `Antworte aus meinen Videos: ${question}`),
+  hitAskDraft: (question: string, where: 'project' | 'unfiled' | 'all') =>
+    where === 'project'
+      ? `Antworte aus den Videos in diesem Projekt: ${question}`
+      : where === 'unfiled'
+        ? `Antworte aus meinen Videos ohne Projekt: ${question}`
+        : `Antworte aus meinen Videos: ${question}`,
   hitsNoneSemantic: 'Nichts Gesprochenes in den Videos handelt davon. Versuchen Sie andere Wörter.',
 };

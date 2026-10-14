@@ -262,6 +262,11 @@ export const tr: SpaceMessages = {
   hitWriting: (tool: string, query: string) => `${tool}: malzeme “${query}” konusuna göre seçildi`,
   hitAsk: 'Bu soruyu yanıtla',
   hitAskHint: 'Agent’a verir: videolarınızda arar ve her noktayı tıklanabilir bir zamanla kaynak gösterir',
-  hitAskDraft: (question: string, inProject: boolean) => (inProject ? `Bu projedeki videolara göre yanıtla: ${question}` : `Videolarıma göre yanıtla: ${question}`),
+  hitAskDraft: (question: string, where: 'project' | 'unfiled' | 'all') =>
+    where === 'project'
+      ? `Bu projedeki videolara göre yanıtla: ${question}`
+      : where === 'unfiled'
+        ? `Projeye ait olmayan videolarıma göre yanıtla: ${question}`
+        : `Videolarıma göre yanıtla: ${question}`,
   hitsNoneSemantic: 'Videolarda bununla ilgili söylenen bir şey bulunamadı. Başka sözcükler deneyin.',
 };

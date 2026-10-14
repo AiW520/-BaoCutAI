@@ -438,13 +438,17 @@ function HitActions({ hit, entries, query, web, runtime }: { hit: Hit; entries: 
  * 只放进输入框（接在已有的话后面），由用户发出。
  *
  * 无项目会话的智能体本来只看会话自己的视频（架构设计 §4.8），所以没筛项目时给新会话挂上只读检索范围（`Conversation.spaceReadScope`）：
- * 「全部项目」是全部视频，「不属于项目」是不属于项目的视频。输入框上方写明，可以摘掉。
+ * 「全部项目」是全部视频（起始页不用项目时本来就是这个，不显示标记），「不属于项目」是不属于项目的视频（话里写明，会话的输入框上
+ * 有标记，可以摘掉）。
  */
 export function askAcrossVideos(question: string, projectId: Id | 'none' | null): void {
   const project = projectId && projectId !== 'none' ? projectId : null;
   const key = startDraftKey(project);
   const shell = useShell.getState();
-  shell.setDraft(key, mergeDraft(shell.drafts[key], COPY.hitAskDraft(question, project !== null)));
+  shell.setDraft(
+    key,
+    mergeDraft(shell.drafts[key], COPY.hitAskDraft(question, project ? 'project' : projectId === 'none' ? 'unfiled' : 'all')),
+  );
   useDraftSkills.getState().add(key, CROSS_VIDEO_QA_SKILL);
   useStartBrief.getState().patch(key, { readScope: project ? null : projectId === 'none' ? 'unfiled' : 'all' });
   openHome(project);

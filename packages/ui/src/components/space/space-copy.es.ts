@@ -54,6 +54,11 @@ export const es: SpaceMessages = {
   hitWriting: (tool: string, query: string) => `${tool}: material elegido por el tema «${query}»`,
   hitAsk: 'Responder a esta pregunta',
   hitAskHint: 'Se la pasa al Agent: busca en tus videos y cita cada punto con un tiempo en el que puedes hacer clic',
-  hitAskDraft: (question: string, inProject: boolean) => (inProject ? `Responde a partir de los videos de este proyecto: ${question}` : `Responde a partir de mis videos: ${question}`),
+  hitAskDraft: (question: string, where: 'project' | 'unfiled' | 'all') =>
+    where === 'project'
+      ? `Responde a partir de los videos de este proyecto: ${question}`
+      : where === 'unfiled'
+        ? `Responde a partir de mis videos sin proyecto: ${question}`
+        : `Responde a partir de mis videos: ${question}`,
   hitsNoneSemantic: 'Nada de lo dicho en los vídeos trata de esto. Prueba con otras palabras.',
 };
