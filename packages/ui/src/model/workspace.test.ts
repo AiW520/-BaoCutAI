@@ -5,6 +5,7 @@ import {
   DOCK_DEFAULT,
   EDITOR_MIN_WIDTH,
   EMPTY_WORKSPACE,
+  addTab,
   clampDock,
   closeTab,
   dockFor,
@@ -55,6 +56,13 @@ describe('标签的开关与排序', () => {
     expect(replaceTab(state, itemKey(web), files)).toEqual({ tabs: [video, files, file], active: 'files' });
     expect(replaceTab(state, itemKey(web), file)).toEqual({ tabs: [video, file], active: itemKey(file) });
     expect(replaceTab(state, 'nope', files)).toEqual(openTab(state, files));
+  });
+
+  it('addTab 排到最后但不选中，记下的标签照旧；已经开着时返回原对象', () => {
+    const state = { tabs: [web], active: null, last: itemKey(web) };
+    expect(addTab(state, video)).toEqual({ tabs: [web, video], active: null, last: itemKey(web) });
+    expect(addTab({ tabs: [web], active: itemKey(web) }, video)).toEqual({ tabs: [web, video], active: itemKey(web) });
+    expect(addTab(state, web)).toBe(state);
   });
 
   it('moveTab 挪到目标前后；没变化时返回原对象', () => {

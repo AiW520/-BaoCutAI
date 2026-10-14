@@ -340,6 +340,40 @@ describe('Home 功能区标签', () => {
     useShell.setState({ workspaceNarrow: false });
   });
 
+  it('视频卡第一次出现：分屏在右侧打开（收起的也展开），不进历史；单条标签条只加标签，仍是原来那一格；别的会话不动', () => {
+    useShell.setState({ views: {}, workspaceNarrow: false, hiddenBeforeNarrow: false });
+    const { go, openPane, toggleWorkspace, toggleWorkspaceFull, openVideoBeside } = useShell.getState();
+    const second = { kind: 'video', target: { projectId: 'p1', path: 'w' } } as const;
+    const third = { kind: 'video', target: { projectId: 'p1', path: 'x' } } as const;
+    go({ tab: 'home', conversationId: 'c1', projectId: null });
+    openPane(files);
+    toggleWorkspace();
+    const back = useShell.getState().back.length;
+    openVideoBeside(video.target, 'c1');
+    expect(useShell.getState().route).toEqual({ tab: 'home', conversationId: 'c1', projectId: null, pane: video });
+    expect(view()).toBeUndefined();
+    expect(useShell.getState().back).toHaveLength(back);
+    expect(useShell.getState().workspaces.c1?.tabs).toEqual([files, video]);
+    // 不是正看着的会话、不在 Home：不动。
+    openVideoBeside(second.target, 'c2');
+    expect(useShell.getState().workspaces.c1?.tabs).toEqual([files, video]);
+    expect(useShell.getState().workspaces.c2).toBeUndefined();
+    // 完整视图里选着会话：只加标签，会话仍是当前的那一格。
+    toggleWorkspace();
+    toggleWorkspaceFull();
+    expect(view()).toEqual({ hidden: true, full: true });
+    openVideoBeside(second.target, 'c1');
+    expect(view()).toEqual({ hidden: true, full: true });
+    expect(useShell.getState().route).toEqual({ tab: 'home', conversationId: 'c1', projectId: null, pane: video });
+    expect(useShell.getState().workspaces.c1).toMatchObject({ tabs: [files, video, second], active: itemKey(video) });
+    // 窄窗口同样只加标签。
+    useShell.setState({ views: {}, workspaceNarrow: true });
+    openVideoBeside(third.target, 'c1');
+    expect(useShell.getState().route).toEqual({ tab: 'home', conversationId: 'c1', projectId: null, pane: video });
+    expect(useShell.getState().workspaces.c1?.tabs).toEqual([files, video, second, third]);
+    useShell.setState({ workspaceNarrow: false });
+  });
+
   describe('窄窗口：会话是固定的第一个标签', () => {
     const wide = () => useShell.setState({ workspaceNarrow: false, views: {}, hiddenBeforeNarrow: false });
     const at = () => {

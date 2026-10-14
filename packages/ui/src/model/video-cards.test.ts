@@ -13,9 +13,11 @@ import {
   downloadCardView,
   downloadEntry,
   foldRows,
+  freshVideoCards,
   jobRowView,
   needsAction,
   threadCards,
+  videoCardKeys,
   videoStatus,
   type JobRowView,
 } from './video-cards.ts';
@@ -396,6 +398,39 @@ describe('threadCards：随第一句话带进来的视频（产品设计 §3.2.2
   it('会话摘要的产物里也列这部视频', () => {
     const outputs = conversationOutputs({ id: CONV, projectId: 'p1' }, [opened('u1', 't1', 10), reply('a1', 't1')], [], Infinity, []);
     expect(outputs.map((o) => [o.kind, o.id, o.name])).toEqual([['video', 'mov_1', '访谈第一集']]);
+  });
+});
+
+describe('第一次出现的视频卡（产品设计 §3.3：功能区自动打开）', () => {
+  const opened: TimelineItem = {
+    kind: 'user-message',
+    id: 'u1',
+    createdAt: at(10),
+    taskId: 't1',
+    text: '把口癖剪掉',
+    context: { videoId: 'mov_1', videoName: '访谈第一集', videoPath: 'videos/访谈第一集', revision: '3', selection: [], playheadSeconds: 0 },
+  };
+  const placed = (items: TimelineItem[], jobs: JobRecord[] = []) =>
+    threadCards({ blocks: buildThread(items), items, jobs, conversationId: CONV, entries: [] });
+
+  it('seen 里没有的、知道在哪打开的才算，按挂的先后', () => {
+    const first = placed([user('u1', 't1'), created('mov_2', 't1'), reply('a1', 't1')]);
+    expect(videoCardKeys(first)).toEqual(['video:mov_2']);
+    expect(freshVideoCards(first, new Set(), null).map((c) => [c.key, c.video.video])).toEqual([
+      ['video:mov_2', { conversationId: CONV, path: '新视频 mov_2' }],
+    ]);
+    const later = placed([user('u1', 't1'), created('mov_2', 't1'), reply('a1', 't1'), user('u2', 't2', 20), created('mov_3', 't2'), reply('a2', 't2')]);
+    expect(freshVideoCards(later, new Set(videoCardKeys(first)), null).map((c) => c.key)).toEqual(['video:mov_3']);
+    // 流程刚建出来、Space 还没扫到：还不知道位置，先不算，下次再看。
+    const pending = placed([user('u1', 't1'), tool('c1', 't1'), reply('a1', 't1')], [job({ videoId: 'mov_9' })]);
+    expect(videoCardKeys(pending)).toEqual(['video:mov_9']);
+    expect(freshVideoCards(pending, new Set(), null)).toEqual([]);
+  });
+
+  it('随第一句话带进来的视频不算，智能体后来改了它也不算', () => {
+    const items = [opened, change('x1', 'mov_1', 't1'), reply('a1', 't1')];
+    expect(videoCardKeys(placed(items))).toEqual(['video:mov_1']);
+    expect(freshVideoCards(placed(items), new Set(), 'mov_1')).toEqual([]);
   });
 });
 

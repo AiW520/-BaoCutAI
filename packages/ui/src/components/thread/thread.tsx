@@ -5,8 +5,10 @@ import { OUTPUT_COPY } from '../../copy.ts';
 import { conversationOutputs, outputsByMessage, type ConversationOutput } from '../../model/conversation-outputs.ts';
 import { gapBetween, rowKind, showFooter, turns, type RowKind, type Turn } from '../../model/agent-turn.ts';
 import { buildThread, type ThreadBlock } from '../../model/thread.ts';
-import { threadCards, type ThreadCard } from '../../model/video-cards.ts';
+import { freshVideoCards, openingVideo, threadCards, videoCardKeys, type ThreadCard } from '../../model/video-cards.ts';
 import { useConversationMeta } from '../../state/directory-store.ts';
+import { useJobs } from '../../state/jobs-store.ts';
+import { useShell } from '../../state/shell-store.ts';
 import { useSpace } from '../../state/space-store.ts';
 import { ApprovalCard } from './approval-card.tsx';
 import {
@@ -106,6 +108,7 @@ export function Thread({
     () => threadCards({ blocks, items, jobs, conversationId, entries }),
     [blocks, items, jobs, conversationId, entries],
   );
+  useOpenFreshVideos(cards, items, conversationId);
   const showColumn = blocks.length > 0 || running;
   const { scrollerRef, columnRef } = useFollowBottom(conversationId, blocks, showColumn);
 
@@ -168,6 +171,27 @@ export function Thread({
       )}
     </div>
   );
+}
+
+/**
+ * 视频卡第一次出现时在功能区打开那部视频（产品设计 §3.3，shell-store `openVideoBeside`）。线程在会话记录读完后才挂，
+ * Job 镜像也到了时记下这一刻已有的卡，它们不算；之后新出现的、知道在哪打开的各打开一次，用户关掉后不再打开。
+ */
+function useOpenFreshVideos(cards: Map<string, ThreadCard[]>, items: readonly TimelineItem[], conversationId: string) {
+  const jobsReady = useJobs((s) => s.ready);
+  const seen = useRef<{ conversationId: string; keys: Set<string> } | null>(null);
+  useEffect(() => {
+    if (!jobsReady) return;
+    if (seen.current?.conversationId !== conversationId) {
+      seen.current = { conversationId, keys: new Set(videoCardKeys(cards)) };
+      return;
+    }
+    const { keys } = seen.current;
+    for (const card of freshVideoCards(cards, keys, openingVideo(items)?.videoId ?? null)) {
+      keys.add(card.key);
+      if (card.video.video) useShell.getState().openVideoBeside(card.video.video, conversationId);
+    }
+  }, [cards, items, conversationId, jobsReady]);
 }
 
 /** 这一轮在不在跑：有任务看任务的状态；还没有任务时，会话在跑的最后一轮算在跑。 */

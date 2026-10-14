@@ -149,6 +149,23 @@
       const conversation = W.fullViewEntry(workspaceVisible, workspace.active) === W.CONVERSATION;
       setViews(previous => ({...previous, [sid]: {...previous[sid], full: true, hidden: conversation}}));
     };
+    // product-design §3.3: a video card that shows up for the first time in the conversation on screen
+    // opens its video. The split shows it on the right, unhiding the pane, without a history entry (Back
+    // does not undo it); the single tab strip (narrow, full view) only adds the tab and keeps what is selected.
+    const openMovieBeside = (id, sessionId) => {
+      if (!sid || sessionId !== sid) return;
+      const item = {key: 'movie:' + id, kind: 'movie', id};
+      if (workspaceSingle) {
+        setBook(previous => {
+          const synced = W.reconcile(previous, app.route);
+          const next = W.add(synced[sid], item);
+          return next === synced[sid] ? synced : {...synced, [sid]: next};
+        });
+        return;
+      }
+      show(sid);
+      app.replace(W.route(sid, item));
+    };
     // Tabs list popover: open a tab in the split, or straight into full view.
     const showWorkspaceTab = (key, full = false) => {
       const item = workspace.tabs.find(t => t.key === key);
@@ -183,7 +200,7 @@
     });
     return {workspaceKey: sid, workspaceSessionId, workspaceSingle, showWorkspaceTab, finishDraftWorkspace, openAgent, createWorkspacePage, browseWorkspaceFiles, workspaceAttachments, openWorkspaceAttachment, workspaceMediaState, updateWorkspaceMediaState, workspaceFileTitles, setWorkspaceFileTitle, workspace, workspaceVisible, workspaceFull, workspaceNarrow, workspaceConversation, workspaceRef, showConversation,
       workspaceWidth, workspaceDockW, resizeWorkspace, toggleWorkspace, toggleWorkspaceFull,
-      selectWorkspaceTab, closeWorkspaceTab, moveWorkspaceTab, openWorkspaceFile, openWorkspaceSlides, openWorkspaceDesign, openWorkspaceDesignSystem, openWorkspaceBrowser, openMovie};
+      selectWorkspaceTab, closeWorkspaceTab, moveWorkspaceTab, openWorkspaceFile, openWorkspaceSlides, openWorkspaceDesign, openWorkspaceDesignSystem, openWorkspaceBrowser, openMovie, openMovieBeside};
   }
   Object.assign(window, {useHomeWorkspace});
 })();

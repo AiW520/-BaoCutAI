@@ -295,6 +295,27 @@ export function threadCards(input: {
   return out;
 }
 
+type VideoThreadCard = Extract<ThreadCard, { kind: 'video' }>;
+
+/** 线程里全部视频卡的键（`threadCards` 的输出）。 */
+export function videoCardKeys(cards: ReadonlyMap<Id, readonly ThreadCard[]>): string[] {
+  return [...cards.values()].flatMap((list) => list.filter((c) => c.kind === 'video').map((c) => c.key));
+}
+
+/**
+ * 第一次出现的视频卡（产品设计 §3.3：功能区自动打开这部视频）：`seen` 里没有、已经知道在哪打开的，按挂的先后。
+ * 随第一句话带进会话的视频（`openingVideo`）不算，发它的人正开着它。调用方打开后把键记进 `seen`；还不知道位置的下次再看。
+ */
+export function freshVideoCards(
+  cards: ReadonlyMap<Id, readonly ThreadCard[]>,
+  seen: ReadonlySet<string>,
+  openingVideoId: Id | null,
+): VideoThreadCard[] {
+  return [...cards.values()].flatMap((list) =>
+    list.filter((c): c is VideoThreadCard => c.kind === 'video' && !seen.has(c.key) && c.video.id !== openingVideoId && !!c.video.video),
+  );
+}
+
 /** 整条会话里归这部视频的活，按提交先后：线程里的视频卡与「产物」弹层里的是同一份。 */
 export function conversationVideoJobs(videoId: Id, jobs: readonly JobRecord[], conversationId: Id): Id[] {
   const byId = new Map(jobs.map((j) => [j.jobId, j]));

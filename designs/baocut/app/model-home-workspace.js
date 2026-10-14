@@ -38,6 +38,12 @@
     const old = s.tabs.find(t => t.key === item.key);
     return {tabs: old ? s.tabs.map(t => t.key === item.key ? {...t, ...item} : t) : [...s.tabs, item], active: item.key};
   }
+  // Add a tab without selecting it: in the single tab strip a video card that shows up for the
+  // first time adds its video at the end and the conversation stays selected (product-design §3.3).
+  function add(state, item) {
+    const s = state || empty();
+    return s.tabs.some(t => t.key === item.key) ? s : {...s, tabs: [...s.tabs, item]};
+  }
   // Swap a tab for another in the same slot (a new tab's start page turning into the
   // page it created), the way a browser replaces a tab in place.
   function replace(state, key, item) {
@@ -134,6 +140,6 @@
   // Which tab a wide → narrow switch selects: the conversation when it holds focus
   // or when no pane is showing; otherwise the visible pane stays.
   function narrowShowsConversation(focusInConversation, paneVisible) { return !!focusInConversation || !paneVisible; }
-  window.BC_HOME_WORKSPACE = {CONVERSATION, keyFor, carry, fullViewEntry, tabsButton, empty, fromRoute, safeUrl, open, replace, close, move, route, reconcile, title, dragTarget, dragOffsets,
+  window.BC_HOME_WORKSPACE = {CONVERSATION, keyFor, carry, fullViewEntry, tabsButton, empty, fromRoute, safeUrl, open, add, replace, close, move, route, reconcile, title, dragTarget, dragOffsets,
     NARROW_WIDTH, isNarrow, narrowShowsConversation, PANE_MIN_WIDTH, PANE_HIDE_WIDTH, resizeSplit};
 })();

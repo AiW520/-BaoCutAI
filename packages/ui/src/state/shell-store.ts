@@ -30,6 +30,7 @@ import {
   DEFAULT_VIEW,
   DOCK_DEFAULT,
   EMPTY_WORKSPACE,
+  addTab,
   clampDock,
   closeTab,
   fullViewEntry,
@@ -150,6 +151,11 @@ export interface ShellStore {
   closeVideo(): void;
   /** 在当前 Home 会话的功能区打开一个标签；不在 Home 时去 Home。 */
   openPane(item: WorkspaceItem, from?: { conversationId?: Id | null; projectId?: Id | null }): void;
+  /**
+   * 视频卡第一次出现时在功能区打开那部视频（产品设计 §3.3）：只在这条会话正开在 Home 时。分屏里在右侧打开、成为当前标签
+   * （功能区收起时也展开；不进历史，后退不撤销它）；单条标签条（窄窗口、完整视图）里只加一个标签，仍显示会话。
+   */
+  openVideoBeside(video: FileTarget, conversationId: Id): void;
   selectPane(key: string): void;
   replaceFilePane(key: string, target: MediaTarget): void;
   /**
@@ -291,6 +297,21 @@ export const useShell = create<ShellStore>()(
         const { route, go } = get();
         if (route.tab === 'home' && !from) go({ ...route, pane });
         else go({ tab: 'home', conversationId: from?.conversationId ?? null, projectId: from?.projectId ?? null, pane });
+        set((s) => ({ ...patchView(s, { hidden: false }), hiddenBeforeNarrow: false }));
+      },
+      openVideoBeside: (video, conversationId) => {
+        const state = get();
+        const { route } = state;
+        if (route.tab !== 'home' || route.conversationId !== conversationId) return;
+        const pane: WorkspaceItem = { kind: 'video', target: video };
+        if (homeMode(state)?.single) {
+          const book = workspaceKey(route.conversationId, route.projectId);
+          const current = state.workspaces[book] ?? EMPTY_WORKSPACE;
+          const next = addTab(current, pane);
+          if (next !== current) set((s) => ({ workspaces: { ...s.workspaces, [book]: next } }));
+          return;
+        }
+        state.replace({ ...route, pane });
         set((s) => ({ ...patchView(s, { hidden: false }), hiddenBeforeNarrow: false }));
       },
       selectPane: (key) => {

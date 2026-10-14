@@ -102,6 +102,15 @@ export function openTab(state: WorkspaceTabs, item: WorkspaceItem): WorkspaceTab
 }
 
 /**
+ * 加一个标签但不选中它（原型 model-home-workspace.js `add`）：单条标签条里视频卡第一次出现时，视频排到最后，会话仍是当前的那一格
+ * （产品设计 §3.3）。已经开着时原样返回。
+ */
+export function addTab(state: WorkspaceTabs, item: WorkspaceItem): WorkspaceTabs {
+  const key = itemKey(item);
+  return state.tabs.some((t) => itemKey(t) === key) ? state : { ...state, tabs: [...state.tabs, item] };
+}
+
+/**
  * 原地换掉一个标签（原型 model-home-workspace.js `replace`）：新标签放在 `key` 的位置并成为当前标签，像浏览器在同一个标签页里换页面；
  * 新标签已在别处打开时挪过来，不留两份。没有 `key` 这个标签时等于 `openTab`。
  */

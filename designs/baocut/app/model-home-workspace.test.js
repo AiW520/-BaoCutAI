@@ -206,6 +206,13 @@ test('the tabs button opens a first tab, then toggles the split or leaves full v
   assert.equal(W.tabsButton({count:9, visible:false, full:false}).badge, '9');
   assert.equal(W.tabsButton({count:10, visible:false, full:false}).badge, '9+');
 });
+test('add appends a tab without selecting it; an open tab stays put', () => {
+  const state = {tabs:[file], active:null};
+  assert.deepEqual(W.add(state, movie), {tabs:[file, movie], active:null});
+  assert.deepEqual(W.add({tabs:[file], active:file.key}, movie), {tabs:[file, movie], active:file.key});
+  assert.equal(W.add(state, file), state);
+  assert.deepEqual(W.add(undefined, movie), {tabs:[movie], active:null});
+});
 test('a start page is replaced in place by the page it creates', () => {
   const start = {key:'web:a', kind:'web', id:'a', url:''};
   const other = {key:'web:b', kind:'web', id:'b', url:'https://example.com/'};
