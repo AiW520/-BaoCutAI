@@ -971,6 +971,14 @@ describe('space.searchV2', () => {
     const status = await services.search.indexStatus(service);
     expect(status.cacheBytes).toBe(0);
     expect(JSON.stringify(status)).not.toMatch(/v1|v3/);
+
+    // 范围里一部视频都没有：零条，不是「索引没好」（智能体会因此以为要等）。
+    const none: SpaceViewer = { kind: 'service', videos: new Set(), owns: () => false, jobs: () => null };
+    const empty = await services.search.searchV2(none, { query: { kind: 'text', text: 'battery' }, mode: 'semantic' });
+    expect(empty.hits).toEqual([]);
+    const emptyHybrid = await services.search.searchV2(none, { query: { kind: 'text', text: 'battery' }, mode: 'hybrid' });
+    expect(emptyHybrid.hits).toEqual([]);
+    expect(JSON.stringify(emptyHybrid)).not.toMatch(/INDEX_NOT_READY/);
   });
 
   it('没有模型：语义模式报 MODEL_NOT_INSTALLED，综合模式退回字面并说明原因', async () => {

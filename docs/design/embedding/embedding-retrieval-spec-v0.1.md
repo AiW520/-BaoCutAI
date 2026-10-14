@@ -443,7 +443,7 @@ API 只接受已有授权素材引用，不接受让智能体随意传任意磁�
 
 `MODEL_NOT_INSTALLED`、`MODEL_UNAVAILABLE`、`PROFILE_INCOMPATIBLE`、`INPUT_TOO_LONG`、`SOURCE_MISSING`、`INDEX_NOT_READY`、`INDEX_PARTIAL`、`STALE_REVISION`、`CURSOR_STALE`、`SEARCH_CANCELLED`、`RESOURCE_EXHAUSTED`、`APPEARANCE_UNAVAILABLE`。
 
-hybrid 可以退回 lexical，但结果明确给出 `effectiveMode` 和原因。纯 semantic 请求遇到不可用时不把空数组当作成功“无相关结果”。不暴露未授权资源是否存在。
+hybrid 可以退回 lexical，但结果明确给出 `effectiveMode` 和原因。纯 semantic 请求遇到不可用时不把空数组当作成功“无相关结果”。不暴露未授权资源是否存在。范围里一部视频都没有（例如会话只看自己的目录、那里没有视频）时是零条结果，不报 `INDEX_NOT_READY`：没有可扫的不是索引没好，报了会让调用方去等或去建索引。
 
 ## 12. 时间线定位与编辑安全
 

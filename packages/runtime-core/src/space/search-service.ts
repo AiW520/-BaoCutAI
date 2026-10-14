@@ -246,6 +246,8 @@ export class SearchService {
     const scheduler = this.#options.scheduler();
     if (!scheduler) throw semanticError('MODEL_NOT_INSTALLED', { channel: 'visual' });
     if (!this.#options.store()) throw semanticError('INDEX_NOT_READY', { channel: 'visual' });
+    // 范围里一部视频都没有（例如会话只看自己的目录、目录里没有视频）：没有可扫的，不是索引没好。
+    if (videos.length === 0) return [];
     const usable = videos.filter((v) => v.usable);
     if (usable.length === 0) {
       const incompatible = videos.some((v) => v.generation !== null && v.generation.chunkCount > 0 && v.generation.embeddingSpaceId !== profile.embeddingSpaceId);
@@ -288,6 +290,7 @@ export class SearchService {
     const scheduler = this.#options.scheduler();
     if (!scheduler) throw semanticError('MODEL_NOT_INSTALLED');
     if (!this.#options.store()) throw semanticError('INDEX_NOT_READY');
+    if (resolved.videos.length === 0) return [];
     const usable = resolved.videos.filter((v) => v.usable);
     if (usable.length === 0) {
       const incompatible = resolved.videos.some((v) => v.generation !== null && v.generation.chunkCount > 0 && v.generation.embeddingSpaceId !== profile.embeddingSpaceId);
