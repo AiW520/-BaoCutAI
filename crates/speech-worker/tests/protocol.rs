@@ -710,6 +710,9 @@ fn retryable_errors_are_retried_by_the_core() {
     let requests = events_named(&events, "llm.request");
     assert_eq!(requests[0]["params"]["kind"], "translate");
     assert_eq!(requests[1]["params"]["kind"], "translate");
+    // `attempt` 是第几次重试，从 0 起：头一次不算重试（Runtime 按它记重试数）。
+    assert_eq!(requests[0]["params"]["attempt"], 0);
+    assert_eq!(requests[1]["params"]["attempt"], 1);
 }
 
 #[test]

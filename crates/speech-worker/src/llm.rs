@@ -75,7 +75,8 @@ pub fn request_params(request_id: u64, request: &LlmRequest) -> Value {
     json!({
         "requestId": request_id,
         "kind": request.kind,
-        "attempt": request.attempt,
+        // 核心的 `attempt` 从 1 起；协议里是这个 kind 的第几次重试，从 0 起（命令协议规范 §4.5）。
+        "attempt": request.attempt.saturating_sub(1),
         "system": request.system,
         "user": request_user_content(request, file_contract),
         "temperature": request.temperature,
