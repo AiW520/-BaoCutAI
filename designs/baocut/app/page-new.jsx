@@ -80,6 +80,8 @@
        已有主素材时选它 = 替换，给一次撤销；它在的时候再加的视频音频只当参考材料（new-agent.jsx 的 addReal）。
        发送时不新建视频，直接在那部视频的会话里说（startAgent）。 */
     const [recentId, setRecentId] = useState(null);
+    /* 只读检索范围（2026-10-13 待确认）：不用项目时新会话缺省「可检索全部视频」，标签上点 × 这一次不挂；离开这一页再来又是缺省 */
+    const [readAll, setReadAll] = useState(true);
     const recent = recentId ? app.projById(recentId) : null;
     const pickRecent = (id) => {
       const mv = id ? app.projById(id) : null;
@@ -186,6 +188,8 @@
       /* 「转录并翻译」填的目标语言记下来，下次点这条快捷开始直接沿用（N.starterTarget 认不出就不记） */
       app.rememberNew({entry: 'agent', picked, shorts: shortsPick, targetName: N.starterTarget(text)});
       const materials = names.length ? `\n材料：${names.join('、')}` : '';
+      // 不在已有视频里继续时，新会话带上只读检索范围（选了项目的不挂，见 BC_SEMANTIC.defaultReadScope）
+      const scoped = {...run, readScope: window.BC_SEMANTIC.defaultReadScope({dir, keep: readAll}) || undefined};
       if (recent) {
         // 选了已有的视频：不新建，直接在它的会话里说；带着素材的那条路线照旧（含切成 Shorts 的那一行）
         const cut = shortsCut ? `\n${S.cutPromptLine(S.cutCount(said))}` : '';
@@ -201,7 +205,7 @@
           const proj = app.createProject(route.media, {...DEFAULTS, dir, entry: 'sub', intent: 'ask'});
           const cut = shortsCut ? `\n${S.cutPromptLine(S.cutCount(said))}` : '';
           app.openAgent({project: proj.id, prompt: K.withSkill(request + cut + materials, skill),
-            attachments: [...rest.filter((f) => f.url), ...(mediaAttachment?.name === media ? [mediaAttachment] : [])], send: true, ...run});
+            attachments: [...rest.filter((f) => f.url), ...(mediaAttachment?.name === media ? [mediaAttachment] : [])], send: true, ...scoped});
           app.toast('视频已创建 · 转录在后台跑，Agent 会等它', 'positive');
         }, 900);
         return;
@@ -212,13 +216,13 @@
         /* 话里带着链接（视频网站的页面、文件地址），或这件事要处理一条现成的视频却还没附上（加字幕、转录并翻译…）：
            不先建空白视频，直接开会话——链接由 Agent 下载下来再建视频，没有链接就由它来要。
            会话落在选中的项目里；不用项目时会话不属于任何项目，视频就建在会话自己的文件夹里（§2.3）。 */
-        app.openAgent({dir: dir || undefined, prompt, attachments: rest.filter((f) => f.url), send: true, ...run});
+        app.openAgent({dir: dir || undefined, prompt, attachments: rest.filter((f) => f.url), send: true, ...scoped});
         app.toast(link ? '已交给 Agent · 链接里的视频由它下载' : '已交给 Agent · 附上视频或贴上链接就能开始', 'positive');
         return;
       }
       const ratio = shortsOn ? S.RATIO : '16:9';
       const proj = app.createProject(null, {entry: 'blank', dir, ratio, delivery: shortsOn ? 'shorts' : undefined, title: `${template ? template.title : g.k === 'free' ? 'Agent 制作' : g.title} · ${(said || names[0] || '未命名').slice(0, 16)}`});
-      app.openAgent({project: proj.id, prompt, attachments: [...rest.filter((f) => f.url), ...(mediaAttachment?.name === media ? [mediaAttachment] : [])], send: true, ...run});
+      app.openAgent({project: proj.id, prompt, attachments: [...rest.filter((f) => f.url), ...(mediaAttachment?.name === media ? [mediaAttachment] : [])], send: true, ...scoped});
       app.toast(`视频已创建 · 已交给 Agent 制作${g.k === 'free' ? '' : g.title}`, 'positive');
     };
 
@@ -232,7 +236,7 @@
           </div>
           <window.NewAgentHero text={text} onText={setText} files={files} onFiles={setFiles} media={media} mediaAttachment={mediaAttachment} onMedia={setMedia}
             recent={recent} onRecent={pickRecent} skill={skill} onSkill={setSkillId}
-            scene={scene} onScene={pickScene} downloading={dl} focusTick={focusTick} dir={dir} onDir={setDir}
+            scene={scene} onScene={pickScene} downloading={dl} focusTick={focusTick} dir={dir} onDir={setDir} readAll={readAll} onReadAll={setReadAll}
             sel={sel} onSel={setSelPatch} ready={agentReady} can={aCan} busy={busy} onSubmit={startAgent} />
           <window.NewGateCard guide={N.gateGuide(route.goal, aGate)} avail={app.agentAvail} />
           <window.HomeStarters items={N.homeStarters({targetName: seed.targetName})} onPick={applyStarter} onBlank={() => createBlank()} />

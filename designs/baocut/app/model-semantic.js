@@ -167,6 +167,24 @@
     return mb >= 1024 ? `${(mb / 1024).toFixed(1)} GB` : `${Math.round(mb)} MB`;
   }
 
+  /* ---------- 会话的只读检索范围（Conversation.spaceReadScope，2026-10-13 待确认） ---------- */
+  /* 不属于任何项目的会话本来只检索自己文件夹里的视频（架构设计 §4.8）。首页新会话缺省放宽成「可检索全部视频」：
+     只读、只放宽按内容检索（space_* 与语义检索），不能打开或修改别的视频；输入框上方一个标签，点 × 收回，
+     之后只检索这条会话自己的视频。排除了的项目、设了不索引的条目仍只能按字面找到。在起始页选了项目、在已有视频里继续的不挂；
+     首页开的会话之后建了视频、收进新项目时，范围跟着会话走，不收回。 */
+  const READ_SCOPE = {
+    all: '可检索全部视频',
+    hint: 'Agent 可以按内容检索全部视频里讲的话，不能打开或修改它们；排除了的项目只能按字面找到',
+    drop: '只检索这条会话里的视频',
+    dropped: '这条会话之后只检索它自己的视频',
+  };
+  /** 新会话的检索范围：不用项目、也不是在已有视频里继续时缺省 'all'；用户在起始页点了 ×（keep = false）就不挂。 */
+  function defaultReadScope(o) {
+    const opt = o || {};
+    if (opt.dir || opt.project || opt.keep === false) return null;
+    return 'all';
+  }
+
   /* ---------- 翻译记忆与术语一致（§2.6） ---------- */
   /** 这一句是不是沿用的既有译文；`over` 是用户点了「改为重译」的那几句。 */
   function reusedFrom(tm, cardId, over) {
@@ -189,6 +207,6 @@
   }
 
   const api = {DEFAULT, DEMO, fromSearch, normalize, status, pauseReasonOf, entryNote, ENTRY, STALE_NOTE, PAUSED_NOTE, POWER_NOTE, UNSUPPORTED_NOTE, fmtDuration, etaLine, visualCostLine,
-    CHANNELS, channelsOf, coverageLine, sumText, fmtBytes, reusedFrom, conflicts, tmLine};
+    CHANNELS, channelsOf, coverageLine, sumText, fmtBytes, reusedFrom, conflicts, tmLine, READ_SCOPE, defaultReadScope};
   if (typeof window !== 'undefined') window.BC_SEMANTIC = api;
 })();

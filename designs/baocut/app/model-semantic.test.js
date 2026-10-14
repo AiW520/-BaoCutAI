@@ -102,3 +102,11 @@ test('打开画面之前写开销（v0.1 §13.2）：帧数、首次要多久、
   assert.equal(S.visualCostLine({videos: 1, unknownDuration: 1, sourceSeconds: 0, frames: 0, seconds: 0, basis: 'default', vectorBytes: 0}),
     '1 部视频，时长未知，估不出要多久');
 });
+
+test('首页新会话缺省可检索全部视频；属于项目、在已有视频里继续、点了 × 的不挂', () => {
+  assert.equal(S.defaultReadScope({}), 'all');
+  assert.equal(S.defaultReadScope({dir: 'd1'}), null);
+  assert.equal(S.defaultReadScope({project: 'p1'}), null);
+  assert.equal(S.defaultReadScope({keep: false}), null);
+  assert.equal(S.READ_SCOPE.all, '可检索全部视频');
+});

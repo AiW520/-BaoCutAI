@@ -358,6 +358,10 @@
           renderCompletions={completions}
           attachments={<><window.ComposerSkillToken skill={skill} onRemove={() => setSkillId(null)} />
             <window.ComposerRefToken reference={reference} onRemove={() => onPatch({draftReference: null})} />
+            {/* 只读检索范围跟着会话走：首页开的会话之后收进了新项目（建了视频）也还在，点 × 收回（同 Electron 的输入框） */}
+            <window.ComposerReadScopeToken scope={sess.readScope} onRemove={() => {
+              onPatch({readScope: null}); app.toast(window.BC_SEMANTIC.READ_SCOPE.dropped, 'positive');
+            }} />
             {window.SlideNotesToken ? <window.SlideNotesToken notes={slideNotes} onClear={() => onPatch({draftSlideAnnotations: []})}
               onRemove={id => onPatch({draftSlideAnnotations: window.BC_HOME_SLIDES.remove(slideNotes, id)})} /> : null}
             {window.DesignNotesToken ? <window.DesignNotesToken notes={designNotes} onClear={() => onPatch({draftDesignAnnotations: []})}

@@ -377,6 +377,8 @@
         id, title: '', project: o.project || null,
         /* 2026-10-01：会话可以只挂在一个项目（目录）下、还没有视频（`dir`）；有视频时项目从视频推出来，不存两份 */
         ...(!o.project && o.dir ? {dir: o.dir} : {}),
+        /* 只读检索范围（2026-10-13 待确认）：首页不用项目时开的会话缺省 'all'，输入框上方的标签点 × 收回 */
+        ...(o.readScope ? {readScope: o.readScope} : {}),
         harness: h ? h.id : null,
         // 没点名模型就用设置 › Agent 里这一家的默认模型（没设过 = 推荐模型；'auto' = 交给 CLI 自己）
         // （composer 里明确选了「Agent 默认模型」传进来的是 null，照收）
@@ -567,7 +569,7 @@
       const o = opts || {};
       const movieId = route.r === 'editor' ? route.id : route.movie;
       let sess = o.sid ? sessionsRef.current.find((x) => x.id === o.sid) : null;
-      if (!sess) sess = newSession({project: o.project || movieId || null, dir: o.dir, prompt: o.send ? '' : o.prompt, harness: o.harness, model: o.model, effort: o.effort, mode: o.mode});
+      if (!sess) sess = newSession({project: o.project || movieId || null, dir: o.dir, prompt: o.send ? '' : o.prompt, harness: o.harness, model: o.model, effort: o.effort, mode: o.mode, readScope: o.readScope});
       else if (o.prompt && !o.send) patchSession(sess.id, {draft: o.prompt});
       land(sess, {stay: !!o.stay});
       if (o.send && (o.prompt || o.attachments?.length)) setTimeout(() => sendAgent(sess.id, o.prompt, sess, o.attachments), 0);

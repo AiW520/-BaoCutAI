@@ -72,5 +72,14 @@
       {onRemove ? <IconBtn icon="close" size="xs" tip={'移除引用：' + reference.name} onClick={onRemove} /> : null}</div>;
   }
 
-  Object.assign(window, {ComposerInsertMenu, ComposerSkillToken, ComposerRefToken});
+  /** 只读检索范围的标签（Conversation.spaceReadScope，2026-10-13 待确认）：「可检索全部视频」，点 × 收回。 */
+  function ComposerReadScopeToken({scope, onRemove}) {
+    if (scope !== 'all') return null;
+    const R = window.RSP;
+    const C = window.BC_SEMANTIC.READ_SCOPE;
+    return <div className="cins-token" title={C.hint}><R.Icons.Search /><span>{C.all}</span>
+      {onRemove ? <IconBtn icon="close" size="xs" tip={C.drop} onClick={onRemove} /> : null}</div>;
+  }
+
+  Object.assign(window, {ComposerInsertMenu, ComposerSkillToken, ComposerRefToken, ComposerReadScopeToken});
 })();

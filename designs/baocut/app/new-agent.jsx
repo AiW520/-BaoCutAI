@@ -126,7 +126,7 @@
       {creating && <CreateProjectDialog onClose={() => setCreating(false)} onCreated={d => onDir(d.id)} />}
     </div>;
   }
-  function AgentHero({text, onText, files, onFiles, media, mediaAttachment, onMedia, recent, onRecent, skill, onSkill, scene, onScene, downloading, focusTick, dir, onDir, sel, onSel, ready, can, busy, onSubmit}) {
+  function AgentHero({text, onText, files, onFiles, media, mediaAttachment, onMedia, recent, onRecent, skill, onSkill, scene, onScene, downloading, focusTick, dir, onDir, readAll, onReadAll, sel, onSel, ready, can, busy, onSubmit}) {
     const app = useApp();
     const [over, setOver] = useState(false);
     const ta = useRef(null);
@@ -173,6 +173,8 @@
         <PromptField inputRef={ta} selectSlot={slotTick} onSubmit={onSubmit} busy={busy} canSubmit={can.ok} hasAttachments={files.length > 0 || hasMedia}
           attachments={<>
             <window.ComposerSkillToken skill={skill} onRemove={() => onSkill(null)} />
+            {/* 不用项目、也不是在已有视频里继续：新会话缺省可检索全部视频（只读），点 × 这一次不挂 */}
+            {!dir && !recent && readAll ? <window.ComposerReadScopeToken scope="all" onRemove={() => onReadAll(false)} /> : null}
             {template && <div className="home-template-token"><window.HomeTemplateThumb t={template} size="xs" /><span>模板：{template.title}</span>
               {downloading && <span className="home-template-token__dl" aria-live="polite">正在下载素材 {downloading.pct}%</span>}
               <IconBtn icon="close" size="xs" tip="移除模板" onClick={() => onScene(null)} /></div>}
