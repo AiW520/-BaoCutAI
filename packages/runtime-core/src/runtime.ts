@@ -983,6 +983,7 @@ export async function startRuntime(options: StartRuntimeOptions = {}): Promise<R
         catalog: space,
         analysis,
         assetFileAt: (dir, assetId, revision) => videos.assetFileAt(dir, assetId, revision),
+        readContent: (dir) => videos.readContent(dir),
         log,
       }),
       videos,

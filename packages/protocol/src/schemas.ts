@@ -63,7 +63,8 @@ const revision = z.string().regex(/^\d+$/);
 const assetTarget = { videoId: id, assetId: id, revision: revision.optional() };
 const attachmentTarget = z.object({ conversationId: id, attachmentId: id }).strict();
 const localFileTarget = z.object({ localPath: filePath }).strict();
-const mediaTarget = z.union([fileTarget, attachmentTarget, z.object(assetTarget).strict(), localFileTarget]);
+const spaceAssetTarget = z.object({ entryId: id, assetId: id, revision }).strict();
+const mediaTarget = z.union([fileTarget, attachmentTarget, z.object(assetTarget).strict(), spaceAssetTarget, localFileTarget]);
 const positiveInt = z.number().int().positive();
 /**
  * 调用方给的文字旁边的消息引用（message-ref.ts）：键是 `<区域>.<名字>`，参数是标量或一层嵌套的引用。收下的引用原样存下、

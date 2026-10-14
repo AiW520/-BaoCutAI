@@ -26,6 +26,7 @@ type SpaceMethod =
   | 'space.purge'
   | 'space.openForEdit'
   | 'space.thumbnail'
+  | 'space.hitMoments'
   | 'space.continueInConversation'
   | 'space.rebuildIndex'
   | 'space.searchV2'
@@ -117,6 +118,7 @@ export function spaceMethods(space: SpaceCatalog, deps: SpaceMethodDeps): Pick<R
     'space.purge': (p) => space.purge(p.entryId),
     'space.openForEdit': (p) => space.openForEdit(p.entryId),
     'space.thumbnail': (p, principal) => thumbnails.of(visibleEntry(space, viewerOf(principal), p.entryId)),
+    'space.hitMoments': (p, principal) => thumbnails.moments(visibleEntry(space, viewerOf(principal), p.entryId), p.spans),
     'space.continueInConversation': (p, principal) => {
       viewerOf(principal);
       return continueInConversation(space, harness, p);

@@ -223,6 +223,17 @@ const en = {
   byLexical: 'Words match',
   bySemantic: 'Similar meaning; these words aren’t in it',
   byWeak: 'Loosely related; these words aren’t in it',
+  /** 命中原因：原句里出现的词（最多三个，按出现先后），各语言用自己的引号。 */
+  whySaid: (words: readonly string[]) => `Says ${words.map((w) => `“${w}”`).join(', ')}`,
+  whySaidMeaning: (words: readonly string[]) => `Says ${words.map((w) => `“${w}”`).join(', ')}, and the meaning matches`,
+  /** 检索命中的预览（设计稿 space-search.jsx `Preview`）：那一刻的画面与可播的一段。 */
+  momentWhy: (why: string) => `Why it matched: ${why}`,
+  momentPlay: 'Play this part',
+  momentPause: 'Pause',
+  momentOpen: 'Open in timeline',
+  momentClose: 'Close',
+  momentNoClip: 'There’s no footage to play at this moment. Open it in the timeline to see it.',
+  momentFailed: (text: string) => `Couldn’t load this moment: ${text}`,
   hitsWeakShow: (n: number) => `Show loosely related (${n})`,
   hitsWeakHide: 'Hide loosely related',
   hitNotInTimeline: 'This line was cut from the timeline, so the video opens without moving the playhead',

@@ -10,6 +10,7 @@ import {
   hitTarget,
   hitVideoEntry,
   hitWhere,
+  hitWords,
   matchedByKind,
   MEANING_IN_VIDEO_SHOWN,
   meaningInVideoRequest,
@@ -207,6 +208,17 @@ describe('综合搜索', () => {
     expect(matchedByKind(['lexical', 'semantic'])).toBe('both');
     expect(matchedByKind(['lexical'])).toBe('lexical');
     expect(matchedByKind(['semantic'])).toBe('semantic');
+  });
+
+  it('命中原因写出的词：片段里标出的字面命中，按先后、去重（不分大小写），最多三个；纯语义没有高亮时为空', () => {
+    const snippet = '剪辑的节奏，Cut 与 cut，再讲剪辑和转场、调色';
+    const at = (word: string, from = 0) => [snippet.indexOf(word, from), snippet.indexOf(word, from) + word.length] as [number, number];
+    expect(hitWords({ snippet, highlights: [at('剪辑'), at('Cut'), at('cut'), at('剪辑', 5), at('转场'), at('调色')] })).toEqual([
+      '剪辑',
+      'Cut',
+      '转场',
+    ]);
+    expect(hitWords({ snippet, highlights: [] })).toEqual([]);
   });
 });
 

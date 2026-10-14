@@ -120,6 +120,8 @@ import type {
   SpaceSearchParams,
   SpaceSearchResult,
   SpaceThumbnail,
+  SpaceHitMomentsParams,
+  SpaceHitMomentsResult,
   VideoDeleteResult,
   VideoRestoreResult,
 } from './space.ts';
@@ -571,6 +573,11 @@ export interface RpcMethods {
    * 当前工作稿，不要求视频已经打开。解不了、读不了的文件回答 `none`，不报错；条目不存在或看不到是 `not-found`。
    */
   'space.thumbnail': { params: { entryId: Id }; result: SpaceThumbnail };
+  /**
+   * Space 检索命中的那一刻（创作辅助集成设计 §2.1）：每处看得见的那一帧与可以就地播放的素材区间（`SpaceHitMoment`），按视频当前的
+   * 工作稿找，不要求视频已经打开。不是视频的条目 `invalid-request`，条目不存在或看不到是 `not-found`；某一处读不了只是那一处为空。
+   */
+  'space.hitMoments': { params: SpaceHitMomentsParams; result: SpaceHitMomentsResult };
   /**
    * 从条目继续一段会话（§5.7）：属于项目的条目在项目里新建会话，不属于项目的回到条目原来的会话（没有时新建）；
    * 给了 `conversationId` 时用它，它要看得到这个条目。只建会话、附上条目的引用，不启动任务。
@@ -1230,6 +1237,15 @@ export interface AssetTarget {
   revision?: Revision;
 }
 
+/**
+ * 视频条目里的素材版本，不要求视频已经打开（`space.hitMoments` 给的那一段就地播放）。按视频目录找，与 Space 缩略图同一条只读的路。
+ */
+export interface SpaceAssetTarget {
+  entryId: Id;
+  assetId: Id;
+  revision: Revision;
+}
+
 /** 会话里某条用户消息带的附件（`AttachmentRef.id`）。只读：媒体通道核对它确实出现在这条会话的消息里。 */
 export interface AttachmentTarget {
   conversationId: Id;
@@ -1245,10 +1261,10 @@ export interface LocalFileTarget {
 }
 
 /**
- * 媒体通道的定位：文件，或一个已打开的视频里的素材（受管理的素材在视频目录的 `blobs/` 里），
+ * 媒体通道的定位：文件，或一个已打开的视频里的素材（受管理的素材在视频目录的 `blobs/` 里），或视频条目里的素材版本，
  * 或会话里某条消息附的图片，或桌面端的本机文件。
  */
-export type MediaTarget = FileTarget | AssetTarget | AttachmentTarget | LocalFileTarget;
+export type MediaTarget = FileTarget | AssetTarget | SpaceAssetTarget | AttachmentTarget | LocalFileTarget;
 
 export interface VideoOpenResult {
   ref: VideoRef;

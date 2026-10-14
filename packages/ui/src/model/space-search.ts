@@ -313,3 +313,23 @@ export function matchedByKind(matchedBy: readonly ('lexical' | 'semantic')[]): '
   const semantic = matchedBy.includes('semantic');
   return lexical && semantic ? 'both' : semantic ? 'semantic' : 'lexical';
 }
+
+/** 命中原因里写出的词最多几个（设计稿 model-space-search.js `why`）。 */
+export const WHY_WORDS_MAX = 3;
+
+/**
+ * 命中原因里写出的词：片段里标出来的字面命中，按出现先后、去掉重复（不分大小写），最多 `WHY_WORDS_MAX` 个。纯语义命中没有高亮，
+ * 这里为空：不编造概念名。
+ */
+export function hitWords(hit: Pick<SpaceSearchHit, 'snippet' | 'highlights'>): string[] {
+  const words: string[] = [];
+  const seen = new Set<string>();
+  for (const part of snippetParts(hit.snippet, hit.highlights)) {
+    const word = part.text.trim();
+    if (!part.hit || !word || seen.has(word.toLowerCase())) continue;
+    seen.add(word.toLowerCase());
+    words.push(word);
+    if (words.length === WHY_WORDS_MAX) break;
+  }
+  return words;
+}
