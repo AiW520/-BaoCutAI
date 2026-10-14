@@ -248,6 +248,8 @@
        没有 B-roll / 文字 / 贴纸 / 音乐，也不预埋 AI 建议：口癖、停顿要用户自己点
        「找可剪的口」跑出来。第 194 轮文稿改为单人版本，保留相同 cue id 与剪口位置。 */
     {id: 'p8', title: '口播剪辑 · 实验', dir: 'd3', folder: '发布口播', status: 'complete', entry: 'clean', bare: true,
+     /* 视频速览（2026-10-14）：s33 转录后写进视频的那份，时间链接存成相对的 `?t=<秒>`（视频格式规范 §3.1） */
+     brief: {language: 'zh-Hans', markdown: "**口播剪辑 · 实验**\n`~/Movies/口播/talk-take2.mp4` · 3:26 · 中文 · 本机文件，没有来源页面\n\n一段单人口播，讲视频工具为什么该做成本地优先：语音识别不必上云，小模型在笔记本上已经够快，素材不出本机，重跑也不用付钱。后半段有一分钟左右的操作演示，最后落在一句话：能在本机做完的就别上传。\n\n适合想知道本机转录值不值得用的人，三分多钟能听完。\n\n**出场的人**\n\n- 一位讲者：开场说「欢迎回到科浪」，应该是这档节目的主持人；文稿里没报名字，说话人先留作「说话人 1」，告诉我名字我再改\n\n**要点**\n\n- [0:26](?t=26) 语音识别过去默认放在云上，因为模型大、机器带不动\n- [0:41](?t=41) 现在笔记本跑一小时的识别，比上传加排队还快\n- [1:03](?t=63) 访谈、内部会议、没发布的演示，本来就不该往外传\n- [1:44](?t=104) 演示：拖进文件、选中文、点开始，就地得到带时间的文稿\n- [2:46](?t=166) 本地优先不是反对云，是把默认值调回来"},
      src: {name: 'talk-take2.mp4', path: '~/Movies/口播/talk-take2.mp4', format: 'MP4 · H.264', res: '1920×1080', state: 'ok'},
      duration: DUR, lang: '中文', model: 'moss-transcribe', modified: '刚刚', mtime: 1, otime: 90, ctime: 7200, hue: 20,
      desc: '单人中文口播：视频、单语字幕与剪口，练习去口癖、删停顿和文字剪辑。',
@@ -318,6 +320,8 @@
        它也是搜索里唯一能出「译文命中中文」的项目——中文查询在英文原文上不命中，
        只有译文那一层会亮，这正是两层要分开显示的理由。 */
     {id: 'p7', title: 'EN → 中 · Code & Wander 双语版', dir: 'd2', folder: '英译中双语版', status: 'complete', entry: 'trans', bare: true,
+     /* 视频速览（2026-10-14）：s32 转录后写进视频的那份，时间链接存成相对的 `?t=<秒>`（视频格式规范 §3.1） */
+     brief: {language: 'zh-Hans', markdown: "**Code & Wander · Episode 42**\nCode & Wander · 3:26 · 英语 · [codeandwander.example/42](https://codeandwander.example/42)\n\n> 页面简介：Local-first speech recognition and deterministic rendering.（本地优先的语音识别与确定性渲染）\n\n一期三人对谈，讲视频工具为什么该做成本地优先。主持人从「语音识别默认放在云上」说起，三个人从速度、隐私、成本和离线几个角度拆这个默认值，中间有一分钟左右的产品演示。页面简介里的确定性渲染，这一期只在结尾预告，没有展开。\n\n适合手上常有访谈、会议这类不便外传的素材，又嫌上传排队和云端账单的人看。\n\n**出场的人**\n\n- Lin：主持人，开场、串场和最后的总结\n- Zhou：嘉宾，追问成本\n- Su：嘉宾，补充本机可以随便重跑\n\n**要点**\n\n- [0:26](?t=26) 语音识别过去默认放在云上：模型大，机器带不动\n- [0:41](?t=41) 小模型这两年进步很快，笔记本跑一小时的识别，比上传加排队还快\n- [1:03](?t=63) 语音不出本机，比快不快更要紧：访谈、内部会议、没发布的演示本来就不该外传\n- [1:44](?t=104) 演示：拖进文件、选语言、点开始，就地得到带时间的文稿；改一个词，字幕、翻译和导出一起跟着变\n- [2:21](?t=141) 成本：本机是电费，云上是账单，量一大就差一个量级\n- [2:46](?t=166) 结论：本地优先不是反对云，是把默认值调回来，能在本机做完的就别上传"},
      src: {name: 'code-wander-ep42-en.mp4', path: '~/Movies/播客/code-wander-ep42-en.mp4', format: 'MP4 · H.264', res: '1920×1080', state: 'ok'},
      duration: DUR, lang: '英语', model: 'whisper-large-v3', modified: '1 小时前', mtime: 60, otime: 8, ctime: 8640, hue: 96,
      /* 用户在编辑器里改过英文原文（当前文稿指纹 ≠ stages.asr）：重新转录时工具页警告，默认落点退回新建视频（product-design §5.11） */
@@ -2412,6 +2416,7 @@
          - 视频速览站在观众的角度：来源几项（标题、作者、发布日期、时长、语言、链接）只取 videos_inspect 的 `source`
            与视频事实，缺的就不写；页面简介是作者的话，单独引出来；正文说讲什么、适合谁看，出场的人只按文稿里的证据，
            要点带视频时间链接（时间取自 documents_read 的按句文稿），点了打开视频、播放头放到那一秒。
+         - 速览用 edits_apply 的 setVideoBrief 存到视频上（视频详情里能看到），回复里给同样的正文。
          - 任务总结先一句话对上「你要的是什么 → 结果」，再按步骤列做了什么（回执里的事实与真实路径）、要用户看的地方，
            最后是三栏的没验证项（SKILL.md §6）。
          s32：从链接下载、转录、翻译、建字幕，速览在转录回执之后、翻译之前；s33：本机文件只转录，速览与总结在同一条回复里。 */
@@ -2428,6 +2433,8 @@
          {id: 'm7', role: 'tool', tool: 'edits_apply', args: {label: '沿用作者章节 · 说话人实名'}, status: 'done', took: '0.3s'},
          {id: 'm8', role: 'receipt', text: '已应用 · 4 个章节 · 3 位说话人实名', taskId: null, movieId: 'p7'},
          {id: 'm9', role: 'tool', tool: 'documents_read', args: {document: '文稿', sentences: 62}, status: 'done', took: '0.1s'},
+         {id: 'm9w', role: 'tool', tool: 'edits_apply', args: {label: '写入视频速览'}, status: 'done', took: '0.1s'},
+         {id: 'm9r', role: 'receipt', text: '已应用 · 写入视频速览', taskId: null, movieId: 'p7'},
          {id: 'm10', role: 'assistant', text: "转完了：62 句、3 位说话人，章节沿用作者给的 4 章。翻译之前，先说说这期讲了什么。\n\n### 视频速览\n\n**Code & Wander · Episode 42**\nCode & Wander · 3:26 · 英语 · [codeandwander.example/42](https://codeandwander.example/42)\n\n> 页面简介：Local-first speech recognition and deterministic rendering.（本地优先的语音识别与确定性渲染）\n\n一期三人对谈，讲视频工具为什么该做成本地优先。主持人从「语音识别默认放在云上」说起，三个人从速度、隐私、成本和离线几个角度拆这个默认值，中间有一分钟左右的产品演示。页面简介里的确定性渲染，这一期只在结尾预告，没有展开。\n\n适合手上常有访谈、会议这类不便外传的素材，又嫌上传排队和云端账单的人看。\n\n**出场的人**\n\n- Lin：主持人，开场、串场和最后的总结\n- Zhou：嘉宾，追问成本\n- Su：嘉宾，补充本机可以随便重跑\n\n**要点**\n\n- [0:26](/videos/p7?t=26) 语音识别过去默认放在云上：模型大，机器带不动\n- [0:41](/videos/p7?t=41) 小模型这两年进步很快，笔记本跑一小时的识别，比上传加排队还快\n- [1:03](/videos/p7?t=63) 语音不出本机，比快不快更要紧：访谈、内部会议、没发布的演示本来就不该外传\n- [1:44](/videos/p7?t=104) 演示：拖进文件、选语言、点开始，就地得到带时间的文稿；改一个词，字幕、翻译和导出一起跟着变\n- [2:21](/videos/p7?t=141) 成本：本机是电费，云上是账单，量一大就差一个量级\n- [2:46](/videos/p7?t=166) 结论：本地优先不是反对云，是把默认值调回来，能在本机做完的就别上传"},
          {id: 'm11', role: 'tool', tool: 'documents_read', args: {document: '文稿', sentences: 62, translateTo: 'zh-Hans'}, status: 'done', took: '0.1s', taskId: 'ag32l'},
          {id: 'm12', role: 'tool', tool: 'edits_apply', args: {putDocument: {schema: 'baocut.translation/2', language: '简体中文', units: 62}}, status: 'done', took: '3.1s', taskId: 'ag32l'},
@@ -2449,6 +2456,8 @@
          {id: 'm6', role: 'tool', tool: 'edits_apply', args: {label: '按话题分章'}, status: 'done', took: '0.2s'},
          {id: 'm7', role: 'receipt', text: '已应用 · 3 个章节', taskId: null, movieId: 'p8'},
          {id: 'm8', role: 'tool', tool: 'documents_read', args: {document: '文稿', sentences: 62}, status: 'done', took: '0.1s'},
+         {id: 'm8w', role: 'tool', tool: 'edits_apply', args: {label: '写入视频速览'}, status: 'done', took: '0.1s'},
+         {id: 'm8r', role: 'receipt', text: '已应用 · 写入视频速览', taskId: null, movieId: 'p8'},
          {id: 'm9', role: 'assistant', text: "### 视频速览\n\n**口播剪辑 · 实验**\n`~/Movies/口播/talk-take2.mp4` · 3:26 · 中文 · 本机文件，没有来源页面\n\n一段单人口播，讲视频工具为什么该做成本地优先：语音识别不必上云，小模型在笔记本上已经够快，素材不出本机，重跑也不用付钱。后半段有一分钟左右的操作演示，最后落在一句话：能在本机做完的就别上传。\n\n适合想知道本机转录值不值得用的人，三分多钟能听完。\n\n**出场的人**\n\n- 一位讲者：开场说「欢迎回到科浪」，应该是这档节目的主持人；文稿里没报名字，说话人先留作「说话人 1」，告诉我名字我再改\n\n**要点**\n\n- [0:26](/videos/p8?t=26) 语音识别过去默认放在云上，因为模型大、机器带不动\n- [0:41](/videos/p8?t=41) 现在笔记本跑一小时的识别，比上传加排队还快\n- [1:03](/videos/p8?t=63) 访谈、内部会议、没发布的演示，本来就不该往外传\n- [1:44](/videos/p8?t=104) 演示：拖进文件、选中文、点开始，就地得到带时间的文稿\n- [2:46](/videos/p8?t=166) 本地优先不是反对云，是把默认值调回来\n\n### 任务总结\n\n你要的是把这条口播转成文字。做完了：文稿写进了「口播剪辑 · 实验」，62 句、1 位说话人，按话题分了 3 章（开场、正文、收尾）。这次只转录，没有建字幕层；要在画面上看到字幕，告诉我一声。\n\n**要你看一下的**\n\n- [1:44](/videos/p8?t=104) 演示里念的几个界面上的词识别成了同音字，我没改；要我顺一遍文稿吗\n\n| 量出来的 | 看过的 | 要人听的 |\n| --- | --- | --- |\n| 时长 3:26 · 62 句 · 3 章 | 没取帧，没看画面 | 识别错的词要对着声音核对 |"},
        ]},
       /* 未绑定项目的会话再补 7 条：侧栏这一段首屏只露 5 条、每次再加载 5 条，少于 6 条演示不出来 */

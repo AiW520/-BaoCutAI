@@ -103,3 +103,20 @@ test('复制文本就是屏幕上那几行，值内换行缩进两格', () => {
   // 全空的备注不占一行。
   assert.strictEqual(PI.detailsSection('', '', ''), null);
 });
+
+test('视频速览：相对时间链接显示前换回这部视频的地址，复制时只留文字，别的链接原样', () => {
+  const stored = '一期访谈。\n\n- [0:26](?t=26) 云上识别\n- [另一部](/videos/p1?t=5)\n- [原页面](https://example.com/42)';
+  const shown = PI.expandBriefLinks(stored, 'p7');
+  assert.ok(shown.includes('[0:26](/videos/p7?t=26)'));
+  assert.ok(shown.includes('[另一部](/videos/p1?t=5)'), '指向别的视频的不改');
+  assert.ok(shown.includes('[原页面](https://example.com/42)'));
+  assert.strictEqual(PI.copyText('访谈', '', [], shown),
+    '访谈\n\n视频速览\n一期访谈。\n\n- 0:26 云上识别\n- 另一部\n- [原页面](https://example.com/42)\n');
+  assert.strictEqual(PI.copyText('访谈', '', [], '  '), '访谈\n', '空的不出这一节');
+});
+
+test('视频速览：Web 入口退成纯文本，链接只留文字，记号去掉', () => {
+  const md = '**访谈 · 第 42 期**\n`~/Movies/a.mp4` · 3:26\n\n### 要点\n\n- [0:26](/videos/p7?t=26) 云上识别\n- 看[原页面](https://example.com/42)';
+  assert.strictEqual(PI.briefPlainText(md),
+    '访谈 · 第 42 期\n~/Movies/a.mp4 · 3:26\n\n要点\n\n• 0:26 云上识别\n• 看原页面');
+});

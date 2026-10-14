@@ -650,8 +650,8 @@
     /* ---- 项目详情框（第 233 轮）：两个入口一个框 ----
        `extras`（内容 / 译文两行）由**调用方**给，不在这里从项目对象里猜——只有编辑器
        那条路手上有已加载的文稿，项目卡那条路给不出，这两行就该在那边缺席。 */
-    const [pinfo, setPinfo] = useState(null);   // null | {id, extras}
-    const openProjectInfo = useCallback((id, extras) => setPinfo({id, extras: extras || []}), []);
+    const [pinfo, setPinfo] = useState(null);   // null | {id, extras, editor}；editor：从编辑器顶栏打开（给了 extras）
+    const openProjectInfo = useCallback((id, extras) => setPinfo({id, extras: extras || [], editor: !!extras}), []);
     const closeProjectInfo = useCallback(() => setPinfo(null), []);
 
     /* ---- toast ---- */

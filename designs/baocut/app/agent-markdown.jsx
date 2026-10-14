@@ -169,16 +169,19 @@
 
   /* 视频时间链接（product-design §3.2.2；正式版 packages/ui 的 video-time-link.tsx）：地址由工具结果给，
      画成与写作结果出处相同的蓝底时间码（`.wrtime`），点了打开那部视频、播放头放到那一秒；从会话里点时会话留在左侧。
-     视频不在 Space 里或在回收站里时只显示文字。 */
+     视频不在 Space 里或在回收站里时只显示文字。跳过去之后 TimeLinkOpened 里的回调收尾（视频详情框借它关掉自己；
+     S2 按钮不让 click 冒泡，外层收不到）。 */
+  const TimeLinkOpened = React.createContext(null);
   function VideoTimeLink({vt, children}) {
     const app = useApp();
+    const onOpen = React.useContext(TimeLinkOpened);
     const item = (app.spaceItems || []).find((it) => it.kind === 'movie' && it.id === vt.videoId && !it.trashed);
     if (!item) return <span className="amd-linktext">{children}</span>;
     const sid = app.route.r === 'agent' ? app.route.id : undefined;
     const sec = Math.floor(vt.seconds);
     const at = `${Math.floor(sec / 60)}:${String(sec % 60).padStart(2, '0')}`;
     return <BCAction className="wrtime" title={`在「${item.name}」里从 ${at} 开始播放`}
-      onClick={() => app.openMovie(vt.videoId, {sid, t: vt.seconds})}>{children}</BCAction>;
+      onClick={() => { app.openMovie(vt.videoId, {sid, t: vt.seconds}); onOpen?.(); }}>{children}</BCAction>;
   }
 
   /* 设置链接（product-design §3.2.2）：应用内的设置路径，点了在当前窗口打开设置的那一页，提示里是位置。
@@ -202,14 +205,16 @@
     return <div className={cx('amd-block', gap != null && `agap-${gap}`)}>{parsed ? nodes(parsed) : <p>{src}</p>}</div>;
   });
 
-  function AgentMarkdown({text, streaming}) {
+  function AgentMarkdown({text, streaming, onTimeLink}) {
     const shown = useRevealedText(text, streaming);
     const blocks = ST.splitBlocks(shown);
     if (streaming && blocks.length) blocks[blocks.length - 1] = ST.closeStreamingTail(blocks[blocks.length - 1]);
     const gap = TURN.gapBetween('block', 'block');
-    return <div className="amd" onDoubleClick={selectTextBlock}>
-      {blocks.map((b, i) => <Block key={`block:${i}`} src={b} gap={i ? gap : null} />)}
-    </div>;
+    return <TimeLinkOpened.Provider value={onTimeLink || null}>
+      <div className="amd" onDoubleClick={selectTextBlock}>
+        {blocks.map((b, i) => <Block key={`block:${i}`} src={b} gap={i ? gap : null} />)}
+      </div>
+    </TimeLinkOpened.Provider>;
   }
 
   Object.assign(window, {AgentMarkdown, AgentCopyButton: CopyButton, useRevealedText});

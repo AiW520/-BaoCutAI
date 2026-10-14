@@ -146,8 +146,34 @@
     return rows.length ? {title: SECTION_DETAILS, rows} : null;
   }
 
-  /** 一段可直接粘贴的纯文本：标题、hero 各一行，分区之间空行，值内换行缩进两格。 */
-  function copyText(title, hero, list) {
+  /* 视频速览（视频格式规范 §3.1；正式版 packages/ui 的 video-info-dialog.tsx）：智能体转录之后写在视频上的 Markdown。
+     指向这部视频某一刻的链接存成 `?t=<秒>`（复制、导入换了 ID 也还指向它自己），显示前换回 `/videos/<id>?t=<秒>`；
+     「复制全部」接在最后，视频时间链接在应用外点不开，只留链接文字。 */
+  const SECTION_BRIEF = '视频速览';
+  const MD_LINK = /\[([^\]]*)\]\(([^()\s<>]+)\)/g;
+
+  function expandBriefLinks(markdown, videoId) {
+    return String(markdown || '').replace(MD_LINK, (whole, text, href) => {
+      const m = /^\?t=(\d+(?:\.\d+)?)$/.exec(href);
+      return m ? `[${text}](/videos/${encodeURIComponent(videoId)}?t=${m[1]})` : whole;
+    });
+  }
+
+  function unlinkMoments(markdown) {
+    return String(markdown || '').replace(MD_LINK, (whole, text, href) =>
+      (/^(?:\/videos\/[^/?#]+)?\?t=\d+(?:\.\d+)?$/.test(href) ? text : whole));
+  }
+
+  /* Web 入口不带 Markdown 渲染（markdown-it 只进 App 入口），速览退成可读的纯文本：
+     链接只留文字，粗体、行内代码、标题记号去掉，列表项换成「•」。 */
+  function briefPlainText(markdown) {
+    return String(markdown || '').replace(MD_LINK, '$1')
+      .replace(/\*\*([^*]+)\*\*/g, '$1').replace(/`([^`]+)`/g, '$1')
+      .replace(/^#{1,6}\s+/gm, '').replace(/^(\s*)[-*]\s+/gm, '$1• ').trim();
+  }
+
+  /** 一段可直接粘贴的纯文本：标题、hero 各一行，分区之间空行，值内换行缩进两格；有视频速览时接在最后。 */
+  function copyText(title, hero, list, brief) {
     const lines = [];
     if ((title || '').trim()) lines.push(title.trim());
     if ((hero || '').trim()) lines.push(hero.trim());
@@ -156,13 +182,14 @@
       lines.push(s.title);
       s.rows.forEach((r) => lines.push(`${r.label}: ${r.value.replace(/\n/g, '\n  ')}`));
     });
+    if ((brief || '').trim()) lines.push('', SECTION_BRIEF, unlinkMoments(brief.trim()));
     return lines.join('\n') + '\n';
   }
 
   window.BC_PINFO = {
     HERO_NAME_MAX, elideMiddle, srcTypeLabel, heroLine,
     contentsRow, translationRow, editorExtras,
-    fmtCount, prettyDate, sections, detailsSection, copyText,
-    SECTION_MEDIA, SECTION_SOURCE, SECTION_DETAILS,
+    fmtCount, prettyDate, sections, detailsSection, copyText, expandBriefLinks, briefPlainText,
+    SECTION_MEDIA, SECTION_SOURCE, SECTION_DETAILS, SECTION_BRIEF,
   };
 })();
