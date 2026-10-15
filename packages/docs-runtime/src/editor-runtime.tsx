@@ -134291,8 +134291,9 @@ function isRenderedCodeAndProofreadingWin(
 }
 initializeProsemirrorCommandsDependencies2();
 initializeProsemirrorViewDependencies();
+// BaoCut: 智能体光标旗子上的名字叫 Agent，不叫 Claude。
 var RenderedCodeAndProofreadingColor = {
-  name: "Claude",
+  name: "Agent",
   color: "#d97757",
   connId: "claude-agent",
 };
@@ -299578,11 +299579,12 @@ var resolveWidgetAndHostRuntimeAddExtensions: Dynamic = (
             )
               return void (widgetAndHostRuntimeLimit18 = input2);
             widgetAndHostRuntimeLimit18 = false;
+            // BaoCut: 智能体在改文档的播报称「the agent」，不称 Claude。
             resolveProsePluginsValue7(
               document,
               input2
-                ? "Claude is editing this document"
-                : "Claude stopped editing",
+                ? "The agent is editing this document"
+                : "The agent stopped editing",
               {
                 key: "agent-editing",
               },

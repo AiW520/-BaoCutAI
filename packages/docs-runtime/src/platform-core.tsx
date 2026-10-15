@@ -72488,8 +72488,9 @@ var resolvePlatformApiAndAuthTest: Dynamic = (
 ) =>
   typeof platformApiAndAuthTest == `string` &&
   platformApiAndAuthPattern7.test(platformApiAndAuthTest);
+// BaoCut: 智能体光标旗子上的名字叫 Agent，不叫 Claude。
 var PlatformApiAndAuthColor = {
-  name: `Claude`,
+  name: `Agent`,
   color: `#d97757`,
   connId: `claude-agent`,
 };
@@ -74615,7 +74616,8 @@ var PlatformApiAndAuthParticipants: Dynamic = create(
             contributor.ownerUid &&
             contributor.runId
           ) {
-            let agent: Dynamic = contributor.agent ?? `Claude`;
+            // BaoCut: 没报名字的智能体叫 Agent，不叫 Claude。
+            let agent: Dynamic = contributor.agent ?? `Agent`;
             let label = `agent:${contributor.ownerUid}:${agent}`;
             let participantEntry: Dynamic = participants.get(label);
             participants.set(label, {
@@ -85750,7 +85752,8 @@ function resolveDataModelSchemasValue32(
     options - dataModelSchemasValue32 < context
   );
 }
-var DataModelSchemasMessage3 = `Claude is working on it…`;
+// BaoCut: 批注里等智能体回复时的提示称「the agent」，不称 Claude。
+var DataModelSchemasMessage3 = `The agent is working on it…`;
 var DataModelSchemasState24 = 5 * 6e4;
 var DataModelSchemasState25 = 15 * 6e4;
 var dataModelSchemasMap6: Dynamic = new (Map as Dynamic)();
@@ -88054,7 +88057,8 @@ var PlatformAnnouncementsPageBug: Dynamic = {
   "char_gone:link": `the text you were adding a link to was deleted by someone else while the link box was open; no link was made`,
   block_gone_typing: `the paragraph you were typing in was removed by someone else; your text continues here`,
   block_gone_caret: `the paragraph your cursor was in was removed by someone else`,
-  block_swapped_typing: `Claude rewrote the paragraph you were typing in; the words you had typed there are kept in a paragraph of their own beside Claude’s new text`,
+  // BaoCut: 智能体改写了正在打字的段落时的提示称「the agent」，不称 Claude。
+  block_swapped_typing: `The agent rewrote the paragraph you were typing in; the words you had typed there are kept in a paragraph of their own beside the agent’s new text`,
   reseat_failed: `this page lost track of part of the document and could not put it right by itself; it is read-only until you reload — everything you typed is kept`,
   "paste_plain:link": `that link is longer than a link can be (2 048 characters), so it was pasted as plain text and not made a link`,
   paste_too_large: `what you pasted is larger than a document can take in one go (over 1 MB), so nothing was pasted; paste it in parts`,
