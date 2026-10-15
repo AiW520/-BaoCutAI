@@ -42,6 +42,7 @@ const DONE = 20_000_000;
 /** 豆包语音合成 2.0 的音色（文档音色列表里的 2.0 通用音色）。 */
 const VOICES = [
   { voiceId: 'zh_female_vv_uranus_bigtts', label: 'Vivi 2.0', language: 'zh' },
+  // i18n-ignore-start：音色名是火山引擎控制台里的原名，与 voiceId 一一对应，不翻译。
   { voiceId: 'zh_female_xiaohe_uranus_bigtts', label: '小何 2.0', language: 'zh' },
   { voiceId: 'zh_male_m191_uranus_bigtts', label: '云舟 2.0', language: 'zh' },
   { voiceId: 'zh_male_taocheng_uranus_bigtts', label: '小天 2.0', language: 'zh' },
@@ -49,6 +50,7 @@ const VOICES = [
   { voiceId: 'zh_male_jieshuoxiaoming_uranus_bigtts', label: '解说小明 2.0', language: 'zh' },
   { voiceId: 'zh_male_cixingjieshuonan_uranus_bigtts', label: '磁性解说男声 2.0', language: 'zh' },
   { voiceId: 'zh_female_xiaoxue_uranus_bigtts', label: '儿童绘本 2.0', language: 'zh' },
+  // i18n-ignore-end
   { voiceId: 'en_male_tim_uranus_bigtts', label: 'Tim', language: 'en' },
   { voiceId: 'en_female_dacey_uranus_bigtts', label: 'Dacey', language: 'en' },
   { voiceId: 'ja_male_yusuke_uranus_bigtts', label: 'Yusuke', language: 'ja' },
