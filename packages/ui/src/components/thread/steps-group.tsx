@@ -22,6 +22,7 @@ import ListBulleted from '@react-spectrum/s2/icons/ListBulleted';
 import SaveFloppy from '@react-spectrum/s2/icons/SaveFloppy';
 import Shapes from '@react-spectrum/s2/icons/Shapes';
 import Text from '@react-spectrum/s2/icons/Text';
+import TextParagraph from '@react-spectrum/s2/icons/TextParagraph';
 import Transcript from '@react-spectrum/s2/icons/Transcript';
 import Translate from '@react-spectrum/s2/icons/Translate';
 import Undo from '@react-spectrum/s2/icons/Undo';
@@ -102,6 +103,7 @@ const TOOL_ICON: Record<BaoCutStepKind, ReactNode> = {
   slides: <Layout />,
   design: <Shapes />,
   'design-system': <ColorHarmony />,
+  docs: <TextParagraph />,
 };
 
 /**

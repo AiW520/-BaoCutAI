@@ -66,8 +66,10 @@ import { StorageGc } from './storage-gc.ts';
 import { AttachmentStore } from './attachments.ts';
 import { MediaRegistry } from './media.ts';
 import { SlidesService } from './slides.ts';
+import { DocsService } from './docs.ts';
 import { SlidesTools } from './agent-tools/slides-tools.ts';
 import { DesignTools } from './agent-tools/design-tools.ts';
+import { DocsTools } from './agent-tools/docs-tools.ts';
 import { DesignSystemTools } from './agent-tools/design-system-tools.ts';
 import { MediaAnalysis } from './media-analysis.ts';
 import { createFaceDetector } from './face-detection.ts';
@@ -229,6 +231,11 @@ export interface StartRuntimeOptions {
    * `apps/design-system-editor/dist`；null 表示没有构建（`designSystem.open` 照常给地址，页面回 503，结果里 `editorAvailable` 为 false）。
    */
   designSystemEditorDist?: string | null;
+  /**
+   * 文档编辑器的构建目录（docs/design/docs §3）。默认取 `BAOCUT_DOCS_EDITOR_DIST`、打包的资源目录或仓库的
+   * `apps/docs-editor/dist`；null 表示没有构建（`docs.open` 照常给地址，页面回 503，结果里 `editorAvailable` 为 false）。
+   */
+  docsEditorDist?: string | null;
   /** 从 GitHub 导入 skill（§12.9）。测试注入假的 fetch，不访问真实网络。 */
   skillsGithub?: GithubFetchOptions;
   /** 按需下载的字体（§9.1）。测试注入只含几个族的字体目录，并把下载指向本机的假服务；不访问真实网络。 */
@@ -304,6 +311,7 @@ const STOP_ORDER = [
   'semantic-index',
   'space',
   'slides',
+  'docs',
   'compositions',
   'analysis',
   'videos',
@@ -416,6 +424,12 @@ export async function startRuntime(options: StartRuntimeOptions = {}): Promise<R
       designSystemEditorDist: options.designSystemEditorDist === undefined ? undefined : () => options.designSystemEditorDist ?? null,
     });
     stops.add('slides', () => slides.close(), null);
+    // 文档编辑器（docs/design/docs §6）：网关、Web 服务与智能体的 `docs_*` 工具共用，同一个目录在内存里只有一份文档。
+    const docs = new DocsService({
+      log,
+      editorDist: options.docsEditorDist === undefined ? undefined : () => options.docsEditorDist ?? null,
+    });
+    stops.add('docs', () => docs.close(), null);
     // 生成的音频与图片、参考录音都用 ffprobe 解码校验（与引擎同一个 ffprobe）；WebM / QuickTime 播放也用它探测编码与 alpha。
     const ffprobe = async () => ({ command: process.env.BAOCUT_FFPROBE || 'ffprobe', env: await toolEnv() });
     const analysis = new MediaAnalysis({
@@ -805,6 +819,8 @@ export async function startRuntime(options: StartRuntimeOptions = {}): Promise<R
         new DesignTools({ scope: toolScope, design: slides }),
         // 会话里的设计系统（docs/design/canvas §10.5）：结构校验与导入素材；存储来自同一个编辑器服务。
         new DesignSystemTools({ scope: toolScope, designSystem: slides }),
+        // 会话里的文档（docs/design/docs §7）：连接器与编辑器共用文档服务里的同一份文档。
+        new DocsTools({ scope: toolScope, docs }),
       ];
     };
     // 会话的工具桥与网关 `catalog.call`（终端）共用同一组工具实例：`ScopeRouter` 按主体的种类转给会话的范围或终端的范围
@@ -1003,6 +1019,7 @@ export async function startRuntime(options: StartRuntimeOptions = {}): Promise<R
       slides: slides.opener(),
       design: slides.designOpener(),
       designSystem: slides.designSystemOpener(),
+      docs: docs.opener(),
       attachments,
       analysis,
       spaceThumbnails: new SpaceThumbnails({
@@ -1048,8 +1065,10 @@ export async function startRuntime(options: StartRuntimeOptions = {}): Promise<R
         slides: slides.opener(() => ''),
         design: slides.designOpener(() => ''),
         designSystem: slides.designSystemOpener(() => ''),
+        docs: docs.opener(() => ''),
       }),
       slides: slides.server,
+      docs: docs.server,
     });
     // 在场的用户（工具页的当场授权，§7.9）：这个网关上的桌面界面连接。CLI、智能体、浏览器与对外服务都不算。
     const present = new Set<string>();
@@ -1066,9 +1085,12 @@ export async function startRuntime(options: StartRuntimeOptions = {}): Promise<R
           mcp.handle(request, response) ||
           attachments.handle(request, response) ||
           media.handle(request, response) ||
-          slides.handle(request, response)
+          slides.handle(request, response) ||
+          docs.handle(request, response)
         );
       },
+      // 文档编辑器的实时连接（`/docs/<grant>/api/mux`）；其余升级请求是网关自己的 WebSocket。
+      upgrade: (request, socket, head) => docs.upgrade(request, socket, head),
       onConnect: (principal) => {
         if (principal.kind === 'desktop') present.add(principal.connectionId);
         activity.connected(principal);
@@ -1085,6 +1107,7 @@ export async function startRuntime(options: StartRuntimeOptions = {}): Promise<R
     const endpoint = await gateway.listen(options.host, options.port);
     media.setBaseUrl(endpoint.replace(/^ws:/, 'http:'));
     slides.setBaseUrl(endpoint.replace(/^ws:/, 'http:'));
+    docs.setBaseUrl(endpoint.replace(/^ws:/, 'http:'));
     attachments.setBaseUrl(endpoint.replace(/^ws:/, 'http:'));
     grants.setEndpoint(`${endpoint.replace(/^ws:/, 'http:')}/mcp`);
     const discovery: RuntimeDiscovery = { ...info, endpoint, token };

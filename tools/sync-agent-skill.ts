@@ -35,6 +35,7 @@ import {
   readAgentSkillDir,
   renderAgentSkill,
   renderAgentSkillText,
+  SESSION_ONLY_TOOLS,
   type AgentSkillFace,
   type AgentSkillGeneratedBlock,
 } from '../packages/runtime-core/src/skills/agent-skill-renderer.ts';
@@ -229,7 +230,7 @@ export function rewriteCraftText(text: string, ctx: RewriteContext): string {
       '这种 `skills_read` 的说法没法改写成 CLI 面：写成「用 `skills_read` 读本 skill 的 `references/…`」或「用 `skills_read` 读 `<craft id>`」',
     );
   }
-  out = renderCraftToolNames(lines.join('\n'), cliNames);
+  out = renderSessionOnlyNamesInFences(renderCraftToolNames(lines.join('\n'), cliNames));
   const bridgeOnly = ctx.inputs.agentToolNames.filter((name) => !cliNames.includes(name));
   out.split('\n').forEach((line, index) => {
     for (const name of bridgeOnly) {
@@ -239,6 +240,28 @@ export function rewriteCraftText(text: string, ctx: RewriteContext): string {
     }
   });
   return out;
+}
+
+/**
+ * 代码块里的会话专属工具名（`docs_batch( … )` 这类调用示例）换成兜底说法：渲染器不动代码块，但 craft 是给终端读的副本，
+ * 外部 Agent 不该读到它没有的工具名。只换名字，不换整句，行数不变。
+ */
+function renderSessionOnlyNamesInFences(text: string): string {
+  const names = Object.keys(SESSION_ONLY_TOOLS);
+  const pattern = craftToolNamePattern(names, 'g');
+  if (!pattern) return text;
+  let fence: string | null = null;
+  return text
+    .split('\n')
+    .map((line) => {
+      const mark = /^\s*(```|~~~)/.exec(line)?.[1];
+      if (mark && (!fence || fence === mark)) {
+        fence = fence ? null : mark;
+        return line;
+      }
+      return fence ? line.replace(pattern, (name: string) => SESSION_ONLY_TOOLS[name]!.text) : line;
+    })
+    .join('\n');
 }
 
 /**

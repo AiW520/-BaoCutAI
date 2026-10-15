@@ -5,6 +5,7 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { BaoCutClient } from '@baocut/client';
 import type { AgentDriver, AgentSession } from '@baocut/harness';
 import { RpcError, type DriverProbe } from '@baocut/protocol';
+import { createDoc } from '@baocut/docs';
 import { resolveRuntimeHome } from '@baocut/runtime-storage';
 import { fakeProbe } from './agent-tools/testing/fake-agent.ts';
 import { DEFAULT_PROJECT_FILES_LIMITS, listProjectFiles } from './project-files.ts';
@@ -171,6 +172,20 @@ describe('项目文件浏览（projects.files.list）', () => {
     expect((await listProjectFiles(root, { dir: 'brand' })).entries.map((e) => e.path)).toEqual(['brand/assets', 'brand/design-system.json']);
     expect((await listProjectFiles(root, { query: 'clip' })).entries.map((e) => e.path)).not.toContain('brand/assets/Logos/clip-mark.svg');
     expect((await listProjectFiles(root, { query: 'brand' })).entries).toMatchObject([{ path: 'brand', kind: 'design-system' }]);
+  });
+
+  it('文档目录：含合格 doc.json 的目录是一项 docs，修改时间取 doc.json；查找时不进入', async () => {
+    await fs.mkdir(path.join(root, 'reports'), { recursive: true });
+    await createDoc(path.join(root, 'reports', 'plan'), { name: 'Plan' });
+    await write(path.join(root, 'reports', 'plan', 'assets', 'clip-chart.png'), 'png');
+    // 不合格的 doc.json 不算文档，目录照常进入。
+    await write(path.join(root, 'notes', 'doc.json'), JSON.stringify({ name: 'not a doc' }));
+    const listed = await listProjectFiles(root, { dir: 'reports' });
+    expect(listed.entries.find((e) => e.path === 'reports/plan')).toMatchObject({ isDir: true, size: null, kind: 'docs' });
+    expect(listed.entries.find((e) => e.path === 'reports/plan')?.modifiedAt).toMatch(/^\d{4}-\d{2}-\d{2}T/);
+    expect((await listProjectFiles(root, {})).entries.find((e) => e.path === 'notes')).toMatchObject({ isDir: true, kind: null });
+    expect((await listProjectFiles(root, { query: 'clip' })).entries.map((e) => e.path)).not.toContain('reports/plan/assets/clip-chart.png');
+    expect((await listProjectFiles(root, { query: 'plan' })).entries).toMatchObject([{ path: 'reports/plan', kind: 'docs' }]);
   });
 
   it('截断：超过 limit、看过的目录项或候选超过上限时标出 truncated', async () => {

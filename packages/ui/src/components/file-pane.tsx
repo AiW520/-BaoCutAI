@@ -23,6 +23,7 @@ import { IMAGE } from './image-preview-copy.ts';
 import { itemKey } from '../model/workspace.ts';
 import { DESIGN } from '../model/design-copy.ts';
 import { DESIGN_SYSTEM } from '../model/design-system-copy.ts';
+import { DOCS } from '../model/docs-copy.ts';
 import { SLIDES } from '../model/slides-copy.ts';
 
 const pane = style({ display: 'flex', flexDirection: 'column', flexGrow: 1, minWidth: 0, minHeight: 0 });
@@ -124,6 +125,13 @@ export function FilePane({ target, conversationId, fileNameHint, active = true }
     const system = 'projectId' in target ? { projectId: target.projectId, path: systemDir } : { conversationId: target.conversationId, path: systemDir };
     useShell.getState().openPane({ kind: 'design-system', target: system });
   };
+  // 打开的是一份协作文档的 `doc.json`：改用协作文档编辑器打开它所在的目录（docs/design/docs §8）；认不认得出由 docs.open 判断。
+  const docDir = 'path' in target && /(^|[\\/])doc\.json$/.test(target.path) ? target.path.replace(/[\\/]?doc\.json$/, '') : null;
+  const openDoc = () => {
+    if (docDir === null || !('path' in target)) return;
+    const doc = 'projectId' in target ? { projectId: target.projectId, path: docDir } : { conversationId: target.conversationId, path: docDir };
+    useShell.getState().openPane({ kind: 'docs', target: doc });
+  };
 
   return (
     <section className={pane} aria-label={S.filePane.label(entry?.name ?? fileName)}>
@@ -137,6 +145,7 @@ export function FilePane({ target, conversationId, fileNameHint, active = true }
         {deckDir !== null && <ActionButton isQuiet onPress={openDeck}>{SLIDES.openInEditor}</ActionButton>}
         {canvasDir !== null && <ActionButton isQuiet onPress={openCanvas}>{DESIGN.openInEditor}</ActionButton>}
         {systemDir !== null && <ActionButton isQuiet onPress={openSystem}>{DESIGN_SYSTEM.openInEditor}</ActionButton>}
+        {docDir !== null && <ActionButton isQuiet onPress={openDoc}>{DOCS.openInEditor}</ActionButton>}
         {resolved && <LinkButton variant="secondary" href={`${resolved.handle.url}?download=1`} target="_blank" rel="noopener noreferrer" download={fileName}>{IMAGE.download}</LinkButton>}
         {absolute && kind && runtime.host.openFile && <ActionButton isQuiet onPress={() => {
           void runtime.host.openFile!(absolute).then(async error => {

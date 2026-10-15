@@ -267,6 +267,43 @@ describe('conversationOutputs', () => {
     expect(outputs.every((o) => o.video === null && !o.slides && !o.design)).toBe(true);
   });
 
+  it('智能体新建的协作文档（docs-created）：同设计稿，计数是标签页数；Space 有条目时用条目 id，工作目录里不重复', () => {
+    const source = { projectId: null, conversationId: 'c1' };
+    const items: TimelineItem[] = [
+      {
+        kind: 'docs-created',
+        id: 'k1',
+        createdAt: '2026-10-02T02:00:00.000Z',
+        taskId: 't6',
+        target: { conversationId: 'c1', path: 'docs/plan' },
+        title: '发布计划',
+        tabCount: 2,
+      },
+      {
+        kind: 'docs-created',
+        id: 'k2',
+        createdAt: '2026-10-02T01:00:00.000Z',
+        taskId: 't7',
+        target: { conversationId: 'c1', path: 'docs/untitled' },
+        title: '',
+        tabCount: 1,
+      },
+    ];
+    const entries = [
+      entry('plan', { kind: 'docs', name: '旧标题', source, relPath: 'docs/plan', doc: { tabCount: 3 } }),
+      // 同一路径上的普通文档条目不算这份协作文档
+      entry('note', { kind: 'document', name: 'untitled', source, relPath: 'docs/untitled', lastActivityAt: '2026-09-01T00:00:00.000Z' }),
+      entry('retro', { kind: 'docs', name: '复盘', source, relPath: 'retro', doc: { tabCount: 4 }, lastActivityAt: '2026-10-01T00:00:00.000Z' }),
+    ];
+    const outputs = conversationOutputs({ id: 'c1', projectId: null }, items, entries).filter((o) => o.kind === 'docs');
+    expect(outputs.map((o) => [o.id, o.name, o.taskId, o.docs])).toEqual([
+      ['plan', '发布计划', 't6', { target: { conversationId: 'c1', path: 'docs/plan' }, tabCount: 2 }],
+      ['k2', 'untitled', 't7', { target: { conversationId: 'c1', path: 'docs/untitled' }, tabCount: 1 }],
+      ['retro', '复盘', null, { target: { conversationId: 'c1', path: 'retro' }, tabCount: 4 }],
+    ]);
+    expect(outputs.every((o) => o.video === null && !o.slides && !o.design && !o.designSystem)).toBe(true);
+  });
+
   it('limit：会话头最多 30 项，按回复分组时可以不截断', () => {
     const source = { projectId: null, conversationId: 'c1' };
     const entries = Array.from({ length: 35 }, (_, i) => entry(`e${i}`, { source }));

@@ -19,6 +19,7 @@ export * from './semantic.ts';
 export * from './slides.ts';
 export * from './design.ts';
 export * from './design-system.ts';
+export * from './docs.ts';
 export * from './external-tools.ts';
 export * from './fonts.ts';
 export * from './tool-catalogue.ts';

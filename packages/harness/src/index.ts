@@ -17,6 +17,8 @@ export {
   type ResolvedDesignAnnotation,
   type ResolvedDesignSystemAnnotation,
   type ResolvedVideoAnnotation,
+  withDocsAnnotations,
+  type ResolvedDocsAnnotation,
   type HarnessAttachments,
   type ContractActor,
   type HarnessOptions,

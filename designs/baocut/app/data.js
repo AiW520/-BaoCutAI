@@ -600,6 +600,52 @@
            {name: '全套 8 讲', price: '¥299', note: '含课件与示例工程', featured: true},
            {name: '团队', price: '¥1,999', note: '10 个席位，可开发票'}]}]},
      ]},
+    /* 协作文档（docs/design/docs §6、§7.3）：一份协作文档的目录（doc.json 加每个标签页一份）是一个条目。`tabs` 是原型画静态正文用的演示内容，
+       正式版由协作文档编辑器读 doc.json、tabs/<id>.json 与 comments.json 来画：每个标签页有正文节点 `node` 与按顺序的块
+       （h1 / h2 / h3 / p / list / table / ask，ask 是空行上写给智能体的请求）；`threads` 是评论线程，挂在某个标签页的某一块上，
+       `quote` 是它引用的原文，id 就是第一条评论的 id。概览里「八讲」下面那张列表是 s34 第二轮按请求写进去的，
+       「首月 500 名付费学员」那条线程里智能体的回复也是那一轮回的；风险里的请求和另外两条线程还没发给智能体。 */
+    {id: 'docs-r1', kind: 'docs', name: '确定性渲染课程 · 发布计划', dir: 'd5', session: 's34', mtime: 1, bytes: 18432,
+     file: '协作文档/发布计划/',
+     tabs: [
+       {id: 'overview', name: '概览', node: 'n-overview', blocks: [
+         {id: 'b1', type: 'h1', text: '确定性渲染课程 · 发布计划'},
+         {id: 'b2', type: 'p', text: '这门课讲清视频渲染为什么必须可复现，以及怎么证明它。共 8 讲，每讲 40 分钟；11 月先上线前两讲试听，其余每周一讲。'},
+         {id: 'b3', type: 'h2', text: '这份文档放什么'},
+         {id: 'b4', type: 'list', items: ['计划：目标、上线节奏和每周的负责人', '风险：已知风险和应对办法', '相关文件：落地页在 设计稿/课程落地页/，第 1 讲的课件在 幻灯片/第1讲/']},
+         {id: 'b5', type: 'h3', text: '八讲'},
+         {id: 'b6', type: 'list', items: ['第 1 讲 同一份输入，永远同一帧', '第 2 讲 浮点误差从哪里来', '第 3 讲 字体回退与排版', '第 4 讲 线程顺序',
+           '第 5 讲 时间模型与舍入', '第 6 讲 编码器的确定性', '第 7 讲 逐像素比对', '第 8 讲 把验收放进持续集成']},
+       ]},
+       {id: 'plan', name: '计划', node: 'n-plan', blocks: [
+         {id: 'b1', type: 'h2', text: '目标'},
+         {id: 'b2', type: 'p', text: '首月 500 名付费学员，试听到付费的转化不低于 4%，退款率低于 5%。'},
+         {id: 'b3', type: 'h2', text: '上线节奏'},
+         {id: 'b4', type: 'table', head: ['周', '内容', '负责人', '状态'], rows: [
+           ['第 1 周', '落地页上线，开放第 1、2 讲试听', '林舟', '进行中'],
+           ['第 2 周', '第 3 讲上线，邮件通知试听用户', '我', '未开始'],
+           ['第 3 周', '第 4 讲上线，社群直播答疑', '林舟', '未开始'],
+           ['第 4 周', '第 5 讲上线，首月复盘', '我', '未开始']]},
+         {id: 'b5', type: 'h3', text: '渠道'},
+         {id: 'b6', type: 'list', items: ['课程落地页与试听视频', '已购学员的邮件列表', '两个技术社群的直播答疑']},
+       ]},
+       {id: 'risks', name: '风险', node: 'n-risks', blocks: [
+         {id: 'b1', type: 'h2', text: '已知风险'},
+         {id: 'b2', type: 'list', items: ['第 5 讲之后的录制可能赶不上每周一讲', '试听转化低于预期，首月达不到目标', '逐像素比对的示例工程在部分显卡上跑不通']},
+         {id: 'b3', type: 'ask', text: '把每条风险补一句应对办法，写成两列的表格。'},
+       ]},
+     ],
+     threads: [
+       {id: 'c1', tab: 'plan', block: 'b2', quote: '首月 500 名付费学员', comments: [
+         {id: 'c1', author: '林舟', time: '昨天', text: '500 是怎么估的？试听人数还没出来，这个数会不会太乐观？'},
+         {id: 'c2', author: '我', time: '昨天', text: '按落地页预计 1.2 万次访问、试听转化 4% 估的，可以再保守一点。'},
+         {id: 'c3', author: '智能体', agent: true, time: '1 分钟前', text: '按这两个数算是 480 人左右，500 略高。建议目标改成 400，第 4 周复盘时再按实际试听人数调。要我直接改吗？'}]},
+       {id: 'c5', tab: 'plan', block: 'b4', quote: '社群直播答疑', comments: [
+         {id: 'c5', author: '我', time: '2 小时前', text: '直播放在周四晚上，提前一周在社群预告。'},
+         {id: 'c6', author: '林舟', time: '1 小时前', text: '可以。预告文案谁来写？'}]},
+       {id: 'c4', tab: 'overview', block: 'b2', quote: '其余每周一讲', comments: [
+         {id: 'c4', author: '林舟', time: '1 小时前', text: '第 5 讲之后的录制排得开吗？要不要改成两周一讲？'}]},
+     ]},
     /* 设计系统（docs/design/canvas §10）：含 design-system.json 的目录是一个条目。下面是原型画设计系统标签页用的演示内容，
        正式版由设计系统编辑器读 design-system.json、tokens.json、README.md、components/ 与 assets/ 来画。字段：
        `fileCount` 是目录里的文件数（导航尾巴上的 Files 行）；`cover` 有值时 Overview 顶上画封面（components/Cover）；`readme` 是 README.md 的原文；
@@ -2576,6 +2622,28 @@
          {id: 'm9', role: 'tool', kind: 'edit', summary: '设计稿/课程落地页/phone.dc.html', cmd: '修改 设计稿/课程落地页/phone.dc.html', status: 'done', took: '0.1s'},
          {id: 'm10', role: 'tool', tool: 'design_check', args: {path: '设计稿/课程落地页/', boards: 3}, status: 'done', took: '0.6s', out: '3 个画板 · 0 个问题'},
          {id: 'm11', role: 'assistant', text: '改好了：桌面首屏的按钮换成「免费试听第 1 讲」；手机首屏的标题在逗号后断成两行。右侧打开着的编辑器已经刷新。'},
+       ]},
+      /* 会话里的协作文档（docs/design/docs）：智能体用 `docs_batch` 建好一份三个标签页的协作文档，线程里出一张协作文档卡片。
+         第二轮是在协作文档标签页里把一条评论和一条请求「发给智能体」、随消息发回来的标注（`docsAnnotations`，§8）：
+         智能体读文档，在评论线程里回复（`docs_create` utterance，parent 是线程第一条），把请求那一行换成内容（`docs_update`）。 */
+      {id: 's34', title: '把这门课的发布计划整理成协作文档', project: null, dir: 'd5', harness: 'claude', model: 'sonnet', effort: 'mid',
+       status: 'done', ago: 1, unread: true,
+       messages: [
+         {id: 'm1', role: 'user', text: '把「确定性渲染」这门课的发布计划整理成一份协作文档：概览、计划、风险三个标签页，计划里放目标和每周的上线节奏表。', ...turnDone(4, 46)},
+         {id: 'm2', role: 'tool', kind: 'read', summary: '幻灯片/第1讲/deck.json', cmd: '读取 幻灯片/第1讲/deck.json 与 设计稿/课程落地页/canvas.json · 课程的讲数与时长', status: 'done', took: '0.1s'},
+         {id: 'm3', role: 'tool', tool: 'docs_batch', args: {path: '协作文档/发布计划/', create: {name: '确定性渲染课程 · 发布计划'}, tabs: 3}, status: 'done', took: '0.6s', out: '3 个标签页'},
+         {id: 'm4', role: 'assistant', artifactIds: ['docs-r1'], text: '发布计划整理好了，放在 `协作文档/发布计划/`，分概览、计划、风险三个标签页，计划里有目标和四周的上线节奏表。\n\n点卡片在右侧打开。有问题直接在文档里评论，或者在空行上写一句请求，点「发给智能体」带回这里。'},
+         {id: 'm5', role: 'user', text: '请处理这些协作文档里的评论和请求。', ...turnDone(1, 35),
+          docsAnnotations: [
+            {id: 'k1', doc: 'docs-r1', docPath: '协作文档/发布计划/', kind: 'comment', path: 'f-plan#n-plan/b2;thread=c1',
+             label: '计划 › "首月 500 名付费学员"', quote: '首月 500 名付费学员', text: '500 是怎么估的？试听人数还没出来，这个数会不会太乐观？'},
+            {id: 'k2', doc: 'docs-r1', docPath: '协作文档/发布计划/', kind: 'ask', path: 'f-overview#n-overview/b6',
+             label: '概览 › 空行', text: '在这里列出八讲的标题。'},
+          ]},
+         {id: 'm6', role: 'tool', tool: 'docs_read', args: {path: '协作文档/发布计划/'}, status: 'done', took: '0.2s', out: '3 个标签页 · 3 个评论线程'},
+         {id: 'm7', role: 'tool', tool: 'docs_create', args: {path: '协作文档/发布计划/', object: 'utterance', parent: 'c1'}, status: 'done', took: '0.1s'},
+         {id: 'm8', role: 'tool', tool: 'docs_update', args: {path: '协作文档/发布计划/', block: 'b6'}, status: 'done', took: '0.1s'},
+         {id: 'm9', role: 'assistant', text: '处理好了：在「首月 500 名付费学员」那条评论下回复了估算依据（按 1.2 万次访问、4% 转化算是 480 人左右，建议改成 400）；概览里那行请求换成了八讲的标题。右侧打开着的协作文档已经刷新。'},
        ]},
       {id: 's7', title: '把 3 段竖屏素材拼成一条 60 秒短片', project: null, harness: 'claude', model: 'sonnet', effort: 'mid',
        status: 'done', ago: 1800,

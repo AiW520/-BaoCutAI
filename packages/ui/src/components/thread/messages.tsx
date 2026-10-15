@@ -24,7 +24,7 @@ import { useRuntime } from '../../runtime/context.tsx';
 import { useSkills } from '../../state/skills-store.ts';
 import { AgentMarkdown } from './agent-markdown.tsx';
 import { CopyButton } from './copy-button.tsx';
-import { AnnotationsToken } from '../annotations-token.tsx';
+import { AnnotationsToken, docsTokenItem } from '../annotations-token.tsx';
 
 type Item<K extends TimelineItem['kind']> = Extract<TimelineItem, { kind: K }>;
 
@@ -219,6 +219,12 @@ export const UserMessage = memo(function UserMessage({ item, conversationId }: {
               text: a.text,
             }))}
           />
+        </div>
+      ) : null}
+      {item.docsAnnotations?.length ? (
+        // 随这条消息交出去的协作文档评论与请求（docs/design/docs §8）：点一条打开那份文档，尽力跳到那条评论或那个块。
+        <div className={contextLine}>
+          <AnnotationsToken kind="docs" items={item.docsAnnotations.map((a, i) => docsTokenItem(sentAnnotationId(item.id, i), a))} />
         </div>
       ) : null}
       <div className={actions}>

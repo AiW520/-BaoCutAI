@@ -20,6 +20,10 @@
     // docs/design/canvas §10.6: a design system opens in its own tab; the section it shows is the tab's own state,
     // `at` ("section:anchor") is a one-off jump to an annotated target that the tab clears once it got there.
     if (r.system) return {key: 'design-system:' + r.system, kind: 'design-system', id: r.system, ...(r.at ? {at: r.at} : {})};
+    // docs/design/docs §8: a collaborative doc opens in its own tab; `dtab` is the doc tab it shows (kept when a route
+    // leaves it out), `at` is a one-off jump to an annotation's element path. It is always written, so clearing it
+    // after the jump lets the same annotation jump again.
+    if (r.docs) return {key: 'docs:' + r.docs, kind: 'docs', id: r.docs, ...(r.dtab ? {dtab: r.dtab} : {}), at: r.at || null};
     if (r.web) return {key: 'web:' + r.web, kind: 'web', id: r.web, url: safeUrl(r.url) || ''};
     return null;
   }
@@ -79,6 +83,7 @@
     if (item.kind === 'slides') return {...base, slides: item.id, ...(item.slide ? {slide: item.slide} : {})};
     if (item.kind === 'design') return {...base, design: item.id, ...(item.board ? {board: item.board} : {})};
     if (item.kind === 'design-system') return {...base, system: item.id, ...(item.at ? {at: item.at} : {})};
+    if (item.kind === 'docs') return {...base, docs: item.id, ...(item.dtab ? {dtab: item.dtab} : {}), ...(item.at ? {at: item.at} : {})};
     return {...base, web: item.id, ...(item.url ? {url: item.url} : {})};
   }
   function reconcile(book, r) {
@@ -110,7 +115,7 @@
   }
   function title(item, items) {
     if (item.kind === 'web') { try { return new URL(item.url).hostname; } catch { return '新标签页'; } }
-    return items.find(it => it.id === item.id)?.name || ({movie: '视频不可用', slides: '幻灯片不可用', design: '设计稿不可用', 'design-system': '设计系统不可用'}[item.kind] || '文件不可用');
+    return items.find(it => it.id === item.id)?.name || ({movie: '视频不可用', slides: '幻灯片不可用', design: '设计稿不可用', 'design-system': '设计系统不可用', docs: '协作文档不可用'}[item.kind] || '文件不可用');
   }
   // Hit-test untransformed tab slots so animated neighbors cannot move the target.
   function dragTarget(rects, key, x) {

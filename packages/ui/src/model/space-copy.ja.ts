@@ -12,6 +12,7 @@ export const ja: SpaceMessages = {
     slides: 'スライド',
     design: 'デザイン',
     'design-system': 'デザインシステム',
+    docs: '共同編集ドキュメント',
     package: '動画パッケージ',
     template: 'テンプレート',
   },

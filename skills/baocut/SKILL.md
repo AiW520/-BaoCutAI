@@ -61,6 +61,7 @@ BaoCut 是以**可编辑视频**为中心的剪辑工具：素材在时间线上
 | 做幻灯片、演示文稿、汇报用的页面 | 在工作目录写一份 deck，校验通过后线程里出卡片，用户在功能区预览、编辑、标注 | [media](references/catalog/media.md) | {{skill:slides}} |
 | 做界面、网页、海报、图表或信息图、示意图、原型这类设计稿 | 在工作目录写一份设计稿（每块画板一个文件），校验通过后线程里出卡片，用户在功能区预览、编辑、标注 | [media](references/catalog/media.md) | {{skill:design}} |
 | 建设计系统、整理品牌 tokens 与组件 | 在工作目录写一个设计系统目录，可从代码仓库或设计工具整理；设计稿可以装用它 | — | {{skill:design-system}} |
+| 写报告、提案、计划、信件、手册这类文档，或按文档里的评论改 | 经 docs 工具在工作目录建一份协作文档，先发骨架再逐节填，线程里出卡片，用户在功能区编辑、评论 | [media](references/catalog/media.md) | {{skill:docs}} |
 <!-- /surface -->
 
 ### 三条底线

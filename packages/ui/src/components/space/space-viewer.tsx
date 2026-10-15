@@ -40,6 +40,7 @@ import {
 } from '../../model/space-actions.ts';
 import { DESIGN } from '../../model/design-copy.ts';
 import { DESIGN_SYSTEM } from '../../model/design-system-copy.ts';
+import { DOCS } from '../../model/docs-copy.ts';
 import { M as SEMANTIC } from '../../model/semantic-copy.ts';
 import { SLIDES } from '../../model/slides-copy.ts';
 import type { EntryIndexState } from '../../model/space-index.ts';
@@ -110,6 +111,8 @@ export interface ViewerActions {
   onOpenDesign(entry: SpaceEntry): void;
   /** 设计系统（设计系统目录）在功能区的设计系统标签里打开（docs/design/canvas §10）。 */
   onOpenDesignSystem(entry: SpaceEntry): void;
+  /** 协作文档（文档目录）在功能区的协作文档标签里打开（docs/design/docs §8）。 */
+  onOpenDocs(entry: SpaceEntry): void;
   onEdit(entry: SpaceEntry): void;
   /** 便携包打开成新视频。 */
   onOpenPackage(entry: SpaceEntry): void;
@@ -240,6 +243,7 @@ function ViewerBody({
   const isSlides = entry.kind === 'slides';
   const isDesign = entry.kind === 'design';
   const isDesignSystem = entry.kind === 'design-system';
+  const isDocs = entry.kind === 'docs';
   const jobId = entryJobId(entry);
   const route = editRoute(entry);
   const blockedEdit = isVideo ? null : editBlock(entry, path);
@@ -249,8 +253,8 @@ function ViewerBody({
   const blockedPurge = trashed ? purgeBlock(entry) : null;
   const measure = measureText(entry);
   const status = statusText(entry);
-  // 幻灯片、设计稿与设计系统是一个目录，查看框里不预览，打开到各自的标签里看。
-  const hasFile = !videoDir && !isSlides && !isDesign && !isDesignSystem && entry.status !== 'generating' && entry.status !== 'failed' && entry.status !== 'missing';
+  // 幻灯片、设计稿、设计系统与协作文档是一个目录，查看框里不预览，打开到各自的标签里看。
+  const hasFile = !videoDir && !isSlides && !isDesign && !isDesignSystem && !isDocs && entry.status !== 'generating' && entry.status !== 'failed' && entry.status !== 'missing';
   const origin = entry.origin;
   const generated = origin?.capability
     ? [COPY.capability[origin.capability] ?? origin.capability, origin.provider ? `${origin.provider.providerId} · ${origin.provider.modelId}` : null]
@@ -429,7 +433,7 @@ function ViewerBody({
               </Button>
             ) : null}
           </>
-        ) : isVideo || isSlides || isDesign || isDesignSystem ? (
+        ) : isVideo || isSlides || isDesign || isDesignSystem || isDocs ? (
           <>
             <Button variant="secondary" isDisabled={!!blockedContinue} onPress={() => actions.onContinue(entry)}>
               {COPY.continue}
@@ -445,6 +449,10 @@ function ViewerBody({
             ) : isDesignSystem ? (
               <Button variant="accent" isDisabled={entry.status === 'missing'} onPress={() => actions.onOpenDesignSystem(entry)}>
                 {DESIGN_SYSTEM.open}
+              </Button>
+            ) : isDocs ? (
+              <Button variant="accent" isDisabled={entry.status === 'missing'} onPress={() => actions.onOpenDocs(entry)}>
+                {DOCS.open}
               </Button>
             ) : (
               <Button variant="accent" isDisabled={entry.status === 'missing'} onPress={() => actions.onOpenSlides(entry)}>

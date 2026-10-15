@@ -26,11 +26,13 @@
     design:   {k: 'design',   label: '设计稿', icon: 'Shapes'},
     /* docs/design/canvas §10.6：一套设计系统的目录（含 design-system.json）是一个条目，不再往里扫 */
     'design-system': {k: 'design-system', label: '设计系统', icon: 'ColorHarmony'},
+    /* docs/design/docs §6：一份协作文档的目录（doc.json 加每个标签页一份）是一个条目。叫「协作文档」，不与「文档」（doc）、「文稿」混 */
+    docs:     {k: 'docs',     label: '协作文档', icon: 'TextParagraph'},
     template: {k: 'template', label: '模板', icon: 'Template'},
   };
-  const KIND_ORDER = ['movie', 'final', 'clip', 'image', 'audio', 'subtitle', 'doc', 'slides', 'design', 'design-system', 'template'];
+  const KIND_ORDER = ['movie', 'final', 'clip', 'image', 'audio', 'subtitle', 'doc', 'slides', 'design', 'design-system', 'docs', 'template'];
 
-  /* 分类侧栏（§4.3）：全部 ＋ 十类（幻灯片是 docs/design/slides、设计稿与设计系统是 docs/design/canvas 新加的）；收藏；回收站。 */
+  /* 分类侧栏（§4.3）：全部 ＋ 十二类（幻灯片是 docs/design/slides、设计稿与设计系统是 docs/design/canvas、协作文档是 docs/design/docs 新加的）；收藏；回收站。 */
   const CATS = [{k: 'all', label: '全部', icon: 'Apps'}]
     .concat(KIND_ORDER.map((k) => ({k, label: KINDS[k].label, icon: KINDS[k].icon})));
   const SPECIAL = [{k: 'fav', label: '收藏', icon: 'Star'}, {k: 'trash', label: '回收站', icon: 'Delete'}];
@@ -328,7 +330,7 @@
     return T ? T.timecode(it.dur, {decimals: 0}) : durationText(it);
   }
 
-  /** 「规格」那一列（次要事实）：视频、成片、图片 → 分辨率 · 文件大小；音频 → 文件大小；字幕 → N 句；文档 → N 行。 */
+  /** 「规格」那一列（次要事实）：视频、成片、图片 → 分辨率 · 文件大小；音频 → 文件大小；字幕 → N 句；文档 → N 行；协作文档 → N 个标签页。 */
   function specText(it) {
     if (!it) return '';
     const size = formatBytes(it.bytes);
@@ -339,6 +341,7 @@
     if (it.kind === 'slides') return it.slides ? `${it.slides.length} 页` : '';
     if (it.kind === 'design') return it.boards ? `${it.boards.length} 个画板` : '';
     if (it.kind === 'design-system') return it.components?.length ? `${it.components.length} 个组件` : '';
+    if (it.kind === 'docs') return it.tabs ? `${it.tabs.length} 个标签页` : '';
     return '';
   }
 
@@ -436,6 +439,7 @@
     if (it.kind === 'slides') return 'slides';
     if (it.kind === 'design') return 'design';
     if (it.kind === 'design-system') return 'design-system';
+    if (it.kind === 'docs') return 'docs';
     return 'version';
   }
 

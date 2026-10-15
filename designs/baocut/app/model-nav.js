@@ -11,6 +11,8 @@
      `agent` 的 design 是右侧正在查看的设计稿（Space 条目 id），board 是聚焦的画板（docs/design/canvas §8.1）。
      `agent` 的 system 是右侧正在查看的设计系统（Space 条目 id，docs/design/canvas §10.6）；看到哪一章是标签页自己的状态，不进 URL，
      at 是从一条设计系统标注跳回来时要去的「章节:锚点」，标签页跳到了就把它去掉。
+     `agent` 的 docs 是右侧正在查看的协作文档（Space 条目 id，docs/design/docs §8），dtab 是停在哪个标签页；
+     从一条协作文档标注跳回来时 at 是那条标注的元素路径，标签页切到它所在的标签页、找到线程或块后把它去掉。
      `agent` 没有 id、带 dir = 在这个项目（目录）里起一条还没说话的新会话（App，2026-10-01）
      `tools` 的 id 是工具（'tts' / 'compress' / 'merge'），没有 id 是目录；`services` 的 id 是 'mcp' / 'remote' / 'web'；
      `remote` 与 {r:'tools', id:'remote'} 是旧链接，落到 {r:'services', id:'remote'}（BC_SERVICES.resolve）
@@ -27,6 +29,7 @@
     && (a.file || null) === (b.file || null) && (a.web || null) === (b.web || null) && (a.url || null) === (b.url || null)
     && (a.slides || null) === (b.slides || null) && (a.slide || null) === (b.slide || null)
     && (a.design || null) === (b.design || null) && (a.board || null) === (b.board || null) && (a.system || null) === (b.system || null)
+    && (a.docs || null) === (b.docs || null) && (a.dtab || null) === (b.dtab || null)
     && (a.at || null) === (b.at || null)
     && (a.movie || null) === (b.movie || null) && (a.dir || null) === (b.dir || null) && (a.t ?? null) === (b.t ?? null);
 
@@ -88,7 +91,7 @@
     let url = '#/' + name;
     if (r.id && r.r !== 'projects') url += '/' + encodeURIComponent(r.id);
     if (r.r === 'projects' && r.id) q.set('dir', r.id);
-    for (const key of ['sec', 'tab', 'from', 'via', 'dir', 'movie', 'file', 'web', 'url', 'slides', 'slide', 'design', 'board', 'system', 'at']) {
+    for (const key of ['sec', 'tab', 'from', 'via', 'dir', 'movie', 'file', 'web', 'url', 'slides', 'slide', 'design', 'board', 'system', 'docs', 'dtab', 'at']) {
       if (r[key]) q.set(key === 'sec' && r.r === 'projects' ? 'cat' : key, r[key]);
     }
     if (Number.isFinite(r.t) && r.t >= 0) q.set('t', String(r.t));
@@ -110,7 +113,7 @@
       if (!routes.has(name)) return {...HOME};
       const r = {r:name};
       if (parts[1]) r.id = parts[1];
-      for (const key of ['sec', 'tab', 'from', 'via', 'dir', 'movie', 'file', 'web', 'url', 'slides', 'slide', 'design', 'board', 'system', 'at']) if (q.get(key)) r[key] = q.get(key);
+      for (const key of ['sec', 'tab', 'from', 'via', 'dir', 'movie', 'file', 'web', 'url', 'slides', 'slide', 'design', 'board', 'system', 'docs', 'dtab', 'at']) if (q.get(key)) r[key] = q.get(key);
       if (name === 'projects') {
         if (q.get('cat')) r.sec = q.get('cat');
         if (q.get('dir')) { r.id = q.get('dir'); delete r.dir; }

@@ -15,6 +15,7 @@ describe('packagedResources', () => {
       slidesEditorDist: 'C:\\Users\\a\\AppData\\Local\\Programs\\BaoCut\\resources\\slides-editor',
       designEditorDist: 'C:\\Users\\a\\AppData\\Local\\Programs\\BaoCut\\resources\\design-editor',
       designSystemEditorDist: 'C:\\Users\\a\\AppData\\Local\\Programs\\BaoCut\\resources\\design-system-editor',
+      docsEditorDist: 'C:\\Users\\a\\AppData\\Local\\Programs\\BaoCut\\resources\\docs-editor',
     });
   });
 
@@ -30,6 +31,7 @@ describe('packagedResources', () => {
       BAOCUT_SLIDES_EDITOR_DIST: '/r/slides-editor',
       BAOCUT_DESIGN_EDITOR_DIST: '/r/design-editor',
       BAOCUT_DESIGN_SYSTEM_EDITOR_DIST: '/r/design-system-editor',
+      BAOCUT_DOCS_EDITOR_DIST: '/r/docs-editor',
     });
   });
   it('pins macOS MLX to the shipped Metal library', () => {

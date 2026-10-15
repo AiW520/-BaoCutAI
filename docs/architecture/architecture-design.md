@@ -400,7 +400,7 @@ P0 由一个用户可以理解的执行主体对结果负责。内部的分析�
 发送时的编辑器上下文（`EditorContext`：打开的视频与版本、选中的片段、播放头）另带用户的界面语言 `uiLanguage`（BCP 47 标签，可选），附在用户消息后的 `<baocut-editor-context>` 里；AI 工具的「直接调模型」经 `ai-tool` 流程的 `uiLanguage` 参数写进系统提示词。skill 据此决定输出语言：用户提问用的语言优先，其次是界面语言，最后是文稿的语言。
 
 
-消息带幻灯片标注（`slideAnnotations`，幻灯片设计 §9）时，Runtime 把每条的 deck 换成相对会话工作目录的路径，Harness 按 deck 分段，每份一段 `<baocut-slide-annotations>`，逐条列出位置、定位与批注，附在交给智能体的文字最后；锚点只给编辑器用，不交给智能体。设计稿标注（`designAnnotations`）同样处理：canvas 换成相对路径，每份设计稿一段 `<baocut-design-annotations>`，放在幻灯片标注段之后，编号各自从 1 起。设计系统标注（`designSystemAnnotations`）也一样：每套设计系统一段 `<baocut-design-system-annotations>`，放在设计稿标注段之后。视频标注（`videoAnnotations`，产品设计 §3.2.3「视频标注」）同样处理：每部视频一段 `<baocut-video-annotations video="…" revision="…">`，放在设计系统标注段之后，逐条列出时刻（`timeMs`）、种类与归一化区域、批注，两条以上时另给 `candidateBoundsMs`；它与 `<baocut-editor-context>` 分开——上下文说的是编辑器此刻的状态，标注说的是用户圈出来要改的位置与时刻。格式与限制见协议规范 `conversations`。
+消息带幻灯片标注（`slideAnnotations`，幻灯片设计 §9）时，Runtime 把每条的 deck 换成相对会话工作目录的路径，Harness 按 deck 分段，每份一段 `<baocut-slide-annotations>`，逐条列出位置、定位与批注，附在交给智能体的文字最后；锚点只给编辑器用，不交给智能体。设计稿标注（`designAnnotations`）同样处理：canvas 换成相对路径，每份设计稿一段 `<baocut-design-annotations>`，放在幻灯片标注段之后，编号各自从 1 起。设计系统标注（`designSystemAnnotations`）也一样：每套设计系统一段 `<baocut-design-system-annotations>`，放在设计稿标注段之后。视频标注（`videoAnnotations`，产品设计 §3.2.3「视频标注」）同样处理：每部视频一段 `<baocut-video-annotations video="…" revision="…">`，放在设计系统标注段之后，逐条列出时刻（`timeMs`）、种类与归一化区域、批注，两条以上时另给 `candidateBoundsMs`；它与 `<baocut-editor-context>` 分开——上下文说的是编辑器此刻的状态，标注说的是用户圈出来要改的位置与时刻。文档标注（`docsAnnotations`，[文档设计 §8](../design/docs/docs-design.md#8-评论与请求发给智能体)）指向文档里已经存在的评论或写给智能体的请求：每份文档一段 `<baocut-docs-annotations>`，放在设计系统标注段之后，逐条给出元素路径、原文、评论或请求，以及在哪个线程回复、写到哪个块。格式与限制见协议规范 `conversations`。
 
 - 先摘要与检索，再按需扩展，不默认把完整视频和全文外发。
 - 只读到文件名不能声称理解了内容。`ContextEvidence` 记录实际读取的范围与方法。
@@ -805,7 +805,7 @@ interface ContextBarrierResult {
 - 屏障解决的是「读到自己的写」，不取消其后的版本检查：另一个窗口随后提交时，智能体的结果仍然要对照最新版本检查。
 - 不涉及视频的纯聊天可以不建立屏障。
 - 屏障对 Home 与 Space 两个入口的请求同样适用。
-- 幻灯片编辑器里还没发布的改动也是本次请求依赖的本地修改：消息带幻灯片标注时，先让打开着这几份 deck 的编辑器发布完（`editor:flush` / `editor:flushed`，最多等 10 秒）；没发布成就不发送，输入与标注都留着（幻灯片设计 §8.2）。带设计稿标注时对打开着的设计稿编辑器做同样的事，带设计系统标注时对设计系统编辑器也一样。
+- 幻灯片编辑器里还没发布的改动也是本次请求依赖的本地修改：消息带幻灯片标注时，先让打开着这几份 deck 的编辑器发布完（`editor:flush` / `editor:flushed`，最多等 10 秒）；没发布成就不发送，输入与标注都留着（幻灯片设计 §8.2）。带设计稿标注时对打开着的设计稿编辑器做同样的事，带设计系统标注时对设计系统编辑器也一样。带文档标注时让打开着那几份文档的编辑器把还没存的改动存完（文档设计 §9）。
 
 界面行为见产品设计 §3.2.4。
 
@@ -867,7 +867,7 @@ interface ContextBarrierResult {
 
 **Web 服务**提供与桌面界面相同的客户端协议：浏览器取得的是一个作用域受限的连接，能力集合由服务配置给出，不包含设置、凭据与对外服务的管理。它在产品范围之内（产品设计 §1.4）；首版的取舍见 §14。
 
-- **一个端口，三样东西**。服务监听 `127.0.0.1`，默认端口 47622，提供 Web 客户端的静态文件（`apps/web` 的构建产物）、网关入口 `/ws`、媒体通道 `/media/…` 与幻灯片编辑器的路由 `/slides/<grant>/…`、`/_blob/<id>`（与网关共用一份，要会话；只读时编辑器只读，只能嵌在这个服务自己的页面里；幻灯片设计 §6.2）。设计稿编辑器的路由 `/design/<grant>/…` 不同：画板脚本是任意 JS，所以它只认 grant、不要会话，Web 客户端把它放在另一个回环主机名上（`127.0.0.1` 与 `localhost` 互换），那里没有会话 cookie；跨站只放行 GET 导航，写入要同源，只读配置下发布与上传 403。网关入口与桌面界面用同一套协议与处理函数，只是连接在升级时按会话认证、方法与主题按白名单过滤；媒体用这个服务自己的句柄表，地址是同源的相对路径，取内容同样要会话。浏览器拿不到桌面网关的端口与令牌。构建产物按 `BAOCUT_WEB_DIST`、打包后的 `<resources>/web`、仓库里的 `apps/web/dist` 的顺序找；没有时开启服务进入 `error` 并说明，不影响 Runtime。
+- **一个端口，三样东西**。服务监听 `127.0.0.1`，默认端口 47622，提供 Web 客户端的静态文件（`apps/web` 的构建产物）、网关入口 `/ws`、媒体通道 `/media/…` 与幻灯片编辑器的路由 `/slides/<grant>/…`、`/_blob/<id>`（与网关共用一份，要会话；只读时编辑器只读，只能嵌在这个服务自己的页面里；幻灯片设计 §6.2）。文档编辑器的路由 `/docs/<grant>/…` 与幻灯片相同（同源、要会话，只读时编辑器不能写，只能嵌在这个服务自己的页面里），另有编辑器自己的 WebSocket `/docs/<grant>/api/mux`，升级时同样检查来源与会话（文档设计 §6.2）。设计稿编辑器的路由 `/design/<grant>/…` 不同：画板脚本是任意 JS，所以它只认 grant、不要会话，Web 客户端把它放在另一个回环主机名上（`127.0.0.1` 与 `localhost` 互换），那里没有会话 cookie；跨站只放行 GET 导航，写入要同源，只读配置下发布与上传 403。网关入口与桌面界面用同一套协议与处理函数，只是连接在升级时按会话认证、方法与主题按白名单过滤；媒体用这个服务自己的句柄表，地址是同源的相对路径，取内容同样要会话。浏览器拿不到桌面网关的端口与令牌。构建产物按 `BAOCUT_WEB_DIST`、打包后的 `<resources>/web`、仓库里的 `apps/web/dist` 的顺序找；没有时开启服务进入 `error` 并说明，不影响 Runtime。
 - **登录**。`services.web.createAccessLink` 发一个一次性代码，放在链接的 fragment 里（`http://127.0.0.1:<端口>/#code=…`；fragment 不发给服务器，不进访问日志与 Referer）。`createAccessLink { video }`（videoId）让链接直达这个视频的编辑器：Runtime 把 videoId 解析成界面打开它用的文件目标（已打开的视频或 Space 登记的位置：项目或会话的工作目录 + 相对路径），链接的路径与查询是界面内链接 `/home?video=<JSON 的 FileTarget>`（`@baocut/protocol` 的 `webVideoHref`，界面的路由与它共用一个构造函数），fragment 里仍只有代码；找不到时 `not-found`（`VIDEO_NOT_FOUND`）。未登录时页面只有一张登录页（根路径与界面内链接都是；界面内链接是最后一段没有扩展名、不在 `/media/`、`/_auth/`、`/assets/` 下的路径，登录后同样给客户端页面），它的脚本取出代码、立即从地址栏抹掉，用 `POST /_auth/session` 换一个会话 cookie，然后回到原来的路径与查询，客户端启动时按它去对应的界面、再把地址栏改回根路径；登录页也有一个输入框，粘贴代码（或整条链接）同样能登录。`baocut web open [--video <videoId>]` 打印链接；`--launch` 不把带代码的链接交给浏览器（打开浏览器要经 `open`、`xdg-open` 或 `cmd` 的进程参数，本机别的用户与程序在进程列表里看得到），而是打开不带代码的登录页（保留路径与查询），代码只打在终端里，由用户粘进去。代码两分钟内有效，第一次兑换（不论成败）就作废；Runtime 只存代码与会话令牌的哈希。会话 12 小时有效，只在内存里，服务停止即全部作废；`services.web.listSessions` 列出，`services.web.revokeSession` 吊销并立即断开它的连接。
 - **为什么是 cookie**。`<video>`、`<img>` 不能带请求头，只有 cookie 能让媒体请求与 WebSocket 用同一个会话认证、吊销时一起失效，令牌也不必进 URL。cookie 是 `HttpOnly`（页面脚本读不到）、`SameSite=Strict`（别的站点发起的请求不带）、`Path=/`，名字带端口（`baocut_web_<端口>`）。
 - **能力集合**是一份方法白名单（方法名或 `<命名空间>.*`），在网关分发之前检查，白名单之外回答 `forbidden`（`WEB_METHOD_NOT_ALLOWED`）。默认集合是桌面界面的协议减去：`settings.set`；`models.configure`、`models.removeProvider`、`models.enable`、`models.setDefault` 等模型服务的配置与凭据，含 API 提供方账号的写方法（`models.addAccount`、`models.updateAccount`、`models.removeAccount`、`models.arrangeAccounts`）与查余额（`models.checkBalance`，它用账号的密钥向 API 提供方发请求）；`services.*`（含 `services.mcp.*`、`services.modelApi.*` 与访问链接的发放）；`nodes.pair`、`nodes.remove`、`nodes.share.*`；本地模型包的安装管理（`models.install`、`models.repair`、`models.cancelInstall`、`models.remove`、`models.test`，§6.3：从网络下载几百 MB、删掉本机的转写能力是这台机器的管理，浏览器只看状态与进度）；Agent skill 的添加、导入与移除（`skills.add`、`skills.importGithub`、`skills.remove`，§12.9：要读本机文件夹或从网络取内容，写进这台机器的指导）。查询、会话、编辑、转写与生成（含 `models.generateText`）、模型用量（`models.usage`，只读，也在只读集合里；§6.10）、任务与导出（`exports.*`）、工具目录与候选输入（`tools.list`、`tools.candidates`，也在只读集合里）、创作模板目录（`templates.*`，也在只读集合里；模板包规范 §6，句柄只发给清单登记的封面、预览与素材）、Agent skill 的查看与开关（`skills.list`、`skills.get`、`skills.readFile`、`skills.setEnabled`，前三个也在只读集合里；§3.8）可用；目录里执行方法不在白名单的工具对浏览器标为不可用，外部工具的问题只给错误码与工具名。白名单逐项或按命名空间写出，名字不在里面的方法浏览器一律调不了：固定流程（`pipelines.*`，§7.9）不开放：文件转码的输入与输出目录是任意的绝对路径，不受项目目录约束；要开放得先给它加上与 `exports.create` 同样的路径约束；从链接导入也在其中。受管外部工具（`externalTools.*`，§12.9）不开放，连 `list` 也不开放：下载并执行第三方程序是这台机器的管理，状态里还有本机路径；只开放 `externalTools.cookieBrowsers`（也在只读集合里）：它只列出有 Cookie 库的浏览器名与修改时间，不读内容、不带路径，设置 › 视频下载在浏览器里只读地列出网站登录。主题按对应的读取方法过滤（`services` 主题要 `services.list`，所以默认不可订阅），拒绝时 `WEB_TOPIC_NOT_ALLOWED`。服务配置可以在默认集合之内收紧（`methods`），或设为只读（`readOnly`，只剩一份逐个列出的查询方法，如 `videos.assetStatus`、`exports.get`、`exports.list`；写入回答 `WEB_READ_ONLY`）；配置不能把默认集合之外的方法加进来。配置一改，已有的浏览器连接断开，按新的白名单重连。
@@ -1025,7 +1025,7 @@ Space 目录（`SpaceCatalog`）是共享存储层里的一个派生索引，把
 interface SpaceEntry {
   id: Id;                                  // 视频条目用 videoId；产物条目用 artifactId。kind 里 'video' 是可编辑的视频，'video-file' 是视频素材
   kind: 'video' | 'export' | 'video-file' | 'image' | 'audio'
-      | 'subtitle' | 'document' | 'slides' | 'design' | 'package' | 'template';
+      | 'subtitle' | 'document' | 'slides' | 'design' | 'docs' | 'package' | 'template';
   name: string;
   ref: { videoId: Id } | { artifactRef: VersionRef };
   origin: {
@@ -1102,7 +1102,8 @@ interface SpaceEntry {
 - **bytes**。`media.resolve` 给 `entryId` 时由目录定位：来源目录里的条目限定到来源目录，产物与来源目录之外的导出限定到那一个文件；占位与缺失的条目没有 bytes。
 - **幻灯片目录**。来源目录里含合法 `deck.json`（`v: 4`、`order` 是数组）的目录是一个 `slides` 条目，不再往里扫，里面的页面与图片不各自成为条目（幻灯片设计 §7.3）。`name` 取 deck 的标题（没有标题时用目录名），`deck.slideCount` 是页数，大小与修改时间取目录与第一层子目录里的普通文件（不跟随符号链接、跳过隐藏文件）的合计与最新者，创建时间取 `deck.json`。`deck.json` 读不出或版本不对时照常往里扫。项目文件浏览（`projects.files.list`）同样把它标成 `slides`（修改时间取 `deck.json`），搜索不进去。
 - **设计稿目录**。含合法 `canvas.json`（`v: 3`、`boards` 是对象）的目录是一个 `design` 条目，规则同幻灯片目录：不再往里扫，`name` 取标题，`canvas.boardCount` 是画板数；`canvas.json` 不合法时当普通目录。`projects.files.list` 标成 `design`（修改时间取 `canvas.json`），搜索不进去，用 `dir` 进去时照常列出。
-- **`space.import`**。项目目录里的文件原地登记；项目之外的复制进项目的 `imports/`（重名时加序号），返回 `copied: true`。视频目录、幻灯片目录与设计稿目录里、隐藏目录与依赖目录里的文件，以及认不出类型的文件拒绝（`SPACE_IMPORT_UNSUPPORTED`）。
+- **文档目录**。含合格 `doc.json`（`format` 为 `baocut-doc`）的目录是一个 `docs` 条目，规则同设计稿目录：不再往里扫，`name` 取文档标题，`doc.tabCount` 是标签页数；大小与修改时间取 `doc.json`、`tabs/`、`comments.json` 与 `assets/` 里文件的合计与最新者，创建时间取 `doc.json`（文档设计 §7.3）。`projects.files.list` 标成 `docs`（修改时间取 `doc.json`），搜索不进去。
+- **`space.import`**。项目目录里的文件原地登记；项目之外的复制进项目的 `imports/`（重名时加序号），返回 `copied: true`。视频目录、幻灯片目录、设计稿目录与文档目录里、隐藏目录与依赖目录里的文件，以及认不出类型的文件拒绝（`SPACE_IMPORT_UNSUPPORTED`）。
 - **`space.openForEdit`**。视频条目返回 `video`；有来源视频的返回 `source-video`，带冻结版本、当前版本与 `changed`；没有来源视频的返回 `new-video` 与建议的项目。只回答去哪里，不打开视频。
 - **`space.thumbnail`**（`space/space-thumbnails.ts`）。网格卡片与列表名称列的缩略图，客户端在条目可见时按需取。回答 `image`（宽不超过 720、高不超过宽的 3 倍、不放大；PNG、GIF、WebP 来源输出 PNG 保留透明，其余 JPEG）、`text`（开头约 1.5 KB 的 UTF-8 文字，截在字符边界上）或 `none`，不含本机路径；条目不在或看不到是 `not-found`，主体规则与 `space.get` 相同，Web 只读模式下照常可用。各种类的取法：
   - 视频：工作稿的封面那一帧（与界面的海报帧同一条规则，`@baocut/protocol` 的 `posterFrame`）。素材版本与时间取自内容索引的视频事实（§5.11），还没有索引时让索引先读这一个（至多等 15 秒）。素材文件经 Engine Host 的内部只读查询 `videos.resolveAsset { path, assetId, revision? }`（不在网关的方法表里）找：已经打开的视频用打开的那一份，没有打开的只读打开、找完就放下，不取写锁；复制进来的素材的存放方式是引擎内部的约定，不在 Runtime 里另算一份，链接素材照引擎的长度与位置检查，再照媒体通道的规则放行。回收站里的视频与时间线上没有画面的视频是 `none`。
@@ -2765,7 +2766,7 @@ App Shell
 
 ### 11.3 会话投影
 
-`ConversationProjector` 把 Driver 事件投影成线程条目（消息、推理、工具步骤、审批）；Task 条目由 Harness 在收发消息时写入，视频回执（`video-created`、`video-change`）与幻灯片、设计稿回执（`slides-created`、`design-created`）由工具落到会话里。Job 记录不投影成条目：要显示的卡片由客户端按下面的规则从记录推出（产品设计 §6.5）。
+`ConversationProjector` 把 Driver 事件投影成线程条目（消息、推理、工具步骤、审批）；Task 条目由 Harness 在收发消息时写入，视频回执（`video-created`、`video-change`）与幻灯片、设计稿、文档回执（`slides-created`、`design-created`、`docs-created`）由工具落到会话里。Job 记录不投影成条目：要显示的卡片由客户端按下面的规则从记录推出（产品设计 §6.5）。
 
 - 卡片状态来自事件与回执，不来自模型的自然语言。
 - 卡片保存的是稳定引用（`taskId`、`jobId`、`artifactRef`、`receiptId`、`candidateRef`）；点击时由功能区按引用打开对应的视图。
@@ -2773,6 +2774,7 @@ App Shell
 - 线程里的视频卡与下载卡（产品设计 §3.2.2）服务端不做卡片投影：客户端从智能体提交的 Job 记录（`submitter.kind === 'agent'`，`submitter.taskId` 把 Job 连到会话里引用它的消息；一部视频一张卡，挂在最后的引用之后，Job 还没结束时按 `endedAt` 比之后回合的开始时刻跟到更晚的回合；固定流程的步骤是 `parentJobId` 指向父任务、`submitter.kind === 'pipeline'` 的子记录）加会话里的 `video-created` / `video-change` 回执推出。`video-created` 记视频 ID、名字、打开编辑器的位置（与变更卡的 `target` 同一个写法）与新建时的版本，只记智能体经 `videos_create` 新建的视频；固定流程（从链接导入、转录的 `target.create`）新建的视频不另记，看父任务记录的 `videoId`：视频一建出来（导入媒体之前）就写进父任务并落盘，随 `jobs` 主题推给客户端（§7.9）。
 - `slides-created` 记一份幻灯片（deck 目录的 `target`，与 `video-created` 同一个写法）、标题与页数：智能体的 `slides_check` 没有问题时写入，同一份 deck 只有一条，之后的检查更新标题、页数与 `taskId`（换成这次检查所在的任务，卡片跟着挂到那一轮的回复下面），位置不变。线程不把它当工具步骤画行；幻灯片卡片由客户端从这条回执推出（幻灯片设计 §7.3）。
 - `design-created` 记一份设计稿（设计稿目录的 `target`）、标题与画板数：`design_check` 没有问题时写入，其余规则同 `slides-created`。
+- `docs-created` 记一份文档（文档目录的 `target`）、标题与标签页数：智能体用 `docs_batch` 新建文档时写入；之后 `docs_*` 的写入只更新已有的这一条（标题、标签页数与 `taskId`），不为别处建的文档另起一条（文档设计 §7.3）。
 - 侧栏的状态徽标由会话的活动 Task 状态汇总得到。
 
 ### 11.4 索引化的 Replica

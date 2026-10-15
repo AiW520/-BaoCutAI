@@ -50,6 +50,8 @@ export interface ScannedFile {
   canvas?: { title: string; boardCount: number };
   /** 设计系统条目（设计系统目录）：design-system.json 里的标题（没有时是目录名）。 */
   designSystem?: { title: string };
+  /** 文档条目（文档目录）：doc.json 里的标题与标签页数。 */
+  doc?: { title: string; tabCount: number };
 }
 
 export interface ScannedItem {
@@ -160,6 +162,10 @@ export function deriveEntries(input: DeriveInput): Map<Id, DerivedEntry> {
       entry.canvas = { boardCount: item.file.canvas.boardCount };
     }
     if (item.file.designSystem?.title) entry.name = item.file.designSystem.title;
+    if (item.file.doc) {
+      if (item.file.doc.title) entry.name = item.file.doc.title;
+      entry.doc = { tabCount: item.file.doc.tabCount };
+    }
     if (item.file.kind === 'video') {
       const dir = path.join(source.root, ...item.file.relPath.split('/'));
       derived.videoDir = dir;

@@ -142,6 +142,11 @@ describe('说明书的同步', () => {
     expect(withContract.warnings).toEqual([
       `${BUILTIN}/demo-polish/SKILL.md:16：tasks_contract 只在 BaoCut 的会话里有，CLI 面没有对应的命令，原样留下`,
     ]);
+    // 代码块里的调用示例：有兜底写法的会话专属工具名同样换掉（craft 是给终端读的副本），不提醒。
+    fs.appendFileSync(path.join(root, BUILTIN, 'demo-polish/SKILL.md'), '\n```\ndownloads_save( path = "a.md" )\n```\n');
+    const fenced = buildAgentSkillSync(root, INPUTS);
+    expect(fenced.files.get(`${AGENT}/references/craft/demo-polish.md`)).toContain('```\n把文件交给用户（终端里直接告诉用户文件的路径）( path = "a.md" )\n```');
+    expect(fenced.warnings.filter((warning) => warning.includes('downloads_save'))).toEqual([]);
   });
 
   it('craft 引用共享目录页：生成可解析链接、不复制表格，缺失目标时同步失败', () => {

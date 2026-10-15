@@ -12,6 +12,7 @@ export const ko: SpaceMessages = {
     slides: '슬라이드',
     design: '디자인',
     'design-system': '디자인 시스템',
+    docs: '공동 문서',
     package: '영상 패키지',
     template: '템플릿',
   },

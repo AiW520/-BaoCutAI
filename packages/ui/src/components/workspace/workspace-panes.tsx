@@ -14,6 +14,7 @@ import { FilePane } from '../file-pane.tsx';
 import { ProjectFiles } from './project-files.tsx';
 import { DesignPane } from './design-pane.tsx';
 import { DesignSystemPane } from './design-system-pane.tsx';
+import { DocsPane } from './docs-pane.tsx';
 import { SlidesPane } from './slides-pane.tsx';
 import { WebTab } from './web-tab.tsx';
 import { WORKSPACE_OVERLAY_ATTRIBUTE } from './workspace-overlay.ts';
@@ -103,9 +104,9 @@ export function WorkspacePanes({
   );
 }
 
-/** 编辑器 iframe 的标签（幻灯片、设计稿、设计系统）：隐藏时保留布局。 */
+/** 编辑器 iframe 的标签（幻灯片、设计稿、设计系统、协作文档）：隐藏时保留布局。 */
 function isEditorTab(item: WorkspaceItem): boolean {
-  return item.kind === 'slides' || item.kind === 'design' || item.kind === 'design-system';
+  return item.kind === 'slides' || item.kind === 'design' || item.kind === 'design-system' || item.kind === 'docs';
 }
 
 const PARKED: CSSProperties = { position: 'absolute', inset: 0, visibility: 'hidden' };
@@ -211,6 +212,8 @@ function PaneContent({
       return <DesignPane target={item.target} conversationId={conversationId} active={shown} />;
     case 'design-system':
       return <DesignSystemPane target={item.target} conversationId={conversationId} active={shown} />;
+    case 'docs':
+      return <DocsPane target={item.target} conversationId={conversationId} active={shown} />;
   }
 }
 
@@ -238,6 +241,7 @@ function ConversationFiles({ conversationId }: { conversationId: Id }) {
       onOpenSlides={(target) => useShell.getState().openPane({ kind: 'slides', target: scoped(target) })}
       onOpenDesign={(target) => useShell.getState().openPane({ kind: 'design', target: scoped(target) })}
       onOpenDesignSystem={(target) => useShell.getState().openPane({ kind: 'design-system', target: scoped(target) })}
+      onOpenDocs={(target) => useShell.getState().openPane({ kind: 'docs', target: scoped(target) })}
     />
   );
 }

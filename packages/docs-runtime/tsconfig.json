@@ -1,0 +1,15 @@
+// 文档编辑器运行时与它的页面入口单独检查（README「验证」）：这份还原是 strict 的完整类型，按原工程的编译选项写成，
+// 不开 noUncheckedIndexedAccess，像原工程一样引入 vite/client；JSX 用包内自己的 jsx-runtime.tsx（jsxImportSource "."
+// 按每个文件所在目录解析 ./jsx-runtime，所以 src/ 下的文件保持原工程的平铺布局）。
+// 根 tsconfig.json 排除这两个目录，npm run typecheck 依次检查两者。
+{
+  "extends": "../../tsconfig.json",
+  "compilerOptions": {
+    "noUncheckedIndexedAccess": false,
+    "jsx": "react-jsx",
+    "jsxImportSource": ".",
+    "types": ["vite/client", "node"]
+  },
+  "include": ["src/**/*", "../../apps/docs-editor/src/**/*"],
+  "exclude": []
+}

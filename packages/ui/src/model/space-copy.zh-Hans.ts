@@ -12,6 +12,7 @@ export const zhHans: SpaceMessages = {
     slides: '幻灯片',
     design: '设计稿',
     'design-system': '设计系统',
+    docs: '协作文档',
     package: '视频包',
     template: '模板',
   },

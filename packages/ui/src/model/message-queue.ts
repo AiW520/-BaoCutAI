@@ -5,7 +5,7 @@
  * packages/app/src/composer/actions.ts（`sendQueuedComposerMessageNow`、`editQueuedComposerMessage`），modified：
  * 立即发送先走 `conversations.steer`，按它的结果决定移出、留在队列还是改走 `conversations.send`；队列按会话存在 shell-store。
  */
-import { sendSkillRefs, type AttachmentRef, type EditorContext, type Id, type SkillSendRef, type SlideAnnotation, type DesignAnnotation, type DesignSystemAnnotation, type VideoAnnotation } from '@baocut/protocol';
+import { sendSkillRefs, type AttachmentRef, type EditorContext, type Id, type SkillSendRef, type SlideAnnotation, type DesignAnnotation, type DesignSystemAnnotation, type VideoAnnotation, type DocsAnnotation } from '@baocut/protocol';
 
 export interface QueuedMessage {
   id: Id;
@@ -24,6 +24,8 @@ export interface QueuedMessage {
   designSystemAnnotations?: DesignSystemAnnotation[];
   /** 加进对话的视频标注（产品设计 §3.2.3「视频标注」）；同幻灯片标注。 */
   videoAnnotations?: VideoAnnotation[];
+  /** 发给智能体的协作文档评论与请求（docs/design/docs §8）；同幻灯片标注。 */
+  docsAnnotations?: DocsAnnotation[];
   queuedAt: string;
 }
 
@@ -121,6 +123,21 @@ function isVideoAnnotation(value: unknown): value is VideoAnnotation {
   );
 }
 
+/** 持久化的一条协作文档标注：同幻灯片标注，只核对形状。 */
+function isDocsAnnotation(value: unknown): value is DocsAnnotation {
+  if (!value || typeof value !== 'object') return false;
+  const a = value as Record<string, unknown>;
+  return (
+    !!a.doc &&
+    typeof a.doc === 'object' &&
+    (a.kind === 'comment' || a.kind === 'ask') &&
+    typeof a.path === 'string' &&
+    typeof a.label === 'string' &&
+    typeof a.text === 'string' &&
+    (a.quote === undefined || typeof a.quote === 'string')
+  );
+}
+
 /** 读回持久化的一条：形状不对的不要。只能点一个 skill 时存的 `skill` 也认（`readQueuedMessage` 把它换成 `skills`）。 */
 export function isQueuedMessage(value: unknown): value is QueuedMessage {
   if (!value || typeof value !== 'object') return false;
@@ -138,7 +155,8 @@ export function isQueuedMessage(value: unknown): value is QueuedMessage {
     (m.designAnnotations === undefined || (Array.isArray(m.designAnnotations) && m.designAnnotations.every(isDesignAnnotation))) &&
     (m.designSystemAnnotations === undefined ||
       (Array.isArray(m.designSystemAnnotations) && m.designSystemAnnotations.every(isDesignSystemAnnotation))) &&
-    (m.videoAnnotations === undefined || (Array.isArray(m.videoAnnotations) && m.videoAnnotations.every(isVideoAnnotation)))
+    (m.videoAnnotations === undefined || (Array.isArray(m.videoAnnotations) && m.videoAnnotations.every(isVideoAnnotation))) &&
+    (m.docsAnnotations === undefined || (Array.isArray(m.docsAnnotations) && m.docsAnnotations.every(isDocsAnnotation)))
   );
 }
 

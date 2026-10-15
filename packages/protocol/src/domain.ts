@@ -7,6 +7,7 @@ import type { SlideAnnotation } from './slides.ts';
 import type { DesignAnnotation } from './design.ts';
 import type { DesignSystemAnnotation } from './design-system.ts';
 import type { VideoAnnotation } from './video.ts';
+import type { DocsAnnotation } from './docs.ts';
 
 /**
  * 会话侧的领域对象（架构设计 §1.5、§3.10）。
@@ -236,6 +237,8 @@ export type TimelineItem =
       designSystemAnnotations?: DesignSystemAnnotation[];
       /** 随消息发出的视频标注（产品设计 §3.2.3「视频标注」），按添加的顺序；与 `designSystemAnnotations` 同一个写法。旧记录没有。 */
       videoAnnotations?: VideoAnnotation[];
+      /** 随消息发出的文档标注（docs/design/docs §8），按添加的顺序；与 `designAnnotations` 同一个写法。旧记录没有。 */
+      docsAnnotations?: DocsAnnotation[];
     })
   | (TimelineBase & { kind: 'agent-message'; text: string; streaming: boolean })
   | (TimelineBase & { kind: 'reasoning'; text: string; streaming: boolean })
@@ -298,7 +301,8 @@ export type TimelineItem =
   | (TimelineBase & VideoCreated & { kind: 'video-created' })
   | (TimelineBase & SlidesCreated & { kind: 'slides-created' })
   | (TimelineBase & DesignCreated & { kind: 'design-created' })
-  | (TimelineBase & DesignSystemCreated & { kind: 'design-system-created' });
+  | (TimelineBase & DesignSystemCreated & { kind: 'design-system-created' })
+  | (TimelineBase & DocsCreated & { kind: 'docs-created' });
 
 export type TimelineItemKind = TimelineItem['kind'];
 
@@ -475,6 +479,18 @@ export interface DesignSystemCreated {
   target: VideoChange['target'];
   /** `design-system.json` 的 `title`（去掉首尾空白；没有时是目录名）。 */
   title: string;
+}
+
+/**
+ * 智能体在这条会话里新建了一份文档（`docs_batch` 带 `container.create` 成功，docs/design/docs §7.3）：线程里出现文档卡片，
+ * 点开在功能区的文档标签里看与改。同一份文档只有一条，之后智能体再写它时更新标题与 `taskId`（条目 id 与位置不变）。
+ */
+export interface DocsCreated {
+  /** 文档目录；与 `VideoCreated.target` 同一个写法，打开时原样交给 `docs.open`。 */
+  target: VideoChange['target'];
+  /** 文档的标题（`doc.json` 的 `name`）。 */
+  title: string;
+  tabCount: number;
 }
 
 /**
@@ -871,7 +887,8 @@ export type SpaceEntryKind =
   | 'template'
   | 'slides'
   | 'design'
-  | 'design-system';
+  | 'design-system'
+  | 'docs';
 
 export type SpaceEntryStatus = 'generating' | 'candidate' | 'applied' | 'published' | 'source-changed' | 'missing' | 'failed';
 
@@ -941,6 +958,8 @@ export interface SpaceEntry {
   deck?: { slideCount: number };
   /** 设计稿条目（设计稿目录，docs/design/canvas §7.3）的画板数；`name` 是设计稿的标题。 */
   canvas?: { boardCount: number };
+  /** 文档条目（文档目录，docs/design/docs §7.3）的标签页数；`name` 是文档的标题。 */
+  doc?: { tabCount: number };
   /**
    * 结果写到磁盘上的文件（架构设计 §7.9「保存位置」）：取自任务结果的 `outputs[].path`——文件到文件的流程与导出发布的文件、
    * 直接任务另存的副本。文件不在了时没有；来源目录里扫描到的普通文件也没有（按来源目录与 `relPath` 拼）。

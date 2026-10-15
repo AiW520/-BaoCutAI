@@ -13,6 +13,7 @@ import {
   type VideoSnapshot,
 } from '@baocut/protocol';
 import { TopicLog, silentLogger, type Harness } from '@baocut/harness';
+import { createDoc } from '@baocut/docs';
 import { SpaceArtifactStore, SpaceMarkStore } from '@baocut/runtime-storage';
 import { ArtifactStore, artifactIdOf, toolDefinition } from '@baocut/jobs';
 import { SpaceCatalog, type SpaceJobsSource } from '../space-catalog.ts';
@@ -860,6 +861,31 @@ describe('Space 目录', () => {
     await catalog.update({ entryId: system.id, trashed: true });
     expect(await catalog.purge(system.id)).toEqual({ status: 'purged', entryId: system.id });
     await expect(fs.stat(systemDir)).rejects.toThrow();
+  });
+
+  it('文档：含合格 doc.json 的目录是一个 docs 条目，名字是标题；里面的文件不单列、不能单独登记，物理删除删整个目录', async () => {
+    const docDir = path.join(projectDir, 'plan');
+    await createDoc(docDir, { name: ' 三季度计划 ' });
+    await fs.mkdir(path.join(docDir, 'assets'), { recursive: true });
+    await fs.writeFile(path.join(docDir, 'assets', `${'cd'.repeat(16)}.png`), 'png');
+    // 不合格的 doc.json 不算文档，目录照常往里走。
+    await fs.mkdir(path.join(projectDir, 'loose'), { recursive: true });
+    await fs.writeFile(path.join(projectDir, 'loose', 'doc.json'), JSON.stringify({ name: 'not a doc' }));
+    const { catalog } = await open();
+
+    const doc = catalog.entries().find((e) => e.kind === 'docs')!;
+    expect(doc).toMatchObject({ relPath: 'plan', fileName: 'plan', name: '三季度计划' });
+    expect(doc.size).toBeGreaterThan(0);
+    expect(catalog.entries().filter((e) => e.relPath.startsWith('plan/'))).toEqual([]);
+    expect(byName(catalog, 'doc.json')).toMatchObject({ relPath: 'loose/doc.json', kind: 'document' });
+
+    for (const file of [path.join(docDir, 'doc.json'), path.join(docDir, 'assets', `${'cd'.repeat(16)}.png`)]) {
+      await expect(catalog.importFile({ projectId: 'p1', file })).rejects.toMatchObject({ details: { code: 'SPACE_IMPORT_UNSUPPORTED' } });
+    }
+
+    await catalog.update({ entryId: doc.id, trashed: true });
+    expect(await catalog.purge(doc.id)).toEqual({ status: 'purged', entryId: doc.id });
+    await expect(fs.stat(docDir)).rejects.toThrow();
   });
 
   it('登记项目素材：项目里的原地登记，项目外的复制进 imports/', async () => {

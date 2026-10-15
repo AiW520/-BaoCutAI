@@ -200,6 +200,13 @@ describe('标签名与条目', () => {
     expect(workspaceTitle(system)).toBe('brand');
     expect(workspaceTitle(system, '品牌设计系统')).toBe('品牌设计系统');
     expect(workspaceTitle({ kind: 'design-system', target: { entryId: 'e1' } })).toBe('设计系统不可用');
+    // 协作文档（含 doc.json 的目录）：同一种做法，键与同一目录的别的编辑器标签分开。
+    const docs = { kind: 'docs' as const, target: { conversationId: 'c1', path: 'docs/launch-plan' } };
+    expect(itemKey(docs)).toBe(`docs:${targetKey(docs.target)}`);
+    expect(itemKey(docs)).not.toBe(itemKey({ kind: 'slides', target: docs.target }));
+    expect(workspaceTitle(docs)).toBe('launch-plan');
+    expect(workspaceTitle(docs, '发布计划')).toBe('发布计划');
+    expect(workspaceTitle({ kind: 'docs', target: { entryId: 'e1' } })).toBe('协作文档不可用');
   });
 
   it('按条目 id、项目路径或会话路径找到 Space 条目', () => {

@@ -28,6 +28,7 @@ export const ko: RcSpaceMessages = {
   slidesDirFile: '슬라이드 폴더 안의 파일은 슬라이드에 속하므로 따로 추가할 수 없습니다',
   designDirFile: '디자인 폴더 안의 파일은 디자인에 속하므로 따로 추가할 수 없습니다',
   designSystemDirFile: '디자인 시스템 폴더 안의 파일은 디자인 시스템에 속하므로 따로 추가할 수 없습니다',
+  docsDirFile: '문서 폴더 안의 파일은 문서에 속하므로 따로 추가할 수 없습니다',
   tooManySameName: '프로젝트의 imports/에 이름이 같은 파일이 너무 많습니다',
 
   purgeVideoDeleteFirst: '먼저 영상을 삭제해(videos.delete) 휴지통으로 옮긴 뒤 휴지통에서 영구 삭제하세요',

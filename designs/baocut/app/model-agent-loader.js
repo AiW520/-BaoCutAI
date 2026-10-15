@@ -51,6 +51,8 @@
     slides: ['page', 'eye', 'pencil'],
     design: ['brush', 'eyedrop', 'eye'],
     'design-system': ['eyedrop', 'slider', 'document'],
+    /* 协作文档：读文档、动笔、在线程里回评论 */
+    docs: ['document', 'pencil', 'comment'],
     'space-search': ['mag', 'filter', 'folder'],
     space: ['folder', 'shop', 'cart'],
     /* 进出 */

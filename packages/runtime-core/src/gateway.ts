@@ -47,6 +47,8 @@ export interface GatewayOptions {
   allowedOrigins?: readonly string[];
   /** 同一端口上的 HTTP 请求（媒体通道）。返回 false 表示不认识，回 404。 */
   http?: (request: IncomingMessage, response: ServerResponse) => boolean;
+  /** 同一端口上别的 WebSocket 升级（文档编辑器的实时连接）。返回 false 表示不认识，交给网关自己的 WebSocket。 */
+  upgrade?: (request: IncomingMessage, socket: Duplex, head: Buffer) => boolean;
   /** 已认证的连接断开（释放它打开的视频之类）。 */
   onDisconnect?: (principal: TrustedPrincipal) => void;
   /** 握手成功（Web 服务按会话数连接）。 */
@@ -109,7 +111,13 @@ export class Gateway {
       });
     });
     this.#http = http;
-    this.#start(new WebSocketServer({ server: http, maxPayload: MAX_FRAME_BYTES, perMessageDeflate: false }));
+    // 升级请求先问 `upgrade`（文档编辑器），不认识的才是网关自己的连接。
+    const server = this.#start(new WebSocketServer({ noServer: true, maxPayload: MAX_FRAME_BYTES, perMessageDeflate: false }));
+    http.on('upgrade', (request: IncomingMessage, socket: Duplex, head: Buffer) => {
+      if (this.#closed) return void socket.destroy();
+      if (this.#options.upgrade?.(request, socket, head)) return;
+      server.handleUpgrade(request, socket, head, (ws) => server.emit('connection', ws, request));
+    });
     const address = http.address() as AddressInfo;
     const endpoint = `ws://${host}:${address.port}`;
     this.#log.info('Gateway listening', { endpoint });

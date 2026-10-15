@@ -90,6 +90,20 @@
        `group` 是记进索引的素材分组。`components` 是原型的参数摘要（组件数），不是工具的参数 */
     design_system_check: (a) => ({kind: 'design-system', label: '检查设计系统', icon: 'template', summary: join(a.system || base(a.path), n(a.components, '个组件'))}),
     design_system_import_asset: (a) => ({kind: 'design-system', label: '导入设计系统素材', icon: 'image', summary: join(a.name || base(a.path), a.group)}),
+    /* 协作文档（docs/design/docs §6）：八个工具同一类。摘要是协作文档的目录名，新建时还没有目录，念 `create.name`；
+       在评论线程里回复是 `docs_create` 建一条 utterance，念成「在协作文档里评论」 */
+    docs_batch: (a) => (a.create
+      ? {kind: 'docs', label: '新建协作文档', icon: 'plus', summary: a.create.name || base(a.path)}
+      : {kind: 'docs', label: '编辑协作文档', icon: 'edit', summary: base(a.path)}),
+    docs_create: (a) => (a.object === 'utterance'
+      ? {kind: 'docs', label: '在协作文档里评论', icon: 'edit', summary: base(a.path)}
+      : {kind: 'docs', label: '添加到协作文档', icon: 'plus', summary: base(a.path)}),
+    docs_read: (a) => ({kind: 'docs', label: '读取协作文档', icon: 'transcript', summary: base(a.path)}),
+    docs_update: (a) => ({kind: 'docs', label: '编辑协作文档', icon: 'edit', summary: base(a.path)}),
+    docs_query: (a) => ({kind: 'docs', label: '读取协作文档评论', icon: 'search', summary: base(a.path)}),
+    docs_delete: (a) => ({kind: 'docs', label: '从协作文档删除', icon: 'trash', summary: base(a.path)}),
+    docs_upload: (a) => ({kind: 'docs', label: '上传到协作文档', icon: 'upload', summary: join(base(a.path), a.name || base(a.file))}),
+    docs_export: (a) => ({kind: 'docs', label: '导出协作文档', icon: 'export', summary: join(base(a.path), base(a.to))}),
   };
   const NAMES = Object.keys(CATALOG);
 

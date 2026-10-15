@@ -34,6 +34,10 @@ BaoCut 的部分代码与资源移植、改写或复制自下列开源项目。�
 
 - React 18.3.1 与 ReactDOM 18.3.1（Meta，MIT）：两者的 `umd/*.production.min.js` 原样放在页面的 `artifact-type/vendor/` 下，组件预览按需加载，与编辑器界面的 React 19 分开。
 
+## 协作文档编辑器
+
+编辑器页面（`apps/docs-editor`）打进了 React 19、TipTap 与 ProseMirror、CodeMirror、Shiki、highlight.js（BSD-3-Clause）与 lowlight、KaTeX、mdast / micromark 系列、streamdown 与 remend（Apache-2.0）、Base UI、Floating UI、TanStack Virtual、class-variance-authority（Apache-2.0）、clsx、wouter（Unlicense）、entities（BSD-2-Clause）等 npm 包。构建按实际打进的模块（含原工程资源插件用 esbuild 打的 lfile 运行时）从安装包原文收集许可，输出到 `third-party-licenses.txt`，随应用的 `docs-editor/` 资源分发（`apps/docs-editor/licenses.mjs`）。
+
 ## Paseo
 
 - 来源：Paseo（https://github.com/getpaseo/paseo）

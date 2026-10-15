@@ -17,6 +17,7 @@ import type {
   SlidesCreated,
   DesignCreated,
   DesignSystemCreated,
+  DocsCreated,
   VideoOpenResult,
 } from '@baocut/protocol';
 import type { TrustedPrincipal } from '../gateway.ts';
@@ -203,6 +204,16 @@ export const TOOL_RISK: Readonly<Record<string, RiskLevel>> = {
   // 设计系统（docs/design/canvas §10.5）：同设计稿。校验只读文件；导入素材写设计系统目录的 _blobs/。
   design_system_check: 'read',
   design_system_import_asset: 'edit',
+  // 文档（docs/design/docs §7）：读与列评论只读；写正文、评论、标签页、上传与删除都只动这份文档目录（编辑器里能看历史），与导入素材同级；
+  // 导出写工作目录里一个新的 .md（不覆盖）。
+  docs_read: 'read',
+  docs_query: 'read',
+  docs_batch: 'edit',
+  docs_create: 'edit',
+  docs_update: 'edit',
+  docs_delete: 'edit',
+  docs_upload: 'edit',
+  docs_export: 'edit',
 };
 
 export function toolRisk(request: ToolConfirmation): RiskLevel {
@@ -312,6 +323,11 @@ export interface ToolScope<A extends ToolAccess = ToolAccess> {
   /** `design_system_check` 没有问题之后：会话记一条 `design-system-created`（同一个设计系统只有一条）；对外服务没有会话，不做。 */
   recordDesignSystem?(access: A, created: DesignSystemCreated): void;
   /**
+   * `docs_*` 写入之后：会话记一条 `docs-created`（同一份文档只有一条）。新建文档时 `onlyExisting` 为 false；之后的写入只更新已有的
+   * 那一条（标题与标签页数），不为别处来的文档新添卡片。对外服务没有会话，不做。
+   */
+  recordDocs?(access: A, created: DocsCreated, onlyExisting: boolean): void;
+  /**
    * 固定流程替调用方新建的视频（`download` / `transcribe` 给链接时的 `newVideo`）：对外服务把它登记进自己的视频范围；会话不做
    * （视频卡来自流程的任务卡片）。
    */
@@ -416,6 +432,9 @@ export class ScopeRouter implements ToolScope<ToolAccess> {
   }
   recordDesignSystem(access: ToolAccess, created: DesignSystemCreated): void {
     this.#of(access.principal).recordDesignSystem?.(access, created);
+  }
+  recordDocs(access: ToolAccess, created: DocsCreated, onlyExisting: boolean): void {
+    this.#of(access.principal).recordDocs?.(access, created, onlyExisting);
   }
   adoptCreatedVideo(access: ToolAccess, videoId: Id): void | Promise<void> {
     return this.#of(access.principal).adoptCreatedVideo?.(access, videoId);

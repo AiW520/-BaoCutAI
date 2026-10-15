@@ -62,6 +62,8 @@ export const WEB_DEFAULT_METHODS: readonly string[] = [
   'design.open',
   // 设计系统（docs/design/canvas §10.4）：同设计稿，编辑器在同一个隔离主机名上。
   'designSystem.open',
+  // 文档（docs/design/docs §6）：同幻灯片，要会话；只读配置下照样能打开，编辑器的写入被路由拒绝。
+  'docs.open',
   'videos.*',
   'documents.*',
   'edits.*',
@@ -131,6 +133,7 @@ export const WEB_READ_METHODS: readonly RpcMethod[] = [
   'slides.open',
   'design.open',
   'designSystem.open',
+  'docs.open',
   'videos.open',
   'videos.close',
   'videos.history',

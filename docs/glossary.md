@@ -21,6 +21,8 @@
 | 设计稿标注 | 用户在设计稿编辑器里点中某个元素或区域并写下的意见，随下一条消息交给智能体；与幻灯片标注是同一种附件、各自编号 |
 | 设计系统 | 一套可复用的设计规范：工作目录里一个含 `design-system.json` 的目录，有颜色、字体等 token、品牌说明、组件包与素材。在功能区的设计系统标签里查看与编辑，设计稿可以装上它。见[`packages/design-system-runtime`](../packages/design-system-runtime/README.md) |
 | 设计系统标注 | 用户在设计系统标签里点中某个 token、文字样式、组件、素材或章节并写下的意见，随下一条消息交给智能体；与设计稿标注并列、各自编号。见[产品设计 §3.2.3](product/product-design.md#323-输入区) |
+| 协作文档 | 智能体在会话里写、用户可以直接编辑与评论的一份文档（报告、提案、计划等）：工作目录里一个含 `doc.json` 的目录，有标签页、正文与评论线程。在功能区的协作文档标签里编辑，在 Space 里是一个条目；与 Space 里的「文档」类型（文本、Markdown、PDF 文件）不是一回事。见[文档设计](design/docs/docs-design.md) |
+| 协作文档标注 | 用户在协作文档里把一条评论「发送给智能体」，或在空行上写给智能体的请求，随下一条消息交给智能体；评论本身留在文档里，标注只指向它 |
 | 引用标签 | 输入框上方显示的上下文引用，例如某个对象、某句话、某段时间、某个版本 |
 | 任务卡片 | 对话中由真实事件驱动的结构化卡片：目标、阶段、候选、变更、授权、问题、交付等 |
 | 在文件夹中显示 | 打开系统的文件管理器并选中目标文件或目录。所有平台同一个说法，不写「访达」「Finder」「资源管理器」等平台专有名词 |
@@ -52,6 +54,7 @@
 | 幻灯片 / 幻灯片标注 | Slides / Slide annotation | 一份幻灯片也叫 Slides，不写 Deck、Presentation |
 | 设计稿 / 画板 / 设计稿标注 | Design / Artboard / Design annotation | 一份设计稿也叫 Design，不写 Canvas、Mockup；画板不写 Frame、Board |
 | 设计系统 / 设计系统标注 | Design system / Design system annotation | 不写 Style guide、UI kit |
+| 协作文档 / 协作文档标注 | Docs (a doc) / Doc annotation | 一份协作文档写 a doc，功能叫 Docs；不写 Collaborative document、Living doc |
 | 时间线 / 检查器 / 编辑器 | Timeline / Inspector / Editor | |
 | 候选 / 检查点 | Candidate / Checkpoint | |
 | 任务 / 后台任务 | Task / Background tasks | |

@@ -728,6 +728,7 @@ function paneQuery(pane: WorkspaceItem): string {
   if (pane.kind === 'slides') return new URLSearchParams({ slides: JSON.stringify(pane.target) }).toString();
   if (pane.kind === 'design') return new URLSearchParams({ design: JSON.stringify(pane.target) }).toString();
   if (pane.kind === 'design-system') return new URLSearchParams({ designSystem: JSON.stringify(pane.target) }).toString();
+  if (pane.kind === 'docs') return new URLSearchParams({ docs: JSON.stringify(pane.target) }).toString();
   if (pane.kind === 'file') return new URLSearchParams({file:JSON.stringify(pane.target),...(pane.name?{fileName:pane.name}:{})}).toString();
   const query = new URLSearchParams();
   if (pane.kind === 'files') query.set('files', '1');
@@ -791,6 +792,8 @@ function parsePane(query: URLSearchParams): WorkspaceItem | undefined {
   if (design) return { kind: 'design', target: design };
   const designSystem = parseTarget(query.get('designSystem'));
   if (designSystem) return { kind: 'design-system', target: designSystem };
+  const docs = parseTarget(query.get('docs'));
+  if (docs) return { kind: 'docs', target: docs };
   const file = parseMediaTarget(query.get('file'));
   if (file) return { kind: 'file', target: file, ...(query.get('fileName')?{name:query.get('fileName')!}:{}) };
   if (query.get('files') === '1') return { kind: 'files' };

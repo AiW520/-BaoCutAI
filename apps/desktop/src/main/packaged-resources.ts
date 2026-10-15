@@ -29,6 +29,8 @@ export const RESOURCE_DIRS = {
   designEditor: 'design-editor',
   /** 设计系统编辑器的构建产物（`apps/design-system-editor/dist`）：编辑器页面、预览页 run.html 与预览用的 React UMD。 */
   designSystemEditor: 'design-system-editor',
+  /** 文档编辑器的构建产物（`apps/docs-editor/dist`）：编辑器页面与它的运行时、字体。 */
+  docsEditor: 'docs-editor',
 } as const;
 
 /** `bin/` 里的原生程序（不带后缀）：同一次 cargo 构建出来的 Worker、凭据助手与人脸检测（`face-detect`）。 */
@@ -44,6 +46,7 @@ export interface PackagedResources {
   slidesEditorDist: string;
   designEditorDist: string;
   designSystemEditorDist: string;
+  docsEditorDist: string;
 }
 
 /** 由资源目录算出各个位置。`pathApi` 让检查脚本在别的平台上按 Windows 的写法算。 */
@@ -58,6 +61,7 @@ export function packagedResources(resourcesPath: string, pathApi: path.PlatformP
     slidesEditorDist: pathApi.join(resourcesPath, RESOURCE_DIRS.slidesEditor),
     designEditorDist: pathApi.join(resourcesPath, RESOURCE_DIRS.designEditor),
     designSystemEditorDist: pathApi.join(resourcesPath, RESOURCE_DIRS.designSystemEditor),
+    docsEditorDist: pathApi.join(resourcesPath, RESOURCE_DIRS.docsEditor),
   };
 }
 
@@ -73,6 +77,7 @@ export function packagedResourceEnv(resources: PackagedResources, platform: Node
     BAOCUT_SLIDES_EDITOR_DIST: resources.slidesEditorDist,
     BAOCUT_DESIGN_EDITOR_DIST: resources.designEditorDist,
     BAOCUT_DESIGN_SYSTEM_EDITOR_DIST: resources.designSystemEditorDist,
+    BAOCUT_DOCS_EDITOR_DIST: resources.docsEditorDist,
     ...(platform === 'darwin' ? { PMETAL_METALLIB_PATH: path.join(resources.binDir, 'mlx.metallib') } : {}),
   };
 }

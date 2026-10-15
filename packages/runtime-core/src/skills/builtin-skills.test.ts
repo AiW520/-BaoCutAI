@@ -15,6 +15,7 @@ const EXPECTED_IDS = [
   'cross-video-qa',
   'design',
   'design-system',
+  'docs',
   'motion-graphics',
   'narration',
   'polish-transcript',
@@ -32,7 +33,7 @@ const EXPECTED_IDS = [
 ];
 
 /** 只给会话内智能体的内置 skill：说明书的路由只在工具桥面列出它们，CLI 面的「内置 skill」表也不列。 */
-const AGENT_ONLY_IDS = ['design', 'design-system', 'slides'];
+const AGENT_ONLY_IDS = ['design', 'design-system', 'docs', 'slides'];
 
 /** 会话开始时的 skill 索引只取 description 的前 300 个字符（`skill-brief.ts`），内置的写在这个长度以内。 */
 const INDEX_DESCRIPTION_CHARS = 300;

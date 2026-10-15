@@ -12,6 +12,7 @@ export const it: SpaceMessages = {
     slides: "Diapositive",
     design: "Design",
     'design-system': "Design system",
+    docs: "Documento collaborativo",
     package: "Pacchetto video",
     template: "Template",
   },

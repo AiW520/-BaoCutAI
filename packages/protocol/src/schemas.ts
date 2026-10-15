@@ -15,6 +15,7 @@ import { SLIDE_ANNOTATION_LIMITS } from './slides.ts';
 import { DESIGN_ANNOTATION_LIMITS } from './design.ts';
 import { DESIGN_SYSTEM_ANNOTATION_LIMITS } from './design-system.ts';
 import { VIDEO_ANNOTATION_LIMITS } from './video.ts';
+import { DOCS_ANNOTATION_LIMITS } from './docs.ts';
 import { SPACE_PARAM_SCHEMAS } from './space-schemas.ts';
 import { EXTERNAL_TOOL_PARAM_SCHEMAS } from './external-tools-schemas.ts';
 import { TEMPLATE_PARAM_SCHEMAS, templateSendRefSchema } from './template-schemas.ts';
@@ -453,6 +454,18 @@ const videoAnnotation = z.discriminatedUnion('kind', [
   z.object({ ...videoAnnotationBase, kind: z.literal('pin'), region: pointRegion }).strict(),
 ]);
 const videoAnnotations = z.array(videoAnnotation).max(VIDEO_ANNOTATION_LIMITS.perMessage);
+/** 文档标注（docs/design/docs §8）。`path` 是元素路径 `f-<tab>#<node>/<block>…;thread=<root>`，长度与编辑器消息一致。 */
+const docsAnnotation = z
+  .object({
+    doc: fileTarget,
+    kind: z.enum(['comment', 'ask']),
+    path: z.string().min(1).max(1024),
+    label: z.string().max(1000),
+    quote: z.string().max(DOCS_ANNOTATION_LIMITS.text).optional(),
+    text: z.string().trim().min(1).max(DOCS_ANNOTATION_LIMITS.text),
+  })
+  .strict();
+const docsAnnotations = z.array(docsAnnotation).max(DOCS_ANNOTATION_LIMITS.perMessage);
 const languageOption = z.union([
   z.object({ mode: z.literal('assert'), tag: languageTag }).strict(),
   z.object({ mode: z.literal('prefer'), tag: languageTag.nullable() }).strict(),
@@ -861,6 +874,7 @@ export const methodParamSchemas = {
     designAnnotations: designAnnotations.optional(),
     designSystemAnnotations: designSystemAnnotations.optional(),
     videoAnnotations: videoAnnotations.optional(),
+    docsAnnotations: docsAnnotations.optional(),
   }),
   'conversations.steer': z.object({
     conversationId: id,
@@ -871,6 +885,7 @@ export const methodParamSchemas = {
     designAnnotations: designAnnotations.optional(),
     designSystemAnnotations: designSystemAnnotations.optional(),
     videoAnnotations: videoAnnotations.optional(),
+    docsAnnotations: docsAnnotations.optional(),
   }),
   'attachments.prepare': z.object({
     fileName: z.string().trim().min(1).max(255),
@@ -1028,6 +1043,7 @@ export const methodParamSchemas = {
   'slides.open': fileTarget,
   'design.open': fileTarget,
   'designSystem.open': fileTarget,
+  'docs.open': fileTarget,
   'videos.open': fileTarget,
   'videos.importPackage': z
     .object({

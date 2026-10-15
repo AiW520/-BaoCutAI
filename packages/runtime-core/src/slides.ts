@@ -144,7 +144,7 @@ export function resolveVideoAnnotations(
 }
 
 /** 目录相对会话工作目录的写法：`/` 分隔、以 `/` 结尾；不在工作目录里时是绝对路径；就是工作目录时是 `./`。 */
-function dirPathFor({ root, file }: { root: string; file: string }, cwd: string): string {
+export function dirPathFor({ root, file }: { root: string; file: string }, cwd: string): string {
   const dir = path.resolve(root, file);
   const rel = path.relative(cwd, dir);
   const outside = rel === '..' || rel.startsWith(`..${path.sep}`) || path.isAbsolute(rel);

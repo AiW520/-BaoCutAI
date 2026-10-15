@@ -3,6 +3,7 @@
  * 幻灯片与设计稿编辑器用同一套消息（docs/design/canvas §5），父窗口按消息来自哪个 iframe 区分。
  * 两边都只认这里列出的消息类型；消息里只有标注要的位置与文字，不带 deck 或设计稿文件的内容。
  * 例外是设计稿编辑器导出的文件（`editor:save-file`）：运行时的 `downloads` 能力把导出结果交给父窗口保存（docs/design/canvas §4、§8.3）。
+ * 文档编辑器（docs/design/docs §5）也用这套消息：评论与请求「发给智能体」时发 `editor:annotate`，带上评论的正文与原文。
  *
  * - iframe → 父窗口用 `targetOrigin: "*"`（桌面端父页面是 file://，origin 为 null），父窗口按
  *   `event.source === iframe.contentWindow` 认消息；父窗口 → iframe 指定编辑器地址的 origin，shim 按
@@ -50,7 +51,22 @@ export type EditorToHostMessage =
   /** 运行时请父窗口把一段提示放进这个会话的输入框（「让智能体修好这页」等），父窗口回 `editor:suggest-prompt-result`。 */
   | { type: 'editor:suggest-prompt'; requestId: string; prompt: string }
   /** 设计稿编辑器导出了一个文件，请父窗口保存（Web 交给浏览器下载，桌面端弹存储对话框），父窗口回 `editor:save-file-result`。 */
-  | { type: 'editor:save-file'; requestId: string; filename: string; data: ArrayBuffer | Blob };
+  | { type: 'editor:save-file'; requestId: string; filename: string; data: ArrayBuffer | Blob }
+  /**
+   * 文档编辑器（docs/design/docs §8）：用户把一条评论发给智能体（`comment`），或在空行上写了给智能体的请求（`ask`）。
+   * 父窗口把它作为一条文档标注加进这个会话的草稿（不弹批注框，正文已经写好），回 `editor:annotate-result`。
+   */
+  | ({ type: 'editor:annotate'; requestId: string } & DocsEditorAnnotation);
+
+/** `editor:annotate` 带的内容；字段与 `@baocut/protocol` 的 `DocsAnnotation` 相同（不含文档目录，父窗口按 iframe 补上）。 */
+export interface DocsEditorAnnotation {
+  kind: 'comment' | 'ask';
+  /** 元素路径 `f-<tab>#<node>/<block>…`，评论另带 `;thread=<root>`。 */
+  path: string;
+  label: string;
+  quote?: string;
+  text: string;
+}
 
 /** 父窗口 → iframe。 */
 export type HostToEditorMessage =
@@ -69,7 +85,9 @@ export type HostToEditorMessage =
   /** 回应 `editor:suggest-prompt`：提示放进输入框了没有（标签页不属于会话时为 false，运行时改为复制到剪贴板）。 */
   | { type: 'editor:suggest-prompt-result'; requestId: string; ok: boolean }
   /** 回应 `editor:save-file`：`saved` 交出去了，`declined` 用户在存储对话框里取消了，`failed` 没能保存。 */
-  | { type: 'editor:save-file-result'; requestId: string; outcome: SaveFileOutcome };
+  | { type: 'editor:save-file-result'; requestId: string; outcome: SaveFileOutcome }
+  /** 回应 `editor:annotate`：加进草稿了没有（标签页不属于会话、草稿已满时为 false）。 */
+  | { type: 'editor:annotate-result'; requestId: string; ok: boolean };
 
 /** 父窗口保存导出文件的结果（`editor:save-file-result`）。 */
 export type SaveFileOutcome = 'saved' | 'declined' | 'failed';
@@ -82,6 +100,7 @@ const EDITOR_TYPES = new Set<EditorToHostMessage['type']>([
   'editor:external-change',
   'editor:suggest-prompt',
   'editor:save-file',
+  'editor:annotate',
 ]);
 const HOST_TYPES = new Set<HostToEditorMessage['type']>([
   'editor:threads',
@@ -92,11 +111,15 @@ const HOST_TYPES = new Set<HostToEditorMessage['type']>([
   'editor:flush',
   'editor:suggest-prompt-result',
   'editor:save-file-result',
+  'editor:annotate-result',
 ]);
 const SAVE_FILE_OUTCOMES = new Set<SaveFileOutcome>(['saved', 'declined', 'failed']);
 
 /** `editor:suggest-prompt` 的提示最长多少字符（运行时的修复提示远小于这个数）。 */
 export const SUGGESTED_PROMPT_MAX = 20_000;
+
+/** `editor:annotate` 的正文与原文最长多少字符（与 `DOCS_ANNOTATION_LIMITS.text` 一致）。 */
+export const ANNOTATE_TEXT_MAX = 4096;
 
 /** `editor:save-file` 的文件最大多少字节（整份设计稿的 HTML 内嵌画板运行时与素材，远小于这个数）。 */
 export const SAVE_FILE_MAX_BYTES = 512 * 1024 * 1024;
@@ -190,6 +213,21 @@ export function readEditorMessage(data: unknown): EditorToHostMessage | null {
       return isString(data.requestId, 100) && isString(data.filename, 1000) && data.filename.trim() !== '' && isFileData(data.data)
         ? { type: data.type, requestId: data.requestId, filename: data.filename, data: data.data }
         : null;
+    case 'editor:annotate': {
+      if (!isString(data.requestId, 100) || (data.kind !== 'comment' && data.kind !== 'ask')) return null;
+      if (!isString(data.path, 1024) || data.path === '' || !isString(data.label, 1000)) return null;
+      if (!isString(data.text, ANNOTATE_TEXT_MAX) || data.text.trim() === '') return null;
+      if (data.quote !== undefined && !isString(data.quote, ANNOTATE_TEXT_MAX)) return null;
+      return {
+        type: data.type,
+        requestId: data.requestId,
+        kind: data.kind,
+        path: data.path,
+        label: data.label,
+        ...(data.quote ? { quote: data.quote as string } : {}),
+        text: data.text.trim(),
+      };
+    }
     default:
       return null;
   }
@@ -222,6 +260,8 @@ export function readHostMessage(data: unknown): HostToEditorMessage | null {
       return isString(data.requestId, 100) && SAVE_FILE_OUTCOMES.has(data.outcome as SaveFileOutcome)
         ? { type: data.type, requestId: data.requestId, outcome: data.outcome as SaveFileOutcome }
         : null;
+    case 'editor:annotate-result':
+      return isString(data.requestId, 100) && typeof data.ok === 'boolean' ? { type: data.type, requestId: data.requestId, ok: data.ok } : null;
     default:
       return null;
   }

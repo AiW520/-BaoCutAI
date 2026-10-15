@@ -13,6 +13,7 @@ export const pl: SpaceMessages = {
     slides: "Slajdy",
     design: "Projekt",
     'design-system': "System projektowy",
+    docs: "Wspólny dokument",
     package: "Pakiet wideo",
     template: "Szablon",
   },

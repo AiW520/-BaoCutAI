@@ -72,6 +72,20 @@ describe('分类', () => {
     expect(visibleCategories(counts).find((c) => c.key === 'design-system')?.label).toBe('设计系统');
     expect(inCategory(entry('s', { kind: 'design-system' }), 'design-system')).toBe(true);
   });
+
+  it('协作文档是单独的一类，排在设计系统后面、模板前面，与普通文档分开', () => {
+    const counts = countByCategory([
+      entry('t', { kind: 'template' }),
+      entry('n', { kind: 'document', name: 'notes.md' }),
+      entry('k', { kind: 'docs', name: '发布计划', doc: { tabCount: 2 } }),
+      entry('s', { kind: 'design-system', name: '品牌设计系统' }),
+    ]);
+    expect(counts.docs).toBe(1);
+    expect(visibleCategories(counts).map((c) => c.key)).toEqual(['all', 'document', 'design-system', 'docs', 'template', 'favorite', 'trash']);
+    expect(visibleCategories(counts).find((c) => c.key === 'docs')?.label).toBe('协作文档');
+    expect(inCategory(entry('k', { kind: 'docs' }), 'docs')).toBe(true);
+    expect(inCategory(entry('k', { kind: 'docs' }), 'document')).toBe(false);
+  });
 });
 
 describe('viewEntries', () => {
@@ -263,6 +277,8 @@ describe('状态与时长', () => {
     expect(measureText({ kind: 'document' })).toBeNull();
     expect(measureText({ kind: 'slides', deck: { slideCount: 12 } })).toBe('12 页');
     expect(measureText({ kind: 'slides' })).toBeNull();
+    expect(measureText({ kind: 'docs', doc: { tabCount: 3 } })).toBe('3 个标签页');
+    expect(measureText({ kind: 'docs' })).toBeNull();
   });
 });
 

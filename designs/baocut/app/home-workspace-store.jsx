@@ -60,6 +60,9 @@
     // docs/design/canvas §10.6: a design system opens in its own tab, like a design canvas; `at` ("section:anchor")
     // jumps to an annotated target (an annotation in a sent message).
     const openWorkspaceDesignSystem = (id, sessionId = sid, at) => { show(sessionId); app.go(W.route(sessionId, {kind: 'design-system', id, ...(at ? {at} : {})})); };
+    // docs/design/docs §8: a collaborative doc opens in its own tab; `dtab` picks a doc tab and `at` (an element path)
+    // jumps to a comment thread or block (an annotation in a sent message or in the draft).
+    const openWorkspaceDocs = (id, sessionId = sid, {dtab, at} = {}) => { show(sessionId); app.go(W.route(sessionId, {kind: 'docs', id, ...(dtab ? {dtab} : {}), ...(at ? {at} : {})})); };
     const openWorkspaceAttachment = file => {
       setWorkspaceAttachments(previous => ({...previous, [file.id]: file}));
       setWorkspaceFileTitle(file.id, file.name);
@@ -200,7 +203,7 @@
     });
     return {workspaceKey: sid, workspaceSessionId, workspaceSingle, showWorkspaceTab, finishDraftWorkspace, openAgent, createWorkspacePage, browseWorkspaceFiles, workspaceAttachments, openWorkspaceAttachment, workspaceMediaState, updateWorkspaceMediaState, workspaceFileTitles, setWorkspaceFileTitle, workspace, workspaceVisible, workspaceFull, workspaceNarrow, workspaceConversation, workspaceRef, showConversation,
       workspaceWidth, workspaceDockW, resizeWorkspace, toggleWorkspace, toggleWorkspaceFull,
-      selectWorkspaceTab, closeWorkspaceTab, moveWorkspaceTab, openWorkspaceFile, openWorkspaceSlides, openWorkspaceDesign, openWorkspaceDesignSystem, openWorkspaceBrowser, openMovie, openMovieBeside};
+      selectWorkspaceTab, closeWorkspaceTab, moveWorkspaceTab, openWorkspaceFile, openWorkspaceSlides, openWorkspaceDesign, openWorkspaceDesignSystem, openWorkspaceDocs, openWorkspaceBrowser, openMovie, openMovieBeside};
   }
   Object.assign(window, {useHomeWorkspace});
 })();

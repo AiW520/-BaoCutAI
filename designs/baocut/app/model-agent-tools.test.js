@@ -53,6 +53,23 @@ test('describe：edits_apply 按操作分类别', () => {
   assert.equal(T.describe('design_system_import_asset', {system: '设计系统/Ember/', path: '字体/SourceSans3.woff2'}).summary, 'SourceSans3.woff2');
 });
 
+test('describe：协作文档的八个工具同一类，摘要是目录名；新建念文档名，在线程里回复念「评论」', () => {
+  const path = '协作文档/发布计划/';
+  assert.deepEqual(T.describe('docs_batch', {path: null, create: {name: '确定性渲染课程 · 发布计划'}}),
+    {kind: 'docs', label: '新建协作文档', summary: '确定性渲染课程 · 发布计划', icon: 'plus'});
+  assert.deepEqual(T.describe('docs.batch', {path}), {kind: 'docs', label: '编辑协作文档', summary: '发布计划', icon: 'edit'});
+  assert.deepEqual(T.describe('docs_create', {path, object: 'utterance', parent: 'c1'}),
+    {kind: 'docs', label: '在协作文档里评论', summary: '发布计划', icon: 'edit'});
+  assert.deepEqual(T.describe('docs_create', {path, object: 'tab'}), {kind: 'docs', label: '添加到协作文档', summary: '发布计划', icon: 'plus'});
+  assert.deepEqual(T.describe('docs_read', {path}), {kind: 'docs', label: '读取协作文档', summary: '发布计划', icon: 'transcript'});
+  assert.deepEqual(T.describe('docs_update', {path}), {kind: 'docs', label: '编辑协作文档', summary: '发布计划', icon: 'edit'});
+  assert.deepEqual(T.describe('docs_query', {path}), {kind: 'docs', label: '读取协作文档评论', summary: '发布计划', icon: 'search'});
+  assert.deepEqual(T.describe('docs_delete', {path}), {kind: 'docs', label: '从协作文档删除', summary: '发布计划', icon: 'trash'});
+  assert.equal(T.describe('docs.upload', {path, file: '插图/管线.png'}).summary, '发布计划 · 管线.png');
+  assert.equal(T.describe('docs_export', {path, to: '导出/发布计划.md'}).summary, '发布计划 · 发布计划.md');
+  for (const name of T.NAMES.filter((x) => x.startsWith('docs_'))) assert.equal(T.describe(name, {}).kind, 'docs', name);
+});
+
 test('describe：网关名同样认得，认不出的返回 null', () => {
   assert.equal(T.normalize('models.synthesizeSpeech'), 'models_synthesize_speech');
   assert.equal(T.describe('models.generateImage', {count: 1}).label, '生成图片');

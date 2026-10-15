@@ -172,7 +172,7 @@
       });
       target.current.replaceChildren(copy);
     }, [item.key]);
-    const file = item.kind === 'file' || item.kind === 'slides' || item.kind === 'design' || item.kind === 'design-system' ? app.spaceItems.find(x => x.id === item.id) : null;
+    const file = item.kind === 'file' || item.kind === 'slides' || item.kind === 'design' || item.kind === 'design-system' || item.kind === 'docs' ? app.spaceItems.find(x => x.id === item.id) : null;
     const dir = file?.dir ? app.dirById(file.dir) : null;
     const sub = item.key === W.CONVERSATION ? '会话'
       : item.kind === 'web' ? item.url || '新标签页'

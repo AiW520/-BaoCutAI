@@ -167,6 +167,7 @@ import type { WebAccessLink, WebSession } from './web.ts';
 import type { SlideAnnotation, SlidesOpenResult } from './slides.ts';
 import type { DesignAnnotation, DesignOpenResult } from './design.ts';
 import type { DesignSystemAnnotation, DesignSystemOpenResult } from './design-system.ts';
+import type { DocsAnnotation, DocsOpenResult } from './docs.ts';
 import type { LegacyImportAnswer, LegacyImportRetry, LegacyImportSetSkipped, LegacyImportSnapshot } from './legacy-import.ts';
 import type { Seq } from './domain.ts';
 import type { PlaybackCodec } from './limits.ts';
@@ -412,6 +413,8 @@ export interface RpcMethods {
    * `videoAnnotations`：编辑器预览画面上加进草稿的标注（产品设计 §3.2.3「视频标注」），限制相同（`VIDEO_ANNOTATION_LIMITS`）。
    * 每部视频一段 `<baocut-video-annotations video="…" revision="…">`，附在设计系统标注段之后；编号各自从 1 起，同一部视频两条以上时
    * 段末另给 `candidateBoundsMs`；视频找不到时同样整条 `not-found`，`revision` 落后于当前版本时不拒绝。
+   * `docsAnnotations`：文档标签里发给智能体的评论与请求（docs/design/docs §8），最多 `DOCS_ANNOTATION_LIMITS.perMessage` 条。
+   * 每份文档一段 `<baocut-docs-annotations>`，附在设计系统标注段之后；编号各自从 1 起；文档找不到时同样整条 `not-found`。
    */
   'conversations.send': {
     params: {
@@ -430,12 +433,13 @@ export interface RpcMethods {
       designAnnotations?: DesignAnnotation[];
       designSystemAnnotations?: DesignSystemAnnotation[];
       videoAnnotations?: VideoAnnotation[];
+      docsAnnotations?: DocsAnnotation[];
     };
     result: { taskId: Id };
   };
   /**
    * 把一条消息插进正在运行的回合（Agent 支持时）。不支持或没有运行中的回合时如实返回，由界面决定排队还是先停再发。
-   * `slideAnnotations`、`designAnnotations`、`designSystemAnnotations`、`videoAnnotations` 与 `conversations.send` 的相同。
+   * `slideAnnotations`、`designAnnotations`、`designSystemAnnotations`、`videoAnnotations`、`docsAnnotations` 与 `conversations.send` 的相同。
    */
   'conversations.steer': {
     params: {
@@ -447,6 +451,7 @@ export interface RpcMethods {
       designAnnotations?: DesignAnnotation[];
       designSystemAnnotations?: DesignSystemAnnotation[];
       videoAnnotations?: VideoAnnotation[];
+      docsAnnotations?: DocsAnnotation[];
     };
     result: { status: 'steered' | 'unsupported' | 'no-active-turn' };
   };
@@ -731,6 +736,12 @@ export interface RpcMethods {
    * 同一个目录返回同一个地址。
    */
   'designSystem.open': { params: FileTarget; result: DesignSystemOpenResult };
+  /**
+   * 在文档标签里打开一份文档（docs/design/docs §6.1）：Space 里的文档条目，或来源目录里的文档目录。
+   * 目录的校验与 `slides.open` 相同，认得出是文档（`doc.json` 的 `format` 为 `baocut-doc`），否则 `invalid-request`、
+   * `details.code` 为 `DOCS_NOT_A_DOC`。同一个目录返回同一个地址；编辑器与智能体的 `docs_*` 工具共用同一份内存里的文档。
+   */
+  'docs.open': { params: FileTarget; result: DocsOpenResult };
   /** 打开一个视频：Space 里的视频条目，或来源目录里的视频目录。已经打开的返回同一个 `videoId`。 */
   'videos.open': { params: FileTarget; result: VideoOpenResult };
   /** 这条连接不再需要这个视频；没有其他连接打开它时 Runtime 关闭它。 */
@@ -1234,12 +1245,15 @@ export interface ProjectFileEntry {
   isDir: boolean;
   /** 文件的字节数；目录为 null。 */
   size: number | null;
-  /** 最后修改时间；视频目录取 `video.db`、幻灯片目录取 `deck.json`、设计稿目录取 `canvas.json`、设计系统目录取 `design-system.json` 的修改时间。 */
+  /**
+   * 最后修改时间；视频目录取 `video.db`、幻灯片目录取 `deck.json`、设计稿目录取 `canvas.json`、设计系统目录取 `design-system.json`、
+   * 文档目录取 `doc.json` 的修改时间。
+   */
   modifiedAt: string | null;
   /**
    * 认得出的媒体与文档类型（与 Space 同一套分类）；含 `video.db` 的目录是 `video`，含合法 `deck.json` 的目录是 `slides`，
    * 含合法 `canvas.json`（v 为 3）的目录是 `design`，含合法 `design-system.json`（认法见 docs/design/canvas §10.1）的目录是
-   * `design-system`；其余为 null。
+   * `design-system`，含合法 `doc.json`（docs/design/docs §2.1）的目录是 `docs`；其余为 null。
    */
   kind: SpaceEntryKind | null;
 }

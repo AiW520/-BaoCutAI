@@ -69,6 +69,8 @@ export interface ProjectFilesProps {
   onOpenDesign?: (target: FileTarget, entry: ProjectFileEntry) => void;
   /** 点设计系统目录（含 `design-system.json`）。不给时按普通文件夹进入。 */
   onOpenDesignSystem?: (target: FileTarget, entry: ProjectFileEntry) => void;
+  /** 点协作文档目录（含 `doc.json`）。不给时按普通文件夹进入。 */
+  onOpenDocs?: (target: FileTarget, entry: ProjectFileEntry) => void;
 }
 
 /**
@@ -76,7 +78,7 @@ export interface ProjectFilesProps {
  * 会话所属项目目录里的文件，一层一层进入；搜索框按名字在整个项目里找（`projects.files.list`）。
  * 只读：打开文件交给调用方（单文件标签、视频、幻灯片、设计稿或设计系统）。没有后端时显示真实的空态与错误，不造数据。
  */
-export function ProjectFiles({ conversationId, onOpenFile, onOpenVideo, onOpenSlides, onOpenDesign, onOpenDesignSystem }: ProjectFilesProps) {
+export function ProjectFiles({ conversationId, onOpenFile, onOpenVideo, onOpenSlides, onOpenDesign, onOpenDesignSystem, onOpenDocs }: ProjectFilesProps) {
   const runtime = useRuntime();
   const conversation = useConversationMeta(conversationId);
   const project = useProject(conversation?.projectId ?? null);
@@ -127,6 +129,7 @@ export function ProjectFiles({ conversationId, onOpenFile, onOpenVideo, onOpenSl
     else if (action === 'slides' && onOpenSlides) onOpenSlides(target, entry);
     else if (action === 'design' && onOpenDesign) onOpenDesign(target, entry);
     else if (action === 'design-system' && onOpenDesignSystem) onOpenDesignSystem(target, entry);
+    else if (action === 'docs' && onOpenDocs) onOpenDocs(target, entry);
     else if (action === 'file') onOpenFile?.(target, entry);
     else {
       setInput('');
@@ -206,7 +209,8 @@ export function ProjectFiles({ conversationId, onOpenFile, onOpenVideo, onOpenSl
                   (entry.kind === 'video' && !onOpenVideo) ||
                   (entry.kind === 'slides' && !onOpenSlides) ||
                   (entry.kind === 'design' && !onOpenDesign) ||
-                  (entry.kind === 'design-system' && !onOpenDesignSystem)
+                  (entry.kind === 'design-system' && !onOpenDesignSystem) ||
+                  (entry.kind === 'docs' && !onOpenDocs)
                 }>
                 <Icon slot="icon" />
                 <Text>{entry.name}</Text>

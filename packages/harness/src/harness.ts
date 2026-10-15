@@ -53,6 +53,8 @@ import {
   type DesignSystemCreated,
   type DesignAnnotation,
   type DesignSystemAnnotation,
+  type DocsAnnotation,
+  type DocsCreated,
   type Project,
   type Seq,
   type SequencedEvent,
@@ -74,6 +76,7 @@ import {
   type TimelineItem,
   type Localized,
   type Topic,
+  parseDocsPath,
 } from '@baocut/protocol';
 import {
   AgentPrefsStore,
@@ -682,7 +685,7 @@ export class Harness {
     // 共用这个目录的会话里的卡片写的是这条会话（或它自己）的位置：一起改。
     for (const member of [state, ...guests]) {
       for (const item of member.items()) {
-        if (item.kind !== 'video-created' && item.kind !== 'video-change' && item.kind !== 'slides-created' && item.kind !== 'design-created' && item.kind !== 'design-system-created') continue;
+        if (item.kind !== 'video-created' && item.kind !== 'video-change' && item.kind !== 'slides-created' && item.kind !== 'design-created' && item.kind !== 'design-system-created' && item.kind !== 'docs-created') continue;
         if (!('conversationId' in item.target) || (item.target.conversationId !== state.id && item.target.conversationId !== member.id)) continue;
         const [top, ...rest] = item.target.path.split('/');
         const renamed = top !== undefined ? moved.get(top) : undefined;
@@ -1182,6 +1185,8 @@ export class Harness {
     designSystemAnnotations?: ResolvedDesignSystemAnnotation[];
     /** 视频标注（产品设计 §3.2.3「视频标注」），由 Runtime 按添加的顺序解析好视频相对会话工作目录的路径。 */
     videoAnnotations?: ResolvedVideoAnnotation[];
+    /** 文档标注（docs/design/docs §8），由 Runtime 按添加的顺序解析好文档相对会话工作目录的路径。 */
+    docsAnnotations?: ResolvedDocsAnnotation[];
   }): Promise<{ taskId: Id }> {
     const key = `send:${params.commandId}`;
     const done = this.#commands.get(key);
@@ -1255,6 +1260,7 @@ export class Harness {
         ? { designSystemAnnotations: params.designSystemAnnotations.map((a) => a.annotation) }
         : {}),
       ...(params.videoAnnotations?.length ? { videoAnnotations: params.videoAnnotations.map((a) => a.annotation) } : {}),
+      ...(params.docsAnnotations?.length ? { docsAnnotations: params.docsAnnotations.map((a) => a.annotation) } : {}),
     });
     state.upsert({
       kind: 'task',
@@ -1292,7 +1298,8 @@ export class Harness {
     this.#runs.set(state.id, run);
     const agentText = [params.text, params.template?.instructions, params.skills?.instructions, fileAttachmentsText(attached)].filter(Boolean).join('\n\n');
     void this.#startRun(state, run, {
-      text: withVideoAnnotations(
+      text: withDocsAnnotations(
+        withVideoAnnotations(
         withDesignSystemAnnotations(
           withDesignAnnotations(
             withSlideAnnotations(withSpaceReferences(withEditorContext(agentText, params.context), references), params.slideAnnotations ?? []),
@@ -1301,6 +1308,8 @@ export class Harness {
           params.designSystemAnnotations ?? [],
         ),
         params.videoAnnotations ?? [],
+        ),
+        params.docsAnnotations ?? [],
       ),
       ...imagesOf(attached),
     });
@@ -1398,6 +1407,7 @@ export class Harness {
     designAnnotations?: ResolvedDesignAnnotation[];
     designSystemAnnotations?: ResolvedDesignSystemAnnotation[];
     videoAnnotations?: ResolvedVideoAnnotation[];
+    docsAnnotations?: ResolvedDocsAnnotation[];
   }): Promise<{ status: 'steered' | 'unsupported' | 'no-active-turn' }> {
     const key = `steer:${params.commandId}`;
     if (this.#commands.has(key)) return { status: 'steered' };
@@ -1416,7 +1426,9 @@ export class Harness {
     const designAnnotations = params.designAnnotations ?? [];
     const designSystemAnnotations = params.designSystemAnnotations ?? [];
     const videoAnnotations = params.videoAnnotations ?? [];
-    const text = withVideoAnnotations(
+    const docsAnnotations = params.docsAnnotations ?? [];
+    const text = withDocsAnnotations(
+      withVideoAnnotations(
       withDesignSystemAnnotations(
         withDesignAnnotations(
           withSlideAnnotations([params.text, fileAttachmentsText(attached)].filter(Boolean).join('\n\n'), annotations),
@@ -1425,6 +1437,8 @@ export class Harness {
         designSystemAnnotations,
       ),
       videoAnnotations,
+      ),
+      docsAnnotations,
     );
     const result = await session.steer(run.turnId, { text, ...imagesOf(attached) });
     if (result !== 'accepted') return { status: 'unsupported' };
@@ -1441,6 +1455,7 @@ export class Harness {
       ...(designAnnotations.length ? { designAnnotations: designAnnotations.map((a) => a.annotation) } : {}),
       ...(designSystemAnnotations.length ? { designSystemAnnotations: designSystemAnnotations.map((a) => a.annotation) } : {}),
       ...(videoAnnotations.length ? { videoAnnotations: videoAnnotations.map((a) => a.annotation) } : {}),
+      ...(docsAnnotations.length ? { docsAnnotations: docsAnnotations.map((a) => a.annotation) } : {}),
     });
     return { status: 'steered' };
   }
@@ -1772,6 +1787,26 @@ export class Harness {
       existing
         ? { ...existing, ...created, taskId: taskId ?? existing.taskId }
         : { kind: 'design-system-created', id: newId('dsys'), createdAt: nowIso(), taskId, ...created },
+    );
+  }
+
+  /**
+   * 智能体经 `docs_batch` 新建了一份文档：会话里记一条，线程里出现文档卡片（docs/design/docs §7.3）。
+   * 与 `recordDesignCreated` 相同：同一份文档只有一条，之后智能体再写它时更新标题与标签页数、换成这次的任务，id 与位置不变。
+   * `onlyExisting` 为 true 时只更新已有的那条（写文档的工具不新建卡片：卡片只给这条会话里新建的文档）。
+   */
+  recordDocsCreated(conversationId: Id, taskId: Id | null, created: DocsCreated, onlyExisting = false): void {
+    const state = this.#states.get(conversationId);
+    if (!state) return;
+    const existing = state.items().find(
+      (item): item is Extract<TimelineItem, { kind: 'docs-created' }> => item.kind === 'docs-created' && sameTarget(item.target, created.target),
+    );
+    if (!existing && onlyExisting) return;
+    if (existing && existing.title === created.title && existing.tabCount === created.tabCount && (taskId ?? existing.taskId) === existing.taskId) return;
+    state.upsert(
+      existing
+        ? { ...existing, ...created, taskId: taskId ?? existing.taskId }
+        : { kind: 'docs-created', id: newId('docs'), createdAt: nowIso(), taskId, ...created },
     );
   }
 
@@ -2885,6 +2920,52 @@ export function withVideoAnnotations(text: string, annotations: readonly Resolve
       '\n',
     );
   });
+  return [text, '', ...blocks].join('\n');
+}
+
+/** 一条文档标注与它的文档相对会话工作目录的路径（写法与 `ResolvedSlideAnnotation.deckPath` 相同）。 */
+export interface ResolvedDocsAnnotation {
+  annotation: DocsAnnotation;
+  docPath: string;
+}
+
+/**
+ * 把文档标注附在发给智能体的文字后面（docs/design/docs §8），排在设计系统标注段之后：每份文档一段，按第一次出现的顺序；
+ * 编号是在这条消息的文档标注里的序号，与界面上的列表一致。评论已经在文档里，这里给智能体找到它的位置与线程：
+ * 智能体用 `docs_*` 工具读那个标签页与线程，评论在线程里回复（`parent` 是线程的第一条），请求写进文档那一行。
+ */
+export function withDocsAnnotations(text: string, annotations: readonly ResolvedDocsAnnotation[]): string {
+  if (annotations.length === 0) return text;
+  const groups = new Map<string, string[]>();
+  annotations.forEach(({ annotation: a, docPath }, i) => {
+    const parts = parseDocsPath(a.path);
+    const indent = (value: string) => value.split('\n').join('\n        ');
+    // i18n-ignore-start: 发给智能体的标注（给模型的提示词），不随界面语言变化
+    const lines =
+      a.kind === 'comment'
+        ? [
+            `${i + 1}. 评论 · ${a.label}`,
+            `   位置：${a.path}`,
+            ...(a.quote ? [`   原文：${indent(a.quote)}`] : []),
+            `   评论：${indent(a.text)}`,
+            ...(parts?.thread ? [`   回复：在线程 ${parts.thread} 里回复（docs_create utterance，parent 是这个 id）`] : []),
+          ]
+        : [
+            `${i + 1}. 请求 · ${a.label}`,
+            `   位置：${a.path}`,
+            `   请求：${indent(a.text)}`,
+            ...(parts
+              ? [
+                  parts.block
+                    ? `   写到：正文 ${parts.node} 的块 ${parts.block}（还空着就替换它，否则写在它后面）`
+                    : `   写到：正文 ${parts.node} 的末尾`,
+                ]
+              : []),
+          ];
+    // i18n-ignore-end
+    groups.set(docPath, [...(groups.get(docPath) ?? []), lines.join('\n')]);
+  });
+  const blocks = [...groups].map(([docPath, items]) => [`<baocut-docs-annotations doc=${JSON.stringify(docPath)}>`, ...items, '</baocut-docs-annotations>'].join('\n'));
   return [text, '', ...blocks].join('\n');
 }
 

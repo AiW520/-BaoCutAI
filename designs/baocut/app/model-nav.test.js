@@ -121,6 +121,17 @@ test('设计系统标签的 at（跳到哪个标注目标）算不同的一条�
   assert.deepEqual(N.routeFromHref(N.hrefFor(route)), route);
 });
 
+test('协作文档标签的 docs、dtab 与跳回标注的 at 各算不同的一条路由，并能经地址往返', () => {
+  const base = {r: 'agent', id: 's34', docs: 'docs-r1'};
+  const route = {...base, dtab: 'plan', at: 'f-plan#n-plan/b2;thread=c1'};
+  assert.ok(!N.isSame(base, {...base, dtab: 'plan'}));
+  assert.ok(!N.isSame({...base, dtab: 'plan'}, route));
+  assert.ok(!N.isSame(base, {...base, docs: 'docs-r2'}));
+  assert.ok(N.isSame(route, {...route}));
+  assert.deepEqual(N.routeFromHref(N.hrefFor(route)), route);
+  assert.deepEqual(N.routeFromHref(N.hrefFor({r: 'home', docs: 'docs-r1'})), {r: 'home', docs: 'docs-r1'});
+});
+
 test('旧模型 URL 迁入设置，保留能力与子页并兼容已有设置链接', () => {
   for (const page of [{sec: 'local', tab: 'tts'}, {sec: 'cloud', tab: 'image'}, {sec: 'voices'}]) {
     const route = {r: 'settings', ...page};

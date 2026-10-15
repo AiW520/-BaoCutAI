@@ -11,6 +11,7 @@
     "@baocut/code-runtime": "*",
     "@baocut/design": "*",
     "@baocut/design-system": "*",
+    "@baocut/docs": "*",
     "@baocut/editor-wasm": "*",
     "@baocut/harness": "*",
     "@baocut/jobs": "*",

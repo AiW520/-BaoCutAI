@@ -187,7 +187,7 @@ const SLASH_ICON: Record<SlashCommand['icon'], ComponentType> = {
 
 const IMAGE_TYPES = [...ATTACHMENT_MIME_TYPES];
 
-/** composer 上方的一组还没发出的标注（幻灯片、设计稿或设计系统）：可以逐条移除或全部移除。 */
+/** composer 上方的一组还没发出的标注（幻灯片、设计稿、设计系统或协作文档）：可以逐条移除或全部移除。 */
 export interface ComposerAnnotations {
   items: readonly AnnotationTokenItem[];
   onRemove(id: string): void;
@@ -254,6 +254,10 @@ export interface ComposerProps {
    * 其余同 `slideAnnotations`。
    */
   videoAnnotations?: ComposerAnnotations | null;
+  /**
+   * 输入框上方：协作文档标签里发给智能体、还没发出的评论与请求（docs/design/docs §8），「协作文档标注 · N 条」；其余同 `slideAnnotations`。
+   */
+  docsAnnotations?: ComposerAnnotations | null;
   /** 输入框上方：排队等发送的消息。 */
   queue?: ReactNode;
   /** 新会话起始页（原型 new-agent.jsx `AgentHero`）才传；会话里不传，输入区保持原样。 */
@@ -327,6 +331,7 @@ export function Composer(props: ComposerProps) {
   const designAnnotations = props.designAnnotations?.items.length ? props.designAnnotations : null;
   const designSystemAnnotations = props.designSystemAnnotations?.items.length ? props.designSystemAnnotations : null;
   const videoAnnotations = props.videoAnnotations?.items.length ? props.videoAnnotations : null;
+  const docsAnnotations = props.docsAnnotations?.items.length ? props.docsAnnotations : null;
   const runtime = useRuntime();
   const shellDraft = useShell((s) => s.drafts[draftKey] ?? '');
   const setShellDraft = useShell((s) => s.setDraft);
@@ -400,6 +405,7 @@ export function Composer(props: ComposerProps) {
     !!designAnnotations ||
     !!designSystemAnnotations ||
     !!videoAnnotations ||
+    !!docsAnnotations ||
     (!!start && start.canSendEmpty(images.length));
   const canSend = (!busy || !!queueWhileBusy) && !sending && !picking && !uploading && !blocked && hasContent && !tool?.isDisabled;
   const [over, setOver] = useState(false);
@@ -912,7 +918,7 @@ export function Composer(props: ComposerProps) {
               ))}
             </div>
           ) : null}
-          {reference || spaceReferences || readScope || slideAnnotations || designAnnotations || designSystemAnnotations || videoAnnotations ? (
+          {reference || spaceReferences || readScope || slideAnnotations || designAnnotations || designSystemAnnotations || videoAnnotations || docsAnnotations ? (
             <div className={tags}>
               {readScope ? (
                 <span className={tag} title={S.composer.readScopeHint}>
@@ -962,6 +968,9 @@ export function Composer(props: ComposerProps) {
               ) : null}
               {videoAnnotations ? (
                 <AnnotationsToken kind="video" items={videoAnnotations.items} onRemove={videoAnnotations.onRemove} onClear={videoAnnotations.onClear} />
+              ) : null}
+              {docsAnnotations ? (
+                <AnnotationsToken kind="docs" items={docsAnnotations.items} onRemove={docsAnnotations.onRemove} onClear={docsAnnotations.onClear} />
               ) : null}
             </div>
           ) : null}

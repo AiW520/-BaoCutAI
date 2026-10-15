@@ -12,6 +12,7 @@ export const ptBR: SpaceMessages = {
     slides: "Slides",
     design: "Design",
     'design-system': "Sistema de design",
+    docs: "Documento colaborativo",
     package: "Pacote de vídeo",
     template: "Template",
   },

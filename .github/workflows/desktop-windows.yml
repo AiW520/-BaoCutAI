@@ -209,6 +209,7 @@ jobs:
           npm run build:slides-editor
           npm run build:design-editor
           npm run build:design-system-editor
+          npm run build:docs-editor
 
       - name: Verify slides file watching after atomic saves
         if: steps.gate.outputs.skip != 'true'

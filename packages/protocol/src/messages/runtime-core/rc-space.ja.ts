@@ -29,6 +29,7 @@ export const ja: RcSpaceMessages = {
   slidesDirFile: 'スライドフォルダ内のファイルはスライドが管理しているため、単独では追加できません',
   designDirFile: 'デザインフォルダ内のファイルはデザインが管理しているため、単独では追加できません',
   designSystemDirFile: 'デザインシステムフォルダ内のファイルはデザインシステムが管理しているため、単独では追加できません',
+  docsDirFile: 'ドキュメントフォルダ内のファイルはドキュメントが管理しているため、単独では追加できません',
   tooManySameName: 'プロジェクトの imports/ に同じ名前のファイルが多すぎます',
 
   purgeVideoDeleteFirst:

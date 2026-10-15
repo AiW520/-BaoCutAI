@@ -1,6 +1,14 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { getLocale, type FileTarget, type Id, type Locale, type SpaceEntry } from '@baocut/protocol';
-import { EDITOR_LOCALE_PARAM, readEditorMessage, type EditorPoint, type EditorThread, type EditorToHostMessage, type HostToEditorMessage } from '@baocut/slides/editor-messages';
+import {
+  EDITOR_LOCALE_PARAM,
+  readEditorMessage,
+  type DocsEditorAnnotation,
+  type EditorPoint,
+  type EditorThread,
+  type EditorToHostMessage,
+  type HostToEditorMessage,
+} from '@baocut/slides/editor-messages';
 import {
   ActionButton,
   Button,
@@ -165,6 +173,20 @@ export interface EditorAnnotations {
   draftCount(conversationId: Id): number;
 }
 
+/**
+ * 编辑器直接交来的标注（协作文档 docs/design/docs §8）：编辑器里把评论「发给智能体」或在空行上写了请求，发 `editor:annotate`，
+ * 正文已经写好，不弹批注框，也不交编号标记；这里加进这个会话的草稿，回 `editor:annotate-result`。
+ */
+export interface EditorDirectAnnotations {
+  copy: { token(n: number): string; added(token: string): string; noConversation: string };
+  /** 收下一条；加不进去时返回要提示的话。成功时返回 null。 */
+  add(conversationId: Id, target: FileTarget, note: DocsEditorAnnotation): string | null;
+  /** 加进去之后这个会话草稿里的条数（提示里写）。 */
+  draftCount(conversationId: Id): number;
+  /** 点了一条标注时交给编辑器的 `editor:reveal` id，由那一条的位置（`anchor`，协作文档是元素路径）换来；返回 null 时不跳。 */
+  revealId?(anchor: string): string | null;
+}
+
 /** 这一种编辑器标签各自的部分；其余（iframe、消息往来、发送前保存、跳转、批注框）都在 `EditorPane` 里。 */
 export interface EditorPaneKind {
   kind: EditorKind;
@@ -182,6 +204,8 @@ export interface EditorPaneKind {
   blocked?: { title: string; body: string };
   /** 标注；没有这一项的标签不能标注。 */
   annotations?: EditorAnnotations;
+  /** 编辑器直接交来的标注（`editor:annotate`，协作文档）；没有这一项的标签回 `ok: false`。 */
+  direct?: EditorDirectAnnotations;
   /**
    * 整份导出（设计稿 docs/design/canvas §8.3）：经运行时自己的 frame 协议问它能导出哪些格式，头部显示「导出」菜单；
    * 编辑器交来的文件（`editor:save-file`）也只有这种标签保存。没有这一项的标签回 `failed`。
@@ -236,6 +260,7 @@ export function editorUrl(address: string, locale: Locale, params?: Readonly<Rec
  * 也重新打开（Runtime 重启后地址会变，iframe 跟着重新载入；没重启时还是同一个地址，不重载）。
  * 这台机器没有构建编辑器时说明不可用，不加载地址。地址上带打开时的界面语言（`?lang=`），编辑器按它写标注位置标签。
  * 设计系统标签（docs/design/canvas §10）也用这里，地址另带 `?path=`；它的标注（§10.6）多带一个章节（`section`）。
+ * 协作文档标签（docs/design/docs）也用这里：没有标注开关与批注框，编辑器经 `editor:annotate` 直接交来评论与请求（`direct`）。
  *
  * 标注（§8.2）经 postMessage 与编辑器往来（`@baocut/slides/editor-messages`，两种编辑器同一套）：编辑器里点一个元素或框一块区域，
  * 这里在那个位置弹出批注框，「添加到对话」进这个会话的草稿；草稿里属于这份文档的交回编辑器画编号标记。
@@ -244,7 +269,7 @@ export function editorUrl(address: string, locale: Locale, params?: Readonly<Rec
  */
 export function EditorPane({ spec, target, conversationId, active }: { spec: EditorPaneKind; target: FileTarget; conversationId: Id | null; active: boolean }) {
   const runtime = useRuntime();
-  const { copy, annotations: notes, exports: exportCopy } = spec;
+  const { copy, annotations: notes, direct, exports: exportCopy } = spec;
   // 每次连上（含断开后很快重连、界面没来得及显示断开的）都重新打开：Runtime 重启后 grant 与地址都换了
   const connectionId = useConnection((s) => (s.state.status === 'connected' ? s.state.connectionId : null));
   const go = useShell((s) => s.go);
@@ -356,6 +381,20 @@ export function EditorPane({ spec, target, conversationId, active }: { spec: Edi
         post({ type: 'editor:compose-result', requestId, opened: true });
         return;
       }
+      case 'editor:annotate': {
+        // 协作文档（docs/design/docs §8）：一条评论或请求直接进这个会话的草稿，不弹批注框；标签页不属于会话或草稿满了时回 false。
+        const { requestId, kind, path, label, quote, text } = message;
+        if (!direct || !conversationId) {
+          if (direct) ToastQueue.negative(direct.copy.noConversation, { timeout: 5000 });
+          post({ type: 'editor:annotate-result', requestId, ok: false });
+          return;
+        }
+        const error = direct.add(conversationId, target, { kind, path, label, ...(quote ? { quote } : {}), text });
+        if (error) ToastQueue.negative(error, { timeout: 5000 });
+        else ToastQueue.positive(direct.copy.added(direct.copy.token(direct.draftCount(conversationId))), { timeout: 4000 });
+        post({ type: 'editor:annotate-result', requestId, ok: !error });
+        return;
+      }
       case 'editor:flushed':
         flushes.current.get(message.requestId)?.(message.saved);
         return;
@@ -450,6 +489,12 @@ export function EditorPane({ spec, target, conversationId, active }: { spec: Edi
   useEffect(() => {
     if (!ready || !reveal) return;
     useEditorReveal.getState().take(key, reveal.seq);
+    if (!notes) {
+      // 没有编号标记的标签（协作文档）：编辑器按评论线程、块或正文节点的 id 自己找，直接跳
+      const id = direct?.revealId ? direct.revealId(reveal.anchor) : reveal.id;
+      if (id) post({ type: 'editor:reveal', id });
+      return;
+    }
     const known = latestThreads.current.some((t) => t.id === reveal.id);
     extra.current = known ? null : { id: reveal.id, anchor: reveal.anchor, n: 0, ...(reveal.section ? { section: reveal.section } : {}) };
     postThreads(latestThreads.current);

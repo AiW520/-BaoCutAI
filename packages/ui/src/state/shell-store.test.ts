@@ -32,6 +32,8 @@ const routes: Route[] = [
   { tab: 'home', conversationId: null, projectId: 'p1', pane: { kind: 'design', target: { entryId: 'e2' } } },
   { tab: 'home', conversationId: 'c1', projectId: null, pane: { kind: 'design-system', target: { conversationId: 'c1', path: 'design-systems/品牌 系统' } } },
   { tab: 'home', conversationId: null, projectId: 'p1', pane: { kind: 'design-system', target: { projectId: 'p1', path: 'brand' } } },
+  { tab: 'home', conversationId: 'c1', projectId: null, pane: { kind: 'docs', target: { conversationId: 'c1', path: 'docs/发布 计划' } } },
+  { tab: 'home', conversationId: null, projectId: 'p1', pane: { kind: 'docs', target: { entryId: 'e3' } } },
   { tab: 'home', conversationId: 'c1', projectId: null, pane: { kind: 'web', id: 'w1', url: 'https://example.com/a?b=1&c=2' } },
   { tab: 'space', category: 'video', projectId: null, video: { entryId: 'e1' } },
   { tab: 'settings', section: 'diagnostics' },

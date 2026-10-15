@@ -8,6 +8,7 @@ import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from
 import WebSocket from 'ws';
 import { BaoCutClient } from '@baocut/client';
 import { RpcError, newId, webVideoHref, type Id, type Project, type ServicesEvent, type ServicesSnapshot } from '@baocut/protocol';
+import { createDoc } from '@baocut/docs';
 import { resolveRuntimeHome, type RuntimeHome } from '@baocut/runtime-storage';
 import { resolveEngineHostCommand } from '../videos/engine-host.ts';
 import { startRuntime, type RunningRuntime, type StartRuntimeOptions } from '../runtime.ts';
@@ -927,6 +928,58 @@ describe('Web 服务', () => {
     expect(JSON.parse(readOnly.body)).toMatchObject({ code: 'not_writer' });
     expect(JSON.parse((await send(`${origin}${opened.url}__deck/session`, { headers: { Cookie: cookie } })).body)).toEqual({ canEdit: false });
     expect(await fs.readFile(path.join(deck, 'slides', 's01.html'), 'utf8')).toBe('<section>v2</section>');
+  });
+
+  it('协作文档：浏览器拿到同源的相对地址（与桌面同一个 grant）；页面、接口与实时连接都要会话；只能嵌在自己的页面里；只读配置下写入被拒', async () => {
+    const editor = path.join(dir, 'docs-editor');
+    await fs.mkdir(editor);
+    await fs.writeFile(path.join(editor, 'index.html'), '<!doctype html><html><head></head><body><div id="root"></div></body></html>');
+    await boot({ dist }, { docsEditorDist: editor });
+    const origin = await openWeb();
+    const cookie = await login(origin);
+    const page = await browser(origin, cookie);
+    const { project } = await desktop.request('projects.create', { name: '文档' });
+    await createDoc(path.join(project.path, 'plan'), { name: '三季度计划' });
+    await fs.mkdir(path.join(project.path, 'plain'));
+
+    const opened = await page.request('docs.open', { projectId: project.id, path: 'plan' });
+    expect(opened).toMatchObject({ doc: { title: '三季度计划', tabCount: 1, openThreads: 0 }, editorAvailable: true });
+    expect(opened.url).toMatch(/^\/docs\/[A-Za-z0-9_-]{32}\/$/);
+    const gateway = runtime!.discovery.endpoint.replace('ws:', 'http:');
+    expect((await desktop.request('docs.open', { projectId: project.id, path: 'plan' })).url).toBe(`${gateway}${opened.url}`);
+    for (const target of ['plain', '../outside.txt', 'missing']) {
+      expect(details(await page.request('docs.open', { projectId: project.id, path: target }).catch((e: unknown) => e)), target).toMatchObject({
+        code: target === 'missing' ? 'not-found' : 'invalid-request',
+        ...(target === 'plain' ? { details: { code: 'DOCS_NOT_A_DOC' } } : {}),
+      });
+    }
+
+    const editorPage = await send(`${origin}${opened.url}`, { headers: { Cookie: cookie } });
+    expect(editorPage.status).toBe(200);
+    expect(editorPage.headers['x-frame-options']).toBeUndefined();
+    expect(editorPage.headers['content-security-policy']).toContain("frame-ancestors 'self'");
+    expect((await send(`${origin}${opened.url}`)).status).toBe(401);
+    expect((await send(`${origin}${opened.url}`, { headers: { Cookie: cookie, 'Sec-Fetch-Site': 'cross-site' } })).status).toBe(403);
+    expect((await send(`${origin}/docs/${'x'.repeat(32)}/`, { headers: { Cookie: cookie } })).status).toBe(404);
+
+    // 实时连接：同源、带会话才升级；不认识的 grant 不升级。
+    const mux = `${origin.replace('http:', 'ws:')}${opened.url}api/mux`;
+    expect(await upgrade(mux, { Origin: origin, Cookie: cookie })).toBe(101);
+    expect(await upgrade(mux, { Origin: origin })).toBe(401);
+    expect(await upgrade(mux, { Origin: 'http://evil.example', Cookie: cookie })).toBe(403);
+    expect(await upgrade(mux.replace(/\/docs\/[^/]+\//, `/docs/${'x'.repeat(32)}/`), { Origin: origin, Cookie: cookie })).toBe(404);
+
+    // 只读配置：页面照常打开，上传素材被拒。
+    await desktop.request('services.configure', { serviceId: 'web', readOnly: true });
+    await until(() => page.state.status === 'disconnected');
+    expect((await send(`${origin}${opened.url}`, { headers: { Cookie: cookie } })).status).toBe(200);
+    const blob = await send(`${origin}${opened.url}api/blob`, {
+      method: 'POST',
+      headers: { Cookie: cookie, Origin: origin, 'Content-Type': 'image/png' },
+      body: 'png',
+    });
+    expect(blob.status).toBe(403);
+    expect(await fs.readdir(path.join(project.path, 'plan', 'assets')).catch(() => [])).toEqual([]);
   });
 
   it('设计稿：浏览器拿到相对地址；/design/ 在另一个主机名上只认 grant，不要会话；跨站只放行导航；不带会话的 /_blob/ 只找设计稿；只读不能发布', async () => {

@@ -14,7 +14,7 @@
   // Shared by the tab strip, the drag ghost and the title bar's open-tabs list.
   const workspaceTabName = (app, item) => item.id === '__browse__' ? '项目文件' : (item.kind === 'file' && app.workspaceFileTitles[item.id]) || W.title(item, app.spaceItems);
   const workspaceTabIcon = item => item.kind === 'slides' ? <R.Icons.Layout /> : item.kind === 'design' ? <R.Icons.Shapes /> : item.kind === 'design-system' ? <R.Icons.ColorHarmony />
-    : item.kind === 'file' && item.id !== '__browse__' ? <R.Icons.FileText /> : <Ic n={item.kind === 'movie' ? 'film' : item.kind === 'web' ? 'web' : 'folder'} className="ic--16" />;
+    : item.kind === 'docs' ? <R.Icons.TextParagraph /> : item.kind === 'file' && item.id !== '__browse__' ? <R.Icons.FileText /> : <Ic n={item.kind === 'movie' ? 'film' : item.kind === 'web' ? 'web' : 'folder'} className="ic--16" />;
 
   function ConversationTab({hover}) {
     const app = useApp();
@@ -362,7 +362,8 @@
             : item.kind === 'web' ? <window.WorkspaceBrowser item={item} active={visible && active === item.key} />
             : item.kind === 'slides' ? <window.WorkspaceSlides item={item} active={visible && active === item.key} />
             : item.kind === 'design' ? <window.WorkspaceDesign item={item} active={visible && active === item.key} />
-            : item.kind === 'design-system' ? <window.WorkspaceDesignSystem item={item} active={visible && active === item.key} /> : <WorkspaceFiles item={item} active={visible && active === item.key} />}
+            : item.kind === 'design-system' ? <window.WorkspaceDesignSystem item={item} active={visible && active === item.key} />
+            : item.kind === 'docs' ? <window.WorkspaceDocs item={item} active={visible && active === item.key} /> : <WorkspaceFiles item={item} active={visible && active === item.key} />}
         </div>)}
       </div>
     </div>;

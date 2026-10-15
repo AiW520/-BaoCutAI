@@ -14,6 +14,7 @@ export const de: SpaceMessages = {
     slides: "Folien",
     design: "Design",
     'design-system': "Designsystem",
+    docs: "Gemeinschaftsdokument",
     package: "Videopaket",
     template: "Vorlage",
   } satisfies Record<SpaceEntryKind, string>,

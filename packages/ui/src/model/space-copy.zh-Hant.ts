@@ -12,6 +12,7 @@ export const zhHant: SpaceMessages = {
     slides: '投影片',
     design: '設計稿',
     'design-system': '設計系統',
+    docs: '協作文件',
     package: '影片套件',
     template: '範本',
   },

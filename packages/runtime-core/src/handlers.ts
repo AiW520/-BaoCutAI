@@ -10,6 +10,7 @@ import {
   type DesignAnnotation,
   type DesignSystemAnnotation,
   type VideoAnnotation,
+  type DocsAnnotation,
   type RpcMethod,
   type RpcParams,
   type RpcResult,
@@ -36,6 +37,7 @@ import {
   type DesignSystemOpener,
   type SlidesOpener,
 } from './slides.ts';
+import { resolveDocsAnnotations, type DocsOpener } from './docs.ts';
 import type { SpaceCatalog } from './space-catalog.ts';
 import { resolvePipelineEntryInputs, withImageEntries, withSpeechMaterial, withTextMaterial } from './space/space-inputs.ts';
 import { spaceMethods, updateEntry } from './space/space-methods.ts';
@@ -102,6 +104,8 @@ export interface HandlerDeps {
   design: DesignOpener;
   /** 设计系统编辑器的地址（`designSystem.open`，docs/design/canvas §10.4），基址同 `slides`。 */
   designSystem: DesignSystemOpener;
+  /** 文档编辑器的地址（`docs.open`，docs/design/docs §6.1），基址同 `slides`。 */
+  docs: DocsOpener;
   attachments: AttachmentStore;
   analysis: MediaAnalysis;
   /** Space 条目的缩略图（`space.thumbnail`）。 */
@@ -188,6 +192,7 @@ export function createHandlers({
   slides,
   design,
   designSystem,
+  docs,
   attachments,
   analysis,
   spaceThumbnails,
@@ -234,6 +239,9 @@ export function createHandlers({
   /** 视频标注同上（产品设计 §3.2.3「视频标注」）：视频目录换成相对会话工作目录的路径。 */
   const videoAnnotationsOf = (conversationId: Id, annotations: readonly VideoAnnotation[] | undefined) =>
     resolveVideoAnnotations(annotations, harness.getConversation(conversationId).conversation.cwd, locateMedia);
+  /** 文档标注同上（docs/design/docs §8）。 */
+  const docsAnnotationsOf = (conversationId: Id, annotations: readonly DocsAnnotation[] | undefined) =>
+    resolveDocsAnnotations(annotations, harness.getConversation(conversationId).conversation.cwd, locateMedia);
 
   /**
    * 新建视频的位置：项目目录。给的是会话时用它的来源：所属项目，不属于项目时是会话的工作目录（架构设计 §3.10，不为视频建项目）。
@@ -362,17 +370,19 @@ export function createHandlers({
         return { deleted: true as const };
       },
       // 带模板或 skill 的发送在 `templateMethods` 里：先解析模板与 skill，再交给 Harness。
-      'conversations.steer': ({ slideAnnotations, designAnnotations, designSystemAnnotations, videoAnnotations, ...p }) => {
+      'conversations.steer': ({ slideAnnotations, designAnnotations, designSystemAnnotations, videoAnnotations, docsAnnotations, ...p }) => {
         const resolved = slideAnnotationsOf(p.conversationId, slideAnnotations);
         const resolvedDesign = designAnnotationsOf(p.conversationId, designAnnotations);
         const resolvedSystem = designSystemAnnotationsOf(p.conversationId, designSystemAnnotations);
         const resolvedVideo = videoAnnotationsOf(p.conversationId, videoAnnotations);
+        const resolvedDocs = docsAnnotationsOf(p.conversationId, docsAnnotations);
         return harness.steer({
           ...p,
           ...(resolved ? { slideAnnotations: resolved } : {}),
           ...(resolvedDesign ? { designAnnotations: resolvedDesign } : {}),
           ...(resolvedSystem ? { designSystemAnnotations: resolvedSystem } : {}),
           ...(resolvedVideo ? { videoAnnotations: resolvedVideo } : {}),
+          ...(resolvedDocs ? { docsAnnotations: resolvedDocs } : {}),
         });
       },
       'attachments.prepare': (p) => attachments.prepare(p),
@@ -494,6 +504,11 @@ export function createHandlers({
         const { root, file } = locateMedia(p);
         return designSystem.open(root, path.isAbsolute(file) ? path.relative(root, file) : file);
       },
+      'docs.open': async (p) => {
+        // 同 slides.open（docs/design/docs §6.1）。
+        const { root, file } = locateMedia(p);
+        return docs.open(root, path.isAbsolute(file) ? path.relative(root, file) : file);
+      },
       'videos.open': (p, principal) => videos.open(locateMedia(p), principal),
       'videos.close': (p, principal) => videos.close(p.videoId, principal),
       'videos.delete': (p, principal) => videoTrash.delete(p, principal),
@@ -589,6 +604,7 @@ export function createHandlers({
         designAnnotationsOf,
         designSystemAnnotationsOf,
         videoAnnotationsOf,
+        docsAnnotationsOf,
       }),
       ...skillMethods({ skills, installer: skillInstaller }),
       ...catalogMethods(toolCatalog, agentSkillsDir === undefined ? {} : { agentSkillsDir: () => agentSkillsDir }),

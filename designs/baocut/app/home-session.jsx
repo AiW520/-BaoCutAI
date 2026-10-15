@@ -43,6 +43,8 @@
     if (item.kind === 'design' && window.DesignCanvasCard) return <window.DesignCanvasCard item={item} sess={sess} onOpen={onOpen} />;
     /* 设计系统卡（docs/design/canvas §10.5）：一行，图标、标题、「设计系统」，点了在右侧开设计系统标签页 */
     if (item.kind === 'design-system' && window.DesignSystemCard) return <window.DesignSystemCard item={item} sess={sess} onOpen={onOpen} />;
+    /* 协作文档卡（docs/design/docs §7.3）：一行，图标、标题、「协作文档 · N 个标签页」，点了在右侧开协作文档标签页 */
+    if (item.kind === 'docs' && window.DocsCard) return <window.DocsCard item={item} sess={sess} onOpen={onOpen} />;
     return <ArtifactCard item={item} sess={sess} onOpen={onOpen} />;
   }
 

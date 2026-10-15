@@ -10,6 +10,7 @@ const web = {key:'web:w1', kind:'web', id:'w1', url:'https://example.com/'};
 const slides = {key:'slides:deck1', kind:'slides', id:'deck1'};
 const design = {key:'design:cv1', kind:'design', id:'cv1'};
 const system = {key:'design-system:ds1', kind:'design-system', id:'ds1'};
+const docs = {key:'docs:docs1', kind:'docs', id:'docs1', at:null};
 
 test('multiple resource types coexist, reopening selects rather than duplicates', () => {
   const first = W.open(W.open(W.open(W.empty(), movie), file), web);
@@ -30,7 +31,7 @@ test('closing active selects the right neighbor, then the left, then collapses',
   assert.equal(W.close(first, 'missing'), first);
 });
 test('deep links roundtrip every pane type and keep editor tool/time', () => {
-  for (const item of [movie, {...movie,t:24.5},file,web,{...web,url:''},slides,{...slides,slide:'s03'},design,{...design,board:'hero'},system]) {
+  for (const item of [movie, {...movie,t:24.5},file,web,{...web,url:''},slides,{...slides,slide:'s03'},design,{...design,board:'hero'},system,docs,{...docs,dtab:'plan'}]) {
     const route = W.route('s2', item);
     const parsed = N.routeFromHref(N.hrefFor(route));
     assert.deepEqual(parsed, route);
@@ -44,6 +45,8 @@ test('deep links roundtrip every pane type and keep editor tool/time', () => {
   assert.equal(N.isSame(W.route('s2',design),W.route('s2',{...design,board:'hero'})), false);
   assert.equal(N.isSame(W.route('s2',design),W.route('s2',system)), false);
   assert.equal(N.isSame(W.route('s2',system),W.route('s2',{...system,id:'ds2'})), false);
+  assert.equal(N.isSame(W.route('s2',docs),W.route('s2',{...docs,dtab:'plan'})), false);
+  assert.equal(N.isSame(W.route('s2',design),W.route('s2',docs)), false);
 });
 test('a slides tab keeps its page, and an unknown deck is named as unavailable', () => {
   const opened = W.open(W.empty(), {...slides, slide:'s02'});
@@ -76,6 +79,22 @@ test('a design system tab carries a one-shot jump target in its route', () => {
   assert.deepEqual(W.route('s2', {...system, at}), {r:'agent', id:'s2', system:'ds1', at});
   assert.deepEqual(W.fromRoute({r:'agent', id:'s2', system:'ds1', at}), {...system, at});
   assert.deepEqual(W.route('s2', {...system, at: undefined}), {r:'agent', id:'s2', system:'ds1'});
+});
+test('a doc tab keeps its doc tab, jumps once to an annotation, and an unknown doc is named as unavailable', () => {
+  const at = 'f-plan#n-plan/b2;thread=c1';
+  assert.deepEqual(W.route('s2', docs), {r:'agent', id:'s2', docs:'docs1'});
+  assert.deepEqual(W.route('s2', {...docs, dtab:'plan', at}), {r:'agent', id:'s2', docs:'docs1', dtab:'plan', at});
+  assert.deepEqual(W.fromRoute({r:'agent', id:'s2', docs:'docs1', at}), {...docs, at});
+  const opened = W.open(W.empty(), {...docs, dtab:'risks'});
+  // A route without a doc tab selects the tab without forgetting where it was.
+  assert.equal(W.reconcile({s2: opened}, W.route('s2', docs)).s2.tabs[0].dtab, 'risks');
+  // The jump is cleared after it lands, so the same annotation can jump again.
+  const jumping = W.reconcile({s2: opened}, W.route('s2', {...docs, dtab:'plan', at})).s2;
+  assert.equal(jumping.tabs[0].at, at);
+  const landed = W.reconcile({s2: jumping}, W.route('s2', {...jumping.tabs[0], at: undefined})).s2;
+  assert.deepEqual([landed.tabs[0].dtab, landed.tabs[0].at], ['plan', null]);
+  assert.equal(W.title(docs, [{id:'docs1', name:'发布计划'}]), '发布计划');
+  assert.equal(W.title(docs, []), '协作文档不可用');
 });
 test('history reconciliation isolates conversations and preserves inactive tabs', () => {
   let book = W.reconcile({}, W.route('s2',movie));

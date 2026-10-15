@@ -65,6 +65,15 @@ const en = {
     importDesignAsset: 'Import design asset',
     checkDesignSystem: 'Check design system',
     importDesignSystemAsset: 'Import design system asset',
+    createDoc: 'Create doc',
+    editDoc: 'Edit doc',
+    addToDoc: 'Add to doc',
+    commentInDoc: 'Comment in doc',
+    readDoc: 'Read doc',
+    readDocComments: 'Read doc comments',
+    deleteFromDoc: 'Delete from doc',
+    uploadToDoc: 'Upload to doc',
+    exportDoc: 'Export doc',
   },
   exportKind: {
     subtitles: 'Subtitles',
@@ -123,7 +132,8 @@ export type BaoCutStepKind =
   | 'contract'
   | 'slides'
   | 'design'
-  | 'design-system';
+  | 'design-system'
+  | 'docs';
 
 export interface BaoCutStep {
   kind: BaoCutStepKind;
@@ -231,6 +241,20 @@ const CATALOG: Record<string, (a: Args) => BaoCutStep> = {
     label: M.label.importDesignSystemAsset,
     summary: join(base(a.path), str(a.group)),
   }),
+  // 协作文档（docs/design/docs）：摘要是文档目录名；新建文档时是新文档的名字，上传与导出另带文件名。
+  docs_batch: (a) => {
+    const create = (a.container as Args | undefined)?.create as Args | undefined;
+    return create
+      ? { kind: 'docs', label: M.label.createDoc, summary: str(create.name) ?? base(a.doc) }
+      : { kind: 'docs', label: M.label.editDoc, summary: base(a.doc) };
+  },
+  docs_create: (a) => ({ kind: 'docs', label: a.object === 'utterance' ? M.label.commentInDoc : M.label.addToDoc, summary: base(a.doc) }),
+  docs_read: (a) => ({ kind: 'docs', label: M.label.readDoc, summary: base(a.doc) }),
+  docs_update: (a) => ({ kind: 'docs', label: M.label.editDoc, summary: base(a.doc) }),
+  docs_query: (a) => ({ kind: 'docs', label: M.label.readDocComments, summary: base(a.doc) }),
+  docs_delete: (a) => ({ kind: 'docs', label: M.label.deleteFromDoc, summary: base(a.doc) }),
+  docs_upload: (a) => ({ kind: 'docs', label: M.label.uploadToDoc, summary: join(base(a.doc), base(a.path)) }),
+  docs_export: (a) => ({ kind: 'docs', label: M.label.exportDoc, summary: join(base(a.doc), base(a.to)) }),
 };
 
 /** 工具名：MCP 的 `baocut.<tool>`；不是 BaoCut 的工具返回 null。 */

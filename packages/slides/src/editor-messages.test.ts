@@ -52,3 +52,49 @@ describe('saveFileName', () => {
     expect(saveFileName(`${'a'.repeat(260)}.html`)).toBeNull();
   });
 });
+
+describe('文档编辑器的标注（editor:annotate）', () => {
+  it('父窗口认评论与请求，正文去掉首尾空白', () => {
+    expect(
+      readEditorMessage({
+        type: 'editor:annotate',
+        requestId: 'r1',
+        kind: 'comment',
+        path: 'f-afc001d0-ce07#be1476b2-62c1/mq2x81a0kfd.16;thread=9d41c0aa-77e2',
+        label: 'Plan › "500 weekly active teams"',
+        quote: '500 weekly active teams',
+        text: '  Is Sep 29 firm?  ',
+      }),
+    ).toEqual({
+      type: 'editor:annotate',
+      requestId: 'r1',
+      kind: 'comment',
+      path: 'f-afc001d0-ce07#be1476b2-62c1/mq2x81a0kfd.16;thread=9d41c0aa-77e2',
+      label: 'Plan › "500 weekly active teams"',
+      quote: '500 weekly active teams',
+      text: 'Is Sep 29 firm?',
+    });
+    expect(readEditorMessage({ type: 'editor:annotate', requestId: 'r2', kind: 'ask', path: 'f-a#b/c', label: 'Plan', text: 'Write the risks' })).toEqual({
+      type: 'editor:annotate',
+      requestId: 'r2',
+      kind: 'ask',
+      path: 'f-a#b/c',
+      label: 'Plan',
+      text: 'Write the risks',
+    });
+  });
+
+  it('种类不对、正文为空或太长、路径为空时不认', () => {
+    const base = { type: 'editor:annotate', requestId: 'r1', kind: 'comment', path: 'f-a#b/c', label: 'x', text: 'hi' };
+    expect(readEditorMessage({ ...base, kind: 'reply' })).toBeNull();
+    expect(readEditorMessage({ ...base, text: '   ' })).toBeNull();
+    expect(readEditorMessage({ ...base, text: 'x'.repeat(4097) })).toBeNull();
+    expect(readEditorMessage({ ...base, path: '' })).toBeNull();
+    expect(readEditorMessage({ ...base, quote: 3 })).toBeNull();
+  });
+
+  it('编辑器认结果', () => {
+    expect(readHostMessage({ type: 'editor:annotate-result', requestId: 'r1', ok: true })).toEqual({ type: 'editor:annotate-result', requestId: 'r1', ok: true });
+    expect(readHostMessage({ type: 'editor:annotate-result', requestId: 'r1', ok: 'yes' })).toBeNull();
+  });
+});

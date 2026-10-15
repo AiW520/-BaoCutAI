@@ -89,6 +89,13 @@ describe('排队的增删改', () => {
     expect(isQueuedMessage({ ...msg('a'), videoAnnotations: [{ ...video, kind: 'circle' }] })).toBe(false);
     expect(isQueuedMessage({ ...msg('a'), videoAnnotations: [{ ...video, region: { x: 2, y: 0, w: 0, h: 0 } }] })).toBe(false);
     expect(isQueuedMessage({ ...msg('a'), videoAnnotations: video })).toBe(false);
+    // 协作文档标注同样。
+    const docNote = { doc: { conversationId: 'c1', path: 'launch-plan' }, kind: 'comment', path: 'f-t1#body/b3;thread=c9', label: '计划', quote: '原文', text: '有出处吗' };
+    expect(isQueuedMessage({ ...msg('a'), docsAnnotations: [docNote, { kind: 'ask', doc: docNote.doc, path: 'f-t1#body/b7', label: '计划', text: '补一段' }] })).toBe(true);
+    expect(isQueuedMessage({ ...msg('a'), docsAnnotations: [{ ...docNote, kind: 'note' }] })).toBe(false);
+    expect(isQueuedMessage({ ...msg('a'), docsAnnotations: [{ ...docNote, quote: 1 }] })).toBe(false);
+    expect(isQueuedMessage({ ...msg('a'), docsAnnotations: [{ ...docNote, doc: 'launch-plan' }] })).toBe(false);
+    expect(isQueuedMessage({ ...msg('a'), docsAnnotations: docNote })).toBe(false);
   });
 
   it('读回时把只能点一个 skill 时存的 skill 换成 skills', () => {

@@ -27,6 +27,7 @@ const en = {
     slides: 'Slides',
     design: 'Design',
     'design-system': 'Design system',
+    docs: 'Docs',
     package: 'Video package',
     template: 'Template',
   } satisfies Record<SpaceEntryKind, string>,

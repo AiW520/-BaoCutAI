@@ -26,6 +26,7 @@ import {
   type SpaceSnapshot,
   type TasksSnapshot,
 } from '@baocut/protocol';
+import { createDoc } from '@baocut/docs';
 import { ConversationStore, readDiscovery, resolveRuntimeHome, type RuntimeHome } from '@baocut/runtime-storage';
 import { Gateway } from './gateway.ts';
 import { MediaAnalysis } from './media-analysis.ts';
@@ -994,6 +995,76 @@ describe('Runtime（假 Driver）', () => {
     expect((await rejection(client.request('designSystem.open', { conversationId: conversation.id, path: 'old' }))).details).toEqual({
       code: 'DESIGN_SYSTEM_NOT_A_SYSTEM',
     });
+  });
+
+  it('协作文档（docs.open）：会话工作目录里的文档给网关上的编辑器地址；实时连接走同一端口；校验同 design.open；编辑器没构建时照常给地址、页面 503', async () => {
+    client.close();
+    await runtime.close();
+    runtime = await startRuntime({
+      home: resolveRuntimeHome({ BAOCUT_HOME: dir }),
+      drivers: () => [driver],
+      watchSpace: false,
+      slidesEditorDist: null,
+      designEditorDist: null,
+      designSystemEditorDist: null,
+      docsEditorDist: null,
+    });
+    client = await connect();
+    const { conversation } = await client.request('conversations.create', {});
+    await createDoc(path.join(conversation.cwd, 'plan'), { name: ' Q3 Plan ' });
+    const outside = path.join(dir, 'outside-doc');
+    await createDoc(outside, { name: 'Outside' });
+    await fs.symlink(outside, path.join(conversation.cwd, 'link'));
+    await fs.mkdir(path.join(conversation.cwd, 'old'));
+    await fs.writeFile(path.join(conversation.cwd, 'old', 'doc.json'), JSON.stringify({ name: 'not a doc' }));
+
+    const opened = await client.request('docs.open', { conversationId: conversation.id, path: 'plan' });
+    expect(opened).toEqual({ url: expect.any(String), doc: { title: 'Q3 Plan', tabCount: 1, openThreads: 0 }, editorAvailable: false });
+    const gateway = runtime.discovery.endpoint.replace('ws:', 'http:');
+    expect(opened.url).toMatch(new RegExp(`^${gateway}/docs/[A-Za-z0-9_-]{32}/$`));
+    expect((await client.request('docs.open', { conversationId: conversation.id, path: './plan/' })).url).toBe(opened.url);
+    expect((await fetch(opened.url)).status).toBe(503);
+    // grant 只对发它的那个种类有效。
+    expect((await fetch(opened.url.replace('/docs/', '/slides/'))).status).toBe(404);
+    expect((await fetch(opened.url.replace('/docs/', '/design/'))).status).toBe(404);
+
+    // 编辑器的实时连接（/docs/<grant>/api/mux）在网关的端口上升级；不认识的 grant 不升级；网关自己的连接照常。
+    const mux = (url: string) =>
+      new Promise<'open' | 'refused'>((resolve) => {
+        const socket = new WebSocket(url);
+        socket.addEventListener('open', () => {
+          socket.close();
+          resolve('open');
+        });
+        socket.addEventListener('error', () => resolve('refused'));
+      });
+    const muxUrl = `${opened.url.replace('http:', 'ws:')}api/mux`;
+    expect(await mux(muxUrl)).toBe('open');
+    expect(await mux(muxUrl.replace(/\/docs\/[^/]+\//, `/docs/${'x'.repeat(32)}/`))).toBe('refused');
+    expect(await client.request('conversations.list', {})).toBeTruthy();
+
+    // Space 里文档目录是一个文档条目（名字是标题），用条目打开得到同一个地址；目录里的文件不另成条目。
+    await runtime.space.ready;
+    await client.request('space.rescan', {});
+    const entries = runtime.space.snapshot().entries.filter((e) => e.source.conversationId === conversation.id && e.relPath.startsWith('plan'));
+    expect(entries).toEqual([expect.objectContaining({ kind: 'docs', relPath: 'plan', name: 'Q3 Plan' })]);
+    expect((await client.request('docs.open', { entryId: entries[0]!.id })).url).toBe(opened.url);
+    const files = await client.request('projects.files.list', { conversationId: conversation.id });
+    expect(files.entries.find((e) => e.path === 'plan')).toMatchObject({ isDir: true, kind: 'docs' });
+    expect(files.entries.some((e) => e.path.startsWith('plan/'))).toBe(false);
+
+    const cases: [string, string][] = [
+      ['../outside-doc', 'invalid-request'],
+      [outside, 'invalid-request'],
+      ['link', 'invalid-request'],
+      ['plan/doc.json', 'invalid-request'],
+      ['old', 'invalid-request'],
+      ['missing', 'not-found'],
+    ];
+    for (const [target, code] of cases) {
+      expect((await rejection(client.request('docs.open', { conversationId: conversation.id, path: target }))).code, target).toBe(code);
+    }
+    expect((await rejection(client.request('docs.open', { conversationId: conversation.id, path: 'old' }))).details).toEqual({ code: 'DOCS_NOT_A_DOC' });
   });
 
   it('本机文件（{ localPath }）：只发给桌面客户端，以文件自己的目录为根，只给普通文件', async () => {

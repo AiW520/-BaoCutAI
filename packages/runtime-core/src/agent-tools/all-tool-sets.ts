@@ -14,6 +14,7 @@ import { SkillTools } from './skill-tools.ts';
 import { SlidesTools } from './slides-tools.ts';
 import { DesignTools } from './design-tools.ts';
 import { DesignSystemTools } from './design-system-tools.ts';
+import { DocsTools } from './docs-tools.ts';
 import { SpaceTools } from './space-tools.ts';
 import { SemanticTools } from './semantic-tools.ts';
 import { SpeechSentenceTools } from './speech-sentence-tools.ts';
@@ -52,6 +53,7 @@ export function allToolSets(): ToolSet[] {
     new SlidesTools(none),
     new DesignTools(none),
     new DesignSystemTools(none),
+    new DocsTools(none),
   ];
 }
 

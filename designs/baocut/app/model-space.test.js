@@ -58,7 +58,7 @@ test('分类与计数：回收站只收已移入的，其余分类不含它们',
   assert.equal(n.doc, 0);
   assert.equal(n.fav, 1);
   assert.equal(n.trash, 2);
-  assert.deepEqual(SP.CATS.map((c) => c.label), ['全部', '视频', '成片', '视频素材', '图片', '音频', '字幕', '文档', '幻灯片', '设计稿', '设计系统', '模板']);
+  assert.deepEqual(SP.CATS.map((c) => c.label), ['全部', '视频', '成片', '视频素材', '图片', '音频', '字幕', '文档', '幻灯片', '设计稿', '设计系统', '协作文档', '模板']);
   assert.deepEqual(SP.SPECIAL.map((c) => c.label), ['收藏', '回收站']);
   assert.ok(SP.isCat('trash') && SP.isCat('doc') && !SP.isCat('nope'));
   // 索引文件夹里的文件：来源写文件夹（2026-10-13 待确认）
@@ -164,6 +164,11 @@ test('二次编辑的路子（§4.6）', () => {
   assert.equal(SP.specText({kind: 'design-system', components: [{}, {}, {}]}), '3 个组件');
   assert.deepEqual(SP.KINDS['design-system'], {k: 'design-system', label: '设计系统', icon: 'ColorHarmony'});
   assert.ok(SP.isCat('design-system'));
+  assert.equal(SP.editRoute({kind: 'docs'}), 'docs');
+  assert.equal(SP.specText({kind: 'docs', tabs: [{}, {}, {}]}), '3 个标签页');
+  assert.equal(SP.specText({kind: 'docs'}), '');
+  assert.deepEqual(SP.KINDS.docs, {k: 'docs', label: '协作文档', icon: 'TextParagraph'});
+  assert.ok(SP.isCat('docs'));
 });
 
 test('另存为新版本：新加一条候选，原条目不动；版本号递增', () => {

@@ -190,6 +190,21 @@ export const SESSION_ONLY_TOOLS: Readonly<Record<string, SessionOnlyToolFallback
       '设计系统已有的 record 都保留，没有文件撑着的 record 一条也不写。',
     text: '上传素材（只在 BaoCut 的会话里有）',
   },
+  // 文档（skills/docs）整套都是会话里的 docs_* 工具：文档的文件归 BaoCut，终端里没有别的写法。工具清单的第一条换成说明，其余的名字换成说法。
+  docs_batch: {
+    phrase: new RegExp(`^- ${toolNamePattern('docs_batch')}：新建文档[^\\n]*`, 'g'),
+    replacement:
+      '- 终端里没有文档工具：文档只能在 BaoCut 的会话里新建与修改（它的文件归 BaoCut，不能用文件工具写）。用户在终端里要一份文档时，' +
+      '写成工作目录里的 Markdown 文件，并说明在 BaoCut 的会话里可以做成能评论、能导出的文档；下面的写法只在 BaoCut 的会话里用得上。',
+    text: '新建或批量修改文档（只在 BaoCut 的会话里有）',
+  },
+  docs_create: { phrase: /(?!)/g, replacement: '', text: '在文档里新建评论、标签页或正文（只在 BaoCut 的会话里有）' },
+  docs_read: { phrase: /(?!)/g, replacement: '', text: '读文档（只在 BaoCut 的会话里有）' },
+  docs_update: { phrase: /(?!)/g, replacement: '', text: '改文档（只在 BaoCut 的会话里有）' },
+  docs_query: { phrase: /(?!)/g, replacement: '', text: '列文档的评论（只在 BaoCut 的会话里有）' },
+  docs_delete: { phrase: /(?!)/g, replacement: '', text: '删文档的标签页或评论（只在 BaoCut 的会话里有）' },
+  docs_upload: { phrase: /(?!)/g, replacement: '', text: '上传文档素材（只在 BaoCut 的会话里有）' },
+  docs_export: { phrase: /(?!)/g, replacement: '', text: '导出文档（只在 BaoCut 的会话里有）' },
 };
 // i18n-ignore-end
 

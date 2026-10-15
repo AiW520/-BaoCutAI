@@ -188,6 +188,22 @@ describe('工具步骤', () => {
       'Inter.woff2',
       'design-system',
     ]);
+    // 协作文档：新建文档（docs_batch 带 container.create）写新文档的名字，其余写文档目录名；评论与正文分开念。
+    expect(of('docs_batch', { doc: 'docs/plan', container: { kind: 'project', create: { name: '发布计划' } }, batch: [] })).toEqual([
+      '新建协作文档',
+      '发布计划',
+      'docs',
+    ]);
+    expect(of('docs_batch', { doc: 'docs/plan/', container: { kind: 'project', id: 'd1' }, batch: [] })).toEqual(['编辑协作文档', 'plan', 'docs']);
+    expect(of('docs_create', { doc: 'docs/plan', object: 'utterance', payload: {} })).toEqual(['在协作文档里评论', 'plan', 'docs']);
+    expect(of('docs_create', { doc: 'docs/plan', object: 'file', payload: {} })).toEqual(['添加到协作文档', 'plan', 'docs']);
+    expect(of('docs_read', { doc: 'docs/plan' })).toEqual(['读取协作文档', 'plan', 'docs']);
+    expect(of('docs_update', { doc: 'docs/plan', ref: { object: 'node', id: 'n1' }, payload: {} })).toEqual(['编辑协作文档', 'plan', 'docs']);
+    expect(of('docs_query', { doc: 'docs/plan', object: 'utterance', payload: {} })).toEqual(['读取协作文档评论', 'plan', 'docs']);
+    expect(of('docs_delete', { doc: 'docs/plan', ref: { object: 'utterance', id: 'u1' } })).toEqual(['从协作文档删除', 'plan', 'docs']);
+    expect(of('docs_upload', { doc: 'docs/plan', path: 'images/chart.png' })).toEqual(['上传到协作文档', 'plan · chart.png', 'docs']);
+    expect(of('docs_export', { doc: 'docs/plan', to: 'out/plan.md' })).toEqual(['导出协作文档', 'plan · plan.md', 'docs']);
+    expect(of('docs_export', { doc: 'docs/plan' })).toEqual(['导出协作文档', 'plan', 'docs']);
     expect(of('edits_apply', { video: 'v', operations: [{ type: 'putDocument', kind: 'translation', language: 'en' }] })).toEqual([
       '翻译',
       'en',
@@ -265,6 +281,20 @@ describe('工具步骤', () => {
       taskId: 't1',
       target: { conversationId: 'c', path: 'systems/brand' },
       title: '品牌设计系统',
+    };
+    const blocks = buildThread([user('u1', 't1'), tool('c1', 't1'), created, tool('c2', 't1')]);
+    expect(blocks.map((b) => b.type)).toEqual(['user', 'steps']);
+  });
+
+  it('协作文档的记录同样不占块，也不打断步骤组', () => {
+    const created: TimelineItem = {
+      kind: 'docs-created',
+      id: 'docs_1',
+      createdAt: at,
+      taskId: 't1',
+      target: { conversationId: 'c', path: 'docs/plan' },
+      title: '发布计划',
+      tabCount: 2,
     };
     const blocks = buildThread([user('u1', 't1'), tool('c1', 't1'), created, tool('c2', 't1')]);
     expect(blocks.map((b) => b.type)).toEqual(['user', 'steps']);

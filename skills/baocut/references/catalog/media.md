@@ -146,6 +146,19 @@ description: 媒体的机制：从链接下载、转码与合并、取帧看画�
 | 校验整份设计稿，通过后线程里出卡片 | {{tool:design_check}}，{{arg:path}} 是设计稿目录；改完文件再校验一次 |
 
 css、js、json 这类支持文件不导入，直接写进设计稿目录，用相对路径引用。
+
+### 文档
+
+一份文档是工作目录里的一个目录（`doc.json`、每个标签页一份 `tabs/<id>.json`、`comments.json` 与 `assets/`），**不用文件工具写**：全部经 `docs_*` 工具，每个都带 {{arg:doc}}（文档目录）；怎么做见 {{skill:docs}}。
+
+| 要做的事 | 调用 |
+| --- | --- |
+| 新建一份文档（骨架），或在文档上原子地执行一组改动 | {{tool:docs_batch}}；新建时 `container.create`，线程里出文档卡片 |
+| 读文档、标签页的大纲、一段、搜索或某个 rev 以来的变化 | {{tool:docs_read}} |
+| 改正文，或标签页的名字、顺序与层级 | {{tool:docs_update}} |
+| 评论与回复、下拉选项、标签页 | {{tool:docs_create}}；列评论线程 {{tool:docs_query}}，删除 {{tool:docs_delete}} |
+| 把工作目录里的图片或文件放进文档 | {{tool:docs_upload}}，{{arg:doc}} + {{arg:path}}；正文用 `blob/<id>` 引用 |
+| 导出 Markdown | {{tool:docs_export}}；带 {{arg:to}} 时写成工作目录里的 `.md` |
 <!-- /surface -->
 
 ### 找镜头切换
@@ -172,6 +185,7 @@ css、js、json 这类支持文件不导入，直接写进设计稿目录，用�
 - {{tool:slides_check}}：`problems` 是问题总数，为 0 时线程里记一张幻灯片卡片；否则 `slides` 列出每页的 `problems`，`deckProblems` 是 `deck.json`（含字体与设计系统的记录）与 `ds/` 的问题，`orphans` 是不在 `order` 里的页面文件。每页的 `notes` 不算问题，其中以「排版」开头的是放不下或互相压住的提示，尽量改掉。
 - {{tool:design_import_asset}}：`src` 形如 `/_blob/<id>`，原样写进 `<img src>`、`<helmet><style>` 里的 `url(…)` 或 `@font-face`；另有 `bytes` 与 `contentType`。
 - {{tool:design_check}}：`problems` 是问题总数，为 0 时线程里记一张设计稿卡片；否则 `issues` 每条有 `file`（相对设计稿目录，`.` 是整个目录）与 `message`，列不下时 `more` 说还有几条。`notChecked` 说明没查的部分：画板脚本能不能跑、排版与视觉效果。
+- `docs_*`：结果与 Claude Docs 连接器相同（回执的 `lids`、读到的 `<doc rev=…>` xml、`files[]`、评论的 `rows`）；被拒时错误码就是连接器的拒绝码（`guard_mismatch`、`find_none`、`missing_guard`……），什么也没改，按 {{skill:docs}} 改好后重发整个调用。{{tool:docs_upload}} 返回 `blob`（`blob/<id>`）、`bytes` 与 `contentType`；{{tool:docs_export}} 不带 {{arg:to}} 时返回 `markdown`（太长时 `truncated`）。
 <!-- /surface -->
 
 ## 看一条视频的证据阶梯

@@ -12,6 +12,7 @@ import Folder from '@react-spectrum/s2/icons/Folder';
 import GlobeGrid from '@react-spectrum/s2/icons/GlobeGrid';
 import Layout from '@react-spectrum/s2/icons/Layout';
 import Shapes from '@react-spectrum/s2/icons/Shapes';
+import TextParagraph from '@react-spectrum/s2/icons/TextParagraph';
 import { iconStyle, style } from '@react-spectrum/s2/style' with { type: 'macro' };
 import { Focusable, VisuallyHidden } from 'react-aria-components';
 import { WORKSPACE_COPY } from '../../copy.ts';
@@ -74,6 +75,7 @@ export function WorkspaceTabIcon({ item }: { item: WorkspaceItem }) {
   if (item.kind === 'slides') return <Layout UNSAFE_style={icon} />;
   if (item.kind === 'design') return <Shapes UNSAFE_style={icon} />;
   if (item.kind === 'design-system') return <ColorHarmony UNSAFE_style={icon} />;
+  if (item.kind === 'docs') return <TextParagraph UNSAFE_style={icon} />;
   return <FileText UNSAFE_style={icon} />;
 }
 

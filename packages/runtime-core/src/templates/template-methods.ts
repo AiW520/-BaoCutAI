@@ -1,4 +1,11 @@
-import type { Harness, ResolvedDesignAnnotation, ResolvedDesignSystemAnnotation, ResolvedSlideAnnotation, ResolvedVideoAnnotation } from '@baocut/harness';
+import type {
+  Harness,
+  ResolvedDesignAnnotation,
+  ResolvedDesignSystemAnnotation,
+  ResolvedDocsAnnotation,
+  ResolvedVideoAnnotation,
+  ResolvedSlideAnnotation,
+} from '@baocut/harness';
 import {
   sendSkillRefs,
   type DesignAnnotation,
@@ -6,6 +13,7 @@ import {
   type Id,
   type SlideAnnotation,
   type VideoAnnotation,
+  type DocsAnnotation,
 } from '@baocut/protocol';
 import type { RpcHandlers } from '../handlers.ts';
 import type { MediaRegistry } from '../media.ts';
@@ -19,8 +27,8 @@ type TemplateMethod = 'templates.list' | 'templates.get' | 'templates.openHandle
 /**
  * `templates.*` 与带模板的 `conversations.send`（模板包规范 §5.2、§6），由 `handlers.ts` 并进方法表。目录只读；
  * 句柄只发给清单登记的随附文件，媒体通道再按真实路径确认它在模板目录里。
- * 点选的 skill（架构设计 §3.8，一个或几个）、幻灯片标注（docs/design/slides §9）、设计稿标注（docs/design/canvas §9）
- * 设计系统标注（§10.6）与视频标注（产品设计 §3.2.3）
+ * 点选的 skill（架构设计 §3.8，一个或几个）、幻灯片标注（docs/design/slides §9）、设计稿标注（docs/design/canvas §9）、
+ * 设计系统标注（§10.6）、视频标注（产品设计 §3.2.3）与文档标注（docs/design/docs §8）
  * 也在这一个发送入口里解析：
  * 模板、skill 与标注各自解析好，一起交给 Harness。
  */
@@ -36,8 +44,9 @@ export function templateMethods(deps: {
     annotations: readonly DesignSystemAnnotation[] | undefined,
   ) => ResolvedDesignSystemAnnotation[] | undefined;
   videoAnnotationsOf: (conversationId: Id, annotations: readonly VideoAnnotation[] | undefined) => ResolvedVideoAnnotation[] | undefined;
+  docsAnnotationsOf: (conversationId: Id, annotations: readonly DocsAnnotation[] | undefined) => ResolvedDocsAnnotation[] | undefined;
 }): Pick<RpcHandlers['methods'], TemplateMethod> {
-  const { templates, media, harness, skills, slideAnnotationsOf, designAnnotationsOf, designSystemAnnotationsOf, videoAnnotationsOf } = deps;
+  const { templates, media, harness, skills, slideAnnotationsOf, designAnnotationsOf, designSystemAnnotationsOf, videoAnnotationsOf, docsAnnotationsOf } = deps;
   return {
     'templates.list': (p) => templates.list(p.language),
     'templates.get': (p) => templates.get(p.id, p.language),
@@ -53,12 +62,14 @@ export function templateMethods(deps: {
       designAnnotations,
       designSystemAnnotations,
       videoAnnotations,
+      docsAnnotations,
       ...params
     }) => {
       const annotations = slideAnnotationsOf(params.conversationId, slideAnnotations);
       const design = designAnnotationsOf(params.conversationId, designAnnotations);
       const system = designSystemAnnotationsOf(params.conversationId, designSystemAnnotations);
       const video = videoAnnotationsOf(params.conversationId, videoAnnotations);
+      const docs = docsAnnotationsOf(params.conversationId, docsAnnotations);
       const resolved = await resolveSendSkills(skills, sendSkillRefs({ skill, skills: picked }));
       return harness.send({
         ...params,
@@ -68,6 +79,7 @@ export function templateMethods(deps: {
         ...(design ? { designAnnotations: design } : {}),
         ...(system ? { designSystemAnnotations: system } : {}),
         ...(video ? { videoAnnotations: video } : {}),
+        ...(docs ? { docsAnnotations: docs } : {}),
       });
     },
   };

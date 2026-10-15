@@ -202,6 +202,8 @@ import I_ClockPending from '@react-spectrum/s2/icons/ClockPending';
 import I_Shapes from '@react-spectrum/s2/icons/Shapes';
 // 设计系统（docs/design/canvas §10.6）：Space 分类、功能区标签与线程卡片
 import I_ColorHarmony from '@react-spectrum/s2/icons/ColorHarmony';
+// 协作文档（docs/design/docs）：Space 分类、功能区标签与线程卡片
+import I_TextParagraph from '@react-spectrum/s2/icons/TextParagraph';
 import I_StopProcessing from '@react-spectrum/s2/icons/StopProcessing';
 import I_Keyboard from '@react-spectrum/s2/icons/Keyboard';
 import I_New from '@react-spectrum/s2/icons/New';
@@ -334,6 +336,7 @@ export const Icons = {
   ClockPending: I_ClockPending,
   Shapes: I_Shapes,
   ColorHarmony: I_ColorHarmony,
+  TextParagraph: I_TextParagraph,
   StopProcessing: I_StopProcessing,
   Keyboard: I_Keyboard,
   New: I_New,

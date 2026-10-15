@@ -20,6 +20,7 @@ import {
 import { RcWeb } from '@baocut/protocol/messages/runtime-core';
 import type { Harness, Logger } from '@baocut/harness';
 import type { SlidesServer } from '@baocut/slides';
+import type { DocsServer } from '@baocut/docs';
 import { Gateway, type TrustedPrincipal } from '../gateway.ts';
 import type { RpcHandlers } from '../handlers.ts';
 import { MediaRegistry } from '../media.ts';
@@ -43,6 +44,8 @@ import { resolveWebDist, sendLoginPage, sendLoginScript, sendStatic, setSecurity
  * - 设计稿编辑器 `/design/<grant>/…`（docs/design/canvas §6.2）与设计系统编辑器 `/design-system/<grant>/…`（§10.4）：Web 客户端
  *   把它们放在另一个回环主机名上，那里没有会话 cookie，所以只认 grant；白名单里要有 `design.open` / `designSystem.open`，只读配置下
  *   发布与上传被拒。不带会话的 `/_blob/<id>` 只在白名单开放的那几种（设计稿、设计系统）里找。
+ * - 文档编辑器 `/docs/<grant>/…` 与它的实时连接 `/docs/<grant>/api/mux`（docs/design/docs §6.2）：与网关共用一个 DocsServer，
+ *   与幻灯片相同，同源、要会话 cookie、白名单里要有 `docs.open`；只读配置下只能看与读评论；只能嵌在这个服务自己的页面里。
  *
  * 登录：`createAccessLink` 发一个一次性代码，放在链接的 fragment 里（或由用户粘进登录页的输入框）；
  * 登录页的脚本用它 `POST /_auth/session` 换一个 HttpOnly、SameSite=Strict 的会话 cookie。选 cookie 而不是页面内存里的令牌：`<video>`、`<img>` 不能带请求头，
@@ -83,6 +86,7 @@ export class WebService implements ManagedService {
   readonly #uploads = new Map<string, { sessionId: string; url: string; expires: number }>();
   #binding: { handlers: RpcHandlers; runtime: RuntimeInfo } | null = null;
   #slides: SlidesServer | null = null;
+  #docs: DocsServer | null = null;
   #server: Server | null = null;
   #gateway: Gateway | null = null;
   #port: number | null = null;
@@ -97,8 +101,9 @@ export class WebService implements ManagedService {
   }
 
   /** Runtime 装配好网关之后交给它处理函数（用这个服务的媒体句柄表构造的那一组）。在这之前不能开启。 */
-  bind(binding: { handlers: RpcHandlers; runtime: RuntimeInfo; slides?: SlidesServer }): void {
+  bind(binding: { handlers: RpcHandlers; runtime: RuntimeInfo; slides?: SlidesServer; docs?: DocsServer }): void {
     this.#slides = binding.slides ?? null;
+    this.#docs = binding.docs ?? null;
     this.#binding = {
       runtime: binding.runtime,
       handlers: webHandlers(binding.handlers, {
@@ -279,7 +284,8 @@ export class WebService implements ManagedService {
     const gateway = this.#gateway;
     if (!gateway) return refuse(503, 'Service Unavailable');
     const { pathname } = new URL(request.url ?? '/', 'http://localhost');
-    if (pathname !== '/ws') return refuse(404, 'Not Found');
+    const docs = pathname.startsWith('/docs/');
+    if (pathname !== '/ws' && !docs) return refuse(404, 'Not Found');
     // WebSocket 不受同源策略限制：来源必须带、必须是自己。
     const origin = request.headers.origin;
     if (!this.#hostAllowed(request.headers.host) || origin === undefined || !this.#origins().includes(origin)) {
@@ -288,6 +294,13 @@ export class WebService implements ManagedService {
     }
     const sessionId = this.#session(request);
     if (!sessionId) return refuse(401, 'Unauthorized');
+    if (docs) {
+      // 文档编辑器的实时连接（`/docs/<grant>/api/mux`）：与 `#docsRequest` 同一套条件。
+      const access = this.#access();
+      if (!this.#docs || webAuthorize('docs.open', {}, access)) return refuse(403, 'Forbidden');
+      if (!this.#docs.upgrade(request, socket, head, { canEdit: !access.readOnly })) refuse(404, 'Not Found');
+      return;
+    }
     gateway.upgrade(request, socket, head, { kind: 'web', name: 'web', sessionId });
   }
 
@@ -343,6 +356,7 @@ export class WebService implements ManagedService {
     if (pathname.startsWith('/design/')) return this.#designRequest(request, response, 'design');
     if (pathname.startsWith('/design-system/')) return this.#designRequest(request, response, 'design-system');
     if (pathname.startsWith('/slides/') || pathname.startsWith('/_blob/')) return this.#slidesRequest(request, response);
+    if (pathname.startsWith('/docs/')) return this.#docsRequest(request, response);
     if (request.method !== 'GET' && request.method !== 'HEAD') {
       return void response.writeHead(405, { Allow: 'GET, HEAD' }).end();
     }
@@ -387,6 +401,24 @@ export class WebService implements ManagedService {
     response.removeHeader('X-Frame-Options');
     response.removeHeader('Content-Security-Policy');
     if (!this.#slides.handle(request, response, { canEdit: !access.readOnly, frameAncestors: "'self'" })) deny(404, RcWeb.fileNotFound().text);
+  }
+
+  /**
+   * 文档编辑器的路由（docs/design/docs §6.2）：与幻灯片相同，要会话（同源请求带的 cookie），白名单里要有 `docs.open`。
+   * 只读配置下写入被拒（编辑器只能看与读评论）；这组路由自己给 CSP，嵌入只放行这个服务自己的页面。
+   */
+  #docsRequest(request: IncomingMessage, response: ServerResponse): void {
+    const deny = (status: number, text: string) => response.writeHead(status, { 'Content-Type': 'text/plain; charset=utf-8' }).end(text);
+    const site = request.headers['sec-fetch-site'];
+    const sameOrigin = site === undefined || site === 'same-origin' || site === 'none';
+    const session = sameOrigin ? this.#session(request) : null;
+    if (!sameOrigin || !session) return void deny(sameOrigin ? 401 : 403, RcWeb.loginRequired().text);
+    const access = this.#access();
+    const verdict = webAuthorize('docs.open', {}, access);
+    if (verdict || !this.#docs) return void deny(403, verdict?.message ?? RcWeb.fileNotFound().text);
+    response.removeHeader('X-Frame-Options');
+    response.removeHeader('Content-Security-Policy');
+    if (!this.#docs.handle(request, response, { canEdit: !access.readOnly, frameAncestors: "'self'" })) deny(404, RcWeb.fileNotFound().text);
   }
 
   /**

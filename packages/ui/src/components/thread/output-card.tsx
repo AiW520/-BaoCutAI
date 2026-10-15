@@ -10,6 +10,7 @@ import { OUTPUT_COPY, VIDEO_CARD_COPY } from '../../copy.ts';
 import { outputSourceMissing, posterFrame, type ConversationOutput } from '../../model/conversation-outputs.ts';
 import { formatClock } from '../../model/format.ts';
 import { DESIGN } from '../../model/design-copy.ts';
+import { DOCS } from '../../model/docs-copy.ts';
 import { SLIDES } from '../../model/slides-copy.ts';
 import { formatBytes, isPlayable, KIND_LABEL } from '../../model/space.ts';
 import { videoStatus } from '../../model/video-cards.ts';
@@ -214,6 +215,7 @@ export function OutputCard({
   const slides = output.slides;
   const design = output.design;
   const designSystem = output.designSystem;
+  const docs = output.docs;
   const words = (
     isVideo
       ? [KIND_LABEL.video, output.durationSeconds ? formatClock(output.durationSeconds) : null]
@@ -223,7 +225,9 @@ export function OutputCard({
           ? [KIND_LABEL.design, design.boardCount === null ? null : DESIGN.boards(design.boardCount)]
           : designSystem
             ? [KIND_LABEL['design-system']]
-            : [KIND_LABEL[output.kind], output.entry ? formatBytes(output.entry.size) : null, playable ? OUTPUT_COPY.playHere : output.entry ? OUTPUT_COPY.previewHere : null]
+            : docs
+              ? [KIND_LABEL.docs, docs.tabCount === null ? null : DOCS.tabs(docs.tabCount)]
+              : [KIND_LABEL[output.kind], output.entry ? formatBytes(output.entry.size) : null, playable ? OUTPUT_COPY.playHere : output.entry ? OUTPUT_COPY.previewHere : null]
   )
     .filter(Boolean)
     .join(' · ');
@@ -252,6 +256,8 @@ export function OutputCard({
     else if (design) shell.openPane({ kind: 'design', target: design.target });
     // 设计系统在功能区的设计系统标签里打开（docs/design/canvas §10.6）。
     else if (designSystem) shell.openPane({ kind: 'design-system', target: designSystem.target });
+    // 协作文档在功能区的协作文档标签里打开，智能体的改动实时出现在里面（docs/design/docs §8）。
+    else if (docs) shell.openPane({ kind: 'docs', target: docs.target });
     else if (!isVideo && output.entry) shell.openPane({ kind: 'file', target: { conversationId, path: output.entry.relPath } });
   };
 

@@ -3,7 +3,8 @@
 // Mac 选项：--platform mac、--notary-profile、--sign-keychain、--metallib；Windows 专属选项与流程如下。
 //
 // 先要有：`npm run build`（out/）、`npm run build:web`（apps/web/dist）、`npm run build:slides-editor`（apps/slides-editor/dist）、
-// `npm run build:design-editor`（apps/design-editor/dist）与 `npm run build:design-system-editor`（apps/design-system-editor/dist）；
+// `npm run build:design-editor`（apps/design-editor/dist）、`npm run build:design-system-editor`（apps/design-system-editor/dist）
+// 与 `npm run build:docs-editor`（apps/docs-editor/dist）；
 // 根的 package:win 脚本会先跑它们。
 // 步骤：
 // 1. 编 Worker：`cargo build --release --locked --target <三元组>`，Model Worker 按变体选后端（标准版 candle CPU 与 whisper.cpp 的
@@ -13,7 +14,7 @@
 //    不直接打 apps/desktop：它的 dependencies 里有工作区的 TypeScript 包与只给渲染进程用的 React，会被原样塞进 asar。
 // 3. 资源按 `src/main/packaged-resources.ts`（主进程启动 Runtime 时用的同一份）放到 `<resources>` 下：bin/（Worker、凭据助手，
 //    CUDA 版另带 NVIDIA 运行库）、templates/、skills/（说明书与内置 skill）、model-assets/、web/、slides-editor/、design-editor/、
-//    design-system-editor/。都在 asar 外面，子进程要按路径读。
+//    design-system-editor/、docs-editor/。都在 asar 外面，子进程要按路径读。
 // 4. electron-builder 出包。它会把 Electron 的 win32-x64 发行包与 NSIS 工具下到自己的缓存目录（~/Library/Caches/electron-builder 等）。
 // 5. 核对解开的包：resources 里的每一项都在，asar 里有主进程、Runtime 与 editor.wasm。在 Windows 上另由 check-packaged-app.mjs 真跑一遍。
 // 6. 写发布报告 `<产物名>-release.json`：版本、build、变体、安装器与 zip 的文件名、大小与 sha256。给了 --download-base-url 时再按
@@ -265,6 +266,12 @@ for (const file of DESIGN_SYSTEM_EDITOR_FILES) {
     fail(`没有 apps/design-system-editor/dist/${file}：先运行 npm run build:design-system-editor`);
   }
 }
+// 文档编辑器的页面（docs/design/docs §3）。
+const DOCS_EDITOR_DIST = path.join(ROOT, 'apps/docs-editor/dist');
+const DOCS_EDITOR_FILES = ['index.html', 'assets/docs.css'];
+for (const file of DOCS_EDITOR_FILES) {
+  if (!existsSync(path.join(DOCS_EDITOR_DIST, file))) fail(`没有 apps/docs-editor/dist/${file}：先运行 npm run build:docs-editor`);
+}
 
 // 1. Worker。
 let binSource;
@@ -367,6 +374,7 @@ try {
   cpSync(SLIDES_EDITOR_DIST, path.join(resDir, RESOURCE_DIRS.slidesEditor), { recursive: true });
   cpSync(DESIGN_EDITOR_DIST, path.join(resDir, RESOURCE_DIRS.designEditor), { recursive: true });
   cpSync(DESIGN_SYSTEM_EDITOR_DIST, path.join(resDir, RESOURCE_DIRS.designSystemEditor), { recursive: true });
+  cpSync(DOCS_EDITOR_DIST, path.join(resDir, RESOURCE_DIRS.docsEditor), { recursive: true });
   if (isMac) {
     const fonts = shareMacFonts({ appDir, webDir: path.join(resDir, RESOURCE_DIRS.web),
       fontSource: path.join(ROOT, 'crates/render-raster/assets/fonts'), exportWorker: path.join(bin, 'export-worker') });
@@ -619,6 +627,9 @@ function verifyUnpacked(dir, variantName) {
     if (!existsSync(path.join(resources, RESOURCE_DIRS.designSystemEditor, file))) {
       problems.push(`没有 resources/${RESOURCE_DIRS.designSystemEditor}/${file}`);
     }
+  }
+  for (const file of DOCS_EDITOR_FILES) {
+    if (!existsSync(path.join(resources, RESOURCE_DIRS.docsEditor, file))) problems.push(`没有 resources/${RESOURCE_DIRS.docsEditor}/${file}`);
   }
   const asar = path.join(resources, 'app.asar');
   if (!existsSync(asar)) problems.push('没有 resources/app.asar');
