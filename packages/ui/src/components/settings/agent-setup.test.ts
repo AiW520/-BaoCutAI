@@ -311,6 +311,12 @@ describe('默认模型与强度', () => {
     expect(selectedModelKey(driver({ defaultModel: 'a' }))).toBe('a');
   });
 
+  it('BaoCut 写的模型说明带引用：按界面的语言重新生成，不用 Runtime 写下时的语言', () => {
+    const descriptionRef = { key: 'driversClaude.fromSettings', params: { key: 'ANTHROPIC_MODEL' } };
+    const models = [model('gw', { description: 'From Claude Code settings (env.ANTHROPIC_MODEL)', descriptionRef })];
+    expect(modelChoices(driver({ models }))[1]?.description).toBe('来自 Claude Code 设置（env.ANTHROPIC_MODEL）');
+  });
+
   it('「推荐」只标推荐的那一个：模型表里别的 balanced 不标，最强、最快照旧', () => {
     const models = [
       model('gpt-6-astra', { tier: 'max' }),

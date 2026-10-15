@@ -3,6 +3,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { silentLogger } from '@baocut/harness';
+import { localizeText, setLocale } from '@baocut/protocol';
 import { createFakeClaude, createFakeClaudeCli, type FakeClaude, type FakeClaudeCli } from '../testing/fake-claude.ts';
 import { claudeExec, claudeSearch, describeClaudeAccount, parseClaudeVersion, parseCmdShimTarget } from './claude-binary.ts';
 import { ClaudeDriver } from './claude-driver.ts';
@@ -196,7 +197,8 @@ describe('ClaudeDriver 探测（假 claude）', () => {
       ['gateway-main', null],
       ['corp-sonnet-proxy', 'balanced'],
     ]);
-    expect(probe.models.at(-1)).toMatchObject({
+    const fromSettings = probe.models.at(-1)!;
+    expect(fromSettings).toMatchObject({
       label: 'corp-sonnet-proxy',
       description: '来自 Claude Code 设置（env.ANTHROPIC_DEFAULT_SONNET_MODEL）',
       isDefault: false,
@@ -204,6 +206,15 @@ describe('ClaudeDriver 探测（假 claude）', () => {
       defaultEffort: null,
     });
     expect(probe).toMatchObject({ configModel: 'gateway-main', configModelKnown: false });
+    // 说明是 BaoCut 写的：带引用，界面换了语言按引用重新生成。
+    vi.stubEnv('BAOCUT_LOCALE', 'en');
+    setLocale('en');
+    try {
+      expect(localizeText(fromSettings.description, fromSettings.descriptionRef)).toBe('From Claude Code settings (env.ANTHROPIC_DEFAULT_SONNET_MODEL)');
+    } finally {
+      vi.unstubAllEnvs();
+      setLocale('zh-Hans');
+    }
   });
 
   it('createSession：找不到 claude 时报 driver-unavailable；找到时不立即起进程', async () => {

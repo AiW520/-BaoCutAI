@@ -449,7 +449,7 @@ export function modelChoices(
   for (const m of driver.models) {
     const tierId = tierOf(m);
     const tier = tierId ? TIER_COPY[tierId] : null;
-    rows.push({ key: m.id, model: m.id, label: m.label, tag: tier?.label ?? null, description: m.description ?? tier?.description ?? null, missing: false });
+    rows.push({ key: m.id, model: m.id, label: m.label, tag: tier?.label ?? null, description: localizeText(m.description, m.descriptionRef) ?? tier?.description ?? null, missing: false });
   }
   return rows;
 }

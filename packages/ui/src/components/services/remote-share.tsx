@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import type { ShareStatus } from '@baocut/protocol';
+import { localizeText, type ShareStatus } from '@baocut/protocol';
 import { ActionButton, AlertDialog, Badge, Button, DialogTrigger, Switch, ToastQueue } from '@react-spectrum/s2';
 import { style } from '@react-spectrum/s2/style' with { type: 'macro' };
 import { REMOTE_COPY, SERVICE_COPY, SERVICES_PAGE_COPY } from '../../copy.ts';
@@ -100,7 +100,7 @@ export function RemoteShare() {
     subline = status.name;
   } else if (state === 'error') {
     heading = serviceStateLabel('remote', state);
-    subline = status.error ?? REMOTE_COPY.subErrorFallback;
+    subline = localizeText(status.error, status.errorRef) ?? REMOTE_COPY.subErrorFallback;
   } else if (state === 'on') {
     heading = REMOTE_COPY.cardOn;
     subline = `${status.name} · ${shareAddresses(status)[0] ?? REMOTE_COPY.noAddress}`;

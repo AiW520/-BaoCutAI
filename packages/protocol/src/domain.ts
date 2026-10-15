@@ -588,6 +588,8 @@ export interface DriverModel {
   id: string;
   label: string;
   description: string | null;
+  /** `description` 是 BaoCut 自己写的说明（不是 Agent 给的原话）时的消息引用（message-ref.ts）。 */
+  descriptionRef?: MessageRef;
   tier: ModelTier | null;
   /** Agent 自己标的默认模型。 */
   isDefault: boolean;

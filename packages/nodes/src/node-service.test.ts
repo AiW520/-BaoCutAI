@@ -3,9 +3,9 @@ import fs from 'node:fs/promises';
 import http from 'node:http';
 import os from 'node:os';
 import path from 'node:path';
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { JobVideos } from '@baocut/jobs';
-import { RpcError, type EditOperation, type NodeErrorBody, type NodeHealth, type NodeJob, type NodeJobRequest } from '@baocut/protocol';
+import { RpcError, localizeText, setLocale, type EditOperation, type NodeErrorBody, type NodeHealth, type NodeJob, type NodeJobRequest } from '@baocut/protocol';
 import { resolveRuntimeHome } from '@baocut/runtime-storage';
 import { shareAddresses } from './node-service.ts';
 import {
@@ -669,6 +669,17 @@ describe('共享开关（NodeService）', () => {
         error: expect.stringContaining(String(taken)),
         addresses: [],
       });
+      // 原因带引用：界面换了语言按引用重新生成。
+      const { error, errorRef } = node.service.status();
+      expect(errorRef).toEqual({ key: 'nodesServer.portInUse', params: { port: taken } });
+      vi.stubEnv('BAOCUT_LOCALE', 'en');
+      setLocale('en');
+      try {
+        expect(localizeText(error, errorRef)).toBe(`Port ${taken} is already in use`);
+      } finally {
+        vi.unstubAllEnvs();
+        setLocale('zh-Hans');
+      }
       const status = await node.service.start({ port: 0 });
       expect(status).toMatchObject({ listening: true, error: null, addresses: ['127.0.0.1'] });
       expect(status.port).not.toBe(taken);

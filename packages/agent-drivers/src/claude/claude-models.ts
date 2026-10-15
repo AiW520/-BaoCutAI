@@ -3,7 +3,7 @@
  * packages/server/src/server/agent/providers/claude/models.ts 的 getClaudeModelsWithSettings / readClaudeSettingsModels
  * （把 settings.json 的 env 里指定的模型并进模型表）。
  */
-import type { DriverEffort, DriverModel, ModelTier } from '@baocut/protocol';
+import { refOf, type DriverEffort, type DriverModel, type ModelTier } from '@baocut/protocol';
 import type { EffortLevel, ModelInfo } from '@anthropic-ai/claude-agent-sdk';
 import { DriversClaude } from '@baocut/protocol/messages/agent-drivers';
 
@@ -106,10 +106,12 @@ export function withSettingsModels(models: ClaudeModelEntry[], envModels: Array<
   const out = [...models];
   for (const { key, id } of envModels) {
     if (claudeModelKnown(id, out)) continue;
+    const description = DriversClaude.fromSettings({ key });
     out.push({
       id,
       label: id,
-      description: String(DriversClaude.fromSettings({ key })),
+      description: String(description),
+      descriptionRef: refOf(description),
       tier: claudeTier(id) ?? ENV_KEY_TIER[key] ?? null,
       isDefault: false,
       efforts: [],

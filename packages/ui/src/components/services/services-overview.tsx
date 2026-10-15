@@ -2,6 +2,7 @@ import { ActionButton, Badge } from '@react-spectrum/s2';
 import ChevronRight from '@react-spectrum/s2/icons/ChevronRight';
 import { style } from '@react-spectrum/s2/style' with { type: 'macro' };
 import { Button as RACButton } from 'react-aria-components';
+import { localizeText } from '@baocut/protocol';
 import { REMOTE_COPY, SERVICE_COPY, SERVICES_PAGE_COPY } from '../../copy.ts';
 import { mcpScope, mcpSub, scopeVideos } from '../../model/services-mcp.ts';
 import { shareAddresses } from '../../model/services-remote.ts';
@@ -119,11 +120,11 @@ function useItemDetail(id: ServiceId, state: ServiceState): string {
   const entries = useSpace((s) => s.entries);
   if (state === 'unavailable') return SERVICES_PAGE_COPY.unavailableDetail;
   if (id === 'remote') {
-    if (state === 'error') return share?.error ?? status?.error ?? REMOTE_COPY.subErrorFallback;
+    if (state === 'error') return localizeText(share?.error, share?.errorRef) ?? localizeText(status?.error, status?.errorRef) ?? REMOTE_COPY.subErrorFallback;
     if (state === 'on' && share) return `${share.name} · ${shareAddresses(share)[0] ?? REMOTE_COPY.noAddress}`;
     return SERVICE_COPY.remote.desc;
   }
-  if (state === 'error') return status?.error ?? SERVICE_COPY[id].desc;
+  if (state === 'error') return localizeText(status?.error, status?.errorRef) ?? SERVICE_COPY[id].desc;
   if (id === 'mcp' && status?.policy) {
     const videos = scopeVideos(entries);
     const names = new Map(videos.map((v) => [v.videoId, v.name] as const));

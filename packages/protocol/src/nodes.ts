@@ -1,3 +1,5 @@
+import type { MessageRef } from './message-ref.ts';
+
 /**
  * 局域网节点（架构设计 §6.7；节点协议规范）：一台机器把本地模型能力共享给局域网里的其他机器。
  *
@@ -181,6 +183,8 @@ export interface ShareStatus {
   listening: boolean;
   /** 开着却没有监听的原因（例如端口被占用）。 */
   error: string | null;
+  /** `error` 的消息引用（message-ref.ts）：界面按自己的语言重新生成。 */
+  errorRef?: MessageRef;
   nodeId: string | null;
   name: string;
   /** 监听时为实际绑定的端口，否则为设置的端口。 */

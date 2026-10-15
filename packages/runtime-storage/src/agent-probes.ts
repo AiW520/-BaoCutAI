@@ -98,7 +98,7 @@ function normalize(raw: unknown): StoredDriverProbe | null {
     executable: text(r.executable),
     realExecutable: text(r.realExecutable),
     account: text(r.account),
-    models: r.models as DriverModel[],
+    models: (r.models as DriverModel[]).map(withValidRefs),
     configModel: text(r.configModel),
     configModelKnown: typeof r.configModelKnown === 'boolean' ? r.configModelKnown : null,
     latestVersion: text(r.latestVersion),
@@ -108,6 +108,13 @@ function normalize(raw: unknown): StoredDriverProbe | null {
     ...(isMessageRef(r.accountRef) ? { accountRef: r.accountRef } : {}),
     ...(isMessageRef(r.detailRef) ? { detailRef: r.detailRef } : {}),
   };
+}
+
+/** 模型说明的引用不合法就丢掉，文字照旧。 */
+function withValidRefs(model: DriverModel): DriverModel {
+  if (model.descriptionRef === undefined || isMessageRef(model.descriptionRef)) return model;
+  const { descriptionRef: _, ...rest } = model;
+  return rest;
 }
 
 function isModel(value: unknown): boolean {

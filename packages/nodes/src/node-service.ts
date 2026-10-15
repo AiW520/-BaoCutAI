@@ -11,6 +11,8 @@ import {
   RUNTIME_VERSION,
   RpcError,
   newId,
+  refOf,
+  type Localized,
   type NodeHealth,
   type NodePairResponse,
   type ShareStartParams,
@@ -77,7 +79,8 @@ export class NodeService {
   #boundPort: number | null = null;
   /** 实际绑定的地址（`server.address()`），没在监听时为 null。 */
   #boundAddress: string | null = null;
-  #error: string | null = null;
+  /** 开着却没在监听的原因：存文字与引用，状态里两样都给（界面按自己的语言重新生成）。 */
+  #error: Localized | null = null;
   /** `node-share.json` 读不了或认不出：共享关着、不能修改，也不写那个文件。 */
   readonly #unreadable: string | null;
   /** 开关操作串行。 */
@@ -169,10 +172,12 @@ export class NodeService {
 
   status(): ShareStatus {
     const share = this.#share;
+    const error = this.#unreadable !== null ? NS.shareFileUnreadable({ reason: this.#unreadable }) : share.enabled && !this.#server ? this.#error : null;
     return {
       enabled: share.enabled,
       listening: this.#server !== null,
-      error: this.#unreadable !== null ? NS.shareFileUnreadable({ reason: this.#unreadable }).text : share.enabled && !this.#server ? this.#error : null,
+      error: error?.text ?? null,
+      ...(error ? { errorRef: refOf(error) } : {}),
       nodeId: share.nodeId,
       name: this.#name(),
       port: this.#boundPort ?? share.port,
@@ -336,7 +341,7 @@ export class NodeService {
       });
     } catch (error) {
       const code = (error as NodeJS.ErrnoException).code;
-      this.#error = code === 'EADDRINUSE' ? NS.portInUse({ port: share.port }).text : NS.cannotListen({ code: code ?? String(error) }).text;
+      this.#error = code === 'EADDRINUSE' ? NS.portInUse({ port: share.port }) : NS.cannotListen({ code: code ?? String(error) });
       this.#log.warn('Node service cannot listen', { port: share.port, code });
       return;
     }

@@ -22,6 +22,7 @@ import { resolveRuntimeHome, type RuntimeHome } from '@baocut/runtime-storage';
 import { resolveEngineHostCommand } from '../videos/engine-host.ts';
 import { startRuntime, type RunningRuntime, type StartRuntimeOptions } from '../runtime.ts';
 import { ToolDriver, tool, until } from '../agent-tools/testing/fake-agent.ts';
+import { projectShare } from './node-service-adapter.ts';
 import { call, raw, rpc, type Loose } from './testing/mcp-client.ts';
 
 /**
@@ -233,6 +234,17 @@ describe('对外服务', () => {
     expect(find((await client.request('services.list', {})).services, 'node')).toMatchObject({ state: 'on', port: status.port });
     await client.request('nodes.share.stop', {});
     await until(() => mirror && find(mirror.services, 'node').state === 'off');
+  });
+
+  it('节点服务没在监听：services 里的原因带引用（节点服务给的原因，或没给时的通用说明）', async () => {
+    const { client } = await boot();
+    const taken = await occupyPort();
+    const share = await client.request('nodes.share.start', { port: taken });
+    expect(share).toMatchObject({ enabled: true, listening: false, errorRef: { key: 'nodesServer.portInUse', params: { port: taken } } });
+    expect(find((await client.request('services.list', {})).services, 'node')).toMatchObject({ state: 'error', error: share.error, errorRef: share.errorRef });
+    const { errorRef: _, ...bare } = share;
+    expect(projectShare({ ...bare, error: null })).toMatchObject({ state: 'error', errorRef: { key: 'rcServices.nodeServiceNotListening' } });
+    expect(projectShare({ ...bare, enabled: false, error: null })).not.toHaveProperty('errorRef');
   });
 
   it('MCP 认证与来源：没有令牌、令牌错误 → 401；带 Origin、Host 不是回环 → 403；吊销后失效', async () => {

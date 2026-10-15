@@ -240,6 +240,7 @@ interface ShareStatus {
   enabled: boolean;                   // 用户的开关，持久
   listening: boolean;                 // 节点服务此刻是否在监听
   error: string | null;               // 开着却没有监听的原因（例如端口被占用）
+  errorRef?: MessageRef;              // error 的消息引用，界面按自己的语言重新生成（仓库约定 §5）
   nodeId: string | null;
   name: string;
   port: number;

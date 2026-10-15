@@ -238,6 +238,17 @@ describe.each(cases)('$name', ({ load, empty }) => {
   });
 });
 
+describe('AgentProbeStore', () => {
+  it('模型说明的引用：合法的读回来，不合法的丢掉、文字照旧', async () => {
+    const model = { id: 'gw', label: 'gw', description: '来自 Claude Code 设置（env.ANTHROPIC_MODEL）', tier: null, isDefault: false, efforts: [], defaultEffort: null };
+    const ref = { key: 'driversClaude.fromSettings', params: { key: 'ANTHROPIC_MODEL' } };
+    const models = [{ ...model, descriptionRef: ref }, { ...model, id: 'bad', descriptionRef: { params: {} } }];
+    await fs.writeFile(file, JSON.stringify({ schemaVersion: 1, drivers: { claude: { state: 'ready', checkedAt: new Date(0).toISOString(), models } } }));
+    const loaded = await new AgentProbeStore(file).load();
+    expect(loaded.claude!.models).toEqual([{ ...model, descriptionRef: ref }, { ...model, id: 'bad' }]);
+  });
+});
+
 describe('GrantStore（授权账本不能静默丢）', () => {
   it('坏文件：打开失败，文件原样留着、不改名', async () => {
     await fs.writeFile(file, '{ not json');

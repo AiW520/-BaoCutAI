@@ -25,10 +25,11 @@ import type { ServiceApprovals } from './service-approvals.ts';
  */
 
 /** 服务自己报告的部分：状态之外的配置与运行信息。 */
-export type ServiceReport = Omit<ServiceStatus, 'serviceId' | 'label' | 'available' | 'state' | 'error'> & {
-  /** 投影服务自己给出状态与原因。 */
+export type ServiceReport = Omit<ServiceStatus, 'serviceId' | 'label' | 'available' | 'state' | 'error' | 'errorRef'> & {
+  /** 投影服务自己给出状态与原因（原因的消息引用随它一起转述）。 */
   state?: ServiceState;
   error?: string | null;
+  errorRef?: MessageRef;
 };
 
 export interface ManagedService {
@@ -115,17 +116,18 @@ export class ServiceManager {
     const service = this.#get(serviceId);
     const report = service.status();
     const own = this.#states.get(serviceId)!;
-    const { state: projectedState, error: projectedError, ...rest } = report;
+    const { state: projectedState, error: projectedError, errorRef: projectedErrorRef, ...rest } = report;
     const state = service.projected ? (projectedState ?? 'off') : own.state;
     // 投影服务在开启、停止的过程中也报告过渡状态。
     const transitional = own.state === 'starting' || own.state === 'stopping' ? own.state : null;
+    const errorRef = service.projected ? projectedErrorRef : own.errorRef;
     return {
       serviceId,
       label: service.label,
       available: service.available,
       state: service.projected ? (transitional ?? state) : state,
       error: service.projected ? (projectedError ?? null) : own.error,
-      ...(!service.projected && own.errorRef ? { errorRef: own.errorRef } : {}),
+      ...(errorRef ? { errorRef } : {}),
       ...rest,
     };
   }

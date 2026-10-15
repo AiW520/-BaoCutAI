@@ -1,4 +1,4 @@
-import { RpcError, type ShareStatus } from '@baocut/protocol';
+import { RpcError, refOf, type ShareStatus } from '@baocut/protocol';
 import { RcServices } from '@baocut/protocol/messages/runtime-core';
 import type { NodeService } from '@baocut/nodes';
 import type { ManagedService, ServiceReport } from './service-manager.ts';
@@ -44,9 +44,14 @@ export class NodeServiceAdapter implements ManagedService {
 export function projectShare(share: ShareStatus): ServiceReport {
   const state = !share.enabled ? 'off' : share.listening ? 'on' : 'error';
   const address = share.addresses[0];
+  // 原因与它的引用一起转述；节点服务没给原因时用通用的说明。
+  const generic = state === 'error' && share.error === null ? RcServices.nodeServiceNotListening() : null;
+  const error = generic ? generic.text : state === 'error' ? share.error : null;
+  const errorRef = generic ? refOf(generic) : state === 'error' ? share.errorRef : undefined;
   return {
     state,
-    error: state === 'error' ? (share.error ?? RcServices.nodeServiceNotListening().text) : null,
+    error,
+    ...(errorRef ? { errorRef } : {}),
     autostart: share.enabled,
     port: share.port,
     endpoint: share.listening && address ? `http://${address}:${share.port}` : null,
