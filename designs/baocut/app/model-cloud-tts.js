@@ -106,8 +106,8 @@
      price: '按 token 计费 · 3.8 Flash 约 $0.00225 / 10 秒、Flash-Lite 约 $0.0015 / 10 秒 · 2027-01-01 起翻倍',
      bill: '按 token 计费', langsTag: '130 种语言（Flash-Lite 101）', ownVoices: '它的音色目录（含你在 AI Studio 建的）',
      models: [
-       {id: 'gemini-3.8-flash-tts', desc: '旗舰 · 收风格指令 · 130 种语言', instruct: true, maxChars: 4096, langs: '*', langCount: 130, langExact: true},
-       {id: 'gemini-3.8-flash-lite-tts', desc: '更快更便宜 · 收风格指令 · 101 种语言', instruct: true, maxChars: 4096, langs: '*', langCount: 101, langExact: true},
+       {id: 'gemini-3.8-flash-tts', desc: '旗舰 · 收风格指令 · 130 种语言', instruct: true, maxChars: 2000, langs: '*', langCount: 130, langExact: true},
+       {id: 'gemini-3.8-flash-lite-tts', desc: '更快更便宜 · 收风格指令 · 101 种语言', instruct: true, maxChars: 2000, langs: '*', langCount: 101, langExact: true},
      ],
      /* 复刻音色（2026-10-14，`POST /v1beta/voices`，type: replicated）：两段录音——样本 10–30 秒 + 同一人念的授权声明
         （`consent_audio`，接口会核对两段是不是同一个人；声明原文按 `language_code` 给，实测中文常验不过、英文稳），
@@ -128,6 +128,34 @@
        {id: 'Sadachbia', name: 'Sadachbia', sub: '活泼 · 多语言'}, {id: 'Sadaltager', name: 'Sadaltager', sub: '博学 · 多语言'}, {id: 'Sulafat', name: 'Sulafat', sub: '温暖 · 多语言'},
      ],
      defaultVoice: {'*': 'Kore'}},
+    /* 火山引擎豆包语音（2026-10-15，architecture §6.4）：密钥是豆包语音控制台按项目签发的 API Key（`X-Api-Key`），与方舟
+       （`volcengine`，文本）的密钥不通用，所以单独一家。只接豆包语音合成 2.0（`seed-tts-2.0`）；语气写成一句话放进
+       `context_texts`；一次 1 000 字（V3 文档没给上限，先按保守值）；复刻音色走另一个资源 ID，这一批不接。 */
+    {id: 'volcengine-speech', name: '火山引擎（豆包语音）', api: 'volcengine', rate: 24000, region: false,
+     desc: '豆包语音合成 2.0；收一句语气指令，可调语速；中文音色最全',
+     docs: 'www.volcengine.com/docs/6561/2528925',
+     price: '按字符计费 · 价目以官网为准',
+     models: [
+       {id: 'seed-tts-2.0', desc: '豆包语音合成 2.0 · 收语气指令', instruct: true, maxChars: 1000,
+        langs: ['zh', 'en', 'ja', 'ko', 'es', 'pt', 'id', 'ms', 'th', 'vi', 'fil', 'de', 'fr', 'ru', 'ar']},
+     ],
+     clone: null, speed: {min: 0.5, max: 2, step: 0.05}, sliders: [], emotions: null,
+     voices: [
+       {id: 'zh_female_vv_uranus_bigtts', name: 'Vivi 2.0', sub: '女声 · 中文 · 多语言', lang: 'zh'},
+       {id: 'zh_female_xiaohe_uranus_bigtts', name: '小何 2.0', sub: '女声 · 中文', lang: 'zh'},
+       {id: 'zh_male_m191_uranus_bigtts', name: '云舟 2.0', sub: '男声 · 中文', lang: 'zh'},
+       {id: 'zh_male_taocheng_uranus_bigtts', name: '小天 2.0', sub: '男声 · 中文', lang: 'zh'},
+       {id: 'zh_female_shuangkuaisisi_uranus_bigtts', name: '爽快思思 2.0', sub: '女声 · 中文 · 爽快', lang: 'zh'},
+       {id: 'zh_male_jieshuoxiaoming_uranus_bigtts', name: '解说小明 2.0', sub: '男声 · 中文 · 解说', lang: 'zh'},
+       {id: 'zh_male_cixingjieshuonan_uranus_bigtts', name: '磁性解说男声 2.0', sub: '男声 · 中文 · 解说', lang: 'zh'},
+       {id: 'zh_female_xiaoxue_uranus_bigtts', name: '儿童绘本 2.0', sub: '女声 · 中文 · 讲故事', lang: 'zh'},
+       {id: 'en_male_tim_uranus_bigtts', name: 'Tim', sub: '男声 · 美式英语', lang: 'en'},
+       {id: 'en_female_dacey_uranus_bigtts', name: 'Dacey', sub: '女声 · 美式英语', lang: 'en'},
+       {id: 'ja_male_yusuke_uranus_bigtts', name: 'Yusuke', sub: '男声 · 日语', lang: 'ja'},
+       {id: 'id_female_cesna_uranus_bigtts', name: 'Cesna', sub: '女声 · 印尼语', lang: 'id'},
+       {id: 'es_male_mariano_uranus_bigtts', name: 'Mariano', sub: '男声 · 西班牙语', lang: 'es'},
+     ],
+     defaultVoice: {en: 'en_female_dacey_uranus_bigtts', ja: 'ja_male_yusuke_uranus_bigtts', '*': 'zh_female_vv_uranus_bigtts'}},
   ];
   /** 演示里已连上账号的 API 提供方（product-design §7.6）；真正的种子是 model-vendors.js 的 SEED_ACCOUNTS，store 从账号推出已连接集合 */
   const SEED_SAVED = ['openai', 'deepseek', 'elevenlabs', 'minimax'];

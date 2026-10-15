@@ -6,6 +6,7 @@ export const nl: ProvidersConfigMessages = {
   vendorQwen: "Alibaba Cloud Model Studio (Qwen)",
   vendorZhipu: "Zhipu GLM (Z.ai)",
   vendorVolcengine: "Volcengine (Doubao)",
+  vendorVolcengineSpeech: "Volcengine (Doubao Speech)",
   vendorXai: "xAI (Grok)",
   vendorSiliconflow: "SiliconFlow",
   notEnabledOrNoKey: (p: { label: string }) => `${p.label} is niet ingeschakeld of heeft geen sleutel`,

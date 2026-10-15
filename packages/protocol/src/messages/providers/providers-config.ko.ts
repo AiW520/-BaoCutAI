@@ -6,6 +6,7 @@ export const ko: ProvidersConfigMessages = {
   vendorQwen: 'Alibaba Cloud Model Studio(Qwen)',
   vendorZhipu: 'Zhipu GLM(Z.ai)',
   vendorVolcengine: 'Volcengine(Doubao)',
+  vendorVolcengineSpeech: 'Volcengine(Doubao Speech)',
   vendorXai: 'xAI(Grok)',
   vendorSiliconflow: 'SiliconFlow',
   notEnabledOrNoKey: (p) => `${p.label} 공급자가 켜져 있지 않거나 키가 없습니다`,

@@ -6,6 +6,7 @@ export const ptBR: ProvidersConfigMessages = {
   vendorQwen: "Alibaba Cloud Model Studio (Qwen)",
   vendorZhipu: "Zhipu GLM (Z.ai)",
   vendorVolcengine: "Volcengine (Doubao)",
+  vendorVolcengineSpeech: "Volcengine (Doubao Speech)",
   vendorXai: "xAI (Grok)",
   vendorSiliconflow: "SiliconFlow",
   notEnabledOrNoKey: (p: { label: string }) => `${p.label} não está ativado ou não tem chave`,

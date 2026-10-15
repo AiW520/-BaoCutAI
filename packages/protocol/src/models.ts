@@ -956,7 +956,7 @@ function configurableProviders(capability: ModelServiceCapability): string {
     case 'generateText':
       return `openai|google|${custom}`;
     case 'synthesizeSpeech':
-      return `openai|elevenlabs|${custom}`;
+      return `openai|google|elevenlabs|volcengine-speech|${custom}`;
     case 'separateAudio':
     case 'generateMusic':
       // 没有在线 Provider：补救只有安装本机模型包或设默认值。

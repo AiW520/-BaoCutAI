@@ -15,10 +15,15 @@ test('文本目录使用 DeepSeek、豆包与 GLM 的官方 API 名称', () => {
   assert.deepEqual(V.modelsOf('zhipu', 'text').map((m) => m.id), ['glm-5.3', 'glm-5.3-flash']);
 });
 
-test('目录 id 固定：共享简报 §3 的 15 家 + Codex，没有 Replicate', () => {
+test('目录 id 固定：共享简报 §3 的 15 家 + 豆包语音 + Codex，没有 Replicate', () => {
   const ids = V.VENDORS.map((v) => v.id);
   assert.deepEqual(ids, ['openai', 'anthropic', 'google', 'elevenlabs', 'deepseek', 'moonshot', 'qwen', 'zhipu', 'minimax',
-    'volcengine', 'xai', 'mistral', 'groq', 'openrouter', 'siliconflow', 'agent:codex']);
+    'volcengine', 'volcengine-speech', 'xai', 'mistral', 'groq', 'openrouter', 'siliconflow', 'agent:codex']);
+  // 豆包语音与方舟的密钥不通用（architecture §6.4）：两家，各自的能力
+  assert.deepEqual(V.byId('volcengine-speech').caps, ['tts']);
+  assert.equal(V.byId('volcengine').caps.indexOf('tts'), -1);
+  assert.deepEqual(V.modelsOf('volcengine-speech', 'tts').map((m) => m.id), ['seed-tts-2.0']);
+  assert.ok(V.byId('google').caps.indexOf('tts') >= 0 && V.byId('google').p1.indexOf('tts') < 0);
   assert.equal(V.byId('replicate'), null);
   ['moonshot', 'qwen', 'zhipu', 'minimax'].forEach((id) => assert.deepEqual(V.byId(id).regions.map((r) => r.k), ['global', 'cn'], id));
   assert.deepEqual(V.VENDORS.filter((v) => v.kind === 'relay').map((v) => v.id), ['openrouter', 'siliconflow']);
@@ -115,7 +120,7 @@ test('列表：已连接排前；副行是 host · N 个模型 · 能力词；�
 test('添加 API 提供方：搜索与分组；已添加的标出来', () => {
   const {settings} = V.seed(NOW);
   const all = V.catalog('', settings);
-  assert.equal(all.vendors.length, 13);
+  assert.equal(all.vendors.length, 14);
   assert.deepEqual(all.relays.map((r) => r.vendor.id), ['openrouter', 'siliconflow']);
   assert.ok(all.vendors.find((r) => r.vendor.id === 'openai').added);
   assert.deepEqual(V.catalog('kimi', settings).vendors.map((r) => r.vendor.id), ['moonshot']);

@@ -6,6 +6,7 @@ export const zhHans: ProvidersConfigMessages = {
   vendorQwen: '阿里云百炼（Qwen）',
   vendorZhipu: '智谱 GLM（Z.ai）',
   vendorVolcengine: '火山引擎（豆包）',
+  vendorVolcengineSpeech: '火山引擎（豆包语音）',
   vendorXai: 'xAI（Grok）',
   vendorSiliconflow: '硅基流动（SiliconFlow）',
   notEnabledOrNoKey: (p) => `${p.label} 没有启用或没有密钥`,

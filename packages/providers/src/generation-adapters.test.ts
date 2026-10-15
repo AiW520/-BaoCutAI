@@ -7,15 +7,18 @@ import { FileCredentialStore } from '@baocut/runtime-storage';
 import type { AdapterConfig, ImageAdapter, ImageInputBytes, SpeechAdapter } from './adapter.ts';
 import { ElevenLabsAdapter } from './elevenlabs/elevenlabs-adapter.ts';
 import { GoogleImageAdapter, parseImageInteraction } from './google/google-image.ts';
+import { GoogleSpeechAdapter, parseSpeechInteraction } from './google/google-speech.ts';
 import { ProviderAborted } from './http/provider-fetch.ts';
 import { OnlineGenerator } from './online-generator.ts';
 import { OnlineProviderSource } from './online-source.ts';
 import { CompatibleImageAdapter, CompatibleSpeechAdapter } from './openai-compatible/compatible-media.ts';
 import { OpenAiImageAdapter, OpenAiSpeechAdapter } from './openai/openai-media-adapters.ts';
+import { VolcengineSpeechAdapter, parseSpeechStream } from './volcengine/volcengine-speech.ts';
 import {
   fakeElevenLabsHandler,
   fakeGoogleHandler,
   fakeOpenAiHandler,
+  fakeVolcengineSpeechHandler,
   mp3Fixture,
   pngFixture,
   startFakeProviderServer,
@@ -31,6 +34,7 @@ import {
 const OPENAI_KEY = 'sk-test-ONLY-FOR-TESTS-0123456789abcdef';
 const GOOGLE_KEY = 'AIzaTESTONLY-0123456789abcdefghijklmn';
 const ELEVENLABS_KEY = 'sk_test_ONLY_FOR_TESTS_0123456789abcdef';
+const VOLC_KEY = 'volc-test-ONLY-FOR-TESTS-0123456789abcdef';
 const http = { backoffMs: () => 1, timeoutMs: 5_000 };
 
 let server: FakeProviderServer | undefined;
@@ -290,6 +294,144 @@ describe('ElevenLabs 语音', () => {
   });
 });
 
+describe('Google 语音', () => {
+  it('Interactions：文本逐字念，风格放进 speech_metadata.style，音色在 speech_config；取 model_output 的 WAV', async () => {
+    server = await startFakeProviderServer(fakeGoogleHandler());
+    const cfg = config(`${server.origin}/v1beta`, GOOGLE_KEY);
+    const out = await synthesize(
+      new GoogleSpeechAdapter(),
+      cfg,
+      'gemini-3.8-flash-tts',
+      speech({ voice: 'Puck', format: 'wav', instructions: ' warm and slow ', language: 'zh-Hans' }),
+    );
+    expect(out.bytes.equals(wavFixture())).toBe(true);
+    expect(out.usage).toEqual({ total_input_tokens: 8, total_output_tokens: 75 });
+    const [request] = server.requests;
+    expect(request).toMatchObject({ method: 'POST', path: '/v1beta/interactions' });
+    expect(request!.headers['x-goog-api-key']).toBe(GOOGLE_KEY);
+    expect(request!.headers['api-revision']).toBeTruthy();
+    expect(request!.json).toEqual({
+      model: 'gemini-3.8-flash-tts',
+      input: [
+        {
+          type: 'user_input',
+          content: [{ type: 'text', text: 'hello', annotations: [{ type: 'speech_metadata', style: 'warm and slow' }] }],
+        },
+      ],
+      response_format: { type: 'audio', mime_type: 'audio/wav' },
+      generation_config: { speech_config: [{ voice: 'Puck' }] },
+      store: false,
+    });
+
+    // 没有风格说明时不带 annotations。
+    await synthesize(new GoogleSpeechAdapter(), cfg, 'gemini-3.8-flash-lite-tts', speech({ voice: 'voice_abc123', format: 'wav' }));
+    const second = server.requests[1]!.json as { input: Array<{ content: Array<Record<string, unknown>> }> };
+    expect(second.input[0]!.content[0]).toEqual({ type: 'text', text: 'hello' });
+  });
+
+  it('模型表：30 个预置音色、默认 Kore；只出 WAV；接受风格说明，不接受语速与 seed', () => {
+    const models = new GoogleSpeechAdapter().models(config('x', null));
+    expect(models.map((m) => m.modelId)).toEqual(['gemini-3.8-flash-tts', 'gemini-3.8-flash-lite-tts']);
+    expect(models.find((m) => m.default)?.modelId).toBe('gemini-3.8-flash-tts');
+    for (const m of models) {
+      expect(m.voices).toHaveLength(30);
+      expect(m.defaultVoice).toBe('Kore');
+      expect(m.voiceModes).toEqual(['preset', 'custom']);
+      expect(m.formats).toEqual(['wav']);
+      expect(m).toMatchObject({ acceptsInstructions: true, speedRange: null, acceptsSeed: false, languages: 'any' });
+    }
+  });
+
+  it('要 mp3 是 PROVIDER_REJECTED，不发请求；返回的不是 WAV、没有音频或交互失败都报错', async () => {
+    server = await startFakeProviderServer(fakeGoogleHandler());
+    const mp3 = await failure(synthesize(new GoogleSpeechAdapter(), config(`${server.origin}/v1beta`, GOOGLE_KEY), 'gemini-3.8-flash-tts', speech({ voice: 'Kore' })));
+    expect(mp3.details.code).toBe('PROVIDER_REJECTED');
+    expect(server.requests).toHaveLength(0);
+
+    const pcm = { steps: [{ type: 'model_output', content: [{ type: 'audio', data: Buffer.from('raw-pcm').toString('base64'), mime_type: 'audio/l16' }] }] };
+    expect(() => parseSpeechInteraction(pcm)).toThrow(/audio\/l16/);
+    expect(() => parseSpeechInteraction({ steps: [{ type: 'model_output', content: [{ type: 'text', text: 'no' }] }] })).toThrow(ProviderFailure);
+    expect(() => parseSpeechInteraction({ status: 'failed', steps: [] })).toThrow(ProviderFailure);
+  });
+});
+
+describe('豆包语音', () => {
+  it('X-Api-Key 与资源 ID；mp3 把分片拼起来，结束包的用量原样带回；语速换算成 speech_rate，风格放进 additions', async () => {
+    server = await startFakeProviderServer(fakeVolcengineSpeechHandler(VOLC_KEY));
+    const cfg = config(`${server.origin}/api/v3`, VOLC_KEY);
+    const out = await synthesize(
+      new VolcengineSpeechAdapter(),
+      cfg,
+      'seed-tts-2.0',
+      speech({ voice: 'zh_female_vv_uranus_bigtts', speed: 1.5, instructions: '语气欢快些', language: 'ja' }),
+    );
+    expect(out.bytes.equals(mp3Fixture())).toBe(true);
+    expect(out.usage).toEqual({ text_words: 5 });
+    const [request] = server.requests;
+    expect(request).toMatchObject({ method: 'POST', path: '/api/v3/tts/unidirectional' });
+    expect(request!.headers['x-api-key']).toBe(VOLC_KEY);
+    expect(request!.headers.authorization).toBeUndefined();
+    expect(request!.headers['x-api-resource-id']).toBe('seed-tts-2.0');
+    expect(request!.headers['x-api-request-id']).toMatch(/^[0-9a-f-]{36}$/);
+    const params = (request!.json as { req_params: Record<string, unknown> }).req_params;
+    expect(params).toMatchObject({
+      text: 'hello',
+      speaker: 'zh_female_vv_uranus_bigtts',
+      audio_params: { format: 'mp3', sample_rate: 24000, speech_rate: 50 },
+    });
+    expect(JSON.parse(params.additions as string)).toEqual({ enable_auto_language_recognition: true, context_texts: ['语气欢快些'] });
+  });
+
+  it('WAV：取 24 kHz PCM 自己补头；中英文不开自动识别、没有说明时不带 additions', async () => {
+    server = await startFakeProviderServer(fakeVolcengineSpeechHandler(VOLC_KEY));
+    const out = await synthesize(
+      new VolcengineSpeechAdapter(),
+      config(`${server.origin}/api/v3`, VOLC_KEY),
+      'seed-tts-2.0',
+      speech({ voice: 'en_male_tim_uranus_bigtts', format: 'wav', language: 'en-US' }),
+    );
+    expect(out.bytes.equals(wavFixture())).toBe(true);
+    const params = (server.requests[0]!.json as { req_params: Record<string, unknown> }).req_params;
+    expect(params.audio_params).toEqual({ format: 'pcm', sample_rate: 24000 });
+    expect(params.additions).toBeUndefined();
+  });
+
+  it('密钥不对是 PROVIDER_AUTH_FAILED，密钥不出现在错误里；流里的错误码按分类抛出', async () => {
+    server = await startFakeProviderServer(fakeVolcengineSpeechHandler('another-key'));
+    const auth = await failure(
+      synthesize(new VolcengineSpeechAdapter(), config(`${server.origin}/api/v3`, VOLC_KEY), 'seed-tts-2.0', speech({ voice: 'x' })),
+    );
+    expect(auth.details.code).toBe('PROVIDER_AUTH_FAILED');
+    expect(JSON.stringify({ message: auth.message, details: auth.details })).not.toContain(VOLC_KEY);
+
+    const stream = (...packets: unknown[]) => packets.map((p) => JSON.stringify(p)).join('');
+    const tooLong = (() => {
+      try {
+        parseSpeechStream(stream({ code: 40402003, message: 'text too long' }));
+      } catch (error) {
+        return error as ProviderFailure;
+      }
+      return null;
+    })();
+    expect(tooLong?.details.code).toBe('INPUT_TOO_LONG');
+    expect(() => parseSpeechStream(stream({ code: 45000000, message: 'quota exceeded for types: concurrency' }))).toThrow(ProviderFailure);
+    expect(() => parseSpeechStream('{"code":0,"data":"AA"')).toThrow(ProviderFailure);
+    // 字符串里的花括号不影响切分；没有 code 的包跳过。
+    const ok = parseSpeechStream(stream({ code: 0, data: Buffer.from('a').toString('base64'), message: '{}' }, { sentence: { text: '}' } }, { code: 20000000, message: 'ok' }));
+    expect(Buffer.concat(ok.chunks).toString()).toBe('a');
+  });
+
+  it('验证密钥：空文本的合成请求，服务端拒绝空文本算通过、401 算失败；列模型只验证不给模型', async () => {
+    server = await startFakeProviderServer(fakeVolcengineSpeechHandler(VOLC_KEY));
+    const adapter = new VolcengineSpeechAdapter();
+    await adapter.validateCredential(config(`${server.origin}/api/v3`, VOLC_KEY), new AbortController().signal, http);
+    expect((server.requests[0]!.json as { req_params: { text: string } }).req_params.text).toBe('');
+    expect(await adapter.listModels(config(`${server.origin}/api/v3`, VOLC_KEY), new AbortController().signal, http)).toEqual({});
+    const bad = await failure(adapter.validateCredential(config(`${server.origin}/api/v3`, 'wrong'), new AbortController().signal, http));
+    expect(bad.details.code).toBe('PROVIDER_AUTH_FAILED');
+  });
+});
+
 describe('Google 图片', () => {
   it('尺寸换成宽高比与分辨率；一张一次请求；取 model_output 的图片，不取 thought 的中间图', async () => {
     server = await startFakeProviderServer(fakeGoogleHandler());
@@ -513,7 +655,9 @@ describe('OnlineProviderSource 的生成能力', () => {
       });
       const views = Object.fromEntries((await source.list('view')).map((v) => [v.providerId, v]));
       expect(Object.keys(views.openai!.capabilities).sort()).toEqual(['generateImage', 'generateText', 'synthesizeSpeech', 'transcribe']);
-      expect(Object.keys(views.google!.capabilities).sort()).toEqual(['generateImage', 'generateText', 'transcribe']);
+      expect(Object.keys(views.google!.capabilities).sort()).toEqual(['generateImage', 'generateText', 'synthesizeSpeech', 'transcribe']);
+      expect(Object.keys(views['volcengine-speech']!.capabilities)).toEqual(['synthesizeSpeech']);
+      expect(Object.keys(views.volcengine!.capabilities)).toEqual(['generateText']);
       expect(Object.keys(views.elevenlabs!.capabilities)).toEqual(['synthesizeSpeech']);
       expect(views.elevenlabs!.capabilities.synthesizeSpeech!.available).toBe(true);
       // 能克隆的 Provider 在合成能力上带 voiceClone；ElevenLabs 不要求授权声明录音，没有克隆接口的不带。
@@ -526,14 +670,14 @@ describe('OnlineProviderSource 的生成能力', () => {
       expect(views['custom:studio']!.capabilities.synthesizeSpeech).toMatchObject({ available: true });
       expect(JSON.stringify(views)).not.toContain(ELEVENLABS_KEY);
 
-      expect(source.generator('google', 'synthesizeSpeech')).toBeNull();
+      expect(source.generator('google', 'synthesizeSpeech')).not.toBeNull();
       expect(source.generator('elevenlabs', 'generateImage')).toBeNull();
       expect(source.transcriber('elevenlabs')).toBeNull();
       const eleven = source.generator('elevenlabs', 'synthesizeSpeech');
       expect(eleven).not.toBeNull();
       expect(source.generator('elevenlabs', 'synthesizeSpeech')).toBe(eleven);
       expect(source.generator('custom:studio', 'synthesizeSpeech')).not.toBeNull();
-      expect(source.generators()).toHaveLength(2);
+      expect(source.generators()).toHaveLength(3);
     } finally {
       await fs.rm(dir, { recursive: true, force: true });
     }

@@ -192,7 +192,7 @@ test('校验与费用：字数上限按模型；我的声音在这家不可用�
   assert.equal(C.chars('  ab c '), 4);
 });
 
-test('Google Gemini（§5.6 / §12.9）：两只模型都收风格指令、没有数值语速、要授权录音才能克隆、30 只内置音色、默认 Kore、一次 4096 字、24 kHz、按 token 计费', () => {
+test('Google Gemini（§5.6 / §12.9）：两只模型都收风格指令、没有数值语速、要授权录音才能克隆、30 只内置音色、默认 Kore、一次 2000 字、24 kHz、按 token 计费', () => {
   assert.deepEqual(C.parse('cloud:google/gemini-3.8-flash-lite-tts'), {provider: 'google', model: 'gemini-3.8-flash-lite-tts'});
   assert.equal(C.modelId('google', 'gemini-3.8-flash-tts'), 'cloud:google/gemini-3.8-flash-tts');
   for (const id of ['gemini-3.8-flash-tts', 'gemini-3.8-flash-lite-tts']) {
@@ -202,7 +202,7 @@ test('Google Gemini（§5.6 / §12.9）：两只模型都收风格指令、没�
     assert.equal(cap.instruct, true);
     assert.equal(cap.clone, true);
     assert.equal(cap.profile, 'remote');
-    assert.equal(cap.maxChars, 4096);
+    assert.equal(cap.maxChars, 2000);
     assert.equal(cap.rate, 24000);
     assert.equal(cap.api, 'gemini');
     assert.deepEqual(cap.sliders, []);
@@ -265,10 +265,10 @@ test('Gemini 音色：30 只内置、默认 Kore（任何语言都是它）、�
   assert.equal(C.needsConsentClip(C.providerById('elevenlabs')), false);
 });
 
-test('Gemini 校验：一次上限 4096 字（8,192 输入 token 的保守折算），超出就提示切段；没授权录音的我的声音被拦', () => {
-  const f = {engine: 'cloud:google', cloudModel: 'cloud:google/gemini-3.8-flash-tts', text: 'x'.repeat(4097), cloudVoice: {kind: 'default'}};
-  assert.match(C.validate(f, [])[0], /gemini-3\.8-flash-tts 一次最多 4,096 字/);
-  assert.equal(C.validate(Object.assign({}, f, {text: 'x'.repeat(4096)}), []).length, 0);
+test('Gemini 校验：一次上限 2000 字（16,384 输出 token 约 655 秒的保守折算），超出就提示切段；没授权录音的我的声音被拦', () => {
+  const f = {engine: 'cloud:google', cloudModel: 'cloud:google/gemini-3.8-flash-tts', text: 'x'.repeat(2001), cloudVoice: {kind: 'default'}};
+  assert.match(C.validate(f, [])[0], /gemini-3\.8-flash-tts 一次最多 2,000 字/);
+  assert.equal(C.validate(Object.assign({}, f, {text: 'x'.repeat(2000)}), []).length, 0);
   const v = voice({id: 'a'});
   assert.match(C.validate(Object.assign({}, f, {text: 'hi', cloudVoice: {kind: 'my', id: 'a'}}), [v])[0], /Google Gemini 要本人念一段授权声明/);
   assert.match(C.validate(Object.assign({}, f, {text: 'hi'}), [], {saved: ['openai']})[0], /先连接 Google Gemini/);

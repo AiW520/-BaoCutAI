@@ -49,6 +49,7 @@ import { ELEVENLABS_DEFAULT_BASE_URL, ElevenLabsAdapter } from './elevenlabs/ele
 import { ElevenLabsVoiceCloneAdapter } from './elevenlabs/elevenlabs-voice-clone.ts';
 import { GOOGLE_DEFAULT_BASE_URL, GoogleAdapter } from './google/google-adapter.ts';
 import { GoogleImageAdapter } from './google/google-image.ts';
+import { GoogleSpeechAdapter } from './google/google-speech.ts';
 import { GoogleTextAdapter } from './google/google-text.ts';
 import { redact } from './http/provider-fetch.ts';
 import { OnlineGenerator } from './online-generator.ts';
@@ -63,14 +64,15 @@ import { OpenAiImageAdapter, OpenAiSpeechAdapter } from './openai/openai-media-a
 import { OpenAiTextAdapter } from './openai/openai-text.ts';
 import { accountStatusOf, usageErrorOf, type CallReporter } from './usage-reporter.ts';
 import { COMPAT_VENDOR_IDS, COMPAT_VENDORS, type CompatVendorId } from './vendor-catalog.ts';
+import { VOLCENGINE_SPEECH_DEFAULT_BASE_URL, VolcengineSpeechAdapter } from './volcengine/volcengine-speech.ts';
 import { ProvidersConfig as PC, ProvidersHttp as PH } from '@baocut/protocol/messages/providers';
 
 /**
  * 在线 Provider 来源（架构设计 §6.4）：服务商目录里的内置服务商与用户添加的 OpenAI 兼容端点 `custom:<slug>`。
  *
- * - 能力：`openai` 有 transcribe、synthesizeSpeech、generateImage、generateText；`google` 有 transcribe、generateImage、
- *   generateText；`elevenlabs` 只有 synthesizeSpeech；`anthropic`（Messages 原生适配器）与目录里的兼容文本服务商
- *   （`vendor-catalog.ts`）只有 generateText（目录标 P1 的能力不报告）。自定义端点按声明的模型的 `capability` 提供
+ * - 能力：`openai` 与 `google` 有 transcribe、synthesizeSpeech、generateImage、generateText；`elevenlabs` 与
+ *   `volcengine-speech`（豆包语音，密钥与方舟的 `volcengine` 是两套）只有 synthesizeSpeech；`anthropic`（Messages 原生
+ *   适配器）与目录里的兼容文本服务商（`vendor-catalog.ts`）只有 generateText（目录标 P1 的能力不报告）。自定义端点按声明的模型的 `capability` 提供
  *   （一个模型也没声明时只列 transcribe）。
  * - 账号（§6.8）：一次调用用第一个启用且有密钥的账号，失败不换账号；调用结束时写一条用量（§6.10）并按结果记下那个
  *   账号的状态。基址：账号的改写优先，其次是服务商的端点，最后是目录的预设（有国际与中国两个基址的按账号的 `region`）。
@@ -96,7 +98,7 @@ export interface OnlineSourceOptions {
   usage?: UsageLedger;
 }
 
-type BuiltinId = 'openai' | 'google' | 'elevenlabs' | 'anthropic' | CompatVendorId;
+type BuiltinId = 'openai' | 'google' | 'elevenlabs' | 'volcengine-speech' | 'anthropic' | CompatVendorId;
 
 /** 一个 Provider 上的音色克隆（`voiceCloner()`）：密钥在执行时取，不经调用方。 */
 export interface VoiceCloner {
@@ -191,7 +193,14 @@ const BUILTINS: Record<BuiltinId, BuiltinEntry> = {
     adapters: () => {
       const transcribe = new GoogleAdapter();
       const text = new GoogleTextAdapter();
-      return { transcribe, speech: null, image: new GoogleImageAdapter(), text, validator: transcribe, lister: text };
+      return {
+        transcribe,
+        speech: new GoogleSpeechAdapter(),
+        image: new GoogleImageAdapter(),
+        text,
+        validator: transcribe,
+        lister: text,
+      };
     },
   },
   elevenlabs: {
@@ -209,6 +218,18 @@ const BUILTINS: Record<BuiltinId, BuiltinEntry> = {
         lister: speech,
         clone: new ElevenLabsVoiceCloneAdapter(),
       };
+    },
+  },
+  'volcengine-speech': {
+    // 读取时取：名字随界面语言。
+    get label() {
+      return PC.vendorVolcengineSpeech().text;
+    },
+    baseUrl: VOLCENGINE_SPEECH_DEFAULT_BASE_URL,
+    vendor: { kind: 'vendor', website: 'https://console.volcengine.com/speech/new/setting/apikeys', icon: 'volcengine' },
+    adapters: () => {
+      const speech = new VolcengineSpeechAdapter();
+      return { transcribe: null, speech, image: null, text: null, validator: speech, lister: speech };
     },
   },
   anthropic: {
@@ -521,7 +542,7 @@ export class OnlineProviderSource implements ProviderSource {
       secret = config.credential;
       const http = this.#options.http ?? {};
       const listing = await this.#adapterSet(id).lister.listModels(config, AbortSignal.timeout(REFRESH_TIMEOUT_MS), http);
-      discovered = { at, ok: true, models: listing.models, ...(listing.voices ? { voices: listing.voices } : {}) };
+      discovered = { at, ok: true, ...(listing.models ? { models: listing.models } : {}), ...(listing.voices ? { voices: listing.voices } : {}) };
     } catch (error) {
       // `ProviderFailure` 的文本已经去掉了密钥；别的错误也再去一次。
       const message = error instanceof Error ? error.message : String(error);

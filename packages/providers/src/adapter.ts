@@ -189,9 +189,9 @@ export interface TextAdapter {
 
 // ---- 模型列表 ----
 
-/** 向供应商取到的列表：模型 ID 与（有的话）账号里的音色。 */
+/** 向供应商取到的列表：模型 ID 与（有的话）账号里的音色。没有列模型接口的供应商只验证密钥，不给 `models`。 */
 export interface ProviderListing {
-  models: string[];
+  models?: string[];
   voices?: SpeechVoice[];
 }
 

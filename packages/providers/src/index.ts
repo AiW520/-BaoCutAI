@@ -70,6 +70,13 @@ export {
 export { ElevenLabsAdapter, ELEVENLABS_DEFAULT_BASE_URL } from './elevenlabs/elevenlabs-adapter.ts';
 export { ElevenLabsVoiceCloneAdapter } from './elevenlabs/elevenlabs-voice-clone.ts';
 export { GoogleImageAdapter, parseImageInteraction } from './google/google-image.ts';
+export { GoogleSpeechAdapter, parseSpeechInteraction } from './google/google-speech.ts';
+export {
+  VolcengineSpeechAdapter,
+  VOLCENGINE_SPEECH_DEFAULT_BASE_URL,
+  classifyVolcengineSpeech,
+  parseSpeechStream,
+} from './volcengine/volcengine-speech.ts';
 export { AgentProviderSource, type AgentDrivers, type AgentSourceOptions } from './agent/agent-source.ts';
 export { AgentImageGenerator, type AgentImageGeneratorOptions, type AgentReadiness } from './agent/agent-image-generator.ts';
 export { AnthropicTextAdapter, ANTHROPIC_DEFAULT_BASE_URL, classifyAnthropic, parseAnthropicMessage } from './anthropic/anthropic-text.ts';

@@ -38,7 +38,7 @@
     {id: 'anthropic', name: 'Anthropic', kind: 'vendor', caps: ['text'], p1: [], beyond: [],
      base: 'https://api.anthropic.com', auth: 'x-api-key', site: 'https://console.anthropic.com', icon: {mono: true}, balance: false,
      models: {text: [m('claude-opus-5-5', '旗舰'), m('claude-sonnet-5-5', '均衡'), m('claude-haiku-4-5', '最快'), m('claude-fable-5-1', '最强 · 最贵')]}},
-    {id: 'google', name: 'Google Gemini', kind: 'vendor', caps: ['text', 'transcribe', 'image'], p1: [], beyond: ['tts'],
+    {id: 'google', name: 'Google Gemini', kind: 'vendor', caps: ['text', 'transcribe', 'tts', 'image'], p1: [], beyond: [],
      base: 'https://generativelanguage.googleapis.com/v1beta', auth: 'x-goog-api-key', site: 'https://aistudio.google.com', icon: {mono: false}, balance: false,
      models: {
        text: [m('gemini-3.8-flash', '当前一代'), m('gemini-3.5-flash-lite', '更快 · 更便宜')],
@@ -71,13 +71,16 @@
      base: 'https://api.minimax.io/v1', regions: R('https://api.minimax.io/v1', 'https://api.minimaxi.com/v1'),
      auth: 'Bearer', site: 'https://platform.minimax.io', icon: {mono: false}, balance: false,
      models: {text: [m('MiniMax-M2.5', '当前一代'), m('MiniMax-M2.1', '上一代', {prev: true})]}},
-    {id: 'volcengine', name: '火山引擎（豆包）', kind: 'vendor', caps: ['text', 'tts', 'image'], p1: ['tts', 'image'], beyond: ['transcribe'],
+    {id: 'volcengine', name: '火山引擎（豆包）', kind: 'vendor', caps: ['text', 'image'], p1: ['image'], beyond: ['transcribe'],
      base: 'https://ark.cn-beijing.volces.com/api/v3', auth: 'Bearer', site: 'https://console.volcengine.com/ark', icon: {mono: false}, balance: false,
      models: {
        text: [m('doubao-seed-2-1-pro-260915', '深度思考'), m('doubao-seed-2-1-lite-260915', '更快')],
        transcribe: [m('bigmodel-asr', '自带说话人区分'), m('bigmodel-asr-flash', '更快')],
-       tts: [m('seed-tts-1.0', '豆包语音合成')],
      }},
+    /* 豆包语音的密钥与方舟不通用（architecture §6.4）：单独一家，只有语音合成；模型与音色在 model-cloud-tts.js */
+    {id: 'volcengine-speech', name: '火山引擎（豆包语音）', kind: 'vendor', caps: ['tts'], p1: [], beyond: [],
+     base: 'https://openspeech.bytedance.com/api/v3', auth: 'X-Api-Key', site: 'https://console.volcengine.com/speech/new/setting/apikeys',
+     icon: {mono: false, file: 'volcengine'}, balance: false, models: {}},
     {id: 'xai', name: 'xAI（Grok）', kind: 'vendor', caps: ['text', 'image'], p1: ['image'], beyond: [],
      base: 'https://api.x.ai/v1', auth: 'Bearer', site: 'https://console.x.ai', icon: {mono: true}, balance: false,
      models: {text: [m('grok-4', '旗舰'), m('grok-4-fast-reasoning', '更快')]}},

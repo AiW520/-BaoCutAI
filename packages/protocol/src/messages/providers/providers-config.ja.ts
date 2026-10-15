@@ -6,6 +6,7 @@ export const ja: ProvidersConfigMessages = {
   vendorQwen: 'Alibaba Cloud Model Studio（Qwen）',
   vendorZhipu: 'Zhipu GLM（Z.ai）',
   vendorVolcengine: 'Volcengine（Doubao）',
+  vendorVolcengineSpeech: 'Volcengine（Doubao Speech）',
   vendorXai: 'xAI（Grok）',
   vendorSiliconflow: 'SiliconFlow',
   notEnabledOrNoKey: (p) => `${p.label} がオンになっていないか、キーがありません`,

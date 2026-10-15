@@ -1,7 +1,7 @@
 import type { ProvidersConfigMessages } from './providers-config.ts';
 
 export const fr: ProvidersConfigMessages = {
-  listSeparator: ', ', vendorKimi: 'Kimi (Moonshot)', vendorQwen: 'Alibaba Cloud Model Studio (Qwen)', vendorZhipu: 'Zhipu GLM (Z.ai)', vendorVolcengine: 'Volcengine (Doubao)', vendorXai: 'xAI (Grok)', vendorSiliconflow: 'SiliconFlow',
+  listSeparator: ', ', vendorKimi: 'Kimi (Moonshot)', vendorQwen: 'Alibaba Cloud Model Studio (Qwen)', vendorZhipu: 'Zhipu GLM (Z.ai)', vendorVolcengine: 'Volcengine (Doubao)', vendorVolcengineSpeech: 'Volcengine (Doubao Speech)', vendorXai: 'xAI (Grok)', vendorSiliconflow: 'SiliconFlow',
   notEnabledOrNoKey: (p) => `${p.label} est désactivé ou n’a pas de clé`, noTextModel: (p) => `${p.label} n’a pas de modèle de texte : ${p.model}`, noSpeechModel: (p) => `${p.label} n’a pas de modèle vocal : ${p.model}`, noImageModel: (p) => `${p.label} n’a pas de modèle d’image : ${p.model}`,
   noModel: (p) => `${p.label} n’a pas de modèle : ${p.model}`, modelUnspecified: '(non indiqué)', textFailed: (p) => `La génération de texte de ${p.label} a échoué : ${p.message}`, transcribeFailed: (p) => `La transcription de ${p.label} a échoué : ${p.message}`,
   generateFailed: (p) => `La génération de ${p.label} a échoué : ${p.message}`, noTextGeneration: (p) => `Le moteur de génération multimédia de ${p.label} ne génère pas de texte`, unavailableNow: (p) => `${p.label} est indisponible pour le moment : ${p.detail}`, notEnabled: 'Désactivé',

@@ -292,7 +292,20 @@ export function googleImageReply(request: RecordedRequest, image: Buffer = pngFi
   };
 }
 
-/** 假 Gemini：Interactions（转写模型回词级标注，通用模型回结构化的段；生图），与文本的 `generateContent`。 */
+/** Gemini 语音合成的回复：`model_output` step 里一段 base64 的 WAV（带 RIFF 头）。 */
+export function googleSpeechReply(audio: Buffer = wavFixture()): FakeReply {
+  return {
+    status: 200,
+    json: {
+      id: 'interaction-speech',
+      status: 'completed',
+      steps: [{ type: 'model_output', content: [{ type: 'audio', data: audio.toString('base64'), mime_type: 'audio/wav' }] }],
+      usage: { total_input_tokens: 8, total_output_tokens: 75 },
+    },
+  };
+}
+
+/** 假 Gemini：Interactions（转写模型回词级标注，通用模型回结构化的段；生图；语音合成），与文本的 `generateContent`。 */
 export function fakeGoogleHandler(text = 'hello world'): FakeHandler {
   return (request) => {
     if (request.method === 'GET' && new URL(request.path, 'http://fake').pathname.endsWith('/models')) {
@@ -303,6 +316,7 @@ export function fakeGoogleHandler(text = 'hello world'): FakeHandler {
       return { status: 404, json: { error: { message: 'not found' } } };
     const body = request.json as { model?: string; response_format?: { type?: string } } | undefined;
     if (body?.response_format?.type === 'image') return googleImageReply(request);
+    if (body?.response_format?.type === 'audio') return googleSpeechReply();
     const words = text.split(' ');
     if (body?.model === 'gemini-3.5-transcribe') {
       return {
@@ -341,5 +355,28 @@ export function fakeGoogleHandler(text = 'hello world'): FakeHandler {
         usage: { total_input_tokens: 40, total_output_tokens: 20 },
       },
     };
+  };
+}
+
+/**
+ * 假豆包语音：`POST /tts/unidirectional` 回一串首尾相接的 JSON 包（音频分两片，再加结束包）。`format: 'pcm'` 回
+ * `wavFixture()` 去掉 44 字节头的 PCM，`mp3` 回 `mp3Fixture()`；空文本回流里的错误码；密钥不是 `key` 时回网关的 401。
+ */
+export function fakeVolcengineSpeechHandler(key: string): FakeHandler {
+  return (request) => {
+    if (request.method !== 'POST' || !request.path.endsWith('/tts/unidirectional')) {
+      return { status: 404, json: { header: { code: 40400000, message: 'not found' } } };
+    }
+    if (request.headers['x-api-key'] !== key) return { status: 401, json: { header: { code: 45000010, message: 'Invalid X-Api-Key' } } };
+    const params = (request.json as { req_params?: { text?: string; audio_params?: { format?: string } } } | undefined)?.req_params;
+    if (!params?.text) return { status: 200, text: JSON.stringify({ code: 45002001, message: 'No readable text!', data: null }) };
+    const audio = params.audio_params?.format === 'pcm' ? wavFixture().subarray(44) : mp3Fixture();
+    const half = Math.floor(audio.length / 2);
+    const packets = [
+      { code: 0, message: '', data: audio.subarray(0, half).toString('base64') },
+      { code: 0, message: '', data: audio.subarray(half).toString('base64') },
+      { code: 20000000, message: 'ok', data: null, usage: { text_words: params.text.length } },
+    ];
+    return { status: 200, text: packets.map((p) => JSON.stringify(p)).join('\n'), headers: { 'content-type': 'application/json' } };
   };
 }
