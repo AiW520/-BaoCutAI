@@ -53,6 +53,8 @@
     'design-system': ['eyedrop', 'slider', 'document'],
     /* 协作文档：读文档、动笔、在线程里回评论 */
     docs: ['document', 'pencil', 'comment'],
+    /* 会话标题：读懂素材后起名 */
+    conversation: ['comment', 'pencil'],
     'space-search': ['mag', 'filter', 'folder'],
     space: ['folder', 'shop', 'cart'],
     /* 进出 */

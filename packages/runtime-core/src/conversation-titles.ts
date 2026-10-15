@@ -4,16 +4,16 @@ import type { Id, JobRecord } from '@baocut/protocol';
 
 /**
  * 会话标题跟着链接素材走（产品设计 §3.1、架构设计 §7.9）：会话里的智能体从链接下载，解析出平台给的标题时交给 Harness，
- * 由它决定要不要换掉按第一句话起的会话标题（`Harness.retitleFromMedia`）。每个任务只交一次；还没解析出标题的变化不算。
+ * 由它决定要不要换掉按第一句话起的会话标题（`Harness.retitleIfAuto`）。每个任务只交一次；还没解析出标题的变化不算。
  */
-export function retitleFromLinkImports(jobs: Pick<JobManager, 'onChange'>, harness: Pick<Harness, 'retitleFromMedia'>): () => void {
+export function retitleFromLinkImports(jobs: Pick<JobManager, 'onChange'>, harness: Pick<Harness, 'retitleIfAuto'>): () => void {
   const seen = new Set<Id>();
   return jobs.onChange((job) => {
     if (seen.has(job.jobId)) return;
     const found = linkImportTitle(job);
     if (!found) return;
     seen.add(job.jobId);
-    harness.retitleFromMedia(found.conversationId, found.title);
+    harness.retitleIfAuto(found.conversationId, found.title);
   });
 }
 

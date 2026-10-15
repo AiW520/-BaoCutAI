@@ -422,7 +422,7 @@ models.capabilities / speak / image
 transcribe / translate / dub / transcode
 code.build / code.publish / code.inspect
 jobs.inspect / jobs.wait / jobs.list / jobs.cancel / jobs.retry / artifacts.save / downloads.save / export / download
-tasks.contract / tasks.updateContract / tasks.recordCheck / tasks.stop / grants.request
+tasks.contract / tasks.updateContract / tasks.recordCheck / tasks.stop / grants.request / conversations.setTitle
 models.list / models.install / models.test
 projects.list / projects.create / skills.list / skills.read / library.list / library.show
 space.list / space.search
@@ -570,7 +570,9 @@ interface CapabilitySnapshot {
 
 **持久形态**：每个会话一个只追加的日志 `store/conversations/<id>.jsonl`。第一行是文件头 `{"op":"header","formatVersion":2}`，第二行是 `snapshot`（完整记录：`conversation`、`items`、`seq`、`agent`、`tasks`），之后按顺序重放：`item` 行按 `item.id` 原地替换、没见过的追加到末尾（流式回复与工具调用的状态更新都是替换）；`meta` 行整体替换给出的 `conversation` / `seq` / `agent`，`tasks` 按 taskId 整体替换。内存为主，150ms 合并窗口到期时只追加变化了的行，不 fsync。新会话、item 被删或换序、任务被删、以及日志超过阈值（行数超过 4 ×（items + tasks）+ 64，或字节超过 4 × 记录大小 + 256 KB）时，原子替换成「文件头 + 一行快照」（压缩）；追加与压缩在同一个会话的串行写链上。读取：末尾残行跳过、这次不记落盘副本、下次保存整份写快照；中间认不出的行跳过并记日志；文件头或快照认不出时改名 `.corrupt-<时间>` 保留并跳过；`formatVersion` / `schemaVersion` 不认识时原样留着、跳过。旧的整文件 `<id>.json` 启动时导入为快照并改名 `.json.migrated`。
 
-- 会话标题：第一次发送时取消息的第一行（最多 40 字），创建时给了标题的不取；用户随时可改（`conversations.update { title }`）。会话里的智能体从链接下载（§7.9 的 `link-import` 流程，提交者是这个会话）、解析出平台给的标题时，标题还是按第一句话起的（没改过、创建时没给）就换成媒体标题，写法相同，只换一次（`Harness.retitleFromMedia`）；不算会话的活动（`updatedAt` 不变），照常经 `conversation.updated` 推送。本机文件不换：文件名是用户自己给的；要读懂内容才能起的标题不在这条规则里。
+- 会话标题：第一次发送时取消息的第一行（最多 40 字），创建时给了标题的不取；用户随时可改（`conversations.update { title }`）。标题还是按第一句话起的（没改过、创建时没给）时，有两个来源可以换掉它，规则相同（`Harness.retitleIfAuto`）：写法与按第一句话起的相同，只换一次，先到的算；不算会话的活动（`updatedAt` 不变），照常经 `conversation.updated` 推送。
+  - 会话里的智能体从链接下载（§7.9 的 `link-import` 流程，提交者是这个会话）、解析出平台给的标题时，Runtime 换成媒体标题。
+  - 本机文件的文件名是用户自己给的，不拿来换；智能体读懂内容（文稿、速览）之后用 `conversations_set_title { title }` 起一个标题（只在工具桥；一行、最多 40 个字符，超出拒绝，不截断）。起标题的是智能体，不是 Runtime 另调文本模型：智能体本身就是文本模型、已经读过内容（§3.5「`generateText` 没有提交它的工具」），另调模型要用户配过文本模型、还要把文稿外发（§12.5）。工具只改这个会话自己的标题，不确认、规划模式下也能用；没换（用户改过、已经换过）时返回 `changed: false`，智能体不再调用。
 - `Conversation.projectId` 可空。可以从空绑定一次（下一条），之后不改绑到另一个项目。项目目录被移动或改名后，会话随项目的标识留在它下面，工作目录换到新路径；复制出来的目录是另一个项目，不带走会话（§5.1）。
 - 无项目的会话在它自己的工作目录 `<会话目录>/<会话 id>/` 里工作。会话目录（`RuntimeHome.scratchDir`）放在系统给应用的数据目录里：macOS `~/Library/Application Support/BaoCut/Sessions`，Windows `%LOCALAPPDATA%\BaoCut\Sessions`（不随漫游配置同步：里面是媒体），其余 `${XDG_DATA_HOME:-~/.local/share}/BaoCut/Sessions`；Runtime Home 不是默认的 `~/.baocut` 时（开发、测试）是 `<runtime-home>/scratch/`，环境变量 `BAOCUT_SESSIONS_DIR` 可以覆盖。新建视频不建项目、不绑定：智能体的 `videos_create`、从链接导入与转录的 `create` 目标、流程、给了会话的 `videos.create` / `videos.importPackage` 都把视频建在会话的工作目录里，视频一直留在那里（Space 按会话列出），范围是这个会话。
 - 共用工作目录的会话：从一部不属于项目的视频新开会话时（AI 工具交给 Agent、视频旁的悬浮会话，产品设计 §5.10），新会话用视频所在那条会话的工作目录（`conversations.create { folderOf }`），记录上的 `folderOf` 是那条会话的 id；从共用的会话再开时仍共用最初那条，那条会话属于项目时新会话直接建在项目里。它的范围记那条会话：视频与文件的位置写 `{ conversationId: <那条会话> }`，Space 不为它另列来源，智能体能打开、派生那里的视频。放进项目时放进的是那条会话，共用它的一起绑定（`projectId`、`cwd` 跟着换，`folderOf` 去掉，卡片改指向项目），哪条会话的智能体开着视频都按下一条拒绝；删除共用的会话不碰工作目录；删除被共用的那条时先放进项目（与工作目录里有视频时相同），不丢目录。启动时共用的会话跟上那条会话：它已经属于项目的一起进项目；它没了（删掉之后来不及改共用它的）时，最早建的一条（同时建的按 id）接过这个目录（改名成自己的工作目录），其余改共用它。
@@ -660,6 +662,7 @@ interface DriverStatus {
 | `jobs_cancel` | `command` |
 | `downloads_save` | `command`：写的是工作目录以外的新文件，`autoAcceptEdits` 下照样询问；但只进下载目录、不覆盖（重名加序号），与 `download` 把下载的新文件放进下载目录同级，不是 `high` 的越界写入或不可撤销的覆盖。路径先检查，不合法的直接拒绝，不生成审批 |
 | `tasks_contract`、`tasks_update_contract`、`tasks_record_check` | 不确认，`plan` 下也可用：只读写这个任务自己的合同与检查结果，不碰视频、不外发；改动记为智能体的修订，用户能看到；不能改的字段以 `CONTRACT_FIELD_READONLY` 拒绝（§3.2）。只给会话里的智能体，不在 MCP |
+| `conversations_set_title` | 不确认，`plan` 下也可用（目录里登记为 `read`）：只改这个会话在 BaoCut 里的标题，标题还是自动起的才换、只换一次（§3.10），不碰视频与文件、不外发。只给会话里的智能体，不在 MCP |
 | （`jobs.reconcile`） | 不是工具，按 `high` 只由用户决定（§7.5）：`retry` 是一次新的外发调用（新的预留，可能再次计费），`discard` 放弃一个可能已经计费的结果，`apply` 写用户的视频。智能体在 `jobs_inspect` 里看得到 `needs-reconciliation`、`applications` 与 `cancellation`，`next` 让它告诉用户 |
 | `transcribe`、`translate`、`dub`、`transcode` | `command`：启动固定流程（§7.9）；外发授权由流程检查，没有覆盖时以 `GRANT_REQUIRED` 拒绝，确认里不代发授权。`transcribe` 给 `url` 时按 `download` 确认 |
 | `download` | 用已同意的 yt-dlp 下载是 `command`（执行用户已同意的工具，不外发视频或文稿，结果是下载目录里的新文件；只给 `project` 的下载与对外服务的下载在归属项目的 `downloads/` 里）；`newVideo` 新建视频不提高风险（新建视频是 `edit`）。还没有 yt-dlp 时改为审批 `external_tools_install`（`high`：下载并执行第三方程序，审批摘要带来源、版本、大小与许可）；同意没有或撤回过时审批 `external_tools_consent`（`high`）。链接不合规、严格离线、工具不能下载时直接拒绝，不生成审批（§7.9、§12.9） |

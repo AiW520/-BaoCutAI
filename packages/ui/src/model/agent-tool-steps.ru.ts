@@ -45,6 +45,7 @@ export const ru: AgentToolStepsMessages = {
     readContract: "Прочитать контракт задачи",
     refineContract: "Уточнить контракт задачи",
     recordCheck: "Записать проверку приёмки",
+    renameSession: "Переименовать сессию",
     checkSlides: "Проверить слайды",
     importSlideAsset: "Импортировать изображение для слайдов",
     checkDesign: "Проверить дизайн",

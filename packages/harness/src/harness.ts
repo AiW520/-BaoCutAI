@@ -1731,14 +1731,15 @@ export class Harness {
   }
 
   /**
-   * 智能体从链接下载的素材有了平台给的标题（架构设计 §7.9）：会话标题还是按第一句话起的（用户没改过、创建时没给）时换成它，
-   * 写法与按第一句话起的相同（第一行，最多 40 字）。换过之后标题不再等于按第一句话起的，所以只换一次。不算会话的活动
-   * （不改 `updatedAt`）。返回换了没有。
+   * 会话有了更能认出内容的标题（架构设计 §3.10）：从链接下载的素材解析出平台给的标题（§7.9），或智能体读懂内容后起的标题
+   * （`conversations_set_title`）。会话标题还是按第一句话起的（用户没改过、创建时没给）时换成它，写法与按第一句话起的相同
+   * （第一行，最多 40 字）。换过之后标题不再等于按第一句话起的，所以只换一次，先到的算。不算会话的活动（不改 `updatedAt`）。
+   * 返回换了没有。
    */
-  retitleFromMedia(conversationId: Id, mediaTitle: string): boolean {
+  retitleIfAuto(conversationId: Id, candidate: string): boolean {
     const state = this.#states.get(conversationId);
     if (!state) return false;
-    const title = deriveTitle(mediaTitle);
+    const title = deriveTitle(candidate);
     const current = state.conversation.title;
     if (!title || title === current) return false;
     let auto = '';

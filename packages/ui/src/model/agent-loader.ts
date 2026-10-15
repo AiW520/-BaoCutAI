@@ -131,6 +131,7 @@ export const KINDS: Readonly<Record<LoaderKind, readonly LoaderIcon[]>> = Object
   skill: seq('page', 'potion', 'wand'),
   grant: seq('hourglass', 'dial'),
   contract: seq('document', 'pencil', 'page'),
+  conversation: seq('comment', 'pencil'),
   /* 幻灯片、设计稿、设计系统与协作文档 */
   slides: seq('page', 'eye', 'pencil'),
   design: seq('brush', 'eyedrop', 'eye'),

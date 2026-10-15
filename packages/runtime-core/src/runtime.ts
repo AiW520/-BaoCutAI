@@ -50,6 +50,7 @@ import { AgentSetup, type AgentSetupOptions } from './agent-setup.ts';
 import { AgentGrants } from './agent-tools/grants.ts';
 import { loadAgentGuidance } from './agent-tools/guidance.ts';
 import { TaskTools } from './agent-tools/task-tools.ts';
+import { ConversationTools } from './agent-tools/conversation-tools.ts';
 import { openCredentialStore, type CredentialStoreOptions } from './credentials.ts';
 import { retitleFromLinkImports } from './conversation-titles.ts';
 import { McpEndpoint } from './agent-tools/mcp-endpoint.ts';
@@ -796,6 +797,8 @@ export async function startRuntime(options: StartRuntimeOptions = {}): Promise<R
         new SkillTools({ skills, scope: toolScope }),
         new GrantTools({ models, scope: toolScope }),
         new TaskTools({ harness, scope: toolScope }),
+        // 智能体读懂内容后给会话起标题（产品设计 §3.1）：与链接视频的平台标题同一条规则，只换自动起的标题。
+        new ConversationTools({ harness, scope: toolScope }),
         new LinkImportTools(linkImport),
         // 一级动词（transcribe、translate、dub、transcode）：启动固定流程；视频启用的术语表由流程自己读。
         new FlowTools({ pipelines: models.pipelines, scope: toolScope, linkImport }),

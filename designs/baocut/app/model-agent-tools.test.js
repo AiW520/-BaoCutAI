@@ -31,6 +31,12 @@ test('describe：下载视频（视频还没创建，下载卡挂在这一行）
   assert.equal(T.describe('downloads.fetch', {url: 'https://a.example/v.mp4'}).summary, 'https://a.example/v.mp4');
 });
 
+test('describe：智能体给会话起标题，步骤行念新标题', () => {
+  assert.deepEqual(T.describe('conversations_set_title', {title: '城市骑行通勤的五个误区'}),
+    {kind: 'conversation', label: '重命名会话', summary: '城市骑行通勤的五个误区', icon: 'edit'});
+  assert.equal(T.describe('conversations.setTitle', {}).summary, '');
+});
+
 test('describe：edits_apply 按操作分类别', () => {
   assert.deepEqual(T.describe('edits_apply', {putDocument: {schema: 'baocut.translation/2', language: '英语', units: 62}}),
     {kind: 'translate', label: '翻译', summary: '英语 · 62 句', icon: 'translate'});

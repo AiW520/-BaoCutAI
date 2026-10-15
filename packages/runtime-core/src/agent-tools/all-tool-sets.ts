@@ -1,5 +1,6 @@
 import type { ToolSet } from './tool-catalog.ts';
 import { CompositionTools } from './composition-tools.ts';
+import { ConversationTools } from './conversation-tools.ts';
 import { DownloadTools } from './download-tools.ts';
 import { ExportTools } from './export-tools.ts';
 import { FlowTools } from './flow-tools.ts';
@@ -43,6 +44,7 @@ export function allToolSets(): ToolSet[] {
     new SkillTools(none),
     new GrantTools(none),
     new TaskTools(none),
+    new ConversationTools(none),
     new LinkImportTools(none),
     new FlowTools(none),
     new DownloadTools(none),

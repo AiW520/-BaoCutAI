@@ -109,7 +109,7 @@ afterEach(async () => {
   await fs.rm(dir, { recursive: true, force: true });
 });
 
-describe('retitleFromMedia', () => {
+describe('retitleIfAuto', () => {
   it('按第一句话起的标题换成媒体标题，写法相同（第一行、最多 40 字），不改最近活动；只换一次', async () => {
     const conversation = await harness.createConversation({});
     await harness.send({ conversationId: conversation.id, text: 'Transcribe this video and translate it into Chinese https://x.com/a/status/1', commandId: newId('cmd') });
@@ -117,12 +117,12 @@ describe('retitleFromMedia', () => {
     const before = harness.getConversation(conversation.id).conversation.updatedAt;
 
     const media = 'Sundar Pichai - Some magical progress towards "magic state" in quantum!\nhttps://t.co/abc';
-    expect(harness.retitleFromMedia(conversation.id, media)).toBe(true);
+    expect(harness.retitleIfAuto(conversation.id, media)).toBe(true);
     expect(titleOf(conversation.id)).toBe('Sundar Pichai - Some magical progress to…');
     expect(harness.getConversation(conversation.id).conversation.updatedAt).toBe(before);
 
     // 第二个链接不再换。
-    expect(harness.retitleFromMedia(conversation.id, 'Another video')).toBe(false);
+    expect(harness.retitleIfAuto(conversation.id, 'Another video')).toBe(false);
     expect(titleOf(conversation.id)).toBe('Sundar Pichai - Some magical progress to…');
   });
 
@@ -130,20 +130,20 @@ describe('retitleFromMedia', () => {
     const renamed = await harness.createConversation({});
     await harness.send({ conversationId: renamed.id, text: '下载这个视频 https://youtu.be/x', commandId: newId('cmd') });
     await harness.updateConversation({ conversationId: renamed.id, title: '量子计算访谈' });
-    expect(harness.retitleFromMedia(renamed.id, 'Quantum talk')).toBe(false);
+    expect(harness.retitleIfAuto(renamed.id, 'Quantum talk')).toBe(false);
     expect(titleOf(renamed.id)).toBe('量子计算访谈');
 
     const named = await harness.createConversation({ title: '我的片子' });
     await harness.send({ conversationId: named.id, text: '转录 https://youtu.be/y', commandId: newId('cmd') });
-    expect(harness.retitleFromMedia(named.id, 'Some video')).toBe(false);
+    expect(harness.retitleIfAuto(named.id, 'Some video')).toBe(false);
     expect(titleOf(named.id)).toBe('我的片子');
   });
 
   it('还没有标题的会话直接用媒体标题；空的媒体标题与不存在的会话不处理', async () => {
     const conversation = await harness.createConversation({});
-    expect(harness.retitleFromMedia(conversation.id, '  \n  ')).toBe(false);
-    expect(harness.retitleFromMedia(conversation.id, 'A talk')).toBe(true);
+    expect(harness.retitleIfAuto(conversation.id, '  \n  ')).toBe(false);
+    expect(harness.retitleIfAuto(conversation.id, 'A talk')).toBe(true);
     expect(titleOf(conversation.id)).toBe('A talk');
-    expect(harness.retitleFromMedia('conv_missing', 'A talk')).toBe(false);
+    expect(harness.retitleIfAuto('conv_missing', 'A talk')).toBe(false);
   });
 });

@@ -44,6 +44,7 @@ export const vi: AgentToolStepsMessages = {
     readContract: "Đọc hợp đồng tác vụ",
     refineContract: "Làm rõ hợp đồng tác vụ",
     recordCheck: "Ghi kiểm tra nghiệm thu",
+    renameSession: "Đổi tên phiên",
     checkSlides: "Kiểm tra trang chiếu",
     importSlideAsset: "Nhập hình ảnh cho trang chiếu",
     checkDesign: "Kiểm tra bản thiết kế",

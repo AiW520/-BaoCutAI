@@ -52,7 +52,7 @@ describe('retitleFromLinkImports', () => {
     const calls: [string, string][] = [];
     retitleFromLinkImports(
       { onChange: (l) => ((listener = l), () => {}) },
-      { retitleFromMedia: (conversationId, title) => (calls.push([conversationId, title]), true) },
+      { retitleIfAuto: (conversationId, title) => (calls.push([conversationId, title]), true) },
     );
     listener!(job(run()));
     listener!(job(resolved('Talk')));

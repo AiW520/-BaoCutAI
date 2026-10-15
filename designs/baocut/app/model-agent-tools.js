@@ -80,6 +80,8 @@
     space_list: (a) => ({kind: 'space', label: '浏览 Space', icon: 'asset', summary: a.filter || a.kind || ''}),
     space_search: (a) => ({kind: 'space-search', label: '搜索 Space', icon: 'search', summary: a.query || ''}),
     previews_capture: (a) => ({kind: 'capture', label: '截取画面', icon: 'image', summary: a.at != null ? at(a.at) : ''}),
+    /* 会话标题（产品设计 §3.1）：用户的第一句话认不出是哪部视频时，智能体读懂素材后起的标题；步骤行念新标题 */
+    conversations_set_title: (a) => ({kind: 'conversation', label: '重命名会话', icon: 'edit', summary: a.title || ''}),
     /* 幻灯片（docs/design/slides §7.2）：写完或改完 deck 校验一次，没有错误时线程里登记幻灯片卡片；图片拷进 deck 的 assets/ */
     slides_check: (a) => ({kind: 'slides', label: '检查幻灯片', icon: 'template', summary: join(a.deck || base(a.path), n(a.slides, '页'))}),
     slides_import_asset: (a) => ({kind: 'slides', label: '导入幻灯片素材', icon: 'image', summary: a.name || base(a.path)}),

@@ -59,6 +59,7 @@ const en = {
     readContract: 'Read task contract',
     refineContract: 'Refine task contract',
     recordCheck: 'Record acceptance check',
+    renameSession: 'Rename session',
     checkSlides: 'Check slides',
     importSlideAsset: 'Import slide image',
     checkDesign: 'Check design',
@@ -130,6 +131,7 @@ export type BaoCutStepKind =
   | 'skill'
   | 'grant'
   | 'contract'
+  | 'conversation'
   | 'slides'
   | 'design'
   | 'design-system'
@@ -228,6 +230,7 @@ const CATALOG: Record<string, (a: Args) => BaoCutStep> = {
   tasks_contract: () => ({ kind: 'contract', label: M.label.readContract, summary: '' }),
   tasks_update_contract: () => ({ kind: 'contract', label: M.label.refineContract, summary: '' }),
   tasks_record_check: (a) => ({ kind: 'contract', label: M.label.recordCheck, summary: str(a.checkId) ?? '' }),
+  conversations_set_title: (a) => ({ kind: 'conversation', label: M.label.renameSession, summary: str(a.title) ?? '' }),
   // 幻灯片（docs/design/slides §7.2）：摘要是 deck 目录名与图片文件名。
   slides_check: (a) => ({ kind: 'slides', label: M.label.checkSlides, summary: base(a.path) }),
   slides_import_asset: (a) => ({ kind: 'slides', label: M.label.importSlideAsset, summary: base(a.path) }),

@@ -90,7 +90,7 @@ v3 已经有三个面向程序的入口，但只有两个共用实现：
 | `risk` | `TOOL_RISK` 的等级（`read` / `command` / `high` …），三个主体各自据此决定要不要确认 |
 | `effect` | `query`（只读）、`mutation`（进撤销栈）、`job`（返回 `jobId`）、`destructive`（不可撤销）。skill 的硬规则按它说话：`job` 要等、`mutation` 要读回执、`destructive` 要 `--yes` |
 | `examples` | 一到三个最小调用示例（JSON 参数），`help <命令>` 与 `spec` 带出 |
-| `surfaces` | 在哪些面出现：`agent`（工具桥）、`mcp`、`cli`。默认三个都有；只给会话里的智能体的（`tasks_*`、`grants_request`、`downloads_save`、`slides_*`）标 `agent` |
+| `surfaces` | 在哪些面出现：`agent`（工具桥）、`mcp`、`cli`。默认三个都有；只给会话里的智能体的（`tasks_*`、`grants_request`、`downloads_save`、`slides_*`、`conversations_set_title`）标 `agent` |
 
 `effect` 与 `examples` 是新字段，其余已有。现有 `MCP_SERVICE_TOOLS` 的 `read` / `write` 由 `annotations.readOnlyHint` 推出，不再单独维护一张表。
 
@@ -185,6 +185,7 @@ CLI 不区分「人敲的」与「Agent 敲的」。要让 Agent 宿主的权限
 | | `install` / `test` | job | 安装本地模型包（先报大小，`--yes` 跳过确认）；跑样本检查。两者只在工具桥与 CLI，不开放给 MCP |
 | `space` | `list` / `search` | query | 条目与跨视频检索（只读） |
 | `projects` | `list` / `create` | query / mutation | 项目的登记与新建 |
+| `conversations` | `set_title` | mutation | 只在工具桥：智能体读懂内容后给会话起标题，只换按第一句话自动起的、只换一次（架构设计 §3.10）；CLI 与 MCP 没有会话 |
 | `artifacts` | `save` | mutation | 把任务产物复制成文件（`cwd` 下的路径） |
 | `skills` | `list` / `read` | query | 内置与用户层 craft skill 的索引与正文（§8.3 的「现取」路径） |
 | `library` | `list` / `show` | query | 术语表、音色、品牌素材（只读） |
