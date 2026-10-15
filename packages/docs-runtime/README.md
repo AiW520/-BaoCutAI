@@ -1,6 +1,6 @@
 # docs-runtime
 
-文档编辑器的运行时：文档应用（标签页、工具栏、批注、版本、侧栏）、编辑器 iframe 里的 ProseMirror 运行时（lfile 运行时）与编辑器附加脚本（KaTeX、表情）。源码按 1:1 移植自 Claude Docs 类型的 TypeScript 重建（`src/docs-type`），文件名与内容不改，只改 BaoCut 托管必需的部分，改动处带 `BaoCut:` 注释（见下）。`apps/docs-editor` 把它打成编辑器页面，接口与长连接的前缀由 `packages/docs` 的 `editor/install` 设好，页面背后的 Docs 服务也在 `packages/docs`。
+文档编辑器的运行时：文档应用（标签页、工具栏、批注、版本、侧栏）、编辑器 iframe 里的 ProseMirror 运行时（lfile 运行时）与编辑器附加脚本（KaTeX、表情）。源码移植自 Claude Docs 类型的 TypeScript 重建（`src/docs-type`），保留恢复出的行为与标识符；平台核心按子系统拆成模块，BaoCut 托管与模块组织的改动带 `BaoCut:` 注释（见下）。`apps/docs-editor` 把它打成编辑器页面，接口与长连接的前缀由 `packages/docs` 的 `editor/install` 设好，页面背后的 Docs 服务也在 `packages/docs`。
 
 ## 结构
 
@@ -11,7 +11,7 @@
 | 路径 | 内容 |
 | --- | --- |
 | `main.ts`、`hello-early.ts`、`preload.ts`、`rolldown-runtime.ts` | 入口；最早执行的环境判断（`isFrameArtifact()`）、预热与模块预载 |
-| `docs-app.tsx`、`platform-core.tsx`、`platform-lazy.tsx` | 文档应用、平台层（接口、长连接、批注存储、字体、上报）、按需加载的部分（版本对比、表格、导出） |
+| `docs-app.tsx`、`platform-core.tsx`、`platform-core-*.ts(x)`、`platform-lazy.tsx` | 文档应用、平台层兼容入口与按子系统拆分的实现（见下）、按需加载的部分（版本对比、表格、导出） |
 | `cds.tsx`、`react.tsx`、`jsx-runtime.tsx`、`jsx-dev-runtime.tsx` | 原平台的组件库；React 与 JSX 运行时 |
 | `editor-runtime.tsx`、`editor-schema.ts`、`editor-extras.ts` | 编辑器 iframe 里的 ProseMirror 运行时（打成 `lfile-runtime.35524228.js`）、文档结构、KaTeX 与表情附加脚本 |
 | `editor-runtime-source.ts`、`editor-extras-source.ts` | 两份脚本的文本：前者是空串（只在 Frame 里内联运行时，独立页面从接口取），后者由资源插件打进页面 |
@@ -27,6 +27,22 @@
 | `katex-fonts.ts` | 父页面读取并缓存 KaTeX 本地字体，转换为 data URL 样式，经 `loadFonts` 传入编辑器 iframe |
 
 原工程的 `thumbnail.html` / `thumbnail.ts`（托管平台生成文档缩略图用的页面）没有搬：BaoCut 不生成文档缩略图，Runtime 也不提供这个页面。
+
+### 平台核心模块
+
+`platform-core.tsx` 是兼容入口：先执行 `platform-core-initialize.ts`，再经 `platform-core-exports.ts` 提供原有的具名导出与分块别名。调用方继续导入这个入口；模块之间直接引用所属模块，不经兼容入口形成额外循环。
+
+| 文件前缀（均在 `src/`） | 职责 |
+| --- | --- |
+| `platform-core-dependencies` | 原平台核心的 npm 与本地依赖、适配别名 |
+| `platform-core-observability-*` | 遥测、浏览器与操作事件、启动观测 |
+| `platform-core-platform-*` | 特性开关、宿主能力、会话、接口与认证、同步路由、文档与历史 |
+| `platform-core-data-*` | 枚举与校验、惰性 schema、内容引用、数据模型、操作引擎与控制器 |
+| `platform-core-comments-*` | 批注存储与发件箱、动作与选区、批注编辑 |
+| `platform-core-editor-*` | 编辑器扩展、锚点与提及、宿主、选区与表格、节点视图与媒体 |
+| `platform-core-ui-*`、`platform-core-export-*` | 组件、浮层、快捷键、提示与对话框，以及 MCP 导出连接器 |
+
+较大的子系统按完整顶层声明拆成带数字后缀的文件，保持恢复代码的相对顺序；共享变量与直接写它的函数放在同一模块。原来的函数体与初始化表达式保留，变量补上原类型检查推导出的类型。`initialize` 按原始语句顺序执行初始化及注册副作用，避免 ESM 循环依赖提前读取状态。增加顶层初始化时须同步这个顺序；不要从模块顶层提前执行其他子系统的逻辑。操作控制器的主闭包与批注发件箱的 store 闭包仍保持完整，文件会比其他模块大。
 
 ## 宿主与平台
 
