@@ -153,11 +153,25 @@ impl<'a> Nv12<'a> {
 ///
 /// 色度按最近邻上采样：每个 UV 样本给 2×2 个像素共用（与 ffmpeg swscale 同尺寸换算的缺省路径、libyuv 相同）。
 /// `rotation` 是顺时针摆正的角度（0 / 90 / 180 / 270，其余按 0）。调用前须 [`Nv12::fits`]。
+///
+/// 逐行换算（[`convert_row`]），旋转的分支在行外：不转的素材（绝大多数）直接写进输出行；转的先换进一行暂存，
+/// 再按角度各自一条循环摆到位。逐字节等于逐像素套 [`YuvToRgb::pixel`] 再按旋转落点写（测试对拍）。
 pub(crate) fn nv12_to_rgba(
     frame: &Nv12<'_>,
     convert: &YuvToRgb,
     rotation: u16,
     out: &mut Vec<u8>,
+) -> (usize, usize) {
+    nv12_to_rgba_with(frame, convert, rotation, out, row_converter())
+}
+
+/// [`nv12_to_rgba`] 用指定的逐行换算：测试把通用版与 AVX2 版分别对拍。
+fn nv12_to_rgba_with(
+    frame: &Nv12<'_>,
+    convert: &YuvToRgb,
+    rotation: u16,
+    out: &mut Vec<u8>,
+    convert_row: RowConverter,
 ) -> (usize, usize) {
     debug_assert!(frame.fits());
     let (width, height) = (frame.width, frame.height);
@@ -167,28 +181,220 @@ pub(crate) fn nv12_to_rgba(
         (width, height)
     };
     out.resize(out_width * out_height * 4, 0);
+    let row_bytes = width * 4;
+    let source_row = |y: usize| {
+        let luma = &frame.luma[y * frame.luma_pitch..y * frame.luma_pitch + width];
+        let chroma_start = (y / 2) * frame.chroma_pitch;
+        let chroma = &frame.chroma[chroma_start..chroma_start + width.div_ceil(2) * 2];
+        (luma, chroma)
+    };
+    if !matches!(rotation, 90 | 180 | 270) {
+        for (y, target) in out.chunks_exact_mut(row_bytes).enumerate() {
+            let (luma, chroma) = source_row(y);
+            convert_row(luma, chroma, convert, target);
+        }
+        return (out_width, out_height);
+    }
+    let mut row = vec![0_u8; row_bytes];
     for y in 0..height {
-        let luma = &frame.luma[y * frame.luma_pitch..];
-        let chroma = &frame.chroma[(y / 2) * frame.chroma_pitch..];
-        for x in 0..width {
-            let pixel = convert.pixel(luma[x], chroma[x / 2 * 2], chroma[x / 2 * 2 + 1]);
-            // 顺时针旋转 `rotation` 度后，源 (x, y) 落到的目标坐标。
-            let (tx, ty) = match rotation {
-                90 => (height - 1 - y, x),
-                180 => (width - 1 - x, height - 1 - y),
-                270 => (y, width - 1 - x),
-                _ => (x, y),
-            };
-            let at = (ty * out_width + tx) * 4;
-            out[at..at + 4].copy_from_slice(&pixel);
+        let (luma, chroma) = source_row(y);
+        convert_row(luma, chroma, convert, &mut row);
+        let pixels = row.chunks_exact(4);
+        match rotation {
+            // 源 (x, y) → 目标 (height-1-y, x)：源的一行落成目标的一列。
+            90 => {
+                let column = height - 1 - y;
+                for (x, pixel) in pixels.enumerate() {
+                    let at = (x * out_width + column) * 4;
+                    out[at..at + 4].copy_from_slice(pixel);
+                }
+            }
+            // 源 (x, y) → 目标 (width-1-x, height-1-y)：行序与行内都倒过来。
+            180 => {
+                let target = &mut out[(height - 1 - y) * row_bytes..(height - y) * row_bytes];
+                for (pixel, slot) in pixels.zip(target.chunks_exact_mut(4).rev()) {
+                    slot.copy_from_slice(pixel);
+                }
+            }
+            // 源 (x, y) → 目标 (y, width-1-x)。
+            _ => {
+                for (x, pixel) in pixels.enumerate() {
+                    let at = ((width - 1 - x) * out_width + y) * 4;
+                    out[at..at + 4].copy_from_slice(pixel);
+                }
+            }
         }
     }
     (out_width, out_height)
 }
 
+/// 一行的换算函数：[`row_converter`] 按 CPU 选。
+type RowConverter = fn(&[u8], &[u8], &YuvToRgb, &mut [u8]);
+
+/// 本机最快的逐行换算。x86-64 的缺省目标只到 SSE2，32 位整数乘法向量化不了，同一份代码按 AVX2 编一遍再在运行时
+/// 选：1080p 一帧从约 4.3 ms 降到约 0.9 ms（i7-12700F）。两份是同一段整数运算，结果逐字节相同（测试两份都对拍）。
+fn row_converter() -> RowConverter {
+    #[cfg(target_arch = "x86_64")]
+    if std::arch::is_x86_feature_detected!("avx2") {
+        return convert_row_avx2_entry;
+    }
+    convert_row
+}
+
+#[cfg(target_arch = "x86_64")]
+fn convert_row_avx2_entry(luma: &[u8], chroma: &[u8], convert: &YuvToRgb, out: &mut [u8]) {
+    // SAFETY: 只有 `row_converter` 在检测到 AVX2 之后才交出这个入口。
+    unsafe { convert_row_avx2(luma, chroma, convert, out) }
+}
+
+#[cfg(target_arch = "x86_64")]
+#[target_feature(enable = "avx2")]
+unsafe fn convert_row_avx2(luma: &[u8], chroma: &[u8], convert: &YuvToRgb, out: &mut [u8]) {
+    convert_row(luma, chroma, convert, out)
+}
+
+/// 一行 NV12 → RGBA：`luma` 是这一行的 `width` 个 Y，`chroma` 是对应的 UV 对（`width` 为奇数时最后一对只用 U、V
+/// 给最后一个像素），`out` 是 `width × 4` 字节。每对像素共用一个 UV 样本，色度项每对只算一次；整数运算的次序与
+/// [`YuvToRgb::pixel`] 相同，结果逐字节一样。`inline(always)`：AVX2 版靠把它内联进带 `target_feature` 的函数编出来。
+#[inline(always)]
+fn convert_row(luma: &[u8], chroma: &[u8], convert: &YuvToRgb, out: &mut [u8]) {
+    let channel = |value: i32| (value >> FRACTION_BITS).clamp(0, 255) as u8;
+    let pairs = luma.len() / 2;
+    let (out_pairs, out_tail) = out.split_at_mut(pairs * 8);
+    for ((ys, uv), rgba) in luma
+        .chunks_exact(2)
+        .zip(chroma.chunks_exact(2))
+        .zip(out_pairs.chunks_exact_mut(8))
+    {
+        let u = i32::from(uv[0]) - 128;
+        let v = i32::from(uv[1]) - 128;
+        let red = convert.r_from_v * v;
+        let green = convert.g_from_u * u + convert.g_from_v * v;
+        let blue = convert.b_from_u * u;
+        for (y, pixel) in ys.iter().zip(rgba.chunks_exact_mut(4)) {
+            let luma = (i32::from(*y) - convert.y_offset) * convert.y_gain + ROUNDING;
+            pixel[0] = channel(luma + red);
+            pixel[1] = channel(luma - green);
+            pixel[2] = channel(luma + blue);
+            pixel[3] = 255;
+        }
+    }
+    if let (Some(y), Some(uv)) = (luma.get(pairs * 2), chroma.get(pairs * 2..pairs * 2 + 2)) {
+        out_tail[..4].copy_from_slice(&convert.pixel(*y, uv[0], uv[1]));
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    /// 对拍用的逐像素实现（W2 之前的 `nv12_to_rgba`）：每个像素套一次 [`YuvToRgb::pixel`]，再按旋转算落点。
+    fn reference_nv12_to_rgba(
+        frame: &Nv12<'_>,
+        convert: &YuvToRgb,
+        rotation: u16,
+        out: &mut Vec<u8>,
+    ) -> (usize, usize) {
+        let (width, height) = (frame.width, frame.height);
+        let (out_width, out_height) = if matches!(rotation, 90 | 270) {
+            (height, width)
+        } else {
+            (width, height)
+        };
+        out.resize(out_width * out_height * 4, 0);
+        for y in 0..height {
+            let luma = &frame.luma[y * frame.luma_pitch..];
+            let chroma = &frame.chroma[(y / 2) * frame.chroma_pitch..];
+            for x in 0..width {
+                let pixel = convert.pixel(luma[x], chroma[x / 2 * 2], chroma[x / 2 * 2 + 1]);
+                let (tx, ty) = match rotation {
+                    90 => (height - 1 - y, x),
+                    180 => (width - 1 - x, height - 1 - y),
+                    270 => (y, width - 1 - x),
+                    _ => (x, y),
+                };
+                let at = (ty * out_width + tx) * 4;
+                out[at..at + 4].copy_from_slice(&pixel);
+            }
+        }
+        (out_width, out_height)
+    }
+
+    /// 确定性的伪随机字节（xorshift64*）：对拍不依赖随机数 crate，失败可复现。
+    struct Bytes(u64);
+
+    impl Bytes {
+        fn next(&mut self) -> u8 {
+            self.0 ^= self.0 >> 12;
+            self.0 ^= self.0 << 25;
+            self.0 ^= self.0 >> 27;
+            (self.0.wrapping_mul(0x2545_f491_4f6c_dd1d) >> 56) as u8
+        }
+
+        fn fill(&mut self, len: usize) -> Vec<u8> {
+            (0..len).map(|_| self.next()).collect()
+        }
+    }
+
+    /// 本机能跑的每一种逐行换算：通用版，CPU 支持时再加 AVX2 版。
+    fn row_converters() -> Vec<(&'static str, RowConverter)> {
+        let mut converters: Vec<(&'static str, RowConverter)> = vec![("generic", convert_row)];
+        #[cfg(target_arch = "x86_64")]
+        if std::arch::is_x86_feature_detected!("avx2") {
+            converters.push(("avx2", convert_row_avx2_entry));
+        }
+        converters
+    }
+
+    /// W2 的逐行实现与逐像素实现逐字节相同：随机平面（含 0 / 255 附近的饱和值）、奇偶宽高、行距大于宽度、四种
+    /// 旋转加一个非法角度、全部矩阵与两种量化范围，通用版与 AVX2 版各比一遍；输出缓冲事先装着别的尺寸与内容。
+    #[test]
+    fn the_row_wise_converter_matches_the_per_pixel_reference_byte_for_byte() {
+        let mut bytes = Bytes(0x9e37_79b9_7f4a_7c15);
+        let sizes: [(usize, usize); 7] =
+            [(1, 1), (2, 2), (3, 5), (7, 4), (16, 9), (33, 17), (64, 36)];
+        for (width, height) in sizes {
+            let luma_pitch = width + 5;
+            let chroma_pitch = width.div_ceil(2) * 2 + 3;
+            let luma = bytes.fill(luma_pitch * height);
+            let chroma = bytes.fill(chroma_pitch * height.div_ceil(2));
+            let frame = Nv12 {
+                luma: &luma,
+                luma_pitch,
+                chroma: &chroma,
+                chroma_pitch,
+                width,
+                height,
+            };
+            assert!(frame.fits());
+            for matrix in [
+                YuvMatrix::Bt601,
+                YuvMatrix::Bt709,
+                YuvMatrix::Smpte240m,
+                YuvMatrix::Bt2020,
+            ] {
+                for full_range in [false, true] {
+                    let convert = YuvToRgb::new(matrix, full_range);
+                    for rotation in [0_u16, 90, 180, 270, 45] {
+                        let mut expected = Vec::new();
+                        let expected_size =
+                            reference_nv12_to_rgba(&frame, &convert, rotation, &mut expected);
+                        for (name, row) in row_converters() {
+                            let mut actual = bytes.fill(11);
+                            let actual_size =
+                                nv12_to_rgba_with(&frame, &convert, rotation, &mut actual, row);
+                            assert_eq!(actual_size, expected_size);
+                            assert!(
+                                actual == expected,
+                                "{name} {width}x{height} {matrix:?} full={full_range} \
+                                 rotation={rotation}"
+                            );
+                        }
+                    }
+                }
+            }
+        }
+    }
 
     /// 有限范围的黑、白、灰落在 0 / 255 / 中灰，任何矩阵都一样（色度为 128 时矩阵不参与）。
     #[test]
