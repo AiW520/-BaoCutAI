@@ -356,19 +356,22 @@ fn fused_chunks(
 /// `<p>` 的译文文本：子节点原样拼接后归一化（[`Element::text`]）。
 ///
 /// 融合块（`<span data-src>`）之间模型常常紧贴着写、不留空格，以空格分词的
-/// 目标语就会粘词（`little</span><span>I've` ⇒ `littleI've`）。目标语以空格分词
-/// 且 `<p>` 带块标注时，两侧都没有空白的块缝按行文本载体的同一规则补一个空格
-/// （[`glued_joint_wants_space`]：句读之后必补，括号引号内侧与收尾标点前不补，
-/// 两个词字符之间看本句其他块缝有没有空格）。只补不删；不以空格分词的目标语
-/// 与不带块标注的 `<p>` 照旧原样拼接。
+/// 目标语就会粘词（`little</span><span>I've` ⇒ `littleI've`）。`<p>` 带块标注时，
+/// 两侧都没有空白的块缝按行文本载体的同一规则补一个空格
+/// （[`glued_joint_wants_space`]）：以空格分词的目标语句读之后必补，括号引号
+/// 内侧与收尾标点前不补，两个词字符之间看本句其他块缝有没有空格；不以空格
+/// 分词的目标语（中日、泰文等）只在两个空格分词文字的词之间补
+/// （`Cerveza</span><span>Japón`），汉字与拉丁字母之间留给入库时的
+/// AutoCorrect。只补不删；不带块标注的 `<p>` 照旧原样拼接。
 fn paragraph_text(element: &Element, target_lang: &str) -> String {
     let annotated = element
         .children
         .iter()
         .any(|node| matches!(node, Node::Element(child) if child.attr("data-src").is_some()));
-    if !annotated || !is_spaced_target(target_lang) {
+    if !annotated {
         return element.text();
     }
+    let spaced_target = is_spaced_target(target_lang);
     // 每块文本及其后的块缝是否带空白（块尾空白、后块头空白，或两块之间只有
     // 空白的文本节点）。`<p>` 首尾的排版空白不是块缝，不影响本句口径。
     let mut pieces: Vec<(String, bool)> = Vec::new();
@@ -394,7 +397,9 @@ fn paragraph_text(element: &Element, target_lang: &str) -> String {
         .any(|(_, spaced)| *spaced);
     let mut text = String::new();
     for (index, (piece, _)) in pieces.iter().enumerate() {
-        if index > 0 && (pieces[index - 1].1 || glued_joint_wants_space(&text, piece, line_spaced))
+        if index > 0
+            && (pieces[index - 1].1
+                || glued_joint_wants_space(&text, piece, spaced_target, line_spaced))
         {
             text.push(' ');
         }
@@ -1202,7 +1207,7 @@ mod tests {
     }
 
     #[test]
-    fn glued_span_joints_get_a_space_in_spaced_targets_only() {
+    fn glued_span_joints_get_a_space_by_target_script() {
         let mut page = sample_page();
         page.source_lang = "zh".to_owned();
         page.sections[0].sentences[0].source = "我从小就一直在推着自己往前走。".to_owned();
@@ -1288,8 +1293,24 @@ mod tests {
         );
         assert_eq!(parsed.translations["s-g1.0"], "어릴 때부터 항상 노력했다.");
 
-        // 不以空格分词的目标语照旧原样拼接。
+        // 不以空格分词的目标语：宽字符之间与汉字–拉丁字母之间照旧原样拼接
+        // （后者由入库时的 AutoCorrect 补空格），只有两个拉丁词之间补。
         for (target, spans, expected) in [
+            (
+                "zh",
+                "<span data-src=\"1-4\">用 Claude</span><span data-src=\"5-8\">Code 写代码。</span>",
+                "用 Claude Code 写代码。",
+            ),
+            (
+                "zh",
+                "<span data-src=\"1-4\">进口的 Cerveza</span><span data-src=\"5-8\">Japón 等。</span>",
+                "进口的 Cerveza Japón 等。",
+            ),
+            (
+                "zh",
+                "<span data-src=\"1-4\">能够收购</span><span data-src=\"5-8\">World Labs。</span>",
+                "能够收购World Labs。",
+            ),
             (
                 "zh",
                 "<span data-src=\"1-4\">我从小就</span><span data-src=\"5-8\">一直在逼自己。</span>",
