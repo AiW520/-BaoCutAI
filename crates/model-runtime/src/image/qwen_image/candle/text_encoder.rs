@@ -29,8 +29,13 @@ fn rms(x: &Tensor, w: &Tensor) -> Result<Tensor> {
     Ok(candle_nn::ops::rms_norm(&x.contiguous()?, w, EPS)?)
 }
 
+/// `x` [batch, seq, in] 乘 `w` [out, in] 的转置：摊成二维，转置交给矩阵乘的步长（不另拷一份转置的矩阵）。
 fn linear(x: &Tensor, w: &Tensor) -> Result<Tensor> {
-    Ok(x.to_dtype(w.dtype())?.broadcast_matmul(&w.t()?.contiguous()?)?)
+    let (batch, sequence, input) = x.dims3()?;
+    Ok(x.to_dtype(w.dtype())?
+        .reshape((batch * sequence, input))?
+        .matmul(&w.t()?)?
+        .reshape((batch, sequence, w.dim(0)?))?)
 }
 
 fn projection(weights: &ShardedWeights, prefix: &str, x: &Tensor, input: usize, device: &Device, dtype: DType) -> Result<Tensor> {
@@ -105,10 +110,16 @@ pub fn encode(
         }
     }
     let mask = Tensor::from_vec(causal, (1, 1, ids.len(), ids.len()), device)?.to_dtype(dtype)?;
+    // 冷启动时后台按层序先把后面两层读进文件缓存（见 [`ShardedWeights::prefetch`]）。
+    let groups = (0..LAYERS)
+        .map(|i| weights.keys_with_prefix(&format!("{prefix}.layers.{i}.")))
+        .collect();
+    let prefetch = weights.prefetch(groups, 2);
     for i in 0..LAYERS {
         if cancel() {
             return Err(Cancelled.into());
         }
+        prefetch.advance(i);
         let p = format!("{prefix}.layers.{i}");
         let input_norm = weights.load(&format!("{p}.input_layernorm.weight"), device)?.to_dtype(dtype)?;
         let normalized = rms(&hidden, &input_norm)?;

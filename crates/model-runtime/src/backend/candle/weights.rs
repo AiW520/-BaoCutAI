@@ -227,6 +227,26 @@ pub fn dequantize_affine(weight: &Tensor, scales: &Tensor, biases: &Tensor, grou
     Ok(Tensor::from_vec(output, (rows, columns), &device)?)
 }
 
+/// [`dequantize_affine`] 的设备版：结果是 `dtype`，留在 `weight` 所在的设备上。CUDA 上要 bf16 时在显卡上展开
+/// （[`super::cuda_kernels`]：只搬打包的 4 或 8 位权重，主机内存里不展开），与主机上展开再转 bf16 逐位相同；别的情况
+/// 在主机上展开、转精度后搬回原设备。
+pub fn dequantize_affine_to(
+    weight: &Tensor,
+    scales: &Tensor,
+    biases: &Tensor,
+    group_size: usize,
+    bits: usize,
+    dtype: DType,
+) -> Result<Tensor> {
+    #[cfg(feature = "cuda")]
+    if weight.device().is_cuda() && dtype == DType::BF16 {
+        return super::cuda_kernels::dequantize_affine_bf16(weight, scales, biases, group_size, bits);
+    }
+    let host = |tensor: &Tensor| tensor.to_device(&Device::Cpu);
+    let dense = dequantize_affine(&host(weight)?, &host(scales)?, &host(biases)?, group_size, bits)?;
+    Ok(dense.to_dtype(dtype)?.to_device(weight.device())?)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

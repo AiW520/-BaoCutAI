@@ -3,28 +3,98 @@
 //! candle 普通的 `safetensors::load` 会把每个张量一次性搬到设备上；图像模型的权重比一般显卡的显存大得多，所以映射与
 //! 张量搬运的生命周期刻意分开。与 v2 唯一的不同：v2 按目录扫 `*.safetensors`，这里读调用方按清单取出的文件
 //! （[`crate::bundle::VerifiedFiles::require_extension_in`]）。
+//!
+//! 冷启动（权重不在系统的文件缓存里）时，从映射里读是按页缺页、一次只读几十 KB，机械硬盘上比顺序的大块读慢好几倍。
+//! [`ShardedWeights::prefetch`] 在后台线程里按用到的顺序把后面几层用大块读一遍，读进的页与映射共用同一份文件缓存。
 
 use anyhow::{Context, Result, anyhow, bail};
 use candle_core::safetensors::Load;
 use candle_core::{DType, Device, Tensor};
 use memmap2::{Mmap, MmapOptions};
 use safetensors::SafeTensors;
+use safetensors::tensor::TensorView;
 use std::collections::HashMap;
 use std::fs::File;
+use std::io::{Read, Seek, SeekFrom};
 use std::path::{Path, PathBuf};
+use std::sync::Arc;
+use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
+use std::thread::JoinHandle;
 
-use crate::backend::candle::weights::dequantize_affine;
+use crate::backend::candle::weights::{dequantize_affine, dequantize_affine_to};
 
 struct Shard {
     path: PathBuf,
     data: Mmap,
 }
 
+/// 一个张量在哪个分片、文件里的哪段字节（打开时从 safetensors 头读出，之后不再解析头）。
+struct Entry {
+    shard: usize,
+    dtype: safetensors::Dtype,
+    shape: Vec<usize>,
+    start: usize,
+    end: usize,
+}
+
 /// safetensors 分片一直映射在主机的虚拟内存里。只有请求的张量会拷到目标设备上；层算完后丢掉返回的张量，
 /// 那份设备内存就放掉了。
 pub struct ShardedWeights {
     shards: Vec<Shard>,
-    index: HashMap<String, usize>,
+    index: HashMap<String, Entry>,
+}
+
+/// 后台的预读：按组（一组是一层的张量）的顺序读，至多领先 [`Prefetch::advance`] 报的那组 `ahead` 组。丢掉时停下并等线程退出。
+pub struct Prefetch {
+    stop: Arc<AtomicBool>,
+    consumed: Arc<AtomicUsize>,
+    worker: Option<JoinHandle<()>>,
+}
+
+impl Prefetch {
+    /// 主线程开始用第 `group` 组了。
+    pub fn advance(&self, group: usize) {
+        self.consumed.store(group, Ordering::Release);
+    }
+}
+
+impl Drop for Prefetch {
+    fn drop(&mut self) {
+        self.stop.store(true, Ordering::Release);
+        if let Some(worker) = self.worker.take() {
+            let _ = worker.join();
+        }
+    }
+}
+
+/// 一个线性层留在设备上的原始权重：MLX 仿射量化的打包 u32 加每组的 scales 与 biases（8-bit 约为展开后 bf16 的一半大，
+/// 4-bit 约四分之一），或不量化的浮点矩阵。
+pub struct PackedLinear {
+    weight: Tensor,
+    quantized: Option<Quantized>,
+}
+
+struct Quantized {
+    scales: Tensor,
+    biases: Tensor,
+    group: usize,
+    bits: usize,
+}
+
+impl PackedLinear {
+    /// 占用的设备内存（字节）。
+    pub fn bytes(&self) -> usize {
+        let size = |t: &Tensor| t.elem_count() * t.dtype().size_in_bytes();
+        size(&self.weight) + self.quantized.as_ref().map_or(0, |q| size(&q.scales) + size(&q.biases))
+    }
+
+    /// 展开成 `dtype` 的 [out, in] 矩阵，与权重在同一设备上。
+    pub fn dense(&self, dtype: DType) -> Result<Tensor> {
+        match &self.quantized {
+            None => Ok(self.weight.to_dtype(dtype)?),
+            Some(q) => dequantize_affine_to(&self.weight, &q.scales, &q.biases, q.group, q.bits, dtype),
+        }
+    }
 }
 
 impl ShardedWeights {
@@ -41,13 +111,24 @@ impl ShardedWeights {
             let file = File::open(&path).with_context(|| format!("打开 {}", path.display()))?;
             // SAFETY: 映射只读，建映射时文件一直开着，BaoCut 的代码不改模型权重。
             let data = unsafe { MmapOptions::new().map(&file) }.with_context(|| format!("映射 {}", path.display()))?;
-            let tensors = SafeTensors::deserialize(&data).with_context(|| format!("解析 {}", path.display()))?;
-            for key in tensors.names() {
-                if index.insert(key.to_owned(), shards.len()).is_some() {
+            let (header, metadata) = SafeTensors::read_metadata(&data).with_context(|| format!("解析 {}", path.display()))?;
+            let base = 8 + header;
+            for (key, info) in metadata.tensors() {
+                let (start, end) = (base + info.data_offsets.0, base + info.data_offsets.1);
+                if end > data.len() {
+                    bail!("{} 里 {key} 的数据越过文件末尾", path.display());
+                }
+                let entry = Entry {
+                    shard: shards.len(),
+                    dtype: info.dtype,
+                    shape: info.shape.clone(),
+                    start,
+                    end,
+                };
+                if index.insert(key.clone(), entry).is_some() {
                     bail!("重复权重键：{key}");
                 }
             }
-            drop(tensors);
             shards.push(Shard { path, data });
         }
         Ok(Self { shards, index })
@@ -57,34 +138,72 @@ impl ShardedWeights {
         self.index.contains_key(key)
     }
 
-    fn shard(&self, key: &str) -> Result<&Shard> {
-        self.shards
-            .get(*self.index.get(key).ok_or_else(|| anyhow!("缺少权重：{key}"))?)
-            .context("权重分片索引越界")
+    /// 以 `prefix` 开头的键（一层的张量），按在文件里的位置排。
+    pub fn keys_with_prefix(&self, prefix: &str) -> Vec<String> {
+        let mut keys = self
+            .index
+            .iter()
+            .filter(|(key, _)| key.starts_with(prefix))
+            .map(|(key, entry)| (entry.shard, entry.start, key.clone()))
+            .collect::<Vec<_>>();
+        keys.sort_unstable();
+        keys.into_iter().map(|(_, _, key)| key).collect()
+    }
+
+    fn entry(&self, key: &str) -> Result<(&Entry, &Shard)> {
+        let entry = self.index.get(key).ok_or_else(|| anyhow!("缺少权重：{key}"))?;
+        Ok((entry, self.shards.get(entry.shard).context("权重分片索引越界")?))
+    }
+
+    fn view(&self, key: &str) -> Result<(TensorView<'_>, &Path)> {
+        let (entry, shard) = self.entry(key)?;
+        let view = TensorView::new(entry.dtype, entry.shape.clone(), &shard.data[entry.start..entry.end])
+            .with_context(|| format!("{key} 的形状与数据长度不符（{}）", shard.path.display()))?;
+        Ok((view, &shard.path))
     }
 
     /// 只看形状与类型，不分配设备张量。
     pub fn metadata(&self, key: &str) -> Result<(Vec<usize>, safetensors::Dtype)> {
-        let shard = self.shard(key)?;
-        let tensors = SafeTensors::deserialize(&shard.data)?;
-        let view = tensors.tensor(key)?;
-        Ok((view.shape().to_vec(), view.dtype()))
+        let (entry, _) = self.entry(key)?;
+        Ok((entry.shape.clone(), entry.dtype))
     }
 
     pub fn load(&self, key: &str, device: &Device) -> Result<Tensor> {
-        let shard = self.shard(key)?;
-        let tensors = SafeTensors::deserialize(&shard.data).with_context(|| format!("解析 {}", shard.path.display()))?;
-        tensors
-            .tensor(key)?
-            .load(device)
-            .with_context(|| format!("读取权重 {key} ({})", shard.path.display()))
+        let (view, path) = self.view(key)?;
+        view.load(device).with_context(|| format!("读取权重 {key} ({})", path.display()))
+    }
+
+    /// 在后台线程里按 `groups` 的顺序把每组张量在文件里的字节用大块读一遍（读进系统的文件缓存，不留副本），至多领先
+    /// [`Prefetch::advance`] 报的那组 `ahead` 组。读不了的就跳过：预读只影响快慢。
+    pub fn prefetch(&self, groups: Vec<Vec<String>>, ahead: usize) -> Prefetch {
+        let ranges = groups
+            .iter()
+            .map(|keys| {
+                let mut ranges = keys
+                    .iter()
+                    .filter_map(|key| self.index.get(key))
+                    .map(|entry| (entry.shard, entry.start, entry.end))
+                    .collect::<Vec<_>>();
+                ranges.sort_unstable();
+                ranges
+            })
+            .collect::<Vec<_>>();
+        let paths = self.shards.iter().map(|shard| shard.path.clone()).collect::<Vec<_>>();
+        let stop = Arc::new(AtomicBool::new(false));
+        let consumed = Arc::new(AtomicUsize::new(0));
+        let worker = {
+            let (stop, consumed) = (stop.clone(), consumed.clone());
+            std::thread::Builder::new()
+                .name("weights-prefetch".into())
+                .spawn(move || read_ahead(&paths, &ranges, ahead, &stop, &consumed))
+                .ok()
+        };
+        Prefetch { stop, consumed, worker }
     }
 
     /// 二维张量只按 `ids` 读出那几行（行在文件里连续）：不把整张表搬进内存。
     fn rows(&self, key: &str, ids: &[u32]) -> Result<Tensor> {
-        let shard = self.shard(key)?;
-        let tensors = SafeTensors::deserialize(&shard.data).with_context(|| format!("解析 {}", shard.path.display()))?;
-        let view = tensors.tensor(key)?;
+        let (view, _) = self.view(key)?;
         let &[count, width] = view.shape() else {
             bail!("{key} 不是二维张量");
         };
@@ -105,21 +224,26 @@ impl ShardedWeights {
             }
             selected.extend_from_slice(&data[id * row_bytes..(id + 1) * row_bytes]);
         }
-        safetensors::tensor::TensorView::new(view.dtype(), vec![ids.len(), width], &selected)?
+        TensorView::new(view.dtype(), vec![ids.len(), width], &selected)?
             .load(&Device::Cpu)
             .with_context(|| format!("读取权重 {key} 的行"))
     }
 
-    /// MLX 仿射量化的矩阵是打包的 u32 加每组的 scales 与 biases。只在主机内存里反量化这一个矩阵，再把结果按 `dtype`
-    /// 搬到设备上；临时分配在返回时就放掉。
+    /// 读出并展开一个线性层的 [out, in] 矩阵（`dtype`，放在 `device` 上）；临时分配在返回时就放掉。
     pub fn linear(&self, prefix: &str, input: usize, device: &Device, dtype: DType) -> Result<Tensor> {
-        let key = format!("{prefix}.weight");
-        let weight = self.load(&key, &Device::Cpu)?;
+        self.packed(prefix, input, device)?.dense(dtype)
+    }
+
+    /// 一个线性层的原始权重，原样从映射的文件搬到 `device` 上（不展开）。MLX 仿射量化的矩阵是打包的 u32 加每组的
+    /// scales 与 biases，[`PackedLinear::dense`] 时才展开：CPU 上在主机内存里展开；CUDA 上只经 PCIe 搬打包的权重、
+    /// 在显卡上展开，两者的 bf16 逐位相同。
+    pub fn packed(&self, prefix: &str, input: usize, device: &Device) -> Result<PackedLinear> {
+        let weight = self.load(&format!("{prefix}.weight"), device)?;
         if !self.contains(&format!("{prefix}.scales")) {
-            return Ok(weight.to_dtype(dtype)?.to_device(device)?);
+            return Ok(PackedLinear { weight, quantized: None });
         }
-        let scales = self.load(&format!("{prefix}.scales"), &Device::Cpu)?;
-        let biases = self.load(&format!("{prefix}.biases"), &Device::Cpu)?;
+        let scales = self.load(&format!("{prefix}.scales"), device)?;
+        let biases = self.load(&format!("{prefix}.biases"), device)?;
         let (rows, columns) = weight.dims2()?;
         let (scale_rows, groups) = scales.dims2()?;
         if groups == 0 || rows != scale_rows || !input.is_multiple_of(groups) {
@@ -133,9 +257,15 @@ impl ShardedWeights {
         if !matches!(bits, 4 | 8) {
             bail!("{prefix} 的量化位宽 {bits} 不受支持");
         }
-        let group = input / groups;
-        let dense = dequantize_affine(&weight, &scales, &biases, group, bits)?;
-        Ok(dense.to_dtype(dtype)?.to_device(device)?)
+        Ok(PackedLinear {
+            weight,
+            quantized: Some(Quantized {
+                scales,
+                biases,
+                group: input / groups,
+                bits,
+            }),
+        })
     }
 
     /// 词嵌入先按提示词的 token 从映射的文件里只读那几行、再反量化：Qwen3-VL 的整张词表展开会在主机内存里占好几 GB，
@@ -167,11 +297,53 @@ impl ShardedWeights {
     }
 }
 
+/// [`ShardedWeights::prefetch`] 的线程体：相邻的字节段合成一段，每次读 8 MiB。
+fn read_ahead(paths: &[PathBuf], groups: &[Vec<(usize, usize, usize)>], ahead: usize, stop: &AtomicBool, consumed: &AtomicUsize) {
+    const CHUNK: usize = 8 << 20;
+    let mut files = paths.iter().map(|path| File::open(path).ok()).collect::<Vec<_>>();
+    let mut buffer = vec![0_u8; CHUNK];
+    for (group, ranges) in groups.iter().enumerate() {
+        while group > consumed.load(Ordering::Acquire) + ahead {
+            if stop.load(Ordering::Acquire) {
+                return;
+            }
+            std::thread::sleep(std::time::Duration::from_millis(2));
+        }
+        let mut merged: Vec<(usize, usize, usize)> = Vec::new();
+        for &(shard, start, end) in ranges {
+            match merged.last_mut() {
+                Some(last) if last.0 == shard && start <= last.2 + CHUNK => last.2 = last.2.max(end),
+                _ => merged.push((shard, start, end)),
+            }
+        }
+        for (shard, start, end) in merged {
+            let Some(Some(file)) = files.get_mut(shard) else {
+                continue;
+            };
+            if file.seek(SeekFrom::Start(start as u64)).is_err() {
+                continue;
+            }
+            let mut at = start;
+            while at < end {
+                if stop.load(Ordering::Acquire) {
+                    return;
+                }
+                let take = CHUNK.min(end - at);
+                match file.read(&mut buffer[..take]) {
+                    Ok(0) | Err(_) => break,
+                    Ok(read) => at += read,
+                }
+            }
+        }
+    }
+}
+
 #[cfg(test)]
-mod tests {
+pub(super) mod tests {
     use super::*;
 
-    fn write_tensor(path: &Path, key: &str, dtype: &str, shape: &[usize], body: &[u8]) {
+    /// 写一个只有一个张量的 safetensors 文件（别的模块的测试也用）。
+    pub(crate) fn write_tensor(path: &Path, key: &str, dtype: &str, shape: &[usize], body: &[u8]) {
         let mut header = format!(
             "{{\"{key}\":{{\"dtype\":\"{dtype}\",\"shape\":{shape:?},\"data_offsets\":[0,{}]}}}}",
             body.len()
@@ -295,6 +467,27 @@ mod tests {
         assert_eq!(selected, vec![vec![3.0, -3.0], vec![1.0, -1.0], vec![3.0, -3.0]]);
         assert!(weights.embedding_rows("embed", &[3], 2, &Device::Cpu, DType::F32).is_err());
         assert!(weights.embedding_rows("embed", &[0], 4, &Device::Cpu, DType::F32).is_err());
+    }
+
+    /// 按前缀列出一层的键；预读线程在主线程没跟上时等着，丢掉句柄就停下（不卡住）。
+    #[test]
+    fn prefetch_waits_for_the_consumer_and_stops_when_dropped() {
+        let dir = tempfile::tempdir().unwrap();
+        write_tensor(&dir.path().join("a.safetensors"), "layers.0.w", "F32", &[1], &1.0_f32.to_le_bytes());
+        write_tensor(&dir.path().join("b.safetensors"), "layers.1.w", "F32", &[1], &2.0_f32.to_le_bytes());
+        let weights = open(dir.path(), &["a.safetensors", "b.safetensors"]).unwrap();
+        assert_eq!(weights.keys_with_prefix("layers.1."), vec!["layers.1.w".to_owned()]);
+        assert!(weights.keys_with_prefix("layers.2.").is_empty());
+        let groups = vec![weights.keys_with_prefix("layers.0."), weights.keys_with_prefix("layers.1."), vec![]];
+        let prefetch = weights.prefetch(groups, 0);
+        std::thread::sleep(std::time::Duration::from_millis(20));
+        let started = std::time::Instant::now();
+        drop(prefetch);
+        assert!(started.elapsed() < std::time::Duration::from_secs(1));
+        assert_eq!(
+            weights.load("layers.1.w", &Device::Cpu).unwrap().to_vec1::<f32>().unwrap(),
+            vec![2.0]
+        );
     }
 
     #[test]

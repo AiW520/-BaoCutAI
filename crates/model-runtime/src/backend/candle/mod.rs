@@ -10,6 +10,8 @@
 
 pub mod aligner;
 pub mod audio_encoder;
+#[cfg(feature = "cuda")]
+pub mod cuda_kernels;
 pub mod layers;
 pub mod moss;
 pub mod pyannote;
@@ -73,15 +75,30 @@ fn resolve_device() -> Device {
     Device::Cpu
 }
 
+/// CUDA 设备当前空闲与总共的显存（字节）；不是 CUDA 设备或查询失败时为 `None`。
+pub fn cuda_memory(device: &Device) -> Option<(usize, usize)> {
+    #[cfg(feature = "cuda")]
+    if let Device::Cuda(cuda) = device {
+        return cuda.cuda_stream().context().mem_get_info().ok();
+    }
+    let _ = device;
+    None
+}
+
 /// 设备的协议名（`cpu` / `cuda`）。
 pub fn device_label(device: &Device) -> &'static str {
     if device.is_cuda() { DEVICE_CUDA } else { DEVICE_CPU }
 }
 
+/// 是不是 CUDA 显存不足的报错。
+pub(crate) fn is_out_of_memory(error: &anyhow::Error) -> bool {
+    let text = format!("{error:#}");
+    text.contains("OUT_OF_MEMORY") || text.contains("out of memory")
+}
+
 /// 把底层的 CUDA 显存不足报错补上可操作的提示。
 pub(crate) fn annotate_out_of_memory(error: anyhow::Error) -> anyhow::Error {
-    let text = format!("{error:#}");
-    if text.contains("OUT_OF_MEMORY") || text.contains("out of memory") {
+    if is_out_of_memory(&error) {
         error.context("CUDA ran out of GPU memory: close other programs using the GPU and retry, or set BAOCUT_GPU=off to run on the CPU")
     } else {
         error

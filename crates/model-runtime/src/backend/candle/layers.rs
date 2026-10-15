@@ -159,6 +159,16 @@ impl TokenEmbedding {
     }
 }
 
+/// 末维 softmax。CUDA 上的 bf16 走 [`super::cuda_kernels`] 的核（一行一个块、在 f32 里算，几千列的长行上比 candle
+/// 自带的快几倍）；别的设备与精度用 candle 的。
+pub fn softmax_last_dim(x: &Tensor) -> Result<Tensor> {
+    #[cfg(feature = "cuda")]
+    if x.device().is_cuda() && x.dtype() == DType::BF16 {
+        return super::cuda_kernels::softmax_last_dim_bf16(x);
+    }
+    Ok(candle_nn::ops::softmax_last_dim(x)?)
+}
+
 /// 标准 SDPA：`softmax(q·kᵀ·scale + mask)·v`。支持 GQA（kv 头数少于 q 头数
 /// 时把重复的 q 头折进序列维，而不是把 kv 物化成 q 头数）。所有输入为
 /// [batch, heads, sequence, head_dim]，且必须是 gemm 可直接消费的布局
@@ -195,7 +205,7 @@ pub fn scaled_dot_product_attention(query: &Tensor, key: &Tensor, value: &Tensor
         }
         None => scores,
     };
-    let probabilities = candle_nn::ops::softmax_last_dim(&scores)?;
+    let probabilities = softmax_last_dim(&scores)?;
     let attended = probabilities.matmul(value)?;
     Ok(if repeats == 1 {
         attended

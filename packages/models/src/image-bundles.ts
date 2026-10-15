@@ -101,13 +101,15 @@ const QWEN_IMAGE_CANDLE: BundleDefinition = {
   device: 'cpu',
   image: {
     ...QWEN_IMAGE_MLX.image!,
-    // 只有 1K 档：CPU 上 1024² 已要几个小时，2K 约四倍的 token、注意力更多，没有实测、也不实用；CUDA 本机测不了。
+    // 只有 1K 档：CPU 上 1024² 已要几个小时，2K 约四倍的 token、注意力更多，没有实测、也不实用；CUDA 上 2K 没有实测。
     aspects: QWEN_IMAGE_ASPECTS,
     // CPU 上算 f32，计在进程内存。本机实测进程峰值（phys_footprint）：256² 2.4 GB、1024² 4.7 GB（出在 VAE 解码；DiT 那段
     // 3.3 GB，逐层反量化的矩阵约 0.9 GB 加注意力的分块）。常驻集还算上映射的权重页（1024² 4.9 GB），那部分是文件缓存、可回收，
     // 不计。留到 6 GiB 容长边 1536 的尺寸与抖动。
     peakBytes: 6 * GiB,
-    // CUDA 上算 bf16，计在显存：本机没有 CUDA；旧版同一管线实测 1024×576 整卡峰值 3.57 GiB（含桌面约 1.2 GB），1024² 未测。
+    // CUDA 上算 bf16，计在显存。登记的是流式（不留权重）的下限：旧版同一管线实测 1024×576 整卡峰值 3.57 GiB（含桌面约 1.2 GB）。
+    // 空闲的显存多时 Worker 在 DiT 那段把打包的权重留在显卡上（只在这一次生成里），RTX 3060 12 GB 上 1024² 整卡峰值约 9.5 GB
+    // （架构设计 §6.5）。
     devicePeakBytes: { cuda: 4 * GiB },
     // 改图与以图为底重画只在 MLX 上实现；candle 的 Worker 不收输入图。
     inputs: undefined,
@@ -161,7 +163,8 @@ const QWEN_IMAGE_TURBO_CANDLE: BundleDefinition = {
     // 编码 0.7 GB：词嵌入只读提示词用到的行），与基础版 256² 的 2.4 GB 相当；DiT 与 VAE 反量化后的形状与基础版相同，1024² 没有
     // 实测，按基础版的 4.7 GB 同样留到 6 GiB。
     peakBytes: 6 * GiB,
-    // CUDA 上算 bf16，计在显存：没有实测（本机没有 CUDA），沿用基础版的估计（旧版同一管线 1024×576 整卡峰值 3.57 GiB）。
+    // CUDA 上算 bf16，计在显存：与基础版一样登记流式的下限。RTX 3060 12 GB 上实测 1024² 八步约 46 秒，DiT 那段留 7.7 GB 权重、
+    // 整卡峰值约 9.5 GB（含桌面约 1.1 GB）。
     devicePeakBytes: { cuda: 4 * GiB },
     inputs: undefined,
   },

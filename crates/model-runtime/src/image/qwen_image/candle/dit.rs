@@ -1,14 +1,21 @@
 //! Qwen-Image-2.1 单流 DiT 的 candle 流式实现（移植自 v2 `bcut-image-local::candle::dit`）。每个投影在用到时从映射的
-//! MLX checkpoint 反量化；主机内存与 CUDA 显存里都不留整个模型的 dense 副本，同一时刻只留一层的矩阵。
+//! MLX checkpoint 反量化；主机内存与 CUDA 显存里都不留整个模型的 dense 副本，同一时刻只留一层展开后的矩阵。
+//!
+//! CUDA 上另把打包的（量化的）权重留在显存里，按 [`Dit::load`] 给的预算从前往后留：第一步读入，之后各步只在显卡上展开，
+//! 不再经 PCIe 重搬；超出预算的层每一步照旧从映射的文件搬。`Dit` 丢掉时一起放掉，不跨生成常驻。
 
-use anyhow::{Result, anyhow, bail};
+use anyhow::{Context, Result, anyhow, bail};
 use candle_core::{DType, Device, Tensor};
 use std::path::Path;
-use std::{cell::RefCell, collections::HashMap};
+use std::{
+    cell::{Cell, RefCell},
+    collections::HashMap,
+};
 
 use super::super::rope;
-use super::weights::ShardedWeights;
-use crate::backend::candle::layers::scaled_dot_product_attention;
+use super::weights::{PackedLinear, ShardedWeights};
+use crate::backend::candle::is_out_of_memory;
+use crate::backend::candle::layers::softmax_last_dim;
 use crate::image::Cancelled;
 
 const DIM: usize = 4096;
@@ -17,16 +24,62 @@ const HEADS: usize = 32;
 const HEAD_DIM: usize = 128;
 const LAYERS: usize = 32;
 const EPS: f64 = 1e-6;
+const GIB: usize = 1 << 30;
 
-/// CUDA 的矩阵乘不收转置过的 q（不连续布局），先拷成连续的。
+/// q 先乘 1/√d 再与 k 相乘：比在 [头, q, k] 的分数上乘省一整遍读写；缩放的输出是连续的，CUDA 的矩阵乘不收转置过的 q。
 fn attend(q: &Tensor, k: &Tensor, v: &Tensor, mask: Option<&Tensor>) -> Result<Tensor> {
-    scaled_dot_product_attention(
-        &q.contiguous()?,
-        &k.contiguous()?,
-        &v.contiguous()?,
-        (HEAD_DIM as f64).sqrt().recip(),
-        mask,
-    )
+    let q = (q * (HEAD_DIM as f64).sqrt().recip())?;
+    let scores = q.matmul(&k.contiguous()?.t()?)?;
+    let scores = match mask {
+        Some(mask) => scores.broadcast_add(mask)?,
+        None => scores,
+    };
+    Ok(softmax_last_dim(&scores)?.matmul(&v.contiguous()?)?)
+}
+
+/// `x` [..., in] 乘 `weight` [out, in] 的转置：摊成二维，转置交给矩阵乘的步长（不另拷一份转置的矩阵）。
+fn linear(x: &Tensor, weight: &Tensor, dtype: DType) -> Result<Tensor> {
+    let mut dims = x.dims().to_vec();
+    let input = *dims.last().context("线性层输入至少一维")?;
+    let y = x.to_dtype(dtype)?.reshape((x.elem_count() / input, input))?.matmul(&weight.t()?)?;
+    *dims.last_mut().unwrap() = weight.dim(0)?;
+    Ok(y.reshape(dims)?)
+}
+
+/// 先跑 `attempt`；它因 CUDA 显存不足失败、且 `release` 放掉了东西（返回 true）时再跑一次。别的错误、没东西可放与第二次的
+/// 失败都原样返回。
+fn retry_after_release<S, T>(
+    state: &mut S,
+    mut attempt: impl FnMut(&mut S) -> Result<T>,
+    release: impl FnOnce(&mut S) -> Result<bool>,
+) -> Result<T> {
+    match attempt(state) {
+        Err(error) if is_out_of_memory(&error) => {
+            if release(state)? {
+                attempt(state)
+            } else {
+                Err(error)
+            }
+        }
+        result => result,
+    }
+}
+
+/// 打包的 DiT 权重最多留在设备上多少字节：空闲的显存减去这一步的工作量（[`working_bytes`]），不够时为 0（全部流式）；
+/// 不是 CUDA（`free` 为 `None`）时为 0。
+pub fn resident_budget(free: Option<usize>, working: usize) -> usize {
+    free.map_or(0, |free| free.saturating_sub(working))
+}
+
+/// 这个尺寸下 DiT 一步除常驻权重以外要的显存（字节）的上界估计：残差与各块输出（f32）、整张的 q/k/v 与拼起来的 k/v
+/// （计算精度）、一块的注意力分数与 softmax、一层展开后的矩阵，再加 1 GiB 给 cuBLAS 的工作区、分配器的碎片与别的进程。
+pub fn working_bytes(image_tokens: usize, text_tokens: usize, chunk: usize, dtype: DType) -> usize {
+    let width = dtype.size_in_bytes();
+    let residual = 3 * image_tokens * DIM * 4;
+    let qkv = 5 * image_tokens * DIM * width;
+    let scores = 2 * HEADS * chunk.min(image_tokens) * (image_tokens + text_tokens) * width;
+    let layer = (4 * DIM * DIM + 3 * DIM * INTER) * width;
+    residual + qkv + scores + layer + GIB
 }
 
 fn silu(x: &Tensor) -> Result<Tensor> {
@@ -59,22 +112,16 @@ fn modulate(x: &Tensor, scale: &Tensor) -> Result<Tensor> {
 }
 
 /// 相邻两个通道是一对实部、虚部（与 MLX 实现一致），不是半分裂。
+/// 输入 [1, seq, 头, d]，输出换成注意力要的 [1, 头, seq, d]（连续）。在 f32 里转（candle 的交错 RoPE 核，一遍读写），
+/// 再回到输入的精度。
 fn apply_rope(x: &Tensor, cos: &Tensor, sin: &Tensor) -> Result<Tensor> {
-    let (batch, seq, heads, width) = x.dims4()?;
+    let (batch, _, heads, width) = x.dims4()?;
     if batch != 1 || heads != HEADS || width != HEAD_DIM {
         bail!("DiT RoPE 输入形状不符");
     }
     let dtype = x.dtype();
-    let pairs = x.to_dtype(DType::F32)?.reshape((1, seq, heads, width / 2, 2))?;
-    let a = pairs.narrow(4, 0, 1)?.squeeze(4)?;
-    let b = pairs.narrow(4, 1, 1)?.squeeze(4)?;
-    let c = cos.reshape((1, seq, 1, width / 2))?;
-    let s = sin.reshape((1, seq, 1, width / 2))?;
-    let real = (a.broadcast_mul(&c)? - b.broadcast_mul(&s)?)?;
-    let imag = (a.broadcast_mul(&s)? + b.broadcast_mul(&c)?)?;
-    Ok(Tensor::stack(&[&real, &imag], 4)?
-        .reshape((1, seq, heads, width))?
-        .to_dtype(dtype)?)
+    let heads_first = x.transpose(1, 2)?.to_dtype(DType::F32)?.contiguous()?;
+    Ok(candle_nn::rotary_emb::rope_i(&heads_first, &cos.contiguous()?, &sin.contiguous()?)?.to_dtype(dtype)?)
 }
 
 fn gelu_tanh_f32(x: &Tensor) -> Result<Tensor> {
@@ -93,6 +140,7 @@ struct Mod {
     gate2: Tensor,
 }
 
+#[derive(Clone)]
 struct TextPending {
     x: Tensor,
     mod_: Mod,
@@ -113,11 +161,16 @@ pub struct Dit {
     dtype: DType,
     /// 一层的文本块与图像块都算完之前留着这层反量化出的矩阵；进下一层前清掉，CUDA 显存因此有界。
     layer_matrices: RefCell<HashMap<String, Tensor>>,
+    /// 留在设备上的打包权重：按第一次用到的顺序留，直到用完预算。
+    resident: RefCell<HashMap<String, PackedLinear>>,
+    /// 还能再留多少字节。
+    resident_budget: Cell<usize>,
 }
 
 impl Dit {
-    /// `files` 是 `transformer/` 下按清单取出的 safetensors。
-    pub fn load(files: &[&Path], device: &Device, dtype: DType) -> Result<Self> {
+    /// `files` 是 `transformer/` 下按清单取出的 safetensors；`resident_budget` 是打包权重最多留在设备上多少字节
+    /// （0 时每一步都从映射的文件重新搬）。
+    pub fn load(files: &[&Path], device: &Device, dtype: DType, resident_budget: usize) -> Result<Self> {
         let weights = ShardedWeights::open(files)?;
         for i in 0..LAYERS {
             let key = format!("transformer_blocks.{i}.attn.to_q.weight");
@@ -130,7 +183,29 @@ impl Dit {
             device: device.clone(),
             dtype,
             layer_matrices: RefCell::new(HashMap::new()),
+            resident: RefCell::new(HashMap::new()),
+            resident_budget: Cell::new(resident_budget),
         })
+    }
+
+    /// 留在设备上的打包权重（字节）。
+    pub fn resident_bytes(&self) -> usize {
+        self.resident.borrow().values().map(PackedLinear::bytes).sum()
+    }
+
+    /// 展开一个投影的矩阵：留在设备上的直接展开；没留的从映射的文件搬上来，预算够就留下。
+    fn dense(&self, prefix: &str, input: usize) -> Result<Tensor> {
+        if let Some(packed) = self.resident.borrow().get(prefix) {
+            return packed.dense(self.dtype);
+        }
+        let packed = self.weights.packed(prefix, input, &self.device)?;
+        let dense = packed.dense(self.dtype)?;
+        let (bytes, budget) = (packed.bytes(), self.resident_budget.get());
+        if bytes <= budget {
+            self.resident_budget.set(budget - bytes);
+            self.resident.borrow_mut().insert(prefix.to_owned(), packed);
+        }
+        Ok(dense)
     }
 
     fn pick(&self, names: &[&str]) -> Result<String> {
@@ -144,10 +219,18 @@ impl Dit {
     fn proj(&self, prefix: &str, x: &Tensor, input: usize) -> Result<Tensor> {
         let mut matrices = self.layer_matrices.borrow_mut();
         if !matrices.contains_key(prefix) {
-            matrices.insert(prefix.to_owned(), self.weights.linear(prefix, input, &self.device, self.dtype)?);
+            matrices.insert(prefix.to_owned(), self.dense(prefix, input)?);
         }
-        let weight = &matrices[prefix];
-        Ok(x.to_dtype(self.dtype)?.broadcast_matmul(&weight.t()?.contiguous()?)?)
+        linear(x, &matrices[prefix], self.dtype)
+    }
+
+    /// 一层里每一块都要用的小向量（q/k 的 RMSNorm 权重）：这层第一次用到时读入、转成计算精度，与这层的矩阵一起清掉。
+    fn vector(&self, key: &str) -> Result<Tensor> {
+        let mut matrices = self.layer_matrices.borrow_mut();
+        if !matrices.contains_key(key) {
+            matrices.insert(key.to_owned(), self.weights.load(key, &self.device)?.to_dtype(self.dtype)?);
+        }
+        Ok(matrices[key].clone())
     }
 
     fn temb(&self, sigma: f64) -> Result<Tensor> {
@@ -207,16 +290,10 @@ impl Dit {
         let q = self.proj(&format!("{p}.attn.to_q"), xm, DIM)?.reshape((1, seq, HEADS, HEAD_DIM))?;
         let k = self.proj(&format!("{p}.attn.to_k"), xm, DIM)?.reshape((1, seq, HEADS, HEAD_DIM))?;
         let v = self.proj(&format!("{p}.attn.to_v"), xm, DIM)?.reshape((1, seq, HEADS, HEAD_DIM))?;
-        let qw = self
-            .weights
-            .load(&format!("{p}.attn.norm_q.weight"), &self.device)?
-            .to_dtype(self.dtype)?;
-        let kw = self
-            .weights
-            .load(&format!("{p}.attn.norm_k.weight"), &self.device)?
-            .to_dtype(self.dtype)?;
-        let q = apply_rope(&rms(&q, &qw)?, cos, sin)?.transpose(1, 2)?;
-        let k = apply_rope(&rms(&k, &kw)?, cos, sin)?.transpose(1, 2)?;
+        let qw = self.vector(&format!("{p}.attn.norm_q.weight"))?;
+        let kw = self.vector(&format!("{p}.attn.norm_k.weight"))?;
+        let q = apply_rope(&rms(&q, &qw)?, cos, sin)?;
+        let k = apply_rope(&rms(&k, &kw)?, cos, sin)?;
         Ok((q, k, v.transpose(1, 2)?))
     }
 
@@ -252,8 +329,41 @@ impl Dit {
     }
 
     /// 一步去噪，返回速度场。图像 token 按 `chunk` 个一块算 q 与输出；每层之前看一次 `cancel`。
+    ///
+    /// 显存在量过空闲之后被别的进程占去、这一步放不下时：放掉留在设备上的权重、此后不再留，把第一步算到一半的文本缓存
+    /// 还原，从这一步开头按流式重来一次。
     #[allow(clippy::too_many_arguments)]
     pub fn step(
+        &self,
+        cache: &mut TextCache,
+        latents: &Tensor,
+        sigma: f64,
+        gh: usize,
+        gw: usize,
+        chunk: usize,
+        cancel: &dyn Fn() -> bool,
+    ) -> Result<Tensor> {
+        let (kv, pending) = (cache.kv.len(), cache.pending.clone());
+        retry_after_release(
+            cache,
+            |cache| self.step_once(cache, latents, sigma, gh, gw, chunk, cancel),
+            |cache| {
+                if self.resident.borrow().is_empty() && self.resident_budget.get() == 0 {
+                    return Ok(false);
+                }
+                self.resident.borrow_mut().clear();
+                self.resident_budget.set(0);
+                self.layer_matrices.borrow_mut().clear();
+                cache.kv.truncate(kv);
+                cache.pending = pending;
+                self.device.synchronize()?;
+                Ok(true)
+            },
+        )
+    }
+
+    #[allow(clippy::too_many_arguments)]
+    fn step_once(
         &self,
         cache: &mut TextCache,
         latents: &Tensor,
@@ -273,9 +383,19 @@ impl Dit {
         let mod_ = self.mods(&temb)?;
         let mut x = self.proj("img_in", &latents.to_dtype(self.dtype)?, 64)?.to_dtype(DType::F32)?;
         let chunk = chunk.max(1);
+        // 第一步每一层都从文件读：后台按层序先读后面两层（冷启动时见效）。之后的步要么留在设备上，要么已在文件缓存里。
+        let prefetch = cache.pending.is_some().then(|| {
+            let groups = (0..LAYERS)
+                .map(|i| self.weights.keys_with_prefix(&format!("transformer_blocks.{i}.")))
+                .collect();
+            self.weights.prefetch(groups, 2)
+        });
         for i in 0..LAYERS {
             if cancel() {
                 return Err(Cancelled.into());
+            }
+            if let Some(prefetch) = &prefetch {
+                prefetch.advance(i);
             }
             self.layer_matrices.borrow_mut().clear();
             let p = format!("transformer_blocks.{i}");
@@ -334,6 +454,7 @@ mod tests {
     #[test]
     #[ignore = "requires an NVIDIA CUDA device"]
     fn cuda_attention_accepts_transposed_q_heads() {
+        use crate::backend::candle::layers::scaled_dot_product_attention;
         let device = Device::new_cuda(0).expect("CUDA device 0 is required");
         let qkv = Tensor::ones((1, 25, HEADS, HEAD_DIM), DType::BF16, &device).unwrap();
         let q = qkv.transpose(1, 2).unwrap();
@@ -355,6 +476,97 @@ mod tests {
             .to_vec1::<f32>()
             .unwrap();
         assert!(values.iter().all(|value| (value - 1.0).abs() < 0.02));
+    }
+
+    #[test]
+    fn residency_budget_is_free_memory_minus_the_working_set() {
+        let working = working_bytes(4096, 15, 1024, DType::BF16);
+        // 1024² 的工作量：激活、一块的注意力分数与一层展开后的矩阵，加 1 GiB 余量，在 2–3 GiB 之间。
+        assert!((2 * GIB..3 * GIB).contains(&working), "{working}");
+        assert!(working_bytes(16384, 15, 1024, DType::BF16) > working);
+        assert_eq!(resident_budget(None, working), 0);
+        assert_eq!(resident_budget(Some(working / 2), working), 0);
+        assert_eq!(resident_budget(Some(working + 5 * GIB), working), 5 * GIB);
+    }
+
+    fn oom() -> anyhow::Error {
+        anyhow!("DriverError(CUDA_ERROR_OUT_OF_MEMORY, \"out of memory\")")
+    }
+
+    /// 显存不足时放掉留着的东西再试一次；没东西可放、别的错误、第二次的失败都原样返回。
+    #[test]
+    fn a_step_is_retried_once_after_releasing_resident_weights() {
+        let mut attempts = 0;
+        let result = retry_after_release(
+            &mut attempts,
+            |n| {
+                *n += 1;
+                if *n == 1 { Err(oom()) } else { Ok(*n) }
+            },
+            |_| Ok(true),
+        );
+        assert_eq!(result.unwrap(), 2);
+
+        let mut attempts = 0;
+        let result: Result<()> = retry_after_release(
+            &mut attempts,
+            |n| {
+                *n += 1;
+                Err(oom())
+            },
+            |_| Ok(false),
+        );
+        assert!(result.is_err());
+        assert_eq!(attempts, 1);
+
+        let mut attempts = 0;
+        let result: Result<()> = retry_after_release(
+            &mut attempts,
+            |n| {
+                *n += 1;
+                Err(oom())
+            },
+            |_| Ok(true),
+        );
+        assert!(result.is_err());
+        assert_eq!(attempts, 2);
+
+        let mut attempts = 0;
+        let result: Result<()> = retry_after_release(
+            &mut attempts,
+            |n| {
+                *n += 1;
+                Err(anyhow!("shape mismatch"))
+            },
+            |_| panic!("only out-of-memory errors release resident weights"),
+        );
+        assert!(result.is_err());
+        assert_eq!(attempts, 1);
+    }
+
+    /// 打包权重按第一次用到的顺序留在设备上，用完预算就不再留；留下的不再从文件读。
+    #[test]
+    fn resident_weights_fill_the_budget_in_first_use_order() {
+        let dir = tempfile::tempdir().unwrap();
+        let body = [1.0_f32, 2.0, 3.0, 4.0].iter().flat_map(|v| v.to_le_bytes()).collect::<Vec<_>>();
+        let mut paths = Vec::new();
+        for i in 0..LAYERS {
+            let path = dir.path().join(format!("{i}.safetensors"));
+            let key = format!("transformer_blocks.{i}.attn.to_q.weight");
+            super::super::weights::tests::write_tensor(&path, &key, "F32", &[2, 2], &body);
+            paths.push(path);
+        }
+        let files = paths.iter().map(|path| path.as_path()).collect::<Vec<_>>();
+        // 每个矩阵 16 字节：40 字节的预算放得下两个。
+        let dit = Dit::load(&files, &Device::Cpu, DType::F32, 40).unwrap();
+        for i in 0..3 {
+            let dense = dit.dense(&format!("transformer_blocks.{i}.attn.to_q"), 2).unwrap();
+            assert_eq!(dense.to_vec2::<f32>().unwrap(), vec![vec![1.0, 2.0], vec![3.0, 4.0]]);
+        }
+        assert_eq!(dit.resident_bytes(), 32);
+        assert!(dit.resident.borrow().contains_key("transformer_blocks.1.attn.to_q"));
+        assert!(!dit.resident.borrow().contains_key("transformer_blocks.2.attn.to_q"));
+        assert_eq!(dit.resident_budget.get(), 8);
     }
 
     #[test]

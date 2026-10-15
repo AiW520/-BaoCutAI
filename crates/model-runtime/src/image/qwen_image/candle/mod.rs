@@ -27,7 +27,7 @@ use serde_json::{Value, json};
 
 use super::prompt::Prompter;
 use super::scheduler::Schedule;
-use crate::backend::candle::annotate_out_of_memory;
+use crate::backend::candle::{annotate_out_of_memory, cuda_memory};
 use crate::bundle::{FAMILY_QWEN_IMAGE, VerifiedFiles};
 use crate::image::{Cancelled, ImageEngine, ImageProgress, ImageRequest, RawImage};
 use crate::protocol::{ErrorBody, codes};
@@ -221,18 +221,28 @@ impl QwenImage {
             compute,
             cancel,
         )?;
+        if super::timing() {
+            self.device.synchronize()?;
+        }
         trace!("[text] {:?}，{:.1}s", condition.dims(), t0.elapsed().as_secs_f64());
-        mem("after text");
+        mem("after text", &self.device);
         check(cancel)?;
 
-        // 2. DiT 去噪
+        // 2. DiT 去噪。CUDA 上打包的 DiT 权重按当前空闲的显存减去这一步的工作量留在显卡上（先同步，放掉文本编码器的显存）。
         let t1 = Instant::now();
-        let dit = dit::Dit::load(&refs(&self.files.transformer), &self.device, compute)?;
+        self.device.synchronize()?;
+        let working = dit::working_bytes(gh * gw, condition.dim(1)?, DIT_CHUNK, compute);
+        let budget = dit::resident_budget(cuda_memory(&self.device).map(|(free, _)| free), working);
+        let dit = dit::Dit::load(&refs(&self.files.transformer), &self.device, compute, budget)?;
         let mut cache = dit.prepare_text(&condition, gh, gw)?;
         let sigmas = self.scheduler.sigmas(steps, gh * gw);
         let noise = seeded_noise(request.seed, gh * gw * vae::Z_DIM);
         let mut latent = Tensor::from_vec(noise, (1, gh * gw, vae::Z_DIM), &self.device)?;
-        trace!("[dit] 准备 {:.1}s（{compute:?}）", t1.elapsed().as_secs_f64());
+        trace!(
+            "[dit] 准备 {:.1}s（{compute:?}，常驻预算 {:.2} GB）",
+            t1.elapsed().as_secs_f64(),
+            budget as f64 / 1e9
+        );
         progress(ImageProgress::Denoising {
             done: 0,
             total: request.steps,
@@ -243,6 +253,10 @@ impl QwenImage {
             let velocity = dit.step(&mut cache, &latent, sigmas[step], gh, gw, DIT_CHUNK, cancel)?;
             let delta = sigmas[step + 1] - sigmas[step];
             latent = latent.broadcast_add(&(velocity * delta)?)?;
+            if super::timing() {
+                // GPU 上的算子是异步的：计时要等这一步真正算完。
+                self.device.synchronize()?;
+            }
             trace!(
                 "[dit] step {}/{steps} sigma {:.4} {:.2}s",
                 step + 1,
@@ -254,7 +268,8 @@ impl QwenImage {
                 total: request.steps,
             });
         }
-        mem("dit done");
+        trace!("[dit] 常驻权重 {:.2} GB", dit.resident_bytes() as f64 / 1e9);
+        mem("dit done", &self.device);
         drop((condition, cache, dit));
         check(cancel)?;
 
@@ -265,7 +280,7 @@ impl QwenImage {
         let image = decoder.decode(&latent.reshape((1, gh, gw, vae::Z_DIM))?, cancel)?;
         let image = to_rgba(&image)?;
         trace!("[vae] 解码 {:.1}s", t2.elapsed().as_secs_f64());
-        mem("vae done");
+        mem("vae done", &self.device);
         trace!(
             "{}x{} {steps} steps seed {}（总计 {:.1}s）",
             request.width,
@@ -317,18 +332,20 @@ impl ImageEngine for QwenImage {
 }
 
 /// 计时开关打开时打一行进程内存：常驻（含映射进来的权重文件页，可回收）与它的峰值；macOS 上另报 phys_footprint
-/// （不含干净的文件页，是真正和别的进程抢内存的量）。
-fn mem(tag: &str) {
+/// （不含干净的文件页，是真正和别的进程抢内存的量）；CUDA 上另报整卡已用的显存（含别的进程）。
+fn mem(tag: &str, device: &Device) {
     if !super::timing() {
         return;
     }
     let gb = |v: Option<u64>| v.map_or_else(|| "?".to_owned(), |v| format!("{:.2} GB", v as f64 / 1e9));
     let (footprint, footprint_max) = footprint();
+    let gpu = cuda_memory(device).map(|(free, total)| (total - free) as u64);
     eprintln!(
-        "[mem] {tag}: 常驻峰值 {}｜footprint {}，进程最大 {}",
+        "[mem] {tag}: 常驻峰值 {}｜footprint {}，进程最大 {}｜显存已用 {}",
         gb(peak_resident_bytes()),
         gb(footprint),
-        gb(footprint_max)
+        gb(footprint_max),
+        gb(gpu)
     );
 }
 
@@ -536,7 +553,8 @@ mod tests {
                     walk(root, &path, out);
                 } else if !path.file_name().unwrap().to_string_lossy().starts_with('.') {
                     out.push(FileEntry {
-                        path: path.strip_prefix(root).unwrap().to_string_lossy().into_owned(),
+                        // 清单里的路径一律用 `/`（Windows 上 strip_prefix 出来的是 `\`）。
+                        path: path.strip_prefix(root).unwrap().to_string_lossy().replace('\\', "/"),
                         sha256: String::new(),
                         byte_length: path.metadata().unwrap().len(),
                     });
@@ -584,12 +602,15 @@ mod tests {
     /// 量峰值时可以换尺寸与步数：`BAOCUT_TEST_IMAGE_EDGE=512`、`BAOCUT_TEST_IMAGE_STEPS=1`（峰值与步数无关；固定步数的包
     /// 只收它的步数，不给时 4-bit 包跑 2 步、固定步数的包跑它的步数）；`BAOCUT_TEST_IMAGE_REPEAT=0` 时不跑第二张。
     /// `BAOCUT_TEST_IMAGE_PACK=/path/to/pack` 换成任意目录下的权重包（如 Turbo），不读 `BAOCUT_TEST_MODELS_DIR`。
-    /// `BCUT_IMAGE_TIMING=1` 打出各段耗时与内存。
+    /// `BCUT_IMAGE_TIMING=1` 打出各段耗时（GPU 上每段等算完再计）与内存（CUDA 上另报整卡已用的显存）。
     ///
     /// ```sh
     /// BAOCUT_TEST_MODELS_DIR=/path/to/models BCUT_IMAGE_TIMING=1 cargo test -p model-runtime --release \
     ///   --features backend-candle --lib -- --ignored candle_engine_generates --test-threads=1 --nocapture
     /// ```
+    ///
+    /// NVIDIA 上把 feature 换成 `--no-default-features --features cuda`（Windows 上在 MSVC 的环境里构建，nvcc 要 `cl.exe`；
+    /// `CUDA_COMPUTE_CAP` 给本机显卡的，如 RTX 30 系的 86），`BAOCUT_TEST_IMAGE_EDGE=1024` 量 1K 档。
     #[test]
     #[ignore = "需要 BAOCUT_TEST_MODELS_DIR 下装好的 Qwen-Image-2.1（或 BAOCUT_TEST_IMAGE_PACK 指向的权重包）"]
     fn candle_engine_generates_and_reproduces_a_seed() {

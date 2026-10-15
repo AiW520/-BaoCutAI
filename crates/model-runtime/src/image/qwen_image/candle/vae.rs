@@ -2,14 +2,20 @@
 //! `[out, kh, kw, in]`、gamma 存成 `[C]`，candle 要 NCHW 与 `[out, in, kh, kw]`；mlx-serve 的包（Turbo）保留 PyTorch 布局
 //! （`[out, in, kh, kw]`、gamma `[C,1,1]`），按 `post_quant_conv` 的形状整体判定（与 MLX 路径同一做法）。解码器按需读每个
 //! 卷积，高分辨率的尾段按行条带处理，条带上下各留 12 行重叠（与 Metal 实现相同）。
+//!
+//! CUDA 上卷积直接在 NHWC 上算（[`crate::backend::candle::cuda_kernels::im2col_nhwc_bf16`] 加一次矩阵乘），不转 NCHW；读过的
+//! 卷积核留在显存里给后面的条带用，条带的行数按空闲的显存放大（1024² 一两个条带，重叠重算的那部分随之变少）。
 
 use anyhow::{Result, bail};
 use candle_core::{DType, Device, Tensor};
 use serde::Deserialize;
+use std::cell::RefCell;
+use std::collections::HashMap;
 use std::path::Path;
 
-use super::weights::ShardedWeights;
+use super::weights::{Prefetch, ShardedWeights};
 use crate::backend::candle::layers::scaled_dot_product_attention;
+use crate::backend::candle::{cuda_memory, is_out_of_memory};
 use crate::image::Cancelled;
 
 const DECODER_BASE: usize = 144;
@@ -18,6 +24,9 @@ const TEMPORAL_DOWN: [bool; 4] = [false, true, true, true];
 const TAIL_FROM: usize = 2;
 const HALO: usize = 12;
 const BAND_ELEMS: usize = 64 << 20;
+/// CUDA 上一次 im2col 最多展开多少元素（bf16 512 MB）：大卷积按输出行分块，尾段的峰值不随条带变大而多出九倍。
+#[cfg(feature = "cuda")]
+const IM2COL_ELEMS: usize = 256 << 20;
 pub const Z_DIM: usize = 64;
 
 fn attend(q: &Tensor, k: &Tensor, v: &Tensor, channels: usize) -> Result<Tensor> {
@@ -30,24 +39,81 @@ fn attend(q: &Tensor, k: &Tensor, v: &Tensor, channels: usize) -> Result<Tensor>
     )
 }
 
-/// 卷积核换成 candle 的 `[out, in, kh, kw]`：MLX 布局 `[out, kh, kw, in]` 要转置，PyTorch 布局原样用。
-fn candle_kernel(w: Tensor, torch_layout: bool) -> Result<Tensor> {
+/// 卷积核统一成 MLX 的 `[out, kh, kw, in]`：PyTorch 布局 `[out, in, kh, kw]` 要转置，MLX 布局原样用。
+fn nhwc_kernel(w: Tensor, torch_layout: bool) -> Result<Tensor> {
     if torch_layout {
-        Ok(w)
+        Ok(w.permute((0, 2, 3, 1))?.contiguous()?)
     } else {
-        Ok(w.permute((0, 3, 1, 2))?.contiguous()?)
+        Ok(w)
     }
 }
 
-/// `w` 已是 candle 的 `[out, in, kh, kw]`（[`candle_kernel`]）。
+/// `w` 是 `[out, kh, kw, in]`（[`nhwc_kernel`]）。1×1 的卷积就是一次矩阵乘；CUDA 上的 bf16 用 NHWC 的 im2col 核加一次
+/// 矩阵乘，输出直接是 NHWC；别的转成 NCHW 交给 candle 的 conv2d。
 fn conv_nhwc(x: &Tensor, w: &Tensor, pad: usize, stride: usize) -> Result<Tensor> {
-    let (_, _, _, input) = x.dims4()?;
-    let (_, kernel_input, _, _) = w.dims4()?;
+    let (batch, height, width, input) = x.dims4()?;
+    let (output, kernel_h, kernel_w, kernel_input) = w.dims4()?;
     if input != kernel_input {
         bail!("VAE 卷积输入通道数不匹配");
     }
+    if (kernel_h, kernel_w, pad, stride) == (1, 1, 0, 1) {
+        let y = x
+            .reshape((batch * height * width, input))?
+            .matmul(&w.reshape((output, input))?.t()?)?;
+        return Ok(y.reshape((batch, height, width, output))?);
+    }
+    #[cfg(feature = "cuda")]
+    if x.device().is_cuda() && x.dtype() == DType::BF16 && batch == 1 && input.is_multiple_of(8) {
+        return conv_nhwc_cuda(x, w, pad, stride);
+    }
     let nchw = x.permute((0, 3, 1, 2))?.contiguous()?;
-    Ok(nchw.conv2d(w, pad, stride, 1, 1)?.permute((0, 2, 3, 1))?.contiguous()?)
+    let kernel = w.permute((0, 3, 1, 2))?.contiguous()?;
+    Ok(nchw.conv2d(&kernel, pad, stride, 1, 1)?.permute((0, 2, 3, 1))?.contiguous()?)
+}
+
+/// CUDA 上的 NHWC 卷积：按输出行分块，每块 im2col（至多 [`IM2COL_ELEMS`] 个元素）加一次矩阵乘，最后按行拼起来。
+#[cfg(feature = "cuda")]
+fn conv_nhwc_cuda(x: &Tensor, w: &Tensor, pad: usize, stride: usize) -> Result<Tensor> {
+    use crate::backend::candle::cuda_kernels::im2col_nhwc_bf16;
+    let (_, height, width, input) = x.dims4()?;
+    let (output, kernel_h, kernel_w, _) = w.dims4()?;
+    if height + 2 * pad < kernel_h || width + 2 * pad < kernel_w {
+        bail!("VAE 卷积核比输入大");
+    }
+    let (out_h, out_w) = (
+        (height + 2 * pad - kernel_h) / stride + 1,
+        (width + 2 * pad - kernel_w) / stride + 1,
+    );
+    let kernel = w.reshape((output, kernel_h * kernel_w * input))?;
+    let rows = (IM2COL_ELEMS / (out_w * kernel_h * kernel_w * input).max(1)).clamp(1, out_h);
+    let mut parts = Vec::with_capacity(out_h.div_ceil(rows));
+    for start in (0..out_h).step_by(rows) {
+        let end = (start + rows).min(out_h);
+        // 这一块输出行读到的输入行；越出上下边界的那几行由核按 0 补。
+        let first = (start * stride).saturating_sub(pad);
+        let last = ((end - 1) * stride + kernel_h).saturating_sub(pad).min(height);
+        let band = x.narrow(1, first, last - first)?;
+        let columns = im2col_nhwc_bf16(
+            &band,
+            (kernel_h, kernel_w),
+            stride,
+            (pad + first - start * stride, pad),
+            (end - start, out_w),
+        )?;
+        parts.push(columns.matmul(&kernel.t()?)?.reshape((1, end - start, out_w, output))?);
+    }
+    if parts.len() == 1 {
+        return Ok(parts.remove(0));
+    }
+    Ok(Tensor::cat(&parts.iter().collect::<Vec<_>>(), 1)?)
+}
+
+/// 尾段一个条带最多多少元素（尾段最大的张量：全分辨率、288 通道），`width` 是计算精度的字节数。CPU（`free` 为 `None`）上固定
+/// [`BAND_ELEMS`]；CUDA 上按空闲的显存放大：im2col 分块后尾段的峰值约是它的 10 倍（块的输入与输出、拼接、偏置、残差与 DupUp
+/// 的捷径），另留一块 im2col、还没读的卷积核与 1.5 GiB 余量（cuBLAS 的工作区、碎片与别的进程），至少 [`BAND_ELEMS`]。
+fn band_elems(free: Option<usize>, width: usize) -> usize {
+    let reserve = (3 << 29) + (256 << 20) * width + (512 << 20);
+    free.map_or(BAND_ELEMS, |free| (free.saturating_sub(reserve) / (10 * width)).max(BAND_ELEMS))
 }
 
 #[derive(Deserialize)]
@@ -74,6 +140,10 @@ pub struct Decoder {
     std: Tensor,
     device: Device,
     dtype: DType,
+    /// CUDA 上读过的卷积核与偏置（尾段每个条带都要再用一遍；整个 VAE 的 bf16 权重不到 0.7 GB）。CPU 上不留，进程内存不变。
+    kernels: RefCell<HashMap<String, (Tensor, Tensor)>>,
+    /// 后台把解码器的权重先读进文件缓存（冷启动时见效）；解码器丢掉时停下。
+    _prefetch: Prefetch,
 }
 
 impl Decoder {
@@ -105,6 +175,9 @@ impl Decoder {
         if torch_layout && config.mlx_format == Some(true) {
             bail!("vae/config.json 声明 MLX 布局，权重却是 PyTorch 布局");
         }
+        let mut keys = vec!["post_quant_conv.weight".to_owned(), "post_quant_conv.bias".to_owned()];
+        keys.extend(weights.keys_with_prefix("decoder."));
+        let prefetch = weights.prefetch(vec![keys], 0);
         Ok(Self {
             weights,
             torch_layout,
@@ -112,15 +185,41 @@ impl Decoder {
             std: Tensor::from_vec(config.latents_std, (1, 1, 1, Z_DIM), device)?,
             device: device.clone(),
             dtype,
+            kernels: RefCell::new(HashMap::new()),
+            _prefetch: prefetch,
         })
     }
 
-    fn conv(&self, p: &str, x: &Tensor, pad: usize, stride: usize) -> Result<Tensor> {
+    /// 卷积核（`[out, kh, kw, in]`）与偏置，按计算精度。
+    fn kernel(&self, p: &str) -> Result<(Tensor, Tensor)> {
+        if let Some(found) = self.kernels.borrow().get(p) {
+            return Ok(found.clone());
+        }
         let w = self.weights.load(&format!("{p}.weight"), &self.device)?.to_dtype(self.dtype)?;
-        let w = candle_kernel(w, self.torch_layout)?;
-        let y = conv_nhwc(&x.to_dtype(self.dtype)?, &w, pad, stride)?;
+        let w = nhwc_kernel(w, self.torch_layout)?;
         let bias = self.weights.load(&format!("{p}.bias"), &self.device)?.to_dtype(self.dtype)?;
+        if self.device.is_cuda() {
+            self.kernels.borrow_mut().insert(p.to_owned(), (w.clone(), bias.clone()));
+        }
+        Ok((w, bias))
+    }
+
+    fn conv(&self, p: &str, x: &Tensor, pad: usize, stride: usize) -> Result<Tensor> {
+        let (w, bias) = self.kernel(p)?;
+        let y = conv_nhwc(&x.to_dtype(self.dtype)?, &w, pad, stride)?;
         Ok(y.broadcast_add(&bias)?)
+    }
+
+    /// 尾段一个条带最多多少元素（见 [`band_elems`]）：CUDA 上先同步，放掉前段与 DiT 的显存再量空闲。
+    fn band_elems(&self) -> Result<usize> {
+        if !self.device.is_cuda() {
+            return Ok(BAND_ELEMS);
+        }
+        self.device.synchronize()?;
+        Ok(band_elems(
+            cuda_memory(&self.device).map(|(free, _)| free),
+            self.dtype.size_in_bytes(),
+        ))
     }
 
     fn rms(&self, p: &str, x: &Tensor) -> Result<Tensor> {
@@ -237,8 +336,28 @@ impl Decoder {
         if h != gh * 4 || width != gw * 4 {
             bail!("VAE 前段尺寸不符");
         }
+        // CUDA 上条带按空闲的显存放大；显存被别的进程占去、放不下时把条带缩到四分之一重来，直到 CPU 上的大小。
+        let mut band = self.band_elems()?;
+        let out = loop {
+            match self.tail(&x, band, cancel) {
+                Err(error) if band > BAND_ELEMS && is_out_of_memory(&error) => {
+                    band = (band / 4).max(BAND_ELEMS);
+                    self.device.synchronize()?;
+                }
+                result => break result?,
+            }
+        };
+        if out.dim(1)? != gh * 16 || out.dim(2)? != gw * 16 || out.dim(3)? != 4 {
+            bail!("VAE 解码尺寸与请求不符");
+        }
+        Ok(out)
+    }
+
+    /// 尾段（up_blocks 2..4 与 conv_out）按行条带算，每个条带至多 `band` 个元素（见 [`Self::band_elems`]）。
+    fn tail(&self, x: &Tensor, band: usize, cancel: &dyn Fn() -> bool) -> Result<Tensor> {
+        let (_, h, width, _) = x.dims4()?;
         let per_row = 16 * width * 288;
-        let rows = (BAND_ELEMS / per_row.max(1)).saturating_sub(2 * HALO).max(HALO);
+        let rows = (band / per_row.max(1)).saturating_sub(2 * HALO).max(HALO);
         let rows = rows.min(h);
         let mut strips = Vec::new();
         for start in (0..h).step_by(rows) {
@@ -265,11 +384,7 @@ impl Decoder {
             }
             strips.push(y.clamp(-1.0, 1.0)?);
         }
-        let out = Tensor::cat(&strips.iter().collect::<Vec<_>>(), 1)?;
-        if out.dim(1)? != gh * 16 || out.dim(2)? != gw * 16 || out.dim(3)? != 4 {
-            bail!("VAE 解码尺寸与请求不符");
-        }
-        Ok(out)
+        Ok(Tensor::cat(&strips.iter().collect::<Vec<_>>(), 1)?)
     }
 }
 
@@ -306,6 +421,18 @@ mod tests {
         assert!((mean - 1.0).abs() < 0.02);
     }
 
+    /// 条带大小：CPU 固定；显存少时不小于 CPU 的大小；12 GB 卡上空出约 10.5 GB 时放大到 1024² 一个条带装得下。
+    #[test]
+    fn band_size_follows_free_device_memory() {
+        assert_eq!(band_elems(None, 2), BAND_ELEMS);
+        assert_eq!(band_elems(Some(1 << 30), 2), BAND_ELEMS);
+        let large = band_elems(Some(10_500_000_000), 2);
+        assert!(large > 5 * BAND_ELEMS, "{large}");
+        // 1024²：尾段 256 行、每行 16·256·288 个元素，加上下各 12 行的重叠。
+        assert!(large >= (256 + 24) * 16 * 256 * 288, "{large}");
+        assert!(band_elems(Some(20_000_000_000), 2) > large);
+    }
+
     #[test]
     fn dup_up_matches_first_frame_channel_shuffle() {
         let x = Tensor::from_vec(vec![10.0_f32, 20.0, 30.0, 40.0], (1, 1, 1, 4), &Device::Cpu).unwrap();
@@ -321,12 +448,12 @@ mod tests {
     fn mlx_nhwc_kernel_matches_small_convolution() {
         let x = Tensor::from_vec(vec![1.0_f32, 2.0, 3.0, 4.0], (1, 2, 2, 1), &Device::Cpu).unwrap();
         let w = Tensor::from_vec(vec![1.0_f32, 2.0, 3.0, 4.0], (1, 2, 2, 1), &Device::Cpu).unwrap();
-        let y = conv_nhwc(&x, &candle_kernel(w, false).unwrap(), 0, 1).unwrap();
+        let y = conv_nhwc(&x, &nhwc_kernel(w, false).unwrap(), 0, 1).unwrap();
         assert_eq!(y.dims(), &[1, 1, 1, 1]);
         assert_eq!(y.flatten_all().unwrap().to_vec1::<f32>().unwrap(), vec![30.0]);
     }
 
-    /// 两个输入通道时两种布局的核排列不同：MLX `[O,kh,kw,C]` 转置后与同一个 PyTorch `[O,C,kh,kw]` 核算出同一个结果。
+    /// 两个输入通道时两种布局的核排列不同：PyTorch `[O,C,kh,kw]` 转置后与同一个 MLX `[O,kh,kw,C]` 核算出同一个结果。
     #[test]
     fn torch_and_mlx_kernels_give_the_same_convolution() {
         // x: 1×1×2×2（NHWC），两个通道。
@@ -334,8 +461,8 @@ mod tests {
         // 1×2 的核，输出 1 通道：w[c][kw] = c*2 + kw + 1。
         let torch = Tensor::from_vec(vec![1.0_f32, 2.0, 3.0, 4.0], (1, 2, 1, 2), &Device::Cpu).unwrap();
         let mlx = torch.permute((0, 2, 3, 1)).unwrap().contiguous().unwrap();
-        let a = conv_nhwc(&x, &candle_kernel(torch, true).unwrap(), 0, 1).unwrap();
-        let b = conv_nhwc(&x, &candle_kernel(mlx, false).unwrap(), 0, 1).unwrap();
+        let a = conv_nhwc(&x, &nhwc_kernel(torch, true).unwrap(), 0, 1).unwrap();
+        let b = conv_nhwc(&x, &nhwc_kernel(mlx, false).unwrap(), 0, 1).unwrap();
         // 1*1 + 2*2 + 10*3 + 20*4 = 115
         assert_eq!(a.flatten_all().unwrap().to_vec1::<f32>().unwrap(), vec![115.0]);
         assert_eq!(b.flatten_all().unwrap().to_vec1::<f32>().unwrap(), vec![115.0]);
