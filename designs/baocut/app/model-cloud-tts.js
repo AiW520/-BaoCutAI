@@ -1,5 +1,5 @@
 /* 云端语音合成的纯模型 —— docs/design/speech/bcut-cloud-tts-design.md（2026-09-24，原型先行）。
-   设置 › 模型 › 云端模型多一档「语音合成 · TTS」：第一批 MiniMax / OpenAI / ElevenLabs，用户也能添加任何
+   设置 › 模型 › 语音合成的 API 提供方一节：第一批 MiniMax / OpenAI / ElevenLabs，用户也能添加任何
    OpenAI-compatible 的 `/v1/audio/speech` 服务；2026-09-25 加第四家 Google Gemini（`generateContent` 出音频，
    30 只内置音色、风格指令写成一句话、没有数值语速、不接克隆，设计稿 §5.6 / §12.9）。这里放：四家的种子表（模型、能力、音色目录、默认音色、
    字数上限、语速区间）、`cloud:<provider>/<model>` 的拼与拆、把已连接的 API 提供方折成 model-tts.js 认的
@@ -412,7 +412,7 @@
     groups.push({k: 'my', label: '我的声音', items: mine});
     const list = voicesOf(p, o.discovered);
     const items = searchVoices(list, o.query, 30).map((v) => ({kind: 'voice', id: v.id, label: v.name, sub: v.sub || v.id}));
-    groups.push({k: 'voices', label: `${p.name} 的音色`, search: list.length > SEARCH_AT, total: list.length, items: items.length ? items : [{kind: 'none', label: list.length ? '没有匹配的音色' : '刷新音色目录', sub: list.length ? '换个关键字' : '设置 › 模型 › 云端模型 › 刷新音色', disabled: true}]});
+    groups.push({k: 'voices', label: `${p.name} 的音色`, search: list.length > SEARCH_AT, total: list.length, items: items.length ? items : [{kind: 'none', label: list.length ? '没有匹配的音色' : '刷新音色目录', sub: list.length ? '换个关键字' : '设置 › 模型 › API 提供方', disabled: true}]});
     /* 要授权录音的（Gemini）没有「临时用一段」：一段录音建不了，得先在我的声音里录样本 + 授权 */
     if (p.clone && !p.clone.consent && o.file !== false) {
       groups.push({k: 'file', label: '临时', items: [{kind: 'file', label: '临时用一段录音…',

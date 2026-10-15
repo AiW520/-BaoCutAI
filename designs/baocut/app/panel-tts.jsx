@@ -212,7 +212,7 @@
               {TTS.ENGINES.filter((e) => !e.dubOnly).map((e) => (
                 <MenuItem key={e.id} label={e.name} sub={e.desc} wrap on={e.id === f.engine} onClick={() => { pickEngine(e.id); setPop(null); }} />
               ))}
-              {/* 选模型的时候就能去添加模型（2026-09-24）：本机一组末尾一条去本地模型页，云端一组末尾一条去云端模型页，
+              {/* 选模型的时候就能去添加模型（2026-09-24）：本机一组末尾一条去本地模型页，云端一组末尾一条去 API 提供方页，
                  两条常在——不只在缺模型 / 一家没连的时候才出现。跳过去落到语音那一档。 */}
               <MenuItem icon="settings" label="管理本地模型…" sub="下载、删除本机语音模型 · 设置 › 模型 › 语音合成"
                 onClick={() => { setPop(null); app.go({r: 'settings', sec: 'local', tab: 'tts'}); }} />

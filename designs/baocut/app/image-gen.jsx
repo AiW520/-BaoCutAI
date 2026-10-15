@@ -616,7 +616,7 @@
     return {text: IM.statusLine(f, engines, IM.resolveSize(cap, f.aspect, f.quality, f.size)), bad: false};
   }
 
-  /* ---------- 生图测试对话框（设置 › 模型 › 云端模型「测试生图」与本地模型「试画」共用；§2.1 / §6.5）----------
+  /* ---------- 生图测试对话框（设置里 API 提供方的「测试生图」与本地模型「试画」共用；§2.1 / §6.5）----------
      能改提示词、认参考图的模型能带参考图、512² 一张、看结果图、下载 PNG、复制提示词。
      engine: {family:'cloud'|'local', title, modelId, chip, price?, cap, note?}；onDone(result) 把判词回给调用方。
      本地是「试画」（用它），不是「检查」（模型健不健康）：notice 是上次检查没通过的提醒（BC_LOCALCHECK.tryNotice），

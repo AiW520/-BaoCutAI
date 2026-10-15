@@ -635,7 +635,7 @@
 
   /* ---------- 谁来做（第 111 轮） ----------
      工具页第一行只回答一件事：这一步交给谁。两组候选——本机编码 Agent（用你的订阅，
-     会话里跑、写入前会问）与直接调模型（Settings › 云端模型里的 provider，三态 + 收据）；
+     会话里跑、写入前会问）与直接调模型（设置 › 模型 › API 提供方里连接的模型，三态 + 收据）；
      本机工具（重新转录 / 识别说话人）第二组换成「直接跑 · 本机模型」。
      选项的 key 是全局记忆的那份偏好：上次选了 Agent，下一个工具页默认还是 Agent。 */
   /** 「更多」里的四家（`extra`）与用户添加的（`added`，product-design §7.6）没检测到时不进任何选择器——一串「未安装」
@@ -779,7 +779,7 @@
   }
 
   /* ---------- 首页就绪清单 ----------
-     新用户要有的三样：一个语音模型、一个 Agent harness、（可选）云端 provider。
+     新用户要有的三样：一个语音模型、一个 Agent harness、（可选）API 提供方。
      三条各自可点去对应设置页；全绿时整行收成一句，不再逐条列。 */
   function readiness(o) {
     const models = (o.models || []).filter((m) => m.installed);
@@ -793,8 +793,8 @@
        label: h ? `Agent · ${h.name}` : (o.harnesses || []).some((x) => x.found) ? '编码 Agent 已停用' : '没检测到 Claude Code 或 Codex',
        route: {r: 'settings', sec: 'agent'}},
       {k: 'cloud', ok: provs.length > 0, optional: true,
-       label: provs.length ? `云端模型 · ${provs.length} 个 provider` : '云端模型未连接（可选）',
-       route: {r: 'settings', sec: 'cloud'}},
+       label: provs.length ? `API 提供方 · ${provs.length} 个已连接` : 'API 提供方未连接（可选）',
+       route: {r: 'settings', sec: 'providers'}},
     ];
   }
 

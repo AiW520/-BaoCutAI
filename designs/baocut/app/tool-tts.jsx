@@ -239,7 +239,7 @@
 
     const generate = () => {
       setTried(true);
-      if (!installed) { app.toast(cloud ? `先在设置 › 模型 › 云端模型连接 ${eng.name}` : `先下载 ${modelName}`); return; }
+      if (!installed) { app.toast(cloud ? `先在设置 › 模型 › API 提供方连接 ${eng.name}` : `先下载 ${modelName}`); return; }
       if (errs.length) { app.toast(errs[0]); return; }
       enqueue(app, fx, save.dir, fromSpace ? src.entry : null);
     };

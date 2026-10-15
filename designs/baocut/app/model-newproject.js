@@ -273,7 +273,7 @@
     const base = {
       'agent-off':     {title: '已安装的编码 Agent 都停用了', fix: '启用 Agent', route: {r: 'settings', sec: 'agent'}, enable: true},
       'agent-missing': {title: '这一项要交给编码 Agent', fix: '连接 Agent', route: {r: 'settings', sec: 'agent'}},
-      'key-missing':   {title: '选中的模型还没连接密钥', fix: '连接云端模型', route: {r: 'settings', sec: 'cloud'}},
+      'key-missing':   {title: '选中的模型还没连接密钥', fix: '连接 API 提供方', route: {r: 'settings', sec: 'providers'}},
       'none':          {title: '还没有可用的 AI', fix: '连接 Agent', route: {r: 'settings', sec: 'agent'}},
     }[gate.why];
     const body = gate.why === 'agent-off'

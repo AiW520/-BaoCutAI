@@ -1005,7 +1005,7 @@
 
   /* 云端模型表（直接调模型那一组）。第 109 轮把「本机 Agent」从这张表里拿掉；第 111 轮起
      它作为另一组回到工具页第一行「用」的下拉里（model-agent.js::runnerOptions 把 agent.harnesses
-     与这张表拼成两组，各自标明是什么）——这张表本身只剩 Settings › 云端模型里的 provider；第一项是默认。 */
+     与这张表拼成两组，各自标明是什么）——这张表本身只剩 设置 › 模型 › API 提供方里连接的模型；第一项是默认。 */
   const transModels = [
     {id: 'claude-sonnet',    name: 'claude-sonnet', provider: 'Anthropic', note: '默认', dflt: true},
     {id: 'gpt-4o',           name: 'gpt-4o',        provider: 'OpenAI'},

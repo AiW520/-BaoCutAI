@@ -351,7 +351,7 @@
               <div className="failc failc--cfg">
                 <b>模型鉴权失败 · API Key 无效</b>
                 <span>这类错误重试也不会好——去设置修一下配置。</span>
-                <div><Btn variant="secondary" size="s" onClick={() => app.go({r: 'settings', sec: 'cloud'})}>去模型管理检查 API Key</Btn></div>
+                <div><Btn variant="secondary" size="s" onClick={() => app.go({r: 'settings', sec: 'providers'})}>去模型管理检查 API Key</Btn></div>
               </div>
             ) : null}
             <div className="hint">

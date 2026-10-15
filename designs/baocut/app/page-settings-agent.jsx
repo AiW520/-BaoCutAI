@@ -154,9 +154,9 @@
               <p>不需要。Agent 用的是你已经在用的 Claude 或 ChatGPT 订阅，费用和额度都算在那边；BaoCut 不自带模型，不代收密钥，也不做云端中转。没有这类订阅也可以不用 Agent，BaoCut 的其他功能照常可用。</p></BCDisclosure>
             <BCDisclosure className="agset-disclosure" title={<> BaoCut 会看到我的账号和密码吗？ </>}>
               <p>不会。登录在 Agent 自己的窗口里完成，BaoCut 只是启动你电脑上的那个程序，并把视频交给它处理。它要修改视频之前会先问你，规则在「权限与安全」里。</p></BCDisclosure>
-            <BCDisclosure className="agset-disclosure" title={<> Agent 和「云端模型」有什么区别？ </>}>
-              <p>Agent 使用你本机的编码助手与自己的订阅，能连续完成多步任务。「云端模型」用 API key 直接运行单项工具，按用量计费，两者分开设置。</p>
-              <Btn size="s" variant="quiet" onClick={() => app.replace({r: 'settings', sec: 'cloud'})}>前往云端模型</Btn></BCDisclosure>
+            <BCDisclosure className="agset-disclosure" title={<> Agent 和「API 提供方」有什么区别？ </>}>
+              <p>Agent 使用你本机的编码助手与自己的订阅，能连续完成多步任务。「API 提供方」的模型用 API key 直接运行单项工具，按用量计费，两者分开设置。</p>
+              <Btn size="s" variant="quiet" onClick={() => app.replace({r: 'settings', sec: 'providers'})}>前往 API 提供方</Btn></BCDisclosure>
             <BCDisclosure className="agset-disclosure" title={<> 想在终端里直接用这些 Agent 操作 BaoCut？ </>}>
               <p>在 BaoCut 里开会话不需要额外准备。要在终端或其他应用里用，给它们装上 BaoCut 的 skill 即可。</p>
               <Btn size="s" variant="quiet" onClick={() => app.replace({r: 'settings', sec: 'skills', tab: 'external'})}>查看安装方法</Btn></BCDisclosure>

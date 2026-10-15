@@ -47,7 +47,7 @@
     const close = () => { lv.close(); setTab(null); };
     const toggle = () => { setTab(null); lv.toggle(); };
     const goAgentSettings = () => { close(); app.go({r: 'settings', sec: 'agent'}); };
-    const goCloudSettings = () => { close(); app.go({r: 'settings', sec: 'cloud'}); };
+    const goCloudSettings = () => { close(); app.go({r: 'settings', sec: 'providers'}); };
     const pickAgent = (h, id) => {
       const it = agents.find((i) => i.harness === h.id && i.model === id) || {k: id ? `agent:${h.id}:${id}` : `agent:${h.id}`};
       onChange(it); close();
@@ -80,7 +80,7 @@
                   {grp.items.length ? grp.items.map((it) => (
                     <MenuItem key={it.k} label={it.label} sub={it.sub} on={!!value && it.k === value.k}
                       onClick={() => { onChange(it); close(); }} />
-                  )) : <MenuItem icon="sparkle" label="还没有可用的模型" sub="连接一个 provider 的 key · 设置 › 模型 › 云端模型" onClick={goCloudSettings} />}
+                  )) : <MenuItem icon="sparkle" label="还没有可用的模型" sub="连接一个 API 提供方的 key · 设置 › 模型 › API 提供方" onClick={goCloudSettings} />}
                 </Menu>
               )}
             </div>
@@ -89,7 +89,7 @@
               {grp.kind === 'agent'
                 ? <MenuItem icon="settings" label="设置 › Agent…" sub="安装、启用、登录编码 Agent" onClick={goAgentSettings} />
                 : grp.kind === 'api'
-                  ? <MenuItem icon="settings" label="设置 › 模型 › 云端模型…" sub="连接 API key、添加 provider" onClick={goCloudSettings} />
+                  ? <MenuItem icon="settings" label="设置 › 模型 › API 提供方…" sub="连接 API key、添加 API 提供方" onClick={goCloudSettings} />
                   : <MenuItem icon="settings" label="设置 › 模型 › 本地模型…" sub="下载与管理本机模型" onClick={() => { close(); app.go({r: 'settings', sec: 'local'}); }} />}
             </Menu>
           </>
@@ -173,8 +173,8 @@
     const fix = rn && !rn.ready
       ? (rn.kind === 'agent'
         ? {label: '去安装或启用', route: {r: 'settings', sec: 'agent'}}
-        : {label: '去连接 key', route: {r: 'settings', sec: 'cloud'}})
-      : (!runner && mdl && mdl.note === '未连接 key' ? {label: '去连接 key', route: {r: 'settings', sec: 'cloud'}} : null);
+        : {label: '去连接 key', route: {r: 'settings', sec: 'providers'}})
+      : (!runner && mdl && mdl.note === '未连接 key' ? {label: '去连接 key', route: {r: 'settings', sec: 'providers'}} : null);
     return (
       <div className={cx('tsetup', compact && 'tsetup--compact')}>
         <div className="tsetup__sum">

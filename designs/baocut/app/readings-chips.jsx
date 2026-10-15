@@ -91,7 +91,7 @@
     const edited = (r) => { const b = base.find((x) => x.start === r.start); return !!b && b.reading !== r.reading; };
     const on = f.readings && !stale;
     const n = on ? f.readings.filter((r) => r.chip || edited(r)).length : 0;
-    const toCloud = () => app.go({r: 'settings', sec: 'cloud'});
+    const toCloud = () => app.go({r: 'settings', sec: 'providers'});
     return (
       <div className="rdbar">
         <div className="rdbar__hd">

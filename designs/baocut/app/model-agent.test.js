@@ -283,7 +283,7 @@ test('rulePrefix / autoAllowed：记的是子命令前缀，不是整条命令',
   assert.equal(A.autoAllowed('', ['']), false);
 });
 
-test('readiness：三条各自判，云端是可选项', () => {
+test('readiness：三条各自判，API 提供方是可选项', () => {
   const r = A.readiness({
     models: [{id: 'm', name: 'MOSS Transcribe', installed: true, dflt: true}],
     harnesses: H, preferred: 'claude',
@@ -292,11 +292,13 @@ test('readiness：三条各自判，云端是可选项', () => {
   assert.deepEqual(r.map((x) => x.ok), [true, true, true]);
   assert.equal(r[0].label, '语音模型 · MOSS Transcribe');
   assert.equal(r[1].label, 'Agent · Claude Code');
-  assert.equal(r[2].label, '云端模型 · 1 个 provider');
+  assert.equal(r[2].label, 'API 提供方 · 1 个已连接');
   const none = A.readiness({models: [], harnesses: [], providers: []});
   assert.deepEqual(none.map((x) => x.ok), [false, false, false]);
   assert.equal(none[2].optional, true);
   assert.deepEqual(none[1].route, {r: 'settings', sec: 'agent'});
+  assert.equal(none[2].label, 'API 提供方未连接（可选）');
+  assert.deepEqual(none[2].route, {r: 'settings', sec: 'providers'});
 });
 
 const S = [

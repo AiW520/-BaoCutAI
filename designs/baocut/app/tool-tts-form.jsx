@@ -60,9 +60,9 @@
                 <MenuItem key={m.id} label={m.model} sub={m.desc} wrap on={m.id === mid} suffix={m.prev ? '上一代' : undefined}
                   onClick={() => { setOpen(false); set(T.switchCloudModel(f, m.id)); }} />
               ))}
-              {/* 与音频面板同一条：选模型的时候就能去设置添加模型 / 刷新音色目录 */}
+              {/* 与音频面板同一条：选模型的时候就能去设置添加模型、测试 */}
               <MenuRule />
-              <MenuItem icon="settings" label="管理这家的模型…" sub="添加模型、刷新音色目录 · 设置 › 模型 › 语音合成 › 云端模型" wrap
+              <MenuItem icon="settings" label="管理这家的模型…" sub="添加模型、测试 · 设置 › 模型 › API 提供方" wrap
                 onClick={() => { setOpen(false); app.go({r: 'settings', sec: 'cloud', tab: 'tts'}); }} />
             </Menu>
           </Picker>
@@ -109,7 +109,7 @@
             </BCAction>
           );
         })}
-        {/* 云端：设置 › 模型 › 语音合成 › 云端模型里连了密钥的 API 提供方一家一张卡；没连的也列出来（淡一档、写「未连接」），选中后下方是连接卡 */}
+        {/* 云端：设置 › 模型 › 语音合成 › API 提供方里连了密钥的那几家一家一张卡；没连的也列出来（淡一档、写「未连接」），选中后下方是连接卡 */}
         <span className="ttsw__grouphd">云端 · 联网计费 <BCAction className="viewall" onClick={() => app.go({r: 'settings', sec: 'tts'})}>设置 › 模型 › 语音合成</BCAction></span>
         {C.allEngines(app.cloudCustom).map((e) => {
           const on = f.engine === e.id;

@@ -298,7 +298,7 @@
         }
       }
     }
-    /* 设置 › 云端模型 › 语音合成默认选了某只云端模型（不是「每次选择」）且那家还连着：工作台直接开在它上 */
+    /* 设置 › 模型 › 语音合成的默认模型选了某只云端模型（不是「每次选择」）且那家还连着：工作台直接开在它上 */
     if (cloudDefault && installed(cloudDefault)) {
       const e = TTS().engineOf(C().engineId(C().providerOf(cloudDefault)));
       if (e.cloud) return switchCloudModel(switchEngine(base, e.id), cloudDefault);
