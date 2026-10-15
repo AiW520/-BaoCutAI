@@ -116,6 +116,30 @@ describe('块结构', () => {
     expect(plainText(list).split('\n')).toEqual(['一项', '新项', '二项']);
   });
 
+  it('block_split 带 item 时 minted 先列表项、再段落（编辑器按这个顺序给两块记 id）', () => {
+    const outcome = apply([{ op: 'block_split', at: `${SESSION}.24`, side: 'after', item: 'editorsess1.1', id: 'editorsess1.2' }]);
+    expect(outcome.results[0]?.minted).toEqual(['editorsess1.1', 'editorsess1.2']);
+    expect(findBlock(outcome.blocks, 'editorsess1.1')!.block.type).toBe('listItem');
+    expect(findBlock(outcome.blocks, 'editorsess1.2')!.block.type).toBe('paragraph');
+  });
+
+  it('列表项末尾连按两次回车再写字：拆出空项、把它提出列表，字落在两段列表之间的段落里', () => {
+    const outcome = apply([
+      { op: 'block_split', at: `${SESSION}.24`, side: 'after', item: 'editorsess1.1', id: 'editorsess1.2' },
+      { op: 'unwrap', block: 'editorsess1.1', id: 'editorsess1.3' },
+      {
+        op: 'insert',
+        target: { kind: 'blocks', ids: ['editorsess1.2'] },
+        side: 'start',
+        source: { from: { kind: 'inline', content: '新段' }, as: 'text' },
+      },
+    ]);
+    expect(outcome.blocks.map((block) => block.id)).toEqual([`${SESSION}.0`, `${SESSION}.10`, `${SESSION}.20`, 'editorsess1.2', 'editorsess1.3']);
+    expect(textOf(outcome.blocks, `${SESSION}.20`)).toBe('一项');
+    expect(textOf(outcome.blocks, 'editorsess1.2')).toBe('新段');
+    expect(textOf(outcome.blocks, 'editorsess1.3')).toBe('二项');
+  });
+
   it('段首退格：block_join 把后一段并进前一段', () => {
     const outcome = apply([{ op: 'block_join', block: [`${SESSION}.0`, `${SESSION}.10`] }]);
     expect(textOf(outcome.blocks, `${SESSION}.0`)).toBe('你好世界第二段');
@@ -385,6 +409,7 @@ describe('最终写法', () => {
   it('split 两个 id = 列表项 + 段落；join；move 到根末尾', () => {
     const split = apply([{ op: 'split', target: { kind: 'chars', range: [`${SESSION}.24`, `${SESSION}.24`] }, side: 'after', ids: ['e.1', 'e.2'] }]);
     expect(findBlock(split.blocks, 'e.1')!.block.type).toBe('listItem');
+    expect(split.results[0]?.minted).toEqual(['e.1', 'e.2']);
     const joined = apply([{ op: 'join', target: { kind: 'blocks', ids: [`${SESSION}.0`, `${SESSION}.10`] } }]);
     expect(textOf(joined.blocks, `${SESSION}.0`)).toBe('你好世界第二段');
     const moved = apply([{ op: 'move', target: { kind: 'blocks', ids: [`${SESSION}.0`] }, to: { target: { kind: 'root' }, side: 'end' } }]);

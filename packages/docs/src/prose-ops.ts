@@ -935,18 +935,21 @@ function applySplit(blocks: ProseBlock[], op: BlockSplitOp, ctx: OpContext): OpR
     block = textBlockIn(blocks, op.at);
     cut = op.side === 'before' ? 0 : block.items.length;
   }
-  const newBlockId = op.resurrect ?? op.id;
-  if (newBlockId) ctx.ids.claim(newBlockId);
   const location = requireBlock(blocks, block.id);
   const listItem = location.parent?.type === 'listItem' ? location.parent : undefined;
+  const itemId = listItem ? op.item : undefined;
+  // minted 的顺序与 door 写法 split 的 ids 一致：先新列表项，再新段落。编辑器按这个顺序给两块记 id，
+  // 反过来它会把段落的 id 当成列表项的（下一次 unwrap 就落到段落上，被拒）。
+  if (itemId !== undefined) ctx.ids.claim(itemId);
+  const newBlockId = op.resurrect ?? op.id;
+  if (newBlockId) ctx.ids.claim(newBlockId);
   const fresh = splitTextBlock(blocks, block, cut, newBlockId ?? ctx.ids.next(), ctx);
-  if (listItem && op.item !== undefined) {
-    ctx.ids.claim(op.item);
+  if (listItem && itemId !== undefined) {
     const itemLocation = requireBlock(blocks, listItem.id);
     const freshIndex = listItem.children.indexOf(fresh);
     const following = listItem.children.splice(freshIndex);
     const parentList = itemLocation.parent as ListBlock | undefined;
-    const item: ListItemBlock = { type: 'listItem', id: op.item, rev: ctx.rev, children: following };
+    const item: ListItemBlock = { type: 'listItem', id: itemId, rev: ctx.rev, children: following };
     if (parentList?.kind === 'check') item.checked = false;
     itemLocation.siblings.splice(itemLocation.index + 1, 0, item);
     ctx.touch(listItem);
