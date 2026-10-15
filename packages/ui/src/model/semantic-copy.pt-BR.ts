@@ -100,6 +100,7 @@ export const ptBR: SemanticMessages = {
       label: 'Progresso da indexação',
       text: (done, total) => `Fala: vídeos ${done}/${total}`,
       textDone: 'A fala está pronta',
+      textCurrent: (line, pct) => `${line} (vídeo atual: ${pct}%)`,
       visual: (done, total) => `Imagem: quadros ${done}/${total}`,
       visualDone: 'A imagem está pronta',
       startsAfter: (line) => `${line} (começa depois da fala)`,

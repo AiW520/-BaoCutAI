@@ -101,7 +101,10 @@ export function etaLine(estimate: SemanticEstimate | null | undefined): string |
 export interface IndexProgressView {
   /** 0–100；有一路还估不出时间时 null（条不定量）。 */
   value: number | null;
-  /** 按路的计数：「讲话内容 8/12 部视频 · 画面 0/825 帧（讲话内容建完后开始）」，不写百分比。 */
+  /**
+   * 按路的计数：「讲话内容 8/12 部视频（当前这部 35%） · 画面 0/825 帧（讲话内容建完后开始）」。只有讲话内容正在建的那一部写
+   * 百分比（一部长视频要建几分钟，只写部数时一直不动），整体不写。
+   */
   line: string;
   /** 两路合起来还要多久（等讲话内容的时间也算在里面）；停着时写原因。 */
   eta: string;
@@ -113,7 +116,7 @@ export interface IndexProgressView {
  *
  * - 条按估算时间合：讲话内容按部视频、画面按帧，单位不能相加；值 = 两路已建的估算秒 ÷（已建 + 还剩）。还剩的取 `estimates`
  *   里没开 `ifEnabled` 的那一项，有一路还估不出时间时不定量。
- * - 计数按路写；讲话内容还没建完时画面写明排在后面。
+ * - 计数按路写；讲话内容正在建的那一部写它的句群编到百分之几（`progress.text.current`）；讲话内容还没建完时画面写明排在后面。
  * - 两路都建完、或旧的 Runtime 没给 `progress` 时 null。
  */
 export function indexProgressView(
@@ -131,7 +134,12 @@ export function indexProgressView(
   const count = new Intl.NumberFormat(intlLocale());
   const textBusy = !!p.text && p.text.done < p.text.total;
   const counts: string[] = [];
-  if (p.text) counts.push(p.text.done >= p.text.total ? P.textDone : P.text(count.format(p.text.done), count.format(p.text.total)));
+  if (p.text) {
+    const t = p.text;
+    const line = P.text(count.format(t.done), count.format(t.total));
+    const current = textBusy && !status.paused && t.current && t.current.total > 0 ? t.current : null;
+    counts.push(t.done >= t.total ? P.textDone : current ? P.textCurrent(line, Math.floor((current.done / current.total) * 100)) : line);
+  }
   if (p.visual) {
     const v = p.visual;
     const line = P.visual(count.format(v.done), count.format(v.total));

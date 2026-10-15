@@ -100,6 +100,7 @@ export const vi: SemanticMessages = {
       label: 'Tiến độ lập chỉ mục',
       text: (done, total) => `Lời nói: ${done}/${total} video`,
       textDone: 'Lời nói đã xong',
+      textCurrent: (line, pct) => `${line} (video hiện tại: ${pct}%)`,
       visual: (done, total) => `Hình ảnh: ${done}/${total} khung hình`,
       visualDone: 'Hình ảnh đã xong',
       startsAfter: (line) => `${line} (bắt đầu sau lời nói)`,

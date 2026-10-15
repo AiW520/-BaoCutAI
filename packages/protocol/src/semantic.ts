@@ -244,8 +244,11 @@ export interface SemanticIndexStatus {
 }
 
 export interface SemanticIndexProgress {
-  /** 讲话内容（按部视频）：`done` 是跟上当前版本的，`total` 再加上还要建的（同 `estimates` 里文字一项的视频数）。文字一路没开时没有。 */
-  text?: SemanticChannelProgress;
+  /**
+   * 讲话内容（按部视频）：`done` 是跟上当前版本的，`total` 再加上还要建的（同 `estimates` 里文字一项的视频数）。正在建的那一部
+   * 另给 `current`（一部长视频在 CPU 上要建几分钟，只按部数时这段时间里一直不动）。文字一路没开时没有。
+   */
+  text?: SemanticChannelProgress & { current?: SemanticCurrentProgress };
   /**
    * 画面（按帧）：`done` 是已跟上的视频的帧数加上正在建的那部编好的帧，`total` 再加上还要建的（同 `estimates` 里画面一项，
    * 按时长估，时长未知的不算）。画面没开、这个 Runtime 不建画面时没有。
@@ -260,6 +263,15 @@ export interface SemanticChannelProgress {
   total: number;
   /** 已建那部分按这一路的速度（同 `estimates`）折算的秒数；这一路还没有速度时 null。 */
   doneSeconds: number | null;
+}
+
+/**
+ * 讲话内容一路正在建的那一部：要编码的句群里编好了几条（`total` 不含已有向量、不用重编的句群）。还在读内容、句群都有现成的
+ * 向量时 `total` 为 0；停着、没在建时没有这一项。
+ */
+export interface SemanticCurrentProgress {
+  done: number;
+  total: number;
 }
 
 /**

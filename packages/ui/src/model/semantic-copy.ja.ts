@@ -100,6 +100,7 @@ export const ja: SemanticMessages = {
       label: 'インデックスの進捗',
       text: (done, total) => `発話内容：${done}/${total} 本の動画`,
       textDone: '発話内容は作成済み',
+      textCurrent: (line, pct) => `${line}（現在の動画 ${pct}%）`,
       visual: (done, total) => `映像：${done}/${total} フレーム`,
       visualDone: '映像は作成済み',
       startsAfter: (line) => `${line}（発話内容の後に開始）`,

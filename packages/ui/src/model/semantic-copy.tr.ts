@@ -100,6 +100,7 @@ export const tr: SemanticMessages = {
       label: 'Dizinleme ilerlemesi',
       text: (done, total) => `Konuşma: ${done}/${total} video`,
       textDone: 'Konuşma hazır',
+      textCurrent: (line, pct) => `${line} (geçerli video: %${pct})`,
       visual: (done, total) => `Görüntü: ${done}/${total} kare`,
       visualDone: 'Görüntü hazır',
       startsAfter: (line) => `${line} (konuşmadan sonra başlar)`,

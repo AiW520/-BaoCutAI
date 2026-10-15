@@ -116,6 +116,17 @@ test('合并的索引进度（2026-10-14）：一根条按估算时间合，按�
   assert.equal(S.indexProgress({text: {done: 3, total: 3, doneSeconds: 90}}, null), null);
 });
 
+test('讲话内容正在建的那一部写它编到百分之几（2026-10-14）：第一部还没量出速度时也看得出在走', () => {
+  const queued = {done: 0, total: 39341, doneSeconds: 0, estimate: {videos: 188, seconds: 43275, basis: 'default'}};
+  const first = {done: 0, total: 188, doneSeconds: null, current: {done: 48, total: 137}, estimate: {videos: 188, seconds: null}};
+  const a = S.indexProgress({text: first, visual: queued}, null);
+  assert.equal(a.line, '讲话内容 0/188 部视频（当前这部 35%） · 画面 0/39,341 帧（讲话内容建完后开始）');
+  assert.equal(a.value, null);
+  // 还在读内容（要编码的还不知道）、停着：不写
+  assert.equal(S.indexProgress({text: {...first, current: {done: 0, total: 0}}}, null).line, '讲话内容 0/188 部视频');
+  assert.equal(S.indexProgress({text: first}, 'user').line, '讲话内容 0/188 部视频');
+});
+
 test('打开画面之前写开销（v0.1 §13.2）：帧数、首次要多久、向量多大；关键帧缓存另算', () => {
   assert.equal(S.visualCostLine(null), null);
   assert.equal(

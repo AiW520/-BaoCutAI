@@ -100,6 +100,7 @@ export const nl: SemanticMessages = {
       label: 'Voortgang indexering',
       text: (done, total) => `Spraak: ${done}/${total} video’s`,
       textDone: 'Spraak is klaar',
+      textCurrent: (line, pct) => `${line} (huidige video: ${pct}%)`,
       visual: (done, total) => `Beeld: ${done}/${total} frames`,
       visualDone: 'Beeld is klaar',
       startsAfter: (line) => `${line} (begint na spraak)`,

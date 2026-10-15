@@ -295,9 +295,11 @@ function open(
     frames?: KeyframeSource;
     power?: () => Promise<PowerState>;
     pauseOnBattery?: boolean;
+    /** 换掉假目录的几项（首次扫描还没完成时）。 */
+    catalog?: { videos?: () => SpaceVideo[]; scanning?: boolean; ready?: Promise<void> };
   } = {},
 ): SemanticServices {
-  const catalog = { videos: () => videos, index, scanning: false, folderIds: () => folderIds, visualFiles: () => visualFiles };
+  const catalog = { videos: () => videos, index, scanning: false, folderIds: () => folderIds, visualFiles: () => visualFiles, ...options.catalog };
   const s = openSemanticServices({
     cacheDir: path.join(tmp, 'cache'),
     catalog,
@@ -577,6 +579,21 @@ describe('增量构建', () => {
     await again.coordinator.idle();
     expect(reopened.activeGenerations(['v1']).size).toBe(1);
     expect(provider.documents).toBe(encoded);
+  });
+
+  it('启动时目录还在首次扫描：扫完之后照常建（内容索引从库里读回、没有变化，不会再通知）', async () => {
+    let scanned = false;
+    let finish!: () => void;
+    const ready = new Promise<void>((resolve) => (finish = resolve));
+    services = open({ catalog: { videos: () => (scanned ? videos : []), ready } });
+    await build(services);
+    expect(services.store()!.activeGenerations(['v1', 'v2', 'v3']).size).toBe(0);
+
+    scanned = true;
+    finish();
+    await ready;
+    await services.coordinator.idle();
+    expect(services.store()!.activeGenerations(['v1', 'v2', 'v3']).size).toBe(3);
   });
 
   it('清除删掉索引与向量，文件也缩回去；之后按当前内容重建', async () => {
@@ -1577,6 +1594,51 @@ describe('供电与估时', () => {
       visual: { done: 0, total: 20, doneSeconds: 0 },
       unknownDuration: 1,
     });
+  });
+
+  it('indexStatus 的进度：讲话内容建到一部视频的中间时给它的句群编到哪了，已建的秒数折进去一截', async () => {
+    const sentences = Array.from({ length: 600 }, (_, i) => `Point ${i} covers topic ${i} with detail ${i} and example ${i}.`);
+    const placed = { canvas: true, clip: { contentHash: 'h-long', seconds: 80 }, placed: { sourceIn: 0, seconds: 80 } };
+    reader.videos.set(videos[0]!.dir, { ...V1, revision: 'r2', sentences, ...placed });
+    await syncIndex(2);
+    // 第二批编码时停住：第一批已经提交。
+    let release!: () => void;
+    const held = new Promise<void>((resolve) => (release = resolve));
+    let reached!: () => void;
+    const second = new Promise<void>((resolve) => (reached = resolve));
+    let batches = 0;
+    const embed = provider.embed.bind(provider);
+    provider.embed = async (...args: Parameters<EmbeddingProvider['embed']>) => {
+      if (args[1].role === 'document' && ++batches === 2) {
+        reached();
+        await held;
+      }
+      return embed(...args);
+    };
+    services = open();
+    const profile = await provider.profile('retrieval');
+    recordRate(services.store()!, 'text', profile, 0.5);
+    services.coordinator.start();
+    await second;
+
+    try {
+      const text = (await services.search.indexStatus(USER_VIEWER)).progress!.text!;
+      expect(text).toMatchObject({ done: 0, total: 3 });
+      expect(text.current!.done).toBe(16);
+      expect(text.current!.total).toBeGreaterThan(16);
+      expect(text.doneSeconds).toBe(Math.round(0.5 * 80 * (16 / text.current!.total)));
+      expect((await services.search.indexStatus(USER_VIEWER, { videoIds: ['v1'] })).videos?.[0]?.text).toBe('indexing');
+      // 暂停时不写正在建的那一部。
+      services.coordinator.pause();
+    } finally {
+      release();
+    }
+    await services.coordinator.idle();
+    expect((await services.search.indexStatus(USER_VIEWER)).progress!.text!.current).toBeUndefined();
+    services.coordinator.resume();
+    await services.coordinator.idle();
+    expect((await services.search.indexStatus(USER_VIEWER)).progress!.text).toMatchObject({ done: 3, total: 3 });
+    expect((await services.search.indexStatus(USER_VIEWER)).progress!.text!.current).toBeUndefined();
   });
 });
 

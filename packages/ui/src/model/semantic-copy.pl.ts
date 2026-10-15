@@ -101,6 +101,7 @@ export const pl: SemanticMessages = {
       label: 'Postęp indeksowania',
       text: (done, total) => `Mowa: ${done}/${total} wideo`,
       textDone: 'Mowa jest gotowa',
+      textCurrent: (line, pct) => `${line} (bieżące wideo: ${pct}%)`,
       visual: (done, total) => `Obraz: ${done}/${total} klatek`,
       visualDone: 'Obraz jest gotowy',
       startsAfter: (line) => `${line} (zacznie się po mowie)`,

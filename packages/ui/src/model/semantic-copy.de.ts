@@ -100,6 +100,7 @@ export const de: SemanticMessages = {
       label: 'Indexierungsfortschritt',
       text: (done, total) => `Sprache: ${done}/${total} Videos`,
       textDone: 'Sprache ist fertig',
+      textCurrent: (line, pct) => `${line} (aktuelles Video: ${pct} %)`,
       visual: (done, total) => `Bild: ${done}/${total} Bilder`,
       visualDone: 'Bild ist fertig',
       startsAfter: (line) => `${line} (beginnt nach der Sprache)`,

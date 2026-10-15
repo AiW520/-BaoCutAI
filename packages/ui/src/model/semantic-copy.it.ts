@@ -100,6 +100,7 @@ export const it: SemanticMessages = {
       label: 'Avanzamento dell’indicizzazione',
       text: (done, total) => `Parlato: ${done}/${total} video`,
       textDone: 'Il parlato è pronto',
+      textCurrent: (line, pct) => `${line} (video attuale: ${pct}%)`,
       visual: (done, total) => `Immagini: ${done}/${total} fotogrammi`,
       visualDone: 'Le immagini sono pronte',
       startsAfter: (line) => `${line} (inizia dopo il parlato)`,

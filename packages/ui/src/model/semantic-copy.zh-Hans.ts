@@ -100,6 +100,7 @@ export const zhHans: SemanticMessages = {
       label: '索引进度',
       text: (done, total) => `讲话内容 ${done}/${total} 部视频`,
       textDone: '讲话内容已建好',
+      textCurrent: (line, pct) => `${line}（当前这部 ${pct}%）`,
       visual: (done, total) => `画面 ${done}/${total} 帧`,
       visualDone: '画面已建好',
       startsAfter: (line) => `${line}（讲话内容建完后开始）`,

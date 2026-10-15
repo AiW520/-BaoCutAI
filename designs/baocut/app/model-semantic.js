@@ -114,10 +114,12 @@
   /** 合并的索引进度（2026-10-14 已确认，同 Electron / Web 的 indexProgressView）：讲话内容先建，画面等它建完再建（Runtime 的画面一路让文字先走），
       所以两路合在「状态」下面的一根进度条里，不再在画面那一行另画一根——那根条在讲话内容建完之前一直是 0。
       · 条按估算时间合：文字按部、画面按帧，单位不能相加；值 = 两路已建的估算秒 ÷（已建 + 还剩）。有一路还估不出时间时不定量。
-      · 那一行不写百分比（画面的帧多，讲话内容那一段在条上只占一小截）：按路写计数，写明画面排在讲话内容后面；
+      · 那一行整体不写百分比（画面的帧多，讲话内容那一段在条上只占一小截）：按路写计数，写明画面排在讲话内容后面；
         下面一句是两路合起来还要多久，等讲话内容的时间也算在里面。
+      · 讲话内容正在建的那一部写它编到百分之几（2026-10-14 补）：一部长视频在 CPU 上要建几分钟，只写部数时一直是 0，像卡住了。
       p = {text, visual}，每路 {done, total, doneSeconds, estimate}（estimate 是 indexStatus.estimates 里没开 ifEnabled 的那一项；
-      text 按部视频，visual 按帧；画面没开时 visual 省略）；why 是 pauseReasonOf 的结果。两路都建完时返回 null。 */
+      text 按部视频，另有正在建那一部的 current {done, total}（句群）；visual 按帧；画面没开时 visual 省略）；
+      why 是 pauseReasonOf 的结果。两路都建完时返回 null。 */
   function indexProgress(p, why) {
     const t = p && p.text;
     const v = p && p.visual;
@@ -126,7 +128,11 @@
     if (!left.length) return null;
     const textBusy = !!t && t.done < t.total;
     const counts = [];
-    if (t) counts.push(t.done >= t.total ? '讲话内容已建好' : `讲话内容 ${fmtCount(t.done)}/${fmtCount(t.total)} 部视频`);
+    if (t) {
+      const cur = textBusy && !why && t.current && t.current.total > 0 ? t.current : null;
+      const pct = cur ? `（当前这部 ${Math.floor((cur.done / cur.total) * 100)}%）` : '';
+      counts.push(t.done >= t.total ? '讲话内容已建好' : `讲话内容 ${fmtCount(t.done)}/${fmtCount(t.total)} 部视频${pct}`);
+    }
     if (v) {
       const wait = !textBusy ? '' : v.done ? '（讲话内容建完后接着建）' : '（讲话内容建完后开始）';
       counts.push(v.done >= v.total ? '画面已建好' : `画面 ${fmtCount(v.done)}/${fmtCount(v.total)} 帧${wait}`);

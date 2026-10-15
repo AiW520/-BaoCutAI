@@ -126,6 +126,8 @@ const en = {
       label: 'Indexing progress',
       text: (done: string, total: string) => `Speech: ${done}/${total} videos`,
       textDone: 'Speech is ready',
+      /** 讲话内容正在建的那一部的句群编到百分之几（整数）。 */
+      textCurrent: (line: string, pct: number) => `${line} (current video ${pct}%)`,
       visual: (done: string, total: string) => `Visuals: ${done}/${total} frames`,
       visualDone: 'Visuals are ready',
       /** 画面在等讲话内容建完：一帧还没建时「开始」，建过一部分时「接着建」。 */

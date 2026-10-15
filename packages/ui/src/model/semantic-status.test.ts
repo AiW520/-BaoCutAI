@@ -221,6 +221,24 @@ describe('合并的索引进度', () => {
     expect(resumed?.line).toBe([P.text('31', '212'), P.continuesAfter(P.visual(fmt(1200), fmt(39730)))].join(P.separator));
   });
 
+  it('讲话内容正在建的那一部写它编到百分之几；还在读内容、停着时不写', () => {
+    const building = (current: { done: number; total: number }) => ({ ...both, progress: { text: { ...text, current }, visual: queued, unknownDuration: 0 } });
+    expect(indexProgressView(building({ done: 48, total: 137 }))?.line).toBe(
+      [P.textCurrent(P.text('31', '212'), 35), P.startsAfter(P.visual('0', fmt(39730)))].join(P.separator),
+    );
+    // 第一部还没量出速度：条不定量、还要多久写不出，但这一部的百分比照样走。
+    const first = indexProgressView({
+      ...building({ done: 16, total: 400 }),
+      progress: { text: { done: 0, total: 188, doneSeconds: null, current: { done: 16, total: 400 } }, visual: queued, unknownDuration: 0 },
+      estimates: [left('text', { seconds: null, basis: null }), left('visual', { basis: 'default' })],
+    });
+    expect(first).toMatchObject({ value: null, eta: P.noRate });
+    expect(first?.line.startsWith(P.textCurrent(P.text('0', '188'), 4))).toBe(true);
+    const plain = indexProgressView(both)?.line;
+    expect(indexProgressView(building({ done: 0, total: 0 }))?.line).toBe(plain);
+    expect(indexProgressView({ ...building({ done: 48, total: 137 }), paused: true, pauseReason: 'user' })?.line).toBe(plain);
+  });
+
   it('画面在建：讲话内容已建好，那一段也在条上', () => {
     const view = indexProgressView(
       status({

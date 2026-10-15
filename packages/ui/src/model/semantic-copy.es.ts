@@ -100,6 +100,7 @@ export const es: SemanticMessages = {
       label: 'Progreso del índice',
       text: (done, total) => `Voz: vídeos ${done}/${total}`,
       textDone: 'La voz está lista',
+      textCurrent: (line, pct) => `${line} (vídeo actual: ${pct} %)`,
       visual: (done, total) => `Imagen: fotogramas ${done}/${total}`,
       visualDone: 'La imagen está lista',
       startsAfter: (line) => `${line} (empieza después de la voz)`,

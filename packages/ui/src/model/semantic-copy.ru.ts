@@ -101,6 +101,7 @@ export const ru: SemanticMessages = {
       label: 'Ход индексации',
       text: (done, total) => `Речь: ${done} из ${total} видео`,
       textDone: 'Речь готова',
+      textCurrent: (line, pct) => `${line} (текущее видео: ${pct}%)`,
       visual: (done, total) => `Изображение: ${done} из ${total} кадров`,
       visualDone: 'Изображение готово',
       startsAfter: (line) => `${line} (начнётся после речи)`,

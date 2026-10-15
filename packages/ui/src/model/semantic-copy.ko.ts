@@ -100,6 +100,7 @@ export const ko: SemanticMessages = {
       label: '색인 진행률',
       text: (done, total) => `발화 내용: 동영상 ${done}/${total}개`,
       textDone: '발화 내용 색인 완료',
+      textCurrent: (line, pct) => `${line} (현재 동영상 ${pct}%)`,
       visual: (done, total) => `화면: ${done}/${total} 프레임`,
       visualDone: '화면 색인 완료',
       startsAfter: (line) => `${line} (발화 내용 다음에 시작)`,

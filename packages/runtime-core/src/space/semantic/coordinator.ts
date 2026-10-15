@@ -52,6 +52,8 @@ export interface SemanticCatalogSource {
   visualFiles?(): SpaceVisualFile[];
   readonly index: Pick<ContentIndex, 'at' | 'pendingCount' | 'listen'> | null;
   readonly scanning: boolean;
+  /** 首次扫描完成（Space 的 `ready`）；不给时当作已经扫完。 */
+  readonly ready?: Promise<void>;
 }
 
 export interface SemanticCoordinatorOptions {
@@ -156,10 +158,17 @@ export class SemanticCoordinator {
     return this.#options.settings().channels.includes('text');
   }
 
-  /** 开始跟随内容索引。 */
+  /**
+   * 开始跟随内容索引。目录首次扫描完成后再规划一次：扫完之前目录里还没有视频，而内容索引从库里读回、没有变化的视频不会再
+   * 通知，不补这一次时重启之后一部都不建。
+   */
   start(): void {
     if (this.#unlisten || this.#closed) return;
     this.#unlisten = this.#options.catalog.index?.listen(() => this.schedule()) ?? null;
+    void this.#options.catalog.ready?.then(
+      () => this.schedule(),
+      () => {},
+    );
     if (this.#options.power) {
       this.#powerTimer = setInterval(() => {
         if (this.#hasWork) void this.#probePower();
@@ -258,12 +267,14 @@ export class SemanticCoordinator {
     return this.#worker !== null;
   }
 
-  /** 讲话内容一路正在建的视频；没在建时 null。 */
-  get current(): Id | null {
-    return this.#current;
+  /**
+   * 讲话内容一路正在建的视频与它的句群编到哪了（`total` 是要编码的句群，已有向量的不算；还在读内容时为 0）；没在建时 null。
+   */
+  get current(): { videoId: Id; done: number; total: number } | null {
+    return this.#current ? { ...this.#current } : null;
   }
 
-  #current: Id | null = null;
+  #current: { videoId: Id; done: number; total: number } | null = null;
 
   /** 排队待建的视频数。 */
   get queued(): number {
@@ -528,7 +539,7 @@ export class SemanticCoordinator {
       const item = this.#queue.values().next().value!;
       this.#queue.delete(item.dir);
       this.#abort = new AbortController();
-      this.#current = item.videoId;
+      this.#current = { videoId: item.videoId, done: 0, total: 0 };
       try {
         await this.#indexOne(store, scheduler, profile, item, this.#abort.signal);
         this.#blocked = null;
@@ -578,6 +589,7 @@ export class SemanticCoordinator {
     const have = item.rebuild ? new Map<string, Float32Array>() : store.embeddings(keys, profile.encoderProfileId, profile.dims);
     const textOf = new Map(keyed.map((c) => [c.embeddingKey, c.text]));
     const missing = keys.filter((key) => !have.has(key));
+    if (this.#current?.videoId === item.videoId) this.#current = { videoId: item.videoId, done: 0, total: missing.length };
     let encodeMs = 0;
     for (let i = 0; i < missing.length; i += TEXT_BATCH_MAX) {
       signal.throwIfAborted();
@@ -593,6 +605,7 @@ export class SemanticCoordinator {
       store.putEmbeddings(
         batch.map((key, n) => ({ key, encoderProfileId: profile.encoderProfileId, vector: validVector(result.vectors[n]!, profile.dims) })),
       );
+      if (this.#current?.videoId === item.videoId) this.#current = { videoId: item.videoId, done: i + batch.length, total: missing.length };
     }
     signal.throwIfAborted();
     // 速度按时间线时长记（估时间时也按它）；大部分句群命中缓存的视频不记。

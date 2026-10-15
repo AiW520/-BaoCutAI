@@ -699,7 +699,8 @@ export class SearchService {
    * 建索引的进度（§13.2，设置「状态」下面那根合并的进度条）：开着的每一路已建与一共多少，已建那部分按这一路的速度折算成秒
    * （还要建的秒数在 `estimates` 里），界面按估算时间把两路合成一根条。两路都没开时没有。
    *
-   * - 讲话内容按部视频：跟上当前版本的算已建，还要建的同 `estimates` 里文字一项（排队、落后的与内容索引还没读到的）。
+   * - 讲话内容按部视频：跟上当前版本的算已建，还要建的同 `estimates` 里文字一项（排队、落后的与内容索引还没读到的）。正在建的
+   *   那一部另给句群编到哪了（`current`），已建的秒数也按它折进去一截，条在一部长视频建完之前也会动。
    * - 画面按帧：已跟上的视频的帧（世代的 chunk 数）加上正在建的那部编好的，再加上还要建的（`estimates` 里画面一项的帧数，
    *   正在建的那部也在里面，扣掉它编好的）。
    * - 时长未知的按视频去重：同一部两路都要建只算一次，内容索引还没读到的两路都算过一次。
@@ -722,8 +723,17 @@ export class SearchService {
     if (textLeft) {
       const indexed = resolved.videos.filter((v) => v.state === 'indexed');
       const rate = rateOf('text', profile, store);
-      const seconds = indexed.reduce((sum, v) => sum + (durationOf(v.video) ?? 0), 0);
-      out.text = { done: indexed.length, total: indexed.length + textLeft.videos, doneSeconds: rate ? Math.round(rate.perUnit * seconds) : null };
+      const coordinator = this.#options.coordinator;
+      const now = coordinator && !coordinator.paused ? coordinator.current : null;
+      const building = now ? resolved.videos.find((v) => v.video.videoId === now.videoId && left(v.state)) : undefined;
+      const part = building && now && now.total > 0 ? (durationOf(building.video) ?? 0) * (now.done / now.total) : 0;
+      const seconds = indexed.reduce((sum, v) => sum + (durationOf(v.video) ?? 0), 0) + part;
+      out.text = {
+        done: indexed.length,
+        total: indexed.length + textLeft.videos,
+        doneSeconds: rate ? Math.round(rate.perUnit * seconds) : null,
+        ...(building && now ? { current: { done: now.done, total: now.total } } : {}),
+      };
       for (const v of resolved.videos) if (left(v.state) && durationOf(v.video) === null) unknown.add(v.video.videoId);
     }
     if (visualScope && settings.channels.includes('visual')) {
@@ -747,7 +757,7 @@ export class SearchService {
     const settings = this.#options.settings();
     const coordinator = this.#options.coordinator;
     const paused = coordinator?.paused ?? false;
-    const textNow = paused ? null : (coordinator?.current ?? null);
+    const textNow = paused ? null : (coordinator?.current?.videoId ?? null);
     const visualNow = paused ? null : (coordinator?.visual?.current ?? null);
     const text = new Map(resolved.videos.map((v) => [v.video.videoId, v]));
     const visual = new Map(visualScope?.videos.map((v) => [v.video.videoId, v]) ?? []);
