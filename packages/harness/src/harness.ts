@@ -1300,14 +1300,14 @@ export class Harness {
     void this.#startRun(state, run, {
       text: withDocsAnnotations(
         withVideoAnnotations(
-        withDesignSystemAnnotations(
-          withDesignAnnotations(
-            withSlideAnnotations(withSpaceReferences(withEditorContext(agentText, params.context), references), params.slideAnnotations ?? []),
-            params.designAnnotations ?? [],
+          withDesignSystemAnnotations(
+            withDesignAnnotations(
+              withSlideAnnotations(withSpaceReferences(withEditorContext(agentText, params.context), references), params.slideAnnotations ?? []),
+              params.designAnnotations ?? [],
+            ),
+            params.designSystemAnnotations ?? [],
           ),
-          params.designSystemAnnotations ?? [],
-        ),
-        params.videoAnnotations ?? [],
+          params.videoAnnotations ?? [],
         ),
         params.docsAnnotations ?? [],
       ),
@@ -1429,14 +1429,14 @@ export class Harness {
     const docsAnnotations = params.docsAnnotations ?? [];
     const text = withDocsAnnotations(
       withVideoAnnotations(
-      withDesignSystemAnnotations(
-        withDesignAnnotations(
-          withSlideAnnotations([params.text, fileAttachmentsText(attached)].filter(Boolean).join('\n\n'), annotations),
-          designAnnotations,
+        withDesignSystemAnnotations(
+          withDesignAnnotations(
+            withSlideAnnotations([params.text, fileAttachmentsText(attached)].filter(Boolean).join('\n\n'), annotations),
+            designAnnotations,
+          ),
+          designSystemAnnotations,
         ),
-        designSystemAnnotations,
-      ),
-      videoAnnotations,
+        videoAnnotations,
       ),
       docsAnnotations,
     );

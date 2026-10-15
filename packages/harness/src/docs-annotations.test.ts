@@ -2,7 +2,7 @@ import fs from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { newId, type DocsAnnotation, type DriverProbe, type Id } from '@baocut/protocol';
+import { newId, type DocsAnnotation, type DriverProbe, type Id, type VideoAnnotation } from '@baocut/protocol';
 import { ConversationStore, ProjectStore, resolveRuntimeHome, type RuntimeHome } from '@baocut/runtime-storage';
 import { DriverRegistry } from './agent-manager.ts';
 import type { AgentDriver, AgentEvent, AgentSession } from './driver.ts';
@@ -199,6 +199,16 @@ afterEach(async () => {
   await fs.rm(dir, { recursive: true, force: true });
 });
 
+const videoNote = (conversationId: Id): VideoAnnotation => ({
+  video: { conversationId, path: 'talk' },
+  revision: '3',
+  timeMs: 42300,
+  kind: 'pin',
+  region: { x: 0.5, y: 0.5, w: 0, h: 0 },
+  label: '00:42.3',
+  text: '改这里',
+});
+
 describe('send 与 steer 带文档标注', () => {
   it('文档标注段排在设计稿标注段之后，用户消息上原样记一份（不带解析出的路径）', async () => {
     const conversation = await harness.createConversation({ title: '改文档' });
@@ -209,16 +219,20 @@ describe('send 与 steer 带文档标注', () => {
       },
     ];
     const docsAnnotations: ResolvedDocsAnnotation[] = [{ annotation: comment({ doc: { conversationId: conversation.id, path: 'plan' } }), docPath: 'plan/' }];
-    await harness.send({ conversationId: conversation.id, text: '按评论改', commandId: newId('cmd'), designAnnotations, docsAnnotations });
+    const video = videoNote(conversation.id);
+    await harness.send({ conversationId: conversation.id, text: '按评论改', commandId: newId('cmd'), designAnnotations,
+      videoAnnotations: [{ annotation: video, videoPath: 'talk/' }], docsAnnotations });
     const session = await until(() => driver.sessions.at(-1));
     const input = await until(() => session.inputs[0]);
     const designAt = input.indexOf('<baocut-design-annotations canvas="poster/">');
     const docsAt = input.indexOf('<baocut-docs-annotations doc="plan/">\n1. 评论');
     expect(designAt).toBeGreaterThan(0);
-    expect(docsAt).toBeGreaterThan(designAt);
+    const videoAt = input.indexOf('<baocut-video-annotations video="talk/"');
+    expect(videoAt).toBeGreaterThan(designAt);
+    expect(docsAt).toBeGreaterThan(videoAt);
     expect(input.trimEnd().endsWith('</baocut-docs-annotations>')).toBe(true);
     const [message] = userMessages(conversation.id);
-    expect(message).toMatchObject({ text: '按评论改', docsAnnotations: [docsAnnotations[0]!.annotation] });
+    expect(message).toMatchObject({ text: '按评论改', docsAnnotations: [docsAnnotations[0]!.annotation], videoAnnotations: [video] });
   });
 
   it('没带标注的消息不写这个字段；插话带的标注同样附上、记下', async () => {
@@ -229,16 +243,19 @@ describe('send 与 steer 带文档标注', () => {
     expect(userMessages(conversation.id)[0]).not.toHaveProperty('docsAnnotations');
 
     const annotation = ask({ doc: { conversationId: conversation.id, path: 'plan' } });
+    const video = videoNote(conversation.id);
     const result = await harness.steer({
       conversationId: conversation.id,
       text: '顺便补这里',
       commandId: newId('cmd'),
       docsAnnotations: [{ annotation, docPath: 'plan/' }],
+      videoAnnotations: [{ annotation: video, videoPath: 'talk/' }],
     });
     expect(result).toEqual({ status: 'steered' });
     expect(session.inputs[1]).toContain('<baocut-docs-annotations doc="plan/">');
     expect(session.inputs[1]).toContain('   请求：这里补一张风险表');
-    expect(userMessages(conversation.id)[1]).toMatchObject({ text: '顺便补这里', docsAnnotations: [annotation] });
+    expect(session.inputs[1]).toContain('<baocut-video-annotations video="talk/"');
+    expect(userMessages(conversation.id)[1]).toMatchObject({ text: '顺便补这里', docsAnnotations: [annotation], videoAnnotations: [video] });
   });
 });
 
