@@ -18,6 +18,7 @@ BaoCut 是一个源码可用（source-available）的 AI 视频智能体：用�
 | [`spec/template-spec.md`](spec/template-spec.md) | **模板包规范**：Home 创作模板的目录布局、清单字段与分类、封面与预览、素材、路径与语言约束、场景模板的简报引导 |
 | [`acceptance/acceptance-spec.md`](acceptance/acceptance-spec.md) | **验收与测试**：测试策略、发布门槛、性能目标、验收矩阵 |
 | [`acceptance/agent-surface-e2e.md`](acceptance/agent-surface-e2e.md) | **Agent 面端到端验收记录**：2026-10-06 用 Claude Code 经 skill 与 MCP 走「链接 → 转录 → 自译 → 双语字幕 → 导出」的结论、证据位置、修复与发现 |
+| [`acceptance/windows-validation.md`](acceptance/windows-validation.md) | **Windows 实机验证记录**：MSVC 原生媒体与导出、EcoQoS、Runtime IPC、凭据与 Windows 路径回归的实际通过项、失败项和未测边界 |
 | [`design/subtitle/`](design/subtitle/README.md) | **字幕与翻译设计（移植自 v2）**：转录后处理、翻译载体、字幕对齐与切分、字幕导出的设计记录；实现在 `crates/speech-doc`，文中的数据模型名指 v2，与 v3 的对应见架构设计 §14 |
 | [`design/export/windows-media-path-todo.md`](design/export/windows-media-path-todo.md) | **Windows 导出媒体路径待办**：成片导出在 Windows 上的解码直写缓冲、行搬运、编码输入拷贝、EcoQoS 验证、硬件解码、编码节流与三家显卡兼容；每条写明位置、做法、像素会不会变与验证方法 |
 | [`design/brand/app-icon.md`](design/brand/app-icon.md) | **App 图标设计**：图形组成、三色配色与备选变体、外形模板、否决过的方向；绘制源码在 `tools/app-icon/` |

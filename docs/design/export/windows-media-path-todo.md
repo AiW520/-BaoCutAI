@@ -1,6 +1,6 @@
 # Windows 导出媒体路径待办
 
-成片导出（`export-worker render`，架构设计 §9.11）在 Windows 上的原生解码、编码与调度优先级还没做过性能整理，也没在 Windows 真机上量过。macOS 一侧已经整理过一轮：解码直接写进轮换的缓冲、合成去掉多余的整帧填充与拷贝、调度优先级、写入器视频轨声明为实时源（结果见验收与测试 §4）。本文列出 Windows 一侧对应的缺口，每条写明位置、做法、像素会不会变、怎么验证，不依赖别的记录就能动手。
+成片导出（`export-worker render`，架构设计 §9.11）在 Windows 上的原生解码、编码与调度优先级尚有以下缺口。2026-10-15 已在 Windows 11 / RTX 3060 上运行现有测试、1080p 双语字幕导出与 EcoQoS 检查，发现媒体正确性和 GOP 合同未通过，不能把整个 Windows 路径记为完成；环境、失败值与复现命令见 [Windows 实机验证记录](../../acceptance/windows-validation.md)。macOS 一侧的性能整理结果见验收与测试 §4。
 
 涉及的代码：
 
@@ -9,19 +9,20 @@
 - 调度优先级：`crates/export-worker/src/priority.rs` 的 `#[cfg(windows)]` 分支；
 - 平台无关的顺序流与缓冲轮换：`crates/media-native/src/frames.rs`（`FrameSource`、`SequentialDecoder`）。
 
-现状：CI 的测试只在 Ubuntu 上跑（`.github/workflows/tests.yml`），Windows 只有打包工作流（`desktop-windows.yml`）。上面这些 `cfg(windows)` 代码最近的改动只在 macOS 上用 `--target x86_64-pc-windows-gnu` 做过类型检查，没有在 Windows 上运行过。
+现状：CI 的测试只在 Ubuntu 上跑（`.github/workflows/tests.yml`），Windows 只有打包工作流（`desktop-windows.yml`）。本机已用 MSVC 原生构建并运行这些 `cfg(windows)` 路径；这次没有重打发布包，不能替代 Windows 安装包验收。
 
 ## 待办
 
-| # | 事项 | 像素 | 优先 |
-| --- | --- | --- | --- |
-| W1 | 解码直接写进调用方的缓冲 | 不变 | 高 |
-| W2 | `copy_rows` 去掉逐像素的旋转分支 | 不变 | 高 |
-| W3 | 编码输入直接写进 Media Foundation 的缓冲 | 不变 | 中 |
-| W4 | 在 Windows 上验证 EcoQoS 的关闭 | 不变 | 高 |
-| W5 | 解码走硬件（D3D11） | 会变 | 中 |
-| W6 | 编码的节流与低延迟开关 | 码流会变 | 中 |
-| W7 | 三家显卡的硬件编码器兼容 | — | 高 |
+| # | 事项 | 像素 | 优先 | 状态（2026-10-15） |
+| --- | --- | --- | --- | --- |
+| W1 | 解码直接写进调用方的缓冲 | 不变 | 高 | 待实现；先解决 W8 的现有正确性失败 |
+| W2 | `copy_rows` 去掉逐像素的旋转分支 | 不变 | 高 | 待实现 |
+| W3 | 编码输入直接写进 Media Foundation 的缓冲 | 不变 | 中 | 待实现 |
+| W4 | 在 Windows 上验证 EcoQoS 的关闭 | 不变 | 高 | 部分通过：原生 API 回读、24 忙进程交替对比通过；真实应用最小化 / 切后台待测 |
+| W5 | 解码走硬件（D3D11） | 会变 | 中 | 导出 Source Reader 路径待实现；播放的 DXGI 测试通过不等于此项完成 |
+| W6 | 编码的节流与低延迟开关 | 码流会变 | 中 | 待 A/B，未启用候选开关 |
+| W7 | 三家显卡的硬件编码器兼容 | — | 高 | 未通过：RTX 3060 主机导出成功、BT.709 / High 正确，但 GOP 为 1 秒而非 2 秒；实际 MFT、AMD / Intel 与回落待测 |
+| W8 | 修复原生媒体测试的实机失败 | 待定位 | 高 | 5 个现有测试失败：单帧边界与 SSIM、顺序流起点与 SSIM、NTSC 帧率 |
 
 ### W1 解码直接写进调用方的缓冲
 
@@ -43,7 +44,7 @@
 
 ### W4 在 Windows 上验证 EcoQoS 的关闭
 
-- `priority.rs` 在 Windows 上调用 `SetProcessInformation(ProcessPowerThrottling)`，关掉本进程的执行速度节流。它只做过交叉编译，没在 Windows 上跑过。
+- `priority.rs` 在 Windows 上调用 `SetProcessInformation(ProcessPowerThrottling)`，关掉本进程的执行速度节流。原生实测先开启节流，再调用实际入口，`GetProcessInformation` 回读 `ControlMask=1`、`StateMask=0`，API 关闭行为通过；负载对比见 [Windows 实机验证记录 §2](../../acceptance/windows-validation.md#2-结果)。
 - 要确认：调用返回成功（失败时 stderr 有 `cannot opt out of power throttling`）；Worker 在应用最小化、切到后台时导出不降速；同一个构建用 `BAOCUT_EXPORT_PRIORITY=0` 对比，有负载时开着不慢于关着。macOS 上 12 个忙进程时出现过开着反而慢的情况（验收与测试 §4「导出的调度优先级」），Windows 也要在超过核数的负载下量一次。
 
 ### W5 解码走硬件（D3D11）
@@ -60,9 +61,13 @@
 
 ### W7 三家显卡的硬件编码器兼容
 
-- `MF_READWRITE_ENABLE_HARDWARE_TRANSFORMS = 1` 时，Sink Writer 选显卡驱动提供的 H.264 编码 MFT（NVIDIA NVENC、AMD AMF、Intel Quick Sync），没有时回落微软的软件编码器。三家的行为没有在本仓库测过。
-- 每家各一台机器，导出同一个工程，用 `ffprobe -show_streams -show_frames` 核对：profile 为 High、关键帧间隔等于 `KEYFRAME_INTERVAL_SECONDS` 换算的帧数、BT.709 的 VUI（`encode_windows.rs` 的注释写明尚未在 Windows 上核验）、码率接近设定、faststart 探测的结果与 moov 位置。再核对回落时 `done.video` 报出的后端与原因。
+- `MF_READWRITE_ENABLE_HARDWARE_TRANSFORMS = 1` 允许 Sink Writer 选择显卡驱动提供的 H.264 编码 MFT（NVIDIA NVENC、AMD AMF、Intel Quick Sync），没有时回落微软的软件编码器。RTX 3060 主机的 MF 导出与 ffprobe 已实测：High、BT.709、300 帧和 30 fps 正确，GOP 却为 30 帧而非要求的 60 帧；faststart 明确回落且 `moov` 在 `mdat` 后。当前报告未识别具体 MFT，不能据此认定选到了 NVENC，三家硬件兼容仍未完成。
+- 每家各一台机器，导出同一个工程，用 `ffprobe -show_streams -show_frames` 核对：profile 为 High、关键帧间隔等于 `KEYFRAME_INTERVAL_SECONDS` 换算的帧数、BT.709 的 VUI、码率接近设定、faststart 探测的结果与 moov 位置。再核对回落时 `done.video` 报出的后端与原因。
 - 驱动缺失或编码 MFT 初始化失败时应能回落，不能让导出失败而不报原因。
+
+### W8 修复原生媒体测试的实机失败
+
+现有单帧、顺序流和写入器测试在 Windows 上分别失败 2、2、1 项；具体测试名、实测值和后续检查见 [Windows 实机验证记录 §3](../../acceptance/windows-validation.md#3-失败与后续事项)。先定位 sample 时间戳、颜色转换、EOF 与容器时基的实际行为，再做 W1–W3 的像素等价优化；不得通过放宽阈值或把失败改成跳过来更新完成状态。W7 的 GOP 差异仍归 W7。
 
 ## 验证
 
