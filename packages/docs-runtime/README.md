@@ -1,6 +1,6 @@
 # docs-runtime
 
-文档编辑器的运行时：文档应用（标签页、工具栏、批注、版本、侧栏）、编辑器 iframe 里的 ProseMirror 运行时（lfile 运行时）与编辑器附加脚本（KaTeX、表情）。源码移植自 Claude Docs 类型的 TypeScript 重建（`src/docs-type`），保留恢复出的行为与标识符；平台核心按子系统拆成模块，BaoCut 托管与模块组织的改动带 `BaoCut:` 注释（见下）。`apps/docs-editor` 把它打成编辑器页面，接口与长连接的前缀由 `packages/docs` 的 `editor/install` 设好，页面背后的 Docs 服务也在 `packages/docs`。
+文档编辑器的运行时：文档应用（标签页、工具栏、批注、版本、侧栏）、编辑器 iframe 里的 ProseMirror 运行时（lfile 运行时）与编辑器附加脚本（KaTeX、表情）。源码移植自 Claude Docs 类型的 TypeScript 重建（`src/docs-type`），保留恢复出的行为与标识符；文档应用、组件库与平台核心按职责拆成模块，BaoCut 托管与模块组织的改动带 `BaoCut:` 注释（见下）。`apps/docs-editor` 把它打成编辑器页面，接口与长连接的前缀由 `packages/docs` 的 `editor/install` 设好，页面背后的 Docs 服务也在 `packages/docs`。
 
 ## 结构
 
@@ -11,8 +11,9 @@
 | 路径 | 内容 |
 | --- | --- |
 | `main.ts`、`hello-early.ts`、`preload.ts`、`rolldown-runtime.ts` | 入口；最早执行的环境判断（`isFrameArtifact()`）、预热与模块预载 |
-| `docs-app.tsx`、`platform-core.tsx`、`platform-core-*.ts(x)`、`platform-lazy.tsx` | 文档应用、平台层兼容入口与按子系统拆分的实现（见下）、按需加载的部分（版本对比、表格、导出） |
-| `cds.tsx`、`react.tsx`、`jsx-runtime.tsx`、`jsx-dev-runtime.tsx` | 原平台的组件库；React 与 JSX 运行时 |
+| `docs-app.tsx`、`docs-app-*.ts(x)` | 文档应用兼容入口与按职责拆分的实现（见下） |
+| `platform-core.tsx`、`platform-core-*.ts(x)`、`platform-lazy.tsx` | 平台层兼容入口与按子系统拆分的实现（见下）、按需加载的部分（版本对比、表格、导出） |
+| `cds.tsx`、`cds-*.ts(x)`、`react.tsx`、`jsx-runtime.tsx`、`jsx-dev-runtime.tsx` | 原平台的组件库兼容入口与实现；React 与 JSX 运行时 |
 | `editor-runtime.tsx`、`editor-schema.ts`、`editor-extras.ts` | 编辑器 iframe 里的 ProseMirror 运行时（打成 `lfile-runtime.35524228.js`）、文档结构、KaTeX 与表情附加脚本 |
 | `editor-runtime-source.ts`、`editor-extras-source.ts` | 两份脚本的文本：前者是空串（只在 Frame 里内联运行时，独立页面从接口取），后者由资源插件打进页面 |
 | `right-rail.tsx`、`tabs-*.ts(x)`、`version-*.ts(x)`、`history-groups.ts`、`lfile-snapshot-view.tsx`、`diff-worker.ts` | 批注栏、标签页、版本历史与版本对比（Worker） |
@@ -27,6 +28,24 @@
 | `katex-fonts.ts` | 父页面读取并缓存 KaTeX 本地字体，转换为 data URL 样式，经 `loadFonts` 传入编辑器 iframe |
 
 原工程的 `thumbnail.html` / `thumbnail.ts`（托管平台生成文档缩略图用的页面）没有搬：BaoCut 不生成文档缩略图，Runtime 也不提供这个页面。
+
+### 文档应用与组件模块
+
+`docs-app.tsx` 与 `cds.tsx` 保留原来的公开导出和分块别名，调用方继续使用这两个兼容入口。各入口先执行对应的 `*-initialize.ts`，再通过 `*-exports.ts` 提供公开接口；实现模块之间直接引用所属模块，避免经入口重复触发初始化。npm 与本地依赖的适配别名集中在各自的 `*-dependencies.ts`，顶层状态、样式注册、`displayName` 与其他副作用按恢复代码的原始顺序初始化。
+
+| 文件前缀（均在 `src/`） | 职责 |
+| --- | --- |
+| `docs-app-connection-*`、`docs-app-document-recovery*` | 连接、权限与错误、文档恢复 |
+| `docs-app-document-*`、`docs-app-room-document-*`、`docs-app-room-page-*` | 文档上下文、命令、选区、宿主交互、编辑页面、iframe、预览、导出与标签页 |
+| `docs-app-comment-*`、`docs-app-ask-*` | 批注会话、锚点、编辑框与卡片，以及行内提问 |
+| `docs-app-frame-*`、`docs-app-widget-*` | 宿主手势与嵌入组件桥接 |
+| `docs-app-session-*`、`docs-app-application-*` | 会话导航、应用路由与最终挂载 |
+| `docs-app-phone-*`、`docs-app-run-*`、`docs-app-presence-*` | 手机浮层、运行评审与在线状态／对话入口 |
+| `cds-menu-*`、`cds-popover*`、`cds-sheet*` | 菜单、弹层、移动端抽屉与键盘交互 |
+| `cds-comment-*`、`cds-composer*`、`cds-text-*`、`cds-field-*` | 批注卡片、编辑框、文本输入与表单基础 |
+| 其余 `cds-*` | 设计 token、工具栏、头像、折叠、加载状态、语言选择、表格、提示与通知 |
+
+大型组件提取的 helper 和回调保持原来的 React hooks 顺序及调用条件；跨模块闭包状态使用显式活绑定，延迟回调仍读取执行时的状态。应用的样式注入、平台配置、预加载与 `createRoot().render()` 保留原顺序且只执行一次。下文使用兼容入口名指代同前缀的实现模块组，具体定义按函数名定位。
 
 ### 平台核心模块
 
