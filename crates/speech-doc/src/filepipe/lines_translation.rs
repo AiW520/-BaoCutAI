@@ -92,6 +92,15 @@ fn chunks_over(units: usize, one_row: usize, params: &TransParams) -> usize {
 ///   DeepSeek V4 Flash 0.85 on the Korean one; design doc §8.16). Their
 ///   budgets ran about twice what the answers needed, so budget-sized hints
 ///   asked for 1.7× the chunks.
+/// - Chinese source into English: 2.7, the rows-carrier answers of two
+///   Chinese videos (pooled p75 2.6 over 243 sentences; 2.9–3.4 on the
+///   unpunctuated one, 2.2–2.3 on the other; design doc §8.16). On the
+///   unpunctuated video every budget ran above the estimate, and Gemini 3.8
+///   Flash, asked for budget-sized ≥7–14 chunks, wrote 10–14% longer
+///   translations than rows, enough to put sentences over their budget and
+///   their cues over the reading speed; with this estimate it wrote 3–4%
+///   shorter. A higher ratio would bring back that over-ask; a lower one
+///   costs rewrite turns for chunks over `hard`.
 ///
 /// Thai into Chinese was measured too (0.40, 104 translations) and is left
 /// out on purpose: its hint of ≥3 gave three long Thai pieces, and DeepSeek
@@ -99,9 +108,8 @@ fn chunks_over(units: usize, one_row: usize, params: &TransParams) -> usize {
 /// (0 of 16 with the budget's five shorter pieces). Every other pair, Thai
 /// into any other language and Lao, Khmer or Burmese sources included,
 /// returns `None` and the caller falls back to the budget. A Chinese source
-/// is not estimated (into English it measured 2.6–2.8, but on those two
-/// videos the budget was the smaller bound for most sentences), nor is a
-/// Japanese or Korean one into anything but Chinese.
+/// into anything but English is not estimated, nor is a Japanese or Korean
+/// one into anything but Chinese.
 fn estimated_units(source: &str, source_lang: &str, target_lang: &str) -> Option<usize> {
     let target = crate::split::primary_subtag(target_lang);
     let ratio = match (
@@ -109,6 +117,7 @@ fn estimated_units(source: &str, source_lang: &str, target_lang: &str) -> Option
         target.as_str(),
     ) {
         ("ja" | "ko", "zh") => 0.85,
+        ("zh", "en") => 2.7,
         ("zh" | "ja" | "ko", _) => return None,
         _ => match (dominant_script(source)?, target.as_str()) {
             (SourceScript::Latin, "zh" | "ja" | "ko") => 0.34,
@@ -2492,8 +2501,8 @@ mod tests {
     }
 
     /// 只有量过的语言对有长度预测；泰文源只登记了英文目标（中文量过但会让
-    /// 模型照抄原文，不登记），其余目标语、老挝 / 高棉 / 缅甸文源、中日韩源
-    /// 都回到预算。
+    /// 模型照抄原文，不登记），其余目标语、老挝 / 高棉 / 缅甸文源都回到预算；
+    /// 中日韩源只登记了中→英与日、韩→中。
     #[test]
     fn only_measured_pairs_are_estimated() {
         let thai = "ลลิตาไม่ได้ยกเลิกการประชุมแต่เลื่อนไปเป็นวันพฤหัสบดีเวลา14:30น.";
@@ -2523,7 +2532,13 @@ mod tests {
             None
         );
         assert_eq!(estimated_units("我用 ChatGPT 写代码", "zh", "ja"), None);
-        assert_eq!(estimated_units("我用 ChatGPT 写代码", "zh", "en"), None);
+        // Chinese into English counts source characters the same way.
+        assert_eq!(estimated_units("我用 ChatGPT 写代码", "zh", "en"), Some(33));
+        assert_eq!(
+            estimated_units("我用 ChatGPT 写代码", "zh-Hans", "en-US"),
+            Some(33)
+        );
+        assert_eq!(estimated_units("我用 ChatGPT 写代码", "zh", "de"), None);
         // Japanese and Korean into Chinese count source characters, Latin
         // product names included; into any other target they stay unestimated.
         assert_eq!(
@@ -2564,6 +2579,28 @@ mod tests {
             chunk_hint(&sentence, "zh", "ja", &TransParams::for_lang("ja")),
             6
         );
+    }
+
+    /// 中文源翻成英文：没有标点的长句预算都比预测长，按预算要块时 Gemini 在
+    /// 这类句子上的译文比 rows 长一成、有的整句超出读速（§8.16 的 `b8fa938f`
+    /// 第 2 句：84 字、预算 290，`≥11`）；按预测要 `≥9`。预算更小时仍按预算。
+    #[test]
+    fn a_chinese_sentence_into_english_is_hinted_by_its_predicted_length() {
+        let en = TransParams::for_lang("en");
+        let source = "但你好我是一名二十七岁美高美本毕业以后进入美国大厂当了五年程序员然后在硅谷抑郁了没有了劲的女生不知道应不应该接工资不高的 offer 回国我从小一直都在恐惧和压力中拼命向前";
+        let mut sentence = TranslateSentence::new("zh-02", source);
+        sentence.budget = Some(290);
+        assert_eq!(estimated_units(source, "zh", "en"), Some(227));
+        assert_eq!(chunks_for_units(290, &en), 11);
+        assert_eq!(chunk_hint(&sentence, "zh", "en", &en), 9);
+        sentence.budget = Some(120);
+        assert_eq!(chunk_hint(&sentence, "zh", "en", &en), 5);
+        // A short sentence predicted within one row asks for no chunks even
+        // when its budget would have asked for three.
+        let mut short = TranslateSentence::new("zh-03", "我用 ChatGPT 写代码");
+        short.budget = Some(60);
+        assert_eq!(chunks_for_units(60, &en), 3);
+        assert_eq!(chunk_hint(&short, "zh", "en", &en), 1);
     }
 
     /// 泰文源带预算翻成英文：首轮的 `≥k` 按预测长度要，不再按预算上限要
