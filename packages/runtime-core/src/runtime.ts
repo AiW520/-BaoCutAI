@@ -51,6 +51,7 @@ import { AgentGrants } from './agent-tools/grants.ts';
 import { loadAgentGuidance } from './agent-tools/guidance.ts';
 import { TaskTools } from './agent-tools/task-tools.ts';
 import { openCredentialStore, type CredentialStoreOptions } from './credentials.ts';
+import { retitleFromLinkImports } from './conversation-titles.ts';
 import { McpEndpoint } from './agent-tools/mcp-endpoint.ts';
 import { AgentScope } from './agent-tools/agent-scope.ts';
 import { LocalScope } from './agent-tools/local-scope.ts';
@@ -736,6 +737,8 @@ export async function startRuntime(options: StartRuntimeOptions = {}): Promise<R
     settings.store.onChange((changed) => {
       if ('agent.defaultDriver' in changed || 'agent.defaultModel' in changed) harness.agentsChanged();
     });
+    // 会话里的智能体从链接下载、解析出平台给的标题时，按第一句话起的会话标题换成它（产品设计 §3.1）。
+    retitleFromLinkImports(models.jobs, harness);
     harnessRef = harness;
     harnessOpened(harness);
     // 应用内运行的安装、升级命令：停 Harness 之前结束它们（结束后的重新探测要用 Harness）。

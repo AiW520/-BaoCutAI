@@ -1730,6 +1730,28 @@ export class Harness {
     state.upsert({ kind: 'video-change', id: `change/${change.transactionId}`, createdAt: nowIso(), taskId, ...change });
   }
 
+  /**
+   * 智能体从链接下载的素材有了平台给的标题（架构设计 §7.9）：会话标题还是按第一句话起的（用户没改过、创建时没给）时换成它，
+   * 写法与按第一句话起的相同（第一行，最多 40 字）。换过之后标题不再等于按第一句话起的，所以只换一次。不算会话的活动
+   * （不改 `updatedAt`）。返回换了没有。
+   */
+  retitleFromMedia(conversationId: Id, mediaTitle: string): boolean {
+    const state = this.#states.get(conversationId);
+    if (!state) return false;
+    const title = deriveTitle(mediaTitle);
+    const current = state.conversation.title;
+    if (!title || title === current) return false;
+    let auto = '';
+    for (const item of state.items()) {
+      if (item.kind !== 'user-message') continue;
+      auto = deriveTitle(item.text);
+      if (auto) break;
+    }
+    if (current !== auto) return false;
+    state.updateConversation({ title }, { touch: false });
+    return true;
+  }
+
   /** 智能体经 `videos_create` 新建了视频：会话里记一条，界面的视频卡从它出现（产品设计 §3.2.2、架构设计 §11.3）。 */
   recordVideoCreated(conversationId: Id, taskId: Id | null, created: VideoCreated): void {
     const state = this.#states.get(conversationId);
