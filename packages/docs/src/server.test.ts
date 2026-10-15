@@ -6,6 +6,7 @@ import path from 'node:path';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { WebSocket } from 'ws';
 import { createDocsConnector, type DocsConnector } from './connector.ts';
+import { LOCAL_PRINCIPAL } from './door.ts';
 import { DocsServer } from './server.ts';
 
 const actor = { id: 'claude', name: 'Agent' };
@@ -379,6 +380,61 @@ describe('mux', () => {
     expect(last.data.diff[0]!.address.ref).toEqual({ object: 'utterance', id: asked.id });
     // 编辑器只把 external + via mcp 认作智能体
     expect(last.data.actor).toEqual({ principal: 'claude', channel: 'external', via: 'mcp' });
+  });
+
+  type ProjectEnvelope = {
+    ev: string;
+    data: { actor: object; diff: { address: { ref: { object: string; id: string } }; after?: { tabs: Record<string, { name: string }> } }[] };
+  };
+  const projectEnvelopes = (client: Client, feed: string) =>
+    client.frames
+      .filter(isTopic(feed))
+      .map((frame) => JSON.parse(frame['data'] as string) as ProjectEnvelope)
+      .filter((envelope) => envelope.data.diff.some((entry) => entry.address.ref.object === 'project'));
+
+  it('智能体经连接器加标签页：开着的编辑器从 feed 收到改后的项目值，actor 是智能体（编辑器据此提示 The agent added a tab）', async () => {
+    const editor = await connect();
+    const feed = `feed:project/${project.id}`;
+    editor.socket.send(JSON.stringify({ op: 'sub', topic: feed }));
+    await editor.next((frame) => frame['op'] === 'ack' && frame['topic'] === feed);
+    const result = (await connector.batch(
+      docDir,
+      {
+        container: { kind: 'project', id: project.id },
+        batch: [
+          { $lid: 'f', verb: 'create', object: 'file', payload: { value: { birthName: 'Open questions.ldoc' } } },
+          { verb: 'update', ref: { object: 'project', id: project.id }, payload: { kind: 'patch', patch: [{ op: 'set', path: ['tabs', '$lid:f'], value: { name: 'Open questions' } }] } },
+        ],
+      },
+      actor,
+    )) as { lids: Record<string, string> };
+    const tab = result.lids['f']!;
+    await vi.waitFor(() => expect(projectEnvelopes(editor, feed).some((envelope) => envelope.data.diff[0]!.after?.tabs[tab])).toBe(true));
+    const last = projectEnvelopes(editor, feed).at(-1)!;
+    expect(last.data.diff).toEqual([{ address: { ref: { object: 'project', id: project.id } }, after: expect.objectContaining({ id: project.id }) }]);
+    expect(last.data.diff[0]!.after!.tabs[tab]).toEqual({ name: 'Open questions' });
+    // 编辑器只把 external + via mcp 认作智能体（isRealTabFile）
+    expect(last.data.actor).toEqual({ principal: 'claude', channel: 'external', via: 'mcp' });
+  });
+
+  it('本机用户在编辑器里加标签页：feed 上的项目改动 actor 是 human、没有 via（编辑器不提示）', async () => {
+    const editor = await connect();
+    const feed = `feed:project/${project.id}`;
+    editor.socket.send(JSON.stringify({ op: 'sub', topic: feed }));
+    await editor.next((frame) => frame['op'] === 'ack' && frame['topic'] === feed);
+    editor.socket.send(doorFrame(1, 'o', { verb: 'create', object: 'file', payload: { value: { birthName: 'Notes.ldoc' } } }));
+    const created = JSON.parse((await editor.next((frame) => frame['op'] === 'doorack' && frame['rid'] === 1))['body'] as string) as { verdict: string; minted: string };
+    expect(created.verdict).toBe('allow');
+    editor.socket.send(
+      doorFrame(2, 'o', {
+        verb: 'update',
+        ref: { object: 'project', id: project.id },
+        payload: { kind: 'patch', patch: [{ op: 'set', path: ['tabs', created.minted], value: { name: 'Notes' } }] },
+      }),
+    );
+    await editor.next((frame) => frame['op'] === 'doorack' && frame['rid'] === 2);
+    await vi.waitFor(() => expect(projectEnvelopes(editor, feed).some((envelope) => envelope.data.diff[0]!.after?.tabs[created.minted])).toBe(true));
+    for (const envelope of projectEnvelopes(editor, feed)) expect(envelope.data.actor).toEqual({ principal: LOCAL_PRINCIPAL, channel: 'human' });
   });
 
   it('跨源的升级被拒', async () => {

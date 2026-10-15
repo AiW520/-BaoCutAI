@@ -273,6 +273,10 @@ export class DocsServer implements DocsConnectorHost {
       const diff = [{ address: { ref: { object: 'utterance', id: event.threadId } }, after: { parent: { object: 'node', id: event.nodeId } } }];
       mux.broadcast(feed, envelope(diff));
     } else {
+      // 编辑器的标签栏从 feed 收项目的改动：地址是 project，`after` 是改后的项目值（没有 `after` 编辑器当作文档被删了），
+      // 按信封里的 actor 认出智能体加的标签页，提示「The agent added a tab」。room 照旧重发。
+      const diff = [{ address: { ref: { object: 'project', id: doc.id } }, after: projectValue(doc.meta) }];
+      mux.broadcast(feed, envelope(diff));
       for (const connection of mux.connections) this.#sendFold(doc, connection, `room:project/${doc.id}`);
     }
   }
