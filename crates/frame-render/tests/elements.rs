@@ -972,7 +972,7 @@ fn svg_images_use_the_kernel_raster_and_missing_bytes_are_refused() {
     let video = video(vec![full_image("im", 0, 0, 30)], vec![svg_asset("a_im", 10, 10)], json!({}));
     let mut media = Media::default();
     // 界面给的画面不用：SVG 只从素材字节画。
-    media.pictures.insert("im".into(), solid(10, 10, YELLOW));
+    media.pictures.insert("im".into(), std::sync::Arc::new(solid(10, 10, YELLOW)));
     let error = try_render(&mut renderer(false, frame_render::Documents::default()), &video, 0.5, &mut media).unwrap_err();
     assert_eq!(
         (error.items[0].scope, error.items[0].reason.as_str()),
@@ -1034,7 +1034,7 @@ fn gif_images_play_from_their_bytes_and_loop() {
     let video = video(vec![full_image("im", 0, 0, 90)], vec![gif_asset("a_im", 8, 8)], json!({}));
     let mut media = Media::default();
     // 界面给的画面不用：GIF 只从素材字节解。
-    media.pictures.insert("im".into(), solid(8, 8, WHITE));
+    media.pictures.insert("im".into(), std::sync::Arc::new(solid(8, 8, WHITE)));
     media.assets.insert("a_im".into(), STRIPES_GIF.to_vec());
     let mut renderer = renderer(false, frame_render::Documents::default());
     // 帧表 [0, 100) [100, 300) [300, 600) [600, 1000)；过了 1 秒从头再来。

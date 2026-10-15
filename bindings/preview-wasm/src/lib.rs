@@ -83,15 +83,15 @@ struct SetVideo {
 /// 界面送进来的画面、素材字节与频谱。
 #[derive(Default)]
 struct Media {
-    pictures: HashMap<String, Pixmap>,
+    pictures: HashMap<String, Arc<Pixmap>>,
     assets: HashMap<String, Vec<u8>>,
     spectra: HashMap<String, Vec<u8>>,
     audio_spectra: HashMap<String, Vec<u8>>,
 }
 
 impl LayerMedia for Media {
-    fn picture(&mut self, layer: &VisualLayer) -> Result<Option<&Pixmap>, RenderError> {
-        Ok(self.pictures.get(&layer.item_id))
+    fn picture(&mut self, layer: &VisualLayer) -> Result<Option<Arc<Pixmap>>, RenderError> {
+        Ok(self.pictures.get(&layer.item_id).cloned())
     }
 
     fn asset_bytes(&mut self, asset: &VersionRef) -> Option<Vec<u8>> {
@@ -343,7 +343,7 @@ pub fn set_picture(key: &str, rgba: Vec<u8>, width: u32, height: u32) -> Result<
         return Err(failure("INVALID_PICTURE", format!("画面 {key} 的字节数与 {width}×{height} 不符")));
     }
     let picture = frame_render::premultiplied(width, height, rgba).ok_or_else(|| failure("INVALID_PICTURE", "画面尺寸不可用"))?;
-    STATE.with_borrow_mut(|state| state.media.pictures.insert(key.to_string(), picture));
+    STATE.with_borrow_mut(|state| state.media.pictures.insert(key.to_string(), Arc::new(picture)));
     Ok(())
 }
 

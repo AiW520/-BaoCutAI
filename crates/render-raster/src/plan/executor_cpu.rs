@@ -2,7 +2,8 @@
 //!
 //! **折叠保证**：`FramePlan::is_folded()` 为真时，[`execute_plan`] 直接调
 //! `raster::rasterize_with_media`——与「`record(t)` 之后原样光栅化」是同一个
-//! 函数调用，不多一次分配、不多一次拷贝，因此逐字节相同。
+//! 函数调用，不多一次分配、不多一次拷贝，因此逐字节相同。调用方还回来的旧画布
+//! （[`CpuExecutor::recycle`]）经 `rasterize_with_media_into` 接着用，结果同样逐字节相同。
 
 use super::cache::SurfaceCache;
 use super::capability::CapabilityProfile;
@@ -11,7 +12,7 @@ use super::pass::RenderPass;
 use super::surface::{CompositeInput, SurfaceId, SurfacePlan};
 use crate::drawop::FrameOps;
 use crate::emissive::{composite_associated, has_emissive_components};
-use crate::raster::{FrameMedia, rasterize_with_media};
+use crate::raster::{FrameMedia, rasterize_with_media_into};
 use anyhow::{Result, anyhow, bail};
 use motion::effect::{BlendMode, EffectRef, UniformMap};
 use std::collections::BTreeMap;
@@ -161,11 +162,19 @@ pub trait PassExecutor {
 
 pub struct CpuExecutor {
     caps: CapabilityProfile,
+    /// 调用方用完还回来的画布（[`Self::recycle`]）：下一次同尺寸的 Draw 画在它上面。
+    spare: Option<Pixmap>,
 }
 
 impl CpuExecutor {
     pub fn new(caps: CapabilityProfile) -> Self {
-        CpuExecutor { caps }
+        CpuExecutor { caps, spare: None }
+    }
+
+    /// 还回一块用完的画布（内容不要紧）：下一次同尺寸的 Draw 不再新建、清零一整幅（逐帧导出的整幅层）。
+    /// 只留一块，新还的顶替旧的。
+    pub fn recycle(&mut self, canvas: Pixmap) {
+        self.spare = Some(canvas);
     }
 }
 
@@ -186,7 +195,11 @@ impl PassExecutor for CpuExecutor {
         ops: &FrameOps,
         media: &mut dyn FrameMedia,
     ) -> Result<Pixmap> {
-        let mut pixmap = rasterize_with_media(ops, surface.width, surface.height, media)?;
+        let canvas = self
+            .spare
+            .take_if(|canvas| (canvas.width(), canvas.height()) == (surface.width, surface.height));
+        let mut pixmap =
+            rasterize_with_media_into(ops, surface.width, surface.height, canvas, media)?;
         if let Some(clear) = surface.clear {
             // 清屏色在 DrawOp 之前生效；`Clear` 指令会覆盖它，两者不冲突。
             let mut base = Pixmap::new(surface.width, surface.height)

@@ -1,12 +1,14 @@
 //! 媒体层的画面：每个视频实例一条顺序解码流，图片解一次（SVG 与 GIF 图片由帧光栅从素材字节自己解，见 `asset_bytes`；
 //! 这里的 SVG 分支只接媒体类型没记成 SVG、文件却是 `.svg` 的素材）；解出来的非预乘 RGBA
-//! 换成预乘的画面交给帧光栅。视频帧的像素从解码器换过来（不复制），解码器还在同一帧时原样再用；探测说素材不带透明时
+//! 换成预乘的画面共享给帧光栅（不复制）。视频帧的像素从解码器换过来（不复制），解码器还在同一帧时原样再用，换下一帧时
+//! 帧光栅早已放掉它借去的引用，缓冲原样还给解码器；探测说素材不带透明时
 //! alpha 全是 255、本来就是预乘的，不逐像素预乘。Lottie 贴纸要的素材字节按冻结的位置读；声波要的素材频谱从冻结的声音文件算，每个素材版本
 //! 算一次（[`frame_render::spectrum::analyze_file`]）。
 //! 一段时间没用到的解码流关掉（子进程不攒着），再用到时从目标前的关键帧重开。
 //! 视频先走平台原生解码（[`crate::native`]），每个素材各自回落 ffmpeg；图片仍经 ffmpeg 解。
 
 use std::collections::HashMap;
+use std::sync::Arc;
 
 use frame_render::support::{UnsupportedItem, kind_name};
 use frame_render::{LayerMedia, RenderError, premultiplied};
@@ -28,8 +30,8 @@ const IDLE_FRAMES: u64 = 90;
 enum Media {
     Video {
         decoder: Box<VideoDecoder>,
-        /// 当前帧（预乘）。像素是从解码器换出来的，不复制。
-        pixmap: Option<Pixmap>,
+        /// 当前帧（预乘）。像素是从解码器换出来的，不复制；共享给帧光栅，画完一帧它就放掉。
+        pixmap: Option<Arc<Pixmap>>,
         /// `pixmap` 是解码器的哪一帧（[`VideoDecoder::advance`] 的代号）。
         generation: u64,
         /// 素材可能带透明：要逐像素预乘；不带时解出来的 alpha 都是 255，预乘不改任何值，跳过。
@@ -37,7 +39,7 @@ enum Media {
         alpha: bool,
         asset_id: String,
     },
-    Still(Pixmap),
+    Still(Arc<Pixmap>),
 }
 
 pub struct Sources<'a> {
@@ -241,7 +243,7 @@ fn premultiply(data: &mut [u8]) {
 }
 
 impl LayerMedia for Sources<'_> {
-    fn picture(&mut self, layer: &VisualLayer) -> Result<Option<&Pixmap>, RenderError> {
+    fn picture(&mut self, layer: &VisualLayer) -> Result<Option<Arc<Pixmap>>, RenderError> {
         let id = layer.item_id.clone();
         if !self.media.contains_key(&id) {
             let Some(info) = self.picture_info(layer)? else {
@@ -251,16 +253,16 @@ impl LayerMedia for Sources<'_> {
                 let bytes =
                     std::fs::read(&info.path).map_err(|e| RenderError::new("EXPORT_DECODE_FAILED", format!("SVG 图片读不到：{e}")))?;
                 let long_edge = crate::preflight::svg_long_edge(self.input);
-                Media::Still(
+                Media::Still(Arc::new(
                     frame_render::decode_svg(&bytes, long_edge)
                         .map_err(|e| RenderError::new("EXPORT_DECODE_FAILED", format!("SVG 图片解不开：{e:#}")))?,
-                )
+                ))
             } else if layer.kind == LayerKind::Image {
                 let picture = decode_still(&self.tools, &info.path, info.width, info.height).map_err(decode_error)?;
-                Media::Still(
+                Media::Still(Arc::new(
                     premultiplied(picture.width, picture.height, picture.data)
                         .ok_or_else(|| RenderError::new("EXPORT_DECODE_FAILED", "图片的尺寸不对"))?,
-                )
+                ))
             } else {
                 let asset = layer.asset.as_ref().expect("上面查过");
                 let origin = self.input.pts_origin(&asset.id, &asset.revision);
@@ -291,7 +293,7 @@ impl LayerMedia for Sources<'_> {
         }
         self.last_used.insert(id.clone(), self.frame);
         match self.media.get_mut(&id).expect("上面放进去了") {
-            Media::Still(pixmap) => Ok(Some(pixmap)),
+            Media::Still(pixmap) => Ok(Some(pixmap.clone())),
             Media::Video {
                 decoder,
                 pixmap,
@@ -302,20 +304,25 @@ impl LayerMedia for Sources<'_> {
                 let seconds = layer.source_seconds.unwrap_or(0.0).max(0.0);
                 let current = decoder.advance(seconds).map_err(decode_error)?;
                 if pixmap.is_none() || *generation != current {
-                    // 换上新的一帧：上一帧的缓冲还给解码器，新一帧的像素直接做成画面。
-                    let spare = pixmap.take().map(Pixmap::take).unwrap_or_default();
+                    // 换上新的一帧：上一帧的缓冲还给解码器（帧光栅画完上一帧就放掉了它借去的引用，这里是独一份；
+                    // 万一还有人拿着就不抢，解码器自己另要一块），新一帧的像素直接做成画面。
+                    let spare = pixmap
+                        .take()
+                        .and_then(|previous| Arc::try_unwrap(previous).ok())
+                        .map(Pixmap::take)
+                        .unwrap_or_default();
                     let mut picture = decoder.swap_current(spare).expect("advance 成功就有当前帧");
                     if *alpha {
                         premultiply(&mut picture.data);
                     }
                     let size = IntSize::from_wh(picture.width, picture.height)
                         .ok_or_else(|| RenderError::new("EXPORT_DECODE_FAILED", "画面的尺寸不对"))?;
-                    *pixmap = Some(
+                    *pixmap = Some(Arc::new(
                         Pixmap::from_vec(picture.data, size).ok_or_else(|| RenderError::new("EXPORT_DECODE_FAILED", "画面的尺寸不对"))?,
-                    );
+                    ));
                     *generation = current;
                 }
-                Ok(pixmap.as_ref())
+                Ok(pixmap.clone())
             }
         }
     }

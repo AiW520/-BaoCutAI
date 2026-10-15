@@ -4,7 +4,7 @@
 #![allow(dead_code)]
 
 use std::collections::HashMap;
-use std::sync::OnceLock;
+use std::sync::{Arc, OnceLock};
 
 use frame_render::{Documents, FrameRenderer, LayerMedia, RenderError, RenderOptions, premultiplied};
 use render_graph::{FramePlan, VideoView, VisualLayer, plan_interactive};
@@ -223,7 +223,7 @@ pub fn video(items: Vec<Value>, assets: Vec<(String, Value)>, sequence: Value) -
 /// 按实例 ID 给源画面与声波频谱、按素材 ID 给素材字节、按 `素材ID@版本` 给素材频谱。
 #[derive(Default)]
 pub struct Media {
-    pub pictures: HashMap<String, Pixmap>,
+    pub pictures: HashMap<String, Arc<Pixmap>>,
     pub assets: HashMap<String, Vec<u8>>,
     pub spectra: HashMap<String, Vec<u8>>,
     pub audio_spectra: HashMap<String, Vec<u8>>,
@@ -231,14 +231,14 @@ pub struct Media {
 
 impl Media {
     pub fn with(mut self, item_id: &str, picture: Pixmap) -> Media {
-        self.pictures.insert(item_id.into(), picture);
+        self.pictures.insert(item_id.into(), Arc::new(picture));
         self
     }
 }
 
 impl LayerMedia for Media {
-    fn picture(&mut self, layer: &VisualLayer) -> Result<Option<&Pixmap>, RenderError> {
-        Ok(self.pictures.get(&layer.item_id))
+    fn picture(&mut self, layer: &VisualLayer) -> Result<Option<Arc<Pixmap>>, RenderError> {
+        Ok(self.pictures.get(&layer.item_id).cloned())
     }
 
     fn asset_bytes(&mut self, asset: &VersionRef) -> Option<Vec<u8>> {

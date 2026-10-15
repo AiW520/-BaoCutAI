@@ -121,15 +121,15 @@ fn unhex(text: &str) -> Vec<u8> {
 /// 夹具里的输入原样送进渲染器：按实例给画面与频谱、按 `素材ID@版本` 给素材字节与素材频谱（与预览 WASM 相同）。
 #[derive(Default)]
 struct FixtureMedia {
-    pictures: BTreeMap<String, Pixmap>,
+    pictures: BTreeMap<String, Arc<Pixmap>>,
     assets: BTreeMap<String, Vec<u8>>,
     spectra: BTreeMap<String, Vec<u8>>,
     audio_spectra: BTreeMap<String, Vec<u8>>,
 }
 
 impl LayerMedia for FixtureMedia {
-    fn picture(&mut self, layer: &VisualLayer) -> Result<Option<&Pixmap>, RenderError> {
-        Ok(self.pictures.get(&layer.item_id))
+    fn picture(&mut self, layer: &VisualLayer) -> Result<Option<Arc<Pixmap>>, RenderError> {
+        Ok(self.pictures.get(&layer.item_id).cloned())
     }
 
     fn asset_bytes(&mut self, asset: &VersionRef) -> Option<Vec<u8>> {
@@ -1669,7 +1669,7 @@ fn render_scene(scene: &Value) -> Vec<Value> {
         );
         let bands: Vec<[u8; 4]> = serde_json::from_value(picture["bands"].clone()).unwrap();
         let pixmap = premultiplied(w, h, bands_rgba(w, h, &bands)).unwrap();
-        media.pictures.insert(picture["itemId"].as_str().unwrap().into(), pixmap);
+        media.pictures.insert(picture["itemId"].as_str().unwrap().into(), Arc::new(pixmap));
     }
     for asset in scene["assets"].as_array().unwrap() {
         let bytes = match asset["hex"].as_str() {

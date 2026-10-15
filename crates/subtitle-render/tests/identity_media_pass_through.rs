@@ -5,7 +5,8 @@
 //! 恒等形态下原本要做三次满幅 8.3 MB 分配、两次满幅 Bilinear 重采样和一次满幅
 //! alpha 扫描——全部是恒等运算。快路径把它们省掉，前提是这几步在恒等参数下
 //! **逐字节不改画面**；下面头两个测试就是这个前提的实测，第三个测试盯住整条
-//! `render_media_element` 的输出仍等于源图，第四个盯住非恒等形态没被误判。
+//! `render_media_element` 的输出仍等于源图，第四个盯住非恒等形态没被误判。直通还不复制源图：
+//! 交给光栅的就是宿主共享进来的那一份，要改像素时才复制（`identity_pass_through_shares_…`）。
 use serde_json::{Value, json};
 use std::sync::Arc;
 use subtitle_render::{OverlayRenderPlan, draw_fit_pixmap};
@@ -86,10 +87,14 @@ fn studio_document() -> Value {
 
 /// `place.w` 百分比 → 是否把源图原样透出。
 fn render_pip(width_percent: f64) -> Pixmap {
+    Arc::unwrap_or_clone(render_pip_shared(json!({"w": width_percent})).1)
+}
+
+/// 按 `place` 画一个 PIP 图片元素，返回素材的源图与画出的层（两者是否同一份）。
+fn render_pip_shared(place: Value) -> (Arc<Pixmap>, Arc<Pixmap>) {
+    let source = Arc::new(noise(WIDTH, HEIGHT));
     let mut assets = render_raster::LoadedAssets::default();
-    assets
-        .images
-        .insert("probe".to_owned(), Arc::new(noise(WIDTH, HEIGHT)));
+    assets.images.insert("probe".to_owned(), source.clone());
     let mut plan =
         OverlayRenderPlan::compile(&studio_document(), WIDTH, HEIGHT, 3.0, 30.0, None).unwrap();
     plan.media.base = render_raster::MediaStore::new(Arc::new(assets), 30.0);
@@ -98,14 +103,28 @@ fn render_pip(width_percent: f64) -> Pixmap {
             "id": "el-1", "kind": "image", "srcId": "probe",
             "start": 0.0, "end": 3.0,
             "mode": "pip", "fit": "contain",
-            "place": {"w": width_percent}
+            "place": place
         }]}]}
     }))
     .unwrap();
     let element = plan.elements[0].clone();
-    plan.render_media_element(&element, 1.0, Default::default())
+    let rendered = plan
+        .render_media_element(&element, 1.0, Default::default())
         .unwrap()
-        .expect("媒体元素必须出图")
+        .expect("媒体元素必须出图");
+    (source, rendered)
+}
+
+/// 恒等直通不复制源图：交出去的就是素材那一份（导出的解码帧不再整帧复制）。要改像素（这里是不透明度）时才复制一份，
+/// 素材那一份不变。
+#[test]
+fn identity_pass_through_shares_the_source_and_copies_only_to_modify_it() {
+    let (source, rendered) = render_pip_shared(json!({"w": 100.0}));
+    assert!(Arc::ptr_eq(&source, &rendered));
+    let (source, rendered) = render_pip_shared(json!({"w": 100.0, "opacity": 0.5}));
+    assert!(!Arc::ptr_eq(&source, &rendered));
+    assert_eq!(source.data(), noise(WIDTH, HEIGHT).data());
+    assert_ne!(rendered.data(), source.data());
 }
 
 /// 恒等 PIP（盒子等于画布、无 fx/mask/tile/变换、满不透明）必须逐字节透出源图。
@@ -156,9 +175,11 @@ fn render_fullscreen(source: Pixmap, bg: &str) -> Pixmap {
     }))
     .unwrap();
     let element = plan.elements[0].clone();
-    plan.render_media_element(&element, 1.0, Default::default())
-        .unwrap()
-        .expect("媒体元素必须出图")
+    Arc::unwrap_or_clone(
+        plan.render_media_element(&element, 1.0, Default::default())
+            .unwrap()
+            .expect("媒体元素必须出图"),
+    )
 }
 
 /// 旧背景板路径的参考结果：画布铺底色，再 contain 贴源图。

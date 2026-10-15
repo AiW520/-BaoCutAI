@@ -84,7 +84,10 @@ pub trait LayerMedia {
         false
     }
     /// 视频或图片层这一刻的画面（按源的显示尺寸，预乘的 RGBA）。`None`：这一层的素材在跳过的清单里，不画。
-    fn picture(&mut self, layer: &VisualLayer) -> Result<Option<&Pixmap>, RenderError>;
+    ///
+    /// 共享给帧光栅，不复制：不裁剪、没有效果时原样交给内核，画完这一层就放掉（[`FrameRenderer::render`] 返回时
+    /// 这里给出的引用都已放掉，调用方可以 `Arc::try_unwrap` 拿回缓冲，比如还给解码器）。
+    fn picture(&mut self, layer: &VisualLayer) -> Result<Option<Arc<Pixmap>>, RenderError>;
 
     /// 素材的原始字节（Lottie 贴纸要读它）。缺省没有。
     fn asset_bytes(&mut self, _asset: &VersionRef) -> Option<Vec<u8>> {
@@ -502,20 +505,31 @@ impl FrameRenderer {
     }
 
     /// 把一层叠到帧上。帧上还只有没铺的底、这一层又整幅不透明时，叠出来就是这一层本身：直接接管它，省掉铺底与整帧拷贝
-    /// （导出每帧的整幅视频）。
+    /// （导出每帧的整幅视频）。用完的那一幅（接管时是原来的帧，否则是这一层）还给内核当下一层的画布。
     fn composite(&mut self, layer: Pixmap) {
         if self.background.is_some()
             && (layer.width(), layer.height()) == (self.frame.width(), self.frame.height())
             && render_raster::raster::is_opaque(layer.data())
         {
-            self.frame = layer;
+            let old = std::mem::replace(&mut self.frame, layer);
             self.background = None;
             self.frame_plain = true;
+            self.recycle(old);
             return;
         }
         self.paint_background();
         if !over(&mut self.frame, &layer, self.frame_plain) {
             self.frame_plain = false;
+        }
+        self.recycle(layer);
+    }
+
+    /// 一幅用完的整幅画布还给画实例的内核计划（[`OverlayRenderPlan::recycle_canvas`]）：下一层画在它上面，不再新建、清零。
+    fn recycle(&mut self, canvas: Pixmap) {
+        if let Some(plan) = self.elements.as_mut()
+            && (canvas.width(), canvas.height()) == (self.options.width, self.options.height)
+        {
+            plan.recycle_canvas(canvas);
         }
     }
 
@@ -577,7 +591,7 @@ impl FrameRenderer {
         let short_edge = f64::from(size.0.min(size.1));
 
         let mut natural = None;
-        let mut injected: Option<Pixmap> = None;
+        let mut injected: Option<Arc<Pixmap>> = None;
         match (&layer.kind, &layer.content) {
             (LayerKind::Video | LayerKind::Image, _) => {
                 let decoded = if layer.kind == LayerKind::Image && context.is_svg(layer.asset.as_ref()) {
@@ -599,17 +613,23 @@ impl FrameRenderer {
                 } else {
                     None
                 };
-                let picture = match &decoded {
-                    Some(decoded) => decoded.as_ref(),
+                let picture = match decoded {
+                    Some(decoded) => decoded,
                     None => match media.picture(layer)? {
                         Some(picture) => picture,
                         None => return Ok(None),
                     },
                 };
-                let mut source = cropped(picture, crop_of(item))
-                    .ok_or_else(|| RenderError::new("EXPORT_RENDER_FAILED", format!("实例 {} 的源画面尺寸不可用", layer.item_id)))?;
+                // 不裁剪时源画面原样共享给内核（导出每帧的整幅视频不再整帧复制）；要作用效果时才复制一份。
+                let mut source =
+                    match crop_of(item) {
+                        None => picture,
+                        Some(rect) => Arc::new(cropped(&picture, rect).ok_or_else(|| {
+                            RenderError::new("EXPORT_RENDER_FAILED", format!("实例 {} 的源画面尺寸不可用", layer.item_id))
+                        })?),
+                    };
                 if let Some(fx) = &fx {
-                    apply_to_source(fx, &mut source, short_edge);
+                    apply_to_source(fx, Arc::make_mut(&mut source), short_edge);
                 }
                 natural = Some((f64::from(source.width()), f64::from(source.height())));
                 injected = Some(source);
@@ -627,9 +647,9 @@ impl FrameRenderer {
                 let (w, h) = (geom.w.round().clamp(1.0, 4096.0) as u32, geom.h.round().clamp(1.0, 4096.0) as u32);
                 let at = lottie_time(parameters, layer.source_seconds.unwrap_or(0.0), meta.duration());
                 let frame = lottie.sample_scaled(MediaTime::from_secs(at), w, h).map_err(RenderError::render)?;
-                let mut source = Arc::try_unwrap(frame.pixmap).unwrap_or_else(|shared| (*shared).clone());
+                let mut source = frame.pixmap;
                 if let Some(fx) = &fx {
-                    apply_to_source(fx, &mut source, short_edge);
+                    apply_to_source(fx, Arc::make_mut(&mut source), short_edge);
                 }
                 natural = Some(dims);
                 injected = Some(source);
@@ -653,7 +673,7 @@ impl FrameRenderer {
         plan.media.injected.clear();
         if let Some(source) = injected {
             let id = source_id(&element.id);
-            plan.media.injected.insert(id.clone(), Arc::new(source));
+            plan.media.injected.insert(id.clone(), source);
             element.src_id = Some(id);
         }
         if let Some(track) = viz {
@@ -663,7 +683,9 @@ impl FrameRenderer {
         plan.text.take_missing_families();
         let rendered = plan.render_drawop_overlay_frame(eval, None).map_err(RenderError::render);
         plan.elements.clear();
+        // 画完就放掉源画面与画好的中间层（内核的动态资源表本来留到下一次画才清）：宿主拿回缓冲（解码器换帧）时只剩它那一份。
         plan.media.injected.clear();
+        plan.media.dynamic.clear();
         let notes = std::mem::take(&mut plan.warnings);
         let missing = plan.text.take_missing_families();
         for note in notes {
@@ -713,7 +735,7 @@ impl FrameRenderer {
             .map_err(RenderError::render)?;
             // 画出的层不读 DrawOp 指纹：动态栅格的资源名不必逐帧哈希整帧像素。
             plan.set_dynamic_asset_names(DynamicAssetNames::Slot);
-            // 源画面每次画前注入、画完清空：计划可以独占它，不再复制一份。
+            // 源画面每次画前注入、画完清空：计划不再留着它，不改像素就不复制。
             plan.set_consume_injected_sources(true);
             self.elements = Some(plan);
         }
@@ -1484,11 +1506,8 @@ fn crop_of(item: &TimelineItem) -> Option<[f64; 4]> {
     (crop.is_valid() && !crop.is_empty()).then(|| crop.rect())
 }
 
-/// 源画面按裁剪留下的区域复制一份（没有裁剪时整张复制）。
-fn cropped(picture: &Pixmap, rect: Option<[f64; 4]>) -> Option<Pixmap> {
-    let Some([u0, v0, u1, v1]) = rect else {
-        return Some(picture.clone());
-    };
+/// 源画面按裁剪留下的区域复制一份。
+fn cropped(picture: &Pixmap, [u0, v0, u1, v1]: [f64; 4]) -> Option<Pixmap> {
     let (w, h) = (f64::from(picture.width()), f64::from(picture.height()));
     let x = (u0 * w).round().clamp(0.0, w - 1.0);
     let y = (v0 * h).round().clamp(0.0, h - 1.0);

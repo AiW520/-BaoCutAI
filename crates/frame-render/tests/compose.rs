@@ -61,11 +61,39 @@ fn an_exchanged_canvas_never_shows_through_the_next_frame() {
         let mut renderer = renderer(false, Documents::default());
         let mut media = Media::default().with("a", solid(16, 9, RED));
         let first = render_with(&mut renderer, case, 0.0, &mut media);
-        assert_eq!(renderer.exchange_frame(vec![0x7F; first.len()]).unwrap(), first);
-        assert_eq!(render_with(&mut renderer, case, 0.0, &mut media), first);
+        // 接管时换下来的旧帧又还给内核当下一层的画布（`OverlayRenderPlan::recycle_canvas`）：换回来的脏缓冲两帧之后
+        // 才轮到内核画在它上面，多画几帧，每一帧都与第一帧相同。
+        for fill in [0x7F, 0x01, 0xFF] {
+            assert_eq!(renderer.exchange_frame(vec![fill; first.len()]).unwrap(), first);
+            assert_eq!(render_with(&mut renderer, case, 0.0, &mut media), first);
+        }
         // 长度不是一帧的缓冲不换，原样还回去。
         assert_eq!(renderer.exchange_frame(vec![1; 8]).unwrap_err(), vec![1; 8]);
         assert_eq!(renderer.frame().data(), first.as_slice());
+    }
+}
+
+#[test]
+fn pictures_are_shared_with_the_kernel_and_released_after_the_frame() {
+    // 宿主给的画面共享给内核，不复制；画完一帧渲染器与内核都不再拿着它（注入表、动态资源表都清掉）：导出的解码器换帧时
+    // 靠 `Arc::try_unwrap` 把缓冲原样拿回去。不裁剪、裁剪、作用效果、画中画都一样。
+    let assets = || vec![image_asset("a_a", W, H)];
+    let cases = [
+        json!({ "mode": "fullscreen" }),
+        json!({ "mode": "fullscreen", "crop": { "left": 0.5, "top": 0, "right": 0, "bottom": 0 } }),
+        json!({ "mode": "fullscreen", "fx": { "saturation": -1 } }),
+        json!({ "place": { "w": 50, "opacity": 0.5 } }),
+    ];
+    for body in cases {
+        let case = video(vec![image("a", 0, 0, 30, body.clone())], assets(), json!({}));
+        let mut renderer = renderer(false, Documents::default());
+        let mut media = Media::default().with("a", halves(W, H, RED, BLUE));
+        let first = render_with(&mut renderer, &case, 0.0, &mut media);
+        assert_eq!(std::sync::Arc::strong_count(&media.pictures["a"]), 1, "{body}");
+        assert_eq!(render_with(&mut renderer, &case, 0.0, &mut media), first, "{body}");
+        assert_eq!(std::sync::Arc::strong_count(&media.pictures["a"]), 1, "{body}");
+        // 效果作用在复制的那一份上，宿主的画面不变。
+        assert_eq!(media.pictures["a"].data(), halves(W, H, RED, BLUE).data(), "{body}");
     }
 }
 

@@ -2441,9 +2441,15 @@ impl OverlayRenderPlan {
     /// 媒体元素画完就从 `media.injected` 里拿走它用的源画面（缺省不拿）。
     ///
     /// 只给每帧重新注入、画一次就清空注入表的宿主（frame-render 一次画一个实例）：没有效果要烘时，
-    /// 计划独占的源画面直接当局部画布用，省一次整幅复制。像素不变。
+    /// 计划不再留着源画面，宿主也不留时它就是独占的，要改像素时不必复制。像素不变。
     pub fn set_consume_injected_sources(&mut self, consume: bool) {
         self.consume_injected_sources = consume;
+    }
+
+    /// 还回一块用完的画布（与计划同尺寸，内容不要紧）：下一次画 overlay 画在它上面，不再新建、清零一整幅
+    /// （[`render_raster::CpuExecutor::recycle`]）。像素不变。
+    pub fn recycle_canvas(&mut self, canvas: Pixmap) {
+        self.executor.recycle(canvas);
     }
 
     /// 这一帧第 `slot` 个动态栅格的资源名（[`DynamicAssetNames`]）。
@@ -5499,7 +5505,7 @@ impl OverlayRenderPlan {
         element: &TimelineVisualElement,
         time: f64,
         pose: timeline::AnimationPose,
-    ) -> Result<Option<Pixmap>> {
+    ) -> Result<Option<Arc<Pixmap>>> {
         let Some(source_id) = element.src_id.as_deref() else {
             if element.kind == ElementKind::Sticker {
                 self.warn_once(format!(
@@ -5566,9 +5572,9 @@ impl OverlayRenderPlan {
                 box_height,
             );
             let source = self.whiteboard_source_at(source_id, &source, target);
-            self.whiteboard_source_frame(element, source_id, &source, time)?
+            Arc::new(self.whiteboard_source_frame(element, source_id, &source, time)?)
         } else {
-            // 宿主声明注入的源画面只用这一次、又没有效果要烘时，从注入表拿走：计划独占它就不必复制。
+            // 宿主声明注入的源画面只用这一次、又没有效果要烘时，从注入表拿走：计划不再留着它。
             if self.consume_injected_sources
                 && element.fx.is_none()
                 && self
@@ -5579,19 +5585,16 @@ impl OverlayRenderPlan {
             {
                 self.media.injected.remove(source_id);
             }
-            let mut filtered = match Arc::try_unwrap(source) {
-                Ok(owned) => owned,
-                Err(shared) => Pixmap::from_vec(
-                    shared.data().to_vec(),
-                    IntSize::from_wh(shared.width(), shared.height()).context("媒体元素尺寸非法")?,
-                )
-                .context("媒体元素 RGBA 尺寸非法")?,
-            };
-            apply_media_effects(
-                &mut filtered,
-                element.fx.as_ref(),
-                f64::from(self.width.min(self.height)) / REFERENCE_SHORT_EDGE,
-            );
+            // 源画面一路共享着往下传（宿主可能还留着它：导出的解码器下一帧可能还要用同一帧），到真要改像素
+            // （效果、虹膜、遮罩、不透明度）时才 `Arc::make_mut` 复制一份；恒等直通的一路不改，交给光栅时不复制。
+            let mut filtered = source;
+            if element.fx.is_some() {
+                apply_media_effects(
+                    Arc::make_mut(&mut filtered),
+                    element.fx.as_ref(),
+                    f64::from(self.width.min(self.height)) / REFERENCE_SHORT_EDGE,
+                );
+            }
             filtered
         };
         let natural_width = f64::from(filtered.width().max(1));
@@ -5612,7 +5615,9 @@ impl OverlayRenderPlan {
         );
         // 背景板只有「全屏 + contain」且元素有底（`bg`）才预填；其余情形局部画布在
         // `draw_fit_pixmap` 之前是全透明的。合成替身没有底，留边与透明像素都露出下层。
-        let backdrop = element.bg.filter(|_| element.mode == VisualMode::Fullscreen && element.fit == Fit::Contain);
+        let backdrop = element
+            .bg
+            .filter(|_| element.mode == VisualMode::Fullscreen && element.fit == Fit::Contain);
         let has_backdrop = backdrop.is_some();
         // 恒等直通：盒子与源同尺寸时 `draw_fit_pixmap` 的 scale 恰为 1、偏移恰为 0，
         // 贴到全透明画布上是逐字节拷贝（`tests/identity_media_pass_through.rs` 实测
@@ -5651,16 +5656,27 @@ impl OverlayRenderPlan {
                 }
             }
             match element.focal.filter(|_| element.fit == Fit::Cover) {
-                Some(anchor) => draw_fit_pixmap_anchored(&mut local, &filtered, element.fit, 1.0, anchor, element.zoom),
+                Some(anchor) => draw_fit_pixmap_anchored(
+                    &mut local,
+                    &filtered,
+                    element.fit,
+                    1.0,
+                    anchor,
+                    element.zoom,
+                ),
                 None => draw_fit_pixmap(&mut local, &filtered, element.fit, 1.0),
             }
-            local
+            Arc::new(local)
         };
         if transition.iris < 1.0 {
             let half_x = f64::from(local_width) / 2.0;
             let half_y = f64::from(local_height) / 2.0;
             let radius = half_x.hypot(half_y) * transition.iris;
-            for (i, pixel) in local.data_mut().chunks_exact_mut(4).enumerate() {
+            for (i, pixel) in Arc::make_mut(&mut local)
+                .data_mut()
+                .chunks_exact_mut(4)
+                .enumerate()
+            {
                 let x = (i % local_width as usize) as f64 + 0.5 - half_x;
                 let y = (i / local_width as usize) as f64 + 0.5 - half_y;
                 let coverage = (radius - x.hypot(y) + 0.5).clamp(0.0, 1.0);
@@ -5684,7 +5700,7 @@ impl OverlayRenderPlan {
             render_raster::effects::apply_filter_in_place(
                 &lowered.effect,
                 &lowered.uniforms,
-                &mut local,
+                Arc::make_mut(&mut local),
                 canvas_short_edge,
             )?;
         }
@@ -5693,10 +5709,10 @@ impl OverlayRenderPlan {
         let dy = pose.dy * short;
         let opacity = (element.place.opacity.unwrap_or(1.0) * pose.opacity).clamp(0.0, 1.0);
         if opacity <= 0.001 {
-            return Ok(Some(
+            return Ok(Some(Arc::new(
                 Pixmap::new(self.width, self.height)
                     .ok_or_else(|| anyhow!("无法创建媒体元素合成层"))?,
-            ));
+            )));
         }
         // 镜像是几何（ADR-E01）：只进仿射的 `post_scale`，不参与盒子尺寸与
         // 平铺点阵的换算。缺席 = (1, 1) ⇒ 旧文档逐字节不变。
@@ -5709,9 +5725,9 @@ impl OverlayRenderPlan {
         let vertical_scale = element.place.scale.unwrap_or(1.0)
             * element.place.scale_y.unwrap_or(1.0)
             * pose.scale_y;
-        let mut field;
+        let mut field: Arc<Pixmap>;
         if let Some(tile) = element.tile.as_ref().filter(|tile| tile.on) {
-            field = Pixmap::new(self.width, self.height)
+            let mut stamped = Pixmap::new(self.width, self.height)
                 .ok_or_else(|| anyhow!("无法创建媒体元素合成层"))?;
             let rotation =
                 tile.angle.unwrap_or(-30.0) + element.place.rot.unwrap_or(0.0) + pose.rotation;
@@ -5736,10 +5752,10 @@ impl OverlayRenderPlan {
                     (canvas_width / 2.0 + dx + rotated_x) as f32,
                     (canvas_height / 2.0 + dy + rotated_y) as f32,
                 );
-                field.draw_pixmap(
+                stamped.draw_pixmap(
                     0,
                     0,
-                    local.as_ref(),
+                    (*local).as_ref(),
                     &PixmapPaint {
                         quality: FilterQuality::Bilinear,
                         ..Default::default()
@@ -5748,6 +5764,7 @@ impl OverlayRenderPlan {
                     None,
                 );
             }
+            field = Arc::new(stamped);
         } else {
             let transform = Transform::from_translate(
                 -(local_width as f32) / 2.0,
@@ -5766,12 +5783,12 @@ impl OverlayRenderPlan {
             if transform.is_identity() && local_width == self.width && local_height == self.height {
                 field = local;
             } else {
-                field = Pixmap::new(self.width, self.height)
+                let mut placed = Pixmap::new(self.width, self.height)
                     .ok_or_else(|| anyhow!("无法创建媒体元素合成层"))?;
-                field.draw_pixmap(
+                placed.draw_pixmap(
                     0,
                     0,
-                    local.as_ref(),
+                    (*local).as_ref(),
                     &PixmapPaint {
                         quality: FilterQuality::Bilinear,
                         ..Default::default()
@@ -5779,6 +5796,7 @@ impl OverlayRenderPlan {
                     transform,
                     None,
                 );
+                field = Arc::new(placed);
             }
         }
         if pose.blur > 0.5 {
@@ -5822,16 +5840,19 @@ impl OverlayRenderPlan {
                 ),
             }];
             plan.output = render_raster::SurfaceId(1);
-            let external = std::collections::BTreeMap::from([(0u32, Arc::new(field))]);
-            field = render_raster::execute_plan_with_inputs(
+            let external = std::collections::BTreeMap::from([(0u32, field)]);
+            field = Arc::new(render_raster::execute_plan_with_inputs(
                 &plan,
                 &mut self.executor,
                 &mut self.media,
                 None,
                 &external,
-            )?;
+            )?);
         }
-        multiply_premultiplied_alpha(field.data_mut(), opacity);
+        // 满不透明是恒等变换（不写任何字节），不为它把共享的源画面复制一份。
+        if opacity.is_nan() || opacity < 1.0 {
+            multiply_premultiplied_alpha(Arc::make_mut(&mut field).data_mut(), opacity);
+        }
         Ok(Some(field))
     }
 
@@ -6726,9 +6747,7 @@ impl OverlayRenderPlan {
                         let asset_name =
                             self.dynamic_asset_name("media", &element.id, pixmap.data(), slot);
                         slot += 1;
-                        self.media
-                            .dynamic
-                            .insert(asset_name.clone(), Arc::new(pixmap));
+                        self.media.dynamic.insert(asset_name.clone(), pixmap);
                         let asset = builder.string_id(&asset_name);
                         builder.push(DrawOp::DrawMedia {
                             asset,

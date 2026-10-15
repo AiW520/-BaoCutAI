@@ -477,12 +477,30 @@ pub fn rasterize_with_media(
     height: u32,
     media: &mut (impl FrameMedia + ?Sized),
 ) -> Result<Pixmap> {
+    rasterize_with_media_into(frame, width, height, None, media)
+}
+
+/// 同 [`rasterize_with_media`]，画在调用方给的旧画布 `canvas` 上（用过的，内容不要紧；尺寸不对时不用），
+/// 省掉一次整幅的分配。结果与画在新建的画布上逐字节相同：旧画布不当作新建时的全零，开头的透明清屏照样整幅写零；
+/// 第一条要画的指令不是清屏时先清成全零。
+pub fn rasterize_with_media_into(
+    frame: &FrameOps,
+    width: u32,
+    height: u32,
+    canvas: Option<Pixmap>,
+    media: &mut (impl FrameMedia + ?Sized),
+) -> Result<Pixmap> {
     // path 侧表按需物化（见 [`LazyPaths`]）
     let paths = LazyPaths::new(&frame.paths);
 
     let paints: Vec<Paint<'static>> = frame.paints.iter().map(paint_from).collect();
 
-    let mut base = Pixmap::new(width, height).ok_or_else(|| anyhow!("pixmap"))?;
+    let recycled = canvas.filter(|canvas| (canvas.width(), canvas.height()) == (width, height));
+    let dirty = recycled.is_some();
+    let mut base = match recycled {
+        Some(canvas) => canvas,
+        None => Pixmap::new(width, height).ok_or_else(|| anyhow!("pixmap"))?,
+    };
     // 静态前缀（背景纸）：命中就从前缀之后接着画；未命中时画到前缀末尾存一张。
     let prefix = frame
         .static_prefix
@@ -491,7 +509,7 @@ pub fn rasterize_with_media(
     let mut start = 0;
     let mut store_at = None;
     // `base` 还是新建时的全零（没接上前缀缓存、还没画过东西）：画实例的 DrawOp 都以透明清屏开头，这一遍整幅写零可以省。
-    let mut untouched = true;
+    let mut untouched = !dirty;
     if let Some((key, ops)) = prefix {
         match static_prefix_get(key) {
             Some(hit) => {
@@ -501,6 +519,9 @@ pub fn rasterize_with_media(
             }
             None => store_at = Some((key, ops)),
         }
+    }
+    if dirty && start == 0 && !matches!(frame.ops.first(), Some(DrawOp::Clear { .. })) {
+        base.fill(Color::TRANSPARENT);
     }
     // 层栈：(离屏层, 合成不透明度, 混合模式)。遮罩源层用 `None` 的混合模式区分
     // ——它不回贴画面，只在 `PopMatte` 时折进下面那一层的 alpha。
@@ -1148,7 +1169,10 @@ mod clear_tests {
         for op in ops {
             builder.push(op);
         }
-        rasterize_with_media(&builder.finish(), 4, 2, &mut NoMedia).unwrap().data().to_vec()
+        rasterize_with_media(&builder.finish(), 4, 2, &mut NoMedia)
+            .unwrap()
+            .data()
+            .to_vec()
     }
 
     #[test]
@@ -1170,6 +1194,48 @@ mod clear_tests {
         // 画过之后的透明清屏、不透明的清屏照做。
         assert_eq!(rasterize(vec![clear(NONE), rect, clear(NONE)]), vec![0; 32]);
         assert_eq!(rasterize(vec![clear(NONE), clear(RED)]), red);
+    }
+
+    #[test]
+    fn a_recycled_canvas_draws_the_same_bytes_as_a_fresh_one() {
+        // 旧画布（上一帧的内容还在）不当作新建时的全零：开头的透明清屏照样写零，不以清屏开头时先清成全零。
+        let clear = |color| DrawOp::Clear { color };
+        let half = DrawOp::FillRect {
+            x: 0.0,
+            y: 0.0,
+            w: 2.0,
+            h: 2.0,
+            radius: 0.0,
+            color: [0.0, 0.0, 1.0, 0.5],
+            tf: [1.0, 0.0, 0.0, 1.0, 0.0, 0.0],
+        };
+        let cases = [
+            vec![clear(NONE)],
+            vec![clear(NONE), half.clone()],
+            vec![half.clone()],
+            vec![clear(RED), half.clone()],
+            vec![],
+        ];
+        for ops in cases {
+            let mut builder = FrameBuilder::default();
+            for op in ops.iter().cloned() {
+                builder.push(op);
+            }
+            let frame = builder.finish();
+            let mut dirty = Pixmap::new(4, 2).unwrap();
+            dirty.data_mut().fill(0x7F);
+            let recycled =
+                rasterize_with_media_into(&frame, 4, 2, Some(dirty), &mut NoMedia).unwrap();
+            assert_eq!(
+                recycled.data(),
+                rasterize(ops.clone()).as_slice(),
+                "{ops:?}"
+            );
+            // 尺寸不对的旧画布不用。
+            let small = Pixmap::new(2, 2).unwrap();
+            let fresh = rasterize_with_media_into(&frame, 4, 2, Some(small), &mut NoMedia).unwrap();
+            assert_eq!(fresh.data(), rasterize(ops.clone()).as_slice(), "{ops:?}");
+        }
     }
 
     #[test]

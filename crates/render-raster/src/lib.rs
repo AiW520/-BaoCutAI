@@ -94,7 +94,7 @@ pub use plan::{
 /// 校验和转译目标不会因为两处版本漂移而对不上。
 #[cfg(feature = "wgsl-validate")]
 pub use naga;
-pub use raster::{FrameMedia, rasterize_with_media};
+pub use raster::{FrameMedia, rasterize_with_media, rasterize_with_media_into};
 pub use source::{
     AnimatedImage, ContentHash, MediaTime, PrepareCtx, SourceFrame, SourceKind, SourceLoop,
     SourceMetadata, VisualSource,

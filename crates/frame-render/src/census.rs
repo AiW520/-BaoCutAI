@@ -26,7 +26,7 @@ impl LayerMedia for NoMedia {
     fn captions_text_only(&self) -> bool {
         true
     }
-    fn picture(&mut self, _layer: &VisualLayer) -> Result<Option<&Pixmap>, RenderError> {
+    fn picture(&mut self, _layer: &VisualLayer) -> Result<Option<Arc<Pixmap>>, RenderError> {
         Ok(None)
     }
 }
