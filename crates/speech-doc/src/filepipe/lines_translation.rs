@@ -86,27 +86,35 @@ fn chunks_over(units: usize, one_row: usize, params: &TransParams) -> usize {
 /// - Latin-script source into a CJK target: 0.34, the en→zh-Hans validation
 ///   pages;
 /// - Thai source into English: 1.3, per-sentence medians of 8 Thai sentences
-///   (DeepSeek Flash, 2026-10-01, 189 translations).
+///   (DeepSeek Flash, 2026-10-01, 189 translations);
+/// - Japanese or Korean source into Chinese: 0.85, the rows-carrier answers
+///   of one Japanese and one Korean video (Gemini 3.8 Flash 0.77 / 0.80,
+///   DeepSeek V4 Flash 0.85 on the Korean one; design doc §8.16). Their
+///   budgets ran about twice what the answers needed, so budget-sized hints
+///   asked for 1.7× the chunks.
 ///
 /// Thai into Chinese was measured too (0.40, 104 translations) and is left
 /// out on purpose: its hint of ≥3 gave three long Thai pieces, and DeepSeek
 /// Flash answered 8 of 16 pages by echoing the source instead of translating
 /// (0 of 16 with the budget's five shorter pieces). Every other pair, Thai
 /// into any other language and Lao, Khmer or Burmese sources included,
-/// returns `None` and the caller falls back to the budget. A Chinese,
-/// Japanese or Korean source is never estimated.
+/// returns `None` and the caller falls back to the budget. A Chinese source
+/// is not estimated (into English it measured 2.6–2.8, but on those two
+/// videos the budget was the smaller bound for most sentences), nor is a
+/// Japanese or Korean one into anything but Chinese.
 fn estimated_units(source: &str, source_lang: &str, target_lang: &str) -> Option<usize> {
-    if matches!(
-        crate::split::primary_subtag(source_lang).as_str(),
-        "zh" | "ja" | "ko"
-    ) {
-        return None;
-    }
     let target = crate::split::primary_subtag(target_lang);
-    let ratio = match (dominant_script(source)?, target.as_str()) {
-        (SourceScript::Latin, "zh" | "ja" | "ko") => 0.34,
-        (SourceScript::Thai, "en") => 1.3,
-        _ => return None,
+    let ratio = match (
+        crate::split::primary_subtag(source_lang).as_str(),
+        target.as_str(),
+    ) {
+        ("ja" | "ko", "zh") => 0.85,
+        ("zh" | "ja" | "ko", _) => return None,
+        _ => match (dominant_script(source)?, target.as_str()) {
+            (SourceScript::Latin, "zh" | "ja" | "ko") => 0.34,
+            (SourceScript::Thai, "en") => 1.3,
+            _ => return None,
+        },
     };
     let chars = source.chars().filter(|ch| !ch.is_whitespace()).count();
     Some((chars as f64 * ratio).ceil() as usize)
@@ -966,11 +974,7 @@ fn unescaped_count(line: &str, needle: char) -> usize {
 /// inside a quote is left alone. With `phrases`, a whole-phrase quote of this
 /// sentence qualifies too; the caller only asks for that on a line that does
 /// not read cleanly otherwise.
-fn reopen_markers<W: JoinWord>(
-    line: &str,
-    words: &[W],
-    phrases: bool,
-) -> Option<(String, usize)> {
+fn reopen_markers<W: JoinWord>(line: &str, words: &[W], phrases: bool) -> Option<(String, usize)> {
     let mut delimiters: Vec<(usize, char)> = Vec::new();
     let mut chars = line.char_indices();
     while let Some((at, ch)) = chars.next() {
@@ -1002,9 +1006,7 @@ fn reopen_markers<W: JoinWord>(
         } else {
             lines::endpoint_quote(quote)
         };
-        if reference
-            .is_some_and(|reference| lines::quotes_occur(words, &reference) == Some(true))
-        {
+        if reference.is_some_and(|reference| lines::quotes_occur(words, &reference) == Some(true)) {
             reopened.push(at);
             bars += 1;
         }
@@ -1115,12 +1117,38 @@ fn quotes_all_hit<W: JoinWord>(record: &Record, words: &[W]) -> bool {
     !hits.is_empty() && hits.iter().all(|hit| *hit)
 }
 
+/// No quote of `record` hits its own sentence, and at least two of them and
+/// more than half hit other sentences on the page, even though no single one
+/// takes them all: a quote that slipped, or one that spans two sentences the
+/// transcript split inside a word (`…맛` | `집이에요.`), keeps the strict home
+/// test from seeing the drift. Gemini 3.8 Flash wrote sentence 19's
+/// translation under number 18 that way (§8.16); taken as the line's own,
+/// it showed the same content twice.
+fn mostly_elsewhere<W: JoinWord>(record: &Record, own: usize, words: &[Vec<W>]) -> bool {
+    let quotes: Vec<&Reference> = record
+        .chunks
+        .iter()
+        .filter(|chunk| !chunk.text.is_empty())
+        .map(|chunk| &chunk.reference)
+        .filter(|reference| matches!(reference, Reference::Quote { .. }))
+        .collect();
+    let elsewhere = quotes
+        .iter()
+        .filter(|reference| {
+            (0..words.len())
+                .any(|m| m != own && lines::quotes_occur(&words[m], reference) == Some(true))
+        })
+        .count();
+    elsewhere >= 2 && elsewhere * 2 > quotes.len()
+}
+
 /// What a numbered line's quotes say about which sentence it translates.
 enum Verdict {
     /// Its own sentence (quotes that miss are slips, the chunks stay unlocated).
     Own,
     /// Another sentence: no quote hits its own sentence and every quote hits
-    /// one other sentence — the line drifted after a merge or a skip.
+    /// one other sentence — the line drifted after a merge or a skip — or most
+    /// of them hit other sentences ([`mostly_elsewhere`]).
     Drifted,
     /// Its own sentence plus a neighbour's: the listed chunks quote another
     /// sentence and repeat text that sentence's own line already carries.
@@ -1144,7 +1172,11 @@ fn verdict<W: JoinWord>(
     }
     if hits.iter().all(|hit| !hit) {
         let home = (0..words.len()).any(|m| m != own && quotes_all_hit(record, &words[m]));
-        return if home { Verdict::Drifted } else { Verdict::Own };
+        return if home || mostly_elsewhere(record, own, words) {
+            Verdict::Drifted
+        } else {
+            Verdict::Own
+        };
     }
     let mut merged = Vec::new();
     for (index, chunk) in record.chunks.iter().enumerate() {
@@ -2491,6 +2523,47 @@ mod tests {
             None
         );
         assert_eq!(estimated_units("我用 ChatGPT 写代码", "zh", "ja"), None);
+        assert_eq!(estimated_units("我用 ChatGPT 写代码", "zh", "en"), None);
+        // Japanese and Korean into Chinese count source characters, Latin
+        // product names included; into any other target they stay unestimated.
+        assert_eq!(
+            estimated_units("東京観光のおすすめスポット 15 選！", "ja", "zh-Hans"),
+            Some(15)
+        );
+        assert_eq!(
+            estimated_units("도쿄 여행 코스를 추천해 드릴게요", "ko", "zh"),
+            Some(12)
+        );
+        assert_eq!(
+            estimated_units("東京観光のおすすめスポット 15 選！", "ja", "en"),
+            None
+        );
+        assert_eq!(
+            estimated_units("도쿄 여행 코스를 추천해 드릴게요", "ko", "ja"),
+            None
+        );
+    }
+
+    /// 日文源翻成中文：预算是上限，按预算要块会多要一倍（§8.16 的 Gemini 复测
+    /// 里 1,039 块对实际需要的 616 块）；按源字数预测的长度要。`≤27 ≥3`
+    /// 那句（实测译文 13 单位）现在只要一块。
+    #[test]
+    fn a_japanese_sentence_into_chinese_is_hinted_by_its_predicted_length() {
+        let zh = TransParams::for_lang("zh");
+        let mut sentence = TranslateSentence::new("ja-01", "東京観光の おすすめ スポット 15 選！");
+        sentence.budget = Some(27);
+        assert_eq!(chunk_hint(&sentence, "ja", "zh-Hans", &zh), 1);
+        let long =
+            "東京には歴史のある名所や思い切り遊べる施設、最新の注目スポットなどが目白押しです。";
+        let mut sentence = TranslateSentence::new("ja-02", long);
+        sentence.budget = Some(58);
+        assert_eq!(chunks_for_units(58, &zh), 6);
+        assert_eq!(chunk_hint(&sentence, "ja", "zh-Hans", &zh), 4);
+        // A Chinese source into Japanese keeps the budget's hint.
+        assert_eq!(
+            chunk_hint(&sentence, "zh", "ja", &TransParams::for_lang("ja")),
+            6
+        );
     }
 
     /// 泰文源带预算翻成英文：首轮的 `≥k` 按预测长度要，不再按预算上限要
@@ -3084,6 +3157,60 @@ mod tests {
             result.issues
         );
         assert_eq!(result.records[&5].chunks.len(), 2);
+    }
+
+    /// A line that quotes only other sentences is not its own sentence's
+    /// translation even when one quote slipped and no single sentence takes
+    /// them all: the sentence is retried instead of showing its neighbour's
+    /// text twice. One stray hit elsewhere is still a slip.
+    #[test]
+    fn a_line_quoting_mostly_other_sentences_is_retried() {
+        let p = TranslatePage {
+            source_lang: "en".into(),
+            target_lang: "es".into(),
+            sections: vec![TranslateSection {
+                id: "p1".into(),
+                sentences: vec![
+                    TranslateSentence::new("a", "I went to the market today."),
+                    TranslateSentence::new("b", "It was very crowded."),
+                    TranslateSentence::new("c", "We bought apples and some fresh bread."),
+                    TranslateSentence::new("d", "Then we walked home together."),
+                ],
+                ..Default::default()
+            }],
+            ..Default::default()
+        };
+        let input = render(&p);
+        let response = "1 |I..today|Fui al mercado hoy.\n\
+2 |We..apples|Compramos manzanas |and..bread|y pan fresco, |then we drove|luego volvimos.\n\
+3 |We..apples|Compramos manzanas |and..bread|y pan fresco.\n\
+4 |Then..together|Luego caminamos a casa juntos.";
+        let result = parse(&p, &input, response);
+        assert_eq!(
+            result.translation.retry_ids,
+            vec!["b"],
+            "{:?}",
+            result.issues
+        );
+        assert!(!result.translation.translations.contains_key("b"));
+        assert_eq!(
+            result.translation.translations["c"],
+            "Compramos manzanas y pan fresco."
+        );
+        let response = "1 |I..today|Fui al mercado hoy.\n\
+2 |It..busy|Estaba muy lleno, |We..apples|como siempre.\n\
+3 |We..apples|Compramos manzanas |and..bread|y pan fresco.\n\
+4 |Then..together|Luego caminamos a casa juntos.";
+        let result = parse(&p, &input, response);
+        assert!(
+            result.translation.retry_ids.is_empty(),
+            "{:?}",
+            result.issues
+        );
+        assert_eq!(
+            result.translation.translations["b"],
+            "Estaba muy lleno, como siempre."
+        );
     }
 
     /// A line that repeats its neighbour's translation under its own number
