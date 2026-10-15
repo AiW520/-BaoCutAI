@@ -117,7 +117,7 @@ export function AgentPicker({ drivers, driverId, model, effort, lockedTo, compac
             return (
               <SubmenuTrigger key={row.id}>
                 {item(`driver:${row.id}`)}
-                <ModelMenu driver={driver} model={own.model} effort={own.effort} onChange={onChange} />
+                <ModelMenu driver={driver} selected={row.selected} model={own.model} effort={own.effort} onChange={onChange} />
               </SubmenuTrigger>
             );
           })}
@@ -137,11 +137,13 @@ export function AgentPicker({ drivers, driverId, model, effort, lockedTo, compac
 /** 第二级：「模型」打头是「Agent 默认模型」，再是它的模型表；下面是这个模型的推理强度（没有就不出）。 */
 function ModelMenu({
   driver,
+  selected,
   model,
   effort,
   onChange,
 }: {
   driver: DriverInfo;
+  selected: boolean;
   model: string | null;
   effort: string | null;
   onChange(change: AgentChange): void;
@@ -151,17 +153,19 @@ function ModelMenu({
   const currentId = currentEffort(active, effort);
   const currentLabel = currentId ? effortLabel(currentId, active?.efforts.find((e) => e.id === currentId)?.label) : null;
   return (
-    <Menu aria-label={S.agentPicker.models(driver.name)} size="M" styles={menu}>
+    <Menu
+      aria-label={S.agentPicker.models(driver.name)}
+      size="M"
+      styles={menu}
+      onAction={(key) => {
+        const id = String(key);
+        if (id.startsWith('model:')) onChange(modelChange(driver, id.slice('model:'.length) || null, effort));
+        else if (id.startsWith('effort:')) onChange({ driverId: driver.id, model, effort: id.slice('effort:'.length) });
+      }}>
       <MenuSection
         selectionMode="single"
         disallowEmptySelection
-        selectedKeys={[`model:${model ?? ''}`]}
-        onSelectionChange={(keys) => {
-          const key = keys === 'all' ? undefined : String([...keys][0] ?? '');
-          if (!key?.startsWith('model:')) return;
-          const next = key.slice('model:'.length) || null;
-          onChange(modelChange(driver, next, effort));
-        }}>
+        selectedKeys={selected ? [`model:${model ?? ''}`] : []}>
         <Header>
           <Heading>{AGENT_PICKER.models}</Heading>
         </Header>
@@ -176,12 +180,7 @@ function ModelMenu({
         <MenuSection
           selectionMode="single"
           disallowEmptySelection
-          selectedKeys={currentId ? [`effort:${currentId}`] : []}
-          onSelectionChange={(keys) => {
-            const key = keys === 'all' ? undefined : String([...keys][0] ?? '');
-            if (!key?.startsWith('effort:')) return;
-            onChange({ driverId: driver.id, model, effort: key.slice('effort:'.length) });
-          }}>
+          selectedKeys={selected && currentId ? [`effort:${currentId}`] : []}>
           <Header>
             <Heading>{AGENT_PICKER.effort(currentLabel ?? AGENT_PICKER.defaultMark)}</Heading>
           </Header>

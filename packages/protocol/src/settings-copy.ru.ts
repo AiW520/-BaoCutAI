@@ -2,7 +2,7 @@ import { LOCALES } from './i18n.ts';
 import type { SettingDescriptionMessages } from './settings-copy.ts';
 
 export const ru: SettingDescriptionMessages = {
-  'agent.defaultDriver': "Агент новых сессий; null использует встроенный по умолчанию (codex). Фиксируется при создании сессии",
+  'agent.defaultDriver': "Агент новых сессий; null предпочитает обнаруженного доступного агента (сначала Codex). Фиксируется при создании сессии",
   'agent.defaultModel': "Модель новых сессий; null — рекомендуемая модель (Sonnet для Claude Code, модель -sol для Codex), __agent-default__ — модель не передаётся, действует конфигурация CLI агента",
   'agent.defaultEffort': "Уровень рассуждений новых сессий; null использует значение агента по умолчанию",
   'agent.defaultAccessMode':

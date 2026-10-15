@@ -603,7 +603,7 @@ interface DriverStatus {
 - **推送**。`agents` 主题的快照就是 `agents.list` 的视图；每个 Driver 的探测完成，以及 Agent 偏好的任何变化（启用、默认模型与强度、可执行文件、放行策略、「总是允许」规则的增删、偏好设置里的默认 Agent `agent.defaultDriver`）都推送整份新视图（`agents.updated`），客户端整体替换。
 - **登录在 Driver 自己的界面完成**。BaoCut 不接收、不保存智能体运行时的账号与密码；未登录时只给出登录的方式。运行中出现的认证失败与模型不可用是结构化的错误（`AGENT_AUTH_REQUIRED`、`AGENT_MODEL_UNAVAILABLE`），会话保留，补救之后可以继续。
 - **安装与升级**是 §12.9 的受管安装动作，不是 Driver 的职责。
-- **默认值**。默认 Driver、每个 Driver 的默认模型与推理强度属于偏好设置（§5.10）；会话创建时冻结自己的选择，之后改默认值不影响已有会话。模型与推理强度经 `RunContext` 交给 Driver，Driver 不支持的取值在创建会话时拒绝。
+- **默认值**。默认 Driver、每个 Driver 的默认模型与推理强度属于偏好设置（§5.10）；会话创建时冻结自己的选择，之后改默认值不影响已有会话。没有手动设置默认 Driver（或它已停用）时，从探测缓存里选已就绪且启用的 Agent，Codex 可用时优先，否则按注册顺序取第一个，包含用户添加的 ACP Agent；没有可用结果时才退回已注册且启用的 Codex、再到第一个启用的 Driver，注册表为空时保留 Codex 兜底并在使用时报告不可用。不等待额外探测、不写回默认偏好；后续探测结果只影响新会话。手动设过的默认即使未安装、未登录或出错也保持它，不自动换成别家；没有注册时拒绝创建。模型与推理强度经 `RunContext` 交给 Driver，Driver 不支持的取值在创建会话时拒绝。
 - **默认模型与推荐模型**（2026-09-29 用户裁决）。新会话没指定模型时依次取：这个 Driver 的 Agent 偏好里设过的默认模型、默认 Driver 的偏好设置 `agent.defaultModel`、推荐模型。推荐模型按这一版 CLI 自己的模型表次序取（`recommendedDriverModel`）：Claude Code 取第一个 id 含 `sonnet` 的，Codex 取第一个 id 以 `-sol` 结尾的（隐藏的模型不在表里），其余几家（以及表里没有这一系列时）取第一个标 `balanced` 的，再不然是 Agent 标的默认，再不然是第一个；模型表还没有时不传模型。这样默认不会随 CLI 配置落到 Opus、Fable 这类最贵的模型上。只有用户明确选了「Agent 默认模型」才不传模型、按 CLI 配置走：会话上是 `model: null`（`conversations.create` 显式给 `model: null`），偏好里是 `agents.configure { defaultModel: null }`，存成 `AGENT_DEFAULT_MODEL`（`__agent-default__`，偏好设置 `agent.defaultModel` 也认它）；存储里的 null 是没设过，旧文件里的 null 也按没设过、用推荐模型。设过的模型不在当前模型表里时新会话改用推荐模型。`DriverInfo.defaultModel` 是新会话起手的模型：设过的原样给出（不在表里也给，界面标成已不在模型表里），没设过是推荐模型，明确选了「Agent 默认模型」为 null。
 
 - **用户添加的智能体**。`agents.addProvider { id, name, command, env? }` 把一个 ACP 智能体加进注册表：`command` 是启动它的 ACP 模式的程序与参数（不经 shell），`env` 是额外的环境变量。id 不能是内置 id，也不能与已有的重复（`conflict`，`AGENT_PROVIDER_EXISTS`）。列表存在 Runtime Home 的 `store/agent-providers.json`（`{ schemaVersion, providers: [{ id, name, command, env?, addedAt }] }`，权限 0600，串行原子写入；文件损坏或条目不合法时按没有处理），Runtime 启动时先注册它们再读探测缓存。加进来后立即在后台探测。`agents.removeProvider { id }` 只移除用户添加的（内置的以 `invalid-request`、`AGENT_PROVIDER_BUILTIN` 拒绝）：用着它的进行中的任务以失败结束、原生会话关闭，它的 Agent 偏好、探测缓存，以及指向它的 `agent.defaultDriver` 一并清掉；之后往这些会话发送以 `driver-unavailable` 拒绝，会话本身保留。两个方法都返回新的 `AgentsView` 并推送。视图里每个 Driver 带 `source`（`builtin` 或 `custom`）；用户添加的另带 `custom`（命令、环境变量的名字与添加时间），环境变量的值不出 Runtime。这两个方法不对浏览器与对外服务开放。与 `agents.configure` 分开，是因为后者只改已注册的 Driver 的偏好，而它们改的是注册表本身与能执行的命令。
@@ -1236,7 +1236,7 @@ library/
 
 | 键 | 取值 | 默认 | 说明 |
 | --- | --- | --- | --- |
-| `agent.defaultDriver` | Driver id 或 `null` | `null`（内置默认 `codex`） | 新会话用的 Driver（§3.11） |
+| `agent.defaultDriver` | Driver id 或 `null` | `null`（优先用已检测可用的 Agent，见 §3.11） | 新会话用的 Driver（§3.11） |
 | `agent.defaultModel` | 模型 id、`__agent-default__` 或 `null` | `null`（推荐模型） | 新会话的模型：只用于默认 Driver 的会话，且该 Driver 的 Agent 偏好里没有默认模型时；`null` 用推荐模型（Claude Code 的 Sonnet、Codex 的 `-sol`），`__agent-default__` 不传模型、按 Agent 自己的 CLI 配置；会话创建时冻结，每轮交给 Driver（§3.11「默认模型与推荐模型」） |
 | `agent.defaultEffort` | 推理强度或 `null` | `null`（Driver 自己的默认） | 新会话的推理强度，规则同上 |
 | `agent.defaultAccessMode` | `plan` `ask` `autoAcceptEdits` `auto` `fullAccess` | `auto` | 没有切换过模式的会话用它（§3.12）。写入时也接受旧值 `controlled`、`authorized`，按 `ask`、`fullAccess` 保存；文件里存着的旧值读出时同样换掉 |

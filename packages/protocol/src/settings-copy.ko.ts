@@ -2,7 +2,7 @@ import { LOCALES } from './i18n.ts';
 import type { SettingDescriptionMessages } from './settings-copy.ts';
 
 export const ko: SettingDescriptionMessages = {
-  'agent.defaultDriver': '새 세션에 사용할 Agent. null이면 내장 기본값(codex)을 사용합니다. 세션을 만들 때 고정됩니다',
+  'agent.defaultDriver': "새 세션에 사용할 Agent. null이면 감지된 사용 가능한 Agent를 우선 사용합니다(Codex 우선). 세션을 만들 때 고정됩니다",
   'agent.defaultModel': '새 세션의 모델. null이면 권장 모델(Claude Code는 Sonnet, Codex는 -sol 계열), __agent-default__이면 모델을 지정하지 않고 Agent 자체 CLI 설정을 따릅니다',
   'agent.defaultEffort': '새 세션의 추론 강도. null이면 Agent 자체의 기본값을 사용합니다',
   'agent.defaultAccessMode':

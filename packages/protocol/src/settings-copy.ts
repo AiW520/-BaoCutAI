@@ -17,7 +17,7 @@ import { vi } from './settings-copy.vi.ts';
 
 /** 每个设置键给人看的一句说明（设置页与 `baocut settings` 用）。英文在这里，译文在 `settings-copy.<语言>.ts`。 */
 const en = {
-  'agent.defaultDriver': 'Agent for new sessions; null uses the built-in default (codex). Fixed when a session is created',
+  'agent.defaultDriver': "Agent for new sessions; null prefers a detected available Agent (Codex first). Fixed when a session is created",
   'agent.defaultModel': "Model for new sessions; null uses the recommended model (Sonnet for Claude Code, a -sol model for Codex), __agent-default__ passes no model so the Agent's own CLI config decides",
   'agent.defaultEffort': "Reasoning effort for new sessions; null uses the Agent's own default",
   'agent.defaultAccessMode':

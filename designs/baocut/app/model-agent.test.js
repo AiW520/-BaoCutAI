@@ -116,6 +116,14 @@ test('pickHarness：偏好 → 默认 → 第一个装着的 → null', () => {
   assert.equal(A.pickHarness([], 'claude'), null);
 });
 
+test('新会话只找到 Qwen Code：用可用的 Agent，空模型表也能明确选它的默认模型', () => {
+  const qwen = {id: 'qwen', name: 'Qwen Code', found: true, enabled: true, models: []};
+  const codex = {id: 'codex', name: 'Codex', found: false, dflt: true};
+  assert.equal(A.pickHarness([codex, qwen], null).id, 'qwen');
+  assert.ok(A.modelRows(qwen, {harness: 'codex', model: null}).every((row) => !row.on));
+  assert.equal(A.modelRows(qwen, {harness: 'qwen', model: null})[0].on, true);
+});
+
 test('harnessLabel：默认委托 Agent；目录缺席不能掩盖指定模型', () => {
   assert.equal(A.harnessLabel(H[0], 'opus'), 'Claude Code · Opus');
   assert.equal(A.harnessLabel(H[0]), 'Claude Code · Agent 默认模型');

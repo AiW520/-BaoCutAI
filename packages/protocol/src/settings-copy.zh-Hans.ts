@@ -2,7 +2,7 @@ import { LOCALES } from './i18n.ts';
 import type { SettingDescriptionMessages } from './settings-copy.ts';
 
 export const zhHans: SettingDescriptionMessages = {
-  'agent.defaultDriver': '新会话用的智能体引擎；null 为内置默认（codex）。会话创建时冻结',
+  'agent.defaultDriver': "新会话用的智能体引擎；null 优先使用已检测可用的 Agent（Codex 优先）。会话创建时冻结",
   'agent.defaultModel': '新会话的模型；null 用推荐模型（Claude Code 用 Sonnet，Codex 用 -sol 那一档），__agent-default__ 不传模型，按 Agent 自己命令行的配置',
   'agent.defaultEffort': '新会话的推理强度；null 为引擎自己的默认值',
   'agent.defaultAccessMode':

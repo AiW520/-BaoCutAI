@@ -888,7 +888,7 @@ export class Harness {
     const project = projectId ? this.#projects.get(projectId) : null;
     if (projectId && !project) throw new RpcError('not-found', HP.projectNotFound({ id: projectId }));
     // 会话创建时冻结 Driver、模型与强度（§3.11）。没指定 Driver 时用偏好设置里的默认（见 `#defaultDriverId`）：
-    // 用户设的默认没有注册时拒绝；退回内置的 codex 时它没有安装也可以先建会话，发送时再报不可用。显式指定的必须已注册。
+    // 用户设的默认没有注册时拒绝；没设过时优先用缓存里已就绪的 Agent。显式指定的必须已注册。
     const driverId = params.driverId ?? this.#defaultDriverId();
     if (params.driverId) this.#drivers.get(params.driverId);
     if (params.accessMode) this.#checkAccessMode(driverId, normalizeAgentMode(params.accessMode));
@@ -2213,7 +2213,8 @@ export class Harness {
 
   /**
    * 新会话的默认 Agent（§3.11）：偏好设置 `agent.defaultDriver` 指定的——没有注册时拒绝（`strict`），不悄悄换成别的；
-   * 没有设置（或它已停用）时用内置的 codex，codex 停用了用第一个没停用的。不探测：没安装也可以先建会话，发送时再报不可用。
+   * 没有设置（或它已停用）时优先用缓存里已就绪且启用的 Agent（Codex 优先，再按注册顺序）。
+   * 尚无可用结果时保留原来的 Codex / 第一个启用的兜底，不等待探测；已有会话的 Driver 不变。
    */
   #defaultDriverId(options: { strict: boolean } = { strict: true }): DriverId {
     const ids = this.#drivers.ids();
@@ -2221,8 +2222,9 @@ export class Harness {
     const preferred = this.#settings.snapshot(['agent.defaultDriver']).values['agent.defaultDriver'] as DriverId | null;
     if (preferred && options.strict) this.#drivers.get(preferred);
     if (preferred && ids.includes(preferred) && enabled(preferred)) return preferred;
-    if (!ids.includes('codex') || enabled('codex')) return 'codex';
-    return ids.find(enabled) ?? 'codex';
+    const ready = (id: DriverId) => enabled(id) && this.#drivers.result(id)?.state === 'ready';
+    if (ids.includes('codex') && ready('codex')) return 'codex';
+    return ids.find(ready) ?? (ids.includes('codex') && enabled('codex') ? 'codex' : ids.find(enabled)) ?? 'codex';
   }
 
   /** 正常停止（架构设计 §2.4）：停止接纳 → 屏障 → 中断 → 持久化 → 关闭原生会话。 */

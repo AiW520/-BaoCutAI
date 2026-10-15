@@ -3,7 +3,7 @@ import { LOCALES } from './i18n.ts';
 import type { SettingDescriptionMessages } from './settings-copy.ts';
 
 export const nl: SettingDescriptionMessages = {
-  'agent.defaultDriver': "Agent voor nieuwe sessies; null gebruikt de ingebouwde standaard (codex). Wordt vastgelegd bij het maken van een sessie",
+  'agent.defaultDriver': "Agent voor nieuwe sessies; null geeft voorrang aan een gedetecteerde beschikbare Agent (Codex eerst). Wordt vastgelegd bij het maken van een sessie",
   'agent.defaultModel': "Model voor nieuwe sessies; null gebruikt het aanbevolen model (Sonnet voor Claude Code, een -sol-model voor Codex), __agent-default__ geeft geen model door en volgt de eigen CLI-configuratie van de agent",
   'agent.defaultEffort': "Denkintensiteit voor nieuwe sessies; null gebruikt de eigen standaard van de agent",
   'agent.defaultAccessMode':

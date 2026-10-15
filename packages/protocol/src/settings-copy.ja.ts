@@ -2,7 +2,7 @@ import { LOCALES } from './i18n.ts';
 import type { SettingDescriptionMessages } from './settings-copy.ts';
 
 export const ja: SettingDescriptionMessages = {
-  'agent.defaultDriver': '新しいセッションで使う Agent。null は組み込みの既定（codex）。セッション作成時に固定されます',
+  'agent.defaultDriver': "新しいセッションで使う Agent。null は検出済みの利用可能な Agent を優先（Codex が最優先）。セッション作成時に固定されます",
   'agent.defaultModel': '新しいセッションのモデル。null は推奨モデル（Claude Code は Sonnet、Codex は -sol 系）、__agent-default__ はモデルを指定せず Agent 自身の CLI 設定に従う',
   'agent.defaultEffort': '新しいセッションの推論の強さ。null は Agent 自身の既定値',
   'agent.defaultAccessMode':

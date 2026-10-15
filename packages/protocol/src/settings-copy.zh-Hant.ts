@@ -2,7 +2,7 @@ import { LOCALES } from './i18n.ts';
 import type { SettingDescriptionMessages } from './settings-copy.ts';
 
 export const zhHant: SettingDescriptionMessages = {
-  'agent.defaultDriver': '新對話使用的 Agent；null 使用內建預設值（codex）。建立對話時即固定',
+  'agent.defaultDriver': "新對話使用的 Agent；null 優先使用已偵測可用的 Agent（Codex 優先）。建立對話時即固定",
   'agent.defaultModel': '新對話使用的模型；null 使用推薦模型（Claude Code 用 Sonnet，Codex 用 -sol 那一檔），__agent-default__ 不指定模型，依 Agent 自己命令列的設定',
   'agent.defaultEffort': '新對話的推理強度；null 使用 Agent 自己的預設值',
   'agent.defaultAccessMode':

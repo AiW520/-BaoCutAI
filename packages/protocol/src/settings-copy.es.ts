@@ -1,7 +1,7 @@
 import { LOCALES } from './i18n.ts';
 import type { SettingDescriptionMessages } from './settings-copy.ts';
 export const es: SettingDescriptionMessages = {
- 'agent.defaultDriver': 'Agente para sesiones nuevas; null usa el predeterminado integrado (codex). Se fija al crear la sesión',
+ 'agent.defaultDriver': "Agente para sesiones nuevas; null prioriza un agente detectado disponible (Codex primero). Se fija al crear la sesión",
  'agent.defaultModel': 'Modelo para sesiones nuevas; null usa el modelo recomendado (Sonnet en Claude Code, un modelo -sol en Codex) y __agent-default__ no indica modelo y sigue la configuración de la CLI del agente', 'agent.defaultEffort': 'Esfuerzo de razonamiento para sesiones nuevas; null usa el predeterminado del agente',
  'agent.defaultAccessMode': 'Usado por sesiones que nunca cambiaron el modo de acceso: ask, autoAcceptEdits, auto, fullAccess o plan (los valores antiguos controlled y authorized se tratan como ask y fullAccess)',
  'ui.language': `Idioma de interfaz: system sigue el idioma del sistema (inglés si no hay idioma coincidente), o un código de idioma (${LOCALES.join(', ')}). El texto que el Runtime muestra a personas también lo usa`,

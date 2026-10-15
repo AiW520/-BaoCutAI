@@ -53,6 +53,7 @@ class ModelsDriver implements AgentDriver {
   readonly id: DriverId;
   readonly verified = true;
   models: DriverModel[];
+  state: DriverProbe['state'] = 'ready';
 
   constructor(id: DriverId, models: DriverModel[]) {
     this.id = id;
@@ -77,8 +78,8 @@ class ModelsDriver implements AgentDriver {
   async probe(): Promise<DriverProbe> {
     return {
       ...this.describe(),
-      state: 'ready',
-      ...driverAvailability('ready'),
+      state: this.state,
+      ...driverAvailability(this.state),
       version: '1.0.0',
       latestVersion: null,
       detail: null,
@@ -141,6 +142,46 @@ afterEach(async () => {
 });
 
 describe('新会话的默认模型', () => {
+  it('只检测到用户添加的 Agent 可用时，视图与新会话都用它，不再固定 Codex', async () => {
+    const unavailable = codex();
+    unavailable.state = 'not-installed';
+    const qwen = new ModelsDriver('qwen', []);
+    const h = await open([unavailable, qwen]);
+    expect(h.agentsSnapshot().drivers.filter((d) => d.isDefault).map((d) => d.id)).toEqual(['qwen']);
+    expect(await h.createConversation({})).toMatchObject({ driverId: 'qwen', model: null });
+    expect(settings['agent.defaultDriver']).toBeUndefined();
+  });
+
+  it('Codex 需要登录时也优先用可用 Agent；停用后不参与自动选择', async () => {
+    const unavailable = codex();
+    unavailable.state = 'signed-out';
+    const h = await open([unavailable, claude(), new ModelsDriver('qwen', [])]);
+    const existing = await h.createConversation({});
+    expect(existing.driverId).toBe('claude');
+    await h.configureAgent({ driverId: 'claude', enabled: false });
+    expect(h.agentsSnapshot().drivers.find((d) => d.isDefault)?.id).toBe('qwen');
+    expect((await h.createConversation({})).driverId).toBe('qwen');
+    expect(h.getConversation(existing.id).conversation.driverId).toBe('claude');
+  });
+
+  it('手动设过默认就保持它，即使不可用；没有可用 Agent 时仍可建会话', async () => {
+    const unavailable = codex();
+    unavailable.state = 'not-installed';
+    settings['agent.defaultDriver'] = 'codex';
+    const h = await open([unavailable, claude()]);
+    expect(h.agentsSnapshot().drivers.find((d) => d.isDefault)?.id).toBe('codex');
+    expect((await h.createConversation({})).driverId).toBe('codex');
+    settings['agent.defaultDriver'] = null;
+    await h.configureAgent({ driverId: 'claude', enabled: false });
+    expect((await h.createConversation({})).driverId).toBe('codex');
+  });
+
+  it('没注册 Codex 时默认选已注册的可用 Agent', async () => {
+    const h = await open([new ModelsDriver('qwen', [])]);
+    expect(h.agentsSnapshot().drivers.find((d) => d.isDefault)?.id).toBe('qwen');
+    expect((await h.createConversation({})).driverId).toBe('qwen');
+  });
+
   it('没设过：Claude Code 用 Sonnet、Codex 用第一个 -sol，界面读到的默认就是它', async () => {
     const h = await open([claude(), codex()]);
     expect(defaultOf(h, 'claude')).toBe('sonnet');

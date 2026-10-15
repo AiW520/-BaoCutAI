@@ -168,6 +168,23 @@ afterEach(async () => {
 });
 
 describe('Agent 探测缓存', () => {
+  it('慢的 ACP Agent 探测完才成为自动默认；推送与新会话一致，已有会话保持原来的 Agent', async () => {
+    const codex = new FakeDriver('codex');
+    codex.state = 'not-installed';
+    const qwen = new FakeDriver('qwen', true, true);
+    qwen.hold = gate();
+    const h = await open([codex, qwen]);
+    const before = await h.agents();
+    expect(before.checking).toContain('qwen');
+    expect(before.drivers.find((d) => d.isDefault)?.id).toBe('codex');
+    const existing = await h.createConversation({});
+    qwen.hold.open();
+    await until(() => lastView()?.drivers.find((d) => d.id === 'qwen' && d.isDefault));
+    expect(h.agentsSnapshot().checking).not.toContain('qwen');
+    expect((await h.createConversation({})).driverId).toBe('qwen');
+    expect(h.getConversation(existing.id).conversation.driverId).toBe('codex');
+  });
+
   it('从磁盘缓存起步：agents.list 立刻返回上次的结果，不等后台探测；探完推送新结果并写回文件', async () => {
     await seed({ codex: stored('signed-out', '0.9.0') });
     const codex = new FakeDriver('codex');

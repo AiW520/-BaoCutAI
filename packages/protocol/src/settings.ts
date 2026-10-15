@@ -43,7 +43,7 @@ export interface CaptionLineLength {
 }
 
 export interface SettingValues {
-  /** 新会话用的 Driver；null 表示内置默认（`codex`）。 */
+  /** 新会话用的 Driver；null 优先使用已检测可用的 Agent（Codex 优先）。 */
   'agent.defaultDriver': string | null;
   /** 新会话的模型；null 表示 Driver 自己的默认模型。 */
   'agent.defaultModel': string | null;
