@@ -1,6 +1,8 @@
 import type { DriversAcpMessages } from './drivers-acp.ts';
 export const es: DriversAcpMessages = {
- copilotPlan: 'Suscripción a GitHub Copilot', copilotLoginHint: 'ejecuta copilot login en un terminal para iniciar sesión (o introduce /login en el modo interactivo de copilot)', copilotInstallHint: 'Instala GitHub Copilot CLI (npm install -g @github/copilot)',
+ qwenPlan: "Cuenta de modelo configurada en Qwen Code",
+  qwenInstallHint: "Instala Qwen Code (npm install -g @qwen-code/qwen-code@latest; Node.js 22+)",
+  copilotPlan: 'Suscripción a GitHub Copilot', copilotLoginHint: 'ejecuta copilot login en un terminal para iniciar sesión (o introduce /login en el modo interactivo de copilot)', copilotInstallHint: 'Instala GitHub Copilot CLI (npm install -g @github/copilot)',
  geminiPlan: 'Cuenta de Google', geminiLoginHint: 'ejecuta gemini en un terminal y elige iniciar sesión con una cuenta de Google, o escribe GEMINI_API_KEY=… en ~/.gemini/.env', geminiInstallHint: 'Instala Gemini CLI (brew install gemini-cli)',
  cursorPlan: 'Suscripción a Cursor', cursorInstallHint: 'Instala Cursor Agent con el script oficial', grokPlan: 'Cuenta de xAI', grokInstallHint: 'Instala Grok CLI con el script oficial', kimiPlan: 'Cuenta de Kimi', kimiInstallHint: 'Instala Kimi Code siguiendo las instrucciones oficiales (https://github.com/MoonshotAI/kimi-code)',
  customNoCommand: (p) => `El agente ${p.id} no tiene comando`, customInstallHint: (p) => `Comprueba que ${p.command} esté instalado y en PATH, o añádelo de nuevo con una ruta absoluta`,

@@ -1239,6 +1239,30 @@ describe('Runtime（假 Driver）', () => {
     expect(conversation.driverId).toBe('codex');
   });
 
+  it('内置 Qwen 不覆盖升级前的同 id 自定义配置；用户移除覆盖后才恢复内置', async () => {
+    client.close();
+    await runtime.close();
+    const home = resolveRuntimeHome({ BAOCUT_HOME: dir });
+    await fs.mkdir(path.dirname(home.agentProvidersFile), { recursive: true });
+    const provider = { id: 'qwen', name: 'My Qwen', command: ['/custom/qwen', '--acp'], env: { REGION: 'custom' }, addedAt: new Date().toISOString() };
+    await fs.writeFile(home.agentProvidersFile, JSON.stringify({ schemaVersion: 1, providers: [provider] }));
+    const builtin: AgentDriver = {
+      id: 'qwen', verified: true,
+      probe: async () => ({ ...fakeProbe(capabilities), id: 'qwen', name: 'Builtin Qwen' }),
+      createSession: async () => new FakeSession(),
+    };
+    runtime = await startRuntime({ home, drivers: () => [builtin], customDriver: (p) => ({
+      ...builtin, id: p.id, probe: async () => ({ ...fakeProbe(capabilities), id: p.id, name: p.name }),
+    }), watchSpace: false });
+    client = await connect();
+    const before = await client.request('agents.list', {});
+    expect(before.drivers.find((d) => d.id === 'qwen')).toMatchObject({ name: 'My Qwen', source: 'custom', custom: { command: provider.command, envKeys: ['REGION'] } });
+    expect((await client.request('conversations.create', {})).conversation.driverId).toBe('qwen');
+    await client.request('agents.removeProvider', { id: 'qwen' });
+    const after = await client.request('agents.detect', { driverId: 'qwen' });
+    expect(after.drivers.find((d) => d.id === 'qwen')).toMatchObject({ name: 'Builtin Qwen', source: 'builtin' });
+  });
+
   it('未经集成测试的 Driver（D08）：可以选，但发送被拒绝，不开原生会话', async () => {
     client.close();
     await runtime.close();

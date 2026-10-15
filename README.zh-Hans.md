@@ -76,7 +76,7 @@ Fish Audio S2 Pro 可在本机使用 MLX 社区 8-bit 权重，支持内置音�
 | **MCP 服务 + BaoCut skill** | 让你自己的智能体（Claude Code、Codex、Cursor、Gemini CLI 等）通过同一份工具目录操作 BaoCut。`baocut skill install` 安装使用说明，`baocut mcp install` 配置 MCP 接入。 |
 | **Web 客户端** | 用 `baocut web open --video <id>` 获取一次性链接，在浏览器打开视频的编辑器，查看远端智能体的工作结果。 |
 
-**选择自己的智能体引擎。** Claude Code 与 Codex CLI 已有端到端验证；GitHub Copilot CLI、Pi 和 OpenCode 已内置接入。支持 Agent Client Protocol 的智能体（如 Gemini CLI、Cursor Agent、Grok、Kimi Code，或自行添加的引擎）通过统一驱动接入。各引擎的验证状态见下文。
+**选择自己的智能体引擎。** Claude Code 与 Codex CLI 已有端到端验证；GitHub Copilot CLI、Pi 和 OpenCode 已内置接入。支持 Agent Client Protocol 的智能体（如 Qwen Code（千问）、Gemini CLI、Cursor Agent、Grok、Kimi Code，或自行添加的引擎）通过统一驱动接入。各引擎的验证状态见下文。
 
 **选择自己的模型。** 转写、语音合成、图片生成、文本生成、音频分离等能力与服务提供方解耦。Apple Silicon 使用 MLX、Core ML 本地后端，Windows 使用 whisper.cpp、candle，并提供 CUDA 与 Vulkan 打包配置。在线接入包括 OpenAI、Anthropic、Google、ElevenLabs、DeepSeek、Moonshot、Qwen、Zhipu、MiniMax、Volcengine、xAI、Mistral、Groq、OpenRouter、SiliconFlow 及其他 OpenAI 兼容端点。各服务支持的能力不同；用量账本记录任务消耗与可获得的费用信息。一台机器也可以向局域网里的其他机器共享本地模型能力。Windows 当前的凭据与硬件验证限制见下文。
 

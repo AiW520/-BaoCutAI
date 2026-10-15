@@ -9,8 +9,8 @@ import type { DriverId, DriverInstallOption, Localized } from '@baocut/protocol'
 import { DriversAcp } from '@baocut/protocol/messages/agent-drivers';
 import { officialScript } from '../driver-text.ts';
 
-/** 内置的 ACP 预设（`BUILTIN_DRIVER_IDS` 里经 ACP 接入的五个）。 */
-export type BuiltinAcpDriverId = 'copilot' | 'gemini' | 'cursor' | 'grok' | 'kimi';
+/** 内置的 ACP 预设（`BUILTIN_DRIVER_IDS` 里经 ACP 接入的六个）。 */
+export type BuiltinAcpDriverId = 'copilot' | 'qwen' | 'gemini' | 'cursor' | 'grok' | 'kimi';
 /** 经 ACP 接入的 Driver：内置预设，或用户添加的智能体（`agents.addProvider`）。 */
 export type AcpDriverId = DriverId;
 
@@ -142,6 +142,25 @@ export const ACP_PRESETS: Record<BuiltinAcpDriverId, AcpPreset> = {
       fullAccess: [COPILOT_MODE('agent'), 'default'],
     },
     permissionOption: { configId: 'allow_all', on: 'on', off: 'off' },
+    tested: false,
+  },
+  qwen: {
+    id: 'qwen',
+    name: 'Qwen Code',
+    command: 'qwen',
+    args: ['--acp'],
+    // 已有 ACP 目录钉住的版本；不接受早期尚无这套 ACP 接口的 qwen。
+    minVersion: '0.20.1',
+    get plan() { return DriversAcp.qwenPlan(); },
+    loginCommand: 'qwen',
+    install: [
+      { kind: 'npm', label: 'npm', needs: 'Node.js 22+', command: 'npm install -g @qwen-code/qwen-code@latest', upgrade: 'npm install -g @qwen-code/qwen-code@latest' },
+      { kind: 'brew', label: 'Homebrew', needs: 'Homebrew', command: 'brew install qwen-code', upgrade: 'brew upgrade qwen-code' },
+    ],
+    get installHint() { return DriversAcp.qwenInstallHint(); },
+    knownLocations: LOCAL_BIN('qwen'),
+    models: 'session',
+    modes: ACP_MODES,
     tested: false,
   },
   gemini: {

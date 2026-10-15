@@ -3,6 +3,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { promisify } from 'node:util';
 import { agentEnv, findOnPath, isExecutable, pickNewest } from '../login-shell.ts';
+import { resolveCliCommand } from '../cli-command.ts';
 import type { AcpPreset } from './acp-presets.ts';
 
 const run = promisify(execFile);
@@ -14,6 +15,22 @@ export interface AcpInstall {
 }
 
 const located = new Map<string, { at: number; result: Promise<AcpInstall | null> }>();
+
+/** Windows 同时支持独立 exe 与 npm cmd shim；macOS / Linux 使用原命令与预设安装位置。 */
+export function acpSearch(preset: Pick<AcpPreset, 'command' | 'knownLocations'>, platform: NodeJS.Platform, env: NodeJS.ProcessEnv, home: string): { names: string[]; locations: string[] } {
+  const paths = platform === 'win32' ? path.win32 : path.posix;
+  const locations = (preset.knownLocations ?? []).map((file) => file.startsWith('~/') ? paths.join(home, file.slice(2)) : file);
+  if (platform !== 'win32') return { names: [preset.command], locations };
+  const win = path.win32;
+  return {
+    names: /\.(exe|cmd)$/i.test(preset.command) ? [preset.command] : [`${preset.command}.exe`, `${preset.command}.cmd`],
+    locations: [
+      win.join(home, '.local', 'bin', `${preset.command}.exe`),
+      win.join(env.APPDATA || win.join(home, 'AppData', 'Roaming'), 'npm', `${preset.command}.cmd`),
+      ...locations,
+    ],
+  };
+}
 
 /** 覆盖可执行文件位置的环境变量：`BAOCUT_GEMINI_PATH` 之类；id 里的连字符换成下划线（`my-agent` → `BAOCUT_MY_AGENT_PATH`）。 */
 export function acpPathVariable(preset: Pick<AcpPreset, 'id'>): string {
@@ -47,11 +64,13 @@ async function findAcp(preset: AcpPreset): Promise<AcpInstall | null> {
   }
 
   const candidates: string[] = [];
-  const onPath = await findOnPath(process.platform === 'win32' ? `${preset.command}.exe` : preset.command, env.PATH ?? '');
-  if (onPath) candidates.push(onPath);
-  if (!readVersion) return onPath ? { command: onPath, version: null, env } : null;
-  for (const location of preset.knownLocations ?? []) {
-    const file = location.startsWith('~/') ? path.join(os.homedir(), location.slice(2)) : location;
+  const search = acpSearch(preset, process.platform, env, os.homedir());
+  for (const name of search.names) {
+    const onPath = await findOnPath(name, env.PATH ?? env.Path ?? '');
+    if (onPath) candidates.push(onPath);
+  }
+  if (!readVersion) return candidates[0] ? { command: candidates[0], version: null, env } : null;
+  for (const file of search.locations) {
     if (await isExecutable(file)) candidates.push(file);
   }
   return pickNewest(candidates, async (command) => ({ command, version: await readAcpVersion(command, env), env }));
@@ -71,7 +90,8 @@ export function parseAcpVersion(output: string): string | null {
 
 async function readAcpVersion(command: string, env: NodeJS.ProcessEnv): Promise<string | null> {
   try {
-    const { stdout, stderr } = await run(command, ['--version'], { env, timeout: 10_000 });
+    const launch = await resolveCliCommand(command);
+    const { stdout, stderr } = await run(launch.file, [...launch.args, '--version'], { env, timeout: 10_000 });
     return parseAcpVersion(stdout) ?? parseAcpVersion(stderr);
   } catch {
     return null;

@@ -18,6 +18,7 @@ import {
 import { RUNTIME_VERSION, type Localized } from '@baocut/protocol';
 import { DriversAcp, DriversCommon } from '@baocut/protocol/messages/agent-drivers';
 import type { Logger } from '@baocut/harness';
+import { resolveCliCommand } from '../cli-command.ts';
 
 /** ACP 的「需要登录」（`RequestError.authRequired`）。 */
 export const ACP_AUTH_REQUIRED = -32000;
@@ -227,7 +228,8 @@ export class AcpProcess {
   }
 
   static async start(options: AcpProcessOptions): Promise<AcpProcess> {
-    const proc = new AcpProcess(options);
+    const launch = await resolveCliCommand(options.command);
+    const proc = new AcpProcess({ ...options, command: launch.file, args: [...launch.args, ...options.args] });
     const exitedEarly = proc.exited.then((reason) => {
       throw new Error(String(reason ?? DriversAcp.exitedBeforeInit({ name: options.label })));
     });

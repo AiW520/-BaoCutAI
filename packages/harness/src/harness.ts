@@ -2029,7 +2029,7 @@ export class Harness {
    */
   async removeProvider(id: DriverId): Promise<AgentsView> {
     const providers = this.#requireProviders();
-    if (isBuiltinDriverId(id) || (this.#drivers.has(id) && !this.#drivers.custom(id))) {
+    if (!this.#drivers.custom(id) && (isBuiltinDriverId(id) || this.#drivers.has(id))) {
       throw new RpcError('invalid-request', HA.builtinNotRemovable({ agent: this.#driverNameOf(id) }), {
         code: 'AGENT_PROVIDER_BUILTIN',
         driverId: id,
@@ -2049,6 +2049,8 @@ export class Harness {
       await this.#agents.release(state.id);
     }
     this.#drivers.unregister(id);
+    // 移除历史自定义覆盖后，同 id 的内置 Driver 会恢复，需要重新检测。
+    if (this.#drivers.has(id)) void this.#drivers.refresh([id], { force: true, reason: 'restore-builtin' });
     await providers.store.remove(id);
     if (this.#prefs.get().drivers[id]) {
       await this.#prefs.update((p) => {
@@ -2630,6 +2632,7 @@ const BUILTIN_DRIVER_NAME: Record<BuiltinDriverId, string> = {
   pi: 'Pi',
   opencode: 'OpenCode',
   antigravity: 'Antigravity CLI',
+  qwen: 'Qwen Code',
   gemini: 'Gemini CLI',
   cursor: 'Cursor Agent',
   grok: 'Grok',

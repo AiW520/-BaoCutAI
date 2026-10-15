@@ -38,8 +38,8 @@ const M = defineMessages(en, { 'zh-Hans': zhHans, 'zh-Hant': zhHant, ja, ko, es,
  * 视图只组合；添加与移除走 `agents.addProvider` / `agents.removeProvider`，界面不在本地存添加的 Agent。
  */
 
-/** 内置九家里收进「更多」折叠段的四家（经 ACP 接入）；其余五家常驻主列表，没装也列出。 */
-export const MORE_BUILTIN_IDS: readonly DriverId[] = ['gemini', 'cursor', 'grok', 'kimi'];
+/** 内置 Agent 中收进「更多」折叠段的五家（经 ACP 接入）；其余六家常驻主列表，没装也列出。 */
+export const MORE_BUILTIN_IDS: readonly DriverId[] = ['qwen', 'gemini', 'cursor', 'grok', 'kimi'];
 
 /** 用户添加的（`agents.addProvider`），能移除；内置的只能停用。 */
 export function isCustomDriver(driver: Pick<DriverInfo, 'source'>): boolean {
@@ -48,7 +48,7 @@ export function isCustomDriver(driver: Pick<DriverInfo, 'source'>): boolean {
 
 /**
  * 进会话与工具的 Agent 选择器（原型 model-agent.js `listed`）：检测到的都进；没检测到的只有常驻主列表的内置几家进（带安装提示），
- * 「更多」四家与用户添加的没检测到时不进——一串「未安装」只会把能用的那一行淹掉。
+ * 「更多」五家与用户添加的没检测到时不进——一串「未安装」只会把能用的那一行淹掉。
  */
 export function listedInPicker(driver: Pick<DriverInfo, 'id' | 'state' | 'source'>): boolean {
   if (driver.state !== 'not-installed') return true;

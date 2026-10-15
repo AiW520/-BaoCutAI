@@ -273,5 +273,5 @@ export class AcpDriver implements AgentDriver {
 
 /** 内置 ACP 预设各一个 Driver，按 `BUILTIN_DRIVER_IDS` 的顺序。 */
 export function acpDrivers(log: Logger): AcpDriver[] {
-  return (['copilot', 'gemini', 'cursor', 'grok', 'kimi'] as const).map((id) => new AcpDriver(id, log));
+  return (['copilot', 'qwen', 'gemini', 'cursor', 'grok', 'kimi'] as const).map((id) => new AcpDriver(id, log));
 }

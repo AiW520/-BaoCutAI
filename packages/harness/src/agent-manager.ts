@@ -52,6 +52,8 @@ interface InflightProbe {
 export class DriverRegistry {
   readonly #drivers = new Map<DriverId, AgentDriver>();
   readonly #custom = new Map<DriverId, CustomAgentProviderView>();
+  /** 已有自定义 id 后来成为内置 id：暂存内置实现，移除自定义覆盖时恢复。 */
+  readonly #shadowed = new Map<DriverId, AgentDriver>();
   readonly #executables = new Map<DriverId, string>();
   readonly #results = new Map<DriverId, DriverProbe>();
   readonly #inflight = new Map<DriverId, InflightProbe>();
@@ -62,6 +64,9 @@ export class DriverRegistry {
 
   /** 注册（或替换）一个 Driver。`custom`：用户添加的智能体的配置摘要；不给是内置的。 */
   register(driver: AgentDriver, options: { custom?: CustomAgentProviderView } = {}): void {
+    const previous = this.#drivers.get(driver.id);
+    if (options.custom && previous && !this.#custom.has(driver.id)) this.#shadowed.set(driver.id, previous);
+    else if (!options.custom) this.#shadowed.delete(driver.id);
     this.#drivers.set(driver.id, driver);
     if (options.custom) this.#custom.set(driver.id, structuredClone(options.custom));
     else this.#custom.delete(driver.id);
@@ -71,10 +76,13 @@ export class DriverRegistry {
 
   /**
    * 注销一个 Driver：丢掉它的结果与可执行文件，作废进行中的探测（回来的结果不再写入），探测缓存文件里的条目随即删掉。
-   * 返回是否注册过。偏好与会话由 Harness 处理。
+   * 有历史自定义覆盖时恢复它遮住的内置实现。返回是否注册过。偏好与会话由 Harness 处理。
    */
   unregister(id: DriverId): boolean {
     if (!this.#drivers.delete(id)) return false;
+    const fallback = this.#shadowed.get(id);
+    if (fallback) this.#drivers.set(id, fallback);
+    this.#shadowed.delete(id);
     this.#custom.delete(id);
     this.#executables.delete(id);
     this.#results.delete(id);

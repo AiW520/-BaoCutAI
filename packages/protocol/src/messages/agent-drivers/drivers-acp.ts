@@ -16,6 +16,8 @@ import { vi } from './drivers-acp.vi.ts';
 
 /** 经 ACP 接入的 Agent（GitHub Copilot、Gemini CLI、Cursor Agent、Grok、Kimi Code 与用户添加的）：预设、探测与会话里的文字。 */
 const en = {
+  qwenPlan: "Model account configured in Qwen Code",
+  qwenInstallHint: "Install Qwen Code (npm install -g @qwen-code/qwen-code@latest; Node.js 22+)",
   copilotPlan: 'GitHub Copilot subscription',
   copilotLoginHint: "run copilot login in a terminal to sign in (or enter /login in copilot's interactive mode)",
   copilotInstallHint: 'Install GitHub Copilot CLI (npm install -g @github/copilot)',

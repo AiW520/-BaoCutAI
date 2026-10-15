@@ -2076,8 +2076,14 @@
        docs: 'https://antigravity.google/docs/cli/install/',
        loginHint: '装好后在终端里运行 agy，按提示用 Google 账号登录。Windows 请按官方说明在 PowerShell 中安装。'}),
   ];
-  /* 「更多」折叠段的四家 ACP 智能体。 */
+  /* 「更多」折叠段的五家 ACP 智能体。 */
   const MORE_HARNESSES = [
+    /* product-design §7.6：千问是内置 ACP Agent；模型表由实际会话返回，不写死模型。 */
+    harnessPreset('qwen', 'Qwen Code', 'qwen', 'Alibaba', 'Qwen Code 里的模型账号', '0.20.1',
+      [{k: 'npm', label: 'npm', needs: 'Node.js 22+', cmd: 'npm install -g @qwen-code/qwen-code@latest', upgrade: 'npm install -g @qwen-code/qwen-code@latest'},
+       {k: 'brew', label: 'Homebrew', needs: 'Homebrew', cmd: 'brew install qwen-code', upgrade: 'brew upgrade qwen-code'}], [],
+      {minVer: '0.20.1', launch: ['qwen', '--acp'], docs: 'https://qwenlm.github.io/qwen-code-docs/en/users/quickstart/',
+       loginHint: '装好后在终端运行 qwen，按提示配置模型账号；需要更换登录方式时输入 /auth。'}),
     harnessPreset('gemini', 'Gemini CLI', 'gemini', 'Google', 'Google 账号', '0.27.3',
       [{k: 'brew', label: 'Homebrew', needs: 'Homebrew', cmd: 'brew install gemini-cli', upgrade: 'brew upgrade gemini-cli'},
        {k: 'npm', label: 'npm', needs: 'Node.js', cmd: 'npm install -g @google/gemini-cli', upgrade: 'npm install -g @google/gemini-cli@latest'}],
@@ -2092,7 +2098,7 @@
     harnessPreset('kimi', 'Kimi Code', 'kimi', 'Moonshot AI', 'Kimi 账号', '1.12.0', [],
       [{id: 'kimi-k3', name: 'Kimi K3', dflt: true, tier: 'balanced'}], {docs: 'https://github.com/MoonshotAI/kimi-code'}),
   ];
-  /* 可添加的 ACP 智能体目录（product-design §7.6）：设置 › Agent「添加更多 Agent」里一键添加的条目，不含上面内置的十家。
+  /* 可添加的 ACP 智能体目录（product-design §7.6）：设置 › Agent「添加更多 Agent」里一键添加的条目，不含上面内置的十一家。
      command = BaoCut 启动它用的命令数组（`npx -y 包@版本` 钉住版本，升级跟着 BaoCut 的目录走）；env = 启动时附加的环境变量；
      ver = 目录记的版本（null = 由它自己的安装方式决定）；docs = 它的官方说明。介绍是 BaoCut 自己写的一句话。
      这些智能体 BaoCut 没有逐家验证过：能不能用以它自己的说明与探测结果为准。 */

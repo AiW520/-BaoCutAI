@@ -23,6 +23,26 @@ describe('AcpDriver.probe（假 ACP 智能体）', () => {
 
   const sessionsStarted = () => fake.log().filter((e) => e.kind === 'start').length;
 
+  it('Qwen Code：按原生 --acp 启动，读会话模型表；没有模型表时仍可用', async () => {
+    fake.scenario({ version: '0.20.1', models: 'config' });
+    const driver = new AcpDriver('qwen', silentLogger, { locate: fake.locate });
+    const probe = await driver.probe();
+    expect(probe).toMatchObject({ id: 'qwen', name: 'Qwen Code', state: 'ready', loginCommand: 'qwen', minVersion: '0.20.1', tested: false });
+    expect(probe.models.map((m) => m.id)).toEqual(['fake-pro', 'fake-flash']);
+    expect(fake.log().find((e) => e.kind === 'start')?.args).toEqual(['--acp']);
+    fake.scenario({ version: '0.20.2', models: 'none' });
+    expect(await driver.probe({ force: true })).toMatchObject({ state: 'ready', models: [] });
+  });
+
+  it('Qwen Code：版本过旧时提示升级；未登录时给出 qwen 登录入口', async () => {
+    fake.scenario({ version: '0.0.1' });
+    const driver = new AcpDriver('qwen', silentLogger, { locate: fake.locate });
+    expect(await driver.probe()).toMatchObject({ state: 'outdated' });
+    expect(sessionsStarted()).toBe(0);
+    fake.scenario({ version: '0.20.1', loggedIn: false });
+    expect(await driver.probe()).toMatchObject({ state: 'signed-out', loginCommand: 'qwen', detail: expect.stringContaining('qwen') });
+  });
+
   it('已安装、已登录：ready，版本、模型表（旧版 models）、能力；共享实现已验证，可以开会话', async () => {
     const driver = new AcpDriver('gemini', silentLogger, { locate: fake.locate });
     const probe = await driver.probe();
@@ -132,9 +152,10 @@ describe('AcpDriver.probe（假 ACP 智能体）', () => {
 
 describe('ACP 预设', () => {
   it('内置预设：启动参数、安装方式、覆盖变量', () => {
-    expect(acpDrivers(silentLogger).map((d) => d.id)).toEqual(['copilot', 'gemini', 'cursor', 'grok', 'kimi']);
+    expect(acpDrivers(silentLogger).map((d) => d.id)).toEqual(['copilot', 'qwen', 'gemini', 'cursor', 'grok', 'kimi']);
     expect(Object.values(ACP_PRESETS).map((p) => [p.id, p.command, p.args.join(' ')])).toEqual([
       ['copilot', 'copilot', '--acp'],
+      ['qwen', 'qwen', '--acp'],
       ['gemini', 'gemini', '--acp'],
       ['cursor', 'cursor-agent', 'acp'],
       ['grok', 'grok', 'agent stdio'],
@@ -158,6 +179,7 @@ describe('ACP 预设', () => {
     // 共享实现已验证：都能开会话；各家都还没以自家智能体在 BaoCut 上实测过。
     expect(acpDrivers(silentLogger).map((d) => [d.id, d.verified, d.slowProbe, d.preset.tested])).toEqual([
       ['copilot', true, true, false],
+      ['qwen', true, true, false],
       ['gemini', true, true, false],
       ['cursor', true, true, false],
       ['grok', true, true, false],

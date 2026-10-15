@@ -104,16 +104,19 @@ test('添加的那家：没检测到也留在主列表、不进选择器；检�
   assert.equal(missing.includes('other'), false);
 });
 
-test('演示数据：内置十家（常驻六家 + 更多四家），目录不含内置的，id 合规且不重复', () => {
+test('演示数据：内置十一家（常驻六家 + 更多五家），目录不含内置的，id 合规且不重复', () => {
   ['model-substyle', 'model-pose', 'model-shape-paths', 'model-elements', 'model-textpresets', 'model-wordanim', 'model-subanim',
     'model-subpresets', 'model-motioncaption', 'model-template', 'model-cut', 'model-defaultsub', 'data'].forEach((m) => require('./' + m + '.js'));
   const A = window.BC_DATA.agent;
   const g = S.groups(A.harnesses);
   assert.deepEqual(g.main.filter((h) => !h.found).map((h) => h.id).concat(A.harnesses.filter((h) => h.found).map((h) => h.id)).sort(),
     ['antigravity', 'claude', 'codex', 'copilot', 'opencode', 'pi']);
-  assert.deepEqual(g.more.map((h) => h.id), ['gemini', 'cursor', 'grok', 'kimi']);
+  assert.deepEqual(g.more.map((h) => h.id), ['qwen', 'gemini', 'cursor', 'grok', 'kimi']);
   assert.equal(A.harnesses.some((h) => h.id === 'deepseek' || h.id === 'fx'), false);
   const copilot = A.harnesses.find((h) => h.id === 'copilot');
+  const qwen = A.harnesses.find((h) => h.id === 'qwen');
+  assert.deepEqual([qwen.minVer, qwen.launch, qwen.models], ['0.20.1', ['qwen', '--acp'], []]);
+  assert.equal(qwen.installs[0].cmd, 'npm install -g @qwen-code/qwen-code@latest');
   assert.deepEqual([copilot.cmd, copilot.launch, copilot.installs[0].cmd], ['copilot', ['copilot', '--acp'], 'npm install -g @github/copilot']);
   const opencode = A.harnesses.find((h) => h.id === 'opencode');
   assert.deepEqual([opencode.minVer, opencode.ver, opencode.latest], ['2.0.10', '2.0.24', '2.0.24']);

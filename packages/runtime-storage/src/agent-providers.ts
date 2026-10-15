@@ -11,7 +11,7 @@ interface AgentProvidersFile {
  * 整份读进内存，改一次写一次（原子写，写串行，后一次覆盖前一次）；`env` 可能含密钥，文件权限 0600。
  *
  * 文件坏了改名保留、当没有（不拦住 Runtime 启动），更新版本写下的不改写（`store-file.ts`）；单条不合法（id 写法不对、
- * 与内置的或前面的重名、命令为空）的丢掉。
+ * 与内置的或前面的重名、命令为空）的丢掉；新增内置前已有的自定义 qwen 例外保留。
  */
 export class AgentProviderStore {
   readonly #file: JsonStoreFile;
@@ -31,7 +31,8 @@ export class AgentProviderStore {
     const seen = new Set<string>();
     this.#providers = [];
     for (const entry of raw) {
-      const provider = normalize(entry);
+      // qwen 过去是合法的自定义 id；新增内置预设后，已有命令与环境仍由用户的配置持有。
+      const provider = normalize(entry, { legacy: true });
       if (!provider || seen.has(provider.id)) continue;
       seen.add(provider.id);
       this.#providers.push(provider);
@@ -79,10 +80,10 @@ export class AgentProviderStore {
   }
 }
 
-function normalize(raw: unknown): CustomAgentProvider | null {
+function normalize(raw: unknown, options: { legacy?: boolean } = {}): CustomAgentProvider | null {
   if (!raw || typeof raw !== 'object') return null;
   const r = raw as Record<string, unknown>;
-  if (!isDriverId(r.id) || isBuiltinDriverId(r.id)) return null;
+  if (!isDriverId(r.id) || (isBuiltinDriverId(r.id) && !(options.legacy && r.id === 'qwen'))) return null;
   if (typeof r.name !== 'string' || !r.name.trim()) return null;
   if (!Array.isArray(r.command) || r.command.length === 0 || !r.command.every((a) => typeof a === 'string' && a.length > 0)) return null;
   const env: Record<string, string> = {};

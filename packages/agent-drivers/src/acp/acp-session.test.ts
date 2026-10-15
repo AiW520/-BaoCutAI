@@ -59,6 +59,25 @@ describe('AcpSession（假 ACP 智能体）', () => {
 
   const settings = (accessMode: AgentMode = 'ask', model: string | null = null) => ({ accessMode, model, effort: null });
 
+  it('Qwen Code：默认模型会话保留 MCP、逐次审批与原生恢复', async () => {
+    driver = new AcpDriver('qwen', silentLogger, { locate: fake.locate });
+    const first = await start({ models: 'none', turn: { reply: '你好', tool: { kind: 'edit', title: 'edit file' }, ask: 1 } }, {
+      mcpServers: { baocut: { url: 'http://127.0.0.1:9/mcp', headers: {} } },
+    });
+    expect(fake.requests('session/new').at(-1)!.params.mcpServers).toEqual([
+      { type: 'http', name: 'baocut', url: 'http://127.0.0.1:9/mcp', headers: [] },
+    ]);
+    const { turnId } = await first.session.startTurn({ text: 'hello' }, settings());
+    const approval = await first.approval();
+    await first.session.respondToApproval(approval.approvalId, { decision: 'accept' });
+    expect(await first.completed(turnId)).toMatchObject({ outcome: 'completed' });
+    const handle = first.session.describePersistence()!;
+    expect(handle.driverId).toBe('qwen');
+    const second = await start({ models: 'none' }, { resume: handle });
+    expect(second.session.describePersistence()).toEqual(handle);
+    expect(fake.requests('session/load')).toHaveLength(1);
+  });
+
   it('新建会话：cwd 与 MCP 服务（Streamable HTTP）照传，第一轮前附开发者指令，消息与思考按增量到达', async () => {
     const { session, events, completed } = await start(
       { turn: { thought: 'thinking…', reply: 'hello world', plan: ['read', 'cut'] } },

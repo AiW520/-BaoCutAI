@@ -400,7 +400,8 @@ export async function startRuntime(options: StartRuntimeOptions = {}): Promise<R
     const customProviders = new AgentProviderStore(home.agentProvidersFile, { log: log.child('agent-providers') });
     const createCustomDriver = (provider: CustomAgentProvider) => (options.customDriver ?? createCustomAcpDriver)(provider, log);
     for (const provider of await customProviders.load()) {
-      if (drivers.has(provider.id)) continue;
+      // 升级前用户可能已手动配置 id=qwen；保留它的启动命令与环境，不被新内置预设覆盖。
+      if (drivers.has(provider.id) && provider.id !== 'qwen') continue;
       drivers.register(createCustomDriver(provider), { custom: customAgentProviderView(provider) });
     }
 

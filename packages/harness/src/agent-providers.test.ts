@@ -288,6 +288,20 @@ describe('添加智能体', () => {
 });
 
 describe('移除智能体', () => {
+  it('升级前的自定义 qwen 保留身份；移除其覆盖后恢复内置预设', async () => {
+    await fs.mkdir(path.dirname(home.agentProvidersFile), { recursive: true });
+    const qwen = { id: 'qwen', name: 'Custom Qwen', command: ['/custom/qwen', '--acp'], env: { REGION: 'custom' }, addedAt: nowIso() };
+    await fs.writeFile(home.agentProvidersFile, JSON.stringify({ schemaVersion: 1, providers: [qwen] }));
+    const h = await open([new FakeDriver('qwen', { name: 'Builtin Qwen' })]);
+    const before = await h.agents();
+    expect(before.drivers.find((d) => d.id === 'qwen')).toMatchObject({ name: 'Custom Qwen', source: 'custom', custom: { command: qwen.command, envKeys: ['REGION'] } });
+    await h.removeProvider('qwen');
+    const after = await h.agents({ fresh: true });
+    expect(after.drivers.find((d) => d.id === 'qwen')).toMatchObject({ name: 'Builtin Qwen', source: 'builtin' });
+    expect(store.get('qwen')).toBeNull();
+    expect((await rejection(h.removeProvider('qwen'))).details).toMatchObject({ code: 'AGENT_PROVIDER_BUILTIN' });
+  });
+
   it('清掉偏好、探测缓存与指向它的默认 Agent；进行中的任务失败，之后发送以 driver-unavailable 拒绝', async () => {
     const h = await open([new FakeDriver('codex')]);
     await h.addProvider(pinned);

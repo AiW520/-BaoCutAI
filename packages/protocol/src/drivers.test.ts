@@ -5,7 +5,7 @@ import { WEB_DEFAULT_METHODS, WEB_READ_METHODS } from './web.ts';
 
 describe('DriverId', () => {
   it('内置的十个引擎：常驻主列表的六个，以及经 ACP 接入的四个', () => {
-    expect(BUILTIN_DRIVER_IDS).toEqual(['claude', 'codex', 'copilot', 'pi', 'opencode', 'antigravity', 'gemini', 'cursor', 'grok', 'kimi']);
+    expect(BUILTIN_DRIVER_IDS).toEqual(['claude', 'codex', 'copilot', 'pi', 'opencode', 'antigravity', 'qwen', 'gemini', 'cursor', 'grok', 'kimi']);
     expect(isBuiltinDriverId('pi')).toBe(true);
     expect(isBuiltinDriverId('my-agent')).toBe(false);
   });

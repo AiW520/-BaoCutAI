@@ -152,6 +152,7 @@ export const AGENT_ICON_FILES: Readonly<Record<string, { file: string; mono: boo
   opencode: { file: 'opencode', mono: true },
   gemini: { file: 'google', mono: false },
   antigravity: { file: 'google', mono: false },
+  qwen: { file: 'qwen', mono: false },
   cursor: { file: 'cursor', mono: true },
   grok: { file: 'xai', mono: true },
   kimi: { file: 'moonshot', mono: true },

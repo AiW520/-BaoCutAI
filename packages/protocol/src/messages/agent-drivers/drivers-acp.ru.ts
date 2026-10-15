@@ -1,6 +1,8 @@
 import type { DriversAcpMessages } from './drivers-acp.ts';
 
 export const ru: DriversAcpMessages = {
+  qwenPlan: "Аккаунт модели, настроенный в Qwen Code",
+  qwenInstallHint: "Установите Qwen Code (npm install -g @qwen-code/qwen-code@latest; Node.js 22+)",
   copilotPlan: "Подписка GitHub Copilot",
   copilotLoginHint: "выполните copilot login в терминале для входа (или введите /login в интерактивном режиме copilot)",
   copilotInstallHint: "Установите GitHub Copilot CLI (npm install -g @github/copilot)",

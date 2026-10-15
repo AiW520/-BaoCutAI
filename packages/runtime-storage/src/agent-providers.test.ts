@@ -19,6 +19,17 @@ afterEach(async () => {
 const at = '2026-10-06T00:00:00.000Z';
 
 describe('AgentProviderStore', () => {
+  it('保留新增内置之前手动添加的 qwen，但不再允许新添加保留 id', async () => {
+    await fs.mkdir(path.dirname(file), { recursive: true });
+    const qwen = { id: 'qwen', name: 'My Qwen', command: ['/custom/qwen', '--acp'], env: { REGION: 'custom' }, addedAt: at };
+    await fs.writeFile(file, JSON.stringify({ schemaVersion: 1, providers: [qwen] }));
+    const store = new AgentProviderStore(file);
+    expect(await store.load()).toEqual([qwen]);
+    await expect(new AgentProviderStore(path.join(dir, 'new.json')).add(qwen)).rejects.toThrow();
+    await store.add({ id: 'another', name: 'Another', command: ['another'], addedAt: at });
+    expect((await new AgentProviderStore(file).load())[0]).toEqual(qwen);
+  });
+
   it('没有文件或文件损坏时当没有', async () => {
     expect(await new AgentProviderStore(file).load()).toEqual([]);
     await fs.mkdir(path.dirname(file), { recursive: true });

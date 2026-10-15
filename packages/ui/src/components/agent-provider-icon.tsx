@@ -11,6 +11,7 @@ import google from './vendor-icons/google.svg';
 import moonshot from './vendor-icons/moonshot.svg';
 import opencode from './vendor-icons/opencode.svg';
 import pi from './vendor-icons/pi.svg';
+import qwen from './vendor-icons/qwen.svg';
 import xai from './vendor-icons/xai.svg';
 
 /*
@@ -19,7 +20,7 @@ import xai from './vendor-icons/xai.svg';
  * 用 createIcon 包一层、画在 20 网格上，放进 ActionButton 与 MenuItem 的图标槽时和 S2 workflow 图标一样定位、按紧凑档显示 16px（app.css）；
  * 单色的当遮罩填 currentColor（行停用时跟着变淡），彩色的原样画，用户添加的 Agent 画名字首字母。
  */
-const FILES: Readonly<Record<string, string>> = { anthropic, codex, cursor, githubcopilot, google, moonshot, opencode, pi, xai };
+const FILES: Readonly<Record<string, string>> = { anthropic, codex, cursor, githubcopilot, google, moonshot, opencode, pi, qwen, xai };
 
 const letterBox = style({ fill: 'gray-200' });
 const letterText = style({ fill: 'gray-800' });
