@@ -2,7 +2,6 @@
 import type { Dynamic } from "../interop/legacy-dynamic";
 import {
   React,
-  originalJsxProps,
   preloadModule,
   resolvePlatformLoadingAndStatusResolve,
   resolveUiDesignSystemValue2,
@@ -234,21 +233,9 @@ export function initializeSparkStep1(): void {
         ? input3
         : resolveUiDesignSystemValue2(`shrink-0`, input3);
     return input === undefined || input === `idle` ? (
-      <AvatarsMemo
-        {...originalJsxProps({
-          ...input4,
-          className: value,
-        })}
-      />
+      <AvatarsMemo {...input4} className={value} />
     ) : (
-      <ShimmerMemo
-        {...originalJsxProps({
-          state: input,
-          onEnd: input2,
-          ...input4,
-          className: value,
-        })}
-      />
+      <ShimmerMemo state={input} onEnd={input2} {...input4} className={value} />
     );
   };
   ShimmerState2.displayName = `Spark`;

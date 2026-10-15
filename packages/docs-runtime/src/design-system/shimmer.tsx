@@ -1,11 +1,10 @@
+import { jsx as renderReactJsx } from "react/jsx-runtime";
 /** BaoCut: shimmer from cds-CIGM-LUe.js. */
 import type { Dynamic } from "../interop/legacy-dynamic";
 import {
   React,
   UiDesignSystemUseLayoutEffect,
   createSafeResizeObserver,
-  originalJsxProps,
-  originalJsxsProps,
   resolveUiDesignSystemValue2,
   resolveUiOverlaysAndIconsValue4,
 } from "./dependencies";
@@ -276,43 +275,17 @@ export function initializeShimmerStep1(): void {
         : undefined;
     return (
       <span
-        {...originalJsxsProps({
-          ...input6,
-          ref: value4,
-          "data-cds": `ShimmerText`,
-          "data-shimmering": input7 ? `true` : `false`,
-          className:
-            value12 === `inactive`
-              ? input4
-              : value12 === `composited`
-                ? resolveUiDesignSystemValue2(
-                    ShimmerStyles3,
-                    ShimmerDefault2[input8],
-                    input4,
-                  )
-                : resolveUiDesignSystemValue2(
-                    ShimmerStyles,
-                    ShimmerDefault[input8],
-                    input4,
-                  ),
-          style: value14,
-          children: [
-            input,
-            value12 === `composited` ? (
-              <span
-                {...originalJsxProps(
-                  {
-                    ref: value3,
-                    ...ShimmerShimmerClone,
-                    children: input,
-                  },
-                  value8,
-                )}
-              />
-            ) : null,
-          ],
-        })}
-      />
+        {...input6}
+        ref={value4}
+        data-cds={`ShimmerText`}
+        data-shimmering={input7 ? `true` : `false`}
+        className={value12 === `inactive` ? input4 : value12 === `composited` ? resolveUiDesignSystemValue2(ShimmerStyles3, ShimmerDefault2[input8], input4) : resolveUiDesignSystemValue2(ShimmerStyles, ShimmerDefault[input8], input4)}
+        style={value14}
+      >{input}{value12 === `composited` ? renderReactJsx("span", {
+    ref: value3,
+    ...ShimmerShimmerClone,
+    children: input
+  }, value8) : null}</span>
     );
   });
   Shimmer.displayName = `ShimmerText`;

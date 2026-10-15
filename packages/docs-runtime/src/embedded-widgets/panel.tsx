@@ -1,5 +1,5 @@
 /** widget-panel: restored from WidgetPanel-3Iw60EMJ.js. */
-import { originalJsxProps, originalJsxsProps } from "../react-runtime/jsx-runtime";
+
 import type { Dynamic } from "../interop/legacy-dynamic";
 import { javascript } from "@codemirror/lang-javascript";
 
@@ -120,35 +120,15 @@ function ReferenceText(
             ..._extraArguments: unknown[]
           ): Dynamic =>
             entry.type === `text` ? (
-              <React.Fragment
-                {...originalJsxProps(
-                  {
-                    children: entry.text,
-                  },
-                  input2,
-                )}
-              />
+              <React.Fragment key={input2}>{entry.text}</React.Fragment>
             ) : (
               <ArtifactReferenceChip
-                {...originalJsxProps(
-                  {
-                    refStr: entry.ref,
-                    label: entry.label,
-                    kind: entry.kind,
-                    container: input.container,
-                    onDrillRun: (
-                      input3?: Dynamic,
-                      ..._extraArguments: unknown[]
-                    ): Dynamic =>
-                      value2(
-                        (
-                          input4?: Dynamic,
-                          ..._extraArguments: unknown[]
-                        ): Dynamic => (input4 === input3 ? null : input3),
-                      ),
-                  },
-                  input2,
-                )}
+                refStr={entry.ref}
+                label={entry.label}
+                kind={entry.kind}
+                container={input.container}
+                onDrillRun={(input3?: Dynamic, ..._extraArguments: unknown[]): Dynamic => value2((input4?: Dynamic, ..._extraArguments: unknown[]): Dynamic => input4 === input3 ? null : input3)}
+                key={input2}
               />
             ),
         )}
@@ -226,32 +206,12 @@ function StampedAddressLines(
     >
       {input.map(
         (input2?: Dynamic, ..._extraArguments: unknown[]): Dynamic => (
-          <div
-            {...originalJsxsProps(
-              {
-                children: [
-                  <div
-                    className={
-                      input2.key === `misses`
-                        ? `text-secondary`
-                        : `text-primary`
-                    }
-                  >
+          <div key={input2.key}>{<div className={input2.key === `misses` ? `text-secondary` : `text-primary`}>
                     {input2.label}
-                  </div>,
-                  input2.items.length > 0 && (
-                    <div
-                      className={`text-muted font-mono break-all whitespace-pre-wrap`}
-                    >
+                  </div>}{input2.items.length > 0 && <div className={`text-muted font-mono break-all whitespace-pre-wrap`}>
                       {input2.items.join(`
 `)}
-                    </div>
-                  ),
-                ],
-              },
-              input2.key,
-            )}
-          />
+                    </div>}</div>
         ),
       )}
     </div>
@@ -729,17 +689,11 @@ function WidgetPanel(input?: Dynamic, ..._extraArguments: unknown[]): Dynamic {
         {(input.room ? ROOM_TABS : PROJECT_TABS).map(
           (input2?: Dynamic, ..._extraArguments: unknown[]): Dynamic => (
             <Button
-              {...originalJsxProps(
-                {
-                  size: value(`sm`),
-                  variant: value2 === input2 ? `secondary` : `ghost`,
-                  onClick: (..._extraArguments: unknown[]): Dynamic =>
-                    value4(input2),
-                  children: input2,
-                },
-                input2,
-              )}
-            />
+              size={value(`sm`)}
+              variant={value2 === input2 ? `secondary` : `ghost`}
+              onClick={(..._extraArguments: unknown[]): Dynamic => value4(input2)}
+              key={input2}
+            >{input2}</Button>
           ),
         )}
         <div className={`flex-1`} />
@@ -771,20 +725,10 @@ function WidgetPanel(input?: Dynamic, ..._extraArguments: unknown[]): Dynamic {
       </div>
       <div className={`flex min-h-0 flex-1 overflow-hidden`}>
         {value2 === `code` && (
-          <CodeTab
-            {...originalJsxProps({
-              ...input,
-              sessionRef: value5,
-              actionsEl: value6,
-            })}
-          />
+          <CodeTab {...input} sessionRef={value5} actionsEl={value6} />
         )}
         {value2 === `comments` && input.room && (
-          <WidgetCommentsTab
-            {...originalJsxProps({
-              ...input,
-            })}
-          />
+          <WidgetCommentsTab {...input} />
         )}
         {value2 === `log` &&
           (input.room ? (
@@ -797,19 +741,10 @@ function WidgetPanel(input?: Dynamic, ..._extraArguments: unknown[]): Dynamic {
               codeDismissedRunRef={value14}
             />
           ) : (
-            <WidgetLogTab
-              {...originalJsxProps({
-                ...input,
-                sessionRef: value5,
-              })}
-            />
+            <WidgetLogTab {...input} sessionRef={value5} />
           ))}
         {value2 === `dependencies` && (
-          <WidgetDependenciesTab
-            {...originalJsxProps({
-              ...input,
-            })}
-          />
+          <WidgetDependenciesTab {...input} />
         )}
       </div>
     </div>
@@ -840,24 +775,11 @@ function RoomLogTab(
     value21?: Dynamic,
     ..._extraArguments: unknown[]
   ): Dynamic => (
-    <div
-      {...originalJsxsProps(
-        {
-          className: `text-caption flex items-baseline gap-2 px-3 py-1 font-mono`,
-          children: [
-            <span className={`shrink-0 ${value21 ?? `text-secondary`}`}>
+    <div className={`text-caption flex items-baseline gap-2 px-3 py-1 font-mono`} key={input6}>{<span className={`shrink-0 ${value21 ?? `text-secondary`}`}>
               {options}
-            </span>,
-            <span
-              className={`text-primary min-w-0 break-words whitespace-pre-wrap`}
-            >
+            </span>}{<span className={`text-primary min-w-0 break-words whitespace-pre-wrap`}>
               {context}
-            </span>,
-          ],
-        },
-        input6,
-      )}
-    />
+            </span>}</div>
   );
   let items: Dynamic = [];
   (value2 ?? []).forEach(
@@ -2062,18 +1984,12 @@ function CodeTab(input?: Dynamic, ..._extraArguments: unknown[]): Dynamic {
           {[`draft`, `published`].map(
             (input2?: Dynamic, ..._extraArguments: unknown[]): Dynamic => (
               <Button
-                {...originalJsxProps(
-                  {
-                    size: value(`sm`),
-                    variant: value29 === input2 ? `secondary` : `ghost`,
-                    disabled: value51,
-                    onClick: (..._extraArguments: unknown[]): Dynamic =>
-                      updateEditorSelectionAndTablesPublished(value28, input2),
-                    children: input2,
-                  },
-                  input2,
-                )}
-              />
+                size={value(`sm`)}
+                variant={value29 === input2 ? `secondary` : `ghost`}
+                disabled={value51}
+                onClick={(..._extraArguments: unknown[]): Dynamic => updateEditorSelectionAndTablesPublished(value28, input2)}
+                key={input2}
+              >{input2}</Button>
             ),
           )}
         </span>
@@ -2187,17 +2103,9 @@ function CodeTab(input?: Dynamic, ..._extraArguments: unknown[]): Dynamic {
             </div>
             {value20.map(
               (input2?: Dynamic, ..._extraArguments: unknown[]): Dynamic => (
-                <div
-                  {...originalJsxsProps(
-                    {
-                      className: `text-footnote px-3 py-1`,
-                      children: [
-                        <div className={`text-danger`}>
+                <div className={`text-footnote px-3 py-1`} key={`${input2.rule}:${input2.line}:${input2.col}`}>{<div className={`text-danger`}>
                           {diagnosticMessage(input2)}
-                        </div>,
-                        <details
-                          className={`text-muted text-caption font-mono`}
-                        >
+                        </div>}{<details className={`text-muted text-caption font-mono`}>
                           <summary className={`cursor-pointer select-none`}>
                             {input2.rule}
                             {` · line `}
@@ -2208,12 +2116,7 @@ function CodeTab(input?: Dynamic, ..._extraArguments: unknown[]): Dynamic {
                           <div className={`whitespace-pre-wrap`}>
                             {input2.message}
                           </div>
-                        </details>,
-                      ],
-                    },
-                    `${input2.rule}:${input2.line}:${input2.col}`,
-                  )}
-                />
+                        </details>}</div>
               ),
             )}
           </div>
@@ -2492,28 +2395,15 @@ function ToolEventDetails(
               ): Dynamic => {
                 let value2: Dynamic = input2.quote?.exact;
                 return (
-                  <div
-                    {...originalJsxsProps(
-                      {
-                        className: `flex flex-col`,
-                        children: [
-                          <span className={`text-danger/80 truncate`}>
+                  <div className={`flex flex-col`} key={options}>{<span className={`text-danger/80 truncate`}>
                             {`− “`}
                             {truncateText(value2, 80)}
                             {`”`}
-                          </span>,
-                          <span className={`text-success/90 truncate`}>
+                          </span>}{<span className={`text-success/90 truncate`}>
                             {`+`}
                             {` `}
-                            {typeof input2.with == `string`
-                              ? `“${truncateText(input2.with, 80)}”`
-                              : `${formatByteCount(input2.withBytes) ?? `?`} (truncated)`}
-                          </span>,
-                        ],
-                      },
-                      options,
-                    )}
-                  />
+                            {typeof input2.with == `string` ? `“${truncateText(input2.with, 80)}”` : `${formatByteCount(input2.withBytes) ?? `?`} (truncated)`}
+                          </span>}</div>
                 );
               },
             )}
@@ -2547,19 +2437,9 @@ function ToolEventDetails(
                   [input2, input3]: Dynamic,
                   ..._extraArguments: unknown[]
                 ): Dynamic => (
-                  <React.Fragment
-                    {...originalJsxsProps(
-                      {
-                        children: [
-                          <dt className={`text-muted truncate`}>{input2}</dt>,
-                          <dd className={`truncate`}>
+                  <React.Fragment key={input2}>{<dt className={`text-muted truncate`}>{input2}</dt>}{<dd className={`truncate`}>
                             {truncateText(String(input3), 120)}
-                          </dd>,
-                        ],
-                      },
-                      input2,
-                    )}
-                  />
+                          </dd>}</React.Fragment>
                 ),
               )}
           </dl>
@@ -2900,14 +2780,7 @@ function RunLogSection(
         {input.header && <ToolEventRow e={input.header} />}
         {input.rows.map(
           (input2?: Dynamic, ..._extraArguments: unknown[]): Dynamic => (
-            <ToolEventRow
-              {...originalJsxProps(
-                {
-                  e: input2,
-                },
-                input2.id,
-              )}
-            />
+            <ToolEventRow e={input2} key={input2.id} />
           ),
         )}
         {input.footer && <ToolEventRow e={input.footer} />}
@@ -2964,17 +2837,7 @@ function InvocationCycle(
       <div className={`pl-3`}>
         {input.pairs.map(
           (input2?: Dynamic, ..._extraArguments: unknown[]): Dynamic => (
-            <React.Fragment
-              {...originalJsxsProps(
-                {
-                  children: [
-                    <ToolEventRow e={input2.invoke} />,
-                    <ToolEventRow e={input2.result} />,
-                  ],
-                },
-                input2.invoke.id,
-              )}
-            />
+            <React.Fragment key={input2.invoke.id}>{<ToolEventRow e={input2.invoke} />}{<ToolEventRow e={input2.result} />}</React.Fragment>
           ),
         )}
       </div>
@@ -3028,14 +2891,7 @@ function ToolEventGroup(
       <div className={`pl-3`}>
         {input.rows.map(
           (input2?: Dynamic, ..._extraArguments: unknown[]): Dynamic => (
-            <ToolEventRow
-              {...originalJsxProps(
-                {
-                  e: input2,
-                },
-                input2.id,
-              )}
-            />
+            <ToolEventRow e={input2} key={input2.id} />
           ),
         )}
       </div>
@@ -3261,27 +3117,12 @@ function WidgetLogTab(input?: Dynamic, ..._extraArguments: unknown[]): Dynamic {
       <div className={`flex shrink-0 items-center gap-1 border-b px-2 py-1`}>
         {LOG_FILTER_KEYS.map(
           (input2?: Dynamic, ..._extraArguments: unknown[]): Dynamic => (
-            <Button
-              {...originalJsxProps(
-                {
-                  size: value(`sm`),
-                  variant: value18[input2] === false ? `ghost` : `secondary`,
-                  onClick: (..._extraArguments: unknown[]): Dynamic =>
-                    value19({
-                      ...value18,
-                      [input2]: value18[input2] === false,
-                    }),
-                  children: (
-                    <span
-                      className={`font-mono ${value18[input2] === false ? `text-muted line-through` : ``}`}
-                    >
+            <Button size={value(`sm`)} variant={value18[input2] === false ? `ghost` : `secondary`} onClick={(..._extraArguments: unknown[]): Dynamic => value19({
+  ...value18,
+  [input2]: value18[input2] === false
+})} key={input2}>{<span className={`font-mono ${value18[input2] === false ? `text-muted line-through` : ``}`}>
                       {input2}
-                    </span>
-                  ),
-                },
-                input2,
-              )}
-            />
+                    </span>}</Button>
           ),
         )}
         <span className={`text-muted text-caption ml-auto`}>
@@ -3315,47 +3156,19 @@ function WidgetLogTab(input?: Dynamic, ..._extraArguments: unknown[]): Dynamic {
             (entry?: Dynamic, ..._extraArguments: unknown[]): Dynamic => {
               if (entry.kind === `run-section`)
                 return (
-                  <RunLogSection
-                    {...originalJsxProps(
-                      {
-                        s: entry,
-                      },
-                      entry.runId,
-                    )}
-                  />
+                  <RunLogSection s={entry} key={entry.runId} />
                 );
               if (entry.kind === `cycles`)
                 return (
-                  <InvocationCycle
-                    {...originalJsxProps(
-                      {
-                        c: entry,
-                      },
-                      entry.pairs[0].invoke.id,
-                    )}
-                  />
+                  <InvocationCycle c={entry} key={entry.pairs[0].invoke.id} />
                 );
               if (entry.kind === `group`)
                 return (
-                  <ToolEventGroup
-                    {...originalJsxProps(
-                      {
-                        g: entry,
-                      },
-                      entry.rows[0].id,
-                    )}
-                  />
+                  <ToolEventGroup g={entry} key={entry.rows[0].id} />
                 );
               if (entry.kind !== `message`)
                 return (
-                  <ToolEventRow
-                    {...originalJsxProps(
-                      {
-                        e: entry.row,
-                      },
-                      entry.row.id,
-                    )}
-                  />
+                  <ToolEventRow e={entry.row} key={entry.row.id} />
                 );
               let thread: Dynamic = entry.thread;
               let value33: Dynamic = threadRefOf(thread);
@@ -3364,157 +3177,51 @@ function WidgetLogTab(input?: Dynamic, ..._extraArguments: unknown[]): Dynamic {
               let value36: boolean = isRunProgress(thread);
               let value37: Dynamic = agentIdFromActor(thread.root?.actor);
               return (
-                <div
-                  {...originalJsxsProps(
-                    {
-                      "data-testid": value36 ? `run-progress-row` : undefined,
-                      className: `flex items-baseline gap-2 py-1`,
-                      children: [
-                        <span
-                          className={`text-muted w-3 shrink-0 text-center font-mono`}
-                        >{`›`}</span>,
-                        <div className={`min-w-0 flex-1`}>
-                          <div
-                            className={`text-muted text-caption flex items-baseline gap-2`}
-                          >
-                            <span
-                              className={`${value36 || value37 ? `text-muted` : `text-primary`} font-medium`}
-                            >
-                              {value36
-                                ? `run`
-                                : value37
-                                  ? `claude`
-                                  : thread.root?.user}
+                <div data-testid={value36 ? `run-progress-row` : undefined} className={`flex items-baseline gap-2 py-1`} key={thread.id}>{<span className={`text-muted w-3 shrink-0 text-center font-mono`}>{`›`}</span>}{<div className={`min-w-0 flex-1`}>
+                          <div className={`text-muted text-caption flex items-baseline gap-2`}>
+                            <span className={`${value36 || value37 ? `text-muted` : `text-primary`} font-medium`}>
+                              {value36 ? `run` : value37 ? `claude` : thread.root?.user}
                             </span>
-                            {!value36 && value37 && (
-                              <span className={`font-mono`}>
+                            {!value36 && value37 && <span className={`font-mono`}>
                                 {shortenId(value37)}
-                              </span>
-                            )}
-                            {thread.id === value23 && (
-                              <span
-                                data-testid={`initial-prompt-tag`}
-                                className={`bg-alpha-1 text-muted text-caption rounded px-1`}
-                              >{`initial prompt`}</span>
-                            )}
-                            {value34 && (
-                              <Tooltip
-                                content={`Attach this element to your next message`}
-                              >
-                                <button
-                                  type={`button`}
-                                  className={`bg-alpha-1 hover:bg-alpha-2 rounded px-1 font-mono`}
-                                  onClick={(
-                                    ..._extraArguments: unknown[]
-                                  ): Dynamic =>
-                                    value7({
-                                      segment: value34,
-                                      vs: value35,
-                                    })
-                                  }
-                                >
+                              </span>}
+                            {thread.id === value23 && <span data-testid={`initial-prompt-tag`} className={`bg-alpha-1 text-muted text-caption rounded px-1`}>{`initial prompt`}</span>}
+                            {value34 && <Tooltip content={`Attach this element to your next message`}>
+                                <button type={`button`} className={`bg-alpha-1 hover:bg-alpha-2 rounded px-1 font-mono`} onClick={(..._extraArguments: unknown[]): Dynamic => value7({
+          segment: value34,
+          vs: value35
+        })}>
                                   {`#`}
                                   {input.nodeId}
                                   {`/`}
                                   {value34}
                                 </button>
-                              </Tooltip>
-                            )}
-                            {value35 &&
-                              Object.entries(value35).map(
-                                (
-                                  [input2, input3]: Dynamic,
-                                  ..._extraArguments: unknown[]
-                                ): Dynamic => (
-                                  <span
-                                    {...originalJsxsProps(
-                                      {
-                                        className: `bg-alpha-1 rounded px-1 font-mono`,
-                                        children: [input2, `: `, input3],
-                                      },
-                                      input2,
-                                    )}
-                                  />
-                                ),
-                              )}
+                              </Tooltip>}
+                            {value35 && Object.entries(value35).map(([input2, input3]: Dynamic, ..._extraArguments: unknown[]): Dynamic => <span className={`bg-alpha-1 rounded px-1 font-mono`} key={input2}>{input2}{`: `}{input3}</span>)}
                             {thread.resolved && <span>{`resolved`}</span>}
                           </div>
-                          <div
-                            className={`${value36 ? `text-secondary italic` : `text-primary`} text-footnote whitespace-pre-wrap`}
-                          >
-                            <ReferenceText
-                              text={thread.root?.body ?? ``}
-                              container={input.container}
-                            />
+                          <div className={`${value36 ? `text-secondary italic` : `text-primary`} text-footnote whitespace-pre-wrap`}>
+                            <ReferenceText text={thread.root?.body ?? ``} container={input.container} />
                           </div>
-                          {thread.replies.map(
-                            (
-                              input2?: Dynamic,
-                              ..._extraArguments: unknown[]
-                            ): Dynamic => {
-                              let value38: Dynamic = agentIdFromActor(
-                                input2.actor,
-                              );
-                              return (
-                                <div
-                                  {...originalJsxsProps(
-                                    {
-                                      className: `mt-1 pl-3`,
-                                      children: [
-                                        <div
-                                          className={`text-muted text-caption`}
-                                        >
-                                          <span
-                                            className={`${value38 ? `text-muted` : `text-primary`} font-medium`}
-                                          >
+                          {thread.replies.map((input2?: Dynamic, ..._extraArguments: unknown[]): Dynamic => {
+      let value38: Dynamic = agentIdFromActor(input2.actor);
+      return <div className={`mt-1 pl-3`} key={input2.id}>{<div className={`text-muted text-caption`}>
+                                          <span className={`${value38 ? `text-muted` : `text-primary`} font-medium`}>
                                             {value38 ? `claude` : input2.user}
                                           </span>
-                                          {value38 && (
-                                            <span className={`font-mono`}>
+                                          {value38 && <span className={`font-mono`}>
                                               {` `}
                                               {shortenId(value38)}
-                                            </span>
-                                          )}
+                                            </span>}
                                           {` `}
-                                          {input2.at &&
-                                            resolvePlatformSessionAndSourcesWeekday(
-                                              input2.at,
-                                              Date.parse(value2.now()),
-                                              value2.locale,
-                                              value2.timeZone,
-                                            )}
-                                        </div>,
-                                        <div
-                                          className={`text-secondary text-footnote whitespace-pre-wrap`}
-                                        >
-                                          <ReferenceText
-                                            text={input2.body}
-                                            container={input.container}
-                                          />
-                                        </div>,
-                                      ],
-                                    },
-                                    input2.id,
-                                  )}
-                                />
-                              );
-                            },
-                          )}
-                        </div>,
-                        <span className={`text-muted text-caption shrink-0`}>
-                          {thread.root?.at &&
-                            resolvePlatformSessionAndSourcesWeekday(
-                              thread.root.at,
-                              Date.parse(value2.now()),
-                              value2.locale,
-                              value2.timeZone,
-                            )}
-                        </span>,
-                      ],
-                    },
-                    thread.id,
-                  )}
-                />
+                                          {input2.at && resolvePlatformSessionAndSourcesWeekday(input2.at, Date.parse(value2.now()), value2.locale, value2.timeZone)}
+                                        </div>}{<div className={`text-secondary text-footnote whitespace-pre-wrap`}>
+                                          <ReferenceText text={input2.body} container={input.container} />
+                                        </div>}</div>;
+    })}
+                        </div>}{<span className={`text-muted text-caption shrink-0`}>
+                          {thread.root?.at && resolvePlatformSessionAndSourcesWeekday(thread.root.at, Date.parse(value2.now()), value2.locale, value2.timeZone)}
+                        </span>}</div>
               );
             },
           )}
@@ -3791,75 +3498,19 @@ function WidgetCommentsTab(
             [input2, input3]: Dynamic,
             ..._extraArguments: unknown[]
           ): Dynamic => (
-            <div
-              {...originalJsxsProps(
-                {
-                  className: `mb-3`,
-                  "data-testid": `widget-comment-group`,
-                  "data-anchor": input2,
-                  children: [
-                    <div
-                      className={`text-muted text-caption flex items-baseline gap-2 font-semibold tracking-wide uppercase`}
-                    >
+            <div className={`mb-3`} data-testid={`widget-comment-group`} data-anchor={input2} key={input2 || `(whole)`}>{<div className={`text-muted text-caption flex items-baseline gap-2 font-semibold tracking-wide uppercase`}>
                       {input2 === `` ? `Whole widget` : `re: ${input2}`}
-                      {value17(input2) && (
-                        <Tooltip
-                          content={`The published code no longer carries this claude-anchor name. The comment keeps pointing at the name it was written against — it is never re-guessed onto other content.`}
-                          multiline={true}
-                        >
-                          <span
-                            className={`text-warning normal-case`}
-                            data-testid={`widget-anchor-orphan-badge`}
-                          >
+                      {value17(input2) && <Tooltip
+                        content={`The published code no longer carries this claude-anchor name. The comment keeps pointing at the name it was written against — it is never re-guessed onto other content.`}
+                        multiline={true}
+                      >
+                          <span className={`text-warning normal-case`} data-testid={`widget-anchor-orphan-badge`}>
                             {`was on: `}
                             {input2}
                             {` — no longer in this widget`}
                           </span>
-                        </Tooltip>
-                      )}
-                    </div>,
-                    input3.map(
-                      (
-                        input4?: Dynamic,
-                        ..._extraArguments: unknown[]
-                      ): Dynamic => (
-                        <div
-                          {...originalJsxsProps(
-                            {
-                              className: `mt-1 rounded border px-2 py-1.5`,
-                              "data-testid": `widget-comment-thread`,
-                              children: [
-                                <WidgetMessageRow row={input4.root} />,
-                                input4.replies.map(
-                                  (
-                                    input5?: Dynamic,
-                                    ..._extraArguments: unknown[]
-                                  ): Dynamic => (
-                                    <div
-                                      {...originalJsxProps(
-                                        {
-                                          className: `border-strong mt-1 border-l pl-2`,
-                                          children: (
-                                            <WidgetMessageRow row={input5} />
-                                          ),
-                                        },
-                                        input5.id,
-                                      )}
-                                    />
-                                  ),
-                                ),
-                              ],
-                            },
-                            input4.id,
-                          )}
-                        />
-                      ),
-                    ),
-                  ],
-                },
-                input2 || `(whole)`,
-              )}
-            />
+                        </Tooltip>}
+                    </div>}{input3.map((input4?: Dynamic, ..._extraArguments: unknown[]): Dynamic => <div className={`mt-1 rounded border px-2 py-1.5`} data-testid={`widget-comment-thread`} key={input4.id}>{<WidgetMessageRow row={input4.root} />}{input4.replies.map((input5?: Dynamic, ..._extraArguments: unknown[]): Dynamic => <div className={`border-strong mt-1 border-l pl-2`} key={input5.id}>{<WidgetMessageRow row={input5} />}</div>)}</div>)}</div>
           ),
         )}
       </div>
@@ -3877,18 +3528,12 @@ function WidgetCommentsTab(
           {(value5?.names ?? []).map(
             (input2?: Dynamic, ..._extraArguments: unknown[]): Dynamic => (
               <Button
-                {...originalJsxProps(
-                  {
-                    size: value(`sm`),
-                    variant: value9 === input2 ? `secondary` : `ghost`,
-                    "data-testid": `widget-comment-spot`,
-                    onClick: (..._extraArguments: unknown[]): Dynamic =>
-                      value10(input2),
-                    children: input2,
-                  },
-                  input2,
-                )}
-              />
+                size={value(`sm`)}
+                variant={value9 === input2 ? `secondary` : `ghost`}
+                data-testid={`widget-comment-spot`}
+                onClick={(..._extraArguments: unknown[]): Dynamic => value10(input2)}
+                key={input2}
+              >{input2}</Button>
             ),
           )}
           {(value5?.prefixes ?? []).length > 0 && (
@@ -4120,22 +3765,9 @@ function WidgetEditHistory(
                   options?: Dynamic,
                   ..._extraArguments: unknown[]
                 ): Dynamic => (
-                  <span
-                    {...originalJsxsProps(
-                      {
-                        children: [
-                          options > 0 && `, `,
-                          <span className={`text-code break-all`}>
+                  <span key={entry.ref}>{options > 0 && `, `}{<span className={`text-code break-all`}>
                             {entry.ref}
-                          </span>,
-                          entry.kind === `inline` && (
-                            <span>{` (inline sample rows)`}</span>
-                          ),
-                        ],
-                      },
-                      entry.ref,
-                    )}
-                  />
+                          </span>}{entry.kind === `inline` && <span>{` (inline sample rows)`}</span>}</span>
                 ),
               )}
               {value15.every(
@@ -4184,18 +3816,7 @@ function WidgetEditHistory(
               options?: Dynamic,
               ..._extraArguments: unknown[]
             ): Dynamic => (
-              <WidgetTrailGroup
-                {...originalJsxProps(
-                  {
-                    g: input2,
-                    rel: value2,
-                    abs: value3,
-                    continues:
-                      options === value4.length - 1 && value6 !== undefined,
-                  },
-                  input2.rev,
-                )}
-              />
+              <WidgetTrailGroup g={input2} rel={value2} abs={value3} continues={options === value4.length - 1 && value6 !== undefined} key={input2.rev} />
             ),
           )}
           {value4.length === 0 && (
@@ -4258,24 +3879,9 @@ function WidgetEditHistory(
             {items.map(
               (input2?: Dynamic, ..._extraArguments: unknown[]): Dynamic =>
                 input2.person === undefined ? (
-                  <span
-                    {...originalJsxProps(
-                      {
-                        className: `text-secondary`,
-                        children: input2.label,
-                      },
-                      input2.person ?? input2.label,
-                    )}
-                  />
+                  <span className={`text-secondary`} key={input2.person ?? input2.label}>{input2.label}</span>
                 ) : (
-                  <UserReferenceChip
-                    {...originalJsxProps(
-                      {
-                        who: input2.person,
-                      },
-                      input2.person ?? input2.label,
-                    )}
-                  />
+                  <UserReferenceChip who={input2.person} key={input2.person ?? input2.label} />
                 ),
             )}
           </div>
@@ -4293,24 +3899,12 @@ function WidgetTrailGroup(
     <jsxRuntime.Fragment>
       {input.events.map(
         (input5?: Dynamic, ..._extraArguments: unknown[]): Dynamic => (
-          <details
-            {...originalJsxsProps(
-              {
-                className: `group py-0.5`,
-                "data-testid": `widget-trail-event`,
-                children: [
-                  <summary
-                    className={`flex cursor-pointer list-none items-baseline gap-1.5 select-none`}
-                  >
+          <details className={`group py-0.5`} data-testid={`widget-trail-event`} key={input5.rev}>{<summary className={`flex cursor-pointer list-none items-baseline gap-1.5 select-none`}>
                     <span className={`text-footnote min-w-0 flex-1 truncate`}>
                       {trailActionLabels[input5.action] ?? input5.action}
                       {` by`}
                       {` `}
-                      {value.person === undefined ? (
-                        value.label
-                      ) : (
-                        <UserReferenceChip who={value.person} />
-                      )}
+                      {value.person === undefined ? value.label : <UserReferenceChip who={value.person} />}
                     </span>
                     <span className={`text-secondary text-caption shrink-0`}>
                       {input2(input5.at)}
@@ -4320,10 +3914,7 @@ function WidgetTrailGroup(
                       customSize={10}
                       className={`text-muted shrink-0 self-center transition-transform group-open:rotate-90`}
                     />
-                  </summary>,
-                  <div
-                    className={`text-caption border-strong mt-0.5 mb-1 ml-1 border-l pl-2`}
-                  >
+                  </summary>}{<div className={`text-caption border-strong mt-0.5 mb-1 ml-1 border-l pl-2`}>
                     <div className={`text-secondary`}>
                       {input3(input5.at)}
                       {` · `}
@@ -4332,12 +3923,7 @@ function WidgetTrailGroup(
                     <div className={`text-muted font-mono`}>
                       {trailEventLabel(input5)}
                     </div>
-                  </div>,
-                ],
-              },
-              input5.rev,
-            )}
-          />
+                  </div>}</details>
         ),
       )}
       {input.open === true && input4 && (
@@ -4469,56 +4055,18 @@ function WidgetDependenciesTab(
             ..._extraArguments: unknown[]
           ): Dynamic =>
             input3 && input4 ? (
-              <div
-                {...originalJsxsProps(
-                  {
-                    className: `flex items-center gap-1.5`,
-                    "data-testid": `pinned-source`,
-                    children: [
-                      <div className={`min-w-0 flex-1`}>
-                        <DrillReferenceChip
-                          container={input.container}
-                          refStr={input3}
-                          label={input2}
-                        />
-                      </div>,
-                      <span
-                        className={`text-secondary bg-surface-2 border-strong text-caption shrink-0 rounded-full border px-1.5`}
-                      >{`pinned`}</span>,
-                    ],
-                  },
-                  input2,
-                )}
-              />
+              <div className={`flex items-center gap-1.5`} data-testid={`pinned-source`} key={input2}>{<div className={`min-w-0 flex-1`}>
+                        <DrillReferenceChip container={input.container} refStr={input3} label={input2} />
+                      </div>}{<span className={`text-secondary bg-surface-2 border-strong text-caption shrink-0 rounded-full border px-1.5`}>{`pinned`}</span>}</div>
             ) : input3 ? (
-              <DrillReferenceChip
-                {...originalJsxProps(
-                  {
-                    container: input.container,
-                    refStr: input3,
-                    label: input2,
-                  },
-                  input2,
-                )}
-              />
+              <DrillReferenceChip container={input.container} refStr={input3} label={input2} key={input2} />
             ) : (
               <div
-                {...originalJsxsProps(
-                  {
-                    "data-testid": `drill-frame`,
-                    "data-ref": input2,
-                    className: `text-muted text-caption flex items-baseline gap-1.5 px-1 py-0.5 font-mono`,
-                    children: [
-                      <span className={`w-3 shrink-0`}>{`·`}</span>,
-                      <span className={`truncate`}>{input2}</span>,
-                      <span
-                        className={`shrink-0`}
-                      >{`no lineage view for this ref kind yet`}</span>,
-                    ],
-                  },
-                  input2,
-                )}
-              />
+                data-testid={`drill-frame`}
+                data-ref={input2}
+                className={`text-muted text-caption flex items-baseline gap-1.5 px-1 py-0.5 font-mono`}
+                key={input2}
+              >{<span className={`w-3 shrink-0`}>{`·`}</span>}{<span className={`truncate`}>{input2}</span>}{<span className={`shrink-0`}>{`no lineage view for this ref kind yet`}</span>}</div>
             ),
         )}
       </div>
@@ -4531,34 +4079,18 @@ function WidgetDependenciesTab(
             {mapped.map(
               (input2?: Dynamic, ..._extraArguments: unknown[]): Dynamic => (
                 <div
-                  {...originalJsxsProps(
-                    {
-                      "data-testid": `chart-census-row`,
-                      "data-chart-id": input2.id,
-                      className: `text-caption flex items-baseline gap-1.5 px-1 py-0.5 font-mono`,
-                      children: [
-                        <span
-                          className={`text-muted w-3 shrink-0`}
-                        >{`▤`}</span>,
-                        <span className={`truncate`}>{input2.id}</span>,
-                        input2.title && (
-                          <span className={`text-muted truncate`}>
+                  data-testid={`chart-census-row`}
+                  data-chart-id={input2.id}
+                  className={`text-caption flex items-baseline gap-1.5 px-1 py-0.5 font-mono`}
+                  key={input2.id}
+                >{<span className={`text-muted w-3 shrink-0`}>{`▤`}</span>}{<span className={`truncate`}>{input2.id}</span>}{input2.title && <span className={`text-muted truncate`}>
                             {`“`}
                             {input2.title}
                             {`”`}
-                          </span>
-                        ),
-                        input2.version !== null && (
-                          <span className={`text-muted shrink-0`}>
+                          </span>}{input2.version !== null && <span className={`text-muted shrink-0`}>
                             {`v`}
                             {input2.version}
-                          </span>
-                        ),
-                      ],
-                    },
-                    input2.id,
-                  )}
-                />
+                          </span>}</div>
               ),
             )}
           </div>

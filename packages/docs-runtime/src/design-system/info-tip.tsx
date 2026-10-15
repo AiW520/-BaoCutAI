@@ -9,7 +9,6 @@ import {
   UiShortcutsAndSizingStyles12,
   UiShortcutsAndSizingStyles13,
   UiShortcutsAndSizingStyles14,
-  originalJsxProps,
   resolveUiDesignSystemValue2,
   resolveUiLinksAndFoundationUseContext3,
 } from "./dependencies";
@@ -64,11 +63,7 @@ function InfoTip(
           delay={input12}
           className={resolveUiDesignSystemValue2(SwitchStylesStyles5, input5)}
         >
-          <UiOverlaysAndIconsCustomIcon
-            {...originalJsxProps({
-              ...state,
-            })}
-          />
+          <UiOverlaysAndIconsCustomIcon {...state} />
         </Popover.Trigger>
         <Popover.Popup
           aria-label={value2}

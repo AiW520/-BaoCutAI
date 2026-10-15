@@ -2,7 +2,6 @@
 import type { Dynamic } from "../../interop/legacy-dynamic";
 import {
   Button,
-  originalJsxProps,
   resolveCommentsActionsAndSelectionCell,
   resolveCommentsActionsAndSelectionLines2,
   resolveDataModelSchemasHasOwn,
@@ -135,15 +134,7 @@ function TargetDataRows(
             <thead className={`bg-surface-popover sticky top-0 z-10`}>
               <tr className={`bg-alpha-1`}>
                 {items.map((item?: Dynamic, ..._extraArguments: unknown[]) => (
-                  <th
-                    {...originalJsxProps(
-                      {
-                        className: `text-footnote border-b px-3 py-2 text-left font-medium ${item === column ? `text-primary` : `text-secondary`}`,
-                        children: item,
-                      },
-                      item,
-                    )}
-                  />
+                  <th className={`text-footnote border-b px-3 py-2 text-left font-medium ${item === column ? `text-primary` : `text-secondary`}`} key={item}>{item}</th>
                 ))}
               </tr>
             </thead>
@@ -160,43 +151,18 @@ function TargetDataRows(
                     let matchesTotal = total4 === hiRow;
                     return (
                       <tr
-                        {...originalJsxProps(
-                          {
-                            ref: matchesTotal ? elementRef2 : undefined,
-                            className: `border-b last:border-0 ${matchesTotal ? `bg-alpha-2` : ``}`,
-                            "data-pinned-row": matchesTotal ? `` : undefined,
-                            children: items.map(
-                              (
-                                item?: Dynamic,
-                                ..._extraArguments: unknown[]
-                              ) => {
-                                let matchesTotal2 =
-                                  matchesTotal && item === column;
-                                return (
-                                  <td
-                                    {...originalJsxProps(
-                                      {
-                                        "data-pinned-cell": matchesTotal2
-                                          ? ``
-                                          : undefined,
-                                        className: `px-3 py-1.5 ${typeof resolveDataModelSchemasHasOwn(itemsSlice, item) == `number` ? `text-right tabular-nums` : ``} ${matchesTotal2 ? `bg-accent text-accent font-medium` : matchesTotal ? `text-primary` : `text-secondary`}`,
-                                        children: sourceCellLabel(
-                                          resolveDataModelSchemasHasOwn(
-                                            itemsSlice,
-                                            item,
-                                          ),
-                                        ),
-                                      },
-                                      item,
-                                    )}
-                                  />
-                                );
-                              },
-                            ),
-                          },
-                          total4,
-                        )}
-                      />
+                        ref={matchesTotal ? elementRef2 : undefined}
+                        className={`border-b last:border-0 ${matchesTotal ? `bg-alpha-2` : ``}`}
+                        data-pinned-row={matchesTotal ? `` : undefined}
+                        key={total4}
+                      >{items.map((item?: Dynamic, ..._extraArguments: unknown[]) => {
+    let matchesTotal2 = matchesTotal && item === column;
+    return <td
+      data-pinned-cell={matchesTotal2 ? `` : undefined}
+      className={`px-3 py-1.5 ${typeof resolveDataModelSchemasHasOwn(itemsSlice, item) == `number` ? `text-right tabular-nums` : ``} ${matchesTotal2 ? `bg-accent text-accent font-medium` : matchesTotal ? `text-primary` : `text-secondary`}`}
+      key={item}
+    >{sourceCellLabel(resolveDataModelSchemasHasOwn(itemsSlice, item))}</td>;
+  })}</tr>
                     );
                   },
                 )}

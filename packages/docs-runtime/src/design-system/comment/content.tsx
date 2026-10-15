@@ -1,8 +1,9 @@
+import { jsxs as renderReactJsxs } from "react/jsx-runtime";
 /** BaoCut: comment content from cds-CIGM-LUe.js. */
-import type { JSX } from "../../react-runtime/jsx-runtime";
-import type { CapturedProps as CapturedJsxProps } from "../../react-runtime/jsx-runtime";
+import type { JSX } from "react";
+
 import type { Dynamic } from "../../interop/legacy-dynamic";
-type JsxElementType = JSX.ElementType;
+
 import {
   Button,
   OverflowTooltip,
@@ -10,8 +11,6 @@ import {
   Tooltip,
   UiDesignSystemUseLayoutEffect,
   jsxRuntime,
-  originalJsxProps,
-  originalJsxsProps,
   resolveUiDesignSystemValue2,
   resolveUiLinksAndFoundationUseContext3,
   resolveUiOverlaysAndIconsValue4,
@@ -292,95 +291,42 @@ export function initializeCommentContentStep1(): void {
         </span>
       </Tooltip>
       );
-      return ((
-        RenderedComponent: JsxElementType,
-        CapturedProps: CapturedJsxProps,
-      ) => <RenderedComponent {...CapturedProps} />)(
-        value5 ? `article` : `div`,
-        originalJsxsProps({
-          ref: options,
-          "data-cds-part": `comment`,
-          "data-by-claude": input16 || undefined,
-          "aria-labelledby": value5
-            ? `${value10.name} ${value10.time}`
-            : undefined,
-          tabIndex: value5 ? -1 : undefined,
-          className: resolveUiDesignSystemValue2(
-            `group/comment relative flex flex-col gap-xs rounded outline-none focus-visible:shadow-focus focus-visible:outline-hidden`,
-            `touch:isolate`,
-            input13,
-          ),
-          ...input15,
-          children: [
-            <div
-              className={resolveUiDesignSystemValue2(
-                `relative flex flex-wrap items-center gap-x-sm text-footnote font-normal touch:z-[1]`,
-                !resolveShimmerValue6(input11) &&
-                  `-mb-[calc(var(--cds-gap-xs)/2)]`,
-              )}
-            >
-            <span
-                aria-hidden={input3 == null ? `true` : undefined}
-                className={`-me-[calc(var(--cds-gap-sm)-var(--cds-gap-xs))] inline-flex shrink-0`}
-              >
+      return renderReactJsxs(value5 ? `article` : `div`, {
+  ref: options,
+  "data-cds-part": `comment`,
+  "data-by-claude": input16 || undefined,
+  "aria-labelledby": value5 ? `${value10.name} ${value10.time}` : undefined,
+  tabIndex: value5 ? -1 : undefined,
+  className: resolveUiDesignSystemValue2(`group/comment relative flex flex-col gap-xs rounded outline-none focus-visible:shadow-focus focus-visible:outline-hidden`, `touch:isolate`, input13),
+  ...input15,
+  children: [<div className={resolveUiDesignSystemValue2(`relative flex flex-wrap items-center gap-x-sm text-footnote font-normal touch:z-[1]`, !resolveShimmerValue6(input11) && `-mb-[calc(var(--cds-gap-xs)/2)]`)}>
+            <span aria-hidden={input3 == null ? `true` : undefined} className={`-me-[calc(var(--cds-gap-sm)-var(--cds-gap-xs))] inline-flex shrink-0`}>
               {value15}
             </span>
-            <span
-                className={`flex min-h-control flex-1 flex-wrap content-center items-baseline gap-x-xs before:h-0 before:w-16 before:basis-full before:content-['']`}
-              >
-              <span
-                  className={`grid max-w-full grid-cols-[minmax(0,max-content)]`}
-                >
+            <span className={`flex min-h-control flex-1 flex-wrap content-center items-baseline gap-x-xs before:h-0 before:w-16 before:basis-full before:content-['']`}>
+              <span className={`grid max-w-full grid-cols-[minmax(0,max-content)]`}>
                 {value17}
               </span>
-              {value11 && (
-                  <span
-                    id={value10.time}
-                    className={`shrink-0 text-caption font-normal whitespace-nowrap text-muted`}
-                    data-cds-part={`timestamp`}
-                  >
+              {value11 && <span id={value10.time} className={`shrink-0 text-caption font-normal whitespace-nowrap text-muted`} data-cds-part={`timestamp`}>
                   {input5}
-                </span>
-                )}
+                </span>}
             </span>
             <CommentMotionFloat.Provider value={value14}>
               <CommentMotionCreateContext2.Provider value={value6}>
                 {value13}
               </CommentMotionCreateContext2.Provider>
             </CommentMotionFloat.Provider>
-          </div>,
-            resolveShimmerValue6(input11) ? (
-              input11
-            ) : (
-              <div
-                className={`flex flex-col text-body font-normal text-primary`}
-                data-cds-part={`body`}
-                id={value10.body}
-              >
-              <CommentsShowMoreLabel
-                  showMoreLabel={input9}
-                  showLessLabel={input10}
-                >
+          </div>, resolveShimmerValue6(input11) ? input11 : <div className={`flex flex-col text-body font-normal text-primary`} data-cds-part={`body`} id={value10.body}>
+              <CommentsShowMoreLabel showMoreLabel={input9} showLessLabel={input10}>
                 {input14}
               </CommentsShowMoreLabel>
-              {input7 != null && input7 !== false && (
-                  <OverflowTooltip
-                    lazy={true}
-                    className={`text-caption font-normal text-muted`}
-                    data-cds-part={`footnote`}
-                  >
+              {input7 != null && input7 !== false && <OverflowTooltip lazy={true} className={`text-caption font-normal text-muted`} data-cds-part={`footnote`}>
                   {input7}
-                </OverflowTooltip>
-                )}
-            </div>
-            ),
-            <CommentMotionCreateContext2.Provider value={value6}>
+                </OverflowTooltip>}
+            </div>, <CommentMotionCreateContext2.Provider value={value6}>
             {input8}
-          </CommentMotionCreateContext2.Provider>,
-            input12,
-          ],
-        }),
-      );
+          </CommentMotionCreateContext2.Provider>, input12]
+});
     },
   );
   CommentsAuthorName.displayName = `CommentCard.Comment`;
@@ -392,18 +338,12 @@ export function initializeCommentContentStep1(): void {
       ..._extraArguments: unknown[]
     ): Dynamic => (
       <blockquote
-        {...originalJsxProps({
-          ref: options,
-          dir: `auto`,
-          "data-cds-part": `quote`,
-          className: resolveUiDesignSystemValue2(
-            `m-0 line-clamp-2 border-s-2 border-strong ps-md text-caption font-normal text-secondary`,
-            input,
-          ),
-          ...input3,
-          children: input2,
-        })}
-      />
+        ref={options}
+        dir={`auto`}
+        data-cds-part={`quote`}
+        className={resolveUiDesignSystemValue2(`m-0 line-clamp-2 border-s-2 border-strong ps-md text-caption font-normal text-secondary`, input)}
+        {...input3}
+      >{input2}</blockquote>
     ),
   );
   CommentsRef.displayName = `CommentCard.Quote`;
@@ -424,20 +364,14 @@ export function initializeCommentContentStep1(): void {
       resolveCommentMotionStandDown(value2, `replies`);
       return (
         <Button
-          {...originalJsxProps({
-            ref: resolveUiOverlaysAndIconsValue4(value2, options),
-            variant: `ghost`,
-            size: `xs`,
-            flush: true,
-            "data-cds-part": `replies-toggle`,
-            className: resolveUiDesignSystemValue2(
-              `self-start text-secondary`,
-              input3,
-            ),
-            ...input4,
-            children: input2 ?? value,
-          })}
-        />
+          ref={resolveUiOverlaysAndIconsValue4(value2, options)}
+          variant={`ghost`}
+          size={`xs`}
+          flush={true}
+          data-cds-part={`replies-toggle`}
+          className={resolveUiDesignSystemValue2(`self-start text-secondary`, input3)}
+          {...input4}
+        >{input2 ?? value}</Button>
       );
     },
   );
@@ -448,18 +382,7 @@ export function initializeCommentContentStep1(): void {
       options?: Dynamic,
       ..._extraArguments: unknown[]
     ): Dynamic => (
-      <div
-        {...originalJsxProps({
-          ref: options,
-          "data-cds-part": `note`,
-          className: resolveUiDesignSystemValue2(
-            `text-caption font-normal text-muted`,
-            input,
-          ),
-          ...input3,
-          children: input2,
-        })}
-      />
+      <div ref={options} data-cds-part={`note`} className={resolveUiDesignSystemValue2(`text-caption font-normal text-muted`, input)} {...input3}>{input2}</div>
     ),
   );
   CommentsRef2.displayName = `CommentCard.Note`;
@@ -470,18 +393,7 @@ export function initializeCommentContentStep1(): void {
       ..._extraArguments: unknown[]
     ): Dynamic => (
       <FieldStylesCreateContext.Provider value={true}>
-      <div
-          {...originalJsxProps({
-            ref: options,
-            "data-cds-part": `replies`,
-            className: resolveUiDesignSystemValue2(
-              `flex flex-col gap-sm`,
-              input,
-            ),
-            ...input3,
-            children: input2,
-          })}
-        />
+      <div ref={options} data-cds-part={`replies`} className={resolveUiDesignSystemValue2(`flex flex-col gap-sm`, input)} {...input3}>{input2}</div>
     </FieldStylesCreateContext.Provider>
     ),
   );
@@ -500,14 +412,11 @@ export function initializeCommentContentStep1(): void {
       resolveCommentMotionCurrent(value);
       return (
         <div
-          {...originalJsxProps({
-            ref: resolveUiOverlaysAndIconsValue4(value, options),
-            "data-cds-part": `fixed-row`,
-            className: resolveUiDesignSystemValue2(`px-lg pb-xs`, input),
-            ...input3,
-            children: input2,
-          })}
-        />
+          ref={resolveUiOverlaysAndIconsValue4(value, options)}
+          data-cds-part={`fixed-row`}
+          className={resolveUiDesignSystemValue2(`px-lg pb-xs`, input)}
+          {...input3}
+        >{input2}</div>
       );
     },
   );
@@ -521,12 +430,7 @@ export function initializeCommentContentStep1(): void {
       let value: Dynamic = (0, React.useRef)(null);
       resolveCommentMotionCurrent(value);
       return (
-        <div
-          {...originalJsxProps({
-            ref: resolveUiOverlaysAndIconsValue4(value, options),
-            ...input,
-          })}
-        />
+        <div ref={resolveUiOverlaysAndIconsValue4(value, options)} {...input} />
       );
     },
   );
@@ -555,61 +459,29 @@ export function initializeCommentContentStep1(): void {
       );
       let value3: Dynamic = (0, React.useRef)(null);
       return !value || value2 ? null : (
-        <CommentsRef4
-          {...originalJsxProps({
-            ref: options,
-            "data-cds-part": `reply-field`,
-            className: resolveUiDesignSystemValue2(
-              `px-lg pb-lg group-has-[:is([data-cds-part=edit-field],[data-cds-part=delete-confirm])]/comment-card:hidden`,
-              input2,
-            ),
-            onMouseDown: (
-              event?: Dynamic,
-              ..._extraArguments: unknown[]
-            ): undefined => {
-              input4?.(event);
-              let value4: boolean =
-                event.target === event.currentTarget ||
-                event.target === value3.current;
-              if (event.defaultPrevented || !value4) return;
-              event.preventDefault();
-              let element: Dynamic = event.currentTarget.querySelector(
-                `textarea, [contenteditable="true"], button[data-cds-part="reply-launcher"]`,
-              );
-              element?.focus();
-              if (element?.matches(`button`)) {
-                element.click();
-              }
-            },
-            ...input5,
-            children: input ? (
-              <button
-                type={`button`}
-                data-cds-part={`reply-launcher`}
-                aria-haspopup={`dialog`}
-                onClick={input.onOpen}
-                className={resolveUiDesignSystemValue2(
-                  CommentsReplace,
-                  `cds-reset flex min-h-11 w-full items-center text-start text-muted forced-colors:border`,
-                )}
-              >
+        <CommentsRef4 ref={options} data-cds-part={`reply-field`} className={resolveUiDesignSystemValue2(`px-lg pb-lg group-has-[:is([data-cds-part=edit-field],[data-cds-part=delete-confirm])]/comment-card:hidden`, input2)} onMouseDown={(event?: Dynamic, ..._extraArguments: unknown[]): undefined => {
+  input4?.(event);
+  let value4: boolean = event.target === event.currentTarget || event.target === value3.current;
+  if (event.defaultPrevented || !value4) return;
+  event.preventDefault();
+  let element: Dynamic = event.currentTarget.querySelector(`textarea, [contenteditable="true"], button[data-cds-part="reply-launcher"]`);
+  element?.focus();
+  if (element?.matches(`button`)) {
+    element.click();
+  }
+}} {...input5}>{input ? <button
+  type={`button`}
+  data-cds-part={`reply-launcher`}
+  aria-haspopup={`dialog`}
+  onClick={input.onOpen}
+  className={resolveUiDesignSystemValue2(CommentsReplace, `cds-reset flex min-h-11 w-full items-center text-start text-muted forced-colors:border`)}
+>
               {input.placeholder}
-            </button>
-            ) : (
-              <CommentMotionCreateContext4.Provider value={true}>
-              <div
-                  ref={value3}
-                  className={resolveUiDesignSystemValue2(
-                    FieldStylesState2,
-                    `forced-colors:border`,
-                  )}
-                >
+            </button> : <CommentMotionCreateContext4.Provider value={true}>
+              <div ref={value3} className={resolveUiDesignSystemValue2(FieldStylesState2, `forced-colors:border`)}>
                 {input3}
               </div>
-            </CommentMotionCreateContext4.Provider>
-            ),
-          })}
-        />
+            </CommentMotionCreateContext4.Provider>}</CommentsRef4>
       );
     },
   );

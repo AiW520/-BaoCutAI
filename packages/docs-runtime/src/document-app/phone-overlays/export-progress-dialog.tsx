@@ -1,8 +1,9 @@
+import { jsx as renderReactJsx } from "react/jsx-runtime";
 /** BaoCut: phone overlays from index-CX4IZqzA.js. */
-import type { JSX } from "../../react-runtime/jsx-runtime";
-import type { CapturedProps as CapturedJsxProps } from "../../react-runtime/jsx-runtime";
+import type { JSX } from "react";
+
 import type { Dynamic } from "../../interop/legacy-dynamic";
-type JsxElementType = JSX.ElementType;
+
 import {
   Button,
   PlatformSyncAndRoutingDialog,
@@ -11,7 +12,6 @@ import {
   UiDialogsRoot2,
   UiTooltipsAndControlsDelay,
   frameOpenExternal,
-  originalJsxProps,
   resolvePlatformChunkLoadingDescription2,
   resolvePlatformSyncAndRoutingValue10,
 } from "../dependencies";
@@ -128,11 +128,7 @@ function BottomSheet(bottomSheet?: Dynamic, ..._extraArguments: unknown[]) {
     [useBottomSheetModule3],
   );
   return useBottomSheetModule2 ? (
-    <useBottomSheetModule2.BottomSheet
-      {...originalJsxProps({
-        ...bottomSheet,
-      })}
-    />
+    <useBottomSheetModule2.BottomSheet {...bottomSheet} />
   ) : null;
 }
 
@@ -148,17 +144,9 @@ function PhoneConfirmationDialog(
     useBottomSheetModule(phoneConfirmationDialogResult);
   return !phoneConfirmationDialogResult ||
     (!useBottomSheetModule2 && useBottomSheetModule3) ? (
-    <UiDialogsOpen
-      {...originalJsxProps({
-        ...phoneConfirmationDialog,
-      })}
-    />
+    <UiDialogsOpen {...phoneConfirmationDialog} />
   ) : useBottomSheetModule2 ? (
-    <useBottomSheetModule2.PhoneConfirmationDialog
-      {...originalJsxProps({
-        ...phoneConfirmationDialog,
-      })}
-    />
+    <useBottomSheetModule2.PhoneConfirmationDialog {...phoneConfirmationDialog} />
   ) : null;
 }
 
@@ -307,16 +295,10 @@ export function initializePhoneOverlaysExportProgressDialogStep1(): void {
     options?: Dynamic,
     ..._extraArguments: unknown[]
   ) {
-    return ((
-      RenderedComponent: JsxElementType,
-      CapturedProps: CapturedJsxProps,
-    ) => <RenderedComponent {...CapturedProps} />)(
-      (kind === `alert` ? UiDialogsRoot2 : UiDialogsRoot).Popup,
-      originalJsxProps({
-        ref: options,
-        ...desktopDialogPopup,
-      }),
-    );
+    return renderReactJsx((kind === `alert` ? UiDialogsRoot2 : UiDialogsRoot).Popup, {
+  ref: options,
+  ...desktopDialogPopup
+});
   }));
   (PhoneDialogPopup = (0, React.forwardRef)(function (
     phoneDialogPopup?: Dynamic,
@@ -328,19 +310,9 @@ export function initializePhoneOverlaysExportProgressDialogStep1(): void {
       useBottomSheetModule(phoneDialogPopupResult);
     return !phoneDialogPopupResult ||
       (!useBottomSheetModule2 && useBottomSheetModule3) ? (
-      <DesktopDialogPopup
-        {...originalJsxProps({
-          ref: options,
-          ...phoneDialogPopup,
-        })}
-      />
+      <DesktopDialogPopup ref={options} {...phoneDialogPopup} />
     ) : useBottomSheetModule2 ? (
-      <useBottomSheetModule2.PhoneDialogPopup
-        {...originalJsxProps({
-          ref: options,
-          ...phoneDialogPopup,
-        })}
-      />
+      <useBottomSheetModule2.PhoneDialogPopup ref={options} {...phoneDialogPopup} />
     ) : null;
   }));
   (isDocumentFocusedElsewhere = (

@@ -1,3 +1,4 @@
+import { jsx as renderReactJsx } from "react/jsx-runtime";
 // BaoCut: extracted embed view callbacks; state stays with the component.
 import type { Dynamic } from "../../interop/legacy-dynamic";
 
@@ -126,7 +127,7 @@ export interface RenderRoomViewEmbedPageViewContext {
   onViewOnly: Dynamic;
   onVisualize: Dynamic;
   open: Dynamic;
-  originalJsxProps: Dynamic;
+
   outlineFeed: Dynamic;
   outlineJump: Dynamic;
   outlineWanted: Dynamic;
@@ -323,48 +324,40 @@ export function renderRoomViewEmbedPageView(embedPageLiveContext: RenderRoomView
               <embedPageLiveContext.FrameUnavailable what={`Routines`} />
             ) : embedPageLiveContext.routineId ? (
               <embedPageLiveContext.RoutinePage
-                {...(0, embedPageLiveContext.originalJsxProps)(
-                  {
-                    pid: embedPageLiveContext.pid2,
-                    routineId: embedPageLiveContext.routineId,
-                    version: embedPageLiveContext.version,
-                  },
-                  `${embedPageLiveContext.pid2}/${embedPageLiveContext.routineId}`,
-                )}
+                pid={embedPageLiveContext.pid2}
+                routineId={embedPageLiveContext.routineId}
+                version={embedPageLiveContext.version}
+                key={`${embedPageLiveContext.pid2}/${embedPageLiveContext.routineId}`}
               />
             ) : embedPageLiveContext.seat2 && embedPageLiveContext.room ? (
               <embedPageLiveContext.FilmedProsePage
-                {...(0, embedPageLiveContext.originalJsxProps)(
-                  {
-                    room: embedPageLiveContext.room,
-                    pid: embedPageLiveContext.seat2.pid,
-                    fileId: embedPageLiveContext.seat2.fileId,
-                    snapshotHead: embedPageLiveContext.snapshotHead,
-                    snapshotReady: embedPageLiveContext.snapshotReady,
-                    displayName: embedPageLiveContext.displayName,
-                    version: embedPageLiveContext.seat2.version,
-                    objectFiles: embedPageLiveContext.objectFiles,
-                    tabNames: embedPageLiveContext.tabNames,
-                    onSurfaceKind: embedPageLiveContext.onSurfaceKind,
-                    onHeadKind: embedPageLiveContext.onHeadKind,
-                    onLeaveProbe: embedPageLiveContext.useDocumentPreviewShown2.onProbe,
-                    leaving: embedPageLiveContext.useDocumentPreviewShown2.held,
-                    onViewOnly: embedPageLiveContext.onViewOnly,
-                    onPageGone: embedPageLiveContext.onPageGone,
-                    onTabGone: embedPageLiveContext.onTabGone,
-                    onEscapeToChrome: embedPageLiveContext.onEscapeToChrome,
-                    onHistoryLeave: embedPageLiveContext.documentTabsFormat.refocusEditor,
-                    onTitleCommit: embedPageLiveContext.onTitleCommit,
-                    onFirstHeading: embedPageLiveContext.onFirstHeading,
-                    readOnly: embedPageLiveContext.viewerReadOnly,
-                    placement: embedPageLiveContext.placement,
-                    onOpenFile: embedPageLiveContext.onOpenFile2,
-                    embed: true,
-                    bornHere: embedPageLiveContext.roomViewEmbedPageState13 === embedPageLiveContext.pid2,
-                    hostCommentOffered: embedPageLiveContext.hostCommentOffered,
-                  },
-                  (0, embedPageLiveContext.documentPreviewKey)(embedPageLiveContext.seat2.pid, embedPageLiveContext.seat2.fileId, embedPageLiveContext.seat2.version),
-                )}
+                room={embedPageLiveContext.room}
+                pid={embedPageLiveContext.seat2.pid}
+                fileId={embedPageLiveContext.seat2.fileId}
+                snapshotHead={embedPageLiveContext.snapshotHead}
+                snapshotReady={embedPageLiveContext.snapshotReady}
+                displayName={embedPageLiveContext.displayName}
+                version={embedPageLiveContext.seat2.version}
+                objectFiles={embedPageLiveContext.objectFiles}
+                tabNames={embedPageLiveContext.tabNames}
+                onSurfaceKind={embedPageLiveContext.onSurfaceKind}
+                onHeadKind={embedPageLiveContext.onHeadKind}
+                onLeaveProbe={embedPageLiveContext.useDocumentPreviewShown2.onProbe}
+                leaving={embedPageLiveContext.useDocumentPreviewShown2.held}
+                onViewOnly={embedPageLiveContext.onViewOnly}
+                onPageGone={embedPageLiveContext.onPageGone}
+                onTabGone={embedPageLiveContext.onTabGone}
+                onEscapeToChrome={embedPageLiveContext.onEscapeToChrome}
+                onHistoryLeave={embedPageLiveContext.documentTabsFormat.refocusEditor}
+                onTitleCommit={embedPageLiveContext.onTitleCommit}
+                onFirstHeading={embedPageLiveContext.onFirstHeading}
+                readOnly={embedPageLiveContext.viewerReadOnly}
+                placement={embedPageLiveContext.placement}
+                onOpenFile={embedPageLiveContext.onOpenFile2}
+                embed={true}
+                bornHere={embedPageLiveContext.roomViewEmbedPageState13 === embedPageLiveContext.pid2}
+                hostCommentOffered={embedPageLiveContext.hostCommentOffered}
+                key={(0, embedPageLiveContext.documentPreviewKey)(embedPageLiveContext.seat2.pid, embedPageLiveContext.seat2.fileId, embedPageLiveContext.seat2.version)}
               />
             ) : embedPageLiveContext.contentPending ? null : (
               <embedPageLiveContext.UseApplicationRootHasFilesComponent
@@ -382,22 +375,18 @@ export function renderRoomViewEmbedPageView(embedPageLiveContext: RenderRoomView
                 className={`bg-fill-secondary flex items-center rounded-lg border`}
               >
                 <embedPageLiveContext.MemoizedTabRail
-                  {...(0, embedPageLiveContext.originalJsxProps)(
-                    {
-                      pid: embedPageLiveContext.pid2,
-                      activeId: embedPageLiveContext.nodeId,
-                      pageName: embedPageLiveContext.roomViewEmbedPageResult18?.name,
-                      version: embedPageLiveContext.version,
-                      room: embedPageLiveContext.room,
-                      presence: embedPageLiveContext.presence,
-                      onNavigate: embedPageLiveContext.onOpenFile2,
-                      readOnly: embedPageLiveContext.readOnly,
-                      onPageSkill: embedPageLiveContext.onPageSkill,
-                      onDocFont: embedPageLiveContext.onDocFont,
-                      onDocLanguage: embedPageLiveContext.onDocLanguage,
-                    },
-                    embedPageLiveContext.pid2,
-                  )}
+                  pid={embedPageLiveContext.pid2}
+                  activeId={embedPageLiveContext.nodeId}
+                  pageName={embedPageLiveContext.roomViewEmbedPageResult18?.name}
+                  version={embedPageLiveContext.version}
+                  room={embedPageLiveContext.room}
+                  presence={embedPageLiveContext.presence}
+                  onNavigate={embedPageLiveContext.onOpenFile2}
+                  readOnly={embedPageLiveContext.readOnly}
+                  onPageSkill={embedPageLiveContext.onPageSkill}
+                  onDocFont={embedPageLiveContext.onDocFont}
+                  onDocLanguage={embedPageLiveContext.onDocLanguage}
+                  key={embedPageLiveContext.pid2}
                 />
                 <embedPageLiveContext.PageSkillBulbGate seat={embedPageLiveContext.seat3} />
               </div>
@@ -492,20 +481,16 @@ export function renderRoomViewEmbedPageView(embedPageLiveContext: RenderRoomView
                         className={`bg-fill-secondary flex items-center rounded-lg border`}
                       >
                         <embedPageLiveContext.MemoizedTabRail
-                          {...(0, embedPageLiveContext.originalJsxProps)(
-                            {
-                              pid: embedPageLiveContext.pid2,
-                              activeId: embedPageLiveContext.nodeId,
-                              pageName: embedPageLiveContext.roomViewEmbedPageResult18?.name,
-                              version: embedPageLiveContext.version,
-                              room: embedPageLiveContext.room,
-                              presence: embedPageLiveContext.presence,
-                              onPageSkill: embedPageLiveContext.onPageSkill,
-                              onDocFont: embedPageLiveContext.onDocFont,
-                              onDocLanguage: embedPageLiveContext.onDocLanguage,
-                            },
-                            embedPageLiveContext.pid2,
-                          )}
+                          pid={embedPageLiveContext.pid2}
+                          activeId={embedPageLiveContext.nodeId}
+                          pageName={embedPageLiveContext.roomViewEmbedPageResult18?.name}
+                          version={embedPageLiveContext.version}
+                          room={embedPageLiveContext.room}
+                          presence={embedPageLiveContext.presence}
+                          onPageSkill={embedPageLiveContext.onPageSkill}
+                          onDocFont={embedPageLiveContext.onDocFont}
+                          onDocLanguage={embedPageLiveContext.onDocLanguage}
+                          key={embedPageLiveContext.pid2}
                         />
                         <embedPageLiveContext.PageSkillBulbGate seat={embedPageLiveContext.seat3} />
                       </div>
@@ -637,39 +622,30 @@ export function renderRoomViewEmbedPageView(embedPageLiveContext: RenderRoomView
                     tabs={
                       embedPageLiveContext.pid3 && embedPageLiveContext.documentPreviewChromeShown && !embedPageLiveContext.failed ? (
                         <embedPageLiveContext.MemoizedTabRail
-                          {...(0, embedPageLiveContext.originalJsxProps)(
-                            {
-                              pid: embedPageLiveContext.pid2,
-                              activeId: embedPageLiveContext.nodeId,
-                              pageName: embedPageLiveContext.roomViewEmbedPageResult18?.name,
-                              version: embedPageLiveContext.version,
-                              room: embedPageLiveContext.room,
-                              presence: embedPageLiveContext.presence,
-                              onUserNavigate: embedPageLiveContext.onUserNavigate,
-                              readOnly: embedPageLiveContext.readOnly2,
-                              onPageSkill: embedPageLiveContext.onPageSkill,
-                              onDocFont: embedPageLiveContext.onDocFont,
-                              onDocLanguage: embedPageLiveContext.onDocLanguage,
-                              outlineFeed: embedPageLiveContext.outlineFeed,
-                              onJumpHeading: embedPageLiveContext.onJumpHeading,
-                              onPanelOpen: embedPageLiveContext.onPanelOpen,
-                              timers: embedPageLiveContext.ApplicationRoutesSet,
-                              onTabsSeat: embedPageLiveContext.isTabsLocationFeatureEnabled2
-                                ? embedPageLiveContext.setRoomViewEmbedPageState2
-                                : undefined,
-                              tabsPlaceOffered:
-                                embedPageLiveContext.isTabsLocationFeatureEnabled2 && embedPageLiveContext.frame,
-                              tabsPlace: embedPageLiveContext.place,
-                              tabsOnPage: embedPageLiveContext.tabsOnPage,
-                              tabsListShown: embedPageLiveContext.onLeft,
-                              tabsNoRoom:
-                                embedPageLiveContext.tabsSidebarDrawingState2 ||
-                                embedPageLiveContext.useStableDocumentIdentity2,
-                              triggerHidden: embedPageLiveContext.triggerHidden,
-                              triggerChrome: `readout`,
-                            },
-                            embedPageLiveContext.pid2,
-                          )}
+                          pid={embedPageLiveContext.pid2}
+                          activeId={embedPageLiveContext.nodeId}
+                          pageName={embedPageLiveContext.roomViewEmbedPageResult18?.name}
+                          version={embedPageLiveContext.version}
+                          room={embedPageLiveContext.room}
+                          presence={embedPageLiveContext.presence}
+                          onUserNavigate={embedPageLiveContext.onUserNavigate}
+                          readOnly={embedPageLiveContext.readOnly2}
+                          onPageSkill={embedPageLiveContext.onPageSkill}
+                          onDocFont={embedPageLiveContext.onDocFont}
+                          onDocLanguage={embedPageLiveContext.onDocLanguage}
+                          outlineFeed={embedPageLiveContext.outlineFeed}
+                          onJumpHeading={embedPageLiveContext.onJumpHeading}
+                          onPanelOpen={embedPageLiveContext.onPanelOpen}
+                          timers={embedPageLiveContext.ApplicationRoutesSet}
+                          onTabsSeat={embedPageLiveContext.isTabsLocationFeatureEnabled2 ? embedPageLiveContext.setRoomViewEmbedPageState2 : undefined}
+                          tabsPlaceOffered={embedPageLiveContext.isTabsLocationFeatureEnabled2 && embedPageLiveContext.frame}
+                          tabsPlace={embedPageLiveContext.place}
+                          tabsOnPage={embedPageLiveContext.tabsOnPage}
+                          tabsListShown={embedPageLiveContext.onLeft}
+                          tabsNoRoom={embedPageLiveContext.tabsSidebarDrawingState2 || embedPageLiveContext.useStableDocumentIdentity2}
+                          triggerHidden={embedPageLiveContext.triggerHidden}
+                          triggerChrome={`readout`}
+                          key={embedPageLiveContext.pid2}
                         />
                       ) : null
                     }
@@ -729,38 +705,29 @@ export function renderRoomViewEmbedPageView(embedPageLiveContext: RenderRoomView
                   seats={embedPageLiveContext.seats}
                   tabs={
                     <embedPageLiveContext.MemoizedTabRail
-                      {...(0, embedPageLiveContext.originalJsxProps)(
-                        {
-                          pid: embedPageLiveContext.pid2,
-                          activeId: embedPageLiveContext.nodeId,
-                          pageName: embedPageLiveContext.roomViewEmbedPageResult18?.name,
-                          version: embedPageLiveContext.version,
-                          room: embedPageLiveContext.room,
-                          presence: embedPageLiveContext.presence,
-                          onUserNavigate: embedPageLiveContext.onUserNavigate,
-                          readOnly: embedPageLiveContext.readOnly2,
-                          onPageSkill: embedPageLiveContext.onPageSkill,
-                          onDocFont: embedPageLiveContext.onDocFont,
-                          onDocLanguage: embedPageLiveContext.onDocLanguage,
-                          outlineFeed: embedPageLiveContext.outlineFeed,
-                          onJumpHeading: embedPageLiveContext.onJumpHeading,
-                          onPanelOpen: embedPageLiveContext.onPanelOpen,
-                          timers: embedPageLiveContext.ApplicationRoutesSet,
-                          onTabsSeat: embedPageLiveContext.isTabsLocationFeatureEnabled2
-                            ? embedPageLiveContext.setRoomViewEmbedPageState2
-                            : undefined,
-                          tabsPlaceOffered:
-                            embedPageLiveContext.isTabsLocationFeatureEnabled2 && embedPageLiveContext.frame,
-                          tabsPlace: embedPageLiveContext.place,
-                          tabsOnPage: embedPageLiveContext.tabsOnPage,
-                          tabsListShown: embedPageLiveContext.onLeft,
-                          tabsNoRoom:
-                            embedPageLiveContext.tabsSidebarDrawingState2 ||
-                            embedPageLiveContext.useStableDocumentIdentity2,
-                          triggerChrome: embedPageLiveContext.docked ? `readout` : `button`,
-                        },
-                        embedPageLiveContext.pid2,
-                      )}
+                      pid={embedPageLiveContext.pid2}
+                      activeId={embedPageLiveContext.nodeId}
+                      pageName={embedPageLiveContext.roomViewEmbedPageResult18?.name}
+                      version={embedPageLiveContext.version}
+                      room={embedPageLiveContext.room}
+                      presence={embedPageLiveContext.presence}
+                      onUserNavigate={embedPageLiveContext.onUserNavigate}
+                      readOnly={embedPageLiveContext.readOnly2}
+                      onPageSkill={embedPageLiveContext.onPageSkill}
+                      onDocFont={embedPageLiveContext.onDocFont}
+                      onDocLanguage={embedPageLiveContext.onDocLanguage}
+                      outlineFeed={embedPageLiveContext.outlineFeed}
+                      onJumpHeading={embedPageLiveContext.onJumpHeading}
+                      onPanelOpen={embedPageLiveContext.onPanelOpen}
+                      timers={embedPageLiveContext.ApplicationRoutesSet}
+                      onTabsSeat={embedPageLiveContext.isTabsLocationFeatureEnabled2 ? embedPageLiveContext.setRoomViewEmbedPageState2 : undefined}
+                      tabsPlaceOffered={embedPageLiveContext.isTabsLocationFeatureEnabled2 && embedPageLiveContext.frame}
+                      tabsPlace={embedPageLiveContext.place}
+                      tabsOnPage={embedPageLiveContext.tabsOnPage}
+                      tabsListShown={embedPageLiveContext.onLeft}
+                      tabsNoRoom={embedPageLiveContext.tabsSidebarDrawingState2 || embedPageLiveContext.useStableDocumentIdentity2}
+                      triggerChrome={embedPageLiveContext.docked ? `readout` : `button`}
+                      key={embedPageLiveContext.pid2}
                     />
                   }
                   pageSkill={
@@ -875,69 +842,53 @@ export function renderRoomViewEmbedPageView(embedPageLiveContext: RenderRoomView
                     <embedPageLiveContext.FrameUnavailable what={`Routines`} />
                   ) : embedPageLiveContext.routineId ? (
                     <embedPageLiveContext.RoutinePage
-                      {...(0, embedPageLiveContext.originalJsxProps)(
-                        {
-                          pid: embedPageLiveContext.pid2,
-                          routineId: embedPageLiveContext.routineId,
-                          version: embedPageLiveContext.version,
-                          chipNav: embedPageLiveContext.chipNav,
-                          onVisualize: embedPageLiveContext.onVisualize,
-                        },
-                        `${embedPageLiveContext.pid2}/${embedPageLiveContext.routineId}`,
-                      )}
+                      pid={embedPageLiveContext.pid2}
+                      routineId={embedPageLiveContext.routineId}
+                      version={embedPageLiveContext.version}
+                      chipNav={embedPageLiveContext.chipNav}
+                      onVisualize={embedPageLiveContext.onVisualize}
+                      key={`${embedPageLiveContext.pid2}/${embedPageLiveContext.routineId}`}
                     />
                   ) : embedPageLiveContext.seat2 && embedPageLiveContext.room ? (
                     <embedPageLiveContext.FilmedProsePage
-                      {...(0, embedPageLiveContext.originalJsxProps)(
-                        {
-                          room: embedPageLiveContext.room,
-                          pid: embedPageLiveContext.seat2.pid,
-                          fileId: embedPageLiveContext.seat2.fileId,
-                          snapshotHead: embedPageLiveContext.snapshotHead,
-                          snapshotReady: embedPageLiveContext.snapshotReady,
-                          displayName: embedPageLiveContext.displayName,
-                          version: embedPageLiveContext.seat2.version,
-                          objectFiles: embedPageLiveContext.objectFiles,
-                          tabNames: embedPageLiveContext.tabNames,
-                          onSurfaceKind: embedPageLiveContext.onSurfaceKind,
-                          onHeadKind: embedPageLiveContext.onHeadKind,
-                          onShown: embedPageLiveContext.onShown,
-                          onLeaveProbe: embedPageLiveContext.useDocumentPreviewShown2.onProbe,
-                          leaving: embedPageLiveContext.useDocumentPreviewShown2.held,
-                          onViewOnly: embedPageLiveContext.onViewOnly,
-                          onPageGone: embedPageLiveContext.onPageGone,
-                          onTabGone: embedPageLiveContext.onTabGone,
-                          onEscapeToChrome: embedPageLiveContext.onEscapeToChrome,
-                          onHistoryLeave: embedPageLiveContext.documentTabsFormat.refocusEditor,
-                          onTitleCommit: embedPageLiveContext.onTitleCommit,
-                          onFirstHeading: embedPageLiveContext.onFirstHeading,
-                          readOnly: embedPageLiveContext.viewerReadOnly,
-                          placement: embedPageLiveContext.placement,
-                          onOpenFile: embedPageLiveContext.onOpenFile,
-                          edgeMinLeft: embedPageLiveContext.edgeMinLeft,
-                          railSlot: embedPageLiveContext.railSlot,
-                          onRailInSlot: embedPageLiveContext.onRailInSlot,
-                          leftOverlayHost: embedPageLiveContext.onPage
-                            ? embedPageLiveContext.roomViewEmbedPageState7
-                            : null,
-                          leftOverlayHeld: embedPageLiveContext.tabsOnPage,
-                          onLeftOverlayState: embedPageLiveContext.onPage
-                            ? embedPageLiveContext.setRoomViewEmbedPageState5
-                            : undefined,
-                          outlineWanted: embedPageLiveContext.outlineWanted,
-                          onOutline: embedPageLiveContext.outlineWanted ? embedPageLiveContext.send : undefined,
-                          onOutlineAt: embedPageLiveContext.outlineWanted ? embedPageLiveContext.send2 : undefined,
-                          onOutlineScrolled: embedPageLiveContext.outlineWanted ? embedPageLiveContext.send3 : undefined,
-                          outlineJump: embedPageLiveContext.outlineJump,
-                          bornHere: embedPageLiveContext.roomViewEmbedPageState13 === embedPageLiveContext.pid2,
-                          hostCommentOffered: embedPageLiveContext.hostCommentOffered,
-                        },
-                        (0, embedPageLiveContext.documentPreviewKey)(
-                          embedPageLiveContext.seat2.pid,
-                          embedPageLiveContext.seat2.fileId,
-                          embedPageLiveContext.seat2.version,
-                        ),
-                      )}
+                      room={embedPageLiveContext.room}
+                      pid={embedPageLiveContext.seat2.pid}
+                      fileId={embedPageLiveContext.seat2.fileId}
+                      snapshotHead={embedPageLiveContext.snapshotHead}
+                      snapshotReady={embedPageLiveContext.snapshotReady}
+                      displayName={embedPageLiveContext.displayName}
+                      version={embedPageLiveContext.seat2.version}
+                      objectFiles={embedPageLiveContext.objectFiles}
+                      tabNames={embedPageLiveContext.tabNames}
+                      onSurfaceKind={embedPageLiveContext.onSurfaceKind}
+                      onHeadKind={embedPageLiveContext.onHeadKind}
+                      onShown={embedPageLiveContext.onShown}
+                      onLeaveProbe={embedPageLiveContext.useDocumentPreviewShown2.onProbe}
+                      leaving={embedPageLiveContext.useDocumentPreviewShown2.held}
+                      onViewOnly={embedPageLiveContext.onViewOnly}
+                      onPageGone={embedPageLiveContext.onPageGone}
+                      onTabGone={embedPageLiveContext.onTabGone}
+                      onEscapeToChrome={embedPageLiveContext.onEscapeToChrome}
+                      onHistoryLeave={embedPageLiveContext.documentTabsFormat.refocusEditor}
+                      onTitleCommit={embedPageLiveContext.onTitleCommit}
+                      onFirstHeading={embedPageLiveContext.onFirstHeading}
+                      readOnly={embedPageLiveContext.viewerReadOnly}
+                      placement={embedPageLiveContext.placement}
+                      onOpenFile={embedPageLiveContext.onOpenFile}
+                      edgeMinLeft={embedPageLiveContext.edgeMinLeft}
+                      railSlot={embedPageLiveContext.railSlot}
+                      onRailInSlot={embedPageLiveContext.onRailInSlot}
+                      leftOverlayHost={embedPageLiveContext.onPage ? embedPageLiveContext.roomViewEmbedPageState7 : null}
+                      leftOverlayHeld={embedPageLiveContext.tabsOnPage}
+                      onLeftOverlayState={embedPageLiveContext.onPage ? embedPageLiveContext.setRoomViewEmbedPageState5 : undefined}
+                      outlineWanted={embedPageLiveContext.outlineWanted}
+                      onOutline={embedPageLiveContext.outlineWanted ? embedPageLiveContext.send : undefined}
+                      onOutlineAt={embedPageLiveContext.outlineWanted ? embedPageLiveContext.send2 : undefined}
+                      onOutlineScrolled={embedPageLiveContext.outlineWanted ? embedPageLiveContext.send3 : undefined}
+                      outlineJump={embedPageLiveContext.outlineJump}
+                      bornHere={embedPageLiveContext.roomViewEmbedPageState13 === embedPageLiveContext.pid2}
+                      hostCommentOffered={embedPageLiveContext.hostCommentOffered}
+                      key={(0, embedPageLiveContext.documentPreviewKey)(embedPageLiveContext.seat2.pid, embedPageLiveContext.seat2.fileId, embedPageLiveContext.seat2.version)}
                     />
                   ) : embedPageLiveContext.faceUp ? null : (
                     <embedPageLiveContext.UseApplicationRootHasFilesComponent
@@ -956,27 +907,13 @@ export function renderRoomViewEmbedPageView(embedPageLiveContext: RenderRoomView
                   }
                 >
                   <embedPageLiveContext.React.Suspense fallback={null}>
-                    <embedPageLiveContext.SessionNavigationDefault4
-                      {...(0, embedPageLiveContext.originalJsxProps)(
-                        {
-                          pid: embedPageLiveContext.pid2,
-                          container: `project/${embedPageLiveContext.pid2}`,
-                          measureKey: embedPageLiveContext.measureKey,
-                          scrollYOf: (
-                            roomViewEmbedPage?: Dynamic,
-                            ..._extraArguments: unknown[]
-                          ): Dynamic =>
-                            (0, embedPageLiveContext.getDocumentScroll)(
-                              (0, embedPageLiveContext.documentScrollKey)(
-                                embedPageLiveContext.pid2,
-                                roomViewEmbedPage.slice(embedPageLiveContext.pid2.length + 1),
-                              ),
-                            ),
-                          ...embedPageLiveContext.usePageSkillSeat2.layer,
-                        },
-                        embedPageLiveContext.pid2,
-                      )}
-                    />
+                    {renderReactJsx(embedPageLiveContext.SessionNavigationDefault4, {
+  pid: embedPageLiveContext.pid2,
+  container: `project/${embedPageLiveContext.pid2}`,
+  measureKey: embedPageLiveContext.measureKey,
+  scrollYOf: (roomViewEmbedPage?: Dynamic, ..._extraArguments: unknown[]): Dynamic => (0, embedPageLiveContext.getDocumentScroll)((0, embedPageLiveContext.documentScrollKey)(embedPageLiveContext.pid2, roomViewEmbedPage.slice(embedPageLiveContext.pid2.length + 1))),
+  ...embedPageLiveContext.usePageSkillSeat2.layer
+}, embedPageLiveContext.pid2)}
                   </embedPageLiveContext.React.Suspense>
                 </embedPageLiveContext.RouteErrorBoundary>
               )}

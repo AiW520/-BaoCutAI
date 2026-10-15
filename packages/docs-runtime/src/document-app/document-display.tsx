@@ -14,7 +14,6 @@ import {
   collectPlatformKeyboardAndSaveStatusMods,
   create,
   liveDoor,
-  originalJsxsProps,
   pageBusyOf,
   platformAnnouncementsPattern,
   preloadModule,
@@ -513,90 +512,19 @@ function KeyboardHelpDialog(
               filterKeyboardShortcut?: Dynamic,
               ..._extraArguments: unknown[]
             ): Dynamic => (
-              <section
-                {...originalJsxsProps(
-                  {
-                    "aria-labelledby": `shortcut-sheet-${filterKeyboardShortcut.group}`,
-                    className: `mb-lg`,
-                    children: [
-                      <h3
-                        id={`shortcut-sheet-${filterKeyboardShortcut.group}`}
-                        className={`text-muted text-caption mb-sm break-after-avoid`}
-                      >
+              <section aria-labelledby={`shortcut-sheet-${filterKeyboardShortcut.group}`} className={`mb-lg`} key={filterKeyboardShortcut.group}>{<h3 id={`shortcut-sheet-${filterKeyboardShortcut.group}`} className={`text-muted text-caption mb-sm break-after-avoid`}>
                         {filterKeyboardShortcut.title}
-                      </h3>,
-                      <ul>
-                        {filterKeyboardShortcut.rows.map(
-                          (
-                            event?: Dynamic,
-                            ..._extraArguments: unknown[]
-                          ): Dynamic => (
-                            <li
-                              {...originalJsxsProps(
-                                {
-                                  "data-chord": event.id,
-                                  className: `flex flex-wrap break-inside-avoid items-center justify-between gap-x-md gap-y-0 py-1`,
-                                  children: [
-                                    <span className={`text-body flex-1`}>
+                      </h3>}{<ul>
+                        {filterKeyboardShortcut.rows.map((event?: Dynamic, ..._extraArguments: unknown[]): Dynamic => <li data-chord={event.id} className={`flex flex-wrap break-inside-avoid items-center justify-between gap-x-md gap-y-0 py-1`} key={event.id}>{<span className={`text-body flex-1`}>
                                       {event.label}
-                                      {PlatformKeyboardAndSaveStatusText[
-                                        event.scope
-                                      ] !== undefined && (
-                                        <span className={`text-secondary`}>
+                                      {PlatformKeyboardAndSaveStatusText[event.scope] !== undefined && <span className={`text-secondary`}>
                                           {` · `}
-                                          {
-                                            PlatformKeyboardAndSaveStatusText[
-                                              event.scope
-                                            ]
-                                          }
-                                        </span>
-                                      )}
-                                    </span>,
-                                    <span
-                                      className={`ml-auto flex shrink-0 items-center gap-sm`}
-                                    >
-                                      {[event.key, ...(event.also ?? [])].map(
-                                        (
-                                          item?: Dynamic,
-                                          index?: Dynamic,
-                                          ..._extraArguments: unknown[]
-                                        ): Dynamic => (
-                                          <span
-                                            {...originalJsxsProps(
-                                              {
-                                                className: `flex items-center gap-sm`,
-                                                children: [
-                                                  index > 0 && (
-                                                    <span
-                                                      className={`text-muted text-caption`}
-                                                    >{`or`}</span>
-                                                  ),
-                                                  <UiShortcutsAndSizingKeys
-                                                    keys={collectPlatformKeyboardAndSaveStatusMods(
-                                                      item,
-                                                    )}
-                                                  />,
-                                                ],
-                                              },
-                                              item,
-                                            )}
-                                          />
-                                        ),
-                                      )}
-                                    </span>,
-                                  ],
-                                },
-                                event.id,
-                              )}
-                            />
-                          ),
-                        )}
-                      </ul>,
-                    ],
-                  },
-                  filterKeyboardShortcut.group,
-                )}
-              />
+                                          {PlatformKeyboardAndSaveStatusText[event.scope]}
+                                        </span>}
+                                    </span>}{<span className={`ml-auto flex shrink-0 items-center gap-sm`}>
+                                      {[event.key, ...(event.also ?? [])].map((item?: Dynamic, index?: Dynamic, ..._extraArguments: unknown[]): Dynamic => <span className={`flex items-center gap-sm`} key={item}>{index > 0 && <span className={`text-muted text-caption`}>{`or`}</span>}{<UiShortcutsAndSizingKeys keys={collectPlatformKeyboardAndSaveStatusMods(item)} />}</span>)}
+                                    </span>}</li>)}
+                      </ul>}</section>
             ),
           )}
         </div>

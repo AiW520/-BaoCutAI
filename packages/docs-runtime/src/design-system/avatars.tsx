@@ -6,7 +6,6 @@ import {
   TooltipGroup,
   cva,
   loadReactDom,
-  originalJsxProps,
   resolveUiDesignSystemValue2,
   resolveUiLinksAndFoundationUseContext3,
   resolveUiOverlaysAndIconsValue6,
@@ -184,37 +183,16 @@ export function initializeAvatarsStep1(): void {
       );
       let value8: boolean = !!input && !value3;
       return (
-        <span
-          {...originalJsxProps({
-            ref: options,
-            "data-cds": `Avatar`,
-            ...input6,
-            className: resolveUiDesignSystemValue2(
-              AvatarsVariants({
-                size: input3,
-                variant: input4,
-              }),
-              input5,
-            ),
-            role: value8 ? undefined : `img`,
-            "aria-label": value8 ? undefined : input2,
-            children: value8 ? (
-              <img
-                src={input}
-                alt={input2}
-                className={`size-full object-cover`}
-                draggable={false}
-                onError={(..._extraArguments: unknown[]): Dynamic =>
-                  value4(true)
-                }
-              />
-            ) : input4 === `claude` ? (
-              <AvatarsMemo size={`60%`} color={`currentColor`} />
-            ) : (
-              value7
-            ),
-          })}
-        />
+        <span ref={options} data-cds={`Avatar`} {...input6} className={resolveUiDesignSystemValue2(AvatarsVariants({
+  size: input3,
+  variant: input4
+}), input5)} role={value8 ? undefined : `img`} aria-label={value8 ? undefined : input2}>{value8 ? <img
+  src={input}
+  alt={input2}
+  className={`size-full object-cover`}
+  draggable={false}
+  onError={(..._extraArguments: unknown[]): Dynamic => value4(true)}
+/> : input4 === `claude` ? <AvatarsMemo size={`60%`} color={`currentColor`} /> : value7}</span>
       );
     },
   );
@@ -315,21 +293,11 @@ export function initializeAvatarsStep1(): void {
                   ..._extraArguments: unknown[]
                 ): Dynamic => (
                   <span
-                    {...originalJsxProps(
-                      {
-                        "data-stack-item": true,
-                        className: AvatarsStyles2,
-                        style: resolveAvatarsMarginInlineStart(
-                          value12 - 1 - options2,
-                          options2 === 0,
-                        ),
-                        children: input9,
-                      },
-                      (0, React.isValidElement)(input9)
-                        ? (input9.key ?? options2)
-                        : options2,
-                    )}
-                  />
+                    data-stack-item={true}
+                    className={AvatarsStyles2}
+                    style={resolveAvatarsMarginInlineStart(value12 - 1 - options2, options2 === 0)}
+                    key={(0, React.isValidElement)(input9) ? input9.key ?? options2 : options2}
+                  >{input9}</span>
                 ),
               )}
             {value6 > 0 && (

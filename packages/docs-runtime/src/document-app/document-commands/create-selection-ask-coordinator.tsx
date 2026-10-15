@@ -8,7 +8,6 @@ import {
   UiOverlaysAndIconsCustomIcon,
   loadObservabilityBrowserAndOperationEventsCode,
   observabilityBrowserAndOperationEventsSet32,
-  originalJsxProps,
   preloadModule,
   resolveEditorProofreadingExec,
   resolvePlatformSessionAndSourcesTest6,
@@ -247,35 +246,23 @@ function UseDocumentCommandsNonceComponent(
     <jsxRuntime.Fragment>
       {notice ? <InlineAskNotice notice={notice} quiet={noticeQuiet} /> : null}
       <CommentReplyComposer
-        {...originalJsxProps(
-          {
-            layout: `composer`,
-            composerChrome: chrome,
-            claudeRoute: `always`,
-            placeholder: `Ask the agent…`,
-            ariaLabel: `Ask Agent`,
-            autoFocus: autoFocus,
-            addressClaude: true,
-            boxId: INLINE_ASK_TOAST_ID,
-            lockWhileBusy: true,
-            holdWhileBusy: true,
-            persistent: persistent,
-            onHolding: onHolding,
-            draftKey: draftKey,
-            suggestions: suggestions,
-            onPost: (
-              documentCommandsNonce?: Dynamic,
-              options?: Dynamic,
-              context?: Dynamic,
-              dependencies?: unknown,
-              argument?: Dynamic,
-              ..._extraArguments: unknown[]
-            ): Dynamic =>
-              onPost(documentCommandsNonce, options, context, argument),
-            onCancel: onCancel,
-          },
-          nonce,
-        )}
+        layout={`composer`}
+        composerChrome={chrome}
+        claudeRoute={`always`}
+        placeholder={`Ask the agent…`}
+        ariaLabel={`Ask Agent`}
+        autoFocus={autoFocus}
+        addressClaude={true}
+        boxId={INLINE_ASK_TOAST_ID}
+        lockWhileBusy={true}
+        holdWhileBusy={true}
+        persistent={persistent}
+        onHolding={onHolding}
+        draftKey={draftKey}
+        suggestions={suggestions}
+        onPost={(documentCommandsNonce?: Dynamic, options?: Dynamic, context?: Dynamic, dependencies?: unknown, argument?: Dynamic, ..._extraArguments: unknown[]): Dynamic => onPost(documentCommandsNonce, options, context, argument)}
+        onCancel={onCancel}
+        key={nonce}
       />
     </jsxRuntime.Fragment>
   );

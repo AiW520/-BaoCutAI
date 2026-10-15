@@ -6,7 +6,6 @@ import {
   UiTooltipsAndControlsLight,
   UiTooltipsAndControlsLight2,
   UiTooltipsAndControlsPanel,
-  originalJsxProps,
   resolveUiDesignSystemValue2,
   resolveUiProviderAndLayersCdsPageBg,
   resolveUiProviderAndLayersLight,
@@ -45,29 +44,12 @@ export function initializeSurfaceStep1(): void {
         UiTooltipsAndControlsPanel[input],
       );
       return (
-        <div
-          {...originalJsxProps({
-            ref: options,
-            "data-cds": `Surface`,
-            "data-surface": input,
-            ...input5,
-            className: resolveUiDesignSystemValue2(
-              resolveUiTooltipsAndControlsValue3(input),
-              input2,
-            ),
-            style: {
-              ...value,
-              ...input3,
-            },
-            children: (
-              <UiProviderAndLayersCreateContext8.Provider
-                value={UiTooltipsAndControlsPanel[input]}
-              >
+        <div ref={options} data-cds={`Surface`} data-surface={input} {...input5} className={resolveUiDesignSystemValue2(resolveUiTooltipsAndControlsValue3(input), input2)} style={{
+  ...value,
+  ...input3
+}}>{<UiProviderAndLayersCreateContext8.Provider value={UiTooltipsAndControlsPanel[input]}>
               {input4}
-            </UiProviderAndLayersCreateContext8.Provider>
-            ),
-          })}
-        />
+            </UiProviderAndLayersCreateContext8.Provider>}</div>
       );
     },
   );

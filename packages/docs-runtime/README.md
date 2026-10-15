@@ -10,7 +10,7 @@
 | --- | --- |
 | `main.ts`、`boot/` | 入口、最早执行的环境判断、Frame 握手、预热、模块预加载与活绑定支持 |
 | `document-app/` | 应用入口、路由、文档命令与宿主状态；子目录包含评论组件、Frame、页面、交互桥、导航与标签栏 |
-| `design-system/`、`react-runtime/` | 设计 token 与控件；菜单、抽屉、评论卡片分别成组；React 与自定义 JSX 运行时 |
+| `design-system/` | 设计 token 与 TSX 控件；菜单、抽屉、评论卡片分别成组 |
 | `platform/` | 平台入口与依赖适配；`services/` 管理宿主、接口、认证与同步，`data/` 管理 schema 与操作引擎，`operations/` 管理控制器，`observability/` 管理遥测 |
 | `prose-editor/` | iframe 运行时、schema、KaTeX 与表情附加脚本；`platform/` 放平台侧的编辑器扩展、节点视图、媒体、选区与表格 |
 | `comments/` | 批注栏、发件箱、store 与动作工厂 |
@@ -20,7 +20,7 @@
 | `host/`、`fonts/` | BaoCut 宿主合同、版本历史开关，以及父页面读取并传给 iframe 的字体 |
 | `serialization/`、`interop/`、`ambient/` | 共享值合同、库的未公开导出合同与页面全局／虚拟资源声明 |
 
-JSX 使用包导出 `@baocut/docs-runtime/react-runtime/jsx-runtime` 与 `jsx-dev-runtime`，由 `jsxImportSource` 统一解析，不依赖源文件的目录深度。恢复代码引用 Base UI 未公开的子路径时，用私有 `#base-ui/` 与 `#base-ui-utils/` 前缀；TypeScript `paths` 读取包内原生声明，`tools/asset-plugin.ts` 的 `nodeModulesPaths()` 在 Vite 与两处 esbuild 构建中解析相同文件。
+TSX 使用 React 标准自动 JSX runtime，不再包装 props 或扩展 JSX 的组件属性检查。应用直接从 `react-dom/client` 引入 `createRoot`；CSS 自定义属性的类型扩展位于 `ambient/react-styles.d.ts`，编辑器渲染边界的 props 位于 `prose-editor/render-boundaries.ts`。动态组件以及需要保持原始 key／children 调用语义的少数位置使用 React 原生元素工厂。恢复代码引用 Base UI 未公开的子路径时，用私有 `#base-ui/` 与 `#base-ui-utils/` 前缀；TypeScript `paths` 读取包内原生声明，`tools/asset-plugin.ts` 的 `nodeModulesPaths()` 在 Vite 与两处 esbuild 构建中解析相同文件。
 
 ### 初始化与模块边界
 

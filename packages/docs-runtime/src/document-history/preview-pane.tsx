@@ -1,5 +1,5 @@
 /** version-preview-pane: restored from VersionPreviewPane-Bo7aPjii.js. */
-import { originalJsxProps } from "../react-runtime/jsx-runtime";
+
 import type { Dynamic } from "../interop/legacy-dynamic";
 const mapPreloadDependencies: Dynamic = (
   ..._extraArguments: unknown[]
@@ -332,11 +332,7 @@ function StructuredVersionPreview(
 ): Dynamic {
   return (
     <StackedPreviewShell stacked={props.stacked && props.upto !== undefined}>
-      <StructuredVersionPreviewBody
-        {...originalJsxProps({
-          ...props,
-        })}
-      />
+      <StructuredVersionPreviewBody {...props} />
     </StackedPreviewShell>
   );
 }
@@ -1564,16 +1560,9 @@ function PreviewFailure(
   ..._extraArguments: unknown[]
 ): Dynamic {
   return flagOn ? (
-    <PreviewNotice
-      {...originalJsxProps({
-        text: words.text,
-        ...(words.retry
-          ? {
-              onRetry: onRetry,
-            }
-          : {}),
-      })}
-    />
+    <PreviewNotice text={words.text} {...words.retry ? {
+  onRetry: onRetry
+} : {}} />
   ) : (
     <div
       className={`text-danger text-footnote flex h-full items-center justify-center p-6`}
@@ -1598,11 +1587,7 @@ function VersionPreviewPane(
       </StackedPreviewShell>
     )
   ) : (
-    <StructuredVersionPreview
-      {...originalJsxProps({
-        ...props,
-      })}
-    />
+    <StructuredVersionPreview {...props} />
   );
 }
 function FrameVersionPreview(

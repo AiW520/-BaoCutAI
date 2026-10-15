@@ -15,8 +15,6 @@ import {
   isTmpId,
   isTouchPresentation,
   mintedThreadId,
-  originalJsxProps,
-  originalJsxsProps,
   resolveCommentsStoreNode,
   resolveCommentsStoreSource,
   resolveCommentsStoreSource2,
@@ -1116,566 +1114,229 @@ export function initializeCommentComponentsShared4Step1(): void {
     return chrome === `cds` ? (
       <TooltipGroup delay={150}>
       <CommentCard
-          {...originalJsxsProps({
-            ref: cardRef,
-            variant: flat ? `flat` : `raised`,
-            expanded: expanded,
-            active: expanded || active === true,
-            readOnly: readOnly2,
-            className: resolveUiDesignSystemValue2(
-              `rx-card`,
-              flat && !fit && `py-md`,
-              fit && `min-h-0`,
-            ),
-            role: `article`,
-            "data-testid": `ldoc-thread-card`,
-            "data-comment-stop": ``,
-            "data-stop-id": t5.id,
-            "data-nonresting":
-              expanded || useCommentResolveMotion2.phase !== `idle` || undefined,
-            ...useCommentResolveMotion2.cardProps,
-            tabIndex: tabStop === false ? -1 : 0,
-            "aria-label": ariaLabel,
-            "aria-describedby": hintId,
-            onKeyDown: onKeyDown,
-            onClick: onClick,
-            children: [
-              <SeeMorePill
-                fit={fit}
-                touch={touch}
-                tailKey={tailKey}
-                expanded={expanded}
-                column={`flex flex-col gap-sm`}
-                tallerCap={true}
-              >
+        ref={cardRef}
+        variant={flat ? `flat` : `raised`}
+        expanded={expanded}
+        active={expanded || active === true}
+        readOnly={readOnly2}
+        className={resolveUiDesignSystemValue2(`rx-card`, flat && !fit && `py-md`, fit && `min-h-0`)}
+        role={`article`}
+        data-testid={`ldoc-thread-card`}
+        data-comment-stop={``}
+        data-stop-id={t5.id}
+        data-nonresting={expanded || useCommentResolveMotion2.phase !== `idle` || undefined}
+        {...useCommentResolveMotion2.cardProps}
+        tabIndex={tabStop === false ? -1 : 0}
+        aria-label={ariaLabel}
+        aria-describedby={hintId}
+        onKeyDown={onKeyDown}
+        onClick={onClick}
+      >{<SeeMorePill fit={fit} touch={touch} tailKey={tailKey} expanded={expanded} column={`flex flex-col gap-sm`} tallerCap={true}>
               {jsxs2(true)}
               <CommentHeader
-                  {...originalJsxProps({
-                    ...citeOutcomeChipHandler4(t5.root, t5.replies),
-                    dimmed:
-                      face?.state === `sending` && face.unconfirmed !== undefined,
-                    right: jsxs3(t5.root, true),
-                    onReact: readOnly2
-                      ? undefined
-                      : (
-                          citeOutcomeChip?: Dynamic,
-                          ..._extraArguments: unknown[]
-                        ): Dynamic => onReact?.(t5.root.id, citeOutcomeChip),
-                  })}
-                />
-              {t5.root.kind === `suggestion` &&
-                  !t5.resolved &&
-                  !readOnly2 &&
-                  enabled &&
-                  t5.root.proposedText !== undefined && (
-                    <div className={`flex gap-2`}>
-                    <Button
-                        size={citeOutcomeChipResult(`xs`)}
-                        variant={`secondary`}
-                        onClick={(
-                          citeOutcomeChip?: Dynamic,
-                          ..._extraArguments: unknown[]
-                        ): undefined => {
-                          citeOutcomeChip.stopPropagation();
-                          onResolve?.(t5.id);
-                        }}
-                      >{`Reject`}</Button>
-                  </div>
-                  )}
-              {matchesRepliesCount && (
-                  <CommentCard.Replies
-                    className={resolveUiDesignSystemValue2(
-                      tuckReplies && CommentComponents_PsMdMs25BorderS,
-                    )}
-                  >
-                  {matchesCount && (
-                      <CommentCard.RepliesToggle
-                        count={count}
-                        data-testid={`show-replies`}
-                        onClick={(..._extraArguments: unknown[]): Dynamic => {
-                          if (expanded) return setEnabledState2(true);
-                          enabledRef2.current = true;
-                          queueMicrotask(
-                            (..._extraArguments: unknown[]) =>
-                              (enabledRef2.current = false),
-                          );
-                          if (onExpand(t5.id) !== false) {
-                            setEnabledState2(true);
-                          }
-                        }}
-                      />
-                    )}
-                  {t5.replies
-                      .slice(count)
-                      .map(
-                        (
-                          repliesSlice?: Dynamic,
-                          ..._extraArguments: unknown[]
-                        ) => {
-                          let face2: Dynamic = Object.hasOwn(
-                            citeOutcomeChipResult2,
-                            repliesSlice.id,
-                          )
-                            ? citeOutcomeChipResult2[repliesSlice.id]
-                            : undefined;
-                          return (
-                            <React.Fragment
-                              {...originalJsxsProps(
-                                {
-                                  children: [
-                                    <CommentHeader
-                                      {...originalJsxProps({
-                                        ...citeOutcomeChipHandler4(
-                                          repliesSlice,
-                                          t5.replies.slice(
-                                            t5.replies.indexOf(repliesSlice) + 1,
-                                          ),
-                                        ),
-                                        dimmed:
-                                          face2?.state === `sending` &&
-                                          face2.unconfirmed !== undefined,
-                                        right: face2
-                                          ? undefined
-                                          : jsxs3(repliesSlice, false),
-                                        onReact:
-                                          readOnly2 || face2
-                                            ? undefined
-                                            : (
-                                                citeOutcomeChip?: Dynamic,
-                                                ..._extraArguments: unknown[]
-                                              ): Dynamic =>
-                                                onReact?.(
-                                                  repliesSlice.id,
-                                                  citeOutcomeChip,
-                                                ),
-                                      })}
-                                    />,
-                                    face2 && (
-                                      <CommentOutbox
-                                        id={repliesSlice.id}
-                                        face={face2}
-                                        flush={true}
-                                      />
-                                    ),
-                                  ],
-                                },
-                                repliesSlice.id,
-                              )}
-                            />
-                          );
-                        },
-                      )}
-                  {(text || rowShowing) && (
-                      <CommentCard.Activity
-                        byline={!!text}
-                        label={
-                          text
-                            ? resolveCommentComposerTest(text)
-                            : // BaoCut: 称「the agent」，不称 Claude。
-                              `The agent is working on it…`
-                        }
-                        leading={
-                          text ? (
-                            <UseCommentComposerDataClaudeActivityDotsComponent />
-                          ) : (
-                            <ClaudeTypingIndicator />
-                          )
-                        }
-                        data-testid={text ? undefined : `claude-pending-row`}
-                      />
-                    )}
-                  {t5.pendingAsks &&
-                    filterCommentComposerFilter(t5.pendingAsks, parse).length >
-                      0 ? (
-                      <PendingAsk asks={t5.pendingAsks} />
-                    ) : null}
+                {...citeOutcomeChipHandler4(t5.root, t5.replies)}
+                dimmed={face?.state === `sending` && face.unconfirmed !== undefined}
+                right={jsxs3(t5.root, true)}
+                onReact={readOnly2 ? undefined : (citeOutcomeChip?: Dynamic, ..._extraArguments: unknown[]): Dynamic => onReact?.(t5.root.id, citeOutcomeChip)}
+              />
+              {t5.root.kind === `suggestion` && !t5.resolved && !readOnly2 && enabled && t5.root.proposedText !== undefined && <div className={`flex gap-2`}>
+                    <Button size={citeOutcomeChipResult(`xs`)} variant={`secondary`} onClick={(citeOutcomeChip?: Dynamic, ..._extraArguments: unknown[]): undefined => {
+        citeOutcomeChip.stopPropagation();
+        onResolve?.(t5.id);
+      }}>{`Reject`}</Button>
+                  </div>}
+              {matchesRepliesCount && <CommentCard.Replies className={resolveUiDesignSystemValue2(tuckReplies && CommentComponents_PsMdMs25BorderS)}>
+                  {matchesCount && <CommentCard.RepliesToggle count={count} data-testid={`show-replies`} onClick={(..._extraArguments: unknown[]): Dynamic => {
+        if (expanded) return setEnabledState2(true);
+        enabledRef2.current = true;
+        queueMicrotask((..._extraArguments: unknown[]) => enabledRef2.current = false);
+        if (onExpand(t5.id) !== false) {
+          setEnabledState2(true);
+        }
+      }} />}
+                  {t5.replies.slice(count).map((repliesSlice?: Dynamic, ..._extraArguments: unknown[]) => {
+        let face2: Dynamic = Object.hasOwn(citeOutcomeChipResult2, repliesSlice.id) ? citeOutcomeChipResult2[repliesSlice.id] : undefined;
+        return <React.Fragment key={repliesSlice.id}>{<CommentHeader
+          {...citeOutcomeChipHandler4(repliesSlice, t5.replies.slice(t5.replies.indexOf(repliesSlice) + 1))}
+          dimmed={face2?.state === `sending` && face2.unconfirmed !== undefined}
+          right={face2 ? undefined : jsxs3(repliesSlice, false)}
+          onReact={readOnly2 || face2 ? undefined : (citeOutcomeChip?: Dynamic, ..._extraArguments: unknown[]): Dynamic => onReact?.(repliesSlice.id, citeOutcomeChip)}
+        />}{face2 && <CommentOutbox id={repliesSlice.id} face={face2} flush={true} />}</React.Fragment>;
+      })}
+                  {(text || rowShowing) && <CommentCard.Activity byline={!!text} label={text ? resolveCommentComposerTest(text) :
+      // BaoCut: 称「the agent」，不称 Claude。
+      `The agent is working on it…`} leading={text ? <UseCommentComposerDataClaudeActivityDotsComponent /> : <ClaudeTypingIndicator />} data-testid={text ? undefined : `claude-pending-row`} />}
+                  {t5.pendingAsks && filterCommentComposerFilter(t5.pendingAsks, parse).length > 0 ? <PendingAsk asks={t5.pendingAsks} /> : null}
                   {matchesTuckReplies && jsx}
-                </CommentCard.Replies>
-                )}
+                </CommentCard.Replies>}
               {!matchesTuckReplies && jsx}
               {face && <CommentOutbox id={t5.id} face={face} flush={true} />}
-            </SeeMorePill>,
-              <CommentCard.ReplyField
-                data-comment-reply={``}
-                onClick={(
-                  citeOutcomeChip?: Dynamic,
-                  ..._extraArguments: unknown[]
-                ): Dynamic => citeOutcomeChip.stopPropagation()}
-                launcher={
-                  replyRoad === `sheet`
-                    ? {
-                        placeholder: placeholder,
-                        onOpen: (..._extraArguments: unknown[]): undefined => {
-                          returnFocus.current =
-                            cardRef.current?.querySelector(
-                              `[data-cds-part="reply-launcher"]`,
-                            ) ?? null;
-                          setEnabledState(true);
-                        },
-                      }
-                    : undefined
-                }
-              >
-              {replyRoad === `sheet` ? null : (
-                  <div
-                    className={`pointer-coarse:py-1 min-w-0 [&_.ProseMirror]:content-center`}
-                  >
-                  {live ? (
-                      <CommentReplyComposer
-                        {...originalJsxProps(
-                          {
-                            layout: `composer`,
-                            composerChrome: `cds`,
-                            foldWhenIdle: true,
-                            placeholder: placeholder,
-                            sendHeld: sendHeld,
-                            ariaLabel: `Reply`,
-                            enableCCSessions: enableCCSessions,
-                            coworkerContainer: coworkerContainer,
-                            refPid: refPid,
-                            draftKey: keepReplyDraft ? t5.id : undefined,
-                            draftPageId: keepReplyDraft
-                              ? t5.target.pageId
-                              : undefined,
-                            claudeRoute: route,
-                            onHolding: onHolding,
-                            onPost: onPost,
-                            onPosted: onPosted,
-                          },
-                          `composer`,
-                        )}
-                      />
-                    ) : (
-                      <CommentReplyComposer
-                        {...originalJsxProps(
-                          {
-                            composerChrome: `flush`,
-                            placeholder: placeholder,
-                            sendHeld: sendHeld,
-                            ariaLabel: `Reply`,
-                            enableCCSessions: enableCCSessions,
-                            coworkerContainer: coworkerContainer,
-                            refPid: refPid,
-                            draftKey: keepReplyDraft ? t5.id : undefined,
-                            draftPageId: keepReplyDraft
-                              ? t5.target.pageId
-                              : undefined,
-                            onPost: (
-                              citeOutcomeChip?: Dynamic,
-                              options?: Dynamic,
-                              context?: Dynamic,
-                              dependencies?: Dynamic,
-                              ..._extraArguments: unknown[]
-                            ): Dynamic =>
-                              onReply?.(
-                                t5.id,
-                                citeOutcomeChip,
-                                options,
-                                context,
-                                dependencies,
-                              ) ?? Promise.resolve(),
-                            onPosted: onPosted,
-                          },
-                          `inline`,
-                        )}
-                      />
-                    )}
-                </div>
-                )}
-            </CommentCard.ReplyField>,
-            ],
-          })}
-        />
+            </SeeMorePill>}{<CommentCard.ReplyField data-comment-reply={``} onClick={(citeOutcomeChip?: Dynamic, ..._extraArguments: unknown[]): Dynamic => citeOutcomeChip.stopPropagation()} launcher={replyRoad === `sheet` ? {
+    placeholder: placeholder,
+    onOpen: (..._extraArguments: unknown[]): undefined => {
+      returnFocus.current = cardRef.current?.querySelector(`[data-cds-part="reply-launcher"]`) ?? null;
+      setEnabledState(true);
+    }
+  } : undefined}>
+              {replyRoad === `sheet` ? null : <div className={`pointer-coarse:py-1 min-w-0 [&_.ProseMirror]:content-center`}>
+                  {live ? <CommentReplyComposer
+                    layout={`composer`}
+                    composerChrome={`cds`}
+                    foldWhenIdle={true}
+                    placeholder={placeholder}
+                    sendHeld={sendHeld}
+                    ariaLabel={`Reply`}
+                    enableCCSessions={enableCCSessions}
+                    coworkerContainer={coworkerContainer}
+                    refPid={refPid}
+                    draftKey={keepReplyDraft ? t5.id : undefined}
+                    draftPageId={keepReplyDraft ? t5.target.pageId : undefined}
+                    claudeRoute={route}
+                    onHolding={onHolding}
+                    onPost={onPost}
+                    onPosted={onPosted}
+                    key={`composer`}
+                  /> : <CommentReplyComposer
+                    composerChrome={`flush`}
+                    placeholder={placeholder}
+                    sendHeld={sendHeld}
+                    ariaLabel={`Reply`}
+                    enableCCSessions={enableCCSessions}
+                    coworkerContainer={coworkerContainer}
+                    refPid={refPid}
+                    draftKey={keepReplyDraft ? t5.id : undefined}
+                    draftPageId={keepReplyDraft ? t5.target.pageId : undefined}
+                    onPost={(citeOutcomeChip?: Dynamic, options?: Dynamic, context?: Dynamic, dependencies?: Dynamic, ..._extraArguments: unknown[]): Dynamic => onReply?.(t5.id, citeOutcomeChip, options, context, dependencies) ?? Promise.resolve()}
+                    onPosted={onPosted}
+                    key={`inline`}
+                  />}
+                </div>}
+            </CommentCard.ReplyField>}</CommentCard>
       {jsx2}
     </TooltipGroup>
     ) : (
       <TooltipGroup delay={150}>
-      <div
-          {...originalJsxsProps({
-            ref: cardRef,
-            "data-testid": `ldoc-thread-card`,
-            "data-comment-stop": ``,
-            "data-stop-id": t5.id,
-            role: `article`,
-            tabIndex: tabStop === false ? -1 : 0,
-            "aria-label": ariaLabel,
-            "aria-describedby": hintId,
-            onKeyDown: onKeyDown,
-            onClick: (..._extraArguments: unknown[]): undefined => {
-              if (enabledRef2.current) {
-                enabledRef2.current = false;
-              } else {
-                if (!expanded) {
-                  onExpand(t5.id);
-                }
-              }
-            },
-            "data-active": active || undefined,
-            "data-expanded": expanded || undefined,
-            "data-nonresting":
-              expanded || useCommentResolveMotion2.phase !== `idle` || undefined,
-            ...useCommentResolveMotion2.cardProps,
-            className:
-              `rx-card ` +
-              (flat
-                ? `text-primary focus-visible:ring-fill-accent p-3 text-[13px] focus-visible:ring-1 focus-visible:outline-none focus-visible:ring-inset`
-                : `${CommentComponents_Styles2} data-[expanded]:shadow-card-active focus-visible:ring-fill-accent transition-[box-shadow,translate] focus-visible:ring-1 focus-visible:outline-none data-[expanded]:-translate-x-2`),
-            children: [
-              <SeeMorePill tailKey={tailKey} expanded={expanded}>
+      <div ref={cardRef} data-testid={`ldoc-thread-card`} data-comment-stop={``} data-stop-id={t5.id} role={`article`} tabIndex={tabStop === false ? -1 : 0} aria-label={ariaLabel} aria-describedby={hintId} onKeyDown={onKeyDown} onClick={(..._extraArguments: unknown[]): undefined => {
+  if (enabledRef2.current) {
+    enabledRef2.current = false;
+  } else {
+    if (!expanded) {
+      onExpand(t5.id);
+    }
+  }
+}} data-active={active || undefined} data-expanded={expanded || undefined} data-nonresting={expanded || useCommentResolveMotion2.phase !== `idle` || undefined} {...useCommentResolveMotion2.cardProps} className={`rx-card ` + (flat ? `text-primary focus-visible:ring-fill-accent p-3 text-[13px] focus-visible:ring-1 focus-visible:outline-none focus-visible:ring-inset` : `${CommentComponents_Styles2} data-[expanded]:shadow-card-active focus-visible:ring-fill-accent transition-[box-shadow,translate] focus-visible:ring-1 focus-visible:outline-none data-[expanded]:-translate-x-2`)}>{<SeeMorePill tailKey={tailKey} expanded={expanded}>
               {jsxs2()}
               <CommentWhen
-                  container={refPid}
-                  r={t5.root}
-                  dimmed={
-                    face?.state === `sending` && face.unconfirmed !== undefined
-                  }
-                  expanded={expanded}
-                  compact={compact}
-                  right={jsxs(t5.root, true)}
-                  rightSeated={expanded && !readOnly2}
-                  editing={row === t5.root.id}
-                  editToClaude={resolveCommentAnchorsActor3(t5.root, t5.replies)}
-                  deleting={citeOutcomeChipState4 === t5.root.id}
-                  deleteAsk={deleteAsk}
-                  me={citeOutcomeChipResult7}
-                  onReact={
-                    readOnly2
-                      ? undefined
-                      : (
-                          citeOutcomeChip?: Dynamic,
-                          ..._extraArguments: unknown[]
-                        ): Dynamic => onReact?.(t5.root.id, citeOutcomeChip)
-                  }
-                  onSave={citeOutcomeChipHandler2(t5.root.id)}
-                  onDelete={citeOutcomeChipHandler3(t5.root.id)}
-                  onCancel={onCancel}
-                />
-              {t5.root.kind === `suggestion` &&
-                  !t5.resolved &&
-                  !readOnly2 &&
-                  enabled &&
-                  t5.root.proposedText !== undefined && (
-                    <div className={`mt-2 flex gap-2`}>
-                    <Button
-                        size={citeOutcomeChipResult(`xs`)}
-                        variant={`secondary`}
-                        onClick={(
-                          citeOutcomeChip?: Dynamic,
-                          ..._extraArguments: unknown[]
-                        ): undefined => {
-                          citeOutcomeChip.stopPropagation();
-                          onResolve?.(t5.id);
-                        }}
-                      >{`Reject`}</Button>
-                  </div>
-                  )}
-              {matchesRepliesCount && (
-                  <div
-                    className={resolveUiDesignSystemValue2(
-                      `mt-2 space-y-2`,
-                      tuckReplies && CommentComponents_PsMdMs25BorderS,
-                    )}
-                  >
-                  {matchesCount && (
-                      <button
-                        type={`button`}
-                        data-testid={`show-replies`}
-                        className={
-                          CommentAnchors_TextMutedHoverTextSecondaryTextCaptionMt05BlockTextLeft
-                        }
-                        onClick={(..._extraArguments: unknown[]): Dynamic => {
-                          if (expanded) return setEnabledState2(true);
-                          enabledRef2.current = true;
-                          queueMicrotask(
-                            (..._extraArguments: unknown[]) =>
-                              (enabledRef2.current = false),
-                          );
-                          if (onExpand(t5.id) !== false) {
-                            setEnabledState2(true);
-                          }
-                        }}
-                      >
+                container={refPid}
+                r={t5.root}
+                dimmed={face?.state === `sending` && face.unconfirmed !== undefined}
+                expanded={expanded}
+                compact={compact}
+                right={jsxs(t5.root, true)}
+                rightSeated={expanded && !readOnly2}
+                editing={row === t5.root.id}
+                editToClaude={resolveCommentAnchorsActor3(t5.root, t5.replies)}
+                deleting={citeOutcomeChipState4 === t5.root.id}
+                deleteAsk={deleteAsk}
+                me={citeOutcomeChipResult7}
+                onReact={readOnly2 ? undefined : (citeOutcomeChip?: Dynamic, ..._extraArguments: unknown[]): Dynamic => onReact?.(t5.root.id, citeOutcomeChip)}
+                onSave={citeOutcomeChipHandler2(t5.root.id)}
+                onDelete={citeOutcomeChipHandler3(t5.root.id)}
+                onCancel={onCancel}
+              />
+              {t5.root.kind === `suggestion` && !t5.resolved && !readOnly2 && enabled && t5.root.proposedText !== undefined && <div className={`mt-2 flex gap-2`}>
+                    <Button size={citeOutcomeChipResult(`xs`)} variant={`secondary`} onClick={(citeOutcomeChip?: Dynamic, ..._extraArguments: unknown[]): undefined => {
+        citeOutcomeChip.stopPropagation();
+        onResolve?.(t5.id);
+      }}>{`Reject`}</Button>
+                  </div>}
+              {matchesRepliesCount && <div className={resolveUiDesignSystemValue2(`mt-2 space-y-2`, tuckReplies && CommentComponents_PsMdMs25BorderS)}>
+                  {matchesCount && <button type={`button`} data-testid={`show-replies`} className={CommentAnchors_TextMutedHoverTextSecondaryTextCaptionMt05BlockTextLeft} onClick={(..._extraArguments: unknown[]): Dynamic => {
+        if (expanded) return setEnabledState2(true);
+        enabledRef2.current = true;
+        queueMicrotask((..._extraArguments: unknown[]) => enabledRef2.current = false);
+        if (onExpand(t5.id) !== false) {
+          setEnabledState2(true);
+        }
+      }}>
                       {`Show `}
                       {count}
                       {` `}
                       {count === 1 ? `reply` : `replies`}
-                    </button>
-                    )}
-                  {t5.replies
-                      .slice(count)
-                      .map(
-                        (
-                          repliesSlice?: Dynamic,
-                          ..._extraArguments: unknown[]
-                        ) => {
-                          let face2: Dynamic = Object.hasOwn(
-                            citeOutcomeChipResult2,
-                            repliesSlice.id,
-                          )
-                            ? citeOutcomeChipResult2[repliesSlice.id]
-                            : undefined;
-                          return (
-                            <React.Fragment
-                              {...originalJsxsProps(
-                                {
-                                  children: [
-                                    <CommentWhen
-                                      container={refPid}
-                                      r={repliesSlice}
-                                      dimmed={
-                                        face2?.state === `sending` &&
-                                        face2.unconfirmed !== undefined
-                                      }
-                                      expanded={expanded}
-                                      compact={compact}
-                                      right={
-                                        face2
-                                          ? undefined
-                                          : jsxs(repliesSlice, false)
-                                      }
-                                      editing={row === repliesSlice.id}
-                                      editToClaude={resolveCommentAnchorsActor3(
-                                        repliesSlice,
-                                        t5.replies.slice(
-                                          t5.replies.indexOf(repliesSlice) + 1,
-                                        ),
-                                      )}
-                                      deleting={
-                                        citeOutcomeChipState4 === repliesSlice.id
-                                      }
-                                      deleteAsk={deleteAsk}
-                                      me={citeOutcomeChipResult7}
-                                      onReact={
-                                        readOnly2 || face2
-                                          ? undefined
-                                          : (
-                                              citeOutcomeChip?: Dynamic,
-                                              ..._extraArguments: unknown[]
-                                            ): Dynamic =>
-                                              onReact?.(
-                                                repliesSlice.id,
-                                                citeOutcomeChip,
-                                              )
-                                      }
-                                      onSave={citeOutcomeChipHandler2(
-                                        repliesSlice.id,
-                                      )}
-                                      onDelete={citeOutcomeChipHandler3(
-                                        repliesSlice.id,
-                                      )}
-                                      onCancel={onCancel}
-                                    />,
-                                    face2 && (
-                                      <CommentOutbox
-                                        id={repliesSlice.id}
-                                        face={face2}
-                                      />
-                                    ),
-                                  ],
-                                },
-                                repliesSlice.id,
-                              )}
-                            />
-                          );
-                        },
-                      )}
+                    </button>}
+                  {t5.replies.slice(count).map((repliesSlice?: Dynamic, ..._extraArguments: unknown[]) => {
+        let face2: Dynamic = Object.hasOwn(citeOutcomeChipResult2, repliesSlice.id) ? citeOutcomeChipResult2[repliesSlice.id] : undefined;
+        return <React.Fragment key={repliesSlice.id}>{<CommentWhen
+          container={refPid}
+          r={repliesSlice}
+          dimmed={face2?.state === `sending` && face2.unconfirmed !== undefined}
+          expanded={expanded}
+          compact={compact}
+          right={face2 ? undefined : jsxs(repliesSlice, false)}
+          editing={row === repliesSlice.id}
+          editToClaude={resolveCommentAnchorsActor3(repliesSlice, t5.replies.slice(t5.replies.indexOf(repliesSlice) + 1))}
+          deleting={citeOutcomeChipState4 === repliesSlice.id}
+          deleteAsk={deleteAsk}
+          me={citeOutcomeChipResult7}
+          onReact={readOnly2 || face2 ? undefined : (citeOutcomeChip?: Dynamic, ..._extraArguments: unknown[]): Dynamic => onReact?.(repliesSlice.id, citeOutcomeChip)}
+          onSave={citeOutcomeChipHandler2(repliesSlice.id)}
+          onDelete={citeOutcomeChipHandler3(repliesSlice.id)}
+          onCancel={onCancel}
+        />}{face2 && <CommentOutbox id={repliesSlice.id} face={face2} />}</React.Fragment>;
+      })}
                   {text && <UseCommentComposerTextComponent text={text} />}
                   {rowShowing && !text && <ClaudePendingRow />}
-                  {t5.pendingAsks &&
-                    filterCommentComposerFilter(t5.pendingAsks, parse).length >
-                      0 ? (
-                      <PendingAsk asks={t5.pendingAsks} />
-                    ) : null}
-                </div>
-                )}
+                  {t5.pendingAsks && filterCommentComposerFilter(t5.pendingAsks, parse).length > 0 ? <PendingAsk asks={t5.pendingAsks} /> : null}
+                </div>}
               <UseCommentComponentsState3Component>
                 <SummonNote note={note} onOpen={onOpen} handoff={handoff} />
               </UseCommentComponentsState3Component>
               {face && <CommentOutbox id={t5.id} face={face} />}
-            </SeeMorePill>,
-              expanded && !readOnly2 && (
+            </SeeMorePill>}{expanded && !readOnly2 && <div
+              className={row || citeOutcomeChipState4 ? `hidden` : CommentComponents_Mx3Mt3Mb3Px3Pb3}
+              data-comment-reply={``}
+              onMouseDown={resolveCommentComponentsTarget3}
+              onClick={resolveCommentComponentsTarget4}
+            >
                 <div
-                  className={
-                    row || citeOutcomeChipState4
-                      ? `hidden`
-                      : CommentComponents_Mx3Mt3Mb3Px3Pb3
-                  }
-                  data-comment-reply={``}
+                  className={CommentComponentsState}
+                  data-comment-reply-field={``}
                   onMouseDown={resolveCommentComponentsTarget3}
                   onClick={resolveCommentComponentsTarget4}
                 >
-                <div
-                    className={CommentComponentsState}
-                    data-comment-reply-field={``}
-                    onMouseDown={resolveCommentComponentsTarget3}
-                    onClick={resolveCommentComponentsTarget4}
-                  >
-                  {live ? (
-                      <CommentReplyComposer
-                        {...originalJsxProps(
-                          {
-                            layout: `composer`,
-                            composerChrome: `flush`,
-                            foldWhenIdle: true,
-                            placeholder: placeholder,
-                            sendHeld: sendHeld,
-                            ariaLabel: `Reply`,
-                            enableCCSessions: enableCCSessions,
-                            coworkerContainer: coworkerContainer,
-                            refPid: refPid,
-                            draftKey: keepReplyDraft ? t5.id : undefined,
-                            draftPageId: keepReplyDraft
-                              ? t5.target.pageId
-                              : undefined,
-                            claudeRoute: route,
-                            onHolding: onHolding,
-                            onPost: onPost,
-                            onPosted: onPosted,
-                          },
-                          `composer`,
-                        )}
-                      />
-                    ) : (
-                      <CommentReplyComposer
-                        {...originalJsxProps(
-                          {
-                            composerChrome: `flush`,
-                            placeholder: placeholder,
-                            sendHeld: sendHeld,
-                            ariaLabel: `Reply`,
-                            enableCCSessions: enableCCSessions,
-                            coworkerContainer: coworkerContainer,
-                            refPid: refPid,
-                            draftKey: keepReplyDraft ? t5.id : undefined,
-                            draftPageId: keepReplyDraft
-                              ? t5.target.pageId
-                              : undefined,
-                            onPost: (
-                              citeOutcomeChip?: Dynamic,
-                              options?: Dynamic,
-                              context?: Dynamic,
-                              dependencies?: Dynamic,
-                              ..._extraArguments: unknown[]
-                            ): Dynamic =>
-                              onReply?.(
-                                t5.id,
-                                citeOutcomeChip,
-                                options,
-                                context,
-                                dependencies,
-                              ) ?? Promise.resolve(),
-                            onPosted: onPosted,
-                          },
-                          `inline`,
-                        )}
-                      />
-                    )}
+                  {live ? <CommentReplyComposer
+                    layout={`composer`}
+                    composerChrome={`flush`}
+                    foldWhenIdle={true}
+                    placeholder={placeholder}
+                    sendHeld={sendHeld}
+                    ariaLabel={`Reply`}
+                    enableCCSessions={enableCCSessions}
+                    coworkerContainer={coworkerContainer}
+                    refPid={refPid}
+                    draftKey={keepReplyDraft ? t5.id : undefined}
+                    draftPageId={keepReplyDraft ? t5.target.pageId : undefined}
+                    claudeRoute={route}
+                    onHolding={onHolding}
+                    onPost={onPost}
+                    onPosted={onPosted}
+                    key={`composer`}
+                  /> : <CommentReplyComposer
+                    composerChrome={`flush`}
+                    placeholder={placeholder}
+                    sendHeld={sendHeld}
+                    ariaLabel={`Reply`}
+                    enableCCSessions={enableCCSessions}
+                    coworkerContainer={coworkerContainer}
+                    refPid={refPid}
+                    draftKey={keepReplyDraft ? t5.id : undefined}
+                    draftPageId={keepReplyDraft ? t5.target.pageId : undefined}
+                    onPost={(citeOutcomeChip?: Dynamic, options?: Dynamic, context?: Dynamic, dependencies?: Dynamic, ..._extraArguments: unknown[]): Dynamic => onReply?.(t5.id, citeOutcomeChip, options, context, dependencies) ?? Promise.resolve()}
+                    onPosted={onPosted}
+                    key={`inline`}
+                  />}
                 </div>
-              </div>
-              ),
-            ],
-          })}
-        />
+              </div>}</div>
     </TooltipGroup>
     );
   }));

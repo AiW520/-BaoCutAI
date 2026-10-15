@@ -1,10 +1,6 @@
 /** BaoCut: dependencies from app-core-BE6n4d7F.js. */
 import type { Dynamic } from "../interop/legacy-dynamic";
-import {
-  originalElementProps,
-  originalJsxProps,
-  originalJsxsProps,
-} from "../react-runtime/jsx-runtime";
+
 
 // BaoCut: KaTeX 字体随包输出，由父页面读取缓存，沿用 loadFonts 传入沙箱。
 import KATEX_FONT_CSS from "virtual:katex-font-css";
@@ -759,9 +755,6 @@ export {
   none,
   number,
   object,
-  originalElementProps,
-  originalJsxProps,
-  originalJsxsProps,
   outsidePress,
   ownerDocument,
   parseIndentedBlocks,

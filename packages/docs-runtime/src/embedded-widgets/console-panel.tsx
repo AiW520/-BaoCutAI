@@ -1,5 +1,5 @@
 /** widget-console-panel: restored from WidgetConsolePanel-C_yYMqA_.js. */
-import { originalJsxProps } from "../react-runtime/jsx-runtime";
+
 import type { Dynamic } from "../interop/legacy-dynamic";
 import { toModuleNamespace } from "../boot/module-runtime";
 import {
@@ -406,16 +406,12 @@ function ComponentSourceRow(
           component.sources.map(
             (source?: Dynamic, ..._extraArguments: unknown[]): Dynamic => (
               <SourceChip
-                {...originalJsxProps(
-                  {
-                    s: source,
-                    dbDir: dbDirectory,
-                    routineDir: routineDirectory,
-                    onOpenRef: onOpenRef,
-                    solo: component.sources.length === 1,
-                  },
-                  `${source.name}/${source.ref ?? ``}`,
-                )}
+                s={source}
+                dbDir={dbDirectory}
+                routineDir={routineDirectory}
+                onOpenRef={onOpenRef}
+                solo={component.sources.length === 1}
+                key={`${source.name}/${source.ref ?? ``}`}
               />
             ),
           )
@@ -587,14 +583,7 @@ function WidgetConsolePanel(
       }}
       data-testid={`widget-console-panel`}
     >
-      <PaneResizeHandle
-        {...originalJsxProps({
-          ...widgetConsolePanelResult2.handleProps,
-          side: `left`,
-          bordered: true,
-          label: `Resize console`,
-        })}
-      />
+      <PaneResizeHandle {...widgetConsolePanelResult2.handleProps} side={`left`} bordered={true} label={`Resize console`} />
       <div className={`flex h-12 shrink-0 items-center gap-1.5 border-b px-3`}>
         <Tooltip content={`Open source code`}>
           <Button
@@ -644,19 +633,12 @@ function WidgetConsolePanel(
             {memoized.map(
               (event?: Dynamic, ..._extraArguments: unknown[]): Dynamic => (
                 <ComponentSourceRow
-                  {...originalJsxProps(
-                    {
-                      c: event,
-                      dbDir: useSourceDirectory2,
-                      routineDir: useSourceDirectory3,
-                      onOpenRef: widgetConsolePanel3,
-                      sourcesLabel:
-                        memoized.length === 1 &&
-                        (event.label ?? event.id ?? `component`) ===
-                          widgetConsolePanel6,
-                    },
-                    event.key,
-                  )}
+                  c={event}
+                  dbDir={useSourceDirectory2}
+                  routineDir={useSourceDirectory3}
+                  onOpenRef={widgetConsolePanel3}
+                  sourcesLabel={memoized.length === 1 && (event.label ?? event.id ?? `component`) === widgetConsolePanel6}
+                  key={event.key}
                 />
               ),
             )}
@@ -673,16 +655,12 @@ function WidgetConsolePanel(
                   ..._extraArguments: unknown[]
                 ): Dynamic => (
                   <SourceChip
-                    {...originalJsxProps(
-                      {
-                        s: memoized3,
-                        dbDir: useSourceDirectory2,
-                        routineDir: useSourceDirectory3,
-                        onOpenRef: widgetConsolePanel3,
-                        solo: memoized2.length === 1,
-                      },
-                      `${memoized3.name}/${memoized3.ref ?? ``}`,
-                    )}
+                    s={memoized3}
+                    dbDir={useSourceDirectory2}
+                    routineDir={useSourceDirectory3}
+                    onOpenRef={widgetConsolePanel3}
+                    solo={memoized2.length === 1}
+                    key={`${memoized3.name}/${memoized3.ref ?? ``}`}
                   />
                 ),
               )}

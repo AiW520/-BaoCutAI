@@ -1,5 +1,5 @@
 /** chat-markdown: restored from chat-markdown-DgL94P7f.js. */
-import { originalJsxProps } from "../react-runtime/jsx-runtime";
+
 import type { Dynamic } from "../interop/legacy-dynamic";
 import { findAndReplace } from "mdast-util-find-and-replace";
 import rehypeSanitize from "rehype-sanitize";
@@ -510,16 +510,7 @@ function createReferenceSpanRenderer(
       let { node: value5, children: value6, ...value7 }: Dynamic = input2;
       return (
         <MentionHoverAnchor principal={value3}>
-          <span
-            {...originalJsxProps({
-              ...value7,
-              children: resolveEditorAnchorsAndMentionsPlatform(value3) ? (
-                <MentionName principal={value3} />
-              ) : (
-                value6
-              ),
-            })}
-          />
+          <span {...value7}>{resolveEditorAnchorsAndMentionsPlatform(value3) ? <MentionName principal={value3} /> : value6}</span>
         </MentionHoverAnchor>
       );
     }
@@ -530,12 +521,7 @@ function createReferenceSpanRenderer(
     if (!value4 || value2 === undefined) {
       let { node: value5, children: value6, ...value7 }: Dynamic = input2;
       return (
-        <span
-          {...originalJsxProps({
-            ...value7,
-            children: value6,
-          })}
-        />
+        <span {...value7}>{value6}</span>
       );
     }
     return (

@@ -3,7 +3,6 @@ import type { Dynamic } from "../../interop/legacy-dynamic";
 import {
   editRefusalLeavesBoxOpen,
   isCommentRefusal,
-  originalJsxProps,
   preloadModule,
   resolvePlatformSessionAndSourcesRound,
   resolvePlatformSessionAndSourcesValue3,
@@ -740,54 +739,27 @@ function UseCommentAnchorsSheetsComponent(
         let { url: sheetItem, frames: sheetItem2 }: Dynamic =
           sheets2[dataStage];
         return (
-          <span
-            {...originalJsxProps(
-              {
-                "data-stage": dataStage,
-                "data-live": matchesDataStage ? `` : undefined,
-                className: `absolute inset-0 m-auto overflow-clip`,
-                style: {
-                  ...CommentAnchorsWidth,
-                  opacity: matchesDataStage ? undefined : 0.001,
-                  zIndex: matchesDataStage ? 1 : undefined,
-                },
-                children: (
-                  <span className={`block`}>
-                    <span
-                      ref={(
-                        commentAnchorsSheets?: Dynamic,
-                        ..._extraArguments: unknown[]
-                      ): undefined => {
-                        if (commentAnchorsSheets) {
-                          lookupRef.current.set(
-                            dataStage,
-                            commentAnchorsSheets,
-                          );
-                        } else {
-                          lookupRef.current.delete(dataStage);
-                        }
-                      }}
-                      className={`block`}
-                      style={{
-                        width: commentAnchorsLimit20,
-                        height: sheetItem2 * commentAnchorsLimit20,
-                        backgroundImage: `url(${sheetItem})`,
-                        backgroundSize: `100% 100%`,
-                        backgroundRepeat: `no-repeat`,
-                        transform: resolveCommentAnchorsValue2(
-                          matchesDataStage && reduceMotion ? sheets5 : 0,
-                        ),
-                        ...(matchesDataStage &&
-                          !reduceMotion &&
-                          CommentAnchorsWillChange),
-                      }}
-                    />
-                  </span>
-                ),
-              },
-              dataStage,
-            )}
-          />
+          <span data-stage={dataStage} data-live={matchesDataStage ? `` : undefined} className={`absolute inset-0 m-auto overflow-clip`} style={{
+  ...CommentAnchorsWidth,
+  opacity: matchesDataStage ? undefined : 0.001,
+  zIndex: matchesDataStage ? 1 : undefined
+}} key={dataStage}>{<span className={`block`}>
+                    <span ref={(commentAnchorsSheets?: Dynamic, ..._extraArguments: unknown[]): undefined => {
+      if (commentAnchorsSheets) {
+        lookupRef.current.set(dataStage, commentAnchorsSheets);
+      } else {
+        lookupRef.current.delete(dataStage);
+      }
+    }} className={`block`} style={{
+      width: commentAnchorsLimit20,
+      height: sheetItem2 * commentAnchorsLimit20,
+      backgroundImage: `url(${sheetItem})`,
+      backgroundSize: `100% 100%`,
+      backgroundRepeat: `no-repeat`,
+      transform: resolveCommentAnchorsValue2(matchesDataStage && reduceMotion ? sheets5 : 0),
+      ...(matchesDataStage && !reduceMotion && CommentAnchorsWillChange)
+    }} />
+                  </span>}</span>
         );
       })}
     </jsxRuntime.Fragment>

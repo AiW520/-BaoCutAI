@@ -20,7 +20,6 @@ import {
   loadPlatformApiAndAuthFiles,
   loadPlatformSyncAndRoutingClipboard,
   loadReactDom,
-  originalJsxsProps,
   preloadModule,
   resolveCommentsStoreReauthDismiss,
   resolveCommentsStoreValue24,
@@ -495,45 +494,16 @@ function ConnectorPermissionDialog(
                 let matchesConnected =
                   connectorPermissionDialogResult4[use]?.connected === true;
                 return (
-                  <div
-                    {...originalJsxsProps(
-                      {
-                        className: `flex items-center gap-2 py-1 text-[12px]`,
-                        children: [
-                          <UiOverlaysAndIconsCustomIcon
-                            name={`Connectors`}
-                            size={`xs`}
-                            className={`text-secondary shrink-0`}
-                          />,
-                          <span className={`text-primary flex-1`}>
+                  <div className={`flex items-center gap-2 py-1 text-[12px]`} key={use}>{<UiOverlaysAndIconsCustomIcon name={`Connectors`} size={`xs`} className={`text-secondary shrink-0`} />}{<span className={`text-primary flex-1`}>
                             {CommentsStoreBigQuery[use] ?? use}
-                          </span>,
-                          matchesConnected ? (
-                            <span
-                              className={`text-success flex items-center gap-1 text-[10px]`}
-                            >
-                              <UiOverlaysAndIconsCustomIcon
-                                name={`CheckCircleFilled`}
-                                customSize={11}
-                              />
+                          </span>}{matchesConnected ? <span className={`text-success flex items-center gap-1 text-[10px]`}>
+                              <UiOverlaysAndIconsCustomIcon name={`CheckCircleFilled`} customSize={11} />
                               {` connected`}
-                            </span>
-                          ) : (
-                            <Button
+                            </span> : <Button
                               size={connectorPermissionDialogResult(`xs`)}
                               variant={`secondary`}
-                              onClick={(
-                                ..._extraArguments: unknown[]
-                              ): undefined =>
-                                void connectorPermissionDialogResult6(use)
-                              }
-                            >{`Connect`}</Button>
-                          ),
-                        ],
-                      },
-                      use,
-                    )}
-                  />
+                              onClick={(..._extraArguments: unknown[]): undefined => void connectorPermissionDialogResult6(use)}
+                            >{`Connect`}</Button>}</div>
                 );
               },
             )
@@ -786,25 +756,12 @@ function PeekFileTree(peekFileTree?: Dynamic, ..._extraArguments: unknown[]) {
     ..._extraArguments: unknown[]
   ) => (
     <div
-      {...originalJsxsProps(
-        {
-          onClick: (..._extraArguments: unknown[]): Dynamic =>
-            peekFileTree.onOpen(peekFileTree2),
-          className: `flex cursor-pointer items-center gap-1.5 rounded py-[3px] pr-2 text-[11px] ${options ? `pl-5` : `pl-2`} ${peekFileTree.active === peekFileTree2 ? `bg-alpha-2 text-primary` : `text-primary`}`,
-          children: [
-            <UiOverlaysAndIconsCustomIcon
-              name={`File`}
-              size={`xs`}
-              className={`text-muted`}
-            />,
-            <span className={`flex-1 truncate`}>
+      onClick={(..._extraArguments: unknown[]): Dynamic => peekFileTree.onOpen(peekFileTree2)}
+      className={`flex cursor-pointer items-center gap-1.5 rounded py-[3px] pr-2 text-[11px] ${options ? `pl-5` : `pl-2`} ${peekFileTree.active === peekFileTree2 ? `bg-alpha-2 text-primary` : `text-primary`}`}
+      key={peekFileTree2}
+    >{<UiOverlaysAndIconsCustomIcon name={`File`} size={`xs`} className={`text-muted`} />}{<span className={`flex-1 truncate`}>
               {peekFileTree2.split(`/`).pop()}
-            </span>,
-          ],
-        },
-        peekFileTree2,
-      )}
-    />
+            </span>}</div>
   );
   return (
     <jsxRuntime.Fragment>
@@ -813,30 +770,10 @@ function PeekFileTree(peekFileTree?: Dynamic, ..._extraArguments: unknown[]) {
       )}
       {[...lookup].map(
         ([item, item2]: Dynamic, ..._extraArguments: unknown[]) => (
-          <details
-            {...originalJsxsProps(
-              {
-                open: peekFileTree.active.startsWith(`${item}/`),
-                children: [
-                  <summary
-                    className={`text-primary flex cursor-pointer items-center gap-1.5 rounded py-[3px] pr-2 pl-2 text-[11px]`}
-                  >
-                    <UiOverlaysAndIconsCustomIcon
-                      name={`Folder`}
-                      size={`xs`}
-                      className={`text-muted`}
-                    />
+          <details open={peekFileTree.active.startsWith(`${item}/`)} key={item}>{<summary className={`text-primary flex cursor-pointer items-center gap-1.5 rounded py-[3px] pr-2 pl-2 text-[11px]`}>
+                    <UiOverlaysAndIconsCustomIcon name={`Folder`} size={`xs`} className={`text-muted`} />
                     <span className={`flex-1 truncate`}>{item}</span>
-                  </summary>,
-                  item2.map(
-                    (item3?: Dynamic, ..._extraArguments: unknown[]): Dynamic =>
-                      split(item3, true),
-                  ),
-                ],
-              },
-              item,
-            )}
-          />
+                  </summary>}{item2.map((item3?: Dynamic, ..._extraArguments: unknown[]): Dynamic => split(item3, true))}</details>
         ),
       )}
     </jsxRuntime.Fragment>

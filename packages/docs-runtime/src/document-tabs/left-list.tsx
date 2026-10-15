@@ -1,5 +1,5 @@
 /** tabs-left-list: restored from TabsLeftList-c8GRwyIM.js. */
-import { originalJsxsProps } from "../react-runtime/jsx-runtime";
+
 import type { Dynamic } from "../interop/legacy-dynamic";
 import { toModuleNamespace } from "../boot/module-runtime";
 import {
@@ -1379,420 +1379,161 @@ function TabsLeftList(
               let matchesId3: Dynamic = matchesId && hasActiveOutline;
               let rowExpansion2: Dynamic = rowExpansion(id);
               return (
-                <React.Fragment
-                  {...originalJsxsProps(
-                    {
-                      children: [
-                        <div
-                          role={`treeitem`}
-                          aria-expanded={rowExpansion2?.expanded}
-                          aria-owns={
-                            matchesId3 && activeOutlineExpanded
-                              ? listId
-                              : undefined
-                          }
-                          aria-level={depth + 1}
-                          aria-setsize={
-                            (siblingDirectory.get(id)?.size ?? 0) +
-                              outlineRootCount2 || undefined
-                          }
-                          aria-posinset={
-                            (siblingDirectory.get(id)?.pos ?? 0) +
-                              outlineRootCount2 || undefined
-                          }
-                          aria-current={matchesId ? `page` : undefined}
-                          aria-label={displayNameEntry}
-                          tabIndex={
-                            id === tabStopId &&
-                            !matchesId2 &&
-                            outlineTabStopId === null
-                              ? 0
-                              : -1
-                          }
-                          data-tab-row={id}
-                          onFocus={(
-                            event?: Dynamic,
-                            ..._extraArguments: unknown[]
-                          ): undefined => {
-                            if (event.target === event.currentTarget) {
-                              setFocusedTabId(id);
-                              setFocusedOutlineId(null);
-                            }
-                          }}
-                          className={`group/row focus-visible:ring-fill-accent relative flex items-center rounded focus-visible:ring-1 focus-visible:outline-hidden focus-visible:ring-inset ${matchesId2 ? `` : matchesId ? `bg-fill-ghost-selected` : `hover:bg-fill-ghost-hover`} ${zone === `into` ? `ring-strong ring-1` : ``} ${draggedId === id ? `opacity-40` : ``}`}
-                          style={
-                            depth > 0
-                              ? {
-                                  paddingLeft: `${depth * TAB_ICON_SCALE}rem`,
-                                }
-                              : undefined
-                          }
-                          draggable={canEdit && !matchesId2 && !busy}
-                          onDragStart={(
-                            event?: Dynamic,
-                            ..._extraArguments: unknown[]
-                          ): Dynamic => {
-                            if (isInsideIconGutter(event))
-                              return event.preventDefault();
-                            clearOutlineHover();
-                            event.dataTransfer.setData(TAB_DRAG_MIME_TYPE, id);
-                            event.dataTransfer.effectAllowed = `move`;
-                            setDraggedId(id);
-                          }}
-                          onDragEnd={(
-                            ..._extraArguments: unknown[]
-                          ): undefined => {
-                            setDraggedId(null);
-                            setDropTarget(null);
-                          }}
-                          onDragOver={(
-                            event?: Dynamic,
-                            ..._extraArguments: unknown[]
-                          ): undefined => {
-                            if (
-                              !event.dataTransfer.types.includes(
-                                TAB_DRAG_MIME_TYPE,
-                              ) ||
-                              draggedId === null
-                            )
-                              return;
-                            event.preventDefault();
-                            event.stopPropagation();
-                            if (draggedSubtreeIds?.has(id)) {
-                              event.dataTransfer.dropEffect = `none`;
-                              if (zone !== null) {
-                                setDropTarget(null);
-                              }
-                              return;
-                            }
-                            event.dataTransfer.dropEffect = `move`;
-                            let dropPositionOf2: string =
-                              dropPositionOf(event);
-                            if (zone !== dropPositionOf2) {
-                              setDropTarget({
-                                id: id,
-                                zone: dropPositionOf2,
-                              });
-                            }
-                          }}
-                          onDragLeave={(
-                            event?: Dynamic,
-                            ..._extraArguments: unknown[]
-                          ): undefined => {
-                            if (
-                              !event.currentTarget.contains(
-                                event.relatedTarget,
-                              ) &&
-                              zone !== null
-                            ) {
-                              setDropTarget(null);
-                            }
-                          }}
-                          onDrop={(
-                            event?: Dynamic,
-                            ..._extraArguments: unknown[]
-                          ): undefined => {
-                            if (
-                              event.dataTransfer.types.includes(
-                                TAB_DRAG_MIME_TYPE,
-                              )
-                            ) {
-                              event.preventDefault();
-                              event.stopPropagation();
-                              dropOnRow(event, id);
-                            }
-                          }}
-                        >
-                          {rowExpansion2 !== null && !matchesId2 ? (
-                            <button
-                              type={`button`}
-                              tabIndex={-1}
-                              draggable={false}
-                              aria-label={tabOutlineToggleLabel(
-                                rowExpansion2.names,
-                                rowExpansion2.expanded,
-                                displayNameEntry,
-                              )}
-                              className={`text-muted hover:text-primary absolute inset-y-0 flex items-center justify-center ${draggedId === null ? `` : `pointer-events-none`}`}
-                              style={{
-                                left: `calc(-1 * ${TAB_BRANCH_GUTTER})`,
-                                width: TAB_ICON_WIDTH,
-                              }}
-                              onClick={(
-                                ..._extraArguments: unknown[]
-                              ): undefined => {
-                                tabElement(id)?.focus({
-                                  preventScroll: true,
-                                });
-                                clearOutlineHover();
-                                toggleRow(id, !rowExpansion2.expanded);
-                              }}
-                              data-testid={`tabs-left-toggle-${id}`}
-                            >
-                              <UiOverlaysAndIconsCustomIcon
-                                name={
-                                  rowExpansion2.expanded
-                                    ? `CaretDown`
-                                    : `CaretRight`
-                                }
-                                size={`xs`}
-                              />
-                            </button>
-                          ) : null}
-                          {matchesId2 ? (
-                            <label
-                              className={`gap-sm text-body text-primary min-h-control compact:px-2 comfortable:px-2.5 flex min-w-0 flex-1 cursor-text items-center self-stretch rounded ${fieldSurfaceClasses} focus-within:shadow-focus ${matchesId ? `font-medium` : ``}`}
-                              onMouseDown={(
-                                event?: Dynamic,
-                                ..._extraArguments: unknown[]
-                              ): undefined => {
-                                if (
-                                  !(
-                                    event.target instanceof
-                                    (HTMLInputElement as Dynamic)
-                                  )
-                                ) {
-                                  event.preventDefault();
-                                }
-                              }}
-                            >
-                              <TabRenameInput
-                                aria-label={`Tab name`}
-                                style={TAB_ROOT_PADDING_STYLE}
-                                value={renameDraft.draft}
-                                onChange={(
-                                  event?: Dynamic,
-                                  ..._extraArguments: unknown[]
-                                ): undefined => {
-                                  let renameDraft2: Dynamic =
-                                    renameDraftRef.current;
-                                  if (renameDraft2 !== null) {
-                                    updateRenameDraft({
-                                      ...renameDraft2,
-                                      draft: event.target.value,
-                                    });
-                                  }
-                                }}
-                                onBlur={(
-                                  ..._extraArguments: unknown[]
-                                ): Dynamic => finishRename(true, false)}
-                                onKeyDown={(
-                                  event?: Dynamic,
-                                  ..._extraArguments: unknown[]
-                                ): undefined => {
-                                  if (!event.nativeEvent.isComposing) {
-                                    event.stopPropagation();
-                                    if (event.key === `Enter`) {
-                                      event.preventDefault();
-                                      finishRename(true, true);
-                                    } else {
-                                      if (event.key === `Escape`) {
-                                        event.preventDefault();
-                                        event.nativeEvent.stopImmediatePropagation();
-                                        finishRename(false, true);
-                                      }
-                                    }
-                                  }
-                                }}
-                                data-testid={`tabs-left-rename-${id}`}
-                              />
-                            </label>
-                          ) : (
-                            <Tooltip
+                <React.Fragment key={id}>{<div role={`treeitem`} aria-expanded={rowExpansion2?.expanded} aria-owns={matchesId3 && activeOutlineExpanded ? listId : undefined} aria-level={depth + 1} aria-setsize={(siblingDirectory.get(id)?.size ?? 0) + outlineRootCount2 || undefined} aria-posinset={(siblingDirectory.get(id)?.pos ?? 0) + outlineRootCount2 || undefined} aria-current={matchesId ? `page` : undefined} aria-label={displayNameEntry} tabIndex={id === tabStopId && !matchesId2 && outlineTabStopId === null ? 0 : -1} data-tab-row={id} onFocus={(event?: Dynamic, ..._extraArguments: unknown[]): undefined => {
+    if (event.target === event.currentTarget) {
+      setFocusedTabId(id);
+      setFocusedOutlineId(null);
+    }
+  }} className={`group/row focus-visible:ring-fill-accent relative flex items-center rounded focus-visible:ring-1 focus-visible:outline-hidden focus-visible:ring-inset ${matchesId2 ? `` : matchesId ? `bg-fill-ghost-selected` : `hover:bg-fill-ghost-hover`} ${zone === `into` ? `ring-strong ring-1` : ``} ${draggedId === id ? `opacity-40` : ``}`} style={depth > 0 ? {
+    paddingLeft: `${depth * TAB_ICON_SCALE}rem`
+  } : undefined} draggable={canEdit && !matchesId2 && !busy} onDragStart={(event?: Dynamic, ..._extraArguments: unknown[]): Dynamic => {
+    if (isInsideIconGutter(event)) return event.preventDefault();
+    clearOutlineHover();
+    event.dataTransfer.setData(TAB_DRAG_MIME_TYPE, id);
+    event.dataTransfer.effectAllowed = `move`;
+    setDraggedId(id);
+  }} onDragEnd={(..._extraArguments: unknown[]): undefined => {
+    setDraggedId(null);
+    setDropTarget(null);
+  }} onDragOver={(event?: Dynamic, ..._extraArguments: unknown[]): undefined => {
+    if (!event.dataTransfer.types.includes(TAB_DRAG_MIME_TYPE) || draggedId === null) return;
+    event.preventDefault();
+    event.stopPropagation();
+    if (draggedSubtreeIds?.has(id)) {
+      event.dataTransfer.dropEffect = `none`;
+      if (zone !== null) {
+        setDropTarget(null);
+      }
+      return;
+    }
+    event.dataTransfer.dropEffect = `move`;
+    let dropPositionOf2: string = dropPositionOf(event);
+    if (zone !== dropPositionOf2) {
+      setDropTarget({
+        id: id,
+        zone: dropPositionOf2
+      });
+    }
+  }} onDragLeave={(event?: Dynamic, ..._extraArguments: unknown[]): undefined => {
+    if (!event.currentTarget.contains(event.relatedTarget) && zone !== null) {
+      setDropTarget(null);
+    }
+  }} onDrop={(event?: Dynamic, ..._extraArguments: unknown[]): undefined => {
+    if (event.dataTransfer.types.includes(TAB_DRAG_MIME_TYPE)) {
+      event.preventDefault();
+      event.stopPropagation();
+      dropOnRow(event, id);
+    }
+  }}>
+                          {rowExpansion2 !== null && !matchesId2 ? <button type={`button`} tabIndex={-1} draggable={false} aria-label={tabOutlineToggleLabel(rowExpansion2.names, rowExpansion2.expanded, displayNameEntry)} className={`text-muted hover:text-primary absolute inset-y-0 flex items-center justify-center ${draggedId === null ? `` : `pointer-events-none`}`} style={{
+      left: `calc(-1 * ${TAB_BRANCH_GUTTER})`,
+      width: TAB_ICON_WIDTH
+    }} onClick={(..._extraArguments: unknown[]): undefined => {
+      tabElement(id)?.focus({
+        preventScroll: true
+      });
+      clearOutlineHover();
+      toggleRow(id, !rowExpansion2.expanded);
+    }} data-testid={`tabs-left-toggle-${id}`}>
+                              <UiOverlaysAndIconsCustomIcon name={rowExpansion2.expanded ? `CaretDown` : `CaretRight`} size={`xs`} />
+                            </button> : null}
+                          {matchesId2 ? <label className={`gap-sm text-body text-primary min-h-control compact:px-2 comfortable:px-2.5 flex min-w-0 flex-1 cursor-text items-center self-stretch rounded ${fieldSurfaceClasses} focus-within:shadow-focus ${matchesId ? `font-medium` : ``}`} onMouseDown={(event?: Dynamic, ..._extraArguments: unknown[]): undefined => {
+      if (!(event.target instanceof (HTMLInputElement as Dynamic))) {
+        event.preventDefault();
+      }
+    }}>
+                              <TabRenameInput aria-label={`Tab name`} style={TAB_ROOT_PADDING_STYLE} value={renameDraft.draft} onChange={(event?: Dynamic, ..._extraArguments: unknown[]): undefined => {
+        let renameDraft2: Dynamic = renameDraftRef.current;
+        if (renameDraft2 !== null) {
+          updateRenameDraft({
+            ...renameDraft2,
+            draft: event.target.value
+          });
+        }
+      }} onBlur={(..._extraArguments: unknown[]): Dynamic => finishRename(true, false)} onKeyDown={(event?: Dynamic, ..._extraArguments: unknown[]): undefined => {
+        if (!event.nativeEvent.isComposing) {
+          event.stopPropagation();
+          if (event.key === `Enter`) {
+            event.preventDefault();
+            finishRename(true, true);
+          } else {
+            if (event.key === `Escape`) {
+              event.preventDefault();
+              event.nativeEvent.stopImmediatePropagation();
+              finishRename(false, true);
+            }
+          }
+        }
+      }} data-testid={`tabs-left-rename-${id}`} />
+                            </label> : <Tooltip
                               lazy={true}
-                              content={(
-                                ..._extraArguments: unknown[]
-                              ): Dynamic =>
-                                overflowTitle(
-                                  listRef.current?.querySelector(
-                                    `[data-tab-name="${CSS.escape(id)}"]`,
-                                  ),
-                                  displayNameEntry,
-                                )
-                              }
+                              content={(..._extraArguments: unknown[]): Dynamic => overflowTitle(listRef.current?.querySelector(`[data-tab-name="${CSS.escape(id)}"]`), displayNameEntry)}
                               side={`right`}
                             >
                               {jsx}
-                            </Tooltip>
-                          )}
-                          <span
-                            className={`${ROW_ACTIONS_HIDDEN_CLASS} ${matchesId2 ? `invisible` : ROW_ACTIONS_SHOWN_CLASSES}`}
-                          >
-                            <Menu
-                              align={`start`}
-                              renderTrigger={
-                                <IconButton
-                                  icon={
-                                    <UiOverlaysAndIconsCustomIcon
-                                      name={`DotsVertical`}
-                                      size={`xs`}
-                                    />
-                                  }
-                                  size={24}
-                                  aria-label={`${EditorExtensionsMoreActions} for ${displayNameEntry}`}
-                                  tabIndex={-1}
-                                  data-tab-menu={``}
-                                  data-testid={`tabs-left-menu-${id}`}
-                                />
-                              }
-                              onOpenChange={(
-                                tabsLeftList?: Dynamic,
-                                ..._extraArguments: unknown[]
-                              ): undefined => {
-                                if (tabsLeftList) {
-                                  if (canEdit) {
-                                    ops.probeKind(id);
-                                  }
-                                  return;
-                                }
-                                requestAnimationFrame(
-                                  (
-                                    ..._extraArguments: unknown[]
-                                  ): undefined => {
-                                    let activeElement: Dynamic = (
-                                      document as Dynamic
-                                    ).activeElement;
-                                    if (
-                                      activeElement === null ||
-                                      activeElement ===
-                                        (document as Dynamic).body ||
-                                      (activeElement instanceof
-                                        (HTMLElement as Dynamic) &&
-                                        activeElement.hasAttribute(
-                                          `data-tab-menu`,
-                                        ))
-                                    ) {
-                                      tabElement(id)?.focus({
-                                        preventScroll: true,
-                                      });
-                                    }
-                                  },
-                                );
-                              }}
-                              items={tabRowMenuItems({
-                                id: id,
-                                readOnly: readOnly,
-                                busy: busy,
-                                kind: kinds.get(id),
-                                onRename: (
-                                  ..._extraArguments: unknown[]
-                                ): Dynamic => beginRename(id),
-                                onDuplicate: (
-                                  ..._extraArguments: unknown[]
-                                ): Dynamic => ops.duplicate(id),
-                                onNewSubtab: (
-                                  ..._extraArguments: unknown[]
-                                ): undefined => void createTab(id),
-                                onCopyLink: (
-                                  ..._extraArguments: unknown[]
-                                ): Dynamic => ops.copyLink(id),
-                                onDelete: (
-                                  ..._extraArguments: unknown[]
-                                ): undefined => {
-                                  outlineUnsubscribeRef.current = id;
-                                  ops.requestDelete(id);
-                                },
-                                onlyTab: singleTab,
-                                moves: tabMoveAvailability(
-                                  siblingDirectory.get(id)?.pos ?? 1,
-                                  siblingDirectory.get(id)?.size ?? 1,
-                                  depth,
-                                  moveFailure !== null,
-                                ),
-                                intoName: previousSiblingName(id),
-                                moveSaving: moveFailure?.id === id,
-                                onMove: (
-                                  tabsLeftList?: Dynamic,
-                                  options?: Dynamic,
-                                  ..._extraArguments: unknown[]
-                                ): undefined =>
-                                  void moveTab(
-                                    id,
-                                    tabsLeftList,
-                                    resolveDataOperationControlByKey(
-                                      document,
-                                      options,
-                                    ),
-                                  ),
-                              })}
-                            />
+                            </Tooltip>}
+                          <span className={`${ROW_ACTIONS_HIDDEN_CLASS} ${matchesId2 ? `invisible` : ROW_ACTIONS_SHOWN_CLASSES}`}>
+                            <Menu align={`start`} renderTrigger={<IconButton
+                              icon={<UiOverlaysAndIconsCustomIcon name={`DotsVertical`} size={`xs`} />}
+                              size={24}
+                              aria-label={`${EditorExtensionsMoreActions} for ${displayNameEntry}`}
+                              tabIndex={-1}
+                              data-tab-menu={``}
+                              data-testid={`tabs-left-menu-${id}`}
+                            />} onOpenChange={(tabsLeftList?: Dynamic, ..._extraArguments: unknown[]): undefined => {
+        if (tabsLeftList) {
+          if (canEdit) {
+            ops.probeKind(id);
+          }
+          return;
+        }
+        requestAnimationFrame((..._extraArguments: unknown[]): undefined => {
+          let activeElement: Dynamic = (document as Dynamic).activeElement;
+          if (activeElement === null || activeElement === (document as Dynamic).body || activeElement instanceof (HTMLElement as Dynamic) && activeElement.hasAttribute(`data-tab-menu`)) {
+            tabElement(id)?.focus({
+              preventScroll: true
+            });
+          }
+        });
+      }} items={tabRowMenuItems({
+        id: id,
+        readOnly: readOnly,
+        busy: busy,
+        kind: kinds.get(id),
+        onRename: (..._extraArguments: unknown[]): Dynamic => beginRename(id),
+        onDuplicate: (..._extraArguments: unknown[]): Dynamic => ops.duplicate(id),
+        onNewSubtab: (..._extraArguments: unknown[]): undefined => void createTab(id),
+        onCopyLink: (..._extraArguments: unknown[]): Dynamic => ops.copyLink(id),
+        onDelete: (..._extraArguments: unknown[]): undefined => {
+          outlineUnsubscribeRef.current = id;
+          ops.requestDelete(id);
+        },
+        onlyTab: singleTab,
+        moves: tabMoveAvailability(siblingDirectory.get(id)?.pos ?? 1, siblingDirectory.get(id)?.size ?? 1, depth, moveFailure !== null),
+        intoName: previousSiblingName(id),
+        moveSaving: moveFailure?.id === id,
+        onMove: (tabsLeftList?: Dynamic, options?: Dynamic, ..._extraArguments: unknown[]): undefined => void moveTab(id, tabsLeftList, resolveDataOperationControlByKey(document, options))
+      })} />
                           </span>
-                          {(zone === `before` ||
-                            (zone === `after` &&
-                              !(matchesId3 && activeOutlineExpanded))) && (
-                            <span
-                              aria-hidden={`true`}
-                              className={`bg-fill-primary pointer-events-none absolute inset-x-1 h-0.5 rounded-full ${zone === `before` ? `-top-px` : `-bottom-px`}`}
-                            />
-                          )}
-                        </div>,
-                        matchesId3 && activeOutlineExpanded ? (
-                          <TabsHeadingRow
-                            boxRef={outlineScrollRef}
-                            id={listId}
-                            tabName={displayNameEntry}
-                            rows={outlineRows}
-                            places={visibleOutlineRows}
-                            marked={activeOutlineId}
-                            stop={outlineTabStopId}
-                            level={depth + 2}
-                            indentRem={depth * TAB_ICON_SCALE + 0.875}
-                            lead={TAB_EDGE_PADDING}
-                            cap={outlineRowLimit}
-                            restTone={`text-secondary`}
-                            onPick={(
-                              tabsLeftList?: Dynamic,
-                              options?: Dynamic,
-                              context?: Dynamic,
-                              ..._extraArguments: unknown[]
-                            ): Dynamic =>
-                              outline?.jump(
-                                tabsLeftList,
-                                options ||
-                                  (canEdit &&
-                                    (context === `mouse` || context === `pen`)),
-                              )
-                            }
-                            onRowFocus={(
-                              tabsLeftList?: Dynamic,
-                              options?: Dynamic,
-                              ..._extraArguments: unknown[]
-                            ): undefined => {
-                              setFocusedOutlineId(tabsLeftList);
-                              focusedElementRef.current = {
-                                id: tabsLeftList,
-                                index: options,
-                              };
-                              outlineJumpTracker.arrivedOn(tabsLeftList);
-                            }}
-                            onRowBlur={(
-                              tabsLeftList?: Dynamic,
-                              ..._extraArguments: unknown[]
-                            ): undefined => {
-                              if (tabsLeftList) {
-                                focusedElementRef.current = null;
-                              }
-                              outlineJumpTracker.drop();
-                            }}
-                          />
-                        ) : null,
-                        matchesId3 &&
-                        activeOutlineExpanded &&
-                        zone === `after` ? (
-                          <span
+                          {(zone === `before` || zone === `after` && !(matchesId3 && activeOutlineExpanded)) && <span
                             aria-hidden={`true`}
-                            className={`relative block h-0`}
-                          >
-                            <span
-                              className={`bg-fill-primary pointer-events-none absolute inset-x-1 -top-px h-0.5 rounded-full`}
-                            />
-                          </span>
-                        ) : null,
-                      ],
-                    },
-                    id,
-                  )}
-                />
+                            className={`bg-fill-primary pointer-events-none absolute inset-x-1 h-0.5 rounded-full ${zone === `before` ? `-top-px` : `-bottom-px`}`}
+                          />}
+                        </div>}{matchesId3 && activeOutlineExpanded ? <TabsHeadingRow boxRef={outlineScrollRef} id={listId} tabName={displayNameEntry} rows={outlineRows} places={visibleOutlineRows} marked={activeOutlineId} stop={outlineTabStopId} level={depth + 2} indentRem={depth * TAB_ICON_SCALE + 0.875} lead={TAB_EDGE_PADDING} cap={outlineRowLimit} restTone={`text-secondary`} onPick={(tabsLeftList?: Dynamic, options?: Dynamic, context?: Dynamic, ..._extraArguments: unknown[]): Dynamic => outline?.jump(tabsLeftList, options || canEdit && (context === `mouse` || context === `pen`))} onRowFocus={(tabsLeftList?: Dynamic, options?: Dynamic, ..._extraArguments: unknown[]): undefined => {
+    setFocusedOutlineId(tabsLeftList);
+    focusedElementRef.current = {
+      id: tabsLeftList,
+      index: options
+    };
+    outlineJumpTracker.arrivedOn(tabsLeftList);
+  }} onRowBlur={(tabsLeftList?: Dynamic, ..._extraArguments: unknown[]): undefined => {
+    if (tabsLeftList) {
+      focusedElementRef.current = null;
+    }
+    outlineJumpTracker.drop();
+  }} /> : null}{matchesId3 && activeOutlineExpanded && zone === `after` ? <span aria-hidden={`true`} className={`relative block h-0`}>
+                            <span className={`bg-fill-primary pointer-events-none absolute inset-x-1 -top-px h-0.5 rounded-full`} />
+                          </span> : null}</React.Fragment>
               );
             },
           )}

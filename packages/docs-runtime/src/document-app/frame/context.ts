@@ -303,8 +303,8 @@ export interface DocumentFrameContext {
   onStageForClaude: Dynamic;
   onUnreactRoot: Dynamic;
   open: Dynamic;
-  originalJsxProps: Dynamic;
-  originalJsxsProps: Dynamic;
+
+
   otherEditorDirty: Dynamic;
   path: Dynamic;
   peek: Dynamic;

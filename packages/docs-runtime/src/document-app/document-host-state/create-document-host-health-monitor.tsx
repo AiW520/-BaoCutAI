@@ -17,7 +17,6 @@ import {
   isFrameArtifact,
   isPlatformApiAndAuthAnon,
   isPlatformSessionAndSourcesToLowerCase,
-  originalJsxProps,
   resolveDataContentAndReferencesValue5,
   resolveEditorAnchorsAndMentionsOther,
   resolveObservabilityBrowserAndOperationEventsKey2,
@@ -1199,29 +1198,15 @@ function UseDocumentHostStateParticipantsComponent(
       {updateDocumentHostStateKind2.map(
         (event?: Dynamic, ..._extraArguments: unknown[]) =>
           event.kind === `resting` ? (
-            <PresenceClaudeResting
-              {...originalJsxProps(
-                {
-                  name: `Agent`,
-                },
-                event.key,
-              )}
-            />
+            <PresenceClaudeResting name={`Agent`} key={event.key} />
           ) : (
             <DocumentPresencePerson
-              {...originalJsxProps(
-                {
-                  name:
-                    event.kind === `self`
-                      ? `${resolveDocumentHostStateKind2(event.p)} (you)`
-                      : resolveDocumentHostStateKind2(event.p),
-                  p: event.p,
-                  isSelf: event.kind === `self`,
-                  following: following,
-                  onFollow: onFollow,
-                },
-                event.key,
-              )}
+              name={event.kind === `self` ? `${resolveDocumentHostStateKind2(event.p)} (you)` : resolveDocumentHostStateKind2(event.p)}
+              p={event.p}
+              isSelf={event.kind === `self`}
+              following={following}
+              onFollow={onFollow}
+              key={event.key}
             />
           ),
       )}

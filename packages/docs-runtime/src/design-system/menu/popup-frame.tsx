@@ -8,7 +8,6 @@ import {
   UiProviderAndLayersCreateContext13,
   UiShortcutsAndSizingOverride,
   UiTooltipsAndControlsPanel,
-  originalJsxProps,
   resolveUiDesignSystemValue2,
   resolveUiOverlaysAndIconsValue4,
   resolveUiProviderAndLayersValue3,
@@ -62,56 +61,26 @@ export function initializeMenuPopupFrameStep1(): void {
       return (
         <SheetsValue>
         <UiOverlaysAndIconsSurface
-            {...originalJsxProps({
-              ...value3.portalProps,
-              surface: UiTooltipsAndControlsPanel.popover,
-              companionModalCatcher: true,
-              closeOnActivityHide: true,
-              children: (
-                <UiShortcutsAndSizingOverride
-                  override={input5}
-                  provideInherit={true}
-                >
-                {(
-                    input11?: Dynamic,
-                    ..._extraArguments: unknown[]
-                  ): Dynamic => (
-                    <UiProviderAndLayersCreateContext13.Provider
-                      value={value3.base}
-                    >
-                    <BaseMenuPositioner
-                        style={value3.style}
-                        anchor={input}
-                        side={input2}
-                        align={input3}
-                        sideOffset={input4}
-                        collisionPadding={input11}
-                      >
+          {...value3.portalProps}
+          surface={UiTooltipsAndControlsPanel.popover}
+          companionModalCatcher={true}
+          closeOnActivityHide={true}
+        >{<UiShortcutsAndSizingOverride override={input5} provideInherit={true}>
+                {(input11?: Dynamic, ..._extraArguments: unknown[]): Dynamic => <UiProviderAndLayersCreateContext13.Provider value={value3.base}>
+                    <BaseMenuPositioner style={value3.style} anchor={input} side={input2} align={input3} sideOffset={input4} collisionPadding={input11}>
                       <BaseMenuPopup
-                          {...originalJsxProps({
-                            "data-cds": input9,
-                            ...value5,
-                            ref: value6,
-                            finalFocus: input6 ?? value,
-                            ...input10,
-                            className: resolveUiDesignSystemValue2(
-                              MenuPopupsPopover,
-                              input7,
-                            ),
-                            children: (
-                              <MenuInteractionsHeader>
+                        data-cds={input9}
+                        {...value5}
+                        ref={value6}
+                        finalFocus={input6 ?? value}
+                        {...input10}
+                        className={resolveUiDesignSystemValue2(MenuPopupsPopover, input7)}
+                      >{<MenuInteractionsHeader>
                               {input8}
-                            </MenuInteractionsHeader>
-                            ),
-                          })}
-                        />
+                            </MenuInteractionsHeader>}</BaseMenuPopup>
                     </BaseMenuPositioner>
-                  </UiProviderAndLayersCreateContext13.Provider>
-                  )}
-              </UiShortcutsAndSizingOverride>
-              ),
-            })}
-          />
+                  </UiProviderAndLayersCreateContext13.Provider>}
+              </UiShortcutsAndSizingOverride>}</UiOverlaysAndIconsSurface>
       </SheetsValue>
       );
     },

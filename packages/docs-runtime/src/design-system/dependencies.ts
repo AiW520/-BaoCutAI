@@ -1,7 +1,7 @@
 /** BaoCut: dependencies from cds-CIGM-LUe.js. */
 import type { Dynamic } from "../interop/legacy-dynamic";
 
-import { originalJsxProps, originalJsxsProps } from "../react-runtime/jsx-runtime";
+
 
 import {
   LabelableProvider as BaseLabelableProvider,
@@ -347,8 +347,6 @@ export {
   jsxRuntime,
   loadReactDom,
   moduleNamespace,
-  originalJsxProps,
-  originalJsxsProps,
   preloadModule,
   resolvePlatformLoadingAndStatusResolve,
   resolveUiDesignSystemValue2,

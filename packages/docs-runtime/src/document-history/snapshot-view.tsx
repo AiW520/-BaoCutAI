@@ -1,5 +1,5 @@
 /** lfile-snapshot-view: restored from LFileSnapshotView-edTBLlnH.js. */
-import { originalJsxProps } from "../react-runtime/jsx-runtime";
+
 import type { Dynamic } from "../interop/legacy-dynamic";
 import { toModuleNamespace } from "../boot/module-runtime";
 import {
@@ -1254,18 +1254,9 @@ function LFileSnapshotView(
       {value8}
     </div>
   ) : (
-    <iframe
-      {...originalJsxProps({
-        ref: value,
-        "aria-label": `${input2} (${value26})`,
-        sandbox: `allow-scripts`,
-        srcDoc: input29,
-        onLoad: value45,
-        "data-testid": `lfile-snapshot-view`,
-        className: `${input30} block size-full border-0`,
-        [EditorSelectionAndTablesDataPagesPrintSurface]: ``,
-      })}
-    />
+    <iframe ref={value} aria-label={`${input2} (${value26})`} sandbox={`allow-scripts`} srcDoc={input29} onLoad={value45} data-testid={`lfile-snapshot-view`} className={`${input30} block size-full border-0`} {...{
+  [EditorSelectionAndTablesDataPagesPrintSurface]: ``
+}} />
   );
 }
 export { LFileSnapshotView };

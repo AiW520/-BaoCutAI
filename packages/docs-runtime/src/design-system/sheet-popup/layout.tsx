@@ -3,8 +3,6 @@ import type { Dynamic } from "../../interop/legacy-dynamic";
 import {
   React,
   clsx,
-  originalJsxProps,
-  originalJsxsProps,
   resolveUiDesignSystemValue2,
   resolveUiLinksAndFoundationUseContext3,
   resolveUiTooltipsAndControlsMatches,
@@ -21,21 +19,11 @@ function SheetPopupDrawPill(
 ): Dynamic {
   return (
     <div
-      {...originalJsxProps({
-        "aria-hidden": true,
-        "data-cds-sheet-handle": ``,
-        ...useLabeledFieldsHeight(),
-        className: `flex min-h-8 shrink-0 touch-none items-center justify-center select-none`,
-        children: (
-          <div
-            className={clsx(
-              `h-1 w-9 rounded-full bg-border`,
-              !input && `opacity-0`,
-            )}
-          />
-        ),
-      })}
-    />
+      aria-hidden={true}
+      data-cds-sheet-handle={``}
+      {...useLabeledFieldsHeight()}
+      className={`flex min-h-8 shrink-0 touch-none items-center justify-center select-none`}
+    >{<div className={clsx(`h-1 w-9 rounded-full bg-border`, !input && `opacity-0`)} />}</div>
   );
 }
 
@@ -47,24 +35,12 @@ function SheetPopupLeading(
   let value2: boolean = input != null && input !== false;
   return !value2 &&
     !(input2 != null && input2 !== false && input2 !== ``) ? null : (
-    <div
-      {...originalJsxsProps({
-        ...value,
-        className: `order-first flex min-h-control shrink-0 touch-none items-center gap-xs px-1 pb-1 select-none`,
-        children: [
-          value2 && <span className={`-me-2.5 shrink-0`}>{input}</span>,
-          <span
-            aria-hidden={true}
-            className={clsx(
-              `min-w-0 flex-1 truncate text-start text-heading font-semibold text-primary`,
-              !value2 && `ps-2.5`,
-            )}
-          >
+    <div {...value} className={`order-first flex min-h-control shrink-0 touch-none items-center gap-xs px-1 pb-1 select-none`}>{value2 && <span className={`-me-2.5 shrink-0`}>{input}</span>}{<span
+      aria-hidden={true}
+      className={clsx(`min-w-0 flex-1 truncate text-start text-heading font-semibold text-primary`, !value2 && `ps-2.5`)}
+    >
             {input2}
-          </span>,
-        ],
-      })}
-    />
+          </span>}</div>
   );
 }
 
@@ -247,20 +223,13 @@ export function initializeSheetPopupLayoutStep1(): void {
     let value2: Dynamic = input2 ?? value;
     return (
       <Input5Component
-        {...originalJsxProps({
-          ref: options,
-          type: `button`,
-          "data-cds-sheet-control": ``,
-          onClick: input,
-          ...input4,
-          className: resolveUiDesignSystemValue2(
-            `cds-reset mx-1 mb-1 block shrink-0 rounded px-2 text-start text-body font-normal text-primary outline-none select-none focus-visible:bg-fill-ghost-hover focus-visible:outline-hidden [&:not(:focus-visible):not([data-cds-sheet-control-held])]:sr-only`,
-            `min-h-control`,
-            input3,
-          ),
-          children: value2,
-        })}
-      />
+        ref={options}
+        type={`button`}
+        data-cds-sheet-control={``}
+        onClick={input}
+        {...input4}
+        className={resolveUiDesignSystemValue2(`cds-reset mx-1 mb-1 block shrink-0 rounded px-2 text-start text-body font-normal text-primary outline-none select-none focus-visible:bg-fill-ghost-hover focus-visible:outline-hidden [&:not(:focus-visible):not([data-cds-sheet-control-held])]:sr-only`, `min-h-control`, input3)}
+      >{value2}</Input5Component>
     );
   });
   SheetPopupHandle = {

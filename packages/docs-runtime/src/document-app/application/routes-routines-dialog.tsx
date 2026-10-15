@@ -20,8 +20,6 @@ import {
   loadPlatformLiveDocumentAndHistoryVerb,
   loadPlatformSessionAndSourcesFrameVersionTable,
   loadPlatformSyncAndRoutingClipboard,
-  originalJsxProps,
-  originalJsxsProps,
   pageBusyOf,
   resolveCommentsEditorUseContext4,
   resolveDataContentAndReferencesKind,
@@ -311,35 +309,18 @@ function VersionPicker(
               {toSorted.map(
                 (toSorted2?: Dynamic, ..._extraArguments: unknown[]) => (
                   <Menu.Item
-                    {...originalJsxProps(
-                      {
-                        onClick: (..._extraArguments: unknown[]) =>
-                          navigate2(toSorted2.id),
-                        checked: toSorted2.id === version,
-                        checkedRole: `radio`,
-                        children: (
-                          <div
-                            className={`flex min-w-0 flex-1 flex-col leading-tight`}
-                          >
+                    onClick={(..._extraArguments: unknown[]) => navigate2(toSorted2.id)}
+                    checked={toSorted2.id === version}
+                    checkedRole={`radio`}
+                    key={toSorted2.id}
+                  >{<div className={`flex min-w-0 flex-1 flex-col leading-tight`}>
                             <span className={`truncate`}>
                               {toSorted2.name ?? toSorted2.id}
                             </span>
-                            {toSorted2.bornAt && (
-                              <span
-                                className={`text-secondary text-caption truncate`}
-                              >
-                                {resolvePlatformSessionAndSourcesWeekday(
-                                  toSorted2.bornAt,
-                                  versionPickerResult,
-                                )}
-                              </span>
-                            )}
-                          </div>
-                        ),
-                      },
-                      toSorted2.id,
-                    )}
-                  />
+                            {toSorted2.bornAt && <span className={`text-secondary text-caption truncate`}>
+                                {resolvePlatformSessionAndSourcesWeekday(toSorted2.bornAt, versionPickerResult)}
+                              </span>}
+                          </div>}</Menu.Item>
                 ),
               )}
             </div>
@@ -1233,49 +1214,16 @@ function RoutinesDialog(
                     ): Dynamic => {
                       let run: Dynamic = resolveApplicationRoutesRuns(row2);
                       return (
-                        <button
-                          {...originalJsxsProps(
-                            {
-                              type: `button`,
-                              "data-testid": `routine-row`,
-                              ref:
-                                row !== undefined && row2 === row
-                                  ? elementRef3
-                                  : undefined,
-                              onClick: (
-                                ..._extraArguments: unknown[]
-                              ): Dynamic =>
-                                onDrillChange({
-                                  kind: `routine`,
-                                  ref: row2.id ?? row2.name,
-                                }),
-                              className: routinesDialogHandler2(
-                                row !== undefined && row2 === row,
-                              ),
-                              children: [
-                                <UiOverlaysAndIconsCustomIcon
-                                  name={
-                                    ApplicationRoutesPrompt[row2.type] ??
-                                    `Lightning`
-                                  }
-                                  customSize={14}
-                                  className={`text-secondary shrink-0`}
-                                />,
-                                <span
-                                  className={`text-primary text-footnote min-w-0 flex-1 truncate`}
-                                >
-                                  {resolveDataContentAndReferencesReplace2(
-                                    row2.label ?? row2.name,
-                                  )}
-                                </span>,
-                                run !== undefined && (
-                                  <RoutineInflightChip run={run} />
-                                ),
-                              ],
-                            },
-                            row2.id ?? row2.name,
-                          )}
-                        />
+                        <button type={`button`} data-testid={`routine-row`} ref={row !== undefined && row2 === row ? elementRef3 : undefined} onClick={(..._extraArguments: unknown[]): Dynamic => onDrillChange({
+  kind: `routine`,
+  ref: row2.id ?? row2.name
+})} className={routinesDialogHandler2(row !== undefined && row2 === row)} key={row2.id ?? row2.name}>{<UiOverlaysAndIconsCustomIcon
+  name={ApplicationRoutesPrompt[row2.type] ?? `Lightning`}
+  customSize={14}
+  className={`text-secondary shrink-0`}
+/>}{<span className={`text-primary text-footnote min-w-0 flex-1 truncate`}>
+                                  {resolveDataContentAndReferencesReplace2(row2.label ?? row2.name)}
+                                </span>}{run !== undefined && <RoutineInflightChip run={run} />}</button>
                       );
                     },
                   )
@@ -1303,48 +1251,14 @@ function RoutinesDialog(
                       routinesDialogState8?: Dynamic,
                       ..._extraArguments: unknown[]
                     ) => (
-                      <button
-                        {...originalJsxsProps(
-                          {
-                            type: `button`,
-                            "data-testid": `database-row`,
-                            ref:
-                              memoized !== undefined &&
-                              routinesDialogState8 === memoized
-                                ? elementRef3
-                                : undefined,
-                            onClick: (..._extraArguments: unknown[]): Dynamic =>
-                              onDrillChange({
-                                kind: `database`,
-                                ref: routinesDialogState8.id,
-                              }),
-                            className: routinesDialogHandler2(
-                              memoized !== undefined &&
-                                routinesDialogState8 === memoized,
-                            ),
-                            children: [
-                              <UiOverlaysAndIconsCustomIcon
-                                name={`Database`}
-                                customSize={14}
-                                className={`text-secondary shrink-0`}
-                              />,
-                              <span
-                                className={`text-primary text-footnote min-w-0 flex-1 truncate`}
-                              >
-                                {resolveDataContentAndReferencesReplace2(
-                                  routinesDialogState8.name,
-                                )}
-                              </span>,
-                              <span
-                                className={`text-muted text-caption shrink-0 tabular-nums`}
-                              >
+                      <button type={`button`} data-testid={`database-row`} ref={memoized !== undefined && routinesDialogState8 === memoized ? elementRef3 : undefined} onClick={(..._extraArguments: unknown[]): Dynamic => onDrillChange({
+  kind: `database`,
+  ref: routinesDialogState8.id
+})} className={routinesDialogHandler2(memoized !== undefined && routinesDialogState8 === memoized)} key={routinesDialogState8.id}>{<UiOverlaysAndIconsCustomIcon name={`Database`} customSize={14} className={`text-secondary shrink-0`} />}{<span className={`text-primary text-footnote min-w-0 flex-1 truncate`}>
+                                {resolveDataContentAndReferencesReplace2(routinesDialogState8.name)}
+                              </span>}{<span className={`text-muted text-caption shrink-0 tabular-nums`}>
                                 {routinesDialogState8.totalRows}
-                              </span>,
-                            ],
-                          },
-                          routinesDialogState8.id,
-                        )}
-                      />
+                              </span>}</button>
                     ),
                   )
                 )
@@ -1392,91 +1306,46 @@ function RoutinesDialog(
                                 );
                         return (
                           <div
-                            {...originalJsxsProps(
-                              {
-                                "data-testid": `staged-run-row`,
-                                className: `border-strong flex items-center gap-3 border-b px-1 py-2.5 last:border-0`,
-                                children: [
-                                  <span
-                                    className={`bg-alpha-1 text-secondary flex shrink-0 items-center gap-1 rounded px-1.5 py-0.5 text-[10px]`}
-                                  >
-                                    <UiOverlaysAndIconsCustomIcon
-                                      name={`Lightning`}
-                                      customSize={10}
-                                    />
+                            data-testid={`staged-run-row`}
+                            className={`border-strong flex items-center gap-3 border-b px-1 py-2.5 last:border-0`}
+                            key={entry.runId}
+                          >{<span className={`bg-alpha-1 text-secondary flex shrink-0 items-center gap-1 rounded px-1.5 py-0.5 text-[10px]`}>
+                                    <UiOverlaysAndIconsCustomIcon name={`Lightning`} customSize={10} />
                                     {`staged`}
-                                  </span>,
-                                  <div className={`min-w-0 flex-1`}>
-                                    <div
-                                      className={`text-primary truncate text-[13px]`}
-                                    >
+                                  </span>}{<div className={`min-w-0 flex-1`}>
+                                    <div className={`text-primary truncate text-[13px]`}>
                                       {runId}
                                     </div>
-                                    <div
-                                      className={`text-secondary flex items-center gap-1.5 text-[11px]`}
-                                    >
+                                    <div className={`text-secondary flex items-center gap-1.5 text-[11px]`}>
                                       <span
                                         className={`min-w-0 truncate`}
-                                        title={
-                                          (entry.provenance === undefined
-                                            ? undefined
-                                            : resolvePlatformSyncAndRoutingScheduled2(
-                                                entry.provenance,
-                                              )) || undefined
-                                        }
+                                        title={(entry.provenance === undefined ? undefined : resolvePlatformSyncAndRoutingScheduled2(entry.provenance)) || undefined}
                                       >
                                         {entry.kind ?? `run`}
                                         {` · staged by`}
                                         {` `}
-                                        {resolveDataContentAndReferencesReplace2(
-                                          entry.provenance === undefined
-                                            ? entry.user
-                                            : resolvePlatformSyncAndRoutingScheduled(
-                                                entry.provenance,
-                                              ),
-                                        )}
-                                        {entry.createdAt === ``
-                                          ? ``
-                                          : ` · ${resolvePlatformSessionAndSourcesWeekday(entry.createdAt, nowMs)}`}
+                                        {resolveDataContentAndReferencesReplace2(entry.provenance === undefined ? entry.user : resolvePlatformSyncAndRoutingScheduled(entry.provenance))}
+                                        {entry.createdAt === `` ? `` : ` · ${resolvePlatformSessionAndSourcesWeekday(entry.createdAt, nowMs)}`}
                                       </span>
-                                      {entry.source != null && (
-                                        <RunSourceChip source={entry.source} />
-                                      )}
+                                      {entry.source != null && <RunSourceChip source={entry.source} />}
                                     </div>
-                                  </div>,
-                                  <span className={`flex shrink-0 gap-1`}>
+                                  </div>}{<span className={`flex shrink-0 gap-1`}>
                                     <Button
                                       size={routinesDialogResult(`xs`)}
                                       variant={`primary`}
                                       data-testid={`staged-run-approve`}
                                       disabled={routinesDialogState3 !== null}
-                                      onClick={(
-                                        ..._extraArguments: unknown[]
-                                      ): Dynamic =>
-                                        setRoutinesDialogState4(entry)
-                                      }
+                                      onClick={(..._extraArguments: unknown[]): Dynamic => setRoutinesDialogState4(entry)}
                                     >{`Approve…`}</Button>
                                     <Button
                                       size={routinesDialogResult(`xs`)}
                                       variant={`ghost`}
                                       data-testid={`staged-run-dismiss`}
-                                      busy={
-                                        routinesDialogState3 ===
-                                        entry.runId + `:dismiss`
-                                      }
+                                      busy={routinesDialogState3 === entry.runId + `:dismiss`}
                                       disabled={routinesDialogState3 !== null}
-                                      onClick={(
-                                        ..._extraArguments: unknown[]
-                                      ): undefined =>
-                                        void error(entry, `dismiss`)
-                                      }
+                                      onClick={(..._extraArguments: unknown[]): undefined => void error(entry, `dismiss`)}
                                     >{`Dismiss`}</Button>
-                                  </span>,
-                                ],
-                              },
-                              entry.runId,
-                            )}
-                          />
+                                  </span>}</div>
                         );
                       },
                     )}
@@ -1498,49 +1367,16 @@ function RoutinesDialog(
                     text={`That routine isn't available in this project`}
                   />
                 ) : (
-                  <RoutineDetail
-                    {...originalJsxProps(
-                      {
-                        pid: pid,
-                        version: version,
-                        row: row,
-                        slug: slug,
-                        nowMs: nowMs,
-                        knownNames: knownNames,
-                        onVisualize: onVisualize,
-                        closeModal: closeModal,
-                        onSelectRoutine: (
-                          routinesDialog?: Dynamic,
-                          ..._extraArguments: unknown[]
-                        ): undefined => {
-                          let filteredRows: Dynamic = (rows ?? []).filter(
-                            (row2?: Dynamic, ..._extraArguments: unknown[]) =>
-                              row2.name === routinesDialog,
-                          );
-                          onDrillChange({
-                            kind: `routine`,
-                            ref:
-                              (filteredRows.length === 1
-                                ? filteredRows[0]
-                                : undefined
-                              )?.id ?? routinesDialog,
-                          });
-                        },
-                      },
-                      row.id ?? row.name,
-                    )}
-                  />
+                  <RoutineDetail pid={pid} version={version} row={row} slug={slug} nowMs={nowMs} knownNames={knownNames} onVisualize={onVisualize} closeModal={closeModal} onSelectRoutine={(routinesDialog?: Dynamic, ..._extraArguments: unknown[]): undefined => {
+  let filteredRows: Dynamic = (rows ?? []).filter((row2?: Dynamic, ..._extraArguments: unknown[]) => row2.name === routinesDialog);
+  onDrillChange({
+    kind: `routine`,
+    ref: (filteredRows.length === 1 ? filteredRows[0] : undefined)?.id ?? routinesDialog
+  });
+}} key={row.id ?? row.name} />
                 )
               ) : routinesDialogState7?.kind === `database` ? (
-                <DatabaseDetail
-                  {...originalJsxProps(
-                    {
-                      pid: pid,
-                      dbId: routinesDialogState7.ref,
-                    },
-                    routinesDialogState7.ref,
-                  )}
-                />
+                <DatabaseDetail pid={pid} dbId={routinesDialogState7.ref} key={routinesDialogState7.ref} />
               ) : (
                 <UseApplicationRootTextComponent
                   text={

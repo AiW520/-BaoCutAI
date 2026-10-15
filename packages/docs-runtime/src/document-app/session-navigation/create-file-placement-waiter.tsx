@@ -14,7 +14,6 @@ import {
   UiOverlaysAndIconsCustomIcon,
   apiFetcher,
   loadPlatformSessionAndSourcesAckOf,
-  originalJsxProps,
   preloadModule,
   resolveDataContentAndReferencesError2,
   resolveDataOperationEngineLdoc,
@@ -821,15 +820,7 @@ function RoomDeniedScreen(
       className={`bg-surface-0 flex h-full flex-col overflow-y-auto px-6`}
     >
       <div className={`my-auto flex flex-col items-center gap-3 py-6`}>
-        <RoomDeniedMessage
-          {...originalJsxProps(
-            {
-              title: title,
-              line: line,
-            },
-            `${title}|${line}`,
-          )}
-        />
+        <RoomDeniedMessage title={title} line={line} key={`${title}|${line}`} />
         {items.length > 0 && (
           <div
             className={`flex w-full max-w-xl flex-col gap-2`}
@@ -1238,82 +1229,30 @@ function FileTabNavigation(
                 idx?: Dynamic,
                 ..._extraArguments: unknown[]
               ) => (
-                <FileTabNavigationItem
-                  {...originalJsxProps(
-                    {
-                      path: path,
-                      active: path === active,
-                      onSelect: (..._extraArguments: unknown[]): Dynamic =>
-                        onSelect(path),
-                      onClose: (..._extraArguments: unknown[]): Dynamic =>
-                        onClose(path),
-                      onCloseOthers:
-                        tabs.length > 1
-                          ? (..._extraArguments: unknown[]): Dynamic =>
-                              onCloseOthers?.(path)
-                          : undefined,
-                      onRename: onRenameFile,
-                      onDownload: onDownloadFile
-                        ? (..._extraArguments: unknown[]): Dynamic =>
-                            onDownloadFile(path)
-                        : undefined,
-                      onDelete: onDeleteFile
-                        ? (..._extraArguments: unknown[]): Dynamic =>
-                            onDeleteFile(path)
-                        : undefined,
-                      dnd: onReorder
-                        ? {
-                            dragging: fileTabNavigationState === idx,
-                            drop:
-                              fileTabNavigationState2?.idx === idx &&
-                              fileTabNavigationState !== null
-                                ? fileTabNavigationState2.before
-                                  ? `before`
-                                  : `after`
-                                : null,
-                            onDragStart: (
-                              fileTabNavigation?: Dynamic,
-                              ..._extraArguments: unknown[]
-                            ): undefined => {
-                              fileTabNavigation.dataTransfer.setData(
-                                `text/plain`,
-                                path,
-                              );
-                              fileTabNavigation.dataTransfer.effectAllowed = `move`;
-                              setFileTabNavigationState(idx);
-                            },
-                            onDragOver: (
-                              event?: Dynamic,
-                              ..._extraArguments: unknown[]
-                            ): undefined => {
-                              if (fileTabNavigationState === null) return;
-                              event.preventDefault();
-                              event.dataTransfer.dropEffect = `move`;
-                              let currentTargetBounds: Dynamic =
-                                event.currentTarget.getBoundingClientRect();
-                              let before =
-                                event.clientX <
-                                currentTargetBounds.left +
-                                  currentTargetBounds.width / 2;
-                              let element: Dynamic = elementRef.current;
-                              if (
-                                !element ||
-                                element.idx !== idx ||
-                                element.before !== before
-                              ) {
-                                setFileTabNavigationState3({
-                                  idx: idx,
-                                  before: before,
-                                });
-                              }
-                            },
-                            onDragEnd: onDragEnd,
-                          }
-                        : undefined,
-                    },
-                    path,
-                  )}
-                />
+                <FileTabNavigationItem path={path} active={path === active} onSelect={(..._extraArguments: unknown[]): Dynamic => onSelect(path)} onClose={(..._extraArguments: unknown[]): Dynamic => onClose(path)} onCloseOthers={tabs.length > 1 ? (..._extraArguments: unknown[]): Dynamic => onCloseOthers?.(path) : undefined} onRename={onRenameFile} onDownload={onDownloadFile ? (..._extraArguments: unknown[]): Dynamic => onDownloadFile(path) : undefined} onDelete={onDeleteFile ? (..._extraArguments: unknown[]): Dynamic => onDeleteFile(path) : undefined} dnd={onReorder ? {
+  dragging: fileTabNavigationState === idx,
+  drop: fileTabNavigationState2?.idx === idx && fileTabNavigationState !== null ? fileTabNavigationState2.before ? `before` : `after` : null,
+  onDragStart: (fileTabNavigation?: Dynamic, ..._extraArguments: unknown[]): undefined => {
+    fileTabNavigation.dataTransfer.setData(`text/plain`, path);
+    fileTabNavigation.dataTransfer.effectAllowed = `move`;
+    setFileTabNavigationState(idx);
+  },
+  onDragOver: (event?: Dynamic, ..._extraArguments: unknown[]): undefined => {
+    if (fileTabNavigationState === null) return;
+    event.preventDefault();
+    event.dataTransfer.dropEffect = `move`;
+    let currentTargetBounds: Dynamic = event.currentTarget.getBoundingClientRect();
+    let before = event.clientX < currentTargetBounds.left + currentTargetBounds.width / 2;
+    let element: Dynamic = elementRef.current;
+    if (!element || element.idx !== idx || element.before !== before) {
+      setFileTabNavigationState3({
+        idx: idx,
+        before: before
+      });
+    }
+  },
+  onDragEnd: onDragEnd
+} : undefined} key={path} />
               ),
             )}
           </div>

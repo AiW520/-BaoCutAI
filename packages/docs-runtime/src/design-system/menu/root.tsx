@@ -13,8 +13,6 @@ import {
   UiOverlaysAndIconsActionsRef,
   UiOverlaysAndIconsCustomIcon,
   jsxRuntime,
-  originalJsxProps,
-  originalJsxsProps,
   resolveUiProviderAndLayersBase,
   resolveUiProviderAndLayersUseContext2,
   resolveUiProviderAndLayersUseContext9,
@@ -70,62 +68,42 @@ function renderMenuItems(
           ..._extraArguments: unknown[]
         ): Dynamic =>
           event === `separator` ? (
-            <MenuPopupsView {...originalJsxProps({}, options)} />
+            <MenuPopupsView key={options} />
           ) : event.label === undefined ||
             event.label === null ||
             event.label === `` ||
             event.label === false ? null : event.items ? (
-            <React.Fragment
-              {...originalJsxsProps(
-                {
-                  children: [
-                    event.separatorBefore && <MenuPopupsView />,
-                    <MenuPopupsActionsRef disabled={event.disabled}>
+            <React.Fragment key={options}>{event.separatorBefore && <MenuPopupsView />}{<MenuPopupsActionsRef disabled={event.disabled}>
                       <MenuPopupsIcon2 icon={event.icon} hint={event.hint}>
                         {event.label}
                       </MenuPopupsIcon2>
                       <MenuPopupsAlign>
                         {renderMenuItems(event.items)}
                       </MenuPopupsAlign>
-                    </MenuPopupsActionsRef>,
-                  ],
-                },
-                options,
-              )}
-            />
+                    </MenuPopupsActionsRef>}</React.Fragment>
           ) : (
-            <React.Fragment
-              {...originalJsxsProps(
-                {
-                  children: [
-                    event.separatorBefore && <MenuPopupsView />,
-                    <MenuPopupsIcon
-                      icon={event.icon}
-                      shortcut={event.shortcut}
-                      variant={event.variant}
-                      disabled={event.disabled}
-                      checked={event.checked}
-                      checkedRole={event.checkedRole}
-                      indicator={event.indicator}
-                      indeterminate={event.indeterminate}
-                      hint={event.hint}
-                      description={event.description}
-                      disabledReason={event.disabledReason}
-                      keepOpen={event.keepOpen}
-                      leading={event.leading}
-                      trailing={event.trailing}
-                      href={event.href}
-                      routerOptions={event.routerOptions}
-                      target={event.target}
-                      onClick={event.onSelect}
-                    >
+            <React.Fragment key={options}>{event.separatorBefore && <MenuPopupsView />}{<MenuPopupsIcon
+              icon={event.icon}
+              shortcut={event.shortcut}
+              variant={event.variant}
+              disabled={event.disabled}
+              checked={event.checked}
+              checkedRole={event.checkedRole}
+              indicator={event.indicator}
+              indeterminate={event.indeterminate}
+              hint={event.hint}
+              description={event.description}
+              disabledReason={event.disabledReason}
+              keepOpen={event.keepOpen}
+              leading={event.leading}
+              trailing={event.trailing}
+              href={event.href}
+              routerOptions={event.routerOptions}
+              target={event.target}
+              onClick={event.onSelect}
+            >
                       {event.label}
-                    </MenuPopupsIcon>,
-                  ],
-                },
-                options,
-              )}
-            />
+                    </MenuPopupsIcon>}</React.Fragment>
           ),
       )
     : input;
@@ -203,11 +181,7 @@ function MenuPopupsTriggerRef(
     );
   let value6: Dynamic = resolveUiProviderAndLayersUseContext9();
   return value ? (
-    <MenuPopupsOpen
-      {...originalJsxProps({
-        ...input,
-      })}
-    />
+    <MenuPopupsOpen {...input} />
   ) : (
     MenuPopupsItems(input, value6, {
       triggerRef: value5,
@@ -485,29 +459,12 @@ function MenuPopupsSheetTitle(
   resolveUiTooltipsAndControlsClose(value11, value5.actionsRef);
   return value6 ? (
     <UiOverlaysAndIconsActionsRef actionsRef={value11}>
-      <MenuPopupsSheetTitle2
-        {...originalJsxProps({
-          ...input,
-          actionsRef: value11,
-        })}
-      />
+      <MenuPopupsSheetTitle2 {...input} actionsRef={value11} />
     </UiOverlaysAndIconsActionsRef>
   ) : (
     <MenuPopupsProvider value={value9}>
       <UiOverlaysAndIconsActionsRef actionsRef={value11}>
-        <BaseMenuRoot
-          {...originalJsxProps({
-            ...value5,
-            modal: value7 ? undefined : value5.modal,
-            actionsRef: value11,
-            onOpenChange: value10.onOpenChange,
-            children:
-              typeof value == `function`
-                ? (input2?: Dynamic, ..._extraArguments: unknown[]): Dynamic =>
-                    MenuPopupsValue(value(input2), value10.cell, value11)
-                : MenuPopupsValue(value, value10.cell, value11),
-          })}
-        />
+        <BaseMenuRoot {...value5} modal={value7 ? undefined : value5.modal} actionsRef={value11} onOpenChange={value10.onOpenChange}>{typeof value == `function` ? (input2?: Dynamic, ..._extraArguments: unknown[]): Dynamic => MenuPopupsValue(value(input2), value10.cell, value11) : MenuPopupsValue(value, value10.cell, value11)}</BaseMenuRoot>
       </UiOverlaysAndIconsActionsRef>
     </MenuPopupsProvider>
   );
@@ -559,26 +516,12 @@ function MenuPopupsSheetTitle2(
       <SheetsValue2 value={value13}>
         <MenuInteractionsSheetTitle.Provider value={value6}>
           <BaseMenuRoot
-            {...originalJsxProps({
-              ...value5,
-              modal: value7 ? undefined : (value13.modal ?? value5.modal),
-              actionsRef: value13.actionsRef,
-              onOpenChange: value13.onOpenChange,
-              onOpenChangeComplete: value13.onOpenChangeComplete,
-              children:
-                typeof value == `function`
-                  ? (
-                      input2?: Dynamic,
-                      ..._extraArguments: unknown[]
-                    ): Dynamic =>
-                      MenuPopupsValue(
-                        value(input2),
-                        value10.cell,
-                        value13.actionsRef,
-                      )
-                  : MenuPopupsValue(value, value10.cell, value13.actionsRef),
-            })}
-          />
+            {...value5}
+            modal={value7 ? undefined : value13.modal ?? value5.modal}
+            actionsRef={value13.actionsRef}
+            onOpenChange={value13.onOpenChange}
+            onOpenChangeComplete={value13.onOpenChangeComplete}
+          >{typeof value == `function` ? (input2?: Dynamic, ..._extraArguments: unknown[]): Dynamic => MenuPopupsValue(value(input2), value10.cell, value13.actionsRef) : MenuPopupsValue(value, value10.cell, value13.actionsRef)}</BaseMenuRoot>
         </MenuInteractionsSheetTitle.Provider>
       </SheetsValue2>
     </MenuPopupsProvider>
@@ -601,18 +544,9 @@ export function initializeMenuRootStep1(): void {
         id={input2}
         disabled={input3.disabled || input3.busy}
         render={
-          <Button
-            {...originalJsxsProps({
-              ref: options,
-              ...input3,
-              ...(input3.busy
-                ? {
-                    disabled: input3.disabled,
-                  }
-                : undefined),
-              children: [input, <MenuPopupsPart size={input3.size} />],
-            })}
-          />
+          <Button ref={options} {...input3} {...input3.busy ? {
+  disabled: input3.disabled
+} : undefined}>{input}{<MenuPopupsPart size={input3.size} />}</Button>
         }
       />
     );

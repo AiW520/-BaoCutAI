@@ -51,7 +51,6 @@ import {
   isFrameArtifact,
   loadPlatformSessionAndSourcesAckOf,
   loadPlatformSessionAndSourcesAckOf2,
-  originalJsxProps,
   preloadModule,
   resolveCommentsActionsAndSelectionContainer,
   resolveDataContentAndReferencesKind,
@@ -324,7 +323,7 @@ function TabRail(
     get onToggle(): Dynamic { return onToggle; },
     get open(): Dynamic { return open; },
     get ops(): Dynamic { return ops; },
-    get originalJsxProps(): Dynamic { return originalJsxProps; },
+
     get pid(): Dynamic { return pid; },
     get preloadModule(): Dynamic { return preloadModule; },
     get presence(): Dynamic { return presence; },
@@ -1583,19 +1582,11 @@ function TabPresenceSplash(
     (..._extraArguments: unknown[]): Dynamic => played.get(rowId) ?? 0,
   );
   return ts2 <= Math.max(playedEntryState, played.get(rowId) ?? 0) ? null : (
-    <span
-      {...originalJsxProps(
-        {
-          onAnimationEnd: (..._extraArguments: unknown[]): undefined => {
-            if (ts2 > (played.get(rowId) ?? 0)) {
-              played.set(rowId, ts2);
-            }
-          },
-          className: `animate-presence-splash pointer-events-none absolute inset-0 rounded-md`,
-        },
-        Math.floor(ts2 / 500),
-      )}
-    />
+    <span onAnimationEnd={(..._extraArguments: unknown[]): undefined => {
+  if (ts2 > (played.get(rowId) ?? 0)) {
+    played.set(rowId, ts2);
+  }
+}} className={`animate-presence-splash pointer-events-none absolute inset-0 rounded-md`} key={Math.floor(ts2 / 500)} />
   );
 }
 
@@ -1613,36 +1604,19 @@ function TabRenameInput(
     });
   }, []);
   return (
-    <input
-      {...originalJsxProps({
-        ref: elementRef,
-        type: `text`,
-        autoComplete: `off`,
-        spellCheck: false,
-        className: `-my-0.5 min-w-0 flex-1 border-0 bg-transparent p-0 leading-[calc(1lh+4px)] outline-none`,
-        ...tabRenameInput,
-        onKeyDown: (
-          event?: Dynamic,
-          ..._extraArguments: unknown[]
-        ): undefined => {
-          let code: Dynamic = event.code || event.key;
-          let isComposing: Dynamic = event.nativeEvent.isComposing;
-          if (
-            event.repeat &&
-            !isComposing &&
-            !uniqueItemsRef.current.has(code)
-          ) {
-            event.preventDefault();
-            event.stopPropagation();
-            return;
-          }
-          if (!(isComposing && (code === `Enter` || code === `NumpadEnter`))) {
-            uniqueItemsRef.current.add(code);
-          }
-          tabRenameInput.onKeyDown?.(event);
-        },
-      })}
-    />
+    <input ref={elementRef} type={`text`} autoComplete={`off`} spellCheck={false} className={`-my-0.5 min-w-0 flex-1 border-0 bg-transparent p-0 leading-[calc(1lh+4px)] outline-none`} {...tabRenameInput} onKeyDown={(event?: Dynamic, ..._extraArguments: unknown[]): undefined => {
+  let code: Dynamic = event.code || event.key;
+  let isComposing: Dynamic = event.nativeEvent.isComposing;
+  if (event.repeat && !isComposing && !uniqueItemsRef.current.has(code)) {
+    event.preventDefault();
+    event.stopPropagation();
+    return;
+  }
+  if (!(isComposing && (code === `Enter` || code === `NumpadEnter`))) {
+    uniqueItemsRef.current.add(code);
+  }
+  tabRenameInput.onKeyDown?.(event);
+}} />
   );
 }
 

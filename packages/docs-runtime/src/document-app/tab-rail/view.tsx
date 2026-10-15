@@ -76,7 +76,7 @@ export interface RenderTabRailViewContext {
   onMouseDown: Dynamic;
   onOpen: Dynamic;
   onToggle: Dynamic;
-  originalJsxProps: Dynamic;
+
   pid: Dynamic;
   presenceBy: Dynamic;
   probeKind: Dynamic;
@@ -425,15 +425,10 @@ export function renderTabRailView(tabRailLiveContext: RenderTabRailViewContext):
                 data-testid={`tab-rail-error`}
               >
                 <span
-                  {...(0, tabRailLiveContext.originalJsxProps)(
-                    {
-                      role: tabRailLiveContext.tabsOnPage ? undefined : `alert`,
-                      className: `text-footnote text-danger min-w-0 flex-1`,
-                      children: tabRailLiveContext.error,
-                    },
-                    (tabRailLiveContext.tabsOnPage ? `quiet:` : `alert:`) + tabRailLiveContext.error,
-                  )}
-                />
+                  role={tabRailLiveContext.tabsOnPage ? undefined : `alert`}
+                  className={`text-footnote text-danger min-w-0 flex-1`}
+                  key={(tabRailLiveContext.tabsOnPage ? `quiet:` : `alert:`) + tabRailLiveContext.error}
+                >{tabRailLiveContext.error}</span>
                 <tabRailLiveContext.Button
                   size={(0, tabRailLiveContext.tabRailResult)(`sm`)}
                   variant={`ghost`}
@@ -646,13 +641,7 @@ export function renderTabRailView(tabRailLiveContext: RenderTabRailViewContext):
                 disabled={!tabRailLiveContext.room}
               >{`New tab`}</tabRailLiveContext.Button>
             ) : null}
-            <tabRailLiveContext.PaneResizeHandle
-              {...(0, tabRailLiveContext.originalJsxProps)({
-                ...tabRailLiveContext.tabRailResult3.handleProps,
-                side: `right`,
-                label: `Resize tabs`,
-              })}
-            />
+            <tabRailLiveContext.PaneResizeHandle {...tabRailLiveContext.tabRailResult3.handleProps} side={`right`} label={`Resize tabs`} />
           </div>
         </tabRailLiveContext.Popover.Popup>
       </tabRailLiveContext.Popover.Root>

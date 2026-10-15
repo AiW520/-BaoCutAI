@@ -13,7 +13,6 @@ import {
   isObservabilityBrowserAndOperationEventsIncludes,
   isPlatformSessionAndSourcesToLowerCase2,
   menuItemVariants,
-  originalJsxProps,
   platformSessionAndSourcesPattern12,
   platformSessionAndSourcesPattern20,
   resolveDataModelSchemasMain,
@@ -1076,51 +1075,14 @@ function DocumentLinkPopover(
                           dataHidx?: Dynamic,
                           ..._extraArguments: unknown[]
                         ) => (
-                          <button
-                            {...originalJsxProps(
-                              {
-                                type: `button`,
-                                tabIndex: -1,
-                                id: `ldoc-linkpop-h-${dataHidx}`,
-                                "data-hidx": dataHidx,
-                                role: `option`,
-                                "aria-selected":
-                                  dataHidx === documentLinkPopoverState4,
-                                "data-highlighted":
-                                  dataHidx === documentLinkPopoverState4
-                                    ? ``
-                                    : undefined,
-                                onMouseEnter: (
-                                  ..._extraArguments: unknown[]
-                                ): Dynamic =>
-                                  setDocumentLinkPopoverState2(dataHidx),
-                                onMouseDown: (
-                                  event?: Dynamic,
-                                  ..._extraArguments: unknown[]
-                                ): Dynamic => event.preventDefault(),
-                                onClick: (..._extraArguments: unknown[]) =>
-                                  focus({
-                                    kind: `heading`,
-                                    h: toLowerCase3,
-                                  }),
-                                className: resolveUiDesignSystemValue2(
-                                  menuItemVariants(),
-                                  `cursor-pointer`,
-                                ),
-                                children: (
-                                  <span
-                                    className={`min-w-0 flex-1 truncate text-left`}
-                                    style={{
-                                      marginLeft: (toLowerCase3.level - 1) * 12,
-                                    }}
-                                  >
+                          <button type={`button`} tabIndex={-1} id={`ldoc-linkpop-h-${dataHidx}`} data-hidx={dataHidx} role={`option`} aria-selected={dataHidx === documentLinkPopoverState4} data-highlighted={dataHidx === documentLinkPopoverState4 ? `` : undefined} onMouseEnter={(..._extraArguments: unknown[]): Dynamic => setDocumentLinkPopoverState2(dataHidx)} onMouseDown={(event?: Dynamic, ..._extraArguments: unknown[]): Dynamic => event.preventDefault()} onClick={(..._extraArguments: unknown[]) => focus({
+  kind: `heading`,
+  h: toLowerCase3
+})} className={resolveUiDesignSystemValue2(menuItemVariants(), `cursor-pointer`)} key={`${toLowerCase3.slug}`}>{<span className={`min-w-0 flex-1 truncate text-left`} style={{
+    marginLeft: (toLowerCase3.level - 1) * 12
+  }}>
                                     {toLowerCase3.text}
-                                  </span>
-                                ),
-                              },
-                              `${toLowerCase3.slug}`,
-                            )}
-                          />
+                                  </span>}</button>
                         ),
                       )}
                     </div>
@@ -1145,49 +1107,12 @@ function DocumentLinkPopover(
                         ) => {
                           let dataHidx: Dynamic = toLowerCase.length + index;
                           return (
-                            <button
-                              {...originalJsxProps(
-                                {
-                                  type: `button`,
-                                  tabIndex: -1,
-                                  id: `ldoc-linkpop-h-${dataHidx}`,
-                                  "data-hidx": dataHidx,
-                                  "data-kind": `tab`,
-                                  role: `option`,
-                                  "aria-selected":
-                                    dataHidx === documentLinkPopoverState4,
-                                  "data-highlighted":
-                                    dataHidx === documentLinkPopoverState4
-                                      ? ``
-                                      : undefined,
-                                  onMouseEnter: (
-                                    ..._extraArguments: unknown[]
-                                  ): Dynamic =>
-                                    setDocumentLinkPopoverState2(dataHidx),
-                                  onMouseDown: (
-                                    event?: Dynamic,
-                                    ..._extraArguments: unknown[]
-                                  ): Dynamic => event.preventDefault(),
-                                  onClick: (..._extraArguments: unknown[]) =>
-                                    focus({
-                                      kind: `tab`,
-                                      t: toLowerCase3,
-                                    }),
-                                  className: resolveUiDesignSystemValue2(
-                                    menuItemVariants(),
-                                    `cursor-pointer`,
-                                  ),
-                                  children: (
-                                    <span
-                                      className={`min-w-0 flex-1 truncate text-left`}
-                                    >
+                            <button type={`button`} tabIndex={-1} id={`ldoc-linkpop-h-${dataHidx}`} data-hidx={dataHidx} data-kind={`tab`} role={`option`} aria-selected={dataHidx === documentLinkPopoverState4} data-highlighted={dataHidx === documentLinkPopoverState4 ? `` : undefined} onMouseEnter={(..._extraArguments: unknown[]): Dynamic => setDocumentLinkPopoverState2(dataHidx)} onMouseDown={(event?: Dynamic, ..._extraArguments: unknown[]): Dynamic => event.preventDefault()} onClick={(..._extraArguments: unknown[]) => focus({
+  kind: `tab`,
+  t: toLowerCase3
+})} className={resolveUiDesignSystemValue2(menuItemVariants(), `cursor-pointer`)} key={toLowerCase3.id}>{<span className={`min-w-0 flex-1 truncate text-left`}>
                                       {toLowerCase3.name}
-                                    </span>
-                                  ),
-                                },
-                                toLowerCase3.id,
-                              )}
-                            />
+                                    </span>}</button>
                           );
                         },
                       )}

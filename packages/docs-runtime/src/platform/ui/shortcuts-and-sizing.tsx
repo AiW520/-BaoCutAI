@@ -3,8 +3,6 @@ import type { Dynamic } from "../../interop/legacy-dynamic";
 import {
   React,
   jsxRuntime,
-  originalJsxProps,
-  originalJsxsProps,
 } from "../dependencies";
 import {
   UiDesignSystemUseLayoutEffect,
@@ -75,85 +73,25 @@ function UiShortcutsAndSizingKeys(
     variant === `text` && !useUiShortcutsAndSizingUseSyncExternalStore3;
   return (
     <span
-      {...originalJsxProps({
-        ...uiShortcutsAndSizingKeys,
-        "data-cds": `Shortcut`,
-        "data-variant": variant,
-        className: resolveUiDesignSystemValue2(
-          UiShortcutsAndSizingKeycap[variant],
-          onFill && `[--cds-shortcut-cap-ink:currentColor]`,
-          className,
-        ),
-        children: mappedUiShortcutsAndSizingReplace.map(
-          (
-            mappedUiShortcutsAndSizingReplace2?: Dynamic,
-            index?: Dynamic,
-            ..._extraArguments: unknown[]
-          ): Dynamic => (
-            <React.Fragment
-              {...originalJsxsProps(
-                {
-                  children: [
-                    index > 0 && (
-                      <span
-                        className={`px-[2px] [color:var(--cds-shortcut-cap-ink)]`}
-                      >
+      {...uiShortcutsAndSizingKeys}
+      data-cds={`Shortcut`}
+      data-variant={variant}
+      className={resolveUiDesignSystemValue2(UiShortcutsAndSizingKeycap[variant], onFill && `[--cds-shortcut-cap-ink:currentColor]`, className)}
+    >{mappedUiShortcutsAndSizingReplace.map((mappedUiShortcutsAndSizingReplace2?: Dynamic, index?: Dynamic, ..._extraArguments: unknown[]): Dynamic => <React.Fragment key={index}>{index > 0 && <span className={`px-[2px] [color:var(--cds-shortcut-cap-ink)]`}>
                         {uiLinksAndFoundationUseContext3}
-                      </span>
-                    ),
-                    mappedUiShortcutsAndSizingReplace2.map(
-                      (
-                        { label: label, spoken: spoken }: Dynamic,
-                        index2?: Dynamic,
-                        ..._extraArguments: unknown[]
-                      ): Dynamic => (
-                        <React.Fragment
-                          {...originalJsxsProps(
-                            {
-                              children: [
-                                matchesVariant && index2 > 0 && (
-                                  <span
-                                    className={`mx-[-0.3em] [color:var(--cds-shortcut-cap-ink)]`}
-                                  >
+                      </span>}{mappedUiShortcutsAndSizingReplace2.map(({
+      label: label,
+      spoken: spoken
+    }: Dynamic, index2?: Dynamic, ..._extraArguments: unknown[]): Dynamic => <React.Fragment key={index2}>{matchesVariant && index2 > 0 && <span className={`mx-[-0.3em] [color:var(--cds-shortcut-cap-ink)]`}>
                                     {UiShortcutsAndSizingMessage}
-                                  </span>
-                                ),
-                                <kbd
-                                  className={
-                                    variant === `text`
-                                      ? UiShortcutsAndSizingStyles4
-                                      : resolveUiShortcutsAndSizingFrom(label)
-                                  }
-                                >
-                                  {spoken === undefined ? (
-                                    label
-                                  ) : matchesVariant ? (
-                                    spoken
-                                  ) : (
-                                    <jsxRuntime.Fragment>
+                                  </span>}{<kbd className={variant === `text` ? UiShortcutsAndSizingStyles4 : resolveUiShortcutsAndSizingFrom(label)}>
+                                  {spoken === undefined ? label : matchesVariant ? spoken : <jsxRuntime.Fragment>
                                       <span aria-hidden={`true`}>{label}</span>
                                       <span className={`sr-only select-none`}>
                                         {spoken}
                                       </span>
-                                    </jsxRuntime.Fragment>
-                                  )}
-                                </kbd>,
-                              ],
-                            },
-                            index2,
-                          )}
-                        />
-                      ),
-                    ),
-                  ],
-                },
-                index,
-              )}
-            />
-          ),
-        ),
-      })}
-    />
+                                    </jsxRuntime.Fragment>}
+                                </kbd>}</React.Fragment>)}</React.Fragment>)}</span>
   );
 }
 
@@ -2026,15 +1964,9 @@ function UiShortcutsAndSizingReason(
     [reason],
   );
   return (
-    <span
-      {...originalJsxProps({
-        ref: elementRef,
-        id: id,
-        hidden: true,
-        [UiShortcutsAndSizingDataCdsDisabledReason]: ``,
-        children: isUiShortcutsAndSizingValue(reason) ? reason : null,
-      })}
-    />
+    <span ref={elementRef} id={id} hidden={true} {...{
+  [UiShortcutsAndSizingDataCdsDisabledReason]: ``
+}}>{isUiShortcutsAndSizingValue(reason) ? reason : null}</span>
   );
 }
 
@@ -2244,20 +2176,10 @@ export function initializeUiShortcutsAndSizingStep1(): void {
       options?: Dynamic,
       ..._extraArguments: unknown[]
     ) => (
-      <div
-        {...originalJsxProps({
-          ref: resolveUiOverlaysAndIconsValue4(
-            options,
-            useUiShortcutsAndSizingEnabled({
-              enabled: enabled,
-              immediate: immediate,
-            }),
-          ),
-          "data-cds": `ShrinkWrap`,
-          ...shrinkWrap,
-          children: children,
-        })}
-      />
+      <div ref={resolveUiOverlaysAndIconsValue4(options, useUiShortcutsAndSizingEnabled({
+  enabled: enabled,
+  immediate: immediate
+}))} data-cds={`ShrinkWrap`} {...shrinkWrap}>{children}</div>
     ),
   ));
   ShrinkWrap.displayName = `ShrinkWrap`;

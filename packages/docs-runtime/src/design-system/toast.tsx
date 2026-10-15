@@ -15,7 +15,6 @@ import {
   UiOverlaysAndIconsCustomIcon,
   UiOverlaysAndIconsSurface,
   UiTooltipsAndControlsPanel,
-  originalJsxProps,
   resolveUiDesignSystemValue2,
   resolveUiLinksAndFoundationUseContext3,
   resolveUiTooltipsAndControlsValue3,
@@ -396,17 +395,7 @@ function ToastToasts(
                 options?: Dynamic,
                 ..._extraArguments: unknown[]
               ): Dynamic => (
-                <ToastToast
-                  {...originalJsxProps(
-                    {
-                      toast: input2,
-                      front: input2 === match,
-                      frontHeight: match?.height,
-                      zIndex: value.length - options,
-                    },
-                    input2.id,
-                  )}
-                />
+                <ToastToast toast={input2} front={input2 === match} frontHeight={match?.height} zIndex={value.length - options} key={input2.id} />
               ),
             )}
           </BaseToastViewport>

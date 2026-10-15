@@ -14,7 +14,6 @@ import {
   collectPlatformKeyboardAndSaveStatusJoin,
   collectPlatformKeyboardAndSaveStatusMods,
   editorExtensionsAskClaudeCommentReactValues,
-  originalJsxProps,
   page,
   preloadModule,
   renderMenuItems,
@@ -1312,28 +1311,15 @@ function WidgetProvenanceFacts(
                 ..._extraArguments: unknown[]
               ) => (
                 <Tooltip
-                  {...originalJsxProps(
-                    {
-                      content:
-                        entry.kind === `inline`
-                          ? `${entry.ref} — inline sample rows typed in the widget code`
-                          : entry.ref,
-                      multiline: true,
-                      className: `wrap-anywhere`,
-                      children: (
-                        <span
-                          className={`text-code`}
-                          data-testid={`widget-provenance-source`}
-                        >
+                  content={entry.kind === `inline` ? `${entry.ref} — inline sample rows typed in the widget code` : entry.ref}
+                  multiline={true}
+                  className={`wrap-anywhere`}
+                  key={entry.ref}
+                >{<span className={`text-code`} data-testid={`widget-provenance-source`}>
                           {index > 0 && `, `}
                           {entry.ref}
                           {entry.kind === `inline` && ` · inline`}
-                        </span>
-                      ),
-                    },
-                    entry.ref,
-                  )}
-                />
+                        </span>}</Tooltip>
               ),
             )}
             {difference > 0 && `, +${difference} more`}

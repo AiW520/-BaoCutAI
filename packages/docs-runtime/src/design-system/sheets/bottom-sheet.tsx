@@ -1,5 +1,5 @@
 /** bottom-sheet.impl: restored from BottomSheet.impl-CAaQPhpT.js. */
-import { originalJsxProps, originalJsxsProps } from "../../react-runtime/jsx-runtime";
+
 import type { Dynamic } from "../../interop/legacy-dynamic";
 import { toModuleNamespace } from "../../boot/module-runtime";
 import {
@@ -316,29 +316,12 @@ function BottomSheet(
         style={insetStyle}
       >
         <div
-          {...originalJsxsProps({
-            ...dragHandlers,
-            className: `flex min-h-control shrink-0 touch-none items-center gap-sm px-4 pt-4 pb-2 select-none`,
-            "data-testid": `bottom-sheet-header`,
-            children: [
-              leading !== undefined && (
-                <span className={`flex shrink-0 items-center`}>{leading}</span>
-              ),
-              <UiDialogsRoot.Title
-                className={resolveUiDesignSystemValue2(
-                  `text-heading min-w-0 flex-1 truncate font-semibold`,
-                  titleHidden && `sr-only`,
-                )}
-              >
+          {...dragHandlers}
+          className={`flex min-h-control shrink-0 touch-none items-center gap-sm px-4 pt-4 pb-2 select-none`}
+          data-testid={`bottom-sheet-header`}
+        >{leading !== undefined && <span className={`flex shrink-0 items-center`}>{leading}</span>}{<UiDialogsRoot.Title className={resolveUiDesignSystemValue2(`text-heading min-w-0 flex-1 truncate font-semibold`, titleHidden && `sr-only`)}>
                 {title}
-              </UiDialogsRoot.Title>,
-              titleHidden && <span className={`flex-1`} aria-hidden={true} />,
-              trailing !== undefined && (
-                <span className={`flex shrink-0 items-center`}>{trailing}</span>
-              ),
-            ],
-          })}
-        />
+              </UiDialogsRoot.Title>}{titleHidden && <span className={`flex-1`} aria-hidden={true} />}{trailing !== undefined && <span className={`flex shrink-0 items-center`}>{trailing}</span>}</div>
         <div
           className={resolveUiDesignSystemValue2(
             `min-h-0 flex-1 overflow-y-auto overscroll-contain rounded-[inherit] px-4`,
@@ -396,14 +379,7 @@ function SheetDragStrip(
   ..._extraArguments: unknown[]
 ): Dynamic {
   return (
-    <div
-      {...originalJsxProps({
-        "aria-hidden": true,
-        "data-testid": `bottom-sheet-drag-strip`,
-        ...drag,
-        className: `min-h-5 shrink-0 touch-none select-none`,
-      })}
-    />
+    <div aria-hidden={true} data-testid={`bottom-sheet-drag-strip`} {...drag} className={`min-h-5 shrink-0 touch-none select-none`} />
   );
 }
 var TEXT_FIELD: string = `:is([contenteditable],textarea,input:not([type=checkbox],[type=radio],[type=range]))`;
@@ -581,12 +557,7 @@ var PhoneDialogPopup: Dynamic = (0, React.forwardRef)(function (
     kind === `alert` ? UiDialogsRoot2 : UiDialogsRoot;
   if (!phoneDialogPopupResult)
     return (
-      <phoneDialogPopupResult2.Popup
-        {...originalJsxProps({
-          ref: options,
-          ...phoneDialogPopup,
-        })}
-      />
+      <phoneDialogPopupResult2.Popup ref={options} {...phoneDialogPopup} />
     );
   let {
     size: phoneDialogPopup2,
@@ -653,39 +624,17 @@ function PhonePopupContent(
   );
   return (
     <Ns.Popup
-      {...originalJsxsProps({
-        ...rest,
-        ref: setPopupRef,
-        unstyled: true,
-        surface: `surface-3`,
-        "data-bottom-sheet": ``,
-        portalClassName: portalClassName,
-        backdropClassName: resolveUiDesignSystemValue2(
-          SHEET_BACKDROP_CLASS,
-          backdropClassName,
-        ),
-        className: SHEET_POPUP_CLASS,
-        children: [
-          <SheetDragStrip drag={dragHandlers} />,
-          <div
-            className={resolveUiDesignSystemValue2(
-              `isolate flex min-h-0 flex-1 flex-col overflow-y-auto rounded-[inherit] px-xl pt-sm pb-xl`,
-              touchActions &&
-                `[&_[data-cds=Button]:not([data-cds-icon-only])]:min-h-11`,
-            )}
-          >
+      {...rest}
+      ref={setPopupRef}
+      unstyled={true}
+      surface={`surface-3`}
+      data-bottom-sheet={``}
+      portalClassName={portalClassName}
+      backdropClassName={resolveUiDesignSystemValue2(SHEET_BACKDROP_CLASS, backdropClassName)}
+      className={SHEET_POPUP_CLASS}
+    >{<SheetDragStrip drag={dragHandlers} />}{<div className={resolveUiDesignSystemValue2(`isolate flex min-h-0 flex-1 flex-col overflow-y-auto rounded-[inherit] px-xl pt-sm pb-xl`, touchActions && `[&_[data-cds=Button]:not([data-cds-icon-only])]:min-h-11`)}>
             {children}
-          </div>,
-          <Ns.Close
-            ref={closeButtonRef}
-            hidden={true}
-            tabIndex={-1}
-            aria-hidden={true}
-          />,
-          <SheetSafeAreaFoot />,
-        ],
-      })}
-    />
+          </div>}{<Ns.Close ref={closeButtonRef} hidden={true} tabIndex={-1} aria-hidden={true} />}{<SheetSafeAreaFoot />}</Ns.Popup>
   );
 }
 function PhoneConfirmationDialog(
@@ -707,11 +656,7 @@ function PhoneConfirmationDialog(
   );
   if (!phone)
     return (
-      <UiDialogsOpen
-        {...originalJsxProps({
-          ...props,
-        })}
-      />
+      <UiDialogsOpen {...props} />
     );
   let {
     open: props2,

@@ -5,7 +5,6 @@ import {
   BaseSwitchThumb,
   DisabledReasonTooltip,
   React,
-  originalJsxProps,
   resolveUiDesignSystemValue2,
   resolveUiOverlaysAndIconsValue2,
   resolveUiProviderAndLayersDataSize,
@@ -51,32 +50,10 @@ export function initializeSwitchStep1(): void {
       ..._extraArguments: unknown[]
     ): Dynamic => {
       let value: Dynamic = (
-        <BaseSwitchRoot
-          {...originalJsxProps({
-            ref: options,
-            "data-cds": `Switch`,
-            ...input7,
-            ...resolveUiProviderAndLayersDataSize(input2),
-            onMouseDown: resolveUiOverlaysAndIconsValue2(input6),
-            onKeyDown: (
-              input8?: Dynamic,
-              ..._extraArguments: unknown[]
-            ): undefined => {
-              resolveSwitchStylesEnter(input8);
-              input5?.(input8);
-            },
-            className: resolveUiDesignSystemValue2(
-              SwitchStylesStyles,
-              SwitchStylesStyles3,
-              input,
-            ),
-            children: (
-              <BaseSwitchThumb
-                className={`${SwitchStylesStyles2} ${SwitchStylesStyles4}`}
-              />
-            ),
-          })}
-        />
+        <BaseSwitchRoot ref={options} data-cds={`Switch`} {...input7} {...resolveUiProviderAndLayersDataSize(input2)} onMouseDown={resolveUiOverlaysAndIconsValue2(input6)} onKeyDown={(input8?: Dynamic, ..._extraArguments: unknown[]): undefined => {
+  resolveSwitchStylesEnter(input8);
+  input5?.(input8);
+}} className={resolveUiDesignSystemValue2(SwitchStylesStyles, SwitchStylesStyles3, input)}>{<BaseSwitchThumb className={`${SwitchStylesStyles2} ${SwitchStylesStyles4}`} />}</BaseSwitchRoot>
       );
       return input3 === undefined ? (
         value

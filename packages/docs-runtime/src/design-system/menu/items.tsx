@@ -18,8 +18,6 @@ import {
   collectUiShortcutsAndSizingModifiers2,
   isUiShortcutsAndSizingValue,
   jsxRuntime,
-  originalJsxProps,
-  originalJsxsProps,
   resolveUiDesignSystemValue2,
   resolveUiLinksAndFoundationHref,
   resolveUiLinksAndFoundationValue3,
@@ -157,13 +155,7 @@ function MenuPopupsActionsRef(
       <MenuInteractionsCreateContext2.Provider value={value22}>
         <MenuInteractionsCreateContext6.Provider value={value19}>
           <MenuInteractionsCreateContext5.Provider value={value15}>
-            <BaseMenuSubmenuRoot
-              {...originalJsxProps({
-                ...input2,
-                actionsRef: value15,
-                onOpenChange: value12,
-              })}
-            />
+            <BaseMenuSubmenuRoot {...input2} actionsRef={value15} onOpenChange={value12} />
           </MenuInteractionsCreateContext5.Provider>
         </MenuInteractionsCreateContext6.Provider>
       </MenuInteractionsCreateContext2.Provider>
@@ -426,66 +418,32 @@ export function initializeMenuItemsStep1(): void {
         let value18: Dynamic = resolveUiLinksAndFoundationValue4(state);
         return value13(
           <BaseMenuItem
-            {...originalJsxProps({
-              ref: value10,
-              ...value18,
-              ...value12,
-              closeOnClick: input16 ? false : undefined,
-              className: value15,
-              render: (
-                <a
-                  {...originalJsxProps({
-                    ...value14,
-                  })}
-                />
-              ),
-              children: value17,
-            })}
-          />,
+            ref={value10}
+            {...value18}
+            {...value12}
+            closeOnClick={input16 ? false : undefined}
+            className={value15}
+            render={<a {...value14} />}
+          >{value17}</BaseMenuItem>,
         );
       }
       return value13(
         value2 === undefined ? (
-          <BaseMenuItem
-            {...originalJsxProps({
-              ref: value10,
-              ...state,
-              ...value12,
-              closeOnClick: input16 ? false : undefined,
-              className: value15,
-              children: value17,
-            })}
-          />
+          <BaseMenuItem ref={value10} {...state} {...value12} closeOnClick={input16 ? false : undefined} className={value15}>{value17}</BaseMenuItem>
         ) : value3 === `radio` ? (
           <BaseMenuItem
-            {...originalJsxProps({
-              ref: value10,
-              ...state,
-              ...value12,
-              role: `menuitemradio`,
-              "aria-checked": value2,
-              closeOnClick: input16 ? false : undefined,
-              className: value15,
-              children: value17,
-            })}
-          />
+            ref={value10}
+            {...state}
+            {...value12}
+            role={`menuitemradio`}
+            aria-checked={value2}
+            closeOnClick={input16 ? false : undefined}
+            className={value15}
+          >{value17}</BaseMenuItem>
         ) : (
-          <BaseMenuCheckboxItem
-            {...originalJsxProps({
-              ref: value10,
-              ...state,
-              ...(value && input7
-                ? {
-                    "aria-checked": `mixed`,
-                  }
-                : {}),
-              ...value12,
-              checked: value2,
-              closeOnClick: value ? false : !input16,
-              className: value15,
-              children: value17,
-            })}
-          />
+          <BaseMenuCheckboxItem ref={value10} {...state} {...value && input7 ? {
+  "aria-checked": `mixed`
+} : {}} {...value12} checked={value2} closeOnClick={value ? false : !input16} className={value15}>{value17}</BaseMenuCheckboxItem>
         ),
       );
     },
@@ -529,53 +487,17 @@ export function initializeMenuItemsStep1(): void {
         [value2, value8, input6],
       );
       return (
-        <BaseMenuSubmenuTrigger
-          {...originalJsxsProps({
-            ref: value7,
-            "data-cds-icon-row": input === undefined ? undefined : ``,
-            ...input8,
-            label: value4,
-            ...value3,
-            openOnHover: value2 ? false : input7,
-            className: resolveUiDesignSystemValue2(
-              menuItemVariants({
-                variant: `default`,
-              }),
-              `justify-between data-[popup-open]:bg-fill-ghost-hover`,
-              input5,
-            ),
-            children: [
-              input2,
-              input !== undefined && <UiOverlaysAndIconsIcon icon={input} />,
-              <span ref={value5} className={`min-w-0 flex-1 truncate`}>
+        <BaseMenuSubmenuTrigger ref={value7} data-cds-icon-row={input === undefined ? undefined : ``} {...input8} label={value4} {...value3} openOnHover={value2 ? false : input7} className={resolveUiDesignSystemValue2(menuItemVariants({
+  variant: `default`
+}), `justify-between data-[popup-open]:bg-fill-ghost-hover`, input5)}>{input2}{input !== undefined && <UiOverlaysAndIconsIcon icon={input} />}{<span ref={value5} className={`min-w-0 flex-1 truncate`}>
               {input6}
-            </span>,
-              input4 || input3 ? (
-                <span className={`ml-md flex shrink-0 items-center gap-xs`}>
+            </span>}{input4 || input3 ? <span className={`ml-md flex shrink-0 items-center gap-xs`}>
                 {input4}
-                {input3 && (
-                    <span
-                      className={`max-w-[160px] shrink-0 truncate py-[0.125em] -my-[0.125em] text-footnote text-muted ${resolveMenuPopupsTabularNums(input3)}`}
-                    >
+                {input3 && <span className={`max-w-[160px] shrink-0 truncate py-[0.125em] -my-[0.125em] text-footnote text-muted ${resolveMenuPopupsTabularNums(input3)}`}>
                     {input3}
-                  </span>
-                  )}
-                <UiOverlaysAndIconsCustomIcon
-                    name={`CaretRight`}
-                    size={`sm`}
-                    className={`-mr-1 shrink-0 text-muted`}
-                  />
-              </span>
-              ) : (
-                <UiOverlaysAndIconsCustomIcon
-                  name={`CaretRight`}
-                  size={`sm`}
-                  className={`-mr-1 shrink-0 text-muted`}
-                />
-              ),
-            ],
-          })}
-        />
+                  </span>}
+                <UiOverlaysAndIconsCustomIcon name={`CaretRight`} size={`sm`} className={`-mr-1 shrink-0 text-muted`} />
+              </span> : <UiOverlaysAndIconsCustomIcon name={`CaretRight`} size={`sm`} className={`-mr-1 shrink-0 text-muted`} />}</BaseMenuSubmenuTrigger>
       );
     },
   );

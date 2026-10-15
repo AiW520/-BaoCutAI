@@ -21,7 +21,6 @@ import {
   isPlatformLiveDocumentAndHistoryHasFocus,
   isPlatformLiveDocumentAndHistoryKind,
   loadPlatformLiveDocumentAndHistoryChanged,
-  originalJsxProps,
   platformKeyboardAndSaveStatusValue2500,
   preloadModule,
   resolveCommentsStoreLayer,
@@ -899,41 +898,9 @@ function FilmedProsePage(
       >
         <div className={`relative min-w-0 flex-1`}>
           {historyRoad2 && (
-            <div
-              {...originalJsxProps({
-                "data-testid": `history-version-pane`,
-                "data-shown": upto === undefined ? undefined : `1`,
-                "data-warm-road": labelRef.current,
-                className:
-                  upto === undefined
-                    ? `hidden`
-                    : (documentPreviewRailOverlay.overlayClass ??
-                      `bg-surface-popover dark:bg-surface-0 absolute inset-0 z-10`),
-                style:
-                  upto === undefined
-                    ? undefined
-                    : documentPreviewRailOverlay.overlayStyle,
-                inert:
-                  upto === undefined ||
-                  (historyOpen &&
-                    documentPreviewRailOverlay.listCovers === true),
-                "aria-hidden":
-                  upto === undefined ||
-                  (historyOpen &&
-                    documentPreviewRailOverlay.listCovers === true),
-                ...(upto === undefined
-                  ? {
-                      "data-pages-print-skip": ``,
-                    }
-                  : {}),
-                children: (
-                  <React.Suspense
-                    fallback={
-                      upto === undefined ? null : (
-                        <div className={`bg-alpha-0 h-full animate-pulse`} />
-                      )
-                    }
-                  >
+            <div data-testid={`history-version-pane`} data-shown={upto === undefined ? undefined : `1`} data-warm-road={labelRef.current} className={upto === undefined ? `hidden` : documentPreviewRailOverlay.overlayClass ?? `bg-surface-popover dark:bg-surface-0 absolute inset-0 z-10`} style={upto === undefined ? undefined : documentPreviewRailOverlay.overlayStyle} inert={upto === undefined || historyOpen && documentPreviewRailOverlay.listCovers === true} aria-hidden={upto === undefined || historyOpen && documentPreviewRailOverlay.listCovers === true} {...upto === undefined ? {
+  "data-pages-print-skip": ``
+} : {}}>{<React.Suspense fallback={upto === undefined ? null : <div className={`bg-alpha-0 h-full animate-pulse`} />}>
                     <SessionNavigationDefault3
                       pid={pid}
                       fileId={fileId}
@@ -941,29 +908,14 @@ function FilmedProsePage(
                       previewId={filmedProsePageResult5?.id}
                       title={fileValue?.birthName || `Document`}
                       envelope={envelope}
-                      scrollY={(..._extraArguments: unknown[]): Dynamic =>
-                        getDocumentScroll(documentScrollKey(pid, fileId))
-                      }
+                      scrollY={(..._extraArguments: unknown[]): Dynamic => getDocumentScroll(documentScrollKey(pid, fileId))}
                       stacked={documentPreviewRailOverlay.stacked}
                     />
-                  </React.Suspense>
-                ),
-              })}
-            />
+                  </React.Suspense>}</div>
           )}
-          <div
-            {...originalJsxProps({
-              className:
-                upto === undefined ? `size-full` : `invisible size-full`,
-              inert: upto !== undefined || leaving || enabledState,
-              ...(upto === undefined
-                ? {}
-                : {
-                    [EditorSelectionAndTablesDataPagesPrintSkip]: ``,
-                  }),
-              children: filmedProsePageResult7,
-            })}
-          />
+          <div className={upto === undefined ? `size-full` : `invisible size-full`} inert={upto !== undefined || leaving || enabledState} {...upto === undefined ? {} : {
+  [EditorSelectionAndTablesDataPagesPrintSkip]: ``
+}}>{filmedProsePageResult7}</div>
         </div>
         {historyRoad && historyOpen && (
           <UseDocumentPreviewSlotElComponent
@@ -1138,33 +1090,11 @@ function FilmedProsePage(
               >{`Loading widget panel…`}</div>
             }
           >
-            <SessionNavigationDefault
-              {...originalJsxProps(
-                {
-                  container: `project/${pid}`,
-                  dir: `project/${pid}`,
-                  fsEntryId: fileId,
-                  nodeId: SessionNavigationPanel2.nodeId,
-                  onClose: (..._extraArguments: unknown[]): Dynamic =>
-                    SessionNavigationPanel.getState().close(),
-                  onOpenCode: (
-                    filmedProsePage?: Dynamic,
-                    ..._extraArguments: unknown[]
-                  ): Dynamic =>
-                    SessionNavigationNodeId.getState().open(filmedProsePage),
-                  room: room2,
-                  onOpenRef: (
-                    file?: Dynamic,
-                    ..._extraArguments: unknown[]
-                  ): undefined => {
-                    updateDataModelSchemasPath({
-                      file: file,
-                    });
-                  },
-                },
-                `${fileId}/${SessionNavigationPanel2.nodeId}`,
-              )}
-            />
+            <SessionNavigationDefault container={`project/${pid}`} dir={`project/${pid}`} fsEntryId={fileId} nodeId={SessionNavigationPanel2.nodeId} onClose={(..._extraArguments: unknown[]): Dynamic => SessionNavigationPanel.getState().close()} onOpenCode={(filmedProsePage?: Dynamic, ..._extraArguments: unknown[]): Dynamic => SessionNavigationNodeId.getState().open(filmedProsePage)} room={room2} onOpenRef={(file?: Dynamic, ..._extraArguments: unknown[]): undefined => {
+  updateDataModelSchemasPath({
+    file: file
+  });
+}} key={`${fileId}/${SessionNavigationPanel2.nodeId}`} />
           </React.Suspense>
         )}
       </div>
@@ -1407,13 +1337,7 @@ function ChatPill(
         <React.Suspense fallback={null}>
           <SessionNavigationThen pid={pid} currentFile={currentFile} />
         </React.Suspense>
-        <PaneResizeHandle
-          {...originalJsxProps({
-            ...chatPillResult4.handleProps,
-            side: `right`,
-            label: `Resize chat`,
-          })}
-        />
+        <PaneResizeHandle {...chatPillResult4.handleProps} side={`right`} label={`Resize chat`} />
       </div>
     )
   ) : null;

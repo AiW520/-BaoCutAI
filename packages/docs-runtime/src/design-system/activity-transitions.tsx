@@ -4,7 +4,6 @@ import {
   React,
   UiDesignSystemUseLayoutEffect,
   clsx,
-  originalJsxProps,
   resolveUiDesignSystemValue2,
   useUiOverlaysAndIconsUseInsertionEffect2,
 } from "./dependencies";
@@ -210,15 +209,7 @@ function ShimmerFaceKey(
         value5 && value7 === 0 && ShimmerStyles7,
       )}
     >
-      <ShimmerMemo3
-        {...originalJsxProps(
-          {
-            frozen: input2,
-            children: input6,
-          },
-          value7,
-        )}
-      />
+      <ShimmerMemo3 frozen={input2} key={value7}>{input6}</ShimmerMemo3>
     </span>
   );
 }
@@ -377,39 +368,18 @@ function ShimmerSwapKey(
   );
   return (
     <span
-      {...originalJsxProps({
-        ...input3,
-        id: input2,
-        ref: value2,
-        className: resolveUiDesignSystemValue2(
-          `group/morph inline-grid min-w-0 items-center justify-items-start data-[gliding]:overflow-x-clip`,
-          input4,
-        ),
-        children: [
-          ...value7.filter(
-            (input6?: Dynamic, ..._extraArguments: unknown[]) =>
-              input6 !== input,
-          ),
-          input,
-        ].map(
-          (input6?: Dynamic, ..._extraArguments: unknown[]): Dynamic => (
-            <ShimmerFaceKey
-              {...originalJsxProps(
-                {
-                  faceKey: input6,
-                  leaving: input6 !== input,
-                  initialEnters: value5 && !value,
-                  easesBack: !value,
-                  onLeft: value9,
-                  children: input6 === input ? input5 : null,
-                },
-                input6,
-              )}
-            />
-          ),
-        ),
-      })}
-    />
+      {...input3}
+      id={input2}
+      ref={value2}
+      className={resolveUiDesignSystemValue2(`group/morph inline-grid min-w-0 items-center justify-items-start data-[gliding]:overflow-x-clip`, input4)}
+    >{[...value7.filter((input6?: Dynamic, ..._extraArguments: unknown[]) => input6 !== input), input].map((input6?: Dynamic, ..._extraArguments: unknown[]): Dynamic => <ShimmerFaceKey
+      faceKey={input6}
+      leaving={input6 !== input}
+      initialEnters={value5 && !value}
+      easesBack={!value}
+      onLeft={value9}
+      key={input6}
+    >{input6 === input ? input5 : null}</ShimmerFaceKey>)}</span>
   );
 }
 

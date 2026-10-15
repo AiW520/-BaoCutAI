@@ -6,7 +6,6 @@ import {
   BaseMenuPortal,
   React,
   UiOverlaysAndIconsActionsRef,
-  originalJsxProps,
   resolveUiProviderAndLayersUseContext9,
   resolveUiTooltipsAndControlsClose,
   useUiOverlaysAndIconsUseInsertionEffect2,
@@ -58,23 +57,12 @@ function ContextMenuSheetTitle(
   );
   return value5 ? (
     <UiOverlaysAndIconsActionsRef actionsRef={value6}>
-      <ContextMenuSheetTitle2
-        {...originalJsxProps({
-          ...input,
-          actionsRef: value6,
-        })}
-      />
+      <ContextMenuSheetTitle2 {...input} actionsRef={value6} />
     </UiOverlaysAndIconsActionsRef>
   ) : (
     <UiOverlaysAndIconsActionsRef actionsRef={value6}>
       <MenuInteractionsCreateContext5.Provider value={value6}>
-        <BaseContextMenuRoot
-          {...originalJsxProps({
-            ...value4,
-            actionsRef: value6,
-            onOpenChange: value7,
-          })}
-        />
+        <BaseContextMenuRoot {...value4} actionsRef={value6} onOpenChange={value7} />
       </MenuInteractionsCreateContext5.Provider>
     </UiOverlaysAndIconsActionsRef>
   );
@@ -120,14 +108,11 @@ function ContextMenuSheetTitle2(
     <SheetsValue2 value={value8}>
       <MenuInteractionsSheetTitle.Provider value={value6}>
         <BaseContextMenuRoot
-          {...originalJsxProps({
-            ...value5,
-            actionsRef: value8.actionsRef,
-            onOpenChange: value8.onOpenChange,
-            onOpenChangeComplete: value8.onOpenChangeComplete,
-            children: MenuPopupsValue(value, null, value8.actionsRef, true),
-          })}
-        />
+          {...value5}
+          actionsRef={value8.actionsRef}
+          onOpenChange={value8.onOpenChange}
+          onOpenChangeComplete={value8.onOpenChangeComplete}
+        >{MenuPopupsValue(value, null, value8.actionsRef, true)}</BaseContextMenuRoot>
       </MenuInteractionsSheetTitle.Provider>
     </SheetsValue2>
   );
@@ -143,13 +128,7 @@ export function initializeContextMenuStep1(): void {
       options?: Dynamic,
       ..._extraArguments: unknown[]
     ): Dynamic => (
-      <MenuPopupsAnchor
-        {...originalJsxProps({
-          ref: options,
-          "data-cds": `ContextMenu`,
-          ...input,
-        })}
-      />
+      <MenuPopupsAnchor ref={options} data-cds={`ContextMenu`} {...input} />
     ),
   );
   ContextMenuRef.displayName = `ContextMenu.PopupInner`;
@@ -159,13 +138,7 @@ export function initializeContextMenuStep1(): void {
       options?: Dynamic,
       ..._extraArguments: unknown[]
     ): Dynamic => (
-      <Menu.Popup
-        {...originalJsxProps({
-          "data-cds": `ContextMenu`,
-          ...input,
-          ref: options,
-        })}
-      />
+      <Menu.Popup data-cds={`ContextMenu`} {...input} ref={options} />
     ),
   );
   ContextMenuDataCds.displayName = `ContextMenu.SheetCapablePopup`;
@@ -178,20 +151,10 @@ export function initializeContextMenuStep1(): void {
       let value: boolean = resolveSheetsUseContext3();
       let value2: Dynamic = resolveUiProviderAndLayersUseContext9();
       return value ? (
-        <ContextMenuDataCds
-          {...originalJsxProps({
-            ...input,
-            ref: options,
-          })}
-        />
+        <ContextMenuDataCds {...input} ref={options} />
       ) : (
         <BaseMenuPortal container={value2}>
-        <ContextMenuRef
-            {...originalJsxProps({
-              ref: options,
-              ...input,
-            })}
-          />
+        <ContextMenuRef ref={options} {...input} />
       </BaseMenuPortal>
       );
     },

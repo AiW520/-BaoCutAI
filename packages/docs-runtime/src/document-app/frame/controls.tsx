@@ -21,95 +21,42 @@ export function createDocumentFrameTitle99(__documentClosure: Pick<DocumentFrame
     </__documentClosure.jsxRuntime.Fragment>);
 }
 
-export function createDocumentFrameJsxs2100(__documentClosure: Pick<DocumentFrameContext, "jsxRuntime" | "Menu" | "originalJsxsProps" | "documentFrameState8" | "Tooltip" | "IconButton" | "elementRef28" | "returnAddsLine" | "PHONE_TOUCH_TARGET_CLASS" | "UiOverlaysAndIconsCustomIcon" | "elementRef29" | "renderMenuItems" | "mappedItems" | "documentFrameState9" | "elementRef30" | "elementRef31" | "collectPlatformKeyboardAndSaveStatusMods" | "resolvePlatformKeyboardAndSaveStatusFind" | "onSelect">): Dynamic {
+export function createDocumentFrameJsxs2100(__documentClosure: Pick<DocumentFrameContext, "jsxRuntime" | "Menu" | "documentFrameState8" | "Tooltip" | "IconButton" | "elementRef28" | "returnAddsLine" | "PHONE_TOUCH_TARGET_CLASS" | "UiOverlaysAndIconsCustomIcon" | "elementRef29" | "renderMenuItems" | "mappedItems" | "documentFrameState9" | "elementRef30" | "elementRef31" | "collectPlatformKeyboardAndSaveStatusMods" | "resolvePlatformKeyboardAndSaveStatusFind" | "onSelect">): Dynamic {
   return (<__documentClosure.jsxRuntime.Fragment>
-      <__documentClosure.Menu.Root
-        {...(0, __documentClosure.originalJsxsProps)({
-          modal: false,
-          ...__documentClosure.documentFrameState8.root,
-          children: [
-            <__documentClosure.Tooltip content={`Filter`}>
-              <__documentClosure.Menu.Trigger
-                render={
-                  <__documentClosure.IconButton
-                    ref={__documentClosure.elementRef28}
-                    aria-label={`Filter comments`}
-                    size={__documentClosure.returnAddsLine ? 36 : 24}
-                    className={
-                      __documentClosure.returnAddsLine ? __documentClosure.PHONE_TOUCH_TARGET_CLASS : undefined
-                    }
-                    icon={
-                      __documentClosure.returnAddsLine ? (
-                        <__documentClosure.UiOverlaysAndIconsCustomIcon name={`Filter`} />
-                      ) : (
-                        <__documentClosure.UiOverlaysAndIconsCustomIcon
-                          name={`Filter`}
-                          customSize={14}
-                        />
-                      )
-                    }
-                  />
-                }
-              />
-            </__documentClosure.Tooltip>,
-            <__documentClosure.Menu.Popup
+      <__documentClosure.Menu.Root modal={false} {...__documentClosure.documentFrameState8.root}>{<__documentClosure.Tooltip content={`Filter`}>
+              <__documentClosure.Menu.Trigger render={<__documentClosure.IconButton
+                ref={__documentClosure.elementRef28}
+                aria-label={`Filter comments`}
+                size={__documentClosure.returnAddsLine ? 36 : 24}
+                className={__documentClosure.returnAddsLine ? __documentClosure.PHONE_TOUCH_TARGET_CLASS : undefined}
+                icon={__documentClosure.returnAddsLine ? <__documentClosure.UiOverlaysAndIconsCustomIcon name={`Filter`} /> : <__documentClosure.UiOverlaysAndIconsCustomIcon name={`Filter`} customSize={14} />}
+              />} />
+            </__documentClosure.Tooltip>}{<__documentClosure.Menu.Popup
               ref={__documentClosure.elementRef29}
               align={`end`}
               finalFocus={__documentClosure.documentFrameState8.finalFocus}
             >
               {(0, __documentClosure.renderMenuItems)(__documentClosure.mappedItems)}
-            </__documentClosure.Menu.Popup>,
-          ],
-        })}
-      />
-      <__documentClosure.Menu.Root
-        {...(0, __documentClosure.originalJsxsProps)({
-          modal: false,
-          ...__documentClosure.documentFrameState9.root,
-          children: [
-            <__documentClosure.Tooltip content={`More`}>
-              <__documentClosure.Menu.Trigger
-                render={
-                  <__documentClosure.IconButton
-                    ref={__documentClosure.elementRef30}
-                    aria-label={`More`}
-                    size={__documentClosure.returnAddsLine ? 36 : 24}
-                    className={
-                      __documentClosure.returnAddsLine ? __documentClosure.PHONE_TOUCH_TARGET_CLASS : undefined
-                    }
-                    icon={
-                      __documentClosure.returnAddsLine ? (
-                        <__documentClosure.UiOverlaysAndIconsCustomIcon name={`DotsHorizontal`} />
-                      ) : (
-                        <__documentClosure.UiOverlaysAndIconsCustomIcon
-                          name={`DotsHorizontal`}
-                          customSize={14}
-                        />
-                      )
-                    }
-                  />
-                }
-              />
-            </__documentClosure.Tooltip>,
-            <__documentClosure.Menu.Popup
+            </__documentClosure.Menu.Popup>}</__documentClosure.Menu.Root>
+      <__documentClosure.Menu.Root modal={false} {...__documentClosure.documentFrameState9.root}>{<__documentClosure.Tooltip content={`More`}>
+              <__documentClosure.Menu.Trigger render={<__documentClosure.IconButton
+                ref={__documentClosure.elementRef30}
+                aria-label={`More`}
+                size={__documentClosure.returnAddsLine ? 36 : 24}
+                className={__documentClosure.returnAddsLine ? __documentClosure.PHONE_TOUCH_TARGET_CLASS : undefined}
+                icon={__documentClosure.returnAddsLine ? <__documentClosure.UiOverlaysAndIconsCustomIcon name={`DotsHorizontal`} /> : <__documentClosure.UiOverlaysAndIconsCustomIcon name={`DotsHorizontal`} customSize={14} />}
+              />} />
+            </__documentClosure.Tooltip>}{<__documentClosure.Menu.Popup
               ref={__documentClosure.elementRef31}
               align={`end`}
               finalFocus={__documentClosure.documentFrameState9.finalFocus}
             >
-              {(0, __documentClosure.renderMenuItems)([
-                {
-                  label: `Hide comments`,
-                  shortcut: (0, __documentClosure.collectPlatformKeyboardAndSaveStatusMods)(
-                    (0, __documentClosure.resolvePlatformKeyboardAndSaveStatusFind)(`hideComments`)
-                      .key,
-                  ),
-                  onSelect: __documentClosure.onSelect,
-                },
-              ])}
-            </__documentClosure.Menu.Popup>,
-          ],
-        })}
-      />
+              {(0, __documentClosure.renderMenuItems)([{
+      label: `Hide comments`,
+      shortcut: (0, __documentClosure.collectPlatformKeyboardAndSaveStatusMods)((0, __documentClosure.resolvePlatformKeyboardAndSaveStatusFind)(`hideComments`).key),
+      onSelect: __documentClosure.onSelect
+    }])}
+            </__documentClosure.Menu.Popup>}</__documentClosure.Menu.Root>
     </__documentClosure.jsxRuntime.Fragment>);
 }
 

@@ -3,7 +3,6 @@ import type { Dynamic } from "../interop/legacy-dynamic";
 import {
   loadJsxRuntime,
   loadReact,
-  loadReactDomClient,
   toModuleNamespace as weather,
 } from "./dependencies";
 
@@ -14,8 +13,6 @@ const mapPreloadDependencies: Dynamic = (
 var React: Dynamic;
 
 var jsxRuntime: Dynamic;
-
-var ReactRouter: Dynamic;
 
 var BOTTOM_SHEET_SCRIM_CLASS: string;
 
@@ -86,7 +83,6 @@ export function initializeBootstrapStep1(): void {
   })();
   (React = weather(loadReact(), 1));
   (jsxRuntime = loadJsxRuntime());
-  (ReactRouter = loadReactDomClient());
   (BOTTOM_SHEET_SCRIM_CLASS = `bottom-sheet-scrim`);
   (PHONE_TOUCH_TARGET_CLASS = `size-11`);
   (PHONE_EDIT_BUTTON_CLASS = `[&_:is([data-cds-part=edit-field],[data-cds-part=delete-confirm])_[data-cds=Button]:not([data-cds-icon-only])]:min-h-11`);
@@ -101,7 +97,6 @@ export {
   PHONE_TOAST_POSITION_CLASS,
   PHONE_TOUCH_TARGET_CLASS,
   React,
-  ReactRouter,
   jsxRuntime,
   mapPreloadDependencies,
 };

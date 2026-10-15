@@ -1,15 +1,15 @@
+import { createElement as createReactElement } from "react";
 /** BaoCut: platform runtime and chat from app-core-BE6n4d7F.js. */
-import type { JSX } from "../../react-runtime/jsx-runtime";
-import type { CapturedProps as CapturedJsxProps } from "../../react-runtime/jsx-runtime";
+import type { JSX } from "react";
+
 import type { Dynamic } from "../../interop/legacy-dynamic";
-type JsxElementType = JSX.ElementType;
+
 import {
   applyUpdate,
   create,
   encodeStateAsUpdate,
   encodeStateVector,
   mergeUpdates,
-  originalElementProps,
   preloadModule,
   readVarUint,
   readVarUint8Array,
@@ -503,13 +503,11 @@ function resolvePlatformRuntimeAndChatCustomSize(
     { size = 16, className: className }: Dynamic,
     ..._extraArguments: unknown[]
   ) => (
-    <UiOverlaysAndIconsCustomIcon
-      {...originalElementProps({
-        name: name,
-        customSize: size,
-        className: className,
-      })}
-    />
+    createReactElement(UiOverlaysAndIconsCustomIcon, {
+  name: name,
+  customSize: size,
+  className: className
+})
   );
   resolvePlatformRuntimeAndChatCustomSizeHandler.displayName = `ExtIcon(${name})`;
   return resolvePlatformRuntimeAndChatCustomSizeHandler;
@@ -2340,16 +2338,10 @@ export function initializePlatformRuntimeAndChat1Step1(): void {
       resolveObservabilityBrowserAndOperationEventsXlsx(
         platformRuntimeAndChatPath.path,
       );
-    return ((
-      RenderedComponent: JsxElementType,
-      CapturedProps: CapturedJsxProps,
-    ) => <RenderedComponent {...CapturedProps} />)(
-      PlatformRuntimeAndChatXlsx[observabilityBrowserAndOperationEventsXlsx],
-      originalElementProps({
-        size: platformRuntimeAndChatPath.size ?? 12,
-        className: `shrink-0 ${PlatformRuntimeAndChatXlsx2[observabilityBrowserAndOperationEventsXlsx]} ${platformRuntimeAndChatPath.className ?? ``}`,
-      }),
-    );
+    return createReactElement(PlatformRuntimeAndChatXlsx[observabilityBrowserAndOperationEventsXlsx], {
+  size: platformRuntimeAndChatPath.size ?? 12,
+  className: `shrink-0 ${PlatformRuntimeAndChatXlsx2[observabilityBrowserAndOperationEventsXlsx]} ${platformRuntimeAndChatPath.className ?? ``}`
+});
   });
   (platformRuntimeAndChatPattern = /^\/(projects|skills|users)(\/|$)/);
   (resolvePlatformRuntimeAndChatValue5 = (

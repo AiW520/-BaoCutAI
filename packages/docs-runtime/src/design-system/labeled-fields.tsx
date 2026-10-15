@@ -7,8 +7,6 @@ import {
   BaseFieldRoot,
   React,
   UiOverlaysAndIconsCustomIcon,
-  originalJsxProps,
-  originalJsxsProps,
   resolveUiDesignSystemValue2,
 } from "./dependencies";
 import {
@@ -68,37 +66,9 @@ export function initializeLabeledFieldsStep1(): void {
       options?: Dynamic,
       ..._extraArguments: unknown[]
     ): Dynamic => (
-      <BaseFieldRoot
-        {...originalJsxProps({
-          ref: options,
-          "data-cds": `Field`,
-          validationMode: input3,
-          ...input2,
-          className: resolveUiDesignSystemValue2(
-            `flex flex-col gap-xs font-sans`,
-            input,
-          ),
-          render: (
-            input4?: Dynamic,
-            options2?: Dynamic,
-            ..._extraArguments: unknown[]
-          ): Dynamic => (
-            <FieldStatesCreateContext.Provider
-              value={
-                ToastFalse[`${options2.disabled}`][
-                  `${options2.valid === false}`
-                ]
-              }
-            >
-            <div
-                {...originalJsxProps({
-                  ...input4,
-                })}
-              />
-          </FieldStatesCreateContext.Provider>
-          ),
-        })}
-      />
+      <BaseFieldRoot ref={options} data-cds={`Field`} validationMode={input3} {...input2} className={resolveUiDesignSystemValue2(`flex flex-col gap-xs font-sans`, input)} render={(input4?: Dynamic, options2?: Dynamic, ..._extraArguments: unknown[]): Dynamic => <FieldStatesCreateContext.Provider value={ToastFalse[`${options2.disabled}`][`${options2.valid === false}`]}>
+            <div {...input4} />
+          </FieldStatesCreateContext.Provider>} />
     ),
   );
   Field.displayName = `Field.Root`;
@@ -111,15 +81,10 @@ export function initializeLabeledFieldsStep1(): void {
       let value: Dynamic = fieldLabelId();
       return (
         <BaseFieldLabel
-          {...originalJsxProps({
-            ref: options,
-            id: input2 ?? value,
-            ...input3,
-            className: resolveUiDesignSystemValue2(
-              `text-body font-medium leading-none text-primary`,
-              input,
-            ),
-          })}
+          ref={options}
+          id={input2 ?? value}
+          {...input3}
+          className={resolveUiDesignSystemValue2(`text-body font-medium leading-none text-primary`, input)}
         />
       );
     },
@@ -132,14 +97,9 @@ export function initializeLabeledFieldsStep1(): void {
       ..._extraArguments: unknown[]
     ): Dynamic => (
       <BaseFieldDescription
-        {...originalJsxProps({
-          ref: options,
-          ...input2,
-          className: resolveUiDesignSystemValue2(
-            `text-footnote font-normal leading-snug text-muted`,
-            input,
-          ),
-        })}
+        ref={options}
+        {...input2}
+        className={resolveUiDesignSystemValue2(`text-footnote font-normal leading-snug text-muted`, input)}
       />
     ),
   );
@@ -151,32 +111,10 @@ export function initializeLabeledFieldsStep1(): void {
       ..._extraArguments: unknown[]
     ): Dynamic => (
       <BaseFieldError
-        {...originalJsxProps({
-          ref: options,
-          ...input3,
-          className: resolveUiDesignSystemValue2(
-            `flex items-start gap-1 text-footnote font-normal leading-snug text-danger`,
-            input,
-          ),
-          render: (
-            input4?: Dynamic,
-            ..._extraArguments: unknown[]
-          ): Dynamic => (
-            <div
-              {...originalJsxsProps({
-                ...input4,
-                children: [
-                  <UiOverlaysAndIconsCustomIcon
-                    name={`WarningCircle`}
-                    size={`sm`}
-                    className={`mt-px shrink-0`}
-                  />,
-                  <span>{input2 ?? input4.children}</span>,
-                ],
-              })}
-            />
-          ),
-        })}
+        ref={options}
+        {...input3}
+        className={resolveUiDesignSystemValue2(`flex items-start gap-1 text-footnote font-normal leading-snug text-danger`, input)}
+        render={(input4?: Dynamic, ..._extraArguments: unknown[]): Dynamic => <div {...input4}>{<UiOverlaysAndIconsCustomIcon name={`WarningCircle`} size={`sm`} className={`mt-px shrink-0`} />}{<span>{input2 ?? input4.children}</span>}</div>}
       />
     ),
   );
@@ -217,13 +155,7 @@ export function initializeLabeledFieldsStep1(): void {
         error={input3}
         fieldClassName={input5}
       >
-      <TextInput
-          {...originalJsxProps({
-            ref: options,
-            required: input4,
-            ...input6,
-          })}
-        />
+      <TextInput ref={options} required={input4} {...input6} />
     </LabeledField>
     ),
   );
@@ -247,13 +179,7 @@ export function initializeLabeledFieldsStep1(): void {
         error={input3}
         fieldClassName={input5}
       >
-      <TextArea
-          {...originalJsxProps({
-            ref: options,
-            required: input4,
-            ...input6,
-          })}
-        />
+      <TextArea ref={options} required={input4} {...input6} />
     </LabeledField>
     ),
   );

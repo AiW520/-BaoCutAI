@@ -62,3 +62,18 @@ export type PermissionFlags = [
   phoneEdit: "always" | "on-inset" | false,
 ];
 export type InlineStyle = Record<string, string>;
+
+/** Definition passed to the inline-chip node factory. */
+export interface InlineChipDefinition {
+  readonly name: string;
+  readonly attrs: Readonly<Record<string, { readonly default?: unknown }>>;
+  readonly copyText?: (
+    attrs: Readonly<Record<string, unknown>>,
+  ) => string | null | undefined;
+  readonly render: unknown;
+}
+
+/** Common graph shape needed to collect slide and placement identifiers. */
+export interface SlideGraphProjection {
+  readonly nodes: Readonly<Record<string, { readonly type: string } | undefined>>;
+}

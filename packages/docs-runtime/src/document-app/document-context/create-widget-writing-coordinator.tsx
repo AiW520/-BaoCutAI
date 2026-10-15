@@ -14,7 +14,6 @@ import {
   isDoorUnreachable,
   loadObservabilityBrowserAndOperationEventsCode,
   observabilityBrowserAndOperationEventsSet32,
-  originalJsxProps,
   platformAnnouncementsPattern,
   preloadModule,
   resolveDataOperationControlAbsent,
@@ -1308,23 +1307,9 @@ function UseDocumentContextHtmlComponent(
   ..._extraArguments: unknown[]
 ) {
   return (
-    <iframe
-      {...originalJsxProps({
-        "aria-label": title,
-        sandbox: ``,
-        srcDoc: resolveDocumentContextTest(
-          html,
-          fontCss,
-          mode,
-          title,
-          edgeMinLeft,
-          zoom,
-          language,
-        ),
-        className: `block h-full w-full border-0`,
-        [EditorSelectionAndTablesDataPagesPrintSurface]: ``,
-      })}
-    />
+    <iframe aria-label={title} sandbox={``} srcDoc={resolveDocumentContextTest(html, fontCss, mode, title, edgeMinLeft, zoom, language)} className={`block h-full w-full border-0`} {...{
+  [EditorSelectionAndTablesDataPagesPrintSurface]: ``
+}} />
   );
 }
 

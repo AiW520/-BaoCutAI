@@ -9,7 +9,6 @@ import {
   UiOverlaysAndIconsCustomIcon,
   UiOverlaysAndIconsIcon,
   moduleNamespace,
-  originalJsxProps,
   resolveUiDesignSystemValue2,
   resolveUiLinksAndFoundationUseContext3,
 } from "../dependencies";
@@ -146,16 +145,9 @@ function PopoverSheetContent(
           `h-auto max-h-none min-h-0 w-full min-w-0 max-w-none flex-auto`,
         )}
       >
-        <div
-          {...originalJsxProps({
-            ref: input3,
-            tabIndex: -1,
-            "data-cds-popover-body": ``,
-            [SheetsDataCdsSheetScroll]: ``,
-            className: input4,
-            children: input6,
-          })}
-        />
+        <div ref={input3} tabIndex={-1} data-cds-popover-body={``} {...{
+  [SheetsDataCdsSheetScroll]: ``
+}} className={input4}>{input6}</div>
         <value.DismissButton as={BasePopoverClose} label={input5} />
       </value.Body>
     </SheetsCreateContext2.Provider>

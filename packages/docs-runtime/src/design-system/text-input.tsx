@@ -5,8 +5,6 @@ import {
   Button,
   React,
   useLabelableContext,
-  originalJsxProps,
-  originalJsxsProps,
   resolveUiDesignSystemValue2,
   resolveUiLinksAndFoundationUseContext3,
   resolveUiOverlaysAndIconsValue4,
@@ -210,87 +208,27 @@ export function initializeTextInputStep1(): void {
         let value30: string = `flex shrink-0 items-center gap-[var(--cds-pad-sm,6px)] text-muted [--fh:var(--cds-h-control)] [--fr:var(--cds-radius)] [--fhn:var(--cds-h-control-nested)] ${TextInputStyles}`;
         return (
           <div
-            {...originalJsxsProps({
-              "data-cds": `TextInput`,
-              ...resolveUiProviderAndLayersDataSize(input2),
-              "data-invalid": value8 || undefined,
-              onMouseDown: value15.onMouseDown,
-              className: resolveUiDesignSystemValue2(
-                TextInputState,
-                value29,
-                TextInputStyles2,
-                `inline-flex`,
-                value13,
-                value11 ? `cursor-default` : `cursor-text`,
-                `items-center gap-[var(--cds-pad-sm,6px)] has-[:focus-visible]:shadow-focus`,
-                `has-[input:disabled]:opacity-disabled`,
-                value11 ? undefined : fieldHoverClasses,
-                input,
-              ),
-              children: [
-                input3 ? (
-                  <span className={`flex shrink-0 items-center text-muted`}>
+            data-cds={`TextInput`}
+            {...resolveUiProviderAndLayersDataSize(input2)}
+            data-invalid={value8 || undefined}
+            onMouseDown={value15.onMouseDown}
+            className={resolveUiDesignSystemValue2(TextInputState, value29, TextInputStyles2, `inline-flex`, value13, value11 ? `cursor-default` : `cursor-text`, `items-center gap-[var(--cds-pad-sm,6px)] has-[:focus-visible]:shadow-focus`, `has-[input:disabled]:opacity-disabled`, value11 ? undefined : fieldHoverClasses, input)}
+          >{input3 ? <span className={`flex shrink-0 items-center text-muted`}>
                   {input3}
-                </span>
-                ) : null,
-                <BaseFieldControl
-                  {...originalJsxProps({
-                    ...state,
-                    render: (
-                      <input
-                        {...originalJsxProps({
-                          ref: value16,
-                          "aria-invalid": value9,
-                          ...value5,
-                          onChange: value21,
-                          onKeyDown: value28,
-                          className: resolveUiDesignSystemValue2(
-                            TextInputState2,
-                            `disabled:opacity-100`,
-                          ),
-                        })}
-                      />
-                    ),
-                  })}
-                />,
-                value25 || input4 ? (
-                  <span data-cds-end-slot={``} className={value30}>
+                </span> : null}{<BaseFieldControl
+                  {...state}
+                  render={<input ref={value16} aria-invalid={value9} {...value5} onChange={value21} onKeyDown={value28} className={resolveUiDesignSystemValue2(TextInputState2, `disabled:opacity-100`)} />}
+                />}{value25 || input4 ? <span data-cds-end-slot={``} className={value30}>
                   {input4}
                   {value25}
-                </span>
-                ) : null,
-              ],
-            })}
-          />
+                </span> : null}</div>
         );
       }
       return (
         <BaseFieldControl
-          {...originalJsxProps({
-            ref: options,
-            ...state,
-            render: (
-              <input
-                {...originalJsxProps({
-                  "data-cds": `TextInput`,
-                  ...resolveUiProviderAndLayersDataSize(input2),
-                  "data-invalid": value8 || undefined,
-                  "aria-invalid": value9,
-                  ...value5,
-                  onChange: value21,
-                  onKeyDown: value28,
-                  className: resolveUiDesignSystemValue2(
-                    `cds-input cds-reset`,
-                    TextInputState,
-                    `pr-md`,
-                    value12,
-                    `placeholder:text-muted outline-none focus-visible:outline-hidden enabled:[&:hover:not(:focus):not([data-invalid])]:shadow-field-hover focus-visible:shadow-focus disabled:opacity-disabled`,
-                    input,
-                  ),
-                })}
-              />
-            ),
-          })}
+          ref={options}
+          {...state}
+          render={<input data-cds={`TextInput`} {...resolveUiProviderAndLayersDataSize(input2)} data-invalid={value8 || undefined} aria-invalid={value9} {...value5} onChange={value21} onKeyDown={value28} className={resolveUiDesignSystemValue2(`cds-input cds-reset`, TextInputState, `pr-md`, value12, `placeholder:text-muted outline-none focus-visible:outline-hidden enabled:[&:hover:not(:focus):not([data-invalid])]:shadow-field-hover focus-visible:shadow-focus disabled:opacity-disabled`, input)} />}
         />
       );
     },

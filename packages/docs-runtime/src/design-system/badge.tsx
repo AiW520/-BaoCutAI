@@ -5,7 +5,6 @@ import {
   UiOverlaysAndIconsCustomIcon,
   clsx,
   mergeProps,
-  originalJsxsProps,
   resolveUiDesignSystemValue2,
   resolveUiLinksAndFoundationUseContext3,
   resolveUiOverlaysAndIconsValue9,
@@ -223,65 +222,13 @@ export function initializeBadgeStep1(): void {
             ? CommentsNeutral[value]
             : CommentsRed2[value];
       return (
-        <span
-          {...originalJsxsProps({
-            ref: options,
-            "data-cds": `Badge`,
-            role: input12 ? `img` : undefined,
-            ...(input7 === `xxs`
-              ? {
-                  "data-step": `1`,
-                }
-              : resolveUiProviderAndLayersDataSize(input7)),
-            ...input11,
-            className: resolveUiDesignSystemValue2(
-              `inline-flex items-center gap-1 align-middle h-control-nested whitespace-nowrap rounded-chip`,
-              input12
-                ? `aspect-square w-control-nested justify-center px-0`
-                : `px-sm`,
-              `font-sans text-caption font-medium leading-[round(1.25em,1px)]`,
-              input8 ? `min-w-0` : `shrink-0`,
-              value14,
-              input9,
-            ),
-            children: [
-              typeof input2 != `number` &&
-                input2 &&
-                (resolveUiOverlaysAndIconsValue9(input2) ? (
-                  <UiOverlaysAndIconsCustomIcon
-                    name={input2}
-                    size={value4}
-                    className={value5}
-                  />
-                ) : (
-                  <span
-                    aria-hidden={true}
-                    className={resolveUiDesignSystemValue2(
-                      `inline-flex`,
-                      value5,
-                    )}
-                  >
+        <span ref={options} data-cds={`Badge`} role={input12 ? `img` : undefined} {...input7 === `xxs` ? {
+  "data-step": `1`
+} : resolveUiProviderAndLayersDataSize(input7)} {...input11} className={resolveUiDesignSystemValue2(`inline-flex items-center gap-1 align-middle h-control-nested whitespace-nowrap rounded-chip`, input12 ? `aspect-square w-control-nested justify-center px-0` : `px-sm`, `font-sans text-caption font-medium leading-[round(1.25em,1px)]`, input8 ? `min-w-0` : `shrink-0`, value14, input9)}>{typeof input2 != `number` && input2 && (resolveUiOverlaysAndIconsValue9(input2) ? <UiOverlaysAndIconsCustomIcon name={input2} size={value4} className={value5} /> : <span aria-hidden={true} className={resolveUiDesignSystemValue2(`inline-flex`, value5)}>
                   {input2}
-                </span>
-                )),
-              input8 ? (
-                <span
-                  className={resolveUiDesignSystemValue2(
-                    value6,
-                    `min-w-0 overflow-x-clip text-ellipsis whitespace-nowrap`,
-                  )}
-                >
+                </span>)}{input8 ? <span className={resolveUiDesignSystemValue2(value6, `min-w-0 overflow-x-clip text-ellipsis whitespace-nowrap`)}>
                 {input10}
-              </span>
-              ) : length === 1 ? (
-                <span className={value6}>{input10}</span>
-              ) : (
-                input10
-              ),
-              value12,
-            ],
-          })}
-        />
+              </span> : length === 1 ? <span className={value6}>{input10}</span> : input10}{value12}</span>
       );
     },
   );

@@ -1,5 +1,5 @@
 /** doc-font-control: restored from DocFontControl-YP-wmLFC.js. */
-import { originalJsxProps } from "../../react-runtime/jsx-runtime";
+
 import type { Dynamic } from "../../interop/legacy-dynamic";
 import { toModuleNamespace } from "../../boot/module-runtime";
 import {
@@ -235,16 +235,11 @@ function DocFontControl(
         </PropertyRow>
         {failure ? (
           <p
-            {...originalJsxProps(
-              {
-                role: announceFailure ? `alert` : undefined,
-                className: `text-footnote text-danger pt-1`,
-                "data-testid": `doc-font-error`,
-                children: FONT_COPY[failure],
-              },
-              (announceFailure ? `alert:` : `quiet:`) + failure,
-            )}
-          />
+            role={announceFailure ? `alert` : undefined}
+            className={`text-footnote text-danger pt-1`}
+            data-testid={`doc-font-error`}
+            key={(announceFailure ? `alert:` : `quiet:`) + failure}
+          >{FONT_COPY[failure]}</p>
         ) : null}
       </Popover.Popup>
     </Popover.Root>

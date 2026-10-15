@@ -22,8 +22,6 @@ import {
   api,
   apiFetcher,
   collectDataContentAndReferencesWEEKLY,
-  originalJsxProps,
-  originalJsxsProps,
   preloadModule,
   resolveDataContentAndReferencesKind,
   resolveDataContentAndReferencesKind2,
@@ -271,23 +269,11 @@ function RoutineDetail(
               {filteredRefs.map(
                 (filteredRef?: Dynamic, ..._extraArguments: unknown[]) => (
                   <button
-                    {...originalJsxsProps(
-                      {
-                        type: `button`,
-                        onClick: (..._extraArguments: unknown[]): Dynamic =>
-                          onSelectRoutine(filteredRef),
-                        className: `bg-alpha-1 text-secondary text-footnote hover:bg-alpha-2 flex items-center gap-1 rounded px-1.5 py-0.5`,
-                        children: [
-                          <UiOverlaysAndIconsCustomIcon
-                            name={`Lightning`}
-                            customSize={11}
-                          />,
-                          resolveDataContentAndReferencesReplace2(filteredRef),
-                        ],
-                      },
-                      filteredRef,
-                    )}
-                  />
+                    type={`button`}
+                    onClick={(..._extraArguments: unknown[]): Dynamic => onSelectRoutine(filteredRef)}
+                    className={`bg-alpha-1 text-secondary text-footnote hover:bg-alpha-2 flex items-center gap-1 rounded px-1.5 py-0.5`}
+                    key={filteredRef}
+                  >{<UiOverlaysAndIconsCustomIcon name={`Lightning`} customSize={11} />}{resolveDataContentAndReferencesReplace2(filteredRef)}</button>
                 ),
               )}
             </span>
@@ -319,18 +305,12 @@ function RoutineDetail(
         {[`instructions`, `output`].map(
           (item?: Dynamic, ..._extraArguments: unknown[]) => (
             <button
-              {...originalJsxProps(
-                {
-                  type: `button`,
-                  "data-testid": `routine-tab-${item}`,
-                  onClick: (..._extraArguments: unknown[]): Dynamic =>
-                    setLabelState2(item),
-                  className: `text-footnote -mb-px border-b-2 pb-1.5 font-medium transition-colors ${labelState2 === item ? `border-accent text-primary` : `text-secondary hover:text-primary border-transparent`}`,
-                  children: item === `instructions` ? `Instructions` : `Output`,
-                },
-                item,
-              )}
-            />
+              type={`button`}
+              data-testid={`routine-tab-${item}`}
+              onClick={(..._extraArguments: unknown[]): Dynamic => setLabelState2(item)}
+              className={`text-footnote -mb-px border-b-2 pb-1.5 font-medium transition-colors ${labelState2 === item ? `border-accent text-primary` : `text-secondary hover:text-primary border-transparent`}`}
+              key={item}
+            >{item === `instructions` ? `Instructions` : `Output`}</button>
           ),
         )}
       </div>
@@ -519,29 +499,11 @@ function DatabaseDetail(
         <div className={`mt-3 flex flex-wrap items-center gap-1.5`}>
           {labelState.columns.map(
             (event?: Dynamic, ..._extraArguments: unknown[]) => (
-              <span
-                {...originalJsxsProps(
-                  {
-                    className: `bg-alpha-1 text-secondary text-footnote flex items-center gap-1 rounded px-1.5 py-0.5`,
-                    children: [
-                      <span className={`text-primary`}>
+              <span className={`bg-alpha-1 text-secondary text-footnote flex items-center gap-1 rounded px-1.5 py-0.5`} key={event.key}>{<span className={`text-primary`}>
                         {resolveDataContentAndReferencesReplace2(event.key)}
-                      </span>,
-                      <span className={`text-muted`}>
+                      </span>}{<span className={`text-muted`}>
                         {databaseDetailHandler(event)}
-                      </span>,
-                      event.unique === true ? (
-                        <span className={`text-muted`}>{`· unique`}</span>
-                      ) : (
-                        event.required === true && (
-                          <span className={`text-muted`}>{`· required`}</span>
-                        )
-                      ),
-                    ],
-                  },
-                  event.key,
-                )}
-              />
+                      </span>}{event.unique === true ? <span className={`text-muted`}>{`· unique`}</span> : event.required === true && <span className={`text-muted`}>{`· required`}</span>}</span>
             ),
           )}
         </div>
@@ -565,26 +527,11 @@ function DatabaseDetail(
         >
           {labelState.marks.map(
             (entry?: Dynamic, ..._extraArguments: unknown[]): Dynamic => (
-              <div
-                {...originalJsxsProps(
-                  {
-                    className: `flex items-center gap-1`,
-                    children: [
-                      <UiOverlaysAndIconsCustomIcon
-                        name={`Warning`}
-                        customSize={11}
-                        className={`shrink-0`}
-                      />,
-                      <span>
+              <div className={`flex items-center gap-1`} key={`${entry.source}:${entry.kind}`}>{<UiOverlaysAndIconsCustomIcon name={`Warning`} customSize={11} className={`shrink-0`} />}{<span>
                         {ApplicationRootRefDangling[entry.kind] ?? entry.kind}
                         {` — `}
                         {entry.count}
-                      </span>,
-                    ],
-                  },
-                  `${entry.source}:${entry.kind}`,
-                )}
-              />
+                      </span>}</div>
             ),
           )}
         </div>
@@ -596,16 +543,7 @@ function DatabaseDetail(
               <TableRow hoverable={false}>
                 {labelState.columns.map(
                   (event?: Dynamic, ..._extraArguments: unknown[]) => (
-                    <TableHeaderCell
-                      {...originalJsxProps(
-                        {
-                          children: resolveDataContentAndReferencesReplace2(
-                            event.key,
-                          ),
-                        },
-                        event.key,
-                      )}
-                    />
+                    <TableHeaderCell key={event.key}>{resolveDataContentAndReferencesReplace2(event.key)}</TableHeaderCell>
                   ),
                 )}
               </TableRow>
@@ -613,27 +551,7 @@ function DatabaseDetail(
             <TableBody>
               {labelState.rows.map(
                 (row?: Dynamic, ..._extraArguments: unknown[]) => (
-                  <TableRow
-                    {...originalJsxProps(
-                      {
-                        children: labelState.columns.map(
-                          (event?: Dynamic, ..._extraArguments: unknown[]) => (
-                            <TableCell
-                              {...originalJsxProps(
-                                {
-                                  children: useApplicationRootStringify(
-                                    row.cells[event.key],
-                                  ),
-                                },
-                                event.key,
-                              )}
-                            />
-                          ),
-                        ),
-                      },
-                      `${row.pk.source}:${row.pk.index}`,
-                    )}
-                  />
+                  <TableRow key={`${row.pk.source}:${row.pk.index}`}>{labelState.columns.map((event?: Dynamic, ..._extraArguments: unknown[]) => <TableCell key={event.key}>{useApplicationRootStringify(row.cells[event.key])}</TableCell>)}</TableRow>
                 ),
               )}
             </TableBody>
@@ -843,24 +761,13 @@ function RoutinePage(
           }
         >
           <SessionNavigationThen5
-            {...originalJsxProps(
-              {
-                container: `projects/${recordState.slug}`,
-                name: recordState.address,
-                pid: pid,
-                readOnly: version !== undefined,
-                selectedRef: selectedRef,
-                historySlot: (
-                  <RoutineHistoryIcon
-                    runs={runs}
-                    routineId={routineId}
-                    label={recordState.displayName}
-                    onVisualize={onVisualize}
-                  />
-                ),
-              },
-              `${pid}/${routineId}`,
-            )}
+            container={`projects/${recordState.slug}`}
+            name={recordState.address}
+            pid={pid}
+            readOnly={version !== undefined}
+            selectedRef={selectedRef}
+            historySlot={<RoutineHistoryIcon runs={runs} routineId={routineId} label={recordState.displayName} onVisualize={onVisualize} />}
+            key={`${pid}/${routineId}`}
           />
         </React.Suspense>
       </div>
@@ -965,60 +872,21 @@ function RoutineRunActivity(
         >
           {filteredRuns.map(
             (response?: Dynamic, ..._extraArguments: unknown[]): Dynamic => (
-              <div
-                {...originalJsxsProps(
-                  {
-                    "data-testid": `routine-run-inflight-${response.status}`,
-                    children: [
-                      <div className={`flex items-center gap-2`}>
-                        <UseDocumentPreviewStatusComponent
-                          running={response.status === `running`}
-                        />
-                        <span
-                          className={`text-primary text-footnote font-medium`}
-                        >
-                          {ApplicationRoutesStaged[response.status] ??
-                            response.status}
+              <div data-testid={`routine-run-inflight-${response.status}`} key={response.id}>{<div className={`flex items-center gap-2`}>
+                        <UseDocumentPreviewStatusComponent running={response.status === `running`} />
+                        <span className={`text-primary text-footnote font-medium`}>
+                          {ApplicationRoutesStaged[response.status] ?? response.status}
                         </span>
-                        {response.startedAt !== `` && (
-                          <span className={`text-secondary text-caption`}>
+                        {response.startedAt !== `` && <span className={`text-secondary text-caption`}>
                             {`started `}
                             {routineRunActivityHandler(response.startedAt)}
-                          </span>
-                        )}
-                      </div>,
-                      response.status === `running` &&
-                        response.progress !== undefined &&
-                        response.progress.length > 0 && (
-                          <div
-                            className={`mt-1 ml-4 flex flex-col gap-0.5`}
-                            data-testid={`routine-run-progress`}
-                          >
-                            {response.progress.map(
-                              (
-                                progress?: Dynamic,
-                                index?: Dynamic,
-                                items?: Dynamic,
-                                ..._extraArguments: unknown[]
-                              ): Dynamic => (
-                                <div
-                                  {...originalJsxProps(
-                                    {
-                                      className: `text-caption ${index === items.length - 1 ? `text-secondary` : `text-muted`}`,
-                                      children: progress,
-                                    },
-                                    `${progress}#${String(items.slice(0, index).filter((itemsSlice?: Dynamic, ..._extraArguments: unknown[]) => itemsSlice === progress).length)}`,
-                                  )}
-                                />
-                              ),
-                            )}
-                          </div>
-                        ),
-                    ],
-                  },
-                  response.id,
-                )}
-              />
+                          </span>}
+                      </div>}{response.status === `running` && response.progress !== undefined && response.progress.length > 0 && <div className={`mt-1 ml-4 flex flex-col gap-0.5`} data-testid={`routine-run-progress`}>
+                            {response.progress.map((progress?: Dynamic, index?: Dynamic, items?: Dynamic, ..._extraArguments: unknown[]): Dynamic => <div
+                              className={`text-caption ${index === items.length - 1 ? `text-secondary` : `text-muted`}`}
+                              key={`${progress}#${String(items.slice(0, index).filter((itemsSlice?: Dynamic, ..._extraArguments: unknown[]) => itemsSlice === progress).length)}`}
+                            >{progress}</div>)}
+                          </div>}</div>
             ),
           )}
         </div>
@@ -1047,20 +915,12 @@ function RoutineHistoryIcon(
         ) => (
           <Tooltip content={`Run history`}>
             <button
-              {...originalJsxProps({
-                ...routineHistoryIcon,
-                type: `button`,
-                "aria-label": `Run history`,
-                "data-testid": `routine-history-icon`,
-                className: `text-muted hover:text-primary hover:bg-alpha-1 mt-2 flex size-6 shrink-0 items-center justify-center rounded`,
-                children: (
-                  <UiOverlaysAndIconsCustomIcon
-                    name={`History`}
-                    customSize={14}
-                  />
-                ),
-              })}
-            />
+              {...routineHistoryIcon}
+              type={`button`}
+              aria-label={`Run history`}
+              data-testid={`routine-history-icon`}
+              className={`text-muted hover:text-primary hover:bg-alpha-1 mt-2 flex size-6 shrink-0 items-center justify-center rounded`}
+            >{<UiOverlaysAndIconsCustomIcon name={`History`} customSize={14} />}</button>
           </Tooltip>
         )}
       />
@@ -1134,109 +994,27 @@ function RoutineRuns(
     <div data-testid={`routine-run-history`}>
       {filteredRuns.map(
         (response?: Dynamic, ..._extraArguments: unknown[]): Dynamic => (
-          <div
-            {...originalJsxsProps(
-              {
-                "data-testid": `routine-run-row`,
-                className: `py-1`,
-                children: [
-                  <div className={`flex items-center gap-2`}>
-                    <UseDocumentPreviewStatusComponent
-                      status={
-                        response.status === `error`
-                          ? `error`
-                          : response.status === `cancelled`
-                            ? `warning`
-                            : `ok`
-                      }
-                    />
-                    {response.startedAt !== `` && (
-                      <span className={`text-secondary text-caption shrink-0`}>
+          <div data-testid={`routine-run-row`} className={`py-1`} key={response.id}>{<div className={`flex items-center gap-2`}>
+                    <UseDocumentPreviewStatusComponent status={response.status === `error` ? `error` : response.status === `cancelled` ? `warning` : `ok`} />
+                    {response.startedAt !== `` && <span className={`text-secondary text-caption shrink-0`}>
                         {routineRunsHandler(response.startedAt)}
-                      </span>
-                    )}
+                      </span>}
                     <span className={`text-muted text-caption shrink-0`}>
-                      {ApplicationRoutesStaged[response.status] ??
-                        response.status}
-                      {response.settledAt !== `` && response.status !== `error`
-                        ? ` ${routineRunsHandler(response.settledAt)}`
-                        : ``}
+                      {ApplicationRoutesStaged[response.status] ?? response.status}
+                      {response.settledAt !== `` && response.status !== `error` ? ` ${routineRunsHandler(response.settledAt)}` : ``}
                     </span>
-                    {(response.error || response.summary) && (
-                      <span
-                        className={`text-caption min-w-0 flex-1 truncate ${response.error === undefined ? `text-secondary` : `text-danger`}`}
-                      >
-                        {resolveDataContentAndReferencesReplace2(
-                          response.error ?? response.summary ?? ``,
-                        )}
-                      </span>
-                    )}
-                  </div>,
-                  response.outputs !== undefined &&
-                    response.outputs.length > 0 && (
-                      <div
-                        data-testid={`routine-run-outputs`}
-                        className={`text-caption mt-0.5 ml-4 flex min-w-0 flex-wrap items-baseline gap-x-2`}
-                      >
-                        <span
-                          className={`text-muted shrink-0`}
-                        >{`Outputs:`}</span>
-                        {response.outputs.map(
-                          (
-                            entry?: Dynamic,
-                            ..._extraArguments: unknown[]
-                          ): Dynamic =>
-                            entry.kind === `file` ? (
-                              <Link
-                                {...originalJsxsProps(
-                                  {
-                                    href: resolvePlatformApiAndAuthValue(
-                                      runFilePath(response.id, entry.name),
-                                    ),
-                                    download: entry.name,
-                                    className: `max-w-full truncate`,
-                                    children: [
-                                      resolveDataContentAndReferencesReplace2(
-                                        entry.name,
-                                      ),
-                                      ` (`,
-                                      resolveObservabilityBrowserAndOperationEventsToFixed(
-                                        entry.bytes,
-                                      ),
-                                      `)`,
-                                    ],
-                                  },
-                                  entry.name,
-                                )}
-                              />
-                            ) : (
-                              <span
-                                {...originalJsxsProps(
-                                  {
-                                    className: `text-secondary max-w-full truncate`,
-                                    children: [
-                                      resolveDataContentAndReferencesReplace2(
-                                        entry.name,
-                                      ),
-                                      ` (`,
-                                      resolveObservabilityBrowserAndOperationEventsToFixed(
-                                        entry.bytes,
-                                      ),
-                                      `)`,
-                                    ],
-                                  },
-                                  entry.name,
-                                )}
-                              />
-                            ),
-                        )}
-                      </div>
-                    ),
-                ],
-              },
-              response.id,
-            )}
-          />
+                    {(response.error || response.summary) && <span className={`text-caption min-w-0 flex-1 truncate ${response.error === undefined ? `text-secondary` : `text-danger`}`}>
+                        {resolveDataContentAndReferencesReplace2(response.error ?? response.summary ?? ``)}
+                      </span>}
+                  </div>}{response.outputs !== undefined && response.outputs.length > 0 && <div data-testid={`routine-run-outputs`} className={`text-caption mt-0.5 ml-4 flex min-w-0 flex-wrap items-baseline gap-x-2`}>
+                        <span className={`text-muted shrink-0`}>{`Outputs:`}</span>
+                        {response.outputs.map((entry?: Dynamic, ..._extraArguments: unknown[]): Dynamic => entry.kind === `file` ? <Link
+                          href={resolvePlatformApiAndAuthValue(runFilePath(response.id, entry.name))}
+                          download={entry.name}
+                          className={`max-w-full truncate`}
+                          key={entry.name}
+                        >{resolveDataContentAndReferencesReplace2(entry.name)}{` (`}{resolveObservabilityBrowserAndOperationEventsToFixed(entry.bytes)}{`)`}</Link> : <span className={`text-secondary max-w-full truncate`} key={entry.name}>{resolveDataContentAndReferencesReplace2(entry.name)}{` (`}{resolveObservabilityBrowserAndOperationEventsToFixed(entry.bytes)}{`)`}</span>)}
+                      </div>}</div>
         ),
       )}
     </div>
@@ -1370,15 +1148,7 @@ function UseApplicationRootDisabledComponent(
   ..._extraArguments: unknown[]
 ) {
   let jsx = (
-    <Menu.Item
-      {...originalJsxProps({
-        ...applicationRootDisabled,
-        disabled: disabled,
-        onClick: onSelect,
-        icon: icon,
-        children: children,
-      })}
-    />
+    <Menu.Item {...applicationRootDisabled} disabled={disabled} onClick={onSelect} icon={icon}>{children}</Menu.Item>
   );
   return disabled ? (
     <Tooltip content={reason} side={`right`} delay={300}>

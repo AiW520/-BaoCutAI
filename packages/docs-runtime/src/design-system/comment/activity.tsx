@@ -3,7 +3,6 @@ import type { Dynamic } from "../../interop/legacy-dynamic";
 import {
   React,
   UiDesignSystemUseLayoutEffect,
-  originalJsxsProps,
   resolveUiDesignSystemValue2,
   resolveUiLinksAndFoundationUseContext3,
   resolveUiTooltipsAndControlsValue5,
@@ -303,30 +302,12 @@ export function initializeCommentActivityStep1(): void {
         `Agent`,
       );
       return (
-        <div
-          {...originalJsxsProps({
-            ref: options,
-            "data-cds-part": `activity`,
-            className: resolveUiDesignSystemValue2(
-              `flex flex-col gap-xs`,
-              input3,
-            ),
-            ...input4,
-            children: [
-              input5 && (
-                <div
-                  className={`flex items-center gap-xs text-footnote font-normal`}
-                >
+        <div ref={options} data-cds-part={`activity`} className={resolveUiDesignSystemValue2(`flex flex-col gap-xs`, input3)} {...input4}>{input5 && <div className={`flex items-center gap-xs text-footnote font-normal`}>
                 <span aria-hidden={`true`} className={`inline-flex shrink-0`}>
                   <Avatar variant={`claude`} name={value} size={`sm`} />
                 </span>
                 <span className={`font-semibold`}>{value}</span>
-              </div>
-              ),
-              <CommentsLabel label={input} leading={input2} />,
-            ],
-          })}
-        />
+              </div>}{<CommentsLabel label={input} leading={input2} />}</div>
       );
     },
   );

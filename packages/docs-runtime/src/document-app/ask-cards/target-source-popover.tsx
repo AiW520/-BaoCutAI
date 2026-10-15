@@ -12,8 +12,6 @@ import {
   api,
   apiFetcher,
   loadPlatformSessionAndSourcesAckOf,
-  originalJsxProps,
-  originalJsxsProps,
   preloadModule,
   resolveCommentsActionsAndSelectionBlobId,
   resolveCommentsActionsAndSelectionKind2,
@@ -381,60 +379,36 @@ function SelectionActionsBar(
             }
           }}
         >
-          <Popover.Popup
-            {...originalJsxsProps({
-              anchor: anchor2,
-              ...selectionActionsPlacement2,
-              collisionPadding: collisionPadding,
-              padding: `none`,
-              className: `border-strong border shadow-md`,
-              style: {
-                borderRadius: SELECTION_ACTIONS_RADIUS,
-              },
-              initialFocus: initialFocus,
-              "aria-label": `Actions for this selection`,
-              "data-testid": `selection-actions-bar`,
-              finalFocus: open ? false : undefined,
-              children: [
-                <div
-                  ref={initialFocus}
-                  tabIndex={-1}
-                  role={`toolbar`}
-                  aria-label={`Actions for this selection`}
-                  aria-orientation={`horizontal`}
-                  className={`flex items-center p-px outline-none`}
-                  onKeyDownCapture={onKeyDownCapture}
-                  onKeyDown={onKeyDown}
-                >
-                  {items.map(
-                    (
-                      event?: Dynamic,
-                      index?: Dynamic,
-                      ..._extraArguments: unknown[]
-                    ) => {
-                      let onClick = (
-                        ..._extraArguments: unknown[]
-                      ): undefined => {
-                        event.run();
-                        if (event.key !== `react`) {
-                          onClose();
-                        }
-                      };
-                      let jsx = (
-                        <span
-                          aria-hidden={true}
-                          className={`bg-border h-3 w-px flex-none`}
-                        />
-                      );
-                      return event.quiet ? (
-                        <span
-                          {...originalJsxsProps(
-                            {
-                              "data-quiet-action": true,
-                              className: `flex items-center [&:not(:focus-within)]:sr-only`,
-                              children: [
-                                index > 0 && jsx,
-                                <Button
+          <Popover.Popup anchor={anchor2} {...selectionActionsPlacement2} collisionPadding={collisionPadding} padding={`none`} className={`border-strong border shadow-md`} style={{
+  borderRadius: SELECTION_ACTIONS_RADIUS
+}} initialFocus={initialFocus} aria-label={`Actions for this selection`} data-testid={`selection-actions-bar`} finalFocus={open ? false : undefined}>{<div
+  ref={initialFocus}
+  tabIndex={-1}
+  role={`toolbar`}
+  aria-label={`Actions for this selection`}
+  aria-orientation={`horizontal`}
+  className={`flex items-center p-px outline-none`}
+  onKeyDownCapture={onKeyDownCapture}
+  onKeyDown={onKeyDown}
+>
+                  {items.map((event?: Dynamic, index?: Dynamic, ..._extraArguments: unknown[]) => {
+      let onClick = (..._extraArguments: unknown[]): undefined => {
+        event.run();
+        if (event.key !== `react`) {
+          onClose();
+        }
+      };
+      let jsx = <span aria-hidden={true} className={`bg-border h-3 w-px flex-none`} />;
+      return event.quiet ? <span data-quiet-action={true} className={`flex items-center [&:not(:focus-within)]:sr-only`} key={event.key}>{index > 0 && jsx}{<Button
+        variant={`ghost`}
+        size={selectionActionsBarResult2(`xs`)}
+        icon={event.icon ?? undefined}
+        style={SELECTION_ACTIONS_INNER_STYLE}
+        data-selection-action={event.key}
+        onClick={onClick}
+      >
+                                  {event.label}
+                                </Button>}{index === 0 && items.length > 1 && jsx}</span> : <React.Fragment key={event.key}>{items.slice(0, index).some((itemsSlice?: Dynamic, ..._extraArguments: unknown[]) => !itemsSlice.quiet) && jsx}{event.worded ? <Button
                                   variant={`ghost`}
                                   size={selectionActionsBarResult2(`xs`)}
                                   icon={event.icon ?? undefined}
@@ -442,44 +416,8 @@ function SelectionActionsBar(
                                   data-selection-action={event.key}
                                   onClick={onClick}
                                 >
-                                  {event.label}
-                                </Button>,
-                                index === 0 && items.length > 1 && jsx,
-                              ],
-                            },
-                            event.key,
-                          )}
-                        />
-                      ) : (
-                        <React.Fragment
-                          {...originalJsxsProps(
-                            {
-                              children: [
-                                items
-                                  .slice(0, index)
-                                  .some(
-                                    (
-                                      itemsSlice?: Dynamic,
-                                      ..._extraArguments: unknown[]
-                                    ) => !itemsSlice.quiet,
-                                  ) && jsx,
-                                event.worded ? (
-                                  <Button
-                                    variant={`ghost`}
-                                    size={selectionActionsBarResult2(`xs`)}
-                                    icon={event.icon ?? undefined}
-                                    style={SELECTION_ACTIONS_INNER_STYLE}
-                                    data-selection-action={event.key}
-                                    onClick={onClick}
-                                  >
                                     {event.label}
-                                  </Button>
-                                ) : (
-                                  <Tooltip
-                                    content={event.label}
-                                    side={selectionActionsPlacement2.side}
-                                    collisionPadding={collisionPadding}
-                                  >
+                                  </Button> : <Tooltip content={event.label} side={selectionActionsPlacement2.side} collisionPadding={collisionPadding}>
                                     <Button
                                       variant={`ghost`}
                                       size={selectionActionsBarResult2(`xs`)}
@@ -491,21 +429,9 @@ function SelectionActionsBar(
                                       data-selection-action={event.key}
                                       onClick={onClick}
                                     />
-                                  </Tooltip>
-                                ),
-                              ],
-                            },
-                            event.key,
-                          )}
-                        />
-                      );
-                    },
-                  )}
-                </div>,
-                <Popover.Close className={`sr-only`}>{`Close`}</Popover.Close>,
-              ],
-            })}
-          />
+                                  </Tooltip>}</React.Fragment>;
+    })}
+                </div>}{<Popover.Close className={`sr-only`}>{`Close`}</Popover.Close>}</Popover.Popup>
         </Popover.Root>
       )}
       {onReact && (
@@ -520,38 +446,24 @@ function SelectionActionsBar(
             }
           }}
         >
-          <ReactionPicker
-            {...originalJsxProps({
-              ...(selectionActionsBarResult && elementRef.current !== null
-                ? {
-                    anchor: {
-                      getBoundingClientRect: (
-                        ..._extraArguments: unknown[]
-                      ): Dynamic =>
-                        elementRef.current ?? new (DOMRect as Dynamic)(),
-                    },
-                    side: `bottom`,
-                    align: `end`,
-                    sideOffset: -elementRef.current.height,
-                    collisionPadding: collisionPadding,
-                  }
-                : {
-                    anchor: anchor2,
-                    side: `bottom`,
-                    align: `start`,
-                    sideOffset: 4,
-                  }),
-              finalFocus: false,
-              onPick: (
-                selectionActionsBar?: Dynamic,
-                ..._extraArguments: unknown[]
-              ): undefined => {
-                if (selection) {
-                  onReact(selection, selectionActionsBar);
-                }
-              },
-            })}
-          />
+          <ReactionPicker {...selectionActionsBarResult && elementRef.current !== null ? {
+  anchor: {
+    getBoundingClientRect: (..._extraArguments: unknown[]): Dynamic => elementRef.current ?? new (DOMRect as Dynamic)()
+  },
+  side: `bottom`,
+  align: `end`,
+  sideOffset: -elementRef.current.height,
+  collisionPadding: collisionPadding
+} : {
+  anchor: anchor2,
+  side: `bottom`,
+  align: `start`,
+  sideOffset: 4
+}} finalFocus={false} onPick={(selectionActionsBar?: Dynamic, ..._extraArguments: unknown[]): undefined => {
+  if (selection) {
+    onReact(selection, selectionActionsBar);
+  }
+}} />
         </Popover.Root>
       )}
     </jsxRuntime.Fragment>
@@ -1199,23 +1111,11 @@ function TargetSourcePopover(
                 testimony={target?.target.value}
               />
             ) : (
-              <TargetDataRows
-                {...originalJsxProps({
-                  rows: targetSourcePopoverState.rows,
-                  pin: pin,
-                  note: targetSourcePopoverState.note,
-                  ...(target?.inline === undefined
-                    ? targetSourcePopoverState.total === undefined
-                      ? {}
-                      : {
-                          total: targetSourcePopoverState.total,
-                        }
-                    : {
-                        total: target.inline.rows,
-                      }),
-                  locale: targetSourcePopoverResult2.locale,
-                })}
-              />
+              <TargetDataRows rows={targetSourcePopoverState.rows} pin={pin} note={targetSourcePopoverState.note} {...target?.inline === undefined ? targetSourcePopoverState.total === undefined ? {} : {
+  total: targetSourcePopoverState.total
+} : {
+  total: target.inline.rows
+}} locale={targetSourcePopoverResult2.locale} />
             )}
           </div>
         )}

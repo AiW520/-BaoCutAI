@@ -1,4 +1,5 @@
 /** BaoCut: application root from index-CX4IZqzA.js. */
+import { createRoot } from "../dependencies";
 import type { Dynamic } from "../../interop/legacy-dynamic";
 import {
   CommentsStoreClaude,
@@ -38,7 +39,6 @@ import {
   loadPlatformSyncAndRoutingLevel,
   memoryLocation,
   onFrameShellLog,
-  originalJsxProps,
   preloadModule,
   recordFramePhase,
   resolveCommentsStoreWhat2,
@@ -69,7 +69,6 @@ import {
 import {
   PHONE_TOAST_POSITION_CLASS,
   React,
-  ReactRouter,
   mapPreloadDependencies,
 } from "../bootstrap";
 import {
@@ -353,167 +352,52 @@ function ApplicationRoot(
         <ResolvePlatformSyncAndRoutingValue12Component />
         <div className={`flex min-h-0 flex-1`}>
           <div className={`min-w-0 flex-1 overflow-y-auto`}>
-            <RouteErrorBoundary
-              {...originalJsxProps(
-                {
-                  resetKey: resetKey,
-                  children: (
-                    <React.Suspense fallback={null}>
+            <RouteErrorBoundary resetKey={resetKey} key={resetKey.split(`/`)[1] || `/`}>{<React.Suspense fallback={null}>
                       <ResolveObservabilityBrowserAndOperationEventsLocationComponent>
                         <ResolveObservabilityBrowserAndOperationEventsPathComponent
                           path={`/`}
-                          component={
-                            isFrameArtifact()
-                              ? FrameEntryUnlinked
-                              : ApplicationRootDefault4
-                          }
+                          component={isFrameArtifact() ? FrameEntryUnlinked : ApplicationRootDefault4}
                         />
-                        <ResolveObservabilityBrowserAndOperationEventsPathComponent
-                          path={`/project/:pid`}
-                          component={RoomViewEmbedPage}
-                        />
-                        <ResolveObservabilityBrowserAndOperationEventsPathComponent
-                          path={`/project/:pid/file/:fileId`}
-                          component={RoomViewEmbedPage}
-                        />
-                        <ResolveObservabilityBrowserAndOperationEventsPathComponent
-                          path={`/project/:pid/routine/:rid`}
-                          component={RoomViewEmbedPage}
-                        />
-                        {enabled && (
-                          <ResolveObservabilityBrowserAndOperationEventsPathComponent
-                            path={`/runs/:id?`}
-                            component={ApplicationRootDefault7}
-                          />
-                        )}
-                        {enabled2 && (
-                          <ResolveObservabilityBrowserAndOperationEventsPathComponent
-                            path={`/debug/suites`}
-                            component={ApplicationRootDefault13}
-                          />
-                        )}
-                        {enabled && (
-                          <ResolveObservabilityBrowserAndOperationEventsPathComponent
-                            path={`/suite/:sid/run/:rid`}
-                            component={ApplicationRootDefault8}
-                          />
-                        )}
-                        {enabled && (
-                          <ResolveObservabilityBrowserAndOperationEventsPathComponent
-                            path={`/sessions/:id?`}
-                            component={ApplicationRootDefault10}
-                          />
-                        )}
-                        {enabled2 && (
-                          <ResolveObservabilityBrowserAndOperationEventsPathComponent
-                            path={`/debug/code-pane`}
-                          >
+                        <ResolveObservabilityBrowserAndOperationEventsPathComponent path={`/project/:pid`} component={RoomViewEmbedPage} />
+                        <ResolveObservabilityBrowserAndOperationEventsPathComponent path={`/project/:pid/file/:fileId`} component={RoomViewEmbedPage} />
+                        <ResolveObservabilityBrowserAndOperationEventsPathComponent path={`/project/:pid/routine/:rid`} component={RoomViewEmbedPage} />
+                        {enabled && <ResolveObservabilityBrowserAndOperationEventsPathComponent path={`/runs/:id?`} component={ApplicationRootDefault7} />}
+                        {enabled2 && <ResolveObservabilityBrowserAndOperationEventsPathComponent path={`/debug/suites`} component={ApplicationRootDefault13} />}
+                        {enabled && <ResolveObservabilityBrowserAndOperationEventsPathComponent path={`/suite/:sid/run/:rid`} component={ApplicationRootDefault8} />}
+                        {enabled && <ResolveObservabilityBrowserAndOperationEventsPathComponent path={`/sessions/:id?`} component={ApplicationRootDefault10} />}
+                        {enabled2 && <ResolveObservabilityBrowserAndOperationEventsPathComponent path={`/debug/code-pane`}>
                             <React.Suspense fallback={null}>
                               <ApplicationRootThen3 />
                             </React.Suspense>
-                          </ResolveObservabilityBrowserAndOperationEventsPathComponent>
-                        )}
-                        {enabled2 && (
-                          <ResolveObservabilityBrowserAndOperationEventsPathComponent
-                            path={`/debug/transcript-fold`}
-                          >
+                          </ResolveObservabilityBrowserAndOperationEventsPathComponent>}
+                        {enabled2 && <ResolveObservabilityBrowserAndOperationEventsPathComponent path={`/debug/transcript-fold`}>
                             <React.Suspense fallback={null}>
                               <ApplicationRootDefault />
                             </React.Suspense>
-                          </ResolveObservabilityBrowserAndOperationEventsPathComponent>
-                        )}
-                        {enabled2 && (
-                          <ResolveObservabilityBrowserAndOperationEventsPathComponent
-                            path={`/debug/filmed-mount`}
-                          >
+                          </ResolveObservabilityBrowserAndOperationEventsPathComponent>}
+                        {enabled2 && <ResolveObservabilityBrowserAndOperationEventsPathComponent path={`/debug/filmed-mount`}>
                             <React.Suspense fallback={null}>
                               <ApplicationRootDefault2 />
                             </React.Suspense>
-                          </ResolveObservabilityBrowserAndOperationEventsPathComponent>
-                        )}
-                        {enabled2 && (
-                          <ResolveObservabilityBrowserAndOperationEventsPathComponent
-                            path={`/debug/:id?`}
-                            component={Debug}
-                          />
-                        )}
-                        {enabled && (
-                          <ResolveObservabilityBrowserAndOperationEventsPathComponent
-                            path={`/actions/:id?`}
-                            component={ApplicationRootDefault12}
-                          />
-                        )}
-                        {enabled && (
-                          <ResolveObservabilityBrowserAndOperationEventsPathComponent
-                            path={`/settings`}
-                            component={ApplicationRootDefault11}
-                          />
-                        )}
-                        <ResolveObservabilityBrowserAndOperationEventsPathComponent
-                          path={`/projects/*`}
-                        >
-                          {(
-                            applicationRoot?: Dynamic,
-                            ..._extraArguments: unknown[]
-                          ) => (
-                            <ApplicationRootDefault6
-                              {...originalJsxProps(
-                                {},
-                                `projects/${(applicationRoot[`*`] ?? ``).split(`/`)[0]}`,
-                              )}
-                            />
-                          )}
+                          </ResolveObservabilityBrowserAndOperationEventsPathComponent>}
+                        {enabled2 && <ResolveObservabilityBrowserAndOperationEventsPathComponent path={`/debug/:id?`} component={Debug} />}
+                        {enabled && <ResolveObservabilityBrowserAndOperationEventsPathComponent path={`/actions/:id?`} component={ApplicationRootDefault12} />}
+                        {enabled && <ResolveObservabilityBrowserAndOperationEventsPathComponent path={`/settings`} component={ApplicationRootDefault11} />}
+                        <ResolveObservabilityBrowserAndOperationEventsPathComponent path={`/projects/*`}>
+                          {(applicationRoot?: Dynamic, ..._extraArguments: unknown[]) => <ApplicationRootDefault6 key={`projects/${(applicationRoot[`*`] ?? ``).split(`/`)[0]}`} />}
                         </ResolveObservabilityBrowserAndOperationEventsPathComponent>
-                        {enabled && (
-                          <ResolveObservabilityBrowserAndOperationEventsPathComponent
-                            path={`/skills/*?`}
-                          >
-                            {(
-                              applicationRoot?: Dynamic,
-                              ..._extraArguments: unknown[]
-                            ) => (
-                              <ApplicationRootDefault5
-                                {...originalJsxProps(
-                                  {},
-                                  `skills/${(applicationRoot[`*`] ?? ``).split(`/`)[0]}`,
-                                )}
-                              />
-                            )}
-                          </ResolveObservabilityBrowserAndOperationEventsPathComponent>
-                        )}
-                        {enabled && (
-                          <ResolveObservabilityBrowserAndOperationEventsPathComponent
-                            path={`/users/*`}
-                          >
-                            {(
-                              applicationRoot?: Dynamic,
-                              ..._extraArguments: unknown[]
-                            ) => (
-                              <ApplicationRootDefault5
-                                {...originalJsxProps(
-                                  {},
-                                  `users/${(applicationRoot[`*`] ?? ``).split(`/`)[0]}`,
-                                )}
-                              />
-                            )}
-                          </ResolveObservabilityBrowserAndOperationEventsPathComponent>
-                        )}
-                        {enabled && (
-                          <ResolveObservabilityBrowserAndOperationEventsPathComponent
-                            path={`/me`}
-                            component={useApplicationRootReplace}
-                          />
-                        )}
+                        {enabled && <ResolveObservabilityBrowserAndOperationEventsPathComponent path={`/skills/*?`}>
+                            {(applicationRoot?: Dynamic, ..._extraArguments: unknown[]) => <ApplicationRootDefault5 key={`skills/${(applicationRoot[`*`] ?? ``).split(`/`)[0]}`} />}
+                          </ResolveObservabilityBrowserAndOperationEventsPathComponent>}
+                        {enabled && <ResolveObservabilityBrowserAndOperationEventsPathComponent path={`/users/*`}>
+                            {(applicationRoot?: Dynamic, ..._extraArguments: unknown[]) => <ApplicationRootDefault5 key={`users/${(applicationRoot[`*`] ?? ``).split(`/`)[0]}`} />}
+                          </ResolveObservabilityBrowserAndOperationEventsPathComponent>}
+                        {enabled && <ResolveObservabilityBrowserAndOperationEventsPathComponent path={`/me`} component={useApplicationRootReplace} />}
                         <ResolveObservabilityBrowserAndOperationEventsPathComponent>
                           <AccessDeniedPage />
                         </ResolveObservabilityBrowserAndOperationEventsPathComponent>
                       </ResolveObservabilityBrowserAndOperationEventsLocationComponent>
-                    </React.Suspense>
-                  ),
-                },
-                resetKey.split(`/`)[1] || `/`,
-              )}
-            />
+                    </React.Suspense>}</RouteErrorBoundary>
           </div>
         </div>
       </div>
@@ -836,7 +720,7 @@ export function initializeApplicationRootStep1(): void {
       PlatformSyncAndRoutingSystem.getState().value,
     ),
   );
-  (0, ReactRouter.createRoot)(document.getElementById(`root`)).render(
+  createRoot(document.getElementById(`root`)!).render(
     <React.StrictMode>
     {ApplicationRootPath ? (
         <UseObservabilityBrowserAndOperationEventsValueComponent

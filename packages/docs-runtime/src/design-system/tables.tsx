@@ -6,8 +6,6 @@ import {
   clsx,
   isUiLinksAndFoundationToLowerCase,
   jsxRuntime,
-  originalJsxProps,
-  originalJsxsProps,
   resolveUiDesignSystemValue2,
   resolveUiLinksAndFoundationHref,
   resolveUiLinksAndFoundationItContainsAControlCharacter,
@@ -34,24 +32,11 @@ function TablesLink(
   if (InputComponent) {
     let { href: value2, ...value3 }: Dynamic = value;
     return (
-      <InputComponent
-        {...originalJsxProps({
-          href:
-            resolveUiLinksAndFoundationItContainsAControlCharacter(value2) ??
-            value2,
-          ...value3,
-        })}
-      />
+      <InputComponent href={resolveUiLinksAndFoundationItContainsAControlCharacter(value2) ?? value2} {...value3} />
     );
   }
   return (
-    <TablesHref
-      {...originalJsxProps({
-        linkOptions: input2,
-        "aria-current": input3,
-        ...value,
-      })}
-    />
+    <TablesHref linkOptions={input2} aria-current={input3} {...value} />
   );
 }
 
@@ -68,13 +53,7 @@ function TablesHref(
     isUiLinksAndFoundationToLowerCase(value.target) && !input3[`aria-hidden`];
   return (
     <jsxRuntime.Fragment>
-      <a
-        {...originalJsxProps({
-          ...input3,
-          ...value,
-          "aria-describedby": value3 ? value2 : undefined,
-        })}
-      />
+      <a {...input3} {...value} aria-describedby={value3 ? value2 : undefined} />
       {value3 && <BadgeAndLinkHidden id={value2} />}
     </jsxRuntime.Fragment>
   );
@@ -146,16 +125,10 @@ export function initializeTablesStep1(): void {
     ): Dynamic => {
       let value: Dynamic = (
         <table
-          {...originalJsxProps({
-            "data-cds": `Table`,
-            ref: options,
-            className: resolveUiDesignSystemValue2(
-              `w-full border-separate border-spacing-0 whitespace-nowrap font-sans text-body font-normal text-primary`,
-              input3 ? `table-fixed` : `table-auto`,
-              input,
-            ),
-            ...input2,
-          })}
+          data-cds={`Table`}
+          ref={options}
+          className={resolveUiDesignSystemValue2(`w-full border-separate border-spacing-0 whitespace-nowrap font-sans text-body font-normal text-primary`, input3 ? `table-fixed` : `table-auto`, input)}
+          {...input2}
         />
       );
       return input4 ? (
@@ -188,18 +161,9 @@ export function initializeTablesStep1(): void {
       );
       return (
         <thead
-          {...originalJsxProps({
-            ref: resolveUiOverlaysAndIconsValue4(value, options),
-            className: resolveUiDesignSystemValue2(
-              `text-left`,
-              input3 &&
-                `[&_th]:sticky [&_th]:top-(--cds-sticky-header-top,0px) [&_th]:z-20 [&_th]:bg-(--cds-sticky-header-bg,var(--cds-scroll-fade-strip-color,var(--cds-surface-1))) [&_tr]:transform-none`,
-              input3 &&
-                `[&_th]:border-b [&_th]:border-alpha-1 [&+tbody>tr:first-child>td]:border-t-0 [&:has(+tbody>tr[data-hoverable]:first-child:hover)_th]:border-b-transparent`,
-              input,
-            ),
-            ...input2,
-          })}
+          ref={resolveUiOverlaysAndIconsValue4(value, options)}
+          className={resolveUiDesignSystemValue2(`text-left`, input3 && `[&_th]:sticky [&_th]:top-(--cds-sticky-header-top,0px) [&_th]:z-20 [&_th]:bg-(--cds-sticky-header-bg,var(--cds-scroll-fade-strip-color,var(--cds-surface-1))) [&_tr]:transform-none`, input3 && `[&_th]:border-b [&_th]:border-alpha-1 [&+tbody>tr:first-child>td]:border-t-0 [&:has(+tbody>tr[data-hoverable]:first-child:hover)_th]:border-b-transparent`, input)}
+          {...input2}
         />
       );
     },
@@ -212,17 +176,9 @@ export function initializeTablesStep1(): void {
       ..._extraArguments: unknown[]
     ): Dynamic => (
       <tbody
-        {...originalJsxProps({
-          ref: options,
-          className: resolveUiDesignSystemValue2(
-            (input3 === `trailing` || input3 === `none`) &&
-              `[&>tr:first-child>td]:border-t-0`,
-            (input3 === `leading` || input3 === `none`) &&
-              `[&>tr:last-child>td]:border-b-0`,
-            input,
-          ),
-          ...input2,
-        })}
+        ref={options}
+        className={resolveUiDesignSystemValue2((input3 === `trailing` || input3 === `none`) && `[&>tr:first-child>td]:border-t-0`, (input3 === `leading` || input3 === `none`) && `[&>tr:last-child>td]:border-b-0`, input)}
+        {...input2}
       />
     ),
   );
@@ -247,21 +203,12 @@ export function initializeTablesStep1(): void {
       let value: Dynamic = input2 ?? input3.onClick !== undefined;
       return (
         <tr
-          {...originalJsxProps({
-            ref: options,
-            "data-hoverable": input4 ? `` : undefined,
-            "data-clickable": value ? `` : undefined,
-            className: resolveUiDesignSystemValue2(
-              TablesStyles2,
-              input4 && TablesGroupCdsrow,
-              value && TablesStyles3,
-              input,
-            ),
-            ...input3,
-            onMouseDown: value
-              ? resolveUiOverlaysAndIconsValue2(input3.onMouseDown)
-              : input3.onMouseDown,
-          })}
+          ref={options}
+          data-hoverable={input4 ? `` : undefined}
+          data-clickable={value ? `` : undefined}
+          className={resolveUiDesignSystemValue2(TablesStyles2, input4 && TablesGroupCdsrow, value && TablesStyles3, input)}
+          {...input3}
+          onMouseDown={value ? resolveUiOverlaysAndIconsValue2(input3.onMouseDown) : input3.onMouseDown}
         />
       );
     },
@@ -301,25 +248,15 @@ export function initializeTablesStep1(): void {
       );
       return (
         <tr
-          {...originalJsxProps({
-            ref: options,
-            "data-hoverable": input10 ? `` : undefined,
-            "data-clickable": ``,
-            className: resolveUiDesignSystemValue2(
-              TablesStyles2,
-              input10 && TablesGroupCdsrow,
-              TablesStyles3,
-              input,
-            ),
-            ...input9,
-            onMouseDown: resolveUiOverlaysAndIconsValue2(input9.onMouseDown),
-            children: (
-              <TablesCreateContext.Provider value={value2}>
+          ref={options}
+          data-hoverable={input10 ? `` : undefined}
+          data-clickable={``}
+          className={resolveUiDesignSystemValue2(TablesStyles2, input10 && TablesGroupCdsrow, TablesStyles3, input)}
+          {...input9}
+          onMouseDown={resolveUiOverlaysAndIconsValue2(input9.onMouseDown)}
+        >{<TablesCreateContext.Provider value={value2}>
               {input8}
-            </TablesCreateContext.Provider>
-            ),
-          })}
-        />
+            </TablesCreateContext.Provider>}</tr>
       );
     },
   );
@@ -346,26 +283,16 @@ export function initializeTablesStep1(): void {
       );
       return (
         <tr
-          {...originalJsxProps({
-            ref: options,
-            "data-hoverable": input5 ? `` : undefined,
-            "data-clickable": ``,
-            className: resolveUiDesignSystemValue2(
-              TablesStyles2,
-              input5 && TablesGroupCdsrow,
-              `cursor-[var(--cds-cursor-interactive)]`,
-              input,
-            ),
-            ...input4,
-            onClick: input2,
-            onMouseDown: resolveUiOverlaysAndIconsValue2(input4.onMouseDown),
-            children: (
-              <TablesCreateContext.Provider value={value2}>
+          ref={options}
+          data-hoverable={input5 ? `` : undefined}
+          data-clickable={``}
+          className={resolveUiDesignSystemValue2(TablesStyles2, input5 && TablesGroupCdsrow, `cursor-[var(--cds-cursor-interactive)]`, input)}
+          {...input4}
+          onClick={input2}
+          onMouseDown={resolveUiOverlaysAndIconsValue2(input4.onMouseDown)}
+        >{<TablesCreateContext.Provider value={value2}>
               {input3}
-            </TablesCreateContext.Provider>
-            ),
-          })}
-        />
+            </TablesCreateContext.Provider>}</tr>
       );
     },
   );
@@ -379,15 +306,10 @@ export function initializeTablesStep1(): void {
       ..._extraArguments: unknown[]
     ): Dynamic => (
       <th
-        {...originalJsxProps({
-          ref: options,
-          scope: `col`,
-          className: resolveUiDesignSystemValue2(
-            TablesHControlTruncatePxMdTextFootnoteFontMediumTextSecondary,
-            input,
-          ),
-          ...input2,
-        })}
+        ref={options}
+        scope={`col`}
+        className={resolveUiDesignSystemValue2(TablesHControlTruncatePxMdTextFootnoteFontMediumTextSecondary, input)}
+        {...input2}
       />
     ),
   );
@@ -430,47 +352,21 @@ export function initializeTablesStep1(): void {
       );
       return (
         <th
-          {...originalJsxProps({
-            ref: options,
-            scope: `col`,
-            "aria-sort":
-              input2 === `asc`
-                ? `ascending`
-                : input2 === `desc`
-                  ? `descending`
-                  : `none`,
-            className: resolveUiDesignSystemValue2(
-              `h-control text-footnote font-medium text-secondary`,
-              input,
-            ),
-            ...input6,
-            children: (
-              <button
-                type={`button`}
-                onClick={(
-                  input8?: Dynamic,
-                  ..._extraArguments: unknown[]
-                ): undefined => {
-                  value2(true);
-                  input4?.(input8);
-                }}
-                onMouseLeave={(..._extraArguments: unknown[]): Dynamic =>
-                  value2(false)
-                }
-                className={clsx(
-                  `cds-reset group/cdsth flex h-full w-full select-none items-center gap-1 rounded px-md outline-none focus-visible:outline-hidden hover:text-primary focus-visible:shadow-focus`,
-                  input7 === `end` ? `justify-end text-right` : `text-left`,
-                )}
-              >
+          ref={options}
+          scope={`col`}
+          aria-sort={input2 === `asc` ? `ascending` : input2 === `desc` ? `descending` : `none`}
+          className={resolveUiDesignSystemValue2(`h-control text-footnote font-medium text-secondary`, input)}
+          {...input6}
+        >{<button type={`button`} onClick={(input8?: Dynamic, ..._extraArguments: unknown[]): undefined => {
+    value2(true);
+    input4?.(input8);
+  }} onMouseLeave={(..._extraArguments: unknown[]): Dynamic => value2(false)} className={clsx(`cds-reset group/cdsth flex h-full w-full select-none items-center gap-1 rounded px-md outline-none focus-visible:outline-hidden hover:text-primary focus-visible:shadow-focus`, input7 === `end` ? `justify-end text-right` : `text-left`)}>
               {input7 === `end` && value3}
               <span className={`min-w-0 truncate py-[0.125em] -my-[0.125em]`}>
                 {input5}
               </span>
               {input7 !== `end` && value3}
-            </button>
-            ),
-          })}
-        />
+            </button>}</th>
       );
     },
   );
@@ -518,57 +414,19 @@ export function initializeTablesStep1(): void {
                 "aria-labelledby": value2,
               };
           return (
-            <td
-              {...originalJsxsProps({
-                ref: options,
-                className: value3,
-                ...input8,
-                children: [
-                  <TablesLink
-                    {...originalJsxProps({
-                      href: value5,
-                      linkOptions: value6,
-                      Link: value7,
-                      ...value10,
-                      "aria-current": value8,
-                      className: value9,
-                    })}
-                  />,
-                  <span id={value2} className={`contents`}>
+            <td ref={options} className={value3} {...input8}>{<TablesLink href={value5} linkOptions={value6} Link={value7} {...value10} aria-current={value8} className={value9} />}{<span id={value2} className={`contents`}>
                   {input7}
-                </span>,
-                ],
-              })}
-            />
+                </span>}</td>
           );
         }
         return (
-          <td
-            {...originalJsxsProps({
-              ref: options,
-              className: value3,
-              ...input8,
-              children: [
-                <button
-                  {...originalJsxProps({
-                    type: `button`,
-                    ...(input4
-                      ? {
-                          "aria-label": input4,
-                        }
-                      : {
-                          "aria-labelledby": value2,
-                        }),
-                    "aria-current": value8,
-                    className: `cds-reset pointer-events-none absolute inset-0 rounded outline-none focus-visible:outline-hidden focus-visible:shadow-focus`,
-                  })}
-                />,
-                <span id={value2} className={`contents`}>
+          <td ref={options} className={value3} {...input8}>{<button type={`button`} {...input4 ? {
+    "aria-label": input4
+  } : {
+    "aria-labelledby": value2
+  }} aria-current={value8} className={`cds-reset pointer-events-none absolute inset-0 rounded outline-none focus-visible:outline-hidden focus-visible:shadow-focus`} />}{<span id={value2} className={`contents`}>
                 {input7}
-              </span>,
-              ],
-            })}
-          />
+              </span>}</td>
         );
       }
       let value4: Dynamic = input2 ? (
@@ -595,26 +453,7 @@ export function initializeTablesStep1(): void {
         input7
       );
       return (
-        <td
-          {...originalJsxsProps({
-            ref: options,
-            className: value3,
-            ...input8,
-            children: [
-              input6 && value?.href !== undefined && (
-                <TablesLink
-                  href={value.href}
-                  linkOptions={value.linkOptions}
-                  Link={value.Link}
-                  aria-hidden={true}
-                  tabIndex={-1}
-                  className={TablesStyles}
-                />
-              ),
-              value4,
-            ],
-          })}
-        />
+        <td ref={options} className={value3} {...input8}>{input6 && value?.href !== undefined && <TablesLink href={value.href} linkOptions={value.linkOptions} Link={value.Link} aria-hidden={true} tabIndex={-1} className={TablesStyles} />}{value4}</td>
       );
     },
   );
@@ -629,42 +468,17 @@ export function initializeTablesStep1(): void {
       let value: Dynamic = (0, React.useContext)(TablesCreateContext);
       return (
         <td
-          {...originalJsxProps({
-            ref: options,
-            "data-cds": `TableRowActions`,
-            className: resolveUiDesignSystemValue2(
-              TablesH7BoxContentPxMdPySm,
-              `text-right`,
-              TablesStyles4,
-              TablesStyles5,
-              input,
-            ),
-            ...input3,
-            children: (
-              <span
-                className={clsx(
-                  `relative inline-flex max-w-full align-middle`,
-                  value && TablesZ10,
-                  TablesStyles6,
-                )}
-                onClick={(
-                  input4?: Dynamic,
-                  ..._extraArguments: unknown[]
-                ): Dynamic => input4.stopPropagation()}
-                onMouseDown={(
-                  input4?: Dynamic,
-                  ..._extraArguments: unknown[]
-                ): undefined => {
-                  if (input4.detail > 1 && input4.button === 0) {
-                    input4.stopPropagation();
-                  }
-                }}
-              >
+          ref={options}
+          data-cds={`TableRowActions`}
+          className={resolveUiDesignSystemValue2(TablesH7BoxContentPxMdPySm, `text-right`, TablesStyles4, TablesStyles5, input)}
+          {...input3}
+        >{<span className={clsx(`relative inline-flex max-w-full align-middle`, value && TablesZ10, TablesStyles6)} onClick={(input4?: Dynamic, ..._extraArguments: unknown[]): Dynamic => input4.stopPropagation()} onMouseDown={(input4?: Dynamic, ..._extraArguments: unknown[]): undefined => {
+    if (input4.detail > 1 && input4.button === 0) {
+      input4.stopPropagation();
+    }
+  }}>
               {input2}
-            </span>
-            ),
-          })}
-        />
+            </span>}</td>
       );
     },
   );

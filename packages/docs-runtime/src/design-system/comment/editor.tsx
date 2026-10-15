@@ -1,6 +1,8 @@
 /** BaoCut: comment editor from cds-CIGM-LUe.js. */
 import type { Dynamic } from "../../interop/legacy-dynamic";
-import { React, originalJsxProps } from "../dependencies";
+import {
+  React,
+} from "../dependencies";
 import {
   installSheetsCapture,
   resolveSheetsEnter,
@@ -38,93 +40,36 @@ export function initializeCommentEditorStep1(): void {
         [input5],
       );
       return (
-        <TextArea
-          {...originalJsxProps({
-            ref: options,
-            "data-cds": `PlainEditor`,
-            bare: true,
-            autosize: true,
-            rows: input8,
-            value: input,
-            onChange: (
-              event?: Dynamic,
-              ..._extraArguments: unknown[]
-            ): Dynamic => input2(event.target.value),
-            onKeyDown: (0, React.useCallback)(
-              (event?: Dynamic, ..._extraArguments: unknown[]): undefined => {
-                resolveSheetsEnter(event);
-                input4?.(event);
-                if (
-                  !(event.defaultPrevented || event.currentTarget.readOnly) &&
-                  !(input3 === undefined || event.key !== `Enter`)
-                ) {
-                  if (
-                    event.altKey &&
-                    !event.shiftKey &&
-                    !event.ctrlKey &&
-                    !event.metaKey &&
-                    !event.nativeEvent.isComposing
-                  ) {
-                    event.preventDefault();
-                    let currentTarget: Dynamic = event.currentTarget;
-                    let ownerDocument: Dynamic = currentTarget.ownerDocument;
-                    if (
-                      !(
-                        typeof ownerDocument.execCommand == `function` &&
-                        ownerDocument.execCommand(
-                          `insertText`,
-                          false,
-                          `
-`,
-                        )
-                      )
-                    ) {
-                      currentTarget.setRangeText(
-                        `
-`,
-                        currentTarget.selectionStart,
-                        currentTarget.selectionEnd,
-                        `end`,
-                      );
-                      input2(currentTarget.value);
-                    }
-                    return;
-                  }
-                  if (
-                    !event.shiftKey &&
-                    !event.altKey &&
-                    resolveSheetsIsComposing(event.nativeEvent)
-                  ) {
-                    if (resolveSheetsEnter2(event.nativeEvent, input7)) {
-                      let currentTarget: Dynamic = event.currentTarget;
-                      let value2: Dynamic = resolveSheetsModifierKey(
-                        event,
-                        `enter`,
-                      );
-                      installSheetsCapture(
-                        event.nativeEvent,
-                        currentTarget,
-                        (..._extraArguments: unknown[]): Dynamic =>
-                          input3(currentTarget.value, value2),
-                      );
-                    }
-                    return;
-                  }
-                  if (resolveSheetsEnter2(event.nativeEvent, input7)) {
-                    event.preventDefault();
-                    input3(
-                      event.currentTarget.value,
-                      resolveSheetsModifierKey(event, `enter`),
-                    );
-                  }
-                }
-              },
-              [input2, input4, input3, input7],
-            ),
-            onCompositionEnd: value,
-            ...input6,
-          })}
-        />
+        <TextArea ref={options} data-cds={`PlainEditor`} bare={true} autosize={true} rows={input8} value={input} onChange={(event?: Dynamic, ..._extraArguments: unknown[]): Dynamic => input2(event.target.value)} onKeyDown={(0, React.useCallback)((event?: Dynamic, ..._extraArguments: unknown[]): undefined => {
+  resolveSheetsEnter(event);
+  input4?.(event);
+  if (!(event.defaultPrevented || event.currentTarget.readOnly) && !(input3 === undefined || event.key !== `Enter`)) {
+    if (event.altKey && !event.shiftKey && !event.ctrlKey && !event.metaKey && !event.nativeEvent.isComposing) {
+      event.preventDefault();
+      let currentTarget: Dynamic = event.currentTarget;
+      let ownerDocument: Dynamic = currentTarget.ownerDocument;
+      if (!(typeof ownerDocument.execCommand == `function` && ownerDocument.execCommand(`insertText`, false, `
+`))) {
+        currentTarget.setRangeText(`
+`, currentTarget.selectionStart, currentTarget.selectionEnd, `end`);
+        input2(currentTarget.value);
+      }
+      return;
+    }
+    if (!event.shiftKey && !event.altKey && resolveSheetsIsComposing(event.nativeEvent)) {
+      if (resolveSheetsEnter2(event.nativeEvent, input7)) {
+        let currentTarget: Dynamic = event.currentTarget;
+        let value2: Dynamic = resolveSheetsModifierKey(event, `enter`);
+        installSheetsCapture(event.nativeEvent, currentTarget, (..._extraArguments: unknown[]): Dynamic => input3(currentTarget.value, value2));
+      }
+      return;
+    }
+    if (resolveSheetsEnter2(event.nativeEvent, input7)) {
+      event.preventDefault();
+      input3(event.currentTarget.value, resolveSheetsModifierKey(event, `enter`));
+    }
+  }
+}, [input2, input4, input3, input7])} onCompositionEnd={value} {...input6} />
       );
     },
   );

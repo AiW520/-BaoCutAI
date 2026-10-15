@@ -7,8 +7,6 @@ import {
   React,
   UiOverlaysAndIconsCustomIcon,
   clsx,
-  originalJsxProps,
-  originalJsxsProps,
   resolveUiDesignSystemValue2,
   resolveUiOverlaysAndIconsValue2,
 } from "./dependencies";
@@ -39,13 +37,7 @@ export function initializeCollapsibleStep1(): void {
       options?: Dynamic,
       ..._extraArguments: unknown[]
     ): Dynamic => (
-      <BaseCollapsibleRoot
-        {...originalJsxProps({
-          ref: options,
-          "data-cds": `Collapsible`,
-          ...input,
-        })}
-      />
+      <BaseCollapsibleRoot ref={options} data-cds={`Collapsible`} {...input} />
     ),
   );
   CollapsibleRef.displayName = `Collapsible.Root`;
@@ -76,29 +68,9 @@ export function initializeCollapsibleStep1(): void {
         />
       );
       return input5 ? (
-        <BaseCollapsibleTrigger
-          {...originalJsxProps({
-            ref: options,
-            render: input5,
-            className: input,
-            ...input6,
-            onMouseDown: value,
-          })}
-        />
+        <BaseCollapsibleTrigger ref={options} render={input5} className={input} {...input6} onMouseDown={value} />
       ) : (
-        <BaseCollapsibleTrigger
-          {...originalJsxsProps({
-            ref: options,
-            ...input6,
-            className: resolveUiDesignSystemValue2(CollapsibleStyles, input),
-            onMouseDown: value,
-            children: [
-              input3 !== `end` && value2,
-              input2,
-              input3 === `end` && value2,
-            ],
-          })}
-        />
+        <BaseCollapsibleTrigger ref={options} {...input6} className={resolveUiDesignSystemValue2(CollapsibleStyles, input)} onMouseDown={value}>{input3 !== `end` && value2}{input2}{input3 === `end` && value2}</BaseCollapsibleTrigger>
       );
     },
   );
@@ -112,13 +84,7 @@ export function initializeCollapsibleStep1(): void {
     ): Dynamic => {
       let value: Dynamic = useDisclosurePanelRef(options);
       return (
-        <BaseCollapsiblePanel
-          {...originalJsxProps({
-            ref: value,
-            ...input2,
-            className: resolveUiDesignSystemValue2(CollapsibleState, input),
-          })}
-        />
+        <BaseCollapsiblePanel ref={value} {...input2} className={resolveUiDesignSystemValue2(CollapsibleState, input)} />
       );
     },
   );

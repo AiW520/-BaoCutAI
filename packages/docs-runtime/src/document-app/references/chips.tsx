@@ -1,5 +1,5 @@
 /** ref-chips: restored from ref-chips-bSfzhdCy.js. */
-import { originalJsxProps } from "../../react-runtime/jsx-runtime";
+
 import type { Dynamic } from "../../interop/legacy-dynamic";
 import { toModuleNamespace } from "../../boot/module-runtime";
 import {
@@ -1492,16 +1492,7 @@ function DrillChildren(
           let countEntry: Dynamic = counts.get(label) ?? 0;
           counts.set(label, countEntry + 1);
           return (
-            <DrillFrame
-              {...originalJsxProps(
-                {
-                  container: props.container,
-                  frame: entry,
-                  depth: depth,
-                },
-                countEntry ? `${label}#${countEntry}` : label,
-              )}
-            />
+            <DrillFrame container={props.container} frame={entry} depth={depth} key={countEntry ? `${label}#${countEntry}` : label} />
           );
         },
       )}

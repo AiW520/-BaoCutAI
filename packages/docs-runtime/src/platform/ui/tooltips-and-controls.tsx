@@ -13,8 +13,6 @@ import {
   createTooltipHandle,
   cva,
   jsxRuntime,
-  originalJsxProps,
-  originalJsxsProps,
   preloadModule,
   createLiveModuleNamespace,
   useRender,
@@ -472,13 +470,7 @@ function Tooltip(
     (0, React.isValidElement)(children) && children.type !== React.Fragment
       ? children
       : (input?: Dynamic, ..._extraArguments: unknown[]) => (
-          <span
-            {...originalJsxProps({
-              ...input,
-              className: `inline-flex`,
-              children: children,
-            })}
-          />
+          <span {...input} className={`inline-flex`}>{children}</span>
         );
   let trigger = (
     <TooltipTrigger
@@ -673,19 +665,7 @@ function DisabledReasonTooltip(
       closeOnClick={false}
       openOnHandedBackFocus={true}
     >
-      <span
-        {...originalJsxsProps({
-          ...resolveUiShortcutsAndSizingTabIndex(
-            reason,
-            controlId,
-            wrapperClassName,
-          ),
-          children: [
-            children,
-            <UiShortcutsAndSizingReason id={controlId} reason={reason} />,
-          ],
-        })}
-      />
+      <span {...resolveUiShortcutsAndSizingTabIndex(reason, controlId, wrapperClassName)}>{children}{<UiShortcutsAndSizingReason id={controlId} reason={reason} />}</span>
     </Tooltip>
   );
 }
@@ -1363,19 +1343,9 @@ function UiTooltipsAndControlsImpl(
   let matchesAutoFocus = node.autoFocus === false;
   if (useUiTooltipsAndControlsImpl2 !== null)
     return useUiTooltipsAndControlsImpl3 || matchesAutoFocus ? (
-      <useUiTooltipsAndControlsImpl2.Tooltip
-        {...originalJsxProps({
-          ...node,
-          triggerRef: triggerRef,
-          children: resolveUiTooltipsAndControlsAutoFocus(node.children),
-        })}
-      />
+      <useUiTooltipsAndControlsImpl2.Tooltip {...node} triggerRef={triggerRef}>{resolveUiTooltipsAndControlsAutoFocus(node.children)}</useUiTooltipsAndControlsImpl2.Tooltip>
     ) : (
-      <useUiTooltipsAndControlsImpl2.Tooltip
-        {...originalJsxProps({
-          ...node,
-        })}
-      />
+      <useUiTooltipsAndControlsImpl2.Tooltip {...node} />
     );
   let { children: node2 }: Dynamic = node;
   if (!(0, React.isValidElement)(node2))
@@ -1399,18 +1369,9 @@ function UiTooltipsAndControlsImpl2(
   let controlId: Dynamic = (0, React.useId)();
   if (useUiTooltipsAndControlsImpl2 !== null)
     return useUiTooltipsAndControlsImpl3 ? (
-      <useUiTooltipsAndControlsImpl2.DisabledReasonTooltip
-        {...originalJsxProps({
-          ...node,
-          children: resolveUiTooltipsAndControlsAutoFocus(node.children),
-        })}
-      />
+      <useUiTooltipsAndControlsImpl2.DisabledReasonTooltip {...node}>{resolveUiTooltipsAndControlsAutoFocus(node.children)}</useUiTooltipsAndControlsImpl2.DisabledReasonTooltip>
     ) : (
-      <useUiTooltipsAndControlsImpl2.DisabledReasonTooltip
-        {...originalJsxProps({
-          ...node,
-        })}
-      />
+      <useUiTooltipsAndControlsImpl2.DisabledReasonTooltip {...node} />
     );
   let {
     reason: reason,
@@ -1419,17 +1380,11 @@ function UiTooltipsAndControlsImpl2(
   }: Dynamic = node;
   return (
     <span
-      {...originalJsxsProps({
-        ...resolveUiShortcutsAndSizingTabIndex(reason, controlId, node2),
-        title: typeof reason == `string` ? reason : undefined,
-        ...useUiTooltipsAndControlsImpl4({}),
-        ...UiTooltipsAndControlsTooltipPending,
-        children: [
-          node3,
-          <UiShortcutsAndSizingReason id={controlId} reason={reason} />,
-        ],
-      })}
-    />
+      {...resolveUiShortcutsAndSizingTabIndex(reason, controlId, node2)}
+      title={typeof reason == `string` ? reason : undefined}
+      {...useUiTooltipsAndControlsImpl4({})}
+      {...UiTooltipsAndControlsTooltipPending}
+    >{node3}{<UiShortcutsAndSizingReason id={controlId} reason={reason} />}</span>
   );
 }
 
@@ -2496,17 +2451,11 @@ export function initializeUiTooltipsAndControlsStep1(): void {
         lazy={lazy2}
       >
       <span
-          {...originalJsxProps({
-            ...overflow,
-            ref: uiOverlaysAndIconsValue4,
-            "data-cds": `OverflowTooltip`,
-            className: resolveUiDesignSystemValue2(
-              `block min-w-0 overflow-x-clip text-ellipsis whitespace-nowrap`,
-              className,
-            ),
-            children: children,
-          })}
-        />
+        {...overflow}
+        ref={uiOverlaysAndIconsValue4}
+        data-cds={`OverflowTooltip`}
+        className={resolveUiDesignSystemValue2(`block min-w-0 overflow-x-clip text-ellipsis whitespace-nowrap`, className)}
+      >{children}</span>
     </Tooltip>
     );
   }));
@@ -3021,65 +2970,18 @@ export function initializeUiTooltipsAndControlsStep1(): void {
         setIndeterminateState(indeterminate);
       }
       let jsxs = (
-        <CheckboxRoot
-          {...originalJsxsProps({
-            ref: options,
-            "data-cds": `Checkbox`,
-            "aria-labelledby":
-              ariaLabelledby ||
-              (matchesLabel2 && !checkbox[`aria-label`] ? controlId : undefined),
-            "aria-describedby":
-              [ariaDescribedby, matchesLabel2 ? controlId2 : undefined]
-                .filter(Boolean)
-                .join(` `) || undefined,
-            ...checkbox,
-            ...(size === `xxs`
-              ? {
-                  "data-size": `xxs`,
-                }
-              : resolveUiProviderAndLayersDataSize(size)),
-            onMouseDown: resolveUiOverlaysAndIconsValue2(onMouseDown),
-            className: resolveUiDesignSystemValue2(
-              `cds-reset group/cb border-0 outline-none focus-visible:outline-hidden data-[disabled]:opacity-disabled`,
-              UiTooltipsAndControlsInlineFlexGapXsTextStartFontSansTextBodyFontNormalTextPrimary,
-              matchesLabel ? `items-start` : `items-center`,
-              size === `xxs` &&
-                `[--cds-checkbox:var(--cds-checkbox-xxs)] [--cds-checkbox-radius:var(--cds-checkbox-xxs-radius)] [--cds-checkbox-glyph:var(--cds-checkbox-xxs-glyph)]`,
-              className,
-            ),
-            children: [
-              <span
-                className={clsx(
-                  UiTooltipsAndControlsState10,
-                  matchesLabel &&
-                    `mt-[calc((1lh_-_var(--cds-checkbox,1rem))_/_2)]`,
-                )}
-              >
-              <span
-                  className={`text-on-accent [clip-path:inset(0_100%_0_0)] transition-[clip-path] duration-snap ease-out motion-reduce:transition-none group-data-[checked]/cb:[clip-path:inset(0)] group-data-[checked]/cb:duration-base group-data-[indeterminate]/cb:[clip-path:inset(0)] group-data-[indeterminate]/cb:duration-base`}
-                >
-                <UiTooltipsAndControlsIndeterminate
-                    indeterminate={indeterminate}
-                  />
+        <CheckboxRoot ref={options} data-cds={`Checkbox`} aria-labelledby={ariaLabelledby || (matchesLabel2 && !checkbox[`aria-label`] ? controlId : undefined)} aria-describedby={[ariaDescribedby, matchesLabel2 ? controlId2 : undefined].filter(Boolean).join(` `) || undefined} {...checkbox} {...size === `xxs` ? {
+  "data-size": `xxs`
+} : resolveUiProviderAndLayersDataSize(size)} onMouseDown={resolveUiOverlaysAndIconsValue2(onMouseDown)} className={resolveUiDesignSystemValue2(`cds-reset group/cb border-0 outline-none focus-visible:outline-hidden data-[disabled]:opacity-disabled`, UiTooltipsAndControlsInlineFlexGapXsTextStartFontSansTextBodyFontNormalTextPrimary, matchesLabel ? `items-start` : `items-center`, size === `xxs` && `[--cds-checkbox:var(--cds-checkbox-xxs)] [--cds-checkbox-radius:var(--cds-checkbox-xxs-radius)] [--cds-checkbox-glyph:var(--cds-checkbox-xxs-glyph)]`, className)}>{<span className={clsx(UiTooltipsAndControlsState10, matchesLabel && `mt-[calc((1lh_-_var(--cds-checkbox,1rem))_/_2)]`)}>
+              <span className={`text-on-accent [clip-path:inset(0_100%_0_0)] transition-[clip-path] duration-snap ease-out motion-reduce:transition-none group-data-[checked]/cb:[clip-path:inset(0)] group-data-[checked]/cb:duration-base group-data-[indeterminate]/cb:[clip-path:inset(0)] group-data-[indeterminate]/cb:duration-base`}>
+                <UiTooltipsAndControlsIndeterminate indeterminate={indeterminate} />
               </span>
-            </span>,
-              matchesLabel &&
-                (matchesLabel2 ? (
-                  <span className={`flex min-w-0 flex-col`}>
+            </span>}{matchesLabel && (matchesLabel2 ? <span className={`flex min-w-0 flex-col`}>
                   <span id={controlId}>{label}</span>
-                  <span
-                      id={controlId2}
-                      className={`text-footnote leading-snug text-muted`}
-                    >
+                  <span id={controlId2} className={`text-footnote leading-snug text-muted`}>
                     {description}
                   </span>
-                </span>
-                ) : (
-                  <span>{label}</span>
-                )),
-            ],
-          })}
-        />
+                </span> : <span>{label}</span>)}</CheckboxRoot>
       );
       return disabledReason === undefined ? (
         jsxs

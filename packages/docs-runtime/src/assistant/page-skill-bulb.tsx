@@ -1,5 +1,5 @@
 /** page-skill-bulb: restored from PageSkillBulb-Cd0qoRd6.js. */
-import { originalJsxProps } from "../react-runtime/jsx-runtime";
+
 import type { Dynamic } from "../interop/legacy-dynamic";
 import { toModuleNamespace } from "../boot/module-runtime";
 import {
@@ -518,34 +518,18 @@ function PageSkillBulb(
           <Popover.Trigger
             render={
               chrome === `button` ? (
-                <IconButton
-                  {...originalJsxProps({
-                    ...triggerProps,
-                    variant: `default`,
-                    size: EditorHostGlyph.size,
-                    icon: renderIcon(EditorHostGlyph.glyph),
-                  })}
-                />
+                <IconButton {...triggerProps} variant={`default`} size={EditorHostGlyph.size} icon={renderIcon(EditorHostGlyph.glyph)} />
               ) : chrome === `bar` || chrome === `docked` ? (
                 <Button
-                  {...originalJsxProps({
-                    ...triggerProps,
-                    iconOnly: true,
-                    variant: `ghost`,
-                    icon: renderIcon(chrome === `docked` ? 20 : 16),
-                    tooltip: false,
-                    className: `shrink-0`,
-                  })}
+                  {...triggerProps}
+                  iconOnly={true}
+                  variant={`ghost`}
+                  icon={renderIcon(chrome === `docked` ? 20 : 16)}
+                  tooltip={false}
+                  className={`shrink-0`}
                 />
               ) : (
-                <button
-                  {...originalJsxProps({
-                    type: `button`,
-                    ...triggerProps,
-                    className: SKILL_ICON_BUTTON_CLASS,
-                    children: renderIcon(15),
-                  })}
-                />
+                <button type={`button`} {...triggerProps} className={SKILL_ICON_BUTTON_CLASS}>{renderIcon(15)}</button>
               )
             }
           />
@@ -614,12 +598,7 @@ function SkillEditorWithDraft(
 ): Dynamic {
   let localDraft: Dynamic = useSkillDraft(``, props.view);
   return (
-    <SkillEditor
-      {...originalJsxProps({
-        ...props,
-        draft: props.draft ?? localDraft,
-      })}
-    />
+    <SkillEditor {...props} draft={props.draft ?? localDraft} />
   );
 }
 function SkillEditor(props?: Dynamic, ..._extraArguments: unknown[]): Dynamic {

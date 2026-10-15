@@ -1,5 +1,5 @@
 /** tab-picture-layer: restored from TabPictureLayer-FmEx-jWa.js. */
-import { originalJsxProps } from "../react-runtime/jsx-runtime";
+
 import type { Dynamic } from "../interop/legacy-dynamic";
 const mapPreloadDependencies: Dynamic = (
   ..._extraArguments: unknown[]
@@ -200,80 +200,27 @@ function TabPictureLayer(
   );
   let visible: Dynamic = props4 && offset !== null;
   return (
-    <div
-      {...originalJsxProps({
-        ref: layerRef,
-        className: `${visible ? DOCUMENT_PREVIEW_POPOVER_CLASS : ``} absolute inset-0`,
-        style: {
-          zIndex: loadTimeout,
-          opacity: +!!visible,
-          pointerEvents: visible ? `auto` : `none`,
-        },
-        "aria-hidden": true,
-        "data-testid": `tab-picture-layer`,
-        "data-drawn": visible ? `1` : undefined,
-        [EditorSelectionAndTablesDataPagesPrintSkip]: ``,
-        children: offset !== null && (
-          <div
-            className={`pointer-events-none absolute`}
-            style={{
-              left: offset.left,
-              top: offset.top,
-              width: offset.width,
-              height: offset.height,
-            }}
-            inert={true}
-          >
-            <LFileSnapshotView
-              file={html?.pic.file ?? null}
-              title={`Document`}
-              label={`picture`}
-              swap={html?.swap ?? `remount`}
-              placeEveryMount={true}
-              scrollY={(..._extraArguments: unknown[]): Dynamic =>
-                loadedPictureRef.current === null
-                  ? undefined
-                  : propsRef.current.scrollYOf(loadedPictureRef.current)
-              }
-              hostLayout={(..._extraArguments: unknown[]): Dynamic =>
-                loadedPictureRef.current === null
-                  ? []
-                  : getPlatformLiveDocumentAndHistoryValues(
-                      loadedPictureRef.current,
-                    )
-              }
-              container={props.container}
-              typography={typography}
-              display={style}
-              parked={!visible}
-              requestBlob={fontLoader}
-              requestEnums={fontCss}
-              enumsChanged={refreshTick}
-              srcDoc={renderer}
-              frameClassName={``}
-              onPosted={(
-                tabPictureLayer?: Dynamic,
-                ..._extraArguments: unknown[]
-              ): undefined => {
-                renderTaskRef.current = tabPictureLayer;
-                propsRef.current.onPosted(tabPictureLayer);
-              }}
-              onPainted={(
-                tabPictureLayer?: Dynamic,
-                ..._extraArguments: unknown[]
-              ): undefined => {
-                if (tabPictureLayer === renderTaskRef.current) {
-                  propsRef.current.onPainted(tabPictureLayer);
-                }
-              }}
-              onError={(..._extraArguments: unknown[]): Dynamic =>
-                propsRef.current.onError()
-              }
-            />
-          </div>
-        ),
-      })}
-    />
+    <div ref={layerRef} className={`${visible ? DOCUMENT_PREVIEW_POPOVER_CLASS : ``} absolute inset-0`} style={{
+  zIndex: loadTimeout,
+  opacity: +!!visible,
+  pointerEvents: visible ? `auto` : `none`
+}} aria-hidden={true} data-testid={`tab-picture-layer`} data-drawn={visible ? `1` : undefined} {...{
+  [EditorSelectionAndTablesDataPagesPrintSkip]: ``
+}}>{offset !== null && <div className={`pointer-events-none absolute`} style={{
+    left: offset.left,
+    top: offset.top,
+    width: offset.width,
+    height: offset.height
+  }} inert={true}>
+            <LFileSnapshotView file={html?.pic.file ?? null} title={`Document`} label={`picture`} swap={html?.swap ?? `remount`} placeEveryMount={true} scrollY={(..._extraArguments: unknown[]): Dynamic => loadedPictureRef.current === null ? undefined : propsRef.current.scrollYOf(loadedPictureRef.current)} hostLayout={(..._extraArguments: unknown[]): Dynamic => loadedPictureRef.current === null ? [] : getPlatformLiveDocumentAndHistoryValues(loadedPictureRef.current)} container={props.container} typography={typography} display={style} parked={!visible} requestBlob={fontLoader} requestEnums={fontCss} enumsChanged={refreshTick} srcDoc={renderer} frameClassName={``} onPosted={(tabPictureLayer?: Dynamic, ..._extraArguments: unknown[]): undefined => {
+      renderTaskRef.current = tabPictureLayer;
+      propsRef.current.onPosted(tabPictureLayer);
+    }} onPainted={(tabPictureLayer?: Dynamic, ..._extraArguments: unknown[]): undefined => {
+      if (tabPictureLayer === renderTaskRef.current) {
+        propsRef.current.onPainted(tabPictureLayer);
+      }
+    }} onError={(..._extraArguments: unknown[]): Dynamic => propsRef.current.onError()} />
+          </div>}</div>
   );
 }
 export { TabPictureLayer };

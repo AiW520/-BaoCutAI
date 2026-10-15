@@ -5,8 +5,6 @@ import {
   Tooltip,
   createStore,
   filterEditorExtensionsMap,
-  originalJsxProps,
-  originalJsxsProps,
   preloadModule,
   resolveDataOperationControlValue35,
   resolveDataOperationControlValue8,
@@ -212,17 +210,9 @@ function PresenceDots({ dots: dots }: Dynamic, ..._extraArguments: unknown[]) {
               index?: Dynamic,
               ..._extraArguments: unknown[]
             ) => (
-              <span
-                {...originalJsxProps(
-                  {
-                    className: `size-[6px] rounded-full ring-1 ring-white ${index > 0 ? `-ml-0.5` : ``}`,
-                    style: {
-                      backgroundColor: itemsSlice.color,
-                    },
-                  },
-                  index,
-                )}
-              />
+              <span className={`size-[6px] rounded-full ring-1 ring-white ${index > 0 ? `-ml-0.5` : ``}`} style={{
+  backgroundColor: itemsSlice.color
+}} key={index} />
             ),
           )}
       </span>
@@ -487,72 +477,23 @@ function TabsHeadingRow(
             </button>
           );
           return (
-            <div
-              {...originalJsxsProps(
-                {
-                  role: `treeitem`,
-                  "aria-level": level + item.indent,
-                  "aria-setsize": places[index]?.size,
-                  "aria-posinset": places[index]?.pos,
-                  "aria-current": matchesId ? `location` : undefined,
-                  "aria-label": item.h.text,
-                  "aria-describedby": ariaDescribedby,
-                  tabIndex: item.id === stop ? 0 : -1,
-                  "data-outline-row": item.id,
-                  onClick: (
-                    event?: Dynamic,
-                    ..._extraArguments: unknown[]
-                  ): undefined => {
-                    if (event.target === event.currentTarget) {
-                      onPick2(item.h, event.detail);
-                    }
-                  },
-                  onPointerDown: (
-                    tabsHeadingRow?: Dynamic,
-                    ..._extraArguments: unknown[]
-                  ): undefined => {
-                    elementRef2.current = tabsHeadingRow.pointerType;
-                  },
-                  onFocus: (
-                    event?: Dynamic,
-                    ..._extraArguments: unknown[]
-                  ): undefined => {
-                    if (event.target === event.currentTarget) {
-                      onRowFocus?.(item.id, index);
-                    }
-                  },
-                  onBlur: (
-                    tabsHeadingRow?: Dynamic,
-                    ..._extraArguments: unknown[]
-                  ): Dynamic =>
-                    onRowBlur?.(tabsHeadingRow.relatedTarget === null),
-                  className: `focus-visible:ring-fill-accent relative flex items-center focus-visible:ring-1 focus-visible:outline-hidden focus-visible:ring-inset ${matchesId ? `text-primary font-medium` : `${restTone} hover:text-primary`}`,
-                  children: [
-                    matchesId ? (
-                      <span
-                        aria-hidden={`true`}
-                        className={`bg-fill-primary pointer-events-none absolute inset-y-0 -left-px w-0.5`}
-                      />
-                    ) : null,
-                    <Tooltip
-                      lazy={true}
-                      content={(..._extraArguments: unknown[]): Dynamic =>
-                        overflowTitle(
-                          elementRef.current?.querySelector(
-                            `[data-outline-name="${CSS.escape(item.id)}"]`,
-                          ),
-                          item.h.text,
-                        )
-                      }
-                      side={`right`}
-                    >
+            <div role={`treeitem`} aria-level={level + item.indent} aria-setsize={places[index]?.size} aria-posinset={places[index]?.pos} aria-current={matchesId ? `location` : undefined} aria-label={item.h.text} aria-describedby={ariaDescribedby} tabIndex={item.id === stop ? 0 : -1} data-outline-row={item.id} onClick={(event?: Dynamic, ..._extraArguments: unknown[]): undefined => {
+  if (event.target === event.currentTarget) {
+    onPick2(item.h, event.detail);
+  }
+}} onPointerDown={(tabsHeadingRow?: Dynamic, ..._extraArguments: unknown[]): undefined => {
+  elementRef2.current = tabsHeadingRow.pointerType;
+}} onFocus={(event?: Dynamic, ..._extraArguments: unknown[]): undefined => {
+  if (event.target === event.currentTarget) {
+    onRowFocus?.(item.id, index);
+  }
+}} onBlur={(tabsHeadingRow?: Dynamic, ..._extraArguments: unknown[]): Dynamic => onRowBlur?.(tabsHeadingRow.relatedTarget === null)} className={`focus-visible:ring-fill-accent relative flex items-center focus-visible:ring-1 focus-visible:outline-hidden focus-visible:ring-inset ${matchesId ? `text-primary font-medium` : `${restTone} hover:text-primary`}`} key={item.id}>{matchesId ? <span aria-hidden={`true`} className={`bg-fill-primary pointer-events-none absolute inset-y-0 -left-px w-0.5`} /> : null}{<Tooltip
+  lazy={true}
+  content={(..._extraArguments: unknown[]): Dynamic => overflowTitle(elementRef.current?.querySelector(`[data-outline-name="${CSS.escape(item.id)}"]`), item.h.text)}
+  side={`right`}
+>
                       {jsx}
-                    </Tooltip>,
-                  ],
-                },
-                item.id,
-              )}
-            />
+                    </Tooltip>}</div>
           );
         },
       )}

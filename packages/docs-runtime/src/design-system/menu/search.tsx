@@ -9,8 +9,6 @@ import {
   UiDesignSystemUseLayoutEffect,
   UiLinksAndFoundationStyles2,
   jsxRuntime,
-  originalJsxProps,
-  originalJsxsProps,
   resolveUiDesignSystemValue2,
   resolveUiOverlaysAndIconsValue3,
   resolveUiProviderAndLayersUseContext10,
@@ -284,237 +282,112 @@ function MenuPopupsSearchLabel(
     return value17 ? (value17.focus(), true) : false;
   };
   return (
-    <MenuPopupsAlign
-      {...originalJsxsProps({
-        ...input9,
-        stableWhileOpen: input11,
-        onKeyDown: (
-          event?: Dynamic,
-          ..._extraArguments: unknown[]
-        ): undefined => {
-          let current: Dynamic = value13.current;
-          if (
-            !current ||
-            event.target.closest?.(`input, textarea, [contenteditable]`) ||
-            event.nativeEvent.isComposing ||
-            !resolveMenuPopupsAltGraph(event)
-          ) {
-            input7?.(event);
-            return;
-          }
-          event.preventDefault();
-          event.stopPropagation();
-          event.preventBaseUIHandler();
-          current.focus({
-            preventScroll: true,
-          });
-          value15(event.key);
-        },
-        onFocus: (
-          event?: Dynamic,
-          ..._extraArguments: unknown[]
-        ): undefined => {
-          input8?.(event);
-          let currentTarget: Dynamic = event.currentTarget;
-          let ownerDocument: Dynamic = currentTarget.ownerDocument;
-          if (
-            !value8 ||
-            event.target !== currentTarget ||
-            ownerDocument.activeElement !== currentTarget
-          )
-            return;
-          let value17: Dynamic = resolveUiProviderAndLayersValue2(
-            event.relatedTarget,
-          );
-          if (
-            !(
-              value17?.hasAttribute(`data-popup-open`) &&
-              currentTarget.contains(value17)
-            )
-          ) {
-            value13.current?.focus({
-              preventScroll: true,
-            });
-            return;
-          }
-          value14.current?.();
-          let value18 = (
-            event2?: Dynamic,
-            ..._extraArguments: unknown[]
-          ): undefined => {
-            let value19: Dynamic = resolveUiProviderAndLayersValue2(
-              event2.target,
-            );
-            let value20: Dynamic = value19?.closest(`[role="menu"]`);
-            let bounds: Dynamic = currentTarget.getBoundingClientRect();
-            let value21: boolean =
-              event2.clientX >= bounds.left &&
-              event2.clientX < bounds.right &&
-              event2.clientY >= bounds.top &&
-              event2.clientY < bounds.bottom;
-            if (!(!value20 && value21)) {
-              value14.current?.();
-              if (
-                !(
-                  value20 &&
-                  (value20 !== currentTarget ||
-                    value19?.closest(`[role^="menuitem"]`))
-                ) &&
-                ownerDocument.activeElement === currentTarget
-              ) {
-                value13.current?.focus({
-                  preventScroll: true,
-                });
-              }
-            }
-          };
-          ownerDocument.addEventListener(`mousemove`, value18);
-          value14.current = (..._extraArguments: unknown[]): undefined => {
-            ownerDocument.removeEventListener(`mousemove`, value18);
-            value14.current = null;
-          };
-        },
-        onMouseDown: (
-          event?: Dynamic,
-          ..._extraArguments: unknown[]
-        ): undefined => {
-          let target: Dynamic = event.target;
-          if (
-            !(
-              (resolveUiOverlaysAndIconsValue3(target) &&
-                target.localName === `input`) ||
-              target === event.currentTarget ||
-              (target.classList.contains(`overflow-y-auto`) &&
-                isPresentationInline(
-                  event.nativeEvent.offsetX,
-                  event.nativeEvent.offsetY,
-                  target,
-                ))
-            )
-          ) {
-            event.preventDefault();
-          }
-        },
-        header: (
-          <jsxRuntime.Fragment>
-            {input6 !== undefined && (
-              <div
-                ref={value12}
-                role={`presentation`}
-                className={`px-sm pt-sm`}
-                onKeyDown={(
-                  event?: Dynamic,
-                  ..._extraArguments: unknown[]
-                ): undefined => {
-                  if (event.key !== `Escape`) {
-                    event.stopPropagation();
-                    if (event.key === `Tab`) {
-                      event.preventDefault();
-                      value13.current?.focus();
-                    }
-                  }
-                }}
-              >
+    <MenuPopupsAlign {...input9} stableWhileOpen={input11} onKeyDown={(event?: Dynamic, ..._extraArguments: unknown[]): undefined => {
+  let current: Dynamic = value13.current;
+  if (!current || event.target.closest?.(`input, textarea, [contenteditable]`) || event.nativeEvent.isComposing || !resolveMenuPopupsAltGraph(event)) {
+    input7?.(event);
+    return;
+  }
+  event.preventDefault();
+  event.stopPropagation();
+  event.preventBaseUIHandler();
+  current.focus({
+    preventScroll: true
+  });
+  value15(event.key);
+}} onFocus={(event?: Dynamic, ..._extraArguments: unknown[]): undefined => {
+  input8?.(event);
+  let currentTarget: Dynamic = event.currentTarget;
+  let ownerDocument: Dynamic = currentTarget.ownerDocument;
+  if (!value8 || event.target !== currentTarget || ownerDocument.activeElement !== currentTarget) return;
+  let value17: Dynamic = resolveUiProviderAndLayersValue2(event.relatedTarget);
+  if (!(value17?.hasAttribute(`data-popup-open`) && currentTarget.contains(value17))) {
+    value13.current?.focus({
+      preventScroll: true
+    });
+    return;
+  }
+  value14.current?.();
+  let value18 = (event2?: Dynamic, ..._extraArguments: unknown[]): undefined => {
+    let value19: Dynamic = resolveUiProviderAndLayersValue2(event2.target);
+    let value20: Dynamic = value19?.closest(`[role="menu"]`);
+    let bounds: Dynamic = currentTarget.getBoundingClientRect();
+    let value21: boolean = event2.clientX >= bounds.left && event2.clientX < bounds.right && event2.clientY >= bounds.top && event2.clientY < bounds.bottom;
+    if (!(!value20 && value21)) {
+      value14.current?.();
+      if (!(value20 && (value20 !== currentTarget || value19?.closest(`[role^="menuitem"]`))) && ownerDocument.activeElement === currentTarget) {
+        value13.current?.focus({
+          preventScroll: true
+        });
+      }
+    }
+  };
+  ownerDocument.addEventListener(`mousemove`, value18);
+  value14.current = (..._extraArguments: unknown[]): undefined => {
+    ownerDocument.removeEventListener(`mousemove`, value18);
+    value14.current = null;
+  };
+}} onMouseDown={(event?: Dynamic, ..._extraArguments: unknown[]): undefined => {
+  let target: Dynamic = event.target;
+  if (!(resolveUiOverlaysAndIconsValue3(target) && target.localName === `input` || target === event.currentTarget || target.classList.contains(`overflow-y-auto`) && isPresentationInline(event.nativeEvent.offsetX, event.nativeEvent.offsetY, target))) {
+    event.preventDefault();
+  }
+}} header={<jsxRuntime.Fragment>
+            {input6 !== undefined && <div ref={value12} role={`presentation`} className={`px-sm pt-sm`} onKeyDown={(event?: Dynamic, ..._extraArguments: unknown[]): undefined => {
+    if (event.key !== `Escape`) {
+      event.stopPropagation();
+      if (event.key === `Tab`) {
+        event.preventDefault();
+        value13.current?.focus();
+      }
+    }
+  }}>
                 {input6}
-              </div>
-            )}
-            <TextInput
-              ref={value13}
-              value={value3}
-              onChange={(
-                event?: Dynamic,
-                ..._extraArguments: unknown[]
-              ): Dynamic => value4(event.target.value)}
-              onCompositionEnd={(
-                event?: Dynamic,
-                ..._extraArguments: unknown[]
-              ): Dynamic => resolveSheetsValue5(event.nativeEvent.timeStamp)}
-              onKeyDown={(
-                event?: Dynamic,
-                ..._extraArguments: unknown[]
-              ): undefined => {
-                resolveSheetsEnter(event);
-                if (event.nativeEvent.isComposing || event.keyCode === 229) {
-                  event.stopPropagation();
-                  return;
-                }
-                if (event.key === `Enter`) {
-                  let value17: Dynamic = value3.trim();
-                  if (
-                    input5 !== undefined &&
-                    value17 !== `` &&
-                    !event.repeat &&
-                    !event.shiftKey &&
-                    !event.altKey
-                  ) {
-                    let value18 = (
-                      ..._extraArguments: unknown[]
-                    ): undefined => {
-                      input5(value17);
-                      value11?.current?.close?.();
-                    };
-                    if (resolveSheetsIsComposing(event.nativeEvent)) {
-                      installSheetsCapture(
-                        event.nativeEvent,
-                        event.currentTarget,
-                        value18,
-                      );
-                    } else {
-                      event.preventDefault();
-                      value18();
-                    }
-                  }
-                  event.stopPropagation();
-                  return;
-                }
-                if (event.key === `ArrowDown` || event.key === `ArrowUp`) {
-                  let value17: Dynamic = event.currentTarget
-                    .closest(`[role="menu"]`)
-                    ?.querySelectorAll(
-                      `[role^="menuitem"]:not([aria-disabled="true"])`,
-                    );
-                  let value18: Dynamic =
-                    event.key === `ArrowDown`
-                      ? value17?.[0]
-                      : value17?.[value17.length - 1];
-                  if (value18 !== undefined) {
-                    event.preventDefault();
-                    event.stopPropagation();
-                    value18.focus();
-                  }
-                  return;
-                }
-                if (event.key === `Tab` && !event.shiftKey && value16()) {
-                  event.preventDefault();
-                  event.stopPropagation();
-                  return;
-                }
-                if (!(event.key === `Escape` || event.key === `Tab`)) {
-                  event.stopPropagation();
-                }
-              }}
-              placeholder={input2}
-              aria-label={input2}
-              autoComplete={`off`}
-              data-1p-ignore={true}
-              autoFocus={value8}
-              tabIndex={value8 ? undefined : -1}
-              className={`!border-transparent !bg-transparent !shadow-none compact:!pl-2 comfortable:!pl-2.5`}
-            />
+              </div>}
+            <TextInput ref={value13} value={value3} onChange={(event?: Dynamic, ..._extraArguments: unknown[]): Dynamic => value4(event.target.value)} onCompositionEnd={(event?: Dynamic, ..._extraArguments: unknown[]): Dynamic => resolveSheetsValue5(event.nativeEvent.timeStamp)} onKeyDown={(event?: Dynamic, ..._extraArguments: unknown[]): undefined => {
+    resolveSheetsEnter(event);
+    if (event.nativeEvent.isComposing || event.keyCode === 229) {
+      event.stopPropagation();
+      return;
+    }
+    if (event.key === `Enter`) {
+      let value17: Dynamic = value3.trim();
+      if (input5 !== undefined && value17 !== `` && !event.repeat && !event.shiftKey && !event.altKey) {
+        let value18 = (..._extraArguments: unknown[]): undefined => {
+          input5(value17);
+          value11?.current?.close?.();
+        };
+        if (resolveSheetsIsComposing(event.nativeEvent)) {
+          installSheetsCapture(event.nativeEvent, event.currentTarget, value18);
+        } else {
+          event.preventDefault();
+          value18();
+        }
+      }
+      event.stopPropagation();
+      return;
+    }
+    if (event.key === `ArrowDown` || event.key === `ArrowUp`) {
+      let value17: Dynamic = event.currentTarget.closest(`[role="menu"]`)?.querySelectorAll(`[role^="menuitem"]:not([aria-disabled="true"])`);
+      let value18: Dynamic = event.key === `ArrowDown` ? value17?.[0] : value17?.[value17.length - 1];
+      if (value18 !== undefined) {
+        event.preventDefault();
+        event.stopPropagation();
+        value18.focus();
+      }
+      return;
+    }
+    if (event.key === `Tab` && !event.shiftKey && value16()) {
+      event.preventDefault();
+      event.stopPropagation();
+      return;
+    }
+    if (!(event.key === `Escape` || event.key === `Tab`)) {
+      event.stopPropagation();
+    }
+  }} placeholder={input2} aria-label={input2} autoComplete={`off`} data-1p-ignore={true} autoFocus={value8} tabIndex={value8 ? undefined : -1} className={`!border-transparent !bg-transparent !shadow-none compact:!pl-2 comfortable:!pl-2.5`} />
             <BaseSeparator className={`-mx-1 my-1 h-px bg-border`} />
-          </jsxRuntime.Fragment>
-        ),
-        children: [
-          input10 && <UseMenuPopupsResetComponent reset={value5} />,
-          value8 && <UseMenuPopupsInputRef2Component inputRef={value13} />,
-          <UseMenuPopupsInputRefComponent
-            inputRef={value13}
-            applyKey={value15}
-          />,
-          input(value3.trim().toLowerCase(), value3.trim()),
-        ],
-      })}
-    />
+          </jsxRuntime.Fragment>}>{input10 && <UseMenuPopupsResetComponent reset={value5} />}{value8 && <UseMenuPopupsInputRef2Component inputRef={value13} />}{<UseMenuPopupsInputRefComponent inputRef={value13} applyKey={value15} />}{input(value3.trim().toLowerCase(), value3.trim())}</MenuPopupsAlign>
   );
 }
 
@@ -694,17 +567,7 @@ export function initializeMenuSearchStep1(): void {
   ): Dynamic {
     return (
       <MenuInteractionsCreateContext4.Provider value={true}>
-      <BaseMenubar
-          {...originalJsxProps({
-            ref: options,
-            "data-cds": `MenuBar`,
-            ...input2,
-            className: resolveUiDesignSystemValue2(
-              `flex items-center gap-xs`,
-              input,
-            ),
-          })}
-        />
+      <BaseMenubar ref={options} data-cds={`MenuBar`} {...input2} className={resolveUiDesignSystemValue2(`flex items-center gap-xs`, input)} />
     </MenuInteractionsCreateContext4.Provider>
     );
   });

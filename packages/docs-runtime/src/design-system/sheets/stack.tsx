@@ -5,7 +5,6 @@ import {
   UiDesignSystemUseLayoutEffect,
   UiOverlaysAndIconsSurface,
   clsx,
-  originalJsxProps,
   resolveUiLinksAndFoundationValue17,
   resolveUiLinksAndFoundationValue18,
   resolveUiProviderAndLayersUseContext10,
@@ -488,40 +487,19 @@ function SheetsKind(
   return value8 === null || value === null || !value.open
     ? null
     : (0, AvatarsState.createPortal)(
-        <UiOverlaysAndIconsSurface
-          {...originalJsxProps({
-            ...value3.portalProps,
-            children: (
-              <div
-                {...originalJsxProps({
-                  role: `presentation`,
-                  [SheetsDataCdsSheetPending]: ``,
-                  className: clsx(SheetsState7, !value4 && `opacity-0`),
-                  style: value3.style,
-                  onPointerDown: (
-                    input2?: Dynamic,
-                    ..._extraArguments: unknown[]
-                  ): undefined => {
-                    value6.current = true;
-                    resolveSheetsPreventDefault(input2);
-                  },
-                  onPointerCancel: (
-                    ..._extraArguments: unknown[]
-                  ): undefined => {
-                    value6.current = false;
-                  },
-                  onMouseDown: resolveSheetsPreventDefault,
-                  onClick: (..._extraArguments: unknown[]): undefined => {
-                    if (value6.current) {
-                      value6.current = false;
-                      value.dismiss();
-                    }
-                  },
-                })}
-              />
-            ),
-          })}
-        />,
+        <UiOverlaysAndIconsSurface {...value3.portalProps}>{<div role={`presentation`} {...{
+    [SheetsDataCdsSheetPending]: ``
+  }} className={clsx(SheetsState7, !value4 && `opacity-0`)} style={value3.style} onPointerDown={(input2?: Dynamic, ..._extraArguments: unknown[]): undefined => {
+    value6.current = true;
+    resolveSheetsPreventDefault(input2);
+  }} onPointerCancel={(..._extraArguments: unknown[]): undefined => {
+    value6.current = false;
+  }} onMouseDown={resolveSheetsPreventDefault} onClick={(..._extraArguments: unknown[]): undefined => {
+    if (value6.current) {
+      value6.current = false;
+      value.dismiss();
+    }
+  }} />}</UiOverlaysAndIconsSurface>,
         value8,
       );
 }

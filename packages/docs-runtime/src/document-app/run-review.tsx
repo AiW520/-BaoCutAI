@@ -12,8 +12,6 @@ import {
   apiFetcher,
   collectDataContentAndReferencesWEEKLY,
   createLiveModuleNamespace as lastTextblock,
-  originalJsxProps,
-  originalJsxsProps,
   resolveCommentsStoreValue29,
   resolveCommentsStoreValue32,
   resolveDataContentAndReferencesReplace,
@@ -158,24 +156,9 @@ function DeclaredOutputsLine(
         let enabled2 = !enabled;
         enabled = false;
         return (
-          <span
-            {...originalJsxsProps(
-              {
-                children: [
-                  enabled2 && <span className={`text-secondary`}>{` · `}</span>,
-                  <span
-                    className={`whitespace-pre-wrap`}
-                    data-testid={`review-output-target`}
-                  >
-                    {resolveDataContentAndReferencesReplace(
-                      resolvePlatformSessionAndSourcesToUpperCase(item),
-                    )}
-                  </span>,
-                ],
-              },
-              `${item}#${lookupEntry}`,
-            )}
-          />
+          <span key={`${item}#${lookupEntry}`}>{enabled2 && <span className={`text-secondary`}>{` · `}</span>}{<span className={`whitespace-pre-wrap`} data-testid={`review-output-target`}>
+                    {resolveDataContentAndReferencesReplace(resolvePlatformSessionAndSourcesToUpperCase(item))}
+                  </span>}</span>
         );
       })}
     </p>
@@ -740,16 +723,14 @@ export function initializeRunReviewStep1(): void {
     let iconButtonSize2 = iconButtonSize(size);
     return (
       <IconButtonBase
-        {...originalJsxProps({
-          ...iconButton,
-          ref: options,
-          iconOnly: true,
-          icon: icon,
-          variant: variant === "default" ? `secondary` : `ghost`,
-          size: iconButtonSize2 && iconButtonResult(iconButtonSize2),
-          "aria-label": ariaLabel ?? title ?? ``,
-          tooltip: false,
-        })}
+        {...iconButton}
+        ref={options}
+        iconOnly={true}
+        icon={icon}
+        variant={variant === "default" ? `secondary` : `ghost`}
+        size={iconButtonSize2 && iconButtonResult(iconButtonSize2)}
+        aria-label={ariaLabel ?? title ?? ``}
+        tooltip={false}
       />
     );
   }));
@@ -769,16 +750,14 @@ export function initializeRunReviewStep1(): void {
     let iconButtonSize2 = iconButtonSize(size);
     return (
       <IconButtonBase
-        {...originalJsxProps({
-          ...untippedIconButton,
-          ref: options,
-          iconOnly: true,
-          icon: icon,
-          variant: `ghost`,
-          size: iconButtonSize2 && untippedIconButtonResult(iconButtonSize2),
-          "aria-label": ariaLabel ?? title ?? ``,
-          tooltip: false,
-        })}
+        {...untippedIconButton}
+        ref={options}
+        iconOnly={true}
+        icon={icon}
+        variant={`ghost`}
+        size={iconButtonSize2 && untippedIconButtonResult(iconButtonSize2)}
+        aria-label={ariaLabel ?? title ?? ``}
+        tooltip={false}
       />
     );
   }));

@@ -15,7 +15,6 @@ import {
   isEditorHostProse,
   isPlatformLiveDocumentAndHistoryReadFrom,
   liveDoor,
-  originalJsxProps,
   platformKeyboardAndSaveStatusValue2500,
   platformLiveDocumentAndHistoryValue3000,
   preloadModule,
@@ -225,17 +224,13 @@ function DocumentUnavailablePage(
         {documentUnavailablePageResult}
       </div>
       <DocumentCommentsHeadless
-        {...originalJsxProps(
-          {
-            container: container,
-            version: version,
-            fsEntryId: fsEntryId,
-            path: path,
-            forceList: true,
-            nodeName: nodeName,
-          },
-          fsEntryId,
-        )}
+        container={container}
+        version={version}
+        fsEntryId={fsEntryId}
+        path={path}
+        forceList={true}
+        nodeName={nodeName}
+        key={fsEntryId}
       />
     </div>
   );
@@ -1334,20 +1329,9 @@ function UseDocumentPreviewSlotElComponent(
     setMatchesSlotElState(true);
   }
   return matchesSlotElState ? (
-    <UseDocumentPreviewSlotEl2Component
-      {...originalJsxProps({
-        slotEl: slotEl,
-        inSlot: inSlot,
-        onInSlot: onInSlot,
-        ...documentPreviewSlotEl,
-      })}
-    />
+    <UseDocumentPreviewSlotEl2Component slotEl={slotEl} inSlot={inSlot} onInSlot={onInSlot} {...documentPreviewSlotEl} />
   ) : (
-    <div
-      {...originalJsxProps({
-        ...documentPreviewSlotEl,
-      })}
-    />
+    <div {...documentPreviewSlotEl} />
   );
 }
 
@@ -1447,11 +1431,7 @@ function UseDocumentPreviewSlotEl2Component(
     <jsxRuntime.Fragment>
       <div ref={appendChild} className={`contents`} />
       {(0, ReactDom.createPortal)(
-        <div
-          {...originalJsxProps({
-            ...documentPreviewSlotEl2,
-          })}
-        />,
+        <div {...documentPreviewSlotEl2} />,
         useDocumentPreviewSlotEl2State,
       )}
     </jsxRuntime.Fragment>
@@ -1519,25 +1499,9 @@ export function initializeDocumentPreviewUsePageSkillSeatStep1(): void {
       );
     let className2 = `${matchesOnClick && !dashed ? `${label} hover:bg-alpha-2` : label}${className ? ` ${className}` : ``}`;
     return matchesOnClick ? (
-      <button
-        {...originalJsxProps({
-          ref: options,
-          type: `button`,
-          onClick: onClick,
-          className: className2,
-          ...callback,
-          children: jsxs,
-        })}
-      />
+      <button ref={options} type={`button`} onClick={onClick} className={className2} {...callback}>{jsxs}</button>
     ) : (
-      <span
-        {...originalJsxProps({
-          ref: options,
-          className: className2,
-          ...callback,
-          children: jsxs,
-        })}
-      />
+      <span ref={options} className={className2} {...callback}>{jsxs}</span>
     );
   });
   (documentPreviewLimit2000 = 2e3);

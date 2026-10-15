@@ -4,7 +4,6 @@ import {
   React,
   UiOverlaysAndIconsDataCdsOverlay,
   clsx,
-  originalJsxProps,
   resolveUiDesignSystemValue2,
 } from "../dependencies";
 import { SheetsDataCdsSheetScroll } from "../sheets/geometry";
@@ -192,31 +191,21 @@ function MenuInteractionsHeader(
           {input}
         </div>
       )}
-      <div
-        {...originalJsxProps({
-          style: {
-            maxHeight: value,
-          },
-          className: `${MenuInteractionsStyles3}${input ? ` pt-0` : ``}`,
-          [SheetsDataCdsSheetScroll]: ``,
-          children: input5,
-        })}
-      />
+      <div style={{
+  maxHeight: value
+}} className={`${MenuInteractionsStyles3}${input ? ` pt-0` : ``}`} {...{
+  [SheetsDataCdsSheetScroll]: ``
+}}>{input5}</div>
       {input3 && (
         <div className={MenuInteractionsMt1Shrink0Px1Pb1}>{input3}</div>
       )}
     </div>
   ) : (
-    <div
-      {...originalJsxProps({
-        style: {
-          maxHeight: value,
-        },
-        className: clsx(MenuInteractionsStyles2, input6 && `flex-1`),
-        [SheetsDataCdsSheetScroll]: ``,
-        children: input5,
-      })}
-    />
+    <div style={{
+  maxHeight: value
+}} className={clsx(MenuInteractionsStyles2, input6 && `flex-1`)} {...{
+  [SheetsDataCdsSheetScroll]: ``
+}}>{input5}</div>
   );
 }
 

@@ -6,8 +6,6 @@ import {
   DisabledReasonTooltip,
   React,
   Tooltip,
-  originalJsxProps,
-  originalJsxsProps,
   resolveUiDesignSystemValue2,
   resolveUiLinksAndFoundationUseContext3,
   resolveUiOverlaysAndIconsValue4,
@@ -171,78 +169,30 @@ export function initializeCommentEditStep1(): void {
       let value21: Dynamic = input8 ?? value6;
       return (
         <div
-          {...originalJsxsProps({
-            ref: value13,
-            "data-cds-part": `edit-field`,
-            className: resolveUiDesignSystemValue2(
-              `flex flex-col gap-xs`,
-              input9,
-            ),
-            onMouseDown: value18,
-            ...input11,
-            children: [
-              <div
-                ref={value10}
-                className={resolveUiDesignSystemValue2(
-                  FieldStylesState2,
-                  `forced-colors:border`,
-                )}
-              >
-              {resolveShimmerValue6(input7) ? (
-                  input7
-                ) : (
-                  <CommentsValue
-                    ref={value11}
-                    aria-label={value21}
-                    value={value4}
-                    onChange={value5}
-                    onSubmit={value15}
-                    submitOnPlainEnter={value12}
-                    readOnly={input12}
-                    onKeyDown={(
-                      event?: Dynamic,
-                      ..._extraArguments: unknown[]
-                    ): undefined => {
-                      if (
-                        event.key === `Escape` &&
-                        !event.nativeEvent.isComposing &&
-                        event.nativeEvent.keyCode !== 229
-                      ) {
-                        event.preventDefault();
-                        event.stopPropagation();
-                        if (!input12) {
-                          input5();
-                        }
-                      }
-                    }}
-                  />
-                )}
-            </div>,
-              <div className={`flex flex-wrap items-center gap-sm`}>
+          ref={value13}
+          data-cds-part={`edit-field`}
+          className={resolveUiDesignSystemValue2(`flex flex-col gap-xs`, input9)}
+          onMouseDown={value18}
+          {...input11}
+        >{<div ref={value10} className={resolveUiDesignSystemValue2(FieldStylesState2, `forced-colors:border`)}>
+              {resolveShimmerValue6(input7) ? input7 : <CommentsValue ref={value11} aria-label={value21} value={value4} onChange={value5} onSubmit={value15} submitOnPlainEnter={value12} readOnly={input12} onKeyDown={(event?: Dynamic, ..._extraArguments: unknown[]): undefined => {
+      if (event.key === `Escape` && !event.nativeEvent.isComposing && event.nativeEvent.keyCode !== 229) {
+        event.preventDefault();
+        event.stopPropagation();
+        if (!input12) {
+          input5();
+        }
+      }
+    }} />}
+            </div>}{<div className={`flex flex-wrap items-center gap-sm`}>
               {input6 && <CommentsBox box={input6} disabled={input12} />}
               <div className={`ms-auto flex items-center gap-sm`}>
-                <Button
-                    variant={`secondary`}
-                    aria-disabled={input12 || undefined}
-                    onClick={input12 ? undefined : input5}
-                  >
+                <Button variant={`secondary`} aria-disabled={input12 || undefined} onClick={input12 ? undefined : input5}>
                   {value7}
                 </Button>
-                <Button
-                    {...originalJsxProps({
-                      variant: `primary`,
-                      busy: input12,
-                      disabled: value19,
-                      onClick: value15,
-                      ...value20,
-                      children: value8,
-                    })}
-                  />
+                <Button variant={`primary`} busy={input12} disabled={value19} onClick={value15} {...value20}>{value8}</Button>
               </div>
-            </div>,
-            ],
-          })}
-        />
+            </div>}</div>
       );
     },
   );
@@ -278,39 +228,22 @@ export function initializeCommentEditStep1(): void {
       resolveCommentMotionPreventScroll(value5, value6);
       return (
         <div
-          {...originalJsxsProps({
-            ref: resolveUiOverlaysAndIconsValue4(value5, options),
-            role: `group`,
-            "aria-labelledby": value4,
-            "data-cds-part": `delete-confirm`,
-            className: resolveUiDesignSystemValue2(
-              `flex flex-col gap-sm border-t pt-sm`,
-              input4,
-            ),
-            ...input5,
-            children: [
-              <span
-                id={value4}
-                className={`text-body font-normal text-primary`}
-              >
+          ref={resolveUiOverlaysAndIconsValue4(value5, options)}
+          role={`group`}
+          aria-labelledby={value4}
+          data-cds-part={`delete-confirm`}
+          className={resolveUiDesignSystemValue2(`flex flex-col gap-sm border-t pt-sm`, input4)}
+          {...input5}
+        >{<span id={value4} className={`text-body font-normal text-primary`}>
               {input3 ?? value}
-            </span>,
-              <div className={`flex justify-end gap-sm`}>
-              <Button
-                  ref={value6}
-                  variant={`secondary`}
-                  aria-disabled={input6 || undefined}
-                  onClick={input6 ? undefined : input2}
-                >
+            </span>}{<div className={`flex justify-end gap-sm`}>
+              <Button ref={value6} variant={`secondary`} aria-disabled={input6 || undefined} onClick={input6 ? undefined : input2}>
                 {value2}
               </Button>
               <Button variant={`danger`} busy={input6} onClick={input}>
                 {value3}
               </Button>
-            </div>,
-            ],
-          })}
-        />
+            </div>}</div>
       );
     },
   );

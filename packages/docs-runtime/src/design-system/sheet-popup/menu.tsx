@@ -11,8 +11,6 @@ import {
   UiShortcutsAndSizingCreateContext3,
   UiShortcutsAndSizingOverride,
   UiTooltipsAndControlsPanel,
-  originalJsxProps,
-  originalJsxsProps,
   resolveUiDesignSystemValue2,
   resolveUiOverlaysAndIconsValue5,
   resolveUiProviderAndLayersBase2,
@@ -552,168 +550,45 @@ export function initializeSheetPopupMenuStep1(): void {
       return (
         <BaseMenuPortal container={input6 ?? value}>
         <UiOverlaysAndIconsSurface
-            {...originalJsxsProps({
-              ...value51.portalProps,
-              surface: UiTooltipsAndControlsPanel.popover,
-              density: value4 ? SheetsComfortable : undefined,
-              companionModalCatcher: !value4,
-              closeOnActivityHide: true,
-              children: [
-                value4 && !value5 && (
-                  <BaseMenuBackdrop
-                    data-presentation={`sheet`}
-                    data-sheet-scrim={value11?.treeId}
-                    className={
-                      value26.depth > 0
-                        ? `draggable-none fixed inset-0 bg-transparent`
-                        : SheetsState7
-                    }
-                  />
-                ),
-                <UiShortcutsAndSizingOverride
-                  override={value7}
-                  container={input6 ?? value}
-                  provideInherit={true}
-                >
-                {(
-                    input19?: Dynamic,
-                    ..._extraArguments: unknown[]
-                  ): Dynamic => (
-                    <UiProviderAndLayersCreateContext13.Provider
-                      value={value51.base}
-                    >
-                    <BaseMenuPositioner
-                        {...originalJsxProps({
-                          ref: value10.positionerRef,
-                          "data-sheet-tree": value4
-                            ? value11?.treeId
-                            : undefined,
-                          style: value4
-                            ? {
-                                ...value51.style,
-                                ...resolveSheetsBottom(value11),
-                              }
-                            : value10.held === null
-                              ? value51.style
-                              : {
-                                  ...value51.style,
-                                  ...value10.held.positionerStyle,
-                                },
-                          side: value10.side,
-                          align: value10.align,
-                          sideOffset: value9,
-                          collisionPadding: input19,
-                          collisionAvoidance: input4,
-                          anchor: value8,
-                          ...(value4 ? SheetsDisableAnchorTracking : {}),
-                          className: value4
-                            ? value5
-                              ? SheetsStyles3
-                              : value26.depth === 0
-                                ? SheetsStyles2
-                                : undefined
-                            : value10.held?.positionerClassName,
-                          children: (
-                            <MenuPopupsCell
-                              cell={value4 ? null : value47.cell}
-                              nested={value2 !== null}
-                            >
-                            {(
-                                input20?: Dynamic,
-                                ..._extraArguments: unknown[]
-                              ): Dynamic => (
-                                <MenuPopupsAnchoredWithoutFinalFocus
-                                  {...originalJsxProps({
-                                    anchoredWithoutFinalFocus: value46,
-                                    cursorAnchored: value3,
-                                    "data-cds": input18,
-                                    "data-presentation": value4
-                                      ? `sheet`
-                                      : undefined,
-                                    "data-sheet-tree": value4
-                                      ? value11?.treeId
-                                      : undefined,
-                                    "data-cds-sheet-depth": value4
-                                      ? String(value26.depth)
-                                      : undefined,
-                                    ...(value32
-                                      ? {
-                                          [SheetsDataCdsSheetCovered]: ``,
-                                        }
-                                      : {}),
-                                    ...(value33 ? SheetsState4 : {}),
-                                    ...(value5 &&
-                                    value11 !== null &&
-                                    !value11.open
-                                      ? {
-                                          [SheetsDataCdsSheetTreeClosing]: ``,
-                                        }
-                                      : {}),
-                                    ...(value5 && value37 && !value12.open
-                                      ? {
-                                          [SheetsDataCdsSheetPeeling]: ``,
-                                        }
-                                      : {}),
-                                    ...(value4
-                                      ? resolveUiProviderAndLayersDataSize(`lg`)
-                                      : {}),
-                                    ref: value48,
-                                    ...input20(value4 ? state : input15),
-                                    style: value50,
-                                    className: resolveUiDesignSystemValue2(
-                                      MenuPopupsPopover,
-                                      value10.held?.popupClassName,
-                                      value4 && SheetsState5,
-                                      value4 &&
-                                        (value5
-                                          ? `bg-transparent shadow-none [&[data-ending-style]:not([data-cds-sheet-tree-closing])]:translate-x-full rtl:[&[data-ending-style]:not([data-cds-sheet-tree-closing])]:-translate-x-full [&[data-ending-style][data-cds-sheet-peeling]]:translate-x-full rtl:[&[data-ending-style][data-cds-sheet-peeling]]:-translate-x-full [&[data-ending-style][data-cds-sheet-tree-closing]]:translate-y-[calc(100%+1.5rem)]`
-                                          : `data-[starting-style]:translate-y-[calc(100%+1.5rem)] data-[ending-style]:translate-y-[calc(100%+1.5rem)]`),
-                                      value4 &&
-                                        `origin-top [&[data-cds-sheet-covered]:not([data-starting-style]):not([data-ending-style])]:-translate-y-3 data-[cds-sheet-covered]:scale-[0.94] after:pointer-events-none after:absolute after:inset-0 after:rounded-[inherit] after:bg-backdrop after:opacity-0 after:transition-opacity after:duration-sheet motion-reduce:after:transition-none data-[cds-sheet-covered]:after:opacity-100`,
-                                      input7,
-                                    ),
-                                    children: value4 ? (
-                                      <SheetsCreateContext2.Provider
-                                        value={value53}
-                                      >
-                                      <SheetPopupDrawPill
-                                          drawPill={!value5}
-                                        />
+          {...value51.portalProps}
+          surface={UiTooltipsAndControlsPanel.popover}
+          density={value4 ? SheetsComfortable : undefined}
+          companionModalCatcher={!value4}
+          closeOnActivityHide={true}
+        >{value4 && !value5 && <BaseMenuBackdrop
+          data-presentation={`sheet`}
+          data-sheet-scrim={value11?.treeId}
+          className={value26.depth > 0 ? `draggable-none fixed inset-0 bg-transparent` : SheetsState7}
+        />}{<UiShortcutsAndSizingOverride override={value7} container={input6 ?? value} provideInherit={true}>
+                {(input19?: Dynamic, ..._extraArguments: unknown[]): Dynamic => <UiProviderAndLayersCreateContext13.Provider value={value51.base}>
+                    <BaseMenuPositioner ref={value10.positionerRef} data-sheet-tree={value4 ? value11?.treeId : undefined} style={value4 ? {
+        ...value51.style,
+        ...resolveSheetsBottom(value11)
+      } : value10.held === null ? value51.style : {
+        ...value51.style,
+        ...value10.held.positionerStyle
+      }} side={value10.side} align={value10.align} sideOffset={value9} collisionPadding={input19} collisionAvoidance={input4} anchor={value8} {...value4 ? SheetsDisableAnchorTracking : {}} className={value4 ? value5 ? SheetsStyles3 : value26.depth === 0 ? SheetsStyles2 : undefined : value10.held?.positionerClassName}>{<MenuPopupsCell cell={value4 ? null : value47.cell} nested={value2 !== null}>
+                            {(input20?: Dynamic, ..._extraArguments: unknown[]): Dynamic => <MenuPopupsAnchoredWithoutFinalFocus anchoredWithoutFinalFocus={value46} cursorAnchored={value3} data-cds={input18} data-presentation={value4 ? `sheet` : undefined} data-sheet-tree={value4 ? value11?.treeId : undefined} data-cds-sheet-depth={value4 ? String(value26.depth) : undefined} {...value32 ? {
+            [SheetsDataCdsSheetCovered]: ``
+          } : {}} {...value33 ? SheetsState4 : {}} {...value5 && value11 !== null && !value11.open ? {
+            [SheetsDataCdsSheetTreeClosing]: ``
+          } : {}} {...value5 && value37 && !value12.open ? {
+            [SheetsDataCdsSheetPeeling]: ``
+          } : {}} {...value4 ? resolveUiProviderAndLayersDataSize(`lg`) : {}} ref={value48} {...input20(value4 ? state : input15)} style={value50} className={resolveUiDesignSystemValue2(MenuPopupsPopover, value10.held?.popupClassName, value4 && SheetsState5, value4 && (value5 ? `bg-transparent shadow-none [&[data-ending-style]:not([data-cds-sheet-tree-closing])]:translate-x-full rtl:[&[data-ending-style]:not([data-cds-sheet-tree-closing])]:-translate-x-full [&[data-ending-style][data-cds-sheet-peeling]]:translate-x-full rtl:[&[data-ending-style][data-cds-sheet-peeling]]:-translate-x-full [&[data-ending-style][data-cds-sheet-tree-closing]]:translate-y-[calc(100%+1.5rem)]` : `data-[starting-style]:translate-y-[calc(100%+1.5rem)] data-[ending-style]:translate-y-[calc(100%+1.5rem)]`), value4 && `origin-top [&[data-cds-sheet-covered]:not([data-starting-style]):not([data-ending-style])]:-translate-y-3 data-[cds-sheet-covered]:scale-[0.94] after:pointer-events-none after:absolute after:inset-0 after:rounded-[inherit] after:bg-backdrop after:opacity-0 after:transition-opacity after:duration-sheet motion-reduce:after:transition-none data-[cds-sheet-covered]:after:opacity-100`, input7)}>{value4 ? <SheetsCreateContext2.Provider value={value53}>
+                                      <SheetPopupDrawPill drawPill={!value5} />
                                       <div className={SheetsState6}>
-                                        <MenuInteractionsHeader
-                                            header={input9}
-                                            headerClassName={SheetsStyles4}
-                                            footer={input10}
-                                            fill={true}
-                                          >
+                                        <MenuInteractionsHeader header={input9} headerClassName={SheetsStyles4} footer={input10} fill={true}>
                                           {input8}
                                           {!value5 && <SheetCloseMenuItem />}
                                         </MenuInteractionsHeader>
                                         <SheetBackMenuItem nested={value5} />
                                       </div>
-                                    </SheetsCreateContext2.Provider>
-                                    ) : (
-                                      <MenuInteractionsHeader
-                                        header={input9}
-                                        footer={input10}
-                                        maxVisibleItems={input11}
-                                      >
+                                    </SheetsCreateContext2.Provider> : <MenuInteractionsHeader header={input9} footer={input10} maxVisibleItems={input11}>
                                       {input8}
-                                    </MenuInteractionsHeader>
-                                    ),
-                                  })}
-                                />
-                              )}
-                          </MenuPopupsCell>
-                          ),
-                        })}
-                      />
-                  </UiProviderAndLayersCreateContext13.Provider>
-                  )}
-              </UiShortcutsAndSizingOverride>,
-              ],
-            })}
-          />
+                                    </MenuInteractionsHeader>}</MenuPopupsAnchoredWithoutFinalFocus>}
+                          </MenuPopupsCell>}</BaseMenuPositioner>
+                  </UiProviderAndLayersCreateContext13.Provider>}
+              </UiShortcutsAndSizingOverride>}</UiOverlaysAndIconsSurface>
       </BaseMenuPortal>
       );
     },

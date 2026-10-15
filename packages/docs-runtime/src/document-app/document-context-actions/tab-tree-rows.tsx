@@ -7,7 +7,6 @@ import {
   UiOverlaysAndIconsCustomIcon,
   isObservabilityBrowserAndOperationEventsRelatedTarget,
   isPlatformApiAndAuthColor,
-  originalJsxsProps,
   resolveDataOperationControlByKey,
   resolveEditorExtensionsDelete,
   resolvePlatformSyncAndRoutingUntitled,
@@ -233,123 +232,83 @@ function TabTreeRows(
           let hint: Dynamic =
             dnd.hint !== null && dnd.hint.id === node.id ? dnd.hint.zone : null;
           return (
-            <li
-              {...originalJsxsProps(
-                {
-                  role: `none`,
-                  children: [
-                    <TabTreeRow
-                      id={node.id}
-                      label={label}
-                      shown={shown}
-                      depth={depth}
-                      index={index}
-                      count={nodes.length}
-                      ariaShift={posShift}
-                      under={
-                        headings2 === null
-                          ? `subtabs`
-                          : node.children.length > 0
-                            ? `both`
-                            : `headings`
-                      }
-                      gutter={gutter}
-                      parentId={parentId}
-                      firstChildId={node.children[0]?.id}
-                      nextSiblingId={nodes[index + 1]?.id}
-                      caret={caret}
-                      active={node.id === activeId}
-                      isExpanded={isExpanded}
-                      isEditingRow={isEditingRow}
-                      draft={isEditingRow ? editing.draft : null}
-                      dropOk={dropOk}
-                      hint={hint}
-                      rowPresence={presenceBy?.get(node.id)}
-                      rowSplash={splashTs?.get(node.id)}
-                      splashPlayed={splashPlayed}
-                      busy={busy}
-                      readOnly={readOnly}
-                      onlyTab={
-                        depth === 0 &&
-                        nodes.length === 1 &&
-                        node.children.length === 0
-                      }
-                      kind={kinds.get(node.id)}
-                      moving={moveSavingIds !== null}
-                      moveSaving={moveSavingIds?.has(node.id) ?? false}
-                      intoName={
-                        index > 0
-                          ? (displayNames.get(nodes[index - 1].id) ??
-                            nodes[index - 1].entry.name ??
-                            ``)
-                          : undefined
-                      }
-                      actions={actions}
-                    />,
-                    expanded.has(node.id) && headings2 !== null ? (
-                      <TabsHeadingRow
-                        id={controlId}
-                        tabName={shown}
-                        rows={headings2.rows}
-                        places={headings2.places}
-                        marked={headings2.marked}
-                        stop={null}
-                        level={depth + 2}
-                        indentRem={
-                          (depth + 1) * TAB_PRESENCE_ANIMATION_DURATION +
-                          TAB_PRESENCE_ANIMATION_MIN -
-                          0.5
-                        }
-                        cap={null}
-                        testid={`tab-rail-heading`}
-                        onPick={(
-                          tabTreeRows?: Dynamic,
-                          options?: Dynamic,
-                          ..._extraArguments: unknown[]
-                        ): Dynamic => headings2.onPick(tabTreeRows, options)}
-                        onRowFocus={headings2.onRowFocus}
-                        onRowBlur={headings2.onRowBlur}
-                      />
-                    ) : null,
-                    expanded.has(node.id) && node.children.length > 0 && (
-                      <TabTreeRows
-                        nodes={node.children}
-                        displayNames={displayNames}
-                        depth={depth + 1}
-                        parentId={node.id}
-                        activeId={activeId}
-                        expanded={expanded}
-                        headings={headings}
-                        posShift={posShift2}
-                        presenceBy={presenceBy}
-                        splashTs={splashTs}
-                        splashPlayed={splashPlayed}
-                        busy={busy}
-                        readOnly={readOnly}
-                        editing={editing}
-                        onDraft={onDraft}
-                        onRenameCommit={onRenameCommit}
-                        onRenameCancel={onRenameCancel}
-                        onToggle={onToggle}
-                        onOpen={onOpen}
-                        onRenameStart={onRenameStart}
-                        onNewSubtab={onNewSubtab}
-                        kinds={kinds}
-                        onMenuOpen={onMenuOpen}
-                        onCopyLink={onCopyLink}
-                        onDuplicate={onDuplicate}
-                        onDelete={onDelete}
-                        onMoveStep={onMoveStep}
-                        moveSavingIds={moveSavingIds}
-                        dnd={dnd}
-                        gutter={gutter}
-                      />
-                    ),
-                  ],
-                },
-                node.id,
-              )}
-            />
+            <li role={`none`} key={node.id}>{<TabTreeRow
+              id={node.id}
+              label={label}
+              shown={shown}
+              depth={depth}
+              index={index}
+              count={nodes.length}
+              ariaShift={posShift}
+              under={headings2 === null ? `subtabs` : node.children.length > 0 ? `both` : `headings`}
+              gutter={gutter}
+              parentId={parentId}
+              firstChildId={node.children[0]?.id}
+              nextSiblingId={nodes[index + 1]?.id}
+              caret={caret}
+              active={node.id === activeId}
+              isExpanded={isExpanded}
+              isEditingRow={isEditingRow}
+              draft={isEditingRow ? editing.draft : null}
+              dropOk={dropOk}
+              hint={hint}
+              rowPresence={presenceBy?.get(node.id)}
+              rowSplash={splashTs?.get(node.id)}
+              splashPlayed={splashPlayed}
+              busy={busy}
+              readOnly={readOnly}
+              onlyTab={depth === 0 && nodes.length === 1 && node.children.length === 0}
+              kind={kinds.get(node.id)}
+              moving={moveSavingIds !== null}
+              moveSaving={moveSavingIds?.has(node.id) ?? false}
+              intoName={index > 0 ? displayNames.get(nodes[index - 1].id) ?? nodes[index - 1].entry.name ?? `` : undefined}
+              actions={actions}
+            />}{expanded.has(node.id) && headings2 !== null ? <TabsHeadingRow
+              id={controlId}
+              tabName={shown}
+              rows={headings2.rows}
+              places={headings2.places}
+              marked={headings2.marked}
+              stop={null}
+              level={depth + 2}
+              indentRem={(depth + 1) * TAB_PRESENCE_ANIMATION_DURATION + TAB_PRESENCE_ANIMATION_MIN - 0.5}
+              cap={null}
+              testid={`tab-rail-heading`}
+              onPick={(tabTreeRows?: Dynamic, options?: Dynamic, ..._extraArguments: unknown[]): Dynamic => headings2.onPick(tabTreeRows, options)}
+              onRowFocus={headings2.onRowFocus}
+              onRowBlur={headings2.onRowBlur}
+            /> : null}{expanded.has(node.id) && node.children.length > 0 && <TabTreeRows
+              nodes={node.children}
+              displayNames={displayNames}
+              depth={depth + 1}
+              parentId={node.id}
+              activeId={activeId}
+              expanded={expanded}
+              headings={headings}
+              posShift={posShift2}
+              presenceBy={presenceBy}
+              splashTs={splashTs}
+              splashPlayed={splashPlayed}
+              busy={busy}
+              readOnly={readOnly}
+              editing={editing}
+              onDraft={onDraft}
+              onRenameCommit={onRenameCommit}
+              onRenameCancel={onRenameCancel}
+              onToggle={onToggle}
+              onOpen={onOpen}
+              onRenameStart={onRenameStart}
+              onNewSubtab={onNewSubtab}
+              kinds={kinds}
+              onMenuOpen={onMenuOpen}
+              onCopyLink={onCopyLink}
+              onDuplicate={onDuplicate}
+              onDelete={onDelete}
+              onMoveStep={onMoveStep}
+              moveSavingIds={moveSavingIds}
+              dnd={dnd}
+              gutter={gutter}
+            />}</li>
           );
         },
       )}

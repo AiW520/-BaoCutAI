@@ -11,7 +11,6 @@ import {
   PlatformAnnouncementsMessage3,
   Tooltip,
   UNCONFIRMED_WORDS_AFTER_MS,
-  originalJsxProps,
   quoteWords,
   resolveDataModelSchemasChecked,
   resolvePlatformAnnouncementsValue,
@@ -227,25 +226,17 @@ function CommentComposerCds(
     sendToClaude: sendToClaude,
   }: Dynamic = useCommentComponentsWrapper(route, named, busy, onPointerToggle);
   return (
-    <span
-      {...originalJsxProps({
-        className: `contents`,
-        ...useCommentComponentsWrapper2,
-        children: (
-          <Composer
-            editor={editor}
-            value={text}
-            canSubmit={canSubmit}
-            busy={busy}
-            onSubmit={onSend}
-            submitOnPlainEnter={plainEnterPosts}
-            sendToClaude={sendToClaude}
-            form={form}
-            data-testid={`comment-composer-cds`}
-          />
-        ),
-      })}
-    />
+    <span className={`contents`} {...useCommentComponentsWrapper2}>{<Composer
+      editor={editor}
+      value={text}
+      canSubmit={canSubmit}
+      busy={busy}
+      onSubmit={onSend}
+      submitOnPlainEnter={plainEnterPosts}
+      sendToClaude={sendToClaude}
+      form={form}
+      data-testid={`comment-composer-cds`}
+    />}</span>
   );
 }
 
@@ -270,48 +261,22 @@ function CommentClaudeToggle(
   let enabledRef2: Dynamic = (0, React.useRef)(false);
   let controlId: Dynamic = (0, React.useId)();
   let jsx = (
-    <Checkbox
-      {...originalJsxProps({
-        size: commentClaudeToggleResult(`xs`),
-        className: resolveUiDesignSystemValue2(
-          boxClassName,
-          commentClaudeToggleResult2.locked && `opacity-disabled`,
-        ),
-        label: (
-          <span className={`text-secondary text-caption`}>
+    <Checkbox size={commentClaudeToggleResult(`xs`)} className={resolveUiDesignSystemValue2(boxClassName, commentClaudeToggleResult2.locked && `opacity-disabled`)} label={<span className={`text-secondary text-caption`}>
             {DataModelSchemasSendToClaude}
-          </span>
-        ),
-        checked: commentClaudeToggleResult2.checked,
-        disabled:
-          busy ||
-          (commentClaudeToggleResult2.disabled &&
-            !commentClaudeToggleResult2.locked),
-        ...(commentClaudeToggleResult2.locked
-          ? {
-              readOnly: true,
-            }
-          : {}),
-        "aria-describedby": commentClaudeToggleResult2.locked
-          ? controlId
-          : undefined,
-        onCheckedChange: (
-          commentClaude?: Dynamic,
-          ..._extraArguments: unknown[]
-        ): undefined => {
-          let enabled: Dynamic = enabledRef.current;
-          enabledRef.current = false;
-          if (!enabledRef2.current) {
-            if (!commentClaudeToggleResult2.locked) {
-              route.onChange(commentClaude === true);
-              if (enabled) {
-                onPointerToggle?.();
-              }
-            }
-          }
-        },
-      })}
-    />
+          </span>} checked={commentClaudeToggleResult2.checked} disabled={busy || commentClaudeToggleResult2.disabled && !commentClaudeToggleResult2.locked} {...commentClaudeToggleResult2.locked ? {
+  readOnly: true
+} : {}} aria-describedby={commentClaudeToggleResult2.locked ? controlId : undefined} onCheckedChange={(commentClaude?: Dynamic, ..._extraArguments: unknown[]): undefined => {
+  let enabled: Dynamic = enabledRef.current;
+  enabledRef.current = false;
+  if (!enabledRef2.current) {
+    if (!commentClaudeToggleResult2.locked) {
+      route.onChange(commentClaude === true);
+      if (enabled) {
+        onPointerToggle?.();
+      }
+    }
+  }
+}} />
   );
   return (
     <span

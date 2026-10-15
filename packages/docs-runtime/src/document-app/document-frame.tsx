@@ -170,8 +170,6 @@ import {
   listFilterSaid,
   listTitleCount,
   mintedThreadId,
-  originalJsxProps,
-  originalJsxsProps,
   otherEditorDirty,
   quietCarrierThreads,
   quoteWords,
@@ -693,7 +691,7 @@ function DocumentFrame(
   get n5() { return n5; },
   get request() { return request; },
   get Menu() { return Menu; },
-  get originalJsxsProps() { return originalJsxsProps; },
+
   get documentFrameState8() { return documentFrameState8; },
   get Tooltip() { return Tooltip; },
   get IconButton() { return IconButton; },
@@ -729,7 +727,7 @@ function DocumentFrame(
   get UseDocumentSourcePromptDraftComponent() { return UseDocumentSourcePromptDraftComponent; },
   get LdocCommentDraftClamped() { return LdocCommentDraftClamped; },
   get CommentReplyComposer() { return CommentReplyComposer; },
-  get originalJsxProps() { return originalJsxProps; },
+
   get placeholder() { return placeholder; },
   get ariaLabel() { return ariaLabel; },
   get claudeRoute() { return claudeRoute; },
@@ -2026,7 +2024,7 @@ function DocumentFrame(
   get PHONE_EDIT_BUTTON_CLASS() { return PHONE_EDIT_BUTTON_CLASS; },
   get uniqueItems() { return uniqueItems; },
   get resolveCommentsEditorReactionOnly() { return resolveCommentsEditorReactionOnly; },
-  get originalJsxProps() { return originalJsxProps; },
+
   get WhoReacted() { return WhoReacted; },
   get resolveCommentsEditorUser() { return resolveCommentsEditorUser; },
   get ReactionChip() { return ReactionChip; },
@@ -2080,7 +2078,7 @@ function DocumentFrame(
   get documentFrameResult6() { return documentFrameResult6; },
   get documentFrameResult7() { return documentFrameResult7; },
   get Tooltip() { return Tooltip; },
-  get originalJsxProps() { return originalJsxProps; },
+
   get useCommentStore() { return useCommentStore; },
   get onExpand2() { return onExpand2; },
   get resolvePlatformAnnouncementsValue() { return resolvePlatformAnnouncementsValue; },

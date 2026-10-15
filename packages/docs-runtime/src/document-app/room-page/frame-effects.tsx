@@ -287,7 +287,14 @@ export function runRoomPage202Unavailable(roomPageContext: {
 }): Dynamic {
   return <div className={`p-lg text-body`} data-testid={`room-ldoc-error`}>
         {roomPageContext.items.length > 0 && <div className={`mb-md`}>
-            <RecoveryTextPanel items={roomPageContext.items} onDismiss={roomPageContext.onDismiss} onCopyReport={resolveCommentsStoreValue30() ? roomPageContext.openDebugReportDialog2 : undefined} viewOnly={roomPageContext.readOnly2} gone={roomPageContext.gone} errorFace={true} />
+            <RecoveryTextPanel
+              items={roomPageContext.items}
+              onDismiss={roomPageContext.onDismiss}
+              onCopyReport={resolveCommentsStoreValue30() ? roomPageContext.openDebugReportDialog2 : undefined}
+              viewOnly={roomPageContext.readOnly2}
+              gone={roomPageContext.gone}
+              errorFace={true}
+            />
           </div>}
         {roomPageContext.reason === DataOperationControlNodeGone2 || roomPageContext.reason === DataOperationControlPageGone ? <div className={`text-footnote text-secondary`} role={`status`} data-testid={`room-ldoc-gone`}>
             {roomPageContext.reason}

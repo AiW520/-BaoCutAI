@@ -35,8 +35,6 @@ import {
   isEditorAnchorsAndMentionsSuggestion,
   isFrameArtifact,
   loadEditorExtensionsPluginKey,
-  originalJsxProps,
-  originalJsxsProps,
   renderMenuItems,
   resolveCommentsActionsAndSelectionFrame,
   resolveCommentsActionsAndSelectionNoun,
@@ -196,63 +194,33 @@ function UseCommentComposerModalComponent(
       isDataOperationControlRoot(elementRef2, elementRef),
   );
   return (
-    <Menu.Root
-      {...originalJsxsProps({
-        modal: false,
-        ...useCommentComposerModalState.root,
-        children: [
-          <Tooltip content={EditorExtensionsMoreActions}>
-            <Menu.Trigger
-              render={
-                <IconButton
-                  ref={elementRef}
-                  aria-label={EditorExtensionsMoreActions}
-                  size={20}
-                  icon={
-                    <UiOverlaysAndIconsCustomIcon
-                      name={`DotsHorizontal`}
-                      customSize={14}
-                    />
-                  }
-                  onClick={(
-                    commentComposerModal?: Dynamic,
-                    ..._extraArguments: unknown[]
-                  ): Dynamic => commentComposerModal.stopPropagation()}
-                />
-              }
-            />
-          </Tooltip>,
-          <Menu.Popup
+    <Menu.Root modal={false} {...useCommentComposerModalState.root}>{<Tooltip content={EditorExtensionsMoreActions}>
+            <Menu.Trigger render={<IconButton
+              ref={elementRef}
+              aria-label={EditorExtensionsMoreActions}
+              size={20}
+              icon={<UiOverlaysAndIconsCustomIcon name={`DotsHorizontal`} customSize={14} />}
+              onClick={(commentComposerModal?: Dynamic, ..._extraArguments: unknown[]): Dynamic => commentComposerModal.stopPropagation()}
+            />} />
+          </Tooltip>}{<Menu.Popup
             ref={elementRef2}
             align={`end`}
             finalFocus={useCommentComposerModalState.finalFocus}
-            onClick={(
-              commentComposerModal?: Dynamic,
-              ..._extraArguments: unknown[]
-            ): Dynamic => commentComposerModal.stopPropagation()}
+            onClick={(commentComposerModal?: Dynamic, ..._extraArguments: unknown[]): Dynamic => commentComposerModal.stopPropagation()}
           >
-            {renderMenuItems(
-              [
-                {
-                  label: `Copy link`,
-                  onSelect: onCopyLink,
-                },
-                onEdit && {
-                  label: `Edit`,
-                  onSelect: onEdit,
-                },
-                onDelete && {
-                  label: resolveEditorExtensionsDelete(`comment`),
-                  variant: `danger`,
-                  separatorBefore: true,
-                  onSelect: onDelete,
-                },
-              ].filter(Boolean),
-            )}
-          </Menu.Popup>,
-        ],
-      })}
-    />
+            {renderMenuItems([{
+      label: `Copy link`,
+      onSelect: onCopyLink
+    }, onEdit && {
+      label: `Edit`,
+      onSelect: onEdit
+    }, onDelete && {
+      label: resolveEditorExtensionsDelete(`comment`),
+      variant: `danger`,
+      separatorBefore: true,
+      onSelect: onDelete
+    }].filter(Boolean))}
+          </Menu.Popup>}</Menu.Root>
   );
 }
 
@@ -320,37 +288,17 @@ function PendingAsk({ asks: asks }: Dynamic, ..._extraArguments: unknown[]) {
           );
           return (
             <Tooltip
-              {...originalJsxProps(
-                {
-                  content: pendingAskResult3.via
-                    ? `Asked via ${pendingAskResult3.via}`
-                    : item.channel
-                      ? `Asked in ${item.channel.startsWith(`#`) ? item.channel : `#${item.channel}`}`
-                      : item.channelId
-                        ? `Asked from Slack channel ${item.channelId}`
-                        : `Asked via ${item.label}`,
-                  multiline: true,
-                  children: (
-                    <div
-                      data-testid={`pending-ask`}
-                      className={`text-muted flex cursor-default items-center gap-1.5 text-[12px]`}
-                    >
-                      <span
-                        className={`bg-accent-blue size-2 shrink-0 animate-pulse rounded-full`}
-                      />
+              content={pendingAskResult3.via ? `Asked via ${pendingAskResult3.via}` : item.channel ? `Asked in ${item.channel.startsWith(`#`) ? item.channel : `#${item.channel}`}` : item.channelId ? `Asked from Slack channel ${item.channelId}` : `Asked via ${item.label}`}
+              multiline={true}
+              key={resolveCommentsEditorChannel(item, pendingAskResult)}
+            >{<div data-testid={`pending-ask`} className={`text-muted flex cursor-default items-center gap-1.5 text-[12px]`}>
+                      <span className={`bg-accent-blue size-2 shrink-0 animate-pulse rounded-full`} />
                       <span className={`min-w-0 truncate`}>
                         {`Waiting on `}
                         {pendingAskResult3.line}
-                        {item.n > 1
-                          ? ` · ${item.n} asks · oldest ${resolveCommentComposerValue(item.oldest, parse)}`
-                          : ` · asked ${resolveCommentComposerValue(item.oldest, parse)}`}
+                        {item.n > 1 ? ` · ${item.n} asks · oldest ${resolveCommentComposerValue(item.oldest, parse)}` : ` · asked ${resolveCommentComposerValue(item.oldest, parse)}`}
                       </span>
-                    </div>
-                  ),
-                },
-                resolveCommentsEditorChannel(item, pendingAskResult),
-              )}
-            />
+                    </div>}</Tooltip>
           );
         },
       )}

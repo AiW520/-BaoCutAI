@@ -91,7 +91,6 @@ import {
   loadDataOperationControlKind,
   loadPlatformLiveDocumentAndHistoryLimit,
   onFrameGotoAnchor,
-  originalJsxProps,
   platformLiveDocumentAndHistoryModalModalRefValues,
   resolveCommentsActionsAndSelectionValue3,
   resolveCommentsEditorStore,
@@ -521,7 +520,7 @@ function RoomViewEmbedPage(..._extraArguments: unknown[]) {
     get onVisualize(): Dynamic { return onVisualize; },
     get oneTabList(): Dynamic { return oneTabList; },
     get open(): Dynamic { return open; },
-    get originalJsxProps(): Dynamic { return originalJsxProps; },
+
     get outlineFeed(): Dynamic { return outlineFeed; },
     get outlineJump(): Dynamic { return outlineJump; },
     get outlineWanted(): Dynamic { return outlineWanted; },

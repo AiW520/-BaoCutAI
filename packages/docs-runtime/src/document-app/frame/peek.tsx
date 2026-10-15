@@ -1,3 +1,4 @@
+import { jsx as renderReactJsx } from "react/jsx-runtime";
 /** BaoCut: extracted comment frame peek expressions; state remains owned by the original closure. */
 import type { Dynamic } from "../../interop/legacy-dynamic";
 import type { DocumentFrameContext } from "./context";
@@ -114,7 +115,7 @@ export function createDocumentFrameOnClose122(__documentClosure: Pick<DocumentFr
     }) })["onClose"]);
 }
 
-export function createDocumentFrameJsxs9123(__documentClosure: Pick<DocumentFrameContext, "useWidgetBridgeCurrent2" | "lookupEntry2" | "covered" | "BottomSheet" | "shouldClose" | "onClose" | "widgetBridgeFlatMapIndex" | "jsxRuntime" | "widgetBridgeFlatMap" | "IconButton" | "UiOverlaysAndIconsCustomIcon" | "widgetBridgeValue" | "resolveUiDesignSystemValue2" | "PHONE_TOUCH_TARGET_CLASS" | "indexOf" | "widgetBridgeValue2" | "PHONE_EDIT_BUTTON_CLASS" | "uniqueItems" | "resolveCommentsEditorReactionOnly" | "originalJsxProps" | "WhoReacted" | "resolveCommentsEditorUser" | "ReactionChip" | "isWholeDocumentComment" | "callback6" | "resolveDocumentSourcePromptValue2" | "documentFrameResult6" | "documentFrameResult7" | "DocumentSourcePrompt_WholeDocument" | "hintId2" | "onReact" | "onDelete" | "onUnreactRoot" | "onResolve" | "onReopen" | "readOnly" | "commentOnly2" | "documentFrameHandler10" | "CiteOutcomeChip" | "record" | "onExpand2" | "resolveDocumentSourcePromptTarget3" | "callback5" | "hintId" | "PhoneConfirmationDialog" | "id2" | "setId" | "elementRef18">): Dynamic {
+export function createDocumentFrameJsxs9123(__documentClosure: Pick<DocumentFrameContext, "useWidgetBridgeCurrent2" | "lookupEntry2" | "covered" | "BottomSheet" | "shouldClose" | "onClose" | "widgetBridgeFlatMapIndex" | "jsxRuntime" | "widgetBridgeFlatMap" | "IconButton" | "UiOverlaysAndIconsCustomIcon" | "widgetBridgeValue" | "resolveUiDesignSystemValue2" | "PHONE_TOUCH_TARGET_CLASS" | "indexOf" | "widgetBridgeValue2" | "PHONE_EDIT_BUTTON_CLASS" | "uniqueItems" | "resolveCommentsEditorReactionOnly" | "WhoReacted" | "resolveCommentsEditorUser" | "ReactionChip" | "isWholeDocumentComment" | "callback6" | "resolveDocumentSourcePromptValue2" | "documentFrameResult6" | "documentFrameResult7" | "DocumentSourcePrompt_WholeDocument" | "hintId2" | "onReact" | "onDelete" | "onUnreactRoot" | "onResolve" | "onReopen" | "readOnly" | "commentOnly2" | "documentFrameHandler10" | "CiteOutcomeChip" | "record" | "onExpand2" | "resolveDocumentSourcePromptTarget3" | "callback5" | "hintId" | "PhoneConfirmationDialog" | "id2" | "setId" | "elementRef18">): Dynamic {
   return (__documentClosure.useWidgetBridgeCurrent2 && __documentClosure.lookupEntry2 && !__documentClosure.covered ? (
         <__documentClosure.BottomSheet
           shouldClose={__documentClosure.shouldClose}
@@ -183,32 +184,12 @@ export function createDocumentFrameJsxs9123(__documentClosure: Pick<DocumentFram
               );
             };
             return (0, __documentClosure.resolveCommentsEditorReactionOnly)(lookupEntry3) ? (
-              <div
-                {...(0, __documentClosure.originalJsxProps)(
-                  {
-                    className: `p-lg`,
-                    children: (
-                      <__documentClosure.WhoReacted
-                        reactions={(0, __documentClosure.resolveCommentsEditorUser)(lookupEntry3)}
-                      >
+              <div className={`p-lg`} key={(0, __documentClosure.documentFrameHandler10)(lookupEntry3)}>{<__documentClosure.WhoReacted reactions={(0, __documentClosure.resolveCommentsEditorUser)(lookupEntry3)}>
                         <__documentClosure.ReactionChip
                           t={lookupEntry3}
                           active={true}
-                          showLabel={
-                            hasId || (0, __documentClosure.isWholeDocumentComment)(lookupEntry3)
-                          }
-                          quote={
-                            hasId
-                              ? (0, __documentClosure.callback6)(lookupEntry3)
-                              : ((0, __documentClosure.resolveDocumentSourcePromptValue2)(
-                                  lookupEntry3,
-                                  __documentClosure.documentFrameResult6,
-                                  __documentClosure.documentFrameResult7,
-                                ) ??
-                                ((0, __documentClosure.isWholeDocumentComment)(lookupEntry3)
-                                  ? __documentClosure.DocumentSourcePrompt_WholeDocument
-                                  : undefined))
-                          }
+                          showLabel={hasId || (0, __documentClosure.isWholeDocumentComment)(lookupEntry3)}
+                          quote={hasId ? (0, __documentClosure.callback6)(lookupEntry3) : (0, __documentClosure.resolveDocumentSourcePromptValue2)(lookupEntry3, __documentClosure.documentFrameResult6, __documentClosure.documentFrameResult7) ?? ((0, __documentClosure.isWholeDocumentComment)(lookupEntry3) ? __documentClosure.DocumentSourcePrompt_WholeDocument : undefined)}
                           tabStop={true}
                           onNavigate={onNavigate2}
                           hintId={__documentClosure.hintId2}
@@ -220,51 +201,30 @@ export function createDocumentFrameJsxs9123(__documentClosure: Pick<DocumentFram
                           readOnly={__documentClosure.readOnly}
                           commentOnly={__documentClosure.commentOnly2}
                         />
-                      </__documentClosure.WhoReacted>
-                    ),
-                  },
-                  (0, __documentClosure.documentFrameHandler10)(lookupEntry3),
-                )}
-              />
+                      </__documentClosure.WhoReacted>}</div>
             ) : (
-              <__documentClosure.CiteOutcomeChip
-                {...(0, __documentClosure.originalJsxProps)(
-                  {
-                    t: lookupEntry3,
-                    ...__documentClosure.record,
-                    chrome: `cds`,
-                    onExpand: __documentClosure.onExpand2,
-                    active: true,
-                    expanded: true,
-                    flat: true,
-                    resolveMotion: `check`,
-                    quote: hasId
-                      ? (0, __documentClosure.callback6)(lookupEntry3)
-                      : (0, __documentClosure.resolveDocumentSourcePromptTarget3)(
-                          lookupEntry3,
-                          __documentClosure.documentFrameResult7,
-                        ),
-                    chartLine: hasId ? (0, __documentClosure.callback5)(lookupEntry3) : undefined,
-                    orphan: false,
-                    wholePage: !hasId && (0, __documentClosure.isWholeDocumentComment)(lookupEntry3),
-                    anchorLabel: hasId
-                      ? undefined
-                      : (0, __documentClosure.resolveDocumentSourcePromptValue2)(
-                          lookupEntry3,
-                          __documentClosure.documentFrameResult6,
-                          __documentClosure.documentFrameResult7,
-                        ),
-                    away: true,
-                    onNavigate: onNavigate2,
-                    hintId: __documentClosure.hintId,
-                    tabStop: true,
-                    touch: true,
-                    replyRoad: `sheet`,
-                    fit: true,
-                  },
-                  (0, __documentClosure.documentFrameHandler10)(lookupEntry3),
-                )}
-              />
+              renderReactJsx(__documentClosure.CiteOutcomeChip, {
+  t: lookupEntry3,
+  ...__documentClosure.record,
+  chrome: `cds`,
+  onExpand: __documentClosure.onExpand2,
+  active: true,
+  expanded: true,
+  flat: true,
+  resolveMotion: `check`,
+  quote: hasId ? (0, __documentClosure.callback6)(lookupEntry3) : (0, __documentClosure.resolveDocumentSourcePromptTarget3)(lookupEntry3, __documentClosure.documentFrameResult7),
+  chartLine: hasId ? (0, __documentClosure.callback5)(lookupEntry3) : undefined,
+  orphan: false,
+  wholePage: !hasId && (0, __documentClosure.isWholeDocumentComment)(lookupEntry3),
+  anchorLabel: hasId ? undefined : (0, __documentClosure.resolveDocumentSourcePromptValue2)(lookupEntry3, __documentClosure.documentFrameResult6, __documentClosure.documentFrameResult7),
+  away: true,
+  onNavigate: onNavigate2,
+  hintId: __documentClosure.hintId,
+  tabStop: true,
+  touch: true,
+  replyRoad: `sheet`,
+  fit: true
+}, (0, __documentClosure.documentFrameHandler10)(lookupEntry3))
             );
           })()}
           <__documentClosure.PhoneConfirmationDialog
@@ -288,7 +248,7 @@ export function createDocumentFrameJsxs9123(__documentClosure: Pick<DocumentFram
       ) : null);
 }
 
-export function createDocumentFrameRender124(__documentClosure: Pick<DocumentFrameContext, "observe" | "iconLane2" | "DocumentFrame_Comments" | "covered" | "jsxs" | "EditorHostState33" | "setDocumentFrameState8" | "iconLane" | "documentSelectionIds" | "lookup3" | "uniqueItems" | "isWholeDocumentComment" | "resolveDocumentRuntimeValue10" | "resolveCommentComponentsCount" | "callback5" | "callback6" | "resolveDocumentSourcePromptCells" | "documentFrameResult6" | "documentFrameResult7" | "Tooltip" | "originalJsxProps" | "useCommentStore" | "onExpand2" | "resolvePlatformAnnouncementsValue" | "setDocumentFrameState7" | "scrollTo2" | "querySelectorAll2" | "elementRef9" | "predict2" | "documentFrameHandler8" | "UiOverlaysAndIconsCustomIcon" | "useWidgetBridgeCurrent2" | "jsxs9" | "lookupEntry2" | "flatMap2" | "elementRef13" | "top" | "maxHeight" | "observe2" | "onFocus" | "getAttribute" | "documentFrameHandler5" | "resolveCommentsEditorReactionOnly" | "resolveUiTooltipsAndControlsValue3" | "ReactionChip" | "resolveDocumentSourcePromptValue2" | "DocumentSourcePrompt_WholeDocument" | "fsEntryId5" | "onNavigate" | "hintId2" | "onReact" | "onDelete" | "onUnreactRoot" | "onResolve" | "onReopen" | "readOnly" | "commentOnly2" | "documentFrameHandler10" | "CiteOutcomeChip" | "record" | "documentSelectionId" | "resolveDocumentSourcePromptTarget3" | "hintId">): Dynamic {
+export function createDocumentFrameRender124(__documentClosure: Pick<DocumentFrameContext, "observe" | "iconLane2" | "DocumentFrame_Comments" | "covered" | "jsxs" | "EditorHostState33" | "setDocumentFrameState8" | "iconLane" | "documentSelectionIds" | "lookup3" | "uniqueItems" | "isWholeDocumentComment" | "resolveDocumentRuntimeValue10" | "resolveCommentComponentsCount" | "callback5" | "callback6" | "resolveDocumentSourcePromptCells" | "documentFrameResult6" | "documentFrameResult7" | "Tooltip" | "useCommentStore" | "onExpand2" | "resolvePlatformAnnouncementsValue" | "setDocumentFrameState7" | "scrollTo2" | "querySelectorAll2" | "elementRef9" | "predict2" | "documentFrameHandler8" | "UiOverlaysAndIconsCustomIcon" | "useWidgetBridgeCurrent2" | "jsxs9" | "lookupEntry2" | "flatMap2" | "elementRef13" | "top" | "maxHeight" | "observe2" | "onFocus" | "getAttribute" | "documentFrameHandler5" | "resolveCommentsEditorReactionOnly" | "resolveUiTooltipsAndControlsValue3" | "ReactionChip" | "resolveDocumentSourcePromptValue2" | "DocumentSourcePrompt_WholeDocument" | "fsEntryId5" | "onNavigate" | "hintId2" | "onReact" | "onDelete" | "onUnreactRoot" | "onResolve" | "onReopen" | "readOnly" | "commentOnly2" | "documentFrameHandler10" | "CiteOutcomeChip" | "record" | "documentSelectionId" | "resolveDocumentSourcePromptTarget3" | "hintId">): Dynamic {
   return (<div
         ref={__documentClosure.observe}
         role={__documentClosure.iconLane2 ? `region` : undefined}
@@ -371,105 +331,39 @@ export function createDocumentFrameRender124(__documentClosure: Pick<DocumentFra
                       : undefined,
                   });
                   return (
-                    <__documentClosure.Tooltip
-                      {...(0, __documentClosure.originalJsxProps)(
-                        {
-                          content: content,
-                          side: `left`,
-                          children: (
-                            <button
-                              type={`button`}
-                              data-testid={`comment-icon`}
-                              data-whole-page={matchesLookupEntry3 || undefined}
-                              aria-label={ariaLabel2}
-                              className={`text-secondary hover:text-primary hover:bg-alpha-1 pointer-events-auto absolute left-0 inline-flex items-center gap-1 rounded px-1 transition-colors`}
-                              style={{
-                                top: documentSelectionId2.y,
-                                height: 26,
-                              }}
-                              data-threads={documentSelectionId2.ids.join(` `)}
-                              onClick={(
-                                documentFrame?: Dynamic,
-                                ..._extraArguments: unknown[]
-                              ): undefined => {
-                                let matchesFocusId =
-                                  __documentClosure.useCommentStore.getState().focusId ===
-                                  documentSelectionId2.ids[0];
-                                if (!(0, __documentClosure.onExpand2)(documentSelectionId2.ids[0])) {
-                                  if (documentFrame.detail === 0) {
-                                    (0, __documentClosure.resolvePlatformAnnouncementsValue)(
-                                      document,
-                                      `Finish or cancel what you're writing first`,
-                                      {
-                                        key: `comment-card`,
-                                      },
-                                    );
-                                  }
-                                  return;
-                                }
-                                (0, __documentClosure.setDocumentFrameState7)(
-                                  documentSelectionId2.ids.length > 1
-                                    ? [...documentSelectionId2.ids]
-                                    : null,
-                                );
-                                (0, __documentClosure.scrollTo2)(documentSelectionId2.ids[0]);
-                                if (documentFrame.detail === 0) {
-                                  if (matchesFocusId) {
-                                    (0, __documentClosure.querySelectorAll2)(
-                                      documentSelectionId2.ids[0],
-                                    )?.focus({
-                                      preventScroll: true,
-                                    });
-                                  } else {
-                                    __documentClosure.elementRef9.current =
-                                      documentSelectionId2.ids[0];
-                                  }
-                                }
-                              }}
-                              onMouseEnter={(
-                                ..._extraArguments: unknown[]
-                              ): Dynamic =>
-                                __documentClosure.useCommentStore
-                                  .getState()
-                                  .setActive(
-                                    documentSelectionId2.ids[0],
-                                    documentSelectionId2.ids.slice(1),
-                                  )
-                              }
-                              onMouseLeave={(
-                                ..._extraArguments: unknown[]
-                              ): Dynamic =>
-                                __documentClosure.useCommentStore.getState().setActive(null)
-                              }
-                              onFocus={(
-                                event?: Dynamic,
-                                ..._extraArguments: unknown[]
-                              ): undefined => {
-                                __documentClosure.useCommentStore
-                                  .getState()
-                                  .setActive(
-                                    documentSelectionId2.ids[0],
-                                    documentSelectionId2.ids.slice(1),
-                                  );
-                                (0, __documentClosure.predict2)(event.currentTarget);
-                              }}
-                              onBlur={(0, __documentClosure.documentFrameHandler8)(
-                                documentSelectionId2.ids[0],
-                              )}
-                            >
-                              <__documentClosure.UiOverlaysAndIconsCustomIcon
-                                name={`Chat`}
-                                customSize={14}
-                              />
+                    <__documentClosure.Tooltip content={content} side={`left`} key={documentSelectionId2.ids[0]}>{<button type={`button`} data-testid={`comment-icon`} data-whole-page={matchesLookupEntry3 || undefined} aria-label={ariaLabel2} className={`text-secondary hover:text-primary hover:bg-alpha-1 pointer-events-auto absolute left-0 inline-flex items-center gap-1 rounded px-1 transition-colors`} style={{
+    top: documentSelectionId2.y,
+    height: 26
+  }} data-threads={documentSelectionId2.ids.join(` `)} onClick={(documentFrame?: Dynamic, ..._extraArguments: unknown[]): undefined => {
+    let matchesFocusId = __documentClosure.useCommentStore.getState().focusId === documentSelectionId2.ids[0];
+    if (!(0, __documentClosure.onExpand2)(documentSelectionId2.ids[0])) {
+      if (documentFrame.detail === 0) {
+        (0, __documentClosure.resolvePlatformAnnouncementsValue)(document, `Finish or cancel what you're writing first`, {
+          key: `comment-card`
+        });
+      }
+      return;
+    }
+    (0, __documentClosure.setDocumentFrameState7)(documentSelectionId2.ids.length > 1 ? [...documentSelectionId2.ids] : null);
+    (0, __documentClosure.scrollTo2)(documentSelectionId2.ids[0]);
+    if (documentFrame.detail === 0) {
+      if (matchesFocusId) {
+        (0, __documentClosure.querySelectorAll2)(documentSelectionId2.ids[0])?.focus({
+          preventScroll: true
+        });
+      } else {
+        __documentClosure.elementRef9.current = documentSelectionId2.ids[0];
+      }
+    }
+  }} onMouseEnter={(..._extraArguments: unknown[]): Dynamic => __documentClosure.useCommentStore.getState().setActive(documentSelectionId2.ids[0], documentSelectionId2.ids.slice(1))} onMouseLeave={(..._extraArguments: unknown[]): Dynamic => __documentClosure.useCommentStore.getState().setActive(null)} onFocus={(event?: Dynamic, ..._extraArguments: unknown[]): undefined => {
+    __documentClosure.useCommentStore.getState().setActive(documentSelectionId2.ids[0], documentSelectionId2.ids.slice(1));
+    (0, __documentClosure.predict2)(event.currentTarget);
+  }} onBlur={(0, __documentClosure.documentFrameHandler8)(documentSelectionId2.ids[0])}>
+                              <__documentClosure.UiOverlaysAndIconsCustomIcon name={`Chat`} customSize={14} />
                               <span className={`text-caption font-medium`}>
                                 {count}
                               </span>
-                            </button>
-                          ),
-                        },
-                        documentSelectionId2.ids[0],
-                      )}
-                    />
+                            </button>}</__documentClosure.Tooltip>
                   );
                 },
               )}
@@ -515,84 +409,46 @@ export function createDocumentFrameRender124(__documentClosure: Pick<DocumentFra
                       let hasId: Dynamic = __documentClosure.uniqueItems.has(mt2.id);
                       return (0, __documentClosure.resolveCommentsEditorReactionOnly)(mt2) ? (
                         <div
-                          {...(0, __documentClosure.originalJsxProps)(
-                            {
-                              "data-testid": `ldoc-peek-reaction-card`,
-                              "data-active": open2 || undefined,
-                              className: `${(0, __documentClosure.resolveUiTooltipsAndControlsValue3)(`panel`)} data-[active]:shadow-panel transition-shadow duration-fast text-primary text-body p-lg`,
-                              children: (
-                                <__documentClosure.ReactionChip
-                                  t={mt2}
-                                  active={open2}
-                                  showLabel={
-                                    hasId || (0, __documentClosure.isWholeDocumentComment)(mt2)
-                                  }
-                                  quote={
-                                    hasId
-                                      ? (0, __documentClosure.callback6)(mt2)
-                                      : ((0, __documentClosure.resolveDocumentSourcePromptValue2)(
-                                          mt2,
-                                          __documentClosure.documentFrameResult6,
-                                          __documentClosure.documentFrameResult7,
-                                        ) ??
-                                        ((0, __documentClosure.isWholeDocumentComment)(mt2)
-                                          ? __documentClosure.DocumentSourcePrompt_WholeDocument
-                                          : undefined))
-                                  }
-                                  tabStop={__documentClosure.fsEntryId5 === mt2.id}
-                                  onNavigate={__documentClosure.onNavigate}
-                                  hintId={__documentClosure.hintId2}
-                                  onReact={__documentClosure.onReact}
-                                  onDelete={__documentClosure.onDelete}
-                                  onUnreactRoot={__documentClosure.onUnreactRoot}
-                                  onResolve={__documentClosure.onResolve}
-                                  onReopen={__documentClosure.onReopen}
-                                  readOnly={__documentClosure.readOnly}
-                                  commentOnly={__documentClosure.commentOnly2}
-                                />
-                              ),
-                            },
-                            (0, __documentClosure.documentFrameHandler10)(mt2),
-                          )}
-                        />
+                          data-testid={`ldoc-peek-reaction-card`}
+                          data-active={open2 || undefined}
+                          className={`${(0, __documentClosure.resolveUiTooltipsAndControlsValue3)(`panel`)} data-[active]:shadow-panel transition-shadow duration-fast text-primary text-body p-lg`}
+                          key={(0, __documentClosure.documentFrameHandler10)(mt2)}
+                        >{<__documentClosure.ReactionChip
+                          t={mt2}
+                          active={open2}
+                          showLabel={hasId || (0, __documentClosure.isWholeDocumentComment)(mt2)}
+                          quote={hasId ? (0, __documentClosure.callback6)(mt2) : (0, __documentClosure.resolveDocumentSourcePromptValue2)(mt2, __documentClosure.documentFrameResult6, __documentClosure.documentFrameResult7) ?? ((0, __documentClosure.isWholeDocumentComment)(mt2) ? __documentClosure.DocumentSourcePrompt_WholeDocument : undefined)}
+                          tabStop={__documentClosure.fsEntryId5 === mt2.id}
+                          onNavigate={__documentClosure.onNavigate}
+                          hintId={__documentClosure.hintId2}
+                          onReact={__documentClosure.onReact}
+                          onDelete={__documentClosure.onDelete}
+                          onUnreactRoot={__documentClosure.onUnreactRoot}
+                          onResolve={__documentClosure.onResolve}
+                          onReopen={__documentClosure.onReopen}
+                          readOnly={__documentClosure.readOnly}
+                          commentOnly={__documentClosure.commentOnly2}
+                        />}</div>
                       ) : (
-                        <__documentClosure.CiteOutcomeChip
-                          {...(0, __documentClosure.originalJsxProps)(
-                            {
-                              t: mt2,
-                              ...__documentClosure.record,
-                              onExpand: __documentClosure.onExpand2,
-                              active: open2,
-                              expanded: open2,
-                              resolveMotion: `check`,
-                              quote: hasId
-                                ? (0, __documentClosure.callback6)(mt2)
-                                : __documentClosure.documentSelectionId
-                                  ? (0, __documentClosure.resolveDocumentSourcePromptTarget3)(
-                                      mt2,
-                                      __documentClosure.documentFrameResult7,
-                                    )
-                                  : undefined,
-                              chartLine: hasId ? (0, __documentClosure.callback5)(mt2) : undefined,
-                              orphan: false,
-                              wholePage: !hasId && (0, __documentClosure.isWholeDocumentComment)(mt2),
-                              anchorLabel: hasId
-                                ? undefined
-                                : (0, __documentClosure.resolveDocumentSourcePromptValue2)(
-                                    mt2,
-                                    __documentClosure.documentFrameResult6,
-                                    __documentClosure.documentFrameResult7,
-                                  ),
-                              away: __documentClosure.flatMap2.length > 1,
-                              beside: hasId && __documentClosure.flatMap2.length === 1,
-                              onNavigate: __documentClosure.onNavigate,
-                              hintId: __documentClosure.hintId,
-                              tabStop: __documentClosure.fsEntryId5 === mt2.id,
-                              chrome: `cds`,
-                            },
-                            (0, __documentClosure.documentFrameHandler10)(mt2),
-                          )}
-                        />
+                        renderReactJsx(__documentClosure.CiteOutcomeChip, {
+  t: mt2,
+  ...__documentClosure.record,
+  onExpand: __documentClosure.onExpand2,
+  active: open2,
+  expanded: open2,
+  resolveMotion: `check`,
+  quote: hasId ? (0, __documentClosure.callback6)(mt2) : __documentClosure.documentSelectionId ? (0, __documentClosure.resolveDocumentSourcePromptTarget3)(mt2, __documentClosure.documentFrameResult7) : undefined,
+  chartLine: hasId ? (0, __documentClosure.callback5)(mt2) : undefined,
+  orphan: false,
+  wholePage: !hasId && (0, __documentClosure.isWholeDocumentComment)(mt2),
+  anchorLabel: hasId ? undefined : (0, __documentClosure.resolveDocumentSourcePromptValue2)(mt2, __documentClosure.documentFrameResult6, __documentClosure.documentFrameResult7),
+  away: __documentClosure.flatMap2.length > 1,
+  beside: hasId && __documentClosure.flatMap2.length === 1,
+  onNavigate: __documentClosure.onNavigate,
+  hintId: __documentClosure.hintId,
+  tabStop: __documentClosure.fsEntryId5 === mt2.id,
+  chrome: `cds`
+}, (0, __documentClosure.documentFrameHandler10)(mt2))
                       );
                     },
                   )}
@@ -787,7 +643,7 @@ export function createDocumentFrameRender130(__documentClosure: Pick<DocumentFra
     </div>);
 }
 
-export function createDocumentFrameRender131(__documentClosure: Pick<DocumentFrameContext, "updateElement" | "ariaLabelledby" | "documentFrameResult28" | "jsxs" | "jsxs3" | "jsxs4" | "PaneResizeHandle" | "originalJsxProps">): Dynamic {
+export function createDocumentFrameRender131(__documentClosure: Pick<DocumentFrameContext, "updateElement" | "ariaLabelledby" | "documentFrameResult28" | "jsxs" | "jsxs3" | "jsxs4" | "PaneResizeHandle">): Dynamic {
   return (<div
       ref={__documentClosure.updateElement}
       role={`region`}
@@ -804,12 +660,10 @@ export function createDocumentFrameRender131(__documentClosure: Pick<DocumentFra
       {__documentClosure.jsxs3}
       {__documentClosure.jsxs4}
       <__documentClosure.PaneResizeHandle
-        {...(0, __documentClosure.originalJsxProps)({
-          ...__documentClosure.documentFrameResult28.handleProps,
-          side: `left`,
-          bordered: true,
-          label: `Resize comments`,
-        })}
+        {...__documentClosure.documentFrameResult28.handleProps}
+        side={`left`}
+        bordered={true}
+        label={`Resize comments`}
       />
     </div>);
 }

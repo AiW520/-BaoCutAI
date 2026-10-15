@@ -3,8 +3,6 @@ import type { Dynamic } from "../../interop/legacy-dynamic";
 import {
   React,
   clsx,
-  originalJsxProps,
-  originalJsxsProps,
 } from "../dependencies";
 import {
   UiDesignSystemUseLayoutEffect,
@@ -31,32 +29,12 @@ function DropZone_Overlay(
 ) {
   return (
     <div
-      {...originalJsxProps({
-        ...dropZoneOverlay,
-        "aria-hidden": true,
-        "data-cds": `DropZone`,
-        ...resolvePlatformKeyboardAndSaveStatusDataDragOver(dragState),
-        className: resolveUiDesignSystemValue2(
-          `pointer-events-none absolute inset-0 z-10 rounded-[inherit] opacity-0 shadow-drop-ring`,
-          `outline-2 -outline-offset-2 outline-transparent`,
-          `transition-opacity duration-snap ease-out motion-reduce:transition-none`,
-          `data-[drag-over]:opacity-100`,
-          `data-[drag-rejected]:shadow-drop-ring-danger`,
-          className,
-        ),
-        children: (
-          <div
-            className={resolveUiDesignSystemValue2(
-              `absolute inset-0 rounded-[inherit] opacity-0 shadow-drop-glow`,
-              `transition-opacity duration-slow ease-out motion-reduce:transition-none`,
-              `[[data-drag-over]>&]:opacity-100`,
-              `[[data-drag-over]>&]:delay-[100ms]`,
-              `[[data-drag-rejected]>&]:shadow-drop-glow-danger`,
-            )}
-          />
-        ),
-      })}
-    />
+      {...dropZoneOverlay}
+      aria-hidden={true}
+      data-cds={`DropZone`}
+      {...resolvePlatformKeyboardAndSaveStatusDataDragOver(dragState)}
+      className={resolveUiDesignSystemValue2(`pointer-events-none absolute inset-0 z-10 rounded-[inherit] opacity-0 shadow-drop-ring`, `outline-2 -outline-offset-2 outline-transparent`, `transition-opacity duration-snap ease-out motion-reduce:transition-none`, `data-[drag-over]:opacity-100`, `data-[drag-rejected]:shadow-drop-ring-danger`, className)}
+    >{<div className={resolveUiDesignSystemValue2(`absolute inset-0 rounded-[inherit] opacity-0 shadow-drop-glow`, `transition-opacity duration-slow ease-out motion-reduce:transition-none`, `[[data-drag-over]>&]:opacity-100`, `[[data-drag-over]>&]:delay-[100ms]`, `[[data-drag-rejected]>&]:shadow-drop-glow-danger`)} />}</div>
   );
 }
 
@@ -2204,53 +2182,24 @@ export function initializePlatformKeyboardAndSaveStatusStep1(): void {
       };
       return (
         <div
-          {...originalJsxsProps({
-            ...platformKeyboardAndSaveStatusOrientation,
-            ref: options,
-            "data-cds": `ResizeHandle`,
-            role: `separator`,
-            "aria-orientation": matchesOrientation ? `vertical` : `horizontal`,
-            tabIndex: 0,
-            "data-dragging": enabledState ? `` : undefined,
-            onMouseDown: onMouseDown2,
-            onKeyDown: onKeyDown2,
-            className: resolveUiDesignSystemValue2(
-              `cds-reset group/resize outline-none focus-visible:outline-hidden`,
-              matchesOrientation
-                ? `w-3 cursor-col-resize`
-                : `h-3 cursor-row-resize`,
-              side === undefined
-                ? [`relative`, matchesOrientation ? `h-full` : `w-full`]
-                : [`absolute`, PlatformKeyboardAndSaveStatusInlineStart[side]],
-              className,
-            ),
-            children: [
-              <div
-                aria-hidden={true}
-                className={clsx(
-                  `absolute rounded-full transition-shadow duration-fast group-focus-visible/resize:shadow-focus`,
-                  matchesOrientation
-                    ? `inset-y-0 left-1/2 w-3 -translate-x-1/2 cursor-col-resize`
-                    : `inset-x-0 top-1/2 h-3 -translate-y-1/2 cursor-row-resize`,
-                )}
-              />,
-              <div
-                aria-hidden={true}
-                data-cds-part={`resize-pill`}
-                className={clsx(
-                  `absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full bg-current transition-[opacity,color,background-color]`,
-                  matchesOrientation
-                    ? `h-full max-h-12 w-[3px] group-focus-visible/resize:max-h-none`
-                    : `h-[3px] w-full max-w-12 group-focus-visible/resize:max-w-none`,
-                  enabledState
-                    ? `text-secondary opacity-100 duration-snap`
-                    : `text-muted opacity-[var(--cds-resize-pill-force,0)] delay-200 duration-base group-hover/resize:opacity-100`,
-                  `group-focus-visible/resize:bg-fill-accent group-focus-visible/resize:opacity-100 group-focus-visible/resize:delay-0`,
-                )}
-              />,
-            ],
-          })}
-        />
+          {...platformKeyboardAndSaveStatusOrientation}
+          ref={options}
+          data-cds={`ResizeHandle`}
+          role={`separator`}
+          aria-orientation={matchesOrientation ? `vertical` : `horizontal`}
+          tabIndex={0}
+          data-dragging={enabledState ? `` : undefined}
+          onMouseDown={onMouseDown2}
+          onKeyDown={onKeyDown2}
+          className={resolveUiDesignSystemValue2(`cds-reset group/resize outline-none focus-visible:outline-hidden`, matchesOrientation ? `w-3 cursor-col-resize` : `h-3 cursor-row-resize`, side === undefined ? [`relative`, matchesOrientation ? `h-full` : `w-full`] : [`absolute`, PlatformKeyboardAndSaveStatusInlineStart[side]], className)}
+        >{<div
+          aria-hidden={true}
+          className={clsx(`absolute rounded-full transition-shadow duration-fast group-focus-visible/resize:shadow-focus`, matchesOrientation ? `inset-y-0 left-1/2 w-3 -translate-x-1/2 cursor-col-resize` : `inset-x-0 top-1/2 h-3 -translate-y-1/2 cursor-row-resize`)}
+        />}{<div
+          aria-hidden={true}
+          data-cds-part={`resize-pill`}
+          className={clsx(`absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full bg-current transition-[opacity,color,background-color]`, matchesOrientation ? `h-full max-h-12 w-[3px] group-focus-visible/resize:max-h-none` : `h-[3px] w-full max-w-12 group-focus-visible/resize:max-w-none`, enabledState ? `text-secondary opacity-100 duration-snap` : `text-muted opacity-[var(--cds-resize-pill-force,0)] delay-200 duration-base group-hover/resize:opacity-100`, `group-focus-visible/resize:bg-fill-accent group-focus-visible/resize:opacity-100 group-focus-visible/resize:delay-0`)}
+        />}</div>
       );
     },
   ));

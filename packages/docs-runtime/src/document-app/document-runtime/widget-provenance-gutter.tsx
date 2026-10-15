@@ -12,7 +12,6 @@ import {
   isFrameArtifact,
   isObservabilityTelemetryRemote,
   liveDoor,
-  originalJsxsProps,
   page,
   preloadModule,
   renderMenuItems,
@@ -228,157 +227,51 @@ function WidgetProvenanceGutter(
                 ? total - documentRuntimeLimit6
                 : documentRuntimeLimit43 - documentRuntimeLimit42;
           return (
-            <React.Fragment
-              {...originalJsxsProps(
-                {
-                  children: [
-                    onEdit !== undefined && (
-                      <div
-                        className={`pointer-events-auto absolute transition-opacity duration-100`}
-                        data-testid={`widget-hover-toolbar-seat`}
-                        data-widget-chrome={dataWidgetChrome}
-                        style={{
-                          top: Math.max(0, item2 + documentRuntimeLimit6),
-                          ...(difference2 === undefined
-                            ? {
-                                left: 36,
-                              }
-                            : {
-                                left: Math.max(0, difference2),
-                                transform: `translateX(-100%)`,
-                              }),
-                          visibility: matchesItem ? `visible` : `hidden`,
-                          opacity: +!!revealed,
-                          pointerEvents:
-                            matchesItem && revealed ? `auto` : `none`,
-                        }}
-                        onPointerEnter={(
-                          ..._extraArguments: unknown[]
-                        ): Dynamic =>
-                          page.hover(dataWidgetChrome, true, `toolbar`)
-                        }
-                        onPointerLeave={(
-                          ..._extraArguments: unknown[]
-                        ): Dynamic =>
-                          page.hover(dataWidgetChrome, false, `toolbar`)
-                        }
-                        onFocus={(..._extraArguments: unknown[]): Dynamic =>
-                          page.focus(dataWidgetChrome, true)
-                        }
-                        onBlur={(
-                          widgetProvenanceGutter?: Dynamic,
-                          ..._extraArguments: unknown[]
-                        ) =>
-                          resolveDocumentRuntimeRelatedTarget(
-                            widgetProvenanceGutter,
-                            dataWidgetChrome,
-                          )
-                        }
-                      >
-                        <UseDocumentRuntimeNodeIdComponent
-                          nodeId={dataWidgetChrome}
-                        />
-                        <DocumentRuntimeMemo
-                          nodeId={dataWidgetChrome}
-                          onEdit={onEdit}
-                          onEscape={actions?.onEscape}
-                        />
-                      </div>
-                    ),
-                    <div
-                      className={`pointer-events-auto absolute flex flex-col items-center gap-1`}
-                      data-widget-chrome={dataWidgetChrome}
-                      style={{
-                        top: Math.max(0, item2 + documentRuntimeLimit6),
-                        left: Math.max(0, documentRuntimeLimit43),
-                        paddingLeft: matchesTotal
-                          ? documentRuntimeLimit8
-                          : undefined,
-                        visibility:
-                          matchesItem && revealed ? `visible` : `hidden`,
-                      }}
-                      onPointerEnter={(
-                        ..._extraArguments: unknown[]
-                      ): Dynamic => page.hover(dataWidgetChrome, true, `dock`)}
-                      onPointerLeave={(
-                        ..._extraArguments: unknown[]
-                      ): Dynamic => page.hover(dataWidgetChrome, false, `dock`)}
-                      onFocus={(..._extraArguments: unknown[]): Dynamic =>
-                        page.focus(dataWidgetChrome, true)
-                      }
-                      onBlur={(
-                        widgetProvenanceGutter?: Dynamic,
-                        ..._extraArguments: unknown[]
-                      ) =>
-                        resolveDocumentRuntimeRelatedTarget(
-                          widgetProvenanceGutter,
-                          dataWidgetChrome,
-                        )
-                      }
-                    >
-                      <UseDocumentRuntimeNodeIdComponent
+            <React.Fragment key={dataWidgetChrome}>{onEdit !== undefined && <div className={`pointer-events-auto absolute transition-opacity duration-100`} data-testid={`widget-hover-toolbar-seat`} data-widget-chrome={dataWidgetChrome} style={{
+    top: Math.max(0, item2 + documentRuntimeLimit6),
+    ...(difference2 === undefined ? {
+      left: 36
+    } : {
+      left: Math.max(0, difference2),
+      transform: `translateX(-100%)`
+    }),
+    visibility: matchesItem ? `visible` : `hidden`,
+    opacity: +!!revealed,
+    pointerEvents: matchesItem && revealed ? `auto` : `none`
+  }} onPointerEnter={(..._extraArguments: unknown[]): Dynamic => page.hover(dataWidgetChrome, true, `toolbar`)} onPointerLeave={(..._extraArguments: unknown[]): Dynamic => page.hover(dataWidgetChrome, false, `toolbar`)} onFocus={(..._extraArguments: unknown[]): Dynamic => page.focus(dataWidgetChrome, true)} onBlur={(widgetProvenanceGutter?: Dynamic, ..._extraArguments: unknown[]) => resolveDocumentRuntimeRelatedTarget(widgetProvenanceGutter, dataWidgetChrome)}>
+                        <UseDocumentRuntimeNodeIdComponent nodeId={dataWidgetChrome} />
+                        <DocumentRuntimeMemo nodeId={dataWidgetChrome} onEdit={onEdit} onEscape={actions?.onEscape} />
+                      </div>}{<div className={`pointer-events-auto absolute flex flex-col items-center gap-1`} data-widget-chrome={dataWidgetChrome} style={{
+    top: Math.max(0, item2 + documentRuntimeLimit6),
+    left: Math.max(0, documentRuntimeLimit43),
+    paddingLeft: matchesTotal ? documentRuntimeLimit8 : undefined,
+    visibility: matchesItem && revealed ? `visible` : `hidden`
+  }} onPointerEnter={(..._extraArguments: unknown[]): Dynamic => page.hover(dataWidgetChrome, true, `dock`)} onPointerLeave={(..._extraArguments: unknown[]): Dynamic => page.hover(dataWidgetChrome, false, `dock`)} onFocus={(..._extraArguments: unknown[]): Dynamic => page.focus(dataWidgetChrome, true)} onBlur={(widgetProvenanceGutter?: Dynamic, ..._extraArguments: unknown[]) => resolveDocumentRuntimeRelatedTarget(widgetProvenanceGutter, dataWidgetChrome)}>
+                      <UseDocumentRuntimeNodeIdComponent nodeId={dataWidgetChrome} />
+                      {fetchFor !== undefined && !widgetProvenanceGutterResult2 && <WidgetProvenanceTrigger
                         nodeId={dataWidgetChrome}
-                      />
-                      {fetchFor !== undefined &&
-                        !widgetProvenanceGutterResult2 && (
-                          <WidgetProvenanceTrigger
-                            nodeId={dataWidgetChrome}
-                            fetchFor={fetchFor}
-                            trigger={`gutter`}
-                            onOpenDependencies={onOpenDependencies}
-                            anchorHidden={!matchesItem}
-                          />
-                        )}
-                      {actions !== undefined && (
-                        <DocumentRuntimeMemo2
-                          nodeId={dataWidgetChrome}
-                          loadHandlers={actions.loadHandlers}
-                          onRun={actions.onRun}
-                          onOpenPanel={actions.onOpenPanel}
-                          onViewData={
-                            actions.viewDataFor === dataWidgetChrome
-                              ? actions.onViewData
-                              : undefined
-                          }
-                          onOpenCode={
-                            widgetProvenanceGutterResult2
-                              ? undefined
-                              : actions.onOpenCode
-                          }
-                          onAskClaude={
-                            widgetProvenanceGutterResult2
-                              ? undefined
-                              : actions.onAskClaude
-                          }
-                          onComment={
-                            widgetProvenanceGutterResult2
-                              ? undefined
-                              : actions.onComment
-                          }
-                          onReact={
-                            widgetProvenanceGutterResult2
-                              ? undefined
-                              : actions.onReact
-                          }
-                          onDelete={
-                            widgetProvenanceGutterResult2
-                              ? undefined
-                              : actions.onDelete
-                          }
-                          noun={item.noun}
-                          onEscape={actions.onEscape}
-                          chordTarget={
-                            actions.chord === true && onEdit === undefined
-                          }
-                          anchorHidden={!matchesItem}
-                        />
-                      )}
-                    </div>,
-                  ],
-                },
-                dataWidgetChrome,
-              )}
-            />
+                        fetchFor={fetchFor}
+                        trigger={`gutter`}
+                        onOpenDependencies={onOpenDependencies}
+                        anchorHidden={!matchesItem}
+                      />}
+                      {actions !== undefined && <DocumentRuntimeMemo2
+                        nodeId={dataWidgetChrome}
+                        loadHandlers={actions.loadHandlers}
+                        onRun={actions.onRun}
+                        onOpenPanel={actions.onOpenPanel}
+                        onViewData={actions.viewDataFor === dataWidgetChrome ? actions.onViewData : undefined}
+                        onOpenCode={widgetProvenanceGutterResult2 ? undefined : actions.onOpenCode}
+                        onAskClaude={widgetProvenanceGutterResult2 ? undefined : actions.onAskClaude}
+                        onComment={widgetProvenanceGutterResult2 ? undefined : actions.onComment}
+                        onReact={widgetProvenanceGutterResult2 ? undefined : actions.onReact}
+                        onDelete={widgetProvenanceGutterResult2 ? undefined : actions.onDelete}
+                        noun={item.noun}
+                        onEscape={actions.onEscape}
+                        chordTarget={actions.chord === true && onEdit === undefined}
+                        anchorHidden={!matchesItem}
+                      />}
+                    </div>}</React.Fragment>
           );
         },
       )}

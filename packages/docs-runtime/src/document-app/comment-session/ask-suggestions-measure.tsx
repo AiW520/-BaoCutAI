@@ -8,7 +8,6 @@ import {
   PlatformSessionAndSourcesClaudeRepliedInTheComments,
   filterDataModelSchemasFilter3,
   heldThreads,
-  originalJsxsProps,
   quietCarrierThreads,
   resolveCommentsStoreLayer,
   resolveDataModelSchemasAgentRows,
@@ -431,40 +430,11 @@ function AskSuggestionsMeasure(
       </span>
       {askSuggestionsMeasure.map(
         (item?: Dynamic, index?: Dynamic, ..._extraArguments: unknown[]) => (
-          <React.Fragment
-            {...originalJsxsProps(
-              {
-                children: [
-                  index > 0 && (
-                    <span
-                      className={`text-muted`}
-                      aria-hidden={true}
-                    >{`·`}</span>
-                  ),
-                  options ? (
-                    <Link
-                      inheritColor={true}
-                      data-suggestion={item.id}
-                      onClick={(..._extraArguments: unknown[]): Dynamic =>
-                        onPick(item)
-                      }
-                    >
+          <React.Fragment key={item.id}>{index > 0 && <span className={`text-muted`} aria-hidden={true}>{`·`}</span>}{options ? <Link inheritColor={true} data-suggestion={item.id} onClick={(..._extraArguments: unknown[]): Dynamic => onPick(item)}>
                       {item.label}
-                    </Link>
-                  ) : (
-                    <Link
-                      inheritColor={true}
-                      disabled={true}
-                      data-suggestion={item.id}
-                    >
+                    </Link> : <Link inheritColor={true} disabled={true} data-suggestion={item.id}>
                       {item.label}
-                    </Link>
-                  ),
-                ],
-              },
-              item.id,
-            )}
-          />
+                    </Link>}</React.Fragment>
         ),
       )}
     </jsxRuntime.Fragment>

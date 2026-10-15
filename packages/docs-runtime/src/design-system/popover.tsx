@@ -19,8 +19,6 @@ import {
   UiProviderAndLayersCreateContext13,
   UiTooltipsAndControlsPanel,
   jsxRuntime,
-  originalJsxProps,
-  originalJsxsProps,
   resolveUiDesignSystemValue2,
   resolveUiOverlaysAndIconsValue4,
   resolveUiProviderAndLayersBase2,
@@ -163,21 +161,13 @@ function PopoverActionsRef(
       <UiOverlaysAndIconsActionsRef actionsRef={value3}>
         {value2 ? (
           <PopoverConsumerHandlesOpenChange
-            {...originalJsxProps({
-              ...input3,
-              actionsRef: value3,
-              onOpenChange: value.onOpenChange,
-              consumerHandlesOpenChange: input !== undefined,
-            })}
+            {...input3}
+            actionsRef={value3}
+            onOpenChange={value.onOpenChange}
+            consumerHandlesOpenChange={input !== undefined}
           />
         ) : (
-          <BasePopoverRoot
-            {...originalJsxProps({
-              ...input3,
-              actionsRef: value3,
-              onOpenChange: value.onOpenChange,
-            })}
-          />
+          <BasePopoverRoot {...input3} actionsRef={value3} onOpenChange={value.onOpenChange} />
         )}
       </UiOverlaysAndIconsActionsRef>
     </PopoverCreateContext2.Provider>
@@ -224,13 +214,11 @@ function PopoverConsumerHandlesOpenChange(
     <PopoverCreateContext.Provider value={value3}>
       <SheetsValue2 value={value5}>
         <BasePopoverRoot
-          {...originalJsxProps({
-            ...input2,
-            modal: value5.modal ?? input2.modal,
-            actionsRef: value5.actionsRef,
-            onOpenChange: value5.onOpenChange,
-            onOpenChangeComplete: value5.onOpenChangeComplete,
-          })}
+          {...input2}
+          modal={value5.modal ?? input2.modal}
+          actionsRef={value5.actionsRef}
+          onOpenChange={value5.onOpenChange}
+          onOpenChangeComplete={value5.onOpenChangeComplete}
         />
       </SheetsValue2>
     </PopoverCreateContext.Provider>
@@ -277,17 +265,9 @@ export function initializePopoverStep1(): void {
         value3.popupRef,
       );
       return (
-        <BasePopoverPopup
-          {...originalJsxProps({
-            "data-cds": `Popover`,
-            [UiOverlaysAndIconsDataCdsOverlay]: ``,
-            ref: value4,
-            finalFocus: value2 ? value3.finalFocus : input2,
-            ...input5,
-            className: input3,
-            children: input4,
-          })}
-        />
+        <BasePopoverPopup data-cds={`Popover`} {...{
+  [UiOverlaysAndIconsDataCdsOverlay]: ``
+}} ref={value4} finalFocus={value2 ? value3.finalFocus : input2} {...input5} className={input3}>{input4}</BasePopoverPopup>
       );
     },
   );
@@ -314,21 +294,9 @@ export function initializePopoverStep1(): void {
         ...input,
       };
       return resolveSheetsUseContext3() ? (
-        <PopoverKind
-          {...originalJsxProps({
-            ...state,
-            ref: options,
-          })}
-        />
+        <PopoverKind {...state} ref={options} />
       ) : (
-        <PopoverSheetPopup
-          {...originalJsxProps({
-            ...state,
-            ref: options,
-            sheetPopup: SheetsSheet3,
-            sheetParts: null,
-          })}
-        />
+        <PopoverSheetPopup {...state} ref={options} sheetPopup={SheetsSheet3} sheetParts={null} />
       );
     },
   );
@@ -345,14 +313,7 @@ export function initializePopoverStep1(): void {
           options2?: Dynamic,
           ..._extraArguments: unknown[]
         ): Dynamic => (
-          <PopoverSheetPopup
-            {...originalJsxProps({
-              ...input,
-              ref: options,
-              sheetPopup: input2,
-              sheetParts: options2,
-            })}
-          />
+          <PopoverSheetPopup {...input} ref={options} sheetPopup={input2} sheetParts={options2} />
         )}
     </MenuPopupsKind>
     ),
@@ -464,149 +425,47 @@ export function initializePopoverStep1(): void {
     );
     return (
       <BasePopoverPortal container={resolveUiProviderAndLayersUseContext9()}>
-      <UiOverlaysAndIconsSurface
-          {...originalJsxsProps({
-            ...value29.portalProps,
-            style: input.concealed
-              ? {
-                  ...value29.portalProps.style,
-                  ...SheetsVisibility,
-                }
-              : value29.portalProps.style,
-            surface: UiTooltipsAndControlsPanel.popover,
-            density: sheet ? SheetsComfortable : undefined,
-            companionModalCatcher: !sheet,
-            closeOnActivityHide: true,
-            children: [
-              value22 !== null && input.sheet && (
-                <value22.PopoverSheetBackdrop sheetPopup={input} />
-              ),
-              <UiProviderAndLayersCreateContext13.Provider value={value29.base}>
-              <BasePopoverPositioner
-                  {...originalJsxProps({
-                    style:
-                      input.positionerStyle === undefined
-                        ? value29.style
-                        : {
-                            ...value29.style,
-                            ...input.positionerStyle,
-                          },
-                    side: value12,
-                    align: value13,
-                    sideOffset: value14,
-                    alignOffset: value,
-                    anchor: value2,
-                    collisionPadding: value3,
-                    ...(sheet ? SheetsDisableAnchorTracking : {}),
-                    className:
-                      sheet && input.state.depth === 0
-                        ? SheetsStyles2
-                        : undefined,
-                    children: (
-                      <PopoverAnchored
-                        {...originalJsxProps({
-                          anchored: value2 != null,
-                          ref: value28,
-                          ...input.attrs,
-                          ...value11,
-                          ...(sheet
-                            ? {
-                                initialFocus: undefined,
-                              }
-                            : {}),
-                          onMouseDown: sheet
-                            ? value10
-                            : (
-                                input4?: Dynamic,
-                                ..._extraArguments: unknown[]
-                              ): undefined => {
-                                value10?.(input4);
-                                value25(input4);
-                              },
-                          style:
-                            input.style === undefined
-                              ? value11.style
-                              : typeof value11.style == `function`
-                                ? (
-                                    input4?: Dynamic,
-                                    ..._extraArguments: unknown[]
-                                  ): Dynamic => ({
-                                    ...value11.style(input4),
-                                    ...input.style,
-                                  })
-                                : {
-                                    ...value11.style,
-                                    ...input.style,
-                                  },
-                          onFocus: (
-                            event?: Dynamic,
-                            ..._extraArguments: unknown[]
-                          ): undefined => {
-                            value9?.(event);
-                            let currentTarget: Dynamic = event.currentTarget;
-                            if (
-                              event.target === currentTarget &&
-                              currentTarget.ownerDocument.activeElement ===
-                                currentTarget
-                            ) {
-                              value18.current?.focus({
-                                preventScroll: true,
-                              });
-                            }
-                          },
-                          className: resolveUiDesignSystemValue2(
-                            PopoverPopover,
-                            sheet && SheetsState5,
-                            sheet &&
-                              `data-[starting-style]:translate-y-[calc(100%+1.5rem)] data-[ending-style]:translate-y-[calc(100%+1.5rem)]`,
-                            sheet &&
-                              `origin-top [&[data-cds-sheet-covered]:not([data-starting-style]):not([data-ending-style])]:-translate-y-3 data-[cds-sheet-covered]:scale-[0.94] after:pointer-events-none after:absolute after:inset-0 after:rounded-[inherit] after:bg-backdrop after:opacity-0 after:transition-opacity after:duration-sheet motion-reduce:after:transition-none data-[cds-sheet-covered]:after:opacity-100`,
-                            sheet && `flex flex-col`,
-                            !sheet && value7,
-                          ),
-                          children:
-                            value22 !== null && input.sheet ? (
-                              <value22.PopoverSheetContent
-                                sheetPopup={input}
-                                className={value7}
-                                bodyRef={value18}
-                                bodyClassName={resolveUiDesignSystemValue2(
-                                  PopoverStyles,
-                                  value16 && `scroll-fade-y`,
-                                  PopoverNone[value15],
-                                )}
-                                closeLabel={value5}
-                              >
+      <UiOverlaysAndIconsSurface {...value29.portalProps} style={input.concealed ? {
+  ...value29.portalProps.style,
+  ...SheetsVisibility
+} : value29.portalProps.style} surface={UiTooltipsAndControlsPanel.popover} density={sheet ? SheetsComfortable : undefined} companionModalCatcher={!sheet} closeOnActivityHide={true}>{value22 !== null && input.sheet && <value22.PopoverSheetBackdrop sheetPopup={input} />}{<UiProviderAndLayersCreateContext13.Provider value={value29.base}>
+              <BasePopoverPositioner style={input.positionerStyle === undefined ? value29.style : {
+      ...value29.style,
+      ...input.positionerStyle
+    }} side={value12} align={value13} sideOffset={value14} alignOffset={value} anchor={value2} collisionPadding={value3} {...sheet ? SheetsDisableAnchorTracking : {}} className={sheet && input.state.depth === 0 ? SheetsStyles2 : undefined}>{<PopoverAnchored anchored={value2 != null} ref={value28} {...input.attrs} {...value11} {...sheet ? {
+        initialFocus: undefined
+      } : {}} onMouseDown={sheet ? value10 : (input4?: Dynamic, ..._extraArguments: unknown[]): undefined => {
+        value10?.(input4);
+        value25(input4);
+      }} style={input.style === undefined ? value11.style : typeof value11.style == `function` ? (input4?: Dynamic, ..._extraArguments: unknown[]): Dynamic => ({
+        ...value11.style(input4),
+        ...input.style
+      }) : {
+        ...value11.style,
+        ...input.style
+      }} onFocus={(event?: Dynamic, ..._extraArguments: unknown[]): undefined => {
+        value9?.(event);
+        let currentTarget: Dynamic = event.currentTarget;
+        if (event.target === currentTarget && currentTarget.ownerDocument.activeElement === currentTarget) {
+          value18.current?.focus({
+            preventScroll: true
+          });
+        }
+      }} className={resolveUiDesignSystemValue2(PopoverPopover, sheet && SheetsState5, sheet && `data-[starting-style]:translate-y-[calc(100%+1.5rem)] data-[ending-style]:translate-y-[calc(100%+1.5rem)]`, sheet && `origin-top [&[data-cds-sheet-covered]:not([data-starting-style]):not([data-ending-style])]:-translate-y-3 data-[cds-sheet-covered]:scale-[0.94] after:pointer-events-none after:absolute after:inset-0 after:rounded-[inherit] after:bg-backdrop after:opacity-0 after:transition-opacity after:duration-sheet motion-reduce:after:transition-none data-[cds-sheet-covered]:after:opacity-100`, sheet && `flex flex-col`, !sheet && value7)}>{value22 !== null && input.sheet ? <value22.PopoverSheetContent
+        sheetPopup={input}
+        className={value7}
+        bodyRef={value18}
+        bodyClassName={resolveUiDesignSystemValue2(PopoverStyles, value16 && `scroll-fade-y`, PopoverNone[value15])}
+        closeLabel={value5}
+      >
                               {value31}
-                            </value22.PopoverSheetContent>
-                            ) : (
-                              <jsxRuntime.Fragment>
-                              <div
-                                  {...originalJsxProps({
-                                    ref: value18,
-                                    tabIndex: -1,
-                                    "data-cds-popover-body": ``,
-                                    [SheetsDataCdsSheetScroll]: ``,
-                                    className: resolveUiDesignSystemValue2(
-                                      PopoverStyles,
-                                      value16 && `scroll-fade-y`,
-                                      PopoverNone[value15],
-                                    ),
-                                    children: value31,
-                                  })}
-                                />
+                            </value22.PopoverSheetContent> : <jsxRuntime.Fragment>
+                              <div ref={value18} tabIndex={-1} data-cds-popover-body={``} {...{
+            [SheetsDataCdsSheetScroll]: ``
+          }} className={resolveUiDesignSystemValue2(PopoverStyles, value16 && `scroll-fade-y`, PopoverNone[value15])}>{value31}</div>
                               {filtered}
-                            </jsxRuntime.Fragment>
-                            ),
-                        })}
-                      />
-                    ),
-                  })}
-                />
-            </UiProviderAndLayersCreateContext13.Provider>,
-            ],
-          })}
-        />
+                            </jsxRuntime.Fragment>}</PopoverAnchored>}</BasePopoverPositioner>
+            </UiProviderAndLayersCreateContext13.Provider>}</UiOverlaysAndIconsSurface>
     </BasePopoverPortal>
     );
   });
@@ -632,12 +491,7 @@ export function initializePopoverStep1(): void {
       ),
     );
     return (
-      <BasePopoverTrigger
-        {...originalJsxProps({
-          ...input,
-          ref: value2,
-        })}
-      />
+      <BasePopoverTrigger {...input} ref={value2} />
     );
   });
   PopoverTriggerEl.displayName = `Popover.Trigger`;

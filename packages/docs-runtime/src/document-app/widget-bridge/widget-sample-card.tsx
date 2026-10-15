@@ -6,7 +6,6 @@ import {
   Tooltip,
   UiDialogsRoot,
   UiOverlaysAndIconsCustomIcon,
-  originalJsxProps,
   platformSessionAndSourcesPattern9,
   resolveDataModelSchemasRail,
   resolveDataModelSchemasTarget,
@@ -478,15 +477,7 @@ function FunctionRunDialog(
                     widgetBridgeIcon2?: Dynamic,
                     ..._extraArguments: unknown[]
                   ) => (
-                    <UseWidgetBridgeIconComponent
-                      {...originalJsxProps(
-                        {
-                          icon: widgetBridgeIcon2.icon,
-                          children: widgetBridgeIcon2.label,
-                        },
-                        widgetBridgeIcon2.label,
-                      )}
-                    />
+                    <UseWidgetBridgeIconComponent icon={widgetBridgeIcon2.icon} key={widgetBridgeIcon2.label}>{widgetBridgeIcon2.label}</UseWidgetBridgeIconComponent>
                   ),
                 )}
                 {widgetBridgeIcon.length === 0 && (
@@ -953,14 +944,7 @@ function WidgetSampleProblems(
     >
       {problemsSlice.map(
         (item?: Dynamic, index?: Dynamic, ..._extraArguments: unknown[]) => (
-          <li
-            {...originalJsxProps(
-              {
-                children: resolveWidgetBridgeRule(item),
-              },
-              index,
-            )}
-          />
+          <li key={index}>{resolveWidgetBridgeRule(item)}</li>
         ),
       )}
       {total > 0 && (

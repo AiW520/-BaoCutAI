@@ -21,7 +21,6 @@ import {
   frameExportViaMcp,
   frameSaveDownload,
   frameUploadToDrive,
-  originalJsxProps,
   recordFramePhase,
   resolveCommentsStoreLayer,
   resolveDataContentAndReferencesTest5,
@@ -289,19 +288,16 @@ function DocumentPostureBadge(
       : undefined);
   let chip: Dynamic = (
     <Badge
-      {...originalJsxProps({
-        variant: `neutral`,
-        size: size2,
-        icon: matchesPosture ? `Chat` : `Lock`,
-        ...record,
-        "aria-label": ariaLabel,
-        "aria-description": ariaDescription,
-        "data-testid": `roomview-view-only`,
-        "data-posture": posture,
-        className: matchesChrome ? `select-none` : `select-none ${className}`,
-        children: ariaLabel,
-      })}
-    />
+      variant={`neutral`}
+      size={size2}
+      icon={matchesPosture ? `Chat` : `Lock`}
+      {...record}
+      aria-label={ariaLabel}
+      aria-description={ariaDescription}
+      data-testid={`roomview-view-only`}
+      data-posture={posture}
+      className={matchesChrome ? `select-none` : `select-none ${className}`}
+    >{ariaLabel}</Badge>
   );
   let jsx: Dynamic = matchesPosture2 ? (
     <DocumentPosturePopover chip={chip} tip={ariaDescription} />
@@ -1180,45 +1176,11 @@ export function initializeAskCardsDocumentPostureBadgeStep1(): void {
   ) {
     let reactionPickerResult: Dynamic = resolvePlatformSyncAndRoutingCompact();
     return (
-      <Popover.Popup
-        {...originalJsxProps({
-          ref: options,
-          ...reactionPicker,
-          padding: `xs`,
-          className: `flex gap-1`,
-          "data-testid": `reaction-picker`,
-          children: QUICK_EMOJI.map(
-            (dataEmoji?: Dynamic, ..._extraArguments: unknown[]) => (
-              <Button
-                {...originalJsxProps(
-                  {
-                    variant: `ghost`,
-                    size: reactionPickerResult(`xs`),
-                    iconOnly: true,
-                    icon: (
-                      <span
-                        aria-hidden={true}
-                        className={`leading-none`}
-                        style={{
-                          fontSize: 16,
-                        }}
-                      >
+      <Popover.Popup ref={options} {...reactionPicker} padding={`xs`} className={`flex gap-1`} data-testid={`reaction-picker`}>{QUICK_EMOJI.map((dataEmoji?: Dynamic, ..._extraArguments: unknown[]) => <Button variant={`ghost`} size={reactionPickerResult(`xs`)} iconOnly={true} icon={<span aria-hidden={true} className={`leading-none`} style={{
+    fontSize: 16
+  }}>
                       {dataEmoji}
-                    </span>
-                    ),
-                    "aria-label": resolveEditorExtensionsValue6(dataEmoji),
-                    tooltip: false,
-                    "data-emoji": dataEmoji,
-                    onClick: (..._extraArguments: unknown[]): Dynamic =>
-                      onPick(dataEmoji),
-                  },
-                  dataEmoji,
-                )}
-              />
-            ),
-          ),
-        })}
-      />
+                    </span>} aria-label={resolveEditorExtensionsValue6(dataEmoji)} tooltip={false} data-emoji={dataEmoji} onClick={(..._extraArguments: unknown[]): Dynamic => onPick(dataEmoji)} key={dataEmoji} />)}</Popover.Popup>
     );
   }));
   (DESKTOP_HOVER_QUERY = `(hover: hover) and (pointer: fine)`);

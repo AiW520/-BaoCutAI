@@ -1,5 +1,5 @@
 /** tabs-place-row: restored from TabsPlaceRow-DNisWUl6.js. */
-import { originalJsxProps } from "../react-runtime/jsx-runtime";
+
 import type { Dynamic } from "../interop/legacy-dynamic";
 import { toModuleNamespace } from "../boot/module-runtime";
 import {
@@ -107,19 +107,12 @@ function TabsPlaceRow(
       </div>
       {TABSPLACEROWCOPYItem2 ? (
         <p
-          {...originalJsxProps(
-            {
-              id: controlId,
-              role: failure ? `alert` : undefined,
-              className: failure
-                ? `text-footnote text-danger pt-1`
-                : `text-footnote text-muted pt-1`,
-              "data-testid": failure ? `tabs-place-error` : `tabs-place-why`,
-              children: TABSPLACEROWCOPYItem2,
-            },
-            (failure ? `alert:` : `why:`) + TABSPLACEROWCOPYItem2,
-          )}
-        />
+          id={controlId}
+          role={failure ? `alert` : undefined}
+          className={failure ? `text-footnote text-danger pt-1` : `text-footnote text-muted pt-1`}
+          data-testid={failure ? `tabs-place-error` : `tabs-place-why`}
+          key={(failure ? `alert:` : `why:`) + TABSPLACEROWCOPYItem2}
+        >{TABSPLACEROWCOPYItem2}</p>
       ) : null}
     </div>
   );

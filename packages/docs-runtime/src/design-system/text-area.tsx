@@ -4,7 +4,6 @@ import {
   BaseFieldControl,
   React,
   UiDesignSystemUseLayoutEffect,
-  originalJsxProps,
   resolveUiDesignSystemValue2,
   resolveUiOverlaysAndIconsValue4,
   resolveUiProviderAndLayersDataSize,
@@ -196,27 +195,15 @@ export function initializeTextAreaStep1(): void {
           disabled={input7}
           render={
             <textarea
-              {...originalJsxProps({
-                ref: value6,
-                "data-cds": `TextArea`,
-                rows: value2,
-                style: value8,
-                ...resolveUiProviderAndLayersDataSize(input3),
-                "data-invalid": value || undefined,
-                "aria-invalid": value || input6,
-                ...input9,
-                className: resolveUiDesignSystemValue2(
-                  `cds-reset`,
-                  value9,
-                  input12
-                    ? `block resize-none border-0 bg-transparent p-0 shadow-none`
-                    : `cds-input font-normal ${textAreaSurfaceClasses} enabled:[&:hover:not(:focus):not([data-invalid])]:shadow-field-hover focus-visible:shadow-focus data-[invalid]:focus-visible:shadow-focus-danger ${value4}`,
-                  `font-sans text-body text-primary placeholder:text-muted outline-none focus-visible:outline-hidden disabled:opacity-disabled`,
-                  value5,
-                  value7,
-                  input,
-                ),
-              })}
+              ref={value6}
+              data-cds={`TextArea`}
+              rows={value2}
+              style={value8}
+              {...resolveUiProviderAndLayersDataSize(input3)}
+              data-invalid={value || undefined}
+              aria-invalid={value || input6}
+              {...input9}
+              className={resolveUiDesignSystemValue2(`cds-reset`, value9, input12 ? `block resize-none border-0 bg-transparent p-0 shadow-none` : `cds-input font-normal ${textAreaSurfaceClasses} enabled:[&:hover:not(:focus):not([data-invalid])]:shadow-field-hover focus-visible:shadow-focus data-[invalid]:focus-visible:shadow-focus-danger ${value4}`, `font-sans text-body text-primary placeholder:text-muted outline-none focus-visible:outline-hidden disabled:opacity-disabled`, value5, value7, input)}
             />
           }
         />

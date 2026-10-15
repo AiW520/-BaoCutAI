@@ -5,8 +5,6 @@ import {
   UiDesignSystemUseLayoutEffect,
   UiOverlaysAndIconsCustomIcon,
   jsxRuntime,
-  originalJsxProps,
-  originalJsxsProps,
   resolveUiDesignSystemValue2,
   resolveUiLinksAndFoundationUseContext3,
   resolveUiOverlaysAndIconsValue4,
@@ -216,24 +214,7 @@ function LanguagePickerSkeleton(
                 options?: Dynamic,
                 ..._extraArguments: unknown[]
               ): Dynamic => (
-                <div
-                  {...originalJsxsProps(
-                    {
-                      className: resolveUiDesignSystemValue2(
-                        LanguagePickerPxMdPySm,
-                        `flex flex-col`,
-                      ),
-                      children: [
-                        <Skeleton width={96} className={`h-[1lh] text-body`} />,
-                        <Skeleton
-                          width={64}
-                          className={`h-[1lh] text-footnote`}
-                        />,
-                      ],
-                    },
-                    options,
-                  )}
-                />
+                <div className={resolveUiDesignSystemValue2(LanguagePickerPxMdPySm, `flex flex-col`)} key={options}>{<Skeleton width={96} className={`h-[1lh] text-body`} />}{<Skeleton width={64} className={`h-[1lh] text-footnote`} />}</div>
               ),
             )}
           </div>
@@ -523,19 +504,15 @@ export function initializeLanguagePickerStep1(): void {
                         ..._extraArguments: unknown[]
                       ): Dynamic => (
                         <LanguagePickerOption
-                          {...originalJsxProps(
-                            {
-                              option: input11,
-                              checked: input11.value === input3,
-                              isTabStop: input11.value === value29,
-                              lang: input11.value,
-                              disabled: input9,
-                              descriptionLang: input10,
-                              onSelect: input4,
-                              onKeyDown: value27,
-                            },
-                            input11.value,
-                          )}
+                          option={input11}
+                          checked={input11.value === input3}
+                          isTabStop={input11.value === value29}
+                          lang={input11.value}
+                          disabled={input9}
+                          descriptionLang={input10}
+                          onSelect={input4}
+                          onKeyDown={value27}
+                          key={input11.value}
                         />
                       ),
                     )}
@@ -549,54 +526,24 @@ export function initializeLanguagePickerStep1(): void {
                   ): Dynamic => {
                     let value30: Dynamic = value26(input11.options);
                     return (
-                      <React.Fragment
-                        {...originalJsxsProps(
-                          {
-                            children: [
-                              <div className={`mx-pad-md mt-md border-t`} />,
-                              <div className={`mt-pad-md flex flex-col gap-xs`}>
-                              <span
-                                  className={`px-md text-footnote font-normal text-muted`}
-                                >
+                      <React.Fragment key={`${options2}:${input11.label}`}>{<div className={`mx-pad-md mt-md border-t`} />}{<div className={`mt-pad-md flex flex-col gap-xs`}>
+                              <span className={`px-md text-footnote font-normal text-muted`}>
                                 {input11.label}
                               </span>
-                              <div
-                                  role={`radiogroup`}
-                                  aria-label={input11.label}
-                                  className={
-                                    LanguagePickerGridGridCols1GapXMdGapYXsSmGridCols2MdGridCols3
-                                  }
-                                >
-                                {input11.options.map(
-                                    (
-                                      input12?: Dynamic,
-                                      ..._extraArguments: unknown[]
-                                    ): Dynamic => (
-                                      <LanguagePickerOption
-                                        {...originalJsxProps(
-                                          {
-                                            option: input12,
-                                            checked: input12.value === input3,
-                                            isTabStop:
-                                              input12.value === value30,
-                                            lang: input11.lang ?? input12.value,
-                                            disabled: input9,
-                                            descriptionLang: input10,
-                                            onSelect: input4,
-                                            onKeyDown: value27,
-                                          },
-                                          input12.value,
-                                        )}
-                                      />
-                                    ),
-                                  )}
+                              <div role={`radiogroup`} aria-label={input11.label} className={LanguagePickerGridGridCols1GapXMdGapYXsSmGridCols2MdGridCols3}>
+                                {input11.options.map((input12?: Dynamic, ..._extraArguments: unknown[]): Dynamic => <LanguagePickerOption
+                                  option={input12}
+                                  checked={input12.value === input3}
+                                  isTabStop={input12.value === value30}
+                                  lang={input11.lang ?? input12.value}
+                                  disabled={input9}
+                                  descriptionLang={input10}
+                                  onSelect={input4}
+                                  onKeyDown={value27}
+                                  key={input12.value}
+                                />)}
                               </div>
-                            </div>,
-                            ],
-                          },
-                          `${options2}:${input11.label}`,
-                        )}
-                      />
+                            </div>}</React.Fragment>
                     );
                   },
                 )}

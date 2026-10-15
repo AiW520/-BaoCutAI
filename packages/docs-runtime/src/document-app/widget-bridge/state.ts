@@ -1,5 +1,5 @@
 /** BaoCut: widget bridge from index-CX4IZqzA.js. */
-import type { JSX } from "../../react-runtime/jsx-runtime";
+import type { JSX } from "react";
 import type { Dynamic } from "../../interop/legacy-dynamic";
 import {
   clearDataModelSchemasDelete2,

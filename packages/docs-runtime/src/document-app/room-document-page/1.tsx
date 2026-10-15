@@ -2111,7 +2111,16 @@ function RoomDocumentPage({
   let onOpenNodeLog: Dynamic = runRoomPage200OnOpenNodeLog(roomPageContext);
   runRoomPage201Effect(roomPageContext);
   if (reason && room) return runRoomPage202Unavailable(roomPageContext);
-  if (reason) return <DocumentUnavailablePage dir={dir} path={path} title={title} language={typeof useDocumentLanguage2 == `string` ? useDocumentLanguage2 : undefined} reason={reason} container={container} version={version} fsEntryId={fsEntryId2} />;
+  if (reason) return <DocumentUnavailablePage
+    dir={dir}
+    path={path}
+    title={title}
+    language={typeof useDocumentLanguage2 == `string` ? useDocumentLanguage2 : undefined}
+    reason={reason}
+    container={container}
+    version={version}
+    fsEntryId={fsEntryId2}
+  />;
   let documentHostStateSave: Dynamic = isFrameArtifact() && resolveDocumentHostStateSave({
     ...record3,
     turned: turned

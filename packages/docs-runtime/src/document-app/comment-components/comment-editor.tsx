@@ -17,8 +17,6 @@ import {
   isFrameArtifact,
   loadPlatformSyncAndRoutingClipboard,
   nothingToSee,
-  originalJsxProps,
-  originalJsxsProps,
   resolveDataModelSchemasAlways,
   resolveDataModelSchemasBody,
   resolveEditorAnchorsAndMentionsReplaceAll,
@@ -256,46 +254,13 @@ function CommentEditor(
       elementRef3.current?.commands.focus(),
   );
   return chrome === `cds` ? (
-    <span
-      {...originalJsxsProps({
-        className: `contents`,
-        ...useCommentComponentsWrapper2.wrapper,
-        children: [
-          sendToClaude2 && (
-            <span
-              id={controlId}
-              hidden={true}
-              data-testid={`comment-route-said`}
-            >
+    <span className={`contents`} {...useCommentComponentsWrapper2.wrapper}>{sendToClaude2 && <span id={controlId} hidden={true} data-testid={`comment-route-said`}>
               {/* BaoCut: 称「agent」，不称 Claude。 */}
               {`Sends to agent`}
-            </span>
-          ),
-          <CommentCard.EditField
-            {...originalJsxProps({
-              ref: elementRef,
-              editor: <div ref={elementRef2} data-chat-editor={true} />,
-              value: initialState,
-              savedValue: initial2,
-              busy: busy,
-              onSave: (..._extraArguments: unknown[]): undefined =>
-                void onModEnter(),
-              onCancel: onCancel,
-              sendToClaude: useCommentComponentsWrapper2.sendToClaude,
-              "data-testid": `comment-edit`,
-              onClick: (
-                commentEditor?: Dynamic,
-                ..._extraArguments: unknown[]
-              ): Dynamic => commentEditor.stopPropagation(),
-              ...(returnAddsLine && {
-                onPointerDown: resolveCommentComponentsTarget2,
-                onMouseDown: resolveCommentComponentsTarget2,
-              }),
-            })}
-          />,
-        ],
-      })}
-    />
+            </span>}{<CommentCard.EditField ref={elementRef} editor={<div ref={elementRef2} data-chat-editor={true} />} value={initialState} savedValue={initial2} busy={busy} onSave={(..._extraArguments: unknown[]): undefined => void onModEnter()} onCancel={onCancel} sendToClaude={useCommentComponentsWrapper2.sendToClaude} data-testid={`comment-edit`} onClick={(commentEditor?: Dynamic, ..._extraArguments: unknown[]): Dynamic => commentEditor.stopPropagation()} {...returnAddsLine && {
+    onPointerDown: resolveCommentComponentsTarget2,
+    onMouseDown: resolveCommentComponentsTarget2
+  }} />}</span>
   ) : (
     <div
       ref={elementRef}

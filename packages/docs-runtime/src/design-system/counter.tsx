@@ -2,7 +2,6 @@
 import type { Dynamic } from "../interop/legacy-dynamic";
 import {
   React,
-  originalJsxProps,
   resolveUiDesignSystemValue2,
   resolveUiProviderAndLayersDataSize,
 } from "./dependencies";
@@ -80,17 +79,11 @@ export function initializeCounterStep1(): void {
       if (input7)
         return (
           <span
-            {...originalJsxProps({
-              ref: options,
-              "data-cds": `Counter`,
-              "aria-hidden": `true`,
-              ...input4,
-              className: resolveUiDesignSystemValue2(
-                `inline-block size-2 shrink-0 rounded-full align-middle`,
-                CommentsNeutral4[input8],
-                input3,
-              ),
-            })}
+            ref={options}
+            data-cds={`Counter`}
+            aria-hidden={`true`}
+            {...input4}
+            className={resolveUiDesignSystemValue2(`inline-block size-2 shrink-0 rounded-full align-middle`, CommentsNeutral4[input8], input3)}
           />
         );
       if (!Number.isFinite(input)) return null;
@@ -99,24 +92,12 @@ export function initializeCounterStep1(): void {
       let value2: string = value > input5 ? `${input5}+` : `${value}`;
       return (
         <span
-          {...originalJsxProps({
-            ref: options,
-            "data-cds": `Counter`,
-            ...resolveUiProviderAndLayersDataSize(input2),
-            ...input4,
-            className: resolveUiDesignSystemValue2(
-              `inline-flex shrink-0 items-center justify-center align-middle`,
-              `h-control-nested min-w-[var(--cds-h-control-nested)] rounded-full`,
-              value2.length === 1
-                ? `px-0`
-                : `px-[calc(var(--cds-h-control-nested)*0.3)]`,
-              `font-sans text-caption font-medium proportional-nums`,
-              CommentsNeutral3[input8],
-              input3,
-            ),
-            children: value2,
-          })}
-        />
+          ref={options}
+          data-cds={`Counter`}
+          {...resolveUiProviderAndLayersDataSize(input2)}
+          {...input4}
+          className={resolveUiDesignSystemValue2(`inline-flex shrink-0 items-center justify-center align-middle`, `h-control-nested min-w-[var(--cds-h-control-nested)] rounded-full`, value2.length === 1 ? `px-0` : `px-[calc(var(--cds-h-control-nested)*0.3)]`, `font-sans text-caption font-medium proportional-nums`, CommentsNeutral3[input8], input3)}
+        >{value2}</span>
       );
     },
   );

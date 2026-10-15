@@ -1,5 +1,5 @@
 /** right-rail: restored from RightRail-BuctNQEl.js. */
-import { originalJsxProps, originalJsxsProps } from "../react-runtime/jsx-runtime";
+
 import type { Dynamic } from "../interop/legacy-dynamic";
 import { defaultRangeExtractor, useVirtualizer } from "@tanstack/react-virtual";
 
@@ -438,17 +438,7 @@ function ContributorAvatars(
     >
       {shown.map(
         (contributor?: Dynamic, ..._extraArguments: unknown[]): Dynamic => (
-          <ContributorAvatar
-            {...originalJsxProps(
-              {
-                who: contributor,
-                xs: xs,
-              },
-              contributor.kind === `human`
-                ? contributor.email
-                : contributor.kind,
-            )}
-          />
+          <ContributorAvatar who={contributor} xs={xs} key={contributor.kind === `human` ? contributor.email : contributor.kind} />
         ),
       )}
     </span>
@@ -892,26 +882,13 @@ function HistoryVersionRow(
           ).map(
             (item?: Dynamic, ..._extraArguments: unknown[]): Dynamic =>
               item != null && (
-                <Tooltip
-                  {...originalJsxProps(
-                    {
-                      content: item.full,
-                      children: (
-                        <span
-                          className={`text-muted min-w-0 truncate`}
-                          data-testid={`history-row-note`}
-                        >
+                <Tooltip content={item.full} key={item.full}>{<span className={`text-muted min-w-0 truncate`} data-testid={`history-row-note`}>
                           <span aria-hidden={`true`}>
                             {`· `}
                             {item.short}
                           </span>
                           <span className={`sr-only`}>{item.full}</span>
-                        </span>
-                      ),
-                    },
-                    item.full,
-                  )}
-                />
+                        </span>}</Tooltip>
               ),
           )}
           {contains && (
@@ -1103,22 +1080,7 @@ function HistoryLoading(
     >
       {[0, 1, 2].map(
         (item?: Dynamic, ..._extraArguments: unknown[]): Dynamic => (
-          <div
-            {...originalJsxsProps(
-              {
-                className: `flex flex-col gap-1.5`,
-                children: [
-                  <div
-                    className={`bg-alpha-1 h-3 w-2/3 animate-pulse rounded`}
-                  />,
-                  <div
-                    className={`bg-alpha-1 h-2.5 w-1/3 animate-pulse rounded`}
-                  />,
-                ],
-              },
-              item,
-            )}
-          />
+          <div className={`flex flex-col gap-1.5`} key={item}>{<div className={`bg-alpha-1 h-3 w-2/3 animate-pulse rounded`} />}{<div className={`bg-alpha-1 h-2.5 w-1/3 animate-pulse rounded`} />}</div>
         ),
       )}
     </div>
@@ -2241,27 +2203,12 @@ function VersionHistoryPanel(
   ): Dynamic =>
     diffV22 ? (
       <div
-        {...originalJsxProps(
-          {
-            "data-vh-row": ``,
-            className: `group/vhrow relative py-0.5${context && !options ? ` before:absolute before:top-0 before:right-2 before:h-px before:bg-alpha-1 before:content-[''] hover:before:hidden has-[button[aria-pressed]:focus-visible]:before:hidden ${dependencies ? `before:left-6` : `before:left-2`}` : ``}`,
-            children: (
-              <div className={options ? label : undefined}>{argument}</div>
-            ),
-          },
-          versionHistoryPanel,
-        )}
-      />
+        data-vh-row={``}
+        className={`group/vhrow relative py-0.5${context && !options ? ` before:absolute before:top-0 before:right-2 before:h-px before:bg-alpha-1 before:content-[''] hover:before:hidden has-[button[aria-pressed]:focus-visible]:before:hidden ${dependencies ? `before:left-6` : `before:left-2`}` : ``}`}
+        key={versionHistoryPanel}
+      >{<div className={options ? label : undefined}>{argument}</div>}</div>
     ) : (
-      <div
-        {...originalJsxProps(
-          {
-            className: argument2,
-            children: argument,
-          },
-          versionHistoryPanel,
-        )}
-      />
+      <div className={argument2} key={versionHistoryPanel}>{argument}</div>
     );
   let versionHistoryPanelHandler8: Dynamic = (
     versionHistoryPanel?: Dynamic,
@@ -2280,40 +2227,17 @@ function VersionHistoryPanel(
       argument,
       context,
       <jsxRuntime.Fragment>
-        <HistoryVersionRow
-          {...originalJsxProps({
-            a: versionHistoryPanel,
-            who: options,
-            label: diffV22
-              ? rowDisplayLabel(versionHistoryPanel)
-              : versionLabelOf(versionHistoryPanel),
-            isCurrent: matchesId2,
-            selected: matchesId,
-            prevSha: memoized4.get(versionHistoryPanel.id) ?? null,
-            path: versionPathOf(versionHistoryPanel, path ?? ``),
-            prevPath: memoized5.get(versionHistoryPanel.id) ?? null,
-            ...(diffV22
-              ? {
-                  v2: diffV22,
-                  base: versionHistoryPanelHandler3(versionHistoryPanel),
-                  navId: versionHistoryPanel.id,
-                  tabStops: versionHistoryPanelHandler10,
-                  stats: matchesId ? versionHistoryPanelResult6 : null,
-                  stacked: stacked,
-                  day: dependencies,
-                  indent: context,
-                  menu: (
-                    versionHistoryPanel2?: Dynamic,
-                    ..._extraArguments: unknown[]
-                  ): Dynamic =>
-                    versionHistoryPanelHandler6(
-                      versionHistoryPanel2,
-                      matchesId2,
-                    ),
-                }
-              : {}),
-          })}
-        />
+        <HistoryVersionRow a={versionHistoryPanel} who={options} label={diffV22 ? rowDisplayLabel(versionHistoryPanel) : versionLabelOf(versionHistoryPanel)} isCurrent={matchesId2} selected={matchesId} prevSha={memoized4.get(versionHistoryPanel.id) ?? null} path={versionPathOf(versionHistoryPanel, path ?? ``)} prevPath={memoized5.get(versionHistoryPanel.id) ?? null} {...diffV22 ? {
+  v2: diffV22,
+  base: versionHistoryPanelHandler3(versionHistoryPanel),
+  navId: versionHistoryPanel.id,
+  tabStops: versionHistoryPanelHandler10,
+  stats: matchesId ? versionHistoryPanelResult6 : null,
+  stacked: stacked,
+  day: dependencies,
+  indent: context,
+  menu: (versionHistoryPanel2?: Dynamic, ..._extraArguments: unknown[]): Dynamic => versionHistoryPanelHandler6(versionHistoryPanel2, matchesId2)
+} : {}} />
         {matchesId &&
           versionHistoryPanelHandler5(matchesId2, context && diffV22)}
       </jsxRuntime.Fragment>,
@@ -2939,133 +2863,51 @@ function VersionHistoryPanel(
     let diffV212: Dynamic =
       diffV210 || (!diffV22 && some && id === itemItem.id);
     return (
-      <Collapsible.Root
-        {...originalJsxsProps(
-          {
-            open: some,
-            onOpenChange: (
-              versionHistoryPanel?: Dynamic,
-              ..._extraArguments: unknown[]
-            ): undefined => {
-              if (
-                diffV22 &&
-                versionHistoryPanel &&
-                createHistoryRoverState.get() === historyGroupId(event)
-              ) {
-                createHistoryRoverState.set(itemItem.id);
-              }
-              if (diffV22 && !versionHistoryPanel) {
-                let activeElement: Dynamic =
-                  elementRef.current?.ownerDocument.activeElement ?? null;
-                let attribute: Dynamic = activeElement
-                  ?.closest(`[data-nav-id]`)
-                  ?.getAttribute(`data-nav-id`);
-                let matchesMatches: boolean =
-                  activeElement?.matches(
-                    `[data-testid="history-group-toggle"]`,
-                  ) === true &&
-                  activeElement
-                    .closest(`[data-testid="history-group"]`)
-                    ?.querySelector(`[data-nav-id]`)
-                    ?.getAttribute(`data-nav-id`) === itemItem.id;
-                if (
-                  attribute != null &&
-                  event.items.some(
-                    (item?: Dynamic, ..._extraArguments: unknown[]) =>
-                      item.id === attribute,
-                  )
-                ) {
-                  elementRef6.current = historyGroupId(event);
-                } else {
-                  if (matchesMatches) {
-                    createHistoryRoverState.set(historyGroupId(event));
-                  }
-                }
-              }
-              versionHistoryPanelHandler4(event, versionHistoryPanel);
-            },
-            "data-testid": `history-group`,
-            children: [
-              versionHistoryPanelHandler7(
-                undefined,
-                diffV210,
-                !context,
-                false,
-                <jsxRuntime.Fragment>
-                  <HistoryVersionRow
-                    {...originalJsxProps({
-                      a: itemItem,
-                      who: event.contributors,
-                      label: diffV22
-                        ? groupDisplayLabel(event).label
-                        : firstGroupLabel(event),
-                      count: event.items.length,
-                      ...(diffV22
-                        ? {
-                            v2: diffV22,
-                            navId: some ? undefined : historyGroupId(event),
-                            tabStops: versionHistoryPanelHandler10,
-                            stats: diffV212 ? versionHistoryPanelResult6 : null,
-                            editsTitle: groupDisplayLabel(event).edits,
-                            stacked: stacked,
-                            opens: versionHistoryPanelHandler2(event),
-                            contains: diffV211,
-                            day: options,
-                            menu: (
-                              versionHistoryPanel?: Dynamic,
-                              ..._extraArguments: unknown[]
-                            ): Dynamic =>
-                              versionHistoryPanelHandler6(
-                                versionHistoryPanel,
-                                matchesId,
-                              ),
-                          }
-                        : {}),
-                      lead: (
-                        <Collapsible.Trigger
-                          hideCaret={true}
-                          data-testid={`history-group-toggle`}
-                          aria-label={`${some ? `Hide` : `Show`} ${event.items.length} versions`}
-                          className={`${diffV22 ? `relative ` : ``}mt-1 h-[10px] shrink-0 justify-center`}
-                        >
+      <Collapsible.Root open={some} onOpenChange={(versionHistoryPanel?: Dynamic, ..._extraArguments: unknown[]): undefined => {
+  if (diffV22 && versionHistoryPanel && createHistoryRoverState.get() === historyGroupId(event)) {
+    createHistoryRoverState.set(itemItem.id);
+  }
+  if (diffV22 && !versionHistoryPanel) {
+    let activeElement: Dynamic = elementRef.current?.ownerDocument.activeElement ?? null;
+    let attribute: Dynamic = activeElement?.closest(`[data-nav-id]`)?.getAttribute(`data-nav-id`);
+    let matchesMatches: boolean = activeElement?.matches(`[data-testid="history-group-toggle"]`) === true && activeElement.closest(`[data-testid="history-group"]`)?.querySelector(`[data-nav-id]`)?.getAttribute(`data-nav-id`) === itemItem.id;
+    if (attribute != null && event.items.some((item?: Dynamic, ..._extraArguments: unknown[]) => item.id === attribute)) {
+      elementRef6.current = historyGroupId(event);
+    } else {
+      if (matchesMatches) {
+        createHistoryRoverState.set(historyGroupId(event));
+      }
+    }
+  }
+  versionHistoryPanelHandler4(event, versionHistoryPanel);
+}} data-testid={`history-group`} key={event.key}>{versionHistoryPanelHandler7(undefined, diffV210, !context, false, <jsxRuntime.Fragment>
+                  <HistoryVersionRow a={itemItem} who={event.contributors} label={diffV22 ? groupDisplayLabel(event).label : firstGroupLabel(event)} count={event.items.length} {...diffV22 ? {
+      v2: diffV22,
+      navId: some ? undefined : historyGroupId(event),
+      tabStops: versionHistoryPanelHandler10,
+      stats: diffV212 ? versionHistoryPanelResult6 : null,
+      editsTitle: groupDisplayLabel(event).edits,
+      stacked: stacked,
+      opens: versionHistoryPanelHandler2(event),
+      contains: diffV211,
+      day: options,
+      menu: (versionHistoryPanel?: Dynamic, ..._extraArguments: unknown[]): Dynamic => versionHistoryPanelHandler6(versionHistoryPanel, matchesId)
+    } : {}} lead={<Collapsible.Trigger
+      hideCaret={true}
+      data-testid={`history-group-toggle`}
+      aria-label={`${some ? `Hide` : `Show`} ${event.items.length} versions`}
+      className={`${diffV22 ? `relative ` : ``}mt-1 h-[10px] shrink-0 justify-center`}
+    >
                           <UiOverlaysAndIconsCustomIcon
                             name={`CaretRight`}
                             customSize={10}
                             className={`transition-transform group-data-[panel-open]/clp:rotate-90`}
                           />
-                        </Collapsible.Trigger>
-                      ),
-                      isCurrent: matchesId,
-                      selected: diffV212,
-                      prevSha: memoized4.get(itemItem.id) ?? null,
-                      path: versionPathOf(itemItem, path ?? ``),
-                      prevPath: memoized5.get(itemItem.id) ?? null,
-                    })}
-                  />
-                  {diffV210 &&
-                    versionHistoryPanelHandler5(
-                      diffV22 ? matchesId : activity?.id === memoized2,
-                    )}
-                </jsxRuntime.Fragment>,
-                diffV210 ? label : ``,
-              ),
-              <Collapsible.Panel>
-                {event.items.map(
-                  (item?: Dynamic, ..._extraArguments: unknown[]): Dynamic =>
-                    versionHistoryPanelHandler8(
-                      item,
-                      contributorsOf(item),
-                      true,
-                      options,
-                      true,
-                    ),
-                )}
-              </Collapsible.Panel>,
-            ],
-          },
-          event.key,
-        )}
-      />
+                        </Collapsible.Trigger>} isCurrent={matchesId} selected={diffV212} prevSha={memoized4.get(itemItem.id) ?? null} path={versionPathOf(itemItem, path ?? ``)} prevPath={memoized5.get(itemItem.id) ?? null} />
+                  {diffV210 && versionHistoryPanelHandler5(diffV22 ? matchesId : activity?.id === memoized2)}
+                </jsxRuntime.Fragment>, diffV210 ? label : ``)}{<Collapsible.Panel>
+                {event.items.map((item?: Dynamic, ..._extraArguments: unknown[]): Dynamic => versionHistoryPanelHandler8(item, contributorsOf(item), true, options, true))}
+              </Collapsible.Panel>}</Collapsible.Root>
     );
   };
   let versionHistoryPanelHandler19: Dynamic = (
@@ -3098,21 +2940,7 @@ function VersionHistoryPanel(
       )
     : memoized.map(
         (memoized13?: Dynamic, ..._extraArguments: unknown[]): Dynamic => (
-          <div
-            {...originalJsxsProps(
-              {
-                className: `mb-3`,
-                children: [
-                  versionHistoryPanelHandler19(memoized13.day),
-                  memoized13.groups.map(
-                    (group?: Dynamic, ..._extraArguments: unknown[]): Dynamic =>
-                      versionHistoryPanelHandler18(group),
-                  ),
-                ],
-              },
-              memoized13.day,
-            )}
-          />
+          <div className={`mb-3`} key={memoized13.day}>{versionHistoryPanelHandler19(memoized13.day)}{memoized13.groups.map((group?: Dynamic, ..._extraArguments: unknown[]): Dynamic => versionHistoryPanelHandler18(group))}</div>
         ),
       );
   let diffV27: Dynamic =
@@ -3280,24 +3108,9 @@ function VersionHistoryPanel(
         .map((event?: Dynamic, ..._extraArguments: unknown[]): Dynamic => {
           let itemItem: Dynamic = memoized12.items[event.index];
           return (
-            <div
-              {...originalJsxProps(
-                {
-                  "data-index": event.index,
-                  ref: useVirtualizer2.measureElement,
-                  className: `absolute inset-x-0 top-0`,
-                  style: {
-                    transform: `translateY(${event.start}px)`,
-                  },
-                  children: versionHistoryPanelHandler18(
-                    itemItem.g,
-                    itemItem.day,
-                    itemItem.first,
-                  ),
-                },
-                event.key,
-              )}
-            />
+            <div data-index={event.index} ref={useVirtualizer2.measureElement} className={`absolute inset-x-0 top-0`} style={{
+  transform: `translateY(${event.start}px)`
+}} key={event.key}>{versionHistoryPanelHandler18(itemItem.g, itemItem.day, itemItem.first)}</div>
           );
         })}
     </div>
@@ -3737,21 +3550,7 @@ function ActivityGroup(
       <ul className={`flex flex-col`}>
         {group.entries.map(
           (entry?: Dynamic, ..._extraArguments: unknown[]): Dynamic => (
-            <li
-              {...originalJsxProps(
-                {
-                  children: (
-                    <ActivityEntry
-                      entry={entry}
-                      now={now}
-                      locale={locale}
-                      tz={tz}
-                    />
-                  ),
-                },
-                `${entry.rev}:${entry.blockId ?? entry.blockKind}`,
-              )}
-            />
+            <li key={`${entry.rev}:${entry.blockId ?? entry.blockKind}`}>{<ActivityEntry entry={entry} now={now} locale={locale} tz={tz} />}</li>
           ),
         )}
       </ul>
@@ -3770,30 +3569,10 @@ function ActivityLoading(
     >
       {[0, 1].map(
         (item?: Dynamic, ..._extraArguments: unknown[]): Dynamic => (
-          <div
-            {...originalJsxsProps(
-              {
-                className: `flex flex-col gap-2`,
-                children: [
-                  <div className={`flex items-center gap-2`}>
-                    <div
-                      className={`bg-alpha-1 size-4 animate-pulse rounded-full`}
-                    />
-                    <div
-                      className={`bg-alpha-1 h-3 w-1/3 animate-pulse rounded`}
-                    />
-                  </div>,
-                  <div
-                    className={`bg-alpha-1 ml-8 h-3 w-2/3 animate-pulse rounded`}
-                  />,
-                  <div
-                    className={`bg-alpha-1 ml-8 h-3 w-1/2 animate-pulse rounded`}
-                  />,
-                ],
-              },
-              item,
-            )}
-          />
+          <div className={`flex flex-col gap-2`} key={item}>{<div className={`flex items-center gap-2`}>
+                    <div className={`bg-alpha-1 size-4 animate-pulse rounded-full`} />
+                    <div className={`bg-alpha-1 h-3 w-1/3 animate-pulse rounded`} />
+                  </div>}{<div className={`bg-alpha-1 ml-8 h-3 w-2/3 animate-pulse rounded`} />}{<div className={`bg-alpha-1 ml-8 h-3 w-1/2 animate-pulse rounded`} />}</div>
         ),
       )}
     </div>
@@ -3865,14 +3644,7 @@ function ActivityCoverageNotice(
     >
       {messages.map(
         (message?: Dynamic, ..._extraArguments: unknown[]): Dynamic => (
-          <p
-            {...originalJsxProps(
-              {
-                children: message,
-              },
-              message,
-            )}
-          />
+          <p key={message}>{message}</p>
         ),
       )}
     </div>
@@ -3937,17 +3709,7 @@ function PageActivityPanel(
             ) : (
               groups.map(
                 (group?: Dynamic, ..._extraArguments: unknown[]): Dynamic => (
-                  <ActivityGroup
-                    {...originalJsxProps(
-                      {
-                        group: group,
-                        now: now,
-                        locale: mode.locale,
-                        tz: mode.timeZone,
-                      },
-                      activityActorKey(group.actor),
-                    )}
-                  />
+                  <ActivityGroup group={group} now={now} locale={mode.locale} tz={mode.timeZone} key={activityActorKey(group.actor)} />
                 ),
               )
             )}
@@ -4036,15 +3798,7 @@ function FileSourcesPanel(
       <SourceSection title={`Functions this doc runs`} empty={`No functions`}>
         {memoized.runs.slice(0, 64).map(
           (runsSlice?: Dynamic, ..._extraArguments: unknown[]): Dynamic => (
-            <FunctionSourcesPanel
-              {...originalJsxProps(
-                {
-                  container: project,
-                  fnRef: runsSlice,
-                },
-                runsSlice,
-              )}
-            />
+            <FunctionSourcesPanel container={project} fnRef={runsSlice} key={runsSlice} />
           ),
         )}
         {memoized.runs.length > 64 && (
@@ -4054,14 +3808,7 @@ function FileSourcesPanel(
       <SourceSection title={`Data this doc reads`} empty={`No bound data`}>
         {memoized.reads.slice(0, 64).map(
           (readsSlice?: Dynamic, ..._extraArguments: unknown[]): Dynamic => (
-            <SourceReference
-              {...originalJsxProps(
-                {
-                  refStr: readsSlice,
-                },
-                readsSlice,
-              )}
-            />
+            <SourceReference refStr={readsSlice} key={readsSlice} />
           ),
         )}
         {memoized.reads.length > 64 && (
@@ -4338,51 +4085,30 @@ function RightRail(
     : {};
   return (
     <div
-      {...originalJsxsProps({
-        ref: elementRef,
-        className: stacked
-          ? `bg-surface-panel flex h-full w-full flex-col`
-          : `bg-surface-panel flex h-full w-[320px] shrink-0 flex-col border-l`,
-        ...record,
-        children: [
-          <div
-            ref={elementRef2}
-            className={
-              besideBar
-                ? `relative flex ${RAIL_ROW_HEIGHT_CLASS} shrink-0 items-center gap-1 px-3`
-                : `flex h-12 shrink-0 items-center gap-1 border-b px-3`
-            }
-          >
-            {filteredRAILTABS.length === 1 ? (
-              <h2
-                className={`text-primary flex-1 truncate text-[13px] font-semibold`}
-              >
+      ref={elementRef}
+      className={stacked ? `bg-surface-panel flex h-full w-full flex-col` : `bg-surface-panel flex h-full w-[320px] shrink-0 flex-col border-l`}
+      {...record}
+    >{<div
+      ref={elementRef2}
+      className={besideBar ? `relative flex ${RAIL_ROW_HEIGHT_CLASS} shrink-0 items-center gap-1 px-3` : `flex h-12 shrink-0 items-center gap-1 border-b px-3`}
+    >
+            {filteredRAILTABS.length === 1 ? <h2 className={`text-primary flex-1 truncate text-[13px] font-semibold`}>
                 {filteredRAILTABS[0].label}
-              </h2>
-            ) : (
-              <div className={`flex flex-1 gap-3`}>
-                {filteredRAILTABS.map(
-                  (
-                    { k: k2, label: label2, antOnly: antOnly }: Dynamic,
-                    ..._extraArguments: unknown[]
-                  ): Dynamic => (
-                    <button
-                      {...originalJsxsProps(
-                        {
-                          type: `button`,
-                          "data-testid": `rail-tab-${k2}`,
-                          "aria-pressed": initialState2 === k2,
-                          onClick: (..._extraArguments: unknown[]): Dynamic =>
-                            rightRailHandler(k2),
-                          className: `inline-flex items-center gap-1.5 whitespace-nowrap text-[13px] font-semibold ${initialState2 === k2 ? `text-primary` : `text-muted hover:text-primary`}`,
-                          children: [
-                            label2,
-                            antOnly && (
-                              <jsxRuntime.Fragment>
+              </h2> : <div className={`flex flex-1 gap-3`}>
+                {filteredRAILTABS.map(({
+        k: k2,
+        label: label2,
+        antOnly: antOnly
+      }: Dynamic, ..._extraArguments: unknown[]): Dynamic => <button
+        type={`button`}
+        data-testid={`rail-tab-${k2}`}
+        aria-pressed={initialState2 === k2}
+        onClick={(..._extraArguments: unknown[]): Dynamic => rightRailHandler(k2)}
+        className={`inline-flex items-center gap-1.5 whitespace-nowrap text-[13px] font-semibold ${initialState2 === k2 ? `text-primary` : `text-muted hover:text-primary`}`}
+        key={k2}
+      >{label2}{antOnly && <jsxRuntime.Fragment>
                                 {` `}
-                                <Tooltip
-                                  content={`Only visible to Anthropic employees while Page activity is in preview.`}
-                                >
+                                <Tooltip content={`Only visible to Anthropic employees while Page activity is in preview.`}>
                                   <Badge
                                     variant={`neutral`}
                                     size={`xxs`}
@@ -4391,111 +4117,39 @@ function RightRail(
                                     className={`shrink-0 select-none`}
                                   >{`Ant only`}</Badge>
                                 </Tooltip>
-                              </jsxRuntime.Fragment>
-                            ),
-                          ],
-                        },
-                        k2,
-                      )}
-                    />
-                  ),
-                )}
-              </div>
-            )}
+                              </jsxRuntime.Fragment>}</button>)}
+              </div>}
             <Tooltip content={`Close`}>
-              <IconButton
-                aria-label={`Close`}
-                size={24}
-                icon={
-                  <UiOverlaysAndIconsCustomIcon name={`X`} customSize={14} />
-                }
-                onClick={(
-                  event?: Dynamic,
-                  ..._extraArguments: unknown[]
-                ): undefined => {
-                  let rightRailResult2: Dynamic =
-                    rightRailResult &&
-                    (document as Dynamic).hasFocus() &&
-                    event.detail === 0;
-                  try {
-                    if (
-                      rightRailResult &&
-                      !rightRailResult2 &&
-                      (document as Dynamic).hasFocus() &&
-                      event.currentTarget.matches(`:focus-visible`)
-                    ) {
-                      rightRailResult2 = true;
-                    }
-                  } catch {}
-                  let activeElement: Dynamic = (document as Dynamic)
-                    .activeElement;
-                  let activeElement2: Dynamic =
-                    rightRailResult2 &&
-                    activeElement instanceof (HTMLElement as Dynamic) &&
-                    elementRef.current?.contains(activeElement)
-                      ? activeElement
-                      : null;
-                  if (
-                    !activeElement2 &&
-                    activeElement !== null &&
-                    activeElement !== (document as Dynamic).body
-                  ) {
-                    rightRailResult2 = false;
-                  }
-                  PlatformSyncAndRoutingAssign2.getState().clear();
-                  PlatformSyncAndRoutingState4.getState().set(false);
-                  if (rightRailResult2) {
-                    activeElement2?.blur();
-                    onLeave?.();
-                  }
-                }}
-              />
+              <IconButton aria-label={`Close`} size={24} icon={<UiOverlaysAndIconsCustomIcon name={`X`} customSize={14} />} onClick={(event?: Dynamic, ..._extraArguments: unknown[]): undefined => {
+        let rightRailResult2: Dynamic = rightRailResult && (document as Dynamic).hasFocus() && event.detail === 0;
+        try {
+          if (rightRailResult && !rightRailResult2 && (document as Dynamic).hasFocus() && event.currentTarget.matches(`:focus-visible`)) {
+            rightRailResult2 = true;
+          }
+        } catch {}
+        let activeElement: Dynamic = (document as Dynamic).activeElement;
+        let activeElement2: Dynamic = rightRailResult2 && activeElement instanceof (HTMLElement as Dynamic) && elementRef.current?.contains(activeElement) ? activeElement : null;
+        if (!activeElement2 && activeElement !== null && activeElement !== (document as Dynamic).body) {
+          rightRailResult2 = false;
+        }
+        PlatformSyncAndRoutingAssign2.getState().clear();
+        PlatformSyncAndRoutingState4.getState().set(false);
+        if (rightRailResult2) {
+          activeElement2?.blur();
+          onLeave?.();
+        }
+      }} />
             </Tooltip>
-            {besideBar && (
-              <div
-                aria-hidden={`true`}
-                data-testid={`rail-header-rule`}
-                className={`bg-border duration-snap pointer-events-none absolute inset-x-0 bottom-0 h-px transition-opacity ease-out motion-reduce:transition-none ${enabledState ? `opacity-100` : `opacity-0`}`}
-              />
-            )}
-          </div>,
-          <div
-            ref={elementRef3}
-            className={`relative min-h-0 flex-1 overflow-clip`}
-            onScrollCapture={besideBar ? callback : undefined}
-          >
-            {initialState2 === `sources` && isDocument && path ? (
-              <FileSourcesPanel
-                container={container}
-                version={version}
-                path={path}
-              />
-            ) : initialState2 === `activity` && roomFile ? (
-              <PageActivityPanel roomFile={roomFile} />
-            ) : (
-              <VersionHistoryPanel
-                {...originalJsxProps({
-                  container: container,
-                  version: version,
-                  path: path,
-                  pageId: pageId,
-                  roomFile: roomFile,
-                  onRestore: onRestore,
-                  onCopy: onCopy,
-                  readOnly: readOnly,
-                  onLeave: onLeave,
-                  ...(stacked
-                    ? {
-                        stacked: stacked,
-                      }
-                    : {}),
-                })}
-              />
-            )}
-          </div>,
-        ],
-      })}
-    />
+            {besideBar && <div
+              aria-hidden={`true`}
+              data-testid={`rail-header-rule`}
+              className={`bg-border duration-snap pointer-events-none absolute inset-x-0 bottom-0 h-px transition-opacity ease-out motion-reduce:transition-none ${enabledState ? `opacity-100` : `opacity-0`}`}
+            />}
+          </div>}{<div ref={elementRef3} className={`relative min-h-0 flex-1 overflow-clip`} onScrollCapture={besideBar ? callback : undefined}>
+            {initialState2 === `sources` && isDocument && path ? <FileSourcesPanel container={container} version={version} path={path} /> : initialState2 === `activity` && roomFile ? <PageActivityPanel roomFile={roomFile} /> : <VersionHistoryPanel container={container} version={version} path={path} pageId={pageId} roomFile={roomFile} onRestore={onRestore} onCopy={onCopy} readOnly={readOnly} onLeave={onLeave} {...stacked ? {
+      stacked: stacked
+    } : {}} />}
+          </div>}</div>
   );
 }
 export { ACTIVITY_ANT_ONLY_TIP, ANT_ONLY_LABEL, RightRail };

@@ -14,7 +14,6 @@ import {
   UiShortcutsAndSizingOverride,
   UiTooltipsAndControlsPanel,
   jsxRuntime,
-  originalJsxProps,
   resolveUiDesignSystemValue2,
   resolveUiOverlaysAndIconsValue4,
   resolveUiOverlaysAndIconsValue5,
@@ -573,86 +572,30 @@ function MenuPopupsSide(
   );
   return (
     <BaseMenuPortal container={value7 ?? value19}>
-      <UiOverlaysAndIconsSurface
-        {...originalJsxProps({
-          ...value32.portalProps,
-          style: value
-            ? {
-                ...value32.portalProps.style,
-                ...SheetsVisibility,
-              }
-            : value32.portalProps.style,
-          surface: UiTooltipsAndControlsPanel.popover,
-          companionModalCatcher: true,
-          closeOnActivityHide: true,
-          children: (
-            <UiShortcutsAndSizingOverride
-              override={value23}
-              container={value7 ?? value19}
-              provideInherit={true}
-            >
-              {(input2?: Dynamic, ..._extraArguments: unknown[]): Dynamic => (
-                <UiProviderAndLayersCreateContext13.Provider
-                  value={value32.base}
-                >
-                  <BaseMenuPositioner
-                    ref={value26.positionerRef}
-                    className={value26.held?.positionerClassName}
-                    style={
-                      value26.held === null
-                        ? value32.style
-                        : {
-                            ...value32.style,
-                            ...value26.held.positionerStyle,
-                          }
-                    }
-                    side={value26.side}
-                    align={value26.align}
-                    sideOffset={value25}
-                    collisionPadding={input2}
-                    collisionAvoidance={value5}
-                    anchor={value24}
-                  >
-                    <MenuPopupsCell
-                      cell={value29.cell}
-                      nested={value20 !== null}
-                    >
-                      {(
-                        input3?: Dynamic,
-                        ..._extraArguments: unknown[]
-                      ): Dynamic => (
-                        <MenuPopupsAnchoredWithoutFinalFocus
-                          {...originalJsxProps({
-                            anchoredWithoutFinalFocus: value28,
-                            cursorAnchored: value21,
-                            "data-cds": value18,
-                            ref: value31,
-                            ...input3(value15),
-                            className: resolveUiDesignSystemValue2(
-                              MenuPopupsPopover,
-                              value26.held?.popupClassName,
-                              value8,
-                            ),
-                            children: (
-                              <MenuInteractionsHeader
-                                header={value10}
-                                footer={value11}
-                                maxVisibleItems={value12}
-                              >
+      <UiOverlaysAndIconsSurface {...value32.portalProps} style={value ? {
+  ...value32.portalProps.style,
+  ...SheetsVisibility
+} : value32.portalProps.style} surface={UiTooltipsAndControlsPanel.popover} companionModalCatcher={true} closeOnActivityHide={true}>{<UiShortcutsAndSizingOverride override={value23} container={value7 ?? value19} provideInherit={true}>
+              {(input2?: Dynamic, ..._extraArguments: unknown[]): Dynamic => <UiProviderAndLayersCreateContext13.Provider value={value32.base}>
+                  <BaseMenuPositioner ref={value26.positionerRef} className={value26.held?.positionerClassName} style={value26.held === null ? value32.style : {
+        ...value32.style,
+        ...value26.held.positionerStyle
+      }} side={value26.side} align={value26.align} sideOffset={value25} collisionPadding={input2} collisionAvoidance={value5} anchor={value24}>
+                    <MenuPopupsCell cell={value29.cell} nested={value20 !== null}>
+                      {(input3?: Dynamic, ..._extraArguments: unknown[]): Dynamic => <MenuPopupsAnchoredWithoutFinalFocus
+                        anchoredWithoutFinalFocus={value28}
+                        cursorAnchored={value21}
+                        data-cds={value18}
+                        ref={value31}
+                        {...input3(value15)}
+                        className={resolveUiDesignSystemValue2(MenuPopupsPopover, value26.held?.popupClassName, value8)}
+                      >{<MenuInteractionsHeader header={value10} footer={value11} maxVisibleItems={value12}>
                                 {value9}
-                              </MenuInteractionsHeader>
-                            ),
-                          })}
-                        />
-                      )}
+                              </MenuInteractionsHeader>}</MenuPopupsAnchoredWithoutFinalFocus>}
                     </MenuPopupsCell>
                   </BaseMenuPositioner>
-                </UiProviderAndLayersCreateContext13.Provider>
-              )}
-            </UiShortcutsAndSizingOverride>
-          ),
-        })}
-      />
+                </UiProviderAndLayersCreateContext13.Provider>}
+            </UiShortcutsAndSizingOverride>}</UiOverlaysAndIconsSurface>
     </BaseMenuPortal>
   );
 }
@@ -718,15 +661,10 @@ export function initializeMenuPopupStep1(): void {
       );
       return (
         <BaseMenuPopup
-          {...originalJsxProps({
-            ...value3,
-            ref: value5,
-            finalFocus:
-              (input2 === undefined || (input4 && input2 === null)) && input
-                ? value4.finalFocus
-                : input2,
-            ...input3,
-          })}
+          {...value3}
+          ref={value5}
+          finalFocus={(input2 === undefined || input4 && input2 === null) && input ? value4.finalFocus : input2}
+          {...input3}
         />
       );
     },
@@ -756,12 +694,7 @@ export function initializeMenuPopupStep1(): void {
       let value: boolean = resolveSheetsUseContext3();
       let value2: Dynamic = MenuPopupsSide(state, options, !value, false);
       return value ? (
-        <MenuPopupsPending
-          {...originalJsxProps({
-            ...state,
-            ref: options,
-          })}
-        />
+        <MenuPopupsPending {...state} ref={options} />
       ) : (
         value2
       );
@@ -795,12 +728,7 @@ export function initializeMenuPopupStep1(): void {
         {value2 && value3 === null ? <SheetsKind kind={value4} /> : null}
       </jsxRuntime.Fragment>
       ) : (
-        <value.MenuSheetPopup
-          {...originalJsxProps({
-            ...input,
-            ref: options,
-          })}
-        />
+        <value.MenuSheetPopup {...input} ref={options} />
       );
     },
   );

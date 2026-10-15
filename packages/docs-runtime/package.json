@@ -6,9 +6,7 @@
   "type": "module",
   "exports": {
     "./main": "./src/main.ts",
-    "./asset-plugin": "./tools/asset-plugin.ts",
-    "./react-runtime/jsx-runtime": "./src/react-runtime/jsx-runtime.tsx",
-    "./react-runtime/jsx-dev-runtime": "./src/react-runtime/jsx-dev-runtime.tsx"
+    "./asset-plugin": "./tools/asset-plugin.ts"
   },
   "dependencies": {
     "@base-ui/react": "1.7.0",

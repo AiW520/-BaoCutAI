@@ -22,8 +22,6 @@ import {
   loadDataOperationControlDialect,
   loadDataOperationControlDoc,
   loadDataOperationControlNode,
-  originalJsxProps,
-  originalJsxsProps,
   preloadModule,
   resolveDataModelSchemasDoorFactsListenerError,
   resolveDataModelSchemasHighlightColour,
@@ -1369,59 +1367,13 @@ export function initializeDocumentContextActionsDuplicateDocumentTabStep1(): voi
         hoverable={false}
       >
       <span
-          {...originalJsxsProps({
-            tabIndex: disabled ? 0 : -1,
-            ...disabledTabActionAccessibility2.props,
-            "data-tb-icon": useContext2 ? `` : undefined,
-            className: joinClasses(
-              `relative inline-flex shrink-0 rounded align-top outline-none focus-visible:shadow-focus`,
-              className,
-            ),
-            children: [
-              useContext || iconOnly === true ? (
-                caret === true ? (
-                  <Button
-                    {...originalJsxProps({
-                      ...record,
-                      icon: icon2,
-                      children: <TabCaretIcon />,
-                    })}
-                  />
-                ) : (
-                  <Button
-                    {...originalJsxProps({
-                      ...record,
-                      iconOnly: true,
-                      icon: icon2,
-                      tooltip: false,
-                    })}
-                  />
-                )
-              ) : (
-                <Button
-                  {...originalJsxsProps({
-                    ...record,
-                    icon: icon2,
-                    children: [
-                      label,
-                      children,
-                      caret === true ? <TabCaretIcon /> : null,
-                    ],
-                  })}
-                />
-              ),
-              count ? (
-                <span
-                  aria-hidden={`true`}
-                  className={`pointer-events-none absolute -top-0.5 -right-0.5 flex`}
-                >
+        tabIndex={disabled ? 0 : -1}
+        {...disabledTabActionAccessibility2.props}
+        data-tb-icon={useContext2 ? `` : undefined}
+        className={joinClasses(`relative inline-flex shrink-0 rounded align-top outline-none focus-visible:shadow-focus`, className)}
+      >{useContext || iconOnly === true ? caret === true ? <Button {...record} icon={icon2}>{<TabCaretIcon />}</Button> : <Button {...record} iconOnly={true} icon={icon2} tooltip={false} /> : <Button {...record} icon={icon2}>{label}{children}{caret === true ? <TabCaretIcon /> : null}</Button>}{count ? <span aria-hidden={`true`} className={`pointer-events-none absolute -top-0.5 -right-0.5 flex`}>
                 <Counter value={count} variant={`accent`} size={`xs`} />
-              </span>
-              ) : null,
-              disabledTabActionAccessibility2.mirror,
-            ],
-          })}
-        />
+              </span> : null}{disabledTabActionAccessibility2.mirror}</span>
     </Tooltip>
     );
   }));

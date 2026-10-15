@@ -10,8 +10,6 @@ import {
   TooltipGroup,
   UiOverlaysAndIconsCustomIcon,
   collectUiShortcutsAndSizingModifiers2,
-  originalJsxProps,
-  originalJsxsProps,
   resolveUiDesignSystemValue2,
   resolveUiLinksAndFoundationValue5,
   resolveUiLinksAndFoundationValue9,
@@ -285,74 +283,34 @@ function SegmentedControl(
   let value9: Dynamic = useTooltipGroup();
   let value10: Dynamic = (
     <BaseRadioGroup
-      {...originalJsxsProps({
-        ref: value,
-        "data-cds": `SegmentedControl`,
-        "aria-label": input8,
-        "aria-required": input9,
-        "aria-invalid": input10,
-        "aria-describedby": input11,
-        value: input2,
-        onValueChange: value7,
-        disabled: input5,
-        ...resolveUiProviderAndLayersDataSize(input4),
-        className: resolveUiDesignSystemValue2(
-          `relative inline-flex`,
-          input15 ? `w-full` : `w-fit`,
-          `shrink-0 items-stretch h-control font-sans`,
-          value8
-            ? `rounded bg-[var(--cds-segmented-control-track)] p-px`
-            : `gap-[1px]`,
-          input13,
-        ),
-        children: [
-          <div
-            aria-hidden={true}
-            className={`pointer-events-none absolute inset-0 overflow-clip ${value8 ? `rounded` : ``}`}
-          >
-            <div
-              ref={value2}
-              className={`${SegmentedControlStyles5} ${value8 ? SegmentedControlStyles6 : SegmentedControlStyles7}`}
-            />
-          </div>,
-          input.map(
-            (input16?: Dynamic, ..._extraArguments: unknown[]): Dynamic => {
-              let value11: Dynamic =
-                input16.icon && input16.label === undefined;
-              let value12: Dynamic = value11
-                ? (input16.tooltip ?? String(input16.value))
-                : input16.tooltip;
-              let value13: Dynamic =
-                typeof input16.tooltip == `string`
-                  ? input16.tooltip
-                  : String(input16.value);
-              let value14: Dynamic = input16.icon ? (
-                <UiOverlaysAndIconsCustomIcon
-                  name={input16.icon}
-                  size={`auto`}
-                />
-              ) : null;
-              let value15: Dynamic = (
-                <BaseRadioRoot
-                  value={input16.value}
-                  disabled={input16.disabled}
-                  aria-label={value11 ? value13 : undefined}
-                  aria-keyshortcuts={
-                    input16.shortcut
-                      ? collectUiShortcutsAndSizingModifiers2(
-                          input16.shortcut,
-                          value4,
-                        )
-                      : undefined
-                  }
-                  onMouseDown={resolveUiOverlaysAndIconsValue2(undefined)}
-                  className={`${SegmentedControlStyles} ${value8 ? SegmentedControlTextSecondary : SegmentedControlStyles4} ${value11 ? SegmentedControlAspectSquare : SegmentedControlPxMd}${input15 ? ` flex-1` : ``}`}
-                >
-                  {value14 && input16.indicator ? (
-                    <span className={`grid`}>
-                      <span
-                        className={`col-start-1 row-start-1 [--seg-dot-r:calc(0.1875rem*var(--cds-rem-scale,1))] [--seg-dot-x:calc(100%_-_var(--seg-dot-r)_+_1px)] [&:dir(rtl)]:[--seg-dot-x:calc(var(--seg-dot-r)_-_1px)] not-forced-colors:has-[~[data-cds-part=indicator]>*]:[mask-image:radial-gradient(circle_at_var(--seg-dot-x)_calc(var(--seg-dot-r)_-_1px),transparent_calc(var(--seg-dot-r)_+_2px),black_calc(var(--seg-dot-r)_+_2.5px))]`}
-                      >
+      ref={value}
+      data-cds={`SegmentedControl`}
+      aria-label={input8}
+      aria-required={input9}
+      aria-invalid={input10}
+      aria-describedby={input11}
+      value={input2}
+      onValueChange={value7}
+      disabled={input5}
+      {...resolveUiProviderAndLayersDataSize(input4)}
+      className={resolveUiDesignSystemValue2(`relative inline-flex`, input15 ? `w-full` : `w-fit`, `shrink-0 items-stretch h-control font-sans`, value8 ? `rounded bg-[var(--cds-segmented-control-track)] p-px` : `gap-[1px]`, input13)}
+    >{<div aria-hidden={true} className={`pointer-events-none absolute inset-0 overflow-clip ${value8 ? `rounded` : ``}`}>
+            <div ref={value2} className={`${SegmentedControlStyles5} ${value8 ? SegmentedControlStyles6 : SegmentedControlStyles7}`} />
+          </div>}{input.map((input16?: Dynamic, ..._extraArguments: unknown[]): Dynamic => {
+    let value11: Dynamic = input16.icon && input16.label === undefined;
+    let value12: Dynamic = value11 ? input16.tooltip ?? String(input16.value) : input16.tooltip;
+    let value13: Dynamic = typeof input16.tooltip == `string` ? input16.tooltip : String(input16.value);
+    let value14: Dynamic = input16.icon ? <UiOverlaysAndIconsCustomIcon name={input16.icon} size={`auto`} /> : null;
+    let value15: Dynamic = <BaseRadioRoot
+      value={input16.value}
+      disabled={input16.disabled}
+      aria-label={value11 ? value13 : undefined}
+      aria-keyshortcuts={input16.shortcut ? collectUiShortcutsAndSizingModifiers2(input16.shortcut, value4) : undefined}
+      onMouseDown={resolveUiOverlaysAndIconsValue2(undefined)}
+      className={`${SegmentedControlStyles} ${value8 ? SegmentedControlTextSecondary : SegmentedControlStyles4} ${value11 ? SegmentedControlAspectSquare : SegmentedControlPxMd}${input15 ? ` flex-1` : ``}`}
+    >
+                  {value14 && input16.indicator ? <span className={`grid`}>
+                      <span className={`col-start-1 row-start-1 [--seg-dot-r:calc(0.1875rem*var(--cds-rem-scale,1))] [--seg-dot-x:calc(100%_-_var(--seg-dot-r)_+_1px)] [&:dir(rtl)]:[--seg-dot-x:calc(var(--seg-dot-r)_-_1px)] not-forced-colors:has-[~[data-cds-part=indicator]>*]:[mask-image:radial-gradient(circle_at_var(--seg-dot-x)_calc(var(--seg-dot-r)_-_1px),transparent_calc(var(--seg-dot-r)_+_2px),black_calc(var(--seg-dot-r)_+_2.5px))]`}>
                         {value14}
                       </span>
                       <span
@@ -362,31 +320,17 @@ function SegmentedControl(
                       >
                         {input16.indicator}
                       </span>
-                    </span>
-                  ) : (
-                    value14
-                  )}
+                    </span> : value14}
                   {input16.label}
-                </BaseRadioRoot>
-              );
-              let value16: Dynamic =
-                input16.disabled && input16.disabledReason ? (
-                  <DisabledReasonTooltip
-                    reason={input16.disabledReason}
-                    side={input6}
-                    hoverable={false}
-                    wrapperClassName={
-                      input15
-                        ? `${SegmentedControlStyles2} ${value11 ? SegmentedControlFlex1 : SegmentedControlStyles3}`
-                        : SegmentedControlStyles2
-                    }
-                  >
+                </BaseRadioRoot>;
+    let value16: Dynamic = input16.disabled && input16.disabledReason ? <DisabledReasonTooltip
+      reason={input16.disabledReason}
+      side={input6}
+      hoverable={false}
+      wrapperClassName={input15 ? `${SegmentedControlStyles2} ${value11 ? SegmentedControlFlex1 : SegmentedControlStyles3}` : SegmentedControlStyles2}
+    >
                     {value15}
-                  </DisabledReasonTooltip>
-                ) : value12 === undefined ? (
-                  value15
-                ) : (
-                  <Tooltip
+                  </DisabledReasonTooltip> : value12 === undefined ? value15 : <Tooltip
                     content={value12}
                     detail={input16.tooltipDetail}
                     shortcut={input16.shortcut}
@@ -395,32 +339,9 @@ function SegmentedControl(
                     className={input7}
                   >
                     {value15}
-                  </Tooltip>
-                );
-              return value3 ? (
-                <BaseLabelableProvider
-                  {...originalJsxProps(
-                    {
-                      children: value16,
-                    },
-                    input16.value,
-                  )}
-                />
-              ) : (
-                <React.Fragment
-                  {...originalJsxProps(
-                    {
-                      children: value16,
-                    },
-                    input16.value,
-                  )}
-                />
-              );
-            },
-          ),
-        ],
-      })}
-    />
+                  </Tooltip>;
+    return value3 ? <BaseLabelableProvider key={input16.value}>{value16}</BaseLabelableProvider> : <React.Fragment key={input16.value}>{value16}</React.Fragment>;
+  })}</BaseRadioGroup>
   );
   return value9 ? value10 : <TooltipGroup>{value10}</TooltipGroup>;
 }

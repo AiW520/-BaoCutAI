@@ -1,3 +1,4 @@
+import { jsx as renderReactJsx } from "react/jsx-runtime";
 /** BaoCut: reactions from cds-CIGM-LUe.js. */
 import type { Dynamic } from "../interop/legacy-dynamic";
 import {
@@ -6,7 +7,6 @@ import {
   TooltipGroup,
   UiLinksAndFoundationCreateContext3,
   jsxRuntime,
-  originalJsxProps,
   resolveUiDesignSystemValue2,
   resolveUiLinksAndFoundationValue19,
   resolveUiOverlaysAndIconsValue4,
@@ -365,46 +365,18 @@ function CommentMotionAriaHidden(
   return (
     <jsxRuntime.Fragment>
       <span
-        {...originalJsxProps(
-          {
-            "aria-hidden": `true`,
-            className: resolveUiDesignSystemValue2(
-              `text-body font-normal leading-none`,
-              context?.face === `pop` && `cds-pill-pop`,
-              context?.face === `dip` && `cds-pill-dip`,
-            ),
-            children: input,
-          },
-          context?.face ? `emoji${context.seq}` : `emoji`,
-        )}
-      />
+        aria-hidden={`true`}
+        className={resolveUiDesignSystemValue2(`text-body font-normal leading-none`, context?.face === `pop` && `cds-pill-pop`, context?.face === `dip` && `cds-pill-dip`)}
+        key={context?.face ? `emoji${context.seq}` : `emoji`}
+      >{input}</span>
       <span
-        {...originalJsxProps(
-          {
-            "aria-hidden": `true`,
-            "data-cds-roll-from": value?.from,
-            className: resolveUiDesignSystemValue2(
-              `relative block tabular-nums`,
-              value &&
-                (value.up ? `cds-pill-roll-out-up` : `cds-pill-roll-out-down`),
-            ),
-            children: (
-              <span
-                className={resolveUiDesignSystemValue2(
-                  `inline-block`,
-                  value &&
-                    (value.up
-                      ? `cds-pill-roll-in-up`
-                      : `cds-pill-roll-in-down`),
-                )}
-              >
+        aria-hidden={`true`}
+        data-cds-roll-from={value?.from}
+        className={resolveUiDesignSystemValue2(`relative block tabular-nums`, value && (value.up ? `cds-pill-roll-out-up` : `cds-pill-roll-out-down`))}
+        key={value ? `count${context.seq}` : `count`}
+      >{<span className={resolveUiDesignSystemValue2(`inline-block`, value && (value.up ? `cds-pill-roll-in-up` : `cds-pill-roll-in-down`))}>
                 {options}
-              </span>
-            ),
-          },
-          value ? `count${context.seq}` : `count`,
-        )}
-      />
+              </span>}</span>
     </jsxRuntime.Fragment>
   );
 }
@@ -433,24 +405,12 @@ export function initializeReactionsStep1(): void {
       let value: Dynamic = (0, React.useRef)(null);
       resolveCommentMotionStandDown(value, `pill`);
       return (
-        <button
-          {...originalJsxProps({
-            ref: resolveUiOverlaysAndIconsValue4(value, options),
-            ...input2,
-            onKeyDown: (
-              event?: Dynamic,
-              ..._extraArguments: unknown[]
-            ): undefined => {
-              if (
-                event.repeat &&
-                (event.key === `Enter` || event.key === ` `)
-              ) {
-                event.preventDefault();
-              }
-              input?.(event);
-            },
-          })}
-        />
+        <button ref={resolveUiOverlaysAndIconsValue4(value, options)} {...input2} onKeyDown={(event?: Dynamic, ..._extraArguments: unknown[]): undefined => {
+  if (event.repeat && (event.key === `Enter` || event.key === ` `)) {
+    event.preventDefault();
+  }
+  input?.(event);
+}} />
       );
     },
   );
@@ -581,17 +541,7 @@ export function initializeReactionsStep1(): void {
             );
             return [
               input5.emoji,
-              <Tooltip
-                {...originalJsxProps(
-                  {
-                    content: input5.names || undefined,
-                    side: `top`,
-                    multiline: true,
-                    children: value16,
-                  },
-                  input5.emoji,
-                )}
-              />,
+              <Tooltip content={input5.names || undefined} side={`top`} multiline={true} key={input5.emoji}>{value16}</Tooltip>,
             ];
           },
         ),
@@ -603,35 +553,17 @@ export function initializeReactionsStep1(): void {
         ): Dynamic =>
           input6
             ? [
-                <span
-                  {...originalJsxProps(
-                    {
-                      "aria-hidden": `true`,
-                      ...inertProps(true),
-                      className: resolveUiDesignSystemValue2(
-                        CommentMotionStyles7,
-                        resolveCommentMotionBorderAccentBgAccentMutedTextAccent(
-                          input6.tinted ?? false,
-                          false,
-                        ),
-                        `pointer-events-none cds-pill-out`,
-                      ),
-                      onAnimationEnd: (
-                        event?: Dynamic,
-                        ..._extraArguments: unknown[]
-                      ): undefined => {
-                        if (event.target === event.currentTarget) {
-                          value9(input5);
-                        }
-                      },
-                      children: CommentMotionAriaHidden(
-                        input6.emoji,
-                        input6.count,
-                      ),
-                    },
-                    input5,
-                  )}
-                />,
+                renderReactJsx("span", {
+  "aria-hidden": `true`,
+  ...inertProps(true),
+  className: resolveUiDesignSystemValue2(CommentMotionStyles7, resolveCommentMotionBorderAccentBgAccentMutedTextAccent(input6.tinted ?? false, false), `pointer-events-none cds-pill-out`),
+  onAnimationEnd: (event?: Dynamic, ..._extraArguments: unknown[]): undefined => {
+    if (event.target === event.currentTarget) {
+      value9(input5);
+    }
+  },
+  children: CommentMotionAriaHidden(input6.emoji, input6.count)
+}, input5),
               ]
             : entries.has(input5)
               ? [entries.get(input5)]
@@ -639,18 +571,12 @@ export function initializeReactionsStep1(): void {
       );
       let value11: Dynamic = (
         <div
-          {...originalJsxProps({
-            ref: options,
-            "data-cds": `Reactions`,
-            "data-cds-part": `reactions`,
-            className: resolveUiDesignSystemValue2(
-              `flex flex-wrap gap-xs`,
-              input3,
-            ),
-            ...input4,
-            children: value10,
-          })}
-        />
+          ref={options}
+          data-cds={`Reactions`}
+          data-cds-part={`reactions`}
+          className={resolveUiDesignSystemValue2(`flex flex-wrap gap-xs`, input3)}
+          {...input4}
+        >{value10}</div>
       );
       return value6 ? value11 : <TooltipGroup>{value11}</TooltipGroup>;
     },

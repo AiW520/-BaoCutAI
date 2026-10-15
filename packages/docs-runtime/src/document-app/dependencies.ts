@@ -1,8 +1,6 @@
 /** BaoCut: dependencies from index-CX4IZqzA.js. */
 import type { Dynamic } from "../interop/legacy-dynamic";
 
-export { originalJsxProps, originalJsxsProps } from "../react-runtime/jsx-runtime";
-
 import * as wouterMemoryLocationModule from "wouter/memory-location";
 import { memoryLocation } from "wouter/memory-location";
 
@@ -1248,7 +1246,7 @@ export {
   textAreaSurfaceClasses,
 } from "../design-system/index";
 
-export { loadReactDomClient } from "../react-runtime/react";
+export { createRoot } from "react-dom/client";
 
 export {
   referenceContainer,

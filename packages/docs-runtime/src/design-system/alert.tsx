@@ -4,7 +4,6 @@ import {
   Button,
   React,
   UiOverlaysAndIconsCustomIcon,
-  originalJsxProps,
   resolveUiDesignSystemValue2,
   resolveUiLinksAndFoundationUseContext3,
   resolveUiOverlaysAndIconsValue,
@@ -144,21 +143,10 @@ function Alert(
   let value27: Dynamic = value9 || !value8;
   let value28: Dynamic = input3 ? (
     <span
-      {...originalJsxProps({
-        ref: value17,
-        ...state,
-        className: resolveUiDesignSystemValue2(
-          `flex shrink-0 items-center gap-xs`,
-          !value23 && `h-[1lh]`,
-          value24 && `basis-full`,
-          !value23 && `-ms-[2px]`,
-          value24 && value5 && BadgeAndLinkGlyph2[value5],
-          value5 !== undefined && !input7 && BadgeAndLinkGlyph4[value5],
-          !value6 && !input7 && `-me-[calc(var(--cds-pad-md)-2px)]`,
-        ),
-        children: input3,
-      })}
-    />
+      ref={value17}
+      {...state}
+      className={resolveUiDesignSystemValue2(`flex shrink-0 items-center gap-xs`, !value23 && `h-[1lh]`, value24 && `basis-full`, !value23 && `-ms-[2px]`, value24 && value5 && BadgeAndLinkGlyph2[value5], value5 !== undefined && !input7 && BadgeAndLinkGlyph4[value5], !value6 && !input7 && `-me-[calc(var(--cds-pad-md)-2px)]`)}
+    >{input3}</span>
   ) : null;
   return (
     <div
@@ -263,21 +251,9 @@ function Alert(
       )}
       {input7 && (
         <span
-          {...originalJsxProps({
-            ...state,
-            className: `${value5 === undefined ? `-me-[calc(var(--cds-pad-md)-2px)]` : BadgeAndLinkGlyph3[value5]} flex h-[1lh] shrink-0 items-center`,
-            children: (
-              <Button
-                variant={`ghost`}
-                iconOnly={true}
-                icon={`X`}
-                aria-label={value2}
-                tooltip={false}
-                onClick={input7}
-              />
-            ),
-          })}
-        />
+          {...state}
+          className={`${value5 === undefined ? `-me-[calc(var(--cds-pad-md)-2px)]` : BadgeAndLinkGlyph3[value5]} flex h-[1lh] shrink-0 items-center`}
+        >{<Button variant={`ghost`} iconOnly={true} icon={`X`} aria-label={value2} tooltip={false} onClick={input7} />}</span>
       )}
     </div>
   );

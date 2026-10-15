@@ -5,7 +5,6 @@ import {
   React,
   UiDesignSystemUseLayoutEffect,
   jsxRuntime,
-  originalJsxProps,
   resolveUiDesignSystemValue2,
   resolveUiLinksAndFoundationUseContext3,
   resolveUiOverlaysAndIconsValue4,
@@ -305,36 +304,15 @@ export function initializeComposerStep1(): void {
           ) ?? null,
       });
       let value40: Dynamic = (
-        <Button
-          {...originalJsxProps({
-            variant: `ghost`,
-            iconOnly: true,
-            icon: `ArrowUp`,
-            "aria-label": input11 ?? value,
-            shortcut: value10 ? `enter` : `cmd+enter`,
-            disabled: value38,
-            busy: input19,
-            onMouseDown: (
-              event?: Dynamic,
-              ..._extraArguments: unknown[]
-            ): Dynamic => event.preventDefault(),
-            onClick: (
-              input22?: Dynamic,
-              ..._extraArguments: unknown[]
-            ): undefined => {
-              value25({
-                modifierKey: input22.metaKey || input22.ctrlKey,
-                source: `send`,
-              });
-              value19.current?.querySelector(CommentsStyles4)?.focus({
-                preventScroll: true,
-              });
-            },
-            className: `shrink-0`,
-            "data-cds-part": `send`,
-            ...value39,
-          })}
-        />
+        <Button variant={`ghost`} iconOnly={true} icon={`ArrowUp`} aria-label={input11 ?? value} shortcut={value10 ? `enter` : `cmd+enter`} disabled={value38} busy={input19} onMouseDown={(event?: Dynamic, ..._extraArguments: unknown[]): Dynamic => event.preventDefault()} onClick={(input22?: Dynamic, ..._extraArguments: unknown[]): undefined => {
+  value25({
+    modifierKey: input22.metaKey || input22.ctrlKey,
+    source: `send`
+  });
+  value19.current?.querySelector(CommentsStyles4)?.focus({
+    preventScroll: true
+  });
+}} className={`shrink-0`} data-cds-part={`send`} {...value39} />
       );
       let value41: Dynamic = value4 ? (
         input12
@@ -471,28 +449,12 @@ export function initializeComposerStep1(): void {
       };
       return value8 ? (
         <Surface
-          {...originalJsxProps({
-            elevation: `panel`,
-            ...state,
-            className: resolveUiDesignSystemValue2(
-              commentCardSurfaceClasses(true),
-              `group/cc flex min-w-0 flex-col p-lg font-sans text-body font-normal text-primary`,
-              input15,
-            ),
-            children: value47,
-          })}
-        />
+          elevation={`panel`}
+          {...state}
+          className={resolveUiDesignSystemValue2(commentCardSurfaceClasses(true), `group/cc flex min-w-0 flex-col p-lg font-sans text-body font-normal text-primary`, input15)}
+        >{value47}</Surface>
       ) : (
-        <div
-          {...originalJsxProps({
-            ...state,
-            className: resolveUiDesignSystemValue2(
-              `group/cc flex min-w-0 flex-col`,
-              input15,
-            ),
-            children: value47,
-          })}
-        />
+        <div {...state} className={resolveUiDesignSystemValue2(`group/cc flex min-w-0 flex-col`, input15)}>{value47}</div>
       );
     },
   );

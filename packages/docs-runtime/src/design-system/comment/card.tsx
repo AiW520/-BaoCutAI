@@ -5,7 +5,6 @@ import {
   TooltipGroup,
   UiProviderAndLayersCreateContext8,
   UiTooltipsAndControlsPanel,
-  originalJsxsProps,
   resolveUiDesignSystemValue2,
   resolveUiLinksAndFoundationUseContext3,
   resolveUiProviderAndLayersUseContext6,
@@ -189,100 +188,34 @@ export function initializeCommentCardStep1(): void {
         <CommentCardContext.Provider value={value2}>
         <CommentMotionCreateContext3.Provider value={value4}>
           <TooltipGroup>
-            <article
-                {...originalJsxsProps({
-                  ref: options,
-                  "data-cds": `CommentCard`,
-                  "data-variant": input16,
-                  "data-expanded": input17 || undefined,
-                  "data-active": input18 || undefined,
-                  "aria-label": input12,
-                  "aria-labelledby": value13
-                    ? input13
-                    : `${value4.name} ${value4.time}`,
-                  "aria-describedby":
-                    input14 ?? (value13 ? undefined : value4.body),
-                  tabIndex:
-                    input11 ??
-                    ((input && !input17) || (input17 && !value6) ? 0 : -1),
-                  onClick: (
-                    event?: Dynamic,
-                    ..._extraArguments: unknown[]
-                  ): undefined => {
-                    input9?.(event);
-                    if (
-                      !event.defaultPrevented &&
-                      !input17 &&
-                      isCommentsClosest(event.target, event.currentTarget)
-                    ) {
-                      input?.();
-                    }
-                  },
-                  onKeyDown: (
-                    event?: Dynamic,
-                    ..._extraArguments: unknown[]
-                  ): undefined => {
-                    input10?.(event);
-                    if (
-                      !(
-                        event.defaultPrevented ||
-                        event.target !== event.currentTarget
-                      ) &&
-                      !input17 &&
-                      input &&
-                      (event.key === `Enter` || event.key === ` `)
-                    ) {
-                      event.preventDefault();
-                      if (!event.repeat) {
-                        input();
-                      }
-                    }
-                  },
-                  className: resolveUiDesignSystemValue2(
-                    `group/comment-card relative flex flex-col font-sans text-body font-normal text-primary outline-none after:pointer-events-none after:absolute after:inset-0 after:rounded-[inherit] after:content-[''] focus-visible:outline-hidden focus-visible:after:shadow-focus`,
-                    input && !input17 && `cursor-interactive`,
-                    value7
-                      ? resolveUiDesignSystemValue2(
-                          commentCardSurfaceClasses(input17 || input18),
-                          CommentsStyles6,
-                        )
-                      : input16 === `flat` && CommentsStyles7,
-                    input6,
-                  ),
-                  style: value7
-                    ? {
-                        ...value8,
-                        ...input7,
-                      }
-                    : input7,
-                  ...input15,
-                  children: [
-                    input4 === undefined ? (
-                      <div className={`flex min-h-0 flex-col gap-sm p-lg`}>
+            <article ref={options} data-cds={`CommentCard`} data-variant={input16} data-expanded={input17 || undefined} data-active={input18 || undefined} aria-label={input12} aria-labelledby={value13 ? input13 : `${value4.name} ${value4.time}`} aria-describedby={input14 ?? (value13 ? undefined : value4.body)} tabIndex={input11 ?? (input && !input17 || input17 && !value6 ? 0 : -1)} onClick={(event?: Dynamic, ..._extraArguments: unknown[]): undefined => {
+  input9?.(event);
+  if (!event.defaultPrevented && !input17 && isCommentsClosest(event.target, event.currentTarget)) {
+    input?.();
+  }
+}} onKeyDown={(event?: Dynamic, ..._extraArguments: unknown[]): undefined => {
+  input10?.(event);
+  if (!(event.defaultPrevented || event.target !== event.currentTarget) && !input17 && input && (event.key === `Enter` || event.key === ` `)) {
+    event.preventDefault();
+    if (!event.repeat) {
+      input();
+    }
+  }
+}} className={resolveUiDesignSystemValue2(`group/comment-card relative flex flex-col font-sans text-body font-normal text-primary outline-none after:pointer-events-none after:absolute after:inset-0 after:rounded-[inherit] after:content-[''] focus-visible:outline-hidden focus-visible:after:shadow-focus`, input && !input17 && `cursor-interactive`, value7 ? resolveUiDesignSystemValue2(commentCardSurfaceClasses(input17 || input18), CommentsStyles6) : input16 === `flat` && CommentsStyles7, input6)} style={value7 ? {
+  ...value8,
+  ...input7
+} : input7} {...input15}>{input4 === undefined ? <div className={`flex min-h-0 flex-col gap-sm p-lg`}>
                       {value12}
-                    </div>
-                    ) : (
-                      <div className={CommentsStyles9}>
-                      <div
-                          role={`group`}
-                          tabIndex={0}
-                          aria-label={input5 || value5}
-                          className={CommentsStyles8}
-                          style={{
-                            maxHeight: input4,
-                          }}
-                        >
+                    </div> : <div className={CommentsStyles9}>
+                      <div role={`group`} tabIndex={0} aria-label={input5 || value5} className={CommentsStyles8} style={{
+      maxHeight: input4
+    }}>
                         {value12}
                       </div>
-                    </div>
-                    ),
-                    <CommentMotionCreateContext.Provider value={false}>
+                    </div>}{<CommentMotionCreateContext.Provider value={false}>
                     {value9(filtered)}
                     {value9(filtered2)}
-                  </CommentMotionCreateContext.Provider>,
-                  ],
-                })}
-              />
+                  </CommentMotionCreateContext.Provider>}</article>
           </TooltipGroup>
         </CommentMotionCreateContext3.Provider>
       </CommentCardContext.Provider>

@@ -9,7 +9,6 @@ import {
   useRender,
   isUiLinksAndFoundationToLowerCase,
   jsxRuntime,
-  originalJsxProps,
   resolveUiDesignSystemValue2,
   resolveUiLinksAndFoundationHref,
   resolveUiLinksAndFoundationItContainsAControlCharacter,
@@ -78,41 +77,14 @@ function BadgeAndLinkStamp(
       ...uiLinksAndFoundationOnClickOnPointerEnterOnPointerLeaveOnPointerDownValues,
     ]);
     return (
-      <a
-        {...originalJsxProps({
-          ref: input2,
-          ...input,
-          ...value5,
-          ...value2,
-          className: input6,
-          children: input5,
-        })}
-      />
+      <a ref={input2} {...input} {...value5} {...value2} className={input6}>{input5}</a>
     );
   }
   let value4: Dynamic = resolveBadgeAndLinkKeys(input9, [`href`, `disabled`]);
   return (
-    <BaseButton
-      {...originalJsxProps({
-        render: (
-          <span
-            {...originalJsxProps({
-              ...input,
-            })}
-          />
-        ),
-        nativeButton: false,
-        ...(input8 === undefined
-          ? {}
-          : {
-              disabled: input8,
-            }),
-        ref: input2,
-        ...value4,
-        className: input7,
-        children: input5,
-      })}
-    />
+    <BaseButton render={<span {...input} />} nativeButton={false} {...input8 === undefined ? {} : {
+  disabled: input8
+}} ref={input2} {...value4} className={input7}>{input5}</BaseButton>
   );
 }
 

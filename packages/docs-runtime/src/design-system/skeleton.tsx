@@ -8,8 +8,6 @@ import {
   UiOverlaysAndIconsCreateContext4,
   createSafeMutationObserver,
   createSafeResizeObserver,
-  originalJsxProps,
-  originalJsxsProps,
   resolveUiDesignSystemValue2,
   resolveUiLinksAndFoundationUseContext3,
   resolveUiLinksAndFoundationValue9,
@@ -637,40 +635,22 @@ function SkeletonRows(
     if (value5 > 0) {
       items.push(
         <ValueComponent
-          {...originalJsxProps(
-            {
-              "aria-hidden": true,
-              "data-slot": `menu-skeleton-separator`,
-              className: resolveUiDesignSystemValue2(
-                value2,
-                `compact:mx-2 comfortable:mx-2.5 my-1 h-px bg-border`,
-              ),
-            },
-            `separator-${value5}`,
-          )}
+          aria-hidden={true}
+          data-slot={`menu-skeleton-separator`}
+          className={resolveUiDesignSystemValue2(value2, `compact:mx-2 comfortable:mx-2.5 my-1 h-px bg-border`)}
+          key={`separator-${value5}`}
         />,
       );
     }
     for (let value7: Dynamic = index + value6; index < value7; index++)
       items.push(
         <ValueComponent
-          {...originalJsxsProps(
-            {
-              "aria-hidden": index > 0 ? true : undefined,
-              className: `flex h-control items-center gap-xs compact:px-2 comfortable:px-2.5`,
-              children: [
-                input2 && <Skeleton width={20} height={20} />,
-                <span
-                  aria-hidden={input2 ? true : undefined}
-                  className={`contents`}
-                >
+          aria-hidden={index > 0 ? true : undefined}
+          className={`flex h-control items-center gap-xs compact:px-2 comfortable:px-2.5`}
+          key={index}
+        >{input2 && <Skeleton width={20} height={20} />}{<span aria-hidden={input2 ? true : undefined} className={`contents`}>
                   <Skeleton width={value3[index % value3.length]} height={16} />
-                </span>,
-              ],
-            },
-            index,
-          )}
-        />,
+                </span>}</ValueComponent>,
       );
   }
   return <ValueComponent className={value2}>{items}</ValueComponent>;
@@ -713,25 +693,7 @@ function SkeletonLines(
           options?: Dynamic,
           ..._extraArguments: unknown[]
         ): Dynamic => (
-          <span
-            {...originalJsxProps(
-              {
-                "aria-hidden": options > 0 ? true : undefined,
-                className: `contents`,
-                children: (
-                  <Skeleton
-                    width={
-                      commentMotion921009658Values[
-                        options % commentMotion921009658Values.length
-                      ]
-                    }
-                    height={14}
-                  />
-                ),
-              },
-              options,
-            )}
-          />
+          <span aria-hidden={options > 0 ? true : undefined} className={`contents`} key={options}>{<Skeleton width={commentMotion921009658Values[options % commentMotion921009658Values.length]} height={14} />}</span>
         ),
       )}
     </ValueComponent2>

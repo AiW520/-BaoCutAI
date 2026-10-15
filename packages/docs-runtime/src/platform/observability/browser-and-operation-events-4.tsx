@@ -1,3 +1,4 @@
+import { createElement as createReactElement } from "react";
 /** BaoCut: observability browser and operation events from app-core-BE6n4d7F.js. */
 import type { Dynamic } from "../../interop/legacy-dynamic";
 import {
@@ -5,7 +6,6 @@ import {
   React,
   frameHostEnvironment,
   inFrame,
-  originalElementProps,
   preloadModule,
 } from "../dependencies";
 import {
@@ -2148,12 +2148,10 @@ export function initializeObservabilityBrowserAndOperationEvents4Step1(): void {
       }
     }
     return (
-      <ObservabilityBrowserAndOperationEventsCreateContext.Provider
-        {...originalElementProps({
-          value: ObservabilityBrowserAndOperationEventsHook3,
-          children: children,
-        })}
-      />
+      createReactElement(ObservabilityBrowserAndOperationEventsCreateContext.Provider, {
+  value: ObservabilityBrowserAndOperationEventsHook3,
+  children: children
+})
     );
   });
   (resolveObservabilityBrowserAndOperationEventsComponent = (
@@ -2162,11 +2160,9 @@ export function initializeObservabilityBrowserAndOperationEvents4Step1(): void {
     ..._extraArguments: unknown[]
   ): Dynamic =>
     ComponentComponent ? (
-      <ComponentComponent
-        {...originalElementProps({
-          params: params,
-        })}
-      />
+      createReactElement(ComponentComponent, {
+  params: params
+})
     ) : typeof children == `function` ? (
       children(params)
     ) : (
@@ -2224,17 +2220,9 @@ export function initializeObservabilityBrowserAndOperationEvents4Step1(): void {
       });
     if (!match2) return null;
     let element: Dynamic = base ? (
-      <UseObservabilityBrowserAndOperationEventsValueComponent
-        {...originalElementProps(
-          {
-            base: base,
-          },
-          resolveObservabilityBrowserAndOperationEventsComponent(
-            observabilityBrowserAndOperationEventsPath,
-            useObservabilityBrowserAndOperationEventsCurrent22,
-          ),
-        )}
-      />
+      createReactElement(UseObservabilityBrowserAndOperationEventsValueComponent, {
+  base: base
+}, resolveObservabilityBrowserAndOperationEventsComponent(observabilityBrowserAndOperationEventsPath, useObservabilityBrowserAndOperationEventsCurrent22))
     ) : (
       resolveObservabilityBrowserAndOperationEventsComponent(
         observabilityBrowserAndOperationEventsPath,
@@ -2242,12 +2230,10 @@ export function initializeObservabilityBrowserAndOperationEvents4Step1(): void {
       )
     );
     return (
-      <ObservabilityBrowserAndOperationEventsCreateContext2.Provider
-        {...originalElementProps({
-          value: useObservabilityBrowserAndOperationEventsCurrent22,
-          children: element,
-        })}
-      />
+      createReactElement(ObservabilityBrowserAndOperationEventsCreateContext2.Provider, {
+  value: useObservabilityBrowserAndOperationEventsCurrent22,
+  children: element
+})
     );
   });
   (ObservabilityBrowserAndOperationEventsHref = (0, React.forwardRef)(
@@ -2313,19 +2299,12 @@ export function initializeObservabilityBrowserAndOperationEvents4Step1(): void {
         })
       ) : (
         <a
-          {...originalElementProps({
-            ...observabilityBrowserAndOperationEventsHref9,
-            onClick: onClick,
-            href: href,
-            className: observabilityBrowserAndOperationEventsHref5?.call
-              ? observabilityBrowserAndOperationEventsHref5(
-                  observabilityBrowserAndOperationEventsHook ===
-                    observabilityBrowserAndOperationEventsHref11,
-                )
-              : observabilityBrowserAndOperationEventsHref5,
-            children: observabilityBrowserAndOperationEventsHref4,
-            ref: options,
-          })}
+          {...observabilityBrowserAndOperationEventsHref9}
+          onClick={onClick}
+          href={href}
+          className={observabilityBrowserAndOperationEventsHref5?.call ? observabilityBrowserAndOperationEventsHref5(observabilityBrowserAndOperationEventsHook === observabilityBrowserAndOperationEventsHref11) : observabilityBrowserAndOperationEventsHref5}
+          children={observabilityBrowserAndOperationEventsHref4}
+          ref={options}
         />
       );
     },

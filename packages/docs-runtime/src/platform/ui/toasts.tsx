@@ -2,7 +2,6 @@
 import type { Dynamic } from "../../interop/legacy-dynamic";
 import {
   jsxRuntime,
-  originalJsxProps,
   createLiveModuleNamespace,
 } from "../dependencies";
 import {
@@ -109,23 +108,10 @@ function UiToastsSecondary(
     context2?: Dynamic,
     ..._extraArguments: unknown[]
   ) => (
-    <Button
-      {...originalJsxProps(
-        {
-          size: `lg`,
-          variant: variant,
-          onClick: (
-            ui4?: Dynamic,
-            ..._extraArguments: unknown[]
-          ): undefined => {
-            ui3.onClick(ui4);
-            context();
-          },
-          children: ui3.label,
-        },
-        context2,
-      )}
-    />
+    <Button size={`lg`} variant={variant} onClick={(ui4?: Dynamic, ..._extraArguments: unknown[]): undefined => {
+  ui3.onClick(ui4);
+  context();
+}} key={context2}>{ui3.label}</Button>
   );
   let uiToastsSecondaryHandler2: Dynamic = isUiToastsLabel(ui2)
     ? uiToastsSecondaryHandler(ui2, `secondary`, `a`)

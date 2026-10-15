@@ -1,5 +1,5 @@
 /** doc-layout-control: restored from DocLayoutControl-B2yicOym.js. */
-import { originalJsxProps } from "../../react-runtime/jsx-runtime";
+
 import type { Dynamic } from "../../interop/legacy-dynamic";
 import { toModuleNamespace } from "../../boot/module-runtime";
 import {
@@ -227,16 +227,11 @@ function DocLayoutControl(
         </PropertyRow>
         {failure ? (
           <p
-            {...originalJsxProps(
-              {
-                role: announceFailure ? `alert` : undefined,
-                className: `text-footnote text-danger pt-1`,
-                "data-testid": `doc-layout-error`,
-                children: LAYOUT_COPY[failure],
-              },
-              (announceFailure ? `alert:` : `quiet:`) + failure,
-            )}
-          />
+            role={announceFailure ? `alert` : undefined}
+            className={`text-footnote text-danger pt-1`}
+            data-testid={`doc-layout-error`}
+            key={(announceFailure ? `alert:` : `quiet:`) + failure}
+          >{LAYOUT_COPY[failure]}</p>
         ) : null}
       </Popover.Popup>
     </Popover.Root>

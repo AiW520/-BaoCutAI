@@ -1,8 +1,9 @@
+import { jsx as renderReactJsx } from "react/jsx-runtime";
 /** BaoCut: document tabs from index-CX4IZqzA.js. */
-import type { JSX } from "../../react-runtime/jsx-runtime";
-import type { CapturedProps as CapturedJsxProps } from "../../react-runtime/jsx-runtime";
+import type { JSX } from "react";
+
 import type { Dynamic } from "../../interop/legacy-dynamic";
-type JsxElementType = JSX.ElementType;
+
 import {
   Button,
   DataModelSchemasDragging,
@@ -13,8 +14,6 @@ import {
   TooltipGroup,
   UiOverlaysAndIconsCustomIcon,
   UiProviderAndLayersDensity,
-  originalJsxProps,
-  originalJsxsProps,
   preloadModule,
   resolveEditorHostValue20,
   resolvePlatformChunkLoadingLazy3,
@@ -126,27 +125,11 @@ function PagebarMenuSection(
     <UiProviderAndLayersDensity
       density={density}
       render={
-        <header
-          {...originalJsxProps({
-            ref: pagebarMenuSectionResult2,
-            role: `toolbar`,
-            "aria-label": label,
-            tabIndex: -1,
-            ...(enabledState
-              ? {
-                  role: `none`,
-                  "aria-label": undefined,
-                  tabIndex: undefined,
-                }
-              : null),
-            onKeyDown: onKeyDown,
-            onFocus: onFocus,
-            "data-testid": dataTestid,
-            "data-collapsed": enabledState2 ? `` : undefined,
-            "data-rule": rule ? `` : undefined,
-            className: `tb-root flex h-10 shrink-0 items-center gap-1 px-1 pointer-coarse:h-12 pointer-coarse:gap-1.5 pointer-coarse:px-2`,
-          })}
-        />
+        <header ref={pagebarMenuSectionResult2} role={`toolbar`} aria-label={label} tabIndex={-1} {...enabledState ? {
+  role: `none`,
+  "aria-label": undefined,
+  tabIndex: undefined
+} : null} onKeyDown={onKeyDown} onFocus={onFocus} data-testid={dataTestid} data-collapsed={enabledState2 ? `` : undefined} data-rule={rule ? `` : undefined} className={`tb-root flex h-10 shrink-0 items-center gap-1 px-1 pointer-coarse:h-12 pointer-coarse:gap-1.5 pointer-coarse:px-2`} />
       }
     >
       <TooltipGroup>
@@ -260,35 +243,25 @@ function PagebarMenuTrigger(
           (useContext || pagebarMenuTrigger.iconOnly === true) &&
           pagebarMenuTrigger.caret !== true ? (
             <Button
-              {...originalJsxProps({
-                iconOnly: true,
-                variant: `ghost`,
-                icon: icon,
-                disabled: disabled,
-                "aria-label": ariaLabel,
-                ...disabledTabActionAccessibility2.inner,
-                "data-testid": dataTestid,
-                className: `shrink-0`,
-              })}
+              iconOnly={true}
+              variant={`ghost`}
+              icon={icon}
+              disabled={disabled}
+              aria-label={ariaLabel}
+              {...disabledTabActionAccessibility2.inner}
+              data-testid={dataTestid}
+              className={`shrink-0`}
             />
           ) : (
             <Button
-              {...originalJsxsProps({
-                variant: `ghost`,
-                icon: icon,
-                disabled: disabled,
-                "aria-label": ariaLabel,
-                ...disabledTabActionAccessibility2.inner,
-                "data-testid": dataTestid,
-                className: `shrink-0`,
-                children: [
-                  useContext || pagebarMenuTrigger.iconOnly === true
-                    ? null
-                    : ariaLabel,
-                  pagebarMenuTrigger.caret === true ? <TabCaretIcon /> : null,
-                ],
-              })}
-            />
+              variant={`ghost`}
+              icon={icon}
+              disabled={disabled}
+              aria-label={ariaLabel}
+              {...disabledTabActionAccessibility2.inner}
+              data-testid={dataTestid}
+              className={`shrink-0`}
+            >{useContext || pagebarMenuTrigger.iconOnly === true ? null : ariaLabel}{pagebarMenuTrigger.caret === true ? <TabCaretIcon /> : null}</Button>
           )
         }
       />
@@ -296,16 +269,13 @@ function PagebarMenuTrigger(
       <Menu.Trigger
         render={
           <Button
-            {...originalJsxsProps({
-              variant: `ghost`,
-              disabled: disabled,
-              "aria-label": name,
-              ...disabledTabActionAccessibility2.inner,
-              "data-testid": dataTestid,
-              className: `shrink-0 tabular-nums`,
-              children: [pagebarMenuTrigger.readout, <TabCaretIcon />],
-            })}
-          />
+            variant={`ghost`}
+            disabled={disabled}
+            aria-label={name}
+            {...disabledTabActionAccessibility2.inner}
+            data-testid={dataTestid}
+            className={`shrink-0 tabular-nums`}
+          >{pagebarMenuTrigger.readout}{<TabCaretIcon />}</Button>
         }
       />
     );
@@ -359,48 +329,12 @@ function PagebarMenuTrigger(
             : undefined
         }
       >
-        <span
-          {...originalJsxsProps({
-            ref: elementRef,
-            tabIndex: disabled ? 0 : undefined,
-            ...disabledTabActionAccessibility2.props,
-            onPointerEnter: enabledState2
-              ? (..._extraArguments: unknown[]): Dynamic =>
-                  setEnabledState2(false)
-              : undefined,
-            onBlur: enabledState2
-              ? (..._extraArguments: unknown[]): Dynamic =>
-                  setEnabledState2(false)
-              : undefined,
-            onFocus: enabledState2
-              ? (
-                  pagebarMenuTrigger9?: Dynamic,
-                  ..._extraArguments: unknown[]
-                ): undefined => {
-                  let relatedTarget: Dynamic =
-                    pagebarMenuTrigger9.relatedTarget;
-                  if (
-                    relatedTarget &&
-                    relatedTarget.isConnected &&
-                    !elementRef2.current?.contains(relatedTarget) &&
-                    !elementRef.current?.contains(relatedTarget)
-                  ) {
-                    setEnabledState2(false);
-                  }
-                }
-              : undefined,
-            "data-tb-icon":
-              pagebarMenuTrigger.readout === undefined &&
-              pagebarMenuTrigger.caret !== true &&
-              (useContext || pagebarMenuTrigger.iconOnly === true)
-                ? ``
-                : undefined,
-            "data-tb-readout":
-              pagebarMenuTrigger.readout === undefined ? undefined : ``,
-            className: className,
-            children: [jsx, disabledTabActionAccessibility2.mirror],
-          })}
-        />
+        <span ref={elementRef} tabIndex={disabled ? 0 : undefined} {...disabledTabActionAccessibility2.props} onPointerEnter={enabledState2 ? (..._extraArguments: unknown[]): Dynamic => setEnabledState2(false) : undefined} onBlur={enabledState2 ? (..._extraArguments: unknown[]): Dynamic => setEnabledState2(false) : undefined} onFocus={enabledState2 ? (pagebarMenuTrigger9?: Dynamic, ..._extraArguments: unknown[]): undefined => {
+  let relatedTarget: Dynamic = pagebarMenuTrigger9.relatedTarget;
+  if (relatedTarget && relatedTarget.isConnected && !elementRef2.current?.contains(relatedTarget) && !elementRef.current?.contains(relatedTarget)) {
+    setEnabledState2(false);
+  }
+} : undefined} data-tb-icon={pagebarMenuTrigger.readout === undefined && pagebarMenuTrigger.caret !== true && (useContext || pagebarMenuTrigger.iconOnly === true) ? `` : undefined} data-tb-readout={pagebarMenuTrigger.readout === undefined ? undefined : ``} className={className}>{jsx}{disabledTabActionAccessibility2.mirror}</span>
       </Tooltip>
       <Menu.Popup
         ref={elementRef2}
@@ -571,15 +505,7 @@ function PagebarStrip(
     >
       {filterDocumentTabsShown2.map(
         (event?: Dynamic, ..._extraArguments: unknown[]) => (
-          <span
-            {...originalJsxProps(
-              {
-                className: `contents`,
-                children: event.node,
-              },
-              event.key,
-            )}
-          />
+          <span className={`contents`} key={event.key}>{event.node}</span>
         ),
       )}
       {filterDocumentTabsShown3.length > 0 || matchesFooter ? (
@@ -615,15 +541,7 @@ function PagebarStrip(
           >
             {filterDocumentTabsShown3.map(
               (event?: Dynamic, ..._extraArguments: unknown[]) => (
-                <span
-                  {...originalJsxProps(
-                    {
-                      className: `contents`,
-                      children: event.row,
-                    },
-                    event.key,
-                  )}
-                />
+                <span className={`contents`} key={event.key}>{event.row}</span>
               ),
             )}
             {filterDocumentTabsShown3.length > 0 && matchesFooter ? (
@@ -682,17 +600,9 @@ function UseDocumentTabsFallbackComponent(
   );
   return (
     <React.Suspense fallback={null}>
-      {((
-        RenderedComponent3: JsxElementType,
-        CapturedProps3: CapturedJsxProps,
-      ) => (
-        <RenderedComponent3 {...CapturedProps3} />
-      ))(
-        useDocumentTabsFallbackState ?? DocumentTabsDefault,
-        originalJsxProps({
-          ...documentTabsFallback,
-        }),
-      )}
+      {renderReactJsx(useDocumentTabsFallbackState ?? DocumentTabsDefault, {
+  ...documentTabsFallback
+})}
     </React.Suspense>
   );
 }
@@ -920,68 +830,22 @@ function Pagebar(
     };
   };
   let node = (
-    <PagebarMenuTrigger
-      {...originalJsxProps({
-        icon: `Add`,
-        label: `Insert`,
-        iconOnly: true,
-        caret: true,
-        shortcut: `/`,
-        disabled: !matchesDocumentTabsEditable,
-        disabledTip: documentTabsEditable ?? undefined,
-        "data-testid": `pagebar-insert`,
-        footer: (
-          <div
-            className={`text-footnote text-muted border-border border-t px-3 py-1.5`}
-            data-testid={`pagebar-insert-hint`}
-          >
+    <PagebarMenuTrigger icon={`Add`} label={`Insert`} iconOnly={true} caret={true} shortcut={`/`} disabled={!matchesDocumentTabsEditable} disabledTip={documentTabsEditable ?? undefined} data-testid={`pagebar-insert`} footer={<div className={`text-footnote text-muted border-border border-t px-3 py-1.5`} data-testid={`pagebar-insert-hint`}>
             {DocumentTabs_TypeInTheDocumentForMore}
-          </div>
-        ),
-        ...record,
-        children: (
-          <Menu.Group>
-            {DocumentSelectionLabel3.flatMap(
-              (
-                DocumentSelectionLabel32?: Dynamic,
-                ..._extraArguments: unknown[]
-              ): Dynamic => {
-                if (
-                  matchesDocumentTabsEditable &&
-                  format !== null &&
-                  !resolveDocumentTabsIncludes(
-                    DocumentSelectionLabel32.cmd,
-                    format,
-                  )
-                )
-                  return [];
-                let pagebarHandler5: Dynamic = pagebarHandler2(
-                  DocumentSelectionLabel32.cmd,
-                );
-                return [
-                  <Menu.Item
-                    {...originalJsxProps(
-                      {
-                        icon: resolveDocumentTabsValue(
-                          DocumentSelectionLabel32.id,
-                        ),
-                        disabled: pagebarHandler5.disabled,
-                        description: pagebarHandler5.tip,
-                        onClick: (..._extraArguments: unknown[]): Dynamic =>
-                          keySeat(DocumentSelectionLabel32.cmd),
-                        "data-testid": `pagebar-insert-${DocumentSelectionLabel32.id}`,
-                        children: DocumentSelectionLabel32.label,
-                      },
-                      DocumentSelectionLabel32.id,
-                    )}
-                  />,
-                ];
-              },
-            )}
-          </Menu.Group>
-        ),
-      })}
-    />
+          </div>} {...record}>{<Menu.Group>
+            {DocumentSelectionLabel3.flatMap((DocumentSelectionLabel32?: Dynamic, ..._extraArguments: unknown[]): Dynamic => {
+      if (matchesDocumentTabsEditable && format !== null && !resolveDocumentTabsIncludes(DocumentSelectionLabel32.cmd, format)) return [];
+      let pagebarHandler5: Dynamic = pagebarHandler2(DocumentSelectionLabel32.cmd);
+      return [<Menu.Item
+        icon={resolveDocumentTabsValue(DocumentSelectionLabel32.id)}
+        disabled={pagebarHandler5.disabled}
+        description={pagebarHandler5.tip}
+        onClick={(..._extraArguments: unknown[]): Dynamic => keySeat(DocumentSelectionLabel32.cmd)}
+        data-testid={`pagebar-insert-${DocumentSelectionLabel32.id}`}
+        key={DocumentSelectionLabel32.id}
+      >{DocumentSelectionLabel32.label}</Menu.Item>];
+    })}
+          </Menu.Group>}</PagebarMenuTrigger>
   );
   let pagebarHandler4: Dynamic = posture === `none` ? null : pagebarHandler3();
   let items: Dynamic =
@@ -1029,13 +893,7 @@ function Pagebar(
           onLeave={onMenuClose}
         />
       ) : items.length > 0 ? (
-        <div
-          {...originalJsxProps({
-            className: `contents`,
-            ...useDocumentTabsVia2.props,
-            children: <PagebarStrip items={items} onMenuClose={onMenuClose} />,
-          })}
-        />
+        <div className={`contents`} {...useDocumentTabsVia2.props}>{<PagebarStrip items={items} onMenuClose={onMenuClose} />}</div>
       ) : null}
     </PagebarMenuSection>
   );
@@ -1147,22 +1005,14 @@ function PagebarMenuFit(
       {EditorHostState31.map(
         (item?: Dynamic, ..._extraArguments: unknown[]) => (
           <Menu.Item
-            {...originalJsxProps(
-              {
-                checkedRole: `radio`,
-                checked: value === item,
-                onClick: (..._extraArguments: unknown[]): Dynamic =>
-                  onPick(item),
-                "data-testid": `${testid}-${item}`,
-                children: (
-                  <span className={`tabular-nums`}>
+            checkedRole={`radio`}
+            checked={value === item}
+            onClick={(..._extraArguments: unknown[]): Dynamic => onPick(item)}
+            data-testid={`${testid}-${item}`}
+            key={item}
+          >{<span className={`tabular-nums`}>
                     {resolveEditorHostValue20(item)}
-                  </span>
-                ),
-              },
-              item,
-            )}
-          />
+                  </span>}</Menu.Item>
         ),
       )}
     </Menu.Group>

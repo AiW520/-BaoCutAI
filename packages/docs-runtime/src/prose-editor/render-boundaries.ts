@@ -11,3 +11,9 @@ export interface RevisionBoundaryProps {
   readonly children?: ReactNode;
   onError?(error: unknown): void;
 }
+
+export interface StaticSparkProps {
+  readonly size?: number | string;
+  readonly color?: string;
+  readonly className?: string;
+}

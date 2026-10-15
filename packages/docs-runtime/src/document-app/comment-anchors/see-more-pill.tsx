@@ -18,8 +18,6 @@ import {
   frameProfilesVersion,
   isFrameArtifact,
   isTmpId,
-  originalJsxProps,
-  originalJsxsProps,
   resolveCommentsEditorAgent,
   resolveCommentsEditorTrim,
   resolveCommentsEditorUser,
@@ -420,15 +418,7 @@ function CommentWhen(
         <ReactionPill reactions={r5.reactions} me={me2} onToggle={onReact} />
       )}
       {deleting && onDelete && onCancel && (
-        <UseCommentAnchorsAutoFocusComponent
-          {...originalJsxProps(
-            {
-              onDelete: onDelete,
-              onCancel: onCancel,
-            },
-            deleteAsk,
-          )}
-        />
+        <UseCommentAnchorsAutoFocusComponent onDelete={onDelete} onCancel={onCancel} key={deleteAsk} />
       )}
     </div>
   );
@@ -530,15 +520,7 @@ function CommentHeader(
       }
       confirm={
         deleting && onDelete && onCancel ? (
-          <UseCommentAnchorsBusyComponent
-            {...originalJsxProps(
-              {
-                onDelete: onDelete,
-                onCancel: onCancel,
-              },
-              deleteAsk,
-            )}
-          />
+          <UseCommentAnchorsBusyComponent onDelete={onDelete} onCancel={onCancel} key={deleteAsk} />
         ) : undefined
       }
     >
@@ -773,57 +755,17 @@ function ReactionPill(
             </jsxRuntime.Fragment>
           );
           return (
-            <Tooltip
-              {...originalJsxProps(
-                {
-                  content: content,
-                  side: `top`,
-                  multiline: true,
-                  children: onToggle ? (
-                    <button
-                      type={`button`}
-                      data-testid={`reaction-pill`}
-                      aria-pressed={ariaPressed}
-                      aria-label={ariaLabel}
-                      aria-describedby={`${controlId}-${index}`}
-                      onClick={(
-                        reactionPill?: Dynamic,
-                        ..._extraArguments: unknown[]
-                      ): undefined => {
-                        reactionPill.stopPropagation();
-                        onToggle(item);
-                      }}
-                      onKeyDown={(
-                        event?: Dynamic,
-                        ..._extraArguments: unknown[]
-                      ): undefined =>
-                        void (
-                          event.repeat &&
-                          event.key === `Enter` &&
-                          event.preventDefault()
-                        )
-                      }
-                      className={className}
-                    >
+            <Tooltip content={content} side={`top`} multiline={true} key={item}>{onToggle ? <button type={`button`} data-testid={`reaction-pill`} aria-pressed={ariaPressed} aria-label={ariaLabel} aria-describedby={`${controlId}-${index}`} onClick={(reactionPill?: Dynamic, ..._extraArguments: unknown[]): undefined => {
+    reactionPill.stopPropagation();
+    onToggle(item);
+  }} onKeyDown={(event?: Dynamic, ..._extraArguments: unknown[]): undefined => void (event.repeat && event.key === `Enter` && event.preventDefault())} className={className}>
                       {jsxs}
                       <span id={`${controlId}-${index}`} className={`sr-only`}>
                         {content}
                       </span>
-                    </button>
-                  ) : (
-                    <span
-                      data-testid={`reaction-pill`}
-                      role={`img`}
-                      aria-label={`${ariaLabel}, ${content}`}
-                      className={className}
-                    >
+                    </button> : <span data-testid={`reaction-pill`} role={`img`} aria-label={`${ariaLabel}, ${content}`} className={className}>
                       {jsxs}
-                    </span>
-                  ),
-                },
-                item,
-              )}
-            />
+                    </span>}</Tooltip>
           );
         },
       )}
@@ -1094,142 +1036,56 @@ export function initializeCommentAnchorsSeeMorePillStep1(): void {
         : undefined;
     return (
       <TooltipGroup delay={150}>
-      <div
-          {...originalJsxsProps({
-            ref: elementRef,
-            "data-active": active || undefined,
-            "data-testid": `reaction-chip`,
-            className: `group/row relative inline-flex max-w-full items-center gap-1${enabledState ? `` : ` align-top`} ${matchesTabStop ? `rounded-full focus-visible:ring-1 focus-visible:ring-fill-accent focus-visible:outline-none` : ``}`,
-            ...(matchesTabStop
-              ? {
-                  "data-comment-stop": ``,
-                  "data-stop-id": t5.id,
-                  role: `group`,
-                  tabIndex: tabStop === false ? -1 : 0,
-                  "aria-label": ariaLabel,
-                  onFocus: onFocus,
-                  onBlur: onFocus,
-                  "aria-describedby": readOnly ? undefined : hintId,
-                  onKeyDown: (
-                    event?: Dynamic,
-                    ..._extraArguments: unknown[]
-                  ): undefined => {
-                    if (
-                      event.key === `Escape` &&
-                      event.target !== event.currentTarget &&
-                      !event.nativeEvent.isComposing
-                    ) {
-                      event.preventDefault();
-                      event.stopPropagation();
-                      event.currentTarget.focus();
-                      return;
-                    }
-                    let enabled2 = false;
-                    resolveCommentComponentsTarget5(
-                      event,
-                      (..._extraArguments: unknown[]): undefined => {
-                        let matchedElement: Dynamic =
-                          event.currentTarget.querySelector(`button`);
-                        if (matchedElement) {
-                          matchedElement.focus();
-                          enabled2 = true;
-                        }
-                      },
-                      onNavigate,
-                    );
-                    if (enabled2) {
-                      event.stopPropagation();
-                    }
-                  },
-                }
-              : {}),
-            children: [
-              <UseCommentAnchorsReactionsComponent
-                reactions={enabledState ? reactions : CommentAnchorsState6}
-                me={reactionChipResult2}
-                onToggle={
-                  readOnly
-                    ? undefined
-                    : (reactionChip?: Dynamic, ..._extraArguments: unknown[]) =>
-                        result(reactionChip, true)
-                }
-                className={`flex-nowrap items-center`}
-                hint={readOnly ? undefined : record}
-                onClick={(
-                  event?: Dynamic,
-                  ..._extraArguments: unknown[]
-                ): undefined => {
-                  let closest: Dynamic = event.target.closest(`button`);
-                  if (closest && event.currentTarget.contains(closest)) {
-                    event.stopPropagation();
-                  }
-                }}
-              />,
-              showLabel && quote && (
-                <Tooltip content={quote} multiline={true}>
-                <span
-                    className={`text-muted text-caption min-w-0 truncate`}
-                    data-testid={`reaction-chip-label`}
-                  >
+      <div ref={elementRef} data-active={active || undefined} data-testid={`reaction-chip`} className={`group/row relative inline-flex max-w-full items-center gap-1${enabledState ? `` : ` align-top`} ${matchesTabStop ? `rounded-full focus-visible:ring-1 focus-visible:ring-fill-accent focus-visible:outline-none` : ``}`} {...matchesTabStop ? {
+  "data-comment-stop": ``,
+  "data-stop-id": t5.id,
+  role: `group`,
+  tabIndex: tabStop === false ? -1 : 0,
+  "aria-label": ariaLabel,
+  onFocus: onFocus,
+  onBlur: onFocus,
+  "aria-describedby": readOnly ? undefined : hintId,
+  onKeyDown: (event?: Dynamic, ..._extraArguments: unknown[]): undefined => {
+    if (event.key === `Escape` && event.target !== event.currentTarget && !event.nativeEvent.isComposing) {
+      event.preventDefault();
+      event.stopPropagation();
+      event.currentTarget.focus();
+      return;
+    }
+    let enabled2 = false;
+    resolveCommentComponentsTarget5(event, (..._extraArguments: unknown[]): undefined => {
+      let matchedElement: Dynamic = event.currentTarget.querySelector(`button`);
+      if (matchedElement) {
+        matchedElement.focus();
+        enabled2 = true;
+      }
+    }, onNavigate);
+    if (enabled2) {
+      event.stopPropagation();
+    }
+  }
+} : {}}>{<UseCommentAnchorsReactionsComponent reactions={enabledState ? reactions : CommentAnchorsState6} me={reactionChipResult2} onToggle={readOnly ? undefined : (reactionChip?: Dynamic, ..._extraArguments: unknown[]) => result(reactionChip, true)} className={`flex-nowrap items-center`} hint={readOnly ? undefined : record} onClick={(event?: Dynamic, ..._extraArguments: unknown[]): undefined => {
+    let closest: Dynamic = event.target.closest(`button`);
+    if (closest && event.currentTarget.contains(closest)) {
+      event.stopPropagation();
+    }
+  }} />}{showLabel && quote && <Tooltip content={quote} multiline={true}>
+                <span className={`text-muted text-caption min-w-0 truncate`} data-testid={`reaction-chip-label`}>
                   {quote}
                 </span>
-              </Tooltip>
-              ),
-              t5.resolved && onReopen && !readOnly && enabled && (
-                <Tooltip
-                  content={resolveCommentAnchorsResolvedBy(t5)}
-                  side={`top`}
-                >
-                <IconButton
-                    aria-label={`Reopen`}
-                    size={20}
-                    icon={
-                      <UiOverlaysAndIconsCustomIcon
-                        name={`CheckCircleFilled`}
-                        customSize={14}
-                        className={`text-accent`}
-                      />
-                    }
-                    onClick={(
-                      reactionChip?: Dynamic,
-                      ..._extraArguments: unknown[]
-                    ): undefined => {
-                      reactionChip.stopPropagation();
-                      onReopen(t5.id);
-                    }}
-                  />
-              </Tooltip>
-              ),
-              t5.resolved && onReopen && !readOnly && !enabled && (
-                <ResolvedMark t={t5} />
-              ),
-              !readOnly && (
-                <span
-                  className={`pointer-events-none flex w-0 shrink-0 items-center gap-0.5 overflow-hidden opacity-0 transition-opacity group-focus-within/row:pointer-events-auto group-focus-within/row:w-auto group-focus-within/row:opacity-100 group-hover/row:pointer-events-auto group-hover/row:w-auto group-hover/row:opacity-100 has-[[data-popup-open]]:pointer-events-auto has-[[data-popup-open]]:w-auto has-[[data-popup-open]]:opacity-100`}
-                >
-                <UseCommentAnchorsPinnedComponent
-                    onPick={(
-                      reactionChip?: Dynamic,
-                      ..._extraArguments: unknown[]
-                    ) => result(reactionChip, false)}
-                  />
-                {!t5.resolved && enabled && (
-                    <UseCommentComposerLabelComponent
-                      label={`Resolve`}
-                      icon={
-                        <UiOverlaysAndIconsCustomIcon
-                          name={`Check`}
-                          customSize={13}
-                        />
-                      }
-                      onClick={onClick}
-                    />
-                  )}
-              </span>
-              ),
-            ],
-          })}
-        />
+              </Tooltip>}{t5.resolved && onReopen && !readOnly && enabled && <Tooltip content={resolveCommentAnchorsResolvedBy(t5)} side={`top`}>
+                <IconButton aria-label={`Reopen`} size={20} icon={<UiOverlaysAndIconsCustomIcon name={`CheckCircleFilled`} customSize={14} className={`text-accent`} />} onClick={(reactionChip?: Dynamic, ..._extraArguments: unknown[]): undefined => {
+      reactionChip.stopPropagation();
+      onReopen(t5.id);
+    }} />
+              </Tooltip>}{t5.resolved && onReopen && !readOnly && !enabled && <ResolvedMark t={t5} />}{!readOnly && <span className={`pointer-events-none flex w-0 shrink-0 items-center gap-0.5 overflow-hidden opacity-0 transition-opacity group-focus-within/row:pointer-events-auto group-focus-within/row:w-auto group-focus-within/row:opacity-100 group-hover/row:pointer-events-auto group-hover/row:w-auto group-hover/row:opacity-100 has-[[data-popup-open]]:pointer-events-auto has-[[data-popup-open]]:w-auto has-[[data-popup-open]]:opacity-100`}>
+                <UseCommentAnchorsPinnedComponent onPick={(reactionChip?: Dynamic, ..._extraArguments: unknown[]) => result(reactionChip, false)} />
+                {!t5.resolved && enabled && <UseCommentComposerLabelComponent
+                  label={`Resolve`}
+                  icon={<UiOverlaysAndIconsCustomIcon name={`Check`} customSize={13} />}
+                  onClick={onClick}
+                />}
+              </span>}</div>
     </TooltipGroup>
     );
   }));
@@ -1248,28 +1104,13 @@ export function initializeCommentAnchorsSeeMorePillStep1(): void {
       >
       {filteredReactionsEntries.map(
           ([item, item2]: Dynamic, ..._extraArguments: unknown[]) => (
-            <li
-              {...originalJsxsProps(
-                {
-                  className: `gap-xs flex`,
-                  children: [
-                    <span className={`shrink-0`}>{item}</span>,
-                    item2.some(isCommentAnchorsStartsWith) ? (
-                      <span
-                        aria-hidden={`true`}
-                        data-testid={`reaction-names-loading`}
-                        className={`bg-alpha-2 inline-block h-2 w-24 animate-pulse self-center rounded`}
-                      />
-                    ) : (
-                      <span className={`min-w-0 wrap-break-word`}>
+            <li className={`gap-xs flex`} key={item}>{<span className={`shrink-0`}>{item}</span>}{item2.some(isCommentAnchorsStartsWith) ? <span
+              aria-hidden={`true`}
+              data-testid={`reaction-names-loading`}
+              className={`bg-alpha-2 inline-block h-2 w-24 animate-pulse self-center rounded`}
+            /> : <span className={`min-w-0 wrap-break-word`}>
                       {item2.map(resolveCommentAnchorsStartsWith).join(`, `)}
-                    </span>
-                    ),
-                  ],
-                },
-                item,
-              )}
-            />
+                    </span>}</li>
           ),
         )}
     </ul>

@@ -14,7 +14,6 @@ import {
   React,
   clsx,
   createAlertDialogHandle,
-  originalJsxProps,
 } from "../dependencies";
 import {
   UiDesignSystemUseLayoutEffect,
@@ -419,13 +418,7 @@ function Dialog_Root(
         <UiDialogsCreateContext3.Provider value={elementRef}>
           <UiDialogsCreateContext4.Provider value={!disablePointerDismissal2}>
             <UiOverlaysAndIconsActionsRef actionsRef={actionsRef2}>
-              <DialogRoot
-                {...originalJsxProps({
-                  disablePointerDismissal: disablePointerDismissal2,
-                  actionsRef: actionsRef2,
-                  ...dialogRoot,
-                })}
-              />
+              <DialogRoot disablePointerDismissal={disablePointerDismissal2} actionsRef={actionsRef2} {...dialogRoot} />
             </UiOverlaysAndIconsActionsRef>
           </UiDialogsCreateContext4.Provider>
         </UiDialogsCreateContext3.Provider>
@@ -447,12 +440,7 @@ function AlertDialog_Root(
       <UiDialogsCreateContext.Provider value={true}>
         <UiDialogsCreateContext4.Provider value={false}>
           <UiOverlaysAndIconsActionsRef actionsRef={actionsRef2}>
-            <AlertDialogRoot
-              {...originalJsxProps({
-                ...alertDialogRoot,
-                actionsRef: actionsRef2,
-              })}
-            />
+            <AlertDialogRoot {...alertDialogRoot} actionsRef={actionsRef2} />
           </UiOverlaysAndIconsActionsRef>
         </UiDialogsCreateContext4.Provider>
       </UiDialogsCreateContext.Provider>
@@ -813,12 +801,7 @@ export function initializeUiDialogsStep1(): void {
         dialogTrigger.handle ? null : (useContext ?? null),
       );
       return (
-        <DialogTrigger
-          {...originalJsxProps({
-            ref: uiOverlaysAndIconsValue4,
-            ...dialogTrigger,
-          })}
-        />
+        <DialogTrigger ref={uiOverlaysAndIconsValue4} {...dialogTrigger} />
       );
     },
   ));
@@ -852,16 +835,9 @@ export function initializeUiDialogsStep1(): void {
         useUiTooltipsAndControlsTop(fitVisualViewport),
       );
       return (
-        <DialogPopup
-          {...originalJsxProps({
-            [UiOverlaysAndIconsDataCdsOverlay]: ``,
-            ref: uiOverlaysAndIconsValue4,
-            finalFocus: finalFocus ?? useUiTooltipsAndControlsFinalFocus22,
-            "aria-modal": useContext === false ? `false` : undefined,
-            ...dialogPopupInner,
-            children: children,
-          })}
-        />
+        <DialogPopup {...{
+  [UiOverlaysAndIconsDataCdsOverlay]: ``
+}} ref={uiOverlaysAndIconsValue4} finalFocus={finalFocus ?? useUiTooltipsAndControlsFinalFocus22} aria-modal={useContext === false ? `false` : undefined} {...dialogPopupInner}>{children}</DialogPopup>
       );
     },
   ));
@@ -877,14 +853,9 @@ export function initializeUiDialogsStep1(): void {
         useUiTooltipsAndControlsTop(true),
       );
       return (
-        <DialogPopup
-          {...originalJsxProps({
-            [UiOverlaysAndIconsDataCdsOverlay]: ``,
-            ref: uiOverlaysAndIconsValue4,
-            ...confirmationDialogPopupInner,
-            children: children,
-          })}
-        />
+        <DialogPopup {...{
+  [UiOverlaysAndIconsDataCdsOverlay]: ``
+}} ref={uiOverlaysAndIconsValue4} {...confirmationDialogPopupInner}>{children}</DialogPopup>
       );
     },
   ));
@@ -946,24 +917,12 @@ export function initializeUiDialogsStep1(): void {
               />
             <UiDialogsAriaHidden />
             <Dialog_PopupInner
-                {...originalJsxProps({
-                  "data-cds": `Dialog`,
-                  ref: options,
-                  ...dialogPopup,
-                  fitVisualViewport: !unstyled,
-                  className: resolveUiDesignSystemValue2(
-                    `draggable-none`,
-                    UiDialogsStyles4,
-                    label,
-                    className,
-                  ),
-                  children: unstyled ? (
-                    children
-                  ) : (
-                    <div className={UiDialogsStyles}>{children}</div>
-                  ),
-                })}
-              />
+              data-cds={`Dialog`}
+              ref={options}
+              {...dialogPopup}
+              fitVisualViewport={!unstyled}
+              className={resolveUiDesignSystemValue2(`draggable-none`, UiDialogsStyles4, label, className)}
+            >{unstyled ? children : <div className={UiDialogsStyles}>{children}</div>}</Dialog_PopupInner>
           </UiProviderAndLayersCreateContext13.Provider>
         </UiOverlaysAndIconsSurface>
       </DialogPortal>
@@ -980,17 +939,9 @@ export function initializeUiDialogsStep1(): void {
       let useContext: Dynamic = (0, React.useContext)(UiDialogsCreateContext2);
       return (
         <DialogTitle
-          {...originalJsxProps({
-            ref: options,
-            ...dialogTitle,
-            className: resolveUiDesignSystemValue2(
-              `text-primary`,
-              useContext
-                ? UiDialogsTextHeadingFontMediumBreakWords
-                : UiDialogsTextTitleFontSemiboldBreakWords,
-              className,
-            ),
-          })}
+          ref={options}
+          {...dialogTitle}
+          className={resolveUiDesignSystemValue2(`text-primary`, useContext ? UiDialogsTextHeadingFontMediumBreakWords : UiDialogsTextTitleFontSemiboldBreakWords, className)}
         />
       );
     },
@@ -1006,14 +957,9 @@ export function initializeUiDialogsStep1(): void {
       ..._extraArguments: unknown[]
     ) => (
       <DialogDescription
-        {...originalJsxProps({
-          ref: options,
-          ...dialogDescription,
-          className: resolveUiDesignSystemValue2(
-            UiDialogsMt1TextBodyFontNormalTextSecondaryBreakWords,
-            className,
-          ),
-        })}
+        ref={options}
+        {...dialogDescription}
+        className={resolveUiDesignSystemValue2(UiDialogsMt1TextBodyFontNormalTextSecondaryBreakWords, className)}
       />
     ),
   ));

@@ -1,8 +1,9 @@
+import { jsx as renderReactJsx } from "react/jsx-runtime";
 /** BaoCut: comment anchors from index-CX4IZqzA.js. */
-import type { JSX } from "../../react-runtime/jsx-runtime";
-import type { CapturedProps as CapturedJsxProps } from "../../react-runtime/jsx-runtime";
+import type { JSX } from "react";
+
 import type { Dynamic } from "../../interop/legacy-dynamic";
-type JsxElementType = JSX.ElementType;
+
 import {
   ArtifactReferenceChip,
   EditorAnchorsAndMentions00100100,
@@ -26,7 +27,6 @@ import {
   commentsEditorSet,
   isRawAnchorJson,
   isTmpId,
-  originalJsxProps,
   preloadModule,
   quoteWords,
   resolveCommentsStorePaint,
@@ -1023,41 +1023,22 @@ function SummonNote(
           : CommentAnchors_YourSession,
       )
     : null;
-  return ((
-    RenderedComponent2: JsxElementType,
-    CapturedProps2: CapturedJsxProps,
-  ) => <RenderedComponent2 {...CapturedProps2} />)(
-    as2 ?? `div`,
-    originalJsxProps({
-      ...(as2 === undefined && {
-        className: `text-muted text-caption mt-1`,
-      }),
-      "data-testid": `summon-note`,
-      "data-summon-note": note,
-      "data-summon-handoff": resolveCommentAnchorsValue4(note, handoff)
-        ? ``
-        : undefined,
-      children:
-        commentAnchorsLastIndexOf === null ? (
-          Item
-        ) : (
-          <jsxRuntime.Fragment>
+  return renderReactJsx(as2 ?? `div`, {
+  ...(as2 === undefined && {
+    className: `text-muted text-caption mt-1`
+  }),
+  "data-testid": `summon-note`,
+  "data-summon-note": note,
+  "data-summon-handoff": resolveCommentAnchorsValue4(note, handoff) ? `` : undefined,
+  children: commentAnchorsLastIndexOf === null ? Item : <jsxRuntime.Fragment>
             {commentAnchorsLastIndexOf[0]}
-            <Link
-              {...originalJsxProps({
-                onClick: onOpen,
-                ...(note !== `no_listener` && {
-                  // BaoCut: 称「agent」，不称 Claude。
-                  "aria-label": `Open your agent session`,
-                }),
-                children: commentAnchorsLastIndexOf[1],
-              })}
-            />
+            <Link onClick={onOpen} {...note !== `no_listener` && {
+      // BaoCut: 称「agent」，不称 Claude。
+      "aria-label": `Open your agent session`
+    }}>{commentAnchorsLastIndexOf[1]}</Link>
             {commentAnchorsLastIndexOf[2] || null}
           </jsxRuntime.Fragment>
-        ),
-    }),
-  );
+});
 }
 
 function resolveCommentAnchorsLastIndexOf(
@@ -1347,51 +1328,16 @@ function UseCommentAnchorsContainer2Component(
           : entry.ref.length + (entry.label?.length ?? 0);
       if (entry.type === `text`)
         return (
-          <React.Fragment
-            {...originalJsxProps(
-              {
-                children: entry.text,
-              },
-              label,
-            )}
-          />
+          <React.Fragment key={label}>{entry.text}</React.Fragment>
         );
       if (entry.kind === `user`) {
         let dataMentionId: Dynamic = entry.ref.slice(6);
         return (
-          <span
-            {...originalJsxProps(
-              {
-                "data-chat-mention": ``,
-                "data-mention-id": dataMentionId,
-                children:
-                  entry.label == null ? (
-                    resolveEditorAnchorsAndMentionsPlatform(dataMentionId) ? (
-                      <MentionName principal={dataMentionId} />
-                    ) : (
-                      `@${resolvePlatformSessionAndSourcesValue(dataMentionId)}`
-                    )
-                  ) : (
-                    `@${entry.label}`
-                  ),
-              },
-              label,
-            )}
-          />
+          <span data-chat-mention={``} data-mention-id={dataMentionId} key={label}>{entry.label == null ? resolveEditorAnchorsAndMentionsPlatform(dataMentionId) ? <MentionName principal={dataMentionId} /> : `@${resolvePlatformSessionAndSourcesValue(dataMentionId)}` : `@${entry.label}`}</span>
         );
       }
       return (
-        <ArtifactReferenceChip
-          {...originalJsxProps(
-            {
-              refStr: entry.ref,
-              label: entry.label,
-              kind: entry.kind,
-              container: container,
-            },
-            label,
-          )}
-        />
+        <ArtifactReferenceChip refStr={entry.ref} label={entry.label} kind={entry.kind} container={container} key={label} />
       );
     },
   );

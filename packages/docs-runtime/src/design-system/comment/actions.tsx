@@ -7,8 +7,6 @@ import {
   UiLinksAndFoundationCreateContext3,
   UiOverlaysAndIconsCustomIcon,
   jsxRuntime,
-  originalJsxProps,
-  originalJsxsProps,
   resolveUiDesignSystemValue2,
   resolveUiLinksAndFoundationUseContext3,
   resolveUiLinksAndFoundationValue19,
@@ -153,24 +151,15 @@ export function initializeCommentActionsStep1(): void {
       let value12: Dynamic =
         value5 && !value4 ? (
           <Button
-            {...originalJsxProps(
-              {
-                variant: `ghost`,
-                iconOnly: true,
-                "aria-label": value5.closeLabel ?? value7,
-                icon: (
-                  <UiOverlaysAndIconsCustomIcon
-                    name={`X`}
-                    size={value ? `md` : `sm`}
-                  />
-                ),
-                onClick: value5.onClose,
-                className: CommentsStyles2,
-                "data-step": resolveCommentsComfortable(value),
-                "data-cds-part": `close`,
-              },
-              `close`,
-            )}
+            variant={`ghost`}
+            iconOnly={true}
+            aria-label={value5.closeLabel ?? value7}
+            icon={<UiOverlaysAndIconsCustomIcon name={`X`} size={value ? `md` : `sm`} />}
+            onClick={value5.onClose}
+            className={CommentsStyles2}
+            data-step={resolveCommentsComfortable(value)}
+            data-cds-part={`close`}
+            key={`close`}
           />
         ) : null;
       let value13: Dynamic = React.Children.toArray(input4);
@@ -181,59 +170,24 @@ export function initializeCommentActionsStep1(): void {
       let value15: Dynamic = value ? `pinned` : (input ?? value3);
       return value2 ? (
         <span
-          {...originalJsxsProps({
-            ref: options,
-            "data-cds-part": `actions`,
-            "data-placement": value15,
-            onKeyDown: input5,
-            onFocus: input6,
-            className: resolveUiDesignSystemValue2(
-              `ms-auto flex shrink-0 items-center`,
-              input3,
-            ),
-            ...input7,
-            children: [value14, value12],
-          })}
-        />
+          ref={options}
+          data-cds-part={`actions`}
+          data-placement={value15}
+          onKeyDown={input5}
+          onFocus={input6}
+          className={resolveUiDesignSystemValue2(`ms-auto flex shrink-0 items-center`, input3)}
+          {...input7}
+        >{value14}{value12}</span>
       ) : (
-        <span
-          {...originalJsxProps({
-            ref: value11,
-            role: `toolbar`,
-            "aria-label": input2 ?? value6,
-            tabIndex: -1,
-            "data-cds-part": `actions`,
-            "data-placement": value15,
-            onKeyDown: (
-              input8?: Dynamic,
-              ..._extraArguments: unknown[]
-            ): undefined => {
-              input5?.(input8);
-              value9(input8);
-            },
-            onFocus: (
-              input8?: Dynamic,
-              ..._extraArguments: unknown[]
-            ): undefined => {
-              input6?.(input8);
-              value10(input8);
-            },
-            className: resolveUiDesignSystemValue2(
-              `relative ms-auto flex shrink-0 items-center self-stretch`,
-              CommentsStyles3,
-              input3,
-            ),
-            ...input7,
-            children:
-              value15 === `float` ? (
-                <jsxRuntime.Fragment>
+        <span ref={value11} role={`toolbar`} aria-label={input2 ?? value6} tabIndex={-1} data-cds-part={`actions`} data-placement={value15} onKeyDown={(input8?: Dynamic, ..._extraArguments: unknown[]): undefined => {
+  input5?.(input8);
+  value9(input8);
+}} onFocus={(input8?: Dynamic, ..._extraArguments: unknown[]): undefined => {
+  input6?.(input8);
+  value10(input8);
+}} className={resolveUiDesignSystemValue2(`relative ms-auto flex shrink-0 items-center self-stretch`, CommentsStyles3, input3)} {...input7}>{value15 === `float` ? <jsxRuntime.Fragment>
                 <CommentMotionCreateContext6.Provider value={`float`}>
-                  <span
-                      className={resolveUiDesignSystemValue2(
-                        `flex items-center`,
-                        CommentsStyles,
-                      )}
-                    >
+                  <span className={resolveUiDesignSystemValue2(`flex items-center`, CommentsStyles)}>
                     {value14}
                   </span>
                 </CommentMotionCreateContext6.Provider>
@@ -241,15 +195,10 @@ export function initializeCommentActionsStep1(): void {
                   {value14.filter(resolveCommentsValue)}
                 </CommentMotionCreateContext6.Provider>
                 {value12}
-              </jsxRuntime.Fragment>
-              ) : (
-                <jsxRuntime.Fragment>
+              </jsxRuntime.Fragment> : <jsxRuntime.Fragment>
                 {value14}
                 {value12}
-              </jsxRuntime.Fragment>
-              ),
-          })}
-        />
+              </jsxRuntime.Fragment>}</span>
       );
     },
   );
@@ -284,27 +233,17 @@ export function initializeCommentActionsStep1(): void {
           <Popover.Trigger
               render={
                 <CommentsHandBack
-                  {...originalJsxProps({
-                    ref: options,
-                    handBack: `actions`,
-                    variant: `ghost`,
-                    iconOnly: true,
-                    tooltip: false,
-                    "aria-label": value8,
-                    icon: (
-                      <UiOverlaysAndIconsCustomIcon
-                        name={`Smiley`}
-                        size={value2 ? `md` : `sm`}
-                      />
-                    ),
-                    className: resolveUiDesignSystemValue2(
-                      CommentsStyles2,
-                      input4,
-                    ),
-                    "data-step": resolveCommentsComfortable(value2),
-                    "data-cds-part": `react`,
-                    ...input5,
-                  })}
+                  ref={options}
+                  handBack={`actions`}
+                  variant={`ghost`}
+                  iconOnly={true}
+                  tooltip={false}
+                  aria-label={value8}
+                  icon={<UiOverlaysAndIconsCustomIcon name={`Smiley`} size={value2 ? `md` : `sm`} />}
+                  className={resolveUiDesignSystemValue2(CommentsStyles2, input4)}
+                  data-step={resolveCommentsComfortable(value2)}
+                  data-cds-part={`react`}
+                  {...input5}
                 />
               }
             />
@@ -318,37 +257,15 @@ export function initializeCommentActionsStep1(): void {
           >
           {input.map(
               (input6?: Dynamic, ..._extraArguments: unknown[]): Dynamic => (
-                <Button
-                  {...originalJsxProps(
-                    {
-                      variant: `ghost`,
-                      iconOnly: true,
-                      icon: (
-                        <span
-                          aria-hidden={true}
-                          className={`text-heading font-normal leading-none`}
-                        >
+                <Button variant={`ghost`} iconOnly={true} icon={<span aria-hidden={true} className={`text-heading font-normal leading-none`}>
                         {input6}
-                      </span>
-                      ),
-                      "aria-label": resolveUiLinksAndFoundationValue19(
-                        value7,
-                        `reactWith`,
-                        `React with {emoji}`,
-                        {
-                          emoji: input6,
-                        },
-                      ),
-                      tooltip: false,
-                      onClick: (..._extraArguments: unknown[]): undefined => {
-                        value?.note(input6);
-                        input2(input6);
-                        value5(false);
-                      },
-                    },
-                    input6,
-                  )}
-                />
+                      </span>} aria-label={resolveUiLinksAndFoundationValue19(value7, `reactWith`, `React with {emoji}`, {
+  emoji: input6
+})} tooltip={false} onClick={(..._extraArguments: unknown[]): undefined => {
+  value?.note(input6);
+  input2(input6);
+  value5(false);
+}} key={input6} />
               ),
             )}
         </Popover.Popup>
@@ -434,27 +351,17 @@ export function initializeCommentActionsStep1(): void {
           <Menu.Trigger
               render={
                 <CommentsHandBack
-                  {...originalJsxProps({
-                    ref: options,
-                    handBack: `actions`,
-                    variant: `ghost`,
-                    iconOnly: true,
-                    tooltip: false,
-                    "aria-label": value10,
-                    icon: (
-                      <UiOverlaysAndIconsCustomIcon
-                        name={`DotsHorizontal`}
-                        size={value ? `md` : `sm`}
-                      />
-                    ),
-                    className: resolveUiDesignSystemValue2(
-                      CommentsStyles2,
-                      input7,
-                    ),
-                    "data-step": resolveCommentsComfortable(value),
-                    "data-cds-part": `more`,
-                    ...input8,
-                  })}
+                  ref={options}
+                  handBack={`actions`}
+                  variant={`ghost`}
+                  iconOnly={true}
+                  tooltip={false}
+                  aria-label={value10}
+                  icon={<UiOverlaysAndIconsCustomIcon name={`DotsHorizontal`} size={value ? `md` : `sm`} />}
+                  className={resolveUiDesignSystemValue2(CommentsStyles2, input7)}
+                  data-step={resolveCommentsComfortable(value)}
+                  data-cds-part={`more`}
+                  {...input8}
                 />
               }
             />
@@ -474,12 +381,7 @@ export function initializeCommentActionsStep1(): void {
       let value: Dynamic = (0, React.useRef)(null);
       resolveCommentMotionStandDown(value, input);
       return (
-        <Button
-          {...originalJsxProps({
-            ref: resolveUiOverlaysAndIconsValue4(value, options),
-            ...input2,
-          })}
-        />
+        <Button ref={resolveUiOverlaysAndIconsValue4(value, options)} {...input2} />
       );
     },
   );
@@ -521,16 +423,7 @@ export function initializeCommentActionsStep1(): void {
         value10(true);
       }
       let value11: Dynamic = (
-        <span
-          {...originalJsxProps(
-            {
-              role: `status`,
-              className: `sr-only`,
-              children: value7,
-            },
-            `status`,
-          )}
-        />
+        <span role={`status`} className={`sr-only`} key={`status`}>{value7}</span>
       );
       if (value5 !== `all` && (value5 === `line`) !== input6)
         return value5 === `float` && value9 ? (
@@ -540,26 +433,14 @@ export function initializeCommentActionsStep1(): void {
         let value12: Dynamic = (
           <Tooltip content={value6} side={`top`}>
           <span
-              {...originalJsxProps({
-                ref: options,
-                ...input5,
-                role: `img`,
-                "aria-label": value6,
-                "data-cds-part": `resolved-mark`,
-                "data-step": resolveCommentsComfortable(value),
-                className: resolveUiDesignSystemValue2(
-                  `inline-flex size-control items-center justify-center`,
-                  input4,
-                ),
-                children: (
-                  <UiOverlaysAndIconsCustomIcon
-                    name={`CheckCircleFilled`}
-                    size={value ? `md` : `sm`}
-                    className={`text-accent`}
-                  />
-                ),
-              })}
-            />
+            ref={options}
+            {...input5}
+            role={`img`}
+            aria-label={value6}
+            data-cds-part={`resolved-mark`}
+            data-step={resolveCommentsComfortable(value)}
+            className={resolveUiDesignSystemValue2(`inline-flex size-control items-center justify-center`, input4)}
+          >{<UiOverlaysAndIconsCustomIcon name={`CheckCircleFilled`} size={value ? `md` : `sm`} className={`text-accent`} />}</span>
         </Tooltip>
         );
         return value5 === `all` ? (
@@ -573,60 +454,18 @@ export function initializeCommentActionsStep1(): void {
       }
       return value2 || input === undefined ? null : (
         <jsxRuntime.Fragment>
-        <CommentsHandBack
-            {...originalJsxProps({
-              ref: options,
-              handBack: `more`,
-              variant: `ghost`,
-              iconOnly: true,
-              "aria-label": input2 ?? value3,
-              ...(input7
-                ? {
-                    "aria-busy": true,
-                    "aria-disabled": true,
-                  }
-                : {}),
-              "data-cds-part": `resolve`,
-              "data-resolving": input7 ? `true` : undefined,
-              icon: input7 ? (
-                <span className={`cds-resolve-check relative inline-flex`}>
-                <svg
-                    viewBox={`0 0 16 16`}
-                    aria-hidden={true}
-                    className={`pointer-events-none absolute inset-0 size-full overflow-visible`}
-                  >
-                  <rect
-                      className={`cds-resolve-square`}
-                      x={`0.75`}
-                      y={`0.75`}
-                      width={`14.5`}
-                      height={`14.5`}
-                      rx={`4`}
-                    />
+        <CommentsHandBack ref={options} handBack={`more`} variant={`ghost`} iconOnly={true} aria-label={input2 ?? value3} {...input7 ? {
+  "aria-busy": true,
+  "aria-disabled": true
+} : {}} data-cds-part={`resolve`} data-resolving={input7 ? `true` : undefined} icon={input7 ? <span className={`cds-resolve-check relative inline-flex`}>
+                <svg viewBox={`0 0 16 16`} aria-hidden={true} className={`pointer-events-none absolute inset-0 size-full overflow-visible`}>
+                  <rect className={`cds-resolve-square`} x={`0.75`} y={`0.75`} width={`14.5`} height={`14.5`} rx={`4`} />
                 </svg>
-                <UiOverlaysAndIconsCustomIcon
-                    name={`Check`}
-                    size={value ? `md` : `sm`}
-                    className={`relative`}
-                  />
-              </span>
-              ) : (
-                <UiOverlaysAndIconsCustomIcon
-                  name={`Check`}
-                  size={value ? `md` : `sm`}
-                />
-              ),
-              onClick: input7
-                ? undefined
-                : (..._extraArguments: unknown[]): undefined => {
-                    value8();
-                    input();
-                  },
-              className: resolveUiDesignSystemValue2(CommentsStyles2, input4),
-              "data-step": resolveCommentsComfortable(value),
-              ...input5,
-            })}
-          />
+                <UiOverlaysAndIconsCustomIcon name={`Check`} size={value ? `md` : `sm`} className={`relative`} />
+              </span> : <UiOverlaysAndIconsCustomIcon name={`Check`} size={value ? `md` : `sm`} />} onClick={input7 ? undefined : (..._extraArguments: unknown[]): undefined => {
+  value8();
+  input();
+}} className={resolveUiDesignSystemValue2(CommentsStyles2, input4)} data-step={resolveCommentsComfortable(value)} {...input5} />
         {value11}
       </jsxRuntime.Fragment>
       );

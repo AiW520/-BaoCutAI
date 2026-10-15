@@ -2,8 +2,6 @@
 import type { Dynamic } from "../../interop/legacy-dynamic";
 import {
   React,
-  originalJsxProps,
-  originalJsxsProps,
 } from "../dependencies";
 import {
   resolveUiDesignSystemValue2,
@@ -762,66 +760,11 @@ function UiOverlaysAndIconsCustomIcon(
       ].px;
     let fontSize: string = resolveUiOverlaysAndIconsValue6(px2);
     return (
-      <svg
-        {...originalJsxProps({
-          "data-cds": `Icon`,
-          width: `1em`,
-          height: `1em`,
-          viewBox: `0 0 ${uiOverlaysAndIconsCustomIcon13.viewBox} ${uiOverlaysAndIconsCustomIcon13.viewBox}`,
-          fill: `currentColor`,
-          fillRule: `evenodd`,
-          stroke: `none`,
-          strokeLinecap: `round`,
-          strokeLinejoin: `round`,
-          xmlns: `http://www.w3.org/2000/svg`,
-          style: {
-            ...UiOverlaysAndIconsFlexShrink,
-            fontSize: fontSize,
-            ...uiOverlaysAndIconsCustomIcon15,
-          },
-          className: className2,
-          ...uiOverlaysAndIconsCustomIcon19,
-          role:
-            uiOverlaysAndIconsCustomIcon19.role ??
-            (uiOverlaysAndIconsCustomIcon14 ? `img` : undefined),
-          "aria-hidden":
-            uiOverlaysAndIconsCustomIcon19[`aria-hidden`] ??
-            (uiOverlaysAndIconsCustomIcon14 ? undefined : true),
-          "aria-label":
-            uiOverlaysAndIconsCustomIcon19[`aria-label`] ??
-            (uiOverlaysAndIconsCustomIcon14 || undefined),
-          children: uiOverlaysAndIconsCustomIcon13.paths.map(
-            (
-              path?: Dynamic,
-              index?: Dynamic,
-              ..._extraArguments: unknown[]
-            ): Dynamic =>
-              typeof path == `string` ? (
-                <path
-                  {...originalJsxProps(
-                    {
-                      d: path,
-                    },
-                    index,
-                  )}
-                />
-              ) : (
-                <path
-                  {...originalJsxProps(
-                    {
-                      d: path.d,
-                      fill: `none`,
-                      stroke: `currentColor`,
-                      strokeWidth: path.strokeWidth,
-                      vectorEffect: `non-scaling-stroke`,
-                    },
-                    index,
-                  )}
-                />
-              ),
-          ),
-        })}
-      />
+      <svg data-cds={`Icon`} width={`1em`} height={`1em`} viewBox={`0 0 ${uiOverlaysAndIconsCustomIcon13.viewBox} ${uiOverlaysAndIconsCustomIcon13.viewBox}`} fill={`currentColor`} fillRule={`evenodd`} stroke={`none`} strokeLinecap={`round`} strokeLinejoin={`round`} xmlns={`http://www.w3.org/2000/svg`} style={{
+  ...UiOverlaysAndIconsFlexShrink,
+  fontSize: fontSize,
+  ...uiOverlaysAndIconsCustomIcon15
+}} className={className2} {...uiOverlaysAndIconsCustomIcon19} role={uiOverlaysAndIconsCustomIcon19.role ?? (uiOverlaysAndIconsCustomIcon14 ? `img` : undefined)} aria-hidden={uiOverlaysAndIconsCustomIcon19[`aria-hidden`] ?? (uiOverlaysAndIconsCustomIcon14 ? undefined : true)} aria-label={uiOverlaysAndIconsCustomIcon19[`aria-label`] ?? (uiOverlaysAndIconsCustomIcon14 || undefined)}>{uiOverlaysAndIconsCustomIcon13.paths.map((path?: Dynamic, index?: Dynamic, ..._extraArguments: unknown[]): Dynamic => typeof path == `string` ? <path d={path} key={index} /> : <path d={path.d} fill={`none`} stroke={`currentColor`} strokeWidth={path.strokeWidth} vectorEffect={`non-scaling-stroke`} key={index} />)}</svg>
     );
   }
   let {
@@ -904,43 +847,12 @@ function UiOverlaysAndIconsCustomIcon(
       }
     : strong;
   return (
-    <span
-      {...originalJsxsProps({
-        "data-cds": `Icon`,
-        "data-cds-anim": uiOverlaysAndIconsCustomIcon12 ? `` : undefined,
-        "data-cds-anim-loop":
-          uiOverlaysAndIconsCustomIcon12 && uiOverlaysAndIconsSet2.has(name)
-            ? ``
-            : undefined,
-        style: uiOverlaysAndIconsCustomIcon3
-          ? {
-              ...record2,
-              ...uiOverlaysAndIconsCustomIcon3,
-            }
-          : record2,
-        className: className,
-        ...uiOverlaysAndIconsCustomIcon9,
-        role:
-          uiOverlaysAndIconsCustomIcon9.role ??
-          (uiOverlaysAndIconsCustomIcon2 ? `img` : undefined),
-        "aria-hidden":
-          uiOverlaysAndIconsCustomIcon9[`aria-hidden`] ??
-          (uiOverlaysAndIconsCustomIcon2 ? undefined : true),
-        "aria-label":
-          uiOverlaysAndIconsCustomIcon9[`aria-label`] ??
-          (uiOverlaysAndIconsCustomIcon2 || undefined),
-        children: [
-          UiOverlaysAndIconsSecondaryItem !== undefined && (
-            <span data-cds-icon-layer={`secondary`} aria-hidden={`true`}>
+    <span data-cds={`Icon`} data-cds-anim={uiOverlaysAndIconsCustomIcon12 ? `` : undefined} data-cds-anim-loop={uiOverlaysAndIconsCustomIcon12 && uiOverlaysAndIconsSet2.has(name) ? `` : undefined} style={uiOverlaysAndIconsCustomIcon3 ? {
+  ...record2,
+  ...uiOverlaysAndIconsCustomIcon3
+} : record2} className={className} {...uiOverlaysAndIconsCustomIcon9} role={uiOverlaysAndIconsCustomIcon9.role ?? (uiOverlaysAndIconsCustomIcon2 ? `img` : undefined)} aria-hidden={uiOverlaysAndIconsCustomIcon9[`aria-hidden`] ?? (uiOverlaysAndIconsCustomIcon2 ? undefined : true)} aria-label={uiOverlaysAndIconsCustomIcon9[`aria-label`] ?? (uiOverlaysAndIconsCustomIcon2 || undefined)}>{UiOverlaysAndIconsSecondaryItem !== undefined && <span data-cds-icon-layer={`secondary`} aria-hidden={`true`}>
               {String.fromCodePoint(UiOverlaysAndIconsSecondaryItem)}
-            </span>
-          ),
-          UiOverlaysAndIconsIcons2Item === undefined
-            ? null
-            : String.fromCodePoint(UiOverlaysAndIconsIcons2Item),
-        ],
-      })}
-    />
+            </span>}{UiOverlaysAndIconsIcons2Item === undefined ? null : String.fromCodePoint(UiOverlaysAndIconsIcons2Item)}</span>
   );
 }
 

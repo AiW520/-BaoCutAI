@@ -13,8 +13,6 @@ import {
   enumSchema,
   frameUploadAsset,
   isFrameArtifact,
-  originalJsxProps,
-  originalJsxsProps,
   preloadModule,
   resolveDataModelSchemasValue14,
   resolveObservabilityBrowserAndOperationEventsDenyUnrowed,
@@ -661,102 +659,21 @@ function TypeEditorPopover(
             index?: Dynamic,
             ..._extraArguments: unknown[]
           ): Dynamic => (
-            <div
-              {...originalJsxsProps(
-                {
-                  className: `flex items-center gap-2`,
-                  children: [
-                    <div className={`flex flex-none gap-[5px] p-[2px]`}>
-                      {ENUM_COLORS.map(
-                        (
-                          ariaLabel?: Dynamic,
-                          ..._extraArguments: unknown[]
-                        ): Dynamic => (
-                          <button
-                            {...originalJsxProps(
-                              {
-                                type: `button`,
-                                "aria-label": ariaLabel,
-                                "aria-pressed": itemsState2.c === ariaLabel,
-                                onClick: (
-                                  ..._extraArguments: unknown[]
-                                ): Dynamic =>
-                                  setItemsState(
-                                    (
-                                      typeEditorPopover?: Dynamic,
-                                      ..._extraArguments: unknown[]
-                                    ): Dynamic =>
-                                      slice(typeEditorPopover, index, {
-                                        c: ariaLabel,
-                                      }),
-                                  ),
-                                className: `relative h-[14px] w-[14px] cursor-pointer rounded-[3px] transition-transform hover:scale-[1.15]`,
-                                style: {
-                                  background: DocumentUploadsNeutral[ariaLabel],
-                                  boxShadow:
-                                    itemsState2.c === ariaLabel
-                                      ? `0 0 0 1px #fff, 0 0 0 2px #3d3929`
-                                      : undefined,
-                                },
-                                children: itemsState2.c === ariaLabel && (
-                                  <UiOverlaysAndIconsCustomIcon
-                                    name={`Check`}
-                                    size={`xs`}
-                                    className={`absolute inset-0 m-auto text-white drop-shadow-sm`}
-                                  />
-                                ),
-                              },
-                              ariaLabel,
-                            )}
-                          />
-                        ),
-                      )}
-                    </div>,
-                    <input
-                      value={itemsState2.l}
-                      placeholder={`Option`}
-                      maxLength={80}
-                      className={`border-strong bg-surface-0 focus:border-accent min-w-0 flex-1 rounded border px-1.5 py-1 text-sm`}
-                      onChange={(
-                        event?: Dynamic,
-                        ..._extraArguments: unknown[]
-                      ): Dynamic =>
-                        setItemsState(
-                          (
-                            typeEditorPopover?: Dynamic,
-                            ..._extraArguments: unknown[]
-                          ): Dynamic =>
-                            slice(typeEditorPopover, index, {
-                              l: event.target.value,
-                            }),
-                        )
-                      }
-                    />,
-                    <button
-                      type={`button`}
-                      aria-label={`Remove`}
-                      className={`text-muted hover:text-danger flex-none px-1`}
-                      onClick={(..._extraArguments: unknown[]): Dynamic =>
-                        setItemsState(
-                          (
-                            typeEditorPopover?: Dynamic,
-                            ..._extraArguments: unknown[]
-                          ): Dynamic =>
-                            typeEditorPopover.filter(
-                              (
-                                item?: unknown,
-                                index2?: Dynamic,
-                                ..._extraArguments: unknown[]
-                              ) => index2 !== index,
-                            ),
-                        )
-                      }
-                    >{`×`}</button>,
-                  ],
-                },
-                itemsState2.k,
-              )}
-            />
+            <div className={`flex items-center gap-2`} key={itemsState2.k}>{<div className={`flex flex-none gap-[5px] p-[2px]`}>
+                      {ENUM_COLORS.map((ariaLabel?: Dynamic, ..._extraArguments: unknown[]): Dynamic => <button type={`button`} aria-label={ariaLabel} aria-pressed={itemsState2.c === ariaLabel} onClick={(..._extraArguments: unknown[]): Dynamic => setItemsState((typeEditorPopover?: Dynamic, ..._extraArguments: unknown[]): Dynamic => slice(typeEditorPopover, index, {
+      c: ariaLabel
+    }))} className={`relative h-[14px] w-[14px] cursor-pointer rounded-[3px] transition-transform hover:scale-[1.15]`} style={{
+      background: DocumentUploadsNeutral[ariaLabel],
+      boxShadow: itemsState2.c === ariaLabel ? `0 0 0 1px #fff, 0 0 0 2px #3d3929` : undefined
+    }} key={ariaLabel}>{itemsState2.c === ariaLabel && <UiOverlaysAndIconsCustomIcon name={`Check`} size={`xs`} className={`absolute inset-0 m-auto text-white drop-shadow-sm`} />}</button>)}
+                    </div>}{<input value={itemsState2.l} placeholder={`Option`} maxLength={80} className={`border-strong bg-surface-0 focus:border-accent min-w-0 flex-1 rounded border px-1.5 py-1 text-sm`} onChange={(event?: Dynamic, ..._extraArguments: unknown[]): Dynamic => setItemsState((typeEditorPopover?: Dynamic, ..._extraArguments: unknown[]): Dynamic => slice(typeEditorPopover, index, {
+    l: event.target.value
+  }))} />}{<button
+    type={`button`}
+    aria-label={`Remove`}
+    className={`text-muted hover:text-danger flex-none px-1`}
+    onClick={(..._extraArguments: unknown[]): Dynamic => setItemsState((typeEditorPopover?: Dynamic, ..._extraArguments: unknown[]): Dynamic => typeEditorPopover.filter((item?: unknown, index2?: Dynamic, ..._extraArguments: unknown[]) => index2 !== index))}
+  >{`×`}</button>}</div>
           ),
         )}
         <Button
