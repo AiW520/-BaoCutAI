@@ -13,8 +13,6 @@
 //! 独立进程让合成的崩溃与内存不影响 Runtime 与引擎；引擎宿主照常处理编辑请求，导出读的是启动时冻结的输入。
 
 mod delivery;
-#[cfg_attr(not(windows), allow(dead_code))]
-mod frame_alloc;
 mod input;
 mod master;
 mod native;
@@ -28,11 +26,6 @@ use std::path::PathBuf;
 use std::process::ExitCode;
 
 use serde_json::{Value, json};
-
-/// Windows 上留着释放的整帧大块给下一帧用（[`frame_alloc`]）。
-#[cfg(windows)]
-#[global_allocator]
-static ALLOCATOR: frame_alloc::FrameAlloc = frame_alloc::FrameAlloc::new();
 
 /// 失败：协议的错误码与说明。
 #[derive(Debug)]
