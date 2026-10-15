@@ -355,6 +355,11 @@ export function AgentProviderCard({
     else if (action === 'upgrade') askRun();
   };
 
+  const setDefault = () =>
+    void run('default', () => setDefaultAgent(runtime, driver.id), CARD_COPY.setDefaultFailed).then(
+      (ok) => ok && ToastQueue.positive(CARD_COPY.nowDefault(driver.name), { timeout: 3000 }),
+    );
+
   return (
     <div className={card}>
       <div className={head}>
@@ -391,6 +396,11 @@ export function AgentProviderCard({
           </p>
         </div>
         <div className={headControls}>
+          {!driver.isDefault && driver.state === 'ready' ? (
+            <Button variant="secondary" size="S" isDisabled={disabled} onPress={setDefault}>
+              {CARD_COPY.setDefault}
+            </Button>
+          ) : null}
           {installed ? (
             <Switch
               aria-label={CARD_COPY.enable(driver.name)}
@@ -577,10 +587,6 @@ function InstalledDetail({
     void run('models', () => detectAgents(runtime, driver.id), CARD_COPY.refreshFailed).then(
       (ok) => ok && ToastQueue.neutral(CARD_COPY.refreshed(driver.name), { timeout: 3000 }),
     );
-  const setDefault = () =>
-    void run('default', () => setDefaultAgent(runtime, driver.id), CARD_COPY.setDefaultFailed).then(
-      (ok) => ok && ToastQueue.positive(CARD_COPY.nowDefault(driver.name), { timeout: 3000 }),
-    );
 
   return (
     <>
@@ -685,11 +691,6 @@ function InstalledDetail({
         />
       ) : null}
       <SettingRow label={CARD_COPY.troubleshoot} desc={CARD_COPY.troubleshootDesc}>
-        {!driver.isDefault && driver.state === 'ready' ? (
-          <Button variant="secondary" size="S" isDisabled={disabled} onPress={setDefault}>
-            {CARD_COPY.setDefault}
-          </Button>
-        ) : null}
         <Button variant="secondary" size="S" isDisabled={disabled} onPress={onRecheck}>
           {busy === 'detect' ? CARD_COPY.checking : CARD_COPY.runChecks}
         </Button>

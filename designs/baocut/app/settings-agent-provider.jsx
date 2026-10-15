@@ -227,6 +227,7 @@
             : h.added ? (h.launcher ? `还没检测 · 启动时由 ${h.launcher} 下载，需要 ${h.launcherNeeds}` : `还没检测 · 未在这台电脑上找到 ${h.cmd}`)
             : `未在这台电脑上找到 ${h.cmd} · 用你已有的 ${h.plan} 即可`}</p>
         </div>
+        {!isDefault && state === 'ready' ? <Btn size="s" onClick={() => { app.setHarnessPref(h.id); app.toast(`新会话默认用 ${h.name}`, 'positive'); }}>设为默认</Btn> : null}
         {h.found ? <Switch on={h.enabled && !S.blocked(h)} disabled={S.blocked(h)} ariaLabel={'启用 ' + h.name}
           onChange={(v) => { app.setHarnessOn(h.id, v); app.toast(v ? `已启用 ${h.name}` : `已停用 ${h.name} · 新会话不再列出它`); }} /> : null}
         <Btn size="s" variant={h.found ? 'quiet' : 'secondary'} iconRight={open ? 'chevup' : 'chevdown'} aria-expanded={open}
@@ -294,7 +295,7 @@
             <p>BaoCut 经 ACP（Agent Client Protocol）用这条命令启动它。</p></div>
             <IconBtn icon="copy" size="s" tip="复制启动命令" onClick={() => copy(C.launchLine(h), '启动命令')} /></div> : null}
           <div className="agset-detailrow"><div><b>排查</b><p>逐项检查安装、版本、登录和模型列表，告诉你卡在哪一步。</p></div>
-            <div className="row gap8">{!isDefault && state === 'ready' ? <Btn size="s" onClick={() => { app.setHarnessPref(h.id); app.toast(`新会话默认用 ${h.name}`, 'positive'); }}>设为默认</Btn> : null}
+            <div className="row gap8">
               <Btn size="s" disabled={busy} onClick={recheck}>{busy ? '正在检查…' : '运行排查'}</Btn></div></div>
         </>}
         {diag ? <Diagnosis h={h} onFix={act} /> : null}
