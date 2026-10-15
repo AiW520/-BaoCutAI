@@ -24,7 +24,7 @@
 | 范围 | 内容 |
 | --- | --- |
 | 做 | 上面四步，桌面端与 Web 端；单用户；导出 Markdown（智能体 `docs_export`，编辑器里的导出） |
-| 不做 | 多人协作与在线状态；分享与权限；图表、示意图、widget（D4）；Claude 会话侧栏、版本侧栏里依赖 claude.ai 的部分 |
+| 不做 | 多人协作与在线状态；分享与权限；图表、示意图、widget（D4）；Claude 会话侧栏；编辑器里的版本历史（第 5 节） |
 
 ## 2. 文档的文件
 
@@ -67,6 +67,7 @@
 - `globalThis.docsHost.comments`：评论的「发送给智能体」与空行上的请求经它发给父窗口（`editor:annotate`，第 8 节）；父窗口回 `editor:annotate-result`。标签（标签页名 › 原文）与原文由 shim 向 `api/baocut/annotation?path=` 查；页面不在 BaoCut 的 iframe 里时 `canSendToClaude()` 为 `no_session`。
 - `globalThis.docsHost.chat`（只在 BaoCut 的 iframe 里装）：编辑器左下角的「Ask Agent」点了发 `editor:focus-chat`，功能区让这个会话露出来（单条标签条里选中会话标签），光标放到它的输入框末尾；标签不属于会话时提示。页面单独打开时没有这个按钮。原版这里打开 claude.ai 的对话栏，BaoCut 不提供。
 - 选中文字后工具栏的「Ask Agent」打开这处选区的批注框（开头带着提及智能体的 `@Agent`），之后同第 8 节的评论；批注发不出去（页面单独打开、只读）时提示。
+- 版本历史：编辑器的版本面板要文档服务提供版本列表与每一版渲染好的 HTML（`api/v3/project/<id>/file/<文件>/history`、`at/<rev>`、`restore/<rev>`），`packages/docs` 不提供，所以编辑器不显示顶栏的 History 按钮与版本面板（`packages/docs-runtime` README「版本历史」；原版在独立页面总是开着，点了只显示接口的 404）。正文最近若干个 rev 的快照仍存在 `tabs/<正文 id>.history.json`，给智能体的 `atRev` / `sinceRev` 读与 `restore` 用。
 - 与功能区的其他编辑器共用 `editor:ready`、`editor:flush` / `editor:flushed`、`editor:reveal`；文档自己有持久的评论，没有幻灯片那样的标注模式开关。
 - 界面里把助手叫「智能体」（Send to agent / Sent to agent / Ask Agent），不叫 Claude；评论里提及智能体写作 `@Agent`（原版是 `@Claude`）。以前的文档里的 `@Claude` 与手打的 `@claude` 照样算发给智能体：编辑器勾上「Send to agent」，没带 `to` 的评论 door 记作发给智能体，交给智能体前去掉开头的提及。智能体改文档时露出的名字（光标旗子、在线头像、播报、新加标签页与改写段落的提示、批注里的署名与等回复的提示）也叫 Agent / the agent；连不上与编辑器更新后的提示只说 Docs。BaoCut 用不到的部分（正文里的行内提问、skill、widget、图表、登录、分享）文案不改。
 

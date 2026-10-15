@@ -12,6 +12,7 @@
  * 不经 chat：装了 comments 时打开批注框（docs-app.tsx 的 ask-claude）。
  * 空行上 @Agent 的行内提问不经这里：它要先让模型判断请求（sample）再决定由 Claude 直接写还是转成批注，独立页面不提供
  * （packages/docs-runtime/README.md「不提供」）。
+ * 版本历史也不经 docsHost：它要的是文档服务的接口，BaoCut 不提供，独立页面不显示（versionHistoryOffered()）。
  */
 import { isFrameArtifact } from "./hello-early";
 
@@ -81,6 +82,18 @@ export function standaloneDocsChat(): DocsHostChat | null {
 /** 批注能交给智能体的环境：原来的 Frame，或装了 docsHost.comments 的独立页面。 */
 export function commentSummonHost(): boolean {
   return isFrameArtifact() || standaloneDocsHost() !== null;
+}
+
+/**
+ * 版本历史（顶栏的 History 按钮、项目菜单的「Version history」、版本面板与版本预览）只在 Frame 里照原样开，独立页面不开。
+ * 原版的独立页面总是开着，面板向文档服务取 `api/v3/project/<id>/file/<文件>/history`（版本列表）、`at/<rev>`（这一版与上一版
+ * 渲染好的 HTML）、`restore/<rev>`；BaoCut 的文档服务（packages/docs）不提供这些接口，正文最近若干个 rev 的快照只给智能体的
+ * `atRev` / `sinceRev` 读与 `restore` 用。开着时点 History 只显示接口的 404，面板还把编辑器挤成几个字宽。
+ * 读取点（都带 BaoCut: 注释）：docs-app.tsx 的 FilmedProsePage 的 historyRoad（面板与版本预览）、RoomViewEmbedPage 顶栏的
+ * HistoryRailToggle 与 ?chrome=embed 布局给 HeaderPath 的 historyOffered（项目菜单的「Version history」）。
+ */
+export function versionHistoryOffered(): boolean {
+  return isFrameArtifact();
 }
 
 /**

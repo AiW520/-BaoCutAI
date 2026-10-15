@@ -1251,11 +1251,12 @@ import {
   S as isFrameArtifact,
   _ as recordFramePhase,
 } from "./hello-early";
-// BaoCut: 独立页面的批注宿主（globalThis.docsHost），见 docs-host.ts。
+// BaoCut: 独立页面的批注宿主（globalThis.docsHost）与版本历史的开关，见 docs-host.ts。
 import {
   commentSummonHost,
   standaloneDocsChat,
   standaloneDocsHost,
+  versionHistoryOffered,
 } from "./docs-host";
 import { t as preloadModule } from "./preload";
 import {
@@ -87816,7 +87817,8 @@ function RoomViewEmbedPage(..._extraArguments: unknown[]) {
                   navigate={navigate}
                   onOpenSources={onOpenSources}
                   embed={true}
-                  historyOffered={!viewerReadOnly}
+                  // BaoCut: 独立页面没有版本历史（docs-host.ts 的 versionHistoryOffered），项目菜单不列「Version history」。
+                  historyOffered={!viewerReadOnly && versionHistoryOffered()}
                 />
                 {readOnly2 && (
                   <DocumentPostureBadge
@@ -88179,7 +88181,10 @@ function RoomViewEmbedPage(..._extraArguments: unknown[]) {
                     {nodeId && proseSurface && (
                       <LdocCommentsBtn fileId={nodeId} />
                     )}
-                    {nodeId && !viewerReadOnly && <HistoryRailToggle />}
+                    {/* BaoCut: 独立页面没有版本历史（docs-host.ts 的 versionHistoryOffered），不显示 History 按钮。 */}
+                    {nodeId && !viewerReadOnly && versionHistoryOffered() && (
+                      <HistoryRailToggle />
+                    )}
                     <Button
                       variant={`primary`}
                       size={roomViewEmbedPageResult(`sm`)}
@@ -88727,7 +88732,10 @@ function FilmedProsePage(
   let filmed2: Dynamic = filmed || frame;
   let filmedProsePageResult4: Dynamic =
     resolvePlatformLiveDocumentAndHistoryValue36(pid, fileId);
-  let historyRoad: Dynamic = !filmed && filmedProsePageResult4 && !readOnly;
+  // BaoCut: 独立页面没有版本历史（docs-host.ts 的 versionHistoryOffered）：版本面板与版本预览都不开，记在本地的
+  // 「面板开着」（bongo.settings.historyRailOpen）也不起作用。原版独立页面这里总是开着（resolvePlatformLiveDocumentAndHistoryValue36）。
+  let historyRoad: Dynamic =
+    !filmed && filmedProsePageResult4 && !readOnly && versionHistoryOffered();
   let [filmedProsePageState]: Dynamic = (0, React.useState)(
     (..._extraArguments: unknown[]): Dynamic => ++applicationRoutesLimit0,
   );
