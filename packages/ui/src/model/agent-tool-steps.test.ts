@@ -44,7 +44,33 @@ describe('baocutStep', () => {
       expect(step?.summary, locale).toBe('');
       if (locale === 'en') expect(step?.label).toBe('Rename session');
       else expect(step?.label, locale).not.toBe('Rename session');
+      const adopt = baocutStep(call('projects_adopt_session', {}))?.label;
+      if (locale === 'en') expect(adopt).toBe('Move to new project');
+      else expect(adopt, locale).not.toBe('Move to new project');
     }
+  });
+
+  it('项目工具：新建念项目名，没给时念目录名；放进新项目念用户给的名字', () => {
+    use('zh-Hans');
+    expect(baocutStep(call('projects_list', {}))).toEqual({ kind: 'project', label: '列出项目', summary: '' });
+    expect(baocutStep(call('projects_create', { path: '/Users/me/Videos/episode-12', name: '第 12 期' }))?.summary).toBe('第 12 期');
+    expect(baocutStep(call('projects_create', { path: '/Users/me/Videos/episode-12/' }))).toEqual({
+      kind: 'project',
+      label: '新建项目',
+      summary: 'episode-12',
+    });
+    expect(baocutStep(call('projects_adopt_session', { name: '第 12 期' }))).toEqual({
+      kind: 'project',
+      label: '放进新项目',
+      summary: '第 12 期',
+    });
+    expect(baocutStep(call('projects_adopt_session', {}))?.summary).toBe('');
+    use('en');
+    expect(['projects_list', 'projects_create', 'projects_adopt_session'].map((t) => baocutStep(call(t, {}))?.label)).toEqual([
+      'List projects',
+      'New project',
+      'Move to new project',
+    ]);
   });
 
   it('不是 BaoCut 的工具、认不出的工具返回 null', () => {

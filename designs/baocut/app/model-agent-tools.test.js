@@ -37,6 +37,14 @@ test('describe：智能体给会话起标题，步骤行念新标题', () => {
   assert.equal(T.describe('conversations.setTitle', {}).summary, '');
 });
 
+test('describe：项目工具，新建念项目名或目录名，放进新项目念用户给的名字', () => {
+  assert.deepEqual(T.describe('projects_list', {}), {kind: 'project', label: '列出项目', summary: '', icon: 'folder'});
+  assert.equal(T.describe('projects_create', {path: '/Users/me/Videos/episode-12', name: '第 12 期'}).summary, '第 12 期');
+  assert.equal(T.describe('projects_create', {path: '/Users/me/Videos/episode-12/'}).summary, 'episode-12');
+  assert.deepEqual(T.describe('projects_adopt_session', {name: '第 12 期'}), {kind: 'project', label: '放进新项目', summary: '第 12 期', icon: 'folder'});
+  assert.equal(T.describe('projects.adoptSession', {}).summary, '');
+});
+
 test('describe：edits_apply 按操作分类别', () => {
   assert.deepEqual(T.describe('edits_apply', {putDocument: {schema: 'baocut.translation/2', language: '英语', units: 62}}),
     {kind: 'translate', label: '翻译', summary: '英语 · 62 句', icon: 'translate'});

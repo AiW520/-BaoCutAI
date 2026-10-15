@@ -60,6 +60,9 @@ const en = {
     refineContract: 'Refine task contract',
     recordCheck: 'Record acceptance check',
     renameSession: 'Rename session',
+    listProjects: 'List projects',
+    newProject: 'New project',
+    moveToNewProject: 'Move to new project',
     checkSlides: 'Check slides',
     importSlideAsset: 'Import slide image',
     checkDesign: 'Check design',
@@ -132,6 +135,7 @@ export type BaoCutStepKind =
   | 'grant'
   | 'contract'
   | 'conversation'
+  | 'project'
   | 'slides'
   | 'design'
   | 'design-system'
@@ -231,6 +235,10 @@ const CATALOG: Record<string, (a: Args) => BaoCutStep> = {
   tasks_update_contract: () => ({ kind: 'contract', label: M.label.refineContract, summary: '' }),
   tasks_record_check: (a) => ({ kind: 'contract', label: M.label.recordCheck, summary: str(a.checkId) ?? '' }),
   conversations_set_title: (a) => ({ kind: 'conversation', label: M.label.renameSession, summary: str(a.title) ?? '' }),
+  // 项目：新建念项目名（没给时念目录名）；把会话放进新项目念用户给的名字，没给时只给类别名。
+  projects_list: () => ({ kind: 'project', label: M.label.listProjects, summary: '' }),
+  projects_create: (a) => ({ kind: 'project', label: M.label.newProject, summary: str(a.name) ?? base(a.path) }),
+  projects_adopt_session: (a) => ({ kind: 'project', label: M.label.moveToNewProject, summary: str(a.name) ?? '' }),
   // 幻灯片（docs/design/slides §7.2）：摘要是 deck 目录名与图片文件名。
   slides_check: (a) => ({ kind: 'slides', label: M.label.checkSlides, summary: base(a.path) }),
   slides_import_asset: (a) => ({ kind: 'slides', label: M.label.importSlideAsset, summary: base(a.path) }),

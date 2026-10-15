@@ -102,6 +102,7 @@ const TOOL_ICON: Record<BaoCutStepKind, ReactNode> = {
   grant: <Key />,
   contract: <Checkmark />,
   conversation: <Rename />,
+  project: <Folder />,
   slides: <Layout />,
   design: <Shapes />,
   'design-system': <ColorHarmony />,

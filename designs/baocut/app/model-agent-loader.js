@@ -55,6 +55,8 @@
     docs: ['document', 'pencil', 'comment'],
     /* 会话标题：读懂素材后起名 */
     conversation: ['comment', 'pencil'],
+    /* 项目：列出、新建，把会话放进新项目 */
+    project: ['folder', 'pencil', 'arrow'],
     'space-search': ['mag', 'filter', 'folder'],
     space: ['folder', 'shop', 'cart'],
     /* 进出 */
