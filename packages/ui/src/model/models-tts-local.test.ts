@@ -120,7 +120,7 @@ describe('许可、说明与体积', () => {
   });
 
   it('模型描述带了 notes（candle 在 CPU 上的耗时）时试听前先说它', () => {
-    const notes = '在本机的 CPU 上合成，只用到几个核，比实时慢约 7 倍，10 秒的一句要一分多钟';
+    const notes = '在本机的 CPU 上合成，比实时慢 5–6 倍，10 秒的一句要一分钟左右';
     expect(quickNote({ ...VOXCPM2, notes })).toBe(notes);
     expect(quickNote({ ...QWEN_DESIGN, notes })).toBe(notes);
     expect(quickNote({ ...QWEN_BASE, notes })).toBe(notes);

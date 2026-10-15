@@ -2,13 +2,16 @@ import type { ModelsLocalSpeechMessages } from './local-speech.ts';
 
 export const ko: ModelsLocalSpeechMessages = {
   referenceTranscriptRequired: "참조 녹음의 원문을 입력하세요",
-  paceQwen06: '실시간보다 약 7배 느려 10초짜리 대사에 1분 남짓 걸립니다',
-  paceQwen17: '0.6B(실시간보다 약 7배 느림)보다 느릴 것으로 예상되며, 이 모델은 측정하지 않았습니다',
-  paceIndexTts2: '실시간보다 30~60배 느려 10초짜리 대사에 5~10분이 걸립니다',
-  paceIndexTts25: 'IndexTTS2(실시간보다 30~60배 느림)와 비슷할 것으로 예상되며, 이 모델은 측정하지 않았습니다',
-  paceDefault: '속도는 측정하지 않았습니다',
+  paceQwen06: '실시간보다 5~6배 느려 10초짜리 대사에 1분 정도 걸립니다',
+  paceQwen17: '실시간보다 7~8배 느려 10초짜리 대사에 1분 남짓 걸립니다',
+  paceIndexTts2: '실시간보다 약 25배 느려 10초짜리 대사에 4분 정도 걸립니다',
+  paceIndexTts25: '실시간보다 약 19배 느려 10초짜리 대사에 3분 남짓 걸립니다',
+  paceGptSovits: '실시간보다 약 1.7배 느려 10초짜리 대사에 20초 가까이 걸립니다',
+  paceVoxcpm2: '실시간보다 약 9배 느려 10초짜리 대사에 1분 30초 정도 걸립니다',
+  paceOmnivoice: '실시간보다 약 8배 느려 10초짜리 대사에 1분 30초 가까이 걸립니다',
+  paceDefault: '이 모델은 측정하지 않았습니다',
   cpuNote: (p: { pace: string }) =>
-    `이 컴퓨터의 CPU에서 코어를 몇 개만 사용해 합성합니다: ${p.pace}. NVIDIA GPU(CUDA)가 있으면 훨씬 빠르며, RTX 3060에서는 실시간과 비슷합니다`,
+    `이 컴퓨터의 CPU에서 합성합니다: ${p.pace}. NVIDIA GPU(CUDA)가 있으면 훨씬 빠르며, RTX 3060에서 Qwen3-TTS 0.6B와 IndexTTS2는 실시간과 비슷합니다`,
   oneVoiceSource: 'voice, reference, voiceDescription 중 하나만 지정하세요',
   modeUnsupported: (p: { modelId: string; what: string; mode: string }) =>
     `${p.modelId} 모델은 ${p.what} 기능(${p.mode})을 지원하지 않습니다`,

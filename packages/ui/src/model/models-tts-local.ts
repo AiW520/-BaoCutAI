@@ -116,8 +116,8 @@ export function familyDesc(model: Pick<SpeechModelInfo, 'local'>): string | null
 }
 
 /**
- * 试听前要先说清楚的一句（设计稿 `quickSlow`）；没有就是 null。模型描述的 `notes` 优先（candle 在 CPU 上比实时慢几倍到几十倍，
- * 一次试听要等半分钟到几分钟，这时 VoxCPM2 的实时率与大模型的说法都不对），其次按描述造声的说明、VoxCPM2 的实时率、不许商用，
+ * 试听前要先说清楚的一句（设计稿 `quickSlow`）；没有就是 null。模型描述的 `notes` 优先（candle 在 CPU 上比实时慢 2 到 25 倍，
+ * 一次试听要等几秒到几分钟，这时 VoxCPM2 的实时率与大模型的说法都不对），其次按描述造声的说明、VoxCPM2 的实时率、不许商用，
  * 最后是大模型的慢。
  */
 export function quickNote(model: SpeechModelInfo): string | null {
