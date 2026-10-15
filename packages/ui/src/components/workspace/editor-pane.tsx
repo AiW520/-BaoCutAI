@@ -257,7 +257,8 @@ export function editorUrl(address: string, locale: Locale, params?: Readonly<Rec
  * 功能区的编辑器标签（幻灯片 docs/design/slides §8.1、设计稿 docs/design/canvas §8.1）：头部是图标、标题与计数，
  * 「标注」开关、「在 Space 中显示」与「在文件夹中显示」；内容是编辑器的 iframe，地址来自 `slides.open` / `design.open`。
  * 地址里的 grant 只在 Runtime 的内存里，所以每次挂上都重新打开，每次连上（`connectionId` 变了，含没收到断开信号就重连上的）
- * 也重新打开（Runtime 重启后地址会变，iframe 跟着重新载入；没重启时还是同一个地址，不重载）。
+ * 也重新打开（Runtime 重启后地址会变，iframe 跟着重新载入；没重启时还是同一个地址，不重载）。挂上后等标签第一次显示出来
+ * 才打开、载入编辑器，还没显示过的标签只有头部；显示过之后切走不卸载。
  * 这台机器没有构建编辑器时说明不可用，不加载地址。地址上带打开时的界面语言（`?lang=`），编辑器按它写标注位置标签。
  * 设计系统标签（docs/design/canvas §10）也用这里，地址另带 `?path=`；它的标注（§10.6）多带一个章节（`section`）。
  * 协作文档标签（docs/design/docs）也用这里：没有标注开关与批注框，编辑器经 `editor:annotate` 直接交来评论与请求（`direct`）。
@@ -278,9 +279,13 @@ export function EditorPane({ spec, target, conversationId, active }: { spec: Edi
   const conversations = useDirectory((s) => s.conversations);
   const key = itemKey({ kind: spec.kind, target });
   const [opened, setOpened] = useState<Opened | null>(null);
+  // 标签第一次显示出来才打开、载入编辑器：恢复的会话里常开着十几个编辑器标签，一起载入时当前那份要等好几秒才出来。
+  // 显示过之后切走仍挂着（保留编辑器里的状态），同以前。
+  const [shownOnce, setShownOnce] = useState(active);
+  if (active && !shownOnce) setShownOnce(true);
 
   useEffect(() => {
-    if (!connectionId) return;
+    if (!connectionId || !shownOnce) return;
     let live = true;
     spec.open(runtime, target).then(
       (result) => live && setOpened({ key, result }),
@@ -290,7 +295,7 @@ export function EditorPane({ spec, target, conversationId, active }: { spec: Edi
       live = false;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps -- target 按 key 比较：同一份文档换了对象不重开
-  }, [runtime, key, connectionId]);
+  }, [runtime, key, connectionId, shownOnce]);
 
   const current = opened?.key === key ? opened : null;
   const result = current && 'result' in current ? current.result : null;
@@ -575,7 +580,10 @@ export function EditorPane({ spec, target, conversationId, active }: { spec: Edi
           </TooltipTrigger>
         ) : null}
       </header>
-      {!current ? (
+      {!shownOnce ? (
+        // 还没显示过：不打开、不载入，也不显示「正在打开」（页签缩略卡克隆的就是这一块）
+        <div className={stage} />
+      ) : !current ? (
         <div className={centered}>
           <ProgressCircle isIndeterminate aria-label={copy.opening} />
           <span>{copy.opening}</span>
