@@ -1,3 +1,14 @@
+import type { DecorationSource, NodeView, ViewMutationRecord } from "prosemirror-view";
+import type { CharacterLedger } from "./character-ledger";
+import {
+  codePointCount,
+  pmCharacterOffsets,
+  characterId,
+  parseCharacterId,
+  requireCharacterIdParts,
+  classifyBlockLedgerDrift,
+  createCharacterLedger,
+} from "./character-ledger";
 import type { CommandProps, KeyboardShortcutCommand } from "@tiptap/core";
 import type { $RefinementCtx } from "zod/v4/core";
 import { createElement as createReactElement } from "react";
@@ -554,161 +565,161 @@ function initializeDesignSystemBaseUI(
 ): undefined {}
 import * as baseUiReactModule from "@base-ui/react";
 import { Separator as designSystemState249, Menubar as designSystemState437 } from "@base-ui/react";
-const designSystemState143: Dynamic = (baseUiReactModule).Menu
+const designSystemState143 = (baseUiReactModule).Menu
   .Backdrop;
-const designSystemState248: Dynamic = (baseUiReactModule).Menu.Root;
-const resolveDesignSystemParentMenu: Dynamic = (baseUiReactModule).Menu
+const designSystemState248 = (baseUiReactModule).Menu.Root;
+const resolveDesignSystemParentMenu = (baseUiReactModule).Menu
   .SubmenuRoot;
-const designSystemState159: Dynamic = (baseUiReactModule).Menu
+const designSystemState159 = (baseUiReactModule).Menu
   .CheckboxItem;
-const designSystemGroup: Dynamic = (baseUiReactModule).Menu.Group;
-const designSystemState164: Dynamic = (baseUiReactModule).Menu
+const designSystemGroup = (baseUiReactModule).Menu.Group;
+const designSystemState164 = (baseUiReactModule).Menu
   .GroupLabel;
-const designSystemState165: Dynamic = (baseUiReactModule).Menu.Item;
-const designSystemState232: Dynamic = (baseUiReactModule).Menu.Popup;
-const designSystemState234: Dynamic = (baseUiReactModule).Menu.Portal;
-const designSystemState242: Dynamic = (baseUiReactModule).Menu
+const designSystemState165 = (baseUiReactModule).Menu.Item;
+const designSystemState232 = (baseUiReactModule).Menu.Popup;
+const designSystemState234 = (baseUiReactModule).Menu.Portal;
+const designSystemState242 = (baseUiReactModule).Menu
   .Positioner;
-const designSystemTrigger: Dynamic = (baseUiReactModule).Menu.Trigger;
+const designSystemTrigger = (baseUiReactModule).Menu.Trigger;
 
-const designSystemState251: Dynamic = (baseUiReactModule).Menu
+const designSystemState251 = (baseUiReactModule).Menu
   .SubmenuTrigger;
-const resolveDesignSystemGetBoundingClientRect2: Dynamic = (
+const resolveDesignSystemGetBoundingClientRect2 = (
   baseUiReactModule
 ).ContextMenu.Root;
-const designSystemState252: Dynamic = (baseUiReactModule).ContextMenu
+const designSystemState252 = (baseUiReactModule).ContextMenu
   .Trigger;
-const resolveDesignSystemProps4: Dynamic = (baseUiReactModule).Popover
+const resolveDesignSystemProps4 = (baseUiReactModule).Popover
   .Root;
-const designSystemState272: Dynamic = (baseUiReactModule).Popover
+const designSystemState272 = (baseUiReactModule).Popover
   .Trigger;
-const designSystemState274: Dynamic = (baseUiReactModule).Popover
+const designSystemState274 = (baseUiReactModule).Popover
   .Portal;
-const designSystemState276: Dynamic = (baseUiReactModule).Popover
+const designSystemState276 = (baseUiReactModule).Popover
   .Positioner;
-const designSystemState278: Dynamic = (baseUiReactModule).Popover
+const designSystemState278 = (baseUiReactModule).Popover
   .Popup;
-const designSystemArrow: Dynamic = (baseUiReactModule).Popover.Arrow;
-const designSystemState279: Dynamic = (baseUiReactModule).Popover
+const designSystemArrow = (baseUiReactModule).Popover.Arrow;
+const designSystemState279 = (baseUiReactModule).Popover
   .Backdrop;
-const designSystemTitle: Dynamic = (baseUiReactModule).Popover.Title;
-const designSystemDescription: Dynamic = (baseUiReactModule).Popover
+const designSystemTitle = (baseUiReactModule).Popover.Title;
+const designSystemDescription = (baseUiReactModule).Popover
   .Description;
-const designSystemClose: Dynamic = (baseUiReactModule).Popover.Close;
-const createHandle: Dynamic = (baseUiReactModule).Popover.createHandle;
-const designSystemState305: Dynamic = (baseUiReactModule).Combobox
+const designSystemClose = (baseUiReactModule).Popover.Close;
+const createHandle = (baseUiReactModule).Popover.createHandle;
+const designSystemState305 = (baseUiReactModule).Combobox
   .Status;
 
-const resolveDesignSystemMultiple: Dynamic = (baseUiReactModule)
+const resolveDesignSystemMultiple = (baseUiReactModule)
   .Combobox.Root;
-const resolveDesignSystemPlaceholder: Dynamic = (baseUiReactModule)
+const resolveDesignSystemPlaceholder = (baseUiReactModule)
   .Combobox.Value;
-const designSystemState301: Dynamic = (baseUiReactModule).Combobox
+const designSystemState301 = (baseUiReactModule).Combobox
   .Input;
-const designSystemState302: Dynamic = (baseUiReactModule).Combobox
+const designSystemState302 = (baseUiReactModule).Combobox
   .Trigger;
-const collectDesignSystemCollection: Dynamic = (baseUiReactModule)
+const collectDesignSystemCollection = (baseUiReactModule)
   .Combobox.Collection;
-const designSystemState304: Dynamic = (baseUiReactModule).Combobox
+const designSystemState304 = (baseUiReactModule).Combobox
   .List;
-const designSystemState307: Dynamic = (baseUiReactModule).Combobox
+const designSystemState307 = (baseUiReactModule).Combobox
   .Portal;
-const designSystemState308: Dynamic = (baseUiReactModule).Combobox
+const designSystemState308 = (baseUiReactModule).Combobox
   .Backdrop;
-const designSystemState309: Dynamic = (baseUiReactModule).Combobox
+const designSystemState309 = (baseUiReactModule).Combobox
   .Positioner;
-const designSystemState310: Dynamic = (baseUiReactModule).Combobox
+const designSystemState310 = (baseUiReactModule).Combobox
   .Popup;
-const designSystemGroup2: Dynamic = (baseUiReactModule).Combobox.Group;
-const designSystemState312: Dynamic = (baseUiReactModule).Combobox
+const designSystemGroup2 = (baseUiReactModule).Combobox.Group;
+const designSystemState312 = (baseUiReactModule).Combobox
   .GroupLabel;
-const designSystemState315: Dynamic = (baseUiReactModule).Combobox
+const designSystemState315 = (baseUiReactModule).Combobox
   .Item;
-const designSystemState316: Dynamic = (baseUiReactModule).Combobox
+const designSystemState316 = (baseUiReactModule).Combobox
   .ItemIndicator;
-const designSystemState318: Dynamic = (baseUiReactModule).Combobox
+const designSystemState318 = (baseUiReactModule).Combobox
   .Chips;
-const designSystemState320: Dynamic = (baseUiReactModule).Combobox
+const designSystemState320 = (baseUiReactModule).Combobox
   .Chip;
-const designSystemState321: Dynamic = (baseUiReactModule).Combobox
+const designSystemState321 = (baseUiReactModule).Combobox
   .ChipRemove;
-const designSystemState322: Dynamic = (baseUiReactModule).Combobox
+const designSystemState322 = (baseUiReactModule).Combobox
   .Empty;
-const designSystemState323: Dynamic = (baseUiReactModule).Combobox
+const designSystemState323 = (baseUiReactModule).Combobox
   .Clear;
-const designSystemState325: Dynamic = (baseUiReactModule).Combobox
+const designSystemState325 = (baseUiReactModule).Combobox
   .Separator;
-const resolveDesignSystemFilteredItems2: Dynamic = (baseUiReactModule)
+const resolveDesignSystemFilteredItems2 = (baseUiReactModule)
   .Combobox.useFilteredItems;
-const designSystemState375: Dynamic = (baseUiReactModule).Tooltip.Root;
-const designSystemState377: Dynamic = (baseUiReactModule).Tooltip
+const designSystemState375 = (baseUiReactModule).Tooltip.Root;
+const designSystemState377 = (baseUiReactModule).Tooltip
   .Trigger;
-const designSystemState380: Dynamic = (baseUiReactModule).Tooltip
+const designSystemState380 = (baseUiReactModule).Tooltip
   .Portal;
-const designSystemState382: Dynamic = (baseUiReactModule).Tooltip
+const designSystemState382 = (baseUiReactModule).Tooltip
   .Positioner;
-const designSystemState383: Dynamic = (baseUiReactModule).Tooltip
+const designSystemState383 = (baseUiReactModule).Tooltip
   .Popup;
-const resolveDesignSystemDelay2: Dynamic = (baseUiReactModule).Tooltip
+const resolveDesignSystemDelay2 = (baseUiReactModule).Tooltip
   .Provider;
-const resolveDesignSystemValue217: Dynamic = (baseUiReactModule)
+const resolveDesignSystemValue217 = (baseUiReactModule)
   .Tooltip.createHandle;
-const designSystemState426: Dynamic = (baseUiReactModule).Field
+const designSystemState426 = (baseUiReactModule).Field
   .Control;
-const HeadingAndControlsRender: Dynamic = (baseUiReactModule)
+const HeadingAndControlsRender = (baseUiReactModule)
   .Collapsible.Root;
-const HeadingAndControlsPanelId: Dynamic = (baseUiReactModule)
+const HeadingAndControlsPanelId = (baseUiReactModule)
   .Collapsible.Trigger;
-const HeadingAndControlsHiddenUntilFound: Dynamic = (baseUiReactModule)
+const HeadingAndControlsHiddenUntilFound = (baseUiReactModule)
   .Collapsible.Panel;
-const resolveHeadingAndControlsAlertDialog: Dynamic = (
+const resolveHeadingAndControlsAlertDialog = (
   baseUiReactModule
 ).AlertDialog.Root;
-const HeadingAndControlsBackdrop: Dynamic = (baseUiReactModule).Dialog
+const HeadingAndControlsBackdrop = (baseUiReactModule).Dialog
   .Backdrop;
-const HeadingAndControlsClose: Dynamic = (baseUiReactModule).Dialog
+const HeadingAndControlsClose = (baseUiReactModule).Dialog
   .Close;
-const HeadingAndControlsRender2: Dynamic = (baseUiReactModule).Dialog
+const HeadingAndControlsRender2 = (baseUiReactModule).Dialog
   .Description;
-const HeadingAndControlsRender3: Dynamic = (baseUiReactModule).Dialog
+const HeadingAndControlsRender3 = (baseUiReactModule).Dialog
   .Popup;
-const HeadingAndControlsKeepMounted: Dynamic = (baseUiReactModule)
+const HeadingAndControlsKeepMounted = (baseUiReactModule)
   .Dialog.Portal;
-const HeadingAndControlsRender4: Dynamic = (baseUiReactModule).Dialog
+const HeadingAndControlsRender4 = (baseUiReactModule).Dialog
   .Title;
-const HeadingAndControlsRender5: Dynamic = (baseUiReactModule).Dialog
+const HeadingAndControlsRender5 = (baseUiReactModule).Dialog
   .Trigger;
-const headingAndControlsHeadingAndControlsRender5Alias: Dynamic = (
+const headingAndControlsHeadingAndControlsRender5Alias = (
   baseUiReactModule
 ).AlertDialog.Trigger;
-const resolveHeadingAndControlsCreateHandle: Dynamic = (
+const resolveHeadingAndControlsCreateHandle = (
   baseUiReactModule
 ).AlertDialog.createHandle;
-const resolveHeadingAndControlsDialog: Dynamic = (baseUiReactModule)
+const resolveHeadingAndControlsDialog = (baseUiReactModule)
   .Dialog.Root;
-const HeadingAndControlsDefaultValue: Dynamic = (baseUiReactModule)
+const HeadingAndControlsDefaultValue = (baseUiReactModule)
   .Tabs.Root;
-const HeadingAndControlsDisabled: Dynamic = (baseUiReactModule).Tabs
+const HeadingAndControlsDisabled = (baseUiReactModule).Tabs
   .Tab;
-const HeadingAndControlsRender6: Dynamic = (baseUiReactModule).Tabs
+const HeadingAndControlsRender6 = (baseUiReactModule).Tabs
   .Panel;
-const HeadingAndControlsActivateOnFocus: Dynamic = (baseUiReactModule)
+const HeadingAndControlsActivateOnFocus = (baseUiReactModule)
   .Tabs.List;
-const resolveHeadingAndControlsTimeout: Dynamic = (baseUiReactModule)
+const resolveHeadingAndControlsTimeout = (baseUiReactModule)
   .Toast.Provider;
-const HeadingAndControlsRender7: Dynamic = (baseUiReactModule).Toast
+const HeadingAndControlsRender7 = (baseUiReactModule).Toast
   .Viewport;
-const HeadingAndControlsToast: Dynamic = (baseUiReactModule).Toast
+const HeadingAndControlsToast = (baseUiReactModule).Toast
   .Root;
-const HeadingAndControlsRender8: Dynamic = (baseUiReactModule).Toast
+const HeadingAndControlsRender8 = (baseUiReactModule).Toast
   .Description;
-const HeadingAndControlsRender9: Dynamic = (baseUiReactModule).Toast
+const HeadingAndControlsRender9 = (baseUiReactModule).Toast
   .Title;
-const HeadingAndControlsRender10: Dynamic = (baseUiReactModule).Toast
+const HeadingAndControlsRender10 = (baseUiReactModule).Toast
   .Close;
-const HeadingAndControlsRef3: Dynamic = (baseUiReactModule).Toast
+const HeadingAndControlsRef3 = (baseUiReactModule).Toast
   .Portal;
-const resolveHeadingAndControlsToasts: Dynamic = (baseUiReactModule)
+const resolveHeadingAndControlsToasts = (baseUiReactModule)
   .Toast.useToastManager;
 import { measureElement } from "@tanstack/virtual-core";
 import { useVirtualizer } from "@tanstack/react-virtual";
@@ -793,7 +804,7 @@ var {
   defineProperty: runtimeSupportReferenceAlias,
   getOwnPropertyNames: getOwnPropertyNames,
 }: Dynamic = Object;
-var hasOwnPropertyReference: Dynamic = Object.prototype.hasOwnProperty;
+var hasOwnPropertyReference = Object.prototype.hasOwnProperty;
 function resolveRuntimeSupportValue(
   this: Dynamic,
   input?: Dynamic,
@@ -1045,7 +1056,7 @@ function updateDesignSystemTheme(
     [value6],
   );
   let value8 = value6 !== undefined;
-  let value9: Dynamic = useRef(undefined);
+  let value9 = useRef(undefined);
   designSystemState2(
     (..._extraArguments: unknown[]): undefined => {
       if (value3)
@@ -2016,7 +2027,7 @@ function resolveDesignSystemSubscribe2(
   options?: Dynamic,
   ..._extraArguments: unknown[]
 ) {
-  let value: Dynamic =
+  let value =
     input === null || input === undefined
       ? null
       : updateDesignSystemSubscribe(input, options);
@@ -2965,7 +2976,7 @@ function resolveDesignSystemValue26(..._extraArguments: unknown[]): Dynamic {
 function resolveDesignSystemSheet(..._extraArguments: unknown[]): Dynamic {
   let value: Dynamic = resolveDesignSystemValue26();
   let value2: Dynamic = resolveDesignSystemValue205();
-  let value3: Dynamic = useSyncExternalStore(
+  let value3: boolean = useSyncExternalStore(
     resolveDesignSystemValue11,
     (..._extraArguments: unknown[]) =>
       value2 !== undefined &&
@@ -3235,7 +3246,7 @@ function isDesignSystemUnpan(
 ): Dynamic {
   let value2: Dynamic = useRef(null);
   resolveDesignSystemClose(value2, options);
-  let value3: Dynamic = useId();
+  let value3: string = useId();
   let [value4, value5]: Dynamic = useState();
   let [value6, value7]: Dynamic = useState(true);
   let value8: Dynamic = useRef([]);
@@ -3455,15 +3466,15 @@ function isDesignSystemOpen(
   }: Dynamic = input;
   let value: Dynamic = useContext(designSystemState61);
   let value2: Dynamic = resolveDesignSystemValue26();
-  let value3: Dynamic = resolveDesignSystemValue25();
+  let value3: boolean = resolveDesignSystemValue25();
   let value4: Dynamic = isDesignSystemUnpan(
     open,
     actionsRef,
     onOpenChangeComplete,
     close,
   );
-  let value5: Dynamic = resolveDesignSystemValue187();
-  let value6: Dynamic = resolveDesignSystemValue188();
+  let value5: boolean = resolveDesignSystemValue187();
+  let value6: boolean = resolveDesignSystemValue188();
   let value7: Dynamic = resolveDesignSystemSheet();
   useEffect(
     (..._extraArguments: unknown[]): undefined => {
@@ -3484,7 +3495,7 @@ function isDesignSystemOpen(
   let [value11, value12]: Dynamic = useState(open);
   if (open !== value11) {
     value12(open);
-    let value39: Dynamic = (designSystemLimit12 || value6) && !value5;
+    let value39 = (designSystemLimit12 || value6) && !value5;
     if (open && value9 !== value39) value10(value39);
   }
   if (open && value6 && !value5 && !value9) value10(true);
@@ -3515,7 +3526,7 @@ function isDesignSystemOpen(
   let value15: Dynamic = value14 && value4.showing && (!value5 || !open);
   let value16: Dynamic = value14 && value !== null ? value.depth + 1 : 0;
   let value17: Dynamic = useRef(new (Set as Dynamic)());
-  let value18: Dynamic = useRef(0);
+  let value18 = useRef(0);
   let [value19, value20]: Dynamic = useState(false);
   let value21: Dynamic = useCallback(
     (input2?: unknown, ..._extraArguments: unknown[]) => (
@@ -3593,7 +3604,7 @@ function isDesignSystemOpen(
     },
     [],
   );
-  let value31: Dynamic = useRef(null);
+  let value31 = useRef(null);
   let value32: Dynamic = useCallback(
     (..._extraArguments: unknown[]): Dynamic => {
       let current: Dynamic = value31.current;
@@ -4056,7 +4067,7 @@ function updateDesignSystemHeight(..._extraArguments: unknown[]): Dynamic {
     },
     [value10, value4, value2],
   );
-  let value11: Dynamic = useRef({
+  let value11 = useRef({
     open: false,
     height: undefined,
     detent: "default",
@@ -4800,7 +4811,7 @@ function resolveDesignSystemHeight4(
   );
 }
 function getDesignSystemSheet(..._extraArguments: unknown[]): Dynamic {
-  let value: Dynamic = resolveDesignSystemValue29();
+  let value = resolveDesignSystemValue29();
   let [value2, value3]: Dynamic = useState(false);
   let value4: Dynamic = useRef(false);
   let value5: Dynamic = useRef(null);
@@ -4817,7 +4828,7 @@ function getDesignSystemSheet(..._extraArguments: unknown[]): Dynamic {
   let { sheet: sheet }: Dynamic = value;
   let value11: Dynamic = useContext(designSystemState60);
   let value12: Dynamic = useContext(designSystemState61);
-  let value13: Dynamic = useRef(null);
+  let value13 = useRef(null);
   let value14: Dynamic = value11?.pinHeight;
   let value15: Dynamic = useCallback(
     (
@@ -4947,8 +4958,8 @@ function getDesignSystemSheet(..._extraArguments: unknown[]): Dynamic {
           value29 = false;
           return;
         }
-        let value38: Dynamic = resolveDesignSystemAbsolute(value9, value30);
-        let value39: Dynamic = resolveDesignSystemVisible(value9);
+        let value38: number = resolveDesignSystemAbsolute(value9, value30);
+        let value39 = resolveDesignSystemVisible(value9);
         let value40: number =
           value9.getBoundingClientRect().height + value38 - value39.visible;
         let value41 =
@@ -5339,7 +5350,7 @@ function resolveDesignSystemActionsRef(
   let [value]: Dynamic = useState(
     (..._extraArguments: unknown[]): Dynamic => new (Set as Dynamic)(),
   );
-  let value2: Dynamic = useRef(false);
+  let value2 = useRef(false);
   useEffect(
     (..._extraArguments: unknown[]) => {
       if (value2.current) {
@@ -5365,7 +5376,7 @@ function clearDesignSystemCurrent(
   ..._extraArguments: unknown[]
 ): Dynamic {
   let value: Dynamic = useContext(designSystemState76);
-  let value2: Dynamic = useRef(null);
+  let value2 = useRef(null);
   useEffect(
     (..._extraArguments: unknown[]) => {
       let current: Dynamic = value2.current;
@@ -6626,7 +6637,7 @@ function resolveDesignSystemTop(
   options?: unknown,
   ..._extraArguments: unknown[]
 ): Dynamic {
-  let value: Dynamic = resolveDesignSystemSubscribe5(options);
+  let value: number = resolveDesignSystemSubscribe5(options);
   return useMemo(
     (..._extraArguments: unknown[]): Dynamic => {
       if (input !== undefined) return input;
@@ -6995,7 +7006,7 @@ function resolveDesignSystemCurrent8(
   ..._extraArguments: unknown[]
 ): undefined {
   let value2: Dynamic = resolveDesignSystemValue203();
-  let value3: Dynamic = useRef(false);
+  let value3 = useRef(false);
   useInsertionEffect(
     (..._extraArguments: unknown[]): undefined => {
       if (!input) {
@@ -7024,8 +7035,8 @@ function isDesignSystemFinalFocus(
   let value: Dynamic = input?.skipRestoreOnOutsideFocus ?? false;
   let value2: Dynamic = input?.registerOpenerReturn ?? true;
   let value3: Dynamic = input?.triggerRef;
-  let value4: Dynamic = useRef(null);
-  let value5: Dynamic = useRef(null);
+  let value4 = useRef(null);
+  let value5 = useRef(null);
   let value6: Dynamic = useRef(null);
   resolveDesignSystemCurrent8(input?.open ?? true, value4, value6);
   let value7: Dynamic = useRef(value2);
@@ -7089,7 +7100,7 @@ function isDesignSystemFinalFocus2(
 ): Dynamic {
   let value: Dynamic = resolveDesignSystemValue203();
   let value2: Dynamic = useRef(null);
-  let value3: Dynamic = useRef(false);
+  let value3 = useRef(false);
   let value4: Dynamic = useCallback(
     (..._extraArguments: unknown[]): undefined => {
       value2.current = null;
@@ -7709,7 +7720,7 @@ function clearDesignSystemCell(..._extraArguments: unknown[]): Dynamic {
       value?.(input, options);
       if (options.isCanceled === true) return;
       value5 = false;
-      let value17: Dynamic =
+      let value17: boolean =
         value2 && options.reason === designSystemTriggerHover2;
       let value18: Dynamic =
         options.trigger?.ownerDocument ??
@@ -7874,12 +7885,12 @@ function resolveDesignSystemCell2(
   { cell: cell, nested: nested, children: children }: Dynamic,
   ..._extraArguments: unknown[]
 ): Dynamic {
-  let value: Dynamic = useSyncExternalStore(
+  let value: string = useSyncExternalStore(
     cell === null ? resolveDesignSystemValue152 : cell.subscribe,
     cell === null ? resolveDesignSystemValue153 : cell.getLevel,
     resolveDesignSystemValue153,
   );
-  let value2: Dynamic =
+  let value2 =
     cell === null ? "off" : nested && value === "hover" ? "off" : value;
   return designSystemState59(designSystemState257.Provider, {
     value: value2 === "declared",
@@ -8090,7 +8101,7 @@ function resolveDesignSystemTriggerRef(
   options: Dynamic = false,
   ..._extraArguments: unknown[]
 ): Dynamic {
-  let value: Dynamic = useRef(null);
+  let value = useRef(null);
   return {
     triggerRef: value,
     onOpenChange: resolveDesignSystemCurrent5(
@@ -8178,7 +8189,7 @@ var initializeDesignSystemAnchoredWithoutFinalFocus: Dynamic =
         options: ReactComponentTypes.ForwardedRef<unknown>,
         ..._extraArguments: unknown[]
       ): Dynamic => {
-        let value: Dynamic = useContext(designSystemState60)?.open ?? true;
+        let value: boolean = useContext(designSystemState60)?.open ?? true;
         let { elementRef: elementRef, overlayAttrs: overlayAttrs }: Dynamic =
           resolveDesignSystemIsOpen2();
         let value2: Dynamic = isDesignSystemFinalFocus({
@@ -8246,7 +8257,7 @@ function resolveDesignSystemEnabled3(
   let [value3, value4]: Dynamic = useState(null);
   let [value5, value6]: Dynamic = useState();
   let value7: Dynamic = useRef(null);
-  let value8: Dynamic = useRef(false);
+  let value8 = useRef(false);
   let value9: Dynamic = useRef(null);
   let value10: Dynamic = useCallback(
     (element?: Dynamic, ..._extraArguments: unknown[]): undefined => {
@@ -8632,7 +8643,7 @@ function resolveDesignSystemNested(
 ): Dynamic {
   let value: Dynamic = useContext(designSystemState110);
   let { label: label }: Dynamic = useContext(designSystemState112);
-  let value2: Dynamic = useContext(designSystemState115);
+  let value2 = useContext(designSystemState115);
   let value3: Dynamic = resolveDesignSystemValue36("back", "Back");
   let value4: Dynamic = value2.backLabel ?? value3;
   return designSystemState58(resolveDesignSystemTitleBar, {
@@ -8663,7 +8674,7 @@ function resolveDesignSystemNested(
 function resolveDesignSystemCloseOnClick3(
   ..._extraArguments: unknown[]
 ): Dynamic {
-  let value: Dynamic = useContext(designSystemState60);
+  let value = useContext(designSystemState60);
   let value2: Dynamic = resolveDesignSystemValue36("close", "Close");
   let value3: Dynamic = useContext(designSystemState115).closeLabel ?? value2;
   return designSystemState58(designSystemState165, {
@@ -8757,8 +8768,8 @@ var initializeDesignSystemSide: Dynamic = resolveRuntimeSupportValue3(
         let value2: Dynamic = useContext(designSystemState110);
         let value3: Dynamic =
           useContext(designSystemState113) && value2 === null;
-        let value4: Dynamic = resolveDesignSystemSheet2();
-        let value5: Dynamic = value4 && value2 !== null;
+        let value4: boolean = resolveDesignSystemSheet2();
+        let value5 = value4 && value2 !== null;
         let value6: Dynamic = useContext(designSystemState106);
         let value7: Dynamic = collisionPadding ?? value6?.collisionPadding;
         let value8: Dynamic = useMemo(
@@ -8778,8 +8789,8 @@ var initializeDesignSystemSide: Dynamic = resolveRuntimeSupportValue3(
         });
         let value11: Dynamic = useContext(designSystemState60);
         let value12: Dynamic = useContext(designSystemState112);
-        let value13: Dynamic = useRef(null);
-        let value14: Dynamic = useRef(null);
+        let value13 = useRef(null);
+        let value14 = useRef(null);
         let value15: Dynamic = useCallback(
           (..._extraArguments: unknown[]): undefined => {
             let current: Dynamic = value14.current;
@@ -8832,7 +8843,7 @@ var initializeDesignSystemSide: Dynamic = resolveRuntimeSupportValue3(
           open: value4 && !value5 && (value11?.open ?? false),
           liftOnClose: value24,
         });
-        let value26: Dynamic = resolveDesignSystemValue29();
+        let value26 = resolveDesignSystemValue29();
         let value27: Dynamic = useContext(designSystemState61);
         let value28: Dynamic = useContext(designSystemState68);
         let [value29, value30]: Dynamic = useState(null);
@@ -8886,7 +8897,7 @@ var initializeDesignSystemSide: Dynamic = resolveRuntimeSupportValue3(
           value4 && (value5 ? value12.open : (value11?.open ?? false)),
           value5 ? value2?.close : value11?.dismiss,
         );
-        let value34: Dynamic = useRef(false);
+        let value34 = useRef(false);
         let value35: Dynamic = value11?.open ?? false;
         designSystemState2(
           (..._extraArguments: unknown[]): undefined => {
@@ -8899,7 +8910,7 @@ var initializeDesignSystemSide: Dynamic = resolveRuntimeSupportValue3(
           },
           [value5, value12.open, value35, value16, value15],
         );
-        let value36: Dynamic = useRef(false);
+        let value36 = useRef(false);
         let [value37, value38]: Dynamic = useState(false);
         designSystemState2(
           (..._extraArguments: unknown[]): undefined => {
@@ -9534,7 +9545,7 @@ function resolveDesignSystemValue194(
   options?: unknown,
   ..._extraArguments: unknown[]
 ): undefined {
-  let value: Dynamic = resolveDesignSystemSubscribe2(
+  let value: boolean = resolveDesignSystemSubscribe2(
     input ? options : undefined,
     designSystemMessage3,
   );
@@ -9651,7 +9662,7 @@ function clearDesignSystemAttributes(
   ..._extraArguments: unknown[]
 ): Dynamic {
   let value: Dynamic = null;
-  let value2: Dynamic =
+  let value2 =
     input === undefined && typeof document !== "undefined"
       ? document.documentElement.getAttribute("data-mode")
       : null;
@@ -9896,7 +9907,7 @@ function ResolveDesignSystemDensityComponent(
   let value6: Dynamic = useContext(designSystemState73);
   let value7: Dynamic = useContext(designSystemState340);
   let value8: Dynamic = experimental?.densityOverride ?? value7;
-  let value9: Dynamic = useSyncExternalStore(
+  let value9: boolean = useSyncExternalStore(
     resolveDesignSystemValue208,
     isDesignSystemSource,
     isDesignSystemValue9,
@@ -9938,7 +9949,7 @@ function ResolveDesignSystemDensityComponent(
   let value21: Dynamic = useContext(designSystemState342);
   let value22: Dynamic = locale?.trim() ? locale.trim() : undefined;
   let value23: Dynamic = value22 ?? value21;
-  let value24: Dynamic = useSyncExternalStore(
+  let value24: string = useSyncExternalStore(
     resolveDesignSystemValue206,
     resolveDesignSystemDesktop,
     resolveDesignSystemValue207,
@@ -10008,7 +10019,7 @@ function ResolveDesignSystemDensityComponent(
     value36.$$typeof === Symbol.for("react.lazy")
   )
     value36 = Children.toArray(value36)[0];
-  let value37: Dynamic = isValidElement(value36) && value36.type === "html";
+  let value37: boolean = isValidElement(value36) && value36.type === "html";
   let value38: Dynamic = resolveDesignSystemSubscribe4(
     font === undefined && value3 === undefined && !value37,
   );
@@ -10103,7 +10114,7 @@ var resolveDesignSystemValue208 = (
   input?: Dynamic,
   ..._extraArguments: unknown[]
 ): Dynamic => {
-  let value: Dynamic = clearDesignSystemSubscribers(input);
+  let value = clearDesignSystemSubscribers(input);
   queueMicrotask(input);
   return value;
 };
@@ -11624,7 +11635,7 @@ function resolveDesignSystemReason3(
   { id: id2, reason: reason }: Dynamic,
   ..._extraArguments: unknown[]
 ): Dynamic {
-  let value: Dynamic = useRef(null);
+  let value = useRef(null);
   useEffect(
     (..._extraArguments: unknown[]): undefined => {
       return;
@@ -11774,7 +11785,7 @@ function Tooltip(
   let value2: Dynamic = resolveDesignSystemEnabled4({
     immediate: true,
   });
-  let value3: Dynamic = useId();
+  let value3: string = useId();
   let value4: Dynamic = useRef(null);
   let [value5, value6]: Dynamic = useState(false);
   let value7: Dynamic = useRef({
@@ -11889,7 +11900,7 @@ function Tooltip(
   );
   let [value22, value23]: Dynamic = useState(false);
   let value24: Dynamic = value22 || value21 === null;
-  let value25: Dynamic = useRef(false);
+  let value25 = useRef(false);
   let value26: Dynamic = useCallback(
     (..._extraArguments: unknown[]): undefined => {
       value25.current = true;
@@ -11898,7 +11909,7 @@ function Tooltip(
     [],
   );
   let value27: Dynamic = resolveDesignSystemStart4();
-  let value28: Dynamic = useRef(null);
+  let value28 = useRef(null);
   let value29: Dynamic = useRef(false);
   useEffect(
     (..._extraArguments: unknown[]): undefined => {
@@ -12167,7 +12178,7 @@ function DisabledReasonTooltip(
   }: Dynamic,
   ..._extraArguments: unknown[]
 ): Dynamic {
-  let value: Dynamic = useId();
+  let value: string = useId();
   return designSystemState58(Tooltip, {
     content: isDesignSystemValue10(reason) ? reason : undefined,
     side: side,
@@ -12327,7 +12338,7 @@ var initializeDesignSystemOpen4: Dynamic = resolveRuntimeSupportValue3(
       options: ReactComponentTypes.ForwardedRef<unknown>,
       ..._extraArguments: unknown[]
     ): Dynamic {
-      let value: Dynamic = useRef(null);
+      let value = useRef(null);
       let value2: Dynamic = resolveDesignSystemValue40(value, options);
       let value3: Dynamic = useTooltipTrigger();
       return designSystemState58(Tooltip, {
@@ -12657,7 +12668,7 @@ function clearDesignSystemImpl(
   );
   let value5: Dynamic = value3 === null ? null : value3.impl;
   let [value6]: Dynamic = useState(value5 === null);
-  let value7: Dynamic = useRef({
+  let value7 = useRef({
     hover: false,
     focus: false,
     down: false,
@@ -12666,7 +12677,7 @@ function clearDesignSystemImpl(
     handBack: false,
     tapHold: null,
   });
-  let value8: Dynamic = useRef(false);
+  let value8 = useRef(false);
   let value9: Dynamic = useCallback(
     (..._extraArguments: unknown[]): undefined => {
       if (value7.current.adopted || (value2 !== null && value2.isDeferred()))
@@ -12949,7 +12960,7 @@ function resolveDesignSystemImpl2(
     wasCold: wasCold,
     interceptors: interceptors,
   }: Dynamic = clearDesignSystemImpl(false);
-  let value: Dynamic = useId();
+  let value: string = useId();
   if (impl !== null)
     return wasCold
       ? designSystemState58(impl.DisabledReasonTooltip, {
@@ -13247,7 +13258,7 @@ var initializeDesignSystemVariants2: Dynamic = resolveRuntimeSupportValue3(
             ? value11
             : undefined;
         let value13: Dynamic = isDesignSystemTest2();
-        let value14: Dynamic = useRef(null);
+        let value14 = useRef(null);
         resolveDesignSystemValue220(value14, "Button");
         let value15: Dynamic = resolveDesignSystemAuto2(size);
         let value16: Dynamic =
@@ -13693,7 +13704,7 @@ function subscribeDesignSystemHold(
   ..._extraArguments: unknown[]
 ): Dynamic {
   let value: Dynamic = useContext(designSystemState80);
-  let value2: Dynamic = useContext(designSystemState81);
+  let value2: string = useContext(designSystemState81);
   let [value3]: Dynamic = useState(as ?? value2);
   let value4: Dynamic = designSystemState415[value3];
   let value5 = value3 === "span";
@@ -13707,7 +13718,7 @@ function subscribeDesignSystemHold(
   });
   let [value9]: Dynamic = useState(value6);
   let [value10, value11]: Dynamic = useState(false);
-  let value12: Dynamic = useRef(false);
+  let value12 = useRef(false);
   let value13: Dynamic = value && !value10;
   let value14: Dynamic = useCallback(
     (input?: Dynamic, ..._extraArguments: unknown[]): undefined => {
@@ -13734,7 +13745,7 @@ function subscribeDesignSystemHold(
     },
     [],
   );
-  let value21: Dynamic = useRef(false);
+  let value21 = useRef(false);
   let value22: Dynamic = useRef({
     onShown: onShown,
     onHidden: onHidden,
@@ -14033,7 +14044,7 @@ function resolveDesignSystemWidth9(
   ..._extraArguments: unknown[]
 ): Dynamic {
   let value: Dynamic = useContext(designSystemState80);
-  let value2: Dynamic = useContext(designSystemState81);
+  let value2: string = useContext(designSystemState81);
   let value3: Dynamic = designSystemState415[as ?? value2];
   let value4 = value3 === "span" ? "block" : undefined;
   let value5: Dynamic = resolveDesignSystemValue36("loading", "Loading");
@@ -14363,9 +14374,9 @@ var initializeDesignSystemFullWidth: Dynamic = resolveRuntimeSupportValue3(
         };
         let value4: Dynamic = resolveDesignSystemValue36("clear", "Clear");
         let value5: Dynamic = clearLabel ?? value4;
-        let value6: Dynamic = resolveDesignSystemValue223();
+        let value6: boolean = resolveDesignSystemValue223();
         let value7: Dynamic = value6 || value2;
-        let value8: Dynamic = resolveDesignSystemValue224();
+        let value8: boolean = resolveDesignSystemValue224();
         let value9: Dynamic = disabled || value8;
         let value10 = fullWidth ? "w-full" : "";
         let value11 = fullWidth ? "w-full min-w-0" : "";
@@ -14438,7 +14449,7 @@ var initializeDesignSystemFullWidth: Dynamic = resolveRuntimeSupportValue3(
               onClick: value19,
             })
           : null;
-        let value23: Dynamic = useRef(false);
+        let value23 = useRef(false);
         let value24 = (
           event?: Dynamic,
           ..._extraArguments: unknown[]
@@ -14583,12 +14594,12 @@ function resolveDesignSystemRole(
   { kind: kind }: Dynamic,
   ..._extraArguments: unknown[]
 ) {
-  let value: Dynamic = useContext(designSystemState60);
+  let value = useContext(designSystemState60);
   let value2: Dynamic = resolveDesignSystemValue204();
   let value3: Dynamic = resolveDesignSystemValue39(kind);
   installDesignSystemCapture(value?.open ?? false, value?.dismiss);
   let [value4, value5]: Dynamic = useState(false);
-  let value6: Dynamic = useRef(false);
+  let value6 = useRef(false);
   let value7: Dynamic = resolveDesignSystemValue205();
   useEffect(
     (..._extraArguments: unknown[]) => {
@@ -14876,7 +14887,7 @@ function resolveDesignSystemValue227(
   if (!Array.isArray(input)) return;
   let text: string = "";
   for (let value of input as Dynamic) {
-    let value2: Dynamic = resolveDesignSystemValue227(value);
+    let value2 = resolveDesignSystemValue227(value);
     if (value2 === undefined) return;
     text += value2;
   }
@@ -14973,7 +14984,7 @@ function resolveDesignSystemSide3(
     ...value2
   }: Dynamic = input;
   let value4: Dynamic = resolveDesignSystemValue204();
-  let value5: Dynamic = useContext(designSystemState110);
+  let value5 = useContext(designSystemState110);
   let value6: Dynamic = useContext(designSystemState113) && value5 === null;
   let value7: Dynamic = useContext(designSystemState106);
   let value8: Dynamic = collisionPadding ?? value7?.collisionPadding;
@@ -15205,10 +15216,10 @@ function resolveDesignSystemHeader2(
   { children: children, className: className }: Dynamic,
   ..._extraArguments: unknown[]
 ): Dynamic {
-  let value: Dynamic = resolveDesignSystemSheet2();
+  let value: boolean = resolveDesignSystemSheet2();
   let value2 = useContext(designSystemState110) !== null;
   let { label: label }: Dynamic = useContext(designSystemState112);
-  let value3: Dynamic =
+  let value3 =
     value &&
     value2 &&
     typeof children === "string" &&
@@ -15794,7 +15805,7 @@ function installDesignSystemInputRef(
   { inputRef: inputRef, applyKey: applyKey }: Dynamic,
   ..._extraArguments: unknown[]
 ) {
-  let value: Dynamic = useContext(designSystemState110)?.triggerRef;
+  let value = useContext(designSystemState110)?.triggerRef;
   useEffect(
     (..._extraArguments: unknown[]): Dynamic => {
       let value2: Dynamic = value?.current;
@@ -15823,7 +15834,7 @@ function installDesignSystemInputRef2(
   { inputRef: inputRef }: Dynamic,
   ..._extraArguments: unknown[]
 ) {
-  let value: Dynamic = useContext(designSystemState110);
+  let value = useContext(designSystemState110);
   useEffect(
     (..._extraArguments: unknown[]): Dynamic => {
       let value2: Dynamic = value?.triggerRef.current;
@@ -15907,15 +15918,15 @@ function isDesignSystemSearchablePopup(
       if (value3 !== "") value4("");
     },
   );
-  let value6: Dynamic = useRef(false);
+  let value6 = useRef(false);
   useEffect(
     (..._extraArguments: unknown[]): undefined => {
       return;
     },
     [query, onQueryChange],
   );
-  let value7: Dynamic = resolveDesignSystemSheet2();
-  let value8: Dynamic = resolveDesignSystemSubscribe2(
+  let value7: boolean = resolveDesignSystemSheet2();
+  let value8: boolean = resolveDesignSystemSubscribe2(
     resolveDesignSystemValue205(),
     designSystemMessage3,
   );
@@ -15923,7 +15934,7 @@ function isDesignSystemSearchablePopup(
   let value10: Dynamic = useContext(designSystemState117);
   let value11: Dynamic = useContext(designSystemState116);
   let value12: Dynamic = value10 ?? value11;
-  let value13: Dynamic = useRef(null);
+  let value13 = useRef(null);
   let value14: Dynamic = useRef(null);
   let value15: Dynamic = useRef(null);
   useEffect(
@@ -16248,7 +16259,7 @@ function resolveDesignSystemPendingList(
   }: Dynamic,
   ..._extraArguments: unknown[]
 ): Dynamic {
-  let value: Dynamic = useRef(null);
+  let value = useRef(null);
   let value2: Dynamic = useRef(designSystemState440);
   useEffect((..._extraArguments: unknown[]) => {
     let current: Dynamic = value.current;
@@ -16411,7 +16422,7 @@ var initializeDesignSystemAlign: Dynamic = resolveRuntimeSupportValue3(
       ): Dynamic => {
         let value: Dynamic = resolveDesignSystemSheet3();
         let { pending: pending }: Dynamic = resolveDesignSystemValue29();
-        let value2: Dynamic = useContext(designSystemState110);
+        let value2 = useContext(designSystemState110);
         let value3 =
           useContext(designSystemState113) && value2 === null
             ? "contextmenu"
@@ -16479,7 +16490,7 @@ var initializeDesignSystemAlign: Dynamic = resolveRuntimeSupportValue3(
         let value3: Dynamic = value ? "checkbox" : (checkedRole ?? "checkbox");
         let value4: Dynamic = checkPosition ?? (value ? "leading" : "trailing");
         let value5: Dynamic = isDesignSystemTest2();
-        let value6: Dynamic = useId();
+        let value6: string = useId();
         let {
           label: label,
           labelSpanRef: labelSpanRef,
@@ -16713,7 +16724,7 @@ var initializeDesignSystemAlign: Dynamic = resolveRuntimeSupportValue3(
         ..._extraArguments: unknown[]
       ): Dynamic => {
         let value: Dynamic = useContext(designSystemState110);
-        let value2: Dynamic = resolveDesignSystemSheet2();
+        let value2: boolean = resolveDesignSystemSheet2();
         let value3: Dynamic = resolveDesignSystemValue151();
         let {
           label: label,
@@ -16895,7 +16906,7 @@ function resolveDesignSystemValue230(
   options?: unknown,
   ..._extraArguments: unknown[]
 ): undefined {
-  let value: Dynamic = useRef(false);
+  let value = useRef(false);
   useEffect(
     (..._extraArguments: unknown[]): undefined => {
       return;
@@ -16963,7 +16974,7 @@ function resolveDesignSystemRoot2(
 ): Dynamic {
   let value: Dynamic = resolveDesignSystemInnerOverlays(onOpenChange);
   let value2: Dynamic = resolveDesignSystemValue32();
-  let value3: Dynamic = useRef(null);
+  let value3 = useRef(null);
   resolveDesignSystemClose(value3, actionsRef);
   return designSystemState58(designSystemState451.Provider, {
     value: value.innerOverlays,
@@ -16989,7 +17000,7 @@ function isDesignSystemConsumerHandlesOpenChange(
   ..._extraArguments: unknown[]
 ): Dynamic {
   let value: Dynamic = resolveDesignSystemOpen(input);
-  let value2: Dynamic = useRef({
+  let value2 = useRef({
     popupMounted: false,
     declinesFocus: false,
     anchor: undefined,
@@ -17098,7 +17109,7 @@ var initializeDesignSystemNone: Dynamic = resolveRuntimeSupportValue3(
         options: ReactComponentTypes.ForwardedRef<unknown>,
         ..._extraArguments: unknown[]
       ): Dynamic => {
-        let value: Dynamic = useContext(designSystemState60)?.open ?? true;
+        let value: boolean = useContext(designSystemState60)?.open ?? true;
         let value2: Dynamic = anchored && finalFocus === undefined;
         let value3: Dynamic = isDesignSystemFinalFocus({
           skipRestoreOnOutsideFocus: true,
@@ -17572,7 +17583,7 @@ var initializeDesignSystemNeutral: Dynamic = resolveRuntimeSupportValue3(
         );
         let value3: Dynamic = resolveDesignSystemValue196();
         let value4: Dynamic = designSystemState459[value3][size ?? "base"];
-        let length: Dynamic = Children.toArray(children).length;
+        let length: number = Children.toArray(children).length;
         let value5: Dynamic =
           !iconOnly &&
           (length > 0 || onRemove !== undefined || removeRender !== undefined)
@@ -20075,7 +20086,7 @@ function resolveChartEngineValue16(
   input?: Dynamic,
   ..._extraArguments: unknown[]
 ): Dynamic {
-  let items: Dynamic = [
+  let items = [
     676.5203681218851, -1259.1392167224028, 771.3234287776531,
     -176.6150291621406, 12.507343278686905, -0.13857109526572012,
     0.000009984369578019572, 0.00000015056327351493116,
@@ -20468,9 +20479,9 @@ function resolveChartEngineFit(
       let value18: number = options[index4] - index5;
       index3 += value18 * value18;
     }
-  let value8: Dynamic = length - 2 * index + index2;
+  let value8: number = length - 2 * index + index2;
   let value9: number = value8 > 0 ? index3 / value8 : NaN;
-  let value10: Dynamic =
+  let value10: number =
     value8 > 0 ? resolveChartEngineSqrt2(0.5 + value4 / 2, value8) : NaN;
   let length2: Dynamic = context.length;
   let value11: Dynamic = new Float64Array(length2);
@@ -20493,7 +20504,7 @@ function resolveChartEngineFit(
       );
     let index6: number = 0;
     let index7: number = 0;
-    for (let value17: Dynamic = index5; value17 < value16; value17++) {
+    for (let value17: number = index5; value17 < value16; value17++) {
       index6 += value6[value17] * options[value17];
       index7 += value6[value17] * value6[value17];
     }
@@ -21598,7 +21609,7 @@ function getChartEngineFrom(
     for (let index7 = 0; index7 < size; index7++) {
       let value9: Dynamic = value7[index7];
       let value10: number = value3[value9][count] - value3[value9][count - 1];
-      let value11: Dynamic = value10 / 2 + index6;
+      let value11: number = value10 / 2 + index6;
       index4 += value3[value9][count];
       index5 += value11 * value3[value9][count];
       index6 += value10;
@@ -22425,9 +22436,9 @@ function resolveChartEngineFloor3(
             context - 1,
             Math.floor(((input[value6] - value2) / value5) * context),
           );
-    let value8: Dynamic = value6;
-    let value9: Dynamic = value6;
-    let value10: Dynamic = value6;
+    let value8: number = value6;
+    let value9: number = value6;
+    let value10: number = value6;
     while (value8 < value4) {
       if (
         (value5 <= 0
@@ -22762,7 +22773,7 @@ function resolveChartEngineIsFinite(
   context?: Dynamic,
   ..._extraArguments: unknown[]
 ): Dynamic {
-  let value: Dynamic = resolveChartEngineTest(input, options);
+  let value: number = resolveChartEngineTest(input, options);
   if (context === undefined) return value;
   let value2: Dynamic = context(input, options);
   return Number.isFinite(value2) && value2 > value ? value2 : value;
@@ -22870,7 +22881,7 @@ function collectChartEnginePush(
       items.push(null);
       continue;
     }
-    let value4: Dynamic = resolveChartEngineMantissa(value3);
+    let value4 = resolveChartEngineMantissa(value3);
     if (value4 === null) return input.map(options);
     items.push(value4);
     if (Math.abs(value4.exponent) >= chartEngineLimit4) value = true;
@@ -22949,7 +22960,7 @@ function collectChartEngineLocale(
   let count = 6;
   if (exact)
     for (let value9 of input as Dynamic) {
-      let value10: Dynamic = resolveChartEngineFloor4(
+      let value10 = resolveChartEngineFloor4(
         Math.abs(percent ? value9 * 100 : value9),
         count,
       );
@@ -23312,7 +23323,7 @@ function collectChartEngineText(
     },
   );
   if (items.length === 0) return null;
-  let value3: Dynamic = value2 + 1;
+  let value3: number = value2 + 1;
   return {
     entries: items,
     rows: value3,
@@ -23436,7 +23447,7 @@ function resolveChartEngineValue33(
   let text2: string = "";
   let index: number = 0;
   for (let value2 of input as Dynamic) {
-    let value3: Dynamic = resolveChartEngineTest(value2);
+    let value3: number = resolveChartEngineTest(value2);
     if (index + value3 > value) break;
     text2 += value2;
     index += value3;
@@ -27095,7 +27106,7 @@ function collectChartEngineThreshold(
           );
           return;
         }
-        let value13: Dynamic = resolveChartEngineColumn8(
+        let value13 = resolveChartEngineColumn8(
           input2,
           input,
           options,
@@ -28502,7 +28513,7 @@ function resolveChartEngineValue47(
   context?: Dynamic,
   ..._extraArguments: unknown[]
 ): Dynamic {
-  let value: Dynamic = filterChartEngineBandwidth(input, input, context);
+  let value = filterChartEngineBandwidth(input, input, context);
   if (value === null) return null;
   return value[0] + options * (value[1] - value[0]);
 }
@@ -28673,7 +28684,7 @@ function buildChartAnnotations(
                   : [Math.min(value38, value39), Math.max(value38, value39)];
               })()
             : undefined;
-        let value29: Dynamic =
+        let value29 =
           value28 !== undefined
             ? value28
             : value27 && value24 !== undefined && value25 !== undefined
@@ -28996,7 +29007,7 @@ function buildChartAnnotations(
       let value14: string = `${value4}~${value13}`;
       if (input.facetKey !== null)
         value14 += `~f=${encodeURIComponent(input.facetKey)}`;
-      let value15: Dynamic = value14;
+      let value15: string = value14;
       if (value7) {
         let value19 = `${value14}~flagstem`;
         value14 += "~flagchip";
@@ -29343,7 +29354,7 @@ function resolveChartEngineGeometry(
               : geometry.ys[input2];
     if (Number.isNaN(value13) || Number.isNaN(value14)) return;
     let value15: Dynamic = value12 ? "point" : context;
-    let value16: Dynamic = value3(value9);
+    let value16 = value3(value9);
     items.push({
       id: `${input.targetId}~${options}`,
       specPath: input.specPath,
@@ -34585,7 +34596,7 @@ function resolveChartEngineFloor10(
     next: (input2?: Dynamic, ..._extraArguments: unknown[]): Dynamic => {
       let value2: Dynamic = value(input2) + input;
       for (let index = 0; index < 6; index++) {
-        let value3: Dynamic = value(value2);
+        let value3: number = value(value2);
         if (value3 > input2) return value3;
         value2 += input;
       }
@@ -35621,8 +35632,8 @@ function resolveChartEngineAligned(
     if (!(domain5 < 0 && domain6 > 0)) return null;
     return -domain5 / (domain6 - domain5);
   };
-  let value2: Dynamic = value(input);
-  let value3: Dynamic = value(options);
+  let value2 = value(input);
+  let value3 = value(options);
   if (value2 === null || value3 === null) return state;
   let value4 = (input2?: Dynamic, ..._extraArguments: unknown[]) =>
     input2.rangePx[1] < input2.rangePx[0];
@@ -35697,13 +35708,13 @@ function resolveChartEngineDomain(
     let value7 = 0.000000001 * Math.max(1, Math.abs(value), Math.abs(value2));
     if (value5 > 0) {
       for (
-        let value8: Dynamic = value6(slice[0] - value5);
+        let value8: number = value6(slice[0] - value5);
         value8 >= value - value7;
         value8 = value6(value8 - value5)
       )
         slice.unshift(value8);
       for (
-        let value8: Dynamic = value6(slice[slice.length - 1] + value5);
+        let value8: number = value6(slice[slice.length - 1] + value5);
         value8 <= value2 + value7;
         value8 = value6(value8 + value5)
       )
@@ -36737,7 +36748,7 @@ function updateChartEngineRole(
   }
   if (options.rampScale === "eq-hist") {
     let value7: Dynamic = options.sortedSample ?? new Float64Array(0);
-    let value8: Dynamic = resolveChartEngineValue73(value7);
+    let value8: number = resolveChartEngineValue73(value7);
     for (let index = 0; index < input.length; index++) {
       let value9: Dynamic = input[index];
       if (!Number.isNaN(value9))
@@ -37302,8 +37313,8 @@ function resolveChartEngineFloor15(
   ..._extraArguments: unknown[]
 ) {
   let value = Math.floor(input / chartEngineLimit864000004);
-  let value2: Dynamic = resolveChartEngineValue76(value + 4, 7);
-  let value3: Dynamic = resolveChartEngineValue76(value2 + 6, 7);
+  let value2: number = resolveChartEngineValue76(value + 4, 7);
+  let value3: number = resolveChartEngineValue76(value2 + 6, 7);
   return (value - value3) * chartEngineLimit864000004;
 }
 function resolveChartEngineTimeZone(
@@ -37333,7 +37344,7 @@ function resolveChartEngineTimeZone(
     resolveChartEngineValue77(options, value2),
   );
   if (value3 !== value4) {
-    let value7: Dynamic = new (Intl.DateTimeFormat)(extra, {
+    let value7 = new (Intl.DateTimeFormat)(extra, {
       timeZone: value2,
       month: "short",
       year: "numeric",
@@ -37373,7 +37384,7 @@ function resolveChartEngineTimeZone(
     resolveChartEngineValue77(options, value2),
   );
   if (value5 !== value6) {
-    let value7: Dynamic = new (Intl.DateTimeFormat)(extra, {
+    let value7 = new (Intl.DateTimeFormat)(extra, {
       timeZone: value2,
       month: "short",
       day: "numeric",
@@ -37385,7 +37396,7 @@ function resolveChartEngineTimeZone(
       index2 < chartEngineLimit128 && value8 <= value6;
       index2++
     ) {
-      let value9: Dynamic = value8 + 7 * chartEngineLimit864000004;
+      let value9: number = value8 + 7 * chartEngineLimit864000004;
       let value10 = Math.max(resolveChartEngineValue40(value8, value2), input);
       let value11 = Math.min(
         resolveChartEngineValue40(value9, value2),
@@ -41069,7 +41080,7 @@ function validateCandelaAnnotation(
     let panel: Dynamic = entry.panel;
     let value2 = (input?: unknown, ..._extraArguments: unknown[]) =>
       typeof input === "string" && input.length > 0;
-    let value3: Dynamic =
+    let value3: boolean =
       Array.isArray(panel) &&
       panel.length === 2 &&
       value2(panel[0]) &&
@@ -42292,7 +42303,7 @@ function filterChartEngineIndex(
           input2.channels.y2 !== undefined
         )
           return;
-        let value6: Dynamic = value4(input2);
+        let value6: boolean = value4(input2);
         if (value5 === null)
           value5 = {
             index: options2,
@@ -42918,7 +42929,7 @@ function validateCandelaScale(
     );
   let orient: Dynamic = input.orient;
   if (orient !== undefined && !value2) {
-    let value3: Dynamic =
+    let value3 =
       context === "x" ? ["bottom", "top"] : ["left", "right"];
     if (typeof orient !== "string" || !value3.includes(orient))
       extra(
@@ -45968,8 +45979,8 @@ function compileCandelaChart(
   };
   let value102: boolean =
     value3.legend !== false && value54 && value48.sizeExtent !== null;
-  let value103: Dynamic = value102 && !value92 && !value70;
-  let value104: Dynamic = value103
+  let value103: boolean = value102 && !value92 && !value70;
+  let value104 = value103
     ? resolveChartEngineCenterY(
         value3.scales?.size?.rangePx?.[1] ?? chartEngineLimit125,
       )
@@ -46174,7 +46185,7 @@ function compileCandelaChart(
           height: index3,
         }
       : undefined;
-  let value125: Dynamic =
+  let value125 =
     index4 > 0 || index5 > 0
       ? {
           ...(index4 > 0
@@ -47275,7 +47286,7 @@ function compileCandelaChart(
         let items16: Dynamic = [];
         for (let value186 of items15 as Dynamic) {
           let value187: Dynamic = null;
-          let value188: Dynamic =
+          let value188: number =
             value59 && input2.type === "bar" && scale.type === "band"
               ? value181 - 1 - index9
               : index9;
@@ -48160,7 +48171,7 @@ function compileCandelaChart(
         )
       : null;
   let value138: Dynamic = value130;
-  let value139: Dynamic = index6;
+  let value139: number = index6;
   let value140 = false;
   let items10: Dynamic = [];
   let items11: Dynamic = [];
@@ -48341,7 +48352,7 @@ function compileCandelaChart(
         values10.has(value158.seriesKey)
       )
         continue;
-      let value159: Dynamic = value157(value158);
+      let value159: number = value157(value158);
       if (value159 < 0) continue;
       values10.add(value158.seriesKey);
       let value160: Dynamic =
@@ -48373,7 +48384,7 @@ function compileCandelaChart(
         value160.name === ""
       )
         continue;
-      let value161: Dynamic = value157(value158);
+      let value161: number = value157(value158);
       if (value161 < 0) continue;
       values10.add(`tone\x00${value158.specPath}`);
       items15.push({
@@ -48587,7 +48598,7 @@ function compileCandelaChart(
         items6,
         value155.index,
         values9,
-        (input2?: unknown, ..._extraArguments: unknown[]): undefined => {
+        (input2: number, ..._extraArguments: unknown[]): undefined => {
           value139 += input2;
         },
       ),
@@ -49371,7 +49382,7 @@ function resolveChartEngineAnnotations2(
   argument?: Dynamic,
   ..._extraArguments: unknown[]
 ): Dynamic {
-  let value2: Dynamic = resolveChartEngineTop2(input);
+  let value2 = resolveChartEngineTop2(input);
   if (options === undefined || options.length === 0) return value2;
   if (
     detail !== undefined &&
@@ -49384,7 +49395,7 @@ function resolveChartEngineAnnotations2(
     }) !== "full"
   )
     return value2;
-  let state: Dynamic = {
+  let state = {
     left: 0,
     right: 0,
   };
@@ -52191,7 +52202,7 @@ function resolveChartEngineValue87(
   let index: number = 0;
   for (let index3: number = 0; index3 < input.length; index3 += 2)
     index += input[index3 + 1] - input[index3];
-  let value: Dynamic = new Uint32Array(index);
+  let value = new Uint32Array(index);
   let index2 = 0;
   for (let index3: number = 0; index3 < input.length; index3 += 2)
     for (
@@ -52983,7 +52994,7 @@ function resolveChartEngineTrim(
       ? resolveChartEnginePrecision(entry, value2, context)
       : String(options);
   }
-  let value: Dynamic = resolveChartEngineIsFinite6(options);
+  let value = resolveChartEngineIsFinite6(options);
   return value === null
     ? String(options)
     : resolveChartEngineParts(entry, value);
@@ -55733,25 +55744,25 @@ function resolveChartEngineYs22(
   while (index < vertexCount) {
     while (index < vertexCount && !value2(index)) index++;
     if (index >= vertexCount) break;
-    let value4: Dynamic = index;
+    let value4: number = index;
     while (value4 + 1 < vertexCount && value2(value4 + 1)) value4++;
     if (value !== null) {
       let value5: Dynamic = value(input);
       value5.areaStart();
       value5.lineStart();
-      for (let value6: Dynamic = index; value6 <= value4; value6++)
+      for (let value6: number = index; value6 <= value4; value6++)
         value5.point(xs2[value6], ys2[value6]);
       value5.lineEnd();
       value5.lineStart();
-      for (let value6: Dynamic = value4; value6 >= index; value6--)
+      for (let value6 = value4; value6 >= index; value6--)
         value5.point(xs2[value6], value3(value6));
       value5.lineEnd();
       value5.areaEnd();
     } else {
       input.moveTo(xs2[index], ys2[index]);
-      for (let value5: Dynamic = index + 1; value5 <= value4; value5++)
+      for (let value5: number = index + 1; value5 <= value4; value5++)
         input.lineTo(xs2[value5], ys2[value5]);
-      for (let value5: Dynamic = value4; value5 >= index; value5--)
+      for (let value5 = value4; value5 >= index; value5--)
         input.lineTo(xs2[value5], value3(value5));
       input.closePath();
     }
@@ -59106,7 +59117,7 @@ function updateChartEngineHitTest(
       let { NaN: NaN2, POSITIVE_INFINITY: POSITIVE_INFINITY }: Dynamic = Number;
       for (let value4 of entry as Dynamic) {
         if (!resolveChartEngineBand7(value4.node)) continue;
-        let value5: Dynamic = value3(value4, input2 - value4.panelX);
+        let value5 = value3(value4, input2 - value4.panelX);
         if (value5 && value5.dx < POSITIVE_INFINITY) {
           POSITIVE_INFINITY = value5.dx;
           NaN2 = value4.node.xs[value5.vertexIndex] + value4.panelX;
@@ -59115,7 +59126,7 @@ function updateChartEngineHitTest(
       if (!Number.isFinite(NaN2)) return null;
       let mapped: Dynamic = entry.map(
         (input3?: Dynamic, ..._extraArguments: unknown[]): Dynamic => {
-          let value4: Dynamic = value3(input3, NaN2 - input3.panelX);
+          let value4 = value3(input3, NaN2 - input3.panelX);
           let value5: Dynamic = value4 ? value4.vertexIndex : -1;
           let value6 = value4 !== null && value4.dx <= chartEngineLimit0_56;
           let value7: Dynamic = value6
@@ -60336,7 +60347,7 @@ function updateChartEngineNode3(
     if (entry && entry.node === input2) return entry.paths;
     let mapped: Dynamic = options.map(
       (input3?: Dynamic, ..._extraArguments: unknown[]): Dynamic => {
-        let value20: Dynamic = new (Path2D)();
+        let value20 = new (Path2D)();
         input3.emit(value20);
         return value20;
       },
@@ -62543,7 +62554,7 @@ function updateChartEngineScales(
       entries.set(input2.pointerId, value23(input2));
     let value30: Dynamic = value9();
     if (value18 === null || value30 === null) return;
-    let value31: Dynamic = value15(input2);
+    let value31: number = value15(input2);
     let value32: Dynamic = input.dataXAt(value18);
     let value33: Dynamic = input.dataXAt(value31);
     value18 = value31;
@@ -63843,7 +63854,7 @@ function isChartEngineTransparentBackground(
     note(input2?: Dynamic, ..._extraArguments: unknown[]): undefined {
       if (input.getMotion() === false) return;
       text = input2;
-      let value9: Dynamic = resolveChartEngineValue107();
+      let value9: number = resolveChartEngineValue107();
       let value10: number = value9 - NEGATIVE_INFINITY;
       if (value10 <= value5() + value6()) value2 = true;
       index2 = Number.isFinite(value10)
@@ -64265,7 +64276,7 @@ function createChartInteractionHarness(
     ..._extraArguments: unknown[]
   ): Dynamic {
     if (typeof OffscreenCanvas !== "undefined") {
-      let value20: Dynamic = new (OffscreenCanvas)(options, context);
+      let value20 = new (OffscreenCanvas)(options, context);
       let value21: Dynamic = value20.getContext("2d");
       return value21
         ? {
@@ -65380,10 +65391,10 @@ function resolveProsePluginsValue8(
 var prosePluginsEn = "en";
 var prosePluginsInputPattern = /^[A-Za-z0-9-]{1,35}$/;
 var prosePluginsDataProductWords = "data-product-words";
-function resolveProsePluginsDataDocLang(
-  element?: Dynamic,
+function resolveProsePluginsDataDocLang<ElementType extends HTMLElement>(
+  element: ElementType,
   ..._extraArguments: unknown[]
-): Dynamic {
+): ElementType {
   element.setAttribute(prosePluginsDataProductWords, "");
   if (element.ownerDocument.documentElement.hasAttribute("data-doc-lang"))
     element.lang = prosePluginsEn;
@@ -65959,7 +65970,7 @@ function filterProsePluginsMods2(
     else if (value2 === "Ctrl" || value2 === "Control") values.add("Control");
     else if (value2 === "Cmd" || value2 === "Meta") values.add("Meta");
     else values.add(value2);
-  let filtered: Dynamic = ["Control", "Alt", "Shift", "Meta"].filter(
+  let filtered = ["Control", "Alt", "Shift", "Meta"].filter(
     (input2: string, ..._extraArguments: unknown[]): Dynamic =>
       values.has(input2),
   );
@@ -66012,7 +66023,7 @@ function collectProsePluginsControl(
   options: Dynamic = isProsePluginsNavigator(),
   ..._extraArguments: unknown[]
 ): Dynamic {
-  let parts: Dynamic = filterProsePluginsMods2(input, options).split("+");
+  let parts = filterProsePluginsMods2(input, options).split("+");
   let value: Dynamic = parts.pop();
   if (options) {
     let value3: Dynamic = Object.hasOwn(ProsePluginsEscape, value)
@@ -66482,7 +66493,7 @@ function resolveProsePluginsExact(
       value = +slice.slice(0, value2);
       slice = slice.slice(value2 + 1);
     }
-    let value3: Dynamic = prosePluginsInputPattern8.exec(slice);
+    let value3 = prosePluginsInputPattern8.exec(slice);
     if (value3) {
       let state: Dynamic = {
         kind: "cell",
@@ -66497,7 +66508,7 @@ function resolveProsePluginsExact(
         });
       return state;
     }
-    let value4: Dynamic = prosePluginsInputPattern9.exec(slice);
+    let value4 = prosePluginsInputPattern9.exec(slice);
     if (value4) {
       let state: Dynamic = {
         kind: "cell",
@@ -66907,7 +66918,7 @@ function resolveProsePluginsMintId(..._extraArguments: unknown[]): Dynamic {
     ? prosePluginsState.mintId()
     : `u${(++prosePluginsLimit0).toString(36)}`;
 }
-var ProsePluginsData3: Dynamic = Symbol("lazyZod.real");
+var ProsePluginsData3 = Symbol("lazyZod.real");
 var prosePluginsLimit02 = 0;
 var prosePluginsLimit03 = 0;
 var prosePluginsLimit04: number = 0;
@@ -66930,7 +66941,7 @@ function resolveProsePluginsReal(
     );
   let build: Dynamic = input.build;
   input.building = true;
-  let value: Dynamic =
+  let value: number =
     prosePluginsLimit05 === 0 ? resolveProsePluginsValue15() : 0;
   prosePluginsLimit05++;
   try {
@@ -67589,7 +67600,7 @@ function resolveProsePluginsNode2(
   ..._extraArguments: unknown[]
 ): Dynamic {
   if (typeof input !== "string") return;
-  let value: Dynamic = resolveProsePluginsNode(input);
+  let value = resolveProsePluginsNode(input);
   if (value !== undefined) return value;
   let value2: Dynamic = resolveProsePluginsError(input);
   if (!value2.ok || value2.ref.file !== undefined) return;
@@ -67821,7 +67832,7 @@ function isProsePluginsGroup(
             input2?: Dynamic,
             ..._extraArguments: unknown[]
           ): Dynamic => {
-            let value2: Dynamic = resolveProsePluginsCenter(input2.align);
+            let value2 = resolveProsePluginsCenter(input2.align);
             return value2
               ? {
                   "data-align": value2,
@@ -67963,7 +67974,7 @@ function isProsePluginsGroup(
           ..._extraArguments: unknown[]
         ): undefined => {
           if (!value) return;
-          let value15: Dynamic = resolveProsePluginsCenter(input2.attrs.align);
+          let value15 = resolveProsePluginsCenter(input2.attrs.align);
           if (value15) value3.setAttribute("data-align", value15);
           else value3.removeAttribute("data-align");
         };
@@ -69147,7 +69158,7 @@ function resolveProsePluginsMessage9(
       );
   }
 }
-var ProsePluginsMessage: Dynamic = string()
+var ProsePluginsMessage = string()
   .min(1)
   .refine(
     (input?: Dynamic, ..._extraArguments: unknown[]): Dynamic =>
@@ -69190,7 +69201,7 @@ var prosePluginsRowsSchema2: Dynamic = strictObject({
   "json-columnar — a header list plus row-major cell arrays, zipped into records. Both " +
     "paths are required: a columnar answer that carries its own keys is json-rows, not this.",
 );
-var prosePluginsXmlRowsSchema: Dynamic = strictObject({
+var prosePluginsXmlRowsSchema = strictObject({
   kind: literal("xml-rows").describe(
     "The answer is an XML document carrying <row><field name=…> rows.",
   ),
@@ -69232,7 +69243,7 @@ var prosePluginsHasHeaderSchema: Dynamic = strictObject({
 }).describe(
   "csv — the first row names the columns unless hasHeader is false. Every cell is a verbatim STRING unless `columns` declares a type for it: refuse-never-coerce is house law, and a CSV carries no type sidecar, so the lens never guesses a type off the data — it only obeys one the author wrote down. COMMA-ONLY by contract: no delimiter sniffing (sniffing is the guess-the-shape heuristic this union deletes). Quoted fields carry embedded commas, newlines, and doubled-quote escapes; a width mismatch or unterminated quote refuses loudly, never a best-effort zip.",
 );
-var prosePluginsXlsxValuesSchema: Dynamic = strictObject({
+var prosePluginsXlsxValuesSchema = strictObject({
   kind: literal("xlsx-values").describe(
     "The answer is xlsx workbook bytes: decoded server-side to a per-sheet cell-VALUE grid.",
   ),
@@ -70293,10 +70304,10 @@ function resolveProsePluginsChar(
     $position: $position,
   }: Dynamic = input;
   let value2: Dynamic = allowSpaces && !allowToIncludeChar;
-  let value3: Dynamic = TiptapescapeForRegEx(char);
+  let value3: string = TiptapescapeForRegEx(char);
   let value4 = new RegExp(`\\s${value3}$`);
   let value5 = startOfLine ? "^" : "";
-  let value6: Dynamic = allowToIncludeChar ? "" : value3;
+  let value6 = allowToIncludeChar ? "" : value3;
   let value7 = value2
     ? new RegExp(`${value5}${value3}.*?(?=\\s${value6}|$)`, "gm")
     : new RegExp(`${value5}(?:^)?${value3}[^\\s${value6}]*`, "gm");
@@ -71380,7 +71391,7 @@ var resolveProsePluginsYellow = (
   input?: Dynamic,
   ..._extraArguments: unknown[]
 ) => (input === "yellow" ? 200 : 450);
-var ProsePluginsStrong: Dynamic = Object.fromEntries(
+var ProsePluginsStrong = Object.fromEntries(
   prosePluginsGraySkyMineralValues.map(
     (input: string, ..._extraArguments: unknown[]): Dynamic => {
       let value: Dynamic = ProsePluginsGray[input];
@@ -72669,7 +72680,7 @@ function resolveProsePluginsRef(
       kind: "node",
       id: value[1],
     };
-  let value2: Dynamic = resolveProsePluginsNode(input);
+  let value2 = resolveProsePluginsNode(input);
   if (value2 !== undefined)
     return {
       kind: "node",
@@ -73023,14 +73034,14 @@ function isEditorAnchorsAndMentionsBottom(
   ) =>
     (context2 - input2) * (input.y - options2) -
     (value5 - options2) * (input.x - input2);
-  let value2: Dynamic = value(options.x, options.y, context.x, context.top);
-  let value3: Dynamic = value(
+  let value2: number = value(options.x, options.y, context.x, context.top);
+  let value3: number = value(
     context.x,
     context.top,
     context.x,
     context.bottom,
   );
-  let value4: Dynamic = value(context.x, context.bottom, options.x, options.y);
+  let value4: number = value(context.x, context.bottom, options.x, options.y);
   return !(
     (value2 < 0 || value3 < 0 || value4 < 0) &&
     (value2 > 0 || value3 > 0 || value4 > 0)
@@ -73380,7 +73391,7 @@ function createInlineChoiceMenu(
   let value40 = (..._extraArguments: unknown[]): undefined => {
     let value47: Dynamic = value17;
     let value48 = index2;
-    let value49: Dynamic = value18;
+    let value49: boolean = value18;
     let value50: Dynamic = value22;
     value28();
     value.textContent = "";
@@ -73388,7 +73399,7 @@ function createInlineChoiceMenu(
     if (value23 >= 0) value23 = -2;
     let value51: Dynamic = null;
     let value52: Dynamic = null;
-    let value53: Dynamic = value;
+    let value53 = value;
     let index4 = 0;
     let value54: Dynamic;
     items.forEach(
@@ -74139,7 +74150,7 @@ function resolveProsePluginsBlocks(
       ? value.target.ids
       : [];
   if (value2.length < 2) return 0;
-  let value3: Dynamic = resolveProsePluginsValue44(value.attrs ?? {});
+  let value3: number = resolveProsePluginsValue44(value.attrs ?? {});
   let index: number = 0;
   for (let value4 of value2 as Dynamic)
     index += resolveProsePluginsValue40(
@@ -74318,7 +74329,7 @@ function resolveProsePluginsLaw(
   let value = ProsePluginsRowBytes;
   for (let index = 0; index < input.length; index++) {
     let value3: Dynamic = input[index];
-    let value4: Dynamic = resolveProsePluginsBlob(value3);
+    let value4: number = resolveProsePluginsBlob(value3);
     if (value4 > value.sourceBytes)
       return {
         law: "source_bytes",
@@ -74463,7 +74474,7 @@ function updateProsePluginsBlocks(
     cols: 0,
     children: 0,
   };
-  let value2: Dynamic = resolveProsePluginsIsTextblock(input);
+  let value2: boolean = resolveProsePluginsIsTextblock(input);
   let index: number = 0;
   let index2 = 0;
   let index3: number = 0;
@@ -74472,7 +74483,7 @@ function updateProsePluginsBlocks(
     if (value3.isText) {
       if (value2) {
         ProsePluginsTextsCounted.textsCounted++;
-        let value6: Dynamic = resolveProsePluginsBytes(value3.text ?? "");
+        let value6 = resolveProsePluginsBytes(value3.text ?? "");
         index += value6.scalars;
         state.textBytes += value6.bytes;
       }
@@ -74640,7 +74651,7 @@ function resolveProsePluginsLaw2(
 ): Dynamic {
   let value = ProsePluginsRowBytes;
   let value2: Dynamic = input.html ?? input.text ?? "";
-  let value3: Dynamic = resolveProsePluginsBytes2(value2);
+  let value3: number = resolveProsePluginsBytes2(value2);
   if (value3 > value.sourceBytes)
     return {
       law: "source_bytes",
@@ -74648,7 +74659,7 @@ function resolveProsePluginsLaw2(
       actual: value3,
     };
   if (input.html) {
-    let value10: Dynamic = resolveProsePluginsSlice2(input.html);
+    let value10: number = resolveProsePluginsSlice2(input.html);
     if (value10 > value.tableCols)
       return {
         law: "table_cols",
@@ -74657,10 +74668,10 @@ function resolveProsePluginsLaw2(
       };
     let value11: Dynamic = options.holderDepth ?? 0;
     let value12: Dynamic = options.holderLists ?? 0;
-    let value13: Dynamic = resolveProsePluginsValue48(input.html);
-    let value14: Dynamic = resolveProsePluginsDepth4(value11, value12);
+    let value13: number = resolveProsePluginsValue48(input.html);
+    let value14: number = resolveProsePluginsDepth4(value11, value12);
     let value15 = Math.min(value12, resolveProsePluginsExec2(input.html));
-    let value16: Dynamic = value14 + value15;
+    let value16 = value14 + value15;
     if (value13 > value16) {
       if (value16 > 0)
         return {
@@ -74670,7 +74681,7 @@ function resolveProsePluginsLaw2(
           levels: value16,
           pasted: true,
         };
-      let value17: Dynamic = resolveProsePluginsValue47(
+      let value17: number = resolveProsePluginsValue47(
         Math.max(0, value11 - value12),
       );
       return {
@@ -74799,7 +74810,7 @@ function resolveProsePluginsUnstamped(
   options?: Dynamic,
   ..._extraArguments: unknown[]
 ) {
-  let value: Dynamic = resolveProsePluginsExec3(input);
+  let value = resolveProsePluginsExec3(input);
   if (value === null || !options) return "unstamped";
   return value.toLowerCase() === options.toLowerCase() ? "same" : "foreign";
 }
@@ -75144,7 +75155,7 @@ function isProsePluginsFrom3(
           if (!value7 || value8 < 0) return value6;
           let lastChild: Dynamic = value7.lastChild;
           if (!lastChild || !value(lastChild)) break;
-          let value9: Dynamic =
+          let value9: number =
             value8 + 1 + (value7.content.size - lastChild.nodeSize);
           let value10 = (
             input2?: Dynamic,
@@ -75159,7 +75170,7 @@ function isProsePluginsFrom3(
               );
           let value11: Dynamic = value10(tr2.doc, lastChild);
           if (!value11) return value6;
-          let value12: Dynamic = ProseMirrorliftTarget(value11);
+          let value12 = ProseMirrorliftTarget(value11);
           if (value12 == null) return value6;
           if (!dispatch) return true;
           let parent: Dynamic = tr2.doc.resolve(value8).parent;
@@ -75301,7 +75312,7 @@ function resolveProsePluginsValue49(
   input?: unknown,
   ..._extraArguments: unknown[]
 ) {
-  let value: Dynamic = resolveProsePluginsTrim4(input);
+  let value = resolveProsePluginsTrim4(input);
   return value === null ? null : resolveProsePluginsJoin(value) || null;
 }
 var prosePluginsInputPattern39 = /^[A-Za-z0-9-]{1,64}$/;
@@ -75757,10 +75768,10 @@ var collectProsePluginsJoin3 = (
         `[data-mode=dark] ${input}[data-bg-hue=${input2}]{background-image:linear-gradient(${resolveProsePluginsValue57(input2)},${resolveProsePluginsValue57(input2)})}`,
     )
     .join("");
-var ProsePluginsData20: Dynamic = collectProsePluginsJoin3(
+var ProsePluginsData20: string = collectProsePluginsJoin3(
   ".ProseMirror :is(td,th)",
 );
-var ProsePluginsData21: Dynamic = collectProsePluginsJoin3(
+var ProsePluginsData21: string = collectProsePluginsJoin3(
   ".ldoc-elmenu .swatch",
 );
 var ProsePluginsData22 =
@@ -75993,7 +76004,7 @@ var resolveEditorChipsAndNodeViewsTimeZone3 = (
   let value: Dynamic = resolveProsePluginsValue13();
   let date2 = new Date(value.now());
   if (!value.timeZone) return date2;
-  let value2: Dynamic = new (Intl.DateTimeFormat)("en-CA", {
+  let value2 = new (Intl.DateTimeFormat)("en-CA", {
     timeZone: value.timeZone,
     year: "numeric",
     month: "2-digit",
@@ -76158,7 +76169,7 @@ function filterProsePluginsToday(
         ? 2000 + +value5[3]
         : +value5[3]
       : null;
-    let value7: Dynamic =
+    let value7 =
       value6 === null
         ? resolveProsePluginsGetFullYear(options, items, items2)
         : new Date(value6, items, items2);
@@ -76174,7 +76185,7 @@ var resolveEditorChipsAndNodeViewsTimeZone4 = (
 ): Dynamic => {
   let value: Dynamic = input ?? "";
   if (prosePluginsState3?.locale === value) return prosePluginsState3.labels;
-  let value2: Dynamic = new (Intl.DateTimeFormat)(input, {
+  let value2 = new (Intl.DateTimeFormat)(input, {
     timeZone: "UTC",
     weekday: "short",
   });
@@ -76254,7 +76265,7 @@ function collectProsePluginsFocusVisible(
   value.className = "ldoc-chip-cal";
   let value2 = resolveProsePluginsPadStart();
   let value3 = input !== "" && !Number.isNaN(+new Date(`${input}T00:00:00`));
-  let value4: Dynamic = value3
+  let value4 = value3
     ? new Date(`${input}T00:00:00`)
     : resolveEditorChipsAndNodeViewsTimeZone3();
   let value5: Dynamic = value4.getFullYear();
@@ -76302,7 +76313,7 @@ function collectProsePluginsFocusVisible(
     }
     value14.append(value22);
     let date2 = new Date(value5, value6, 1);
-    let value23: Dynamic = resolveProsePluginsSetDate(date2, -date2.getDay());
+    let value23 = resolveProsePluginsSetDate(date2, -date2.getDay());
     let value24: Dynamic = null;
     for (let index = 0; index < 42; index++) {
       if (index % 7 === 0) {
@@ -76399,7 +76410,7 @@ function collectProsePluginsFocusVisible(
       (value19 &&
         (activeElement === null || activeElement === ownerDocument.body));
     value19 = false;
-    let value23: Dynamic = value18(new Date(value5, value6, 1), input2);
+    let value23 = value18(new Date(value5, value6, 1), input2);
     value5 = value23.getFullYear();
     value6 = value23.getMonth();
     value8 = resolveProsePluginsPadStart(
@@ -76441,7 +76452,7 @@ function collectProsePluginsFocusVisible(
         event.metaKey
       )
         return;
-      let value22: Dynamic =
+      let value22 =
         event.target instanceof HTMLElement ? event.target : null;
       let value23: Dynamic =
         value22 !== null &&
@@ -76473,7 +76484,7 @@ function collectProsePluginsFocusVisible(
       let date2 = new Date(`${value8}T00:00:00`);
       let value24 = event.key === "PageUp" || event.key === "PageDown";
       if (event.shiftKey && !value24) return;
-      let value25: Dynamic =
+      let value25 =
         event.key === "ArrowLeft"
           ? resolveProsePluginsSetDate(date2, -1)
           : event.key === "ArrowRight"
@@ -76545,7 +76556,7 @@ function collectProsePluginsInline(
   input: InlineChipDefinition,
   ..._extraArguments: unknown[]
 ): Dynamic {
-  let value: Dynamic = input.name.replace(/^chip/, "").toLowerCase();
+  let value: string = input.name.replace(/^chip/, "").toLowerCase();
   let value2: Dynamic =
     input.copyText &&
     ((input2?: Dynamic, ..._extraArguments: unknown[]) =>
@@ -76600,7 +76611,7 @@ function collectProsePluginsInline(
       { node: node, HTMLAttributes: HTMLAttributes }: Dynamic,
       ..._extraArguments: unknown[]
     ): Dynamic {
-      let value3: Dynamic = TiptapmergeAttributes(HTMLAttributes, {
+      let value3 = TiptapmergeAttributes(HTMLAttributes, {
         "data-chip": value,
         class: "ldoc-chip",
       });
@@ -76851,7 +76862,7 @@ var createSw = (
   input?: Dynamic,
   ..._extraArguments: unknown[]
 ): Dynamic => {
-  let value: Dynamic = (document).createElement("span");
+  let value = (document).createElement("span");
   value.className = "sw";
   value.style.background =
     EditorChipsAndNodeViewsNeutral[input] ??
@@ -76917,7 +76928,7 @@ function resolveProsePluginsCalpop(
 ): Dynamic {
   let value: Dynamic = resolveProsePluginsDate(options);
   input.classList.add("dd", "calpop");
-  let value2: Dynamic = resolveProsePluginsValue71("ls cal");
+  let value2 = resolveProsePluginsValue71("ls cal");
   let value3: Dynamic = collectProsePluginsFocusVisible(value.date, context);
   value2.append(value3.root);
   input.append(value2);
@@ -77270,7 +77281,7 @@ var updateProsePluginsPrincipal = (
   )
     .then((input2?: Dynamic, ..._extraArguments: unknown[]): Dynamic => {
       let value3: Dynamic = input2?.label?.trim();
-      let value4: Dynamic = resolveProsePluginsMention({
+      let value4: string = resolveProsePluginsMention({
         kind: "mention",
         principal: input,
       }).toLowerCase();
@@ -77382,7 +77393,7 @@ function updateProsePluginsClear(
   prosePluginsLimit12 = options;
   for (let [value, value2] of Object.entries(input) as Dynamic) {
     prosePluginsSet7.add(value);
-    let value3: Dynamic = resolveProsePluginsTrim4(value2);
+    let value3 = resolveProsePluginsTrim4(value2);
     if (value3 !== null) prosePluginsMap9.set(value, value3);
   }
   for (let value of prosePluginsSet8 as Dynamic) value();
@@ -77556,14 +77567,14 @@ function updateProsePluginsDom(
   let value7: Dynamic = null;
   let value8 = (..._extraArguments: unknown[]): undefined => {
     pop.textContent = "";
-    let value10: Dynamic = resolveProsePluginsValue71("hd");
+    let value10 = resolveProsePluginsValue71("hd");
     value10.append(resolveProsePluginsValue59("search", 16));
     let value11 = document.createElement("input");
     value11.type = "text";
     value11.placeholder = "Find or add an option…";
     value11.autocomplete = "off";
     value10.append(value11);
-    let value12: Dynamic = resolveProsePluginsValue71("ls");
+    let value12 = resolveProsePluginsValue71("ls");
     let value13 = (
       input2?: Dynamic,
       ..._extraArguments: unknown[]
@@ -77592,7 +77603,7 @@ function updateProsePluginsDom(
       let value17 = value16.toLowerCase();
       for (let value18 of value2.options as Dynamic) {
         if (value16 && !value18.l.toLowerCase().includes(value17)) continue;
-        let value19: Dynamic = resolveProsePluginsValue71(
+        let value19 = resolveProsePluginsValue71(
           "row" + (value18.id === value2.value ? " is-sel" : ""),
         );
         value19.append(resolveProsePluginsSpan3(value18.c));
@@ -77601,7 +77612,7 @@ function updateProsePluginsDom(
           value19.append(resolveProsePluginsValue59("check", 16));
         value19.addEventListener(
           "mousedown",
-          (event?: Dynamic, ..._extraArguments: unknown[]): undefined => {
+          (event: MouseEvent, ..._extraArguments: unknown[]): undefined => {
             event.preventDefault();
             value13(value18);
           },
@@ -77615,7 +77626,7 @@ function updateProsePluginsDom(
             input2.l.toLowerCase() === value17,
         )
       ) {
-        let value18: Dynamic = resolveProsePluginsButton3("crt");
+        let value18 = resolveProsePluginsButton3("crt");
         value18.append(resolveProsePluginsValue59("plus", 16));
         resolveProsePluginsSpan2(value18, "Create", "");
         let value19 = document.createElement("span");
@@ -77629,7 +77640,7 @@ function updateProsePluginsDom(
         value18.append(value19);
         value18.addEventListener(
           "mousedown",
-          (event?: Dynamic, ..._extraArguments: unknown[]): undefined => {
+          (event: MouseEvent, ..._extraArguments: unknown[]): undefined => {
             event.preventDefault();
             value14();
           },
@@ -77637,7 +77648,7 @@ function updateProsePluginsDom(
         value12.append(value18);
       }
       if (!value16 && !value2.options.length) {
-        let value18: Dynamic = resolveProsePluginsValue71("emp");
+        let value18 = resolveProsePluginsValue71("emp");
         value18.textContent = "No options yet — type to add one.";
         value12.append(value18);
         let slice: Dynamic = collectProsePluginsChipDropdown(editor).slice(
@@ -77645,11 +77656,11 @@ function updateProsePluginsDom(
           5,
         );
         if (slice.length) {
-          let value19: Dynamic = resolveProsePluginsValue71("tplhd");
+          let value19 = resolveProsePluginsValue71("tplhd");
           value19.textContent = "Or start from";
           value12.append(value19);
           for (let value20 of slice as Dynamic) {
-            let value21: Dynamic = resolveProsePluginsButton3("tplrow");
+            let value21 = resolveProsePluginsButton3("tplrow");
             let value22 = document.createElement("span");
             value22.className = "dots";
             for (let value23 of value20.options.slice(0, 3) as Dynamic)
@@ -77671,7 +77682,7 @@ function updateProsePluginsDom(
             );
             value21.addEventListener(
               "mousedown",
-              (event?: Dynamic, ..._extraArguments: unknown[]): undefined => {
+              (event: MouseEvent, ..._extraArguments: unknown[]): undefined => {
                 event.preventDefault();
                 value2.options = value20.options.map(
                   (
@@ -77713,8 +77724,8 @@ function updateProsePluginsDom(
     value15();
     pop.append(value10, value12);
     if (value2.options.length) {
-      let value16: Dynamic = resolveProsePluginsValue71("ft");
-      let value17: Dynamic = resolveProsePluginsButton3("ftbtn");
+      let value16 = resolveProsePluginsValue71("ft");
+      let value17 = resolveProsePluginsButton3("ftbtn");
       value17.append(resolveProsePluginsValue59("pencil", 16));
       resolveProsePluginsSpan2(value17, "Edit options", "");
       value17.addEventListener(
@@ -77733,8 +77744,8 @@ function updateProsePluginsDom(
   };
   let value9 = (..._extraArguments: unknown[]): undefined => {
     pop.textContent = "";
-    let value10: Dynamic = resolveProsePluginsValue71("hd2");
-    let value11: Dynamic = resolveProsePluginsButton3("backbtn");
+    let value10 = resolveProsePluginsValue71("hd2");
+    let value11 = resolveProsePluginsButton3("backbtn");
     value11.setAttribute("aria-label", "Back to select");
     value11.append(resolveProsePluginsValue59("arrowLeft", 16));
     value11.addEventListener("click", value8);
@@ -77751,7 +77762,7 @@ function updateProsePluginsDom(
       },
     );
     value10.append(value11, value12);
-    let value13: Dynamic = resolveProsePluginsValue71("ls2");
+    let value13 = resolveProsePluginsValue71("ls2");
     let value14 = (
       input2?: Dynamic,
       ..._extraArguments: unknown[]
@@ -77759,16 +77770,16 @@ function updateProsePluginsDom(
       value13.textContent = "";
       let value17: Dynamic = null;
       for (let value19 of value2.options as Dynamic) {
-        let value20: Dynamic = resolveProsePluginsValue71("");
-        let value21: Dynamic = resolveProsePluginsValue71("orow");
-        let value22: Dynamic = resolveProsePluginsButton3("dotbtn");
+        let value20 = resolveProsePluginsValue71("");
+        let value21 = resolveProsePluginsValue71("orow");
+        let value22 = resolveProsePluginsButton3("dotbtn");
         value22.dataset.tip = "Change color";
         value22.setAttribute("aria-label", "Change color");
-        let value23: Dynamic = resolveProsePluginsSpan3(value19.c);
+        let value23 = resolveProsePluginsSpan3(value19.c);
         value22.append(value23);
         value22.addEventListener(
           "click",
-          (input3?: Dynamic, ..._extraArguments: unknown[]): undefined => {
+          (input3: PointerEvent, ..._extraArguments: unknown[]): undefined => {
             input3.stopPropagation();
             value7 = value7 === value19.id ? null : value19.id;
             value14();
@@ -77806,12 +77817,12 @@ function updateProsePluginsDom(
             value3();
           },
         );
-        let value25: Dynamic = resolveProsePluginsButton3("delbtn");
+        let value25 = resolveProsePluginsButton3("delbtn");
         value25.setAttribute("aria-label", "Delete option");
         value25.append(resolveProsePluginsValue59("x", 14));
         value25.addEventListener(
           "click",
-          (input3?: Dynamic, ..._extraArguments: unknown[]): undefined => {
+          (input3: PointerEvent, ..._extraArguments: unknown[]): undefined => {
             input3.stopPropagation();
             value2.options = value2.options.filter(
               (input4?: Dynamic, ..._extraArguments: unknown[]) =>
@@ -77826,9 +77837,9 @@ function updateProsePluginsDom(
         value21.append(value22, value24, value25);
         value20.append(value21);
         if (value7 === value19.id) {
-          let value26: Dynamic = resolveProsePluginsValue71("strip");
+          let value26 = resolveProsePluginsValue71("strip");
           for (let value27 of prosePluginsGraySkyMineralValues as Dynamic) {
-            let value28: Dynamic = resolveProsePluginsButton3(
+            let value28 = resolveProsePluginsButton3(
               `swb dd-c-${value27}` + (value27 === value19.c ? " is-sel" : ""),
             );
             value28.dataset.tip = value27;
@@ -77838,7 +77849,7 @@ function updateProsePluginsDom(
             value28.append(value29);
             value28.addEventListener(
               "click",
-              (input3?: Dynamic, ..._extraArguments: unknown[]): undefined => {
+              (input3: PointerEvent, ..._extraArguments: unknown[]): undefined => {
                 input3.stopPropagation();
                 value19.c = value27;
                 value19.auto = false;
@@ -77853,7 +77864,7 @@ function updateProsePluginsDom(
         }
         value13.append(value20);
       }
-      let value18: Dynamic = resolveProsePluginsButton3("addbtn");
+      let value18 = resolveProsePluginsButton3("addbtn");
       value18.append(resolveProsePluginsValue59("plus", 16));
       resolveProsePluginsSpan2(value18, "Add option", "");
       value18.addEventListener(
@@ -77876,8 +77887,8 @@ function updateProsePluginsDom(
       });
     };
     value14();
-    let value15: Dynamic = resolveProsePluginsValue71("ft2");
-    let value16: Dynamic = resolveProsePluginsButton3("donebtn");
+    let value15 = resolveProsePluginsValue71("ft2");
+    let value16 = resolveProsePluginsButton3("donebtn");
     value16.textContent = "Done";
     value16.addEventListener("click", value8);
     value15.append(value16);
@@ -78106,7 +78117,7 @@ var ProsePluginsVoters: Dynamic = collectProsePluginsInline({
     ..._extraArguments: unknown[]
   ): undefined {
     let value: Dynamic = filterProsePluginsVoters(attrs);
-    let value2: Dynamic = resolveProsePluginsAnon2();
+    let value2 = resolveProsePluginsAnon2();
     dom.dataset.voted = String(value2 !== null && value.includes(value2));
     resolveProsePluginsSpan(dom, "\uD83D\uDC4D");
     resolveProsePluginsSpan2(dom, String(value.length), "n");
@@ -78115,7 +78126,7 @@ var ProsePluginsVoters: Dynamic = collectProsePluginsInline({
         ? "You voted — click to remove your vote"
         : "Vote";
     on(dom, "click", (..._extraArguments: unknown[]): undefined => {
-      let value3: Dynamic = resolveProsePluginsAnon2();
+      let value3 = resolveProsePluginsAnon2();
       if (value3 === null) return;
       let value4: Dynamic = value.includes(value3);
       setAttrs({
@@ -78450,7 +78461,7 @@ function collectProsePluginsArrIdx(
 ): Dynamic {
   let value: Dynamic = null;
   let value2: Dynamic = null;
-  let value3: Dynamic = resolveProsePluginsValue71("ls2");
+  let value3 = resolveProsePluginsValue71("ls2");
   let value4 = (
     input2?: Dynamic,
     options2?: Dynamic,
@@ -78509,7 +78520,7 @@ function collectProsePluginsArrIdx(
       value8,
       { o: value9, arrIdx: value10 },
     ] of value6.entries() as Dynamic) {
-      let value11: Dynamic = resolveProsePluginsValue71("orow");
+      let value11 = resolveProsePluginsValue71("orow");
       value11.style.borderTop = "2px solid transparent";
       value11.style.borderBottom = "2px solid transparent";
       let value12 = document.createElement("span");
@@ -78532,7 +78543,7 @@ function collectProsePluginsArrIdx(
       );
       value11.addEventListener(
         "dragstart",
-        (input2?: Dynamic, ..._extraArguments: unknown[]): undefined => {
+        (input2: DragEvent, ..._extraArguments: unknown[]): undefined => {
           value2 = value8;
           input2.dataTransfer?.setData("text/plain", "");
           if (input2.dataTransfer) input2.dataTransfer.effectAllowed = "move";
@@ -78548,7 +78559,7 @@ function collectProsePluginsArrIdx(
       );
       value11.addEventListener(
         "dragover",
-        (event?: Dynamic, ..._extraArguments: unknown[]): undefined => {
+        (event: DragEvent, ..._extraArguments: unknown[]): undefined => {
           if (value2 === null || value2 === value8) return;
           event.preventDefault();
           let bounds: Dynamic = value11.getBoundingClientRect();
@@ -78570,7 +78581,7 @@ function collectProsePluginsArrIdx(
       );
       value11.addEventListener(
         "drop",
-        (event?: Dynamic, ..._extraArguments: unknown[]): undefined => {
+        (event: DragEvent, ..._extraArguments: unknown[]): undefined => {
           if (value2 === null || value2 === value8) return;
           event.preventDefault();
           let bounds: Dynamic = value11.getBoundingClientRect();
@@ -78586,7 +78597,7 @@ function collectProsePluginsArrIdx(
       value12.addEventListener(
         "touchmove",
         (event: TouchEvent, ..._extraArguments: unknown[]): undefined => {
-          let value18: Dynamic = event.touches[0];
+          let value18 = event.touches[0];
           if (!value18) return;
           event.preventDefault();
           for (let value21 of value3.querySelectorAll(".orow") as Dynamic) {
@@ -78610,7 +78621,7 @@ function collectProsePluginsArrIdx(
       value12.addEventListener(
         "touchend",
         (input2: TouchEvent, ..._extraArguments: unknown[]) => {
-          let value18: Dynamic = input2.changedTouches[0];
+          let value18 = input2.changedTouches[0];
           if (!value18) return;
           let value19: Dynamic = document
             .elementFromPoint(value18.clientX, value18.clientY)
@@ -78630,10 +78641,10 @@ function collectProsePluginsArrIdx(
           value5();
         },
       );
-      let value13: Dynamic = resolveProsePluginsButton3("dotbtn");
+      let value13 = resolveProsePluginsButton3("dotbtn");
       value13.dataset.tip = "Pick color";
       value13.setAttribute("aria-label", "Pick color");
-      let value14: Dynamic = resolveProsePluginsValue71("dd-dot");
+      let value14 = resolveProsePluginsValue71("dd-dot");
       value14.style.setProperty(
         "--dd",
         resolveProsePluginsStrong2(value9, value10),
@@ -78688,7 +78699,7 @@ function collectProsePluginsArrIdx(
           value20[value20.length - 1]?.focus();
         },
       );
-      let value16: Dynamic = resolveProsePluginsButton3("delbtn");
+      let value16 = resolveProsePluginsButton3("delbtn");
       let value17 = value10 >= options;
       value16.dataset.tip = value17
         ? "Remove (not saved yet)"
@@ -78716,15 +78727,15 @@ function collectProsePluginsArrIdx(
       value11.append(value12, value13, value15, value16);
       value3.append(value11);
       if (value === value10) {
-        let value18: Dynamic = resolveProsePluginsValue71("strip");
+        let value18 = resolveProsePluginsValue71("strip");
         let value19: Dynamic = resolveProsePluginsToLowerCase(value9.color);
         for (let value20 of prosePluginsGraySkyMineralValues as Dynamic) {
-          let value21: Dynamic = resolveProsePluginsButton3(
+          let value21 = resolveProsePluginsButton3(
             "swb" + (value19 === value20 ? " is-sel" : ""),
           );
           value21.dataset.tip = value20;
           value21.setAttribute("aria-label", value20);
-          let value22: Dynamic = resolveProsePluginsValue71("dd-dot");
+          let value22 = resolveProsePluginsValue71("dd-dot");
           value22.style.setProperty("--dd", ProsePluginsStrong[value20].strong);
           value21.style.setProperty("--dd", ProsePluginsStrong[value20].strong);
           value21.append(value22);
@@ -78741,7 +78752,7 @@ function collectProsePluginsArrIdx(
         value3.append(value18);
       }
     }
-    let value7: Dynamic = resolveProsePluginsButton3("addbtn");
+    let value7 = resolveProsePluginsButton3("addbtn");
     value7.append(resolveProsePluginsValue59("plus", 13));
     value7.append("Add option");
     value7.addEventListener(
@@ -78981,7 +78992,7 @@ function isProsePluginsPop(
       value10.textContent = "Templates";
       pop.append(value10);
       for (let value11 of filtered as Dynamic) {
-        let value12: Dynamic = value2(
+        let value12 = value2(
           value11.name,
           String(value11.options.length),
           (..._extraArguments: unknown[]): undefined => {
@@ -79001,8 +79012,8 @@ function isProsePluginsPop(
   let value5 = (..._extraArguments: unknown[]): undefined => {
     pop.textContent = "";
     pop.classList.add("dd", "creating");
-    let value6: Dynamic = resolveProsePluginsValue71("hd2");
-    let value7: Dynamic = resolveProsePluginsButton3("backbtn");
+    let value6 = resolveProsePluginsValue71("hd2");
+    let value7 = resolveProsePluginsButton3("backbtn");
     value7.append(resolveProsePluginsValue59("arrowLeft", 16));
     value7.dataset.tip = "Back";
     value7.setAttribute("aria-label", "Back");
@@ -79024,8 +79035,8 @@ function isProsePluginsPop(
     };
     let value9: Dynamic = collectProsePluginsArrIdx(state, 0);
     pop.append(value9);
-    let value10: Dynamic = resolveProsePluginsValue71("ft2");
-    let value11: Dynamic = resolveProsePluginsButton3("donebtn");
+    let value10 = resolveProsePluginsValue71("ft2");
+    let value11 = resolveProsePluginsButton3("donebtn");
     value11.textContent = "Create";
     value11.disabled = true;
     value8.addEventListener(
@@ -79134,7 +79145,7 @@ function clearProsePluginsPop(
       (..._extraArguments: unknown[]): Dynamic => value2.cancel(value4),
     );
     pop.addEventListener("mouseleave", value6);
-    let value10: Dynamic = resolveProsePluginsMention({
+    let value10: string = resolveProsePluginsMention({
       kind: "mention",
       principal: options,
     });
@@ -79164,7 +79175,7 @@ function clearProsePluginsPop(
             },
           ).format(new Date(resolveProsePluginsValue13().now()))} local`;
         } catch {}
-      let value17: Dynamic = resolveProsePluginsPlatform2(options);
+      let value17: boolean = resolveProsePluginsPlatform2(options);
       let value18: Dynamic =
         input2?.label ||
         (value17
@@ -79643,7 +79654,7 @@ function resolveProsePluginsValue79(
   options?: unknown,
   ..._extraArguments: unknown[]
 ): Dynamic {
-  let value: Dynamic = resolveProsePluginsValue49(options);
+  let value = resolveProsePluginsValue49(options);
   let value2: Dynamic =
     typeof input === "string" ? resolveProsePluginsRef3(input) : null;
   if (!value2)
@@ -79729,7 +79740,7 @@ var resolveProsePluginsDom = (
       dom.classList.remove("ldoc-chip");
       dom.classList.add("ldoc-mention");
       if (value2) dom.dataset.mentionId = value2;
-      let value3: Dynamic = resolveProsePluginsSpan2(
+      let value3 = resolveProsePluginsSpan2(
         dom,
         resolveProsePluginsMention(value),
       );
@@ -79910,7 +79921,7 @@ function openInlineChipPopover(
       value9("escape");
     };
     document.addEventListener("keydown", value10, true);
-    let value11: Dynamic = resolveProsePluginsValue71("hd");
+    let value11 = resolveProsePluginsValue71("hd");
     value11.append(resolveProsePluginsValue59("search", 16));
     let value12 = document.createElement("input");
     value12.type = "text";
@@ -79957,7 +79968,7 @@ function openInlineChipPopover(
           event.preventDefault();
       },
     );
-    let value13: Dynamic = resolveProsePluginsValue71("ls");
+    let value13 = resolveProsePluginsValue71("ls");
     pop.append(value13);
     let value14 = `ldoc-chip-list-${++prosePluginsLimit09}`;
     value13.id = value14;
@@ -80135,7 +80146,7 @@ function openInlineChipPopover(
       for (let { opt: opt2, i: i7 } of value30 as Dynamic) {
         if (opt2.disabled && i7 !== context) continue;
         if (value28 && !opt2.name.toLowerCase().includes(value29)) continue;
-        let value31: Dynamic = resolveProsePluginsValue71(
+        let value31 = resolveProsePluginsValue71(
           "row" + (i7 === context ? " is-sel" : ""),
         );
         value31.id = `${value14}-opt-${i7}`;
@@ -80158,7 +80169,7 @@ function openInlineChipPopover(
         } else {
           value31.addEventListener(
             "mousedown",
-            (event?: Dynamic, ..._extraArguments: unknown[]): undefined => {
+            (event: MouseEvent, ..._extraArguments: unknown[]): undefined => {
               event.preventDefault();
               value15 = true;
               value19(i7, resolveProsePluginsButton(event) ? "key" : "pointer");
@@ -80166,7 +80177,7 @@ function openInlineChipPopover(
           );
           value31.addEventListener(
             "click",
-            (input3?: Dynamic, ..._extraArguments: unknown[]): undefined => {
+            (input3: PointerEvent, ..._extraArguments: unknown[]): undefined => {
               let value34 = value15;
               value15 = false;
               if (input3.detail === 0 && value31.isConnected && !value34)
@@ -80187,7 +80198,7 @@ function openInlineChipPopover(
             input3.name.toLowerCase() === value29,
         )
       ) {
-        let value31: Dynamic = resolveProsePluginsButton3("crt");
+        let value31 = resolveProsePluginsButton3("crt");
         value31.append(resolveProsePluginsValue59("plus", 16));
         let value32 = document.createElement("span");
         value32.textContent = "Create";
@@ -80208,7 +80219,7 @@ function openInlineChipPopover(
         value31.append(value33);
         value31.addEventListener(
           "mousedown",
-          (event?: Dynamic, ..._extraArguments: unknown[]): undefined => {
+          (event: MouseEvent, ..._extraArguments: unknown[]): undefined => {
             event.preventDefault();
             value15 = true;
             value21(resolveProsePluginsButton(event) ? "key" : "pointer");
@@ -80216,7 +80227,7 @@ function openInlineChipPopover(
         );
         value31.addEventListener(
           "click",
-          (input3?: Dynamic, ..._extraArguments: unknown[]): undefined => {
+          (input3: PointerEvent, ..._extraArguments: unknown[]): undefined => {
             let value36 = value15;
             value15 = false;
             if (input3.detail === 0 && value31.isConnected && !value36)
@@ -80231,7 +80242,7 @@ function openInlineChipPopover(
         value13.append(value31);
       }
       if (!value28 && input2.options.length === 0) {
-        let value31: Dynamic = resolveProsePluginsValue71("emp");
+        let value31 = resolveProsePluginsValue71("emp");
         value31.textContent = "No options yet — type to add one.";
         value31.id = `${value14}-empty`;
         value31.setAttribute("role", "option");
@@ -80322,8 +80333,8 @@ function openInlineChipPopover(
     };
     value22();
     if (prosePluginsState14 !== null && input2.options.length > 0) {
-      let value28: Dynamic = resolveProsePluginsValue71("ft");
-      let value29: Dynamic = resolveProsePluginsButton3("ftbtn");
+      let value28 = resolveProsePluginsValue71("ft");
+      let value29 = resolveProsePluginsButton3("ftbtn");
       value29.append(resolveProsePluginsValue59("pencil", 16));
       let value30 = document.createElement("span");
       value30.textContent = "Edit options";
@@ -80333,7 +80344,7 @@ function openInlineChipPopover(
       let value31 = false;
       value29.addEventListener(
         "keydown",
-        (event?: Dynamic, ..._extraArguments: unknown[]): undefined => {
+        (event: KeyboardEvent, ..._extraArguments: unknown[]): undefined => {
           if (
             event.key !== "Tab" ||
             event.shiftKey ||
@@ -80348,7 +80359,7 @@ function openInlineChipPopover(
       );
       value29.addEventListener(
         "keyup",
-        (input3?: Dynamic, ..._extraArguments: unknown[]): undefined => {
+        (input3: KeyboardEvent, ..._extraArguments: unknown[]): undefined => {
           if (!value31 || input3.key !== "Tab") return;
           value31 = false;
           value9();
@@ -80362,7 +80373,7 @@ function openInlineChipPopover(
       );
       value29.addEventListener(
         "click",
-        (input3?: Dynamic, ..._extraArguments: unknown[]): undefined => {
+        (input3: PointerEvent, ..._extraArguments: unknown[]): undefined => {
           value8 = true;
           pop.textContent = "";
           let length: Dynamic = input2.options.length;
@@ -80407,8 +80418,8 @@ function openInlineChipPopover(
               }),
             ),
           };
-          let value32: Dynamic = resolveProsePluginsValue71("hd2");
-          let value33: Dynamic = resolveProsePluginsButton3("backbtn");
+          let value32 = resolveProsePluginsValue71("hd2");
+          let value33 = resolveProsePluginsButton3("backbtn");
           value33.append(resolveProsePluginsValue59("arrowLeft", 16));
           value33.dataset.tip = "Back";
           value33.setAttribute("aria-label", "Back");
@@ -80435,14 +80446,14 @@ function openInlineChipPopover(
           pop.append(value32);
           let value35: Dynamic = collectProsePluginsArrIdx(state2, length);
           pop.append(value35);
-          let value36: Dynamic = resolveProsePluginsValue71("ft2");
-          let value37: Dynamic = resolveProsePluginsButton3("donebtn");
+          let value36 = resolveProsePluginsValue71("ft2");
+          let value37 = resolveProsePluginsButton3("donebtn");
           value37.textContent = "Save";
           let value38 = false;
           let value39 = false;
           value37.addEventListener(
             "keydown",
-            (event?: Dynamic, ..._extraArguments: unknown[]): undefined => {
+            (event: KeyboardEvent, ..._extraArguments: unknown[]): undefined => {
               if (
                 (event.key !== "Enter" && event.key !== " ") ||
                 !value24(event) ||
@@ -80456,7 +80467,7 @@ function openInlineChipPopover(
           );
           value37.addEventListener(
             "keyup",
-            (event?: Dynamic, ..._extraArguments: unknown[]): undefined => {
+            (event: KeyboardEvent, ..._extraArguments: unknown[]): undefined => {
               if (!value39 || (event.key !== "Enter" && event.key !== " "))
                 return;
               value39 = false;
@@ -80472,7 +80483,7 @@ function openInlineChipPopover(
           );
           value37.addEventListener(
             "click",
-            (input4?: Dynamic, ..._extraArguments: unknown[]): Dynamic =>
+            (input4: PointerEvent, ..._extraArguments: unknown[]): Dynamic =>
               value40(input4.detail === 0 ? "key" : "pointer"),
           );
           let value40 = (
@@ -80658,7 +80669,7 @@ function openInlineChipPopover(
       if (prosePluginsWeakMap6.get(dom)) return false;
       let value7: Dynamic = resolveProsePluginsEntry(options);
       if (!value4 || !editor.isEditable || value7 === null) return false;
-      let value8: Dynamic = value6(value7, true);
+      let value8 = value6(value7, true);
       return value8.ownerDocument.activeElement === value8;
     },
     canOpen: (..._extraArguments: unknown[]): Dynamic =>
@@ -80765,7 +80776,7 @@ var BuiltinExtension: Dynamic = TiptapNode.create({
         ];
       }
       case "date": {
-        let value: Dynamic =
+        let value: string =
           resolveProsePluginsJoin(
             typeof builtin.ts === "string"
               ? resolveEditorChipsAndNodeViewsDate2(builtin.ts)
@@ -80930,7 +80941,7 @@ var ChipContinuationExtension: Dynamic = TiptapExtension.create({
           (prosePluginsSet13.has(firstChild.type.name) || value === "checkbox");
         if (!firstChild || !value2) return false;
         if ($from.parentOffset < firstChild.nodeSize) return false;
-        let value3: Dynamic = this.editor.chain().focus();
+        let value3 = this.editor.chain().focus();
         if (
           !parent
             .textBetween(
@@ -81334,7 +81345,7 @@ function isProsePluginsView(
       ),
     ),
   );
-  let value5: Dynamic = value2
+  let value5 = value2
     ? new (ProseMirrorReplaceAroundStep)(
         items3 - 1,
         items4,
@@ -81361,7 +81372,7 @@ function isProsePluginsView(
         2,
         true,
       );
-  let value6: Dynamic = ProseMirrorcloseHistory(state.tr);
+  let value6 = ProseMirrorcloseHistory(state.tr);
   if (value6.maybeStep(value5).failed) return false;
   view.dispatch(value6.scrollIntoView());
   if (view.state.doc !== state.doc)
@@ -81436,7 +81447,7 @@ function isEditorTableControlsSelection(
   let { $from: $from }: Dynamic = selection;
   for (let depth: Dynamic = $from.depth; depth > 0; depth--) {
     if (!resolveProsePluginsCell2($from.node(depth))) continue;
-    let value: Dynamic = ProseMirrorTextSelection.between(
+    let value = ProseMirrorTextSelection.between(
       doc.resolve($from.before(depth)),
       doc.resolve($from.after(depth)),
     );
@@ -81484,7 +81495,7 @@ function filterProsePluginsBulletList(
     ).length < 2
   )
     return null;
-  let value: Dynamic = resolveProsePluginsValue84(
+  let value: number = resolveProsePluginsValue84(
     context.baseDepth ?? 0,
     context.baseLists ?? 0,
   );
@@ -81557,7 +81568,7 @@ function filterProsePluginsBulletList(
     }
     let value9 = !!value8;
     let value10: Dynamic = resolveProsePluginsTrim5(value6, value7 ?? value8);
-    let value11: Dynamic = resolveProsePluginsValue83(value6);
+    let value11: number = resolveProsePluginsValue83(value6);
     let index = 0;
     while (index < items2.length && items2[index].indent < value11) index++;
     if (index < items2.length && items2[index].indent === value11) index++;
@@ -81919,7 +81930,7 @@ class ProsePluginsStepType extends ProseMirrorReplaceAroundStep {
       let slice: Dynamic = input.slice(this.gapFrom, this.gapTo);
       if (slice.openStart || slice.openEnd)
         return ProseMirrorStepResult.fail("Gap is not a flat range");
-      let value: Dynamic = new (ProseMirrorSlice)(
+      let value = new (ProseMirrorSlice)(
         resolveProsePluginsChildCount2(
           this.slice.content,
           this.insert + this.slice.openStart,
@@ -81928,7 +81939,7 @@ class ProsePluginsStepType extends ProseMirrorReplaceAroundStep {
         this.slice.openStart,
         this.slice.openEnd,
       );
-      let value2: Dynamic = ProseMirrorStepResult.fromReplace(
+      let value2 = ProseMirrorStepResult.fromReplace(
         input,
         this.from,
         this.to,
@@ -81948,7 +81959,7 @@ class ProsePluginsStepType extends ProseMirrorReplaceAroundStep {
     );
   }
   map(input?: Dynamic, ..._extraArguments: unknown[]): Dynamic {
-    let mapped: Dynamic = super.map(input);
+    let mapped = super.map(input);
     return (
       mapped &&
       new (ProsePluginsStepType)(...resolveProsePluginsFrom(mapped))
@@ -81978,7 +81989,7 @@ class ProsePluginsStepType2 extends ProseMirrorReplaceAroundStep {
     );
   }
   map(input?: Dynamic, ..._extraArguments: unknown[]): Dynamic {
-    let mapped: Dynamic = super.map(input);
+    let mapped = super.map(input);
     return (
       mapped &&
       new (ProsePluginsStepType2)(...resolveProsePluginsFrom(mapped))
@@ -82077,7 +82088,7 @@ function collectProsePluginsFrom(
         );
         let value6: Dynamic = value4.blockRange(value5);
         if (!value6) return;
-        let value7: Dynamic = ProseMirrorliftTarget(value6);
+        let value7 = ProseMirrorliftTarget(value6);
         if (input.isTextblock)
           editorState.setNodeMarkup(
             value6.start,
@@ -82101,7 +82112,7 @@ function resolveProsePluginsDoc(
   ..._extraArguments: unknown[]
 ): Dynamic {
   if (isProsePluginsFrom6(input, options)) return null;
-  let tr2: Dynamic = ProseMirrorEditorState.create({
+  let tr2 = ProseMirrorEditorState.create({
     doc: input,
     selection: options,
   }).tr;
@@ -82136,7 +82147,7 @@ function resolveProsePluginsSteps(
   ..._extraArguments: unknown[]
 ): undefined {
   for (let value2 of options.steps as Dynamic) editorState.step(value2);
-  let value: Dynamic = ProseMirrorSelection.fromJSON(
+  let value = ProseMirrorSelection.fromJSON(
     editorState.doc,
     options.selection.toJSON(),
   );
@@ -82324,11 +82335,11 @@ function filterProsePluginsOffset(
     index += value12.r - value12.l;
     let items3: Dynamic = [];
     for (let index2 = 0; index2 <= count; index2++) {
-      let value16: Dynamic = resolveProsePluginsValue87(
+      let value16: number = resolveProsePluginsValue87(
         value10,
         index2 / count,
       );
-      let value17: Dynamic = context ? value16 : 1 - value16;
+      let value17 = context ? value16 : 1 - value16;
       items3.push({
         offset: index2 / count,
         transform: `scaleX(${Math.min(1, Math.max(0, (value17 - value14) / (value15 - value14)))})`,
@@ -82828,7 +82839,7 @@ function resolveProsePluginsFrom2(
   let value3: Dynamic = $to2.after(depth + 1);
   let value4: Dynamic = value2;
   let value5: Dynamic = value3;
-  let empty: Dynamic = ProseMirrorFragment.empty;
+  let empty = ProseMirrorFragment.empty;
   let index = 0;
   for (let value7: Dynamic = depth, value8 = false; value7 > context; value7--)
     if (value8 || $from.index(value7) > 0) {
@@ -82836,7 +82847,7 @@ function resolveProsePluginsFrom2(
       empty = ProseMirrorFragment.from($from.node(value7).copy(empty));
       index++;
     } else value4--;
-  let empty2: Dynamic = ProseMirrorFragment.empty;
+  let empty2 = ProseMirrorFragment.empty;
   let index2 = 0;
   for (let value7: Dynamic = depth, value8 = false; value7 > context; value7--)
     if (value8 || $to2.after(value7 + 1) < $to2.end(value7)) {
@@ -82844,7 +82855,7 @@ function resolveProsePluginsFrom2(
       empty2 = ProseMirrorFragment.from($to2.node(value7).copy(empty2));
       index2++;
     } else value5++;
-  let value6: Dynamic = new (ProseMirrorSlice)(
+  let value6 = new (ProseMirrorSlice)(
     empty.append(ProseMirrorFragment.from(value)).append(empty2),
     index,
     index2,
@@ -82887,7 +82898,7 @@ function collectProsePluginsParent(
     options.start + 1,
     options.start + value.nodeSize - 1,
   ];
-  let value2: Dynamic = new (ProseMirrorTransform)(input);
+  let value2 = new (ProseMirrorTransform)(input);
   try {
     value2.lift(
       new (ProseMirrorNodeRange)(
@@ -82897,7 +82908,7 @@ function collectProsePluginsParent(
       ),
       depth - 1,
     );
-    let value3: Dynamic = new (ProseMirrorNodeRange)(
+    let value3 = new (ProseMirrorNodeRange)(
       value2.doc.resolve(value2.mapping.map(items)),
       value2.doc.resolve(value2.mapping.map(items2)),
       depth - 1,
@@ -82918,7 +82929,7 @@ function resolveEditorExtensionsFrom4(
   let value2 = value.from > options.start;
   let value3 = value.to > options.$from.end(options.depth);
   if (value2 && !(value3 && value.open)) {
-    let value4: Dynamic = new (ProseMirrorTransform)(input.doc).lift(
+    let value4 = new (ProseMirrorTransform)(input.doc).lift(
       options,
       context,
     );
@@ -82995,7 +83006,7 @@ var ProsePluginsGroup3: Dynamic = TiptapNode.create({
           entry?: Dynamic,
           ..._extraArguments: unknown[]
         ): Dynamic => {
-          let value: Dynamic =
+          let value =
             entry.kind === "ordered"
               ? resolveProsePluginsIncludes6(entry.numbering)
               : null;
@@ -83079,7 +83090,7 @@ var ProsePluginsGroup3: Dynamic = TiptapNode.create({
           { tr: tr2, state: state, dispatch: dispatch }: Dynamic,
           ..._extraArguments: unknown[]
         ) => {
-          let value3: Dynamic = resolveProsePluginsIncludes7(input)
+          let value3 = resolveProsePluginsIncludes7(input)
             ? value(state)
             : undefined;
           if (!value3) return false;
@@ -83132,7 +83143,7 @@ var ProsePluginsGroup3: Dynamic = TiptapNode.create({
             let value8: Dynamic = chain();
             for (let value9 of filtered2.toReversed() as Dynamic) {
               let value10 = value9.pos + value9.node.nodeSize - 1;
-              let value11: Dynamic =
+              let value11 =
                 from > value9.pos
                   ? null
                   : ProseMirrorSelection.findFrom(
@@ -83140,7 +83151,7 @@ var ProsePluginsGroup3: Dynamic = TiptapNode.create({
                       1,
                       true,
                     );
-              let value12: Dynamic =
+              let value12 =
                 value7 > value10
                   ? ProseMirrorSelection.findFrom(
                       state.doc.resolve(value10),
@@ -83249,7 +83260,7 @@ var ProsePluginsGroup3: Dynamic = TiptapNode.create({
             tr2.scrollIntoView();
             return true;
           }
-          let value5: Dynamic =
+          let value5 =
             from < to2 && $to2.parentOffset === 0
               ? ProseMirrorSelection.findFrom(
                   state.doc.resolve($to2.before()),
@@ -83257,7 +83268,7 @@ var ProsePluginsGroup3: Dynamic = TiptapNode.create({
                   true,
                 )
               : null;
-          let value6: Dynamic = ProseMirrorwrapInList(
+          let value6 = ProseMirrorwrapInList(
             this.type,
             resolveProsePluginsStart(input),
           );
@@ -83700,7 +83711,7 @@ var ProsePluginsDefining: Dynamic = TiptapNode.create({
           { state: state, tr: tr2, dispatch: dispatch }: Dynamic,
           ..._extraArguments: unknown[]
         ) => {
-          let value2: Dynamic = value(state.selection);
+          let value2 = value(state.selection);
           if (
             !value2 ||
             resolveProsePluginsBullet(state.doc.resolve(value2.pos).parent) !==
@@ -83741,7 +83752,7 @@ var ProsePluginsDefining: Dynamic = TiptapNode.create({
           return chain()
             .sinkListItem(this.type)
             .command(({ tr: tr2 }: Dynamic, ..._extraArguments: unknown[]) => {
-              let value6: Dynamic =
+              let value6 =
                 value5 === null ? undefined : value(tr2.selection);
               let value7: Dynamic = value6 ? tr2.doc.resolve(value6.pos) : null;
               if (
@@ -83799,7 +83810,7 @@ var ProsePluginsDefining: Dynamic = TiptapNode.create({
           !this.editor.isEditable
         )
           return false;
-        let value2: Dynamic = TiptapfindParentNode(
+        let value2 = TiptapfindParentNode(
           (input: ProseMirrorNode, ..._extraArguments: unknown[]) =>
             input.type === this.type,
         )(this.editor.state.selection);
@@ -84083,7 +84094,7 @@ var ProseListNumberingExtension: Dynamic = TiptapExtension.create({
         if (!value2 || !this.editor.isEditable) return false;
         let value3: Dynamic = state.tr.delete(value2.from, value2.to);
         if (!ProseMirrorcanJoin(value3.doc, value2.from)) return false;
-        let value4: Dynamic = ProseMirrorSelection.findFrom(
+        let value4 = ProseMirrorSelection.findFrom(
           value3.doc.resolve(value2.from),
           input,
           true,
@@ -84356,7 +84367,7 @@ function resolveProsePluginsUnknown(
     ? value
     : "unknown";
 }
-var ProsePluginsData26: Dynamic = resolveProsePluginsUnknown(undefined);
+var ProsePluginsData26: string = resolveProsePluginsUnknown(undefined);
 var prosePluginsMessage26 = "[A-Za-z_][\\w-]{0,63}";
 var prosePluginsInstance29 = new RegExp(
   `^Invalid content for node (${prosePluginsMessage26})$`,
@@ -84394,7 +84405,7 @@ function resolveProsePluginsThrownClass(
   input?: unknown,
   ..._extraArguments: unknown[]
 ): Dynamic {
-  let value: Dynamic = resolveProsePluginsValue88(input, "thrownClass");
+  let value: string = resolveProsePluginsValue88(input, "thrownClass");
   return value === ProsePluginsData26 || prosePluginsSet19.has(value)
     ? value
     : resolveProsePluginsValue89(input);
@@ -84414,7 +84425,7 @@ function resolveDataModelSchemasMessage2(
 ) {
   let value = resolveProsePluginsMessage10(input);
   if (value !== null) return `Invalid content for node ${value}`;
-  let value2: Dynamic = resolveProsePluginsValue88(input, "message");
+  let value2: string = resolveProsePluginsValue88(input, "message");
   let match =
     prosePluginsInsertedContentDeeperThanInsertionPositionInconsistentOpenDepthsValues.find(
       (input2: string, ..._extraArguments: unknown[]) => input2 === value2,
@@ -84502,7 +84513,7 @@ function resolveProsePluginsMessage11(
 ): Dynamic {
   let value: string = typeof options === "string" ? options : "Error";
   let value2: string = typeof context === "string" ? context : "threw";
-  let value3: Dynamic = ProsePluginsData26;
+  let value3 = ProsePluginsData26;
   let value4: string = `${value2} ${value3}`;
   let value5: boolean = false;
   let value6: number = prosePluginsLimit010;
@@ -84514,7 +84525,7 @@ function resolveProsePluginsMessage11(
   let value7: string = `${value}: ${value4}`;
   try {
     let value8: Dynamic = Error(value4);
-    let value9: Dynamic = value7;
+    let value9: string = value7;
     if (value5)
       try {
         value9 = [value7, ...filterProsePluginsStack(value8)].join(`
@@ -84786,7 +84797,7 @@ function collectProsePluginsBefore(
   ..._extraArguments: unknown[]
 ): Dynamic {
   if (options[0]?.before !== input.before) return null;
-  let value: Dynamic = new (ProseMirrorMapping)();
+  let value = new (ProseMirrorMapping)();
   for (let value4 = input.steps.length - 1; value4 >= 0; value4--)
     value.appendMap(input.steps[value4].getMap().invert());
   for (let value4 of options as Dynamic) value.appendMapping(value4.mapping);
@@ -85069,7 +85080,7 @@ function getProsePluginsNode(
     ): number => options2[0] - input2[0],
   );
   for (let [value2, value3] of items as Dynamic) input.insert(value2, value3);
-  let value: Dynamic = fixTables(
+  let value = fixTables(
     ProseMirrorEditorState.create({
       doc: input.doc,
     }),
@@ -85838,7 +85849,7 @@ function updateProsePluginsMention(
   options?: Dynamic,
   ..._extraArguments: unknown[]
 ): undefined {
-  let value: Dynamic = resolveProsePluginsTrim4(options);
+  let value = resolveProsePluginsTrim4(options);
   if (
     !prosePluginsLimit18 ||
     value === null ||
@@ -86247,7 +86258,7 @@ function applyInlineAtomPaste(
           return false;
         if (event.key === "Enter") {
           let selection: Dynamic = input2.state.selection;
-          let value21: Dynamic =
+          let value21: boolean =
             selection instanceof (ProseMirrorNodeSelection as Dynamic) &&
             isProsePluginsMention2(selection.node) &&
             value7(input2, selection.from);
@@ -86891,11 +86902,11 @@ function getEditorTableControlsRect(
   ..._extraArguments: unknown[]
 ): Dynamic {
   if (options < 0 || options > input.content.size) return null;
-  let value: Dynamic = cellAround(input.resolve(options));
+  let value = cellAround(input.resolve(options));
   if (!value || (context !== undefined && value.start(-1) - 1 !== context))
     return null;
   try {
-    let entry: Dynamic = TableMap.get(value.node(-1));
+    let entry = TableMap.get(value.node(-1));
     return {
       rect: entry.findCell(value.pos - value.start(-1)),
       cellPos: value.pos,
@@ -86930,7 +86941,7 @@ function getEditorTableControlsWidth(
   value?: Dynamic,
   ..._extraArguments: unknown[]
 ): Dynamic {
-  let entry: Dynamic = TableMap.get(input);
+  let entry = TableMap.get(input);
   if (!entry.width || !entry.height) return -1;
   let value2 = (
     input2?: Dynamic,
@@ -86938,9 +86949,9 @@ function getEditorTableControlsWidth(
     ..._extraArguments: unknown[]
   ) =>
     Math.max(0, Math.min(Number.isFinite(input2) ? input2 : 0, options2 - 1));
-  let value3: Dynamic =
+  let value3: number =
     context === "row" ? entry.height - 1 : value2(value, entry.height);
-  let value4: Dynamic =
+  let value4: number =
     context === "col" ? entry.width - 1 : value2(value, entry.width);
   return options + 1 + entry.map[value3 * entry.width + value4] + 1;
 }
@@ -87212,7 +87223,7 @@ function createTableAppendPlugin(
         }
         let value27: Dynamic = resolveEditorTableControlsTable2(input2, value4);
         if (!value27) return 0;
-        let entry: Dynamic = TableMap.get(value27.table);
+        let entry = TableMap.get(value27.table);
         let bounds: Dynamic =
           value26[value26.length - 1].getBoundingClientRect();
         let value28: Dynamic = input2.posAtCoords({
@@ -87350,7 +87361,7 @@ function createTableColumnResizeAutoScrollPlugin(
       let value5 = (..._extraArguments: unknown[]) =>
         TableColumnResizingPluginKey.getState(input.state)?.dragging || null;
       let value6 = (..._extraArguments: unknown[]): Dynamic => {
-        let value16: Dynamic = TableColumnResizingPluginKey.getState(
+        let value16 = TableColumnResizingPluginKey.getState(
           input.state,
         );
         if (!value16 || value16.activeHandle < 0) return null;
@@ -87371,7 +87382,7 @@ function createTableColumnResizeAutoScrollPlugin(
           : null;
       };
       let value7 = (..._extraArguments: unknown[]): Dynamic => {
-        let value16: Dynamic = TableColumnResizingPluginKey.getState(
+        let value16 = TableColumnResizingPluginKey.getState(
           input.state,
         );
         let value17: Dynamic =
@@ -87403,7 +87414,7 @@ function createTableColumnResizeAutoScrollPlugin(
         value.dispatchEvent(value16);
       };
       let value10 = (..._extraArguments: unknown[]): undefined => {
-        let value16: Dynamic = value5();
+        let value16 = value5();
         if (!value16 || index4 === 0) return;
         input.dispatch(
           input.state.tr.setMeta(TableColumnResizingPluginKey, {
@@ -87446,7 +87457,7 @@ function createTableColumnResizeAutoScrollPlugin(
         ..._extraArguments: unknown[]
       ): undefined => {
         index = 0;
-        let value16: Dynamic = value5();
+        let value16 = value5();
         let value17: Dynamic = value11();
         if (!value16 || !value17 || !value2) return;
         let value18 = index2
@@ -87454,7 +87465,7 @@ function createTableColumnResizeAutoScrollPlugin(
           : 1;
         index2 = input2;
         let { wrapper: wrapper, left: left, right: right }: Dynamic = value17;
-        let value19: Dynamic = value12(value2.x, value17);
+        let value19: number = value12(value2.x, value17);
         if (value19 === 0) return;
         value19 =
           Math.sign(value19) *
@@ -87490,7 +87501,7 @@ function createTableColumnResizeAutoScrollPlugin(
         ..._extraArguments: unknown[]
       ) => {
         if (value3.has(input2)) return;
-        let value16: Dynamic = value5();
+        let value16 = value5();
         if (!value16) return;
         if (!value2) {
           index3 = value16.startX;
@@ -87592,7 +87603,7 @@ function resolveEditorTableControlsResolve2(
 ): Dynamic {
   let value: Dynamic = input.resolve(options);
   for (let index = 0; index < 100; index++) {
-    let value2: Dynamic = ProseMirrorSelection.findFrom(value, context, true);
+    let value2 = ProseMirrorSelection.findFrom(value, context, true);
     if (!value2) return null;
     let value3: Dynamic = resolveProsePluginsTable2(value2.$head);
     if (!value3) return value2.$head;
@@ -87670,7 +87681,7 @@ function isProsePluginsHead(
       return true;
     }
     if (!selection.empty) return false;
-    let entry: Dynamic = TableMap.get(value3);
+    let entry = TableMap.get(value3);
     if (entry.map.length === 0) return false;
     let value6: Dynamic = value4 + 1 + entry.map[0];
     let value7: Dynamic = value4 + 1 + entry.map[entry.map.length - 1];
@@ -87822,7 +87833,7 @@ var isProsePluginsMap = (
   ..._extraArguments: unknown[]
 ) => {
   if (!mergeCells(input)) return false;
-  let value: Dynamic = getEditorSelectionAndTablesTableStart(input);
+  let value = getEditorSelectionAndTablesTableStart(input);
   let value2: Dynamic = resolveProsePluginsMap(value);
   if (value2.length === 0) return mergeCells(input, options);
   let {
@@ -87901,7 +87912,7 @@ function clearProsePluginsMap(
   }: Dynamic = options;
   let value: Dynamic = map.map[top * map.width + left];
   let value2: Dynamic = table.nodeAt(value);
-  let empty: Dynamic = ProseMirrorFragment.empty;
+  let empty = ProseMirrorFragment.empty;
   let values: Dynamic = new (Set as Dynamic)([value]);
   let items: Dynamic = [];
   for (let value8: Dynamic = top; value8 < bottom; value8++)
@@ -88658,7 +88669,7 @@ function resolveEditorTableControlsPos(
     return null;
   }
   if (value < 0 || value > input.state.doc.content.size) return null;
-  let value2: Dynamic = cellAround(input.state.doc.resolve(value));
+  let value2 = cellAround(input.state.doc.resolve(value));
   return value2?.nodeAfter
     ? {
         pos: value2.pos,
@@ -88672,7 +88683,7 @@ var resolveProsePluginsNodeAt = (
   ..._extraArguments: unknown[]
 ): Dynamic => {
   let value: Dynamic = input.nodeAt(options);
-  let from: Dynamic = ProseMirrorSelection.near(
+  let from: number = ProseMirrorSelection.near(
     input.resolve(options + 1),
     1,
   ).from;
@@ -88939,7 +88950,7 @@ function isEditorTableControlsHeight(
   options?: Dynamic,
   ..._extraArguments: unknown[]
 ) {
-  let entry: Dynamic = TableMap.get(input);
+  let entry = TableMap.get(input);
   for (let index = 0; index < entry.height; index++) {
     let value: Dynamic = entry.map[index * entry.width + options];
     let value2: Dynamic = entry.findCell(value);
@@ -88953,7 +88964,7 @@ function isProsePluginsWidth(
   options?: Dynamic,
   ..._extraArguments: unknown[]
 ) {
-  let entry: Dynamic = TableMap.get(input);
+  let entry = TableMap.get(input);
   for (let index = 0; index < entry.width; index++) {
     let value: Dynamic = entry.findCell(
       entry.map[options * entry.width + index],
@@ -88967,7 +88978,7 @@ function isEditorTableControlsWidth2(
   options?: Dynamic,
   ..._extraArguments: unknown[]
 ) {
-  let entry: Dynamic = TableMap.get(input);
+  let entry = TableMap.get(input);
   if (options <= 0 || options >= entry.width)
     return options === 0 || options === entry.width;
   for (let index = 0; index < entry.height; index++)
@@ -88980,7 +88991,7 @@ function isEditorTableControlsHeight2(
   options?: Dynamic,
   ..._extraArguments: unknown[]
 ) {
-  let entry: Dynamic = TableMap.get(input);
+  let entry = TableMap.get(input);
   if (options <= 0 || options >= entry.height)
     return options === 0 || options === entry.height;
   for (let index = 0; index < entry.width; index++)
@@ -89024,7 +89035,7 @@ function clearProsePluginsHeight(
   extra?: Dynamic,
   ..._extraArguments: unknown[]
 ): Dynamic {
-  let entry: Dynamic = TableMap.get(options);
+  let entry = TableMap.get(options);
   let value2: Dynamic = context + 1;
   let value3: Dynamic = resolveProsePluginsOff(options);
   for (let index = 0; index < entry.height; index++) {
@@ -89073,7 +89084,7 @@ function getProsePluginsDir(
   extra: Dynamic = {},
   ..._extraArguments: unknown[]
 ): Dynamic {
-  let entry: Dynamic = TableMap.get(input);
+  let entry = TableMap.get(input);
   let value2 = value === "up" || value === "down" ? "row" : "col";
   let value3: Dynamic = value2 === "row" ? options : context;
   let value4: Dynamic = value2 === "row" ? entry.height : entry.width;
@@ -89171,7 +89182,7 @@ function resolveProsePluginsNodeAt2(
   if (context === null) return input.setSelection(value4());
   let value5 = Math.max(options + 1, Math.min(options + context, value2 - 1));
   let value6: Dynamic = input.doc.resolve(value5);
-  let value7: Dynamic = value6.parent.inlineContent
+  let value7 = value6.parent.inlineContent
     ? ProseMirrorTextSelection.create(input.doc, value5)
     : ProseMirrorSelection.near(value6, 1);
   return input.setSelection(value3(value7) ? value7 : value4());
@@ -89202,7 +89213,7 @@ function getProsePluginsIndex(
     );
   let value: Dynamic = resolveProsePluginsValue106(entry.from, entry.boundary);
   let value2: Dynamic = input.doc.nodeAt(context);
-  let entry2: Dynamic = TableMap.get(value2);
+  let entry2 = TableMap.get(value2);
   let value3: Dynamic =
     entry.kind === "row"
       ? resolveProsePluginsValue105(extra.row, entry.from, value)
@@ -89238,8 +89249,8 @@ function getProsePluginsColwidth(
 ): Dynamic {
   if (extra !== null && !Number.isFinite(extra))
     throw RangeError("setColumnWidths: px must be a finite number or null");
-  let value2: Dynamic = extra === null ? 0 : resolveProsePluginsTrunc(extra);
-  let entry: Dynamic = TableMap.get(options);
+  let value2: number = extra === null ? 0 : resolveProsePluginsTrunc(extra);
+  let entry = TableMap.get(options);
   let filtered: Dynamic = value.filter(
     (input2?: Dynamic, ..._extraArguments: unknown[]) =>
       input2 >= 0 && input2 < entry.width,
@@ -89299,7 +89310,7 @@ function getProsePluginsIdx(
   if (options) {
     let value: Dynamic = input.doc.nodeAt(options.tablePos);
     if (value?.type.spec.tableRole === "table") {
-      let entry: Dynamic = TableMap.get(value);
+      let entry = TableMap.get(value);
       let { kind: kind, idx: idx }: Dynamic = options;
       if (idx >= 0 && idx < (kind === "col" ? entry.width : entry.height)) {
         let values: Dynamic = new (Set as Dynamic)();
@@ -89342,7 +89353,7 @@ function getProsePluginsTablePos(
     let value4: Dynamic = value3.node(depth);
     if (value4.type.spec.tableRole === "table") {
       let value5: Dynamic = value3.before(depth);
-      let entry: Dynamic = TableMap.get(value4);
+      let entry = TableMap.get(value4);
       let value6: number = -1;
       for (let depth2: Dynamic = value3.depth; depth2 > depth; depth2--) {
         let tableRole: Dynamic = value3.node(depth2).type.spec.tableRole;
@@ -89376,7 +89387,7 @@ function isProsePluginsTableWrapper(
   )
     return false;
   if (input.dom.classList.contains("resize-cursor")) return false;
-  let value: Dynamic = TableColumnResizingPluginKey.getState(input.state);
+  let value = TableColumnResizingPluginKey.getState(input.state);
   return !(value && ((value.activeHandle ?? -1) > -1 || value.dragging));
 }
 function createTableSelectionPaintingPlugin(
@@ -89636,7 +89647,7 @@ function createTableSelectionPaintingPlugin(
         context?: Dynamic,
         ..._extraArguments: unknown[]
       ): Dynamic => {
-        let entry: Dynamic = TableMap.get(options);
+        let entry = TableMap.get(options);
         let value31: Dynamic = input3 === "col" ? entry.width : entry.height;
         let items: Dynamic = [];
         for (let index = 0; index <= value31; index++) {
@@ -89835,7 +89846,7 @@ function createTableSelectionPaintingPlugin(
             return getProsePluginsValue12(input2);
           let value33: Dynamic = input2.state.doc.nodeAt(value31.tablePos);
           if (!value33 || value33.type.spec.tableRole !== "table") return;
-          let entry: Dynamic = TableMap.get(value33);
+          let entry = TableMap.get(value33);
           let value34: Dynamic =
             value31.kind === "col"
               ? entry.map[value31.idx]
@@ -89843,7 +89854,7 @@ function createTableSelectionPaintingPlugin(
           let value35: Dynamic = input2.state.doc.resolve(
             value31.tablePos + 1 + value34,
           );
-          let value36: Dynamic =
+          let value36 =
             value31.kind === "col"
               ? CellSelection.colSelection(value35)
               : CellSelection.rowSelection(value35);
@@ -89985,7 +89996,7 @@ function createTableSelectionPaintingPlugin(
           if (!value6 || !input2.editable) return;
           let value31: Dynamic = input2.state.doc.nodeAt(value6.tablePos);
           if (!value31) return;
-          let entry: Dynamic = TableMap.get(value31);
+          let entry = TableMap.get(value31);
           let value32: Dynamic = input2.state.doc.resolve(
             value6.tablePos + 1 + entry.map[0],
           );
@@ -90177,13 +90188,13 @@ function createTableColumnResizeFocusPlugin(
           options?: Dynamic,
           ..._extraArguments: unknown[]
         ): undefined {
-          let value2: Dynamic =
+          let value2 =
             TableColumnResizingPluginKey.getState(options)?.dragging;
           if (!value2) {
             value = false;
             return;
           }
-          let value3: Dynamic = TableColumnResizingPluginKey.getState(
+          let value3 = TableColumnResizingPluginKey.getState(
             input2.state,
           );
           if (value3?.dragging) {
@@ -90389,7 +90400,7 @@ var isProsePluginsColwidth = (
     if (selection.$anchorCell.pos !== selection.$headCell.pos) return false;
     value = selection.$anchorCell.pos;
   } else {
-    let value3: Dynamic = cellAround(selection.$from);
+    let value3 = cellAround(selection.$from);
     if (!value3) return false;
     value = value3.pos;
   }
@@ -90398,7 +90409,7 @@ var isProsePluginsColwidth = (
   let attrs: Dynamic = value2.attrs;
   if (attrs.colspan === 1 && attrs.rowspan === 1) return false;
   if (options) {
-    let value3: Dynamic = getEditorSelectionAndTablesTableStart(editorState);
+    let value3 = getEditorSelectionAndTablesTableStart(editorState);
     let value4: number = value3.right - value3.left;
     let { colwidth: colwidth }: Dynamic = attrs;
     let value5 = (
@@ -90519,7 +90530,7 @@ var TableTypingLockExtension: Dynamic = TiptapExtension.create({
           return {
             update(input?: Dynamic, ..._extraArguments: unknown[]) {
               let { state: state }: Dynamic = input;
-              let value10: Dynamic =
+              let value10 =
                 TableColumnResizingPluginKey.getState(state);
               if (value10?.dragging) {
                 if (value4) {
@@ -90614,7 +90625,7 @@ var TableTypingLockExtension: Dynamic = TiptapExtension.create({
                   : (value11?.querySelector?.("table") ?? null);
               if (!value12?.rows.length) return value9();
               let value13: Dynamic = $from.node(index);
-              let value14: Dynamic = TableMap.get(value13).findCell(
+              let value14 = TableMap.get(value13).findCell(
                 $from.before(index2) - $from.start(index),
               );
               if (
@@ -91105,7 +91116,7 @@ var ProsePluginsDraggable: Dynamic = TableExtension.extend({
     let value = (..._extraArguments: unknown[]): Dynamic => {
       if (!(this.editor.state.selection instanceof (CellSelection as Dynamic)))
         return false;
-      let value3: Dynamic = getEditorSelectionAndTablesTableStart(
+      let value3 = getEditorSelectionAndTablesTableStart(
         this.editor.state,
       );
       let value4 = value3.left === 0 && value3.right === value3.map.width;
@@ -91323,7 +91334,7 @@ function collectProsePluginsMap(
   context?: Dynamic,
   ..._extraArguments: unknown[]
 ): Dynamic {
-  let value: Dynamic = tableNodeTypes(table.type.schema);
+  let value = tableNodeTypes(table.type.schema);
   let value2 = resolveProsePluginsChildCount4(table);
   for (let index: number = 0; index < map.height; index++) {
     let value3: Dynamic = index * map.width + context;
@@ -91369,7 +91380,7 @@ var isProsePluginsLeft = (
 ) => {
   if (!isInTable(input)) return false;
   if (options) {
-    let value: Dynamic = getEditorSelectionAndTablesTableStart(input);
+    let value = getEditorSelectionAndTablesTableStart(input);
     options(collectProsePluginsMap(input.tr, value, value.left));
   }
   return true;
@@ -91381,7 +91392,7 @@ var isProsePluginsRight = (
 ) => {
   if (!isInTable(input)) return false;
   if (options) {
-    let value: Dynamic = getEditorSelectionAndTablesTableStart(input);
+    let value = getEditorSelectionAndTablesTableStart(input);
     options(collectProsePluginsMap(input.tr, value, value.right));
   }
   return true;
@@ -91496,7 +91507,7 @@ function resolveProsePluginsMap3(
   context?: Dynamic,
   ..._extraArguments: unknown[]
 ): Dynamic {
-  let value: Dynamic = tableNodeTypes(table.type.schema);
+  let value = tableNodeTypes(table.type.schema);
   let cell: Dynamic = value.cell;
   let defaultType: Dynamic = cell.contentMatch.defaultType;
   let value2: Dynamic = context > 0 ? resolveProsePluginsEnum2(map, table) : [];
@@ -91540,7 +91551,7 @@ var isProsePluginsValue5 = (
 ) => {
   if (!isInTable(input)) return false;
   if (options) {
-    let value: Dynamic = getEditorSelectionAndTablesTableStart(input);
+    let value = getEditorSelectionAndTablesTableStart(input);
     options(resolveProsePluginsMap3(input.tr, value, value.top));
   }
   return true;
@@ -91552,7 +91563,7 @@ var isProsePluginsBottom = (
 ) => {
   if (!isInTable(input)) return false;
   if (options) {
-    let value: Dynamic = getEditorSelectionAndTablesTableStart(input);
+    let value = getEditorSelectionAndTablesTableStart(input);
     options(resolveProsePluginsMap3(input.tr, value, value.bottom));
   }
   return true;
@@ -91936,7 +91947,7 @@ function isProsePluginsArrowLeft(
     value8.max = String(value23 > 0 ? value23 : 1);
     let value25 = value17 && !input2;
     if (!value25) value8.value = String(value23 > 0 ? value24 : 0);
-    let value26: Dynamic = resolveProsePluginsIsFinite(value24, value23);
+    let value26: string = resolveProsePluginsIsFinite(value24, value23);
     if (
       (input2 || !value22 || input.activeElement !== value8) &&
       value8.getAttribute("aria-valuetext") !== value26
@@ -92208,8 +92219,8 @@ var resolveProsePluginsValue109 = (
 ): Dynamic => {
   if (input === null || typeof input !== "object") return null;
   let value: Dynamic = input;
-  let value2: Dynamic = resolveProsePluginsIsFinite2(value.w);
-  let value3: Dynamic = resolveProsePluginsIsFinite2(value.h);
+  let value2: number = resolveProsePluginsIsFinite2(value.w);
+  let value3: number = resolveProsePluginsIsFinite2(value.h);
   return value2 > 0 && value3 > 0
     ? {
         w: value2,
@@ -92285,7 +92296,7 @@ var resolveEditorMediaWrapper = (
   input?: Dynamic,
   ..._extraArguments: unknown[]
 ) => {
-  let value: Dynamic = resolveProsePluginsEvery(input.crop);
+  let value = resolveProsePluginsEvery(input.crop);
   let value2: Dynamic = resolveProsePluginsValue109(input.dims);
   if (!value || !value2) return null;
   let value3 = (input2?: Dynamic, ..._extraArguments: unknown[]) =>
@@ -92318,7 +92329,7 @@ var resolveProsePluginsLfilePmMediaCropped = (
   context?: Dynamic,
   ..._extraArguments: unknown[]
 ): undefined => {
-  let value: Dynamic = options ? resolveEditorMediaWrapper(context) : null;
+  let value = options ? resolveEditorMediaWrapper(context) : null;
   if (value) {
     input.style.aspectRatio = value.wrapper.aspectRatio;
     input.classList.add("lfile-pm-media-cropped");
@@ -92390,12 +92401,12 @@ var resolveProsePluginsBlob2 = (
   input?: Dynamic,
   ..._extraArguments: unknown[]
 ): Dynamic => {
-  let value: Dynamic = resolveProsePluginsTest17(input.blob);
+  let value = resolveProsePluginsTest17(input.blob);
   if (value === null) return null;
-  let value2: Dynamic = resolveProsePluginsTest18(input.mime);
+  let value2 = resolveProsePluginsTest18(input.mime);
   let value3: Dynamic = resolveProsePluginsValue109(input.dims);
-  let value4: Dynamic = resolveProsePluginsEvery(input.crop);
-  let value5: Dynamic = resolveProsePluginsCenter(input.align);
+  let value4 = resolveProsePluginsEvery(input.crop);
+  let value5 = resolveProsePluginsCenter(input.align);
   return {
     blob: value,
     ...(value2
@@ -92557,7 +92568,7 @@ var MediaExtension: Dynamic = TiptapNode.create({
           input?: Dynamic,
           ..._extraArguments: unknown[]
         ): Dynamic => {
-          let value: Dynamic = resolveProsePluginsTest17(input.blob);
+          let value = resolveProsePluginsTest17(input.blob);
           return value
             ? {
                 "data-lfile-media-blob": value,
@@ -92578,7 +92589,7 @@ var MediaExtension: Dynamic = TiptapNode.create({
           input?: Dynamic,
           ..._extraArguments: unknown[]
         ): Dynamic => {
-          let value: Dynamic = resolveProsePluginsTest18(input.mime);
+          let value = resolveProsePluginsTest18(input.mime);
           return value
             ? {
                 "data-lfile-media-mime": value,
@@ -92630,7 +92641,7 @@ var MediaExtension: Dynamic = TiptapNode.create({
           input?: Dynamic,
           ..._extraArguments: unknown[]
         ) => {
-          let value: Dynamic = resolveProsePluginsEvery(input.crop);
+          let value = resolveProsePluginsEvery(input.crop);
           return value
             ? {
                 "data-lfile-media-crop": JSON.stringify(value),
@@ -92663,14 +92674,14 @@ var MediaExtension: Dynamic = TiptapNode.create({
             /(?:^|;)\s*width:\s*(\d+(?:\.\d+)?)px/.exec(
               element.getAttribute("style") ?? "",
             )?.[1];
-          let value2: Dynamic = resolveProsePluginsIsFinite2(value);
+          let value2: number = resolveProsePluginsIsFinite2(value);
           return value2 > 0 ? value2 : null;
         },
         renderHTML: (
           input?: Dynamic,
           ..._extraArguments: unknown[]
         ): Dynamic => {
-          let value: Dynamic = resolveProsePluginsIsFinite2(input.width);
+          let value: number = resolveProsePluginsIsFinite2(input.width);
           return value > 0
             ? {
                 width: value,
@@ -92693,7 +92704,7 @@ var MediaExtension: Dynamic = TiptapNode.create({
           input?: Dynamic,
           ..._extraArguments: unknown[]
         ): Dynamic => {
-          let value: Dynamic = resolveProsePluginsCenter(input.align);
+          let value = resolveProsePluginsCenter(input.align);
           return value
             ? {
                 "data-align": value,
@@ -92851,10 +92862,10 @@ var MediaExtension: Dynamic = TiptapNode.create({
         let value15: Dynamic = resolveProsePluginsWidth(input.attrs);
         if (value15 > 0) value2.style.width = `${value15}px`;
         else value2.style.removeProperty("width");
-        let value16: Dynamic = resolveProsePluginsCenter(input.attrs.align);
+        let value16 = resolveProsePluginsCenter(input.attrs.align);
         if (value16) value2.setAttribute("data-align", value16);
         else value2.removeAttribute("data-align");
-        let state: Dynamic = {
+        let state = {
           "data-lfile-media-blob": resolveProsePluginsTest17(input.attrs.blob),
           "data-lfile-media-mime": resolveProsePluginsTest18(input.attrs.mime),
           "data-lfile-media-dims": ((
@@ -92908,7 +92919,7 @@ var MediaExtension: Dynamic = TiptapNode.create({
           value2.removeAttribute("data-lfile-media-src-pending");
           return;
         }
-        let value18: Dynamic = value16
+        let value18 = value16
           ? null
           : resolveProsePluginsTest17(input.attrs.blob);
         if (value16?.kind === "blob" || value18) {
@@ -93050,7 +93061,7 @@ var MediaExtension: Dynamic = TiptapNode.create({
       };
       let value14: Dynamic = node;
       value13(node);
-      let items: Dynamic = ["src", "blob", "mime", "alt", "name", "commentIds"];
+      let items = ["src", "blob", "mime", "alt", "name", "commentIds"];
       return {
         dom: value2,
         stopEvent: isProsePluginsStopEvent,
@@ -93071,7 +93082,7 @@ var MediaExtension: Dynamic = TiptapNode.create({
             return true;
           }
           let value17: Dynamic = value6;
-          let value18: Dynamic = Object.getOwnPropertyDescriptor(
+          let value18 = Object.getOwnPropertyDescriptor(
             (globalThis).Node.prototype,
             "parentNode",
           )?.get;
@@ -93291,7 +93302,7 @@ var ProsePluginsSelectable: Dynamic = ProsePluginsBoundaryMarker.extend({
           input?: Dynamic,
           ..._extraArguments: unknown[]
         ): Dynamic => {
-          let value: Dynamic =
+          let value =
             typeof input.ref === "string"
               ? resolveProsePluginsTrim4(input.label)
               : null;
@@ -93336,7 +93347,7 @@ var ProsePluginsSelectable: Dynamic = ProsePluginsBoundaryMarker.extend({
         ..._extraArguments: unknown[]
       ) => {
         if (typeof attrs.ref === "string") dom.dataset.ref = attrs.ref;
-        let value2: Dynamic = resolveProsePluginsTrim4(attrs.label);
+        let value2 = resolveProsePluginsTrim4(attrs.label);
         if (value2 === null) delete dom.dataset.label;
         else dom.dataset.label = value2;
         return isProsePluginsLabel(dom, attrs.ref, on, value2);
@@ -93377,9 +93388,9 @@ var ProsePluginsSelectable: Dynamic = ProsePluginsBoundaryMarker.extend({
             : null);
         value3.textContent = `@${value8 || context || resolveProsePluginsIncludes8(input2)}`;
         let value9 = !(typeof input2 === "string" && input2.length > 0);
-        let value10: Dynamic =
+        let value10: boolean =
           typeof input2 === "string" && resolveProsePluginsPlatform2(input2);
-        let value11: Dynamic = value9 || (value10 && !(value8 || context));
+        let value11 = value9 || (value10 && !(value8 || context));
         if (value11) value2.dataset.unnamed = "";
         else delete value2.dataset.unnamed;
         if (value10 && !value8 && context) value2.dataset.face = "label";
@@ -93445,7 +93456,7 @@ var ProsePluginsSelectable: Dynamic = ProsePluginsBoundaryMarker.extend({
     ..._extraArguments: unknown[]
   ): Dynamic {
     if (resolveProsePluginsPrincipal3(node.attrs)) {
-      let value: Dynamic = resolveProsePluginsValue113(node.attrs.ref);
+      let value: string = resolveProsePluginsValue113(node.attrs.ref);
       let value2 = node.marks.some(
         (input?: Dynamic, ..._extraArguments: unknown[]) =>
           input.type.name === "link",
@@ -93641,7 +93652,7 @@ var ProsePluginsAddAttributes: Dynamic = MediaExtension.extend({
       "file",
     ];
     let { attrs: attrs }: Dynamic = input.node;
-    let value2: Dynamic = resolveProsePluginsTest17(attrs.blob);
+    let value2 = resolveProsePluginsTest17(attrs.blob);
     if (value2 === null) return value;
     if (!Array.isArray(value) || value[0] !== "span") return value;
     let value3: Dynamic = value[1];
@@ -93651,7 +93662,7 @@ var ProsePluginsAddAttributes: Dynamic = MediaExtension.extend({
     };
     if (typeof attrs.alt === "string" && attrs.alt.length > 0)
       state.alt = [...attrs.alt].slice(0, 2048).join("");
-    let value4: Dynamic = resolveProsePluginsTest18(attrs.mime);
+    let value4 = resolveProsePluginsTest18(attrs.mime);
     if (value4 !== null) state["data-mime"] = value4;
     let value5: Dynamic = resolveProsePluginsValue109(attrs.dims);
     if (value5 !== null)
@@ -93756,7 +93767,7 @@ function isProsePluginsParent(..._extraArguments: unknown[]): Dynamic {
       if (!value(editorState)) return false;
       let selection: Dynamic = editorState.selection;
       let value7: Dynamic = input < 0 ? selection.$from : selection.$to;
-      let value8: Dynamic =
+      let value8 =
         ProseMirrorSelection.findFrom(value7, input, true) ??
         ProseMirrorSelection.findFrom(value7, input);
       let { parent: parent, pos: pos }: Dynamic = value7;
@@ -93941,7 +93952,7 @@ var ProsePluginsAddCommands: Dynamic = ParagraphExtension.extend({
           { tr: tr2, state: state, dispatch: dispatch }: Dynamic,
           ..._extraArguments: unknown[]
         ) => {
-          let value: Dynamic = resolveProsePluginsIsInteger5(input);
+          let value = resolveProsePluginsIsInteger5(input);
           let paragraph: Dynamic = state.schema.nodes.paragraph;
           let value2 = (
             input2?: Dynamic,
@@ -94063,7 +94074,7 @@ var ProsePluginsAddCommands: Dynamic = ParagraphExtension.extend({
     { node: node, HTMLAttributes: HTMLAttributes }: Dynamic,
     ..._extraArguments: unknown[]
   ) {
-    let value: Dynamic = resolveProsePluginsIsInteger5(node.attrs.heading);
+    let value = resolveProsePluginsIsInteger5(node.attrs.heading);
     return [
       value === null ? "p" : `h${value}`,
       TiptapmergeAttributes(this.options.HTMLAttributes, HTMLAttributes),
@@ -94704,7 +94715,7 @@ function resolveProsePluginsNodeAfter(
     let value3: Dynamic = tr2.doc
       .resolve(pos + 1)
       .blockRange(tr2.doc.resolve(pos + nodeAfter.nodeSize - 1));
-    let value4: Dynamic = value3 ? ProseMirrorliftTarget(value3) : null;
+    let value4 = value3 ? ProseMirrorliftTarget(value3) : null;
     if (!value3 || value4 == null || value4 < context.depth) return null;
     tr2.lift(value3, value4);
     pos -= value3.depth - value4;
@@ -95029,7 +95040,7 @@ function resolveProsePluginsText3(
       content: value2.content,
       text: value2.text,
     };
-    let value3: Dynamic = resolveProsePluginsHeading2(state);
+    let value3 = resolveProsePluginsHeading2(state);
     if (value3 !== null) {
       let value5: Dynamic = resolveProsePluginsSlice4(
         resolveProsePluginsText2(state, options2),
@@ -95216,7 +95227,7 @@ function getProsePluginsOwnerOf(
     let text: string = "unk";
     let value2: number = 1 / 0;
     for (let [value3, value4] of prosePluginsMap15 as Dynamic) {
-      let value5: Dynamic = slice.indexOf(value3);
+      let value5: number = slice.indexOf(value3);
       if (value5 !== -1 && value5 < value2) {
         value2 = value5;
         text = value4;
@@ -96364,7 +96375,7 @@ function updateClipboardAndCodeInputTransformCopied(
     return input;
   if (!resolveClipboardAndCodeInputForEach(firstChild)) return input;
   if (!firstChild.type.validContent(firstChild.content)) return input;
-  let value: Dynamic = new (ProseMirrorSlice)(
+  let value = new (ProseMirrorSlice)(
     input.content,
     input.openStart - openStart,
     input.openEnd,
@@ -96667,7 +96678,7 @@ function getClipboardAndCodeInputSerializeFragment(
         : resolveClipboardAndCodeInputNodeType2(value5, value6);
     };
   }
-  let value2: Dynamic = new (ProseMirrorDOMSerializer)(
+  let value2 = new (ProseMirrorDOMSerializer)(
     state,
     ProseMirrorDOMSerializer.marksFromSchema(input),
   );
@@ -96903,7 +96914,7 @@ function getClipboardAndCodeInputToLowerCase(
           b: 0,
           a: 0,
         };
-  let value2: Dynamic = /^#([0-9a-f]{3,8})$/.exec(value);
+  let value2 = /^#([0-9a-f]{3,8})$/.exec(value);
   if (value2) {
     let value3: Dynamic = value2[1];
     if (value3.length === 3 || value3.length === 4) {
@@ -97181,934 +97192,6 @@ function flattenWireAttributes(
   for (let [value, value2] of Object.entries(input) as Dynamic)
     if (!options.has(value) && value2 != null) state[value] = value2;
   return state;
-}
-var codePointUTF16Width = (
-  input?: Dynamic,
-  options?: Dynamic,
-  ..._extraArguments: unknown[]
-) => {
-  let value: Dynamic = input.charCodeAt(options);
-  let value2: Dynamic = input.charCodeAt(options + 1);
-  return value >= 55296 && value <= 56319 && value2 >= 56320 && value2 <= 57343
-    ? 2
-    : 1;
-};
-function codePointCount(input?: Dynamic, ..._extraArguments: unknown[]) {
-  let index = 0;
-  for (
-    let index2: number = 0;
-    index2 < input.length;
-    index2 += codePointUTF16Width(input, index2)
-  )
-    index++;
-  return index;
-}
-function* pmCharacterOffsets(
-  input?: Dynamic,
-  ..._extraArguments: unknown[]
-): Generator<Dynamic, Dynamic, Dynamic> {
-  let index: number = 0;
-  for (let index2 = 0; index2 < input.childCount; index2++) {
-    let value: Dynamic = input.child(index2);
-    let value2: Dynamic = value.isText ? value.text : null;
-    if (value2 === null) yield [index, index + value.nodeSize];
-    else
-      for (
-        let index3: number = 0;
-        index3 < value2.length;
-        index3 += codePointUTF16Width(value2, index3)
-      )
-        yield [
-          index + index3,
-          index + index3 + codePointUTF16Width(value2, index3),
-        ];
-    index += value.nodeSize;
-  }
-}
-function* pmCharacterStarts(
-  input?: unknown,
-  ..._extraArguments: unknown[]
-): Generator<Dynamic, Dynamic, Dynamic> {
-  for (let [value] of pmCharacterOffsets(input) as Dynamic) yield value;
-}
-var pmCharacterOffsetCache: Dynamic = new (WeakMap as Dynamic)();
-function indexPMCharacterOffsets(
-  documentNode?: Dynamic,
-  ..._extraArguments: unknown[]
-): Dynamic {
-  let entry: Dynamic = pmCharacterOffsetCache.get(documentNode);
-  if (entry) return entry;
-  let value: boolean = true;
-  for (let index = 0; value && index < documentNode.childCount; index++) {
-    let value2: Dynamic = documentNode.child(index);
-    value = value2.isText && codePointCount(value2.text) === value2.text.length;
-  }
-  if (value)
-    entry = {
-      plain: true,
-      size: documentNode.content.size,
-    };
-  else {
-    let items: Dynamic = [];
-    let items2: Dynamic = [];
-    for (let [value2, value3] of pmCharacterOffsets(documentNode) as Dynamic) {
-      items.push(value2);
-      items2.push(value3);
-    }
-    entry = {
-      plain: false,
-      starts: Uint32Array.from(items),
-      ends: Uint32Array.from(items2),
-    };
-  }
-  pmCharacterOffsetCache.set(documentNode, entry);
-  return entry;
-}
-function utf16OffsetToCharacterIndex(
-  input?: Dynamic,
-  options?: Dynamic,
-  ..._extraArguments: unknown[]
-) {
-  let value: Dynamic = indexPMCharacterOffsets(input);
-  if (value.plain)
-    return Math.max(0, Math.min(Math.floor(options), value.size));
-  let index = 0;
-  let length: Dynamic = value.ends.length;
-  while (index < length) {
-    let value2 = (index + length) >>> 1;
-    if (value.ends[value2] <= options) index = value2 + 1;
-    else length = value2;
-  }
-  return index;
-}
-function characterIndexToUTF16Offset(
-  input?: Dynamic,
-  options?: Dynamic,
-  ..._extraArguments: unknown[]
-): Dynamic {
-  let value: Dynamic = indexPMCharacterOffsets(input);
-  if (value.plain) return Math.max(0, Math.min(options, value.size));
-  let length: Dynamic = value.starts.length;
-  if (length === 0) return input.content.size;
-  return options <= 0
-    ? value.starts[0]
-    : options < length
-      ? value.starts[options]
-      : input.content.size;
-}
-var pmCharacterCountCache: Dynamic = new (WeakMap as Dynamic)();
-var pmCharacterCount = (
-  input?: Dynamic,
-  ..._extraArguments: unknown[]
-): Dynamic => {
-  let entry: Dynamic = pmCharacterCountCache.get(input);
-  if (entry !== undefined) return entry;
-  entry = 0;
-  for (let index = 0; index < input.childCount; index++) {
-    let value: Dynamic = input.child(index);
-    entry += value.isText ? codePointCount(value.text) : 1;
-  }
-  pmCharacterCountCache.set(input, entry);
-  return entry;
-};
-var characterId = (
-  input?: Dynamic,
-  options?: Dynamic,
-  ..._extraArguments: unknown[]
-) => `${input}.${options}`;
-function parseCharacterId(
-  input?: Dynamic,
-  ..._extraArguments: unknown[]
-): Dynamic {
-  let value: Dynamic = input.lastIndexOf(".");
-  let value2 = Number(input.slice(value + 1));
-  return value > 0 && Number.isInteger(value2) && value2 >= 0
-    ? {
-        sess: input.slice(0, value),
-        i: value2,
-      }
-    : null;
-}
-var characterRunsAreAdjacent = (
-  input?: Dynamic,
-  options?: Dynamic,
-  ..._extraArguments: unknown[]
-) => input.sess === options.sess && input.start + input.len === options.start;
-class CharacterRunSpans {
-  [key: string]: Dynamic;
-  spans: Dynamic = [];
-  opaque: Dynamic = false;
-  static fromView(
-    input?: unknown,
-    options: unknown = false,
-    ..._extraArguments: unknown[]
-  ): Dynamic {
-    let value: Dynamic = new (CharacterRunSpans)();
-    value.opaque = options;
-    if (!options)
-      for (let { id: id2, len: len } of input as Dynamic) {
-        let value2: Dynamic = parseCharacterId(id2);
-        if (!value2) {
-          value.opaque = true;
-          value.spans = [];
-          break;
-        }
-        value.push({
-          sess: value2.sess,
-          start: value2.i,
-          len: len,
-        });
-      }
-    return value;
-  }
-  get length(): Dynamic {
-    return this.spans.reduce(
-      (
-        input?: Dynamic,
-        options?: Dynamic,
-        ..._extraArguments: unknown[]
-      ): Dynamic => input + options.len,
-      0,
-    );
-  }
-  push(input?: Dynamic, ..._extraArguments: unknown[]): undefined {
-    let value: Dynamic = this.spans.at(-1);
-    if (value && characterRunsAreAdjacent(value, input)) value.len += input.len;
-    else if (input.len > 0)
-      this.spans.push({
-        ...input,
-      });
-  }
-  keyAt(input?: Dynamic, ..._extraArguments: unknown[]) {
-    for (let value of this.spans as Dynamic) {
-      if (input >= 0 && input < value.len)
-        return characterId(value.sess, value.start + input);
-      input -= value.len;
-    }
-    return null;
-  }
-  offsetOf(input?: unknown, ..._extraArguments: unknown[]): number {
-    let value: Dynamic = parseCharacterId(input);
-    let index: number = 0;
-    for (let value2 of this.spans as Dynamic) {
-      if (
-        value?.sess === value2.sess &&
-        value.i >= value2.start &&
-        value.i < value2.start + value2.len
-      )
-        return index + value.i - value2.start;
-      index += value2.len;
-    }
-    return -1;
-  }
-  range(input?: Dynamic, options?: Dynamic, ..._extraArguments: unknown[]) {
-    let value = options > 0 ? this.keyAt(input) : null;
-    let value2 = options > 0 ? this.keyAt(input + options - 1) : null;
-    return value !== null && value2 !== null ? [value, value2] : null;
-  }
-  cut(input?: Dynamic, ..._extraArguments: unknown[]) {
-    let index = 0;
-    for (
-      ;
-      index < this.spans.length && input > 0;
-      input -= this.spans[index++].len
-    ) {
-      let value: Dynamic = this.spans[index];
-      if (input >= value.len) continue;
-      this.spans[index] = {
-        ...value,
-        len: input,
-      };
-      this.spans.splice(index + 1, 0, {
-        ...value,
-        start: value.start + input,
-        len: value.len - input,
-      });
-      return index + 1;
-    }
-    if (input > 0) throw RangeError("runTable: offset past the end");
-    return index;
-  }
-  mergeAround(input?: Dynamic, ..._extraArguments: unknown[]): undefined {
-    for (
-      let value = Math.max(0, input - 1);
-      value < Math.min(this.spans.length - 1, input + 1);
-
-    ) {
-      let value2: Dynamic = this.spans[value];
-      if (characterRunsAreAdjacent(value2, this.spans[value + 1]))
-        this.spans.splice(value, 2, {
-          ...value2,
-          len: value2.len + this.spans[value + 1].len,
-        });
-      else value++;
-    }
-  }
-  insert(
-    input?: Dynamic,
-    options?: Dynamic,
-    context?: Dynamic,
-    value?: Dynamic,
-    ..._extraArguments: unknown[]
-  ): undefined {
-    if (value <= 0) return;
-    let value2 = this.cut(input);
-    this.spans.splice(value2, 0, {
-      sess: options,
-      start: context,
-      len: value,
-    });
-    this.mergeAround(value2);
-  }
-  remove(
-    input?: Dynamic,
-    options?: Dynamic,
-    ..._extraArguments: unknown[]
-  ): Dynamic {
-    if (options <= 0) return [];
-    let value = this.cut(input);
-    let value2: Dynamic = this.spans.splice(
-      value,
-      this.cut(input + options) - value,
-    );
-    this.mergeAround(value);
-    return value2.flatMap(
-      (input2?: Dynamic, ..._extraArguments: unknown[]): Dynamic =>
-        Array.from<Dynamic, Dynamic>(
-          {
-            length: input2.len,
-          },
-          (
-            input3: unknown,
-            options2: number,
-            ..._extraArguments: unknown[]
-          ) => characterId(input2.sess, input2.start + options2),
-        ),
-    );
-  }
-  renameAt(
-    input?: Dynamic,
-    options?: Dynamic,
-    ..._extraArguments: unknown[]
-  ): undefined {
-    let value: Dynamic = parseCharacterId(options);
-    if (!value || input < 0 || input >= this.length) return;
-    this.remove(input, 1);
-    this.insert(input, value.sess, value.i, 1);
-  }
-  toView(..._extraArguments: unknown[]): Dynamic {
-    return this.spans.map(
-      (input?: Dynamic, ..._extraArguments: unknown[]): Dynamic => ({
-        id: characterId(input.sess, input.start),
-        len: input.len,
-      }),
-    );
-  }
-}
-var proseBlockId = (
-  input?: Dynamic,
-  ..._extraArguments: unknown[]
-): Dynamic =>
-  typeof input.attrs.bid === "string" && input.attrs.bid
-    ? input.attrs.bid
-    : null;
-function indexProseBlocks(
-  documentNode?: Dynamic,
-  ..._extraArguments: unknown[]
-): Dynamic {
-  let entries: Dynamic = new (Map as Dynamic)();
-  documentNode.descendants(
-    (input?: Dynamic, options?: Dynamic, ..._extraArguments: unknown[]) => {
-      let value: Dynamic = proseBlockId(input);
-      if (value !== null && !entries.has(value))
-        entries.set(value, {
-          pos: options,
-          node: input,
-        });
-      return !input.isTextblock;
-    },
-  );
-  return entries;
-}
-function textBlockAtPosition(
-  input?: Dynamic,
-  options?: Dynamic,
-  ..._extraArguments: unknown[]
-): Dynamic {
-  let value: Dynamic =
-    options >= 0 && options <= input.content.size
-      ? input.resolve(options)
-      : null;
-  if (!value?.parent.isTextblock) return null;
-  return {
-    node: value.parent,
-    bid: proseBlockId(value.parent),
-    start: value.start(),
-    offset: value.parentOffset,
-  };
-}
-var classifyBlockLedgerDrift = (
-  input?: Dynamic,
-  ..._extraArguments: unknown[]
-) =>
-  input === "a textblock without a block id"
-    ? "idless"
-    : input.startsWith("two blocks carry the id ")
-      ? "dup_id"
-      : /^block \S+: /.test(input)
-        ? "drift"
-        : "other";
-function createCharacterLedger(
-  input?: Dynamic,
-  options?: Dynamic,
-  ..._extraArguments: unknown[]
-): Dynamic {
-  let entries: Dynamic = new (Map as Dynamic)();
-  let entries2: Dynamic = new (Map as Dynamic)();
-  let count = 1024;
-  let index: number = 0;
-  let value: Dynamic = null;
-  let count2 = 4096;
-  let value2: number = -1;
-  let value3: number = -1;
-  let text: string = "";
-  let value4: Dynamic = null;
-  let entries3: Dynamic = new (Map as Dynamic)();
-  let value5 = (..._extraArguments: unknown[]): Dynamic => {
-    let value13: Dynamic = new (CharacterRunSpans)();
-    value13.opaque = true;
-    return value13;
-  };
-  let value6: Dynamic = null;
-  let value7 = (..._extraArguments: unknown[]): Dynamic =>
-    options() || "_";
-  let value8 = (
-    input2?: Dynamic,
-    options2?: Dynamic,
-    ..._extraArguments: unknown[]
-  ): undefined => {
-    if (input2 === value7() && options2 > value2) value2 = options2;
-  };
-  let value9 = (input2?: Dynamic, ..._extraArguments: unknown[]): undefined => {
-    let value13: Dynamic = value7();
-    if (
-      input2.length <= value13.length ||
-      input2.charCodeAt(value13.length) !== 46 ||
-      !input2.startsWith(value13)
-    )
-      return;
-    let value14: Dynamic = parseCharacterId(input2);
-    if (value14) value8(value14.sess, value14.i);
-  };
-  let value10 = (input2?: Dynamic, ..._extraArguments: unknown[]) => (
-    (value4 ??= input2),
-    false
-  );
-  let value11 = (
-    input2?: unknown,
-    ..._extraArguments: unknown[]
-  ): Dynamic =>
-    (value6?.doc === input2
-      ? value6
-      : (value6 = {
-          doc: input2,
-          at: indexProseBlocks(input2),
-        })
-    ).at;
-  let value12 = (
-    input2?: Dynamic,
-    options2?: Dynamic,
-    context?: Dynamic,
-    value13?: Dynamic,
-    ..._extraArguments: unknown[]
-  ): undefined => {
-    let value14: Dynamic = input2.docs[0] ?? input2.doc;
-    let value15: Dynamic = value11(value14);
-    let value16: Dynamic = input2.mapping.invert();
-    let value17: Dynamic = null;
-    let value18 = (
-      input3?: Dynamic,
-      ..._extraArguments: unknown[]
-    ): Dynamic => {
-      if (
-        value17 &&
-        input3 >= value17.start &&
-        input3 <= value17.start + value17.node.content.size
-      )
-        return {
-          node: value17.node,
-          bid: value17.bid,
-          start: value17.start,
-          offset: input3 - value17.start,
-        };
-      let value22: Dynamic = textBlockAtPosition(value14, input3);
-      if (value22) value17 = value22;
-      return value22;
-    };
-    let value19 = (
-      input3?: unknown,
-      ..._extraArguments: unknown[]
-    ): Dynamic => {
-      let value22: Dynamic = value16.mapResult(input3, 1);
-      let value23: Dynamic = value22.deleted ? null : value18(value22.pos);
-      if (
-        !value23 ||
-        value23.bid === null ||
-        value23.offset >= value23.node.content.size
-      )
-        return null;
-      return (
-        entries
-          .get(value23.bid)
-          ?.keyAt(utf16OffsetToCharacterIndex(value23.node, value23.offset)) ??
-        null
-      );
-    };
-    let value20 = (
-      input3?: Dynamic,
-      options3?: Dynamic,
-      ..._extraArguments: unknown[]
-    ): Dynamic => {
-      let match: Dynamic = context.find(
-        (input4?: Dynamic, ..._extraArguments: unknown[]): Dynamic =>
-          input4.includes(input3),
-      );
-      let value22: Dynamic = match ? match.indexOf(input3) : -1;
-      return match && match.length > value22 + options3
-        ? match.slice(value22 + 1, value22 + 1 + options3)
-        : null;
-    };
-    let entries4: Dynamic = new (Map as Dynamic)();
-    let value21 = (
-      input3?: unknown,
-      options3?: unknown,
-      ..._extraArguments: unknown[]
-    ) => {
-      if (!value13) return value10(options3);
-      if (!entries3.has(input3)) entries3.set(input3, options3);
-      entries4.set(input3, value5());
-      return false;
-    };
-    input2.doc.descendants(
-      (
-        input3?: Dynamic,
-        options3?: Dynamic,
-        ..._extraArguments: unknown[]
-      ) => {
-        if (value4) return false;
-        let value22: Dynamic = proseBlockId(input3);
-        if (value22 !== null) value9(value22);
-        if (!input3.isTextblock) return true;
-        if (value22 === null) return value10("a textblock without a block id");
-        if (entries4.has(value22))
-          return value10(`two blocks carry the id ${value22}`);
-        let value23: Dynamic = pmCharacterCount(input3);
-        let entry: Dynamic = entries.get(value22);
-        let value24: Dynamic = entry
-          ? (value15.get(value22)?.node ?? null)
-          : null;
-        if (
-          value24 &&
-          (value24 === input3 || value24.content === input3.content) &&
-          entry.length === value23
-        ) {
-          entries4.set(value22, entry);
-          return false;
-        }
-        if (entry?.opaque && entries3.has(value22))
-          return value21(value22, entries3.get(value22));
-        let value25: Dynamic = options3 + 1;
-        let mapped: Dynamic = options2
-          .filter(
-            (input4?: Dynamic, ..._extraArguments: unknown[]) =>
-              input4.from >= value25 &&
-              input4.from <= value25 + input3.content.size,
-          )
-          .map(
-            (input4?: Dynamic, ..._extraArguments: unknown[]): Dynamic => ({
-              k: parseCharacterId(input4.firstId),
-              at: utf16OffsetToCharacterIndex(input3, input4.from - value25),
-              len: input4.len,
-              over: input4.over === true,
-            }),
-          );
-        let value26: Dynamic = entry ? null : value20(value22, value23);
-        let value27: Dynamic = new (CharacterRunSpans)();
-        let index2 = 0;
-        for (let value28 of pmCharacterStarts(input3) as Dynamic) {
-          let match: Dynamic = mapped.find(
-            (input4?: Dynamic, ..._extraArguments: unknown[]): Dynamic =>
-              input4.k &&
-              index2 >= input4.at &&
-              index2 < input4.at + input4.len,
-          );
-          let value29: Dynamic = value19(value25 + value28);
-          if (match && value29 !== null && !match.over)
-            return value21(
-              value22,
-              `block ${value22}: an inserted run overlaps a kept char`,
-            );
-          let value30: Dynamic = match
-            ? characterId(match.k.sess, match.k.i + index2 - match.at)
-            : (value26?.[index2] ?? value29);
-          let value31: Dynamic = value30 ? parseCharacterId(value30) : null;
-          if (!value31)
-            return value21(
-              value22,
-              `block ${value22}: no id for position ${value28}`,
-            );
-          value27.push({
-            sess: value31.sess,
-            start: value31.i,
-            len: 1,
-          });
-          value9(value30);
-          index2++;
-        }
-        entries4.set(value22, value27);
-        entries3.delete(value22);
-        return false;
-      },
-    );
-    if (value4) return;
-    index += 1;
-    entries.clear();
-    for (let [value22, value23] of entries4 as Dynamic)
-      entries.set(value22, value23);
-    for (let value22 of entries3.keys() as Dynamic)
-      if (!entries4.has(value22)) entries3.delete(value22);
-  };
-  return {
-    get generation(): number {
-      return index;
-    },
-    get drifted(): Dynamic {
-      return value4;
-    },
-    get doubted(): Dynamic {
-      return entries3;
-    },
-    runsOf: (input2?: unknown, ..._extraArguments: unknown[]): Dynamic =>
-      entries.get(input2),
-    doubt(input2?: Dynamic, options2?: Dynamic, ..._extraArguments: unknown[]) {
-      if (value4 || !value11(input()).get(input2)?.node.isTextblock)
-        return false;
-      if (!entries3.has(input2))
-        entries3.set(input2, `block ${input2}: ${options2}`);
-      index += 1;
-      entries.set(input2, value5());
-      return true;
-    },
-    save(..._extraArguments: unknown[]) {
-      let state: Dynamic = {
-        runs: [...entries].map(
-          (
-            [input2, characterRuns]: Dynamic,
-            ..._extraArguments: unknown[]
-          ): Dynamic => [
-            input2,
-            Object.assign(new (CharacterRunSpans)(), {
-              spans: characterRuns.spans.map(
-                (input3?: Dynamic, ..._extraArguments: unknown[]): Dynamic => ({
-                  ...input3,
-                }),
-              ),
-              opaque: characterRuns.opaque,
-            }),
-          ],
-        ),
-        doubts: [...entries3],
-        drifted: value4,
-        hwm: value2,
-      };
-      return (..._extraArguments: unknown[]): undefined => {
-        index += 1;
-        entries.clear();
-        for (let [value13, value14] of state.runs as Dynamic)
-          entries.set(value13, value14);
-        entries3.clear();
-        for (let [value13, value14] of state.doubts as Dynamic)
-          entries3.set(value13, value14);
-        value4 = state.drifted;
-        value2 = Math.max(value2, state.hwm);
-        value6 = null;
-      };
-    },
-    idAt(input2?: Dynamic, ..._extraArguments: unknown[]): Dynamic {
-      let value13: Dynamic = textBlockAtPosition(input(), input2);
-      if (
-        !value13 ||
-        value13.bid === null ||
-        value13.offset >= value13.node.content.size
-      )
-        return null;
-      return (
-        entries
-          .get(value13.bid)
-          ?.keyAt(utf16OffsetToCharacterIndex(value13.node, value13.offset)) ??
-        null
-      );
-    },
-    posOf(
-      input2?: Dynamic,
-      options2?: Dynamic,
-      ..._extraArguments: unknown[]
-    ): Dynamic {
-      let value13: Dynamic = input();
-      if (value === null || value.doc !== value13 || value.gen !== index)
-        value = {
-          doc: value13,
-          gen: index,
-          at: new (Map as Dynamic)(),
-        };
-      else if (value.at.has(input2)) return value.at.get(input2);
-      let at: Dynamic = value.at;
-      if (options2 === true) {
-        let entry: Dynamic = entries2.get(input2);
-        if (entry !== undefined) {
-          let entry2: Dynamic = entries.get(entry);
-          let value14: Dynamic =
-            entry2 === undefined ? -1 : entry2.offsetOf(input2);
-          let value15: Dynamic =
-            value14 < 0 ? undefined : value11(value13).get(entry);
-          if (value15)
-            return (
-              value15.pos +
-              1 +
-              characterIndexToUTF16Offset(value15.node, value14)
-            );
-          entries2.delete(input2);
-        }
-      }
-      for (let [value14, value15] of entries as Dynamic) {
-        let value16: Dynamic = value15.offsetOf(input2);
-        if (value16 < 0) continue;
-        let entry: Dynamic = value11(value13).get(value14);
-        if (options2 === true && entry) {
-          if (entries2.size >= 1024) entries2.clear();
-          entries2.set(input2, value14);
-        }
-        let value17: Dynamic = entry
-          ? entry.pos + 1 + characterIndexToUTF16Offset(entry.node, value16)
-          : null;
-        if (at.size >= count2) at.clear();
-        at.set(input2, value17);
-        return value17;
-      }
-      if (options2 !== true) {
-        if (at.size >= count2) at.clear();
-        at.set(input2, null);
-      }
-      return null;
-    },
-    holdersOf: (input2?: unknown, ..._extraArguments: unknown[]): Dynamic =>
-      [...entries]
-        .filter(
-          ([, input3]: Dynamic, ..._extraArguments: unknown[]) =>
-            input3.offsetOf(input2) >= 0,
-        )
-        .map(
-          ([input3]: Dynamic, ..._extraArguments: unknown[]): Dynamic => input3,
-        ),
-    holderOf(input2?: Dynamic, ..._extraArguments: unknown[]): Dynamic {
-      let value13: Dynamic = parseCharacterId(input2);
-      if (!value13) return null;
-      let value14: Dynamic = value11(input());
-      for (let [value15, value16] of entries as Dynamic)
-        if (
-          value14.has(value15) &&
-          value16.spans.some(
-            (input3?: Dynamic, ..._extraArguments: unknown[]) =>
-              input3.sess === value13.sess &&
-              value13.i >= input3.start &&
-              value13.i < input3.start + input3.len,
-          )
-        )
-          return value15;
-      return null;
-    },
-    idsIn(
-      input2?: Dynamic,
-      options2?: Dynamic,
-      ..._extraArguments: unknown[]
-    ): Dynamic {
-      let value13: Dynamic = textBlockAtPosition(input(), input2);
-      let value14: Dynamic =
-        value13?.bid == null ? null : entries.get(value13.bid);
-      if (
-        !value13 ||
-        !value14 ||
-        options2 < input2 ||
-        options2 > value13.start + value13.node.content.size
-      )
-        return [];
-      let value15 = utf16OffsetToCharacterIndex(value13.node, value13.offset);
-      let value16: Dynamic = Array.from<Dynamic, Dynamic>(
-        {
-          length:
-            utf16OffsetToCharacterIndex(
-              value13.node,
-              value13.offset + options2 - input2,
-            ) - value15,
-        },
-        (
-          input3: unknown,
-          options3: number,
-          ..._extraArguments: unknown[]
-        ): Dynamic => value14.keyAt(value15 + options3),
-      );
-      return value16.includes(null) ? [] : value16;
-    },
-    blockAt(input2?: Dynamic, ..._extraArguments: unknown[]): Dynamic {
-      let value13: Dynamic = textBlockAtPosition(input(), input2);
-      return value13?.bid == null
-        ? null
-        : {
-            bid: value13.bid,
-            start: value13.start,
-            end: value13.start + value13.node.content.size,
-          };
-    },
-    posOfBlock: (input2?: Dynamic, ..._extraArguments: unknown[]): Dynamic =>
-      value11(input()).get(input2)?.pos ?? null,
-    predict(input2?: Dynamic, ..._extraArguments: unknown[]) {
-      let value13 = characterId(value7(), value2 + 1);
-      value2 += Math.max(0, input2);
-      return value13;
-    },
-    atLeast(input2?: Dynamic, ..._extraArguments: unknown[]): undefined {
-      if (Number.isInteger(input2) && input2 > value2) value2 = input2;
-    },
-    counter: (input2?: Dynamic, ..._extraArguments: unknown[]): number =>
-      (value2 =
-        input2 !== undefined && Number.isInteger(input2)
-          ? Math.max(input2, text === value7() ? value3 : -1)
-          : value2),
-    taught(input2?: Dynamic, ..._extraArguments: unknown[]): undefined {
-      if (!Number.isInteger(input2)) return;
-      if (text !== value7()) {
-        text = value7();
-        value3 = -1;
-      }
-      if (input2 > value3) value3 = input2;
-      if (input2 > value2) value2 = input2;
-    },
-    floor: (..._extraArguments: unknown[]): number =>
-      text === value7() ? value3 : -1,
-    mapThrough(
-      input2?: Dynamic,
-      options2?: Dynamic,
-      context: Dynamic = [],
-      value13: Dynamic = false,
-      ..._extraArguments: unknown[]
-    ): undefined {
-      if (!value4 && input2.docChanged)
-        value12(input2, options2, context, value13);
-    },
-    salvageDrift(..._extraArguments: unknown[]) {
-      let value13 = value4 === null ? null : /^block (\S+): /.exec(value4);
-      if (!value13) return null;
-      let value14 = value13[1];
-      if (!entries3.has(value14)) entries3.set(value14, value4);
-      value4 = null;
-      return value14;
-    },
-    settle(input2?: unknown, ..._extraArguments: unknown[]): undefined {
-      let items: Dynamic = [];
-      for (let [value13, value14] of input2 as Dynamic) {
-        value9(value14);
-        if (value13 === value14) continue;
-        for (let value15 of entries.values() as Dynamic) {
-          let value16: Dynamic = value15.offsetOf(value13);
-          if (value16 < 0) continue;
-          items.push({
-            runs: value15,
-            off: value16,
-            key: value14,
-          });
-          break;
-        }
-      }
-      if (items.length > 0) index += 1;
-      for (let { runs: runs, off: off, key: key } of items as Dynamic)
-        runs.renameAt(off, key);
-    },
-    load(
-      input2?: Dynamic,
-      options2?: Dynamic,
-      context: Dynamic = false,
-      ..._extraArguments: unknown[]
-    ): undefined {
-      index += 1;
-      if (!options2) entries.clear();
-      if (!options2) value4 = null;
-      if (!options2) entries3.clear();
-      value6 = null;
-      let index2: number = 0;
-      for (let { bid: bid, runs: runs, opaque: opaque } of input2 as Dynamic) {
-        let value13: Dynamic = (CharacterRunSpans).fromView(
-          runs,
-          opaque,
-        );
-        entries.set(bid, value13);
-        if (!value13.opaque) entries3.delete(bid);
-        if (value13.opaque) index2 += 1;
-        else
-          for (let value14 of runs as Dynamic) {
-            let value15: Dynamic = parseCharacterId(value14.id);
-            value8(value15.sess, value15.i + value14.len - 1);
-          }
-      }
-      if (index2)
-        console.warn(
-          `runTable: ${index2} block(s) carry ids that cannot be read; shown, not addressable`,
-        );
-      let values: Dynamic = new (Set as Dynamic)();
-      input().descendants(
-        (input3?: Dynamic, ..._extraArguments: unknown[]) => {
-          let value13: Dynamic = proseBlockId(input3);
-          if (value13 !== null) value9(value13);
-          if (!input3.isTextblock) return true;
-          if (value13 === null)
-            return value10("a textblock without a block id");
-          if (values.size === values.add(value13).size)
-            return value10(`two blocks carry the id ${value13}`);
-          if (!entries.has(value13))
-            entries.set(value13, new (CharacterRunSpans)());
-          let entry: Dynamic = entries.get(value13);
-          if (!entry.opaque && entry.length !== pmCharacterCount(input3)) {
-            if (!context) return value10(`block ${value13}: runs ≠ content`);
-            if (!entries3.has(value13))
-              entries3.set(value13, `block ${value13}: runs ≠ content`);
-            entries.set(value13, value5());
-          }
-          return false;
-        },
-      );
-    },
-    dump(..._extraArguments: unknown[]): Dynamic {
-      let items: Dynamic = [];
-      let values: Dynamic = new (Set as Dynamic)();
-      input().descendants((input2?: Dynamic, ..._extraArguments: unknown[]) => {
-        let value13: Dynamic = input2.isTextblock ? proseBlockId(input2) : null;
-        let value14: Dynamic =
-          value13 === null || values.has(value13) ? null : entries.get(value13);
-        if (!value14) return !input2.isTextblock;
-        items.push({
-          bid: value13,
-          runs: value14.toView(),
-          ...(value14.opaque
-            ? {
-                opaque: true,
-              }
-            : {}),
-        });
-        values.add(value13);
-        return false;
-      });
-      return items;
-    },
-  };
 }
 var normalizedTableRole = (
   input?: Dynamic,
@@ -98393,7 +97476,7 @@ function wireNodeAttributes(
     );
     if (value) state.colwidth = value;
     else delete state.colwidth;
-    let value2: Dynamic = normalizedTextAlignment(state.align);
+    let value2 = normalizedTextAlignment(state.align);
     if (value2) state.align = value2;
     else delete state.align;
     let value3 = normalizedCellBackground(state.background);
@@ -98413,7 +97496,7 @@ function wireNodeAttributes(
       if (state[value] === null) delete state[value];
   }
   if (input.type.name === "list") {
-    let value: Dynamic =
+    let value =
       input.attrs.kind === "ordered"
         ? resolveProsePluginsIncludes6(state.numbering)
         : null;
@@ -98964,7 +98047,7 @@ function parseWirePMNodes(
     let value6: Dynamic =
       typeof value5 === "string" ? value5 : (context[index] ?? null);
     if (typeof value5 !== "string") index += options2;
-    let value7: Dynamic = value6 ? parseCharacterId(value6) : null;
+    let value7 = value6 ? parseCharacterId(value6) : null;
     for (let index2 = 0; index2 < options2; index2++)
       value.push(value7 ? characterId(value7.sess, value7.i + index2) : "");
     return value6;
@@ -99088,7 +98171,7 @@ function mintedBlockIdsAfterStep(
   let entries: Dynamic = new (Map as Dynamic)(
     value < 0 ? [] : entry.get(value),
   );
-  for (let value2: Dynamic = value; value2 >= 0 && value2 < options; value2++) {
+  for (let value2: number = value; value2 >= 0 && value2 < options; value2++) {
     let value3: Dynamic = input.steps[value2].getMap();
     let entries2: Dynamic = new (Map as Dynamic)();
     for (let [value4, value5] of entries as Dynamic) {
@@ -99180,7 +98263,7 @@ function recordInsertedCharacterIds(
     if (input2.isText) {
       let length = Array.from<Dynamic>(input2.text ?? "").length;
       let value7: Dynamic = context(index);
-      let value8: Dynamic = value7 === null ? null : parseCharacterId(value7);
+      let value8 = value7 === null ? null : parseCharacterId(value7);
       if (!value8) return false;
       for (let index2 = 0; index2 < length; index2++)
         items.push(characterId(value8.sess, value8.i + index2));
@@ -99254,7 +98337,7 @@ function adjacentCharacterRanges(
   let items: Dynamic = [];
   let value: Dynamic = null;
   for (let value2 of input as Dynamic) {
-    let value3: Dynamic = parseCharacterId(value2);
+    let value3 = parseCharacterId(value2);
     if (
       value3 &&
       value &&
@@ -99331,7 +98414,7 @@ function batchCharacterRuns(
   for (let value of splitLargeCharacterRanges(
     adjacentCharacterRanges(input),
   ) as Dynamic) {
-    let value2: Dynamic = characterRangeLength(value);
+    let value2: number = characterRangeLength(value);
     let value3: Dynamic = items[items.length - 1];
     if (
       value3.length > 0 &&
@@ -99703,7 +98786,7 @@ function transactionTouchesCodeContent(
     editorState2.selection.$head.parent.type.name === value
   )
     return true;
-  let value2: Dynamic = TiptapfindChildren(
+  let value2 = TiptapfindChildren(
     editorState.doc,
     (input2: ProseMirrorNode, ..._extraArguments: unknown[]) =>
       input2.type.name === value,
@@ -100135,52 +99218,61 @@ var codeRenderableKinds = [
     aliases: ["yml"],
   },
 ];
-var codeRenderableKindLookup: Dynamic = ((
+var codeRenderableKindLookup = ((
   ..._extraArguments: unknown[]
-): Dynamic => {
-  let entries: Dynamic = new (Map as Dynamic)();
-  for (let value of codeRenderableKinds as Dynamic) {
+) => {
+  let entries = new Map<string, (typeof codeRenderableKinds)[number]>();
+  for (let value of codeRenderableKinds) {
     entries.set(value.key, value);
-    for (let value2 of value.aliases as Dynamic) entries.set(value2, value);
+    for (let value2 of value.aliases) entries.set(value2, value);
   }
   return entries;
 })();
 function codeRenderableKind(
-  input?: Dynamic,
+  input?: string | null,
   ..._extraArguments: unknown[]
-): Dynamic {
+) {
   if (!input) return null;
   return codeRenderableKindLookup.get(input.toLowerCase()) ?? null;
 }
 function normalizedRenderableLanguage(
-  input?: unknown,
+  input?: string | null,
   ..._extraArguments: unknown[]
-): Dynamic {
+) {
   return codeRenderableKind(input)?.key ?? null;
 }
 function liveRenderableLanguage(
-  input?: unknown,
+  input?: string | null,
   ..._extraArguments: unknown[]
-): Dynamic {
+) {
   return codeRenderableKind(input)?.live ?? null;
 }
 function renderableKindDefinition(
   input?: unknown,
   ..._extraArguments: unknown[]
-): Dynamic {
+) {
   if (!input) return null;
-  for (let value of codeRenderableKinds as Dynamic)
+  for (let value of codeRenderableKinds)
     if (value.key === input) return value;
   return null;
+}
+/** Preserve the failure of reading a label from an unsupported rendering kind. */
+function renderableKindLabel(language: unknown): string {
+  const definition = renderableKindDefinition(language);
+  if (definition === null) {
+    // i18n-ignore: Preserve the previous JavaScript exception for an invalid internal kind.
+    throw new TypeError("Cannot read properties of null (reading 'label')");
+  }
+  return definition.label;
 }
 function renderableKindLanguage(
   input?: unknown,
   ..._extraArguments: unknown[]
-): Dynamic {
+) {
   return renderableKindDefinition(input)?.live ?? null;
 }
-var codeRenderableKindKeys: Dynamic = codeRenderableKinds.map(
-  (input: { key: string; label: string; aliases: string[]; slashOnly: string[]; live: string; } | { key: string; label: string; aliases: string[]; live: string; slashOnly?: undefined; } | { key: string; label: string; aliases: string[]; slashOnly?: undefined; live?: undefined; }, ..._extraArguments: unknown[]): Dynamic => input.key,
+var codeRenderableKindKeys = codeRenderableKinds.map(
+  (input, ..._extraArguments: unknown[]) => input.key,
 );
 function replaceCodeTextRanges(
   input?: Dynamic,
@@ -100540,9 +99632,9 @@ function resolveClipboardAndCodeInputFind(
   input?: Dynamic,
   ..._extraArguments: unknown[]
 ): Dynamic {
-  let value: Dynamic = TiptapmarkInputRule({
+  let value = TiptapmarkInputRule({
     find: (input2?: Dynamic, ..._extraArguments: unknown[]): Dynamic => {
-      let value2: Dynamic = inputRegex.exec(input2);
+      let value2 = inputRegex.exec(input2);
       if (!value2) return null;
       let length: Dynamic = (value2[1] ?? "").length;
       return {
@@ -101101,8 +100193,8 @@ var EmojiShortcodeExtension: Dynamic = TiptapExtension.create({
   },
 });
 initializeTiptapCoreDependencies2();
-var splitBlockReference: Dynamic = Tiptapcommands.splitBlock;
-var splitListItemReference: Dynamic = Tiptapcommands.splitListItem;
+var splitBlockReference = Tiptapcommands.splitBlock;
+var splitListItemReference = Tiptapcommands.splitListItem;
 var ContainedSplitExtension: Dynamic = TiptapExtension.create({
   name: "containedSplit",
   addCommands(..._extraArguments: unknown[]): Dynamic {
@@ -101117,7 +100209,7 @@ var ContainedSplitExtension: Dynamic = TiptapExtension.create({
         `opPlugin: ${options} threw while building its transaction — the key is refused, nothing changed`,
         resolveProsePluginsValue90(input),
       );
-      let editor: Dynamic = this.editor;
+      let editor = this.editor;
       queueMicrotask((..._extraArguments: unknown[]): undefined => {
         try {
           if (!editor.isDestroyed)
@@ -101693,7 +100785,7 @@ class ClipboardAndCodeInputDropped extends ProseMirrorDOMParser {
     options: Dynamic = {},
     ..._extraArguments: unknown[]
   ): Dynamic {
-    let value: Dynamic = super.parse(input, options);
+    let value = super.parse(input, options);
     let items: Dynamic = [];
     value.descendants(
       (
@@ -101908,7 +101000,7 @@ var BreakPastAtomsExtension: Dynamic = TiptapExtension.create({
   addKeyboardShortcuts(..._extraArguments: unknown[]) {
     return {
       "Shift-Enter": (..._extraArguments: unknown[]) => {
-        let hardBreak: Dynamic = this.editor.schema.nodes.hardBreak;
+        let hardBreak = this.editor.schema.nodes.hardBreak;
         return (
           !!hardBreak &&
           insertHardBreakPastAtoms(hardBreak)(
@@ -102737,7 +101829,7 @@ var WholeSetNodeExtension: Dynamic = TiptapExtension.create({
           { state: state, tr: tr2, dispatch: dispatch }: Dynamic,
           ..._extraArguments: unknown[]
         ): Dynamic => {
-          let value: Dynamic = TiptapgetMarkType(input, state.schema);
+          let value = TiptapgetMarkType(input, state.schema);
           if (!value.isTextblock) return false;
           if (
             value.spec.code &&
@@ -102745,7 +101837,7 @@ var WholeSetNodeExtension: Dynamic = TiptapExtension.create({
           )
             return false;
           let { $anchor: $anchor, $head: $head }: Dynamic = state.selection;
-          let value2: Dynamic = ProseMirrorsetBlockType(value, {
+          let value2 = ProseMirrorsetBlockType(value, {
             ...($anchor.sameParent($head) ? $anchor.parent.attrs : undefined),
             ...options,
           });
@@ -102779,10 +101871,10 @@ function resolveClipboardAndCodeInputExec(
   if (typeof input !== "string") return null;
   if (input.length > 2048) return null;
   let value: Dynamic = resolveProsePluginsCharCodeAt6(input);
-  let value2: Dynamic = /^claude:(?:\/\/)?([^\s"'<>]{1,2048})$/.exec(value);
+  let value2 = /^claude:(?:\/\/)?([^\s"'<>]{1,2048})$/.exec(value);
   if (value2 === null) return null;
   let value3: Dynamic = value2[1];
-  let value4: Dynamic = resolveProsePluginsValue39(value3);
+  let value4 = resolveProsePluginsValue39(value3);
   if (value4 !== null) return value4;
   let value5: Dynamic = value3.indexOf("/");
   if (value5 <= 0 || value5 === value3.length - 1) return null;
@@ -103195,7 +102287,7 @@ function isClipboardAndCodeInputFrom2(
   let value2: Dynamic = resolveClipboardAndCodeInputSteps(input);
   if (value2 === null) return null;
   let doc: Dynamic = input.doc;
-  let value3: Dynamic = new (ProseMirrorMapping)([
+  let value3 = new (ProseMirrorMapping)([
     input.mapping.maps[0],
   ]);
   let items: Dynamic = [];
@@ -104627,7 +103719,7 @@ function filterClipboardAndCodeInputDataColwidth(
     clipboardAndCodeInputInputPattern8.test(attrs.background)
       ? attrs.background
       : null;
-  let value6: Dynamic = value5 ? resolveProsePluginsGray2(value5) : null;
+  let value6 = value5 ? resolveProsePluginsGray2(value5) : null;
   let text = [value4?.style, value5 ? `background-color:${value5}` : null]
     .filter(Boolean)
     .join(";");
@@ -104733,7 +103825,7 @@ function renderPMNodeHTML(
         context?.artifactLinkChips !== true || value4 === undefined
           ? null
           : resolveClipboardAndCodeInputArtifact(value4);
-      let value6: Dynamic =
+      let value6: boolean =
         value5 !== null &&
         isClipboardAndCodeInputValue3(
           value5,
@@ -104753,7 +103845,7 @@ function renderPMNodeHTML(
         value4?.type === "chipCheckbox" ||
         (value4?.type === "builtin" &&
           value4.attrs?.builtin?.kind === "checkbox");
-      let value6: Dynamic = resolveProsePluginsIsInteger5(node.attrs?.heading);
+      let value6 = resolveProsePluginsIsInteger5(node.attrs?.heading);
       if (value6 !== null) return `<h${value6}>${value2()}</h${value6}>`;
       return value5
         ? `<p class="ldoc-checklist">${value2()}</p>`
@@ -104774,7 +103866,7 @@ function renderPMNodeHTML(
         : `<ol>${value2()}</ol>`;
     }
     case "listItem": {
-      let value4: Dynamic = resolveClipboardAndCodeInputValue12(
+      let value4: number = resolveClipboardAndCodeInputValue12(
         node.attrs?.[clipboardAndCodeInputOwnLevel],
       );
       return value4
@@ -104929,7 +104021,7 @@ function renderPMNodeHTML(
         node.type === "embed" && Number.isFinite(value7) && value7 > 0
           ? ` data-width="${Math.round(value7)}" data-lfile-embed-sized="" style="width:${Math.round(value7)}px;--embed-w:${Math.round(value7)}px"`
           : "";
-      let value9: Dynamic =
+      let value9 =
         node.type === "embed"
           ? resolveProsePluginsCenter(node.attrs?.align)
           : null;
@@ -104955,9 +104047,9 @@ function renderPMNodeHTML(
     }
     case "mention": {
       if (typeof node.attrs?.ref === "string" && node.attrs.ref !== "") {
-        let value6: Dynamic =
+        let value6: string =
           resolveProsePluginsValue39(node.attrs.ref) ?? "ref";
-        let value7: Dynamic = resolveProsePluginsValue49(node.attrs.label);
+        let value7 = resolveProsePluginsValue49(node.attrs.label);
         let value8 =
           value7 === null
             ? ""
@@ -104969,7 +104061,7 @@ function renderPMNodeHTML(
         node.attrs.principal !== ""
       ) {
         let principal: Dynamic = node.attrs.principal;
-        let value6: Dynamic =
+        let value6 =
           principal === prosePluginsClaude
             ? null
             : resolveProsePluginsValue49(node.attrs.label);
@@ -104991,7 +104083,7 @@ function renderPMNodeHTML(
       return `<span class="ldoc-chip" data-chip="checkbox" data-checked="${value4}">${value4 ? "☑" : "☐"}</span>`;
     }
     case "chipDate": {
-      let value4: Dynamic = resolveProsePluginsJoin(
+      let value4: string = resolveProsePluginsJoin(
         String(node.attrs?.value ?? ""),
       );
       return `<span class="ldoc-chip" data-chip="date">${resolveClipboardAndCodeInputReplace(value4 || "—")}</span>`;
@@ -105037,7 +104129,7 @@ function renderPMNodeHTML(
           let value7 = /^\d{4}-\d{2}-\d{2}(T\d{2}:\d{2}(\[[^\]]+\])?)?$/.test(
             value6,
           );
-          let value8: Dynamic =
+          let value8: string =
             resolveProsePluginsJoin(
               value6 === "" ? "—" : value7 ? value6 : value6.slice(0, 10),
             ) || "—";
@@ -105317,7 +104409,7 @@ var HighlightExtension: Dynamic = TiptapMark.create({
           element?: Dynamic,
           ..._extraArguments: unknown[]
         ) => {
-          let value: Dynamic = resolveClipboardAndCodeInputBackground(
+          let value = resolveClipboardAndCodeInputBackground(
             element.getAttribute("style"),
           );
           return value === null
@@ -106686,7 +105778,7 @@ function resolveSchemaAndRenderingReplace(
   let value2 = false;
   schemaAndRenderingInputPattern3.lastIndex = 0;
   for (
-    let value3: Dynamic = schemaAndRenderingInputPattern3.exec(value);
+    let value3 = schemaAndRenderingInputPattern3.exec(value);
     value3;
     value3 = schemaAndRenderingInputPattern3.exec(value)
   )
@@ -106795,7 +105887,7 @@ function resolveSchemaAndRenderingDecl2(
   );
   if (value2 && value2.index === 0) index = value2[0].length;
   while (index <= input.length) {
-    let value3: Dynamic = index;
+    let value3: number = index;
     while (
       value3 < input.length &&
       input[value3] !==
@@ -106820,7 +105912,7 @@ function resolveSchemaAndRenderingDecl2(
     let value5 = /^([ \t]*)([\p{L}\p{N}_.-]+)[ \t]*:[ \t]*(.*?)[ \t]*$/u.exec(
       slice,
     );
-    let value6: Dynamic = index + (value5?.[1].length ?? 0);
+    let value6: number = index + (value5?.[1].length ?? 0);
     if (
       value5 &&
       value5[2] === options &&
@@ -107778,7 +106870,7 @@ function resolveSchemaAndRenderingExec(
       );
       let value7: Dynamic = value6 < 0 ? input.length : value6;
       let value8: number = -1;
-      for (let value9: Dynamic = index + 1; value9 < value7; value9++)
+      for (let value9: number = index + 1; value9 < value7; value9++)
         if (input[value9] === '"') {
           let value10: Dynamic = input.indexOf('"', value9 + 1);
           if (value10 < 0 || value10 >= value7) break;
@@ -108261,9 +107353,9 @@ function filterSchemaAndRenderingClass(
         input.localName === "line",
     );
     if (!match || filtered.length === 0) continue;
-    let value2: Dynamic = resolveSchemaAndRenderingParseFloat(match, "cx");
-    let value3: Dynamic = resolveSchemaAndRenderingParseFloat(match, "cy");
-    let value4: Dynamic = resolveSchemaAndRenderingParseFloat(match, "r");
+    let value2 = resolveSchemaAndRenderingParseFloat(match, "cx");
+    let value3 = resolveSchemaAndRenderingParseFloat(match, "cy");
+    let value4 = resolveSchemaAndRenderingParseFloat(match, "r");
     if (value2 == null || value3 == null || value4 == null) continue;
     let value5 = value3 - value4 + schemaAndRenderingLimit13;
     let value6 = value2 - schemaAndRenderingLimit44 / 2;
@@ -108376,9 +107468,9 @@ function filterSchemaAndRenderingDecisions(
         input2.localName === "rect",
     );
     if (match3) {
-      let value2: Dynamic =
+      let value2: number =
         resolveSchemaAndRenderingParseFloat(match3, "rx") ?? 0;
-      let value3: Dynamic =
+      let value3: number =
         resolveSchemaAndRenderingParseFloat(match3, "height") ?? 0;
       if (value3 > 0 && value2 >= value3 / 2 - 0.5) {
         value.classList.add("cw-mm-terminal");
@@ -108873,11 +107965,11 @@ function resolveSchemaAndRenderingBody(
   input?: Dynamic,
   ..._extraArguments: unknown[]
 ): Dynamic {
-  let value: Dynamic =
+  let value: number =
     resolveSchemaAndRenderingTrim2(input.fontSize) ??
     resolveSchemaAndRenderingTrim2(input.lengths?.["--cds-font-size-body"]) ??
     schemaAndRenderingLimit162;
-  let value2: Dynamic =
+  let value2: number =
     resolveSchemaAndRenderingTrim2(input.lineHeight, value, value * 3) ??
     Math.round(value * 1.5 * 10) / 10;
   let value3 = Math.max(11, Math.round(value * 0.875));
@@ -109044,7 +108136,7 @@ function resolveSchemaAndRenderingValue10(
   options?: Dynamic,
   ..._extraArguments: unknown[]
 ) {
-  let value: Dynamic = resolveSchemaAndRenderingValue9(input.a);
+  let value: number = resolveSchemaAndRenderingValue9(input.a);
   return resolveSchemaAndRenderingPadStart2({
     r: input.r * value + options.r * (1 - value),
     g: input.g * value + options.g * (1 - value),
@@ -109819,7 +108911,7 @@ function isRenderedCodeAndProofreadingMode(
   renderedCodeAndProofreadingState = value;
   return true;
 }
-var RenderedCodeAndProofreadingResolve: Dynamic = Promise.resolve();
+var RenderedCodeAndProofreadingResolve = Promise.resolve();
 class RenderedCodeAndProofreadingData extends Error {
   [key: string]: Dynamic;
 }
@@ -111042,7 +110134,7 @@ function resolveRenderedCodeAndProofreadingDiffSummary(
   context?: Dynamic,
   ..._extraArguments: unknown[]
 ): Dynamic {
-  let value: Dynamic = resolveRenderedCodeAndProofreadingValue9(
+  let value = resolveRenderedCodeAndProofreadingValue9(
     resolveRenderedCodeAndProofreadingCall(input.attrs, "diffSummary"),
   );
   if (options === "chg") return value ?? (context ? "Changed" : undefined);
@@ -111116,7 +110208,7 @@ function resolveRenderedCodeAndProofreadingDiff(
   let values: Dynamic = new (Set as Dynamic)();
   let value = (input2?: Dynamic, ..._extraArguments: unknown[]): undefined => {
     for (let value5 of (input2.content ?? []) as Dynamic) {
-      let value6: Dynamic = resolveRenderedCodeAndProofreadingValue9(
+      let value6 = resolveRenderedCodeAndProofreadingValue9(
         resolveRenderedCodeAndProofreadingCall(value5.attrs, "diff"),
       );
       if (value6 === "move") {
@@ -111372,7 +110464,7 @@ function updateRenderedCodeAndProofreadingSummary(
           ) === "del"
         )
           continue;
-        let value6: Dynamic = resolveRenderedCodeAndProofreadingValue9(
+        let value6 = resolveRenderedCodeAndProofreadingValue9(
           resolveRenderedCodeAndProofreadingCall(value5.attrs, "diffSummary"),
         );
         if (
@@ -111382,7 +110474,7 @@ function updateRenderedCodeAndProofreadingSummary(
           value6 !== undefined &&
           value6 !== "Column resized"
         ) {
-          let value7: Dynamic =
+          let value7: string =
             resolveRenderedCodeAndProofreadingValue9(
               resolveRenderedCodeAndProofreadingCall(value5.attrs, "diffId"),
             ) ?? `${options}:${index}`;
@@ -111513,10 +110605,10 @@ function resolveRenderedCodeAndProofreadingDataDiff(
   let state: Dynamic = {
     "data-diff": options,
   };
-  let value: Dynamic = resolveRenderedCodeAndProofreadingValue9(
+  let value = resolveRenderedCodeAndProofreadingValue9(
     resolveRenderedCodeAndProofreadingCall(input.attrs, "diffId"),
   );
-  let value2: Dynamic = resolveRenderedCodeAndProofreadingValue9(
+  let value2 = resolveRenderedCodeAndProofreadingValue9(
     resolveRenderedCodeAndProofreadingCall(input.attrs, "diffSummary"),
   );
   if (value) {
@@ -111632,11 +110724,11 @@ function resolveRenderedCodeAndProofreadingParentType(
       resolveRenderedCodeAndProofreadingValue9(
         resolveRenderedCodeAndProofreadingCall(input2.attrs, "diff"),
       ) === "ins";
-    let value6: Dynamic =
+    let value6: boolean =
       value5(value4) &&
       (value5(input[index2 - 1]) || value5(input[index2 + 1]));
     if (!value5(value4)) value3 = false;
-    let value7: Dynamic = resolveRenderedCodeAndProofreadingValue9(
+    let value7 = resolveRenderedCodeAndProofreadingValue9(
       resolveRenderedCodeAndProofreadingCall(value4.attrs, "diff"),
     );
     if (value7 === "del") {
@@ -111715,7 +110807,7 @@ function resolveRenderedCodeAndProofreadingParentType(
     let value13: Dynamic = value7
       ? resolveRenderedCodeAndProofreadingDiffSummary(value4, value7, value12)
       : undefined;
-    let value14: Dynamic = resolveRenderedCodeAndProofreadingValue9(
+    let value14 = resolveRenderedCodeAndProofreadingValue9(
       resolveRenderedCodeAndProofreadingCall(value4.attrs, "diffId"),
     );
     let value15: Dynamic = value14 !== undefined && value.badged.has(value14);
@@ -111742,7 +110834,7 @@ function resolveRenderedCodeAndProofreadingParentType(
         ),
       ) !== undefined
     ) {
-      let value18: Dynamic = resolveRenderedCodeAndProofreadingValue9(
+      let value18 = resolveRenderedCodeAndProofreadingValue9(
         resolveRenderedCodeAndProofreadingCall(
           value4.attrs,
           renderedCodeAndProofreadingDiffUnchecked,
@@ -111761,7 +110853,7 @@ function resolveRenderedCodeAndProofreadingParentType(
           ),
         );
       } else {
-        let value19: Dynamic = resolveRenderedCodeAndProofreadingBadge(value18);
+        let value19 = resolveRenderedCodeAndProofreadingBadge(value18);
         value13 = value19.badge;
         Object.assign(
           state,
@@ -111772,14 +110864,14 @@ function resolveRenderedCodeAndProofreadingParentType(
     if (value4.type === "cell" && value7 === "chg") value13 = undefined;
     let value16: Dynamic = value13;
     if (value4.type === "table" && value7 !== "ins") {
-      let value18: Dynamic = updateRenderedCodeAndProofreadingSummary(value4);
+      let value18 = updateRenderedCodeAndProofreadingSummary(value4);
       if (value18 !== undefined) {
         value13 = value13 ? `${value13} · ${value18.badge}` : value18.badge;
         value16 = value16 ? `${value16} · ${value18.title}` : value18.title;
       }
     }
     if (value13 && value4.type === "table") {
-      let value18: Dynamic = value15
+      let value18 = value15
         ? resolveRenderedCodeAndProofreadingValue9(
             resolveRenderedCodeAndProofreadingCall(value4.attrs, "diffSummary"),
           )
@@ -111801,7 +110893,7 @@ function resolveRenderedCodeAndProofreadingParentType(
         resolveRenderedCodeAndProofreadingCall(value4.attrs, "diffSummary"),
       ) === undefined
     ) {
-      let value18: Dynamic = resolveRenderedCodeAndProofreadingDiff(value4);
+      let value18 = resolveRenderedCodeAndProofreadingDiff(value4);
       if (value18 !== undefined) {
         let value19: string = `${value13 ?? renderedCodeAndProofreadingAdded} · ${value18}`;
         Object.assign(
@@ -111845,7 +110937,7 @@ function resolveRenderedCodeAndProofreadingParentType(
         : value8.childCount === 1
           ? value8.firstChild
           : null;
-      let value19: Dynamic =
+      let value19 =
         value18?.isTextblock === true && value18.content.size === 0
           ? resolveRenderedCodeAndProofreadingCodeBlock(
               value4,
@@ -111924,7 +111016,7 @@ function resolveRenderedCodeAndProofreadingParentType(
       value8.content.size === 0 &&
       resolveRenderedCodeAndProofreadingParagraph(value4)
     ) {
-      let value18: Dynamic = resolveRenderedCodeAndProofreadingHeading(
+      let value18: string = resolveRenderedCodeAndProofreadingHeading(
         value4,
         extra,
         input.length === 1,
@@ -111974,10 +111066,10 @@ function filterRenderedCodeAndProofreadingNodeName(
   let values2: Dynamic = new (Set as Dynamic)();
   for (let value3 of input as Dynamic) {
     if (value3.type !== "media") continue;
-    let value4: Dynamic = resolveRenderedCodeAndProofreadingValue9(
+    let value4 = resolveRenderedCodeAndProofreadingValue9(
       resolveRenderedCodeAndProofreadingCall(value3.attrs, "diff"),
     );
-    let value5: Dynamic = resolveRenderedCodeAndProofreadingValue9(
+    let value5 = resolveRenderedCodeAndProofreadingValue9(
       resolveRenderedCodeAndProofreadingCall(value3.attrs, "diffId"),
     );
     if (!value5) continue;
@@ -112028,7 +111120,7 @@ function filterRenderedCodeAndProofreadingNodeName(
           ),
         );
       else if (value10 !== undefined) {
-        let value11: Dynamic =
+        let value11: string =
           resolveRenderedCodeAndProofreadingValue9(
             resolveRenderedCodeAndProofreadingCall(value10.attrs, "summary"),
           ) ?? "Formatting changed";
@@ -112055,7 +111147,7 @@ function filterRenderedCodeAndProofreadingNodeName(
       index2 += value6.length;
       continue;
     }
-    let value4: Dynamic = resolveRenderedCodeAndProofreadingValue9(
+    let value4 = resolveRenderedCodeAndProofreadingValue9(
       resolveRenderedCodeAndProofreadingCall(value3.attrs, "diff"),
     );
     let value5: Dynamic =
@@ -112156,13 +111248,13 @@ function filterRenderedCodeAndProofreadingNodeName(
         ),
       ) !== undefined
     ) {
-      let value6: Dynamic = resolveRenderedCodeAndProofreadingValue9(
+      let value6 = resolveRenderedCodeAndProofreadingValue9(
         resolveRenderedCodeAndProofreadingCall(
           value3.attrs,
           renderedCodeAndProofreadingDiffUnchecked,
         ),
       );
-      let value7: Dynamic =
+      let value7 =
         value6 === renderedCodeAndProofreadingChecking
           ? {
               badge: renderedCodeAndProofreadingMessage5,
@@ -112212,7 +111304,7 @@ var resolveRenderedCodeAndProofreadingDate = (
   input?: unknown,
   ..._extraArguments: unknown[]
 ): Dynamic => {
-  let value: Dynamic =
+  let value =
     resolveRenderedCodeAndProofreadingValue9(
       resolveRenderedCodeAndProofreadingCall(input, "ts"),
     ) ??
@@ -112259,13 +111351,13 @@ var resolveRenderedCodeAndProofreadingValue13 = (
   );
 var RenderedCodeAndProofreadingMention: Dynamic = {
   mention: (input?: unknown, ..._extraArguments: unknown[]): Dynamic => {
-    let value: Dynamic = resolveRenderedCodeAndProofreadingValue9(
+    let value = resolveRenderedCodeAndProofreadingValue9(
       resolveRenderedCodeAndProofreadingCall(input, "label"),
     );
-    let value2: Dynamic = resolveRenderedCodeAndProofreadingValue9(
+    let value2 = resolveRenderedCodeAndProofreadingValue9(
       resolveRenderedCodeAndProofreadingCall(input, "principal"),
     );
-    let value3: Dynamic = resolveRenderedCodeAndProofreadingValue9(
+    let value3 = resolveRenderedCodeAndProofreadingValue9(
       resolveRenderedCodeAndProofreadingCall(input, "ref"),
     );
     if (value3 !== undefined && value2 === undefined)
@@ -112300,7 +111392,7 @@ function resolveRenderedCodeAndProofreadingMime(
   input?: Dynamic,
   ..._extraArguments: unknown[]
 ) {
-  let value: Dynamic =
+  let value: string =
     resolveRenderedCodeAndProofreadingValue9(
       resolveRenderedCodeAndProofreadingCall(input, "mime"),
     ) ?? "";
@@ -112354,7 +111446,7 @@ function resolveRenderedCodeAndProofreadingSpan2(
     ? `Previous ${value2.toLowerCase()} (replaced below)`
     : `${value2} removed`;
   value.appendChild(value3);
-  let value4: Dynamic = resolveRenderedCodeAndProofreadingValue9(
+  let value4 = resolveRenderedCodeAndProofreadingValue9(
     resolveRenderedCodeAndProofreadingCall(options.attrs, "alt"),
   );
   if (value4) {
@@ -112363,7 +111455,7 @@ function resolveRenderedCodeAndProofreadingSpan2(
     value6.textContent = value4;
     value.appendChild(value6);
   }
-  let value5: Dynamic = resolveRenderedCodeAndProofreadingValue9(
+  let value5 = resolveRenderedCodeAndProofreadingValue9(
     resolveRenderedCodeAndProofreadingCall(options.attrs, "diffSummary"),
   );
   resolveRenderedCodeAndProofreadingDataTip2(
@@ -112551,7 +111643,7 @@ function resolveRenderedCodeAndProofreadingTableRow(
   );
   value.setAttribute("data-diff", "del");
   value.setAttribute("data-vh-delblock", "");
-  let value2: Dynamic = resolveRenderedCodeAndProofreadingValue9(
+  let value2 = resolveRenderedCodeAndProofreadingValue9(
     resolveRenderedCodeAndProofreadingCall(options.attrs, "diffSummary"),
   );
   if (options.type === "codeBlock") {
@@ -112699,7 +111791,7 @@ function resolveRenderedCodeAndProofreadingParentType2(
     value5.textContent =
       node.type === "embed" ? "Embedded content removed" : "Block removed";
     value3.appendChild(value5);
-    let value6: Dynamic = resolveRenderedCodeAndProofreadingValue9(
+    let value6 = resolveRenderedCodeAndProofreadingValue9(
       resolveRenderedCodeAndProofreadingCall(node.attrs, "caption"),
     );
     if (value6) {
@@ -112713,7 +111805,7 @@ function resolveRenderedCodeAndProofreadingParentType2(
   if (node.type === "pending") {
     value3.setAttribute("data-lfile-embed", "");
     value3.className = "vh-card";
-    let value5: Dynamic = resolveRenderedCodeAndProofreadingValue9(
+    let value5 = resolveRenderedCodeAndProofreadingValue9(
       resolveRenderedCodeAndProofreadingCall(node.attrs, "intent"),
     );
     let value6: Dynamic = resolveProsePluginsDataDocLang(
@@ -113922,7 +113014,7 @@ var resolveRenderedCodeAndProofreadingAdapter = (
       };
     return input;
   }
-  let value2: Dynamic = Object.getOwnPropertyNames(input);
+  let value2 = Object.getOwnPropertyNames(input);
   if (value2.length !== 1 || value2[0] !== "ref") return input;
   let ref: Dynamic = input.ref;
   return typeof ref === "string"
@@ -114669,7 +113761,7 @@ function resolveRenderedCodeAndProofreadingFrom4(
     $from.nodeAfter?.type.name === prosePluginsListItem
       ? $from.nodeAfter
       : null;
-  let value2: Dynamic = value
+  let value2: number = value
     ? resolveRenderedCodeAndProofreadingValue24(value)
     : 0;
   let value3: Dynamic = value ? resolveProsePluginsBullet($from.parent) : null;
@@ -115077,7 +114169,7 @@ var A11yAnnounceExtension: Dynamic = TiptapExtension.create({
               ? renderedCodeAndProofreadingRemovedDivider
               : null)
           );
-        let value20: Dynamic =
+        let value20 =
           resolveRenderedCodeAndProofreadingBlockquote(
             entry.kind,
             entry2.kind,
@@ -115232,7 +114324,7 @@ var A11yAnnounceExtension: Dynamic = TiptapExtension.create({
               input.state,
             );
             if (value?.rule !== true) return;
-            let value2: Dynamic =
+            let value2 =
               (value.swap
                 ? resolveRenderedCodeAndProofreadingTyped2(value.swap)
                 : null) ??
@@ -115401,7 +114493,7 @@ function isRenderedCodeAndProofreadingTextarea(
   options?: Dynamic,
   ..._extraArguments: unknown[]
 ): Dynamic {
-  let document2: Dynamic = (globalThis).document;
+  let document2 = (globalThis).document;
   if (!document2?.body) return false;
   let value: Dynamic = options ? document2.activeElement : null;
   let value2: Dynamic = document2.getSelection?.();
@@ -116328,7 +115420,7 @@ function openEditorActionMenu(
   value9.tabIndex = -1;
   value9.setAttribute("contenteditable", "false");
   let value10 = false;
-  let state: Dynamic = {
+  let state = {
     left: 0,
     top: 0,
     width: 0,
@@ -116696,12 +115788,12 @@ function openEditorActionMenu(
     return -1;
   };
   let value25 = (
-    input2?: unknown,
+    input2: string,
     ..._extraArguments: unknown[]
   ): undefined => {
     let value28 = value11 < 0 ? 0 : value11;
-    let value29: Dynamic = text + input2;
-    let value30: Dynamic = value29.length > 1 ? value24(value29, value28) : -1;
+    let value29: string = text + input2;
+    let value30: number = value29.length > 1 ? value24(value29, value28) : -1;
     if (value30 < 0) {
       value29 = input2;
       value30 = value24(value29, value11 < 0 ? 0 : value11 + 1);
@@ -117571,7 +116663,7 @@ function resolveRenderedCodeAndProofreadingStart(
   let value3 = /<[^>]+>|[^<]+/g;
   value3.lastIndex = value2;
   for (
-    let value4: Dynamic = value3.exec(input);
+    let value4 = value3.exec(input);
     value4;
     value4 = value3.exec(input)
   ) {
@@ -117635,7 +116727,7 @@ function resolveRenderedCodeAndProofreadingFrom8(
   ..._extraArguments: unknown[]
 ): Dynamic {
   if (!options.length) return null;
-  let value2: Dynamic = resolveRenderedCodeAndProofreadingValue52(context);
+  let value2: string = resolveRenderedCodeAndProofreadingValue52(context);
   if (!value2) return null;
   let items: Dynamic = [(..._extraArguments: unknown[]): Dynamic => options];
   if (value?.wordSplitFallback)
@@ -117647,7 +116739,7 @@ function resolveRenderedCodeAndProofreadingFrom8(
             let slice: Dynamic = input.slice(input2.from, input2.to);
             let value3 = /\S+/g;
             for (
-              let value4: Dynamic = value3.exec(slice);
+              let value4 = value3.exec(slice);
               value4;
               value4 = value3.exec(slice)
             ) {
@@ -117743,7 +116835,7 @@ function updateRenderedCodeAndProofreadingBongoLiveSrcHover(
   ..._extraArguments: unknown[]
 ): undefined {
   let defaultView: Dynamic = input.defaultView;
-  let value: Dynamic = (globalThis).CSS?.highlights;
+  let value = (globalThis).CSS?.highlights;
   if (!defaultView?.Highlight || !value) return;
   value.set(
     "bongo-live-src-hover",
@@ -118344,7 +117436,7 @@ function resolveRenderedCodeAndProofreadingOwnerDocument2(
     value2 = value.nextNode()
   ) {
     let value3: Dynamic = value2;
-    let value4: Dynamic = index;
+    let value4: number = index;
     let value5: Dynamic = index + value3.data.length;
     index = value5;
     let value6 = Math.max(options, value4);
@@ -118376,7 +117468,7 @@ function resolveRenderedCodeAndProofreadingCreateTreeWalker(
     text += value4.data;
   let items: Dynamic = [];
   for (
-    let value4: Dynamic = text.indexOf(options);
+    let value4: number = text.indexOf(options);
     value4 >= 0;
     value4 = text.indexOf(options, value4 + 1)
   )
@@ -118566,7 +117658,7 @@ function filterRenderedCodeAndProofreadingStart(
     ..._extraArguments: unknown[]
   ): Dynamic => {
     for (
-      let value7: Dynamic = text.indexOf(input, options2);
+      let value7: number = text.indexOf(input, options2);
       value7 >= 0;
       value7 = text.indexOf(input, value7 + 1)
     ) {
@@ -118619,7 +117711,7 @@ function filterRenderedCodeAndProofreadingStart(
   if (items3.length < Math.ceil((filtered.length - index) * 0.6)) return [];
   let mapped: Dynamic = items3.map(
     (input?: Dynamic, ..._extraArguments: unknown[]) => {
-      let value7: Dynamic = value(input.start + 1);
+      let value7: number = value(input.start + 1);
       return {
         start: input.start - value7,
         end: input.end - value7,
@@ -118640,7 +117732,7 @@ function filterRenderedCodeAndProofreadingStart(
     value7 = value6.nextNode()
   ) {
     let value8: Dynamic = value7;
-    let value9: Dynamic = index2;
+    let value9: number = index2;
     let value10: Dynamic = index2 + value8.data.length;
     index2 = value10;
     while (index3 < mapped.length && mapped[index3].start < value10) {
@@ -118658,69 +117750,68 @@ function filterRenderedCodeAndProofreadingStart(
   }
   return items4;
 }
-class CodeBlockNodeView {
-  [key: string]: Dynamic;
-  view: Dynamic;
-  getPos: Dynamic;
-  instances: Dynamic;
-  dom: Dynamic;
-  contentDOM: Dynamic;
-  head: Dynamic;
-  langBtn: Dynamic;
-  langIcon: Dynamic;
-  langFace: Dynamic = "";
-  langLive: Dynamic = undefined;
+class CodeBlockNodeView implements NodeView {
+  view: ProseMirrorEditorView;
+  getPos: () => number | undefined;
+  instances: Set<CodeBlockNodeView>;
+  dom: HTMLDivElement;
+  contentDOM: HTMLElement;
+  head: HTMLDivElement;
+  langBtn: HTMLButtonElement;
+  langIcon: HTMLSpanElement;
+  langFace: string = "";
+  langLive: string | null | undefined = undefined;
   #e: Dynamic = null;
-  #r: Dynamic = false;
-  #t: Dynamic = false;
-  #n: Dynamic = false;
-  #o: Dynamic = false;
-  moreBtn: Dynamic;
-  srcHead: Dynamic;
-  pre: Dynamic;
-  pick: Dynamic;
-  lead: Dynamic;
-  srcBtn: Dynamic;
-  status: Dynamic;
-  statusMsg: Dynamic;
-  errbar: Dynamic;
-  errorAt: Dynamic = null;
-  caretIn: Dynamic = false;
-  render: Dynamic = null;
-  cutOff: Dynamic = null;
-  cutWatching: Dynamic = null;
-  csvFitOff: Dynamic = null;
-  seatCrowded: Dynamic = false;
-  seatWatchOff: Dynamic = null;
-  fitFont: Dynamic = "";
+  #r: boolean = false;
+  #t: boolean = false;
+  #n: boolean = false;
+  #o: boolean = false;
+  moreBtn: HTMLButtonElement;
+  srcHead: HTMLDivElement;
+  pre: HTMLPreElement;
+  pick: HTMLDivElement;
+  lead: HTMLDivElement;
+  srcBtn: HTMLButtonElement;
+  status: HTMLDivElement;
+  statusMsg: HTMLSpanElement;
+  errbar: HTMLDivElement;
+  errorAt: { from: number; to: number } | null = null;
+  caretIn: boolean = false;
+  render: HTMLDivElement | null = null;
+  cutOff: (() => void) | null = null;
+  cutWatching: Element | null = null;
+  csvFitOff: (() => void) | null = null;
+  seatCrowded: boolean = false;
+  seatWatchOff: (() => void) | null = null;
+  fitFont: string = "";
   fitAdvances: Dynamic = new (Map as Dynamic)();
-  node: Dynamic;
-  lastGood: Dynamic = null;
-  lastPane: Dynamic = null;
-  lastOk: Dynamic = null;
+  node: ProseMirrorNode;
+  lastGood: { lang: string; src: string; html: string; theme?: string } | null = null;
+  lastPane: { lang: string; src: string; html: string; theme?: string } | null = null;
+  lastOk: { src: string; html: string; theme: string } | null = null;
   lastErr: Dynamic = null;
   lastLadder: Dynamic = null;
-  detectSrc: Dynamic = null;
-  autoLabelOwed: Dynamic = false;
-  detected: Dynamic = null;
-  srcOpen: Dynamic = false;
-  selRange: Dynamic = null;
+  detectSrc: string | null = null;
+  autoLabelOwed: boolean = false;
+  detected: string | null = null;
+  srcOpen: boolean = false;
+  selRange: { from: number; to: number } | null = null;
   inPlace: Dynamic = null;
-  suppressClickOnce: Dynamic = false;
-  pressAt: Dynamic = null;
-  panePressing: Dynamic = false;
-  paneSelOff: Dynamic = null;
-  panePress: Dynamic = null;
+  suppressClickOnce: boolean = false;
+  pressAt: { x: number; y: number } | null = null;
+  panePressing: boolean = false;
+  paneSelOff: (() => void) | null = null;
+  panePress: MouseEvent | null = null;
   editor: Dynamic = null;
   syncTimer: Dynamic = null;
   lxTagged: Dynamic = [];
   mmTagged: Dynamic = [];
   mmSplits: Dynamic = [];
   mmRects: Dynamic = [];
-  mmHoverEl: Dynamic = null;
-  mmSeq: Dynamic = 0;
-  mmInflight: Dynamic = null;
-  destroyed: Dynamic = false;
+  mmHoverEl: Element | null = null;
+  mmSeq: number = 0;
+  mmInflight: { src: string; theme: string } | null = null;
+  destroyed: boolean = false;
   wholeThreads: Dynamic = new (Set as Dynamic)();
   mdThreadRanges: Dynamic = new (Map as Dynamic)();
   decoAnchors: Dynamic = [];
@@ -118734,18 +117825,18 @@ class CodeBlockNodeView {
     this.abandonMermaidRender();
   }
   isLiveKick(
-    input?: Dynamic,
-    options?: Dynamic,
+    input: number,
+    options: HTMLDivElement | null,
     ..._extraArguments: unknown[]
   ) {
     return !this.destroyed && input === this.mmSeq && this.render === options;
   }
   constructor(
-    input?: Dynamic,
-    options?: Dynamic,
-    context?: Dynamic,
-    value?: Dynamic,
-    extra?: Dynamic,
+    input: ProseMirrorNode,
+    options: ProseMirrorEditorView,
+    context: () => number | undefined,
+    value: Set<CodeBlockNodeView>,
+    extra: DecorationSource,
     ..._extraArguments: unknown[]
   ) {
     this.view = options;
@@ -118756,7 +117847,7 @@ class CodeBlockNodeView {
       extra,
       input.content.size,
     );
-    let ownerDocument: Dynamic = options.dom.ownerDocument;
+    let ownerDocument = options.dom.ownerDocument;
     resolveProsePluginsGetElementById(
       ownerDocument,
       "lfile-codewrap-css",
@@ -118781,7 +117872,7 @@ class CodeBlockNodeView {
     );
     this.dom.addEventListener(
       "mousedown",
-      (event?: Dynamic, ..._extraArguments: unknown[]): undefined => {
+      (event: MouseEvent, ..._extraArguments: unknown[]): undefined => {
         let value6: Dynamic = renderableKindDefinition(
           this.node.attrs.language,
         )?.live;
@@ -118802,15 +117893,15 @@ class CodeBlockNodeView {
         }
         if (target && this.contentDOM.contains(target)) return;
         if (target && this.render?.contains(target)) {
-          let bounds: Dynamic = this.render.getBoundingClientRect();
+          let bounds = this.render.getBoundingClientRect();
           if (
             event.clientY - bounds.top > this.render.clientHeight ||
             event.clientX - bounds.left > this.render.clientWidth
           )
             return;
         } else {
-          let value7: Dynamic = this.getPos();
-          let value8: Dynamic = this.view.posAtCoords({
+          let value7 = this.getPos();
+          let value8 = this.view.posAtCoords({
             left: event.clientX,
             top: event.clientY,
           });
@@ -118828,7 +117919,7 @@ class CodeBlockNodeView {
     );
     this.dom.addEventListener(
       "mouseup",
-      (event?: Dynamic, ..._extraArguments: unknown[]): undefined => {
+      (event: MouseEvent, ..._extraArguments: unknown[]): undefined => {
         if (
           !this.srcOpen ||
           !renderableKindDefinition(this.node.attrs.language)?.live
@@ -118863,19 +117954,19 @@ class CodeBlockNodeView {
       10,
     );
     value2.setAttribute("class", "cw-chev");
-    let value3: Dynamic = ownerDocument.createElement("span");
+    let value3 = ownerDocument.createElement("span");
     value3.textContent = "Source";
     this.srcBtn.append(value2, value3);
     this.srcBtn.addEventListener(
       "mousedown",
-      (event?: Dynamic, ..._extraArguments: unknown[]): Dynamic =>
+      (event: MouseEvent, ..._extraArguments: unknown[]): Dynamic =>
         event.preventDefault(),
     );
     this.srcBtn.addEventListener(
       "click",
-      (event?: Dynamic, ..._extraArguments: unknown[]): undefined => {
+      (event: PointerEvent, ..._extraArguments: unknown[]): undefined => {
         event.preventDefault();
-        let ownerDocument2: Dynamic = this.srcBtn.ownerDocument;
+        let ownerDocument2 = this.srcBtn.ownerDocument;
         this.toggleSource({
           keepFocus:
             resolveRenderedCodeAndProofreadingDetail(event) === 0 ||
@@ -118885,7 +117976,7 @@ class CodeBlockNodeView {
     );
     this.srcBtn.addEventListener(
       "keydown",
-      (event?: Dynamic, ..._extraArguments: unknown[]): undefined => {
+      (event: KeyboardEvent, ..._extraArguments: unknown[]): undefined => {
         if (event.key === "Enter") {
           event.preventDefault();
           event.stopPropagation();
@@ -118926,7 +118017,7 @@ class CodeBlockNodeView {
     );
     this.srcBtn.addEventListener(
       "keyup",
-      (event?: Dynamic, ..._extraArguments: unknown[]): undefined => {
+      (event: KeyboardEvent, ..._extraArguments: unknown[]): undefined => {
         if (event.key === " ") {
           event.preventDefault();
           event.stopPropagation();
@@ -118984,12 +118075,12 @@ class CodeBlockNodeView {
     this.srcHead.appendChild(this.pick);
     this.langBtn.addEventListener(
       "mousedown",
-      (event?: Dynamic, ..._extraArguments: unknown[]): Dynamic =>
+      (event: MouseEvent, ..._extraArguments: unknown[]): Dynamic =>
         event.preventDefault(),
     );
     this.langBtn.addEventListener(
       "click",
-      (event?: Dynamic, ..._extraArguments: unknown[]) => {
+      (event: PointerEvent, ..._extraArguments: unknown[]) => {
         event.preventDefault();
         if (
           !resolveRenderedCodeAndProofreadingIsTrusted(event) ||
@@ -119006,7 +118097,7 @@ class CodeBlockNodeView {
     );
     this.langBtn.addEventListener(
       "keydown",
-      (event?: Dynamic, ..._extraArguments: unknown[]): undefined => {
+      (event: KeyboardEvent, ..._extraArguments: unknown[]): undefined => {
         if (
           !resolveRenderedCodeAndProofreadingIsTrusted(event) ||
           this.#e ||
@@ -119052,7 +118143,7 @@ class CodeBlockNodeView {
     );
     this.langIcon.addEventListener(
       "mousedown",
-      (event?: Dynamic, ..._extraArguments: unknown[]): Dynamic =>
+      (event: MouseEvent, ..._extraArguments: unknown[]): Dynamic =>
         event.preventDefault(),
     );
     this.moreBtn = resolveProsePluginsDataDocLang(
@@ -119067,7 +118158,7 @@ class CodeBlockNodeView {
       this,
       (..._extraArguments: unknown[]): Dynamic => this.#a(),
     );
-    let value4: Dynamic = (this.pre = ownerDocument.createElement("pre"));
+    let value4 = (this.pre = ownerDocument.createElement("pre"));
     value4.setAttribute(prosePluginsDataBidText, "");
     this.contentDOM = ownerDocument.createElement("code");
     value4.appendChild(this.contentDOM);
@@ -119076,19 +118167,19 @@ class CodeBlockNodeView {
     this.errbar.contentEditable = "false";
     this.errbar.addEventListener(
       "mousedown",
-      (event?: Dynamic, ..._extraArguments: unknown[]): undefined => {
+      (event: MouseEvent, ..._extraArguments: unknown[]): undefined => {
         event.preventDefault();
-        let value6: Dynamic = this.getPos();
+        let value6 = this.getPos();
         if (value6 == null) return;
         this.openSource();
         if (!this.view.editable) return;
-        let doc: Dynamic = this.view.state.doc;
+        let doc = this.view.state.doc;
         let value7 = Math.min(
           value6 + 1 + (this.errorAt?.from ?? 0),
           value6 + 1 + this.node.textContent.length,
           doc.content.size,
         );
-        let value8: Dynamic = this.view.state.tr.setSelection(
+        let value8 = this.view.state.tr.setSelection(
           ProseMirrorTextSelection.create(doc, value7),
         );
         this.view.dispatch(value8.scrollIntoView());
@@ -119105,7 +118196,7 @@ class CodeBlockNodeView {
     );
     this.dom.addEventListener(
       "pointerup",
-      (input2?: Dynamic, ..._extraArguments: unknown[]): undefined => {
+      (input2: PointerEvent, ..._extraArguments: unknown[]): undefined => {
         if (input2.pointerType === "mouse") return;
         this.syncObjectMenu();
         this.dom.classList.add(LdocTappedClass);
@@ -119120,7 +118211,7 @@ class CodeBlockNodeView {
     this.refreshAutoLabel();
   }
   refreshAutoLabel(
-    input: unknown = false,
+    input: boolean = false,
     ..._extraArguments: unknown[]
   ): undefined {
     if (renderableKindDefinition(this.node.attrs.language) != null) return;
@@ -119130,7 +118221,7 @@ class CodeBlockNodeView {
       return;
     }
     this.autoLabelOwed = false;
-    let textContent: Dynamic = this.node.textContent;
+    let textContent = this.node.textContent;
     if (textContent !== this.detectSrc) {
       this.detectSrc = textContent;
       this.detected = updateClipboardAndCodeInputTrim(textContent);
@@ -119138,8 +118229,8 @@ class CodeBlockNodeView {
     this.paintLang(this.detected ? `auto (${this.detected})` : "auto");
   }
   paintLang(
-    input?: unknown,
-    options: unknown = null,
+    input: string,
+    options: string | null = null,
     ..._extraArguments: unknown[]
   ): undefined {
     if (this.langBtn.textContent !== input) {
@@ -119174,10 +118265,10 @@ class CodeBlockNodeView {
       this.head.append(this.langBtn);
     }
   }
-  #s(this: Dynamic, ..._extraArguments: unknown[]): Dynamic {
+  #s(this: CodeBlockNodeView, ..._extraArguments: unknown[]): Dynamic {
     return this.view.editable && !this.isCollapsed();
   }
-  #l(this: Dynamic, ..._extraArguments: unknown[]): undefined {
+  #l(this: CodeBlockNodeView, ..._extraArguments: unknown[]): undefined {
     let value: Dynamic = this.#e;
     if (!value) return;
     let ownerDocument: Dynamic = value.el.ownerDocument;
@@ -119198,7 +118289,7 @@ class CodeBlockNodeView {
       if (ownerDocument.activeElement === ownerDocument.body) this.view.focus();
     });
   }
-  #i(this: Dynamic, ..._extraArguments: unknown[]): undefined {
+  #i(this: CodeBlockNodeView, ..._extraArguments: unknown[]): undefined {
     if (!this.#s()) return;
     this.refreshAutoLabel(true);
     let value: Dynamic =
@@ -119245,12 +118336,12 @@ class CodeBlockNodeView {
     this.#e = value3;
   }
   #u(
-    this: Dynamic,
+    this: CodeBlockNodeView,
     input?: unknown,
     options?: unknown,
     ..._extraArguments: unknown[]
   ): undefined {
-    let value: Dynamic = this.getPos();
+    let value = this.getPos();
     if (value == null || !this.view.editable) return;
     if (
       (input ?? "") ===
@@ -119283,11 +118374,11 @@ class CodeBlockNodeView {
   moreTrigger(..._extraArguments: unknown[]): Dynamic {
     return this.moreBtn;
   }
-  #a(this: Dynamic, ..._extraArguments: unknown[]): Dynamic {
+  #a(this: CodeBlockNodeView, ..._extraArguments: unknown[]): Dynamic {
     if (this.getPos() == null) return [];
     let value: Dynamic = resolveRenderedCodeAndProofreadingLabel3(
       (..._extraArguments: unknown[]): Dynamic => {
-        let value2: Dynamic = this.getPos();
+        let value2 = this.getPos();
         if (value2 == null) return null;
         let value3 = this.dom.classList.contains("cw-src-open")
           ? "text"
@@ -119329,7 +118420,7 @@ class CodeBlockNodeView {
     return items;
   }
   syncObjectMenu(..._extraArguments: unknown[]): undefined {
-    let value: Dynamic = this.view.editable || this.#a().length > 0;
+    let value = this.view.editable || this.#a().length > 0;
     if (value !== this.dom.hasAttribute(renderedCodeAndProofreadingDataObjmenu))
       this.dom.toggleAttribute(renderedCodeAndProofreadingDataObjmenu, value);
     resolveRenderedCodeAndProofreadingAriaLabel(
@@ -119344,8 +118435,8 @@ class CodeBlockNodeView {
   }
   syncSeat(..._extraArguments: unknown[]): undefined {
     if (this.destroyed) return;
-    let value: Dynamic = this.getPos();
-    let value2: Dynamic =
+    let value = this.getPos();
+    let value2 =
       (value != null && this.view.state.doc.resolve(value).depth > 0) ||
       this.seatCrowded;
     if (
@@ -119361,9 +118452,9 @@ class CodeBlockNodeView {
       else this.dom.removeAttribute(renderedCodeAndProofreadingDataObjmenuSeat);
   }
   copySource(..._extraArguments: unknown[]): undefined {
-    let textContent: Dynamic = this.node.textContent;
+    let textContent = this.node.textContent;
     if (!textContent) return;
-    let ownerDocument: Dynamic = this.dom.ownerDocument;
+    let ownerDocument = this.dom.ownerDocument;
     if (isRenderedCodeAndProofreadingTextarea(textContent)) {
       if (renderedCodeAndProofreadingState10?.() !== true)
         resolveProsePluginsValue7(
@@ -119372,7 +118463,7 @@ class CodeBlockNodeView {
         );
       return;
     }
-    let value: Dynamic = this.getPos();
+    let value = this.getPos();
     if (!this.dom.classList.contains("cw-src-open")) {
       resolveProsePluginsValue7(
         ownerDocument,
@@ -119387,7 +118478,7 @@ class CodeBlockNodeView {
       );
       return;
     }
-    let doc: Dynamic = this.view.state.doc;
+    let doc = this.view.state.doc;
     let value2 = Math.min(value + 1 + this.node.content.size, doc.content.size);
     this.view.dispatch(
       this.view.state.tr.setSelection(
@@ -119402,12 +118493,12 @@ class CodeBlockNodeView {
   }
   deleteBlock(..._extraArguments: unknown[]): undefined {
     if (!this.view.editable) return;
-    let value: Dynamic = this.getPos();
-    let state: Dynamic = this.view.state;
+    let value = this.getPos();
+    let state = this.view.state;
     let value2: Dynamic = value == null ? null : state.doc.nodeAt(value);
     if (value == null || value2?.type.name !== "codeBlock") return;
     let value3 = this.kind();
-    let value4: Dynamic = ProseMirrorcloseHistory(state.tr).delete(
+    let value4 = ProseMirrorcloseHistory(state.tr).delete(
       value,
       value + value2.nodeSize,
     );
@@ -119427,7 +118518,7 @@ class CodeBlockNodeView {
   pos(..._extraArguments: unknown[]): Dynamic {
     return this.getPos();
   }
-  isOwnedBy(input?: Dynamic, ..._extraArguments: unknown[]) {
+  isOwnedBy(input: ProseMirrorEditorView, ..._extraArguments: unknown[]) {
     return this.view === input;
   }
   srcLen(..._extraArguments: unknown[]): Dynamic {
@@ -119442,7 +118533,7 @@ class CodeBlockNodeView {
   holdsInPlace(..._extraArguments: unknown[]) {
     return this.inPlace != null && !this.srcOpen;
   }
-  holdsSelection(input?: Dynamic, ..._extraArguments: unknown[]) {
+  holdsSelection(input: ProseMirrorSelection, ..._extraArguments: unknown[]) {
     let inPlace: Dynamic = this.inPlace;
     if (
       !inPlace ||
@@ -119450,7 +118541,7 @@ class CodeBlockNodeView {
       renderableKindDefinition(this.node.attrs.language)?.live !== "mermaid"
     )
       return false;
-    let value: Dynamic = this.getPos();
+    let value = this.getPos();
     if (
       value == null ||
       !(input.from > value && input.to < value + this.node.nodeSize)
@@ -119473,7 +118564,7 @@ class CodeBlockNodeView {
   isEditingLabel(..._extraArguments: unknown[]) {
     return this.editor != null;
   }
-  holdsElement(input?: Dynamic, ..._extraArguments: unknown[]): Dynamic {
+  holdsElement(input: Element, ..._extraArguments: unknown[]): Dynamic {
     let inPlace: Dynamic = this.inPlace;
     return (
       inPlace != null &&
@@ -119483,7 +118574,7 @@ class CodeBlockNodeView {
         input.contains(inPlace.el))
     );
   }
-  setSourceOpen(input?: unknown, ..._extraArguments: unknown[]): undefined {
+  setSourceOpen(input: boolean, ..._extraArguments: unknown[]): undefined {
     if (this.srcOpen === input) return;
     this.srcOpen = input;
     let value: Dynamic = resolveRenderedCodeAndProofreadingValue53(this.node);
@@ -119506,7 +118597,7 @@ class CodeBlockNodeView {
   }
   toggleSource(input: Dynamic = {}, ..._extraArguments: unknown[]): undefined {
     if (!renderableKindDefinition(this.node.attrs.language)?.live) return;
-    let value: Dynamic = this.getPos();
+    let value = this.getPos();
     if (this.srcOpen) {
       if (this.srcBtn.disabled) return;
       this.setSourceOpen(false);
@@ -119524,7 +118615,7 @@ class CodeBlockNodeView {
     if (input.keepFocus || value == null || !this.view.editable) return;
     let { from: from, to: to2 }: Dynamic = this.view.state.selection;
     if (!(from > value && to2 < value + this.node.nodeSize)) {
-      let doc: Dynamic = this.view.state.doc;
+      let doc = this.view.state.doc;
       this.view.dispatch(
         this.view.state.tr.setSelection(
           ProseMirrorTextSelection.create(
@@ -119536,8 +118627,8 @@ class CodeBlockNodeView {
     }
     this.view.focus();
   }
-  #c(this: Dynamic, ..._extraArguments: unknown[]): undefined {
-    let value: Dynamic = this.getPos();
+  #c(this: CodeBlockNodeView, ..._extraArguments: unknown[]): undefined {
+    let value = this.getPos();
     if (
       value != null &&
       this.view.state.doc.nodeAt(value)?.type.name === "codeBlock"
@@ -119549,7 +118640,7 @@ class CodeBlockNodeView {
       );
     this.view.focus();
   }
-  #d(this: Dynamic, ..._extraArguments: unknown[]): undefined {
+  #d(this: CodeBlockNodeView, ..._extraArguments: unknown[]): undefined {
     this.#o = false;
     this.#n = false;
     this.#t = false;
@@ -119573,7 +118664,7 @@ class CodeBlockNodeView {
     ..._extraArguments: unknown[]
   ): Dynamic {
     if (!this.isCollapsed()) return null;
-    let value: Dynamic = this.getPos();
+    let value = this.getPos();
     if (value == null) return null;
     let value2: Dynamic = editorState.doc.nodeAt(value);
     if (!value2 || value2.type !== this.node.type) return null;
@@ -119594,22 +118685,22 @@ class CodeBlockNodeView {
     );
   }
   caretInside(..._extraArguments: unknown[]) {
-    let value: Dynamic = this.getPos();
+    let value = this.getPos();
     if (value == null) return false;
     let { from: from, to: to2 }: Dynamic = this.view.state.selection;
     return from > value && to2 < value + this.node.nodeSize;
   }
   trackSelection(..._extraArguments: unknown[]): undefined {
-    let value: Dynamic = this.getPos();
+    let value = this.getPos();
     if (value == null) return;
     let { from: from, to: to2 }: Dynamic = this.view.state.selection;
     let value2 = from > value && to2 < value + this.node.nodeSize;
     this.dom.classList.toggle("cw-has-caret", value2);
     if (value2) this.syncObjectMenu();
     if (!renderableKindDefinition(this.node.attrs.language)?.live) return;
-    let value3: Dynamic = this.caretIn && !value2;
+    let value3 = this.caretIn && !value2;
     this.caretIn = value2;
-    let value4: Dynamic =
+    let value4 =
       value2 && to2 > from
         ? {
             from: from - (value + 1),
@@ -119882,7 +118973,7 @@ class CodeBlockNodeView {
     extra?: Dynamic,
     ..._extraArguments: unknown[]
   ): undefined {
-    let value2: Dynamic = this.getPos();
+    let value2 = this.getPos();
     if (value2 == null) return;
     if (this.editor && !this.holdsElement(input.el))
       this.closeLabelEditor(false);
@@ -119894,16 +118985,16 @@ class CodeBlockNodeView {
       el: input.el,
       exact: extra,
     };
-    let doc: Dynamic = this.view.state.doc;
+    let doc = this.view.state.doc;
     let value3 = (input2?: Dynamic, ..._extraArguments: unknown[]) =>
       Math.min(
         value2 + 1 + Math.max(options.from, Math.min(options.to, input2)),
         doc.content.size,
       );
-    let value4: Dynamic = value3(context);
-    let value5: Dynamic = value3(value);
+    let value4: number = value3(context);
+    let value5: number = value3(value);
     if (value4 === value5) return;
-    let selection: Dynamic = this.view.state.selection;
+    let selection = this.view.state.selection;
     this.view.dispatch(
       this.view.state.tr.setSelection(
         ProseMirrorTextSelection.create(doc, value4, value5),
@@ -119914,8 +119005,8 @@ class CodeBlockNodeView {
   }
   clearInPlace(input: unknown = 1, ..._extraArguments: unknown[]): undefined {
     if (!this.inPlace) return;
-    let value: Dynamic = this.getPos() ?? null;
-    let doc: Dynamic = this.view.state.doc;
+    let value = this.getPos() ?? null;
+    let doc = this.view.state.doc;
     let value2: Dynamic =
       this.exitSelection(doc, value, input) ??
       (value != null ? ProseMirrorNodeSelection.create(doc, value) : null);
@@ -119923,12 +119014,12 @@ class CodeBlockNodeView {
     this.inPlace = null;
     this.view.dispatch(this.view.state.tr.setSelection(value2));
   }
-  beginPaneSelect(input?: unknown, ..._extraArguments: unknown[]): undefined {
+  beginPaneSelect(input: MouseEvent, ..._extraArguments: unknown[]): undefined {
     this.dom.classList.add(renderedCodeAndProofreadingCwPaneSel);
     this.panePressing = true;
     this.panePress = input;
     if (this.paneSelOff) return;
-    let ownerDocument: Dynamic = this.dom.ownerDocument;
+    let ownerDocument = this.dom.ownerDocument;
     let defaultView: Dynamic = ownerDocument.defaultView;
     let value = (..._extraArguments: unknown[]): undefined => {
       this.panePressing = false;
@@ -119949,7 +119040,7 @@ class CodeBlockNodeView {
     };
   }
   paneRange(..._extraArguments: unknown[]): Dynamic {
-    let render: Dynamic = this.render;
+    let render = this.render;
     let value: Dynamic = render?.ownerDocument.getSelection?.();
     return (
       !!render &&
@@ -119968,8 +119059,8 @@ class CodeBlockNodeView {
     this.paneSelOff?.();
   }
   selectBlock(event?: Dynamic, ..._extraArguments: unknown[]): undefined {
-    if ((event.target as Element | null)?.closest?.("a[href]")) return;
-    let value: Dynamic = this.getPos() ?? null;
+    if ((event.target instanceof Element ? event.target : null)?.closest?.("a[href]")) return;
+    let value = this.getPos() ?? null;
     let value2 =
       event.button === 0 &&
       !event.shiftKey &&
@@ -119981,7 +119072,7 @@ class CodeBlockNodeView {
       return;
     }
     if (this.editor) this.closeLabelEditor(false);
-    let value3: Dynamic = ProseMirrorNodeSelection.create(
+    let value3 = ProseMirrorNodeSelection.create(
       this.view.state.doc,
       value,
     );
@@ -120035,7 +119126,7 @@ class CodeBlockNodeView {
       let value5: Dynamic = input2 > 0 ? value2 : options;
       for (let index = 0; index <= this.instances.size + 1; index++) {
         if (value5 < 0 || value5 > input.content.size) return null;
-        let value6: Dynamic = ProseMirrorSelection.findFrom(
+        let value6 = ProseMirrorSelection.findFrom(
           input.resolve(value5),
           input2,
           true,
@@ -120071,7 +119162,7 @@ class CodeBlockNodeView {
       this.historyChord(event);
       return true;
     }
-    let value3: Dynamic = this.getPos();
+    let value3 = this.getPos();
     if (value3 == null) return null;
     let { from: from, to: to2 }: Dynamic = this.view.state.selection;
     if (!(from > value3 && to2 < value3 + this.node.nodeSize)) return null;
@@ -120123,7 +119214,7 @@ class CodeBlockNodeView {
   inPlacePaste(input?: Dynamic, ..._extraArguments: unknown[]) {
     if (!this.inPlace || this.srcOpen || this.editor || !this.view.editable)
       return false;
-    let value: Dynamic = this.getPos();
+    let value = this.getPos();
     if (value == null) return false;
     let { from: from, to: to2 }: Dynamic = this.view.state.selection;
     if (!(from > value && to2 < value + this.node.nodeSize)) return false;
@@ -120148,9 +119239,9 @@ class CodeBlockNodeView {
     )
       return false;
     if (!resolveRenderedCodeAndProofreadingMatches(inPlace.el)) return false;
-    let value: Dynamic = this.getPos();
+    let value = this.getPos();
     if (value == null) return false;
-    let textContent: Dynamic = this.node.textContent;
+    let textContent = this.node.textContent;
     let value2: Dynamic = resolveSchemaAndRenderingFrom2(
       textContent,
       inPlace.id,
@@ -120189,10 +119280,10 @@ class CodeBlockNodeView {
     let value7: Dynamic = inPlace.exact
       ? textContent.slice(inPlace.from, inPlace.to)
       : (inPlace.label ?? "").replace(/\s*\n\s*/g, " ");
-    let selection: Dynamic = this.view.state.selection;
+    let selection = this.view.state.selection;
     let value8 = (input2?: Dynamic, ..._extraArguments: unknown[]) =>
       Math.max(0, Math.min(value7.length, input2));
-    let value9: Dynamic = inPlace.exact
+    let value9: number = inPlace.exact
       ? value8(selection.from - (value + 1) - inPlace.from)
       : 0;
     let value10: Dynamic = inPlace.exact
@@ -120200,7 +119291,7 @@ class CodeBlockNodeView {
       : value7.length;
     if (value10 < value9) [value9, value10] = [value10, value9];
     let value11: Dynamic = value7;
-    let value12: Dynamic = value9;
+    let value12 = value9;
     let value13: Dynamic = value10;
     if (input.replaceWith != null) {
       value11 =
@@ -120212,7 +119303,7 @@ class CodeBlockNodeView {
     } else if (input.caretEnd) value12 = value13 = value11.length;
     else if (input.caret != null)
       value12 = value13 = inPlace.exact ? value8(input.caret) : value11.length;
-    let ownerDocument: Dynamic = this.dom.ownerDocument;
+    let ownerDocument = this.dom.ownerDocument;
     let value14: Dynamic = ownerDocument.createElement("div");
     value14.className = "cw-mm-edit-host";
     value14.setAttribute("contenteditable", "false");
@@ -120415,14 +119506,14 @@ class CodeBlockNodeView {
     let inPlace: Dynamic = this.inPlace;
     if (!editor || !inPlace || !this.render) return;
     let el: Dynamic = editor.el;
-    let ownerDocument: Dynamic = this.dom.ownerDocument;
+    let ownerDocument = this.dom.ownerDocument;
     let value: Dynamic =
       inPlace.el.isConnected &&
       this.render.contains(inPlace.el) &&
       (inPlace.el.querySelector("foreignObject > *, text") ?? inPlace.el);
     if (!value) return;
     let bounds: Dynamic = value.getBoundingClientRect();
-    let bounds2: Dynamic = this.dom.getBoundingClientRect();
+    let bounds2 = this.dom.getBoundingClientRect();
     el.style.left = `${bounds.left + bounds.width / 2 - bounds2.left}px`;
     el.style.top = `${bounds.top + bounds.height / 2 - bounds2.top}px`;
     el.style.minWidth = `${Math.max(16, bounds.width + 4)}px`;
@@ -120461,13 +119552,13 @@ class CodeBlockNodeView {
   writeThrough(..._extraArguments: unknown[]): undefined {
     let editor: Dynamic = this.editor;
     let inPlace: Dynamic = this.inPlace;
-    let value: Dynamic = this.getPos();
+    let value = this.getPos();
     if (!editor || !inPlace || value == null || this.destroyed) return;
     let value2: Dynamic = resolveRenderedCodeAndProofreadingTrim3(
       editor.el.textContent,
     );
     if (!value2 || value2 === editor.written) return;
-    let textContent: Dynamic = this.node.textContent;
+    let textContent = this.node.textContent;
     let value3: Dynamic = resolveSchemaAndRenderingFrom7(
       textContent,
       inPlace.id,
@@ -120517,7 +119608,7 @@ class CodeBlockNodeView {
     ..._extraArguments: unknown[]
   ): undefined {
     let inPlace: Dynamic = this.inPlace;
-    let value2: Dynamic = this.getPos();
+    let value2 = this.getPos();
     if (!inPlace || value2 == null) return;
     if (!this.writeAllowed(input, inPlace.id, options, context, value)) return;
     let value3: Dynamic = resolveRenderedCodeAndProofreadingFrom11(
@@ -120531,7 +119622,7 @@ class CodeBlockNodeView {
     );
     let value4: Dynamic = value2 + 1 + value3.from;
     let value5: Dynamic = value2 + 1 + value3.to;
-    let value6: Dynamic = this.view.state.tr.setMeta(
+    let value6 = this.view.state.tr.setMeta(
       CodeRenderPanePluginKey,
       renderedCodeAndProofreadingMmWrite,
     );
@@ -120766,7 +119857,7 @@ class CodeBlockNodeView {
     let editor: Dynamic = this.editor;
     let inPlace: Dynamic = this.inPlace;
     if (!editor || !inPlace) return null;
-    let textContent: Dynamic = this.node.textContent;
+    let textContent = this.node.textContent;
     if (inPlace.exact) return textContent.slice(inPlace.from, inPlace.to);
     let value: Dynamic = resolveSchemaAndRenderingFrom2(
       textContent,
@@ -120807,7 +119898,7 @@ class CodeBlockNodeView {
     editor.host.remove();
     this.dom.classList.remove("cw-mm-editing");
     let inPlace: Dynamic = this.inPlace;
-    let value: Dynamic = this.getPos();
+    let value = this.getPos();
     if (input && inPlace && inPlace.id !== editor.forId) input = false;
     if (
       input &&
@@ -120816,7 +119907,7 @@ class CodeBlockNodeView {
       !this.destroyed &&
       editor.written !== editor.original
     ) {
-      let textContent: Dynamic = this.node.textContent;
+      let textContent = this.node.textContent;
       let value2: Dynamic = resolveSchemaAndRenderingFrom2(
         textContent,
         inPlace.id,
@@ -121122,7 +120213,7 @@ class CodeBlockNodeView {
     let inPlace: Dynamic = this.inPlace;
     if (!inPlace || this.srcOpen || this.view !== input || !this.render)
       return null;
-    let value: Dynamic = this.getPos();
+    let value = this.getPos();
     if (
       value == null ||
       options < value + 1 + inPlace.from ||
@@ -121193,13 +120284,13 @@ class CodeBlockNodeView {
   }
   sync(..._extraArguments: unknown[]): undefined {
     let value: Dynamic = this.node.attrs.language ?? null;
-    let value2: Dynamic = renderableKindDefinition(value);
-    let value3: Dynamic = value2?.live ?? null;
+    let value2 = renderableKindDefinition(value);
+    let value3 = value2?.live ?? null;
     if (value2 == null) this.refreshAutoLabel();
     else this.paintLang(value2.label, value3);
-    let value4: Dynamic = value3 != null ? this.node.textContent : "";
+    let value4 = value3 != null ? this.node.textContent : "";
     let value5 = value3 != null && !value4.trim();
-    let value6: Dynamic =
+    let value6 =
       this.#o || this.srcBtn.ownerDocument.activeElement === this.srcBtn;
     if (value5 && !this.srcOpen && this.view.editable) {
       this.srcOpen = true;
@@ -121281,7 +120372,7 @@ class CodeBlockNodeView {
       this.render.contentEditable = "false";
       this.render.addEventListener(
         "click",
-        (event?: Dynamic, ..._extraArguments: unknown[]): undefined => {
+        (event: PointerEvent, ..._extraArguments: unknown[]): undefined => {
           if (this.suppressClickOnce) {
             this.suppressClickOnce = false;
             return;
@@ -121294,7 +120385,7 @@ class CodeBlockNodeView {
           )
             return;
           let value7: Dynamic =
-            event.target
+            (event.target instanceof Element ? event.target : null)
               ?.closest?.("[data-comment-id]")
               ?.getAttribute("data-comment-id") ?? null;
           let value8: Dynamic = renderableKindDefinition(
@@ -121315,7 +120406,7 @@ class CodeBlockNodeView {
           )
             value9 = null;
           if (value8 === "mermaid" && !this.srcOpen) {
-            let textContent: Dynamic = this.node.textContent;
+            let textContent = this.node.textContent;
             let value13 = !!target?.closest?.("foreignObject, text");
             let value14: Dynamic =
               value9 != null && value13 && this.holdsElement(value9.el);
@@ -121356,7 +120447,7 @@ class CodeBlockNodeView {
                     event.clientX,
                     event.clientY,
                   );
-                let value19: Dynamic = this.getPos();
+                let value19 = this.getPos();
                 if (value18 != null && value19 != null) {
                   let value20: number =
                     this.view.state.selection.anchor - (value19 + 1);
@@ -121415,9 +120506,9 @@ class CodeBlockNodeView {
               value9.id,
               value9.label,
             );
-          let value12: Dynamic = this.getPos();
+          let value12 = this.getPos();
           if (value12 != null) {
-            let doc: Dynamic = this.view.state.doc;
+            let doc = this.view.state.doc;
             let value13 = Math.min(
               value12 + 1 + (value10?.from ?? value11?.at ?? 0),
               doc.content.size,
@@ -121428,7 +120519,7 @@ class CodeBlockNodeView {
                 (value10?.to ?? (value11 ? value11.at + value11.len : 0)),
               doc.content.size,
             );
-            let value15: Dynamic = this.view.state.tr.setSelection(
+            let value15 = this.view.state.tr.setSelection(
               ProseMirrorTextSelection.create(doc, value13, value14),
             );
             if (value11 != null) value15 = value15.scrollIntoView();
@@ -121439,7 +120530,7 @@ class CodeBlockNodeView {
       );
       this.render.addEventListener(
         "mousedown",
-        (event?: Dynamic, ..._extraArguments: unknown[]): undefined => {
+        (event: MouseEvent, ..._extraArguments: unknown[]): undefined => {
           this.suppressClickOnce = false;
           this.pressAt = {
             x: event.clientX,
@@ -121457,7 +120548,7 @@ class CodeBlockNodeView {
             !event.altKey &&
             (!event.shiftKey || this.paneRange()) &&
             this.mdThreadAtPoint(event.clientX, event.clientY) == null &&
-            !(event.target as Element | null)?.closest?.("a[href]")
+            !(event.target instanceof Element ? event.target : null)?.closest?.("a[href]")
           ) {
             this.beginPaneSelect(event);
             if (!event.shiftKey) {
@@ -121467,22 +120558,22 @@ class CodeBlockNodeView {
             return;
           }
           if (this.srcOpen || value7 !== "mermaid") return;
-          if (!event.target?.closest?.("foreignObject, text"))
+          if (!(event.target instanceof Element ? event.target : null)?.closest?.("foreignObject, text"))
             event.preventDefault();
         },
       );
       this.render.addEventListener(
         "mouseup",
-        (event?: Dynamic, ..._extraArguments: unknown[]): undefined => {
+        (event: MouseEvent, ..._extraArguments: unknown[]): undefined => {
           if (
             this.srcOpen ||
             renderableKindDefinition(this.node.attrs.language)?.live !==
               "mermaid"
           )
             return;
-          let render: Dynamic = this.render;
+          let render = this.render;
           let value7: Dynamic = render?.ownerDocument.getSelection?.();
-          let pressAt: Dynamic = this.pressAt;
+          let pressAt = this.pressAt;
           this.pressAt = null;
           if (!render || !value7 || value7.rangeCount === 0) return;
           let { anchorNode: anchorNode, focusNode: focusNode }: Dynamic =
@@ -121590,8 +120681,8 @@ class CodeBlockNodeView {
             input?: Dynamic,
             ..._extraArguments: unknown[]
           ) => Math.max(0, Math.min(length, input - value10));
-          let value15: Dynamic = value14(value12 ? value12[0] : value11);
-          let value16: Dynamic = value14(value13);
+          let value15: number = value14(value12 ? value12[0] : value11);
+          let value16: number = value14(value13);
           if (value15 === value16) return;
           let value17: Dynamic = resolveRenderedCodeAndProofreadingFrom2(
             this.node.textContent,
@@ -121620,7 +120711,7 @@ class CodeBlockNodeView {
       );
       this.render.addEventListener(
         "dblclick",
-        (event?: Dynamic, ..._extraArguments: unknown[]): undefined => {
+        (event: MouseEvent, ..._extraArguments: unknown[]): undefined => {
           if (
             this.srcOpen ||
             renderableKindDefinition(this.node.attrs.language)?.live !==
@@ -121637,7 +120728,7 @@ class CodeBlockNodeView {
       );
       this.render.addEventListener(
         "mouseover",
-        (event?: Dynamic, ..._extraArguments: unknown[]): undefined => {
+        (event: MouseEvent, ..._extraArguments: unknown[]): undefined => {
           if (
             renderableKindDefinition(this.node.attrs.language)?.live !==
             "mermaid"
@@ -121768,10 +120859,10 @@ class CodeBlockNodeView {
     else if (value3 === "csv") this.paintCsvSelection();
     else this.paintMdSelection();
   }
-  extrasWait: Dynamic = null;
+  extrasWait: (() => void) | null = null;
   awaitFormulaRenderer(..._extraArguments: unknown[]): undefined {
     resolveClipboardAndCodeInputValue3();
-    let render: Dynamic = this.render;
+    let render = this.render;
     if (render) {
       render.textContent = "Loading formula renderer…";
       if (!render.classList.contains("cw-mm-loading"))
@@ -121786,7 +120877,7 @@ class CodeBlockNodeView {
         this.extrasWait = null;
         if (this.destroyed) return;
         if (this.dom.getAttribute("data-live") !== "latex") return;
-        let render2: Dynamic = this.render;
+        let render2 = this.render;
         let value: Dynamic = render2?.classList.contains("cw-wait-box")
           ? this.measureWaiting(render2)
           : null;
@@ -121814,9 +120905,9 @@ class CodeBlockNodeView {
     this.errbar.textContent = options
       ? `character ${options.position + 1}: ${input}`
       : input;
-    let errorAt: Dynamic = this.errorAt;
+    let errorAt = this.errorAt;
     if (options) {
-      let length: Dynamic = this.node.textContent.length;
+      let length = this.node.textContent.length;
       let value = Math.min(options.position, Math.max(0, length - 1));
       this.errorAt = {
         from: value,
@@ -121826,7 +120917,7 @@ class CodeBlockNodeView {
         ),
       };
     } else this.errorAt = null;
-    let errorAt2: Dynamic = this.errorAt;
+    let errorAt2 = this.errorAt;
     if (
       (errorAt === null) !== (errorAt2 === null) ||
       errorAt?.from !== errorAt2?.from ||
@@ -121851,9 +120942,9 @@ class CodeBlockNodeView {
       this.status.removeAttribute("title");
     }
     this.statusMsg.textContent = input == null ? "" : "error";
-    let errorAt: Dynamic = this.errorAt;
+    let errorAt = this.errorAt;
     if (input != null && context) {
-      let length: Dynamic = this.node.textContent.length;
+      let length = this.node.textContent.length;
       let value = Math.min(context.position, Math.max(0, length - 1));
       this.errorAt = {
         from: value,
@@ -121863,7 +120954,7 @@ class CodeBlockNodeView {
         ),
       };
     } else this.errorAt = null;
-    let errorAt2: Dynamic = this.errorAt;
+    let errorAt2 = this.errorAt;
     if (
       (errorAt === null) !== (errorAt2 === null) ||
       errorAt?.from !== errorAt2?.from ||
@@ -121883,16 +120974,16 @@ class CodeBlockNodeView {
           : input;
     this.status.querySelector("button")?.remove();
     if (input != null && options && this.view.editable) {
-      let value: Dynamic = resolveProsePluginsDataDocLang(
+      let value = resolveProsePluginsDataDocLang(
         this.dom.ownerDocument.createElement("button"),
       );
       value.type = "button";
       value.textContent = "Revert";
       value.addEventListener(
         "mousedown",
-        (event?: Dynamic, ..._extraArguments: unknown[]): undefined => {
+        (event: MouseEvent, ..._extraArguments: unknown[]): undefined => {
           event.preventDefault();
-          let value2: Dynamic = this.getPos();
+          let value2 = this.getPos();
           if (value2 == null) return;
           this.view.dispatch(
             this.view.state.tr.replaceWith(
@@ -121922,7 +121013,7 @@ class CodeBlockNodeView {
       return null;
     let value: Dynamic = defaultView.getComputedStyle(input);
     if (!(Number.parseFloat(value.opacity) > 0.99)) return null;
-    let bounds: Dynamic = this.dom.getBoundingClientRect();
+    let bounds = this.dom.getBoundingClientRect();
     let element: Dynamic = this.dom.querySelector(":scope > .cw-lead");
     let value2 =
       element !== null &&
@@ -121935,7 +121026,7 @@ class CodeBlockNodeView {
       stripHidden: value2,
     };
   }
-  arrivalGlide: Dynamic = null;
+  arrivalGlide: Animation | null = null;
   playArrival(
     element?: Dynamic,
     options?: Dynamic,
@@ -121954,7 +121045,7 @@ class CodeBlockNodeView {
     }
     let value3: Dynamic = defaultView.getComputedStyle(element);
     let bounds: Dynamic = element.getBoundingClientRect();
-    let bounds2: Dynamic = this.dom.getBoundingClientRect();
+    let bounds2 = this.dom.getBoundingClientRect();
     let value4 =
       value3.boxSizing === "border-box"
         ? 0
@@ -122317,7 +121408,7 @@ class CodeBlockNodeView {
       this.dropFitWidth();
       return;
     }
-    let value: Dynamic =
+    let value =
       this.dom.ownerDocument.defaultView?.getComputedStyle(input);
     let value2 =
       (Number.parseFloat(value?.paddingLeft ?? "") || 0) +
@@ -122367,14 +121458,14 @@ class CodeBlockNodeView {
     value();
   }
   unwatchCsvFit(..._extraArguments: unknown[]): undefined {
-    let csvFitOff: Dynamic = this.csvFitOff;
+    let csvFitOff = this.csvFitOff;
     this.csvFitOff = null;
     csvFitOff?.();
   }
   outsideSeatCrowded(..._extraArguments: unknown[]) {
-    let bounds: Dynamic = this.dom.getBoundingClientRect();
+    let bounds = this.dom.getBoundingClientRect();
     if (!(bounds.width > 0)) return false;
-    let ownerDocument: Dynamic = this.dom.ownerDocument;
+    let ownerDocument = this.dom.ownerDocument;
     let defaultView: Dynamic = ownerDocument.defaultView;
     let value: number =
       (ownerDocument.documentElement.clientWidth ||
@@ -122390,14 +121481,14 @@ class CodeBlockNodeView {
     );
   }
   stampCodeFit(..._extraArguments: unknown[]): undefined {
-    let value: Dynamic = this.getPos();
+    let value = this.getPos();
     if (value != null && this.view.state.doc.resolve(value).depth > 0) {
       this.dom.style.removeProperty("--cw-fit");
       this.dropCodeSeat();
       return;
     }
     this.watchCodeSeat();
-    let ownerDocument: Dynamic = this.dom.ownerDocument;
+    let ownerDocument = this.dom.ownerDocument;
     let defaultView: Dynamic = ownerDocument.defaultView;
     let value2: Dynamic =
       updateRenderedCodeAndProofreadingCanvas(ownerDocument);
@@ -122426,7 +121517,7 @@ class CodeBlockNodeView {
       this.fitFont = value7;
       value2.font = value7;
       if (value2.font !== "10px sans-serif") {
-        let value8: Dynamic =
+        let value8: number =
           value3(value5.paddingLeft) +
           value3(value5.paddingRight) +
           value3(value5.borderLeftWidth) +
@@ -122483,7 +121574,7 @@ class CodeBlockNodeView {
   }
   watchCodeSeat(..._extraArguments: unknown[]): undefined {
     if (this.seatWatchOff) return;
-    let ownerDocument: Dynamic = this.dom.ownerDocument;
+    let ownerDocument = this.dom.ownerDocument;
     let value = (..._extraArguments: unknown[]) =>
       this.judgeCodeSeat();
     let value2: Dynamic =
@@ -122609,12 +121700,12 @@ class CodeBlockNodeView {
     if (!value6) value4();
   }
   unwatchPaneCut(..._extraArguments: unknown[]): undefined {
-    let cutOff: Dynamic = this.cutOff;
+    let cutOff = this.cutOff;
     this.cutOff = null;
     cutOff?.();
   }
-  syncMermaid(input?: Dynamic, ..._extraArguments: unknown[]): undefined {
-    let render: Dynamic = this.render;
+  syncMermaid(input: string, ..._extraArguments: unknown[]): undefined {
+    let render = this.render;
     if (!render) return;
     if (this.syncTimer != null) {
       this.paintMermaid();
@@ -122763,7 +121854,7 @@ class CodeBlockNodeView {
     this.sync();
   }
   regreyMermaid(input?: Dynamic, ..._extraArguments: unknown[]): undefined {
-    let render: Dynamic = this.render;
+    let render = this.render;
     let lastGood: Dynamic = this.lastGood;
     if (!render || lastGood?.lang !== "mermaid" || lastGood.theme === input)
       return;
@@ -122826,7 +121917,7 @@ class CodeBlockNodeView {
     let value7 = false;
     for (let value8 of items as Dynamic) {
       let data: Dynamic = value8.data;
-      let value9: Dynamic = index;
+      let value9: number = index;
       index += data.length;
       let value10 = Math.max(value4, value9) - value9;
       let value11 = Math.min(value5, index) - value9;
@@ -122930,7 +122021,7 @@ class CodeBlockNodeView {
     }
   }
   paintMermaid(..._extraArguments: unknown[]): undefined {
-    let render: Dynamic = this.render;
+    let render = this.render;
     if (!render) return;
     resolveRenderedCodeAndProofreadingText(render);
     this.clearMmSplits();
@@ -122952,7 +122043,7 @@ class CodeBlockNodeView {
       let value: Dynamic = this.splitCommentRanges();
       let selRange: Dynamic = this.selRange;
       if (value.length || selRange) {
-        let textContent: Dynamic = this.node.textContent;
+        let textContent = this.node.textContent;
         let value2: Dynamic = collectRenderedCodeAndProofreadingLabel(render);
         let value3: Dynamic = !this.srcOpen ? this.inPlace : null;
         if (selRange && value3) {
@@ -123137,7 +122228,7 @@ class CodeBlockNodeView {
     this.applyActivePaneHighlight();
   }
   splitCommentRanges(..._extraArguments: unknown[]): Dynamic {
-    let length: Dynamic = this.node.textContent.length;
+    let length = this.node.textContent.length;
     let entries: Dynamic = new (Map as Dynamic)();
     for (let value2 of this.commentRanges() as Dynamic) {
       let entry: Dynamic = entries.get(value2.threadId);
@@ -123156,7 +122247,7 @@ class CodeBlockNodeView {
     }
     this.wholeThreads.clear();
     let items: Dynamic = [];
-    let textContent: Dynamic = this.node.textContent;
+    let textContent = this.node.textContent;
     let index = 0;
     while (index < length && /\s/.test(textContent[index])) index++;
     let value: Dynamic = length;
@@ -123194,8 +122285,8 @@ class CodeBlockNodeView {
     return items;
   }
   ringForThread(
-    input?: unknown,
-    options?: unknown,
+    input: string | null,
+    options: string,
     ..._extraArguments: unknown[]
   ): undefined {
     if (!(input != null && this.wholeThreads.has(input))) {
@@ -123261,7 +122352,7 @@ class CodeBlockNodeView {
     return null;
   }
   mermaidUnavailable(..._extraArguments: unknown[]): Dynamic {
-    let render: Dynamic = this.render;
+    let render = this.render;
     if (
       !render ||
       resolveRenderedCodeAndProofreadingValue2() ||
@@ -123279,9 +122370,9 @@ class CodeBlockNodeView {
     if (value == null) return false;
     if (this.faceForThread(input)) return false;
     if (!this.srcOpen) this.openSource();
-    let value2: Dynamic = this.getPos();
+    let value2 = this.getPos();
     if (value2 != null) {
-      let doc: Dynamic = this.view.state.doc;
+      let doc = this.view.state.doc;
       this.view.dispatch(
         this.view.state.tr.setSelection(
           ProseMirrorTextSelection.create(
@@ -123332,7 +122423,7 @@ class CodeBlockNodeView {
     renderedCodeAndProofreadingMap3.delete(this);
     renderedCodeAndProofreadingMap4.delete(this);
     renderedCodeAndProofreadingMap6.delete(this);
-    let render: Dynamic = this.render;
+    let render = this.render;
     if (render) {
       let textContent: Dynamic = this.node.textContent;
       let value = Math.max(1, textContent.length);
@@ -123407,7 +122498,7 @@ class CodeBlockNodeView {
       value5.removeAttribute(renderedCodeAndProofreadingDataCommentIds);
     }
     this.lxTagged.length = 0;
-    let render: Dynamic = this.render;
+    let render = this.render;
     let value: Dynamic = render?.querySelector(".katex-html");
     let value2: Dynamic =
       this.lastPane?.lang === "latex" &&
@@ -123421,7 +122512,7 @@ class CodeBlockNodeView {
       this.dom.classList.contains("cw-broken")
     )
       return;
-    let textContent: Dynamic = this.node.textContent;
+    let textContent = this.node.textContent;
     let selRange: Dynamic = this.selRange;
     let value3: Dynamic = selRange
       ? [
@@ -123483,7 +122574,7 @@ class CodeBlockNodeView {
       value5 = value4.nextNode()
     ) {
       let value6: Dynamic = value5;
-      let value7: Dynamic = index;
+      let value7: number = index;
       let value8: Dynamic = index + value6.data.length;
       index = value8;
       let filtered: Dynamic = spans.filter(
@@ -123520,7 +122611,7 @@ class CodeBlockNodeView {
     this.applyActivePaneHighlight();
   }
   paintCsvSelection(..._extraArguments: unknown[]): undefined {
-    let render: Dynamic = this.render;
+    let render = this.render;
     if (!render) return;
     renderedCodeAndProofreadingMap3.delete(this);
     for (let value5 of render.querySelectorAll(".cw-csv-sel") as Dynamic)
@@ -123538,7 +122629,7 @@ class CodeBlockNodeView {
       );
       return;
     }
-    let textContent: Dynamic = this.node.textContent;
+    let textContent = this.node.textContent;
     let value2: Dynamic = parseCSVWithRanges(textContent);
     if (!value2.length) return;
     let value3: Dynamic = (Math.max as Dynamic)(
@@ -123611,9 +122702,9 @@ class CodeBlockNodeView {
     this.applyActivePaneHighlight();
   }
   update(
-    node?: Dynamic,
-    options?: unknown,
-    context?: Dynamic,
+    node: ProseMirrorNode,
+    options: readonly ProseMirrorDecoration[],
+    context: DecorationSource,
     ..._extraArguments: unknown[]
   ) {
     if (node.type.name !== "codeBlock") return false;
@@ -123637,7 +122728,7 @@ class CodeBlockNodeView {
       !value5 &&
       renderableKindDefinition(node.attrs.language)?.live != null
     ) {
-      let value6: Dynamic = this.getPos();
+      let value6 = this.getPos();
       let { from: from, to: to2 }: Dynamic = this.view.state.selection;
       if (value6 != null && from > value6 && to2 < value6 + node.nodeSize) {
         this.srcOpen = true;
@@ -123700,7 +122791,7 @@ class CodeBlockNodeView {
   deselectNode(..._extraArguments: unknown[]): undefined {
     this.dom.classList.remove("ProseMirror-selectednode");
   }
-  ignoreMutation(event?: Dynamic, ..._extraArguments: unknown[]): Dynamic {
+  ignoreMutation(event: ViewMutationRecord, ..._extraArguments: unknown[]): Dynamic {
     if (event.type === "selection")
       return (
         (this.render?.contains(event.target) ?? false) ||
@@ -123721,7 +122812,7 @@ class CodeBlockNodeView {
     }
     return true;
   }
-  stopEvent(event?: Dynamic, ..._extraArguments: unknown[]): Dynamic {
+  stopEvent(event: Event, ..._extraArguments: unknown[]): Dynamic {
     let target: Dynamic = event.target;
     return (
       !!target &&
@@ -124004,7 +123095,7 @@ function isRenderedCodeAndProofreadingView3(
         return true;
       }
       if (value5 && value5.type.name !== "hardBreak") {
-        let value6: Dynamic = ProseMirrorTextSelection.create(
+        let value6 = ProseMirrorTextSelection.create(
           state.doc,
           value > 0 ? selection.to : selection.from,
         );
@@ -124025,7 +123116,7 @@ function isRenderedCodeAndProofreadingView3(
       ? state.doc.resolve(value > 0 ? value2.after() : value2.before())
       : null;
   if (!value3) return false;
-  let value4: Dynamic = ProseMirrorSelection.findFrom(value3, value);
+  let value4 = ProseMirrorSelection.findFrom(value3, value);
   if (options === "vert") {
     let value5: Dynamic = resolveRenderedCodeAndProofreadingPos(value2);
     if (
@@ -124156,7 +123247,7 @@ function resolveRenderedCodeAndProofreadingDoc(
 ): Dynamic {
   let { doc: doc }: Dynamic = input.state;
   let value: Dynamic = doc.resolve(options);
-  let value2: Dynamic = nextCell(value, "vert", context);
+  let value2 = nextCell(value, "vert", context);
   if (value2) return ProseMirrorSelection.near(value2, 1);
   let value3: Dynamic = doc.resolve(
     context < 0 ? value.before(-1) : value.after(-1),
@@ -124513,11 +123604,11 @@ ${value3}${value9}`);
           },
           nodeViews: {
             codeBlock: (
-              input?: unknown,
-              options?: unknown,
-              context?: unknown,
-              value2?: unknown,
-              extra?: unknown,
+              input: ProseMirrorNode,
+              options: ProseMirrorEditorView,
+              context: () => number | undefined,
+              value2: readonly ProseMirrorDecoration[],
+              extra: DecorationSource,
               ..._extraArguments: unknown[]
             ): Dynamic =>
               new (CodeBlockNodeView)(
@@ -125128,7 +124219,7 @@ function collectRenderedCodeAndProofreadingTextHtml(
   try {
     let value: string = /^(\s*<meta [^>]*>)*/.exec(input)?.[0] ?? "";
     let slice: Dynamic = input.slice(value.length);
-    let value2: Dynamic = /<([a-z][^>\s]*)/i.exec(slice)?.[1]?.toLowerCase();
+    let value2 = /<([a-z][^>\s]*)/i.exec(slice)?.[1]?.toLowerCase();
     let value3: Dynamic = value2
       ? RenderedCodeAndProofreadingThead[value2]
       : undefined;
@@ -125146,7 +124237,7 @@ function collectRenderedCodeAndProofreadingTextHtml(
           )
           .toReversed()
           .join("");
-    let value4: Dynamic = new (DOMParser)().parseFromString(
+    let value4 = new (DOMParser)().parseFromString(
       slice,
       "text/html",
     );
@@ -125362,7 +124453,7 @@ function resolveRenderedCodeAndProofreadingFrom14(
   let link: Dynamic = input.schema.marks.link;
   if (!link || options < 0 || options > input.state.doc.content.size)
     return null;
-  let value: Dynamic = TiptapgetMarkRange(
+  let value = TiptapgetMarkRange(
     input.state.doc.resolve(options),
     link,
   );
@@ -125546,7 +124637,7 @@ function resolveRenderedCodeAndProofreadingFrom15(
         : {}),
     });
   };
-  let value2: Dynamic = resolveRenderedCodeAndProofreadingTest5();
+  let value2: boolean = resolveRenderedCodeAndProofreadingTest5();
   let value3 = `${value2 ? "⌘" : "Ctrl"}-click or ${collectProsePluginsControl(resolveProsePluginsFind("openLink").key, value2)} to open`;
   let value4 = (event?: Dynamic, ..._extraArguments: unknown[]): undefined => {
     if (!isRenderedCodeAndProofreadingValue(event)) return;
@@ -125753,7 +124844,7 @@ var resolveRenderedCodeAndProofreadingLabel5 = (
   input?: Dynamic,
   ..._extraArguments: unknown[]
 ) =>
-  `${renderableKindDefinition(resolveRenderedCodeAndProofreadingValue66(input.attrs.language)).label} ${RenderedCodeAndProofreadingChart.liveBlock.word}`;
+  `${renderableKindLabel(resolveRenderedCodeAndProofreadingValue66(input.attrs.language))} ${RenderedCodeAndProofreadingChart.liveBlock.word}`;
 var RenderedCodeAndProofreadingFocusVisible2 = {
   focusVisible: true,
 };
@@ -125905,7 +124996,7 @@ var RenderedCodeAndProofreadingEmbed: Dynamic = {
   date: {
     kind: (..._extraArguments: unknown[]) => "date",
     aria: (input?: Dynamic, ..._extraArguments: unknown[]): Dynamic => {
-      let value: Dynamic = resolveRenderedCodeAndProofreadingValue66(
+      let value = resolveRenderedCodeAndProofreadingValue66(
         input.attrs.ts,
       );
       if (value === null)
@@ -125939,7 +125030,7 @@ var RenderedCodeAndProofreadingEmbed: Dynamic = {
               resolveProsePluginsFind3(input.attrs.enum, input.attrs.index),
             ) ?? renderedCodeAndProofreadingOptionUnavailable,
         };
-      let value: Dynamic = resolveRenderedCodeAndProofreadingValue66(
+      let value = resolveRenderedCodeAndProofreadingValue66(
         input.attrs.enum,
       );
       return {
@@ -125987,7 +125078,7 @@ var RenderedCodeAndProofreadingEmbed: Dynamic = {
         role: "figure",
         name:
           value === "diagram"
-            ? `${renderableKindDefinition(resolveRenderedCodeAndProofreadingValue66(input.attrs.language)).label} diagram`
+            ? `${renderableKindLabel(resolveRenderedCodeAndProofreadingValue66(input.attrs.language))} diagram`
             : resolveRenderedCodeAndProofreadingLabel5(input),
       };
     },
@@ -126185,7 +125276,7 @@ function isRenderedCodeAndProofreadingPending(
   let value: Dynamic = input.mapping.mapResult(selection.from, 1);
   if (!value.deleted && context.doc.nodeAt(value.pos)?.type.name === "pending")
     return null;
-  let value2: Dynamic = resolveRenderedCodeAndProofreadingValue66(
+  let value2 = resolveRenderedCodeAndProofreadingValue66(
     selection.node.attrs.bid,
   );
   if (
@@ -126211,7 +125302,7 @@ function isRenderedCodeAndProofreadingPending(
   let value4 = false;
   let value5 = false;
   for (let value10 = $from.index() - 1; value10 >= 0 && !value4; value10--) {
-    let value11: Dynamic = resolveRenderedCodeAndProofreadingValue66(
+    let value11 = resolveRenderedCodeAndProofreadingValue66(
       parent.child(value10).attrs.bid,
     );
     let value12: Dynamic =
@@ -126228,7 +125319,7 @@ function isRenderedCodeAndProofreadingPending(
     value10 < parent.childCount && !value5;
     value10++
   ) {
-    let value11: Dynamic = resolveRenderedCodeAndProofreadingValue66(
+    let value11 = resolveRenderedCodeAndProofreadingValue66(
       parent.child(value10).attrs.bid,
     );
     let value12: Dynamic =
@@ -126242,7 +125333,7 @@ function isRenderedCodeAndProofreadingPending(
   }
   for (let depth: Dynamic = $from.depth; depth >= 1; depth--) {
     if (value4 && value5) break;
-    let value10: Dynamic = resolveRenderedCodeAndProofreadingValue66(
+    let value10 = resolveRenderedCodeAndProofreadingValue66(
       $from.node(depth).attrs.bid,
     );
     let value11: Dynamic =
@@ -126258,7 +125349,7 @@ function isRenderedCodeAndProofreadingPending(
   if (mapped2 <= mapped) return "deleted";
   let value6: Dynamic = null;
   let value7 = (input2?: Dynamic, ..._extraArguments: unknown[]) => {
-    let value10: Dynamic = resolveRenderedCodeAndProofreadingValue66(
+    let value10 = resolveRenderedCodeAndProofreadingValue66(
       input2.attrs.bid,
     );
     if (value10 === null) {
@@ -126275,7 +125366,7 @@ function isRenderedCodeAndProofreadingPending(
       let values: Dynamic = new (Set as Dynamic)();
       editorState.doc.descendants(
         (input3?: Dynamic, ..._extraArguments: unknown[]) => {
-          let value11: Dynamic = resolveRenderedCodeAndProofreadingValue66(
+          let value11 = resolveRenderedCodeAndProofreadingValue66(
             input3.attrs.bid,
           );
           if (value11 !== null) values.add(value11);
@@ -126521,7 +125612,7 @@ class RenderedCodeAndProofreadingChord {
         this.stampIn(0, input.state.doc.content.size);
     } else this.sameStateRuns = 0;
     if (options.doc !== input.state.doc) {
-      let value11: Dynamic = resolveRenderedCodeAndProofreadingFrom16(
+      let value11 = resolveRenderedCodeAndProofreadingFrom16(
         options.doc,
         input.state.doc,
       );
@@ -126621,7 +125712,7 @@ class RenderedCodeAndProofreadingChord {
         }
       }
     }
-    let value10: Dynamic =
+    let value10 =
       value4 === "liveBlock"
         ? resolveRenderedCodeAndProofreadingLabel5(selection.node)
         : undefined;
@@ -127092,7 +126183,7 @@ function isRenderedCodeAndProofreadingFrom(
       let textContent: Dynamic = input.textContent;
       let value3: Dynamic = textContent.indexOf(options);
       while (value3 !== -1) {
-        let value4: Dynamic = resolveRenderedCodeAndProofreadingChildCount(
+        let value4: number = resolveRenderedCodeAndProofreadingChildCount(
           input,
           value3,
         );
@@ -127349,7 +126440,7 @@ var RenderedCodeAndProofreadingPaced = {
   paced: false,
   show: true,
 };
-var renderedCodeAndProofreadingRenderedCodeAndProofreadingPacedAlias: Dynamic =
+var renderedCodeAndProofreadingRenderedCodeAndProofreadingPacedAlias =
   RenderedCodeAndProofreadingPaced;
 function resolveRenderedCodeAndProofreadingValue72(
   input?: unknown,
@@ -127623,7 +126714,7 @@ var BongoProofreadExtension: Dynamic = TiptapExtension.create({
                 if (value4 === -1) continue;
                 let value5: Dynamic = editorState.doc.nodeAt(entry2.pos);
                 if (!value5) continue;
-                let value6: Dynamic =
+                let value6: number =
                   resolveRenderedCodeAndProofreadingChildCount(value5, value4);
                 let value7: Dynamic = entry2.pos + 1 + value6;
                 let value8: Dynamic = value7 + value3.quote.length;
@@ -127737,7 +126828,7 @@ var BongoProofreadExtension: Dynamic = TiptapExtension.create({
                   while (true) {
                     let value8: Dynamic = value3.text.indexOf(text2, index3);
                     if (value8 === -1) break;
-                    let value9: Dynamic =
+                    let value9: number =
                       resolveRenderedCodeAndProofreadingChildCount(
                         value4,
                         value8,
@@ -128065,7 +127156,7 @@ var BongoProofreadExtension: Dynamic = TiptapExtension.create({
             let index: number = 0;
             let entries2: Dynamic = new (Map as Dynamic)();
             for (let value7 of filtered as Dynamic) {
-              let value8: Dynamic =
+              let value8: number =
                 resolveRenderedCodeAndProofreadingCharCodeAt2(value7.text);
               if (value8 > renderedCodeAndProofreadingLimit36000) {
                 entries2.set(value7.id, value7.hash);
@@ -128689,7 +127780,7 @@ function getRenderedCodeAndProofreadingDismissKey(
       while (true) {
         let value9: Dynamic = value4.text.indexOf(entry.original, index2);
         if (value9 === -1) break;
-        let value10: Dynamic = resolveRenderedCodeAndProofreadingChildCount(
+        let value10: number = resolveRenderedCodeAndProofreadingChildCount(
           value5,
           value9,
         );
@@ -129766,7 +128857,7 @@ var COMMON_AUTOCORRECT_WORDS =
 var renderedCodeAndProofreadingMap12: Dynamic = new (Map as Dynamic)(
   COMMON_AUTOCORRECT_WORDS.split("|").map(
     (input: string, ..._extraArguments: unknown[]): Dynamic => {
-      let value: Dynamic = input.indexOf(" ");
+      let value: number = input.indexOf(" ");
       return [input.slice(0, value), input.slice(value + 1)];
     },
   ),
@@ -130428,7 +129519,7 @@ function isRenderedCodeAndProofreadingWord(
           text += (!value3 && input3.text) || value4.repeat(input3.nodeSize);
         },
       );
-      let value2: Dynamic = resolveProsePluginsHeading(input2);
+      let value2: boolean = resolveProsePluginsHeading(input2);
       for (let {
         word: word,
         index: index,
@@ -131053,7 +130144,7 @@ function isRenderedCodeAndProofreadingClientX(
         ],
       ),
     ] as Dynamic) {
-      let value36: Dynamic = value33(options + value35);
+      let value36: number = value33(options + value35);
       if (value35 !== 0 && value36 === options) continue;
       for (let value37 of filtered2 as Dynamic)
         if (value32(value36, value37))
@@ -132429,7 +131520,7 @@ function updateRenderedCodeAndProofreadingSelection(
   ): Dynamic => {
     let values: Dynamic = new (Set as Dynamic)();
     for (let value5 of value.find(input2, options2) as Dynamic) {
-      let value6: Dynamic = value2(value5);
+      let value6: string = value2(value5);
       if (
         value6 !== "" &&
         !options.has(value6) &&
@@ -132445,7 +131536,7 @@ function updateRenderedCodeAndProofreadingSelection(
   if (value4.size < 2) return [...value4];
   let entries: Dynamic = new (Map as Dynamic)();
   for (let value5 of value.find() as Dynamic) {
-    let value6: Dynamic = value2(value5);
+    let value6: string = value2(value5);
     if (value4.has(value6))
       entries.set(
         value6,
@@ -133301,7 +132392,7 @@ function isRenderedCodeAndProofreadingHeight(
       value7.root,
       value7.firstBlock,
     ));
-    let value8: Dynamic = collectRenderedCodeAndProofreadingTitle(value3);
+    let value8: string = collectRenderedCodeAndProofreadingTitle(value3);
     if (value8 !== text) {
       text = value8;
       value2 = undefined;
@@ -133460,7 +132551,7 @@ function resolveRenderedCodeAndProofreadingAddToHistory(
 initializeTiptapCoreDependencies2();
 initializeProsemirrorCommandsDependencies2();
 initializeProsemirrorViewDependencies();
-var setTimeoutReference: Dynamic = (globalThis).setTimeout;
+var setTimeoutReference = (globalThis).setTimeout;
 var LfileTitleSeedPluginKey: Dynamic = new (ProseMirrorPluginKey as Dynamic)(
   "lfileTitleSeed",
 );
@@ -133542,7 +132633,7 @@ function resolveDocumentSelectionFirstChild(
     (firstChild.type.name === "heading" || isHeading(firstChild)) &&
     input.childCount > 1
   ) {
-    let value: Dynamic = ProseMirrorSelection.findFrom(
+    let value = ProseMirrorSelection.findFrom(
       input.resolve(firstChild.nodeSize),
       1,
       true,
@@ -133907,7 +132998,7 @@ function resolveRenderedCodeAndProofreadingFirstChild(
     !isRenderedCodeAndProofreadingChildCount(input)
   ) {
     let nodeSize: Dynamic = firstChild.nodeSize;
-    let value: Dynamic = ProseMirrorSelection.findFrom(
+    let value = ProseMirrorSelection.findFrom(
       input.resolve(nodeSize),
       1,
       true,
@@ -134451,7 +133542,7 @@ function isRenderedCodeAndProofreadingAnchor(
     for (let value5 = $anchorCell.depth - 1; value5 >= 0; value5--) {
       let value6: Dynamic = $anchorCell.node(value5);
       if (value6.type.spec.tableRole === "table") {
-        let value7: Dynamic = resolveRenderedCodeAndProofreadingValue90(value6);
+        let value7 = resolveRenderedCodeAndProofreadingValue90(value6);
         return value7 === null
           ? null
           : {
@@ -134474,7 +133565,7 @@ function isRenderedCodeAndProofreadingAnchor(
             head: value2,
           };
     }
-    let value4: Dynamic = resolveRenderedCodeAndProofreadingValue90(node);
+    let value4 = resolveRenderedCodeAndProofreadingValue90(node);
     return value4 === null
       ? null
       : {
@@ -134586,7 +133677,7 @@ function resolveRenderedCodeAndProofreadingFrom27(
     ..._extraArguments: unknown[]
   ): undefined => {
     if (items.length >= options) return;
-    let value4: Dynamic = resolveRenderedCodeAndProofreadingValue90(input2);
+    let value4 = resolveRenderedCodeAndProofreadingValue90(input2);
     let value5 = options2 >= from && options2 + input2.nodeSize <= to2;
     if (value4 !== null && (value5 || input2.isTextblock))
       return void items.push(value4);
@@ -134598,7 +133689,7 @@ function resolveRenderedCodeAndProofreadingFrom27(
   value2($from.node(value), $from.start(value));
   if (items.length === 0)
     for (let value4: Dynamic = value; value4 >= 0; value4--) {
-      let value5: Dynamic = resolveRenderedCodeAndProofreadingValue90(
+      let value5 = resolveRenderedCodeAndProofreadingValue90(
         $from.node(value4),
       );
       if (value5 !== null) return [value5];
@@ -134793,7 +133884,7 @@ function collectRenderedCodeAndProofreadingPeer(
   ): Dynamic => {
     if (detail.agentOffPending === true && input2.key.startsWith("xagent:"))
       return null;
-    let value6: Dynamic = input2.key.startsWith("xagent:")
+    let value6 = input2.key.startsWith("xagent:")
       ? resolveRenderedCodeAndProofreadingPending(context)
       : null;
     let value7: Dynamic = value2((value6 ?? options2) + 1, 1);
@@ -135258,7 +134349,7 @@ function resolveRenderedCodeAndProofreadingKey4(
       : null;
   let value2: Dynamic = value.blocks[0];
   if (!value2) return null;
-  let value3: Dynamic = ProseMirrorSelection.findFrom(
+  let value3 = ProseMirrorSelection.findFrom(
     input.resolve(value2.from + 1),
     1,
     true,
@@ -135655,7 +134746,7 @@ function proseMirrorCalloutKind(
     "￼",
     "￼",
   );
-  let value2: Dynamic = renderedCodeAndProofreadingInputPattern30.exec(value);
+  let value2 = renderedCodeAndProofreadingInputPattern30.exec(value);
   if (!value2) return null;
   let value3: Dynamic = value2[1];
   return {
@@ -135735,7 +134826,7 @@ function installRenderedCodeAndProofreadingWidth(
   if (!input.editable) return;
   let value = (..._extraArguments: unknown[]) =>
     options.isConnected ? calloutPositionFromDom(input, options) : null;
-  let value2: Dynamic = value();
+  let value2 = value();
   let value3: Dynamic =
     value2 === null
       ? null
@@ -135749,7 +134840,7 @@ function installRenderedCodeAndProofreadingWidth(
   let items: Dynamic = [];
   let value5 = (input2?: unknown, ..._extraArguments: unknown[]): undefined => {
     value11(true);
-    let value15: Dynamic = value();
+    let value15 = value();
     if (value15 !== null) changeCalloutKind(input, value15, input2);
   };
   for (let value15 of CALLOUT_KINDS as Dynamic) {
@@ -135903,7 +134994,7 @@ function deleteCalloutTransaction(
 ): Dynamic {
   let value: Dynamic = input.doc.nodeAt(options);
   if (!value || !proseMirrorCalloutKind(value)) return null;
-  let value2: Dynamic = ProseMirrorcloseHistory(input.tr).delete(
+  let value2 = ProseMirrorcloseHistory(input.tr).delete(
     options,
     options + value.nodeSize,
   );
@@ -136038,7 +135129,7 @@ var resolveRenderedCodeAndProofreadingIsFinite2 = (
   input?: unknown,
   ..._extraArguments: unknown[]
 ): Dynamic => {
-  let value: Dynamic = resolveRenderedCodeAndProofreadingClientX(input);
+  let value = resolveRenderedCodeAndProofreadingClientX(input);
   return Number.isFinite(value.x) && Number.isFinite(value.y) ? value : null;
 };
 function isRenderedCodeAndProofreadingSel(
@@ -136537,7 +135628,7 @@ function isRenderedCodeAndProofreadingTableUi(
   if (!view.editable) return false;
   let value: Dynamic = resolveEditorTableControlsTable2(view, options);
   if (!value) return false;
-  let entry: Dynamic = TableMap.get(value.table);
+  let entry = TableMap.get(value.table);
   if (!entry.width || !entry.height) return false;
   let value2: Dynamic = value.tablePos + 1 + entry.map[0];
   if (
@@ -136665,7 +135756,7 @@ function createCalloutNodeInteractionPlugin(
           return true;
         let value51: Dynamic = value10 ? value15() : null;
         if (!value51) return false;
-        let value52: Dynamic =
+        let value52 =
           resolveRenderedCodeAndProofreadingClientX(input3);
         let value53 =
           value52.x >= value51.left - value51.reach &&
@@ -136758,7 +135849,7 @@ function createCalloutNodeInteractionPlugin(
           value25();
       };
       let value25 = (..._extraArguments: unknown[]): undefined => {
-        let value51: Dynamic = value9;
+        let value51: boolean = value9;
         value9 = true;
         try {
           input2.focus();
@@ -137148,7 +136239,7 @@ function resolveRenderedCodeAndProofreadingFirstChild2(
     (options && !resolveRenderedCodeAndProofreadingParagraph6(value))
   )
     tr2.insert(firstChild.nodeSize, firstChild.type.create());
-  let value2: Dynamic = ProseMirrorSelection.findFrom(
+  let value2 = ProseMirrorSelection.findFrom(
     tr2.doc.resolve(firstChild.nodeSize),
     1,
     true,
@@ -138112,7 +137203,7 @@ function resolveOperationModelHeader(
     value2.selectNodeContents(element);
     text = resolveProsePluginsValue10(value2);
   }
-  let value: Dynamic = text.replace(/\s+/gu, " ").trim();
+  let value: string = text.replace(/\s+/gu, " ").trim();
   return value === ""
     ? {}
     : {
@@ -138262,7 +137353,7 @@ function isOperationModelMedia(
 ): Dynamic {
   if (!operationModelState) return false;
   let value: Dynamic = options?.type.name === "media" ? options.attrs : null;
-  let value2: Dynamic =
+  let value2 =
     value && resolveProsePluginsValue109(value.dims)
       ? resolveProsePluginsEvery(value.crop)
       : null;
@@ -138415,7 +137506,7 @@ function installOperationModelTask(
   input?: Dynamic,
   ..._extraArguments: unknown[]
 ): undefined {
-  let scheduler: Dynamic = (globalThis).scheduler;
+  let scheduler = (globalThis).scheduler;
   if (typeof scheduler?.postTask === "function")
     try {
       scheduler
@@ -138428,7 +137519,7 @@ function installOperationModelTask(
       return;
     } catch {}
   if (typeof MessageChannel !== "function") return void setTimeout(input, 0);
-  let value: Dynamic = new (MessageChannel)();
+  let value = new (MessageChannel)();
   value.port1.addEventListener(
     "message",
     (..._extraArguments: unknown[]): undefined => {
@@ -139177,7 +138268,7 @@ function isOperationModelLabel(
               (input3?: Dynamic, ..._extraArguments: unknown[]): Dynamic =>
                 input3.ref === input2.attrs.ref && input3.ids.has(value2),
             );
-      let value4: Dynamic = value3
+      let value4 = value3
         ? resolveProsePluginsTrim4(value3.label)
         : null;
       if (value2 === null || value4 === null) return false;
@@ -139232,7 +138323,7 @@ function clearOperationModelPos(
       : null;
   if (!value8) return value4;
   let head: Dynamic = editorState.selection.head;
-  let value9: Dynamic =
+  let value9 =
     head > value5 && head < value5 + value6.nodeSize ? head - value5 : null;
   try {
     let value12: Dynamic = editorState.doc.resolve(value8.pos);
@@ -139394,7 +138485,7 @@ function clearOperationModelAbsent(
   )
     return null;
   let head: Dynamic = editorState.selection.head;
-  let value9: Dynamic =
+  let value9 =
     head > value5 && head < value5 + value6.nodeSize ? head - value5 : null;
   let value10: number = -1;
   try {
@@ -139611,9 +138702,9 @@ function clearOperationModelFrom(
       let value8: Dynamic = extra.idAt(value6);
       if (value8 === null) return null;
       let value9 = Math.max(1, pmCharacterSizeAt(editorState.doc, value6));
-      let value10: Dynamic = parseCharacterId(value8);
+      let value10 = parseCharacterId(value8);
       let value11: Dynamic = items2.at(-1);
-      let value12: Dynamic = value11 ? parseCharacterId(value11.firstId) : null;
+      let value12 = value11 ? parseCharacterId(value11.firstId) : null;
       if (
         value11 &&
         value12 &&
@@ -140062,12 +139153,12 @@ function isOperationModelDoc(
       let value4: Dynamic = value3.nodes[0];
       if (isListItemNodeType(value4.type)) {
         let value5: Dynamic = doc.resolve(value3.from + 1);
-        let value6: Dynamic = new (ProseMirrorNodeRange)(
+        let value6 = new (ProseMirrorNodeRange)(
           value5,
           doc.resolve(value3.to - 1),
           value5.depth,
         );
-        let value7: Dynamic = ProseMirrorliftTarget(value6);
+        let value7 = ProseMirrorliftTarget(value6);
         if (value7 === null || value7 === undefined) return false;
         input.lift(value6, value7);
         let value8: Dynamic = value5.before(value5.depth - 1);
@@ -140237,9 +139328,9 @@ function resolveOperationModelCell(
   if (typeof input !== "object" || input === null) return;
   let value: Dynamic = input;
   if (value.g === undefined) return;
-  let value2: Dynamic = resolveOperationModelValue14(value.sh);
+  let value2 = resolveOperationModelValue14(value.sh);
   let value3: Dynamic = resolveOperationModelOther(value.g);
-  let value4: Dynamic = resolveOperationModelDragMove(value3, value.drag);
+  let value4 = resolveOperationModelDragMove(value3, value.drag);
   return {
     g: value3,
     ...(value.cell === true
@@ -140912,7 +140003,7 @@ function clearOperationModelPick(
     selection.node.attrs.bid === value
   )
     return null;
-  let value2: Dynamic = isOperationModelDescendants(editorState.doc, value);
+  let value2: number = isOperationModelDescendants(editorState.doc, value);
   if (value2 < 0) return null;
   return editorState.tr
     .setSelection(ProseMirrorNodeSelection.create(editorState.doc, value2))
@@ -140955,7 +140046,7 @@ function collectOperationModelUiEvent(
       ? editorState.doc.nodeAt(from)
       : null;
   if (!value || value.type !== selection.node.type) return null;
-  let value2: Dynamic = ProseMirrorSelection.findFrom(
+  let value2 = ProseMirrorSelection.findFrom(
     editorState.doc.resolve(from + value.nodeSize - 1),
     -1,
     true,
@@ -141006,9 +140097,9 @@ function resolveOperationModelDoc(
     return;
   let bid: Dynamic = node.node.attrs.bid;
   if (node.node.isInline || typeof bid !== "string" || !bid) return;
-  let value: Dynamic = isOperationModelDescendants(doc, bid);
+  let value: number = isOperationModelDescendants(doc, bid);
   if (value < 0) return;
-  let value2: Dynamic = ProseMirrorNodeSelection.create(doc, value);
+  let value2 = ProseMirrorNodeSelection.create(doc, value);
   if (resolveOperationModelOpenStart(dragging.slice))
     dragging.slice = new (ProseMirrorSlice)(
       ProseMirrorFragment.from(value2.node),
@@ -141032,7 +140123,7 @@ function getOperationModelSlice(
     ? slice.content.firstChild
     : null;
   if (!value2 || value2.attrs.bid !== value) return;
-  let value3: Dynamic = isOperationModelDescendants(input.state.doc, value);
+  let value3: number = isOperationModelDescendants(input.state.doc, value);
   if (value3 < 0) return;
   let value4: Dynamic = input.state.doc.nodeAt(value3);
   if (!value4 || value4 === value2) return;
@@ -141108,7 +140199,7 @@ function updateOperationModelMouseup(
   };
   let value8 = (..._extraArguments: unknown[]): undefined => {
     let entry: Dynamic = operationModelWeakMap.get(input);
-    let value13: Dynamic =
+    let value13: number =
       entry === undefined
         ? -1
         : isOperationModelDescendants(input.state.doc, entry);
@@ -141129,7 +140220,7 @@ function updateOperationModelMouseup(
         : undefined);
     if (value13 === undefined) return void operationModelWeakMap2.delete(input);
     operationModelWeakMap2.set(input, value13);
-    let value14: Dynamic =
+    let value14: number =
       entry === undefined || !dragging?.node
         ? -1
         : isOperationModelDescendants(input.state.doc, entry);
@@ -141148,7 +140239,7 @@ function updateOperationModelMouseup(
       ? dragging.slice.content.firstChild
       : null;
     if (!value14 || value14.attrs.bid !== value13) return;
-    let value15: Dynamic = isOperationModelDescendants(
+    let value15: number = isOperationModelDescendants(
       input.state.doc,
       value13,
     );
@@ -141445,7 +140536,7 @@ function resolveOperationModelAfter(
     ..._extraArguments: unknown[]
   ): Dynamic => {
     let value11: Dynamic = context2 === "after" ? options2 : input2;
-    let value12: Dynamic = ProseMirrorSelection.findFrom(
+    let value12 = ProseMirrorSelection.findFrom(
       input.resolve(value11),
       context2 === "after" ? 1 : -1,
       true,
@@ -141529,7 +140620,7 @@ function resolveOperationModelDoc2(
     );
     if (value12 < 0 || value12 > doc.content.size) return null;
     let value13 = value10 ? -1 : 1;
-    let value14: Dynamic =
+    let value14 =
       ProseMirrorSelection.findFrom(doc.resolve(value12), value13, true) ??
       ProseMirrorSelection.findFrom(doc.resolve(value12), -value13, true);
     return value14 && resolveOperationModelCell4(value14.$head).table === value4
@@ -141841,7 +140932,7 @@ var resolveOperationModelSpell2 = (
   input?: Dynamic,
   ..._extraArguments: unknown[]
 ): Dynamic => {
-  let value: Dynamic = resolveOperationModelTarget2(input);
+  let value = resolveOperationModelTarget2(input);
   if (!value) return [input];
   let value2: Dynamic = Array.isArray(input.ids) ? input.ids : [];
   let value3 = (
@@ -141893,7 +140984,7 @@ var resolveOperationModelSpell3 = (
   options?: Dynamic,
   ..._extraArguments: unknown[]
 ): Dynamic => {
-  let value: Dynamic = resolveOperationModelTarget2(input);
+  let value = resolveOperationModelTarget2(input);
   if (!value || value[0] !== value[1]) return [input];
   let value2 = input.side === "before" ? "before" : "after";
   let value3: Dynamic =
@@ -142864,7 +141955,7 @@ function resolveOperationModelFrom(
   input?: Dynamic,
   ..._extraArguments: unknown[]
 ): Dynamic {
-  let value: Dynamic = input.length ? parseCharacterId(input[0]) : null;
+  let value = input.length ? parseCharacterId(input[0]) : null;
   if (!value) return null;
   for (let count = 1; count < input.length; count++)
     if (input[count] !== characterId(value.sess, value.i + count)) return null;
@@ -142992,7 +142083,7 @@ function isOperationModelBlocks(
   for (let value of (input.revivedBlocks ?? []) as Dynamic)
     for (let value2 of value.ids as Dynamic) values.add(value2);
   for (let value of input.inserted as Dynamic) {
-    let value2: Dynamic = parseCharacterId(value.firstId);
+    let value2 = parseCharacterId(value.firstId);
     if (value2)
       for (let index = 0; index < value.len; index++)
         values.add(characterId(value2.sess, value2.i + index));
@@ -143066,7 +142157,7 @@ function isOperationModelTarget3(
           entry.sig === JSON.stringify(documentNode.content.toJSON()))
       ) {
         for (let value12 of runs as Dynamic) {
-          let value13: Dynamic = parseCharacterId(value12.id);
+          let value13 = parseCharacterId(value12.id);
           if (!value13) return false;
           for (let index3 = 0; index3 < value12.len; index3++)
             items.push(characterId(value13.sess, value13.i + index3));
@@ -143106,7 +142197,7 @@ function isOperationModelTarget3(
         let index3: number = 0;
         for (let [value13, value14] of value12 as Dynamic) {
           let value15 =
-            parseCharacterId(value14).i - parseCharacterId(value13).i + 1;
+            requireCharacterIdParts(value14).i - requireCharacterIdParts(value13).i + 1;
           items3.push(value9.slice(index3, index3 + value15).join(""));
           index3 += value15;
         }
@@ -143129,7 +142220,7 @@ function isOperationModelTarget3(
         (items.push as Dynamic)(...value10);
         return true;
       }
-      let value11: Dynamic = parseCharacterId(
+      let value11 = parseCharacterId(
         input.table.predict(value9.length),
       );
       if (!value11) return false;
@@ -143166,7 +142257,7 @@ function resolveOperationModelPredict(
   input?: Dynamic,
   ..._extraArguments: unknown[]
 ): Dynamic {
-  let value: Dynamic = parseCharacterId(input.table.predict(0))?.sess;
+  let value = parseCharacterId(input.table.predict(0))?.sess;
   return (input2?: Dynamic, ..._extraArguments: unknown[]) =>
     value !== undefined && parseCharacterId(input2)?.sess === value;
 }
@@ -143219,7 +142310,7 @@ function resolveOperationModelIds4(
     let value4: number = -1;
     let items: Dynamic = [];
     for (
-      let value10: Dynamic = index;
+      let value10: number = index;
       value10 < value2.length &&
       (value10 === index || value2[value10].pos === value4);
       value10++
@@ -143326,8 +142417,8 @@ function resolveOperationModelSess(
 ): Dynamic {
   let items: Dynamic = [];
   for (let value of input as Dynamic) {
-    let value2: Dynamic = parseCharacterId(value);
-    let value3: Dynamic = items.length
+    let value2 = parseCharacterId(value);
+    let value3 = items.length
       ? parseCharacterId(items[items.length - 1][1])
       : null;
     if (
@@ -143383,9 +142474,9 @@ function resolveOperationModelTarget3(
   let index: number = 0;
   for (let value3 of value as Dynamic) {
     let items: Dynamic = [];
-    let value4: Dynamic = index;
+    let value4: number = index;
     for (let [value6, value7] of value3 as Dynamic) {
-      let value8 = parseCharacterId(value7).i - parseCharacterId(value6).i + 1;
+      let value8 = requireCharacterIdParts(value7).i - requireCharacterIdParts(value6).i + 1;
       extra(value6, value8, index);
       items.push(value2.slice(index, index + value8).join(""));
       index += value8;
@@ -143936,8 +143027,8 @@ function projectOperationResultToTransaction(
             : [input3.a, input3.z],
       );
       return {
-        has: (input3?: unknown, ..._extraArguments: unknown[]): Dynamic => {
-          let value19: Dynamic = parseCharacterId(input3);
+        has: (input3: string, ..._extraArguments: unknown[]): Dynamic => {
+          let value19 = parseCharacterId(input3);
           return (
             !!value19 &&
             value17.some(
@@ -144222,7 +143313,7 @@ function projectOperationResultToTransaction(
         typeof ids.from === "string" &&
         typeof ids.count === "number"
       ) {
-        let value13: Dynamic = parseCharacterId(ids.from);
+        let value13 = parseCharacterId(ids.from);
         if (value13)
           items6.push({
             sess: value13.sess,
@@ -144246,7 +143337,7 @@ function projectOperationResultToTransaction(
         ))(parseCharacterId(input2));
   })();
   for (let value12 of out2.inserted as Dynamic) {
-    let value13: Dynamic = value12.over
+    let value13 = value12.over
       ? null
       : parseCharacterId(value12.firstId);
     if (
@@ -144335,7 +143426,7 @@ function projectOperationResultToTransaction(
     input2?: Dynamic,
     ..._extraArguments: unknown[]
   ): Dynamic => {
-    let value12: Dynamic =
+    let value12 =
       operationModelWeakSet2.has(input2) && input2.add === undefined
         ? value8(input2)
         : null;
@@ -144908,7 +143999,7 @@ function resolveOperationModelFrom2(
     items += value3(value7, items2);
     items2 += value7.nodeSize;
   }
-  let value4: Dynamic = items
+  let value4 = items
     ? parseCharacterId(input.table.predict(items))
     : null;
   if (!value4) return [];
@@ -145105,10 +144196,10 @@ function isOperationModelSess(
   let items2: Dynamic = [];
   let items3: Dynamic = [];
   for (let index: number = 0; index < input.length; ) {
-    let value2: Dynamic = context(index)
+    let value2 = context(index)
       ? resolveOperationModelTarget5(input[index])
       : null;
-    let value3: Dynamic = index;
+    let value3: number = index;
     if (value2 !== null) {
       let values: Dynamic = new (Set as Dynamic)([
         resolveOperationModelBlocks2(input[index]),
@@ -145121,7 +144212,7 @@ function isOperationModelSess(
         ..._extraArguments: unknown[]
       ) => {
         let value6: Dynamic = resolveOperationModelFrom4(input[input2]);
-        let value7: Dynamic = value6 ? parseCharacterId(value6.from) : null;
+        let value7 = value6 ? parseCharacterId(value6.from) : null;
         return (
           !!value6 &&
           !!value7 &&
@@ -145159,7 +144250,7 @@ function isOperationModelSess(
       let items4: Dynamic = [];
       let items5: Dynamic = [];
       let index2: number = 0;
-      for (let value5: Dynamic = index; value5 <= value3; value5++) {
+      for (let value5: number = index; value5 <= value3; value5++) {
         items4.push(resolveOperationModelBlocks2(input[value5]));
         (items5.push as Dynamic)(...options[value5]);
         index2 += resolveOperationModelFrom4(input[value5]).count;
@@ -145208,7 +144299,7 @@ function filterOperationModelEach(
   )
     return null;
   let value2: Dynamic = resolveOperationModelFrom4(event);
-  let value3: Dynamic = value2 ? parseCharacterId(value2.from) : null;
+  let value3 = value2 ? parseCharacterId(value2.from) : null;
   let value4: Dynamic = value2 ? value2.count : options.length;
   if (
     (value2 && !value3) ||
@@ -145530,7 +144621,7 @@ function isOperationModelIndex(
   input?: Dynamic,
   ..._extraArguments: unknown[]
 ): Dynamic {
-  let value: Dynamic = ProseMirrorFragment.from(input);
+  let value = ProseMirrorFragment.from(input);
   let value2: Dynamic = resolveOperationModelValue23(value);
   if (value2 === value) return null;
   let value3: boolean = false;
@@ -145749,7 +144840,7 @@ function isOperationModelKeep(
   };
   for (let value7 of value as Dynamic) value3(value7, null);
   if (!value2) return null;
-  let value4: Dynamic = ProseMirrorFragment.from(value);
+  let value4 = ProseMirrorFragment.from(value);
   let value5: Dynamic = resolveOperationModelValue23(value4);
   if (value5 === value4) return null;
   let items: Dynamic = [];
@@ -146019,7 +145110,7 @@ function collectOperationModelSeat(
       continue;
     }
     let value4: Dynamic = getOperationModelFresh(input, value[index], 1);
-    let value5: Dynamic = index + 1;
+    let value5: number = index + 1;
     while (
       value5 < value.length &&
       getOperationModelFresh(input, value[value5], -1) === value4
@@ -146069,7 +145160,7 @@ function resolveOperationModelFrom6(
       ..._extraArguments: unknown[]
     ): number => input2.pos - options.pos,
   ) as Dynamic) {
-    let value4: Dynamic = parseCharacterId(value3.id);
+    let value4 = parseCharacterId(value3.id);
     let value5: Dynamic = items.at(-1);
     if (
       value5 &&
@@ -146192,7 +145283,7 @@ function collectOperationModelText(
     context.length > 0 &&
     resolveOperationModelReduce(value3) + extra > context.length
   ) {
-    let value4: Dynamic = ProseMirrorFragment.from(
+    let value4 = ProseMirrorFragment.from(
       parseWirePMNodes(input, value2) ?? [],
     );
     let value5: Dynamic = resolveOperationModelValue23(value4);
@@ -147782,7 +146873,7 @@ function isOperationModelJoin(
       },
     );
   if (value6) {
-    let value12: Dynamic = new (ProseMirrorTransform)(input.tr.doc);
+    let value12 = new (ProseMirrorTransform)(input.tr.doc);
     try {
       value12.delete(value4, value3.pos + 1);
     } catch {}
@@ -147949,7 +147040,7 @@ function isOperationModelWrap(
   let value8: Dynamic = input.tr.doc.resolve(
     value.at(-1).pos + value.at(-1).node.nodeSize,
   );
-  let value9: Dynamic = new (ProseMirrorNodeRange)(
+  let value9 = new (ProseMirrorNodeRange)(
     value7,
     value8,
     value7.depth,
@@ -147973,7 +147064,7 @@ function isOperationModelWrap(
       );
     let value14 = value7.parent.child(value13 - 1).lastChild?.type === value3;
     let value15 = value14 ? 3 : 1;
-    let value16: Dynamic = value14
+    let value16 = value14
       ? ProseMirrorFragment.from(listItem.create())
       : undefined;
     let value17: Dynamic = value3.create(
@@ -147983,7 +147074,7 @@ function isOperationModelWrap(
       },
       value16,
     );
-    let value18: Dynamic = new (ProseMirrorSlice)(
+    let value18 = new (ProseMirrorSlice)(
       ProseMirrorFragment.from(
         listItem.create(null, ProseMirrorFragment.from(value17)),
       ),
@@ -148010,7 +147101,7 @@ function isOperationModelWrap(
     return true;
   }
   if (value3.name !== "list") {
-    let value13: Dynamic = ProseMirrorfindWrapping(value9, value3, state);
+    let value13 = ProseMirrorfindWrapping(value9, value3, state);
     if (value13?.length !== 1)
       return resolveOperationModelValue24("wrap", "schema refused the wrap");
     input.tr.wrap(value9, value13);
@@ -148088,12 +147179,12 @@ function isOperationModelNodeAt(
   let value: Dynamic = input.tr.doc.nodeAt(options);
   if (!value || value.isLeaf) return false;
   let value2: Dynamic = input.tr.doc.resolve(options + 1);
-  let value3: Dynamic = new (ProseMirrorNodeRange)(
+  let value3 = new (ProseMirrorNodeRange)(
     value2,
     input.tr.doc.resolve(options + value.nodeSize - 1),
     value2.depth,
   );
-  let value4: Dynamic = ProseMirrorliftTarget(value3);
+  let value4 = ProseMirrorliftTarget(value3);
   if (value4 === value2.depth - 1) {
     input.tr.lift(value3, value4);
     return true;
@@ -148462,7 +147553,7 @@ function isOperationModelDoc2(
   context?: Dynamic,
   ..._extraArguments: unknown[]
 ) {
-  let value: Dynamic = ProseMirrorEditorState.create({
+  let value = ProseMirrorEditorState.create({
     schema: input.tr.doc.type.schema,
     doc: input.tr.doc,
   });
@@ -148481,7 +147572,7 @@ function isOperationModelDoc2(
         "table step did not compose",
       );
   for (let value3 of (value2.getMeta(OpInsertedClass) ?? []) as Dynamic) {
-    let value4: Dynamic = parseCharacterId(value3.firstId);
+    let value4 = parseCharacterId(value3.firstId);
     if (!value4) continue;
     for (
       let index = 0, from: Dynamic = value3.from;
@@ -149221,7 +148312,7 @@ function resolveOperationModelPos(
 ): Dynamic {
   let value: Dynamic = isOperationModelPos3(input);
   if (!value.length) return input;
-  let value2: Dynamic = new (ProseMirrorTransform)(input);
+  let value2 = new (ProseMirrorTransform)(input);
   for (let { pos: pos } of value as Dynamic)
     value2.setNodeAttribute(pos, "checked", null);
   return value2.doc;
@@ -149329,7 +148420,7 @@ function isOperationModelSkipped(
       ok: false,
       skipped: "lowering-skipped",
     };
-  let value2: Dynamic = ProseMirrorEditorState.create({
+  let value2 = ProseMirrorEditorState.create({
     schema: input.type.schema,
     doc: resolveOperationModelPos(input),
   });
@@ -149643,7 +148734,7 @@ function resolveOperationModelIsTextblock3(
   let index: number = 0;
   input.forEach(
     (input2?: unknown, ..._extraArguments: unknown[]): undefined => {
-      let value: Dynamic = resolveOperationModelIsTextblock3(input2);
+      let value: number = resolveOperationModelIsTextblock3(input2);
       if (value > index) index = value;
     },
   );
@@ -149854,7 +148945,7 @@ function resolveOperationModelFrom7(
       index += 1;
       continue;
     }
-    let value: Dynamic = index + 1;
+    let value: number = index + 1;
     while (
       value < input.length &&
       !resolveRenderedCodeAndProofreadingTest8(input[value])
@@ -149892,7 +148983,7 @@ function collectOperationModelFrom(
   let items: Dynamic = [];
   let index: number = 0;
   while (index < input.length) {
-    let value3: Dynamic = index + 1;
+    let value3: number = index + 1;
     while (
       value3 < input.length &&
       value3 - index < value2 &&
@@ -150136,16 +149227,16 @@ function resolveOperationModelCharCodeAt2(
   )
     index2 += 1;
   let value2 = Math.max(0, length - index2);
-  let value3: Dynamic = index;
+  let value3: number = index;
   if (value2 > value3) return null;
   let value4: number = -1;
-  for (let value5: Dynamic = value3; value5 >= value2 && value4 < 0; value5--)
+  for (let value5 = value3; value5 >= value2 && value4 < 0; value5--)
     if (
       value5 === 0 ||
       resolveRenderedCodeAndProofreadingTest8(options[value5 - 1])
     )
       value4 = value5;
-  for (let value5: Dynamic = value3; value5 >= value2 && value4 < 0; value5--)
+  for (let value5 = value3; value5 >= value2 && value4 < 0; value5--)
     if (
       value5 + value === options.length ||
       resolveRenderedCodeAndProofreadingTest8(options[value5 + value])
@@ -150232,7 +149323,7 @@ function isOperationModelCharCodeAt2(
   options?: Dynamic,
   ..._extraArguments: unknown[]
 ): Dynamic {
-  let value: Dynamic = resolveOperationModelCharCodeAt2(input, options);
+  let value = resolveOperationModelCharCodeAt2(input, options);
   let value2: Dynamic;
   let value3: Dynamic;
   let value4: Dynamic;
@@ -150873,7 +149964,7 @@ function isOperationModelPending2(
     )
     .slice(0, operationModelLimit300);
   if (items.length === 0 && slice.length === 0) return value2();
-  let value12: Dynamic = resolveOperationModelFloor(value);
+  let value12: number = resolveOperationModelFloor(value);
   let value13: Dynamic = collectOperationModelFrom(
     items,
     Math.max(1, value12 - value8.length),
@@ -151424,7 +150515,7 @@ function createProseTombstoneArchive(
       options?: Dynamic,
       ..._extraArguments: unknown[]
     ): Dynamic {
-      let value: Dynamic = parseCharacterId(input2);
+      let value = parseCharacterId(input2);
       if (!value) return null;
       let value2: Dynamic = null;
       for (let [value3, value4] of Array.from<Dynamic>(
@@ -151433,7 +150524,7 @@ function createProseTombstoneArchive(
         if (value4.via !== "join" || options?.has(value3)) continue;
         for (let value5 of value4.leaves.values() as Dynamic) {
           let value6: Dynamic = value5.runs[0];
-          let value7: Dynamic = value6 ? parseCharacterId(value6.id) : null;
+          let value7 = value6 ? parseCharacterId(value6.id) : null;
           if (
             value7 &&
             value7.sess === value.sess &&
@@ -151443,7 +150534,7 @@ function createProseTombstoneArchive(
             return value3;
           if (value2 === null)
             for (let value8 of value5.runs as Dynamic) {
-              let value9: Dynamic = parseCharacterId(value8.id);
+              let value9 = parseCharacterId(value8.id);
               if (
                 value9 &&
                 value9.sess === value.sess &&
@@ -151631,8 +150722,8 @@ function createProseTombstoneArchive(
           input2.after === null ? -1 : value18.ids.indexOf(input2.after);
         let value20: Dynamic =
           input2.before === null ? -1 : value18.ids.indexOf(input2.before);
-        let value21: Dynamic = value4(value18, input2.after);
-        let value22: Dynamic =
+        let value21: boolean = value4(value18, input2.after);
+        let value22: boolean =
           value5(value18, input2.before) ||
           (input2.before === null && value18.before === null);
         if (!value21 && !value22 && value19 < 0 && value20 < 0) continue;
@@ -151751,7 +150842,7 @@ function createProseTombstoneArchive(
             index++;
             continue;
           }
-          let value4: Dynamic = index;
+          let value4: number = index;
           while (
             value4 + 1 < value2.ids.length &&
             !values.has(value2.ids[value4 + 1])
@@ -151844,7 +150935,7 @@ function resolveOperationModelEncode2(
   input?: Dynamic,
   ..._extraArguments: unknown[]
 ): string {
-  let value: Dynamic = digest(new TextEncoder().encode(input));
+  let value = digest(new TextEncoder().encode(input));
   let text: string = "";
   for (let index = 0; index < operationModelLimit16 / 2; index++)
     text += OperationModelFrom[value[index]];
@@ -151876,7 +150967,7 @@ function resolveOperationModelListItem(
       : input;
   let value2: Dynamic =
     typeof value.attrs.bid === "string" ? value.attrs.bid : null;
-  let value3: Dynamic =
+  let value3 =
     value2 === null ? null : resolveOperationModelIsTextblock4(value);
   return value2 === null || value3 === null
     ? null
@@ -151912,7 +151003,7 @@ function isOperationModelLeaves(
           : null;
       if (value4.isInline || value5 === null) return false;
       if (value4.isTextblock) {
-        let value6: Dynamic = resolveOperationModelIsTextblock4(value4);
+        let value6 = resolveOperationModelIsTextblock4(value4);
         if (value6 === null || items.length >= operationModelLimit482)
           return false;
         items.push({
@@ -152533,8 +151624,8 @@ function isOperationModelIndexOf(
   ..._extraArguments: unknown[]
 ) {
   if (options === "") return false;
-  let value: Dynamic = resolveOperationModelTest5(options[0]);
-  let value2: Dynamic = resolveOperationModelTest5(options[options.length - 1]);
+  let value: boolean = resolveOperationModelTest5(options[0]);
+  let value2: boolean = resolveOperationModelTest5(options[options.length - 1]);
   let value3: Dynamic = input.indexOf(options);
   while (value3 !== -1) {
     let value4 = !value || !resolveOperationModelTest5(input[value3 - 1]);
@@ -153464,7 +152555,7 @@ function isOperationModelTable(
 ): Dynamic {
   let { table: table, pending: pending, row: row }: Dynamic = input;
   let doc: Dynamic = input.doc;
-  let value: Dynamic = new (ProseMirrorTransform)(input.doc);
+  let value = new (ProseMirrorTransform)(input.doc);
   let value2 = (
     input2?: Dynamic,
     options?: Dynamic,
@@ -154109,7 +153200,7 @@ function isOperationModelFrom4(
   );
   if (value2 === null) return false;
   try {
-    let value3: Dynamic = new (ProseMirrorTransform)(input.doc);
+    let value3 = new (ProseMirrorTransform)(input.doc);
     let items3: Dynamic = [...value2, [items.length, items2.length]];
     for (let value4 = items3.length - 1; value4 >= 0; value4--) {
       let [value5, value6]: Dynamic = items3[value4];
@@ -154155,7 +153246,7 @@ function isOperationModelFrom4(
         index++;
         continue;
       }
-      let value6: Dynamic = index + 1;
+      let value6: number = index + 1;
       while (
         value6 < value2.length &&
         value2[value6][1] === value2[value6 - 1][1] + 1 &&
@@ -154374,7 +153465,7 @@ function resolveOperationModelReplace2(
       items2.textOffset === 0 &&
       !items.parent.inlineContent
     ) {
-      let value4: Dynamic = new (ProseMirrorTransform)(input.doc);
+      let value4 = new (ProseMirrorTransform)(input.doc);
       resolveOperationModelChildCount3(
         value4,
         options,
@@ -154497,7 +153588,7 @@ function collectOperationModelSteps(
         )
           items.push([value5.from, value5.to]);
       }
-      let value6: Dynamic = new (ProseMirrorMapping)(
+      let value6 = new (ProseMirrorMapping)(
         tr2.mapping.maps.slice(0, options2),
       ).invert();
       for (let [value7, value8] of items as Dynamic) {
@@ -154505,7 +153596,7 @@ function collectOperationModelSteps(
         value2 = Math.max(value2, value6.map(value8, 1));
         let mapped: Dynamic = input2.getMap().map(value7, -1);
         let mapped2: Dynamic = input2.getMap().map(value8, 1);
-        let value9: Dynamic = new (ProseMirrorMapping)(
+        let value9 = new (ProseMirrorMapping)(
           tr2.mapping.maps.slice(options2 + 1),
         );
         value3 = Math.min(value3, value9.map(mapped, -1));
@@ -155053,7 +154144,7 @@ function lowerProseMirrorTransaction(
       if (value32 !== null) values6.add(value32);
     }
     for (let index2: number = 0; index2 < value30.length; ) {
-      let value31: Dynamic = index2;
+      let value31: number = index2;
       while (
         value31 + 1 < value30.length &&
         entries7.get(value30[value31 + 1][0]) ===
@@ -155163,7 +154254,7 @@ function lowerProseMirrorTransaction(
     (options2.id = input2.id),
     void (options2.born = false)
   );
-  let value9: Dynamic = parseCharacterId(input.table.predict(0))?.sess;
+  let value9 = parseCharacterId(input.table.predict(0))?.sess;
   let value10 = (input2?: Dynamic, ..._extraArguments: unknown[]) =>
     !!input2 &&
     value9 !== undefined &&
@@ -156464,7 +155555,7 @@ function createLocalProseOperationBuilder(
     input2?: Dynamic,
     ..._extraArguments: unknown[]
   ): Dynamic => {
-    let value63: Dynamic = parseCharacterId(input.table.predict(input2));
+    let value63 = parseCharacterId(input.table.predict(input2));
     return value63
       ? Array.from<Dynamic, Dynamic>(
           {
@@ -156997,7 +156088,7 @@ function createLocalProseOperationBuilder(
     let mapped: Dynamic = input2.map(
       (input3?: Dynamic, ..._extraArguments: unknown[]): Dynamic => input3.node,
     );
-    let value64: Dynamic =
+    let value64: boolean =
       options2 !== null && isListNodeType(options2.node.type);
     let value65: Dynamic =
       value64 &&
@@ -157535,7 +156626,7 @@ function createLocalProseOperationBuilder(
     ..._extraArguments: unknown[]
   ) => {
     let type: Dynamic = input2.node.type;
-    let value63: Dynamic = isListNodeType(type);
+    let value63: boolean = isListNodeType(type);
     if (!value63 && type.name !== "blockquote") return false;
     if (input2.parent && isListNodeType(input2.parent.node.type)) return false;
     let filtered: Dynamic = input2.kids.filter(
@@ -157549,7 +156640,7 @@ function createLocalProseOperationBuilder(
     )
       index++;
     if (index === filtered.length) return false;
-    let value64: Dynamic = index === 0 && value63 ? value20(filtered[0]) : 0;
+    let value64: number = index === 0 && value63 ? value20(filtered[0]) : 0;
     if (index === 0 && !value64) return false;
     let value65 = (
       input3?: Dynamic,
@@ -158909,11 +158000,11 @@ function createLocalProseOperationBuilder(
       !!input3.match &&
       input3.match === options3 &&
       options3.placed === "stable";
-    let value67: Dynamic =
+    let value67: boolean =
       value65 === 0
         ? context === 0
         : value66(value64[value65 - 1], options2[context - 1]);
-    let value68: Dynamic =
+    let value68: boolean =
       value65 === value64.length - 1
         ? context + value63 === options2.length
         : value66(value64[value65 + 1], options2[context + value63]);
@@ -160336,7 +159427,7 @@ function isOperationModelBid3(
         index++;
         continue;
       }
-      let value6: Dynamic = index;
+      let value6: number = index;
       while (
         value6 + 1 < value3.units.length &&
         value5(value3.units[value6 + 1])
@@ -160561,7 +159652,7 @@ function isOperationModelBid3(
           return void items.push((..._extraArguments: unknown[]) =>
             value30(true),
           );
-        let value35: Dynamic = parseCharacterId(input.table.predict(value8));
+        let value35 = parseCharacterId(input.table.predict(value8));
         let value36: Dynamic = value35
           ? Array.from<Dynamic, Dynamic>(
               {
@@ -160626,7 +159717,7 @@ function isOperationModelBid3(
         index++;
         continue;
       }
-      let value5: Dynamic = index;
+      let value5: number = index;
       while (
         value5 + 1 < value3.units.length &&
         value2(value3.units[value5 + 1])
@@ -160745,7 +159836,7 @@ function updateOperationModelBid2(
         }
         let item: Dynamic = value7.splitOf.item;
         let value9 = item ? 2 : 1;
-        let value10: Dynamic = parseCharacterId(input.table.predict(value9));
+        let value10 = parseCharacterId(input.table.predict(value9));
         let value11: Dynamic = value10
           ? Array.from<Dynamic, Dynamic>(
               {
@@ -161105,7 +160196,7 @@ function resolveOperationModelTarget9(
         value4.reborn === undefined
       )
         (input.out.tickOut ??= {})[value4.id] = true;
-      let value6: Dynamic =
+      let value6: boolean =
         !!value4.parent.old &&
         isListNodeType(value4.parent.old.node.type) &&
         normalizedListKind(value4.parent.old.node) !== "check" &&
@@ -162261,7 +161352,7 @@ function isOperationModelFrom6(
     return true;
   };
   let value7 = (..._extraArguments: unknown[]): Dynamic => {
-    let tr3: Dynamic = ProseMirrorEditorState.create({
+    let tr3 = ProseMirrorEditorState.create({
       doc: input,
     }).tr;
     items.length = 0;
@@ -162277,7 +161368,7 @@ function isOperationModelFrom6(
     )
   )
     return value7();
-  let tr2: Dynamic = ProseMirrorEditorState.create({
+  let tr2 = ProseMirrorEditorState.create({
     doc: input,
   }).tr;
   try {
@@ -162737,7 +161828,7 @@ function isOperationModelSess2(
     context: Dynamic = false,
     ..._extraArguments: unknown[]
   ): Dynamic => {
-    let value6: Dynamic = value(input2);
+    let value6 = value(input2);
     return (
       value6 !== null &&
       options2.some(
@@ -162832,7 +161923,7 @@ function isOperationModelSess2(
       value5 = true;
     let value10: Dynamic = operationModelSet27.has(String(value8.op));
     {
-      let value11: Dynamic = value(value8.id);
+      let value11 = value(value8.id);
       if (value11)
         items.push({
           sess: value11.sess,
@@ -162843,7 +161934,7 @@ function isOperationModelSess2(
     }
     if (Array.isArray(value8.ids))
       for (let value11 of value8.ids as Dynamic) {
-        let value12: Dynamic = value(value11);
+        let value12 = value(value11);
         if (value12)
           items.push({
             sess: value12.sess,
@@ -162857,7 +161948,7 @@ function isOperationModelSess2(
       typeof value8.ids === "object" &&
       typeof value8.ids.count === "number"
     ) {
-      let value11: Dynamic = value(value8.ids.from);
+      let value11 = value(value8.ids.from);
       if (value11)
         items.push({
           sess: value11.sess,
@@ -163482,10 +162573,10 @@ function reconcileProseChangesToOperations(
       updateOperationModelOps(value6, opsPerUpdateReference);
       for (let value17 of value13.reseated as Dynamic) {
         let value18: Dynamic = value3.inserted.at(-1);
-        let value19: Dynamic = value18
+        let value19 = value18
           ? parseCharacterId(value18.firstId)
           : null;
-        let value20: Dynamic = parseCharacterId(value17.id);
+        let value20 = parseCharacterId(value17.id);
         if (
           value18 &&
           value19 &&
@@ -163761,7 +162852,7 @@ function reconcileProseChangesToOperations(
                 continue;
               }
               let value26: Dynamic = items6.at(-1);
-              let value27: Dynamic = value26
+              let value27 = value26
                 ? parseCharacterId(value26.id)
                 : null;
               if (
@@ -164717,7 +163808,7 @@ function resolveOperationModelAllowDetach3(
   let value3 = false;
   for (let index: number = 0; index < input.length; ) {
     let items4: Dynamic = [];
-    let value4: Dynamic = index;
+    let value4: number = index;
     for (; value4 < input.length; value4++) {
       let value8: Dynamic = value2(input[index], input[value4])
         ? value(value4)
@@ -164735,7 +163826,7 @@ function resolveOperationModelAllowDetach3(
         : [];
     if (value6.length === 0 || value6.length === value4 - index) {
       for (
-        let value8: Dynamic = index;
+        let value8: number = index;
         value8 < Math.max(value4, index + 1);
         value8++
       ) {
@@ -164891,7 +163982,7 @@ function isOperationModelOut2(
           letters: Array.from<Dynamic>(value7[1]),
         },
       ];
-      let value11: Dynamic = index + 1;
+      let value11: number = index + 1;
       for (; value11 < length; value11++) {
         let value12: Dynamic =
           out2.ops[value11].op === "revive" ? entries.get(value11) : undefined;
@@ -164920,7 +164011,7 @@ function isOperationModelOut2(
           input2
             .map(
               (
-                input3?: unknown,
+                input3: string,
                 options?: unknown,
                 ..._extraArguments: unknown[]
               ): Dynamic => ({
@@ -164957,7 +164048,7 @@ function isOperationModelOut2(
         else {
           let [items8, items9, items10]: Dynamic = [index, 0, 0];
           let value15: Dynamic = null;
-          for (let value16: Dynamic = index; value16 < value11; value16++) {
+          for (let value16: number = index; value16 < value11; value16++) {
             let ids: Dynamic = items6[value16 - index].ids;
             let value17 = (
               input2?: unknown,
@@ -164965,7 +164056,7 @@ function isOperationModelOut2(
             ): Dynamic => {
               let [items11, items12]: Dynamic = [0, input2];
               for (let value19 of ids as Dynamic) {
-                let value20: Dynamic = parseCharacterId(value19);
+                let value20 = parseCharacterId(value19);
                 if (
                   !(
                     value20 &&
@@ -165090,7 +164181,7 @@ function isOperationModelOut2(
     let value9: Dynamic = value8 === null ? null : table.holderOf(value8[0]);
     if (value8 !== null && value9 !== null) {
       let items5: Dynamic = [...value8];
-      let value11: Dynamic = index + 1;
+      let value11: number = index + 1;
       for (; value11 < length; value11++) {
         let value12: Dynamic = value(out2.ops[value11]);
         if (
@@ -165111,7 +164202,7 @@ function isOperationModelOut2(
         let mapped: Dynamic = items5
           .map(
             (
-              input2?: unknown,
+              input2: string,
               options?: unknown,
               ..._extraArguments: unknown[]
             ): Dynamic => ({
@@ -165158,7 +164249,7 @@ function isOperationModelOut2(
           into: mapped2.length,
           ids: items5.length,
         });
-        for (let value12: Dynamic = index; value12 < value11; value12++)
+        for (let value12: number = index; value12 < value11; value12++)
           items3[value12] = items.length;
         for (let value12 of mapped2 as Dynamic) {
           items.push(value12);
@@ -165172,7 +164263,7 @@ function isOperationModelOut2(
     if (value10 !== null && (out2.minted[index]?.length ?? 0) > 0) {
       let value11: Dynamic = value10[1];
       let items5: Dynamic = [...out2.minted[index]];
-      let value12: Dynamic = index + 1;
+      let value12: number = index + 1;
       for (; value12 < length; value12++) {
         let value13: Dynamic = value2(out2.ops[value12]);
         let value14: Dynamic = out2.minted[value12] ?? [];
@@ -165219,7 +164310,7 @@ function isOperationModelOut2(
           into: 1,
           ids: items5.length,
         });
-        for (let value13: Dynamic = index; value13 < value12; value13++)
+        for (let value13: number = index; value13 < value12; value13++)
           items3[value13] = items.length;
         items.push(state);
         items2.push(items5);
@@ -165450,7 +164541,7 @@ function isOperationModelOut3(
       ): Dynamic => input2 + resolveProsePluginsValue40(options2, value6.attrs),
       0,
     );
-    let value8: Dynamic = index + 1;
+    let value8: number = index + 1;
     for (; value8 < length; value8++) {
       let value9: Dynamic = value4(out2.ops[value8], value8);
       if (
@@ -165754,7 +164845,7 @@ function isOperationModelOut4(
         ) => {
           let slice: Dynamic = value10.slice(index, index + mapped[options2]);
           index += mapped[options2];
-          let value17: Dynamic = resolveOperationModelEncode3(input2) + 1;
+          let value17: number = resolveOperationModelEncode3(input2) + 1;
           let value18: Dynamic =
             value17 + 1 > operationModelLimit327682 && slice.length > 0
               ? resolveOperationModelTableRow(input2)
@@ -167545,7 +166636,7 @@ function resolveOperationModelSome3(
   ..._extraArguments: unknown[]
 ): Dynamic {
   if (!options.steps.some(resolveOperationModelAttr)) return null;
-  let value: Dynamic = new (ProseMirrorTransform)(input);
+  let value = new (ProseMirrorTransform)(input);
   try {
     for (let value2 of options.steps as Dynamic)
       if (!resolveOperationModelAttr(value2) && value.maybeStep(value2).failed)
@@ -167608,7 +166699,7 @@ function clearOperationModelSteps2(
   )
     index2--;
   if (index === 0 && index2 === 0) return null;
-  let value4: Dynamic = new (ProseMirrorTransform)(input);
+  let value4 = new (ProseMirrorTransform)(input);
   let slice: Dynamic = text.slice(index, text.length - index2);
   if (!slice && value.from + index >= value.to - index2) return value4;
   try {
@@ -167673,7 +166764,7 @@ function isOperationModelPending3(
   ) as Dynamic) {
     let value4: Dynamic = input.doc.nodeAt(value3);
     if (!value4 || value4.type !== pending || value4.childCount === 0) continue;
-    let value5: Dynamic = new (ProseMirrorSlice)(
+    let value5 = new (ProseMirrorSlice)(
       ProseMirrorFragment.from(value4.copy(ProseMirrorFragment.empty)),
       0,
       0,
@@ -168261,7 +167352,7 @@ class MutableProseStructureIndex {
         !values6.has(value18.block)
       )
         value13 = value11(value18.shell) && value13;
-    let value14: Dynamic = value13 && index === items5.length;
+    let value14: boolean = value13 && index === items5.length;
     let index2: number = 0;
     let value15 = (
       input2?: unknown,
@@ -168361,7 +167452,7 @@ class MutableProseStructureIndex {
               (typeof input2.after !== "string" ||
                 this.parentOf.get(input2.after) === value25)
             ) {
-              let value26: Dynamic = index2;
+              let value26: number = index2;
               if (value16(block, input2.shell, true)) {
                 index2 = value26;
                 value16(block, input2.shell, false);
@@ -168825,7 +167916,7 @@ function resolveOperationModelSess2(
       : typeof value.atom?.id === "string"
         ? value.atom.id
         : null;
-  let value3: Dynamic = value2 === null ? null : parseCharacterId(value2);
+  let value3 = value2 === null ? null : parseCharacterId(value2);
   if (!value3) return null;
   let value4 = typeof value.text === "string" ? codePointCount(value.text) : 0;
   return {
@@ -168849,7 +167940,7 @@ function resolveOperationModelSess3(
   let value2 = -1;
   for (let value3 of value as Dynamic) {
     if (value3 === null || typeof value3 !== "object") continue;
-    let value4: Dynamic =
+    let value4 =
       typeof value3.id === "string" ? parseCharacterId(value3.id) : null;
     if (value4 && value4.sess === options) value2 = Math.max(value2, value4.i);
     if (!Array.isArray(value3.runs)) continue;
@@ -168896,7 +167987,7 @@ function updateOperationModelRuns(
   let items: Dynamic = [];
   for (let value6 of options as Dynamic) {
     if (extra.posOfBlock(value6) === null) continue;
-    let value7: Dynamic = parseCharacterId(value6);
+    let value7 = parseCharacterId(value6);
     if (!value7 || !value3(value6)) continue;
     items.push(value6);
     let entry: Dynamic = entries.get(value7.sess);
@@ -169017,7 +168108,7 @@ function isOperationModelEchoed(
 ) {
   let entries: Dynamic = new (Map as Dynamic)();
   for (let value4 of options as Dynamic) {
-    let value5: Dynamic = parseCharacterId(value4);
+    let value5 = parseCharacterId(value4);
     if (!value5) continue;
     let entry: Dynamic = entries.get(value5.sess);
     if (!entry) entries.set(value5.sess, (entry = new (Set as Dynamic)()));
@@ -169037,7 +168128,7 @@ function isOperationModelEchoed(
     return false;
   };
   let value3 = (input2?: unknown, ..._extraArguments: unknown[]) => {
-    let value4: Dynamic =
+    let value4 =
       typeof input2 === "string" ? parseCharacterId(input2) : null;
     return !!value4 && value2(value4.sess, value4.i, 1);
   };
@@ -169449,7 +168540,7 @@ function isOperationModelMine(
     }
     let value5: Dynamic = value4;
     let index2: number = 0;
-    let value6: Dynamic = index;
+    let value6: number = index;
     let entries3: Dynamic = new (Map as Dynamic)();
     value5.forEach(
       (
@@ -169480,7 +168571,7 @@ function isOperationModelMine(
       continue;
     }
     try {
-      let value8: Dynamic = ProseMirrorreplaceStep(
+      let value8 = ProseMirrorreplaceStep(
         input.doc,
         value6,
         value6,
@@ -169882,7 +168973,7 @@ function isOperationModelPos4(
         items3.splice(value20, 0, value19.node);
         value19.parent = "";
       }
-      let value18: Dynamic = ProseMirrorFragment.fromArray(items3);
+      let value18 = ProseMirrorFragment.fromArray(items3);
       if (!input2.type.validContent(value18)) {
         value14 = true;
         return input2;
@@ -169928,7 +169019,7 @@ function isOperationModelPos4(
       let length: Dynamic = input.steps.length;
       input.replaceWith(input2, input2 + options2.nodeSize, context2);
       if (input.steps.length === length) return false;
-      let value12: Dynamic = new (ProseMirrorTransform)(
+      let value12 = new (ProseMirrorTransform)(
         input.docs[length],
       );
       if (!options2.sameMarkup(context2))
@@ -170173,8 +169264,8 @@ function isOperationModelIns(
   context?: Dynamic,
   ..._extraArguments: unknown[]
 ): Dynamic {
-  let items: Dynamic = [...pmCharacterOffsets(options.node)];
-  let items2: Dynamic = [...pmCharacterOffsets(context.node)];
+  let items = [...pmCharacterOffsets(options.node)];
+  let items2 = [...pmCharacterOffsets(context.node)];
   let items3: Dynamic = [];
   let items4: Dynamic = [];
   items.forEach(
@@ -170295,7 +169386,7 @@ function isOperationModelNode2(
   )
     return false;
   let value2: Dynamic = argument.ids(context.bid, node);
-  let items: Dynamic = [...pmCharacterOffsets(node)];
+  let items = [...pmCharacterOffsets(node)];
   if (!value2 || value2.length !== items.length) return false;
   let value3: Dynamic = isOperationModelIns(input, detail, {
     node: context.node,
@@ -170555,7 +169646,7 @@ function isOperationModelNode2(
     ): Dynamic => input2.append(options2.ins),
     ProseMirrorFragment.empty,
   );
-  let empty: Dynamic = ProseMirrorFragment.empty;
+  let empty = ProseMirrorFragment.empty;
   items3.forEach(
     (
       input2?: Dynamic,
@@ -170624,7 +169715,7 @@ function isOperationModelNode2(
   let doc2: Dynamic = input.doc;
   let value15 = (input2?: Dynamic, ..._extraArguments: unknown[]) => {
     try {
-      let value16: Dynamic = new (ProseMirrorTransform)(doc);
+      let value16 = new (ProseMirrorTransform)(doc);
       if (!context.node.sameMarkup(node2))
         value16.setNodeMarkup(pos, node2.type, node2.attrs, node2.marks);
       input2(value16);
@@ -170653,7 +169744,7 @@ function isOperationModelNode2(
         1 +
         value8.a +
         (value10 === "before" ? value3.ins.size - (value3.e1 - value3.a) : 0);
-      let value17: Dynamic =
+      let value17 =
         value10 === "before" && value3.e1 === value8.a && value8.a === value8.e1
           ? [...pmCharacterOffsets(input2.doc.nodeAt(pos))].find(
               ([input3]: Dynamic, ..._extraArguments: unknown[]) =>
@@ -170745,7 +169836,7 @@ function resolveOperationModelIns2(
   ..._extraArguments: unknown[]
 ): Dynamic {
   if (input.size === 0 || context?.length === 0) return null;
-  let items: Dynamic = [...pmCharacterOffsets(options)];
+  let items = [...pmCharacterOffsets(options)];
   let items2: Dynamic = [];
   for (let [value2] of items as Dynamic) {
     let value3: Dynamic = value2 + input.size;
@@ -171379,7 +170470,7 @@ function isOperationModelNode3(
       if (!value) items.push(value7);
       continue;
     }
-    let value9: Dynamic = entry.parent === value8.parent && value6(value8.pos);
+    let value9: boolean = entry.parent === value8.parent && value6(value8.pos);
     if (
       (input.mapping.mapResult(value8.pos, 1).deleted &&
         !value9 &&
@@ -171414,7 +170505,7 @@ function isOperationModelFrom9(
         if (input2.content.size === 0) return false;
         let value20: Dynamic = blockIdOf(input2);
         let value21: Dynamic = value20 === null ? null : options2(value20);
-        let items4: Dynamic = [...pmCharacterOffsets(input2)];
+        let items4 = [...pmCharacterOffsets(input2)];
         if (!value21 || value21.length !== items4.length)
           return (value19 = false);
         items4.forEach(
@@ -171647,8 +170738,8 @@ function isOperationModelFrom9(
   if (value14 || value15) return null;
   value13(input.content.size, options.content.size);
   if (items2.length === 0) return null;
-  let value16: Dynamic = new (ProseMirrorStepMap)(items2);
-  let value17: Dynamic = new (ProseMirrorMapping)([value16]);
+  let value16 = new (ProseMirrorStepMap)(items2);
+  let value17 = new (ProseMirrorMapping)([value16]);
   let value18 = (
     input2?: Dynamic,
     options2?: Dynamic,
@@ -171749,7 +170840,7 @@ function isOperationModelBid5(
       let value8: Dynamic = options.others(value7, input2);
       if (!value8 || value8.length === 0) return false;
       let value9: Dynamic = options.ids(value7, input2);
-      let items3: Dynamic = [...pmCharacterOffsets(input2)];
+      let items3 = [...pmCharacterOffsets(input2)];
       if (!value9 || value9.length !== items3.length) return false;
       let value10 = (
         input3?: Dynamic,
@@ -171949,7 +171040,7 @@ function isOperationModelBid5(
       index2 < value8.length;
 
     ) {
-      let value10: Dynamic = index2;
+      let value10: number = index2;
       let value11: Dynamic = index3 + value8[index2].length;
       while (
         value10 + 1 < value8.length &&
@@ -172149,7 +171240,7 @@ function isOperationModelBid6(
     );
     if (value10 && values.size > 0) {
       let value13: Dynamic = options.ids(value8, value10) ?? [];
-      let items2: Dynamic = [...pmCharacterOffsets(value10)];
+      let items2 = [...pmCharacterOffsets(value10)];
       let slice2: Dynamic = input.mapping.slice(0, context);
       if (value13.length === items2.length)
         items2.forEach(
@@ -172251,7 +171342,7 @@ function resolveOperationModelIsTextblock5(
   );
   if (value) return input;
   if (items.length === 0) return null;
-  let value2: Dynamic = ProseMirrorFragment.fromArray(items);
+  let value2 = ProseMirrorFragment.fromArray(items);
   return input.type.validContent(value2) ? input.copy(value2) : null;
 }
 function resolveOperationModelToSorted3(
@@ -172666,7 +171757,7 @@ function getOperationModelItems(
       if (!value6 || !value.includes(value6.bid)) continue;
       let value7 = -1;
       for (
-        let value8: Dynamic = value4 + 1;
+        let value8: number = value4 + 1;
         value8 < value3 && value7 < 0;
         value8++
       ) {
@@ -172742,7 +171833,7 @@ function getOperationModelDepth(
         continue;
       }
       try {
-        let value11: Dynamic = new (ProseMirrorTransform)(
+        let value11 = new (ProseMirrorTransform)(
           input.docs[value10],
         );
         value11.step(input.steps[value10]);
@@ -173048,8 +172139,8 @@ function isOperationModelTarget10(
           let items5: Dynamic = [];
           let index = 0;
           for (let value5 of target.runs as Dynamic) {
-            let value6: Dynamic = parseCharacterId(value5[0]);
-            let value7: Dynamic = parseCharacterId(value5[1]);
+            let value6 = parseCharacterId(value5[0]);
+            let value7 = parseCharacterId(value5[1]);
             if (
               !value6 ||
               !value7 ||
@@ -173281,8 +172372,8 @@ function filterOperationModelTarget3(
   ];
   let { target: target, to: to2 }: Dynamic = input;
   let value3: Dynamic = input;
-  let value4: Dynamic = target?.kind === "blocks" ? value(target.ids) : [];
-  let value5: Dynamic = value(value3.blocks?.ids);
+  let value4 = target?.kind === "blocks" ? value(target.ids) : [];
+  let value5 = value(value3.blocks?.ids);
   return {
     subjects: [...value4, ...value5],
     targetSubjects: value4,
@@ -173386,7 +172477,7 @@ var isOperationModelSpans = (
 ): Dynamic => {
   if (input.ids.has(options)) return true;
   if (input.spans.length === 0) return false;
-  let value: Dynamic = resolveOperationModelLastIndexOf2(options);
+  let value = resolveOperationModelLastIndexOf2(options);
   return (
     value !== null &&
     input.spans.some(
@@ -173655,14 +172746,14 @@ function isOperationModelFrom10(
     $from: $from,
     $to: $to2,
   }: Dynamic = input.selection;
-  let value: Dynamic = resolveOperationModelStartsWith2(input.selection.node);
+  let value = resolveOperationModelStartsWith2(input.selection.node);
   if (value !== null)
     return {
       blocks: [value],
     };
   if (empty || ($from.sameParent($to2) && $from.parent.isTextblock)) {
     for (let depth: Dynamic = $from.depth; depth >= 0; depth--) {
-      let value5: Dynamic = resolveOperationModelStartsWith2($from.node(depth));
+      let value5 = resolveOperationModelStartsWith2($from.node(depth));
       if (value5 === null) continue;
       let value6 = depth === $from.depth;
       return !empty && value6
@@ -173711,7 +172802,7 @@ function isOperationModelFrom10(
     ..._extraArguments: unknown[]
   ): undefined => {
     if (items.length >= options) return;
-    let value5: Dynamic = resolveOperationModelStartsWith2(input2);
+    let value5 = resolveOperationModelStartsWith2(input2);
     let value6 = options2 >= from && options2 + input2.nodeSize <= to2;
     if (value5 !== null && (value6 || input2.isTextblock))
       return void items.push(value5);
@@ -173723,7 +172814,7 @@ function isOperationModelFrom10(
   value3($from.node(value2), $from.start(value2));
   if (items.length === 0)
     for (let value5: Dynamic = value2; value5 >= 0; value5--) {
-      let value6: Dynamic = resolveOperationModelStartsWith2(
+      let value6 = resolveOperationModelStartsWith2(
         $from.node(value5),
       );
       if (value6 !== null)
@@ -173794,7 +172885,7 @@ function resolveOperationModelNodeType(
   let value = input instanceof Error ? input : Error("");
   let value2: Dynamic = options?.content;
   let value3: Dynamic = Array.isArray(value2) ? value2[0]?.type : undefined;
-  let value4: Dynamic =
+  let value4 =
     resolveOperationModelExec(value.message) ??
     (typeof value3 === "string" ? value3 : null);
   let state: Dynamic = {
@@ -174139,7 +173230,7 @@ var resolveOperationModelLen = (
       { id: id2, len: len }: Dynamic,
       ..._extraArguments: unknown[]
     ): Dynamic => {
-      let value: Dynamic = parseCharacterId(id2);
+      let value = parseCharacterId(id2);
       return value
         ? Array.from<Dynamic, Dynamic>(
             {
@@ -174161,7 +173252,7 @@ var resolveOperationModelLen2 = (
   let items: Dynamic = [];
   for (let value of input as Dynamic) {
     let [items2, items3]: Dynamic = [parseCharacterId(value), items.at(-1)];
-    let value2: Dynamic = items3 ? parseCharacterId(items3.id) : null;
+    let value2 = items3 ? parseCharacterId(items3.id) : null;
     if (
       items2 &&
       value2 &&
@@ -174337,7 +173428,7 @@ function isOperationModelFrom12(
     for (let index = 0; index < steps.length; index++) {
       let value4: Dynamic = steps[index];
       if (!value2(value4.slice)) return null;
-      let value5: Dynamic = new (ProseMirrorMapping)(
+      let value5 = new (ProseMirrorMapping)(
         options.steps
           .slice(0, index)
           .map(
@@ -174362,7 +173453,7 @@ function isOperationModelFrom12(
         i: index,
       });
     }
-    let tr2: Dynamic = ProseMirrorEditorState.create({
+    let tr2 = ProseMirrorEditorState.create({
       doc: input,
     }).tr;
     for (let value4 of items as Dynamic)
@@ -174380,14 +173471,14 @@ function isOperationModelFrom12(
         );
     let items2: Dynamic = [];
     let items3: Dynamic = [];
-    let value3: Dynamic = new (ProseMirrorMapping)();
+    let value3 = new (ProseMirrorMapping)();
     let doc: Dynamic = tr2.doc;
     for (let value4 of items as Dynamic) {
       if (!(value4.from < value4.to) || value4.whole) continue;
       let mapped2: Dynamic = value3.map(tr2.mapping.map(value4.from, 1), 1);
       let mapped3: Dynamic = value3.map(tr2.mapping.map(value4.to, 1), -1);
       if (!(mapped2 < mapped3)) return null;
-      let value5: Dynamic = new (ProseMirrorReplaceStep)(
+      let value5 = new (ProseMirrorReplaceStep)(
         mapped2,
         mapped3,
         ProseMirrorSlice.empty,
@@ -174401,7 +173492,7 @@ function isOperationModelFrom12(
     }
     if (!doc.eq(context)) return null;
     if (tr2.steps.length === 0) {
-      let tr3: Dynamic = ProseMirrorEditorState.create({
+      let tr3 = ProseMirrorEditorState.create({
         doc: input,
       }).tr;
       let count = 1;
@@ -175183,7 +174274,7 @@ function createOperationalTransformProseBridge(
     for (let BridgeData109 of options as Dynamic) {
       values3.add(BridgeData109.bid);
       for (let BridgeData110 of BridgeData109.runs as Dynamic) {
-        let BridgeData111: Dynamic = parseCharacterId(BridgeData110.id);
+        let BridgeData111 = parseCharacterId(BridgeData110.id);
         if (BridgeData111 === null || BridgeData110.len <= 0) continue;
         let BridgeSess: Dynamic = entries.get(BridgeData111.sess);
         if (BridgeSess)
@@ -175242,10 +174333,10 @@ function createOperationalTransformProseBridge(
     resolveBridgeOperation2() &&
     (isBridgeOperation(input, options) || resolveBridgeSome3(input, options));
   let resolveBridgeSess = (
-    input?: unknown,
+    input: string,
     ..._extraArguments: unknown[]
   ): Dynamic => {
-    let BridgeData109: Dynamic = parseCharacterId(input);
+    let BridgeData109 = parseCharacterId(input);
     return (
       BridgeData109 !== null &&
       resolveBridgeOperation3(BridgeData109.sess, BridgeData109.i)
@@ -175404,7 +174495,7 @@ function createOperationalTransformProseBridge(
           ): undefined => void (size += value - context - (options - input2)),
         );
       if (size !== input.before.content.size) return null;
-      let bridgeProseMirrorMapping: Dynamic =
+      let bridgeProseMirrorMapping =
         new (ProseMirrorMapping)();
       for (
         let BridgeData111 = BridgeData110.length - 1;
@@ -175512,7 +174603,7 @@ function createOperationalTransformProseBridge(
           isBridgeFrom2(input2, BridgeDocs)
         )
           return;
-        let BridgeData110: Dynamic = resolveBridgeHead2(input2, BridgeDocs);
+        let BridgeData110 = resolveBridgeHead2(input2, BridgeDocs);
         let state49: Dynamic = null;
         let resolveBridgeAppendMap = (
           ..._extraArguments: unknown[]
@@ -175544,7 +174635,7 @@ function createOperationalTransformProseBridge(
             1,
           );
           if (BridgeMapResult2.deleted) return null;
-          let BridgeIdAt: Dynamic = table2.idAt(BridgeMapResult2.pos);
+          let BridgeIdAt = table2.idAt(BridgeMapResult2.pos);
           return BridgeIdAt === null
             ? null
             : ((
@@ -175821,7 +174912,7 @@ function createOperationalTransformProseBridge(
     );
     for (let BridgeData110 of (input.getMeta(OpInsertedClass) ??
       []) as Dynamic) {
-      let BridgeFirstId: Dynamic = parseCharacterId(BridgeData110.firstId);
+      let BridgeFirstId = parseCharacterId(BridgeData110.firstId);
       if (BridgeFirstId !== null && BridgeData110.len > 0)
         BridgeData109.push({
           sess: BridgeFirstId.sess,
@@ -175839,10 +174930,10 @@ function createOperationalTransformProseBridge(
     if (values30.size > 0 && table !== null && table !== input.before)
       BridgeData210 = true;
     let resolveBridgeSome7 = (
-      input2?: unknown,
+      input2: string,
       ..._extraArguments: unknown[]
     ): Dynamic => {
-      let BridgeData110: Dynamic = parseCharacterId(input2);
+      let BridgeData110 = parseCharacterId(input2);
       return (
         BridgeData110 !== null &&
         BridgeData109.some(
@@ -175873,7 +174964,7 @@ function createOperationalTransformProseBridge(
           return true;
         for (let BridgeData110 of values30 as Dynamic) {
           if (input2.blocks.has(BridgeData110)) return true;
-          let BridgeRunsOf: Dynamic = table2.runsOf(BridgeData110);
+          let BridgeRunsOf = table2.runsOf(BridgeData110);
           if (!BridgeRunsOf || BridgeRunsOf.opaque) {
             if (input2.runs.length > 0) return true;
             continue;
@@ -175897,10 +174988,10 @@ function createOperationalTransformProseBridge(
     );
   };
   let resolveBridgeOperation4 = (
-    input?: unknown,
+    input: string,
     ..._extraArguments: unknown[]
   ): Dynamic => {
-    let BridgeData109: Dynamic = parseCharacterId(input)?.sess;
+    let BridgeData109 = parseCharacterId(input)?.sess;
     return (
       (message !== "" && BridgeData109 === message) ||
       BridgeData109 === "_" ||
@@ -175920,10 +175011,10 @@ function createOperationalTransformProseBridge(
       (input === message || values4.has(input) || values5.has(input)));
   let values6: Dynamic = new (Set as Dynamic)();
   let resolveBridgeSess2 = (
-    input?: unknown,
+    input: string,
     ..._extraArguments: unknown[]
   ): Dynamic => {
-    let BridgeData109: Dynamic = parseCharacterId(input);
+    let BridgeData109 = parseCharacterId(input);
     return (
       (BridgeData109 !== null &&
         (BridgeData109.sess === message ||
@@ -175933,7 +175024,7 @@ function createOperationalTransformProseBridge(
     );
   };
   let resolveBridgeOperation6 = (
-    input?: unknown,
+    input: string,
     ..._extraArguments: unknown[]
   ): Dynamic =>
     resolveBridgeSess2(input) ||
@@ -175990,10 +175081,10 @@ function createOperationalTransformProseBridge(
     return BridgeData109;
   };
   let isBridgeRunsOf = (
-    input?: unknown,
+    input: string,
     ..._extraArguments: unknown[]
   ): Dynamic => {
-    let BridgeRunsOf: Dynamic = table2.runsOf(input);
+    let BridgeRunsOf = table2.runsOf(input);
     if (BridgeRunsOf)
       return (
         !BridgeRunsOf.opaque &&
@@ -176002,7 +175093,7 @@ function createOperationalTransformProseBridge(
             !resolveBridgeEvery(input2),
         )
       );
-    let BridgePosOfBlock: Dynamic = table ? table2.posOfBlock(input) : null;
+    let BridgePosOfBlock = table ? table2.posOfBlock(input) : null;
     let BridgeNodeAt: Dynamic =
       BridgePosOfBlock === null ? null : table.nodeAt(BridgePosOfBlock);
     if (!BridgeNodeAt || BridgeNodeAt.isTextblock) return false;
@@ -176024,11 +175115,11 @@ function createOperationalTransformProseBridge(
     return BridgeData109;
   };
   let others = (
-    input?: unknown,
-    options?: unknown,
+    input: string,
+    options: ProseMirrorNode,
     ..._extraArguments: unknown[]
   ): Dynamic => {
-    let BridgeRunsOf: Dynamic = table2.runsOf(input);
+    let BridgeRunsOf = table2.runsOf(input);
     if (
       !BridgeRunsOf ||
       BridgeRunsOf.opaque ||
@@ -176038,7 +175129,7 @@ function createOperationalTransformProseBridge(
       )
     )
       return null;
-    let BridgeData109: Dynamic = [...pmCharacterOffsets(options)];
+    let BridgeData109 = [...pmCharacterOffsets(options)];
     if (BridgeData109.length !== BridgeRunsOf.length) return [];
     let BridgeData210: Dynamic = [];
     let index32: number = 0;
@@ -176059,13 +175150,13 @@ function createOperationalTransformProseBridge(
     return BridgeData210;
   };
   let resolveBridgeRunsOf = (
-    input?: unknown,
-    options?: unknown,
+    input: string,
+    options: ProseMirrorNode,
     ..._extraArguments: unknown[]
   ): Dynamic => {
-    let BridgeRunsOf: Dynamic = table2.runsOf(input);
+    let BridgeRunsOf = table2.runsOf(input);
     if (!BridgeRunsOf || BridgeRunsOf.opaque) return null;
-    let BridgeData109: Dynamic = [...pmCharacterOffsets(options)];
+    let BridgeData109 = [...pmCharacterOffsets(options)];
     if (BridgeData109.length !== BridgeRunsOf.length) return null;
     let BridgeData210: Dynamic = [];
     for (let BridgeData110 of BridgeRunsOf.spans as Dynamic)
@@ -176208,13 +175299,13 @@ function createOperationalTransformProseBridge(
     }
   };
   let resolveBridgeRunsOf2 = (
-    input?: unknown,
-    options?: unknown,
+    input: string,
+    options: ProseMirrorNode,
     ..._extraArguments: unknown[]
   ): Dynamic => {
-    let BridgeRunsOf: Dynamic = table2.runsOf(input);
+    let BridgeRunsOf = table2.runsOf(input);
     if (!BridgeRunsOf || BridgeRunsOf.opaque) return null;
-    let BridgeData109: Dynamic = [...pmCharacterOffsets(options)];
+    let BridgeData109 = [...pmCharacterOffsets(options)];
     if (BridgeData109.length !== BridgeRunsOf.length) return null;
     let BridgeData210: Dynamic = [];
     let index32: number = 0;
@@ -176303,7 +175394,7 @@ function createOperationalTransformProseBridge(
   let resolveBridgeOperation7 = (
     ..._extraArguments: unknown[]
   ): Dynamic => table ?? state.state.doc;
-  let table2: Dynamic = createCharacterLedger(
+  let table2 = createCharacterLedger(
     resolveBridgeOperation7,
     (..._extraArguments: unknown[]): string => message,
   );
@@ -176943,7 +176034,7 @@ function createOperationalTransformProseBridge(
     context?: Dynamic,
     ..._extraArguments: unknown[]
   ): Dynamic => {
-    let BridgeData109: Dynamic = BridgeData15;
+    let BridgeData109: number = BridgeData15;
     for (let BridgeData110 of input as Dynamic)
       BridgeData109 = Math.max(
         BridgeData109,
@@ -177377,7 +176468,7 @@ function createOperationalTransformProseBridge(
         Math.max(0, Math.min(input, state.state.doc.content.size)),
       ).parent.isTextblock
     ) {
-      let BridgeData109: Dynamic = resolveOperationModelResolve2(
+      let BridgeData109 = resolveOperationModelResolve2(
         state.state.doc,
         input,
         1,
@@ -177581,7 +176672,7 @@ function createOperationalTransformProseBridge(
         options2?: Dynamic,
         ..._extraArguments: unknown[]
       ): Dynamic => {
-        let item: Dynamic = resolveBridgeBlocks3(operation);
+        let item = resolveBridgeBlocks3(operation);
         if (
           operation.op !== "set" ||
           item === undefined ||
@@ -177678,7 +176769,7 @@ function createOperationalTransformProseBridge(
     let values30: Dynamic = new (Set as Dynamic)();
     if (!table) return [];
     for (let BridgeData109 of input as Dynamic) {
-      let BridgePosOfBlock: Dynamic = table2.posOfBlock(BridgeData109);
+      let BridgePosOfBlock = table2.posOfBlock(BridgeData109);
       if (BridgePosOfBlock === null || BridgePosOfBlock > table.content.size)
         continue;
       let state48: Dynamic = null;
@@ -177781,8 +176872,8 @@ function createOperationalTransformProseBridge(
       if (!BridgeData109.opaque)
         entries43.set(BridgeData109.bid, BridgeData109.runs);
     return {
-      cur: (input2?: unknown, ..._extraArguments: unknown[]): Dynamic => {
-        let BridgeRunsOf: Dynamic = table2.runsOf(input2);
+      cur: (input2: string, ..._extraArguments: unknown[]): Dynamic => {
+        let BridgeRunsOf = table2.runsOf(input2);
         return BridgeRunsOf &&
           !BridgeRunsOf.opaque &&
           !table2.doubted.has(input2)
@@ -177921,7 +177012,7 @@ function createOperationalTransformProseBridge(
       BridgeData36 = BridgeData37 = BridgeData39 = BridgeData38 = false;
       return input;
     }
-    let BridgeData109: Dynamic = BridgeData36 || state.state.doc !== state19;
+    let BridgeData109: boolean = BridgeData36 || state.state.doc !== state19;
     let BridgeData210 = Math.max(index4, index8);
     let resolveBridgeOperation49 = (
       input2?: Dynamic,
@@ -177935,7 +177026,7 @@ function createOperationalTransformProseBridge(
       (BridgeData109 &&
         ((BridgeData38 && BridgeData39) ||
           resolveBridgeOperation49(operationModelLimit20003)));
-    let BridgeData410: Dynamic =
+    let BridgeData410 =
       !BridgeData310 &&
       BridgeData109 &&
       (BridgeData38 ||
@@ -178051,7 +177142,7 @@ function createOperationalTransformProseBridge(
     ..._extraArguments: unknown[]
   ): undefined => {
     try {
-      let BridgeNone: Dynamic =
+      let BridgeNone: string =
         bridgeNone !== "none" || editable()
           ? bridgeNone
           : BridgeData51
@@ -178406,15 +177497,15 @@ function createOperationalTransformProseBridge(
   let index14 = 0;
   let state23: Dynamic = null;
   let resolveBridgePosOfBlock2 = (
-    input?: unknown,
+    input: string,
     ..._extraArguments: unknown[]
   ): Dynamic => {
-    let BridgePosOfBlock: Dynamic = table2.posOfBlock(input);
+    let BridgePosOfBlock = table2.posOfBlock(input);
     let BridgeNodeAt: Dynamic =
       BridgePosOfBlock === null
         ? null
         : resolveBridgeOperation7().nodeAt(BridgePosOfBlock);
-    let input2: Dynamic = input;
+    let input2 = input;
     if (BridgeNodeAt && !BridgeNodeAt.isTextblock)
       BridgeNodeAt.descendants(
         (input3?: Dynamic, ..._extraArguments: unknown[]) =>
@@ -178610,7 +177701,7 @@ function createOperationalTransformProseBridge(
     let BridgeData109 = -1;
     for (let BridgeData110 of table2.dump() as Dynamic)
       for (let BridgeData111 of BridgeData110.runs as Dynamic) {
-        let BridgeData112: Dynamic = parseCharacterId(BridgeData111.id);
+        let BridgeData112 = parseCharacterId(BridgeData111.id);
         if (
           BridgeData112?.sess === message &&
           BridgeData112.i + BridgeData111.len - 1 > BridgeData109
@@ -178730,7 +177821,7 @@ function createOperationalTransformProseBridge(
     reason?: Dynamic,
     ..._extraArguments: unknown[]
   ) => {
-    let BridgeData109: Dynamic = collectBridgeChars(input);
+    let BridgeData109 = collectBridgeChars(input);
     if (BridgeData109 === null) return 0;
     if (entries21.size >= 64 && !entries21.has(BridgeData109))
       entries21.delete(entries21.keys().next().value);
@@ -178757,7 +177848,7 @@ function createOperationalTransformProseBridge(
           );
     let index32 = 0;
     for (let BridgeData109 of BridgeFilter as Dynamic) {
-      let BridgeData110: Dynamic = resolveBridgeInsert2(BridgeData109);
+      let BridgeData110 = resolveBridgeInsert2(BridgeData109);
       if (BridgeData110 === null) continue;
       if (entries21.size >= 64 && !entries21.has(BridgeData110))
         entries21.delete(entries21.keys().next().value);
@@ -178774,7 +177865,7 @@ function createOperationalTransformProseBridge(
     ..._extraArguments: unknown[]
   ): Dynamic => {
     if (entries21.size === 0) return;
-    let BridgeData109: Dynamic = collectBridgeChars(input);
+    let BridgeData109 = collectBridgeChars(input);
     if (BridgeData109 !== null) {
       let BridgeData110: Dynamic = entries21.get(BridgeData109);
       if (!BridgeData110 || BridgeData110.rev !== init.rev) return;
@@ -178785,7 +177876,7 @@ function createOperationalTransformProseBridge(
     }
     if (!isBridgeDelete2(input)) return;
     for (let BridgeData110 of input as Dynamic) {
-      let BridgeData111: Dynamic = resolveBridgeInsert2(BridgeData110);
+      let BridgeData111 = resolveBridgeInsert2(BridgeData110);
       let BridgeData210: Dynamic =
         BridgeData111 === null ? undefined : entries21.get(BridgeData111);
       if (BridgeData210 && BridgeData210.rev === init.rev)
@@ -178795,7 +177886,7 @@ function createOperationalTransformProseBridge(
   };
   let BridgeData56 = false;
   let entries22: Dynamic = new (Map as Dynamic)();
-  let BridgeTouched: Dynamic = {
+  let BridgeTouched = {
     touched: 0,
     complete: true,
     other: 0,
@@ -178958,7 +178049,7 @@ function createOperationalTransformProseBridge(
       });
       return;
     }
-    let dirty2: Dynamic = BridgeData109 || BridgeData22.length > 0 || region;
+    let dirty2: boolean = BridgeData109 || BridgeData22.length > 0 || region;
     let hold2 = !dirty2
       ? "none"
       : BridgeData56
@@ -179003,7 +178094,7 @@ function createOperationalTransformProseBridge(
     let BridgeData109: number =
       BridgePending.size - resolveBridgeProvisional();
     init.pending = BridgeData109 + (resolveBridgeOperation11() ? 1 : 0);
-    let BridgePending2: Dynamic =
+    let BridgePending2: boolean =
       init.pending > 0 && resolveBridgeOperation13(BridgeData109);
     let imeWhy =
       init.pending > 0 && isBridgeOperation4() && !BridgePending2
@@ -179206,7 +178297,7 @@ function createOperationalTransformProseBridge(
       input?: unknown,
       ..._extraArguments: unknown[]
     ): Dynamic => {
-      let bridgeProseMirrorTransform2: Dynamic =
+      let bridgeProseMirrorTransform2 =
         new (ProseMirrorTransform)(BridgeData109);
       for (let BridgeData110 of BridgeData22.slice(0, input) as Dynamic)
         if (
@@ -179221,7 +178312,7 @@ function createOperationalTransformProseBridge(
       return bridgeProseMirrorTransform2;
     };
     let index32: number = 0;
-    let bridgeProseMirrorTransform: Dynamic =
+    let bridgeProseMirrorTransform =
       new (ProseMirrorTransform)(BridgeData109);
     while (index32 < BridgeData22.length) {
       let BridgeData110: Dynamic = BridgeData22[index32];
@@ -179238,7 +178329,7 @@ function createOperationalTransformProseBridge(
     }
     if (bridgeProseMirrorTransform.steps.length === 0)
       return void resolveBridgeNode();
-    let BridgeCounter: Dynamic = table2.counter();
+    let BridgeCounter = table2.counter();
     let BridgeGuarded: Dynamic = resolveOperationModelErr(
       (..._extraArguments: unknown[]): Dynamic =>
         resolveOperationModelLeadTails(
@@ -179932,7 +179023,7 @@ function createOperationalTransformProseBridge(
                   BridgeData410.push(BridgeTextContent);
                 else {
                   values30.add(BridgeData111);
-                  let BridgePosOfBlock3: Dynamic =
+                  let BridgePosOfBlock3 =
                     table2.posOfBlock(BridgeData111);
                   let BridgeNodeAt: Dynamic =
                     BridgePosOfBlock3 === null
@@ -179948,7 +179039,7 @@ function createOperationalTransformProseBridge(
                     BridgeTextContent2.text,
                     !!input2.type.spec.code,
                   );
-                  let afterId3: Dynamic =
+                  let afterId3 =
                     BridgeTextContent2.from > 0
                       ? table2.idAt(BridgePosOfBlock3 + BridgeTextContent2.from)
                       : null;
@@ -180040,7 +179131,7 @@ function createOperationalTransformProseBridge(
               console.warn(
                 "opPlugin: words typed around an Enter in the moments after a refusal, in a paragraph too long to tell them apart from its text: staged whole after the paragraph (may repeat its tail), never dropped",
               );
-              let afterId3: Dynamic =
+              let afterId3 =
                 BridgeResolve.end() > BridgeResolve.start()
                   ? table2.idAt(BridgeResolve.end() - 1)
                   : null;
@@ -180064,7 +179155,7 @@ function createOperationalTransformProseBridge(
               return;
             }
             for (let BridgeData112 of BridgeData111 as Dynamic) {
-              let afterId3: Dynamic =
+              let afterId3 =
                 BridgeInvert + BridgeData112.at > BridgeResolve.start()
                   ? table2.idAt(BridgeInvert + BridgeData112.at - 1)
                   : null;
@@ -180091,7 +179182,7 @@ function createOperationalTransformProseBridge(
           let BridgeIsTextblock3: Dynamic = BridgeResolve.parent.isTextblock
             ? BridgeInvert
             : BridgeIsTextblock22 + 1 + BridgeIsTextblock2.content.size;
-          let afterId2: Dynamic =
+          let afterId2 =
             BridgeIsTextblock3 > BridgeIsTextblock22 + 1
               ? table2.idAt(BridgeIsTextblock3 - 1)
               : null;
@@ -180183,7 +179274,7 @@ function createOperationalTransformProseBridge(
           BridgeData111,
           1,
         );
-        let BridgeIdAt: Dynamic =
+        let BridgeIdAt =
           BridgeData112 >= 0 && BridgeData112 < table.content.size
             ? table2.idAt(BridgeData112)
             : null;
@@ -180196,7 +179287,7 @@ function createOperationalTransformProseBridge(
       }
       let BridgeData110: Dynamic =
         state49 === null ? undefined : resolveBridgeHolderOf(state49);
-      let BridgePosOfBlock: Dynamic =
+      let BridgePosOfBlock =
         BridgeData110 === undefined ? null : table2.posOfBlock(BridgeData110);
       return BridgeData110 !== undefined &&
         BridgePosOfBlock !== null &&
@@ -180287,7 +179378,7 @@ function createOperationalTransformProseBridge(
           index32 = Math.max(index32, BridgeData112 - options);
       }
       if (index32 >= BridgeTextBetween.length || extra.length === 0) return;
-      let BridgeIdAt: Dynamic =
+      let BridgeIdAt =
         index32 > 0 ? table2.idAt(options + index32) : null;
       if (index32 > 0 && BridgeIdAt === null) return;
       if (values30.has(input)) return false;
@@ -180341,7 +179432,7 @@ function createOperationalTransformProseBridge(
         );
         for (let BridgeData111 of BridgeData311 as Dynamic) {
           if (BridgeData111.at === 0) continue;
-          let BridgeIdAt2: Dynamic = table2.idAt(
+          let BridgeIdAt2 = table2.idAt(
             options + index32 + BridgeData111.at,
           );
           let BridgeText: Dynamic = collectBridgeReplaceAll(BridgeData111.text);
@@ -180397,13 +179488,13 @@ function createOperationalTransformProseBridge(
               typeof BridgeResolve.parent.attrs.bid === "string"
                 ? BridgeResolve.parent.attrs.bid
                 : null;
-            let BridgePosOfBlock: Dynamic =
+            let BridgePosOfBlock =
               BridgeParent === null ? null : table2.posOfBlock(BridgeParent);
             let BridgeNodeBefore: Dynamic =
               BridgePosOfBlock === null || BridgePosOfBlock === undefined
                 ? null
                 : table.resolve(BridgePosOfBlock).nodeBefore;
-            let BridgeInvert: Dynamic = new (ProseMirrorMapping)(
+            let BridgeInvert: number = new (ProseMirrorMapping)(
               BridgeData109.slice(0, options).map(
                 (input?: Dynamic, ..._extraArguments: unknown[]): Dynamic =>
                   input.getMap(),
@@ -180574,7 +179665,7 @@ function createOperationalTransformProseBridge(
                   BridgeChild.attrs.bid
                     ? BridgeChild.attrs.bid
                     : null);
-                let BridgePosOfBlock: Dynamic =
+                let BridgePosOfBlock =
                   BridgeIsTextblock === null
                     ? null
                     : table2.posOfBlock(BridgeIsTextblock);
@@ -180622,7 +179713,7 @@ function createOperationalTransformProseBridge(
                       : undefined;
                     if (BridgeIncludes !== undefined) return BridgeIncludes;
                   }
-                  let BridgeIdAt: Dynamic =
+                  let BridgeIdAt =
                     BridgeData214.content.size > 0
                       ? table2.idAt(
                           BridgePosOfBlock + BridgeData214.content.size,
@@ -180702,7 +179793,7 @@ function createOperationalTransformProseBridge(
                 BridgeChild.attrs.bid
                   ? BridgeChild.attrs.bid
                   : null;
-              let BridgePosOfBlock: Dynamic =
+              let BridgePosOfBlock =
                 BridgeCode === null ? null : table2.posOfBlock(BridgeCode);
               let BridgeNodeAt: Dynamic =
                 BridgePosOfBlock === null
@@ -180740,7 +179831,7 @@ function createOperationalTransformProseBridge(
                 : undefined;
               if (BridgeIncludes !== undefined) return BridgeIncludes;
               if (BridgeData114 !== BridgeIndex - 1) break;
-              let BridgeIdAt: Dynamic =
+              let BridgeIdAt =
                 BridgeNodeAt.content.size > 0
                   ? table2.idAt(BridgePosOfBlock + BridgeNodeAt.content.size)
                   : null;
@@ -181007,7 +180098,7 @@ function createOperationalTransformProseBridge(
   );
   let isBridgePosOfBlock = (input?: Dynamic, ..._extraArguments: unknown[]) => {
     if (message === "" || !table) return false;
-    let BridgePosOfBlock: Dynamic = table2.posOfBlock(input);
+    let BridgePosOfBlock = table2.posOfBlock(input);
     let BridgeNodeAt: Dynamic =
       BridgePosOfBlock === null ? null : table.nodeAt(BridgePosOfBlock);
     if (BridgePosOfBlock === null || !BridgeNodeAt || !BridgeNodeAt.isTextblock)
@@ -181018,7 +180109,7 @@ function createOperationalTransformProseBridge(
       BridgeData110 < BridgePosOfBlock + 1 + BridgeNodeAt.content.size;
       BridgeData110++
     ) {
-      let BridgeIdAt: Dynamic = table2.idAt(BridgeData110);
+      let BridgeIdAt = table2.idAt(BridgeData110);
       if (
         typeof BridgeIdAt !== "string" ||
         !BridgeIdAt.startsWith(BridgeData109)
@@ -181113,7 +180204,7 @@ function createOperationalTransformProseBridge(
             ): Dynamic => [argument2, argument],
           ),
         );
-        let BridgePosOfBlock: Dynamic = table2.posOfBlock(BridgeData109);
+        let BridgePosOfBlock = table2.posOfBlock(BridgeData109);
         let BridgeData210: Dynamic = state48.get(BridgeData109) ?? null;
         let BridgeNodeAt: Dynamic =
           BridgePosOfBlock === null ? null : table.nodeAt(BridgePosOfBlock);
@@ -181229,12 +180320,12 @@ function createOperationalTransformProseBridge(
     }
   };
   let getBridgeDoubted = (
-    input?: unknown,
+    input: string,
     ..._extraArguments: unknown[]
   ): Dynamic =>
     table2.doubted.has(input) && (entries28.get(input) ?? 0) < limit25;
   let resolveBridgePosOfBlock3 = (
-    input?: unknown,
+    input: string,
     options?: unknown,
     ..._extraArguments: unknown[]
   ): undefined => {
@@ -181246,7 +180337,7 @@ function createOperationalTransformProseBridge(
     ..._extraArguments: unknown[]
   ) => {
     if (!input || !table) return;
-    let BridgePosOfBlock: Dynamic = table2.posOfBlock(input);
+    let BridgePosOfBlock = table2.posOfBlock(input);
     if (BridgePosOfBlock === null || BridgePosOfBlock > table.content.size)
       return;
     let state48: Dynamic = null;
@@ -181280,10 +180371,10 @@ function createOperationalTransformProseBridge(
           {
             doc: table,
             posOfBlock: (
-              input2?: unknown,
+              input2: string,
               ..._extraArguments: unknown[]
             ): Dynamic => table2.posOfBlock(input2),
-            posOf: (input2?: unknown, ..._extraArguments: unknown[]): Dynamic =>
+            posOf: (input2: string, ..._extraArguments: unknown[]): Dynamic =>
               table2.posOf(input2),
           },
         )
@@ -181294,11 +180385,11 @@ function createOperationalTransformProseBridge(
     ..._extraArguments: unknown[]
   ): Dynamic => {
     let values30: Dynamic = new (Set as Dynamic)();
-    let BridgeData109: Dynamic = resolveBridgePosOfBlock4(options[0]);
+    let BridgeData109 = resolveBridgePosOfBlock4(options[0]);
     if (BridgeData109) values30.add(BridgeData109);
     for (let BridgeData110 of input as Dynamic) {
       if (table2.posOfBlock(BridgeData110) === null) continue;
-      let BridgeData111: Dynamic = resolveBridgePosOfBlock4(BridgeData110);
+      let BridgeData111 = resolveBridgePosOfBlock4(BridgeData110);
       if (BridgeData111) values30.add(BridgeData111);
     }
     return [...values30];
@@ -181320,7 +180411,7 @@ function createOperationalTransformProseBridge(
         .setMeta("addToHistory", false);
       let BridgeData110: Dynamic = [];
       for (let BridgeData111 of input as Dynamic) {
-        let BridgePosOfBlock: Dynamic = table2.posOfBlock(BridgeData111);
+        let BridgePosOfBlock = table2.posOfBlock(BridgeData111);
         if (BridgePosOfBlock === null) continue;
         let BridgeNodeAt: Dynamic = input2.doc.nodeAt(BridgePosOfBlock);
         if (!BridgeNodeAt || BridgeNodeAt.attrs.bid !== BridgeData111)
@@ -181331,7 +180422,7 @@ function createOperationalTransformProseBridge(
         ]);
       }
       for (let BridgeData111 of options as Dynamic) {
-        let BridgePosOf: Dynamic = table2.posOf(BridgeData111);
+        let BridgePosOf = table2.posOf(BridgeData111);
         if (BridgePosOf === null) continue;
         BridgeData110.push([
           BridgePosOf,
@@ -181339,7 +180430,7 @@ function createOperationalTransformProseBridge(
         ]);
       }
       for (let [BridgeData111, BridgeData212] of context as Dynamic) {
-        let BridgePosOfBlock: Dynamic = table2.posOfBlock(BridgeData111);
+        let BridgePosOfBlock = table2.posOfBlock(BridgeData111);
         let BridgeNodeAt: Dynamic =
           BridgePosOfBlock === null
             ? null
@@ -181444,7 +180535,7 @@ function createOperationalTransformProseBridge(
     return true;
   };
   let resolveBridgeRung = (..._extraArguments: unknown[]) => {
-    let rung: Dynamic = resolveBridgeOperation25();
+    let rung: number = resolveBridgeOperation25();
     if (rung === 0) return updateBridgeBlock2(operationModelMessage4);
     state15 = null;
     needing = operationModelMessage4;
@@ -181466,7 +180557,7 @@ function createOperationalTransformProseBridge(
   };
   let isBridgeDrifted = (..._extraArguments: unknown[]): Dynamic => {
     if (!state) return null;
-    let BridgeDrifted: Dynamic = table2.drifted ?? "";
+    let BridgeDrifted = table2.drifted ?? "";
     let BridgeExec =
       (/^two blocks carry the id (\S+)/.exec(BridgeDrifted) ??
         /^block (\S+):/.exec(BridgeDrifted))?.[1] ?? null;
@@ -181606,7 +180697,7 @@ function createOperationalTransformProseBridge(
     BridgeData81 = true;
     values11.add("(table)");
     resolveBridgeMany2("drift_dead");
-    let staged: Dynamic = state
+    let staged: number = state
       ? resolveBridgeText5(isBridgeKnown(true), true)
       : 0;
     BridgeData51 = true;
@@ -181668,7 +180759,7 @@ function createOperationalTransformProseBridge(
       resolveBridgeBlock(input2, options);
     };
     let BridgeData210: Dynamic = table;
-    let blocks: Dynamic = table2.dump();
+    let blocks = table2.dump();
     let block: Dynamic = null;
     let BridgeData310: Dynamic = [];
     let BridgeData410 = Math.max(init.rev, haveRev);
@@ -181834,7 +180925,7 @@ function createOperationalTransformProseBridge(
     let values30: Dynamic = new (Set as Dynamic)();
     if (!table) return [];
     for (let BridgeData109 of (BridgeFlying.get(input) ?? []) as Dynamic) {
-      let BridgePosOfBlock: Dynamic = table2.posOfBlock(BridgeData109);
+      let BridgePosOfBlock = table2.posOfBlock(BridgeData109);
       if (BridgePosOfBlock === null || BridgePosOfBlock > table.content.size)
         continue;
       let state48: Dynamic = null;
@@ -181870,7 +180961,7 @@ function createOperationalTransformProseBridge(
       : {};
   let updateBridgeBlock2 = (
     input?: unknown,
-    block?: unknown,
+    block?: string | null,
     ..._extraArguments: unknown[]
   ): undefined => {
     if (
@@ -182886,7 +181977,7 @@ function createOperationalTransformProseBridge(
         let length: Dynamic = BridgeData110.items.length;
         if (BridgeData110.eventCount === 0 || length === 0) continue;
         if (length > 2500) return null;
-        let bridgeProseMirrorMapping: Dynamic =
+        let bridgeProseMirrorMapping =
           new (ProseMirrorMapping)();
         BridgeData110.items.forEach(
           (
@@ -183161,12 +182252,12 @@ function createOperationalTransformProseBridge(
       }
       if (!BridgeData110 && !values30.has(token))
         try {
-          let BridgePosOf: Dynamic = table2.posOf(BridgeData109.first);
-          let BridgePosOf2: Dynamic = table2.posOf(BridgeData109.last);
+          let BridgePosOf = table2.posOf(BridgeData109.first);
+          let BridgePosOf2 = table2.posOf(BridgeData109.last);
           if (BridgePosOf === null || BridgePosOf2 === null)
             BridgeData110 = true;
           else {
-            let BridgeIdsIn: Dynamic =
+            let BridgeIdsIn =
               BridgePosOf2 + 1 > BridgePosOf
                 ? table2.idsIn(BridgePosOf, BridgePosOf2 + 1)
                 : [];
@@ -183275,7 +182366,7 @@ function createOperationalTransformProseBridge(
       return null;
     if (!node2.type.schema.nodes.paragraph) return null;
     try {
-      let tr2: Dynamic = ProseMirrorEditorState.create({
+      let tr2 = ProseMirrorEditorState.create({
         doc: node2,
       }).tr;
       if (from < to2) tr2.replace(from, to2, ProseMirrorSlice.empty);
@@ -183726,7 +182817,7 @@ function createOperationalTransformProseBridge(
       getBridgeObject2(BridgeToJSON);
       if (!BridgeData210) continue;
       try {
-        let BridgeFromJSON: Dynamic = ProseMirrorStep.fromJSON(
+        let BridgeFromJSON = ProseMirrorStep.fromJSON(
           state.state.schema,
           BridgeToJSON,
         );
@@ -183806,7 +182897,7 @@ function createOperationalTransformProseBridge(
     let BridgeParent =
       state42 !== null &&
       state.state.selection.$head.parent.attrs.bid === state42.bid;
-    let bridgeProseMirrorMapping: Dynamic = new (ProseMirrorMapping)(
+    let bridgeProseMirrorMapping = new (ProseMirrorMapping)(
       filterBridgeFilter().map(
         (input2?: Dynamic, ..._extraArguments: unknown[]): Dynamic =>
           input2.getMap(),
@@ -183841,7 +182932,7 @@ function createOperationalTransformProseBridge(
     if (!resolveBridgeOperation11()) table = state.state.doc;
   };
   let resolveBridgeHolderOf = (
-    input?: unknown,
+    input: string,
     ..._extraArguments: unknown[]
   ): Dynamic =>
     table2.holderOf(input) ??
@@ -184027,10 +183118,10 @@ function createOperationalTransformProseBridge(
         len: BridgeData111.len,
       });
     }
-    let BridgeData310: Dynamic = parseCharacterId(context[0]);
+    let BridgeData310 = parseCharacterId(context[0]);
     if (!BridgeData310) return;
     for (let limit43 = 1; limit43 < context.length; limit43++) {
-      let BridgeData110: Dynamic = parseCharacterId(context[limit43]);
+      let BridgeData110 = parseCharacterId(context[limit43]);
       if (
         !BridgeData110 ||
         BridgeData110.sess !== BridgeData310.sess ||
@@ -184072,7 +183163,7 @@ function createOperationalTransformProseBridge(
       BridgeData710 < BridgeData210.length
         ? BridgeData210[BridgeData710]
         : null;
-    let BridgeSess =
+    const BridgeSess =
       BridgeData310.i > BridgeData510.i
         ? characterId(BridgeData510.sess, BridgeData310.i - 1)
         : BridgeData610 === null
@@ -184085,7 +183176,7 @@ function createOperationalTransformProseBridge(
             : undefined;
     let BridgeData910: number =
       BridgeData310.i + context.length - BridgeData510.i;
-    let BridgeSess2 =
+    const BridgeSess2 =
       BridgeData510.len !== null && BridgeData910 < BridgeData510.len
         ? characterId(BridgeData510.sess, BridgeData510.i + BridgeData910)
         : BridgeData810 !== null
@@ -184093,8 +183184,8 @@ function createOperationalTransformProseBridge(
           : BridgeData510.len !== null
             ? null
             : undefined;
-    let BridgePosOf: Dynamic = table2.posOf(context[0]);
-    let BridgeBlockAt: Dynamic =
+    let BridgePosOf = table2.posOf(context[0]);
+    let BridgeBlockAt =
       BridgePosOf === null ? null : table2.blockAt(BridgePosOf);
     if (BridgePosOf === null || !BridgeBlockAt || BridgeBlockAt.bid !== block)
       return;
@@ -184116,21 +183207,21 @@ function createOperationalTransformProseBridge(
       for (let BridgeData111 of BridgeData110.ids as Dynamic)
         values30.add(BridgeData111);
     for (
-      let BridgeIdAt2: Dynamic = table2.idAt(from);
+      let BridgeIdAt2 = table2.idAt(from);
       from < BridgeBlockAt.end &&
       BridgeIdAt2 !== null &&
       (values30.has(BridgeIdAt2) || detail.has(BridgeIdAt2));
       BridgeIdAt2 = table2.idAt(from)
     )
       from += resolveBridgeIdAt(from, BridgeIdAt2);
-    let BridgeStart: Dynamic =
+    let BridgeStart =
       BridgePosOf > BridgeBlockAt.start ? table2.idAt(BridgePosOf - 1) : null;
-    let BridgeIdAt: Dynamic =
+    let BridgeIdAt =
       from < BridgeBlockAt.end ? table2.idAt(from) : null;
-    let BridgePosOf2 =
+    const BridgePosOf2 =
       BridgeSess !== undefined &&
       (BridgeSess === null || table2.posOf(BridgeSess) !== null);
-    let BridgePosOf3 =
+    const BridgePosOf3 =
       BridgeSess2 !== undefined &&
       (BridgeSess2 === null || table2.posOf(BridgeSess2) !== null);
     if (!BridgePosOf2 && !BridgePosOf3) return;
@@ -184141,13 +183232,13 @@ function createOperationalTransformProseBridge(
       return;
     let from2: Dynamic;
     if (BridgePosOf2) {
-      let BridgePosOf4: Dynamic =
+      let BridgePosOf4 =
         BridgeSess === null ? null : table2.posOf(BridgeSess);
       from2 =
         BridgePosOf4 === null
           ? BridgeBlockAt.start
           : BridgePosOf4 + resolveBridgeIdAt(BridgePosOf4, BridgeSess);
-    } else
+    } else if (BridgePosOf3)
       from2 =
         BridgeSess2 === null ? BridgeBlockAt.end : table2.posOf(BridgeSess2);
     if (
@@ -184180,15 +183271,15 @@ function createOperationalTransformProseBridge(
         : BridgePosOf;
     let BridgeData112: Dynamic = [];
     for (let from3: Dynamic = BridgeFrom.from; from3 < BridgeFrom.to; ) {
-      let firstId: Dynamic = table2.idAt(from3);
+      let firstId = table2.idAt(from3);
       if (firstId === null)
         return void updateBridgeBlock(
           block,
           "an ack seated a run of mine elsewhere and a char between the two seats has no name to move by",
         );
-      let BridgeData110: Dynamic = parseCharacterId(firstId);
+      let BridgeData110 = parseCharacterId(firstId);
       let BridgeData211: Dynamic = BridgeData112.at(-1);
-      let BridgeFirstId: Dynamic = BridgeData211
+      let BridgeFirstId = BridgeData211
         ? parseCharacterId(BridgeData211.firstId)
         : null;
       if (
@@ -184380,9 +183471,9 @@ function createOperationalTransformProseBridge(
         ..._extraArguments: unknown[]
       ): Dynamic => {
         let resolveBridgeSess4 = (
-          input3?: unknown,
-          options3?: unknown,
-          context2?: unknown,
+          input3: string,
+          options3: string,
+          context2: string,
           ..._extraArguments: unknown[]
         ): null | number => {
           let [BridgeData111, BridgeData210, BridgeData310]: Dynamic = [
@@ -184472,7 +183563,7 @@ function createOperationalTransformProseBridge(
             }),
           ] as Dynamic)
             resolveBridgeObject2(BridgeData113);
-          let BridgeFirst: Dynamic =
+          let BridgeFirst =
             BridgeIsArray === null
               ? null
               : resolveBridgeSess4(BridgeIsArray, input2.first, input2.last);
@@ -184506,7 +183597,7 @@ function createOperationalTransformProseBridge(
         },
       );
       if (BridgeFilter.length > 0) {
-        let BridgeData111: Dynamic =
+        let BridgeData111: boolean =
           resolveBridgeOperation11() ||
           table !== BridgeData110.state.doc ||
           init.rev > context ||
@@ -184525,8 +183616,8 @@ function createOperationalTransformProseBridge(
               },
               init.table,
             );
-            let BridgeFirst: Dynamic = parseCharacterId(input2.first);
-            let BridgeLast: Dynamic = parseCharacterId(input2.last);
+            let BridgeFirst = parseCharacterId(input2.first);
+            let BridgeLast = parseCharacterId(input2.last);
             if (
               !BridgeRange2 ||
               !BridgeFirst ||
@@ -184567,7 +183658,7 @@ function createOperationalTransformProseBridge(
             for (let BridgeData113 of (BridgeData112
               ? [BridgeData112.done, BridgeData112.undone]
               : []) as Dynamic) {
-              let bridgeProseMirrorMapping: Dynamic =
+              let bridgeProseMirrorMapping =
                 new (ProseMirrorMapping)();
               BridgeData113.items.forEach(
                 (
@@ -184707,8 +183798,8 @@ function createOperationalTransformProseBridge(
             },
             init.table,
           );
-          let BridgeFirst: Dynamic = parseCharacterId(BridgeData111.first);
-          let BridgeLast: Dynamic = parseCharacterId(BridgeData111.last);
+          let BridgeFirst = parseCharacterId(BridgeData111.first);
+          let BridgeLast = parseCharacterId(BridgeData111.last);
           if (
             !BridgeRange2 ||
             !BridgeFirst ||
@@ -184797,11 +183888,11 @@ function createOperationalTransformProseBridge(
           let BridgeData510: Dynamic = [];
           let from2: Dynamic = BridgeFrom2;
           for (let index33 = 0; index33 < BridgeData112.length; index33++) {
-            let BridgeData113: Dynamic = parseCharacterId(
+            let BridgeData113 = parseCharacterId(
               BridgeData112[index33],
             );
             let BridgeData211: Dynamic = BridgeData510.at(-1);
-            let BridgeFirstId: Dynamic = BridgeData211
+            let BridgeFirstId = BridgeData211
               ? parseCharacterId(BridgeData211.firstId)
               : null;
             if (
@@ -184858,7 +183949,7 @@ function createOperationalTransformProseBridge(
           range.slice.size === 0
         )
           return;
-        let bridgeProseMirrorMapping: Dynamic =
+        let bridgeProseMirrorMapping =
           new (ProseMirrorMapping)();
         for (
           let BridgeData110 = options - 1;
@@ -184994,7 +184085,7 @@ function createOperationalTransformProseBridge(
       "the door allowed a tick of ours beside ops it applied and stored no box for it (its list is no check list there)";
     let values30: Dynamic = new (Set as Dynamic)();
     for (let BridgeData110 of BridgeData109 as Dynamic) {
-      let BridgePosOfBlock: Dynamic = table2.posOfBlock(BridgeData110.item);
+      let BridgePosOfBlock = table2.posOfBlock(BridgeData110.item);
       if (
         (BridgePosOfBlock === null
           ? undefined
@@ -185002,7 +184093,7 @@ function createOperationalTransformProseBridge(
         options[BridgeData110.k].attrs.checked
       )
         continue;
-      let BridgeItem: Dynamic = resolveBridgePosOfBlock4(BridgeData110.item);
+      let BridgeItem = resolveBridgePosOfBlock4(BridgeData110.item);
       if (BridgeItem !== undefined) values30.add(BridgeItem);
     }
     resolveOperationModelValue10("ack.tick_dropped", {
@@ -185044,7 +184135,7 @@ function createOperationalTransformProseBridge(
     let values30: Dynamic = new (Set as Dynamic)();
     let values210: Dynamic = new (Set as Dynamic)();
     for (let BridgeData109 of value as Dynamic) {
-      let BridgePosOfBlock: Dynamic = table2.posOfBlock(BridgeData109.item);
+      let BridgePosOfBlock = table2.posOfBlock(BridgeData109.item);
       let BridgeParent: Dynamic =
         BridgePosOfBlock === null
           ? null
@@ -185105,7 +184196,7 @@ function createOperationalTransformProseBridge(
         },
       }),
     );
-    let BridgeOpId: Dynamic = updateBridgeOpId5(
+    let BridgeOpId = updateBridgeOpId5(
       opId2,
       [...BridgeTarget, ...options.ops],
       [
@@ -185412,7 +184503,7 @@ function createOperationalTransformProseBridge(
       (input?: Dynamic, ..._extraArguments: unknown[]) => {
         if (table2.posOfBlock(input.row) === null) return false;
         let BridgeCell2: Dynamic = entries31.get(input.cell) ?? input.cell;
-        let BridgePosOfBlock: Dynamic = table2.posOfBlock(BridgeCell2);
+        let BridgePosOfBlock = table2.posOfBlock(BridgeCell2);
         return (
           entries43.get(input.row) !== BridgeCell2 ||
           BridgePosOfBlock === null ||
@@ -185609,7 +184700,7 @@ function createOperationalTransformProseBridge(
               (input?: Dynamic, ..._extraArguments: unknown[]) =>
                 table2.posOfBlock(input) !== null,
             );
-            let BridgePosOfBlock: Dynamic =
+            let BridgePosOfBlock =
               BridgeFind === undefined ? null : table2.posOfBlock(BridgeFind);
             let BridgeResolve: Dynamic =
               BridgePosOfBlock === null || !state
@@ -185848,7 +184939,7 @@ function createOperationalTransformProseBridge(
         )
       )
         continue;
-      let BridgeData211: Dynamic = resolveBridgePosOfBlock4(BridgeData111[0]);
+      let BridgeData211 = resolveBridgePosOfBlock4(BridgeData111[0]);
       let BridgeIncludes: Dynamic =
         BridgeData211 !== undefined &&
         !BridgeData111.includes(BridgeData211) &&
@@ -185991,7 +185082,7 @@ function createOperationalTransformProseBridge(
         ? -1
         : resolveBridgeInsert3(context, value, detail, extra, argument2);
     if (BridgeData109 < 0) return false;
-    let BridgeData210: Dynamic = resolveBridgePosOfBlock4(argument);
+    let BridgeData210 = resolveBridgePosOfBlock4(argument);
     let BridgeData310: Dynamic =
       BridgeData210 !== undefined &&
       BridgeData210 !== argument &&
@@ -186083,7 +185174,7 @@ function createOperationalTransformProseBridge(
       return false;
     let BridgeFind: Dynamic = value
       .map(
-        (input?: unknown, ..._extraArguments: unknown[]): Dynamic =>
+        (input: string, ..._extraArguments: unknown[]): Dynamic =>
           resolveBridgeHolderOf(input),
       )
       .find(
@@ -186437,7 +185528,7 @@ function createOperationalTransformProseBridge(
       for (let BridgeData113 of (Array.isArray(BridgeData111.minted)
         ? BridgeData111.minted.flat(3)
         : []) as Dynamic) {
-        let BridgeData114: Dynamic =
+        let BridgeData114 =
           typeof BridgeData113 === "string"
             ? parseCharacterId(BridgeData113)
             : null;
@@ -186504,7 +185595,7 @@ function createOperationalTransformProseBridge(
         table2.posOfBlock(BridgeData110.into) !== null
       )
         continue;
-      let BridgeInto: Dynamic = parseCharacterId(BridgeData110.into);
+      let BridgeInto = parseCharacterId(BridgeData110.into);
       if (BridgeInto && BridgeInto.sess === message)
         resolveBridgeTaught(BridgeInto.i);
     }
@@ -186978,7 +186069,7 @@ function createOperationalTransformProseBridge(
           );
           if (!BridgeFrom || BridgeFrom.keep.length !== BridgeData211.length)
             return;
-          let shed: Dynamic = isBridgeHeading(
+          let shed: boolean = isBridgeHeading(
             BridgeFrom.goneBlocks,
             BridgeFrom.goneChars,
             BridgeFrom.heirs,
@@ -187121,7 +186212,7 @@ function createOperationalTransformProseBridge(
             input2.side === "after" &&
             input2.target.ids?.length === 1
           ) {
-            let BridgePosOfBlock: Dynamic = table2.posOfBlock(BridgeData211[0]);
+            let BridgePosOfBlock = table2.posOfBlock(BridgeData211[0]);
             let state48: Dynamic = null;
             try {
               state48 =
@@ -187133,7 +186224,7 @@ function createOperationalTransformProseBridge(
             }
             let BridgeTarget = `>${input2.target.ids[0]}`;
             for (let BridgeData111 of BridgeData211 as Dynamic) {
-              let BridgePosOfBlock2: Dynamic = table2.posOfBlock(BridgeData111);
+              let BridgePosOfBlock2 = table2.posOfBlock(BridgeData111);
               if (BridgePosOfBlock2 === null) continue;
               let state49: Dynamic = null;
               try {
@@ -187405,7 +186496,7 @@ function createOperationalTransformProseBridge(
               : [];
           let updateBridgeOpId7 = (
             input2?: unknown,
-            options3?: unknown,
+            options3?: string | null,
             ..._extraArguments: unknown[]
           ): undefined => {
             updateBridgeBlock2(input2, options3);
@@ -187441,7 +186532,7 @@ function createOperationalTransformProseBridge(
           };
           if (
             input.filter((input2?: Dynamic, ..._extraArguments: unknown[]) => {
-              let BridgePosOfBlock: Dynamic = table2.posOfBlock(input2);
+              let BridgePosOfBlock = table2.posOfBlock(input2);
               let BridgeNodeAt: Dynamic =
                 BridgePosOfBlock === null || !table
                   ? null
@@ -187569,7 +186660,7 @@ function createOperationalTransformProseBridge(
               BridgeData162.push([input2, BridgeData211[options3]]);
               values.add(BridgeData211[options3]);
               if (argument) {
-                let BridgeData111: Dynamic = parseCharacterId(
+                let BridgeData111 = parseCharacterId(
                   BridgeData211[options3],
                 )?.sess;
                 if (BridgeData111) values5.add(BridgeData111);
@@ -187660,7 +186751,7 @@ function createOperationalTransformProseBridge(
           )
             return [];
           let BridgeData110: Dynamic = BridgeData510?.[operation.op];
-          let label: Dynamic =
+          let label =
             typeof operation.label === "string"
               ? resolveProsePluginsTrim4(operation.label)
               : null;
@@ -187756,7 +186847,7 @@ function createOperationalTransformProseBridge(
           : [BridgeBlocks2];
       let values31: Dynamic = new (Set as Dynamic)();
       for (let BridgeData111 of BridgeIsArray as Dynamic) {
-        let BridgePosOfBlock: Dynamic =
+        let BridgePosOfBlock =
           typeof BridgeData111 === "string" && BridgeData111
             ? table2.posOfBlock(BridgeData111)
             : null;
@@ -187817,7 +186908,7 @@ function createOperationalTransformProseBridge(
         reconcile
           ? []
           : collectBridgeBlocks(input).filter(
-              (input2?: unknown, ..._extraArguments: unknown[]): Dynamic =>
+              (input2: string, ..._extraArguments: unknown[]): Dynamic =>
                 table2.doubt(input2, context2),
             );
       if (BridgeRoot4.length > 0) {
@@ -188071,8 +187162,8 @@ function createOperationalTransformProseBridge(
             ...(BridgeFilter[BridgeData110.k] ?? []),
             ...(BridgeData110.into !== undefined ? [BridgeData110.into] : []),
           ].flatMap(
-            (input?: unknown, ..._extraArguments: unknown[]): Dynamic => {
-              let BridgeData111: Dynamic = parseCharacterId(input);
+            (input: string, ..._extraArguments: unknown[]): Dynamic => {
+              let BridgeData111 = parseCharacterId(input);
               return BridgeData111 && BridgeData111.sess === message
                 ? [BridgeData111.i]
                 : [];
@@ -188083,7 +187174,7 @@ function createOperationalTransformProseBridge(
           input?: Dynamic,
           ..._extraArguments: unknown[]
         ) => {
-          let BridgeData111: Dynamic = parseCharacterId(input);
+          let BridgeData111 = parseCharacterId(input);
           return (
             !!BridgeData111 &&
             BridgeData111.sess === message &&
@@ -188425,7 +187516,7 @@ function createOperationalTransformProseBridge(
     ..._extraArguments: unknown[]
   ): Dynamic => {
     let head: Dynamic = input.selection.head;
-    let BridgeBlockAt: Dynamic = table2.blockAt(head);
+    let BridgeBlockAt = table2.blockAt(head);
     let BridgeStart: number = BridgeBlockAt ? head - BridgeBlockAt.start : 0;
     let BridgeData109: Dynamic = [];
     for (
@@ -188434,7 +187525,7 @@ function createOperationalTransformProseBridge(
       BridgeData109.length < limit33;
       BridgeData110--
     ) {
-      let BridgeIdAt: Dynamic = table2.idAt(BridgeData110);
+      let BridgeIdAt = table2.idAt(BridgeData110);
       if (BridgeIdAt !== null && BridgeIdAt !== BridgeData109.at(-1))
         BridgeData109.push(BridgeIdAt);
     }
@@ -188445,16 +187536,16 @@ function createOperationalTransformProseBridge(
       BridgeData110 < BridgeData211 && BridgeData210.length < limit33;
       BridgeData110++
     ) {
-      let BridgeIdAt: Dynamic = table2.idAt(BridgeData110);
+      let BridgeIdAt = table2.idAt(BridgeData110);
       if (BridgeIdAt !== null && BridgeIdAt !== BridgeData210.at(-1))
         BridgeData210.push(BridgeIdAt);
     }
     let resolveBridgePosOf2 = (
-      input2?: unknown,
+      input2: string | null,
       ..._extraArguments: unknown[]
     ): Dynamic => {
       for (let BridgeData110 of input2 as Dynamic) {
-        let BridgePosOf: Dynamic = table2.posOf(BridgeData110);
+        let BridgePosOf = table2.posOf(BridgeData110);
         if (BridgePosOf !== null) return BridgePosOf;
       }
       return null;
@@ -188470,7 +187561,7 @@ function createOperationalTransformProseBridge(
         );
       let BridgeData211: Dynamic = resolveBridgePosOf2(BridgeData210);
       if (BridgeData211 !== null) return BridgeData211;
-      let BridgePosOfBlock: Dynamic = BridgeBlockAt
+      let BridgePosOfBlock = BridgeBlockAt
         ? table2.posOfBlock(BridgeBlockAt.bid)
         : null;
       let BridgeData310: Dynamic =
@@ -188510,7 +187601,7 @@ function createOperationalTransformProseBridge(
       from < selection.to && BridgeData109.length < 4096;
       from++
     ) {
-      let BridgeIdAt: Dynamic = table2.idAt(from);
+      let BridgeIdAt = table2.idAt(from);
       if (BridgeIdAt !== null && BridgeIdAt !== BridgeData109.at(-1))
         BridgeData109.push(BridgeIdAt);
     }
@@ -188526,7 +187617,7 @@ function createOperationalTransformProseBridge(
         BridgeData111 >= 0 && BridgeData210 === null;
         BridgeData111--
       ) {
-        let BridgePosOf: Dynamic = table2.posOf(BridgeData109[BridgeData111]);
+        let BridgePosOf = table2.posOf(BridgeData109[BridgeData111]);
         if (BridgePosOf !== null)
           BridgeData210 =
             BridgePosOf +
@@ -188793,7 +187884,7 @@ function createOperationalTransformProseBridge(
   let resolveBridgeOperation34 = (
     ..._extraArguments: unknown[]
   ): number => {
-    let BridgeData109: Dynamic = index25;
+    let BridgeData109: number = index25;
     index25 += 1;
     if (resolveBridgeOperation11())
       state38 = Math.min(state38 ?? BridgeData109, BridgeData109);
@@ -188851,7 +187942,7 @@ function createOperationalTransformProseBridge(
     ..._extraArguments: unknown[]
   ): Dynamic => {
     if (!table || options === "" || message === "") return null;
-    let BridgePosOfBlock: Dynamic = table2.posOfBlock(input);
+    let BridgePosOfBlock = table2.posOfBlock(input);
     let BridgeNodeAt: Dynamic =
       BridgePosOfBlock === null ? null : table.nodeAt(BridgePosOfBlock);
     if (BridgePosOfBlock === null || !BridgeNodeAt?.isTextblock) return null;
@@ -188922,7 +188013,7 @@ function createOperationalTransformProseBridge(
             }
             let index32: number = 0;
             for (let BridgeData111 of input2.text as Dynamic) {
-              let BridgeIdAt: Dynamic = table2.idAt(
+              let BridgeIdAt = table2.idAt(
                 input + 1 + options2 + index32,
               );
               let BridgeData112: Dynamic = BridgeData109(BridgeIdAt)
@@ -189587,22 +188678,22 @@ function createOperationalTransformProseBridge(
     return BridgeData210 ? BridgeData109.toReversed().slice(0, 48) : [];
   };
   let resolveBridgePosOf = (
-    input?: unknown,
+    input: string | null,
     ..._extraArguments: unknown[]
   ): Dynamic => {
     if (input === null) return [];
-    let BridgePosOf: Dynamic = table2.posOf(input);
+    let BridgePosOf = table2.posOf(input);
     let BridgeData109: Dynamic = resolveBridgeHolderOf(input);
-    let BridgePosOfBlock: Dynamic =
+    let BridgePosOfBlock =
       BridgeData109 !== undefined ? table2.posOfBlock(BridgeData109) : null;
     if (BridgePosOf === null || BridgePosOfBlock === null) return [input];
-    let BridgeData210: Dynamic = [input];
+    let BridgeData210 = [input];
     for (
       let BridgeData110 = BridgePosOf - 1;
       BridgeData110 > BridgePosOfBlock && BridgeData210.length < 200;
       BridgeData110--
     ) {
-      let BridgeIdAt: Dynamic = table2.idAt(BridgeData110);
+      let BridgeIdAt = table2.idAt(BridgeData110);
       if (
         BridgeIdAt !== null &&
         BridgeIdAt !== input &&
@@ -189700,10 +188791,10 @@ function createOperationalTransformProseBridge(
     );
   };
   let resolveBridgeOperation36 = (
-    input?: unknown,
+    input: string,
     ..._extraArguments: unknown[]
   ): Dynamic => {
-    let BridgeData109: Dynamic = parseCharacterId(input)?.sess;
+    let BridgeData109 = parseCharacterId(input)?.sess;
     return (
       (message !== "" && BridgeData109 === message) ||
       (BridgeData109 !== undefined && values4.has(BridgeData109)) ||
@@ -189738,7 +188829,7 @@ function createOperationalTransformProseBridge(
         Array.isArray(BridgeData111.runs) ? BridgeData111.runs : []
       ).flatMap((input2?: unknown, ..._extraArguments: unknown[]): Dynamic => {
         let input22: Dynamic = input2;
-        let BridgeFrom: Dynamic =
+        let BridgeFrom =
           typeof input22?.from === "string"
             ? parseCharacterId(input22.from)
             : null;
@@ -189759,7 +188850,7 @@ function createOperationalTransformProseBridge(
       let BridgeFilter2: Dynamic = BridgeSession
         ? BridgeFilter
         : BridgeFilter.filter(
-            (input2?: unknown, ..._extraArguments: unknown[]): Dynamic =>
+            (input2: string, ..._extraArguments: unknown[]): Dynamic =>
               resolveBridgeOperation36(input2),
           );
       let BridgeFilter3: Dynamic = BridgeSession
@@ -189883,7 +188974,7 @@ function createOperationalTransformProseBridge(
       options?: Dynamic,
       ..._extraArguments: unknown[]
     ): Dynamic => {
-      let BridgeData110: Dynamic = parseCharacterId(options);
+      let BridgeData110 = parseCharacterId(options);
       return (
         !!BridgeData110 &&
         input2.some(
@@ -189932,7 +189023,7 @@ function createOperationalTransformProseBridge(
               typeof input3 === "string",
           ),
         );
-        let BridgeDelete: Dynamic =
+        let BridgeDelete: boolean =
           input22.op === "delete" ||
           !Array.isArray(BridgeResults) ||
           isBridgeReplace(input, input2, options);
@@ -189964,7 +189055,7 @@ function createOperationalTransformProseBridge(
       let BridgeData110: Dynamic = context ? input2 : null;
       if (!context)
         for (let BridgeData111 of values32 as Dynamic) {
-          let BridgePosOfBlock: Dynamic = table2.posOfBlock(BridgeData111);
+          let BridgePosOfBlock = table2.posOfBlock(BridgeData111);
           let BridgeNodeAt: Dynamic =
             BridgePosOfBlock === null ? null : table.nodeAt(BridgePosOfBlock);
           if (
@@ -190060,7 +189151,7 @@ function createOperationalTransformProseBridge(
       };
     };
     for (let BridgeData110 of values210 as Dynamic) {
-      let BridgePosOfBlock: Dynamic = table2.posOfBlock(BridgeData110);
+      let BridgePosOfBlock = table2.posOfBlock(BridgeData110);
       let BridgeNodeAt: Dynamic =
         BridgePosOfBlock === null ? null : table.nodeAt(BridgePosOfBlock);
       if (
@@ -190103,7 +189194,7 @@ function createOperationalTransformProseBridge(
           ) ||
             BridgeData112.ops.size === 0);
         let resolveBridgeRuns = (
-          input2?: unknown,
+          input2: string,
           ..._extraArguments: unknown[]
         ): Dynamic =>
           isBridgeSome5(BridgeData112.runs, input2) ||
@@ -190125,7 +189216,7 @@ function createOperationalTransformProseBridge(
           BridgeData114 < BridgeData211;
 
         ) {
-          let BridgeIdAt: Dynamic = table2.idAt(BridgeData114);
+          let BridgeIdAt = table2.idAt(BridgeData114);
           let BridgeData115: Dynamic = BridgeData114 + 1;
           while (
             BridgeData115 < BridgeData211 &&
@@ -190139,7 +189230,7 @@ function createOperationalTransformProseBridge(
               BridgeData115,
             );
             text += text2;
-            let BridgeData116: Dynamic = resolveBridgeOperation36(BridgeIdAt)
+            let BridgeData116 = resolveBridgeOperation36(BridgeIdAt)
               ? parseCharacterId(BridgeIdAt)
               : null;
             let clock: Dynamic = BridgeData116
@@ -190221,7 +189312,7 @@ function createOperationalTransformProseBridge(
         BridgeData111 < BridgeData212;
         BridgeData111++
       ) {
-        let BridgeIdAt: Dynamic = table2.idAt(BridgeData111);
+        let BridgeIdAt = table2.idAt(BridgeData111);
         if (BridgeIdAt !== null && !resolveBridgeOperation36(BridgeIdAt))
           BridgeData110 = false;
       }
@@ -190499,7 +189590,7 @@ function createOperationalTransformProseBridge(
         return false;
       BridgeData109 = BridgeData210.pos + 1;
       for (let BridgeData110 of (input.lefts ?? []) as Dynamic) {
-        let BridgePosOf: Dynamic = table2.posOf(BridgeData110);
+        let BridgePosOf = table2.posOf(BridgeData110);
         let BridgeData111: Dynamic =
           BridgePosOf === null ? null : collectBridgeOperation(BridgePosOf + 1);
         if (
@@ -190747,7 +189838,7 @@ function createOperationalTransformProseBridge(
       let BridgeFlatMap: Dynamic = BridgeSome
         ? new (Set as Dynamic)(
             BridgeData109.ids.flatMap(
-              (input2?: unknown, ..._extraArguments: unknown[]): Dynamic =>
+              (input2: string, ..._extraArguments: unknown[]): Dynamic =>
                 resolveBridgeHolderOf(input2) ?? [],
             ),
           )
@@ -190838,7 +189929,7 @@ function createOperationalTransformProseBridge(
     context?: Dynamic,
     ..._extraArguments: unknown[]
   ): Dynamic => {
-    let BridgeData109: Dynamic = resolveBridgeOperation9();
+    let BridgeData109: boolean = resolveBridgeOperation9();
     if (BridgeData109)
       state15 ??= {
         opId: opId2,
@@ -190896,7 +189987,7 @@ function createOperationalTransformProseBridge(
     for (let BridgeData110 of BridgePending.values() as Dynamic)
       if (
         BridgeData110.flat().some(
-          (input2?: unknown, ..._extraArguments: unknown[]): Dynamic =>
+          (input2: string, ..._extraArguments: unknown[]): Dynamic =>
             blocks.includes(resolveBridgeHolderOf(input2) ?? input2),
         )
       )
@@ -191184,7 +190275,7 @@ function createOperationalTransformProseBridge(
       )
         state2 = null;
     }
-    let BridgeData109: Dynamic = isBridgeDomClosed();
+    let BridgeData109 = isBridgeDomClosed();
     if (BridgeData109 !== null) getBridgeSeconds(BridgeData109);
     if (BridgeData36 && isBridgeOperation5()) resolveBridgeOperation23();
     if (isBridgeHeld("tick") && init.seated) {
@@ -191376,7 +190467,7 @@ function createOperationalTransformProseBridge(
     );
     for (let BridgeData110 of entries25.keys() as Dynamic)
       if (!values30.has(BridgeData110)) entries25.delete(BridgeData110);
-    let BridgeData310: Dynamic =
+    let BridgeData310: boolean =
       BridgePending.size > 0 || needing !== null || isBridgeOperation5();
     for (let BridgeData110 of BridgeData210 as Dynamic) {
       let preview: Dynamic = resolveBridgeText4(
@@ -191441,7 +190532,7 @@ function createOperationalTransformProseBridge(
     if (!table || input < 0 || input > table.content.size) return null;
     let BridgeResolve: Dynamic = table.resolve(input);
     if (!BridgeResolve.parent.isTextblock) return null;
-    let left: Dynamic =
+    let left =
       input > BridgeResolve.start() ? table2.idAt(input - 1) : null;
     return {
       bid: BridgeResolve.parent.attrs.bid,
@@ -191497,28 +190588,28 @@ function createOperationalTransformProseBridge(
   ): Dynamic => {
     if (!table) return null;
     let resolveBridgePosOf2 = (
-      input2?: unknown,
+      input2: string | null,
       ..._extraArguments: unknown[]
     ): Dynamic => {
-      let BridgePosOf: Dynamic = input2 === null ? null : table2.posOf(input2);
+      let BridgePosOf = input2 === null ? null : table2.posOf(input2);
       return BridgePosOf === null
         ? null
         : BridgePosOf + (table2.idAt(BridgePosOf + 1) === input2 ? 2 : 1);
     };
     if (argument === "opens") {
-      let BridgeRight2: Dynamic =
+      let BridgeRight2 =
         input.right === null ? null : table2.posOf(input.right);
       if (BridgeRight2 !== null) return BridgeRight2;
     }
     let BridgeLeft: Dynamic = resolveBridgePosOf2(input.left);
     if (BridgeLeft !== null) return BridgeLeft;
-    let BridgeRight: Dynamic =
+    let BridgeRight =
       input.right === null || (argument && input.left === null)
         ? null
         : table2.posOf(input.right);
     if (BridgeRight !== null) return BridgeRight;
     if (input.left !== null && input.right !== null) return null;
-    let BridgePosOfBlock: Dynamic =
+    let BridgePosOfBlock =
       typeof input.bid === "string" && input.bid
         ? table2.posOfBlock(input.bid)
         : null;
@@ -191710,7 +190801,7 @@ function createOperationalTransformProseBridge(
     ..._extraArguments: unknown[]
   ): Dynamic => {
     if (!table) return null;
-    let BridgePosOfBlock: Dynamic =
+    let BridgePosOfBlock =
       typeof input.bid === "string" && input.bid
         ? table2.posOfBlock(input.bid)
         : null;
@@ -191730,7 +190821,7 @@ function createOperationalTransformProseBridge(
     ..._extraArguments: unknown[]
   ): Dynamic => {
     let BridgeData109: Dynamic = filterBridgeFilter();
-    let bridgeProseMirrorMapping: Dynamic =
+    let bridgeProseMirrorMapping =
       new (ProseMirrorMapping)();
     for (let BridgeData110 = input - 1; BridgeData110 >= 0; BridgeData110--)
       bridgeProseMirrorMapping.appendMap(
@@ -191756,7 +190847,7 @@ function createOperationalTransformProseBridge(
     ..._extraArguments: unknown[]
   ): Dynamic => {
     let BridgeData109: Dynamic = filterBridgeFilter();
-    let bridgeProseMirrorMapping: Dynamic =
+    let bridgeProseMirrorMapping =
       new (ProseMirrorMapping)();
     for (let BridgeData110 = input - 1; BridgeData110 >= 0; BridgeData110--)
       bridgeProseMirrorMapping.appendMap(
@@ -191791,7 +190882,7 @@ function createOperationalTransformProseBridge(
     let text: Dynamic =
       typeof $head.parent.attrs.bid === "string" && table
         ? ((..._extraArguments: unknown[]): Dynamic => {
-            let BridgePosOfBlock: Dynamic = table2.posOfBlock(
+            let BridgePosOfBlock = table2.posOfBlock(
               $head.parent.attrs.bid,
             );
             let BridgeNodeAt: Dynamic =
@@ -191870,7 +190961,7 @@ function createOperationalTransformProseBridge(
       typeof input2 === "string" &&
       message !== "" &&
       parseCharacterId(input2)?.sess === message;
-    let BridgeNames: Dynamic =
+    let BridgeNames: boolean =
       resolveBridgeOperation49(BridgeIsTextblock) &&
       !(input.names?.has(BridgeIsTextblock) ?? false) &&
       !(BridgeData109?.made.has(BridgeIsTextblock) ?? false);
@@ -191938,11 +191029,11 @@ function createOperationalTransformProseBridge(
         );
       }
       let state49: Dynamic = null;
-      let BridgeData410: Dynamic = resolveBridgeDump();
-      let BridgePosOf: Dynamic =
+      let BridgeData410 = resolveBridgeDump();
+      let BridgePosOf =
         BridgeData410 === null ? null : table2.posOf(BridgeData410);
       if (BridgePosOf !== null) {
-        let BridgeGetMap: Dynamic = new (ProseMirrorMapping)(
+        let BridgeGetMap: number = new (ProseMirrorMapping)(
           filterBridgeFilter().map(
             (input2?: Dynamic, ..._extraArguments: unknown[]): Dynamic =>
               input2.getMap(),
@@ -192123,7 +191214,7 @@ function createOperationalTransformProseBridge(
         depth--
       ) {
         if (BridgeResolve.node(depth).type.spec.tableRole !== "table") continue;
-        let BridgeFindFrom: Dynamic = ProseMirrorSelection.findFrom(
+        let BridgeFindFrom = ProseMirrorSelection.findFrom(
           doc.resolve(BridgeResolve.after(depth)),
           1,
           true,
@@ -192293,7 +191384,7 @@ function createOperationalTransformProseBridge(
     ..._extraArguments: unknown[]
   ) => {
     let BridgeBehind = input === "behind";
-    let BridgeData109: Dynamic = BridgeBehind ? (index20 += 1) : (index19 += 1);
+    let BridgeData109: number = BridgeBehind ? (index20 += 1) : (index19 += 1);
     let locks: Dynamic =
       !BridgeBehind && BridgeData109 > limit18 && init.seated;
     resolveOperationModelValue10("seat.rejected", {
@@ -192327,7 +191418,7 @@ function createOperationalTransformProseBridge(
       for (let BridgeData110 of `${node}${message}` as Dynamic)
         BridgeData210 =
           (BridgeData210 * 31 + BridgeData110.charCodeAt(0)) >>> 0;
-    let rung: Dynamic =
+    let rung: number =
       resolveBridgeOperation25() +
       (BridgeData109 >= limit18 ? BridgeData210 % (4 * limit19) : 0);
     if (options !== null && state31) {
@@ -192391,7 +191482,7 @@ function createOperationalTransformProseBridge(
         ? BridgeData85.splice(0)
         : [];
     if (BridgePartial2.length > 0 || !input.partial) state36 = null;
-    let wasAhead: Dynamic = resolveBridgeOperation11();
+    let wasAhead: boolean = resolveBridgeOperation11();
     let BridgeFocused: Dynamic = {
       ...resolveBridgeLeft2(),
       focused: state.hasFocus(),
@@ -192520,7 +191611,7 @@ function createOperationalTransformProseBridge(
               BridgeData110.known.slice(from2)
         )
           continue;
-        let BridgePosOfBlock: Dynamic = table2.posOfBlock(BridgeData110.bid);
+        let BridgePosOfBlock = table2.posOfBlock(BridgeData110.bid);
         let BridgeNodeAt: Dynamic =
           BridgePosOfBlock === null ? null : table.nodeAt(BridgePosOfBlock);
         if (
@@ -192696,7 +191787,7 @@ function createOperationalTransformProseBridge(
         for (let BridgeData111 of (input.blocks ?? []) as Dynamic) {
           values31.add(BridgeData111.bid);
           for (let BridgeData112 of BridgeData111.runs as Dynamic) {
-            let BridgeData113: Dynamic = parseCharacterId(BridgeData112.id);
+            let BridgeData113 = parseCharacterId(BridgeData112.id);
             if (!BridgeData113) values31.add(BridgeData112.id);
             else
               for (let index32 = 0; index32 < BridgeData112.len; index32++)
@@ -192724,7 +191815,7 @@ function createOperationalTransformProseBridge(
         BridgeData210 = state.state.tr.insert(BridgeAfter, state310);
         isOperationModelColwidth(BridgeData210);
         if (wasAhead) {
-          let BridgeInsert: Dynamic = new (ProseMirrorTransform)(
+          let BridgeInsert = new (ProseMirrorTransform)(
             table,
           ).insert(BridgeAfter2, state310);
           isOperationModelColwidth(BridgeInsert);
@@ -192877,7 +191968,7 @@ function createOperationalTransformProseBridge(
           );
         isOperationModelColwidth(BridgeData210);
         if (wasAhead) {
-          let BridgeReplaceWith: Dynamic =
+          let BridgeReplaceWith =
             new (ProseMirrorTransform)(table).replaceWith(
               BridgePosOfBlock,
               BridgePosOfBlock + BridgeNodeAt.nodeSize,
@@ -193028,7 +192119,7 @@ function createOperationalTransformProseBridge(
               ))
           )
             return;
-          let bridgeProseMirrorMapping2: Dynamic =
+          let bridgeProseMirrorMapping2 =
             new (ProseMirrorMapping)(
               BridgeData110.slice(options + 1).map(
                 (input3?: Dynamic, ..._extraArguments: unknown[]): Dynamic =>
@@ -193288,11 +192379,11 @@ function createOperationalTransformProseBridge(
     isBridgeNode2();
     if (message !== "")
       for (let BridgeData110 of input.blocks as Dynamic) {
-        let BridgeData111: Dynamic = parseCharacterId(BridgeData110.bid);
-        let BridgeAtLeast: Dynamic = argument ? table2.atLeast : table2.taught;
+        let BridgeData111 = parseCharacterId(BridgeData110.bid);
+        let BridgeAtLeast = argument ? table2.atLeast : table2.taught;
         if (BridgeData111?.sess === message) BridgeAtLeast(BridgeData111.i);
         for (let BridgeData112 of BridgeData110.runs as Dynamic) {
-          let BridgeData113: Dynamic = parseCharacterId(BridgeData112.id);
+          let BridgeData113 = parseCharacterId(BridgeData112.id);
           if (BridgeData113?.sess === message)
             BridgeAtLeast(BridgeData113.i + Math.max(0, BridgeData112.len - 1));
         }
@@ -193326,7 +192417,7 @@ function createOperationalTransformProseBridge(
       ? BridgeSeated3()
       : null;
     let BridgeData710: Dynamic = BridgePosOf ? BridgeFindLast : null;
-    let BridgePosOf2: Dynamic = BridgeData710
+    let BridgePosOf2 = BridgeData710
       ? table2.posOf(BridgeData710.tail)
       : null;
     if (BridgeData710 && BridgePosOf2 !== null) {
@@ -193379,7 +192470,7 @@ function createOperationalTransformProseBridge(
       (!BridgeFocused.seated ||
         state.state.selection instanceof (ProseMirrorTextSelection as Dynamic))
     ) {
-      let BridgeSeated6: Dynamic = resolveOperationModelResolve2(
+      let BridgeSeated6 = resolveOperationModelResolve2(
         BridgeData210.doc,
         BridgeFocused.seated
           ? BridgeData210.selection.from
@@ -193391,7 +192482,7 @@ function createOperationalTransformProseBridge(
       BridgeData210.setMeta(OpAnchorsClass, input.anchors ?? input.comments);
     if (!input.partial && Array.isArray(input.comments))
       BridgeData103 = input.comments;
-    let focus: Dynamic = BridgeData73 && !state.hasFocus();
+    let focus: boolean = BridgeData73 && !state.hasFocus();
     if (BridgeData210.docChanged || BridgeData210.selectionSet || focus)
       resolveOperationModelValue10("seat.caret", {
         rev: input.rev,
@@ -193495,7 +192586,7 @@ function createOperationalTransformProseBridge(
         ..._extraArguments: unknown[]
       ): undefined => {
         let doc: Dynamic = state.state.doc;
-        let BridgeIsTextblock: Dynamic = doc.resolve(
+        let BridgeIsTextblock = doc.resolve(
           Math.max(0, Math.min(input2, doc.content.size)),
         ).parent.isTextblock
           ? ProseMirrorTextSelection.create(doc, input2)
@@ -193526,7 +192617,7 @@ function createOperationalTransformProseBridge(
                   input2.gen === index13 &&
                   input2.anchor === BridgeData110.at.left,
               );
-        let BridgeTail2: Dynamic =
+        let BridgeTail2 =
           BridgeLeft && BridgeLeft.tail !== BridgeData110.at.left
             ? table2.posOf(BridgeLeft.tail)
             : null;
@@ -193610,7 +192701,7 @@ function createOperationalTransformProseBridge(
           }
           continue;
         }
-        let bridgeProseMirrorReplaceStep: Dynamic =
+        let bridgeProseMirrorReplaceStep =
           new (ProseMirrorReplaceStep)(
             BridgeHead,
             BridgeHead,
@@ -193694,7 +192785,7 @@ function createOperationalTransformProseBridge(
     if (!input.partial) region = false;
     let state62: Dynamic = null;
     let BridgeData910 = false;
-    let bridgeProseMirrorMapping: Dynamic =
+    let bridgeProseMirrorMapping =
       new (ProseMirrorMapping)();
     let isBridgeRunsOf3 = (input2?: Dynamic, ..._extraArguments: unknown[]) => {
       let BridgeData110: Dynamic = entries210.get(input2);
@@ -193872,7 +192963,7 @@ function createOperationalTransformProseBridge(
           state50 = BridgeAfter + BridgeNodeAt.nodeSize;
       } else if (BridgeData110.depth0) state50 = 0;
       else if (BridgeData110.parent !== null) {
-        let BridgePosOfBlock: Dynamic = table2.posOfBlock(BridgeData110.parent);
+        let BridgePosOfBlock = table2.posOfBlock(BridgeData110.parent);
         if (
           BridgePosOfBlock !== null &&
           state.state.doc.nodeAt(BridgePosOfBlock) &&
@@ -194023,11 +193114,11 @@ function createOperationalTransformProseBridge(
         !BridgeData110 &&
         !(state28 === BridgeTail.bid && askedAt - BridgeData59 < 5000)
       ) {
-        let BridgeData111: Dynamic = resolveBridgeDump();
-        let BridgePosOf3: Dynamic =
+        let BridgeData111 = resolveBridgeDump();
+        let BridgePosOf3 =
           BridgeData111 === null ? null : table2.posOf(BridgeData111);
         if (BridgePosOf3 !== null) {
-          let BridgeGetMap: Dynamic = new (ProseMirrorMapping)(
+          let BridgeGetMap: number = new (ProseMirrorMapping)(
             filterBridgeFilter().map(
               (input2?: Dynamic, ..._extraArguments: unknown[]): Dynamic =>
                 input2.getMap(),
@@ -194365,11 +193456,11 @@ function createOperationalTransformProseBridge(
         }
         continue;
       }
-      let BridgePosOfBlock: Dynamic =
+      let BridgePosOfBlock =
         BridgeData110.bid === null
           ? null
           : table2.posOfBlock(BridgeData110.bid);
-      let BridgeAfterId: Dynamic =
+      let BridgeAfterId =
         BridgeData110.afterId === null
           ? null
           : table2.posOf(BridgeData110.afterId);
@@ -194441,7 +193532,7 @@ function createOperationalTransformProseBridge(
           BridgePosOfBlock + 1 + BridgeData410.content.size,
           true,
         ];
-      let BridgeGetMap: Dynamic =
+      let BridgeGetMap =
         state48 === null
           ? null
           : new (ProseMirrorMapping)(
@@ -194463,7 +193554,7 @@ function createOperationalTransformProseBridge(
       let BridgeText: Dynamic = resolveProsePluginsTest9(
         BridgeData110.text.slice(index32),
       );
-      let BridgeData510: Dynamic = resolveProsePluginsCharCodeAt4(BridgeText);
+      let BridgeData510: boolean = resolveProsePluginsCharCodeAt4(BridgeText);
       let BridgeData610: Dynamic = BridgeData510
         ? BridgeText
         : resolveProsePluginsValue43(BridgeText);
@@ -194632,7 +193723,7 @@ function createOperationalTransformProseBridge(
     for (let index32 = 0; index32 < olds.length; index32++) {
       let BridgeToJSON: Dynamic = olds[index32].toJSON();
       if (typeof BridgeToJSON.from !== "number") return null;
-      let bridgeProseMirrorMapping: Dynamic =
+      let bridgeProseMirrorMapping =
         new (ProseMirrorMapping)();
       for (let BridgeData109 = index32 - 1; BridgeData109 >= 0; BridgeData109--)
         bridgeProseMirrorMapping.appendMap(
@@ -194782,7 +193873,7 @@ function createOperationalTransformProseBridge(
         options2?: Dynamic,
         ..._extraArguments: unknown[]
       ): Dynamic => {
-        let bridgeProseMirrorMapping: Dynamic =
+        let bridgeProseMirrorMapping =
           new (ProseMirrorMapping)();
         for (
           let BridgeData111 = input2 - 1;
@@ -194823,7 +193914,7 @@ function createOperationalTransformProseBridge(
             !isOperationModelFrom16(range, BridgeData311[options2])
           )
             return null;
-          let bridgeProseMirrorMapping: Dynamic =
+          let bridgeProseMirrorMapping =
             new (ProseMirrorMapping)();
           for (
             let BridgeData112 = options2 - 1;
@@ -194855,7 +193946,7 @@ function createOperationalTransformProseBridge(
               });
               from += BridgeCharCodeAt;
             } else {
-              let BridgeIdAt: Dynamic = table2.idAt(BridgeMapResult.pos);
+              let BridgeIdAt = table2.idAt(BridgeMapResult.pos);
               if (BridgeIdAt === null) return null;
               let BridgeIdAt2 =
                 table2.idAt(BridgeMapResult.pos + 1) === BridgeIdAt ? 2 : 1;
@@ -194913,7 +194004,7 @@ function createOperationalTransformProseBridge(
             : null;
         if (BridgeDrifted2 !== null && argument5 && argument6 === true)
           for (
-            let BridgeIdAt: Dynamic = table2.idAt(BridgeDrifted2);
+            let BridgeIdAt = table2.idAt(BridgeDrifted2);
             BridgeIdAt !== null && argument5.has(BridgeIdAt);
             BridgeIdAt = table2.idAt(BridgeDrifted2)
           )
@@ -194952,7 +194043,7 @@ function createOperationalTransformProseBridge(
               }
               BridgeData114 = BridgeMapResult.pos;
             } else {
-              let BridgePosOf: Dynamic = table2.posOf(BridgeData113.id);
+              let BridgePosOf = table2.posOf(BridgeData113.id);
               if (BridgePosOf !== null)
                 BridgeData114 = BridgeMapping2.map(BridgePosOf, 1);
               else if (
@@ -195000,7 +194091,7 @@ function createOperationalTransformProseBridge(
                 BridgeOlds5.from,
                 -1,
               ).pos;
-              let bridgeProseMirrorReplaceStep: Dynamic =
+              let bridgeProseMirrorReplaceStep =
                 new (ProseMirrorReplaceStep)(
                   pos,
                   pos,
@@ -195027,7 +194118,7 @@ function createOperationalTransformProseBridge(
               BridgeData114,
               BridgeData214,
             ] of BridgeData213 as Dynamic) {
-              let bridgeProseMirrorReplaceStep: Dynamic =
+              let bridgeProseMirrorReplaceStep =
                 new (ProseMirrorReplaceStep)(
                   BridgeData114 - index32,
                   BridgeData214 - index32,
@@ -195068,7 +194159,7 @@ function createOperationalTransformProseBridge(
           let BridgeData112: Dynamic = cache24.get(BridgeOlds5) ?? ++index23;
           let index32: number = 0;
           for (let [BridgeData113, BridgeData213] of BridgeData312 as Dynamic) {
-            let bridgeProseMirrorReplaceStep: Dynamic =
+            let bridgeProseMirrorReplaceStep =
               new (ProseMirrorReplaceStep)(
                 BridgeData113 - index32,
                 BridgeData213 - index32,
@@ -195136,7 +194227,7 @@ function createOperationalTransformProseBridge(
                 ? null
                 : BridgeMapResult.pos;
             } else {
-              let BridgeDrifted3: Dynamic = table2.drifted
+              let BridgeDrifted3 = table2.drifted
                 ? null
                 : table2.posOf(BridgeData112.id);
               BridgeData113 =
@@ -195234,7 +194325,7 @@ function createOperationalTransformProseBridge(
         BridgeData210.push(BridgeOlds3);
         BridgeData310.push(index32);
       }
-      let bridgeProseMirrorMapping: Dynamic =
+      let bridgeProseMirrorMapping =
         new (ProseMirrorMapping)(
           options.olds.map(
             (input2?: Dynamic, ..._extraArguments: unknown[]): Dynamic =>
@@ -195242,7 +194333,7 @@ function createOperationalTransformProseBridge(
           ),
         );
       for (let index32 = 0; index32 < input.steps.length; index32++) {
-        let bridgeProseMirrorMapping2: Dynamic =
+        let bridgeProseMirrorMapping2 =
           new (ProseMirrorMapping)();
         for (
           let BridgeData110 = index32 - 1;
@@ -195260,7 +194351,7 @@ function createOperationalTransformProseBridge(
         if (!BridgeSteps2 || tr2.maybeStep(BridgeSteps2).failed) return false;
       }
       for (let BridgeData110 of values30 as Dynamic) {
-        let bridgeProseMirrorMapping2: Dynamic =
+        let bridgeProseMirrorMapping2 =
           new (ProseMirrorMapping)(
             BridgeData210.filter(
               (
@@ -195316,7 +194407,7 @@ function createOperationalTransformProseBridge(
         let BridgeGetMeta2: Dynamic = input.getMeta(OpMirrorsClass);
         if (!BridgeGetMeta2 || input.steps.length === 0) return null;
         let tr3: Dynamic = state.state.tr;
-        let bridgeProseMirrorMapping: Dynamic =
+        let bridgeProseMirrorMapping =
           new (ProseMirrorMapping)(
             options.olds.map(
               (input2?: Dynamic, ..._extraArguments: unknown[]): Dynamic =>
@@ -195324,7 +194415,7 @@ function createOperationalTransformProseBridge(
             ),
           );
         for (let index32 = 0; index32 < input.steps.length; index32++) {
-          let bridgeProseMirrorMapping2: Dynamic =
+          let bridgeProseMirrorMapping2 =
             new (ProseMirrorMapping)();
           for (
             let BridgeData110 = index32 - 1;
@@ -195423,7 +194514,7 @@ function createOperationalTransformProseBridge(
     }
     if (!pinned && BridgeOlds && BridgeDeletedAcross && !table2.drifted) {
       let BridgeData110: Dynamic = resolveBridgeOpens(BridgeOlds);
-      let BridgeGetMap: Dynamic =
+      let BridgeGetMap =
         BridgeData110 === null
           ? null
           : new (ProseMirrorMapping)(
@@ -195513,7 +194604,7 @@ function createOperationalTransformProseBridge(
       ) {
         let BridgeAfter: Dynamic =
           BridgeData109.side === "after" ? target.range[1] : target.range[0];
-        let BridgePosOf: Dynamic = table2.posOf(BridgeAfter);
+        let BridgePosOf = table2.posOf(BridgeAfter);
         if (BridgePosOf === null) continue;
         BridgeData110 = resolveBridgeHolderOf(BridgeAfter);
         state48 =
@@ -195528,7 +194619,7 @@ function createOperationalTransformProseBridge(
         target.ids?.length === 1 &&
         (BridgeData109.side === "start" || BridgeData109.side === "end")
       ) {
-        let BridgePosOfBlock: Dynamic = table2.posOfBlock(target.ids[0]);
+        let BridgePosOfBlock = table2.posOfBlock(target.ids[0]);
         let BridgeNodeAt: Dynamic =
           BridgePosOfBlock === null
             ? null
@@ -195647,7 +194738,7 @@ function createOperationalTransformProseBridge(
           input22.target.ids?.length === 1
         ) {
           let BridgeTarget2: Dynamic = input22.target.ids[0];
-          let BridgePosOfBlock: Dynamic = table2.posOfBlock(BridgeTarget2);
+          let BridgePosOfBlock = table2.posOfBlock(BridgeTarget2);
           if (BridgePosOfBlock === null) return input2;
           let BridgeData111: Dynamic = resolveBridgeOperation7();
           let BridgeData212: Dynamic;
@@ -195698,7 +194789,7 @@ function createOperationalTransformProseBridge(
           input22.target.range[0] === input22.target.range[1]
         ) {
           let BridgeRange2: Dynamic = input22.target.range[1];
-          let BridgePosOf: Dynamic = table2.posOf(BridgeRange2);
+          let BridgePosOf = table2.posOf(BridgeRange2);
           if (BridgePosOf === null) return input2;
           BridgeData110 =
             BridgePosOf +
@@ -195709,7 +194800,7 @@ function createOperationalTransformProseBridge(
           input22.side === "start" &&
           input22.target.ids?.length === 1
         ) {
-          let BridgePosOfBlock: Dynamic = table2.posOfBlock(
+          let BridgePosOfBlock = table2.posOfBlock(
             input22.target.ids[0],
           );
           let BridgeNodeAt: Dynamic =
@@ -195725,7 +194816,7 @@ function createOperationalTransformProseBridge(
         let state48: Dynamic = null;
         for (let index33 = 0; ; index33++) {
           if (index33 >= 4096) return input2;
-          let BridgeIdAt: Dynamic = table2.idAt(BridgeData110);
+          let BridgeIdAt = table2.idAt(BridgeData110);
           if (BridgeIdAt === null) break;
           let BridgeData111 = getBridgeUnsafe(
             BridgeIdAt,
@@ -196021,7 +195112,7 @@ function createOperationalTransformProseBridge(
               ? selection.from
               : null));
         if (BridgeCells !== null) {
-          let BridgeFindFrom: Dynamic = ProseMirrorSelection.findFrom(
+          let BridgeFindFrom = ProseMirrorSelection.findFrom(
             state.state.doc.resolve(BridgeCells + 1),
             1,
             true,
@@ -196246,7 +195337,7 @@ function createOperationalTransformProseBridge(
         ledger?.record(input2, options2);
       },
     });
-    let BridgeDrifted: Dynamic =
+    let BridgeDrifted =
       BridgeMarksMinted && !table2.drifted ? table2.dump() : null;
     table = BridgeRuns.doc;
     table2.load(BridgeRuns.runs);
@@ -196360,10 +195451,10 @@ function createOperationalTransformProseBridge(
         !isBridgeReplace(input, operation, options),
     );
   let resolveBridgePosOfBlock8 = (
-    input?: unknown,
+    input: string,
     ..._extraArguments: unknown[]
   ): Dynamic => {
-    let BridgePosOfBlock: Dynamic = table2.posOfBlock(input);
+    let BridgePosOfBlock = table2.posOfBlock(input);
     let BridgeNodeAt: Dynamic =
       BridgePosOfBlock === null ||
       !table ||
@@ -196422,7 +195513,7 @@ function createOperationalTransformProseBridge(
       for (let home of (BridgeFramesOut.get(opId2)?.homes ??
         BridgeFlying.get(opId2) ??
         []) as Dynamic) {
-        let BridgePosOfBlock: Dynamic =
+        let BridgePosOfBlock =
           typeof home === "string" ? table2.posOfBlock(home) : null;
         if (
           BridgePosOfBlock !== null &&
@@ -196487,8 +195578,8 @@ function createOperationalTransformProseBridge(
         if (table2.posOfBlock(BridgeData110) !== null)
           values30.add(BridgeData110);
         else {
-          let BridgePosOf: Dynamic = table2.posOf(BridgeData110);
-          let BridgeBlockAt: Dynamic =
+          let BridgePosOf = table2.posOf(BridgeData110);
+          let BridgeBlockAt =
             BridgePosOf === null ? undefined : table2.blockAt(BridgePosOf)?.bid;
           if (BridgeBlockAt) values30.add(BridgeBlockAt);
         }
@@ -196526,7 +195617,7 @@ function createOperationalTransformProseBridge(
       (argument >= argument3 && argument < argument4) ||
       (argument3 >= argument && argument3 < argument2);
     let isBridgeSome5 = (
-      input2?: unknown,
+      input2: string,
       ..._extraArguments: unknown[]
     ): Dynamic => {
       if (BridgeData410.has(input2)) return true;
@@ -196566,7 +195657,7 @@ function createOperationalTransformProseBridge(
     input?: Dynamic,
     ..._extraArguments: unknown[]
   ) => {
-    let BridgePosOfBlock: Dynamic = table2.posOfBlock(input);
+    let BridgePosOfBlock = table2.posOfBlock(input);
     return (
       BridgePosOfBlock !== null &&
       table !== null &&
@@ -196643,7 +195734,7 @@ function createOperationalTransformProseBridge(
                   BridgePosOfBlock + BridgeNodeAt.nodeSize;
                 return [...entries24.values()].some(
                   (input4?: Dynamic, ..._extraArguments: unknown[]) => {
-                    let BridgePosOfBlock2: Dynamic = table2.posOfBlock(input4);
+                    let BridgePosOfBlock2 = table2.posOfBlock(input4);
                     return (
                       BridgePosOfBlock2 !== null &&
                       BridgePosOfBlock2 > BridgePosOfBlock &&
@@ -197267,7 +196358,7 @@ function createOperationalTransformProseBridge(
       }
     }
     if (BridgeData710.length === 0) return !BridgeData610;
-    let tr2: Dynamic = ProseMirrorEditorState.create({
+    let tr2 = ProseMirrorEditorState.create({
       doc: table,
     }).tr;
     try {
@@ -197374,12 +196465,12 @@ function createOperationalTransformProseBridge(
       let BridgeIndexOf: Dynamic =
         BridgeOldIds === null ? 0 : BridgeData211.ids.indexOf(BridgeOldIds) + 1;
       if (BridgeOldIds !== null && BridgeIndexOf === 0) {
-        let BridgeData111: Dynamic = parseCharacterId(BridgeOldIds);
+        let BridgeData111 = parseCharacterId(BridgeOldIds);
         for (let BridgeData112 of BridgeRuns as Dynamic) {
           let BridgeData113: number = -1;
           let index32: number = 0;
           for (let BridgeData114 of BridgeData112.runs as Dynamic) {
-            let BridgeData115: Dynamic = parseCharacterId(BridgeData114.id);
+            let BridgeData115 = parseCharacterId(BridgeData114.id);
             if (
               BridgeData111 &&
               BridgeData115 &&
@@ -197449,7 +196540,7 @@ function createOperationalTransformProseBridge(
       options2?: Dynamic,
       ..._extraArguments: unknown[]
     ): Dynamic => {
-      let bridgeProseMirrorMapping: Dynamic =
+      let bridgeProseMirrorMapping =
         new (ProseMirrorMapping)();
       for (let BridgeData110 = input2 - 1; BridgeData110 >= 0; BridgeData110--)
         bridgeProseMirrorMapping.appendMap(
@@ -197598,8 +196689,8 @@ function createOperationalTransformProseBridge(
       table2.drifted
     )
       return void (state43 = null);
-    let BridgePosOf: Dynamic = table2.posOf(BridgeData109.first);
-    let BridgeBlockAt: Dynamic =
+    let BridgePosOf = table2.posOf(BridgeData109.first);
+    let BridgeBlockAt =
       BridgePosOf === null ? null : table2.blockAt(BridgePosOf);
     if (BridgePosOf === null || BridgeBlockAt === null) return;
     let index32 = 0;
@@ -197608,7 +196699,7 @@ function createOperationalTransformProseBridge(
       BridgeData110 >= BridgeBlockAt.start && index32 < operationModelLimit5122;
       index32++
     ) {
-      let BridgeIdAt: Dynamic = table2.idAt(BridgeData110);
+      let BridgeIdAt = table2.idAt(BridgeData110);
       if (
         BridgeIdAt === null ||
         !((entries12.get(BridgeIdAt) ?? -1) > BridgeData109.rev)
@@ -197829,7 +196920,7 @@ function createOperationalTransformProseBridge(
       return false;
     }
     if (!BridgeData109.isTextblock) return false;
-    let BridgePosOfBlock: Dynamic = table2.posOfBlock(input.block);
+    let BridgePosOfBlock = table2.posOfBlock(input.block);
     let BridgeNodeAt: Dynamic =
       BridgePosOfBlock === null ? null : table.nodeAt(BridgePosOfBlock);
     if (
@@ -197844,10 +196935,10 @@ function createOperationalTransformProseBridge(
           input2.bid === input.block,
       )?.runs ?? [],
     );
-    let BridgeData210: Dynamic = [...pmCharacterOffsets(BridgeData109)];
+    let BridgeData210 = [...pmCharacterOffsets(BridgeData109)];
     if (BridgeFind.length !== BridgeData210.length || BridgeFind.length === 0)
       return false;
-    let BridgeIdsIn: Dynamic = table2.idsIn(
+    let BridgeIdsIn = table2.idsIn(
       BridgePosOfBlock + 1,
       BridgePosOfBlock + 1 + BridgeNodeAt.content.size,
     );
@@ -197929,7 +197020,7 @@ function createOperationalTransformProseBridge(
         index32 += 1;
         continue;
       }
-      let BridgeData211: Dynamic = index32;
+      let BridgeData211: number = index32;
       let text: string = "";
       let minted: Dynamic = [];
       while (
@@ -197963,7 +197054,7 @@ function createOperationalTransformProseBridge(
       )
         return false;
       if (BridgeData311 === null && BridgeData310) return false;
-      let source: Dynamic = {
+      let source = {
         from: {
           kind: "inline",
           content: [
@@ -198050,7 +197141,7 @@ function createOperationalTransformProseBridge(
       state48 = null;
     }
     if (!state48) return false;
-    let BridgeData710: Dynamic = isBridgeTable(
+    let BridgeData710: boolean = isBridgeTable(
       state48,
       BridgeData610,
       haveRev,
@@ -198090,7 +197181,7 @@ function createOperationalTransformProseBridge(
     }
     return BridgeData710;
   };
-  let BridgePrint: Dynamic = {
+  let BridgePrint = {
     print: -1,
     table: -1,
     doomed: 0,
@@ -198124,7 +197215,7 @@ function createOperationalTransformProseBridge(
     } catch {
       return false;
     }
-    let BridgePosOfBlock: Dynamic = table2.posOfBlock(input.block);
+    let BridgePosOfBlock = table2.posOfBlock(input.block);
     let BridgeNodeAt: Dynamic =
       BridgePosOfBlock === null ? null : table.nodeAt(BridgePosOfBlock);
     if (
@@ -198193,7 +197284,7 @@ function createOperationalTransformProseBridge(
         options2?: Dynamic,
         ..._extraArguments: unknown[]
       ): undefined => {
-        let BridgeIdsIn: Dynamic =
+        let BridgeIdsIn =
           options2 !== null && context && context.size > 0
             ? table2.idsIn(options2 + 1, options2 + 1 + input2.content.size)
             : [];
@@ -198257,7 +197348,7 @@ function createOperationalTransformProseBridge(
       let values31: Dynamic = new (Set as Dynamic)();
       let foreign = false;
       let resolveBridgeOperation49 = (
-        input2?: unknown,
+        input2: string,
         ..._extraArguments: unknown[]
       ): Dynamic => resolveBridgeOperation4(input2);
       for (let [BridgeData110, BridgeData211] of BridgeFramesOut as Dynamic) {
@@ -198322,7 +197413,7 @@ function createOperationalTransformProseBridge(
       };
       if (foreign) return false;
       if (values31.size > 0) {
-        let BridgeData110: Dynamic = resolveBridgeChildCount(
+        let BridgeData110: string = resolveBridgeChildCount(
           BridgeData109,
           (input2?: Dynamic, ..._extraArguments: unknown[]) =>
             !values31.has(BridgeFind[input2] ?? ""),
@@ -198472,20 +197563,20 @@ function createOperationalTransformProseBridge(
               input3.bid === BridgeData211.attrs.bid,
           )?.runs[0]?.id;
           if (typeof BridgeFind !== "string") return;
-          let BridgeHolderOf: Dynamic = table2.holderOf(BridgeFind);
+          let BridgeHolderOf = table2.holderOf(BridgeFind);
           if (
             BridgeHolderOf === null ||
             BridgeHolderOf === BridgeData211.attrs.bid ||
             !bridgeMutableProseStructureIndex2.has(BridgeHolderOf)
           )
             return;
-          let BridgeData311: Dynamic = parseCharacterId(BridgeFind);
+          let BridgeData311 = parseCharacterId(BridgeFind);
           let isBridgeSome5 = (
             input3?: Dynamic,
             ..._extraArguments: unknown[]
           ): Dynamic =>
             input3.some((input4?: Dynamic, ..._extraArguments: unknown[]) => {
-              let BridgeData112: Dynamic = parseCharacterId(input4.id);
+              let BridgeData112 = parseCharacterId(input4.id);
               return (
                 !!BridgeData112 &&
                 !!BridgeData311 &&
@@ -198522,8 +197613,8 @@ function createOperationalTransformProseBridge(
             )
           )
             return;
-          let BridgePosOf: Dynamic = table2.posOf(BridgeFind);
-          let BridgePosOfBlock: Dynamic = table2.posOfBlock(BridgeHolderOf);
+          let BridgePosOf = table2.posOf(BridgeFind);
+          let BridgePosOfBlock = table2.posOfBlock(BridgeHolderOf);
           if (BridgePosOf === null || BridgePosOfBlock === null) return;
           let BridgeNodeAt: Dynamic = table.nodeAt(BridgePosOfBlock);
           if (
@@ -198800,7 +197891,7 @@ function createOperationalTransformProseBridge(
       )
         if (!BridgeOlds.slice.content.child(index33).isText) return null;
     }
-    let oldIds: Dynamic = table2.idsIn(
+    let oldIds = table2.idsIn(
       value + 1,
       value + 1 + options.content.size,
     );
@@ -198816,12 +197907,12 @@ function createOperationalTransformProseBridge(
     ];
     if (!BridgeData109 || !BridgeData210) return null;
     let isBridgeBlocks = (input2?: Dynamic, ..._extraArguments: unknown[]) => {
-      let BridgeData110: Dynamic = parseCharacterId(input2);
+      let BridgeData110 = parseCharacterId(input2);
       if (!BridgeData110) return false;
       for (let BridgeData111 of detail.blocks as Dynamic) {
         if (BridgeData111.bid === input) continue;
         for (let BridgeData112 of BridgeData111.runs as Dynamic) {
-          let BridgeData113: Dynamic = parseCharacterId(BridgeData112.id);
+          let BridgeData113 = parseCharacterId(BridgeData112.id);
           if (
             BridgeData113 &&
             BridgeData113.sess === BridgeData110.sess &&
@@ -198932,8 +198023,8 @@ function createOperationalTransformProseBridge(
             ? null
             : state.state.doc.nodeAt(BridgePosOfBlock);
         if (!BridgeNodeAt?.isTextblock) continue;
-        let named: Dynamic = table2.runsOf(BridgeData111)?.length ?? -1;
-        let shown: Dynamic = table2.idsIn(
+        let named = table2.runsOf(BridgeData111)?.length ?? -1;
+        let shown = table2.idsIn(
           BridgePosOfBlock + 1,
           BridgePosOfBlock + 1 + BridgeNodeAt.content.size,
         ).length;
@@ -199135,7 +198226,7 @@ function createOperationalTransformProseBridge(
   ) => {
     if (!table) return;
     let BridgeData109: Dynamic = entries31.get(input) ?? input;
-    let BridgePosOfBlock: Dynamic = table2.posOfBlock(BridgeData109);
+    let BridgePosOfBlock = table2.posOfBlock(BridgeData109);
     if (BridgePosOfBlock === null || BridgePosOfBlock > table.content.size)
       return;
     let state48: Dynamic = null;
@@ -199198,7 +198289,7 @@ function createOperationalTransformProseBridge(
             : resolveBridgeHolderOf(BridgeBefore);
         if (!resolveBridgePosOfBlock11(BridgeData110)) continue;
         block ??= BridgeData110;
-        let container: Dynamic = getBridgePosOfBlock2(BridgeData110);
+        let container = getBridgePosOfBlock2(BridgeData110);
         if (container)
           return {
             container: container,
@@ -199243,7 +198334,7 @@ function createOperationalTransformProseBridge(
         : []) as Dynamic) {
         if (!resolveBridgePosOfBlock11(BridgeData110)) continue;
         block ??= BridgeData110;
-        let container: Dynamic = getBridgePosOfBlock2(BridgeData110);
+        let container = getBridgePosOfBlock2(BridgeData110);
         if (container)
           return {
             container: container,
@@ -199790,12 +198881,12 @@ function createOperationalTransformProseBridge(
         );
     } else if (BridgeData310.caret && BridgeData510.kind === "text") {
       let { bid: bid, charId: charId }: Dynamic = BridgeData310.caret;
-      let BridgePosOf: Dynamic = charId === null ? null : table2.posOf(charId);
+      let BridgePosOf = charId === null ? null : table2.posOf(charId);
       let BridgeIdAt: Dynamic =
         BridgePosOf != null
           ? BridgePosOf + (table2.idAt(BridgePosOf + 1) === charId ? 2 : 1)
           : ((..._extraArguments: unknown[]): Dynamic => {
-              let BridgePosOfBlock: Dynamic = table2.posOfBlock(bid);
+              let BridgePosOfBlock = table2.posOfBlock(bid);
               return BridgePosOfBlock === null ? null : BridgePosOfBlock + 1;
             })();
       let selection2: Dynamic = state.state.selection;
@@ -199873,7 +198964,7 @@ function createOperationalTransformProseBridge(
     if (!input.partial && Array.isArray(input.comments))
       BridgeData103 = input.comments;
     if (!state || BridgeAnchors === undefined || input.partial) return;
-    let bridgeProseMirrorMapping: Dynamic = new (ProseMirrorMapping)(
+    let bridgeProseMirrorMapping = new (ProseMirrorMapping)(
       filterBridgeFilter().map(
         (input2?: Dynamic, ..._extraArguments: unknown[]): Dynamic =>
           input2.getMap(),
@@ -200010,7 +199101,7 @@ function createOperationalTransformProseBridge(
     options?: Dynamic,
     ..._extraArguments: unknown[]
   ) => {
-    let BridgePosOfBlock: Dynamic = table2.posOfBlock(input);
+    let BridgePosOfBlock = table2.posOfBlock(input);
     if (
       BridgePosOfBlock === null ||
       !table ||
@@ -200132,7 +199223,7 @@ function createOperationalTransformProseBridge(
     )
       return false;
     let block: Dynamic = input.block;
-    let BridgePosOfBlock: Dynamic = table2.posOfBlock(block);
+    let BridgePosOfBlock = table2.posOfBlock(block);
     let BridgeNodeAt: Dynamic =
       BridgePosOfBlock === null ? null : table.nodeAt(BridgePosOfBlock);
     if (!BridgeNodeAt) return false;
@@ -200418,7 +199509,7 @@ function createOperationalTransformProseBridge(
             : [],
       ),
     );
-    let BridgeSome: Dynamic =
+    let BridgeSome: boolean =
       isBridgeOperation5() ||
       entries10.size > 0 ||
       [...BridgeOrphans.keys()].some(
@@ -200634,7 +199725,7 @@ function createOperationalTransformProseBridge(
   ): undefined => {
     if (!state || !init.seated || !table || !Array.isArray(input.anchors))
       return;
-    let bridgeProseMirrorMapping: Dynamic = new (ProseMirrorMapping)(
+    let bridgeProseMirrorMapping = new (ProseMirrorMapping)(
       filterBridgeFilter().map(
         (input2?: Dynamic, ..._extraArguments: unknown[]): Dynamic =>
           input2.getMap(),
@@ -200652,7 +199743,7 @@ function createOperationalTransformProseBridge(
         typeof BridgeData111.to !== "number"
       )
         continue;
-      let BridgePosOfBlock: Dynamic = table2.posOfBlock(BridgeData111.bid);
+      let BridgePosOfBlock = table2.posOfBlock(BridgeData111.bid);
       let BridgeNodeAt: Dynamic =
         BridgePosOfBlock === null ? null : table.nodeAt(BridgePosOfBlock);
       if (BridgePosOfBlock === null || !BridgeNodeAt) continue;
@@ -200847,7 +199938,7 @@ function createOperationalTransformProseBridge(
         (table ?? state?.state.doc)?.descendants(
           (input2?: Dynamic, ..._extraArguments: unknown[]) => {
             let BridgeData110: Dynamic = blockIdOf(input2);
-            let BridgeData210: Dynamic =
+            let BridgeData210 =
               BridgeData110 === null ? null : parseCharacterId(BridgeData110);
             if (BridgeData210?.sess === message) table2.taught(BridgeData210.i);
             return !input2.isTextblock;
@@ -200855,7 +199946,7 @@ function createOperationalTransformProseBridge(
         );
         for (let BridgeData110 of table2.dump() as Dynamic)
           for (let BridgeData111 of BridgeData110.runs as Dynamic) {
-            let BridgeData112: Dynamic = parseCharacterId(BridgeData111.id);
+            let BridgeData112 = parseCharacterId(BridgeData111.id);
             if (BridgeData112?.sess === message)
               table2.taught(
                 BridgeData112.i + Math.max(0, BridgeData111.len - 1),
@@ -201210,7 +200301,7 @@ function createOperationalTransformProseBridge(
           }
           if (BridgeExternals.delete(input.opId)) {
             BridgeData28.delete(input.opId);
-            let BridgeOpId14: Dynamic = clearBridgeDelete3(input.opId, false);
+            let BridgeOpId14: boolean = clearBridgeDelete3(input.opId, false);
             console.error(
               "opPlugin: a queued payload was handed back by the link (after a whole seat) and cannot be placed again",
               input.opId,
@@ -201231,7 +200322,7 @@ function createOperationalTransformProseBridge(
           ),
         );
         let BridgeBack: Dynamic = detail.back?.ops;
-        let BridgeOpId42: Dynamic = isBridgeDelete(
+        let BridgeOpId42: boolean = isBridgeDelete(
           input.opId,
           BridgeOpId32 ?? BridgeBack,
           BridgeOpId22,
@@ -201242,7 +200333,7 @@ function createOperationalTransformProseBridge(
             resolveBridgeInsert(BridgeOpId32);
         if (BridgeExternals.delete(input.opId)) {
           BridgeData28.delete(input.opId);
-          let BridgeOpId13: Dynamic = clearBridgeDelete3(input.opId, false);
+          let BridgeOpId13: boolean = clearBridgeDelete3(input.opId, false);
           console.error(
             "opPlugin: a queued payload was handed back by the link (it named a retired block) and cannot be placed again",
             input.opId,
@@ -201317,7 +200408,7 @@ function createOperationalTransformProseBridge(
           BridgeOpId12.ids !== undefined
         )
           return false;
-        let BridgeNextFree: Dynamic =
+        let BridgeNextFree =
           typeof input2.next_free === "string"
             ? parseCharacterId(input2.next_free)
             : null;
@@ -201539,7 +200630,7 @@ function createOperationalTransformProseBridge(
           return resolveBridgeSince();
         if (klass !== null && !assert && !BridgeOpId12) {
           let detail6: Dynamic = input.detail;
-          let BridgeIsInteger3: Dynamic = ((
+          let BridgeIsInteger3 = ((
             input2?: unknown,
             ..._extraArguments: unknown[]
           ): null | number =>
@@ -201665,7 +200756,7 @@ function createOperationalTransformProseBridge(
           clearBridgeForget();
           zeroErrors++;
           BridgeAsserts.delete(input.opId);
-          let BridgeLimit: Dynamic =
+          let BridgeLimit: boolean =
             isOperationModelTooMany(input.reason, input.detail) ||
             input.reason === "limit";
           let resolveBridgeUnsupported = (
@@ -201744,7 +200835,7 @@ function createOperationalTransformProseBridge(
               detail7.was === "bad_op") &&
             (detail7.why === "model_balance" ||
               detail7.law === "model_balance");
-          let shaped: Dynamic =
+          let shaped: number =
             (BridgeBadRequest
               ? updateBridgeReason2(
                   BridgeOpId42?.ops,
@@ -201800,7 +200891,7 @@ function createOperationalTransformProseBridge(
             : null;
           BridgeUndoOps.delete(input.opId);
           BridgeUndoHist.delete(input.opId);
-          let BridgeIdConflict: Dynamic =
+          let BridgeIdConflict =
             BridgeSnap !== null &&
             (input.reason === "id_conflict" ||
               detail5?.room_reason === "id_conflict")
@@ -201938,7 +201029,7 @@ function createOperationalTransformProseBridge(
               input2?: Dynamic,
               ..._extraArguments: unknown[]
             ) => {
-              let BridgePosOfBlock: Dynamic = BridgeData113
+              let BridgePosOfBlock = BridgeData113
                 ? table2.posOfBlock(input2)
                 : null;
               if (!BridgeData113 || BridgePosOfBlock === null) return false;
@@ -202131,7 +201222,7 @@ function createOperationalTransformProseBridge(
                 if (BridgeOpId62 !== "") values29.add(BridgeOpId62);
                 while (values29.size > 64)
                   values29.delete(values29.values().next().value);
-                let BridgeData114: Dynamic =
+                let BridgeData114: boolean =
                   region || filterBridgeFilter().length > 0;
                 state44 = BridgeData114 ? BridgePaste : null;
                 resolveOperationModelValue10("zero_error.second_chance", {
@@ -202245,7 +201336,7 @@ function createOperationalTransformProseBridge(
               clearBridgeAtLeast();
               if (again) {
                 resolveBridgeMany2("fuse_struct");
-                let BridgeData114: Dynamic =
+                let BridgeData114: number =
                   region || resolveBridgeOperation11()
                     ? resolveBridgeText5(isBridgeKnown(true), true, table)
                     : 0;
@@ -202309,7 +201400,7 @@ function createOperationalTransformProseBridge(
             for (let BridgeData114 of BridgeData511 as Dynamic)
               if (table2.posOfBlock(BridgeData114) !== null)
                 values11.add(BridgeData114);
-            let BridgeData113: Dynamic =
+            let BridgeData113: boolean =
               BridgeData910 && resolveBridgeOperation9();
             if (BridgeData113)
               state15 ??= {
@@ -202392,7 +201483,7 @@ function createOperationalTransformProseBridge(
             ledger2?.settle(input.opId);
             resolveBridgeMany2("fuse_text");
             (BridgeData92.push as Dynamic)(...BridgeOpId72);
-            let BridgeData113: Dynamic =
+            let BridgeData113: number =
               region || resolveBridgeOperation11()
                 ? resolveBridgeText5(isBridgeKnown(true), true, table)
                 : 0;
@@ -202560,14 +201651,14 @@ function createOperationalTransformProseBridge(
                 input2?: Dynamic,
                 ..._extraArguments: unknown[]
               ): Dynamic => {
-                let BridgePosOfBlock: Dynamic =
+                let BridgePosOfBlock =
                   input2.bid === null ? null : table2.posOfBlock(input2.bid);
                 if (BridgePosOfBlock === null) return 0;
                 let BridgeFindIndex: Dynamic = BridgeData113.ops.findIndex(
                   (input3?: unknown, ..._extraArguments: unknown[]): Dynamic =>
                     resolveBridgeTarget2(input3).some(
                       (input4?: Dynamic, ..._extraArguments: unknown[]) => {
-                        let BridgePosOfBlock2: Dynamic =
+                        let BridgePosOfBlock2 =
                           table2.posOfBlock(input4);
                         let BridgeNodeAt: Dynamic =
                           BridgePosOfBlock2 === null
@@ -202796,7 +201887,7 @@ function createOperationalTransformProseBridge(
           : []),
       ]
         .map(
-          (input2?: unknown, ..._extraArguments: unknown[]): Dynamic =>
+          (input2: string, ..._extraArguments: unknown[]): Dynamic =>
             resolveBridgeHolderOf(input2) ??
             (table2.posOfBlock(input2) !== null ? input2 : undefined),
         )
@@ -202952,7 +202043,7 @@ function createOperationalTransformProseBridge(
               BridgeData310 = true;
       }
       let detail4: Dynamic = input.detail;
-      let BridgeIsInteger2: Dynamic = ((
+      let BridgeIsInteger2 = ((
         input2?: unknown,
         ..._extraArguments: unknown[]
       ): null | number =>
@@ -203388,7 +202479,7 @@ function createOperationalTransformProseBridge(
                 !(message !== "" && parseCharacterId(input2)?.sess === message),
             );
         })().map(
-          (input2?: unknown, ..._extraArguments: unknown[]): Dynamic =>
+          (input2: string, ..._extraArguments: unknown[]): Dynamic =>
             table2.posOf(input2),
         );
         let BridgeEvery: Dynamic =
@@ -203405,7 +202496,7 @@ function createOperationalTransformProseBridge(
           : [null, null];
         let BridgePosOf2: Dynamic =
           BridgeData110 ?? table2.posOf(BridgeData410);
-        let BridgeGetMap: Dynamic =
+        let BridgeGetMap =
           BridgePosOf2 === null
             ? null
             : new (ProseMirrorMapping)(
@@ -203704,8 +202795,8 @@ function createOperationalTransformProseBridge(
       typeof BridgeData109[1] !== "string"
     )
       return null;
-    let BridgePosOf: Dynamic = table2.posOf(BridgeData109[0]);
-    let BridgePosOf2: Dynamic = table2.posOf(BridgeData109[1]);
+    let BridgePosOf = table2.posOf(BridgeData109[0]);
+    let BridgePosOf2 = table2.posOf(BridgeData109[1]);
     if (
       BridgePosOf === null ||
       BridgePosOf2 === null ||
@@ -203745,7 +202836,7 @@ function createOperationalTransformProseBridge(
     }
     let getBridgeDetached = (input2?: Dynamic, ..._extraArguments: unknown[]) =>
       entries43.get(input2)?.state === "detached";
-    let bridgeProseMirrorMapping: Dynamic = new (ProseMirrorMapping)(
+    let bridgeProseMirrorMapping = new (ProseMirrorMapping)(
       filterBridgeFilter().map(
         (input2?: Dynamic, ..._extraArguments: unknown[]): Dynamic =>
           input2.getMap(),
@@ -203827,7 +202918,7 @@ function createOperationalTransformProseBridge(
           BridgeData210.push(BridgeData111);
       } else if (Array.isArray(BridgeData110.cells))
         for (let BridgeData112 of BridgeData110.cells as Dynamic) {
-          let BridgePosOfBlock: Dynamic =
+          let BridgePosOfBlock =
             typeof BridgeData112 === "string"
               ? table2.posOfBlock(BridgeData112)
               : null;
@@ -203865,7 +202956,7 @@ function createOperationalTransformProseBridge(
     value?: Dynamic,
     ..._extraArguments: unknown[]
   ): undefined => {
-    let bridgeProseMirrorMapping: Dynamic = new (ProseMirrorMapping)(
+    let bridgeProseMirrorMapping = new (ProseMirrorMapping)(
       filterBridgeFilter().map(
         (input2?: Dynamic, ..._extraArguments: unknown[]): Dynamic =>
           input2.getMap(),
@@ -203878,7 +202969,7 @@ function createOperationalTransformProseBridge(
         options2?: Dynamic,
         ..._extraArguments: unknown[]
       ): undefined => {
-        let bridgeProseMirrorMapping2: Dynamic =
+        let bridgeProseMirrorMapping2 =
           new (ProseMirrorMapping)();
         for (
           let BridgeData110 = options2 - 1;
@@ -204180,7 +203271,7 @@ function createOperationalTransformProseBridge(
     let BridgeData109: Dynamic = filterBridgeFilter();
     let BridgeData210: Dynamic = state;
     let tr2: Dynamic = BridgeData210.state.tr;
-    let bridgeProseMirrorMapping: Dynamic =
+    let bridgeProseMirrorMapping =
       new (ProseMirrorMapping)();
     let BridgeData310: Dynamic = [];
     let BridgeData410: Dynamic = [];
@@ -204428,7 +203519,7 @@ function createOperationalTransformProseBridge(
       value.ops.length > 0
     ) {
       let BridgeData110: Dynamic = table;
-      let BridgeDump: Dynamic = table2.dump();
+      let BridgeDump = table2.dump();
       table2.mapThrough(
         BridgeData410,
         BridgeData410.getMeta(OpInsertedClass) ?? [],
@@ -204462,7 +203553,7 @@ function createOperationalTransformProseBridge(
       table2.load(BridgeDump);
       if (state49 && state48)
         try {
-          let tr2: Dynamic = ProseMirrorEditorState.create({
+          let tr2 = ProseMirrorEditorState.create({
             doc: BridgeData110,
           }).tr;
           for (let BridgeData111 of BridgeData410.steps as Dynamic)
@@ -204476,7 +203567,7 @@ function createOperationalTransformProseBridge(
             for (let BridgeData113 of (resolveOperationModelMinted2(
               BridgeData111,
             ) ?? []) as Dynamic) {
-              let BridgeData114: Dynamic = parseCharacterId(BridgeData113);
+              let BridgeData114 = parseCharacterId(BridgeData113);
               if (BridgeData114 && BridgeData114.sess === message)
                 BridgeData510 = Math.max(BridgeData510, BridgeData114.i);
             }
@@ -204496,7 +203587,7 @@ function createOperationalTransformProseBridge(
     if (!BridgeData410 || !state) {
       if (state && table && BridgeGestureTails.delete(opId2) && !region) {
         resolveBridgeMany2("peel_noinv");
-        let BridgeData110: Dynamic = resolveBridgeText5(isBridgeKnown(true));
+        let BridgeData110: number = resolveBridgeText5(isBridgeKnown(true));
         if (!BridgeFinal)
           resolveBridgeGestureUndone(
             BridgeData110 > 0 ? "frozen" : "gesture_undone",
@@ -204605,7 +203696,7 @@ function createOperationalTransformProseBridge(
         input?: Dynamic,
         ..._extraArguments: unknown[]
       ): Dynamic => {
-        let BridgeData111: Dynamic = parseCharacterId(input.id);
+        let BridgeData111 = parseCharacterId(input.id);
         return (
           BridgeData111 !== null &&
           BridgeData311 !== undefined &&
@@ -204624,7 +203715,7 @@ function createOperationalTransformProseBridge(
           values32.has(textContent)
         )
           continue;
-        let BridgeRunsOf: Dynamic =
+        let BridgeRunsOf =
           table2.runsOf(BridgeData111.bid)?.toView() ?? [];
         if (BridgeRunsOf.length === 0 || BridgeRunsOf.some(resolveBridgeSess4))
           continue;
@@ -204673,7 +203764,7 @@ function createOperationalTransformProseBridge(
     let BridgeData910: Dynamic = isBridgeKept2(opId2, BridgeData410);
     BridgeData102 = false;
     state18 = BridgeData910 ? BridgeData910.kept : null;
-    let head: Dynamic = BridgeData910 ? 0 : getBridgeUndo(BridgeData410);
+    let head: number = BridgeData910 ? 0 : getBridgeUndo(BridgeData410);
     let BridgeData1010: Dynamic =
       !BridgeData910 &&
       head === 0 &&
@@ -204784,7 +203875,7 @@ function createOperationalTransformProseBridge(
       region = !state.state.doc.eq(BridgeData410.doc);
       if (BridgeSome2 && region && !BridgeData56) {
         resolveBridgeMany2("peel_stranded");
-        let BridgeData110: Dynamic = resolveBridgeText5(isBridgeKnown(true));
+        let BridgeData110: number = resolveBridgeText5(isBridgeKnown(true));
         if (!BridgeFinal)
           resolveBridgeGestureUndone(
             BridgeData110 > 0 ? "frozen" : "gesture_undone",
@@ -205220,7 +204311,7 @@ function createOperationalTransformProseBridge(
     resolveBridgeBlocks5(BridgeFilter, message13, true);
     return (..._extraArguments: unknown[]): undefined => {
       if (message === "") return;
-      let BridgeCounter: Dynamic = table2.counter() + 1;
+      let BridgeCounter = table2.counter() + 1;
       let renames: Dynamic = [];
       let names: Dynamic = new (Map as Dynamic)();
       let flat: Dynamic = new (Map as Dynamic)();
@@ -205411,7 +204502,7 @@ function createOperationalTransformProseBridge(
       if (context?.includes(BridgeData110) === true) {
         for (let BridgeData112 of (BridgeData310[BridgeData110] ??
           []) as Dynamic) {
-          let BridgeHolderOf: Dynamic = table2.holderOf(BridgeData112);
+          let BridgeHolderOf = table2.holderOf(BridgeData112);
           if (BridgeHolderOf === null) continue;
           values30.add(BridgeHolderOf);
           break;
@@ -205467,7 +204558,7 @@ function createOperationalTransformProseBridge(
           index32++;
           continue;
         }
-        let BridgeData112: Dynamic = index32;
+        let BridgeData112: number = index32;
         while (
           BridgeData112 + 1 < BridgeData212.length &&
           !values31.has(BridgeData212[BridgeData112 + 1])
@@ -205693,7 +204784,7 @@ function createOperationalTransformProseBridge(
             [argument, argument2]: Dynamic,
             ..._extraArguments: unknown[]
           ): Dynamic => {
-            let BridgeBlockAt: Dynamic = table2.blockAt(argument2.pos);
+            let BridgeBlockAt = table2.blockAt(argument2.pos);
             return [
               argument,
               BridgeBlockAt !== null &&
@@ -205708,7 +204799,7 @@ function createOperationalTransformProseBridge(
           },
         ),
       );
-      let BridgeCounter: Dynamic = table2.counter() + 1;
+      let BridgeCounter = table2.counter() + 1;
       let BridgeData110: Dynamic = [];
       let minted: Dynamic = BridgeData410.map(
         ({ dead: dead }: Dynamic, ..._extraArguments: unknown[]): Dynamic =>
@@ -205895,7 +204986,7 @@ function createOperationalTransformProseBridge(
     ..._extraArguments: unknown[]
   ) => {
     let BridgeData109: Dynamic = resolveBridgeBlocks7(input);
-    let BridgePosOfBlock: Dynamic =
+    let BridgePosOfBlock =
       BridgeData109 === undefined || !table
         ? null
         : table2.posOfBlock(BridgeData109);
@@ -206153,7 +205244,7 @@ function createOperationalTransformProseBridge(
       BridgeData510 = BridgeData510.slice(landed);
       BridgePosOfBlock2 = BridgePosOfBlock.slice(landed);
     }
-    let opId22: Dynamic = updateBridgeOpId5(
+    let opId22 = updateBridgeOpId5(
       opId2,
       BridgeData510,
       BridgePosOfBlock2,
@@ -206298,11 +205389,11 @@ function createOperationalTransformProseBridge(
     )
       return "comment";
     let isBridgeHolderOf = (
-      input2?: unknown,
+      input2: string,
       ..._extraArguments: unknown[]
     ): Dynamic => {
       if (input.has(input2) || options(input2)) return true;
-      let BridgeHolderOf: Dynamic = table2.holderOf(input2);
+      let BridgeHolderOf = table2.holderOf(input2);
       return BridgeHolderOf !== null && input.has(BridgeHolderOf);
     };
     if (resolveOperationModelFlatMap5(peers).some(isBridgeHolderOf))
@@ -206367,7 +205458,7 @@ function createOperationalTransformProseBridge(
     let values30: Dynamic = new (Set as Dynamic)();
     let BridgeData510: Dynamic = [];
     for (let BridgeData110 of BridgeData310 as Dynamic) {
-      let BridgePosOfBlock: Dynamic = table2.posOfBlock(BridgeData110.bid);
+      let BridgePosOfBlock = table2.posOfBlock(BridgeData110.bid);
       let BridgeNodeAt: Dynamic =
         BridgePosOfBlock === null ? null : table.nodeAt(BridgePosOfBlock);
       if (
@@ -206448,7 +205539,7 @@ function createOperationalTransformProseBridge(
     ] as Dynamic)
       BridgeData110.delete(opId2);
     BridgeReviveOthers.delete(opId2);
-    let BridgeOpId: Dynamic = updateBridgeOpId5(
+    let BridgeOpId = updateBridgeOpId5(
       opId2,
       BridgeFlat2,
       BridgeMinted,
@@ -206583,7 +205674,7 @@ function createOperationalTransformProseBridge(
       BridgeData410,
       (input?: Dynamic, ..._extraArguments: unknown[]): Dynamic => {
         let BridgeTarget2: Dynamic = BridgeData310[input].target?.ids?.[0];
-        let BridgePosOfBlock: Dynamic =
+        let BridgePosOfBlock =
           BridgeData510 && typeof BridgeTarget2 === "string"
             ? table2.posOfBlock(BridgeTarget2)
             : null;
@@ -206607,7 +205698,7 @@ function createOperationalTransformProseBridge(
       })
     )
       return false;
-    let BridgeOpId: Dynamic = updateBridgeOpId5(
+    let BridgeOpId = updateBridgeOpId5(
       opId2,
       BridgeTarget.ops,
       BridgeTarget.minted,
@@ -206907,7 +205998,7 @@ function createOperationalTransformProseBridge(
           : null;
         BridgeData110 = isOperationModelTarget10(
           input,
-          (input3?: unknown, ..._extraArguments: unknown[]): Dynamic =>
+          (input3: string, ..._extraArguments: unknown[]): Dynamic =>
             !values7.has(input3) &&
             (BridgeReminted?.has(input3) === true ||
               (BridgeUndo?.has(input3) !== true &&
@@ -206918,7 +206009,7 @@ function createOperationalTransformProseBridge(
                 !values8.has(input3) &&
                 !isBridgeRunsOf(input3))),
           input.undo
-            ? (input3?: unknown, ..._extraArguments: unknown[]): Dynamic =>
+            ? (input3: string, ..._extraArguments: unknown[]): Dynamic =>
                 resolveBridgeOperation4(input3) ||
                 resolveBridgeSess(input3) ||
                 BridgeCarried?.has(input3) === true
@@ -207625,7 +206716,7 @@ function createOperationalTransformProseBridge(
           typeof BridgeSource.content !== "string"
         )
           continue;
-        let BridgePosOf: Dynamic = table2.posOf(target.range[0]);
+        let BridgePosOf = table2.posOf(target.range[0]);
         let BridgeRange2 =
           BridgePosOf === null
             ? "?"
@@ -207975,7 +207066,7 @@ function createOperationalTransformProseBridge(
     let values30: Dynamic = new (Set as Dynamic)();
     let values210: Dynamic = new (Set as Dynamic)();
     let resolveBridgePosOf2 = (
-      input2?: unknown,
+      input2: string | null,
       ..._extraArguments: unknown[]
     ) =>
       typeof input2 === "string" &&
@@ -208011,8 +207102,8 @@ function createOperationalTransformProseBridge(
           target?.kind === "chars" &&
           typeof BridgeChars[0] === "string"
         ) {
-          let BridgePosOf: Dynamic = table2.posOf(BridgeChars[0]);
-          let BridgeBlockAt: Dynamic =
+          let BridgePosOf = table2.posOf(BridgeChars[0]);
+          let BridgeBlockAt =
             BridgePosOf === null ? null : table2.blockAt(BridgePosOf);
           if (BridgePosOf !== null && BridgeBlockAt)
             for (let BridgeData109 of table2.idsIn(
@@ -208220,7 +207311,7 @@ function createOperationalTransformProseBridge(
     ..._extraArguments: unknown[]
   ): undefined => {
     if (!BridgeData105 && !BridgeData106) return;
-    let BridgeData109: Dynamic = BridgeData106;
+    let BridgeData109: boolean = BridgeData106;
     BridgeData105 = false;
     BridgeData106 = false;
     if (!BridgeData109) return;
@@ -208275,7 +207366,7 @@ function createOperationalTransformProseBridge(
       (input2?: Dynamic, ..._extraArguments: unknown[]) =>
         input2 instanceof (ProseMirrorStep as Dynamic),
     );
-    let bridgeProseMirrorMapping: Dynamic = new (ProseMirrorMapping)(
+    let bridgeProseMirrorMapping = new (ProseMirrorMapping)(
       BridgeFilter.map(
         (input2?: Dynamic, ..._extraArguments: unknown[]): Dynamic =>
           input2.getMap(),
@@ -208343,7 +207434,7 @@ function createOperationalTransformProseBridge(
         (BridgeData109.side === "after" || BridgeData109.side === "before")
       )
         for (let BridgeData111 of values30 as Dynamic) {
-          let BridgeRunsOf: Dynamic = table2.runsOf(BridgeData111);
+          let BridgeRunsOf = table2.runsOf(BridgeData111);
           let BridgeRange2: Dynamic =
             BridgeRunsOf?.offsetOf(target.range[0]) ?? -1;
           if (!BridgeRunsOf || BridgeRange2 < 0) continue;
@@ -208417,9 +207508,9 @@ function createOperationalTransformProseBridge(
         )
           return operation;
         let BridgeRange2: Dynamic = target.range[0];
-        let BridgePosOf: Dynamic = table2.posOf(BridgeRange2);
+        let BridgePosOf = table2.posOf(BridgeRange2);
         let BridgeData109: Dynamic = resolveBridgeHolderOf(BridgeRange2);
-        let BridgePosOfBlock: Dynamic =
+        let BridgePosOfBlock =
           BridgeData109 === undefined ? null : table2.posOfBlock(BridgeData109);
         let BridgeNodeAt: Dynamic =
           BridgePosOfBlock === null
@@ -208512,7 +207603,7 @@ function createOperationalTransformProseBridge(
         input.resolve(BridgePosOf).parent.attrs.bid !== BridgeData109.bid
       )
         continue;
-      let tr2: Dynamic = ProseMirrorEditorState.create({
+      let tr2 = ProseMirrorEditorState.create({
         doc: input,
       }).tr;
       if (
@@ -208548,11 +207639,11 @@ function createOperationalTransformProseBridge(
     return null;
   };
   let state46: Dynamic = null;
-  let table3: Dynamic = null;
+  let table3: CharacterLedger | null = null;
   let isBridgeBuffered3 = (input?: Dynamic, ..._extraArguments: unknown[]) => {
     if (!state46) return false;
     if (input.length === 0) return true;
-    let tr2: Dynamic = ProseMirrorEditorState.create({
+    let tr2 = ProseMirrorEditorState.create({
       doc: state46.doc,
     }).tr;
     for (let BridgeData109 of input as Dynamic)
@@ -208572,7 +207663,7 @@ function createOperationalTransformProseBridge(
       )
     )
       tr2.setMeta("paste", true);
-    let BridgeCounter: Dynamic = table2.counter();
+    let BridgeCounter = table2.counter();
     try {
       let BridgeBuffered: Dynamic = resolveOperationModelLeadTails(
         tr2,
@@ -208623,7 +207714,7 @@ function createOperationalTransformProseBridge(
       BridgeData210.length === 0 &&
       !region
     ) {
-      let BridgeCounter: Dynamic = table2.counter();
+      let BridgeCounter = table2.counter();
       try {
         let BridgeGuarded: Dynamic = resolveOperationModelLeadTails(
           BridgeData109,
@@ -208668,11 +207759,11 @@ function createOperationalTransformProseBridge(
         )
       )
     ) {
-      table3 ??= createCharacterLedger(
+      const shadowTable = (table3 ??= createCharacterLedger(
         (..._extraArguments: unknown[]): Dynamic =>
           state46?.doc ?? resolveBridgeOperation7(),
         (..._extraArguments: unknown[]): string => message,
-      );
+      ));
       state46 = {
         base: base,
         doc: base,
@@ -208683,7 +207774,7 @@ function createOperationalTransformProseBridge(
       if (
         resolveOperationModelErr(
           (..._extraArguments: unknown[]) => (
-            table3.load(table2.dump(), false, true),
+            shadowTable.load(table2.dump(), false, true),
             false
           ),
           true,
@@ -208701,7 +207792,7 @@ function createOperationalTransformProseBridge(
     }
     let BridgeData310: Dynamic = state46;
     try {
-      let tr2: Dynamic = ProseMirrorEditorState.create({
+      let tr2 = ProseMirrorEditorState.create({
         doc: BridgeData310.doc,
       }).tr;
       for (let BridgeData110 of BridgeData109.steps as Dynamic)
@@ -208824,7 +207915,7 @@ function createOperationalTransformProseBridge(
         }
       }
       let BridgeData111: Dynamic = table;
-      let BridgeData211: Dynamic = region;
+      let BridgeData211: boolean = region;
       region = false;
       let BridgeSome: Dynamic =
         BridgeData211 &&
@@ -209024,7 +208115,7 @@ function createOperationalTransformProseBridge(
         cache6.has(BridgeData710)
       ) {
         let BridgeData113: Dynamic = cache6.get(BridgeData710);
-        let tr2: Dynamic = ProseMirrorEditorState.create({
+        let tr2 = ProseMirrorEditorState.create({
           doc: BridgeData111,
         }).tr;
         if (
@@ -209057,7 +208148,7 @@ function createOperationalTransformProseBridge(
             let BridgeNodeAt: Dynamic =
               state49 === null ? null : tr2.doc.nodeAt(state49);
             if (state49 === null || !BridgeNodeAt) continue;
-            let BridgeData116: Dynamic = [...pmCharacterOffsets(BridgeNodeAt)];
+            let BridgeData116 = [...pmCharacterOffsets(BridgeNodeAt)];
             let index32: number = 0;
             for (let BridgeData117 of BridgeData115.spans as Dynamic) {
               if (index32 >= BridgeData116.length) break;
@@ -209096,7 +208187,7 @@ function createOperationalTransformProseBridge(
         if (!resolveBridgeOperation11()) table = BridgeData110.state.doc;
         continue;
       }
-      let BridgeData810: Dynamic = text > 0 || BridgeData211;
+      let BridgeData810 = text > 0 || BridgeData211;
       let state48: Dynamic = null;
       let resolveBridgePaste = (
         input?: Dynamic,
@@ -209114,7 +208205,7 @@ function createOperationalTransformProseBridge(
         input?: unknown,
         ..._extraArguments: unknown[]
       ): Dynamic => {
-        let tr2: Dynamic = ProseMirrorEditorState.create({
+        let tr2 = ProseMirrorEditorState.create({
           doc: BridgeData111,
         }).tr;
         for (let BridgeData113 of BridgeData22.slice(0, input) as Dynamic)
@@ -209249,7 +208340,7 @@ function createOperationalTransformProseBridge(
         BridgeData610 > 0 &&
         BridgeData610 < text
       ) {
-        let BridgeCounter2: Dynamic = table2.counter();
+        let BridgeCounter2 = table2.counter();
         let BridgeBuffered2: Dynamic = resolveOperationModelLeadTails(
           resolveBridgePaste(state48, text),
           BridgeData111,
@@ -209341,7 +208432,7 @@ function createOperationalTransformProseBridge(
         options?: Dynamic,
         ..._extraArguments: unknown[]
       ): Dynamic => {
-        let tr2: Dynamic = ProseMirrorEditorState.create({
+        let tr2 = ProseMirrorEditorState.create({
           doc: BridgeData111,
         }).tr;
         let index32 = 0;
@@ -209403,7 +208494,7 @@ function createOperationalTransformProseBridge(
         input?: Dynamic,
         ..._extraArguments: unknown[]
       ): Dynamic => {
-        let tr2: Dynamic = ProseMirrorEditorState.create({
+        let tr2 = ProseMirrorEditorState.create({
           doc: BridgeData111,
         }).tr;
         let BridgeData113: Dynamic = [BridgeData111];
@@ -209450,7 +208541,7 @@ function createOperationalTransformProseBridge(
               BridgeResolve.parentOffset === BridgeResolve.parent.content.size
             )
               return false;
-            let BridgeInvert: Dynamic = new (ProseMirrorMapping)([
+            let BridgeInvert = new (ProseMirrorMapping)([
               ...tr2.mapping.maps,
             ]).invert();
             return (
@@ -209524,7 +208615,7 @@ function createOperationalTransformProseBridge(
             BridgeData113,
           );
           if (!BridgeData611) break;
-          let BridgeCounter2: Dynamic = table2.counter();
+          let BridgeCounter2 = table2.counter();
           let BridgeBuffered2: Dynamic = resolveOperationModelLeadTails(
             BridgeData611,
             BridgeData111,
@@ -209648,7 +208739,7 @@ function createOperationalTransformProseBridge(
               !(BridgeSteps2.from < BridgeSteps2.to)
             )
               return [];
-            let bridgeProseMirrorMapping: Dynamic =
+            let bridgeProseMirrorMapping =
               new (ProseMirrorMapping)();
             for (
               let BridgeData114 = input - 1;
@@ -209668,7 +208759,7 @@ function createOperationalTransformProseBridge(
               BridgeData114 < BridgeFrom2;
               BridgeData114++
             ) {
-              let BridgeIdAt: Dynamic = table2.idAt(BridgeData114);
+              let BridgeIdAt = table2.idAt(BridgeData114);
               if (BridgeIdAt !== null && BridgeIdAt !== BridgeData113.at(-1))
                 BridgeData113.push(BridgeIdAt);
             }
@@ -209767,7 +208858,7 @@ function createOperationalTransformProseBridge(
             )
               limit43++;
           if (limit43 > 1) {
-            let BridgeCounter2: Dynamic = table2.counter();
+            let BridgeCounter2 = table2.counter();
             let BridgeData114: Dynamic = isBridgeFailed(limit43);
             let BridgeReviveChars: Dynamic =
               (BridgeData13.reviveChars ||
@@ -209821,7 +208912,7 @@ function createOperationalTransformProseBridge(
                 BridgeData511
             )
               break;
-            let BridgeData213: Dynamic = limit43;
+            let BridgeData213: number = limit43;
             let BridgeData312: Dynamic;
             let BridgeData412: Dynamic = cache16.get(BridgeData114);
             if (BridgeData412 && BridgeData412 !== BridgeData611) {
@@ -209855,7 +208946,7 @@ function createOperationalTransformProseBridge(
                 break;
               BridgeData312 = BridgeEvery2;
             } else BridgeData312 = isBridgeFailed(limit43);
-            let BridgeCounter2: Dynamic = table2.counter();
+            let BridgeCounter2 = table2.counter();
             let BridgeGuarded =
               !!BridgeData312 &&
               !!resolveOperationModelLeadTails(
@@ -209886,7 +208977,7 @@ function createOperationalTransformProseBridge(
             limit43++
           ) {
             if (seen11.has(BridgeData22[limit43 - 1])) break;
-            let BridgeCounter2: Dynamic = table2.counter();
+            let BridgeCounter2 = table2.counter();
             let BridgeData114: Dynamic = isBridgeFailed(limit43);
             let BridgeGuarded: Dynamic =
               !!BridgeData114 &&
@@ -209932,7 +209023,7 @@ function createOperationalTransformProseBridge(
         }
         let BridgeData711: Dynamic = [];
         if (!BridgeData212 && state48 && BridgeData22.length > text) {
-          let tr2: Dynamic = ProseMirrorEditorState.create({
+          let tr2 = ProseMirrorEditorState.create({
             doc: BridgeData111,
           }).tr;
           for (let limit43 = 1; limit43 <= BridgeData22.length; limit43++) {
@@ -209961,7 +209052,7 @@ function createOperationalTransformProseBridge(
             let BridgeData115: Dynamic = isBridgeFailed(BridgeData114);
             if (!BridgeData115 || !BridgeData115.doc.eq(BridgeData111))
               continue;
-            let BridgeCounter2: Dynamic = table2.counter();
+            let BridgeCounter2 = table2.counter();
             let BridgeBuffered2: Dynamic = resolveOperationModelLeadTails(
               BridgeData115,
               BridgeData111,
@@ -209991,7 +209082,7 @@ function createOperationalTransformProseBridge(
           }
         BridgeData310 = state48?.doc ?? BridgeData310;
       }
-      let BridgeCounter: Dynamic = table2.counter();
+      let BridgeCounter = table2.counter();
       let guarded: Dynamic = resolveBridgeEvery3(text);
       resolveBridgePaste(state48, text);
       let BridgeBuffered: Dynamic = state48
@@ -210058,7 +209149,7 @@ function createOperationalTransformProseBridge(
         BridgeData710 instanceof (ProseMirrorAttrStep as Dynamic) &&
         BridgeData710.attr === "bid"
       ) {
-        let bridgeProseMirrorMapping: Dynamic =
+        let bridgeProseMirrorMapping =
           new (ProseMirrorMapping)(
             filterBridgeFilter()
               .slice(1)
@@ -210188,7 +209279,7 @@ function createOperationalTransformProseBridge(
           "unsupported",
           BridgeBuffered?.skipped?.[0] ?? "format",
         );
-        let bridgeProseMirrorMapping: Dynamic =
+        let bridgeProseMirrorMapping =
           new (ProseMirrorMapping)(
             filterBridgeFilter()
               .slice(1)
@@ -210697,7 +209788,7 @@ function createOperationalTransformProseBridge(
         ? BridgeFind.at
         : null;
     if (BridgeObject === null || BridgeObject.state === "detached") return null;
-    let bridgeProseMirrorMapping: Dynamic = new (ProseMirrorMapping)(
+    let bridgeProseMirrorMapping = new (ProseMirrorMapping)(
       filterBridgeFilter().map(
         (input2?: Dynamic, ..._extraArguments: unknown[]): Dynamic =>
           input2.getMap(),
@@ -210712,7 +209803,7 @@ function createOperationalTransformProseBridge(
     for (let BridgeData110 of (Array.isArray(BridgeObject.cells)
       ? BridgeObject.cells
       : []) as Dynamic) {
-      let BridgePosOfBlock: Dynamic =
+      let BridgePosOfBlock =
         typeof BridgeData110 === "string"
           ? table2.posOfBlock(BridgeData110)
           : null;
@@ -210896,8 +209987,8 @@ function createOperationalTransformProseBridge(
       ): Dynamic => {
         if (!init.seated) return null;
         let nSteps: Dynamic = filterBridgeFilter().length;
-        let busy: Dynamic = resolveOperationModelValue37(input);
-        let generation: Dynamic = table2.generation;
+        let busy: boolean = resolveOperationModelValue37(input);
+        let generation = table2.generation;
         let BridgeData109: Dynamic = state47;
         let { painted: painted, placed: placed }: Dynamic =
           BridgeData109 !== null &&
@@ -211256,7 +210347,7 @@ function createOperationalTransformProseBridge(
         return false;
       }
       if (editorState.getMeta("history$") !== undefined) {
-        let BridgeData110: Dynamic = isBridgeRedo(editorState2, editorState);
+        let BridgeData110 = isBridgeRedo(editorState2, editorState);
         if (BridgeData110) {
           resolveOperationModelValue10("history.dropped", BridgeData110);
           console.debug(
@@ -211265,7 +210356,7 @@ function createOperationalTransformProseBridge(
         }
         if (!table2.drifted) {
           let BridgeRehome: Dynamic = BridgeData12.rehome(
-            (input?: unknown, ..._extraArguments: unknown[]): Dynamic =>
+            (input: string, ..._extraArguments: unknown[]): Dynamic =>
               table2.holderOf(input),
             (input?: Dynamic, ..._extraArguments: unknown[]) =>
               table2.posOfBlock(input) !== null,
@@ -211286,7 +210377,7 @@ function createOperationalTransformProseBridge(
           let values30: Dynamic = new (Set as Dynamic)();
           for (let BridgeData111 of (BridgeRetired.get(input)?.runs ??
             []) as Dynamic) {
-            let BridgeData112: Dynamic = parseCharacterId(BridgeData111.id);
+            let BridgeData112 = parseCharacterId(BridgeData111.id);
             if (BridgeData112)
               for (let index32 = 0; index32 < BridgeData111.len; index32++)
                 values30.add(
@@ -211308,9 +210399,9 @@ function createOperationalTransformProseBridge(
           };
         };
         let BridgeMine2: Dynamic = isOperationModelMine(editorState, {
-          mine: (input?: unknown, ..._extraArguments: unknown[]): Dynamic =>
+          mine: (input: string, ..._extraArguments: unknown[]): Dynamic =>
             resolveBridgeOperation6(input) && !values8.has(input),
-          made: (input?: unknown, ..._extraArguments: unknown[]): Dynamic =>
+          made: (input: string, ..._extraArguments: unknown[]): Dynamic =>
             resolveBridgeSess2(input) && !values8.has(input),
           others: others,
           ownKept: ownKept,
@@ -211384,7 +210475,7 @@ function createOperationalTransformProseBridge(
           (BridgeData9.push as Dynamic)(...BridgeMine2.keptOwn);
           for (let { step: step, bid: bid } of BridgeMine2.puts as Dynamic) {
             let runsIn: Dynamic = [];
-            let BridgePosOfBlock: Dynamic = table2.posOfBlock(bid);
+            let BridgePosOfBlock = table2.posOfBlock(bid);
             let BridgeData111: Dynamic =
               BridgePosOfBlock === null
                 ? null
@@ -211402,7 +210493,7 @@ function createOperationalTransformProseBridge(
                 },
               );
             for (let BridgeData112 of BridgeData211 as Dynamic) {
-              let BridgeRunsOf: Dynamic = table2.runsOf(BridgeData112);
+              let BridgeRunsOf = table2.runsOf(BridgeData112);
               if (BridgeRunsOf && !BridgeRunsOf.opaque)
                 runsIn.push({
                   bid: BridgeData112,
@@ -211435,7 +210526,7 @@ function createOperationalTransformProseBridge(
                 ...BridgeMine2.lost,
               ],
               table,
-              (input?: unknown, ..._extraArguments: unknown[]): Dynamic =>
+              (input: string, ..._extraArguments: unknown[]): Dynamic =>
                 resolveBridgeOperation6(input) && !values8.has(input),
             );
             if (BridgeKept.length > 0) {
@@ -211696,7 +210787,7 @@ function createOperationalTransformProseBridge(
               filterBridgeFilter().length,
               from,
             );
-            let BridgeLost: Dynamic = BridgeData112.lost
+            let BridgeLost = BridgeData112.lost
               ? null
               : table2.idAt(BridgeData112.pos);
             if (BridgeLost !== null && BridgeData212.at(-1) !== BridgeLost)
@@ -211828,7 +210919,7 @@ function createOperationalTransformProseBridge(
         editorState.steps.length > 0 &&
         !BridgeData56
       ) {
-        let limit43: Dynamic = resolveProsePluginsListLevels2();
+        let limit43: number = resolveProsePluginsListLevels2();
         let BridgeData110: Dynamic = isBridgeGuarded(
           editorState,
           BridgeData109,
@@ -211911,7 +211002,7 @@ function createOperationalTransformProseBridge(
         queueMicrotask(isBridgeBuffered4);
         return resolveBridgeOperation49();
       }
-      let BridgeCounter: Dynamic = table2.counter();
+      let BridgeCounter = table2.counter();
       cache14.set(editorState, BridgeCounter);
       let BridgeData310: Dynamic = BridgeData109
         ? null
@@ -211941,7 +211032,7 @@ function createOperationalTransformProseBridge(
       }
       if (table2.doubted.size > 0) {
         let block: Dynamic = resolveOperationModelForEach5(editorState).find(
-          (input?: unknown, ..._extraArguments: unknown[]): Dynamic =>
+          (input: string, ..._extraArguments: unknown[]): Dynamic =>
             getBridgeDoubted(input),
         );
         if (block !== undefined) {
@@ -212329,7 +211420,7 @@ function createOperationalTransformProseBridge(
           if (!resolveBridgeOperation11()) table = BridgeData110.doc;
           continue;
         }
-        let BridgeData111: Dynamic =
+        let BridgeData111: boolean =
           resolveOperationModelAppendedTransaction(BridgeData110) ||
           resolveOperationModelAppendedTransaction2(BridgeData110);
         if (
@@ -213246,11 +212337,11 @@ function filterHeadingAndControlsKey(
   for (let value2 of options.sections as Dynamic) {
     if (!options.collapsed.has(value2.key) || value2.index < value) continue;
     value = value2.bodyTo;
-    let value3: Dynamic = resolveOperationModelChildCount2(
+    let value3: number = resolveOperationModelChildCount2(
       input,
       value2.bodyFrom,
     );
-    let value4: Dynamic = resolveOperationModelChildCount2(
+    let value4: number = resolveOperationModelChildCount2(
       input,
       value2.bodyTo,
     );
@@ -213341,7 +212432,7 @@ function isHeadingAndControlsDelete(
   ..._extraArguments: unknown[]
 ): Dynamic {
   if (event.isComposing) return null;
-  let value: Dynamic = TiptapisMacOS() || TiptapisiOS();
+  let value: boolean = TiptapisMacOS() || TiptapisiOS();
   if (event.key === "Delete") return true;
   if (event.key === "Backspace") return value && event.ctrlKey && event.altKey;
   if (!value || event.metaKey) return null;
@@ -214348,7 +213439,7 @@ initializeDesignSystemModule64();
 initializeDesignSystemModule65();
 resolveDesignSystemValue81();
 initializeDesignSystemModule67();
-var HeadingAndControlsData2: Dynamic = createContext(null);
+var HeadingAndControlsData2 = createContext(null);
 function resolveHeadingAndControlsValue3(
   ..._extraArguments: unknown[]
 ): Dynamic {
@@ -214393,11 +213484,11 @@ var resolveHeadingAndControlsColor: ReactComponentTypes.FunctionComponent<Static
   });
 };
 resolveHeadingAndControlsColor.displayName = "StaticSpark";
-var HeadingAndControlsData4: Dynamic = memo(resolveHeadingAndControlsColor);
+var HeadingAndControlsData4 = memo(resolveHeadingAndControlsColor);
 initializeReactDependencies();
 initializeDesignSystemModule16();
 initializeClassVarianceAuthority();
-var HeadingAndControlsVariants: Dynamic = cva(
+var HeadingAndControlsVariants = cva(
   "inline-flex shrink-0 select-none items-center justify-center overflow-hidden rounded-full font-sans font-medium leading-none",
   {
     variants: {
@@ -214580,7 +213671,7 @@ var HeadingAndControlsMax: Dynamic = forwardRef(
       )
       .slice(0, headingAndControlsLimit4);
     let value7: number = value6 - slice3.length;
-    let value8: Dynamic =
+    let value8 =
       slice3.length > 0
         ? slice3.join(", ") +
           (value7 > 0 ? `, and ${value7} other${value7 === 1 ? "" : "s"}` : "")
@@ -214858,17 +213949,17 @@ function isHeadingAndControlsTop(
     },
     [input, value],
   );
-  let value7: Dynamic = useSyncExternalStore(
+  let value7: boolean = useSyncExternalStore(
     value5,
     value6,
     (..._extraArguments: unknown[]) => false,
   );
   installDesignSystemUnpan(input && (value7 || value3 !== null), value4);
-  let value8: Dynamic = useMemo(
+  let value8 = useMemo(
     (..._extraArguments: unknown[]) => resolveHeadingAndControlsTop(value3),
     [value3],
   );
-  let value9: Dynamic = useRef(null);
+  let value9 = useRef(null);
   designSystemState2((..._extraArguments: unknown[]): undefined => {
     let current: Dynamic = value9.current;
     if (current !== null && (current.node !== value || value8 === undefined)) {
@@ -215121,8 +214212,8 @@ function resolveHeadingAndControlsValue6(
     [input],
   );
 }
-var HeadingAndControlsData14: Dynamic = createContext(undefined);
-var HeadingAndControlsData15: Dynamic = createContext(false);
+var HeadingAndControlsData14 = createContext(undefined);
+var HeadingAndControlsData15 = createContext(false);
 var headingAndControlsTextHeadingFontMediumBreakWords =
   "text-heading font-medium break-words";
 var headingAndControlsTextTitleFontSemiboldBreakWords =
@@ -215131,8 +214222,8 @@ var headingAndControlsMt05 = "-mt-0.5";
 var headingAndControlsMt1 = "-mt-1";
 var headingAndControlsMt1TextBodyFontNormalTextSecondaryBreakWords =
   "mt-1 text-body font-normal text-secondary break-words";
-var HeadingAndControlsData16: Dynamic = createContext(undefined);
-var HeadingAndControlsData17: Dynamic = createContext(false);
+var HeadingAndControlsData16 = createContext(undefined);
+var HeadingAndControlsData17 = createContext(false);
 var HeadingAndControlsTrigger2: Dynamic = forwardRef(
   (
     input: Dynamic,
@@ -215406,8 +214497,8 @@ function resolveHeadingAndControlsRoot(
   }: Dynamic,
   ..._extraArguments: unknown[]
 ): Dynamic {
-  let value: Dynamic = useRef(null);
-  let value2: Dynamic = useRef(null);
+  let value = useRef(null);
+  let value2 = useRef(null);
   resolveDesignSystemClose(value2, actionsRef);
   let value3: Dynamic =
     disablePointerDismissal ?? (dismissible === false ? true : undefined);
@@ -215449,7 +214540,7 @@ function resolveHeadingAndControlsRoot2(
   { actionsRef: actionsRef, ...input }: Dynamic,
   ..._extraArguments: unknown[]
 ): Dynamic {
-  let value: Dynamic = useRef(null);
+  let value = useRef(null);
   resolveDesignSystemClose(value, actionsRef);
   return designSystemState58(HeadingAndControlsData15.Provider, {
     value: true,
@@ -216378,9 +215469,9 @@ function ComboboxControl(
   let value20: Dynamic = value19 && !value16;
   let value21: Dynamic = input.multiple && (input.selectAllFooter ?? false);
   let value22: Dynamic = indicator ?? (value12 ? "checkbox" : "check");
-  let value23: Dynamic = resolveDesignSystemValue223();
+  let value23: boolean = resolveDesignSystemValue223();
   let value24: boolean = resolveDesignSystemValue225();
-  let value25: Dynamic = resolveDesignSystemValue224();
+  let value25: boolean = resolveDesignSystemValue224();
   let value26: Dynamic = disabled || value25;
   let value27: boolean = input.value !== undefined;
   let [value28, value29]: Dynamic = useState(
@@ -216446,7 +215537,7 @@ function ComboboxControl(
     },
     [value33],
   );
-  let value38: Dynamic = useRef(false);
+  let value38 = useRef(false);
   let value39: Dynamic = useRef(value30);
   useEffect(
     (..._extraArguments: unknown[]): undefined => {
@@ -216533,7 +215624,7 @@ function ComboboxControl(
   let [value43, value44]: Dynamic = useState(false);
   let [value45, value46]: Dynamic = useState("");
   let value47: Dynamic = useRef(null);
-  let value48: Dynamic = useRef(false);
+  let value48 = useRef(false);
   let value49: Dynamic = useCallback(
     (
       input2?: Dynamic,
@@ -216583,7 +215674,7 @@ function ComboboxControl(
     (..._extraArguments: unknown[]): Dynamic => value50(false),
     [value50],
   );
-  let value52: Dynamic = useRef(null);
+  let value52 = useRef(null);
   useImperativeHandle(
     value52,
     (..._extraArguments: unknown[]): Dynamic => ({
@@ -216710,8 +215801,8 @@ function ComboboxControl(
     [value61, value45, value22, value53, value60, announceGroupLabels],
   );
   let value63: Dynamic = useRef(null);
-  let value64: Dynamic = useRef(false);
-  let value65: Dynamic = useRef(false);
+  let value64 = useRef(false);
+  let value65 = useRef(false);
   useEffect(
     (..._extraArguments: unknown[]): undefined => {
       value65.current = value43;
@@ -216909,7 +216000,7 @@ function ComboboxControl(
       }),
     });
   let value79: string = fullWidth ? "w-full min-w-0" : "shrink-0";
-  let value80: Dynamic = useId();
+  let value80: string = useId();
   let {
     labelId: labelId,
     triggerId: triggerId,
@@ -217378,7 +216469,7 @@ function collectHeadingAndControlsSheetPopup(
     },
     [onLoadMore],
   );
-  let value24: Dynamic = useRef(null);
+  let value24 = useRef(null);
   useEffect(
     (..._extraArguments: unknown[]): undefined => {
       value24.current = null;
@@ -217404,7 +216495,7 @@ function collectHeadingAndControlsSheetPopup(
         (value24.current !== null && renderedItemCount <= value24.current)
       )
         return;
-      let value37: Dynamic = new (IntersectionObserver)(
+      let value37 = new (IntersectionObserver)(
         (input?: Dynamic, ..._extraArguments: unknown[]): undefined => {
           if (!input.at(-1)?.isIntersecting) return;
           value37.disconnect();
@@ -217455,14 +216546,14 @@ function collectHeadingAndControlsSheetPopup(
     },
     [displayedItems, value15, value30],
   );
-  let value32: Dynamic = useRef(null);
+  let value32 = useRef(null);
   let value33: Dynamic = resolveDesignSystemValue40(value32, sheetPopup.ref);
   let value34: Dynamic = useCallback(
     (..._extraArguments: unknown[]): Dynamic =>
       anchorRef.current?.querySelector('[role="combobox"]'),
     [anchorRef],
   );
-  let value35: Dynamic = useRef(null);
+  let value35 = useRef(null);
   let { ref: ref, nameProps: nameProps }: Dynamic =
     resolveHeadingAndControlsFallback(
       value35,
@@ -217785,9 +216876,9 @@ var HeadingAndControlsTrigger3: Dynamic = forwardRef(
     options: ReactComponentTypes.ForwardedRef<unknown>,
     ..._extraArguments: unknown[]
   ): Dynamic => {
-    let value: Dynamic = useId();
+    let value: string = useId();
     let value2: boolean = resolveDesignSystemValue225();
-    let value3: Dynamic =
+    let value3: boolean =
       input["aria-label"] !== undefined ||
       input["aria-labelledby"] !== undefined ||
       input.id !== undefined ||
@@ -217944,7 +217035,7 @@ function resolveHeadingAndControlsCurrent2(
   options?: Dynamic,
   ..._extraArguments: unknown[]
 ): Dynamic {
-  let value: Dynamic = useRef(null);
+  let value = useRef(null);
   return useCallback(
     (input2?: Dynamic, ..._extraArguments: unknown[]): undefined => {
       if (input === undefined || options === undefined) return;
@@ -218184,7 +217275,7 @@ var HeadingAndControlsSheetPopup: Dynamic = forwardRef(function (
   let value6: Dynamic = sheetPopup.sheet ? sheetPopup.chrome : null;
   let value7: Dynamic =
     sheetPopup.sheet && sheetParts !== null ? sheetParts : null;
-  let value8: Dynamic = useRef(null);
+  let value8 = useRef(null);
   let value9: Dynamic = useContext(HeadingAndControlsData21);
   let value10: Dynamic = useContext(HeadingAndControlsData22);
   let { ref: ref, nameProps: nameProps }: Dynamic =
@@ -218526,9 +217617,9 @@ var HeadingAndControlsChips: Dynamic = forwardRef(
     }),
 );
 HeadingAndControlsChips.displayName = "Combobox.Chips";
-var HeadingAndControlsData21: Dynamic = createContext(null);
-var HeadingAndControlsData22: Dynamic = createContext(false);
-var HeadingAndControlsData23: Dynamic = createContext(false);
+var HeadingAndControlsData21 = createContext(null);
+var HeadingAndControlsData22 = createContext(false);
+var HeadingAndControlsData23 = createContext(false);
 function resolveHeadingAndControlsReason(
   ..._extraArguments: unknown[]
 ): Dynamic {
@@ -218677,7 +217768,7 @@ var HeadingAndControlsRoot5 = Object.assign(ComboboxControl, {
   Collection: collectDesignSystemCollection,
 });
 initializeReactDependencies();
-var HeadingAndControlsData24: Dynamic = createContext(null);
+var HeadingAndControlsData24 = createContext(null);
 function resolveHeadingAndControlsValue13(
   ..._extraArguments: unknown[]
 ): Dynamic {
@@ -218733,7 +217824,7 @@ function resolveHeadingAndControlsAriaLabel2(
   element?: Dynamic,
   ..._extraArguments: unknown[]
 ): Dynamic {
-  let value: Dynamic = resolveHeadingAndControlsNone(
+  let value: string = resolveHeadingAndControlsNone(
     element,
     headingAndControlsMessage27,
   );
@@ -218849,8 +217940,8 @@ function filterHeadingAndControlsAriaLabel(
 ): Dynamic {
   let value: Dynamic = resolveHeadingAndControlsValue13();
   let value2: Dynamic = useRef(null);
-  let value3: Dynamic = useId();
-  let value4: Dynamic = useId();
+  let value3: string = useId();
+  let value4: string = useId();
   let [value5, value6]: Dynamic = useState(
     (..._extraArguments: unknown[]): Dynamic =>
       filterHeadingAndControlsSort(value?.tabs() ?? new (Map as Dynamic)()),
@@ -219067,8 +218158,8 @@ function updateHeadingAndControlsChildList(
 ): Dynamic {
   let [value2, value3]: Dynamic = useState(false);
   let value4: Dynamic = useRef(new (Map as Dynamic)());
-  let value5: Dynamic = useRef(0);
-  let value6: Dynamic = useRef(NaN);
+  let value5 = useRef(0);
+  let value6 = useRef(NaN);
   let value7: Dynamic = useRef(context);
   let value8: Dynamic = useRef(value);
   designSystemState2(
@@ -219226,7 +218317,7 @@ var HeadingAndControlsList2: Dynamic = forwardRef(
       ),
       [value4, value5],
     );
-    let value6: Dynamic = useRef(false);
+    let value6 = useRef(false);
     designSystemState2(
       (..._extraArguments: unknown[]): undefined => {
         if (!value4 && value6.current) {
@@ -219291,7 +218382,7 @@ var HeadingAndControlsDisabledReason: Dynamic = forwardRef(
     options: ReactComponentTypes.ForwardedRef<unknown>,
     ..._extraArguments: unknown[]
   ): Dynamic => {
-    let value: Dynamic = useId();
+    let value: string = useId();
     let value2 = !!input2.disabled && isDesignSystemValue10(disabledReason);
     let value3: Dynamic = resolveHeadingAndControlsValue13()?.registerTab;
     let { value: value4 }: Dynamic = input2;
@@ -219525,8 +218616,8 @@ function updateHeadingAndControlsToast(
   let value6: Dynamic = resolveDesignSystemValue36("dismiss", "Dismiss");
   let { update: update }: Dynamic = resolveHeadingAndControlsToasts();
   let value7: Dynamic = useContext(HeadingAndControlsData30);
-  let value8: Dynamic = useRef(null);
-  let value9: Dynamic = useRef("");
+  let value8 = useRef(null);
+  let value9 = useRef("");
   let value10: Dynamic = toast.data?.titleNode;
   let value11: Dynamic = toast.data?.count ?? 1;
   let id2: Dynamic = toast.id;
@@ -219552,7 +218643,7 @@ function updateHeadingAndControlsToast(
         }
       };
       value18();
-      let observer: Dynamic = new (MutationObserver)(value18);
+      let observer = new (MutationObserver)(value18);
       observer.observe(current, {
         characterData: true,
         childList: true,
@@ -219656,7 +218747,7 @@ function updateHeadingAndControlsToast(
     }),
   });
 }
-var HeadingAndControlsData30: Dynamic = createContext(null);
+var HeadingAndControlsData30 = createContext(null);
 function resolveHeadingAndControlsPinned(
   { pinned: pinned, onDismiss: onDismiss }: Dynamic,
   ..._extraArguments: unknown[]
@@ -219731,7 +218822,7 @@ function installHeadingAndControlsCtx(
     slotRef: slotRef,
     focusWasInsideRef: focusWasInsideRef,
   }: Dynamic = ctx;
-  let value: Dynamic = useRef(null);
+  let value = useRef(null);
   useEffect(
     (..._extraArguments: unknown[]): Dynamic => {
       let current: Dynamic = slotRef.current;
@@ -219878,8 +218969,8 @@ function ResolveHeadingAndControlsTimeout2Component(
 ): Dynamic {
   let [value, value2]: Dynamic = useState(null);
   let value3: Dynamic = useRef(value);
-  let value4: Dynamic = useRef(null);
-  let value5: Dynamic = useRef(false);
+  let value4 = useRef(null);
+  let value5 = useRef(false);
   let value6: Dynamic = useCallback(
     (input?: unknown, ..._extraArguments: unknown[]): undefined => {
       let current: Dynamic = value3.current;
@@ -220209,7 +219300,7 @@ function resolveDocumentInteractionsLook(
   };
 }
 var documentInteractionsLimit3 = 3;
-var documentInteractionsCreateElementAlias: Dynamic = createElement;
+var documentInteractionsCreateElementAlias = createElement;
 var DocumentInteractionsEmail: Dynamic = forwardRef(function (
   { name: name, email: email, color: color, style: style, ...input }: Dynamic,
   options: ReactComponentTypes.ForwardedRef<unknown>,
@@ -220291,7 +219382,7 @@ function resolveDocumentInteractionsPeopleMark(
   options?: Dynamic,
   ..._extraArguments: unknown[]
 ) {
-  let value: Dynamic = createRoot(input);
+  let value = createRoot(input);
   value.render(
     createReactElement(ResolveDesignSystemDensityComponent, {
   className: "contents",
@@ -220387,7 +219478,7 @@ function filterDocumentInteractionsFilter(
   input?: Dynamic,
   ..._extraArguments: unknown[]
 ) {
-  let filtered: Dynamic = documentInteractionsImageVideoFileValues.filter(
+  let filtered = documentInteractionsImageVideoFileValues.filter(
     (input2: string, ..._extraArguments: unknown[]) => input[input2] > 0,
   );
   if (filtered.length === 0) return "";
@@ -220784,7 +219875,7 @@ var LfileDropIndicatorExtension: Dynamic = TiptapExtension.create({
         ..._extraArguments: unknown[]
       ): Dynamic =>
       (..._extraArguments: unknown[]): Dynamic => {
-        let value2: Dynamic = document.createElement(
+        let value2 = document.createElement(
           options && !context ? "div" : "span",
         );
         if (context) {
@@ -221234,7 +220325,7 @@ var resolveDocumentInteractionsVert = (
   ..._extraArguments: unknown[]
 ) => {
   let value: Dynamic = input.doc.resolve(input.before(options));
-  let value2: Dynamic = nextCell(value, "vert", context);
+  let value2 = nextCell(value, "vert", context);
   if (value2) return ProseMirrorSelection.near(value2, 1);
   return ProseMirrorSelection.near(
     input.doc.resolve(context < 0 ? value.before(-1) : value.after(-1)),
@@ -221300,7 +220391,7 @@ var isDocumentInteractionsVert =
       if (!resolveDocumentInteractionsCell(value4)) return false;
       if (context) {
         let value5: Dynamic = editorState.doc.resolve($head.before(value3));
-        let value6: Dynamic = nextCell(value5, "vert", input);
+        let value6 = nextCell(value5, "vert", input);
         let $anchor: Dynamic = editorState.selection.$anchor;
         let value7 =
           $anchor.depth >= value3 && $anchor.before(value3) === value5.pos;
@@ -221454,9 +220545,9 @@ var resolveDocumentInteractionsFindFrom = (
   context?: Dynamic,
   ..._extraArguments: unknown[]
 ): Dynamic => {
-  let value: Dynamic = ProseMirrorSelection.findFrom(input, -1, true);
+  let value = ProseMirrorSelection.findFrom(input, -1, true);
   if (value && value.from > options && value.from < context) return value.from;
-  let value2: Dynamic = ProseMirrorSelection.findFrom(input, 1, true);
+  let value2 = ProseMirrorSelection.findFrom(input, 1, true);
   return value2 && value2.from > options && value2.from < context
     ? value2.from
     : null;
@@ -221495,7 +220586,7 @@ var isDocumentInteractionsNodeAt = (
       let value5: Dynamic = options + 1 + options2;
       let value6: Dynamic = resolveDocumentInteractionsEvNodeDOM(input, value5);
       if (!value6) return false;
-      let value7: Dynamic = resolveDocumentInteractionsValue9(
+      let value7: number = resolveDocumentInteractionsValue9(
         value,
         value6.top,
         value6.bottom,
@@ -221578,7 +220669,7 @@ function isDocumentInteractionsTable(
           }
           if (value13.top < value10) value10 = value13.top;
           if (value13.bottom > value11) value11 = value13.bottom;
-          let value14: Dynamic =
+          let value14: number =
             resolveDocumentInteractionsValue9(
               context,
               value13.left,
@@ -222029,7 +221120,7 @@ function resolveDocumentInteractionsEvDispatch(
     if (input.state === state) return null;
   }
   let firstChild: Dynamic = input.state.doc.firstChild;
-  let value2: Dynamic = firstChild
+  let value2 = firstChild
     ? ProseMirrorSelection.findFrom(
         input.state.doc.resolve(firstChild.nodeSize),
         1,
@@ -222232,7 +221323,7 @@ function resolveDocumentInteractionsImage(
   let state: Dynamic = value5.state;
   let media: Dynamic = state.schema.nodes.media;
   if (!media) return null;
-  let value8: Dynamic = /^[0-9a-f]{64}$/;
+  let value8 = /^[0-9a-f]{64}$/;
   let items: Dynamic = [];
   let index: number = 0;
   let items2: Dynamic = [];
@@ -222322,7 +221413,7 @@ function resolveDocumentInteractionsImage(
   if (value7 !== null) tr2 = tr2.insert(value7, items);
   else if (value4 && !value) {
     let value17: number = Math.min(value4.pos, state.doc.content.size);
-    let value18: Dynamic =
+    let value18: number =
       value4.to === null
         ? value17
         : Math.min(value4.to, state.doc.content.size);
@@ -222343,7 +221434,7 @@ function resolveDocumentInteractionsImage(
         : tr2.insert(resolveDocumentInteractionsFrom3(state, value17), items);
   } else if (value4) {
     let value17: number = Math.min(value4.pos, state.doc.content.size);
-    let value18: Dynamic =
+    let value18: boolean =
       !isRenderedCodeAndProofreadingResolve(state, {
         from: state.selection.head,
         to: state.selection.head,
@@ -222364,7 +221455,7 @@ function resolveDocumentInteractionsImage(
         ? value20.tr.insert(value20.selection.to, items)
         : tr2.insert(resolveDocumentInteractionsFrom3(state, value17), items);
   } else if (!value2 && value6 && !value) {
-    let value17: Dynamic = resolveOperationModelCell3(state.selection);
+    let value17 = resolveOperationModelCell3(state.selection);
     tr2 =
       value17.cell || value17.cross
         ? tr2.insert(resolveDocumentInteractionsSelection(state), items)
@@ -222475,7 +221566,7 @@ var resolveDocumentInteractionsClaudeAddedATableOf = (
 ) => "Claude added a table of " + input + (input === 1 ? " row." : " rows.");
 var documentInteractionsAskedClaudePressEscapeToStop =
   "Asked Claude. Press Escape to stop.";
-var CLAUDE_REQUEST_STOP_MESSAGES: Dynamic = {
+var CLAUDE_REQUEST_STOP_MESSAGES = {
   stopped_early: "Stopped. Your request is back in the box.",
   stopped_waiting: "Claude may finish anyway. Your request is still here.",
   undone:
@@ -222636,7 +221727,7 @@ function resolveDocumentInteractionsSeat(
   let index: number = 0;
   for (let index2 = 0; index2 < input.childCount; index2++) {
     let value3: Dynamic = input.child(index2);
-    let value4: Dynamic = index;
+    let value4: number = index;
     index += value3.nodeSize;
     if (index2 === 0 && value2) continue;
     if (value3.isTextblock && value3.childCount === 0 && !isHeading(value3))
@@ -223415,7 +222506,7 @@ function installDocumentInteractionsMsgKind(
     ..._extraArguments: unknown[]
   ): undefined => {
     try {
-      let value5: Dynamic = resolveDocumentInteractionsSlice(context);
+      let value5: string = resolveDocumentInteractionsSlice(context);
       let {
         msgKind = resolveDocumentInteractionsMsgKind2(context, value5).msgKind,
         ident: ident,
@@ -223502,7 +222593,7 @@ function resolveDocumentInteractionsBlob2(
 ): Dynamic {
   let value: Dynamic = resolveProsePluginsSafeParse(input.src);
   if (value) return value.kind === "blob" ? `sha:${value.sha}` : value.url;
-  let value2: Dynamic = resolveProsePluginsTest17(input.blob);
+  let value2 = resolveProsePluginsTest17(input.blob);
   return value2 === null ? null : `ref:${value2}`;
 }
 function resolveDocumentInteractionsParagraph(
@@ -224039,7 +223130,7 @@ function resolveDocumentInteractionsFrom5(
   input?: Dynamic,
   ..._extraArguments: unknown[]
 ): Dynamic {
-  let value: Dynamic = new (ProseMirrorSlice)(
+  let value = new (ProseMirrorSlice)(
     ProseMirrorFragment.from([
       input.prev.type.create(input.prev.attrs),
       input.list.type.create(input.list.attrs),
@@ -224091,7 +223182,7 @@ function resolveDocumentInteractionsValidContent2(
       node.type.create(node.attrs),
     ),
   );
-  let value2: Dynamic = new (ProseMirrorSlice)(
+  let value2 = new (ProseMirrorSlice)(
     ProseMirrorFragment.from([
       value,
       options.list.type.create(options.list.attrs),
@@ -224437,7 +223528,7 @@ function openImageResizePopover(
     };
   }
   let count = 20;
-  let mapped: Dynamic = ["e", "w"].map(
+  let mapped = ["e", "w"].map(
     (input2: string, ..._extraArguments: unknown[]) => {
       let value16 = document.createElement("div");
       value16.className = `lfile-imghandle ${input2}`;
@@ -224984,7 +224075,7 @@ function openImageCropPopover(
   value.tabIndex = -1;
   value.setAttribute("role", "group");
   value.setAttribute("aria-label", "Crop image");
-  let mapped: Dynamic = ["n", "s", "w", "e"].map(
+  let mapped = ["n", "s", "w", "e"].map(
     (input2: string, ..._extraArguments: unknown[]) => {
       let value27 = document.createElement("div");
       value27.className = `lfile-crophandle ${input2}`;
@@ -225135,7 +224226,7 @@ function openImageCropPopover(
     if (!value27) return false;
     let value28: Dynamic = input2.state.doc.nodeAt(value27.pos);
     if (!value28) return false;
-    let value29: Dynamic = (resolveEditorMediaWrapper(value28.attrs)
+    let value29 = (resolveEditorMediaWrapper(value28.attrs)
       ? resolveProsePluginsEvery(value28.attrs.crop)
       : null) ?? {
       x: 0,
@@ -226427,7 +225518,7 @@ function resolveDocumentInteractionsGetMeta(
         let value8: number = value7 - context2;
         let value9: number = options2 - input2;
         if (input2 >= value4 && options2 <= value5) {
-          let value10: Dynamic = input2 - value4 + index2;
+          let value10: number = input2 - value4 + index2;
           if (value10 <= value2.length)
             value2 = (
               value2.slice(0, value10) +
@@ -226570,7 +225661,7 @@ function collectDocumentInteractionsPos(
   context?: Dynamic,
   ..._extraArguments: unknown[]
 ): Dynamic {
-  let value: Dynamic = resolveDocumentInteractionsNodeAt2(
+  let value = resolveDocumentInteractionsNodeAt2(
     input.doc,
     input.mapping.map(options.pos, 1),
     options.chipId ?? null,
@@ -226863,7 +225954,7 @@ var documentInteractionsProseMirrorPlugin: Dynamic =
           value2 && "phase" in value2 && value2.phase.pos !== undefined
             ? value2.phase.nonce
             : null;
-        let value5: Dynamic =
+        let value5: boolean =
           input.getMeta(OpRemoteClass) !== undefined && getOperationModelView();
         if (input.docChanged && asks.length > 0) {
           let items: Dynamic = [];
@@ -227384,7 +226475,7 @@ function clearDocumentInteractionsView(
   let value: Dynamic = resolveDocumentInteractionsView3(input);
   if (!value || value.ask.phase !== "sending") return;
   let { view: view, ask: ask }: Dynamic = value;
-  let value2: Dynamic = resolveDocumentInteractionsNodeAt2(
+  let value2 = resolveDocumentInteractionsNodeAt2(
     view.state.doc,
     ask.pos,
     ask.chipId ?? null,
@@ -227488,7 +226579,7 @@ function isDocumentInteractionsEditable2(
 ) {
   if (!input.editable) return false;
   let doc: Dynamic = input.state.doc;
-  let value: Dynamic = resolveDocumentInteractionsNodeAt2(
+  let value = resolveDocumentInteractionsNodeAt2(
     doc,
     options.pos,
     options.chipId ?? null,
@@ -227643,7 +226734,7 @@ async function loadDocumentInteractionsWhy(
       ok: false,
       why: "gone",
     };
-  let value4: Dynamic = resolveDocumentInteractionsNodeAt2(
+  let value4 = resolveDocumentInteractionsNodeAt2(
     view.state.doc,
     value3.ask.pos,
     value3.ask.chipId ?? null,
@@ -228725,7 +227816,7 @@ function createClaudeWritingAnimation(
       ),
     );
     for (let value48 of input2.lines as Dynamic) {
-      let value49: Dynamic = resolveDocumentInteractionsValue39(value48);
+      let value49: string = resolveDocumentInteractionsValue39(value48);
       items5.push(
         value28(documentInteractionsLimit3003),
         (..._extraArguments: unknown[]) => {
@@ -228752,7 +227843,7 @@ function createClaudeWritingAnimation(
       ) {
         let value48: Dynamic = items[index];
         if (value48.kind === "row") {
-          let value49: Dynamic = value38();
+          let value49: boolean = value38();
           if (value49 && index + 1 >= items.length && !value12) {
             value32 = true;
             return false;
@@ -228835,7 +227926,7 @@ function createClaudeWritingAnimation(
       value33 = null;
       let value48: Dynamic = items[index++];
       if (value10 === "outline" && value48.kind === "heading") {
-        let value50: Dynamic =
+        let value50: boolean =
           !value26 &&
           resolveDocumentInteractionsValue40(
             value48.text,
@@ -229489,12 +228580,12 @@ function filterDocumentInteractionsFrom(
       continue;
     }
     let value17 = value10 + value9.parent.nodeSize - 1;
-    let value18: Dynamic = resolveDocumentInteractionsValue46(
+    let value18: number = resolveDocumentInteractionsValue46(
       options.map(value5.shownTo, 1),
       value10 + 1,
       value17,
     );
-    let value19: Dynamic = resolveDocumentInteractionsValue46(
+    let value19: number = resolveDocumentInteractionsValue46(
       options.map(value5.landedTo, -1),
       value18,
       value17,
@@ -233295,7 +232386,7 @@ function isDocumentInteractionsFrom3(
       resolveDocumentInteractionsSome3(state, value6, value2)
     )
       continue;
-    let value7: Dynamic = value5.isTextblock
+    let value7 = value5.isTextblock
       ? ProseMirrorTextSelection.create(state.doc, value6 + 1)
       : ProseMirrorSelection.findFrom(state.doc.resolve(value6 + 1), 1, true);
     if (!value7 || value7.from <= value6 || value7.to >= value2) continue;
@@ -233316,7 +232407,7 @@ function isDocumentInteractionsFrom3(
   if (!context || !paragraph || resolveDocumentInteractionsDone(state))
     return true;
   let size: Dynamic = state.doc.content.size;
-  let value3: Dynamic = ProseMirrorcloseHistory(state.tr).insert(
+  let value3 = ProseMirrorcloseHistory(state.tr).insert(
     size,
     paragraph.create(),
   );
@@ -233394,7 +232485,7 @@ function isDocumentInteractionsPos3(
         node: parent,
       },
     );
-    let value7: Dynamic = ProseMirrorcloseHistory(state.tr);
+    let value7 = ProseMirrorcloseHistory(state.tr);
     if (!value6.into) value7.insert(value6.below, value6.make());
     value7.setSelection(
       ProseMirrorTextSelection.create(value7.doc, value6.below + 1),
@@ -233495,14 +232586,14 @@ function resolveDocumentInteractionsFrom7(
     : null;
 }
 var documentInteractionsWeakSet3: Dynamic = new (WeakSet as Dynamic)();
-var setTimeoutReference4: Dynamic = (globalThis).setTimeout;
+var setTimeoutReference4 = (globalThis).setTimeout;
 var documentInteractionsLimit08: number = 0;
 function updateDocumentInteractionsRebuild(
   input?: Dynamic,
   ..._extraArguments: unknown[]
 ): undefined {
   if (documentInteractionsWeakSet3.has(input) || input.isDestroyed) return;
-  let value: Dynamic = getDocumentInteractionsNEGATIVEINFINITY(input);
+  let value: number = getDocumentInteractionsNEGATIVEINFINITY(input);
   let value2 =
     value < documentInteractionsLimit502
       ? Math.min(
@@ -233647,7 +232738,7 @@ var documentInteractionsProseMirrorPlugin4: Dynamic =
         let value6: Dynamic =
           input.getMeta("composition") !== undefined || options.held;
         let value7 = input.getMeta(OpSnapshotClass) !== undefined;
-        let value8: Dynamic =
+        let value8: boolean =
           !value7 &&
           input.getMeta(OpRemoteClass) !== undefined &&
           getOperationModelView(LdocAgentSweepDoorPluginKey.get(value));
@@ -234433,7 +233524,7 @@ function createLiveCellsPlugin(..._extraArguments: unknown[]): Dynamic {
             input.mapping.map(value6.pos + 1),
             value5,
           );
-          let value8: Dynamic = value7
+          let value8 = value7
             ? isDocumentInteractionsIsText(value7.node)
             : undefined;
           if (value7?.key === value6.key && value8 === options.get(value6.key))
@@ -234534,7 +233625,7 @@ var isDocumentInteractionsResolve = (
 ) => {
   let value: Dynamic = input.state.doc.resolve(options);
   if (!value.parent.isTextblock || value.parent.type.spec.code) return false;
-  let value2: Dynamic = TiptapgetTextContentFromNodes(value) + context;
+  let value2: string = TiptapgetTextContentFromNodes(value) + context;
   return DocumentInteractionsData12.some(
     (input2: RegExp, ..._extraArguments: unknown[]): Dynamic =>
       input2.test(value2),
@@ -235166,7 +234257,7 @@ var resolveDocumentInteractionsValue59 = (
   input?: unknown,
   ..._extraArguments: unknown[]
 ): Dynamic => OpPastePluginKey.getState(input)?.offer ?? null;
-var DocumentInteractionsData13: Dynamic = ProseMirror__endComposition ?? null;
+var DocumentInteractionsData13 = ProseMirror__endComposition ?? null;
 var resolveDocumentInteractionsClipboardData = (
   ..._extraArguments: unknown[]
 ): Dynamic =>
@@ -235198,7 +234289,7 @@ function isDocumentInteractionsRulesAsLines(
       )
   )
     return false;
-  let value: Dynamic = isDocumentInteractionsLen(input, {
+  let value: string = isDocumentInteractionsLen(input, {
     rulesAsLines: !!options.inCell,
     quotesAsLines: !!options.inCell,
   });
@@ -235343,7 +234434,7 @@ var resolveDocumentInteractionsText = (
       text: input,
     },
   ]);
-var DocumentInteractionsData14: Dynamic = resolveDocumentInteractionsText("");
+var DocumentInteractionsData14: number = resolveDocumentInteractionsText("");
 var resolveDocumentInteractionsFrom8 = (
   editorState?: Dynamic,
   ..._extraArguments: unknown[]
@@ -235676,7 +234767,7 @@ function isDocumentInteractionsLen(
   let text: string = "";
   let items: Dynamic = [];
   let value: Dynamic = null;
-  let state: Dynamic = {
+  let state = {
     ch: "`",
     len: 3,
     tail: "",
@@ -236423,7 +235514,7 @@ function collectDocumentInteractionsFrom3(
       ))
   ) {
     tr2 = tr2.replace(value3.from, value3.to, value);
-    let value5: Dynamic = ProseMirrorSelection.findFrom(
+    let value5 = ProseMirrorSelection.findFrom(
       tr2.doc.resolve(tr2.mapping.map(value3.to)),
       -1,
       true,
@@ -236666,7 +235757,7 @@ function collectDocumentInteractionsColspan(
   input?: Dynamic,
   ..._extraArguments: unknown[]
 ): Dynamic {
-  let value: Dynamic = __pastedCells(input);
+  let value = __pastedCells(input);
   if (!value) return input;
   let value2 = false;
   for (let value6 of value.rows as Dynamic)
@@ -236680,7 +235771,7 @@ function collectDocumentInteractionsColspan(
   if (!value2) return input;
   let value3: Dynamic = value.rows[0]?.firstChild;
   if (!value3) return input;
-  let value4: Dynamic = tableNodeTypes(value3.type.schema);
+  let value4 = tableNodeTypes(value3.type.schema);
   let value5: Dynamic = Array.from<Dynamic, Dynamic>(
     {
       length: value.height,
@@ -236767,7 +235858,7 @@ function resolveDocumentInteractionsSelection4(
   );
   let value2: Dynamic = value >= 0 ? editorState.doc.nodeAt(value) : null;
   if (!value2) return editorState;
-  let value3: Dynamic = ProseMirrorSelection.findFrom(
+  let value3 = ProseMirrorSelection.findFrom(
     editorState.doc.resolve(value + value2.nodeSize - 1),
     -1,
     true,
@@ -236789,8 +235880,8 @@ function getDocumentInteractionsHeader(
     value2.type !== value.type
   )
     return input;
-  let entry: Dynamic = TableMap.get(value);
-  let entry2: Dynamic = TableMap.get(value2);
+  let entry = TableMap.get(value);
+  let entry2 = TableMap.get(value2);
   let values: Dynamic = new (Set as Dynamic)();
   for (let index = 0; index < entry2.height; index++)
     for (let index2 = 0; index2 < entry2.width; index2++) {
@@ -236956,7 +236047,7 @@ function isDocumentInteractionsLine(
         value3(items4, items5, value9);
     }
   }
-  let value5: Dynamic = new (ProseMirrorTransform)(input.doc);
+  let value5 = new (ProseMirrorTransform)(input.doc);
   for (let { at: at, heading: heading } of items as Dynamic)
     value5.setNodeMarkup(at, null, {
       ...value5.doc.nodeAt(at)?.attrs,
@@ -237159,7 +236250,7 @@ function resolveDocumentInteractionsTopNodeType(
     );
     if (!value7) return [documentNode];
     if (!items.length) return [];
-    let value8: Dynamic = ProseMirrorFragment.from(items);
+    let value8 = ProseMirrorFragment.from(items);
     return [
       documentNode.type.validContent(documentNode.content) &&
       !documentNode.type.validContent(value8)
@@ -237170,12 +236261,12 @@ function resolveDocumentInteractionsTopNodeType(
   let firstChild: Dynamic = input.content.firstChild;
   let value4: Dynamic = value3(firstChild, 1);
   if (value4.length === 1 && value4[0] === firstChild) return input;
-  let value5: Dynamic = ProseMirrorFragment.from([
+  let value5 = ProseMirrorFragment.from([
     ...value4,
     ...input.content.content.slice(1),
   ]);
   if (!value5.childCount) return ProseMirrorSlice.empty;
-  let value6: Dynamic = ProseMirrorSlice.maxOpen(value5);
+  let value6 = ProseMirrorSlice.maxOpen(value5);
   return new (ProseMirrorSlice)(
     value5,
     Math.min(input.openStart, value6.openStart),
@@ -237232,7 +236323,7 @@ function resolveDocumentInteractionsTag(
       getAttrs: value(options.embed),
     },
   ];
-  let value2: Dynamic = new (ProseMirrorDOMParser)(input, [
+  let value2 = new (ProseMirrorDOMParser)(input, [
     ...items,
     ...ProseMirrorDOMParser.fromSchema(input).rules,
   ]);
@@ -237432,7 +236523,7 @@ function installDocumentInteractionsLeft(
     context2?: Dynamic,
     ..._extraArguments: unknown[]
   ): undefined => {
-    let state: Dynamic = {
+    let state = {
       left: 8,
       bottom: 8,
     };
@@ -237534,7 +236625,7 @@ function createProjectPastePlugin(
       let value28: Dynamic = page?.enumKnown(value27) ?? null;
       if (value3 === "unstamped" && value28 !== false) return false;
       if (value28 === null) return true;
-      let value29: Dynamic = resolveProsePluginsIsInteger3(
+      let value29 = resolveProsePluginsIsInteger3(
         resolveDocumentInteractionsValue66(input, "data-index"),
       );
       if (value28 === true) {
@@ -237589,7 +236680,7 @@ function createProjectPastePlugin(
     value6();
     value3 =
       value27 === null ? null : resolveProsePluginsUnstamped(input, value27);
-    let value28: Dynamic =
+    let value28 =
       value3 === "foreign" ? resolveProsePluginsExec3(input) : null;
     value4 =
       value28 !== null &&
@@ -237630,7 +236721,7 @@ function createProjectPastePlugin(
           typeof input2.attrs.enum !== "string"
         )
           return input2;
-        let value28: Dynamic = resolveProsePluginsIsInteger3(
+        let value28 = resolveProsePluginsIsInteger3(
           input2.attrs.index,
         );
         let entry: Dynamic = context.get(input2.attrs.enum);
@@ -238425,7 +237516,7 @@ function createProjectPastePlugin(
           let value27: Dynamic = clipboardData.getData("text/html") || "";
           let value28: Dynamic = clipboardData.getData("text/plain") || "";
           let value29 = !!input.state.selection.$from.parent.type.spec.code;
-          let value30: Dynamic =
+          let value30: boolean =
             !value27 ||
             value29 ||
             resolveDocumentInteractionsLastKeyCode(input);
@@ -238676,7 +237767,7 @@ function updateDocumentInteractionsRel(
           input3 instanceof (ProseMirrorReplaceStep as Dynamic) &&
           input3.to > input3.from
         ) {
-          let value4: Dynamic = new (ProseMirrorMapping)(
+          let value4 = new (ProseMirrorMapping)(
             items.slice(0, options2),
           ).invert();
           let value5 =
@@ -238707,7 +237798,7 @@ function updateDocumentInteractionsRel(
     let tr2: Dynamic = options.tr;
     let items: Dynamic = [];
     for (let value4 = input2.inv.length - 1; value4 >= 0; value4--) {
-      let value5: Dynamic = new (ProseMirrorMapping)([
+      let value5 = new (ProseMirrorMapping)([
         ...input2.fwd.slice(value4 + 1),
         ...input2.later,
         ...tr2.steps.map(
@@ -239696,7 +238787,7 @@ function resolveDocumentInteractionsByPerson(
       input() - NEGATIVE_INFINITY < 1000,
   };
 }
-var DocumentInteractionsBind: Dynamic = (
+var DocumentInteractionsBind = (
   globalThis
 ).queueMicrotask.bind(globalThis);
 var dateNow3 = Date.now;
@@ -239749,7 +238840,7 @@ function resolveDocumentInteractionsBefore(
     value3 = null;
     value4 = null;
     if (value8 == null || value6()) return;
-    let value9: Dynamic = resolveDocumentInteractionsIsFinite7(
+    let value9 = resolveDocumentInteractionsIsFinite7(
       value8,
       input.caretTop(),
       input.viewportHeight(),
@@ -240393,7 +239484,7 @@ var resolveDocumentInteractionsLabel = (
   options?: Dynamic,
   ..._extraArguments: unknown[]
 ) => (input.label < options.label ? -1 : input.label > options.label ? 1 : 0);
-var DocumentSelectionLabel3: Dynamic = [
+var DocumentSelectionLabel3 = [
   ...DocumentInteractionsLabel2,
   {
     id: "code",
@@ -241399,7 +240490,7 @@ function resolveDocumentInteractionsKey2(
     value3.h,
   );
   if (!value5) return "gone";
-  let value6: Dynamic = ProseMirrorcloseHistory(
+  let value6 = ProseMirrorcloseHistory(
     editor.state.tr,
   ).setNodeAttribute(context, value5.attr, value5.value);
   value6.setSelection(ProseMirrorNodeSelection.create(value6.doc, context));
@@ -241454,7 +240545,7 @@ function collectDocumentInteractionsKey(
     )
   )
     return null;
-  let value: Dynamic = resolveDocumentInteractionsBlob4(selection.node);
+  let value: string = resolveDocumentInteractionsBlob4(selection.node);
   let value2: Dynamic = resolveDocumentInteractionsValue71(
     resolveProsePluginsWidth(selection.node.attrs),
     resolveDocumentInteractionsDataPageWidth(editor.view.dom.ownerDocument),
@@ -242353,7 +241444,7 @@ var createLfileWidgetGhostPlugin = (
         let value2: Dynamic = input.getMeta(LfileWidgetGhostPluginKey);
         if (value2 !== undefined) {
           if (value2 === null) return null;
-          let value3: Dynamic = ProseMirrorDecoration.widget(
+          let value3 = ProseMirrorDecoration.widget(
             value2.pos,
             (input2?: unknown, ..._extraArguments: unknown[]): Dynamic =>
               installDocumentInteractionsPhase(input2, value2),
@@ -243837,7 +242928,7 @@ function isDocumentInteractionsOpenStart2(
   let value4: Dynamic = context.resolve(pos);
   let value5: Dynamic = context.resolve(value3);
   if (value4.depth - openStart === value5.depth - openEnd) return null;
-  let value6: Dynamic = new (ProseMirrorMapping)();
+  let value6 = new (ProseMirrorMapping)();
   for (let value9 = options.to - 1; value9 >= options.from; value9--) {
     let value10: Dynamic = options.getMirror(value9);
     value6.appendMap(
@@ -243874,7 +242965,7 @@ function isDocumentInteractionsOpenStart2(
     ) {
       if (context.resolve(value10).depth !== value9 || !value7(value10, -1))
         continue;
-      let value11: Dynamic = new (ProseMirrorReplaceStep)(
+      let value11 = new (ProseMirrorReplaceStep)(
         pos,
         value10,
         input.slice,
@@ -243891,7 +242982,7 @@ function isDocumentInteractionsOpenStart2(
     ) {
       if (context.resolve(value10).depth !== value9 || !value7(value10, 1))
         continue;
-      let value11: Dynamic = new (ProseMirrorReplaceStep)(
+      let value11 = new (ProseMirrorReplaceStep)(
         value10,
         value3,
         input.slice,
@@ -243911,7 +243002,7 @@ function isDocumentInteractionsChord(
       let value: Dynamic = null;
       let value2: Dynamic = null;
       let value3 = false;
-      let value4: Dynamic = ProseMirrorredo(
+      let value4: boolean = ProseMirrorredo(
         input.state,
         (input2?: unknown, ..._extraArguments: unknown[]): undefined => {
           if (isDocumentInteractionsSteps(input.state, "undone", input2))
@@ -244843,9 +243934,9 @@ var resolveDocumentInteractionsValue83 = (
   ..._extraArguments: unknown[]
 ) =>
   resolveDocumentInteractionsMatchMedia(documentInteractionsMessage35);
-var DocumentInteractionsData37: Dynamic = (globalThis).CSS
+var DocumentInteractionsData37 = (globalThis).CSS
   ?.highlights;
-var highlightReference: Dynamic = (globalThis).Highlight;
+var highlightReference = (globalThis).Highlight;
 var DocumentInteractionsGetPrototypeOf2: Dynamic = DocumentInteractionsData37
   ? resolveRenderedCodeAndProofreadingValue31(
       Object.getPrototypeOf(DocumentInteractionsData37),
@@ -244962,7 +244053,7 @@ var isDocumentInteractionsArrow = (
   input?: Dynamic,
   ..._extraArguments: unknown[]
 ) => {
-  let value: Dynamic = resolveDocumentInteractionsValue79(
+  let value: string = resolveDocumentInteractionsValue79(
     resolveDocumentInteractionsValue77(DocumentInteractionsData31, input, ""),
   );
   if (
@@ -245243,7 +244334,7 @@ var resolveDocumentInteractionsTouch2 = (
 ): undefined => {
   if (!resolveDocumentInteractionsIsTrusted3(input)) return;
   if (documentInteractionsState32) documentInteractionsState32.pressEnded();
-  let value: Dynamic = resolveDocumentInteractionsValue85(input);
+  let value: string = resolveDocumentInteractionsValue85(input);
   if (
     documentInteractionsState29 &&
     (value === "touch" || value === "pen") &&
@@ -245564,7 +244655,7 @@ function openDocumentSelectionToolbar(
   let value2: Dynamic = value && extra && !context;
   let value3: Dynamic = (argument2 !== false && !options) || value2;
   if (!document.getElementById("lfile-selbar-css")) {
-    let value257: Dynamic = document.createElement("style");
+    let value257 = document.createElement("style");
     value257.id = "lfile-selbar-css";
     value257.textContent = SELECTION_TOOLBAR_CSS;
     document.head.append(value257);
@@ -245718,7 +244809,7 @@ function openDocumentSelectionToolbar(
           gone: false,
         };
     }
-    let value258: Dynamic = new (ProseMirrorMapping)();
+    let value258 = new (ProseMirrorMapping)();
     for (let value259 of options2 as Dynamic)
       value258.appendMapping(value259.mapping);
     if (input2.from === input2.to) {
@@ -245788,7 +244879,7 @@ function openDocumentSelectionToolbar(
   };
   let value27 = (..._extraArguments: unknown[]): undefined => {
     if (!value8) return;
-    let value257: Dynamic = document.getSelection();
+    let value257 = document.getSelection();
     if (value257?.anchorNode)
       try {
         let view: Dynamic = value8.ed.view;
@@ -246645,7 +245736,7 @@ function openDocumentSelectionToolbar(
       input2,
       null,
     );
-    let value258: Dynamic = value257 instanceof Node ? value257 : null;
+    let value258 = value257 instanceof Node ? value257 : null;
     if (value258 && value50(value258)) return;
     let value259 = !!(
       value258 &&
@@ -246691,7 +245782,7 @@ function openDocumentSelectionToolbar(
             ? value221
             : null;
     if (!value260) return false;
-    let value261: Dynamic = value42;
+    let value261: boolean = value42;
     value44 = value32?.quote ?? null;
     let selection: Dynamic = value4.ed.state.selection;
     value45 = {
@@ -246725,7 +245816,7 @@ function openDocumentSelectionToolbar(
     let ed2: Dynamic = value4.ed;
     if (!ed2.isEditable || !ed2.view.editable || !ed2.view.hasFocus())
       return false;
-    let value257: Dynamic = isRenderedCodeAndProofreadingSelection(ed2.view);
+    let value257: boolean = isRenderedCodeAndProofreadingSelection(ed2.view);
     if (value257) resolveProsePluginsValue2(ed2.view.dom);
     return value257;
   };
@@ -246840,7 +245931,7 @@ function openDocumentSelectionToolbar(
       );
       return false;
     }
-    let value258: Dynamic = value43;
+    let value258: boolean = value43;
     index++;
     try {
       value257.act();
@@ -246867,7 +245958,7 @@ function openDocumentSelectionToolbar(
   ) => {
     let value257: Dynamic = value48(value187, options2) ? value187 : value102;
     let value258: Dynamic = value52(value257);
-    let value259: Dynamic =
+    let value259: number =
       value46 && options2 !== value46 && value53(value258, value46) >= 0
         ? value53(value258, value46)
         : value53(value258, options2);
@@ -246932,7 +246023,7 @@ function openDocumentSelectionToolbar(
     if (!resolveDocumentInteractionsIsTrusted3(event)) return;
     let value257: Dynamic = resolveDocumentInteractionsTarget3(event);
     if (!(value257 instanceof HTMLElement) || !value47(value257)) return;
-    let value258: Dynamic = resolveDocumentInteractionsValue79(
+    let value258: string = resolveDocumentInteractionsValue79(
       resolveDocumentInteractionsValue77(DocumentInteractionsData31, event, ""),
     );
     if (
@@ -247043,7 +246134,7 @@ function openDocumentSelectionToolbar(
       },
     );
   };
-  let value102: Dynamic = document.createElement("div");
+  let value102 = document.createElement("div");
   value102.className = "ldoc-selbar";
   value102.hidden = true;
   let value103 = (..._extraArguments: unknown[]) =>
@@ -247059,12 +246150,12 @@ function openDocumentSelectionToolbar(
   );
   value102.addEventListener(
     "mousedown",
-    (event?: Dynamic, ..._extraArguments: unknown[]): Dynamic =>
+    (event: MouseEvent, ..._extraArguments: unknown[]): Dynamic =>
       event.preventDefault(),
   );
   value102.addEventListener(
     "mousedown",
-    (event?: Dynamic, ..._extraArguments: unknown[]): undefined => {
+    (event: MouseEvent, ..._extraArguments: unknown[]): undefined => {
       let value257: number = value71() - value72;
       if (value257 < 0 || value257 >= documentInteractionsLimit350) return;
       event.preventDefault();
@@ -247074,13 +246165,13 @@ function openDocumentSelectionToolbar(
   );
   value102.addEventListener(
     "animationend",
-    (event?: Dynamic, ..._extraArguments: unknown[]): undefined => {
+    (event: AnimationEvent, ..._extraArguments: unknown[]): undefined => {
       if (event.target === value102) value102.classList.add("placed");
     },
   );
   if (!context) document.body.append(value102);
   let value104 = (..._extraArguments: unknown[]): Dynamic => {
-    let value257: Dynamic = document.createElement("span");
+    let value257 = document.createElement("span");
     value257.className = "sep";
     return value257;
   };
@@ -247116,12 +246207,12 @@ function openDocumentSelectionToolbar(
             ? "ldoc-selmenu hl"
             : "ldoc-selmenu";
     let value262 = context2.guarded === true;
-    let value263: Dynamic = document.createElement("div");
+    let value263 = document.createElement("div");
     value263.className = value261();
     value263.hidden = true;
     value263.addEventListener(
       "mousedown",
-      (event?: Dynamic, ..._extraArguments: unknown[]): Dynamic =>
+      (event: MouseEvent, ..._extraArguments: unknown[]): Dynamic =>
         event.preventDefault(),
     );
     value263.addEventListener(
@@ -247180,7 +246271,7 @@ function openDocumentSelectionToolbar(
       let clientWidth: number = document.documentElement.clientWidth;
       if (value258) {
         let top: Dynamic = value56.top;
-        let value286: Dynamic = DocumentInteractionsData22 + index5;
+        let value286: number = DocumentInteractionsData22 + index5;
         value263.style.left = "0px";
         value263.style.top = `${top}px`;
         value263.style.width = `${clientWidth}px`;
@@ -247240,7 +246331,7 @@ function openDocumentSelectionToolbar(
       items13 = [];
       let index11 = 0;
       let value283: Dynamic = null;
-      let value284: Dynamic = value257 || value258;
+      let value284: boolean = value257 || value258;
       let value285 = context2.inner?.on() === true;
       let value286: Dynamic =
         value285 && context2.inner
@@ -247269,12 +246360,12 @@ function openDocumentSelectionToolbar(
           !value284 && value288 !== "sep" && value288.swatch !== undefined;
         if (!value289) value283 = null;
         if (value288 === "sep") {
-          let value292: Dynamic = document.createElement("div");
+          let value292 = document.createElement("div");
           value292.setAttribute("role", "separator");
           value263.append(value292);
           continue;
         }
-        let value290: Dynamic = document.createElement("button");
+        let value290 = document.createElement("button");
         value290.type = "button";
         value290.tabIndex = -1;
         value290.setAttribute(
@@ -247314,7 +246405,7 @@ function openDocumentSelectionToolbar(
           )
             value290.classList.add("worded");
           if (value288.icon !== undefined || value288.swatch !== undefined) {
-            let value293: Dynamic = document.createElement("span");
+            let value293 = document.createElement("span");
             value293.className = "g";
             value293.setAttribute("aria-hidden", "true");
             value293.style.cssText = value284
@@ -247329,12 +246420,12 @@ function openDocumentSelectionToolbar(
               value293.append(value288.icon);
             value290.append(value293);
           }
-          let value292: Dynamic = document.createElement("span");
+          let value292 = document.createElement("span");
           value292.textContent = value288.label;
           if (!value258) value292.style.marginRight = "14px";
           value290.append(value292);
           if (value288.hint !== undefined) {
-            let value293: Dynamic = document.createElement("span");
+            let value293 = document.createElement("span");
             value293.textContent = value288.hint;
             value293.setAttribute("aria-hidden", "true");
             value293.style.cssText =
@@ -247365,7 +246456,7 @@ function openDocumentSelectionToolbar(
             value292 < documentInteractionsLimit350
           )
             return false;
-          let value293: Dynamic =
+          let value293: boolean =
             value42 && resolveDocumentInteractionsActiveElement() === value290;
           if (value262 && input3) {
             if (
@@ -247418,12 +246509,12 @@ function openDocumentSelectionToolbar(
               return false;
             }
           }
-          let value294: Dynamic = value43;
+          let value294: boolean = value43;
           let value295 = value288.toggle === true || value288.stay === true;
-          let value296: Dynamic =
+          let value296 =
             value293 ||
             value53(items11, resolveDocumentInteractionsActiveElement()) >= 0;
-          let value297: Dynamic =
+          let value297: number =
             !value295 || value288.stay === true
               ? -1
               : value53(
@@ -247441,7 +246532,7 @@ function openDocumentSelectionToolbar(
           }
           if (options || !value4 || !value4.ed.isEditable) return false;
           let ed2: Dynamic = value4.ed;
-          let value298: Dynamic = resolveRenderedCodeAndProofreadingParagraph2(
+          let value298 = resolveRenderedCodeAndProofreadingParagraph2(
             ed2.state,
           );
           let value299: Dynamic = resolveProsePluginsNode3(ed2.state);
@@ -247454,11 +246545,11 @@ function openDocumentSelectionToolbar(
           } finally {
             index--;
           }
-          let value301: Dynamic = resolveRenderedCodeAndProofreadingParagraph2(
+          let value301 = resolveRenderedCodeAndProofreadingParagraph2(
             ed2.state,
           );
           let value302: Dynamic = resolveProsePluginsNode3(ed2.state);
-          let value303: Dynamic = value262
+          let value303 = value262
             ? null
             : value301 !== value298
               ? resolveRenderedCodeAndProofreadingParagraph3(value301)
@@ -247553,7 +246644,7 @@ function openDocumentSelectionToolbar(
         else
           value290.addEventListener(
             "click",
-            (input3?: Dynamic, ..._extraArguments: unknown[]): undefined => {
+            (input3: PointerEvent, ..._extraArguments: unknown[]): undefined => {
               if (!input3.isTrusted) return;
               value291(
                 resolveDocumentInteractionsValue77(
@@ -247648,7 +246739,7 @@ function openDocumentSelectionToolbar(
         if (items12[index11].label === value282 && !items12[index11].danger)
           value283 = items11[index11] ?? null;
       if (!value283 && value258) value283 = items11[0] ?? null;
-      let value284: Dynamic = value283 ? value53(value279(), value283) : -1;
+      let value284: number = value283 ? value53(value279(), value283) : -1;
       if (!value283 || value284 < 0) {
         value266 = null;
         return;
@@ -247859,7 +246950,7 @@ function openDocumentSelectionToolbar(
       ..._extraArguments: unknown[]
     ) => {
       let value282: Dynamic = value279();
-      let value283: Dynamic = value53(
+      let value283: number = value53(
         value282,
         resolveDocumentInteractionsActiveElement(),
       );
@@ -247915,7 +247006,7 @@ function openDocumentSelectionToolbar(
       "keydown",
       (event?: Dynamic, ..._extraArguments: unknown[]): undefined => {
         if (!resolveDocumentInteractionsIsTrusted3(event)) return;
-        let value282: Dynamic = resolveDocumentInteractionsValue79(
+        let value282: string = resolveDocumentInteractionsValue79(
           resolveDocumentInteractionsValue77(
             DocumentInteractionsData31,
             event,
@@ -247997,7 +247088,7 @@ function openDocumentSelectionToolbar(
       ..._extraArguments: unknown[]
     ) => options2 === 0 || resolveProsePluginsIncludes5(options2),
   );
-  let value108: Dynamic = document.createElement("button");
+  let value108 = document.createElement("button");
   value108.type = "button";
   value108.className = "drop compact";
   value108.dataset.tip = "Text style";
@@ -248006,7 +247097,7 @@ function openDocumentSelectionToolbar(
       ? `${input2.short}, text style`
       : `${input2.short}, ${input2.label} — text style`;
   value108.setAttribute("aria-label", value109(items5[0]));
-  let value110: Dynamic = document.createElement("span");
+  let value110 = document.createElement("span");
   let value111 = (
     input2?: Dynamic,
     ..._extraArguments: unknown[]
@@ -248088,7 +247179,7 @@ function openDocumentSelectionToolbar(
   };
   let mapped: Dynamic = items6.map(
     ([input2, input3]: Dynamic, ..._extraArguments: unknown[]): Dynamic => {
-      let value257: Dynamic = (document).createElement("button");
+      let value257 = (document).createElement("button");
       value257.type = "button";
       value257.append(updateDocumentInteractionsValue2(input3));
       value257.dataset.tip = state[input2];
@@ -248107,7 +247198,7 @@ function openDocumentSelectionToolbar(
       return [input2, value257];
     },
   );
-  let value117: Dynamic = document.createElement("button");
+  let value117 = document.createElement("button");
   value117.type = "button";
   value117.dataset.tip = "Highlight";
   value117.setAttribute("aria-label", "Highlight");
@@ -248263,7 +247354,7 @@ function openDocumentSelectionToolbar(
         options2?: Dynamic,
         ..._extraArguments: unknown[]
       ): undefined => {
-        let value257: Dynamic = ProseMirrorTextSelection.between(
+        let value257 = ProseMirrorTextSelection.between(
           doc.resolve(options2 + 1),
           doc.resolve(options2 + input3.nodeSize - 1),
         );
@@ -248327,7 +247418,7 @@ function openDocumentSelectionToolbar(
   ): undefined => {
     input2.chain().focus().toggleListKind(options2).run();
   };
-  let value129: Dynamic = document.createElement("button");
+  let value129 = document.createElement("button");
   value129.type = "button";
   value129.className = "chev";
   value129.dataset.tip = "List";
@@ -248455,7 +247546,7 @@ function openDocumentSelectionToolbar(
       } finally {
         index--;
       }
-      let value261: Dynamic =
+      let value261 =
         resolveRenderedCodeAndProofreadingDepth(
           value259,
           resolveRenderedCodeAndProofreadingFrom4(ed2.state),
@@ -248496,7 +247587,7 @@ function openDocumentSelectionToolbar(
       : [];
   for (let value257 of value135 as Dynamic) value257.hidden = true;
   let value136: Dynamic = value104();
-  let value137: Dynamic = document.createElement("button");
+  let value137 = document.createElement("button");
   value137.type = "button";
   value137.dataset.tip = "Link";
   value137.setAttribute("aria-label", "Link");
@@ -248513,7 +247604,7 @@ function openDocumentSelectionToolbar(
       ? String(ed2.getAttributes("link").href ?? "")
       : "";
     if (value257) {
-      let value258: Dynamic = TiptapgetMarkRange(
+      let value258 = TiptapgetMarkRange(
         ed2.state.doc.resolve(from),
         ed2.state.schema.marks.link,
       );
@@ -248586,7 +247677,7 @@ function openDocumentSelectionToolbar(
         inline: "nearest",
       });
     else value139(editor);
-    let value259: Dynamic = value258.a
+    let value259 = value258.a
       ? resolveRenderedCodeAndProofreadingTop(value258.a)
       : TiptapposToDOMRect(editor.view, value258.from, value258.to);
     return {
@@ -248675,7 +247766,7 @@ function openDocumentSelectionToolbar(
     (..._extraArguments: unknown[]): undefined => void value138(),
     true,
   );
-  let value143: Dynamic = document.createElement("button");
+  let value143 = document.createElement("button");
   value143.type = "button";
   value143.dataset.tip = ProsePluginsAskClaude.comment.label;
   value143.setAttribute("aria-label", ProsePluginsAskClaude.comment.label);
@@ -248692,7 +247783,7 @@ function openDocumentSelectionToolbar(
   ): undefined => {
     if (options || !editor.isEditable || resolveDocumentInteractionsHasFocus())
       return;
-    let value257: Dynamic = document.getSelection();
+    let value257 = document.getSelection();
     if (!value257 || value257.rangeCount === 0 || value257.isCollapsed) return;
     let value258: Dynamic = value257.getRangeAt(0);
     if (
@@ -248731,7 +247822,7 @@ function openDocumentSelectionToolbar(
     let selection: Dynamic = editor.state.selection;
     if (selection.from === value261 && selection.to === value262) return;
     if (selection instanceof (ProseMirrorAllSelection as Dynamic)) {
-      let value264: Dynamic = isRenderedCodeAndProofreadingFrom5(doc);
+      let value264 = isRenderedCodeAndProofreadingFrom5(doc);
       if (!value264 || (value261 <= value264.from && value262 >= value264.to))
         return;
     } else if (!TiptapisTextSelection(selection)) return;
@@ -248932,14 +248023,14 @@ function openDocumentSelectionToolbar(
       document,
       (..._extraArguments: unknown[]) => document.getSelection(),
     );
-    let value258: Dynamic = resolveDocumentInteractionsValue79(
+    let value258: string = resolveDocumentInteractionsValue79(
       resolveDocumentInteractionsValue78(
         DocumentInteractionsToString,
         value257,
         (..._extraArguments: unknown[]): Dynamic => value257?.toString() ?? "",
       ),
     );
-    let value259: Dynamic = value258;
+    let value259 = value258;
     let value260: boolean = false;
     if (value258)
       try {
@@ -249051,7 +248142,7 @@ function openDocumentSelectionToolbar(
     document.documentElement.clientHeight - index6 >=
       documentInteractionsLimit120 + DocumentInteractionsData22;
   let value170 = (..._extraArguments: unknown[]): undefined => {
-    let style: Dynamic = document.documentElement.style;
+    let style = document.documentElement.style;
     if (resolveDocumentInteractionsHidden2(value102) && !value167()) {
       style.removeProperty("--dock-inset");
       return;
@@ -249121,7 +248212,7 @@ function openDocumentSelectionToolbar(
     let value258: Dynamic =
       value2 || value257.view.hasFocus() ? value172(value257) : null;
     if (!value258) return;
-    let value259: Dynamic = TiptapposToDOMRect(
+    let value259 = TiptapposToDOMRect(
       value257.view,
       value258.to,
       value258.to,
@@ -249192,8 +248283,8 @@ function openDocumentSelectionToolbar(
             (..._extraArguments: unknown[]): Dynamic =>
               value261?.parentElement ?? null,
           ));
-    let value263: Dynamic = resolveDocumentInteractionsValue83();
-    let value264: Dynamic = resolveDocumentInteractionsValue79(
+    let value263: boolean = resolveDocumentInteractionsValue83();
+    let value264: string = resolveDocumentInteractionsValue79(
       resolveDocumentInteractionsValue78(
         DocumentInteractionsPointerType,
         event,
@@ -249424,7 +248515,7 @@ function openDocumentSelectionToolbar(
         ).length === 0
       )
         return null;
-      let value262: Dynamic = ProseMirrorTextSelection.findFrom(
+      let value262 = ProseMirrorTextSelection.findFrom(
         doc.resolve(value261),
         1,
         true,
@@ -249463,7 +248554,7 @@ function openDocumentSelectionToolbar(
       return value259 === "cell" || value259 === "header_cell";
     };
     if (entry.cells === "all") {
-      let entry2: Dynamic = TableMap.get(value257);
+      let entry2 = TableMap.get(value257);
       let value259: number = entry2.width * entry2.height;
       if (value259 === 0) return null;
       let value260: Dynamic = entry.tablePos + 1 + entry2.map[0];
@@ -249541,7 +248632,7 @@ function openDocumentSelectionToolbar(
     let value261: Dynamic;
     if (value258.kind === "atom") {
       let value262: Dynamic = ed2.view.nodeDOM(value258.sel.from);
-      let value263: Dynamic =
+      let value263 =
         value262 instanceof HTMLElement
           ? value262.getBoundingClientRect()
           : TiptapposToDOMRect(ed2.view, value258.sel.from, value258.sel.to);
@@ -249554,7 +248645,7 @@ function openDocumentSelectionToolbar(
         value262,
       );
     } else if (value258.kind === "block") {
-      let value262: Dynamic = TiptapposToDOMRect(
+      let value262 = TiptapposToDOMRect(
         ed2.view,
         value258.from,
         value258.to,
@@ -249603,8 +248694,8 @@ function openDocumentSelectionToolbar(
       );
       let value264: Dynamic;
       if (value262 instanceof HTMLElement && value263 instanceof HTMLElement) {
-        let bounds: Dynamic = value262.getBoundingClientRect();
-        let bounds2: Dynamic = value263.getBoundingClientRect();
+        let bounds = value262.getBoundingClientRect();
+        let bounds2 = value263.getBoundingClientRect();
         let value265 = Math.min(bounds.left, bounds2.left);
         value264 = {
           left: value265,
@@ -249638,10 +248729,10 @@ function openDocumentSelectionToolbar(
             : null;
       let value263: Dynamic =
         value262 === null ? null : ed2.view.nodeDOM(value262);
-      let value264: Dynamic = document.getSelection();
+      let value264 = document.getSelection();
       if (value263 && value264)
         try {
-          let value265: Dynamic = document.createRange();
+          let value265 = document.createRange();
           value265.selectNodeContents(value263);
           value265.collapse(true);
           value264.removeAllRanges();
@@ -249693,7 +248784,7 @@ function openDocumentSelectionToolbar(
     let value257: Dynamic = value182(input2.view);
     return value257 !== null && value183(value257.ed, input2) !== null;
   };
-  let value186: Dynamic = document.createElement("button");
+  let value186 = document.createElement("button");
   value186.type = "button";
   value186.dataset.tip = ProsePluginsAskClaude.react.label;
   value186.setAttribute("aria-label", ProsePluginsAskClaude.react.label);
@@ -249701,14 +248792,14 @@ function openDocumentSelectionToolbar(
   value186.append(
     updateDocumentInteractionsValue2(DocumentInteractionsMaster1610),
   );
-  let value187: Dynamic = document.createElement("div");
+  let value187 = document.createElement("div");
   value187.className = "ldoc-selbar ldoc-emojipick placed";
   value187.hidden = true;
   value187.setAttribute("aria-label", "React with an emoji");
   value187.setAttribute("data-testid", "lfile-selbar-emojipick");
   value187.addEventListener(
     "mousedown",
-    (event?: Dynamic, ..._extraArguments: unknown[]): Dynamic =>
+    (event: MouseEvent, ..._extraArguments: unknown[]): Dynamic =>
       event.preventDefault(),
   );
   if (!context) document.body.append(value187);
@@ -249770,7 +248861,7 @@ function openDocumentSelectionToolbar(
     event.preventDefault();
     event.stopPropagation();
     resolveProsePluginsValue32(event);
-    let value257: Dynamic =
+    let value257: boolean =
       value42 && resolveDocumentInteractionsIsTrusted3(event);
     let value258: number = index2;
     if (value257) {
@@ -249790,7 +248881,7 @@ function openDocumentSelectionToolbar(
   };
   let items8: Dynamic = [];
   for (let value257 of renderedCodeAndProofreadingValues as Dynamic) {
-    let value258: Dynamic = document.createElement("button");
+    let value258 = document.createElement("button");
     value258.type = "button";
     value258.textContent = value257;
     value258.dataset.emoji = value257;
@@ -249870,7 +248961,7 @@ function openDocumentSelectionToolbar(
       value229(value187);
     }
     value54 = true;
-    let value257: Dynamic =
+    let value257: boolean =
       !input2 && value42 && value49(resolveDocumentInteractionsActiveElement());
     if ((input2 || value257) && items8[0]) {
       if (value257) value80();
@@ -249995,7 +249086,7 @@ function openDocumentSelectionToolbar(
     },
   );
   let value196: Dynamic = value104();
-  let value197: Dynamic = document.createElement("button");
+  let value197 = document.createElement("button");
   value197.type = "button";
   value197.dataset.tip = "Crop";
   value197.setAttribute("aria-label", "Crop image");
@@ -250066,7 +249157,7 @@ function openDocumentSelectionToolbar(
       value258 !== null && value257.table.posOf(value258) === pos
         ? value258
         : null;
-    let value260: Dynamic =
+    let value260: string =
       resolveProsePluginsValue110(selection.node.attrs.alt) ?? "";
     value9 = {
       ed: ed2,
@@ -250362,7 +249453,7 @@ function openDocumentSelectionToolbar(
       );
   };
   let value212: Dynamic = value104();
-  let value213: Dynamic = document.createElement("button");
+  let value213 = document.createElement("button");
   value213.type = "button";
   value213.dataset.tip = prosePluginsMoreActions;
   value213.setAttribute("aria-label", prosePluginsMoreActions);
@@ -250395,7 +249486,7 @@ function openDocumentSelectionToolbar(
       return;
     let name: Dynamic = selection.node.type.name;
     if (name !== "image" && name !== "media" && name !== "embed") return;
-    let value257: Dynamic = ProseMirrorcloseHistory(ed2.state.tr).delete(
+    let value257 = ProseMirrorcloseHistory(ed2.state.tr).delete(
       pos,
       pos + selection.node.nodeSize,
     );
@@ -250743,7 +249834,7 @@ function openDocumentSelectionToolbar(
   };
   let value225 = (..._extraArguments: unknown[]): undefined => {
     if (value221) return;
-    let value257: Dynamic = document.createElement("button");
+    let value257 = document.createElement("button");
     value257.type = "button";
     value257.className = "more";
     value257.append(
@@ -251105,7 +250196,7 @@ function openDocumentSelectionToolbar(
     )
       return;
     let [value257, value258]: Dynamic = value231(input2);
-    let bounds: Dynamic = options2.getBoundingClientRect();
+    let bounds = options2.getBoundingClientRect();
     if (bounds.left < value257) input2.scrollLeft -= value257 - bounds.left;
     else if (bounds.right > value258)
       input2.scrollLeft += bounds.right - value258;
@@ -251315,7 +250406,7 @@ function openDocumentSelectionToolbar(
       let value290: Dynamic = value262
         ? resolveDocumentInteractionsGetSelection(value262.view.dom)
         : null;
-      let value291: Dynamic = document.getSelection();
+      let value291 = document.getSelection();
       if (
         !value262 ||
         value290 === null ||
@@ -251331,7 +250422,7 @@ function openDocumentSelectionToolbar(
       value263 = value292.getBoundingClientRect();
       value272 = true;
       if (value291.focusNode) {
-        let value295: Dynamic = document.createRange();
+        let value295 = document.createRange();
         value295.setStart(value291.focusNode, value291.focusOffset);
         value264 = value295.getBoundingClientRect();
       }
@@ -251425,7 +250516,7 @@ function openDocumentSelectionToolbar(
         );
       let value296: Dynamic =
         value292 || value293 || value295 ? value291 : null;
-      let value297: Dynamic =
+      let value297 =
         value262 && value290 instanceof (ProseMirrorAllSelection as Dynamic)
           ? isRenderedCodeAndProofreadingFrom5(value262.state.doc)
           : null;
@@ -251470,8 +250561,8 @@ function openDocumentSelectionToolbar(
           value301 instanceof HTMLElement &&
           value302 instanceof HTMLElement
         ) {
-          let bounds: Dynamic = value301.getBoundingClientRect();
-          let bounds2: Dynamic = value302.getBoundingClientRect();
+          let bounds = value301.getBoundingClientRect();
+          let bounds2 = value302.getBoundingClientRect();
           let value303 = Math.min(bounds.left, bounds2.left);
           value263 = {
             left: value303,
@@ -251825,7 +250916,7 @@ function openDocumentSelectionToolbar(
     let value281 =
       document.documentElement.clientHeight -
       Math.max(0, Math.min(value280, 400));
-    let value282: Dynamic = resolveDocumentInteractionsValue83();
+    let value282: boolean = resolveDocumentInteractionsValue83();
     if (value155) value155.hidden = !value282 || text6 !== "keep";
     if (value169()) {
       value236();
@@ -251908,7 +250999,7 @@ function openDocumentSelectionToolbar(
       value279,
       value284,
     );
-    let value286: Dynamic = value272 && value282;
+    let value286 = value272 && value282;
     let value287: Dynamic = value263;
     if (value286) {
       let value290 = value263.bottom + documentInteractionsLimit28 - 10;
@@ -252313,7 +251404,7 @@ function openDocumentSelectionToolbar(
         value81 = false;
         return;
       }
-      let value278: Dynamic = resolveDocumentInteractionsValue79(
+      let value278: string = resolveDocumentInteractionsValue79(
         resolveDocumentInteractionsValue77(
           DocumentInteractionsData31,
           event,
@@ -252383,7 +251474,7 @@ function openDocumentSelectionToolbar(
     };
     let value267 = (..._extraArguments: unknown[]): undefined => {
       if (!options && editor.isEditable) return;
-      let value278: Dynamic = document.getSelection()?.anchorNode;
+      let value278 = document.getSelection()?.anchorNode;
       let value279: Dynamic =
         value278 instanceof Element
           ? value278
@@ -252470,7 +251561,7 @@ function openDocumentSelectionToolbar(
         nodeId: input2,
         ed: editor,
       };
-      let value278: Dynamic = value85;
+      let value278: boolean = value85;
       value85 = resolveOperationModelGetMeta3(transaction);
       value55 = value272(transaction);
       try {
@@ -252644,7 +251735,7 @@ function openDocumentSelectionToolbar(
       value258.to,
       "",
     );
-    let value265: Dynamic = value244(entry, value258.from, value258.to);
+    let value265: boolean = value244(entry, value258.from, value258.to);
     if (value263.startsWith("#") && !value265 && value264.length === 0) return;
     let value266: Dynamic = value265
       ? ""
@@ -252758,7 +251849,7 @@ function openDocumentSelectionToolbar(
       );
       return;
     }
-    let value259: Dynamic = resolveDocumentInteractionsTrim5(input2.alt);
+    let value259 = resolveDocumentInteractionsTrim5(input2.alt);
     let tr2: Dynamic = entry.state.tr;
     if (
       value259 !== null &&
@@ -252865,7 +251956,7 @@ function openDocumentSelectionToolbar(
     if (value257 === null || context) return null;
     let ed2: Dynamic = value257.ed;
     if (ed2.isDestroyed) return null;
-    let value258: Dynamic = value105(ed2);
+    let value258 = value105(ed2);
     return {
       nodeId: value257.nodeId,
       editable: !options && ed2.isEditable,
@@ -253066,7 +252157,7 @@ function openDocumentSelectionToolbar(
         resolveDocumentInteractionsValue87(input2) &&
         isDocumentInteractionsPreventDefault(input2),
       key: (input2?: unknown, ..._extraArguments: unknown[]): Dynamic => {
-        let activeElement: Dynamic = document.activeElement;
+        let activeElement = document.activeElement;
         if (!(activeElement instanceof HTMLElement)) return false;
         for (let index11 = 0; index11 < items4.length; index11++)
           if (value48(items4[index11].menu, activeElement))
@@ -253074,7 +252165,7 @@ function openDocumentSelectionToolbar(
         return value47(activeElement) ? value99(input2, activeElement) : false;
       },
       press: (..._extraArguments: unknown[]): Dynamic => {
-        let activeElement: Dynamic = document.activeElement;
+        let activeElement = document.activeElement;
         if (!(activeElement instanceof HTMLElement)) return false;
         for (let index11 = 0; index11 < items4.length; index11++) {
           let value257: Dynamic = items4[index11].pressRow(activeElement, null);
@@ -253086,7 +252177,7 @@ function openDocumentSelectionToolbar(
         return value59 !== null;
       },
       click: (..._extraArguments: unknown[]) => {
-        let activeElement: Dynamic = document.activeElement;
+        let activeElement = document.activeElement;
         return (
           activeElement instanceof HTMLElement &&
           value61(activeElement) &&
@@ -253292,7 +252383,7 @@ function isDocumentInteractionsColwidthMismatch(
   input?: Dynamic,
   ..._extraArguments: unknown[]
 ) {
-  let entry: Dynamic = TableMap.get(input);
+  let entry = TableMap.get(input);
   let value = resolveProsePluginsChildCount4(input);
   if (entry.height - value < 2) return false;
   if (
@@ -253371,7 +252462,7 @@ function isDocumentInteractionsKey4(
   context?: Dynamic,
   ..._extraArguments: unknown[]
 ): Dynamic {
-  let entry: Dynamic = TableMap.get(input);
+  let entry = TableMap.get(input);
   let value = resolveProsePluginsChildCount4(input);
   let items: Dynamic = [];
   for (let value4 = value; value4 < entry.height; value4++)
@@ -254190,7 +253281,7 @@ function getDocumentInteractionsTable(
   let value2: Dynamic = value.node(-1);
   if (value2.type.spec.tableRole !== "table") return null;
   let value3 = value.start(-1) - 1;
-  let entry: Dynamic = TableMap.get(value2);
+  let entry = TableMap.get(value2);
   let value4: Dynamic = entry.findCell(options.pos - value3 - 1);
   let items: Dynamic = [];
   for (let left: Dynamic = value4.left; left < value4.right; left++)
@@ -254346,7 +253437,7 @@ function resolveDocumentInteractionsEditor(
     input.say("unsupported", "structure:unnamed");
     return "refused";
   }
-  let value4: Dynamic = ProseMirrorcloseHistory(editor.state.tr);
+  let value4 = ProseMirrorcloseHistory(editor.state.tr);
   let value5: Dynamic = getProsePluginsIndex(
     value4,
     value2.table,
@@ -254904,7 +253995,7 @@ function resolveDocumentInteractionsBackground(
   if (selection instanceof (CellSelection as Dynamic))
     selection.forEachCell(value2);
   else {
-    let value3: Dynamic = cellAround(editorState.doc.resolve(selection.from));
+    let value3 = cellAround(editorState.doc.resolve(selection.from));
     let value4: Dynamic = value3 ? editorState.doc.nodeAt(value3.pos) : null;
     if (value3 && value4) value2(value4, value3.pos);
   }
@@ -254929,7 +254020,7 @@ function resolveDocumentInteractionsPos8(
         }),
     );
   else {
-    let value: Dynamic = cellAround(editorState.selection.$from);
+    let value = cellAround(editorState.selection.$from);
     if (value?.nodeAfter)
       items.push({
         pos: value.pos,
@@ -255220,7 +254311,7 @@ var TableContextMenuExtension: Dynamic = TiptapExtension.create({
                         : value28,
                 );
             } else if (key === "ArrowLeft" || key === "ArrowRight") {
-              let activeElement: Dynamic = document.activeElement;
+              let activeElement = document.activeElement;
               let value26: Dynamic = activeElement?.parentElement;
               if (
                 !activeElement ||
@@ -255551,7 +254642,7 @@ var TableContextMenuExtension: Dynamic = TiptapExtension.create({
                     top: options.clientY,
                   });
             let value42: Dynamic = value26 ?? selection;
-            let value43: Dynamic =
+            let value43 =
               (value41
                 ? cellAround(
                     editor.state.doc.resolve(
@@ -255580,9 +254671,9 @@ var TableContextMenuExtension: Dynamic = TiptapExtension.create({
               if (!value43) return null;
               if (value44 !== null)
                 return isProsePluginsPos(input2.doc, value44);
-              let value87: Dynamic = value45(input2);
+              let value87 = value45(input2);
               if (value87 === null) return null;
-              let value88: Dynamic = cellAround(input2.doc.resolve(value87));
+              let value88 = cellAround(input2.doc.resolve(value87));
               return value88?.nodeAfter
                 ? {
                     pos: value88.pos,
@@ -255602,7 +254693,7 @@ var TableContextMenuExtension: Dynamic = TiptapExtension.create({
                 value("cell_gone");
                 return null;
               }
-              let value88: Dynamic = value45(input2);
+              let value88 = value45(input2);
               return value88 !== null &&
                 value88 > value87.pos &&
                 value88 < value87.pos + value87.node.nodeSize &&
@@ -256230,7 +255321,7 @@ var TableContextMenuExtension: Dynamic = TiptapExtension.create({
                 input2?: Dynamic,
                 ..._extraArguments: unknown[]
               ): Dynamic => {
-                let value107: Dynamic = cellAround(input2.selection.$from);
+                let value107 = cellAround(input2.selection.$from);
                 return value107?.nodeAfter
                   ? {
                       pos: value107.pos,
@@ -256358,7 +255449,7 @@ var TableContextMenuExtension: Dynamic = TiptapExtension.create({
                 ..._extraArguments: unknown[]
               ): Dynamic => {
                 if (input2 == null) return null;
-                let value107: Dynamic = cellAround(
+                let value107 = cellAround(
                   options2.doc.resolve(
                     Math.min(input2, options2.doc.content.size),
                   ),
@@ -256367,7 +255458,7 @@ var TableContextMenuExtension: Dynamic = TiptapExtension.create({
                 let value108 = value107.start(-1) - 1;
                 let value109: Dynamic = options2.doc.nodeAt(value108);
                 if (value109?.type.spec.tableRole !== "table") return null;
-                let left: Dynamic = TableMap.get(value109).findCell(
+                let left: number = TableMap.get(value109).findCell(
                   value107.pos - value107.start(-1),
                 ).left;
                 return {
@@ -256765,7 +255856,7 @@ var TableContextMenuExtension: Dynamic = TiptapExtension.create({
                 let value88: Dynamic = doc.resolve(
                   Math.min(value41.pos, doc.content.size),
                 );
-                let value89: Dynamic = ProseMirrorTextSelection.near(
+                let value89 = ProseMirrorTextSelection.near(
                   value88,
                   value88.parent.inlineContent ? 1 : -1,
                 );
@@ -257056,8 +256147,8 @@ function resolveDocumentInteractionsInk(
     let value8: Dynamic = input.resolve(input2);
     return value8 === null ? null : isDocumentInteractionsToLowerCase(value8);
   };
-  let value2: Dynamic = value(input.ink);
-  let value3: Dynamic = value(input.bg);
+  let value2 = value(input.ink);
+  let value3 = value(input.bg);
   if (value2 === null || value3 === null)
     return {
       ink: input.ink,
@@ -257072,7 +256163,7 @@ function resolveDocumentInteractionsInk(
       bg: input.bg,
     };
   let value4: Dynamic = input.backdrop();
-  let value5: Dynamic = value4 === null ? null : value(value4);
+  let value5 = value4 === null ? null : value(value4);
   if (
     value4 !== null &&
     value5 !== null &&
@@ -257083,7 +256174,7 @@ function resolveDocumentInteractionsInk(
       ink: input.ink,
       bg: value4,
     };
-  let value6: Dynamic = value(input.cardInk);
+  let value6 = value(input.cardInk);
   if (
     value6 !== null &&
     resolveDocumentInteractionsValue96(value6, value3) >=
@@ -257235,7 +256326,7 @@ function resolveDocumentInteractionsMessage3(
   input?: Dynamic,
   ..._extraArguments: unknown[]
 ): Dynamic {
-  let value: Dynamic = documentInteractionsInputPattern39.exec(input)?.[0];
+  let value = documentInteractionsInputPattern39.exec(input)?.[0];
   let value2: Dynamic =
     value !== undefined ? DocumentInteractionsData40[value] : undefined;
   if (value !== undefined && value2 !== undefined)
@@ -257243,7 +256334,7 @@ function resolveDocumentInteractionsMessage3(
       ok: false,
       message: `"${input}" holds "${value}": ${resolveDocumentInteractionsValue97(value2, value)}`,
     };
-  let value3: Dynamic = documentInteractionsInputPattern38.exec(input);
+  let value3 = documentInteractionsInputPattern38.exec(input);
   if (!value3)
     return {
       ok: false,
@@ -258014,7 +257105,7 @@ function resolveVisualizationGrammarInstant2(
   for (let value of input as Dynamic) {
     let value2: Dynamic = resolveVisualizationGrammarHasOwn(value, options);
     if (resolveVisualizationGrammarInstant(value2) !== "instant") continue;
-    let value3: Dynamic =
+    let value3 =
       typeof value2 === "bigint"
         ? Number(value2)
         : resolveVisualizationGrammarIsFinite(value2);
@@ -258210,8 +257301,8 @@ function resolveVisualizationGrammarGetUTCDate2(
   let value3: Dynamic =
     date2.getUTCFullYear() * 12 + date2.getUTCMonth() + options;
   let value4 = Math.floor(value3 / 12);
-  let value5: Dynamic = resolveVisualizationGrammarValue7(value3, 12);
-  let value6: Dynamic = resolveVisualizationGrammarGetUTCDate(value4, value5);
+  let value5: number = resolveVisualizationGrammarValue7(value3, 12);
+  let value6: number = resolveVisualizationGrammarGetUTCDate(value4, value5);
   if (value > value6 && !context) return null;
   return (
     resolveVisualizationGrammarSetUTCFullYear(
@@ -258285,7 +257376,7 @@ function resolveVisualizationGrammarPush(
   let items: Dynamic = [];
   for (
     let index = 0,
-      value2: Dynamic = resolveVisualizationGrammarHour(input, context);
+      value2 = resolveVisualizationGrammarHour(input, context);
     index < value;
     index++, value2 = resolveVisualizationGrammarHour2(value2, context, 1)
   )
@@ -258502,7 +257593,7 @@ function updateVisualizationGrammarSlots(
       items.push(null);
       continue;
     }
-    let value8: Dynamic = resolveVisualizationGrammarBigint2(value7);
+    let value8 = resolveVisualizationGrammarBigint2(value7);
     if (value8 === null)
       return value3(
         `${value2}: ${detail(index)} ${options} ${resolveVisualizationGrammarBigint3(value7)} is not a date or a timestamp — ${VisualizationGrammarDates[context === "hour" ? "instants" : "dates"]}, truncated to the ${context}`,
@@ -258515,7 +257606,7 @@ function updateVisualizationGrammarSlots(
     if (value8 < POSITIVE_INFINITY) POSITIVE_INFINITY = value8;
     if (value8 > NEGATIVE_INFINITY) NEGATIVE_INFINITY = value8;
     if (value5 < 0 && context !== "hour") {
-      let value9: Dynamic = resolveVisualizationGrammarInstant(value7);
+      let value9 = resolveVisualizationGrammarInstant(value7);
       if (value9 === "instant" || value9 === "naive") value5 = index;
     }
   }
@@ -259190,7 +258281,7 @@ function isVisualizationGrammarFilter(
   ..._extraArguments: unknown[]
 ) {
   let value: Dynamic = VisualizationGrammarChart[options];
-  let filtered: Dynamic = Object.keys(input).filter(
+  let filtered = Object.keys(input).filter(
     (input2: string, ..._extraArguments: unknown[]) =>
       !value.includes(input2),
   );
@@ -260295,7 +259386,7 @@ var visualizationGrammarMessage17 = `there is no z: a point's marker area is siz
 var visualizationGrammarStyles8 = `there is no style split: a bar's fill patterns are hatch: {"by": "<column>"}, a line's stroke patterns are dash: {"by": "<column>"} — the key is the paint`;
 var visualizationGrammarStyles9 =
   'dash is a split: dash: {"by": "<column>"} on a line mark strokes one pattern per value in split order (solid, dashed, dotted, dash-dot) — no fixed stroke word; a lone line draws solid';
-var chartDefinitionKeyHints: Dynamic = {
+var chartDefinitionKeyHints = {
   ...VisualizationGrammarData6,
   ...VisualizationGrammarData7,
   data: 'a mark that reads another table names it with source: "<sources key>"',
@@ -260776,7 +259867,7 @@ var VisualizationGrammarTitle4: Dynamic = {
   },
 };
 var visualizationGrammarStyles10 = `Vega-Lite's spelling — a chart is {"kind": "chart", "axes": {"x": [{"column": "<column>"}]}, "source": "<sources key>", "marks": [{"type", "y": "<column>", "group"?: {"by"}}], "title"?}`;
-var VisualizationGrammarScales: Dynamic = {
+var VisualizationGrammarScales = {
   ...VisualizationGrammarData6,
   scales: visualizationGrammarStyles4,
   color: visualizationGrammarStyles3,
@@ -261486,7 +260577,7 @@ function isVisualizationGrammarPath(
   }
   let value3: string = kind;
   let value4: Dynamic = VisualizationGrammarTime[value3];
-  let filtered: Dynamic = Object.keys(entry).filter(
+  let filtered = Object.keys(entry).filter(
     (input: string, ..._extraArguments: unknown[]) => !value4.includes(input),
   );
   if (filtered.length > 0)
@@ -261527,7 +260618,7 @@ function isVisualizationGrammarPath(
     }
   for (let value6 of ["prefix", "suffix"] as Dynamic) {
     if (!Object.hasOwn(entry, value6) || entry[value6] === undefined) continue;
-    let value7: Dynamic = resolveVisualizationGrammarTest2(
+    let value7 = resolveVisualizationGrammarTest2(
       entry[value6],
       value6,
     );
@@ -261537,7 +260628,7 @@ function isVisualizationGrammarPath(
 var resolveVisualizationGrammarValue15 = (..._extraArguments: unknown[]) =>
   `must be a non-empty string of at most ${visualizationGrammarLimit2562} characters`;
 var VisualizationGrammarData14 = `must be an order — ${visualizationGrammarStyles}`;
-var visualizationGrammarKindValuesValues: Dynamic = ["kind", "values"];
+var visualizationGrammarKindValuesValues = ["kind", "values"];
 function isVisualizationGrammarPath2(
   entry?: Dynamic,
   options?: Dynamic,
@@ -261590,7 +260681,7 @@ function isVisualizationGrammarPath2(
     );
   }
   if (value3 === "natural") {
-    let filtered2: Dynamic = Object.keys(entry).filter(
+    let filtered2 = Object.keys(entry).filter(
       (input: string, ..._extraArguments: unknown[]) => input !== "kind",
     );
     if (filtered2.length > 0)
@@ -261601,7 +260692,7 @@ function isVisualizationGrammarPath2(
       });
     return;
   }
-  let filtered: Dynamic = Object.keys(entry).filter(
+  let filtered = Object.keys(entry).filter(
     (input: string, ..._extraArguments: unknown[]) =>
       !visualizationGrammarKindValuesValues.includes(input),
   );
@@ -261820,7 +260911,7 @@ function isVisualizationGrammarPath3(
             : collectVisualizationGrammarText(entry),
         );
       let value3: Dynamic = options[entry.key];
-      let value4: Dynamic = Object.keys(entry.variants);
+      let value4 = Object.keys(entry.variants);
       if (value3 === undefined) {
         let value5: string = `is required — ${value4.map(resolveVisualizationGrammarValue11).join(" or ")}`;
         return value2(
@@ -261938,7 +261029,7 @@ function isVisualizationGrammarPath3(
         );
       {
         let value3: Dynamic = resolveVisualizationGrammarReplace2(context);
-        let filtered: Dynamic = Object.keys(options).filter(
+        let filtered = Object.keys(options).filter(
           (input: string, ..._extraArguments: unknown[]) =>
             !Object.hasOwn(entry.fields, input),
         );
@@ -262434,7 +261525,7 @@ function chartSemanticProblems(
           });
       }
       if (input2.tone !== undefined) {
-        let value16: Dynamic =
+        let value16 =
           input2.group !== undefined
             ? "group"
             : input2.stack !== undefined
@@ -263314,7 +262405,7 @@ var visualizationGrammarMessage35 =
   "figures carry no links or icons — link from the doc's prose";
 var visualizationGrammarMessage36 = "a figure sizes to its slot — drop it";
 var VisualizationGrammarData18 = `good or bad is tone: ${visualizationGrammarStyles2} — a number judged against cutoffs (default [0], the sign; reverse: true when lower is better)`;
-var VisualizationGrammarField3: Dynamic = {
+var VisualizationGrammarField3 = {
   field: visualizationGrammarTheValueIsColumn,
   value: visualizationGrammarTheValueIsColumn,
   metric: visualizationGrammarTheValueIsColumn,
@@ -263546,7 +262637,7 @@ var VisualizationGrammarText = {
   label: "Text label",
   help: "Inline words printed as written (editable in place).",
 };
-var VisualizationGrammarColumn2: Dynamic = {
+var VisualizationGrammarColumn2 = {
   kind: "group",
   fields: {
     kind: {
@@ -263830,11 +262921,11 @@ function isVisualizationGrammarPath4(
     });
     return;
   }
-  let value2: Dynamic = Object.keys(input.fields);
+  let value2 = Object.keys(input.fields);
   let value3: Dynamic = context[context.length - 1];
   let value4: Dynamic =
     input.noun ?? (typeof value3 === "string" ? value3 : "each entry");
-  let filtered: Dynamic = Object.keys(options).filter(
+  let filtered = Object.keys(options).filter(
     (input2: string, ..._extraArguments: unknown[]) =>
       !Object.hasOwn(input.fields, input2),
   );
@@ -264385,7 +263476,7 @@ function isVisualizationGrammarTone(
   if (value3(input.column)) return value4("column", input.column);
   if (input.tone !== undefined && value3(input.tone.column))
     return value4("tone.column", input.tone.column);
-  let value6: Dynamic = value5(input.labels);
+  let value6 = value5(input.labels);
   if (value6 !== undefined) return value6;
   for (let value8 of input.deltas as Dynamic) {
     let value9 = `deltas[${value8.index}]`;
@@ -264393,7 +263484,7 @@ function isVisualizationGrammarTone(
     if (value3(value8.tone.column))
       return value4(`${value9}.tone.column`, value8.tone.column);
     items.push([`${value9}.tone`, value8.tone]);
-    let value10: Dynamic = value5(value8.labels);
+    let value10 = value5(value8.labels);
     if (value10 !== undefined) return value10;
   }
   let value7 = resolveVisualizationGrammarDate2(options, input.column);
@@ -264461,8 +263552,8 @@ function resolveVisualizationGrammarValue23(
   for (let index = 0; index < value2; index++) {
     let value3: Dynamic = input[index];
     let value4: Dynamic = options[index];
-    let value5: Dynamic = resolveVisualizationGrammarCharCodeAt2(value3);
-    let value6: Dynamic = resolveVisualizationGrammarCharCodeAt2(value4);
+    let value5: boolean = resolveVisualizationGrammarCharCodeAt2(value3);
+    let value6: boolean = resolveVisualizationGrammarCharCodeAt2(value4);
     if (value5 && value6) {
       let value7: Dynamic = resolveVisualizationGrammarReplace3(value3);
       let value8: Dynamic = resolveVisualizationGrammarReplace3(value4);
@@ -264921,7 +264012,7 @@ var VisualizationGrammarSource2 = [
   "source",
   ...Object.keys(columnCellFields),
 ];
-var columnCellSchema: Dynamic = {
+var columnCellSchema = {
   kind: "group",
   fields: columnCellFields,
   required: ["column"],
@@ -265205,7 +264296,7 @@ function resolveVisualizationGrammarPath13(
       options2: number,
       ..._extraArguments: unknown[]
     ): undefined => {
-      let items: Dynamic = ["cells", options2];
+      let items = ["cells", options2];
       if (!resolveVisualizationGrammarValue29(input2)) {
         value.push({
           path: [...items],
@@ -265462,7 +264553,7 @@ function updateVisualizationGrammarPath2(
     );
   return items;
 }
-var tableSchema: Dynamic = {
+var tableSchema = {
   kind: "group",
   fields: {
     ...tableHeadingFields,
@@ -265634,7 +264725,7 @@ function updateVisualizationGrammarPush(
     let items: Dynamic = [];
     let value2 = true;
     for (let value4 of options as Dynamic) {
-      let value5: Dynamic = resolveVisualizationGrammarIsFinite3(
+      let value5 = resolveVisualizationGrammarIsFinite3(
         resolveVisualizationGrammarHasOwn(value, value4.by),
       );
       if (value5 === undefined) {
@@ -265644,7 +264735,7 @@ function updateVisualizationGrammarPush(
       items.push(value5);
     }
     if (!value2) continue;
-    let value3: Dynamic = resolveVisualizationGrammarValue34(items);
+    let value3: string = resolveVisualizationGrammarValue34(items);
     if (!entries.has(value3)) entries.set(value3, items);
   }
   return [...entries.values()];
@@ -265726,7 +264817,7 @@ function updateVisualizationGrammarValue2(
 ): Dynamic {
   let entries: Dynamic = new (Map as Dynamic)();
   for (let value of input as Dynamic) {
-    let value2: Dynamic = resolveVisualizationGrammarIsFinite3(
+    let value2 = resolveVisualizationGrammarIsFinite3(
       resolveVisualizationGrammarHasOwn(value, options),
     );
     if (value2 === undefined) continue;
@@ -265735,7 +264826,7 @@ function updateVisualizationGrammarValue2(
       entry = new (Set as Dynamic)();
       entries.set(value2, entry);
     }
-    let value3: Dynamic = resolveVisualizationGrammarIsFinite3(
+    let value3 = resolveVisualizationGrammarIsFinite3(
       resolveVisualizationGrammarHasOwn(value, context),
     );
     if (value3 !== undefined) entry.add(value3);
@@ -265851,14 +264942,14 @@ function updateVisualizationGrammarSlice(
       continue;
     let items3: Dynamic = [];
     for (let value4 of [items, ...options.columns] as Dynamic) {
-      let value5: Dynamic = resolveVisualizationGrammarIsFinite3(
+      let value5 = resolveVisualizationGrammarIsFinite3(
         resolveVisualizationGrammarHasOwn(value, value4.by),
       );
       if (value5 === undefined) break;
       items3.push(value5);
     }
     if (items3.length < 1 + options.columns.length) continue;
-    let value2: Dynamic = resolveVisualizationGrammarValue34(items3);
+    let value2: string = resolveVisualizationGrammarValue34(items3);
     let value3: Dynamic = entries.get(value2) ?? {
       slice: items3,
       n: 0,
@@ -265889,7 +264980,7 @@ function updateVisualizationGrammarRows(
     );
   let entries: Dynamic = new (Map as Dynamic)();
   for (let value2 of input as Dynamic) {
-    let value3: Dynamic = value(
+    let value3: string = value(
       items.map(
         (input2?: Dynamic, ..._extraArguments: unknown[]) =>
           resolveVisualizationGrammarIsFinite3(
@@ -266082,7 +265173,7 @@ function updateVisualizationGrammarCell(
       let items2: Dynamic = [];
       let value13 = true;
       for (let value15 of items as Dynamic) {
-        let value16: Dynamic = resolveVisualizationGrammarIsFinite3(
+        let value16 = resolveVisualizationGrammarIsFinite3(
           resolveVisualizationGrammarHasOwn(value12, value15.by),
         );
         if (value16 === undefined) {
@@ -266092,7 +265183,7 @@ function updateVisualizationGrammarCell(
         items2.push(value16);
       }
       if (!value13) continue;
-      let value14: Dynamic = resolveVisualizationGrammarValue34(items2);
+      let value14: string = resolveVisualizationGrammarValue34(items2);
       let entry: Dynamic = entries.get(value14);
       if (entry === undefined)
         entries.set(value14, {
@@ -266622,8 +265713,8 @@ function updateVisualizationGrammarSpan(
   for (let [value, value2] of Object.entries(input) as Dynamic) {
     if (!value2 || typeof value2 !== "object") continue;
     let value3: Dynamic = value2;
-    let value4: Dynamic = resolveVisualizationGrammarStart2(value3.span);
-    let value5: Dynamic = resolveVisualizationGrammarStart2(value3.spanInner);
+    let value4 = resolveVisualizationGrammarStart2(value3.span);
+    let value5 = resolveVisualizationGrammarStart2(value3.spanInner);
     if (!value4 || !value5) continue;
     let state: Dynamic = {
       span: value4,
@@ -266840,7 +265931,7 @@ function updateVisualizationGrammarSource(
   ) as Dynamic) {
     let value2: Dynamic = resolveVisualizationGrammarField(input, value);
     if (value2 === null) continue;
-    let value3: Dynamic = resolveVisualizationGrammarSource4({
+    let value3: string = resolveVisualizationGrammarSource4({
       source: value2.provenance.data.source,
       rowIndex: value2.provenance.data.row,
       field: value2.field,
@@ -269365,14 +268456,14 @@ function formatVisualizationChartValues(
   ..._extraArguments: unknown[]
 ): Dynamic {
   let { theme: theme, format: format }: Dynamic = input;
-  let value: Dynamic = new (Intl.NumberFormat)(input.locale, {
+  let value = new (Intl.NumberFormat)(input.locale, {
     maximumFractionDigits: 2,
   });
-  let value2: Dynamic = new (Intl.NumberFormat)(input.locale, {
+  let value2 = new (Intl.NumberFormat)(input.locale, {
     maximumFractionDigits: 2,
     signDisplay: "always",
   });
-  let value3: Dynamic = new (Intl.NumberFormat)(input.locale, {
+  let value3 = new (Intl.NumberFormat)(input.locale, {
     maximumFractionDigits: 1,
   });
   function value4(
@@ -269604,7 +268695,7 @@ function formatVisualizationChartValues(
       return;
     }
     let ownerDocument: Dynamic = element.ownerDocument;
-    let value9: Dynamic = value7(input2);
+    let value9: string = value7(input2);
     if (
       value5 === null ||
       value9 !== text ||
@@ -270093,7 +269184,7 @@ async function loadVisualizationRuntimeTransparentBackground(
     throw Error(`candela: bad scale ${value}`);
   let value2 = Math.max(1, Math.round(input.width * value));
   let value3 = Math.max(1, Math.round(input.height * value));
-  let value4: Dynamic =
+  let value4 =
     typeof OffscreenCanvas !== "undefined"
       ? new (OffscreenCanvas)(value2, value3)
       : null;
@@ -270188,7 +269279,7 @@ function resolveVisualizationRuntimeSubarray(
   ) {
     let value: number = Math.max(1024, visualizationRuntimeState?.length ?? 0);
     while (value < input) value *= 2;
-    let value2: Dynamic = new Uint32Array(value);
+    let value2 = new Uint32Array(value);
     for (let index = 0; index < value; index++) value2[index] = index;
     visualizationRuntimeState = value2;
   }
@@ -270242,7 +269333,7 @@ function updateVisualizationRuntimePlain(
   input?: Intl.LocalesArgument,
   ..._extraArguments: unknown[]
 ): Dynamic {
-  let value: Dynamic = input ?? "";
+  let value = input ?? "";
   let entry: Dynamic = visualizationRuntimeMap2.get(value);
   if (entry === undefined) {
     entry = {
@@ -271887,7 +270978,7 @@ var mountCandelaChart = (
       value150.style.border = `${surfaceRing}px solid ${value144}`;
     }
     for (
-      let value145: Dynamic = index2;
+      let value145: number = index2;
       value145 < value22.children.length;
       value145++
     )
@@ -272185,7 +271276,7 @@ var mountCandelaChart = (
         let value163: Dynamic = resolveVisualizationRuntimeFormat(
           value7.scales?.x,
         );
-        let value164: Dynamic =
+        let value164 =
           value160 &&
           value162 !== null &&
           value162.ok &&
@@ -272507,7 +271598,7 @@ var mountCandelaChart = (
         input2?: Dynamic,
         ..._extraArguments: unknown[]
       ) => Math.sign(input2) * Math.log1p(Math.abs(input2) / value148);
-      let value150: Dynamic =
+      let value150: number =
         value149(value143[0]) +
         value145 * (value149(value143[1]) - value149(value143[0]));
       return Math.sign(value150) * value148 * Math.expm1(Math.abs(value150));
@@ -272519,7 +271610,7 @@ var mountCandelaChart = (
         input2?: Dynamic,
         ..._extraArguments: unknown[]
       ) => Math.sign(input2) * Math.abs(input2) ** value148;
-      let value150: Dynamic =
+      let value150: number =
         value149(value143[0]) +
         value145 * (value149(value143[1]) - value149(value143[0]));
       return Math.sign(value150) * Math.abs(value150) ** (1 / value148);
@@ -273413,7 +272504,7 @@ var mountCandelaChart = (
       );
   }
   let value135: Dynamic = null;
-  let state3: Dynamic = {
+  let state3 = {
     width: 0,
     height: 0,
   };
@@ -274502,7 +273593,7 @@ function isVisualizationRuntimeStructural(
         );
         items.push(items2);
       }
-      let value5: Dynamic =
+      let value5 =
         index === 0 ? resolveVisualizationRuntimeMustBe(items, context) : null;
       if (value5 !== null)
         resolveVisualizationRuntimePath(value, context, "structural", value5);
@@ -274712,7 +273803,7 @@ function isVisualizationRuntimeStructural(
     }
   }
   if (resolveVisualizationRuntimeValue5(options)) {
-    let value3: Dynamic = Object.keys(options);
+    let value3 = Object.keys(options);
     let value4: Dynamic = resolveVisualizationRuntimeValue5(input.properties)
       ? input.properties
       : null;
@@ -274792,7 +273883,7 @@ function isVisualizationRuntimeStructural(
         }
     }
     if (input.additionalProperties === false) {
-      let value5: Dynamic = value4 ? Object.keys(value4) : [];
+      let value5 = value4 ? Object.keys(value4) : [];
       for (let value6 of value3 as Dynamic) {
         if (value4 && Object.hasOwn(value4, value6)) continue;
         resolveVisualizationRuntimePath(
@@ -275089,7 +274180,7 @@ function updateVisualizationRuntimeMetadataJson(
   context?: Dynamic,
   ..._extraArguments: unknown[]
 ): undefined {
-  let value: Dynamic = resolveVisualizationRuntimeValue6(options);
+  let value = resolveVisualizationRuntimeValue6(options);
   let value2 =
     value !== null &&
     input.metadataJson !== null &&
@@ -275598,11 +274689,11 @@ function GetVisualizationRuntimeCellComponent(
     ),
     (..._extraArguments: unknown[]): Dynamic => cell.version,
   );
-  let value2: Dynamic = useSyncExternalStore(
+  let value2: string = useSyncExternalStore(
     clearVisualizationRuntimeAttributes,
     resolveVisualizationRuntimeDataMode,
   );
-  let value3: Dynamic = useRef(null);
+  let value3 = useRef(null);
   let [value4, value5]: Dynamic = useState(0);
   useLayoutEffect((..._extraArguments: unknown[]) => {
     let current: Dynamic = value3.current;
@@ -275639,12 +274730,12 @@ function GetVisualizationRuntimeCellComponent(
       getVisualizationRuntimeMessage(cell),
     [cell, value],
   );
-  let value7: Dynamic = useRef(0);
-  let value8: Dynamic = useMemo(
+  let value7 = useRef(0);
+  let value8: number = useMemo(
     (..._extraArguments: unknown[]): number => ++value7.current,
     [value6, value4, value2],
   );
-  let value9: Dynamic = useRef(null);
+  let value9 = useRef(null);
   let value10: Dynamic = useRef(null);
   let [value11, value12]: Dynamic = useState(null);
   useEffect(
@@ -275659,7 +274750,7 @@ function GetVisualizationRuntimeCellComponent(
       }
       let current2: Dynamic = value7.current;
       let value18 = Math.max(160, value4);
-      let value19: Dynamic = resolveVisualizationGrammarRound(value18);
+      let value19: number = resolveVisualizationGrammarRound(value18);
       current.style.height = `${value19}px`;
       let state: Dynamic = {
         ...value6.plotSpec,
@@ -275749,10 +274840,10 @@ function GetVisualizationRuntimeCellComponent(
       },
     [],
   );
-  let value13: Dynamic = resolveVisualizationRuntimeTitle(
+  let value13 = resolveVisualizationRuntimeTitle(
     visualizationRuntimeWeakMap2.get(cell),
   );
-  let value14: Dynamic = resolveVisualizationRuntimeNote(
+  let value14 = resolveVisualizationRuntimeNote(
     visualizationRuntimeWeakMap2.get(cell),
   );
   let value15: Dynamic =
@@ -276133,7 +275224,7 @@ function isVisualizationRuntimeError(
       help: "One figure: the value of a numeric column off the source's one row, titled, with up to two labels under it (an as-of date), up to three signed changes under those, and a note.",
     });
 }
-var VisualizationRuntimeError: Dynamic = string({
+var VisualizationRuntimeError = string({
   error: (input?: Dynamic, ..._extraArguments: unknown[]) =>
     input.input === undefined
       ? 'is required — name the source the value reads: source: "<name>"'
@@ -277855,7 +276946,7 @@ function resolveVisualizationRuntimePrefix(
     if (value2.format === undefined)
       return resolveVisualizationGrammarIsFinite2(input);
     if (value2.format.kind === "time") {
-      let value4: Dynamic = resolveVisualizationGrammarIsFinite(input);
+      let value4 = resolveVisualizationGrammarIsFinite(input);
       return value4 === null
         ? resolveVisualizationGrammarIsFinite2(input)
         : resolveVisualizationGrammarParts(value2.format, value4);
@@ -277890,7 +276981,7 @@ function resolveVisualizationRuntimePrefix(
       categoryAxis.format !== undefined &&
       categoryAxis.format.kind === "time"
     ) {
-      let value2: Dynamic = resolveVisualizationGrammarIsFinite(input);
+      let value2 = resolveVisualizationGrammarIsFinite(input);
       if (value2 !== null)
         return resolveVisualizationGrammarParts(categoryAxis.format, value2);
     }
@@ -278359,15 +277450,15 @@ function isVisualizationRuntimeRule(
     for (let value4 of value2 as Dynamic) {
       if (!value3(value4)) continue;
       if (value.kind === "rule") {
-        let value5: Dynamic = resolveVisualizationGrammarIsFinite(
+        let value5 = resolveVisualizationGrammarIsFinite(
           resolveVisualizationGrammarHasOwn(value4, value.value),
         );
         if (value5 !== null) items.push(value5);
       } else {
-        let value5: Dynamic = resolveVisualizationGrammarIsFinite(
+        let value5 = resolveVisualizationGrammarIsFinite(
           resolveVisualizationGrammarHasOwn(value4, value.range[0]),
         );
-        let value6: Dynamic = resolveVisualizationGrammarIsFinite(
+        let value6 = resolveVisualizationGrammarIsFinite(
           resolveVisualizationGrammarHasOwn(value4, value.range[1]),
         );
         if (value5 !== null) items.push(value5);
@@ -278459,12 +277550,12 @@ function collectVisualizationRuntimeSpecs(
             ["range[1]", value9.range[1]],
           ];
     for (let [value17, value18] of value15 as Dynamic) {
-      let value19: Dynamic = value14(value17, value18);
+      let value19 = value14(value17, value18);
       if (value19 !== null) return value4(value19);
     }
     for (let [value17, value18] of value9.labels.entries() as Dynamic) {
       if (value18.kind !== "column") continue;
-      let value19: Dynamic =
+      let value19 =
         value14(`labels[${value17}].column`, value18.column) ??
         (value18.tone?.column !== undefined
           ? value14(`labels[${value17}].tone.column`, value18.tone.column)
@@ -279173,7 +278264,7 @@ function collectVisualizationRuntimeLayout(
   let mapped: Dynamic = layout.deltas.map(
     (input2?: Dynamic, ..._extraArguments: unknown[]): Dynamic => {
       let value5: Dynamic = value2(input2.column);
-      let value6: Dynamic = resolveVisualizationRuntimeIsNaN(value5);
+      let value6: boolean = resolveVisualizationRuntimeIsNaN(value5);
       let value7: Dynamic = value6
         ? visualizationRuntimeMessage4
         : resolveVisualizationRuntimeStartsWith2(
@@ -279434,7 +278525,7 @@ var formatValue = (
 ): string => {
   let format: Dynamic = input.format;
   if (format !== undefined && format.kind === "time") {
-    let value: Dynamic = resolveVisualizationGrammarIsFinite(options);
+    let value = resolveVisualizationGrammarIsFinite(options);
     return value !== null
       ? resolveVisualizationGrammarParts(format, value)
       : String(options);
@@ -279615,7 +278706,7 @@ function resolveVisualizationRuntimeHour(
   options?: Dynamic,
   ..._extraArguments: unknown[]
 ): Dynamic {
-  let value: Dynamic = resolveVisualizationRuntimeToISOString(
+  let value: string = resolveVisualizationRuntimeToISOString(
     VisualizationRuntimeYear[options],
     input,
   );
@@ -279770,7 +278861,7 @@ function resolveVisualizationRuntimeTime2(
   ..._extraArguments: unknown[]
 ): Dynamic {
   if (input.format?.kind === "time") {
-    let value: Dynamic = resolveVisualizationGrammarBigint2(options);
+    let value = resolveVisualizationGrammarBigint2(options);
     if (value !== null)
       return resolveVisualizationRuntimeSlice3(
         resolveVisualizationGrammarParts(input.format, value),
@@ -279906,7 +278997,7 @@ function resolveVisualizationRuntimeLayout(
     input.zoned !== undefined && input.zoned.columns.includes(value4)
       ? input.zoned
       : undefined;
-  let value16: Dynamic =
+  let value16 =
     value2.type === "time" || value13 !== undefined || value15 !== undefined
       ? resolveVisualizationGrammarBigint2(value12)
       : null;
@@ -280020,7 +279111,7 @@ function resolveVisualizationRuntimeLayout2(
     let value9: Dynamic = resolveVisualizationGrammarHasOwn(context, input2);
     if (entry.axis === "y")
       return resolveVisualizationRuntimePrefix2(value3, value9, locale);
-    let value10: Dynamic =
+    let value10 =
       value3.type === "time" ||
       (value3.period ?? layout.x.period) !== undefined ||
       input.zoned !== undefined
@@ -281412,7 +280503,7 @@ function lowerVisualizationPlotSpec(
         ..._extraArguments: unknown[]
       ): Dynamic => (value2[options2].category === input2 ? [options2] : []),
     );
-  let value21: Dynamic = ((..._extraArguments: unknown[]): boolean => {
+  let value21: boolean = ((..._extraArguments: unknown[]): boolean => {
     let period2: Dynamic = options.x.period;
     let value69: Dynamic =
       options.shared?.channel === "x" ? options.shared.column : undefined;
@@ -281422,7 +280513,7 @@ function lowerVisualizationPlotSpec(
       NEGATIVE_INFINITY: NEGATIVE_INFINITY,
     }: Dynamic = Number;
     for (let value70 of value as Dynamic) {
-      let value71: Dynamic = resolveVisualizationGrammarBigint2(
+      let value71 = resolveVisualizationGrammarBigint2(
         value70[value69],
       );
       if (value71 === null || !Number.isFinite(value71)) continue;
@@ -281469,7 +280560,7 @@ function lowerVisualizationPlotSpec(
     (input2?: Dynamic, ..._extraArguments: unknown[]): Dynamic =>
     (input3?: Dynamic, ..._extraArguments: unknown[]): Dynamic => {
       if (input2 !== undefined) {
-        let value69: Dynamic = resolveVisualizationGrammarIsFinite(input3);
+        let value69 = resolveVisualizationGrammarIsFinite(input3);
         if (value69 !== null)
           return resolveVisualizationGrammarParts(input2, value69);
       }
@@ -281678,7 +280769,7 @@ function lowerVisualizationPlotSpec(
         ? (input2.shade ?? input2.y)
         : input2[value70.measure];
       let value73: Dynamic = input2[value70.category];
-      let value74: Dynamic = value7(options2);
+      let value74: string = value7(options2);
       {
         let value82: Dynamic = value30(input2);
         if (value82.length > 0) {
@@ -281754,7 +280845,7 @@ function lowerVisualizationPlotSpec(
             value13(options2, input3) && Object.hasOwn(input3, value73),
         )
       ) {
-        let value82: Dynamic = value36 && value70.category === "x";
+        let value82: boolean = value36 && value70.category === "x";
         let value83: number = -1;
         let value84: Dynamic = value82 ? -1 : value.length;
         for (
@@ -282111,7 +281202,7 @@ function lowerVisualizationPlotSpec(
       ..._extraArguments: unknown[]
     ): undefined => {
       let value69: boolean = input2.type === "tile";
-      let value70: Dynamic =
+      let value70: boolean =
         input2.type === "bar" ||
         value69 ||
         (input2.type === "area" && input2.stackBy !== undefined);
@@ -282318,7 +281409,7 @@ function lowerVisualizationPlotSpec(
           if (!extra2) return "";
           let value83: Dynamic = value4(value82);
           if (value83.type === "time") {
-            let value84: Dynamic = resolveVisualizationGrammarIsFinite(value75);
+            let value84 = resolveVisualizationGrammarIsFinite(value75);
             let value85: Dynamic =
               value83.format !== undefined && value83.format.kind === "time"
                 ? value83.format
@@ -282342,7 +281433,7 @@ function lowerVisualizationPlotSpec(
       }
       if (value76?.format !== undefined && value76.format.kind === "time") {
         if (!extra2) return "";
-        let value80: Dynamic = resolveVisualizationGrammarIsFinite(value75);
+        let value80 = resolveVisualizationGrammarIsFinite(value75);
         return value80 !== null
           ? resolveVisualizationGrammarParts(value76.format, value80)
           : String(value75);
@@ -283462,7 +282553,7 @@ function lowerVisualizationPlotSpec(
         value54,
       );
       if (value73 === undefined || value73 === null) continue;
-      let value74: Dynamic = resolveVisualizationGrammarIsFinite2(value73);
+      let value74: string = resolveVisualizationGrammarIsFinite2(value73);
       if (!entries6.has(value74)) entries6.set(value74, value73);
     }
     let value70: Dynamic = value69 ?? [...entries6.keys()];
@@ -283748,7 +282839,7 @@ function lowerVisualizationPlotSpec(
               input2?: unknown,
               ..._extraArguments: unknown[]
             ): Dynamic => {
-              let value79: Dynamic =
+              let value79 =
                 resolveVisualizationGrammarIsFinite(input2);
               return value79 === null
                 ? null
@@ -284027,7 +283118,7 @@ var resolveVisualizationRuntimeFlatMap = (
   ..._extraArguments: unknown[]
 ): Dynamic =>
   input.flatMap((input2?: unknown, ..._extraArguments: unknown[]): Dynamic => {
-    let value: Dynamic = resolveVisualizationGrammarIsFinite(
+    let value = resolveVisualizationGrammarIsFinite(
       resolveVisualizationGrammarHasOwn(input2, options),
     );
     return value === null ? [] : [value];
@@ -284161,7 +283252,7 @@ function filterVisualizationRuntimeSource(
   if (value2 === undefined) return null;
   let value3: Dynamic = input.data[value2.source]?.run ?? undefined;
   let value4: Dynamic = input.data[value2.source]?.table.rows;
-  let value5: Dynamic = resolveVisualizationRuntimeDefinition(input, value2);
+  let value5: number = resolveVisualizationRuntimeDefinition(input, value2);
   let value6: Dynamic = resolveVisualizationRuntimeMeasure(
     value2,
     resolveVisualizationRuntimeValue47(input.definition)[value] ??
@@ -284638,7 +283729,7 @@ var mountVisualizeChart = (
   let value2: Dynamic = value;
   let items: Dynamic = [];
   let value3: Dynamic = visualizationRuntimeMap6;
-  let state: Dynamic = {
+  let state = {
     kind: "ok",
   };
   let value4: Dynamic = null;
@@ -285768,7 +284859,7 @@ function updateWidgetAndHostRuntimeLayout(
       for (let value20 of ["rows", "columns"] as Dynamic) {
         let items: Dynamic = [];
         for (let [value21, value22] of layout[value20].entries() as Dynamic) {
-          let value23: Dynamic = resolveVisualizationGrammarIsFinite3(
+          let value23 = resolveVisualizationGrammarIsFinite3(
             resolveVisualizationGrammarHasOwn(value19, value22.by),
           );
           if (value23 === undefined) break;
@@ -286800,7 +285891,7 @@ function getWidgetAndHostRuntimeRenderChartCell(
         let entry: Dynamic = value16.get(value24.index);
         items2.push(
           (input3?: Dynamic, ..._extraArguments: unknown[]): undefined => {
-            let value25: Dynamic =
+            let value25: number =
               resolveWidgetAndHostRuntimeHorizontal(options2);
             let value26: Dynamic = context.renderChartCell(
               input2,
@@ -287178,7 +286269,7 @@ var widgetAndHostRuntimeDataLfileWidgetOriginSelecting =
 var widgetAndHostRuntimeLimit200 = 200;
 var WidgetAndHostRuntimeData3 = `calc(4px * var(${documentInteractionsDocZoom},1))`;
 var ProseMirrorHideselectionStyles = `[${widgetAndHostRuntimeDataLfileWidgetOrigin}]{margin:0;font-family:var(--cds-font-sans,inherit);text-align:left}[data-lfile-widget]:has([${widgetAndHostRuntimeDataLfileWidgetOrigin}="panel"]){outline:1px solid var(--cds-border-strong,#d5d3cc);outline-offset:${WidgetAndHostRuntimeData3};border-radius:var(--cds-radius,6px);margin-bottom:calc(${WidgetAndHostRuntimeData3} + 10px);padding-bottom:1px}[${widgetAndHostRuntimeDataLfileWidgetOrigin}="panel"]{margin:12px calc(-1 * ${WidgetAndHostRuntimeData3}) calc(-1 * ${WidgetAndHostRuntimeData3} - 1px);padding:4px ${WidgetAndHostRuntimeData3} 10px;border-top:1px solid var(--cds-border-strong,#d5d3cc);border-radius:0 0 calc(var(--cds-radius,6px) + ${WidgetAndHostRuntimeData3}) calc(var(--cds-radius,6px) + ${WidgetAndHostRuntimeData3});background:var(--cds-surface-1,#f5f4ef)}[${widgetAndHostRuntimeDataLfileWidgetOrigin}] button{font-size:var(--cds-font-size-footnote,13px)}[${widgetAndHostRuntimeDataLfileWidgetOrigin}] :is(.wo-name,.wo-path,.wo-count){margin:0;color:var(--cds-text-secondary,#6b6a63);font-size:var(--cds-font-size-caption,11px);line-height:1.4;unicode-bidi:isolate;overflow-wrap:anywhere}[${widgetAndHostRuntimeDataLfileWidgetOrigin}] .wo-name{margin-top:10px;color:inherit;font-weight:600}[${widgetAndHostRuntimeDataLfileWidgetOrigin}] :is(.wo-path,.wo-count){margin-top:6px}[${widgetAndHostRuntimeDataLfileWidgetOrigin}] .wo-bar{z-index:50;display:flex;width:max-content;padding:4px;transform:translate(-50%,calc(-100% - 10px));background:var(--cds-surface-popover,#fff);color:var(--cds-text-primary,#0b0b0b);border:1px solid var(--cds-border,rgba(11,11,11,.1));border-radius:12px;box-shadow:var(--cds-shadow-lg,0 4px 8px rgba(11,11,11,.08),0 12px 28px -2px rgba(11,11,11,.08));user-select:none}[${widgetAndHostRuntimeDataLfileWidgetOrigin}] .wo-bar button{width:24px;height:24px;margin:0;padding:0;border:0;border-radius:6px;background:transparent;color:inherit;display:inline-flex;align-items:center;justify-content:center;cursor:pointer}[${widgetAndHostRuntimeDataLfileWidgetOrigin}] .wo-bar button:hover{background:var(--cds-fill-ghost-hover,rgba(11,11,11,.05))}::highlight(lfile-origin-quote){background-color:${EditorHostRest2.rest}}::highlight(lfile-origin-quote-on){background-color:${EditorHostRest2.on}}[${widgetAndHostRuntimeDataLfileWidgetOrigin}] .wo-quiet:not(:focus-within){position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}[${widgetAndHostRuntimeDataLfileWidgetOrigin}] .wo-quotes{display:flex;flex-wrap:wrap;gap:4px;margin:4px 0 0}[${widgetAndHostRuntimeDataLfileWidgetOrigin}] .wo-quote{display:inline-flex;align-items:baseline;gap:6px;max-width:100%;margin:0;padding:2px 8px;border:1px solid var(--cds-border-strong,#c9c7c0);border-radius:9999px;background:none;color:inherit;font:inherit;font-size:var(--cds-font-size-caption,11px);cursor:pointer}[${widgetAndHostRuntimeDataLfileWidgetOrigin}] .wo-quote:hover{background:var(--cds-surface-2,#eceae3)}[${widgetAndHostRuntimeDataLfileWidgetOrigin}] .wo-quote-n{font-weight:600}[${widgetAndHostRuntimeDataLfileWidgetOrigin}] .wo-quote-words{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}[${widgetAndHostRuntimeDataLfileWidgetOrigin}] .wo-rows{max-height:320px;overflow:auto;margin:8px 0 0;background:var(--cds-surface-0,#fff);isolation:isolate;scroll-padding-top:max(2em,24px)}[${widgetAndHostRuntimeDataLfileWidgetOrigin}] table{width:100%;border-collapse:separate;border-spacing:0;font-size:var(--cds-font-size-footnote,13px);user-select:text;-webkit-user-select:text}[${widgetAndHostRuntimeDataLfileWidgetOrigin}] :is(th,td){border:solid var(--cds-border-strong,#c9c7c0);border-width:0 1px 1px 0;padding:3px 10px;text-align:left;white-space:nowrap;unicode-bidi:isolate}[${widgetAndHostRuntimeDataLfileWidgetOrigin}] :is(th,td):first-child{border-left-width:1px}[${widgetAndHostRuntimeDataLfileWidgetOrigin}] td[data-number]{text-align:right;font-variant-numeric:tabular-nums}[${widgetAndHostRuntimeDataLfileWidgetOrigin}] tr[data-lit] td{background:color-mix(in srgb,var(--cds-fill-accent,#2a78d6) 16%,transparent)}[${widgetAndHostRuntimeDataLfileWidgetOrigin}] th{position:sticky;top:0;z-index:1;border-top-width:1px;font-weight:600;background:var(--cds-surface-2,#eceae3)}[${widgetAndHostRuntimeDataLfileWidgetOrigin}] :is(pre,.wo-text){max-height:240px;overflow:auto;margin:2px 0 0;user-select:text;-webkit-user-select:text;unicode-bidi:isolate}[${widgetAndHostRuntimeDataLfileWidgetOrigin}] pre{white-space:pre;tab-size:2}[${widgetAndHostRuntimeDataLfileWidgetOrigin}] .wo-text{white-space:pre-wrap;overflow-wrap:anywhere}.ProseMirror-hideselection [${widgetAndHostRuntimeDataLfileWidgetOrigin}]:not([${widgetAndHostRuntimeDataLfileWidgetOriginSelecting}]) ::selection{color:currentcolor;background-color:transparent}.ProseMirror-hideselection [${widgetAndHostRuntimeDataLfileWidgetOriginSelecting}] ::selection{background-color:var(--cds-bg-accent,#cde2fb);color:var(--cds-text-accent,#184f95)}[data-mode=dark] .ProseMirror-hideselection [${widgetAndHostRuntimeDataLfileWidgetOriginSelecting}] ::selection{background-color:var(--cds-bg-accent,#032042);color:var(--cds-text-accent,#6da7ec)}[${widgetAndHostRuntimeDataLfileWidgetOrigin}] :is(pre,.wo-text,.wo-rows,.wo-quote,.wo-bar button):focus-visible{outline:2px solid transparent;box-shadow:var(--cds-focus-shadow,0 0 0 2px var(--cds-fill-accent,#2a78d6))}`;
-var widgetAndHostRuntimeCreateElementAlias: Dynamic = createElement;
+var widgetAndHostRuntimeCreateElementAlias = createElement;
 function resolveWidgetAndHostRuntimeCurrent(
   input?: Dynamic,
   options?: Dynamic,
@@ -287486,7 +286577,7 @@ function IsWidgetAndHostRuntimeArgComponent(
     },
     [arg, value],
   );
-  let value3: Dynamic = useRef(null);
+  let value3 = useRef(null);
   let [value4, value5]: Dynamic = useState(null);
   let value6: Dynamic =
     useSyncExternalStore(
@@ -287926,7 +287017,7 @@ function UpdateWidgetAndHostRuntimeDockComponent(
   let { dock: dock, panelId: panelId }: Dynamic = input;
   let { sources: sources, open: open }: Dynamic =
     updateWidgetAndHostRuntimeSources(dock);
-  let value: Dynamic = useRef(null);
+  let value = useRef(null);
   let value2 = sources.length > 0;
   resolveWidgetAndHostRuntimeCurrent(value, value2);
   useLayoutEffect(
@@ -287966,7 +287057,7 @@ function CollectWidgetAndHostRuntimeDockComponent(
     tab: tab,
     lit: lit2,
   }: Dynamic = updateWidgetAndHostRuntimeSources(dock);
-  let value: Dynamic = useRef(null);
+  let value = useRef(null);
   let value2: Dynamic = open && sources.length > 0;
   resolveWidgetAndHostRuntimeCurrent(value, value2);
   installWidgetAndHostRuntimeSelectionchange(value, value2);
@@ -288063,7 +287154,7 @@ function updateWidgetAndHostRuntimeValue(
   if (typeof input !== "object" || input === null) return 0;
   let entry: Dynamic = widgetAndHostRuntimeWeakMap4.get(input);
   if (entry !== undefined) return entry;
-  let value: Dynamic = resolveWidgetAndHostRuntimeEncode(
+  let value: number = resolveWidgetAndHostRuntimeEncode(
     JSON.stringify(input) ?? "",
   );
   widgetAndHostRuntimeWeakMap4.set(input, value);
@@ -288130,8 +287221,8 @@ function resolveWidgetAndHostRuntimeGap(
     options2?: Dynamic,
     ..._extraArguments: unknown[]
   ) => Math.max(0, Math.min(input2, context.w - options2));
-  let value3: Dynamic = value2(value - bar.w / 2, bar.w);
-  let value4: Dynamic = value2(value + tip.from, tip.to - tip.from);
+  let value3: number = value2(value - bar.w / 2, bar.w);
+  let value4: number = value2(value + tip.from, tip.to - tip.from);
   let value5 = (
     input2?: unknown,
     ..._extraArguments: unknown[]
@@ -288547,7 +287638,7 @@ function isWidgetAndHostRuntimeNodeId2(
   ..._extraArguments: unknown[]
 ) {
   let value: Dynamic = input.ref.startsWith("blob/") ? input.ref.slice(5) : "";
-  let value2: Dynamic = resolveSchemaAndRenderingLabel(input.cited.quote.exact);
+  let value2: string = resolveSchemaAndRenderingLabel(input.cited.quote.exact);
   if (widgetAndHostRuntimeState5 === null || value === "") return false;
   widgetAndHostRuntimeState5({
     nodeId: input.nodeId,
@@ -289106,7 +288197,7 @@ var isWidgetAndHostRuntimeErr = (
   let kind: Dynamic = value.kind;
   let value2 = Object.keys(value);
   let value3 = (...input2: Dynamic[]) => {
-    let filtered: Dynamic = value2.filter(
+    let filtered = value2.filter(
       (input3: string, ..._extraArguments: unknown[]) =>
         !input2.includes(input3),
     );
@@ -289784,7 +288875,7 @@ function createWidgetRendererComponents(
         return resolveWidgetAndHostRuntimeDataLfileVisualizeCard(
           operationModelMessage2,
         );
-      let value12: Dynamic = resolveWidgetAndHostRuntimeValue19(
+      let value12 = resolveWidgetAndHostRuntimeValue19(
         input2.definition,
         value8,
       );
@@ -289874,7 +288965,7 @@ function createWidgetRendererComponents(
           entries2.set(value14, value16);
           state[value14] = value16.data;
         }
-        let value13: Dynamic = resolveOperationModelUnrecognized();
+        let value13 = resolveOperationModelUnrecognized();
         if (!Object.hasOwn(state, operationModelDatum))
           Object.defineProperty(state, operationModelDatum, {
             value: updateOperationModelEntries(state, value13),
@@ -290485,7 +289576,7 @@ function UseWidgetNaturalDimensionsComponent(
           : "light";
       let value11 = resolveWidgetAndHostRuntimeLocal(ownerDocument);
       let value12 = Math.max(160, current2.clientWidth || 480);
-      let value13: Dynamic = resolveVisualizationGrammarFloor(
+      let value13: number = resolveVisualizationGrammarFloor(
         value12,
         isVisualizationRuntimeValue3(input.definition)
           ? collectVisualizationRuntimeWrap(
@@ -290881,7 +289972,7 @@ function UseWidgetNaturalDimensionsComponent(
       attributeFilter: ["data-mode", widgetAndHostRuntimeDataChartZone],
     });
     let value11: Dynamic = null;
-    let ResizeObserver2: Dynamic = (globalThis).ResizeObserver;
+    let ResizeObserver2 = (globalThis).ResizeObserver;
     let value12: Dynamic = null;
     let clientWidth: Dynamic = current2.clientWidth;
     let value13 = (..._extraArguments: unknown[]): undefined => {
@@ -291376,7 +290467,7 @@ function updateWidgetAndHostRuntimeWire(
       Visualize: createWidgetRendererComponents({
         hooks: hooks,
         viewOf: (input2?: Dynamic, ..._extraArguments: unknown[]): Dynamic => {
-          let value13: Dynamic = value9(input2);
+          let value13: string = value9(input2);
           let value14: Dynamic = value8(value13);
           if (!entries4.has(value13)) {
             entries4.set(value13, null);
@@ -292746,7 +291837,7 @@ function collectWidgetAndHostRuntimeLeft(
       right: value21 + context.width,
       bottom: value22 + context.height,
     };
-    let value23: Dynamic = resolveWidgetAndHostRuntimeRight(state2, value4);
+    let value23: number = resolveWidgetAndHostRuntimeRight(state2, value4);
     let value24: Dynamic = mapped.reduce(
       (
         input2: number,
@@ -292764,7 +291855,7 @@ function collectWidgetAndHostRuntimeLeft(
       0,
     );
     let value26: number = value3 - value16(state2, value4);
-    let value27: Dynamic = value26 > widgetAndHostRuntimeLimit0_5 ? value26 : 0;
+    let value27: number = value26 > widgetAndHostRuntimeLimit0_5 ? value26 : 0;
     let value28 =
       state[value20].side === "above" || state[value20].side === "below";
     let value29 = (input2?: Dynamic, ..._extraArguments: unknown[]) =>
@@ -292779,8 +291870,8 @@ function collectWidgetAndHostRuntimeLeft(
             Math.min(state2.bottom, input2.bottom) -
               Math.max(state2.top, input2.top),
           );
-    let value30: Dynamic = value29(value4);
-    let value31: Dynamic = value16(state2, value15);
+    let value30: number = value29(value4);
+    let value31: number = value16(state2, value15);
     let value32 = mapped.some(
       (input2?: Dynamic, ..._extraArguments: unknown[]) =>
         value29(input2) > value30 && value16(state2, input2) <= value31,
@@ -293704,7 +292795,7 @@ function resolveWidgetAndHostRuntimeTextContent2(
   }
   return value2;
 }
-var widgetAndHostRuntimeCreateElementAlias2: Dynamic = createElement;
+var widgetAndHostRuntimeCreateElementAlias2 = createElement;
 function filterWidgetAndHostRuntimeMessage(
   input?: Dynamic,
   ..._extraArguments: unknown[]
@@ -294286,9 +293377,9 @@ var widgetRenderer: Dynamic = {
         input3?: Dynamic,
         ..._extraArguments: unknown[]
       ) => parseFloat(input3 ?? "") || 0;
-      let value123: Dynamic =
+      let value123: number =
         value122(value104?.paddingLeft) + value122(value104?.borderLeftWidth);
-      let value124: Dynamic =
+      let value124: number =
         value122(value104?.paddingRight) + value122(value104?.borderRightWidth);
       let value125 = bounds.width - value123 - value124;
       let value126 = value99
@@ -294314,7 +293405,7 @@ var widgetRenderer: Dynamic = {
         parentElement && value129
           ? parentElement.clientWidth - (value128 - value130)
           : value127;
-      let value132: Dynamic = parentElement
+      let value132: number = parentElement
         ? value122(doc.defaultView?.getComputedStyle(parentElement).paddingLeft)
         : 0;
       let value133 =
@@ -294590,7 +293681,7 @@ var widgetRenderer: Dynamic = {
               );
           }
           value75(options, value159 ?? "");
-          let value160: Dynamic = resolveWidgetAndHostRuntimeValue32(value62);
+          let value160 = resolveWidgetAndHostRuntimeValue32(value62);
           widgetAndHostRuntimeState13?.({
             nodeId: context.currentId,
             id: options,
@@ -295122,7 +294213,7 @@ var widgetRenderer: Dynamic = {
       if (widgetAndHostRuntimeState17 === null) return false;
       if (value38(input2) !== "out") return true;
       if (!value39(options)) return false;
-      let value97: Dynamic = value37(input2);
+      let value97 = value37(input2);
       return (
         value97 !== null &&
         isWidgetAndHostRuntimeWidth2(
@@ -295146,7 +294237,7 @@ var widgetRenderer: Dynamic = {
       ..._extraArguments: unknown[]
     ) => {
       let value97: Dynamic = value41?.from ?? null;
-      let value98: Dynamic = value37(input2);
+      let value98 = value37(input2);
       return (
         value97 !== null &&
         value98 !== null &&
@@ -295369,7 +294460,7 @@ var widgetRenderer: Dynamic = {
       (event?: Dynamic, ..._extraArguments: unknown[]): undefined => {
         if (value41 === null) return;
         let from: Dynamic = value41.from;
-        let value97: Dynamic = value37(event);
+        let value97 = value37(event);
         if (
           from !== null &&
           value97 !== null &&
@@ -296089,7 +295180,7 @@ var widgetRenderer: Dynamic = {
       value63 = null;
       if (resolveWidgetAndHostRuntimeValue29(input2)) return value86();
       if (resolveWidgetAndHostRuntimeValue30(input2)) return value87();
-      let value98: Dynamic = resolveWidgetAndHostRuntimeValue31(input2);
+      let value98: string = resolveWidgetAndHostRuntimeValue31(input2);
       if (value98 !== "") {
         let noteSub: Dynamic = input2.noteSub;
         return value78(
@@ -296107,7 +295198,7 @@ var widgetRenderer: Dynamic = {
       value64 = !value99 && !value65;
       let value100: Dynamic = null;
       let value101 = false;
-      let value102: Dynamic = widgetAndHostRuntimeLimit0;
+      let value102: boolean = widgetAndHostRuntimeLimit0;
       let value103: Dynamic = updateWidgetAndHostRuntimeBindings(
         globalThis,
         (
@@ -296236,7 +295327,7 @@ var widgetRenderer: Dynamic = {
           );
         }
         let value115: Dynamic = doc.createElement("div");
-        let value116: Dynamic = createRoot(value115);
+        let value116 = createRoot(value115);
         let index3 = 0;
         let value117 = (..._extraArguments: unknown[]): Dynamic =>
           value116.render(
@@ -296340,7 +295431,7 @@ var widgetRenderer: Dynamic = {
         );
         value61 = value57.onStale(value3);
         let value121: Dynamic = value99 ? null : element.offsetHeight;
-        let value122: Dynamic = value81();
+        let value122: number = value81();
         element.setAttribute("data-lfile-widget-state", "live");
         element.removeAttribute("data-lfile-wait-asked");
         element.toggleAttribute("data-widget-readonly-vocab", value107);
@@ -296395,7 +295486,7 @@ var widgetRenderer: Dynamic = {
       value79();
       element.setAttribute("data-widget-view", "draft");
       let value98 = false;
-      let value99: Dynamic = widgetAndHostRuntimeLimit0;
+      let value99: boolean = widgetAndHostRuntimeLimit0;
       let value100: Dynamic = updateWidgetAndHostRuntimeBindings(
         globalThis,
         (
@@ -297227,7 +296318,7 @@ resolveRenderedCodeAndProofreadingValue73(
       ...input,
     }),
 );
-var WidgetAndHostRuntimeFixed: Dynamic = {
+var WidgetAndHostRuntimeFixed = {
   fixed: 0,
   remaining: 0,
 };
@@ -297992,7 +297083,7 @@ function resolveWidgetAndHostRuntimeParagraph(
   )
     return null;
   isDocumentInteractionsAddToHistory(input, options);
-  let value: Dynamic = ProseMirrorcloseHistory(input.state.tr);
+  let value = ProseMirrorcloseHistory(input.state.tr);
   let firstChild: Dynamic = value.doc.firstChild;
   let value2: Dynamic;
   if (context !== null && firstChild && value.doc.childCount > 1)
@@ -298110,7 +297201,7 @@ async function loadWidgetAndHostRuntimeWhy(
       (input2?: Dynamic, ..._extraArguments: unknown[]) =>
         input2.view === value2.view,
     ) ?? null;
-  let value4: Dynamic = resolveWidgetAndHostRuntimeMoved(
+  let value4: number = resolveWidgetAndHostRuntimeMoved(
     value3
       ? {
           ed: value3,
@@ -298301,7 +297392,7 @@ function resolveWidgetAndHostRuntimeFrom4(
           to: value2.pos + 1 + value2.size,
         }
       : null;
-  let value11: Dynamic = resolveWidgetAndHostRuntimeMoved(
+  let value11: number = resolveWidgetAndHostRuntimeMoved(
     value10
       ? {
           ed: input,
@@ -298462,7 +297553,7 @@ function isWidgetAndHostRuntimeFrom3(
   let value2 = (..._extraArguments: unknown[]): undefined => {
     let doc: Dynamic = match.state.doc;
     if (to2 <= from || to2 > doc.content.size) return;
-    let value6: Dynamic = ProseMirrorSelection.near(doc.resolve(to2), -1);
+    let value6 = ProseMirrorSelection.near(doc.resolve(to2), -1);
     if (
       !(value6 instanceof (ProseMirrorTextSelection as Dynamic)) ||
       !value6.empty ||
@@ -298790,7 +297881,7 @@ var collectWidgetAndHostRuntimeJoin = (
         input.toString(16).padStart(2, "0"),
     )
     .join("");
-var WidgetAndHostRuntimeData21: Dynamic = collectWidgetAndHostRuntimeJoin();
+var WidgetAndHostRuntimeData21: string = collectWidgetAndHostRuntimeJoin();
 var resolveWidgetAndHostRuntimePresence2 = (
   input?: Dynamic,
   ..._extraArguments: unknown[]
@@ -299823,7 +298914,7 @@ var WidgetAndHostRuntimeAddProseMirrorPlugins: Dynamic =
                   value3(doc.firstChild, 0, "is-empty");
               } else {
                 let value4: Dynamic = updateWidgetAndHostRuntimeArmed(input);
-                let value5: Dynamic =
+                let value5: boolean =
                   value2 && resolveRenderedCodeAndProofreadingParagraph5(doc);
                 let value6 = TiptapisNodeEmpty(doc)
                   ? "is-empty is-editor-empty"
@@ -300155,7 +299246,7 @@ var resolveWidgetAndHostRuntimeAddToHistory3 = (
     let selection: Dynamic = value.state.selection;
     if (selection.empty) continue;
     let value2 = selection instanceof (CellSelection as Dynamic) ? -1 : 1;
-    let value3: Dynamic =
+    let value3 =
       ProseMirrorSelection.findFrom(selection.$head, value2, true) ??
       ProseMirrorSelection.findFrom(selection.$head, -value2, true);
     if (value3 !== null)
@@ -300216,7 +299307,7 @@ var resolveWidgetAndHostRuntimeAddToHistory4 = (
     input !== ""
   ) {
     if (resolveProsePluginsSelection(value.view) !== input) {
-      let value2: Dynamic = resolveProsePluginsEmbed(value.view, input);
+      let value2: number = resolveProsePluginsEmbed(value.view, input);
       if (value2 >= 0)
         value.view.dispatch(
           value.state.tr
@@ -300426,7 +299517,7 @@ var widgetAndHostRuntimeState45: Dynamic = null;
 var widgetAndHostRuntimeState46: Dynamic = null;
 var WidgetAndHostRuntimeLatch: Dynamic = resolveDocumentInteractionsShown();
 var widgetAndHostRuntimeState47: Dynamic = null;
-var WidgetAndHostRuntimeLatch2: Dynamic = resolveDocumentInteractionsShown2();
+var WidgetAndHostRuntimeLatch2 = resolveDocumentInteractionsShown2();
 function resolveWidgetAndHostRuntimeEscape(
   input?: Dynamic,
   ..._extraArguments: unknown[]
@@ -300609,12 +299700,12 @@ function dispatchHostMessage(
     return;
   }
   if (message.type === "comment-active") {
-    let value: Dynamic = typeof message.id === "string" ? message.id : null;
+    let value = typeof message.id === "string" ? message.id : null;
     let value2: boolean =
       message.focus === true &&
       value !== null &&
       !(value === widgetAndHostRuntimeState55 && widgetAndHostRuntimeFocused1);
-    let value3: Dynamic = isWidgetAndHostRuntimeFocus(
+    let value3 = isWidgetAndHostRuntimeFocus(
       {
         id: widgetAndHostRuntimeState55,
         focused: widgetAndHostRuntimeFocused1,
@@ -300675,7 +299766,7 @@ function dispatchHostMessage(
     return;
   }
   if (message.type === "edge-min") {
-    let documentElement: Dynamic = (document).documentElement;
+    let documentElement = (document).documentElement;
     let value: number =
       typeof message.left === "number" && Number.isFinite(message.left)
         ? Math.round(message.left)
@@ -300742,7 +299833,7 @@ function dispatchHostMessage(
     return;
   }
   if (message.type === "bottom-inset") {
-    let documentElement: Dynamic = (document).documentElement;
+    let documentElement = (document).documentElement;
     let value: number =
       typeof message.px === "number" && Number.isFinite(message.px)
         ? Math.round(message.px)
@@ -300760,13 +299851,13 @@ function dispatchHostMessage(
     return;
   }
   if (message.type === "comment-rail") {
-    let documentElement: Dynamic = (document).documentElement;
+    let documentElement = (document).documentElement;
     let value: boolean =
       documentElement.classList.contains("lfile-rail") !== !!message.on;
     let value2: boolean =
       documentElement.classList.contains("lfile-icons") !==
       (message.icons === true);
-    let value3: Dynamic = value || value2;
+    let value3: boolean = value || value2;
     if (
       value3 &&
       [...mountedEditors].some(
@@ -300873,7 +299964,7 @@ function dispatchHostMessage(
       typeof message.px === "number" && Number.isFinite(message.px)
         ? Math.max(0, message.px)
         : 0;
-    let documentElement: Dynamic = (document).documentElement;
+    let documentElement = (document).documentElement;
     let value2: Dynamic =
       (document).scrollingElement ?? documentElement;
     if (typeof message.keep !== "number" || !Number.isFinite(message.keep)) {
@@ -300897,7 +299988,7 @@ function dispatchHostMessage(
       return;
     }
     widgetAndHostRuntimeLimit08 = Math.max(0, message.keep);
-    let value3: Dynamic = resolveWidgetAndHostRuntimeScrollingElement(value2);
+    let value3: number = resolveWidgetAndHostRuntimeScrollingElement(value2);
     if (value3 !== 0)
       resolveOperationModelValue11("dom", "scroll", {
         via: "rail.overhang",
@@ -300955,7 +300046,7 @@ function dispatchHostMessage(
     let value3: string = `${value}/${value2}`;
     let value4: boolean = value3 !== WidgetAndHostRuntimeFontHeadings;
     WidgetAndHostRuntimeFontHeadings = value3;
-    let documentElement: Dynamic = (document).documentElement;
+    let documentElement = (document).documentElement;
     if (value) documentElement.dataset.fontHeadings = value;
     else delete documentElement.dataset.fontHeadings;
     if (value2) documentElement.dataset.fontText = value2;
@@ -300989,7 +300080,7 @@ function dispatchHostMessage(
       return;
     }
     widgetAndHostRuntimeState30 = null;
-    let value: Dynamic = resolveOperationModelTest2(message.ids);
+    let value = resolveOperationModelTest2(message.ids);
     let value2: Dynamic =
       value.length !== widgetAndHostRuntimeValues2.length ||
       value.some(
@@ -301080,7 +300171,7 @@ function dispatchHostMessage(
     }
     widgetAndHostRuntimeState34 = null;
     WidgetAndHostRuntimePageWidth = width;
-    let documentElement: Dynamic = (document).documentElement;
+    let documentElement = (document).documentElement;
     let value2 = (..._extraArguments: unknown[]): undefined => {
       if (width) documentElement.dataset.pageWidth = width;
       else delete documentElement.dataset.pageWidth;
@@ -301315,7 +300406,7 @@ function dispatchHostMessage(
   }
   if (message.type === "widget-comment-placement") {
     if (message.commit === true) {
-      let value: Dynamic =
+      let value =
         typeof message.nodeId === "string" &&
         resolveProsePluginsTest(message.nodeId)
           ? message.nodeId
@@ -302623,7 +301714,7 @@ function dispatchHostMessage(
           ).append(widgetAndHostRuntimeState41);
         }
       }
-      let value3: Dynamic = (
+      let value3 = (
         message.file as import("./contracts").HostDocumentFile
       ).nodes[
         (
@@ -303379,7 +302470,7 @@ function dispatchHostMessage(
       typeof message.bid === "string" &&
       prosePluginsInputPattern2.test(message.bid)
     ) {
-      let value: Dynamic = resolveWidgetAndHostRuntimeEscape2(message.bid);
+      let value = resolveWidgetAndHostRuntimeEscape2(message.bid);
       resolveWidgetAndHostRuntimeIsDestroyed2(value);
       resolveWidgetAndHostRuntimeVia2(value, "center");
       if (message.flash === true) flashAnchorOutline(value);
@@ -303752,7 +302843,7 @@ function observeDocWidth(..._extraArguments: unknown[]): undefined {
   if (!value) return;
   widgetAndHostRuntimeState51 = new ResizeObserver(
     (input: ResizeObserverEntry[], ..._extraArguments: unknown[]): undefined => {
-      let value2: Dynamic = input[input.length - 1]?.contentRect.width ?? -1;
+      let value2: number = input[input.length - 1]?.contentRect.width ?? -1;
       if (value2 === widgetAndHostRuntimeLimit126) return;
       widgetAndHostRuntimeLimit126 = value2;
       if (widgetAndHostRuntimeDocumentInteractionsLimit100Alias === "fit")
@@ -303959,7 +303050,7 @@ function resolveWidgetAndHostRuntimeAddToHistory5(
 ) {
   let { ed: ed2 }: Dynamic = input;
   let selection: Dynamic = ed2.state.selection;
-  let value: Dynamic =
+  let value =
     !input.ranges.every(
       (input2?: Dynamic, ..._extraArguments: unknown[]): Dynamic =>
         selection.ranges.some(
@@ -304140,7 +303231,7 @@ var WidgetAndHostRuntimeRender: Dynamic = isOperationModelActive({
 document.addEventListener(
   "animationend",
   (event: AnimationEvent, ..._extraArguments: unknown[]): undefined => {
-    let target: Dynamic = event.target;
+    let target = event.target;
     if (!(target instanceof Element) || typeof event.animationName !== "string")
       return;
     if (!event.animationName.startsWith("lfile-comment-")) return;
@@ -304472,7 +303563,7 @@ document.addEventListener(
   "click",
   (event: PointerEvent, ..._extraArguments: unknown[]): undefined => {
     if (!widgetAndHostRuntimeLimit133) return;
-    let target: Dynamic = event.target;
+    let target = event.target;
     if (!(target instanceof Element)) return;
     let value: Dynamic = target.closest("[data-bid]");
     let value2: Dynamic = value?.getAttribute("data-bid");
@@ -305157,7 +304248,7 @@ function updateWidgetAndHostRuntimeTop(
   }
   let value8: Dynamic;
   for (let value9 of widgetAndHostRuntimeSet24 as Dynamic) {
-    let value10: Dynamic = resolveWidgetAndHostRuntimeEscape2(value9);
+    let value10 = resolveWidgetAndHostRuntimeEscape2(value9);
     if (!value10) continue;
     let bounds: Dynamic = value10.getBoundingClientRect();
     (value8 ??= {})[value9] = {
@@ -305574,7 +304665,7 @@ document.addEventListener(
 `),
       id: value,
     };
-    let value2: Dynamic =
+    let value2 =
       event.target instanceof HTMLElement && event.target.isContentEditable
         ? event.target
         : null;
@@ -305959,7 +305050,7 @@ document.addEventListener(
       }) !== "forward"
     )
       return;
-    let value8: Dynamic = RenderedCodeAndProofreadingFromWidget;
+    let value8 = RenderedCodeAndProofreadingFromWidget;
     try {
       value8 = resolveRenderedCodeAndProofreadingFromWidget(value2, {
         widgetAttr: prosePluginsDataLfileWidget,
