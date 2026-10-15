@@ -85,7 +85,7 @@
     const tabs = SETTINGS_TAB[task.kind] || [];
     const local = task.remedy && task.remedy.local;
     if (code === 'CAPABILITY_NOT_CONFIGURED') {
-      const route = local && tabs[0] ? {r: 'settings', sec: tabs[0], tab: tabs[1]} : {r: 'settings', sec: tabs[2] || 'cloud', tab: tabs[3] || undefined};
+      const route = local && tabs[0] ? {r: 'settings', sec: tabs[0], tab: tabs[1]} : {r: 'settings', sec: tabs[2] || 'providers', tab: tabs[3] || undefined};
       return {k: 'settings', label: '去设置启用', route};
     }
     if (code === 'AGENT_AUTH_REQUIRED') return {k: 'login', label: '去登录', route: {r: 'settings', sec: 'agent'}};
