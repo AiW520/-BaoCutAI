@@ -16,7 +16,7 @@
 
 mod common;
 
-use media_native::{available, open_frame_stream};
+use media_native::{available, open_frame_stream, open_sequential_decoder};
 use render_raster::imgcmp;
 
 use common::{
@@ -190,6 +190,40 @@ fn native_frames_match_the_ffmpeg_fallback_within_the_cross_backend_tolerance() 
             measured.max_deviation,
             measured.flat_max_deviation,
             measured.edge_share * 100.0
+        );
+    }
+}
+
+/// 两条取帧路径逐字节相同：帧流走平台的 `next_decoded`（每帧新分配），顺序解码器走 `next_decoded_into`
+/// （像素直接写进调用方的缓冲）。同一个源、同一个起点，帧率等于源帧率时两边一帧对一帧；顺序解码器始终复用同一块
+/// 缓冲，上一帧留下的字节不能漏进下一帧。
+#[test]
+fn decoding_into_a_reused_buffer_matches_the_allocating_path_byte_for_byte() {
+    if !available() {
+        return;
+    }
+    let Some((_dir, media)) = fixture() else {
+        return;
+    };
+    for from in [0.0_f64, 1.5] {
+        let streamed = drain(&media, from, SOURCE_FPS);
+        let mut decoder = open_sequential_decoder(&media, from, None).expect("原生顺序解码器");
+        // 先放一块尺寸不对、内容是垃圾的缓冲：第一帧就得把它改成整帧。
+        let mut buffer = vec![0xAB_u8; 17];
+        for (index, expected) in streamed.iter().enumerate() {
+            let info = decoder
+                .next_into(&mut buffer)
+                .expect("解码")
+                .unwrap_or_else(|| panic!("from={from} 的顺序解码器在第 {index} 帧提前结束"));
+            assert_eq!((info.width, info.height), (expected.width, expected.height));
+            assert!(
+                buffer == expected.data,
+                "from={from} 第 {index} 帧两条路径的像素不同"
+            );
+        }
+        assert!(
+            decoder.next_into(&mut buffer).expect("解码").is_none(),
+            "from={from} 的顺序解码器比帧流多出帧"
         );
     }
 }

@@ -522,6 +522,25 @@ impl crate::frames::FrameSource for SourceReaderFrames {
     }
 
     fn next_decoded(&mut self) -> Result<Option<crate::frames::DecodedFrame>> {
+        let mut data = Vec::new();
+        Ok(self
+            .next_decoded_into(&mut data)?
+            .map(|decoded| crate::frames::DecodedFrame {
+                pts_seconds: decoded.pts_seconds,
+                duration_seconds: decoded.duration_seconds,
+                frame: RgbaFrame {
+                    width: decoded.width,
+                    height: decoded.height,
+                    data,
+                },
+            }))
+    }
+
+    /// 像素直接换算进调用方的缓冲：成片导出逐帧轮换同一批缓冲，不逐帧分配、清零一整帧。
+    fn next_decoded_into(
+        &mut self,
+        data: &mut Vec<u8>,
+    ) -> Result<Option<crate::frames::DecodedInto>> {
         if self.finished {
             return Ok(None);
         }
@@ -537,19 +556,15 @@ impl crate::frames::FrameSource for SourceReaderFrames {
             {
                 continue;
             }
-            let mut data = Vec::new();
-            let (width, height) = unsafe { self.video.sample_to_rgba(&decoded.sample, &mut data)? };
-            return Ok(Some(crate::frames::DecodedFrame {
+            let (width, height) = unsafe { self.video.sample_to_rgba(&decoded.sample, data)? };
+            return Ok(Some(crate::frames::DecodedInto {
                 pts_seconds: decoded.timestamp as f64 / HNS_PER_SECOND,
                 duration_seconds: decoded
                     .duration
                     .map(|value| value as f64 / HNS_PER_SECOND)
                     .or(self.video.track_frame_duration),
-                frame: RgbaFrame {
-                    width,
-                    height,
-                    data,
-                },
+                width,
+                height,
             }));
         }
     }

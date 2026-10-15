@@ -15,7 +15,7 @@
 
 | # | 事项 | 像素 | 优先 | 状态（2026-10-15） |
 | --- | --- | --- | --- | --- |
-| W1 | 解码直接写进调用方的缓冲 | 不变 | 高 | 待实现；先解决 W8 的现有正确性失败 |
+| W1 | 解码直接写进调用方的缓冲 | 不变 | 高 | 已实现：两条路径逐字节相同（`frame_stream` 集成测试）；交替 5 次的中位数 cover 125 → 135 fps、contain 120 → 124 fps |
 | W2 | `copy_rows` 去掉逐像素的旋转分支 | 不变 | 高 | 待实现 |
 | W3 | 编码输入直接写进 Media Foundation 的缓冲 | 不变 | 中 | 待实现 |
 | W4 | 在 Windows 上验证 EcoQoS 的关闭 | 不变 | 高 | 部分通过：原生 API 回读、24 忙进程交替对比通过；真实应用最小化 / 切后台待测 |
@@ -30,6 +30,7 @@
 - 问题：`SourceReaderFrames` 没有覆盖 `FrameSource::next_decoded_into`，走 `frames.rs` 的缺省实现：每帧先在 `copy_rows` 里 `vec![0_u8; w * h * 4]` 新分配一帧（1080p 是 8,294,400 字节），再换进调用方的缓冲。成片导出逐帧都这样分配、清零一遍。
 - 做法：照 `macos.rs` 的 `next_decoded_into` 覆盖它。`sample_to_rgba` 与 `copy_rows` 改成写进 `&mut Vec<u8>`（`data.resize(w * h * 4, 0)` 后逐行写），`next_decoded` 保留为对它的薄包装，单帧抽取（`extract_frame_rgba`）不受影响。seek 后早于起点的帧照旧在搬像素之前跳过。
 - 验证：同一个源、同一个起点，新旧两条路径解出的前 N 帧逐字节相同（见下文「验证」的等价测试）。
+- 2026-10-15 已实现（W8 之后，Reader 交的是 NV12）：`SourceReaderFrames::next_decoded_into` 把 NV12 直接换算进调用方的缓冲（尺寸对时 `resize` 不清零），`next_decoded` 是对它的薄包装。`frame_stream.rs` 的 `decoding_into_a_reused_buffer_matches_the_allocating_path_byte_for_byte` 从 0 与 1.5 秒起，把帧流（`next_decoded`）与始终复用一块缓冲的顺序解码器（`next_decoded_into`）逐帧对比，帧数与每帧字节都相同；这条测试不带平台条件，macOS 上同样比对自己的两条路径。Bench（`export-bench --baseline` 为 W7 的 Worker，20 秒、各 5 次交替，机器上有别的会话在跑）：cover 125.4 → 135.1 fps（1.08），contain 119.7 → 124.3 fps（1.04），10 对里 9 对更快。
 
 ### W2 `copy_rows` 去掉逐像素的旋转分支
 
