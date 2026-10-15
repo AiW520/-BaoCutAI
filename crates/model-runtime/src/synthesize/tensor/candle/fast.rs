@@ -10,6 +10,16 @@ pub fn rms_norm(x: impl Borrow<Array>, w: impl Borrow<Array>, eps: f32) -> Resul
 }
 pub fn layer_norm(x: impl Borrow<Array>, w: Option<&Array>, b: Option<&Array>, eps: f32) -> Result<Array> {
     let x = x.borrow();
+    // CUDA 上一个融合的核（按元素拼要十来个核）。
+    #[cfg(feature = "cuda")]
+    if x.0.device().is_cuda() && w.is_some() {
+        return Ok(Array(crate::backend::candle::cuda_kernels::layer_norm(
+            &x.0,
+            w.map(|w| &w.0),
+            b.map(|b| &b.0),
+            eps,
+        )?));
+    }
     let dtype = x.0.dtype();
     let f = x.0.to_dtype(DType::F32)?;
     let f = f.broadcast_sub(&f.mean_keepdim(candle_core::D::Minus1)?)?;
@@ -98,9 +108,21 @@ pub fn scaled_dot_product_attention<'a>(
     };
     Ok(Array(crate::backend::candle::layers::scaled_dot_product_attention(
         &q.0.contiguous()?,
-        &k.0.contiguous()?,
-        &v.0.contiguous()?,
+        &gemm_ready(&k.0)?,
+        &gemm_ready(&v.0)?,
         scale as f64,
         mask.as_ref(),
     )?))
+}
+/// 矩阵乘直接收的 [b, h, s, d] 布局：每个矩阵行连续，前两维能合成一个批次步长。KV 缓存在序列维上截出的视图就是
+/// 这样（只截了序列维），原样交出去，免得每层每步把整个缓存连续化拷一遍；别的布局照旧连续化。
+fn gemm_ready(x: &Tensor) -> Result<Tensor> {
+    if let [_, heads, _, width] = *x.dims()
+        && let [batch_stride, head_stride, row_stride, 1] = *x.stride()
+        && row_stride == width
+        && batch_stride == head_stride * heads
+    {
+        return Ok(x.clone());
+    }
+    Ok(x.contiguous()?)
 }

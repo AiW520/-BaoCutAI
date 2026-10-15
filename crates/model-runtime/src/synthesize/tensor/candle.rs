@@ -49,9 +49,25 @@ pub fn dequantize(w: &Array, s: &Array, b: &Array, group: usize, bits: u32) -> R
 }
 /// Keep dense weights in their checkpoint precision. CUDA half GEMMs use Tensor
 /// Cores; return F32 to the IndexTTS normalization/flow graph for stability.
+///
+/// The input is flattened to 2D and multiplied with the transposed view of the
+/// [out, in] weight: `broadcast_matmul` would broadcast that view to the batch
+/// shape and make it contiguous, i.e. transpose-copy the whole weight per call.
 pub fn linear(x: &Array, w: &Array, b: Option<&Array>) -> Result<Array> {
     let dtype = w.0.dtype();
-    let mut y = x.0.to_dtype(dtype)?.broadcast_matmul(&w.0.t()?)?.to_dtype(x.0.dtype())?;
+    let (out_features, in_features) = w.0.dims2()?;
+    let mut dims = x.0.dims().to_vec();
+    if dims.last() != Some(&in_features) {
+        bail!("linear input {:?} does not match the weight {:?}", x.0.dims(), w.0.dims());
+    }
+    let rows = x.0.elem_count() / in_features;
+    *dims.last_mut().expect("non-empty shape") = out_features;
+    let mut y =
+        x.0.to_dtype(dtype)?
+            .reshape((rows, in_features))?
+            .matmul(&w.0.t()?)?
+            .reshape(dims)?
+            .to_dtype(x.0.dtype())?;
     if let Some(b) = b {
         y = y.broadcast_add(&b.0.to_dtype(y.dtype())?)?;
     }
@@ -170,6 +186,18 @@ impl Array {
     pub fn as_slice<T: WithDType>(&self) -> Vec<T> {
         self.0.flatten_all().and_then(|t| t.to_vec1()).expect("tensor readback")
     }
+    /// 把 `values` 就地写进这块存储第 `a` 维 `offset` 起的位置（`slice_set`），别的维取整段。与 MLX 的值语义不同：
+    /// 共享这块存储的视图也看得到这次写，所以只给只往后追加的 KV 缓存用（之前取出的视图都在写入的范围之前）。
+    /// 通用的 `index_mut` 走 `slice_assign`，要把源补零到整块、建同样大的掩码再 `where_cond`，逐 token 写缓存太贵。
+    pub fn write_axis_in_place(&mut self, a: i32, offset: i32, values: &Self) -> Result<()> {
+        let a = axis(a, self.ndim());
+        if !self.0.is_contiguous() {
+            self.0 = self.0.contiguous()?;
+        }
+        let values = values.0.to_dtype(self.0.dtype())?.contiguous()?;
+        self.0.slice_set(&values, a, offset as usize)?;
+        Ok(())
+    }
     pub fn take_axis(&self, ids: &Self, a: i32) -> Result<Self> {
         Ok(Self(self.0.contiguous()?.index_select(
             &ids.0.flatten_all()?.to_dtype(DType::U32)?.contiguous()?,
@@ -276,8 +304,37 @@ macro_rules! binary {
     };
 }
 binary!(add:broadcast_add,subtract:broadcast_sub,multiply:broadcast_mul,divide:broadcast_div,gt:broadcast_gt);
+#[derive(Clone, Copy)]
+enum ScalarOp {
+    Add,
+    Sub,
+    Mul,
+    Div,
+}
+/// 数组与 f32 标量的运算。浮点数组的加、减、乘走 candle 的 `affine`：系数先舍入到数组的精度、在同一精度上算
+/// `x * mul + add`，与先建标量数组再广播逐位相同，省下每次建标量数组的分配与上传（GPU 上一次 `x * 0.5` 原来
+/// 约 21 µs，`affine` 约 6 µs，逐 token 的图里这比算子本身还贵）。除法换成乘倒数会改舍入，照旧。
+fn scalar(a: &Array, b: f32, op: ScalarOp) -> Result<Array> {
+    if matches!(a.0.dtype(), DType::F32 | DType::F16 | DType::BF16) {
+        let b = f64::from(b);
+        let (mul, add) = match op {
+            ScalarOp::Add => (1.0, b),
+            ScalarOp::Sub => (1.0, -b),
+            ScalarOp::Mul => (b, 0.0),
+            ScalarOp::Div => return a.divide(Array::from_f32(b as f32)),
+        };
+        return Ok(Array(a.0.affine(mul, add)?));
+    }
+    let b = Array::from_f32(b);
+    match op {
+        ScalarOp::Add => a.add(b),
+        ScalarOp::Sub => a.subtract(b),
+        ScalarOp::Mul => a.multiply(b),
+        ScalarOp::Div => a.divide(b),
+    }
+}
 macro_rules! arithmetic {
-    ($trait:ident,$method:ident,$op:ident) => {
+    ($trait:ident,$method:ident,$op:ident,$scalar:ident) => {
         impl<T: Borrow<Array>> std::ops::$trait<T> for Array {
             type Output = Array;
             fn $method(self, b: T) -> Array {
@@ -293,21 +350,21 @@ macro_rules! arithmetic {
         impl std::ops::$trait<f32> for Array {
             type Output = Array;
             fn $method(self, b: f32) -> Array {
-                Array::$op(&self, Array::from_f32(b)).expect("tensor scalar")
+                scalar(&self, b, ScalarOp::$scalar).expect("tensor scalar")
             }
         }
         impl std::ops::$trait<f32> for &Array {
             type Output = Array;
             fn $method(self, b: f32) -> Array {
-                Array::$op(&self, Array::from_f32(b)).expect("tensor scalar")
+                scalar(self, b, ScalarOp::$scalar).expect("tensor scalar")
             }
         }
     };
 }
-arithmetic!(Add, add, add);
-arithmetic!(Sub, sub, subtract);
-arithmetic!(Mul, mul, multiply);
-arithmetic!(Div, div, divide);
+arithmetic!(Add, add, add, Add);
+arithmetic!(Sub, sub, subtract, Sub);
+arithmetic!(Mul, mul, multiply, Mul);
+arithmetic!(Div, div, divide, Div);
 impl std::ops::Neg for Array {
     type Output = Self;
     fn neg(self) -> Self {
@@ -431,6 +488,10 @@ pub fn gelu_same_dtype(x: &Array) -> Result<Array> {
 }
 pub mod nn {
     use super::*;
+    /// tanh 近似的 GELU `0.5·x·(1 + tanh(√(2/π)·(x + 0.044715·x³)))`，一个融合的核（按元素拼要九个核与四个标量）。
+    pub fn gelu_tanh(x: impl Borrow<Array>) -> Result<Array> {
+        Ok(Array(x.borrow().0.gelu()?))
+    }
     pub fn mish(x: impl Borrow<Array>) -> Result<Array> {
         Ok(Array(candle_nn::ops::mish(&x.borrow().0)?))
     }

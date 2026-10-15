@@ -86,6 +86,31 @@ fn kv_update_keeps_prefix_and_does_not_modify_previous_view() {
     near(&old, &[0.; 8]);
 }
 
+/// 就地追加：写进的位置之前取出的视图不受影响，缓存里是写进的值。
+#[test]
+fn kv_append_writes_in_place_after_previous_views() {
+    let mut cache = ops::zeros::<f32>(&[1, 1, 4, 2]).unwrap();
+    cache
+        .write_axis_in_place(2, 0, &Array::from_slice(&[9., 8.], &[1, 1, 1, 2]))
+        .unwrap();
+    let prefix = cache.index((.., .., ..1, ..));
+    cache
+        .write_axis_in_place(2, 1, &Array::from_slice(&[1., 2., 3., 4.], &[1, 1, 2, 2]))
+        .unwrap();
+    near(&cache, &[9., 8., 1., 2., 3., 4., 0., 0.]);
+    near(&prefix, &[9., 8.]);
+}
+
+/// 2D 的右边（权重的转置视图）与批次维的左边相乘，等于逐行乘。
+#[test]
+fn matmul_with_a_transposed_weight_keeps_batch_dims() {
+    let x = Array::from_slice(&[1., 2., 3., 4.], &[2, 1, 2]);
+    let w = Array::from_slice(&[0., 1., 2., 3., 4., 5.], &[3, 2]);
+    let y = ops::matmul(&x, w.t()).unwrap();
+    assert_eq!(y.shape(), [2, 1, 3]);
+    near(&y, &[2., 8., 14., 4., 18., 32.]);
+}
+
 #[test]
 fn attention_matmul_accepts_transposed_multihead_views() {
     let x = Array::from_slice(&(1..=8).map(|i| i as f32).collect::<Vec<_>>(), &[1, 2, 2, 2]);

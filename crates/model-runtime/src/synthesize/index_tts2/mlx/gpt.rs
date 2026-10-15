@@ -34,7 +34,7 @@ use crate::synthesize::index_tts2::sampling::{
     is_beam_sample_done, log_softmax, sample_indices_without_replacement, sample_token, top_log_probs,
 };
 use crate::synthesize::tensor::fast::{self, ScaledDotProductAttentionMask};
-use crate::synthesize::tensor::ops::indexing::{IndexMutOp, IndexOp};
+use crate::synthesize::tensor::ops::indexing::IndexOp;
 use crate::synthesize::tensor::{Array, Dtype, ops};
 use anyhow::{Result, bail, ensure};
 
@@ -452,14 +452,27 @@ impl KvCache for BatchedKvCache {
             _ => {}
         }
         let (bk, bv) = self.buffers[layer].as_mut().expect("缓存已分配");
-        bk.index_mut((.., .., self.offset..end, ..), &keys);
-        bv.index_mut((.., .., self.offset..end, ..), &values);
+        write_cache(bk, self.offset, &keys)?;
+        write_cache(bv, self.offset, &values)?;
         Ok((bk.index((.., .., ..end, ..)), bv.index((.., .., ..end, ..))))
     }
 
     fn commit(&mut self, tokens: i32) {
         self.offset += tokens;
     }
+}
+
+/// 把这一步的 `values` 写进缓存第 2 维 `offset` 起。candle 上就地写（`Array::write_axis_in_place`）。
+#[cfg(not(all(feature = "backend-mlx", target_os = "macos", target_arch = "aarch64")))]
+fn write_cache(buffer: &mut Array, offset: i32, values: &Array) -> Result<()> {
+    buffer.write_axis_in_place(2, offset, values)
+}
+
+#[cfg(all(feature = "backend-mlx", target_os = "macos", target_arch = "aarch64"))]
+fn write_cache(buffer: &mut Array, offset: i32, values: &Array) -> Result<()> {
+    use crate::synthesize::tensor::ops::indexing::IndexMutOp;
+    buffer.index_mut((.., .., offset..offset + values.dim(2), ..), values);
+    Ok(())
 }
 
 // ---------------------------------------------------------------------------

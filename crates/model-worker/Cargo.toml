@@ -21,7 +21,8 @@ cuda = ["backend-candle", "model-runtime/cuda"]
 whisper-ggml = ["backend-candle", "model-runtime/whisper-ggml"]
 whisper-ggml-vulkan = ["whisper-ggml", "model-runtime/whisper-ggml-vulkan"]
 whisper-ggml-metal = ["whisper-ggml", "model-runtime/whisper-ggml-metal"]
-# Whisper 在 NVIDIA 上走 ggml 的 CUDA 后端（要 CUDA Toolkit；与 candle 的 `cuda` 各自独立，CUDA 安装包两个都开）。未实测。
+# Whisper 在 NVIDIA 上走 ggml 的 CUDA 后端（要 CUDA Toolkit；与 candle 的 `cuda` 各自独立，CUDA 安装包两个都开）。
+# Windows 11 + RTX 3060 上实测过（架构设计 §6.5）。
 whisper-ggml-cuda = ["whisper-ggml", "model-runtime/whisper-ggml-cuda"]
 
 [dependencies]

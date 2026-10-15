@@ -296,8 +296,13 @@ pub mod act {
 
     /// tanh 近似 GELU（GPT-2 `gelu_new`）。
     pub fn gelu_tanh(x: &Array) -> Result<Array> {
-        let inner = (x + x.square()?.multiply(x)? * 0.044_715f32) * (2.0f32 / std::f32::consts::PI).sqrt();
-        Ok(x * 0.5f32 * (ops::tanh(inner)? + 1.0f32))
+        #[cfg(not(all(feature = "backend-mlx", target_os = "macos", target_arch = "aarch64")))]
+        return crate::synthesize::tensor::nn::gelu_tanh(x);
+        #[cfg(all(feature = "backend-mlx", target_os = "macos", target_arch = "aarch64"))]
+        {
+            let inner = (x + x.square()?.multiply(x)? * 0.044_715f32) * (2.0f32 / std::f32::consts::PI).sqrt();
+            Ok(x * 0.5f32 * (ops::tanh(inner)? + 1.0f32))
+        }
     }
 
     pub fn softplus(x: &Array) -> Result<Array> {

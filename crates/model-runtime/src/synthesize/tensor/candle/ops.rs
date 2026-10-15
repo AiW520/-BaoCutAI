@@ -20,8 +20,25 @@ pub fn round(x: impl Borrow<Array>, decimals: impl Into<Option<i32>>) -> Result<
     let tie = (&scaled - scaled.floor()?)?.eq(0.5)?;
     Ok(Array((tie.where_cond(&even, &nearest)? * (1. / mult))?))
 }
+/// MLX `matmul`（NumPy 广播）。右边是 2D（权重，常是 [out, in] 的转置视图）时把左边拍成 2D 再乘：
+/// `broadcast_matmul` 会把它广播成批次形状再连续化，每次调用都把整块权重拷一遍（转置视图还要转置），
+/// 逐帧的自回归里这是大头；cuBLAS 与 CPU 的 gemm 都直接收转置视图。
 pub fn matmul(a: impl Borrow<Array>, b: impl Borrow<Array>) -> Result<Array> {
     let (a, b) = pair(a.borrow(), b.borrow())?;
+    if a.rank() >= 2
+        && let Ok((k, n)) = b.dims2()
+        && a.dims().last() == Some(&k)
+    {
+        let mut dims = a.dims().to_vec();
+        *dims.last_mut().expect("rank >= 2") = n;
+        let rows = a.elem_count() / k;
+        let b = if b.is_contiguous() || b.t()?.is_contiguous() {
+            b
+        } else {
+            b.contiguous()?
+        };
+        return Ok(Array(a.contiguous()?.reshape((rows, k))?.matmul(&b)?.reshape(dims)?));
+    }
     Ok(Array(a.contiguous()?.broadcast_matmul(&b.contiguous()?)?))
 }
 pub fn maximum(a: impl Borrow<Array>, b: impl Borrow<Array>) -> Result<Array> {
@@ -207,6 +224,23 @@ pub fn pad(x: impl Borrow<Array>, pads: &[(i32, i32)], value: impl Into<Option<A
 // Models use NLC / OLC. Candle/cuBLAS use NCL / OCL.
 pub fn conv1d(x: impl Borrow<Array>, w: impl Borrow<Array>, stride: i32, padding: i32, dilation: i32, groups: i32) -> Result<Array> {
     let (x, w) = pair(x.borrow(), w.borrow())?;
+    // 逐通道卷积（MLX 布局的核 [C, K, 1]、组数等于通道数）：CUDA 上一个核在 [B, T, C] 上直接算。candle 的分组卷积
+    // 按组拆开逐组算再拼，BigVGAN 的抗混叠滤波一次就是一千多个通道。
+    #[cfg(feature = "cuda")]
+    if x.device().is_cuda()
+        && groups > 1
+        && let [channels, _, 1] = *w.dims()
+        && channels == groups as usize
+        && x.dim(2)? == channels
+    {
+        return Ok(Array(crate::backend::candle::cuda_kernels::depthwise_conv1d_nlc(
+            &x,
+            &w,
+            stride as usize,
+            padding as usize,
+            dilation as usize,
+        )?));
+    }
     Ok(Array(
         x.transpose(1, 2)?
             .contiguous()?

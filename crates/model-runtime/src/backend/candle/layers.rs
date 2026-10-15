@@ -25,10 +25,10 @@ pub fn gelu(x: &Tensor) -> Result<Tensor> {
 }
 
 pub struct Dense {
-    /// 只保存 [in, out] 一份布局：这是 gemm 直接可用的形状，既不需要像原来那样
-    /// 额外保留一份 [out, in]（大投影层是数 GB 的差别），也避免解码期用转置视图
-    /// 触发 cuBLAS 的低效 `OP_T` GEMV 路径。
-    weight_t: Tensor,
+    /// checkpoint 的 [out, in]，只存这一份。前向把输入拍成 2D、乘它的转置视图：cuBLAS（`OP_T`）与 CPU 的 gemm
+    /// 都直接收转置视图。RTX 3060 上 bf16 逐 token 的 GEMV 这样比乘 [in, out] 的连续副本快 15–25%；也不能用
+    /// `broadcast_matmul`，它把 2D 的权重广播成批次形状再连续化（转置视图就是每次整块拷一遍）。
+    weight: Tensor,
     bias: Option<Tensor>,
 }
 
@@ -46,28 +46,42 @@ impl Dense {
         Self::from_weight(weight, bias)
     }
 
-    /// `weight` 为 checkpoint 的 [out, in]；转置后原张量立即释放。
+    /// `weight` 为 checkpoint 的 [out, in]。
     pub fn from_weight(weight: Tensor, bias: Option<Tensor>) -> Result<Self> {
-        let weight_t = weight.t()?.contiguous()?;
-        drop(weight);
-        Ok(Self { weight_t, bias })
+        weight.dims2()?;
+        Ok(Self {
+            weight: weight.contiguous()?,
+            bias,
+        })
     }
 
     pub fn device(&self) -> &Device {
-        self.weight_t.device()
+        self.weight.device()
     }
 
     pub fn dtype(&self) -> DType {
-        self.weight_t.dtype()
+        self.weight.dtype()
     }
 
     pub fn forward(&self, input: &Tensor) -> Result<Tensor> {
-        let output = input.broadcast_matmul(&self.weight_t)?;
+        let output = matmul_transposed(input, &self.weight)?;
         Ok(match &self.bias {
             Some(bias) => output.broadcast_add(bias)?,
             None => output,
         })
     }
+}
+
+/// `input` [..., in] 乘 [out, in] 权重的转置，得 [..., out]：输入拍成 2D 再乘转置视图（见 [`Dense`]）。
+pub fn matmul_transposed(input: &Tensor, weight: &Tensor) -> Result<Tensor> {
+    let (outputs, inputs) = weight.dims2()?;
+    let mut dims = input.dims().to_vec();
+    if dims.last() != Some(&inputs) {
+        bail!("matmul input {:?} does not match the weight {:?}", input.dims(), weight.dims());
+    }
+    let rows = input.elem_count() / inputs;
+    *dims.last_mut().expect("non-empty shape") = outputs;
+    Ok(input.contiguous()?.reshape((rows, inputs))?.matmul(&weight.t()?)?.reshape(dims)?)
 }
 
 pub struct LayerNorm {
@@ -92,6 +106,10 @@ impl LayerNorm {
     }
 
     pub fn forward(&self, input: &Tensor) -> Result<Tensor> {
+        #[cfg(feature = "cuda")]
+        if input.device().is_cuda() && self.weight.is_some() {
+            return super::cuda_kernels::layer_norm(input, self.weight.as_ref(), self.bias.as_ref(), self.eps as f32);
+        }
         let dtype = input.dtype();
         let working = if dtype == DType::F32 {
             input.clone()
@@ -132,30 +150,29 @@ impl RmsNorm {
 }
 
 pub struct TokenEmbedding {
-    /// 同样只保存 [hidden, vocab] 一份：tied 输出层是每步都跑的热路径，需要这个
-    /// 布局；查表则改成沿 vocab 维 `index_select` 再转置，代价只有取到的那几行。
-    weight_t: Tensor,
+    /// checkpoint 的 [vocab, hidden]，只存这一份：查表沿 vocab 维取行，tied 输出层与 [`Dense`] 一样乘转置视图。
+    weight: Tensor,
 }
 
 impl TokenEmbedding {
     pub fn load(store: &mut WeightStore, prefix: &str, group_size: usize, bits: usize) -> Result<Self> {
         let weight = store.take_dequantized(prefix, group_size, bits)?;
-        let weight_t = weight.t()?.contiguous()?;
-        drop(weight);
-        Ok(Self { weight_t })
+        weight.dims2()?;
+        Ok(Self {
+            weight: weight.contiguous()?,
+        })
     }
 
     /// `ids` 为 u32 [batch, sequence]。
     pub fn forward(&self, ids: &Tensor) -> Result<Tensor> {
         let (batch, sequence) = ids.dims2()?;
-        let flat = ids.flatten_all()?;
-        let columns = self.weight_t.index_select(&flat, 1)?;
-        Ok(columns.t()?.contiguous()?.reshape((batch, sequence, ()))?)
+        let rows = self.weight.index_select(&ids.flatten_all()?, 0)?;
+        Ok(rows.reshape((batch, sequence, ()))?)
     }
 
     /// tied embedding 作为输出层：`hidden × Wᵀ`。
     pub fn as_linear(&self, hidden: &Tensor) -> Result<Tensor> {
-        Ok(hidden.broadcast_matmul(&self.weight_t)?)
+        matmul_transposed(hidden, &self.weight)
     }
 }
 
@@ -424,27 +441,29 @@ mod tests {
         }
     }
 
-    /// Dense 只保存转置布局，前向结果必须仍等于 `x · Wᵀ + b`。
+    /// Dense 乘 [out, in] 权重的转置视图，前向结果必须等于 `x · Wᵀ + b`（含批次维）。
     #[test]
     fn dense_forward_matches_row_major_weight() {
         let device = Device::Cpu;
         let weight = Tensor::arange(0.0_f32, 6.0, &device).unwrap().reshape((3, 2)).unwrap();
         let bias = Tensor::from_vec(vec![0.5_f32, -0.5, 1.0], (3,), &device).unwrap();
         let dense = Dense::from_weight(weight, Some(bias)).unwrap();
-        let input = Tensor::from_vec(vec![1.0_f32, 2.0], (1, 1, 2), &device).unwrap();
-        let output = dense.forward(&input).unwrap().flatten_all().unwrap().to_vec1::<f32>().unwrap();
-        // W = [[0,1],[2,3],[4,5]]，x = [1,2] → [2, 8, 14]，再加 bias。
-        assert_eq!(output, vec![2.5, 7.5, 15.0]);
+        let input = Tensor::from_vec(vec![1.0_f32, 2.0, 3.0, 4.0], (2, 1, 2), &device).unwrap();
+        let output = dense.forward(&input).unwrap();
+        assert_eq!(output.dims(), &[2, 1, 3]);
+        // W = [[0,1],[2,3],[4,5]]，x = [1,2] → [2, 8, 14]、[3,4] → [4, 18, 32]，再加 bias。
+        assert_eq!(
+            output.flatten_all().unwrap().to_vec1::<f32>().unwrap(),
+            vec![2.5, 7.5, 15.0, 4.5, 17.5, 33.0]
+        );
     }
 
-    /// tied embedding 只保存 [hidden, vocab]，查表与输出投影都要保持原语义。
+    /// tied embedding 只保存 [vocab, hidden]，查表与输出投影都要保持原语义。
     #[test]
     fn token_embedding_lookup_and_projection_agree() {
         let device = Device::Cpu;
         let weight = Tensor::arange(0.0_f32, 12.0, &device).unwrap().reshape((4, 3)).unwrap();
-        let embedding = TokenEmbedding {
-            weight_t: weight.t().unwrap().contiguous().unwrap(),
-        };
+        let embedding = TokenEmbedding { weight };
         let ids = Tensor::from_vec(vec![2_u32, 0], (1, 2), &device).unwrap();
         let rows = embedding.forward(&ids).unwrap();
         assert_eq!(rows.dims(), &[1, 2, 3]);
