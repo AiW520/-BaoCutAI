@@ -35,11 +35,11 @@ var placeholderByInvitation: Dynamic = {
   comment: ASK_CARD_PLACEHOLDER,
   blank: ASK_CARD_PLACEHOLDER_BLANK,
 };
-var ASK_CARD_FIELD_LABEL: Dynamic = `Ask Claude to write or edit here`;
+var ASK_CARD_FIELD_LABEL: Dynamic = `Ask the agent to write or edit here`;
 var ASK_CARD_GROUP_LABEL: Dynamic = {
-  write: `Ask Claude to write`,
-  comment: `Ask Claude`,
-  blank: `Ask Claude to write`,
+  write: `Ask the agent to write`,
+  comment: `Ask Agent`,
+  blank: `Ask the agent to write`,
 };
 var CARD_FOCUSABLE_SELECTOR: Dynamic = `[contenteditable="true"], [role="textbox"][tabindex="0"], button:not(:disabled):not([aria-busy="true"]):not([tabindex="-1"])`;
 var CARD_READONLY_SELECTOR: Dynamic = `[role="textbox"][aria-readonly="true"]`;

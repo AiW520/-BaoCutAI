@@ -97,4 +97,9 @@ describe('文档编辑器的标注（editor:annotate）', () => {
     expect(readHostMessage({ type: 'editor:annotate-result', requestId: 'r1', ok: true })).toEqual({ type: 'editor:annotate-result', requestId: 'r1', ok: true });
     expect(readHostMessage({ type: 'editor:annotate-result', requestId: 'r1', ok: 'yes' })).toBeNull();
   });
+
+  it('「Ask Agent」要父窗口把焦点交给输入框，多余的字段不带过去', () => {
+    expect(readEditorMessage({ type: 'editor:focus-chat', prompt: 'x' })).toEqual({ type: 'editor:focus-chat' });
+    expect(readHostMessage({ type: 'editor:focus-chat' })).toBeNull();
+  });
 });

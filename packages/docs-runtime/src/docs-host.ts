@@ -7,6 +7,9 @@
  * 读取点（都带 BaoCut: 注释）：platform-core.tsx 的 resolveObservabilityBrowserAndOperationEventsClaude7、
  * frameSendToClaudeVerdict / frameSendCommentToClaude 的成员判断、frameRegisterCustomAnchors；docs-app.tsx 的
  * useCommentSessionBridge、SummonNote、knownBlocksRef / summonHostRef、批注框的 offered / framed。
+ * 另有 docsHost.chat：左下角的「Ask Agent」原版打开 claude.ai 的对话栏，独立页面里只出一块空白浮层；宿主装了 chat 时点了
+ * 交给宿主（BaoCut 把焦点交给会话的输入框），没装时不显示（docs-app.tsx 的 ChatPill）。选中文字后工具栏的「Ask Agent」
+ * 不经 chat：装了 comments 时打开批注框（docs-app.tsx 的 ask-claude）。
  * 空行上 @Claude 的行内提问不经这里：它要先让模型判断请求（sample）再决定由 Claude 直接写还是转成批注，独立页面不提供
  * （packages/docs-runtime/README.md「不提供」）。
  */
@@ -44,8 +47,14 @@ export interface DocsHostComments {
   }): Promise<{ threadId: string }>;
 }
 
+/** 左下角「Ask Agent」交给宿主的对话：BaoCut 把焦点交给这个标签页所属会话的输入框。 */
+export interface DocsHostChat {
+  focus(): void;
+}
+
 export interface DocsHost {
   comments?: DocsHostComments;
+  chat?: DocsHostChat;
 }
 
 declare global {
@@ -59,6 +68,13 @@ export function standaloneDocsHost(): DocsHost | null {
   return typeof host?.comments === "object" && host.comments !== null
     ? host
     : null;
+}
+
+/** 独立页面（不在 Frame 里）且宿主装了 docsHost.chat 时返回它，否则返回 null。 */
+export function standaloneDocsChat(): DocsHostChat | null {
+  if (isFrameArtifact()) return null;
+  const chat = globalThis.docsHost?.chat;
+  return typeof chat === "object" && chat !== null ? chat : null;
 }
 
 /** 批注能交给智能体的环境：原来的 Frame，或装了 docsHost.comments 的独立页面。 */

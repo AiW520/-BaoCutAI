@@ -65,8 +65,10 @@
 - Runtime 给的地址是 `/docs/<grant>/`；服务端在 `index.html` 里注入 `<base href="/docs/<grant>/">` 与启动信息 `window.__BAOCUT_DOCS__ = {projectId, canEdit}`。shim（`packages/docs/src/editor/`）设好接口与 WebSocket 的基址（原应用的 `__BONGO_BASE__` / `__BONGO_WS_BASE__` = `/docs/<grant>`），再用 `history.replaceState` 把地址换成应用认的 `/docs/<grant>/project/<文档 id>`（查询串照留）；编辑器的相对地址（字体、样式、拼写词表、运行时）都落在 grant 下。
 - 编辑器的改动经 mux 的 door 调用即时发出；`editor:flush` 时 shim 稍等停笔，再等在途的 door 调用都有了 `doorack`，回 `editor:flushed`。
 - `globalThis.docsHost.comments`：评论的「发送给智能体」与空行上的请求经它发给父窗口（`editor:annotate`，第 8 节）；父窗口回 `editor:annotate-result`。标签（标签页名 › 原文）与原文由 shim 向 `api/baocut/annotation?path=` 查；页面不在 BaoCut 的 iframe 里时 `canSendToClaude()` 为 `no_session`。
+- `globalThis.docsHost.chat`（只在 BaoCut 的 iframe 里装）：编辑器左下角的「Ask Agent」点了发 `editor:focus-chat`，功能区让这个会话露出来（单条标签条里选中会话标签），光标放到它的输入框末尾；标签不属于会话时提示。页面单独打开时没有这个按钮。原版这里打开 claude.ai 的对话栏，BaoCut 不提供。
+- 选中文字后工具栏的「Ask Agent」打开这处选区的批注框（开头带着提及智能体的 `@Claude`），之后同第 8 节的评论；批注发不出去（页面单独打开、只读）时提示。
 - 与功能区的其他编辑器共用 `editor:ready`、`editor:flush` / `editor:flushed`、`editor:reveal`；文档自己有持久的评论，没有幻灯片那样的标注模式开关。
-- 界面里把助手叫「智能体」（Send to agent / Sent to agent），不叫 Claude。
+- 界面里把助手叫「智能体」（Send to agent / Sent to agent / Ask Agent），不叫 Claude；`@Claude` 是评论里提及智能体的写法，照原版保留。
 
 ## 6. Runtime：文档服务与路由
 
@@ -120,7 +122,7 @@
 
 ## 8. 评论与请求发给智能体
 
-1. 用户在编辑器里对一条评论点「发送给智能体」（`comment`），或在空行上写一句给智能体的请求（`ask`）。
+1. 用户在编辑器里对一条评论点「发送给智能体」（`comment`），或在空行上写一句给智能体的请求（`ask`）。选中文字后工具栏的「Ask Agent」打开的批注框默认发送给智能体（第 5 节）。
 2. shim 发 `editor:annotate { requestId, kind, path, label, quote?, text }`；`path` 是元素路径 `f-<标签页 id>#<正文 id>/<块 id>…`，评论另带 `;thread=<线程第一条的 id>`。
 3. 功能区把它变成一条 `DocsAnnotation`（`doc` 是这个标签的 `FileTarget`）挂到这个会话的草稿上，回 `editor:annotate-result { ok }`（标签不属于会话、草稿已满时 `ok: false`）。上限同幻灯片：一条消息 20 条，每条 4096 字。
 4. `conversations.send` / `steer` 带 `docsAnnotations`；Runtime 把文档解析成相对工作目录的路径，Harness 在消息末尾拼一段：

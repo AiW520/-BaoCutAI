@@ -1252,7 +1252,11 @@ import {
   _ as recordFramePhase,
 } from "./hello-early";
 // BaoCut: 独立页面的批注宿主（globalThis.docsHost），见 docs-host.ts。
-import { commentSummonHost } from "./docs-host";
+import {
+  commentSummonHost,
+  standaloneDocsChat,
+  standaloneDocsHost,
+} from "./docs-host";
 import { t as preloadModule } from "./preload";
 import {
   A as Popover,
@@ -31766,8 +31770,8 @@ var NodeThreadsCard: Dynamic = (0, React.memo)(function (
   );
 });
 var INLINE_ASK_COMPOSER_LAYOUT = {
-  regionLabel: `Ask Claude about this document`,
-  dismissedHint: `Type @Claude to talk to Claude`,
+  regionLabel: `Ask the agent about this document`,
+  dismissedHint: `Type @Claude to talk to the agent`,
   bottom: 16,
   clearance: 8,
   lane: 672,
@@ -32223,7 +32227,7 @@ function InlineAskComposer(
     >
       <div
         className={`text-secondary mb-1.5 text-footnote font-medium`}
-      >{`Ask Claude`}</div>
+      >{`Ask Agent`}</div>
       <div
         className={`absolute top-1.5 right-1.5 transition-opacity duration-150 group-focus-within:opacity-100 group-hover:opacity-100 ${dock ? `opacity-100` : `opacity-0`}`}
       >
@@ -32233,7 +32237,7 @@ function InlineAskComposer(
             size={`xs`}
             iconOnly={true}
             icon={<UiOverlaysAndIconsCustomIcon name={`X`} size={`sm`} />}
-            aria-label={`Close Ask Claude`}
+            aria-label={`Close Ask Agent`}
             onClick={onCancel}
           />
         </Tooltip>
@@ -32345,8 +32349,8 @@ function UseDocumentCommandsNonceComponent(
             layout: `composer`,
             composerChrome: chrome,
             claudeRoute: `always`,
-            placeholder: `Ask Claude…`,
-            ariaLabel: `Ask Claude`,
+            placeholder: `Ask the agent…`,
+            ariaLabel: `Ask Agent`,
             autoFocus: autoFocus,
             addressClaude: true,
             boxId: INLINE_ASK_TOAST_ID,
@@ -32412,8 +32416,8 @@ function InlineAskSheet(
       ): Dynamic =>
         onCancel(inlineAskSheet === `close` || inlineAskSheet === `escape`)
       }
-      title={`Ask Claude`}
-      closeLabel={`Close Ask Claude`}
+      title={`Ask Agent`}
+      closeLabel={`Close Ask Agent`}
       onHeightChange={onLayout}
       finalFocus={false}
       initialFocus={(..._extraArguments: unknown[]): Dynamic =>
@@ -68673,6 +68677,25 @@ function RoomDocumentPage(
                       ? data.block.slice(0, 1e4)
                       : null;
                   if (!text.trim()) return;
+                  // BaoCut: 选中文字后工具栏的「Ask Agent」。独立页面没有原版的对话栏（下面加进对话栏的那条路在 BaoCut 里什么也不出现）；
+                  // 装了 docsHost.comments 时照 Frame 的做法打开批注框，这条批注当作问智能体的（ask），发给智能体。交不出去时提示。
+                  if (room && !isFrameArtifact() && commentSummonHost()) {
+                    if (
+                      useCommentStore.getState().frameSummon !== null &&
+                      !commentsReadOnlyRef.current
+                    ) {
+                      countRef4.current = Date.now();
+                      send({
+                        type: `comment-key`,
+                      });
+                    } else {
+                      toast(PlatformSessionAndSourcesMessage4, {
+                        id: `ask-claude-frame`,
+                        duration: 4e3,
+                      });
+                    }
+                    return;
+                  }
                   if (room && isFrameArtifact()) {
                     if (
                       useCommentStore.getState().frameSummon !== null &&
@@ -89872,16 +89895,21 @@ function ChatPill(
     max: 700,
     edge: `right`,
   });
+  // BaoCut: 独立页面没有原版的对话栏（点了只出一块空白、挡住左下角的浮层）。宿主装了 docsHost.chat 时一直是按钮，点了交给宿主
+  // （BaoCut 把焦点交给会话的输入框）；BaoCut 的页面单独打开、不在会话里（有 comments 没有 chat）时不显示。
+  let baocutHost: Dynamic = standaloneDocsHost() !== null;
+  let hostChat: Dynamic = baocutHost ? standaloneDocsChat() : null;
+  if (baocutHost && !hostChat) return null;
   return pid ? (
-    chatPillResult === `pill` ? (
+    hostChat || chatPillResult === `pill` ? (
       <div className={`absolute bottom-4 left-4 z-30`}>
         <button
           type={`button`}
           data-chat-pill={true}
           data-testid={`chat-pill`}
-          aria-label={`Ask Claude`}
+          aria-label={`Ask Agent`}
           onClick={(..._extraArguments: unknown[]): Dynamic =>
-            chatPillResult2(`floating`)
+            hostChat ? hostChat.focus() : chatPillResult2(`floating`)
           }
           className={`bg-surface-popover text-primary hover:after:bg-alpha-1 relative flex items-center gap-2 rounded-full border px-4 py-2.5 text-sm font-medium shadow-lg after:pointer-events-none after:absolute after:inset-0 after:rounded-full after:transition-colors after:content-['']`}
         >
@@ -89890,7 +89918,7 @@ function ChatPill(
             size={`sm`}
             className={`text-secondary`}
           />
-          {`Ask Claude`}
+          {`Ask Agent`}
         </button>
       </div>
     ) : chatPillResult === `floating` ? (

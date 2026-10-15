@@ -1,6 +1,6 @@
 import type { EditorToHostMessage, HostToEditorMessage } from '@baocut/slides/editor-messages';
 import { describe, expect, it, vi } from 'vitest';
-import { ackRid, annotationPath, annotationText, answerFlush, createCommentsHost, doorRid, DoorTracker, HostError, type ParentLink } from './host.ts';
+import { ackRid, annotationPath, annotationText, answerFlush, createChatHost, createCommentsHost, doorRid, DoorTracker, HostError, type ParentLink } from './host.ts';
 
 /** 假的父窗口：记下编辑器发的消息，`reply` 模拟父窗口回消息。 */
 function fakeLink() {
@@ -58,6 +58,14 @@ describe('批注', () => {
     const error = await sent.catch((caught: unknown) => caught);
     expect(error).toBeInstanceOf(HostError);
     expect(error).toMatchObject({ code: 'unavailable' });
+  });
+});
+
+describe('Ask Agent', () => {
+  it('请父窗口把焦点交给会话的输入框', () => {
+    const { link, posted } = fakeLink();
+    createChatHost(link).focus();
+    expect(posted).toEqual([{ type: 'editor:focus-chat' }]);
   });
 });
 

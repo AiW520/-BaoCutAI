@@ -28,7 +28,7 @@ import type {
   ClosestTarget,
 } from "./type-models/feedback";
 import type { Dispose } from "./type-models/common";
-var ASK_WHY_QUESTION = `What made you close Ask Claude?`;
+var ASK_WHY_QUESTION = `What made you close Ask Agent?`;
 var ASK_WHY_CHIPS: readonly {
   word: FeedbackChoice;
   label: string;

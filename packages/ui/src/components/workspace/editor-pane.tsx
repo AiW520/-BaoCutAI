@@ -49,6 +49,7 @@ import { useDirectory } from '../../state/directory-store.ts';
 import { registerEditorFlush, useEditorReveal } from '../../state/editor-bridge.ts';
 import { useShell } from '../../state/shell-store.ts';
 import { useSpace } from '../../state/space-store.ts';
+import { focusPromptEnd } from '../focus-prompt.ts';
 import { saveEditorFile, type EditorExportCopy } from './editor-save-file.ts';
 
 export type { EditorExportCopy } from './editor-save-file.ts';
@@ -265,7 +266,8 @@ export function editorUrl(address: string, locale: Locale, params?: Readonly<Rec
  *
  * 标注（§8.2）经 postMessage 与编辑器往来（`@baocut/slides/editor-messages`，两种编辑器同一套）：编辑器里点一个元素或框一块区域，
  * 这里在那个位置弹出批注框，「添加到对话」进这个会话的草稿；草稿里属于这份文档的交回编辑器画编号标记。
- * 编辑器里「让智能体修好」的提示经 `editor:suggest-prompt` 放进这个会话的输入框。
+ * 编辑器里「让智能体修好」的提示经 `editor:suggest-prompt` 放进这个会话的输入框；协作文档左下角的「Ask Agent」经
+ * `editor:focus-chat` 让会话露出来，光标放进它的输入框。
  * 发送消息前经 `registerEditorFlush` 让编辑器保存完；已发送消息里点一条，经 `useEditorReveal` 跳到那个位置。
  */
 export function EditorPane({ spec, target, conversationId, active }: { spec: EditorPaneKind; target: FileTarget; conversationId: Id | null; active: boolean }) {
@@ -414,6 +416,18 @@ export function EditorPane({ spec, target, conversationId, active }: { spec: Edi
           shell.setDraft(conversationId, mergeDraft(shell.drafts[conversationId], message.prompt));
         }
         post({ type: 'editor:suggest-prompt-result', requestId: message.requestId, ok: !!conversationId });
+        return;
+      }
+      case 'editor:focus-chat': {
+        // 协作文档左下角的「Ask Agent」（docs/design/docs §5）：会话露出来（单条标签条里选中会话标签），光标放到输入框末尾
+        if (!conversationId) {
+          const copy = direct?.copy ?? notes?.copy;
+          if (copy) ToastQueue.negative(copy.noConversation, { timeout: 5000 });
+          return;
+        }
+        const shell = useShell.getState();
+        if (shell.route.tab === 'home' && shell.route.conversationId === conversationId) shell.revealConversation();
+        requestAnimationFrame(() => focusPromptEnd(document.querySelector(`[data-composer="${CSS.escape(conversationId)}"]`)));
         return;
       }
       case 'editor:save-file': {

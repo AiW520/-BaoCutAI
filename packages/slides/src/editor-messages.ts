@@ -56,7 +56,9 @@ export type EditorToHostMessage =
    * 文档编辑器（docs/design/docs §8）：用户把一条评论发给智能体（`comment`），或在空行上写了给智能体的请求（`ask`）。
    * 父窗口把它作为一条文档标注加进这个会话的草稿（不弹批注框，正文已经写好），回 `editor:annotate-result`。
    */
-  | ({ type: 'editor:annotate'; requestId: string } & DocsEditorAnnotation);
+  | ({ type: 'editor:annotate'; requestId: string } & DocsEditorAnnotation)
+  /** 文档编辑器左下角的「Ask Agent」（docs/design/docs §5）：父窗口把焦点交给这个会话的输入框；标签页不属于会话时提示。 */
+  | { type: 'editor:focus-chat' };
 
 /** `editor:annotate` 带的内容；字段与 `@baocut/protocol` 的 `DocsAnnotation` 相同（不含文档目录，父窗口按 iframe 补上）。 */
 export interface DocsEditorAnnotation {
@@ -101,6 +103,7 @@ const EDITOR_TYPES = new Set<EditorToHostMessage['type']>([
   'editor:suggest-prompt',
   'editor:save-file',
   'editor:annotate',
+  'editor:focus-chat',
 ]);
 const HOST_TYPES = new Set<HostToEditorMessage['type']>([
   'editor:threads',
@@ -228,6 +231,8 @@ export function readEditorMessage(data: unknown): EditorToHostMessage | null {
         text: data.text.trim(),
       };
     }
+    case 'editor:focus-chat':
+      return { type: data.type };
     default:
       return null;
   }

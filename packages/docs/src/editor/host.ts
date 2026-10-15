@@ -4,6 +4,8 @@
  * - `docsHost.comments`：编辑器里批注的「Send to agent」先把批注存进文档，再调 `sendToClaude({anchor, text})`。这里向文档服务
  *   要这条批注的位置说明（`api/baocut/annotation`：标签页名、原文），发 `editor:annotate` 给父窗口（BaoCut 界面），
  *   父窗口把它挂到会话草稿上并回 `editor:annotate-result`。
+ * - `docsHost.chat`：编辑器左下角的「Ask Agent」请父窗口把焦点交给这个会话的输入框（`editor:focus-chat`）。只在 BaoCut 的
+ *   iframe 里装；页面单独打开时没有会话，编辑器不显示这个按钮。
  * - `editor:flush`：发送消息前父窗口要编辑器把改动交给服务端。编辑器的改动经 mux 的 door 调用即时发出（停笔后很快），这里
  *   等一小会儿，再等在途的 door 调用都有了回执，回 `editor:flushed`。
  */
@@ -27,6 +29,11 @@ export type SendVerdict = 'available' | 'no_session' | 'writers_only' | 'off';
 export interface DocsHostComments {
   canSendToClaude(): Promise<SendVerdict>;
   sendToClaude(request: { anchor: CommentAnchor; text: string }): Promise<{ threadId: string }>;
+}
+
+/** 编辑器左下角「Ask Agent」用的宿主（packages/docs-runtime/src/docs-host.ts 的 DocsHostChat）。 */
+export interface DocsHostChat {
+  focus(): void;
 }
 
 /** 文档服务对一条批注位置的说明（`api/baocut/annotation`）。 */
@@ -103,6 +110,10 @@ export function createCommentsHost(
       return { threadId: thread };
     },
   };
+}
+
+export function createChatHost(link: ParentLink): DocsHostChat {
+  return { focus: () => link.post({ type: 'editor:focus-chat' }) };
 }
 
 /** 在途的 door 调用：mux 上发出的 `~d:<rid>` 帧，收到同一个 rid 的 `doorack` 为止。 */

@@ -6,6 +6,7 @@ import type { FileTarget } from '@baocut/protocol';
 import { RuntimeContext } from '../../runtime/context.tsx';
 import type { RuntimeSession } from '../../runtime/session.ts';
 import { useConnection } from '../../state/connection-store.ts';
+import { useShell } from '../../state/shell-store.ts';
 import { EditorPane, type EditorOpened, type EditorPaneKind } from './editor-pane.tsx';
 
 const open = vi.fn(async (): Promise<EditorOpened> => ({ url: 'about:blank', editorAvailable: true, title: 'Plan', count: null }));
@@ -70,4 +71,29 @@ it('opens a tab that is already shown when it mounts', async () => {
   expect(open).toHaveBeenCalledTimes(1);
   expect(open).toHaveBeenCalledWith(runtime, target);
   expect(frame()).not.toBeNull();
+});
+
+it('reveals the conversation and focuses its composer when the editor asks for the chat', async () => {
+  const initialShell = useShell.getState();
+  const revealConversation = vi.fn();
+  useShell.setState({ route: { tab: 'home', conversationId: 'conv_1', projectId: null }, revealConversation });
+  const composer = document.createElement('div');
+  composer.dataset.composer = 'conv_1';
+  const input = document.createElement('div');
+  input.setAttribute('role', 'textbox');
+  input.tabIndex = 0;
+  composer.append(input);
+  document.body.append(composer);
+  try {
+    await render(true);
+    await act(() => {
+      window.dispatchEvent(new MessageEvent('message', { data: { type: 'editor:focus-chat' }, source: frame()!.contentWindow }));
+    });
+    await act(() => new Promise<void>((resolve) => requestAnimationFrame(() => resolve())));
+    expect(revealConversation).toHaveBeenCalledTimes(1);
+    expect(document.activeElement).toBe(input);
+  } finally {
+    composer.remove();
+    useShell.setState(initialShell, true);
+  }
 });

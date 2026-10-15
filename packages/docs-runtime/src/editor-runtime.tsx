@@ -71208,7 +71208,7 @@ var ProsePluginsMaster162: Dynamic = {
 };
 var ProsePluginsAskClaude = {
   askClaude: {
-    label: "Ask Claude",
+    label: "Ask Agent",
   },
   comment: {
     label: "Comment",
@@ -86704,7 +86704,7 @@ function applyInlineAtomPaste(
       },
       sectionOf: (entry?: Dynamic, ..._extraArguments: unknown[]): Dynamic =>
         entry.kind === "claude"
-          ? "Ask Claude"
+          ? "Ask Agent"
           : entry.kind === "more"
             ? entry.section
             : entry.kind === "tab"
@@ -135650,7 +135650,7 @@ function isRenderedCodeAndProofreadingPreventScroll(
   };
 }
 var renderedCodeAndProofreadingTitle = "Title";
-var renderedCodeAndProofreadingMessage36 = "Start typing, or ask Claude to…";
+var renderedCodeAndProofreadingMessage36 = "Start typing, or ask the agent to…";
 var renderedCodeAndProofreadingMessage37 = "Start typing…";
 var renderedCodeAndProofreadingStartTyping = "Start typing";
 var renderedCodeAndProofreadingDataGhostAlone = "data-ghost-alone";
@@ -222595,8 +222595,8 @@ var DocumentInteractionsSection = {
   paragraph: "add a paragraph about…",
 };
 var documentInteractionsMessage7 = "↵";
-var documentInteractionsAskClaude = "ask Claude";
-var documentInteractionsAskClaude2 = "Ask Claude";
+var documentInteractionsAskClaude = "ask the agent";
+var documentInteractionsAskClaude2 = "Ask Agent";
 var [DocumentInteractionsSplit = "", DocumentInteractionsSplit2 = ""]: Dynamic =
   renderedCodeAndProofreadingMessage36.split(documentInteractionsAskClaude);
 var LfileAskGhostPluginKey: Dynamic = new (ProseMirrorPluginKey as Dynamic)(
@@ -241964,7 +241964,7 @@ var DocumentInteractionsIcon4 = {
 initializeProsemirrorCommandsDependencies2();
 initializeProsemirrorViewDependencies();
 var documentInteractionsMessage24 =
-  "Select for options, or ask Claude to change it.";
+  "Select for options, or ask the agent to change it.";
 var LfileWidgetFreshHintClass = "lfile-widget-fresh-hint";
 var documentInteractionsLimit12002 = 1200;
 var documentInteractionsMap6: Dynamic = new (Map as Dynamic)();
@@ -251788,9 +251788,9 @@ function openDocumentSelectionToolbar(
       let value290: Dynamic = value265 && !value269;
       value193.disabled = value267 || value290 || value273 || !value32?.ask;
       value193.dataset.tip = value267
-        ? "Select part of the text to ask Claude about"
+        ? "Select part of the text to ask the agent about"
         : value290 || value273
-          ? "Select some text to ask Claude about"
+          ? "Select some text to ask the agent about"
           : value193.disabled
             ? "Nothing to ask about — the selection has no text"
             : ProsePluginsAskClaude.askClaude.label;

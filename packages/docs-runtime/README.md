@@ -39,8 +39,11 @@
   - `docs-app.tsx` 的 `useCommentSessionBridge`、批注下方的发送状态、块定位（`knownBlocksRef` / `summonHostRef`）与批注框的「Send to agent」勾选，从 Frame 判断改成 `commentSummonHost()`（Frame，或独立页面装了 `docsHost.comments`）。
   - 宿主没装 `docsHost` 时与原版的独立页面相同：没有勾选，批注只存进文档。
   - 顺序：批注先经文档服务存进文档（door 的 create utterance），之后才调 `sendToClaude`，实测相隔约 20 ms。`anchor.path` 形如 `f-<标签页 id>#<正文节点 id>/<块 id>@<起>-<止>;thread=<批注 id>`；`text` 是去掉控制字符与格式字符后的批注正文，开头的 `@Claude ` 保留，例如 `@Claude please tighten this`。
+- **Ask Agent**（`docs-app.tsx`、`docs-host.ts`）：原版的两个入口都通向 claude.ai 的对话栏，独立页面里点了没有可见的反应（左下角按钮只打开一块空白浮层，挡住左下角；工具栏按钮只播报一句）。
+  - 选中文字后工具栏的「Ask Agent」（`ask-claude` 手势）：独立页面装了 `docsHost.comments` 时照 Frame 的做法发 `comment-key`，打开这处选区的批注框，这条批注当作问智能体的（`ask`），默认发给智能体；批注发不出去（页面单独打开、没有会话，或只读）时提示「Ask Agent isn't available here」。
+  - 左下角的「Ask Agent」（`ChatPill`）：宿主装了 `globalThis.docsHost.chat`（`focus()`，BaoCut 的 iframe 里才装）时点了交给宿主，BaoCut 把焦点交给这个会话的输入框（`editor:focus-chat`）；装了 `comments` 没有 `chat`（页面单独打开）时不显示。两种情况都不再打开原版的对话浮层。
 - **本页新建的批注收后续回复**（`platform-core.tsx` 的 `seatDoorList`）：原版的 `room:project/<id>` 同步评论（`utterance/<id>`），批注栏接上 fold 之后，本页新建的批注由 fold 接管，智能体的回复经 fold 到达。BaoCut 的 room 只同步标签栏与下拉选项，评论走 door 读回的列表；原版在 fold 接上时只拿列表补 fold 里没有、本地也没有的批注，本页新建的那条一直是本地那份，智能体的回复要重开编辑器才看得到（服务端的推送与编辑器重读都正常）。改成：门里列表的批注只要不在 fold 里，就顶替本地同 id 的那份，与门里来的批注同样处理；没送达的本地改动照原样由发件箱补回。
-- **文案**：批注发给智能体这条路上的状态、勾选、提示与智能体署名称「the agent」/「Agent」，键与判断不变（`platform-core.tsx` 的 `PlatformSessionAndSourcesSent` 等、`DataModelSchemasSendToClaude` 等，`docs-app.tsx` 的 `Sent to agent`、`Sends to agent`、`The agent is working on it…`、`Ask the agent…`，`cds.tsx` 里批注框勾选与智能体署名的默认文字）。`@Claude` 是批注里提及智能体的写法（提及项的标签与正文识别都按它），照原样保留。
+- **文案**：批注发给智能体这条路上的状态、勾选、提示与智能体署名称「the agent」/「Agent」，键与判断不变（`platform-core.tsx` 的 `PlatformSessionAndSourcesSent` 等、`DataModelSchemasSendToClaude` 等，`docs-app.tsx` 的 `Sent to agent`、`Sends to agent`、`The agent is working on it…`、`Ask the agent…`，`cds.tsx` 里批注框勾选与智能体署名的默认文字）。「Ask Claude」一类的按钮、提示、标题与播报改称「Ask Agent」/「ask the agent」（工具栏按钮与它的三种提示、左下角按钮、行内提问卡片、`@` 菜单的分组名、空文档的占位语「Start typing, or ask the agent to…」——`editor-runtime.tsx` 按「ask the agent」切开它做链接，`platform-core.tsx` 的 `EditorHostMessage12` 与它保持同一句）。`@Claude` 是批注里提及智能体的写法（提及项的标签与正文识别都按它，`packages/docs/src/editor/host.ts` 也按它去掉开头的提及），照原样保留；给模型看的提示词（`docs-app.tsx` 的 `S7`、`DocumentCommandsState2` 等）不改；智能体头像与工具栏按钮的星形图标来自图标字体，见「随包的第三方代码与资源」。
 - **字体**：不内置 Anthropic Sans / Serif / Mono 品牌字体（`platform-core.tsx` 的字体清单留空）。原版把品牌字体与图标字体用 `Promise.all` 一起取，缺一份整组作废、编辑器 iframe 连图标字体也没有；清单留空后只取图标字体，正文退回 `docs.css` 字体栈里的系统字体。图标字体按应用要的名字 `artifact-type/fonts/anthropicons-variable.e7f7e9ca44846912.woff2` 放进产物，文件是 `packages/slides-runtime/src/fonts/anthropicons-fizzy-lake.woff2`（`apps/docs-editor/vite.config.ts`）。
 - **KaTeX 字体**：只分发 npm 包的 20 份 WOFF2（共 259,792 字节），输出到 `artifact-type/fonts/katex-<字体名>-<内容哈希>.woff2`，不打进附加脚本。父页面按 `document.baseURI` 读取 grant 下的本地文件，同一页面内合并并发请求、缓存成功结果；失败的字体可在下次调用时重试。字体转为 data URL 的 `@font-face` 样式，通过既有 `loadFonts` 消息与正文／图标字体一并交给 iframe（冷启动 `all` 或预热帧 `first`，`rest` 不重复传）。附加脚本只保留 KaTeX 排版 CSS。iframe 保持原有 sandbox 与 CSP；网关和 Web 共用同一份资源与加载流程。
 - **页面模板**：不装托管平台的健康上报脚本，不预载品牌字体，`appifact-capabilities` 只留 `comments`（应用本身不读这个 meta），不带写给托管平台的 README 注释与 meta，标题是 Docs。
@@ -55,7 +58,7 @@
 
 下面这些要 claude.ai 的服务或 Frame，BaoCut 不提供，界面照原样保留。都是在 `/docs/<grant>/` 下实测看到的：
 
-- **Ask Claude 对话**：左下角的「Ask Claude」按钮点了没有反应，也不发请求；选中文字后工具栏的「Ask Claude」只播报一句「Added to your message to Claude」，内容不去任何地方。
+- **文档里的对话栏**：原版左下角按钮与工具栏的提问打开 claude.ai 的对话栏，BaoCut 不提供；两个入口改走批注框与 BaoCut 会话的输入框，见「宿主与平台」的「Ask Agent」。
 - **空行上 @Claude 提问**：编辑器 @ 菜单里没有「Ask Claude」一项（`docs-app.tsx` 里 `people` 回复的 Frame 条件）。只放开这一处与行内提问的 Frame 条件试过：卡片能出来，但按回车先要模型判断请求（`sample`，`claude-verdict.ts`）、再决定由 Claude 直接写还是转成批注，独立页面里卡片停住，既不存批注也不调 `sendToClaude`，所以照原样不提供。要找智能体，选中文字写批注（装了 `docsHost.comments` 时「Send to agent」默认勾选）。
 - **Claude 直接写文档**（「Ask the agent to edit」之后的写作卡片、`claude-writing-*`、会话路由 `sendToClaudeSession`）：要宿主的 `room` 能力（Frame 里的 `window.claude`）。
 - **分享**：「Share」按钮点了没有反应。
@@ -80,4 +83,4 @@ node apps/docs-editor/build.mjs --force
 npx tsc -p packages/docs-runtime/tsconfig.json --noEmit
 ```
 
-改动后在 `/docs/<grant>/project/<id>` 下打开一篇文档，过一遍：图标与工具栏、输入后重新载入、选中文字加批注、装了 `docsHost.comments` 时批注框出现「Send to agent」并调到 `sendToClaude`。
+改动后在 `/docs/<grant>/project/<id>` 下打开一篇文档，过一遍：图标与工具栏、输入后重新载入、选中文字加批注、装了 `docsHost.comments` 时批注框出现「Send to agent」并调到 `sendToClaude`。在 BaoCut 的文档标签里再过一遍：选中文字点工具栏的「Ask Agent」出批注框、加进会话草稿；左下角的「Ask Agent」把焦点交给会话的输入框。

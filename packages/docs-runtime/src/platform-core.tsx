@@ -12678,8 +12678,8 @@ function installPlatformSessionAndSourcesReason(
     },
   );
 }
-var PlatformSessionAndSourcesMessage4 = `Ask Claude isn't available here yet`;
-var PlatformSessionAndSourcesAddedToYourMessageToClaude = `Added to your message to Claude`;
+var PlatformSessionAndSourcesMessage4 = `Ask Agent isn't available here`;
+var PlatformSessionAndSourcesAddedToYourMessageToClaude = `Added to your message to the agent`;
 function resolvePlatformSessionAndSourcesBid2(
   bid?: unknown,
   start?: unknown,
@@ -18680,7 +18680,7 @@ function resolveEditorExtensionsDataColor(
 }
 var EditorExtensionsAskClaude: Dynamic = {
   askClaude: {
-    label: `Ask Claude`,
+    label: `Ask Agent`,
   },
   comment: {
     label: `Comment`,
@@ -119512,7 +119512,7 @@ var resolveEditorHostKind3: Dynamic = (
 var EditorHostLfileFigure = `lfile-figure`;
 var editorHostValue1200 = 1200;
 var EditorHostTitle = `Title`;
-var EditorHostMessage12 = `Start typing, or ask Claude to…`;
+var EditorHostMessage12 = `Start typing, or ask the agent to…`;
 var EditorHostStartTyping = `Start typing`;
 var EditorHostDataGhostAlone = `data-ghost-alone`;
 var EditorHostLfileAskGhosted = `lfile-ask-ghosted`;
