@@ -284,6 +284,82 @@ fn convert_row(luma: &[u8], chroma: &[u8], convert: &YuvToRgb, out: &mut [u8]) {
     }
 }
 
+// ── 编码输入：RGBA → NV12 / bottom-up BGRX（Windows 写入器）
+//
+// BT.709 limited range 定点系数（缩放 1<<16），顺序为 R、G、B。与 `apps/cli` 导出后端逐位同值：色度两组系数各自
+// 求和为 0，亮度组求和为 219/255 的定点值，纯黑严格落在 Y=16/UV=128、纯白严格落在 Y=235/UV=128，不靠夹取兜底。
+const BT709_LUMA: [i32; 3] = [11966, 40254, 4064];
+const BT709_CHROMA_BLUE: [i32; 3] = [-6596, -22189, 28785];
+const BT709_CHROMA_RED: [i32; 3] = [28785, -26145, -2640];
+
+#[inline(always)]
+fn bt709_luma(red: u8, green: u8, blue: u8) -> u8 {
+    let value = BT709_LUMA[0] * i32::from(red)
+        + BT709_LUMA[1] * i32::from(green)
+        + BT709_LUMA[2] * i32::from(blue);
+    (16 + ((value + 32768) >> 16)).clamp(0, 255) as u8
+}
+
+#[inline(always)]
+fn bt709_chroma(coefficients: [i32; 3], red: i32, green: i32, blue: i32) -> u8 {
+    let value = coefficients[0] * red + coefficients[1] * green + coefficients[2] * blue;
+    (128 + ((value + 32768) >> 16)).clamp(0, 255) as u8
+}
+
+/// 2x2 块内四个分量的四舍五入均值。
+#[inline(always)]
+fn average4(first: u8, second: u8, third: u8, fourth: u8) -> i32 {
+    (i32::from(first) + i32::from(second) + i32::from(third) + i32::from(fourth) + 2) >> 2
+}
+
+/// top-down RGBA8 → NV12（BT.709 limited range，Y 平面后紧跟交错的 UV 平面）。
+///
+/// 前置条件：`width`、`height` 均为偶数，两个平面的行距都等于 `width`，`nv12` 恰好 `width × height × 3 / 2` 字节。
+/// 色度按 4:2:0 先求 2x2 块的 RGB 均值再转换，亮度仍逐像素独立。标量实现：同一段代码按 AVX2 编反而慢（1080p 一帧
+/// 约 3.5 ms 对 2.9 ms），要提速得换循环的形状，并先过下面的对拍测试。
+pub(crate) fn rgba_to_nv12(rgba: &[u8], width: usize, height: usize, nv12: &mut [u8]) {
+    debug_assert!(width.is_multiple_of(2));
+    debug_assert!(height.is_multiple_of(2));
+    let (luma, chroma) = nv12.split_at_mut(width * height);
+    for pair in 0..height / 2 {
+        let row = pair * 2;
+        let (top, bottom) = rgba[row * width * 4..(row + 2) * width * 4].split_at(width * 4);
+        let (luma_top, luma_bottom) = luma[row * width..(row + 2) * width].split_at_mut(width);
+        let chroma_row = &mut chroma[pair * width..(pair + 1) * width];
+        for block in 0..width / 2 {
+            let offset = block * 8;
+            let upper = &top[offset..offset + 8];
+            let lower = &bottom[offset..offset + 8];
+            luma_top[block * 2] = bt709_luma(upper[0], upper[1], upper[2]);
+            luma_top[block * 2 + 1] = bt709_luma(upper[4], upper[5], upper[6]);
+            luma_bottom[block * 2] = bt709_luma(lower[0], lower[1], lower[2]);
+            luma_bottom[block * 2 + 1] = bt709_luma(lower[4], lower[5], lower[6]);
+            let red = average4(upper[0], upper[4], lower[0], lower[4]);
+            let green = average4(upper[1], upper[5], lower[1], lower[5]);
+            let blue = average4(upper[2], upper[6], lower[2], lower[6]);
+            chroma_row[block * 2] = bt709_chroma(BT709_CHROMA_BLUE, red, green, blue);
+            chroma_row[block * 2 + 1] = bt709_chroma(BT709_CHROMA_RED, red, green, blue);
+        }
+    }
+}
+
+/// top-down RGBA8 → RGB32 的连续缓冲（bottom-up，内存序 B,G,R,X，X 照抄 alpha）：编码器谈不成 NV12 时的输入。
+pub(crate) fn rgba_to_bottom_up_bgrx(rgba: &[u8], width: usize, height: usize, bgrx: &mut [u8]) {
+    let row_bytes = width * 4;
+    for (source, target) in rgba
+        .chunks_exact(row_bytes)
+        .take(height)
+        .zip(bgrx.chunks_exact_mut(row_bytes).rev())
+    {
+        for (source, target) in source.chunks_exact(4).zip(target.chunks_exact_mut(4)) {
+            target[0] = source[2];
+            target[1] = source[1];
+            target[2] = source[0];
+            target[3] = source[3];
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -394,6 +470,75 @@ mod tests {
                 }
             }
         }
+    }
+
+    /// 纯色块的 NV12 换算与 `apps/cli` 导出后端逐位同值（同一组定点系数）：
+    /// 纯黑落在 Y=16/UV=128，纯白落在 Y=235/UV=128。
+    #[test]
+    fn solid_colours_land_on_the_limited_range_anchors() {
+        let mut nv12 = vec![0_u8; 2 * 2 * 3 / 2];
+        let black = [0_u8, 0, 0, 255].repeat(4);
+        rgba_to_nv12(&black, 2, 2, &mut nv12);
+        assert_eq!(&nv12[..4], &[16, 16, 16, 16]);
+        assert_eq!(&nv12[4..], &[128, 128]);
+        let white = [255_u8, 255, 255, 255].repeat(4);
+        rgba_to_nv12(&white, 2, 2, &mut nv12);
+        assert_eq!(&nv12[..4], &[235, 235, 235, 235]);
+        assert_eq!(&nv12[4..], &[128, 128]);
+    }
+
+    /// 按坐标逐个算的 RGBA → NV12：每个 Y 独立，每个 2×2 块取 RGB 的四舍五入均值再算 UV。
+    fn reference_rgba_to_nv12(rgba: &[u8], width: usize, height: usize) -> Vec<u8> {
+        let pixel = |x: usize, y: usize| &rgba[(y * width + x) * 4..(y * width + x) * 4 + 4];
+        let mut out = vec![0_u8; width * height * 3 / 2];
+        for y in 0..height {
+            for x in 0..width {
+                let p = pixel(x, y);
+                out[y * width + x] = bt709_luma(p[0], p[1], p[2]);
+            }
+        }
+        for by in 0..height / 2 {
+            for bx in 0..width / 2 {
+                let mean = |channel: usize| {
+                    let sum: i32 = [(0, 0), (1, 0), (0, 1), (1, 1)]
+                        .iter()
+                        .map(|(dx, dy)| i32::from(pixel(bx * 2 + dx, by * 2 + dy)[channel]))
+                        .sum();
+                    (sum + 2) >> 2
+                };
+                let (red, green, blue) = (mean(0), mean(1), mean(2));
+                let at = width * height + by * width + bx * 2;
+                out[at] = bt709_chroma(BT709_CHROMA_BLUE, red, green, blue);
+                out[at + 1] = bt709_chroma(BT709_CHROMA_RED, red, green, blue);
+            }
+        }
+        out
+    }
+
+    /// 编码输入的 NV12 换算对随机图像与按坐标的参照逐字节相同；以后改 SIMD 先过这条。
+    #[test]
+    fn rgba_to_nv12_matches_the_coordinate_reference_on_random_images() {
+        let mut bytes = Bytes(0x2545_f491_4f6c_dd1d);
+        for (width, height) in [(2_usize, 2_usize), (6, 4), (64, 36), (322, 182)] {
+            let rgba = bytes.fill(width * height * 4);
+            let expected = reference_rgba_to_nv12(&rgba, width, height);
+            // 输出缓冲事先装着别的内容：每个字节都得被写到。
+            let mut actual = bytes.fill(width * height * 3 / 2);
+            rgba_to_nv12(&rgba, width, height, &mut actual);
+            assert!(actual == expected, "{width}x{height}");
+        }
+    }
+
+    /// RGB32 回落的输入是 bottom-up 的 B,G,R,X：第一行落到缓冲最后一行，alpha 照抄。
+    #[test]
+    fn the_rgb32_fallback_is_bottom_up_bgrx() {
+        let rgba = [1_u8, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16];
+        let mut bgrx = [0_u8; 16];
+        rgba_to_bottom_up_bgrx(&rgba, 2, 2, &mut bgrx);
+        assert_eq!(
+            bgrx,
+            [11, 10, 9, 12, 15, 14, 13, 16, 3, 2, 1, 4, 7, 6, 5, 8]
+        );
     }
 
     /// 有限范围的黑、白、灰落在 0 / 255 / 中灰，任何矩阵都一样（色度为 128 时矩阵不参与）。

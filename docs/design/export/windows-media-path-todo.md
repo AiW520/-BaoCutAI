@@ -17,7 +17,7 @@
 | --- | --- | --- | --- | --- |
 | W1 | 解码直接写进调用方的缓冲 | 不变 | 高 | 已实现：两条路径逐字节相同（`frame_stream` 集成测试）；交替 5 次的中位数 cover 125 → 135 fps、contain 120 → 124 fps |
 | W2 | `copy_rows` 去掉逐像素的旋转分支 | 不变 | 高 | 已实现（落在 W8 的 NV12 换算上）：逐行换算 + AVX2 运行时选用，1080p 一帧 7.85 → 1.03 ms，与逐像素实现逐字节相同 |
-| W3 | 编码输入直接写进 Media Foundation 的缓冲 | 不变 | 中 | 待实现 |
+| W3 | 编码输入直接写进 Media Foundation 的缓冲 | 不变 | 中 | 已实现：换算直接写进 MF 缓冲，省掉每帧一次暂存与整帧拷贝；换算挪进 `yuv.rs`，补随机图像对拍 |
 | W4 | 在 Windows 上验证 EcoQoS 的关闭 | 不变 | 高 | 部分通过：原生 API 回读、24 忙进程交替对比通过；真实应用最小化 / 切后台待测 |
 | W5 | 解码走硬件（D3D11） | 会变 | 中 | 导出 Source Reader 路径待实现；播放的 DXGI 测试通过不等于此项完成 |
 | W6 | 编码的节流与低延迟开关 | 码流会变 | 中 | 待 A/B，未启用候选开关 |
@@ -44,6 +44,7 @@
 - 问题：`SinkWriter::write_frame` 先用 `rgba_to_nv12` 把一帧转进 `staging`，`sample_from_bytes` 再 `MFCreateMemoryBuffer` 新建一块缓冲、把 `staging` 整帧拷进去。每帧多一次分配和一次整帧拷贝（NV12 约 3.1 MB；RGB32 回落时 8.3 MB）。
 - 做法：先建缓冲、`Lock`，`rgba_to_nv12`（或 RGB32 的倒行换序）直接写进锁住的内存，`Unlock` 后 `SetCurrentLength`。Sink Writer 可能异步持有 sample，所以缓冲不要跨帧复用，除非改成按 sample 释放回调的缓冲池；每帧新建但直接写入已经省掉那次拷贝。`staging` 字段随之去掉。音频块的 `sample_from_bytes` 用法不变。
 - `rgba_to_nv12` 是标量实现。若再要提速可改 SIMD，但必须与现有实现逐字节相同（现有的单元测试只覆盖黑白两色，改之前先补随机图像的对拍测试）。
+- 2026-10-15 已实现：`sample_filled_with` 新建缓冲、锁住，`rgba_to_nv12` 或 RGB32 回落的 `rgba_to_bottom_up_bgrx` 直接写进去，`staging` 去掉；音频仍走 `sample_from_bytes`（现在是它的薄包装）。两个换算挪进不带平台条件的 `yuv.rs`，CI 上跑：黑白锚点、随机图像与按坐标逐个算的参照逐字节对拍（4 种尺寸），RGB32 的倒行与换序。编码器的输入字节与改动前相同（同一个函数，只换了目的地）；原生编码器的输出随出帧节奏变，不拿成片逐帧比。试过把 `rgba_to_nv12` 按 AVX2 再编一份（W2 的做法），1080p 一帧反而从约 2.9 ms 慢到约 3.5 ms，没有采用；要提速得换循环的形状。
 
 ### W4 在 Windows 上验证 EcoQoS 的关闭
 

@@ -29,70 +29,13 @@ use crate::encode::{
     PcmSource, WriterSetup,
 };
 use crate::windows::{Runtime, media_feature_error, pack_ratio, wide_path};
+use crate::yuv::{rgba_to_bottom_up_bgrx, rgba_to_nv12};
 
 const HNS_PER_SECOND: i64 = 10_000_000;
 
 /// 关键帧间隔（秒）。编码器默认的 GOP 在本仓库实测能稀到只剩首帧一个关键帧，
 /// 拖动预览会很难受；2 秒与导出后端的取值一致。
 const KEYFRAME_INTERVAL_SECONDS: f64 = 2.0;
-
-// ── BT.709 limited range 定点系数（缩放 1<<16），顺序为 R、G、B。
-//
-// 与 `apps/cli` 导出后端逐位同值：色度两组系数各自求和为 0，亮度组求和为 219/255
-// 的定点值，纯黑严格落在 Y=16/UV=128、纯白严格落在 Y=235/UV=128，不靠夹取兜底。
-const BT709_LUMA: [i32; 3] = [11966, 40254, 4064];
-const BT709_CHROMA_BLUE: [i32; 3] = [-6596, -22189, 28785];
-const BT709_CHROMA_RED: [i32; 3] = [28785, -26145, -2640];
-
-#[inline]
-fn bt709_luma(red: u8, green: u8, blue: u8) -> u8 {
-    let value = BT709_LUMA[0] * i32::from(red)
-        + BT709_LUMA[1] * i32::from(green)
-        + BT709_LUMA[2] * i32::from(blue);
-    (16 + ((value + 32768) >> 16)).clamp(0, 255) as u8
-}
-
-#[inline]
-fn bt709_chroma(coefficients: [i32; 3], red: i32, green: i32, blue: i32) -> u8 {
-    let value = coefficients[0] * red + coefficients[1] * green + coefficients[2] * blue;
-    (128 + ((value + 32768) >> 16)).clamp(0, 255) as u8
-}
-
-/// 2x2 块内四个分量的四舍五入均值。
-#[inline]
-fn average4(first: u8, second: u8, third: u8, fourth: u8) -> i32 {
-    (i32::from(first) + i32::from(second) + i32::from(third) + i32::from(fourth) + 2) >> 2
-}
-
-/// top-down RGBA8 → NV12（BT.709 limited range，Y 平面后紧跟交错的 UV 平面）。
-///
-/// 前置条件：`width`、`height` 均为偶数，两个平面的行距都等于 `width`。色度按
-/// 4:2:0 先求 2x2 块的 RGB 均值再转换，亮度仍逐像素独立。
-fn rgba_to_nv12(rgba: &[u8], width: usize, height: usize, nv12: &mut [u8]) {
-    debug_assert_eq!(width % 2, 0);
-    debug_assert_eq!(height % 2, 0);
-    let (luma, chroma) = nv12.split_at_mut(width * height);
-    for pair in 0..height / 2 {
-        let row = pair * 2;
-        let (top, bottom) = rgba[row * width * 4..(row + 2) * width * 4].split_at(width * 4);
-        let (luma_top, luma_bottom) = luma[row * width..(row + 2) * width].split_at_mut(width);
-        let chroma_row = &mut chroma[pair * width..(pair + 1) * width];
-        for block in 0..width / 2 {
-            let offset = block * 8;
-            let upper = &top[offset..offset + 8];
-            let lower = &bottom[offset..offset + 8];
-            luma_top[block * 2] = bt709_luma(upper[0], upper[1], upper[2]);
-            luma_top[block * 2 + 1] = bt709_luma(upper[4], upper[5], upper[6]);
-            luma_bottom[block * 2] = bt709_luma(lower[0], lower[1], lower[2]);
-            luma_bottom[block * 2 + 1] = bt709_luma(lower[4], lower[5], lower[6]);
-            let red = average4(upper[0], upper[4], lower[0], lower[4]);
-            let green = average4(upper[1], upper[5], lower[1], lower[5]);
-            let blue = average4(upper[2], upper[6], lower[2], lower[6]);
-            chroma_row[block * 2] = bt709_chroma(BT709_CHROMA_BLUE, red, green, blue);
-            chroma_row[block * 2 + 1] = bt709_chroma(BT709_CHROMA_RED, red, green, blue);
-        }
-    }
-}
 
 unsafe fn attributes(capacity: u32) -> Result<IMFAttributes> {
     let mut value = None;
@@ -193,20 +136,43 @@ fn declared_frame_rate(fps_num: u32, fps_den: u32) -> (u32, u32) {
     }
 }
 
-/// 一块像素字节 → 带时间戳的 `IMFSample`。
-unsafe fn sample_from_bytes(pixels: &[u8], time: i64, duration: i64) -> Result<IMFSample> {
-    let length: u32 = pixels
-        .len()
+/// 一块字节 → 带时间戳的 `IMFSample`。
+unsafe fn sample_from_bytes(bytes: &[u8], time: i64, duration: i64) -> Result<IMFSample> {
+    unsafe {
+        sample_filled_with(bytes.len(), time, duration, |buffer| {
+            buffer.copy_from_slice(bytes)
+        })
+    }
+}
+
+/// 新建一块 `length` 字节的 Media Foundation 缓冲，`fill` 直接写进锁住的内存，再包成带时间戳的 `IMFSample`。
+///
+/// 视频帧就这样把 RGBA → NV12 的换算直接写进编码器要的缓冲，不先转进一块暂存再整帧拷一遍。缓冲每次新建、不跨帧
+/// 复用：Sink Writer 可能异步持有已交出的 sample。
+unsafe fn sample_filled_with(
+    length: usize,
+    time: i64,
+    duration: i64,
+    fill: impl FnOnce(&mut [u8]),
+) -> Result<IMFSample> {
+    let length_u32: u32 = length
         .try_into()
         .context("单帧超过 4 GiB，Media Foundation 缓冲装不下")?;
-    let buffer = unsafe { MFCreateMemoryBuffer(length)? };
+    let buffer = unsafe { MFCreateMemoryBuffer(length_u32)? };
     let mut pointer = std::ptr::null_mut();
-    unsafe { buffer.Lock(&mut pointer, None, None)? };
-    unsafe { std::slice::from_raw_parts_mut(pointer, pixels.len()) }.copy_from_slice(pixels);
-    unsafe {
-        buffer.Unlock()?;
-        buffer.SetCurrentLength(length)?;
-    }
+    let mut maximum = 0_u32;
+    unsafe { buffer.Lock(&mut pointer, Some(&mut maximum), None)? };
+    // Lock 与 Unlock 之间不用 `?`：先记下结果，解锁无条件执行。
+    let locked = if pointer.is_null() || (maximum as usize) < length {
+        Err(anyhow!("Media Foundation 给的缓冲小于 {length} 字节"))
+    } else {
+        fill(unsafe { std::slice::from_raw_parts_mut(pointer, length) });
+        Ok(())
+    };
+    let unlocked = unsafe { buffer.Unlock() };
+    locked?;
+    unlocked?;
+    unsafe { buffer.SetCurrentLength(length_u32)? };
     let sample = unsafe { MFCreateSample()? };
     unsafe {
         sample.AddBuffer(&buffer)?;
@@ -339,8 +305,6 @@ pub(crate) struct SinkWriter {
     fps_den: u32,
     /// 编码器输入用 NV12（否则 RGB32）。
     nv12: bool,
-    /// 跨帧复用的输入缓冲，只在第一帧分配。
-    staging: Vec<u8>,
     frames: u64,
     /// Sink Writer 实际选中的 H.264 编码器。
     encoder: Option<EncoderDevice>,
@@ -474,7 +438,6 @@ unsafe fn open_inner(runtime: Runtime, out: &Path, setup: WriterSetup) -> Result
         fps_num,
         fps_den,
         nv12,
-        staging: Vec::new(),
         frames: 0,
         encoder,
         _runtime: runtime,
@@ -538,28 +501,22 @@ impl Mp4Sink for SinkWriter {
         }
         self.pump_audio(self.video_seconds() + AUDIO_LEAD_SECONDS)?;
         let (width, height) = (self.width, self.height);
-        if self.nv12 {
-            self.staging.resize(width * height * 3 / 2, 0);
-            rgba_to_nv12(rgba, width, height, &mut self.staging);
-        } else {
-            // RGB32 的连续缓冲是 bottom-up，内存序 B,G,R,X。
-            self.staging.resize(width * height * 4, 0);
-            for y in 0..height {
-                let source = &rgba[y * width * 4..(y + 1) * width * 4];
-                let target_row = height - 1 - y;
-                let target =
-                    &mut self.staging[target_row * width * 4..(target_row + 1) * width * 4];
-                for (source, target) in source.chunks_exact(4).zip(target.chunks_exact_mut(4)) {
-                    target[0] = source[2];
-                    target[1] = source[1];
-                    target[2] = source[0];
-                    target[3] = source[3];
-                }
-            }
-        }
         let time = self.frame_time_hns(self.frames);
         let duration = self.frame_time_hns(self.frames + 1) - time;
-        let sample = unsafe { sample_from_bytes(&self.staging, time, duration)? };
+        // 换算直接写进交给编码器的缓冲（NV12，或回落时的 RGB32）。
+        let sample = if self.nv12 {
+            unsafe {
+                sample_filled_with(width * height * 3 / 2, time, duration, |buffer| {
+                    rgba_to_nv12(rgba, width, height, buffer)
+                })?
+            }
+        } else {
+            unsafe {
+                sample_filled_with(width * height * 4, time, duration, |buffer| {
+                    rgba_to_bottom_up_bgrx(rgba, width, height, buffer)
+                })?
+            }
+        };
         unsafe { self.writer.WriteSample(self.video_stream, &sample) }
             .map_err(|error| anyhow!("Media Foundation 写入视频帧失败：{error}"))?;
         self.frames += 1;
@@ -606,20 +563,5 @@ mod tests {
         assert_eq!(declared_frame_rate(60000, 1001), (60, 1));
         assert_eq!(declared_frame_rate(30, 1), (30, 1));
         assert_eq!(declared_frame_rate(12500, 1000), (12500, 1000));
-    }
-
-    /// 纯色块的 NV12 换算与 `apps/cli` 导出后端逐位同值（同一组定点系数）：
-    /// 纯黑落在 Y=16/UV=128，纯白落在 Y=235/UV=128。
-    #[test]
-    fn solid_colours_land_on_the_limited_range_anchors() {
-        let mut nv12 = vec![0_u8; 2 * 2 * 3 / 2];
-        let black = vec![0_u8, 0, 0, 255].repeat(4);
-        rgba_to_nv12(&black, 2, 2, &mut nv12);
-        assert_eq!(&nv12[..4], &[16, 16, 16, 16]);
-        assert_eq!(&nv12[4..], &[128, 128]);
-        let white = vec![255_u8, 255, 255, 255].repeat(4);
-        rgba_to_nv12(&white, 2, 2, &mut nv12);
-        assert_eq!(&nv12[..4], &[235, 235, 235, 235]);
-        assert_eq!(&nv12[4..], &[128, 128]);
     }
 }
