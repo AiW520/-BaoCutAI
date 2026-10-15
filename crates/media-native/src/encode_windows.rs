@@ -163,6 +163,36 @@ unsafe fn aac_type(bitrate: u32) -> Result<IMFMediaType> {
     Ok(media_type)
 }
 
+/// 帧率 `fps_num / fps_den` 下第 `index` 帧的起点（hns）：按有理数逐帧算，向下取整再加 1 hns（首帧为 0）。
+///
+/// 不能用「单帧时长 × 帧号」：29.97 fps 的单帧是 333666.67 hns，截成 333666 后每帧少 0.67 hns，几百帧后换算到
+/// MP4 时标就差出一个 tick。也不能四舍五入或向上取整：Sink 换到容器时标时向下截，恰好落在 tick 边界上的时刻
+/// （30 fps 的 333333.33 hns 一帧、时标 30000 时每 3 帧一次）会因浮点误差少一个 tick，`mdhd` 的时长随之短一个
+/// tick，读回的末帧时长与帧率就不齐（Windows 11 实测：四舍五入时 1–130 帧里约四成的帧数出错，含 30 fps；本写法
+/// 在 23.976 / 29.97 / 59.94 / 30 fps 上全部正确）。多出的 1 hns 远小于一个 tick（≥ 166 hns），帧长不受影响。
+fn frame_time_hns(index: u64, fps_num: u32, fps_den: u32) -> i64 {
+    if index == 0 {
+        return 0;
+    }
+    let numerator = u128::from(index) * HNS_PER_SECOND as u128 * u128::from(fps_den);
+    (numerator / u128::from(fps_num.max(1))) as i64 + 1
+}
+
+/// 写进媒体类型的帧率。
+///
+/// MP4 Sink 按 `round(1000 × 帧率)` 定视频轨的时标，再把样本时刻换算过去（Windows 11 实测）：29.97（30000/1001）的
+/// 时标成了 29970、每帧 1000 tick，容器存的是 2997/100，ffprobe 的 `r_frame_rate` 与输出帧率差 3e-5，Runtime 的发布
+/// 校验（1e-6）通不过。NTSC 系（`k/1001`）因此在类型上声明整数帧率 `k/1000`：时标成了 `k`，样本时刻仍按真实帧率给，
+/// 每帧恰好 1001 tick，读回 30000/1001。代价是编码器以为是 30 fps：码流 VUI 的 timing 写的是 30 fps（MP4 的播放与
+/// 探测都以容器的时间戳为准），码控按 30 fps 分配每帧比特，实际码率比设定低 0.1%。
+fn declared_frame_rate(fps_num: u32, fps_den: u32) -> (u32, u32) {
+    if fps_den == 1001 && fps_num % 1000 == 0 {
+        (fps_num / 1000, 1)
+    } else {
+        (fps_num, fps_den)
+    }
+}
+
 /// 一块像素字节 → 带时间戳的 `IMFSample`。
 unsafe fn sample_from_bytes(pixels: &[u8], time: i64, duration: i64) -> Result<IMFSample> {
     let length: u32 = pixels
@@ -289,6 +319,8 @@ unsafe fn open_inner(runtime: Runtime, out: &Path, setup: WriterSetup) -> Result
         audio_bitrate,
     } = setup;
     let exact_fps = f64::from(fps_num) / f64::from(fps_den);
+    // 媒体类型上的帧率；样本时刻始终按真实帧率 `fps_num / fps_den` 给（见 `declared_frame_rate`）。
+    let (rate_num, rate_den) = declared_frame_rate(fps_num, fps_den);
     let faststart = faststart_finalize_works(out);
     if !faststart {
         eprintln!(
@@ -311,7 +343,7 @@ unsafe fn open_inner(runtime: Runtime, out: &Path, setup: WriterSetup) -> Result
     .map_err(|error| media_feature_error("创建 MP4 Sink Writer", error))?;
 
     let encoded_video =
-        unsafe { video_type(&MFVideoFormat_H264, width, height, fps_num, fps_den)? };
+        unsafe { video_type(&MFVideoFormat_H264, width, height, rate_num, rate_den)? };
     unsafe {
         encoded_video.SetUINT32(&MF_MT_AVG_BITRATE, bitrate)?;
         encoded_video.SetUINT32(&MF_MT_MPEG2_PROFILE, 100)?;
@@ -339,7 +371,7 @@ unsafe fn open_inner(runtime: Runtime, out: &Path, setup: WriterSetup) -> Result
     // `open_mp4_writer` 挡在门外，这里不必再判偶数。
     let nv12 = {
         let media_type =
-            unsafe { video_type(&MFVideoFormat_NV12, width, height, fps_num, fps_den)? };
+            unsafe { video_type(&MFVideoFormat_NV12, width, height, rate_num, rate_den)? };
         unsafe {
             media_type.SetUINT32(&MF_MT_DEFAULT_STRIDE, width)?;
             // 显式标注矩阵与量化范围：不标的话编码器可能按 BT.601 打标记，
@@ -353,7 +385,7 @@ unsafe fn open_inner(runtime: Runtime, out: &Path, setup: WriterSetup) -> Result
     };
     if !nv12 {
         let input_video =
-            unsafe { video_type(&MFVideoFormat_RGB32, width, height, fps_num, fps_den)? };
+            unsafe { video_type(&MFVideoFormat_RGB32, width, height, rate_num, rate_den)? };
         unsafe { writer.SetInputMediaType(video_stream, &input_video, None::<&IMFAttributes>) }
             .map_err(|error| media_feature_error("unsupported: 配置 RGB32→H.264 编码器", error))?;
     }
@@ -393,8 +425,9 @@ unsafe fn open_inner(runtime: Runtime, out: &Path, setup: WriterSetup) -> Result
 }
 
 impl SinkWriter {
-    fn frame_duration_hns(&self) -> i64 {
-        HNS_PER_SECOND * i64::from(self.fps_den) / i64::from(self.fps_num.max(1))
+    /// 第 `index` 帧的起点（hns）。
+    fn frame_time_hns(&self, index: u64) -> i64 {
+        frame_time_hns(index, self.fps_num, self.fps_den)
     }
 
     fn video_seconds(&self) -> f64 {
@@ -467,8 +500,8 @@ impl Mp4Sink for SinkWriter {
                 }
             }
         }
-        let duration = self.frame_duration_hns();
-        let time = self.frames as i64 * duration;
+        let time = self.frame_time_hns(self.frames);
+        let duration = self.frame_time_hns(self.frames + 1) - time;
         let sample = unsafe { sample_from_bytes(&self.staging, time, duration)? };
         unsafe { self.writer.WriteSample(self.video_stream, &sample) }
             .map_err(|error| anyhow!("Media Foundation 写入视频帧失败：{error}"))?;
@@ -491,6 +524,28 @@ impl Mp4Sink for SinkWriter {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    /// 帧起点按有理数逐帧算、不累积单帧时长的截断，且总比真实时刻多不到 1 hns（首帧为 0）：29.97 fps 第 30 帧
+    /// 在 1.001 秒之后 1 hns，一小时后仍是 1 hns。
+    #[test]
+    fn frame_times_follow_the_exact_rational_rate() {
+        assert_eq!(frame_time_hns(0, 30000, 1001), 0);
+        assert_eq!(frame_time_hns(1, 30000, 1001), 333_667);
+        assert_eq!(frame_time_hns(2, 30000, 1001), 667_334);
+        assert_eq!(frame_time_hns(30, 30000, 1001), 10_010_001);
+        assert_eq!(frame_time_hns(108_000, 30000, 1001), 36_036_000_001);
+        assert_eq!(frame_time_hns(3, 30, 1), 1_000_001);
+    }
+
+    /// 只有 NTSC 系换成整数帧率声明，其余原样。
+    #[test]
+    fn ntsc_rates_are_declared_as_their_integer_neighbour() {
+        assert_eq!(declared_frame_rate(30000, 1001), (30, 1));
+        assert_eq!(declared_frame_rate(24000, 1001), (24, 1));
+        assert_eq!(declared_frame_rate(60000, 1001), (60, 1));
+        assert_eq!(declared_frame_rate(30, 1), (30, 1));
+        assert_eq!(declared_frame_rate(12500, 1000), (12500, 1000));
+    }
 
     /// 纯色块的 NV12 换算与 `apps/cli` 导出后端逐位同值（同一组定点系数）：
     /// 纯黑落在 Y=16/UV=128，纯白落在 Y=235/UV=128。

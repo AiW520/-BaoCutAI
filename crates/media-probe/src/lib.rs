@@ -37,11 +37,13 @@
  * [`VideoInfo::display_width`] / [`VideoInfo::display_height`] 给帧缓冲与渲染几何使用。
  * 新字段是 additive 的，不改任何已有 `naturalW/naturalH` 输出。
  *
- * ## 音轨编辑表
+ * ## 编辑表
  *
  * [`audio_edit_start`] 回答另一个「这个文件是什么」的问题：MP4 / M4A / MOV 音轨
  * 的 `elst` 让解码后先丢掉多少编码器前置帧。Symphonia 不应用编辑表，全仓三条
  * Symphonia 解码循环（渲染混音、语音 / 节拍 / 分离、波形）都靠它对齐 ffmpeg。
+ * [`video_edit_start`] 是视频轨的同一个起点：Windows Media Foundation 不应用视频轨的
+ * 编辑表，`media-native` 靠它把 B 帧素材的时间戳扣回 ffmpeg 的时间轴。
  */
 
 use std::path::Path;
@@ -52,7 +54,7 @@ mod edit_list;
 mod ffprobe;
 mod native;
 
-pub use edit_list::{EditStart, audio_edit_start};
+pub use edit_list::{EditStart, audio_edit_start, video_edit_start};
 pub use ffprobe::probe_with_ffprobe;
 
 /// 媒体的粗分类。与 `bcut source probe` 的 `kind` 字段同口径。

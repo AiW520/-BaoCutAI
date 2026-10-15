@@ -1,6 +1,6 @@
 # Windows 实机验证记录
 
-验证日期：2026-10-15。源码基线：`d5f75af1`，BaoCut 3.6.1。本次仅验证已有实现、更新待办状态，未修改产品代码；未重新打包或发布。
+验证日期：2026-10-15。源码基线：`d5f75af1`，BaoCut 3.6.1。本次仅验证已有实现、更新待办状态，未修改产品代码；未重新打包或发布。同日的后续修复（W8 等）在各自的提交里，修复后的重跑结果补在 §2、§3 对应的行里。
 
 ## 目录
 
@@ -36,7 +36,7 @@
 | EcoQoS 关闭（W4） | 部分通过 | 在原生进程中先开启执行速度节流，调用实际导出优先级入口，再用 `GetProcessInformation` 回读，得到 `ControlMask=1`、`StateMask=0`。同一构建的 12 次交替导出未观察到开启后变慢，详见下表；应用最小化 / 切后台尚未覆盖 |
 | `export-worker` | 通过（现有测试） | 19 项通过；原生构建成功 |
 | `media-native` 单元测试 / DXGI frame server | 通过 | 分别 37 / 3 项；DXGI 用仓库真实视频夹具，实际发布可共享 GPU 帧并检查三槽池行为 |
-| 单帧抽取 / 顺序帧流 / MP4 写入 | 未通过 | 分别 3 过 2 败、4 过 2 败、4 过 1 败，详见 §3 |
+| 单帧抽取 / 顺序帧流 / MP4 写入 | 未通过 → 已修复（W8） | 首轮分别 3 过 2 败、4 过 2 败、4 过 1 败；同日修复后 5 / 6 / 5 项全部通过，阈值未动，详见 §3 |
 | 1080p 双语字幕成片导出 | 通过（冒烟） | cover / contain 均输出 300 帧，解码和编码均报告 `media-foundation`，无编解码回落；合成 4.068 / 4.314 秒，即 73.7 / 69.5 fps；contain / cover = 0.94。各跑一次，不能作为性能回归门槛 |
 | H.264 输出合同（W7） | 部分通过，GOP 不符 | High profile、1920×1080、30/1、300 帧，BT.709 primaries / transfer / matrix、limited range 正确；实测码率 9,632,737 bit/s。关键帧每 30 帧一次，而代码要求 60 帧。本机 faststart 不支持，stderr 明确回落，`mdat` 在 `moov` 前 |
 | Windows 路径、停止监督与凭据迁移 TS 回归 | 未全过 | 5 个文件共 53 项，52 过 1 败；包含 6 项 Windows v2 升级测试。唯一失败为 POSIX 文件权限位断言，详见 §3。路径测试没有实际打开 Explorer 或系统保存窗口 |
@@ -58,11 +58,11 @@
 
 | 失败 | 实测 | 后续验证要求 |
 | --- | --- | --- |
-| `extract_frame::frames_do_not_bleed_across_a_segment_boundary` | `t=1.0166667s` 应为绿段，实际仍为红段 | 修复前保留失败；核对 MF seek 后的 sample 时间戳与最终像素，重跑边界夹具 |
-| `extract_frame::native_frames_match_the_ffmpeg_fallback_within_the_cross_backend_tolerance` | `t=0.5s` 降采样灰度 SSIM 0.8132，低于 0.95；全分辨率 0.8484 | 排查颜色转换、范围与 sample 选择；不得放宽既有阈值来记通过 |
-| `frame_stream::the_stream_starts_on_the_frame_that_covers_the_requested_time` | 从 0.5 秒开始应剩 75 帧，实际 77 帧 | 核对起点、时戳与 EOF 的呈现区间 |
-| `frame_stream::native_frames_match_the_ffmpeg_fallback_within_the_cross_backend_tolerance` | 第 15 帧降采样 SSIM 0.7909，低于 0.95；全分辨率 0.7958 | 与单帧抽取分别复测，不能以无起点的帧数通过代替 |
-| `mp4_writer::ntsc_frame_rates_survive_the_container_timebase` | 29.97 的读回值为 29.97049950832514，未满足现有断言 | 核对容器时基、每帧时长取整与探测算法；尚未确定是编码时序还是探测口径问题 |
+| `extract_frame::frames_do_not_bleed_across_a_segment_boundary` | `t=1.0166667s` 应为绿段，实际仍为红段 | 已修复（W8）：MF 不应用视频轨编辑表，时间戳整体晚两帧；扣掉 `elst` 起点后通过 |
+| `extract_frame::native_frames_match_the_ffmpeg_fallback_within_the_cross_backend_tolerance` | `t=0.5s` 降采样灰度 SSIM 0.8132，低于 0.95；全分辨率 0.8484 | 已修复（W8）：MF 的 RGB32 转换不看码流标注、按高度猜成 BT.601；改为 NV12 按解码器报的矩阵自行换算后三个时刻降采样 SSIM 0.9907–0.9956，阈值未动 |
+| `frame_stream::the_stream_starts_on_the_frame_that_covers_the_requested_time` | 从 0.5 秒开始应剩 75 帧，实际 77 帧 | 已修复（W8）：同单帧边界，时间戳晚两帧；修后从 0、0.5、1.0167 秒起分别 90、75、60 帧，首帧时刻 0、0.5、1.0 |
+| `frame_stream::native_frames_match_the_ffmpeg_fallback_within_the_cross_backend_tolerance` | 第 15 帧降采样 SSIM 0.7909，低于 0.95；全分辨率 0.7958 | 已修复（W8）：同单帧的颜色矩阵；8 个探测帧降采样 SSIM 0.9699–0.9864，逐通道最大偏差 2–3 |
+| `mp4_writer::ntsc_frame_rates_survive_the_container_timebase` | 29.97 的读回值为 29.97049950832514，未满足现有断言 | 已修复（W8）：编码时序问题。时间戳按「单帧时长 × 帧号」截断累积；MP4 Sink 按 `round(1000 × 帧率)` 定时标（29970，容器存 2997/100）。改为逐帧按有理数取时刻（向下取整加 1 hns）、NTSC 系在媒体类型上声明整数帧率后读回 30000/1001；在 NVIDIA 的 H.264 MFT 上 23.976 / 29.97 / 59.94 / 30 fps 各 1–130 帧逐一读回正确 |
 | W7 的 GOP 合同 | `KEYFRAME_INTERVAL_SECONDS=2.0`，30 fps 应为 60 帧；ffprobe 读到 0、1、2…9 秒的 I 帧 | 核实当前实际选中的 MFT 是否接受 `MF_MT_MAX_KEYFRAME_SPACING`；解决前不能标记 NVIDIA 硬件编码兼容通过 |
 | `keychain-credential-store.test.ts` 的部分迁移测试 | 断言 `stat.mode & 0o777 == 0o600`，Windows 实际为 `0o666` | 这是 Windows 文件权限表达与 POSIX 断言的差异；迁移、保留失败项和真实 Credential Manager 存取分别已测。需要 Windows ACL 验证口径，不能据此宣称权限安全已验收 |
 

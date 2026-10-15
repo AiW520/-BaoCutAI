@@ -4,7 +4,7 @@
 
 涉及的代码：
 
-- 解码：`crates/media-native/src/windows.rs`（Media Foundation Source Reader，输出 RGB32）；
+- 解码：`crates/media-native/src/windows.rs`（Media Foundation Source Reader，输出 NV12）与 `yuv.rs`（NV12 → RGBA 的纯函数）；
 - 编码：`crates/media-native/src/encode_windows.rs`（Media Foundation Sink Writer，H.264）；
 - 调度优先级：`crates/export-worker/src/priority.rs` 的 `#[cfg(windows)]` 分支；
 - 平台无关的顺序流与缓冲轮换：`crates/media-native/src/frames.rs`（`FrameSource`、`SequentialDecoder`）。
@@ -22,7 +22,7 @@
 | W5 | 解码走硬件（D3D11） | 会变 | 中 | 导出 Source Reader 路径待实现；播放的 DXGI 测试通过不等于此项完成 |
 | W6 | 编码的节流与低延迟开关 | 码流会变 | 中 | 待 A/B，未启用候选开关 |
 | W7 | 三家显卡的硬件编码器兼容 | — | 高 | 未通过：RTX 3060 主机导出成功、BT.709 / High 正确，但 GOP 为 1 秒而非 2 秒；实际 MFT、AMD / Intel 与回落待测 |
-| W8 | 修复原生媒体测试的实机失败 | 待定位 | 高 | 5 个现有测试失败：单帧边界与 SSIM、顺序流起点与 SSIM、NTSC 帧率 |
+| W8 | 修复原生媒体测试的实机失败 | 有标注的素材会变 | 高 | 已修复：5 项全部通过，阈值未动；三个根因见下文 |
 | W9 | 合成线程的整帧拷贝与分配 | 不变 | 高 | 已实现：Windows 全局分配器（空闲时 1080p 双语字幕 cover 118 → 138 fps、contain 112 → 130 fps）；解出的画面共享给帧光栅、内核画布跨帧复用（空闲时再快 1.08–1.09 倍）；满载都没有一致的方向。这之后分配器反而拖慢 2–5%，待拿掉。合成上 GPU 另有[方案稿](gpu-compositing.md) |
 
 ### W1 解码直接写进调用方的缓冲
@@ -69,6 +69,14 @@
 ### W8 修复原生媒体测试的实机失败
 
 现有单帧、顺序流和写入器测试在 Windows 上分别失败 2、2、1 项；具体测试名、实测值和后续检查见 [Windows 实机验证记录 §3](../../acceptance/windows-validation.md#3-失败与后续事项)。先定位 sample 时间戳、颜色转换、EOF 与容器时基的实际行为，再做 W1–W3 的像素等价优化；不得通过放宽阈值或把失败改成跳过来更新完成状态。W7 的 GOP 差异仍归 W7。
+
+2026-10-15 定位并修复，三个根因互不相干，阈值与断言都没动：
+
+- **时间戳晚两帧**（边界串段、从 0.5 秒起多 2 帧）：Media Foundation 的 MPEG-4 源不应用视频轨的编辑表。libx264 缺省两级 B 帧，`elst` 的 `media_time` 是两帧（时标 15360 下 1024），MF 报的首帧时刻是 0.0667 秒而 ffmpeg 与 AVFoundation 是 0。修法：`media_probe::video_edit_start` 读第一条视频轨的编辑起点，交出的时间戳减去它、seek 目标加上它。
+- **颜色矩阵错**（SSIM 0.79–0.81）：让 Source Reader 直接交 RGB32 时，MF 的视频处理器不看码流标注，按画面高度猜矩阵（576 行及以下 BT.601，以上 BT.709）；夹具是 320×180 的 BT.709，红色被按 BT.601 换成 0.914 倍。解码器自己在第一个样本（`CURRENTMEDIATYPECHANGED`）之后报出码流的矩阵、量化范围、对齐后的平面高度（1080 → 1088）与显示孔径。修法：Reader 改交 NV12，按解码器报的布局与颜色在 CPU 上换 RGBA（`yuv.rs`，定点系数，色度最近邻上采样）；码流没标矩阵时沿用 MF 的按高度推定。修后 SSIM 0.97–0.99、逐通道最大偏差 2–5。
+- **NTSC 读回 29.9705**：两处。写入器按「单帧时长 × 帧号」给时间戳，333666.67 hns 截成 333666 后逐帧累积误差；MP4 Sink 又按 `round(1000 × 帧率)` 定时标，30000/1001 成了 29970、每帧 1000 tick，容器只能存 2997/100。修法：样本时刻按有理数逐帧算（向下取整加 1 hns，首帧为 0：Sink 换算时标时向下截，恰在 tick 边界上的时刻会因浮点误差少一个 tick，`mdhd` 的时长随之短一个 tick）；NTSC 系在媒体类型上声明整数帧率（30000/1001 声明为 30），时标成了 30000、每帧 1001 tick，读回 30000/1001。代价：编码器按 30 fps 写码流 VUI 的 timing、按 30 fps 分配码率（实际低 0.1%），MP4 的播放与 ffprobe 都以容器时间戳为准。这一项也关系到 Runtime 的发布校验：它比 ffprobe 的 `r_frame_rate` 与输出帧率（容差 1e-6），按这个口径，改动前 Windows 上 29.97 的原生导出（容器 2997/100）会以 `EXPORT_VALIDATION_FAILED` 失败（没有跑端到端导出复现）。
+
+像素变化：只有码流标注的矩阵与按高度推定不一致的素材（标清的 BT.709、高清的 BT.601）颜色会变，这是修正；无标注与常见的高清 BT.709 素材只剩换算实现的舍入与色度上采样差异（1080p testsrc2 与改动前的 MF RGB32 平均每通道差 0.53 级）。与 ffmpeg 8.1 的已知差异：无标注的高清素材 ffmpeg 按 BT.601 换，这里与 MF、浏览器一样按 BT.709。
 
 ### W9 合成线程的整帧拷贝与分配
 

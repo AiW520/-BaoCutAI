@@ -1,4 +1,11 @@
-//! ISO-BMFF 音轨编辑表（`elst`）的起点：解码后要丢掉多少编码器前置帧（priming）。
+//! ISO-BMFF 编辑表（`elst`）的起点：音轨解码后要丢掉多少编码器前置帧（priming），视频轨的时间戳要提前多少。
+//!
+//! ## 视频轨
+//!
+//! 带 B 帧的 H.264 / HEVC 在 MP4 里用组合时间偏移（`ctts`）排呈现顺序，首帧的组合时间因此晚于 0（libx264 缺省的
+//! 两级 B 帧是两帧），编辑表把它拉回 0。ffmpeg 与 AVFoundation 都应用它；**Windows Media Foundation 的 MPEG-4 源
+//! 不应用**（Windows 11 实测：ffmpeg 编出的 30 fps 夹具首帧报 0.0667 秒），按时间戳取帧就整体晚两帧。
+//! [`video_edit_start`] 给 `media-native` 的 Windows 解码把时间戳扣回去，口径同下文。
 //!
 //! ## 为什么要自己读
 //!
@@ -63,9 +70,26 @@ impl EditStart {
 /// 返回 `None` 的情形：不是 ISO-BMFF、读不了、找不到这条轨、没有 `elst`、
 /// 第一段非空编辑从 0 开始。全部等价于「不用丢前缀」，调用方照旧解码即可。
 pub fn audio_edit_start(path: &Path, track_id: u32) -> Option<EditStart> {
+    edit_start(path, Track::Id(track_id))
+}
+
+/// 第一条视频轨（`hdlr` 为 `vide`，也就是 Media Foundation 的第一条视频流）的编辑表起点。`None` 的情形同
+/// [`audio_edit_start`]。
+pub fn video_edit_start(path: &Path) -> Option<EditStart> {
+    edit_start(path, Track::FirstVideo)
+}
+
+/// 要查哪条轨。
+#[derive(Clone, Copy)]
+enum Track {
+    Id(u32),
+    FirstVideo,
+}
+
+fn edit_start(path: &Path, track: Track) -> Option<EditStart> {
     let file = std::fs::File::open(path).ok()?;
     let len = file.metadata().ok()?.len();
-    edit_start_in(&mut io::BufReader::new(file), len, track_id)
+    edit_start_in(&mut io::BufReader::new(file), len, track)
         .ok()
         .flatten()
 }
@@ -73,7 +97,7 @@ pub fn audio_edit_start(path: &Path, track_id: u32) -> Option<EditStart> {
 fn edit_start_in<R: Read + Seek>(
     reader: &mut R,
     len: u64,
-    track_id: u32,
+    track: Track,
 ) -> io::Result<Option<EditStart>> {
     // 先认类型再认尺寸：WAV / FLAC 的前 4 字节当 box 尺寸读必然越界，
     // 那不是「坏 MP4」，只是别的容器。
@@ -87,7 +111,7 @@ fn edit_start_in<R: Read + Seek>(
     let mut pos = 0;
     while let Some(header) = next_box(reader, pos, len)? {
         if &header.kind == b"moov" {
-            return find_in_moov(reader, &header, track_id);
+            return find_in_moov(reader, &header, track);
         }
         pos = header.end;
     }
@@ -97,13 +121,17 @@ fn edit_start_in<R: Read + Seek>(
 fn find_in_moov<R: Read + Seek>(
     reader: &mut R,
     moov: &BoxHeader,
-    track_id: u32,
+    track: Track,
 ) -> io::Result<Option<EditStart>> {
     let mut pos = moov.body;
     while let Some(child) = next_box(reader, pos, moov.end)? {
         if &child.kind == b"trak" {
             let trak = read_trak(reader, &child)?;
-            if trak.track_id != Some(track_id) {
+            let wanted = match track {
+                Track::Id(id) => trak.track_id == Some(id),
+                Track::FirstVideo => trak.handler == Some(*b"vide"),
+            };
+            if !wanted {
                 pos = child.end;
                 continue;
             }
@@ -125,6 +153,8 @@ fn find_in_moov<R: Read + Seek>(
 #[derive(Default)]
 struct Trak {
     track_id: Option<u32>,
+    /// `mdia/hdlr` 的 handler_type（`vide`、`soun`…）。
+    handler: Option<[u8; 4]>,
     timescale: Option<u32>,
     media_time: Option<u64>,
 }
@@ -151,6 +181,8 @@ fn read_trak<R: Read + Seek>(reader: &mut R, trak: &BoxHeader) -> io::Result<Tra
                     if &grandchild.kind == b"mdhd" {
                         out.timescale =
                             read_small(reader, &grandchild)?.and_then(|b| parse_mdhd(&b));
+                    } else if &grandchild.kind == b"hdlr" {
+                        out.handler = read_small(reader, &grandchild)?.and_then(|b| parse_hdlr(&b));
                     }
                     inner = grandchild.end;
                 }
@@ -228,6 +260,11 @@ fn parse_tkhd(body: &[u8]) -> Option<u32> {
     }
 }
 
+/// `hdlr`（FullBox）：version/flags 4 + pre_defined 4 之后是 handler_type。
+fn parse_hdlr(body: &[u8]) -> Option<[u8; 4]> {
+    body.get(8..12)?.try_into().ok()
+}
+
 /// `mdhd`（FullBox）：timescale 紧跟在创建 / 修改时间之后。
 fn parse_mdhd(body: &[u8]) -> Option<u32> {
     match body.first()? {
@@ -283,11 +320,13 @@ mod tests {
         bx(b"tkhd", &full(0, &rest))
     }
 
-    fn mdia(timescale: u32) -> Vec<u8> {
+    fn mdia(timescale: u32, handler: &[u8; 4]) -> Vec<u8> {
         let mut rest = vec![0u8; 8];
         rest.extend_from_slice(&timescale.to_be_bytes());
         rest.extend_from_slice(&[0u8; 8]);
-        let mut stbl_padding = bx(b"hdlr", &full(0, b"\0\0\0\0soun"));
+        let mut hdlr = b"\0\0\0\0".to_vec();
+        hdlr.extend_from_slice(handler);
+        let mut stbl_padding = bx(b"hdlr", &full(0, &hdlr));
         stbl_padding.extend(bx(b"minf", &bx(b"stbl", &[0u8; 64])));
         let mut payload = bx(b"mdhd", &full(0, &rest));
         payload.extend(stbl_padding);
@@ -306,9 +345,13 @@ mod tests {
     }
 
     fn trak(track_id: u32, timescale: u32, edts: Option<Vec<u8>>) -> Vec<u8> {
+        trak_of(b"soun", track_id, timescale, edts)
+    }
+
+    fn trak_of(handler: &[u8; 4], track_id: u32, timescale: u32, edts: Option<Vec<u8>>) -> Vec<u8> {
         let mut payload = tkhd(track_id);
         payload.extend(edts.unwrap_or_default());
-        payload.extend(mdia(timescale));
+        payload.extend(mdia(timescale, handler));
         bx(b"trak", &payload)
     }
 
@@ -324,7 +367,42 @@ mod tests {
     }
 
     fn lookup(bytes: &[u8], track_id: u32) -> Option<EditStart> {
-        edit_start_in(&mut Cursor::new(bytes), bytes.len() as u64, track_id).unwrap()
+        edit_start_in(
+            &mut Cursor::new(bytes),
+            bytes.len() as u64,
+            Track::Id(track_id),
+        )
+        .unwrap()
+    }
+
+    fn lookup_video(bytes: &[u8]) -> Option<EditStart> {
+        edit_start_in(
+            &mut Cursor::new(bytes),
+            bytes.len() as u64,
+            Track::FirstVideo,
+        )
+        .unwrap()
+    }
+
+    /// 视频按 `hdlr` 认第一条 `vide` 轨，排在前面的音轨不算；没有视频轨或它没有编辑表时是 `None`。
+    #[test]
+    fn the_video_edit_belongs_to_the_first_video_track() {
+        let bytes = file(&[
+            trak(1, 48_000, Some(edts_v0(&[(48_000, 1024)]))),
+            trak_of(b"vide", 2, 15_360, Some(edts_v0(&[(1000, 1024)]))),
+            trak_of(b"vide", 3, 600, Some(edts_v0(&[(1000, 40)]))),
+        ]);
+        assert_eq!(
+            lookup_video(&bytes),
+            Some(EditStart {
+                media_time: 1024,
+                timescale: 15_360
+            })
+        );
+        let audio_only = file(&[trak(1, 48_000, Some(edts_v0(&[(48_000, 1024)])))]);
+        assert_eq!(lookup_video(&audio_only), None);
+        let no_edit = file(&[trak_of(b"vide", 1, 15_360, None)]);
+        assert_eq!(lookup_video(&no_edit), None);
     }
 
     #[test]
@@ -392,7 +470,9 @@ mod tests {
         let mut broken = bx(b"ftyp", b"isom");
         broken.extend_from_slice(&0xFFFF_FFF0u32.to_be_bytes());
         broken.extend_from_slice(b"moov");
-        assert!(edit_start_in(&mut Cursor::new(&broken), broken.len() as u64, 1).is_err());
+        assert!(
+            edit_start_in(&mut Cursor::new(&broken), broken.len() as u64, Track::Id(1)).is_err()
+        );
         assert_eq!(
             audio_edit_start(Path::new("/definitely/not/here.m4a"), 1),
             None
@@ -409,6 +489,14 @@ mod tests {
             Some(EditStart {
                 media_time: 1024,
                 timescale: 48_000
+            })
+        );
+        // 视频轨（id 1）是 libx264 的两级 B 帧：组合时间晚两帧（30 fps、时标 15360 下 1024 tick）。
+        assert_eq!(
+            video_edit_start(&fixture),
+            Some(EditStart {
+                media_time: 1024,
+                timescale: 15_360
             })
         );
     }

@@ -31,7 +31,7 @@
  * | 平台 | 后端 | 单帧 | 顺序流 | 实时 GPU 播放帧 | MP4 写入 |
  * | --- | --- | --- | --- | --- | --- |
  * | macOS | AVFoundation | `AVAssetImageGenerator`（容差为零的精确取帧）+ CoreGraphics 位图上下文转 RGBA | `AVAssetReader` + `AVAssetReaderTrackOutput`（32BGRA） | App 播放层持有 `CVPixelBuffer` / IOSurface | `AVAssetWriter` + 像素缓冲适配器（VideoToolbox H.264 + AAC） |
- * | Windows | Media Foundation | `IMFSourceReader` + `MFVideoFormat_RGB32`，seek 后按时间戳推进到目标帧 | 同一个 source reader，seek 后一路 `ReadSample` | `IMFMediaEngine` frame-server → 三槽共享 D3D11 BGRA 纹理 + shared fence | `IMFSinkWriter` + H.264 MFT（NV12 输入）+ AAC MFT |
+ * | Windows | Media Foundation | `IMFSourceReader` 解 NV12（按码流的矩阵与范围在 CPU 上换 RGBA，时间戳扣掉 MP4 编辑表），seek 后按时间戳推进到目标帧 | 同一个 source reader，seek 后一路 `ReadSample` | `IMFMediaEngine` frame-server → 三槽共享 D3D11 BGRA 纹理 + shared fence | `IMFSinkWriter` + H.264 MFT（NV12 输入）+ AAC MFT |
  * | 其余（Linux…） | 无 | [`available`] 返回 `false`，返回 `Err` | 同左 | 无 | [`encode_available`] 返回 `false`，同左 |
  *
  * **调用方必须自带 ffmpeg 兜底**：本 crate 不发现、不启动任何外部二进制（那是
@@ -53,6 +53,9 @@ use anyhow::Result;
 mod encode;
 mod frames;
 mod scale;
+// 只有 Windows 的解码路径在用；纯函数不带平台条件，测试在每个平台上都跑。
+#[cfg_attr(not(target_os = "windows"), allow(dead_code))]
+mod yuv;
 
 #[cfg(target_os = "macos")]
 mod encode_macos;
