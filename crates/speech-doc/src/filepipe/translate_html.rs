@@ -20,7 +20,8 @@ use super::common::{
     Diagnostics, Problem, ProblemCode, TRANSLATION_SOURCE_FORMAT, Warning, WarningCode,
     guard_output_size, normalize_llm_output, sanitize_inline_text,
 };
-use super::html::{Element, escape_attr, escape_text, index_by_id, parse_html};
+use super::html::{Element, Node, escape_attr, escape_text, index_by_id, parse_html};
+use super::lines_translation::{glued_joint_wants_space, is_spaced_target};
 
 /// 一句在翻译载体里的渲染输入。
 #[derive(Debug, Clone, PartialEq, Eq, Default)]
@@ -350,6 +351,56 @@ fn fused_chunks(
     }
     let concat: String = chunks.iter().map(|chunk| chunk.text.as_str()).collect();
     (normalize_chars(&concat) == normalize_chars(translation)).then_some(chunks)
+}
+
+/// `<p>` 的译文文本：子节点原样拼接后归一化（[`Element::text`]）。
+///
+/// 融合块（`<span data-src>`）之间模型常常紧贴着写、不留空格，以空格分词的
+/// 目标语就会粘词（`little</span><span>I've` ⇒ `littleI've`）。目标语以空格分词
+/// 且 `<p>` 带块标注时，两侧都没有空白的块缝按行文本载体的同一规则补一个空格
+/// （[`glued_joint_wants_space`]：句读之后必补，括号引号内侧与收尾标点前不补，
+/// 两个词字符之间看本句其他块缝有没有空格）。只补不删；不以空格分词的目标语
+/// 与不带块标注的 `<p>` 照旧原样拼接。
+fn paragraph_text(element: &Element, target_lang: &str) -> String {
+    let annotated = element
+        .children
+        .iter()
+        .any(|node| matches!(node, Node::Element(child) if child.attr("data-src").is_some()));
+    if !annotated || !is_spaced_target(target_lang) {
+        return element.text();
+    }
+    // 每块文本及其后的块缝是否带空白（块尾空白、后块头空白，或两块之间只有
+    // 空白的文本节点）。`<p>` 首尾的排版空白不是块缝，不影响本句口径。
+    let mut pieces: Vec<(String, bool)> = Vec::new();
+    for node in &element.children {
+        let raw = match node {
+            Node::Text(text) => text.clone(),
+            Node::Element(child) => child.raw_text(),
+        };
+        let leading = raw.starts_with(char::is_whitespace);
+        if let Some(previous) = pieces.last_mut()
+            && leading
+        {
+            previous.1 = true;
+        }
+        if !raw.trim().is_empty() {
+            let trailing = raw.ends_with(char::is_whitespace);
+            pieces.push((raw, trailing));
+        }
+    }
+    let line_spaced = pieces
+        .iter()
+        .take(pieces.len().saturating_sub(1))
+        .any(|(_, spaced)| *spaced);
+    let mut text = String::new();
+    for (index, (piece, _)) in pieces.iter().enumerate() {
+        if index > 0 && (pieces[index - 1].1 || glued_joint_wants_space(&text, piece, line_spaced))
+        {
+            text.push(' ');
+        }
+        text.push_str(piece);
+    }
+    super::html::normalize_html_text(&text)
 }
 
 /// `data-budget` 文案：只带相对预算（整句字数上限），不带秒数。
@@ -717,7 +768,7 @@ pub fn parse_translate_page(
             continue;
         };
         let element = index[id];
-        let text = element.text();
+        let text = paragraph_text(element, &page.target_lang);
 
         // 段落归属：可编辑句被挪段是单元级问题（照常记 problem，不拒页）；
         // 冻结句被挪段降为 advisory——冻结句的**文本从不进 `translations`**
@@ -1147,6 +1198,120 @@ mod tests {
             assert!(parsed.retry_ids.is_empty(), "{:?}", parsed.diagnostics);
             assert!(!parsed.page_rejected);
             assert_eq!(parsed.translations["s-g1.0"], "九十天增长八倍。");
+        }
+    }
+
+    #[test]
+    fn glued_span_joints_get_a_space_in_spaced_targets_only() {
+        let mut page = sample_page();
+        page.source_lang = "zh".to_owned();
+        page.sections[0].sentences[0].source = "我从小就一直在推着自己往前走。".to_owned();
+        page.sections[0].sentences[0].alignment = Some(TranslateAlignmentInput {
+            source_words: ["我", "从小", "就", "一直", "在", "推着", "自己", "往前走。"]
+                .into_iter()
+                .map(str::to_owned)
+                .collect(),
+            needs_split: true,
+            groups: Vec::new(),
+            source_glue: Vec::new(),
+        });
+        let parse = |page: &TranslatePage, spans: &str| {
+            let output = format!(
+                "<article><section id=\"p-g1.0\"><p id=\"s-g1.0\">{spans}</p><p id=\"s-g1.7\">-</p></section></article>"
+            );
+            parse_translate_page(page, None, &output)
+        };
+
+        // zh→en：模型把块紧贴着写，块缝补回空格；块草稿照常成立。
+        page.target_lang = "en".to_owned();
+        let parsed = parse(
+            &page,
+            concat!(
+                "<span data-src=\"1-2\">Since I was little</span><span data-src=\"3\">I've</span>",
+                "<span data-src=\"4\">always</span><span data-src=\"5-8\">been pushing myself.</span>",
+            ),
+        );
+        assert_eq!(
+            parsed.translations["s-g1.0"],
+            "Since I was little I've always been pushing myself."
+        );
+        let chunks = &parsed.alignments["s-g1.0"].chunks;
+        assert_eq!(chunks.len(), 4);
+        assert_eq!(chunks[1].text, "I've");
+        for (spans, expected) in [
+            // 句读之后必补。
+            (
+                "<span data-src=\"1-4\">In my posts,</span><span data-src=\"5-8\">these ideas spread.</span>",
+                "In my posts, these ideas spread.",
+            ),
+            // 收尾标点前、开括号后不补。
+            (
+                "<span data-src=\"1-4\">He said</span><span data-src=\"5-8\">, then left.</span>",
+                "He said, then left.",
+            ),
+            (
+                "<span data-src=\"1-4\">the word (</span><span data-src=\"5-8\">pushing)</span>",
+                "the word (pushing)",
+            ),
+            // 模型自己写的空格（块尾或块间空白节点）不重复。
+            (
+                "<span data-src=\"1-4\">Since I was little </span><span data-src=\"5-8\">I've</span>",
+                "Since I was little I've",
+            ),
+            (
+                "<span data-src=\"1-4\">Since I was little</span> <span data-src=\"5-8\">I've</span>",
+                "Since I was little I've",
+            ),
+            // `<p>` 首尾的排版空白不是块缝。
+            (
+                "\n  <span data-src=\"1-4\">Since I was little</span><span data-src=\"5-8\">I've</span>\n",
+                "Since I was little I've",
+            ),
+            // 本句其他块缝有空格时，词字符之间的贴缝是有意切开的词，保持贴合。
+            (
+                "<span data-src=\"1-2\">It was </span><span data-src=\"3-5\">somat</span><span data-src=\"6-8\">ized pain.</span>",
+                "It was somatized pain.",
+            ),
+        ] {
+            assert_eq!(
+                parse(&page, spans).translations["s-g1.0"],
+                expected,
+                "{spans}"
+            );
+        }
+
+        // 韩文以空格分词，同样补。
+        page.target_lang = "ko".to_owned();
+        let parsed = parse(
+            &page,
+            "<span data-src=\"1-4\">어릴 때부터</span><span data-src=\"5-8\">항상 노력했다.</span>",
+        );
+        assert_eq!(parsed.translations["s-g1.0"], "어릴 때부터 항상 노력했다.");
+
+        // 不以空格分词的目标语照旧原样拼接。
+        for (target, spans, expected) in [
+            (
+                "zh",
+                "<span data-src=\"1-4\">我从小就</span><span data-src=\"5-8\">一直在逼自己。</span>",
+                "我从小就一直在逼自己。",
+            ),
+            (
+                "ja",
+                "<span data-src=\"1-4\">子供の頃から</span><span data-src=\"5-8\">ずっと頑張ってきた。</span>",
+                "子供の頃からずっと頑張ってきた。",
+            ),
+            (
+                "th",
+                "<span data-src=\"1-4\">ตั้งแต่เด็ก</span><span data-src=\"5-8\">ผมพยายามมาตลอด</span>",
+                "ตั้งแต่เด็กผมพยายามมาตลอด",
+            ),
+        ] {
+            page.target_lang = target.to_owned();
+            assert_eq!(
+                parse(&page, spans).translations["s-g1.0"],
+                expected,
+                "{target}"
+            );
         }
     }
 

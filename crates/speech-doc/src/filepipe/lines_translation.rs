@@ -761,32 +761,56 @@ fn tidy_joints(record: &mut Record, spaced_target: bool) {
         let (Some(last), Some(first)) = (tail.chars().last(), head.chars().next()) else {
             continue;
         };
-        let wide = unspaced_pair(last, first);
-        let space = if wide || opens_at_end(&tail) || closes_at_start(&head) {
-            false
-        } else if spaced {
-            true
+        let blocked = unspaced_pair(last, first) || opens_at_end(&tail) || closes_at_start(&head);
+        let space = if spaced {
+            !blocked
         } else if !spaced_target {
             // Two words of a spaced script meeting inside an unspaced
             // translation (`University|of Toronto`) keep their space; a
             // split word is the rarer case and reads worse glued.
-            spaced_script_letter(last) && spaced_script_letter(first)
-        } else if matches!(
-            first,
-            ',' | '.' | ';' | ':' | '!' | '?' | ')' | ']' | '}' | '”' | '’' | '»' | '-' | '—' | '–'
-        ) || matches!(last, '(' | '[' | '{' | '“' | '‘' | '«' | '-' | '/')
-        {
-            false
-        } else if matches!(last, ',' | '.' | ';' | ':' | '!' | '?') {
-            true
+            !blocked && spaced_script_letter(last) && spaced_script_letter(first)
         } else {
-            !line_spaced
+            glued_joint_wants_space(&tail, &head, line_spaced)
         };
         if space {
             tail.push(' ');
         }
         record.chunks[a].text = tail;
         record.chunks[b].text = head;
+    }
+}
+
+/// The target language puts spaces between its words: not a wide script
+/// (Chinese, Japanese) and not Thai, Lao, Burmese, Khmer or Tibetan.
+pub(crate) fn is_spaced_target(target_lang: &str) -> bool {
+    !(crate::autocorrect::is_unspaced_cjk_language(target_lang)
+        || crate::autocorrect::is_unspaced_script_language(target_lang))
+}
+
+/// Whether a joint the model left glued (`tail` + `head`, no whitespace on
+/// either side) gets a space in a target that spaces its words — the rule
+/// [`tidy_joints`] applies, shared with the rows carrier's span joints. Never
+/// between two wide characters, just inside a bracket or quote, before
+/// closing punctuation or a dash, or after an opener, dash or slash; always
+/// after sentence punctuation; between two word characters by the line's own
+/// convention (`line_spaced`: some other joint of the line carries
+/// whitespace, so a glued one is deliberate).
+pub(crate) fn glued_joint_wants_space(tail: &str, head: &str, line_spaced: bool) -> bool {
+    let (Some(last), Some(first)) = (tail.chars().last(), head.chars().next()) else {
+        return false;
+    };
+    if unspaced_pair(last, first) || opens_at_end(tail) || closes_at_start(head) {
+        false
+    } else if matches!(
+        first,
+        ',' | '.' | ';' | ':' | '!' | '?' | ')' | ']' | '}' | '”' | '’' | '»' | '-' | '—' | '–'
+    ) || matches!(last, '(' | '[' | '{' | '“' | '‘' | '«' | '-' | '/')
+    {
+        false
+    } else if matches!(last, ',' | '.' | ';' | ':' | '!' | '?') {
+        true
+    } else {
+        !line_spaced
     }
 }
 
@@ -1244,8 +1268,7 @@ pub fn parse_with_params(
 ) -> Parsed {
     // A target written without spaces between words never has a space added
     // at a joint: the model's own spaces (phrase breaks) are kept as written.
-    let spaced_target = !(crate::autocorrect::is_unspaced_cjk_language(&page.target_lang)
-        || crate::autocorrect::is_unspaced_script_language(&page.target_lang));
+    let spaced_target = is_spaced_target(&page.target_lang);
     let mut result = Parsed {
         translation: TranslateParsed::default(),
         records: BTreeMap::new(),
