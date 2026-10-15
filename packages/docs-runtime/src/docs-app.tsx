@@ -17617,8 +17617,8 @@ var ASK_NOTICE_TIMEOUT_MS = 1e4;
 var ASK_NOTICE_HOLD_MS = 4e3;
 var MAX_ASK_NOTICE_RETRIES = 40;
 var INLINE_ASK_TOAST_ID = `inline-ask`;
-var ASK_LINE_REMOVED_MESSAGE = `That line was removed — copy your text, or close this and pick @Claude again.`;
-var ASK_DOCUMENT_CHANGED_MESSAGE = `The document changed under this — copy your text, or close this and type @Claude in the document.`;
+var ASK_LINE_REMOVED_MESSAGE = `That line was removed — copy your text, or close this and pick @Agent again.`;
+var ASK_DOCUMENT_CHANGED_MESSAGE = `The document changed under this — copy your text, or close this and type @Agent in the document.`;
 var COMMENT_DRAFT_BLOCKING_MESSAGE = `Finish or discard the comment you're writing first.`;
 var CLAUDE_BUSY_MESSAGE = `Claude is busy with an earlier request. Ask again once that request is done.`;
 var CLAUDE_BUSY_REQUEST_KEPT_MESSAGE = `Claude is busy with an earlier request, so what you typed stays in the document as text. Ask again once that request is done.`;
@@ -18286,9 +18286,9 @@ function askCardRecoveryLostMessage(
 ): Dynamic {
   return !options ||
     (context !==
-      `That line was removed — copy your text, or close this and pick @Claude again.` &&
+      `That line was removed — copy your text, or close this and pick @Agent again.` &&
       context !==
-        `The document changed under this — copy your text, or close this and type @Claude in the document.`)
+        `The document changed under this — copy your text, or close this and type @Agent in the document.`)
     ? context
     : ((cardRecoveryLostMessage.lost = true),
       CLAUDE_REQUEST_UNSENDABLE_MESSAGE);
@@ -29744,7 +29744,7 @@ function CommentClaudeToggle(
         <span
           id={controlId}
           hidden={true}
-        >{`Your comment mentions @Claude. Remove the mention to uncheck.`}</span>
+        >{`Your comment mentions @Agent. Remove the mention to uncheck.`}</span>
       )}
     </span>
   );
@@ -31771,7 +31771,7 @@ var NodeThreadsCard: Dynamic = (0, React.memo)(function (
 });
 var INLINE_ASK_COMPOSER_LAYOUT = {
   regionLabel: `Ask the agent about this document`,
-  dismissedHint: `Type @Claude to talk to the agent`,
+  dismissedHint: `Type @Agent to talk to the agent`,
   bottom: 16,
   clearance: 8,
   lane: 672,
@@ -33983,7 +33983,7 @@ var isEmptyClaudeRequest = (
   ..._extraArguments: unknown[]
 ) =>
   emptyClaudeRequest
-    .replace(/^\s*@Claude\u2060?\s*/i, ``)
+    .replace(/^\s*@(?:Claude|Agent)\u2060?\s*/i, ``)
     .split(
       `
 `,

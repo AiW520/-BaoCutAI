@@ -222584,11 +222584,11 @@ var documentInteractionsStopClaudeWriting = "Stop Claude writing";
 var documentInteractionsMessage2 =
   "Simulated Claude. Text that appears here is sample text, not written by Claude.";
 var documentInteractionsMessage3 = "Start typing, or ask ";
-var documentInteractionsMessage4 = "@Claude";
+var documentInteractionsMessage4 = "@Agent";
 var documentInteractionsToWriteOrEdit = " to write or edit";
-var documentInteractionsMessage5 = "ask @Claude to write or edit";
+var documentInteractionsMessage5 = "ask @Agent to write or edit";
 var documentInteractionsToWrite = " to write";
-var documentInteractionsMessage6 = "ask @Claude to write";
+var documentInteractionsMessage6 = "ask @Agent to write";
 var DocumentInteractionsSection = {
   section: "write this section",
   end: "add a section on…",
@@ -298719,7 +298719,7 @@ async function loadWidgetAndHostRuntimeWhy(
   postDocumentGesture({
     type: "comment-add",
     nodeId: entry,
-    quote: "@Claude",
+    quote: "@Agent",
     prefix: value2.prefix,
     suffix: value2.suffix,
     y: value2.y,
