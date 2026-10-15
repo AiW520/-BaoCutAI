@@ -3,7 +3,7 @@ import http, { type IncomingHttpHeaders } from 'node:http';
 import type { AddressInfo } from 'node:net';
 import os from 'node:os';
 import path from 'node:path';
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { WebSocket } from 'ws';
 import { createDocsConnector, type DocsConnector } from './connector.ts';
 import { DocsServer } from './server.ts';
@@ -294,6 +294,77 @@ describe('mux', () => {
     expect(editor.frames.some(isTopic(feed))).toBe(false);
     const after = (await connector.read(docDir, { ref: { object: 'node', id: node } }, actor)) as { xml: string };
     expect(after.xml).toContain('>Alpha');
+  });
+
+  it('同一个 opId 重发（编辑器重新打开后从本地日志重放）只生效一次：回上次的回执，不再写、不再通知', async () => {
+    const node = project.files[0]!.content.id;
+    const xml = ((await connector.read(docDir, { ref: { object: 'node', id: node } }, actor)) as { xml: string }).xml;
+    const prefix = /id='([a-z0-9]+)\./.exec(xml)![1]!;
+    const firstChar = /<text id='([^']+)'>Alpha/.exec(xml)![1]!;
+    const charId = firstChar.startsWith('.') ? prefix + firstChar : firstChar;
+    const insert = (opId: string, content: string) => ({
+      verb: 'update',
+      ref: { object: 'node', id: node },
+      opId,
+      payload: { ops: [{ op: 'insert', target: { kind: 'chars', range: [charId, charId] }, side: 'before', source: { from: { kind: 'inline', content }, as: 'text' } }] },
+    });
+    const count = async (text: string) =>
+      ((await connector.read(docDir, { ref: { object: 'node', id: node } }, actor)) as { xml: string }).xml.split(text).length - 1;
+
+    const before = await connect();
+    before.socket.send(doorFrame(1, 'o', insert('ln-body.a.0', '§')));
+    const first = JSON.parse((await before.next((frame) => frame['op'] === 'doorack' && frame['rid'] === 1))['body'] as string) as unknown;
+    expect(first).toMatchObject({ verdict: 'allow', changed: true });
+    before.socket.close();
+
+    const watcher = await connect();
+    const feed = `feed:project/${project.id}`;
+    watcher.socket.send(JSON.stringify({ op: 'sub', topic: feed }));
+    await watcher.next((frame) => frame['op'] === 'ack' && frame['topic'] === feed);
+    const reopened = await connect();
+    reopened.socket.send(doorFrame(1, 'o', insert('ln-body.a.0', '§')));
+    const again = JSON.parse((await reopened.next((frame) => frame['op'] === 'doorack' && frame['rid'] === 1))['body'] as string) as unknown;
+    expect(again).toEqual(first);
+    expect(await count('§')).toBe(1);
+
+    // batch 成员同样按 opId 认；被拒的不记，同一个 opId 之后照常生效
+    const batch = { batch: [insert('ln-body.a.1', '¶')] };
+    reopened.socket.send(doorFrame(2, 'b', batch));
+    await reopened.next((frame) => frame['op'] === 'doorack' && frame['rid'] === 2);
+    reopened.socket.send(doorFrame(3, 'b', batch));
+    const batchAgain = JSON.parse((await reopened.next((frame) => frame['op'] === 'doorack' && frame['rid'] === 3))['body'] as string) as unknown;
+    expect(batchAgain).toMatchObject({ verdict: 'allow', acks: [{ verdict: 'allow' }] });
+    expect(await count('¶')).toBe(1);
+    reopened.socket.send(doorFrame(4, 'o', { ...insert('ln-body.a.2', '†'), ref: { object: 'node', id: 'missing' } }));
+    expect(JSON.parse((await reopened.next((frame) => frame['op'] === 'doorack' && frame['rid'] === 4))['body'] as string)).toMatchObject({ verdict: 'deny' });
+    reopened.socket.send(doorFrame(5, 'o', insert('ln-body.a.2', '†')));
+    expect(JSON.parse((await reopened.next((frame) => frame['op'] === 'doorack' && frame['rid'] === 5))['body'] as string)).toMatchObject({ verdict: 'allow' });
+    expect(await count('†')).toBe(1);
+
+    // 只有真正写入的那几次通知开着的编辑器：重发的两次不算
+    await watcher.next(isTopic(feed));
+    await new Promise((resolve) => setTimeout(resolve, 50));
+    expect(watcher.frames.filter(isTopic(feed))).toHaveLength(2);
+  });
+
+  it('智能体经连接器回复评论：开着的编辑器从 feed 收到这个线程的通知', async () => {
+    const editor = await connect();
+    const feed = `feed:project/${project.id}`;
+    editor.socket.send(JSON.stringify({ op: 'sub', topic: feed }));
+    await editor.next((frame) => frame['op'] === 'ack' && frame['topic'] === feed);
+    const node = project.files[0]!.content.id;
+    editor.socket.send(doorFrame(3, 'o', { verb: 'create', object: 'utterance', opId: 'c-1', payload: { value: { body: 'Is gamma right?', parent: { object: 'node', id: node } } } }));
+    const asked = JSON.parse((await editor.next((frame) => frame['op'] === 'doorack' && frame['rid'] === 3))['body'] as string) as { verdict: string; id: string };
+    expect(asked.verdict).toBe('allow');
+    const before = editor.frames.filter(isTopic(feed)).length;
+    await connector.create(docDir, { object: 'utterance', payload: { value: { parent: { object: 'utterance', id: asked.id }, body: 'Yes.' } } }, actor);
+    await vi.waitFor(() => expect(editor.frames.filter(isTopic(feed)).length).toBeGreaterThan(before));
+    const last = JSON.parse(editor.frames.filter(isTopic(feed)).at(-1)!['data'] as string) as {
+      data: { actor: object; diff: { address: { ref: { object: string; id: string } } }[] };
+    };
+    expect(last.data.diff[0]!.address.ref).toEqual({ object: 'utterance', id: asked.id });
+    // 编辑器只把 external + via mcp 认作智能体
+    expect(last.data.actor).toEqual({ principal: 'claude', channel: 'external', via: 'mcp' });
   });
 
   it('跨源的升级被拒', async () => {

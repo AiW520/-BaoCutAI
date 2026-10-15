@@ -53,8 +53,8 @@
 ## 4. 服务端：`packages/docs`
 
 - **存储**（`doc-store`）：按目录读写第 2 节的文件；同一个目录在内存里只有一份 `LiveDoc`。
-- **door**：编辑器与智能体共用的读写入口，动词与 Claude Docs 连接器相同（`batch`、`create`、`read`、`update`、`query`、`delete`），对象有 project、file（标签页）、node（正文）、utterance（评论）、enum（下拉选项）、blob（素材）。正文的改动是 prose ops（`insert`、`replace`、`delete`、`move`、`set`、`restore` 等），整批要么全部生效、要么一条也不生效。
-- **mux**：编辑器的 WebSocket，承载 door 调用与文档变化的推送；智能体经 door 写入后，开着的编辑器即时收到。
+- **door**：编辑器与智能体共用的读写入口，动词与 Claude Docs 连接器相同（`batch`、`create`、`read`、`update`、`query`、`delete`），对象有 project、file（标签页）、node（正文）、utterance（评论）、enum（下拉选项）、blob（素材）。正文的改动是 prose ops（`insert`、`replace`、`delete`、`move`、`set`、`restore` 等），整批要么全部生效、要么一条也不生效。带 `opId` 的写入只生效一次：编辑器把发出去还没收到回执的改动记在本地（`bongo.op-wal`、`bongo.comment-outbox`），重新打开时用同一个 opId 原样重发；door 按「写入者 + opId」记住最近 256 次写入的回执，重发的回上次的回执，不再写、不再推送（batch 里逐条判断）。
+- **mux**：编辑器的 WebSocket，承载 door 调用与文档变化的推送；智能体经 door 写入后，开着的编辑器即时收到。`feed:project/<id>` 的信封里 `actor` 照原版的写法：本机用户是 `{principal, channel: "human"}`，智能体是 `{principal, channel: "external", via: "mcp"}`（编辑器只把这样的 actor 认作智能体）。评论的变化以线程为地址推送给所有连接（含发起的），编辑器据此重读评论；room 不同步评论，本页新建的批注由 door 读回的列表更新（`packages/docs-runtime` README「本页新建的批注收后续回复」）。
 - **连接器**（`createDocsConnector(server)`）：给智能体的一层，把连接器的参数（markdown 与 chip、`find` 目标、guard、`$lid`）翻成 door 调用，回执与拒绝码照搬 Claude Docs（D3）。图表、widget 与 `node/…` 的 embed 拒绝为 `unsupported`（D4）。
 - **DocsServer**：Node http 的路由与 WebSocket 升级（第 6.2 节），grant 只在内存里，Runtime 重启后要重新打开。
 

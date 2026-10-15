@@ -6,6 +6,8 @@
  * - 写入要 `canEdit`（Web 服务的只读会话没有）；被拒时什么也没改。
  * - batch：成员按顺序执行，`$lid` 别名换成前面成员新建出的 id；任一成员被拒，整批不生效并报出它的下标。
  * - 改动后经 LiveDoc 的事件推给开着的编辑器（mux）。
+ * - 带 `opId` 的写入只生效一次：编辑器把发出去还没等到回执的改动记在本地（`bongo.op-wal`、`bongo.comment-outbox`），
+ *   页面关掉再打开时用同一个 opId 原样重发；已经生效过的回上次的回执，不再写、不再通知。
  */
 import { randomUUID } from 'node:crypto';
 import { applyJsonPatch, JsonPatchError, type JsonPatchOp } from './json-patch.ts';
@@ -30,6 +32,9 @@ export const PAGE_MIME = 'application/vnd.claude.page';
 
 /** 评论的上限（与 Claude Docs 相同）。 */
 export const COMMENT_LIMITS = { threads: 1000, perThread: 100, bodyBytes: 4096 };
+
+/** 每份文档记住最近多少个生效过的 opId（只在 Runtime 进程里记）。 */
+export const RECENT_OPS = 256;
 
 /** 一次调用的身份与权限。 */
 export interface DoorContext {
@@ -120,11 +125,19 @@ function utf8Bytes(text: string): number {
   return Buffer.byteLength(text, 'utf8');
 }
 
+/** 写入的去重键（调用者与 opId）；读、没有 opId 的调用与只读会话没有。 */
+function opKey(request: DoorRequest, ctx: DoorContext): string | undefined {
+  if (!ctx.canEdit || typeof request.opId !== 'string' || !request.opId || request.verb === 'read' || request.verb === 'query') return undefined;
+  return `${ctx.actor.principal}\u0000${request.opId}`;
+}
+
 export class DocDoor {
   readonly doc: LiveDoc;
   readonly #user: () => DoorUser;
   /** 最近一次正文改动（连接器读回执用）。 */
   lastNodeUpdate: NodeUpdate | undefined;
+  /** 生效过的写入：调用者与 opId → 当时的回执，旧的在前。 */
+  readonly #applied = new Map<string, DoorAllow>();
 
   constructor(doc: LiveDoc, user: () => DoorUser) {
     this.doc = doc;
@@ -141,10 +154,32 @@ export class DocDoor {
 
   /** 单个调用：写入的调用自成一个事务。 */
   handle(request: DoorRequest, ctx: DoorContext): DoorVerdict {
-    return this.doc.transaction(() => {
+    const replayed = this.#replayed(request, ctx);
+    if (replayed) return replayed;
+    const result = this.doc.transaction(() => {
       const verdict = this.#dispatch(request, ctx);
       return Object.assign(verdict, verdict.verdict === 'deny' ? { commit: false } : {});
     });
+    if (result.verdict === 'allow') this.#remember(request, ctx, result);
+    return result;
+  }
+
+  /** 已经生效过的写入（同一调用者、同一 opId）：上次的回执。 */
+  #replayed(request: DoorRequest, ctx: DoorContext): DoorAllow | undefined {
+    const key = opKey(request, ctx);
+    const ack = key === undefined ? undefined : this.#applied.get(key);
+    return ack && structuredClone(ack);
+  }
+
+  #remember(request: DoorRequest, ctx: DoorContext, ack: DoorAllow): void {
+    const key = opKey(request, ctx);
+    if (key === undefined) return;
+    this.#applied.delete(key);
+    this.#applied.set(key, structuredClone(ack));
+    for (const oldest of this.#applied.keys()) {
+      if (this.#applied.size <= RECENT_OPS) break;
+      this.#applied.delete(oldest);
+    }
   }
 
   /**
@@ -168,7 +203,7 @@ export class DocDoor {
           if (error instanceof UnknownLid) return { ...deny('absent', error.message, { lid: error.lid }), index, commit: false };
           throw error;
         }
-        const verdict = dispatch?.(member, index) ?? this.#dispatch(member, ctx);
+        const verdict = this.#replayed(member, ctx) ?? dispatch?.(member, index) ?? this.#dispatch(member, ctx);
         if (verdict.verdict === 'deny') return { ...verdict, index, commit: false };
         if (typeof raw.$lid === 'string' && raw.$lid) {
           const minted = verdict.minted ?? verdict.id;
@@ -179,6 +214,7 @@ export class DocDoor {
       return { verdict: 'allow', acks, lids };
     });
     delete (result as { commit?: boolean }).commit;
+    if (result.verdict === 'allow') for (const [index, member] of members.entries()) this.#remember(member, ctx, result.acks[index]!);
     return result;
   }
 

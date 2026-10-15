@@ -103762,8 +103762,21 @@ var useCommentStore: Dynamic = create(
           (commentStore2?: Dynamic, ..._extraArguments: unknown[]): Dynamic => {
             let byPageItem: Dynamic =
               commentStore2.byPage[commentStore] ?? commentsStoreValues2;
-            let commentsStoreMap5Entry: Dynamic =
-              commentsStoreMap5.get(commentStore) ?? commentsStoreSet6;
+            // BaoCut: room 不同步 utterance，本页新建的批注不会进 fold，原版由 fold 接管它的后续回复。
+            // 这里让门里列表的同 id 批注顶替本地那份（与门里来的批注同样处理），智能体的回复才能实时出现。
+            let foldRefs: Dynamic = foldStore.get(refIndexAtom);
+            let commentsStoreMap5Entry: Dynamic = new (Set as Dynamic)([
+              ...(commentsStoreMap5.get(commentStore) ?? commentsStoreSet6),
+              ...options
+                .map(
+                  (option?: Dynamic, ..._extraArguments: unknown[]): Dynamic =>
+                    option.id,
+                )
+                .filter(
+                  (id?: Dynamic, ..._extraArguments: unknown[]): Dynamic =>
+                    !foldRefs.has(`utterance/${id}`),
+                ),
+            ]);
             let filteredAllByPageItem: Dynamic = commentStore2.allByPage[
               commentStore
             ]?.filter(

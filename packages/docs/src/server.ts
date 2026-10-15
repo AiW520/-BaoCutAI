@@ -18,8 +18,8 @@ import path from 'node:path';
 import type { Duplex } from 'node:stream';
 import type { DocsConnectorHost } from './connector.ts';
 import { DocDoor, LOCAL_PRINCIPAL, SERVER_CAPS, fileValue, humanActor, projectValue, type DoorContext, type DoorUser } from './door.ts';
-import type { DoorRequest } from './door-types.ts';
-import { LiveDoc, type DocEvent } from './live-doc.ts';
+import { AGENT_VIA, type DoorRequest } from './door-types.ts';
+import { LiveDoc, type DocEvent, type DocEventActor } from './live-doc.ts';
 import { MuxServer, type MuxConnection, type TopicHandler } from './mux.ts';
 import { loadDocState, visibleTabs, type DocState } from './store.ts';
 
@@ -151,6 +151,11 @@ function topicProject(topic: string): string {
   return topic.slice(topic.indexOf('project/') + 'project/'.length);
 }
 
+/** feed 信封里的 actor 照原版的写法：智能体经连接器写入是 `external` + `via: "mcp"`，编辑器据此认出是智能体。 */
+function wireActor(actor: DocEventActor): { principal: string; channel: string; via?: string } {
+  return actor.channel === 'agent' ? { principal: actor.principal, channel: 'external', via: AGENT_VIA } : { principal: actor.principal, channel: 'human' };
+}
+
 export class DocsServer implements DocsConnectorHost {
   readonly #options: DocsServerOptions;
   readonly #byGrant = new Map<string, OpenDoc>();
@@ -258,7 +263,7 @@ export class DocsServer implements DocsConnectorHost {
     if (!mux) return;
     const feed = `feed:project/${doc.id}`;
     const envelope = (diff: object[], extra: object = {}) =>
-      JSON.stringify({ ev: 'envelope', data: { at: new Date().toISOString(), actor: event.actor, diff, ...extra } });
+      JSON.stringify({ ev: 'envelope', data: { at: new Date().toISOString(), actor: wireActor(event.actor), diff, ...extra } });
     if (event.type === 'node') {
       // 告诉其他连接：正文有新修订，去读增量（发起编辑的连接自己已经有了）
       const diff = [{ address: { ref: { object: 'node', id: event.nodeId } } }];
