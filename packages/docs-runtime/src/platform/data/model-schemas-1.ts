@@ -1322,6 +1322,4 @@ export function initializeDataModelSchemas1Step2(): void {
   ));
 }
 
-export {
-  useWorkbookStore,
-};
+export { useWorkbookStore };

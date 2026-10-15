@@ -152,10 +152,4 @@ function startSimulatedRun<Handle>(
 function _resetSimForTests(): void {
   simulatedRunCounter = 0;
 }
-export {
-  SIM_VERDICT_MS,
-  _resetSimForTests,
-  looksLikeNotWriting,
-  simulatedVerdict,
-  startSimulatedRun,
-};
+export { SIM_VERDICT_MS, _resetSimForTests, looksLikeNotWriting, simulatedVerdict, startSimulatedRun };

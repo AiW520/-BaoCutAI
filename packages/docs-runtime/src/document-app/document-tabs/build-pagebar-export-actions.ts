@@ -399,8 +399,4 @@ export function initializeDocumentTabsBuildPagebarExportActionsStep1(): void {
   });
 }
 
-export {
-  buildPagebarExportActions,
-  mapDocumentTabsFormat,
-  resolveDocumentTabsDrive,
-};
+export { buildPagebarExportActions, mapDocumentTabsFormat, resolveDocumentTabsDrive };

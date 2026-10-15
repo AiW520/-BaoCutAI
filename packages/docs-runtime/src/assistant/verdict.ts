@@ -255,11 +255,4 @@ async function decideAsk<Card, Handle>(
   }
   return verdict;
 }
-export {
-  CLAUDE_VERDICT_INSTRUCTION,
-  VERDICT_GIVE_UP_MS,
-  askVerdict,
-  decideAsk,
-  readVerdict,
-  verdictPrompt,
-};
+export { CLAUDE_VERDICT_INSTRUCTION, VERDICT_GIVE_UP_MS, askVerdict, decideAsk, readVerdict, verdictPrompt };

@@ -15,24 +15,6 @@ import { convert as convertNodeTest } from "unist-util-is";
 import "../boot/module-runtime";
 import "./assertions";
 export {
-  countCharacters as a,
-  parseRawHtml as c,
-  nodePosition as d,
-  structuredClone as f,
-  convertNodeTest as g,
-  visitParents as h,
-  stringifyPosition as i,
-  pointEnd as l,
-  SKIP as m,
-  toJsxRuntime as n,
-  sanitizeHast as o,
-  visit as p,
-  VFileMessage as r,
-  defaultSanitizeSchema as s,
-  toHtml as t,
-  pointStart as u,
-};
-export {
   countCharacters,
   parseRawHtml,
   nodePosition,

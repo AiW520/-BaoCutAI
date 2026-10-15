@@ -39,7 +39,7 @@ import {
   useCommentsStoreUseSyncExternalStore,
   useToast,
   watchToastStack,
-  weather,
+  toModuleNamespace as weather,
 } from "../dependencies";
 import {
   React,

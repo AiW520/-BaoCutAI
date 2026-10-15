@@ -5,5 +5,4 @@ const loadReactDomClient = (..._extraArguments: unknown[]) =>
   reactDomClientModule;
 import "../boot/module-runtime";
 import "../platform/index";
-export { loadReactDomClient as t };
 export { loadReactDomClient };

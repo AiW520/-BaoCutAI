@@ -3101,9 +3101,4 @@ export function initializeEditorExtensions4Step1(): void {
   (EditorExtensionsGotoAnchorRefused = `gotoAnchor:refused`);
 }
 
-export {
-  EditorExtensionsReadTimeouts,
-  FOREIGN_CONTAINER,
-  installEditorExtensionsHost,
-  loadEditorExtensionsCall,
-};
+export { EditorExtensionsReadTimeouts, FOREIGN_CONTAINER, installEditorExtensionsHost, loadEditorExtensionsCall };

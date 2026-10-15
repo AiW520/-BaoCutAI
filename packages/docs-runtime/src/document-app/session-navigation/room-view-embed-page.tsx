@@ -2145,6 +2145,4 @@ function RoomViewEmbedPage(..._extraArguments: unknown[]) {
   return renderRoomViewEmbedPageView(embedPageLiveContext);
 }
 
-export {
-  RoomViewEmbedPage,
-};
+export { RoomViewEmbedPage };

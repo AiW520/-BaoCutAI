@@ -28,8 +28,4 @@ export function initializeConnectionAndErrorsShared2Step1(): void {
   (REACT_MEMO_SYMBOL = Symbol.for(`react.memo`));
 }
 
-export {
-  REACT_FORWARD_REF_SYMBOL,
-  REACT_MEMO_SYMBOL,
-  loadBottomSheetModule,
-};
+export { REACT_FORWARD_REF_SYMBOL, REACT_MEMO_SYMBOL, loadBottomSheetModule };

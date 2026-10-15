@@ -2,5 +2,4 @@
 
 import editorExtrasSource from "virtual:editor-extras-source";
 
-export { editorExtrasSource as default };
 export { editorExtrasSource };

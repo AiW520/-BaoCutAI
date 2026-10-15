@@ -6869,9 +6869,4 @@ function validateStructuralPM(
         bucket: `root-not-doc`,
       };
 }
-export {
-  structuralPMValidationModule as n,
-  proseExtensions as r,
-  RENDERABLE_PM_TYPES as t,
-};
 export { structuralPMValidationModule, proseExtensions, RENDERABLE_PM_TYPES };

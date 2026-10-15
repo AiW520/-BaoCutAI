@@ -11,7 +11,7 @@ import {
   UiOverlaysAndIconsCustomIcon,
   apiFetcher,
   collectDataContentAndReferencesWEEKLY,
-  lastTextblock,
+  createLiveModuleNamespace as lastTextblock,
   originalJsxProps,
   originalJsxsProps,
   resolveCommentsStoreValue29,

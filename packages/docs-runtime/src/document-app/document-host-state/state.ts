@@ -173,7 +173,4 @@ export function initializeDocumentHostStateState3Step1(): void {
     [undefined, null, 1].includes(documentHostStateType.attrs?.heading));
 }
 
-export {
-  isDocumentHostStateIsArray,
-  updateDocumentHostStatePictured,
-};
+export { isDocumentHostStateIsArray, updateDocumentHostStatePictured };

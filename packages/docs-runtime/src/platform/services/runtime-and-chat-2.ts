@@ -1247,6 +1247,4 @@ export function initializePlatformRuntimeAndChat2Step1(): void {
   }
 }
 
-export {
-  PlatformRuntimeAndChatByPath,
-};
+export { PlatformRuntimeAndChatByPath };

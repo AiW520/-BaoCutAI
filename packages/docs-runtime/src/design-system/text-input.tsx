@@ -298,10 +298,4 @@ export function initializeTextInputStep1(): void {
   TextInput.displayName = `TextInput`;
 }
 
-export {
-  FieldStatesCreateContext,
-  TextInput,
-  fieldLabelId,
-  isFieldInvalid,
-  isInsideField,
-};
+export { FieldStatesCreateContext, TextInput, fieldLabelId, isFieldInvalid, isInsideField };

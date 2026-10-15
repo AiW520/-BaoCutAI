@@ -2124,6 +2124,4 @@ export function initializeRoomDocumentPage1Step1(): void {
   (DocumentRuntimeState9 = null);
 }
 
-export {
-  RoomDocumentPage,
-};
+export { RoomDocumentPage };

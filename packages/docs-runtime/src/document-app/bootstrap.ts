@@ -4,7 +4,7 @@ import {
   loadJsxRuntime,
   loadReact,
   loadReactDomClient,
-  weather,
+  toModuleNamespace as weather,
 } from "./dependencies";
 
 const mapPreloadDependencies: Dynamic = (

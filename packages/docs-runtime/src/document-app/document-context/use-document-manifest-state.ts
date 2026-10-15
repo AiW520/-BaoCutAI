@@ -302,6 +302,4 @@ function useDocumentManifestState(
   }).current;
 }
 
-export {
-  useDocumentManifestState,
-};
+export { useDocumentManifestState };

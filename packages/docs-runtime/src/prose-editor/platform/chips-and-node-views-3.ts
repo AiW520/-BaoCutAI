@@ -279,8 +279,4 @@ export function initializeEditorChipsAndNodeViews3Step1(): void {
       `checkbox`);
 }
 
-export {
-  editorChipsAndNodeViewsSet10,
-  editorChipsAndNodeViewsSet9,
-  resolveEditorTableControlsBuiltin,
-};
+export { editorChipsAndNodeViewsSet10, editorChipsAndNodeViewsSet9, resolveEditorTableControlsBuiltin };

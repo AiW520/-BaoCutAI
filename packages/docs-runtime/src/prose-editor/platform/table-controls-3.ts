@@ -1107,6 +1107,4 @@ export function initializeEditorTableControls3Step1(): void {
   (TableReorderPluginKey = new (PluginKey as Dynamic)(`tableReorder`));
 }
 
-export {
-  getEditorTableControlsKey2,
-};
+export { getEditorTableControlsKey2 };

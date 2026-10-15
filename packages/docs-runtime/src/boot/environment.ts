@@ -1039,33 +1039,6 @@ function helloEarly(..._extraArguments: unknown[]): undefined {
 }
 helloEarly();
 export {
-  isFrameOfflineError as C,
-  isFrameArtifact as S,
-  takePrewarmWorker as T,
-  recordFramePhase as _,
-  FRAME_STORE as a,
-  frameTimings as b,
-  createFrameMessagePort as c,
-  canContactShell as d,
-  isSafeFrameToken as f,
-  FRAME_TIMING_PHASES as g,
-  FRAME_TIMING_DETAIL_KEYS as h,
-  DEFAULT_SHELL_ORIGINS as i,
-  knownShellOrigin as l,
-  isTrustedClaudeOrigin as m,
-  adoptEarlyHello as n,
-  watchShellOrigin as o,
-  frameHostEnvironment as p,
-  NO_SHELL_ORIGIN_REASON as r,
-  waitForShellOrigin as s,
-  helloEarly as t,
-  shellOriginFromWindow as u,
-  recordHostStart as v,
-  disposePrewarmWorker as w,
-  FrameOfflineError as x,
-  subscribeFrameTimings as y,
-};
-export {
   isFrameOfflineError,
   isFrameArtifact,
   takePrewarmWorker,

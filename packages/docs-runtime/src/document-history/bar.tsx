@@ -207,10 +207,4 @@ function VersionBar(
     </div>
   );
 }
-export {
-  NARROW_BAR_PX,
-  W_COMPARE,
-  W_COMPARE_COMFORTABLE,
-  VersionBar as default,
-};
-export { VersionBar };
+export { NARROW_BAR_PX, W_COMPARE, W_COMPARE_COMFORTABLE, VersionBar };

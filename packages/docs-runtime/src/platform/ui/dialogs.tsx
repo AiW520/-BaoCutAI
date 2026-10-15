@@ -1054,8 +1054,4 @@ export function initializeUiDialogsStep1(): void {
   });
 }
 
-export {
-  UiDialogsOpen,
-  UiDialogsRoot,
-  UiDialogsRoot2,
-};
+export { UiDialogsOpen, UiDialogsRoot, UiDialogsRoot2 };

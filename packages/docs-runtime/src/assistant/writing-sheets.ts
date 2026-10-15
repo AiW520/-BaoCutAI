@@ -21,10 +21,4 @@ var WRITING_SHEETS: Readonly<Record<WritingStage, WritingSprite>> = {
     frames: 60,
   },
 };
-export {
-  LOOP_REST_FRAME,
-  SHEET_FRAME_MS,
-  SHEET_FRAME_PX,
-  WRITING_SHEETS,
-  WRITING_STAGES,
-};
+export { LOOP_REST_FRAME, SHEET_FRAME_MS, SHEET_FRAME_PX, WRITING_SHEETS, WRITING_STAGES };

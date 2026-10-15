@@ -26,9 +26,9 @@ JSX 使用包导出 `@baocut/docs-runtime/react-runtime/jsx-runtime` 与 `jsx-de
 
 下文以 `document-app/`、`design-system/`、`platform/` 指代各自入口及实现模块组，具体定义可按函数名定位。
 
-`document-app/index.ts`、`design-system/index.ts` 与 `platform/index.ts` 保留原来的公开导出和分块别名。各入口先执行同目录 `initialize.ts`，再经 `exports.ts` 提供接口；实现模块直接引用所属模块，避免经入口重复触发初始化。npm 与本地依赖适配集中在各领域的 `dependencies.ts`。顶层状态、样式注册、`displayName`、预加载与 `createRoot().render()` 保留恢复代码的原始顺序。
+`document-app/index.ts`、`design-system/index.ts` 与 `platform/index.ts` 是各领域的具名入口。各入口先执行同目录 `initialize.ts`，再经 `exports.ts` 提供接口；实现模块直接引用所属模块，避免经入口重复触发初始化。npm 与本地依赖适配集中在各领域的 `dependencies.ts`。顶层状态、样式注册、`displayName`、预加载与 `createRoot().render()` 保留恢复代码的原始顺序。
 
-内部静态导入和惰性加载后的属性读取使用语义化导出名，例如 `preloadModule`、`createLiveModuleNamespace`，不再依赖压缩产物的 `t`、`n`、`$A` 等短别名。旧分块名与适配名保留在导出边界以维持兼容；局部重命名只用于表达不同职责或避免冲突。大量同类资源使用有领域含义的命名空间，例如代码高亮通过 `import * as grammars from "./langs"` 读取 `grammars.typescriptGrammars`。删除未使用的导入项时，保留原模块的副作用导入及求值顺序。
+源码模块统一使用语义化具名导出，同一模块内同一绑定只导出一次，不提供压缩产物的 `t`、`n`、`$A` 等短别名或重复的默认导出。静态导入、再导出和惰性加载选择器使用对应名称，例如 `preloadModule`、`createLiveModuleNamespace`、`module.VersionBar`。局部重命名只用于表达不同职责或避免冲突。大量同类资源使用有领域含义的命名空间，例如代码高亮通过 `import * as grammars from "./langs"` 读取 `grammars.typescriptGrammars`。删除未使用的导入项时，保留原模块的副作用导入及求值顺序。
 
 外部依赖直接使用有意义的 default／named import，例如 `import scssGrammars from "@shikijs/langs/scss"`，避免先导入 `npmDependency48` 再读取 `.default` 的中间变量。确实需要整模块对象的加载器，以及类型声明缺失或与实际导出不一致的私有 API，保留具有领域名称的命名空间和明确的适配合同。
 

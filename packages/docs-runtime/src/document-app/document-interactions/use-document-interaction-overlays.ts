@@ -1107,6 +1107,4 @@ export function initializeDocumentInteractionsUseDocumentInteractionOverlaysStep
   (documentRuntimeLimit0 = 0);
 }
 
-export {
-  useDocumentInteractionOverlays,
-};
+export { useDocumentInteractionOverlays };

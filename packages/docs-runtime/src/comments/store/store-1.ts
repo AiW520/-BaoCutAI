@@ -58,8 +58,4 @@ export function initializeCommentsStore1Step1(): void {
   (dataOperationEngineValue0 = 0);
 }
 
-export {
-  _resetFold,
-  applyFrame,
-  dataOperationEngineValue0,
-};
+export { _resetFold, applyFrame, dataOperationEngineValue0 };

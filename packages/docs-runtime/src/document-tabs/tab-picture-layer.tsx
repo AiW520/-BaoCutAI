@@ -276,5 +276,4 @@ function TabPictureLayer(
     />
   );
 }
-export { TabPictureLayer as default };
 export { TabPictureLayer };

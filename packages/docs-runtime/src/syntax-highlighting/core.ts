@@ -1148,5 +1148,4 @@ function createCodePlugin(
   }
 }
 var code: Dynamic = createCodePlugin();
-export { codeToHtml as n, codePluginModule as t };
 export { codeToHtml, codePluginModule };

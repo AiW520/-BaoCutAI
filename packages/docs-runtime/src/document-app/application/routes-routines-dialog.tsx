@@ -1589,8 +1589,4 @@ export function initializeApplicationRoutesRoutinesDialogStep1(): void {
   });
 }
 
-export {
-  HeaderPath,
-  RoutinesDialog,
-  useApplicationRoutesAriaLabel,
-};
+export { HeaderPath, RoutinesDialog, useApplicationRoutesAriaLabel };

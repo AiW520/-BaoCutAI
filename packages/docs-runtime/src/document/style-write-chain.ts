@@ -235,5 +235,4 @@ function enqueueStyleWrite(
     chain.tail = chain.tail.then(() => performStyleWrite(pid, chain, record));
   });
 }
-export { enqueueStyleWrite as t };
 export { enqueueStyleWrite };

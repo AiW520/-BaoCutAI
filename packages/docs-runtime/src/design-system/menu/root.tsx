@@ -620,9 +620,4 @@ export function initializeMenuRootStep1(): void {
   MenuPopupsDisabled.displayName = `Menu.TriggerButton`;
 }
 
-export {
-  MenuPopupsDisabled,
-  MenuPopupsSheetTitle,
-  MenuPopupsTriggerRef,
-  renderMenuItems,
-};
+export { MenuPopupsDisabled, MenuPopupsSheetTitle, MenuPopupsTriggerRef, renderMenuItems };

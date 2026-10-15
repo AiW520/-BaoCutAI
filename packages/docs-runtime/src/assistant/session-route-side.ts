@@ -1541,9 +1541,4 @@ function createRouteSide(
     },
   };
 }
-export {
-  _resetRouteSideForTest,
-  createOwedSummons,
-  createRouteSide,
-  routeCarrierDispatched,
-};
+export { _resetRouteSideForTest, createOwedSummons, createRouteSide, routeCarrierDispatched };

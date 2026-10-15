@@ -114,8 +114,4 @@ export function initializeCommentNotificationsState2Step1(): void {
   (CommentNotifications_Margin = `margin`);
 }
 
-export {
-  CommentNotificationsTickMs,
-  installCommentNotificationsVisibilityState,
-  updateCommentNotificationsSet,
-};
+export { CommentNotificationsTickMs, installCommentNotificationsVisibilityState, updateCommentNotificationsSet };

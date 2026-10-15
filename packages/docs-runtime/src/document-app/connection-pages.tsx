@@ -273,8 +273,4 @@ export function initializeConnectionPagesStep1(): void {
       : {});
 }
 
-export {
-  ConnectionPage,
-  SignInRequiredPage,
-  asManifestObject,
-};
+export { ConnectionPage, SignInRequiredPage, asManifestObject };

@@ -353,7 +353,4 @@ function SourceValuePreview(
   );
 }
 
-export {
-  SourceValuePreview,
-  TargetDataRows,
-};
+export { SourceValuePreview, TargetDataRows };

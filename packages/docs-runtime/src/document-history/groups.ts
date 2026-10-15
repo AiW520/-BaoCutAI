@@ -688,20 +688,6 @@ function makeHistoryDayLabeler(
   };
 }
 export {
-  makeHistoryDayLabeler as a,
-  groupCheckpointHistory as c,
-  restoreLabel as d,
-  checkpointName as f,
-  contributorsAccessibleLabel as i,
-  currentVersionId as l,
-  contributorsSummary as n,
-  groupHistoryByActor as o,
-  contributorsOf as r,
-  historyRows as s,
-  changeStatsLabel as t,
-  hasVersionEvents as u,
-};
-export {
   makeHistoryDayLabeler,
   groupCheckpointHistory,
   restoreLabel,

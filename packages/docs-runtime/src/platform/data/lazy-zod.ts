@@ -628,10 +628,4 @@ export function initializeDataLazyZodStep1(): void {
   ): Dynamic => dataLazyZodPattern.exec(dataLazyZodExec)?.[1] ?? dataLazyZodExec);
 }
 
-export {
-  collectDataLazyZodText,
-  getLazySchemaStats,
-  lazyZod,
-  resolveDataLazyZodDigest,
-  unwrapLazyZodSchema,
-};
+export { collectDataLazyZodText, getLazySchemaStats, lazyZod, resolveDataLazyZodDigest, unwrapLazyZodSchema };

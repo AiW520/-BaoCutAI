@@ -58,5 +58,4 @@ var claudeAnimations: Dynamic = {
     speed: 40,
   },
 };
-export { claudeAnimations as animations };
 export { claudeAnimations };

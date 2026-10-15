@@ -221,7 +221,4 @@ async function loadDataOperationEngineRef(
       `folded`);
 }
 
-export {
-  loadDataOperationEngineRef,
-  updateDataOperationEngineEngine,
-};
+export { loadDataOperationEngineRef, updateDataOperationEngineEngine };

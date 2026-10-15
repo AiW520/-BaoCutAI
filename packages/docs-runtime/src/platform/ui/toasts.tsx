@@ -612,12 +612,4 @@ export function initializeUiToastsStep1(): void {
   });
 }
 
-export {
-  UiToastsNow,
-  UiToastsTOASTHARDMAXMS,
-  _onToastBridgeReady,
-  _setToastApi,
-  toast,
-  toastStands,
-  watchToastStack,
-};
+export { UiToastsNow, UiToastsTOASTHARDMAXMS, _onToastBridgeReady, _setToastApi, toast, toastStands, watchToastStack };

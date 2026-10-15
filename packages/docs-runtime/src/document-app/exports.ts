@@ -1,12 +1,5 @@
-/** BaoCut: original public names and bundle aliases; internal exports stay private. */
+/** BaoCut: Semantic public exports; internal implementation exports stay private. */
 export {
-  useRepeatedTabShortcut as $,
-  overflowTitle as Q,
-  TabsHeadingRow as X,
-  tabOutlineToggleLabel as Z,
-  tabsOutlineStore as et,
-  useTabOutline as nt,
-  useSelectedTabHeading as tt,
   useRepeatedTabShortcut,
   overflowTitle,
   TabsHeadingRow,
@@ -16,15 +9,6 @@ export {
   useSelectedTabHeading,
 } from "./presence-and-chat";
 export {
-  notifyClaudeReplied as A,
-  CLAUDE_ASKED_WAITING_MESSAGE as F,
-  CLAUDE_WRITING_OUTCOME_MESSAGES as I,
-  CollaboratorAvatar as L,
-  INLINE_ASK_TOAST_ID as M,
-  CLAUDE_COMMENT_WAITING_MESSAGES as N,
-  CLAUDE_WRITE_UNAVAILABLE_MESSAGE as P,
-  hasMintedContent as j,
-  CLAUDE_REPLIED_MESSAGE as k,
   notifyClaudeReplied,
   CLAUDE_ASKED_WAITING_MESSAGE,
   CLAUDE_WRITING_OUTCOME_MESSAGES,
@@ -35,59 +19,16 @@ export {
   hasMintedContent,
   CLAUDE_REPLIED_MESSAGE,
 } from "./comment-notifications/create-comment-notice-coordinator";
+export { DISPLAY_PROPERTY, UntippedIconButton, IconButton, isFontSettingsObject, runSourceOf } from "./run-review";
 export {
-  DISPLAY_PROPERTY as At,
-  UntippedIconButton as Rt,
-  IconButton as zt,
-  DISPLAY_PROPERTY,
-  UntippedIconButton,
-  IconButton,
-  isFontSettingsObject,
-  runSourceOf,
-} from "./run-review";
-export {
-  tabRowMenuItems as B,
-  tabMoveAvailability as H,
-  tabOpenedAnnouncement as U,
-  tabMoveAnnouncement as V,
   tabRowMenuItems,
   tabMoveAvailability,
   tabOpenedAnnouncement,
   tabMoveAnnouncement,
 } from "./document-context-actions/tab-tree-rows";
+export { isDocumentFocusedElsewhere, PhoneDialogPopup } from "./phone-overlays/export-progress-dialog";
+export { CommentReplyComposer } from "./comment-components/comment-reply-composer";
 export {
-  isDocumentFocusedElsewhere as Bt,
-  PhoneDialogPopup as Vt,
-  isDocumentFocusedElsewhere,
-  PhoneDialogPopup,
-} from "./phone-overlays/export-progress-dialog";
-export {
-  CommentReplyComposer as C,
-  CommentReplyComposer,
-} from "./comment-components/comment-reply-composer";
-export {
-  serializeDocumentLayout as Ct,
-  useDocumentLanguage as Dt,
-  documentLanguageAttributes as Et,
-  serializeDocumentFonts as Ft,
-  documentFontsPostState as It,
-  useDocumentFonts as Lt,
-  setDocumentFonts as Mt,
-  applyDocumentFontsIfCurrent as Nt,
-  writeDocumentLanguage as Ot,
-  equalDocumentFonts as Pt,
-  equalDocumentLayouts as St,
-  DOCUMENT_LANGUAGE_COPY as Tt,
-  getDocumentDisplayGeneration as _t,
-  pickDocumentLayout as bt,
-  documentDisplayPostState as gt,
-  PAGE_WIDTH_PROPERTY as ht,
-  getDocumentFontGeneration as jt,
-  SKILL_PROPERTY as kt,
-  clearDocumentLayoutPickIfCurrent as vt,
-  useDocumentDisplay as wt,
-  applyDocumentLayoutIfCurrent as xt,
-  parseDocumentLayout as yt,
   serializeDocumentLayout,
   useDocumentLanguage,
   documentLanguageAttributes,
@@ -125,25 +66,9 @@ export {
   classifyTitleFocusRequest,
   reduceKeyboardHelpVisibility,
 } from "./document-display";
+export { registerCommentSessionHost, commentSessionIdentity } from "./comment-session/ask-suggestions-measure";
+export { reportCommentSessionEvent, reportCommentSessionEnd } from "./comment-session/clear-comment-session-thread-id";
 export {
-  registerCommentSessionHost as D,
-  commentSessionIdentity as O,
-  registerCommentSessionHost,
-  commentSessionIdentity,
-} from "./comment-session/ask-suggestions-measure";
-export {
-  reportCommentSessionEvent as E,
-  reportCommentSessionEnd as T,
-  reportCommentSessionEvent,
-  reportCommentSessionEnd,
-} from "./comment-session/clear-comment-session-thread-id";
-export {
-  resolveTabNavigation as G,
-  DuplicateUnsupported as J,
-  DuplicateStructureInvalid as K,
-  TabRailButton as W,
-  duplicateVersionTab as Y,
-  DuplicateTooLarge as q,
   resolveTabNavigation,
   DuplicateUnsupported,
   DuplicateStructureInvalid,
@@ -151,36 +76,15 @@ export {
   duplicateVersionTab,
   DuplicateTooLarge,
 } from "./document-context-actions/duplicate-document-tab";
+export { BOTTOM_SHEET_CLEAR_PROPERTY, BOTTOM_SHEET_SCRIM_CLASS, PHONE_TOUCH_TARGET_CLASS } from "./bootstrap";
+export { prefetchDocumentViewWithComments } from "./ask-cards/document-posture-badge";
+export { COMMENT_PROSE_CLASS } from "./comment-composer";
 export {
-  BOTTOM_SHEET_CLEAR_PROPERTY as Ht,
-  BOTTOM_SHEET_SCRIM_CLASS as Ut,
-  PHONE_TOUCH_TARGET_CLASS as Wt,
-  BOTTOM_SHEET_CLEAR_PROPERTY,
-  BOTTOM_SHEET_SCRIM_CLASS,
-  PHONE_TOUCH_TARGET_CLASS,
-} from "./bootstrap";
-export {
-  prefetchDocumentViewWithComments as R,
-  prefetchDocumentViewWithComments,
-} from "./ask-cards/document-posture-badge";
-export {
-  COMMENT_PROSE_CLASS as S,
-  COMMENT_PROSE_CLASS,
-} from "./comment-composer";
-export {
-  isEmptyClaudeRequest as _,
-  ASK_RETRY_DELAY_MS as g,
-  normalizeClaudeRequestText as v,
   isEmptyClaudeRequest,
   ASK_RETRY_DELAY_MS,
   normalizeClaudeRequestText,
 } from "./document-commands/create-ask-card-request-pool";
 export {
-  PagebarSeparator as a,
-  canClosePagebarOnFocusLeave as i,
-  PagebarStrip as n,
-  PagebarMenuTrigger as r,
-  PagebarCommandItem as t,
   PagebarSeparator,
   canClosePagebarOnFocusLeave,
   PagebarStrip,
@@ -188,18 +92,6 @@ export {
   PagebarCommandItem,
 } from "./document-tabs/pagebar";
 export {
-  tabKeyboardMovePlacement as at,
-  collapseTabChildren as ct,
-  pickTabsPlacement as dt,
-  getTabsPlacement as ft,
-  tabDropPlacement as it,
-  releaseTabsPlacementPick as lt,
-  parseTabsPlacement as mt,
-  tabPositionAnnouncement as ot,
-  serializeTabsPlacement as pt,
-  flattenTabTree as rt,
-  tabDescendantIds as st,
-  commitTabsPlacementPick as ut,
   useTabsPlacement,
   isTabsLocationFeatureEnabled,
   isTabsPlacementObject,
@@ -230,54 +122,24 @@ export {
   shouldEstimateZoomedSidebar,
   measureTabsSidebarViewport,
 } from "./document-chrome";
+export { InlineAskNotice, INLINE_ASK_COMPOSER_LAYOUT } from "./comment-components/state";
 export {
-  InlineAskNotice as b,
-  INLINE_ASK_COMPOSER_LAYOUT as x,
-  InlineAskNotice,
-  INLINE_ASK_COMPOSER_LAYOUT,
-} from "./comment-components/state";
-export {
-  documentPreviewKey as c,
-  isPopupScrollBoundary as o,
-  DOCUMENT_PREVIEW_POPOVER_CLASS as s,
   documentPreviewKey,
   isPopupScrollBoundary,
   DOCUMENT_PREVIEW_POPOVER_CLASS,
 } from "./document-preview/use-page-skill-seat";
 export {
-  useProvenanceTimeFormat as d,
-  isWidgetBuildRunning as f,
-  WidgetProvenanceTrigger as l,
-  widgetProvenanceAuthors as u,
   useProvenanceTimeFormat,
   isWidgetBuildRunning,
   WidgetProvenanceTrigger,
   widgetProvenanceAuthors,
 } from "./document-runtime/use-document-iframe-focus";
-export {
-  documentFrameStyleAttributes as h,
-  documentFrameStyleAttributes,
-} from "./document-context/create-widget-writing-coordinator";
-export {
-  CLAUDE_LOGO_DATA_URI as m,
-  CLAUDE_LOGO_DATA_URI,
-} from "./document-host-state/create-document-host-health-monitor";
-export {
-  useNodeEngineNames as p,
-  useNodeEngineNames,
-} from "./document-runtime/use-document-runtime-subscribe-project-feed";
-export {
-  ClaudeTypingIndicator as w,
-  ClaudeTypingIndicator,
-} from "./comment-anchors/use-comment-anchors-sheets-component";
-export {
-  claudeAskRoute as y,
-  claudeAskRoute,
-} from "./document-commands/create-selection-ask-coordinator";
-export {
-  TabRenameInput as z,
-  TabRenameInput,
-} from "./document-context-actions/tab-rail";
+export { documentFrameStyleAttributes } from "./document-context/create-widget-writing-coordinator";
+export { CLAUDE_LOGO_DATA_URI } from "./document-host-state/create-document-host-health-monitor";
+export { useNodeEngineNames } from "./document-runtime/use-document-runtime-subscribe-project-feed";
+export { ClaudeTypingIndicator } from "./comment-anchors/use-comment-anchors-sheets-component";
+export { claudeAskRoute } from "./document-commands/create-selection-ask-coordinator";
+export { TabRenameInput } from "./document-context-actions/tab-rail";
 export {
   resolveFrameGesturesKeyboard,
   resolveFrameGesturesHasFocus,
@@ -301,6 +163,4 @@ export {
   resolveFrameGesturesValue3,
   resolveFrameGesturesValue4,
 } from "./frame/gestures-state-1";
-export {
-  extractErrorDetails,
-} from "./connection-and-errors/connector-permission-dialog";
+export { extractErrorDetails } from "./connection-and-errors/connector-permission-dialog";

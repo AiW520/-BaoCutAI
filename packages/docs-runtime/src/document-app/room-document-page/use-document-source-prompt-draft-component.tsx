@@ -69,8 +69,4 @@ export function initializeRoomDocumentPageUseDocumentSourcePromptDraftComponentS
   (DocumentSourcePrompt_Message = `Long selection — your comment will attach to the beginning of it.`);
 }
 
-export {
-  LdocCommentDraftClamped,
-  UseDocumentSourcePromptDraftComponent,
-  resolveDocumentSourcePromptComponent,
-};
+export { LdocCommentDraftClamped, UseDocumentSourcePromptDraftComponent, resolveDocumentSourcePromptComponent };

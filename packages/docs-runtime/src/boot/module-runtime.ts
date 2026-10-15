@@ -109,9 +109,4 @@ var toModuleNamespace = <
       : context,
     input,
   )) as ModuleNamespace<Value, Node>;
-export {
-  createLiveModuleNamespace as n,
-  toModuleNamespace as r,
-  initializeCommonJS as t,
-};
 export { createLiveModuleNamespace, toModuleNamespace, initializeCommonJS };

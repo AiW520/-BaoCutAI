@@ -79,6 +79,4 @@ function documentExportTelemetryEvent(
   };
 }
 
-export {
-  documentExportTelemetryEvent,
-};
+export { documentExportTelemetryEvent };

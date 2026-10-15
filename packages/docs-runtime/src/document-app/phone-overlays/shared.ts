@@ -28,7 +28,4 @@ export function initializePhoneOverlaysShared1Step1(): void {
       })));
 }
 
-export {
-  ensureBottomSheetLoaded,
-  loadedBottomSheetModule,
-};
+export { ensureBottomSheetLoaded, loadedBottomSheetModule };

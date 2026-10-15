@@ -317,10 +317,4 @@ export function initializeCommentEditStep1(): void {
   CommentsBusy.displayName = `CommentCard.DeleteConfirm`;
 }
 
-export {
-  CommentsBox,
-  CommentsBusy,
-  CommentsStyles4,
-  CommentsValue2,
-  resolveCommentsDisabledReason,
-};
+export { CommentsBox, CommentsBusy, CommentsStyles4, CommentsValue2, resolveCommentsDisabledReason };

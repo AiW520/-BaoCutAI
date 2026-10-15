@@ -892,8 +892,4 @@ export function initializeCommentSessionUseCommentSessionBridgeStep3(): void {
     undefined);
 }
 
-export {
-  CommentSessionState,
-  resolveCommentSessionValue7,
-  useCommentSessionBridge,
-};
+export { CommentSessionState, resolveCommentSessionValue7, useCommentSessionBridge };

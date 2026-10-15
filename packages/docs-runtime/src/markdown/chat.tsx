@@ -643,15 +643,4 @@ function ChatMarkdown(
     </Streamdown>
   );
 }
-export {
-  Streamdown as i,
-  chatRehypePlugins as n,
-  useMarkdownCodePlugins as r,
-  chatMarkdownModule as t,
-};
-export {
-  Streamdown,
-  chatRehypePlugins,
-  useMarkdownCodePlugins,
-  chatMarkdownModule,
-};
+export { Streamdown, chatRehypePlugins, useMarkdownCodePlugins, chatMarkdownModule };

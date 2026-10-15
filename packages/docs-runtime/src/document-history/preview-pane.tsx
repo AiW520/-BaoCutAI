@@ -1794,5 +1794,4 @@ function PreviewLoading(
     <div className={`bg-alpha-0 h-full animate-pulse`} />
   );
 }
-export { PreviewLoading, VersionPreviewPane as default };
-export { VersionPreviewPane };
+export { PreviewLoading, VersionPreviewPane };

@@ -1268,5 +1268,4 @@ function LFileSnapshotView(
     />
   );
 }
-export { LFileSnapshotView as t };
 export { LFileSnapshotView };

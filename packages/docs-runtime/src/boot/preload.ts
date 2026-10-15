@@ -128,5 +128,4 @@ var preloadModule = function <Module> (
     },
   );
 };
-export { preloadModule as t };
 export { preloadModule };

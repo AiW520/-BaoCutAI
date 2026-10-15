@@ -100,7 +100,4 @@ export function initializeDocumentPreviewRoomviewFrameToolbarStep1(): void {
   (DocumentPreview_BorderTransparent = `border-transparent`);
 }
 
-export {
-  RoomviewFrameToolbar,
-  resolveDocumentPreviewValue3,
-};
+export { RoomviewFrameToolbar, resolveDocumentPreviewValue3 };

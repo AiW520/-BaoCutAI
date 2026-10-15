@@ -5918,10 +5918,4 @@ function displayFieldAtPath(
     return;
   }
 }
-export {
-  displayTextMaxOf,
-  displayTextPaths,
-  displayTextValueProblem,
-  rootFieldOf,
-  withDisplayText,
-};
+export { displayTextMaxOf, displayTextPaths, displayTextValueProblem, rootFieldOf, withDisplayText };

@@ -1569,7 +1569,7 @@ export function initializeDocumentTabsPagebarStep1(): void {
         import.meta.url,
       ),
     (documentTabsDefault?: Dynamic, ..._extraArguments: unknown[]): Dynamic =>
-      documentTabsDefault.default,
+      documentTabsDefault.VersionBar,
     resolveDocumentTabsValue3,
   ));
   (DocumentTabs_TypeInTheDocumentForMore = `Type / in the document for more`);

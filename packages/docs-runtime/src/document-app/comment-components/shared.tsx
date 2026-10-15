@@ -1681,6 +1681,4 @@ export function initializeCommentComponentsShared4Step1(): void {
   }));
 }
 
-export {
-  CiteOutcomeChip,
-};
+export { CiteOutcomeChip };

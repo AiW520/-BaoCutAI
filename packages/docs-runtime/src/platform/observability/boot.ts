@@ -1335,7 +1335,7 @@ var ObservabilityBootState6: Dynamic;
 async function loadObservabilityBootRuntimeChars(
   ..._extraArguments: unknown[]
 ): Promise<Dynamic> {
-  let result: Dynamic = (await ObservabilityBootState6()).default;
+  let result: Dynamic = (await ObservabilityBootState6()).editorRuntimeSource;
   if (result.length === 0)
     throw Error(
       `lfile runtime is not in this build (Frame mode needs the prebuilt runtime)`,

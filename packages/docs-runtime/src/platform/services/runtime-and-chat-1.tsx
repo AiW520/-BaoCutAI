@@ -568,7 +568,7 @@ async function loadPlatformRuntimeAndChatDefault(
         (
           await preloadModule(
             async (..._extraArguments: unknown[]): Promise<Dynamic> => {
-              let { default: result }: Dynamic = await import(
+              let { EMPTY_DOCUMENT_MODEL_URL: result }: Dynamic = await import(
                 "../../embedded-widgets/model-workbook"
               );
               return {
@@ -585,7 +585,7 @@ async function loadPlatformRuntimeAndChatDefault(
           (
             await preloadModule(
               async (..._extraArguments: unknown[]): Promise<Dynamic> => {
-                let { default: result }: Dynamic = await import(
+                let { blankSlidesDataUrl: result }: Dynamic = await import(
                   "../../document/templates/blank-slides"
                 );
                 return {
@@ -602,7 +602,7 @@ async function loadPlatformRuntimeAndChatDefault(
             (
               await preloadModule(
                 async (..._extraArguments: unknown[]): Promise<Dynamic> => {
-                  let { default: result }: Dynamic = await import(
+                  let { blankDocumentDataUrl: result }: Dynamic = await import(
                     "../../document/templates/blank-document"
                   );
                   return {

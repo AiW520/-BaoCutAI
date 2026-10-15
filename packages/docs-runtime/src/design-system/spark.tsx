@@ -255,10 +255,4 @@ export function initializeSparkStep1(): void {
   ShimmerMemo2 = (0, React.memo)(ShimmerState2);
 }
 
-export {
-  ShimmerMemo2,
-  resolveShimmerAnimate,
-  resolveShimmerValue3,
-  resolveShimmerValue4,
-  resolveShimmerValue6,
-};
+export { ShimmerMemo2, resolveShimmerAnimate, resolveShimmerValue3, resolveShimmerValue4, resolveShimmerValue6 };

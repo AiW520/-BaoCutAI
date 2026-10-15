@@ -271,10 +271,4 @@ export function initializeSheetPopupLayoutStep1(): void {
   };
 }
 
-export {
-  SheetPopupDrawPill,
-  SheetPopupHandle,
-  SheetPopupLeading,
-  useSheetPopupClick,
-  useSheetPopupTall,
-};
+export { SheetPopupDrawPill, SheetPopupHandle, SheetPopupLeading, useSheetPopupClick, useSheetPopupTall };

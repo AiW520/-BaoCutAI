@@ -587,11 +587,4 @@ export function initializeMenuItemsStep1(): void {
   (MenuPopupsView2 as Dynamic).displayName = `Menu.GroupLabel`;
 }
 
-export {
-  MenuPopupsActionsRef,
-  MenuPopupsIcon,
-  MenuPopupsIcon2,
-  MenuPopupsLabel,
-  MenuPopupsView,
-  MenuPopupsView2,
-};
+export { MenuPopupsActionsRef, MenuPopupsIcon, MenuPopupsIcon2, MenuPopupsLabel, MenuPopupsView, MenuPopupsView2 };

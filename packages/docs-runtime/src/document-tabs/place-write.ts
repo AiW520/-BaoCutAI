@@ -131,9 +131,4 @@ function writeTabsPlaceUnseen(
   );
   return result;
 }
-export {
-  TABS_PLACE_FAILURE_COPY,
-  tabsPlaceRowOnScreen,
-  writeTabsPlace,
-  writeTabsPlaceUnseen,
-};
+export { TABS_PLACE_FAILURE_COPY, tabsPlaceRowOnScreen, writeTabsPlace, writeTabsPlaceUnseen };

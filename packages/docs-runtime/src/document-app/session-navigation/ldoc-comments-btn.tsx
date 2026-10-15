@@ -534,7 +534,7 @@ export function initializeSessionNavigationLdocCommentsBtnStep1(): void {
     (
       sessionNavigationDefault3?: Dynamic,
       ..._extraArguments: unknown[]
-    ): Dynamic => sessionNavigationDefault3.default,
+    ): Dynamic => sessionNavigationDefault3.VersionPreviewPane,
   ));
   (SessionNavigationDefault4 = resolvePlatformChunkLoadingLazy3(
     (..._extraArguments: unknown[]): Dynamic =>
@@ -546,7 +546,7 @@ export function initializeSessionNavigationLdocCommentsBtnStep1(): void {
     (
       sessionNavigationDefault4?: Dynamic,
       ..._extraArguments: unknown[]
-    ): Dynamic => sessionNavigationDefault4.default,
+    ): Dynamic => sessionNavigationDefault4.TabPictureLayer,
   ));
   (resolveSessionNavigationMatches = (
     ..._extraArguments: unknown[]

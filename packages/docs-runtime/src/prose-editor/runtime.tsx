@@ -307243,12 +307243,9 @@ postHostEvent({
 });
 export {
   RUN_GESTURE_WINDOW_MS,
-  runtimeTestHooks as __test,
   projectsSearch,
   tabsSearch,
-};
-export { runtimeTestHooks };
-export {
+  runtimeTestHooks,
   resolveRenderedCodeAndProofreadingReplace5,
   resolveRenderedCodeAndProofreadingTech,
   resolveOperationModelWidth2,
@@ -307280,9 +307277,6 @@ export {
   resolveWidgetAndHostRuntimePortPost,
   updateWidgetAndHostRuntimeBridgeCall,
   WidgetAndHostRuntimeBridge,
-};
-
-export {
   updateDesignSystemSubscribe,
   resolveDesignSystemValue12,
   installDesignSystemChange,

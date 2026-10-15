@@ -1560,9 +1560,4 @@ export function initializeAskCardsTargetSourcePopoverStep1(): void {
   ]));
 }
 
-export {
-  MAX_SOURCE_PREVIEW_ROWS,
-  SelectionActionsBar,
-  TargetSourcePopover,
-  sourceCellLabel,
-};
+export { MAX_SOURCE_PREVIEW_ROWS, SelectionActionsBar, TargetSourcePopover, sourceCellLabel };

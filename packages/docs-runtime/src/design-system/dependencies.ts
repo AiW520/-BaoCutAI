@@ -337,11 +337,6 @@ export {
   UiTooltipsAndControlsLight2,
   UiTooltipsAndControlsPanel,
   UiTooltipsAndControlsStyles6,
-  clsx as appKDImport,
-  mergeProps as appKEImport,
-  useLabelableContext as appLCImport2,
-  cva as appTImport2,
-  useRender as appWEImport,
   collectUiShortcutsAndSizingModifiers2,
   createSafeMutationObserver,
   createSafeResizeObserver,
@@ -411,7 +406,9 @@ export {
   useUiTooltipsAndControlsFinalFocus,
   useUiTooltipsAndControlsState,
   useUiTooltipsAndControlsUnpan,
+  clsx,
+  cva,
+  mergeProps,
+  useLabelableContext,
+  useRender,
 };
-
-/** Semantic exports; legacy adapter names remain available above. */
-export { clsx, cva, mergeProps, useLabelableContext, useRender };

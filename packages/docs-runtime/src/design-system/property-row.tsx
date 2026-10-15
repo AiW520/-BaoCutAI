@@ -19,5 +19,4 @@ function PropertyRow(
     </div>
   );
 }
-export { PropertyRow as t };
 export { PropertyRow };
