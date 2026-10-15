@@ -43,6 +43,10 @@ import type {
   HistoryVersion,
 } from "./type-models/platform-core";
 import type { Dynamic } from "./types";
+// BaoCut: KaTeX 字体随包输出，由父页面读取缓存，沿用 loadFonts 传入沙箱。
+import KATEX_FONT_CSS from "virtual:katex-font-css";
+import { createKatexFontLoader } from "./katex-fonts";
+const loadKatexFontCss = createKatexFontLoader(KATEX_FONT_CSS);
 import * as npmDependency143 from "jotai/react";
 const useStore: Dynamic = (npmDependency143 as Dynamic).useStore;
 const useAtomValue: Dynamic = (npmDependency143 as Dynamic).useAtomValue;
@@ -80920,6 +80924,19 @@ var resolveDataModelSchemasFamily: Dynamic = (
   );
 };
 async function loadDataModelSchemasCss(
+  phase: Dynamic = `all`,
+): Promise<Dynamic> {
+  // BaoCut: 冷启动的 all 与预热帧的 first 都带 KaTeX；rest 不重复传。字体失败不阻断原有字体。
+  const [message, css] = await Promise.all([
+    loadDataModelSchemasBaseCss(phase),
+    phase === `rest` ? `` : loadKatexFontCss().catch((error: unknown) => {
+      console.warn(`[KaTeX] Local font loading failed.`, error);
+      return ``;
+    }),
+  ]);
+  return css ? { ...(message ?? { type: `loadFonts` }), css: (message?.css ?? ``) + css } : message;
+}
+async function loadDataModelSchemasBaseCss(
   dataModelSchemasCss: Dynamic = `all`,
   ..._extraArguments: unknown[]
 ): Promise<Dynamic> {
@@ -119906,7 +119923,8 @@ var EditorHostSource = `<!doctype html><html class="cds-root" data-mode="light" 
          * already spelled the faces as data: rules — Frame's inherited
          * font-src admits data:, never blob: — inject the text as-is.
          * Else fontBlobs.ts blobFontFaceRule, embedded as source. */
-        s.textContent=typeof d.css==="string"?d.css:(d.fonts||[]).map(${resolveDataModelSchemasNormal2}).join("");
+        /* BaoCut: 字体字节与父页面传来的 data: CSS 可以共存（包括独立的 KaTeX 字体）。 */
+        s.textContent=(typeof d.css==="string"?d.css:"")+(d.fonts||[]).map(${resolveDataModelSchemasNormal2}).join("");
         (document.head||document.documentElement).appendChild(s);
       }catch(e){}
       return;

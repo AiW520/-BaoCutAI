@@ -4,6 +4,7 @@
 //                                               取它，Runtime 用这个文件回应
 //   artifact-type/lfile-spell-words.e258c731.txt 拼写词表（原样拷贝；只有 Frame 里才取，照原样产出）
 //   artifact-type/fonts/anthropicons-variable.e7f7e9ca44846912.woff2  图标字体
+//   artifact-type/fonts/katex-<字体名>-<内容哈希>.woff2  KaTeX 字体（父页面读取并转交 iframe）
 //   third-party-licenses.txt                    打进去的第三方代码的原始许可
 //
 // 全部由 Vite 一步打出（vite.config.ts）：lfile 运行时与编辑器附加脚本由原工程的资源插件（packages/docs-runtime/tools/asset-plugin.ts）
@@ -13,16 +14,26 @@
 import { existsSync, readdirSync, statSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { createRequire } from 'node:module';
 
 const appDir = dirname(fileURLToPath(import.meta.url));
 const repoRoot = resolve(appDir, '../..');
 const dist = join(appDir, 'dist');
+const require = createRequire(join(repoRoot, 'packages/docs-runtime/package.json'));
+const katexDist = join(dirname(require.resolve('katex/package.json')), 'dist');
+const fontDir = join(dist, 'artifact-type/fonts');
+const builtFonts = existsSync(fontDir) ? readdirSync(fontDir) : [];
+// 缺少任何一份 KaTeX 字体时重建；哈希名由资源插件生成，不在这里重复计算。
+const katexOutputs = readdirSync(join(katexDist, 'fonts')).filter(file => file.endsWith('.woff2')).map(file => {
+  const prefix = file.slice(0, -6).toLowerCase().replaceAll('_', '-') + '-';
+  return join(fontDir, builtFonts.find(built => built.startsWith(prefix) && /^.+-[a-f0-9]{12}\.woff2$/.test(built)) ?? file);
+});
 const outputs = [
   'index.html',
   'artifact-type/lfile-runtime.35524228.js',
   'artifact-type/fonts/anthropicons-variable.e7f7e9ca44846912.woff2',
   'third-party-licenses.txt',
-].map(file => join(dist, file));
+].map(file => join(dist, file)).concat(katexOutputs);
 
 /** 目录里最新的修改时间（跳过 node_modules、dist 与以点开头的）。 */
 function newest(target) {
@@ -38,6 +49,9 @@ function newest(target) {
 }
 
 const inputs = [
+  join(repoRoot, 'package-lock.json'),
+  join(katexDist, 'katex.min.css'),
+  join(katexDist, 'fonts'),
   join(repoRoot, 'packages', 'docs-runtime'),
   join(appDir, 'src'),
   join(appDir, 'index.html'),

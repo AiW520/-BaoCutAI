@@ -48,6 +48,7 @@
 
 - `packages/docs-runtime/`：Claude Docs 前端的还原源码（D1），只做在 BaoCut 里跑起来必须的改动，每处 `// BaoCut:` 注释说明为什么，包的 README 列出全部。
 - `apps/docs-editor/`：Vite 构建，`npm run build:docs-editor` 输出到 `apps/docs-editor/dist/`（编辑器页面、`artifact-type/` 下的运行时与字体、`third-party-licenses.txt`）；输入没变时跳过，`--force` 重建。入口先导入 `@baocut/docs/editor/install` 装好宿主 shim（必须在编辑器的任何模块求值之前），再加载编辑器。
+- KaTeX 字体只随包分发 WOFF2，本地文件带内容哈希。父页面按 grant 下的资源地址读取并缓存，转换为 data URL 样式后经既有 `loadFonts` 消息传给编辑器 iframe；附加脚本只含排版 CSS，不内嵌字体二进制，不放宽 iframe 的 sandbox 与 CSP。网关与 Web 使用同一条加载路径。
 - 首屏：lfile 运行时与编辑器附加脚本压缩后打包（运行时约 12.4 MB → 5.2 MB）；页面模板在 body 开头先挂一个隐藏的空沙箱 iframe，让浏览器提前起编辑器 iframe 要用的渲染进程（原版在 Frame 里提前建好编辑器 iframe，独立页面没有这一步），编辑器就绪（`lfile-prelude-ready`）或 20 秒后移除。本机实测从编辑器 iframe 建好到正文画出约 0.52 秒降到约 0.31 秒（各 3 次的平均）。
 - 构建产物的位置：`BAOCUT_DOCS_EDITOR_DIST`，打包后的应用里是 `<resources>/docs-editor`，开发时是仓库的 `apps/docs-editor/dist`；都没有时 `docs.open` 照常给地址、`editorAvailable` 为 false，界面显示不可用的说明。
 

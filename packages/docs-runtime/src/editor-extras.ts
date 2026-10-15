@@ -1,5 +1,5 @@
 import { renderToString } from 'katex';
-import KATEX_CSS from 'virtual:katex-embedded-css';
+import KATEX_CSS from 'virtual:katex-css';
 import { nameToEmoji } from './emoji-data';
 
 /** Standalone child-frame payload, built as an IIFE by the Vite asset plugin. */

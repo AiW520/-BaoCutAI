@@ -23,7 +23,8 @@
 | `docs-host.ts` | BaoCut 加的：宿主接口 `globalThis.docsHost` 的类型与读取（见下） |
 | `public/assets/docs.css` | 原页面的样式表（与线上 `index-7E8lmnbp.css` 逐字节相同），原样拷进产物 |
 | `public/artifact-type/lfile-spell-words.e258c731.txt` | 拼写检查词表，原样拷进产物（只在 Frame 里取，独立页面不取） |
-| `tools/asset-plugin.ts` | 原工程的资源插件：用 esbuild 打 lfile 运行时与编辑器附加脚本，KaTeX 字体以 data URL 内嵌 |
+| `tools/asset-plugin.ts` | 原工程的资源插件：用 esbuild 打 lfile 运行时与编辑器附加脚本，KaTeX 的 WOFF2 字体独立输出为带内容哈希的本地资源 |
+| `katex-fonts.ts` | 父页面读取并缓存 KaTeX 本地字体，转换为 data URL 样式，经 `loadFonts` 传入编辑器 iframe |
 
 原工程的 `thumbnail.html` / `thumbnail.ts`（托管平台生成文档缩略图用的页面）没有搬：BaoCut 不生成文档缩略图，Runtime 也不提供这个页面。
 
@@ -41,6 +42,7 @@
 - **本页新建的批注收后续回复**（`platform-core.tsx` 的 `seatDoorList`）：原版的 `room:project/<id>` 同步评论（`utterance/<id>`），批注栏接上 fold 之后，本页新建的批注由 fold 接管，智能体的回复经 fold 到达。BaoCut 的 room 只同步标签栏与下拉选项，评论走 door 读回的列表；原版在 fold 接上时只拿列表补 fold 里没有、本地也没有的批注，本页新建的那条一直是本地那份，智能体的回复要重开编辑器才看得到（服务端的推送与编辑器重读都正常）。改成：门里列表的批注只要不在 fold 里，就顶替本地同 id 的那份，与门里来的批注同样处理；没送达的本地改动照原样由发件箱补回。
 - **文案**：批注发给智能体这条路上的状态、勾选、提示与智能体署名称「the agent」/「Agent」，键与判断不变（`platform-core.tsx` 的 `PlatformSessionAndSourcesSent` 等、`DataModelSchemasSendToClaude` 等，`docs-app.tsx` 的 `Sent to agent`、`Sends to agent`、`The agent is working on it…`、`Ask the agent…`，`cds.tsx` 里批注框勾选与智能体署名的默认文字）。`@Claude` 是批注里提及智能体的写法（提及项的标签与正文识别都按它），照原样保留。
 - **字体**：不内置 Anthropic Sans / Serif / Mono 品牌字体（`platform-core.tsx` 的字体清单留空）。原版把品牌字体与图标字体用 `Promise.all` 一起取，缺一份整组作废、编辑器 iframe 连图标字体也没有；清单留空后只取图标字体，正文退回 `docs.css` 字体栈里的系统字体。图标字体按应用要的名字 `artifact-type/fonts/anthropicons-variable.e7f7e9ca44846912.woff2` 放进产物，文件是 `packages/slides-runtime/src/fonts/anthropicons-fizzy-lake.woff2`（`apps/docs-editor/vite.config.ts`）。
+- **KaTeX 字体**：只分发 npm 包的 20 份 WOFF2（共 259,792 字节），输出到 `artifact-type/fonts/katex-<字体名>-<内容哈希>.woff2`，不打进附加脚本。父页面按 `document.baseURI` 读取 grant 下的本地文件，同一页面内合并并发请求、缓存成功结果；失败的字体可在下次调用时重试。字体转为 data URL 的 `@font-face` 样式，通过既有 `loadFonts` 消息与正文／图标字体一并交给 iframe（冷启动 `all` 或预热帧 `first`，`rest` 不重复传）。附加脚本只保留 KaTeX 排版 CSS。iframe 保持原有 sandbox 与 CSP；网关和 Web 共用同一份资源与加载流程。
 - **页面模板**：不装托管平台的健康上报脚本，不预载品牌字体，`appifact-capabilities` 只留 `comments`（应用本身不读这个 meta），不带写给托管平台的 README 注释与 meta，标题是 Docs。
 
 ## 重建代码的修正
@@ -66,7 +68,7 @@
 - 打进页面、lfile 运行时与编辑器附加脚本的 npm 包按实际打进的模块收集许可：Vite 的模块图加上资源插件记下的两处 esbuild 输入（`tools/asset-plugin.ts` 的 `editorAssets(root, bundledInputs)`），输出到产物的 `third-party-licenses.txt`（`apps/docs-editor/licenses.mjs`），见根目录 [`THIRD_PARTY_NOTICES.md`](../../THIRD_PARTY_NOTICES.md)「协作文档编辑器」。
 - 图标字体（Anthropicons）不是仓库约定的 S2 图标（[仓库约定 §4](../../docs/repo-conventions.md#4-界面图标)），以后要换；它的分发许可也待确认。
 - 依赖版本跟原工程对齐（`package.json` 钉住原工程的版本；`@base-ui/react` 1.7.0、`@tanstack/*` 等装在本包的 `node_modules`），与原工程安装结果不同的（用的是根目录 `node_modules` 里已有的版本）：React / ReactDOM 19.3.0（原 19.2.5）、`@tiptap/starter-kit` 嵌套的 `@tiptap/core` 等与 `@tiptap/pm` 3.32.0（原 3.31.4）、`marked` 18.1.1（原 18.1.0）、`mdast-util-from-markdown` 2.0.3（原 2.1.0）、`mdast-util-to-markdown` 2.1.3（原 2.2.0）；`use-sync-external-store` 本包装的是原版的 1.6.0，根目录的 `wouter`、`zustand` 引用根目录的 1.7.0，两份都打了进去。
-- lfile 运行时与编辑器附加脚本都压缩（`tools/asset-plugin.ts` 的 `minify: true`，带 `BaoCut:` 注释）。原工程的资源插件不压缩，原版的产物是压缩过的（4.9 MB）。运行时从约 12.4 MB 降到约 5.2 MB（5,154,387 字节），附加脚本从约 2.3 MB 降到约 1.9 MB（大头是内嵌的 KaTeX 字体）；页面取运行时、转交给编辑器 iframe、iframe 解析它都快一些。
+- lfile 运行时与编辑器附加脚本都压缩（`tools/asset-plugin.ts` 的 `minify: true`，带 `BaoCut:` 注释）。原工程的资源插件不压缩，原版的产物是压缩过的（4.9 MB）。运行时从约 12.4 MB 降到约 5.2 MB（5,154,387 字节）；附加脚本的字体分发方式见「KaTeX 字体」，避免字体二进制参与 JS 下载、解析与求值。
 
 ## 验证
 
