@@ -1,35 +1,17 @@
 /** hast: restored from hast-BOzXEYQZ.js. */
-import type { Dynamic } from "../interop/legacy-dynamic";
-import * as npmDependency11 from "hast-util-to-html";
-const toHtml = (npmDependency11).toHtml;
-import * as npmDependency10 from "hast-util-to-jsx-runtime";
-const toJsxRuntime = (npmDependency10).toJsxRuntime;
-import * as npmDependency9 from "vfile-message";
-const VFileMessage = (npmDependency9).VFileMessage;
-import * as npmDependency8 from "unist-util-stringify-position";
-const stringifyPosition = (npmDependency8)
-  .stringifyPosition;
-import * as npmDependency7 from "ccount";
-const countCharacters = (npmDependency7).ccount;
-import * as npmDependency6 from "hast-util-sanitize";
-const sanitizeHast = (npmDependency6).sanitize;
-const defaultSanitizeSchema = (npmDependency6)
-  .defaultSchema;
-import * as npmDependency5 from "unist-util-position";
-const nodePosition = (npmDependency5).position;
-const pointEnd = (npmDependency5).pointEnd;
-const pointStart = (npmDependency5).pointStart;
-import * as npmDependency4 from "hast-util-raw";
-const parseRawHtml = (npmDependency4).raw;
-import * as npmDependency3 from "@ungap/structured-clone";
-const structuredClone = (npmDependency3).default;
-import * as npmDependency2 from "unist-util-visit";
-const visit = (npmDependency2).visit;
-import * as npmDependency1 from "unist-util-visit-parents";
-const visitParents = (npmDependency1).visitParents;
-const SKIP = (npmDependency1).SKIP;
-import * as npmDependency0 from "unist-util-is";
-const convertNodeTest = (npmDependency0).convert;
+
+import { toHtml } from "hast-util-to-html";
+import { toJsxRuntime } from "hast-util-to-jsx-runtime";
+import { VFileMessage } from "vfile-message";
+import { stringifyPosition } from "unist-util-stringify-position";
+import { ccount as countCharacters } from "ccount";
+import { sanitize as sanitizeHast, defaultSchema as defaultSanitizeSchema } from "hast-util-sanitize";
+import { position as nodePosition, pointEnd, pointStart } from "unist-util-position";
+import { raw as parseRawHtml } from "hast-util-raw";
+import structuredClone from "@ungap/structured-clone";
+import { visit } from "unist-util-visit";
+import { visitParents, SKIP } from "unist-util-visit-parents";
+import { convert as convertNodeTest } from "unist-util-is";
 import "../boot/module-runtime";
 import "./assertions";
 export {

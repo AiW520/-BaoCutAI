@@ -1,29 +1,18 @@
 /** widget-panel: restored from WidgetPanel-3Iw60EMJ.js. */
 import { originalJsxProps, originalJsxsProps } from "../react-runtime/jsx-runtime";
 import type { Dynamic } from "../interop/legacy-dynamic";
-import * as npmDependency5 from "@codemirror/lang-javascript";
-const javascript = (npmDependency5).javascript;
-import * as npmDependency4 from "@codemirror/commands";
-const history = (npmDependency4).history;
-const historyKeymap = (npmDependency4).historyKeymap;
-const defaultKeymap = (npmDependency4).defaultKeymap;
-import * as npmDependency3 from "@codemirror/language";
-const HighlightStyle = (npmDependency3).HighlightStyle;
-const syntaxHighlighting = (npmDependency3)
-  .syntaxHighlighting;
-import * as npmDependency2 from "@lezer/highlight";
-const tags = (npmDependency2).tags;
-import * as npmDependency1 from "@codemirror/view";
-const Decoration = (npmDependency1).Decoration;
-const EditorView = (npmDependency1).EditorView;
-const keymap = (npmDependency1).keymap;
-const lineNumbers = (npmDependency1).lineNumbers;
-import * as npmDependency0 from "@codemirror/state";
-const StateField = (npmDependency0).StateField;
-const Compartment = (npmDependency0).Compartment;
-const StateEffect = (npmDependency0).StateEffect;
-const Transaction = (npmDependency0).Transaction;
-const EditorState = (npmDependency0).EditorState;
+import { javascript } from "@codemirror/lang-javascript";
+
+import { history, historyKeymap, defaultKeymap } from "@codemirror/commands";
+
+import { HighlightStyle, syntaxHighlighting } from "@codemirror/language";
+
+import { tags } from "@lezer/highlight";
+
+import { Decoration, EditorView, keymap, lineNumbers } from "@codemirror/view";
+
+import { StateField, Compartment, StateEffect, Transaction, EditorState } from "@codemirror/state";
+
 const __vite__mapDeps: Dynamic = (..._extraArguments: unknown[]): Dynamic => [];
 import { toModuleNamespace } from "../boot/module-runtime";
 import {

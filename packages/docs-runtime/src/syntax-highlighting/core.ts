@@ -1,15 +1,7 @@
 /** shiki-core: restored from shiki-core-BRe5JeN_.js. */
 import type { Dynamic } from "../interop/legacy-dynamic";
-import * as npmDependency1 from "@shikijs/engine-javascript";
-const createJavaScriptRegexEngine = (npmDependency1)
-  .createJavaScriptRegexEngine;
-import * as npmDependency0 from "@shikijs/core";
-const createBundledHighlighter = (npmDependency0)
-  .createBundledHighlighter;
-const createSingletonShorthands = (npmDependency0)
-  .createSingletonShorthands;
-const guessEmbeddedLanguages = (npmDependency0)
-  .guessEmbeddedLanguages;
+import { createJavaScriptRegexEngine } from "@shikijs/engine-javascript";
+import { createBundledHighlighter, createSingletonShorthands, guessEmbeddedLanguages } from "@shikijs/core";
 import { createLiveModuleNamespace } from "../boot/module-runtime";
 import { preloadModule } from "../boot/preload";
 import * as grammars from "./langs";

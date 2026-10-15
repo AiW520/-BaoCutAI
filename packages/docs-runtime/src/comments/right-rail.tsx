@@ -1,10 +1,8 @@
 /** right-rail: restored from RightRail-BuctNQEl.js. */
 import { originalJsxProps, originalJsxsProps } from "../react-runtime/jsx-runtime";
 import type { Dynamic } from "../interop/legacy-dynamic";
-import * as npmDependency0 from "@tanstack/react-virtual";
-const defaultRangeExtractor = (npmDependency0)
-  .defaultRangeExtractor;
-const useVirtualizer = (npmDependency0).useVirtualizer;
+import { defaultRangeExtractor, useVirtualizer } from "@tanstack/react-virtual";
+
 const mapPreloadDependencies: Dynamic = (
   ..._extraArguments: unknown[]
 ): Dynamic => [];

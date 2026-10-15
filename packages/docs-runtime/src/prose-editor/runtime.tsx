@@ -42,344 +42,293 @@ import type {
   HostMessageRecord,
 } from "./contracts";
 import type { Dynamic } from "../interop/legacy-dynamic";
-import * as npmDependency66 from "highlight.js/lib/languages/yaml";
-const highlightJsLibLanguagesYaml = (npmDependency66)
-  .default;
-import * as npmDependency65 from "highlight.js/lib/languages/xml";
-const highlightJsLibLanguagesXml = (npmDependency65)
-  .default;
-import * as npmDependency64 from "highlight.js/lib/languages/typescript";
-const highlightJsLibLanguagesTypescript = (npmDependency64)
-  .default;
-import * as npmDependency63 from "highlight.js/lib/languages/javascript";
-const highlightJsLibLanguagesJavascript = (npmDependency63)
-  .default;
-import * as npmDependency62 from "highlight.js/lib/languages/sql";
-const highlightJsLibLanguagesSql = (npmDependency62)
-  .default;
-import * as npmDependency61 from "highlight.js/lib/languages/python";
-const highlightJsLibLanguagesPython = (npmDependency61)
-  .default;
-import * as npmDependency60 from "highlight.js/lib/languages/plaintext";
-const highlightJsLibLanguagesPlaintext = (npmDependency60)
-  .default;
-import * as npmDependency59 from "highlight.js/lib/languages/markdown";
-const highlightJsLibLanguagesMarkdown = (npmDependency59)
-  .default;
-import * as npmDependency58 from "highlight.js/lib/languages/latex";
-const highlightJsLibLanguagesLatex = (npmDependency58)
-  .default;
-import * as npmDependency57 from "highlight.js/lib/languages/json";
-const highlightJsLibLanguagesJson = (npmDependency57)
-  .default;
-import * as npmDependency56 from "highlight.js/lib/languages/css";
-const highlightJsLibLanguagesCss = (npmDependency56)
-  .default;
-import * as npmDependency55 from "highlight.js/lib/languages/bash";
-const highlightJsLibLanguagesBash = (npmDependency55)
-  .default;
-import * as npmDependency54 from "lowlight";
-const createLowlight = (npmDependency54).createLowlight;
-import * as npmDependency53 from "@tiptap/extension-code-block-lowlight";
-const CodeBlockLowlight = (npmDependency53)
-  .CodeBlockLowlight;
-import * as npmDependency52 from "highlight.js/lib/core";
+import highlightJsLibLanguagesYaml from "highlight.js/lib/languages/yaml";
+import highlightJsLibLanguagesXml from "highlight.js/lib/languages/xml";
+import highlightJsLibLanguagesTypescript from "highlight.js/lib/languages/typescript";
+import highlightJsLibLanguagesJavascript from "highlight.js/lib/languages/javascript";
+import highlightJsLibLanguagesSql from "highlight.js/lib/languages/sql";
+import highlightJsLibLanguagesPython from "highlight.js/lib/languages/python";
+import highlightJsLibLanguagesPlaintext from "highlight.js/lib/languages/plaintext";
+import highlightJsLibLanguagesMarkdown from "highlight.js/lib/languages/markdown";
+import highlightJsLibLanguagesLatex from "highlight.js/lib/languages/latex";
+import highlightJsLibLanguagesJson from "highlight.js/lib/languages/json";
+import highlightJsLibLanguagesCss from "highlight.js/lib/languages/css";
+import highlightJsLibLanguagesBash from "highlight.js/lib/languages/bash";
+import { createLowlight } from "lowlight";
+import { CodeBlockLowlight } from "@tiptap/extension-code-block-lowlight";
+import * as highlightJsLibCoreModule from "highlight.js/lib/core";
 const loadHighlightJsLibCore: Dynamic = (
   ..._extraArguments: unknown[]
-): Dynamic => (npmDependency52).default;
-import * as npmDependency51 from "@tiptap/extension-table";
-const TableCellExtension = (npmDependency51).TableCell;
-const TableRowExtension = (npmDependency51).TableRow;
-const TableView = (npmDependency51).TableView;
-const TableExtension = (npmDependency51).Table;
-import * as npmDependency50 from "prosemirror-tables";
-const TableMap = (npmDependency50).TableMap;
-const tableNodeTypes = (npmDependency50).tableNodeTypes;
-const SelectingCellsPluginKey = (npmDependency50)
-  .tableEditingKey;
-const cellAround = (npmDependency50).cellAround;
-const isInTable = (npmDependency50).isInTable;
-const nextCell = (npmDependency50).nextCell;
-const resolveEditorSelectionAndTablesColspan3 = (
-  npmDependency50
-).addColSpan;
-const CellSelection = (npmDependency50).CellSelection;
-const fixTables = (npmDependency50).fixTables;
-const getEditorSelectionAndTablesTableStart = (
-  npmDependency50
-).selectedRect;
-const addColumnBefore = (npmDependency50).addColumnBefore;
-const addColumnAfter = (npmDependency50).addColumnAfter;
-const deleteColumn = (npmDependency50).deleteColumn;
-const addRowBefore = (npmDependency50).addRowBefore;
-const addRowAfter = (npmDependency50).addRowAfter;
-const deleteRow = (npmDependency50).deleteRow;
-const mergeCells = (npmDependency50).mergeCells;
-const splitCell = (npmDependency50).splitCell;
-const setCellAttr = (npmDependency50).setCellAttr;
-const toggleHeader = (npmDependency50).toggleHeader;
-const toggleHeaderCell = (npmDependency50).toggleHeaderCell;
-const isEditorSelectionAndTablesResolve = (npmDependency50)
-  .goToNextCell;
-const deleteTable = (npmDependency50).deleteTable;
-const __pastedCells = (npmDependency50).__pastedCells;
-const handlePaste = (npmDependency50).handlePaste as TablePasteHandler;
-const TableColumnResizingPluginKey = (npmDependency50)
-  .columnResizingPluginKey;
-const createTableColumnResizingPlugin = (npmDependency50)
-  .columnResizing;
-const createSelectingCellsPlugin = (npmDependency50)
-  .tableEditing;
+): Dynamic => (highlightJsLibCoreModule).default;
+import {
+  TableCell as TableCellExtension,
+  TableRow as TableRowExtension,
+  TableView,
+  Table as TableExtension,
+} from "@tiptap/extension-table";
+import * as prosemirrorTablesModule from "prosemirror-tables";
+import {
+  TableMap,
+  tableNodeTypes,
+  tableEditingKey as SelectingCellsPluginKey,
+  cellAround,
+  isInTable,
+  nextCell,
+  addColSpan as resolveEditorSelectionAndTablesColspan3,
+  CellSelection,
+  fixTables,
+  selectedRect as getEditorSelectionAndTablesTableStart,
+  addColumnBefore,
+  addColumnAfter,
+  deleteColumn,
+  addRowBefore,
+  addRowAfter,
+  deleteRow,
+  mergeCells,
+  splitCell,
+  setCellAttr,
+  toggleHeader,
+  toggleHeaderCell,
+  goToNextCell as isEditorSelectionAndTablesResolve,
+  deleteTable,
+  __pastedCells,
+  columnResizingPluginKey as TableColumnResizingPluginKey,
+  columnResizing as createTableColumnResizingPlugin,
+  tableEditing as createSelectingCellsPlugin,
+} from "prosemirror-tables";
+
+const handlePaste = (prosemirrorTablesModule).handlePaste as TablePasteHandler;
+
 function initializeReactDependencies(
   ..._extraArguments: unknown[]
 ): undefined {}
-import * as npmDependency49 from "react";
-const Activity = (npmDependency49).Activity;
-const Children = (npmDependency49).Children;
-const Component = (npmDependency49).Component;
-const Fragment = (npmDependency49).Fragment;
-const Profiler = (npmDependency49).Profiler;
-const PureComponent = (npmDependency49).PureComponent;
-const StrictMode = (npmDependency49).StrictMode;
-const Suspense = (npmDependency49).Suspense;
+import * as reactModule from "react";
+import {
+  Activity,
+  Children,
+  Component,
+  Fragment,
+  Profiler,
+  PureComponent,
+  StrictMode,
+  Suspense,
+  cache,
+  cacheSignal,
+  cloneElement,
+  createContext,
+  createElement,
+  createRef,
+  forwardRef,
+  isValidElement,
+  lazy,
+  memo,
+  startTransition,
+  use,
+  useActionState,
+  useCallback,
+  useContext,
+  useDebugValue,
+  useDeferredValue,
+  useEffect,
+  useEffectEvent,
+  useId,
+  useImperativeHandle,
+  useInsertionEffect,
+  useLayoutEffect,
+  useMemo,
+  useOptimistic,
+  useReducer,
+  useRef,
+  useState,
+  useSyncExternalStore,
+  useTransition,
+  version,
+} from "react";
+
 const __CLIENT_INTERNALS_DO_NOT_USE_OR_WARN_USERS_THEY_CANNOT_UPGRADE =
-  (npmDependency49 as typeof npmDependency49 & ReactPrivateExports)
+  (reactModule as typeof reactModule & ReactPrivateExports)
     .__CLIENT_INTERNALS_DO_NOT_USE_OR_WARN_USERS_THEY_CANNOT_UPGRADE;
-const __COMPILER_RUNTIME = (npmDependency49 as typeof npmDependency49 & ReactPrivateExports)
+const __COMPILER_RUNTIME = (reactModule as typeof reactModule & ReactPrivateExports)
   .__COMPILER_RUNTIME;
-const cache = (npmDependency49).cache;
-const cacheSignal = (npmDependency49).cacheSignal;
-const cloneElement = (npmDependency49).cloneElement;
-const createContext = (npmDependency49).createContext;
-const createElement = (npmDependency49).createElement;
-const createRef = (npmDependency49).createRef;
-const forwardRef = (npmDependency49).forwardRef;
-const isValidElement = (npmDependency49).isValidElement;
-const lazy = (npmDependency49).lazy;
-const memo = (npmDependency49).memo;
-const startTransition = (npmDependency49).startTransition;
-const unstable_useCacheRefresh = (npmDependency49 as typeof npmDependency49 & ReactPrivateExports)
+
+const unstable_useCacheRefresh = (reactModule as typeof reactModule & ReactPrivateExports)
   .unstable_useCacheRefresh;
-const use = (npmDependency49).use;
-const useActionState = (npmDependency49).useActionState;
-const useCallback = (npmDependency49).useCallback;
-const useContext = (npmDependency49).useContext;
-const useDebugValue = (npmDependency49).useDebugValue;
-const useDeferredValue = (npmDependency49).useDeferredValue;
-const useEffect = (npmDependency49).useEffect;
-const useEffectEvent = (npmDependency49).useEffectEvent;
-const useId = (npmDependency49).useId;
-const useImperativeHandle = (npmDependency49)
-  .useImperativeHandle;
-const useInsertionEffect = (npmDependency49)
-  .useInsertionEffect;
-const useLayoutEffect = (npmDependency49).useLayoutEffect;
-const useMemo = (npmDependency49).useMemo;
-const useOptimistic = (npmDependency49).useOptimistic;
-const useReducer = (npmDependency49).useReducer;
-const useRef = (npmDependency49).useRef;
-const useState = (npmDependency49).useState;
-const useSyncExternalStore = (npmDependency49)
-  .useSyncExternalStore;
-const useTransition = (npmDependency49).useTransition;
-const version = (npmDependency49).version;
-const Namespace = npmDependency49;
+
+const Namespace = reactModule;
 function initializeTiptapStarterKitDependencies(
   ..._extraArguments: unknown[]
 ): undefined {}
-import * as npmDependency48 from "@tiptap/starter-kit";
-const StarterKitExtension = (npmDependency48).StarterKit;
+import { StarterKit as StarterKitExtension } from "@tiptap/starter-kit";
+
 function initializeTiptapExtensionUnderlineDependencies(
   ..._extraArguments: unknown[]
 ): undefined {}
-import * as npmDependency47 from "@tiptap/extension-underline";
-const UnderlineExtension = (npmDependency47).Underline;
+import { Underline as UnderlineExtension } from "@tiptap/extension-underline";
+
 function initializeTiptapExtensionTextDependencies(
   ..._extraArguments: unknown[]
 ): undefined {}
-import * as npmDependency46 from "@tiptap/extension-text";
-const TextExtension = (npmDependency46).Text;
+import { Text as TextExtension } from "@tiptap/extension-text";
+
 function initializeTiptapExtensionStrikeDependencies(
   ..._extraArguments: unknown[]
 ): undefined {}
-import * as npmDependency45 from "@tiptap/extension-strike";
-const StrikeExtension = (npmDependency45).Strike;
+import { Strike as StrikeExtension } from "@tiptap/extension-strike";
+
 function initializeTiptapExtensionListDependencies(
   ..._extraArguments: unknown[]
 ): undefined {}
 function initializeTiptapExtensionItalicDependencies(
   ..._extraArguments: unknown[]
 ): undefined {}
-import * as npmDependency44 from "@tiptap/extension-italic";
-const ItalicExtension = (npmDependency44).Italic;
+import { Italic as ItalicExtension } from "@tiptap/extension-italic";
+
 function initializeTiptapExtensionHeadingDependencies(
   ..._extraArguments: unknown[]
 ): undefined {}
-import * as npmDependency43 from "@tiptap/extension-heading";
-const HeadingExtension = (npmDependency43).Heading;
+import { Heading as HeadingExtension } from "@tiptap/extension-heading";
+
 function initializeTiptapExtensionHardBreakDependencies(
   ..._extraArguments: unknown[]
 ): undefined {}
-import * as npmDependency42 from "@tiptap/extension-hard-break";
-const HardBreakExtension = (npmDependency42).HardBreak;
+import { HardBreak as HardBreakExtension } from "@tiptap/extension-hard-break";
+
 function initializeTiptapExtensionDocumentDependencies(
   ..._extraArguments: unknown[]
 ): undefined {}
-import * as npmDependency41 from "@tiptap/extension-document";
-const DocExtension = (npmDependency41).Document;
+import { Document as DocExtension } from "@tiptap/extension-document";
+
 function initializeTiptapExtensionCodeBlockDependencies(
   ..._extraArguments: unknown[]
 ): undefined {}
-import * as npmDependency40 from "@tiptap/extension-code-block";
-const CodeBlockExtension = (npmDependency40).CodeBlock;
+import { CodeBlock as CodeBlockExtension } from "@tiptap/extension-code-block";
+
 function initializeTiptapExtensionCodeDependencies(
   ..._extraArguments: unknown[]
 ): undefined {}
-import * as npmDependency39 from "@tiptap/extension-code";
-const CodeExtension = (npmDependency39).Code;
-const inputRegex = (npmDependency39).inputRegex;
+import { Code as CodeExtension, inputRegex } from "@tiptap/extension-code";
+
 function initializeTiptapExtensionBoldDependencies(
   ..._extraArguments: unknown[]
 ): undefined {}
-import * as npmDependency38 from "@tiptap/extension-bold";
-const BoldExtension = (npmDependency38).Bold;
+import { Bold as BoldExtension } from "@tiptap/extension-bold";
+
 function initializeTiptapExtensionBlockquoteDependencies(
   ..._extraArguments: unknown[]
 ): undefined {}
-import * as npmDependency37 from "@tiptap/extension-blockquote";
-const BlockquoteExtension = (npmDependency37).Blockquote;
+import { Blockquote as BlockquoteExtension } from "@tiptap/extension-blockquote";
+
 function initializeTiptapCoreDependencies(
   ..._extraArguments: unknown[]
 ): undefined {}
 function initializeTiptapExtensionLinkDependencies(
   ..._extraArguments: unknown[]
 ): undefined {}
-import * as npmDependency36 from "@tiptap/extension-link";
-const LinkExtension = (npmDependency36).Link;
-import * as npmDependency35 from "human-id";
+import { Link as LinkExtension } from "@tiptap/extension-link";
+import * as humanIdModule from "human-id";
 const loadNamespace = (..._extraArguments: unknown[]) =>
-  npmDependency35;
+  humanIdModule;
 function initializeTiptapExtensionParagraphDependencies(
   ..._extraArguments: unknown[]
 ): undefined {}
-import * as npmDependency34 from "@tiptap/extension-paragraph";
-const ParagraphExtension = (npmDependency34).Paragraph;
+import { Paragraph as ParagraphExtension } from "@tiptap/extension-paragraph";
+
 function initializeTiptapExtensionHorizontalRuleDependencies(
   ..._extraArguments: unknown[]
 ): undefined {}
-import * as npmDependency33 from "@tiptap/extension-horizontal-rule";
-const HorizontalRuleExtension = (npmDependency33)
-  .HorizontalRule;
+import { HorizontalRule as HorizontalRuleExtension } from "@tiptap/extension-horizontal-rule";
+
 function initializeTiptapExtensionsDependencies(
   ..._extraArguments: unknown[]
 ): undefined {}
-import * as npmDependency32 from "@tiptap/extensions";
-const PlaceholderExtension = (npmDependency32).Placeholder;
+import { Placeholder as PlaceholderExtension } from "@tiptap/extensions";
+
 function initializeProsemirrorHistoryDependencies(
   ..._extraArguments: unknown[]
 ): undefined {}
 function initializeProsemirrorHistoryDependencies2(
   ..._extraArguments: unknown[]
 ): undefined {}
-import * as npmDependency31 from "prosemirror-history";
-const ProseMirrorcloseHistory = (npmDependency31)
-  .closeHistory;
-const ProseMirrorhistory = (npmDependency31).history;
-const ProseMirrorundoDepth = (npmDependency31).undoDepth;
-const ProseMirrorredoDepth = (npmDependency31).redoDepth;
-const ProseMirrorundo = (npmDependency31).undo;
-const ProseMirrorredo = (npmDependency31).redo;
+import {
+  closeHistory as ProseMirrorcloseHistory,
+  history as ProseMirrorhistory,
+  undoDepth as ProseMirrorundoDepth,
+  redoDepth as ProseMirrorredoDepth,
+  undo as ProseMirrorundo,
+  redo as ProseMirrorredo,
+} from "prosemirror-history";
+
 function initializeRopeSequenceDependencies(
   ..._extraArguments: unknown[]
 ): undefined {}
-import * as npmDependency30 from "rope-sequence";
-const ropeSequence = (npmDependency30).default;
+import ropeSequence from "rope-sequence";
+
 function initializeProsemirrorGapcursorDependencies(
   ..._extraArguments: unknown[]
 ): undefined {}
 function initializeProsemirrorGapcursorDependencies2(
   ..._extraArguments: unknown[]
 ): undefined {}
-import * as npmDependency29 from "prosemirror-gapcursor";
-const ProseMirrorgapCursor = (npmDependency29).gapCursor;
-const ProseMirrorGapCursor = (npmDependency29).GapCursor;
+import { gapCursor as ProseMirrorgapCursor, GapCursor as ProseMirrorGapCursor } from "prosemirror-gapcursor";
+
 function initializeProsemirrorDropcursorDependencies(
   ..._extraArguments: unknown[]
 ): undefined {}
 function initializeProsemirrorDropcursorDependencies2(
   ..._extraArguments: unknown[]
 ): undefined {}
-import * as npmDependency28 from "prosemirror-dropcursor";
-const ProseMirrordropCursor = (npmDependency28).dropCursor;
+import { dropCursor as ProseMirrordropCursor } from "prosemirror-dropcursor";
+
 function initializeTiptapCoreDependencies2(
   ..._extraArguments: unknown[]
 ): undefined {}
-import * as npmDependency27 from "@tiptap/core";
-const TiptapgetMarkType = (npmDependency27).getNodeType;
-const TiptapgetMarkRange = (npmDependency27).getMarkRange;
-const TiptapisTextSelection = (npmDependency27)
-  .isTextSelection;
-const TiptapisAndroid = (npmDependency27).isAndroid;
-const TiptapisiOS = (npmDependency27).isiOS;
-const TiptapisMacOS = (npmDependency27).isMacOS;
-const TiptapisMarkActive = (npmDependency27).isNodeActive;
-const TiptapcombineTransactionSteps = (npmDependency27)
-  .combineTransactionSteps;
-const TiptapfindChildren = (npmDependency27).findChildren;
-const TiptapfindChildrenInRange = (npmDependency27)
-  .findChildrenInRange;
-const TiptapfindParentNodeClosestToPos = (npmDependency27)
-  .findParentNodeClosestToPos;
-const TiptapfindParentNode = (npmDependency27)
-  .findParentNode;
-const TiptapgetExtensionField = (npmDependency27)
-  .getExtensionField;
-const TiptapcallOrReturn = (npmDependency27).callOrReturn;
-const TiptapmergeAttributes = (npmDependency27)
-  .mergeAttributes;
-const TiptapgetRenderedAttributes = (npmDependency27)
-  .getRenderedAttributes;
-const TiptapgetText = (npmDependency27).getText;
-const TiptapgetTextSerializersFromSchema = (npmDependency27)
-  .getTextSerializersFromSchema;
-const TiptapgetAttributes = (npmDependency27).getAttributes;
-const TiptapgetChangedRanges = (npmDependency27)
-  .getChangedRanges;
-const TiptapgetMarksBetween = (npmDependency27)
-  .getMarksBetween;
-const TiptapgetSplittedAttributes = (npmDependency27)
-  .getSplittedAttributes;
-const TiptapisNodeEmpty = (npmDependency27).isNodeEmpty;
-const TiptapisNodeSelection = (npmDependency27)
-  .isNodeSelection;
-const TiptapposToDOMRect = (npmDependency27).posToDOMRect;
-const TiptapmarkInputRule = (npmDependency27).markInputRule;
-const TiptapnodeInputRule = (npmDependency27).nodeInputRule;
-const TiptaptextblockTypeInputRule = (npmDependency27)
-  .textblockTypeInputRule;
-const TiptapwrappingInputRule = (npmDependency27)
-  .wrappingInputRule;
-const TiptapcanInsertNode = (npmDependency27).canInsertNode;
-const TiptapescapeForRegEx = (npmDependency27)
-  .escapeForRegEx;
-const TiptapparseIndentedBlocks = (npmDependency27)
-  .parseIndentedBlocks;
-const TiptaprenderNestedMarkdownContent = (npmDependency27)
-  .renderNestedMarkdownContent;
-const TiptapmarkPasteRule = (npmDependency27).markPasteRule;
-const Tiptapcommands = (npmDependency27).commands;
-const TiptapgetNodeAtPosition = (npmDependency27)
-  .getNodeAtPosition;
-const TiptapgetTextContentFromNodes = (npmDependency27)
-  .getTextContentFromNodes;
-const TiptapisAtEndOfNode = (npmDependency27).isAtEndOfNode;
-const TiptapisAtStartOfNode = (npmDependency27)
-  .isAtStartOfNode;
-const TiptapInputRule = (npmDependency27).InputRule;
-const TiptapMark = (npmDependency27).Mark;
-const TiptapExtension = (npmDependency27).Extension;
-const TiptapEditor = (npmDependency27).Editor;
-const TiptapNode = (npmDependency27).Node;
+import {
+  getNodeType as TiptapgetMarkType,
+  getMarkRange as TiptapgetMarkRange,
+  isTextSelection as TiptapisTextSelection,
+  isAndroid as TiptapisAndroid,
+  isiOS as TiptapisiOS,
+  isMacOS as TiptapisMacOS,
+  isNodeActive as TiptapisMarkActive,
+  combineTransactionSteps as TiptapcombineTransactionSteps,
+  findChildren as TiptapfindChildren,
+  findChildrenInRange as TiptapfindChildrenInRange,
+  findParentNodeClosestToPos as TiptapfindParentNodeClosestToPos,
+  findParentNode as TiptapfindParentNode,
+  getExtensionField as TiptapgetExtensionField,
+  callOrReturn as TiptapcallOrReturn,
+  mergeAttributes as TiptapmergeAttributes,
+  getRenderedAttributes as TiptapgetRenderedAttributes,
+  getText as TiptapgetText,
+  getTextSerializersFromSchema as TiptapgetTextSerializersFromSchema,
+  getAttributes as TiptapgetAttributes,
+  getChangedRanges as TiptapgetChangedRanges,
+  getMarksBetween as TiptapgetMarksBetween,
+  getSplittedAttributes as TiptapgetSplittedAttributes,
+  isNodeEmpty as TiptapisNodeEmpty,
+  isNodeSelection as TiptapisNodeSelection,
+  posToDOMRect as TiptapposToDOMRect,
+  markInputRule as TiptapmarkInputRule,
+  nodeInputRule as TiptapnodeInputRule,
+  textblockTypeInputRule as TiptaptextblockTypeInputRule,
+  wrappingInputRule as TiptapwrappingInputRule,
+  canInsertNode as TiptapcanInsertNode,
+  escapeForRegEx as TiptapescapeForRegEx,
+  parseIndentedBlocks as TiptapparseIndentedBlocks,
+  renderNestedMarkdownContent as TiptaprenderNestedMarkdownContent,
+  markPasteRule as TiptapmarkPasteRule,
+  commands as Tiptapcommands,
+  getNodeAtPosition as TiptapgetNodeAtPosition,
+  getTextContentFromNodes as TiptapgetTextContentFromNodes,
+  isAtEndOfNode as TiptapisAtEndOfNode,
+  isAtStartOfNode as TiptapisAtStartOfNode,
+  InputRule as TiptapInputRule,
+  Mark as TiptapMark,
+  Extension as TiptapExtension,
+  Editor as TiptapEditor,
+  Node as TiptapNode,
+} from "@tiptap/core";
+
 function initializeProsemirrorKeymapDependencies(
   ..._extraArguments: unknown[]
 ): undefined {}
@@ -389,24 +338,24 @@ function initializeProsemirrorKeymapDependencies2(
 function initializeProsemirrorKeymapDependencies3(
   ..._extraArguments: unknown[]
 ): undefined {}
-import * as npmDependency26 from "prosemirror-keymap";
-const ProseMirrorkeymap = (npmDependency26).keymap;
-const ProseMirrorkeydownHandler = (npmDependency26)
-  .keydownHandler;
+import { keymap as ProseMirrorkeymap, keydownHandler as ProseMirrorkeydownHandler } from "prosemirror-keymap";
+
 function initializeProsemirrorViewDependencies(
   ..._extraArguments: unknown[]
 ): undefined {}
 function initializeProsemirrorViewDependencies2(
   ..._extraArguments: unknown[]
 ): undefined {}
-import * as npmDependency25 from "prosemirror-view";
-const ProseMirrorDecoration = (npmDependency25).Decoration;
-const ProseMirrorDecorationSet = (npmDependency25)
-  .DecorationSet;
-const ProseMirrorEditorView = (npmDependency25).EditorView;
-const ProseMirror__endComposition = (npmDependency25 as typeof npmDependency25 & ProseMirrorViewPrivateExports)
+import * as proseMirrorViewModule from "prosemirror-view";
+import {
+  Decoration as ProseMirrorDecoration,
+  DecorationSet as ProseMirrorDecorationSet,
+  EditorView as ProseMirrorEditorView,
+} from "prosemirror-view";
+
+const ProseMirror__endComposition = (proseMirrorViewModule as typeof proseMirrorViewModule & ProseMirrorViewPrivateExports)
   .__endComposition;
-const ProseMirror__parseFromClipboard = (npmDependency25 as typeof npmDependency25 & ProseMirrorViewPrivateExports)
+const ProseMirror__parseFromClipboard = (proseMirrorViewModule as typeof proseMirrorViewModule & ProseMirrorViewPrivateExports)
   .__parseFromClipboard;
 function initializeProsemirrorSchemaListDependencies(
   ..._extraArguments: unknown[]
@@ -414,13 +363,13 @@ function initializeProsemirrorSchemaListDependencies(
 function initializeProsemirrorSchemaListDependencies2(
   ..._extraArguments: unknown[]
 ): undefined {}
-import * as npmDependency24 from "prosemirror-schema-list";
-const ProseMirrorwrapInList = (npmDependency24).wrapInList;
-const ProseMirrorliftListItem = (npmDependency24)
-  .liftListItem;
-const ProseMirrorsinkListItem = (npmDependency24)
-  .sinkListItem;
-const wrapRangeInList = (npmDependency24).wrapRangeInList;
+import {
+  wrapInList as ProseMirrorwrapInList,
+  liftListItem as ProseMirrorliftListItem,
+  sinkListItem as ProseMirrorsinkListItem,
+  wrapRangeInList,
+} from "prosemirror-schema-list";
+
 function initializeProsemirrorCommandsDependencies(
   ..._extraArguments: unknown[]
 ): undefined {}
@@ -433,142 +382,109 @@ function initializeProsemirrorCommandsDependencies3(
 function initializeProsemirrorCommandsDependencies4(
   ..._extraArguments: unknown[]
 ): undefined {}
-import * as npmDependency23 from "prosemirror-commands";
-const ProseMirrorwrapIn = (npmDependency23).wrapIn;
-const ProseMirrorsetBlockType = (npmDependency23)
-  .setBlockType;
-const ProseMirrordeleteSelection = (npmDependency23)
-  .deleteSelection;
-const ProseMirrorjoinBackward = (npmDependency23)
-  .joinBackward;
-const ProseMirrorjoinTextblockBackward = (npmDependency23)
-  .joinTextblockBackward;
-const ProseMirrorjoinTextblockForward = (npmDependency23)
-  .joinTextblockForward;
-const ProseMirrorselectNodeBackward = (npmDependency23)
-  .selectNodeBackward;
-const ProseMirrorjoinForward = (npmDependency23)
-  .joinForward;
-const ProseMirrorselectNodeForward = (npmDependency23)
-  .selectNodeForward;
-const ProseMirrorjoinUp = (npmDependency23).joinUp;
-const ProseMirrorjoinDown = (npmDependency23).joinDown;
-const ProseMirrorlift = (npmDependency23).lift;
-const ProseMirrornewlineInCode = (npmDependency23)
-  .newlineInCode;
-const ProseMirrorexitCode = (npmDependency23).exitCode;
-const ProseMirrorcreateParagraphNear = (npmDependency23)
-  .createParagraphNear;
-const ProseMirrorliftEmptyBlock = (npmDependency23)
-  .liftEmptyBlock;
-const ProseMirrorselectParentNode = (npmDependency23)
-  .selectParentNode;
-const ProseMirrorselectTextblockStart = (npmDependency23)
-  .selectTextblockStart;
-const ProseMirrorselectTextblockEnd = (npmDependency23)
-  .selectTextblockEnd;
+import {
+  wrapIn as ProseMirrorwrapIn,
+  setBlockType as ProseMirrorsetBlockType,
+  deleteSelection as ProseMirrordeleteSelection,
+  joinBackward as ProseMirrorjoinBackward,
+  joinTextblockBackward as ProseMirrorjoinTextblockBackward,
+  joinTextblockForward as ProseMirrorjoinTextblockForward,
+  selectNodeBackward as ProseMirrorselectNodeBackward,
+  joinForward as ProseMirrorjoinForward,
+  selectNodeForward as ProseMirrorselectNodeForward,
+  joinUp as ProseMirrorjoinUp,
+  joinDown as ProseMirrorjoinDown,
+  lift as ProseMirrorlift,
+  newlineInCode as ProseMirrornewlineInCode,
+  exitCode as ProseMirrorexitCode,
+  createParagraphNear as ProseMirrorcreateParagraphNear,
+  liftEmptyBlock as ProseMirrorliftEmptyBlock,
+  selectParentNode as ProseMirrorselectParentNode,
+  selectTextblockStart as ProseMirrorselectTextblockStart,
+  selectTextblockEnd as ProseMirrorselectTextblockEnd,
+} from "prosemirror-commands";
+
 function initializeProsemirrorStateDependencies(
   ..._extraArguments: unknown[]
 ): undefined {}
-import * as npmDependency22 from "prosemirror-state";
-const ProseMirrorSelection = (npmDependency22).Selection;
-const ProseMirrorSelectionRange = (npmDependency22)
-  .SelectionRange;
-const ProseMirrorEditorState = (npmDependency22)
-  .EditorState;
-const ProseMirrorPlugin = (npmDependency22).Plugin;
-const ProseMirrorPluginKey = (npmDependency22).PluginKey;
-const ProseMirrorTextSelection = (npmDependency22)
-  .TextSelection;
-const ProseMirrorNodeSelection = (npmDependency22)
-  .NodeSelection;
-const ProseMirrorAllSelection = (npmDependency22)
-  .AllSelection;
-const ProseMirrorTransaction = (npmDependency22)
-  .Transaction;
+import {
+  Selection as ProseMirrorSelection,
+  SelectionRange as ProseMirrorSelectionRange,
+  EditorState as ProseMirrorEditorState,
+  Plugin as ProseMirrorPlugin,
+  PluginKey as ProseMirrorPluginKey,
+  TextSelection as ProseMirrorTextSelection,
+  NodeSelection as ProseMirrorNodeSelection,
+  AllSelection as ProseMirrorAllSelection,
+  Transaction as ProseMirrorTransaction,
+} from "prosemirror-state";
+
 function initializeProsemirrorTransformDependencies(
   ..._extraArguments: unknown[]
 ): undefined {}
 function initializeProsemirrorTransformDependencies2(
   ..._extraArguments: unknown[]
 ): undefined {}
-import * as npmDependency21 from "prosemirror-transform";
-const ProseMirrorStepMap = (npmDependency21).StepMap;
-const ProseMirrorMapping = (npmDependency21).Mapping;
-const ProseMirrorStep = (npmDependency21).Step;
-const ProseMirrorStepResult = (npmDependency21).StepResult;
-const ProseMirrorliftTarget = (npmDependency21).liftTarget;
-const ProseMirrorfindWrapping = (npmDependency21)
-  .findWrapping;
-const ProseMirrorcanSplit = (npmDependency21).canSplit;
-const ProseMirrorcanJoin = (npmDependency21).canJoin;
-const ProseMirrorjoinPoint = (npmDependency21).joinPoint;
-const ProseMirrordropPoint = (npmDependency21).dropPoint;
-const ProseMirrorreplaceStep = (npmDependency21)
-  .replaceStep;
-const ProseMirrorTransform = (npmDependency21).Transform;
-const ProseMirrorAddMarkStep = (npmDependency21)
-  .AddMarkStep;
-const ProseMirrorRemoveMarkStep = (npmDependency21)
-  .RemoveMarkStep;
-const ProseMirrorAddNodeMarkStep = (npmDependency21)
-  .AddNodeMarkStep;
-const ProseMirrorRemoveNodeMarkStep = (npmDependency21)
-  .RemoveNodeMarkStep;
-const ProseMirrorReplaceStep = (npmDependency21)
-  .ReplaceStep;
-const ProseMirrorReplaceAroundStep = (npmDependency21)
-  .ReplaceAroundStep;
-const ProseMirrorAttrStep = (npmDependency21).AttrStep;
-const ProseMirrorDocAttrStep = (npmDependency21)
-  .DocAttrStep;
+import {
+  StepMap as ProseMirrorStepMap,
+  Mapping as ProseMirrorMapping,
+  Step as ProseMirrorStep,
+  StepResult as ProseMirrorStepResult,
+  liftTarget as ProseMirrorliftTarget,
+  findWrapping as ProseMirrorfindWrapping,
+  canSplit as ProseMirrorcanSplit,
+  canJoin as ProseMirrorcanJoin,
+  joinPoint as ProseMirrorjoinPoint,
+  dropPoint as ProseMirrordropPoint,
+  replaceStep as ProseMirrorreplaceStep,
+  Transform as ProseMirrorTransform,
+  AddMarkStep as ProseMirrorAddMarkStep,
+  RemoveMarkStep as ProseMirrorRemoveMarkStep,
+  AddNodeMarkStep as ProseMirrorAddNodeMarkStep,
+  RemoveNodeMarkStep as ProseMirrorRemoveNodeMarkStep,
+  ReplaceStep as ProseMirrorReplaceStep,
+  ReplaceAroundStep as ProseMirrorReplaceAroundStep,
+  AttrStep as ProseMirrorAttrStep,
+  DocAttrStep as ProseMirrorDocAttrStep,
+} from "prosemirror-transform";
+
 function initializeProsemirrorModelDependencies(
   ..._extraArguments: unknown[]
 ): undefined {}
-import * as npmDependency20 from "prosemirror-model";
-const ProseMirrorFragment = (npmDependency20).Fragment;
-const ProseMirrorMark = (npmDependency20).Mark;
-const ProseMirrorSlice = (npmDependency20).Slice;
-const ProseMirrorNodeRange = (npmDependency20).NodeRange;
-const ProseMirrorNode = (npmDependency20).Node;
-const ProseMirrorMarkType = (npmDependency20).MarkType;
-const ProseMirrorSchema = (npmDependency20).Schema;
-const ProseMirrorDOMParser = (npmDependency20).DOMParser;
-const ProseMirrorDOMSerializer = (npmDependency20)
-  .DOMSerializer;
-const ProseMirrorReplaceError = (npmDependency20)
-  .ReplaceError;
+import {
+  Fragment as ProseMirrorFragment,
+  Mark as ProseMirrorMark,
+  Slice as ProseMirrorSlice,
+  NodeRange as ProseMirrorNodeRange,
+  Node as ProseMirrorNode,
+  MarkType as ProseMirrorMarkType,
+  Schema as ProseMirrorSchema,
+  DOMParser as ProseMirrorDOMParser,
+  DOMSerializer as ProseMirrorDOMSerializer,
+  ReplaceError as ProseMirrorReplaceError,
+} from "prosemirror-model";
+
 function initializeOrderedmapDependencies(
   ..._extraArguments: unknown[]
 ): undefined {}
-import * as npmDependency19 from "orderedmap";
-const orderedmap = (npmDependency19).default;
-import * as npmDependency18 from "#base-ui/internals/useRenderElement.mjs";
-const resolveDesignSystemRender: Dynamic = (npmDependency18 as Dynamic)
-  .useRenderElement;
-import * as npmDependency17 from "#base-ui/menubar/MenubarContext.mjs";
-const resolveDesignSystemValue146: Dynamic = (npmDependency17 as Dynamic)
-  .useMenubarContext;
-const designSystemState243: Dynamic = (npmDependency17 as Dynamic)
-  .MenubarContext;
-import * as npmDependency16 from "#base-ui/internals/composite/list/CompositeList.mjs";
-const isDesignSystemElementsRef: Dynamic = (npmDependency16 as Dynamic)
-  .CompositeList;
-import * as npmDependency15 from "#base-ui/internals/composite/composite.mjs";
-const designSystemState230: Dynamic = (npmDependency15 as Dynamic)
-  .COMPOSITE_KEYS;
-const isDesignSystemTEXTAREA: Dynamic = (npmDependency15 as Dynamic)
-  .isNativeInput;
-const designSystemEnd: Dynamic = (npmDependency15 as Dynamic).END;
-import * as npmDependency14 from "#base-ui/floating-ui-react/components/FloatingTree.mjs";
-const resolveDesignSystemValue111: Dynamic = (npmDependency14 as Dynamic)
-  .useFloatingParentNodeId;
-import * as npmDependency13 from "#base-ui/merge-props/mergeProps.mjs";
-const resolveDesignSystemValue70: Dynamic = (npmDependency13 as Dynamic)
-  .mergeProps;
-import * as npmDependency12 from "#base-ui/utils/resolveStyle.mjs";
-const resolveDesignSystemValue69: Dynamic = (npmDependency12 as Dynamic)
-  .resolveStyle;
+import orderedmap from "orderedmap";
+import { useRenderElement as resolveDesignSystemRender } from "#base-ui/internals/useRenderElement.mjs";
+import {
+  useMenubarContext as resolveDesignSystemValue146,
+  MenubarContext as designSystemState243,
+} from "#base-ui/menubar/MenubarContext.mjs";
+import { CompositeList as isDesignSystemElementsRef } from "#base-ui/internals/composite/list/CompositeList.mjs";
+import {
+  COMPOSITE_KEYS as designSystemState230,
+  isNativeInput as isDesignSystemTEXTAREA,
+  END as designSystemEnd,
+} from "#base-ui/internals/composite/composite.mjs";
+import {
+  useFloatingParentNodeId as resolveDesignSystemValue111,
+} from "#base-ui/floating-ui-react/components/FloatingTree.mjs";
+import { mergeProps as resolveDesignSystemValue70 } from "#base-ui/merge-props/mergeProps.mjs";
+import { resolveStyle as resolveDesignSystemValue69 } from "#base-ui/utils/resolveStyle.mjs";
+
 function resolveDesignSystemValue81(..._extraArguments: unknown[]): undefined {}
 function initializeDesignSystemModule202(
   ..._extraArguments: unknown[]
@@ -630,222 +546,240 @@ function initializeDesignSystemModule42(
 function initializeDesignSystemBaseUI(
   ..._extraArguments: unknown[]
 ): undefined {}
-import * as npmDependency11 from "@base-ui/react";
-const designSystemState143: Dynamic = (npmDependency11).Menu
+import * as baseUiReactModule from "@base-ui/react";
+import { Separator as designSystemState249, Menubar as designSystemState437 } from "@base-ui/react";
+const designSystemState143: Dynamic = (baseUiReactModule).Menu
   .Backdrop;
-const designSystemState248: Dynamic = (npmDependency11).Menu.Root;
-const resolveDesignSystemParentMenu: Dynamic = (npmDependency11).Menu
+const designSystemState248: Dynamic = (baseUiReactModule).Menu.Root;
+const resolveDesignSystemParentMenu: Dynamic = (baseUiReactModule).Menu
   .SubmenuRoot;
-const designSystemState159: Dynamic = (npmDependency11).Menu
+const designSystemState159: Dynamic = (baseUiReactModule).Menu
   .CheckboxItem;
-const designSystemGroup: Dynamic = (npmDependency11).Menu.Group;
-const designSystemState164: Dynamic = (npmDependency11).Menu
+const designSystemGroup: Dynamic = (baseUiReactModule).Menu.Group;
+const designSystemState164: Dynamic = (baseUiReactModule).Menu
   .GroupLabel;
-const designSystemState165: Dynamic = (npmDependency11).Menu.Item;
-const designSystemState232: Dynamic = (npmDependency11).Menu.Popup;
-const designSystemState234: Dynamic = (npmDependency11).Menu.Portal;
-const designSystemState242: Dynamic = (npmDependency11).Menu
+const designSystemState165: Dynamic = (baseUiReactModule).Menu.Item;
+const designSystemState232: Dynamic = (baseUiReactModule).Menu.Popup;
+const designSystemState234: Dynamic = (baseUiReactModule).Menu.Portal;
+const designSystemState242: Dynamic = (baseUiReactModule).Menu
   .Positioner;
-const designSystemTrigger: Dynamic = (npmDependency11).Menu.Trigger;
-const designSystemState249 = (npmDependency11).Separator;
-const designSystemState251: Dynamic = (npmDependency11).Menu
+const designSystemTrigger: Dynamic = (baseUiReactModule).Menu.Trigger;
+
+const designSystemState251: Dynamic = (baseUiReactModule).Menu
   .SubmenuTrigger;
 const resolveDesignSystemGetBoundingClientRect2: Dynamic = (
-  npmDependency11
+  baseUiReactModule
 ).ContextMenu.Root;
-const designSystemState252: Dynamic = (npmDependency11).ContextMenu
+const designSystemState252: Dynamic = (baseUiReactModule).ContextMenu
   .Trigger;
-const resolveDesignSystemProps4: Dynamic = (npmDependency11).Popover
+const resolveDesignSystemProps4: Dynamic = (baseUiReactModule).Popover
   .Root;
-const designSystemState272: Dynamic = (npmDependency11).Popover
+const designSystemState272: Dynamic = (baseUiReactModule).Popover
   .Trigger;
-const designSystemState274: Dynamic = (npmDependency11).Popover
+const designSystemState274: Dynamic = (baseUiReactModule).Popover
   .Portal;
-const designSystemState276: Dynamic = (npmDependency11).Popover
+const designSystemState276: Dynamic = (baseUiReactModule).Popover
   .Positioner;
-const designSystemState278: Dynamic = (npmDependency11).Popover
+const designSystemState278: Dynamic = (baseUiReactModule).Popover
   .Popup;
-const designSystemArrow: Dynamic = (npmDependency11).Popover.Arrow;
-const designSystemState279: Dynamic = (npmDependency11).Popover
+const designSystemArrow: Dynamic = (baseUiReactModule).Popover.Arrow;
+const designSystemState279: Dynamic = (baseUiReactModule).Popover
   .Backdrop;
-const designSystemTitle: Dynamic = (npmDependency11).Popover.Title;
-const designSystemDescription: Dynamic = (npmDependency11).Popover
+const designSystemTitle: Dynamic = (baseUiReactModule).Popover.Title;
+const designSystemDescription: Dynamic = (baseUiReactModule).Popover
   .Description;
-const designSystemClose: Dynamic = (npmDependency11).Popover.Close;
-const createHandle: Dynamic = (npmDependency11).Popover.createHandle;
-const designSystemState305: Dynamic = (npmDependency11).Combobox
+const designSystemClose: Dynamic = (baseUiReactModule).Popover.Close;
+const createHandle: Dynamic = (baseUiReactModule).Popover.createHandle;
+const designSystemState305: Dynamic = (baseUiReactModule).Combobox
   .Status;
-const designSystemState437 = (npmDependency11).Menubar;
-const resolveDesignSystemMultiple: Dynamic = (npmDependency11)
+
+const resolveDesignSystemMultiple: Dynamic = (baseUiReactModule)
   .Combobox.Root;
-const resolveDesignSystemPlaceholder: Dynamic = (npmDependency11)
+const resolveDesignSystemPlaceholder: Dynamic = (baseUiReactModule)
   .Combobox.Value;
-const designSystemState301: Dynamic = (npmDependency11).Combobox
+const designSystemState301: Dynamic = (baseUiReactModule).Combobox
   .Input;
-const designSystemState302: Dynamic = (npmDependency11).Combobox
+const designSystemState302: Dynamic = (baseUiReactModule).Combobox
   .Trigger;
-const collectDesignSystemCollection: Dynamic = (npmDependency11)
+const collectDesignSystemCollection: Dynamic = (baseUiReactModule)
   .Combobox.Collection;
-const designSystemState304: Dynamic = (npmDependency11).Combobox
+const designSystemState304: Dynamic = (baseUiReactModule).Combobox
   .List;
-const designSystemState307: Dynamic = (npmDependency11).Combobox
+const designSystemState307: Dynamic = (baseUiReactModule).Combobox
   .Portal;
-const designSystemState308: Dynamic = (npmDependency11).Combobox
+const designSystemState308: Dynamic = (baseUiReactModule).Combobox
   .Backdrop;
-const designSystemState309: Dynamic = (npmDependency11).Combobox
+const designSystemState309: Dynamic = (baseUiReactModule).Combobox
   .Positioner;
-const designSystemState310: Dynamic = (npmDependency11).Combobox
+const designSystemState310: Dynamic = (baseUiReactModule).Combobox
   .Popup;
-const designSystemGroup2: Dynamic = (npmDependency11).Combobox.Group;
-const designSystemState312: Dynamic = (npmDependency11).Combobox
+const designSystemGroup2: Dynamic = (baseUiReactModule).Combobox.Group;
+const designSystemState312: Dynamic = (baseUiReactModule).Combobox
   .GroupLabel;
-const designSystemState315: Dynamic = (npmDependency11).Combobox
+const designSystemState315: Dynamic = (baseUiReactModule).Combobox
   .Item;
-const designSystemState316: Dynamic = (npmDependency11).Combobox
+const designSystemState316: Dynamic = (baseUiReactModule).Combobox
   .ItemIndicator;
-const designSystemState318: Dynamic = (npmDependency11).Combobox
+const designSystemState318: Dynamic = (baseUiReactModule).Combobox
   .Chips;
-const designSystemState320: Dynamic = (npmDependency11).Combobox
+const designSystemState320: Dynamic = (baseUiReactModule).Combobox
   .Chip;
-const designSystemState321: Dynamic = (npmDependency11).Combobox
+const designSystemState321: Dynamic = (baseUiReactModule).Combobox
   .ChipRemove;
-const designSystemState322: Dynamic = (npmDependency11).Combobox
+const designSystemState322: Dynamic = (baseUiReactModule).Combobox
   .Empty;
-const designSystemState323: Dynamic = (npmDependency11).Combobox
+const designSystemState323: Dynamic = (baseUiReactModule).Combobox
   .Clear;
-const designSystemState325: Dynamic = (npmDependency11).Combobox
+const designSystemState325: Dynamic = (baseUiReactModule).Combobox
   .Separator;
-const resolveDesignSystemFilteredItems2: Dynamic = (npmDependency11)
+const resolveDesignSystemFilteredItems2: Dynamic = (baseUiReactModule)
   .Combobox.useFilteredItems;
-const designSystemState375: Dynamic = (npmDependency11).Tooltip.Root;
-const designSystemState377: Dynamic = (npmDependency11).Tooltip
+const designSystemState375: Dynamic = (baseUiReactModule).Tooltip.Root;
+const designSystemState377: Dynamic = (baseUiReactModule).Tooltip
   .Trigger;
-const designSystemState380: Dynamic = (npmDependency11).Tooltip
+const designSystemState380: Dynamic = (baseUiReactModule).Tooltip
   .Portal;
-const designSystemState382: Dynamic = (npmDependency11).Tooltip
+const designSystemState382: Dynamic = (baseUiReactModule).Tooltip
   .Positioner;
-const designSystemState383: Dynamic = (npmDependency11).Tooltip
+const designSystemState383: Dynamic = (baseUiReactModule).Tooltip
   .Popup;
-const resolveDesignSystemDelay2: Dynamic = (npmDependency11).Tooltip
+const resolveDesignSystemDelay2: Dynamic = (baseUiReactModule).Tooltip
   .Provider;
-const resolveDesignSystemValue217: Dynamic = (npmDependency11)
+const resolveDesignSystemValue217: Dynamic = (baseUiReactModule)
   .Tooltip.createHandle;
-const designSystemState426: Dynamic = (npmDependency11).Field
+const designSystemState426: Dynamic = (baseUiReactModule).Field
   .Control;
-const HeadingAndControlsRender: Dynamic = (npmDependency11)
+const HeadingAndControlsRender: Dynamic = (baseUiReactModule)
   .Collapsible.Root;
-const HeadingAndControlsPanelId: Dynamic = (npmDependency11)
+const HeadingAndControlsPanelId: Dynamic = (baseUiReactModule)
   .Collapsible.Trigger;
-const HeadingAndControlsHiddenUntilFound: Dynamic = (npmDependency11)
+const HeadingAndControlsHiddenUntilFound: Dynamic = (baseUiReactModule)
   .Collapsible.Panel;
 const resolveHeadingAndControlsAlertDialog: Dynamic = (
-  npmDependency11
+  baseUiReactModule
 ).AlertDialog.Root;
-const HeadingAndControlsBackdrop: Dynamic = (npmDependency11).Dialog
+const HeadingAndControlsBackdrop: Dynamic = (baseUiReactModule).Dialog
   .Backdrop;
-const HeadingAndControlsClose: Dynamic = (npmDependency11).Dialog
+const HeadingAndControlsClose: Dynamic = (baseUiReactModule).Dialog
   .Close;
-const HeadingAndControlsRender2: Dynamic = (npmDependency11).Dialog
+const HeadingAndControlsRender2: Dynamic = (baseUiReactModule).Dialog
   .Description;
-const HeadingAndControlsRender3: Dynamic = (npmDependency11).Dialog
+const HeadingAndControlsRender3: Dynamic = (baseUiReactModule).Dialog
   .Popup;
-const HeadingAndControlsKeepMounted: Dynamic = (npmDependency11)
+const HeadingAndControlsKeepMounted: Dynamic = (baseUiReactModule)
   .Dialog.Portal;
-const HeadingAndControlsRender4: Dynamic = (npmDependency11).Dialog
+const HeadingAndControlsRender4: Dynamic = (baseUiReactModule).Dialog
   .Title;
-const HeadingAndControlsRender5: Dynamic = (npmDependency11).Dialog
+const HeadingAndControlsRender5: Dynamic = (baseUiReactModule).Dialog
   .Trigger;
 const headingAndControlsHeadingAndControlsRender5Alias: Dynamic = (
-  npmDependency11
+  baseUiReactModule
 ).AlertDialog.Trigger;
 const resolveHeadingAndControlsCreateHandle: Dynamic = (
-  npmDependency11
+  baseUiReactModule
 ).AlertDialog.createHandle;
-const resolveHeadingAndControlsDialog: Dynamic = (npmDependency11)
+const resolveHeadingAndControlsDialog: Dynamic = (baseUiReactModule)
   .Dialog.Root;
-const HeadingAndControlsDefaultValue: Dynamic = (npmDependency11)
+const HeadingAndControlsDefaultValue: Dynamic = (baseUiReactModule)
   .Tabs.Root;
-const HeadingAndControlsDisabled: Dynamic = (npmDependency11).Tabs
+const HeadingAndControlsDisabled: Dynamic = (baseUiReactModule).Tabs
   .Tab;
-const HeadingAndControlsRender6: Dynamic = (npmDependency11).Tabs
+const HeadingAndControlsRender6: Dynamic = (baseUiReactModule).Tabs
   .Panel;
-const HeadingAndControlsActivateOnFocus: Dynamic = (npmDependency11)
+const HeadingAndControlsActivateOnFocus: Dynamic = (baseUiReactModule)
   .Tabs.List;
-const resolveHeadingAndControlsTimeout: Dynamic = (npmDependency11)
+const resolveHeadingAndControlsTimeout: Dynamic = (baseUiReactModule)
   .Toast.Provider;
-const HeadingAndControlsRender7: Dynamic = (npmDependency11).Toast
+const HeadingAndControlsRender7: Dynamic = (baseUiReactModule).Toast
   .Viewport;
-const HeadingAndControlsToast: Dynamic = (npmDependency11).Toast
+const HeadingAndControlsToast: Dynamic = (baseUiReactModule).Toast
   .Root;
-const HeadingAndControlsRender8: Dynamic = (npmDependency11).Toast
+const HeadingAndControlsRender8: Dynamic = (baseUiReactModule).Toast
   .Description;
-const HeadingAndControlsRender9: Dynamic = (npmDependency11).Toast
+const HeadingAndControlsRender9: Dynamic = (baseUiReactModule).Toast
   .Title;
-const HeadingAndControlsRender10: Dynamic = (npmDependency11).Toast
+const HeadingAndControlsRender10: Dynamic = (baseUiReactModule).Toast
   .Close;
-const HeadingAndControlsRef3: Dynamic = (npmDependency11).Toast
+const HeadingAndControlsRef3: Dynamic = (baseUiReactModule).Toast
   .Portal;
-const resolveHeadingAndControlsToasts: Dynamic = (npmDependency11)
+const resolveHeadingAndControlsToasts: Dynamic = (baseUiReactModule)
   .Toast.useToastManager;
-import * as npmDependency10 from "@tanstack/virtual-core";
-const measureElement = (npmDependency10).measureElement;
-import * as npmDependency9 from "@tanstack/react-virtual";
-const useVirtualizer = (npmDependency9).useVirtualizer;
+import { measureElement } from "@tanstack/virtual-core";
+import { useVirtualizer } from "@tanstack/react-virtual";
+
 function initializeClassVarianceAuthority(
   ..._extraArguments: unknown[]
 ): undefined {}
-import * as npmDependency8 from "class-variance-authority";
-const cva = (npmDependency8).cva;
+import { cva } from "class-variance-authority";
+
 function initializeTailwindMerge(..._extraArguments: unknown[]): undefined {}
-import * as npmDependency7 from "tailwind-merge";
-const extendTailwindMerge = (npmDependency7)
-  .extendTailwindMerge;
-const tailwindValidators = (npmDependency7).validators;
-import * as npmDependency6 from "clsx";
-const clsx = (npmDependency6).clsx;
-import * as npmDependency5 from "lib0/hash/sha256";
-const digest = (npmDependency5).digest;
+import { extendTailwindMerge, validators as tailwindValidators } from "tailwind-merge";
+import { clsx } from "clsx";
+import { digest } from "lib0/hash/sha256";
+
 function initializeNpmHf(..._extraArguments: unknown[]): undefined {}
-import * as npmDependency4 from "react-dom";
-const createPortal = (npmDependency4).createPortal;
-const flushSync = (npmDependency4).flushSync;
+import { createPortal, flushSync } from "react-dom";
+
 function initializeNpmUIt(..._extraArguments: unknown[]): undefined {}
-import * as npmDependency3 from "react-dom/client";
-const createRoot = (npmDependency3).createRoot;
-import * as npmDependency2 from "zod/locales";
-const en = (npmDependency2).en;
-import * as npmDependency1 from "zod/v4/core";
-const ZodError = (npmDependency1).$ZodError;
-const _safeParse = (npmDependency1)._safeParse;
-import * as npmDependency0 from "zod";
-const NEVER = (npmDependency0).NEVER;
-const config = (npmDependency0).config;
-const iso = (npmDependency0).iso;
-const string = (npmDependency0).string;
-const number = (npmDependency0).number;
-const int = (npmDependency0).int;
-const boolean = (npmDependency0).boolean;
-const value_null = (npmDependency0).null;
-const unknown = (npmDependency0).unknown;
-const never = (npmDependency0).never;
-const date = (npmDependency0).date;
-const array = (npmDependency0).array;
-const object = (npmDependency0).object;
-const strictObject = (npmDependency0).strictObject;
-const looseObject = (npmDependency0).looseObject;
-const union = (npmDependency0).union;
-const discriminatedUnion = (npmDependency0)
-  .discriminatedUnion;
-const tuple = (npmDependency0).tuple;
-const record = (npmDependency0).record;
-const partialRecord = (npmDependency0).partialRecord;
-const value_enum = (npmDependency0).enum;
-const literal = (npmDependency0).literal;
-const templateLiteral = (npmDependency0).templateLiteral;
-const lazy2 = (npmDependency0).lazy;
-const custom = (npmDependency0).custom;
-const json = (npmDependency0).json;
-const preprocess = (npmDependency0).preprocess;
+import { createRoot } from "react-dom/client";
+import { en } from "zod/locales";
+import { $ZodError as ZodError, _safeParse } from "zod/v4/core";
+import {
+  NEVER,
+  config,
+  iso,
+  string,
+  number,
+  int,
+  boolean,
+  null as value_null,
+  unknown,
+  never,
+  date,
+  array,
+  object,
+  strictObject,
+  looseObject,
+  union,
+  discriminatedUnion,
+  tuple,
+  record,
+  partialRecord,
+  enum as value_enum,
+  literal,
+  templateLiteral,
+  lazy as lazy2,
+  custom,
+  json,
+  preprocess,
+} from "zod";
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 /* Subsystem: runtime-support */
 var objectCreate = Object.create;
 var {

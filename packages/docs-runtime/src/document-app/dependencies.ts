@@ -1,15 +1,16 @@
 /** BaoCut: dependencies from index-CX4IZqzA.js. */
 import type { Dynamic } from "../interop/legacy-dynamic";
 
-
 export {
   originalJsxProps,
   originalJsxsProps,
 } from "../react-runtime/jsx-runtime";
 
-import * as npmDependency1 from "wouter/memory-location";
+import * as wouterMemoryLocationModule from "wouter/memory-location";
+import { memoryLocation } from "wouter/memory-location";
 
-import * as npmDependency0 from "mitt";
+import * as mittModule from "mitt";
+import createEventEmitter from "mitt";
 
 export {
   n as lastTextblock,
@@ -1295,12 +1296,8 @@ export {
   y as searchTabs,
 } from "./references/chips";
 
-const memoryLocation = (npmDependency1).memoryLocation;
-
-const createEventEmitter = (npmDependency0).default;
-
 export {
   memoryLocation,
-  npmDependency0,
-  npmDependency1,
+  mittModule as npmDependency0,
+  wouterMemoryLocationModule as npmDependency1,
 };

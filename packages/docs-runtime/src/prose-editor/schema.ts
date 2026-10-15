@@ -1,83 +1,69 @@
 /** editor-schema: restored from pm-schema-C6YCXgLT.js. */
 import type { Dynamic } from "../interop/legacy-dynamic";
-import * as npmDependency31 from "./emoji-data";
-const nameToEmoji: Dynamic = (npmDependency31 as Dynamic).nameToEmoji;
-import * as npmDependency30 from "lowlight";
-const createLowlight = (npmDependency30).createLowlight;
-import * as npmDependency29 from "highlight.js/lib/languages/yaml";
-const highlightJsLibLanguagesYaml = (npmDependency29)
-  .default;
-import * as npmDependency28 from "highlight.js/lib/languages/xml";
-const highlightJsLibLanguagesXml = (npmDependency28)
-  .default;
-import * as npmDependency27 from "highlight.js/lib/languages/typescript";
-const highlightJsLibLanguagesTypescript = (npmDependency27)
-  .default;
-import * as npmDependency26 from "highlight.js/lib/languages/javascript";
-const highlightJsLibLanguagesJavascript = (npmDependency26)
-  .default;
-import * as npmDependency25 from "highlight.js/lib/languages/sql";
-const highlightJsLibLanguagesSql = (npmDependency25)
-  .default;
-import * as npmDependency24 from "highlight.js/lib/languages/python";
-const highlightJsLibLanguagesPython = (npmDependency24)
-  .default;
-import * as npmDependency23 from "highlight.js/lib/languages/plaintext";
-const highlightJsLibLanguagesPlaintext = (npmDependency23)
-  .default;
-import * as npmDependency22 from "highlight.js/lib/languages/markdown";
-const highlightJsLibLanguagesMarkdown = (npmDependency22)
-  .default;
-import * as npmDependency21 from "highlight.js/lib/languages/latex";
-const highlightJsLibLanguagesLatex = (npmDependency21)
-  .default;
-import * as npmDependency20 from "highlight.js/lib/languages/json";
-const highlightJsLibLanguagesJson = (npmDependency20)
-  .default;
-import * as npmDependency19 from "highlight.js/lib/languages/css";
-const highlightJsLibLanguagesCss = (npmDependency19)
-  .default;
-import * as npmDependency18 from "highlight.js/lib/languages/bash";
-const highlightJsLibLanguagesBash = (npmDependency18)
-  .default;
-import * as npmDependency17 from "@tiptap/extension-code-block-lowlight";
-const CodeBlockLowlightExtension = (npmDependency17)
-  .CodeBlockLowlight;
-import * as npmDependency16 from "highlight.js/lib/core";
-const highlightJsLibCore = (npmDependency16).default;
-import * as npmDependency15 from "@tiptap/starter-kit";
-const StarterKitExtension = (npmDependency15).StarterKit;
-import * as npmDependency14 from "@tiptap/extension-underline";
-const UnderlineExtension = (npmDependency14).Underline;
-import * as npmDependency13 from "@tiptap/extension-strike";
-const StrikeExtension = (npmDependency13).Strike;
-import * as npmDependency12 from "@tiptap/extension-list";
-const TaskListExtension = (npmDependency12).TaskList;
-import * as npmDependency11 from "@tiptap/extension-list";
-const TaskItemExtension = (npmDependency11).TaskItem;
-import * as npmDependency10 from "@tiptap/extension-list";
-const OrderedListExtension = (npmDependency10).OrderedList;
-import * as npmDependency9 from "@tiptap/extension-list";
-const ListKeymapExtension = (npmDependency9).ListKeymap;
-import * as npmDependency8 from "@tiptap/extension-list";
-const ListItemExtension = (npmDependency8).ListItem;
-import * as npmDependency7 from "@tiptap/extension-list";
-const BulletListExtension = (npmDependency7).BulletList;
-import * as npmDependency6 from "@tiptap/extension-italic";
-const ItalicExtension = (npmDependency6).Italic;
-import * as npmDependency5 from "@tiptap/extension-heading";
-const HeadingExtension = (npmDependency5).Heading;
-import * as npmDependency4 from "@tiptap/extension-bold";
-const BoldExtension = (npmDependency4).Bold;
-import * as npmDependency3 from "@tiptap/extension-blockquote";
-const BlockquoteExtension = (npmDependency3).Blockquote;
-import * as npmDependency2 from "@tiptap/extension-link";
-const LinkExtension = (npmDependency2).Link;
-import * as npmDependency1 from "@tiptap/extension-code-block";
-const CodeBlockExtension = (npmDependency1).CodeBlock;
-import * as npmDependency0 from "@tiptap/extension-code";
-const CodeExtension = (npmDependency0).Code;
-const inputRegex = (npmDependency0).inputRegex;
+import { nameToEmoji } from "./emoji-data";
+
+import { createLowlight } from "lowlight";
+
+import highlightJsLibLanguagesYaml from "highlight.js/lib/languages/yaml";
+
+import highlightJsLibLanguagesXml from "highlight.js/lib/languages/xml";
+
+import highlightJsLibLanguagesTypescript from "highlight.js/lib/languages/typescript";
+
+import highlightJsLibLanguagesJavascript from "highlight.js/lib/languages/javascript";
+
+import highlightJsLibLanguagesSql from "highlight.js/lib/languages/sql";
+
+import highlightJsLibLanguagesPython from "highlight.js/lib/languages/python";
+
+import highlightJsLibLanguagesPlaintext from "highlight.js/lib/languages/plaintext";
+
+import highlightJsLibLanguagesMarkdown from "highlight.js/lib/languages/markdown";
+
+import highlightJsLibLanguagesLatex from "highlight.js/lib/languages/latex";
+
+import highlightJsLibLanguagesJson from "highlight.js/lib/languages/json";
+
+import highlightJsLibLanguagesCss from "highlight.js/lib/languages/css";
+
+import highlightJsLibLanguagesBash from "highlight.js/lib/languages/bash";
+
+import { CodeBlockLowlight as CodeBlockLowlightExtension } from "@tiptap/extension-code-block-lowlight";
+
+import highlightJsLibCore from "highlight.js/lib/core";
+
+import { StarterKit as StarterKitExtension } from "@tiptap/starter-kit";
+
+import { Underline as UnderlineExtension } from "@tiptap/extension-underline";
+
+import { Strike as StrikeExtension } from "@tiptap/extension-strike";
+
+import { TaskList as TaskListExtension } from "@tiptap/extension-list";
+
+import { TaskItem as TaskItemExtension } from "@tiptap/extension-list";
+
+import { OrderedList as OrderedListExtension } from "@tiptap/extension-list";
+
+import { ListKeymap as ListKeymapExtension } from "@tiptap/extension-list";
+
+import { ListItem as ListItemExtension } from "@tiptap/extension-list";
+
+import { BulletList as BulletListExtension } from "@tiptap/extension-list";
+
+import { Italic as ItalicExtension } from "@tiptap/extension-italic";
+
+import { Heading as HeadingExtension } from "@tiptap/extension-heading";
+
+import { Bold as BoldExtension } from "@tiptap/extension-bold";
+
+import { Blockquote as BlockquoteExtension } from "@tiptap/extension-blockquote";
+
+import { Link as LinkExtension } from "@tiptap/extension-link";
+
+import { CodeBlock as CodeBlockExtension } from "@tiptap/extension-code-block";
+
+import { Code as CodeExtension, inputRegex } from "@tiptap/extension-code";
+
 import { createLiveModuleNamespace } from "../boot/module-runtime";
 import {
   AddMarkStep,

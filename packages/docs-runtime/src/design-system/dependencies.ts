@@ -3,9 +3,17 @@ import type { Dynamic } from "../interop/legacy-dynamic";
 
 import { originalJsxProps, originalJsxsProps } from "../react-runtime/jsx-runtime";
 
-import * as npmDependency1 from "#base-ui/internals/labelable-provider/LabelableProvider.mjs";
+import {
+  LabelableProvider as BaseLabelableProvider,
+} from "#base-ui/internals/labelable-provider/LabelableProvider.mjs";
 
-import * as npmDependency0 from "@base-ui/react";
+import * as baseUiModule from "@base-ui/react";
+import {
+  Separator as BaseSeparator,
+  Menubar as BaseMenubar,
+  Button as BaseButton,
+  RadioGroup as BaseRadioGroup,
+} from "@base-ui/react";
 
 import {
   createLiveModuleNamespace as moduleNamespace,
@@ -127,122 +135,111 @@ import {
 
 import { preloadModule } from "../boot/preload";
 
-const BaseLabelableProvider: Dynamic = (npmDependency1 as Dynamic)
-  .LabelableProvider;
-
-const BaseCollapsibleRoot: Dynamic = (npmDependency0).Collapsible
+const BaseCollapsibleRoot: Dynamic = (baseUiModule).Collapsible
   .Root;
 
-const BaseCollapsibleTrigger: Dynamic = (npmDependency0).Collapsible
+const BaseCollapsibleTrigger: Dynamic = (baseUiModule).Collapsible
   .Trigger;
 
-const BaseCollapsiblePanel: Dynamic = (npmDependency0).Collapsible
+const BaseCollapsiblePanel: Dynamic = (baseUiModule).Collapsible
   .Panel;
 
-const BaseFieldRoot: Dynamic = (npmDependency0).Field.Root;
+const BaseFieldRoot: Dynamic = (baseUiModule).Field.Root;
 
-const BaseFieldLabel: Dynamic = (npmDependency0).Field.Label;
+const BaseFieldLabel: Dynamic = (baseUiModule).Field.Label;
 
-const BaseFieldError: Dynamic = (npmDependency0).Field.Error;
+const BaseFieldError: Dynamic = (baseUiModule).Field.Error;
 
-const BaseFieldDescription: Dynamic = (npmDependency0).Field
+const BaseFieldDescription: Dynamic = (baseUiModule).Field
   .Description;
 
-const BaseFieldControl: Dynamic = (npmDependency0).Field.Control;
+const BaseFieldControl: Dynamic = (baseUiModule).Field.Control;
 
-const BaseMenuCheckboxItem: Dynamic = (npmDependency0).Menu
+const BaseMenuCheckboxItem: Dynamic = (baseUiModule).Menu
   .CheckboxItem;
 
-const BaseMenuGroup: Dynamic = (npmDependency0).Menu.Group;
+const BaseMenuGroup: Dynamic = (baseUiModule).Menu.Group;
 
-const BaseMenuGroupLabel: Dynamic = (npmDependency0).Menu.GroupLabel;
+const BaseMenuGroupLabel: Dynamic = (baseUiModule).Menu.GroupLabel;
 
-const BaseMenuItem: Dynamic = (npmDependency0).Menu.Item;
+const BaseMenuItem: Dynamic = (baseUiModule).Menu.Item;
 
-const BaseMenuPopup: Dynamic = (npmDependency0).Menu.Popup;
+const BaseMenuPopup: Dynamic = (baseUiModule).Menu.Popup;
 
-const BaseMenuPortal: Dynamic = (npmDependency0).Menu.Portal;
+const BaseMenuPortal: Dynamic = (baseUiModule).Menu.Portal;
 
-const BaseMenuRoot: Dynamic = (npmDependency0).Menu.Root;
+const BaseMenuRoot: Dynamic = (baseUiModule).Menu.Root;
 
-const BaseMenuSubmenuRoot: Dynamic = (npmDependency0).Menu
+const BaseMenuSubmenuRoot: Dynamic = (baseUiModule).Menu
   .SubmenuRoot;
 
-const BaseMenuTrigger: Dynamic = (npmDependency0).Menu.Trigger;
+const BaseMenuTrigger: Dynamic = (baseUiModule).Menu.Trigger;
 
-const BaseSeparator = (npmDependency0).Separator;
-
-const BaseMenuSubmenuTrigger: Dynamic = (npmDependency0).Menu
+const BaseMenuSubmenuTrigger: Dynamic = (baseUiModule).Menu
   .SubmenuTrigger;
 
-const BaseContextMenuRoot: Dynamic = (npmDependency0).ContextMenu
+const BaseContextMenuRoot: Dynamic = (baseUiModule).ContextMenu
   .Root;
 
-const BaseContextMenuTrigger: Dynamic = (npmDependency0).ContextMenu
+const BaseContextMenuTrigger: Dynamic = (baseUiModule).ContextMenu
   .Trigger;
 
-const BaseMenubar = (npmDependency0).Menubar;
-
-const BasePopoverPositioner: Dynamic = (npmDependency0).Popover
+const BasePopoverPositioner: Dynamic = (baseUiModule).Popover
   .Positioner;
 
-const BasePopoverPopup: Dynamic = (npmDependency0).Popover.Popup;
+const BasePopoverPopup: Dynamic = (baseUiModule).Popover.Popup;
 
-const BasePopoverArrow: Dynamic = (npmDependency0).Popover.Arrow;
+const BasePopoverArrow: Dynamic = (baseUiModule).Popover.Arrow;
 
-const BasePopoverTitle: Dynamic = (npmDependency0).Popover.Title;
+const BasePopoverTitle: Dynamic = (baseUiModule).Popover.Title;
 
-const BasePopoverDescription: Dynamic = (npmDependency0).Popover
+const BasePopoverDescription: Dynamic = (baseUiModule).Popover
   .Description;
 
-const BasePopoverClose: Dynamic = (npmDependency0).Popover.Close;
+const BasePopoverClose: Dynamic = (baseUiModule).Popover.Close;
 
-const BasePopoverBackdrop: Dynamic = (npmDependency0).Popover
+const BasePopoverBackdrop: Dynamic = (baseUiModule).Popover
   .Backdrop;
 
-const BaseButton = (npmDependency0).Button;
-
-const BaseComboboxBackdrop: Dynamic = (npmDependency0).Combobox
+const BaseComboboxBackdrop: Dynamic = (baseUiModule).Combobox
   .Backdrop;
 
-const BaseSwitchRoot: Dynamic = (npmDependency0).Switch.Root;
+const BaseSwitchRoot: Dynamic = (baseUiModule).Switch.Root;
 
-const BaseSwitchThumb: Dynamic = (npmDependency0).Switch.Thumb;
+const BaseSwitchThumb: Dynamic = (baseUiModule).Switch.Thumb;
 
-const BaseRadioRoot: Dynamic = (npmDependency0).Radio.Root;
+const BaseRadioRoot: Dynamic = (baseUiModule).Radio.Root;
 
-const BaseRadioGroup = (npmDependency0).RadioGroup;
+const BaseToastProvider: Dynamic = (baseUiModule).Toast.Provider;
 
-const BaseToastProvider: Dynamic = (npmDependency0).Toast.Provider;
+const BaseToastViewport: Dynamic = (baseUiModule).Toast.Viewport;
 
-const BaseToastViewport: Dynamic = (npmDependency0).Toast.Viewport;
+const BaseToastRoot: Dynamic = (baseUiModule).Toast.Root;
 
-const BaseToastRoot: Dynamic = (npmDependency0).Toast.Root;
-
-const BaseToastDescription: Dynamic = (npmDependency0).Toast
+const BaseToastDescription: Dynamic = (baseUiModule).Toast
   .Description;
 
-const BaseToastTitle: Dynamic = (npmDependency0).Toast.Title;
+const BaseToastTitle: Dynamic = (baseUiModule).Toast.Title;
 
-const BaseToastClose: Dynamic = (npmDependency0).Toast.Close;
+const BaseToastClose: Dynamic = (baseUiModule).Toast.Close;
 
-const BaseToastPortal: Dynamic = (npmDependency0).Toast.Portal;
+const BaseToastPortal: Dynamic = (baseUiModule).Toast.Portal;
 
-const BaseToastuseToastManager: Dynamic = (npmDependency0).Toast
+const BaseToastuseToastManager: Dynamic = (baseUiModule).Toast
   .useToastManager;
 
-const BasePopoverRoot: Dynamic = (npmDependency0).Popover.Root;
+const BasePopoverRoot: Dynamic = (baseUiModule).Popover.Root;
 
-const BasePopoverTrigger: Dynamic = (npmDependency0).Popover.Trigger;
+const BasePopoverTrigger: Dynamic = (baseUiModule).Popover.Trigger;
 
-const BasePopoverPortal: Dynamic = (npmDependency0).Popover.Portal;
+const BasePopoverPortal: Dynamic = (baseUiModule).Popover.Portal;
 
-const BasePopovercreateHandle: Dynamic = (npmDependency0).Popover
+const BasePopovercreateHandle: Dynamic = (baseUiModule).Popover
   .createHandle;
 
-const BaseMenuBackdrop: Dynamic = (npmDependency0).Menu.Backdrop;
+const BaseMenuBackdrop: Dynamic = (baseUiModule).Menu.Backdrop;
 
-const BaseMenuPositioner: Dynamic = (npmDependency0).Menu.Positioner;
+const BaseMenuPositioner: Dynamic = (baseUiModule).Menu.Positioner;
 
 var React: Dynamic = toModuleNamespace(loadReact());
 

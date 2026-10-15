@@ -1,7 +1,7 @@
 /** renderable-katex: restored from renderableKatex-D77CCXnD.js. */
 import type { Dynamic } from "../interop/legacy-dynamic";
-import * as npmDependency0 from "katex";
-const renderToString = (npmDependency0).renderToString;
+import { renderToString } from "katex";
+
 import { resolveEditorHostReplace } from "../platform/index";
 var allowedMathClassPattern: Dynamic = /^bongo-(hl|eq)-[a-z0-9-]+$/;
 var allowedEquationIdPattern: Dynamic = /^bongo-eq-[a-z0-9-]+$/;

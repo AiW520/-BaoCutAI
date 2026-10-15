@@ -1,20 +1,14 @@
 /** chat-markdown: restored from chat-markdown-DgL94P7f.js. */
 import { originalJsxProps } from "../react-runtime/jsx-runtime";
 import type { Dynamic } from "../interop/legacy-dynamic";
-import * as npmDependency5 from "mdast-util-find-and-replace";
-const findAndReplace = (npmDependency5).findAndReplace;
-import * as npmDependency4 from "rehype-sanitize";
-const rehypeSanitize = (npmDependency4).default;
-import * as npmDependency3 from "rehype-raw";
-const rehypeRaw = (npmDependency3).default;
-import * as npmDependency2 from "rehype-harden";
-const harden = (npmDependency2).harden;
-import * as npmDependency1 from "react/jsx-runtime";
-const jsxRuntime = npmDependency1;
-import * as npmDependency0 from "streamdown";
-const Streamdown = (npmDependency0).Streamdown;
-const defaultRemarkPlugins = (npmDependency0)
-  .defaultRemarkPlugins;
+import { findAndReplace } from "mdast-util-find-and-replace";
+import rehypeSanitize from "rehype-sanitize";
+import rehypeRaw from "rehype-raw";
+import { harden } from "rehype-harden";
+import * as jsxRuntimeModule from "react/jsx-runtime";
+const jsxRuntime = jsxRuntimeModule;
+import { Streamdown, defaultRemarkPlugins } from "streamdown";
+
 const __vite__mapDeps: Dynamic = (..._extraArguments: unknown[]): Dynamic => [];
 import {
   createLiveModuleNamespace,

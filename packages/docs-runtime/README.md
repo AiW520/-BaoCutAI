@@ -30,6 +30,8 @@ JSX 使用包导出 `@baocut/docs-runtime/react-runtime/jsx-runtime` 与 `jsx-de
 
 内部静态导入和惰性加载后的属性读取使用语义化导出名，例如 `preloadModule`、`createLiveModuleNamespace`，不再依赖压缩产物的 `t`、`n`、`$A` 等短别名。旧分块名与适配名保留在导出边界以维持兼容；局部重命名只用于表达不同职责或避免冲突。大量同类资源使用有领域含义的命名空间，例如代码高亮通过 `import * as grammars from "./langs"` 读取 `grammars.typescriptGrammars`。删除未使用的导入项时，保留原模块的副作用导入及求值顺序。
 
+外部依赖直接使用有意义的 default／named import，例如 `import scssGrammars from "@shikijs/langs/scss"`，避免先导入 `npmDependency48` 再读取 `.default` 的中间变量。确实需要整模块对象的加载器，以及类型声明缺失或与实际导出不一致的私有 API，保留具有领域名称的命名空间和明确的适配合同。
+
 较大的子系统仍以数字后缀区分连续声明段。`initialize` 按原始语句顺序执行初始化与注册，避免循环依赖提前读取状态；新增顶层初始化须同步这个顺序，不从模块顶层提前执行其他子系统的逻辑。大型组件提取的回调保持原来的 hooks 顺序与调用条件。
 
 `platform/operations/` 与 `comments/actions/` 中的模块工厂按实例创建，状态由原来的控制器或 store 持有。跨模块 context 以 getter／setter 读写活绑定，不复制可变状态快照。`comments/actions/store.ts` 保留 helper 的创建与动作组装顺序；控制器保留类字段、构造时序、`this` 与 prototype 描述符。维护这些模块时验证延迟回调、多实例隔离及初始化顺序。
