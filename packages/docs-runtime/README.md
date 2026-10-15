@@ -1,90 +1,65 @@
 # docs-runtime
 
-文档编辑器的运行时：文档应用（标签页、工具栏、批注、版本、侧栏）、编辑器 iframe 里的 ProseMirror 运行时（lfile 运行时）与编辑器附加脚本（KaTeX、表情）。源码移植自 Claude Docs 类型的 TypeScript 重建（`src/docs-type`），保留恢复出的行为与标识符；文档应用、组件库与平台核心按职责拆成模块，BaoCut 托管与模块组织的改动带 `BaoCut:` 注释（见下）。`apps/docs-editor` 把它打成编辑器页面，接口与长连接的前缀由 `packages/docs` 的 `editor/install` 设好，页面背后的 Docs 服务也在 `packages/docs`。
+文档编辑器的运行时：文档应用（标签页、工具栏、批注、版本、侧栏）、编辑器 iframe 里的 ProseMirror 运行时（lfile 运行时）与编辑器附加脚本（KaTeX、表情）。源码移植自 Claude Docs 类型的 TypeScript 重建，保留恢复出的行为与标识符；文档应用、组件库与平台核心按职责拆成模块，BaoCut 托管与模块组织的改动带 `BaoCut:` 注释（见下）。`apps/docs-editor` 把它打成编辑器页面，接口与长连接的前缀由 `packages/docs` 的 `editor/install` 设好，页面背后的 Docs 服务也在 `packages/docs`。
 
 ## 结构
 
-源码保持原工程的平铺布局：JSX 用包内自己的 `jsx-runtime.tsx`，`tsconfig.json` 的 `jsxImportSource` 是 `"."`，按每个文件所在目录解析 `./jsx-runtime`。重建代码按原工程的布局写 `./node_modules/@base-ui/react/…` 这样相对源码目录的深路径导入（不在包的 exports 里），`tools/asset-plugin.ts` 的 `nodeModulesPaths()` 从导入方往上找第一个有这个文件的 `node_modules`，Vite 与两处 esbuild 构建都用它。
+源码按领域组织，`src/` 根目录只保留包入口 `main.ts`。文件名在所属目录内描述职责，去掉原先重复的 `docs-app-`、`platform-core-` 与 `cds-` 前缀。协议类型与实现放在同一领域，跨领域的 JSON 值和恢复代码互操作合同分别放在 `serialization/` 与 `interop/`。
 
-类型：保留原工程的 `Dynamic`（即 `any`），用原工程的编译选项（不开 `noUncheckedIndexedAccess`，引入 `vite/client`）单独检查，根 `tsconfig.json` 排除本包与 `apps/docs-editor/src`。根 tsconfig 开着 `noFallthroughCasesInSwitch`，`docs-app.tsx` 里有一处 `case` 落进下一个 `case`（TS7029），改成显式做下一个 `case` 的事，行为不变。
-
-| 路径 | 内容 |
+| 路径（相对 `src/`） | 内容 |
 | --- | --- |
-| `main.ts`、`hello-early.ts`、`preload.ts`、`rolldown-runtime.ts` | 入口；最早执行的环境判断（`isFrameArtifact()`）、预热与模块预载 |
-| `docs-app.tsx`、`docs-app-*.ts(x)` | 文档应用兼容入口与按职责拆分的实现（见下） |
-| `platform-core.tsx`、`platform-core-*.ts(x)`、`platform-lazy.tsx` | 平台层兼容入口与按子系统拆分的实现（见下）、按需加载的部分（版本对比、表格、导出） |
-| `cds.tsx`、`cds-*.ts(x)`、`react.tsx`、`jsx-runtime.tsx`、`jsx-dev-runtime.tsx` | 原平台的组件库兼容入口与实现；React 与 JSX 运行时 |
-| `editor-runtime.tsx`、`editor-schema.ts`、`editor-extras.ts` | 编辑器 iframe 里的 ProseMirror 运行时（打成 `lfile-runtime.35524228.js`）、文档结构、KaTeX 与表情附加脚本 |
-| `editor-runtime-source.ts`、`editor-extras-source.ts` | 两份脚本的文本：前者是空串（只在 Frame 里内联运行时，独立页面从接口取），后者由资源插件打进页面 |
-| `right-rail.tsx`、`tabs-*.ts(x)`、`version-*.ts(x)`、`history-groups.ts`、`lfile-snapshot-view.tsx`、`diff-worker.ts` | 批注栏、标签页、版本历史与版本对比（Worker） |
-| `claude-*.ts(x)`、`ask-*.ts`、`session-route-side.ts`、`page-skill-bulb.tsx` | 空行上 @Claude 提问、Claude 直接写文档、会话路由（BaoCut 不提供，见「不提供」） |
-| `widget-*.tsx`、`model-workbook.ts`、`display-text-paths.ts`、`shiki-*.ts`、`markdown-renderer.tsx`、`chat-markdown.tsx`、`code-viewer.tsx` | 嵌入组件、数据表、代码高亮与 Markdown 渲染 |
-| `type-models/`、`types.ts`、`globals.d.ts`、`assets.d.ts`、`host-protocol.ts` | 模块之间的协议类型与页面全局 |
-| 其余 `.ts` / `.tsx` | 原包按需加载的分块（字体与版式控件、语言对话框、底部抽屉、动画、空白文档模板、表情数据等），一个文件对应原包的一个分块 |
-| `docs-host.ts` | BaoCut 加的：宿主接口 `globalThis.docsHost` 的类型与读取，版本历史的开关（见下） |
-| `public/assets/docs.css` | 原页面的样式表（与线上 `index-7E8lmnbp.css` 逐字节相同），原样拷进产物 |
-| `public/artifact-type/lfile-spell-words.e258c731.txt` | 拼写检查词表，原样拷进产物（只在 Frame 里取，独立页面不取） |
-| `tools/asset-plugin.ts` | 原工程的资源插件：用 esbuild 打 lfile 运行时与编辑器附加脚本，KaTeX 的 WOFF2 字体独立输出为带内容哈希的本地资源 |
-| `katex-fonts.ts` | 父页面读取并缓存 KaTeX 本地字体，转换为 data URL 样式，经 `loadFonts` 传入编辑器 iframe |
+| `main.ts`、`boot/` | 入口、最早执行的环境判断、Frame 握手、预热、模块预加载与活绑定支持 |
+| `document-app/` | 应用入口、路由、文档命令与宿主状态；子目录包含评论组件、Frame、页面、交互桥、导航与标签栏 |
+| `design-system/`、`react-runtime/` | 设计 token 与控件；菜单、抽屉、评论卡片分别成组；React 与自定义 JSX 运行时 |
+| `platform/` | 平台入口与依赖适配；`services/` 管理宿主、接口、认证与同步，`data/` 管理 schema 与操作引擎，`operations/` 管理控制器，`observability/` 管理遥测 |
+| `prose-editor/` | iframe 运行时、schema、KaTeX 与表情附加脚本；`platform/` 放平台侧的编辑器扩展、节点视图、媒体、选区与表格 |
+| `comments/` | 批注栏、发件箱、store 与动作工厂 |
+| `document/`、`document-tabs/`、`document-history/` | 文档与格式合同、模板、标签树、版本历史、预览与 diff Worker |
+| `assistant/` | 行内提问、写作与会话路由（BaoCut 不提供的能力见下） |
+| `embedded-widgets/`、`markdown/`、`syntax-highlighting/` | 嵌入组件、数据表、Markdown 与代码高亮 |
+| `host/`、`fonts/` | BaoCut 宿主合同、版本历史开关，以及父页面读取并传给 iframe 的字体 |
+| `serialization/`、`interop/`、`ambient/` | 共享值合同、库的未公开导出合同与页面全局／虚拟资源声明 |
 
-原工程的 `thumbnail.html` / `thumbnail.ts`（托管平台生成文档缩略图用的页面）没有搬：BaoCut 不生成文档缩略图，Runtime 也不提供这个页面。
+JSX 使用包导出 `@baocut/docs-runtime/react-runtime/jsx-runtime` 与 `jsx-dev-runtime`，由 `jsxImportSource` 统一解析，不依赖源文件的目录深度。恢复代码引用 Base UI 未公开的子路径时，用私有 `#base-ui/` 与 `#base-ui-utils/` 前缀；TypeScript `paths` 读取包内原生声明，`tools/asset-plugin.ts` 的 `nodeModulesPaths()` 在 Vite 与两处 esbuild 构建中解析相同文件。
 
-### 文档应用与组件模块
+### 初始化与模块边界
 
-`docs-app.tsx` 与 `cds.tsx` 保留原来的公开导出和分块别名，调用方继续使用这两个兼容入口。各入口先执行对应的 `*-initialize.ts`，再通过 `*-exports.ts` 提供公开接口；实现模块之间直接引用所属模块，避免经入口重复触发初始化。npm 与本地依赖的适配别名集中在各自的 `*-dependencies.ts`，顶层状态、样式注册、`displayName` 与其他副作用按恢复代码的原始顺序初始化。
+下文以 `document-app/`、`design-system/`、`platform/` 指代各自入口及实现模块组，具体定义可按函数名定位。
 
-| 文件前缀（均在 `src/`） | 职责 |
-| --- | --- |
-| `docs-app-connection-*`、`docs-app-document-recovery*` | 连接、权限与错误、文档恢复 |
-| `docs-app-document-*`、`docs-app-room-document-*`、`docs-app-room-page-*` | 文档上下文、命令、选区、宿主交互、编辑页面、iframe、预览、导出与标签页 |
-| `docs-app-comment-*`、`docs-app-ask-*` | 批注会话、锚点、编辑框与卡片，以及行内提问 |
-| `docs-app-frame-*`、`docs-app-widget-*` | 宿主手势与嵌入组件桥接 |
-| `docs-app-session-*`、`docs-app-application-*` | 会话导航、应用路由与最终挂载 |
-| `docs-app-phone-*`、`docs-app-run-*`、`docs-app-presence-*` | 手机浮层、运行评审与在线状态／对话入口 |
-| `cds-menu-*`、`cds-popover*`、`cds-sheet*` | 菜单、弹层、移动端抽屉与键盘交互 |
-| `cds-comment-*`、`cds-composer*`、`cds-text-*`、`cds-field-*` | 批注卡片、编辑框、文本输入与表单基础 |
-| 其余 `cds-*` | 设计 token、工具栏、头像、折叠、加载状态、语言选择、表格、提示与通知 |
+`document-app/index.ts`、`design-system/index.ts` 与 `platform/index.ts` 保留原来的公开导出和分块别名。各入口先执行同目录 `initialize.ts`，再经 `exports.ts` 提供接口；实现模块直接引用所属模块，避免经入口重复触发初始化。npm 与本地依赖适配集中在各领域的 `dependencies.ts`。顶层状态、样式注册、`displayName`、预加载与 `createRoot().render()` 保留恢复代码的原始顺序。
 
-大型组件提取的 helper 和回调保持原来的 React hooks 顺序及调用条件；跨模块闭包状态使用显式活绑定，延迟回调仍读取执行时的状态。应用的样式注入、平台配置、预加载与 `createRoot().render()` 保留原顺序且只执行一次。下文使用兼容入口名指代同前缀的实现模块组，具体定义按函数名定位。
+较大的子系统仍以数字后缀区分连续声明段。`initialize` 按原始语句顺序执行初始化与注册，避免循环依赖提前读取状态；新增顶层初始化须同步这个顺序，不从模块顶层提前执行其他子系统的逻辑。大型组件提取的回调保持原来的 hooks 顺序与调用条件。
 
-### 平台核心模块
+`platform/operations/` 与 `comments/actions/` 中的模块工厂按实例创建，状态由原来的控制器或 store 持有。跨模块 context 以 getter／setter 读写活绑定，不复制可变状态快照。`comments/actions/store.ts` 保留 helper 的创建与动作组装顺序；控制器保留类字段、构造时序、`this` 与 prototype 描述符。维护这些模块时验证延迟回调、多实例隔离及初始化顺序。
 
-`platform-core.tsx` 是兼容入口：先执行 `platform-core-initialize.ts`，再经 `platform-core-exports.ts` 提供原有的具名导出与分块别名。调用方继续导入这个入口；模块之间直接引用所属模块，不经兼容入口形成额外循环。
+### 类型与资源
 
-| 文件前缀（均在 `src/`） | 职责 |
-| --- | --- |
-| `platform-core-dependencies` | 原平台核心的 npm 与本地依赖、适配别名 |
-| `platform-core-observability-*` | 遥测、浏览器与操作事件、启动观测 |
-| `platform-core-platform-*` | 特性开关、宿主能力、会话、接口与认证、同步路由、文档与历史 |
-| `platform-core-data-*` | 枚举与校验、惰性 schema、内容引用、数据模型、操作引擎与控制器 |
-| `platform-core-comments-*` | 批注存储与发件箱、动作与选区、批注编辑 |
-| `platform-core-editor-*` | 编辑器扩展、锚点与提及、宿主、选区与表格、节点视图与媒体 |
-| `platform-core-ui-*`、`platform-core-export-*` | 组件、浮层、快捷键、提示与对话框，以及 MCP 导出连接器 |
+本包与 `apps/docs-editor/src` 单独进行 strict 类型检查，保留原工程的 `noUncheckedIndexedAccess: false` 和 `vite/client`。依赖适配优先使用 npm 原生类型，业务合同在所属领域声明。`interop/legacy-dynamic.ts` 中的 `Dynamic = any` 仍用于尚未恢复的合同，当前源码尚未达到个位数目标；不能通过改名、取消检查或引入新的无约束类型来隐藏这些用量。
 
-较大的子系统按完整顶层声明拆成带数字后缀的文件，保持恢复代码的相对顺序；变量保留原有或原类型检查推导出的类型。`initialize` 按原始语句顺序执行初始化及注册副作用，避免 ESM 循环依赖提前读取状态。增加顶层初始化时须同步这个顺序；不要从模块顶层提前执行其他子系统的逻辑。
+`tools/type-debt.mjs` 通过 TypeScript AST 统计 `Dynamic` 类型引用、显式 `any` 与无类型模块声明，排除导入名称、注释、字符串和 JSX 文案；该统计不等于对推导类型安全性的完整证明。带 `--check-target` 时要求前两项各不超过 9、无类型模块声明为 0，未达标返回非零。
 
-操作控制器与批注 store 的闭包继续按职责拆成 `platform-core-operation-*.ts` 与 `platform-core-comment-*.ts`。状态仍由原来的控制器调用或 store 创建过程持有，提取模块通过显式 context 的 getter／setter 读写活绑定，不复制可变状态快照。模块工厂按实例创建，不能在模块顶层保存实例状态；调用注入的普通函数时保留原来的接收者语义。
+`tools/asset-plugin.ts` 将 `prose-editor/runtime.tsx` 打成 `artifact-type/lfile-runtime.35524228.js`，将 `prose-editor/extras.ts` 打成附加脚本文本。KaTeX 的 WOFF2 独立输出为带内容哈希的本地资源，由 `fonts/katex-fonts.ts` 缓存并转为 data URL 传给 iframe。`runtime-source.ts` 仍为空串：Frame 内联运行时，独立页面从接口获取；`extras-source.ts` 由虚拟资源插件填充。
 
-批注的 `platform-core-comment-store.ts` 保留私有 helper 的创建顺序，再按原属性顺序组装加载、创建、修改、回复、解决、反应、重开、布局与草稿动作。操作控制器保留类字段与构造时序，提取的方法保留原来的 `this` 及 prototype 属性描述符。对这些模块的维护同时验证延迟回调、多实例状态隔离与初始化顺序。
+`public/assets/docs.css` 与 `public/artifact-type/lfile-spell-words.e258c731.txt` 原样分发。原工程的 `thumbnail.html`／`thumbnail.ts` 未移植，BaoCut 不提供文档缩略图。
 
 ## 宿主与平台
 
 代码里以 `BaoCut:` 注释标出，页面模板 `apps/docs-editor/index.html` 的改动写在它开头的注释里。原应用有上百处按 `isFrameArtifact()`（嵌进 claude.ai 的 Frame）切到 postMessage 通道，BaoCut 的页面不是 Frame，也不伪装成 Frame，下面每一处只放开一个具体的条件。
 
 - **前缀与路由**：页面在 `/docs/<grant>/project/<文档 id>`，Runtime 注入 `<base href="/docs/<grant>/">`。`@baocut/docs/editor/install`（`apps/docs-editor/src/main.ts` 的第一个导入）在应用模块求值之前设好 `__BONGO_BASE__` / `__BONGO_WS_BASE__`；接口、长连接（`<前缀>/api/mux`）与 lfile 运行时（`<前缀>/api/lfile-runtime/35524228`）都带这个前缀，路由去掉前缀再匹配，这些原应用本来就支持，没有改。页面引用的资源（样式表、分块、图标字体、Worker）都是相对地址，靠 `<base>` 落在 `/docs/<grant>/` 下。
-- **独立工具栏**（`docs-app.tsx`，三处）：原版只在 Frame 里显示文档工具栏（标签页、字体、版式、表格、图片、清单、插入菜单）。去掉 `useDocumentTabsUseSyncExternalStore` 的 frame 条件（手机宽度上仍然不显示）；独立分支的内容容器在有工具栏时加 `flex flex-col`，编辑器 iframe 才填满工具栏下方（否则只有 150px 高）；`emitFormatState` 去掉 Frame 条件，编辑器回报光标处的格式，工具栏按钮的可用与选中状态靠它。
-- **批注发给智能体**（`docs-host.ts`、`platform-core.tsx`、`docs-app.tsx`）：原版只在 Frame 里经 `window.claude.comments` 把批注交给 Claude。BaoCut 的宿主在应用模块求值前装上 `globalThis.docsHost.comments`（`canSendToClaude()` 与 `sendToClaude({ anchor: { path, x, y }, text })`，类型与语义写在 `docs-host.ts`），装了时：
-  - `platform-core.tsx` 里批注用的宿主改读 `docsHost`（Frame 里照原样读 `window.claude`）；看的人按成员处理（独立页面没有 Frame 的成员信息）；`frameRegisterCustomAnchors` 给一个空的锚点实现（应用只检查方法存在、卸载时调 `release()`）。
-  - `docs-app.tsx` 的 `useCommentSessionBridge`、批注下方的发送状态、块定位（`knownBlocksRef` / `summonHostRef`）与批注框的「Send to agent」勾选，从 Frame 判断改成 `commentSummonHost()`（Frame，或独立页面装了 `docsHost.comments`）。
+- **独立工具栏**（`document-app/`，三处）：原版只在 Frame 里显示文档工具栏（标签页、字体、版式、表格、图片、清单、插入菜单）。去掉 `useDocumentTabsUseSyncExternalStore` 的 frame 条件（手机宽度上仍然不显示）；独立分支的内容容器在有工具栏时加 `flex flex-col`，编辑器 iframe 才填满工具栏下方（否则只有 150px 高）；`emitFormatState` 去掉 Frame 条件，编辑器回报光标处的格式，工具栏按钮的可用与选中状态靠它。
+- **批注发给智能体**（`host/docs-host.ts`、`platform/index.ts`、`document-app/index.ts`）：原版只在 Frame 里经 `window.claude.comments` 把批注交给 Claude。BaoCut 的宿主在应用模块求值前装上 `globalThis.docsHost.comments`（`canSendToClaude()` 与 `sendToClaude({ anchor: { path, x, y }, text })`，类型与语义写在 `host/docs-host.ts`），装了时：
+  - `platform/` 里批注用的宿主改读 `docsHost`（Frame 里照原样读 `window.claude`）；看的人按成员处理（独立页面没有 Frame 的成员信息）；`frameRegisterCustomAnchors` 给一个空的锚点实现（应用只检查方法存在、卸载时调 `release()`）。
+  - `document-app/` 的 `useCommentSessionBridge`、批注下方的发送状态、块定位（`knownBlocksRef` / `summonHostRef`）与批注框的「Send to agent」勾选，从 Frame 判断改成 `commentSummonHost()`（Frame，或独立页面装了 `docsHost.comments`）。
   - 宿主没装 `docsHost` 时与原版的独立页面相同：没有勾选，批注只存进文档。
   - 顺序：批注先经文档服务存进文档（door 的 create utterance），之后才调 `sendToClaude`，实测相隔约 20 ms。`anchor.path` 形如 `f-<标签页 id>#<正文节点 id>/<块 id>@<起>-<止>;thread=<批注 id>`；`text` 是去掉控制字符与格式字符后的批注正文，开头的 `@Agent ` 保留，例如 `@Agent please tighten this`（以前的文档里是 `@Claude`）。
-- **Ask Agent**（`docs-app.tsx`、`docs-host.ts`）：原版的两个入口都通向 claude.ai 的对话栏，独立页面里点了没有可见的反应（左下角按钮只打开一块空白浮层，挡住左下角；工具栏按钮只播报一句）。
+- **Ask Agent**（`document-app/index.ts`、`host/docs-host.ts`）：原版的两个入口都通向 claude.ai 的对话栏，独立页面里点了没有可见的反应（左下角按钮只打开一块空白浮层，挡住左下角；工具栏按钮只播报一句）。
   - 选中文字后工具栏的「Ask Agent」（`ask-claude` 手势）：独立页面装了 `docsHost.comments` 时照 Frame 的做法发 `comment-key`，打开这处选区的批注框，这条批注当作问智能体的（`ask`），默认发给智能体；批注发不出去（页面单独打开、没有会话，或只读）时提示「Ask Agent isn't available here」。
   - 左下角的「Ask Agent」（`ChatPill`）：宿主装了 `globalThis.docsHost.chat`（`focus()`，BaoCut 的 iframe 里才装）时点了交给宿主，BaoCut 把焦点交给这个会话的输入框（`editor:focus-chat`）；装了 `comments` 没有 `chat`（页面单独打开）时不显示。两种情况都不再打开原版的对话浮层。
-- **版本历史**（`docs-host.ts` 的 `versionHistoryOffered()`、`docs-app.tsx`，三处）：原版的独立页面总是开着版本历史（`platform-core.tsx` 的 `resolvePlatformLiveDocumentAndHistoryValue36` 在 Frame 外直接放行），面板要的接口 BaoCut 不提供（见「不提供」）。独立页面不开，Frame 里照原样：`FilmedProsePage` 的 `historyRoad` 加上这个条件，版本面板与版本预览都不出来，记在本地的「面板开着」（`bongo.settings.historyRailOpen`）也不起作用；顶栏不显示 History 按钮（`HistoryRailToggle`）；`?chrome=embed` 布局给 `HeaderPath` 的 `historyOffered` 加上这个条件，项目菜单不列「Version history」（BaoCut 不用这个布局）。命令面板的「Version history」与历史面板的快捷键另看 `versionHistoryV2` 开关（默认关），BaoCut 里本来就没有。
-- **本页新建的批注收后续回复**（`platform-core.tsx` 的 `seatDoorList`）：原版的 `room:project/<id>` 同步评论（`utterance/<id>`），批注栏接上 fold 之后，本页新建的批注由 fold 接管，智能体的回复经 fold 到达。BaoCut 的 room 只同步标签栏与下拉选项，评论走 door 读回的列表；原版在 fold 接上时只拿列表补 fold 里没有、本地也没有的批注，本页新建的那条一直是本地那份，智能体的回复要重开编辑器才看得到（服务端的推送与编辑器重读都正常）。改成：门里列表的批注只要不在 fold 里，就顶替本地同 id 的那份，与门里来的批注同样处理；没送达的本地改动照原样由发件箱补回。
-- **文案**：批注发给智能体这条路上的状态、勾选、提示与智能体署名称「the agent」/「Agent」，键与判断不变（`platform-core.tsx` 的 `PlatformSessionAndSourcesSent` 等、`DataModelSchemasSendToClaude` 等，`docs-app.tsx` 的 `Sent to agent`、`Sends to agent`、`The agent is working on it…`、`Ask the agent…`，`cds.tsx` 里批注框勾选与智能体署名的默认文字）。「Ask Claude」一类的按钮、提示、标题与播报改称「Ask Agent」/「ask the agent」（工具栏按钮与它的三种提示、左下角按钮、行内提问卡片、`@` 菜单的分组名、空文档的占位语「Start typing, or ask the agent to…」——`editor-runtime.tsx` 按「ask the agent」切开它做链接，`platform-core.tsx` 的 `EditorHostMessage12` 与它保持同一句）。批注里提及智能体写作「@Agent」：提及项的 id 仍是 `claude`（发给智能体按 id 判断），只把标签从 Claude 换成 Agent（`platform-core.tsx` 的 `PlatformApiAndAuthLabel`、`DataModelSchemasLabel3`，`cds.tsx` 批注框开头的徽标），提到这个写法的提示一并改；按正文识别提及的几处（`platform-core.tsx` 的 `platformSessionAndSourcesPattern3`，`docs-app.tsx` 的 `isEmptyClaudeRequest`，`claude-session-run.ts`、`claude-ask-card.ts`，`packages/docs` 的 `door.ts` 与 `editor/host.ts`）同时认 `@Agent` 与以前的 `@Claude`，旧文档里的批注照样发得出去。智能体改文档时露出来的名字也一样：光标旗子与在线头像上的名字（`platform-core.tsx` 的 `PlatformApiAndAuthColor`、`editor-runtime.tsx` 的 `RenderedCodeAndProofreadingColor`，以及没报名字的智能体）、「正在改这篇文档」的播报、新加标签页的提示、改写了正在打字的段落的提示、批注里智能体正在回复时的署名与「The agent is working on it…」、智能体头像的无障碍名称、表情回应名单、「Resolved by the agent」与「via the agent」，还有文档还在建、空标签页的提示；连不上与编辑器更新后的提示不提 Claude Docs，只说 Docs。这些都只是显示的文字，没有别处按它判断。BaoCut 用不到的部分（正文里的行内提问：`@claude` 触发、正文提及的标签与行内提问卡片；版本历史；skill、widget、图表、登录、分享、Google Drive、校对）文案照旧。存下的批注正文照原样是纯文字，旧批注仍显示 `@Claude`；给模型看的提示词（`docs-app.tsx` 的 `S7`、`DocumentCommandsState2` 等）不改；智能体头像与工具栏按钮的星形图标来自图标字体，见「随包的第三方代码与资源」。
-- **字体**：不内置 Anthropic Sans / Serif / Mono 品牌字体（`platform-core.tsx` 的字体清单留空）。原版把品牌字体与图标字体用 `Promise.all` 一起取，缺一份整组作废、编辑器 iframe 连图标字体也没有；清单留空后只取图标字体，正文退回 `docs.css` 字体栈里的系统字体。图标字体按应用要的名字 `artifact-type/fonts/anthropicons-variable.e7f7e9ca44846912.woff2` 放进产物，文件是 `packages/slides-runtime/src/fonts/anthropicons-fizzy-lake.woff2`（`apps/docs-editor/vite.config.ts`）。
+- **版本历史**（`host/docs-host.ts` 的 `versionHistoryOffered()`、`document-app/`，三处）：原版的独立页面总是开着版本历史（`platform/` 的 `resolvePlatformLiveDocumentAndHistoryValue36` 在 Frame 外直接放行），面板要的接口 BaoCut 不提供（见「不提供」）。独立页面不开，Frame 里照原样：`FilmedProsePage` 的 `historyRoad` 加上这个条件，版本面板与版本预览都不出来，记在本地的「面板开着」（`bongo.settings.historyRailOpen`）也不起作用；顶栏不显示 History 按钮（`HistoryRailToggle`）；`?chrome=embed` 布局给 `HeaderPath` 的 `historyOffered` 加上这个条件，项目菜单不列「Version history」（BaoCut 不用这个布局）。命令面板的「Version history」与历史面板的快捷键另看 `versionHistoryV2` 开关（默认关），BaoCut 里本来就没有。
+- **本页新建的批注收后续回复**（`platform/` 的 `seatDoorList`）：原版的 `room:project/<id>` 同步评论（`utterance/<id>`），批注栏接上 fold 之后，本页新建的批注由 fold 接管，智能体的回复经 fold 到达。BaoCut 的 room 只同步标签栏与下拉选项，评论走 door 读回的列表；原版在 fold 接上时只拿列表补 fold 里没有、本地也没有的批注，本页新建的那条一直是本地那份，智能体的回复要重开编辑器才看得到（服务端的推送与编辑器重读都正常）。改成：门里列表的批注只要不在 fold 里，就顶替本地同 id 的那份，与门里来的批注同样处理；没送达的本地改动照原样由发件箱补回。
+- **文案**：批注发给智能体这条路上的状态、勾选、提示与智能体署名称「the agent」/「Agent」，键与判断不变（`platform/` 的 `PlatformSessionAndSourcesSent` 等、`DataModelSchemasSendToClaude` 等，`document-app/` 的 `Sent to agent`、`Sends to agent`、`The agent is working on it…`、`Ask the agent…`，`design-system/` 里批注框勾选与智能体署名的默认文字）。「Ask Claude」一类的按钮、提示、标题与播报改称「Ask Agent」/「ask the agent」（工具栏按钮与它的三种提示、左下角按钮、行内提问卡片、`@` 菜单的分组名、空文档的占位语「Start typing, or ask the agent to…」——`prose-editor/runtime.tsx` 按「ask the agent」切开它做链接，`platform/` 的 `EditorHostMessage12` 与它保持同一句）。批注里提及智能体写作「@Agent」：提及项的 id 仍是 `claude`（发给智能体按 id 判断），只把标签从 Claude 换成 Agent（`platform/` 的 `PlatformApiAndAuthLabel`、`DataModelSchemasLabel3`，`design-system/index.ts` 批注框开头的徽标），提到这个写法的提示一并改；按正文识别提及的几处（`platform/` 的 `platformSessionAndSourcesPattern3`，`document-app/` 的 `isEmptyClaudeRequest`，`assistant/session-run.ts`、`assistant/ask-card.ts`，`packages/docs` 的 `door.ts` 与 `editor/host.ts`）同时认 `@Agent` 与以前的 `@Claude`，旧文档里的批注照样发得出去。智能体改文档时露出来的名字也一样：光标旗子与在线头像上的名字（`platform/` 的 `PlatformApiAndAuthColor`、`prose-editor/runtime.tsx` 的 `RenderedCodeAndProofreadingColor`，以及没报名字的智能体）、「正在改这篇文档」的播报、新加标签页的提示、改写了正在打字的段落的提示、批注里智能体正在回复时的署名与「The agent is working on it…」、智能体头像的无障碍名称、表情回应名单、「Resolved by the agent」与「via the agent」，还有文档还在建、空标签页的提示；连不上与编辑器更新后的提示不提 Claude Docs，只说 Docs。这些都只是显示的文字，没有别处按它判断。BaoCut 用不到的部分（正文里的行内提问：`@claude` 触发、正文提及的标签与行内提问卡片；版本历史；skill、widget、图表、登录、分享、Google Drive、校对）文案照旧。存下的批注正文照原样是纯文字，旧批注仍显示 `@Claude`；给模型看的提示词（`document-app/` 的 `S7`、`DocumentCommandsState2` 等）不改；智能体头像与工具栏按钮的星形图标来自图标字体，见「随包的第三方代码与资源」。
+- **字体**：不内置 Anthropic Sans / Serif / Mono 品牌字体（`platform/` 的字体清单留空）。原版把品牌字体与图标字体用 `Promise.all` 一起取，缺一份整组作废、编辑器 iframe 连图标字体也没有；清单留空后只取图标字体，正文退回 `docs.css` 字体栈里的系统字体。图标字体按应用要的名字 `artifact-type/fonts/anthropicons-variable.e7f7e9ca44846912.woff2` 放进产物，文件是 `packages/slides-runtime/src/fonts/anthropicons-fizzy-lake.woff2`（`apps/docs-editor/vite.config.ts`）。
 - **KaTeX 字体**：只分发 npm 包的 20 份 WOFF2（共 259,792 字节），输出到 `artifact-type/fonts/katex-<字体名>-<内容哈希>.woff2`，不打进附加脚本。父页面按 `document.baseURI` 读取 grant 下的本地文件，同一页面内合并并发请求、缓存成功结果；失败的字体可在下次调用时重试。字体转为 data URL 的 `@font-face` 样式，通过既有 `loadFonts` 消息与正文／图标字体一并交给 iframe（冷启动 `all` 或预热帧 `first`，`rest` 不重复传）。附加脚本只保留 KaTeX 排版 CSS。iframe 保持原有 sandbox 与 CSP；网关和 Web 共用同一份资源与加载流程。
 - **页面模板**：不装托管平台的健康上报脚本，不预载品牌字体，`appifact-capabilities` 只留 `comments`（应用本身不读这个 meta），不带写给托管平台的 README 注释与 meta，标题是 Docs。
 
@@ -92,15 +67,15 @@
 
 与原版压缩代码对照后改回，带 `BaoCut: restorer fix` 注释：
 
-- `platform-lazy.tsx` 的 `createDiffWorker`：重建代码照抄了原版构建产物里 Vite 改写后的地址 `new URL("diffWorker-Dnf0Jf6P.js", import.meta.url)`（原包里同目录的 Worker 分块）。这里的构建不产出这个文件，Worker 加载失败，版本对比退回主线程计算（构建时 Vite 也会警告）。改回源码的写法 `new Worker(new URL("./diff-worker.ts", import.meta.url), …)`，Vite 把 `diff-worker.ts`（就是从 `diffWorker-Dnf0Jf6P.js` 还原的）打成 `assets/diff-worker-*.js`（约 78 KB，原版 75 KB）。
+- `platform/lazy.tsx` 的 `createDiffWorker`：重建代码照抄了原版构建产物里 Vite 改写后的地址 `new URL("diffWorker-Dnf0Jf6P.js", import.meta.url)`（原包里同目录的 Worker 分块）。这里的构建不产出这个文件，Worker 加载失败，版本对比退回主线程计算（构建时 Vite 也会警告）。改回源码的写法 `new Worker(new URL("../document-history/diff-worker.ts", import.meta.url), …)`，Vite 把 `document-history/diff-worker.ts`（就是从 `diffWorker-Dnf0Jf6P.js` 还原的）打成 `assets/diff-worker-*.js`（约 78 KB，原版 75 KB）。
 
 ## 不提供
 
 下面这些要 claude.ai 的服务或 Frame，BaoCut 不提供，界面照原样保留。都是在 `/docs/<grant>/` 下实测看到的：
 
 - **文档里的对话栏**：原版左下角按钮与工具栏的提问打开 claude.ai 的对话栏，BaoCut 不提供；两个入口改走批注框与 BaoCut 会话的输入框，见「宿主与平台」的「Ask Agent」。
-- **空行上 @Claude 提问**：编辑器 @ 菜单里没有「Ask Agent」一项（`docs-app.tsx` 里 `people` 回复的 Frame 条件）。只放开这一处与行内提问的 Frame 条件试过：卡片能出来，但按回车先要模型判断请求（`sample`，`claude-verdict.ts`）、再决定由 Claude 直接写还是转成批注，独立页面里卡片停住，既不存批注也不调 `sendToClaude`，所以照原样不提供。要找智能体，选中文字写批注（装了 `docsHost.comments` 时「Send to agent」默认勾选）。
-- **Claude 直接写文档**（「Ask the agent to edit」之后的写作卡片、`claude-writing-*`、会话路由 `sendToClaudeSession`）：要宿主的 `room` 能力（Frame 里的 `window.claude`）。
+- **空行上 @Claude 提问**：编辑器 @ 菜单里没有「Ask Agent」一项（`document-app/` 里 `people` 回复的 Frame 条件）。只放开这一处与行内提问的 Frame 条件试过：卡片能出来，但按回车先要模型判断请求（`sample`，`assistant/verdict.ts`）、再决定由 Claude 直接写还是转成批注，独立页面里卡片停住，既不存批注也不调 `sendToClaude`，所以照原样不提供。要找智能体，选中文字写批注（装了 `docsHost.comments` 时「Send to agent」默认勾选）。
+- **Claude 直接写文档**（「Ask the agent to edit」之后的写作卡片、`assistant/writing-*`、会话路由 `sendToClaudeSession`）：要宿主的 `room` 能力（Frame 里的 `window.claude`）。
 - **分享**：「Share」按钮点了没有反应。
 - **版本历史**：面板向 `<前缀>/api/v3/project/<id>/file/<文件>/history` 取版本列表、向 `…/at/<rev>` 取这一版与上一版渲染好的 HTML、向 `…/restore/<rev>` 还原。原始材料里只有客户端，没有这些接口的回应格式，BaoCut 的文档服务（`packages/docs/src/server.ts`）不提供。以前点顶栏的 History 时面板只显示接口的 404，还把编辑器挤成几个字宽；现在独立页面不显示 History 按钮与面板（见「宿主与平台」的「版本历史」）。正文最近若干个 rev 的快照另存在 `tabs/<正文 id>.history.json`，只给智能体的 `atRev` / `sinceRev` 读与 `restore` 用。
 - **品牌字体**：见上。**拼写词表**只在 Frame 里取，独立页面不取（产物里照原样有这个文件）。
@@ -120,7 +95,10 @@ node apps/docs-editor/build.mjs --force
 ```
 
 ```bash
-npx tsc -p packages/docs-runtime/tsconfig.json --noEmit
+npm run typecheck
+node packages/docs-runtime/tools/type-debt.mjs
+# 完成类型目标时此检查应通过；当前会如实报告未达标
+node packages/docs-runtime/tools/type-debt.mjs --check-target
 ```
 
 改动后在 `/docs/<grant>/project/<id>` 下打开一篇文档，过一遍：图标与工具栏（顶栏没有 History 按钮）、输入后重新载入、选中文字加批注、装了 `docsHost.comments` 时批注框出现「Send to agent」并调到 `sendToClaude`。在 BaoCut 的文档标签里再过一遍：选中文字点工具栏的「Ask Agent」出批注框、加进会话草稿；左下角的「Ask Agent」把焦点交给会话的输入框。

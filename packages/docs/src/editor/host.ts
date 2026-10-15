@@ -17,7 +17,7 @@ export interface ParentLink {
   onMessage(listener: (message: HostToEditorMessage) => void): () => void;
 }
 
-/** 编辑器给的批注位置（packages/docs-runtime/src/docs-host.ts 的 DocsHostCommentAnchor）。 */
+/** 编辑器给的批注位置（packages/docs-runtime/src/host/docs-host.ts 的 DocsHostCommentAnchor）。 */
 export interface CommentAnchor {
   path: string;
   x: number;
@@ -31,7 +31,7 @@ export interface DocsHostComments {
   sendToClaude(request: { anchor: CommentAnchor; text: string }): Promise<{ threadId: string }>;
 }
 
-/** 编辑器左下角「Ask Agent」用的宿主（packages/docs-runtime/src/docs-host.ts 的 DocsHostChat）。 */
+/** 编辑器左下角「Ask Agent」用的宿主（packages/docs-runtime/src/host/docs-host.ts 的 DocsHostChat）。 */
 export interface DocsHostChat {
   focus(): void;
 }

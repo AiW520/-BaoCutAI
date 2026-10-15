@@ -28,14 +28,21 @@ function katexAssets() {
 }
 
 /**
- * BaoCut: 还原代码按原工程的布局写 `./node_modules/@base-ui/...` 这样相对源码目录的深路径导入（这些文件不在包的
- * exports 里）。原工程的 node_modules 就在源码目录里，这里源码在 src/、依赖装在包目录（或仓库根目录）的 node_modules，
- * 所以按 Node 的查找方式从导入方所在目录往上找第一个有这个文件的 node_modules。Vite 的页面构建与下面两处 esbuild 构建都用它。
+ * BaoCut: 恢复代码引用了 Base UI 未公开的子路径，以私有 #base-ui/ 前缀保留对应文件。
+ * TypeScript paths 读取同一路径的原生声明；Vite 与下面两处 esbuild 从导入方逐级查找依赖，
+ * 不依赖 src 的目录深度，也不经过包的 exports。
  */
 function nodeModulesFile(source: string, importer: string): string | null {
-  const prefix = "./node_modules/";
-  if (!source.startsWith(prefix)) return null;
-  const rest = source.slice(prefix.length);
+  const prefix = source.startsWith("#base-ui/")
+    ? "#base-ui/"
+    : source.startsWith("#base-ui-utils/")
+      ? "#base-ui-utils/"
+      : null;
+  if (prefix === null) return null;
+  const rest = path.join(
+    prefix === "#base-ui/" ? "@base-ui/react" : "@base-ui/utils",
+    source.slice(prefix.length),
+  );
   for (let dir = path.dirname(importer); ; dir = path.dirname(dir)) {
     const candidate = path.join(dir, "node_modules", rest);
     if (fs.existsSync(candidate)) return candidate;
@@ -58,7 +65,7 @@ export function nodeModulesPaths(): Plugin {
 const esbuildNodeModulesPaths: EsbuildPlugin = {
   name: "docs-runtime-node-modules-paths",
   setup(builder) {
-    builder.onResolve({ filter: /^\.\/node_modules\// }, (args) => {
+    builder.onResolve({ filter: /^#base-ui(?:-utils)?\// }, (args) => {
       const file = nodeModulesFile(args.path, args.importer);
       return file ? { path: file } : undefined;
     });
@@ -84,7 +91,7 @@ export function editorAssets(root: string, bundledInputs?: Set<string>): Plugin 
   let runtimeBuild: Promise<string> | undefined;
   const runtimeSource = (): Promise<string> =>
     (runtimeBuild ??= build({
-      entryPoints: [path.join(root, "editor-runtime.tsx")],
+      entryPoints: [path.join(root, "prose-editor/runtime.tsx")],
       bundle: true,
       write: false,
       platform: "browser",
@@ -151,7 +158,7 @@ export function editorAssets(root: string, bundledInputs?: Set<string>): Plugin 
         return `export default ${JSON.stringify(katex.fontCss)};`;
       if (id !== extrasId) return;
       const result = await build({
-        entryPoints: [path.join(root, "editor-extras.ts")],
+        entryPoints: [path.join(root, "prose-editor/extras.ts")],
         bundle: true,
         write: false,
         platform: "browser",

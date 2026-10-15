@@ -1,2 +1,2 @@
-import './hello-early';
-import './docs-app';
+import "./boot/environment";
+import "./document-app/index";
